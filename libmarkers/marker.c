@@ -15,20 +15,26 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
-#include <linux/module.h>
-#include <linux/mutex.h>
-#include <linux/types.h>
-#include <linux/jhash.h>
-#include <linux/list.h>
-#include <linux/rcupdate.h>
-#include <linux/marker.h>
-#include <linux/err.h>
-#include <linux/slab.h>
-#include <linux/immediate.h>
-#include <linux/sched.h>
-#include <linux/uaccess.h>
-#include <linux/user_marker.h>
-#include <linux/ltt-tracer.h>
+//ust// #include <linux/module.h>
+//ust// #include <linux/mutex.h>
+//ust// #include <linux/types.h>
+#include "jhash.h"
+#include "list.h"
+#include "rcupdate.h"
+//ust// #include <linux/marker.h>
+#include <errno.h>
+//ust// #include <linux/slab.h>
+//ust// #include <linux/immediate.h>
+//ust// #include <linux/sched.h>
+//ust// #include <linux/uaccess.h>
+//ust// #include <linux/user_marker.h>
+//ust// #include <linux/ltt-tracer.h>
+
+#include "marker.h"
+#include "kernelcompat.h"
+#include "usterr.h"
+#include "channels.h"
+#include "tracercore.h"
 
 extern struct marker __start___markers[];
 extern struct marker __stop___markers[];
@@ -112,7 +118,7 @@ notrace void __mark_empty_function(const struct marker *mdata,
 	void *probe_private, void *call_private, const char *fmt, va_list *args)
 {
 }
-EXPORT_SYMBOL_GPL(__mark_empty_function);
+//ust// EXPORT_SYMBOL_GPL(__mark_empty_function);
 
 /*
  * marker_probe_cb Callback that prepares the variable argument list for probes.
@@ -135,7 +141,7 @@ notrace void marker_probe_cb(const struct marker *mdata,
 	 * sure the teardown of the callbacks can be done correctly when they
 	 * are in modules and they insure RCU read coherency.
 	 */
-	rcu_read_lock_sched_notrace();
+//ust//	rcu_read_lock_sched_notrace();
 	ptype = mdata->ptype;
 	if (likely(!ptype)) {
 		marker_probe_func *func;
@@ -173,9 +179,9 @@ notrace void marker_probe_cb(const struct marker *mdata,
 			va_end(args);
 		}
 	}
-	rcu_read_unlock_sched_notrace();
+//ust//	rcu_read_unlock_sched_notrace();
 }
-EXPORT_SYMBOL_GPL(marker_probe_cb);
+//ust// EXPORT_SYMBOL_GPL(marker_probe_cb);
 
 /*
  * marker_probe_cb Callback that does not prepare the variable argument list.
@@ -191,7 +197,7 @@ static notrace void marker_probe_cb_noarg(const struct marker *mdata,
 	va_list args;	/* not initialized */
 	char ptype;
 
-	rcu_read_lock_sched_notrace();
+//ust//	rcu_read_lock_sched_notrace();
 	ptype = mdata->ptype;
 	if (likely(!ptype)) {
 		marker_probe_func *func;
@@ -224,7 +230,7 @@ static notrace void marker_probe_cb_noarg(const struct marker *mdata,
 			multi[i].func(mdata, multi[i].probe_private,
 				call_private, mdata->format, &args);
 	}
-	rcu_read_unlock_sched_notrace();
+//ust//	rcu_read_unlock_sched_notrace();
 }
 
 static void free_old_closure(struct rcu_head *head)
@@ -577,36 +583,36 @@ static int set_marker(struct marker_entry *entry, struct marker *elem,
 	smp_wmb();
 	elem->ptype = entry->ptype;
 
-	if (elem->tp_name && (active ^ _imv_read(elem->state))) {
-		WARN_ON(!elem->tp_cb);
-		/*
-		 * It is ok to directly call the probe registration because type
-		 * checking has been done in the __trace_mark_tp() macro.
-		 */
-
-		if (active) {
-			/*
-			 * try_module_get should always succeed because we hold
-			 * markers_mutex to get the tp_cb address.
-			 */
-			ret = try_module_get(__module_text_address(
-				(unsigned long)elem->tp_cb));
-			BUG_ON(!ret);
-			ret = tracepoint_probe_register_noupdate(
-				elem->tp_name,
-				elem->tp_cb);
-		} else {
-			ret = tracepoint_probe_unregister_noupdate(
-				elem->tp_name,
-				elem->tp_cb);
-			/*
-			 * tracepoint_probe_update_all() must be called
-			 * before the module containing tp_cb is unloaded.
-			 */
-			module_put(__module_text_address(
-				(unsigned long)elem->tp_cb));
-		}
-	}
+//ust//	if (elem->tp_name && (active ^ _imv_read(elem->state))) {
+//ust//		WARN_ON(!elem->tp_cb);
+//ust//		/*
+//ust//		 * It is ok to directly call the probe registration because type
+//ust//		 * checking has been done in the __trace_mark_tp() macro.
+//ust//		 */
+//ust//
+//ust//		if (active) {
+//ust//			/*
+//ust//			 * try_module_get should always succeed because we hold
+//ust//			 * markers_mutex to get the tp_cb address.
+//ust//			 */
+//ust//			ret = try_module_get(__module_text_address(
+//ust//				(unsigned long)elem->tp_cb));
+//ust//			BUG_ON(!ret);
+//ust//			ret = tracepoint_probe_register_noupdate(
+//ust//				elem->tp_name,
+//ust//				elem->tp_cb);
+//ust//		} else {
+//ust//			ret = tracepoint_probe_unregister_noupdate(
+//ust//				elem->tp_name,
+//ust//				elem->tp_cb);
+//ust//			/*
+//ust//			 * tracepoint_probe_update_all() must be called
+//ust//			 * before the module containing tp_cb is unloaded.
+//ust//			 */
+//ust//			module_put(__module_text_address(
+//ust//				(unsigned long)elem->tp_cb));
+//ust//		}
+//ust//	}
 	elem->state__imv = active;
 
 	return ret;
@@ -623,21 +629,21 @@ static void disable_marker(struct marker *elem)
 	int ret;
 
 	/* leave "call" as is. It is known statically. */
-	if (elem->tp_name && _imv_read(elem->state)) {
-		WARN_ON(!elem->tp_cb);
-		/*
-		 * It is ok to directly call the probe registration because type
-		 * checking has been done in the __trace_mark_tp() macro.
-		 */
-		ret = tracepoint_probe_unregister_noupdate(elem->tp_name,
-			elem->tp_cb);
-		WARN_ON(ret);
-		/*
-		 * tracepoint_probe_update_all() must be called
-		 * before the module containing tp_cb is unloaded.
-		 */
-		module_put(__module_text_address((unsigned long)elem->tp_cb));
-	}
+//ust//	if (elem->tp_name && _imv_read(elem->state)) {
+//ust//		WARN_ON(!elem->tp_cb);
+//ust//		/*
+//ust//		 * It is ok to directly call the probe registration because type
+//ust//		 * checking has been done in the __trace_mark_tp() macro.
+//ust//		 */
+//ust//		ret = tracepoint_probe_unregister_noupdate(elem->tp_name,
+//ust//			elem->tp_cb);
+//ust//		WARN_ON(ret);
+//ust//		/*
+//ust//		 * tracepoint_probe_update_all() must be called
+//ust//		 * before the module containing tp_cb is unloaded.
+//ust//		 */
+//ust//		module_put(__module_text_address((unsigned long)elem->tp_cb));
+//ust//	}
 	elem->state__imv = 0;
 	elem->single.func = __mark_empty_function;
 	/* Update the function before setting the ptype */
@@ -700,11 +706,11 @@ static void marker_update_probes(void)
 	/* Core kernel markers */
 	marker_update_probe_range(__start___markers, __stop___markers);
 	/* Markers in modules. */
-	module_update_markers();
+//ust//	module_update_markers();
 	tracepoint_probe_update_all();
 	/* Update immediate values */
 	core_imv_update();
-	module_imv_update();
+//ust//	module_imv_update();
 	marker_update_processes();
 }
 
@@ -807,7 +813,7 @@ end:
 	mutex_unlock(&markers_mutex);
 	return ret;
 }
-EXPORT_SYMBOL_GPL(marker_probe_register);
+//ust// EXPORT_SYMBOL_GPL(marker_probe_register);
 
 /**
  * marker_probe_unregister -  Disconnect a probe from a marker
@@ -857,7 +863,7 @@ end:
 	mutex_unlock(&markers_mutex);
 	return ret;
 }
-EXPORT_SYMBOL_GPL(marker_probe_unregister);
+//ust// EXPORT_SYMBOL_GPL(marker_probe_unregister);
 
 static struct marker_entry *
 get_marker_from_private_data(marker_probe_func *probe, void *probe_private)
@@ -945,7 +951,7 @@ end:
 	kfree(name);
 	return ret;
 }
-EXPORT_SYMBOL_GPL(marker_probe_unregister_private_data);
+//ust// EXPORT_SYMBOL_GPL(marker_probe_unregister_private_data);
 
 /**
  * marker_get_private_data - Get a marker's probe private data
@@ -995,7 +1001,7 @@ void *marker_get_private_data(const char *channel, const char *name,
 	}
 	return ERR_PTR(-ENOENT);
 }
-EXPORT_SYMBOL_GPL(marker_get_private_data);
+//ust// EXPORT_SYMBOL_GPL(marker_get_private_data);
 
 /**
  * markers_compact_event_ids - Compact markers event IDs and reassign channels
@@ -1003,27 +1009,27 @@ EXPORT_SYMBOL_GPL(marker_get_private_data);
  * Called when no channel users are active by the channel infrastructure.
  * Called with lock_markers() and channel mutex held.
  */
-void markers_compact_event_ids(void)
-{
-	struct marker_entry *entry;
-	unsigned int i;
-	struct hlist_head *head;
-	struct hlist_node *node;
-	int ret;
-
-	for (i = 0; i < MARKER_TABLE_SIZE; i++) {
-		head = &marker_table[i];
-		hlist_for_each_entry(entry, node, head, hlist) {
-			ret = ltt_channels_get_index_from_name(entry->channel);
-			WARN_ON(ret < 0);
-			entry->channel_id = ret;
-			ret = _ltt_channels_get_event_id(entry->channel,
-							 entry->name);
-			WARN_ON(ret < 0);
-			entry->event_id = ret;
-		}
-	}
-}
+//ust// void markers_compact_event_ids(void)
+//ust// {
+//ust// 	struct marker_entry *entry;
+//ust// 	unsigned int i;
+//ust// 	struct hlist_head *head;
+//ust// 	struct hlist_node *node;
+//ust// 	int ret;
+//ust// 
+//ust// 	for (i = 0; i < MARKER_TABLE_SIZE; i++) {
+//ust// 		head = &marker_table[i];
+//ust// 		hlist_for_each_entry(entry, node, head, hlist) {
+//ust// 			ret = ltt_channels_get_index_from_name(entry->channel);
+//ust// 			WARN_ON(ret < 0);
+//ust// 			entry->channel_id = ret;
+//ust// 			ret = _ltt_channels_get_event_id(entry->channel,
+//ust// 							 entry->name);
+//ust// 			WARN_ON(ret < 0);
+//ust// 			entry->event_id = ret;
+//ust// 		}
+//ust// 	}
+//ust// }
 
 #ifdef CONFIG_MODULES
 
@@ -1047,7 +1053,7 @@ int marker_get_iter_range(struct marker **marker, struct marker *begin,
 		return 1;
 	return 0;
 }
-EXPORT_SYMBOL_GPL(marker_get_iter_range);
+//ust// EXPORT_SYMBOL_GPL(marker_get_iter_range);
 
 static void marker_get_iter(struct marker_iter *iter)
 {
@@ -1071,7 +1077,7 @@ void marker_iter_start(struct marker_iter *iter)
 {
 	marker_get_iter(iter);
 }
-EXPORT_SYMBOL_GPL(marker_iter_start);
+//ust// EXPORT_SYMBOL_GPL(marker_iter_start);
 
 void marker_iter_next(struct marker_iter *iter)
 {
@@ -1083,19 +1089,19 @@ void marker_iter_next(struct marker_iter *iter)
 	 */
 	marker_get_iter(iter);
 }
-EXPORT_SYMBOL_GPL(marker_iter_next);
+//ust// EXPORT_SYMBOL_GPL(marker_iter_next);
 
 void marker_iter_stop(struct marker_iter *iter)
 {
 }
-EXPORT_SYMBOL_GPL(marker_iter_stop);
+//ust// EXPORT_SYMBOL_GPL(marker_iter_stop);
 
 void marker_iter_reset(struct marker_iter *iter)
 {
 	iter->module = NULL;
 	iter->marker = NULL;
 }
-EXPORT_SYMBOL_GPL(marker_iter_reset);
+//ust// EXPORT_SYMBOL_GPL(marker_iter_reset);
 
 #ifdef CONFIG_MARKERS_USERSPACE
 /*
@@ -1114,141 +1120,141 @@ static void free_user_marker(char __user *state, struct hlist_head *head)
 	}
 }
 
-asmlinkage long sys_marker(char __user *name, char __user *format,
-		char __user *state, int reg)
-{
-	struct user_marker *umark;
-	long len;
-	struct marker_entry *entry;
-	int ret = 0;
+//ust// asmlinkage long sys_marker(char __user *name, char __user *format,
+//ust// 		char __user *state, int reg)
+//ust// {
+//ust// 	struct user_marker *umark;
+//ust// 	long len;
+//ust// 	struct marker_entry *entry;
+//ust// 	int ret = 0;
+//ust// 
+//ust// 	printk(KERN_DEBUG "Program %s %s marker [%p, %p]\n",
+//ust// 		current->comm, reg ? "registers" : "unregisters",
+//ust// 		name, state);
+//ust// 	if (reg) {
+//ust// 		umark = kmalloc(sizeof(struct user_marker), GFP_KERNEL);
+//ust// 		umark->name[MAX_USER_MARKER_NAME_LEN - 1] = '\0';
+//ust// 		umark->format[MAX_USER_MARKER_FORMAT_LEN - 1] = '\0';
+//ust// 		umark->state = state;
+//ust// 		len = strncpy_from_user(umark->name, name,
+//ust// 			MAX_USER_MARKER_NAME_LEN - 1);
+//ust// 		if (len < 0) {
+//ust// 			ret = -EFAULT;
+//ust// 			goto error;
+//ust// 		}
+//ust// 		len = strncpy_from_user(umark->format, format,
+//ust// 			MAX_USER_MARKER_FORMAT_LEN - 1);
+//ust// 		if (len < 0) {
+//ust// 			ret = -EFAULT;
+//ust// 			goto error;
+//ust// 		}
+//ust// 		printk(KERN_DEBUG "Marker name : %s, format : %s", umark->name,
+//ust// 			umark->format);
+//ust// 		mutex_lock(&markers_mutex);
+//ust// 		entry = get_marker("userspace", umark->name);
+//ust// 		if (entry) {
+//ust// 			if (entry->format &&
+//ust// 				strcmp(entry->format, umark->format) != 0) {
+//ust// 				printk(" error, wrong format in process %s",
+//ust// 					current->comm);
+//ust// 				ret = -EPERM;
+//ust// 				goto error_unlock;
+//ust// 			}
+//ust// 			printk(" %s", !!entry->refcount
+//ust// 					? "enabled" : "disabled");
+//ust// 			if (put_user(!!entry->refcount, state)) {
+//ust// 				ret = -EFAULT;
+//ust// 				goto error_unlock;
+//ust// 			}
+//ust// 			printk("\n");
+//ust// 		} else {
+//ust// 			printk(" disabled\n");
+//ust// 			if (put_user(0, umark->state)) {
+//ust// 				printk(KERN_WARNING
+//ust// 					"Marker in %s caused a fault\n",
+//ust// 					current->comm);
+//ust// 				goto error_unlock;
+//ust// 			}
+//ust// 		}
+//ust// 		mutex_lock(&current->group_leader->user_markers_mutex);
+//ust// 		hlist_add_head(&umark->hlist,
+//ust// 			&current->group_leader->user_markers);
+//ust// 		current->group_leader->user_markers_sequence++;
+//ust// 		mutex_unlock(&current->group_leader->user_markers_mutex);
+//ust// 		mutex_unlock(&markers_mutex);
+//ust// 	} else {
+//ust// 		mutex_lock(&current->group_leader->user_markers_mutex);
+//ust// 		free_user_marker(state,
+//ust// 			&current->group_leader->user_markers);
+//ust// 		current->group_leader->user_markers_sequence++;
+//ust// 		mutex_unlock(&current->group_leader->user_markers_mutex);
+//ust// 	}
+//ust// 	goto end;
+//ust// error_unlock:
+//ust// 	mutex_unlock(&markers_mutex);
+//ust// error:
+//ust// 	kfree(umark);
+//ust// end:
+//ust// 	return ret;
+//ust// }
+//ust// 
+//ust// /*
+//ust//  * Types :
+//ust//  * string : 0
+//ust//  */
+//ust// asmlinkage long sys_trace(int type, uint16_t id,
+//ust// 		char __user *ubuf)
+//ust// {
+//ust// 	long ret = -EPERM;
+//ust// 	char *page;
+//ust// 	int len;
+//ust// 
+//ust// 	switch (type) {
+//ust// 	case 0:	/* String */
+//ust// 		ret = -ENOMEM;
+//ust// 		page = (char *)__get_free_page(GFP_TEMPORARY);
+//ust// 		if (!page)
+//ust// 			goto string_out;
+//ust// 		len = strncpy_from_user(page, ubuf, PAGE_SIZE);
+//ust// 		if (len < 0) {
+//ust// 			ret = -EFAULT;
+//ust// 			goto string_err;
+//ust// 		}
+//ust// 		trace_mark(userspace, string, "string %s", page);
+//ust// string_err:
+//ust// 		free_page((unsigned long) page);
+//ust// string_out:
+//ust// 		break;
+//ust// 	default:
+//ust// 		break;
+//ust// 	}
+//ust// 	return ret;
+//ust// }
 
-	printk(KERN_DEBUG "Program %s %s marker [%p, %p]\n",
-		current->comm, reg ? "registers" : "unregisters",
-		name, state);
-	if (reg) {
-		umark = kmalloc(sizeof(struct user_marker), GFP_KERNEL);
-		umark->name[MAX_USER_MARKER_NAME_LEN - 1] = '\0';
-		umark->format[MAX_USER_MARKER_FORMAT_LEN - 1] = '\0';
-		umark->state = state;
-		len = strncpy_from_user(umark->name, name,
-			MAX_USER_MARKER_NAME_LEN - 1);
-		if (len < 0) {
-			ret = -EFAULT;
-			goto error;
-		}
-		len = strncpy_from_user(umark->format, format,
-			MAX_USER_MARKER_FORMAT_LEN - 1);
-		if (len < 0) {
-			ret = -EFAULT;
-			goto error;
-		}
-		printk(KERN_DEBUG "Marker name : %s, format : %s", umark->name,
-			umark->format);
-		mutex_lock(&markers_mutex);
-		entry = get_marker("userspace", umark->name);
-		if (entry) {
-			if (entry->format &&
-				strcmp(entry->format, umark->format) != 0) {
-				printk(" error, wrong format in process %s",
-					current->comm);
-				ret = -EPERM;
-				goto error_unlock;
-			}
-			printk(" %s", !!entry->refcount
-					? "enabled" : "disabled");
-			if (put_user(!!entry->refcount, state)) {
-				ret = -EFAULT;
-				goto error_unlock;
-			}
-			printk("\n");
-		} else {
-			printk(" disabled\n");
-			if (put_user(0, umark->state)) {
-				printk(KERN_WARNING
-					"Marker in %s caused a fault\n",
-					current->comm);
-				goto error_unlock;
-			}
-		}
-		mutex_lock(&current->group_leader->user_markers_mutex);
-		hlist_add_head(&umark->hlist,
-			&current->group_leader->user_markers);
-		current->group_leader->user_markers_sequence++;
-		mutex_unlock(&current->group_leader->user_markers_mutex);
-		mutex_unlock(&markers_mutex);
-	} else {
-		mutex_lock(&current->group_leader->user_markers_mutex);
-		free_user_marker(state,
-			&current->group_leader->user_markers);
-		current->group_leader->user_markers_sequence++;
-		mutex_unlock(&current->group_leader->user_markers_mutex);
-	}
-	goto end;
-error_unlock:
-	mutex_unlock(&markers_mutex);
-error:
-	kfree(umark);
-end:
-	return ret;
-}
-
-/*
- * Types :
- * string : 0
- */
-asmlinkage long sys_trace(int type, uint16_t id,
-		char __user *ubuf)
-{
-	long ret = -EPERM;
-	char *page;
-	int len;
-
-	switch (type) {
-	case 0:	/* String */
-		ret = -ENOMEM;
-		page = (char *)__get_free_page(GFP_TEMPORARY);
-		if (!page)
-			goto string_out;
-		len = strncpy_from_user(page, ubuf, PAGE_SIZE);
-		if (len < 0) {
-			ret = -EFAULT;
-			goto string_err;
-		}
-		trace_mark(userspace, string, "string %s", page);
-string_err:
-		free_page((unsigned long) page);
-string_out:
-		break;
-	default:
-		break;
-	}
-	return ret;
-}
-
-static void marker_update_processes(void)
-{
-	struct task_struct *g, *t;
-
-	/*
-	 * markers_mutex is taken to protect the p->user_markers read.
-	 */
-	mutex_lock(&markers_mutex);
-	read_lock(&tasklist_lock);
-	for_each_process(g) {
-		WARN_ON(!thread_group_leader(g));
-		if (hlist_empty(&g->user_markers))
-			continue;
-		if (strcmp(g->comm, "testprog") == 0)
-			printk(KERN_DEBUG "set update pending for testprog\n");
-		t = g;
-		do {
-			/* TODO : implement this thread flag in each arch. */
-			set_tsk_thread_flag(t, TIF_MARKER_PENDING);
-		} while ((t = next_thread(t)) != g);
-	}
-	read_unlock(&tasklist_lock);
-	mutex_unlock(&markers_mutex);
-}
+//ust// static void marker_update_processes(void)
+//ust// {
+//ust// 	struct task_struct *g, *t;
+//ust// 
+//ust// 	/*
+//ust// 	 * markers_mutex is taken to protect the p->user_markers read.
+//ust// 	 */
+//ust// 	mutex_lock(&markers_mutex);
+//ust// 	read_lock(&tasklist_lock);
+//ust// 	for_each_process(g) {
+//ust// 		WARN_ON(!thread_group_leader(g));
+//ust// 		if (hlist_empty(&g->user_markers))
+//ust// 			continue;
+//ust// 		if (strcmp(g->comm, "testprog") == 0)
+//ust// 			printk(KERN_DEBUG "set update pending for testprog\n");
+//ust// 		t = g;
+//ust// 		do {
+//ust// 			/* TODO : implement this thread flag in each arch. */
+//ust// 			set_tsk_thread_flag(t, TIF_MARKER_PENDING);
+//ust// 		} while ((t = next_thread(t)) != g);
+//ust// 	}
+//ust// 	read_unlock(&tasklist_lock);
+//ust// 	mutex_unlock(&markers_mutex);
+//ust// }
 
 /*
  * Update current process.
@@ -1357,50 +1363,51 @@ struct notifier_block marker_module_nb = {
 	.priority = 0,
 };
 
-static int init_markers(void)
-{
-	return register_module_notifier(&marker_module_nb);
-}
-__initcall(init_markers);
+//ust// static int init_markers(void)
+//ust// {
+//ust// 	return register_module_notifier(&marker_module_nb);
+//ust// }
+//ust// __initcall(init_markers);
+/* TODO: call marker_module_nb() when a library is linked at runtime (dlopen)? */
 
 #endif /* CONFIG_MODULES */
 
-void ltt_dump_marker_state(struct ltt_trace_struct *trace)
-{
-	struct marker_iter iter;
-	struct ltt_probe_private_data call_data;
-	const char *channel;
-
-	call_data.trace = trace;
-	call_data.serializer = NULL;
-
-	marker_iter_reset(&iter);
-	marker_iter_start(&iter);
-	for (; iter.marker != NULL; marker_iter_next(&iter)) {
-		if (!_imv_read(iter.marker->state))
-			continue;
-		channel = ltt_channels_get_name_from_index(
-				iter.marker->channel_id);
-		__trace_mark(0, metadata, core_marker_id,
-			&call_data,
-			"channel %s name %s event_id %hu "
-			"int #1u%zu long #1u%zu pointer #1u%zu "
-			"size_t #1u%zu alignment #1u%u",
-			channel,
-			iter.marker->name,
-			iter.marker->event_id,
-			sizeof(int), sizeof(long),
-			sizeof(void *), sizeof(size_t),
-			ltt_get_alignment());
-		if (iter.marker->format)
-			__trace_mark(0, metadata,
-				core_marker_format,
-				&call_data,
-				"channel %s name %s format %s",
-				channel,
-				iter.marker->name,
-				iter.marker->format);
-	}
-	marker_iter_stop(&iter);
-}
-EXPORT_SYMBOL_GPL(ltt_dump_marker_state);
+//ust// void ltt_dump_marker_state(struct ltt_trace_struct *trace)
+//ust// {
+//ust// 	struct marker_iter iter;
+//ust// 	struct ltt_probe_private_data call_data;
+//ust// 	const char *channel;
+//ust// 
+//ust// 	call_data.trace = trace;
+//ust// 	call_data.serializer = NULL;
+//ust// 
+//ust// 	marker_iter_reset(&iter);
+//ust// 	marker_iter_start(&iter);
+//ust// 	for (; iter.marker != NULL; marker_iter_next(&iter)) {
+//ust// 		if (!_imv_read(iter.marker->state))
+//ust// 			continue;
+//ust// 		channel = ltt_channels_get_name_from_index(
+//ust// 				iter.marker->channel_id);
+//ust// 		__trace_mark(0, metadata, core_marker_id,
+//ust// 			&call_data,
+//ust// 			"channel %s name %s event_id %hu "
+//ust// 			"int #1u%zu long #1u%zu pointer #1u%zu "
+//ust// 			"size_t #1u%zu alignment #1u%u",
+//ust// 			channel,
+//ust// 			iter.marker->name,
+//ust// 			iter.marker->event_id,
+//ust// 			sizeof(int), sizeof(long),
+//ust// 			sizeof(void *), sizeof(size_t),
+//ust// 			ltt_get_alignment());
+//ust// 		if (iter.marker->format)
+//ust// 			__trace_mark(0, metadata,
+//ust// 				core_marker_format,
+//ust// 				&call_data,
+//ust// 				"channel %s name %s format %s",
+//ust// 				channel,
+//ust// 				iter.marker->name,
+//ust// 				iter.marker->format);
+//ust// 	}
+//ust// 	marker_iter_stop(&iter);
+//ust// }
+//ust// EXPORT_SYMBOL_GPL(ltt_dump_marker_state);

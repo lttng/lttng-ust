@@ -11,8 +11,11 @@
  *
  */
 
-#include <linux/kref.h>
-#include <linux/module.h>
+//#include "<kernelcompat.h>"
+#include <kref.h>
+//ust// #include <linux/module.h>
+#include "usterr.h"
+#include "compiler.h"
 
 /**
  * kref_set - initialize object and set refcount to requested number.
@@ -62,7 +65,7 @@ void kref_get(struct kref *kref)
 int kref_put(struct kref *kref, void (*release)(struct kref *kref))
 {
 	WARN_ON(release == NULL);
-	WARN_ON(release == (void (*)(struct kref *))kfree);
+//ust//	WARN_ON(release == (void (*)(struct kref *))kfree);
 
 	if (atomic_dec_and_test(&kref->refcount)) {
 		release(kref);
@@ -71,7 +74,7 @@ int kref_put(struct kref *kref, void (*release)(struct kref *kref))
 	return 0;
 }
 
-EXPORT_SYMBOL(kref_set);
-EXPORT_SYMBOL(kref_init);
-EXPORT_SYMBOL(kref_get);
-EXPORT_SYMBOL(kref_put);
+//ust// EXPORT_SYMBOL(kref_set);
+//ust// EXPORT_SYMBOL(kref_init);
+//ust// EXPORT_SYMBOL(kref_get);
+//ust// EXPORT_SYMBOL(kref_put);

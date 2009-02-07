@@ -7,18 +7,21 @@
  * See Documentation/marker.txt.
  *
  * (C) Copyright 2006 Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
+ * (C) Copyright 2009 Pierre-Marc Fournier <pierre-marc dot fournier at polymtl dot ca>
  *
  * This file is released under the GPLv2.
  * See the file COPYING for more details.
  */
 
 #include <stdarg.h>
-#include <linux/types.h>
-#include <linux/immediate.h>
-#include <linux/ltt-channels.h>
+//ust// #include <linux/types.h>
+#include "immediate.h"
+//ust// #include <linux/ltt-channels.h>
+#include "kernelcompat.h"
+#include "compiler.h"
 
-struct module;
-struct task_struct;
+//ust// struct module;
+//ust// struct task_struct;
 struct marker;
 
 /**
@@ -49,7 +52,7 @@ struct marker {
 	const char *format;	/* Marker format string, describing the
 				 * variable argument list.
 				 */
-	DEFINE_IMV(char, state);/* Immediate value state. */
+ 	DEFINE_IMV(char, state);/* Immediate value state. */
 	char ptype;		/* probe type : 0 : single, 1 : multi */
 				/* Probe wrapper */
 	u16 channel_id;		/* Numeric channel identifier, dynamic */
@@ -61,7 +64,7 @@ struct marker {
 	void *tp_cb;		/* Optional tracepoint callback */
 } __attribute__((aligned(8)));
 
-#ifdef CONFIG_MARKERS
+//ust// #ifdef CONFIG_MARKERS
 
 #define _DEFINE_MARKER(channel, name, tp_name_str, tp_cb, format)	\
 		static const char __mstrtab_##channel##_##name[]	\
@@ -129,24 +132,24 @@ extern void marker_update_probe_range(struct marker *begin,
 
 #define GET_MARKER(channel, name)	(__mark_##channel##_##name)
 
-#else /* !CONFIG_MARKERS */
-#define DEFINE_MARKER(channel, name, tp_name, tp_cb, format)
-#define __trace_mark(generic, channel, name, call_private, format, args...) \
-		__mark_check_format(format, ## args)
-#define __trace_mark_tp(channel, name, call_private, tp_name, tp_cb,	\
-		format, args...)					\
-	do {								\
-		void __check_tp_type(void)				\
-		{							\
-			register_trace_##tp_name(tp_cb);		\
-		}							\
-		__mark_check_format(format, ## args);			\
-	} while (0)
-static inline void marker_update_probe_range(struct marker *begin,
-	struct marker *end)
-{ }
-#define GET_MARKER(channel, name)
-#endif /* CONFIG_MARKERS */
+//ust// #else /* !CONFIG_MARKERS */
+//ust// #define DEFINE_MARKER(channel, name, tp_name, tp_cb, format)
+//ust// #define __trace_mark(generic, channel, name, call_private, format, args...) \
+//ust// 		__mark_check_format(format, ## args)
+//ust// #define __trace_mark_tp(channel, name, call_private, tp_name, tp_cb,	\
+//ust// 		format, args...)					\
+//ust// 	do {								\
+//ust// 		void __check_tp_type(void)				\
+//ust// 		{							\
+//ust// 			register_trace_##tp_name(tp_cb);		\
+//ust// 		}							\
+//ust// 		__mark_check_format(format, ## args);			\
+//ust// 	} while (0)
+//ust// static inline void marker_update_probe_range(struct marker *begin,
+//ust// 	struct marker *end)
+//ust// { }
+//ust// #define GET_MARKER(channel, name)
+//ust// #endif /* CONFIG_MARKERS */
 
 /**
  * trace_mark - Marker using code patching
@@ -262,12 +265,12 @@ extern int marker_get_iter_range(struct marker **marker, struct marker *begin,
 extern void marker_update_process(void);
 extern int is_marker_enabled(const char *channel, const char *name);
 
-#ifdef CONFIG_MARKERS_USERSPACE
-extern void exit_user_markers(struct task_struct *p);
-#else
-static inline void exit_user_markers(struct task_struct *p)
-{
-}
-#endif
+//ust// #ifdef CONFIG_MARKERS_USERSPACE
+//ust// extern void exit_user_markers(struct task_struct *p);
+//ust// #else
+//ust// static inline void exit_user_markers(struct task_struct *p)
+//ust// {
+//ust// }
+//ust// #endif
 
 #endif
