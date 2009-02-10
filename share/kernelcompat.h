@@ -9,8 +9,11 @@
         const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
         (type *)( (char *)__mptr - offsetof(type,member) );})
 
-#define KERN_DEBUG
-#define KERN_NOTICE
+#define KERN_DEBUG ""
+#define KERN_NOTICE ""
+#define KERN_INFO ""
+#define KERN_ERR ""
+#define KERN_ALERT ""
 
 /* ERROR OPS */
 
@@ -43,6 +46,18 @@ typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t u64;
 
+#define min_t(type, x, y) ({                    \
+	type __min1 = (x);                      \
+	type __min2 = (y);                      \
+	__min1 < __min2 ? __min1: __min2; })
+
+#define max_t(type, x, y) ({                    \
+	type __max1 = (x);                      \
+	type __max2 = (y);                      \
+	__max1 > __max2 ? __max1: __max2; })
+
+
+/* MUTEXES */
 
 #include <pthread.h>
 
@@ -52,6 +67,7 @@ typedef uint64_t u64;
 
 #define mutex_unlock(m) pthread_mutex_unlock(m)
 
+/* MALLOCATION */
 
 #include <stdlib.h>
 
@@ -60,10 +76,10 @@ typedef uint64_t u64;
 #define kfree(p) free((void *)p)
 #define kstrdup(s, t) strdup(s)
 
+/* PRINTK */
 
 #include <stdio.h>
 #define printk(fmt, args...) printf(fmt, ## args)
-
 
 /* MEMORY BARRIERS */
 
@@ -78,8 +94,11 @@ typedef uint64_t u64;
 /* RCU */
 
 #define rcu_assign_pointer(a, b) do {} while(0)
+#define call_rcu_sched(a,b) do {} while(0)
+#define rcu_barrier_sched() do {} while(0)
 
 /* ATOMICITY */
+
 #include <signal.h>
 
 typedef struct { sig_atomic_t counter; } atomic_t;
@@ -106,6 +125,66 @@ static int atomic_read(atomic_t *p)
 }
 
 /* CACHE */
+
 #define ____cacheline_aligned
+
+/* MATH */
+
+static inline unsigned int hweight32(unsigned int w)
+{
+	unsigned int res = w - ((w >> 1) & 0x55555555);
+	res = (res & 0x33333333) + ((res >> 2) & 0x33333333);
+	res = (res + (res >> 4)) & 0x0F0F0F0F;
+	res = res + (res >> 8);
+	return (res + (res >> 16)) & 0x000000FF;
+}
+
+static inline int fls(int x)
+{
+        int r;
+//ust// #ifdef CONFIG_X86_CMOV
+        asm("bsrl %1,%0\n\t"
+            "cmovzl %2,%0"
+            : "=&r" (r) : "rm" (x), "rm" (-1));
+//ust// #else
+//ust//         asm("bsrl %1,%0\n\t"
+//ust//             "jnz 1f\n\t"
+//ust//             "movl $-1,%0\n"
+//ust//             "1:" : "=r" (r) : "rm" (x));
+//ust// #endif
+        return r + 1;
+}
+
+static __inline__ int get_count_order(unsigned int count)
+{
+	int order;
+	
+	order = fls(count) - 1;
+	if (count & (count - 1))
+		order++;
+	return order;
+}
+
+
+/* ARRAYS */
+
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+
+/* TRACE CLOCK */
+
+static inline u64 trace_clock_read64(void)
+{
+	return 0LL;
+}
+
+static inline unsigned int trace_clock_frequency(void)
+{
+	return 0LL;
+}
+
+static inline u32 trace_clock_freq_scale(void)
+{
+	return 0;
+}
 
 #endif /* KERNELCOMPAT_H */

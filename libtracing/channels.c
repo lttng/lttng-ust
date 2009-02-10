@@ -9,10 +9,13 @@
  *	Mathieu Desnoyers (mathieu.desnoyers@polymtl.ca)
  */
 
-#include <linux/module.h>
-#include <linux/ltt-channels.h>
-#include <linux/mutex.h>
-#include <linux/vmalloc.h>
+//ust// #include <linux/module.h>
+//ust// #include <linux/ltt-channels.h>
+//ust// #include <linux/mutex.h>
+//ust// #include <linux/vmalloc.h>
+
+#include "kernelcompat.h"
+#include "channels.h"
 
 /*
  * ltt_channel_mutex may be nested inside the LTT trace mutex.
@@ -63,7 +66,7 @@ static void release_channel_setting(struct kref *kref)
 			iter->index = free_index++;
 			iter->free_event_id = 0;
 		}
-		markers_compact_event_ids();
+//ust//		markers_compact_event_ids();
 	}
 }
 
@@ -115,7 +118,7 @@ end:
 	mutex_unlock(&ltt_channel_mutex);
 	return ret;
 }
-EXPORT_SYMBOL_GPL(ltt_channels_register);
+//ust// EXPORT_SYMBOL_GPL(ltt_channels_register);
 
 /**
  * ltt_channels_unregister - Unregister a trace channel.
@@ -139,7 +142,7 @@ end:
 	mutex_unlock(&ltt_channel_mutex);
 	return ret;
 }
-EXPORT_SYMBOL_GPL(ltt_channels_unregister);
+//ust// EXPORT_SYMBOL_GPL(ltt_channels_unregister);
 
 /**
  * ltt_channels_set_default - Set channel default behavior.
@@ -166,7 +169,7 @@ end:
 	mutex_unlock(&ltt_channel_mutex);
 	return ret;
 }
-EXPORT_SYMBOL_GPL(ltt_channels_set_default);
+//ust// EXPORT_SYMBOL_GPL(ltt_channels_set_default);
 
 /**
  * ltt_channels_get_name_from_index - get channel name from channel index
@@ -184,7 +187,7 @@ const char *ltt_channels_get_name_from_index(unsigned int index)
 			return iter->name;
 	return NULL;
 }
-EXPORT_SYMBOL_GPL(ltt_channels_get_name_from_index);
+//ust// EXPORT_SYMBOL_GPL(ltt_channels_get_name_from_index);
 
 static struct ltt_channel_setting *
 ltt_channels_get_setting_from_name(const char *name)
@@ -216,7 +219,7 @@ int ltt_channels_get_index_from_name(const char *name)
 	else
 		return -1;
 }
-EXPORT_SYMBOL_GPL(ltt_channels_get_index_from_name);
+//ust// EXPORT_SYMBOL_GPL(ltt_channels_get_index_from_name);
 
 /**
  * ltt_channels_trace_alloc - Allocate channel structures for a trace
@@ -260,7 +263,7 @@ end:
 	mutex_unlock(&ltt_channel_mutex);
 	return channel;
 }
-EXPORT_SYMBOL_GPL(ltt_channels_trace_alloc);
+//ust// EXPORT_SYMBOL_GPL(ltt_channels_trace_alloc);
 
 /**
  * ltt_channels_trace_free - Free one trace's channels
@@ -278,7 +281,7 @@ void ltt_channels_trace_free(struct ltt_channel_struct *channels)
 	mutex_unlock(&ltt_channel_mutex);
 	unlock_markers();
 }
-EXPORT_SYMBOL_GPL(ltt_channels_trace_free);
+//ust// EXPORT_SYMBOL_GPL(ltt_channels_trace_free);
 
 /**
  * _ltt_channels_get_event_id - get next event ID for a marker
@@ -333,6 +336,6 @@ int ltt_channels_get_event_id(const char *channel, const char *name)
 	return ret;
 }
 
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Mathieu Desnoyers");
-MODULE_DESCRIPTION("Linux Trace Toolkit Next Generation Channel Management");
+//ust// MODULE_LICENSE("GPL");
+//ust// MODULE_AUTHOR("Mathieu Desnoyers");
+//ust// MODULE_DESCRIPTION("Linux Trace Toolkit Next Generation Channel Management");

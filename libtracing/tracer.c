@@ -23,25 +23,29 @@
  *  27/05/05, Modular redesign and rewrite.
  */
 
-#include <linux/time.h>
-#include <linux/ltt-tracer.h>
-#include <linux/module.h>
-#include <linux/string.h>
-#include <linux/slab.h>
-#include <linux/init.h>
-#include <linux/rcupdate.h>
-#include <linux/sched.h>
-#include <linux/bitops.h>
-#include <linux/fs.h>
-#include <linux/cpu.h>
-#include <linux/kref.h>
-#include <linux/delay.h>
-#include <linux/vmalloc.h>
-#include <asm/atomic.h>
+//ust// #include <linux/time.h>
+//ust// #include <linux/ltt-tracer.h>
+//ust// #include <linux/module.h>
+//ust// #include <linux/string.h>
+//ust// #include <linux/slab.h>
+//ust// #include <linux/init.h>
+//ust// #include <linux/rcupdate.h>
+//ust// #include <linux/sched.h>
+//ust// #include <linux/bitops.h>
+//ust// #include <linux/fs.h>
+//ust// #include <linux/cpu.h>
+//ust// #include <linux/kref.h>
+//ust// #include <linux/delay.h>
+//ust// #include <linux/vmalloc.h>
+//ust// #include <asm/atomic.h>
+#include "tracercore.h"
+#include "tracer.h"
+#include "kernelcompat.h"
+#include "usterr.h"
 
-static void async_wakeup(unsigned long data);
-
-static DEFINE_TIMER(ltt_async_wakeup_timer, async_wakeup, 0, 0);
+//ust// static void async_wakeup(unsigned long data);
+//ust// 
+//ust// static DEFINE_TIMER(ltt_async_wakeup_timer, async_wakeup, 0, 0);
 
 /* Default callbacks for modules */
 notrace int ltt_filter_control_default(enum ltt_filter_control_msg msg,
@@ -78,90 +82,10 @@ struct chan_info_struct {
 		LTT_DEFAULT_SUBBUF_SIZE_LOW,
 		LTT_DEFAULT_N_SUBBUFS_LOW,
 	},
-	[LTT_CHANNEL_FD_STATE] = {
-		LTT_FD_STATE_CHANNEL,
-		LTT_DEFAULT_SUBBUF_SIZE_LOW,
-		LTT_DEFAULT_N_SUBBUFS_LOW,
-	},
-	[LTT_CHANNEL_GLOBAL_STATE] = {
-		LTT_GLOBAL_STATE_CHANNEL,
-		LTT_DEFAULT_SUBBUF_SIZE_LOW,
-		LTT_DEFAULT_N_SUBBUFS_LOW,
-	},
-	[LTT_CHANNEL_IRQ_STATE] = {
-		LTT_IRQ_STATE_CHANNEL,
-		LTT_DEFAULT_SUBBUF_SIZE_LOW,
-		LTT_DEFAULT_N_SUBBUFS_LOW,
-	},
-	[LTT_CHANNEL_MODULE_STATE] = {
-		LTT_MODULE_STATE_CHANNEL,
-		LTT_DEFAULT_SUBBUF_SIZE_LOW,
-		LTT_DEFAULT_N_SUBBUFS_LOW,
-	},
-	[LTT_CHANNEL_NETIF_STATE] = {
-		LTT_NETIF_STATE_CHANNEL,
-		LTT_DEFAULT_SUBBUF_SIZE_LOW,
-		LTT_DEFAULT_N_SUBBUFS_LOW,
-	},
-	[LTT_CHANNEL_SOFTIRQ_STATE] = {
-		LTT_SOFTIRQ_STATE_CHANNEL,
-		LTT_DEFAULT_SUBBUF_SIZE_LOW,
-		LTT_DEFAULT_N_SUBBUFS_LOW,
-	},
-	[LTT_CHANNEL_SWAP_STATE] = {
-		LTT_SWAP_STATE_CHANNEL,
-		LTT_DEFAULT_SUBBUF_SIZE_LOW,
-		LTT_DEFAULT_N_SUBBUFS_LOW,
-	},
-	[LTT_CHANNEL_SYSCALL_STATE] = {
-		LTT_SYSCALL_STATE_CHANNEL,
-		LTT_DEFAULT_SUBBUF_SIZE_LOW,
-		LTT_DEFAULT_N_SUBBUFS_LOW,
-	},
-	[LTT_CHANNEL_TASK_STATE] = {
-		LTT_TASK_STATE_CHANNEL,
-		LTT_DEFAULT_SUBBUF_SIZE_LOW,
-		LTT_DEFAULT_N_SUBBUFS_LOW,
-	},
-	[LTT_CHANNEL_VM_STATE] = {
-		LTT_VM_STATE_CHANNEL,
-		LTT_DEFAULT_SUBBUF_SIZE_LOW,
-		LTT_DEFAULT_N_SUBBUFS_LOW,
-	},
-	[LTT_CHANNEL_FS] = {
-		LTT_FS_CHANNEL,
-		LTT_DEFAULT_SUBBUF_SIZE_MED,
-		LTT_DEFAULT_N_SUBBUFS_MED,
-	},
-	[LTT_CHANNEL_INPUT] = {
-		LTT_INPUT_CHANNEL,
-		LTT_DEFAULT_SUBBUF_SIZE_LOW,
-		LTT_DEFAULT_N_SUBBUFS_LOW,
-	},
-	[LTT_CHANNEL_IPC] = {
-		LTT_IPC_CHANNEL,
-		LTT_DEFAULT_SUBBUF_SIZE_LOW,
-		LTT_DEFAULT_N_SUBBUFS_LOW,
-	},
-	[LTT_CHANNEL_KERNEL] = {
-		LTT_KERNEL_CHANNEL,
+	[LTT_CHANNEL_UST] = {
+		LTT_UST_CHANNEL,
 		LTT_DEFAULT_SUBBUF_SIZE_HIGH,
 		LTT_DEFAULT_N_SUBBUFS_HIGH,
-	},
-	[LTT_CHANNEL_MM] = {
-		LTT_MM_CHANNEL,
-		LTT_DEFAULT_SUBBUF_SIZE_MED,
-		LTT_DEFAULT_N_SUBBUFS_MED,
-	},
-	[LTT_CHANNEL_RCU] = {
-		LTT_RCU_CHANNEL,
-		LTT_DEFAULT_SUBBUF_SIZE_MED,
-		LTT_DEFAULT_N_SUBBUFS_MED,
-	},
-	[LTT_CHANNEL_DEFAULT] = {
-		NULL,
-		LTT_DEFAULT_SUBBUF_SIZE_MED,
-		LTT_DEFAULT_N_SUBBUFS_MED,
 	},
 };
 
@@ -170,13 +94,13 @@ static enum ltt_channels get_channel_type_from_name(const char *name)
 	int i;
 
 	if (!name)
-		return LTT_CHANNEL_DEFAULT;
+		return LTT_CHANNEL_UST;
 
 	for (i = 0; i < ARRAY_SIZE(chan_infos); i++)
 		if (chan_infos[i].name && !strcmp(name, chan_infos[i].name))
 			return (enum ltt_channels)i;
 
-	return LTT_CHANNEL_DEFAULT;
+	return LTT_CHANNEL_UST;
 }
 
 /**
@@ -192,79 +116,79 @@ static enum ltt_channels get_channel_type_from_name(const char *name)
  * the module allocates virtual memory after its registration must it
  * synchronize the TLBs.
  */
-int ltt_module_register(enum ltt_module_function name, void *function,
-		struct module *owner)
-{
-	int ret = 0;
-
-	/*
-	 * Make sure no page fault can be triggered by the module about to be
-	 * registered. We deal with this here so we don't have to call
-	 * vmalloc_sync_all() in each module's init.
-	 */
-	vmalloc_sync_all();
-
-	switch (name) {
-	case LTT_FUNCTION_RUN_FILTER:
-		if (ltt_run_filter_owner != NULL) {
-			ret = -EEXIST;
-			goto end;
-		}
-		ltt_filter_register((ltt_run_filter_functor)function);
-		ltt_run_filter_owner = owner;
-		break;
-	case LTT_FUNCTION_FILTER_CONTROL:
-		if (ltt_filter_control_owner != NULL) {
-			ret = -EEXIST;
-			goto end;
-		}
-		ltt_filter_control_functor =
-			(int (*)(enum ltt_filter_control_msg,
-			struct ltt_trace_struct *))function;
-		ltt_filter_control_owner = owner;
-		break;
-	case LTT_FUNCTION_STATEDUMP:
-		if (ltt_statedump_owner != NULL) {
-			ret = -EEXIST;
-			goto end;
-		}
-		ltt_statedump_functor =
-			(int (*)(struct ltt_trace_struct *))function;
-		ltt_statedump_owner = owner;
-		break;
-	}
-
-end:
-
-	return ret;
-}
-EXPORT_SYMBOL_GPL(ltt_module_register);
+//ust// int ltt_module_register(enum ltt_module_function name, void *function,
+//ust// 		struct module *owner)
+//ust// {
+//ust// 	int ret = 0;
+//ust// 
+//ust// 	/*
+//ust// 	 * Make sure no page fault can be triggered by the module about to be
+//ust// 	 * registered. We deal with this here so we don't have to call
+//ust// 	 * vmalloc_sync_all() in each module's init.
+//ust// 	 */
+//ust// 	vmalloc_sync_all();
+//ust// 
+//ust// 	switch (name) {
+//ust// 	case LTT_FUNCTION_RUN_FILTER:
+//ust// 		if (ltt_run_filter_owner != NULL) {
+//ust// 			ret = -EEXIST;
+//ust// 			goto end;
+//ust// 		}
+//ust// 		ltt_filter_register((ltt_run_filter_functor)function);
+//ust// 		ltt_run_filter_owner = owner;
+//ust// 		break;
+//ust// 	case LTT_FUNCTION_FILTER_CONTROL:
+//ust// 		if (ltt_filter_control_owner != NULL) {
+//ust// 			ret = -EEXIST;
+//ust// 			goto end;
+//ust// 		}
+//ust// 		ltt_filter_control_functor =
+//ust// 			(int (*)(enum ltt_filter_control_msg,
+//ust// 			struct ltt_trace_struct *))function;
+//ust// 		ltt_filter_control_owner = owner;
+//ust// 		break;
+//ust// 	case LTT_FUNCTION_STATEDUMP:
+//ust// 		if (ltt_statedump_owner != NULL) {
+//ust// 			ret = -EEXIST;
+//ust// 			goto end;
+//ust// 		}
+//ust// 		ltt_statedump_functor =
+//ust// 			(int (*)(struct ltt_trace_struct *))function;
+//ust// 		ltt_statedump_owner = owner;
+//ust// 		break;
+//ust// 	}
+//ust// 
+//ust// end:
+//ust// 
+//ust// 	return ret;
+//ust// }
+//ust// EXPORT_SYMBOL_GPL(ltt_module_register);
 
 /**
  * ltt_module_unregister - LTT module unregistration
  * @name: module type
  */
-void ltt_module_unregister(enum ltt_module_function name)
-{
-	switch (name) {
-	case LTT_FUNCTION_RUN_FILTER:
-		ltt_filter_unregister();
-		ltt_run_filter_owner = NULL;
-		/* Wait for preempt sections to finish */
-		synchronize_sched();
-		break;
-	case LTT_FUNCTION_FILTER_CONTROL:
-		ltt_filter_control_functor = ltt_filter_control_default;
-		ltt_filter_control_owner = NULL;
-		break;
-	case LTT_FUNCTION_STATEDUMP:
-		ltt_statedump_functor = ltt_statedump_default;
-		ltt_statedump_owner = NULL;
-		break;
-	}
-
-}
-EXPORT_SYMBOL_GPL(ltt_module_unregister);
+//ust// void ltt_module_unregister(enum ltt_module_function name)
+//ust// {
+//ust// 	switch (name) {
+//ust// 	case LTT_FUNCTION_RUN_FILTER:
+//ust// 		ltt_filter_unregister();
+//ust// 		ltt_run_filter_owner = NULL;
+//ust// 		/* Wait for preempt sections to finish */
+//ust// 		synchronize_sched();
+//ust// 		break;
+//ust// 	case LTT_FUNCTION_FILTER_CONTROL:
+//ust// 		ltt_filter_control_functor = ltt_filter_control_default;
+//ust// 		ltt_filter_control_owner = NULL;
+//ust// 		break;
+//ust// 	case LTT_FUNCTION_STATEDUMP:
+//ust// 		ltt_statedump_functor = ltt_statedump_default;
+//ust// 		ltt_statedump_owner = NULL;
+//ust// 		break;
+//ust// 	}
+//ust// 
+//ust// }
+//ust// EXPORT_SYMBOL_GPL(ltt_module_unregister);
 
 static LIST_HEAD(ltt_transport_list);
 
@@ -280,32 +204,32 @@ static LIST_HEAD(ltt_transport_list);
  * vmalloc_sync_all. Therefore, only if the module allocates virtual memory
  * after its registration must it synchronize the TLBs.
  */
-void ltt_transport_register(struct ltt_transport *transport)
-{
-	/*
-	 * Make sure no page fault can be triggered by the module about to be
-	 * registered. We deal with this here so we don't have to call
-	 * vmalloc_sync_all() in each module's init.
-	 */
-	vmalloc_sync_all();
-
-	ltt_lock_traces();
-	list_add_tail(&transport->node, &ltt_transport_list);
-	ltt_unlock_traces();
-}
-EXPORT_SYMBOL_GPL(ltt_transport_register);
+//ust// void ltt_transport_register(struct ltt_transport *transport)
+//ust// {
+//ust// 	/*
+//ust// 	 * Make sure no page fault can be triggered by the module about to be
+//ust// 	 * registered. We deal with this here so we don't have to call
+//ust// 	 * vmalloc_sync_all() in each module's init.
+//ust// 	 */
+//ust// 	vmalloc_sync_all();
+//ust// 
+//ust// 	ltt_lock_traces();
+//ust// 	list_add_tail(&transport->node, &ltt_transport_list);
+//ust// 	ltt_unlock_traces();
+//ust// }
+//ust// EXPORT_SYMBOL_GPL(ltt_transport_register);
 
 /**
  * ltt_transport_unregister - LTT transport unregistration
  * @transport: transport structure
  */
-void ltt_transport_unregister(struct ltt_transport *transport)
-{
-	ltt_lock_traces();
-	list_del(&transport->node);
-	ltt_unlock_traces();
-}
-EXPORT_SYMBOL_GPL(ltt_transport_unregister);
+//ust// void ltt_transport_unregister(struct ltt_transport *transport)
+//ust// {
+//ust// 	ltt_lock_traces();
+//ust// 	list_del(&transport->node);
+//ust// 	ltt_unlock_traces();
+//ust// }
+//ust// EXPORT_SYMBOL_GPL(ltt_transport_unregister);
 
 static inline int is_channel_overwrite(enum ltt_channels chan,
 	enum trace_mode mode)
@@ -322,15 +246,10 @@ static inline int is_channel_overwrite(enum ltt_channels chan,
 		}
 	case LTT_TRACE_HYBRID:
 		switch (chan) {
-		case LTT_CHANNEL_KERNEL:
-		case LTT_CHANNEL_FS:
-		case LTT_CHANNEL_MM:
-		case LTT_CHANNEL_RCU:
-		case LTT_CHANNEL_IPC:
-		case LTT_CHANNEL_INPUT:
-			return 1;
-		default:
+		case LTT_CHANNEL_METADATA:
 			return 0;
+		default:
+			return 1;
 		}
 	default:
 		return 0;
@@ -355,7 +274,7 @@ void notrace ltt_write_trace_header(struct ltt_trace_struct *trace,
 	header->start_freq = trace->start_freq;
 	header->freq_scale = trace->freq_scale;
 }
-EXPORT_SYMBOL_GPL(ltt_write_trace_header);
+//ust// EXPORT_SYMBOL_GPL(ltt_write_trace_header);
 
 static void trace_async_wakeup(struct ltt_trace_struct *trace)
 {
@@ -370,34 +289,34 @@ static void trace_async_wakeup(struct ltt_trace_struct *trace)
 	}
 }
 
-/* Timer to send async wakeups to the readers */
-static void async_wakeup(unsigned long data)
-{
-	struct ltt_trace_struct *trace;
-
-	/*
-	 * PREEMPT_RT does not allow spinlocks to be taken within preempt
-	 * disable sections (spinlock taken in wake_up). However, mainline won't
-	 * allow mutex to be taken in interrupt context. Ugly.
-	 * A proper way to do this would be to turn the timer into a
-	 * periodically woken up thread, but it adds to the footprint.
-	 */
-#ifndef CONFIG_PREEMPT_RT
-	rcu_read_lock_sched();
-#else
-	ltt_lock_traces();
-#endif
-	list_for_each_entry_rcu(trace, &ltt_traces.head, list) {
-		trace_async_wakeup(trace);
-	}
-#ifndef CONFIG_PREEMPT_RT
-	rcu_read_unlock_sched();
-#else
-	ltt_unlock_traces();
-#endif
-
-	mod_timer(&ltt_async_wakeup_timer, jiffies + LTT_PERCPU_TIMER_INTERVAL);
-}
+//ust// /* Timer to send async wakeups to the readers */
+//ust// static void async_wakeup(unsigned long data)
+//ust// {
+//ust// 	struct ltt_trace_struct *trace;
+//ust// 
+//ust// 	/*
+//ust// 	 * PREEMPT_RT does not allow spinlocks to be taken within preempt
+//ust// 	 * disable sections (spinlock taken in wake_up). However, mainline won't
+//ust// 	 * allow mutex to be taken in interrupt context. Ugly.
+//ust// 	 * A proper way to do this would be to turn the timer into a
+//ust// 	 * periodically woken up thread, but it adds to the footprint.
+//ust// 	 */
+//ust// #ifndef CONFIG_PREEMPT_RT
+//ust// 	rcu_read_lock_sched();
+//ust// #else
+//ust// 	ltt_lock_traces();
+//ust// #endif
+//ust// 	list_for_each_entry_rcu(trace, &ltt_traces.head, list) {
+//ust// 		trace_async_wakeup(trace);
+//ust// 	}
+//ust// #ifndef CONFIG_PREEMPT_RT
+//ust// 	rcu_read_unlock_sched();
+//ust// #else
+//ust// 	ltt_unlock_traces();
+//ust// #endif
+//ust// 
+//ust// 	mod_timer(&ltt_async_wakeup_timer, jiffies + LTT_PERCPU_TIMER_INTERVAL);
+//ust// }
 
 /**
  * _ltt_trace_find - find a trace by given name.
@@ -431,7 +350,7 @@ struct ltt_trace_struct *_ltt_trace_find_setup(const char *trace_name)
 
 	return NULL;
 }
-EXPORT_SYMBOL_GPL(_ltt_trace_find_setup);
+//ust// EXPORT_SYMBOL_GPL(_ltt_trace_find_setup);
 
 /**
  * ltt_release_transport - Release an LTT transport
@@ -441,9 +360,9 @@ void ltt_release_transport(struct kref *kref)
 {
 	struct ltt_trace_struct *trace = container_of(kref,
 			struct ltt_trace_struct, ltt_transport_kref);
-	trace->ops->remove_dirs(trace);
+//ust//	trace->ops->remove_dirs(trace);
 }
-EXPORT_SYMBOL_GPL(ltt_release_transport);
+//ust// EXPORT_SYMBOL_GPL(ltt_release_transport);
 
 /**
  * ltt_release_trace - Release a LTT trace
@@ -456,7 +375,7 @@ void ltt_release_trace(struct kref *kref)
 	ltt_channels_trace_free(trace->channels);
 	kfree(trace);
 }
-EXPORT_SYMBOL_GPL(ltt_release_trace);
+//ust// EXPORT_SYMBOL_GPL(ltt_release_trace);
 
 static inline void prepare_chan_size_num(unsigned int *subbuf_size,
 					 unsigned int *n_subbufs)
@@ -541,7 +460,7 @@ trace_free:
 traces_error:
 	return err;
 }
-EXPORT_SYMBOL_GPL(_ltt_trace_setup);
+//ust// EXPORT_SYMBOL_GPL(_ltt_trace_setup);
 
 
 int ltt_trace_setup(const char *trace_name)
@@ -552,7 +471,7 @@ int ltt_trace_setup(const char *trace_name)
 	ltt_unlock_traces();
 	return ret;
 }
-EXPORT_SYMBOL_GPL(ltt_trace_setup);
+//ust// EXPORT_SYMBOL_GPL(ltt_trace_setup);
 
 /* must be called from within a traces lock. */
 static void _ltt_trace_free(struct ltt_trace_struct *trace)
@@ -595,7 +514,7 @@ traces_error:
 	ltt_unlock_traces();
 	return err;
 }
-EXPORT_SYMBOL_GPL(ltt_trace_set_type);
+//ust// EXPORT_SYMBOL_GPL(ltt_trace_set_type);
 
 int ltt_trace_set_channel_subbufsize(const char *trace_name,
 		const char *channel_name, unsigned int size)
@@ -625,7 +544,7 @@ traces_error:
 	ltt_unlock_traces();
 	return err;
 }
-EXPORT_SYMBOL_GPL(ltt_trace_set_channel_subbufsize);
+//ust// EXPORT_SYMBOL_GPL(ltt_trace_set_channel_subbufsize);
 
 int ltt_trace_set_channel_subbufcount(const char *trace_name,
 		const char *channel_name, unsigned int cnt)
@@ -655,7 +574,7 @@ traces_error:
 	ltt_unlock_traces();
 	return err;
 }
-EXPORT_SYMBOL_GPL(ltt_trace_set_channel_subbufcount);
+//ust// EXPORT_SYMBOL_GPL(ltt_trace_set_channel_subbufcount);
 
 int ltt_trace_set_channel_enable(const char *trace_name,
 		const char *channel_name, unsigned int enable)
@@ -696,7 +615,7 @@ traces_error:
 	ltt_unlock_traces();
 	return err;
 }
-EXPORT_SYMBOL_GPL(ltt_trace_set_channel_enable);
+//ust// EXPORT_SYMBOL_GPL(ltt_trace_set_channel_enable);
 
 int ltt_trace_set_channel_overwrite(const char *trace_name,
 		const char *channel_name, unsigned int overwrite)
@@ -740,7 +659,7 @@ traces_error:
 	ltt_unlock_traces();
 	return err;
 }
-EXPORT_SYMBOL_GPL(ltt_trace_set_channel_overwrite);
+//ust// EXPORT_SYMBOL_GPL(ltt_trace_set_channel_overwrite);
 
 int ltt_trace_alloc(const char *trace_name)
 {
@@ -762,9 +681,9 @@ int ltt_trace_alloc(const char *trace_name)
 
 	kref_init(&trace->kref);
 	kref_init(&trace->ltt_transport_kref);
-	init_waitqueue_head(&trace->kref_wq);
+//ust//	init_waitqueue_head(&trace->kref_wq);
 	trace->active = 0;
-	get_trace_clock();
+//ust//	get_trace_clock();
 	trace->freq_scale = trace_clock_freq_scale();
 
 	if (!trace->transport) {
@@ -772,25 +691,25 @@ int ltt_trace_alloc(const char *trace_name)
 		err = -EINVAL;
 		goto transport_error;
 	}
-	if (!try_module_get(trace->transport->owner)) {
-		printk(KERN_ERR	"LTT : Can't lock transport module.\n");
-		err = -ENODEV;
-		goto transport_error;
-	}
+//ust//	if (!try_module_get(trace->transport->owner)) {
+//ust//		printk(KERN_ERR	"LTT : Can't lock transport module.\n");
+//ust//		err = -ENODEV;
+//ust//		goto transport_error;
+//ust//	}
 	trace->ops = &trace->transport->ops;
 
-	err = trace->ops->create_dirs(trace);
-	if (err) {
-		printk(KERN_ERR	"LTT : Can't create dir for trace %s.\n",
-			trace_name);
-		goto dirs_error;
-	}
+//ust//	err = trace->ops->create_dirs(trace);
+//ust//	if (err) {
+//ust//		printk(KERN_ERR	"LTT : Can't create dir for trace %s.\n",
+//ust//			trace_name);
+//ust//		goto dirs_error;
+//ust//	}
 
-	local_irq_save(flags);
+//ust//	local_irq_save(flags);
 	trace->start_freq = trace_clock_frequency();
 	trace->start_tsc = trace_clock_read64();
-	do_gettimeofday(&trace->start_time);
-	local_irq_restore(flags);
+	gettimeofday(&trace->start_time, NULL); //ust// changed
+//ust//	local_irq_restore(flags);
 
 	for (chan = 0; chan < trace->nr_channels; chan++) {
 		if (!(trace->channels[chan].active))
@@ -816,13 +735,13 @@ int ltt_trace_alloc(const char *trace_name)
 	}
 
 	list_del(&trace->list);
-	if (list_empty(&ltt_traces.head)) {
-		mod_timer(&ltt_async_wakeup_timer,
-				jiffies + LTT_PERCPU_TIMER_INTERVAL);
-		set_kernel_trace_flag_all_tasks();
-	}
-	list_add_rcu(&trace->list, &ltt_traces.head);
-	synchronize_sched();
+//ust//	if (list_empty(&ltt_traces.head)) {
+//ust//		mod_timer(&ltt_async_wakeup_timer,
+//ust//				jiffies + LTT_PERCPU_TIMER_INTERVAL);
+//ust//		set_kernel_trace_flag_all_tasks();
+//ust//	}
+//ust//	list_add_rcu(&trace->list, &ltt_traces.head);
+//ust//	synchronize_sched();
 
 	ltt_unlock_traces();
 
@@ -834,14 +753,14 @@ create_channel_error:
 			trace->ops->remove_channel(&trace->channels[chan]);
 
 dirs_error:
-	module_put(trace->transport->owner);
+//ust//	module_put(trace->transport->owner);
 transport_error:
-	put_trace_clock();
+//ust//	put_trace_clock();
 traces_error:
 	ltt_unlock_traces();
 	return err;
 }
-EXPORT_SYMBOL_GPL(ltt_trace_alloc);
+//ust// EXPORT_SYMBOL_GPL(ltt_trace_alloc);
 
 /*
  * It is worked as a wrapper for current version of ltt_control.ko.
@@ -888,16 +807,16 @@ static int _ltt_trace_destroy(struct ltt_trace_struct	*trace)
 		goto active_error;
 	}
 	/* Everything went fine */
-	list_del_rcu(&trace->list);
-	synchronize_sched();
+//ust//	list_del_rcu(&trace->list);
+//ust//	synchronize_sched();
 	if (list_empty(&ltt_traces.head)) {
-		clear_kernel_trace_flag_all_tasks();
+//ust//		clear_kernel_trace_flag_all_tasks();
 		/*
 		 * We stop the asynchronous delivery of reader wakeup, but
 		 * we must make one last check for reader wakeups pending
 		 * later in __ltt_trace_destroy.
 		 */
-		del_timer_sync(&ltt_async_wakeup_timer);
+//ust//		del_timer_sync(&ltt_async_wakeup_timer);
 	}
 	return 0;
 
@@ -919,7 +838,7 @@ static void __ltt_trace_destroy(struct ltt_trace_struct	*trace)
 			trace->ops->finish_channel(chan);
 	}
 
-	flush_scheduled_work();
+//ust//	flush_scheduled_work();
 
 	/*
 	 * The currently destroyed trace is not in the trace list anymore,
@@ -936,17 +855,17 @@ static void __ltt_trace_destroy(struct ltt_trace_struct	*trace)
 
 	kref_put(&trace->ltt_transport_kref, ltt_release_transport);
 
-	module_put(trace->transport->owner);
+//ust//	module_put(trace->transport->owner);
 
 	/*
 	 * Wait for lttd readers to release the files, therefore making sure
 	 * the last subbuffers have been read.
 	 */
-	if (atomic_read(&trace->kref.refcount) > 1) {
-		int ret = 0;
-		__wait_event_interruptible(trace->kref_wq,
-			(atomic_read(&trace->kref.refcount) == 1), ret);
-	}
+//ust//	if (atomic_read(&trace->kref.refcount) > 1) {
+//ust//		int ret = 0;
+//ust//		__wait_event_interruptible(trace->kref_wq,
+//ust//			(atomic_read(&trace->kref.refcount) == 1), ret);
+//ust//	}
 	kref_put(&trace->kref, ltt_release_trace);
 }
 
@@ -966,7 +885,7 @@ int ltt_trace_destroy(const char *trace_name)
 		ltt_unlock_traces();
 
 		__ltt_trace_destroy(trace);
-		put_trace_clock();
+//ust//		put_trace_clock();
 
 		return 0;
 	}
@@ -985,7 +904,7 @@ error:
 	ltt_unlock_traces();
 	return err;
 }
-EXPORT_SYMBOL_GPL(ltt_trace_destroy);
+//ust// EXPORT_SYMBOL_GPL(ltt_trace_destroy);
 
 /* must be called from within a traces lock. */
 static int _ltt_trace_start(struct ltt_trace_struct *trace)
@@ -999,11 +918,11 @@ static int _ltt_trace_start(struct ltt_trace_struct *trace)
 	if (trace->active)
 		printk(KERN_INFO "LTT : Tracing already active for trace %s\n",
 				trace->trace_name);
-	if (!try_module_get(ltt_run_filter_owner)) {
-		err = -ENODEV;
-		printk(KERN_ERR "LTT : Can't lock filter module.\n");
-		goto get_ltt_run_filter_error;
-	}
+//ust//	if (!try_module_get(ltt_run_filter_owner)) {
+//ust//		err = -ENODEV;
+//ust//		printk(KERN_ERR "LTT : Can't lock filter module.\n");
+//ust//		goto get_ltt_run_filter_error;
+//ust//	}
 	trace->active = 1;
 	/* Read by trace points without protection : be careful */
 	ltt_traces.num_active_traces++;
@@ -1037,16 +956,16 @@ int ltt_trace_start(const char *trace_name)
 	 * directly using this trace handle inside the logging function.
 	 */
 
-	ltt_dump_marker_state(trace);
+//ust//	ltt_dump_marker_state(trace);
 
-	if (!try_module_get(ltt_statedump_owner)) {
-		err = -ENODEV;
-		printk(KERN_ERR
-			"LTT : Can't lock state dump module.\n");
-	} else {
+//ust//	if (!try_module_get(ltt_statedump_owner)) {
+//ust//		err = -ENODEV;
+//ust//		printk(KERN_ERR
+//ust//			"LTT : Can't lock state dump module.\n");
+//ust//	} else {
 		ltt_statedump_functor(trace);
-		module_put(ltt_statedump_owner);
-	}
+//ust//		module_put(ltt_statedump_owner);
+//ust//	}
 
 	return err;
 
@@ -1055,7 +974,7 @@ no_trace:
 	ltt_unlock_traces();
 	return err;
 }
-EXPORT_SYMBOL_GPL(ltt_trace_start);
+//ust// EXPORT_SYMBOL_GPL(ltt_trace_start);
 
 /* must be called from within traces lock */
 static int _ltt_trace_stop(struct ltt_trace_struct *trace)
@@ -1072,9 +991,9 @@ static int _ltt_trace_stop(struct ltt_trace_struct *trace)
 	if (trace->active) {
 		trace->active = 0;
 		ltt_traces.num_active_traces--;
-		synchronize_sched(); /* Wait for each tracing to be finished */
+//ust//		synchronize_sched(); /* Wait for each tracing to be finished */
 	}
-	module_put(ltt_run_filter_owner);
+//ust//	module_put(ltt_run_filter_owner);
 	/* Everything went fine */
 	return 0;
 
@@ -1094,7 +1013,7 @@ int ltt_trace_stop(const char *trace_name)
 	ltt_unlock_traces();
 	return err;
 }
-EXPORT_SYMBOL_GPL(ltt_trace_stop);
+//ust// EXPORT_SYMBOL_GPL(ltt_trace_stop);
 
 /**
  * ltt_control - Trace control in-kernel API
@@ -1103,40 +1022,40 @@ EXPORT_SYMBOL_GPL(ltt_trace_stop);
  * @trace_type: Type of trace (normal, flight, hybrid)
  * @args: Arguments specific to the action
  */
-int ltt_control(enum ltt_control_msg msg, const char *trace_name,
-		const char *trace_type, union ltt_control_args args)
-{
-	int err = -EPERM;
-
-	printk(KERN_ALERT "ltt_control : trace %s\n", trace_name);
-	switch (msg) {
-	case LTT_CONTROL_START:
-		printk(KERN_DEBUG "Start tracing %s\n", trace_name);
-		err = ltt_trace_start(trace_name);
-		break;
-	case LTT_CONTROL_STOP:
-		printk(KERN_DEBUG "Stop tracing %s\n", trace_name);
-		err = ltt_trace_stop(trace_name);
-		break;
-	case LTT_CONTROL_CREATE_TRACE:
-		printk(KERN_DEBUG "Creating trace %s\n", trace_name);
-		err = ltt_trace_create(trace_name, trace_type,
-			args.new_trace.mode,
-			args.new_trace.subbuf_size_low,
-			args.new_trace.n_subbufs_low,
-			args.new_trace.subbuf_size_med,
-			args.new_trace.n_subbufs_med,
-			args.new_trace.subbuf_size_high,
-			args.new_trace.n_subbufs_high);
-		break;
-	case LTT_CONTROL_DESTROY_TRACE:
-		printk(KERN_DEBUG "Destroying trace %s\n", trace_name);
-		err = ltt_trace_destroy(trace_name);
-		break;
-	}
-	return err;
-}
-EXPORT_SYMBOL_GPL(ltt_control);
+//ust// int ltt_control(enum ltt_control_msg msg, const char *trace_name,
+//ust// 		const char *trace_type, union ltt_control_args args)
+//ust// {
+//ust// 	int err = -EPERM;
+//ust// 
+//ust// 	printk(KERN_ALERT "ltt_control : trace %s\n", trace_name);
+//ust// 	switch (msg) {
+//ust// 	case LTT_CONTROL_START:
+//ust// 		printk(KERN_DEBUG "Start tracing %s\n", trace_name);
+//ust// 		err = ltt_trace_start(trace_name);
+//ust// 		break;
+//ust// 	case LTT_CONTROL_STOP:
+//ust// 		printk(KERN_DEBUG "Stop tracing %s\n", trace_name);
+//ust// 		err = ltt_trace_stop(trace_name);
+//ust// 		break;
+//ust// 	case LTT_CONTROL_CREATE_TRACE:
+//ust// 		printk(KERN_DEBUG "Creating trace %s\n", trace_name);
+//ust// 		err = ltt_trace_create(trace_name, trace_type,
+//ust// 			args.new_trace.mode,
+//ust// 			args.new_trace.subbuf_size_low,
+//ust// 			args.new_trace.n_subbufs_low,
+//ust// 			args.new_trace.subbuf_size_med,
+//ust// 			args.new_trace.n_subbufs_med,
+//ust// 			args.new_trace.subbuf_size_high,
+//ust// 			args.new_trace.n_subbufs_high);
+//ust// 		break;
+//ust// 	case LTT_CONTROL_DESTROY_TRACE:
+//ust// 		printk(KERN_DEBUG "Destroying trace %s\n", trace_name);
+//ust// 		err = ltt_trace_destroy(trace_name);
+//ust// 		break;
+//ust// 	}
+//ust// 	return err;
+//ust// }
+//ust// EXPORT_SYMBOL_GPL(ltt_control);
 
 /**
  * ltt_filter_control - Trace filter control in-kernel API
@@ -1157,10 +1076,10 @@ int ltt_filter_control(enum ltt_filter_control_msg msg, const char *trace_name)
 		err = -ENOENT;
 		goto trace_error;
 	}
-	if (!try_module_get(ltt_filter_control_owner)) {
-		err = -ENODEV;
-		goto get_module_error;
-	}
+//ust//	if (!try_module_get(ltt_filter_control_owner)) {
+//ust//		err = -ENODEV;
+//ust//		goto get_module_error;
+//ust//	}
 	switch (msg) {
 	case LTT_FILTER_DEFAULT_ACCEPT:
 		printk(KERN_DEBUG
@@ -1175,54 +1094,54 @@ int ltt_filter_control(enum ltt_filter_control_msg msg, const char *trace_name)
 	default:
 		err = -EPERM;
 	}
-	module_put(ltt_filter_control_owner);
+//ust//	module_put(ltt_filter_control_owner);
 
 get_module_error:
 trace_error:
 	ltt_unlock_traces();
 	return err;
 }
-EXPORT_SYMBOL_GPL(ltt_filter_control);
+//ust// EXPORT_SYMBOL_GPL(ltt_filter_control);
 
-int __init ltt_init(void)
-{
-	/* Make sure no page fault can be triggered by this module */
-	vmalloc_sync_all();
-	return 0;
-}
+//ust// int __init ltt_init(void)
+//ust// {
+//ust// 	/* Make sure no page fault can be triggered by this module */
+//ust// 	vmalloc_sync_all();
+//ust// 	return 0;
+//ust// }
 
-module_init(ltt_init)
+//ust// module_init(ltt_init)
 
-static void __exit ltt_exit(void)
-{
-	struct ltt_trace_struct *trace;
-	struct list_head *pos, *n;
+//ust// static void __exit ltt_exit(void)
+//ust// {
+//ust// 	struct ltt_trace_struct *trace;
+//ust// 	struct list_head *pos, *n;
+//ust// 
+//ust// 	ltt_lock_traces();
+//ust// 	/* Stop each trace, currently being read by RCU read-side */
+//ust// 	list_for_each_entry_rcu(trace, &ltt_traces.head, list)
+//ust// 		_ltt_trace_stop(trace);
+//ust// 	/* Wait for quiescent state. Readers have preemption disabled. */
+//ust// 	synchronize_sched();
+//ust// 	/* Safe iteration is now permitted. It does not have to be RCU-safe
+//ust// 	 * because no readers are left. */
+//ust// 	list_for_each_safe(pos, n, &ltt_traces.head) {
+//ust// 		trace = container_of(pos, struct ltt_trace_struct, list);
+//ust// 		/* _ltt_trace_destroy does a synchronize_sched() */
+//ust// 		_ltt_trace_destroy(trace);
+//ust// 		__ltt_trace_destroy(trace);
+//ust// 	}
+//ust// 	/* free traces in pre-alloc status */
+//ust// 	list_for_each_safe(pos, n, &ltt_traces.setup_head) {
+//ust// 		trace = container_of(pos, struct ltt_trace_struct, list);
+//ust// 		_ltt_trace_free(trace);
+//ust// 	}
+//ust// 
+//ust// 	ltt_unlock_traces();
+//ust// }
 
-	ltt_lock_traces();
-	/* Stop each trace, currently being read by RCU read-side */
-	list_for_each_entry_rcu(trace, &ltt_traces.head, list)
-		_ltt_trace_stop(trace);
-	/* Wait for quiescent state. Readers have preemption disabled. */
-	synchronize_sched();
-	/* Safe iteration is now permitted. It does not have to be RCU-safe
-	 * because no readers are left. */
-	list_for_each_safe(pos, n, &ltt_traces.head) {
-		trace = container_of(pos, struct ltt_trace_struct, list);
-		/* _ltt_trace_destroy does a synchronize_sched() */
-		_ltt_trace_destroy(trace);
-		__ltt_trace_destroy(trace);
-	}
-	/* free traces in pre-alloc status */
-	list_for_each_safe(pos, n, &ltt_traces.setup_head) {
-		trace = container_of(pos, struct ltt_trace_struct, list);
-		_ltt_trace_free(trace);
-	}
+//ust// module_exit(ltt_exit)
 
-	ltt_unlock_traces();
-}
-
-module_exit(ltt_exit)
-
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Mathieu Desnoyers");
-MODULE_DESCRIPTION("Linux Trace Toolkit Next Generation Tracer Kernel API");
+//ust// MODULE_LICENSE("GPL");
+//ust// MODULE_AUTHOR("Mathieu Desnoyers");
+//ust// MODULE_DESCRIPTION("Linux Trace Toolkit Next Generation Tracer Kernel API");

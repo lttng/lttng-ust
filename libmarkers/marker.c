@@ -707,7 +707,7 @@ static void marker_update_probes(void)
 	marker_update_probe_range(__start___markers, __stop___markers);
 	/* Markers in modules. */
 //ust//	module_update_markers();
-	tracepoint_probe_update_all();
+//ust//	tracepoint_probe_update_all();
 	/* Update immediate values */
 	core_imv_update();
 //ust//	module_imv_update();

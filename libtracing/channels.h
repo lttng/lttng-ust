@@ -10,9 +10,11 @@
 #include <linux/limits.h>
 //ust// #include <linux/kref.h>
 //ust// #include <linux/list.h>
-#include <kernelcompat.h>
+#include <errno.h>
 
-#include <kref.h>
+#include "kernelcompat.h"
+#include "kref.h"
+#include "list.h"
 
 #define EVENTS_PER_CHANNEL	65536
 

@@ -8,6 +8,7 @@
 #define LTT_CORE_H
 
 #include "list.h"
+#include "kernelcompat.h"
 //ust// #include <linux/percpu.h>
 
 /* ltt's root dir in debugfs */

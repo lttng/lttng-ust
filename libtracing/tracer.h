@@ -7,21 +7,27 @@
 #ifndef _LTT_TRACER_H
 #define _LTT_TRACER_H
 
+//ust// #include <stdarg.h>
+//ust// #include <linux/types.h>
+//ust// #include <linux/limits.h>
+//ust// #include <linux/list.h>
+//ust// #include <linux/cache.h>
+//ust// #include <linux/kernel.h>
+//ust// #include <linux/timex.h>
+//ust// #include <linux/wait.h>
+//ust// #include <linux/ltt-relay.h>
+//ust// #include <linux/ltt-channels.h>
+//ust// #include <linux/ltt-core.h>
+//ust// #include <linux/marker.h>
+//ust// #include <linux/trace-clock.h>
+//ust// #include <asm/atomic.h>
+//ust// #include <asm/local.h>
+#include <sys/types.h>
 #include <stdarg.h>
-#include <linux/types.h>
-#include <linux/limits.h>
-#include <linux/list.h>
-#include <linux/cache.h>
-#include <linux/kernel.h>
-#include <linux/timex.h>
-#include <linux/wait.h>
-#include <linux/ltt-relay.h>
-#include <linux/ltt-channels.h>
-#include <linux/ltt-core.h>
-#include <linux/marker.h>
-#include <linux/trace-clock.h>
-#include <asm/atomic.h>
-#include <asm/local.h>
+#include "relay.h"
+#include "list.h"
+#include "kernelcompat.h"
+#include "channels.h"
 
 /* Number of bytes to log with a read/write event */
 #define LTT_LOG_RW_SIZE			32L
@@ -62,13 +68,13 @@ size_t ltt_serialize_data(struct rchan_buf *buf, size_t buf_offset,
 			void *serialize_private,
 			int *largest_align, const char *fmt, va_list *args);
 
-struct ltt_available_probe {
-	const char *name;		/* probe name */
-	const char *format;
-	marker_probe_func *probe_func;
-	ltt_serialize_cb callbacks[LTT_NR_CALLBACKS];
-	struct list_head node;		/* registered probes list */
-};
+//ust// struct ltt_available_probe {
+//ust// 	const char *name;		/* probe name */
+//ust// 	const char *format;
+//ust// 	marker_probe_func *probe_func;
+//ust// 	ltt_serialize_cb callbacks[LTT_NR_CALLBACKS];
+//ust// 	struct list_head node;		/* registered probes list */
+//ust// };
 
 struct ltt_probe_private_data {
 	struct ltt_trace_struct *trace;	/*
@@ -86,23 +92,7 @@ struct ltt_probe_private_data {
 
 enum ltt_channels {
 	LTT_CHANNEL_METADATA,
-	LTT_CHANNEL_FD_STATE,
-	LTT_CHANNEL_GLOBAL_STATE,
-	LTT_CHANNEL_IRQ_STATE,
-	LTT_CHANNEL_MODULE_STATE,
-	LTT_CHANNEL_NETIF_STATE,
-	LTT_CHANNEL_SOFTIRQ_STATE,
-	LTT_CHANNEL_SWAP_STATE,
-	LTT_CHANNEL_SYSCALL_STATE,
-	LTT_CHANNEL_TASK_STATE,
-	LTT_CHANNEL_VM_STATE,
-	LTT_CHANNEL_FS,
-	LTT_CHANNEL_INPUT,
-	LTT_CHANNEL_IPC,
-	LTT_CHANNEL_KERNEL,
-	LTT_CHANNEL_MM,
-	LTT_CHANNEL_RCU,
-	LTT_CHANNEL_DEFAULT,
+	LTT_CHANNEL_UST,
 };
 
 struct ltt_active_marker {
@@ -113,6 +103,7 @@ struct ltt_active_marker {
 	struct ltt_available_probe *probe;
 };
 
+struct marker; //ust//
 extern void ltt_vtrace(const struct marker *mdata, void *probe_data,
 	void *call_data, const char *fmt, va_list *args);
 extern void ltt_trace(const struct marker *mdata, void *probe_data,
@@ -138,7 +129,7 @@ static inline enum marker_id marker_id_type(uint16_t id)
 		return MARKER_ID_DYNAMIC;
 }
 
-#ifdef CONFIG_LTT
+//ust// #ifdef CONFIG_LTT
 
 struct user_dbg_data {
 	unsigned long avail_size;
@@ -162,25 +153,25 @@ struct ltt_trace_ops {
 	int (*user_blocking) (struct ltt_trace_struct *trace,
 				unsigned int index, size_t data_size,
 				struct user_dbg_data *dbg);
-	/* End of first 32 bytes cacheline */
-	int (*create_dirs) (struct ltt_trace_struct *new_trace);
-	void (*remove_dirs) (struct ltt_trace_struct *new_trace);
-	int (*create_channel) (const char *trace_name,
-				struct ltt_trace_struct *trace,
-				struct dentry *dir, const char *channel_name,
-				struct ltt_channel_struct *ltt_chan,
-				unsigned int subbuf_size,
-				unsigned int n_subbufs, int overwrite);
-	void (*finish_channel) (struct ltt_channel_struct *channel);
-	void (*remove_channel) (struct ltt_channel_struct *channel);
-	void (*user_errors) (struct ltt_trace_struct *trace,
-				unsigned int index, size_t data_size,
-				struct user_dbg_data *dbg, int cpu);
-#ifdef CONFIG_HOTPLUG_CPU
-	int (*handle_cpuhp) (struct notifier_block *nb,
-				unsigned long action, void *hcpu,
-				struct ltt_trace_struct *trace);
-#endif
+//ust// 	/* End of first 32 bytes cacheline */
+//ust// 	int (*create_dirs) (struct ltt_trace_struct *new_trace);
+//ust// 	void (*remove_dirs) (struct ltt_trace_struct *new_trace);
+ 	int (*create_channel) (const char *trace_name,
+ 				struct ltt_trace_struct *trace,
+ 				struct dentry *dir, const char *channel_name,
+ 				struct ltt_channel_struct *ltt_chan,
+ 				unsigned int subbuf_size,
+ 				unsigned int n_subbufs, int overwrite);
+ 	void (*finish_channel) (struct ltt_channel_struct *channel);
+ 	void (*remove_channel) (struct ltt_channel_struct *channel);
+ 	void (*user_errors) (struct ltt_trace_struct *trace,
+ 				unsigned int index, size_t data_size,
+ 				struct user_dbg_data *dbg, int cpu);
+//ust// #ifdef CONFIG_HOTPLUG_CPU
+//ust// 	int (*handle_cpuhp) (struct notifier_block *nb,
+//ust// 				unsigned long action, void *hcpu,
+//ust// 				struct ltt_trace_struct *trace);
+//ust// #endif
 } ____cacheline_aligned;
 
 struct ltt_transport {
@@ -213,11 +204,11 @@ struct ltt_trace_struct {
 	struct {
 		struct dentry			*trace_root;
 	} dentry;
-	struct rchan_callbacks callbacks;
+//ust//	struct rchan_callbacks callbacks;
 	struct kref kref; /* Each channel has a kref of the trace struct */
 	struct ltt_transport *transport;
 	struct kref ltt_transport_kref;
-	wait_queue_head_t kref_wq; /* Place for ltt_trace_destroy to sleep */
+//ust//	wait_queue_head_t kref_wq; /* Place for ltt_trace_destroy to sleep */
 	char trace_name[NAME_MAX];
 } ____cacheline_aligned;
 
@@ -547,26 +538,11 @@ static inline void ltt_commit_slot(
  * cpu channel :
  * cpu
  */
-#define LTT_RELAY_ROOT		"ltt"
-#define LTT_RELAY_LOCKED_ROOT	"ltt-locked"
+//ust// #define LTT_RELAY_ROOT		"ltt"
+//ust// #define LTT_RELAY_LOCKED_ROOT	"ltt-locked"
 
 #define LTT_METADATA_CHANNEL		"metadata_state"
-#define LTT_FD_STATE_CHANNEL		"fd_state"
-#define LTT_GLOBAL_STATE_CHANNEL	"global_state"
-#define LTT_IRQ_STATE_CHANNEL		"irq_state"
-#define LTT_MODULE_STATE_CHANNEL	"module_state"
-#define LTT_NETIF_STATE_CHANNEL		"netif_state"
-#define LTT_SOFTIRQ_STATE_CHANNEL	"softirq_state"
-#define LTT_SWAP_STATE_CHANNEL		"swap_state"
-#define LTT_SYSCALL_STATE_CHANNEL	"syscall_state"
-#define LTT_TASK_STATE_CHANNEL		"task_state"
-#define LTT_VM_STATE_CHANNEL		"vm_state"
-#define LTT_FS_CHANNEL			"fs"
-#define LTT_INPUT_CHANNEL		"input"
-#define LTT_IPC_CHANNEL			"ipc"
-#define LTT_KERNEL_CHANNEL		"kernel"
-#define LTT_MM_CHANNEL			"mm"
-#define LTT_RCU_CHANNEL			"rcu"
+#define LTT_UST_CHANNEL			"ust"
 
 #define LTT_FLIGHT_PREFIX	"flight-"
 
@@ -597,21 +573,21 @@ enum ltt_module_function {
 	LTT_FUNCTION_STATEDUMP
 };
 
-extern int ltt_module_register(enum ltt_module_function name, void *function,
-		struct module *owner);
-extern void ltt_module_unregister(enum ltt_module_function name);
+//ust// extern int ltt_module_register(enum ltt_module_function name, void *function,
+//ust// 		struct module *owner);
+//ust// extern void ltt_module_unregister(enum ltt_module_function name);
 
 void ltt_transport_register(struct ltt_transport *transport);
 void ltt_transport_unregister(struct ltt_transport *transport);
 
 /* Exported control function */
 
-enum ltt_control_msg {
-	LTT_CONTROL_START,
-	LTT_CONTROL_STOP,
-	LTT_CONTROL_CREATE_TRACE,
-	LTT_CONTROL_DESTROY_TRACE
-};
+//ust// enum ltt_control_msg {
+//ust// 	LTT_CONTROL_START,
+//ust// 	LTT_CONTROL_STOP,
+//ust// 	LTT_CONTROL_CREATE_TRACE,
+//ust// 	LTT_CONTROL_DESTROY_TRACE
+//ust// };
 
 union ltt_control_args {
 	struct {
@@ -642,8 +618,8 @@ int ltt_trace_destroy(const char *trace_name);
 int ltt_trace_start(const char *trace_name);
 int ltt_trace_stop(const char *trace_name);
 
-extern int ltt_control(enum ltt_control_msg msg, const char *trace_name,
-		const char *trace_type, union ltt_control_args args);
+//ust// extern int ltt_control(enum ltt_control_msg msg, const char *trace_name,
+//ust// 		const char *trace_type, union ltt_control_args args);
 
 enum ltt_filter_control_msg {
 	LTT_FILTER_DEFAULT_ACCEPT,
@@ -677,40 +653,40 @@ extern void ltt_dump_marker_state(struct ltt_trace_struct *trace);
 void ltt_lock_traces(void);
 void ltt_unlock_traces(void);
 
-extern void ltt_dump_softirq_vec(void *call_data);
+//ust// extern void ltt_dump_softirq_vec(void *call_data);
+//ust// 
+//ust// #ifdef CONFIG_HAVE_LTT_DUMP_TABLES
+//ust// extern void ltt_dump_sys_call_table(void *call_data);
+//ust// extern void ltt_dump_idt_table(void *call_data);
+//ust// #else
+//ust// static inline void ltt_dump_sys_call_table(void *call_data)
+//ust// {
+//ust// }
+//ust// 
+//ust// static inline void ltt_dump_idt_table(void *call_data)
+//ust// {
+//ust// }
+//ust// #endif
 
-#ifdef CONFIG_HAVE_LTT_DUMP_TABLES
-extern void ltt_dump_sys_call_table(void *call_data);
-extern void ltt_dump_idt_table(void *call_data);
-#else
-static inline void ltt_dump_sys_call_table(void *call_data)
-{
-}
+//ust// #ifdef CONFIG_LTT_KPROBES
+//ust// extern void ltt_dump_kprobes_table(void *call_data);
+//ust// #else
+//ust// static inline void ltt_dump_kprobes_table(void *call_data)
+//ust// {
+//ust// }
+//ust// #endif
 
-static inline void ltt_dump_idt_table(void *call_data)
-{
-}
-#endif
+//ust// /* Relay IOCTL */
+//ust// 
+//ust// /* Get the next sub buffer that can be read. */
+//ust// #define RELAY_GET_SUBBUF		_IOR(0xF5, 0x00, __u32)
+//ust// /* Release the oldest reserved (by "get") sub buffer. */
+//ust// #define RELAY_PUT_SUBBUF		_IOW(0xF5, 0x01, __u32)
+//ust// /* returns the number of sub buffers in the per cpu channel. */
+//ust// #define RELAY_GET_N_SUBBUFS		_IOR(0xF5, 0x02, __u32)
+//ust// /* returns the size of the sub buffers. */
+//ust// #define RELAY_GET_SUBBUF_SIZE		_IOR(0xF5, 0x03, __u32)
 
-#ifdef CONFIG_LTT_KPROBES
-extern void ltt_dump_kprobes_table(void *call_data);
-#else
-static inline void ltt_dump_kprobes_table(void *call_data)
-{
-}
-#endif
-
-/* Relay IOCTL */
-
-/* Get the next sub buffer that can be read. */
-#define RELAY_GET_SUBBUF		_IOR(0xF5, 0x00, __u32)
-/* Release the oldest reserved (by "get") sub buffer. */
-#define RELAY_PUT_SUBBUF		_IOW(0xF5, 0x01, __u32)
-/* returns the number of sub buffers in the per cpu channel. */
-#define RELAY_GET_N_SUBBUFS		_IOR(0xF5, 0x02, __u32)
-/* returns the size of the sub buffers. */
-#define RELAY_GET_SUBBUF_SIZE		_IOR(0xF5, 0x03, __u32)
-
-#endif /* CONFIG_LTT */
+//ust// #endif /* CONFIG_LTT */
 
 #endif /* _LTT_TRACER_H */
