@@ -11,17 +11,23 @@
  *
  * This file is released under the GPL.
  */
-#include <linux/errno.h>
-#include <linux/stddef.h>
-#include <linux/slab.h>
-#include <linux/module.h>
-#include <linux/string.h>
-#include <linux/ltt-relay.h>
-#include <linux/vmalloc.h>
-#include <linux/mm.h>
-#include <linux/cpu.h>
-#include <linux/splice.h>
-#include <linux/bitops.h>
+//ust// #include <linux/errno.h>
+//ust// #include <linux/stddef.h>
+//ust// #include <linux/slab.h>
+//ust// #include <linux/module.h>
+//ust// #include <linux/string.h>
+//ust// #include <linux/ltt-relay.h>
+//ust// #include <linux/vmalloc.h>
+//ust// #include <linux/mm.h>
+//ust// #include <linux/cpu.h>
+//ust// #include <linux/splice.h>
+//ust// #include <linux/bitops.h>
+#include <sys/mman.h>
+#include "kernelcompat.h"
+#include "list.h"
+#include "relay.h"
+#include "channels.h"
+#include "kref.h"
 
 /* list of open channels, for cpu hotplug */
 static DEFINE_MUTEX(relay_channels_mutex);
@@ -32,48 +38,70 @@ static LIST_HEAD(relay_channels);
  *	@buf: the buffer struct
  *	@size: total size of the buffer
  */
+//ust// static int relay_alloc_buf(struct rchan_buf *buf, size_t *size)
+//ust//{
+//ust//	unsigned int i, n_pages;
+//ust//	struct buf_page *buf_page, *n;
+//ust//
+//ust//	*size = PAGE_ALIGN(*size);
+//ust//	n_pages = *size >> PAGE_SHIFT;
+//ust//
+//ust//	INIT_LIST_HEAD(&buf->pages);
+//ust//
+//ust//	for (i = 0; i < n_pages; i++) {
+//ust//		buf_page = kmalloc_node(sizeof(*buf_page), GFP_KERNEL,
+//ust//			cpu_to_node(buf->cpu));
+//ust//		if (unlikely(!buf_page))
+//ust//			goto depopulate;
+//ust//		buf_page->page = alloc_pages_node(cpu_to_node(buf->cpu),
+//ust//			GFP_KERNEL | __GFP_ZERO, 0);
+//ust//		if (unlikely(!buf_page->page)) {
+//ust//			kfree(buf_page);
+//ust//			goto depopulate;
+//ust//		}
+//ust//		list_add_tail(&buf_page->list, &buf->pages);
+//ust//		buf_page->offset = (size_t)i << PAGE_SHIFT;
+//ust//		buf_page->buf = buf;
+//ust//		set_page_private(buf_page->page, (unsigned long)buf_page);
+//ust//		if (i == 0) {
+//ust//			buf->wpage = buf_page;
+//ust//			buf->hpage[0] = buf_page;
+//ust//			buf->hpage[1] = buf_page;
+//ust//			buf->rpage = buf_page;
+//ust//		}
+//ust//	}
+//ust//	buf->page_count = n_pages;
+//ust//	return 0;
+//ust//
+//ust//depopulate:
+//ust//	list_for_each_entry_safe(buf_page, n, &buf->pages, list) {
+//ust//		list_del_init(&buf_page->list);
+//ust//		__free_page(buf_page->page);
+//ust//		kfree(buf_page);
+//ust//	}
+//ust//	return -ENOMEM;
+//ust//}
+
 static int relay_alloc_buf(struct rchan_buf *buf, size_t *size)
 {
-	unsigned int i, n_pages;
+	unsigned int n_pages;
 	struct buf_page *buf_page, *n;
 
+	void *result;
+
 	*size = PAGE_ALIGN(*size);
-	n_pages = *size >> PAGE_SHIFT;
 
-	INIT_LIST_HEAD(&buf->pages);
-
-	for (i = 0; i < n_pages; i++) {
-		buf_page = kmalloc_node(sizeof(*buf_page), GFP_KERNEL,
-			cpu_to_node(buf->cpu));
-		if (unlikely(!buf_page))
-			goto depopulate;
-		buf_page->page = alloc_pages_node(cpu_to_node(buf->cpu),
-			GFP_KERNEL | __GFP_ZERO, 0);
-		if (unlikely(!buf_page->page)) {
-			kfree(buf_page);
-			goto depopulate;
-		}
-		list_add_tail(&buf_page->list, &buf->pages);
-		buf_page->offset = (size_t)i << PAGE_SHIFT;
-		buf_page->buf = buf;
-		set_page_private(buf_page->page, (unsigned long)buf_page);
-		if (i == 0) {
-			buf->wpage = buf_page;
-			buf->hpage[0] = buf_page;
-			buf->hpage[1] = buf_page;
-			buf->rpage = buf_page;
-		}
+	/* Maybe do read-ahead */
+	result = mmap(NULL, *size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, -1, 0);
+	if(result == MAP_FAILED) {
+		PERROR("mmap");
+		return -1;
 	}
-	buf->page_count = n_pages;
+
+	buf->buf_data = result;
+	buf->buf_size = *size;
+
 	return 0;
-
-depopulate:
-	list_for_each_entry_safe(buf_page, n, &buf->pages, list) {
-		list_del_init(&buf_page->list);
-		__free_page(buf_page->page);
-		kfree(buf_page);
-	}
-	return -ENOMEM;
 }
 
 /**
@@ -90,7 +118,7 @@ static struct rchan_buf *relay_create_buf(struct rchan *chan, int cpu)
 	if (!buf)
 		return NULL;
 
-	buf->cpu = cpu;
+//	buf->cpu = cpu;
 	ret = relay_alloc_buf(buf, &chan->alloc_size);
 	if (ret)
 		goto free_buf;
@@ -124,13 +152,13 @@ static void relay_destroy_buf(struct rchan_buf *buf)
 {
 	struct rchan *chan = buf->chan;
 	struct buf_page *buf_page, *n;
+	int result;
 
-	list_for_each_entry_safe(buf_page, n, &buf->pages, list) {
-		list_del_init(&buf_page->list);
-		__free_page(buf_page->page);
-		kfree(buf_page);
-	}
-	chan->buf[buf->cpu] = NULL;
+	result = munmap(buf->buf_data, buf->buf_size);
+	if(result == -1) {
+		PERROR("munmap");
+
+//ust//	chan->buf[buf->cpu] = NULL;
 	kfree(buf);
 	kref_put(&chan->kref, relay_destroy_channel);
 }
@@ -238,12 +266,12 @@ static struct rchan_buf *relay_open_buf(struct rchan *chan, unsigned int cpu)
 	__relay_reset(buf, 1);
 
 	/* Create file in fs */
-	dentry = chan->cb->create_buf_file(tmpname, chan->parent, S_IRUSR,
-					   buf);
-	if (!dentry)
-		goto free_buf;
-
-	buf->dentry = dentry;
+//ust//	dentry = chan->cb->create_buf_file(tmpname, chan->parent, S_IRUSR,
+//ust//					   buf);
+//ust//	if (!dentry)
+//ust//		goto free_buf;
+//ust//
+//ust//	buf->dentry = dentry;
 
 	goto free_name;
 
@@ -293,39 +321,39 @@ static void setup_callbacks(struct rchan *chan,
  *
  * 	Returns the success/failure of the operation. (%NOTIFY_OK, %NOTIFY_BAD)
  */
-static int __cpuinit relay_hotcpu_callback(struct notifier_block *nb,
-				unsigned long action,
-				void *hcpu)
-{
-	unsigned int hotcpu = (unsigned long)hcpu;
-	struct rchan *chan;
-
-	switch (action) {
-	case CPU_UP_PREPARE:
-	case CPU_UP_PREPARE_FROZEN:
-		mutex_lock(&relay_channels_mutex);
-		list_for_each_entry(chan, &relay_channels, list) {
-			if (chan->buf[hotcpu])
-				continue;
-			chan->buf[hotcpu] = relay_open_buf(chan, hotcpu);
-			if (!chan->buf[hotcpu]) {
-				printk(KERN_ERR
-					"relay_hotcpu_callback: cpu %d buffer "
-					"creation failed\n", hotcpu);
-				mutex_unlock(&relay_channels_mutex);
-				return NOTIFY_BAD;
-			}
-		}
-		mutex_unlock(&relay_channels_mutex);
-		break;
-	case CPU_DEAD:
-	case CPU_DEAD_FROZEN:
-		/* No need to flush the cpu : will be flushed upon
-		 * final relay_flush() call. */
-		break;
-	}
-	return NOTIFY_OK;
-}
+//ust// static int __cpuinit relay_hotcpu_callback(struct notifier_block *nb,
+//ust// 				unsigned long action,
+//ust// 				void *hcpu)
+//ust// {
+//ust// 	unsigned int hotcpu = (unsigned long)hcpu;
+//ust// 	struct rchan *chan;
+//ust// 
+//ust// 	switch (action) {
+//ust// 	case CPU_UP_PREPARE:
+//ust// 	case CPU_UP_PREPARE_FROZEN:
+//ust// 		mutex_lock(&relay_channels_mutex);
+//ust// 		list_for_each_entry(chan, &relay_channels, list) {
+//ust// 			if (chan->buf[hotcpu])
+//ust// 				continue;
+//ust// 			chan->buf[hotcpu] = relay_open_buf(chan, hotcpu);
+//ust// 			if (!chan->buf[hotcpu]) {
+//ust// 				printk(KERN_ERR
+//ust// 					"relay_hotcpu_callback: cpu %d buffer "
+//ust// 					"creation failed\n", hotcpu);
+//ust// 				mutex_unlock(&relay_channels_mutex);
+//ust// 				return NOTIFY_BAD;
+//ust// 			}
+//ust// 		}
+//ust// 		mutex_unlock(&relay_channels_mutex);
+//ust// 		break;
+//ust// 	case CPU_DEAD:
+//ust// 	case CPU_DEAD_FROZEN:
+//ust// 		/* No need to flush the cpu : will be flushed upon
+//ust// 		 * final relay_flush() call. */
+//ust// 		break;
+//ust// 	}
+//ust// 	return NOTIFY_OK;
+//ust// }
 
 /**
  *	ltt_relay_open - create a new relay channel
@@ -574,16 +602,16 @@ EXPORT_SYMBOL_GPL(ltt_relay_read);
  * @buf : buffer
  * @offset : offset within the buffer
  */
-struct buf_page *ltt_relay_read_get_page(struct rchan_buf *buf, size_t offset)
-{
-	struct buf_page *page;
+//ust// struct buf_page *ltt_relay_read_get_page(struct rchan_buf *buf, size_t offset)
+//ust// {
+//ust// 	struct buf_page *page;
 
-	offset &= buf->chan->alloc_size - 1;
-	page = buf->rpage;
-	page = ltt_relay_cache_page(buf, &buf->rpage, page, offset);
-	return page;
-}
-EXPORT_SYMBOL_GPL(ltt_relay_read_get_page);
+//ust// 	offset &= buf->chan->alloc_size - 1;
+//ust// 	page = buf->rpage;
+//ust// 	page = ltt_relay_cache_page(buf, &buf->rpage, page, offset);
+//ust// 	return page;
+//ust// }
+//ust// EXPORT_SYMBOL_GPL(ltt_relay_read_get_page);
 
 /**
  * ltt_relay_offset_address - get address of a location within the buffer
@@ -608,7 +636,7 @@ void *ltt_relay_offset_address(struct rchan_buf *buf, size_t offset)
 	page = ltt_relay_cache_page(buf, &buf->hpage[odd], page, offset);
 	return page_address(page->page) + (offset & ~PAGE_MASK);
 }
-EXPORT_SYMBOL_GPL(ltt_relay_offset_address);
+//ust// EXPORT_SYMBOL_GPL(ltt_relay_offset_address);
 
 /**
  *	relay_file_open - open file op for relay files
@@ -617,14 +645,14 @@ EXPORT_SYMBOL_GPL(ltt_relay_offset_address);
  *
  *	Increments the channel buffer refcount.
  */
-static int relay_file_open(struct inode *inode, struct file *filp)
-{
-	struct rchan_buf *buf = inode->i_private;
-	kref_get(&buf->kref);
-	filp->private_data = buf;
-
-	return nonseekable_open(inode, filp);
-}
+//ust// static int relay_file_open(struct inode *inode, struct file *filp)
+//ust// {
+//ust// 	struct rchan_buf *buf = inode->i_private;
+//ust// 	kref_get(&buf->kref);
+//ust// 	filp->private_data = buf;
+//ust// 
+//ust// 	return nonseekable_open(inode, filp);
+//ust// }
 
 /**
  *	relay_file_release - release file op for relay files
@@ -642,16 +670,16 @@ static int relay_file_release(struct inode *inode, struct file *filp)
 	return 0;
 }
 
-const struct file_operations ltt_relay_file_operations = {
-	.open		= relay_file_open,
-	.release	= relay_file_release,
-};
-EXPORT_SYMBOL_GPL(ltt_relay_file_operations);
+//ust// const struct file_operations ltt_relay_file_operations = {
+//ust// 	.open		= relay_file_open,
+//ust// 	.release	= relay_file_release,
+//ust// };
+//ust// EXPORT_SYMBOL_GPL(ltt_relay_file_operations);
 
-static __init int relay_init(void)
-{
-	hotcpu_notifier(relay_hotcpu_callback, 5);
-	return 0;
-}
+//ust// static __init int relay_init(void)
+//ust// {
+//ust// 	hotcpu_notifier(relay_hotcpu_callback, 5);
+//ust// 	return 0;
+//ust// }
 
-module_init(relay_init);
+//ust// module_init(relay_init);

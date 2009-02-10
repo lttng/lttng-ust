@@ -16,6 +16,7 @@
 
 #include "kernelcompat.h"
 #include "channels.h"
+#include "usterr.h"
 
 /*
  * ltt_channel_mutex may be nested inside the LTT trace mutex.
@@ -239,8 +240,10 @@ struct ltt_channel_struct *ltt_channels_trace_alloc(unsigned int *nr_channels,
 	struct ltt_channel_setting *iter;
 
 	mutex_lock(&ltt_channel_mutex);
-	if (!free_index)
+	if (!free_index) {
+		WARN("ltt_channels_trace_alloc: no free_index; are there any probes connected?");
 		goto end;
+	}
 	if (!atomic_read(&index_kref.refcount))
 		kref_init(&index_kref);
 	else
@@ -248,8 +251,10 @@ struct ltt_channel_struct *ltt_channels_trace_alloc(unsigned int *nr_channels,
 	*nr_channels = free_index;
 	channel = kzalloc(sizeof(struct ltt_channel_struct) * free_index,
 			  GFP_KERNEL);
-	if (!channel)
+	if (!channel) {
+		WARN("ltt_channel_struct: channel null after alloc");
 		goto end;
+	}
 	list_for_each_entry(iter, &ltt_channels, list) {
 		if (!atomic_read(&iter->kref.refcount))
 			continue;

@@ -204,19 +204,19 @@ static LIST_HEAD(ltt_transport_list);
  * vmalloc_sync_all. Therefore, only if the module allocates virtual memory
  * after its registration must it synchronize the TLBs.
  */
-//ust// void ltt_transport_register(struct ltt_transport *transport)
-//ust// {
-//ust// 	/*
-//ust// 	 * Make sure no page fault can be triggered by the module about to be
-//ust// 	 * registered. We deal with this here so we don't have to call
-//ust// 	 * vmalloc_sync_all() in each module's init.
-//ust// 	 */
-//ust// 	vmalloc_sync_all();
-//ust// 
-//ust// 	ltt_lock_traces();
-//ust// 	list_add_tail(&transport->node, &ltt_transport_list);
-//ust// 	ltt_unlock_traces();
-//ust// }
+void ltt_transport_register(struct ltt_transport *transport)
+{
+	/*
+	 * Make sure no page fault can be triggered by the module about to be
+	 * registered. We deal with this here so we don't have to call
+	 * vmalloc_sync_all() in each module's init.
+	 */
+	vmalloc_sync_all();
+
+	ltt_lock_traces();
+	list_add_tail(&transport->node, &ltt_transport_list);
+	ltt_unlock_traces();
+}
 //ust// EXPORT_SYMBOL_GPL(ltt_transport_register);
 
 /**

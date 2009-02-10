@@ -130,7 +130,7 @@ static inline int last_tsc_overflow(struct ltt_channel_buf_struct *ltt_buf,
 }
 #endif
 
-static struct file_operations ltt_file_operations;
+//ust// static struct file_operations ltt_file_operations;
 
 /*
  * A switch is done during tracing or as a final flush after tracing (so it
@@ -209,7 +209,7 @@ static struct dentry *ltt_create_buf_file_callback(const char *filename,
 {
 	struct ltt_channel_struct *ltt_chan;
 	int err;
-	struct dentry *dentry;
+//ust//	struct dentry *dentry;
 
 	ltt_chan = buf->chan->private_data;
 	err = ltt_relay_create_buffer(ltt_chan->trace, ltt_chan,
@@ -218,12 +218,12 @@ static struct dentry *ltt_create_buf_file_callback(const char *filename,
 	if (err)
 		return ERR_PTR(err);
 
-	dentry = debugfs_create_file(filename, mode, parent, buf,
-			&ltt_file_operations);
-	if (!dentry)
-		goto error;
-	return dentry;
-error:
+//ust//	dentry = debugfs_create_file(filename, mode, parent, buf,
+//ust//			&ltt_file_operations);
+//ust//	if (!dentry)
+//ust//		goto error;
+//ust//	return dentry;
+//ust//error:
 	ltt_relay_destroy_buffer(ltt_chan, buf->cpu);
 	return NULL;
 }
@@ -233,7 +233,7 @@ static int ltt_remove_buf_file_callback(struct dentry *dentry)
 	struct rchan_buf *buf = dentry->d_inode->i_private;
 	struct ltt_channel_struct *ltt_chan = buf->chan->private_data;
 
-	debugfs_remove(dentry);
+//ust//	debugfs_remove(dentry);
 	ltt_relay_destroy_buffer(ltt_chan, buf->cpu);
 
 	return 0;
@@ -448,79 +448,79 @@ static int ltt_do_put_subbuf(struct rchan_buf *buf, struct ltt_channel_buf_struc
  *	RELAY_GET_SUBBUF_SIZE
  *		returns the size of the sub buffers.
  */
-static int ltt_ioctl(struct inode *inode, struct file *filp,
-		unsigned int cmd, unsigned long arg)
-{
-	struct rchan_buf *buf = inode->i_private;
-	struct ltt_channel_struct *ltt_channel =
-		(struct ltt_channel_struct *)buf->chan->private_data;
-	struct ltt_channel_buf_struct *ltt_buf =
-		percpu_ptr(ltt_channel->buf, buf->cpu);
-	u32 __user *argp = (u32 __user *)arg;
+//ust// static int ltt_ioctl(struct inode *inode, struct file *filp,
+//ust// 		unsigned int cmd, unsigned long arg)
+//ust// {
+//ust// 	struct rchan_buf *buf = inode->i_private;
+//ust// 	struct ltt_channel_struct *ltt_channel =
+//ust// 		(struct ltt_channel_struct *)buf->chan->private_data;
+//ust// 	struct ltt_channel_buf_struct *ltt_buf =
+//ust// 		percpu_ptr(ltt_channel->buf, buf->cpu);
+//ust// 	u32 __user *argp = (u32 __user *)arg;
+//ust// 
+//ust// 	WARN_ON(atomic_long_read(&ltt_buf->active_readers) != 1);
+//ust// 	switch (cmd) {
+//ust// 	case RELAY_GET_SUBBUF:
+//ust// 	{
+//ust// 		int ret;
+//ust// 		ret = ltt_do_get_subbuf(buf, ltt_buf, &consumed_old);
+//ust// 		if(ret < 0)
+//ust// 			return ret;
+//ust// 		return put_user((u32)consumed_old, argp);
+//ust// 	}
+//ust// 	case RELAY_PUT_SUBBUF:
+//ust// 	{
+//ust// 		int ret;
+//ust// 		u32 uconsumed_old;
+//ust// 		ret = get_user(uconsumed_old, argp);
+//ust// 		if (ret)
+//ust// 			return ret; /* will return -EFAULT */
+//ust// 		return ltt_do_put_subbuf(buf, ltt_buf, uconsumed_old);
+//ust// 	}
+//ust// 	case RELAY_GET_N_SUBBUFS:
+//ust// 		return put_user((u32)buf->chan->n_subbufs, argp);
+//ust// 		break;
+//ust// 	case RELAY_GET_SUBBUF_SIZE:
+//ust// 		return put_user((u32)buf->chan->subbuf_size, argp);
+//ust// 		break;
+//ust// 	default:
+//ust// 		return -ENOIOCTLCMD;
+//ust// 	}
+//ust// 	return 0;
+//ust// }
 
-	WARN_ON(atomic_long_read(&ltt_buf->active_readers) != 1);
-	switch (cmd) {
-	case RELAY_GET_SUBBUF:
-	{
-		int ret;
-		ret = ltt_do_get_subbuf(buf, ltt_buf, &consumed_old);
-		if(ret < 0)
-			return ret;
-		return put_user((u32)consumed_old, argp);
-	}
-	case RELAY_PUT_SUBBUF:
-	{
-		int ret;
-		u32 uconsumed_old;
-		ret = get_user(uconsumed_old, argp);
-		if (ret)
-			return ret; /* will return -EFAULT */
-		return ltt_do_put_subbuf(buf, ltt_buf, uconsumed_old);
-	}
-	case RELAY_GET_N_SUBBUFS:
-		return put_user((u32)buf->chan->n_subbufs, argp);
-		break;
-	case RELAY_GET_SUBBUF_SIZE:
-		return put_user((u32)buf->chan->subbuf_size, argp);
-		break;
-	default:
-		return -ENOIOCTLCMD;
-	}
-	return 0;
-}
+//ust// #ifdef CONFIG_COMPAT
+//ust// static long ltt_compat_ioctl(struct file *file, unsigned int cmd,
+//ust// 		unsigned long arg)
+//ust// {
+//ust// 	long ret = -ENOIOCTLCMD;
+//ust// 
+//ust// 	lock_kernel();
+//ust// 	ret = ltt_ioctl(file->f_dentry->d_inode, file, cmd, arg);
+//ust// 	unlock_kernel();
+//ust// 
+//ust// 	return ret;
+//ust// }
+//ust// #endif
 
-#ifdef CONFIG_COMPAT
-static long ltt_compat_ioctl(struct file *file, unsigned int cmd,
-		unsigned long arg)
-{
-	long ret = -ENOIOCTLCMD;
+//ust// static void ltt_relay_pipe_buf_release(struct pipe_inode_info *pipe,
+//ust// 				   struct pipe_buffer *pbuf)
+//ust// {
+//ust// }
+//ust// 
+//ust// static struct pipe_buf_operations ltt_relay_pipe_buf_ops = {
+//ust// 	.can_merge = 0,
+//ust// 	.map = generic_pipe_buf_map,
+//ust// 	.unmap = generic_pipe_buf_unmap,
+//ust// 	.confirm = generic_pipe_buf_confirm,
+//ust// 	.release = ltt_relay_pipe_buf_release,
+//ust// 	.steal = generic_pipe_buf_steal,
+//ust// 	.get = generic_pipe_buf_get,
+//ust// };
 
-	lock_kernel();
-	ret = ltt_ioctl(file->f_dentry->d_inode, file, cmd, arg);
-	unlock_kernel();
-
-	return ret;
-}
-#endif
-
-static void ltt_relay_pipe_buf_release(struct pipe_inode_info *pipe,
-				   struct pipe_buffer *pbuf)
-{
-}
-
-static struct pipe_buf_operations ltt_relay_pipe_buf_ops = {
-	.can_merge = 0,
-	.map = generic_pipe_buf_map,
-	.unmap = generic_pipe_buf_unmap,
-	.confirm = generic_pipe_buf_confirm,
-	.release = ltt_relay_pipe_buf_release,
-	.steal = generic_pipe_buf_steal,
-	.get = generic_pipe_buf_get,
-};
-
-static void ltt_relay_page_release(struct splice_pipe_desc *spd, unsigned int i)
-{
-}
+//ust// static void ltt_relay_page_release(struct splice_pipe_desc *spd, unsigned int i)
+//ust// {
+//ust// }
 
 /*
  *	subbuf_splice_actor - splice up to one subbuf's worth of data
@@ -711,10 +711,10 @@ static void ltt_relay_print_buffer_errors(struct ltt_channel_struct *ltt_chan,
 	ltt_relay_print_errors(trace, ltt_chan, cpu);
 }
 
-static void ltt_relay_remove_dirs(struct ltt_trace_struct *trace)
-{
-	debugfs_remove(trace->dentry.trace_root);
-}
+//ust// static void ltt_relay_remove_dirs(struct ltt_trace_struct *trace)
+//ust// {
+//ust// 	debugfs_remove(trace->dentry.trace_root);
+//ust// }
 
 static void ltt_relay_release_channel(struct kref *kref)
 {
@@ -726,38 +726,71 @@ static void ltt_relay_release_channel(struct kref *kref)
 /*
  * Create ltt buffer.
  */
+//ust// static int ltt_relay_create_buffer(struct ltt_trace_struct *trace,
+//ust// 		struct ltt_channel_struct *ltt_chan, struct rchan_buf *buf,
+//ust// 		unsigned int cpu, unsigned int n_subbufs)
+//ust// {
+//ust// 	struct ltt_channel_buf_struct *ltt_buf =
+//ust// 		percpu_ptr(ltt_chan->buf, cpu);
+//ust// 	unsigned int j;
+//ust// 
+//ust// 	ltt_buf->commit_count =
+//ust// 		kzalloc_node(sizeof(ltt_buf->commit_count) * n_subbufs,
+//ust// 			GFP_KERNEL, cpu_to_node(cpu));
+//ust// 	if (!ltt_buf->commit_count)
+//ust// 		return -ENOMEM;
+//ust// 	kref_get(&trace->kref);
+//ust// 	kref_get(&trace->ltt_transport_kref);
+//ust// 	kref_get(&ltt_chan->kref);
+//ust// 	local_set(&ltt_buf->offset, ltt_subbuffer_header_size());
+//ust// 	atomic_long_set(&ltt_buf->consumed, 0);
+//ust// 	atomic_long_set(&ltt_buf->active_readers, 0);
+//ust// 	for (j = 0; j < n_subbufs; j++)
+//ust// 		local_set(&ltt_buf->commit_count[j], 0);
+//ust// 	init_waitqueue_head(&ltt_buf->write_wait);
+//ust// 	atomic_set(&ltt_buf->wakeup_readers, 0);
+//ust// 	spin_lock_init(&ltt_buf->full_lock);
+//ust// 
+//ust// 	ltt_buffer_begin_callback(buf, trace->start_tsc, 0);
+//ust// 	/* atomic_add made on local variable on data that belongs to
+//ust// 	 * various CPUs : ok because tracing not started (for this cpu). */
+//ust// 	local_add(ltt_subbuffer_header_size(), &ltt_buf->commit_count[0]);
+//ust// 
+//ust// 	local_set(&ltt_buf->events_lost, 0);
+//ust// 	local_set(&ltt_buf->corrupted_subbuffers, 0);
+//ust// 
+//ust// 	return 0;
+//ust// }
+
 static int ltt_relay_create_buffer(struct ltt_trace_struct *trace,
 		struct ltt_channel_struct *ltt_chan, struct rchan_buf *buf,
 		unsigned int cpu, unsigned int n_subbufs)
 {
-	struct ltt_channel_buf_struct *ltt_buf =
-		percpu_ptr(ltt_chan->buf, cpu);
+	struct ltt_channel_buf_struct *ltt_buf = ltt_chan->buf;
 	unsigned int j;
 
 	ltt_buf->commit_count =
-		kzalloc_node(sizeof(ltt_buf->commit_count) * n_subbufs,
-			GFP_KERNEL, cpu_to_node(cpu));
+		malloc(sizeof(ltt_buf->commit_count) * n_subbufs);
 	if (!ltt_buf->commit_count)
 		return -ENOMEM;
 	kref_get(&trace->kref);
 	kref_get(&trace->ltt_transport_kref);
 	kref_get(&ltt_chan->kref);
-	local_set(&ltt_buf->offset, ltt_subbuffer_header_size());
+	ltt_buf->offset = ltt_subbuffer_header_size();
 	atomic_long_set(&ltt_buf->consumed, 0);
 	atomic_long_set(&ltt_buf->active_readers, 0);
 	for (j = 0; j < n_subbufs; j++)
 		local_set(&ltt_buf->commit_count[j], 0);
-	init_waitqueue_head(&ltt_buf->write_wait);
+//ust//	init_waitqueue_head(&ltt_buf->write_wait);
 	atomic_set(&ltt_buf->wakeup_readers, 0);
 	spin_lock_init(&ltt_buf->full_lock);
 
 	ltt_buffer_begin_callback(buf, trace->start_tsc, 0);
-	/* atomic_add made on local variable on data that belongs to
-	 * various CPUs : ok because tracing not started (for this cpu). */
-	local_add(ltt_subbuffer_header_size(), &ltt_buf->commit_count[0]);
 
-	local_set(&ltt_buf->events_lost, 0);
-	local_set(&ltt_buf->corrupted_subbuffers, 0);
+	ltt_buf->commit_count[0] += ltt_subbuffer_header_size();
+
+	ltt_buf->events_lost = 0;
+	ltt_buf->corrupted_subbuffers = 0;
 
 	return 0;
 }
@@ -845,21 +878,21 @@ end:
 	return err;
 }
 
-static int ltt_relay_create_dirs(struct ltt_trace_struct *new_trace)
-{
-	new_trace->dentry.trace_root = debugfs_create_dir(new_trace->trace_name,
-			get_ltt_root());
-	if (new_trace->dentry.trace_root == NULL) {
-		printk(KERN_ERR "LTT : Trace directory name %s already taken\n",
-				new_trace->trace_name);
-		return EEXIST;
-	}
-
-	new_trace->callbacks.create_buf_file = ltt_create_buf_file_callback;
-	new_trace->callbacks.remove_buf_file = ltt_remove_buf_file_callback;
-
-	return 0;
-}
+//ust// static int ltt_relay_create_dirs(struct ltt_trace_struct *new_trace)
+//ust// {
+//ust// 	new_trace->dentry.trace_root = debugfs_create_dir(new_trace->trace_name,
+//ust// 			get_ltt_root());
+//ust// 	if (new_trace->dentry.trace_root == NULL) {
+//ust// 		printk(KERN_ERR "LTT : Trace directory name %s already taken\n",
+//ust// 				new_trace->trace_name);
+//ust// 		return EEXIST;
+//ust// 	}
+//ust// 
+//ust// 	new_trace->callbacks.create_buf_file = ltt_create_buf_file_callback;
+//ust// 	new_trace->callbacks.remove_buf_file = ltt_remove_buf_file_callback;
+//ust// 
+//ust// 	return 0;
+//ust// }
 
 /*
  * LTTng channel flush function.
@@ -1619,8 +1652,25 @@ static void ltt_relay_print_user_errors(struct ltt_trace_struct *trace,
 			dbg->write, dbg->read);
 }
 
-static struct ltt_transport ltt_relay_transport = {
-	.name = "relay",
+//ust// static struct ltt_transport ltt_relay_transport = {
+//ust// 	.name = "relay",
+//ust// 	.owner = THIS_MODULE,
+//ust// 	.ops = {
+//ust// 		.create_dirs = ltt_relay_create_dirs,
+//ust// 		.remove_dirs = ltt_relay_remove_dirs,
+//ust// 		.create_channel = ltt_relay_create_channel,
+//ust// 		.finish_channel = ltt_relay_finish_channel,
+//ust// 		.remove_channel = ltt_relay_remove_channel,
+//ust// 		.wakeup_channel = ltt_relay_async_wakeup_chan,
+//ust// 		.commit_slot = ltt_relay_commit_slot,
+//ust// 		.reserve_slot = ltt_relay_reserve_slot,
+//ust// 		.user_blocking = ltt_relay_user_blocking,
+//ust// 		.user_errors = ltt_relay_print_user_errors,
+//ust// 	},
+//ust// };
+
+static struct ltt_transport ust_relay_transport = {
+	.name = "ustrelay",
 	.owner = THIS_MODULE,
 	.ops = {
 		.create_dirs = ltt_relay_create_dirs,
@@ -1636,36 +1686,41 @@ static struct ltt_transport ltt_relay_transport = {
 	},
 };
 
-static int __init ltt_relay_init(void)
+//ust// static int __init ltt_relay_init(void)
+//ust// {
+//ust//	printk(KERN_INFO "LTT : ltt-relay init\n");
+//ust//
+//ust//	ltt_file_operations = ltt_relay_file_operations;
+//ust//	ltt_file_operations.owner = THIS_MODULE;
+//ust//	ltt_file_operations.open = ltt_open;
+//ust//	ltt_file_operations.release = ltt_release;
+//ust//	ltt_file_operations.poll = ltt_poll;
+//ust//	ltt_file_operations.splice_read = ltt_relay_file_splice_read,
+//ust//	ltt_file_operations.ioctl = ltt_ioctl;
+//ust//#ifdef CONFIG_COMPAT
+//ust//	ltt_file_operations.compat_ioctl = ltt_compat_ioctl;
+//ust//#endif
+//ust// 
+//ust// 	ltt_transport_register(&ltt_relay_transport);
+//ust// 
+//ust// 	return 0;
+//ust// }
+
+void init_ustrelay_transport(void)
 {
-	printk(KERN_INFO "LTT : ltt-relay init\n");
-
-	ltt_file_operations = ltt_relay_file_operations;
-	ltt_file_operations.owner = THIS_MODULE;
-	ltt_file_operations.open = ltt_open;
-	ltt_file_operations.release = ltt_release;
-	ltt_file_operations.poll = ltt_poll;
-	ltt_file_operations.splice_read = ltt_relay_file_splice_read,
-	ltt_file_operations.ioctl = ltt_ioctl;
-#ifdef CONFIG_COMPAT
-	ltt_file_operations.compat_ioctl = ltt_compat_ioctl;
-#endif
-
-	ltt_transport_register(&ltt_relay_transport);
-
-	return 0;
+	ltt_transport_register(&ust_relay_transport);
 }
 
 static void __exit ltt_relay_exit(void)
 {
-	printk(KERN_INFO "LTT : ltt-relay exit\n");
+//ust//	printk(KERN_INFO "LTT : ltt-relay exit\n");
 
 	ltt_transport_unregister(&ltt_relay_transport);
 }
 
-module_init(ltt_relay_init);
-module_exit(ltt_relay_exit);
-
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Mathieu Desnoyers");
-MODULE_DESCRIPTION("Linux Trace Toolkit Next Generation Lockless Relay");
+//ust// module_init(ltt_relay_init);
+//ust// module_exit(ltt_relay_exit);
+//ust// 
+//ust// MODULE_LICENSE("GPL");
+//ust// MODULE_AUTHOR("Mathieu Desnoyers");
+//ust// MODULE_DESCRIPTION("Linux Trace Toolkit Next Generation Lockless Relay");

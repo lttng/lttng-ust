@@ -124,9 +124,15 @@ static int atomic_read(atomic_t *p)
 	return p->counter;
 }
 
-/* CACHE */
+/* LOCAL OPS */
+
+
+
+/* ATTRIBUTES */
 
 #define ____cacheline_aligned
+#define __init
+#define __exit
 
 /* MATH */
 
@@ -164,6 +170,18 @@ static __inline__ int get_count_order(unsigned int count)
 		order++;
 	return order;
 }
+
+
+
+
+#include <unistd.h>
+
+#define ALIGN(x,a)		__ALIGN_MASK(x,(typeof(x))(a)-1)
+#define __ALIGN_MASK(x,mask)	(((x)+(mask))&~(mask))
+#define PAGE_ALIGN(addr) ALIGN(addr, PAGE_SIZE)
+#define PAGE_SIZE sysconf(_SC_PAGE_SIZE)
+
+
 
 
 /* ARRAYS */

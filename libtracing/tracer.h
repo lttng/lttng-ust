@@ -150,9 +150,9 @@ struct ltt_trace_ops {
 				void **transport_data, long buf_offset,
 				size_t slot_size);
 	void (*wakeup_channel) (struct ltt_channel_struct *ltt_channel);
-	int (*user_blocking) (struct ltt_trace_struct *trace,
-				unsigned int index, size_t data_size,
-				struct user_dbg_data *dbg);
+//ust//	int (*user_blocking) (struct ltt_trace_struct *trace,
+//ust//				unsigned int index, size_t data_size,
+//ust//				struct user_dbg_data *dbg);
 //ust// 	/* End of first 32 bytes cacheline */
 //ust// 	int (*create_dirs) (struct ltt_trace_struct *new_trace);
 //ust// 	void (*remove_dirs) (struct ltt_trace_struct *new_trace);
