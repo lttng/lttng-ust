@@ -22,6 +22,7 @@
 #include "relay.h"
 #include "tracer.h"
 #include "list.h"
+#include "usterr.h"
 
 enum ltt_type {
 	LTT_TYPE_SIGNED_INT,

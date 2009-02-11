@@ -63,6 +63,7 @@ typedef uint64_t u64;
 #include <pthread.h>
 
 #define DEFINE_MUTEX(m) pthread_mutex_t (m) = PTHREAD_MUTEX_INITIALIZER;
+#define DECLARE_MUTEX(m) extern pthread_mutex_t (m);
 
 #define mutex_lock(m) pthread_mutex_lock(m)
 
@@ -82,9 +83,11 @@ typedef int spinlock_t;
 #include <stdlib.h>
 
 #define kmalloc(s, t) malloc(s)
-#define kzalloc(s, t) malloc(s)
+#define kzalloc(s, t) zmalloc(s)
 #define kfree(p) free((void *)p)
 #define kstrdup(s, t) strdup(s)
+
+#define zmalloc(s) calloc(1, s)
 
 #define GFP_KERNEL
 
@@ -108,6 +111,8 @@ typedef int spinlock_t;
 #define rcu_assign_pointer(a, b) do {} while(0)
 #define call_rcu_sched(a,b) do {} while(0)
 #define rcu_barrier_sched() do {} while(0)
+#define rcu_read_lock_sched_notrace() do{} while (0)
+#define rcu_read_unlock_sched_notrace() do{} while (0)
 
 /* ATOMICITY */
 
@@ -301,5 +306,7 @@ static inline u32 trace_clock_freq_scale(void)
 
 
 #define EXPORT_SYMBOL_GPL(a) /*nothing*/
+
+#define smp_processor_id() (-1)
 
 #endif /* KERNELCOMPAT_H */

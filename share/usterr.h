@@ -4,6 +4,7 @@
 #define DBG(fmt, args...) fprintf(stderr, fmt "\n", ## args)
 #define WARN(fmt, args...) fprintf(stderr, "usertrace: WARNING: " fmt "\n", ## args)
 #define ERR(fmt, args...) fprintf(stderr, "usertrace: ERROR: " fmt "\n", ## args)
+#define BUG(fmt, args...) fprintf(stderr, "usertrace: BUG: " fmt "\n", ## args)
 #define PERROR(call) perror("usertrace: ERROR: " call)
 
 #define BUG_ON(condition) do { if (unlikely(condition)) ERR("condition not respected (BUG)"); } while(0)
