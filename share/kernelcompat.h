@@ -14,6 +14,7 @@
 #define KERN_INFO ""
 #define KERN_ERR ""
 #define KERN_ALERT ""
+#define KERN_WARNING ""
 
 /* ERROR OPS */
 
@@ -67,6 +68,15 @@ typedef uint64_t u64;
 
 #define mutex_unlock(m) pthread_mutex_unlock(m)
 
+/* SPINLOCKS */
+
+typedef int spinlock_t;
+
+#define spin_lock(a) /* nothing */
+#define spin_unlock(a) /* nothing */
+#define spin_lock_init(a) /* nothing */
+
+
 /* MALLOCATION */
 
 #include <stdlib.h>
@@ -75,6 +85,8 @@ typedef uint64_t u64;
 #define kzalloc(s, t) malloc(s)
 #define kfree(p) free((void *)p)
 #define kstrdup(s, t) strdup(s)
+
+#define GFP_KERNEL
 
 /* PRINTK */
 
@@ -124,8 +136,83 @@ static int atomic_read(atomic_t *p)
 	return p->counter;
 }
 
+#define atomic_long_t atomic_t
+#define atomic_long_set atomic_set
+#define atomic_long_read atomic_read
+
+#include "asm.h"
+
+#define __xg(x) ((volatile long *)(x))
+
+#define cmpxchg(ptr, o, n)						\
+	((__typeof__(*(ptr)))__cmpxchg((ptr), (unsigned long)(o),	\
+				       (unsigned long)(n), sizeof(*(ptr))))
+
+static inline unsigned long __cmpxchg(volatile void *ptr, unsigned long old,
+				      unsigned long new, int size)
+{
+	unsigned long prev;
+	switch (size) {
+	case 1:
+		asm volatile("lock cmpxchgb %b1,%2"
+			     : "=a"(prev)
+			     : "q"(new), "m"(*__xg(ptr)), "0"(old)
+			     : "memory");
+		return prev;
+	case 2:
+		asm volatile("lock cmpxchgw %w1,%2"
+			     : "=a"(prev)
+			     : "r"(new), "m"(*__xg(ptr)), "0"(old)
+			     : "memory");
+		return prev;
+	case 4:
+		asm volatile("lock cmpxchgl %k1,%2"
+			     : "=a"(prev)
+			     : "r"(new), "m"(*__xg(ptr)), "0"(old)
+			     : "memory");
+		return prev;
+	case 8:
+		asm volatile("lock cmpxchgq %1,%2"
+			     : "=a"(prev)
+			     : "r"(new), "m"(*__xg(ptr)), "0"(old)
+			     : "memory");
+		return prev;
+	}
+	return old;
+}
+
+#define local_cmpxchg cmpxchg
+#define atomic_long_cmpxchg(v, old, new) (cmpxchg(&((v)->counter), (old), (new)))
+
+
 /* LOCAL OPS */
 
+typedef int local_t;
+
+static inline void local_inc(local_t *a)
+{
+	(*a)++;
+}
+
+static inline void local_set(local_t *a, int v)
+{
+	*a = v;
+}
+
+static inline void local_add(int v, local_t *a)
+{
+	*a += v;
+}
+
+static int local_add_return(int v, local_t *a)
+{
+	return *a += v;
+}
+
+static inline int local_read(local_t *a)
+{
+	return *a;
+}
 
 
 /* ATTRIBUTES */
@@ -180,6 +267,7 @@ static __inline__ int get_count_order(unsigned int count)
 #define __ALIGN_MASK(x,mask)	(((x)+(mask))&~(mask))
 #define PAGE_ALIGN(addr) ALIGN(addr, PAGE_SIZE)
 #define PAGE_SIZE sysconf(_SC_PAGE_SIZE)
+#define PAGE_MASK (PAGE_SIZE-1)
 
 
 

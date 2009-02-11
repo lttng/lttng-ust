@@ -28,6 +28,7 @@
 #include "list.h"
 #include "kernelcompat.h"
 #include "channels.h"
+#include "tracercore.h"
 
 /* Number of bytes to log with a read/write event */
 #define LTT_LOG_RW_SIZE			32L
@@ -150,12 +151,12 @@ struct ltt_trace_ops {
 				void **transport_data, long buf_offset,
 				size_t slot_size);
 	void (*wakeup_channel) (struct ltt_channel_struct *ltt_channel);
-//ust//	int (*user_blocking) (struct ltt_trace_struct *trace,
-//ust//				unsigned int index, size_t data_size,
-//ust//				struct user_dbg_data *dbg);
-//ust// 	/* End of first 32 bytes cacheline */
-//ust// 	int (*create_dirs) (struct ltt_trace_struct *new_trace);
-//ust// 	void (*remove_dirs) (struct ltt_trace_struct *new_trace);
+	int (*user_blocking) (struct ltt_trace_struct *trace,
+				unsigned int index, size_t data_size,
+				struct user_dbg_data *dbg);
+ 	/* End of first 32 bytes cacheline */
+ 	int (*create_dirs) (struct ltt_trace_struct *new_trace);
+ 	void (*remove_dirs) (struct ltt_trace_struct *new_trace);
  	int (*create_channel) (const char *trace_name,
  				struct ltt_trace_struct *trace,
  				struct dentry *dir, const char *channel_name,
@@ -332,7 +333,7 @@ static inline unsigned char ltt_get_header_size(
 	size_t orig_offset = offset;
 	size_t padding;
 
-	BUILD_BUG_ON(sizeof(struct ltt_event_header) != sizeof(u32));
+//ust//	BUILD_BUG_ON(sizeof(struct ltt_event_header) != sizeof(u32));
 
 	padding = ltt_align(offset, sizeof(struct ltt_event_header));
 	offset += padding;

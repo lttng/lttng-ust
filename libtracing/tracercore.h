@@ -35,6 +35,7 @@ struct dentry *get_ltt_root(void);
 
 /* Keep track of trap nesting inside LTT */
 //ust// DECLARE_PER_CPU(unsigned int, ltt_nesting);
+extern unsigned int ltt_nesting;
 
 typedef int (*ltt_run_filter_functor)(void *trace, uint16_t eID);
 

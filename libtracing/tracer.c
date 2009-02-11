@@ -211,7 +211,7 @@ void ltt_transport_register(struct ltt_transport *transport)
 	 * registered. We deal with this here so we don't have to call
 	 * vmalloc_sync_all() in each module's init.
 	 */
-	vmalloc_sync_all();
+//ust//	vmalloc_sync_all();
 
 	ltt_lock_traces();
 	list_add_tail(&transport->node, &ltt_transport_list);
@@ -223,12 +223,12 @@ void ltt_transport_register(struct ltt_transport *transport)
  * ltt_transport_unregister - LTT transport unregistration
  * @transport: transport structure
  */
-//ust// void ltt_transport_unregister(struct ltt_transport *transport)
-//ust// {
-//ust// 	ltt_lock_traces();
-//ust// 	list_del(&transport->node);
-//ust// 	ltt_unlock_traces();
-//ust// }
+void ltt_transport_unregister(struct ltt_transport *transport)
+{
+	ltt_lock_traces();
+	list_del(&transport->node);
+	ltt_unlock_traces();
+}
 //ust// EXPORT_SYMBOL_GPL(ltt_transport_unregister);
 
 static inline int is_channel_overwrite(enum ltt_channels chan,
