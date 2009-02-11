@@ -95,7 +95,7 @@ static int relay_alloc_buf(struct rchan_buf *buf, size_t *size)
 	*size = PAGE_ALIGN(*size);
 
 	/* Maybe do read-ahead */
-	result = mmap(NULL, *size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, -1, 0);
+	result = mmap(NULL, *size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 	if(result == MAP_FAILED) {
 		PERROR("mmap");
 		return -1;

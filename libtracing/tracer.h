@@ -29,6 +29,7 @@
 #include "kernelcompat.h"
 #include "channels.h"
 #include "tracercore.h"
+#include "marker.h"
 
 /* Number of bytes to log with a read/write event */
 #define LTT_LOG_RW_SIZE			32L
@@ -69,13 +70,13 @@ size_t ltt_serialize_data(struct rchan_buf *buf, size_t buf_offset,
 			void *serialize_private,
 			int *largest_align, const char *fmt, va_list *args);
 
-//ust// struct ltt_available_probe {
-//ust// 	const char *name;		/* probe name */
-//ust// 	const char *format;
-//ust// 	marker_probe_func *probe_func;
-//ust// 	ltt_serialize_cb callbacks[LTT_NR_CALLBACKS];
-//ust// 	struct list_head node;		/* registered probes list */
-//ust// };
+struct ltt_available_probe {
+	const char *name;		/* probe name */
+	const char *format;
+	marker_probe_func *probe_func;
+	ltt_serialize_cb callbacks[LTT_NR_CALLBACKS];
+	struct list_head node;		/* registered probes list */
+};
 
 struct ltt_probe_private_data {
 	struct ltt_trace_struct *trace;	/*

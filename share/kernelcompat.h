@@ -293,4 +293,13 @@ static inline u32 trace_clock_freq_scale(void)
 	return 0;
 }
 
+
+/* LISTS */
+
+#define list_add_rcu list_add
+#define list_for_each_entry_rcu list_for_each_entry
+
+
+#define EXPORT_SYMBOL_GPL(a) /*nothing*/
+
 #endif /* KERNELCOMPAT_H */

@@ -740,7 +740,7 @@ int ltt_trace_alloc(const char *trace_name)
 //ust//				jiffies + LTT_PERCPU_TIMER_INTERVAL);
 //ust//		set_kernel_trace_flag_all_tasks();
 //ust//	}
-//ust//	list_add_rcu(&trace->list, &ltt_traces.head);
+	list_add_rcu(&trace->list, &ltt_traces.head);
 //ust//	synchronize_sched();
 
 	ltt_unlock_traces();
