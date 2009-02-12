@@ -186,37 +186,44 @@ static inline unsigned long __cmpxchg(volatile void *ptr, unsigned long old,
 	return old;
 }
 
-#define local_cmpxchg cmpxchg
+//#define local_cmpxchg cmpxchg
+#define local_cmpxchg(l, o, n) (cmpxchg(&((l)->a.counter), (o), (n)))
+
 #define atomic_long_cmpxchg(v, old, new) (cmpxchg(&((v)->counter), (old), (new)))
 
 
 /* LOCAL OPS */
 
-typedef int local_t;
-
-static inline void local_inc(local_t *a)
+//typedef int local_t;
+typedef struct
 {
-	(*a)++;
+	atomic_long_t a;
+} local_t;
+
+
+static inline void local_inc(local_t *l)
+{
+	(l->a.counter)++;
 }
 
-static inline void local_set(local_t *a, int v)
+static inline void local_set(local_t *l, int v)
 {
-	*a = v;
+	l->a.counter = v;
 }
 
-static inline void local_add(int v, local_t *a)
+static inline void local_add(int v, local_t *l)
 {
-	*a += v;
+	l->a.counter += v;
 }
 
-static int local_add_return(int v, local_t *a)
+static int local_add_return(int v, local_t *l)
 {
-	return *a += v;
+	return l->a.counter += v;
 }
 
-static inline int local_read(local_t *a)
+static inline int local_read(local_t *l)
 {
-	return *a;
+	return l->a.counter;
 }
 
 

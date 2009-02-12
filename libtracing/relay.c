@@ -36,6 +36,9 @@
 static DEFINE_MUTEX(relay_channels_mutex);
 static LIST_HEAD(relay_channels);
 
+
+static struct dentry *ltt_create_buf_file_callback(struct rchan_buf *buf);
+
 /**
  *	relay_alloc_buf - allocate a channel buffer
  *	@buf: the buffer struct
@@ -266,6 +269,9 @@ static struct rchan_buf *relay_open_buf(struct rchan *chan)
 	/* Create file in fs */
 //ust//	dentry = chan->cb->create_buf_file(tmpname, chan->parent, S_IRUSR,
 //ust//					   buf);
+
+	ltt_create_buf_file_callback(buf); // ust //
+
 //ust//	if (!dentry)
 //ust//		goto free_buf;
 //ust//
@@ -631,6 +637,7 @@ void *ltt_relay_offset_address(struct rchan_buf *buf, size_t offset)
 //ust// 		buf->hpage[odd] = page = buf->wpage;
 //ust// 	page = ltt_relay_cache_page(buf, &buf->hpage[odd], page, offset);
 //ust// 	return page_address(page->page) + (offset & ~PAGE_MASK);
+	return ((char *)buf->buf_data)+offset;
 	return NULL;
 }
 //ust// EXPORT_SYMBOL_GPL(ltt_relay_offset_address);
@@ -867,8 +874,9 @@ static notrace void ltt_buffer_end_callback(struct rchan_buf *buf,
 	header->lost_size = SUBBUF_OFFSET((buf->chan->subbuf_size - offset),
 				buf->chan);
 	header->cycle_count_end = tsc;
-	header->events_lost = ltt_buf->events_lost;
-	header->subbuf_corrupt = ltt_buf->corrupted_subbuffers;
+	header->events_lost = local_read(&ltt_buf->events_lost);
+	header->subbuf_corrupt = local_read(&ltt_buf->corrupted_subbuffers);
+
 }
 
 static notrace void ltt_deliver(struct rchan_buf *buf, unsigned int subbuf_idx,
@@ -881,9 +889,7 @@ static notrace void ltt_deliver(struct rchan_buf *buf, unsigned int subbuf_idx,
 	atomic_set(&ltt_buf->wakeup_readers, 1);
 }
 
-static struct dentry *ltt_create_buf_file_callback(const char *filename,
-		struct dentry *parent, int mode,
-		struct rchan_buf *buf)
+static struct dentry *ltt_create_buf_file_callback(struct rchan_buf *buf)
 {
 	struct ltt_channel_struct *ltt_chan;
 	int err;
@@ -899,6 +905,7 @@ static struct dentry *ltt_create_buf_file_callback(const char *filename,
 //ust//	if (!dentry)
 //ust//		goto error;
 //ust//	return dentry;
+	return NULL; //ust//
 //ust//error:
 	ltt_relay_destroy_buffer(ltt_chan);
 	return NULL;
@@ -1442,13 +1449,13 @@ static int ltt_relay_create_buffer(struct ltt_trace_struct *trace,
 	unsigned int j;
 
 	ltt_buf->commit_count =
-		malloc(sizeof(ltt_buf->commit_count) * n_subbufs);
+		zmalloc(sizeof(ltt_buf->commit_count) * n_subbufs);
 	if (!ltt_buf->commit_count)
 		return -ENOMEM;
 	kref_get(&trace->kref);
 	kref_get(&trace->ltt_transport_kref);
 	kref_get(&ltt_chan->kref);
-	ltt_buf->offset = ltt_subbuffer_header_size();
+	local_set(&ltt_buf->offset, ltt_subbuffer_header_size());
 	atomic_long_set(&ltt_buf->consumed, 0);
 	atomic_long_set(&ltt_buf->active_readers, 0);
 	for (j = 0; j < n_subbufs; j++)
@@ -1459,10 +1466,10 @@ static int ltt_relay_create_buffer(struct ltt_trace_struct *trace,
 
 	ltt_buffer_begin_callback(buf, trace->start_tsc, 0);
 
-	ltt_buf->commit_count[0] += ltt_subbuffer_header_size();
+	local_add(ltt_subbuffer_header_size(), &ltt_buf->commit_count[0]);
 
-	ltt_buf->events_lost = 0;
-	ltt_buf->corrupted_subbuffers = 0;
+	local_set(&ltt_buf->events_lost, 0);
+	local_set(&ltt_buf->corrupted_subbuffers, 0);
 
 	return 0;
 }
@@ -2010,7 +2017,7 @@ static inline void ltt_reserve_end_switch_current(
 static notrace int ltt_relay_reserve_slot(struct ltt_trace_struct *trace,
 		struct ltt_channel_struct *ltt_channel, void **transport_data,
 		size_t data_size, size_t *slot_size, long *buf_offset, u64 *tsc,
-		unsigned int *rflags, int largest_align, int cpu)
+		unsigned int *rflags, int largest_align)
 {
 	struct rchan *rchan = ltt_channel->trans_channel_data;
 	struct rchan_buf *buf = *transport_data = rchan->buf;
@@ -2283,7 +2290,7 @@ static int ltt_relay_user_blocking(struct ltt_trace_struct *trace,
 
 static void ltt_relay_print_user_errors(struct ltt_trace_struct *trace,
 		unsigned int chan_index, size_t data_size,
-		struct user_dbg_data *dbg, int cpu)
+		struct user_dbg_data *dbg)
 {
 	struct rchan *rchan;
 	struct ltt_channel_buf_struct *ltt_buf;

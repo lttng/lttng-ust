@@ -146,8 +146,7 @@ struct ltt_trace_ops {
 				void **transport_data, size_t data_size,
 				size_t *slot_size, long *buf_offset, u64 *tsc,
 				unsigned int *rflags,
-				int largest_align,
-				int cpu);
+				int largest_align);
 	void (*commit_slot) (struct ltt_channel_struct *channel,
 				void **transport_data, long buf_offset,
 				size_t slot_size);
@@ -168,7 +167,7 @@ struct ltt_trace_ops {
  	void (*remove_channel) (struct ltt_channel_struct *channel);
  	void (*user_errors) (struct ltt_trace_struct *trace,
  				unsigned int index, size_t data_size,
- 				struct user_dbg_data *dbg, int cpu);
+ 				struct user_dbg_data *dbg);
 //ust// #ifdef CONFIG_HOTPLUG_CPU
 //ust// 	int (*handle_cpuhp) (struct notifier_block *nb,
 //ust// 				unsigned long action, void *hcpu,
@@ -498,12 +497,11 @@ static inline int ltt_reserve_slot(
 		long *buf_offset,
 		u64 *tsc,
 		unsigned int *rflags,
-		int largest_align,
-		int cpu)
+		int largest_align)
 {
 	return trace->ops->reserve_slot(trace, channel, transport_data,
 			data_size, slot_size, buf_offset, tsc, rflags,
-			largest_align, cpu);
+			largest_align);
 }
 
 

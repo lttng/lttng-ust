@@ -653,7 +653,7 @@ notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
 		ret = ltt_reserve_slot(trace, channel, &transport_data,
 					data_size, &slot_size, &buf_offset,
 					&tsc, &rflags,
-					largest_align, cpu);
+					largest_align);
 		if (unlikely(ret < 0))
 			continue; /* buffer full */
 
