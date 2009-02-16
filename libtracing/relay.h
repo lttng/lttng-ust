@@ -314,5 +314,42 @@ extern void ltt_relay_close(struct rchan *chan);
  */
 extern const struct file_operations ltt_relay_file_operations;
 
+
+/* LTTng lockless logging buffer info */
+struct ltt_channel_buf_struct {
+	/* First 32 bytes cache-hot cacheline */
+	local_t offset;			/* Current offset in the buffer */
+	local_t *commit_count;		/* Commit count per sub-buffer */
+	atomic_long_t consumed;		/*
+					 * Current offset in the buffer
+					 * standard atomic access (shared)
+					 */
+	unsigned long last_tsc;		/*
+					 * Last timestamp written in the buffer.
+					 */
+	/* End of first 32 bytes cacheline */
+	atomic_long_t active_readers;	/*
+					 * Active readers count
+					 * standard atomic access (shared)
+					 */
+	local_t events_lost;
+	local_t corrupted_subbuffers;
+	spinlock_t full_lock;		/*
+					 * buffer full condition spinlock, only
+					 * for userspace tracing blocking mode
+					 * synchronization with reader.
+					 */
+//ust//	wait_queue_head_t write_wait;	/*
+//ust//					 * Wait queue for blocking user space
+//ust//					 * writers
+//ust//					 */
+	atomic_t wakeup_readers;	/* Boolean : wakeup readers waiting ? */
+} ____cacheline_aligned;
+
+int ltt_do_get_subbuf(struct rchan_buf *buf, struct ltt_channel_buf_struct *ltt_buf, long *pconsumed_old);
+
+int ltt_do_put_subbuf(struct rchan_buf *buf, struct ltt_channel_buf_struct *ltt_buf, u32 uconsumed_old);
+
+
 #endif /* _LINUX_LTT_RELAY_H */
 

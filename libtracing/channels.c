@@ -311,6 +311,8 @@ int _ltt_channels_get_event_id(const char *channel, const char *name)
 			ret = 0;
 		else if (strcmp(name, "core_marker_format") == 0)
 			ret = 1;
+		else if (strcmp(name, "testev") == 0)
+			ret = 2;
 		else
 			ret = -ENOENT;
 		goto end;

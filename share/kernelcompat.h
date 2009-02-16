@@ -159,25 +159,25 @@ static inline unsigned long __cmpxchg(volatile void *ptr, unsigned long old,
 	unsigned long prev;
 	switch (size) {
 	case 1:
-		asm volatile("lock cmpxchgb %b1,%2"
+		asm volatile("lock; cmpxchgb %b1,%2"
 			     : "=a"(prev)
 			     : "q"(new), "m"(*__xg(ptr)), "0"(old)
 			     : "memory");
 		return prev;
 	case 2:
-		asm volatile("lock cmpxchgw %w1,%2"
+		asm volatile("lock; cmpxchgw %w1,%2"
 			     : "=a"(prev)
 			     : "r"(new), "m"(*__xg(ptr)), "0"(old)
 			     : "memory");
 		return prev;
 	case 4:
-		asm volatile("lock cmpxchgl %k1,%2"
+		asm volatile("lock; cmpxchgl %k1,%2"
 			     : "=a"(prev)
 			     : "r"(new), "m"(*__xg(ptr)), "0"(old)
 			     : "memory");
 		return prev;
 	case 8:
-		asm volatile("lock cmpxchgq %1,%2"
+		asm volatile("lock; cmpxchgq %1,%2"
 			     : "=a"(prev)
 			     : "r"(new), "m"(*__xg(ptr)), "0"(old)
 			     : "memory");

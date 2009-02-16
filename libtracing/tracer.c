@@ -324,7 +324,7 @@ static void trace_async_wakeup(struct ltt_trace_struct *trace)
  *
  * Returns a pointer to the trace structure, NULL if not found.
  */
-static struct ltt_trace_struct *_ltt_trace_find(const char *trace_name)
+struct ltt_trace_struct *_ltt_trace_find(const char *trace_name)
 {
 	struct ltt_trace_struct *trace;
 
@@ -956,7 +956,7 @@ int ltt_trace_start(const char *trace_name)
 	 * directly using this trace handle inside the logging function.
 	 */
 
-//ust//	ltt_dump_marker_state(trace);
+	ltt_dump_marker_state(trace);
 
 //ust//	if (!try_module_get(ltt_statedump_owner)) {
 //ust//		err = -ENODEV;

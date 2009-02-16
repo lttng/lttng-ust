@@ -1,11 +1,106 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#include <stdarg.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "../libmarkers/marker.h"
 #include "usterr.h"
 #include "tracer.h"
 #include "marker-control.h"
+#include "relay.h"
+
+
+char consumer_stack[10000];
+char trace_name[] = "theusttrace";
+char trace_type[] = "ustrelay";
+
+#define CPRINTF(fmt, args...) safe_printf(fmt "\n", ## args)
+
+int safe_printf(const char *fmt, ...)
+{
+	static char buf[500];
+	va_list ap;
+	int n;
+
+	va_start(ap, fmt);
+
+	n = vsnprintf(buf, sizeof(buf), fmt, ap);
+
+	write(STDOUT_FILENO, buf, n);
+
+	va_end(ap);
+}
+
+int consumer(void *arg)
+{
+	int result;
+
+	int fd;
+
+	char str[] = "Hello, this is the consumer.\n";
+
+	struct ltt_trace_struct *trace;
+
+	ltt_lock_traces();
+	trace = _ltt_trace_find(trace_name);
+	ltt_unlock_traces();
+
+	if(trace == NULL) {
+		CPRINTF("cannot find trace!");
+		return 1;
+	}
+
+	CPRINTF("consumer: got a trace: %s with %d channels\n", trace_name, trace->nr_channels);
+
+	struct ltt_channel_struct *chan = &trace->channels[0];
+
+	CPRINTF("channel 1 (%s) active=%u", chan->channel_name, chan->active & 1);
+
+	struct rchan *rchan = chan->trans_channel_data;
+	struct rchan_buf *rbuf = rchan->buf;
+	struct ltt_channel_buf_struct *lttbuf = chan->buf;
+	long consumed_old;
+
+	result = fd = open("trace.out", O_WRONLY | O_CREAT | O_TRUNC, 00644);
+	if(result == -1) {
+		perror("open");
+		return -1;
+	}
+
+	for(;;) {
+		write(STDOUT_FILENO, str, sizeof(str));
+
+		result = ltt_do_get_subbuf(rbuf, lttbuf, &consumed_old);
+		if(result < 0) {
+			CPRINTF("ltt_do_get_subbuf: error: %s", strerror(-result));
+		}
+		else {
+			CPRINTF("success!");
+
+			result = write(fd, rbuf->buf_data + (consumed_old & (2 * 4096-1)), 4096);
+			ltt_do_put_subbuf(rbuf, lttbuf, consumed_old);
+		}
+
+		//CPRINTF("There seems to be %ld bytes available", SUBBUF_TRUNC(local_read(&lttbuf->offset), rbuf->chan) - consumed_old);
+		CPRINTF("Commit count %ld", local_read(&lttbuf->commit_count[0]));
+
+
+		sleep(1);
+	}
+}
+
+void start_consumer(void)
+{
+	int result;
+
+	result = clone(consumer, consumer_stack+sizeof(consumer_stack)-1, CLONE_FS | CLONE_FILES | CLONE_VM, NULL);
+	if(result == -1) {
+		perror("clone");
+	}
+}
 
 void probe(const struct marker *mdata,
 		void *probe_private, void *call_private,
@@ -13,23 +108,6 @@ void probe(const struct marker *mdata,
 {
 	printf("In probe\n");
 }
-
-//ust// void try_map()
-//ust// {
-//ust// 	char *m;
-//ust// 
-//ust// 	/* maybe add MAP_LOCKED */
-//ust// 	m = mmap(NULL, 4096, PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_POPULATE , -1, 0);
-//ust// 	if(m == (char*)-1) {
-//ust// 		perror("mmap");
-//ust// 		return;
-//ust// 	}
-//ust// 
-//ust// 	printf("The mapping is at %p.\n", m);
-//ust// 	strcpy(m, "Hello, Mapping!");
-//ust// }
-
-//sig_atomic_t must_quit;
 
 void inthandler(int sig)
 {
@@ -63,85 +141,6 @@ int init_int_handler(void)
 	return 0;
 }
 
-//ust// DEFINE_MUTEX(probes_mutex);
-//ust// 
-//ust// static LIST_HEAD(probes_registered_list);
-//ust// 
-//ust// int ltt_marker_connect(const char *channel, const char *mname,
-//ust// 		       const char *pname)
-//ust// 
-//ust// {
-//ust// 	int ret;
-//ust// 	struct ltt_active_marker *pdata;
-//ust// 	struct ltt_available_probe *probe;
-//ust// 
-//ust// 	ltt_lock_traces();
-//ust// 	mutex_lock(&probes_mutex);
-//ust// 	probe = get_probe_from_name(pname);
-//ust// 	if (!probe) {
-//ust// 		ret = -ENOENT;
-//ust// 		goto end;
-//ust// 	}
-//ust// 	pdata = marker_get_private_data(channel, mname, probe->probe_func, 0);
-//ust// 	if (pdata && !IS_ERR(pdata)) {
-//ust// 		ret = -EEXIST;
-//ust// 		goto end;
-//ust// 	}
-//ust// 	pdata = kmem_cache_zalloc(markers_loaded_cachep, GFP_KERNEL);
-//ust// 	if (!pdata) {
-//ust// 		ret = -ENOMEM;
-//ust// 		goto end;
-//ust// 	}
-//ust// 	pdata->probe = probe;
-//ust// 	/*
-//ust// 	 * ID has priority over channel in case of conflict.
-//ust// 	 */
-//ust// 	ret = marker_probe_register(channel, mname, NULL,
-//ust// 		probe->probe_func, pdata);
-//ust// 	if (ret)
-//ust// 		kmem_cache_free(markers_loaded_cachep, pdata);
-//ust// 	else
-//ust// 		list_add(&pdata->node, &markers_loaded_list);
-//ust// end:
-//ust// 	mutex_unlock(&probes_mutex);
-//ust// 	ltt_unlock_traces();
-//ust// 	return ret;
-//ust// }
-//ust// 
-//ust// 
-//ust// int ltt_probe_register(struct ltt_available_probe *pdata)
-//ust// {
-//ust// 	int ret = 0;
-//ust// 	int comparison;
-//ust// 	struct ltt_available_probe *iter;
-//ust// 
-//ust// 	mutex_lock(&probes_mutex);
-//ust// 	list_for_each_entry_reverse(iter, &probes_registered_list, node) {
-//ust// 		comparison = strcmp(pdata->name, iter->name);
-//ust// 		if (!comparison) {
-//ust// 			ret = -EBUSY;
-//ust// 			goto end;
-//ust// 		} else if (comparison > 0) {
-//ust// 			/* We belong to the location right after iter. */
-//ust// 			list_add(&pdata->node, &iter->node);
-//ust// 			goto end;
-//ust// 		}
-//ust// 	}
-//ust// 	/* Should be added at the head of the list */
-//ust// 	list_add(&pdata->node, &probes_registered_list);
-//ust// end:
-//ust// 	mutex_unlock(&probes_mutex);
-//ust// 	return ret;
-//ust// }
-//ust// 
-//ust// 
-//ust// struct ltt_available_probe default_probe = {
-//ust// 	.name = "default",
-//ust// 	.format = NULL,
-//ust// 	.probe_func = ltt_vtrace,
-//ust// 	.callbacks[0] = ltt_serialize_data,
-//ust// };
-
 int main()
 {
 	int result;
@@ -152,20 +151,17 @@ int main()
 
 	printf("page size is %d\n", sysconf(_SC_PAGE_SIZE));
 
-	char trace_name[] = "theusttrace";
-	char trace_type[] = "ustrelay";
-
 	marker_control_init();
 
-	marker_probe_register("abc", "testmark", "", probe, NULL);
-	marker_probe_register("metadata", "core_marker_id", "channel %s name %s event_id %hu int #1u%zu long #1u%zu pointer #1u%zu size_t #1u%zu alignment #1u%u", probe, NULL);
+	//marker_probe_register("abc", "testmark", "", probe, NULL);
+//ust//	marker_probe_register("metadata", "core_marker_id", "channel %s name %s event_id %hu int #1u%zu long #1u%zu pointer #1u%zu size_t #1u%zu alignment #1u%u", probe, NULL);
 //ust//	result = ltt_probe_register(&default_probe);
 //ust//	if(result)
 //ust//		ERR("ltt_probe_register");
 	
-	result = ltt_marker_connect("abc", "testmark2", "default");
-	if(result)
-		ERR("ltt_marker_connect");
+	//result = ltt_marker_connect("metadata", "testev", "default");
+	//if(result)
+	//	ERR("ltt_marker_connect");
 
 
 	result = ltt_trace_setup(trace_name);
@@ -192,13 +188,21 @@ int main()
 		return 1;
 	}
 
-
+	start_consumer();
 	printf("Hello, World!\n");
 
+	sleep(1);
 	for(;;) {
-		trace_mark(abc, testmark, "", MARK_NOARGS);
-		trace_mark(abc, testmark2, "", MARK_NOARGS);
-		sleep(1);
+		//trace_mark(abc, testmark, "", MARK_NOARGS);
+		//trace_mark(metadata, testev, "", MARK_NOARGS);
+		trace_mark(metadata, core_marker_id,
+			   "channel %s name %s event_id %hu "
+			   "int #1u%zu long #1u%zu pointer #1u%zu "
+			   "size_t #1u%zu alignment #1u%u",
+			   "abc", "def", (unsigned short)1000,
+			   sizeof(int), sizeof(long), sizeof(void *),
+			   sizeof(size_t), ltt_get_alignment());
+		usleep(100000);
 	}
 
 	scanf("%*s");

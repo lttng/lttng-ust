@@ -748,37 +748,6 @@ void *ltt_relay_offset_address(struct rchan_buf *buf, size_t offset)
 #define printk_dbg(fmt, args...)
 #endif
 
-/* LTTng lockless logging buffer info */
-struct ltt_channel_buf_struct {
-	/* First 32 bytes cache-hot cacheline */
-	local_t offset;			/* Current offset in the buffer */
-	local_t *commit_count;		/* Commit count per sub-buffer */
-	atomic_long_t consumed;		/*
-					 * Current offset in the buffer
-					 * standard atomic access (shared)
-					 */
-	unsigned long last_tsc;		/*
-					 * Last timestamp written in the buffer.
-					 */
-	/* End of first 32 bytes cacheline */
-	atomic_long_t active_readers;	/*
-					 * Active readers count
-					 * standard atomic access (shared)
-					 */
-	local_t events_lost;
-	local_t corrupted_subbuffers;
-	spinlock_t full_lock;		/*
-					 * buffer full condition spinlock, only
-					 * for userspace tracing blocking mode
-					 * synchronization with reader.
-					 */
-//ust//	wait_queue_head_t write_wait;	/*
-//ust//					 * Wait queue for blocking user space
-//ust//					 * writers
-//ust//					 */
-	atomic_t wakeup_readers;	/* Boolean : wakeup readers waiting ? */
-} ____cacheline_aligned;
-
 /*
  * Last TSC comparison functions. Check if the current TSC overflows
  * LTT_TSC_BITS bits from the last TSC read. Reads and writes last_tsc
@@ -1041,7 +1010,7 @@ static notrace void ltt_buf_unfull(struct rchan_buf *buf,
 //ust// 	return mask;
 //ust// }
 
-static int ltt_do_get_subbuf(struct rchan_buf *buf, struct ltt_channel_buf_struct *ltt_buf, long *pconsumed_old)
+int ltt_do_get_subbuf(struct rchan_buf *buf, struct ltt_channel_buf_struct *ltt_buf, long *pconsumed_old)
 {
 	struct ltt_channel_struct *ltt_channel = (struct ltt_channel_struct *)buf->chan->private_data;
 	long consumed_old, consumed_idx, commit_count, write_offset;
@@ -1081,7 +1050,7 @@ static int ltt_do_get_subbuf(struct rchan_buf *buf, struct ltt_channel_buf_struc
 	return 0;
 }
 
-static int ltt_do_put_subbuf(struct rchan_buf *buf, struct ltt_channel_buf_struct *ltt_buf, u32 uconsumed_old)
+int ltt_do_put_subbuf(struct rchan_buf *buf, struct ltt_channel_buf_struct *ltt_buf, u32 uconsumed_old)
 {
 	long consumed_new, consumed_old;
 

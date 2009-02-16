@@ -35,6 +35,7 @@
 #include "usterr.h"
 #include "channels.h"
 #include "tracercore.h"
+#include "tracer.h"
 
 extern struct marker __start___markers[];
 extern struct marker __stop___markers[];
@@ -1031,7 +1032,7 @@ void *marker_get_private_data(const char *channel, const char *name,
 //ust// 	}
 //ust// }
 
-#ifdef CONFIG_MODULES
+//ust//#ifdef CONFIG_MODULES
 
 /**
  * marker_get_iter_range - Get a next marker iterator given a range.
@@ -1067,7 +1068,7 @@ static void marker_get_iter(struct marker_iter *iter)
 			goto end;
 	}
 	/* Markers in modules. */
-	found = module_get_iter_markers(iter);
+//ust//	found = module_get_iter_markers(iter);
 end:
 	if (!found)
 		marker_iter_reset(iter);
@@ -1338,7 +1339,7 @@ int is_marker_enabled(const char *channel, const char *name)
 
 	return entry && !!entry->refcount;
 }
-#endif
+//ust// #endif
 
 int marker_module_notify(struct notifier_block *self,
 			 unsigned long val, void *data)
@@ -1372,42 +1373,42 @@ struct notifier_block marker_module_nb = {
 
 #endif /* CONFIG_MODULES */
 
-//ust// void ltt_dump_marker_state(struct ltt_trace_struct *trace)
-//ust// {
-//ust// 	struct marker_iter iter;
-//ust// 	struct ltt_probe_private_data call_data;
-//ust// 	const char *channel;
-//ust// 
-//ust// 	call_data.trace = trace;
-//ust// 	call_data.serializer = NULL;
-//ust// 
-//ust// 	marker_iter_reset(&iter);
-//ust// 	marker_iter_start(&iter);
-//ust// 	for (; iter.marker != NULL; marker_iter_next(&iter)) {
-//ust// 		if (!_imv_read(iter.marker->state))
-//ust// 			continue;
-//ust// 		channel = ltt_channels_get_name_from_index(
-//ust// 				iter.marker->channel_id);
-//ust// 		__trace_mark(0, metadata, core_marker_id,
-//ust// 			&call_data,
-//ust// 			"channel %s name %s event_id %hu "
-//ust// 			"int #1u%zu long #1u%zu pointer #1u%zu "
-//ust// 			"size_t #1u%zu alignment #1u%u",
-//ust// 			channel,
-//ust// 			iter.marker->name,
-//ust// 			iter.marker->event_id,
-//ust// 			sizeof(int), sizeof(long),
-//ust// 			sizeof(void *), sizeof(size_t),
-//ust// 			ltt_get_alignment());
-//ust// 		if (iter.marker->format)
-//ust// 			__trace_mark(0, metadata,
-//ust// 				core_marker_format,
-//ust// 				&call_data,
-//ust// 				"channel %s name %s format %s",
-//ust// 				channel,
-//ust// 				iter.marker->name,
-//ust// 				iter.marker->format);
-//ust// 	}
-//ust// 	marker_iter_stop(&iter);
-//ust// }
+void ltt_dump_marker_state(struct ltt_trace_struct *trace)
+{
+	struct marker_iter iter;
+	struct ltt_probe_private_data call_data;
+	const char *channel;
+
+	call_data.trace = trace;
+	call_data.serializer = NULL;
+
+	marker_iter_reset(&iter);
+	marker_iter_start(&iter);
+	for (; iter.marker != NULL; marker_iter_next(&iter)) {
+		if (!_imv_read(iter.marker->state))
+			continue;
+		channel = ltt_channels_get_name_from_index(
+				iter.marker->channel_id);
+		__trace_mark(0, metadata, core_marker_id,
+			&call_data,
+			"channel %s name %s event_id %hu "
+			"int #1u%zu long #1u%zu pointer #1u%zu "
+			"size_t #1u%zu alignment #1u%u",
+			channel,
+			iter.marker->name,
+			iter.marker->event_id,
+			sizeof(int), sizeof(long),
+			sizeof(void *), sizeof(size_t),
+			ltt_get_alignment());
+		if (iter.marker->format)
+			__trace_mark(0, metadata,
+				core_marker_format,
+				&call_data,
+				"channel %s name %s format %s",
+				channel,
+				iter.marker->name,
+				iter.marker->format);
+	}
+	marker_iter_stop(&iter);
+}
 //ust// EXPORT_SYMBOL_GPL(ltt_dump_marker_state);
