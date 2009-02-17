@@ -204,6 +204,11 @@ int main()
 
 	printf("page size is %d\n", sysconf(_SC_PAGE_SIZE));
 
+//	extern struct marker __start___markers[] __attribute__((visibility("hidden")));
+//	extern struct marker __stop___markers[] __attribute__((visibility("hidden")));
+//
+//	printf("the executable's markers start at %lx and end at %lx, the size of a marker is %d\n", __start___markers, __stop___markers, sizeof(struct marker));
+
 	marker_control_init();
 
 	//marker_probe_register("abc", "testmark", "", probe, NULL);
@@ -268,3 +273,5 @@ int main()
 
 	return 0;
 }
+
+MARKER_LIB

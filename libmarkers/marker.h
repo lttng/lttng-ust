@@ -282,5 +282,15 @@ struct lib {
 	struct list_head list;
 };
 
+int marker_register_lib(struct marker *markers_start, int markers_count);
+
+#define MARKER_LIB						\
+extern struct marker __start___markers[] __attribute__((visibility("hidden")));			\
+extern struct marker __stop___markers[] __attribute__((visibility("hidden")));				\
+								\
+static void __attribute__((constructor)) __markers__init(void) 	\
+{								\
+	marker_register_lib(__start___markers, (((long)__stop___markers)-((long)__start___markers))/sizeof(struct marker));\
+}
 
 #endif

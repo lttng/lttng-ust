@@ -37,8 +37,8 @@
 #include "tracercore.h"
 #include "tracer.h"
 
-extern struct marker __start___markers[];
-extern struct marker __stop___markers[];
+extern struct marker __start___markers[] __attribute__((visibility("hidden")));
+extern struct marker __stop___markers[] __attribute__((visibility("hidden")));
 
 /* Set to 1 to enable marker debug output */
 static const int marker_debug;
@@ -705,9 +705,10 @@ void marker_update_probe_range(struct marker *begin,
 static void marker_update_probes(void)
 {
 	/* Core kernel markers */
-	marker_update_probe_range(__start___markers, __stop___markers);
+//ust//	marker_update_probe_range(__start___markers, __stop___markers);
 	/* Markers in modules. */
 //ust//	module_update_markers();
+	lib_update_markers();
 //ust//	tracepoint_probe_update_all();
 	/* Update immediate values */
 	core_imv_update();
@@ -1062,6 +1063,7 @@ static void marker_get_iter(struct marker_iter *iter)
 
 	/* Core kernel markers */
 	if (!iter->lib) {
+		/* ust FIXME: how come we cannot disable the following line? we shouldn't need core stuff */
 		found = marker_get_iter_range(&iter->marker,
 				__start___markers, __stop___markers);
 		if (found)
@@ -1443,6 +1445,17 @@ int lib_get_iter_markers(struct marker_iter *iter)
 	return found;
 }
 
+void lib_update_markers(void)
+{
+	struct lib *lib;
+
+//ust//	mutex_lock(&module_mutex);
+	list_for_each_entry(lib, &libs, list)
+		marker_update_probe_range(lib->markers_start,
+				lib->markers_start + lib->markers_count);
+//ust//	mutex_unlock(&module_mutex);
+}
+
 int marker_register_lib(struct marker *markers_start, int markers_count)
 {
 	struct lib *pl;
@@ -1457,4 +1470,10 @@ int marker_register_lib(struct marker *markers_start, int markers_count)
 	printf("just registered a markers section from %p and having %d markers\n", markers_start, markers_count);
 	
 	return 0;
+}
+
+static void __attribute__((constructor)) __markers__init(void)
+{
+	marker_register_lib(__start___markers, (((long)__stop___markers)-((long)__start___markers))/sizeof(struct marker));
+	printf("markers_start: %p, markers_stop: %p\n", __start___markers, __stop___markers);
 }
