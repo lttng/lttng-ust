@@ -58,7 +58,7 @@ int consumer(void *arg)
 	}
 
 	consumer_channels = (struct consumer_channel *) malloc(trace->nr_channels * sizeof(struct consumer_channel));
-	if(consumer_channels == NULL) {
+if(consumer_channels == NULL) {
 		ERR("malloc returned NULL");
 		return 1;
 	}
@@ -148,7 +148,7 @@ void start_consumer(void)
 {
 	int result;
 
-	result = clone(consumer, consumer_stack+sizeof(consumer_stack)-1, CLONE_FS | CLONE_FILES | CLONE_VM, NULL);
+	result = clone(consumer, consumer_stack+sizeof(consumer_stack)-1, CLONE_FS | CLONE_FILES | CLONE_VM | CLONE_SIGHAND | CLONE_THREAD, NULL);
 	if(result == -1) {
 		perror("clone");
 	}

@@ -5,6 +5,9 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sched.h>
+
+#include "marker.h"
+
 #define UNIX_PATH_MAX 108
 
 //#define SOCKETDIR "/var/run/ust/socks"
@@ -44,6 +47,20 @@ pid_t mypid;
 char mysocketfile[UNIX_PATH_MAX] = "";
 int pfd = -1;
 
+
+static void print_markers(void)
+{
+	struct marker_iter iter;
+
+	marker_iter_reset(&iter);
+	marker_iter_start(&iter);
+
+	while(iter.marker) {
+		fprintf(stderr, "marker: %s_%s \"%s\"\n", iter.marker->channel, iter.marker->name, iter.marker->format);
+		marker_iter_next(&iter);
+	}
+}
+
 void do_command(struct tracecmd *cmd)
 {
 }
@@ -74,56 +91,48 @@ void notif_cb(void)
 	}
 }
 
+char recvbuf[10000];
+
 int listener_main(void *p)
 {
 	int result;
 
-	/* Allowing only 1 connection for now. */
-	result = listen(pfd, 1);
-	if(result == -1) {
-		PERROR("listen");
-		return 1;
-	}
-
 	for(;;) {
-
 		uint32_t size;
-		int fd;
 		struct sockaddr_un addr;
 		socklen_t addrlen = sizeof(addr);
 
-		result = fd = accept(pfd, (struct sockaddr *)&addr, &addrlen);
-		if(result == -1) {
-			PERROR("accept");
-			continue;
-		}
-
 		for(;;) {
 			struct trctl_msg msg;
-			unsigned char dontclose=0;
+			int len;
 
-			result = read(fd, &msg.size, sizeof(msg.size));
+			result = len = recvfrom(pfd, recvbuf, sizeof(recvbuf), 0, &addr, &addrlen);
 			if(result == -1) {
-				PERROR("read");
+				PERROR("recvfrom");
 				continue;
 			}
 
-			if(size > MAX_MSG_SIZE) {
-				ERR("trctl message too big");
-				break;
-			}
+			if(recvbuf[len-2] == '\n')
+				recvbuf[len-2] = '\0';
 
-			result = read(fd, &msg.type, sizeof(msg.type));
-			if(result == -1) {
-				PERROR("read");
-				continue;
-			}
+			fprintf(stderr, "received a message! it's: %s\n", recvbuf);
 
-			switch(msg.type) {
-				case MSG_REGISTER_NOTIF:
-					/* TODO: put it in notif mode */
-					goto next_conn;
-			};
+
+			if(!strcmp(recvbuf, "print_markers")) {
+				print_markers();
+			}
+			else if(!strcmp(recvbuf, "trace_setup")) {
+				DBG("trace setup");
+			}
+			else if(!strcmp(recvbuf, "trace_alloc")) {
+				DBG("trace alloc");
+			}
+			else if(!strcmp(recvbuf, "trace_start")) {
+				DBG("trace start");
+			}
+			else if(!strcmp(recvbuf, "trace_stop")) {
+				DBG("trace stop");
+			}
 		}
 		next_conn:;
 	}
@@ -134,7 +143,7 @@ void create_listener(void)
 	int result;
 	static char listener_stack[16384];
 
-	result = clone(listener_main, listener_stack+sizeof(listener_stack)-1, CLONE_FS | CLONE_FILES | CLONE_VM, NULL);
+	result = clone(listener_main, listener_stack+sizeof(listener_stack)-1, CLONE_FS | CLONE_FILES | CLONE_VM | CLONE_SIGHAND | CLONE_THREAD, NULL);
 	if(result == -1) {
 		perror("clone");
 	}
@@ -145,7 +154,7 @@ void create_listener(void)
 void sighandler(int sig)
 {
 	DBG("sighandler");
-	receive_commands();
+	create_listener();
 }
 
 /* Called by the app signal handler to chain it to us. */
@@ -164,7 +173,7 @@ static int init_socket(void)
 
 	struct sockaddr_un addr;
 	
-	result = fd = socket(PF_UNIX, SOCK_SEQPACKET, 0);
+	result = fd = socket(PF_UNIX, SOCK_DGRAM, 0);
 	if(result == -1) {
 		PERROR("socket");
 		return -1;

@@ -3,6 +3,8 @@
 #include <sys/types.h>
 #include <stdio.h>
 
+#include "marker.h"
+
 void *(*plibc_malloc)(size_t size) = NULL;
 
 void *malloc(size_t size)
@@ -14,6 +16,11 @@ void *malloc(size_t size)
 			return NULL;
 		}
 	}
+
+	trace_mark(ust, malloc, "%d", (int)size);
+
 	fprintf(stderr, "mallocating size %d\n", size);
 	return plibc_malloc(size);
 }
+
+MARKER_LIB
