@@ -19,6 +19,7 @@
 //ust// #include <linux/ltt-channels.h>
 #include "kernelcompat.h"
 #include "compiler.h"
+#include "list.h"
 
 //ust// struct module;
 //ust// struct task_struct;
@@ -251,7 +252,8 @@ extern void *marker_get_private_data(const char *channel, const char *name,
 #define marker_synchronize_unregister() synchronize_sched()
 
 struct marker_iter {
-	struct module *module;
+//ust//	struct module *module;
+	struct lib *lib;
 	struct marker *marker;
 };
 
@@ -272,5 +274,13 @@ extern int is_marker_enabled(const char *channel, const char *name);
 //ust// {
 //ust// }
 //ust// #endif
+
+
+struct lib {
+	struct marker *markers_start;
+	int markers_count;
+	struct list_head list;
+};
+
 
 #endif

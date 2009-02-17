@@ -143,7 +143,7 @@ struct rchan_callbacks {
 	 *
 	 * The callback should return 0 if successful, negative if not.
 	 */
-	int (*remove_buf_file)(struct rchan_buf *buf);
+//ust//	int (*remove_buf_file)(struct rchan_buf *buf);
 };
 
 extern struct buf_page *ltt_relay_find_prev_page(struct rchan_buf *buf,

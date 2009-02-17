@@ -290,19 +290,39 @@ static __inline__ int get_count_order(unsigned int count)
 
 /* TRACE CLOCK */
 
+//ust// static inline u64 trace_clock_read64(void)
+//ust// {
+//ust// 	uint32_t low;
+//ust// 	uint32_t high;
+//ust// 	uint64_t retval;
+//ust// 	__asm__ volatile ("rdtsc\n" : "=a" (low), "=d" (high));
+//ust// 
+//ust// 	retval = high;
+//ust// 	retval <<= 32;
+//ust// 	return retval | low;
+//ust// }
+
 static inline u64 trace_clock_read64(void)
 {
-	return 0LL;
+	struct timeval tv;
+	u64 retval;
+
+	gettimeofday(&tv, NULL);
+	retval = tv.tv_sec;
+	retval *= 1000000;
+	retval += tv.tv_usec;
+
+	return retval;
 }
 
-static inline unsigned int trace_clock_frequency(void)
+static inline u64 trace_clock_frequency(void)
 {
-	return 0LL;
+	return 1000000LL;
 }
 
 static inline u32 trace_clock_freq_scale(void)
 {
-	return 0;
+	return 1;
 }
 
 

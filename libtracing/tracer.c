@@ -838,6 +838,7 @@ static void __ltt_trace_destroy(struct ltt_trace_struct	*trace)
 			trace->ops->finish_channel(chan);
 	}
 
+	return; /* FIXME: temporary for ust */
 //ust//	flush_scheduled_work();
 
 	/*

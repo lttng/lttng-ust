@@ -1061,14 +1061,14 @@ static void marker_get_iter(struct marker_iter *iter)
 	int found = 0;
 
 	/* Core kernel markers */
-	if (!iter->module) {
+	if (!iter->lib) {
 		found = marker_get_iter_range(&iter->marker,
 				__start___markers, __stop___markers);
 		if (found)
 			goto end;
 	}
 	/* Markers in modules. */
-//ust//	found = module_get_iter_markers(iter);
+	found = lib_get_iter_markers(iter);
 end:
 	if (!found)
 		marker_iter_reset(iter);
@@ -1099,7 +1099,7 @@ void marker_iter_stop(struct marker_iter *iter)
 
 void marker_iter_reset(struct marker_iter *iter)
 {
-	iter->module = NULL;
+	iter->lib = NULL;
 	iter->marker = NULL;
 }
 //ust// EXPORT_SYMBOL_GPL(marker_iter_reset);
@@ -1412,3 +1412,49 @@ void ltt_dump_marker_state(struct ltt_trace_struct *trace)
 	marker_iter_stop(&iter);
 }
 //ust// EXPORT_SYMBOL_GPL(ltt_dump_marker_state);
+
+
+static LIST_HEAD(libs);
+
+/*
+ * Returns 0 if current not found.
+ * Returns 1 if current found.
+ */
+int lib_get_iter_markers(struct marker_iter *iter)
+{
+	struct lib *iter_lib;
+	int found = 0;
+
+//ust//	mutex_lock(&module_mutex);
+	list_for_each_entry(iter_lib, &libs, list) {
+		if (iter_lib < iter->lib)
+			continue;
+		else if (iter_lib > iter->lib)
+			iter->marker = NULL;
+		found = marker_get_iter_range(&iter->marker,
+			iter_lib->markers_start,
+			iter_lib->markers_start + iter_lib->markers_count);
+		if (found) {
+			iter->lib = iter_lib;
+			break;
+		}
+	}
+//ust//	mutex_unlock(&module_mutex);
+	return found;
+}
+
+int marker_register_lib(struct marker *markers_start, int markers_count)
+{
+	struct lib *pl;
+
+	pl = (struct lib *) malloc(sizeof(struct lib));
+
+	pl->markers_start = markers_start;
+	pl->markers_count = markers_count;
+
+	list_add(&pl->list, &libs);
+
+	printf("just registered a markers section from %p and having %d markers\n", markers_start, markers_count);
+	
+	return 0;
+}
