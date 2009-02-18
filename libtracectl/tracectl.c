@@ -101,6 +101,8 @@ int listener_main(void *p)
 		uint32_t size;
 		struct sockaddr_un addr;
 		socklen_t addrlen = sizeof(addr);
+		char trace_name[] = "auto";
+		char trace_type[] = "ustrelay";
 
 		for(;;) {
 			struct trctl_msg msg;
@@ -112,8 +114,8 @@ int listener_main(void *p)
 				continue;
 			}
 
-			if(recvbuf[len-2] == '\n')
-				recvbuf[len-2] = '\0';
+			if(recvbuf[len-1] == '\n')
+				recvbuf[len-1] = '\0';
 
 			fprintf(stderr, "received a message! it's: %s\n", recvbuf);
 
@@ -123,15 +125,55 @@ int listener_main(void *p)
 			}
 			else if(!strcmp(recvbuf, "trace_setup")) {
 				DBG("trace setup");
+
+				result = ltt_trace_setup(trace_name);
+				if(result < 0) {
+					ERR("ltt_trace_setup failed");
+					return;
+				}
+
+				result = ltt_trace_set_type(trace_name, trace_type);
+				if(result < 0) {
+					ERR("ltt_trace_set_type failed");
+					return;
+				}
 			}
 			else if(!strcmp(recvbuf, "trace_alloc")) {
 				DBG("trace alloc");
+
+				result = ltt_trace_alloc(trace_name);
+				if(result < 0) {
+					ERR("ltt_trace_alloc failed");
+					return;
+				}
 			}
 			else if(!strcmp(recvbuf, "trace_start")) {
 				DBG("trace start");
+
+				result = ltt_trace_start(trace_name);
+				if(result < 0) {
+					ERR("ltt_trace_start failed");
+					return;
+				}
 			}
 			else if(!strcmp(recvbuf, "trace_stop")) {
 				DBG("trace stop");
+
+				result = ltt_trace_stop(trace_name);
+				if(result < 0) {
+					ERR("ltt_trace_stop failed");
+					return;
+				}
+			}
+			else if(!strcmp(recvbuf, "trace_destroy")) {
+
+				DBG("trace destroy");
+
+				result = ltt_trace_destroy(trace_name);
+				if(result < 0) {
+					ERR("ltt_trace_destroy failed");
+					return;
+				}
 			}
 		}
 		next_conn:;
@@ -271,6 +313,10 @@ static void __attribute__((constructor)) init()
 		init_markers();
 
 		result = ltt_marker_connect("foo", "bar", "default");
+		if(result)
+			ERR("ltt_marker_connect");
+
+		result = ltt_marker_connect("foo", "bar2", "default");
 		if(result)
 			ERR("ltt_marker_connect");
 

@@ -23,6 +23,8 @@
 //ust// #include <linux/splice.h>
 //ust// #include <linux/bitops.h>
 #include <sys/mman.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
 #include "kernelcompat.h"
 #include "list.h"
 #include "relay.h"
@@ -93,21 +95,45 @@ static int relay_alloc_buf(struct rchan_buf *buf, size_t *size)
 	unsigned int n_pages;
 	struct buf_page *buf_page, *n;
 
-	void *result;
+	void *ptr;
+	int result;
+	int shmid;
 
 	*size = PAGE_ALIGN(*size);
 
-	/* Maybe do read-ahead */
-	result = mmap(NULL, *size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-	if(result == MAP_FAILED) {
-		PERROR("mmap");
+	result = shmid = shmget(getpid(), *size, IPC_CREAT | IPC_EXCL | 0700);
+	if(shmid == -1) {
+		PERROR("shmget");
 		return -1;
 	}
 
-	buf->buf_data = result;
+	ptr = shmat(shmid, NULL, 0);
+	if(ptr == (void *) -1) {
+		perror("shmat");
+		goto destroy_shmem;
+	}
+
+	/* Already mark the shared memory for destruction. This will occur only
+         * when all users have detached.
+	 */
+	result = shmctl(shmid, IPC_RMID, NULL);
+	if(result == -1) {
+		perror("shmctl");
+		return -1;
+	}
+
+	buf->buf_data = ptr;
 	buf->buf_size = *size;
 
 	return 0;
+
+	destroy_shmem:
+	result = shmctl(shmid, IPC_RMID, NULL);
+	if(result == -1) {
+		perror("shmctl");
+	}
+
+	return -1;
 }
 
 /**

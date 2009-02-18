@@ -204,12 +204,10 @@ int main()
 
 	sleep(1);
 	for(i=0; i<50; i++) {
-		trace_mark(foo, bar, "%s", "FOOBAZ");
+		trace_mark(foo, bar, "str %s", "FOOBAZ");
+		trace_mark(foo, bar2, "number1 %d number2 %d", 53, 9800);
 		usleep(100000);
 	}
-
-	ltt_trace_stop("auto");
-	ltt_trace_destroy("auto");
 
 	scanf("%*s");
 

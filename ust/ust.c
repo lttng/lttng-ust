@@ -89,15 +89,19 @@ int send_message(pid_t pid, const char *msg)
 		return 1;
 	}
 
-	char buf[] = "print_markers\n";
+	char *buf;
+
+	asprintf(&buf, "%s\n", msg);
 
 	signal_process(pid);
 
-	result = sendto(fd, buf, sizeof(buf), 0, (struct sockaddr *)&addr, sizeof(addr));
+	result = sendto(fd, buf, strlen(buf), 0, (struct sockaddr *)&addr, sizeof(addr));
 	if(result == -1) {
 		perror("sendto");
 		return 1;
 	}
+
+	free(buf);
 
 //	result = fd = open(sockfile, O_RDWR);
 //	if(result == -1 && errno == ENXIO) {
