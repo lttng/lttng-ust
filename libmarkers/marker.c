@@ -817,6 +817,7 @@ int marker_probe_register(const char *channel, const char *name,
 	/* write rcu_pending before calling the RCU callback */
 	smp_wmb();
 	call_rcu_sched(&entry->rcu, free_old_closure);
+	/*synchronize_rcu(); free_old_closure();*/
 	goto end;
 
 error_unregister_channel:

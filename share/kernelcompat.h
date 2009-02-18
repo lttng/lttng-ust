@@ -98,21 +98,21 @@ typedef int spinlock_t;
 
 /* MEMORY BARRIERS */
 
-#define smp_rmb() do {} while(0)
-#define smp_wmb() do {} while(0)
-#define smp_mb() do {} while(0)
+//#define smp_rmb() do {} while(0)
+//#define smp_wmb() do {} while(0)
+//#define smp_mb() do {} while(0)
 #define smp_mb__after_atomic_inc() do {} while(0)
 
 #define read_barrier_depends() do {} while(0)
-#define smp_read_barrier_depends() do {} while(0)
+//#define smp_read_barrier_depends() do {} while(0)
 
 /* RCU */
 
-#define rcu_assign_pointer(a, b) do {} while(0)
-#define call_rcu_sched(a,b) do {} while(0)
-#define rcu_barrier_sched() do {} while(0)
-#define rcu_read_lock_sched_notrace() do{} while (0)
-#define rcu_read_unlock_sched_notrace() do{} while (0)
+#include "urcu.h"
+#define call_rcu_sched(a,b) b(a); synchronize_rcu()
+#define rcu_barrier_sched() do {} while(0) /* this nop is ok if call_rcu_sched does a synchronize_rcu() */
+#define rcu_read_lock_sched_notrace() rcu_read_lock()
+#define rcu_read_unlock_sched_notrace() rcu_read_unlock()
 
 /* ATOMICITY */
 
@@ -147,7 +147,7 @@ static int atomic_read(atomic_t *p)
 
 #include "asm.h"
 
-#define __xg(x) ((volatile long *)(x))
+//#define __xg(x) ((volatile long *)(x))
 
 #define cmpxchg(ptr, o, n)						\
 	((__typeof__(*(ptr)))__cmpxchg((ptr), (unsigned long)(o),	\
