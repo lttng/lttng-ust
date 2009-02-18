@@ -678,6 +678,20 @@ void marker_update_probe_range(struct marker *begin,
 			/*
 			 * ignore error, continue
 			 */
+
+			/* This is added for UST. We emit a core_marker_id event
+			 * for markers that are already registered to a probe
+			 * upon library load. Otherwise, no core_marker_id will
+			 * be generated for these markers. Is this the right thing
+			 * to do?
+			 */
+			trace_mark(metadata, core_marker_id,
+				   "channel %s name %s event_id %hu "
+				   "int #1u%zu long #1u%zu pointer #1u%zu "
+				   "size_t #1u%zu alignment #1u%u",
+				   iter->channel, iter->name, mark_entry->event_id,
+				   sizeof(int), sizeof(long), sizeof(void *),
+				   sizeof(size_t), ltt_get_alignment());
 		} else {
 			disable_marker(iter);
 		}
@@ -1467,13 +1481,21 @@ int marker_register_lib(struct marker *markers_start, int markers_count)
 
 	list_add(&pl->list, &libs);
 
+	/* FIXME: update just the loaded lib */
+	lib_update_markers();
+
 	printf("just registered a markers section from %p and having %d markers\n", markers_start, markers_count);
 	
 	return 0;
 }
 
-static void __attribute__((constructor)) __markers__init(void)
+static int initialized = 0;
+
+void __attribute__((constructor)) init_markers(void)
 {
-	marker_register_lib(__start___markers, (((long)__stop___markers)-((long)__start___markers))/sizeof(struct marker));
-	printf("markers_start: %p, markers_stop: %p\n", __start___markers, __stop___markers);
+	if(!initialized) {
+		marker_register_lib(__start___markers, (((long)__stop___markers)-((long)__start___markers))/sizeof(struct marker));
+		printf("markers_start: %p, markers_stop: %p\n", __start___markers, __stop___markers);
+		initialized = 1;
+	}
 }

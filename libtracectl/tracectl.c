@@ -255,6 +255,50 @@ static void __attribute__((constructor)) init()
 
 	mypid = getpid();
 
+	if(getenv("UST_TRACE")) {
+		char trace_name[] = "auto";
+		char trace_type[] = "ustrelay";
+
+		DBG("starting early tracing");
+
+		/* Ensure marker control is initialized */
+		init_marker_control();
+
+		/* Ensure relay is initialized */
+		init_ustrelay_transport();
+
+		/* Ensure markers are initialized */
+		init_markers();
+
+		result = ltt_marker_connect("foo", "bar", "default");
+		if(result)
+			ERR("ltt_marker_connect");
+
+		result = ltt_trace_setup(trace_name);
+		if(result < 0) {
+			ERR("ltt_trace_setup failed");
+			return;
+		}
+
+		result = ltt_trace_set_type(trace_name, trace_type);
+		if(result < 0) {
+			ERR("ltt_trace_set_type failed");
+			return;
+		}
+
+		result = ltt_trace_alloc(trace_name);
+		if(result < 0) {
+			ERR("ltt_trace_alloc failed");
+			return;
+		}
+
+		result = ltt_trace_start(trace_name);
+		if(result < 0) {
+			ERR("ltt_trace_start failed");
+			return;
+		}
+	}
+
 	/* Must create socket before signal handler to prevent races
          * on pfd variable.
          */

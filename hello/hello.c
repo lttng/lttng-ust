@@ -14,8 +14,6 @@
 
 
 char consumer_stack[10000];
-char trace_name[] = "theusttrace";
-char trace_type[] = "ustrelay";
 
 #define CPRINTF(fmt, args...) safe_printf(fmt "\n", ## args)
 
@@ -47,6 +45,7 @@ int consumer(void *arg)
 	struct ltt_trace_struct *trace;
 	struct consumer_channel *consumer_channels;
 	int i;
+	char trace_name[] = "auto";
 
 	ltt_lock_traces();
 	trace = _ltt_trace_find(trace_name);
@@ -200,34 +199,6 @@ int main()
 
 	init_int_handler();
 
-	result = ltt_marker_connect("foo", "bar", "default");
-	if(result)
-		ERR("ltt_marker_connect");
-
-	result = ltt_trace_setup(trace_name);
-	if(result < 0) {
-		ERR("ltt_trace_setup failed");
-		return 1;
-	}
-
-	result = ltt_trace_set_type(trace_name, trace_type);
-	if(result < 0) {
-		ERR("ltt_trace_set_type failed");
-		return 1;
-	}
-
-	result = ltt_trace_alloc(trace_name);
-	if(result < 0) {
-		ERR("ltt_trace_alloc failed");
-		return 1;
-	}
-
-	result = ltt_trace_start(trace_name);
-	if(result < 0) {
-		ERR("ltt_trace_start failed");
-		return 1;
-	}
-
 	start_consumer();
 	printf("Hello, World!\n");
 
@@ -237,8 +208,8 @@ int main()
 		usleep(100000);
 	}
 
-	ltt_trace_stop(trace_name);
-	ltt_trace_destroy(trace_name);
+	ltt_trace_stop("auto");
+	ltt_trace_destroy("auto");
 
 	scanf("%*s");
 

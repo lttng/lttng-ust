@@ -409,23 +409,29 @@ static void disconnect_all_markers(void)
 	}
 }
 
-int __attribute__((constructor)) marker_control_init(void)
+static char initialized = 0;
+
+void __attribute__((constructor)) init_marker_control(void)
 {
-	int ret;
+	if(!initialized) {
+		int ret;
 
 //ust//	pentry = create_proc_entry("ltt", S_IRUSR|S_IWUSR, NULL);
 //ust//	if (!pentry)
 //ust//		return -EBUSY;
 //ust//	markers_loaded_cachep = KMEM_CACHE(ltt_active_marker, 0);
 
-	ret = ltt_probe_register(&default_probe);
-	BUG_ON(ret);
-	ret = ltt_marker_connect("metadata", "core_marker_format",
-				 DEFAULT_PROBE);
-	BUG_ON(ret);
-	ret = ltt_marker_connect("metadata", "core_marker_id", DEFAULT_PROBE);
-	BUG_ON(ret);
+		ret = ltt_probe_register(&default_probe);
+		BUG_ON(ret);
+		ret = ltt_marker_connect("metadata", "core_marker_format",
+					 DEFAULT_PROBE);
+		BUG_ON(ret);
+		ret = ltt_marker_connect("metadata", "core_marker_id", DEFAULT_PROBE);
+		BUG_ON(ret);
 //ust//	pentry->proc_fops = &ltt_fops;
+
+		initialized = 1;
+	}
 
 	return 0;
 }
