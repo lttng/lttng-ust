@@ -2344,7 +2344,7 @@ static struct ltt_transport ust_relay_transport = {
 //ust// 	return 0;
 //ust// }
 
-void init_ustrelay_transport(void)
+void __attribute__((constructor)) init_ustrelay_transport(void)
 {
 	ltt_transport_register(&ust_relay_transport);
 }

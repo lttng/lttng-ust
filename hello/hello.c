@@ -200,26 +200,6 @@ int main()
 
 	init_int_handler();
 
-	init_ustrelay_transport();
-
-	printf("page size is %d\n", sysconf(_SC_PAGE_SIZE));
-
-//	extern struct marker __start___markers[] __attribute__((visibility("hidden")));
-//	extern struct marker __stop___markers[] __attribute__((visibility("hidden")));
-//
-//	printf("the executable's markers start at %lx and end at %lx, the size of a marker is %d\n", __start___markers, __stop___markers, sizeof(struct marker));
-
-	marker_control_init();
-
-	//marker_probe_register("abc", "testmark", "", probe, NULL);
-//ust//	marker_probe_register("metadata", "core_marker_id", "channel %s name %s event_id %hu int #1u%zu long #1u%zu pointer #1u%zu size_t #1u%zu alignment #1u%u", probe, NULL);
-//ust//	result = ltt_probe_register(&default_probe);
-//ust//	if(result)
-//ust//		ERR("ltt_probe_register");
-	
-	//result = ltt_marker_connect("metadata", "testev", "default");
-	//if(result)
-	//	ERR("ltt_marker_connect");
 	result = ltt_marker_connect("foo", "bar", "default");
 	if(result)
 		ERR("ltt_marker_connect");
@@ -253,16 +233,7 @@ int main()
 
 	sleep(1);
 	for(i=0; i<50; i++) {
-		//trace_mark(abc, testmark, "", MARK_NOARGS);
-		//trace_mark(metadata, testev, "", MARK_NOARGS);
 		trace_mark(foo, bar, "%s", "FOOBAZ");
-		//trace_mark(metadata, core_marker_id,
-		//	   "channel %s name %s event_id %hu "
-		//	   "int #1u%zu long #1u%zu pointer #1u%zu "
-		//	   "size_t #1u%zu alignment #1u%u",
-		//	   "abc", "def", (unsigned short)1000,
-		//	   sizeof(int), sizeof(long), sizeof(void *),
-		//	   sizeof(size_t), ltt_get_alignment());
 		usleep(100000);
 	}
 

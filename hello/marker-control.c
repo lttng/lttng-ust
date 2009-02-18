@@ -409,7 +409,7 @@ static void disconnect_all_markers(void)
 	}
 }
 
-int marker_control_init(void)
+int __attribute__((constructor)) marker_control_init(void)
 {
 	int ret;
 
