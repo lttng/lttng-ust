@@ -291,9 +291,30 @@ static int init_signal_handler(void)
 	return 0;
 }
 
-static void __attribute__((constructor)) init()
+static void auto_probe_connect(struct marker *m)
 {
 	int result;
+
+	result = ltt_marker_connect(m->channel, m->name, "default");
+	if(result)
+		ERR("ltt_marker_connect");
+
+	DBG("just auto connected marker %s %s to probe default", m->channel, m->name);
+}
+
+static void __attribute__((constructor(101))) init0()
+{
+	DBG("UST_AUTOPROBE constructor");
+	if(getenv("UST_AUTOPROBE")) {
+		marker_set_new_marker_cb(auto_probe_connect);
+	}
+}
+
+static void __attribute__((constructor(1000))) init()
+{
+	int result;
+
+	DBG("UST_TRACE constructor");
 
 	mypid = getpid();
 
@@ -312,13 +333,8 @@ static void __attribute__((constructor)) init()
 		/* Ensure markers are initialized */
 		init_markers();
 
-		result = ltt_marker_connect("foo", "bar", "default");
-		if(result)
-			ERR("ltt_marker_connect");
-
-		result = ltt_marker_connect("foo", "bar2", "default");
-		if(result)
-			ERR("ltt_marker_connect");
+		/* In case. */
+		ltt_channels_register("ust");
 
 		result = ltt_trace_setup(trace_name);
 		if(result < 0) {

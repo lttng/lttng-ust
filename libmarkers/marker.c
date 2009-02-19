@@ -1471,6 +1471,23 @@ void lib_update_markers(void)
 //ust//	mutex_unlock(&module_mutex);
 }
 
+static void (*new_marker_cb)(struct marker *) = NULL;
+
+void marker_set_new_marker_cb(void (*cb)(struct marker *))
+{
+	new_marker_cb = cb;
+}
+
+static void new_markers(struct marker *start, struct marker *end)
+{
+	if(new_marker_cb) {
+		struct marker *m;
+		for(m=start; m < end; m++) {
+			new_marker_cb(m);
+		}
+	}
+}
+
 int marker_register_lib(struct marker *markers_start, int markers_count)
 {
 	struct lib *pl;
@@ -1481,6 +1498,8 @@ int marker_register_lib(struct marker *markers_start, int markers_count)
 	pl->markers_count = markers_count;
 
 	list_add(&pl->list, &libs);
+
+	new_markers(markers_start, markers_start + markers_count);
 
 	/* FIXME: update just the loaded lib */
 	lib_update_markers();

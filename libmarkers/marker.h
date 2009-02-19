@@ -294,3 +294,5 @@ static void __attribute__((constructor)) __markers__init(void) 				\
 }
 
 #endif
+
+void marker_set_new_marker_cb(void (*cb)(struct marker *));
