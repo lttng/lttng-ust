@@ -38,9 +38,9 @@
 //ust// #include <linux/delay.h>
 //ust// #include <linux/vmalloc.h>
 //ust// #include <asm/atomic.h>
+#include "kernelcompat.h"
 #include "tracercore.h"
 #include "tracer.h"
-#include "kernelcompat.h"
 #include "usterr.h"
 
 //ust// static void async_wakeup(unsigned long data);

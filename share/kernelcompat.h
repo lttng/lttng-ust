@@ -1,6 +1,8 @@
 #ifndef KERNELCOMPAT_H
 #define KERNELCOMPAT_H
 
+#include <kcompat.h>
+
 #include "compiler.h"
 
 #include <string.h>
@@ -40,12 +42,12 @@ static inline long IS_ERR(const void *ptr)
 
 /* FIXED SIZE INTEGERS */
 
-#include <stdint.h>
+//#include <stdint.h>
 
-typedef uint8_t u8;
-typedef uint16_t u16;
-typedef uint32_t u32;
-typedef uint64_t u64;
+//typedef uint8_t u8;
+//typedef uint16_t u16;
+//typedef uint32_t u32;
+//typedef uint64_t u64;
 
 #define min_t(type, x, y) ({                    \
 	type __min1 = (x);                      \
@@ -98,13 +100,7 @@ typedef int spinlock_t;
 
 /* MEMORY BARRIERS */
 
-//#define smp_rmb() do {} while(0)
-//#define smp_wmb() do {} while(0)
-//#define smp_mb() do {} while(0)
 #define smp_mb__after_atomic_inc() do {} while(0)
-
-#define read_barrier_depends() do {} while(0)
-//#define smp_read_barrier_depends() do {} while(0)
 
 /* RCU */
 
@@ -117,8 +113,6 @@ typedef int spinlock_t;
 /* ATOMICITY */
 
 #include <signal.h>
-
-typedef struct { sig_atomic_t counter; } atomic_t;
 
 static inline int atomic_dec_and_test(atomic_t *p)
 {
@@ -152,39 +146,6 @@ static int atomic_read(atomic_t *p)
 #define cmpxchg(ptr, o, n)						\
 	((__typeof__(*(ptr)))__cmpxchg((ptr), (unsigned long)(o),	\
 				       (unsigned long)(n), sizeof(*(ptr))))
-
-static inline unsigned long __cmpxchg(volatile void *ptr, unsigned long old,
-				      unsigned long new, int size)
-{
-	unsigned long prev;
-	switch (size) {
-	case 1:
-		asm volatile("lock; cmpxchgb %b1,%2"
-			     : "=a"(prev)
-			     : "q"(new), "m"(*__xg(ptr)), "0"(old)
-			     : "memory");
-		return prev;
-	case 2:
-		asm volatile("lock; cmpxchgw %w1,%2"
-			     : "=a"(prev)
-			     : "r"(new), "m"(*__xg(ptr)), "0"(old)
-			     : "memory");
-		return prev;
-	case 4:
-		asm volatile("lock; cmpxchgl %k1,%2"
-			     : "=a"(prev)
-			     : "r"(new), "m"(*__xg(ptr)), "0"(old)
-			     : "memory");
-		return prev;
-	case 8:
-		asm volatile("lock; cmpxchgq %1,%2"
-			     : "=a"(prev)
-			     : "r"(new), "m"(*__xg(ptr)), "0"(old)
-			     : "memory");
-		return prev;
-	}
-	return old;
-}
 
 //#define local_cmpxchg cmpxchg
 #define local_cmpxchg(l, o, n) (cmpxchg(&((l)->a.counter), (o), (n)))

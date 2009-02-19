@@ -38,6 +38,7 @@ struct dentry *get_ltt_root(void);
 extern unsigned int ltt_nesting;
 
 typedef int (*ltt_run_filter_functor)(void *trace, uint16_t eID);
+//typedef int (*ltt_run_filter_functor)(void *, __u16);
 
 extern ltt_run_filter_functor ltt_run_filter;
 

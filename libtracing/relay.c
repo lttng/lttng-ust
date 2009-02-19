@@ -22,10 +22,10 @@
 //ust// #include <linux/cpu.h>
 //ust// #include <linux/splice.h>
 //ust// #include <linux/bitops.h>
+#include "kernelcompat.h"
 #include <sys/mman.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
-#include "kernelcompat.h"
 #include "list.h"
 #include "relay.h"
 #include "channels.h"
