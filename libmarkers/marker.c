@@ -1504,7 +1504,7 @@ int marker_register_lib(struct marker *markers_start, int markers_count)
 	/* FIXME: update just the loaded lib */
 	lib_update_markers();
 
-	printf("just registered a markers section from %p and having %d markers\n", markers_start, markers_count);
+	DBG("just registered a markers section from %p and having %d markers", markers_start, markers_count);
 	
 	return 0;
 }

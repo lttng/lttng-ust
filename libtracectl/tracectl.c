@@ -18,11 +18,6 @@
 #define SOCKETDIRLEN sizeof(SOCKETDIR)
 #define USTSIGNAL SIGIO
 
-#define DBG(fmt, args...) fprintf(stderr, fmt "\n", ## args)
-#define WARN(fmt, args...) fprintf(stderr, "usertrace: WARNING: " fmt "\n", ## args)
-#define ERR(fmt, args...) fprintf(stderr, "usertrace: ERROR: " fmt "\n", ## args); fflush(stderr)
-#define PERROR(call) perror("usertrace: ERROR: " call)
-
 #define MAX_MSG_SIZE (100)
 #define MSG_NOTIF 1
 #define MSG_REGISTER_NOTIF 2
@@ -89,7 +84,7 @@ int consumer(void *arg)
 
 		consumer_channels[i].chan = chan;
 
-		snprintf(tmp, sizeof(tmp), "trace/%s", chan->channel_name);
+		snprintf(tmp, sizeof(tmp), "trace/%s_0", chan->channel_name);
 		result = consumer_channels[i].fd = open(tmp, O_WRONLY | O_CREAT | O_TRUNC, 00644);
 		if(result == -1) {
 			perror("open");
@@ -111,10 +106,10 @@ int consumer(void *arg)
 
 			result = ltt_do_get_subbuf(rbuf, lttbuf, &consumed_old);
 			if(result < 0) {
-				CPRINTF("ltt_do_get_subbuf: error: %s", strerror(-result));
+				DBG("ltt_do_get_subbuf: error: %s", strerror(-result));
 			}
 			else {
-				CPRINTF("success!");
+				DBG("success!");
 
 				result = write(consumer_channels[i].fd, rbuf->buf_data + (consumed_old & (2 * 4096-1)), 4096);
 				ltt_do_put_subbuf(rbuf, lttbuf, consumed_old);
@@ -531,7 +526,7 @@ static void __attribute__((destructor)) fini()
 	}
 
 	/* FIXME: wait for the consumer to be done */
-	sleep(10);
+	sleep(3);
 
 	destroy_socket();
 }
