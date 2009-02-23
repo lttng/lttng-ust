@@ -9,11 +9,11 @@
 
 #include "marker.h"
 #include "tracer.h"
-#include "usterr.h"
+#include "localerr.h"
+#include "ustcomm.h"
 
 #define UNIX_PATH_MAX 108
 
-//#define SOCKETDIR "/var/run/ust/socks"
 #define SOCKETDIR "/tmp/socks"
 #define SOCKETDIRLEN sizeof(SOCKETDIR)
 #define USTSIGNAL SIGIO
@@ -23,6 +23,8 @@
 #define MSG_REGISTER_NOTIF 2
 
 char consumer_stack[10000];
+
+static struct ustcomm_app ustcomm_app;
 
 struct tracecmd { /* no padding */
 	uint32_t size;
@@ -45,7 +47,7 @@ struct trctl_msg {
 
 pid_t mypid;
 char mysocketfile[UNIX_PATH_MAX] = "";
-int pfd = -1;
+//int pfd = -1;
 
 struct consumer_channel {
 	int fd;
@@ -172,6 +174,7 @@ static void print_markers(void)
 {
 	struct marker_iter iter;
 
+	lock_markers();
 	marker_iter_reset(&iter);
 	marker_iter_start(&iter);
 
@@ -179,6 +182,7 @@ static void print_markers(void)
 		fprintf(stderr, "marker: %s_%s \"%s\"\n", iter.marker->channel, iter.marker->name, iter.marker->format);
 		marker_iter_next(&iter);
 	}
+	unlock_markers();
 }
 
 void do_command(struct tracecmd *cmd)
@@ -211,7 +215,11 @@ void notif_cb(void)
 	}
 }
 
-char recvbuf[10000];
+#define CONSUMER_DAEMON_SOCK SOCKETDIR "/ustd"
+
+static int inform_consumer_daemon(void)
+{
+}
 
 int listener_main(void *p)
 {
@@ -223,82 +231,78 @@ int listener_main(void *p)
 		socklen_t addrlen = sizeof(addr);
 		char trace_name[] = "auto";
 		char trace_type[] = "ustrelay";
+		char *recvbuf;
+		int len;
 
-		for(;;) {
-			struct trctl_msg msg;
-			int len;
+		result = ustcomm_app_recv_message(&ustcomm_app, &recvbuf);
+		if(result) {
+			WARN("error in ustcomm_app_recv_message");
+			continue;
+		}
 
-			result = len = recvfrom(pfd, recvbuf, sizeof(recvbuf-1), 0, &addr, &addrlen);
-			if(result == -1) {
-				PERROR("recvfrom");
-				continue;
+		DBG("received a message! it's: %s\n", recvbuf);
+		len = strlen(recvbuf);
+		if(len && recvbuf[len-1] == '\n') {
+			recvbuf[len-1] = '\0';
+		}
+
+		if(!strcmp(recvbuf, "print_markers")) {
+			print_markers();
+		}
+		else if(!strcmp(recvbuf, "trace_setup")) {
+			DBG("trace setup");
+
+			result = ltt_trace_setup(trace_name);
+			if(result < 0) {
+				ERR("ltt_trace_setup failed");
+				return;
 			}
 
-			if(recvbuf[len-1] == '\n')
-				recvbuf[len-1] = '\0';
-			else
-				recvbuf[len] = 0;
-
-			fprintf(stderr, "received a message! it's: %s\n", recvbuf);
-
-
-			if(!strcmp(recvbuf, "print_markers")) {
-				print_markers();
-			}
-			else if(!strcmp(recvbuf, "trace_setup")) {
-				DBG("trace setup");
-
-				result = ltt_trace_setup(trace_name);
-				if(result < 0) {
-					ERR("ltt_trace_setup failed");
-					return;
-				}
-
-				result = ltt_trace_set_type(trace_name, trace_type);
-				if(result < 0) {
-					ERR("ltt_trace_set_type failed");
-					return;
-				}
-			}
-			else if(!strcmp(recvbuf, "trace_alloc")) {
-				DBG("trace alloc");
-
-				result = ltt_trace_alloc(trace_name);
-				if(result < 0) {
-					ERR("ltt_trace_alloc failed");
-					return;
-				}
-			}
-			else if(!strcmp(recvbuf, "trace_start")) {
-				DBG("trace start");
-
-				result = ltt_trace_start(trace_name);
-				if(result < 0) {
-					ERR("ltt_trace_start failed");
-					return;
-				}
-			}
-			else if(!strcmp(recvbuf, "trace_stop")) {
-				DBG("trace stop");
-
-				result = ltt_trace_stop(trace_name);
-				if(result < 0) {
-					ERR("ltt_trace_stop failed");
-					return;
-				}
-			}
-			else if(!strcmp(recvbuf, "trace_destroy")) {
-
-				DBG("trace destroy");
-
-				result = ltt_trace_destroy(trace_name);
-				if(result < 0) {
-					ERR("ltt_trace_destroy failed");
-					return;
-				}
+			result = ltt_trace_set_type(trace_name, trace_type);
+			if(result < 0) {
+				ERR("ltt_trace_set_type failed");
+				return;
 			}
 		}
-		next_conn:;
+		else if(!strcmp(recvbuf, "trace_alloc")) {
+			DBG("trace alloc");
+
+			result = ltt_trace_alloc(trace_name);
+			if(result < 0) {
+				ERR("ltt_trace_alloc failed");
+				return;
+			}
+		}
+		else if(!strcmp(recvbuf, "trace_start")) {
+			DBG("trace start");
+
+			result = ltt_trace_start(trace_name);
+			if(result < 0) {
+				ERR("ltt_trace_start failed");
+				continue;
+			}
+		}
+		else if(!strcmp(recvbuf, "trace_stop")) {
+			DBG("trace stop");
+
+			result = ltt_trace_stop(trace_name);
+			if(result < 0) {
+				ERR("ltt_trace_stop failed");
+				return;
+			}
+		}
+		else if(!strcmp(recvbuf, "trace_destroy")) {
+
+			DBG("trace destroy");
+
+			result = ltt_trace_destroy(trace_name);
+			if(result < 0) {
+				ERR("ltt_trace_destroy failed");
+				return;
+			}
+		}
+
+		free(recvbuf);
 	}
 }
 
@@ -313,12 +317,18 @@ void create_listener(void)
 	}
 }
 
-/* The signal handler itself. */
+/* The signal handler itself. Signals must be setup so there cannot be
+   nested signals. */
 
 void sighandler(int sig)
 {
+	static char have_listener = 0;
 	DBG("sighandler");
-	create_listener();
+
+	if(!have_listener) {
+		create_listener();
+		have_listener = 1;
+	}
 }
 
 /* Called by the app signal handler to chain it to us. */
@@ -330,43 +340,7 @@ void chain_signal(void)
 
 static int init_socket(void)
 {
-	int result;
-	int fd;
-	char pidstr[6];
-	int pidlen;
-
-	struct sockaddr_un addr;
-	
-	result = fd = socket(PF_UNIX, SOCK_DGRAM, 0);
-	if(result == -1) {
-		PERROR("socket");
-		return -1;
-	}
-
-	addr.sun_family = AF_UNIX;
-
-	result = snprintf(addr.sun_path, UNIX_PATH_MAX, "%s/%d", SOCKETDIR, mypid);
-	if(result >= UNIX_PATH_MAX) {
-		ERR("string overflow allocating socket name");
-		goto close_sock;
-	}
-	//DBG("opening socket at %s", addr.sun_path);
-
-	result = bind(fd, (struct sockaddr *)&addr, sizeof(addr));
-	if(result == -1) {
-		PERROR("bind");
-		goto close_sock;
-	}
-
-	strcpy(mysocketfile, addr.sun_path);
-
-	pfd = fd;
-	return 0;
-
-	close_sock:
-	close(fd);
-
-	return -1;
+	return ustcomm_init_app(getpid(), &ustcomm_app);
 }
 
 static void destroy_socket(void)
@@ -528,7 +502,7 @@ static void __attribute__((destructor)) fini()
 	}
 
 	/* FIXME: wait for the consumer to be done */
-	sleep(3);
+	sleep(1);
 
 	destroy_socket();
 }

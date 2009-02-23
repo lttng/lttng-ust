@@ -692,4 +692,6 @@ void ltt_unlock_traces(void);
 
 //ust// #endif /* CONFIG_LTT */
 
+struct ltt_trace_struct *_ltt_trace_find(const char *trace_name);
+
 #endif /* _LTT_TRACER_H */

@@ -34,7 +34,7 @@
 #include "kernelcompat.h"
 #include "list.h"
 #include "tracer.h"
-#include "usterr.h"
+#include "localerr.h"
 
 #define DEFAULT_CHANNEL "cpu"
 #define DEFAULT_PROBE "default"
@@ -432,8 +432,6 @@ void __attribute__((constructor)) init_marker_control(void)
 
 		initialized = 1;
 	}
-
-	return 0;
 }
 //ust// module_init(marker_control_init);
 
