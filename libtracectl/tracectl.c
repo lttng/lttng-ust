@@ -228,7 +228,7 @@ int listener_main(void *p)
 			struct trctl_msg msg;
 			int len;
 
-			result = len = recvfrom(pfd, recvbuf, sizeof(recvbuf), 0, &addr, &addrlen);
+			result = len = recvfrom(pfd, recvbuf, sizeof(recvbuf-1), 0, &addr, &addrlen);
 			if(result == -1) {
 				PERROR("recvfrom");
 				continue;
@@ -236,6 +236,8 @@ int listener_main(void *p)
 
 			if(recvbuf[len-1] == '\n')
 				recvbuf[len-1] = '\0';
+			else
+				recvbuf[len] = 0;
 
 			fprintf(stderr, "received a message! it's: %s\n", recvbuf);
 
