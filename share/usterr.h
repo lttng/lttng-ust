@@ -10,4 +10,7 @@
 #define BUG_ON(condition) do { if (unlikely(condition)) ERR("condition not respected (BUG)"); } while(0)
 #define WARN_ON(condition) do { if (unlikely(condition)) WARN("condition not respected on line %s:%d", __FILE__, __LINE__); } while(0)
 
+#define CPRINTF(fmt, args...) safe_printf(fmt "\n", ## args)
+
+
 #endif /* USTERR_H */
