@@ -1497,7 +1497,10 @@ int marker_register_lib(struct marker *markers_start, int markers_count)
 	pl->markers_start = markers_start;
 	pl->markers_count = markers_count;
 
+	/* FIXME: maybe protect this with its own mutex? */
+	lock_markers();
 	list_add(&pl->list, &libs);
+	unlock_markers();
 
 	new_markers(markers_start, markers_start + markers_count);
 
@@ -1506,6 +1509,14 @@ int marker_register_lib(struct marker *markers_start, int markers_count)
 
 	DBG("just registered a markers section from %p and having %d markers", markers_start, markers_count);
 	
+	return 0;
+}
+
+int marker_unregister_lib(struct marker *markers_start, int markers_count)
+{
+	/*FIXME: implement; but before implementing, marker_register_lib must
+          have appropriate locking. */
+
 	return 0;
 }
 
