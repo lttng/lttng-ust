@@ -20,14 +20,14 @@
 
 #define MSG_MAX 1000
 
-static void bt(void)
-{
-	void *buffer[100];
-	int result;
-
-	result = backtrace(&buffer, 100);
-	backtrace_symbols_fd(buffer, result, STDERR_FILENO);
-}
+//static void bt(void)
+//{
+//	void *buffer[100];
+//	int result;
+//
+//	result = backtrace(&buffer, 100);
+//	backtrace_symbols_fd(buffer, result, STDERR_FILENO);
+//}
 
 static void signal_process(pid_t pid)
 {
@@ -124,7 +124,7 @@ int ustcomm_request_consumer(pid_t pid, const char *channel)
 
 	asprintf(&msg, "collect %d %s", pid, channel); 
 
-	send_message_path(path, msg, NULL, pid);
+	send_message_path(path, msg, NULL, -1);
 	free(msg);
 
 	return 0;
@@ -133,7 +133,6 @@ int ustcomm_request_consumer(pid_t pid, const char *channel)
 static int recv_message_fd(int fd, char **msg)
 {
 	int result;
-	struct sockaddr_un addr;
 
 	*msg = (char *) malloc(MSG_MAX+1);
 	result = recvfrom(fd, *msg, MSG_MAX, 0, NULL, NULL);
@@ -145,8 +144,6 @@ static int recv_message_fd(int fd, char **msg)
 	(*msg)[result] = '\0';
 	
 	DBG("ustcomm_app_recv_message: result is %d, message is %s", result, (*msg));
-
-	bt();
 
 	return 0;
 }
@@ -224,9 +221,19 @@ free_name:
 
 int ustcomm_init_ustd(struct ustcomm_ustd *handle)
 {
-	handle->fd = init_named_socket("ustd", &handle->socketpath);
+	int result;
+	char *name;
+
+	result = asprintf(&name, "%s/%s", SOCK_DIR, "ustd");
+	if(result >= UNIX_PATH_MAX) {
+		ERR("string overflow allocating socket name");
+		return -1;
+	}
+
+	handle->fd = init_named_socket(name, &handle->socketpath);
 	if(handle->fd < 0)
 		return handle->fd;
+	free(name);
 
 	return 0;
 }

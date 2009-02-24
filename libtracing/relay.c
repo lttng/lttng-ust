@@ -97,17 +97,16 @@ static int relay_alloc_buf(struct rchan_buf *buf, size_t *size)
 
 	void *ptr;
 	int result;
-	int shmid;
 
 	*size = PAGE_ALIGN(*size);
 
-	result = shmid = shmget(getpid(), *size, IPC_CREAT | IPC_EXCL | 0700);
-	if(shmid == -1) {
+	result = buf->shmid = shmget(getpid(), *size, IPC_CREAT | IPC_EXCL | 0700);
+	if(buf->shmid == -1) {
 		PERROR("shmget");
 		return -1;
 	}
 
-	ptr = shmat(shmid, NULL, 0);
+	ptr = shmat(buf->shmid, NULL, 0);
 	if(ptr == (void *) -1) {
 		perror("shmat");
 		goto destroy_shmem;
@@ -116,7 +115,7 @@ static int relay_alloc_buf(struct rchan_buf *buf, size_t *size)
 	/* Already mark the shared memory for destruction. This will occur only
          * when all users have detached.
 	 */
-	result = shmctl(shmid, IPC_RMID, NULL);
+	result = shmctl(buf->shmid, IPC_RMID, NULL);
 	if(result == -1) {
 		perror("shmctl");
 		return -1;
@@ -128,7 +127,7 @@ static int relay_alloc_buf(struct rchan_buf *buf, size_t *size)
 	return 0;
 
 	destroy_shmem:
-	result = shmctl(shmid, IPC_RMID, NULL);
+	result = shmctl(buf->shmid, IPC_RMID, NULL);
 	if(result == -1) {
 		perror("shmctl");
 	}

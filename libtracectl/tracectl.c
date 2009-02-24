@@ -12,6 +12,8 @@
 #include "localerr.h"
 #include "ustcomm.h"
 
+#define USE_CLONE
+
 #define UNIX_PATH_MAX 108
 
 #define SOCKETDIR "/tmp/socks"
@@ -45,7 +47,6 @@ struct trctl_msg {
 	char payload[94];
 };
 
-pid_t mypid;
 char mysocketfile[UNIX_PATH_MAX] = "";
 //int pfd = -1;
 
@@ -162,15 +163,18 @@ int consumer(void *arg)
 
 void start_consumer(void)
 {
+#ifdef USE_CLONE
 	int result;
 
 	result = clone(consumer, consumer_stack+sizeof(consumer_stack)-1, CLONE_FS | CLONE_FILES | CLONE_VM | CLONE_SIGHAND | CLONE_THREAD, NULL);
 	if(result == -1) {
 		perror("clone");
 	}
-//	pthread_t thread;
-//
-//	pthread_create(&thread, NULL, consumer, NULL);
+#else
+	pthread_t thread;
+
+	pthread_create(&thread, NULL, consumer, NULL);
+#endif
 }
 
 static void print_markers(void)
@@ -222,6 +226,8 @@ void notif_cb(void)
 
 static int inform_consumer_daemon(void)
 {
+	ustcomm_request_consumer(getpid(), "metadata");
+	ustcomm_request_consumer(getpid(), "ust");
 }
 
 int listener_main(void *p)
@@ -307,6 +313,30 @@ int listener_main(void *p)
 				return;
 			}
 		}
+		else if(!strncmp(recvbuf, "get_shmid ", 10)) {
+			struct ltt_trace_struct *trace;
+			char trace_name[] = "auto";
+			int i;
+
+			DBG("get_shmid");
+
+			ltt_lock_traces();
+			trace = _ltt_trace_find(trace_name);
+			ltt_unlock_traces();
+
+			if(trace == NULL) {
+				CPRINTF("cannot find trace!");
+				return 1;
+			}
+
+			for(i=0; i<trace->nr_channels; i++) {
+				struct rchan *rchan = trace->channels[i].trans_channel_data;
+				struct rchan_buf *rbuf = rchan->buf;
+
+				DBG("the shmid is %d", rbuf->shmid);
+
+			}
+		}
 
 		free(recvbuf);
 	}
@@ -320,13 +350,16 @@ void create_listener(void)
 	static char listener_stack[16384];
 	//char *listener_stack = malloc(16384);
 
+#ifdef USE_CLONE
 	result = clone(listener_main, listener_stack+sizeof(listener_stack)-1, CLONE_FS | CLONE_FILES | CLONE_VM | CLONE_SIGHAND | CLONE_THREAD, NULL);
 	if(result == -1) {
 		perror("clone");
 	}
-	//pthread_t thread;
+#else
+	pthread_t thread;
 
-	//pthread_create(&thread, NULL, listener_main, NULL);
+	pthread_create(&thread, NULL, listener_main, NULL);
+#endif
 }
 
 /* The signal handler itself. Signals must be setup so there cannot be
@@ -426,7 +459,18 @@ static void __attribute__((constructor(1000))) init()
 
 	DBG("UST_TRACE constructor");
 
-	mypid = getpid();
+	/* Must create socket before signal handler to prevent races.
+         */
+	result = init_socket();
+	if(result == -1) {
+		ERR("init_socket error");
+		return;
+	}
+	result = init_signal_handler();
+	if(result == -1) {
+		ERR("init_signal_handler error");
+		return;
+	}
 
 	if(getenv("UST_TRACE")) {
 		char trace_name[] = "auto";
@@ -469,21 +513,10 @@ static void __attribute__((constructor(1000))) init()
 			ERR("ltt_trace_start failed");
 			return;
 		}
-		start_consumer();
+		//start_consumer();
+		inform_consumer_daemon();
 	}
 
-	/* Must create socket before signal handler to prevent races.
-         */
-	result = init_socket();
-	if(result == -1) {
-		ERR("init_socket error");
-		return;
-	}
-	result = init_signal_handler();
-	if(result == -1) {
-		ERR("init_signal_handler error");
-		return;
-	}
 
 	return;
 

@@ -59,6 +59,7 @@ struct rchan_buf {
 //ust//	unsigned int page_count;        /* number of current buffer pages */ 
 	unsigned int finalized;         /* buffer has been finalized */ 
 //ust//	unsigned int cpu;               /* this buf's cpu */ 
+	int shmid;
 } ____cacheline_aligned; 
 
 /*
