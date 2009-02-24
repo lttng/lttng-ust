@@ -168,6 +168,9 @@ void start_consumer(void)
 	if(result == -1) {
 		perror("clone");
 	}
+//	pthread_t thread;
+//
+//	pthread_create(&thread, NULL, consumer, NULL);
 }
 
 static void print_markers(void)
@@ -225,6 +228,8 @@ int listener_main(void *p)
 {
 	int result;
 
+	DBG("LISTENER");
+
 	for(;;) {
 		uint32_t size;
 		struct sockaddr_un addr;
@@ -235,6 +240,7 @@ int listener_main(void *p)
 		int len;
 
 		result = ustcomm_app_recv_message(&ustcomm_app, &recvbuf);
+		DBG("HERE");
 		if(result) {
 			WARN("error in ustcomm_app_recv_message");
 			continue;
@@ -242,9 +248,9 @@ int listener_main(void *p)
 
 		DBG("received a message! it's: %s\n", recvbuf);
 		len = strlen(recvbuf);
-		if(len && recvbuf[len-1] == '\n') {
-			recvbuf[len-1] = '\0';
-		}
+		//if(len && recvbuf[len-1] == '\n') {
+		//	recvbuf[len-1] = '\0';
+		//}
 
 		if(!strcmp(recvbuf, "print_markers")) {
 			print_markers();
@@ -306,15 +312,21 @@ int listener_main(void *p)
 	}
 }
 
+static char listener_stack[16384];
+
 void create_listener(void)
 {
 	int result;
 	static char listener_stack[16384];
+	//char *listener_stack = malloc(16384);
 
 	result = clone(listener_main, listener_stack+sizeof(listener_stack)-1, CLONE_FS | CLONE_FILES | CLONE_VM | CLONE_SIGHAND | CLONE_THREAD, NULL);
 	if(result == -1) {
 		perror("clone");
 	}
+	//pthread_t thread;
+
+	//pthread_create(&thread, NULL, listener_main, NULL);
 }
 
 /* The signal handler itself. Signals must be setup so there cannot be
@@ -460,8 +472,7 @@ static void __attribute__((constructor(1000))) init()
 		start_consumer();
 	}
 
-	/* Must create socket before signal handler to prevent races
-         * on pfd variable.
+	/* Must create socket before signal handler to prevent races.
          */
 	result = init_socket();
 	if(result == -1) {

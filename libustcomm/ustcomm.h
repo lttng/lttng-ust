@@ -4,13 +4,13 @@
 #include <sys/types.h>
 
 struct ustcomm_app {
-	/* the socket for serving the external requests */
+	/* the "server" socket for serving the external requests */
 	int fd;
 	char *socketpath;
 };
 
 struct ustcomm_ustd {
-	/* the socket for serving the external requests */
+	/* the "server" socket for serving the external requests */
 	int fd;
 	char *socketpath;
 };
