@@ -12,7 +12,7 @@
 #include "localerr.h"
 #include "ustcomm.h"
 
-#define USE_CLONE
+//#define USE_CLONE
 
 #define UNIX_PATH_MAX 108
 
@@ -244,8 +244,9 @@ int listener_main(void *p)
 		char trace_type[] = "ustrelay";
 		char *recvbuf;
 		int len;
+		struct ustcomm_source src;
 
-		result = ustcomm_app_recv_message(&ustcomm_app, &recvbuf);
+		result = ustcomm_app_recv_message(&ustcomm_app, &recvbuf, &src);
 		DBG("HERE");
 		if(result) {
 			WARN("error in ustcomm_app_recv_message");
@@ -313,7 +314,7 @@ int listener_main(void *p)
 				return;
 			}
 		}
-		else if(!strncmp(recvbuf, "get_shmid ", 10)) {
+		else if(nth_token_is(recvbuf, "get_shmid", 0) == 1) {
 			struct ltt_trace_struct *trace;
 			char trace_name[] = "auto";
 			int i;
@@ -336,6 +337,13 @@ int listener_main(void *p)
 				DBG("the shmid is %d", rbuf->shmid);
 
 			}
+		}
+		else if(nth_token_is(recvbuf, "load_probe_lib", 0) == 1) {
+			char *libfile;
+
+			libfile = nth_token(recvbuf, 1);
+
+			DBG("load_probe_lib loading %s", libfile);
 		}
 
 		free(recvbuf);

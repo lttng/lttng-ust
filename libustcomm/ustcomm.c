@@ -130,12 +130,26 @@ int ustcomm_request_consumer(pid_t pid, const char *channel)
 	return 0;
 }
 
-static int recv_message_fd(int fd, char **msg)
+static int recv_message_fd(int fd, char **msg, struct ustcomm_source *src)
 {
 	int result;
+	size_t initial_addrlen,addrlen;
 
 	*msg = (char *) malloc(MSG_MAX+1);
-	result = recvfrom(fd, *msg, MSG_MAX, 0, NULL, NULL);
+
+	if(src) {
+		initial_addrlen = addrlen = sizeof(src->addr);
+
+		result = recvfrom(fd, *msg, MSG_MAX, 0, &src->addr, &addrlen);
+		if(initial_addrlen != addrlen) {
+			ERR("recvfrom: unexpected address length");
+			return -1;
+		}
+	}
+	else {
+		result = recvfrom(fd, *msg, MSG_MAX, 0, NULL, NULL);
+	}
+
 	if(result == -1) {
 		PERROR("recvfrom");
 		return -1;
@@ -148,14 +162,14 @@ static int recv_message_fd(int fd, char **msg)
 	return 0;
 }
 
-int ustcomm_ustd_recv_message(struct ustcomm_ustd *ustd, char **msg)
+int ustcomm_ustd_recv_message(struct ustcomm_ustd *ustd, char **msg, struct ustcomm_source *src)
 {
-	return recv_message_fd(ustd->fd, msg);
+	return recv_message_fd(ustd->fd, msg, src);
 }
 
-int ustcomm_app_recv_message(struct ustcomm_app *app, char **msg)
+int ustcomm_app_recv_message(struct ustcomm_app *app, char **msg, struct ustcomm_source *src)
 {
-	return recv_message_fd(app->fd, msg);
+	return recv_message_fd(app->fd, msg, src);
 }
 
 static int init_named_socket(char *name, char **path_out)
@@ -237,3 +251,88 @@ int ustcomm_init_ustd(struct ustcomm_ustd *handle)
 
 	return 0;
 }
+
+char *find_tok(const char *str)
+{
+	while(*str == ' ') {
+		str++;
+
+		if(*str == 0)
+			return NULL;
+	}
+
+	return str;
+}
+
+static char *find_sep(char *str)
+{
+	while(*str != ' ') {
+		str++;
+
+		if(*str == 0)
+			break;
+	}
+
+	return str;
+}
+
+int nth_token_is(char *str, char *token, int tok_no)
+{
+	int i;
+	char *start;
+	char *end;
+
+	for(i=0; i<=tok_no; i++) {
+		str = find_tok(str);
+		if(str == NULL)
+			return -1;
+
+		start = str;
+
+		str = find_sep(str);
+		if(str == NULL)
+			return -1;
+
+		end = str;
+	}
+
+	if(end-start != strlen(token))
+		return 0;
+
+	if(strncmp(start, token, end-start))
+		return 0;
+
+	return 1;
+}
+
+char *nth_token(char *str, int tok_no)
+{
+	static char *retval = NULL;
+	int i;
+	char *start;
+	char *end;
+
+	for(i=0; i<=tok_no; i++) {
+		str = find_tok(str);
+		if(str == NULL)
+			return NULL;
+
+		start = str;
+
+		str = find_sep(str);
+		if(str == NULL)
+			return NULL;
+
+		end = str;
+	}
+
+	if(retval) {
+		free(retval);
+		retval = NULL;
+	}
+
+	retval = strndupa(start, end-start);
+
+	return retval;
+}
+
