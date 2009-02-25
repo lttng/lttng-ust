@@ -10,6 +10,8 @@
 #include "localerr.h"
 #include "ustcomm.h"
 
+struct list_head buffers = LIST_HEAD_INIT(buffers);
+
 struct buffer_info {
 	char *name;
 	pid_t pid;
@@ -18,7 +20,10 @@ struct buffer_info {
 	void *mem;
 	int memlen;
 
-	int nsubbufs;
+	int n_subbufs;
+	int subbuf_size;
+
+	int file_fd; /* output file */
 };
 
 int add_buffer(pid_t pid, char *bufname)
@@ -41,6 +46,7 @@ int add_buffer(pid_t pid, char *bufname)
 	asprintf(&send_msg, "get_shmid %s", buf->name);
 	send_message(pid, send_msg, &received_msg);
 	free(send_msg);
+	DBG("got buffer name %s", buf->name);
 
 	result = sscanf(received_msg, "%d", &buf->shmid);
 	if(result != 1) {
@@ -48,18 +54,33 @@ int add_buffer(pid_t pid, char *bufname)
 		return -1;
 	}
 	free(received_msg);
+	DBG("got shmid %d", buf->shmid);
 
-	/* get nsubbufs */
+	/* get n_subbufs */
 	asprintf(&send_msg, "get_n_subbufs %s", buf->name);
 	send_message(pid, send_msg, &received_msg);
 	free(send_msg);
 
-	result = sscanf(received_msg, "%d", &buf->nsubbufs);
+	result = sscanf(received_msg, "%d", &buf->n_subbufs);
 	if(result != 1) {
-		ERR("unable to parse response to get_shmid");
+		ERR("unable to parse response to get_n_subbufs");
 		return -1;
 	}
 	free(received_msg);
+	DBG("got n_subbufs %d", buf->n_subbufs);
+
+	/* get subbuf size */
+	asprintf(&send_msg, "get_subbuf_size %s", buf->name);
+	send_message(pid, send_msg, &received_msg);
+	free(send_msg);
+
+	result = sscanf(received_msg, "%d", &buf->subbuf_size);
+	if(result != 1) {
+		ERR("unable to parse response to get_subbuf_size");
+		return -1;
+	}
+	free(received_msg);
+	DBG("got subbuf_size %d", buf->subbuf_size);
 
 	/* attach memory */
 	buf->mem = shmat(buf->shmid, NULL, 0);
@@ -67,6 +88,7 @@ int add_buffer(pid_t pid, char *bufname)
 		perror("shmat");
 		return -1;
 	}
+	DBG("successfully attached memory");
 
 	return 0;
 }

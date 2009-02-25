@@ -48,6 +48,31 @@ static void signal_process(pid_t pid)
 	sleep(1);
 }
 
+int send_message_fd(int fd, const char *msg, char **reply)
+{
+	int result;
+
+	result = send(fd, msg, strlen(msg), 0);
+	if(result == -1) {
+		PERROR("send");
+		return -1;
+	}
+
+	if(!reply)
+		return 0;
+
+	*reply = (char *) malloc(MSG_MAX+1);
+	result = recv(fd, *reply, MSG_MAX, 0);
+	if(result == -1) {
+		PERROR("recv");
+		return -1;
+	}
+	
+	(*reply)[result] = '\0';
+
+	return 0;
+}
+
 int send_message_path(const char *path, const char *msg, char **reply, int signalpid)
 {
 	int fd;
@@ -77,25 +102,7 @@ int send_message_path(const char *path, const char *msg, char **reply, int signa
 		return -1;
 	}
 
-	result = send(fd, msg, strlen(msg), 0);
-	if(result == -1) {
-		PERROR("send");
-		return -1;
-	}
-
-	if(!reply)
-		return 0;
-
-	*reply = (char *) malloc(MSG_MAX+1);
-	result = recvfrom(fd, *reply, MSG_MAX, 0, NULL, NULL);
-	if(result == -1) {
-		PERROR("recvfrom");
-		return -1;
-	}
-	
-	(*reply)[result] = '\0';
-
-	return 0;
+	return send_message_fd(fd, msg, reply);
 }
 
 /* pid: the pid of the trace process that must receive the msg
@@ -142,6 +149,8 @@ int ustcomm_request_consumer(pid_t pid, const char *channel)
 	return 0;
 }
 
+
+
 static int recv_message_fd(int fd, char **msg, struct ustcomm_source *src)
 {
 	int result;
@@ -158,10 +167,26 @@ static int recv_message_fd(int fd, char **msg, struct ustcomm_source *src)
 	
 	DBG("ustcomm_app_recv_message: result is %d, message is %s", result, (*msg));
 
+	if(src)
+		src->fd = fd;
+
 	return 0;
 }
 
-int ustcomm_ustd_recv_message(struct ustcomm_ustd *ustd, char **msg, struct ustcomm_source *src)
+int ustcomm_send_reply(struct ustcomm_server *server, char *msg, struct ustcomm_source *src)
+{
+	int result;
+
+	result = send_message_fd(src->fd, msg, NULL);
+	if(result) {
+		ERR("error in send_message_fd");
+		return -1;
+	}
+
+	return 0;
+} 
+
+int ustcomm_recv_message(struct ustcomm_server *server, char **msg, struct ustcomm_source *src)
 {
 	struct pollfd *fds;
 	struct ustcomm_connection *conn;
@@ -172,7 +197,7 @@ int ustcomm_ustd_recv_message(struct ustcomm_ustd *ustd, char **msg, struct ustc
 		int idx = 0;
 		int n_fds = 1;
 
-		list_for_each_entry(conn, &ustd->connections, list) {
+		list_for_each_entry(conn, &server->connections, list) {
 			n_fds++;
 		}
 
@@ -183,11 +208,11 @@ int ustcomm_ustd_recv_message(struct ustcomm_ustd *ustd, char **msg, struct ustc
 		}
 
 		/* special idx 0 is for listening socket */
-		fds[idx].fd = ustd->listen_fd;
+		fds[idx].fd = server->listen_fd;
 		fds[idx].events = POLLIN;
 		idx++;
 
-		list_for_each_entry(conn, &ustd->connections, list) {
+		list_for_each_entry(conn, &server->connections, list) {
 			fds[idx].fd = conn->fd;
 			fds[idx].events = POLLIN;
 			idx++;
@@ -203,7 +228,7 @@ int ustcomm_ustd_recv_message(struct ustcomm_ustd *ustd, char **msg, struct ustc
 			struct ustcomm_connection *newconn;
 			int newfd;
 
-			result = newfd = accept(ustd->listen_fd, NULL, NULL);
+			result = newfd = accept(server->listen_fd, NULL, NULL);
 			if(result == -1) {
 				PERROR("accept");
 				return -1;
@@ -217,7 +242,7 @@ int ustcomm_ustd_recv_message(struct ustcomm_ustd *ustd, char **msg, struct ustc
 
 			newconn->fd = newfd;
 
-			list_add(&newconn->list, &ustd->connections);
+			list_add(&newconn->list, &server->connections);
 		}
 
 		for(idx=1; idx<n_fds; idx++) {
@@ -227,7 +252,7 @@ int ustcomm_ustd_recv_message(struct ustcomm_ustd *ustd, char **msg, struct ustc
 					/* connection finished */
 					close(fds[idx].fd);
 
-					list_for_each_entry(conn, &ustd->connections, list) {
+					list_for_each_entry(conn, &server->connections, list) {
 						if(conn->fd == fds[idx].fd) {
 							list_del(&conn->list);
 							break;
@@ -248,9 +273,14 @@ free_fds_return:
 	return retval;
 }
 
+int ustcomm_ustd_recv_message(struct ustcomm_ustd *ustd, char **msg, struct ustcomm_source *src)
+{
+	return ustcomm_recv_message(&ustd->server, msg, src);
+}
+
 int ustcomm_app_recv_message(struct ustcomm_app *app, char **msg, struct ustcomm_source *src)
 {
-	return ustcomm_ustd_recv_message((struct ustcomm_ustd *)app, msg, src);
+	return ustcomm_recv_message(&app->server, msg, src);
 }
 
 static int init_named_socket(char *name, char **path_out)
@@ -318,14 +348,14 @@ int ustcomm_init_app(pid_t pid, struct ustcomm_app *handle)
 		return -1;
 	}
 
-	handle->listen_fd = init_named_socket(name, &(handle->socketpath));
-	if(handle->listen_fd < 0) {
+	handle->server.listen_fd = init_named_socket(name, &(handle->server.socketpath));
+	if(handle->server.listen_fd < 0) {
 		ERR("error initializing named socket");
 		goto free_name;
 	}
 	free(name);
 
-	INIT_LIST_HEAD(&handle->connections);
+	INIT_LIST_HEAD(&handle->server.connections);
 
 	return 0;
 
@@ -345,14 +375,14 @@ int ustcomm_init_ustd(struct ustcomm_ustd *handle)
 		return -1;
 	}
 
-	handle->listen_fd = init_named_socket(name, &handle->socketpath);
-	if(handle->listen_fd < 0) {
+	handle->server.listen_fd = init_named_socket(name, &handle->server.socketpath);
+	if(handle->server.listen_fd < 0) {
 		ERR("error initializing named socket");
 		goto free_name;
 	}
 	free(name);
 
-	INIT_LIST_HEAD(&handle->connections);
+	INIT_LIST_HEAD(&handle->server.connections);
 
 	return 0;
 

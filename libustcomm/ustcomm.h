@@ -11,7 +11,7 @@ struct ustcomm_connection {
 	int fd;
 };
 
-struct ustcomm_app {
+struct ustcomm_server {
 	/* the "server" socket for serving the external requests */
 	int listen_fd;
 	char *socketpath;
@@ -20,15 +20,16 @@ struct ustcomm_app {
 };
 
 struct ustcomm_ustd {
-	/* the "server" socket for serving the external requests */
-	int listen_fd;
-	char *socketpath;
+	struct ustcomm_server server;
+};
 
-	struct list_head connections;
+struct ustcomm_app {
+	struct ustcomm_server server;
 };
 
 struct ustcomm_source {
-	struct sockaddr_un addr;
+	int fd;
+	void *priv;
 };
 
 int send_message(pid_t pid, const char *msg, char **reply);

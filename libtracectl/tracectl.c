@@ -318,8 +318,15 @@ int listener_main(void *p)
 			struct ltt_trace_struct *trace;
 			char trace_name[] = "auto";
 			int i;
+			char *channel_name;
 
 			DBG("get_shmid");
+
+			channel_name = nth_token(recvbuf, 1);
+			if(channel_name == NULL) {
+				ERR("get_shmid: cannot parse channel");
+				goto next_cmd;
+			}
 
 			ltt_lock_traces();
 			trace = _ltt_trace_find(trace_name);
@@ -334,8 +341,110 @@ int listener_main(void *p)
 				struct rchan *rchan = trace->channels[i].trans_channel_data;
 				struct rchan_buf *rbuf = rchan->buf;
 
-				DBG("the shmid is %d", rbuf->shmid);
+				if(!strcmp(trace->channels[i].channel_name, channel_name)) {
+					char *reply;
 
+					DBG("the shmid for the requested channel is %d", rbuf->shmid);
+					asprintf(&reply, "%d", rbuf->shmid);
+
+					result = ustcomm_send_reply(&ustcomm_app.server, reply, &src);
+					if(result) {
+						ERR("listener: get_shmid: ustcomm_send_reply failed");
+						goto next_cmd;
+					}
+
+					free(reply);
+
+					break;
+				}
+			}
+		}
+		else if(nth_token_is(recvbuf, "get_n_subbufs", 0) == 1) {
+			struct ltt_trace_struct *trace;
+			char trace_name[] = "auto";
+			int i;
+			char *channel_name;
+
+			DBG("get_n_subbufs");
+
+			channel_name = nth_token(recvbuf, 1);
+			if(channel_name == NULL) {
+				ERR("get_n_subbufs: cannot parse channel");
+				goto next_cmd;
+			}
+
+			ltt_lock_traces();
+			trace = _ltt_trace_find(trace_name);
+			ltt_unlock_traces();
+
+			if(trace == NULL) {
+				CPRINTF("cannot find trace!");
+				return 1;
+			}
+
+			for(i=0; i<trace->nr_channels; i++) {
+				struct rchan *rchan = trace->channels[i].trans_channel_data;
+
+				if(!strcmp(trace->channels[i].channel_name, channel_name)) {
+					char *reply;
+
+					DBG("the n_subbufs for the requested channel is %d", rchan->n_subbufs);
+					asprintf(&reply, "%d", rchan->n_subbufs);
+
+					result = ustcomm_send_reply(&ustcomm_app.server, reply, &src);
+					if(result) {
+						ERR("listener: get_n_subbufs: ustcomm_send_reply failed");
+						goto next_cmd;
+					}
+
+					free(reply);
+
+					break;
+				}
+			}
+		}
+		else if(nth_token_is(recvbuf, "get_subbuf_size", 0) == 1) {
+			struct ltt_trace_struct *trace;
+			char trace_name[] = "auto";
+			int i;
+			char *channel_name;
+
+			DBG("get_subbuf_size");
+
+			channel_name = nth_token(recvbuf, 1);
+			if(channel_name == NULL) {
+				ERR("get_subbuf_size: cannot parse channel");
+				goto next_cmd;
+			}
+
+			ltt_lock_traces();
+			trace = _ltt_trace_find(trace_name);
+			ltt_unlock_traces();
+
+			if(trace == NULL) {
+				CPRINTF("cannot find trace!");
+				return 1;
+			}
+
+			for(i=0; i<trace->nr_channels; i++) {
+				struct rchan *rchan = trace->channels[i].trans_channel_data;
+
+				if(!strcmp(trace->channels[i].channel_name, channel_name)) {
+					char *reply;
+
+					DBG("the subbuf_size for the requested channel is %d", rchan->subbuf_size);
+					asprintf(&reply, "%d", rchan->subbuf_size);
+
+					result = ustcomm_send_reply(&ustcomm_app.server, reply, &src);
+					if(result) {
+						ERR("listener: get_subbuf_size: ustcomm_send_reply failed");
+						goto next_cmd;
+					}
+
+					free(reply);
+
+					break;
+				}
 			}
 		}
 		else if(nth_token_is(recvbuf, "load_probe_lib", 0) == 1) {
@@ -346,6 +455,7 @@ int listener_main(void *p)
 			DBG("load_probe_lib loading %s", libfile);
 		}
 
+	next_cmd:
 		free(recvbuf);
 	}
 }
