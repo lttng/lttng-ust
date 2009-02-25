@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <poll.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,6 +20,11 @@
 #define UST_SIGNAL SIGIO
 
 #define MSG_MAX 1000
+
+/* FIXME: ustcomm blocks on message sending, which might be problematic in
+ * some cases. Fix the poll() usage so sends are buffered until they don't
+ * block.
+ */
 
 //static void bt(void)
 //{
@@ -48,7 +54,7 @@ int send_message_path(const char *path, const char *msg, char **reply, int signa
 	int result;
 	struct sockaddr_un addr;
 
-	result = fd = socket(PF_UNIX, SOCK_DGRAM, 0);
+	result = fd = socket(PF_UNIX, SOCK_STREAM, 0);
 	if(result == -1) {
 		PERROR("socket");
 		return -1;
@@ -65,9 +71,15 @@ int send_message_path(const char *path, const char *msg, char **reply, int signa
 	if(signalpid >= 0)
 		signal_process(signalpid);
 
-	result = sendto(fd, msg, strlen(msg), 0, (struct sockaddr *)&addr, sizeof(addr));
+	result = connect(fd, (struct sockaddr *)&addr, sizeof(addr));
 	if(result == -1) {
-		PERROR("sendto");
+		PERROR("connect");
+		return -1;
+	}
+
+	result = send(fd, msg, strlen(msg), 0);
+	if(result == -1) {
+		PERROR("send");
 		return -1;
 	}
 
@@ -133,23 +145,10 @@ int ustcomm_request_consumer(pid_t pid, const char *channel)
 static int recv_message_fd(int fd, char **msg, struct ustcomm_source *src)
 {
 	int result;
-	size_t initial_addrlen,addrlen;
 
 	*msg = (char *) malloc(MSG_MAX+1);
 
-	if(src) {
-		initial_addrlen = addrlen = sizeof(src->addr);
-
-		result = recvfrom(fd, *msg, MSG_MAX, 0, &src->addr, &addrlen);
-		if(initial_addrlen != addrlen) {
-			ERR("recvfrom: unexpected address length");
-			return -1;
-		}
-	}
-	else {
-		result = recvfrom(fd, *msg, MSG_MAX, 0, NULL, NULL);
-	}
-
+	result = recv(fd, *msg, MSG_MAX, 0);
 	if(result == -1) {
 		PERROR("recvfrom");
 		return -1;
@@ -164,12 +163,94 @@ static int recv_message_fd(int fd, char **msg, struct ustcomm_source *src)
 
 int ustcomm_ustd_recv_message(struct ustcomm_ustd *ustd, char **msg, struct ustcomm_source *src)
 {
-	return recv_message_fd(ustd->fd, msg, src);
+	struct pollfd *fds;
+	struct ustcomm_connection *conn;
+	int result;
+	int retval;
+
+	for(;;) {
+		int idx = 0;
+		int n_fds = 1;
+
+		list_for_each_entry(conn, &ustd->connections, list) {
+			n_fds++;
+		}
+
+		fds = (struct pollfd *) malloc(n_fds * sizeof(struct pollfd));
+		if(fds == NULL) {
+			ERR("malloc returned NULL");
+			return -1;
+		}
+
+		/* special idx 0 is for listening socket */
+		fds[idx].fd = ustd->listen_fd;
+		fds[idx].events = POLLIN;
+		idx++;
+
+		list_for_each_entry(conn, &ustd->connections, list) {
+			fds[idx].fd = conn->fd;
+			fds[idx].events = POLLIN;
+			idx++;
+		}
+
+		result = poll(fds, n_fds, -1);
+		if(result == -1) {
+			PERROR("poll");
+			return -1;
+		}
+
+		if(fds[0].revents) {
+			struct ustcomm_connection *newconn;
+			int newfd;
+
+			result = newfd = accept(ustd->listen_fd, NULL, NULL);
+			if(result == -1) {
+				PERROR("accept");
+				return -1;
+			}
+
+			newconn = (struct ustcomm_connection *) malloc(sizeof(struct ustcomm_connection));
+			if(newconn == NULL) {
+				ERR("malloc returned NULL");
+				return -1;
+			}
+
+			newconn->fd = newfd;
+
+			list_add(&newconn->list, &ustd->connections);
+		}
+
+		for(idx=1; idx<n_fds; idx++) {
+			if(fds[idx].revents) {
+				retval = recv_message_fd(fds[idx].fd, msg, src);
+				if(**msg == 0) {
+					/* connection finished */
+					close(fds[idx].fd);
+
+					list_for_each_entry(conn, &ustd->connections, list) {
+						if(conn->fd == fds[idx].fd) {
+							list_del(&conn->list);
+							break;
+						}
+					}
+				}
+				else {
+					goto free_fds_return;
+				}
+			}
+		}
+
+		free(fds);
+	}
+
+free_fds_return:
+	free(fds);
+	return retval;
 }
 
 int ustcomm_app_recv_message(struct ustcomm_app *app, char **msg, struct ustcomm_source *src)
 {
-	return recv_message_fd(app->fd, msg, src);
+	return ustcomm_ustd_recv_message((struct ustcomm_ustd *)app, msg, src);
 }
 
 static int init_named_socket(char *name, char **path_out)
@@ -179,7 +260,7 @@ static int init_named_socket(char *name, char **path_out)
 
 	struct sockaddr_un addr;
 	
-	result = fd = socket(PF_UNIX, SOCK_DGRAM, 0);
+	result = fd = socket(PF_UNIX, SOCK_STREAM, 0);
 	if(result == -1) {
 		PERROR("socket");
 		return -1;
@@ -190,9 +271,26 @@ static int init_named_socket(char *name, char **path_out)
 	strncpy(addr.sun_path, name, UNIX_PATH_MAX);
 	addr.sun_path[UNIX_PATH_MAX-1] = '\0';
 
+	result = access(name, F_OK);
+	if(result == 0) {
+		/* file exists */
+		result = unlink(name);
+		if(result == -1) {
+			PERROR("unlink of socket file");
+			goto close_sock;
+		}
+		WARN("socket already exists; overwriting");
+	}
+
 	result = bind(fd, (struct sockaddr *)&addr, sizeof(addr));
 	if(result == -1) {
 		PERROR("bind");
+		goto close_sock;
+	}
+
+	result = listen(fd, 1);
+	if(result == -1) {
+		PERROR("listen");
 		goto close_sock;
 	}
 
@@ -220,11 +318,14 @@ int ustcomm_init_app(pid_t pid, struct ustcomm_app *handle)
 		return -1;
 	}
 
-	handle->fd = init_named_socket(name, &(handle->socketpath));
-	if(handle->fd < 0) {
+	handle->listen_fd = init_named_socket(name, &(handle->socketpath));
+	if(handle->listen_fd < 0) {
+		ERR("error initializing named socket");
 		goto free_name;
 	}
 	free(name);
+
+	INIT_LIST_HEAD(&handle->connections);
 
 	return 0;
 
@@ -244,15 +345,23 @@ int ustcomm_init_ustd(struct ustcomm_ustd *handle)
 		return -1;
 	}
 
-	handle->fd = init_named_socket(name, &handle->socketpath);
-	if(handle->fd < 0)
-		return handle->fd;
+	handle->listen_fd = init_named_socket(name, &handle->socketpath);
+	if(handle->listen_fd < 0) {
+		ERR("error initializing named socket");
+		goto free_name;
+	}
 	free(name);
 
+	INIT_LIST_HEAD(&handle->connections);
+
 	return 0;
+
+free_name:
+	free(name);
+	return -1;
 }
 
-char *find_tok(const char *str)
+static char *find_tok(char *str)
 {
 	while(*str == ' ') {
 		str++;
@@ -331,7 +440,7 @@ char *nth_token(char *str, int tok_no)
 		retval = NULL;
 	}
 
-	retval = strndupa(start, end-start);
+	asprintf(&retval, "%.*s", (int)(end-start), start);
 
 	return retval;
 }

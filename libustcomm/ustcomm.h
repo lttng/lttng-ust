@@ -4,16 +4,27 @@
 #include <sys/types.h>
 #include <sys/un.h>
 
+#include "kcompat.h"
+
+struct ustcomm_connection {
+	struct list_head list;
+	int fd;
+};
+
 struct ustcomm_app {
 	/* the "server" socket for serving the external requests */
-	int fd;
+	int listen_fd;
 	char *socketpath;
+
+	struct list_head connections;
 };
 
 struct ustcomm_ustd {
 	/* the "server" socket for serving the external requests */
-	int fd;
+	int listen_fd;
 	char *socketpath;
+
+	struct list_head connections;
 };
 
 struct ustcomm_source {
