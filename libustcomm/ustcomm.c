@@ -35,6 +35,20 @@
 //	backtrace_symbols_fd(buffer, result, STDERR_FILENO);
 //}
 
+char *strdup_malloc(const char *s)
+{
+	char *retval;
+
+	if(s == NULL)
+		return NULL;
+
+	retval = (char *) malloc(strlen(s)+1);
+
+	strcpy(retval, s);
+
+	return retval;
+}
+
 static void signal_process(pid_t pid)
 {
 	int result;
@@ -57,9 +71,12 @@ int send_message_fd(int fd, const char *msg, char **reply)
 		PERROR("send");
 		return -1;
 	}
+	else if(result == 0) {
+		return 0;
+	}
 
 	if(!reply)
-		return 0;
+		return 1;
 
 	*reply = (char *) malloc(MSG_MAX+1);
 	result = recv(fd, *reply, MSG_MAX, 0);
@@ -67,10 +84,13 @@ int send_message_fd(int fd, const char *msg, char **reply)
 		PERROR("recv");
 		return -1;
 	}
+	else if(result == 0) {
+		return 0;
+	}
 	
 	(*reply)[result] = '\0';
 
-	return 0;
+	return 1;
 }
 
 int send_message_path(const char *path, const char *msg, char **reply, int signalpid)
@@ -149,7 +169,10 @@ int ustcomm_request_consumer(pid_t pid, const char *channel)
 	return 0;
 }
 
-
+/* returns 1 to indicate a message was received
+ * returns 0 to indicate no message was received (cannot happen)
+ * returns -1 to indicate an error
+ */
 
 static int recv_message_fd(int fd, char **msg, struct ustcomm_source *src)
 {
@@ -159,7 +182,7 @@ static int recv_message_fd(int fd, char **msg, struct ustcomm_source *src)
 
 	result = recv(fd, *msg, MSG_MAX, 0);
 	if(result == -1) {
-		PERROR("recvfrom");
+		PERROR("recv");
 		return -1;
 	}
 
@@ -170,7 +193,7 @@ static int recv_message_fd(int fd, char **msg, struct ustcomm_source *src)
 	if(src)
 		src->fd = fd;
 
-	return 0;
+	return 1;
 }
 
 int ustcomm_send_reply(struct ustcomm_server *server, char *msg, struct ustcomm_source *src)
@@ -186,7 +209,14 @@ int ustcomm_send_reply(struct ustcomm_server *server, char *msg, struct ustcomm_
 	return 0;
 } 
 
-int ustcomm_recv_message(struct ustcomm_server *server, char **msg, struct ustcomm_source *src)
+/* @timeout: max blocking time in milliseconds, -1 means infinity
+ *
+ * returns 1 to indicate a message was received
+ * returns 0 to indicate no message was received
+ * returns -1 to indicate an error
+ */
+
+int ustcomm_recv_message(struct ustcomm_server *server, char **msg, struct ustcomm_source *src, int timeout)
 {
 	struct pollfd *fds;
 	struct ustcomm_connection *conn;
@@ -218,11 +248,14 @@ int ustcomm_recv_message(struct ustcomm_server *server, char **msg, struct ustco
 			idx++;
 		}
 
-		result = poll(fds, n_fds, -1);
+		result = poll(fds, n_fds, timeout);
 		if(result == -1) {
 			PERROR("poll");
 			return -1;
 		}
+
+		if(result == 0)
+			return 0;
 
 		if(fds[0].revents) {
 			struct ustcomm_connection *newconn;
@@ -273,14 +306,14 @@ free_fds_return:
 	return retval;
 }
 
-int ustcomm_ustd_recv_message(struct ustcomm_ustd *ustd, char **msg, struct ustcomm_source *src)
+int ustcomm_ustd_recv_message(struct ustcomm_ustd *ustd, char **msg, struct ustcomm_source *src, int timeout)
 {
-	return ustcomm_recv_message(&ustd->server, msg, src);
+	return ustcomm_recv_message(&ustd->server, msg, src, timeout);
 }
 
-int ustcomm_app_recv_message(struct ustcomm_app *app, char **msg, struct ustcomm_source *src)
+int ustcomm_app_recv_message(struct ustcomm_app *app, char **msg, struct ustcomm_source *src, int timeout)
 {
-	return ustcomm_recv_message(&app->server, msg, src);
+	return ustcomm_recv_message(&app->server, msg, src, timeout);
 }
 
 static int init_named_socket(char *name, char **path_out)

@@ -63,12 +63,18 @@ int main()
 	printf("Hello, World!\n");
 
 	sleep(1);
-	for(i=0; i<5000; i++) {
+	for(i=0; i<50; i++) {
 		trace_mark(ust, bar, "str %s", "FOOBAZ");
 		trace_mark(ust, bar2, "number1 %d number2 %d", 53, 9800);
 		usleep(100000);
 	}
 
+	scanf("%*s");
+
+	ltt_trace_stop("auto");
+	ltt_trace_destroy("auto");
+
+	DBG("TRACE STOPPED");
 	scanf("%*s");
 
 	return 0;

@@ -32,10 +32,12 @@ struct ustcomm_source {
 	void *priv;
 };
 
+char *strdup_malloc(const char *s);
+
 int send_message(pid_t pid, const char *msg, char **reply);
 
-int ustcomm_ustd_recv_message(struct ustcomm_ustd *ustd, char **msg, struct ustcomm_source *src);
-int ustcomm_app_recv_message(struct ustcomm_app *app, char **msg, struct ustcomm_source *src);
+int ustcomm_ustd_recv_message(struct ustcomm_ustd *ustd, char **msg, struct ustcomm_source *src, int timeout);
+int ustcomm_app_recv_message(struct ustcomm_app *app, char **msg, struct ustcomm_source *src, int timeout);
 
 int ustcomm_init_app(pid_t pid, struct ustcomm_app *handle);
 

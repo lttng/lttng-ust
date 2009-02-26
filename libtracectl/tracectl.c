@@ -88,7 +88,7 @@ int consumer(void *arg)
 		consumer_channels[i].chan = chan;
 
 		snprintf(tmp, sizeof(tmp), "trace/%s_0", chan->channel_name);
-		result = consumer_channels[i].fd = open(tmp, O_WRONLY | O_CREAT | O_TRUNC, 00644);
+		result = consumer_channels[i].fd = open(tmp, O_WRONLY | O_CREAT | O_TRUNC, 00600);
 		if(result == -1) {
 			perror("open");
 			return -1;
@@ -121,44 +121,6 @@ int consumer(void *arg)
 
 		sleep(1);
 	}
-
-//	CPRINTF("consumer: got a trace: %s with %d channels\n", trace_name, trace->nr_channels);
-//
-//	struct ltt_channel_struct *chan = &trace->channels[0];
-//
-//	CPRINTF("channel 1 (%s) active=%u", chan->channel_name, chan->active & 1);
-
-//	struct rchan *rchan = chan->trans_channel_data;
-//	struct rchan_buf *rbuf = rchan->buf;
-//	struct ltt_channel_buf_struct *lttbuf = chan->buf;
-//	long consumed_old;
-//
-//	result = fd = open("trace.out", O_WRONLY | O_CREAT | O_TRUNC, 00644);
-//	if(result == -1) {
-//		perror("open");
-//		return -1;
-//	}
-
-//	for(;;) {
-//		write(STDOUT_FILENO, str, sizeof(str));
-//
-//		result = ltt_do_get_subbuf(rbuf, lttbuf, &consumed_old);
-//		if(result < 0) {
-//			CPRINTF("ltt_do_get_subbuf: error: %s", strerror(-result));
-//		}
-//		else {
-//			CPRINTF("success!");
-//
-//			result = write(fd, rbuf->buf_data + (consumed_old & (2 * 4096-1)), 4096);
-//			ltt_do_put_subbuf(rbuf, lttbuf, consumed_old);
-//		}
-//
-//		//CPRINTF("There seems to be %ld bytes available", SUBBUF_TRUNC(local_read(&lttbuf->offset), rbuf->chan) - consumed_old);
-//		CPRINTF("Commit count %ld", local_read(&lttbuf->commit_count[0]));
-//
-//
-//		sleep(1);
-//	}
 }
 
 void start_consumer(void)
@@ -246,18 +208,14 @@ int listener_main(void *p)
 		int len;
 		struct ustcomm_source src;
 
-		result = ustcomm_app_recv_message(&ustcomm_app, &recvbuf, &src);
-		DBG("HERE");
-		if(result) {
+		result = ustcomm_app_recv_message(&ustcomm_app, &recvbuf, &src, -1);
+		if(result <= 0) {
 			WARN("error in ustcomm_app_recv_message");
 			continue;
 		}
 
 		DBG("received a message! it's: %s\n", recvbuf);
 		len = strlen(recvbuf);
-		//if(len && recvbuf[len-1] == '\n') {
-		//	recvbuf[len-1] = '\0';
-		//}
 
 		if(!strcmp(recvbuf, "print_markers")) {
 			print_markers();
@@ -453,6 +411,133 @@ int listener_main(void *p)
 			libfile = nth_token(recvbuf, 1);
 
 			DBG("load_probe_lib loading %s", libfile);
+		}
+		else if(nth_token_is(recvbuf, "get_subbuffer", 0) == 1) {
+			struct ltt_trace_struct *trace;
+			char trace_name[] = "auto";
+			int i;
+			char *channel_name;
+
+			DBG("get_subbuf");
+
+			channel_name = nth_token(recvbuf, 1);
+			if(channel_name == NULL) {
+				ERR("get_subbuf: cannot parse channel");
+				goto next_cmd;
+			}
+
+			ltt_lock_traces();
+			trace = _ltt_trace_find(trace_name);
+			ltt_unlock_traces();
+
+			if(trace == NULL) {
+				CPRINTF("cannot find trace!");
+				return 1;
+			}
+
+			for(i=0; i<trace->nr_channels; i++) {
+				struct rchan *rchan = trace->channels[i].trans_channel_data;
+
+				if(!strcmp(trace->channels[i].channel_name, channel_name)) {
+					struct rchan_buf *rbuf = rchan->buf;
+					struct ltt_channel_buf_struct *lttbuf = trace->channels[i].buf;
+					char *reply;
+					long consumed_old=0;
+
+					result = ltt_do_get_subbuf(rbuf, lttbuf, &consumed_old);
+					if(result < 0) {
+						DBG("ltt_do_get_subbuf: error: %s", strerror(-result));
+						asprintf(&reply, "%s %ld", "UNAVAIL", 0);
+					}
+					else {
+						DBG("ltt_do_get_subbuf: success");
+						asprintf(&reply, "%s %ld", "OK", consumed_old);
+					}
+
+					result = ustcomm_send_reply(&ustcomm_app.server, reply, &src);
+					if(result) {
+						ERR("listener: get_subbuf: ustcomm_send_reply failed");
+						goto next_cmd;
+					}
+
+					free(reply);
+
+					break;
+				}
+			}
+		}
+		else if(nth_token_is(recvbuf, "put_subbuffer", 0) == 1) {
+			struct ltt_trace_struct *trace;
+			char trace_name[] = "auto";
+			int i;
+			char *channel_name;
+			long consumed_old;
+			char *consumed_old_str;
+			char *endptr;
+
+			DBG("put_subbuf");
+
+			channel_name = strdup_malloc(nth_token(recvbuf, 1));
+			if(channel_name == NULL) {
+				ERR("put_subbuf_size: cannot parse channel");
+				goto next_cmd;
+			}
+
+			consumed_old_str = strdup_malloc(nth_token(recvbuf, 2));
+			if(consumed_old_str == NULL) {
+				ERR("put_subbuf: cannot parse consumed_old");
+				goto next_cmd;
+			}
+			consumed_old = strtol(consumed_old_str, &endptr, 10);
+			if(*endptr != '\0') {
+				ERR("put_subbuf: invalid value for consumed_old");
+				goto next_cmd;
+			}
+
+			ltt_lock_traces();
+			trace = _ltt_trace_find(trace_name);
+			ltt_unlock_traces();
+
+			if(trace == NULL) {
+				CPRINTF("cannot find trace!");
+				return 1;
+			}
+
+			for(i=0; i<trace->nr_channels; i++) {
+				struct rchan *rchan = trace->channels[i].trans_channel_data;
+
+				if(!strcmp(trace->channels[i].channel_name, channel_name)) {
+					struct rchan_buf *rbuf = rchan->buf;
+					struct ltt_channel_buf_struct *lttbuf = trace->channels[i].buf;
+					char *reply;
+					long consumed_old=0;
+
+					result = ltt_do_put_subbuf(rbuf, lttbuf, consumed_old);
+					if(result < 0) {
+						WARN("ltt_do_put_subbuf: error");
+					}
+					else {
+						DBG("ltt_do_put_subbuf: success");
+					}
+					asprintf(&reply, "%s", "OK", consumed_old);
+
+					result = ustcomm_send_reply(&ustcomm_app.server, reply, &src);
+					if(result) {
+						ERR("listener: put_subbuf: ustcomm_send_reply failed");
+						goto next_cmd;
+					}
+
+					free(reply);
+
+					break;
+				}
+			}
+
+			free(channel_name);
+			free(consumed_old_str);
+		}
+		else {
+			ERR("unable to parse message: %s", recvbuf);
 		}
 
 	next_cmd:
@@ -664,7 +749,8 @@ static void __attribute__((destructor)) fini()
 	}
 
 	/* FIXME: wait for the consumer to be done */
-	sleep(1);
+	DBG("waiting 5 sec for consume");
+	sleep(5);
 
 	destroy_socket();
 }
