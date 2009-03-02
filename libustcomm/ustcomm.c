@@ -316,6 +316,26 @@ int ustcomm_app_recv_message(struct ustcomm_app *app, char **msg, struct ustcomm
 	return ustcomm_recv_message(&app->server, msg, src, timeout);
 }
 
+/* This removes src from the list of active connections of app.
+ */
+
+int ustcomm_app_detach_client(struct ustcomm_app *app, struct ustcomm_source *src)
+{
+	struct ustcomm_server *server = (struct ustcomm_server *)app;
+	struct ustcomm_connection *conn;
+
+	list_for_each_entry(conn, &server->connections, list) {
+		if(conn->fd == src->fd) {
+			list_del(&conn->list);
+			goto found;
+		}
+	}
+
+	return -1;
+found:
+	return src->fd;
+}
+
 static int init_named_socket(char *name, char **path_out)
 {
 	int result;

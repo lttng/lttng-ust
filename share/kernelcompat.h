@@ -71,14 +71,6 @@ static inline long IS_ERR(const void *ptr)
 
 #define mutex_unlock(m) pthread_mutex_unlock(m)
 
-/* SPINLOCKS */
-
-typedef int spinlock_t;
-
-#define spin_lock(a) /* nothing */
-#define spin_unlock(a) /* nothing */
-#define spin_lock_init(a) /* nothing */
-
 
 /* MALLOCATION */
 

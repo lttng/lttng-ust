@@ -59,7 +59,7 @@ struct rchan_buf {
 //ust//	unsigned int page_count;        /* number of current buffer pages */ 
 	unsigned int finalized;         /* buffer has been finalized */ 
 //ust//	unsigned int cpu;               /* this buf's cpu */ 
-	int shmid;
+	int shmid;			/* the shmid of the buffer data pages */
 } ____cacheline_aligned; 
 
 /*
@@ -335,16 +335,20 @@ struct ltt_channel_buf_struct {
 					 */
 	local_t events_lost;
 	local_t corrupted_subbuffers;
-	spinlock_t full_lock;		/*
-					 * buffer full condition spinlock, only
-					 * for userspace tracing blocking mode
-					 * synchronization with reader.
-					 */
+//ust//	spinlock_t full_lock;		/*
+//ust//					 * buffer full condition spinlock, only
+//ust//					 * for userspace tracing blocking mode
+//ust//					 * synchronization with reader.
+//ust//					 */
 //ust//	wait_queue_head_t write_wait;	/*
 //ust//					 * Wait queue for blocking user space
 //ust//					 * writers
 //ust//					 */
-	atomic_t wakeup_readers;	/* Boolean : wakeup readers waiting ? */
+//ust//	atomic_t wakeup_readers;	/* Boolean : wakeup readers waiting ? */
+	/* whether or not wake_consumer must be called; must be accessed atomically */
+	int call_wake_consumer;
+	/* the arg to pass to wake_consumer; must be accessed atomically */
+	void *wake_consumer_arg;
 } ____cacheline_aligned;
 
 int ltt_do_get_subbuf(struct rchan_buf *buf, struct ltt_channel_buf_struct *ltt_buf, long *pconsumed_old);

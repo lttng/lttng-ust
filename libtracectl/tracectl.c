@@ -11,13 +11,10 @@
 #include "tracer.h"
 #include "localerr.h"
 #include "ustcomm.h"
+#include "relay.h" /* FIXME: remove */
 
 //#define USE_CLONE
 
-#define UNIX_PATH_MAX 108
-
-#define SOCKETDIR "/tmp/socks"
-#define SOCKETDIRLEN sizeof(SOCKETDIR)
 #define USTSIGNAL SIGIO
 
 #define MAX_MSG_SIZE (100)
@@ -46,9 +43,6 @@ struct trctl_msg {
          */
 	char payload[94];
 };
-
-char mysocketfile[UNIX_PATH_MAX] = "";
-//int pfd = -1;
 
 struct consumer_channel {
 	int fd;
@@ -183,8 +177,6 @@ void notif_cb(void)
 		return;
 	}
 }
-
-#define CONSUMER_DAEMON_SOCK SOCKETDIR "/ustd"
 
 static int inform_consumer_daemon(void)
 {
@@ -536,6 +528,55 @@ int listener_main(void *p)
 			free(channel_name);
 			free(consumed_old_str);
 		}
+		else if(nth_token_is(recvbuf, "get_notifications", 0) == 1) {
+			struct ltt_trace_struct *trace;
+			char trace_name[] = "auto";
+			int i;
+			char *channel_name;
+
+			DBG("get_notifications");
+
+			channel_name = strdup_malloc(nth_token(recvbuf, 1));
+			if(channel_name == NULL) {
+				ERR("put_subbuf_size: cannot parse channel");
+				goto next_cmd;
+			}
+
+			ltt_lock_traces();
+			trace = _ltt_trace_find(trace_name);
+			ltt_unlock_traces();
+
+			if(trace == NULL) {
+				CPRINTF("cannot find trace!");
+				return 1;
+			}
+
+			for(i=0; i<trace->nr_channels; i++) {
+				struct rchan *rchan = trace->channels[i].trans_channel_data;
+				int fd;
+
+				if(!strcmp(trace->channels[i].channel_name, channel_name)) {
+					struct rchan_buf *rbuf = rchan->buf;
+					struct ltt_channel_buf_struct *lttbuf = trace->channels[i].buf;
+
+					result = fd = ustcomm_app_detach_client(&ustcomm_app, &src);
+					if(result == -1) {
+						ERR("ustcomm_app_detach_client failed");
+						goto next_cmd;
+					}
+
+					lttbuf->wake_consumer_arg = (void *) fd;
+
+					smp_wmb();
+
+					lttbuf->call_wake_consumer = 1;
+
+					break;
+				}
+			}
+
+			free(channel_name);
+		}
 		else {
 			ERR("unable to parse message: %s", recvbuf);
 		}
@@ -593,15 +634,15 @@ static int init_socket(void)
 
 static void destroy_socket(void)
 {
-	int result;
-
-	if(mysocketfile[0] == '\0')
-		return;
-
-	result = unlink(mysocketfile);
-	if(result == -1) {
-		PERROR("unlink");
-	}
+//	int result;
+//
+//	if(mysocketfile[0] == '\0')
+//		return;
+//
+//	result = unlink(mysocketfile);
+//	if(result == -1) {
+//		PERROR("unlink");
+//	}
 }
 
 static int init_signal_handler(void)
@@ -646,12 +687,39 @@ static void auto_probe_connect(struct marker *m)
 	DBG("just auto connected marker %s %s to probe default", m->channel, m->name);
 }
 
+/* Wake the consumer of a buffer 
+ *
+ * wake_consumer_cb is called in tracing context so it must haste.
+ *
+ * FIXME: don't do a system call here; maybe schedule work to be done
+ * in listener context? Once this is done in listener context, we can
+ * check for the return value of send_message_fd and remove the fd if necessary
+ *
+ * @arg: the buffer
+ * @finished: 0: subbuffer full; 1: buffer being destroyed
+ */
+
+static void wake_consumer_cb(void *arg, int finished)
+{
+	struct ltt_channel_buf_struct *ltt_buf = (struct ltt_channel_buf_struct *) arg;
+	int fd = (int)ACCESS_ONCE(arg);
+
+	if(!finished) {
+		send_message_fd(fd, "consume", NULL);
+	}
+	else {
+		send_message_fd(fd, "destroyed", NULL);
+	}
+}
+
 static void __attribute__((constructor(101))) init0()
 {
 	DBG("UST_AUTOPROBE constructor");
 	if(getenv("UST_AUTOPROBE")) {
 		marker_set_new_marker_cb(auto_probe_connect);
 	}
+
+	relay_set_wake_consumer(wake_consumer_cb);
 }
 
 static void fini(void);
