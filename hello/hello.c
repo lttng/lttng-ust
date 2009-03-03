@@ -6,20 +6,13 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "../libmarkers/marker.h"
+#include "marker.h"
 #include "usterr.h"
 #include "tracer.h"
 #include "marker-control.h"
 #include "relay.h"
 #include "tp.h"
 
-
-void probe(const struct marker *mdata,
-		void *probe_private, void *call_private,
-		const char *fmt, va_list *args)
-{
-	printf("In probe\n");
-}
 
 void inthandler(int sig)
 {
@@ -81,5 +74,5 @@ int main()
 	return 0;
 }
 
-MARKER_LIB
-TRACEPOINT_LIB
+MARKER_LIB;
+TRACEPOINT_LIB;

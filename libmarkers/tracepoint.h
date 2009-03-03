@@ -2,16 +2,26 @@
 #define _LINUX_TRACEPOINT_H
 
 /*
- * Kernel Tracepoint API.
+ * Copyright (C) 2008 Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
+ * Copyright (C) 2009 Pierre-Marc Fournier
  *
- * See Documentation/tracepoint.txt.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
  *
- * (C) Copyright 2008 Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * Heavily inspired from the Linux Kernel Markers.
  *
- * This file is released under the GPLv2.
- * See the file COPYING for more details.
+ * Ported to userspace by Pierre-Marc Fournier.
  */
 
 //#include <linux/immediate.h>
