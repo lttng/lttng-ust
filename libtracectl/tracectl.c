@@ -6,6 +6,7 @@
 #include <sys/un.h>
 #include <sched.h>
 #include <fcntl.h>
+#include <poll.h>
 
 #include "marker.h"
 #include "tracer.h"
@@ -22,6 +23,8 @@
 #define MSG_REGISTER_NOTIF 2
 
 char consumer_stack[10000];
+
+struct list_head blocked_consumers = LIST_HEAD_INIT(blocked_consumers);
 
 static struct ustcomm_app ustcomm_app;
 
@@ -47,6 +50,22 @@ struct trctl_msg {
 struct consumer_channel {
 	int fd;
 	struct ltt_channel_struct *chan;
+};
+
+struct blocked_consumer {
+	int fd_consumer;
+	int fd_producer;
+	int tmp_poll_idx;
+
+	/* args to ustcomm_send_reply */
+	struct ustcomm_server server;
+	struct ustcomm_source src;
+
+	/* args to ltt_do_get_subbuf */
+	struct rchan_buf *rbuf;
+	struct ltt_channel_buf_struct *lttbuf;
+
+	struct list_head list;
 };
 
 int consumer(void *arg)
@@ -184,6 +203,87 @@ static int inform_consumer_daemon(void)
 	ustcomm_request_consumer(getpid(), "ust");
 }
 
+void process_blocked_consumers(void)
+{
+	int n_fds = 0;
+	struct pollfd *fds;
+	struct blocked_consumer *bc;
+	int idx = 0;
+	char inbuf;
+	int result;
+
+	list_for_each_entry(bc, &blocked_consumers, list) {
+		n_fds++;
+	}
+
+	fds = (struct pollfd *) malloc(n_fds * sizeof(struct pollfd));
+	if(fds == NULL) {
+		ERR("malloc returned NULL");
+		return;
+	}
+
+	list_for_each_entry(bc, &blocked_consumers, list) {
+		fds[idx].fd = bc->fd_producer;
+		fds[idx].events = POLLIN;
+		bc->tmp_poll_idx = idx;
+		idx++;
+	}
+
+	result = poll(fds, n_fds, 0);
+	if(result == -1) {
+		PERROR("poll");
+		return -1;
+	}
+
+	list_for_each_entry(bc, &blocked_consumers, list) {
+		if(fds[bc->tmp_poll_idx].revents) {
+			long consumed_old = 0;
+			char *reply;
+
+			result = read(bc->fd_producer, &inbuf, 1);
+			if(result == -1) {
+				PERROR("read");
+				continue;
+			}
+			if(result == 0) {
+				DBG("PRODUCER END");
+
+				close(bc->fd_producer);
+
+				__list_del(bc->list.prev, bc->list.next);
+
+				result = ustcomm_send_reply(&bc->server, "END", &bc->src);
+				if(result < 0) {
+					ERR("ustcomm_send_reply failed");
+					continue;
+				}
+
+				continue;
+			}
+
+			result = ltt_do_get_subbuf(bc->rbuf, bc->lttbuf, &consumed_old);
+			if(result == -EAGAIN) {
+				WARN("missed buffer?");
+				continue;
+			}
+			else if(result < 0) {
+				DBG("ltt_do_get_subbuf: error: %s", strerror(-result));
+			}
+			asprintf(&reply, "%s %ld", "OK", consumed_old);
+			result = ustcomm_send_reply(&bc->server, reply, &bc->src);
+			if(result < 0) {
+				ERR("ustcomm_send_reply failed");
+				free(reply);
+				continue;
+			}
+			free(reply);
+
+			__list_del(bc->list.prev, bc->list.next);
+		}
+	}
+
+}
+
 int listener_main(void *p)
 {
 	int result;
@@ -200,9 +300,15 @@ int listener_main(void *p)
 		int len;
 		struct ustcomm_source src;
 
-		result = ustcomm_app_recv_message(&ustcomm_app, &recvbuf, &src, -1);
-		if(result <= 0) {
+		process_blocked_consumers();
+
+		result = ustcomm_app_recv_message(&ustcomm_app, &recvbuf, &src, 5);
+		if(result < 0) {
 			WARN("error in ustcomm_app_recv_message");
+			continue;
+		}
+		else if(result == 0) {
+			/* no message */
 			continue;
 		}
 
@@ -435,24 +541,22 @@ int listener_main(void *p)
 					struct ltt_channel_buf_struct *lttbuf = trace->channels[i].buf;
 					char *reply;
 					long consumed_old=0;
+					int fd;
+					struct blocked_consumer *bc;
 
-					result = ltt_do_get_subbuf(rbuf, lttbuf, &consumed_old);
-					if(result < 0) {
-						DBG("ltt_do_get_subbuf: error: %s", strerror(-result));
-						asprintf(&reply, "%s %ld", "UNAVAIL", 0);
-					}
-					else {
-						DBG("ltt_do_get_subbuf: success");
-						asprintf(&reply, "%s %ld", "OK", consumed_old);
-					}
-
-					result = ustcomm_send_reply(&ustcomm_app.server, reply, &src);
-					if(result) {
-						ERR("listener: get_subbuf: ustcomm_send_reply failed");
+					bc = (struct blocked_consumer *) malloc(sizeof(struct blocked_consumer));
+					if(bc == NULL) {
+						ERR("malloc returned NULL");
 						goto next_cmd;
 					}
+					bc->fd_consumer = src.fd;
+					bc->fd_producer = lttbuf->data_ready_fd_read;
+					bc->rbuf = rbuf;
+					bc->lttbuf = lttbuf;
+					bc->src = src;
+					bc->server = ustcomm_app.server;
 
-					free(reply);
+					list_add(&bc->list, &blocked_consumers);
 
 					break;
 				}
@@ -528,55 +632,55 @@ int listener_main(void *p)
 			free(channel_name);
 			free(consumed_old_str);
 		}
-		else if(nth_token_is(recvbuf, "get_notifications", 0) == 1) {
-			struct ltt_trace_struct *trace;
-			char trace_name[] = "auto";
-			int i;
-			char *channel_name;
-
-			DBG("get_notifications");
-
-			channel_name = strdup_malloc(nth_token(recvbuf, 1));
-			if(channel_name == NULL) {
-				ERR("put_subbuf_size: cannot parse channel");
-				goto next_cmd;
-			}
-
-			ltt_lock_traces();
-			trace = _ltt_trace_find(trace_name);
-			ltt_unlock_traces();
-
-			if(trace == NULL) {
-				CPRINTF("cannot find trace!");
-				return 1;
-			}
-
-			for(i=0; i<trace->nr_channels; i++) {
-				struct rchan *rchan = trace->channels[i].trans_channel_data;
-				int fd;
-
-				if(!strcmp(trace->channels[i].channel_name, channel_name)) {
-					struct rchan_buf *rbuf = rchan->buf;
-					struct ltt_channel_buf_struct *lttbuf = trace->channels[i].buf;
-
-					result = fd = ustcomm_app_detach_client(&ustcomm_app, &src);
-					if(result == -1) {
-						ERR("ustcomm_app_detach_client failed");
-						goto next_cmd;
-					}
-
-					lttbuf->wake_consumer_arg = (void *) fd;
-
-					smp_wmb();
-
-					lttbuf->call_wake_consumer = 1;
-
-					break;
-				}
-			}
-
-			free(channel_name);
-		}
+//		else if(nth_token_is(recvbuf, "get_notifications", 0) == 1) {
+//			struct ltt_trace_struct *trace;
+//			char trace_name[] = "auto";
+//			int i;
+//			char *channel_name;
+//
+//			DBG("get_notifications");
+//
+//			channel_name = strdup_malloc(nth_token(recvbuf, 1));
+//			if(channel_name == NULL) {
+//				ERR("put_subbuf_size: cannot parse channel");
+//				goto next_cmd;
+//			}
+//
+//			ltt_lock_traces();
+//			trace = _ltt_trace_find(trace_name);
+//			ltt_unlock_traces();
+//
+//			if(trace == NULL) {
+//				CPRINTF("cannot find trace!");
+//				return 1;
+//			}
+//
+//			for(i=0; i<trace->nr_channels; i++) {
+//				struct rchan *rchan = trace->channels[i].trans_channel_data;
+//				int fd;
+//
+//				if(!strcmp(trace->channels[i].channel_name, channel_name)) {
+//					struct rchan_buf *rbuf = rchan->buf;
+//					struct ltt_channel_buf_struct *lttbuf = trace->channels[i].buf;
+//
+//					result = fd = ustcomm_app_detach_client(&ustcomm_app, &src);
+//					if(result == -1) {
+//						ERR("ustcomm_app_detach_client failed");
+//						goto next_cmd;
+//					}
+//
+//					lttbuf->wake_consumer_arg = (void *) fd;
+//
+//					smp_wmb();
+//
+//					lttbuf->call_wake_consumer = 1;
+//
+//					break;
+//				}
+//			}
+//
+//			free(channel_name);
+//		}
 		else {
 			ERR("unable to parse message: %s", recvbuf);
 		}
@@ -687,39 +791,12 @@ static void auto_probe_connect(struct marker *m)
 	DBG("just auto connected marker %s %s to probe default", m->channel, m->name);
 }
 
-/* Wake the consumer of a buffer 
- *
- * wake_consumer_cb is called in tracing context so it must haste.
- *
- * FIXME: don't do a system call here; maybe schedule work to be done
- * in listener context? Once this is done in listener context, we can
- * check for the return value of send_message_fd and remove the fd if necessary
- *
- * @arg: the buffer
- * @finished: 0: subbuffer full; 1: buffer being destroyed
- */
-
-static void wake_consumer_cb(void *arg, int finished)
-{
-	struct ltt_channel_buf_struct *ltt_buf = (struct ltt_channel_buf_struct *) arg;
-	int fd = (int)ACCESS_ONCE(arg);
-
-	if(!finished) {
-		send_message_fd(fd, "consume", NULL);
-	}
-	else {
-		send_message_fd(fd, "destroyed", NULL);
-	}
-}
-
 static void __attribute__((constructor(101))) init0()
 {
 	DBG("UST_AUTOPROBE constructor");
 	if(getenv("UST_AUTOPROBE")) {
 		marker_set_new_marker_cb(auto_probe_connect);
 	}
-
-	relay_set_wake_consumer(wake_consumer_cb);
 }
 
 static void fini(void);

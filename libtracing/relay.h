@@ -345,10 +345,14 @@ struct ltt_channel_buf_struct {
 //ust//					 * writers
 //ust//					 */
 //ust//	atomic_t wakeup_readers;	/* Boolean : wakeup readers waiting ? */
-	/* whether or not wake_consumer must be called; must be accessed atomically */
-	int call_wake_consumer;
-	/* the arg to pass to wake_consumer; must be accessed atomically */
-	void *wake_consumer_arg;
+	/* one byte is written to this pipe when data is available, in order
+           to wake the consumer */
+	/* portability: Single byte writes must be as quick as possible. The kernel-side
+	   buffer must be large enough so the writer doesn't block. From the pipe(7)
+           man page: Since linux 2.6.11, the pipe capacity is 65536 bytes. */
+	int data_ready_fd_write;
+	/* the reading end of the pipe */
+	int data_ready_fd_read;
 } ____cacheline_aligned;
 
 int ltt_do_get_subbuf(struct rchan_buf *buf, struct ltt_channel_buf_struct *ltt_buf, long *pconsumed_old);

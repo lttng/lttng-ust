@@ -131,8 +131,6 @@ static int atomic_read(atomic_t *p)
 #define atomic_long_set atomic_set
 #define atomic_long_read atomic_read
 
-#include "asm.h"
-
 //#define __xg(x) ((volatile long *)(x))
 
 #define cmpxchg(ptr, o, n)						\

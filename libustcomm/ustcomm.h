@@ -11,6 +11,7 @@ struct ustcomm_connection {
 	int fd;
 };
 
+/* ustcomm_server must be shallow-copyable */
 struct ustcomm_server {
 	/* the "server" socket for serving the external requests */
 	int listen_fd;
@@ -27,6 +28,7 @@ struct ustcomm_app {
 	struct ustcomm_server server;
 };
 
+/* ustcomm_source must be shallow-copyable */
 struct ustcomm_source {
 	int fd;
 	void *priv;

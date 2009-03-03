@@ -201,7 +201,7 @@ int ustcomm_send_reply(struct ustcomm_server *server, char *msg, struct ustcomm_
 	int result;
 
 	result = send_message_fd(src->fd, msg, NULL);
-	if(result) {
+	if(result < 0) {
 		ERR("error in send_message_fd");
 		return -1;
 	}

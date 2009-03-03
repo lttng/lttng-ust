@@ -892,9 +892,13 @@ static notrace void ltt_deliver(struct rchan_buf *buf, unsigned int subbuf_idx,
 	struct ltt_channel_struct *channel =
 		(struct ltt_channel_struct *)buf->chan->private_data;
 	struct ltt_channel_buf_struct *ltt_buf = channel->buf;
+	int result;
 
-	if(ltt_buf->call_wake_consumer)
-		relay_wake_consumer(ACCESS_ONCE(ltt_buf->wake_consumer_arg), 0);
+	result = write(ltt_buf->data_ready_fd_write, "1", 1);
+	if(result == -1) {
+		PERROR("write (in ltt_relay_buffer_flush)");
+		ERR("this should never happen!");
+	}
 //ust//	atomic_set(&ltt_buf->wakeup_readers, 1);
 }
 
@@ -1456,6 +1460,8 @@ static int ltt_relay_create_buffer(struct ltt_trace_struct *trace,
 {
 	struct ltt_channel_buf_struct *ltt_buf = ltt_chan->buf;
 	unsigned int j;
+	int fds[2];
+	int result;
 
 	ltt_buf->commit_count =
 		zmalloc(sizeof(ltt_buf->commit_count) * n_subbufs);
@@ -1480,8 +1486,13 @@ static int ltt_relay_create_buffer(struct ltt_trace_struct *trace,
 	local_set(&ltt_buf->events_lost, 0);
 	local_set(&ltt_buf->corrupted_subbuffers, 0);
 
-	ltt_buf->call_wake_consumer = 0;
-	ltt_buf->wake_consumer_arg = NULL;
+	result = pipe(fds);
+	if(result == -1) {
+		PERROR("pipe");
+		return -1;
+	}
+	ltt_buf->data_ready_fd_read = fds[0];
+	ltt_buf->data_ready_fd_write = fds[1];
 
 	return 0;
 }
@@ -1593,11 +1604,16 @@ static notrace void ltt_relay_buffer_flush(struct rchan_buf *buf)
 	struct ltt_channel_struct *channel =
 		(struct ltt_channel_struct *)buf->chan->private_data;
 	struct ltt_channel_buf_struct *ltt_buf = channel->buf;
+	int result;
 
 	buf->finalized = 1;
 	ltt_force_switch(buf, FORCE_FLUSH);
 
-	relay_wake_consumer(ltt_buf, 1);
+	result = write(ltt_buf->data_ready_fd_write, "1", 1);
+	if(result == -1) {
+		PERROR("write (in ltt_relay_buffer_flush)");
+		ERR("this should never happen!");
+	}
 }
 
 static void ltt_relay_async_wakeup_chan(struct ltt_channel_struct *ltt_channel)
@@ -1619,11 +1635,20 @@ static void ltt_relay_async_wakeup_chan(struct ltt_channel_struct *ltt_channel)
 static void ltt_relay_finish_buffer(struct ltt_channel_struct *ltt_channel)
 {
 	struct rchan *rchan = ltt_channel->trans_channel_data;
+	int result;
 
 	if (rchan->buf) {
 		struct ltt_channel_buf_struct *ltt_buf = ltt_channel->buf;
 		ltt_relay_buffer_flush(rchan->buf);
 //ust//		ltt_relay_wake_writers(ltt_buf);
+		/* closing the pipe tells the consumer the buffer is finished */
+		
+		//result = write(ltt_buf->data_ready_fd_write, "D", 1);
+		//if(result == -1) {
+		//	PERROR("write (in ltt_relay_finish_buffer)");
+		//	ERR("this should never happen!");
+		//}
+		close(ltt_buf->data_ready_fd_write);
 	}
 }
 
