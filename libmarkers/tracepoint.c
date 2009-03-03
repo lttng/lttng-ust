@@ -15,22 +15,32 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
-#include <linux/module.h>
-#include <linux/mutex.h>
-#include <linux/types.h>
-#include <linux/jhash.h>
-#include <linux/list.h>
-#include <linux/rcupdate.h>
-#include <linux/tracepoint.h>
-#include <linux/err.h>
-#include <linux/slab.h>
-#include <linux/immediate.h>
+//ust// #include <linux/module.h>
+//ust// #include <linux/mutex.h>
+//ust// #include <linux/types.h>
+//ust// #include <linux/jhash.h>
+//ust// #include <linux/list.h>
+//ust// #include <linux/rcupdate.h>
+//ust// #include <linux/tracepoint.h>
+//ust// #include <linux/err.h>
+//ust// #include <linux/slab.h>
+//ust// #include <linux/immediate.h>
 
-extern struct tracepoint __start___tracepoints[];
-extern struct tracepoint __stop___tracepoints[];
+#include <errno.h>
+
+#include "kernelcompat.h"
+#include "tracepoint.h"
+#include "usterr.h"
+#include "list.h"
+
+//extern struct tracepoint __start___tracepoints[] __attribute__((visibility("hidden")));
+//extern struct tracepoint __stop___tracepoints[] __attribute__((visibility("hidden")));
 
 /* Set to 1 to enable tracepoint debug output */
 static const int tracepoint_debug;
+
+/* libraries that contain tracepoints (struct tracepoint_lib) */
+static LIST_HEAD(libs);
 
 /*
  * tracepoints_mutex nests inside module_mutex. Tracepoints mutex protects the
@@ -61,7 +71,7 @@ struct tracepoint_entry {
 
 struct tp_probes {
 	union {
-		struct rcu_head rcu;
+//ust//		struct rcu_head rcu;
 		struct list_head list;
 	} u;
 	void *probes[0];
@@ -74,17 +84,19 @@ static inline void *allocate_probes(int count)
 	return p == NULL ? NULL : p->probes;
 }
 
-static void rcu_free_old_probes(struct rcu_head *head)
-{
-	kfree(container_of(head, struct tp_probes, u.rcu));
-}
+//ust// static void rcu_free_old_probes(struct rcu_head *head)
+//ust// {
+//ust// 	kfree(container_of(head, struct tp_probes, u.rcu));
+//ust// }
 
 static inline void release_probes(void *old)
 {
 	if (old) {
 		struct tp_probes *tp_probes = container_of(old,
 			struct tp_probes, probes[0]);
-		call_rcu_sched(&tp_probes->u.rcu, rcu_free_old_probes);
+//ust//		call_rcu_sched(&tp_probes->u.rcu, rcu_free_old_probes);
+		synchronize_rcu();
+		kfree(tp_probes);
 	}
 }
 
@@ -298,13 +310,13 @@ void tracepoint_update_probe_range(struct tracepoint *begin,
 static void tracepoint_update_probes(void)
 {
 	/* Core kernel tracepoints */
-	tracepoint_update_probe_range(__start___tracepoints,
-		__stop___tracepoints);
+//ust//	tracepoint_update_probe_range(__start___tracepoints,
+//ust//		__stop___tracepoints);
 	/* tracepoints in modules. */
-	module_update_tracepoints();
+	lib_update_tracepoints();
 	/* Update immediate values */
 	core_imv_update();
-	module_imv_update();
+//ust//	module_imv_update();
 }
 
 static void *tracepoint_add_probe(const char *name, void *probe)
@@ -346,7 +358,7 @@ int tracepoint_probe_register(const char *name, void *probe)
 	release_probes(old);
 	return 0;
 }
-EXPORT_SYMBOL_GPL(tracepoint_probe_register);
+//ust// EXPORT_SYMBOL_GPL(tracepoint_probe_register);
 
 static void *tracepoint_remove_probe(const char *name, void *probe)
 {
@@ -388,7 +400,7 @@ int tracepoint_probe_unregister(const char *name, void *probe)
 	release_probes(old);
 	return 0;
 }
-EXPORT_SYMBOL_GPL(tracepoint_probe_unregister);
+//ust// EXPORT_SYMBOL_GPL(tracepoint_probe_unregister);
 
 static LIST_HEAD(old_probes);
 static int need_update;
@@ -424,7 +436,7 @@ int tracepoint_probe_register_noupdate(const char *name, void *probe)
 	mutex_unlock(&tracepoints_mutex);
 	return 0;
 }
-EXPORT_SYMBOL_GPL(tracepoint_probe_register_noupdate);
+//ust// EXPORT_SYMBOL_GPL(tracepoint_probe_register_noupdate);
 
 /**
  * tracepoint_probe_unregister_noupdate -  remove a probe but not disconnect
@@ -447,7 +459,7 @@ int tracepoint_probe_unregister_noupdate(const char *name, void *probe)
 	mutex_unlock(&tracepoints_mutex);
 	return 0;
 }
-EXPORT_SYMBOL_GPL(tracepoint_probe_unregister_noupdate);
+//ust// EXPORT_SYMBOL_GPL(tracepoint_probe_unregister_noupdate);
 
 /**
  * tracepoint_probe_update_all -  update tracepoints
@@ -470,10 +482,12 @@ void tracepoint_probe_update_all(void)
 	tracepoint_update_probes();
 	list_for_each_entry_safe(pos, next, &release_probes, u.list) {
 		list_del(&pos->u.list);
-		call_rcu_sched(&pos->u.rcu, rcu_free_old_probes);
+//ust//		call_rcu_sched(&pos->u.rcu, rcu_free_old_probes);
+		synchronize_rcu();
+		kfree(pos);
 	}
 }
-EXPORT_SYMBOL_GPL(tracepoint_probe_update_all);
+//ust// EXPORT_SYMBOL_GPL(tracepoint_probe_update_all);
 
 /**
  * tracepoint_get_iter_range - Get a next tracepoint iterator given a range.
@@ -496,21 +510,21 @@ int tracepoint_get_iter_range(struct tracepoint **tracepoint,
 		return 1;
 	return 0;
 }
-EXPORT_SYMBOL_GPL(tracepoint_get_iter_range);
+//ust// EXPORT_SYMBOL_GPL(tracepoint_get_iter_range);
 
 static void tracepoint_get_iter(struct tracepoint_iter *iter)
 {
 	int found = 0;
 
-	/* Core kernel tracepoints */
-	if (!iter->module) {
-		found = tracepoint_get_iter_range(&iter->tracepoint,
-				__start___tracepoints, __stop___tracepoints);
-		if (found)
-			goto end;
-	}
-	/* tracepoints in modules. */
-	found = module_get_iter_tracepoints(iter);
+//ust//	/* Core kernel tracepoints */
+//ust//	if (!iter->module) {
+//ust//		found = tracepoint_get_iter_range(&iter->tracepoint,
+//ust//				__start___tracepoints, __stop___tracepoints);
+//ust//		if (found)
+//ust//			goto end;
+//ust//	}
+	/* tracepoints in libs. */
+	found = lib_get_iter_tracepoints(iter);
 end:
 	if (!found)
 		tracepoint_iter_reset(iter);
@@ -520,7 +534,7 @@ void tracepoint_iter_start(struct tracepoint_iter *iter)
 {
 	tracepoint_get_iter(iter);
 }
-EXPORT_SYMBOL_GPL(tracepoint_iter_start);
+//ust// EXPORT_SYMBOL_GPL(tracepoint_iter_start);
 
 void tracepoint_iter_next(struct tracepoint_iter *iter)
 {
@@ -532,49 +546,136 @@ void tracepoint_iter_next(struct tracepoint_iter *iter)
 	 */
 	tracepoint_get_iter(iter);
 }
-EXPORT_SYMBOL_GPL(tracepoint_iter_next);
+//ust// EXPORT_SYMBOL_GPL(tracepoint_iter_next);
 
 void tracepoint_iter_stop(struct tracepoint_iter *iter)
 {
 }
-EXPORT_SYMBOL_GPL(tracepoint_iter_stop);
+//ust// EXPORT_SYMBOL_GPL(tracepoint_iter_stop);
 
 void tracepoint_iter_reset(struct tracepoint_iter *iter)
 {
-	iter->module = NULL;
+//ust//	iter->module = NULL;
 	iter->tracepoint = NULL;
 }
-EXPORT_SYMBOL_GPL(tracepoint_iter_reset);
+//ust// EXPORT_SYMBOL_GPL(tracepoint_iter_reset);
 
-#ifdef CONFIG_MODULES
+//ust// #ifdef CONFIG_MODULES
 
-int tracepoint_module_notify(struct notifier_block *self,
-			     unsigned long val, void *data)
+//ust// int tracepoint_module_notify(struct notifier_block *self,
+//ust// 			     unsigned long val, void *data)
+//ust// {
+//ust// 	struct module *mod = data;
+//ust// 
+//ust// 	switch (val) {
+//ust// 	case MODULE_STATE_COMING:
+//ust// 		tracepoint_update_probe_range(mod->tracepoints,
+//ust// 			mod->tracepoints + mod->num_tracepoints);
+//ust// 		break;
+//ust// 	case MODULE_STATE_GOING:
+//ust// 		tracepoint_update_probe_range(mod->tracepoints,
+//ust// 			mod->tracepoints + mod->num_tracepoints);
+//ust// 		break;
+//ust// 	}
+//ust// 	return 0;
+//ust// }
+
+//ust// struct notifier_block tracepoint_module_nb = {
+//ust// 	.notifier_call = tracepoint_module_notify,
+//ust// 	.priority = 0,
+//ust// };
+
+//ust// static int init_tracepoints(void)
+//ust// {
+//ust// 	return register_module_notifier(&tracepoint_module_nb);
+//ust// }
+//ust// __initcall(init_tracepoints);
+
+//ust// #endif /* CONFIG_MODULES */
+
+/*
+ * Returns 0 if current not found.
+ * Returns 1 if current found.
+ */
+int lib_get_iter_tracepoints(struct tracepoint_iter *iter)
 {
-	struct module *mod = data;
+	struct tracepoint_lib *iter_lib;
+	int found = 0;
 
-	switch (val) {
-	case MODULE_STATE_COMING:
-		tracepoint_update_probe_range(mod->tracepoints,
-			mod->tracepoints + mod->num_tracepoints);
-		break;
-	case MODULE_STATE_GOING:
-		tracepoint_update_probe_range(mod->tracepoints,
-			mod->tracepoints + mod->num_tracepoints);
-		break;
+//ust//	mutex_lock(&module_mutex);
+	list_for_each_entry(iter_lib, &libs, list) {
+		if (iter_lib < iter->lib)
+			continue;
+		else if (iter_lib > iter->lib)
+			iter->tracepoint = NULL;
+		found = marker_get_iter_range(&iter->tracepoint,
+			iter_lib->tracepoints_start,
+			iter_lib->tracepoints_start + iter_lib->tracepoints_count);
+		if (found) {
+			iter->lib = iter_lib;
+			break;
+		}
 	}
+//ust//	mutex_unlock(&module_mutex);
+	return found;
+}
+
+void lib_update_tracepoints(void)
+{
+	struct tracepoint_lib *lib;
+
+//ust//	mutex_lock(&module_mutex);
+	list_for_each_entry(lib, &libs, list)
+		tracepoint_update_probe_range(lib->tracepoints_start,
+				lib->tracepoints_start + lib->tracepoints_count);
+//ust//	mutex_unlock(&module_mutex);
+}
+
+static void (*new_tracepoint_cb)(struct tracepoint *) = NULL;
+
+void tracepoint_set_new_tracepoint_cb(void (*cb)(struct tracepoint *))
+{
+	new_tracepoint_cb = cb;
+}
+
+static void new_tracepoints(struct tracepoint *start, struct tracepoint *end)
+{
+	if(new_tracepoint_cb) {
+		struct tracepoint *t;
+		for(t=start; t < end; t++) {
+			new_tracepoint_cb(t);
+		}
+	}
+}
+
+int tracepoint_register_lib(struct tracepoint *tracepoints_start, int tracepoints_count)
+{
+	struct tracepoint_lib *pl;
+
+	pl = (struct tracepoint_lib *) malloc(sizeof(struct tracepoint_lib));
+
+	pl->tracepoints_start = tracepoints_start;
+	pl->tracepoints_count = tracepoints_count;
+
+	/* FIXME: maybe protect this with its own mutex? */
+	mutex_lock(&tracepoints_mutex);
+	list_add(&pl->list, &libs);
+	mutex_unlock(&tracepoints_mutex);
+
+	new_tracepoints(tracepoints_start, tracepoints_start + tracepoints_count);
+
+	/* FIXME: update just the loaded lib */
+	lib_update_tracepoints();
+
+	DBG("just registered a tracepoints section from %p and having %d tracepoints", tracepoints_start, tracepoints_count);
+	
 	return 0;
 }
 
-struct notifier_block tracepoint_module_nb = {
-	.notifier_call = tracepoint_module_notify,
-	.priority = 0,
-};
-
-static int init_tracepoints(void)
+int tracepoint_unregister_lib(struct tracepoint *tracepoints_start, int tracepoints_count)
 {
-	return register_module_notifier(&tracepoint_module_nb);
-}
-__initcall(init_tracepoints);
+	/*FIXME: implement; but before implementing, tracepoint_register_lib must
+          have appropriate locking. */
 
-#endif /* CONFIG_MODULES */
+	return 0;
+}

@@ -293,6 +293,6 @@ static void __attribute__((constructor)) __markers__init(void) 				\
 	marker_register_lib(__start___markers, (((long)__stop___markers)-((long)__start___markers))/sizeof(struct marker));\
 }
 
-#endif
-
 void marker_set_new_marker_cb(void (*cb)(struct marker *));
+
+#endif

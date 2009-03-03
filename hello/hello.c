@@ -11,7 +11,7 @@
 #include "tracer.h"
 #include "marker-control.h"
 #include "relay.h"
-
+#include "tp.h"
 
 
 void probe(const struct marker *mdata,
@@ -66,6 +66,7 @@ int main()
 	for(i=0; i<50; i++) {
 		trace_mark(ust, bar, "str %s", "FOOBAZ");
 		trace_mark(ust, bar2, "number1 %d number2 %d", 53, 9800);
+		trace_hello_tptest(i);
 		usleep(100000);
 	}
 
@@ -81,3 +82,4 @@ int main()
 }
 
 MARKER_LIB
+TRACEPOINT_LIB

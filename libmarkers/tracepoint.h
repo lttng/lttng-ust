@@ -14,9 +14,12 @@
  * See the file COPYING for more details.
  */
 
-#include <linux/immediate.h>
-#include <linux/types.h>
-#include <linux/rcupdate.h>
+//#include <linux/immediate.h>
+//#include <linux/types.h>
+//#include <linux/rcupdate.h>
+
+#include "immediate.h"
+#include "kernelcompat.h"
 
 struct module;
 struct tracepoint;
@@ -35,7 +38,7 @@ struct tracepoint {
 #define TPPROTO(args...)	args
 #define TPARGS(args...)		args
 
-#ifdef CONFIG_TRACEPOINTS
+//ust// #ifdef CONFIG_TRACEPOINTS
 
 /*
  * it_func[0] is never NULL because there is at least one element in the array
@@ -112,29 +115,29 @@ struct tracepoint {
 extern void tracepoint_update_probe_range(struct tracepoint *begin,
 	struct tracepoint *end);
 
-#else /* !CONFIG_TRACEPOINTS */
-#define DECLARE_TRACE(name, proto, args)				\
-	static inline void trace_##name(proto)				\
-	{ }								\
-	static inline void _trace_##name(proto)				\
-	{ }								\
-	static inline int register_trace_##name(void (*probe)(proto))	\
-	{								\
-		return -ENOSYS;						\
-	}								\
-	static inline int unregister_trace_##name(void (*probe)(proto))	\
-	{								\
-		return -ENOSYS;						\
-	}
-
-#define DEFINE_TRACE(name)
-#define EXPORT_TRACEPOINT_SYMBOL_GPL(name)
-#define EXPORT_TRACEPOINT_SYMBOL(name)
-
-static inline void tracepoint_update_probe_range(struct tracepoint *begin,
-	struct tracepoint *end)
-{ }
-#endif /* CONFIG_TRACEPOINTS */
+//ust// #else /* !CONFIG_TRACEPOINTS */
+//ust// #define DECLARE_TRACE(name, proto, args)				\
+//ust// 	static inline void trace_##name(proto)				\
+//ust// 	{ }								\
+//ust// 	static inline void _trace_##name(proto)				\
+//ust// 	{ }								\
+//ust// 	static inline int register_trace_##name(void (*probe)(proto))	\
+//ust// 	{								\
+//ust// 		return -ENOSYS;						\
+//ust// 	}								\
+//ust// 	static inline int unregister_trace_##name(void (*probe)(proto))	\
+//ust// 	{								\
+//ust// 		return -ENOSYS;						\
+//ust// 	}
+//ust// 
+//ust// #define DEFINE_TRACE(name)
+//ust// #define EXPORT_TRACEPOINT_SYMBOL_GPL(name)
+//ust// #define EXPORT_TRACEPOINT_SYMBOL(name)
+//ust// 
+//ust// static inline void tracepoint_update_probe_range(struct tracepoint *begin,
+//ust// 	struct tracepoint *end)
+//ust// { }
+//ust// #endif /* CONFIG_TRACEPOINTS */
 
 /*
  * Connect a probe to a tracepoint.
@@ -153,7 +156,8 @@ extern int tracepoint_probe_unregister_noupdate(const char *name, void *probe);
 extern void tracepoint_probe_update_all(void);
 
 struct tracepoint_iter {
-	struct module *module;
+//ust//	struct module *module;
+	struct tracepoint_lib *lib;
 	struct tracepoint *tracepoint;
 };
 
@@ -174,4 +178,18 @@ static inline void tracepoint_synchronize_unregister(void)
 	synchronize_sched();
 }
 
+struct tracepoint_lib {
+	struct tracepoint *tracepoints_start;
+	int tracepoints_count;
+	struct list_head list;
+};
+
+#define TRACEPOINT_LIB									\
+extern struct tracepoint __start___tracepoints[] __attribute__((visibility("hidden")));		\
+extern struct tracepoint __stop___tracepoints[] __attribute__((visibility("hidden")));		\
+											\
+static void __attribute__((constructor)) __tracepoints__init(void) 				\
+{											\
+	tracepoint_register_lib(__start___tracepoints, (((long)__stop___tracepoints)-((long)__start___tracepoints))/sizeof(struct tracepoint));\
+}
 #endif

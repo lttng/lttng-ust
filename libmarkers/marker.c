@@ -726,7 +726,7 @@ static void marker_update_probes(void)
 //ust//	tracepoint_probe_update_all();
 	/* Update immediate values */
 	core_imv_update();
-//ust//	module_imv_update();
+//ust//	module_imv_update(); /* FIXME: need to port for libs? */
 	marker_update_processes();
 }
 
