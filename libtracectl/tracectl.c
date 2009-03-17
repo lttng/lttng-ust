@@ -68,90 +68,6 @@ struct blocked_consumer {
 	struct list_head list;
 };
 
-int consumer(void *arg)
-{
-	int result;
-	int fd;
-	char str[] = "Hello, this is the consumer.\n";
-	struct ltt_trace_struct *trace;
-	struct consumer_channel *consumer_channels;
-	int i;
-	char trace_name[] = "auto";
-
-	ltt_lock_traces();
-	trace = _ltt_trace_find(trace_name);
-	ltt_unlock_traces();
-
-	if(trace == NULL) {
-		CPRINTF("cannot find trace!");
-		return 1;
-	}
-
-	consumer_channels = (struct consumer_channel *) malloc(trace->nr_channels * sizeof(struct consumer_channel));
-	if(consumer_channels == NULL) {
-		ERR("malloc returned NULL");
-		return 1;
-	}
-
-	CPRINTF("opening trace files");
-	for(i=0; i<trace->nr_channels; i++) {
-		char tmp[100];
-		struct ltt_channel_struct *chan = &trace->channels[i];
-
-		consumer_channels[i].chan = chan;
-
-		snprintf(tmp, sizeof(tmp), "trace/%s_0", chan->channel_name);
-		result = consumer_channels[i].fd = open(tmp, O_WRONLY | O_CREAT | O_TRUNC, 00600);
-		if(result == -1) {
-			perror("open");
-			return -1;
-		}
-		CPRINTF("\topened trace file %s", tmp);
-		
-	}
-	CPRINTF("done opening trace files");
-
-	for(;;) {
-		/*wait*/
-
-		for(i=0; i<trace->nr_channels; i++) {
-			struct rchan *rchan = consumer_channels[i].chan->trans_channel_data;
-			struct rchan_buf *rbuf = rchan->buf;
-			struct ltt_channel_buf_struct *lttbuf = consumer_channels[i].chan->buf;
-			long consumed_old;
-
-			result = ltt_do_get_subbuf(rbuf, lttbuf, &consumed_old);
-			if(result < 0) {
-				DBG("ltt_do_get_subbuf: error: %s", strerror(-result));
-			}
-			else {
-				DBG("success!");
-
-				result = write(consumer_channels[i].fd, rbuf->buf_data + (consumed_old & (2 * 4096-1)), 4096);
-				ltt_do_put_subbuf(rbuf, lttbuf, consumed_old);
-			}
-		}
-
-		sleep(1);
-	}
-}
-
-void start_consumer(void)
-{
-#ifdef USE_CLONE
-	int result;
-
-	result = clone(consumer, consumer_stack+sizeof(consumer_stack)-1, CLONE_FS | CLONE_FILES | CLONE_VM | CLONE_SIGHAND | CLONE_THREAD, NULL);
-	if(result == -1) {
-		perror("clone");
-	}
-#else
-	pthread_t thread;
-
-	pthread_create(&thread, NULL, consumer, NULL);
-#endif
-}
-
 static void print_markers(void)
 {
 	struct marker_iter iter;
@@ -894,8 +810,8 @@ static void __attribute__((destructor)) fini()
 	}
 
 	/* FIXME: wait for the consumer to be done */
-	DBG("waiting 5 sec for consume");
-	sleep(5);
+	//DBG("waiting 5 sec for consume");
+	//sleep(5);
 
 	destroy_socket();
 }
