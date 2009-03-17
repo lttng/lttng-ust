@@ -65,9 +65,9 @@ int get_subbuffer(struct buffer_info *buf)
 	int result;
 
 	asprintf(&send_msg, "get_subbuffer %s", buf->name);
-	result = send_message(buf->pid, send_msg, &received_msg);
+	result = ustcomm_send_request(&buf->conn, send_msg, &received_msg);
 	if(result < 0) {
-		ERR("get_subbuffer: send_message failed");
+		ERR("get_subbuffer: ustcomm_send_request failed");
 		return -1;
 	}
 	free(send_msg);
@@ -107,7 +107,7 @@ int put_subbuffer(struct buffer_info *buf)
 	int result;
 
 	asprintf(&send_msg, "put_subbuffer %s %ld", buf->name, buf->consumed_old);
-	result = send_message(buf->pid, send_msg, &received_msg);
+	result = ustcomm_send_request(&buf->conn, send_msg, &received_msg);
 	if(result < 0) {
 		ERR("put_subbuffer: send_message failed");
 		return -1;

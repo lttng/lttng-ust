@@ -59,6 +59,7 @@ static void signal_process(pid_t pid)
 		return;
 	}
 
+	/* FIXME: should wait in a better way */
 	sleep(1);
 }
 
