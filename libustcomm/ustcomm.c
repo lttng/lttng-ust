@@ -62,7 +62,7 @@ static void signal_process(pid_t pid)
 	sleep(1);
 }
 
-int send_message_fd(int fd, const char *msg, char **reply)
+static int send_message_fd(int fd, const char *msg)
 {
 	int result;
 
@@ -75,25 +75,24 @@ int send_message_fd(int fd, const char *msg, char **reply)
 		return 0;
 	}
 
-	if(!reply)
-		return 1;
-
-	*reply = (char *) malloc(MSG_MAX+1);
-	result = recv(fd, *reply, MSG_MAX, 0);
-	if(result == -1) {
-		PERROR("recv");
-		return -1;
-	}
-	else if(result == 0) {
-		return 0;
-	}
-	
-	(*reply)[result] = '\0';
-
 	return 1;
+
+//	*reply = (char *) malloc(MSG_MAX+1);
+//	result = recv(fd, *reply, MSG_MAX, 0);
+//	if(result == -1) {
+//		PERROR("recv");
+//		return -1;
+//	}
+//	else if(result == 0) {
+//		return 0;
+//	}
+//	
+//	(*reply)[result] = '\0';
+//
+//	return 1;
 }
 
-int send_message_path(const char *path, const char *msg, char **reply, int signalpid)
+static int send_message_path(const char *path, const char *msg, int signalpid)
 {
 	int fd;
 	int result;
@@ -122,30 +121,30 @@ int send_message_path(const char *path, const char *msg, char **reply, int signa
 		return -1;
 	}
 
-	return send_message_fd(fd, msg, reply);
+	return send_message_fd(fd, msg);
 }
 
-/* pid: the pid of the trace process that must receive the msg
-   msg: pointer to a null-terminated message to send
-   reply: location where to put the null-terminated string of the reply;
-	  it must be free'd after usage
- */
-
-int send_message(pid_t pid, const char *msg, char **reply)
-{
-	int result;
-	char path[UNIX_PATH_MAX];
-
-	result = snprintf(path, UNIX_PATH_MAX, "%s/%d", SOCK_DIR, pid);
-	if(result >= UNIX_PATH_MAX) {
-		fprintf(stderr, "string overflow allocating socket name");
-		return -1;
-	}
-
-	send_message_path(path, msg, reply, pid);
-
-	return 0;
-}
+///* pid: the pid of the trace process that must receive the msg
+//   msg: pointer to a null-terminated message to send
+//   reply: location where to put the null-terminated string of the reply;
+//	  it must be free'd after usage
+// */
+//
+//int send_message_pid(pid_t pid, const char *msg, char **reply)
+//{
+//	int result;
+//	char path[UNIX_PATH_MAX];
+//
+//	result = snprintf(path, UNIX_PATH_MAX, "%s/%d", SOCK_DIR, pid);
+//	if(result >= UNIX_PATH_MAX) {
+//		fprintf(stderr, "string overflow allocating socket name");
+//		return -1;
+//	}
+//
+//	send_message_path(path, msg, reply, pid);
+//
+//	return 0;
+//}
 
 /* Called by an app to ask the consumer daemon to connect to it. */
 
@@ -163,7 +162,7 @@ int ustcomm_request_consumer(pid_t pid, const char *channel)
 
 	asprintf(&msg, "collect %d %s", pid, channel); 
 
-	send_message_path(path, msg, NULL, -1);
+	send_message_path(path, msg, -1);
 	free(msg);
 
 	return 0;
@@ -200,7 +199,7 @@ int ustcomm_send_reply(struct ustcomm_server *server, char *msg, struct ustcomm_
 {
 	int result;
 
-	result = send_message_fd(src->fd, msg, NULL);
+	result = send_message_fd(src->fd, msg);
 	if(result < 0) {
 		ERR("error in send_message_fd");
 		return -1;
@@ -388,6 +387,97 @@ static int init_named_socket(char *name, char **path_out)
 	close(fd);
 
 	return -1;
+}
+
+int ustcomm_send_request(struct ustcomm_connection *conn, char *req, char **reply)
+{
+	int result;
+
+	result = send(conn->fd, req, strlen(req), 0);
+	if(result == -1) {
+		PERROR("send");
+		return -1;
+	}
+	else if(result == 0) {
+		return 0;
+	}
+
+	if(!reply)
+		return 1;
+
+	*reply = (char *) malloc(MSG_MAX+1);
+	result = recv(conn->fd, *reply, MSG_MAX, 0);
+	if(result == -1) {
+		PERROR("recv");
+		return -1;
+	}
+	else if(result == 0) {
+		return 0;
+	}
+	
+	(*reply)[result] = '\0';
+
+	return 1;
+}
+
+int ustcomm_connect_path(char *path, struct ustcomm_connection *conn, pid_t signalpid)
+{
+	int fd;
+	int result;
+	struct sockaddr_un addr;
+
+	result = fd = socket(PF_UNIX, SOCK_STREAM, 0);
+	if(result == -1) {
+		PERROR("socket");
+		return -1;
+	}
+
+	addr.sun_family = AF_UNIX;
+
+	result = snprintf(addr.sun_path, UNIX_PATH_MAX, "%s", path);
+	if(result >= UNIX_PATH_MAX) {
+		ERR("string overflow allocating socket name");
+		return -1;
+	}
+
+	if(signalpid >= 0)
+		signal_process(signalpid);
+
+	result = connect(fd, (struct sockaddr *)&addr, sizeof(addr));
+	if(result == -1) {
+		PERROR("connect");
+		return -1;
+	}
+
+	conn->fd = fd;
+
+	return 0;
+}
+
+int ustcomm_disconnect(struct ustcomm_connection *conn)
+{
+	return close(conn->fd);
+}
+
+int ustcomm_connect_app(pid_t pid, struct ustcomm_connection *conn)
+{
+	int result;
+	char path[UNIX_PATH_MAX];
+
+
+	result = snprintf(path, UNIX_PATH_MAX, "%s/%d", SOCK_DIR, pid);
+	if(result >= UNIX_PATH_MAX) {
+		fprintf(stderr, "string overflow allocating socket name");
+		return -1;
+	}
+
+	return ustcomm_connect_path(path, conn, pid);
+}
+
+int ustcomm_disconnect_app(struct ustcomm_connection *conn)
+{
+	close(conn->fd);
+	return 0;
 }
 
 int ustcomm_init_app(pid_t pid, struct ustcomm_app *handle)

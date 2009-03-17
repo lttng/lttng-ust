@@ -35,6 +35,7 @@ struct list_head buffers = LIST_HEAD_INIT(buffers);
 struct buffer_info {
 	char *name;
 	pid_t pid;
+	struct ustcomm_connection conn;
 
 	int shmid;
 	void *mem;
@@ -207,9 +208,16 @@ int add_buffer(pid_t pid, char *bufname)
 	buf->name = bufname;
 	buf->pid = pid;
 
+	/* connect to app */
+	result = ustcomm_connect_app(buf->pid, &buf->conn);
+	if(result) {
+		ERR("unable to connect to process");
+		return -1;
+	}
+
 	/* get shmid */
 	asprintf(&send_msg, "get_shmid %s", buf->name);
-	send_message(pid, send_msg, &received_msg);
+	ustcomm_send_request(&buf->conn, send_msg, &received_msg);
 	free(send_msg);
 	DBG("got buffer name %s", buf->name);
 
@@ -223,7 +231,7 @@ int add_buffer(pid_t pid, char *bufname)
 
 	/* get n_subbufs */
 	asprintf(&send_msg, "get_n_subbufs %s", buf->name);
-	send_message(pid, send_msg, &received_msg);
+	ustcomm_send_request(&buf->conn, send_msg, &received_msg);
 	free(send_msg);
 
 	result = sscanf(received_msg, "%d", &buf->n_subbufs);
@@ -236,7 +244,7 @@ int add_buffer(pid_t pid, char *bufname)
 
 	/* get subbuf size */
 	asprintf(&send_msg, "get_subbuf_size %s", buf->name);
-	send_message(pid, send_msg, &received_msg);
+	ustcomm_send_request(&buf->conn, send_msg, &received_msg);
 	free(send_msg);
 
 	result = sscanf(received_msg, "%d", &buf->subbuf_size);
