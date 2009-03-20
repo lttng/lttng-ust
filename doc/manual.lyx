@@ -36,6 +36,7 @@
 \tracking_changes false
 \output_changes false
 \author "" 
+\author "" 
 \end_header
 
 \begin_body
@@ -56,6 +57,20 @@ What is the LTTng Userspace Tracer?
 Overview
 \end_layout
 
+\begin_layout Standard
+The LTTng Userspace Tracer (UST) is a tracing system for userspace applications.
+ It is designed to trace efficiently applications that produce events at
+ a very high rate.
+ UST is derived from LTTng, a tracer for the Linux kernel.
+ It has the same trace format.
+\end_layout
+
+\begin_layout Standard
+Users may choose at runtime and even at trace time what instrumentation
+ should be activated.
+ Custom probes may be used to trace events conditionally.
+\end_layout
+
 \begin_layout Subsection
 Features
 \end_layout
@@ -72,8 +87,25 @@ One buffer per process (multiple threads share the same buffer)
 Early process tracing (from the beginning of the main() function
 \end_layout
 
+\begin_layout Itemize
+Support for custom probes
+\end_layout
+
 \begin_layout Standard
 Still to implement:
+\end_layout
+
+\begin_layout Itemize
+Support of dynamic instrumentation (being implemented in 
+\end_layout
+
+\begin_layout Standard
+Complementary systems:
+\end_layout
+
+\begin_layout Itemize
+A extension to gdb tracepoints that will allow the tracing of applications
+ with dynamic instrumentation is under development.
 \end_layout
 
 \begin_layout Subsection
@@ -87,7 +119,8 @@ Instrumenting an Application
 \begin_layout Standard
 In order to record a trace of events occurring in a application, the application
  must be instrumented.
- Instrumentation points resemble function calls and 
+ Instrumentation points resemble function calls.
+ When the program reaches an instrumentation point, an event is generated.
 \end_layout
 
 \begin_layout Standard
@@ -105,6 +138,11 @@ There are two APIs to instrument programs: markers and tracepoints.
 
 \begin_layout Subsection
 Markers
+\end_layout
+
+\begin_layout Standard
+Markers were ported from the Linux Kernel Markers implementation.
+ Therefore, their usage is almost identical.
 \end_layout
 
 \begin_layout Subsubsection
@@ -392,8 +430,53 @@ Basic Recording
 Early Tracing
 \end_layout
 
+\begin_layout Standard
+Sometimes, an application must be traced as soon as it is started.
+ In these cases, the Basic Recording method is not satisfactory, as important
+ events may be lost before the tracing is started.
+\end_layout
+
+\begin_layout Standard
+By using the Early Tracing method, it is guaranteed that the tracing is
+ started when the execution of the main() function of the program starts.
+\end_layout
+
+\begin_layout Standard
+Early Tracing may be enabled by defining the UST_TRACE environment variable
+ to a non-empty value when the program starts.
+ Additionally, the UST_AUTOPROBE may be set to a non-empty value to automaticall
+y connect all markers to the default probe.
+ For example:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+$ UST_TRACE=1 UST_AUTOPROBE=1 ./prog
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In order for the trace to be saved, ustd must be running when the traced
+ program is started.
+\end_layout
+
 \begin_layout Section
 Viewing and Analyzing the Trace
+\end_layout
+
+\begin_layout Standard
+LTTV may be used for opening the trace.
+ If an appropriate time source was used, it may be opened concurrently with
+ other application traces and kernel traces.
 \end_layout
 
 \begin_layout Section
@@ -401,7 +484,7 @@ Advanced Concepts
 \end_layout
 
 \begin_layout Subsection
-Using Custom Probes
+Using Custom Probes for Conditional Tracing
 \end_layout
 
 \begin_layout Subsection
@@ -444,6 +527,320 @@ LD_PRELOAD=...
 \begin_layout Section
 \start_of_appendix
 Format of Marker Format Strings
+\end_layout
+
+\begin_layout Standard
+The format of Marker format strings is inspired from printf() format strings.
+ As with printf(), it is used to indicate to the parsing function the type
+ of the arguments that are passed.
+ Additionally, format strings indicate the name of each argument and the
+ format of that argument in the trace.
+ The structure of a typical format string is the following.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+\begin_inset Quotes eld
+\end_inset
+
+field_name1 #tracetype1 %ctype1 field_name2 #tracetype2 %ctype2
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Description
+field_name: The name of the field, as it will be seen when the trace is
+ parsed.
+\end_layout
+
+\begin_layout Description
+tracetype: The type of the argument as it will be written in the trace.
+\end_layout
+
+\begin_layout Description
+ctype: The C type of the argument passed to the Marker (this is very similar
+ to the %...
+ types in a printf() format string)
+\end_layout
+
+\begin_layout Standard
+Both field_name and tracetype are optional.
+ These are all valid format strings:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+tracetype
+\end_layout
+
+\begin_layout Standard
+A typical Marker format string looks like this:
+\end_layout
+
+\begin_layout Standard
+The serialization format string supports the basic printf format strings.
+\end_layout
+
+\begin_layout Standard
+In addition, it defines new formats that can be used to serialize more
+\end_layout
+
+\begin_layout Standard
+complex/non portable data structures.
+\end_layout
+
+\begin_layout Standard
+Typical use:
+\end_layout
+
+\begin_layout Standard
+field_name %ctype
+\end_layout
+
+\begin_layout Standard
+field_name #tracetype %ctype
+\end_layout
+
+\begin_layout Standard
+field_name #tracetype %ctype1 %ctype2 ...
+\end_layout
+
+\begin_layout Standard
+A conversion is performed between format string types supported by GCC and
+\end_layout
+
+\begin_layout Standard
+the trace type requested.
+ GCC type is used to perform type checking on format
+\end_layout
+
+\begin_layout Standard
+strings.
+ Trace type is used to specify the exact binary representation
+\end_layout
+
+\begin_layout Standard
+in the trace.
+ A mapping is done between one or more GCC types to one trace
+\end_layout
+
+\begin_layout Standard
+type.
+ Sign extension, if required by the conversion, is performed following
+\end_layout
+
+\begin_layout Standard
+the trace type.
+\end_layout
+
+\begin_layout Standard
+If a gcc format is not declared with a trace format, the gcc format is
+\end_layout
+
+\begin_layout Standard
+also used as binary representation in the trace.
+\end_layout
+
+\begin_layout Standard
+Strings are supported with %s.
+\end_layout
+
+\begin_layout Standard
+A single tracetype (sequence) can take multiple c types as parameter.
+\end_layout
+
+\begin_layout Standard
+c types:
+\end_layout
+
+\begin_layout Standard
+see printf(3).
+\end_layout
+
+\begin_layout Standard
+Note: to write a uint32_t in a trace, the following expression is recommended
+\end_layout
+
+\begin_layout Standard
+si it can be portable:
+\end_layout
+
+\begin_layout Standard
+("#4u%lu", (unsigned long)var)
+\end_layout
+
+\begin_layout Standard
+trace types:
+\end_layout
+
+\begin_layout Standard
+Serialization specific formats :
+\end_layout
+
+\begin_layout Standard
+Fixed size integers
+\end_layout
+
+\begin_layout Standard
+#1u writes uint8_t
+\end_layout
+
+\begin_layout Standard
+#2u writes uint16_t
+\end_layout
+
+\begin_layout Standard
+#4u writes uint32_t
+\end_layout
+
+\begin_layout Standard
+#8u writes uint64_t
+\end_layout
+
+\begin_layout Standard
+#1d writes int8_t
+\end_layout
+
+\begin_layout Standard
+#2d writes int16_t
+\end_layout
+
+\begin_layout Standard
+#4d writes int32_t
+\end_layout
+
+\begin_layout Standard
+#8d writes int64_t
+\end_layout
+
+\begin_layout Standard
+i.e.:
+\end_layout
+
+\begin_layout Standard
+#1u%lu #2u%lu #4d%lu #8d%lu #llu%hu #d%lu
+\end_layout
+
+\begin_layout Standard
+* Attributes:
+\end_layout
+
+\begin_layout Standard
+n: (for network byte order)
+\end_layout
+
+\begin_layout Standard
+#ntracetype%ctype
+\end_layout
+
+\begin_layout Standard
+is written in the trace in network byte order.
+\end_layout
+
+\begin_layout Standard
+i.e.: #bn4u%lu, #n%lu, #b%u
+\end_layout
+
+\begin_layout Standard
+TODO (eventually)
+\end_layout
+
+\begin_layout Standard
+Variable length sequence
+\end_layout
+
+\begin_layout Standard
+#a #tracetype1 #tracetype2 %array_ptr %elem_size %num_elems
+\end_layout
+
+\begin_layout Standard
+In the trace:
+\end_layout
+
+\begin_layout Standard
+#a specifies that this is a sequence
+\end_layout
+
+\begin_layout Standard
+#tracetype1 is the type of elements in the sequence
+\end_layout
+
+\begin_layout Standard
+#tracetype2 is the type of the element count
+\end_layout
+
+\begin_layout Standard
+GCC input:
+\end_layout
+
+\begin_layout Standard
+array_ptr is a pointer to an array that contains members of size
+\end_layout
+
+\begin_layout Standard
+elem_size.
+\end_layout
+
+\begin_layout Standard
+num_elems is the number of elements in the array.
+\end_layout
+
+\begin_layout Standard
+i.e.: #a #lu #lu %p %lu %u
+\end_layout
+
+\begin_layout Standard
+Callback
+\end_layout
+
+\begin_layout Standard
+#k callback (taken from the probe data)
+\end_layout
+
+\begin_layout Standard
+The following % arguments are exepected by the callback
+\end_layout
+
+\begin_layout Standard
+i.e.: #a #lu #lu #k %p
+\end_layout
+
+\begin_layout Standard
+Note: No conversion is done from floats to integers, nor from integers to
+\end_layout
+
+\begin_layout Standard
+floats between c types and trace types.
+ float conversion from double to float
+\end_layout
+
+\begin_layout Standard
+or from float to double is also not supported.
 \end_layout
 
 \end_body
