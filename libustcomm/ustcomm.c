@@ -399,9 +399,6 @@ int ustcomm_send_request(struct ustcomm_connection *conn, char *req, char **repl
 		PERROR("send");
 		return -1;
 	}
-	else if(result == 0) {
-		return 0;
-	}
 
 	if(!reply)
 		return 1;

@@ -312,12 +312,15 @@ int listener_main(void *p)
 			for(i=0; i<trace->nr_channels; i++) {
 				struct rchan *rchan = trace->channels[i].trans_channel_data;
 				struct rchan_buf *rbuf = rchan->buf;
+				struct ltt_channel_struct *ltt_channel = (struct ltt_channel_struct *)rchan->private_data;
+				struct ltt_channel_buf_struct *ltt_buf = ltt_channel->buf;
 
 				if(!strcmp(trace->channels[i].channel_name, channel_name)) {
 					char *reply;
 
 					DBG("the shmid for the requested channel is %d", rbuf->shmid);
-					asprintf(&reply, "%d", rbuf->shmid);
+					DBG("the shmid for its buffer structure is %d", ltt_channel->buf_shmid);
+					asprintf(&reply, "%d %d", rbuf->shmid, ltt_channel->buf_shmid);
 
 					result = ustcomm_send_reply(&ustcomm_app.server, reply, &src);
 					if(result) {

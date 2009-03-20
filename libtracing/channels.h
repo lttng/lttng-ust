@@ -53,6 +53,8 @@ struct ltt_channel_struct {
 	unsigned int subbuf_size;
 	unsigned int subbuf_cnt;
 	const char *channel_name;
+
+	int buf_shmid;
 } ____cacheline_aligned;
 
 struct ltt_channel_setting {

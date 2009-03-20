@@ -92,8 +92,8 @@ static struct dentry *ltt_create_buf_file_callback(struct rchan_buf *buf);
 
 static int relay_alloc_buf(struct rchan_buf *buf, size_t *size)
 {
-	unsigned int n_pages;
-	struct buf_page *buf_page, *n;
+//ust//	unsigned int n_pages;
+//ust//	struct buf_page *buf_page, *n;
 
 	void *ptr;
 	int result;
@@ -1512,6 +1512,48 @@ static void ltt_relay_destroy_buffer(struct ltt_channel_struct *ltt_chan)
 //ust//	wake_up_interruptible(&trace->kref_wq);
 }
 
+static void ltt_chan_alloc_ltt_buf(struct ltt_channel_struct *ltt_chan)
+{
+	void *ptr;
+	int result;
+
+	/* Get one page */
+	size_t size = PAGE_ALIGN(1);
+
+	result = ltt_chan->buf_shmid = shmget(getpid(), size, IPC_CREAT | IPC_EXCL | 0700);
+	if(ltt_chan->buf_shmid == -1) {
+		PERROR("shmget");
+		return -1;
+	}
+
+	ptr = shmat(ltt_chan->buf_shmid, NULL, 0);
+	if(ptr == (void *) -1) {
+		perror("shmat");
+		goto destroy_shmem;
+	}
+
+	/* Already mark the shared memory for destruction. This will occur only
+         * when all users have detached.
+	 */
+	result = shmctl(ltt_chan->buf_shmid, IPC_RMID, NULL);
+	if(result == -1) {
+		perror("shmctl");
+		return -1;
+	}
+
+	ltt_chan->buf = ptr;
+
+	return 0;
+
+	destroy_shmem:
+	result = shmctl(ltt_chan->buf_shmid, IPC_RMID, NULL);
+	if(result == -1) {
+		perror("shmctl");
+	}
+
+	return -1;
+}
+
 /*
  * Create channel.
  */
@@ -1546,7 +1588,10 @@ static int ltt_relay_create_channel(const char *trace_name,
 	ltt_chan->n_subbufs_order = get_count_order(n_subbufs);
 	ltt_chan->commit_count_mask = (~0UL >> ltt_chan->n_subbufs_order);
 //ust//	ltt_chan->buf = percpu_alloc_mask(sizeof(struct ltt_channel_buf_struct), GFP_KERNEL, cpu_possible_map);
-	ltt_chan->buf = malloc(sizeof(struct ltt_channel_buf_struct));
+
+	ltt_chan_alloc_ltt_buf(ltt_chan);
+
+//ust//	ltt_chan->buf = malloc(sizeof(struct ltt_channel_buf_struct));
 	if (!ltt_chan->buf)
 		goto alloc_error;
 	ltt_chan->trans_channel_data = ltt_relay_open(tmpname,
