@@ -1,0 +1,450 @@
+#LyX 1.6.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 345
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\language english
+\inputencoding auto
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\paperfontsize default
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\author "" 
+\end_header
+
+\begin_body
+
+\begin_layout Title
+LTTng Userspace Tracer Manual
+\end_layout
+
+\begin_layout Author
+Pierre-Marc Fournier
+\end_layout
+
+\begin_layout Section
+What is the LTTng Userspace Tracer?
+\end_layout
+
+\begin_layout Subsection
+Overview
+\end_layout
+
+\begin_layout Subsection
+Features
+\end_layout
+
+\begin_layout Itemize
+Arbitrary number of channels
+\end_layout
+
+\begin_layout Itemize
+One buffer per process (multiple threads share the same buffer)
+\end_layout
+
+\begin_layout Itemize
+Early process tracing (from the beginning of the main() function
+\end_layout
+
+\begin_layout Standard
+Still to implement:
+\end_layout
+
+\begin_layout Subsection
+Performance
+\end_layout
+
+\begin_layout Section
+Instrumenting an Application
+\end_layout
+
+\begin_layout Standard
+In order to record a trace of events occurring in a application, the application
+ must be instrumented.
+ Instrumentation points resemble function calls and 
+\end_layout
+
+\begin_layout Standard
+There are no limitations on the type of code that may be instrumented.
+ Multi-threaded programs may be instrumented without problem.
+ Signal handler may be instrumented as well.
+\end_layout
+
+\begin_layout Standard
+There are two APIs to instrument programs: markers and tracepoints.
+ Markers are quick to add and are usually used for temporary instrumentation.
+ Tracepoints provide a way to instrument code more cleanly and are suited
+ for permanent instrumentation.
+\end_layout
+
+\begin_layout Subsection
+Markers
+\end_layout
+
+\begin_layout Subsubsection
+Inserting Markers
+\end_layout
+
+\begin_layout Standard
+Adding a marker is simply a matter of insert one line in the program.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+#include <marker.h>
+\end_layout
+
+\begin_layout Plain Layout
+
+void function()
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\begin_layout Plain Layout
+
+	int v;
+\end_layout
+
+\begin_layout Plain Layout
+
+	char *st;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* ...
+ set values of v and st ...
+ */
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* a marker: */
+\end_layout
+
+\begin_layout Plain Layout
+
+	trace_mark(main, myevent, 
+\begin_inset Quotes eld
+\end_inset
+
+firstarg %d secondarg %s
+\begin_inset Quotes erd
+\end_inset
+
+, v, st);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* a marker without arguments: */
+\end_layout
+
+\begin_layout Plain Layout
+
+	trace_mark(main, myotherevent, MARK_NOARGS);
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The invocation of the trace_mark() macro requires at least 3 arguments.
+ The first, here 
+\begin_inset Quotes eld
+\end_inset
+
+main
+\begin_inset Quotes erd
+\end_inset
+
+, is the name of the event category.
+ It is also the name of the channel the event will go in.
+ The second, here 
+\begin_inset Quotes eld
+\end_inset
+
+myevent
+\begin_inset Quotes erd
+\end_inset
+
+ is the name of the event.
+ The third is a format string that announces the names and the types of
+ the event arguments.
+ Its format resembles that of a printf() format string; it is described
+ thoroughly in Appendix x.
+\end_layout
+
+\begin_layout Standard
+A given Marker may appear more than once in the same program.
+ Other Markers may have the same name and a different format string, although
+ this might induce some confusion at analysis time.
+\end_layout
+
+\begin_layout Subsubsection
+Registering the Markers
+\end_layout
+
+\begin_layout Standard
+In order to inform to register the Markers present in the module, a macro
+ must be inserted at global scope.
+ Only one such macro is needed per exacutable or per shared object.
+ Adding it more than once, however, is harmless.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+MARKER_LIB;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Tracepoints
+\end_layout
+
+\begin_layout Standard
+The Tracepoints API uses the Markers, but provides a higher-level abstraction.
+ Whereas the markers API provides limited type checking, the Tracepoints
+ API provides more thorough type checking and discharges from the need to
+ insert format strings directly in the code and to have format strings appear
+ more than once if a given marker is reused.
+\end_layout
+
+\begin_layout Standard
+A tracepoint in the code looks like this:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+#include <marker.h>
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+void function()
+\end_layout
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\begin_layout Plain Layout
+
+	int v;
+\end_layout
+
+\begin_layout Plain Layout
+
+	char *st;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* ...
+ set values of v and st ...
+ */
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	/* a tracepoint: */
+\end_layout
+
+\begin_layout Plain Layout
+
+	trace_main_myevent(v, st);
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+DEFINE_TRACE();
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+TRACEPOINT_LIB;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Compiling the Application
+\end_layout
+
+\begin_layout Section
+Recording a Trace
+\end_layout
+
+\begin_layout Subsection
+Basic Recording
+\end_layout
+
+\begin_layout Subsection
+Early Tracing
+\end_layout
+
+\begin_layout Section
+Viewing and Analyzing the Trace
+\end_layout
+
+\begin_layout Section
+Advanced Concepts
+\end_layout
+
+\begin_layout Subsection
+Using Custom Probes
+\end_layout
+
+\begin_layout Subsection
+Instrumenting Calls to Library Functions without Recompilation
+\end_layout
+
+\begin_layout Standard
+Calls to uninstrumented libraries may be instrumented by creating a wrapper
+ library that intercepts calls to the library, trigger an instrumentation
+ point.
+\end_layout
+
+\begin_layout Subsection
+Tracing Programs Without Linking them to the Tracing Library
+\end_layout
+
+\begin_layout Standard
+Programs that were not instrumented nor linked with the tracing libraries
+ may still be traced.
+ In order to produce events, they must be linked to instrumented libraries
+ or use instrumented library wrappers as described in section xx.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+LD_PRELOAD=...
+ program
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+\start_of_appendix
+Format of Marker Format Strings
+\end_layout
+
+\end_body
+\end_document
