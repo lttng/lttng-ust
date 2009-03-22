@@ -1463,10 +1463,10 @@ static int ltt_relay_create_buffer(struct ltt_trace_struct *trace,
 	int fds[2];
 	int result;
 
-	ltt_buf->commit_count =
-		zmalloc(sizeof(ltt_buf->commit_count) * n_subbufs);
-	if (!ltt_buf->commit_count)
-		return -ENOMEM;
+//ust//	ltt_buf->commit_count =
+//ust//		zmalloc(sizeof(ltt_buf->commit_count) * n_subbufs);
+//ust//	if (!ltt_buf->commit_count)
+//ust//		return -ENOMEM;
 	kref_get(&trace->kref);
 	kref_get(&trace->ltt_transport_kref);
 	kref_get(&ltt_chan->kref);
@@ -1505,8 +1505,8 @@ static void ltt_relay_destroy_buffer(struct ltt_channel_struct *ltt_chan)
 	kref_put(&ltt_chan->trace->ltt_transport_kref,
 		ltt_release_transport);
 	ltt_relay_print_buffer_errors(ltt_chan);
-	kfree(ltt_buf->commit_count);
-	ltt_buf->commit_count = NULL;
+//ust//	kfree(ltt_buf->commit_count);
+//ust//	ltt_buf->commit_count = NULL;
 	kref_put(&ltt_chan->kref, ltt_relay_release_channel);
 	kref_put(&trace->kref, ltt_release_trace);
 //ust//	wake_up_interruptible(&trace->kref_wq);
@@ -1518,6 +1518,7 @@ static void ltt_chan_alloc_ltt_buf(struct ltt_channel_struct *ltt_chan)
 	int result;
 
 	/* Get one page */
+	/* FIXME: increase size if we have a commit_count array that overflows the page */
 	size_t size = PAGE_ALIGN(1);
 
 	result = ltt_chan->buf_shmid = shmget(getpid(), size, IPC_CREAT | IPC_EXCL | 0700);
@@ -2025,7 +2026,7 @@ static inline void ltt_reserve_switch_old_subbuf(
  * sub-buffer before this code gets executed, caution.  The commit makes sure
  * that this code is executed before the deliver of this sub-buffer.
  */
-static inline void ltt_reserve_switch_new_subbuf(
+static /*inline*/ void ltt_reserve_switch_new_subbuf(
 		struct ltt_channel_struct *ltt_channel,
 		struct ltt_channel_buf_struct *ltt_buf, struct rchan *rchan,
 		struct rchan_buf *buf,
@@ -2237,14 +2238,13 @@ static notrace void ltt_force_switch(struct rchan_buf *buf,
  * fill the subbuffer completely (so the subbuf index stays in the previous
  * subbuffer).
  */
-#ifdef CONFIG_LTT_VMCORE
-static inline void ltt_write_commit_counter(struct rchan_buf *buf,
+//ust// #ifdef CONFIG_LTT_VMCORE
+static /*inline*/ void ltt_write_commit_counter(struct rchan_buf *buf,
 		long buf_offset, size_t slot_size)
 {
 	struct ltt_channel_struct *ltt_channel =
 		(struct ltt_channel_struct *)buf->chan->private_data;
-	struct ltt_channel_buf_struct *ltt_buf =
-			percpu_ptr(ltt_channel->buf, buf->cpu);
+	struct ltt_channel_buf_struct *ltt_buf = ltt_channel->buf;
 	struct ltt_subbuffer_header *header;
 	long offset, subbuf_idx, commit_count;
 	uint32_t lost_old, lost_new;
@@ -2271,12 +2271,12 @@ static inline void ltt_write_commit_counter(struct rchan_buf *buf,
 		}
 	}
 }
-#else
-static inline void ltt_write_commit_counter(struct rchan_buf *buf,
-		long buf_offset, size_t slot_size)
-{
-}
-#endif
+//ust// #else
+//ust// static inline void ltt_write_commit_counter(struct rchan_buf *buf,
+//ust// 		long buf_offset, size_t slot_size)
+//ust// {
+//ust// }
+//ust// #endif
 
 /*
  * Atomic unordered slot commit. Increments the commit count in the
@@ -2315,6 +2315,8 @@ static notrace void ltt_relay_commit_slot(
 	 * ltt buffers from vmcore, after crash.
 	 */
 	ltt_write_commit_counter(buf, buf_offset, slot_size);
+
+	DBG("commited slot. now commit count is %ld", commit_count);
 }
 
 /*

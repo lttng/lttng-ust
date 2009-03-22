@@ -320,7 +320,7 @@ extern const struct file_operations ltt_relay_file_operations;
 struct ltt_channel_buf_struct {
 	/* First 32 bytes cache-hot cacheline */
 	local_t offset;			/* Current offset in the buffer */
-	local_t *commit_count;		/* Commit count per sub-buffer */
+//ust//	local_t *commit_count;		/* Commit count per sub-buffer */
 	atomic_long_t consumed;		/*
 					 * Current offset in the buffer
 					 * standard atomic access (shared)
@@ -353,6 +353,9 @@ struct ltt_channel_buf_struct {
 	int data_ready_fd_write;
 	/* the reading end of the pipe */
 	int data_ready_fd_read;
+
+	/* commit count per subbuffer; must be at end of struct */
+	local_t commit_count[0] ____cacheline_aligned;
 } ____cacheline_aligned;
 
 int ltt_do_get_subbuf(struct rchan_buf *buf, struct ltt_channel_buf_struct *ltt_buf, long *pconsumed_old);
