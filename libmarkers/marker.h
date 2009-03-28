@@ -1,6 +1,3 @@
-#ifndef _LINUX_MARKER_H
-#define _LINUX_MARKER_H
-
 /*
  * Code markup for dynamic and static tracing.
  *
@@ -12,6 +9,9 @@
  * This file is released under the GPLv2.
  * See the file COPYING for more details.
  */
+
+#ifndef _LINUX_MARKER_H
+#define _LINUX_MARKER_H
 
 #include <stdarg.h>
 //ust// #include <linux/types.h>

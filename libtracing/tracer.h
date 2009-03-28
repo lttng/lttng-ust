@@ -1,27 +1,17 @@
 /*
  * Copyright (C) 2005,2006,2008 Mathieu Desnoyers (mathieu.desnoyers@polymtl.ca)
+ * Copyright (C) 2009 Pierre-Marc Fournier
  *
  * This contains the definitions for the Linux Trace Toolkit tracer.
+ *
+ * Ported to userspace by Pierre-Marc Fournier.
+ *
+ * This file is released under the GPLv2.
  */
 
 #ifndef _LTT_TRACER_H
 #define _LTT_TRACER_H
 
-//ust// #include <stdarg.h>
-//ust// #include <linux/types.h>
-//ust// #include <linux/limits.h>
-//ust// #include <linux/list.h>
-//ust// #include <linux/cache.h>
-//ust// #include <linux/kernel.h>
-//ust// #include <linux/timex.h>
-//ust// #include <linux/wait.h>
-//ust// #include <linux/ltt-relay.h>
-//ust// #include <linux/ltt-channels.h>
-//ust// #include <linux/ltt-core.h>
-//ust// #include <linux/marker.h>
-//ust// #include <linux/trace-clock.h>
-//ust// #include <asm/atomic.h>
-//ust// #include <asm/local.h>
 #include <sys/types.h>
 #include <stdarg.h>
 #include "relay.h"
@@ -131,8 +121,6 @@ static inline enum marker_id marker_id_type(uint16_t id)
 		return MARKER_ID_DYNAMIC;
 }
 
-//ust// #ifdef CONFIG_LTT
-
 struct user_dbg_data {
 	unsigned long avail_size;
 	unsigned long write;
@@ -168,11 +156,6 @@ struct ltt_trace_ops {
  	void (*user_errors) (struct ltt_trace_struct *trace,
  				unsigned int index, size_t data_size,
  				struct user_dbg_data *dbg);
-//ust// #ifdef CONFIG_HOTPLUG_CPU
-//ust// 	int (*handle_cpuhp) (struct notifier_block *nb,
-//ust// 				unsigned long action, void *hcpu,
-//ust// 				struct ltt_trace_struct *trace);
-//ust// #endif
 } ____cacheline_aligned;
 
 struct ltt_transport {
@@ -205,11 +188,9 @@ struct ltt_trace_struct {
 	struct {
 		struct dentry			*trace_root;
 	} dentry;
-//ust//	struct rchan_callbacks callbacks;
 	struct kref kref; /* Each channel has a kref of the trace struct */
 	struct ltt_transport *transport;
 	struct kref ltt_transport_kref;
-//ust//	wait_queue_head_t kref_wq; /* Place for ltt_trace_destroy to sleep */
 	char trace_name[NAME_MAX];
 } ____cacheline_aligned;
 
@@ -332,8 +313,6 @@ static inline unsigned char ltt_get_header_size(
 {
 	size_t orig_offset = offset;
 	size_t padding;
-
-//ust//	BUILD_BUG_ON(sizeof(struct ltt_event_header) != sizeof(u32));
 
 	padding = ltt_align(offset, sizeof(struct ltt_event_header));
 	offset += padding;
@@ -538,8 +517,6 @@ static inline void ltt_commit_slot(
  * cpu channel :
  * cpu
  */
-//ust// #define LTT_RELAY_ROOT		"ltt"
-//ust// #define LTT_RELAY_LOCKED_ROOT	"ltt-locked"
 
 #define LTT_METADATA_CHANNEL		"metadata_state"
 #define LTT_UST_CHANNEL			"ust"
@@ -576,21 +553,10 @@ enum ltt_module_function {
 	LTT_FUNCTION_STATEDUMP
 };
 
-//ust// extern int ltt_module_register(enum ltt_module_function name, void *function,
-//ust// 		struct module *owner);
-//ust// extern void ltt_module_unregister(enum ltt_module_function name);
-
 void ltt_transport_register(struct ltt_transport *transport);
 void ltt_transport_unregister(struct ltt_transport *transport);
 
 /* Exported control function */
-
-//ust// enum ltt_control_msg {
-//ust// 	LTT_CONTROL_START,
-//ust// 	LTT_CONTROL_STOP,
-//ust// 	LTT_CONTROL_CREATE_TRACE,
-//ust// 	LTT_CONTROL_DESTROY_TRACE
-//ust// };
 
 union ltt_control_args {
 	struct {
@@ -620,9 +586,6 @@ int ltt_trace_alloc(const char *trace_name);
 int ltt_trace_destroy(const char *trace_name);
 int ltt_trace_start(const char *trace_name);
 int ltt_trace_stop(const char *trace_name);
-
-//ust// extern int ltt_control(enum ltt_control_msg msg, const char *trace_name,
-//ust// 		const char *trace_type, union ltt_control_args args);
 
 enum ltt_filter_control_msg {
 	LTT_FILTER_DEFAULT_ACCEPT,
@@ -655,42 +618,6 @@ extern void ltt_dump_marker_state(struct ltt_trace_struct *trace);
 
 void ltt_lock_traces(void);
 void ltt_unlock_traces(void);
-
-//ust// extern void ltt_dump_softirq_vec(void *call_data);
-//ust// 
-//ust// #ifdef CONFIG_HAVE_LTT_DUMP_TABLES
-//ust// extern void ltt_dump_sys_call_table(void *call_data);
-//ust// extern void ltt_dump_idt_table(void *call_data);
-//ust// #else
-//ust// static inline void ltt_dump_sys_call_table(void *call_data)
-//ust// {
-//ust// }
-//ust// 
-//ust// static inline void ltt_dump_idt_table(void *call_data)
-//ust// {
-//ust// }
-//ust// #endif
-
-//ust// #ifdef CONFIG_LTT_KPROBES
-//ust// extern void ltt_dump_kprobes_table(void *call_data);
-//ust// #else
-//ust// static inline void ltt_dump_kprobes_table(void *call_data)
-//ust// {
-//ust// }
-//ust// #endif
-
-//ust// /* Relay IOCTL */
-//ust// 
-//ust// /* Get the next sub buffer that can be read. */
-//ust// #define RELAY_GET_SUBBUF		_IOR(0xF5, 0x00, __u32)
-//ust// /* Release the oldest reserved (by "get") sub buffer. */
-//ust// #define RELAY_PUT_SUBBUF		_IOW(0xF5, 0x01, __u32)
-//ust// /* returns the number of sub buffers in the per cpu channel. */
-//ust// #define RELAY_GET_N_SUBBUFS		_IOR(0xF5, 0x02, __u32)
-//ust// /* returns the size of the sub buffers. */
-//ust// #define RELAY_GET_SUBBUF_SIZE		_IOR(0xF5, 0x03, __u32)
-
-//ust// #endif /* CONFIG_LTT */
 
 struct ltt_trace_struct *_ltt_trace_find(const char *trace_name);
 
