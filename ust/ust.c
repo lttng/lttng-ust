@@ -51,7 +51,10 @@ int main(int argc, char *argv[])
 
 	char *msg = argv[2];
 
-	send_message(pid, msg, NULL);
+	struct ustcomm_connection conn;
+
+	ustcomm_connect_app(pid, &conn);
+	ustcomm_send_request(&conn, msg, NULL);
 
 	return 0;
 }

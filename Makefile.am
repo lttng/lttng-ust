@@ -1,1 +1,1 @@
-SUBDIRS = libust hello libmallocwrap ustd
+SUBDIRS = libust hello libmallocwrap ustd ust

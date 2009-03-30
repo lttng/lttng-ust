@@ -63,5 +63,5 @@ AC_SUBST(KCOMPAT_PATH)
 #                 ust/Makefile
 #                 ustd/Makefile])
 
-AC_CONFIG_FILES([Makefile libust/Makefile hello/Makefile libmallocwrap/Makefile ustd/Makefile])
+AC_CONFIG_FILES([Makefile libust/Makefile hello/Makefile libmallocwrap/Makefile ustd/Makefile ust/Makefile])
 AC_OUTPUT
