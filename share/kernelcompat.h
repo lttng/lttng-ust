@@ -95,13 +95,13 @@ static inline long IS_ERR(const void *ptr)
 
 #define smp_mb__after_atomic_inc() do {} while(0)
 
-/* RCU */
-
-#include "urcu.h"
-#define call_rcu_sched(a,b) b(a); synchronize_rcu()
-#define rcu_barrier_sched() do {} while(0) /* this nop is ok if call_rcu_sched does a synchronize_rcu() */
-#define rcu_read_lock_sched_notrace() rcu_read_lock()
-#define rcu_read_unlock_sched_notrace() rcu_read_unlock()
+///* RCU */
+//
+//#include "urcu.h"
+//#define call_rcu_sched(a,b) b(a); synchronize_rcu()
+//#define rcu_barrier_sched() do {} while(0) /* this nop is ok if call_rcu_sched does a synchronize_rcu() */
+//#define rcu_read_lock_sched_notrace() rcu_read_lock()
+//#define rcu_read_unlock_sched_notrace() rcu_read_unlock()
 
 /* ATOMICITY */
 

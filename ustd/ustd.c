@@ -273,6 +273,7 @@ int add_buffer(pid_t pid, char *bufname)
 	result = fd = open(tmp, O_WRONLY | O_CREAT | O_TRUNC, 00600);
 	if(result == -1) {
 		PERROR("open");
+		ERR("failed opening trace file %s", tmp);
 		return -1;
 	}
 	buf->file_fd = fd;

@@ -36,6 +36,7 @@
 #include "channels.h"
 #include "tracercore.h"
 #include "tracer.h"
+#include "urcu.h"
 
 extern struct marker __start___markers[] __attribute__((visibility("hidden")));
 extern struct marker __stop___markers[] __attribute__((visibility("hidden")));
@@ -501,8 +502,8 @@ static int remove_marker(const char *channel, const char *name)
 	ret = ltt_channels_unregister(e->channel);
 	WARN_ON(ret);
 	/* Make sure the call_rcu has been executed */
-	if (e->rcu_pending)
-		rcu_barrier_sched();
+//ust//	if (e->rcu_pending)
+//ust//		rcu_barrier_sched();
 	kfree(e);
 	return 0;
 }
@@ -792,8 +793,8 @@ int marker_probe_register(const char *channel, const char *name,
 	 * If we detect that a call_rcu is pending for this marker,
 	 * make sure it's executed now.
 	 */
-	if (entry->rcu_pending)
-		rcu_barrier_sched();
+//ust//	if (entry->rcu_pending)
+//ust//		rcu_barrier_sched();
 	old = marker_entry_add_probe(entry, probe, probe_private);
 	if (IS_ERR(old)) {
 		ret = PTR_ERR(old);
@@ -810,14 +811,14 @@ int marker_probe_register(const char *channel, const char *name,
 	entry = get_marker(channel, name);
 	if (!entry)
 		goto end;
-	if (entry->rcu_pending)
-		rcu_barrier_sched();
+//ust//	if (entry->rcu_pending)
+//ust//		rcu_barrier_sched();
 	entry->oldptr = old;
 	entry->rcu_pending = 1;
 	/* write rcu_pending before calling the RCU callback */
 	smp_wmb();
-	call_rcu_sched(&entry->rcu, free_old_closure);
-	/*synchronize_rcu(); free_old_closure();*/
+//ust//	call_rcu_sched(&entry->rcu, free_old_closure);
+	synchronize_rcu(); free_old_closure(&entry->rcu);
 	goto end;
 
 error_unregister_channel:
@@ -856,8 +857,8 @@ int marker_probe_unregister(const char *channel, const char *name,
 	entry = get_marker(channel, name);
 	if (!entry)
 		goto end;
-	if (entry->rcu_pending)
-		rcu_barrier_sched();
+//ust//	if (entry->rcu_pending)
+//ust//		rcu_barrier_sched();
 	old = marker_entry_remove_probe(entry, probe, probe_private);
 	mutex_unlock(&markers_mutex);
 
@@ -867,13 +868,14 @@ int marker_probe_unregister(const char *channel, const char *name,
 	entry = get_marker(channel, name);
 	if (!entry)
 		goto end;
-	if (entry->rcu_pending)
-		rcu_barrier_sched();
+//ust//	if (entry->rcu_pending)
+//ust//		rcu_barrier_sched();
 	entry->oldptr = old;
 	entry->rcu_pending = 1;
 	/* write rcu_pending before calling the RCU callback */
 	smp_wmb();
-	call_rcu_sched(&entry->rcu, free_old_closure);
+//ust//	call_rcu_sched(&entry->rcu, free_old_closure);
+	synchronize_rcu(); free_old_closure(&entry->rcu);
 	remove_marker(channel, name);	/* Ignore busy error message */
 	ret = 0;
 end:
@@ -940,8 +942,8 @@ int marker_probe_unregister_private_data(marker_probe_func *probe,
 		ret = -ENOENT;
 		goto end;
 	}
-	if (entry->rcu_pending)
-		rcu_barrier_sched();
+//ust//	if (entry->rcu_pending)
+//ust//		rcu_barrier_sched();
 	old = marker_entry_remove_probe(entry, NULL, probe_private);
 	channel = kstrdup(entry->channel, GFP_KERNEL);
 	name = kstrdup(entry->name, GFP_KERNEL);
@@ -953,13 +955,14 @@ int marker_probe_unregister_private_data(marker_probe_func *probe,
 	entry = get_marker(channel, name);
 	if (!entry)
 		goto end;
-	if (entry->rcu_pending)
-		rcu_barrier_sched();
+//ust//	if (entry->rcu_pending)
+//ust//		rcu_barrier_sched();
 	entry->oldptr = old;
 	entry->rcu_pending = 1;
 	/* write rcu_pending before calling the RCU callback */
 	smp_wmb();
-	call_rcu_sched(&entry->rcu, free_old_closure);
+//ust//	call_rcu_sched(&entry->rcu, free_old_closure);
+	synchronize_rcu(); free_old_closure(&entry->rcu);
 	/* Ignore busy error message */
 	remove_marker(channel, name);
 end:

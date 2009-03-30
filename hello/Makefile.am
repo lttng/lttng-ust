@@ -1,4 +1,4 @@
-bin_PROGRAMS = hello
+noinst_PROGRAMS = hello
 hello_SOURCES = hello.c tp.c tp.h
 hello_LDADD = $(top_builddir)/libust/libust.la @URCU_PATH@/liburcu.so
 

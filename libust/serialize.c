@@ -23,6 +23,7 @@
 #include "tracer.h"
 #include "list.h"
 #include "usterr.h"
+#include "urcu.h"
 
 enum ltt_type {
 	LTT_TYPE_SIGNED_INT,
@@ -593,7 +594,7 @@ notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
 	if (unlikely(ltt_traces.num_active_traces == 0))
 		return;
 
-	rcu_read_lock_sched_notrace();
+	rcu_read_lock(); //ust// rcu_read_lock_sched_notrace();
 	cpu = smp_processor_id();
 //ust//	__get_cpu_var(ltt_nesting)++;
 	ltt_nesting++;
@@ -676,7 +677,7 @@ notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
 	}
 //ust//	__get_cpu_var(ltt_nesting)--;
 	ltt_nesting--;
-	rcu_read_unlock_sched_notrace();
+	rcu_read_unlock(); //ust// rcu_read_unlock_sched_notrace();
 }
 EXPORT_SYMBOL_GPL(ltt_vtrace);
 

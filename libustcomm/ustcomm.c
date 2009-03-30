@@ -518,7 +518,7 @@ int ustcomm_init_ustd(struct ustcomm_ustd *handle)
 
 	handle->server.listen_fd = init_named_socket(name, &handle->server.socketpath);
 	if(handle->server.listen_fd < 0) {
-		ERR("error initializing named socket");
+		ERR("error initializing named socket at %s", name);
 		goto free_name;
 	}
 	free(name);

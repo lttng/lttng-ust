@@ -36,6 +36,7 @@
 #include "tracepoint.h"
 #include "usterr.h"
 #include "list.h"
+#include "urcu.h"
 
 //extern struct tracepoint __start___tracepoints[] __attribute__((visibility("hidden")));
 //extern struct tracepoint __stop___tracepoints[] __attribute__((visibility("hidden")));
