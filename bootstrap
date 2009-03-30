@@ -1,5 +1,9 @@
 #! /bin/sh
 
-aclocal \
-&& automake --gnu --add-missing \
-&& autoconf
+set -x
+aclocal -I config
+libtoolize --force --copy
+autoheader
+automake --add-missing --copy
+autoconf
+
