@@ -1,6 +1,6 @@
-bin_PROGRAMS = hello
-hello_SOURCES = hello.c tp.c tp.h
-hello_LDADD = $(top_builddir)/libust/libust.la @URCU_PATH@/liburcu.so
+lib_LTLIBRARIES = libmallocwrap.la
+libmallocwrap_la_SOURCES = mallocwrap.c
+noinst_SCRIPTS = run
 
 INCLUDES = -I$(top_builddir)/share
 INCLUDES += -I@URCU_PATH@

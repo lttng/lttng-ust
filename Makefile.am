@@ -1,1 +1,1 @@
-SUBDIRS = libmarkers libtracectl libtracing hello libmallocwrap
+SUBDIRS = libust hello libmallocwrap

@@ -6,7 +6,7 @@ AC_INIT([ust], [0.0], [pierre-marc dot fournier at polymtl dot ca])
 AC_CONFIG_AUX_DIR(make_scripts)
 AM_INIT_AUTOMAKE([0.0 foreign])
 AC_CONFIG_SRCDIR([ust/localerr.h])
-#AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
 AC_PROG_CC
@@ -63,5 +63,5 @@ AC_SUBST(KCOMPAT_PATH)
 #                 ust/Makefile
 #                 ustd/Makefile])
 
-AC_CONFIG_FILES([Makefile libmarkers/Makefile libtracectl/Makefile libtracing/Makefile hello/Makefile libmallocwrap/Makefile])
+AC_CONFIG_FILES([Makefile libust/Makefile hello/Makefile libmallocwrap/Makefile])
 AC_OUTPUT

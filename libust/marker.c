@@ -18,9 +18,9 @@
 //ust// #include <linux/module.h>
 //ust// #include <linux/mutex.h>
 //ust// #include <linux/types.h>
-#include "jhash.h"
-#include "list.h"
-#include "rcupdate.h"
+//#include "jhash.h"
+//#include "list.h"
+//#include "rcupdate.h"
 //ust// #include <linux/marker.h>
 #include <errno.h>
 //ust// #include <linux/slab.h>
