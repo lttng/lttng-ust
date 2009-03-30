@@ -1,1 +1,1 @@
-SUBDIRS = libmarkers
+SUBDIRS = libmarkers libtracectl libtracing

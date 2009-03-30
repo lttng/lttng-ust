@@ -63,5 +63,5 @@ AC_SUBST(KCOMPAT_PATH)
 #                 ust/Makefile
 #                 ustd/Makefile])
 
-AC_CONFIG_FILES([Makefile libmarkers/Makefile])
+AC_CONFIG_FILES([Makefile libmarkers/Makefile libtracectl/Makefile libtracing/Makefile])
 AC_OUTPUT
