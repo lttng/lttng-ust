@@ -93,7 +93,7 @@ static inline long IS_ERR(const void *ptr)
 
 /* MEMORY BARRIERS */
 
-#define smp_mb__after_atomic_inc() do {} while(0)
+//#define smp_mb__after_atomic_inc() do {} while(0)
 
 ///* RCU */
 //
@@ -105,78 +105,78 @@ static inline long IS_ERR(const void *ptr)
 
 /* ATOMICITY */
 
-#include <signal.h>
-
-static inline int atomic_dec_and_test(atomic_t *p)
-{
-	(p->counter)--;
-	return !p->counter;
-}
-
-static inline void atomic_set(atomic_t *p, int v)
-{
-	p->counter=v;
-}
-
-static inline void atomic_inc(atomic_t *p)
-{
-	p->counter++;
-}
-
-static int atomic_read(atomic_t *p)
-{
-	return p->counter;
-}
-
-#define atomic_long_t atomic_t
-#define atomic_long_set atomic_set
-#define atomic_long_read atomic_read
+//#include <signal.h>
+//
+//static inline int atomic_dec_and_test(atomic_t *p)
+//{
+//	(p->counter)--;
+//	return !p->counter;
+//}
+//
+//static inline void atomic_set(atomic_t *p, int v)
+//{
+//	p->counter=v;
+//}
+//
+//static inline void atomic_inc(atomic_t *p)
+//{
+//	p->counter++;
+//}
+//
+//static int atomic_read(atomic_t *p)
+//{
+//	return p->counter;
+//}
+//
+//#define atomic_long_t atomic_t
+//#define atomic_long_set atomic_set
+//#define atomic_long_read atomic_read
 
 //#define __xg(x) ((volatile long *)(x))
 
-#define cmpxchg(ptr, o, n)						\
-	((__typeof__(*(ptr)))__cmpxchg((ptr), (unsigned long)(o),	\
+//#define cmpxchg(ptr, o, n)						\
+//	((__typeof__(*(ptr)))__cmpxchg((ptr), (unsigned long)(o),	\
 				       (unsigned long)(n), sizeof(*(ptr))))
 
 //#define local_cmpxchg cmpxchg
-#define local_cmpxchg(l, o, n) (cmpxchg(&((l)->a.counter), (o), (n)))
+//#define local_cmpxchg(l, o, n) (cmpxchg(&((l)->a.counter), (o), (n)))
 
-#define atomic_long_cmpxchg(v, old, new) (cmpxchg(&((v)->counter), (old), (new)))
+//#define atomic_long_cmpxchg(v, old, new) (cmpxchg(&((v)->counter), (old), (new)))
 
 
 /* LOCAL OPS */
 
 //typedef int local_t;
-typedef struct
-{
-	atomic_long_t a;
-} local_t;
-
-
-static inline void local_inc(local_t *l)
-{
-	(l->a.counter)++;
-}
-
-static inline void local_set(local_t *l, int v)
-{
-	l->a.counter = v;
-}
-
-static inline void local_add(int v, local_t *l)
-{
-	l->a.counter += v;
-}
-
-static int local_add_return(int v, local_t *l)
-{
-	return l->a.counter += v;
-}
-
-static inline int local_read(local_t *l)
-{
-	return l->a.counter;
-}
+//typedef struct
+//{
+//	atomic_long_t a;
+//} local_t;
+//
+//
+//static inline void local_inc(local_t *l)
+//{
+//	(l->a.counter)++;
+//}
+//
+//static inline void local_set(local_t *l, int v)
+//{
+//	l->a.counter = v;
+//}
+//
+//static inline void local_add(int v, local_t *l)
+//{
+//	l->a.counter += v;
+//}
+//
+//static int local_add_return(int v, local_t *l)
+//{
+//	return l->a.counter += v;
+//}
+//
+//static inline int local_read(local_t *l)
+//{
+//	return l->a.counter;
+//}
 
 
 /* ATTRIBUTES */
