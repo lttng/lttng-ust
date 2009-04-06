@@ -50,7 +50,9 @@ AC_FUNC_MALLOC
 AC_CHECK_FUNCS([gettimeofday munmap socket strerror strtol])
 
 AC_ARG_WITH(urcu, [  --with-urcu path	Path to userspace RCU source], URCU_PATH="$withval", AC_MSG_ERROR([Must specify urcu path.]))
+AC_CHECK_FILE("$URCU_PATH/urcu.h", , AC_MSG_ERROR([Cannot find urcu.h in urcu directory]))
 AC_ARG_WITH(kcompat, [  --with-kcompat path	Path to userspace kcompat source], KCOMPAT_PATH="$withval", AC_MSG_ERROR([Must specify kcompat path.]))
+AC_CHECK_FILE("$KCOMPAT_PATH/kcompat.h", , AC_MSG_ERROR([Cannot find kcompat.h in kcompat directory]))
 AC_SUBST(URCU_PATH)
 AC_SUBST(KCOMPAT_PATH)
 
