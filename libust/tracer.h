@@ -135,9 +135,9 @@ struct ltt_trace_ops {
 				size_t *slot_size, long *buf_offset, u64 *tsc,
 				unsigned int *rflags,
 				int largest_align);
-	void (*commit_slot) (struct ltt_channel_struct *channel,
-				void **transport_data, long buf_offset,
-				size_t slot_size);
+//ust//	void (*commit_slot) (struct ltt_channel_struct *channel,
+//ust//				void **transport_data, long buf_offset,
+//ust//				size_t slot_size);
 	void (*wakeup_channel) (struct ltt_channel_struct *ltt_channel);
 	int (*user_blocking) (struct ltt_trace_struct *trace,
 				unsigned int index, size_t data_size,
@@ -484,29 +484,29 @@ static inline int ltt_reserve_slot(
 }
 
 
-/*
- * ltt_commit_slot
- *
- * Atomic unordered slot commit. Increments the commit count in the
- * specified sub-buffer, and delivers it if necessary.
- *
- * Parameters:
- *
- * @channel : the chanel to reserve space into.
- * @transport_data : specific transport data.
- * @buf_offset : offset of beginning of reserved slot
- * @slot_size : size of the reserved slot.
- */
-static inline void ltt_commit_slot(
-		struct ltt_channel_struct *channel,
-		void **transport_data,
-		long buf_offset,
-		size_t slot_size)
-{
-	struct ltt_trace_struct *trace = channel->trace;
-
-	trace->ops->commit_slot(channel, transport_data, buf_offset, slot_size);
-}
+///*
+// * ltt_commit_slot
+// *
+// * Atomic unordered slot commit. Increments the commit count in the
+// * specified sub-buffer, and delivers it if necessary.
+// *
+// * Parameters:
+// *
+// * @channel : the chanel to reserve space into.
+// * @transport_data : specific transport data.
+// * @buf_offset : offset of beginning of reserved slot
+// * @slot_size : size of the reserved slot.
+// */
+//static inline void ltt_commit_slot(
+//		struct ltt_channel_struct *channel,
+//		void **transport_data,
+//		long buf_offset,
+//		size_t slot_size)
+//{
+//	struct ltt_trace_struct *trace = channel->trace;
+//
+//	trace->ops->commit_slot(channel, transport_data, buf_offset, slot_size);
+//}
 
 /*
  * Control channels :

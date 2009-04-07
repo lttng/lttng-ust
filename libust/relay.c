@@ -887,13 +887,18 @@ void relay_wake_consumer(void *arg, int finished)
 }
 
 static notrace void ltt_deliver(struct rchan_buf *buf, unsigned int subbuf_idx,
-		void *subbuf)
+		long commit_count)
 {
 	struct ltt_channel_struct *channel =
 		(struct ltt_channel_struct *)buf->chan->private_data;
 	struct ltt_channel_buf_struct *ltt_buf = channel->buf;
 	int result;
 
+//ust// #ifdef CONFIG_LTT_VMCORE
+	local_set(&ltt_buf->commit_seq[subbuf_idx], commit_count);
+//ust// #endif
+
+	/* wakeup consumer */
 	result = write(ltt_buf->data_ready_fd_write, "1", 1);
 	if(result == -1) {
 		PERROR("write (in ltt_relay_buffer_flush)");
@@ -1463,10 +1468,10 @@ static int ltt_relay_create_buffer(struct ltt_trace_struct *trace,
 	int fds[2];
 	int result;
 
-//ust//	ltt_buf->commit_count =
-//ust//		zmalloc(sizeof(ltt_buf->commit_count) * n_subbufs);
-//ust//	if (!ltt_buf->commit_count)
-//ust//		return -ENOMEM;
+	ltt_buf->commit_count =
+		zmalloc(sizeof(ltt_buf->commit_count) * n_subbufs);
+	if (!ltt_buf->commit_count)
+		return -ENOMEM;
 	kref_get(&trace->kref);
 	kref_get(&trace->ltt_transport_kref);
 	kref_get(&ltt_chan->kref);
@@ -1494,6 +1499,13 @@ static int ltt_relay_create_buffer(struct ltt_trace_struct *trace,
 	ltt_buf->data_ready_fd_read = fds[0];
 	ltt_buf->data_ready_fd_write = fds[1];
 
+//ust//	ltt_buf->commit_seq = malloc(sizeof(ltt_buf->commit_seq) * n_subbufs);
+//ust//	if(!ltt_buf->commit_seq) {
+//ust//		return -1;
+//ust//	}
+
+	/* FIXME: decrementally destroy on error */
+
 	return 0;
 }
 
@@ -1505,8 +1517,9 @@ static void ltt_relay_destroy_buffer(struct ltt_channel_struct *ltt_chan)
 	kref_put(&ltt_chan->trace->ltt_transport_kref,
 		ltt_release_transport);
 	ltt_relay_print_buffer_errors(ltt_chan);
-//ust//	kfree(ltt_buf->commit_count);
-//ust//	ltt_buf->commit_count = NULL;
+//ust//	free(ltt_buf->commit_seq);
+	kfree(ltt_buf->commit_count);
+	ltt_buf->commit_count = NULL;
 	kref_put(&ltt_chan->kref, ltt_relay_release_channel);
 	kref_put(&trace->kref, ltt_release_trace);
 //ust//	wake_up_interruptible(&trace->kref_wq);
@@ -1518,7 +1531,7 @@ static void ltt_chan_alloc_ltt_buf(struct ltt_channel_struct *ltt_chan)
 	int result;
 
 	/* Get one page */
-	/* FIXME: increase size if we have a commit_count array that overflows the page */
+	/* FIXME: increase size if we have a seq_commit array that overflows the page */
 	size_t size = PAGE_ALIGN(1);
 
 	result = ltt_chan->buf_shmid = shmget(getpid(), size, IPC_CREAT | IPC_EXCL | 0700);
@@ -2016,7 +2029,7 @@ static inline void ltt_reserve_switch_old_subbuf(
 			>> ltt_channel->n_subbufs_order)
 			- ((offsets->commit_count - rchan->subbuf_size)
 				& ltt_channel->commit_count_mask) == 0)
-		ltt_deliver(buf, oldidx, NULL);
+		ltt_deliver(buf, oldidx, offsets->commit_count);
 }
 
 /*
@@ -2044,7 +2057,7 @@ static /*inline*/ void ltt_reserve_switch_new_subbuf(
 			>> ltt_channel->n_subbufs_order)
 			- ((offsets->commit_count - rchan->subbuf_size)
 				& ltt_channel->commit_count_mask) == 0)
-		ltt_deliver(buf, beginidx, NULL);
+		ltt_deliver(buf, beginidx, offsets->commit_count);
 }
 
 
@@ -2086,7 +2099,7 @@ static inline void ltt_reserve_end_switch_current(
 			>> ltt_channel->n_subbufs_order)
 			- ((offsets->commit_count - rchan->subbuf_size)
 				& ltt_channel->commit_count_mask) == 0)
-		ltt_deliver(buf, endidx, NULL);
+		ltt_deliver(buf, endidx, offsets->commit_count);
 }
 
 /**
@@ -2230,96 +2243,6 @@ static notrace void ltt_force_switch(struct rchan_buf *buf,
 }
 
 /*
- * for flight recording. must be called after relay_commit.
- * This function decrements de subbuffer's lost_size each time the commit count
- * reaches back the reserve offset (module subbuffer size). It is useful for
- * crash dump.
- * We use slot_size - 1 to make sure we deal correctly with the case where we
- * fill the subbuffer completely (so the subbuf index stays in the previous
- * subbuffer).
- */
-//ust// #ifdef CONFIG_LTT_VMCORE
-static /*inline*/ void ltt_write_commit_counter(struct rchan_buf *buf,
-		long buf_offset, size_t slot_size)
-{
-	struct ltt_channel_struct *ltt_channel =
-		(struct ltt_channel_struct *)buf->chan->private_data;
-	struct ltt_channel_buf_struct *ltt_buf = ltt_channel->buf;
-	struct ltt_subbuffer_header *header;
-	long offset, subbuf_idx, commit_count;
-	uint32_t lost_old, lost_new;
-
-	subbuf_idx = SUBBUF_INDEX(buf_offset - 1, buf->chan);
-	offset = buf_offset + slot_size;
-	header = (struct ltt_subbuffer_header *)
-			ltt_relay_offset_address(buf,
-				subbuf_idx * buf->chan->subbuf_size);
-	for (;;) {
-		lost_old = header->lost_size;
-		commit_count =
-			local_read(&ltt_buf->commit_count[subbuf_idx]);
-		/* SUBBUF_OFFSET includes commit_count_mask */
-		if (!SUBBUF_OFFSET(offset - commit_count, buf->chan)) {
-			lost_new = (uint32_t)buf->chan->subbuf_size
-				   - SUBBUF_OFFSET(commit_count, buf->chan);
-			lost_old = cmpxchg_local(&header->lost_size, lost_old,
-						lost_new);
-			if (lost_old <= lost_new)
-				break;
-		} else {
-			break;
-		}
-	}
-}
-//ust// #else
-//ust// static inline void ltt_write_commit_counter(struct rchan_buf *buf,
-//ust// 		long buf_offset, size_t slot_size)
-//ust// {
-//ust// }
-//ust// #endif
-
-/*
- * Atomic unordered slot commit. Increments the commit count in the
- * specified sub-buffer, and delivers it if necessary.
- *
- * Parameters:
- *
- * @ltt_channel : channel structure
- * @transport_data: transport-specific data
- * @buf_offset : offset following the event header.
- * @slot_size : size of the reserved slot.
- */
-static notrace void ltt_relay_commit_slot(
-		struct ltt_channel_struct *ltt_channel,
-		void **transport_data, long buf_offset, size_t slot_size)
-{
-	struct rchan_buf *buf = *transport_data;
-	struct ltt_channel_buf_struct *ltt_buf = ltt_channel->buf;
-	struct rchan *rchan = buf->chan;
-	long offset_end = buf_offset;
-	long endidx = SUBBUF_INDEX(offset_end - 1, rchan);
-	long commit_count;
-
-	/* Must write slot data before incrementing commit count */
-	smp_wmb();
-	commit_count = local_add_return(slot_size,
-		&ltt_buf->commit_count[endidx]);
-	/* Check if all commits have been done */
-	if ((BUFFER_TRUNC(offset_end - 1, rchan)
-			>> ltt_channel->n_subbufs_order)
-			- ((commit_count - rchan->subbuf_size)
-			   & ltt_channel->commit_count_mask) == 0)
-		ltt_deliver(buf, endidx, NULL);
-	/*
-	 * Update lost_size for each commit. It's needed only for extracting
-	 * ltt buffers from vmcore, after crash.
-	 */
-	ltt_write_commit_counter(buf, buf_offset, slot_size);
-
-	DBG("commited slot. now commit count is %ld", commit_count);
-}
-
-/*
  * This is called with preemption disabled when user space has requested
  * blocking mode.  If one of the active traces has free space below a
  * specific threshold value, we reenable preemption and block.
@@ -2438,7 +2361,7 @@ static struct ltt_transport ust_relay_transport = {
 		.finish_channel = ltt_relay_finish_channel,
 		.remove_channel = ltt_relay_remove_channel,
 		.wakeup_channel = ltt_relay_async_wakeup_chan,
-		.commit_slot = ltt_relay_commit_slot,
+//		.commit_slot = ltt_relay_commit_slot,
 		.reserve_slot = ltt_relay_reserve_slot,
 		.user_blocking = ltt_relay_user_blocking,
 		.user_errors = ltt_relay_print_user_errors,
@@ -2464,6 +2387,89 @@ static struct ltt_transport ust_relay_transport = {
 //ust// 
 //ust// 	return 0;
 //ust// }
+
+/*
+ * for flight recording. must be called after relay_commit.
+ * This function decrements de subbuffer's lost_size each time the commit count
+ * reaches back the reserve offset (module subbuffer size). It is useful for
+ * crash dump.
+ */
+//ust// #ifdef CONFIG_LTT_VMCORE
+static /* inline */ void ltt_write_commit_counter(struct rchan_buf *buf,
+		struct ltt_channel_buf_struct *ltt_buf,
+		long idx, long buf_offset, long commit_count, size_t data_size)
+{
+	long offset;
+	long commit_seq_old;
+
+	offset = buf_offset + data_size;
+
+	/*
+	 * SUBBUF_OFFSET includes commit_count_mask. We can simply
+	 * compare the offsets within the subbuffer without caring about
+	 * buffer full/empty mismatch because offset is never zero here
+	 * (subbuffer header and event headers have non-zero length).
+	 */
+	if (unlikely(SUBBUF_OFFSET(offset - commit_count, buf->chan)))
+		return;
+
+	commit_seq_old = local_read(&ltt_buf->commit_seq[idx]);
+	while (commit_seq_old < commit_count)
+		commit_seq_old = local_cmpxchg(&ltt_buf->commit_seq[idx],
+					 commit_seq_old, commit_count);
+}
+//ust// #else
+//ust// static inline void ltt_write_commit_counter(struct rchan_buf *buf,
+//ust// 		long buf_offset, size_t slot_size)
+//ust// {
+//ust// }
+//ust// #endif
+
+/*
+ * Atomic unordered slot commit. Increments the commit count in the
+ * specified sub-buffer, and delivers it if necessary.
+ *
+ * Parameters:
+ *
+ * @ltt_channel : channel structure
+ * @transport_data: transport-specific data
+ * @buf_offset : offset following the event header.
+ * @data_size : size of the event data.
+ * @slot_size : size of the reserved slot.
+ */
+/* FIXME: make this function static inline in the .h! */
+/*static*/ /* inline */ notrace void ltt_commit_slot(
+		struct ltt_channel_struct *ltt_channel,
+		void **transport_data, long buf_offset,
+		size_t data_size, size_t slot_size)
+{
+	struct rchan_buf *buf = *transport_data;
+	struct ltt_channel_buf_struct *ltt_buf = ltt_channel->buf;
+	struct rchan *rchan = buf->chan;
+	long offset_end = buf_offset;
+	long endidx = SUBBUF_INDEX(offset_end - 1, rchan);
+	long commit_count;
+
+	/* Must write slot data before incrementing commit count */
+	smp_wmb();
+	commit_count = local_add_return(slot_size,
+		&ltt_buf->commit_count[endidx]);
+	/* Check if all commits have been done */
+	if ((BUFFER_TRUNC(offset_end - 1, rchan)
+			>> ltt_channel->n_subbufs_order)
+			- ((commit_count - rchan->subbuf_size)
+			   & ltt_channel->commit_count_mask) == 0)
+		ltt_deliver(buf, endidx, commit_count);
+	/*
+	 * Update lost_size for each commit. It's needed only for extracting
+	 * ltt buffers from vmcore, after crash.
+	 */
+	ltt_write_commit_counter(buf, ltt_buf, endidx,
+				 buf_offset, commit_count, data_size);
+
+	DBG("commited slot. now commit count is %ld", commit_count);
+}
+
 
 static char initialized = 0;
 

@@ -23,6 +23,7 @@
 //ust// #include <linux/ltt-core.h>
 #include "kref.h"
 #include "list.h"
+#include "channels.h"
 
 /* Needs a _much_ better name... */
 #define FIX_SIZE(x) ((((x) - 1) & PAGE_MASK) + PAGE_SIZE)
@@ -320,7 +321,7 @@ extern const struct file_operations ltt_relay_file_operations;
 struct ltt_channel_buf_struct {
 	/* First 32 bytes cache-hot cacheline */
 	local_t offset;			/* Current offset in the buffer */
-//ust//	local_t *commit_count;		/* Commit count per sub-buffer */
+	local_t *commit_count;		/* Commit count per sub-buffer */
 	atomic_long_t consumed;		/*
 					 * Current offset in the buffer
 					 * standard atomic access (shared)
@@ -329,6 +330,9 @@ struct ltt_channel_buf_struct {
 					 * Last timestamp written in the buffer.
 					 */
 	/* End of first 32 bytes cacheline */
+//ust// #ifdef CONFIG_LTT_VMCORE
+//ust//	local_t *commit_seq;		/* Consecutive commits */
+//ust// #endif
 	atomic_long_t active_readers;	/*
 					 * Active readers count
 					 * standard atomic access (shared)
@@ -355,13 +359,11 @@ struct ltt_channel_buf_struct {
 	int data_ready_fd_read;
 
 	/* commit count per subbuffer; must be at end of struct */
-	local_t commit_count[0] ____cacheline_aligned;
+	local_t commit_seq[0] ____cacheline_aligned;
 } ____cacheline_aligned;
 
 int ltt_do_get_subbuf(struct rchan_buf *buf, struct ltt_channel_buf_struct *ltt_buf, long *pconsumed_old);
 
 int ltt_do_put_subbuf(struct rchan_buf *buf, struct ltt_channel_buf_struct *ltt_buf, u32 uconsumed_old);
 
-
 #endif /* _LINUX_LTT_RELAY_H */
-
