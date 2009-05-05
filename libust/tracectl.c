@@ -68,7 +68,7 @@ struct blocked_consumer {
 	struct list_head list;
 };
 
-static void print_markers(void)
+static void print_markers(FILE *fp)
 {
 	struct marker_iter iter;
 
@@ -77,7 +77,7 @@ static void print_markers(void)
 	marker_iter_start(&iter);
 
 	while(iter.marker) {
-		fprintf(stderr, "marker: %s_%s \"%s\"\n", iter.marker->channel, iter.marker->name, iter.marker->format);
+		fprintf(fp, "marker: %s_%s %d \"%s\"\n", iter.marker->channel, iter.marker->name, (int)imv_read(iter.marker->state), iter.marker->format);
 		marker_iter_next(&iter);
 	}
 	unlock_markers();
@@ -232,7 +232,48 @@ int listener_main(void *p)
 		len = strlen(recvbuf);
 
 		if(!strcmp(recvbuf, "print_markers")) {
-			print_markers();
+			print_markers(stderr);
+		}
+		else if(!strcmp(recvbuf, "list_markers")) {
+			char *ptr;
+			size_t size;
+			FILE *fp;
+
+			fp = open_memstream(&ptr, &size);
+			print_markers(fp);
+			fclose(fp);
+
+			result = ustcomm_send_reply(&ustcomm_app.server, ptr, &src);
+
+			free(ptr);
+		}
+		else if(!strcmp(recvbuf, "start")) {
+			/* start is an operation that setups the trace, allocates it and starts it */
+			result = ltt_trace_setup(trace_name);
+			if(result < 0) {
+				ERR("ltt_trace_setup failed");
+				return;
+			}
+
+			result = ltt_trace_set_type(trace_name, trace_type);
+			if(result < 0) {
+				ERR("ltt_trace_set_type failed");
+				return;
+			}
+
+			result = ltt_trace_alloc(trace_name);
+			if(result < 0) {
+				ERR("ltt_trace_alloc failed");
+				return;
+			}
+
+			inform_consumer_daemon();
+
+			result = ltt_trace_start(trace_name);
+			if(result < 0) {
+				ERR("ltt_trace_start failed");
+				continue;
+			}
 		}
 		else if(!strcmp(recvbuf, "trace_setup")) {
 			DBG("trace setup");
@@ -551,6 +592,42 @@ int listener_main(void *p)
 			free(channel_name);
 			free(consumed_old_str);
 		}
+		else if(nth_token_is(recvbuf, "enable_marker", 0) == 1) {
+			char *channel_slash_name = nth_token(recvbuf, 1);
+			char channel_name[256]="";
+			char marker_name[256]="";
+			struct marker_iter iter;
+
+			result = sscanf(channel_slash_name, "%255[^/]/%255s", channel_name, marker_name);
+
+			if(channel_name == NULL || marker_name == NULL) {
+				WARN("invalid marker name");
+				goto next_cmd;
+			}
+			printf("%s %s\n", channel_name, marker_name);
+
+			result = ltt_marker_connect(channel_name, marker_name, "default");
+			if(result < 0) {
+				WARN("could not enable marker; channel=%s, name=%s", channel_name, marker_name);
+			}
+		}
+		else if(nth_token_is(recvbuf, "disable_marker", 0) == 1) {
+			char *channel_slash_name = nth_token(recvbuf, 1);
+			char *marker_name;
+			char *channel_name;
+			struct marker_iter iter;
+
+			result = sscanf(channel_slash_name, "%a[^/]/%as", &channel_name, &marker_name);
+
+			if(marker_name == NULL) {
+			}
+			printf("%s %s\n", channel_name, marker_name);
+
+			result = ltt_marker_disconnect(channel_name, marker_name, "default");
+			if(result < 0) {
+				WARN("could not disable marker; channel=%s, name=%s", channel_name, marker_name);
+			}
+		}
 //		else if(nth_token_is(recvbuf, "get_notifications", 0) == 1) {
 //			struct ltt_trace_struct *trace;
 //			char trace_name[] = "auto";
@@ -780,7 +857,6 @@ static void __attribute__((constructor(1000))) init()
 			ERR("ltt_trace_start failed");
 			return;
 		}
-		//start_consumer();
 		inform_consumer_daemon();
 	}
 

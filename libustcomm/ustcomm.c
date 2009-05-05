@@ -49,18 +49,20 @@ char *strdup_malloc(const char *s)
 	return retval;
 }
 
-static void signal_process(pid_t pid)
+static int signal_process(pid_t pid)
 {
 	int result;
 
 	result = kill(pid, UST_SIGNAL);
 	if(result == -1) {
 		PERROR("kill");
-		return;
+		return -1;
 	}
 
 	/* FIXME: should wait in a better way */
-	sleep(1);
+	//sleep(1);
+
+	return 0;
 }
 
 static int send_message_fd(int fd, const char *msg)
@@ -113,8 +115,13 @@ static int send_message_path(const char *path, const char *msg, int signalpid)
 		return -1;
 	}
 
-	if(signalpid >= 0)
-		signal_process(signalpid);
+	if(signalpid >= 0) {
+		result = signal_process(signalpid);
+		if(result == -1) {
+			ERR("could not signal process");
+			return -1;
+		}
+	}
 
 	result = connect(fd, (struct sockaddr *)&addr, sizeof(addr));
 	if(result == -1) {
@@ -438,8 +445,13 @@ int ustcomm_connect_path(char *path, struct ustcomm_connection *conn, pid_t sign
 		return -1;
 	}
 
-	if(signalpid >= 0)
-		signal_process(signalpid);
+	if(signalpid >= 0) {
+		result = signal_process(signalpid);
+		if(result == -1) {
+			ERR("could not signal process");
+			return -1;
+		}
+	}
 
 	result = connect(fd, (struct sockaddr *)&addr, sizeof(addr));
 	if(result == -1) {
