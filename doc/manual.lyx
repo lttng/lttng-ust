@@ -84,7 +84,7 @@ One buffer per process (multiple threads share the same buffer)
 \end_layout
 
 \begin_layout Itemize
-Early process tracing (from the beginning of the main() function
+Early process tracing (from the beginning of the main() function)
 \end_layout
 
 \begin_layout Itemize
@@ -96,7 +96,11 @@ Still to implement:
 \end_layout
 
 \begin_layout Itemize
-Support of dynamic instrumentation (being implemented in 
+Support for dynamic instrumentation
+\end_layout
+
+\begin_layout Itemize
+Per thread or per CPU buffers
 \end_layout
 
 \begin_layout Standard
@@ -113,6 +117,10 @@ Performance
 \end_layout
 
 \begin_layout Section
+Installation
+\end_layout
+
+\begin_layout Section
 Instrumenting an Application
 \end_layout
 
@@ -126,7 +134,7 @@ In order to record a trace of events occurring in a application, the application
 \begin_layout Standard
 There are no limitations on the type of code that may be instrumented.
  Multi-threaded programs may be instrumented without problem.
- Signal handler may be instrumented as well.
+ Signal handlers may be instrumented as well.
 \end_layout
 
 \begin_layout Standard
@@ -165,7 +173,7 @@ status open
 
 \begin_layout Plain Layout
 
-void function()
+int main(int argc, char **argv)
 \end_layout
 
 \begin_layout Plain Layout
@@ -228,6 +236,15 @@ firstarg %d secondarg %s
 \begin_layout Plain Layout
 
 	trace_mark(main, myotherevent, MARK_NOARGS);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+	
+return 0;
 \end_layout
 
 \begin_layout Plain Layout
@@ -416,6 +433,26 @@ TRACEPOINT_LIB;
 
 \begin_layout Subsection
 Compiling the Application
+\end_layout
+
+\begin_layout Standard
+See the 
+\begin_inset Quotes eld
+\end_inset
+
+hello
+\begin_inset Quotes erd
+\end_inset
+
+ directory for an example application and makefile.
+\end_layout
+
+\begin_layout Itemize
+The compiler must have access to the include path for the libust headers.
+\end_layout
+
+\begin_layout Itemize
+The application should be statically or dynamically linked to libust.
 \end_layout
 
 \begin_layout Section
