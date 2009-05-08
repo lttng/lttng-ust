@@ -34,10 +34,12 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 			{"enable-marker", 1, 0, 1007},
 			{"disable-marker", 1, 0, 1008},
 			{"start", 0, 0, 1009},
+			{"help", 0, 0, 'h'},
+			{"version", 0, 0, 1010},
 			{0, 0, 0, 0}
 		};
 
-		c = getopt_long(argc, argv, "", long_options, &option_index);
+		c = getopt_long(argc, argv, "h", long_options, &option_index);
 		if (c == -1)
 			break;
 
@@ -71,6 +73,11 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 		case 1008:
 			asprintf(&opts->cmd, "disable_marker %s", optarg);
 			break;
+		case 'h':
+			usage();
+			exit(0);
+		case 1010:
+			printf("Version 0\n");
 
 		default:
 			/* unknown option or other error; error is printed by getopt, just return */
@@ -96,16 +103,16 @@ char *progname = NULL;
 
 void usage(void)
 {
-	fprintf(stderr, "usage: %s [OPTIONS] OPERATION PID...\n", progname);
+	fprintf(stderr, "usage: %s [OPTIONS] COMMAND PID...\n", progname);
 	fprintf(stderr, "\nControl the tracing of a process that supports LTTng Userspace Tracing.\n\
 \n\
-Operations:\n\
-\t--start-trace\tStart tracing\n\
-\t--stop-trace\tStop tracing\n\
-\t--destroy-trace\tDestroy the trace\n\
-\t--enable-marker CHANNEL_NAME/MARKER_NAME\tEnable a marker\n\
-\t--disable-marker CHANNEL_NAME/MARKER_NAME\tDisable a marker\n\
-\t--list-markers\tList the markers of the process and their state\n\
+Commands:\n\
+    --start-trace\t\t\tStart tracing\n\
+    --stop-trace\t\t\tStop tracing\n\
+    --destroy-trace\t\t\tDestroy the trace\n\
+    --enable-marker CHANNEL/MARKER\tEnable a marker\n\
+    --disable-marker CHANNEL/MARKER\tDisable a marker\n\
+    --list-markers\tList the markers of the process and their state\n\
 \n\
 ");
 }
