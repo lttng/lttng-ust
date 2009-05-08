@@ -1,0 +1,37 @@
+LTTNG USERSPACE TRACER
+
+NOTE: THIS LIBRARY HAS NOT BEEN RELEASED YET BECAUSE ALTOUGH IT IS LICENCED AS
+LGPL, IT CAN ONLY BE USED AS GPL BECAUSE IT DEPENDS ON GPL LIBRARIES. IT WILL BE
+RELEASED AS SOON AS THESE ISSUES ARE RESOLVED.
+
+Dependencies:
+
+- liburcu-pmf
+  Userspace RCU library, pmf patches.
+  http://git.dorsal.polymtl.ca
+
+- libkcompat
+  Linux kernel userspace compatibility library.
+  http://git.dorsal.polymtl.ca
+
+Package contents:
+
+- libust
+  The actual userspace tracing library that must be linked to the
+  instrumented programs.
+
+- ust
+  A program to control the tracing of userspace applications. It can list
+  markers, start the tracing, stop the tracing, enable/disable markers, etc.
+
+- ustd
+  The daemon that collects trace data and writes it to the disk.
+
+- Documentation
+
+- hello
+  An example application that uses the userspace tracer.
+
+- libmallocwrap
+  An example library that can be LD_PRELOAD'ed to instrument calls to malloc()
+  in any program without need to recompile it.
