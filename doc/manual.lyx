@@ -1,4 +1,4 @@
-#LyX 1.6.1 created this file. For more info see http://www.lyx.org/
+#LyX 1.6.2 created this file. For more info see http://www.lyx.org/
 \lyxformat 345
 \begin_document
 \begin_header
@@ -118,6 +118,109 @@ Performance
 
 \begin_layout Section
 Installation
+\end_layout
+
+\begin_layout Subsection
+Obtain the code
+\end_layout
+
+\begin_layout Standard
+To compile UST, you need:
+\end_layout
+
+\begin_layout Itemize
+the UST code
+\end_layout
+
+\begin_layout Itemize
+libkcompat
+\end_layout
+
+\begin_layout Itemize
+liburcu-pmf
+\end_layout
+
+\begin_layout Subsection
+Configure libkcompat
+\end_layout
+
+\begin_layout Standard
+Edit kcompat.h and uncomment the architecture of the target system.
+\end_layout
+
+\begin_layout Subsection
+Configure libust
+\end_layout
+
+\begin_layout Standard
+If the code was obtained through git, first generate a Makefile by running
+ autogen.sh.
+\end_layout
+
+\begin_layout Standard
+Then, run ./configure, specifying the directories of liburcu and libkcompat.
+ Example:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+./configure --with-urcu=/home/pmf/liburcu-pmf --with-kcompat=/home/pmf/libkcompat
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Build liburcu
+\end_layout
+
+\begin_layout Standard
+Go to the liburcu directory and run:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+make
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Build ust
+\end_layout
+
+\begin_layout Standard
+Go to the ust directory and run:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+make
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
@@ -243,8 +346,8 @@ firstarg %d secondarg %s
 \end_layout
 
 \begin_layout Plain Layout
-	
-return 0;
+
+	return 0;
 \end_layout
 
 \begin_layout Plain Layout
@@ -459,8 +562,171 @@ The application should be statically or dynamically linked to libust.
 Recording a Trace
 \end_layout
 
+\begin_layout Standard
+These preliminary steps need to be done before recording a trace.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+Create the directory for the communication sockets.
+ Eventually this should be somewhere in /var.
+\end_layout
+
+\begin_layout Plain Layout
+
+$ mkdir /tmp/socks
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+Create the directory where ustd will write the trace.
+ This will become configurable.
+\end_layout
+
+\begin_layout Plain Layout
+
+$ mkdir /tmp/trace
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+Start the daemon
+\end_layout
+
+\begin_layout Plain Layout
+
+$ ustd
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Subsection
 Basic Recording
+\end_layout
+
+\begin_layout Standard
+Tracing on a running program is controlled with the ust helper program.
+ Ust can start the tracing, stop the tracing, enable markers, disable markers
+ and list the markers.
+ Another program, ustd, is a daemon that collects the trace events and write
+ them to a file.
+\end_layout
+
+\begin_layout Standard
+In order to record a trace, the daemon must first be started with the following
+ command.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+ustd
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Markers can be listed with the following command (for PID 1234).
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+ust --list-markers 1234
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+A marker can be enabled with the following command (for PID 1234).
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+ust --enable-marker ust/mymark 1234
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Then, the trace can be started.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+ust --start-trace  1234
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Eventually it can be stopped and destroyed.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+ust --stop-trace  1234
+\end_layout
+
+\begin_layout Plain Layout
+
+ust --destroy-trace  1234
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsection
@@ -493,7 +759,34 @@ status open
 
 \begin_layout Plain Layout
 
-$ UST_TRACE=1 UST_AUTOPROBE=1 ./prog
+# In another terminal, start the daemon.
+\end_layout
+
+\begin_layout Plain Layout
+
+ustd
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+# Start 
+\begin_inset Quotes eld
+\end_inset
+
+prog
+\begin_inset Quotes erd
+\end_inset
+
+ with early tracing.
+\end_layout
+
+\begin_layout Plain Layout
+
+UST_TRACE=1 UST_AUTOPROBE=1 ./prog
 \end_layout
 
 \end_inset
@@ -532,6 +825,11 @@ Instrumenting Calls to Library Functions without Recompilation
 Calls to uninstrumented libraries may be instrumented by creating a wrapper
  library that intercepts calls to the library, trigger an instrumentation
  point.
+\end_layout
+
+\begin_layout Standard
+Such an example can be found in the libmallocwrap directory of the ust code
+ package.
 \end_layout
 
 \begin_layout Subsection
