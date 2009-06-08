@@ -18,12 +18,15 @@
 //ust// #include <linux/ltt-tracer.h>
 #include <string.h>
 #include <stdint.h>
+
 #include "kernelcompat.h"
+#define _LGPL_SOURCE
+#include <urcu.h>
+
 #include "relay.h"
 #include "tracer.h"
-#include "list.h"
+//#include "list.h"
 #include "usterr.h"
-#include "urcu.h"
 
 enum ltt_type {
 	LTT_TYPE_SIGNED_INT,

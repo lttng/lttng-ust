@@ -166,7 +166,7 @@ void process_blocked_consumers(void)
 
 				close(bc->fd_producer);
 
-				__list_del(bc->list.prev, bc->list.next);
+				list_del(&bc->list);
 
 				result = ustcomm_send_reply(&bc->server, "END", &bc->src);
 				if(result < 0) {
@@ -194,7 +194,7 @@ void process_blocked_consumers(void)
 			}
 			free(reply);
 
-			__list_del(bc->list.prev, bc->list.next);
+			list_del(&bc->list);
 		}
 	}
 

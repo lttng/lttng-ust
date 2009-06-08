@@ -1,9 +1,8 @@
 #ifndef KERNELCOMPAT_H
 #define KERNELCOMPAT_H
 
+#include <compiler.h>
 #include <kcompat.h>
-
-#include "compiler.h"
 
 #include <string.h>
 #include <sys/time.h>

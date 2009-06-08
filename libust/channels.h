@@ -14,7 +14,6 @@
 
 #include "kernelcompat.h"
 #include "kref.h"
-#include "list.h"
 
 #define EVENTS_PER_CHANNEL	65536
 

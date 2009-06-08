@@ -26,7 +26,7 @@
 #include <sys/mman.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
-#include "list.h"
+//#include "list.h"
 #include "relay.h"
 #include "channels.h"
 #include "kref.h"

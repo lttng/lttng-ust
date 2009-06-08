@@ -19,7 +19,7 @@
 //ust// #include <linux/ltt-channels.h>
 #include "kernelcompat.h"
 #include "compiler.h"
-#include "list.h"
+#include <kcompat/list.h>
 
 //ust// struct module;
 //ust// struct task_struct;

@@ -22,7 +22,7 @@
 //ust// #include <linux/mm.h>
 //ust// #include <linux/ltt-core.h>
 #include "kref.h"
-#include "list.h"
+//#include "list.h"
 #include "channels.h"
 
 /* Needs a _much_ better name... */

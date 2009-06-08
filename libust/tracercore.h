@@ -7,7 +7,6 @@
 #ifndef LTT_CORE_H
 #define LTT_CORE_H
 
-#include "list.h"
 #include "kernelcompat.h"
 //ust// #include <linux/percpu.h>
 

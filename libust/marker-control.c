@@ -32,7 +32,7 @@
 //ust// #include <linux/seq_file.h>
 //ust// #include <linux/slab.h>
 #include "kernelcompat.h"
-#include "list.h"
+//#include "list.h"
 #include "tracer.h"
 #include "localerr.h"
 

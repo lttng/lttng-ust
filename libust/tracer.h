@@ -14,9 +14,9 @@
 
 #include <sys/types.h>
 #include <stdarg.h>
-#include "relay.h"
-#include "list.h"
+//#include "list.h"
 #include "kernelcompat.h"
+#include "relay.h"
 #include "channels.h"
 #include "tracercore.h"
 #include "marker.h"

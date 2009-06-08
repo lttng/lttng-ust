@@ -30,13 +30,16 @@
 //ust// #include <linux/user_marker.h>
 //ust// #include <linux/ltt-tracer.h>
 
-#include "marker.h"
+#define _LGPL_SOURCE
+#include <urcu.h>
+
 #include "kernelcompat.h"
+
+#include "marker.h"
 #include "usterr.h"
 #include "channels.h"
 #include "tracercore.h"
 #include "tracer.h"
-#include "urcu.h"
 
 extern struct marker __start___markers[] __attribute__((visibility("hidden")));
 extern struct marker __stop___markers[] __attribute__((visibility("hidden")));
