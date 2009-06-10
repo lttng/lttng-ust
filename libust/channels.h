@@ -13,7 +13,7 @@
 #include <errno.h>
 
 #include "kernelcompat.h"
-#include "kref.h"
+#include <kcompat/kref.h>
 
 #define EVENTS_PER_CHANNEL	65536
 

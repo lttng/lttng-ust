@@ -22,7 +22,7 @@
 //ust// #include <linux/mm.h>
 //ust// #include <linux/ltt-core.h>
 #include <assert.h>
-#include "kref.h"
+#include <kcompat/kref.h>
 //#include "list.h"
 #include "channels.h"
 #include "buffer.h"

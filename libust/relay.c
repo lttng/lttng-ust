@@ -29,7 +29,7 @@
 //#include "list.h"
 #include "relay.h"
 #include "channels.h"
-#include "kref.h"
+#include <kcompat/kref.h>
 #include "tracer.h"
 #include "tracercore.h"
 #include "usterr.h"
