@@ -50,19 +50,6 @@ AC_C_INLINE
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([gettimeofday munmap socket strerror strtol])
 
-AC_ARG_WITH(kcompat, [  --with-kcompat path     Path to userspace kcompat source
-], [
-        AC_CHECK_FILE("$withval/kcompat.h", [
-                KCOMPAT_CFLAGS="-I$withval"
-                KCOMPAT_LIBS=
-                ], AC_MSG_ERROR([Cannot find kcompat.h in kcompat directory]))
-], [
-        PKG_CHECK_MODULES(KCOMPAT, [libkcompat], , [
-		AC_MSG_ERROR([Must specify kcompat path.])])
-])
-AC_SUBST(KCOMPAT_CFLAGS)
-AC_SUBST(KCOMPAT_LIBS)
-
 AC_ARG_WITH(urcu, [  --with-urcu path	Path to userspace RCU source], [
 	AC_CHECK_FILE(["$withval/urcu.h"], [
 		URCU_CFLAGS="-I$withval"
@@ -74,6 +61,19 @@ AC_ARG_WITH(urcu, [  --with-urcu path	Path to userspace RCU source], [
 ])
 AC_SUBST(URCU_CFLAGS)
 AC_SUBST(URCU_LIBS)
+
+AC_ARG_WITH(kcompat, [  --with-kcompat path     Path to userspace kcompat source
+], [
+        AC_CHECK_FILE("$withval/kcompat.h", [
+                KCOMPAT_CFLAGS="-I$withval $URCU_CFLAGS"
+                KCOMPAT_LIBS=
+                ], AC_MSG_ERROR([Cannot find kcompat.h in kcompat directory]))
+], [
+        PKG_CHECK_MODULES(KCOMPAT, [libkcompat], , [
+		AC_MSG_ERROR([Must specify kcompat path.])])
+])
+AC_SUBST(KCOMPAT_CFLAGS)
+AC_SUBST(KCOMPAT_LIBS)
 
 AC_CONFIG_FILES([
 	Makefile
