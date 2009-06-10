@@ -3,7 +3,8 @@
 
 #AC_PREREQ([2.63])
 AC_INIT([ust], [0.0], [pierre-marc dot fournier at polymtl dot ca])
-AC_CONFIG_AUX_DIR(make_scripts)
+AC_CONFIG_AUX_DIR([config])
+AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([0.0 foreign])
 AC_CONFIG_SRCDIR([ust/localerr.h])
 AC_CONFIG_HEADERS([config.h])
@@ -49,46 +50,37 @@ AC_C_INLINE
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([gettimeofday munmap socket strerror strtol])
 
-KCOMPAT_PATH=
-AC_ARG_WITH(kcompat, [  --with-kcompat path	Path to userspace kcompat source], [
-	AC_CHECK_FILE(["$withval/kcompat.h"], KCOMPAT_PATH="$withval", [
-		AC_MSG_ERROR([Cannot find kcompat.h in kcompat directory])
-	])
+AC_ARG_WITH(kcompat, [  --with-kcompat path     Path to userspace kcompat source
+], [
+        AC_CHECK_FILE("$KCOMPAT_PATH/kcompat.h", [
+                KCOMPAT_CFLAGS="-I$withval"
+                KCOMPAT_LIBS=
+                ], AC_MSG_ERROR([Cannot find kcompat.h in kcompat directory]))
+], [
+        PKG_CHECK_MODULES(KCOMPAT, [libkcompat], , [
+		AC_MSG_ERROR([Must specify kcompat path.])])
 ])
-if test -n "${KCOMPAT_PATH}" ; then
-   CPPFLAGS="-I$KCOMPAT_PATH/ $CPPFLAGS"
-   AC_SUBST(CPPFLAGS)
-fi
-AC_CHECK_HEADER([kcompat.h], , AC_MSG_ERROR([Must specify kcompat path.]))
-AC_SUBST(KCOMPAT_PATH)
+AC_SUBST(KCOMPAT_CFLAGS)
+AC_SUBST(KCOMPAT_LIBS)
 
-URCU_LIB=
-AC_CHECK_HEADER([urcu.h], [
-	AC_CHECK_LIB(urcu, synchronize_rcu, [
-		URCU_PATH=
-		URCU_LIB="-lurcu"
-	])
-])
 AC_ARG_WITH(urcu, [  --with-urcu path	Path to userspace RCU source], [
 	AC_CHECK_FILE(["$withval/urcu.h"], [
-		URCU_PATH="$withval"
-		URCU_LIB="/liburcu.la" ],
+		URCU_CFLAGS="-I$withval"
+		URCU_LIBS="-L$withval -lurcu" ],
 		AC_MSG_ERROR([Cannot find urcu.h in urcu directory]))
+], [
+	PKG_CHECK_MODULES(URCU, [liburcu], , [
+		AC_MSG_ERROR([Must specify urcu path.])])
 ])
-if test -z "${URCU_LIB}" ; then
-   AC_MSG_ERROR([Must specify urcu path.])
-fi
-AC_SUBST(URCU_PATH)
-AC_SUBST(URCU_LIB)
+AC_SUBST(URCU_CFLAGS)
+AC_SUBST(URCU_LIBS)
 
-#AC_CONFIG_FILES([Makefile
-#                 hello/Makefile
-#                 libmallocwrap/Makefile
-#                 libmarkers/Makefile
-#                 libtracectl/Makefile
-#                 libtracing/Makefile
-#                 ust/Makefile
-#                 ustd/Makefile])
-
-AC_CONFIG_FILES([Makefile libust/Makefile hello/Makefile libmallocwrap/Makefile ustd/Makefile ust/Makefile])
+AC_CONFIG_FILES([
+	Makefile
+	libust/Makefile
+	hello/Makefile
+	libmallocwrap/Makefile
+	ustd/Makefile
+	ust/Makefile
+])
 AC_OUTPUT
