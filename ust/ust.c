@@ -12,6 +12,24 @@ struct ust_opts {
 	int take_reply;
 };
 
+char *progname = NULL;
+
+void usage(void)
+{
+	fprintf(stderr, "usage: %s [OPTIONS] COMMAND PID...\n", progname);
+	fprintf(stderr, "\nControl the tracing of a process that supports LTTng Userspace Tracing.\n\
+\n\
+Commands:\n\
+    --start-trace\t\t\tStart tracing\n\
+    --stop-trace\t\t\tStop tracing\n\
+    --destroy-trace\t\t\tDestroy the trace\n\
+    --enable-marker CHANNEL/MARKER\tEnable a marker\n\
+    --disable-marker CHANNEL/MARKER\tDisable a marker\n\
+    --list-markers\tList the markers of the process and their state\n\
+\n\
+");
+}
+
 int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 {
 	int c;
@@ -97,24 +115,6 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 	}
 
 	return 0;
-}
-
-char *progname = NULL;
-
-void usage(void)
-{
-	fprintf(stderr, "usage: %s [OPTIONS] COMMAND PID...\n", progname);
-	fprintf(stderr, "\nControl the tracing of a process that supports LTTng Userspace Tracing.\n\
-\n\
-Commands:\n\
-    --start-trace\t\t\tStart tracing\n\
-    --stop-trace\t\t\tStop tracing\n\
-    --destroy-trace\t\t\tDestroy the trace\n\
-    --enable-marker CHANNEL/MARKER\tEnable a marker\n\
-    --disable-marker CHANNEL/MARKER\tDisable a marker\n\
-    --list-markers\tList the markers of the process and their state\n\
-\n\
-");
 }
 
 int main(int argc, char *argv[])
