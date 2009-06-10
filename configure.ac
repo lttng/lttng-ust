@@ -6,7 +6,7 @@ AC_INIT([ust], [0.0], [pierre-marc dot fournier at polymtl dot ca])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([0.0 foreign])
-AC_CONFIG_SRCDIR([ust/localerr.h])
+AC_CONFIG_SRCDIR([ust/ust.c])
 AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
