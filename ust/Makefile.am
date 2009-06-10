@@ -1,5 +1,5 @@
 bin_PROGRAMS = ust
-ust_SOURCES = ust.c $(top_builddir)/libustcomm/ustcomm.c $(top_builddir)/libustcomm/ustcomm.h
+ust_SOURCES = ust.c $(top_builddir)/libustcomm/ustcomm.c $(top_builddir)/libustcomm/ustcomm.h localerr.h
 
 #INCLUDES = -I$(top_builddir)/share
 #INCLUDES += -I@URCU_PATH@

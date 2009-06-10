@@ -5,7 +5,7 @@
 AC_INIT([ust], [0.0], [pierre-marc dot fournier at polymtl dot ca])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([m4])
-AM_INIT_AUTOMAKE([0.0 foreign])
+AM_INIT_AUTOMAKE([0.0 foreign dist-bzip2 no-dist-gzip])
 AC_CONFIG_SRCDIR([ust/ust.c])
 AC_CONFIG_HEADERS([config.h])
 
