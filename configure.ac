@@ -52,7 +52,7 @@ AC_CHECK_FUNCS([gettimeofday munmap socket strerror strtol])
 
 AC_ARG_WITH(kcompat, [  --with-kcompat path     Path to userspace kcompat source
 ], [
-        AC_CHECK_FILE("$KCOMPAT_PATH/kcompat.h", [
+        AC_CHECK_FILE("$withval/kcompat.h", [
                 KCOMPAT_CFLAGS="-I$withval"
                 KCOMPAT_LIBS=
                 ], AC_MSG_ERROR([Cannot find kcompat.h in kcompat directory]))
