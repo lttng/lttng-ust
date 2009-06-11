@@ -16,6 +16,7 @@
 #include <stdarg.h>
 //#include "list.h"
 #include "kernelcompat.h"
+#include "buffer.h"
 #include "relay.h"
 #include "channels.h"
 #include "tracercore.h"
@@ -429,23 +430,6 @@ static inline size_t ltt_write_event_header(struct ltt_trace_struct *trace,
 }
 
 /* Lockless LTTng */
-
-/* Buffer offset macros */
-
-/*
- * BUFFER_TRUNC zeroes the subbuffer offset and the subbuffer number parts of
- * the offset, which leaves only the buffer number.
- */
-#define BUFFER_TRUNC(offset, chan) \
-	((offset) & (~((chan)->alloc_size-1)))
-#define BUFFER_OFFSET(offset, chan) ((offset) & ((chan)->alloc_size - 1))
-#define SUBBUF_OFFSET(offset, chan) ((offset) & ((chan)->subbuf_size - 1))
-#define SUBBUF_ALIGN(offset, chan) \
-	(((offset) + (chan)->subbuf_size) & (~((chan)->subbuf_size - 1)))
-#define SUBBUF_TRUNC(offset, chan) \
-	((offset) & (~((chan)->subbuf_size - 1)))
-#define SUBBUF_INDEX(offset, chan) \
-	(BUFFER_OFFSET((offset), chan) >> (chan)->subbuf_size_order)
 
 /*
  * ltt_reserve_slot
