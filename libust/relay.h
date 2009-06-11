@@ -21,6 +21,8 @@
 //ust// #include <linux/kref.h>
 //ust// #include <linux/mm.h>
 //ust// #include <linux/ltt-core.h>
+#include <assert.h>
+#include "tracer.h"
 #include "kref.h"
 //#include "list.h"
 #include "channels.h"
@@ -290,13 +292,16 @@ static inline int ltt_relay_write(struct rchan_buf *buf, size_t offset,
 //ust//		_ltt_relay_write(buf, offset, src, len, page, pagecpy);
 //ust//	return len;
 
-
 	size_t cpy;
-	cpy = min_t(size_t, len, buf->buf_size - offset);
-	ltt_relay_do_copy(buf->buf_data + offset, src, cpy);
+	size_t buf_offset = BUFFER_OFFSET(offset, buf->chan);
+
+	assert(buf_offset < buf->chan->subbuf_size*buf->chan->n_subbufs);
+
+	cpy = min_t(size_t, len, buf->buf_size - buf_offset);
+	ltt_relay_do_copy(buf->buf_data + buf_offset, src, cpy);
 	
 	if (unlikely(len != cpy))
-		_ltt_relay_write(buf, offset, src, len, cpy);
+		_ltt_relay_write(buf, buf_offset, src, len, cpy);
 	return len;
 }
 
