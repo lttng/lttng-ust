@@ -4,6 +4,7 @@
 #include "ustd.h"
 #include "localerr.h"
 
+/* This truncates to an offset in the buffer. */
 #define USTD_BUFFER_TRUNC(offset, bufinfo) \
 	((offset) & (~(((bufinfo)->subbuf_size*(bufinfo)->n_subbufs)-1)))
 
@@ -20,39 +21,60 @@ void finish_consuming_dead_subbuffer(struct buffer_info *buf)
 	DBG("consumed offset is %ld", consumed_offset);
 	DBG("write offset is %ld", write_offset);
 
+	/* First subbuf that we need to consume now. It is not modulo'd.
+	 * Consumed_offset is the next byte to consume.  */
 	long first_subbuf = consumed_offset / buf->subbuf_size;
-	long last_subbuf = write_offset / buf->subbuf_size;
+	/* Last subbuf that we need to consume now. It is not modulo'd. 
+	 * Write_offset is the next place to write so write_offset-1 is the
+	 * last place written. */
+	long last_subbuf = (write_offset - 1) / buf->subbuf_size;
 
-	if(last_subbuf - first_subbuf > buf->n_subbufs) {
+	DBG("first_subbuf=%d", first_subbuf);
+	DBG("last_subbuf=%d", last_subbuf);
+
+	if(last_subbuf - first_subbuf >= buf->n_subbufs) {
 		DBG("an overflow has occurred, nothing can be recovered");
 		return;
 	}
 
+	/* Iterate on subbuffers to recover. */
 	for(i_subbuf=first_subbuf; ; i_subbuf++, i_subbuf %= buf->n_subbufs) {
 		void *tmp;
+		/* commit_seq is the offset in the buffer of the end of the last sequential commit.
+		 * Bytes beyond this limit cannot be recovered. This is a free-running counter. */
 		long commit_seq = local_read(&ltt_buf->commit_seq[i_subbuf]);
 
 		unsigned long valid_length = buf->subbuf_size;
 		long n_subbufs_order = get_count_order(buf->n_subbufs);
 		long commit_seq_mask = (~0UL >> n_subbufs_order);
 
-		if((commit_seq & commit_seq_mask) == 0)
-			break;
+		struct ltt_subbuffer_header *header = (struct ltt_subbuffer_header *)((char *)buf->mem+i_subbuf*buf->subbuf_size);
 
-		/* check if subbuf was fully written */
-		if (!((commit_seq - buf->subbuf_size) & commit_seq_mask)
+		if((commit_seq & commit_seq_mask) == 0) {
+			/* There is nothing to do. */
+			/* FIXME: is this needed? */
+			break;
+		}
+
+		/* Check if subbuf was fully written. This is from Mathieu's algorithm/paper. */
+		if (((commit_seq - buf->subbuf_size) & commit_seq_mask)
 		    - (USTD_BUFFER_TRUNC(consumed_offset, buf) >> n_subbufs_order)
-		    != 0) {
-			struct ltt_subbuffer_header *header = (struct ltt_subbuffer_header *)((char *)buf->mem)+i_subbuf*buf->subbuf_size;
+		    == 0) {
+			/* If it was, we only check the lost_size. This is the lost padding at the end of
+ 			 * the subbuffer. */
 			valid_length = (unsigned long)buf->subbuf_size - header->lost_size;
 		}
 		else {
-			struct ltt_subbuffer_header *header = (struct ltt_subbuffer_header *)((char *)buf->mem)+i_subbuf*buf->subbuf_size;
+			/* If the subbuffer was not fully written, then we don't check lost_size because
+			 * it hasn't been written yet. Instead we check commit_seq and use it to choose
+			 * a value for lost_size. The viewer will need this value when parsing.
+			 */
 
-			valid_length = commit_seq;
+			valid_length = commit_seq & (buf->subbuf_size-1);
 			header->lost_size = buf->subbuf_size-valid_length;
-			assert(i_subbuf == last_subbuf);
+			assert(i_subbuf == (last_subbuf % buf->n_subbufs));
 		}
+
 
 		patient_write(buf->file_fd, buf->mem + i_subbuf * buf->subbuf_size, valid_length);
 
@@ -62,7 +84,7 @@ void finish_consuming_dead_subbuffer(struct buffer_info *buf)
 		patient_write(buf->file_fd, tmp, buf->subbuf_size-valid_length);
 		free(tmp);
 
-		if(i_subbuf == last_subbuf)
+		if(i_subbuf == last_subbuf % buf->n_subbufs)
 			break;
 	}
 }
