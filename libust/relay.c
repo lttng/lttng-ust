@@ -1537,7 +1537,7 @@ static void ltt_chan_alloc_ltt_buf(struct ltt_channel_struct *ltt_chan)
 	result = ltt_chan->buf_shmid = shmget(getpid(), size, IPC_CREAT | IPC_EXCL | 0700);
 	if(ltt_chan->buf_shmid == -1) {
 		PERROR("shmget");
-		return -1;
+		return;
 	}
 
 	ptr = shmat(ltt_chan->buf_shmid, NULL, 0);
@@ -1552,12 +1552,12 @@ static void ltt_chan_alloc_ltt_buf(struct ltt_channel_struct *ltt_chan)
 	result = shmctl(ltt_chan->buf_shmid, IPC_RMID, NULL);
 	if(result == -1) {
 		perror("shmctl");
-		return -1;
+		return;
 	}
 
 	ltt_chan->buf = ptr;
 
-	return 0;
+	return;
 
 	destroy_shmem:
 	result = shmctl(ltt_chan->buf_shmid, IPC_RMID, NULL);
@@ -1565,7 +1565,7 @@ static void ltt_chan_alloc_ltt_buf(struct ltt_channel_struct *ltt_chan)
 		perror("shmctl");
 	}
 
-	return -1;
+	return;
 }
 
 /*

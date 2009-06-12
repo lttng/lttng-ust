@@ -28,7 +28,9 @@
 //#include <linux/types.h>
 //#include <linux/rcupdate.h>
 
-//#include "urcu.h"
+#define _LGPL_SOURCE
+#include <urcu.h>
+
 #include "immediate.h"
 #include "kernelcompat.h"
 
@@ -49,7 +51,8 @@ struct tracepoint {
 #define TPPROTO(args...)	args
 #define TPARGS(args...)		args
 
-//ust// #ifdef CONFIG_TRACEPOINTS
+#define CONFIG_TRACEPOINTS
+#ifdef CONFIG_TRACEPOINTS
 
 /*
  * it_func[0] is never NULL because there is at least one element in the array
@@ -126,29 +129,29 @@ struct tracepoint {
 extern void tracepoint_update_probe_range(struct tracepoint *begin,
 	struct tracepoint *end);
 
-//ust// #else /* !CONFIG_TRACEPOINTS */
-//ust// #define DECLARE_TRACE(name, proto, args)				\
-//ust// 	static inline void trace_##name(proto)				\
-//ust// 	{ }								\
-//ust// 	static inline void _trace_##name(proto)				\
-//ust// 	{ }								\
-//ust// 	static inline int register_trace_##name(void (*probe)(proto))	\
-//ust// 	{								\
-//ust// 		return -ENOSYS;						\
-//ust// 	}								\
-//ust// 	static inline int unregister_trace_##name(void (*probe)(proto))	\
-//ust// 	{								\
-//ust// 		return -ENOSYS;						\
-//ust// 	}
-//ust// 
-//ust// #define DEFINE_TRACE(name)
-//ust// #define EXPORT_TRACEPOINT_SYMBOL_GPL(name)
-//ust// #define EXPORT_TRACEPOINT_SYMBOL(name)
-//ust// 
-//ust// static inline void tracepoint_update_probe_range(struct tracepoint *begin,
-//ust// 	struct tracepoint *end)
-//ust// { }
-//ust// #endif /* CONFIG_TRACEPOINTS */
+#else /* !CONFIG_TRACEPOINTS */
+#define DECLARE_TRACE(name, proto, args)				\
+	static inline void trace_##name(proto)				\
+	{ }								\
+	static inline void _trace_##name(proto)				\
+	{ }								\
+	static inline int register_trace_##name(void (*probe)(proto))	\
+	{								\
+		return -ENOSYS;						\
+	}								\
+	static inline int unregister_trace_##name(void (*probe)(proto))	\
+	{								\
+		return -ENOSYS;						\
+	}
+
+#define DEFINE_TRACE(name)
+#define EXPORT_TRACEPOINT_SYMBOL_GPL(name)
+#define EXPORT_TRACEPOINT_SYMBOL(name)
+
+static inline void tracepoint_update_probe_range(struct tracepoint *begin,
+	struct tracepoint *end)
+{ }
+#endif /* CONFIG_TRACEPOINTS */
 
 /*
  * Connect a probe to a tracepoint.
@@ -195,12 +198,16 @@ struct tracepoint_lib {
 	struct list_head list;
 };
 
-#define TRACEPOINT_LIB									\
-extern struct tracepoint __start___tracepoints[] __attribute__((visibility("hidden")));		\
-extern struct tracepoint __stop___tracepoints[] __attribute__((visibility("hidden")));		\
-											\
-static void __attribute__((constructor)) __tracepoints__init(void) 				\
-{											\
-	tracepoint_register_lib(__start___tracepoints, (((long)__stop___tracepoints)-((long)__start___tracepoints))/sizeof(struct tracepoint));\
-}
+extern int tracepoint_register_lib(struct tracepoint *tracepoints_start,
+				   int tracepoints_count);
+
+#define TRACEPOINT_LIB							\
+	extern struct tracepoint __start___tracepoints[] __attribute__((visibility("hidden")));	\
+	extern struct tracepoint __stop___tracepoints[] __attribute__((visibility("hidden"))); \
+	static void __attribute__((constructor)) __tracepoints__init(void) \
+	{								\
+		tracepoint_register_lib(__start___tracepoints,		\
+					(((long)__stop___tracepoints)-((long)__start___tracepoints))/sizeof(struct tracepoint)); \
+	}
+
 #endif

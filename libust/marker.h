@@ -65,7 +65,8 @@ struct marker {
 	void *tp_cb;		/* Optional tracepoint callback */
 } __attribute__((aligned(8)));
 
-//ust// #ifdef CONFIG_MARKERS
+#define CONFIG_MARKERS
+#ifdef CONFIG_MARKERS
 
 #define _DEFINE_MARKER(channel, name, tp_name_str, tp_cb, format)	\
 		static const char __mstrtab_##channel##_##name[]	\
@@ -133,24 +134,24 @@ extern void marker_update_probe_range(struct marker *begin,
 
 #define GET_MARKER(channel, name)	(__mark_##channel##_##name)
 
-//ust// #else /* !CONFIG_MARKERS */
-//ust// #define DEFINE_MARKER(channel, name, tp_name, tp_cb, format)
-//ust// #define __trace_mark(generic, channel, name, call_private, format, args...) \
-//ust// 		__mark_check_format(format, ## args)
-//ust// #define __trace_mark_tp(channel, name, call_private, tp_name, tp_cb,	\
-//ust// 		format, args...)					\
-//ust// 	do {								\
-//ust// 		void __check_tp_type(void)				\
-//ust// 		{							\
-//ust// 			register_trace_##tp_name(tp_cb);		\
-//ust// 		}							\
-//ust// 		__mark_check_format(format, ## args);			\
-//ust// 	} while (0)
-//ust// static inline void marker_update_probe_range(struct marker *begin,
-//ust// 	struct marker *end)
-//ust// { }
-//ust// #define GET_MARKER(channel, name)
-//ust// #endif /* CONFIG_MARKERS */
+#else /* !CONFIG_MARKERS */
+#define DEFINE_MARKER(channel, name, tp_name, tp_cb, format)
+#define __trace_mark(generic, channel, name, call_private, format, args...) \
+		__mark_check_format(format, ## args)
+#define __trace_mark_tp(channel, name, call_private, tp_name, tp_cb,	\
+		format, args...)					\
+	do {								\
+		void __check_tp_type(void)				\
+		{							\
+			register_trace_##tp_name(tp_cb);		\
+		}							\
+		__mark_check_format(format, ## args);			\
+	} while (0)
+static inline void marker_update_probe_range(struct marker *begin,
+	struct marker *end)
+{ }
+#define GET_MARKER(channel, name)
+#endif /* CONFIG_MARKERS */
 
 /**
  * trace_mark - Marker using code patching
@@ -282,10 +283,11 @@ struct lib {
 	struct list_head list;
 };
 
-int marker_register_lib(struct marker *markers_start, int markers_count);
+extern int marker_register_lib(struct marker *markers_start,
+			       int markers_count);
 
-#define MARKER_LIB									\
-extern struct marker __start___markers[] __attribute__((visibility("hidden")));		\
+#define MARKER_LIB							\
+extern struct marker __start___markers[] __attribute__((visibility("hidden")));	\
 extern struct marker __stop___markers[] __attribute__((visibility("hidden")));		\
 											\
 static void __attribute__((constructor)) __markers__init(void) 				\

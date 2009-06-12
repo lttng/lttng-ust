@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdint.h>
 #include <signal.h>
@@ -113,7 +114,7 @@ void notif_cb(void)
 	}
 }
 
-static int inform_consumer_daemon(void)
+static void inform_consumer_daemon(void)
 {
 	ustcomm_request_consumer(getpid(), "metadata");
 	ustcomm_request_consumer(getpid(), "ust");
@@ -148,7 +149,7 @@ void process_blocked_consumers(void)
 	result = poll(fds, n_fds, 0);
 	if(result == -1) {
 		PERROR("poll");
-		return -1;
+		return;
 	}
 
 	list_for_each_entry(bc, &blocked_consumers, list) {
@@ -200,7 +201,7 @@ void process_blocked_consumers(void)
 
 }
 
-int listener_main(void *p)
+void *listener_main(void *p)
 {
 	int result;
 
@@ -252,19 +253,19 @@ int listener_main(void *p)
 			result = ltt_trace_setup(trace_name);
 			if(result < 0) {
 				ERR("ltt_trace_setup failed");
-				return;
+				return (void *)1;
 			}
 
 			result = ltt_trace_set_type(trace_name, trace_type);
 			if(result < 0) {
 				ERR("ltt_trace_set_type failed");
-				return;
+				return (void *)1;
 			}
 
 			result = ltt_trace_alloc(trace_name);
 			if(result < 0) {
 				ERR("ltt_trace_alloc failed");
-				return;
+				return (void *)1;
 			}
 
 			inform_consumer_daemon();
@@ -281,13 +282,13 @@ int listener_main(void *p)
 			result = ltt_trace_setup(trace_name);
 			if(result < 0) {
 				ERR("ltt_trace_setup failed");
-				return;
+				return (void *)1;
 			}
 
 			result = ltt_trace_set_type(trace_name, trace_type);
 			if(result < 0) {
 				ERR("ltt_trace_set_type failed");
-				return;
+				return (void *)1;
 			}
 		}
 		else if(!strcmp(recvbuf, "trace_alloc")) {
@@ -296,7 +297,7 @@ int listener_main(void *p)
 			result = ltt_trace_alloc(trace_name);
 			if(result < 0) {
 				ERR("ltt_trace_alloc failed");
-				return;
+				return (void *)1;
 			}
 		}
 		else if(!strcmp(recvbuf, "trace_start")) {
@@ -314,7 +315,7 @@ int listener_main(void *p)
 			result = ltt_trace_stop(trace_name);
 			if(result < 0) {
 				ERR("ltt_trace_stop failed");
-				return;
+				return (void *)1;
 			}
 		}
 		else if(!strcmp(recvbuf, "trace_destroy")) {
@@ -324,7 +325,7 @@ int listener_main(void *p)
 			result = ltt_trace_destroy(trace_name);
 			if(result < 0) {
 				ERR("ltt_trace_destroy failed");
-				return;
+				return (void *)1;
 			}
 		}
 		else if(nth_token_is(recvbuf, "get_shmid", 0) == 1) {
@@ -347,7 +348,7 @@ int listener_main(void *p)
 
 			if(trace == NULL) {
 				CPRINTF("cannot find trace!");
-				return 1;
+				return (void *)1;
 			}
 
 			for(i=0; i<trace->nr_channels; i++) {
@@ -395,7 +396,7 @@ int listener_main(void *p)
 
 			if(trace == NULL) {
 				CPRINTF("cannot find trace!");
-				return 1;
+				return (void *)1;
 			}
 
 			for(i=0; i<trace->nr_channels; i++) {
@@ -404,8 +405,8 @@ int listener_main(void *p)
 				if(!strcmp(trace->channels[i].channel_name, channel_name)) {
 					char *reply;
 
-					DBG("the n_subbufs for the requested channel is %d", rchan->n_subbufs);
-					asprintf(&reply, "%d", rchan->n_subbufs);
+					DBG("the n_subbufs for the requested channel is %zd", rchan->n_subbufs);
+					asprintf(&reply, "%zd", rchan->n_subbufs);
 
 					result = ustcomm_send_reply(&ustcomm_app.server, reply, &src);
 					if(result) {
@@ -439,7 +440,7 @@ int listener_main(void *p)
 
 			if(trace == NULL) {
 				CPRINTF("cannot find trace!");
-				return 1;
+				return (void *)1;
 			}
 
 			for(i=0; i<trace->nr_channels; i++) {
@@ -448,8 +449,8 @@ int listener_main(void *p)
 				if(!strcmp(trace->channels[i].channel_name, channel_name)) {
 					char *reply;
 
-					DBG("the subbuf_size for the requested channel is %d", rchan->subbuf_size);
-					asprintf(&reply, "%d", rchan->subbuf_size);
+					DBG("the subbuf_size for the requested channel is %zd", rchan->subbuf_size);
+					asprintf(&reply, "%zd", rchan->subbuf_size);
 
 					result = ustcomm_send_reply(&ustcomm_app.server, reply, &src);
 					if(result) {
@@ -490,7 +491,7 @@ int listener_main(void *p)
 
 			if(trace == NULL) {
 				CPRINTF("cannot find trace!");
-				return 1;
+				return (void *)1;
 			}
 
 			for(i=0; i<trace->nr_channels; i++) {
@@ -556,7 +557,7 @@ int listener_main(void *p)
 
 			if(trace == NULL) {
 				CPRINTF("cannot find trace!");
-				return 1;
+				return (void *)1;
 			}
 
 			for(i=0; i<trace->nr_channels; i++) {
@@ -571,11 +572,11 @@ int listener_main(void *p)
 					result = ltt_do_put_subbuf(rbuf, lttbuf, consumed_old);
 					if(result < 0) {
 						WARN("ltt_do_put_subbuf: error (subbuf=%s)", channel_name);
-						asprintf(&reply, "%s", "ERROR", consumed_old);
+						asprintf(&reply, "%s", "ERROR");
 					}
 					else {
 						DBG("ltt_do_put_subbuf: success (subbuf=%s)", channel_name);
-						asprintf(&reply, "%s", "OK", consumed_old);
+						asprintf(&reply, "%s", "OK");
 					}
 
 					result = ustcomm_send_reply(&ustcomm_app.server, reply, &src);
@@ -649,7 +650,7 @@ int listener_main(void *p)
 //
 //			if(trace == NULL) {
 //				CPRINTF("cannot find trace!");
-//				return 1;
+//				return (void *)1;
 //			}
 //
 //			for(i=0; i<trace->nr_channels; i++) {

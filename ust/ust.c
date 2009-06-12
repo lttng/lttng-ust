@@ -1,7 +1,8 @@
+#define _GNU_SOURCE
+#include <stdio.h>
 #include <unistd.h>
 #include <getopt.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <fcntl.h>
 
 #include "ustcomm.h"
