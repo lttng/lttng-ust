@@ -570,12 +570,13 @@ int listener_main(void *p)
 
 					result = ltt_do_put_subbuf(rbuf, lttbuf, consumed_old);
 					if(result < 0) {
-						WARN("ltt_do_put_subbuf: error");
+						WARN("ltt_do_put_subbuf: error (subbuf=%s)", channel_name);
+						asprintf(&reply, "%s", "ERROR", consumed_old);
 					}
 					else {
-						DBG("ltt_do_put_subbuf: success");
+						DBG("ltt_do_put_subbuf: success (subbuf=%s)", channel_name);
+						asprintf(&reply, "%s", "OK", consumed_old);
 					}
-					asprintf(&reply, "%s", "OK", consumed_old);
 
 					result = ustcomm_send_reply(&ustcomm_app.server, reply, &src);
 					if(result) {
