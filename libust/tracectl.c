@@ -871,6 +871,8 @@ static void __attribute__((constructor(1000))) init()
 /* This is only called if we terminate normally, not with an unhandled signal,
  * so we cannot rely on it. */
 
+/* This destructor probably isn't needed, because ustd can do crash recovery. */
+#if 0
 static void __attribute__((destructor)) fini()
 {
 	int result;
@@ -889,9 +891,6 @@ static void __attribute__((destructor)) fini()
 		ERR("ltt_trace_destroy error");
 	}
 
-	/* FIXME: wait for the consumer to be done */
-	//DBG("waiting 5 sec for consume");
-	//sleep(5);
-
 	destroy_socket();
 }
+#endif
