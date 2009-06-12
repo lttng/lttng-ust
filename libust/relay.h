@@ -22,10 +22,10 @@
 //ust// #include <linux/mm.h>
 //ust// #include <linux/ltt-core.h>
 #include <assert.h>
-#include "tracer.h"
 #include "kref.h"
 //#include "list.h"
 #include "channels.h"
+#include "buffer.h"
 
 /* Needs a _much_ better name... */
 #define FIX_SIZE(x) ((((x) - 1) & PAGE_MASK) + PAGE_SIZE)
