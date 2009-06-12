@@ -1,3 +1,3 @@
 #!/bin/sh
 
-UST_AUTOPROBE=1 UST_TRACE=1 LD_LIBRARY_PATH=../libtracectl:../libmarkers:../libtracing $1 ./hello
+UST_AUTOPROBE=1 UST_TRACE=1 LD_LIBRARY_PATH=../libust/.libs $1 .libs/hello
