@@ -25,8 +25,6 @@ struct buffer_info {
 
 	int file_fd; /* output file */
 
-	struct list_head list;
-
 	long consumed_old;
 };
 

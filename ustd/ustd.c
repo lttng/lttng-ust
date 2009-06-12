@@ -22,16 +22,17 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <signal.h>
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
+#include <assert.h>
 
 #include "ustd.h"
 #include "localerr.h"
 #include "ustcomm.h"
-
-struct list_head buffers = LIST_HEAD_INIT(buffers);
 
 /* return value: 0 = subbuffer is finished, it won't produce data anymore
  *               1 = got subbuffer successfully
@@ -41,6 +42,44 @@ struct list_head buffers = LIST_HEAD_INIT(buffers);
 #define GET_SUBBUF_OK 1
 #define GET_SUBBUF_DONE 0
 #define GET_SUBBUF_DIED 2
+
+#define PUT_SUBBUF_OK 1
+#define PUT_SUBBUF_DIED 0
+#define PUT_SUBBUF_PUSHED 2
+
+int test_sigpipe(void)
+{
+	sigset_t sigset;
+	int result;
+
+	result = sigemptyset(&sigset);
+	if(result == -1) {
+		perror("sigemptyset");
+		return -1;
+	}
+	result = sigaddset(&sigset, SIGPIPE);
+	if(result == -1) {
+		perror("sigaddset");
+		return -1;
+	}
+
+	result = sigtimedwait(&sigset, NULL, &(struct timespec){0,0});
+	if(result == -1 && errno == EAGAIN) {
+		/* no signal received */
+		return 0;
+	}
+	else if(result == -1) {
+		perror("sigtimedwait");
+		return -1;
+	}
+	else if(result == SIGPIPE) {
+		/* received sigpipe */
+		return 1;
+	}
+	else {
+		assert(0);
+	}
+}
 
 int get_subbuffer(struct buffer_info *buf)
 {
@@ -53,7 +92,11 @@ int get_subbuffer(struct buffer_info *buf)
 	asprintf(&send_msg, "get_subbuffer %s", buf->name);
 	result = ustcomm_send_request(&buf->conn, send_msg, &received_msg);
 	free(send_msg);
-	if(result < 0) {
+	if(test_sigpipe()) {
+		WARN("process %d destroyed before we could connect to it", buf->pid);
+		return GET_SUBBUF_DONE;
+	}
+	else if(result < 0) {
 		ERR("get_subbuffer: ustcomm_send_request failed");
 		return -1;
 	}
@@ -113,15 +156,19 @@ int put_subbuffer(struct buffer_info *buf)
 
 	if(!strcmp(rep_code, "OK")) {
 		DBG("subbuffer put %s", buf->name);
-		retval = 1;
+		retval = PUT_SUBBUF_OK;
 	}
 	else {
-		ERR("invalid response to put_subbuffer");
+		DBG("put_subbuffer: received error, we were pushed");
+		return PUT_SUBBUF_PUSHED;
 	}
 
 	free(rep_code);
 	return retval;
 }
+
+/* This write is patient because it restarts if it was incomplete.
+ */
 
 ssize_t patient_write(int fd, const void *buf, size_t count)
 {
@@ -175,8 +222,19 @@ void *consumer_thread(void *arg)
 		/* put the subbuffer */
 		result = put_subbuffer(buf);
 		if(result == -1) {
-			ERR("error putting subbuffer");
+			ERR("unknown error putting subbuffer (channel=%s)", buf->name);
 			break;
+		}
+		else if(result == PUT_SUBBUF_PUSHED) {
+			ERR("Buffer overflow (channel=%s), reader pushed. This channel will not be usable passed this point.", buf->name);
+			break;
+		}
+		else if(result == PUT_SUBBUF_DIED) {
+			WARN("application died while putting subbuffer");
+			/* FIXME: probably need to skip the first subbuffer in finish_consuming_dead_subbuffer */
+			finish_consuming_dead_subbuffer(buf);
+		}
+		else if(result == PUT_SUBBUF_OK) {
 		}
 	}
 
@@ -196,6 +254,7 @@ int add_buffer(pid_t pid, char *bufname)
 	char *tmp;
 	int fd;
 	pthread_t thr;
+	struct shmid_ds shmds;
 
 	buf = (struct buffer_info *) malloc(sizeof(struct buffer_info));
 	if(buf == NULL) {
@@ -209,15 +268,18 @@ int add_buffer(pid_t pid, char *bufname)
 	/* connect to app */
 	result = ustcomm_connect_app(buf->pid, &buf->conn);
 	if(result) {
-		ERR("unable to connect to process");
+		WARN("unable to connect to process, it probably died before we were able to connect");
 		return -1;
 	}
 
 	/* get shmid */
 	asprintf(&send_msg, "get_shmid %s", buf->name);
-	ustcomm_send_request(&buf->conn, send_msg, &received_msg);
+	result = ustcomm_send_request(&buf->conn, send_msg, &received_msg);
 	free(send_msg);
-	DBG("got buffer name %s", buf->name);
+	if(result == -1) {
+		ERR("problem in ustcomm_send_request(get_shmid)");
+		return -1;
+	}
 
 	result = sscanf(received_msg, "%d %d", &buf->shmid, &buf->bufstruct_shmid);
 	if(result != 2) {
@@ -229,8 +291,12 @@ int add_buffer(pid_t pid, char *bufname)
 
 	/* get n_subbufs */
 	asprintf(&send_msg, "get_n_subbufs %s", buf->name);
-	ustcomm_send_request(&buf->conn, send_msg, &received_msg);
+	result = ustcomm_send_request(&buf->conn, send_msg, &received_msg);
 	free(send_msg);
+	if(result == -1) {
+		ERR("problem in ustcomm_send_request(g_n_subbufs)");
+		return -1;
+	}
 
 	result = sscanf(received_msg, "%d", &buf->n_subbufs);
 	if(result != 1) {
@@ -268,6 +334,14 @@ int add_buffer(pid_t pid, char *bufname)
 	}
 	DBG("successfully attached buffer bufstruct memory");
 
+	/* obtain info on the memory segment */
+	result = shmctl(buf->shmid, IPC_STAT, &shmds);
+	if(result == -1) {
+		perror("shmctl");
+		return -1;
+	}
+	buf->memlen = shmds.shm_segsz;
+
 	/* open file for output */
 	asprintf(&tmp, "/tmp/trace/%s_0", buf->name);
 	result = fd = open(tmp, O_WRONLY | O_CREAT | O_TRUNC, 00600);
@@ -279,8 +353,6 @@ int add_buffer(pid_t pid, char *bufname)
 	buf->file_fd = fd;
 	free(tmp);
 
-	//list_add(&buf->list, &buffers);
-
 	pthread_create(&thr, NULL, consumer_thread, buf);
 
 	return 0;
@@ -290,10 +362,27 @@ int main(int argc, char **argv)
 {
 	struct ustcomm_ustd ustd;
 	int result;
+	sigset_t sigset;
 
 	result = ustcomm_init_ustd(&ustd);
 	if(result == -1) {
 		ERR("failed to initialize socket");
+		return 1;
+	}
+
+	result = sigemptyset(&sigset);
+	if(result == -1) {
+		perror("sigemptyset");
+		return 1;
+	}
+	result = sigaddset(&sigset, SIGPIPE);
+	if(result == -1) {
+		perror("sigaddset");
+		return 1;
+	}
+	result = sigprocmask(SIG_BLOCK, &sigset, NULL);
+	if(result == -1) {
+		perror("sigprocmask");
 		return 1;
 	}
 
