@@ -50,7 +50,7 @@ AC_C_INLINE
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([gettimeofday munmap socket strerror strtol])
 
-AC_ARG_WITH(urcu, [  --with-urcu path	Path to userspace RCU source], [
+AC_ARG_WITH(urcu, [  --with-urcu path        Path to userspace RCU source], [
 	AC_CHECK_FILE(["$withval/urcu.h"], [
 		URCU_CFLAGS="-I$withval"
 		URCU_LIBS="-L$withval -lurcu" ],
