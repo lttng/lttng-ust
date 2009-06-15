@@ -29,8 +29,8 @@ void finish_consuming_dead_subbuffer(struct buffer_info *buf)
 	 * last place written. */
 	long last_subbuf = (write_offset - 1) / buf->subbuf_size;
 
-	DBG("first_subbuf=%d", first_subbuf);
-	DBG("last_subbuf=%d", last_subbuf);
+	DBG("first_subbuf=%ld", first_subbuf);
+	DBG("last_subbuf=%ld", last_subbuf);
 
 	if(last_subbuf - first_subbuf >= buf->n_subbufs) {
 		DBG("an overflow has occurred, nothing can be recovered");
