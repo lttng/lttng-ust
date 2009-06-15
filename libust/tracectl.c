@@ -347,7 +347,7 @@ void *listener_main(void *p)
 			ltt_unlock_traces();
 
 			if(trace == NULL) {
-				CPRINTF("cannot find trace!");
+				ERR("cannot find trace!");
 				return (void *)1;
 			}
 
@@ -395,7 +395,7 @@ void *listener_main(void *p)
 			ltt_unlock_traces();
 
 			if(trace == NULL) {
-				CPRINTF("cannot find trace!");
+				ERR("cannot find trace!");
 				return (void *)1;
 			}
 
@@ -439,7 +439,7 @@ void *listener_main(void *p)
 			ltt_unlock_traces();
 
 			if(trace == NULL) {
-				CPRINTF("cannot find trace!");
+				ERR("cannot find trace!");
 				return (void *)1;
 			}
 
@@ -490,7 +490,7 @@ void *listener_main(void *p)
 			ltt_unlock_traces();
 
 			if(trace == NULL) {
-				CPRINTF("cannot find trace!");
+				ERR("cannot find trace!");
 				return (void *)1;
 			}
 
@@ -556,7 +556,7 @@ void *listener_main(void *p)
 			ltt_unlock_traces();
 
 			if(trace == NULL) {
-				CPRINTF("cannot find trace!");
+				ERR("cannot find trace!");
 				return (void *)1;
 			}
 
@@ -649,7 +649,7 @@ void *listener_main(void *p)
 //			ltt_unlock_traces();
 //
 //			if(trace == NULL) {
-//				CPRINTF("cannot find trace!");
+//				ERR("cannot find trace!");
 //				return (void *)1;
 //			}
 //
