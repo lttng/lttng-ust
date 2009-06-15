@@ -49,7 +49,6 @@ int init_int_handler(void)
 
 int main()
 {
-	int result;
 	int i;
 
 	init_int_handler();

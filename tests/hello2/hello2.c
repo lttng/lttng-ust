@@ -3,7 +3,6 @@
 #include "marker.h"
 int main()
 {
-	int result;
 	int i;
 
 //	sleep(1);
