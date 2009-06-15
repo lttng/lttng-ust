@@ -34,14 +34,12 @@ Commands:\n\
 int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 {
 	int c;
-	int digit_optind = 0;
 
 	opts->cmd = NULL;
 	opts->pids = NULL;
 	opts->take_reply = 0;
 
 	while (1) {
-		int this_option_optind = optind ? optind : 1;
 		int option_index = 0;
 		static struct option long_options[] = {
 			{"start-trace", 0, 0, 1000},
