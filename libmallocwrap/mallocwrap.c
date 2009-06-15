@@ -5,40 +5,42 @@
 
 #include "marker.h"
 
-//INTERCEPT_PROTOTYPE(void, malloc, size_t size)
-//INTERCEPT_TRACE("size %d", size)
-//INTERCEPT_CALL_ARGS(size)
-//INTERCEPT()
-//
-//#define INTERCEPT_FUNC(type, name, args...) 						\
-//__I_FUNC_TYPE(type)									\
-//__I_FUNC_NAME(name)									\
-//__I_FUNC_ARGS(args)
-//
-//#define INTERCEPT_TRACE(fmt, args...)							\
-//#define __I_TRACE_FMT fmt								\
-//#define __I_TRACE_ARGS args
-//
-//#define INTERCEPT_CALL_ARGS(args...)							\
-//#define __I_CALL_ARGS args
-//
-//#define INTERCEPT()									\
-//__I_FUNC_TYPE __I_FUNC_NAME(__I_FUNC_ARGS)						\
-//{											\
-//	static __I_FUNC_TYPE (*plibc_ ## __I_FUNC_NAME)(args) = NULL;			\
-//											\
-//	if(plibc_ ## __I_FUNC_NAME == NULL) {						\
-//		plibc_ ## __I_FUNC_NAME = dlsym(RTLD_NEXT, "malloc");			\
-//		if(plibc_ ## __I_FUNC_NAME == NULL) {					\
-//			fprintf(stderr, "mallocwrap: unable to find malloc\n");		\
-//			return NULL;							\
-//		}									\
-//	}										\
-//											\
-//	trace_mark(ust, __I_FUNC_NAME, __I_TRACE_FMT, __I_TRACE_ARGS);			\
-//											\
-//	return plibc_ ## __I_FUNC_NAME (__I_CALL_ARGS);					\
-//}											
+#if 0
+INTERCEPT_PROTOTYPE(void, malloc, size_t size)
+INTERCEPT_TRACE("size %d", size)
+INTERCEPT_CALL_ARGS(size)
+INTERCEPT()
+
+#define INTERCEPT_FUNC(type, name, args...) 						\
+__I_FUNC_TYPE(type)									\
+__I_FUNC_NAME(name)									\
+__I_FUNC_ARGS(args)
+
+#define INTERCEPT_TRACE(fmt, args...)							\
+#define __I_TRACE_FMT fmt								\
+#define __I_TRACE_ARGS args
+
+#define INTERCEPT_CALL_ARGS(args...)							\
+#define __I_CALL_ARGS args
+
+#define INTERCEPT()									\
+__I_FUNC_TYPE __I_FUNC_NAME(__I_FUNC_ARGS)						\
+{											\
+	static __I_FUNC_TYPE (*plibc_ ## __I_FUNC_NAME)(args) = NULL;			\
+											\
+	if(plibc_ ## __I_FUNC_NAME == NULL) {						\
+		plibc_ ## __I_FUNC_NAME = dlsym(RTLD_NEXT, "malloc");			\
+		if(plibc_ ## __I_FUNC_NAME == NULL) {					\
+			fprintf(stderr, "mallocwrap: unable to find malloc\n");		\
+			return NULL;							\
+		}									\
+	}										\
+											\
+	trace_mark(ust, __I_FUNC_NAME, __I_TRACE_FMT, __I_TRACE_ARGS);			\
+											\
+	return plibc_ ## __I_FUNC_NAME (__I_CALL_ARGS);					\
+}
+#endif
 
 void *malloc(size_t size)
 {
