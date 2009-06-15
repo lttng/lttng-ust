@@ -22,6 +22,7 @@
 #include "kernelcompat.h"
 #define _LGPL_SOURCE
 #include <urcu.h>
+#include <kcompat/rculist.h>
 
 #include "relay.h"
 #include "tracer.h"
@@ -587,7 +588,7 @@ notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
 	struct ltt_serialize_closure closure;
 	struct ltt_probe_private_data *private_data = call_data;
 	void *serialize_private = NULL;
-	int cpu;
+//ust//	int cpu;
 	unsigned int rflags;
 
 	/*
@@ -598,7 +599,7 @@ notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
 		return;
 
 	rcu_read_lock(); //ust// rcu_read_lock_sched_notrace();
-	cpu = smp_processor_id();
+//ust//	cpu = smp_processor_id();
 //ust//	__get_cpu_var(ltt_nesting)++;
 	ltt_nesting++;
 

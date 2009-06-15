@@ -38,6 +38,8 @@
 //ust// #include <linux/delay.h>
 //ust// #include <linux/vmalloc.h>
 //ust// #include <asm/atomic.h>
+#include <kcompat/rculist.h>
+
 #include "kernelcompat.h"
 #include "tracercore.h"
 #include "tracer.h"
