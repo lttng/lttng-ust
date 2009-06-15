@@ -14,6 +14,7 @@
 #include "localerr.h"
 #include "ustcomm.h"
 #include "relay.h" /* FIXME: remove */
+#include "marker-control.h"
 
 //#define USE_CLONE
 
@@ -208,9 +209,6 @@ void *listener_main(void *p)
 	DBG("LISTENER");
 
 	for(;;) {
-		uint32_t size;
-		struct sockaddr_un addr;
-		socklen_t addrlen = sizeof(addr);
 		char trace_name[] = "auto";
 		char trace_type[] = "ustrelay";
 		char *recvbuf;
@@ -355,7 +353,6 @@ void *listener_main(void *p)
 				struct rchan *rchan = trace->channels[i].trans_channel_data;
 				struct rchan_buf *rbuf = rchan->buf;
 				struct ltt_channel_struct *ltt_channel = (struct ltt_channel_struct *)rchan->private_data;
-				struct ltt_channel_buf_struct *ltt_buf = ltt_channel->buf;
 
 				if(!strcmp(trace->channels[i].channel_name, channel_name)) {
 					char *reply;
@@ -500,9 +497,6 @@ void *listener_main(void *p)
 				if(!strcmp(trace->channels[i].channel_name, channel_name)) {
 					struct rchan_buf *rbuf = rchan->buf;
 					struct ltt_channel_buf_struct *lttbuf = trace->channels[i].buf;
-					char *reply;
-					long consumed_old=0;
-					int fd;
 					struct blocked_consumer *bc;
 
 					bc = (struct blocked_consumer *) malloc(sizeof(struct blocked_consumer));
@@ -598,7 +592,6 @@ void *listener_main(void *p)
 			char *channel_slash_name = nth_token(recvbuf, 1);
 			char channel_name[256]="";
 			char marker_name[256]="";
-			struct marker_iter iter;
 
 			result = sscanf(channel_slash_name, "%255[^/]/%255s", channel_name, marker_name);
 
@@ -617,7 +610,6 @@ void *listener_main(void *p)
 			char *channel_slash_name = nth_token(recvbuf, 1);
 			char *marker_name;
 			char *channel_name;
-			struct marker_iter iter;
 
 			result = sscanf(channel_slash_name, "%a[^/]/%as", &channel_name, &marker_name);
 
@@ -688,13 +680,11 @@ void *listener_main(void *p)
 	}
 }
 
-static char listener_stack[16384];
-
 void create_listener(void)
 {
-	int result;
+#ifdef USE_CLONE
 	static char listener_stack[16384];
-	//char *listener_stack = malloc(16384);
+#endif
 
 #ifdef USE_CLONE
 	result = clone(listener_main, listener_stack+sizeof(listener_stack)-1, CLONE_FS | CLONE_FILES | CLONE_VM | CLONE_SIGHAND | CLONE_THREAD, NULL);
@@ -734,18 +724,22 @@ static int init_socket(void)
 	return ustcomm_init_app(getpid(), &ustcomm_app);
 }
 
+/* FIXME: reenable this to delete socket file. */
+
+#if 0
 static void destroy_socket(void)
 {
-//	int result;
-//
-//	if(mysocketfile[0] == '\0')
-//		return;
-//
-//	result = unlink(mysocketfile);
-//	if(result == -1) {
-//		PERROR("unlink");
-//	}
+	int result;
+
+	if(mysocketfile[0] == '\0')
+		return;
+
+	result = unlink(mysocketfile);
+	if(result == -1) {
+		PERROR("unlink");
+	}
 }
+#endif
 
 static int init_signal_handler(void)
 {
@@ -796,8 +790,6 @@ static void __attribute__((constructor(101))) init0()
 		marker_set_new_marker_cb(auto_probe_connect);
 	}
 }
-
-static void fini(void);
 
 static void __attribute__((constructor(1000))) init()
 {

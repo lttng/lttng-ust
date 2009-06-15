@@ -37,6 +37,7 @@ struct ustcomm_source {
 char *strdup_malloc(const char *s);
 
 //int send_message_pid(pid_t pid, const char *msg, char **reply);
+int ustcomm_request_consumer(pid_t pid, const char *channel);
 
 int ustcomm_ustd_recv_message(struct ustcomm_ustd *ustd, char **msg, struct ustcomm_source *src, int timeout);
 int ustcomm_app_recv_message(struct ustcomm_app *app, char **msg, struct ustcomm_source *src, int timeout);
@@ -47,6 +48,7 @@ int ustcomm_init_ustd(struct ustcomm_ustd *handle);
 
 int ustcomm_connect_app(pid_t pid, struct ustcomm_connection *conn);
 int ustcomm_send_request(struct ustcomm_connection *conn, char *req, char **reply);
+int ustcomm_send_reply(struct ustcomm_server *server, char *msg, struct ustcomm_source *src);
 
 int nth_token_is(char *str, char *token, int tok_no);
 

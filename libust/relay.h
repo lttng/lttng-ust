@@ -371,4 +371,6 @@ int ltt_do_get_subbuf(struct rchan_buf *buf, struct ltt_channel_buf_struct *ltt_
 
 int ltt_do_put_subbuf(struct rchan_buf *buf, struct ltt_channel_buf_struct *ltt_buf, u32 uconsumed_old);
 
+void init_ustrelay_transport(void);
+
 #endif /* _LINUX_LTT_RELAY_H */
