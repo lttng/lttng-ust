@@ -78,7 +78,9 @@ AC_SUBST(KCOMPAT_LIBS)
 AC_CONFIG_FILES([
 	Makefile
 	libust/Makefile
-	hello/Makefile
+	tests/Makefile
+	tests/hello/Makefile
+	tests/hello2/Makefile
 	libmallocwrap/Makefile
 	ustd/Makefile
 	ust/Makefile
