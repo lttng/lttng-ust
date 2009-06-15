@@ -665,7 +665,7 @@ int ltt_trace_alloc(const char *trace_name)
 {
 	int err = 0;
 	struct ltt_trace_struct *trace;
-	int subbuf_size, subbuf_cnt;
+	unsigned int subbuf_size, subbuf_cnt;
 	unsigned long flags;
 	int chan;
 	const char *channel_name;
