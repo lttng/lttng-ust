@@ -189,7 +189,7 @@ extern int tracepoint_get_iter_range(struct tracepoint **tracepoint,
  */
 static inline void tracepoint_synchronize_unregister(void)
 {
-	synchronize_sched();
+//ust//	synchronize_sched();
 }
 
 struct tracepoint_lib {
