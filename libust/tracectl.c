@@ -777,8 +777,8 @@ static void auto_probe_connect(struct marker *m)
 	int result;
 
 	result = ltt_marker_connect(m->channel, m->name, "default");
-	if(result)
-		ERR("ltt_marker_connect");
+	if(result && result != -EEXIST)
+		ERR("ltt_marker_connect (marker = %s/%s, errno = %d)", m->channel, m->name, -result);
 
 	DBG("just auto connected marker %s %s to probe default", m->channel, m->name);
 }
