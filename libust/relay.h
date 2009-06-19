@@ -215,16 +215,24 @@ static inline struct buf_page *ltt_relay_cache_page(struct rchan_buf *buf,
 //ust// #ifdef CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS
  static inline void ltt_relay_do_copy(void *dest, const void *src, size_t len)
 {
+	union {
+		const void *src;
+		const u8 *src8;
+		const u16 *src16;
+		const u32 *src32;
+		const u64 *src64;
+	} u = { .src = src };
+
 	switch (len) {
 	case 0:	break;
-	case 1:	*(u8 *)dest = *(const u8 *)src;
+	case 1:	*(u8 *)dest = *u.src8;
 		break;
-	case 2:	*(u16 *)dest = *(const u16 *)src;
+	case 2:	*(u16 *)dest = *u.src16;
 		break;
-	case 4:	*(u32 *)dest = *(const u32 *)src;
+	case 4:	*(u32 *)dest = *u.src32;
 		break;
 //ust// #if (BITS_PER_LONG == 64)
-	case 8:	*(u64 *)dest = *(const u64 *)src;
+	case 8:	*(u64 *)dest = *u.src64;
 		break;
 //ust// #endif
 	default:
