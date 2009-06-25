@@ -272,7 +272,8 @@ int ustcomm_recv_message(struct ustcomm_server *server, char **msg, struct ustco
 			idx++;
 		}
 
-		result = poll(fds, n_fds, timeout);
+		while((result = poll(fds, n_fds, timeout)) == -1 && errno == EINTR)
+			/* nothing */;
 		if(result == -1) {
 			PERROR("poll");
 			return -1;

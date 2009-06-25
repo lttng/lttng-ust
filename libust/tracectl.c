@@ -164,7 +164,8 @@ void process_blocked_consumers(void)
 		idx++;
 	}
 
-	result = poll(fds, n_fds, 0);
+	while((result = poll(fds, n_fds, 0)) == -1 && errno == EINTR)
+		/* nothing */;
 	if(result == -1) {
 		PERROR("poll");
 		return;
