@@ -26,6 +26,8 @@
 #include <fcntl.h>
 #include <poll.h>
 
+#include <urcu.h>
+
 #include "marker.h"
 #include "tracer.h"
 #include "localerr.h"
@@ -106,8 +108,13 @@ void do_command(struct tracecmd *cmd)
 {
 }
 
-void receive_commands()
+/* This needs to be called whenever a new thread is created. It notifies
+ * liburcu of the new thread.
+ */
+
+void ust_register_thread(void)
 {
+	rcu_register_thread();
 }
 
 int fd_notif = -1;
@@ -223,6 +230,8 @@ void process_blocked_consumers(void)
 void *listener_main(void *p)
 {
 	int result;
+
+	ust_register_thread();
 
 	DBG("LISTENER");
 
@@ -803,6 +812,12 @@ static void auto_probe_connect(struct marker *m)
 
 static void __attribute__((constructor(101))) init0()
 {
+	/* Initialize RCU in case the constructor order is not good. */
+	urcu_init();
+
+	/* It is important to do this before events start to be generated. */
+	ust_register_thread();
+
 	DBG("UST_AUTOPROBE constructor");
 	if(getenv("UST_AUTOPROBE")) {
 		marker_set_new_marker_cb(auto_probe_connect);
