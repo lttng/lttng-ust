@@ -141,7 +141,7 @@ static __inline__ int get_count_order(unsigned int count)
 #define __ALIGN_MASK(x,mask)	(((x)+(mask))&~(mask))
 #define PAGE_ALIGN(addr) ALIGN(addr, PAGE_SIZE)
 #define PAGE_SIZE sysconf(_SC_PAGE_SIZE)
-#define PAGE_MASK (PAGE_SIZE-1)
+#define PAGE_MASK (~(PAGE_SIZE-1))
 
 
 
