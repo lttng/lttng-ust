@@ -88,13 +88,13 @@ void free(void *ptr)
 		plibc_free = dlsym(RTLD_NEXT, "free");
 		if(plibc_free == NULL) {
 			fprintf(stderr, "mallocwrap: unable to find free\n");
-			return NULL;
+			return;
 		}
 	}
 
 	trace_mark(ust, free, "%p", ptr);
 
-	return plibc_free(ptr);
+	plibc_free(ptr);
 }
 
 MARKER_LIB
