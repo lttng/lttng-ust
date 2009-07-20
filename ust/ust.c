@@ -23,28 +23,41 @@
 #include <fcntl.h>
 
 #include "ustcomm.h"
+#include "ustcmd.h"
+
+enum command {
+	START_TRACE,
+	STOP_TRACE,
+	START,
+	DESTROY,
+	LIST_MARKERS,
+	ENABLE_MARKER,
+	DISABLE_MARKER,
+	GET_ONLINE_PIDS,
+	UNKNOWN
+};	
 
 struct ust_opts {
-	char *cmd;
+	enum command cmd;
 	pid_t *pids;
-	int take_reply;
+	char* m_name;
 };
 
 char *progname = NULL;
 
 void usage(void)
 {
-	fprintf(stderr, "usage: %s [OPTIONS] COMMAND PID...\n", progname);
+	fprintf(stderr, "usage: %s COMMAND PIDs...\n", progname);
 	fprintf(stderr, "\nControl the tracing of a process that supports LTTng Userspace Tracing.\n\
 \n\
 Commands:\n\
     --start-trace\t\t\tStart tracing\n\
     --stop-trace\t\t\tStop tracing\n\
     --destroy-trace\t\t\tDestroy the trace\n\
-    --enable-marker CHANNEL/MARKER\tEnable a marker\n\
-    --disable-marker CHANNEL/MARKER\tDisable a marker\n\
-    --list-markers\tList the markers of the process and their state\n\
-\n\
+    --enable-marker \"CHANNEL/MARKER\"\tEnable a marker\n\
+    --disable-marker \"CHANNEL/MARKER\"\tDisable a marker\n\
+    --list-markers\t\t\tList the markers of the process, their\n\t\t\t\t\t  state and format string\n\
+\
 ");
 }
 
@@ -52,9 +65,8 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 {
 	int c;
 
-	opts->cmd = NULL;
 	opts->pids = NULL;
-	opts->take_reply = 0;
+	opts->m_name = NULL;
 
 	while (1) {
 		int option_index = 0;
@@ -70,6 +82,7 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 			{"start", 0, 0, 1009},
 			{"help", 0, 0, 'h'},
 			{"version", 0, 0, 1010},
+			{"online-pids", 0, 0, 1011},
 			{0, 0, 0, 0}
 		};
 
@@ -86,40 +99,46 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 			break;
 
 		case 1000:
-			opts->cmd = strdup("trace_start");
+			opts->cmd = START_TRACE;
 			break;
 		case 1001:
-			opts->cmd = strdup("trace_stop");
+			opts->cmd = STOP_TRACE;
 			break;
 		case 1009:
-			opts->cmd = strdup("start");
+			opts->cmd = START;
 			break;
 		case 1002:
-			opts->cmd = strdup("trace_destroy");
+			opts->cmd = DESTROY;
 			break;
 		case 1004:
-			opts->cmd = strdup("list_markers");
-			opts->take_reply = 1;
+			opts->cmd = LIST_MARKERS;
 			break;
 		case 1007:
-			asprintf(&opts->cmd, "enable_marker %s", optarg);
+			opts->cmd = ENABLE_MARKER;
+			opts->m_name = strdup(optarg);
 			break;
 		case 1008:
-			asprintf(&opts->cmd, "disable_marker %s", optarg);
+			opts->cmd = DISABLE_MARKER;
+			opts->m_name = strdup(optarg);
+			break;
+		case 1011:
+			opts->cmd = GET_ONLINE_PIDS;
 			break;
 		case 'h':
 			usage();
 			exit(0);
 		case 1010:
-			printf("Version 0\n");
+			printf("Version 0.1\n");
 
 		default:
-			/* unknown option or other error; error is printed by getopt, just return */
+			/* unknown option or other error; error is
+			printed by getopt, just return */
+			opts->cmd = UNKNOWN;
 			return 1;
 		}
 	}
 
-	if(argc - optind > 0) {
+	if(argc - optind > 0 && opts->cmd != GET_ONLINE_PIDS) {
 		int i;
 		int pididx=0;
 		opts->pids = malloc((argc-optind+1) * sizeof(pid_t));
@@ -155,42 +174,147 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	if(opts.pids == NULL) {
+	if(opts.pids == NULL && opts.cmd != GET_ONLINE_PIDS) {
 		fprintf(stderr, "No pid specified.\n");
 		usage();
 		exit(EXIT_FAILURE);
 	}
-	if(opts.cmd == NULL) {
+	if(opts.cmd == UNKNOWN) {
 		fprintf(stderr, "No command specified.\n");
 		usage();
 		exit(EXIT_FAILURE);
 	}
 
-	pidit = opts.pids;
+	if (opts.cmd == GET_ONLINE_PIDS) {
+		pid_t* pp = ustcmd_get_online_pids();
+		unsigned int i = 0;
 
-	while(*pidit != -1) {
-		char *reply;
-		char **preply;
-
-		if(opts.take_reply)
-			preply = &reply;
-		else
-			preply = NULL;
-
-		result = ustcomm_connect_app(*pidit, &conn);
-		if(result) {
-			fprintf(stderr, "error connecting to process\n");
-			exit(EXIT_FAILURE);
+		if (pp) {
+			while (pp[i] != 0) {
+				printf("%u\n", (unsigned int) pp[i]);
+				++i;
+			}
+			free(pp);
 		}
-		ustcomm_send_request(&conn, opts.cmd, preply);
+		
+		exit(EXIT_SUCCESS);
+	}
 
-		if(opts.take_reply)
-			printf("%s", reply);
+	pidit = opts.pids;
+	struct USTcmd_cmsf* cmsf = NULL;
+	
+	while(*pidit != -1) {
+		switch (opts.cmd) {
+			case START_TRACE:
+			if (ustcmd_start_trace(*pidit)) {
+				fprintf(stderr,
+					"error while trying to for trace "
+					"with PID %u\n", (unsigned int) *pidit);
+				break;
+			}
+			printf("sucessfully started trace for PID %u\n",
+				(unsigned int) *pidit);
+			break;
+			
+			case STOP_TRACE:
+			if (ustcmd_stop_trace(*pidit)) {
+				fprintf(stderr,
+					"error while trying to stop trace "
+					"for PID %u\n", (unsigned int) *pidit);
+				break;
+			}
+			printf("sucessfully stopped trace for PID %u\n",
+				(unsigned int) *pidit);
+			break;
+			
+			case START:
+			if (ustcmd_setup_and_start(*pidit)) {
+				fprintf(stderr,
+					"error while trying to setup/start "
+					"trace for PID %u\n",
+					(unsigned int) *pidit);
+				break;
+			}
+			printf("sucessfully setup/started trace for PID %u\n",
+				(unsigned int) *pidit);
+			break;
+			
+			case DESTROY:
+			if (ustcmd_destroy_trace(*pidit)) {
+				fprintf(stderr,
+					"error while trying to destroy "
+					"trace with PID %u\n",
+					(unsigned int) *pidit);
+				break;
+			}
+			printf("sucessfully destroyed trace for PID %u\n",
+				(unsigned int) *pidit);
+			break;
+			
+			case LIST_MARKERS:
+			cmsf = NULL;
+			if (ustcmd_get_cmsf(&cmsf, *pidit)) {
+				fprintf(stderr,
+					"error while trying to list markers for"
+					" PID %u\n", (unsigned int) *pidit);
+				break;
+			}
+			unsigned int i = 0;
+			while (cmsf[i].channel != NULL) {
+				printf("{PID: %u, channel/marker: %s/%s, "
+					"state: %u, fs: %s}\n",
+					(unsigned int) *pidit,
+					cmsf[i].channel,
+					cmsf[i].marker,
+					cmsf[i].state,
+					cmsf[i].fs);
+				++i;
+			}
+			ustcmd_free_cmsf(cmsf);
+			break;
+			
+			case ENABLE_MARKER:
+			if (ustcmd_set_marker_state(opts.m_name, USTCMD_MS_ON,
+				*pidit)) {
+				
+				fprintf(stderr,
+					"error while trying to enable marker"
+					"\"%s\" for PID %u\n",
+					opts.m_name,
+					(unsigned int) *pidit);
+				break;
+			}
+			printf("sucessfully enabled marker \"%s\" for PID %u\n",
+					opts.m_name, (unsigned int) *pidit);
+			break;
+			
+			case DISABLE_MARKER:
+			if (ustcmd_set_marker_state(opts.m_name, USTCMD_MS_OFF,
+				*pidit)) {
+				fprintf(stderr,
+					"error while trying to disable marker"
+					"\"%s\" for PID %u\n",
+					opts.m_name,
+					(unsigned int) *pidit);
+				break;
+			}
+			printf("sucessfully disabled marker \"%s\" for PID %u\n",
+					opts.m_name, (unsigned int) *pidit);
+			break;
+			
+			default:
+			fprintf(stderr, "error: unknown command...\n");
+			break;
+		}
+		
 		pidit++;
 	}
 
 	free(opts.pids);
-	free(opts.cmd);
+	if (opts.m_name != NULL) {
+		free(opts.m_name);
+	}
 
 	return 0;
 }
+

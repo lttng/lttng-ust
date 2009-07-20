@@ -1,8 +1,10 @@
 bin_PROGRAMS = ust
-ust_SOURCES = ust.c $(top_builddir)/libustcomm/ustcomm.c $(top_builddir)/libustcomm/ustcomm.h localerr.h
+ust_SOURCES = ust.c $(top_builddir)/libustcomm/ustcomm.c $(top_builddir)/libustcomm/ustcomm.h $(top_builddir)/libustcmd/ustcmd.c $(top_builddir)/libustcmd/ustcmd.h localerr.h
 
 #INCLUDES = -I$(top_builddir)/share
 #INCLUDES += -I@URCU_PATH@
 INCLUDES = $(KCOMPAT_CFLAGS)
 #INCLUDES += -I$(top_builddir)/libust
 INCLUDES += -I$(top_builddir)/libustcomm
+INCLUDES += -I$(top_builddir)/libustcmd
+
