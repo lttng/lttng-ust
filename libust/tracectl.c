@@ -920,3 +920,24 @@ static void __attribute__((destructor)) fini()
 	destroy_socket();
 }
 #endif
+
+/* Notify ust that there was a fork. This needs to be called inside
+ * the new process, anytime a process whose memory is not shared with
+ * the parent is created. If this function is not called, the events
+ * of the new process will not be collected.
+ */
+
+void ust_fork(void)
+{
+	DBG("ust: forking");
+	ltt_trace_stop("auto");
+	ltt_trace_destroy("auto");
+	ltt_trace_alloc("auto");
+	ltt_trace_start("auto");
+	init_socket();
+	have_listener = 0;
+	create_listener();
+	ustcomm_request_consumer(getpid(), "metadata");
+	ustcomm_request_consumer(getpid(), "ust");
+}
+
