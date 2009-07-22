@@ -1,18 +1,26 @@
 LTTNG USERSPACE TRACER
 
-NOTE: THIS LIBRARY HAS NOT BEEN RELEASED YET BECAUSE ALTOUGH IT IS LICENCED AS
-LGPL, IT CAN ONLY BE USED AS GPL BECAUSE IT DEPENDS ON GPL LIBRARIES. IT WILL BE
-RELEASED AS SOON AS THESE ISSUES ARE RESOLVED.
+NOTE: This library has not been released yet because altough it is licenced as
+LGPL, it can only be used as gpl because it depends on GPL files. It will be
+released as soon as these issues are resolved.
 
 Dependencies:
 
-- liburcu-pmf
-  Userspace RCU library, pmf patches.
-  http://git.dorsal.polymtl.ca
+- liburcu
+  Userspace RCU library, by Mathieu Desnoyers and Paul E. McKenney
+  http://ltt.polymtl.ca/cgi-bin/gitweb.cgi?p=userspace-rcu.git;a=summary
 
 - libkcompat
   Linux kernel userspace compatibility library.
   http://git.dorsal.polymtl.ca
+
+Installation instruction:
+
+- Download, compile and install liburcu and libkcompat.
+- In this package's tree, run ./configure, specifying the location of
+  liburcu and libkcompat with the --with-urcu and --with-kcompat options.
+- Run make.
+- See the manual in the doc/ directory for usage instructions.
 
 Package contents:
 
