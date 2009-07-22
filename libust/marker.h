@@ -31,6 +31,7 @@
 #include "kernelcompat.h"
 #include "compiler.h"
 #include <kcompat/list.h>
+#include "localerr.h"
 
 //ust// struct module;
 //ust// struct task_struct;
@@ -303,6 +304,7 @@ extern struct marker __stop___markers[] __attribute__((visibility("hidden")));		
 											\
 static void __attribute__((constructor)) __markers__init(void) 				\
 {											\
+	DBG("next registration in "__FILE__"\n");\
 	marker_register_lib(__start___markers, (((long)__stop___markers)-((long)__start___markers))/sizeof(struct marker));\
 }
 

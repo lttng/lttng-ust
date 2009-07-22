@@ -1532,7 +1532,7 @@ void __attribute__((constructor)) init_markers(void)
 {
 	if(!initialized) {
 		marker_register_lib(__start___markers, (((long)__stop___markers)-((long)__start___markers))/sizeof(struct marker));
-		printf("markers_start: %p, markers_stop: %p\n", __start___markers, __stop___markers);
+		DBG("markers_start: %p, markers_stop: %p\n", __start___markers, __stop___markers);
 		initialized = 1;
 	}
 }
