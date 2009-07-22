@@ -1398,41 +1398,41 @@ struct notifier_block marker_module_nb = {
 
 void ltt_dump_marker_state(struct ltt_trace_struct *trace)
 {
-	struct marker_iter iter;
+	struct marker_entry *entry;
 	struct ltt_probe_private_data call_data;
-	const char *channel;
+	struct hlist_head *head;
+	struct hlist_node *node;
+	unsigned int i;
 
+	mutex_lock(&markers_mutex);
 	call_data.trace = trace;
 	call_data.serializer = NULL;
 
-	marker_iter_reset(&iter);
-	marker_iter_start(&iter);
-	for (; iter.marker != NULL; marker_iter_next(&iter)) {
-		if (!_imv_read(iter.marker->state))
-			continue;
-		channel = ltt_channels_get_name_from_index(
-				iter.marker->channel_id);
-		__trace_mark(0, metadata, core_marker_id,
-			&call_data,
-			"channel %s name %s event_id %hu "
-			"int #1u%zu long #1u%zu pointer #1u%zu "
-			"size_t #1u%zu alignment #1u%u",
-			channel,
-			iter.marker->name,
-			iter.marker->event_id,
-			sizeof(int), sizeof(long),
-			sizeof(void *), sizeof(size_t),
-			ltt_get_alignment());
-		if (iter.marker->format)
-			__trace_mark(0, metadata,
-				core_marker_format,
+	for (i = 0; i < MARKER_TABLE_SIZE; i++) {
+		head = &marker_table[i];
+		hlist_for_each_entry(entry, node, head, hlist) {
+			__trace_mark(0, metadata, core_marker_id,
 				&call_data,
-				"channel %s name %s format %s",
-				channel,
-				iter.marker->name,
-				iter.marker->format);
+				"channel %s name %s event_id %hu "
+				"int #1u%zu long #1u%zu pointer #1u%zu "
+				"size_t #1u%zu alignment #1u%u",
+				entry->channel,
+				entry->name,
+				entry->event_id,
+				sizeof(int), sizeof(long),
+				sizeof(void *), sizeof(size_t),
+				ltt_get_alignment());
+			if (entry->format)
+				__trace_mark(0, metadata,
+					core_marker_format,
+					&call_data,
+					"channel %s name %s format %s",
+					entry->channel,
+					entry->name,
+					entry->format);
+		}
 	}
-	marker_iter_stop(&iter);
+	mutex_unlock(&markers_mutex);
 }
 //ust// EXPORT_SYMBOL_GPL(ltt_dump_marker_state);
 
