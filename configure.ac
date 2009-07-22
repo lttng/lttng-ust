@@ -82,6 +82,7 @@ AC_CONFIG_FILES([
 	tests/hello/Makefile
 	tests/hello2/Makefile
 	libmallocwrap/Makefile
+	libinterfork/Makefile
 	ustd/Makefile
 	ust/Makefile
 ])
