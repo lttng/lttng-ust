@@ -3,6 +3,8 @@
 
 #include "ustcomm.h"
 
+#define USTD_DEFAULT_TRACE_PATH "/tmp/usttrace"
+
 struct buffer_info {
 	char *name;
 	pid_t pid;

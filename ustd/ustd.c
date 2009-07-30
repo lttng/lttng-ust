@@ -245,6 +245,20 @@ void *consumer_thread(void *arg)
 	return NULL;
 }
 
+int create_dir_if_needed(char *dir)
+{
+	int result;
+	result = mkdir(dir, 0777);
+	if(result == -1) {
+		if(errno != EEXIST) {
+			perror("mkdir");
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
 int add_buffer(pid_t pid, char *bufname)
 {
 	struct buffer_info *buf;
@@ -343,7 +357,22 @@ int add_buffer(pid_t pid, char *bufname)
 	buf->memlen = shmds.shm_segsz;
 
 	/* open file for output */
-	asprintf(&tmp, "/tmp/trace/%s_0", buf->name);
+	result = create_dir_if_needed(USTD_DEFAULT_TRACE_PATH);
+	if(result == -1) {
+		ERR("could not create directory %s", USTD_DEFAULT_TRACE_PATH);
+		return -1;
+	}
+
+	asprintf(&tmp, "%s/%u", USTD_DEFAULT_TRACE_PATH, buf->pid);
+	result = create_dir_if_needed(tmp);
+	if(result == -1) {
+		ERR("could not create directory %s", tmp);
+		free(tmp);
+		return -1;
+	}
+	free(tmp);
+
+	asprintf(&tmp, "%s/%u/%s_0", USTD_DEFAULT_TRACE_PATH, buf->pid, buf->name);
 	result = fd = open(tmp, O_WRONLY | O_CREAT | O_TRUNC, 00600);
 	if(result == -1) {
 		PERROR("open");
