@@ -104,9 +104,7 @@ static void print_markers(FILE *fp)
 	unlock_markers();
 }
 
-void do_command(struct tracecmd *cmd)
-{
-}
+static int init_socket(void);
 
 /* This needs to be called whenever a new thread is created. It notifies
  * liburcu of the new thread.
@@ -707,22 +705,31 @@ void *listener_main(void *p)
 	}
 }
 
+int have_listener = 0;
+
 void create_listener(void)
 {
 #ifdef USE_CLONE
 	static char listener_stack[16384];
+#else
+	pthread_t thread;
 #endif
+
+	if(have_listener)
+		return;
 
 #ifdef USE_CLONE
 	result = clone(listener_main, listener_stack+sizeof(listener_stack)-1, CLONE_FS | CLONE_FILES | CLONE_VM | CLONE_SIGHAND | CLONE_THREAD, NULL);
 	if(result == -1) {
 		perror("clone");
+		return;
 	}
 #else
-	pthread_t thread;
 
 	pthread_create(&thread, NULL, listener_main, NULL);
 #endif
+
+	have_listener = 1;
 }
 
 /* The signal handler itself. Signals must be setup so there cannot be
@@ -812,21 +819,18 @@ static void auto_probe_connect(struct marker *m)
 
 static void __attribute__((constructor(101))) init0()
 {
-	/* Initialize RCU in case the constructor order is not good. */
-	urcu_init();
-
-	/* It is important to do this before events start to be generated. */
-	ust_register_thread();
-
 	DBG("UST_AUTOPROBE constructor");
-	if(getenv("UST_AUTOPROBE")) {
-		marker_set_new_marker_cb(auto_probe_connect);
-	}
 }
 
 static void __attribute__((constructor(1000))) init()
 {
 	int result;
+
+	/* Initialize RCU in case the constructor order is not good. */
+	urcu_init();
+
+	/* It is important to do this before events start to be generated. */
+	ust_register_thread();
 
 	DBG("UST_TRACE constructor");
 
@@ -841,6 +845,34 @@ static void __attribute__((constructor(1000))) init()
 	if(result == -1) {
 		ERR("init_signal_handler error");
 		return;
+	}
+
+	if(getenv("UST_AUTOPROBE")) {
+		struct marker_iter iter;
+
+		DBG("IN AUTOPROBE\n");
+
+		/* Ensure markers are initialized */
+		//init_markers();
+
+		/* Ensure marker control is initialized, for the probe */
+		init_marker_control();
+
+		/* first, set the callback that will connect the
+		 * probe on new markers
+		 */
+		marker_set_new_marker_cb(auto_probe_connect);
+
+		/* Now, connect the probes that were already registered. */
+		marker_iter_reset(&iter);
+		marker_iter_start(&iter);
+
+		DBG("now iterating on markers already registered\n");
+		while(iter.marker) {
+			DBG("now iterating on marker %s\n", iter.marker->name);
+			auto_probe_connect(iter.marker);
+			marker_iter_next(&iter);
+		}
 	}
 
 	if(getenv("UST_TRACE")) {
