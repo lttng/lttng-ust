@@ -953,6 +953,95 @@ static void __attribute__((destructor)) fini()
 }
 #endif
 
+#if 0
+static int trace_recording(void)
+{
+	int retval = 0;
+	struct ltt_trace_struct *trace;
+
+	ltt_lock_traces();
+
+	list_for_each_entry(trace, &ltt_traces.head, list) {
+		if(trace->active) {
+			retval = 1;
+			break;
+		}
+	}
+
+	ltt_unlock_traces();
+
+	return retval;
+}
+
+static int have_consumer(void)
+{
+	return !list_empty(&blocked_consumers);
+}
+
+/* This destructor keeps the process alive for a few seconds in order
+ * to leave time to ustd to consume its buffers.
+ */
+
+int restarting_sleep(int secs)
+{
+        struct timespec tv; 
+        int result; 
+ 
+        tv.tv_sec = secs; 
+        tv.tv_nsec = 0; 
+ 
+        do { 
+                result = nanosleep(&tv, &tv); 
+        } while(result == -1 && errno == EINTR); 
+
+	return result;
+}
+
+static void __attribute__((destructor)) keepalive()
+{
+//	struct ustcomm_ustd ustd;
+//	int result;
+//	sigset_t sigset;
+//
+//	result = sigemptyset(&sigset);
+//	if(result == -1) {
+//		perror("sigemptyset");
+//		return;
+//	}
+//	result = sigaddset(&sigset, SIGIO);
+//	if(result == -1) {
+//		perror("sigaddset");
+//		return;
+//	}
+//	result = sigprocmask(SIG_BLOCK, &sigset, NULL);
+//	if(result == -1) {
+//		perror("sigprocmask");
+//		return;
+//	}
+//
+//	if(trace_recording()) {
+//		if(!have_consumer()) {
+//			/* Request listener creation. We've blocked SIGIO's in
+//			 * order to not interrupt sleep(), so we will miss the
+//			 * one sent by the daemon and therefore won't create
+//			 * the listener automatically.
+//			 */
+//			create_listener();
+//
+			printf("Keeping process alive for consumer daemon...\n");
+			restarting_sleep(3);
+			printf("Finally dying...\n");
+//		}
+//	}
+//
+//	result = sigprocmask(SIG_UNBLOCK, &sigset, NULL);
+//	if(result == -1) {
+//		perror("sigprocmask");
+//		return;
+//	}
+}
+#endif
+
 /* Notify ust that there was a fork. This needs to be called inside
  * the new process, anytime a process whose memory is not shared with
  * the parent is created. If this function is not called, the events
