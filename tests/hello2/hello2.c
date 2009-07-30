@@ -7,7 +7,6 @@ int main()
 {
 	int i;
 	struct timespec tv;
-	struct timespec rem;
 	int result;
 
 	tv.tv_sec = 1;
@@ -23,6 +22,9 @@ int main()
 		trace_mark(ust, bar, "str %d", i);
 		trace_mark(ust, bar2, "number1 %d number2 %d", (int)53, (int)9800);
 	}
+
+//	ltt_trace_stop("auto");
+//	ltt_trace_destroy("auto");
 
 	return 0;
 }
