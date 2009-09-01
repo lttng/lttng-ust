@@ -23,6 +23,9 @@
 
 #include "kcompat.h"
 
+#define SOCK_DIR "/tmp/socks"
+#define UST_SIGNAL SIGIO
+
 struct ustcomm_connection {
 	struct list_head list;
 	int fd;
@@ -70,5 +73,7 @@ int ustcomm_send_reply(struct ustcomm_server *server, char *msg, struct ustcomm_
 int nth_token_is(char *str, char *token, int tok_no);
 
 char *nth_token(char *str, int tok_no);
+
+int pid_is_online(pid_t);
 
 #endif /* USTCOMM_H */

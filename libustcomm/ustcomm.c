@@ -33,8 +33,6 @@
 #include "localerr.h"
 
 #define UNIX_PATH_MAX 108
-#define SOCK_DIR "/tmp/socks"
-#define UST_SIGNAL SIGIO
 
 #define MSG_MAX 1000
 
@@ -80,6 +78,10 @@ static int signal_process(pid_t pid)
 	//sleep(1);
 
 	return 0;
+}
+
+int pid_is_online(pid_t pid) {
+	return kill(pid, UST_SIGNAL) != -1;
 }
 
 static int send_message_fd(int fd, const char *msg)
