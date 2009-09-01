@@ -61,9 +61,9 @@ pid_t* ustcmd_get_online_pids(void) {
 		}
 	}
 
-	ret[i] = 0; // Array end
+	ret[i] = 0; /* Array end */
 
-	if (ret[0] == 0) { // No PID at all..
+	if (ret[0] == 0) { /* No PID at all.. */
 		free(ret);
 		return NULL;
 	}
@@ -236,38 +236,9 @@ int ustcmd_get_cmsf(struct USTcmd_cmsf** cmsf, const pid_t pid) {
 		return USTCMD_ERR_GEN;
 	}
 
-	// Parse received reply string (format: "[chan]/[mark] [st] [fs]"):
+	/* Parse received reply string (format: "[chan]/[mark] [st] [fs]"): */
 	unsigned int i = 0, cur_st, cmsf_ind = 0;
 	while (big_str[i] != '\0') {
-		/* RAW METHOD (REPLACED BY SSCANF):
-		cur_st = i; // Set current start at beginning of current line
-		while (big_str[i] != '/') {
-			++i; // Go to next '/'
-		}
-		tmp_cmsf[cmsf_ind].channel =
-			strndup(big_str + cur_st, i - cur_st);
-
-		++i; // Go after '/'
-		cur_st = i; // Set current start at beginning of marker name
-		while (big_str[i] != ' ') {
-			++i; // Go to next ' '
-		}
-		tmp_cmsf[cmsf_ind].marker =
-			strndup(big_str + cur_st, i - cur_st);
-
-		++i; // Go after ' '
-		tmp_cmsf[cmsf_ind].state = (big_str[i] == USTCMD_MS_CHR_ON ?
-			USTCMD_MS_ON : USTCMD_MS_OFF); // Marker state
-
-		i += 2; // Go to format string (after state and another ' ')
-		cur_st = i; // Set current start at beginning of format string
-		while (big_str[i] != '\n') {
-			++i; // Go to next '\n'
-		}
-		tmp_cmsf[cmsf_ind].fs =
-			strndup(big_str + cur_st, i - cur_st);
-		*/
-
 		char state;
 		sscanf(big_str + i, "%a[^/]/%a[^ ] %c %a[^\n]",
 			&tmp_cmsf[cmsf_ind].channel,
@@ -275,12 +246,12 @@ int ustcmd_get_cmsf(struct USTcmd_cmsf** cmsf, const pid_t pid) {
 			&state,
 			&tmp_cmsf[cmsf_ind].fs);
 		tmp_cmsf[cmsf_ind].state = (state == USTCMD_MS_CHR_ON ?
-			USTCMD_MS_ON : USTCMD_MS_OFF); // Marker state
+			USTCMD_MS_ON : USTCMD_MS_OFF); /* Marker state */
 
 		while (big_str[i] != '\n') {
-			++i; // Go to next '\n'
+			++i; /* Go to next '\n' */
 		}
-		++i; // Skip current pointed '\n'
+		++i; /* Skip current pointed '\n' */
 		++cmsf_ind;
 	}
 	tmp_cmsf[cmsf_ind].channel = NULL;
@@ -318,4 +289,3 @@ int ustcmd_shoot(const char* cmd, const pid_t pid, char** reply) {
 
 	return 0;
 }
-

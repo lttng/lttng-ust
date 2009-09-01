@@ -10,23 +10,23 @@
 #include "ustcomm.h"
 #include "ustcmd.h"
 
-#define USTCMD_ERR_CONN		1 // Process connection error 
-#define USTCMD_ERR_ARG		2 // Invalid function argument
-#define USTCMD_ERR_GEN		3 // General ustcmd error
+#define USTCMD_ERR_CONN		1 /* Process connection error */
+#define USTCMD_ERR_ARG		2 /* Invalid function argument */
+#define USTCMD_ERR_GEN		3 /* General ustcmd error */
 
-#define USTCMD_MS_CHR_OFF	'0' // Marker state 'on' character
-#define USTCMD_MS_CHR_ON	'1' // Marker state 'on' character
-#define USTCMD_MS_OFF		0 // Marker state 'on' value
-#define USTCMD_MS_ON		1 // Marker state 'on' value
+#define USTCMD_MS_CHR_OFF	'0' /* Marker state 'on' character */
+#define USTCMD_MS_CHR_ON	'1' /* Marker state 'on' character */
+#define USTCMD_MS_OFF		0   /* Marker state 'on' value */
+#define USTCMD_MS_ON		1   /* Marker state 'on' value */
 
-#define USTCMD_SOCK_PATH	"/tmp/socks/" // UST sockets directory
+#define USTCMD_SOCK_PATH	"/tmp/socks/"
 
-// Channel/marker/state/format string (cmsf) info. structure
+/* Channel/marker/state/format string (cmsf) info. structure */
 struct USTcmd_cmsf {
-	char* channel; // Channel name (end of USTcmd_cmsf array if NULL)
-	char* marker; // Marker name (end of USTcmd_cmsf array if NULL)
-	int state; // State (0 := marker disabled, 1 := marker enabled)
-	char* fs; // Format string (end of USTcmd_cmsf array if NULL)
+	char* channel; /* Channel name (end of USTcmd_cmsf array if NULL) */
+	char* marker; /* Marker name (end of USTcmd_cmsf array if NULL) */
+	int state; /* State (0 := marker disabled, 1 := marker enabled) */
+	char* fs; /* Format string (end of USTcmd_cmsf array if NULL) */
 };
 
 pid_t* ustcmd_get_online_pids(void);
@@ -40,4 +40,4 @@ unsigned int ustcmd_count_nl(const char*);
 int ustcmd_shoot(const char*, pid_t, char**);
 int ustcmd_get_cmsf(struct USTcmd_cmsf**, pid_t);
 
-#endif // _USTCMD_H
+#endif /* _USTCMD_H */
