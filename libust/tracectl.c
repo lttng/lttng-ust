@@ -25,6 +25,7 @@
 #include <sched.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <regex.h>
 
 #include <urcu.h>
 
@@ -806,15 +807,41 @@ static int init_signal_handler(void)
 	return 0;
 }
 
+static regex_t preg;
+static int regex_is_ok = -1;
+
 static void auto_probe_connect(struct marker *m)
 {
 	int result;
+
+	char* comp_name = NULL;
+	char* regex;
+
+	if (regex_is_ok != 0) {
+		goto end;
+	}
+
+	if (asprintf(&comp_name, "%s/%s", m->channel, m->name) == -1) {
+		ERR("auto_probe_connect: `asprintf' failed (marker %s/%s)",
+			m->channel, m->name);
+		return;
+	}
+	if (regexec(&preg, comp_name, 0, NULL, 0) != 0) {
+		goto end; /* Not matching */
+	}
+
+//	connect:
 
 	result = ltt_marker_connect(m->channel, m->name, "default");
 	if(result && result != -EEXIST)
 		ERR("ltt_marker_connect (marker = %s/%s, errno = %d)", m->channel, m->name, -result);
 
 	DBG("just auto connected marker %s %s to probe default", m->channel, m->name);
+
+	end:
+	if (comp_name != NULL) {
+		free(comp_name);
+	}
 }
 
 static void __attribute__((constructor(101))) init0()
@@ -825,6 +852,7 @@ static void __attribute__((constructor(101))) init0()
 static void __attribute__((constructor(1000))) init()
 {
 	int result;
+	char* regex = NULL;
 
 	/* Initialize RCU in case the constructor order is not good. */
 	urcu_init();
@@ -847,7 +875,9 @@ static void __attribute__((constructor(1000))) init()
 		return;
 	}
 
-	if(getenv("UST_AUTOPROBE")) {
+	regex = getenv("UST_AUTOPROBE");
+	if(regex) {
+		char* regex = NULL;
 		struct marker_iter iter;
 
 		DBG("IN AUTOPROBE\n");
@@ -862,7 +892,10 @@ static void __attribute__((constructor(1000))) init()
 		 * probe on new markers
 		 */
 		marker_set_new_marker_cb(auto_probe_connect);
-
+		regex_is_ok = regcomp(&preg, regex, 0);
+		if (regex_is_ok) {
+			ERR("cannot parse regex %s", regex);
+		}
 		/* Now, connect the probes that were already registered. */
 		marker_iter_reset(&iter);
 		marker_iter_start(&iter);

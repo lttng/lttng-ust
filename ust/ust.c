@@ -21,6 +21,7 @@
 #include <getopt.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <regex.h>
 
 #include "ustcomm.h"
 #include "ustcmd.h"
@@ -35,12 +36,14 @@ enum command {
 	DISABLE_MARKER,
 	GET_ONLINE_PIDS,
 	UNKNOWN
-};	
+};
 
 struct ust_opts {
 	enum command cmd;
 	pid_t *pids;
-	char* m_name;
+	char* regex;
+	regex_t preg;
+	int regex_state;
 };
 
 char *progname = NULL;
@@ -66,7 +69,8 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 	int c;
 
 	opts->pids = NULL;
-	opts->m_name = NULL;
+	opts->regex = NULL;
+	opts->regex_state = -1;
 
 	while (1) {
 		int option_index = 0;
@@ -115,11 +119,11 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 			break;
 		case 1007:
 			opts->cmd = ENABLE_MARKER;
-			opts->m_name = strdup(optarg);
+			opts->regex = strdup(optarg);
 			break;
 		case 1008:
 			opts->cmd = DISABLE_MARKER;
-			opts->m_name = strdup(optarg);
+			opts->regex = strdup(optarg);
 			break;
 		case 1011:
 			opts->cmd = GET_ONLINE_PIDS;
@@ -184,7 +188,6 @@ int main(int argc, char *argv[])
 		usage();
 		exit(EXIT_FAILURE);
 	}
-
 	if (opts.cmd == GET_ONLINE_PIDS) {
 		pid_t* pp = ustcmd_get_online_pids();
 		unsigned int i = 0;
@@ -196,13 +199,13 @@ int main(int argc, char *argv[])
 			}
 			free(pp);
 		}
-		
+
 		exit(EXIT_SUCCESS);
 	}
 
 	pidit = opts.pids;
 	struct USTcmd_cmsf* cmsf = NULL;
-	
+
 	while(*pidit != -1) {
 		switch (opts.cmd) {
 			case START_TRACE:
@@ -215,7 +218,7 @@ int main(int argc, char *argv[])
 			printf("sucessfully started trace for PID %u\n",
 				(unsigned int) *pidit);
 			break;
-			
+
 			case STOP_TRACE:
 			if (ustcmd_stop_trace(*pidit)) {
 				fprintf(stderr,
@@ -226,7 +229,7 @@ int main(int argc, char *argv[])
 			printf("sucessfully stopped trace for PID %u\n",
 				(unsigned int) *pidit);
 			break;
-			
+
 			case START:
 			if (ustcmd_setup_and_start(*pidit)) {
 				fprintf(stderr,
@@ -238,7 +241,7 @@ int main(int argc, char *argv[])
 			printf("sucessfully setup/started trace for PID %u\n",
 				(unsigned int) *pidit);
 			break;
-			
+
 			case DESTROY:
 			if (ustcmd_destroy_trace(*pidit)) {
 				fprintf(stderr,
@@ -250,7 +253,7 @@ int main(int argc, char *argv[])
 			printf("sucessfully destroyed trace for PID %u\n",
 				(unsigned int) *pidit);
 			break;
-			
+
 			case LIST_MARKERS:
 			cmsf = NULL;
 			if (ustcmd_get_cmsf(&cmsf, *pidit)) {
@@ -272,47 +275,26 @@ int main(int argc, char *argv[])
 			}
 			ustcmd_free_cmsf(cmsf);
 			break;
-			
+
 			case ENABLE_MARKER:
-			if (ustcmd_set_marker_state(opts.m_name, USTCMD_MS_ON,
-				*pidit)) {
-				
-				fprintf(stderr,
-					"error while trying to enable marker"
-					"\"%s\" for PID %u\n",
-					opts.m_name,
-					(unsigned int) *pidit);
-				break;
-			}
-			printf("sucessfully enabled marker \"%s\" for PID %u\n",
-					opts.m_name, (unsigned int) *pidit);
-			break;
-			
 			case DISABLE_MARKER:
-			if (ustcmd_set_marker_state(opts.m_name, USTCMD_MS_OFF,
-				*pidit)) {
-				fprintf(stderr,
-					"error while trying to disable marker"
-					"\"%s\" for PID %u\n",
-					opts.m_name,
-					(unsigned int) *pidit);
-				break;
-			}
-			printf("sucessfully disabled marker \"%s\" for PID %u\n",
-					opts.m_name, (unsigned int) *pidit);
+				regex_change_m_state(&opts, *pidit);
 			break;
-			
+
 			default:
 			fprintf(stderr, "error: unknown command...\n");
 			break;
 		}
-		
+
 		pidit++;
 	}
 
-	free(opts.pids);
-	if (opts.m_name != NULL) {
-		free(opts.m_name);
+	exit_free:
+	if (opts.pids != NULL) {
+		free(opts.pids);
+	}
+	if (opts.regex != NULL) {
+		free(opts.regex);
 	}
 
 	return 0;

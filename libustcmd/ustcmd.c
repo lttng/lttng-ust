@@ -15,6 +15,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <unistd.h>
 #include <getopt.h>
@@ -32,14 +33,13 @@
 pid_t* ustcmd_get_online_pids(void) {
 	struct dirent* dirent;
 	DIR* dir;
-	char* ping_res;
+	unsigned int ret_size = 1 * sizeof(pid_t), i = 0;
 
 	dir = opendir(SOCK_DIR);
 	if (!dir) {
 		return NULL;
 	}
 
-	unsigned int ret_size = 1 * sizeof(pid_t), i = 0;
 	pid_t* ret = (pid_t*) malloc(ret_size);
 
 	while (dirent = readdir(dir)) {
@@ -80,17 +80,20 @@ pid_t* ustcmd_get_online_pids(void) {
  * @param pid	Traced process ID
  * @return	0 if successful, or errors {USTCMD_ERR_GEN, USTCMD_ERR_ARG}
  */
-int ustcmd_set_marker_state(const char* mn, int state, pid_t pid) {
+int ustcmd_set_marker_state(const char* mn, int state, pid_t pid)
+{
+	char* cmd_str [] = {"disable_marker", "enable_marker"};
+	char* cmd;
+	int result;
+
 	if (mn == NULL) {
 		return USTCMD_ERR_ARG;
 	}
 
-	char* cmd_str [] = {"disable_marker", "enable_marker"};
-	char* cmd;
 	asprintf(&cmd, "%s %s", cmd_str[state], mn);
 
-	int tres;
-	if (tres = ustcmd_shoot(cmd, pid, NULL)) {
+	result = ustcmd_shoot(cmd, pid, NULL);
+	if (result) {
 		free(cmd);
 		return USTCMD_ERR_GEN;
 	}
@@ -214,13 +217,16 @@ int ustcmd_free_cmsf(struct USTcmd_cmsf* cmsf) {
  * @return	0 if successful, or errors {USTCMD_ERR_ARG, USTCMD_ERR_GEN}
  */
 int ustcmd_get_cmsf(struct USTcmd_cmsf** cmsf, const pid_t pid) {
+	char* big_str = NULL;
+	int result;
+	struct USTcmd_cmsf* tmp_cmsf = NULL;
+	unsigned int i = 0, cmsf_ind = 0;
+
 	if (cmsf == NULL) {
 		return USTCMD_ERR_ARG;
 	}
-	char* big_str = NULL;
-	int tres;
-
-	if (tres = ustcmd_shoot("list_markers", pid, &big_str)) {
+	result = ustcmd_shoot("list_markers", pid, &big_str);
+	if (result) {
 		return USTCMD_ERR_GEN;
 	}
 
@@ -229,7 +235,6 @@ int ustcmd_get_cmsf(struct USTcmd_cmsf** cmsf, const pid_t pid) {
 		return USTCMD_ERR_GEN;
 	}
 
-	struct USTcmd_cmsf* tmp_cmsf = NULL;
 	tmp_cmsf = (struct USTcmd_cmsf*) malloc(sizeof(struct USTcmd_cmsf) *
 		(ustcmd_count_nl(big_str) + 1));
 	if (tmp_cmsf == NULL) {
@@ -237,9 +242,9 @@ int ustcmd_get_cmsf(struct USTcmd_cmsf** cmsf, const pid_t pid) {
 	}
 
 	/* Parse received reply string (format: "[chan]/[mark] [st] [fs]"): */
-	unsigned int i = 0, cur_st, cmsf_ind = 0;
 	while (big_str[i] != '\0') {
 		char state;
+
 		sscanf(big_str + i, "%a[^/]/%a[^ ] %c %a[^\n]",
 			&tmp_cmsf[cmsf_ind].channel,
 			&tmp_cmsf[cmsf_ind].marker,
@@ -278,7 +283,6 @@ int ustcmd_shoot(const char* cmd, const pid_t pid, char** reply) {
 		return USTCMD_ERR_ARG;
 	}
 
-	struct ustcomm_connection conn;
 	if (ustcomm_connect_app(pid, &conn)) {
 		fprintf(stderr, "ustcmd_shoot: could not connect to PID %u\n",
 			(unsigned int) pid);
