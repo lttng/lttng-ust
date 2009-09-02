@@ -182,7 +182,7 @@ static void relay_destroy_channel(struct kref *kref)
 static void relay_destroy_buf(struct rchan_buf *buf)
 {
 	struct rchan *chan = buf->chan;
-	struct buf_page *buf_page, *n;
+//ust//	struct buf_page *buf_page;
 	int result;
 
 	result = munmap(buf->buf_data, buf->buf_size);
@@ -222,21 +222,21 @@ static void relay_remove_buf(struct kref *kref)
 /*
  * create_buf_file_create() default callback.  Does nothing.
  */
-static struct dentry *create_buf_file_default_callback(const char *filename,
-						       struct dentry *parent,
-						       int mode,
-						       struct rchan_buf *buf)
-{
-	return NULL;
-}
+//ust// static struct dentry *create_buf_file_default_callback(const char *filename,
+//ust// 						       struct dentry *parent,
+//ust// 						       int mode,
+//ust// 						       struct rchan_buf *buf)
+//ust// {
+//ust// 	return NULL;
+//ust// }
 
-/*
- * remove_buf_file() default callback.  Does nothing.
- */
-static int remove_buf_file_default_callback(struct dentry *dentry)
-{
-	return -EINVAL;
-}
+//ust// /*
+//ust//  * remove_buf_file() default callback.  Does nothing.
+//ust//  */
+//ust// static int remove_buf_file_default_callback(struct dentry *dentry)
+//ust// {
+//ust// 	return -EINVAL;
+//ust// }
 
 /**
  *	wakeup_readers - wake up readers waiting on a channel
@@ -277,7 +277,7 @@ static void __relay_reset(struct rchan_buf *buf, unsigned int init)
 static struct rchan_buf *relay_open_buf(struct rchan *chan)
 {
 	struct rchan_buf *buf = NULL;
-	struct dentry *dentry;
+//ust//	struct dentry *dentry;
 //ust//	char *tmpname;
 
 //ust//	tmpname = kzalloc(NAME_MAX + 1, GFP_KERNEL);
@@ -304,12 +304,12 @@ static struct rchan_buf *relay_open_buf(struct rchan *chan)
 
 	goto free_name;
 
-free_buf:
+//ust//free_buf:
 	relay_destroy_buf(buf);
 	buf = NULL;
 free_name:
 //ust//	kfree(tmpname);
-end:
+//ust//end:
 	return buf;
 }
 
@@ -406,7 +406,7 @@ struct rchan *ltt_relay_open(const char *base_filename,
 			 size_t n_subbufs,
 			 void *private_data)
 {
-	unsigned int i;
+//ust//	unsigned int i;
 	struct rchan *chan;
 //ust//	if (!base_filename)
 //ust//		return NULL;
@@ -462,7 +462,7 @@ struct rchan *ltt_relay_open(const char *base_filename,
  */
 void ltt_relay_close(struct rchan *chan)
 {
-	unsigned int i;
+//ust//	unsigned int i;
 
 	if (!chan)
 		return;
@@ -929,16 +929,16 @@ static struct dentry *ltt_create_buf_file_callback(struct rchan_buf *buf)
 	return NULL;
 }
 
-static int ltt_remove_buf_file_callback(struct rchan_buf *buf)
-{
-//ust//	struct rchan_buf *buf = dentry->d_inode->i_private;
-	struct ltt_channel_struct *ltt_chan = buf->chan->private_data;
-
-//ust//	debugfs_remove(dentry);
-	ltt_relay_destroy_buffer(ltt_chan);
-
-	return 0;
-}
+//ust// static int ltt_remove_buf_file_callback(struct rchan_buf *buf)
+//ust// {
+//ust// //ust//	struct rchan_buf *buf = dentry->d_inode->i_private;
+//ust// 	struct ltt_channel_struct *ltt_chan = buf->chan->private_data;
+//ust// 
+//ust// //ust//	debugfs_remove(dentry);
+//ust// 	ltt_relay_destroy_buffer(ltt_chan);
+//ust// 
+//ust// 	return 0;
+//ust// }
 
 /*
  * Wake writers :
@@ -1694,7 +1694,7 @@ static void ltt_relay_async_wakeup_chan(struct ltt_channel_struct *ltt_channel)
 static void ltt_relay_finish_buffer(struct ltt_channel_struct *ltt_channel)
 {
 	struct rchan *rchan = ltt_channel->trans_channel_data;
-	int result;
+//	int result;
 
 	if (rchan->buf) {
 		struct ltt_channel_buf_struct *ltt_buf = ltt_channel->buf;
@@ -1714,7 +1714,7 @@ static void ltt_relay_finish_buffer(struct ltt_channel_struct *ltt_channel)
 
 static void ltt_relay_finish_channel(struct ltt_channel_struct *ltt_channel)
 {
-	unsigned int i;
+//ust//	unsigned int i;
 
 //ust//	for_each_possible_cpu(i)
 		ltt_relay_finish_buffer(ltt_channel);
@@ -2481,7 +2481,7 @@ void __attribute__((constructor)) init_ustrelay_transport(void)
 	}
 }
 
-static void __exit ltt_relay_exit(void)
+static void __attribute__((destructor)) ltt_relay_exit(void)
 {
 //ust//	printk(KERN_INFO "LTT : ltt-relay exit\n");
 

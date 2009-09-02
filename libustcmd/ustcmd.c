@@ -23,14 +23,14 @@
 #include <fcntl.h>
 #include <string.h>
 #include <dirent.h>
-#
 
 #include "ustcomm.h"
 #include "ustcmd.h"
 
 #define _GNU_SOURCE
 
-pid_t* ustcmd_get_online_pids(void) {
+pid_t* ustcmd_get_online_pids(void)
+{
 	struct dirent* dirent;
 	DIR* dir;
 	unsigned int ret_size = 1 * sizeof(pid_t), i = 0;
@@ -42,7 +42,7 @@ pid_t* ustcmd_get_online_pids(void) {
 
 	pid_t* ret = (pid_t*) malloc(ret_size);
 
-	while (dirent = readdir(dir)) {
+	while ((dirent = readdir(dir))) {
 		if (!strcmp(dirent->d_name, ".") ||
 			!strcmp(dirent->d_name, "..")) {
 
@@ -108,10 +108,12 @@ int ustcmd_set_marker_state(const char* mn, int state, pid_t pid)
  * @param pid	Traced process ID
  * @return	0 if successful, or error USTCMD_ERR_GEN
  */
-int ustcmd_destroy_trace(pid_t pid) {
-	int tres;
+int ustcmd_destroy_trace(pid_t pid)
+{
+	int result;
 
-	if (tres = ustcmd_shoot("destroy", pid, NULL)) {
+	result = ustcmd_shoot("destroy", pid, NULL);
+	if (result) {
 		return USTCMD_ERR_GEN;
 	}
 
@@ -124,10 +126,12 @@ int ustcmd_destroy_trace(pid_t pid) {
  * @param pid	Traced process ID
  * @return	0 if successful, or error USTCMD_ERR_GEN
  */
-int ustcmd_setup_and_start(pid_t pid) {
-	int tres;
+int ustcmd_setup_and_start(pid_t pid)
+{
+	int result;
 
-	if (tres = ustcmd_shoot("start", pid, NULL)) {
+	result = ustcmd_shoot("start", pid, NULL);
+	if (result) {
 		return USTCMD_ERR_GEN;
 	}
 
@@ -140,10 +144,12 @@ int ustcmd_setup_and_start(pid_t pid) {
  * @param pid	Traced process ID
  * @return	0 if successful, or error USTCMD_ERR_GEN
  */
-int ustcmd_start_trace(pid_t pid) {
-	int tres;
+int ustcmd_start_trace(pid_t pid)
+{
+	int result;
 
-	if (tres = ustcmd_shoot("trace_start", pid, NULL)) {
+	result = ustcmd_shoot("trace_start", pid, NULL);
+	if (result) {
 		return USTCMD_ERR_GEN;
 	}
 
@@ -156,10 +162,12 @@ int ustcmd_start_trace(pid_t pid) {
  * @param pid	Traced process ID
  * @return	0 if successful, or error USTCMD_ERR_GEN
  */
-int ustcmd_stop_trace(pid_t pid) {
-	int tres;
+int ustcmd_stop_trace(pid_t pid)
+{
+	int result;
 
-	if (tres = ustcmd_shoot("trace_stop", pid, NULL)) {
+	result = ustcmd_shoot("trace_stop", pid, NULL);
+	if (result) {
 		return USTCMD_ERR_GEN;
 	}
 
@@ -172,7 +180,8 @@ int ustcmd_stop_trace(pid_t pid) {
  * @param str	String to search in
  * @return	Total newlines count
  */
-unsigned int ustcmd_count_nl(const char* str) {
+unsigned int ustcmd_count_nl(const char* str)
+{
 	unsigned int i = 0, tot = 0;
 
 	while (str[i] != '\0') {
@@ -191,7 +200,8 @@ unsigned int ustcmd_count_nl(const char* str) {
  * @param cmsf	CMSF array to free
  * @return	0 if successful, or error USTCMD_ERR_ARG
  */
-int ustcmd_free_cmsf(struct USTcmd_cmsf* cmsf) {
+int ustcmd_free_cmsf(struct USTcmd_cmsf* cmsf)
+{
 	if (cmsf == NULL) {
 		return USTCMD_ERR_ARG;
 	}
@@ -216,7 +226,8 @@ int ustcmd_free_cmsf(struct USTcmd_cmsf* cmsf) {
  * @param pid	Targeted PID
  * @return	0 if successful, or errors {USTCMD_ERR_ARG, USTCMD_ERR_GEN}
  */
-int ustcmd_get_cmsf(struct USTcmd_cmsf** cmsf, const pid_t pid) {
+int ustcmd_get_cmsf(struct USTcmd_cmsf** cmsf, const pid_t pid)
+{
 	char* big_str = NULL;
 	int result;
 	struct USTcmd_cmsf* tmp_cmsf = NULL;
@@ -278,7 +289,11 @@ int ustcmd_get_cmsf(struct USTcmd_cmsf** cmsf, const pid_t pid) {
  *		be NULL if no reply is needed for the given command).
  * @return	0 if successful, or errors {USTCMD_ERR_ARG, USTCMD_ERR_CONN}
  */
-int ustcmd_shoot(const char* cmd, const pid_t pid, char** reply) {
+
+int ustcmd_shoot(const char* cmd, const pid_t pid, char** reply)
+{
+	struct ustcomm_connection conn;
+
 	if (cmd == NULL) {
 		return USTCMD_ERR_ARG;
 	}

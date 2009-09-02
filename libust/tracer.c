@@ -374,9 +374,9 @@ struct ltt_trace_struct *_ltt_trace_find_setup(const char *trace_name)
  */
 void ltt_release_transport(struct kref *kref)
 {
-	struct ltt_trace_struct *trace = container_of(kref,
-			struct ltt_trace_struct, ltt_transport_kref);
-//ust//	trace->ops->remove_dirs(trace);
+//ust// 	struct ltt_trace_struct *trace = container_of(kref,
+//ust// 			struct ltt_trace_struct, ltt_transport_kref);
+//ust// 	trace->ops->remove_dirs(trace);
 }
 //ust// EXPORT_SYMBOL_GPL(ltt_release_transport);
 
@@ -682,7 +682,7 @@ int ltt_trace_alloc(const char *trace_name)
 	int err = 0;
 	struct ltt_trace_struct *trace;
 	unsigned int subbuf_size, subbuf_cnt;
-	unsigned long flags;
+//ust//	unsigned long flags;
 	int chan;
 	const char *channel_name;
 
@@ -768,7 +768,7 @@ create_channel_error:
 		if (trace->channels[chan].active)
 			trace->ops->remove_channel(&trace->channels[chan]);
 
-dirs_error:
+//ust// dirs_error:
 //ust//	module_put(trace->transport->owner);
 transport_error:
 //ust//	put_trace_clock();
@@ -783,28 +783,28 @@ traces_error:
  * We will make a new ltt_control based on debugfs, and control each channel's
  * buffer.
  */
-static int ltt_trace_create(const char *trace_name, const char *trace_type,
-		enum trace_mode mode,
-		unsigned int subbuf_size_low, unsigned int n_subbufs_low,
-		unsigned int subbuf_size_med, unsigned int n_subbufs_med,
-		unsigned int subbuf_size_high, unsigned int n_subbufs_high)
-{
-	int err = 0;
-
-	err = ltt_trace_setup(trace_name);
-	if (IS_ERR_VALUE(err))
-		return err;
-
-	err = ltt_trace_set_type(trace_name, trace_type);
-	if (IS_ERR_VALUE(err))
-		return err;
-
-	err = ltt_trace_alloc(trace_name);
-	if (IS_ERR_VALUE(err))
-		return err;
-
-	return err;
-}
+//ust// static int ltt_trace_create(const char *trace_name, const char *trace_type,
+//ust// 		enum trace_mode mode,
+//ust// 		unsigned int subbuf_size_low, unsigned int n_subbufs_low,
+//ust// 		unsigned int subbuf_size_med, unsigned int n_subbufs_med,
+//ust// 		unsigned int subbuf_size_high, unsigned int n_subbufs_high)
+//ust// {
+//ust// 	int err = 0;
+//ust// 
+//ust// 	err = ltt_trace_setup(trace_name);
+//ust// 	if (IS_ERR_VALUE(err))
+//ust// 		return err;
+//ust// 
+//ust// 	err = ltt_trace_set_type(trace_name, trace_type);
+//ust// 	if (IS_ERR_VALUE(err))
+//ust// 		return err;
+//ust// 
+//ust// 	err = ltt_trace_alloc(trace_name);
+//ust// 	if (IS_ERR_VALUE(err))
+//ust// 		return err;
+//ust// 
+//ust// 	return err;
+//ust// }
 
 /* Must be called while sure that trace is in the list. */
 static int _ltt_trace_destroy(struct ltt_trace_struct	*trace)
@@ -946,7 +946,7 @@ static int _ltt_trace_start(struct ltt_trace_struct *trace)
 	return err;
 
 	/* error handling */
-get_ltt_run_filter_error:
+//ust// get_ltt_run_filter_error:
 traces_error:
 	return err;
 }
@@ -1113,7 +1113,7 @@ int ltt_filter_control(enum ltt_filter_control_msg msg, const char *trace_name)
 	}
 //ust//	module_put(ltt_filter_control_owner);
 
-get_module_error:
+//ust// get_module_error:
 trace_error:
 	ltt_unlock_traces();
 	return err;

@@ -31,6 +31,7 @@
 #include "kernelcompat.h"
 #include "channels.h"
 #include "usterr.h"
+#include "marker.h"
 
 /*
  * ltt_channel_mutex may be nested inside the LTT trace mutex.

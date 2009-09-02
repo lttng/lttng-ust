@@ -381,4 +381,9 @@ int ltt_do_put_subbuf(struct rchan_buf *buf, struct ltt_channel_buf_struct *ltt_
 
 void init_ustrelay_transport(void);
 
+/*static*/ /* inline */ notrace void ltt_commit_slot(
+		struct ltt_channel_struct *ltt_channel,
+		void **transport_data, long buf_offset,
+		size_t data_size, size_t slot_size);
+
 #endif /* _LINUX_LTT_RELAY_H */

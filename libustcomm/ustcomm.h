@@ -67,7 +67,7 @@ int ustcomm_init_app(pid_t pid, struct ustcomm_app *handle);
 int ustcomm_init_ustd(struct ustcomm_ustd *handle);
 
 int ustcomm_connect_app(pid_t pid, struct ustcomm_connection *conn);
-int ustcomm_send_request(struct ustcomm_connection *conn, char *req, char **reply);
+int ustcomm_send_request(struct ustcomm_connection *conn, const char *req, char **reply);
 int ustcomm_send_reply(struct ustcomm_server *server, char *msg, struct ustcomm_source *src);
 
 int nth_token_is(char *str, char *token, int tok_no);

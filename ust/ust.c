@@ -142,7 +142,7 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 		}
 	}
 
-	if(argc - optind > 0 && opts->cmd != GET_ONLINE_PIDS) {
+	if (argc - optind > 0 && opts->cmd != GET_ONLINE_PIDS) {
 		int i;
 		int pididx=0;
 		opts->pids = malloc((argc-optind+1) * sizeof(pid_t));
@@ -153,13 +153,57 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 		opts->pids[pididx] = -1;
 	}
 
+	if (opts->cmd == ENABLE_MARKER || opts->cmd == DISABLE_MARKER) {
+		if (opts->regex_state = regcomp(&opts->preg, opts->regex, 0)) {
+			fprintf(stderr, "Invalid regular expression.\n");
+		}
+	}
+
 	return 0;
+}
+
+static void regex_change_m_state(struct ust_opts* opts, pid_t pid) {
+	struct USTcmd_cmsf* cmsf = NULL;
+	unsigned int i = 0;
+	int e = (opts->cmd == ENABLE_MARKER);
+
+	if (opts->regex_state != 0) {
+		return;
+	}
+
+	if (ustcmd_get_cmsf(&cmsf, pid)) {
+		fprintf(stderr, "error while trying to get markers for PID "
+			"%u\n", (unsigned int) pid);
+		return;
+	}
+	while (cmsf[i].channel != NULL) {
+		char* mc;
+		asprintf(&mc, "%s/%s", cmsf[i].channel, cmsf[i].marker);
+		if (regexec(&opts->preg, mc, 0, NULL, 0) == 0) {
+			/* We got a match! */
+			if (ustcmd_set_marker_state(mc,
+			e ? USTCMD_MS_ON : USTCMD_MS_OFF, pid)) {
+				fprintf(stderr,
+					"error while trying to %sable marker"
+					"\"%s\" for PID %u\n",
+					e ? "en" : "dis", mc,
+					(unsigned int) pid);
+			} else {
+				printf("sucessfully %sabled marker "
+					"\"%s\" for PID %u\n",
+					e ? "en" : "dis", mc,
+					(unsigned int) pid);
+			}
+		}
+		free(mc);
+		++i;
+	}
+	ustcmd_free_cmsf(cmsf);
 }
 
 int main(int argc, char *argv[])
 {
 	pid_t *pidit;
-	//char *msg = argv[2];
 	struct ustcomm_connection conn;
 	int result;
 	struct ust_opts opts;

@@ -31,6 +31,8 @@
 //ust// #include <linux/mutex.h>
 //ust// #include <linux/seq_file.h>
 //ust// #include <linux/slab.h>
+#include <ctype.h>
+
 #include "kernelcompat.h"
 //#include "list.h"
 #include "tracer.h"
@@ -85,6 +87,7 @@ static struct ltt_available_probe *get_probe_from_name(const char *pname)
 		return NULL;
 }
 
+/* (unused)
 static char *skip_spaces(char *buf)
 {
 	while (*buf != '\0' && isspace(*buf))
@@ -106,6 +109,7 @@ static void get_marker_string(char *buf, char **start,
 	*end = skip_nonspaces(*start);
 	**end = '\0';
 }
+*/
 
 int ltt_probe_register(struct ltt_available_probe *pdata)
 {
@@ -131,7 +135,6 @@ end:
 	mutex_unlock(&probes_mutex);
 	return ret;
 }
-EXPORT_SYMBOL_GPL(ltt_probe_register);
 
 /*
  * Called when a probe does not want to be called anymore.
@@ -157,7 +160,6 @@ end:
 	mutex_unlock(&probes_mutex);
 	return ret;
 }
-EXPORT_SYMBOL_GPL(ltt_probe_unregister);
 
 /*
  * Connect marker "mname" to probe "pname".
@@ -203,7 +205,6 @@ end:
 	ltt_unlock_traces();
 	return ret;
 }
-EXPORT_SYMBOL_GPL(ltt_marker_connect);
 
 /*
  * Disconnect marker "mname", probe "pname".
@@ -243,7 +244,6 @@ end:
 	mutex_unlock(&probes_mutex);
 	return ret;
 }
-EXPORT_SYMBOL_GPL(ltt_marker_disconnect);
 
 /*
  * function handling proc entry write.
@@ -435,7 +435,7 @@ void __attribute__((constructor)) init_marker_control(void)
 }
 //ust// module_init(marker_control_init);
 
-static void __exit marker_control_exit(void)
+static void __attribute__((destructor)) marker_control_exit(void)
 {
 	int ret;
 

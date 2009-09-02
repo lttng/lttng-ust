@@ -53,6 +53,9 @@ static const int marker_debug;
  */
 static DEFINE_MUTEX(markers_mutex);
 
+static LIST_HEAD(libs);
+
+
 void lock_markers(void)
 {
 	mutex_lock(&markers_mutex);
@@ -631,9 +634,9 @@ static int set_marker(struct marker_entry *entry, struct marker *elem,
  */
 static void disable_marker(struct marker *elem)
 {
-	int ret;
-
-	/* leave "call" as is. It is known statically. */
+//ust//	int ret;
+//ust//
+//ust//	/* leave "call" as is. It is known statically. */
 //ust//	if (elem->tp_name && _imv_read(elem->state)) {
 //ust//		WARN_ON(!elem->tp_cb);
 //ust//		/*
@@ -701,6 +704,18 @@ void marker_update_probe_range(struct marker *begin,
 		}
 	}
 	mutex_unlock(&markers_mutex);
+}
+
+static void lib_update_markers(void)
+{
+	struct lib *lib;
+
+	/* FIXME: we should probably take a mutex here on libs */
+//ust//	mutex_lock(&module_mutex);
+	list_for_each_entry(lib, &libs, list)
+		marker_update_probe_range(lib->markers_start,
+				lib->markers_start + lib->markers_count);
+//ust//	mutex_unlock(&module_mutex);
 }
 
 /*
@@ -1055,6 +1070,33 @@ void *marker_get_private_data(const char *channel, const char *name,
 //ust// }
 
 //ust//#ifdef CONFIG_MODULES
+
+/*
+ * Returns 0 if current not found.
+ * Returns 1 if current found.
+ */
+int lib_get_iter_markers(struct marker_iter *iter)
+{
+	struct lib *iter_lib;
+	int found = 0;
+
+//ust//	mutex_lock(&module_mutex);
+	list_for_each_entry(iter_lib, &libs, list) {
+		if (iter_lib < iter->lib)
+			continue;
+		else if (iter_lib > iter->lib)
+			iter->marker = NULL;
+		found = marker_get_iter_range(&iter->marker,
+			iter_lib->markers_start,
+			iter_lib->markers_start + iter_lib->markers_count);
+		if (found) {
+			iter->lib = iter_lib;
+			break;
+		}
+	}
+//ust//	mutex_unlock(&module_mutex);
+	return found;
+}
 
 /**
  * marker_get_iter_range - Get a next marker iterator given a range.
@@ -1435,47 +1477,6 @@ void ltt_dump_marker_state(struct ltt_trace_struct *trace)
 	mutex_unlock(&markers_mutex);
 }
 //ust// EXPORT_SYMBOL_GPL(ltt_dump_marker_state);
-
-
-static LIST_HEAD(libs);
-
-/*
- * Returns 0 if current not found.
- * Returns 1 if current found.
- */
-int lib_get_iter_markers(struct marker_iter *iter)
-{
-	struct lib *iter_lib;
-	int found = 0;
-
-//ust//	mutex_lock(&module_mutex);
-	list_for_each_entry(iter_lib, &libs, list) {
-		if (iter_lib < iter->lib)
-			continue;
-		else if (iter_lib > iter->lib)
-			iter->marker = NULL;
-		found = marker_get_iter_range(&iter->marker,
-			iter_lib->markers_start,
-			iter_lib->markers_start + iter_lib->markers_count);
-		if (found) {
-			iter->lib = iter_lib;
-			break;
-		}
-	}
-//ust//	mutex_unlock(&module_mutex);
-	return found;
-}
-
-void lib_update_markers(void)
-{
-	struct lib *lib;
-
-//ust//	mutex_lock(&module_mutex);
-	list_for_each_entry(lib, &libs, list)
-		marker_update_probe_range(lib->markers_start,
-				lib->markers_start + lib->markers_count);
-//ust//	mutex_unlock(&module_mutex);
-}
 
 static void (*new_marker_cb)(struct marker *) = NULL;
 

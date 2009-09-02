@@ -554,7 +554,6 @@ notrace size_t ltt_serialize_data(struct rchan_buf *buf, size_t buf_offset,
 	}
 	return buf_offset;
 }
-EXPORT_SYMBOL_GPL(ltt_serialize_data);
 
 /*
  * Calculate data size
@@ -696,7 +695,6 @@ notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
 	ltt_nesting--;
 	rcu_read_unlock(); //ust// rcu_read_unlock_sched_notrace();
 }
-EXPORT_SYMBOL_GPL(ltt_vtrace);
 
 notrace void ltt_trace(const struct marker *mdata, void *probe_data,
 		       void *call_data, const char *fmt, ...)
@@ -707,7 +705,6 @@ notrace void ltt_trace(const struct marker *mdata, void *probe_data,
 	ltt_vtrace(mdata, probe_data, call_data, fmt, &args);
 	va_end(args);
 }
-EXPORT_SYMBOL_GPL(ltt_trace);
 
 //ust// MODULE_LICENSE("GPL");
 //ust// MODULE_AUTHOR("Mathieu Desnoyers");

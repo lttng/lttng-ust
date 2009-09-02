@@ -311,6 +311,17 @@ void tracepoint_update_probe_range(struct tracepoint *begin,
 	mutex_unlock(&tracepoints_mutex);
 }
 
+static void lib_update_tracepoints(void)
+{
+	struct tracepoint_lib *lib;
+
+//ust//	mutex_lock(&module_mutex);
+	list_for_each_entry(lib, &libs, list)
+		tracepoint_update_probe_range(lib->tracepoints_start,
+				lib->tracepoints_start + lib->tracepoints_count);
+//ust//	mutex_unlock(&module_mutex);
+}
+
 /*
  * Update probes, removing the faulty probes.
  */
@@ -496,6 +507,33 @@ void tracepoint_probe_update_all(void)
 }
 //ust// EXPORT_SYMBOL_GPL(tracepoint_probe_update_all);
 
+/*
+ * Returns 0 if current not found.
+ * Returns 1 if current found.
+ */
+int lib_get_iter_tracepoints(struct tracepoint_iter *iter)
+{
+	struct tracepoint_lib *iter_lib;
+	int found = 0;
+
+//ust//	mutex_lock(&module_mutex);
+	list_for_each_entry(iter_lib, &libs, list) {
+		if (iter_lib < iter->lib)
+			continue;
+		else if (iter_lib > iter->lib)
+			iter->tracepoint = NULL;
+		found = tracepoint_get_iter_range(&iter->tracepoint,
+			iter_lib->tracepoints_start,
+			iter_lib->tracepoints_start + iter_lib->tracepoints_count);
+		if (found) {
+			iter->lib = iter_lib;
+			break;
+		}
+	}
+//ust//	mutex_unlock(&module_mutex);
+	return found;
+}
+
 /**
  * tracepoint_get_iter_range - Get a next tracepoint iterator given a range.
  * @tracepoint: current tracepoints (in), next tracepoint (out)
@@ -532,7 +570,7 @@ static void tracepoint_get_iter(struct tracepoint_iter *iter)
 //ust//	}
 	/* tracepoints in libs. */
 	found = lib_get_iter_tracepoints(iter);
-end:
+//ust// end:
 	if (!found)
 		tracepoint_iter_reset(iter);
 }
@@ -599,44 +637,6 @@ void tracepoint_iter_reset(struct tracepoint_iter *iter)
 //ust// __initcall(init_tracepoints);
 
 //ust// #endif /* CONFIG_MODULES */
-
-/*
- * Returns 0 if current not found.
- * Returns 1 if current found.
- */
-int lib_get_iter_tracepoints(struct tracepoint_iter *iter)
-{
-	struct tracepoint_lib *iter_lib;
-	int found = 0;
-
-//ust//	mutex_lock(&module_mutex);
-	list_for_each_entry(iter_lib, &libs, list) {
-		if (iter_lib < iter->lib)
-			continue;
-		else if (iter_lib > iter->lib)
-			iter->tracepoint = NULL;
-		found = marker_get_iter_range(&iter->tracepoint,
-			iter_lib->tracepoints_start,
-			iter_lib->tracepoints_start + iter_lib->tracepoints_count);
-		if (found) {
-			iter->lib = iter_lib;
-			break;
-		}
-	}
-//ust//	mutex_unlock(&module_mutex);
-	return found;
-}
-
-void lib_update_tracepoints(void)
-{
-	struct tracepoint_lib *lib;
-
-//ust//	mutex_lock(&module_mutex);
-	list_for_each_entry(lib, &libs, list)
-		tracepoint_update_probe_range(lib->tracepoints_start,
-				lib->tracepoints_start + lib->tracepoints_count);
-//ust//	mutex_unlock(&module_mutex);
-}
 
 static void (*new_tracepoint_cb)(struct tracepoint *) = NULL;
 

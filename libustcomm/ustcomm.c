@@ -417,7 +417,7 @@ static int init_named_socket(char *name, char **path_out)
 	return -1;
 }
 
-int ustcomm_send_request(struct ustcomm_connection *conn, char *req, char **reply)
+int ustcomm_send_request(struct ustcomm_connection *conn, const char *req, char **reply)
 {
 	int result;
 

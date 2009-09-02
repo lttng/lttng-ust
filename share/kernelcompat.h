@@ -92,8 +92,6 @@ static inline long IS_ERR(const void *ptr)
 /* ATTRIBUTES */
 
 #define ____cacheline_aligned
-#define __init
-#define __exit
 
 /* MATH */
 
