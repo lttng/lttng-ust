@@ -807,52 +807,48 @@ static int init_signal_handler(void)
 	return 0;
 }
 
-static regex_t preg;
-static int regex_is_ok = -1;
+#define AUTOPROBE_DISABLED      0
+#define AUTOPROBE_ENABLE_ALL    1
+#define AUTOPROBE_ENABLE_REGEX  2
+static int autoprobe_method = AUTOPROBE_DISABLED;
+static regex_t autoprobe_regex;
 
 static void auto_probe_connect(struct marker *m)
 {
 	int result;
 
-	char* comp_name = NULL;
-	char* regex;
+	char* concat_name = NULL;
+	const char *probe_name = "default";
 
-	if (regex_is_ok != 0) {
-		goto end;
-	}
-
-	if (asprintf(&comp_name, "%s/%s", m->channel, m->name) == -1) {
-		ERR("auto_probe_connect: `asprintf' failed (marker %s/%s)",
-			m->channel, m->name);
+	if(autoprobe_method == AUTOPROBE_DISABLED) {
 		return;
 	}
-	if (regexec(&preg, comp_name, 0, NULL, 0) != 0) {
-		goto end; /* Not matching */
+	else if(autoprobe_method == AUTOPROBE_ENABLE_REGEX) {
+		result = asprintf(&concat_name, "%s/%s", m->channel, m->name);
+		if(result == -1) {
+			ERR("auto_probe_connect: asprintf failed (marker %s/%s)",
+				m->channel, m->name);
+			return;
+		}
+		if (regexec(&autoprobe_regex, concat_name, 0, NULL, 0)) {
+			free(concat_name);
+			return;
+		}
+		free(concat_name);
 	}
 
-//	connect:
-
-	result = ltt_marker_connect(m->channel, m->name, "default");
+	result = ltt_marker_connect(m->channel, m->name, probe_name);
 	if(result && result != -EEXIST)
 		ERR("ltt_marker_connect (marker = %s/%s, errno = %d)", m->channel, m->name, -result);
 
-	DBG("just auto connected marker %s %s to probe default", m->channel, m->name);
+	DBG("auto connected marker %s %s to probe default", m->channel, m->name);
 
-	end:
-	if (comp_name != NULL) {
-		free(comp_name);
-	}
-}
-
-static void __attribute__((constructor(101))) init0()
-{
-	DBG("UST_AUTOPROBE constructor");
 }
 
 static void __attribute__((constructor(1000))) init()
 {
 	int result;
-	char* regex = NULL;
+	char* autoprobe_val = NULL;
 
 	/* Initialize RCU in case the constructor order is not good. */
 	urcu_init();
@@ -860,7 +856,7 @@ static void __attribute__((constructor(1000))) init()
 	/* It is important to do this before events start to be generated. */
 	ust_register_thread();
 
-	DBG("UST_TRACE constructor");
+	DBG("Tracectl constructor");
 
 	/* Must create socket before signal handler to prevent races.
          */
@@ -875,12 +871,11 @@ static void __attribute__((constructor(1000))) init()
 		return;
 	}
 
-	regex = getenv("UST_AUTOPROBE");
-	if(regex) {
-		char* regex = NULL;
+	autoprobe_val = getenv("UST_AUTOPROBE");
+	if(autoprobe_val) {
 		struct marker_iter iter;
 
-		DBG("IN AUTOPROBE\n");
+		DBG("Autoprobe enabled.\n");
 
 		/* Ensure markers are initialized */
 		//init_markers();
@@ -891,11 +886,26 @@ static void __attribute__((constructor(1000))) init()
 		/* first, set the callback that will connect the
 		 * probe on new markers
 		 */
-		marker_set_new_marker_cb(auto_probe_connect);
-		regex_is_ok = regcomp(&preg, regex, 0);
-		if (regex_is_ok) {
-			ERR("cannot parse regex %s", regex);
+		if(autoprobe_val[0] == '/') {
+			result = regcomp(&autoprobe_regex, autoprobe_val+1, 0);
+			if (result) {
+				char regexerr[150];
+
+				regerror(result, &autoprobe_regex, regexerr, sizeof(regexerr));
+				ERR("cannot parse regex %s (%s), will ignore UST_AUTOPROBE", autoprobe_val, regexerr);
+				/* don't crash the application just for this */
+			}
+			else {
+				autoprobe_method = AUTOPROBE_ENABLE_REGEX;
+			}
 		}
+		else {
+			/* just enable all instrumentation */
+			autoprobe_method = AUTOPROBE_ENABLE_ALL;
+		}
+
+		marker_set_new_marker_cb(auto_probe_connect);
+
 		/* Now, connect the probes that were already registered. */
 		marker_iter_reset(&iter);
 		marker_iter_start(&iter);
