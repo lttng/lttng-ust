@@ -55,6 +55,9 @@ struct tracecmd { /* no padding */
 	uint16_t command;
 };
 
+/* volatile because shared between the listener and the main thread */
+volatile sig_atomic_t buffers_to_export = 0;
+
 //struct listener_arg {
 //	int pipe_fd;
 //};
@@ -166,6 +169,7 @@ static void inform_consumer_daemon(const char *trace_name)
 			WARN("Failed to request collection for channel %s. Is the daemon available?", trace->channels[i].channel_name);
 			/* continue even if fail */
 		}
+		buffers_to_export++;
 	}
 
 	finish:
@@ -426,6 +430,8 @@ void *listener_main(void *p)
 					break;
 				}
 			}
+
+			buffers_to_export--;
 		}
 		else if(nth_token_is(recvbuf, "get_n_subbufs", 0) == 1) {
 			struct ltt_trace_struct *trace;
@@ -1005,27 +1011,26 @@ static void __attribute__((constructor(1000))) init()
 #if 0
 static void __attribute__((destructor)) fini()
 {
-	int result;
+//	int result;
 
 	/* if trace running, finish it */
 
-	DBG("destructor stopping traces");
+//	DBG("destructor stopping traces");
 
-	result = ltt_trace_stop("auto");
-	if(result == -1) {
-		ERR("ltt_trace_stop error");
-	}
-
-	result = ltt_trace_destroy("auto");
-	if(result == -1) {
-		ERR("ltt_trace_destroy error");
-	}
-
-	destroy_socket();
+//	result = ltt_trace_stop("auto");
+//	if(result == -1) {
+//		ERR("ltt_trace_stop error");
+//	}
+//
+//	result = ltt_trace_destroy("auto");
+//	if(result == -1) {
+//		ERR("ltt_trace_destroy error");
+//	}
+//
+//	destroy_socket();
 }
 #endif
 
-#if 0
 static int trace_recording(void)
 {
 	int retval = 0;
@@ -1045,22 +1050,20 @@ static int trace_recording(void)
 	return retval;
 }
 
+#if 0
 static int have_consumer(void)
 {
 	return !list_empty(&blocked_consumers);
 }
+#endif
 
-/* This destructor keeps the process alive for a few seconds in order
- * to leave time to ustd to consume its buffers.
- */
-
-int restarting_sleep(int secs)
+int restarting_usleep(useconds_t usecs)
 {
         struct timespec tv; 
         int result; 
  
-        tv.tv_sec = secs; 
-        tv.tv_nsec = 0; 
+        tv.tv_sec = 0; 
+        tv.tv_nsec = usecs * 1000; 
  
         do { 
                 result = nanosleep(&tv, &tv); 
@@ -1069,50 +1072,34 @@ int restarting_sleep(int secs)
 	return result;
 }
 
+/* This destructor keeps the process alive for a few seconds in order
+ * to leave time to ustd to connect to its buffers. This is necessary
+ * for programs whose execution is very short. It is also useful in all
+ * programs when tracing is started close to the end of the program
+ * execution.
+ *
+ * FIXME: For now, this only works for the first trace created in a
+ * process.
+ */
+
 static void __attribute__((destructor)) keepalive()
 {
-//	struct ustcomm_ustd ustd;
-//	int result;
-//	sigset_t sigset;
-//
-//	result = sigemptyset(&sigset);
-//	if(result == -1) {
-//		perror("sigemptyset");
-//		return;
-//	}
-//	result = sigaddset(&sigset, SIGIO);
-//	if(result == -1) {
-//		perror("sigaddset");
-//		return;
-//	}
-//	result = sigprocmask(SIG_BLOCK, &sigset, NULL);
-//	if(result == -1) {
-//		perror("sigprocmask");
-//		return;
-//	}
-//
-//	if(trace_recording()) {
-//		if(!have_consumer()) {
-//			/* Request listener creation. We've blocked SIGIO's in
-//			 * order to not interrupt sleep(), so we will miss the
-//			 * one sent by the daemon and therefore won't create
-//			 * the listener automatically.
-//			 */
-//			create_listener();
-//
-			printf("Keeping process alive for consumer daemon...\n");
-			restarting_sleep(3);
-			printf("Finally dying...\n");
-//		}
-//	}
-//
-//	result = sigprocmask(SIG_UNBLOCK, &sigset, NULL);
-//	if(result == -1) {
-//		perror("sigprocmask");
-//		return;
-//	}
+	if(trace_recording() && buffers_to_export) {
+		DBG("Keeping process alive for consumer daemon...");
+		while(buffers_to_export) {
+			const int interv = 200000;
+			int total = 0;
+			restarting_usleep(20000);
+			total += interv;
+
+			if(total >= 3000000) {
+				WARN("non-consumed buffers remaining after limit; not waiting anymore");
+				break;
+			}
+		}
+		DBG("Finally dying...");
+	}
 }
-#endif
 
 /* Notify ust that there was a fork. This needs to be called inside
  * the new process, anytime a process whose memory is not shared with
