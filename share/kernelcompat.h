@@ -162,18 +162,20 @@ static inline u64 trace_clock_read64(void)
 	return retval | low;
 }
 
-//static inline u64 trace_clock_read64(void)
-//{
-//	struct timeval tv;
-//	u64 retval;
-//
-//	gettimeofday(&tv, NULL);
-//	retval = tv.tv_sec;
-//	retval *= 1000000;
-//	retval += tv.tv_usec;
-//
-//	return retval;
-//}
+#if 0
+static inline u64 trace_clock_read64(void)
+{
+	struct timeval tv;
+	u64 retval;
+
+	gettimeofday(&tv, NULL);
+	retval = tv.tv_sec;
+	retval *= 1000000;
+	retval += tv.tv_usec;
+
+	return retval;
+}
+#endif
 
 static inline u64 trace_clock_frequency(void)
 {

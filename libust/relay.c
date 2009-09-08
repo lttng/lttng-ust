@@ -2466,8 +2466,6 @@ static /* inline */ void ltt_write_commit_counter(struct rchan_buf *buf,
 	 */
 	ltt_write_commit_counter(buf, ltt_buf, endidx,
 				 buf_offset, commit_count, data_size);
-
-	DBG("commited slot. now commit count is %ld", commit_count);
 }
 
 

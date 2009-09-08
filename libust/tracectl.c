@@ -253,7 +253,7 @@ void *listener_main(void *p)
 			continue;
 		}
 
-		DBG("received a message! it's: %s\n", recvbuf);
+		DBG("received a message! it's: %s", recvbuf);
 		len = strlen(recvbuf);
 
 		if(!strcmp(recvbuf, "print_markers")) {
@@ -875,7 +875,7 @@ static void __attribute__((constructor(1000))) init()
 	if(autoprobe_val) {
 		struct marker_iter iter;
 
-		DBG("Autoprobe enabled.\n");
+		DBG("Autoprobe enabled.");
 
 		/* Ensure markers are initialized */
 		//init_markers();
@@ -910,9 +910,9 @@ static void __attribute__((constructor(1000))) init()
 		marker_iter_reset(&iter);
 		marker_iter_start(&iter);
 
-		DBG("now iterating on markers already registered\n");
+		DBG("now iterating on markers already registered");
 		while(iter.marker) {
-			DBG("now iterating on marker %s\n", iter.marker->name);
+			DBG("now iterating on marker %s", iter.marker->name);
 			auto_probe_connect(iter.marker);
 			marker_iter_next(&iter);
 		}

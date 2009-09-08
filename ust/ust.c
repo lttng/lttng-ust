@@ -42,7 +42,7 @@ enum command {
 struct ust_opts {
 	enum command cmd;
 	pid_t *pids;
-	char* regex;
+	char *regex;
 	regex_t preg;
 	int regex_state;
 };
@@ -149,22 +149,32 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 		opts->pids = malloc((argc-optind+1) * sizeof(pid_t));
 
 		for(i=optind; i<argc; i++) {
-			opts->pids[pididx++] = atoi(argv[i]);
+			/* don't take any chances, use a long long */
+			long long tmp;
+			char *endptr;
+			tmp = strtoull(argv[i], &endptr, 10);
+			if(*endptr != '\0') {
+				ERR("The pid \"%s\" is invalid.", argv[i]);
+				return 1;
+			}
+			opts->pids[pididx++] = (pid_t) tmp;
 		}
 		opts->pids[pididx] = -1;
 	}
 
 	if (opts->cmd == ENABLE_MARKER || opts->cmd == DISABLE_MARKER) {
-		if (opts->regex_state = regcomp(&opts->preg, opts->regex, 0)) {
-			fprintf(stderr, "Invalid regular expression.\n");
+		opts->regex_state = regcomp(&opts->preg, opts->regex, 0);
+		if (opts->regex_state) {
+			ERR("invalid regular expression\n");
 		}
 	}
 
 	return 0;
 }
 
-static void regex_change_m_state(struct ust_opts* opts, pid_t pid) {
-	struct USTcmd_cmsf* cmsf = NULL;
+static void regex_change_m_state(struct ust_opts *opts, pid_t pid)
+{
+	struct marker_status *cmsf = NULL;
 	unsigned int i = 0;
 	int e = (opts->cmd == ENABLE_MARKER);
 
@@ -178,7 +188,7 @@ static void regex_change_m_state(struct ust_opts* opts, pid_t pid) {
 		return;
 	}
 	while (cmsf[i].channel != NULL) {
-		char* mc;
+		char *mc;
 		asprintf(&mc, "%s/%s", cmsf[i].channel, cmsf[i].marker);
 		if (regexec(&opts->preg, mc, 0, NULL, 0) == 0) {
 			/* We got a match! */
@@ -205,7 +215,6 @@ static void regex_change_m_state(struct ust_opts* opts, pid_t pid) {
 int main(int argc, char *argv[])
 {
 	pid_t *pidit;
-	struct ustcomm_connection conn;
 	int result;
 	struct ust_opts opts;
 
@@ -219,6 +228,7 @@ int main(int argc, char *argv[])
 
 	result = parse_opts_long(argc, argv, &opts);
 	if(result) {
+		fprintf(stderr, "\n");
 		usage();
 		exit(EXIT_FAILURE);
 	}
@@ -234,7 +244,7 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 	if (opts.cmd == GET_ONLINE_PIDS) {
-		pid_t* pp = ustcmd_get_online_pids();
+		pid_t *pp = ustcmd_get_online_pids();
 		unsigned int i = 0;
 
 		if (pp) {
@@ -249,77 +259,67 @@ int main(int argc, char *argv[])
 	}
 
 	pidit = opts.pids;
-	struct USTcmd_cmsf* cmsf = NULL;
+	struct marker_status *cmsf = NULL;
 
 	while(*pidit != -1) {
 		switch (opts.cmd) {
 			case START_TRACE:
-			if (ustcmd_start_trace(*pidit)) {
-				fprintf(stderr,
-					"error while trying to for trace "
-					"with PID %u\n", (unsigned int) *pidit);
+				result = ustcmd_start_trace(*pidit);
+				if (result) {
+					ERR("error while trying to for trace with PID %u\n", (unsigned int) *pidit);
+					break;
+				}
+				//printf("sucessfully started trace for PID %u\n", (unsigned int) *pidit);
 				break;
-			}
-			printf("sucessfully started trace for PID %u\n",
-				(unsigned int) *pidit);
-			break;
 
 			case STOP_TRACE:
-			if (ustcmd_stop_trace(*pidit)) {
-				fprintf(stderr,
-					"error while trying to stop trace "
-					"for PID %u\n", (unsigned int) *pidit);
+				result = ustcmd_stop_trace(*pidit);
+				if (result) {
+					ERR("error while trying to stop trace for PID %u\n", (unsigned int) *pidit);
+					break;
+				}
+				//printf("sucessfully stopped trace for PID %u\n", (unsigned int) *pidit);
 				break;
-			}
-			printf("sucessfully stopped trace for PID %u\n",
-				(unsigned int) *pidit);
-			break;
 
 			case START:
-			if (ustcmd_setup_and_start(*pidit)) {
-				fprintf(stderr,
-					"error while trying to setup/start "
-					"trace for PID %u\n",
-					(unsigned int) *pidit);
+				result = ustcmd_setup_and_start(*pidit);
+				if (result) {
+					ERR("error while trying to setup/start trace for PID %u\n", (unsigned int) *pidit);
+					break;
+				}
+				//printf("sucessfully setup/started trace for PID %u\n", (unsigned int) *pidit);
 				break;
-			}
-			printf("sucessfully setup/started trace for PID %u\n",
-				(unsigned int) *pidit);
-			break;
 
 			case DESTROY:
-			if (ustcmd_destroy_trace(*pidit)) {
-				fprintf(stderr,
-					"error while trying to destroy "
-					"trace with PID %u\n",
-					(unsigned int) *pidit);
+				result = ustcmd_destroy_trace(*pidit);
+				if (result) {
+					ERR("error while trying to destroy trace with PID %u\n", (unsigned int) *pidit);
+					break;
+				}
+				//printf("sucessfully destroyed trace for PID %u\n", (unsigned int) *pidit);
 				break;
-			}
-			printf("sucessfully destroyed trace for PID %u\n",
-				(unsigned int) *pidit);
-			break;
 
 			case LIST_MARKERS:
-			cmsf = NULL;
-			if (ustcmd_get_cmsf(&cmsf, *pidit)) {
-				fprintf(stderr,
-					"error while trying to list markers for"
-					" PID %u\n", (unsigned int) *pidit);
+				cmsf = NULL;
+				if (ustcmd_get_cmsf(&cmsf, *pidit)) {
+					fprintf(stderr,
+						"error while trying to list markers for"
+						" PID %u\n", (unsigned int) *pidit);
+					break;
+				}
+				unsigned int i = 0;
+				while (cmsf[i].channel != NULL) {
+					printf("{PID: %u, channel/marker: %s/%s, "
+						"state: %u, fs: %s}\n",
+						(unsigned int) *pidit,
+						cmsf[i].channel,
+						cmsf[i].marker,
+						cmsf[i].state,
+						cmsf[i].fs);
+					++i;
+				}
+				ustcmd_free_cmsf(cmsf);
 				break;
-			}
-			unsigned int i = 0;
-			while (cmsf[i].channel != NULL) {
-				printf("{PID: %u, channel/marker: %s/%s, "
-					"state: %u, fs: %s}\n",
-					(unsigned int) *pidit,
-					cmsf[i].channel,
-					cmsf[i].marker,
-					cmsf[i].state,
-					cmsf[i].fs);
-				++i;
-			}
-			ustcmd_free_cmsf(cmsf);
-			break;
 
 			case ENABLE_MARKER:
 			case DISABLE_MARKER:
@@ -327,14 +327,13 @@ int main(int argc, char *argv[])
 			break;
 
 			default:
-			fprintf(stderr, "error: unknown command...\n");
+				ERR("unknown command\n");
 			break;
 		}
 
 		pidit++;
 	}
 
-	exit_free:
 	if (opts.pids != NULL) {
 		free(opts.pids);
 	}

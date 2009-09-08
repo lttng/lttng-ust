@@ -54,26 +54,28 @@ struct ustcomm_source {
 	void *priv;
 };
 
-char *strdup_malloc(const char *s);
+extern char *strdup_malloc(const char *s);
 
 //int send_message_pid(pid_t pid, const char *msg, char **reply);
-int ustcomm_request_consumer(pid_t pid, const char *channel);
+extern int ustcomm_request_consumer(pid_t pid, const char *channel);
 
-int ustcomm_ustd_recv_message(struct ustcomm_ustd *ustd, char **msg, struct ustcomm_source *src, int timeout);
-int ustcomm_app_recv_message(struct ustcomm_app *app, char **msg, struct ustcomm_source *src, int timeout);
+extern int ustcomm_ustd_recv_message(struct ustcomm_ustd *ustd, char **msg, struct ustcomm_source *src, int timeout);
+extern int ustcomm_app_recv_message(struct ustcomm_app *app, char **msg, struct ustcomm_source *src, int timeout);
 
-int ustcomm_init_app(pid_t pid, struct ustcomm_app *handle);
+extern int ustcomm_init_app(pid_t pid, struct ustcomm_app *handle);
 
-int ustcomm_init_ustd(struct ustcomm_ustd *handle);
+extern int ustcomm_init_ustd(struct ustcomm_ustd *handle);
 
-int ustcomm_connect_app(pid_t pid, struct ustcomm_connection *conn);
-int ustcomm_send_request(struct ustcomm_connection *conn, const char *req, char **reply);
-int ustcomm_send_reply(struct ustcomm_server *server, char *msg, struct ustcomm_source *src);
+extern int ustcomm_connect_app(pid_t pid, struct ustcomm_connection *conn);
+extern int ustcomm_connect_path(const char *path, struct ustcomm_connection *conn, pid_t signalpid);
+extern int ustcomm_send_request(struct ustcomm_connection *conn, const char *req, char **reply);
+extern int ustcomm_send_reply(struct ustcomm_server *server, char *msg, struct ustcomm_source *src);
+extern int ustcomm_disconnect(struct ustcomm_connection *conn);
 
-int nth_token_is(char *str, char *token, int tok_no);
+extern int nth_token_is(char *str, char *token, int tok_no);
 
-char *nth_token(char *str, int tok_no);
+extern char *nth_token(char *str, int tok_no);
 
-int pid_is_online(pid_t);
+extern int pid_is_online(pid_t);
 
 #endif /* USTCOMM_H */

@@ -98,80 +98,7 @@ static int send_message_fd(int fd, const char *msg)
 	}
 
 	return 1;
-
-//	*reply = (char *) malloc(MSG_MAX+1);
-//	result = recv(fd, *reply, MSG_MAX, 0);
-//	if(result == -1) {
-//		PERROR("recv");
-//		return -1;
-//	}
-//	else if(result == 0) {
-//		return 0;
-//	}
-//	
-//	(*reply)[result] = '\0';
-//
-//	return 1;
 }
-
-static int send_message_path(const char *path, const char *msg, int signalpid)
-{
-	int fd;
-	int result;
-	struct sockaddr_un addr;
-
-	result = fd = socket(PF_UNIX, SOCK_STREAM, 0);
-	if(result == -1) {
-		PERROR("socket");
-		return -1;
-	}
-
-	addr.sun_family = AF_UNIX;
-
-	result = snprintf(addr.sun_path, UNIX_PATH_MAX, "%s", path);
-	if(result >= UNIX_PATH_MAX) {
-		ERR("string overflow allocating socket name");
-		return -1;
-	}
-
-	if(signalpid >= 0) {
-		result = signal_process(signalpid);
-		if(result == -1) {
-			ERR("could not signal process");
-			return -1;
-		}
-	}
-
-	result = connect(fd, (struct sockaddr *)&addr, sizeof(addr));
-	if(result == -1) {
-		PERROR("connect");
-		return -1;
-	}
-
-	return send_message_fd(fd, msg);
-}
-
-///* pid: the pid of the trace process that must receive the msg
-//   msg: pointer to a null-terminated message to send
-//   reply: location where to put the null-terminated string of the reply;
-//	  it must be free'd after usage
-// */
-//
-//int send_message_pid(pid_t pid, const char *msg, char **reply)
-//{
-//	int result;
-//	char path[UNIX_PATH_MAX];
-//
-//	result = snprintf(path, UNIX_PATH_MAX, "%s/%d", SOCK_DIR, pid);
-//	if(result >= UNIX_PATH_MAX) {
-//		fprintf(stderr, "string overflow allocating socket name");
-//		return -1;
-//	}
-//
-//	send_message_path(path, msg, reply, pid);
-//
-//	return 0;
-//}
 
 /* Called by an app to ask the consumer daemon to connect to it. */
 
@@ -179,20 +106,39 @@ int ustcomm_request_consumer(pid_t pid, const char *channel)
 {
 	char path[UNIX_PATH_MAX];
 	int result;
-	char *msg;
+	char *msg=NULL;
+	int retval = 0;
+	struct ustcomm_connection conn;
 
 	result = snprintf(path, UNIX_PATH_MAX, "%s/ustd", SOCK_DIR);
 	if(result >= UNIX_PATH_MAX) {
-		fprintf(stderr, "string overflow allocating socket name");
+		ERR("string overflow allocating socket name");
 		return -1;
 	}
 
 	asprintf(&msg, "collect %d %s", pid, channel); 
 
-	send_message_path(path, msg, -1);
+	/* don't signal it because it's the daemon */
+	result = ustcomm_connect_path(path, &conn, -1);
+	if(result == -1) {
+		WARN("ustcomm_connect_path failed");
+		retval = -1;
+		goto del_string;
+	}
+
+	result = ustcomm_send_request(&conn, msg, NULL);
+	if(result == -1) {
+		WARN("ustcomm_send_request failed");
+		retval = -1;
+		goto disconnect;
+	}
+
+	disconnect:
+	ustcomm_disconnect(&conn);
+	del_string:
 	free(msg);
 
-	return 0;
+	return retval;
 }
 
 /* returns 1 to indicate a message was received
@@ -363,7 +309,7 @@ found:
 	return src->fd;
 }
 
-static int init_named_socket(char *name, char **path_out)
+static int init_named_socket(const char *name, char **path_out)
 {
 	int result;
 	int fd;
@@ -445,7 +391,7 @@ int ustcomm_send_request(struct ustcomm_connection *conn, const char *req, char 
 	return 1;
 }
 
-int ustcomm_connect_path(char *path, struct ustcomm_connection *conn, pid_t signalpid)
+int ustcomm_connect_path(const char *path, struct ustcomm_connection *conn, pid_t signalpid)
 {
 	int fd;
 	int result;
@@ -497,18 +443,16 @@ int ustcomm_connect_app(pid_t pid, struct ustcomm_connection *conn)
 
 	result = snprintf(path, UNIX_PATH_MAX, "%s/%d", SOCK_DIR, pid);
 	if(result >= UNIX_PATH_MAX) {
-		fprintf(stderr, "string overflow allocating socket name");
+		ERR("string overflow allocating socket name");
 		return -1;
 	}
 
 	return ustcomm_connect_path(path, conn, pid);
 }
 
-int ustcomm_disconnect_app(struct ustcomm_connection *conn)
-{
-	close(conn->fd);
-	return 0;
-}
+/* Called by an application to initialize its server so daemons can
+ * connect to it.
+ */
 
 int ustcomm_init_app(pid_t pid, struct ustcomm_app *handle)
 {
@@ -536,6 +480,10 @@ free_name:
 	free(name);
 	return -1;
 }
+
+/* Used by the daemon to initialize its server so applications
+ * can connect to it.
+ */
 
 int ustcomm_init_ustd(struct ustcomm_ustd *handle)
 {
