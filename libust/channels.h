@@ -80,18 +80,18 @@ struct ltt_channel_setting {
 	char name[PATH_MAX];
 };
 
-int ltt_channels_register(const char *name);
-int ltt_channels_unregister(const char *name);
-int ltt_channels_set_default(const char *name,
+extern int ltt_channels_register(const char *name);
+extern int ltt_channels_unregister(const char *name);
+extern int ltt_channels_set_default(const char *name,
 			     unsigned int subbuf_size,
 			     unsigned int subbuf_cnt);
-const char *ltt_channels_get_name_from_index(unsigned int index);
-int ltt_channels_get_index_from_name(const char *name);
-struct ltt_channel_struct *ltt_channels_trace_alloc(unsigned int *nr_channels,
+extern const char *ltt_channels_get_name_from_index(unsigned int index);
+extern int ltt_channels_get_index_from_name(const char *name);
+extern struct ltt_channel_struct *ltt_channels_trace_alloc(unsigned int *nr_channels,
 						    int overwrite,
 						    int active);
-void ltt_channels_trace_free(struct ltt_channel_struct *channels);
-int _ltt_channels_get_event_id(const char *channel, const char *name);
-int ltt_channels_get_event_id(const char *channel, const char *name);
+extern void ltt_channels_trace_free(struct ltt_channel_struct *channels);
+extern int _ltt_channels_get_event_id(const char *channel, const char *name);
+extern int ltt_channels_get_event_id(const char *channel, const char *name);
 
 #endif /* _LTT_CHANNELS_H */

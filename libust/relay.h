@@ -213,7 +213,7 @@ static inline struct buf_page *ltt_relay_cache_page(struct rchan_buf *buf,
 }
 
 //ust// #ifdef CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS
- static inline void ltt_relay_do_copy(void *dest, const void *src, size_t len)
+static inline void ltt_relay_do_copy(void *dest, const void *src, size_t len)
 {
 	union {
 		const void *src;
@@ -317,7 +317,7 @@ static inline int ltt_relay_write(struct rchan_buf *buf, size_t offset,
  * CONFIG_LTT_RELAY kernel API, ltt/ltt-relay-alloc.c
  */
 
-struct rchan *ltt_relay_open(const char *base_filename,
+extern struct rchan *ltt_relay_open(const char *base_filename,
 			 struct dentry *parent,
 			 size_t subbuf_size,
 			 size_t n_subbufs,
@@ -375,11 +375,11 @@ struct ltt_channel_buf_struct {
 	local_t commit_seq[0] ____cacheline_aligned;
 } ____cacheline_aligned;
 
-int ltt_do_get_subbuf(struct rchan_buf *buf, struct ltt_channel_buf_struct *ltt_buf, long *pconsumed_old);
+extern int ltt_do_get_subbuf(struct rchan_buf *buf, struct ltt_channel_buf_struct *ltt_buf, long *pconsumed_old);
 
-int ltt_do_put_subbuf(struct rchan_buf *buf, struct ltt_channel_buf_struct *ltt_buf, u32 uconsumed_old);
+extern int ltt_do_put_subbuf(struct rchan_buf *buf, struct ltt_channel_buf_struct *ltt_buf, u32 uconsumed_old);
 
-void init_ustrelay_transport(void);
+extern void init_ustrelay_transport(void);
 
 /*static*/ /* inline */ notrace void ltt_commit_slot(
 		struct ltt_channel_struct *ltt_channel,

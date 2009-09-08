@@ -68,7 +68,7 @@ struct ltt_serialize_closure {
 	unsigned int cb_idx;
 };
 
-size_t ltt_serialize_data(struct rchan_buf *buf, size_t buf_offset,
+extern size_t ltt_serialize_data(struct rchan_buf *buf, size_t buf_offset,
 			struct ltt_serialize_closure *closure,
 			void *serialize_private,
 			int *largest_align, const char *fmt, va_list *args);
@@ -552,8 +552,8 @@ enum ltt_module_function {
 	LTT_FUNCTION_STATEDUMP
 };
 
-void ltt_transport_register(struct ltt_transport *transport);
-void ltt_transport_unregister(struct ltt_transport *transport);
+extern void ltt_transport_register(struct ltt_transport *transport);
+extern void ltt_transport_unregister(struct ltt_transport *transport);
 
 /* Exported control function */
 
@@ -569,22 +569,22 @@ union ltt_control_args {
 	} new_trace;
 };
 
-int _ltt_trace_setup(const char *trace_name);
-int ltt_trace_setup(const char *trace_name);
-struct ltt_trace_struct *_ltt_trace_find_setup(const char *trace_name);
-int ltt_trace_set_type(const char *trace_name, const char *trace_type);
-int ltt_trace_set_channel_subbufsize(const char *trace_name,
+extern int _ltt_trace_setup(const char *trace_name);
+extern int ltt_trace_setup(const char *trace_name);
+extern struct ltt_trace_struct *_ltt_trace_find_setup(const char *trace_name);
+extern int ltt_trace_set_type(const char *trace_name, const char *trace_type);
+extern int ltt_trace_set_channel_subbufsize(const char *trace_name,
 		const char *channel_name, unsigned int size);
-int ltt_trace_set_channel_subbufcount(const char *trace_name,
+extern int ltt_trace_set_channel_subbufcount(const char *trace_name,
 		const char *channel_name, unsigned int cnt);
-int ltt_trace_set_channel_enable(const char *trace_name,
+extern int ltt_trace_set_channel_enable(const char *trace_name,
 		const char *channel_name, unsigned int enable);
-int ltt_trace_set_channel_overwrite(const char *trace_name,
+extern int ltt_trace_set_channel_overwrite(const char *trace_name,
 		const char *channel_name, unsigned int overwrite);
-int ltt_trace_alloc(const char *trace_name);
-int ltt_trace_destroy(const char *trace_name);
-int ltt_trace_start(const char *trace_name);
-int ltt_trace_stop(const char *trace_name);
+extern int ltt_trace_alloc(const char *trace_name);
+extern int ltt_trace_destroy(const char *trace_name);
+extern int ltt_trace_start(const char *trace_name);
+extern int ltt_trace_stop(const char *trace_name);
 
 enum ltt_filter_control_msg {
 	LTT_FILTER_DEFAULT_ACCEPT,
@@ -596,16 +596,16 @@ extern int ltt_filter_control(enum ltt_filter_control_msg msg,
 
 extern struct dentry *get_filter_root(void);
 
-void ltt_write_trace_header(struct ltt_trace_struct *trace,
+extern void ltt_write_trace_header(struct ltt_trace_struct *trace,
 		struct ltt_subbuffer_header *header);
 extern void ltt_buffer_destroy(struct ltt_channel_struct *ltt_chan);
 
-void ltt_core_register(int (*function)(u8, void *));
+extern void ltt_core_register(int (*function)(u8, void *));
 
-void ltt_core_unregister(void);
+extern void ltt_core_unregister(void);
 
-void ltt_release_trace(struct kref *kref);
-void ltt_release_transport(struct kref *kref);
+extern void ltt_release_trace(struct kref *kref);
+extern void ltt_release_transport(struct kref *kref);
 
 extern int ltt_probe_register(struct ltt_available_probe *pdata);
 extern int ltt_probe_unregister(struct ltt_available_probe *pdata);
@@ -615,9 +615,9 @@ extern int ltt_marker_disconnect(const char *channel, const char *mname,
 		const char *pname);
 extern void ltt_dump_marker_state(struct ltt_trace_struct *trace);
 
-void ltt_lock_traces(void);
-void ltt_unlock_traces(void);
+extern void ltt_lock_traces(void);
+extern void ltt_unlock_traces(void);
 
-struct ltt_trace_struct *_ltt_trace_find(const char *trace_name);
+extern struct ltt_trace_struct *_ltt_trace_find(const char *trace_name);
 
 #endif /* _LTT_TRACER_H */
