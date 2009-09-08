@@ -25,6 +25,7 @@
 
 #include "ustcomm.h"
 #include "ustcmd.h"
+#include "usterr.h"
 
 enum command {
 	START_TRACE,
