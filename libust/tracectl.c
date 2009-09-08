@@ -1085,15 +1085,15 @@ int restarting_usleep(useconds_t usecs)
 static void __attribute__((destructor)) keepalive()
 {
 	if(trace_recording() && buffers_to_export) {
+		int total = 0;
 		DBG("Keeping process alive for consumer daemon...");
 		while(buffers_to_export) {
 			const int interv = 200000;
-			int total = 0;
-			restarting_usleep(20000);
+			restarting_usleep(interv);
 			total += interv;
 
 			if(total >= 3000000) {
-				WARN("non-consumed buffers remaining after limit; not waiting anymore");
+				WARN("non-consumed buffers remaining after wait limit; not waiting anymore");
 				break;
 			}
 		}
