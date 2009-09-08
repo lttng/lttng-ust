@@ -138,10 +138,38 @@ void notif_cb(void)
 	}
 }
 
-static void inform_consumer_daemon(void)
+/* Ask the daemon to collect a trace called trace_name and being
+ * produced by this pid.
+ *
+ * The trace must be at least allocated. (It can also be started.)
+ * This is because _ltt_trace_find is used.
+ */
+
+static void inform_consumer_daemon(const char *trace_name)
 {
-	ustcomm_request_consumer(getpid(), "metadata");
-	ustcomm_request_consumer(getpid(), "ust");
+	int i;
+	struct ltt_trace_struct *trace;
+	pid_t pid = getpid();
+	int result;
+
+	ltt_lock_traces();
+
+	trace = _ltt_trace_find(trace_name);
+	if(trace == NULL) {
+		WARN("inform_consumer_daemon: could not find trace \"%s\"; it is probably already destroyed", trace_name);
+		goto finish;
+	}
+
+	for(i=0; i < trace->nr_channels; i++) {
+		result = ustcomm_request_consumer(pid, trace->channels[i].channel_name);
+		if(result == -1) {
+			WARN("Failed to request collection for channel %s. Is the daemon available?", trace->channels[i].channel_name);
+			/* continue even if fail */
+		}
+	}
+
+	finish:
+	ltt_unlock_traces();
 }
 
 void process_blocked_consumers(void)
@@ -292,7 +320,7 @@ void *listener_main(void *p)
 				return (void *)1;
 			}
 
-			inform_consumer_daemon();
+			inform_consumer_daemon(trace_name);
 
 			result = ltt_trace_start(trace_name);
 			if(result < 0) {
@@ -954,12 +982,13 @@ static void __attribute__((constructor(1000))) init()
 			return;
 		}
 
+		inform_consumer_daemon(trace_name);
+
 		result = ltt_trace_start(trace_name);
 		if(result < 0) {
 			ERR("ltt_trace_start failed");
 			return;
 		}
-		inform_consumer_daemon();
 	}
 
 
@@ -1101,7 +1130,6 @@ void ust_fork(void)
 	init_socket();
 	have_listener = 0;
 	create_listener();
-	ustcomm_request_consumer(getpid(), "metadata");
-	ustcomm_request_consumer(getpid(), "ust");
+	inform_consumer_daemon("auto");
 }
 
