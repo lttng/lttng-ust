@@ -18,6 +18,7 @@
 #define _GNU_SOURCE
 
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/shm.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -29,6 +30,7 @@
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
+#include <getopt.h>
 
 #include "ustd.h"
 #include "localerr.h"
@@ -48,7 +50,8 @@
 #define PUT_SUBBUF_PUSHED 2
 
 char *sock_path=NULL;
- 
+char *trace_path=NULL;
+
 int test_sigpipe(void)
 {
 	sigset_t sigset;
@@ -261,6 +264,24 @@ int create_dir_if_needed(char *dir)
 	return 0;
 }
 
+int is_directory(const char *dir)
+{
+	int result;
+	struct stat st;
+
+	result = stat(dir, &st);
+	if(result == -1) {
+		PERROR("stat");
+		return 0;
+	}
+
+	if(!S_ISDIR(st.st_mode)) {
+		return 0;
+	}
+
+	return 1;
+}
+
 int add_buffer(pid_t pid, char *bufname)
 {
 	struct buffer_info *buf;
@@ -359,13 +380,21 @@ int add_buffer(pid_t pid, char *bufname)
 	buf->memlen = shmds.shm_segsz;
 
 	/* open file for output */
-	result = create_dir_if_needed(USTD_DEFAULT_TRACE_PATH);
-	if(result == -1) {
-		ERR("could not create directory %s", USTD_DEFAULT_TRACE_PATH);
-		return -1;
+	if(!trace_path) {
+		/* Only create the directory if using the default path, because
+		 * of the risk of typo when using trace path override. We don't
+		 * want to risk creating plenty of useless directories in that case.
+		 */
+		result = create_dir_if_needed(USTD_DEFAULT_TRACE_PATH);
+		if(result == -1) {
+			ERR("could not create directory %s", USTD_DEFAULT_TRACE_PATH);
+			return -1;
+		}
+
+		trace_path = USTD_DEFAULT_TRACE_PATH;
 	}
 
-	asprintf(&tmp, "%s/%u", USTD_DEFAULT_TRACE_PATH, buf->pid);
+	asprintf(&tmp, "%s/%u", trace_path, buf->pid);
 	result = create_dir_if_needed(tmp);
 	if(result == -1) {
 		ERR("could not create directory %s", tmp);
@@ -374,7 +403,7 @@ int add_buffer(pid_t pid, char *bufname)
 	}
 	free(tmp);
 
-	asprintf(&tmp, "%s/%u/%s_0", USTD_DEFAULT_TRACE_PATH, buf->pid, buf->name);
+	asprintf(&tmp, "%s/%u/%s_0", trace_path, buf->pid, buf->name);
 	result = fd = open(tmp, O_WRONLY | O_CREAT | O_TRUNC, 00600);
 	if(result == -1) {
 		PERROR("open");
@@ -389,13 +418,76 @@ int add_buffer(pid_t pid, char *bufname)
 	return 0;
 }
 
+void usage(void)
+{
+	fprintf(stderr, "Usage:\nustd OPTIONS\n\nOptions:\n"
+			"\t-h\t\tDisplay this usage.\n"
+			"\t-o DIR\t\tSpecify the directory where to output the traces.\n"
+			"\t-s PATH\t\tSpecify the path to use for the daemon socket.\n");
+}
+
+int parse_args(int argc, char **argv)
+{
+	int c;
+
+	while (1) {
+		int option_index = 0;
+		static struct option long_options[] = {
+			{"help", 0, 0, 'h'},
+			{"version", 0, 0, 'V'},
+			{0, 0, 0, 0}
+		};
+
+		c = getopt_long(argc, argv, "hs:o:", long_options, &option_index);
+		if (c == -1)
+			break;
+
+		switch (c) {
+		case 0:
+			printf("option %s", long_options[option_index].name);
+			if (optarg)
+				printf(" with arg %s", optarg);
+			printf("\n");
+			break;
+		case 's':
+			sock_path = optarg;
+			break;
+		case 'o':
+			trace_path = optarg;
+			if(!is_directory(trace_path)) {
+				ERR("Not a valid directory. (%s)", trace_path);
+				return -1;
+			}
+			break;
+		case 'h':
+			usage();
+			exit(0);
+		case 'V':
+			printf("Version 0.0\n");
+			break;
+
+		default:
+			/* unknown option or other error; error is
+			printed by getopt, just return */
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
 int main(int argc, char **argv)
 {
 	struct ustcomm_ustd ustd;
 	int result;
 	sigset_t sigset;
 
-	result = ustcomm_init_ustd(&ustd);
+	result = parse_args(argc, argv);
+	if(result == -1) {
+		exit(1);
+	}
+
+	result = ustcomm_init_ustd(&ustd, sock_path);
 	if(result == -1) {
 		ERR("failed to initialize socket");
 		return 1;
