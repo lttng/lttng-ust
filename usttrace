@@ -1,0 +1,60 @@
+#!/bin/bash
+
+USTD="./ustd/ustd"
+LIBINTERFORK="./libinterfork/.libs/libinterfork.so"
+
+BASE_TRACE_DIR="$HOME/.usttraces"
+
+function usage () {
+	echo "usage:  $0 COMMAND" 2>/dev/stderr
+}
+
+function error() {
+	echo "$0: error: $1" 2>/dev/stderr
+}
+
+# Prepare vars
+CMD=$1
+
+# Validate input
+if [ -z "$HOME" ];
+then
+	error "no home specified"
+fi
+
+if [ -z "$CMD" ];
+then
+	error "no command specified"
+	usage;
+	exit 1
+fi
+
+# Create directory for trace output
+DATESTRING="$(hostname)-$(date +%Y%m%d%H%M%S)"
+OUTDIR="$BASE_TRACE_DIR/$DATESTRING"
+mkdir -p "$OUTDIR"
+
+# Choose socket path
+SOCKPATH="/tmp/ust-sock-$$"
+
+# Start daemon
+$USTD -s "$SOCKPATH" -o "$OUTDIR" >"$OUTDIR/ustd.log" 2>&1 &
+USTDPID=$!
+
+# Establish the environment for the command
+export UST_TRACE=1
+export UST_AUTOPROBE=1
+export UST_DAEMON_SOCKET="$SOCKPATH"
+
+# Execute the command
+bash -c "$CMD"
+
+## Because of the keepalive mechanism, we're sure that by the time
+## we get here, the daemon is connected to all the buffers that still exist.
+## Therefore we can politely ask it to die when it's done.
+
+kill -SIGTERM "$USTDPID"
+
+# Tell the daemon to die
+echo "Waiting for ustd to shutdown..."
+wait "$USTDPID"
