@@ -47,6 +47,8 @@
 #define PUT_SUBBUF_DIED 0
 #define PUT_SUBBUF_PUSHED 2
 
+char *sock_path=NULL;
+ 
 int test_sigpipe(void)
 {
 	sigset_t sigset;

@@ -109,8 +109,18 @@ int ustcomm_request_consumer(pid_t pid, const char *channel)
 	char *msg=NULL;
 	int retval = 0;
 	struct ustcomm_connection conn;
+	char *explicit_daemon_socket_path;
 
-	result = snprintf(path, UNIX_PATH_MAX, "%s/ustd", SOCK_DIR);
+	explicit_daemon_socket_path = getenv("UST_DAEMON_SOCKET");
+	if(explicit_daemon_socket_path) {
+		/* user specified explicitly a socket path */
+		result = snprintf(path, UNIX_PATH_MAX, "%s", explicit_daemon_socket_path);
+	}
+	else {
+		/* just use the default path */
+		result = snprintf(path, UNIX_PATH_MAX, "%s/ustd", SOCK_DIR);
+	}
+
 	if(result >= UNIX_PATH_MAX) {
 		ERR("string overflow allocating socket name");
 		return -1;
@@ -485,31 +495,31 @@ free_name:
  * can connect to it.
  */
 
-int ustcomm_init_ustd(struct ustcomm_ustd *handle)
+int ustcomm_init_ustd(struct ustcomm_ustd *handle, const char *sock_path)
 {
-	int result;
 	char *name;
+	int retval = 0;
 
-	result = asprintf(&name, "%s/%s", SOCK_DIR, "ustd");
-	if(result >= UNIX_PATH_MAX) {
-		ERR("string overflow allocating socket name");
-		return -1;
+	if(sock_path) {
+		asprintf(&name, "%s", sock_path);
+	}
+	else {
+		asprintf(&name, "%s/%s", SOCK_DIR, "ustd");
 	}
 
 	handle->server.listen_fd = init_named_socket(name, &handle->server.socketpath);
 	if(handle->server.listen_fd < 0) {
 		ERR("error initializing named socket at %s", name);
+		retval = -1;
 		goto free_name;
 	}
-	free(name);
 
 	INIT_LIST_HEAD(&handle->server.connections);
 
-	return 0;
-
 free_name:
 	free(name);
-	return -1;
+
+	return retval;
 }
 
 static char *find_tok(char *str)
