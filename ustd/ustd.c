@@ -52,6 +52,12 @@
 char *sock_path=NULL;
 char *trace_path=NULL;
 
+/* Number of active buffers and the mutex to protect it. */
+int active_buffers = 0;
+pthread_mutex_t active_buffers_mutex = PTHREAD_MUTEX_INITIALIZER;
+/* Whether a request to end the program was received. */
+sig_atomic_t terminate_req = 0;
+
 int test_sigpipe(void)
 {
 	sigset_t sigset;
@@ -196,10 +202,19 @@ ssize_t patient_write(int fd, const void *buf, size_t count)
 	return bufc-(const char *)buf;
 }
 
+void decrement_active_buffers(void *arg)
+{
+	pthread_mutex_lock(&active_buffers_mutex);
+	active_buffers--;
+	pthread_mutex_unlock(&active_buffers_mutex);
+}
+
 void *consumer_thread(void *arg)
 {
 	struct buffer_info *buf = (struct buffer_info *) arg;
 	int result;
+
+	pthread_cleanup_push(decrement_active_buffers, NULL);
 
 	for(;;) {
 		/* get the subbuffer */
@@ -246,6 +261,8 @@ void *consumer_thread(void *arg)
 	DBG("thread for buffer %s is stopping", buf->name);
 
 	/* FIXME: destroy, unalloc... */
+
+	pthread_cleanup_pop(1);
 
 	return NULL;
 }
@@ -413,6 +430,10 @@ int add_buffer(pid_t pid, char *bufname)
 	buf->file_fd = fd;
 	free(tmp);
 
+	pthread_mutex_lock(&active_buffers_mutex);
+	active_buffers++;
+	pthread_mutex_unlock(&active_buffers_mutex);
+
 	pthread_create(&thr, NULL, consumer_thread, buf);
 
 	return 0;
@@ -476,11 +497,31 @@ int parse_args(int argc, char **argv)
 	return 0;
 }
 
+void sigterm_handler(int sig)
+{
+	terminate_req = 1;
+}
+
 int main(int argc, char **argv)
 {
 	struct ustcomm_ustd ustd;
 	int result;
 	sigset_t sigset;
+	struct sigaction sa;
+
+	result = sigemptyset(&sigset);
+	if(result == -1) {
+		perror("sigemptyset");
+		return 1;
+	}
+	sa.sa_handler = sigterm_handler;
+	sa.sa_mask = sigset;
+	sa.sa_flags = SA_RESTART;
+	result = sigaction(SIGTERM, &sa, NULL);
+	if(result == -1) {
+		PERROR("sigaction");
+		return 1;
+	}
 
 	result = parse_args(argc, argv);
 	if(result == -1) {
@@ -493,6 +534,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	/* setup handler for SIGPIPE */
 	result = sigemptyset(&sigset);
 	if(result == -1) {
 		perror("sigemptyset");
@@ -538,6 +580,15 @@ int main(int argc, char **argv)
 			}
 
 			free(recvbuf);
+		}
+
+		if(terminate_req) {
+			pthread_mutex_lock(&active_buffers_mutex);
+			if(active_buffers == 0) {
+				pthread_mutex_unlock(&active_buffers_mutex);
+				break;
+			}
+			pthread_mutex_unlock(&active_buffers_mutex);
 		}
 	}
 
