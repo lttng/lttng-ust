@@ -1,1 +1,1 @@
-SUBDIRS = hello hello2 basic basic_long
+SUBDIRS = hello hello2 basic basic_long fork
