@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# usttrace  by Pierre-Marc Fournier 2009
+# Distributed under the GPLv2.
+
 USTD="./ustd/ustd"
 LIBINTERFORK="./libinterfork/.libs/libinterfork.so"
 
