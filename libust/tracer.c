@@ -823,8 +823,8 @@ static int _ltt_trace_destroy(struct ltt_trace_struct	*trace)
 		goto active_error;
 	}
 	/* Everything went fine */
-//ust//	list_del_rcu(&trace->list);
-//ust//	synchronize_sched();
+	list_del_rcu(&trace->list);
+	synchronize_rcu();
 	if (list_empty(&ltt_traces.head)) {
 //ust//		clear_kernel_trace_flag_all_tasks();
 		/*
