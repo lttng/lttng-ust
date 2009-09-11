@@ -1109,14 +1109,35 @@ static void __attribute__((destructor)) keepalive()
 
 void ust_fork(void)
 {
+	struct blocked_consumer *bc;
+	struct blocked_consumer *deletable_bc = NULL;
+	int result;
+
 	DBG("ust: forking");
 	ltt_trace_stop("auto");
 	ltt_trace_destroy("auto");
-	ltt_trace_alloc("auto");
-	ltt_trace_start("auto");
-	init_socket();
+	/* Delete all active connections */
+	ustcomm_close_all_connections(&ustcomm_app.server);
+
+	/* Delete all blocked consumers */
+	list_for_each_entry(bc, &blocked_consumers, list) {
+		free(deletable_bc);
+		deletable_bc = bc;
+		list_del(&bc->list);
+	}
+
 	have_listener = 0;
 	create_listener();
+	init_socket();
+	ltt_trace_setup("auto");
+	result = ltt_trace_set_type("auto", "ustrelay");
+	if(result < 0) {
+		ERR("ltt_trace_set_type failed");
+		return (void *)1;
+	}
+
+	ltt_trace_alloc("auto");
+	ltt_trace_start("auto");
 	inform_consumer_daemon("auto");
 }
 

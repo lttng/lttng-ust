@@ -807,7 +807,7 @@ traces_error:
 //ust// }
 
 /* Must be called while sure that trace is in the list. */
-static int _ltt_trace_destroy(struct ltt_trace_struct	*trace)
+static int _ltt_trace_destroy(struct ltt_trace_struct *trace)
 {
 	int err = -EPERM;
 

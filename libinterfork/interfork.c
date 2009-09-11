@@ -34,7 +34,6 @@ pid_t fork(void)
 		}
 	}
 
-	printf("IN FORK!\n");
 	retval = plibc_func();
 
 	if(retval == 0)

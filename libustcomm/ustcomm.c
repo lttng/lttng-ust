@@ -191,6 +191,23 @@ int ustcomm_send_reply(struct ustcomm_server *server, char *msg, struct ustcomm_
 	return 0;
 } 
 
+/* Called after a fork. */
+
+int ustcomm_close_all_connections(struct ustcomm_server *server)
+{
+	struct ustcomm_connection *conn;
+	struct ustcomm_connection *deletable_conn = NULL;
+
+	list_for_each_entry(conn, &server->connections, list) {
+		free(deletable_conn);
+		deletable_conn = conn;
+		close(conn->fd);
+		list_del(&conn->list);
+	}
+
+	return 0;
+}
+
 /* @timeout: max blocking time in milliseconds, -1 means infinity
  *
  * returns 1 to indicate a message was received

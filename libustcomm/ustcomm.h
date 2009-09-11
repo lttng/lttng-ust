@@ -71,6 +71,7 @@ extern int ustcomm_connect_path(const char *path, struct ustcomm_connection *con
 extern int ustcomm_send_request(struct ustcomm_connection *conn, const char *req, char **reply);
 extern int ustcomm_send_reply(struct ustcomm_server *server, char *msg, struct ustcomm_source *src);
 extern int ustcomm_disconnect(struct ustcomm_connection *conn);
+extern int ustcomm_close_all_connections(struct ustcomm_server *server);
 
 extern int nth_token_is(char *str, char *token, int tok_no);
 
