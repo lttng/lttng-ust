@@ -5,16 +5,42 @@
 
 USTD="./ustd/ustd"
 LIBINTERFORK="./libinterfork/.libs/libinterfork.so"
+LIBMALLOCWRAP="./libmallocwrap/.libs/libmallocwrap.so"
+
+STD_LDLIBRARY_UST="./libust/.libs:../liburcu"
 
 BASE_TRACE_DIR="$HOME/.usttraces"
 
 function usage () {
-	echo "usage:  $0 COMMAND" 2>/dev/stderr
+	echo "usage:  $0 OPTIONS COMMAND" 2>/dev/stderr
+	echo "" 2>/dev/stderr
+	echo "Options:" 2>/dev/stderr
+	echo "    -l    Runtime link with UST library." 2>/dev/stderr
+	echo "          (Needed only if program was not linked at compile time with libust.)" 2>/dev/stderr
+	echo "    -L    Add path to ust libraries to LD_LIBRARY_PATH." 2>/dev/stderr
+	echo "    -m    Instrument malloc calls." 2>/dev/stderr
+	echo "    -f    Also trace forked processes." 2>/dev/stderr
 }
 
 function error() {
 	echo "$0: error: $1" 2>/dev/stderr
 }
+
+while getopts ":hlLmf" options; do
+	case $options in
+		l) arg_preload_libust=1;;
+		L) arg_ld_std_ust=1;;
+		m) arg_preload_malloc=1;;
+		f) arg_preload_fork=1;;
+		h) usage;
+		   exit 0;;
+		\?) echo $usage
+			exit 1;;
+		*) echo $usage
+			exit 1;;
+	esac
+done
+shift $(($OPTIND - 1))
 
 # Prepare vars
 CMD=$1
@@ -48,6 +74,27 @@ USTDPID=$!
 export UST_TRACE=1
 export UST_AUTOPROBE=1
 export UST_DAEMON_SOCKET="$SOCKPATH"
+
+if [ "$arg_preload_libust" = "1" ];
+then
+	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./libust/.libs"
+	export LD_PRELOAD="$LD_PRELOAD:./libust/.libs/libust.so"
+fi
+
+if [ "$arg_preload_malloc" = "1" ];
+then
+	export LD_PRELOAD="$LD_PRELOAD:./libmallocwrap/.libs/libmallocwrap.so"
+fi
+
+if [ "$arg_preload_fork" = "1" ];
+then
+	export LD_PRELOAD="$LD_PRELOAD:./libinterfork/.libs/libinterfork.so"
+fi
+
+if [ "$arg_ld_std_ust" = "1" ];
+then
+	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$STD_LDLIBRARY_UST"
+fi
 
 # Execute the command
 bash -c "$CMD"
