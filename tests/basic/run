@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# Run with nothing
+
+
+#LD_LIBRARY_PATH=../../libust/.libs:../../../liburcu $1 .libs/basic
+#UST_AUTOPROBE="/foo" LD_LIBRARY_PATH=../../libust/.libs:../../../liburcu $1 .libs/basic
+UST_AUTOPROBE=1 UST_TRACE=1 LD_LIBRARY_PATH=../../libust/.libs:../../../liburcu $1 .libs/basic
