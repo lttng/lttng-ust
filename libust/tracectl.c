@@ -988,31 +988,34 @@ static void __attribute__((constructor(1000))) init()
 }
 
 /* This is only called if we terminate normally, not with an unhandled signal,
- * so we cannot rely on it. */
+ * so we cannot rely on it. However, for now, LTTV requires that the header of
+ * the last sub-buffer contain a valid end time for the trace. This is done
+ * automatically only when the trace is properly stopped.
+ *
+ * If the traced program crashed, it is always possible to manually add the
+ * right value in the header, or to open the trace in text mode.
+ *
+ * FIXME: Fix LTTV so it doesn't need this.
+ */
 
-/* This destructor probably isn't needed, because ustd can do crash recovery. */
-#if 0
-static void __attribute__((destructor)) fini()
+static void destroy_traces(void)
 {
-//	int result;
+	int result;
 
 	/* if trace running, finish it */
 
-//	DBG("destructor stopping traces");
+	DBG("destructor stopping traces");
 
-//	result = ltt_trace_stop("auto");
-//	if(result == -1) {
-//		ERR("ltt_trace_stop error");
-//	}
-//
-//	result = ltt_trace_destroy("auto");
-//	if(result == -1) {
-//		ERR("ltt_trace_destroy error");
-//	}
-//
-//	destroy_socket();
+	result = ltt_trace_stop("auto");
+	if(result == -1) {
+		ERR("ltt_trace_stop error");
+	}
+
+	result = ltt_trace_destroy("auto");
+	if(result == -1) {
+		ERR("ltt_trace_destroy error");
+	}
 }
-#endif
 
 static int trace_recording(void)
 {
@@ -1082,6 +1085,10 @@ static void __attribute__((destructor)) keepalive()
 		}
 		DBG("Finally dying...");
 	}
+
+	destroy_traces();
+
+	ustcomm_fini_app(&ustcomm_app);
 }
 
 /* Notify ust that there was a fork. This needs to be called inside
