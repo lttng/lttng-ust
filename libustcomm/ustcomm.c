@@ -545,7 +545,6 @@ void ustcomm_fini_app(struct ustcomm_app *handle)
 	struct stat st;
 
 	/* Destroy socket */
-	ERR("socket path is: %s", handle->server.socketpath);
 	result = stat(handle->server.socketpath, &st);
 	if(result == -1) {
 		PERROR("stat (%s)", handle->server.socketpath);
