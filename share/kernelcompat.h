@@ -150,6 +150,23 @@ static __inline__ int get_count_order(unsigned int count)
 
 /* TRACE CLOCK */
 
+/* There are two types of clocks that can be used.
+   - TSC based clock
+   - gettimeofday() clock
+
+   Microbenchmarks on Linux 2.6.30 on Core2 Duo 3GHz (functions are inlined):
+     Calls (100000000) to tsc(): 4004035641 cycles or 40 cycles/call
+     Calls (100000000) to gettimeofday(): 9723158352 cycles or 97 cycles/call
+
+   For merging traces with the kernel, a time source compatible with that of
+   the kernel is necessary.
+
+*/
+
+#if 0
+/* WARNING: Make sure to set frequency and scaling functions that will not
+ * result in lttv timestamps (sec.nsec) with seconds greater than 2**32-1.
+ */
 static inline u64 trace_clock_read64(void)
 {
 	uint32_t low;
@@ -161,8 +178,8 @@ static inline u64 trace_clock_read64(void)
 	retval <<= 32;
 	return retval | low;
 }
+#endif
 
-#if 0
 static inline u64 trace_clock_read64(void)
 {
 	struct timeval tv;
@@ -175,7 +192,6 @@ static inline u64 trace_clock_read64(void)
 
 	return retval;
 }
-#endif
 
 static inline u64 trace_clock_frequency(void)
 {
