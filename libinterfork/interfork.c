@@ -20,6 +20,8 @@
 #include <unistd.h>
 #include <stdio.h>
 
+extern void ust_fork(void);
+
 pid_t fork(void)
 {
 	static pid_t (*plibc_func)(void) = NULL;
@@ -30,7 +32,7 @@ pid_t fork(void)
 		plibc_func = dlsym(RTLD_NEXT, "fork");
 		if(plibc_func == NULL) {
 			fprintf(stderr, "libcwrap: unable to find fork\n");
-			return NULL;
+			return -1;
 		}
 	}
 
