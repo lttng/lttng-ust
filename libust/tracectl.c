@@ -1116,7 +1116,7 @@ void ust_fork(void)
 	result = ltt_trace_set_type("auto", "ustrelay");
 	if(result < 0) {
 		ERR("ltt_trace_set_type failed");
-		return (void *)1;
+		return;
 	}
 
 	ltt_trace_alloc("auto");
