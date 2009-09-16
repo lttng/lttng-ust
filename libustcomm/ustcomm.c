@@ -23,6 +23,7 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include <poll.h>
+#include <sys/stat.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -378,8 +379,7 @@ static int init_named_socket(const char *name, char **path_out)
 	}
 
 	if(path_out) {
-		*path_out = "";
-		*path_out = strdupa(addr.sun_path);
+		*path_out = strdup(addr.sun_path);
 	}
 
 	return fd;
@@ -537,6 +537,32 @@ free_name:
 	free(name);
 
 	return retval;
+}
+
+void ustcomm_fini_app(struct ustcomm_app *handle)
+{
+	int result;
+	struct stat st;
+
+	/* Destroy socket */
+	ERR("socket path is: %s", handle->server.socketpath);
+	result = stat(handle->server.socketpath, &st);
+	if(result == -1) {
+		PERROR("stat (%s)", handle->server.socketpath);
+		return;
+	}
+
+	/* Paranoid check before deleting. */
+	result = S_ISSOCK(st.st_mode);
+	if(!result) {
+		ERR("The socket we are about to delete is not a socket.");
+		return;
+	}
+
+	result = unlink(handle->server.socketpath);
+	if(result == -1) {
+		PERROR("unlink");
+	}
 }
 
 static char *find_tok(char *str)

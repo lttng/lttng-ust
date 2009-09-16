@@ -63,6 +63,7 @@ extern int ustcomm_ustd_recv_message(struct ustcomm_ustd *ustd, char **msg, stru
 extern int ustcomm_app_recv_message(struct ustcomm_app *app, char **msg, struct ustcomm_source *src, int timeout);
 
 extern int ustcomm_init_app(pid_t pid, struct ustcomm_app *handle);
+extern void ustcomm_fini_app(struct ustcomm_app *handle);
 
 extern int ustcomm_init_ustd(struct ustcomm_ustd *handle, const char *sock_path);
 

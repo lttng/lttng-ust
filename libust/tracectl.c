@@ -793,23 +793,6 @@ static int init_socket(void)
 	return ustcomm_init_app(getpid(), &ustcomm_app);
 }
 
-/* FIXME: reenable this to delete socket file. */
-
-#if 0
-static void destroy_socket(void)
-{
-	int result;
-
-	if(mysocketfile[0] == '\0')
-		return;
-
-	result = unlink(mysocketfile);
-	if(result == -1) {
-		PERROR("unlink");
-	}
-}
-#endif
-
 static int init_signal_handler(void)
 {
 	/* Attempt to handler SIGIO. If the main program wants to
