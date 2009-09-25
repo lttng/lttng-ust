@@ -28,6 +28,8 @@ struct buffer_info {
 	int file_fd; /* output file */
 
 	long consumed_old;
+
+	s64 pidunique;
 };
 
 ssize_t patient_write(int fd, const void *buf, size_t count);

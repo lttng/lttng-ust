@@ -46,6 +46,11 @@
 
 char consumer_stack[10000];
 
+/* This should only be accessed by the constructor, before the creation
+ * of the listener, and then only by the listener.
+ */
+s64 pidunique = -1LL;
+
 struct list_head blocked_consumers = LIST_HEAD_INIT(blocked_consumers);
 
 static struct ustcomm_app ustcomm_app;
@@ -92,6 +97,20 @@ struct blocked_consumer {
 
 	struct list_head list;
 };
+
+static long long make_pidunique(void)
+{
+	s64 retval;
+	struct timeval tv;
+	
+	gettimeofday(&tv, NULL);
+
+	retval = tv.tv_sec;
+	retval <<= 32;
+	retval |= tv.tv_usec;
+
+	return retval;
+}
 
 static void print_markers(FILE *fp)
 {
@@ -682,6 +701,19 @@ void *listener_main(void *p)
 				WARN("could not disable marker; channel=%s, name=%s", channel_name, marker_name);
 			}
 		}
+		else if(nth_token_is(recvbuf, "get_pidunique", 0) == 1) {
+			char *reply;
+
+			asprintf(&reply, "%lld", pidunique);
+
+			result = ustcomm_send_reply(&ustcomm_app.server, reply, &src);
+			if(result) {
+				ERR("listener: get_pidunique: ustcomm_send_reply failed");
+				goto next_cmd;
+			}
+
+			free(reply);
+		}
 //		else if(nth_token_is(recvbuf, "get_notifications", 0) == 1) {
 //			struct ltt_trace_struct *trace;
 //			char trace_name[] = "auto";
@@ -866,6 +898,11 @@ static void __attribute__((constructor(1000))) init()
 {
 	int result;
 	char* autoprobe_val = NULL;
+
+	/* Assign the pidunique, to be able to differentiate the processes with same
+	 * pid, (before and after an exec).
+	 */
+	pidunique = make_pidunique();
 
 	/* Initialize RCU in case the constructor order is not good. */
 	urcu_init();

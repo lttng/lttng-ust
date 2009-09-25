@@ -326,6 +326,23 @@ int add_buffer(pid_t pid, char *bufname)
 		return -1;
 	}
 
+	/* get pidunique */
+	asprintf(&send_msg, "get_pidunique");
+	result = ustcomm_send_request(&buf->conn, send_msg, &received_msg);
+	free(send_msg);
+	if(result == -1) {
+		ERR("problem in ustcomm_send_request(get_pidunique)");
+		return -1;
+	}
+
+	result = sscanf(received_msg, "%lld", &buf->pidunique);
+	if(result != 1) {
+		ERR("unable to parse response to get_pidunique");
+		return -1;
+	}
+	free(received_msg);
+	DBG("got pidunique %lld", buf->pidunique);
+
 	/* get shmid */
 	asprintf(&send_msg, "get_shmid %s", buf->name);
 	result = ustcomm_send_request(&buf->conn, send_msg, &received_msg);
@@ -411,7 +428,7 @@ int add_buffer(pid_t pid, char *bufname)
 		trace_path = USTD_DEFAULT_TRACE_PATH;
 	}
 
-	asprintf(&tmp, "%s/%u", trace_path, buf->pid);
+	asprintf(&tmp, "%s/%u_%lld", trace_path, buf->pid, buf->pidunique);
 	result = create_dir_if_needed(tmp);
 	if(result == -1) {
 		ERR("could not create directory %s", tmp);
@@ -420,8 +437,8 @@ int add_buffer(pid_t pid, char *bufname)
 	}
 	free(tmp);
 
-	asprintf(&tmp, "%s/%u/%s_0", trace_path, buf->pid, buf->name);
-	result = fd = open(tmp, O_WRONLY | O_CREAT | O_TRUNC, 00600);
+	asprintf(&tmp, "%s/%u_%lld/%s_0", trace_path, buf->pid, buf->pidunique, buf->name);
+	result = fd = open(tmp, O_WRONLY | O_CREAT | O_TRUNC | O_EXCL, 00600);
 	if(result == -1) {
 		PERROR("open");
 		ERR("failed opening trace file %s", tmp);
