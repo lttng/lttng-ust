@@ -94,32 +94,35 @@ int test_sigpipe(void)
 
 int get_subbuffer(struct buffer_info *buf)
 {
-	char *send_msg;
-	char *received_msg;
-	char *rep_code;
+	char *send_msg=NULL;
+	char *received_msg=NULL;
+	char *rep_code=NULL;
 	int retval;
 	int result;
 
 	asprintf(&send_msg, "get_subbuffer %s", buf->name);
 	result = ustcomm_send_request(&buf->conn, send_msg, &received_msg);
-	free(send_msg);
 	if(test_sigpipe()) {
 		WARN("process %d destroyed before we could connect to it", buf->pid);
-		return GET_SUBBUF_DONE;
+		retval = GET_SUBBUF_DONE;
+		goto end;
 	}
 	else if(result < 0) {
 		ERR("get_subbuffer: ustcomm_send_request failed");
-		return -1;
+		retval = -1;
+		goto end;
 	}
 	else if(result == 0) {
 		DBG("app died while being traced");
-		return GET_SUBBUF_DIED;
+		retval = GET_SUBBUF_DIED;
+		goto end;
 	}
 
 	result = sscanf(received_msg, "%as %ld", &rep_code, &buf->consumed_old);
 	if(result != 2 && result != 1) {
 		ERR("unable to parse response to get_subbuffer");
-		return -1;
+		retval = -1;
+		goto end_rep;
 	}
 
 	DBG("received msg is %s", received_msg);
@@ -129,7 +132,8 @@ int get_subbuffer(struct buffer_info *buf)
 		retval = GET_SUBBUF_OK;
 	}
 	else if(nth_token_is(received_msg, "END", 0) == 1) {
-		return GET_SUBBUF_DONE;
+		retval = GET_SUBBUF_DONE;
+		goto end_rep;
 	}
 	else {
 		DBG("error getting subbuffer %s", buf->name);
@@ -137,33 +141,44 @@ int get_subbuffer(struct buffer_info *buf)
 	}
 
 	/* FIMXE: free correctly the stuff */
-	free(received_msg);
-	free(rep_code);
+end_rep:
+	if(rep_code)
+		free(rep_code);
+end:
+	if(send_msg)
+		free(send_msg);
+	if(received_msg)
+		free(received_msg);
+
 	return retval;
 }
 
 int put_subbuffer(struct buffer_info *buf)
 {
-	char *send_msg;
-	char *received_msg;
-	char *rep_code;
+	char *send_msg=NULL;
+	char *received_msg=NULL;
+	char *rep_code=NULL;
 	int retval;
 	int result;
 
 	asprintf(&send_msg, "put_subbuffer %s %ld", buf->name, buf->consumed_old);
 	result = ustcomm_send_request(&buf->conn, send_msg, &received_msg);
+	if(result < 0 && errno == ECONNRESET) {
+		retval = PUT_SUBBUF_DIED;
+		goto end;
+	}
 	if(result < 0) {
 		ERR("put_subbuffer: send_message failed");
-		return -1;
+		retval = -1;
+		goto end;
 	}
-	free(send_msg);
 
 	result = sscanf(received_msg, "%as", &rep_code);
 	if(result != 1) {
 		ERR("unable to parse response to put_subbuffer");
-		return -1;
+		retval = -1;
+		goto end_rep;
 	}
-	free(received_msg);
 
 	if(!strcmp(rep_code, "OK")) {
 		DBG("subbuffer put %s", buf->name);
@@ -171,10 +186,20 @@ int put_subbuffer(struct buffer_info *buf)
 	}
 	else {
 		DBG("put_subbuffer: received error, we were pushed");
-		return PUT_SUBBUF_PUSHED;
+		retval = PUT_SUBBUF_PUSHED;
+		goto end_rep;
 	}
 
-	free(rep_code);
+end_rep:
+	if(rep_code)
+		free(rep_code);
+
+end:
+	if(send_msg)
+		free(send_msg);
+	if(received_msg)
+		free(received_msg);
+
 	return retval;
 }
 
