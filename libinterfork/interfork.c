@@ -22,6 +22,7 @@
 #include "share/usterr.h"
 
 extern void ust_fork(void);
+extern void ust_potential_exec(void);
 
 pid_t fork(void)
 {
@@ -41,6 +42,27 @@ pid_t fork(void)
 
 	if(retval == 0)
 		ust_fork();
+
+	return retval;
+}
+
+int execve(const char *filename, char *const argv[], char *const envp[])
+{
+	static int (*plibc_func)(const char *filename, char *const argv[], char *const envp[]) = NULL;
+
+	pid_t retval;
+
+	if(plibc_func == NULL) {
+		plibc_func = dlsym(RTLD_NEXT, "execve");
+		if(plibc_func == NULL) {
+			fprintf(stderr, "libcwrap: unable to find execve\n");
+			return -1;
+		}
+	}
+
+	ust_potential_exec();
+
+	retval = plibc_func(filename, argv, envp);
 
 	return retval;
 }
