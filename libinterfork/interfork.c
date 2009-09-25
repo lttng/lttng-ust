@@ -19,6 +19,7 @@
 #include <dlfcn.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <signal.h>
 #include "share/usterr.h"
 
 extern void ust_fork(void);
@@ -30,6 +31,10 @@ pid_t fork(void)
 
 	pid_t retval;
 
+	int result;
+	sigset_t all_sigs;
+	sigset_t orig_sigs;
+
 	if(plibc_func == NULL) {
 		plibc_func = dlsym(RTLD_NEXT, "fork");
 		if(plibc_func == NULL) {
@@ -38,10 +43,38 @@ pid_t fork(void)
 		}
 	}
 
+	/* Disable interrupts. This is to avoid that the child
+	 * intervenes before it is properly setup for tracing. It is
+	 * safer to disable all signals, because then we know we are not
+	 * breaking anything by restoring the original mask.
+	 */
+
+	/* FIXME:
+		- only do this if tracing is active
+	*/
+
+	/* Disable signals */
+	sigfillset(&all_sigs);
+	result = sigprocmask(SIG_BLOCK, &all_sigs, &orig_sigs);
+	if(result == -1) {
+		PERROR("sigprocmask");
+		return -1;
+	}
+
+	/* Do the real fork */
 	retval = plibc_func();
 
-	if(retval == 0)
+	if(retval == 0) {
+		/* child */
 		ust_fork();
+	}
+
+	/* Restore signals */
+	result = sigprocmask(SIG_BLOCK, &orig_sigs, NULL);
+	if(result == -1) {
+		PERROR("sigprocmask");
+		return -1;
+	}
 
 	return retval;
 }
