@@ -19,6 +19,7 @@
 #include <dlfcn.h>
 #include <unistd.h>
 #include <stdio.h>
+#include "share/usterr.h"
 
 extern void ust_fork(void);
 
