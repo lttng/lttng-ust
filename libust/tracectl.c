@@ -1128,6 +1128,13 @@ static void __attribute__((destructor)) keepalive()
 	ustcomm_fini_app(&ustcomm_app);
 }
 
+void ust_potential_exec(void)
+{
+	trace_mark(ust, potential_exec, MARK_NOARGS);
+
+	keepalive();
+}
+
 /* Notify ust that there was a fork. This needs to be called inside
  * the new process, anytime a process whose memory is not shared with
  * the parent is created. If this function is not called, the events
