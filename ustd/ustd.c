@@ -65,12 +65,12 @@ int test_sigpipe(void)
 
 	result = sigemptyset(&sigset);
 	if(result == -1) {
-		perror("sigemptyset");
+		PERROR("sigemptyset");
 		return -1;
 	}
 	result = sigaddset(&sigset, SIGPIPE);
 	if(result == -1) {
-		perror("sigaddset");
+		PERROR("sigaddset");
 		return -1;
 	}
 
@@ -80,7 +80,7 @@ int test_sigpipe(void)
 		return 0;
 	}
 	else if(result == -1) {
-		perror("sigtimedwait");
+		PERROR("sigtimedwait");
 		return -1;
 	}
 	else if(result == SIGPIPE) {
@@ -273,7 +273,7 @@ int create_dir_if_needed(char *dir)
 	result = mkdir(dir, 0777);
 	if(result == -1) {
 		if(errno != EEXIST) {
-			perror("mkdir");
+			PERROR("mkdir");
 			return -1;
 		}
 	}
@@ -393,14 +393,14 @@ int add_buffer(pid_t pid, char *bufname)
 	/* attach memory */
 	buf->mem = shmat(buf->shmid, NULL, 0);
 	if(buf->mem == (void *) 0) {
-		perror("shmat");
+		PERROR("shmat");
 		return -1;
 	}
 	DBG("successfully attached buffer memory");
 
 	buf->bufstruct_mem = shmat(buf->bufstruct_shmid, NULL, 0);
 	if(buf->bufstruct_mem == (void *) 0) {
-		perror("shmat");
+		PERROR("shmat");
 		return -1;
 	}
 	DBG("successfully attached buffer bufstruct memory");
@@ -408,7 +408,7 @@ int add_buffer(pid_t pid, char *bufname)
 	/* obtain info on the memory segment */
 	result = shmctl(buf->shmid, IPC_STAT, &shmds);
 	if(result == -1) {
-		perror("shmctl");
+		PERROR("shmctl");
 		return -1;
 	}
 	buf->memlen = shmds.shm_segsz;
@@ -528,7 +528,7 @@ int main(int argc, char **argv)
 
 	result = sigemptyset(&sigset);
 	if(result == -1) {
-		perror("sigemptyset");
+		PERROR("sigemptyset");
 		return 1;
 	}
 	sa.sa_handler = sigterm_handler;
@@ -554,17 +554,17 @@ int main(int argc, char **argv)
 	/* setup handler for SIGPIPE */
 	result = sigemptyset(&sigset);
 	if(result == -1) {
-		perror("sigemptyset");
+		PERROR("sigemptyset");
 		return 1;
 	}
 	result = sigaddset(&sigset, SIGPIPE);
 	if(result == -1) {
-		perror("sigaddset");
+		PERROR("sigaddset");
 		return 1;
 	}
 	result = sigprocmask(SIG_BLOCK, &sigset, NULL);
 	if(result == -1) {
-		perror("sigprocmask");
+		PERROR("sigprocmask");
 		return 1;
 	}
 
