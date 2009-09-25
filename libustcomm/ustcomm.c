@@ -390,13 +390,24 @@ static int init_named_socket(const char *name, char **path_out)
 	return -1;
 }
 
+/*
+ * Return value:
+ *   0: Success, but no reply because recv() returned 0
+ *   1: Success
+ *   -1: Error
+ *
+ * On error, the error message is printed, except on
+ * ECONNRESET, which is normal when the application dies.
+ */
+
 int ustcomm_send_request(struct ustcomm_connection *conn, const char *req, char **reply)
 {
 	int result;
 
-	result = send(conn->fd, req, strlen(req), 0);
+	result = send(conn->fd, req, strlen(req), MSG_NOSIGNAL);
 	if(result == -1) {
-		PERROR("send");
+		if(errno != ECONNRESET)
+			PERROR("send");
 		return -1;
 	}
 
@@ -406,7 +417,8 @@ int ustcomm_send_request(struct ustcomm_connection *conn, const char *req, char 
 	*reply = (char *) malloc(MSG_MAX+1);
 	result = recv(conn->fd, *reply, MSG_MAX, 0);
 	if(result == -1) {
-		PERROR("recv");
+		if(errno != ECONNRESET)
+			PERROR("recv");
 		return -1;
 	}
 	else if(result == 0) {
