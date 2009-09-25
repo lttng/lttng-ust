@@ -804,12 +804,10 @@ void create_listener(void)
 
 void sighandler(int sig)
 {
-	static char have_listener = 0;
 	DBG("sighandler");
 
 	if(!have_listener) {
 		create_listener();
-		have_listener = 1;
 	}
 }
 
