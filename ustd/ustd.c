@@ -278,6 +278,7 @@ void *consumer_thread(void *arg)
 			WARN("application died while putting subbuffer");
 			/* FIXME: probably need to skip the first subbuffer in finish_consuming_dead_subbuffer */
 			finish_consuming_dead_subbuffer(buf);
+			break;
 		}
 		else if(result == PUT_SUBBUF_OK) {
 		}
