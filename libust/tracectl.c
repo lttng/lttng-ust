@@ -1155,6 +1155,8 @@ void ust_fork(void)
 
 	/* Delete all blocked consumers */
 	list_for_each_entry(bc, &blocked_consumers, list) {
+		close(bc->fd_producer);
+		close(bc->fd_consumer);
 		free(deletable_bc);
 		deletable_bc = bc;
 		list_del(&bc->list);
