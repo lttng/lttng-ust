@@ -1,7 +1,6 @@
 #ifndef KERNELCOMPAT_H
 #define KERNELCOMPAT_H
 
-#include <compiler.h>
 #include <kcompat.h>
 
 #include <string.h>

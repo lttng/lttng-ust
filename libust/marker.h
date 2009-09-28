@@ -29,7 +29,6 @@
 #include "immediate.h"
 //ust// #include <linux/ltt-channels.h>
 #include "kernelcompat.h"
-#include "compiler.h"
 #include <kcompat/list.h>
 #include "localerr.h"
 
