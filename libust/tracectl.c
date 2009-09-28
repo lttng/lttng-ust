@@ -1006,13 +1006,15 @@ static void __attribute__((constructor(1000))) init()
 			return;
 		}
 
-		inform_consumer_daemon(trace_name);
-
 		result = ltt_trace_start(trace_name);
 		if(result < 0) {
 			ERR("ltt_trace_start failed");
 			return;
 		}
+
+		/* Do this after the trace is started in order to avoid creating confusion
+		 * if the trace fails to start. */
+		inform_consumer_daemon(trace_name);
 	}
 
 

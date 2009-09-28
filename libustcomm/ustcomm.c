@@ -89,7 +89,7 @@ static int send_message_fd(int fd, const char *msg)
 {
 	int result;
 
-	result = send(fd, msg, strlen(msg), 0);
+	result = send(fd, msg, strlen(msg), MSG_NOSIGNAL);
 	if(result == -1) {
 		PERROR("send");
 		return -1;
