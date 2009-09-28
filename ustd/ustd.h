@@ -32,8 +32,6 @@ struct buffer_info {
 	s64 pidunique;
 };
 
-ssize_t patient_write(int fd, const void *buf, size_t count);
-
 void finish_consuming_dead_subbuffer(struct buffer_info *buf);
 
 #endif /* USTD_H */

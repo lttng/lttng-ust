@@ -35,6 +35,7 @@
 #include "ustd.h"
 #include "localerr.h"
 #include "ustcomm.h"
+#include "share.h"
 
 /* return value: 0 = subbuffer is finished, it won't produce data anymore
  *               1 = got subbuffer successfully
@@ -196,30 +197,6 @@ end:
 		free(received_msg);
 
 	return retval;
-}
-
-/* This write is patient because it restarts if it was incomplete.
- */
-
-ssize_t patient_write(int fd, const void *buf, size_t count)
-{
-	const char *bufc = (const char *) buf;
-	int result;
-
-	for(;;) {
-		result = write(fd, bufc, count);
-		if(result <= 0) {
-			return result;
-		}
-		count -= result;
-		bufc += result;
-
-		if(count == 0) {
-			break;
-		}
-	}
-
-	return bufc-(const char *)buf;
 }
 
 void decrement_active_buffers(void *arg)
