@@ -772,7 +772,7 @@ void *listener_main(void *p)
 	}
 }
 
-int have_listener = 0;
+volatile sig_atomic_t have_listener = 0;
 
 void create_listener(void)
 {
