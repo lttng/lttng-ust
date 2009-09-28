@@ -121,7 +121,7 @@ static void print_markers(FILE *fp)
 	marker_iter_start(&iter);
 
 	while(iter.marker) {
-		fprintf(fp, "marker: %s_%s %d \"%s\"\n", iter.marker->channel, iter.marker->name, (int)imv_read(iter.marker->state), iter.marker->format);
+		fprintf(fp, "marker: %s/%s %d \"%s\"\n", iter.marker->channel, iter.marker->name, (int)imv_read(iter.marker->state), iter.marker->format);
 		marker_iter_next(&iter);
 	}
 	unlock_markers();

@@ -255,7 +255,7 @@ int ustcmd_get_cmsf(struct marker_status **cmsf, const pid_t pid)
 	while (big_str[i] != '\0') {
 		char state;
 
-		sscanf(big_str + i, "%a[^/]/%a[^ ] %c %a[^\n]",
+		sscanf(big_str + i, "marker: %a[^/]/%a[^ ] %c %a[^\n]",
 			&tmp_cmsf[cmsf_ind].channel,
 			&tmp_cmsf[cmsf_ind].marker,
 			&state,

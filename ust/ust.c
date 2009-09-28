@@ -310,7 +310,7 @@ int main(int argc, char *argv[])
 				unsigned int i = 0;
 				while (cmsf[i].channel != NULL) {
 					printf("{PID: %u, channel/marker: %s/%s, "
-						"state: %u, fs: %s}\n",
+						"state: %u, fmt: %s}\n",
 						(unsigned int) *pidit,
 						cmsf[i].channel,
 						cmsf[i].marker,
