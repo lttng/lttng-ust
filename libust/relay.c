@@ -101,7 +101,11 @@ static int relay_alloc_buf(struct rchan_buf *buf, size_t *size)
 	*size = PAGE_ALIGN(*size);
 
 	result = buf->shmid = shmget(getpid(), *size, IPC_CREAT | IPC_EXCL | 0700);
-	if(buf->shmid == -1) {
+	if(result == -1 && errno == EINVAL) {
+		ERR("shmget() returned EINVAL; maybe /proc/sys/kernel/shmmax should be increased.");
+		return -1;
+	}
+	else if(result == -1) {
 		PERROR("shmget");
 		return -1;
 	}

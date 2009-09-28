@@ -112,11 +112,6 @@ int get_subbuffer(struct buffer_info *buf)
 		retval = -1;
 		goto end;
 	}
-	else if(result == 0) {
-		DBG("app died while being traced");
-		retval = GET_SUBBUF_DIED;
-		goto end;
-	}
 
 	result = sscanf(received_msg, "%as %ld", &rep_code, &buf->consumed_old);
 	if(result != 2 && result != 1) {

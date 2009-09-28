@@ -406,7 +406,7 @@ int ustcomm_send_request(struct ustcomm_connection *conn, const char *req, char 
 
 	result = send(conn->fd, req, strlen(req), MSG_NOSIGNAL);
 	if(result == -1) {
-		if(errno != ECONNRESET)
+		if(errno != EPIPE)
 			PERROR("send");
 		return -1;
 	}
@@ -506,7 +506,7 @@ int ustcomm_init_app(pid_t pid, struct ustcomm_app *handle)
 
 	handle->server.listen_fd = init_named_socket(name, &(handle->server.socketpath));
 	if(handle->server.listen_fd < 0) {
-		ERR("error initializing named socket");
+		ERR("Error initializing named socket (%s). Check that directory exists and that it is writable.", name);
 		goto free_name;
 	}
 	free(name);
