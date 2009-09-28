@@ -1,4 +1,4 @@
-#LyX 1.6.2 created this file. For more info see http://www.lyx.org/
+#LyX 1.6.1 created this file. For more info see http://www.lyx.org/
 \lyxformat 345
 \begin_document
 \begin_header
@@ -1176,6 +1176,30 @@ floats between c types and trace types.
 
 \begin_layout Standard
 or from float to double is also not supported.
+\end_layout
+
+\begin_layout Section
+Environment variables
+\end_layout
+
+\begin_layout Standard
+The following environment variables change the behavior of libust.
+\end_layout
+
+\begin_layout Description
+UST_TRACE When defined, automatically enables tracing.
+\end_layout
+
+\begin_layout Description
+UST_AUTOPROBE When value is 1, enable all markers automatically.
+ When value is a regular expression, enable all markers whose name matches
+ the regular expression.
+\end_layout
+
+\begin_layout Description
+UST_DAEMON_SOCKET If not set, the default location of the daemon socket
+ is used.
+ If set, the value is used as path to the ustd socket.
 \end_layout
 
 \end_body
