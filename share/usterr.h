@@ -5,6 +5,9 @@
 #include <sys/types.h>
 #include <sys/syscall.h>
 #include <errno.h>
+#include <stdarg.h>
+
+#include "share.h"
 
 #ifndef UST_COMPONENT
 //#error UST_COMPONENT is undefined
@@ -15,9 +18,34 @@
 #define XSTR(d) STR(d)
 #define STR(s) #s
 
+/* We sometimes print in the tracing path, and tracing can occur in
+ * signal handlers, so we must use a print method which is signal safe.
+ */
+
+#define sigsafe_print_err(fmt, args...) \
+{ \
+	/* Can't use dynamic allocation. Limit ourselves to 250 chars. */ \
+	char ____buf[250]; \
+	int ____saved_errno; \
+\
+	/* Save the errno. */ \
+	____saved_errno = errno; \
+\
+	snprintf(____buf, sizeof(____buf), fmt, ## args); \
+\
+	/* Add end of string in case of buffer overflow. */ \
+	____buf[sizeof(____buf)-1] = 0; \
+\
+	patient_write(STDERR_FILENO, ____buf, strlen(____buf)); \
+	/* Can't print errors because we are in the error printing code path. */ \
+\
+	/* Restore errno, in order to be async-signal safe. */ \
+	errno = ____saved_errno; \
+}
+
 #define UST_STR_COMPONENT XSTR(UST_COMPONENT)
 
-#define ERRMSG(fmt, args...) do { fprintf(stderr, UST_STR_COMPONENT "[%ld/%ld]: " fmt " (" __FILE__ ":" XSTR(__LINE__) ")\n", (long) getpid(), (long) syscall(SYS_gettid), ## args); fflush(stderr); } while(0)
+#define ERRMSG(fmt, args...) do { sigsafe_print_err(UST_STR_COMPONENT "[%ld/%ld]: " fmt " (" __FILE__ ":" XSTR(__LINE__) ")\n", (long) getpid(), (long) syscall(SYS_gettid), ## args); fflush(stderr); } while(0)
 
 #define DEBUG
 #ifdef DEBUG
