@@ -59,40 +59,6 @@ pthread_mutex_t active_buffers_mutex = PTHREAD_MUTEX_INITIALIZER;
 /* Whether a request to end the program was received. */
 sig_atomic_t terminate_req = 0;
 
-int test_sigpipe(void)
-{
-	sigset_t sigset;
-	int result;
-
-	result = sigemptyset(&sigset);
-	if(result == -1) {
-		PERROR("sigemptyset");
-		return -1;
-	}
-	result = sigaddset(&sigset, SIGPIPE);
-	if(result == -1) {
-		PERROR("sigaddset");
-		return -1;
-	}
-
-	result = sigtimedwait(&sigset, NULL, &(struct timespec){0,0});
-	if(result == -1 && errno == EAGAIN) {
-		/* no signal received */
-		return 0;
-	}
-	else if(result == -1) {
-		PERROR("sigtimedwait");
-		return -1;
-	}
-	else if(result == SIGPIPE) {
-		/* received sigpipe */
-		return 1;
-	}
-	else {
-		assert(0);
-	}
-}
-
 int get_subbuffer(struct buffer_info *buf)
 {
 	char *send_msg=NULL;
@@ -103,9 +69,9 @@ int get_subbuffer(struct buffer_info *buf)
 
 	asprintf(&send_msg, "get_subbuffer %s", buf->name);
 	result = ustcomm_send_request(&buf->conn, send_msg, &received_msg);
-	if(test_sigpipe()) {
-		WARN("process %d destroyed before we could connect to it", buf->pid);
-		retval = GET_SUBBUF_DONE;
+	if(result == -1 && errno == EPIPE || result == 0) {
+		DBG("app died while being traced");
+		retval = GET_SUBBUF_DIED;
 		goto end;
 	}
 	else if(result < 0) {
