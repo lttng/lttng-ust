@@ -203,6 +203,7 @@ void *consumer_thread(void *arg)
 		}
 
 		/* put the subbuffer */
+		/* FIXME: we actually should unput the buffer before consuming... */
 		result = put_subbuffer(buf);
 		if(result == -1) {
 			ERR("unknown error putting subbuffer (channel=%s)", buf->name);
