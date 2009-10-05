@@ -27,7 +27,7 @@
 #include <poll.h>
 #include <regex.h>
 
-#include <urcu.h>
+#include <urcu-bp.h>
 
 #include "marker.h"
 #include "tracer.h"

@@ -29,7 +29,7 @@
 //#include <linux/rcupdate.h>
 
 #define _LGPL_SOURCE
-#include <urcu.h>
+#include <urcu-bp.h>
 
 #include "immediate.h"
 #include "kernelcompat.h"

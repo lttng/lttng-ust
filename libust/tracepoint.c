@@ -38,7 +38,7 @@
 //#include "list.h"
 
 #define _LGPL_SOURCE
-#include <urcu.h>
+#include <urcu-bp.h>
 
 //extern struct tracepoint __start___tracepoints[] __attribute__((visibility("hidden")));
 //extern struct tracepoint __stop___tracepoints[] __attribute__((visibility("hidden")));

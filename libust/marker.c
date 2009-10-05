@@ -31,7 +31,7 @@
 //ust// #include <linux/ltt-tracer.h>
 
 #define _LGPL_SOURCE
-#include <urcu.h>
+#include <urcu-bp.h>
 
 #include "kernelcompat.h"
 
