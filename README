@@ -43,3 +43,7 @@ Package contents:
 - libmallocwrap
   An example library that can be LD_PRELOAD'ed to instrument calls to malloc()
   in any program without need to recompile it.
+
+- libinterfork
+  A library that is LD_PRELOAD'ed, and that hijacks calls to several system
+  calls in order to trace across these calls.
