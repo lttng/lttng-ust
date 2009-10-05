@@ -28,7 +28,7 @@ Package contents:
   The actual userspace tracing library that must be linked to the
   instrumented programs.
 
-- ust
+- ustctl
   A program to control the tracing of userspace applications. It can list
   markers, start the tracing, stop the tracing, enable/disable markers, etc.
 
