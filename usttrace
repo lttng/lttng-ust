@@ -4,8 +4,8 @@
 # Distributed under the GPLv2.
 
 USTD="./ustd/ustd"
-LIBINTERFORK="./libinterfork/.libs/libinterfork.so"
-LIBMALLOCWRAP="./libmallocwrap/.libs/libmallocwrap.so"
+LIBINTERFORK_PATH="./libinterfork/.libs/libinterfork.so"
+LIBMALLOCWRAP_PATH="./libmallocwrap/.libs/libmallocwrap.so"
 
 STD_LDLIBRARY_UST="./libust/.libs:../liburcu"
 
@@ -20,18 +20,20 @@ function usage () {
 	echo "    -L    Add path to ust libraries to LD_LIBRARY_PATH." 2>/dev/stderr
 	echo "    -m    Instrument malloc calls." 2>/dev/stderr
 	echo "    -f    Also trace forked processes." 2>/dev/stderr
+	echo "    -s    Use system-wide daemon instead of creating one for this session." 2>/dev/stderr
 }
 
 function error() {
 	echo "$0: error: $1" 2>/dev/stderr
 }
 
-while getopts ":hlLmf" options; do
+while getopts ":hlLmfs" options; do
 	case $options in
 		l) arg_preload_libust=1;;
 		L) arg_ld_std_ust=1;;
 		m) arg_preload_malloc=1;;
 		f) arg_preload_fork=1;;
+		s) arg_syswide_daemon=1;;
 		h) usage;
 		   exit 0;;
 		\?) echo $usage
@@ -66,19 +68,33 @@ mkdir -p "$OUTDIR"
 # Choose socket path
 SOCKPATH="/tmp/ust-sock-$$"
 
-# Start daemon
-$USTD -s "$SOCKPATH" -o "$OUTDIR" >"$OUTDIR/ustd.log" 2>&1 &
-USTDPID=$!
+if [ "$arg_syswide_daemon" != "1" ];
+then
+	# Start daemon
+	$USTD -s "$SOCKPATH" -o "$OUTDIR" 2>&1 >"$OUTDIR/ustd.log" &
+	USTDPID="$!"
+	export UST_DAEMON_SOCKET="$SOCKPATH"
+fi
+
+# Wait for the daemon to settle
+# If we don't, the process may try to connect to its socket before
+# it's ready.
+# FIXME: is there a way to make sure this works every time?
+sleep 0.5
 
 # Establish the environment for the command
 export UST_TRACE=1
 export UST_AUTOPROBE=1
-export UST_DAEMON_SOCKET="$SOCKPATH"
 
 if [ "$arg_preload_libust" = "1" ];
 then
 	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./libust/.libs"
 	export LD_PRELOAD="$LD_PRELOAD:./libust/.libs/libust.so"
+fi
+
+if [ "$arg_ld_std_ust" = "1" ];
+then
+	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$STD_LDLIBRARY_UST"
 fi
 
 if [ "$arg_preload_malloc" = "1" ];
@@ -88,23 +104,29 @@ fi
 
 if [ "$arg_preload_fork" = "1" ];
 then
-	export LD_PRELOAD="$LD_PRELOAD:./libinterfork/.libs/libinterfork.so"
+	export LD_PRELOAD="$LD_PRELOAD:$LIBINTERFORK_PATH"
 fi
 
-if [ "$arg_ld_std_ust" = "1" ];
-then
-	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$STD_LDLIBRARY_UST"
-fi
+# Install a handler for SIGIO. This is the signal that will be sent by ustd to
+# the traced program to trigger the creation of its listener thread. However,
+# it is possible that the SIGIO will be sent after the shell fork, but before
+# the exec of the command. If this handler isn't there, bash might terminate
+# because of a unhandled signal.
 
 # Execute the command
-bash -c "$CMD"
+bash -c "$CMD" 2>&1 | tee "$OUTDIR/app.log"
 
 ## Because of the keepalive mechanism, we're sure that by the time
 ## we get here, the daemon is connected to all the buffers that still exist.
 ## Therefore we can politely ask it to die when it's done.
 
-kill -SIGTERM "$USTDPID"
+if [ "$arg_syswide_daemon" != "1" ];
+then
+	# Tell the daemon to die
+	kill -SIGTERM "$USTDPID"
 
-# Tell the daemon to die
-echo "Waiting for ustd to shutdown..."
-wait "$USTDPID"
+	echo "Waiting for ustd to shutdown..."
+	wait "$USTDPID"
+fi
+
+echo "Trace was output in: " $OUTDIR
