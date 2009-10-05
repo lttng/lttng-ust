@@ -172,9 +172,194 @@ void decrement_active_buffers(void *arg)
 	pthread_mutex_unlock(&active_buffers_mutex);
 }
 
-void *consumer_thread(void *arg)
+int create_dir_if_needed(char *dir)
 {
-	struct buffer_info *buf = (struct buffer_info *) arg;
+	int result;
+	result = mkdir(dir, 0777);
+	if(result == -1) {
+		if(errno != EEXIST) {
+			PERROR("mkdir");
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+int is_directory(const char *dir)
+{
+	int result;
+	struct stat st;
+
+	result = stat(dir, &st);
+	if(result == -1) {
+		PERROR("stat");
+		return 0;
+	}
+
+	if(!S_ISDIR(st.st_mode)) {
+		return 0;
+	}
+
+	return 1;
+}
+
+struct buffer_info *connect_buffer(pid_t pid, const char *bufname)
+{
+	struct buffer_info *buf;
+	char *send_msg;
+	char *received_msg;
+	int result;
+	char *tmp;
+	int fd;
+	struct shmid_ds shmds;
+
+	buf = (struct buffer_info *) malloc(sizeof(struct buffer_info));
+	if(buf == NULL) {
+		ERR("add_buffer: insufficient memory");
+		return NULL;
+	}
+
+	buf->name = bufname;
+	buf->pid = pid;
+
+	/* connect to app */
+	result = ustcomm_connect_app(buf->pid, &buf->conn);
+	if(result) {
+		WARN("unable to connect to process, it probably died before we were able to connect");
+		return NULL;
+	}
+
+	/* get pidunique */
+	asprintf(&send_msg, "get_pidunique");
+	result = ustcomm_send_request(&buf->conn, send_msg, &received_msg);
+	free(send_msg);
+	if(result == -1) {
+		ERR("problem in ustcomm_send_request(get_pidunique)");
+		return NULL;
+	}
+
+	result = sscanf(received_msg, "%lld", &buf->pidunique);
+	if(result != 1) {
+		ERR("unable to parse response to get_pidunique");
+		return NULL;
+	}
+	free(received_msg);
+	DBG("got pidunique %lld", buf->pidunique);
+
+	/* get shmid */
+	asprintf(&send_msg, "get_shmid %s", buf->name);
+	result = ustcomm_send_request(&buf->conn, send_msg, &received_msg);
+	free(send_msg);
+	if(result == -1) {
+		ERR("problem in ustcomm_send_request(get_shmid)");
+		return NULL;
+	}
+
+	result = sscanf(received_msg, "%d %d", &buf->shmid, &buf->bufstruct_shmid);
+	if(result != 2) {
+		ERR("unable to parse response to get_shmid");
+		return NULL;
+	}
+	free(received_msg);
+	DBG("got shmids %d %d", buf->shmid, buf->bufstruct_shmid);
+
+	/* get n_subbufs */
+	asprintf(&send_msg, "get_n_subbufs %s", buf->name);
+	result = ustcomm_send_request(&buf->conn, send_msg, &received_msg);
+	free(send_msg);
+	if(result == -1) {
+		ERR("problem in ustcomm_send_request(g_n_subbufs)");
+		return NULL;
+	}
+
+	result = sscanf(received_msg, "%d", &buf->n_subbufs);
+	if(result != 1) {
+		ERR("unable to parse response to get_n_subbufs");
+		return NULL;
+	}
+	free(received_msg);
+	DBG("got n_subbufs %d", buf->n_subbufs);
+
+	/* get subbuf size */
+	asprintf(&send_msg, "get_subbuf_size %s", buf->name);
+	ustcomm_send_request(&buf->conn, send_msg, &received_msg);
+	free(send_msg);
+
+	result = sscanf(received_msg, "%d", &buf->subbuf_size);
+	if(result != 1) {
+		ERR("unable to parse response to get_subbuf_size");
+		return NULL;
+	}
+	free(received_msg);
+	DBG("got subbuf_size %d", buf->subbuf_size);
+
+	/* attach memory */
+	buf->mem = shmat(buf->shmid, NULL, 0);
+	if(buf->mem == (void *) 0) {
+		PERROR("shmat");
+		return NULL;
+	}
+	DBG("successfully attached buffer memory");
+
+	buf->bufstruct_mem = shmat(buf->bufstruct_shmid, NULL, 0);
+	if(buf->bufstruct_mem == (void *) 0) {
+		PERROR("shmat");
+		return NULL;
+	}
+	DBG("successfully attached buffer bufstruct memory");
+
+	/* obtain info on the memory segment */
+	result = shmctl(buf->shmid, IPC_STAT, &shmds);
+	if(result == -1) {
+		PERROR("shmctl");
+		return NULL;
+	}
+	buf->memlen = shmds.shm_segsz;
+
+	/* open file for output */
+	if(!trace_path) {
+		/* Only create the directory if using the default path, because
+		 * of the risk of typo when using trace path override. We don't
+		 * want to risk creating plenty of useless directories in that case.
+		 */
+		result = create_dir_if_needed(USTD_DEFAULT_TRACE_PATH);
+		if(result == -1) {
+			ERR("could not create directory %s", USTD_DEFAULT_TRACE_PATH);
+			return NULL;
+		}
+
+		trace_path = USTD_DEFAULT_TRACE_PATH;
+	}
+
+	asprintf(&tmp, "%s/%u_%lld", trace_path, buf->pid, buf->pidunique);
+	result = create_dir_if_needed(tmp);
+	if(result == -1) {
+		ERR("could not create directory %s", tmp);
+		free(tmp);
+		return NULL;
+	}
+	free(tmp);
+
+	asprintf(&tmp, "%s/%u_%lld/%s_0", trace_path, buf->pid, buf->pidunique, buf->name);
+	result = fd = open(tmp, O_WRONLY | O_CREAT | O_TRUNC | O_EXCL, 00600);
+	if(result == -1) {
+		PERROR("open");
+		ERR("failed opening trace file %s", tmp);
+		return NULL;
+	}
+	buf->file_fd = fd;
+	free(tmp);
+
+	pthread_mutex_lock(&active_buffers_mutex);
+	active_buffers++;
+	pthread_mutex_unlock(&active_buffers_mutex);
+
+	return buf;
+}
+
+int consumer_loop(struct buffer_info *buf)
+{
 	int result;
 
 	pthread_cleanup_push(decrement_active_buffers, NULL);
@@ -229,194 +414,56 @@ void *consumer_thread(void *arg)
 
 	pthread_cleanup_pop(1);
 
-	return NULL;
-}
-
-int create_dir_if_needed(char *dir)
-{
-	int result;
-	result = mkdir(dir, 0777);
-	if(result == -1) {
-		if(errno != EEXIST) {
-			PERROR("mkdir");
-			return -1;
-		}
-	}
-
 	return 0;
 }
 
-int is_directory(const char *dir)
+void free_buffer(struct buffer_info *buf)
 {
-	int result;
-	struct stat st;
-
-	result = stat(dir, &st);
-	if(result == -1) {
-		PERROR("stat");
-		return 0;
-	}
-
-	if(!S_ISDIR(st.st_mode)) {
-		return 0;
-	}
-
-	return 1;
 }
 
-int add_buffer(pid_t pid, char *bufname)
+struct consumer_thread_args {
+	pid_t pid;
+	const char *bufname;
+};
+
+void *consumer_thread(void *arg)
 {
-	struct buffer_info *buf;
-	char *send_msg;
-	char *received_msg;
-	int result;
-	char *tmp;
-	int fd;
-	pthread_t thr;
-	struct shmid_ds shmds;
+	struct buffer_info *buf = (struct buffer_info *) arg;
+	struct consumer_thread_args *args = (struct consumer_thread_args *) arg;
 
-	buf = (struct buffer_info *) malloc(sizeof(struct buffer_info));
+	DBG("GOT ARGS: pid %d bufname %s", args->pid, args->bufname);
+
+	buf = connect_buffer(args->pid, args->bufname);
 	if(buf == NULL) {
-		ERR("add_buffer: insufficient memory");
-		return -1;
+		ERR("failed to connect to buffer");
+		goto end;
 	}
 
-	buf->name = bufname;
-	buf->pid = pid;
+	consumer_loop(buf);
 
-	/* connect to app */
-	result = ustcomm_connect_app(buf->pid, &buf->conn);
-	if(result) {
-		WARN("unable to connect to process, it probably died before we were able to connect");
-		return -1;
-	}
+	free_buffer(buf);
 
-	/* get pidunique */
-	asprintf(&send_msg, "get_pidunique");
-	result = ustcomm_send_request(&buf->conn, send_msg, &received_msg);
-	free(send_msg);
-	if(result == -1) {
-		ERR("problem in ustcomm_send_request(get_pidunique)");
-		return -1;
-	}
+	end:
+	/* bufname is free'd in free_buffer() */
+	free(args);
+	return NULL;
+}
 
-	result = sscanf(received_msg, "%lld", &buf->pidunique);
-	if(result != 1) {
-		ERR("unable to parse response to get_pidunique");
-		return -1;
-	}
-	free(received_msg);
-	DBG("got pidunique %lld", buf->pidunique);
+int start_consuming_buffer(pid_t pid, const char *bufname)
+{
+	pthread_t thr;
+	struct consumer_thread_args *args;
 
-	/* get shmid */
-	asprintf(&send_msg, "get_shmid %s", buf->name);
-	result = ustcomm_send_request(&buf->conn, send_msg, &received_msg);
-	free(send_msg);
-	if(result == -1) {
-		ERR("problem in ustcomm_send_request(get_shmid)");
-		return -1;
-	}
+	DBG("beginning of start_consuming_buffer: args: pid %d bufname %s", pid, bufname);
 
-	result = sscanf(received_msg, "%d %d", &buf->shmid, &buf->bufstruct_shmid);
-	if(result != 2) {
-		ERR("unable to parse response to get_shmid");
-		return -1;
-	}
-	free(received_msg);
-	DBG("got shmids %d %d", buf->shmid, buf->bufstruct_shmid);
+	args = (struct consumer_thread_args *) malloc(sizeof(struct consumer_thread_args));
 
-	/* get n_subbufs */
-	asprintf(&send_msg, "get_n_subbufs %s", buf->name);
-	result = ustcomm_send_request(&buf->conn, send_msg, &received_msg);
-	free(send_msg);
-	if(result == -1) {
-		ERR("problem in ustcomm_send_request(g_n_subbufs)");
-		return -1;
-	}
+	args->pid = pid;
+	args->bufname = strdup(bufname);
+	DBG("beginning2 of start_consuming_buffer: args: pid %d bufname %s", args->pid, args->bufname);
 
-	result = sscanf(received_msg, "%d", &buf->n_subbufs);
-	if(result != 1) {
-		ERR("unable to parse response to get_n_subbufs");
-		return -1;
-	}
-	free(received_msg);
-	DBG("got n_subbufs %d", buf->n_subbufs);
-
-	/* get subbuf size */
-	asprintf(&send_msg, "get_subbuf_size %s", buf->name);
-	ustcomm_send_request(&buf->conn, send_msg, &received_msg);
-	free(send_msg);
-
-	result = sscanf(received_msg, "%d", &buf->subbuf_size);
-	if(result != 1) {
-		ERR("unable to parse response to get_subbuf_size");
-		return -1;
-	}
-	free(received_msg);
-	DBG("got subbuf_size %d", buf->subbuf_size);
-
-	/* attach memory */
-	buf->mem = shmat(buf->shmid, NULL, 0);
-	if(buf->mem == (void *) 0) {
-		PERROR("shmat");
-		return -1;
-	}
-	DBG("successfully attached buffer memory");
-
-	buf->bufstruct_mem = shmat(buf->bufstruct_shmid, NULL, 0);
-	if(buf->bufstruct_mem == (void *) 0) {
-		PERROR("shmat");
-		return -1;
-	}
-	DBG("successfully attached buffer bufstruct memory");
-
-	/* obtain info on the memory segment */
-	result = shmctl(buf->shmid, IPC_STAT, &shmds);
-	if(result == -1) {
-		PERROR("shmctl");
-		return -1;
-	}
-	buf->memlen = shmds.shm_segsz;
-
-	/* open file for output */
-	if(!trace_path) {
-		/* Only create the directory if using the default path, because
-		 * of the risk of typo when using trace path override. We don't
-		 * want to risk creating plenty of useless directories in that case.
-		 */
-		result = create_dir_if_needed(USTD_DEFAULT_TRACE_PATH);
-		if(result == -1) {
-			ERR("could not create directory %s", USTD_DEFAULT_TRACE_PATH);
-			return -1;
-		}
-
-		trace_path = USTD_DEFAULT_TRACE_PATH;
-	}
-
-	asprintf(&tmp, "%s/%u_%lld", trace_path, buf->pid, buf->pidunique);
-	result = create_dir_if_needed(tmp);
-	if(result == -1) {
-		ERR("could not create directory %s", tmp);
-		free(tmp);
-		return -1;
-	}
-	free(tmp);
-
-	asprintf(&tmp, "%s/%u_%lld/%s_0", trace_path, buf->pid, buf->pidunique, buf->name);
-	result = fd = open(tmp, O_WRONLY | O_CREAT | O_TRUNC | O_EXCL, 00600);
-	if(result == -1) {
-		PERROR("open");
-		ERR("failed opening trace file %s", tmp);
-		return -1;
-	}
-	buf->file_fd = fd;
-	free(tmp);
-
-	pthread_mutex_lock(&active_buffers_mutex);
-	active_buffers++;
-	pthread_mutex_unlock(&active_buffers_mutex);
-
-	pthread_create(&thr, NULL, consumer_thread, buf);
+	pthread_create(&thr, NULL, consumer_thread, args);
+	DBG("end of start_consuming_buffer: args: pid %d bufname %s", args->pid, args->bufname);
 
 	return 0;
 }
@@ -541,7 +588,7 @@ int main(int argc, char **argv)
 		result = ustcomm_ustd_recv_message(&ustd, &recvbuf, NULL, 100);
 		if(result == -1) {
 			ERR("error in ustcomm_ustd_recv_message");
-			continue;
+			goto loop_end;
 		}
 		if(result > 0) {
 			if(!strncmp(recvbuf, "collect", 7)) {
@@ -551,18 +598,24 @@ int main(int argc, char **argv)
 
 				result = sscanf(recvbuf, "%*s %d %50as", &pid, &bufname);
 				if(result != 2) {
-					fprintf(stderr, "parsing error: %s\n", recvbuf);
+					ERR("parsing error: %s", recvbuf);
+					goto free_bufname;
 				}
 
-				result = add_buffer(pid, bufname);
+				result = start_consuming_buffer(pid, bufname);
 				if(result < 0) {
 					ERR("error in add_buffer");
-					continue;
+					goto free_bufname;
 				}
+
+				free_bufname:
+				free(bufname);
 			}
 
 			free(recvbuf);
 		}
+
+		loop_end:
 
 		if(terminate_req) {
 			pthread_mutex_lock(&active_buffers_mutex);

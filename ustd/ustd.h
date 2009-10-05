@@ -6,7 +6,7 @@
 #define USTD_DEFAULT_TRACE_PATH "/tmp/usttrace"
 
 struct buffer_info {
-	char *name;
+	const char *name;
 	pid_t pid;
 	struct ustcomm_connection conn;
 
