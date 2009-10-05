@@ -1128,7 +1128,7 @@ static void __attribute__((destructor)) keepalive()
 	ustcomm_fini_app(&ustcomm_app);
 }
 
-void ust_potential_exec(void)
+noinline void ust_potential_exec(void)
 {
 	trace_mark(ust, potential_exec, MARK_NOARGS);
 
@@ -1141,7 +1141,7 @@ void ust_potential_exec(void)
  * of the new process will not be collected.
  */
 
-void ust_fork(void)
+noinline void ust_fork(void)
 {
 	struct blocked_consumer *bc;
 	struct blocked_consumer *deletable_bc = NULL;
