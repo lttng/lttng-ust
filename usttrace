@@ -36,9 +36,9 @@ while getopts ":hlLmfs" options; do
 		s) arg_syswide_daemon=1;;
 		h) usage;
 		   exit 0;;
-		\?) echo $usage
+		\?) usage
 			exit 1;;
-		*) echo $usage
+		*) usage
 			exit 1;;
 	esac
 done
