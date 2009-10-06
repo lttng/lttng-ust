@@ -1,9 +1,5 @@
 LTTNG USERSPACE TRACER
 
-NOTE: This library has not been released yet because altough it is licenced as
-LGPL, it can only be used as gpl because it depends on GPL files. It will be
-released as soon as these issues are resolved.
-
 Dependencies:
 
 - liburcu
