@@ -1,4 +1,4 @@
-INCLUDES = -I$(top_builddir)/share -I$(top_builddir)/libust $(KCOMPAT_CFLAGS) $(URCU_CFLAGS)
+INCLUDES = -I$(top_builddir)/share -I$(top_builddir)/libust
 
 lib_LTLIBRARIES = libustjava.la
 libustjava_la_SOURCES = UST.c UST.h

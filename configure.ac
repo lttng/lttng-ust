@@ -50,30 +50,18 @@ AC_C_INLINE
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([gettimeofday munmap socket strerror strtol])
 
-AC_ARG_WITH(urcu, [  --with-urcu path        Path to userspace RCU source], [
-	AC_CHECK_FILE(["$withval/urcu.h"], [
-		URCU_CFLAGS="-I$withval"
-		URCU_LIBS="-L$withval -lurcu-bp" ],
-		AC_MSG_ERROR([Cannot find urcu.h in urcu directory]))
-], [
-	PKG_CHECK_MODULES(URCU, [liburcu], , [
-		AC_MSG_ERROR([Must specify urcu path.])])
-])
-AC_SUBST(URCU_CFLAGS)
-AC_SUBST(URCU_LIBS)
+# URCU
 
-AC_ARG_WITH(kcompat, [  --with-kcompat path     Path to userspace kcompat source
-], [
-        AC_CHECK_FILE("$withval/kcompat.h", [
-                KCOMPAT_CFLAGS="-I$withval $URCU_CFLAGS"
-                KCOMPAT_LIBS=
-                ], AC_MSG_ERROR([Cannot find kcompat.h in kcompat directory]))
-], [
-        PKG_CHECK_MODULES(KCOMPAT, [libkcompat], , [
-		AC_MSG_ERROR([Must specify kcompat path.])])
-])
-AC_SUBST(KCOMPAT_CFLAGS)
-AC_SUBST(KCOMPAT_LIBS)
+# urcu - check if we just find the headers it out of the box.
+AC_CHECK_HEADERS([urcu-bp.h], [], [AC_MSG_ERROR([Cannot find [URCU] headers (urcu-bp.h). Use [CFLAGS]=-Idir to specify their location.])])
+
+# urcu - check that URCU lib is available to compilation
+AC_CHECK_LIB([urcu-bp], [synchronize_rcu], [], [AC_MSG_ERROR([Cannot find liburcu-bp lib. Use [LDFLAGS]=-Ldir to specify its location.])])
+
+# kcompat
+
+AC_CHECK_HEADERS([kcompat.h], [], [AC_MSG_ERROR([Cannot find kcompat headers (kcompat.h). Use [CFLAGS]=-Idir to specify their location.])])
+
 
 AC_CONFIG_FILES([
 	Makefile

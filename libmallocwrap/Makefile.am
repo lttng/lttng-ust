@@ -1,5 +1,4 @@
-INCLUDES = -I$(top_builddir)/share -I$(top_builddir)/libust \
-	$(KCOMPAT_CFLAGS) $(URCU_CFLAGS)
+INCLUDES = -I$(top_builddir)/share -I$(top_builddir)/libust
 
 lib_LTLIBRARIES = libmallocwrap.la
 libmallocwrap_la_SOURCES = mallocwrap.c

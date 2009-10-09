@@ -13,8 +13,7 @@ Dependencies:
 Installation instruction:
 
 - Download, compile and install liburcu and libkcompat.
-- In this package's tree, run ./configure, specifying the location of
-  liburcu and libkcompat with the --with-urcu and --with-kcompat options.
+- In this package's tree, run ./configure.
 - Run make.
 - See the manual in the doc/ directory for usage instructions.
 
