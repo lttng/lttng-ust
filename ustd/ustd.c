@@ -53,6 +53,7 @@
 char *sock_path=NULL;
 char *trace_path=NULL;
 int daemon_mode = 0;
+char *pidfile = NULL;
 
 /* Number of active buffers and the mutex to protect it. */
 int active_buffers = 0;
@@ -516,6 +517,9 @@ int parse_args(int argc, char **argv)
 		case 'd':
 			daemon_mode = 1;
 			break;
+		case 'p':
+			pidfile = strdup(optarg);
+			break;
 		case 'h':
 			usage();
 			exit(0);
@@ -654,10 +658,11 @@ int start_ustd_daemon()
 {
 	int result;
 	int fd[2];
+	pid_t child_pid;
 
 	result = pipe(fd);
 
-	result = fork();
+	result = child_pid = fork();
 	if(result == -1) {
 		PERROR("fork");
 		return -1;
@@ -667,6 +672,27 @@ int start_ustd_daemon()
 	}
 	else {
 		char buf;
+		FILE *pidfp;
+
+		/* It's important to write the file *before*
+		 * the parent ends, because the file may be
+		 * read as soon as the parent ends.
+		 */
+		if(pidfile) {
+			pidfp = fopen(pidfile, "w+");
+			if(!pidfp) {
+				PERROR("fopen (%s)", pidfile);
+				WARN("killing child process");
+				result = kill(child_pid, SIGTERM);
+				if(result == -1) {
+					PERROR("kill");
+				}
+				return -1;
+			}
+
+			fprintf(pidfp, "%d\n", child_pid);
+			fclose(pidfp);
+		}
 
 		result = read(fd[0], &buf, 1);
 		if(result == -1) {
