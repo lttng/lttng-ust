@@ -26,6 +26,7 @@
 #include <sys/mman.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <fcntl.h>
 //#include "list.h"
 #include "relay.h"
 #include "channels.h"
@@ -1502,6 +1503,12 @@ static int ltt_relay_create_buffer(struct ltt_trace_struct *trace,
 	}
 	ltt_buf->data_ready_fd_read = fds[0];
 	ltt_buf->data_ready_fd_write = fds[1];
+
+	/* FIXME: do we actually need this? */
+	result = fcntl(fds[0], F_SETFL, O_NONBLOCK);
+	if(result == -1) {
+		PERROR("fcntl");
+	}
 
 //ust//	ltt_buf->commit_seq = malloc(sizeof(ltt_buf->commit_seq) * n_subbufs);
 //ust//	if(!ltt_buf->commit_seq) {
