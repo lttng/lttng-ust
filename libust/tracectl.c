@@ -892,7 +892,7 @@ static void auto_probe_connect(struct marker *m)
 
 }
 
-static void __attribute__((constructor(1000))) init()
+static void __attribute__((constructor)) init()
 {
 	int result;
 	char* autoprobe_val = NULL;
