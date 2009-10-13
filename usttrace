@@ -3,13 +3,14 @@
 # usttrace  by Pierre-Marc Fournier 2009
 # Distributed under the GPLv2.
 
-USTD="./ustd/ustd"
-LIBINTERFORK_PATH="./libinterfork/.libs/libinterfork.so"
-LIBMALLOCWRAP_PATH="./libmallocwrap/.libs/libmallocwrap.so"
+USTTRACE_DIR="$(dirname $0)"
+USTD="${USTTRACE_DIR}/ustd/ustd"
+LIBINTERFORK_PATH="${USTTRACE_DIR}/libinterfork/.libs/libinterfork.so"
+LIBMALLOCWRAP_PATH="${USTTRACE_DIR}/libmallocwrap/.libs/libmallocwrap.so"
 
-STD_LDLIBRARY_UST="./libust/.libs:../liburcu"
+STD_LDLIBRARY_UST="${USTTRACE_DIR}/libust/.libs"
 
-BASE_TRACE_DIR="$HOME/.usttraces"
+BASE_TRACE_DIR="${HOME}/.usttraces"
 
 function usage () {
 	echo "usage:  $0 OPTIONS COMMAND" 2>/dev/stderr
@@ -43,6 +44,12 @@ while getopts ":hlLmfs" options; do
 	esac
 done
 shift $(($OPTIND - 1))
+
+if [ ! -x "$USTD" ];
+then
+	error "specified path to ustd not executable ($USTD)"
+	exit 1
+fi
 
 # Prepare vars
 CMD=$1
