@@ -63,10 +63,6 @@ struct tracecmd { /* no padding */
 /* volatile because shared between the listener and the main thread */
 volatile sig_atomic_t buffers_to_export = 0;
 
-//struct listener_arg {
-//	int pipe_fd;
-//};
-
 struct trctl_msg {
 	/* size: the size of all the fields except size itself */
 	uint32_t size;
