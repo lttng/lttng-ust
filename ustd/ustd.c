@@ -52,6 +52,7 @@
 
 char *sock_path=NULL;
 char *trace_path=NULL;
+int daemon_mode = 0;
 
 /* Number of active buffers and the mutex to protect it. */
 int active_buffers = 0;
@@ -473,7 +474,9 @@ void usage(void)
 	fprintf(stderr, "Usage:\nustd OPTIONS\n\nOptions:\n"
 			"\t-h\t\tDisplay this usage.\n"
 			"\t-o DIR\t\tSpecify the directory where to output the traces.\n"
-			"\t-s PATH\t\tSpecify the path to use for the daemon socket.\n");
+			"\t-s PATH\t\tSpecify the path to use for the daemon socket.\n"
+			"\t-d\t\tStart as a daemon.\n"
+			"\t--pidfile FILE\tWrite the PID in this file (when using -d).\n");
 }
 
 int parse_args(int argc, char **argv)
@@ -483,12 +486,13 @@ int parse_args(int argc, char **argv)
 	while (1) {
 		int option_index = 0;
 		static struct option long_options[] = {
+			{"pidfile", 1, 0, 'p'},
 			{"help", 0, 0, 'h'},
 			{"version", 0, 0, 'V'},
 			{0, 0, 0, 0}
 		};
 
-		c = getopt_long(argc, argv, "hs:o:", long_options, &option_index);
+		c = getopt_long(argc, argv, "hs:o:d", long_options, &option_index);
 		if (c == -1)
 			break;
 
@@ -508,6 +512,9 @@ int parse_args(int argc, char **argv)
 				ERR("Not a valid directory. (%s)", trace_path);
 				return -1;
 			}
+			break;
+		case 'd':
+			daemon_mode = 1;
 			break;
 		case 'h':
 			usage();
@@ -531,7 +538,7 @@ void sigterm_handler(int sig)
 	terminate_req = 1;
 }
 
-int main(int argc, char **argv)
+int start_ustd(int fd)
 {
 	struct ustcomm_ustd ustd;
 	int result;
@@ -550,11 +557,6 @@ int main(int argc, char **argv)
 	if(result == -1) {
 		PERROR("sigaction");
 		return 1;
-	}
-
-	result = parse_args(argc, argv);
-	if(result == -1) {
-		exit(1);
 	}
 
 	result = ustcomm_init_ustd(&ustd, sock_path);
@@ -578,6 +580,24 @@ int main(int argc, char **argv)
 	if(result == -1) {
 		PERROR("sigprocmask");
 		return 1;
+	}
+
+	/* Notify parent that we are successfully started. */
+	if(fd != -1) {
+		/* write any one character */
+		result = write(fd, "!", 1);
+		if(result == -1) {
+			PERROR("write");
+			return -1;
+		}
+		if(result != 1) {
+			ERR("Problem sending confirmation of daemon start to parent");
+			return -1;
+		}
+		result = close(fd);
+		if(result == -1) {
+			PERROR("close");
+		}
 	}
 
 	/* app loop */
@@ -628,4 +648,65 @@ int main(int argc, char **argv)
 	}
 
 	return 0;
+}
+
+int start_ustd_daemon()
+{
+	int result;
+	int fd[2];
+
+	result = pipe(fd);
+
+	result = fork();
+	if(result == -1) {
+		PERROR("fork");
+		return -1;
+	}
+	else if(result == 0) {
+		return start_ustd(fd[1]);
+	}
+	else {
+		char buf;
+
+		result = read(fd[0], &buf, 1);
+		if(result == -1) {
+			PERROR("read");
+			return -1;
+		}
+		if(result != 1) {
+			ERR("did not receive valid confirmation that the daemon is started");
+			return -1;
+		}
+
+		result = close(fd[0]);
+		if(result == -1) {
+			PERROR("close");
+		}
+
+		DBG("The daemon is now successfully started");
+	}
+
+	/* Wait for confirmation that the server is ready. */
+
+
+	return 0;
+}
+
+int main(int argc, char **argv)
+{
+	int result;
+
+	result = parse_args(argc, argv);
+	if(result == -1) {
+		exit(1);
+	}
+
+	if(daemon_mode) {
+		result = start_ustd_daemon();
+	}
+	else {
+		result = start_ustd(-1);
+	}
+
+	return result;
 }

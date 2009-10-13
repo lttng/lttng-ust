@@ -79,7 +79,10 @@ fi
 # Wait for the daemon to settle
 # If we don't, the process may try to connect to its socket before
 # it's ready.
-# FIXME: is there a way to make sure this works every time?
+# FIXME: is there a way to make sure this works every time? Yes,
+# we could have a mode where ustd daemonizes itself. Therefore
+# by the time the control returns to the console, it's ready.
+
 sleep 0.5
 
 # Establish the environment for the command
