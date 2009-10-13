@@ -774,15 +774,18 @@ void create_listener(void)
 {
 #ifdef USE_CLONE
 	static char listener_stack[16384];
+	int result;
 #else
 	pthread_t thread;
 #endif
 
-	if(have_listener)
+	if(have_listener) {
+		WARN("not creating listener because we already had one");
 		return;
+	}
 
 #ifdef USE_CLONE
-	result = clone(listener_main, listener_stack+sizeof(listener_stack)-1, CLONE_FS | CLONE_FILES | CLONE_VM | CLONE_SIGHAND | CLONE_THREAD, NULL);
+	result = clone((int (*)(void *)) listener_main, listener_stack+sizeof(listener_stack)-1, CLONE_FS | CLONE_FILES | CLONE_VM | CLONE_SIGHAND | CLONE_THREAD, NULL);
 	if(result == -1) {
 		perror("clone");
 		return;
