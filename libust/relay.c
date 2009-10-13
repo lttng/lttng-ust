@@ -1798,13 +1798,24 @@ static inline int ltt_relay_try_reserve(
 			- (local_read(&ltt_buf->commit_count[subbuf_index])
 				& ltt_channel->commit_count_mask);
 		if (offsets->reserve_commit_diff == 0) {
+			long consumed;
+
+			consumed = atomic_long_read(&ltt_buf->consumed);
+
 			/* Next buffer not corrupted. */
 			if (!ltt_channel->overwrite &&
 				(SUBBUF_TRUNC(offsets->begin, buf->chan)
-				 - SUBBUF_TRUNC(atomic_long_read(
-							&ltt_buf->consumed),
-						buf->chan))
+				 - SUBBUF_TRUNC(consumed, buf->chan))
 				>= rchan->alloc_size) {
+
+				long consumed_idx = SUBBUF_INDEX(consumed, buf->chan);
+				long commit_count = local_read(&ltt_buf->commit_count[consumed_idx]);
+				if(((commit_count - buf->chan->subbuf_size) & ltt_channel->commit_count_mask) - (BUFFER_TRUNC(consumed, buf->chan) >> ltt_channel->n_subbufs_order) != 0) {
+					WARN("Event dropped. Caused by non-committed event.");
+				}
+				else {
+					WARN("Event dropped. Caused by non-consumed buffer.");
+				}
 				/*
 				 * We do not overwrite non consumed buffers
 				 * and we are full : event is lost.
