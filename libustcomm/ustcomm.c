@@ -67,22 +67,11 @@ char *strdup_malloc(const char *s)
 
 static int signal_process(pid_t pid)
 {
-	int result;
-
-	result = kill(pid, UST_SIGNAL);
-	if(result == -1) {
-		PERROR("kill");
-		return -1;
-	}
-
-	/* FIXME: should wait in a better way */
-	//sleep(1);
-
 	return 0;
 }
 
 int pid_is_online(pid_t pid) {
-	return kill(pid, UST_SIGNAL) != -1;
+	return 1;
 }
 
 static int send_message_fd(int fd, const char *msg)

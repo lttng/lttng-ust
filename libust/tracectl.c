@@ -798,59 +798,9 @@ void create_listener(void)
 	have_listener = 1;
 }
 
-/* The signal handler itself. Signals must be setup so there cannot be
-   nested signals. */
-
-void sighandler(int sig)
-{
-	DBG("sighandler");
-
-	if(!have_listener) {
-		create_listener();
-	}
-}
-
-/* Called by the app signal handler to chain it to us. */
-
-void chain_signal(void)
-{
-	sighandler(USTSIGNAL);
-}
-
 static int init_socket(void)
 {
 	return ustcomm_init_app(getpid(), &ustcomm_app);
-}
-
-static int init_signal_handler(void)
-{
-	/* Attempt to handler SIGIO. If the main program wants to
-	 * handle it, fine, it'll override us. They it'll have to
-	 * use the chaining function.
-	 */
-
-	int result;
-	struct sigaction act;
-
-	result = sigemptyset(&act.sa_mask);
-	if(result == -1) {
-		PERROR("sigemptyset");
-		return -1;
-	}
-
-	act.sa_handler = sighandler;
-	act.sa_flags = SA_RESTART;
-
-	/* Only defer ourselves. Also, try to restart interrupted
-	 * syscalls to disturb the traced program as little as possible.
-	 */
-	result = sigaction(SIGIO, &act, NULL);
-	if(result == -1) {
-		PERROR("sigaction");
-		return -1;
-	}
-
-	return 0;
 }
 
 #define AUTOPROBE_DISABLED      0
@@ -916,11 +866,8 @@ static void __attribute__((constructor)) init()
 		ERR("init_socket error");
 		return;
 	}
-	result = init_signal_handler();
-	if(result == -1) {
-		ERR("init_signal_handler error");
-		return;
-	}
+
+	create_listener();
 
 	autoprobe_val = getenv("UST_AUTOPROBE");
 	if(autoprobe_val) {
