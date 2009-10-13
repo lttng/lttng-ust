@@ -77,20 +77,13 @@ SOCKPATH="/tmp/ust-sock-$$"
 
 if [ "$arg_syswide_daemon" != "1" ];
 then
+	pidfilepath="/tmp/usttrace-$USER-$(date +%Y%m%d%H%M%S%N)-ustd-pid"
+
 	# Start daemon
-	$USTD -s "$SOCKPATH" -o "$OUTDIR" 2>&1 >"$OUTDIR/ustd.log" &
-	USTDPID="$!"
+	$USTD -d --pidfile "$pidfilepath" -s "$SOCKPATH" -o "$OUTDIR" >"$OUTDIR/ustd.log" 2>&1 &
+	USTDPID="$(<$pidfilepath)"
 	export UST_DAEMON_SOCKET="$SOCKPATH"
 fi
-
-# Wait for the daemon to settle
-# If we don't, the process may try to connect to its socket before
-# it's ready.
-# FIXME: is there a way to make sure this works every time? Yes,
-# we could have a mode where ustd daemonizes itself. Therefore
-# by the time the control returns to the console, it's ready.
-
-sleep 0.5
 
 # Establish the environment for the command
 export UST_TRACE=1
@@ -137,6 +130,8 @@ then
 
 	echo "Waiting for ustd to shutdown..."
 	wait "$USTDPID"
+
+	rm "$pidfilepath"
 fi
 
 echo "Trace was output in: " $OUTDIR
