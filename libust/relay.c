@@ -268,7 +268,7 @@ static void __relay_reset(struct rchan_buf *buf, unsigned int init)
 //ust//		init_waitqueue_head(&buf->read_wait);
 		kref_init(&buf->kref);
 //ust//		setup_timer(&buf->timer, wakeup_readers, (unsigned long)buf);
-	} else
+	} //ust// else
 //ust//		del_timer_sync(&buf->timer);
 
 	buf->finalized = 0;
