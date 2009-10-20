@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/libust
 
 noinst_PROGRAMS = hello
 hello_SOURCES = hello.c tp.c tp.h

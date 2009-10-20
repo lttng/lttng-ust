@@ -33,7 +33,7 @@
 #include "tracer.h"
 #include "usterr.h"
 #include "ustcomm.h"
-#include "relay.h" /* FIXME: remove */
+#include "buffers.h" /* FIXME: remove */
 #include "marker-control.h"
 
 //#define USE_CLONE
@@ -87,9 +87,8 @@ struct blocked_consumer {
 	struct ustcomm_server server;
 	struct ustcomm_source src;
 
-	/* args to ltt_do_get_subbuf */
-	struct rchan_buf *rbuf;
-	struct ltt_channel_buf_struct *lttbuf;
+	/* args to ust_buffers_do_get_subbuf */
+	struct ust_buffer *buf;
 
 	struct list_head list;
 };
@@ -250,13 +249,13 @@ void process_blocked_consumers(void)
 				continue;
 			}
 
-			result = ltt_do_get_subbuf(bc->rbuf, bc->lttbuf, &consumed_old);
+			result = ust_buffers_do_get_subbuf(bc->buf, &consumed_old);
 			if(result == -EAGAIN) {
 				WARN("missed buffer?");
 				continue;
 			}
 			else if(result < 0) {
-				DBG("ltt_do_get_subbuf: error: %s", strerror(-result));
+				DBG("ust_buffers_do_get_subbuf: error: %s", strerror(-result));
 			}
 			asprintf(&reply, "%s %ld", "OK", consumed_old);
 			result = ustcomm_send_reply(&bc->server, reply, &bc->src);
@@ -423,16 +422,15 @@ void *listener_main(void *p)
 			}
 
 			for(i=0; i<trace->nr_channels; i++) {
-				struct rchan *rchan = trace->channels[i].trans_channel_data;
-				struct rchan_buf *rbuf = rchan->buf;
-				struct ltt_channel_struct *ltt_channel = (struct ltt_channel_struct *)rchan->private_data;
+				struct ust_channel *channel = &trace->channels[i];
+				struct ust_buffer *buf = channel->buf;
 
 				if(!strcmp(trace->channels[i].channel_name, channel_name)) {
 					char *reply;
 
-					DBG("the shmid for the requested channel is %d", rbuf->shmid);
-					DBG("the shmid for its buffer structure is %d", ltt_channel->buf_shmid);
-					asprintf(&reply, "%d %d", rbuf->shmid, ltt_channel->buf_shmid);
+					DBG("the shmid for the requested channel is %d", buf->shmid);
+					DBG("the shmid for its buffer structure is %d", channel->buf_shmid);
+					asprintf(&reply, "%d %d", buf->shmid, channel->buf_shmid);
 
 					result = ustcomm_send_reply(&ustcomm_app.server, reply, &src);
 					if(result) {
@@ -472,13 +470,13 @@ void *listener_main(void *p)
 			}
 
 			for(i=0; i<trace->nr_channels; i++) {
-				struct rchan *rchan = trace->channels[i].trans_channel_data;
+				struct ust_channel *channel = &trace->channels[i];
 
 				if(!strcmp(trace->channels[i].channel_name, channel_name)) {
 					char *reply;
 
-					DBG("the n_subbufs for the requested channel is %zd", rchan->n_subbufs);
-					asprintf(&reply, "%zd", rchan->n_subbufs);
+					DBG("the n_subbufs for the requested channel is %d", channel->subbuf_cnt);
+					asprintf(&reply, "%d", channel->subbuf_cnt);
 
 					result = ustcomm_send_reply(&ustcomm_app.server, reply, &src);
 					if(result) {
@@ -516,13 +514,13 @@ void *listener_main(void *p)
 			}
 
 			for(i=0; i<trace->nr_channels; i++) {
-				struct rchan *rchan = trace->channels[i].trans_channel_data;
+				struct ust_channel *channel = &trace->channels[i];
 
 				if(!strcmp(trace->channels[i].channel_name, channel_name)) {
 					char *reply;
 
-					DBG("the subbuf_size for the requested channel is %zd", rchan->subbuf_size);
-					asprintf(&reply, "%zd", rchan->subbuf_size);
+					DBG("the subbuf_size for the requested channel is %zd", channel->subbuf_size);
+					asprintf(&reply, "%zd", channel->subbuf_size);
 
 					result = ustcomm_send_reply(&ustcomm_app.server, reply, &src);
 					if(result) {
@@ -567,11 +565,10 @@ void *listener_main(void *p)
 			}
 
 			for(i=0; i<trace->nr_channels; i++) {
-				struct rchan *rchan = trace->channels[i].trans_channel_data;
+				struct ust_channel *channel = &trace->channels[i];
 
 				if(!strcmp(trace->channels[i].channel_name, channel_name)) {
-					struct rchan_buf *rbuf = rchan->buf;
-					struct ltt_channel_buf_struct *lttbuf = trace->channels[i].buf;
+					struct ust_buffer *buf = channel->buf;
 					struct blocked_consumer *bc;
 
 					bc = (struct blocked_consumer *) malloc(sizeof(struct blocked_consumer));
@@ -580,9 +577,8 @@ void *listener_main(void *p)
 						goto next_cmd;
 					}
 					bc->fd_consumer = src.fd;
-					bc->fd_producer = lttbuf->data_ready_fd_read;
-					bc->rbuf = rbuf;
-					bc->lttbuf = lttbuf;
+					bc->fd_producer = buf->data_ready_fd_read;
+					bc->buf = buf;
 					bc->src = src;
 					bc->server = ustcomm_app.server;
 
@@ -630,21 +626,20 @@ void *listener_main(void *p)
 			}
 
 			for(i=0; i<trace->nr_channels; i++) {
-				struct rchan *rchan = trace->channels[i].trans_channel_data;
+				struct ust_channel *channel = &trace->channels[i];
 
 				if(!strcmp(trace->channels[i].channel_name, channel_name)) {
-					struct rchan_buf *rbuf = rchan->buf;
-					struct ltt_channel_buf_struct *lttbuf = trace->channels[i].buf;
+					struct ust_buffer *buf = channel->buf;
 					char *reply;
 					long consumed_old=0;
 
-					result = ltt_do_put_subbuf(rbuf, lttbuf, consumed_old);
+					result = ust_buffers_do_put_subbuf(buf, consumed_old);
 					if(result < 0) {
-						WARN("ltt_do_put_subbuf: error (subbuf=%s)", channel_name);
+						WARN("ust_buffers_do_put_subbuf: error (subbuf=%s)", channel_name);
 						asprintf(&reply, "%s", "ERROR");
 					}
 					else {
-						DBG("ltt_do_put_subbuf: success (subbuf=%s)", channel_name);
+						DBG("ust_buffers_do_put_subbuf: success (subbuf=%s)", channel_name);
 						asprintf(&reply, "%s", "OK");
 					}
 

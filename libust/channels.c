@@ -247,11 +247,11 @@ int ltt_channels_get_index_from_name(const char *name)
  * Called with trace lock held. Does not perform the trace buffer allocation,
  * because we must let the user overwrite specific channel sizes.
  */
-struct ltt_channel_struct *ltt_channels_trace_alloc(unsigned int *nr_channels,
+struct ust_channel *ltt_channels_trace_alloc(unsigned int *nr_channels,
 						    int overwrite,
 						    int active)
 {
-	struct ltt_channel_struct *channel = NULL;
+	struct ust_channel *channel = NULL;
 	struct ltt_channel_setting *iter;
 
 	mutex_lock(&ltt_channel_mutex);
@@ -264,7 +264,7 @@ struct ltt_channel_struct *ltt_channels_trace_alloc(unsigned int *nr_channels,
 	else
 		kref_get(&index_kref);
 	*nr_channels = free_index;
-	channel = kzalloc(sizeof(struct ltt_channel_struct) * free_index,
+	channel = kzalloc(sizeof(struct ust_channel) * free_index,
 			  GFP_KERNEL);
 	if (!channel) {
 		WARN("ltt_channel_struct: channel null after alloc");
@@ -292,7 +292,7 @@ end:
  * Called with trace lock held. The actual channel buffers must be freed before
  * this function is called.
  */
-void ltt_channels_trace_free(struct ltt_channel_struct *channels)
+void ltt_channels_trace_free(struct ust_channel *channels)
 {
 	lock_markers();
 	mutex_lock(&ltt_channel_mutex);

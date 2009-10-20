@@ -52,6 +52,7 @@
 //ust// #include <linux/delay.h>
 //ust// #include <linux/vmalloc.h>
 //ust// #include <asm/atomic.h>
+#include <urcu-bp.h>
 #include <urcu/rculist.h>
 
 #include <ust/kernelcompat.h>
@@ -295,7 +296,7 @@ void notrace ltt_write_trace_header(struct ltt_trace_struct *trace,
 static void trace_async_wakeup(struct ltt_trace_struct *trace)
 {
 	int i;
-	struct ltt_channel_struct *chan;
+	struct ust_channel *chan;
 
 	/* Must check each channel for pending read wakeup */
 	for (i = 0; i < trace->nr_channels; i++) {
@@ -737,7 +738,6 @@ int ltt_trace_alloc(const char *trace_name)
 		subbuf_cnt = trace->channels[chan].subbuf_cnt;
 		prepare_chan_size_num(&subbuf_size, &subbuf_cnt);
 		err = trace->ops->create_channel(trace_name, trace,
-				trace->dentry.trace_root,
 				channel_name,
 				&trace->channels[chan],
 				subbuf_size,
@@ -846,7 +846,7 @@ traces_error:
 static void __ltt_trace_destroy(struct ltt_trace_struct	*trace)
 {
 	int i;
-	struct ltt_channel_struct *chan;
+	struct ust_channel *chan;
 
 	for (i = 0; i < trace->nr_channels; i++) {
 		chan = &trace->channels[i];

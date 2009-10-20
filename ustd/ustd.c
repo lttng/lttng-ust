@@ -698,7 +698,6 @@ int start_ustd_daemon()
 	}
 	else {
 		char buf;
-		FILE *pidfp;
 
 		result = read(fd[0], &buf, 1);
 		if(result == -1) {

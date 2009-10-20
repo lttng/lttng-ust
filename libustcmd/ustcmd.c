@@ -111,7 +111,7 @@ int ustcmd_destroy_trace(pid_t pid)
 {
 	int result;
 
-	result = ustcmd_send_cmd("destroy", pid, NULL);
+	result = ustcmd_send_cmd("trace_destroy", pid, NULL);
 	if (result) {
 		return USTCMD_ERR_GEN;
 	}

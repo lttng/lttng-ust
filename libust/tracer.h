@@ -28,8 +28,7 @@
 #include <stdarg.h>
 //#include "list.h"
 #include <ust/kernelcompat.h>
-#include "buffer.h"
-#include "relay.h"
+#include "buffers.h"
 #include "channels.h"
 #include "tracercore.h"
 #include <ust/marker.h>
@@ -57,7 +56,7 @@ struct ltt_serialize_closure;
 struct ltt_probe_private_data;
 
 /* Serialization callback '%k' */
-typedef size_t (*ltt_serialize_cb)(struct rchan_buf *buf, size_t buf_offset,
+typedef size_t (*ltt_serialize_cb)(struct ust_buffer *buf, size_t buf_offset,
 			struct ltt_serialize_closure *closure,
 			void *serialize_private, int *largest_align,
 			const char *fmt, va_list *args);
@@ -68,7 +67,7 @@ struct ltt_serialize_closure {
 	unsigned int cb_idx;
 };
 
-extern size_t ltt_serialize_data(struct rchan_buf *buf, size_t buf_offset,
+extern size_t ltt_serialize_data(struct ust_buffer *buf, size_t buf_offset,
 			struct ltt_serialize_closure *closure,
 			void *serialize_private,
 			int *largest_align, const char *fmt, va_list *args);
@@ -143,7 +142,7 @@ struct user_dbg_data {
 struct ltt_trace_ops {
 	/* First 32 bytes cache-hot cacheline */
 	int (*reserve_slot) (struct ltt_trace_struct *trace,
-				struct ltt_channel_struct *channel,
+				struct ust_channel *channel,
 				void **transport_data, size_t data_size,
 				size_t *slot_size, long *buf_offset, u64 *tsc,
 				unsigned int *rflags,
@@ -151,24 +150,24 @@ struct ltt_trace_ops {
 //ust//	void (*commit_slot) (struct ltt_channel_struct *channel,
 //ust//				void **transport_data, long buf_offset,
 //ust//				size_t slot_size);
-	void (*wakeup_channel) (struct ltt_channel_struct *ltt_channel);
+	void (*wakeup_channel) (struct ust_channel *channel);
 	int (*user_blocking) (struct ltt_trace_struct *trace,
 				unsigned int index, size_t data_size,
 				struct user_dbg_data *dbg);
- 	/* End of first 32 bytes cacheline */
- 	int (*create_dirs) (struct ltt_trace_struct *new_trace);
- 	void (*remove_dirs) (struct ltt_trace_struct *new_trace);
- 	int (*create_channel) (const char *trace_name,
- 				struct ltt_trace_struct *trace,
- 				struct dentry *dir, const char *channel_name,
- 				struct ltt_channel_struct *ltt_chan,
- 				unsigned int subbuf_size,
- 				unsigned int n_subbufs, int overwrite);
- 	void (*finish_channel) (struct ltt_channel_struct *channel);
- 	void (*remove_channel) (struct ltt_channel_struct *channel);
- 	void (*user_errors) (struct ltt_trace_struct *trace,
- 				unsigned int index, size_t data_size,
- 				struct user_dbg_data *dbg);
+	/* End of first 32 bytes cacheline */
+	int (*create_dirs) (struct ltt_trace_struct *new_trace);
+	void (*remove_dirs) (struct ltt_trace_struct *new_trace);
+	int (*create_channel) (const char *trace_name,
+				struct ltt_trace_struct *trace,
+				const char *channel_name,
+				struct ust_channel *channel,
+				unsigned int subbuf_size,
+				unsigned int n_subbufs, int overwrite);
+	void (*finish_channel) (struct ust_channel *channel);
+	void (*remove_channel) (struct ust_channel *channel);
+	void (*user_errors) (struct ltt_trace_struct *trace,
+				unsigned int index, size_t data_size,
+				struct user_dbg_data *dbg);
 } ____cacheline_aligned;
 
 struct ltt_transport {
@@ -190,7 +189,7 @@ struct ltt_trace_struct {
 	struct ltt_trace_ops *ops;
 	int active;
 	/* Second 32 bytes cache-hot cacheline */
-	struct ltt_channel_struct *channels;
+	struct ust_channel *channels;
 	unsigned int nr_channels;
 	u32 freq_scale;
 	u64 start_freq;
@@ -299,7 +298,7 @@ static inline size_t ltt_subbuffer_header_size(void)
 }
 
 /*
- * ltt_get_header_size
+ * ust_get_header_size
  *
  * Calculate alignment offset to 32-bits. This is the alignment offset of the
  * event header.
@@ -317,8 +316,8 @@ static inline size_t ltt_subbuffer_header_size(void)
  * The payload must itself determine its own alignment from the biggest type it
  * contains.
  * */
-static inline unsigned char ltt_get_header_size(
-		struct ltt_channel_struct *channel,
+static inline unsigned char ust_get_header_size(
+		struct ust_channel *channel,
 		size_t offset,
 		size_t data_size,
 		size_t *before_hdr_pad,
@@ -370,8 +369,7 @@ static inline unsigned char ltt_get_header_size(
  * returns : offset where the event data must be written.
  */
 static inline size_t ltt_write_event_header(struct ltt_trace_struct *trace,
-		struct ltt_channel_struct *channel,
-		struct rchan_buf *buf, long buf_offset,
+		struct ust_buffer *buf, long buf_offset,
 		u16 eID, size_t event_size,
 		u64 tsc, unsigned int rflags)
 {
@@ -393,44 +391,44 @@ static inline size_t ltt_write_event_header(struct ltt_trace_struct *trace,
 		break;
 	}
 	header.id_time |= (u32)tsc & LTT_TSC_MASK;
-	ltt_relay_write(buf, buf_offset, &header, sizeof(header));
+	ust_buffers_write(buf, buf_offset, &header, sizeof(header));
 	buf_offset += sizeof(header);
 
 	switch (rflags) {
 	case LTT_RFLAG_ID_SIZE_TSC:
 		small_size = min_t(size_t, event_size, 0xFFFFU);
-		ltt_relay_write(buf, buf_offset,
+		ust_buffers_write(buf, buf_offset,
 			(u16[]){ (u16)eID }, sizeof(u16));
 		buf_offset += sizeof(u16);
-		ltt_relay_write(buf, buf_offset,
+		ust_buffers_write(buf, buf_offset,
 			(u16[]){ (u16)small_size }, sizeof(u16));
 		buf_offset += sizeof(u16);
 		if (small_size == 0xFFFFU) {
-			ltt_relay_write(buf, buf_offset,
+			ust_buffers_write(buf, buf_offset,
 				(u32[]){ (u32)event_size }, sizeof(u32));
 			buf_offset += sizeof(u32);
 		}
 		buf_offset += ltt_align(buf_offset, sizeof(u64));
-		ltt_relay_write(buf, buf_offset,
+		ust_buffers_write(buf, buf_offset,
 			(u64[]){ (u64)tsc }, sizeof(u64));
 		buf_offset += sizeof(u64);
 		break;
 	case LTT_RFLAG_ID_SIZE:
 		small_size = min_t(size_t, event_size, 0xFFFFU);
-		ltt_relay_write(buf, buf_offset,
+		ust_buffers_write(buf, buf_offset,
 			(u16[]){ (u16)eID }, sizeof(u16));
 		buf_offset += sizeof(u16);
-		ltt_relay_write(buf, buf_offset,
+		ust_buffers_write(buf, buf_offset,
 			(u16[]){ (u16)small_size }, sizeof(u16));
 		buf_offset += sizeof(u16);
 		if (small_size == 0xFFFFU) {
-			ltt_relay_write(buf, buf_offset,
+			ust_buffers_write(buf, buf_offset,
 				(u32[]){ (u32)event_size }, sizeof(u32));
 			buf_offset += sizeof(u32);
 		}
 		break;
 	case LTT_RFLAG_ID:
-		ltt_relay_write(buf, buf_offset,
+		ust_buffers_write(buf, buf_offset,
 			(u16[]){ (u16)eID }, sizeof(u16));
 		buf_offset += sizeof(u16);
 		break;
@@ -465,7 +463,7 @@ static inline size_t ltt_write_event_header(struct ltt_trace_struct *trace,
  */
 static inline int ltt_reserve_slot(
 		struct ltt_trace_struct *trace,
-		struct ltt_channel_struct *channel,
+		struct ust_channel *channel,
 		void **transport_data,
 		size_t data_size,
 		size_t *slot_size,
@@ -598,7 +596,7 @@ extern struct dentry *get_filter_root(void);
 
 extern void ltt_write_trace_header(struct ltt_trace_struct *trace,
 		struct ltt_subbuffer_header *header);
-extern void ltt_buffer_destroy(struct ltt_channel_struct *ltt_chan);
+extern void ltt_buffer_destroy(struct ust_channel *ltt_chan);
 
 extern void ltt_core_register(int (*function)(u8, void *));
 

@@ -22,8 +22,6 @@
  */
 
 #include <linux/limits.h>
-//ust// #include <linux/kref.h>
-//ust// #include <linux/list.h>
 #include <errno.h>
 
 #include <ust/kernelcompat.h>
@@ -32,13 +30,13 @@
 #define EVENTS_PER_CHANNEL	65536
 
 struct ltt_trace_struct;
-struct rchan_buf;
 
-struct ltt_channel_struct {
+struct ust_buffer;
+
+struct ust_channel {
 	/* First 32 bytes cache-hot cacheline */
 	struct ltt_trace_struct	*trace;
 	void *buf;
-	void *trans_channel_data;
 	int overwrite:1;
 	int active:1;
 	unsigned int n_subbufs_order;
@@ -54,20 +52,25 @@ struct ltt_channel_struct {
 	 * buffer_begin - called on buffer-switch to a new sub-buffer
 	 * @buf: the channel buffer containing the new sub-buffer
 	 */
-	void (*buffer_begin) (struct rchan_buf *buf,
+	void (*buffer_begin) (struct ust_buffer *buf,
 			u64 tsc, unsigned int subbuf_idx);
 	/*
 	 * buffer_end - called on buffer-switch to a new sub-buffer
 	 * @buf: the channel buffer containing the previous sub-buffer
 	 */
-	void (*buffer_end) (struct rchan_buf *buf,
+	void (*buffer_end) (struct ust_buffer *buf,
 			u64 tsc, unsigned int offset, unsigned int subbuf_idx);
 	struct kref kref;	/* Channel transport reference count */
-	unsigned int subbuf_size;
+	size_t subbuf_size;
+	int subbuf_size_order;
 	unsigned int subbuf_cnt;
 	const char *channel_name;
 
 	int buf_shmid;
+
+	u32 version;
+	size_t alloc_size;
+	struct list_head list;
 } ____cacheline_aligned;
 
 struct ltt_channel_setting {
@@ -87,10 +90,10 @@ extern int ltt_channels_set_default(const char *name,
 			     unsigned int subbuf_cnt);
 extern const char *ltt_channels_get_name_from_index(unsigned int index);
 extern int ltt_channels_get_index_from_name(const char *name);
-extern struct ltt_channel_struct *ltt_channels_trace_alloc(unsigned int *nr_channels,
+extern struct ust_channel *ltt_channels_trace_alloc(unsigned int *nr_channels,
 						    int overwrite,
 						    int active);
-extern void ltt_channels_trace_free(struct ltt_channel_struct *channels);
+extern void ltt_channels_trace_free(struct ust_channel *channels);
 extern int _ltt_channels_get_event_id(const char *channel, const char *name);
 extern int ltt_channels_get_event_id(const char *channel, const char *name);
 

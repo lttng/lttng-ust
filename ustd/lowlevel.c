@@ -27,10 +27,10 @@
 
 void finish_consuming_dead_subbuffer(struct buffer_info *buf)
 {
-	struct ltt_channel_buf_struct *ltt_buf = buf->bufstruct_mem;
+	struct ust_buffer *ustbuf = buf->bufstruct_mem;
 
-	long write_offset = local_read(&ltt_buf->offset);
-	long consumed_offset = atomic_long_read(&ltt_buf->consumed);
+	long write_offset = local_read(&ustbuf->offset);
+	long consumed_offset = atomic_long_read(&ustbuf->consumed);
 
 	long i_subbuf;
 
@@ -59,7 +59,7 @@ void finish_consuming_dead_subbuffer(struct buffer_info *buf)
 		void *tmp;
 		/* commit_seq is the offset in the buffer of the end of the last sequential commit.
 		 * Bytes beyond this limit cannot be recovered. This is a free-running counter. */
-		long commit_seq = local_read(&ltt_buf->commit_seq[i_subbuf]);
+		long commit_seq = local_read(&ustbuf->commit_seq[i_subbuf]);
 
 		unsigned long valid_length = buf->subbuf_size;
 		long n_subbufs_order = get_count_order(buf->n_subbufs);

@@ -10,7 +10,7 @@
 #include <ust/marker.h>
 #include "usterr.h"
 #include "tp.h"
-
+#include "tracer.h"
 
 void inthandler(int sig)
 {
