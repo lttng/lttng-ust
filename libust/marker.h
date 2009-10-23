@@ -30,7 +30,7 @@
 //ust// #include <linux/ltt-channels.h>
 #include "kernelcompat.h"
 #include <kcompat/list.h>
-#include "localerr.h"
+#include "usterr.h"
 
 //ust// struct module;
 //ust// struct task_struct;

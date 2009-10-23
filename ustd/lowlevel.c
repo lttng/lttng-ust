@@ -19,7 +19,7 @@
 
 #include "tracer.h"
 #include "ustd.h"
-#include "localerr.h"
+#include "usterr.h"
 
 /* This truncates to an offset in the buffer. */
 #define USTD_BUFFER_TRUNC(offset, bufinfo) \

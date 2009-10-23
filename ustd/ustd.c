@@ -33,7 +33,7 @@
 #include <getopt.h>
 
 #include "ustd.h"
-#include "localerr.h"
+#include "usterr.h"
 #include "ustcomm.h"
 #include "share.h"
 
