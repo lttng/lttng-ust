@@ -76,6 +76,5 @@ AC_CONFIG_FILES([
 	libinterfork/Makefile
 	ustd/Makefile
 	ustctl/Makefile
-	java/Makefile
 ])
 AC_OUTPUT
