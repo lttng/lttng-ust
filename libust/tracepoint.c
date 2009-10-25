@@ -33,7 +33,7 @@
 #include <errno.h>
 
 #include "kernelcompat.h"
-#include "tracepoint.h"
+#include <ust/tracepoint.h>
 #include "usterr.h"
 //#include "list.h"
 

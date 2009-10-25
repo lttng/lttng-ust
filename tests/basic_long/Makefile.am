@@ -1,4 +1,4 @@
-INCLUDES = -I$(top_builddir)/share -I$(top_builddir)/libust
+INCLUDES = -I$(top_builddir)/share -I$(top_builddir)/include
 
 noinst_PROGRAMS = basic_long
 basic_long_SOURCES = basic_long.c

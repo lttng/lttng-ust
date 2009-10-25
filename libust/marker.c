@@ -35,7 +35,7 @@
 
 #include "kernelcompat.h"
 
-#include "marker.h"
+#include <ust/marker.h>
 #include "usterr.h"
 #include "channels.h"
 #include "tracercore.h"

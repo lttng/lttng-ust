@@ -29,7 +29,7 @@
 
 #include <urcu-bp.h>
 
-#include "marker.h"
+#include <ust/marker.h>
 #include "tracer.h"
 #include "usterr.h"
 #include "ustcomm.h"
