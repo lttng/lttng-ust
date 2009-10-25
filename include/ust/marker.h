@@ -28,9 +28,8 @@
 //ust// #include <linux/types.h>
 #include <ust/immediate.h>
 //ust// #include <linux/ltt-channels.h>
-#include "kernelcompat.h"
+#include <ust/kernelcompat.h>
 #include <kcompat/list.h>
-#include "usterr.h"
 
 //ust// struct module;
 //ust// struct task_struct;
@@ -303,7 +302,6 @@ extern struct marker __stop___markers[] __attribute__((visibility("hidden")));		
 											\
 static void __attribute__((constructor)) __markers__init(void) 				\
 {											\
-	DBG("next registration in "__FILE__"\n");\
 	marker_register_lib(__start___markers, (((long)__stop___markers)-((long)__start___markers))/sizeof(struct marker));\
 }
 

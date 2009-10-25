@@ -32,7 +32,7 @@
 #include <urcu-bp.h>
 
 #include <ust/immediate.h>
-#include "kernelcompat.h"
+#include <ust/kernelcompat.h>
 
 struct module;
 struct tracepoint;

@@ -8,6 +8,7 @@
 #include <signal.h>
 
 #include <ust/marker.h>
+#include "usterr.h"
 #include "tp.h"
 
 

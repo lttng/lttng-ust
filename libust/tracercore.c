@@ -22,7 +22,7 @@
 //ust// #include <linux/percpu.h>
 //ust// #include <linux/module.h>
 //ust// #include <linux/debugfs.h>
-#include "kernelcompat.h"
+#include <ust/kernelcompat.h>
 #include "tracercore.h"
 
 /* Traces structures */

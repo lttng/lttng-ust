@@ -1,7 +1,5 @@
 ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = libust tests libmallocwrap ustd ustctl libinterfork include
 
-EXTRA_DIST = doc share/kernelcompat.h share/share.h share/usterr.h
+EXTRA_DIST = doc
 dist_bin_SCRIPTS = usttrace
-
-include_HEADERS = share/kernelcompat.h share/usterr.h

@@ -33,7 +33,7 @@
 //ust// #include <linux/slab.h>
 #include <ctype.h>
 
-#include "kernelcompat.h"
+#include <ust/kernelcompat.h>
 //#include "list.h"
 #include "tracer.h"
 #include "usterr.h"

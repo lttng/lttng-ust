@@ -32,7 +32,7 @@
 #include <string.h>
 #include <stdint.h>
 
-#include "kernelcompat.h"
+#include <ust/kernelcompat.h>
 #define _LGPL_SOURCE
 #include <urcu-bp.h>
 #include <urcu/rculist.h>

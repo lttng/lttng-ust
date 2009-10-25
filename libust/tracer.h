@@ -27,7 +27,7 @@
 #include <sys/types.h>
 #include <stdarg.h>
 //#include "list.h"
-#include "kernelcompat.h"
+#include <ust/kernelcompat.h>
 #include "buffer.h"
 #include "relay.h"
 #include "channels.h"

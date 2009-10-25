@@ -33,7 +33,7 @@
 #define _LGPL_SOURCE
 #include <urcu-bp.h>
 
-#include "kernelcompat.h"
+#include <ust/kernelcompat.h>
 
 #include <ust/marker.h>
 #include "usterr.h"

@@ -54,7 +54,7 @@
 //ust// #include <asm/atomic.h>
 #include <urcu/rculist.h>
 
-#include "kernelcompat.h"
+#include <ust/kernelcompat.h>
 #include "tracercore.h"
 #include "tracer.h"
 #include "usterr.h"

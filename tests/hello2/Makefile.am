@@ -1,4 +1,4 @@
-INCLUDES = -I$(top_builddir)/share -I$(top_builddir)/include
+AM_CPPFLAGS = -I$(top_builddir)/include
 
 noinst_PROGRAMS = hello2
 hello2_SOURCES = hello2.c
