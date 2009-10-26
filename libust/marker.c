@@ -823,6 +823,7 @@ int marker_probe_register(const char *channel, const char *name,
 	}
 	mutex_unlock(&markers_mutex);
 
+	/* Activate marker if necessary */
 	marker_update_probes();
 
 	mutex_lock(&markers_mutex);
