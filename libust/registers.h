@@ -52,54 +52,50 @@ struct registers {
 	int ss;
 };
 
-static inline save_registers(struct registers *regs)
-{
-	asm ("movq %%rax,%c[rax_off](%[regs])\n\t"
-/*	     "movq %%rax,%[rax_el]\n\t"
-	     "movq %%rbx,%[rbx_el]\n\t"
-	     "movq %%rcx,%[rcx_el]\n\t"
-	     "movq %%rdx,%[rdx_el]\n\t"
-	     "movq %%rbp,%[rbp_el]\n\t"
-	     "movq %%rsp,%[rsp_el]\n\t"
-	     "movq %%rsi,%[rsi_el]\n\t"
-	     "movq %%rdi,%[rdi_el]\n\t"
-	     "movq %%r8, %[r8_el]\n\t"
-	     "movq %%r9, %[r9_el]\n\t"
-	     "movq %%r10,%[r10_el]\n\t"
-	     "movq %%r11,%[r11_el]\n\t"
-	     "movq %%r12,%[r12_el]\n\t"
-	     "movq %%r13,%[r13_el]\n\t"
-	     "movq %%r14,%[r14_el]\n\t"
-	     "movq %%r15,%[r15_el]\n\t"
-	     "movw %%cs,%[cs_el]\n\t"
-	     "movw %%ss,%[ss_el]\n\t"
-	     "call getip\n\t"
-	     "getip:\n\t"
-	     "popq %[rip_el]\n\t" */
-	: /* do output regs */
-	: [rax_off] "i" (offsetof(struct registers, rax)),
-	  [regs] "r" (regs)
-/*	: [rax_el] "m" (regs->rax),
-	  [rbx_el] "m" (regs->rbx),
-	  [rcx_el] "m" (regs->rcx),
-	  [rdx_el] "m" (regs->rdx),
-	  [rbp_el] "m" (regs->rbp),
-	  [rsp_el] "m" (regs->rsp),
-	  [rsi_el] "m" (regs->rsi),
-	  [rdi_el] "m" (regs->rdi),
-	  [r8_el] "m" (regs->r8),
-	  [r9_el] "m" (regs->r9),
-	  [r10_el] "m" (regs->r10),
-	  [r11_el] "m" (regs->r11),
-	  [r12_el] "m" (regs->r12),
-	  [r13_el] "m" (regs->r13),
-	  [r14_el] "m" (regs->r14),
-	  [r15_el] "m" (regs->r15),
-	  [cs_el] "m" (regs->cs),
-	  [ss_el] "m" (regs->ss),
-	  [rip_el] "m" (regs->rip)*/
+#define save_registers(regsptr) \
+	asm ("movq %%rax,%c[rax_off](%[regs])\n\t" \
+	     "movq %%rbx,%c[rbx_off](%[regs])\n\t" \
+	     "movq %%rcx,%c[rcx_off](%[regs])\n\t" \
+	     "movq %%rdx,%c[rdx_off](%[regs])\n\t" \
+	     "movq %%rbp,%c[rbp_off](%[regs])\n\t" \
+	     "movq %%rsp,%c[rsp_off](%[regs])\n\t" \
+	     "movq %%rsi,%c[rsi_off](%[regs])\n\t" \
+	     "movq %%rdi,%c[rdi_off](%[regs])\n\t" \
+	     "movq %%r8,%c[r8_off](%[regs])\n\t" \
+	     "movq %%r9,%c[r9_off](%[regs])\n\t" \
+	     "movq %%r10,%c[r10_off](%[regs])\n\t" \
+	     "movq %%r11,%c[r11_off](%[regs])\n\t" \
+	     "movq %%r12,%c[r12_off](%[regs])\n\t" \
+	     "movq %%r13,%c[r13_off](%[regs])\n\t" \
+	     "movq %%r14,%c[r14_off](%[regs])\n\t" \
+	     "movq %%r15,%c[r15_off](%[regs])\n\t" \
+	     "movw %%cs,%c[cs_off](%[regs])\n\t" \
+	     "movw %%ss,%c[ss_off](%[regs])\n\t" \
+	     "call getip\n\t" \
+	     "getip:\n\t" \
+	     "popq %c[rip_off](%[regs])\n\t" \
+	: /* do output regs */ \
+	: [regs] "r" (regsptr), \
+	  [rax_off] "i" (offsetof(struct registers, rax)), \
+	  [rbx_off] "i" (offsetof(struct registers, rbx)), \
+	  [rcx_off] "i" (offsetof(struct registers, rcx)), \
+	  [rdx_off] "i" (offsetof(struct registers, rdx)), \
+	  [rbp_off] "i" (offsetof(struct registers, rbp)), \
+	  [rsp_off] "i" (offsetof(struct registers, rsp)), \
+	  [rsi_off] "i" (offsetof(struct registers, rsi)), \
+	  [rdi_off] "i" (offsetof(struct registers, rdi)), \
+	  [r8_off] "i" (offsetof(struct registers, r8)), \
+	  [r9_off] "i" (offsetof(struct registers, r9)), \
+	  [r10_off] "i" (offsetof(struct registers, r10)), \
+	  [r11_off] "i" (offsetof(struct registers, r11)), \
+	  [r12_off] "i" (offsetof(struct registers, r12)), \
+	  [r13_off] "i" (offsetof(struct registers, r13)), \
+	  [r14_off] "i" (offsetof(struct registers, r14)), \
+	  [r15_off] "i" (offsetof(struct registers, r15)), \
+	  [cs_off] "i" (offsetof(struct registers, cs)), \
+	  [ss_off] "i" (offsetof(struct registers, ss)), \
+	  [rip_off] "i" (offsetof(struct registers, rip)) \
 	);
-}
 
 #endif
 
