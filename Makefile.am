@@ -14,4 +14,4 @@ libust.so: libust.ldscript.in
 	$(SED) -e "s@\@FORMAT\@@${libust_FORMAT}@" -e "s@\@PATH\@@${libdir}@g" < $< > $@
 
 libust-initializer.o: libust-initializer.c
-	$(CC) -c $(CFLAGS) -o $@ $<
+	$(CC) $(CFLAGS) -c -I$(top_builddir)/include -o $@ $<
