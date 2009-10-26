@@ -80,7 +80,7 @@ then
 	pidfilepath="/tmp/usttrace-$USER-$(date +%Y%m%d%H%M%S%N)-ustd-pid"
 	mkfifo -m 0600 "$pidfilepath"
 	# Start daemon
-	$USTD -d --pidfile "$pidfilepath" -s "$SOCKPATH" -o "$OUTDIR" >"$OUTDIR/ustd.log" 2>&1 &
+	$USTD --pidfile "$pidfilepath" -s "$SOCKPATH" -o "$OUTDIR" >"$OUTDIR/ustd.log" 2>&1 &
 	USTDPID="$(<$pidfilepath)"
 	export UST_DAEMON_SOCKET="$SOCKPATH"
 fi
@@ -129,7 +129,7 @@ then
 	kill -SIGTERM "$USTDPID"
 
 	echo "Waiting for ustd to shutdown..."
-	wait
+	wait "$(USTDPID)"
 
 	rm "$pidfilepath"
 fi

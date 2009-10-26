@@ -542,6 +542,24 @@ void sigterm_handler(int sig)
 	terminate_req = 1;
 }
 
+static int write_pidfile(const char *file_name, pid_t pid)
+{
+	FILE *pidfp;
+
+	pidfp = fopen(file_name, "w+");
+	if(!pidfp) {
+		PERROR("fopen (%s)", pidfile);
+		WARN("killing child process");
+		return -1;
+	}
+
+	fprintf(pidfp, "%d\n", pid);
+
+	fclose(pidfp);
+
+	return 0;
+}
+
 int start_ustd(int fd)
 {
 	struct ustcomm_ustd ustd;
@@ -584,6 +602,15 @@ int start_ustd(int fd)
 	if(result == -1) {
 		PERROR("sigprocmask");
 		return 1;
+	}
+
+	/* Write pidfile */
+	if(pidfile) {
+		result = write_pidfile(pidfile, getpid());
+		if(result == -1) {
+			ERR("failed to write pidfile");
+			return 1;
+		}
 	}
 
 	/* Notify parent that we are successfully started. */
@@ -673,26 +700,6 @@ int start_ustd_daemon()
 	else {
 		char buf;
 		FILE *pidfp;
-
-		/* It's important to write the file *before*
-		 * the parent ends, because the file may be
-		 * read as soon as the parent ends.
-		 */
-		if(pidfile) {
-			pidfp = fopen(pidfile, "w+");
-			if(!pidfp) {
-				PERROR("fopen (%s)", pidfile);
-				WARN("killing child process");
-				result = kill(child_pid, SIGTERM);
-				if(result == -1) {
-					PERROR("kill");
-				}
-				return -1;
-			}
-
-			fprintf(pidfp, "%d\n", child_pid);
-			fclose(pidfp);
-		}
 
 		result = read(fd[0], &buf, 1);
 		if(result == -1) {
