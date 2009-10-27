@@ -583,7 +583,8 @@ void ltt_write_event_data(struct rchan_buf *buf, size_t buf_offset,
 
 
 notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
-			void *call_data, const char *fmt, va_list *args)
+			struct registers *regs, void *call_data,
+			const char *fmt, va_list *args)
 {
 	int largest_align, ret;
 	struct ltt_active_marker *pdata;
@@ -697,12 +698,13 @@ notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
 }
 
 notrace void ltt_trace(const struct marker *mdata, void *probe_data,
-		       void *call_data, const char *fmt, ...)
+		       struct registers *regs, void *call_data,
+		       const char *fmt, ...)
 {
 	va_list args;
 
 	va_start(args, fmt);
-	ltt_vtrace(mdata, probe_data, call_data, fmt, &args);
+	ltt_vtrace(mdata, probe_data, regs, call_data, fmt, &args);
 	va_end(args);
 }
 

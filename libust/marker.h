@@ -51,7 +51,7 @@ struct marker;
  * format string to recover the variable argument list.
  */
 typedef void marker_probe_func(const struct marker *mdata,
-		void *probe_private, void *call_private,
+		void *probe_private, struct registers *regs, void *call_private,
 		const char *fmt, va_list *args);
 
 struct marker_probe_closure {
@@ -70,7 +70,7 @@ struct marker {
 				/* Probe wrapper */
 	u16 channel_id;		/* Numeric channel identifier, dynamic */
 	u16 event_id;		/* Numeric event identifier, dynamic */
-	void (*call)(const struct marker *mdata, void *call_private, ...);
+	void (*call)(const struct marker *mdata, void *call_private, struct registers *regs, ...);
 	struct marker_probe_closure single;
 	struct marker_probe_closure *multi;
 	const char *tp_name;	/* Optional tracepoint name */
@@ -85,6 +85,7 @@ struct marker {
 		static const char __mstrtab_##channel##_##name[]	\
 		__attribute__((section("__markers_strings")))		\
 		= #channel "\0" #name "\0" format;			\
+		struct registers regs;					\
 		static struct marker __mark_##channel##_##name		\
 		__attribute__((section("__markers"), aligned(8))) =	\
 		{ __mstrtab_##channel##_##name,				\
@@ -128,13 +129,13 @@ struct marker {
 					__mark_##channel##_##name.state))) \
 				(*__mark_##channel##_##name.call)	\
 					(&__mark_##channel##_##name,	\
-					call_private, ## args);		\
+					call_private, &regs, ## args);		\
 		} else {						\
 			if (unlikely(_imv_read(				\
 					__mark_##channel##_##name.state))) \
 				(*__mark_##channel##_##name.call)	\
 					(&__mark_##channel##_##name,	\
-					call_private, ## args);		\
+					call_private, &regs, ## args);		\
 		}							\
 	} while (0)
 
@@ -148,7 +149,7 @@ struct marker {
 		DEFINE_MARKER_TP(channel, name, tp_name, tp_cb, format);\
 		__mark_check_format(format, ## args);			\
 		(*__mark_##channel##_##name.call)(&__mark_##channel##_##name, \
-			call_private, ## args);				\
+			call_private, &regs, ## args);				\
 	} while (0)
 
 extern void marker_update_probe_range(struct marker *begin,
@@ -242,7 +243,7 @@ static inline void __printf(1, 2) ___mark_check_format(const char *fmt, ...)
 extern marker_probe_func __mark_empty_function;
 
 extern void marker_probe_cb(const struct marker *mdata,
-	void *call_private, ...);
+	void *call_private, struct registers *regs, ...);
 
 /*
  * Connect a probe to a marker.

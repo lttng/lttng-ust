@@ -89,7 +89,7 @@ struct marker_entry {
 	char *format;
 	char *name;
 			/* Probe wrapper */
-	void (*call)(const struct marker *mdata, void *call_private, ...);
+	void (*call)(const struct marker *mdata, void *call_private, struct registers *regs, ...);
 	struct marker_probe_closure single;
 	struct marker_probe_closure *multi;
 	int refcount;	/* Number of times armed. 0 if disarmed. */
@@ -125,7 +125,7 @@ static void marker_update_processes(void)
  * operations that modifies the execution flow of preemptible code.
  */
 notrace void __mark_empty_function(const struct marker *mdata,
-	void *probe_private, void *call_private, const char *fmt, va_list *args)
+	void *probe_private, struct registers *regs, void *call_private, const char *fmt, va_list *args)
 {
 }
 //ust// EXPORT_SYMBOL_GPL(__mark_empty_function);
@@ -141,7 +141,7 @@ notrace void __mark_empty_function(const struct marker *mdata,
  * rcu_dereference() for the pointer read.
  */
 notrace void marker_probe_cb(const struct marker *mdata,
-		void *call_private, ...)
+		void *call_private, struct registers *regs, ...)
 {
 	va_list args;
 	char ptype;
@@ -162,8 +162,8 @@ notrace void marker_probe_cb(const struct marker *mdata,
 		/* Must read the ptr before private data. They are not data
 		 * dependant, so we put an explicit smp_rmb() here. */
 		smp_rmb();
-		va_start(args, call_private);
-		func(mdata, mdata->single.probe_private, call_private,
+		va_start(args, regs);
+		func(mdata, mdata->single.probe_private, regs, call_private,
 			mdata->format, &args);
 		va_end(args);
 	} else {
@@ -183,9 +183,9 @@ notrace void marker_probe_cb(const struct marker *mdata,
 		 */
 		smp_read_barrier_depends();
 		for (i = 0; multi[i].func; i++) {
-			va_start(args, call_private);
+			va_start(args, regs);
 			multi[i].func(mdata, multi[i].probe_private,
-				call_private, mdata->format, &args);
+				regs, call_private, mdata->format, &args);
 			va_end(args);
 		}
 	}
@@ -202,7 +202,7 @@ notrace void marker_probe_cb(const struct marker *mdata,
  * Should be connected to markers "MARK_NOARGS".
  */
 static notrace void marker_probe_cb_noarg(const struct marker *mdata,
-		void *call_private, ...)
+		void *call_private, struct registers *regs, ...)
 {
 	va_list args;	/* not initialized */
 	char ptype;
@@ -218,7 +218,7 @@ static notrace void marker_probe_cb_noarg(const struct marker *mdata,
 		/* Must read the ptr before private data. They are not data
 		 * dependant, so we put an explicit smp_rmb() here. */
 		smp_rmb();
-		func(mdata, mdata->single.probe_private, call_private,
+		func(mdata, mdata->single.probe_private, regs, call_private,
 			mdata->format, &args);
 	} else {
 		struct marker_probe_closure *multi;
@@ -237,7 +237,7 @@ static notrace void marker_probe_cb_noarg(const struct marker *mdata,
 		 */
 		smp_read_barrier_depends();
 		for (i = 0; multi[i].func; i++)
-			multi[i].func(mdata, multi[i].probe_private,
+			multi[i].func(mdata, multi[i].probe_private, regs,
 				call_private, mdata->format, &args);
 	}
 //ust//	rcu_read_unlock_sched_notrace();
