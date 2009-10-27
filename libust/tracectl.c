@@ -117,7 +117,7 @@ static void print_markers(FILE *fp)
 	marker_iter_start(&iter);
 
 	while(iter.marker) {
-		fprintf(fp, "marker: %s/%s %d \"%s\"\n", iter.marker->channel, iter.marker->name, (int)imv_read(iter.marker->state), iter.marker->format);
+		fprintf(fp, "marker: %s/%s %d \"%s\" %p\n", iter.marker->channel, iter.marker->name, (int)imv_read(iter.marker->state), iter.marker->format, iter.marker->location);
 		marker_iter_next(&iter);
 	}
 	unlock_markers();
@@ -837,7 +837,7 @@ static void auto_probe_connect(struct marker *m)
 	if(result && result != -EEXIST)
 		ERR("ltt_marker_connect (marker = %s/%s, errno = %d)", m->channel, m->name, -result);
 
-	DBG("auto connected marker %s %s to probe default", m->channel, m->name);
+	DBG("auto connected marker %s (addr: %p) %s to probe default", m->channel, m, m->name);
 
 }
 

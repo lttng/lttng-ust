@@ -31,6 +31,7 @@
 #include "kernelcompat.h"
 #include <kcompat/list.h>
 #include "localerr.h"
+#include "registers.h"
 
 //ust// struct module;
 //ust// struct task_struct;
@@ -74,6 +75,7 @@ struct marker {
 	struct marker_probe_closure *multi;
 	const char *tp_name;	/* Optional tracepoint name */
 	void *tp_cb;		/* Optional tracepoint callback */
+	void *location;		/* Address of marker in code */
 } __attribute__((aligned(8)));
 
 #define CONFIG_MARKERS
@@ -91,7 +93,16 @@ struct marker {
 						sizeof(#name)],		\
 		  0, 0, 0, 0, marker_probe_cb,				\
 		  { __mark_empty_function, NULL},			\
-		  NULL, tp_name_str, tp_cb }
+		  NULL, tp_name_str, tp_cb };				\
+		asm (".section __marker_addr,\"aw\",@progbits\n\t"	\
+		       _ASM_PTR "%c[marker_struct], (1f)\n\t"		\
+		       ".previous\n\t"					\
+		       "\n\t"						\
+		       "1:\n\t"						\
+			:: [marker_struct] "i" (&__mark_##channel##_##name));\
+		save_registers(&regs)
+
+
 
 #define DEFINE_MARKER(channel, name, format)				\
 		_DEFINE_MARKER(channel, name, NULL, NULL, format)
@@ -287,24 +298,30 @@ extern int is_marker_enabled(const char *channel, const char *name);
 //ust// }
 //ust// #endif
 
+struct marker_addr {
+	struct marker *marker;
+	void *addr;
+};
 
 struct lib {
 	struct marker *markers_start;
+	struct marker_addr *markers_addr_start;
 	int markers_count;
 	struct list_head list;
 };
 
-extern int marker_register_lib(struct marker *markers_start,
-			       int markers_count);
+extern int marker_register_lib(struct marker *markers_start, struct marker_addr *marker_addr_start, int markers_count);
 
-#define MARKER_LIB							\
-extern struct marker __start___markers[] __attribute__((visibility("hidden")));	\
-extern struct marker __stop___markers[] __attribute__((visibility("hidden")));		\
-											\
-static void __attribute__((constructor)) __markers__init(void) 				\
-{											\
-	DBG("next registration in "__FILE__"\n");\
-	marker_register_lib(__start___markers, (((long)__stop___markers)-((long)__start___markers))/sizeof(struct marker));\
+#define MARKER_LIB										\
+extern struct marker __start___markers[] __attribute__((visibility("hidden")));			\
+extern struct marker __stop___markers[] __attribute__((visibility("hidden")));			\
+extern struct marker_addr __start___marker_addr[] __attribute__((visibility("hidden")));	\
+extern struct marker_addr __stop___marker_addr[] __attribute__((visibility("hidden")));		\
+												\
+static void __attribute__((constructor)) __markers__init(void)					\
+{												\
+	DBG("next registration in "__FILE__"\n");						\
+	marker_register_lib(__start___markers, __start___marker_addr, (((long)__stop___markers)-((long)__start___markers))/sizeof(struct marker)); \
 }
 
 extern void marker_set_new_marker_cb(void (*cb)(struct marker *));
