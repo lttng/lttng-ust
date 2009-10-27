@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_builddir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include
 
 noinst_PROGRAMS = fork fork2
 fork_SOURCES = fork.c

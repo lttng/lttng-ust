@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_builddir)/libustcomm
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/libustcomm
 
 lib_LTLIBRARIES = libust.la
 libust_la_SOURCES = buffer.h marker.c tracepoint.c channels.c channels.h marker-control.c marker-control.h relay.c relay.h tracer.c tracer.h tracercore.c tracercore.h serialize.c tracectl.c $(top_builddir)/libustcomm/ustcomm.c

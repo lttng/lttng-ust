@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_builddir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include
 
 lib_LTLIBRARIES = libmallocwrap.la
 libmallocwrap_la_SOURCES = mallocwrap.c
