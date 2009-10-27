@@ -5,7 +5,7 @@ libustjava_la_SOURCES = UST.c UST.h
 noinst_DATA = UST.java
 libustjava_la_LIBADD = -lc -L$(top_builddir)/libust/.libs -lust
 
-all: UST.class
+all: UST.class UST.h
 
 clean-local:
 	rm -rf UST.h UST.class
@@ -13,3 +13,5 @@ clean-local:
 UST.class: UST.java
 	javac UST.java
 
+UST.h:
+	javah -jni UST
