@@ -30,7 +30,7 @@
 //ust// #include <linux/ltt-channels.h>
 #include <ust/kernelcompat.h>
 #include <kcompat/list.h>
-#include "processor.h"
+#include <ust/processor.h>
 
 //ust// struct module;
 //ust// struct task_struct;
