@@ -31,7 +31,7 @@
 #include <execinfo.h>
 
 #include "ustcomm.h"
-#include "localerr.h"
+#include "usterr.h"
 
 #define UNIX_PATH_MAX 108
 

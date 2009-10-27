@@ -1,4 +1,4 @@
-INCLUDES = -I$(top_builddir)/share -I$(top_builddir)/libust
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_builddir)/libust
 
 lib_LTLIBRARIES = libustjava.la
 libustjava_la_SOURCES = UST.c UST.h

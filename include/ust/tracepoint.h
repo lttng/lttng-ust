@@ -31,8 +31,8 @@
 #define _LGPL_SOURCE
 #include <urcu-bp.h>
 
-#include "immediate.h"
-#include "kernelcompat.h"
+#include <ust/immediate.h>
+#include <ust/kernelcompat.h>
 
 struct module;
 struct tracepoint;

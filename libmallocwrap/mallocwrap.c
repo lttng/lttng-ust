@@ -20,7 +20,7 @@
 #include <sys/types.h>
 #include <stdio.h>
 
-#include "marker.h"
+#include <ust/marker.h>
 
 #if 0
 INTERCEPT_PROTOTYPE(void, malloc, size_t size)

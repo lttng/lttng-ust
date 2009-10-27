@@ -33,9 +33,8 @@
 #include <getopt.h>
 
 #include "ustd.h"
-#include "localerr.h"
+#include "usterr.h"
 #include "ustcomm.h"
-#include "share.h"
 
 /* return value: 0 = subbuffer is finished, it won't produce data anymore
  *               1 = got subbuffer successfully

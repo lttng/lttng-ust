@@ -29,9 +29,9 @@
 
 #include <urcu-bp.h>
 
-#include "marker.h"
+#include <ust/marker.h>
 #include "tracer.h"
-#include "localerr.h"
+#include "usterr.h"
 #include "ustcomm.h"
 #include "relay.h" /* FIXME: remove */
 #include "marker-control.h"

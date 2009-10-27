@@ -33,10 +33,10 @@
 //ust// #include <linux/slab.h>
 #include <ctype.h>
 
-#include "kernelcompat.h"
+#include <ust/kernelcompat.h>
 //#include "list.h"
 #include "tracer.h"
-#include "localerr.h"
+#include "usterr.h"
 
 #define DEFAULT_CHANNEL "cpu"
 #define DEFAULT_PROBE "default"

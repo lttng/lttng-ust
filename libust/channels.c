@@ -28,10 +28,10 @@
 //ust// #include <linux/mutex.h>
 //ust// #include <linux/vmalloc.h>
 
-#include "kernelcompat.h"
+#include <ust/kernelcompat.h>
 #include "channels.h"
 #include "usterr.h"
-#include "marker.h"
+#include <ust/marker.h>
 
 /*
  * ltt_channel_mutex may be nested inside the LTT trace mutex.

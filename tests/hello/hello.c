@@ -7,11 +7,8 @@
 #include <fcntl.h>
 #include <signal.h>
 
-#include "marker.h"
+#include <ust/marker.h>
 #include "usterr.h"
-#include "tracer.h"
-#include "marker-control.h"
-#include "relay.h"
 #include "tp.h"
 
 

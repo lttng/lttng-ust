@@ -27,12 +27,12 @@
 #include <sys/types.h>
 #include <stdarg.h>
 //#include "list.h"
-#include "kernelcompat.h"
+#include <ust/kernelcompat.h>
 #include "buffer.h"
 #include "relay.h"
 #include "channels.h"
 #include "tracercore.h"
-#include "marker.h"
+#include <ust/marker.h>
 
 /* Number of bytes to log with a read/write event */
 #define LTT_LOG_RW_SIZE			32L

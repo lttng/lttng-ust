@@ -20,7 +20,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <signal.h>
-#include "share/usterr.h"
+#include "usterr.h"
 
 extern void ust_fork(void);
 extern void ust_potential_exec(void);

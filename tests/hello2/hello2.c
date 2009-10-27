@@ -2,7 +2,8 @@
 #include <time.h>
 #include <errno.h>
 
-#include "marker.h"
+#include <ust/marker.h>
+
 int main()
 {
 	int i;

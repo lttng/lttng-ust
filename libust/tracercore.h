@@ -21,7 +21,7 @@
 #ifndef LTT_CORE_H
 #define LTT_CORE_H
 
-#include "kernelcompat.h"
+#include <ust/kernelcompat.h>
 //ust// #include <linux/percpu.h>
 
 /* ltt's root dir in debugfs */

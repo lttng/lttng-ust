@@ -26,11 +26,10 @@
 
 #include <stdarg.h>
 //ust// #include <linux/types.h>
-#include "immediate.h"
+#include <ust/immediate.h>
 //ust// #include <linux/ltt-channels.h>
-#include "kernelcompat.h"
+#include <ust/kernelcompat.h>
 #include <kcompat/list.h>
-#include "localerr.h"
 #include "processor.h"
 
 //ust// struct module;
@@ -320,7 +319,6 @@ extern struct marker_addr __stop___marker_addr[] __attribute__((visibility("hidd
 												\
 static void __attribute__((constructor)) __markers__init(void)					\
 {												\
-	DBG("next registration in "__FILE__"\n");						\
 	marker_register_lib(__start___markers, __start___marker_addr, (((long)__stop___markers)-((long)__start___markers))/sizeof(struct marker)); \
 }
 

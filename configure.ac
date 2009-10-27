@@ -65,6 +65,7 @@ AC_CHECK_HEADERS([kcompat.h], [], [AC_MSG_ERROR([Cannot find kcompat headers (kc
 
 AC_CONFIG_FILES([
 	Makefile
+	include/Makefile
 	libust/Makefile
 	tests/Makefile
 	tests/hello/Makefile
@@ -76,6 +77,5 @@ AC_CONFIG_FILES([
 	libinterfork/Makefile
 	ustd/Makefile
 	ustctl/Makefile
-	java/Makefile
 ])
 AC_OUTPUT

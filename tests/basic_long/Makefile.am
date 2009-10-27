@@ -1,4 +1,4 @@
-INCLUDES = -I$(top_builddir)/share -I$(top_builddir)/libust
+AM_CPPFLAGS = -I$(top_builddir)/include
 
 noinst_PROGRAMS = basic_long
 basic_long_SOURCES = basic_long.c

@@ -1,4 +1,4 @@
-#include "tracepoint.h"
+#include <ust/tracepoint.h>
 
 DECLARE_TRACE(hello_tptest,
 	      TPPROTO(int anint),

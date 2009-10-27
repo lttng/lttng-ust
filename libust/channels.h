@@ -26,7 +26,7 @@
 //ust// #include <linux/list.h>
 #include <errno.h>
 
-#include "kernelcompat.h"
+#include <ust/kernelcompat.h>
 #include <kcompat/kref.h>
 
 #define EVENTS_PER_CHANNEL	65536
