@@ -28,6 +28,10 @@ static inline save_registers(struct registers *regs)
 {
 }
 
+#define RELATIVE_ADDRESS(__rel_label__) __rel_label__
+
+#define _ASM_PTR ".long "
+
 #else
 
 struct registers {
@@ -47,7 +51,6 @@ struct registers {
 	unsigned long r13;
 	unsigned long r14;
 	unsigned long r15;
-	unsigned long rip;
 	int cs;
 	int ss;
 };
@@ -71,10 +74,7 @@ struct registers {
 	     "movq %%r15,%c[r15_off](%[regs])\n\t" \
 	     "movw %%cs,%c[cs_off](%[regs])\n\t" \
 	     "movw %%ss,%c[ss_off](%[regs])\n\t" \
-	     "call getip\n\t" \
-	     "getip:\n\t" \
-	     "popq %c[rip_off](%[regs])\n\t" \
-	: /* do output regs */ \
+	: \
 	: [regs] "r" (regsptr), \
 	  [rax_off] "i" (offsetof(struct registers, rax)), \
 	  [rbx_off] "i" (offsetof(struct registers, rbx)), \
@@ -93,9 +93,14 @@ struct registers {
 	  [r14_off] "i" (offsetof(struct registers, r14)), \
 	  [r15_off] "i" (offsetof(struct registers, r15)), \
 	  [cs_off] "i" (offsetof(struct registers, cs)), \
-	  [ss_off] "i" (offsetof(struct registers, ss)), \
-	  [rip_off] "i" (offsetof(struct registers, rip)) \
+	  [ss_off] "i" (offsetof(struct registers, ss)) \
 	);
+
+/* Macro to insert the address of a relative jump in an assembly stub,
+ * in a relocatable way. On x86-64, this uses a special (%rip) notation. */
+#define RELATIVE_ADDRESS(__rel_label__) __rel_label__(%%rip)
+
+#define _ASM_PTR ".quad "
 
 #endif
 
