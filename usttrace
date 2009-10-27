@@ -4,11 +4,19 @@
 # Distributed under the GPLv2.
 
 USTTRACE_DIR="$(dirname $0)"
-USTD="${USTTRACE_DIR}/ustd/ustd"
-LIBINTERFORK_PATH="${USTTRACE_DIR}/libinterfork/.libs/libinterfork.so"
-LIBMALLOCWRAP_PATH="${USTTRACE_DIR}/libmallocwrap/.libs/libmallocwrap.so"
-
-STD_LDLIBRARY_UST="${USTTRACE_DIR}/libust/.libs"
+if [ -x "${USTTRACE_DIR}/ustd/ustd" ] ; then
+    # Use the not installed libraries instead
+    USTD="${USTTRACE_DIR}/ustd/ustd"
+    LIBINTERFORK_PATH="${USTTRACE_DIR}/libinterfork/.libs/libinterfork.so"
+    LIBMALLOCWRAP_PATH="${USTTRACE_DIR}/libmallocwrap/.libs/libmallocwrap.so"
+    LIBUST_PATH="${USTTRACE_DIR}/libust/.libs/libust.so"
+else
+    # Use the libraries that the dynamic link finds
+    USTD="ustd"
+    LIBINTERFORK_PATH="libinterfork.so"
+    LIBMALLOCWRAP_PATH="libmallocwrap.so"
+    LIBUST_PATH="libust.so"
+fi
 
 BASE_TRACE_DIR="${HOME}/.usttraces"
 
@@ -45,14 +53,14 @@ while getopts ":hlLmfs" options; do
 done
 shift $(($OPTIND - 1))
 
-if [ ! -x "$USTD" ];
+if [ ! -x "$USTD" -a ! -x "$(which ustd 2>/dev/null)" ];
 then
 	error "specified path to ustd not executable ($USTD)"
 	exit 1
 fi
 
 # Prepare vars
-CMD=$1
+CMD=$*
 
 # Validate input
 if [ -z "$HOME" ];
@@ -86,29 +94,34 @@ then
 fi
 
 # Establish the environment for the command
-export UST_TRACE=1
-export UST_AUTOPROBE=1
+(
+    export UST_TRACE=1
+    export UST_AUTOPROBE=1
 
-if [ "$arg_preload_libust" = "1" ];
-then
-	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./libust/.libs"
-	export LD_PRELOAD="$LD_PRELOAD:./libust/.libs/libust.so"
-fi
+    if [ "$arg_preload_libust" = "1" ];
+    then
+	if [ -n "${LIBUST_PATH%libust.so}" ] ; then
+	    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:${LIBUST_PATH%libust.so}"
+	fi
+	export LD_PRELOAD="$LD_PRELOAD:$LIBUST_PATH"
+    fi
 
-if [ "$arg_ld_std_ust" = "1" ];
-then
-	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$STD_LDLIBRARY_UST"
-fi
+    if [ "$arg_ld_std_ust" = "1" ];
+    then
+	if [ -n "$${LIBUST_PATH%libust.so}" ] ; then
+	    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:${LIBUST_PATH%libust.so}"
+	fi
+    fi
 
-if [ "$arg_preload_malloc" = "1" ];
-then
-	export LD_PRELOAD="$LD_PRELOAD:./libmallocwrap/.libs/libmallocwrap.so"
-fi
+    if [ "$arg_preload_malloc" = "1" ];
+    then
+	export LD_PRELOAD="$LD_PRELOAD:$LIBMALLOCWRAP_PATH"
+    fi
 
-if [ "$arg_preload_fork" = "1" ];
-then
+    if [ "$arg_preload_fork" = "1" ];
+    then
 	export LD_PRELOAD="$LD_PRELOAD:$LIBINTERFORK_PATH"
-fi
+    fi
 
 # Install a handler for SIGIO. This is the signal that will be sent by ustd to
 # the traced program to trigger the creation of its listener thread. However,
@@ -117,7 +130,8 @@ fi
 # because of a unhandled signal.
 
 # Execute the command
-bash -c "$CMD" 2>&1 | tee "$OUTDIR/app.log"
+    $CMD 2>&1
+) | tee "$OUTDIR/app.log"
 
 ## Because of the keepalive mechanism, we're sure that by the time
 ## we get here, the daemon is connected to all the buffers that still exist.
