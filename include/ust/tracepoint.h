@@ -202,8 +202,8 @@ extern int tracepoint_register_lib(struct tracepoint *tracepoints_start,
 				   int tracepoints_count);
 
 #define TRACEPOINT_LIB							\
-	extern struct tracepoint __start___tracepoints[] __attribute__((visibility("hidden")));	\
-	extern struct tracepoint __stop___tracepoints[] __attribute__((visibility("hidden"))); \
+	extern struct tracepoint __start___tracepoints[] __attribute__((weak, visibility("hidden"))); \
+	extern struct tracepoint __stop___tracepoints[] __attribute__((weak, visibility("hidden"))); \
 	static void __attribute__((constructor)) __tracepoints__init(void) \
 	{								\
 		tracepoint_register_lib(__start___tracepoints,		\
