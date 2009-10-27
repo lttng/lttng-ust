@@ -94,11 +94,10 @@ struct marker {
 						sizeof(#name)],		\
 		  0, 0, 0, 0, marker_probe_cb,				\
 		  { __mark_empty_function, NULL},			\
-		  NULL, tp_name_str, tp_cb };				\
+		  NULL, tp_name_str, tp_cb, NULL };			\
 		asm (".section __marker_addr,\"aw\",@progbits\n\t"	\
 		       _ASM_PTR "%c[marker_struct], (1f)\n\t"		\
 		       ".previous\n\t"					\
-		       "\n\t"						\
 		       "1:\n\t"						\
 			:: [marker_struct] "i" (&__mark_##channel##_##name));\
 		save_registers(&regs)
