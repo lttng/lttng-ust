@@ -1,5 +1,5 @@
-#ifndef UST_REGISTERS_H
-#define UST_REGISTERS_H
+#ifndef UST_PROCESSOR_H
+#define UST_PROCESSOR_H
 
 #include <stddef.h>
 
@@ -104,4 +104,4 @@ struct registers {
 
 #endif
 
-#endif /* UST_REGISTERS_H */
+#endif /* UST_PROCESSOR_H */

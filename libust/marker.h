@@ -31,7 +31,7 @@
 #include "kernelcompat.h"
 #include <kcompat/list.h>
 #include "localerr.h"
-#include "registers.h"
+#include "processor.h"
 
 //ust// struct module;
 //ust// struct task_struct;
