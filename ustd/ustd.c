@@ -545,7 +545,7 @@ static int write_pidfile(const char *file_name, pid_t pid)
 {
 	FILE *pidfp;
 
-	pidfp = fopen(file_name, "w+");
+	pidfp = fopen(file_name, "w");
 	if(!pidfp) {
 		PERROR("fopen (%s)", pidfile);
 		WARN("killing child process");
