@@ -143,7 +143,7 @@ then
 	kill -SIGTERM "$USTDPID"
 
 	echo "Waiting for ustd to shutdown..."
-	wait "$(USTDPID)"
+	wait "$USTDPID"
 
 	rm "$pidfilepath"
 fi
