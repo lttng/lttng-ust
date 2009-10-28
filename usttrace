@@ -3,6 +3,10 @@
 # usttrace  by Pierre-Marc Fournier 2009
 # Distributed under the GPLv2.
 
+function error() {
+	echo "$0: error: $1" 2>/dev/stderr
+}
+
 USTTRACE_DIR="$(dirname $0)"
 if [ -x "${USTTRACE_DIR}/ustd/ustd" ] ; then
     # Use the not installed libraries instead
@@ -13,6 +17,10 @@ if [ -x "${USTTRACE_DIR}/ustd/ustd" ] ; then
 else
     # Use the libraries that the dynamic link finds
     USTD="ustd"
+    if [ ! -x "$(which ustd 2>/dev/null)" ]; then
+        error "cannot find an executable ustd; make sure its location is in the PATH"
+        exit 1
+    fi
     LIBINTERFORK_PATH="libinterfork.so"
     LIBMALLOCWRAP_PATH="libmallocwrap.so"
     LIBUST_PATH="libust.so"
@@ -32,10 +40,6 @@ function usage () {
 	echo "    -s    Use system-wide daemon instead of creating one for this session." 2>/dev/stderr
 }
 
-function error() {
-	echo "$0: error: $1" 2>/dev/stderr
-}
-
 while getopts ":hlLmfs" options; do
 	case $options in
 		l) arg_preload_libust=1;;
@@ -52,12 +56,6 @@ while getopts ":hlLmfs" options; do
 	esac
 done
 shift $(($OPTIND - 1))
-
-if [ ! -x "$USTD" -a ! -x "$(which ustd 2>/dev/null)" ];
-then
-	error "specified path to ustd not executable ($USTD)"
-	exit 1
-fi
 
 # Prepare vars
 CMD=$*
