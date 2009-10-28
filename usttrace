@@ -87,6 +87,13 @@ then
 	mkfifo -m 0600 "$pidfilepath"
 	# Start daemon
 	$USTD --pidfile "$pidfilepath" -s "$SOCKPATH" -o "$OUTDIR" >"$OUTDIR/ustd.log" 2>&1 &
+	# ustd sets up its server socket
+	# ustd opens the pidfile, blocks because no one has opened it
+	# we open pidfile
+	# we block reading pidfile
+	# ustd writes to pidfile
+	# ustd closes pidfile
+	# we unblock reading pidfile
 	USTDPID="$(<$pidfilepath)"
 	export UST_DAEMON_SOCKET="$SOCKPATH"
 fi
