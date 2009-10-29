@@ -31,6 +31,7 @@
 //ust// #include <linux/ltt-tracer.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include <ust/kernelcompat.h>
 #define _LGPL_SOURCE
@@ -498,6 +499,92 @@ static inline size_t serialize_trace_data(struct rchan_buf *buf,
 
 copydone:
 	return buf_offset;
+}
+
+static notrace void skip_space(const char **ps)
+{
+	while(**ps == ' ')
+		(*ps)++;
+}
+
+static notrace void copy_token(char **out, const char **in)
+{
+	while(**in != ' ' && **in != '\0') {
+		**out = **in;
+		(*out)++;
+		(*in)++;
+	}
+}
+
+/* serialize_to_text
+ *
+ * Given a format string and a va_list of arguments, convert them to a
+ * human-readable string.
+ *
+ * @outbuf: the buffer to output the string to
+ * @bufsize: the max size that can be used in outbuf
+ * @fmt: the marker format string
+ * @ap: a va_list that contains the arguments corresponding to fmt
+ *
+ * Return value: the number of chars that have been put in outbuf, excluding
+ * the final \0, or, if the buffer was too small, the number of chars that
+ * would have been written in outbuf if it had been large enough.
+ *
+ * outbuf may be NULL. The return value may then be used be allocate an
+ * appropriate outbuf.
+ *
+ */
+
+notrace
+int serialize_to_text(char *outbuf, int bufsize, const char *fmt, va_list ap)
+{
+	int fmt_len = strlen(fmt);
+	char *new_fmt = alloca(fmt_len + 1);
+	const char *orig_fmt_p = fmt;
+	char *new_fmt_p = new_fmt;
+	char false_buf;
+	int result;
+	enum { none, cfmt, tracefmt, argname } prev_token = none;
+
+	while(*orig_fmt_p != '\0') {
+		if(*orig_fmt_p == '%') {
+			prev_token = cfmt;
+			copy_token(&new_fmt_p, &orig_fmt_p);
+		}
+		else if(*orig_fmt_p == '#') {
+			prev_token = tracefmt;
+			do {
+				orig_fmt_p++;
+			} while(*orig_fmt_p != ' ' && *orig_fmt_p != '\0');
+		}
+		else if(*orig_fmt_p == ' ') {
+			if(prev_token == argname) {
+				*new_fmt_p = '=';
+				new_fmt_p++;
+			}
+			else if(prev_token == cfmt) {
+				*new_fmt_p = ' ';
+				new_fmt_p++;
+			}
+
+			skip_space(&orig_fmt_p);
+		}
+		else {
+			prev_token = argname;
+			copy_token(&new_fmt_p, &orig_fmt_p);
+		}
+	}
+
+	*new_fmt_p = '\0';
+
+	if(outbuf == NULL) {
+		/* use this false_buffer for compatibility with pre-C99 */
+		outbuf = &false_buf;
+		bufsize = 1;
+	}
+	result = vsnprintf(outbuf, bufsize, new_fmt, ap);
+
+	return result;
 }
 
 notrace size_t ltt_serialize_data(struct rchan_buf *buf, size_t buf_offset,
