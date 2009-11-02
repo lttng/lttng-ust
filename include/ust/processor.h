@@ -53,6 +53,7 @@ struct registers {
 	unsigned long r15;
 	int cs;
 	int ss;
+	unsigned long rflags;
 };
 
 #define save_registers(regsptr) \
@@ -74,6 +75,9 @@ struct registers {
 	     "movq %%r15,%c[r15_off](%[regs])\n\t" \
 	     "movw %%cs,%c[cs_off](%[regs])\n\t" \
 	     "movw %%ss,%c[ss_off](%[regs])\n\t" \
+	     /* deal with rflags */ \
+	     "pushfq\n\t" /* push rflags on stack */ \
+	     "popq %c[rflags_off](%[regs])\n\t" \
 	: \
 	: [regs] "r" (regsptr), \
 	  [rax_off] "i" (offsetof(struct registers, rax)), \
@@ -93,7 +97,8 @@ struct registers {
 	  [r14_off] "i" (offsetof(struct registers, r14)), \
 	  [r15_off] "i" (offsetof(struct registers, r15)), \
 	  [cs_off] "i" (offsetof(struct registers, cs)), \
-	  [ss_off] "i" (offsetof(struct registers, ss)) \
+	  [ss_off] "i" (offsetof(struct registers, ss)), \
+	  [rflags_off] "i" (offsetof(struct registers, rflags)) \
 	);
 
 /* Macro to insert the address of a relative jump in an assembly stub,
