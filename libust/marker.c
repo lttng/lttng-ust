@@ -41,6 +41,9 @@
 #include "tracercore.h"
 #include "tracer.h"
 
+__thread long ust_reg_stack[500];
+volatile __thread long *ust_reg_stack_ptr = (long *) 0;
+
 extern struct marker __start___markers[] __attribute__((visibility("hidden")));
 extern struct marker __stop___markers[] __attribute__((visibility("hidden")));
 extern struct marker_addr __start___marker_addr[] __attribute__((visibility("hidden")));

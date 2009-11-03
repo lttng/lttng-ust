@@ -2,6 +2,11 @@
 #define UST_PROCESSOR_H
 
 #include <stddef.h>
+#include <string.h>
+
+extern __thread long ust_reg_stack[500];
+extern volatile __thread long *ust_reg_stack_ptr;
+
 
 #ifdef X86_32
 
@@ -35,71 +40,133 @@ static inline save_registers(struct registers *regs)
 #else
 
 struct registers {
-	unsigned long rax;
-	unsigned long rbx;
-	unsigned long rcx;
-	unsigned long rdx;
-	unsigned long rbp;
-	unsigned long rsp;
-	unsigned long rsi;
-	unsigned long rdi;
-	unsigned long r8;
-	unsigned long r9;
-	unsigned long r10;
-	unsigned long r11;
-	unsigned long r12;
-	unsigned long r13;
-	unsigned long r14;
-	unsigned long r15;
-	int cs;
-	int ss;
+	int padding; /* 4 bytes */
+	short ss;
+	short cs;
 	unsigned long rflags;
+	unsigned long r15;
+	unsigned long r14;
+	unsigned long r13;
+	unsigned long r12;
+	unsigned long r11;
+	unsigned long r10;
+	unsigned long r9;
+	unsigned long r8;
+	unsigned long rsi;
+	unsigned long rbp;
+	unsigned long rdx;
+	unsigned long rcx;
+	unsigned long rdi;
+	unsigned long rbx;
+	unsigned long rax;
+	unsigned long rsp;
 };
 
 #define save_registers(regsptr) \
-	asm ("movq %%rax,%c[rax_off](%[regs])\n\t" \
-	     "movq %%rbx,%c[rbx_off](%[regs])\n\t" \
-	     "movq %%rcx,%c[rcx_off](%[regs])\n\t" \
-	     "movq %%rdx,%c[rdx_off](%[regs])\n\t" \
-	     "movq %%rbp,%c[rbp_off](%[regs])\n\t" \
-	     "movq %%rsp,%c[rsp_off](%[regs])\n\t" \
-	     "movq %%rsi,%c[rsi_off](%[regs])\n\t" \
-	     "movq %%rdi,%c[rdi_off](%[regs])\n\t" \
-	     "movq %%r8,%c[r8_off](%[regs])\n\t" \
-	     "movq %%r9,%c[r9_off](%[regs])\n\t" \
-	     "movq %%r10,%c[r10_off](%[regs])\n\t" \
-	     "movq %%r11,%c[r11_off](%[regs])\n\t" \
-	     "movq %%r12,%c[r12_off](%[regs])\n\t" \
-	     "movq %%r13,%c[r13_off](%[regs])\n\t" \
-	     "movq %%r14,%c[r14_off](%[regs])\n\t" \
-	     "movq %%r15,%c[r15_off](%[regs])\n\t" \
-	     "movw %%cs,%c[cs_off](%[regs])\n\t" \
-	     "movw %%ss,%c[ss_off](%[regs])\n\t" \
+	if(ust_reg_stack_ptr == NULL) { \
+		ust_reg_stack_ptr = (long*)((long)ust_reg_stack)+500; \
+	} \
+	asm volatile ( \
+	     /* save original rsp */ \
+	     "pushq %%rsp\n\t" \
+	      /* rax will hold the ptr to the private stack bottom */ \
+	     "pushq %%rax\n\t" \
+	     /* rbx will be used to temporarily hold the stack bottom addr */ \
+	     "pushq %%rbx\n\t" \
+	     /* rdi is the input to __tls_get_addr, and also a temp var */ \
+	     "pushq %%rdi\n\t" \
+	     /* Start TLS access of private reg stack */ \
+	     ".byte 0x66\n\t" \
+	     "leaq ust_reg_stack_ptr@tlsgd(%%rip), %%rdi\n\t" \
+	     ".word 0x6666\n\t" \
+	     "rex64\n\t" \
+	     "call __tls_get_addr@plt\n\t" \
+	     /* --- End TLS access */ \
+	     /* Manually push rsp to private stack */ \
+	     "addq $-8,(%%rax)\n\t" \
+	     "movq 24(%%rsp), %%rdi\n\t" \
+	     "movq (%%rax), %%rbx\n\t" \
+	     "movq %%rdi, (%%rbx)\n\t" \
+	     /* Manually push rax to private stack */ \
+	     "addq $-8,(%%rax)\n\t" \
+	     "movq 16(%%rsp), %%rdi\n\t" \
+	     "movq (%%rax), %%rbx\n\t" \
+	     "movq %%rdi, (%%rbx)\n\t" \
+	     /* Manually push rbx to private stack */ \
+	     "addq $-8,(%%rax)\n\t" \
+	     "movq 8(%%rsp), %%rdi\n\t" \
+	     "movq (%%rax), %%rbx\n\t" \
+	     "movq %%rdi, (%%rbx)\n\t" \
+	     /* Manually push rdi to private stack */ \
+	     "addq $-8,(%%rax)\n\t" \
+	     "movq 0(%%rsp), %%rdi\n\t" \
+	     "movq (%%rax), %%rbx\n\t" \
+	     "movq %%rdi, (%%rbx)\n\t" \
+	     /* now push regs to tls */ \
+	     /* -- rsp already pushed -- */ \
+	     /* -- rax already pushed -- */ \
+	     /* -- rbx already pushed -- */ \
+	     /* -- rdi already pushed -- */ \
+	     "addq $-8,(%%rax)\n\t" \
+	     "movq (%%rax), %%rbx\n\t" \
+	     "movq %%rcx,(%%rbx)\n\t" \
+	     "addq $-8,(%%rax)\n\t" \
+	     "movq (%%rax), %%rbx\n\t" \
+	     "movq %%rdx,(%%rbx)\n\t" \
+	     "addq $-8,(%%rax)\n\t" \
+	     "movq (%%rax), %%rbx\n\t" \
+	     "movq %%rbp,(%%rbx)\n\t" \
+	     "addq $-8,(%%rax)\n\t" \
+	     "movq (%%rax), %%rbx\n\t" \
+	     "movq %%rsi,(%%rbx)\n\t" \
+	     "addq $-8,(%%rax)\n\t" \
+	     "movq (%%rax), %%rbx\n\t" \
+	     "movq %%r8,(%%rbx)\n\t" \
+	     "addq $-8,(%%rax)\n\t" \
+	     "movq (%%rax), %%rbx\n\t" \
+	     "movq %%r9,(%%rbx)\n\t" \
+	     "addq $-8,(%%rax)\n\t" \
+	     "movq (%%rax), %%rbx\n\t" \
+	     "movq %%r10,(%%rbx)\n\t" \
+	     "addq $-8,(%%rax)\n\t" \
+	     "movq (%%rax), %%rbx\n\t" \
+	     "movq %%r11,(%%rbx)\n\t" \
+	     "addq $-8,(%%rax)\n\t" \
+	     "movq (%%rax), %%rbx\n\t" \
+	     "movq %%r12,(%%rbx)\n\t" \
+	     "addq $-8,(%%rax)\n\t" \
+	     "movq (%%rax), %%rbx\n\t" \
+	     "movq %%r13,(%%rbx)\n\t" \
+	     "addq $-8,(%%rax)\n\t" \
+	     "movq (%%rax), %%rbx\n\t" \
+	     "movq %%r14,(%%rbx)\n\t" \
+	     "addq $-8,(%%rax)\n\t" \
+	     "movq (%%rax), %%rbx\n\t" \
+	     "movq %%r15,(%%rbx)\n\t" \
 	     /* deal with rflags */ \
 	     "pushfq\n\t" /* push rflags on stack */ \
-	     "popq %c[rflags_off](%[regs])\n\t" \
-	: \
-	: [regs] "r" (regsptr), \
-	  [rax_off] "i" (offsetof(struct registers, rax)), \
-	  [rbx_off] "i" (offsetof(struct registers, rbx)), \
-	  [rcx_off] "i" (offsetof(struct registers, rcx)), \
-	  [rdx_off] "i" (offsetof(struct registers, rdx)), \
-	  [rbp_off] "i" (offsetof(struct registers, rbp)), \
-	  [rsp_off] "i" (offsetof(struct registers, rsp)), \
-	  [rsi_off] "i" (offsetof(struct registers, rsi)), \
-	  [rdi_off] "i" (offsetof(struct registers, rdi)), \
-	  [r8_off] "i" (offsetof(struct registers, r8)), \
-	  [r9_off] "i" (offsetof(struct registers, r9)), \
-	  [r10_off] "i" (offsetof(struct registers, r10)), \
-	  [r11_off] "i" (offsetof(struct registers, r11)), \
-	  [r12_off] "i" (offsetof(struct registers, r12)), \
-	  [r13_off] "i" (offsetof(struct registers, r13)), \
-	  [r14_off] "i" (offsetof(struct registers, r14)), \
-	  [r15_off] "i" (offsetof(struct registers, r15)), \
-	  [cs_off] "i" (offsetof(struct registers, cs)), \
-	  [ss_off] "i" (offsetof(struct registers, ss)), \
-	  [rflags_off] "i" (offsetof(struct registers, rflags)) \
-	);
+	     "addq $-8,(%%rax)\n\t" \
+	     "movq (%%rax), %%rbx\n\t" \
+	     "popq (%%rbx)\n\t" \
+	     /* push cs */ \
+	     "addq $-2,(%%rax)\n\t" \
+	     "movq (%%rax), %%rbx\n\t" \
+	     "movw %%cs, (%%rbx)\n\t" \
+	     /* push ss */ \
+	     "addq $-2,(%%rax)\n\t" \
+	     "movq (%%rax), %%rbx\n\t" \
+	     "movw %%ss, (%%rbx)\n\t" \
+	     /* add padding for struct registers */ \
+	     "addq $-4,(%%rax)\n\t" \
+	     /* restore original values of regs that were used internally */ \
+	     "popq %%rdi\n\t" \
+	     "popq %%rbx\n\t" \
+	     "popq %%rax\n\t" \
+	     /* cancel push of rsp */ \
+	     "addq $8,%%rsp\n\t" \
+	     ::); \
+	memcpy(regsptr, (void *)ust_reg_stack_ptr, sizeof(struct registers)); \
+	ust_reg_stack_ptr = (void *)(((long)ust_reg_stack_ptr) + sizeof(struct registers));
 
 /* Macro to insert the address of a relative jump in an assembly stub,
  * in a relocatable way. On x86-64, this uses a special (%rip) notation. */
