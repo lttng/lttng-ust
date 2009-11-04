@@ -39,7 +39,7 @@
 #include <urcu/rculist.h>
 
 #include "relay.h"
-#include "tracer.h"
+#include <ust/tracer.h>
 //#include "list.h"
 #include "usterr.h"
 

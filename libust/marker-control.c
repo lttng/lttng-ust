@@ -35,7 +35,7 @@
 
 #include <ust/kernelcompat.h>
 //#include "list.h"
-#include "tracer.h"
+#include <ust/tracer.h>
 #include "usterr.h"
 
 #define DEFAULT_CHANNEL "cpu"

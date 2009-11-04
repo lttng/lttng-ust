@@ -36,10 +36,10 @@
 #include <ust/kernelcompat.h>
 
 #include <ust/marker.h>
+#include <ust/tracer.h>
 #include "usterr.h"
 #include "channels.h"
 #include "tracercore.h"
-#include "tracer.h"
 
 __thread long ust_reg_stack[500];
 volatile __thread long *ust_reg_stack_ptr = (long *) 0;
