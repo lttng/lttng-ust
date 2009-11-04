@@ -43,7 +43,6 @@ struct registers {
 	int padding; /* 4 bytes */
 	short ss;
 	short cs;
-	unsigned long rflags;
 	unsigned long r15;
 	unsigned long r14;
 	unsigned long r13;
@@ -59,30 +58,53 @@ struct registers {
 	unsigned long rdi;
 	unsigned long rbx;
 	unsigned long rax;
+	unsigned long rflags;
 	unsigned long rsp;
 };
 
 #define save_registers(regsptr) \
-	if(ust_reg_stack_ptr == NULL) { \
-		ust_reg_stack_ptr = (long*)((long)ust_reg_stack)+500; \
-	} \
 	asm volatile ( \
 	     /* save original rsp */ \
 	     "pushq %%rsp\n\t" \
+	     /* push original rflags */ \
+	     "pushfq\n\t" \
 	      /* rax will hold the ptr to the private stack bottom */ \
 	     "pushq %%rax\n\t" \
 	     /* rbx will be used to temporarily hold the stack bottom addr */ \
 	     "pushq %%rbx\n\t" \
 	     /* rdi is the input to __tls_get_addr, and also a temp var */ \
 	     "pushq %%rdi\n\t" \
-	     /* Start TLS access of private reg stack */ \
+	     /* Start TLS access of private reg stack pointer */ \
 	     ".byte 0x66\n\t" \
 	     "leaq ust_reg_stack_ptr@tlsgd(%%rip), %%rdi\n\t" \
 	     ".word 0x6666\n\t" \
 	     "rex64\n\t" \
 	     "call __tls_get_addr@plt\n\t" \
 	     /* --- End TLS access */ \
+	     /* check if ust_reg_stack_ptr has been initialized */ \
+	     "movq (%%rax),%%rbx\n\t" \
+	     "testq %%rbx,%%rbx\n\t" \
+	     "jne 1f\n\t" \
+	     "movq %%rax,%%rbx\n\t" \
+	     /* Start TLS access of private reg stack */ \
+	     ".byte 0x66\n\t" \
+	     "leaq ust_reg_stack@tlsgd(%%rip), %%rdi\n\t" \
+	     ".word 0x6666\n\t" \
+	     "rex64\n\t" \
+	     "call __tls_get_addr@plt\n\t" \
+	     /* --- End TLS access */ \
+	     "addq $500,%%rax\n\t" \
+	     "movq %%rax,(%%rbx)\n\t" \
+	     "movq %%rbx,%%rax\n\t" \
+	     /* now the pointer to the private stack is in rax.
+	        must add stack size so the ptr points to the stack bottom. */ \
+	"1:\n\t" \
 	     /* Manually push rsp to private stack */ \
+	     "addq $-8,(%%rax)\n\t" \
+	     "movq 32(%%rsp), %%rdi\n\t" \
+	     "movq (%%rax), %%rbx\n\t" \
+	     "movq %%rdi, (%%rbx)\n\t" \
+	     /* Manually push eflags to private stack */ \
 	     "addq $-8,(%%rax)\n\t" \
 	     "movq 24(%%rsp), %%rdi\n\t" \
 	     "movq (%%rax), %%rbx\n\t" \
@@ -143,11 +165,6 @@ struct registers {
 	     "addq $-8,(%%rax)\n\t" \
 	     "movq (%%rax), %%rbx\n\t" \
 	     "movq %%r15,(%%rbx)\n\t" \
-	     /* deal with rflags */ \
-	     "pushfq\n\t" /* push rflags on stack */ \
-	     "addq $-8,(%%rax)\n\t" \
-	     "movq (%%rax), %%rbx\n\t" \
-	     "popq (%%rbx)\n\t" \
 	     /* push cs */ \
 	     "addq $-2,(%%rax)\n\t" \
 	     "movq (%%rax), %%rbx\n\t" \
@@ -163,6 +180,8 @@ struct registers {
 	     "popq %%rbx\n\t" \
 	     "popq %%rax\n\t" \
 	     /* cancel push of rsp */ \
+	     "addq $8,%%rsp\n\t" \
+	     /* cancel push of rflags */ \
 	     "addq $8,%%rsp\n\t" \
 	     ::); \
 	memcpy(regsptr, (void *)ust_reg_stack_ptr, sizeof(struct registers)); \
