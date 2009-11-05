@@ -1,0 +1,4 @@
+/* GNU ld script
+   Use the shared library, but the link with initializer too */
+OUTPUT_FORMAT(@FORMAT@)
+GROUP ( @PATH@/libust.so.0 @PATH@/libust-initializer.o )
