@@ -4,6 +4,8 @@
 #AC_PREREQ([2.63])
 AC_INIT([ust], [0.0], [pierre-marc dot fournier at polymtl dot ca])
 AC_CONFIG_AUX_DIR([config])
+AC_CANONICAL_TARGET
+AC_CANONICAL_HOST
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([0.0 foreign dist-bzip2 no-dist-gzip])
 AC_CONFIG_SRCDIR([ustctl/ustctl.c])
@@ -62,6 +64,21 @@ AC_CHECK_LIB([urcu-bp], [synchronize_rcu], [], [AC_MSG_ERROR([Cannot find liburc
 
 AC_CHECK_HEADERS([kcompat.h], [], [AC_MSG_ERROR([Cannot find kcompat headers (kcompat.h). Use [CFLAGS]=-Idir to specify their location.])])
 
+AC_MSG_CHECKING([library format for the target system])
+case $target_cpu in
+	i386) LIBFORMAT="elf32-i386" ;;
+	i486) LIBFORMAT="elf32-i386" ;;
+	i586) LIBFORMAT="elf32-i386" ;;
+	i686) LIBFORMAT="elf32-i386" ;;
+	x86_64) LIBFORMAT="elf64-x86-64" ;;
+	ppc) LIBFORMAT="elf32-powerpc" ;;
+	ppc64) LIBFORMAT="elf64-powerpc" ;;
+	s390) LIBFORMAT="elf32-s390" ;;
+	s390x) LIBFORMAT="elf64-s390" ;;
+	*) AC_MSG_ERROR([unable to detect library format (unsupported architecture?)]) ;;
+esac
+AC_SUBST(LIBFORMAT)
+AC_MSG_RESULT($LIBFORMAT)
 
 AC_CONFIG_FILES([
 	Makefile
