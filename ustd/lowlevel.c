@@ -17,7 +17,7 @@
 
 #include <assert.h>
 
-#include <ust/tracer.h>
+#include "tracer.h"
 #include "ustd.h"
 #include "usterr.h"
 

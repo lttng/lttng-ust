@@ -55,8 +55,8 @@
 #include <urcu/rculist.h>
 
 #include <ust/kernelcompat.h>
-#include <ust/tracer.h>
 #include "tracercore.h"
+#include "tracer.h"
 #include "usterr.h"
 
 //ust// static void async_wakeup(unsigned long data);

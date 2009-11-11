@@ -30,7 +30,7 @@
 #include <urcu-bp.h>
 
 #include <ust/marker.h>
-#include <ust/tracer.h>
+#include "tracer.h"
 #include "usterr.h"
 #include "ustcomm.h"
 #include "relay.h" /* FIXME: remove */

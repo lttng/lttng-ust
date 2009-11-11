@@ -31,7 +31,7 @@
 #include "relay.h"
 #include "channels.h"
 #include <kcompat/kref.h>
-#include <ust/tracer.h>
+#include "tracer.h"
 #include "tracercore.h"
 #include "usterr.h"
 
