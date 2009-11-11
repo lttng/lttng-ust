@@ -64,8 +64,8 @@ AC_CHECK_LIB([urcu-bp], [synchronize_rcu], [], [AC_MSG_ERROR([Cannot find liburc
 
 AC_CHECK_HEADERS([kcompat.h], [], [AC_MSG_ERROR([Cannot find kcompat headers (kcompat.h). Use [CFLAGS]=-Idir to specify their location.])])
 
-AC_MSG_CHECKING([library format for the target system])
-case $target_cpu in
+AC_MSG_CHECKING([library format for the host system])
+case $host_cpu in
 	i386) LIBFORMAT="elf32-i386" ;;
 	i486) LIBFORMAT="elf32-i386" ;;
 	i586) LIBFORMAT="elf32-i386" ;;
