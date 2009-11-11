@@ -7,7 +7,7 @@ dist_bin_SCRIPTS = usttrace
 ldscriptsdir = $(libdir)
 ldscripts_DATA = libust.so libust-initializer.o
 
-CLEANFILES = $(ldscripts_DATA)
+CLEANFILES = $(ldscripts_DATA) ./tests/libust-initializer.Po
 
 libust.so: libust.ldscript.in
 	$(SED) -e "s@\@FORMAT\@@$(LIBFORMAT)@" -e "s@\@PATH\@@${libdir}@g" < $< > $@
