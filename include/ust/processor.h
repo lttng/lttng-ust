@@ -8,7 +8,8 @@ extern __thread long ust_reg_stack[500];
 extern volatile __thread long *ust_reg_stack_ptr;
 
 
-#ifdef X86_32
+#ifdef x86_32
+#error "32-bit support broken"
 
 struct registers {
 	long eax;
