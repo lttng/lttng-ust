@@ -21,8 +21,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#ifndef _LINUX_MARKER_H
-#define _LINUX_MARKER_H
+#ifndef _UST_MARKER_H
+#define _UST_MARKER_H
 
 #include <stdarg.h>
 //ust// #include <linux/types.h>
