@@ -94,13 +94,8 @@ struct marker {
 		  0, 0, 0, 0, marker_probe_cb,				\
 		  { __mark_empty_function, NULL},			\
 		  NULL, tp_name_str, tp_cb, NULL };			\
-		asm (".section __marker_addr,\"aw\",@progbits\n\t"	\
-		       _ASM_PTR "%c[marker_struct], (1f)\n\t"		\
-		       ".previous\n\t"					\
-		       "1:\n\t"						\
-			:: [marker_struct] "i" (&__mark_##channel##_##name));\
+		save_ip();						\
 		save_registers(&regs)
-
 
 
 #define DEFINE_MARKER(channel, name, format)				\
@@ -304,7 +299,9 @@ struct marker_addr {
 
 struct lib {
 	struct marker *markers_start;
+#ifdef CONFIG_UST_GDB_INTEGRATION
 	struct marker_addr *markers_addr_start;
+#endif
 	int markers_count;
 	struct list_head list;
 };
@@ -312,6 +309,8 @@ struct lib {
 extern int marker_register_lib(struct marker *markers_start,
 			       struct marker_addr *marker_addr_start,
 			       int markers_count);
+
+#ifdef CONFIG_UST_GDB_INTEGRATION
 
 #define MARKER_LIB							\
 	extern struct marker __start___markers[] __attribute__((weak, visibility("hidden"))); \
@@ -327,4 +326,20 @@ extern int marker_register_lib(struct marker *markers_start,
 extern void marker_set_new_marker_cb(void (*cb)(struct marker *));
 extern void init_markers(void);
 
-#endif
+#else /* CONFIG_UST_GDB_INTEGRATION */
+
+#define MARKER_LIB							\
+	extern struct marker __start___markers[] __attribute__((weak, visibility("hidden"))); \
+	extern struct marker __stop___markers[] __attribute__((weak, visibility("hidden"))); \
+									\
+	static void __attribute__((constructor)) __markers__init(void)	\
+	{								\
+		marker_register_lib(__start___markers, NULL, (((long)__stop___markers)-((long)__start___markers))/sizeof(struct marker)); \
+	}
+
+extern void marker_set_new_marker_cb(void (*cb)(struct marker *));
+extern void init_markers(void);
+
+#endif /* CONFIG_UST_GDB_INTEGRATION */
+
+#endif /* _UST_MARKER_H */

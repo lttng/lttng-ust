@@ -46,8 +46,11 @@ volatile __thread long *ust_reg_stack_ptr = (long *) 0;
 
 extern struct marker __start___markers[] __attribute__((visibility("hidden")));
 extern struct marker __stop___markers[] __attribute__((visibility("hidden")));
+
+#ifdef CONFIG_UST_GDB_INTEGRATION
 extern struct marker_addr __start___marker_addr[] __attribute__((visibility("hidden")));
 extern struct marker_addr __stop___marker_addr[] __attribute__((visibility("hidden")));
+#endif
 
 /* Set to 1 to enable marker debug output */
 static const int marker_debug;
@@ -1509,7 +1512,9 @@ int marker_register_lib(struct marker *markers_start, struct marker_addr *marker
 	pl = (struct lib *) malloc(sizeof(struct lib));
 
 	pl->markers_start = markers_start;
+#ifdef CONFIG_UST_GDB_INTEGRATION
 	pl->markers_addr_start = marker_addr_start;
+#endif
 	pl->markers_count = markers_count;
 
 	lock_markers();
@@ -1545,7 +1550,11 @@ static int initialized = 0;
 void __attribute__((constructor)) init_markers(void)
 {
 	if(!initialized) {
+#ifdef CONFIG_UST_GDB_INTEGRATION
 		marker_register_lib(__start___markers, __start___marker_addr, (((long)__stop___markers)-((long)__start___markers))/sizeof(struct marker));
+#else
+		marker_register_lib(__start___markers, NULL, (((long)__stop___markers)-((long)__start___markers))/sizeof(struct marker));
+#endif
 		//DBG("markers_start: %p, markers_stop: %p\n", __start___markers, __stop___markers);
 		initialized = 1;
 	}
