@@ -250,13 +250,13 @@ void *ltt_buffers_offset_address(struct ust_buffer *buf, size_t offset)
 
 /* FIXME: does this test work properly? */
 #if (BITS_PER_LONG == 32)
-static inline void save_last_tsc(struct ltt_channel_buf_struct *ltt_buf,
+static inline void save_last_tsc(struct ust_buffer *ltt_buf,
 					u64 tsc)
 {
 	ltt_buf->last_tsc = (unsigned long)(tsc >> LTT_TSC_BITS);
 }
 
-static inline int last_tsc_overflow(struct ltt_channel_buf_struct *ltt_buf,
+static inline int last_tsc_overflow(struct ust_buffer *ltt_buf,
 					u64 tsc)
 {
 	unsigned long tsc_shifted = (unsigned long)(tsc >> LTT_TSC_BITS);
