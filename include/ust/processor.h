@@ -8,7 +8,7 @@ extern __thread long ust_reg_stack[500];
 extern volatile __thread long *ust_reg_stack_ptr;
 
 #ifndef CONFIG_UST_GDB_INTEGRATION
-static inline save_ip(void)
+static inline void save_ip(void)
 {
 }
 #endif
