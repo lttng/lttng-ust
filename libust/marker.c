@@ -1517,10 +1517,12 @@ int marker_register_lib(struct marker *markers_start, struct marker_addr *marker
 #endif
 	pl->markers_count = markers_count;
 
+#ifdef CONFIG_UST_GDB_INTEGRATION
 	lock_markers();
 	for(addr = marker_addr_start; addr < marker_addr_start + markers_count; addr++)
 		addr->marker->location = addr->addr;
 	unlock_markers();
+#endif
 
 	/* FIXME: maybe protect this with its own mutex? */
 	lock_markers();
