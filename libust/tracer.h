@@ -32,6 +32,7 @@
 #include "channels.h"
 #include "tracercore.h"
 #include <ust/marker.h>
+#include <ust/probe.h>
 
 /* Number of bytes to log with a read/write event */
 #define LTT_LOG_RW_SIZE			32L
@@ -55,12 +56,6 @@ struct ltt_active_marker;
 struct ltt_serialize_closure;
 struct ltt_probe_private_data;
 
-/* Serialization callback '%k' */
-typedef size_t (*ltt_serialize_cb)(struct ust_buffer *buf, size_t buf_offset,
-			struct ltt_serialize_closure *closure,
-			void *serialize_private, int *largest_align,
-			const char *fmt, va_list *args);
-
 struct ltt_serialize_closure {
 	ltt_serialize_cb *callbacks;
 	long cb_args[LTT_NR_CALLBACKS];
@@ -71,14 +66,6 @@ extern size_t ltt_serialize_data(struct ust_buffer *buf, size_t buf_offset,
 			struct ltt_serialize_closure *closure,
 			void *serialize_private,
 			int *largest_align, const char *fmt, va_list *args);
-
-struct ltt_available_probe {
-	const char *name;		/* probe name */
-	const char *format;
-	marker_probe_func *probe_func;
-	ltt_serialize_cb callbacks[LTT_NR_CALLBACKS];
-	struct list_head node;		/* registered probes list */
-};
 
 struct ltt_probe_private_data {
 	struct ltt_trace_struct *trace;	/*
@@ -605,12 +592,6 @@ extern void ltt_core_unregister(void);
 extern void ltt_release_trace(struct kref *kref);
 extern void ltt_release_transport(struct kref *kref);
 
-extern int ltt_probe_register(struct ltt_available_probe *pdata);
-extern int ltt_probe_unregister(struct ltt_available_probe *pdata);
-extern int ltt_marker_connect(const char *channel, const char *mname,
-		const char *pname);
-extern int ltt_marker_disconnect(const char *channel, const char *mname,
-		const char *pname);
 extern void ltt_dump_marker_state(struct ltt_trace_struct *trace);
 
 extern void ltt_lock_traces(void);

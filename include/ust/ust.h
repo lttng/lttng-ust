@@ -7,5 +7,6 @@
 #include <ust/marker.h>
 #include <ust/processor.h>
 #include <ust/tracepoint.h>
+#include <ust/probe.h>
 
 #endif /* UST_H */
