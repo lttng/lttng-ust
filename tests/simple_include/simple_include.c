@@ -1,3 +1,3 @@
 #include <ust/ust.h>
 
-int main () {}
+int main () { return 0; }
