@@ -1,5 +1,5 @@
-#ifndef _LINUX_TRACEPOINT_H
-#define _LINUX_TRACEPOINT_H
+#ifndef _UST_TRACEPOINT_H
+#define _UST_TRACEPOINT_H
 
 /*
  * Copyright (C) 2008 Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
@@ -210,4 +210,4 @@ extern int tracepoint_register_lib(struct tracepoint *tracepoints_start,
 					(((long)__stop___tracepoints)-((long)__start___tracepoints))/sizeof(struct tracepoint)); \
 	}
 
-#endif
+#endif /* _UST_TRACEPOINT_H */
