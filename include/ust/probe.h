@@ -24,6 +24,7 @@
 #define LTT_NR_CALLBACKS        10
 
 struct ltt_serialize_closure;
+struct ust_buffer;
 
 typedef size_t (*ltt_serialize_cb)(struct ust_buffer *buf, size_t buf_offset,
                         struct ltt_serialize_closure *closure,
