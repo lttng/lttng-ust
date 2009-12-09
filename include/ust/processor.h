@@ -32,12 +32,12 @@ struct registers {
 
 #error "GDB integration not supported for x86-32 yet."
 
-#define save_ip()
+#define save_ip(channel,name)
 #define save_registers(a)
 
 #else /* CONFIG_UST_GDB_INTEGRATION */
 
-#define save_ip()
+#define save_ip(channel,name)
 #define save_registers(a)
 
 #endif /* CONFIG_UST_GDB_INTEGRATION */
@@ -203,6 +203,11 @@ struct registers {
 	     ::); \
 	memcpy(regsptr, (void *)ust_reg_stack_ptr, sizeof(struct registers)); \
 	ust_reg_stack_ptr = (void *)(((long)ust_reg_stack_ptr) + sizeof(struct registers));
+
+#else /* CONFIG_UST_GDB_INTEGRATION */
+
+#define save_ip(channel,name)
+#define save_registers(a)
 
 #endif /* CONFIG_UST_GDB_INTEGRATION */
 
