@@ -7,14 +7,7 @@
 extern __thread long ust_reg_stack[500];
 extern volatile __thread long *ust_reg_stack_ptr;
 
-#ifndef CONFIG_UST_GDB_INTEGRATION
-static inline void save_ip(void)
-{
-}
-#endif
-
-
-#ifndef x86_64
+#ifndef __x86_64
 
 struct registers {
 	long eax;
@@ -35,19 +28,19 @@ struct registers {
 	int  xss;
 };
 
-#ifdef CONFIG_UST_GDB_ITEGRATION
+#ifdef CONFIG_UST_GDB_INTEGRATION
 
 #error "GDB integration not supported for x86-32 yet."
 
 #define save_ip()
 #define save_registers(a)
 
-#else /* CONFIG_UST_GDB_ITEGRATION */
+#else /* CONFIG_UST_GDB_INTEGRATION */
 
 #define save_ip()
 #define save_registers(a)
 
-#endif /* CONFIG_UST_GDB_ITEGRATION */
+#endif /* CONFIG_UST_GDB_INTEGRATION */
 
 #define RELATIVE_ADDRESS(__rel_label__) __rel_label__
 
@@ -78,8 +71,8 @@ struct registers {
 	unsigned long rsp;
 };
 
-#ifdef CONFIG_UST_GDB_ITEGRATION
-#define save_ip() \
+#ifdef CONFIG_UST_GDB_INTEGRATION
+#define save_ip(channel,name) \
 	asm (".section __marker_addr,\"aw\",@progbits\n\t"	\
 	       _ASM_PTR "%c[marker_struct], (1f)\n\t"		\
 	       ".previous\n\t"					\
@@ -211,7 +204,7 @@ struct registers {
 	memcpy(regsptr, (void *)ust_reg_stack_ptr, sizeof(struct registers)); \
 	ust_reg_stack_ptr = (void *)(((long)ust_reg_stack_ptr) + sizeof(struct registers));
 
-#endif /* CONFIG_UST_GDB_ITEGRATION */
+#endif /* CONFIG_UST_GDB_INTEGRATION */
 
 /* Macro to insert the address of a relative jump in an assembly stub,
  * in a relocatable way. On x86-64, this uses a special (%rip) notation. */

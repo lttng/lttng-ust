@@ -94,7 +94,7 @@ struct marker {
 		  0, 0, 0, 0, marker_probe_cb,				\
 		  { __mark_empty_function, NULL},			\
 		  NULL, tp_name_str, tp_cb, NULL };			\
-		save_ip();						\
+		save_ip(channel,name);					\
 		save_registers(&regs)
 
 
