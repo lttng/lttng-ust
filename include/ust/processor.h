@@ -122,10 +122,8 @@ struct registers {
 
 #define save_ip(channel,name)
 
-
 #else /* CONFIG_UST_GDB_INTEGRATION */
 
-#define save_ip(channel,name)
 #define save_registers(a)
 
 #endif /* CONFIG_UST_GDB_INTEGRATION */
@@ -160,12 +158,6 @@ struct registers {
 };
 
 #ifdef CONFIG_UST_GDB_INTEGRATION
-#define save_ip(channel,name) \
-	asm (".section __marker_addr,\"aw\",@progbits\n\t"	\
-	       _ASM_PTR "%c[marker_struct], (1f)\n\t"		\
-	       ".previous\n\t"					\
-	       "1:\n\t"						\
-		:: [marker_struct] "i" (&__mark_##channel##_##name));\
 
 #define save_registers(regsptr) \
 	asm volatile ( \
@@ -294,7 +286,6 @@ struct registers {
 
 #else /* CONFIG_UST_GDB_INTEGRATION */
 
-#define save_ip(channel,name)
 #define save_registers(a)
 
 #endif /* CONFIG_UST_GDB_INTEGRATION */

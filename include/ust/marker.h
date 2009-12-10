@@ -36,6 +36,10 @@
 //ust// struct task_struct;
 struct marker;
 
+/* To stringify the expansion of a define */
+#define XSTR(d) STR(d)
+#define STR(s) #s
+
 /**
  * marker_probe_func - Type of a marker probe function
  * @mdata: marker data
@@ -80,29 +84,69 @@ struct marker {
 #define CONFIG_MARKERS
 #ifdef CONFIG_MARKERS
 
-#define _DEFINE_MARKER(channel, name, tp_name_str, tp_cb, format)	\
-		static const char __mstrtab_##channel##_##name[]	\
-		__attribute__((section("__markers_strings")))		\
-		= #channel "\0" #name "\0" format;			\
-		struct registers regs;					\
-		static struct marker __mark_##channel##_##name		\
-		__attribute__((section("__markers"), aligned(8))) =	\
-		{ __mstrtab_##channel##_##name,				\
-		  &__mstrtab_##channel##_##name[sizeof(#channel)],	\
-		  &__mstrtab_##channel##_##name[sizeof(#channel) +	\
-						sizeof(#name)],		\
-		  0, 0, 0, 0, marker_probe_cb,				\
-		  { __mark_empty_function, NULL},			\
-		  NULL, tp_name_str, tp_cb, NULL };			\
-		save_ip(channel,name);					\
+#define _DEFINE_MARKER(channel, name, tp_name_str, tp_cb, format, unique)	\
+		static const char __old_mstrtab_##channel##_##name[]		\
+		__attribute__((section("__old_markers_strings")))		\
+		= #channel "\0" #name "\0" format;				\
+		struct registers regs;						\
+		static struct marker *__pmark_##channel##_##name;		\
+		static struct marker __old_mark_##channel##_##name		\
+		__attribute__((section("__old_markers"), aligned(8))) =		\
+		{ __old_mstrtab_##channel##_##name,				\
+		  &__old_mstrtab_##channel##_##name[sizeof(#channel)],		\
+		  &__old_mstrtab_##channel##_##name[sizeof(#channel) +		\
+						sizeof(#name)],			\
+		  0, 0, 0, 0, marker_probe_cb,					\
+		  { __mark_empty_function, NULL},				\
+		  NULL, tp_name_str, tp_cb, NULL };				\
+										\
+		/* This next asm has to be a basic inline asm (no input/output/clobber), 	\
+		   because it must not need %-sign escaping, as we most certainly		\
+		   have some in the format string. */						\
+		asm volatile ( 									\
+		     ".section __markers_strings,\"aw\",@progbits\n\t"				\
+		     "__mstrtab_" XSTR(channel) "_" XSTR(name) "_" XSTR(unique) ":\n\t"		\
+		     "__mstrtab_" XSTR(channel) "_" XSTR(name) "_channel_" XSTR(unique) ":\n\t"	\
+		     ".string \"" XSTR(channel) "\"\n\t"					\
+		     "__mstrtab_" XSTR(channel) "_" XSTR(name) "_name_" XSTR(unique) ":\n\t"	\
+		     ".string \"" XSTR(name) "\"\n\t"						\
+		     "__mstrtab_" XSTR(channel) "_" XSTR(name) "_format_" XSTR(unique) ":\n\t"	\
+		     ".string " XSTR(format) "\n\t"						\
+		     ".previous\n\t"								\
+		     ".section __markers,\"aw\",@progbits\n\t"					\
+		     ".align 8\n\t"								\
+		     _ASM_PTR "__mstrtab_" XSTR(channel) "_" XSTR(name) "_channel_" XSTR(unique) "\n\t" /* channel string */ \
+		     _ASM_PTR "__mstrtab_" XSTR(channel) "_" XSTR(name) "_name_" XSTR(unique) "\n\t" /* name string */ \
+		     _ASM_PTR "__mstrtab_" XSTR(channel) "_" XSTR(name) "_format_" XSTR(unique) "\n\t" /* format string */ \
+		     ".byte 0\n\t" /* state imv */ \
+		     ".byte 0\n\t" /* ptype */ \
+		     ".word 0\n\t" /* channel_id */ \
+		     ".word 0\n\t" /* event_id */ \
+		     ".align " XSTR(__SIZEOF_POINTER__) "\n\t" /* alignment */ \
+		     _ASM_PTR "marker_probe_cb\n\t" /* call */ \
+		     _ASM_PTR "__mark_empty_function\n\t" /* marker_probe_closure single.field1 */ \
+		     _ASM_PTR "0\n\t" /* marker_probe_closure single.field2 */ \
+		     _ASM_PTR "0\n\t" /* marker_probe_closure *multi */ \
+		     _ASM_PTR "0\n\t" /* tp_name */ \
+		     _ASM_PTR "0\n\t" /* tp_cb */ \
+		     "__mark_location_" XSTR(unique) ":\n\t" \
+		     _ASM_PTR "(1f)\n\t" /* location */ \
+		     ".previous\n\t" \
+		     "1:\n\t" \
+		); \
+		asm volatile ( \
+		     "mov ""__mstrtab_" XSTR(channel) "_" XSTR(name) "_" XSTR(unique) ", %[pmark_struct]\n\t" \
+		: [pmark_struct] "=r" (__pmark_##channel##_##name) \
+		); \
+		\
 		save_registers(&regs)
 
 
 #define DEFINE_MARKER(channel, name, format)				\
-		_DEFINE_MARKER(channel, name, NULL, NULL, format)
+		_DEFINE_MARKER(channel, name, NULL, NULL, format, __COUNTER__)
 
 #define DEFINE_MARKER_TP(channel, name, tp_name, tp_cb, format)		\
-		_DEFINE_MARKER(channel, name, #tp_name, tp_cb, format)
+		_DEFINE_MARKER(channel, name, #tp_name, tp_cb, format, __COUNTER__)
 
 /*
  * Make sure the alignment of the structure in the __markers section will
@@ -119,15 +163,15 @@ struct marker {
 		__mark_check_format(format, ## args);			\
 		if (!generic) {						\
 			if (unlikely(imv_read(				\
-					__mark_##channel##_##name.state))) \
-				(*__mark_##channel##_##name.call)	\
-					(&__mark_##channel##_##name,	\
+					__pmark_##channel##_##name->state))) \
+				(*__pmark_##channel##_##name->call)	\
+					(__pmark_##channel##_##name,	\
 					call_private, &regs, ## args);		\
 		} else {						\
 			if (unlikely(_imv_read(				\
-					__mark_##channel##_##name.state))) \
-				(*__mark_##channel##_##name.call)	\
-					(&__mark_##channel##_##name,	\
+					__pmark_##channel##_##name->state))) \
+				(__pmark_##channel##_##name->call)	\
+					(__pmark_##channel##_##name,	\
 					call_private, &regs, ## args);		\
 		}							\
 	} while (0)
@@ -320,7 +364,7 @@ extern int marker_register_lib(struct marker *markers_start,
 									\
 	static void __attribute__((constructor)) __markers__init(void)	\
 	{								\
-		marker_register_lib(__start___markers, __start___marker_addr, (((long)__stop___markers)-((long)__start___markers))/sizeof(struct marker)); \
+		marker_register_lib(__start___markers, /*__start___marker_addr*/ NULL, (((long)__stop___markers)-((long)__start___markers))/sizeof(struct marker)); \
 	}
 
 extern void marker_set_new_marker_cb(void (*cb)(struct marker *));
