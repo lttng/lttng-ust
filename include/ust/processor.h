@@ -10,30 +10,118 @@ extern volatile __thread long *ust_reg_stack_ptr;
 #ifndef __x86_64
 
 struct registers {
-	long eax;
-	long ebx;
-	long ecx;
-	long edx;
-	long ebp;
-	long esp;
+	short ss;
+	short cs;
 	long esi;
+	long ebp;
+	long edx;
+	long ecx;
 	long edi;
-	int  xds;
-	int  xes;
-	int  xfs;
-	int  xgs;
-	long eip;
-	int  xcs;
+	long ebx;
+	long eax;
 	long eflags;
-	int  xss;
+	long esp;
 };
 
 #ifdef CONFIG_UST_GDB_INTEGRATION
 
-#error "GDB integration not supported for x86-32 yet."
+//#error "GDB integration not supported for x86-32 yet."
+
+#define save_registers(regsptr) \
+	asm volatile ( \
+	     /* save original esp */ \
+	     "pushl %%esp\n\t" \
+	     /* push original eflags */ \
+	     "pushfl\n\t" \
+	      /* eax will hold the ptr to the private stack bottom */ \
+	     "pushl %%eax\n\t" \
+	     /* ebx will be used to temporarily hold the stack bottom addr */ \
+	     "pushl %%ebx\n\t" \
+	     /* rdi is the input to __tls_get_addr, and also a temp var */ \
+	     "pushl %%edi\n\t" \
+	     /* Start TLS access of private reg stack pointer */ \
+	     "leal ust_reg_stack_ptr@tlsgd(,%%ebx,1),%%eax\n\t" \
+	     "call ___tls_get_addr@plt\n\t" \
+	     /* --- End TLS access */ \
+	     /* check if ust_reg_stack_ptr has been initialized */ \
+	     "movl (%%eax),%%ebx\n\t" \
+	     "testl %%ebx,%%ebx\n\t" \
+	     "jne 1f\n\t" \
+	     "movl %%eax,%%ebx\n\t" \
+	     /* Start TLS access of private reg stack */ \
+	     "leal ust_reg_stack@tlsgd(,%%ebx,1),%%eax\n\t" \
+	     "call ___tls_get_addr@plt\n\t" \
+	     /* --- End TLS access */ \
+	     "addl $500,%%eax\n\t" \
+	     "movl %%eax,(%%ebx)\n\t" \
+	     "movl %%ebx,%%eax\n\t" \
+	     /* now the pointer to the private stack is in eax. \
+	        must add stack size so the ptr points to the stack bottom. */ \
+	"1:\n\t" \
+	     /* Manually push esp to private stack */ \
+	     "addl $-4,(%%eax)\n\t" \
+	     "movl 16(%%esp), %%edi\n\t" \
+	     "movl (%%eax), %%ebx\n\t" \
+	     "movl %%edi, (%%ebx)\n\t" \
+	     /* Manually push eflags to private stack */ \
+	     "addl $-4,(%%eax)\n\t" \
+	     "movl 12(%%esp), %%edi\n\t" \
+	     "movl (%%eax), %%ebx\n\t" \
+	     "movl %%edi, (%%ebx)\n\t" \
+	     /* Manually push eax to private stack */ \
+	     "addl $-4,(%%eax)\n\t" \
+	     "movl 8(%%esp), %%edi\n\t" \
+	     "movl (%%eax), %%ebx\n\t" \
+	     "movl %%edi, (%%ebx)\n\t" \
+	     /* Manually push ebx to private stack */ \
+	     "addl $-4,(%%eax)\n\t" \
+	     "movl 4(%%esp), %%edi\n\t" \
+	     "movl (%%eax), %%ebx\n\t" \
+	     "movl %%edi, (%%ebx)\n\t" \
+	     /* Manually push edi to private stack */ \
+	     "addl $-4,(%%eax)\n\t" \
+	     "movl 0(%%esp), %%edi\n\t" \
+	     "movl (%%eax), %%ebx\n\t" \
+	     "movl %%edi, (%%ebx)\n\t" \
+	     /* now push regs to tls */ \
+	     /* -- esp already pushed -- */ \
+	     /* -- eax already pushed -- */ \
+	     /* -- ebx already pushed -- */ \
+	     /* -- edi already pushed -- */ \
+	     "addl $-4,(%%eax)\n\t" \
+	     "movl (%%eax), %%ebx\n\t" \
+	     "movl %%ecx,(%%ebx)\n\t" \
+	     "addl $-4,(%%eax)\n\t" \
+	     "movl (%%eax), %%ebx\n\t" \
+	     "movl %%edx,(%%ebx)\n\t" \
+	     "addl $-4,(%%eax)\n\t" \
+	     "movl (%%eax), %%ebx\n\t" \
+	     "movl %%ebp,(%%ebx)\n\t" \
+	     "addl $-4,(%%eax)\n\t" \
+	     "movl (%%eax), %%ebx\n\t" \
+	     "movl %%esi,(%%ebx)\n\t" \
+	     /* push cs */ \
+	     "addl $-2,(%%eax)\n\t" \
+	     "movl (%%eax), %%ebx\n\t" \
+	     "movw %%cs, (%%ebx)\n\t" \
+	     /* push ss */ \
+	     "addl $-2,(%%eax)\n\t" \
+	     "movl (%%eax), %%ebx\n\t" \
+	     "movw %%ss, (%%ebx)\n\t" \
+	     /* restore original values of regs that were used internally */ \
+	     "popl %%edi\n\t" \
+	     "popl %%ebx\n\t" \
+	     "popl %%eax\n\t" \
+	     /* cancel push of rsp */ \
+	     "addl $4,%%esp\n\t" \
+	     /* cancel push of eflags */ \
+	     "addl $4,%%esp\n\t" \
+	     ::: "memory"); \
+	memcpy(regsptr, (void *)ust_reg_stack_ptr, sizeof(struct registers)); \
+	ust_reg_stack_ptr = (void *)(((long)ust_reg_stack_ptr) + sizeof(struct registers));
 
 #define save_ip(channel,name)
-#define save_registers(a)
+
 
 #else /* CONFIG_UST_GDB_INTEGRATION */
 
