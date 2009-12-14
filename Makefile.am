@@ -18,5 +18,7 @@ CLEANFILES = $(ldscripts_DATA) ./tests/libust-initializer.Po
 libust.so: libust.ldscript.in
 	$(SED) -e "s@\@FORMAT\@@$(LIBFORMAT)@" -e "s@\@PATH\@@${libdir}@g" < $< > $@
 
+# It is very important to compile the initializer with PIC otherwise we
+# may get obscure errors when linking to shared libraries.
 libust-initializer.o: libust-initializer.c
-	$(CC) $(CFLAGS) -c -I$(top_srcdir)/include -o $@ $<
+	$(CC) $(CFLAGS) -fPIC -c -I$(top_srcdir)/include -o $@ $<
