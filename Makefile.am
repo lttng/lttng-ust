@@ -1,5 +1,11 @@
 ACLOCAL_AMFLAGS = -I m4
-SUBDIRS = libust tests libmallocwrap ustd ustctl libinterfork include
+
+# The order here is tricky. SUBDIRS applies both to compilation and
+# installation. Programs depending on the libs must be built after
+# libust and '.' (that contains the linker script). However, '.'
+# must be installed after libust so it can overwrite libust.so with
+# the linker script.
+SUBDIRS = libust . tests libmallocwrap ustd ustctl libinterfork include
 
 EXTRA_DIST = doc libust.ldscript.in libust-initializer.c
 dist_bin_SCRIPTS = usttrace
