@@ -112,7 +112,7 @@ enum marker_id {
 
 /* static ids 0-1 reserved for internal use. */
 #define MARKER_CORE_IDS		2
-static inline enum marker_id marker_id_type(uint16_t id)
+static __inline__ enum marker_id marker_id_type(uint16_t id)
 {
 	if (id < MARKER_CORE_IDS)
 		return (enum marker_id)id;
@@ -279,7 +279,7 @@ struct ltt_subbuffer_header {
  * structure because gcc generates inefficient code on some architectures
  * (powerpc, mips..)
  */
-static inline size_t ltt_subbuffer_header_size(void)
+static __inline__ size_t ltt_subbuffer_header_size(void)
 {
 	return offsetof(struct ltt_subbuffer_header, header_end);
 }
@@ -303,7 +303,7 @@ static inline size_t ltt_subbuffer_header_size(void)
  * The payload must itself determine its own alignment from the biggest type it
  * contains.
  * */
-static inline unsigned char ust_get_header_size(
+static __inline__ unsigned char ust_get_header_size(
 		struct ust_channel *channel,
 		size_t offset,
 		size_t data_size,
@@ -355,7 +355,7 @@ static inline unsigned char ust_get_header_size(
  *
  * returns : offset where the event data must be written.
  */
-static inline size_t ltt_write_event_header(struct ltt_trace_struct *trace,
+static __inline__ size_t ltt_write_event_header(struct ltt_trace_struct *trace,
 		struct ust_buffer *buf, long buf_offset,
 		u16 eID, size_t event_size,
 		u64 tsc, unsigned int rflags)
@@ -448,7 +448,7 @@ static inline size_t ltt_write_event_header(struct ltt_trace_struct *trace,
  *
  * Return : -ENOSPC if not enough space, else 0.
  */
-static inline int ltt_reserve_slot(
+static __inline__ int ltt_reserve_slot(
 		struct ltt_trace_struct *trace,
 		struct ust_channel *channel,
 		void **transport_data,

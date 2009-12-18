@@ -87,7 +87,7 @@ extern void *ust_buffers_offset_address(struct ust_buffer *buf,
 	size_t offset);
 
 /* FIXME: lttng has a version for systems with inefficient unaligned access */
-static inline void ust_buffers_do_copy(void *dest, const void *src, size_t len)
+static __inline__ void ust_buffers_do_copy(void *dest, const void *src, size_t len)
 {
 	union {
 		const void *src;
@@ -113,7 +113,7 @@ static inline void ust_buffers_do_copy(void *dest, const void *src, size_t len)
 }
 
 /* FIXME: there is both a static inline and a '_' non static inline version ?? */
-static inline int ust_buffers_write(struct ust_buffer *buf, size_t offset,
+static __inline__ int ust_buffers_write(struct ust_buffer *buf, size_t offset,
 	const void *src, size_t len)
 {
 	size_t cpy;
