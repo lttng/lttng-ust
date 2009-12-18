@@ -482,6 +482,13 @@ static void ltt_relay_print_errors(struct ltt_trace_struct *trace,
 	struct ust_buffer *ltt_buf = channel->buf;
 	long cons_off;
 
+	/*
+	 * Can be called in the error path of allocation when
+	 * trans_channel_data is not yet set.
+	 */
+	if (!channel)
+	        return;
+
 	for (cons_off = atomic_long_read(&ltt_buf->consumed);
 			(SUBBUF_TRUNC(local_read(&ltt_buf->offset),
 				      channel)
