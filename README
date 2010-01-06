@@ -1,14 +1,19 @@
 LTTNG USERSPACE TRACER
 
+Updated versions of this package may be found at:
+	git://git.dorsal.polymtl.ca/git/ust.git
+
 Dependencies:
 
 - liburcu
   Userspace RCU library, by Mathieu Desnoyers and Paul E. McKenney
-  http://ltt.polymtl.ca/cgi-bin/gitweb.cgi?p=userspace-rcu.git;a=summary
+   * http://ltt.polymtl.ca/cgi-bin/gitweb.cgi?p=userspace-rcu.git;a=summary
+   * git://lttng.org/userspace-rcu.git
 
 - libkcompat
   Linux kernel userspace compatibility library.
-  http://git.dorsal.polymtl.ca
+   * http://git.dorsal.polymtl.ca
+   * git://git.dorsal.polymtl.ca/git/libkcompat.git
 
 Installation instruction:
 
