@@ -105,7 +105,6 @@ struct marker {
 		   have some %-signs in the format string. */					\
 		asm volatile ( 									\
 		     ".section __markers_strings,\"aw\",@progbits\n\t"				\
-		     "__mstrtab_" XSTR(channel) "_" XSTR(name) "_" XSTR(unique) ":\n\t"		\
 		     "__mstrtab_" XSTR(channel) "_" XSTR(name) "_channel_" XSTR(unique) ":\n\t"	\
 		     ".string \"" XSTR(channel) "\"\n\t"					\
 		     "__mstrtab_" XSTR(channel) "_" XSTR(name) "_name_" XSTR(unique) ":\n\t"	\
@@ -115,16 +114,17 @@ struct marker {
 		     ".previous\n\t"								\
 		     ".section __markers,\"aw\",@progbits\n\t"					\
 		     ".align 8\n\t"								\
-		     _ASM_PTR "__mstrtab_" XSTR(channel) "_" XSTR(name) "_channel_" XSTR(unique) "\n\t" /* channel string */ \
-		     _ASM_PTR "__mstrtab_" XSTR(channel) "_" XSTR(name) "_name_" XSTR(unique) "\n\t" /* name string */ \
-		     _ASM_PTR "__mstrtab_" XSTR(channel) "_" XSTR(name) "_format_" XSTR(unique) "\n\t" /* format string */ \
+		     "__mark_struct_" XSTR(unique) ":\n\t" \
+		     _ASM_PTR "(__mstrtab_" XSTR(channel) "_" XSTR(name) "_channel_" XSTR(unique) ")\n\t" /* channel string */ \
+		     _ASM_PTR "(__mstrtab_" XSTR(channel) "_" XSTR(name) "_name_" XSTR(unique) ")\n\t" /* name string */ \
+		     _ASM_PTR "(__mstrtab_" XSTR(channel) "_" XSTR(name) "_format_" XSTR(unique) ")\n\t" /* format string */ \
 		     ".byte 0\n\t" /* state imv */ \
 		     ".byte 0\n\t" /* ptype */ \
 		     ".word 0\n\t" /* channel_id */ \
 		     ".word 0\n\t" /* event_id */ \
 		     ".align " XSTR(__SIZEOF_POINTER__) "\n\t" /* alignment */ \
-		     _ASM_PTR "marker_probe_cb\n\t" /* call */ \
-		     _ASM_PTR "__mark_empty_function\n\t" /* marker_probe_closure single.field1 */ \
+		     _ASM_PTR "(marker_probe_cb)\n\t" /* call */ \
+		     _ASM_PTR "(__mark_empty_function)\n\t" /* marker_probe_closure single.field1 */ \
 		     _ASM_PTR "0\n\t" /* marker_probe_closure single.field2 */ \
 		     _ASM_PTR "0\n\t" /* marker_probe_closure *multi */ \
 		     _ASM_PTR "0\n\t" /* tp_name */ \
@@ -135,8 +135,8 @@ struct marker {
 		     "1:\n\t" \
 		); \
 		asm volatile ( \
-		     "mov ""__mstrtab_" XSTR(channel) "_" XSTR(name) "_" XSTR(unique) ", %[pmark_struct]\n\t" \
-		: [pmark_struct] "=r" (__pmark_##channel##_##name) \
+		     "mov ""$__mark_struct_" XSTR(unique) ", %[pmark_struct]\n\t" \
+		: [pmark_struct] "=r" (__pmark_##channel##_##name) :: "memory" \
 		); \
 		\
 		save_registers(&regs)
