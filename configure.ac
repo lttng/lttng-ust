@@ -64,12 +64,38 @@ AC_CHECK_LIB([urcu-bp], [synchronize_rcu], [], [AC_MSG_ERROR([Cannot find liburc
 
 AC_CHECK_HEADERS([kcompat.h], [], [AC_MSG_ERROR([Cannot find kcompat headers (kcompat.h). Use [CFLAGS]=-Idir to specify their location.])])
 
+# Check for various supplementary host information (beyond the
+# triplet) which might affect the library format choices.  E.g., we
+# can be building with `i686-unknown-linux-gnu-gcc -m64'
+
+case "${host}" in
+changequote(,)dnl
+  i[34567]86-*-linux*)
+changequote([,])dnl
+    AC_CACHE_CHECK([if building for x86-64], [ust_cv_i386_is_x86_64],
+                    [save_CPPFLAGS="$CPPFLAGS"
+                    CPPFLAGS="$CPPFLAGS $CFLAGS"
+                    AC_EGREP_CPP([got it], [
+#if __x86_64__
+got it
+#endif
+                 ], [ust_cv_i386_is_x86_64=yes],
+                    [ust_cv_i386_is_x86_64=no])
+                    CPPFLAGS="$save_CPPFLAGS"])
+    ;;
+esac
+
 AC_MSG_CHECKING([library format for the host system])
 case $host_cpu in
-	i386) LIBFORMAT="elf32-i386" ;;
-	i486) LIBFORMAT="elf32-i386" ;;
-	i586) LIBFORMAT="elf32-i386" ;;
-	i686) LIBFORMAT="elf32-i386" ;;
+changequote(,)dnl
+	i[3456]86)
+changequote([,])dnl
+	  if test "$ust_cv_i386_is_x86_64" = yes ; then
+	     LIBFORMAT="elf64-x86-64"
+	  else
+	     LIBFORMAT="elf32-i386"
+	  fi
+	  ;;
 	x86_64) LIBFORMAT="elf64-x86-64" ;;
 	ppc) LIBFORMAT="elf32-powerpc" ;;
 	ppc64) LIBFORMAT="elf64-powerpc" ;;
