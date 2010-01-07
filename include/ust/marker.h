@@ -101,8 +101,8 @@ struct marker {
 		  NULL, tp_name_str, tp_cb, NULL };				\
 										\
 		/* This next asm has to be a basic inline asm (no input/output/clobber), 	\
-		   because it must not need %-sign escaping, as we most certainly		\
-		   have some in the format string. */						\
+		   because it must not require %-sign escaping, as we most certainly		\
+		   have some %-signs in the format string. */					\
 		asm volatile ( 									\
 		     ".section __markers_strings,\"aw\",@progbits\n\t"				\
 		     "__mstrtab_" XSTR(channel) "_" XSTR(name) "_" XSTR(unique) ":\n\t"		\
