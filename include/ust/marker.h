@@ -84,22 +84,11 @@ struct marker {
 #define CONFIG_MARKERS
 #ifdef CONFIG_MARKERS
 
-#define _DEFINE_MARKER(channel, name, tp_name_str, tp_cb, format, unique)	\
-		static const char __old_mstrtab_##channel##_##name[]		\
-		__attribute__((section("__old_markers_strings")))		\
-		= #channel "\0" #name "\0" format;				\
-		struct registers regs;						\
-		static struct marker *__pmark_##channel##_##name;		\
-		static struct marker __old_mark_##channel##_##name		\
-		__attribute__((section("__old_markers"), aligned(8))) =		\
-		{ __old_mstrtab_##channel##_##name,				\
-		  &__old_mstrtab_##channel##_##name[sizeof(#channel)],		\
-		  &__old_mstrtab_##channel##_##name[sizeof(#channel) +		\
-						sizeof(#name)],			\
-		  0, 0, 0, 0, marker_probe_cb,					\
-		  { __mark_empty_function, NULL},				\
-		  NULL, tp_name_str, tp_cb, NULL };				\
-										\
+#define _DEFINE_MARKER(channel, name, tp_name_str, tp_cb, format, unique)			\
+		struct registers regs;								\
+		/* make asm label visible to C */						\
+		extern struct marker make_mark_struct_name(channel, name, unique);		\
+												\
 		/* This next asm has to be a basic inline asm (no input/output/clobber), 	\
 		   because it must not require %-sign escaping, as we most certainly		\
 		   have some %-signs in the format string. */					\
@@ -114,7 +103,9 @@ struct marker {
 		     ".previous\n\t"								\
 		     ".section __markers,\"aw\",@progbits\n\t"					\
 		     ".align 8\n\t"								\
-		     "__mark_struct_" XSTR(unique) ":\n\t" \
+		     XSTR(make_mark_struct_name(channel, name, unique)) ":\n\t"			\
+		     ".global " XSTR(make_mark_struct_name(channel, name, unique)) "\n\t"	\
+		     ".hidden " XSTR(make_mark_struct_name(channel, name, unique)) "\n\t"	\
 		     _ASM_PTR "(__mstrtab_" XSTR(channel) "_" XSTR(name) "_channel_" XSTR(unique) ")\n\t" /* channel string */ \
 		     _ASM_PTR "(__mstrtab_" XSTR(channel) "_" XSTR(name) "_name_" XSTR(unique) ")\n\t" /* name string */ \
 		     _ASM_PTR "(__mstrtab_" XSTR(channel) "_" XSTR(name) "_format_" XSTR(unique) ")\n\t" /* format string */ \
@@ -134,19 +125,15 @@ struct marker {
 		     ".previous\n\t"								\
 		     "1:\n\t"									\
 		);										\
-		asm volatile ( \
-		     "mov ""$__mark_struct_" XSTR(unique) ", %[pmark_struct]\n\t" \
-		: [pmark_struct] "=r" (__pmark_##channel##_##name) :: "memory" \
-		); \
-		\
+												\
 		save_registers(&regs)
 
 
-#define DEFINE_MARKER(channel, name, format)				\
-		_DEFINE_MARKER(channel, name, NULL, NULL, format, __COUNTER__)
+#define DEFINE_MARKER(channel, name, format, unique)				\
+		_DEFINE_MARKER(channel, name, NULL, NULL, format, unique)
 
-#define DEFINE_MARKER_TP(channel, name, tp_name, tp_cb, format)		\
-		_DEFINE_MARKER(channel, name, #tp_name, tp_cb, format, __COUNTER__)
+#define DEFINE_MARKER_TP(channel, name, tp_name, tp_cb, format, unique)		\
+		_DEFINE_MARKER(channel, name, #tp_name, tp_cb, format, unique)
 
 /*
  * Make sure the alignment of the structure in the __markers section will
@@ -157,33 +144,45 @@ struct marker {
  * If generic is true, a variable read is used.
  * If generic is false, immediate values are used.
  */
+
+#define make_mark_struct_name(channel, name, unique) \
+	make_mark_struct_name2(channel, name, unique)
+
+#define make_mark_struct_name2(channel, name, unique) \
+	__mark_struct_##channel##_##name##_##unique
+
 #define __trace_mark(generic, channel, name, call_private, format, args...) \
+	__trace_mark_counter(generic, channel, name, __COUNTER__, call_private, format, ## args)
+
+#define __trace_mark_counter(generic, channel, name, unique, call_private, format, args...) \
 	do {								\
-		DEFINE_MARKER(channel, name, format);			\
+		DEFINE_MARKER(channel, name, format, unique);			\
 		__mark_check_format(format, ## args);			\
 		if (!generic) {						\
 			if (unlikely(imv_read(				\
-					__pmark_##channel##_##name->state))) \
-				(*__pmark_##channel##_##name->call)	\
-					(__pmark_##channel##_##name,	\
+					make_mark_struct_name(channel, name, unique).state))) \
+				(make_mark_struct_name(channel, name, unique).call)	\
+					(&make_mark_struct_name(channel, name, unique),	\
 					call_private, &regs, ## args);		\
 		} else {						\
 			if (unlikely(_imv_read(				\
-					__pmark_##channel##_##name->state))) \
-				(__pmark_##channel##_##name->call)	\
-					(__pmark_##channel##_##name,	\
+					make_mark_struct_name(channel, name, unique).state))) \
+				(make_mark_struct_name(channel, name, unique).call)	\
+					(&make_mark_struct_name(channel, name, unique),	\
 					call_private, &regs, ## args);		\
 		}							\
 	} while (0)
 
-#define __trace_mark_tp(channel, name, call_private, tp_name, tp_cb,	\
-			format, args...)				\
+#define __trace_mark_tp(channel, name, call_private, tp_name, tp_cb, format, args...) \
+	__trace_mark_tp_counter(channel, name, __COUNTER__, call_private, tp_name, tp_cb, format, ## args)
+
+#define __trace_mark_tp_counter(channel, name, unique, call_private, tp_name, tp_cb, format, args...) \
 	do {								\
 		void __check_tp_type(void)				\
 		{							\
 			register_trace_##tp_name(tp_cb);		\
 		}							\
-		DEFINE_MARKER_TP(channel, name, tp_name, tp_cb, format);\
+		DEFINE_MARKER_TP(channel, name, tp_name, tp_cb, format, unique);\
 		__mark_check_format(format, ## args);			\
 		(*__mark_##channel##_##name.call)(&__mark_##channel##_##name, \
 			call_private, &regs, ## args);				\
