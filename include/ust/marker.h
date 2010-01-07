@@ -350,27 +350,7 @@ struct lib {
 	struct list_head list;
 };
 
-extern int marker_register_lib(struct marker *markers_start,
-			       struct marker_addr *marker_addr_start,
-			       int markers_count);
-
-#ifdef CONFIG_UST_GDB_INTEGRATION
-
-#define MARKER_LIB							\
-	extern struct marker __start___markers[] __attribute__((weak, visibility("hidden"))); \
-	extern struct marker __stop___markers[] __attribute__((weak, visibility("hidden"))); \
-	extern struct marker_addr __start___marker_addr[] __attribute__((weak, visibility("hidden"))); \
-	extern struct marker_addr __stop___marker_addr[] __attribute__((weak, visibility("hidden"))); \
-									\
-	static void __attribute__((constructor)) __markers__init(void)	\
-	{								\
-		marker_register_lib(__start___markers, /*__start___marker_addr*/ NULL, (((long)__stop___markers)-((long)__start___markers))/sizeof(struct marker)); \
-	}
-
-extern void marker_set_new_marker_cb(void (*cb)(struct marker *));
-extern void init_markers(void);
-
-#else /* CONFIG_UST_GDB_INTEGRATION */
+extern int marker_register_lib(struct marker *markers_start, int markers_count);
 
 #define MARKER_LIB							\
 	extern struct marker __start___markers[] __attribute__((weak, visibility("hidden"))); \
@@ -378,12 +358,10 @@ extern void init_markers(void);
 									\
 	static void __attribute__((constructor)) __markers__init(void)	\
 	{								\
-		marker_register_lib(__start___markers, NULL, (((long)__stop___markers)-((long)__start___markers))/sizeof(struct marker)); \
+		marker_register_lib(__start___markers, (((long)__stop___markers)-((long)__start___markers))/sizeof(struct marker)); \
 	}
 
 extern void marker_set_new_marker_cb(void (*cb)(struct marker *));
 extern void init_markers(void);
-
-#endif /* CONFIG_UST_GDB_INTEGRATION */
 
 #endif /* _UST_MARKER_H */

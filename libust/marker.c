@@ -47,11 +47,6 @@ volatile __thread long *ust_reg_stack_ptr = (long *) 0;
 extern struct marker __start___markers[] __attribute__((visibility("hidden")));
 extern struct marker __stop___markers[] __attribute__((visibility("hidden")));
 
-#ifdef CONFIG_UST_GDB_INTEGRATION
-extern struct marker_addr __start___marker_addr[] __attribute__((visibility("hidden")));
-extern struct marker_addr __stop___marker_addr[] __attribute__((visibility("hidden")));
-#endif
-
 /* Set to 1 to enable marker debug output */
 static const int marker_debug;
 
@@ -1522,7 +1517,7 @@ static void new_markers(struct marker *start, struct marker *end)
 	}
 }
 
-int marker_register_lib(struct marker *markers_start, struct marker_addr *marker_addr_start, int markers_count)
+int marker_register_lib(struct marker *markers_start, int markers_count)
 {
 	struct lib *pl;
 	struct marker_addr *addr;
@@ -1530,17 +1525,7 @@ int marker_register_lib(struct marker *markers_start, struct marker_addr *marker
 	pl = (struct lib *) malloc(sizeof(struct lib));
 
 	pl->markers_start = markers_start;
-#ifdef CONFIG_UST_GDB_INTEGRATION
-	pl->markers_addr_start = marker_addr_start;
-#endif
 	pl->markers_count = markers_count;
-
-#ifdef CONFIG_UST_GDB_INTEGRATION
-	lock_markers();
-	for(addr = marker_addr_start; addr < marker_addr_start + markers_count; addr++)
-		addr->marker->location = addr->addr;
-	unlock_markers();
-#endif
 
 	/* FIXME: maybe protect this with its own mutex? */
 	lock_markers();
@@ -1570,11 +1555,7 @@ static int initialized = 0;
 void __attribute__((constructor)) init_markers(void)
 {
 	if(!initialized) {
-#ifdef CONFIG_UST_GDB_INTEGRATION
-		marker_register_lib(__start___markers, __start___marker_addr, (((long)__stop___markers)-((long)__start___markers))/sizeof(struct marker));
-#else
-		marker_register_lib(__start___markers, NULL, (((long)__stop___markers)-((long)__start___markers))/sizeof(struct marker));
-#endif
+		marker_register_lib(__start___markers, (((long)__stop___markers)-((long)__start___markers))/sizeof(struct marker));
 		//DBG("markers_start: %p, markers_stop: %p\n", __start___markers, __stop___markers);
 		initialized = 1;
 	}
