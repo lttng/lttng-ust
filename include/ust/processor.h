@@ -120,8 +120,6 @@ struct registers {
 	memcpy(regsptr, (void *)ust_reg_stack_ptr, sizeof(struct registers)); \
 	ust_reg_stack_ptr = (void *)(((long)ust_reg_stack_ptr) + sizeof(struct registers));
 
-#define save_ip(channel,name)
-
 #else /* CONFIG_UST_GDB_INTEGRATION */
 
 #define save_registers(a)
