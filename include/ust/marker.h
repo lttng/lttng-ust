@@ -99,7 +99,7 @@ struct marker {
 		     "__mstrtab_" XSTR(channel) "_" XSTR(name) "_name_" XSTR(unique) ":\n\t"	\
 		     ".string \"" XSTR(name) "\"\n\t"						\
 		     "__mstrtab_" XSTR(channel) "_" XSTR(name) "_format_" XSTR(unique) ":\n\t"	\
-		     ".string " XSTR(format) "\n\t"						\
+		     ".string " "\"" format "\"" "\n\t"						\
 		     ".previous\n\t"								\
 		     ".section __markers,\"aw\",@progbits\n\t"					\
 		     ".align 8\n\t"								\
