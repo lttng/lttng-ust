@@ -105,7 +105,7 @@ struct marker {
 		     ".align 8\n\t"								\
 		     XSTR(make_mark_struct_name(channel, name, unique)) ":\n\t"			\
 		     ".global " XSTR(make_mark_struct_name(channel, name, unique)) "\n\t"	\
-		     ".hidden " XSTR(make_mark_struct_name(channel, name, unique)) "\n\t"	\
+		     ".local " XSTR(make_mark_struct_name(channel, name, unique)) "\n\t"	\
 		     _ASM_PTR "(__mstrtab_" XSTR(channel) "_" XSTR(name) "_channel_" XSTR(unique) ")\n\t" /* channel string */ \
 		     _ASM_PTR "(__mstrtab_" XSTR(channel) "_" XSTR(name) "_name_" XSTR(unique) ")\n\t" /* name string */ \
 		     _ASM_PTR "(__mstrtab_" XSTR(channel) "_" XSTR(name) "_format_" XSTR(unique) ")\n\t" /* format string */ \
@@ -152,7 +152,7 @@ struct marker {
 	__mark_struct_##channel##_##name##_##unique
 
 #define __trace_mark(generic, channel, name, call_private, format, args...) \
-	__trace_mark_counter(generic, channel, name, __COUNTER__, call_private, format, ## args)
+	__trace_mark_counter(generic, channel, name, __LINE__, call_private, format, ## args)
 
 #define __trace_mark_counter(generic, channel, name, unique, call_private, format, args...) \
 	do {								\
@@ -174,7 +174,7 @@ struct marker {
 	} while (0)
 
 #define __trace_mark_tp(channel, name, call_private, tp_name, tp_cb, format, args...) \
-	__trace_mark_tp_counter(channel, name, __COUNTER__, call_private, tp_name, tp_cb, format, ## args)
+	__trace_mark_tp_counter(channel, name, __LINE__, call_private, tp_name, tp_cb, format, ## args)
 
 #define __trace_mark_tp_counter(channel, name, unique, call_private, tp_name, tp_cb, format, args...) \
 	do {								\
