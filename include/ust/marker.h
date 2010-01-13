@@ -32,6 +32,8 @@
 #include <kcompat/list.h>
 #include <ust/processor.h>
 
+#include <bits/wordsize.h>
+
 //ust// struct module;
 //ust// struct task_struct;
 struct marker;
@@ -113,7 +115,7 @@ struct marker {
 		     ".byte 0\n\t" /* ptype */							\
 		     ".word 0\n\t" /* channel_id */						\
 		     ".word 0\n\t" /* event_id */						\
-		     ".align " XSTR(__SIZEOF_POINTER__) "\n\t" /* alignment */			\
+		     ".align " XSTR(__WORDSIZE) " / 8\n\t" /* alignment */			\
 		     _ASM_PTR "(marker_probe_cb)\n\t" /* call */				\
 		     _ASM_PTR "(__mark_empty_function)\n\t" /* marker_probe_closure single.field1 */ \
 		     _ASM_PTR "0\n\t" /* marker_probe_closure single.field2 */			\
