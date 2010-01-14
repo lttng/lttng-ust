@@ -15,8 +15,8 @@ struct registers {
 	long esi;
 	long ebp;
 	long edx;
-	long ecx;
 	long edi;
+	long ecx;
 	long ebx;
 	long eax;
 	long eflags;
@@ -35,45 +35,65 @@ struct registers {
 	     "pushfl\n\t" \
 	      /* eax will hold the ptr to the private stack bottom */ \
 	     "pushl %%eax\n\t" \
-	     /* ebx will be used to temporarily hold the stack bottom addr */ \
+	     /* ebx is used for TLS access */ \
 	     "pushl %%ebx\n\t" \
+	     /* ecx will be used to temporarily hold the stack bottom addr */ \
+	     "pushl %%ecx\n\t" \
 	     /* rdi is the input to __tls_get_addr, and also a temp var */ \
 	     "pushl %%edi\n\t" \
+	     /* Get GOT address */ \
+	     "call __i686.get_pc_thunk.bx\n\t" \
+	     "addl $_GLOBAL_OFFSET_TABLE_, %%ebx\n\t" \
+	     /* Save registers before call (not using ecx yet but we must preserve \
+	        the original value of edx. */ \
+	     "pushl %%edx\n\t" \
 	     /* Start TLS access of private reg stack pointer */ \
 	     "leal ust_reg_stack_ptr@tlsgd(,%%ebx,1),%%eax\n\t" \
 	     "call ___tls_get_addr@plt\n\t" \
 	     /* --- End TLS access */ \
+	     "popl %%edx\n\t" \
 	     /* check if ust_reg_stack_ptr has been initialized */ \
-	     "movl (%%eax),%%ebx\n\t" \
-	     "testl %%ebx,%%ebx\n\t" \
+	     "movl (%%eax),%%ecx\n\t" \
+	     "testl %%ecx,%%ecx\n\t" \
 	     "jne 1f\n\t" \
-	     "movl %%eax,%%ebx\n\t" \
+	     "movl %%eax,%%ecx\n\t" \
+	     /* Save registers before call (using ecx and we must preserve \
+	        the original value of edx. */ \
+	     "pushl %%ecx\n\t" \
+	     "pushl %%edx\n\t" \
 	     /* Start TLS access of private reg stack */ \
 	     "leal ust_reg_stack@tlsgd(,%%ebx,1),%%eax\n\t" \
 	     "call ___tls_get_addr@plt\n\t" \
 	     /* --- End TLS access */ \
+	     "popl %%edx\n\t" \
+	     "popl %%ecx\n\t" \
 	     "addl $500,%%eax\n\t" \
-	     "movl %%eax,(%%ebx)\n\t" \
-	     "movl %%ebx,%%eax\n\t" \
+	     "movl %%eax,(%%ecx)\n\t" \
+	     "movl %%ecx,%%eax\n\t" \
 	     /* now the pointer to the private stack is in eax. \
 	        must add stack size so the ptr points to the stack bottom. */ \
 	"1:\n\t" \
 	     /* Manually push esp to private stack */ \
 	     "addl $-4,(%%eax)\n\t" \
-	     "movl 16(%%esp), %%edi\n\t" \
+	     "movl 20(%%esp), %%edi\n\t" \
 	     "movl (%%eax), %%ebx\n\t" \
 	     "movl %%edi, (%%ebx)\n\t" \
 	     /* Manually push eflags to private stack */ \
 	     "addl $-4,(%%eax)\n\t" \
-	     "movl 12(%%esp), %%edi\n\t" \
+	     "movl 16(%%esp), %%edi\n\t" \
 	     "movl (%%eax), %%ebx\n\t" \
 	     "movl %%edi, (%%ebx)\n\t" \
 	     /* Manually push eax to private stack */ \
 	     "addl $-4,(%%eax)\n\t" \
-	     "movl 8(%%esp), %%edi\n\t" \
+	     "movl 12(%%esp), %%edi\n\t" \
 	     "movl (%%eax), %%ebx\n\t" \
 	     "movl %%edi, (%%ebx)\n\t" \
 	     /* Manually push ebx to private stack */ \
+	     "addl $-4,(%%eax)\n\t" \
+	     "movl 8(%%esp), %%edi\n\t" \
+	     "movl (%%eax), %%ebx\n\t" \
+	     "movl %%edi, (%%ebx)\n\t" \
+	     /* Manually push ecx to private stack */ \
 	     "addl $-4,(%%eax)\n\t" \
 	     "movl 4(%%esp), %%edi\n\t" \
 	     "movl (%%eax), %%ebx\n\t" \
@@ -87,10 +107,8 @@ struct registers {
 	     /* -- esp already pushed -- */ \
 	     /* -- eax already pushed -- */ \
 	     /* -- ebx already pushed -- */ \
+	     /* -- ecx already pushed -- */ \
 	     /* -- edi already pushed -- */ \
-	     "addl $-4,(%%eax)\n\t" \
-	     "movl (%%eax), %%ebx\n\t" \
-	     "movl %%ecx,(%%ebx)\n\t" \
 	     "addl $-4,(%%eax)\n\t" \
 	     "movl (%%eax), %%ebx\n\t" \
 	     "movl %%edx,(%%ebx)\n\t" \
@@ -110,6 +128,7 @@ struct registers {
 	     "movw %%ss, (%%ebx)\n\t" \
 	     /* restore original values of regs that were used internally */ \
 	     "popl %%edi\n\t" \
+	     "popl %%ecx\n\t" \
 	     "popl %%ebx\n\t" \
 	     "popl %%eax\n\t" \
 	     /* cancel push of rsp */ \
