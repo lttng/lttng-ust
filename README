@@ -33,7 +33,7 @@ PREREQUISITES:
 
 
 
-INSTALLATION INSTRUCTION:
+INSTALLATION INSTRUCTIONS:
 
   - Download, compile and install liburcu and libkcompat.
   - In this package's tree, run ./configure.
@@ -44,7 +44,16 @@ INSTALLATION INSTRUCTION:
 
 
 
+TRACE VIEWER:
+
+  LTTV is used for viewing UST traces. LTTV may be obtained at
+  http://lttng.org in the Downloads section.
+
+
+
 PACKAGE CONTENTS:
+
+  This package contains the following elements.
 
   - libust
     The actual userspace tracing library that must be linked to the
