@@ -1,5 +1,5 @@
-#ifndef _LTT_CHANNELS_H
-#define _LTT_CHANNELS_H
+#ifndef UST_CHANNELS_H
+#define UST_CHANNELS_H
 
 /*
  * Copyright (C) 2008 Mathieu Desnoyers (mathieu.desnoyers@polymtl.ca)
@@ -97,4 +97,4 @@ extern void ltt_channels_trace_free(struct ust_channel *channels);
 extern int _ltt_channels_get_event_id(const char *channel, const char *name);
 extern int ltt_channels_get_event_id(const char *channel, const char *name);
 
-#endif /* _LTT_CHANNELS_H */
+#endif /* UST_CHANNELS_H */
