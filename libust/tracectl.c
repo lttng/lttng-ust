@@ -949,7 +949,24 @@ static void __attribute__((constructor)) init()
 		/* Ensure markers are initialized */
 		init_markers();
 
-		/* In case. */
+		/* FIXME: When starting early tracing (here), depending on the
+		 * order of constructors, it is very well possible some marker
+		 * sections are not yet registered. Because of this, some
+		 * channels may not be registered. Yet, we are about to ask the
+		 * daemon to collect the channels. Channels which are not yet
+		 * registered will not be collected.
+		 *
+		 * Currently, in LTTng, there is no way to add a channel after
+		 * trace start. The reason for this is that it induces complex
+		 * concurrency issues on the trace structures, which can only
+		 * be resolved using RCU. This has not been done yet. As a
+		 * workaround, we are forcing the registration of the "ust"
+		 * channel here. This is the only channel (apart from metadata)
+		 * that can be reliably used in early tracing.
+		 *
+		 * Non-early tracing does not have this problem and can use
+		 * arbitrary channel names.
+		 */
 		ltt_channels_register("ust");
 
 		result = ltt_trace_setup(trace_name);
