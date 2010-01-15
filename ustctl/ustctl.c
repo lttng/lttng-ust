@@ -27,6 +27,7 @@
 #include "usterr.h"
 
 enum command {
+	CREATE_TRACE,
 	START_TRACE,
 	STOP_TRACE,
 	START,
@@ -52,6 +53,7 @@ void usage(void)
 	fprintf(stderr, "\nControl the tracing of a process that supports LTTng Userspace Tracing.\n\
 \n\
 Commands:\n\
+    --create-trace\t\t\tCreate trace\n\
     --start-trace\t\t\tStart tracing\n\
     --stop-trace\t\t\tStop tracing\n\
     --destroy-trace\t\t\tDestroy the trace\n\
@@ -72,6 +74,7 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 	while (1) {
 		int option_index = 0;
 		static struct option long_options[] = {
+			{"create-trace", 0, 0, 1012},
 			{"start-trace", 0, 0, 1000},
 			{"stop-trace", 0, 0, 1001},
 			{"destroy-trace", 0, 0, 1002},
@@ -130,7 +133,10 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 			exit(0);
 		case 1010:
 			printf("Version 0.1\n");
-
+			break;
+		case 1012:
+			opts->cmd = CREATE_TRACE;
+			break;
 		default:
 			/* unknown option or other error; error is
 			printed by getopt, just return */
@@ -212,6 +218,14 @@ int main(int argc, char *argv[])
 
 	while(*pidit != -1) {
 		switch (opts.cmd) {
+			case CREATE_TRACE:
+				result = ustcmd_create_trace(*pidit);
+				if (result) {
+					ERR("error while trying to create trace with PID %u\n", (unsigned int) *pidit);
+					break;
+				}
+				break;
+
 			case START_TRACE:
 				result = ustcmd_start_trace(*pidit);
 				if (result) {

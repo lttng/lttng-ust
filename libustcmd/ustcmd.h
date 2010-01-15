@@ -34,6 +34,7 @@ extern int ustcmd_set_marker_state(const char *, int, pid_t);
 extern int ustcmd_destroy_trace(pid_t);
 extern int ustcmd_setup_and_start(pid_t);
 extern int ustcmd_stop_trace(pid_t);
+extern int ustcmd_create_trace(pid_t);
 extern int ustcmd_start_trace(pid_t);
 extern int ustcmd_free_cmsf(struct marker_status *);
 extern unsigned int ustcmd_count_nl(const char *);

@@ -138,6 +138,24 @@ int ustcmd_setup_and_start(pid_t pid)
 }
 
 /**
+ * Creates an UST trace according to a PID.
+ *
+ * @param pid	Traced process ID
+ * @return	0 if successful, or error USTCMD_ERR_GEN
+ */
+int ustcmd_create_trace(pid_t pid)
+{
+	int result;
+
+	result = ustcmd_send_cmd("trace_create", pid, NULL);
+	if (result) {
+		return USTCMD_ERR_GEN;
+	}
+
+	return 0;
+}
+
+/**
  * Starts an UST trace according to a PID.
  *
  * @param pid	Traced process ID

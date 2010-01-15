@@ -370,6 +370,29 @@ void *listener_main(void *p)
 				return (void *)1;
 			}
 		}
+		else if(!strcmp(recvbuf, "trace_create")) {
+			DBG("trace create");
+
+			result = ltt_trace_setup(trace_name);
+			if(result < 0) {
+				ERR("ltt_trace_setup failed");
+				return (void *)1;
+			}
+
+			result = ltt_trace_set_type(trace_name, trace_type);
+			if(result < 0) {
+				ERR("ltt_trace_set_type failed");
+				return (void *)1;
+			}
+
+			result = ltt_trace_alloc(trace_name);
+			if(result < 0) {
+				ERR("ltt_trace_alloc failed");
+				return (void *)1;
+			}
+
+			inform_consumer_daemon(trace_name);
+		}
 		else if(!strcmp(recvbuf, "trace_start")) {
 			DBG("trace start");
 
