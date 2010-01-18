@@ -54,8 +54,24 @@ This manual is for UST 0.1.
 @chapter Overview
 
 @menu
+* License::
 * Supported platforms::
 @end menu
+
+@node License
+@section License
+The LTTng Userspace Tracer is intended to be linkable to open source software
+as well as to proprietary applications. This was accomplished by licensing
+the code that needs to be linked to the traced program as @acronym{LGPL}.
+
+The @file{libust} library, including its headers, are licensed as @acronym{GNU}
+@acronym{LGPL} v2.1. It is also the case of some other helper libraries
+(@file{libmallocwrap}, @file{libinterfork}, @file{libustcomm}) that need to be linked to the traced
+program.
+
+The accompanying tools of the @acronym{UST} package are licensed as
+@acronym{GNU} @acronym{GPL} v2. These tools include the @file{ustctl} trace
+control program and the @file{ustd} daemon.
 
 @node Supported platforms
 @section Supported platforms
