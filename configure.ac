@@ -7,7 +7,7 @@ AC_CONFIG_AUX_DIR([config])
 AC_CANONICAL_TARGET
 AC_CANONICAL_HOST
 AC_CONFIG_MACRO_DIR([m4])
-AM_INIT_AUTOMAKE([0.0 foreign dist-bzip2 no-dist-gzip])
+AM_INIT_AUTOMAKE([foreign])
 AC_CONFIG_SRCDIR([ustctl/ustctl.c])
 AC_CONFIG_HEADERS([config.h])
 
