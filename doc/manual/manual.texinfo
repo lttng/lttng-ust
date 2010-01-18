@@ -1,0 +1,437 @@
+\input texinfo   @c -*-texinfo-*-
+@c %**start of header
+@setfilename ust.info
+@settitle LTTng Userspace Tracer (UST) Manual
+@c %**end of header
+
+@copying
+This manual is for program, version version.
+
+Copyright @copyright{}  copyright-owner.
+
+@quotation
+Permission is granted to ...
+@end quotation
+@end copying
+
+@titlepage
+@title LTTng Userspace Tracer (UST) Manual
+@c @subtitle subtitle-if-any
+@c @subtitle second-subtitle
+@c @author author
+
+@c  The following two commands
+@c  start the copyright page.
+@c @page
+@c @vskip 0pt plus 1filll
+@c @insertcopying
+
+@c Published by ...
+@end titlepage
+
+@c So the toc is printed at the start.
+@contents
+
+@ifnottex
+@node Top
+@top LTTng Userspace Tracer
+
+This manual is for UST 0.1.
+@end ifnottex
+
+@menu
+* Overview::
+* Installation::
+* Quick start::
+* Instrumenting an application::
+* Recording a trace::
+* Viewing traces::
+* Performance::
+@c * Copying::          Your rights and freedoms.
+@end menu
+
+@node Overview
+@chapter Overview
+
+@menu
+* Supported platforms::
+@end menu
+
+@node Supported platforms
+@section Supported platforms
+
+UST can currently trace applications running on Linux, on the x86-32 and x86-64 architectures.
+
+@node Installation
+@chapter Installation
+
+The LTTng userspace tracer is a library and a set of userspace tools.
+
+The following packages are required:
+
+@itemize @bullet
+@item
+ust
+
+This contains the tracing library, the ustd daemon, trace control tools
+and other helper tools.
+
+Repository: http://git.dorsal.polymtl.ca
+
+@item
+libkcompat
+
+This is a library that contains a userspace port of some kernel APIs.
+
+Repository: http://git.dorsal.polymtl.ca
+
+@item
+liburcu
+
+This is the userspace read-copy update library by Mathieu Desnoyers.
+
+Available in Debian as package liburcu-dev.
+
+Home page: http://lttng.org/?q=node/18
+
+@item
+LTTV
+
+LTTV is a graphical (and text) viewer for LTTng traces.
+
+Home page: http://lttng.org
+
+@end itemize
+
+Libkcompat and liburcu should be installed first. UST may then be compiled
+and installed. LTTV has no dependency on the other packages; it may therefore
+be installed on a system which does not have UST installed.
+
+Refer to the README in each of these packages for installation instructions.
+
+@c @menu
+@c @end menu
+
+@node Quick start
+@chapter Quick start
+
+First, instrument a program with a marker.
+
+@example
+@verbatim
+
+#include <ust/marker.h>
+
+int main(int argc, char **argv)
+{
+	int v;
+	char *st;
+
+	/* ... set values of v and st ... */
+
+	/* a marker: */
+	trace_mark(ust, myevent, "firstarg %d secondarg %s", v, st);
+
+	/* a marker without arguments: */
+	trace_mark(ust, myotherevent, MARK_NOARGS);
+
+	return 0;
+}
+
+@end verbatim
+@end example
+
+Then compile it in the regular way, linking it with libust. For example:
+
+@example
+gcc -o foo -lust foo.c
+@end example
+
+Run the program with @command{usttrace}. The @command{usttrace} output says where the trace
+was written.
+
+@example
+usttrace ./foo
+@end example
+
+Finally, open the trace in LTTV.
+
+@example
+lttv-gui -t /path/to/trace
+@end example
+
+The trace can also be dumped as text in the console:
+
+@example
+lttv -m textDump -t /path/to/trace
+@end example
+
+@node Instrumenting an application
+@chapter Instrumenting an application
+
+In order to record a trace of events occurring in a application, the
+application must be instrumented. Instrumentation points resemble function
+calls. When the program reaches an instrumentation point, an event is
+generated.
+
+There are no limitations on the type of code that may be instrumented.
+Multi-threaded programs may be instrumented without problem. Signal handlers
+may be instrumented as well.
+
+There are two APIs to instrument programs: markers and tracepoints. Markers are
+quick to add and are usually used for temporary instrumentation. Tracepoints
+provide a way to instrument code more cleanly and are suited for permanent
+instrumentation.
+
+In addition to executable programs, shared libraries may also be instrumented
+with the methods described in this chapter.
+
+@menu
+* Markers::
+* Tracepoints::
+@end menu
+
+@node Markers
+@section Markers
+
+Adding a marker is simply a matter of insert one line in the program.
+
+@example
+@verbatim
+#include <ust/marker.h>
+
+int main(int argc, char **argv)
+{
+	int v;
+	char *st;
+
+	/* ... set values of v and st ... */
+
+	/* a marker: */
+	trace_mark(main, myevent, "firstarg %d secondarg %s", v, st);
+
+	/* a marker without arguments: */
+	trace_mark(main, myotherevent, MARK_NOARGS);
+
+	return 0;
+}
+@end verbatim
+@end example
+
+The invocation of the trace_mark() macro requires at least 3 arguments. The
+first, here "main", is the name of the event category. It is also the name of
+the channel the event will go in. The second, here "myevent" is the name of the
+event. The third is a format string that announces the names and the types of
+the event arguments. Its format resembles that of a printf() format string; it
+is described thoroughly in Appendix x.
+
+A given Marker may appear more than once in the same program. Other Markers may
+have the same name and a different format string, although this might induce
+some confusion at analysis time.
+
+@node Tracepoints
+@section Tracepoints
+
+The Tracepoints API uses the Markers, but provides a higher-level abstraction.
+Whereas the markers API provides limited type checking, the Tracepoints API
+provides more thorough type checking and discharges from the need to insert
+format strings directly in the code and to have format strings appear more than
+once if a given marker is reused.
+
+@quotation Note Although this example uses @emph{mychannel} as the channel, the
+only channel name currently supported with early tracing is @strong{ust}. The
+@command{usttrace} tool always uses the early tracing mode. When using manual
+mode without early tracing, any channel name may be used.  @end quotation
+
+A function instrumented with a tracepoint looks like this:
+
+@example
+@verbatim
+#include "tp.h"
+
+void function()
+{
+	int v;
+	char *st;
+
+	/* ... set values of v and st ... */
+
+	/* a tracepoint: */
+	trace_mychannel_myevent(v, st);
+}
+@end verbatim
+@end example
+
+Another file, here tp.h, contains declarations for the tracepoint.
+
+@example
+@verbatim
+#include <ust/tracepoint.h>
+
+DECLARE_TRACE(mychannel_myevent, TPPROTO(int v, char *st),
+	      TPARGS(v, st));
+@end verbatim
+@end example
+
+A third file, here tp.c, contains definitions for the tracepoint.
+
+@example
+@verbatim
+#include <ust/marker.h>
+#include "tp.h"
+
+DEFINE_TRACE(mychannel_myevent);
+
+void mychannel_myevent_probe(int v, char *st)
+{
+	trace_mark(mychannel, myevent, "v %d st %s", v, st);
+}
+
+static void __attribute__((constructor)) init()
+{
+	register_trace_mychannel_myevent(mychannel_myevent_probe);
+}
+@end verbatim
+@end example
+
+Here, tp.h and tp.c could contain declarations and definitions for other
+tracepoints. The constructor would contain other register_* calls.
+
+@node Recording a trace
+@chapter Recording a trace
+
+@menu
+* Using @command{usttrace}::
+* Setting up the recording manually::
+* Using early tracing::
+* Crash recovery::
+* Tracing across @code{fork()} and @code{clone()}::
+* Tracing programs and libraries that were not linked to libust::
+@end menu
+
+@node Using @command{usttrace}
+@section Using @command{usttrace}
+
+The simplest way to record a trace is to use the @command{usttrace} script. An
+example is given in the quickstart above.
+
+The @command{usttrace} script automatically:
+@itemize @bullet
+@item creates a daemon
+@item enables all markers
+@item runs the command specified on the command line
+@item after the command ends, prints the location where the trace was saved
+@end itemize
+
+Each subdirectory of the save location contains the trace of one process that
+was generated by the command. The name of a subdirectory consists in the the PID
+of the process, followed by the timestamp of its creation.
+
+The save location also contains logs of the tracing.
+
+When using @command{usttrace}, the early tracing is always active, which means
+that the tracing is guaranteed to be started by the time the process enters its
+main() function.
+
+Several @command{usttrace}'s may be run simultaneously without risk of
+conflict. This facilitates the use of the tracer by idependent users on a
+system. Each instance of @command{usttrace} starts its own daemon which
+collects the events of the processes it creates.
+
+@node Setting up the recording manually
+@section Setting up the recording manually
+
+Instead of using @command{usttrace}, a trace may be recorded on an already
+running process.
+
+First the daemon must be started.
+
+@example
+@verbatim
+# Make sure the directory for the communication sockets exists.
+$ mkdir /tmp/ustsocks
+
+# Make sure the directory where ustd will write the trace exists.
+$ mkdir /tmp/trace
+
+# Start the daemon
+$ ustd
+
+# We assume the program we want to trace is already running and that
+# it has pid 1234.
+
+# List the available markers
+$ ustctl --list-markers 1234
+# A column indicates 0 for an inactive marker and 1 for an active marker.
+
+# Enable a marker
+$ ustctl --enable-marker 1234 ust/mymark
+
+# Create a trace
+$ ustctl --create-trace 1234
+
+# Start tracing
+$ ustctl --start-trace 1234
+
+# Do things...
+
+# Stop tracing
+$ ustctl --stop-trace 1234
+@end verbatim
+@end example
+
+@node Using early tracing
+@section Using early tracing
+
+Early tracing consists in starting the tracing as early as possible in the
+program, so no events are lost between program start and the point where the
+command to start the tracing is given. When using early tracing, it is
+guaranteed that by the time the traced program enters its @code{main()}
+function, the tracing will be started.
+
+When using @command{usttrace}, the early tracing is always active.
+
+When using the manual mode (@command{ustctl}), early tracing is enabled using
+environment variables. Setting @env{UST_TRACE} to @code{1}, enables early
+tracing, while setting @env{UST_AUTOPROBE} to @code{1} enables all markers
+automatically.
+
+
+@node Crash recovery
+@section Crash recovery
+
+When a process being traced crashes, the daemon is able to recover all the
+events in its buffers that were successfully commited. This is possible because
+the buffers are in a shared memory segment which remains available to the
+daemon even after the termination of the traced process.
+
+@node Tracing across @code{fork()} and @code{clone()}
+@section Tracing across @code{fork()} and @code{clone()}
+
+Tracing across @code{clone()} when @code{CLONE_VM} is specified is supported
+without any particular action.
+
+When @code{clone()} is called without @code{CLONE_VM} or @code{fork()} is
+called, a new address space is created and the tracer must be notified to
+create new buffers for it. @strong{TODO: specify how to do it.}
+
+This can be done automatically (for @code{fork()} only for now), by
+@env{LD_PRELOAD}'ing @file{libinterfork.so}. This library intercepts calls to
+@code{fork()} and informs the tracer it is being called. When using
+@command{usttrace}, this is accomplied by specifying the @option{-f} command
+line argument.
+
+@node Tracing programs and libraries that were not linked to libust
+@section Tracing programs and libraries that were not linked to libust
+
+Todo.
+
+@node Performance
+@chapter Performance
+
+Todo.
+
+@node Viewing traces
+@chapter Viewing traces
+
+@bye
