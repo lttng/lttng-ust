@@ -42,7 +42,7 @@ INSTALLATION INSTRUCTIONS:
   - Run make.
   - Run make install.
   - Run ldconfig.
-  - See the manual in the doc/ directory for usage instructions.
+  - See the manual for usage instructions.
 
 
 
