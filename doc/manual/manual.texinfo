@@ -377,6 +377,9 @@ $ ustctl --start-trace 1234
 
 # Stop tracing
 $ ustctl --stop-trace 1234
+
+# Destroy the trace
+$ ustctl --destroy-trace 1234
 @end verbatim
 @end example
 

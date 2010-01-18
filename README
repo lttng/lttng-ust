@@ -1,5 +1,7 @@
-LTTNG USERSPACE TRACER
-----------------------
+LTTNG USERSPACE TRACER (UST)
+----------------------------
+
+For the UST manual, see: http://lttng.org/files/ust/manual/ust.html
 
 Updated versions of this package may be found at:
 
@@ -18,7 +20,7 @@ PREREQUISITES:
       * GitWeb:   http://lttng.org/cgi-bin/gitweb.cgi?p=userspace-rcu.git;a=summary
       * Git:      git://lttng.org/userspace-rcu.git
 
-      -> This release was tested with liburcu v0.0
+      -> This release was tested with liburcu v0.3.4
 
 
   - libkcompat
@@ -29,7 +31,7 @@ PREREQUISITES:
       * GitWeb:   http://git.dorsal.polymtl.ca (project: libkcompat)
       * Git:      git://git.dorsal.polymtl.ca/git/libkcompat.git
 
-      -> This release was tested with libkcompat v0.0
+      -> This release was tested with libkcompat v0.1
 
 
 
@@ -66,7 +68,8 @@ PACKAGE CONTENTS:
   - ustd
     The daemon that collects trace data and writes it to the disk.
 
-  - Documentation
+  - doc
+    The documentation.
 
   - hello
     An example application that uses the userspace tracer.
