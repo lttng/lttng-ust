@@ -19,3 +19,6 @@ config/
 config.log
 config.status
 stamp-h1
+
+ustctl/ustctl
+ustd/ustd
