@@ -25,7 +25,6 @@ struct registers {
 
 #ifdef CONFIG_UST_GDB_INTEGRATION
 
-//#error "GDB integration not supported for x86-32 yet."
 
 #define save_registers(regsptr) \
 	asm volatile ( \
