@@ -25,6 +25,27 @@ struct registers {
 
 #ifdef CONFIG_UST_GDB_INTEGRATION
 
+/* save_registers - saves most of the processor's registers so
+ * they are available to the probe. gdb uses this to give the
+ * value of local variables.
+ *
+ * Saving all registers without losing any of their values is
+ * tricky.
+ *
+ * We cannot pass to the asm stub the address of a registers structure
+ * on the stack, because it will use a register and override its value.
+ *
+ * We don't want to use a stub to push the regs on the stack and then
+ * another stub to copy them to a structure because changing %sp in asm
+ * and then returning to C (even briefly) can have unexpected results.
+ * Also, gcc might modify %sp between the stubs in reaction to the
+ * register needs of the second stub that needs to know where to copy
+ * the register values.
+ *
+ * So the chosen approach is to use another stack, declared in thread-
+ * local storage, to push the registers. They are subsequently copied
+ * to the stack, by C code.
+ */
 
 #define save_registers(regsptr) \
 	asm volatile ( \
@@ -36,35 +57,47 @@ struct registers {
 	     "pushl %%eax\n\t" \
 	     /* ebx is used for TLS access */ \
 	     "pushl %%ebx\n\t" \
-	     /* ecx will be used to temporarily hold the stack bottom addr */ \
-	     "pushl %%ecx\n\t" \
-	     /* rdi is the input to __tls_get_addr, and also a temp var */ \
-	     "pushl %%edi\n\t" \
+	     /* ecx will be used to temporarily hold the stack bottom addr */\
+	     "pushl %%ecx\n\t"						     \
+	     /* rdi is the input to __tls_get_addr, and also a temp var */   \
+	     "pushl %%edi\n\t"						     \
+	     /* For TLS access, we have to do function calls. However,	     \
+	      * we must not lose the original value of:			     \
+	      *   esp, eflags, eax, ebx, ecx, edx, esi, edi, ebp, cs, ss     \
+	      *								     \
+	      * Some registers' original values have already been saved:     \
+	      *   esp, eflags, eax, ebx, ecx, edi			     \
+	      *								     \
+	      * In addition, the i386 ABI says the following registers belong\
+	      * to the caller function:					     \
+	      *   esp, ebp, esi, edi, ebx				     \
+	      *								     \
+	      * The following registers should not be changed by the callee: \
+	      *   cs, ss						     \
+	      *								     \
+	      * Therefore, the following registers must be explicitly 	     \
+	      * preserved:						     \
+	      *   edx							     \
+	      */ \
+	     "pushl %%edx\n\t" \
 	     /* Get GOT address */ \
 	     "call __i686.get_pc_thunk.bx\n\t" \
 	     "addl $_GLOBAL_OFFSET_TABLE_, %%ebx\n\t" \
-	     /* Save registers before call (not using ecx yet but we must preserve \
-	        the original value of edx. */ \
-	     "pushl %%edx\n\t" \
 	     /* Start TLS access of private reg stack pointer */ \
 	     "leal ust_reg_stack_ptr@tlsgd(,%%ebx,1),%%eax\n\t" \
 	     "call ___tls_get_addr@plt\n\t" \
 	     /* --- End TLS access */ \
-	     "popl %%edx\n\t" \
 	     /* check if ust_reg_stack_ptr has been initialized */ \
 	     "movl (%%eax),%%ecx\n\t" \
 	     "testl %%ecx,%%ecx\n\t" \
 	     "jne 1f\n\t" \
 	     "movl %%eax,%%ecx\n\t" \
-	     /* Save registers before call (using ecx and we must preserve \
-	        the original value of edx. */ \
+	     /* Save ecx because we are using it. */ \
 	     "pushl %%ecx\n\t" \
-	     "pushl %%edx\n\t" \
 	     /* Start TLS access of private reg stack */ \
 	     "leal ust_reg_stack@tlsgd(,%%ebx,1),%%eax\n\t" \
 	     "call ___tls_get_addr@plt\n\t" \
 	     /* --- End TLS access */ \
-	     "popl %%edx\n\t" \
 	     "popl %%ecx\n\t" \
 	     "addl $500,%%eax\n\t" \
 	     "movl %%eax,(%%ecx)\n\t" \
@@ -72,6 +105,8 @@ struct registers {
 	     /* now the pointer to the private stack is in eax. \
 	        must add stack size so the ptr points to the stack bottom. */ \
 	"1:\n\t" \
+	     /* edx was pushed for function calls */ \
+	     "popl %%edx\n\t" \
 	     /* Manually push esp to private stack */ \
 	     "addl $-4,(%%eax)\n\t" \
 	     "movl 20(%%esp), %%edi\n\t" \
@@ -187,6 +222,32 @@ struct registers {
 	     "pushq %%rbx\n\t" \
 	     /* rdi is the input to __tls_get_addr, and also a temp var */ \
 	     "pushq %%rdi\n\t" \
+	     /* For TLS access, we have to do function calls. However,	     \
+	      * we must not lose the original value of:			     \
+	      *   rsp, rflags, rax, rbx, rcx, rdx, rsi, rdi, rbp, r8, r9     \
+	      *   r10, r11, r12, r13, r14, r15, cs, ss			     \
+	      *								     \
+	      * Some registers' original values have already been saved:     \
+	      *   rsp, rflags, rax, rbx, rdi				     \
+	      *								     \
+	      * In addition, the x86-64 ABI says the following registers     \
+	      * belong to the caller function:				     \
+	      *   rbp, rbx, r12, r13, r14, r15				     \
+	      *								     \
+	      * The following registers should not be changed by the callee: \
+	      *   cs, ss						     \
+	      *								     \
+	      * Therefore, the following registers must be explicitly 	     \
+	      * preserved:						     \
+	      *   rcx, rdx, rsi, r8, r9, r10, r11			     \
+	      */ \
+	     "pushq %%rcx\n\t" \
+	     "pushq %%rdx\n\t" \
+	     "pushq %%rsi\n\t" \
+	     "pushq %%r8\n\t" \
+	     "pushq %%r9\n\t" \
+	     "pushq %%r10\n\t" \
+	     "pushq %%r11\n\t" \
 	     /* Start TLS access of private reg stack pointer */ \
 	     ".byte 0x66\n\t" \
 	     "leaq ust_reg_stack_ptr@tlsgd(%%rip), %%rdi\n\t" \
@@ -212,6 +273,14 @@ struct registers {
 	     /* now the pointer to the private stack is in rax.
 	        must add stack size so the ptr points to the stack bottom. */ \
 	"1:\n\t" \
+	     /* Pop regs that were pushed for function calls */ \
+	     "popq %%r11\n\t" \
+	     "popq %%r10\n\t" \
+	     "popq %%r9\n\t" \
+	     "popq %%r8\n\t" \
+	     "popq %%rsi\n\t" \
+	     "popq %%rdx\n\t" \
+	     "popq %%rcx\n\t" \
 	     /* Manually push rsp to private stack */ \
 	     "addq $-8,(%%rax)\n\t" \
 	     "movq 32(%%rsp), %%rdi\n\t" \
