@@ -20,20 +20,18 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <signal.h>
+#include <ust/ust.h>
+#include <sched.h>
+#include <stdarg.h>
+#include <ust/tracectl.h>
 #include "usterr.h"
-
-extern void ust_fork(void);
-extern void ust_potential_exec(void);
 
 pid_t fork(void)
 {
 	static pid_t (*plibc_func)(void) = NULL;
+	ust_fork_info_t fork_info;
 
 	pid_t retval;
-
-	int result;
-	sigset_t all_sigs;
-	sigset_t orig_sigs;
 
 	if(plibc_func == NULL) {
 		plibc_func = dlsym(RTLD_NEXT, "fork");
@@ -43,37 +41,17 @@ pid_t fork(void)
 		}
 	}
 
-	/* Disable interrupts. This is to avoid that the child
-	 * intervenes before it is properly setup for tracing. It is
-	 * safer to disable all signals, because then we know we are not
-	 * breaking anything by restoring the original mask.
-	 */
-
-	/* FIXME:
-		- only do this if tracing is active
-	*/
-
-	/* Disable signals */
-	sigfillset(&all_sigs);
-	result = sigprocmask(SIG_BLOCK, &all_sigs, &orig_sigs);
-	if(result == -1) {
-		PERROR("sigprocmask");
-		return -1;
-	}
+	ust_before_fork(&fork_info);
 
 	/* Do the real fork */
 	retval = plibc_func();
 
 	if(retval == 0) {
 		/* child */
-		ust_fork();
+		ust_after_fork_child(&fork_info);
 	}
-
-	/* Restore signals */
-	result = sigprocmask(SIG_BLOCK, &orig_sigs, NULL);
-	if(result == -1) {
-		PERROR("sigprocmask");
-		return -1;
+	else {
+		ust_after_fork_parent(&fork_info);
 	}
 
 	return retval;
@@ -88,7 +66,7 @@ int execve(const char *filename, char *const argv[], char *const envp[])
 	if(plibc_func == NULL) {
 		plibc_func = dlsym(RTLD_NEXT, "execve");
 		if(plibc_func == NULL) {
-			fprintf(stderr, "libcwrap: unable to find execve\n");
+			fprintf(stderr, "libinterfork: unable to find execve\n");
 			return -1;
 		}
 	}
@@ -96,6 +74,68 @@ int execve(const char *filename, char *const argv[], char *const envp[])
 	ust_potential_exec();
 
 	retval = plibc_func(filename, argv, envp);
+
+	return retval;
+}
+
+struct interfork_clone_info {
+	int (*fn)(void *);
+	void *arg;
+	ust_fork_info_t *fork_info;
+};
+
+static int clone_fn(void *arg)
+{
+	struct interfork_clone_info *info = (struct interfork_clone_info *)arg;
+
+	/* clone is now done and we are in child */
+	ust_after_fork_child(&info->fork_info);
+
+	return info->fn(info->arg);
+}
+
+int clone(int (*fn)(void *), void *child_stack, int flags, void *arg, ...)
+{
+	static int (*plibc_func)(int (*fn)(void *), void *child_stack, int flags, void *arg, pid_t *ptid, struct user_desc *tls, pid_t *ctid) = NULL;
+
+	/* varargs */
+	pid_t *ptid;
+	struct user_desc *tls;
+	pid_t *ctid;
+
+	int retval;
+
+	va_list ap;
+
+	va_start(ap, arg);
+	ptid = va_arg(ap, pid_t *);
+	tls = va_arg(ap, struct user_desc *);
+	ctid = va_arg(ap, pid_t *);
+	va_end(ap);
+
+	if(plibc_func == NULL) {
+		plibc_func = dlsym(RTLD_NEXT, "clone");
+		if(plibc_func == NULL) {
+			fprintf(stderr, "libinterfork: unable to find clone\n");
+			return -1;
+		}
+	}
+
+	if(flags & CLONE_VM) {
+		/* creating a thread, no need to intervene, just pass on the arguments */
+		retval = plibc_func(fn, child_stack, flags, arg, ptid, tls, ctid);
+	}
+	else {
+		/* creating a real process, we need to intervene */
+		struct interfork_clone_info info = { fn: fn, arg: arg };
+
+		ust_before_fork(&info.fork_info);
+
+		retval = plibc_func(clone_fn, child_stack, flags, &info, ptid, tls, ctid);
+
+		/* The child doesn't get here */
+		ust_after_fork_parent(&info.fork_info);
+	}
 
 	return retval;
 }

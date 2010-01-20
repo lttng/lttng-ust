@@ -30,6 +30,7 @@
 #include <urcu-bp.h>
 
 #include <ust/marker.h>
+#include <ust/tracectl.h>
 #include "tracer.h"
 #include "usterr.h"
 #include "ustcomm.h"
@@ -1122,9 +1123,13 @@ void ust_potential_exec(void)
  * the new process, anytime a process whose memory is not shared with
  * the parent is created. If this function is not called, the events
  * of the new process will not be collected.
+ *
+ * Signals should be disabled before the fork and reenabled only after
+ * this call in order to guarantee tracing is not started before ust_fork()
+ * sanitizes the new process.
  */
 
-void ust_fork(void)
+static void ust_fork(void)
 {
 	struct blocked_consumer *bc;
 	struct blocked_consumer *deletable_bc = NULL;
@@ -1158,5 +1163,57 @@ void ust_fork(void)
 	ltt_trace_alloc("auto");
 	ltt_trace_start("auto");
 	inform_consumer_daemon("auto");
+}
+
+void ust_before_fork(ust_fork_info_t *fork_info)
+{
+        /* Disable signals. This is to avoid that the child
+         * intervenes before it is properly setup for tracing. It is
+         * safer to disable all signals, because then we know we are not
+         * breaking anything by restoring the original mask.
+         */
+	sigset_t all_sigs;
+	int result;
+
+        /* FIXME:
+                - only do this if tracing is active
+        */
+
+        /* Disable signals */
+        sigfillset(&all_sigs);
+        result = sigprocmask(SIG_BLOCK, &all_sigs, &fork_info->orig_sigs);
+        if(result == -1) {
+                PERROR("sigprocmask");
+                return;
+        }
+}
+
+/* Don't call this function directly in a traced program */
+static void ust_after_fork_common(ust_fork_info_t *fork_info)
+{
+	int result;
+	sigset_t orig_sigs;
+
+        /* Restore signals */
+        result = sigprocmask(SIG_SETMASK, &fork_info->orig_sigs, NULL);
+        if(result == -1) {
+                PERROR("sigprocmask");
+                return;
+        }
+}
+
+void ust_after_fork_parent(ust_fork_info_t *fork_info)
+{
+	/* Reenable signals */
+	ust_after_fork_common(fork_info);
+}
+
+void ust_after_fork_child(ust_fork_info_t *fork_info)
+{
+	/* First sanitize the child */
+	ust_fork();
+
+	/* Then reenable interrupts */
+	ust_after_fork_common(fork_info);
 }
 
