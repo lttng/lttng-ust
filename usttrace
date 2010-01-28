@@ -78,15 +78,15 @@ DATESTRING="$(hostname)-$(date +%Y%m%d%H%M%S)"
 OUTDIR="$BASE_TRACE_DIR/$DATESTRING"
 mkdir -p "$OUTDIR"
 
-# Choose socket path
-SOCKPATH="/tmp/ust-sock-$$"
+# Choose ustd socket path
+USTDSOCKPATH="/tmp/ustd-sock-$$"
 
 if [ "$arg_syswide_daemon" != "1" ];
 then
 	pidfilepath="/tmp/usttrace-$USER-$(date +%Y%m%d%H%M%S%N)-ustd-pid"
 	mkfifo -m 0600 "$pidfilepath"
 	# Start daemon
-	$USTD --pidfile "$pidfilepath" -s "$SOCKPATH" -o "$OUTDIR" >"$OUTDIR/ustd.log" 2>&1 &
+	$USTD --pidfile "$pidfilepath" -s "$USTDSOCKPATH" -o "$OUTDIR" >"$OUTDIR/ustd.log" 2>&1 &
 	# ustd sets up its server socket
 	# ustd opens the pidfile, blocks because no one has opened it
 	# we open pidfile
@@ -95,7 +95,7 @@ then
 	# ustd closes pidfile
 	# we unblock reading pidfile
 	USTDPID="$(<$pidfilepath)"
-	export UST_DAEMON_SOCKET="$SOCKPATH"
+	export UST_DAEMON_SOCKET="$USTDSOCKPATH"
 fi
 
 # Establish the environment for the command
