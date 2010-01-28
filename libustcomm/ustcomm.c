@@ -478,6 +478,38 @@ int ustcomm_connect_app(pid_t pid, struct ustcomm_connection *conn)
 	return ustcomm_connect_path(path, conn, pid);
 }
 
+static int ensure_dir_exists(const char *dir)
+{
+	struct stat st;
+	int result;
+
+	if(!strcmp(dir, ""))
+		return -1;
+
+	result = stat(dir, &st);
+	if(result == -1 && errno != ENOENT) {
+		return -1;
+	}
+	else if(result == -1) {
+		/* ENOENT */
+		char buf[200];
+		int result;
+
+		result = snprintf(buf, sizeof(buf), "mkdir -p \"%s\"", dir);
+		if(result >= sizeof(buf)) {
+			ERR("snprintf buffer overflow");
+			return -1;
+		}
+		result = system(buf);
+		if(result != 0) {
+			ERR("executing command %s", buf);
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
 /* Called by an application to initialize its server so daemons can
  * connect to it.
  */
@@ -490,6 +522,12 @@ int ustcomm_init_app(pid_t pid, struct ustcomm_app *handle)
 	result = asprintf(&name, "%s/%d", SOCK_DIR, (int)pid);
 	if(result >= UNIX_PATH_MAX) {
 		ERR("string overflow allocating socket name");
+		return -1;
+	}
+
+	result = ensure_dir_exists(SOCK_DIR);
+	if(result == -1) {
+		ERR("Unable to create socket directory %s", SOCK_DIR);
 		return -1;
 	}
 
@@ -522,6 +560,15 @@ int ustcomm_init_ustd(struct ustcomm_ustd *handle, const char *sock_path)
 		asprintf(&name, "%s", sock_path);
 	}
 	else {
+		int result;
+
+		/* Only check if socket dir exists if we are using the default directory */
+		result = ensure_dir_exists(SOCK_DIR);
+		if(result == -1) {
+			ERR("Unable to create socket directory %s", SOCK_DIR);
+			return -1;
+		}
+
 		asprintf(&name, "%s/%s", SOCK_DIR, "ustd");
 	}
 
