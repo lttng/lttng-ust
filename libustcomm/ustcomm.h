@@ -23,7 +23,7 @@
 
 #include "kcompat.h"
 
-#define SOCK_DIR "/tmp/socks"
+#define SOCK_DIR "/tmp/ust-app-socks"
 #define UST_SIGNAL SIGIO
 
 struct ustcomm_connection {
