@@ -74,9 +74,9 @@ extern int ustcomm_send_reply(struct ustcomm_server *server, char *msg, struct u
 extern int ustcomm_disconnect(struct ustcomm_connection *conn);
 extern int ustcomm_close_all_connections(struct ustcomm_server *server);
 
-extern int nth_token_is(char *str, char *token, int tok_no);
+extern int nth_token_is(const char *str, const char *token, int tok_no);
 
-extern char *nth_token(char *str, int tok_no);
+extern char *nth_token(const char *str, int tok_no);
 
 extern int pid_is_online(pid_t);
 

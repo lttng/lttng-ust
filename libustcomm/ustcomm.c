@@ -612,7 +612,7 @@ void ustcomm_fini_app(struct ustcomm_app *handle)
 	}
 }
 
-static char *find_tok(char *str)
+static const char *find_tok(const char *str)
 {
 	while(*str == ' ') {
 		str++;
@@ -624,7 +624,7 @@ static char *find_tok(char *str)
 	return str;
 }
 
-static char *find_sep(char *str)
+static const char *find_sep(const char *str)
 {
 	while(*str != ' ') {
 		str++;
@@ -636,11 +636,11 @@ static char *find_sep(char *str)
 	return str;
 }
 
-int nth_token_is(char *str, char *token, int tok_no)
+int nth_token_is(const char *str, const char *token, int tok_no)
 {
 	int i;
-	char *start;
-	char *end;
+	const char *start;
+	const char *end;
 
 	for(i=0; i<=tok_no; i++) {
 		str = find_tok(str);
@@ -665,12 +665,12 @@ int nth_token_is(char *str, char *token, int tok_no)
 	return 1;
 }
 
-char *nth_token(char *str, int tok_no)
+char *nth_token(const char *str, int tok_no)
 {
 	static char *retval = NULL;
 	int i;
-	char *start;
-	char *end;
+	const char *start;
+	const char *end;
 
 	for(i=0; i<=tok_no; i++) {
 		str = find_tok(str);
