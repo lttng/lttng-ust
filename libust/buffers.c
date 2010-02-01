@@ -503,19 +503,13 @@ static void ltt_relay_print_buffer_errors(struct ust_channel *channel)
 	struct ust_buffer *ltt_buf = channel->buf;
 
 	if (local_read(&ltt_buf->events_lost))
-		printk(KERN_ALERT
-			"LTT : %s : %ld events lost "
-			"in %s channel.\n",
+		ERR("channel %s: %ld events lost",
 			channel->channel_name,
-			local_read(&ltt_buf->events_lost),
-			channel->channel_name);
+			local_read(&ltt_buf->events_lost));
 	if (local_read(&ltt_buf->corrupted_subbuffers))
-		printk(KERN_ALERT
-			"LTT : %s : %ld corrupted subbuffers "
-			"in %s channel.\n",
+		ERR("channel %s : %ld corrupted subbuffers",
 			channel->channel_name,
-			local_read(&ltt_buf->corrupted_subbuffers),
-			channel->channel_name);
+			local_read(&ltt_buf->corrupted_subbuffers));
 
 	ltt_relay_print_errors(trace, channel);
 }
@@ -709,8 +703,7 @@ static int ust_buffers_create_channel(const char *trace_name, struct ltt_trace_s
 	/* FIXME: handle error of this call */
 	result = ust_buffers_channel_open(ltt_chan, subbuf_size, n_subbufs);
 	if (result == -1) {
-		printk(KERN_ERR "LTT : Can't open channel for trace %s\n",
-				trace_name);
+		ERR("Cannot open channel for trace %s", trace_name);
 		goto relay_open_error;
 	}
 
@@ -1299,35 +1292,6 @@ static notrace void ltt_force_switch(struct ust_buffer *buf,
 		ltt_reserve_switch_new_subbuf(channel, buf, &offsets, &tsc);
 }
 
-static void ltt_relay_print_user_errors(struct ltt_trace_struct *trace,
-		unsigned int chan_index, size_t data_size,
-		struct user_dbg_data *dbg)
-{
-	struct ust_channel *channel;
-	struct ust_buffer *buf;
-
-	channel = &trace->channels[chan_index];
-	buf = channel->buf;
-
-	printk(KERN_ERR "Error in LTT usertrace : "
-	"buffer full : event lost in blocking "
-	"mode. Increase LTT_RESERVE_CRITICAL.\n");
-	printk(KERN_ERR "LTT nesting level is %u.\n", ltt_nesting);
-	printk(KERN_ERR "LTT avail size %lu.\n",
-		dbg->avail_size);
-	printk(KERN_ERR "avai write : %lu, read : %lu\n",
-			dbg->write, dbg->read);
-
-	dbg->write = local_read(&buf->offset);
-	dbg->read = atomic_long_read(&buf->consumed);
-
-	printk(KERN_ERR "LTT cur size %lu.\n",
-		dbg->write + LTT_RESERVE_CRITICAL + data_size
-		- SUBBUF_TRUNC(dbg->read, channel));
-	printk(KERN_ERR "cur write : %lu, read : %lu\n",
-			dbg->write, dbg->read);
-}
-
 static struct ltt_transport ust_relay_transport = {
 	.name = "ustrelay",
 	.ops = {
@@ -1337,7 +1301,6 @@ static struct ltt_transport ust_relay_transport = {
 		.wakeup_channel = ltt_relay_async_wakeup_chan,
 //		.commit_slot = ltt_relay_commit_slot,
 		.reserve_slot = ltt_relay_reserve_slot,
-		.user_errors = ltt_relay_print_user_errors,
 	},
 };
 

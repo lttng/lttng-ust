@@ -6,6 +6,7 @@
 #include <sys/syscall.h>
 #include <errno.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 #include "share.h"
 

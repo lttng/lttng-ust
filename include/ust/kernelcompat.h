@@ -82,12 +82,6 @@ static inline long IS_ERR(const void *ptr)
 
 #define GFP_KERNEL
 
-/* PRINTK */
-
-#include <stdio.h>
-#define printk(fmt, args...) printf(fmt, ## args)
-
-
 /* ATTRIBUTES */
 
 #define ____cacheline_aligned

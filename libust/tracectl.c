@@ -693,7 +693,6 @@ void *listener_main(void *p)
 				WARN("invalid marker name");
 				goto next_cmd;
 			}
-			printf("%s %s\n", channel_name, marker_name);
 
 			result = ltt_marker_connect(channel_name, marker_name, "default");
 			if(result < 0) {
@@ -709,7 +708,6 @@ void *listener_main(void *p)
 
 			if(marker_name == NULL) {
 			}
-			printf("%s %s\n", channel_name, marker_name);
 
 			result = ltt_marker_disconnect(channel_name, marker_name, "default");
 			if(result < 0) {

@@ -262,12 +262,12 @@ static void debug_print_probes(struct marker_entry *entry)
 		return;
 
 	if (!entry->ptype) {
-		printk(KERN_DEBUG "Single probe : %p %p\n",
+		DBG("Single probe : %p %p",
 			entry->single.func,
 			entry->single.probe_private);
 	} else {
 		for (i = 0; entry->multi[i].func; i++)
-			printk(KERN_DEBUG "Multi probe %d : %p %p\n", i,
+			DBG("Multi probe %d : %p %p", i,
 				entry->multi[i].func,
 				entry->multi[i].probe_private);
 	}
@@ -436,8 +436,7 @@ static struct marker_entry *add_marker(const char *channel, const char *name,
 	head = &marker_table[hash & ((1 << MARKER_HASH_BITS)-1)];
 	hlist_for_each_entry(e, node, head, hlist) {
 		if (!strcmp(channel, e->channel) && !strcmp(name, e->name)) {
-			printk(KERN_NOTICE
-				"Marker %s.%s busy\n", channel, name);
+			DBG("Marker %s.%s busy", channel, name);
 			return ERR_PTR(-EBUSY);	/* Already there */
 		}
 	}
@@ -544,9 +543,7 @@ static int set_marker(struct marker_entry *entry, struct marker *elem,
 
 	if (entry->format) {
 		if (strcmp(entry->format, elem->format) != 0) {
-			printk(KERN_NOTICE
-				"Format mismatch for probe %s "
-				"(%s), marker (%s)\n",
+			DBG("Format mismatch for probe %s (%s), marker (%s)",
 				entry->name,
 				entry->format,
 				elem->format);
@@ -1208,190 +1205,49 @@ static void free_user_marker(char __user *state, struct hlist_head *head)
 	}
 }
 
-//ust// asmlinkage long sys_marker(char __user *name, char __user *format,
-//ust// 		char __user *state, int reg)
-//ust// {
-//ust// 	struct user_marker *umark;
-//ust// 	long len;
-//ust// 	struct marker_entry *entry;
-//ust// 	int ret = 0;
-//ust// 
-//ust// 	printk(KERN_DEBUG "Program %s %s marker [%p, %p]\n",
-//ust// 		current->comm, reg ? "registers" : "unregisters",
-//ust// 		name, state);
-//ust// 	if (reg) {
-//ust// 		umark = kmalloc(sizeof(struct user_marker), GFP_KERNEL);
-//ust// 		umark->name[MAX_USER_MARKER_NAME_LEN - 1] = '\0';
-//ust// 		umark->format[MAX_USER_MARKER_FORMAT_LEN - 1] = '\0';
-//ust// 		umark->state = state;
-//ust// 		len = strncpy_from_user(umark->name, name,
-//ust// 			MAX_USER_MARKER_NAME_LEN - 1);
-//ust// 		if (len < 0) {
-//ust// 			ret = -EFAULT;
-//ust// 			goto error;
-//ust// 		}
-//ust// 		len = strncpy_from_user(umark->format, format,
-//ust// 			MAX_USER_MARKER_FORMAT_LEN - 1);
-//ust// 		if (len < 0) {
-//ust// 			ret = -EFAULT;
-//ust// 			goto error;
-//ust// 		}
-//ust// 		printk(KERN_DEBUG "Marker name : %s, format : %s", umark->name,
-//ust// 			umark->format);
-//ust// 		mutex_lock(&markers_mutex);
-//ust// 		entry = get_marker("userspace", umark->name);
-//ust// 		if (entry) {
-//ust// 			if (entry->format &&
-//ust// 				strcmp(entry->format, umark->format) != 0) {
-//ust// 				printk(" error, wrong format in process %s",
-//ust// 					current->comm);
-//ust// 				ret = -EPERM;
-//ust// 				goto error_unlock;
-//ust// 			}
-//ust// 			printk(" %s", !!entry->refcount
-//ust// 					? "enabled" : "disabled");
-//ust// 			if (put_user(!!entry->refcount, state)) {
-//ust// 				ret = -EFAULT;
-//ust// 				goto error_unlock;
-//ust// 			}
-//ust// 			printk("\n");
-//ust// 		} else {
-//ust// 			printk(" disabled\n");
-//ust// 			if (put_user(0, umark->state)) {
-//ust// 				printk(KERN_WARNING
-//ust// 					"Marker in %s caused a fault\n",
-//ust// 					current->comm);
-//ust// 				goto error_unlock;
-//ust// 			}
-//ust// 		}
-//ust// 		mutex_lock(&current->group_leader->user_markers_mutex);
-//ust// 		hlist_add_head(&umark->hlist,
-//ust// 			&current->group_leader->user_markers);
-//ust// 		current->group_leader->user_markers_sequence++;
-//ust// 		mutex_unlock(&current->group_leader->user_markers_mutex);
-//ust// 		mutex_unlock(&markers_mutex);
-//ust// 	} else {
-//ust// 		mutex_lock(&current->group_leader->user_markers_mutex);
-//ust// 		free_user_marker(state,
-//ust// 			&current->group_leader->user_markers);
-//ust// 		current->group_leader->user_markers_sequence++;
-//ust// 		mutex_unlock(&current->group_leader->user_markers_mutex);
-//ust// 	}
-//ust// 	goto end;
-//ust// error_unlock:
-//ust// 	mutex_unlock(&markers_mutex);
-//ust// error:
-//ust// 	kfree(umark);
-//ust// end:
-//ust// 	return ret;
-//ust// }
-//ust// 
-//ust// /*
-//ust//  * Types :
-//ust//  * string : 0
-//ust//  */
-//ust// asmlinkage long sys_trace(int type, uint16_t id,
-//ust// 		char __user *ubuf)
-//ust// {
-//ust// 	long ret = -EPERM;
-//ust// 	char *page;
-//ust// 	int len;
-//ust// 
-//ust// 	switch (type) {
-//ust// 	case 0:	/* String */
-//ust// 		ret = -ENOMEM;
-//ust// 		page = (char *)__get_free_page(GFP_TEMPORARY);
-//ust// 		if (!page)
-//ust// 			goto string_out;
-//ust// 		len = strncpy_from_user(page, ubuf, PAGE_SIZE);
-//ust// 		if (len < 0) {
-//ust// 			ret = -EFAULT;
-//ust// 			goto string_err;
-//ust// 		}
-//ust// 		trace_mark(userspace, string, "string %s", page);
-//ust// string_err:
-//ust// 		free_page((unsigned long) page);
-//ust// string_out:
-//ust// 		break;
-//ust// 	default:
-//ust// 		break;
-//ust// 	}
-//ust// 	return ret;
-//ust// }
-
-//ust// static void marker_update_processes(void)
-//ust// {
-//ust// 	struct task_struct *g, *t;
-//ust// 
-//ust// 	/*
-//ust// 	 * markers_mutex is taken to protect the p->user_markers read.
-//ust// 	 */
-//ust// 	mutex_lock(&markers_mutex);
-//ust// 	read_lock(&tasklist_lock);
-//ust// 	for_each_process(g) {
-//ust// 		WARN_ON(!thread_group_leader(g));
-//ust// 		if (hlist_empty(&g->user_markers))
-//ust// 			continue;
-//ust// 		if (strcmp(g->comm, "testprog") == 0)
-//ust// 			printk(KERN_DEBUG "set update pending for testprog\n");
-//ust// 		t = g;
-//ust// 		do {
-//ust// 			/* TODO : implement this thread flag in each arch. */
-//ust// 			set_tsk_thread_flag(t, TIF_MARKER_PENDING);
-//ust// 		} while ((t = next_thread(t)) != g);
-//ust// 	}
-//ust// 	read_unlock(&tasklist_lock);
-//ust// 	mutex_unlock(&markers_mutex);
-//ust// }
-
 /*
  * Update current process.
  * Note that we have to wait a whole scheduler period before we are sure that
  * every running userspace threads have their markers updated.
  * (synchronize_sched() can be used to insure this).
  */
-void marker_update_process(void)
-{
-	struct user_marker *umark;
-	struct hlist_node *pos;
-	struct marker_entry *entry;
-
-	mutex_lock(&markers_mutex);
-	mutex_lock(&current->group_leader->user_markers_mutex);
-	if (strcmp(current->comm, "testprog") == 0)
-		printk(KERN_DEBUG "do update pending for testprog\n");
-	hlist_for_each_entry(umark, pos,
-			&current->group_leader->user_markers, hlist) {
-		printk(KERN_DEBUG "Updating marker %s in %s\n",
-			umark->name, current->comm);
-		entry = get_marker("userspace", umark->name);
-		if (entry) {
-			if (entry->format &&
-				strcmp(entry->format, umark->format) != 0) {
-				printk(KERN_WARNING
-					" error, wrong format in process %s\n",
-					current->comm);
-				break;
-			}
-			if (put_user(!!entry->refcount, umark->state)) {
-				printk(KERN_WARNING
-					"Marker in %s caused a fault\n",
-					current->comm);
-				break;
-			}
-		} else {
-			if (put_user(0, umark->state)) {
-				printk(KERN_WARNING
-					"Marker in %s caused a fault\n",
-					current->comm);
-				break;
-			}
-		}
-	}
-	clear_thread_flag(TIF_MARKER_PENDING);
-	mutex_unlock(&current->group_leader->user_markers_mutex);
-	mutex_unlock(&markers_mutex);
-}
+//ust// void marker_update_process(void)
+//ust// {
+//ust// 	struct user_marker *umark;
+//ust// 	struct hlist_node *pos;
+//ust// 	struct marker_entry *entry;
+//ust// 
+//ust// 	mutex_lock(&markers_mutex);
+//ust// 	mutex_lock(&current->group_leader->user_markers_mutex);
+//ust// 	if (strcmp(current->comm, "testprog") == 0)
+//ust// 		DBG("do update pending for testprog");
+//ust// 	hlist_for_each_entry(umark, pos,
+//ust// 			&current->group_leader->user_markers, hlist) {
+//ust// 		DBG("Updating marker %s in %s", umark->name, current->comm);
+//ust// 		entry = get_marker("userspace", umark->name);
+//ust// 		if (entry) {
+//ust// 			if (entry->format &&
+//ust// 				strcmp(entry->format, umark->format) != 0) {
+//ust// 				WARN("error, wrong format in process %s",
+//ust// 					current->comm);
+//ust// 				break;
+//ust// 			}
+//ust// 			if (put_user(!!entry->refcount, umark->state)) {
+//ust// 				WARN("Marker in %s caused a fault",
+//ust// 					current->comm);
+//ust// 				break;
+//ust// 			}
+//ust// 		} else {
+//ust// 			if (put_user(0, umark->state)) {
+//ust// 				WARN("Marker in %s caused a fault", current->comm);
+//ust// 				break;
+//ust// 			}
+//ust// 		}
+//ust// 	}
+//ust// 	clear_thread_flag(TIF_MARKER_PENDING);
+//ust// 	mutex_unlock(&current->group_leader->user_markers_mutex);
+//ust// 	mutex_unlock(&markers_mutex);
+//ust// }
 
 /*
  * Called at process exit and upon do_execve().

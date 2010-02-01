@@ -236,8 +236,7 @@ static inline void marker_update_probe_range(struct marker *begin,
  *
  * Places a marker using a standard memory read (_imv_read()) to be
  * enabled. Should be used for markers in code paths where instruction
- * modification based enabling is not welcome. (__init and __exit functions,
- * lockdep, some traps, printk).
+ * modification based enabling is not welcome.
  */
 #define _trace_mark(channel, name, format, args...) \
 	__trace_mark(1, channel, name, NULL, format, ## args)
