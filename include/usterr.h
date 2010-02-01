@@ -48,8 +48,7 @@
 
 #define ERRMSG(fmt, args...) do { sigsafe_print_err(UST_STR_COMPONENT "[%ld/%ld]: " fmt " (" __FILE__ ":" XSTR(__LINE__) ")\n", (long) getpid(), (long) syscall(SYS_gettid), ## args); fflush(stderr); } while(0)
 
-/*#define DEBUG*/
-#ifdef DEBUG
+#ifdef UST_DEBUG
 # define DBG(fmt, args...) ERRMSG(fmt, ## args)
 #else
 # define DBG(fmt, args...) do {} while(0)
