@@ -3,9 +3,11 @@
 - have per-cpu channels
 - make a trace testing script (that can assert whether a trace contains certain events)
 - make web site
+- use signal safe snprintf
 - fix header/lib priority problem at compilation
 - fix FIXME's in the code
 - make cli interface for flight recorder
 - add \n at end of messages in communication protocol
 - save_registers: save them only when the marker is active (complicated because we need to know their value at the address that is put in struct marker)
 - make streaming work
+- ustd should work as a pool of threads
