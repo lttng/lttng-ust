@@ -218,6 +218,7 @@ int ust_buffers_channel_open(struct ust_channel *chan, size_t subbuf_size, size_
 	for(; i>=0; i--) {
 		ust_buffers_close_buf(chan->buf[i]);
 error:
+		do {} while(0);
 	}
 
 	kref_put(&chan->kref, ust_buffers_destroy_channel);
