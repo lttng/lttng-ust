@@ -259,7 +259,7 @@ struct buffer_info *connect_buffer(pid_t pid, const char *bufname)
 
 	result = sscanf(received_msg, "%d %d", &buf->shmid, &buf->bufstruct_shmid);
 	if(result != 2) {
-		ERR("unable to parse response to get_shmid");
+		ERR("unable to parse response to get_shmid (\"%s\")", received_msg);
 		return NULL;
 	}
 	free(received_msg);
@@ -342,7 +342,7 @@ struct buffer_info *connect_buffer(pid_t pid, const char *bufname)
 	}
 	free(tmp);
 
-	asprintf(&tmp, "%s/%u_%lld/%s_0", trace_path, buf->pid, buf->pidunique, buf->name);
+	asprintf(&tmp, "%s/%u_%lld/%s", trace_path, buf->pid, buf->pidunique, buf->name);
 	result = fd = open(tmp, O_WRONLY | O_CREAT | O_TRUNC | O_EXCL, 00600);
 	if(result == -1) {
 		PERROR("open");

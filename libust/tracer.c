@@ -680,7 +680,7 @@ int ltt_trace_alloc(const char *trace_name)
 //ust//	local_irq_save(flags);
 	trace->start_freq = trace_clock_frequency();
 	trace->start_tsc = trace_clock_read64();
-	gettimeofday(&trace->start_time, NULL); //ust// changed
+	gettimeofday(&trace->start_time, NULL); //ust// changed /* FIXME: is this ok? */
 //ust//	local_irq_restore(flags);
 
 	for (chan = 0; chan < trace->nr_channels; chan++) {

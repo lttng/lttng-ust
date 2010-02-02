@@ -24,6 +24,9 @@
  * va_list * to ltt_vtrace.
  */
 
+#define _GNU_SOURCE
+#include <unistd.h>
+#include <sys/syscall.h>
 #include <stdarg.h>
 #include <string.h>
 #include <stdint.h>
@@ -45,6 +48,11 @@ enum ltt_type {
 	LTT_TYPE_STRING,
 	LTT_TYPE_NONE,
 };
+
+static int ust_get_cpu(void)
+{
+	return sched_getcpu();
+}
 
 #define LTT_ATTRIBUTE_NETWORK_BYTE_ORDER (1<<1)
 
@@ -684,7 +692,7 @@ notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
 	struct ltt_serialize_closure closure;
 	struct ltt_probe_private_data *private_data = call_data;
 	void *serialize_private = NULL;
-//ust//	int cpu;
+	int cpu;
 	unsigned int rflags;
 
 	/*
@@ -696,7 +704,9 @@ notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
 
 	rcu_read_lock(); //ust// rcu_read_lock_sched_notrace();
 //ust//	cpu = smp_processor_id();
+	cpu = ust_get_cpu();
 //ust//	__get_cpu_var(ltt_nesting)++;
+	/* FIXME: should nesting be per-cpu? */
 	ltt_nesting++;
 
 	pdata = (struct ltt_active_marker *)probe_data;
@@ -750,18 +760,26 @@ notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
 		if (!channel->active)
 			continue;
 
+		/* If a new cpu was plugged since the trace was started, we did
+		 * not add it to the trace, and therefore we write the event to
+		 * cpu 0.
+		 */
+		if(cpu >= channel->n_cpus) {
+			cpu = 0;
+		}
+
 		/* reserve space : header and data */
 		ret = ltt_reserve_slot(trace, channel, &transport_data,
 					data_size, &slot_size, &buf_offset,
 					&tsc, &rflags,
-					largest_align);
+					largest_align, cpu);
 		if (unlikely(ret < 0))
 			continue; /* buffer full */
 
 		va_copy(args_copy, *args);
 		/* FIXME : could probably encapsulate transport better. */
 //ust//		buf = ((struct rchan *)channel->trans_channel_data)->buf[cpu];
-		buf = channel->buf;
+		buf = channel->buf[cpu];
 		/* Out-of-order write : header and data */
 		buf_offset = ltt_write_event_header(trace,
 					buf, buf_offset,

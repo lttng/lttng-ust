@@ -133,7 +133,7 @@ struct ltt_trace_ops {
 				void **transport_data, size_t data_size,
 				size_t *slot_size, long *buf_offset, u64 *tsc,
 				unsigned int *rflags,
-				int largest_align);
+				int largest_align, int cpu);
 //ust//	void (*commit_slot) (struct ltt_channel_struct *channel,
 //ust//				void **transport_data, long buf_offset,
 //ust//				size_t slot_size);
@@ -154,7 +154,7 @@ struct ltt_trace_ops {
 	void (*remove_channel) (struct ust_channel *channel);
 	void (*user_errors) (struct ltt_trace_struct *trace,
 				unsigned int index, size_t data_size,
-				struct user_dbg_data *dbg);
+				struct user_dbg_data *dbg, unsigned int cpu);
 } ____cacheline_aligned;
 
 struct ltt_transport {
@@ -457,11 +457,11 @@ static __inline__ int ltt_reserve_slot(
 		long *buf_offset,
 		u64 *tsc,
 		unsigned int *rflags,
-		int largest_align)
+		int largest_align, int cpu)
 {
 	return trace->ops->reserve_slot(trace, channel, transport_data,
 			data_size, slot_size, buf_offset, tsc, rflags,
-			largest_align);
+			largest_align, cpu);
 }
 
 

@@ -28,6 +28,7 @@
 #include <kcompat/kref.h>
 
 #define EVENTS_PER_CHANNEL	65536
+#define MAX_CPUS		32
 
 struct ltt_trace_struct;
 
@@ -36,7 +37,8 @@ struct ust_buffer;
 struct ust_channel {
 	/* First 32 bytes cache-hot cacheline */
 	struct ltt_trace_struct	*trace;
-	void *buf;
+	int *buf_struct_shmids;
+	struct ust_buffer **buf;
 	int overwrite:1;
 	int active:1;
 	unsigned int n_subbufs_order;
@@ -65,8 +67,7 @@ struct ust_channel {
 	int subbuf_size_order;
 	unsigned int subbuf_cnt;
 	const char *channel_name;
-
-	int buf_shmid;
+	int n_cpus;
 
 	u32 version;
 	size_t alloc_size;

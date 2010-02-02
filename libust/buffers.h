@@ -69,6 +69,7 @@ struct ust_buffer {
 	void *buf_data;
 	size_t buf_size;
 	int shmid;
+	unsigned int cpu;
 
 	/* commit count per subbuffer; must be at end of struct */
 	local_t commit_seq[0] ____cacheline_aligned;
