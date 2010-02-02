@@ -1041,7 +1041,7 @@ static void __attribute__((constructor)) init()
 	pidunique = make_pidunique();
 
 	/* Initialize RCU in case the constructor order is not good. */
-	urcu_init();
+	rcu_init();
 
 	/* It is important to do this before events start to be generated. */
 	ust_register_thread();
