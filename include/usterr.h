@@ -46,7 +46,7 @@
 
 #define UST_STR_COMPONENT XSTR(UST_COMPONENT)
 
-#define ERRMSG(fmt, args...) do { sigsafe_print_err(UST_STR_COMPONENT "[%ld/%ld]: " fmt " (" __FILE__ ":" XSTR(__LINE__) ")\n", (long) getpid(), (long) syscall(SYS_gettid), ## args); fflush(stderr); } while(0)
+#define ERRMSG(fmt, args...) do { sigsafe_print_err(UST_STR_COMPONENT "[%ld/%ld]: " fmt " (in %s() at " __FILE__ ":" XSTR(__LINE__) ")\n", (long) getpid(), (long) syscall(SYS_gettid), ## args, __func__); fflush(stderr); } while(0)
 
 #ifdef UST_DEBUG
 # define DBG(fmt, args...) ERRMSG(fmt, ## args)
