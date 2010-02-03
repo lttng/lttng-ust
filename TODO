@@ -1,8 +1,8 @@
 - port changes from recent versions of lttng kernel
 - update to trace format 2.5
-- have per-cpu channels
 - make a trace testing script (that can assert whether a trace contains certain events)
 - make web site
+- make sure the proper structures are cacheline aligned, and test performance, including multi-threaded
 - use signal safe snprintf
 - fix header/lib priority problem at compilation
 - fix FIXME's in the code
