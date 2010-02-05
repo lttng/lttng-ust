@@ -1316,7 +1316,7 @@ struct notifier_block marker_module_nb = {
 
 #endif /* CONFIG_MODULES */
 
-void ltt_dump_marker_state(struct ltt_trace_struct *trace)
+void ltt_dump_marker_state(struct ust_trace *trace)
 {
 	struct marker_entry *entry;
 	struct ltt_probe_private_data call_data;

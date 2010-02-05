@@ -197,4 +197,8 @@ static inline u32 trace_clock_freq_scale(void)
 }
 
 
+/* PERCPU */
+
+#define __get_cpu_var(x) x
+
 #endif /* KERNELCOMPAT_H */

@@ -18,8 +18,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#ifndef LTT_CORE_H
-#define LTT_CORE_H
+#ifndef UST_TRACERCORE_H
+#define UST_TRACERCORE_H
 
 #include <ust/kernelcompat.h>
 //ust// #include <linux/percpu.h>
@@ -40,11 +40,6 @@ struct ltt_traces {
 } ____cacheline_aligned;
 
 extern struct ltt_traces ltt_traces;
-
-/*
- * get dentry of ltt's root dir
- */
-struct dentry *get_ltt_root(void);
 
 /* Keep track of trap nesting inside LTT */
 //ust// DECLARE_PER_CPU(unsigned int, ltt_nesting);
@@ -93,4 +88,4 @@ static inline int ltt_get_alignment(void)
 }
 #endif /* defined(CONFIG_LTT) && defined(CONFIG_LTT_ALIGNMENT) */
 
-#endif /* LTT_CORE_H */
+#endif /* UST_TRACERCORE_H */

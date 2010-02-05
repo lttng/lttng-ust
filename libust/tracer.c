@@ -45,12 +45,12 @@
 
 /* Default callbacks for modules */
 notrace int ltt_filter_control_default(enum ltt_filter_control_msg msg,
-		struct ltt_trace_struct *trace)
+		struct ust_trace *trace)
 {
 	return 0;
 }
 
-int ltt_statedump_default(struct ltt_trace_struct *trace)
+int ltt_statedump_default(struct ust_trace *trace)
 {
 	return 0;
 }
@@ -58,13 +58,13 @@ int ltt_statedump_default(struct ltt_trace_struct *trace)
 /* Callbacks for registered modules */
 
 int (*ltt_filter_control_functor)
-	(enum ltt_filter_control_msg msg, struct ltt_trace_struct *trace) =
+	(enum ltt_filter_control_msg msg, struct ust_trace *trace) =
 					ltt_filter_control_default;
 struct module *ltt_filter_control_owner;
 
 /* These function pointers are protected by a trace activation check */
 struct module *ltt_run_filter_owner;
-int (*ltt_statedump_functor)(struct ltt_trace_struct *trace) =
+int (*ltt_statedump_functor)(struct ust_trace *trace) =
 					ltt_statedump_default;
 struct module *ltt_statedump_owner;
 
@@ -140,7 +140,7 @@ static enum ltt_channels get_channel_type_from_name(const char *name)
 //ust// 		}
 //ust// 		ltt_filter_control_functor =
 //ust// 			(int (*)(enum ltt_filter_control_msg,
-//ust// 			struct ltt_trace_struct *))function;
+//ust// 			struct ust_trace *))function;
 //ust// 		ltt_filter_control_owner = owner;
 //ust// 		break;
 //ust// 	case LTT_FUNCTION_STATEDUMP:
@@ -149,7 +149,7 @@ static enum ltt_channels get_channel_type_from_name(const char *name)
 //ust// 			goto end;
 //ust// 		}
 //ust// 		ltt_statedump_functor =
-//ust// 			(int (*)(struct ltt_trace_struct *))function;
+//ust// 			(int (*)(struct ust_trace *))function;
 //ust// 		ltt_statedump_owner = owner;
 //ust// 		break;
 //ust// 	}
@@ -248,26 +248,7 @@ static inline int is_channel_overwrite(enum ltt_channels chan,
 	}
 }
 
-/**
- * ltt_write_trace_header - Write trace header
- * @trace: Trace information
- * @header: Memory address where the information must be written to
- */
-void notrace ltt_write_trace_header(struct ltt_trace_struct *trace,
-		struct ltt_subbuffer_header *header)
-{
-	header->magic_number = LTT_TRACER_MAGIC_NUMBER;
-	header->major_version = LTT_TRACER_VERSION_MAJOR;
-	header->minor_version = LTT_TRACER_VERSION_MINOR;
-	header->arch_size = sizeof(void *);
-	header->alignment = ltt_get_alignment();
-	header->start_time_sec = trace->start_time.tv_sec;
-	header->start_time_usec = trace->start_time.tv_usec;
-	header->start_freq = trace->start_freq;
-	header->freq_scale = trace->freq_scale;
-}
-
-static void trace_async_wakeup(struct ltt_trace_struct *trace)
+static void trace_async_wakeup(struct ust_trace *trace)
 {
 	int i;
 	struct ust_channel *chan;
@@ -283,7 +264,7 @@ static void trace_async_wakeup(struct ltt_trace_struct *trace)
 //ust// /* Timer to send async wakeups to the readers */
 //ust// static void async_wakeup(unsigned long data)
 //ust// {
-//ust// 	struct ltt_trace_struct *trace;
+//ust// 	struct ust_trace *trace;
 //ust// 
 //ust// 	/*
 //ust// 	 * PREEMPT_RT does not allow spinlocks to be taken within preempt
@@ -315,9 +296,9 @@ static void trace_async_wakeup(struct ltt_trace_struct *trace)
  *
  * Returns a pointer to the trace structure, NULL if not found.
  */
-struct ltt_trace_struct *_ltt_trace_find(const char *trace_name)
+struct ust_trace *_ltt_trace_find(const char *trace_name)
 {
-	struct ltt_trace_struct *trace;
+	struct ust_trace *trace;
 
 	list_for_each_entry(trace, &ltt_traces.head, list)
 		if (!strncmp(trace->trace_name, trace_name, NAME_MAX))
@@ -331,9 +312,9 @@ struct ltt_trace_struct *_ltt_trace_find(const char *trace_name)
  *
  * Returns a pointer to the trace structure, NULL if not found.
  */
-struct ltt_trace_struct *_ltt_trace_find_setup(const char *trace_name)
+struct ust_trace *_ltt_trace_find_setup(const char *trace_name)
 {
-	struct ltt_trace_struct *trace;
+	struct ust_trace *trace;
 
 	list_for_each_entry(trace, &ltt_traces.setup_head, list)
 		if (!strncmp(trace->trace_name, trace_name, NAME_MAX))
@@ -348,8 +329,8 @@ struct ltt_trace_struct *_ltt_trace_find_setup(const char *trace_name)
  */
 void ltt_release_transport(struct kref *kref)
 {
-//ust// 	struct ltt_trace_struct *trace = container_of(kref,
-//ust// 			struct ltt_trace_struct, ltt_transport_kref);
+//ust// 	struct ust_trace *trace = container_of(kref,
+//ust// 			struct ust_trace, ltt_transport_kref);
 //ust// 	trace->ops->remove_dirs(trace);
 }
 
@@ -359,8 +340,8 @@ void ltt_release_transport(struct kref *kref)
  */
 void ltt_release_trace(struct kref *kref)
 {
-	struct ltt_trace_struct *trace = container_of(kref,
-			struct ltt_trace_struct, kref);
+	struct ust_trace *trace = container_of(kref,
+			struct ust_trace, kref);
 	ltt_channels_trace_free(trace->channels);
 	kfree(trace);
 }
@@ -368,6 +349,10 @@ void ltt_release_trace(struct kref *kref)
 static inline void prepare_chan_size_num(unsigned int *subbuf_size,
 					 unsigned int *n_subbufs)
 {
+	/* Make sure the subbuffer size is larger than a page */
+	*subbuf_size = max_t(unsigned int, *subbuf_size, PAGE_SIZE);
+
+	/* round to next power of 2 */
 	*subbuf_size = 1 << get_count_order(*subbuf_size);
 	*n_subbufs = 1 << get_count_order(*n_subbufs);
 
@@ -379,7 +364,7 @@ static inline void prepare_chan_size_num(unsigned int *subbuf_size,
 int _ltt_trace_setup(const char *trace_name)
 {
 	int err = 0;
-	struct ltt_trace_struct *new_trace = NULL;
+	struct ust_trace *new_trace = NULL;
 	int metadata_index;
 	unsigned int chan;
 	enum ltt_channels chantype;
@@ -396,7 +381,7 @@ int _ltt_trace_setup(const char *trace_name)
 		goto traces_error;
 	}
 
-	new_trace = kzalloc(sizeof(struct ltt_trace_struct), GFP_KERNEL);
+	new_trace = kzalloc(sizeof(struct ust_trace), GFP_KERNEL);
 	if (!new_trace) {
 		ERR("Unable to allocate memory for trace %s", trace_name);
 		err = -ENOMEM;
@@ -454,7 +439,7 @@ int ltt_trace_setup(const char *trace_name)
 }
 
 /* must be called from within a traces lock. */
-static void _ltt_trace_free(struct ltt_trace_struct *trace)
+static void _ltt_trace_free(struct ust_trace *trace)
 {
 	list_del(&trace->list);
 	kfree(trace);
@@ -463,7 +448,7 @@ static void _ltt_trace_free(struct ltt_trace_struct *trace)
 int ltt_trace_set_type(const char *trace_name, const char *trace_type)
 {
 	int err = 0;
-	struct ltt_trace_struct *trace;
+	struct ust_trace *trace;
 	struct ltt_transport *tran_iter, *transport = NULL;
 
 	ltt_lock_traces();
@@ -498,7 +483,7 @@ int ltt_trace_set_channel_subbufsize(const char *trace_name,
 		const char *channel_name, unsigned int size)
 {
 	int err = 0;
-	struct ltt_trace_struct *trace;
+	struct ust_trace *trace;
 	int index;
 
 	ltt_lock_traces();
@@ -527,7 +512,7 @@ int ltt_trace_set_channel_subbufcount(const char *trace_name,
 		const char *channel_name, unsigned int cnt)
 {
 	int err = 0;
-	struct ltt_trace_struct *trace;
+	struct ust_trace *trace;
 	int index;
 
 	ltt_lock_traces();
@@ -556,7 +541,7 @@ int ltt_trace_set_channel_enable(const char *trace_name,
 		const char *channel_name, unsigned int enable)
 {
 	int err = 0;
-	struct ltt_trace_struct *trace;
+	struct ust_trace *trace;
 	int index;
 
 	ltt_lock_traces();
@@ -596,7 +581,7 @@ int ltt_trace_set_channel_overwrite(const char *trace_name,
 		const char *channel_name, unsigned int overwrite)
 {
 	int err = 0;
-	struct ltt_trace_struct *trace;
+	struct ust_trace *trace;
 	int index;
 
 	ltt_lock_traces();
@@ -637,7 +622,7 @@ traces_error:
 int ltt_trace_alloc(const char *trace_name)
 {
 	int err = 0;
-	struct ltt_trace_struct *trace;
+	struct ust_trace *trace;
 	unsigned int subbuf_size, subbuf_cnt;
 //ust//	unsigned long flags;
 	int chan;
@@ -760,7 +745,7 @@ traces_error:
 //ust// }
 
 /* Must be called while sure that trace is in the list. */
-static int _ltt_trace_destroy(struct ltt_trace_struct *trace)
+static int _ltt_trace_destroy(struct ust_trace *trace)
 {
 	int err = -EPERM;
 
@@ -794,7 +779,7 @@ traces_error:
 }
 
 /* Sleepable part of the destroy */
-static void __ltt_trace_destroy(struct ltt_trace_struct	*trace)
+static void __ltt_trace_destroy(struct ust_trace *trace)
 {
 	int i;
 	struct ust_channel *chan;
@@ -840,7 +825,7 @@ static void __ltt_trace_destroy(struct ltt_trace_struct	*trace)
 int ltt_trace_destroy(const char *trace_name)
 {
 	int err = 0;
-	struct ltt_trace_struct *trace;
+	struct ust_trace *trace;
 
 	ltt_lock_traces();
 
@@ -874,7 +859,7 @@ error:
 }
 
 /* must be called from within a traces lock. */
-static int _ltt_trace_start(struct ltt_trace_struct *trace)
+static int _ltt_trace_start(struct ust_trace *trace)
 {
 	int err = 0;
 
@@ -903,7 +888,7 @@ traces_error:
 int ltt_trace_start(const char *trace_name)
 {
 	int err = 0;
-	struct ltt_trace_struct *trace;
+	struct ust_trace *trace;
 
 	ltt_lock_traces();
 
@@ -941,7 +926,7 @@ no_trace:
 }
 
 /* must be called from within traces lock */
-static int _ltt_trace_stop(struct ltt_trace_struct *trace)
+static int _ltt_trace_stop(struct ust_trace *trace)
 {
 	int err = -EPERM;
 
@@ -968,7 +953,7 @@ traces_error:
 int ltt_trace_stop(const char *trace_name)
 {
 	int err = 0;
-	struct ltt_trace_struct *trace;
+	struct ust_trace *trace;
 
 	ltt_lock_traces();
 	trace = _ltt_trace_find(trace_name);
@@ -985,7 +970,7 @@ int ltt_trace_stop(const char *trace_name)
 int ltt_filter_control(enum ltt_filter_control_msg msg, const char *trace_name)
 {
 	int err;
-	struct ltt_trace_struct *trace;
+	struct ust_trace *trace;
 
 	DBG("ltt_filter_control : trace %s", trace_name);
 	ltt_lock_traces();

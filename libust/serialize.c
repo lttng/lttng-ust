@@ -256,8 +256,9 @@ parse_end:
  * Field width and precision are *not* supported.
  * %n not supported.
  */
-static inline const char *parse_c_type(const char *fmt,
-		char *c_size, enum ltt_type *c_type)
+static inline
+const char *parse_c_type(const char *fmt, char *c_size, enum ltt_type *c_type,
+			 char *outfmt)
 {
 	int qualifier;		/* 'h', 'l', or 'L' for integer fields */
 				/* 'z' support added 23/7/1999 S.H.    */
@@ -287,6 +288,13 @@ repeat:
 			qualifier = 'L';
 			++fmt;
 		}
+	}
+
+	if (outfmt) {
+		if (qualifier != -1)
+			*outfmt++ = (char)qualifier;
+		*outfmt++ = *fmt;
+		*outfmt = 0;
 	}
 
 	switch (*fmt) {
@@ -382,16 +390,13 @@ static inline size_t serialize_trace_data(struct ust_buffer *buf,
 	case LTT_TYPE_UNSIGNED_INT:
 		switch (c_size) {
 		case 1:
-			tmp.v_ulong = (unsigned long)(uint8_t)
-					va_arg(*args, unsigned int);
+			tmp.v_ulong = (unsigned long)(uint8_t)va_arg(*args, unsigned int);
 			break;
 		case 2:
-			tmp.v_ulong = (unsigned long)(uint16_t)
-					va_arg(*args, unsigned int);
+			tmp.v_ulong = (unsigned long)(uint16_t)va_arg(*args, unsigned int);
 			break;
 		case 4:
-			tmp.v_ulong = (unsigned long)(uint32_t)
-					va_arg(*args, unsigned int);
+			tmp.v_ulong = (unsigned long)(uint32_t)va_arg(*args, unsigned int);
 			break;
 		case 8:
 			tmp.v_uint64 = va_arg(*args, uint64_t);
@@ -505,92 +510,6 @@ copydone:
 	return buf_offset;
 }
 
-static notrace void skip_space(const char **ps)
-{
-	while(**ps == ' ')
-		(*ps)++;
-}
-
-static notrace void copy_token(char **out, const char **in)
-{
-	while(**in != ' ' && **in != '\0') {
-		**out = **in;
-		(*out)++;
-		(*in)++;
-	}
-}
-
-/* serialize_to_text
- *
- * Given a format string and a va_list of arguments, convert them to a
- * human-readable string.
- *
- * @outbuf: the buffer to output the string to
- * @bufsize: the max size that can be used in outbuf
- * @fmt: the marker format string
- * @ap: a va_list that contains the arguments corresponding to fmt
- *
- * Return value: the number of chars that have been put in outbuf, excluding
- * the final \0, or, if the buffer was too small, the number of chars that
- * would have been written in outbuf if it had been large enough.
- *
- * outbuf may be NULL. The return value may then be used be allocate an
- * appropriate outbuf.
- *
- */
-
-notrace
-int serialize_to_text(char *outbuf, int bufsize, const char *fmt, va_list ap)
-{
-	int fmt_len = strlen(fmt);
-	char *new_fmt = alloca(fmt_len + 1);
-	const char *orig_fmt_p = fmt;
-	char *new_fmt_p = new_fmt;
-	char false_buf;
-	int result;
-	enum { none, cfmt, tracefmt, argname } prev_token = none;
-
-	while(*orig_fmt_p != '\0') {
-		if(*orig_fmt_p == '%') {
-			prev_token = cfmt;
-			copy_token(&new_fmt_p, &orig_fmt_p);
-		}
-		else if(*orig_fmt_p == '#') {
-			prev_token = tracefmt;
-			do {
-				orig_fmt_p++;
-			} while(*orig_fmt_p != ' ' && *orig_fmt_p != '\0');
-		}
-		else if(*orig_fmt_p == ' ') {
-			if(prev_token == argname) {
-				*new_fmt_p = '=';
-				new_fmt_p++;
-			}
-			else if(prev_token == cfmt) {
-				*new_fmt_p = ' ';
-				new_fmt_p++;
-			}
-
-			skip_space(&orig_fmt_p);
-		}
-		else {
-			prev_token = argname;
-			copy_token(&new_fmt_p, &orig_fmt_p);
-		}
-	}
-
-	*new_fmt_p = '\0';
-
-	if(outbuf == NULL) {
-		/* use this false_buffer for compatibility with pre-C99 */
-		outbuf = &false_buf;
-		bufsize = 1;
-	}
-	result = vsnprintf(outbuf, bufsize, new_fmt, ap);
-
-	return result;
-}
-
 notrace size_t ltt_serialize_data(struct ust_buffer *buf, size_t buf_offset,
 			struct ltt_serialize_closure *closure,
 			void *serialize_private, int *largest_align,
@@ -683,7 +602,7 @@ notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
 	size_t data_size, slot_size;
 	unsigned int chan_index;
 	struct ust_channel *channel;
-	struct ltt_trace_struct *trace, *dest_trace = NULL;
+	struct ust_trace *trace, *dest_trace = NULL;
 	struct ust_buffer *buf;
 	void *transport_data;
 	u64 tsc;
@@ -782,15 +701,14 @@ notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
 		buf = channel->buf[cpu];
 		/* Out-of-order write : header and data */
 		buf_offset = ltt_write_event_header(trace,
-					buf, buf_offset,
+					channel, buf, buf_offset,
 					eID, data_size, tsc, rflags);
 		ltt_write_event_data(buf, buf_offset, &closure,
 					serialize_private,
 					largest_align, fmt, &args_copy);
 		va_end(args_copy);
 		/* Out-of-order commit */
-		ltt_commit_slot(channel, &transport_data, buf_offset,
-				data_size, slot_size);
+		ltt_commit_slot(channel, buf, buf_offset, data_size, slot_size);
 		DBG("just commited event at offset %ld and size %zd", buf_offset, slot_size);
 	}
 //ust//	__get_cpu_var(ltt_nesting)--;
@@ -809,6 +727,88 @@ notrace void ltt_trace(const struct marker *mdata, void *probe_data,
 	va_end(args);
 }
 
-//ust// MODULE_LICENSE("GPL");
-//ust// MODULE_AUTHOR("Mathieu Desnoyers");
-//ust// MODULE_DESCRIPTION("Linux Trace Toolkit Next Generation Serializer");
+static notrace void skip_space(const char **ps)
+{
+	while(**ps == ' ')
+		(*ps)++;
+}
+
+static notrace void copy_token(char **out, const char **in)
+{
+	while(**in != ' ' && **in != '\0') {
+		**out = **in;
+		(*out)++;
+		(*in)++;
+	}
+}
+
+/* serialize_to_text
+ *
+ * Given a format string and a va_list of arguments, convert them to a
+ * human-readable string.
+ *
+ * @outbuf: the buffer to output the string to
+ * @bufsize: the max size that can be used in outbuf
+ * @fmt: the marker format string
+ * @ap: a va_list that contains the arguments corresponding to fmt
+ *
+ * Return value: the number of chars that have been put in outbuf, excluding
+ * the final \0, or, if the buffer was too small, the number of chars that
+ * would have been written in outbuf if it had been large enough.
+ *
+ * outbuf may be NULL. The return value may then be used be allocate an
+ * appropriate outbuf.
+ *
+ */
+
+notrace
+int serialize_to_text(char *outbuf, int bufsize, const char *fmt, va_list ap)
+{
+	int fmt_len = strlen(fmt);
+	char *new_fmt = alloca(fmt_len + 1);
+	const char *orig_fmt_p = fmt;
+	char *new_fmt_p = new_fmt;
+	char false_buf;
+	int result;
+	enum { none, cfmt, tracefmt, argname } prev_token = none;
+
+	while(*orig_fmt_p != '\0') {
+		if(*orig_fmt_p == '%') {
+			prev_token = cfmt;
+			copy_token(&new_fmt_p, &orig_fmt_p);
+		}
+		else if(*orig_fmt_p == '#') {
+			prev_token = tracefmt;
+			do {
+				orig_fmt_p++;
+			} while(*orig_fmt_p != ' ' && *orig_fmt_p != '\0');
+		}
+		else if(*orig_fmt_p == ' ') {
+			if(prev_token == argname) {
+				*new_fmt_p = '=';
+				new_fmt_p++;
+			}
+			else if(prev_token == cfmt) {
+				*new_fmt_p = ' ';
+				new_fmt_p++;
+			}
+
+			skip_space(&orig_fmt_p);
+		}
+		else {
+			prev_token = argname;
+			copy_token(&new_fmt_p, &orig_fmt_p);
+		}
+	}
+
+	*new_fmt_p = '\0';
+
+	if(outbuf == NULL) {
+		/* use this false_buffer for compatibility with pre-C99 */
+		outbuf = &false_buf;
+		bufsize = 1;
+	}
+	result = vsnprintf(outbuf, bufsize, new_fmt, ap);
+
+	return result;
+}

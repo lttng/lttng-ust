@@ -17,6 +17,7 @@
 
 #include <assert.h>
 
+#include "buffers.h"
 #include "tracer.h"
 #include "ustd.h"
 #include "usterr.h"

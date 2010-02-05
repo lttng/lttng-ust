@@ -34,7 +34,7 @@
 #include "tracer.h"
 #include "usterr.h"
 #include "ustcomm.h"
-#include "buffers.h" /* FIXME: remove */
+#include "buffers.h"
 #include "marker-control.h"
 
 //#define USE_CLONE
@@ -88,7 +88,7 @@ struct blocked_consumer {
 	struct ustcomm_server server;
 	struct ustcomm_source src;
 
-	/* args to ust_buffers_do_get_subbuf */
+	/* args to ust_buffers_get_subbuf */
 	struct ust_buffer *buf;
 
 	struct list_head list;
@@ -166,7 +166,7 @@ void notif_cb(void)
 static void inform_consumer_daemon(const char *trace_name)
 {
 	int i,j;
-	struct ltt_trace_struct *trace;
+	struct ust_trace *trace;
 	pid_t pid = getpid();
 	int result;
 
@@ -256,13 +256,13 @@ void process_blocked_consumers(void)
 				continue;
 			}
 
-			result = ust_buffers_do_get_subbuf(bc->buf, &consumed_old);
+			result = ust_buffers_get_subbuf(bc->buf, &consumed_old);
 			if(result == -EAGAIN) {
 				WARN("missed buffer?");
 				continue;
 			}
 			else if(result < 0) {
-				DBG("ust_buffers_do_get_subbuf: error: %s", strerror(-result));
+				DBG("ust_buffers_get_subbuf: error: %s", strerror(-result));
 			}
 			asprintf(&reply, "%s %ld", "OK", consumed_old);
 			result = ustcomm_send_reply(&bc->server, reply, &bc->src);
@@ -298,7 +298,7 @@ void seperate_channel_cpu(const char *channel_and_cpu, char **channel, int *cpu)
 static int do_cmd_get_shmid(const char *recvbuf, struct ustcomm_source *src)
 {
 	int retval = 0;
-	struct ltt_trace_struct *trace;
+	struct ust_trace *trace;
 	char trace_name[] = "auto";
 	int i;
 	char *channel_and_cpu;
@@ -374,7 +374,7 @@ static int do_cmd_get_shmid(const char *recvbuf, struct ustcomm_source *src)
 static int do_cmd_get_n_subbufs(const char *recvbuf, struct ustcomm_source *src)
 {
 	int retval = 0;
-	struct ltt_trace_struct *trace;
+	struct ust_trace *trace;
 	char trace_name[] = "auto";
 	int i;
 	char *channel_and_cpu;
@@ -443,7 +443,7 @@ static int do_cmd_get_n_subbufs(const char *recvbuf, struct ustcomm_source *src)
 static int do_cmd_get_subbuf_size(const char *recvbuf, struct ustcomm_source *src)
 {
 	int retval = 0;
-	struct ltt_trace_struct *trace;
+	struct ust_trace *trace;
 	char trace_name[] = "auto";
 	int i;
 	char *channel_and_cpu;
@@ -512,7 +512,7 @@ static int do_cmd_get_subbuf_size(const char *recvbuf, struct ustcomm_source *sr
 static int do_cmd_get_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 {
 	int retval = 0;
-	struct ltt_trace_struct *trace;
+	struct ust_trace *trace;
 	char trace_name[] = "auto";
 	int i;
 	char *channel_and_cpu;
@@ -583,7 +583,7 @@ static int do_cmd_get_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 static int do_cmd_put_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 {
 	int retval = 0;
-	struct ltt_trace_struct *trace;
+	struct ust_trace *trace;
 	char trace_name[] = "auto";
 	int i;
 	char *channel_and_cpu;
@@ -644,13 +644,13 @@ static int do_cmd_put_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 
 			found = 1;
 
-			result = ust_buffers_do_put_subbuf(buf, consumed_old);
+			result = ust_buffers_put_subbuf(buf, consumed_old);
 			if(result < 0) {
-				WARN("ust_buffers_do_put_subbuf: error (subbuf=%s)", channel_and_cpu);
+				WARN("ust_buffers_put_subbuf: error (subbuf=%s)", channel_and_cpu);
 				asprintf(&reply, "%s", "ERROR");
 			}
 			else {
-				DBG("ust_buffers_do_put_subbuf: success (subbuf=%s)", channel_and_cpu);
+				DBG("ust_buffers_put_subbuf: success (subbuf=%s)", channel_and_cpu);
 				asprintf(&reply, "%s", "OK");
 			}
 
@@ -900,7 +900,7 @@ void *listener_main(void *p)
 			free(reply);
 		}
 //		else if(nth_token_is(recvbuf, "get_notifications", 0) == 1) {
-//			struct ltt_trace_struct *trace;
+//			struct ust_trace *trace;
 //			char trace_name[] = "auto";
 //			int i;
 //			char *channel_name;
@@ -1114,9 +1114,6 @@ static void __attribute__((constructor)) init()
 		/* Ensure marker control is initialized */
 		init_marker_control();
 
-		/* Ensure relay is initialized */
-		init_ustrelay_transport();
-
 		/* Ensure markers are initialized */
 		init_markers();
 
@@ -1209,7 +1206,7 @@ static void destroy_traces(void)
 static int trace_recording(void)
 {
 	int retval = 0;
-	struct ltt_trace_struct *trace;
+	struct ust_trace *trace;
 
 	ltt_lock_traces();
 

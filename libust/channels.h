@@ -30,13 +30,13 @@
 #define EVENTS_PER_CHANNEL	65536
 #define MAX_CPUS		32
 
-struct ltt_trace_struct;
+struct ust_trace;
 
 struct ust_buffer;
 
 struct ust_channel {
 	/* First 32 bytes cache-hot cacheline */
-	struct ltt_trace_struct	*trace;
+	struct ust_trace *trace;
 	int *buf_struct_shmids;
 	struct ust_buffer **buf;
 	int overwrite:1;
@@ -50,18 +50,6 @@ struct ust_channel {
 						 */
 	/* End of first 32 bytes cacheline */
 
-	/*
-	 * buffer_begin - called on buffer-switch to a new sub-buffer
-	 * @buf: the channel buffer containing the new sub-buffer
-	 */
-	void (*buffer_begin) (struct ust_buffer *buf,
-			u64 tsc, unsigned int subbuf_idx);
-	/*
-	 * buffer_end - called on buffer-switch to a new sub-buffer
-	 * @buf: the channel buffer containing the previous sub-buffer
-	 */
-	void (*buffer_end) (struct ust_buffer *buf,
-			u64 tsc, unsigned int offset, unsigned int subbuf_idx);
 	struct kref kref;	/* Channel transport reference count */
 	size_t subbuf_size;
 	int subbuf_size_order;
