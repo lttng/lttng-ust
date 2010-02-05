@@ -729,6 +729,7 @@ static int ust_buffers_init_buffer(struct ust_trace *trace,
 //ust//	if(!ltt_buf->commit_seq) {
 //ust//		return -1;
 //ust//	}
+	memset(buf->commit_seq, 0, sizeof(buf->commit_seq[0]) * n_subbufs);
 
 	/* FIXME: decrementally destroy on error */
 
