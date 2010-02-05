@@ -4,10 +4,13 @@
 - make web site
 - make sure the proper structures are cacheline aligned, and test performance, including multi-threaded
 - use signal safe snprintf
+- test with smaller subbuffer sizes
 - fix header/lib priority problem at compilation
 - fix FIXME's in the code
 - make cli interface for flight recorder
+- make cli interface for changing subbuffer size and number
 - add \n at end of messages in communication protocol
 - save_registers: save them only when the marker is active (complicated because we need to know their value at the address that is put in struct marker)
 - make streaming work
 - ustd should work as a pool of threads
+- support multiple simultaneous traces
