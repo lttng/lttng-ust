@@ -61,8 +61,7 @@ extern void ltt_filter_unregister(void);
  */
 static inline unsigned int ltt_align(size_t align_drift, size_t size_of_type)
 {
-	size_t alignment = min(sizeof(void *), size_of_type);
-	return (alignment - align_drift) & (alignment - 1);
+	return (size_of_type - align_drift) & (size_of_type - 1);
 }
 /* Default arch alignment */
 #define LTT_ALIGN

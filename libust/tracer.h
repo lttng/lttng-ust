@@ -313,7 +313,7 @@ slow_path:
 #define LTT_DEFAULT_N_SUBBUFS_HIGH	2
 #define LTT_TRACER_MAGIC_NUMBER		0x00D6B7ED
 #define LTT_TRACER_VERSION_MAJOR	2
-#define LTT_TRACER_VERSION_MINOR	3
+#define LTT_TRACER_VERSION_MINOR	4
 
 /**
  * ust_write_trace_header - Write trace header
