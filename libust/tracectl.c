@@ -1117,6 +1117,11 @@ static void __attribute__((constructor)) init()
 		/* Ensure markers are initialized */
 		init_markers();
 
+		/* Ensure buffers are initialized, for the transport to be available.
+		 * We are about to set a trace type and it will fail without this.
+		 */
+		init_ustrelay_transport();
+
 		/* FIXME: When starting early tracing (here), depending on the
 		 * order of constructors, it is very well possible some marker
 		 * sections are not yet registered. Because of this, some

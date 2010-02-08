@@ -22,6 +22,8 @@
 #define KERN_ALERT ""
 #define KERN_WARNING ""
 
+#define WARN_ON_ONCE(msg) WARN_ON(msg)
+
 /* ERROR OPS */
 
 #define MAX_ERRNO	4095

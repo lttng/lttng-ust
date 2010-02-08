@@ -537,7 +537,7 @@ notrace size_t ltt_serialize_data(struct ust_buffer *buf, size_t buf_offset,
 			++fmt;			/* skip first '%' */
 			if (*fmt == '%')	/* Escaped %% */
 				break;
-			fmt = parse_c_type(fmt, &c_size, &c_type);
+			fmt = parse_c_type(fmt, &c_size, &c_type, NULL);
 			/*
 			 * Output c types if no trace types has been
 			 * specified.

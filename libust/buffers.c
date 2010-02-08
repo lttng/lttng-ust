@@ -346,10 +346,10 @@ static notrace void ltt_buf_unfull(struct ust_buffer *buf,
  * architecture does not reorder writes.  This should eventually be provided by
  * a separate architecture-specific infrastructure.
  */
-static void remote_mb(void *info)
-{
-	smp_mb();
-}
+//ust// static void remote_mb(void *info)
+//ust// {
+//ust// 	smp_mb();
+//ust// }
 
 int ust_buffers_get_subbuf(struct ust_buffer *buf, long *consumed)
 {
@@ -545,20 +545,20 @@ int ust_buffers_put_subbuf(struct ust_buffer *buf, unsigned long uconsumed_old)
 //ust// 	}
 //ust// }
 
-static void ust_buffers_print_written(struct ust_channel *chan,
-		long cons_off, unsigned int cpu)
-{
-	struct ust_buffer *buf = chan->buf[cpu];
-	long cons_idx, events_count;
-
-	cons_idx = SUBBUF_INDEX(cons_off, chan);
-	events_count = local_read(&buf->commit_count[cons_idx].events);
-
-	if (events_count)
-		printk(KERN_INFO
-			"channel %s: %lu events written (cpu %u, index %lu)\n",
-			chan->channel_name, events_count, cpu, cons_idx);
-}
+//ust// static void ust_buffers_print_written(struct ust_channel *chan,
+//ust// 		long cons_off, unsigned int cpu)
+//ust// {
+//ust// 	struct ust_buffer *buf = chan->buf[cpu];
+//ust// 	long cons_idx, events_count;
+//ust//
+//ust// 	cons_idx = SUBBUF_INDEX(cons_off, chan);
+//ust// 	events_count = local_read(&buf->commit_count[cons_idx].events);
+//ust//
+//ust// 	if (events_count)
+//ust// 		printk(KERN_INFO
+//ust// 			"channel %s: %lu events written (cpu %u, index %lu)\n",
+//ust// 			chan->channel_name, events_count, cpu, cons_idx);
+//ust// }
 
 static void ltt_relay_print_subbuffer_errors(
 		struct ust_channel *channel,
@@ -604,9 +604,9 @@ static void ltt_relay_print_errors(struct ust_trace *trace,
 	if (!channel)
 	        return;
 
-	for (cons_off = 0; cons_off < rchan->alloc_size;
-	     cons_off = SUBBUF_ALIGN(cons_off, rchan))
-		ust_buffers_print_written(ltt_chan, cons_off, cpu);
+//ust//	for (cons_off = 0; cons_off < rchan->alloc_size;
+//ust//	     cons_off = SUBBUF_ALIGN(cons_off, rchan))
+//ust//		ust_buffers_print_written(ltt_chan, cons_off, cpu);
 	for (cons_off = atomic_long_read(&ltt_buf->consumed);
 			(SUBBUF_TRUNC(local_read(&ltt_buf->offset),
 				      channel)
