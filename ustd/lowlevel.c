@@ -78,18 +78,18 @@ void finish_consuming_dead_subbuffer(struct buffer_info *buf)
 		if (((commit_seq - buf->subbuf_size) & commit_seq_mask)
 		    - (USTD_BUFFER_TRUNC(consumed_offset, buf) >> n_subbufs_order)
 		    == 0) {
-			/* If it was, we only check the lost_size. This is the lost padding at the end of
- 			 * the subbuffer. */
-			valid_length = (unsigned long)buf->subbuf_size - header->lost_size;
+			/* If it was, we only check the data_size. This is the amount of valid data at
+			 * the beginning of the subbuffer. */
+			valid_length = header->data_size;
 		}
 		else {
-			/* If the subbuffer was not fully written, then we don't check lost_size because
+			/* If the subbuffer was not fully written, then we don't check data_size because
 			 * it hasn't been written yet. Instead we check commit_seq and use it to choose
-			 * a value for lost_size. The viewer will need this value when parsing.
+			 * a value for data_size. The viewer will need this value when parsing.
 			 */
 
 			valid_length = commit_seq & (buf->subbuf_size-1);
-			header->lost_size = buf->subbuf_size-valid_length;
+			header->data_size = valid_length;
 			assert(i_subbuf == (last_subbuf % buf->n_subbufs));
 		}
 

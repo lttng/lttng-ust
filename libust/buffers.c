@@ -307,8 +307,7 @@ static void ltt_buffer_begin(struct ust_buffer *buf,
 				subbuf_idx * buf->chan->subbuf_size);
 
 	header->cycle_count_begin = tsc;
-	header->lost_size = 0xFFFFFFFF; /* for debugging */
-	header->buf_size = buf->chan->subbuf_size;
+	header->data_size = 0xFFFFFFFF; /* for debugging */
 	ltt_write_trace_header(channel->trace, header);
 }
 
@@ -323,9 +322,10 @@ static notrace void ltt_buffer_end(struct ust_buffer *buf,
 		(struct ltt_subbuffer_header *)
 			ust_buffers_offset_address(buf,
 				subbuf_idx * buf->chan->subbuf_size);
+	u32 data_size = SUBBUF_OFFSET(offset - 1, buf->chan) + 1;
 
-	header->lost_size = SUBBUF_OFFSET((buf->chan->subbuf_size - offset),
-				buf->chan);
+	header->data_size = data_size;
+	header->sb_size = PAGE_ALIGN(data_size);
 	header->cycle_count_end = tsc;
 	header->events_lost = local_read(&buf->events_lost);
 	header->subbuf_corrupt = local_read(&buf->corrupted_subbuffers);

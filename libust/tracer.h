@@ -32,6 +32,7 @@
 #include "tracerconst.h"
 #include <ust/marker.h>
 #include <ust/probe.h>
+#include "buffers.h"
 
 /* Number of bytes to log with a read/write event */
 #define LTT_LOG_RW_SIZE			32L
@@ -213,8 +214,8 @@ struct ltt_subbuffer_header {
 					 * used all along the trace.
 					 */
 	uint32_t freq_scale;		/* Frequency scaling (divisor) */
-	uint32_t lost_size;		/* Size unused at end of subbuffer */
-	uint32_t buf_size;		/* Size of this subbuffer */
+	uint32_t data_size;		/* Size of data in subbuffer */
+	uint32_t sb_size;		/* Subbuffer size (including padding) */
 	uint32_t events_lost;		/*
 					 * Events lost in this subbuffer since
 					 * the beginning of the trace.
@@ -264,7 +265,7 @@ extern size_t ltt_write_event_header_slow(struct ust_trace *trace,
  * returns : offset where the event data must be written.
  */
 static __inline__ size_t ltt_write_event_header(struct ust_trace *trace,
-		struct ust_channel *channel,
+		struct ust_channel *chan,
 		struct ust_buffer *buf, long buf_offset,
 		u16 eID, u32 event_size,
 		u64 tsc, unsigned int rflags)
@@ -275,11 +276,14 @@ static __inline__ size_t ltt_write_event_header(struct ust_trace *trace,
 		goto slow_path;
 
 	header.id_time = eID << LTT_TSC_BITS;
+	header.id_time |= (u32)tsc & LTT_TSC_MASK;
+	ust_buffers_write(buf, buf_offset, &header, sizeof(header));
+	buf_offset += sizeof(header);
 
 	return buf_offset;
 
 slow_path:
-	return ltt_write_event_header_slow(trace, channel, buf, buf_offset,
+	return ltt_write_event_header_slow(trace, chan, buf, buf_offset,
 				eID, event_size, tsc, rflags);
 }
 
@@ -313,7 +317,7 @@ slow_path:
 #define LTT_DEFAULT_N_SUBBUFS_HIGH	2
 #define LTT_TRACER_MAGIC_NUMBER		0x00D6B7ED
 #define LTT_TRACER_VERSION_MAJOR	2
-#define LTT_TRACER_VERSION_MINOR	4
+#define LTT_TRACER_VERSION_MINOR	5
 
 /**
  * ust_write_trace_header - Write trace header

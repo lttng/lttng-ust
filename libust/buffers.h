@@ -413,9 +413,9 @@ static __inline__ void ltt_force_switch(struct ust_buffer *buf,
 
 /*
  * for flight recording. must be called after relay_commit.
- * This function decrements de subbuffer's lost_size each time the commit count
- * reaches back the reserve offset (module subbuffer size). It is useful for
- * crash dump.
+ * This function increments the subbuffers's commit_seq counter each time the
+ * commit count reaches back the reserve offset (module subbuffer size). It is
+ * useful for crash dump.
  */
 #ifdef CONFIG_LTT_VMCORE
 static __inline__ void ltt_write_commit_counter(struct rchan_buf *buf,
@@ -501,7 +501,7 @@ static __inline__ void ltt_commit_slot(
 
 	ltt_check_deliver(chan, buf, offset_end - 1, commit_count, endidx);
 	/*
-	 * Update lost_size for each commit. It's needed only for extracting
+	 * Update data_size for each commit. It's needed only for extracting
 	 * ltt buffers from vmcore, after crash.
 	 */
 	ltt_write_commit_counter(buf, endidx, buf_offset, commit_count, data_size);
