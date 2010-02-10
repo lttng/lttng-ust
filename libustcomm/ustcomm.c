@@ -35,7 +35,7 @@
 
 #define UNIX_PATH_MAX 108
 
-#define MSG_MAX 1000
+#define MSG_MAX 10000
 
 /* FIXME: ustcomm blocks on message sending, which might be problematic in
  * some cases. Fix the poll() usage so sends are buffered until they don't
