@@ -386,7 +386,7 @@ $ ustctl --list-markers 1234
 # A column indicates 0 for an inactive marker and 1 for an active marker.
 
 # Enable a marker
-$ ustctl --enable-marker 1234 ust/mymark
+$ ustctl --enable-marker ust/mymark 1234
 
 # Create a trace
 $ ustctl --create-trace 1234
