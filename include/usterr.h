@@ -50,8 +50,10 @@
 
 #ifdef UST_DEBUG
 # define DBG(fmt, args...) ERRMSG(fmt, ## args)
+# define DBG_raw(fmt, args...) do { sigsafe_print_err(fmt, ## args); fflush(stderr); } while(0)
 #else
 # define DBG(fmt, args...) do {} while(0)
+# define DBG_raw(fmt, args...) do {} while(0)
 #endif
 #define WARN(fmt, args...) ERRMSG("Warning: " fmt, ## args)
 #define ERR(fmt, args...) ERRMSG("Error: " fmt, ## args)
