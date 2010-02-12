@@ -432,23 +432,51 @@ daemon even after the termination of the traced process.
 @node Tracing across @code{fork()} and @code{clone()}
 @section Tracing across @code{fork()} and @code{clone()}
 
-Tracing across @code{clone()} when @code{CLONE_VM} is specified is supported
-without any particular action.
+Tracing across @code{clone()} when the @code{CLONE_VM} flag is specified is
+supported without any particular action.
 
 When @code{clone()} is called without @code{CLONE_VM} or @code{fork()} is
 called, a new address space is created and the tracer must be notified to
-create new buffers for it. @strong{TODO: specify how to do it.}
+create new buffers for it.
 
-This can be done automatically (for @code{fork()} only for now), by
-@env{LD_PRELOAD}'ing @file{libinterfork.so}. This library intercepts calls to
-@code{fork()} and informs the tracer it is being called. When using
-@command{usttrace}, this is accomplied by specifying the @option{-f} command
-line argument.
+This can be done automatically, by @env{LD_PRELOAD}'ing @file{libinterfork.so}.
+This library intercepts calls to @code{fork()} and informs the tracer it is
+being called. When using @command{usttrace}, this is accomplied by specifying
+the @option{-f} command line argument.
+
+Alternatively, the program can call @code{ust_before_fork()} before calling
+@code{fork()} or @code{clone()} with @code{CLONE_VM}. After the call,
+@code{ust_after_fork_parent()} must be called in the parent process and
+@code{ust_after_fork_child()} must be called in the child process.
+
 
 @node Tracing programs and libraries that were not linked to libust
 @section Tracing programs and libraries that were not linked to libust
 
-Todo.
+Some programs need to be traced even though they were not linked to libust
+either because they were not instrumented or because it was not practical.
+
+An executable that is not instrumented can still yield interesting traces when
+at least one of its dynamic libraries is instrumented. It is also possible to
+trace certain function calls by intercepting them with a specially crafted
+library that is linked with @env{LD_PRELOAD} at program start.
+
+In any case, a program that was not linked to libust at compile time must be
+linked to it at run time with @env{LD_PRELOAD}. This can be accomplished with
+@command{usttrace}'s @option{-l} option. It can also be done by setting the
+@env{LD_PRELOAD} environment variable on the command line. For example:
+
+@example
+@verbatim
+# Run ls with usttrace, LD_PRELOAD'ing libust
+# (assuming one of the libraries used by ls is instrumented).
+$ usttrace -l ls
+
+# Run ls, manually adding the LD_PRELOAD.
+$ LD_PRELOAD=/usr/local/lib/libust.so.0 ls
+@end verbatim
+@end example
+
 
 @node Performance
 @chapter Performance
@@ -457,5 +485,32 @@ Todo.
 
 @node Viewing traces
 @chapter Viewing traces
+
+Traces may be viewed with LTTV. An example of command for launching LTTV is
+given in the quickstart.
+
+@menu
+* Viewing multiple traces::
+* Combined kernel-userspace tracing::
+@end menu
+
+@node Viewing multiple traces
+@section Viewing multiple traces
+
+When tracing multi-process applications or several applications simultaneously,
+more than one trace will be obtained. LTTV can open and display all these
+traces simultaneously.
+
+@node Combined kernel-userspace tracing
+@section Combined kernel-userspace tracing
+
+In addition to multiple userspace traces, LTTV can open a kernel trace recorded
+with the LTTng kernel tracer. This provides events that enable the rendering of
+the Control Flow View and the Resource View.
+
+When doing so, it is necessary to use the same time source for the kernel
+tracer as well as the userspace tracer. Currently, the recommended method is to
+use the timestamp counter for both. The TSC can however only be used on architectures
+where it is synchronized across cores.
 
 @bye
