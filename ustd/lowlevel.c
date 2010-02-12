@@ -16,6 +16,7 @@
  */
 
 #include <assert.h>
+#include <byteswap.h>
 
 #include "buffers.h"
 #include "tracer.h"
@@ -25,6 +26,40 @@
 /* This truncates to an offset in the buffer. */
 #define USTD_BUFFER_TRUNC(offset, bufinfo) \
 	((offset) & (~(((bufinfo)->subbuf_size*(bufinfo)->n_subbufs)-1)))
+
+#define LTT_MAGIC_NUMBER 0x00D6B7ED
+#define LTT_REV_MAGIC_NUMBER 0xEDB7D600
+
+/* Returns the size of a subbuffer size. This is the size that
+ * will need to be written to disk.
+ *
+ * @subbuffer: pointer to the beginning of the subbuffer (the
+ *             beginning of its header)
+ */
+
+size_t subbuffer_data_size(void *subbuf)
+{
+	struct ltt_subbuffer_header *header = subbuf;
+	int reverse;
+	u32 data_size;
+
+	if(header->magic_number == LTT_MAGIC_NUMBER) {
+		reverse = 0;
+	}
+	else if(header->magic_number == LTT_REV_MAGIC_NUMBER) {
+		reverse = 1;
+	}
+	else {
+		return -1;
+	}
+
+	data_size = header->sb_size;
+	if(reverse)
+		data_size = bswap_32(data_size);
+
+	return data_size;
+}
+
 
 void finish_consuming_dead_subbuffer(struct buffer_info *buf)
 {
@@ -68,6 +103,8 @@ void finish_consuming_dead_subbuffer(struct buffer_info *buf)
 
 		struct ltt_subbuffer_header *header = (struct ltt_subbuffer_header *)((char *)buf->mem+i_subbuf*buf->subbuf_size);
 
+		int pad_size;
+
 		if((commit_seq & commit_seq_mask) == 0) {
 			/* There is nothing to do. */
 			/* FIXME: is this needed? */
@@ -76,8 +113,8 @@ void finish_consuming_dead_subbuffer(struct buffer_info *buf)
 
 		/* Check if subbuf was fully written. This is from Mathieu's algorithm/paper. */
 		if (((commit_seq - buf->subbuf_size) & commit_seq_mask)
-		    - (USTD_BUFFER_TRUNC(consumed_offset, buf) >> n_subbufs_order)
-		    == 0) {
+		    - (USTD_BUFFER_TRUNC(consumed_offset, buf) >> n_subbufs_order) == 0
+                    && header->data_size != 0xffffffff && header->sb_size != 0xffffffff) {
 			/* If it was, we only check the data_size. This is the amount of valid data at
 			 * the beginning of the subbuffer. */
 			valid_length = header->data_size;
@@ -90,6 +127,7 @@ void finish_consuming_dead_subbuffer(struct buffer_info *buf)
 
 			valid_length = commit_seq & (buf->subbuf_size-1);
 			header->data_size = valid_length;
+			header->sb_size = PAGE_ALIGN(valid_length);
 			assert(i_subbuf == (last_subbuf % buf->n_subbufs));
 		}
 
@@ -97,10 +135,13 @@ void finish_consuming_dead_subbuffer(struct buffer_info *buf)
 		patient_write(buf->file_fd, buf->mem + i_subbuf * buf->subbuf_size, valid_length);
 
 		/* pad with empty bytes */
-		tmp = malloc(buf->subbuf_size-valid_length);
-		memset(tmp, 0, buf->subbuf_size-valid_length);
-		patient_write(buf->file_fd, tmp, buf->subbuf_size-valid_length);
-		free(tmp);
+		pad_size = PAGE_ALIGN(valid_length)-valid_length;
+		if(pad_size) {
+			tmp = malloc(pad_size);
+			memset(tmp, 0, pad_size);
+			patient_write(buf->file_fd, tmp, pad_size);
+			free(tmp);
+		}
 
 		if(i_subbuf == last_subbuf % buf->n_subbufs)
 			break;

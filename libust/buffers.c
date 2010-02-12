@@ -307,7 +307,9 @@ static void ltt_buffer_begin(struct ust_buffer *buf,
 				subbuf_idx * buf->chan->subbuf_size);
 
 	header->cycle_count_begin = tsc;
-	header->data_size = 0xFFFFFFFF; /* for debugging */
+	header->data_size = 0xFFFFFFFF; /* for recognizing crashed buffers */
+	header->sb_size = 0xFFFFFFFF; /* for recognizing crashed buffers */
+	/* FIXME: add memory barrier? */
 	ltt_write_trace_header(channel->trace, header);
 }
 

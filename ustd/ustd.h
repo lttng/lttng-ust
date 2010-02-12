@@ -33,5 +33,6 @@ struct buffer_info {
 };
 
 void finish_consuming_dead_subbuffer(struct buffer_info *buf);
+size_t subbuffer_data_size(void *subbuf);
 
 #endif /* USTD_H */

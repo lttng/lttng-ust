@@ -359,6 +359,24 @@ struct buffer_info *connect_buffer(pid_t pid, const char *bufname)
 	return buf;
 }
 
+int write_current_subbuffer(struct buffer_info *buf)
+{
+	int result;
+
+	void *subbuf_mem = buf->mem + (buf->consumed_old & (buf->n_subbufs * buf->subbuf_size-1));
+
+	size_t cur_sb_size = subbuffer_data_size(subbuf_mem);
+
+	result = patient_write(buf->file_fd, subbuf_mem, cur_sb_size);
+	if(result == -1) {
+		PERROR("write");
+		/* FIXME: maybe drop this trace */
+		return 0;
+	}
+
+	return 0;
+}
+
 int consumer_loop(struct buffer_info *buf)
 {
 	int result;
@@ -382,11 +400,8 @@ int consumer_loop(struct buffer_info *buf)
 		}
 
 		/* write data to file */
-		result = patient_write(buf->file_fd, buf->mem + (buf->consumed_old & (buf->n_subbufs * buf->subbuf_size-1)), buf->subbuf_size);
-		if(result == -1) {
-			PERROR("write");
-			/* FIXME: maybe drop this trace */
-		}
+		write_current_subbuffer(buf);
+		/* FIXME: handle return value? */
 
 		/* put the subbuffer */
 		/* FIXME: we actually should unput the buffer before consuming... */
