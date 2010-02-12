@@ -647,6 +647,7 @@ notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
 	largest_align = 1;	/* must be non-zero for ltt_align */
 	data_size = ltt_get_data_size(&closure, serialize_private,
 					&largest_align, fmt, &args_copy);
+	largest_align = min_t(int, largest_align, sizeof(void *));
 	va_end(args_copy);
 
 	/* Iterate on each trace */
