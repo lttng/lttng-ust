@@ -1,5 +1,7 @@
 - port changes from recent versions of lttng kernel (in progress by pmf)
-- update to trace format 2.5 (in progress by pmf)
+- make cli interface for changing subbuffer size and number (in progress by Douglas Santos)
+- performance testing tool (in progress by Rafik Fahem)
+- improve support for combined kernel/userspace tracing
 - make a trace testing script (that can assert whether a trace contains certain events)
 - make web site
 - make sure the proper structures are cacheline aligned, and test performance, including multi-threaded
@@ -9,8 +11,6 @@
 - fix FIXME's in the code
 - make a system (signal-based?) that allow the listener thread to not be started initially
 - make cli interface for flight recorder
-- make cli interface for changing subbuffer size and number
-- add \n at end of messages in communication protocol
 - save_registers: save them only when the marker is active (complicated because we need to know their value at the address that is put in struct marker)
 - make streaming work
 - ustd should work as a pool of threads
