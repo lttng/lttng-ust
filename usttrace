@@ -7,6 +7,22 @@ function error() {
 	echo "$0: error: $1" 2>/dev/stderr
 }
 
+function sighandler() {
+	echo "Caught Ctrl-C"
+	if [ -z "$USTDPID" ]; then
+		USTDPID="$(<$pidfilepath)"
+	fi
+	# Tell the daemon to die
+	kill -SIGTERM "$USTDPID"
+
+	echo "Waiting for ustd to shutdown..."
+	wait "$USTDPID"
+
+	rm "$pidfilepath"
+
+	exit 0;
+}
+
 USTTRACE_DIR="$(dirname $0)"
 if [ -x "${USTTRACE_DIR}/ustd/ustd" ] ; then
     # Use the not installed libraries instead
@@ -84,6 +100,7 @@ USTDSOCKPATH="/tmp/ustd-sock-$$"
 if [ "$arg_syswide_daemon" != "1" ];
 then
 	pidfilepath="/tmp/usttrace-$USER-$(date +%Y%m%d%H%M%S%N)-ustd-pid"
+	trap "sighandler $pidfilepath" SIGINT
 	mkfifo -m 0600 "$pidfilepath"
 	# Start daemon
 	$USTD --pidfile "$pidfilepath" -s "$USTDSOCKPATH" -o "$OUTDIR" >"$OUTDIR/ustd.log" 2>&1 &
