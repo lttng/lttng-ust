@@ -23,7 +23,7 @@ else
     fi
     LIBINTERFORK_PATH="libinterfork.so"
     LIBMALLOCWRAP_PATH="libmallocwrap.so"
-    LIBUST_PATH="libust.so"
+    LIBUST_PATH="libust.so.0"
 fi
 
 BASE_TRACE_DIR="${HOME}/.usttraces"
