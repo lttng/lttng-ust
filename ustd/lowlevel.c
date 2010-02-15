@@ -91,7 +91,7 @@ void finish_consuming_dead_subbuffer(struct buffer_info *buf)
 	}
 
 	/* Iterate on subbuffers to recover. */
-	for(i_subbuf=first_subbuf; ; i_subbuf++, i_subbuf %= buf->n_subbufs) {
+	for(i_subbuf = first_subbuf % buf->n_subbufs; ; i_subbuf++, i_subbuf %= buf->n_subbufs) {
 		void *tmp;
 		/* commit_seq is the offset in the buffer of the end of the last sequential commit.
 		 * Bytes beyond this limit cannot be recovered. This is a free-running counter. */
