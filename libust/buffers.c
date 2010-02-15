@@ -1359,7 +1359,7 @@ static void ltt_reserve_switch_old_subbuf(
 		  &buf->commit_count[oldidx].cc);
 	commit_count = local_read(&buf->commit_count[oldidx].cc);
 	ltt_check_deliver(chan, buf, offsets->old - 1, commit_count, oldidx);
-	ltt_write_commit_counter(buf, oldidx,
+	ltt_write_commit_counter(chan, buf, oldidx,
 		offsets->old, commit_count, padding_size);
 }
 
@@ -1390,7 +1390,7 @@ static void ltt_reserve_switch_new_subbuf(
 	commit_count = local_read(&buf->commit_count[beginidx].cc);
 	/* Check if the written buffer has to be delivered */
 	ltt_check_deliver(chan, buf, offsets->begin, commit_count, beginidx);
-	ltt_write_commit_counter(buf, beginidx,
+	ltt_write_commit_counter(chan, buf, beginidx,
 		offsets->begin, commit_count, ltt_subbuffer_header_size());
 }
 
@@ -1436,7 +1436,7 @@ static void ltt_reserve_end_switch_current(
 	commit_count = local_read(&buf->commit_count[endidx].cc);
 	ltt_check_deliver(chan, buf,
 		offsets->end - 1, commit_count, endidx);
-	ltt_write_commit_counter(buf, endidx,
+	ltt_write_commit_counter(chan, buf, endidx,
 		offsets->end, commit_count, padding_size);
 }
 

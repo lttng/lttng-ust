@@ -417,10 +417,10 @@ static __inline__ void ltt_force_switch(struct ust_buffer *buf,
  * commit count reaches back the reserve offset (module subbuffer size). It is
  * useful for crash dump.
  */
-#ifdef CONFIG_LTT_VMCORE
-static __inline__ void ltt_write_commit_counter(struct rchan_buf *buf,
-		struct ltt_channel_buf_struct *ltt_buf,
-		long idx, long buf_offset, long commit_count, size_t data_size)
+//ust// #ifdef CONFIG_LTT_VMCORE
+static __inline__ void ltt_write_commit_counter(struct ust_channel *chan,
+		struct ust_buffer *buf, long idx, long buf_offset,
+		long commit_count, size_t data_size)
 {
 	long offset;
 	long commit_seq_old;
@@ -436,17 +436,19 @@ static __inline__ void ltt_write_commit_counter(struct rchan_buf *buf,
 	if (unlikely(SUBBUF_OFFSET(offset - commit_count, buf->chan)))
 		return;
 
-	commit_seq_old = local_read(&ltt_buf->commit_seq[idx]);
+	commit_seq_old = local_read(&buf->commit_seq[idx]);
 	while (commit_seq_old < commit_count)
-		commit_seq_old = local_cmpxchg(&ltt_buf->commit_seq[idx],
+		commit_seq_old = local_cmpxchg(&buf->commit_seq[idx],
 					 commit_seq_old, commit_count);
+
+	DBG("commit_seq for channel %s_%d, subbuf %ld is now %ld", buf->chan->channel_name, buf->cpu, idx, commit_count);
 }
-#else
-static __inline__ void ltt_write_commit_counter(struct ust_buffer *buf,
-		long idx, long buf_offset, long commit_count, size_t data_size)
-{
-}
-#endif
+//ust// #else
+//ust// static __inline__ void ltt_write_commit_counter(struct ust_buffer *buf,
+//ust// 		long idx, long buf_offset, long commit_count, size_t data_size)
+//ust// {
+//ust// }
+//ust// #endif
 
 /*
  * Atomic unordered slot commit. Increments the commit count in the
@@ -504,7 +506,7 @@ static __inline__ void ltt_commit_slot(
 	 * Update data_size for each commit. It's needed only for extracting
 	 * ltt buffers from vmcore, after crash.
 	 */
-	ltt_write_commit_counter(buf, endidx, buf_offset, commit_count, data_size);
+	ltt_write_commit_counter(chan, buf, endidx, buf_offset, commit_count, data_size);
 }
 
 void _ust_buffers_write(struct ust_buffer *buf, size_t offset,
