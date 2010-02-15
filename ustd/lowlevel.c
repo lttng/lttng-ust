@@ -112,6 +112,8 @@ void finish_consuming_dead_subbuffer(struct buffer_info *buf)
 		}
 
 		/* Check if subbuf was fully written. This is from Mathieu's algorithm/paper. */
+		/* FIXME: not sure data_size = 0xffffffff when the buffer is not full. It might
+		 * take the value of the header size initially */
 		if (((commit_seq - buf->subbuf_size) & commit_seq_mask)
 		    - (USTD_BUFFER_TRUNC(consumed_offset, buf) >> n_subbufs_order) == 0
                     && header->data_size != 0xffffffff && header->sb_size != 0xffffffff) {
