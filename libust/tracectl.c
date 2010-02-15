@@ -640,7 +640,6 @@ static int do_cmd_put_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 		if(!strcmp(trace->channels[i].channel_name, ch_name)) {
 			struct ust_buffer *buf = channel->buf[ch_cpu];
 			char *reply;
-			long consumed_old=0;
 
 			found = 1;
 
