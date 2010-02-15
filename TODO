@@ -1,6 +1,7 @@
 - port changes from recent versions of lttng kernel (in progress by pmf)
 - make cli interface for changing subbuffer size and number (in progress by Douglas Santos)
 - performance testing tool (in progress by Rafik Fahem)
+- add buffering for receiving side in libustcomm
 - improve support for combined kernel/userspace tracing
 - make a trace testing script (that can assert whether a trace contains certain events)
 - make web site
