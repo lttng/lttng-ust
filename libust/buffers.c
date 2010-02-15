@@ -1521,6 +1521,7 @@ void ltt_force_switch_lockless_slow(struct ust_buffer *buf,
 
 	offsets.size = 0;
 
+	DBG("Switching (forced) %s_%d", chan->channel_name, buf->cpu);
 	/*
 	 * Perform retryable operations.
 	 */
@@ -1738,6 +1739,7 @@ int ltt_reserve_slot_lockless_slow(struct ust_trace *trace,
 	if (unlikely(offsets.end_switch_old)) {
 //ust//		ltt_clear_noref_flag(chan, buf, SUBBUF_INDEX(offsets.old - 1, chan));
 		ltt_reserve_switch_old_subbuf(chan, buf, &offsets, tsc);
+		DBG("Switching %s_%d", chan->channel_name, cpu);
 	}
 
 	/*
