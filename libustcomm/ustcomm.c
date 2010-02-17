@@ -157,11 +157,12 @@ int ustcomm_request_consumer(pid_t pid, const char *channel)
 }
 
 /* returns 1 to indicate a message was received
- * returns 0 to indicate no message was received (cannot happen)
+ * returns 0 to indicate no message was received (end of stream)
  * returns -1 to indicate an error
  */
 
 #define RECV_INCREMENT 1
+#define RECV_INITIAL_BUF_SIZE 10
 
 static int recv_message_fd(int fd, char **msg)
 {
@@ -170,13 +171,20 @@ static int recv_message_fd(int fd, char **msg)
 	char *buf = NULL;
 	int buf_used_size = 0;
 
-	buf = malloc(10);
-	buf_alloc_size = 16;
+	buf = malloc(RECV_INITIAL_BUF_SIZE);
+	buf_alloc_size = RECV_INITIAL_BUF_SIZE;
 
 	for(;;) {
 		if(buf_used_size + RECV_INCREMENT > buf_alloc_size) {
+			char *new_buf;
 			buf_alloc_size *= 2;
-			buf = (char *) realloc(buf, buf_alloc_size);
+			new_buf = (char *) realloc(buf, buf_alloc_size);
+			if(new_buf == NULL) {
+				ERR("realloc returned NULL");
+				free(buf);
+				return -1;
+			}
+			buf = new_buf;
 		}
 
 		/* FIXME: this is really inefficient; but with count>1 we would
@@ -196,7 +204,6 @@ static int recv_message_fd(int fd, char **msg)
 				return 0;
 			}
 		}
-
 
 		buf_used_size += result;
 
