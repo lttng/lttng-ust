@@ -326,7 +326,7 @@ int ustcomm_recv_message(struct ustcomm_server *server, char **msg, struct ustco
 				if(src)
 					src->fd = fds[idx].fd;
 
-				if(**msg == 0) {
+				if(retval == 0) {
 					/* connection finished */
 					close(fds[idx].fd);
 
