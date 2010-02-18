@@ -311,13 +311,13 @@ static int do_cmd_get_shmid(const char *recvbuf, struct ustcomm_source *src)
 
 	channel_and_cpu = nth_token(recvbuf, 1);
 	if(channel_and_cpu == NULL) {
-		ERR("get_shmid: cannot parse channel");
+		ERR("cannot parse channel");
 		goto end;
 	}
 
 	seperate_channel_cpu(channel_and_cpu, &ch_name, &ch_cpu);
 	if(ch_cpu == -1) {
-		ERR("Problem parsing channel name");
+		ERR("problem parsing channel name");
 		goto free_short_chan_name;
 	}
 
@@ -344,7 +344,7 @@ static int do_cmd_get_shmid(const char *recvbuf, struct ustcomm_source *src)
 
 			result = ustcomm_send_reply(&ustcomm_app.server, reply, src);
 			if(result) {
-				ERR("listener: get_shmid: ustcomm_send_reply failed");
+				ERR("ustcomm_send_reply failed");
 				free(reply);
 				retval = -1;
 				goto free_short_chan_name;
@@ -361,7 +361,7 @@ static int do_cmd_get_shmid(const char *recvbuf, struct ustcomm_source *src)
 		buffers_to_export--;
 	}
 	else {
-		ERR("get_shmid: channel not found (%s)", channel_and_cpu);
+		ERR("channel not found (%s)", channel_and_cpu);
 	}
 
 	free_short_chan_name:
@@ -387,13 +387,13 @@ static int do_cmd_get_n_subbufs(const char *recvbuf, struct ustcomm_source *src)
 
 	channel_and_cpu = nth_token(recvbuf, 1);
 	if(channel_and_cpu == NULL) {
-		ERR("get_n_subbufs: cannot parse channel");
+		ERR("cannot parse channel");
 		goto end;
 	}
 
 	seperate_channel_cpu(channel_and_cpu, &ch_name, &ch_cpu);
 	if(ch_cpu == -1) {
-		ERR("Problem parsing channel name");
+		ERR("problem parsing channel name");
 		goto free_short_chan_name;
 	}
 
@@ -418,7 +418,7 @@ static int do_cmd_get_n_subbufs(const char *recvbuf, struct ustcomm_source *src)
 
 			result = ustcomm_send_reply(&ustcomm_app.server, reply, src);
 			if(result) {
-				ERR("listener: get_n_subbufs: ustcomm_send_reply failed");
+				ERR("ustcomm_send_reply failed");
 				free(reply);
 				retval = -1;
 				goto free_short_chan_name;
@@ -430,7 +430,7 @@ static int do_cmd_get_n_subbufs(const char *recvbuf, struct ustcomm_source *src)
 		}
 	}
 	if(found == 0) {
-		ERR("get_n_subbufs: unable to find channel");
+		ERR("unable to find channel");
 	}
 
 	free_short_chan_name:
@@ -456,13 +456,13 @@ static int do_cmd_get_subbuf_size(const char *recvbuf, struct ustcomm_source *sr
 
 	channel_and_cpu = nth_token(recvbuf, 1);
 	if(channel_and_cpu == NULL) {
-		ERR("get_subbuf_size: cannot parse channel");
+		ERR("cannot parse channel");
 		goto end;
 	}
 
 	seperate_channel_cpu(channel_and_cpu, &ch_name, &ch_cpu);
 	if(ch_cpu == -1) {
-		ERR("Problem parsing channel name");
+		ERR("problem parsing channel name");
 		goto free_short_chan_name;
 	}
 
@@ -487,7 +487,7 @@ static int do_cmd_get_subbuf_size(const char *recvbuf, struct ustcomm_source *sr
 
 			result = ustcomm_send_reply(&ustcomm_app.server, reply, src);
 			if(result) {
-				ERR("listener: get_subbuf_size: ustcomm_send_reply failed");
+				ERR("ustcomm_send_reply failed");
 				free(reply);
 				retval = -1;
 				goto free_short_chan_name;
@@ -499,7 +499,7 @@ static int do_cmd_get_subbuf_size(const char *recvbuf, struct ustcomm_source *sr
 		}
 	}
 	if(found == 0) {
-		ERR("get_subbuf_size: unable to find channel");
+		ERR("unable to find channel");
 	}
 
 	free_short_chan_name:
@@ -524,13 +524,13 @@ static int do_cmd_get_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 
 	channel_and_cpu = nth_token(recvbuf, 1);
 	if(channel_and_cpu == NULL) {
-		ERR("get_subbuf: cannot parse channel");
+		ERR("cannot parse channel");
 		goto end;
 	}
 
 	seperate_channel_cpu(channel_and_cpu, &ch_name, &ch_cpu);
 	if(ch_cpu == -1) {
-		ERR("Problem parsing channel name");
+		ERR("problem parsing channel name");
 		goto free_short_chan_name;
 	}
 
@@ -582,7 +582,7 @@ static int do_cmd_get_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 		}
 	}
 	if(found == 0) {
-		ERR("get_subbuf: unable to find channel");
+		ERR("unable to find channel");
 	}
 
 	free_short_chan_name:
@@ -612,27 +612,27 @@ static int do_cmd_put_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 
 	channel_and_cpu = strdup_malloc(nth_token(recvbuf, 1));
 	if(channel_and_cpu == NULL) {
-		ERR("put_subbuf_size: cannot parse channel");
+		ERR("cannot parse channel");
 		retval = -1;
 		goto end;
 	}
 
 	consumed_old_str = strdup_malloc(nth_token(recvbuf, 2));
 	if(consumed_old_str == NULL) {
-		ERR("put_subbuf: cannot parse consumed_old");
+		ERR("cannot parse consumed_old");
 		retval = -1;
 		goto free_channel_and_cpu;
 	}
 	consumed_old = strtol(consumed_old_str, &endptr, 10);
 	if(*endptr != '\0') {
-		ERR("put_subbuf: invalid value for consumed_old");
+		ERR("invalid value for consumed_old");
 		retval = -1;
 		goto free_consumed_old_str;
 	}
 
 	seperate_channel_cpu(channel_and_cpu, &ch_name, &ch_cpu);
 	if(ch_cpu == -1) {
-		ERR("Problem parsing channel name");
+		ERR("problem parsing channel name");
 		retval = -1;
 		goto free_short_chan_name;
 	}
@@ -676,7 +676,7 @@ static int do_cmd_put_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 
 			result = ustcomm_send_reply(&ustcomm_app.server, reply, src);
 			if(result) {
-				ERR("listener: put_subbuf: ustcomm_send_reply failed");
+				ERR("ustcomm_send_reply failed");
 				free(reply);
 				retval = -1;
 				goto free_channel_and_cpu;
