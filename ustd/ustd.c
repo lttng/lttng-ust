@@ -48,6 +48,7 @@
 #define PUT_SUBBUF_OK 1
 #define PUT_SUBBUF_DIED 0
 #define PUT_SUBBUF_PUSHED 2
+#define PUT_SUBBUF_DONE 3
 
 char *sock_path=NULL;
 char *trace_path=NULL;
@@ -98,6 +99,11 @@ int get_subbuffer(struct buffer_info *buf)
 		retval = GET_SUBBUF_DONE;
 		goto end_rep;
 	}
+	else if(!strcmp(received_msg, "NOTFOUND")) {
+		WARN("For buffer %s, the trace was not found. This likely means it was destroyed by the user.", buf->name);
+		retval = GET_SUBBUF_DONE;
+		goto end_rep;
+	}
 	else {
 		DBG("error getting subbuffer %s", buf->name);
 		retval = -1;
@@ -130,9 +136,16 @@ int put_subbuffer(struct buffer_info *buf)
 		retval = PUT_SUBBUF_DIED;
 		goto end;
 	}
-	if(result < 0) {
+	else if(result < 0) {
 		ERR("put_subbuffer: send_message failed");
 		retval = -1;
+		goto end;
+	}
+	else if(result == 0) {
+		/* Program seems finished. However this might not be
+		 * the last subbuffer that has to be collected.
+		 */
+		retval = PUT_SUBBUF_DIED;
 		goto end;
 	}
 
@@ -418,6 +431,15 @@ int consumer_loop(struct buffer_info *buf)
 			WARN("application died while putting subbuffer");
 			/* FIXME: probably need to skip the first subbuffer in finish_consuming_dead_subbuffer */
 			finish_consuming_dead_subbuffer(buf);
+			break;
+		}
+		else if(result == PUT_SUBBUF_DONE) {
+			/* Done with this subbuffer */
+			/* FIXME: add a case where this branch is used? Upon
+			 * normal trace termination, at put_subbuf time, a
+			 * special last-subbuffer code could be returned by
+			 * the listener.
+			 */
 			break;
 		}
 		else if(result == PUT_SUBBUF_OK) {
