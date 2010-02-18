@@ -539,8 +539,20 @@ static int do_cmd_get_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 	ltt_unlock_traces();
 
 	if(trace == NULL) {
-		ERR("cannot find trace!");
-		retval = -1;
+		char *reply;
+		int result;
+
+		WARN("Cannot find trace. It was likely destroyed by the user.");
+		asprintf(&reply, "%s", "NOTFOUND");
+		result = ustcomm_send_reply(&ustcomm_app.server, reply, src);
+		if(result) {
+			ERR("ustcomm_send_reply failed");
+			free(reply);
+			retval = -1;
+			goto free_short_chan_name;
+		}
+
+		free(reply);
 		goto free_short_chan_name;
 	}
 
@@ -594,6 +606,7 @@ static int do_cmd_put_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 	long consumed_old;
 	char *consumed_old_str;
 	char *endptr;
+	char *reply = NULL;
 
 	DBG("put_subbuf");
 
@@ -629,8 +642,17 @@ static int do_cmd_put_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 	ltt_unlock_traces();
 
 	if(trace == NULL) {
-		ERR("cannot find trace!");
-		retval = -1;
+		WARN("Cannot find trace. It was likely destroyed by the user.");
+		asprintf(&reply, "%s", "NOTFOUND");
+		result = ustcomm_send_reply(&ustcomm_app.server, reply, src);
+		if(result) {
+			ERR("ustcomm_send_reply failed");
+			free(reply);
+			retval = -1;
+			goto free_short_chan_name;
+		}
+
+		free(reply);
 		goto free_short_chan_name;
 	}
 
@@ -639,7 +661,6 @@ static int do_cmd_put_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 
 		if(!strcmp(trace->channels[i].channel_name, ch_name)) {
 			struct ust_buffer *buf = channel->buf[ch_cpu];
-			char *reply;
 
 			found = 1;
 
@@ -666,15 +687,15 @@ static int do_cmd_put_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 		}
 	}
 	if(found == 0) {
-		ERR("get_subbuf_size: unable to find channel");
+		ERR("unable to find channel");
 	}
 
-	free_channel_and_cpu:
-	free(channel_and_cpu);
-	free_consumed_old_str:
-	free(consumed_old_str);
 	free_short_chan_name:
 	free(ch_name);
+	free_consumed_old_str:
+	free(consumed_old_str);
+	free_channel_and_cpu:
+	free(channel_and_cpu);
 
 	end:
 	return retval;

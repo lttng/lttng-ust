@@ -160,6 +160,14 @@ int put_subbuffer(struct buffer_info *buf)
 		DBG("subbuffer put %s", buf->name);
 		retval = PUT_SUBBUF_OK;
 	}
+	else if(!strcmp(received_msg, "NOTFOUND")) {
+		WARN("For buffer %s, the trace was not found. This likely means it was destroyed by the user.", buf->name);
+		/* However, maybe this was not the last subbuffer. So
+		 * we return the program died.
+		 */
+		retval = PUT_SUBBUF_DIED;
+		goto end_rep;
+	}
 	else {
 		DBG("put_subbuffer: received error, we were pushed");
 		retval = PUT_SUBBUF_PUSHED;
