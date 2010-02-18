@@ -51,6 +51,7 @@ TRACE VIEWER:
   LTTV is used for viewing UST traces. LTTV may be obtained at
   http://lttng.org in the Downloads section.
 
+  This release has been tested with LTTV 0.12.30.
 
 
 PACKAGE CONTENTS:
