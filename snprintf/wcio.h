@@ -48,6 +48,9 @@ struct wchar_io_data {
 #define WCIO_GET(fp) \
 	(_EXT(fp) ? &(_EXT(fp)->_wcio) : (struct wchar_io_data *)0)
 
+#define WCIO_GET_NONULL(fp) \
+	(&(_EXT(fp)->_wcio))
+
 #define _SET_ORIENTATION(fp, mode) \
 do {\
 	struct wchar_io_data *_wcio = WCIO_GET(fp); \
@@ -76,6 +79,6 @@ do {\
 } while (0)
 
 #define WCIO_INIT(fp) \
-	memset(WCIO_GET(fp), 0, sizeof(struct wchar_io_data))
+	memset(WCIO_GET_NONULL(fp), 0, sizeof(struct wchar_io_data))
 
 #endif /*_WCIO_H_*/
