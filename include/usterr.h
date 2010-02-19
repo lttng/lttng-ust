@@ -23,6 +23,8 @@
  * signal handlers, so we must use a print method which is signal safe.
  */
 
+extern int ust_safe_snprintf(char *str, size_t n, const char *fmt, ...);
+
 #define sigsafe_print_err(fmt, args...) \
 { \
 	/* Can't use dynamic allocation. Limit ourselves to 250 chars. */ \
@@ -32,7 +34,7 @@
 	/* Save the errno. */ \
 	____saved_errno = errno; \
 \
-	snprintf(____buf, sizeof(____buf), fmt, ## args); \
+	ust_safe_snprintf(____buf, sizeof(____buf), fmt, ## args); \
 \
 	/* Add end of string in case of buffer overflow. */ \
 	____buf[sizeof(____buf)-1] = 0; \

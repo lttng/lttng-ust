@@ -41,6 +41,7 @@
 #include "tracer.h"
 //#include "list.h"
 #include "usterr.h"
+#include "ust_snprintf.h"
 
 enum ltt_type {
 	LTT_TYPE_SIGNED_INT,
@@ -808,7 +809,7 @@ int serialize_to_text(char *outbuf, int bufsize, const char *fmt, va_list ap)
 		outbuf = &false_buf;
 		bufsize = 1;
 	}
-	result = vsnprintf(outbuf, bufsize, new_fmt, ap);
+	result = ust_safe_vsnprintf(outbuf, bufsize, new_fmt, ap);
 
 	return result;
 }

@@ -20,5 +20,5 @@ libust_la_SOURCES = \
 	tracerconst.h \
 	header-inline.h
 libust_la_LDFLAGS = -no-undefined -version-info 0:0:0
-libust_la_LIBADD = -lpthread
+libust_la_LIBADD = -lpthread $(top_builddir)/snprintf/libustsnprintf.la
 libust_la_CFLAGS = -DUST_COMPONENT="libust"
