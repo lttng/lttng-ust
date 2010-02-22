@@ -102,6 +102,55 @@ int ustcmd_set_marker_state(const char *mn, int state, pid_t pid)
 }
 
 /**
+ * Set subbuffer size.
+ *
+ * @param channel_size	Channel name and size
+ * @param pid		Traced process ID
+ * @return		0 if successful, or error
+ */
+int ustcmd_set_subbuf_size(const char *channel_size, pid_t pid)
+{
+	char *cmd;
+	int result;
+
+	asprintf(&cmd, "%s %s", "set_subbuf_size", channel_size);
+
+	result = ustcmd_send_cmd(cmd, pid, NULL);
+	if (result) {
+		free(cmd);
+		return 1;
+	}
+
+	free(cmd);
+	return 0;
+}
+
+/**
+ * Set subbuffer num.
+ *
+ * @param channel_num	Channel name and num
+ * @param pid		Traced process ID
+ * @return		0 if successful, or error
+ */
+int ustcmd_set_subbuf_num(const char *channel_size, pid_t pid)
+{
+	char *cmd;
+	int result;
+
+	asprintf(&cmd, "%s %s", "set_subbuf_num", channel_size);
+
+	result = ustcmd_send_cmd(cmd, pid, NULL);
+	if (result) {
+		free(cmd);
+		return 1;
+	}
+
+	free(cmd);
+	return 0;
+}
+
+
+/**
  * Destroys an UST trace according to a PID.
  *
  * @param pid	Traced process ID
@@ -166,6 +215,24 @@ int ustcmd_start_trace(pid_t pid)
 	int result;
 
 	result = ustcmd_send_cmd("trace_start", pid, NULL);
+	if (result) {
+		return USTCMD_ERR_GEN;
+	}
+
+	return 0;
+}
+
+/**
+ * Alloc an UST trace according to a PID.
+ *
+ * @param pid	Traced process ID
+ * @return	0 if successful, or error USTCMD_ERR_GEN
+ */
+int ustcmd_alloc_trace(pid_t pid)
+{
+	int result;
+
+	result = ustcmd_send_cmd("trace_alloc", pid, NULL);
 	if (result) {
 		return USTCMD_ERR_GEN;
 	}

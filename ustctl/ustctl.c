@@ -36,6 +36,9 @@ enum command {
 	ENABLE_MARKER,
 	DISABLE_MARKER,
 	GET_ONLINE_PIDS,
+	SET_SUBBUF_SIZE,
+	SET_SUBBUF_NUM,
+	ALLOC_TRACE,
 	UNKNOWN
 };
 
@@ -57,6 +60,8 @@ Commands:\n\
     --start-trace\t\t\tStart tracing\n\
     --stop-trace\t\t\tStop tracing\n\
     --destroy-trace\t\t\tDestroy the trace\n\
+    --set-subbuf-size \"CHANNEL/bytes\"\tSet the size of subbuffers per channel\n\
+    --set-subbuf-num \"CHANNEL/n\"\tSet the number of subbuffers per channel\n\
     --enable-marker \"CHANNEL/MARKER\"\tEnable a marker\n\
     --disable-marker \"CHANNEL/MARKER\"\tDisable a marker\n\
     --list-markers\t\t\tList the markers of the process, their\n\t\t\t\t\t  state and format string\n\
@@ -75,6 +80,7 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 		int option_index = 0;
 		static struct option long_options[] = {
 			{"create-trace", 0, 0, 1012},
+			{"alloc-trace", 0, 0, 1015},
 			{"start-trace", 0, 0, 1000},
 			{"stop-trace", 0, 0, 1001},
 			{"destroy-trace", 0, 0, 1002},
@@ -87,6 +93,8 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 			{"help", 0, 0, 'h'},
 			{"version", 0, 0, 1010},
 			{"online-pids", 0, 0, 1011},
+			{"set-subbuf-size", 1, 0, 1013},
+			{"set-subbuf-num", 1, 0, 1014},
 			{0, 0, 0, 0}
 		};
 
@@ -136,6 +144,17 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 			break;
 		case 1012:
 			opts->cmd = CREATE_TRACE;
+			break;
+		case 1013:
+			opts->cmd = SET_SUBBUF_SIZE;
+			opts->regex = strdup(optarg);
+			break;
+		case 1014:
+			opts->cmd = SET_SUBBUF_NUM;
+			opts->regex = strdup(optarg);
+			break;
+		case 1015:
+			opts->cmd = ALLOC_TRACE;
 			break;
 		default:
 			/* unknown option or other error; error is
@@ -291,6 +310,22 @@ int main(int argc, char *argv[])
 			case DISABLE_MARKER:
 				if(opts.regex)
 					ustcmd_set_marker_state(opts.regex, 0, *pidit);
+				break;
+
+			case SET_SUBBUF_SIZE:
+				ustcmd_set_subbuf_size(opts.regex, *pidit);
+				break;
+
+			case SET_SUBBUF_NUM:
+				ustcmd_set_subbuf_num(opts.regex, *pidit);
+				break;
+
+			case ALLOC_TRACE:
+				result = ustcmd_alloc_trace(*pidit);
+				if (result) {
+					ERR("error while trying to alloc trace with PID %u\n", (unsigned int) *pidit);
+					break;
+				}
 				break;
 
 			default:

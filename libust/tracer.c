@@ -630,6 +630,11 @@ int ltt_trace_alloc(const char *trace_name)
 
 	ltt_lock_traces();
 
+	if (_ltt_trace_find(trace_name)) { /* Trace already allocated */
+		err = 1;
+		goto traces_error;
+	}
+
 	trace = _ltt_trace_find_setup(trace_name);
 	if (!trace) {
 		ERR("Trace not found %s", trace_name);

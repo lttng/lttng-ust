@@ -509,6 +509,132 @@ static int do_cmd_get_subbuf_size(const char *recvbuf, struct ustcomm_source *sr
 	return retval;
 }
 
+unsigned int poweroftwo(unsigned int x)
+{
+    unsigned int power2 = 1;
+    unsigned int hardcoded = 2147483648; /* FIX max 2^31 */
+
+    if (x < 2)
+        return 2;
+
+    while (power2 < x && power2 < hardcoded)
+        power2 *= 2;
+
+    return power2;
+}
+
+static int do_cmd_set_subbuf_size(const char *recvbuf, struct ustcomm_source *src)
+{
+	char *channel_slash_size;
+	char ch_name[256]="";
+	unsigned int size, power;
+	int retval = 0;
+	struct ust_trace *trace;
+	char trace_name[] = "auto";
+	int i;
+	int found = 0;
+
+	DBG("set_subbuf_size");
+
+	channel_slash_size = nth_token(recvbuf, 1);
+	sscanf(channel_slash_size, "%255[^/]/%u", ch_name, &size);
+
+	if(ch_name == NULL) {
+		ERR("cannot parse channel");
+		goto end;
+	}
+
+	power = poweroftwo(size);
+	if (power != size)
+		WARN("using the next 2^n = %u\n", power);
+
+	ltt_lock_traces();
+	trace = _ltt_trace_find_setup(trace_name);
+	if(trace == NULL) {
+		ERR("cannot find trace!");
+		ltt_unlock_traces();
+		retval = -1;
+		goto end;
+	}
+
+	for(i = 0; i < trace->nr_channels; i++) {
+		struct ust_channel *channel = &trace->channels[i];
+
+		if(!strcmp(trace->channels[i].channel_name, ch_name)) {
+
+			channel->subbuf_size = power;
+			DBG("the set_subbuf_size for the requested channel is %zd", channel->subbuf_size);
+
+			found = 1;
+			break;
+		}
+	}
+	if(found == 0) {
+		ERR("unable to find channel");
+	}
+
+	ltt_unlock_traces();
+
+	end:
+	return retval;
+}
+
+static int do_cmd_set_subbuf_num(const char *recvbuf, struct ustcomm_source *src)
+{
+	char *channel_slash_num;
+	char ch_name[256]="";
+	unsigned int num;
+	int retval = 0;
+	struct ust_trace *trace;
+	char trace_name[] = "auto";
+	int i;
+	int found = 0;
+
+	DBG("set_subbuf_num");
+
+	channel_slash_num = nth_token(recvbuf, 1);
+	sscanf(channel_slash_num, "%255[^/]/%u", ch_name, &num);
+
+	if(ch_name == NULL) {
+		ERR("cannot parse channel");
+		goto end;
+	}
+	if (num < 2) {
+		ERR("subbuffer count should be greater than 2");
+		goto end;
+	}
+
+	ltt_lock_traces();
+	trace = _ltt_trace_find_setup(trace_name);
+	if(trace == NULL) {
+		ERR("cannot find trace!");
+		ltt_unlock_traces();
+		retval = -1;
+		goto end;
+	}
+
+	for(i = 0; i < trace->nr_channels; i++) {
+		struct ust_channel *channel = &trace->channels[i];
+
+		if(!strcmp(trace->channels[i].channel_name, ch_name)) {
+
+			channel->subbuf_cnt = num;
+			DBG("the set_subbuf_cnt for the requested channel is %zd", channel->subbuf_cnt);
+
+			found = 1;
+			break;
+		}
+	}
+	if(found == 0) {
+		ERR("unable to find channel");
+	}
+
+	ltt_unlock_traces();
+
+	end:
+	return retval;
+}
+
 static int do_cmd_get_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 {
 	int retval = 0;
@@ -798,6 +924,7 @@ void *listener_main(void *p)
 				ERR("ltt_trace_alloc failed");
 				return (void *)1;
 			}
+			inform_consumer_daemon(trace_name);
 		}
 		else if(!strcmp(recvbuf, "trace_create")) {
 			DBG("trace create");
@@ -813,17 +940,18 @@ void *listener_main(void *p)
 				ERR("ltt_trace_set_type failed");
 				return (void *)1;
 			}
+		}
+		else if(!strcmp(recvbuf, "trace_start")) {
+			DBG("trace start");
 
 			result = ltt_trace_alloc(trace_name);
 			if(result < 0) {
 				ERR("ltt_trace_alloc failed");
 				return (void *)1;
 			}
-
-			inform_consumer_daemon(trace_name);
-		}
-		else if(!strcmp(recvbuf, "trace_start")) {
-			DBG("trace start");
+			if(!result) {
+				inform_consumer_daemon(trace_name);
+			}
 
 			result = ltt_trace_start(trace_name);
 			if(result < 0) {
@@ -873,6 +1001,12 @@ void *listener_main(void *p)
 		}
 		else if(nth_token_is(recvbuf, "put_subbuffer", 0) == 1) {
 			do_cmd_put_subbuffer(recvbuf, &src);
+		}
+		else if(nth_token_is(recvbuf, "set_subbuf_size", 0) == 1) {
+			do_cmd_set_subbuf_size(recvbuf, &src);
+		}
+		else if(nth_token_is(recvbuf, "set_subbuf_num", 0) == 1) {
+			do_cmd_set_subbuf_num(recvbuf, &src);
 		}
 		else if(nth_token_is(recvbuf, "enable_marker", 0) == 1) {
 			char *channel_slash_name = nth_token(recvbuf, 1);
