@@ -145,12 +145,6 @@ fi
 	export LD_PRELOAD="$LD_PRELOAD:$LIBINTERFORK_PATH"
     fi
 
-# Install a handler for SIGIO. This is the signal that will be sent by ustd to
-# the traced program to trigger the creation of its listener thread. However,
-# it is possible that the SIGIO will be sent after the shell fork, but before
-# the exec of the command. If this handler isn't there, bash might terminate
-# because of a unhandled signal.
-
 # Execute the command
     $CMD 2>&1
 ) | tee "$OUTDIR/app.log"
