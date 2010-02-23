@@ -52,6 +52,55 @@
 //	backtrace_symbols_fd(buffer, result, STDERR_FILENO);
 //}
 
+static int mkdir_p(const char *path, mode_t mode)
+{
+	char *path_p;
+	char *tmp;
+
+	int retval = 0;
+	int result;
+
+	tmp = malloc(strlen(path) + 1);
+	if (tmp == NULL)
+		return -1;
+
+	/* skip first / */
+	path_p = path+1;
+
+	for(;;) {
+		while (*path_p != '/') {
+			if(*path_p == 0)
+				break;
+			++path_p;
+		}
+		if (*path_p == '/') {
+			strncpy(tmp, path, path_p - path);
+			tmp[path_p-path] = '\0';
+			if (tmp[path_p - path - 1] != '/') {
+				result = mkdir(tmp, mode);
+				if(result == -1) {
+					if (!(errno == EEXIST || errno == EACCES || errno == EROFS)) {
+						/* Then this is a real error */
+						retval = -1;
+						break;
+					}
+				}
+			}
+			/* pass / */
+			path_p++;
+		} else {
+			/* last component */
+			result = mkdir(path, mode);
+			if (result == -1)
+				retval = -1;
+			break;
+		}
+	}
+
+	free(tmp);
+	return retval;
+}
+
 char *strdup_malloc(const char *s)
 {
 	char *retval;
@@ -540,17 +589,11 @@ static int ensure_dir_exists(const char *dir)
 	}
 	else if(result == -1) {
 		/* ENOENT */
-		char buf[200];
 		int result;
 
-		result = snprintf(buf, sizeof(buf), "mkdir -p \"%s\"", dir);
-		if(result >= sizeof(buf)) {
-			ERR("snprintf buffer overflow");
-			return -1;
-		}
-		result = system(buf);
+		result = mkdir_p(dir, 0777);
 		if(result != 0) {
-			ERR("executing command %s", buf);
+			ERR("executing in recursive creation of directory %s", dir);
 			return -1;
 		}
 	}
