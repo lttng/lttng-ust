@@ -91,7 +91,7 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 			{"disable-marker", 1, 0, 1008},
 			{"start", 0, 0, 1009},
 			{"help", 0, 0, 'h'},
-			{"version", 0, 0, 1010},
+			/*{"version", 0, 0, 1010},*/
 			{"online-pids", 0, 0, 1011},
 			{"set-subbuf-size", 1, 0, 1013},
 			{"set-subbuf-num", 1, 0, 1014},
@@ -139,9 +139,11 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 		case 'h':
 			usage();
 			exit(0);
+/*
 		case 1010:
 			printf("Version 0.1\n");
 			break;
+*/
 		case 1012:
 			opts->cmd = CREATE_TRACE;
 			break;
