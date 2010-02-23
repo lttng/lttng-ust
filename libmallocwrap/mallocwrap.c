@@ -92,7 +92,7 @@ void free(void *ptr)
 		}
 	}
 
-	trace_mark(ust, free, "%p", ptr);
+	trace_mark(ust, free, "ptr %p", ptr);
 
 	plibc_free(ptr);
 }
