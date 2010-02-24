@@ -120,6 +120,13 @@ static int signal_process(pid_t pid)
 	return 0;
 }
 
+void ustcomm_init_connection(struct ustcomm_connection *conn)
+{
+	conn->recv_buf = NULL;
+	conn->recv_buf_size = 0;
+	conn->recv_buf_alloc = 0;
+}
+
 int pid_is_online(pid_t pid) {
 	return 1;
 }
@@ -210,63 +217,85 @@ int ustcomm_request_consumer(pid_t pid, const char *channel)
  * returns -1 to indicate an error
  */
 
-#define RECV_INCREMENT 1
+#define RECV_INCREMENT 1000
 #define RECV_INITIAL_BUF_SIZE 10
 
-static int recv_message_fd(int fd, char **msg)
+static int recv_message_fd(int fd, char **recv_buf, int *recv_buf_size, int *recv_buf_alloc, char **msg)
 {
 	int result;
-	int buf_alloc_size = 0;
-	char *buf = NULL;
-	int buf_used_size = 0;
 
-	buf = malloc(RECV_INITIAL_BUF_SIZE);
-	buf_alloc_size = RECV_INITIAL_BUF_SIZE;
+	/* 1. Check if there is a message in the buf */
+	/* 2. If not, do:
+           2.1 receive chunk and put it in buffer
+	   2.2 process full message if there is one
+	   -- while no message arrived
+	*/
 
 	for(;;) {
-		if(buf_used_size + RECV_INCREMENT > buf_alloc_size) {
-			char *new_buf;
-			buf_alloc_size *= 2;
-			new_buf = (char *) realloc(buf, buf_alloc_size);
-			if(new_buf == NULL) {
-				ERR("realloc returned NULL");
-				free(buf);
-				return -1;
+		int i;
+		int nulfound = 0;
+
+		/* Search for full message in buffer */
+		for(i=0; i<*recv_buf_size; i++) {
+			if((*recv_buf)[i] == '\0') {
+				nulfound = 1;
+				break;
 			}
-			buf = new_buf;
 		}
 
-		/* FIXME: this is really inefficient; but with count>1 we would
-		 * need a buffering mechanism */
-		result = recv(fd, buf+buf_used_size, RECV_INCREMENT, 0);
+		/* Process found message */
+		if(nulfound == 1) {
+			char *newbuf;
+
+			if(i == 0) {
+				/* problem */
+			}
+			*msg = strndup(*recv_buf, i);
+
+			/* Remove processed message from buffer */
+			newbuf = (char *) malloc(*recv_buf_size - (i+1));
+			memcpy(newbuf, *recv_buf + (i+1), *recv_buf_size - (i+1));
+			free(*recv_buf);
+			*recv_buf = newbuf;
+			*recv_buf_size -= (i+1);
+			*recv_buf_alloc -= (i+1);
+
+			return 1;
+		}
+
+		/* Receive a chunk from the fd */
+		if(*recv_buf_alloc - *recv_buf_size < RECV_INCREMENT) {
+			*recv_buf_alloc += RECV_INCREMENT - (*recv_buf_alloc - *recv_buf_size);
+			*recv_buf = (char *) realloc(*recv_buf, *recv_buf_alloc);
+		}
+
+		result = recv(fd, *recv_buf+*recv_buf_size, RECV_INCREMENT, 0);
 		if(result == -1) {
-			free(buf);
-			if(errno != ECONNRESET)
-				PERROR("recv");
+			if(errno == ECONNRESET) {
+				*recv_buf_size = 0;
+				return 0;
+			}
+			/* real error */
+			PERROR("recv");
 			return -1;
 		}
 		if(result == 0) {
-			if(buf_used_size)
-				goto ret;
-			else {
-				free(buf);
-				return 0;
-			}
+			return 0;
 		}
+		*recv_buf_size += result;
 
-		buf_used_size += result;
-
-		if(buf[buf_used_size-1] == 0) {
-			goto ret;
-		}
+		/* Go back to the beginning to check if there is a full message in the buffer */
 	}
 
-ret:
-	*msg = buf;
-	DBG("received message \"%s\"", buf);
+	DBG("received message \"%s\"", *recv_buf);
 
 	return 1;
 
+}
+
+static int recv_message_conn(struct ustcomm_connection *conn, char **msg)
+{
+	return recv_message_fd(conn->fd, &conn->recv_buf, &conn->recv_buf_size, &conn->recv_buf_alloc, msg);
 }
 
 int ustcomm_send_reply(struct ustcomm_server *server, char *msg, struct ustcomm_source *src)
@@ -309,6 +338,7 @@ int ustcomm_close_all_connections(struct ustcomm_server *server)
 int ustcomm_recv_message(struct ustcomm_server *server, char **msg, struct ustcomm_source *src, int timeout)
 {
 	struct pollfd *fds;
+	struct ustcomm_connection **conn_table;
 	struct ustcomm_connection *conn;
 	int result;
 	int retval;
@@ -327,6 +357,12 @@ int ustcomm_recv_message(struct ustcomm_server *server, char **msg, struct ustco
 			return -1;
 		}
 
+		conn_table = (struct ustcomm_connection **) malloc(n_fds * sizeof(struct ustcomm_connection *));
+		if(conn_table == NULL) {
+			ERR("malloc returned NULL");
+			return -1;
+		}
+
 		/* special idx 0 is for listening socket */
 		fds[idx].fd = server->listen_fd;
 		fds[idx].events = POLLIN;
@@ -335,6 +371,7 @@ int ustcomm_recv_message(struct ustcomm_server *server, char **msg, struct ustco
 		list_for_each_entry(conn, &server->connections, list) {
 			fds[idx].fd = conn->fd;
 			fds[idx].events = POLLIN;
+			conn_table[idx] = conn;
 			idx++;
 		}
 
@@ -364,6 +401,7 @@ int ustcomm_recv_message(struct ustcomm_server *server, char **msg, struct ustco
 				return -1;
 			}
 
+			ustcomm_init_connection(newconn);
 			newconn->fd = newfd;
 
 			list_add(&newconn->list, &server->connections);
@@ -371,7 +409,7 @@ int ustcomm_recv_message(struct ustcomm_server *server, char **msg, struct ustco
 
 		for(idx=1; idx<n_fds; idx++) {
 			if(fds[idx].revents) {
-				retval = recv_message_fd(fds[idx].fd, msg);
+				retval = recv_message_conn(conn_table[idx], msg);
 				if(src)
 					src->fd = fds[idx].fd;
 
@@ -505,7 +543,7 @@ int ustcomm_send_request(struct ustcomm_connection *conn, const char *req, char 
 	if(!reply)
 		return 1;
 
-	result = recv_message_fd(conn->fd, reply);
+	result = recv_message_conn(conn, reply);
 	if(result == -1) {
 		return -1;
 	}
@@ -521,6 +559,8 @@ int ustcomm_connect_path(const char *path, struct ustcomm_connection *conn, pid_
 	int fd;
 	int result;
 	struct sockaddr_un addr;
+
+	ustcomm_init_connection(conn);
 
 	result = fd = socket(PF_UNIX, SOCK_STREAM, 0);
 	if(result == -1) {

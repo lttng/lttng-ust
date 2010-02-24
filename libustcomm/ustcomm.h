@@ -29,6 +29,10 @@
 struct ustcomm_connection {
 	struct list_head list;
 	int fd;
+	/* Data that has not yet been consumed: */
+	char *recv_buf;
+	int recv_buf_size;
+	int recv_buf_alloc;
 };
 
 /* ustcomm_server must be shallow-copyable */
