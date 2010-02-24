@@ -54,7 +54,7 @@
 
 static int mkdir_p(const char *path, mode_t mode)
 {
-	char *path_p;
+	const char *path_p;
 	char *tmp;
 
 	int retval = 0;
