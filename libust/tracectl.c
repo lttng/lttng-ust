@@ -552,7 +552,6 @@ static int do_cmd_set_subbuf_size(const char *recvbuf, struct ustcomm_source *sr
 	trace = _ltt_trace_find_setup(trace_name);
 	if(trace == NULL) {
 		ERR("cannot find trace!");
-		ltt_unlock_traces();
 		retval = -1;
 		goto end;
 	}
@@ -573,9 +572,8 @@ static int do_cmd_set_subbuf_size(const char *recvbuf, struct ustcomm_source *sr
 		ERR("unable to find channel");
 	}
 
-	ltt_unlock_traces();
-
 	end:
+	ltt_unlock_traces();
 	return retval;
 }
 
@@ -608,7 +606,6 @@ static int do_cmd_set_subbuf_num(const char *recvbuf, struct ustcomm_source *src
 	trace = _ltt_trace_find_setup(trace_name);
 	if(trace == NULL) {
 		ERR("cannot find trace!");
-		ltt_unlock_traces();
 		retval = -1;
 		goto end;
 	}
@@ -629,9 +626,8 @@ static int do_cmd_set_subbuf_num(const char *recvbuf, struct ustcomm_source *src
 		ERR("unable to find channel");
 	}
 
-	ltt_unlock_traces();
-
 	end:
+	ltt_unlock_traces();
 	return retval;
 }
 
@@ -662,24 +658,19 @@ static int do_cmd_get_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 
 	ltt_lock_traces();
 	trace = _ltt_trace_find(trace_name);
-	ltt_unlock_traces();
 
 	if(trace == NULL) {
-		char *reply;
 		int result;
 
 		WARN("Cannot find trace. It was likely destroyed by the user.");
-		asprintf(&reply, "%s", "NOTFOUND");
-		result = ustcomm_send_reply(&ustcomm_app.server, reply, src);
+		result = ustcomm_send_reply(&ustcomm_app.server, "NOTFOUND", src);
 		if(result) {
 			ERR("ustcomm_send_reply failed");
-			free(reply);
 			retval = -1;
-			goto free_short_chan_name;
+			goto unlock_traces;
 		}
 
-		free(reply);
-		goto free_short_chan_name;
+		goto unlock_traces;
 	}
 
 	for(i=0; i<trace->nr_channels; i++) {
@@ -694,7 +685,7 @@ static int do_cmd_get_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 			bc = (struct blocked_consumer *) malloc(sizeof(struct blocked_consumer));
 			if(bc == NULL) {
 				ERR("malloc returned NULL");
-				goto free_short_chan_name;
+				goto unlock_traces;
 			}
 			bc->fd_consumer = src->fd;
 			bc->fd_producer = buf->data_ready_fd_read;
@@ -710,6 +701,9 @@ static int do_cmd_get_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 	if(found == 0) {
 		ERR("unable to find channel");
 	}
+
+	unlock_traces:
+	ltt_unlock_traces();
 
 	free_short_chan_name:
 	free(ch_name);
@@ -765,21 +759,17 @@ static int do_cmd_put_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 
 	ltt_lock_traces();
 	trace = _ltt_trace_find(trace_name);
-	ltt_unlock_traces();
 
 	if(trace == NULL) {
 		WARN("Cannot find trace. It was likely destroyed by the user.");
-		asprintf(&reply, "%s", "NOTFOUND");
-		result = ustcomm_send_reply(&ustcomm_app.server, reply, src);
+		result = ustcomm_send_reply(&ustcomm_app.server, "NOTFOUND", src);
 		if(result) {
 			ERR("ustcomm_send_reply failed");
-			free(reply);
 			retval = -1;
-			goto free_short_chan_name;
+			goto unlock_traces;
 		}
 
-		free(reply);
-		goto free_short_chan_name;
+		goto unlock_traces;
 	}
 
 	for(i=0; i<trace->nr_channels; i++) {
@@ -805,7 +795,7 @@ static int do_cmd_put_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 				ERR("ustcomm_send_reply failed");
 				free(reply);
 				retval = -1;
-				goto free_channel_and_cpu;
+				goto unlock_traces;
 			}
 
 			free(reply);
@@ -816,6 +806,8 @@ static int do_cmd_put_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 		ERR("unable to find channel");
 	}
 
+	unlock_traces:
+	ltt_unlock_traces();
 	free_short_chan_name:
 	free(ch_name);
 	free_consumed_old_str:
