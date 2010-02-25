@@ -260,6 +260,9 @@ struct buffer_info *connect_buffer(pid_t pid, const char *bufname)
 		ERR("problem in ustcomm_send_request(get_pidunique)");
 		return NULL;
 	}
+	if(result == 0) {
+		goto error;
+	}
 
 	result = sscanf(received_msg, "%lld", &buf->pidunique);
 	if(result != 1) {
@@ -276,6 +279,9 @@ struct buffer_info *connect_buffer(pid_t pid, const char *bufname)
 	if(result == -1) {
 		ERR("problem in ustcomm_send_request(get_shmid)");
 		return NULL;
+	}
+	if(result == 0) {
+		goto error;
 	}
 
 	result = sscanf(received_msg, "%d %d", &buf->shmid, &buf->bufstruct_shmid);
@@ -294,6 +300,9 @@ struct buffer_info *connect_buffer(pid_t pid, const char *bufname)
 		ERR("problem in ustcomm_send_request(g_n_subbufs)");
 		return NULL;
 	}
+	if(result == 0) {
+		goto error;
+	}
 
 	result = sscanf(received_msg, "%d", &buf->n_subbufs);
 	if(result != 1) {
@@ -305,8 +314,15 @@ struct buffer_info *connect_buffer(pid_t pid, const char *bufname)
 
 	/* get subbuf size */
 	asprintf(&send_msg, "get_subbuf_size %s", buf->name);
-	ustcomm_send_request(&buf->conn, send_msg, &received_msg);
+	result = ustcomm_send_request(&buf->conn, send_msg, &received_msg);
 	free(send_msg);
+	if(result == -1) {
+		ERR("problem in ustcomm_send_request(get_subbuf_size)");
+		return NULL;
+	}
+	if(result == 0) {
+		goto error;
+	}
 
 	result = sscanf(received_msg, "%d", &buf->subbuf_size);
 	if(result != 1) {
@@ -378,6 +394,10 @@ struct buffer_info *connect_buffer(pid_t pid, const char *bufname)
 	pthread_mutex_unlock(&active_buffers_mutex);
 
 	return buf;
+
+error:
+	free(buf);
+	return NULL;
 }
 
 int write_current_subbuffer(struct buffer_info *buf)
