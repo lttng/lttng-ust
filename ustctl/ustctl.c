@@ -27,18 +27,17 @@
 #include "usterr.h"
 
 enum command {
-	CREATE_TRACE,
+	CREATE_TRACE=1000,
+	ALLOC_TRACE,
 	START_TRACE,
 	STOP_TRACE,
-	START,
-	DESTROY,
+	DESTROY_TRACE,
 	LIST_MARKERS,
 	ENABLE_MARKER,
 	DISABLE_MARKER,
 	GET_ONLINE_PIDS,
 	SET_SUBBUF_SIZE,
 	SET_SUBBUF_NUM,
-	ALLOC_TRACE,
 	UNKNOWN
 };
 
@@ -79,28 +78,27 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 	while (1) {
 		int option_index = 0;
 		static struct option long_options[] = {
-			{"create-trace", 0, 0, 1012},
-			{"alloc-trace", 0, 0, 1015},
-			{"start-trace", 0, 0, 1000},
-			{"stop-trace", 0, 0, 1001},
-			{"destroy-trace", 0, 0, 1002},
-			{"list-markers", 0, 0, 1004},
-			{"print-markers", 0, 0, 1005},
-			{"pid", 1, 0, 1006},
-			{"enable-marker", 1, 0, 1007},
-			{"disable-marker", 1, 0, 1008},
-			{"start", 0, 0, 1009},
-			{"help", 0, 0, 'h'},
-			/*{"version", 0, 0, 1010},*/
-			{"online-pids", 0, 0, 1011},
-			{"set-subbuf-size", 1, 0, 1013},
-			{"set-subbuf-num", 1, 0, 1014},
-			{0, 0, 0, 0}
+			{ "create-trace", 0, 0, CREATE_TRACE },
+			{ "alloc-trace", 0, 0, ALLOC_TRACE },
+			{ "start-trace", 0, 0, START_TRACE },
+			{ "stop-trace", 0, 0, STOP_TRACE },
+			{ "destroy-trace", 0, 0, DESTROY_TRACE },
+			{ "list-markers", 0, 0, LIST_MARKERS },
+			{ "enable-marker", 1, 0, ENABLE_MARKER },
+			{ "disable-marker", 1, 0, DISABLE_MARKER },
+			{ "help", 0, 0, 'h' },
+			{ "online-pids", 0, 0, GET_ONLINE_PIDS },
+			{ "set-subbuf-size", 1, 0, SET_SUBBUF_SIZE },
+			{ "set-subbuf-num", 1, 0, SET_SUBBUF_NUM },
+			{ 0, 0, 0, 0 }
 		};
 
 		c = getopt_long(argc, argv, "h", long_options, &option_index);
 		if (c == -1)
 			break;
+
+		if(c >= 1000)
+			opts->cmd = c;
 
 		switch (c) {
 		case 0:
@@ -110,59 +108,21 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 			printf("\n");
 			break;
 
-		case 1000:
-			opts->cmd = START_TRACE;
-			break;
-		case 1001:
-			opts->cmd = STOP_TRACE;
-			break;
-		case 1009:
-			opts->cmd = START;
-			break;
-		case 1002:
-			opts->cmd = DESTROY;
-			break;
-		case 1004:
-			opts->cmd = LIST_MARKERS;
-			break;
-		case 1007:
-			opts->cmd = ENABLE_MARKER;
+		case ENABLE_MARKER:
+		case DISABLE_MARKER:
+		case SET_SUBBUF_SIZE:
+		case SET_SUBBUF_NUM:
 			opts->regex = strdup(optarg);
 			break;
-		case 1008:
-			opts->cmd = DISABLE_MARKER;
-			opts->regex = strdup(optarg);
-			break;
-		case 1011:
-			opts->cmd = GET_ONLINE_PIDS;
-			break;
+
 		case 'h':
 			usage();
 			exit(0);
-/*
-		case 1010:
-			printf("Version 0.1\n");
-			break;
-*/
-		case 1012:
-			opts->cmd = CREATE_TRACE;
-			break;
-		case 1013:
-			opts->cmd = SET_SUBBUF_SIZE;
-			opts->regex = strdup(optarg);
-			break;
-		case 1014:
-			opts->cmd = SET_SUBBUF_NUM;
-			opts->regex = strdup(optarg);
-			break;
-		case 1015:
-			opts->cmd = ALLOC_TRACE;
-			break;
-		default:
-			/* unknown option or other error; error is
-			printed by getopt, just return */
-			opts->cmd = UNKNOWN;
-			return 1;
+
+		case '?':
+			fprintf(stderr, "Invalid argument\n\n");
+			usage();
+			exit(1);
 		}
 	}
 
@@ -253,7 +213,6 @@ int main(int argc, char *argv[])
 					ERR("error while trying to for trace with PID %u\n", (unsigned int) *pidit);
 					break;
 				}
-				//printf("sucessfully started trace for PID %u\n", (unsigned int) *pidit);
 				break;
 
 			case STOP_TRACE:
@@ -262,25 +221,14 @@ int main(int argc, char *argv[])
 					ERR("error while trying to stop trace for PID %u\n", (unsigned int) *pidit);
 					break;
 				}
-				//printf("sucessfully stopped trace for PID %u\n", (unsigned int) *pidit);
 				break;
 
-			case START:
-				result = ustcmd_setup_and_start(*pidit);
-				if (result) {
-					ERR("error while trying to setup/start trace for PID %u\n", (unsigned int) *pidit);
-					break;
-				}
-				//printf("sucessfully setup/started trace for PID %u\n", (unsigned int) *pidit);
-				break;
-
-			case DESTROY:
+			case DESTROY_TRACE:
 				result = ustcmd_destroy_trace(*pidit);
 				if (result) {
 					ERR("error while trying to destroy trace with PID %u\n", (unsigned int) *pidit);
 					break;
 				}
-				//printf("sucessfully destroyed trace for PID %u\n", (unsigned int) *pidit);
 				break;
 
 			case LIST_MARKERS:
