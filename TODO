@@ -1,22 +1,19 @@
-- port changes from recent versions of lttng kernel (in progress by pmf)
-- performance testing tool (in progress by Rafik Fahem)
-- add buffering for receiving side in libustcomm
-- add --alloc-trace option in ustctl
-- fix locking in the do_cmd_* functions
-- improve support for combined kernel/userspace tracing
-- make a trace testing script (that can assert whether a trace contains certain events)
 - make web site (in progress by pmf)
+- support multiple simultaneous traces
+- fix FIXME's in the code
+- test with smaller subbuffer sizes
+- make a trace testing script (that can assert whether a trace contains certain events)
+- performance testing tool (in progress by Rafik Fahem)
+- improve support for combined kernel/userspace tracing
 - document API
 - make sure the proper structures are cacheline aligned, and test performance, including multi-threaded
 - fix all valgrind errors
-- test with smaller subbuffer sizes
 - fix header/lib priority problem at compilation
-- fix FIXME's in the code
-- make a system (signal-based?) that allow the listener thread to not be started initially
+- port changes from recent versions of lttng kernel
 - make cli interface for flight recorder
 - save_registers: save them only when the marker is active (complicated because we need to know their value at the address that is put in struct marker)
 - make streaming work, including periodical flush
+- make a system (signal-based?) that allow the listener thread to not be started initially
 - ustd should work as a pool of threads
-- support multiple simultaneous traces
 - support more than one marker with the same channel and name on the same line?
 - In early tracing mode, the only channels that can be used reliably are "metadata" and "ust". The "usttrace" tool always uses early tracing and is hence subject to this limitation. Traces setup with the "ustctl" tool ("manual mode") are not subject to this limitation and can contain channels that have any name. Also, when loading a library with dlopen(), in order for markers in the library to generate events in the trace, these markers must be in the same channel as an event that was in the executable or its dynamically linked libraries that were loaded at start time. If using early tracing, only the "ust" channel can be used. Fix this. (RCU locking of channel structures in progress by Mathieu Desnoyers)
