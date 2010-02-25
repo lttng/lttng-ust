@@ -54,9 +54,23 @@ This manual is for UST 0.1.
 @chapter Overview
 
 @menu
+* What is UST?::
 * License::
 * Supported platforms::
 @end menu
+
+@node What is UST?
+@section What is UST?
+
+The LTTng Userspace Tracer (UST) is a library accompanied by a set of tools to
+trace userspace code.
+
+Code may be instrumented with either markers or tracepoints. A highly efficient
+lockless tracer records these events to a trace buffers. These buffers are reaped
+by a deamon which writes trace data to disk.
+
+High performance is achieved by the use of lockless buffering algorithms, RCU and
+per-cpu buffers. In addition, special care is taken to minize cache impact.
 
 @node License
 @section License
@@ -215,7 +229,7 @@ with the methods described in this chapter.
 @node Markers
 @section Markers
 
-Adding a marker is simply a matter of insert one line in the program.
+Adding a marker is simply a matter of inserting one line in the program.
 
 @example
 @verbatim
@@ -231,7 +245,7 @@ int main(int argc, char **argv)
 	/* a marker: */
 	trace_mark(main, myevent, "firstarg %d secondarg %s", v, st);
 
-	/* a marker without arguments: */
+	/* another marker without arguments: */
 	trace_mark(main, myotherevent, MARK_NOARGS);
 
 	return 0;
