@@ -964,7 +964,7 @@ void *listener_main(void *p)
 
 			DBG("trace destroy");
 
-			result = ltt_trace_destroy(trace_name);
+			result = ltt_trace_destroy(trace_name, 0);
 			if(result < 0) {
 				ERR("ltt_trace_destroy failed");
 				return (void *)1;
@@ -1348,7 +1348,7 @@ static void destroy_traces(void)
 		ERR("ltt_trace_stop error");
 	}
 
-	result = ltt_trace_destroy("auto");
+	result = ltt_trace_destroy("auto", 0);
 	if(result == -1) {
 		ERR("ltt_trace_destroy error");
 	}
@@ -1453,9 +1453,10 @@ static void ust_fork(void)
 	struct blocked_consumer *deletable_bc = NULL;
 	int result;
 
+	/* FIXME: technically, the locks could have been taken before the fork */
 	DBG("ust: forking");
 	ltt_trace_stop("auto");
-	ltt_trace_destroy("auto");
+	ltt_trace_destroy("auto", 1);
 	/* Delete all active connections */
 	ustcomm_close_all_connections(&ustcomm_app.server);
 

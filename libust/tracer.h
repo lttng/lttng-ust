@@ -385,7 +385,7 @@ extern int ltt_trace_set_channel_enable(const char *trace_name,
 extern int ltt_trace_set_channel_overwrite(const char *trace_name,
 		const char *channel_name, unsigned int overwrite);
 extern int ltt_trace_alloc(const char *trace_name);
-extern int ltt_trace_destroy(const char *trace_name);
+extern int ltt_trace_destroy(const char *trace_name, int drop);
 extern int ltt_trace_start(const char *trace_name);
 extern int ltt_trace_stop(const char *trace_name);
 

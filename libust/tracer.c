@@ -784,15 +784,17 @@ traces_error:
 }
 
 /* Sleepable part of the destroy */
-static void __ltt_trace_destroy(struct ust_trace *trace)
+static void __ltt_trace_destroy(struct ust_trace *trace, int drop)
 {
 	int i;
 	struct ust_channel *chan;
 
-	for (i = 0; i < trace->nr_channels; i++) {
-		chan = &trace->channels[i];
-		if (chan->active)
-			trace->ops->finish_channel(chan);
+	if(!drop) {
+		for (i = 0; i < trace->nr_channels; i++) {
+			chan = &trace->channels[i];
+			if (chan->active)
+				trace->ops->finish_channel(chan);
+		}
 	}
 
 	return; /* FIXME: temporary for ust */
@@ -827,7 +829,7 @@ static void __ltt_trace_destroy(struct ust_trace *trace)
 	kref_put(&trace->kref, ltt_release_trace);
 }
 
-int ltt_trace_destroy(const char *trace_name)
+int ltt_trace_destroy(const char *trace_name, int drop)
 {
 	int err = 0;
 	struct ust_trace *trace;
@@ -842,7 +844,7 @@ int ltt_trace_destroy(const char *trace_name)
 
 		ltt_unlock_traces();
 
-		__ltt_trace_destroy(trace);
+		__ltt_trace_destroy(trace, drop);
 //ust//		put_trace_clock();
 
 		return 0;

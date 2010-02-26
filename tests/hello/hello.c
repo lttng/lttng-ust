@@ -63,7 +63,7 @@ int main()
 	scanf("%*s");
 
 	ltt_trace_stop("auto");
-	ltt_trace_destroy("auto");
+	ltt_trace_destroy("auto", 0);
 
 	DBG("TRACE STOPPED");
 	scanf("%*s");
