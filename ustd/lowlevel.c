@@ -70,9 +70,9 @@ void finish_consuming_dead_subbuffer(struct buffer_info *buf)
 
 	long i_subbuf;
 
-	DBG("processing died buffer");
-	DBG("consumed offset is %ld", consumed_offset);
-	DBG("write offset is %ld", write_offset);
+	DBG("processing dead buffer (%s)", buf->name);
+	DBG("consumed offset is %ld (%s)", consumed_offset, buf->name);
+	DBG("write offset is %ld (%s)", write_offset, buf->name);
 
 	/* First subbuf that we need to consume now. It is not modulo'd.
 	 * Consumed_offset is the next byte to consume.  */
