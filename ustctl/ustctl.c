@@ -56,6 +56,7 @@ void usage(void)
 \n\
 Commands:\n\
     --create-trace\t\t\tCreate trace\n\
+    --alloc-trace\t\t\tAlloc trace\n\
     --start-trace\t\t\tStart tracing\n\
     --stop-trace\t\t\tStop tracing\n\
     --destroy-trace\t\t\tDestroy the trace\n\
