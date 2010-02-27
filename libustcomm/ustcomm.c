@@ -678,6 +678,16 @@ free_name:
 	return -1;
 }
 
+void ustcomm_free_app(struct ustcomm_app *app)
+{
+	int result;
+	result = close(app->server.listen_fd);
+	if(result == -1) {
+		PERROR("close");
+		return;
+	}
+}
+
 /* Used by the daemon to initialize its server so applications
  * can connect to it.
  */
