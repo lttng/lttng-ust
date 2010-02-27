@@ -710,7 +710,7 @@ notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
 		va_end(args_copy);
 		/* Out-of-order commit */
 		ltt_commit_slot(channel, buf, buf_offset, data_size, slot_size);
-		DBG("just commited event at offset %ld and size %zd", buf_offset, slot_size);
+		DBG("just commited event (%s/%s) at offset %ld and size %zd", mdata->channel, mdata->name, buf_offset, slot_size);
 	}
 //ust//	__get_cpu_var(ltt_nesting)--;
 	ltt_nesting--;
