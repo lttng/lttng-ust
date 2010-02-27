@@ -1474,8 +1474,8 @@ static void ust_fork(void)
 	}
 
 	have_listener = 0;
-	create_listener();
 	init_socket();
+	create_listener();
 	ltt_trace_setup("auto");
 	result = ltt_trace_set_type("auto", "ustrelay");
 	if(result < 0) {
