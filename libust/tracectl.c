@@ -1478,6 +1478,7 @@ static void ust_fork(void)
 		list_del(&bc->list);
 	}
 
+	buffers_to_export = 0;
 	have_listener = 0;
 	init_socket();
 	create_listener();
