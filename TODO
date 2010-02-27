@@ -3,6 +3,7 @@
 - fix FIXME's in the code
 - test with smaller subbuffer sizes
 - make a trace testing script (that can assert whether a trace contains certain events)
+- add option to see subbuffer size and count
 - performance testing tool (in progress by Rafik Fahem)
 - improve support for combined kernel/userspace tracing
 - document API
@@ -16,4 +17,7 @@
 - make a system (signal-based?) that allow the listener thread to not be started initially
 - ustd should work as a pool of threads
 - support more than one marker with the same channel and name on the same line?
+- make a mode where the listener thread can poll buffers to check if they are ready to be collected
+  This is to guarantee there will never be a system call in the tracing path. Currently there is a system
+  call when the buffer is full to notify the listener it can be collected.
 - In early tracing mode, the only channels that can be used reliably are "metadata" and "ust". The "usttrace" tool always uses early tracing and is hence subject to this limitation. Traces setup with the "ustctl" tool ("manual mode") are not subject to this limitation and can contain channels that have any name. Also, when loading a library with dlopen(), in order for markers in the library to generate events in the trace, these markers must be in the same channel as an event that was in the executable or its dynamically linked libraries that were loaded at start time. If using early tracing, only the "ust" channel can be used. Fix this. (RCU locking of channel structures in progress by Mathieu Desnoyers)
