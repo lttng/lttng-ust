@@ -30,6 +30,9 @@ struct buffer_info {
 	long consumed_old;
 
 	s64 pidunique;
+
+	/* the offset we must truncate to, to unput the last subbuffer */
+	off_t previous_offset;
 };
 
 void finish_consuming_dead_subbuffer(struct buffer_info *buf);

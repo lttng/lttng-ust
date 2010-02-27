@@ -400,6 +400,25 @@ error:
 	return NULL;
 }
 
+int unwrite_last_subbuffer(struct buffer_info *buf)
+{
+	int result;
+
+	result = ftruncate(buf->file_fd, buf->previous_offset);
+	if(result == -1) {
+		PERROR("ftruncate");
+		return -1;
+	}
+
+	result = lseek(buf->file_fd, buf->previous_offset, SEEK_SET);
+	if(result == (int)(off_t)-1) {
+		PERROR("lseek");
+		return -1;
+	}
+
+	return 0;
+}
+
 int write_current_subbuffer(struct buffer_info *buf)
 {
 	int result;
@@ -408,11 +427,20 @@ int write_current_subbuffer(struct buffer_info *buf)
 
 	size_t cur_sb_size = subbuffer_data_size(subbuf_mem);
 
+	off_t cur_offset = lseek(buf->file_fd, 0, SEEK_CUR);
+	if(cur_offset == (off_t)-1) {
+		PERROR("lseek");
+		return -1;
+	}
+
+	buf->previous_offset = cur_offset;
+	DBG("previous_offset: %ld", cur_offset);
+
 	result = patient_write(buf->file_fd, subbuf_mem, cur_sb_size);
 	if(result == -1) {
 		PERROR("write");
 		/* FIXME: maybe drop this trace */
-		return 0;
+		return -1;
 	}
 
 	return 0;
@@ -445,7 +473,6 @@ int consumer_loop(struct buffer_info *buf)
 		/* FIXME: handle return value? */
 
 		/* put the subbuffer */
-		/* FIXME: we actually should unput the buffer before consuming... */
 		result = put_subbuffer(buf);
 		if(result == -1) {
 			ERR("unknown error putting subbuffer (channel=%s)", buf->name);
@@ -457,7 +484,10 @@ int consumer_loop(struct buffer_info *buf)
 		}
 		else if(result == PUT_SUBBUF_DIED) {
 			WARN("application died while putting subbuffer");
-			/* FIXME: probably need to skip the first subbuffer in finish_consuming_dead_subbuffer */
+			/* Skip the first subbuffer. We are not sure it is trustable
+			 * because the put_subbuffer() did not complete.
+			 */
+			unwrite_last_subbuffer(buf);
 			finish_consuming_dead_subbuffer(buf);
 			break;
 		}
