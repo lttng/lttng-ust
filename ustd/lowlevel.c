@@ -120,6 +120,7 @@ void finish_consuming_dead_subbuffer(struct buffer_info *buf)
 			/* If it was, we only check the data_size. This is the amount of valid data at
 			 * the beginning of the subbuffer. */
 			valid_length = header->data_size;
+			DBG("writing full subbuffer (%d) with valid_length = %ld", i_subbuf, valid_length);
 		}
 		else {
 			/* If the subbuffer was not fully written, then we don't check data_size because
@@ -128,6 +129,7 @@ void finish_consuming_dead_subbuffer(struct buffer_info *buf)
 			 */
 
 			valid_length = commit_seq & (buf->subbuf_size-1);
+			DBG("writing unfull subbuffer (%d) with valid_length = %ld", i_subbuf, valid_length);
 			header->data_size = valid_length;
 			header->sb_size = PAGE_ALIGN(valid_length);
 			assert(i_subbuf == (last_subbuf % buf->n_subbufs));
