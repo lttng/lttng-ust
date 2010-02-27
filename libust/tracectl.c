@@ -1455,6 +1455,10 @@ static void ust_fork(void)
 
 	/* FIXME: technically, the locks could have been taken before the fork */
 	DBG("ust: forking");
+
+	/* break lock if necessary */
+	ltt_unlock_traces();
+
 	ltt_trace_stop("auto");
 	ltt_trace_destroy("auto", 1);
 	/* Delete all active connections */
