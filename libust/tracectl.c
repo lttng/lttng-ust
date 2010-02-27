@@ -357,10 +357,7 @@ static int do_cmd_get_shmid(const char *recvbuf, struct ustcomm_source *src)
 		}
 	}
 
-	if(found) {
-		buffers_to_export--;
-	}
-	else {
+	if(!found) {
 		ERR("channel not found (%s)", channel_and_cpu);
 	}
 
@@ -694,6 +691,14 @@ static int do_cmd_get_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 			bc->server = ustcomm_app.server;
 
 			list_add(&bc->list, &blocked_consumers);
+
+			/* Being here is the proof the daemon has mapped the buffer in its
+			 * memory. We may now decrement buffers_to_export.
+			 */
+			if(atomic_long_read(&buf->consumed) == 0) {
+				DBG("decrementing buffers_to_export");
+				buffers_to_export--;
+			}
 
 			break;
 		}
