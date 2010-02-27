@@ -56,13 +56,14 @@ function usage () {
 	echo "    -s    Use system-wide daemon instead of creating one for this session." 2>/dev/stderr
 }
 
-while getopts ":hlLmfs" options; do
+while getopts ":hlLmfsW" options; do
 	case $options in
 		l) arg_preload_libust=1;;
 		L) arg_ld_std_ust=1;;
 		m) arg_preload_malloc=1;;
 		f) arg_preload_fork=1;;
 		s) arg_syswide_daemon=1;;
+		W) where=1;;
 		h) usage;
 		   exit 0;;
 		\?) usage
@@ -72,6 +73,11 @@ while getopts ":hlLmfs" options; do
 	esac
 done
 shift $(($OPTIND - 1))
+
+if [ -n "$where" ]; then
+	echo $BASE_TRACE_DIR/$(ls "$BASE_TRACE_DIR" | tail -n 1)
+	exit 0
+fi
 
 # Prepare vars
 CMD=$*
