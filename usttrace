@@ -96,7 +96,7 @@ then
 fi
 
 # Create directory for trace output
-DATESTRING="$(hostname)-$(date +%Y%m%d%H%M%S)"
+DATESTRING="$(hostname)-$(date +%Y%m%d%H%M%S%N)"
 OUTDIR="$BASE_TRACE_DIR/$DATESTRING"
 mkdir -p "$OUTDIR"
 
