@@ -42,7 +42,7 @@ void ltt_unlock_traces(void)
 
 //ust// DEFINE_PER_CPU(unsigned int, ltt_nesting);
 //ust// EXPORT_PER_CPU_SYMBOL(ltt_nesting);
-unsigned int ltt_nesting;
+__thread int ltt_nesting;
 
 int ltt_run_filter_default(void *trace, uint16_t eID)
 {

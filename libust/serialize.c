@@ -623,11 +623,11 @@ notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
 		return;
 
 	rcu_read_lock(); //ust// rcu_read_lock_sched_notrace();
-//ust//	cpu = smp_processor_id();
 	cpu = ust_get_cpu();
-//ust//	__get_cpu_var(ltt_nesting)++;
-	/* FIXME: should nesting be per-cpu? */
-	ltt_nesting++;
+
+	/* Force volatile access. */
+	STORE_SHARED(ltt_nesting, LOAD_SHARED(ltt_nesting) + 1);
+	barrier();
 
 	pdata = (struct ltt_active_marker *)probe_data;
 	eID = mdata->event_id;
@@ -712,8 +712,10 @@ notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
 		ltt_commit_slot(channel, buf, buf_offset, data_size, slot_size);
 		DBG("just commited event (%s/%s) at offset %ld and size %zd", mdata->channel, mdata->name, buf_offset, slot_size);
 	}
-//ust//	__get_cpu_var(ltt_nesting)--;
-	ltt_nesting--;
+
+	barrier();
+	STORE_SHARED(ltt_nesting, LOAD_SHARED(ltt_nesting) - 1);
+
 	rcu_read_unlock(); //ust// rcu_read_unlock_sched_notrace();
 }
 

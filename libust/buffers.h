@@ -356,7 +356,7 @@ static __inline__ int ltt_reserve_slot(struct ust_trace *trace,
 	 * Perform retryable operations.
 	 */
 	/* FIXME: make this rellay per cpu? */
-	if (unlikely(__get_cpu_var(ltt_nesting) > 4)) {
+	if (unlikely(LOAD_SHARED(ltt_nesting) > 4)) {
 		local_inc(&buf->events_lost);
 		return -EPERM;
 	}
