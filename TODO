@@ -2,13 +2,12 @@
 - support multiple simultaneous traces
 - fix FIXME's in the code
 - test with smaller subbuffer sizes
-- make a trace testing script (that can assert whether a trace contains certain events)
+- correctly destroy buffers at trace destroy
 - add option to see subbuffer size and count
 - performance testing tool (in progress by Rafik Fahem)
 - improve support for combined kernel/userspace tracing
 - document API
 - make sure the proper structures are cacheline aligned, and test performance, including multi-threaded
-- fix all valgrind errors
 - fix header/lib priority problem at compilation
 - port changes from recent versions of lttng kernel
 - make cli interface for flight recorder
