@@ -16,8 +16,3 @@ libustsnprintf_la_SOURCES = \
 	wsetup.c
 libustsnprintf_la_LDFLAGS = -no-undefined -version-info 0:0:0 -static
 libustsnprintf_la_CFLAGS = -DUST_COMPONENT="ust_snprintf" -fPIC
-
-check_PROGRAMS = prog
-prog_SOURCES = prog.c
-prog_LDADD = libustsnprintf.la
-TESTS = prog

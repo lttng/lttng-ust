@@ -118,6 +118,7 @@ AC_CONFIG_FILES([
 	tests/basic_long/Makefile
 	tests/fork/Makefile
 	tests/simple_include/Makefile
+	tests/snprintf/Makefile
 	libmallocwrap/Makefile
 	libinterfork/Makefile
 	ustd/Makefile
