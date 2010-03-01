@@ -357,6 +357,7 @@ static __inline__ int ltt_reserve_slot(struct ust_trace *trace,
 	 */
 	/* FIXME: make this rellay per cpu? */
 	if (unlikely(LOAD_SHARED(ltt_nesting) > 4)) {
+		DBG("Dropping event because nesting is too deep.");
 		local_inc(&buf->events_lost);
 		return -EPERM;
 	}

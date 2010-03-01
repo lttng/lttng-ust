@@ -8,6 +8,7 @@ libustsnprintf_la_SOURCES = \
 	fvwrite.c \
 	fvwrite.h \
 	local.h \
+	mbrtowc_sb.c \
 	snprintf.c \
 	various.h \
 	vfprintf.c \

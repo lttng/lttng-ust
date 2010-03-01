@@ -399,7 +399,7 @@ int ust_safe_vfprintf(LFILE *fp, const char *fmt0, va_list ap)
 	 */
 	for (;;) {
 		cp = fmt;
-		while ((n = mbrtowc(&wc, fmt, MB_CUR_MAX, &ps)) > 0) {
+		while ((n = ust_safe_mbrtowc(&wc, fmt, MB_CUR_MAX, &ps)) > 0) {
 			fmt += n;
 			if (wc == '%') {
 				fmt--;
@@ -1071,7 +1071,7 @@ __find_arguments(const char *fmt0, va_list ap, union arg **argtable,
 	 */
 	for (;;) {
 		cp = fmt;
-		while ((n = mbrtowc(&wc, fmt, MB_CUR_MAX, &ps)) > 0) {
+		while ((n = ust_safe_mbrtowc(&wc, fmt, MB_CUR_MAX, &ps)) > 0) {
 			fmt += n;
 			if (wc == '%') {
 				fmt--;

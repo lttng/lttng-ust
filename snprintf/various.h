@@ -88,4 +88,6 @@ typedef struct __sFILE {
 extern int ust_safe_fflush(LFILE *fp);
 extern int ust_safe_vfprintf(LFILE *fp, const char *fmt0, va_list ap);
 
+extern size_t ust_safe_mbrtowc(wchar_t *pwc, const char *s, size_t n, mbstate_t *ps);
+
 #endif /* UST_SNPRINTF_VARIOUS_H */
