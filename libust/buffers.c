@@ -331,6 +331,9 @@ static notrace void ltt_buffer_end(struct ust_buffer *buf,
 	header->cycle_count_end = tsc;
 	header->events_lost = local_read(&buf->events_lost);
 	header->subbuf_corrupt = local_read(&buf->corrupted_subbuffers);
+	if(unlikely(header->events_lost > 0)) {
+		DBG("Some events (%d) were lost in %s_%d", header->events_lost, buf->chan->channel_name, buf->cpu);
+	}
 }
 
 /*
