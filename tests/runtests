@@ -1,0 +1,66 @@
+#!/bin/bash
+
+function check_no_fail() {
+	if [ "$?" -ne "0" ]; then
+		echo "$0: Stopping because of error"
+		exit 1;
+	fi
+}
+
+function NOFAIL() {
+	"$@"
+	if [ "$?" -ne "0" ]; then
+		echo "!!!!!!!!!!!!!!!!!!!!!!!!"
+		echo "$0: Stopping because of error"
+		echo "!!!!!!!!!!!!!!!!!!!!!!!!"
+		exit 1;
+	fi
+}
+
+TESTDIR=$(dirname $0)
+MATCHES="$TESTDIR/trace_matches"
+
+NOFAIL usttrace $TESTDIR/test-nevents/prog
+NOFAIL $MATCHES -N "an_event (100000)" -n 100000 "^ust.an_event:" $(usttrace -W)
+NOFAIL $MATCHES -N "another_event (100000)" -n 100000 "^ust.another_event:" $(usttrace -W)
+
+NOFAIL usttrace -f $TESTDIR/fork/.libs/fork $TESTDIR/fork/.libs/fork2
+NOFAIL $MATCHES -N "fork - before_fork" "^ust.before_fork:" $(usttrace -W)
+NOFAIL $MATCHES -N "fork - after_fork_parent" "^ust.after_fork_parent:" $(usttrace -W)
+NOFAIL $MATCHES -N "fork - after_fork_child" "^ust.after_fork_child:" $(usttrace -W)
+NOFAIL $MATCHES -N "fork - before_exec" "^ust.before_exec:" $(usttrace -W)
+NOFAIL $MATCHES -N "fork - potential_exec" "^ust.potential_exec:" $(usttrace -W)
+NOFAIL $MATCHES -N "fork - after_exec" "^ust.after_exec:" $(usttrace -W)
+
+NOFAIL usttrace -lm $TESTDIR/test-libmallocwrap/prog
+NOFAIL $MATCHES -N "mallocwrap - malloc" -n 1000 "^ust.malloc:.*{ size = 1[0-9][0-9][0-9]," $(usttrace -W)
+
+### Manual mode test
+TRACE_DIR="/tmp/ust-testsuite-manual-trace"
+rm -rf "$TRACE_DIR"
+mkdir "$TRACE_DIR"
+
+NOFAIL ustd -o "$TRACE_DIR" >/dev/null 2>&1 &
+USTD_PID=$!
+
+LD_PRELOAD=/usr/local/lib/libust.so.0.0.0:/usr/local/lib/libmallocwrap.so find / >/dev/null 2>&1 &
+PID=$!
+sleep 0.1
+NOFAIL ustctl --list-markers "$PID" >/dev/null
+NOFAIL ustctl --enable-marker ust/malloc $PID
+NOFAIL ustctl --enable-marker ust/free $PID
+NOFAIL ustctl --create-trace $PID
+NOFAIL ustctl --alloc-trace $PID
+NOFAIL ustctl --start-trace $PID
+sleep 0.5
+NOFAIL ustctl --stop-trace $PID
+NOFAIL ustctl --destroy-trace $PID
+kill $PID
+kill $USTD_PID
+
+NOFAIL $MATCHES -N "manual - find - ust.malloc" "^ust.malloc:" "$TRACE_DIR"
+
+echo "************************************"
+echo "$0: All passed"
+echo "************************************"
+exit 0

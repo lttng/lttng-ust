@@ -1,0 +1,12 @@
+#!/bin/bash
+
+DIR=$(dirname $0)
+
+while [ 0 ]; do
+	$DIR/runtests
+	if [ "$?" != "0" ]; then
+		break;
+	fi
+done
+
+echo "$0: ********* STOPPED BECAUSE OF ERROR *********"

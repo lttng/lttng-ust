@@ -1,0 +1,67 @@
+#!/bin/bash
+
+RUNLTTV=~/devel/lttv/runlttv
+
+function error() {
+	echo "$0: $@" >/dev/stderr
+}
+
+function usage() {
+	echo "Usage: $0 [ -N pattern_name ] [ -n pattern_count ] PATTERN TRACE_PARENT_DIR"
+}
+
+if [ ! -x "$RUNLTTV" ]; then
+	echo "$0: $RUNLTTV not executable. Edit \$RUNLTTV to point to your lttv source directory." >/dev/stderr
+	exit 1;
+fi
+
+while getopts ":n:N:" options; do
+	case "$options" in
+		n) expected_count=$OPTARG;;
+		N) name=$OPTARG;;
+		h) usage;
+		   exit 0;;
+		\?) usage
+			exit 1;;
+		*) usage
+			exit 1;;
+	esac
+done
+shift $(($OPTIND - 1))
+
+pattern=$1
+if [ -z "$pattern" ]; then
+	error "no pattern specified"
+	usage
+	exit 1
+fi
+
+if [ -z "$2" ]; then
+	error "no trace directory specified"
+	usage
+	exit 1
+fi
+traces=$(find "$2" -mindepth 1 -maxdepth 1 -type d)
+
+echo -n "Analyzing trace ($name): "
+
+cnt=$($RUNLTTV -m text "$traces" | grep "$pattern" | wc -l)
+if [ -z "$expected_count" ]; then
+	if [ "$cnt" -eq "0" ]; then
+		echo "ERROR"
+		echo "Did not find at least one instance of this event ($cnt)"
+	else
+		echo "Success"
+		exit 0
+	fi
+else 
+	if [ "$cnt" -ne "$expected_count" ]; then
+		echo "ERROR"
+		echo "Expected: $expected_count"
+		echo "In trace: $cnt"
+		exit 1
+	else
+		echo "Success"
+		exit 0
+	fi
+fi
