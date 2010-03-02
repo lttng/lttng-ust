@@ -5,6 +5,7 @@
 - correctly destroy buffers at trace destroy
 - add option to see subbuffer size and count
 - performance testing tool (in progress by Rafik Fahem)
+- profile with oprofile or similar to check for perf bottlenecks
 - improve support for combined kernel/userspace tracing
 - document API
 - make sure the proper structures are cacheline aligned, and test performance, including multi-threaded
