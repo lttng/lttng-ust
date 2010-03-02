@@ -181,6 +181,8 @@ struct registers {
 
 #define RELATIVE_ADDRESS(__rel_label__) __rel_label__
 
+#define ARCH_COPY_ADDR(src, dst) "lea " src "," dst
+
 #define _ASM_PTR ".long "
 
 #else /* below is code for x86-64 */
@@ -378,6 +380,8 @@ struct registers {
 /* Macro to insert the address of a relative jump in an assembly stub,
  * in a relocatable way. On x86-64, this uses a special (%rip) notation. */
 #define RELATIVE_ADDRESS(__rel_label__) __rel_label__(%%rip)
+
+#define ARCH_COPY_ADDR(src, dst) "lea " src "(%%rip)," dst
 
 #define _ASM_PTR ".quad "
 

@@ -86,15 +86,20 @@ struct marker {
 #define CONFIG_MARKERS
 #ifdef CONFIG_MARKERS
 
-#define _DEFINE_MARKER(channel, name, tp_name_str, tp_cb, format, unique)			\
+#define _DEFINE_MARKER(channel, name, tp_name_str, tp_cb, format, unique, m)			\
 		struct registers regs;								\
-		/* make asm label visible to C */						\
-		extern struct marker make_mark_struct_name(channel, name, unique);		\
 												\
 		/* This next asm has to be a basic inline asm (no input/output/clobber), 	\
-		   because it must not require %-sign escaping, as we most certainly		\
-		   have some %-signs in the format string. */					\
+		 * because it must not require %-sign escaping, as we most certainly		\
+		 * have some %-signs in the format string.					\
+		 */										\
 		asm volatile ( 									\
+		     /* We only define these symbols if they have not yet been defined. Indeed, \
+		      * if two markers with the same channel/name are on the same line, they	\
+		      * will try to create the same symbols, resulting in a conflict. This	\
+		      * is not unusual as it can be the result of function inlining.		\
+		      */									\
+		     ".ifndef __mstrtab_" XSTR(channel) "_" XSTR(name) "_channel_" XSTR(unique) "\n\t"	\
 		     ".section __markers_strings,\"aw\",@progbits\n\t"				\
 		     "__mstrtab_" XSTR(channel) "_" XSTR(name) "_channel_" XSTR(unique) ":\n\t"	\
 		     ".string \"" XSTR(channel) "\"\n\t"					\
@@ -103,11 +108,12 @@ struct marker {
 		     "__mstrtab_" XSTR(channel) "_" XSTR(name) "_format_" XSTR(unique) ":\n\t"	\
 		     ".string " "\"" format "\"" "\n\t"						\
 		     ".previous\n\t"								\
+		     ".endif\n\t"								\
+		);										\
+		asm volatile (									\
 		     ".section __markers,\"aw\",@progbits\n\t"					\
 		     ".align 8\n\t"								\
-		     XSTR(make_mark_struct_name(channel, name, unique)) ":\n\t"			\
-		     ".global " XSTR(make_mark_struct_name(channel, name, unique)) "\n\t"	\
-		     ".local " XSTR(make_mark_struct_name(channel, name, unique)) "\n\t"	\
+		     "2:\n\t" \
 		     _ASM_PTR "(__mstrtab_" XSTR(channel) "_" XSTR(name) "_channel_" XSTR(unique) ")\n\t" /* channel string */ \
 		     _ASM_PTR "(__mstrtab_" XSTR(channel) "_" XSTR(name) "_name_" XSTR(unique) ")\n\t" /* name string */ \
 		     _ASM_PTR "(__mstrtab_" XSTR(channel) "_" XSTR(name) "_format_" XSTR(unique) ")\n\t" /* format string */ \
@@ -122,20 +128,20 @@ struct marker {
 		     _ASM_PTR "0\n\t" /* marker_probe_closure *multi */				\
 		     _ASM_PTR "0\n\t" /* tp_name */						\
 		     _ASM_PTR "0\n\t" /* tp_cb */						\
-		     "__mark_location_" XSTR(unique) ":\n\t"					\
 		     _ASM_PTR "(1f)\n\t" /* location */						\
 		     ".previous\n\t"								\
 		     "1:\n\t"									\
-		);										\
+		     ARCH_COPY_ADDR("2b", "%[outptr]") "\n\t"					\
+		: [outptr] "=r" (m) );								\
 												\
 		save_registers(&regs)
 
 
-#define DEFINE_MARKER(channel, name, format, unique)				\
-		_DEFINE_MARKER(channel, name, NULL, NULL, format, unique)
+#define DEFINE_MARKER(channel, name, format, unique, m)				\
+		_DEFINE_MARKER(channel, name, NULL, NULL, format, unique, m)
 
-#define DEFINE_MARKER_TP(channel, name, tp_name, tp_cb, format, unique)		\
-		_DEFINE_MARKER(channel, name, #tp_name, tp_cb, format, unique)
+#define DEFINE_MARKER_TP(channel, name, tp_name, tp_cb, format, unique, m)		\
+		_DEFINE_MARKER(channel, name, #tp_name, tp_cb, format, unique, m)
 
 /*
  * Make sure the alignment of the structure in the __markers section will
@@ -147,31 +153,20 @@ struct marker {
  * If generic is false, immediate values are used.
  */
 
-#define make_mark_struct_name(channel, name, unique) \
-	make_mark_struct_name2(channel, name, unique)
-
-#define make_mark_struct_name2(channel, name, unique) \
-	__mark_struct_##channel##_##name##_##unique
-
 #define __trace_mark(generic, channel, name, call_private, format, args...) \
 	__trace_mark_counter(generic, channel, name, __LINE__, call_private, format, ## args)
 
 #define __trace_mark_counter(generic, channel, name, unique, call_private, format, args...) \
 	do {								\
-		DEFINE_MARKER(channel, name, format, unique);			\
+		struct marker *m;					\
+		DEFINE_MARKER(channel, name, format, unique, m);			\
 		__mark_check_format(format, ## args);			\
 		if (!generic) {						\
-			if (unlikely(imv_read(				\
-					make_mark_struct_name(channel, name, unique).state))) \
-				(make_mark_struct_name(channel, name, unique).call)	\
-					(&make_mark_struct_name(channel, name, unique),	\
-					call_private, &regs, ## args);		\
+			if (unlikely(imv_read(m->state))) \
+				(m->call)(m, call_private, &regs, ## args);		\
 		} else {						\
-			if (unlikely(_imv_read(				\
-					make_mark_struct_name(channel, name, unique).state))) \
-				(make_mark_struct_name(channel, name, unique).call)	\
-					(&make_mark_struct_name(channel, name, unique),	\
-					call_private, &regs, ## args);		\
+			if (unlikely(_imv_read(m->state))) \
+				(m->call)(m, call_private, &regs, ## args);		\
 		}							\
 	} while (0)
 
@@ -180,11 +175,12 @@ struct marker {
 
 #define __trace_mark_tp_counter(channel, name, unique, call_private, tp_name, tp_cb, format, args...) \
 	do {								\
+		struct marker m;					\
 		void __check_tp_type(void)				\
 		{							\
 			register_trace_##tp_name(tp_cb);		\
 		}							\
-		DEFINE_MARKER_TP(channel, name, tp_name, tp_cb, format, unique);\
+		DEFINE_MARKER_TP(channel, name, tp_name, tp_cb, format, unique, m);\
 		__mark_check_format(format, ## args);			\
 		(*__mark_##channel##_##name.call)(&__mark_##channel##_##name, \
 			call_private, &regs, ## args);				\
@@ -196,7 +192,7 @@ extern void marker_update_probe_range(struct marker *begin,
 #define GET_MARKER(channel, name)	(__mark_##channel##_##name)
 
 #else /* !CONFIG_MARKERS */
-#define DEFINE_MARKER(channel, name, tp_name, tp_cb, format)
+#define DEFINE_MARKER(channel, name, tp_name, tp_cb, format, m)
 #define __trace_mark(generic, channel, name, call_private, format, args...) \
 		__mark_check_format(format, ## args)
 #define __trace_mark_tp(channel, name, call_private, tp_name, tp_cb,	\
