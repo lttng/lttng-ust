@@ -1,3 +1,8 @@
+Changes in 0.3 since 0.2
+* fix several issues, stabilizing tracing of large applications
+* add --set-subbuf-size / --set-subbuf-num options to ustctl
+* add a signal safe implementation of snprintf
+
 Changes in 0.2 since 0.1
 * conversion of the buffering system to per-cpu
 * update to the liburcu 0.4 API
