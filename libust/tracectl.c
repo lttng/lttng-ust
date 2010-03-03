@@ -27,8 +27,6 @@
 #include <poll.h>
 #include <regex.h>
 
-#include <urcu-bp.h>
-
 #include <ust/marker.h>
 #include <ust/tracectl.h>
 #include "tracer.h"
@@ -124,15 +122,6 @@ static void print_markers(FILE *fp)
 }
 
 static int init_socket(void);
-
-/* This needs to be called whenever a new thread is created. It notifies
- * liburcu of the new thread.
- */
-
-void ust_register_thread(void)
-{
-	rcu_register_thread();
-}
 
 int fd_notif = -1;
 void notif_cb(void)
@@ -828,8 +817,6 @@ void *listener_main(void *p)
 {
 	int result;
 
-	ust_register_thread();
-
 	DBG("LISTENER");
 
 	for(;;) {
@@ -1191,16 +1178,8 @@ static void __attribute__((constructor)) init()
 	 */
 	pidunique = make_pidunique();
 
-	/* Initialize RCU in case the constructor order is not good. */
-	rcu_init();
-
-	/* It is important to do this before events start to be generated. */
-	ust_register_thread();
-
 	DBG("Tracectl constructor");
 
-	/* Must create socket before signal handler to prevent races.
-         */
 	result = init_socket();
 	if(result == -1) {
 		ERR("init_socket error");
