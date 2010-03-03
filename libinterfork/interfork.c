@@ -26,6 +26,8 @@
 #include <ust/tracectl.h>
 #include "usterr.h"
 
+struct user_desc;
+
 pid_t fork(void)
 {
 	static pid_t (*plibc_func)(void) = NULL;
