@@ -1,6 +1,6 @@
-- make web site (in progress by pmf)
 - support multiple simultaneous traces
 - fix FIXME's in the code
+- add compilation tests
 - test with smaller subbuffer sizes
 - correctly destroy buffers at trace destroy
 - add option to see subbuffer size and count
