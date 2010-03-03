@@ -17,13 +17,21 @@ function NOFAIL() {
 	fi
 }
 
+function starttest() {
+	echo "------------------------------------"
+	echo "Starting test: $1"
+	echo "------------------------------------"
+}
+
 TESTDIR=$(dirname $0)
 MATCHES="$TESTDIR/trace_matches"
 
+starttest "Test-nevents"
 NOFAIL usttrace $TESTDIR/test-nevents/prog
 NOFAIL $MATCHES -N "an_event (100000)" -n 100000 "^ust.an_event:" $(usttrace -W)
 NOFAIL $MATCHES -N "another_event (100000)" -n 100000 "^ust.another_event:" $(usttrace -W)
 
+starttest "fork()/exec() test"
 NOFAIL usttrace -f $TESTDIR/fork/.libs/fork $TESTDIR/fork/.libs/fork2
 NOFAIL $MATCHES -N "fork - before_fork" "^ust.before_fork:" $(usttrace -W)
 NOFAIL $MATCHES -N "fork - after_fork_parent" "^ust.after_fork_parent:" $(usttrace -W)
@@ -32,10 +40,12 @@ NOFAIL $MATCHES -N "fork - before_exec" "^ust.before_exec:" $(usttrace -W)
 NOFAIL $MATCHES -N "fork - potential_exec" "^ust.potential_exec:" $(usttrace -W)
 NOFAIL $MATCHES -N "fork - after_exec" "^ust.after_exec:" $(usttrace -W)
 
+starttest "libmallocwrap"
 NOFAIL usttrace -lm $TESTDIR/test-libmallocwrap/.libs/prog
 NOFAIL $MATCHES -N "mallocwrap - malloc" -n 1000 "^ust.malloc:.*{ size = 1[0-9][0-9][0-9]," $(usttrace -W)
 
 ### Manual mode test
+starttest "Manual mode tracing"
 TRACE_DIR="/tmp/ust-testsuite-manual-trace"
 rm -rf "$TRACE_DIR"
 mkdir "$TRACE_DIR"
