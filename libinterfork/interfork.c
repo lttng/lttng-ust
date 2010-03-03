@@ -83,7 +83,7 @@ int execve(const char *filename, char *const argv[], char *const envp[])
 struct interfork_clone_info {
 	int (*fn)(void *);
 	void *arg;
-	ust_fork_info_t *fork_info;
+	ust_fork_info_t fork_info;
 };
 
 static int clone_fn(void *arg)
