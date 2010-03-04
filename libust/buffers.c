@@ -329,8 +329,8 @@ static notrace void ltt_buffer_end(struct ust_buffer *buf,
 	header->data_size = data_size;
 	header->sb_size = PAGE_ALIGN(data_size);
 	header->cycle_count_end = tsc;
-	header->events_lost = local_read(&buf->events_lost);
-	header->subbuf_corrupt = local_read(&buf->corrupted_subbuffers);
+	header->events_lost = uatomic_read(&buf->events_lost);
+	header->subbuf_corrupt = uatomic_read(&buf->corrupted_subbuffers);
 	if(unlikely(header->events_lost > 0)) {
 		DBG("Some events (%d) were lost in %s_%d", header->events_lost, buf->chan->channel_name, buf->cpu);
 	}
@@ -362,9 +362,9 @@ int ust_buffers_get_subbuf(struct ust_buffer *buf, long *consumed)
 	long consumed_old, consumed_idx, commit_count, write_offset;
 //ust//	int retval;
 
-	consumed_old = atomic_long_read(&buf->consumed);
+	consumed_old = uatomic_read(&buf->consumed);
 	consumed_idx = SUBBUF_INDEX(consumed_old, buf->chan);
-	commit_count = local_read(&buf->commit_count[consumed_idx].cc_sb);
+	commit_count = uatomic_read(&buf->commit_count[consumed_idx].cc_sb);
 	/*
 	 * Make sure we read the commit count before reading the buffer
 	 * data and the write offset. Correct consumed offset ordering
@@ -416,7 +416,7 @@ int ust_buffers_get_subbuf(struct ust_buffer *buf, long *consumed)
 //ust// 	}
 //ust// #endif
 
-	write_offset = local_read(&buf->offset);
+	write_offset = uatomic_read(&buf->offset);
 	/*
 	 * Check that the subbuffer we are trying to consume has been
 	 * already fully committed.
@@ -452,13 +452,13 @@ int ust_buffers_put_subbuf(struct ust_buffer *buf, unsigned long uconsumed_old)
 {
 	long consumed_new, consumed_old;
 
-	consumed_old = atomic_long_read(&buf->consumed);
+	consumed_old = uatomic_read(&buf->consumed);
 	consumed_old = consumed_old & (~0xFFFFFFFFL);
 	consumed_old = consumed_old | uconsumed_old;
 	consumed_new = SUBBUF_ALIGN(consumed_old, buf->chan);
 
 //ust//	spin_lock(&ltt_buf->full_lock);
-	if (atomic_long_cmpxchg(&buf->consumed, consumed_old,
+	if (uatomic_cmpxchg(&buf->consumed, consumed_old,
 				consumed_new)
 	    != consumed_old) {
 		/* We have been pushed by the writer : the last
@@ -557,7 +557,7 @@ int ust_buffers_put_subbuf(struct ust_buffer *buf, unsigned long uconsumed_old)
 //ust// 	long cons_idx, events_count;
 //ust//
 //ust// 	cons_idx = SUBBUF_INDEX(cons_off, chan);
-//ust// 	events_count = local_read(&buf->commit_count[cons_idx].events);
+//ust// 	events_count = uatomic_read(&buf->commit_count[cons_idx].events);
 //ust//
 //ust// 	if (events_count)
 //ust// 		printk(KERN_INFO
@@ -573,14 +573,14 @@ static void ltt_relay_print_subbuffer_errors(
 	long cons_idx, commit_count, commit_count_sb, write_offset;
 
 	cons_idx = SUBBUF_INDEX(cons_off, channel);
-	commit_count = local_read(&ltt_buf->commit_count[cons_idx].cc);
-	commit_count_sb = local_read(&ltt_buf->commit_count[cons_idx].cc_sb);
+	commit_count = uatomic_read(&ltt_buf->commit_count[cons_idx].cc);
+	commit_count_sb = uatomic_read(&ltt_buf->commit_count[cons_idx].cc_sb);
 
 	/*
 	 * No need to order commit_count and write_offset reads because we
 	 * execute after trace is stopped when there are no readers left.
 	 */
-	write_offset = local_read(&ltt_buf->offset);
+	write_offset = uatomic_read(&ltt_buf->offset);
 	WARN( "LTT : unread channel %s offset is %ld "
 		"and cons_off : %ld (cpu %d)\n",
 		channel->channel_name, write_offset, cons_off, cpu);
@@ -612,8 +612,8 @@ static void ltt_relay_print_errors(struct ust_trace *trace,
 //ust//	for (cons_off = 0; cons_off < rchan->alloc_size;
 //ust//	     cons_off = SUBBUF_ALIGN(cons_off, rchan))
 //ust//		ust_buffers_print_written(ltt_chan, cons_off, cpu);
-	for (cons_off = atomic_long_read(&ltt_buf->consumed);
-			(SUBBUF_TRUNC(local_read(&ltt_buf->offset),
+	for (cons_off = uatomic_read(&ltt_buf->consumed);
+			(SUBBUF_TRUNC(uatomic_read(&ltt_buf->offset),
 				      channel)
 			 - cons_off) > 0;
 			cons_off = SUBBUF_ALIGN(cons_off, channel))
@@ -625,14 +625,14 @@ static void ltt_relay_print_buffer_errors(struct ust_channel *channel, int cpu)
 	struct ust_trace *trace = channel->trace;
 	struct ust_buffer *ltt_buf = channel->buf[cpu];
 
-	if (local_read(&ltt_buf->events_lost))
+	if (uatomic_read(&ltt_buf->events_lost))
 		ERR("channel %s: %ld events lost (cpu %d)",
 			channel->channel_name,
-			local_read(&ltt_buf->events_lost), cpu);
-	if (local_read(&ltt_buf->corrupted_subbuffers))
+			uatomic_read(&ltt_buf->events_lost), cpu);
+	if (uatomic_read(&ltt_buf->corrupted_subbuffers))
 		ERR("channel %s : %ld corrupted subbuffers (cpu %d)",
 			channel->channel_name,
-			local_read(&ltt_buf->corrupted_subbuffers), cpu);
+			uatomic_read(&ltt_buf->corrupted_subbuffers), cpu);
 
 	ltt_relay_print_errors(trace, channel, cpu);
 }
@@ -663,22 +663,22 @@ static void ltt_relay_release_channel(struct kref *kref)
 //ust// 	kref_get(&trace->kref);
 //ust// 	kref_get(&trace->ltt_transport_kref);
 //ust// 	kref_get(&ltt_chan->kref);
-//ust// 	local_set(&ltt_buf->offset, ltt_subbuffer_header_size());
-//ust// 	atomic_long_set(&ltt_buf->consumed, 0);
-//ust// 	atomic_long_set(&ltt_buf->active_readers, 0);
+//ust// 	uatomic_set(&ltt_buf->offset, ltt_subbuffer_header_size());
+//ust// 	uatomic_set(&ltt_buf->consumed, 0);
+//ust// 	uatomic_set(&ltt_buf->active_readers, 0);
 //ust// 	for (j = 0; j < n_subbufs; j++)
-//ust// 		local_set(&ltt_buf->commit_count[j], 0);
+//ust// 		uatomic_set(&ltt_buf->commit_count[j], 0);
 //ust// 	init_waitqueue_head(&ltt_buf->write_wait);
-//ust// 	atomic_set(&ltt_buf->wakeup_readers, 0);
+//ust// 	uatomic_set(&ltt_buf->wakeup_readers, 0);
 //ust// 	spin_lock_init(&ltt_buf->full_lock);
 //ust//
 //ust// 	ltt_buffer_begin_callback(buf, trace->start_tsc, 0);
 //ust// 	/* atomic_add made on local variable on data that belongs to
 //ust// 	 * various CPUs : ok because tracing not started (for this cpu). */
-//ust// 	local_add(ltt_subbuffer_header_size(), &ltt_buf->commit_count[0]);
+//ust// 	uatomic_add(&ltt_buf->commit_count[0], ltt_subbuffer_header_size());
 //ust//
-//ust// 	local_set(&ltt_buf->events_lost, 0);
-//ust// 	local_set(&ltt_buf->corrupted_subbuffers, 0);
+//ust// 	uatomic_set(&ltt_buf->events_lost, 0);
+//ust// 	uatomic_set(&ltt_buf->corrupted_subbuffers, 0);
 //ust//
 //ust// 	return 0;
 //ust// }
@@ -698,23 +698,23 @@ static int ust_buffers_init_buffer(struct ust_trace *trace,
 	kref_get(&trace->kref);
 	kref_get(&trace->ltt_transport_kref);
 	kref_get(&ltt_chan->kref);
-	local_set(&buf->offset, ltt_subbuffer_header_size());
-	atomic_long_set(&buf->consumed, 0);
-	atomic_long_set(&buf->active_readers, 0);
+	uatomic_set(&buf->offset, ltt_subbuffer_header_size());
+	uatomic_set(&buf->consumed, 0);
+	uatomic_set(&buf->active_readers, 0);
 	for (j = 0; j < n_subbufs; j++) {
-		local_set(&buf->commit_count[j].cc, 0);
-		local_set(&buf->commit_count[j].cc_sb, 0);
+		uatomic_set(&buf->commit_count[j].cc, 0);
+		uatomic_set(&buf->commit_count[j].cc_sb, 0);
 	}
 //ust//	init_waitqueue_head(&buf->write_wait);
-//ust//	atomic_set(&buf->wakeup_readers, 0);
+//ust//	uatomic_set(&buf->wakeup_readers, 0);
 //ust//	spin_lock_init(&buf->full_lock);
 
 	ltt_buffer_begin(buf, trace->start_tsc, 0);
 
-	local_add(ltt_subbuffer_header_size(), &buf->commit_count[0].cc);
+	uatomic_add(&buf->commit_count[0].cc, ltt_subbuffer_header_size());
 
-	local_set(&buf->events_lost, 0);
-	local_set(&buf->corrupted_subbuffers, 0);
+	uatomic_set(&buf->events_lost, 0);
+	uatomic_set(&buf->corrupted_subbuffers, 0);
 
 	result = pipe(fds);
 	if(result == -1) {
@@ -893,8 +893,8 @@ static void ltt_relay_async_wakeup_chan(struct ust_channel *ltt_channel)
 //ust//		struct ltt_channel_buf_struct *ltt_buf =
 //ust//			percpu_ptr(ltt_channel->buf, i);
 //ust//
-//ust//		if (atomic_read(&ltt_buf->wakeup_readers) == 1) {
-//ust//			atomic_set(&ltt_buf->wakeup_readers, 0);
+//ust//		if (uatomic_read(&ltt_buf->wakeup_readers) == 1) {
+//ust//			uatomic_set(&ltt_buf->wakeup_readers, 0);
 //ust//			wake_up_interruptible(&rchan->buf[i]->read_wait);
 //ust//		}
 //ust//	}
@@ -945,7 +945,7 @@ static void ltt_relay_remove_channel(struct ust_channel *channel)
 //ust// 		struct ltt_reserve_switch_offsets *offsets, size_t data_size,
 //ust// 		u64 *tsc, unsigned int *rflags, int largest_align)
 //ust// {
-//ust// 	offsets->begin = local_read(&buf->offset);
+//ust// 	offsets->begin = uatomic_read(&buf->offset);
 //ust// 	offsets->old = offsets->begin;
 //ust// 	offsets->begin_switch = 0;
 //ust// 	offsets->end_switch_current = 0;
@@ -982,12 +982,12 @@ static void ltt_relay_remove_channel(struct ust_channel *channel)
 //ust// 		offsets->reserve_commit_diff =
 //ust// 			(BUFFER_TRUNC(offsets->begin, buf->chan)
 //ust// 			 >> channel->n_subbufs_order)
-//ust// 			- (local_read(&buf->commit_count[subbuf_index])
+//ust// 			- (uatomic_read(&buf->commit_count[subbuf_index])
 //ust// 				& channel->commit_count_mask);
 //ust// 		if (offsets->reserve_commit_diff == 0) {
 //ust// 			long consumed;
 //ust//
-//ust// 			consumed = atomic_long_read(&buf->consumed);
+//ust// 			consumed = uatomic_read(&buf->consumed);
 //ust//
 //ust// 			/* Next buffer not corrupted. */
 //ust// 			if (!channel->overwrite &&
@@ -996,7 +996,7 @@ static void ltt_relay_remove_channel(struct ust_channel *channel)
 //ust// 				>= channel->alloc_size) {
 //ust//
 //ust// 				long consumed_idx = SUBBUF_INDEX(consumed, buf->chan);
-//ust// 				long commit_count = local_read(&buf->commit_count[consumed_idx]);
+//ust// 				long commit_count = uatomic_read(&buf->commit_count[consumed_idx]);
 //ust// 				if(((commit_count - buf->chan->subbuf_size) & channel->commit_count_mask) - (BUFFER_TRUNC(consumed, buf->chan) >> channel->n_subbufs_order) != 0) {
 //ust// 					WARN("Event dropped. Caused by non-committed event.");
 //ust// 				}
@@ -1007,7 +1007,7 @@ static void ltt_relay_remove_channel(struct ust_channel *channel)
 //ust// 				 * We do not overwrite non consumed buffers
 //ust// 				 * and we are full : event is lost.
 //ust// 				 */
-//ust// 				local_inc(&buf->events_lost);
+//ust// 				uatomic_inc(&buf->events_lost);
 //ust// 				return -1;
 //ust// 			} else {
 //ust// 				/*
@@ -1035,7 +1035,7 @@ static void ltt_relay_remove_channel(struct ust_channel *channel)
 //ust// 			 * Event too big for subbuffers, report error, don't
 //ust// 			 * complete the sub-buffer switch.
 //ust// 			 */
-//ust// 			local_inc(&buf->events_lost);
+//ust// 			uatomic_inc(&buf->events_lost);
 //ust// 			return -1;
 //ust// 		} else {
 //ust// 			/*
@@ -1075,7 +1075,7 @@ static void ltt_relay_remove_channel(struct ust_channel *channel)
 //ust// {
 //ust// 	long subbuf_index;
 //ust//
-//ust// 	offsets->begin = local_read(&buf->offset);
+//ust// 	offsets->begin = uatomic_read(&buf->offset);
 //ust// 	offsets->old = offsets->begin;
 //ust// 	offsets->begin_switch = 0;
 //ust// 	offsets->end_switch_old = 0;
@@ -1099,13 +1099,13 @@ static void ltt_relay_remove_channel(struct ust_channel *channel)
 //ust// 	offsets->reserve_commit_diff =
 //ust// 		(BUFFER_TRUNC(offsets->begin, buf->chan)
 //ust// 		 >> channel->n_subbufs_order)
-//ust// 		- (local_read(&buf->commit_count[subbuf_index])
+//ust// 		- (uatomic_read(&buf->commit_count[subbuf_index])
 //ust// 			& channel->commit_count_mask);
 //ust// 	if (offsets->reserve_commit_diff == 0) {
 //ust// 		/* Next buffer not corrupted. */
 //ust// 		if (mode == FORCE_ACTIVE
 //ust// 		    && !channel->overwrite
-//ust// 		    && offsets->begin - atomic_long_read(&buf->consumed)
+//ust// 		    && offsets->begin - uatomic_read(&buf->consumed)
 //ust// 		       >= channel->alloc_size) {
 //ust// 			/*
 //ust// 			 * We do not overwrite non consumed buffers and we are
@@ -1131,7 +1131,7 @@ static void ltt_relay_remove_channel(struct ust_channel *channel)
 //ust// 	long consumed_old, consumed_new;
 //ust//
 //ust// 	do {
-//ust// 		consumed_old = atomic_long_read(&buf->consumed);
+//ust// 		consumed_old = uatomic_read(&buf->consumed);
 //ust// 		/*
 //ust// 		 * If buffer is in overwrite mode, push the reader consumed
 //ust// 		 * count if the write position has reached it and we are not
@@ -1151,7 +1151,7 @@ static void ltt_relay_remove_channel(struct ust_channel *channel)
 //ust// 			consumed_new = consumed_old;
 //ust// 			break;
 //ust// 		}
-//ust// 	} while (atomic_long_cmpxchg(&buf->consumed, consumed_old,
+//ust// 	} while (uatomic_cmpxchg(&buf->consumed, consumed_old,
 //ust// 			consumed_new) != consumed_old);
 //ust//
 //ust// 	if (consumed_old != consumed_new) {
@@ -1173,10 +1173,8 @@ static void ltt_relay_remove_channel(struct ust_channel *channel)
 //ust// 			 * was either corrupted or not consumed (overwrite
 //ust// 			 * mode).
 //ust// 			 */
-//ust// 			local_add(offsets->reserve_commit_diff,
-//ust// 				  &buf->commit_count[
-//ust// 					SUBBUF_INDEX(offsets->begin,
-//ust// 						     buf->chan)]);
+//ust// 			uatomic_add(&buf->commit_count[SUBBUF_INDEX(offsets->begin, buf->chan)],
+//ust//					offsets->reserve_commit_diff);
 //ust// 			if (!channel->overwrite
 //ust// 			    || offsets->reserve_commit_diff
 //ust// 			       != channel->subbuf_size) {
@@ -1188,7 +1186,7 @@ static void ltt_relay_remove_channel(struct ust_channel *channel)
 //ust// 				 * recorder mode, we are skipping over a whole
 //ust// 				 * subbuffer.
 //ust// 				 */
-//ust// 				local_inc(&buf->corrupted_subbuffers);
+//ust// 				uatomic_inc(&buf->corrupted_subbuffers);
 //ust// 			}
 //ust// 		}
 //ust// 	}
@@ -1223,14 +1221,14 @@ static void ltt_relay_remove_channel(struct ust_channel *channel)
 //ust// 	 * Perform retryable operations.
 //ust// 	 */
 //ust// 	if (ltt_nesting > 4) {
-//ust// 		local_inc(&buf->events_lost);
+//ust// 		uatomic_inc(&buf->events_lost);
 //ust// 		return -EPERM;
 //ust// 	}
 //ust// 	do {
 //ust// 		if (ltt_relay_try_reserve(channel, buf, &offsets, data_size, tsc, rflags,
 //ust// 				largest_align))
 //ust// 			return -ENOSPC;
-//ust// 	} while (local_cmpxchg(&buf->offset, offsets.old,
+//ust// 	} while (uatomic_cmpxchg(&buf->offset, offsets.old,
 //ust// 			offsets.end) != offsets.old);
 //ust//
 //ust// 	/*
@@ -1270,10 +1268,6 @@ static void ltt_relay_remove_channel(struct ust_channel *channel)
 //ust//  * Force a sub-buffer switch for a per-cpu buffer. This operation is
 //ust//  * completely reentrant : can be called while tracing is active with
 //ust//  * absolutely no lock held.
-//ust//  *
-//ust//  * Note, however, that as a local_cmpxchg is used for some atomic
-//ust//  * operations, this function must be called from the CPU which owns the buffer
-//ust//  * for a ACTIVE flush.
 //ust//  */
 //ust// static notrace void ltt_force_switch(struct ust_buffer *buf,
 //ust// 		enum force_switch_mode mode)
@@ -1291,7 +1285,7 @@ static void ltt_relay_remove_channel(struct ust_channel *channel)
 //ust// 	do {
 //ust// 		if (ltt_relay_try_switch(mode, channel, buf, &offsets, &tsc))
 //ust// 			return;
-//ust// 	} while (local_cmpxchg(&buf->offset, offsets.old,
+//ust// 	} while (uatomic_cmpxchg(&buf->offset, offsets.old,
 //ust// 			offsets.end) != offsets.old);
 //ust//
 //ust// 	/*
@@ -1358,9 +1352,8 @@ static void ltt_reserve_switch_old_subbuf(
 	 * sent by get_subbuf() when it does its smp_rmb().
 	 */
 	barrier();
-	local_add(padding_size,
-		  &buf->commit_count[oldidx].cc);
-	commit_count = local_read(&buf->commit_count[oldidx].cc);
+	uatomic_add(&buf->commit_count[oldidx].cc, padding_size);
+	commit_count = uatomic_read(&buf->commit_count[oldidx].cc);
 	ltt_check_deliver(chan, buf, offsets->old - 1, commit_count, oldidx);
 	ltt_write_commit_counter(chan, buf, oldidx,
 		offsets->old, commit_count, padding_size);
@@ -1388,9 +1381,8 @@ static void ltt_reserve_switch_new_subbuf(
 	 * sent by get_subbuf() when it does its smp_rmb().
 	 */
 	barrier();
-	local_add(ltt_subbuffer_header_size(),
-		  &buf->commit_count[beginidx].cc);
-	commit_count = local_read(&buf->commit_count[beginidx].cc);
+	uatomic_add(&buf->commit_count[beginidx].cc, ltt_subbuffer_header_size());
+	commit_count = uatomic_read(&buf->commit_count[beginidx].cc);
 	/* Check if the written buffer has to be delivered */
 	ltt_check_deliver(chan, buf, offsets->begin, commit_count, beginidx);
 	ltt_write_commit_counter(chan, buf, beginidx,
@@ -1434,9 +1426,8 @@ static void ltt_reserve_end_switch_current(
 	 * sent by get_subbuf() when it does its smp_rmb().
 	 */
 	barrier();
-	local_add(padding_size,
-		  &buf->commit_count[endidx].cc);
-	commit_count = local_read(&buf->commit_count[endidx].cc);
+	uatomic_add(&buf->commit_count[endidx].cc, padding_size);
+	commit_count = uatomic_read(&buf->commit_count[endidx].cc);
 	ltt_check_deliver(chan, buf,
 		offsets->end - 1, commit_count, endidx);
 	ltt_write_commit_counter(chan, buf, endidx,
@@ -1458,7 +1449,7 @@ static int ltt_relay_try_switch_slow(
 	long subbuf_index;
 	long reserve_commit_diff;
 
-	offsets->begin = local_read(&buf->offset);
+	offsets->begin = uatomic_read(&buf->offset);
 	offsets->old = offsets->begin;
 	offsets->begin_switch = 0;
 	offsets->end_switch_old = 0;
@@ -1482,13 +1473,13 @@ static int ltt_relay_try_switch_slow(
 	reserve_commit_diff =
 		(BUFFER_TRUNC(offsets->begin, buf->chan)
 		 >> chan->n_subbufs_order)
-		- (local_read(&buf->commit_count[subbuf_index].cc_sb)
+		- (uatomic_read(&buf->commit_count[subbuf_index].cc_sb)
 			& chan->commit_count_mask);
 	if (reserve_commit_diff == 0) {
 		/* Next buffer not corrupted. */
 		if (mode == FORCE_ACTIVE
 		    && !chan->overwrite
-		    && offsets->begin - atomic_long_read(&buf->consumed)
+		    && offsets->begin - uatomic_read(&buf->consumed)
 		       >= chan->alloc_size) {
 			/*
 			 * We do not overwrite non consumed buffers and we are
@@ -1510,10 +1501,6 @@ static int ltt_relay_try_switch_slow(
  * Force a sub-buffer switch for a per-cpu buffer. This operation is
  * completely reentrant : can be called while tracing is active with
  * absolutely no lock held.
- *
- * Note, however, that as a local_cmpxchg is used for some atomic
- * operations, this function must be called from the CPU which owns the buffer
- * for a ACTIVE flush.
  */
 void ltt_force_switch_lockless_slow(struct ust_buffer *buf,
 		enum force_switch_mode mode)
@@ -1532,7 +1519,7 @@ void ltt_force_switch_lockless_slow(struct ust_buffer *buf,
 		if (ltt_relay_try_switch_slow(mode, chan, buf,
 				&offsets, &tsc))
 			return;
-	} while (local_cmpxchg(&buf->offset, offsets.old,
+	} while (uatomic_cmpxchg(&buf->offset, offsets.old,
 			offsets.end) != offsets.old);
 
 	/*
@@ -1577,7 +1564,7 @@ static int ltt_relay_try_reserve_slow(struct ust_channel *chan, struct ust_buffe
 {
 	long reserve_commit_diff;
 
-	offsets->begin = local_read(&buf->offset);
+	offsets->begin = uatomic_read(&buf->offset);
 	offsets->old = offsets->begin;
 	offsets->begin_switch = 0;
 	offsets->end_switch_current = 0;
@@ -1617,13 +1604,13 @@ static int ltt_relay_try_reserve_slow(struct ust_channel *chan, struct ust_buffe
 		reserve_commit_diff =
 		  (BUFFER_TRUNC(offsets->begin, buf->chan)
 		   >> chan->n_subbufs_order)
-		  - (local_read(&buf->commit_count[subbuf_index].cc_sb)
+		  - (uatomic_read(&buf->commit_count[subbuf_index].cc_sb)
 				& chan->commit_count_mask);
 		if (likely(reserve_commit_diff == 0)) {
 			/* Next buffer not corrupted. */
 			if (unlikely(!chan->overwrite &&
 				(SUBBUF_TRUNC(offsets->begin, buf->chan)
-				 - SUBBUF_TRUNC(atomic_long_read(
+				 - SUBBUF_TRUNC(uatomic_read(
 							&buf->consumed),
 						buf->chan))
 				>= chan->alloc_size)) {
@@ -1631,7 +1618,7 @@ static int ltt_relay_try_reserve_slow(struct ust_channel *chan, struct ust_buffe
 				 * We do not overwrite non consumed buffers
 				 * and we are full : event is lost.
 				 */
-				local_inc(&buf->events_lost);
+				uatomic_inc(&buf->events_lost);
 				return -1;
 			} else {
 				/*
@@ -1646,7 +1633,7 @@ static int ltt_relay_try_reserve_slow(struct ust_channel *chan, struct ust_buffe
 			 * overwrite mode. Caused by either a writer OOPS or
 			 * too many nested writes over a reserve/commit pair.
 			 */
-			local_inc(&buf->events_lost);
+			uatomic_inc(&buf->events_lost);
 			return -1;
 		}
 		offsets->size = ust_get_header_size(chan,
@@ -1661,7 +1648,7 @@ static int ltt_relay_try_reserve_slow(struct ust_channel *chan, struct ust_buffe
 			 * Event too big for subbuffers, report error, don't
 			 * complete the sub-buffer switch.
 			 */
-			local_inc(&buf->events_lost);
+			uatomic_inc(&buf->events_lost);
 			return -1;
 		} else {
 			/*
@@ -1715,7 +1702,7 @@ int ltt_reserve_slot_lockless_slow(struct ust_trace *trace,
 		if (unlikely(ltt_relay_try_reserve_slow(chan, buf, &offsets,
 				data_size, tsc, rflags, largest_align)))
 			return -ENOSPC;
-	} while (unlikely(local_cmpxchg(&buf->offset, offsets.old,
+	} while (unlikely(uatomic_cmpxchg(&buf->offset, offsets.old,
 			offsets.end) != offsets.old));
 
 	/*

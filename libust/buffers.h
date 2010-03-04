@@ -42,28 +42,22 @@
 /**************************************/
 
 struct commit_counters {
-	local_t cc;
-	local_t cc_sb;			/* Incremented _once_ at sb switch */
+	long cc;			/* ATOMIC */
+	long cc_sb;			/* ATOMIC - Incremented _once_ at sb switch */
 };
 
 struct ust_buffer {
 	/* First 32 bytes cache-hot cacheline */
-	local_t offset;			/* Current offset in the buffer */
+	long offset;			/* Current offset in the buffer *atomic* */
 	struct commit_counters *commit_count;	/* Commit count per sub-buffer */
-	atomic_long_t consumed;		/*
-					 * Current offset in the buffer
-					 * standard atomic access (shared)
-					 */
+	long consumed;			/* Current offset in the buffer *atomic* access (shared) */
 	unsigned long last_tsc;		/*
 					 * Last timestamp written in the buffer.
 					 */
 	/* End of first 32 bytes cacheline */
-	atomic_long_t active_readers;	/*
-					 * Active readers count
-					 * standard atomic access (shared)
-					 */
-	local_t events_lost;
-	local_t corrupted_subbuffers;
+	long active_readers;	/* ATOMIC - Active readers count standard atomic access (shared) */
+	long events_lost;	/* ATOMIC */
+	long corrupted_subbuffers; /* *ATOMIC* */
 	/* one byte is written to this pipe when data is available, in order
            to wake the consumer */
 	/* portability: Single byte writes must be as quick as possible. The kernel-side
@@ -86,7 +80,7 @@ struct ust_buffer {
 	unsigned int cpu;
 
 	/* commit count per subbuffer; must be at end of struct */
-	local_t commit_seq[0] ____cacheline_aligned;
+	long commit_seq[0] ____cacheline_aligned; /* ATOMIC */
 } ____cacheline_aligned;
 
 /*
@@ -184,7 +178,7 @@ static __inline__ void ltt_reserve_push_reader(
 	long consumed_old, consumed_new;
 
 	do {
-		consumed_old = atomic_long_read(&buf->consumed);
+		consumed_old = uatomic_read(&buf->consumed);
 		/*
 		 * If buffer is in overwrite mode, push the reader consumed
 		 * count if the write position has reached it and we are not
@@ -202,7 +196,7 @@ static __inline__ void ltt_reserve_push_reader(
 			consumed_new = SUBBUF_ALIGN(consumed_old, buf->chan);
 		else
 			return;
-	} while (unlikely(atomic_long_cmpxchg(&buf->consumed, consumed_old,
+	} while (unlikely(uatomic_cmpxchg(&buf->consumed, consumed_old,
 			consumed_new) != consumed_old));
 }
 
@@ -210,7 +204,7 @@ static __inline__ void ltt_vmcore_check_deliver(
 		struct ust_buffer *buf,
 		long commit_count, long idx)
 {
-	local_set(&buf->commit_seq[idx], commit_count);
+	uatomic_set(&buf->commit_seq[idx], commit_count);
 }
 
 static __inline__ void ltt_check_deliver(struct ust_channel *chan,
@@ -230,7 +224,7 @@ static __inline__ void ltt_check_deliver(struct ust_channel *chan,
 		 * value without adding a add_return atomic operation to the
 		 * fast path.
 		 */
-		if (likely(local_cmpxchg(&buf->commit_count[idx].cc_sb,
+		if (likely(uatomic_cmpxchg(&buf->commit_count[idx].cc_sb,
 					 old_commit_count, commit_count)
 			   == old_commit_count)) {
 			int result;
@@ -255,16 +249,16 @@ static __inline__ int ltt_poll_deliver(struct ust_channel *chan, struct ust_buff
 {
 	long consumed_old, consumed_idx, commit_count, write_offset;
 
-	consumed_old = atomic_long_read(&buf->consumed);
+	consumed_old = uatomic_read(&buf->consumed);
 	consumed_idx = SUBBUF_INDEX(consumed_old, buf->chan);
-	commit_count = local_read(&buf->commit_count[consumed_idx].cc_sb);
+	commit_count = uatomic_read(&buf->commit_count[consumed_idx].cc_sb);
 	/*
 	 * No memory barrier here, since we are only interested
 	 * in a statistically correct polling result. The next poll will
 	 * get the data is we are racing. The mb() that ensures correct
 	 * memory order is in get_subbuf.
 	 */
-	write_offset = local_read(&buf->offset);
+	write_offset = uatomic_read(&buf->offset);
 
 	/*
 	 * Check that the subbuffer we are trying to consume has been
@@ -302,7 +296,7 @@ static __inline__ int ltt_relay_try_reserve(
 		long *o_begin, long *o_end, long *o_old,
 		size_t *before_hdr_pad, size_t *size)
 {
-	*o_begin = local_read(&buf->offset);
+	*o_begin = uatomic_read(&buf->offset);
 	*o_old = *o_begin;
 
 	*tsc = trace_clock_read64();
@@ -358,7 +352,7 @@ static __inline__ int ltt_reserve_slot(struct ust_trace *trace,
 	/* FIXME: make this rellay per cpu? */
 	if (unlikely(LOAD_SHARED(ltt_nesting) > 4)) {
 		DBG("Dropping event because nesting is too deep.");
-		local_inc(&buf->events_lost);
+		uatomic_inc(&buf->events_lost);
 		return -EPERM;
 	}
 
@@ -368,7 +362,7 @@ static __inline__ int ltt_reserve_slot(struct ust_trace *trace,
 			&before_hdr_pad, slot_size)))
 		goto slow_path;
 
-	if (unlikely(local_cmpxchg(&buf->offset, o_old, o_end) != o_old))
+	if (unlikely(uatomic_cmpxchg(&buf->offset, o_old, o_end) != o_old))
 		goto slow_path;
 
 	/*
@@ -401,10 +395,6 @@ slow_path:
  * Force a sub-buffer switch for a per-cpu buffer. This operation is
  * completely reentrant : can be called while tracing is active with
  * absolutely no lock held.
- *
- * Note, however, that as a local_cmpxchg is used for some atomic
- * operations, this function must be called from the CPU which owns the buffer
- * for a ACTIVE flush.
  */
 static __inline__ void ltt_force_switch(struct ust_buffer *buf,
 		enum force_switch_mode mode)
@@ -437,9 +427,9 @@ static __inline__ void ltt_write_commit_counter(struct ust_channel *chan,
 	if (unlikely(SUBBUF_OFFSET(offset - commit_count, buf->chan)))
 		return;
 
-	commit_seq_old = local_read(&buf->commit_seq[idx]);
+	commit_seq_old = uatomic_read(&buf->commit_seq[idx]);
 	while (commit_seq_old < commit_count)
-		commit_seq_old = local_cmpxchg(&buf->commit_seq[idx],
+		commit_seq_old = uatomic_cmpxchg(&buf->commit_seq[idx],
 					 commit_seq_old, commit_count);
 
 	DBG("commit_seq for channel %s_%d, subbuf %ld is now %ld", buf->chan->channel_name, buf->cpu, idx, commit_count);
@@ -482,7 +472,7 @@ static __inline__ void ltt_commit_slot(
 	 */
 	barrier();
 #endif
-	local_add(slot_size, &buf->commit_count[endidx].cc);
+	uatomic_add(&buf->commit_count[endidx].cc, slot_size);
 	/*
 	 * commit count read can race with concurrent OOO commit count updates.
 	 * This is only needed for ltt_check_deliver (for non-polling delivery
@@ -492,7 +482,7 @@ static __inline__ void ltt_commit_slot(
 	 * - Multiple delivery for the same sub-buffer (which is handled
 	 *   gracefully by the reader code) if the value is for a full
 	 *   sub-buffer. It's important that we can never miss a sub-buffer
-	 *   delivery. Re-reading the value after the local_add ensures this.
+	 *   delivery. Re-reading the value after the uatomic_add ensures this.
 	 * - Reading a commit_count with a higher value that what was actually
 	 *   added to it for the ltt_write_commit_counter call (again caused by
 	 *   a concurrent committer). It does not matter, because this function
@@ -500,7 +490,7 @@ static __inline__ void ltt_commit_slot(
 	 *   reserve offset for a specific sub-buffer, which is completely
 	 *   independent of the order.
 	 */
-	commit_count = local_read(&buf->commit_count[endidx].cc);
+	commit_count = uatomic_read(&buf->commit_count[endidx].cc);
 
 	ltt_check_deliver(chan, buf, offset_end - 1, commit_count, endidx);
 	/*

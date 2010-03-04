@@ -26,6 +26,7 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <regex.h>
+#include <urcu/uatomic_arch.h>
 
 #include <ust/marker.h>
 #include <ust/tracectl.h>
@@ -684,7 +685,7 @@ static int do_cmd_get_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 			/* Being here is the proof the daemon has mapped the buffer in its
 			 * memory. We may now decrement buffers_to_export.
 			 */
-			if(atomic_long_read(&buf->consumed) == 0) {
+			if(uatomic_read(&buf->consumed) == 0) {
 				DBG("decrementing buffers_to_export");
 				buffers_to_export--;
 			}

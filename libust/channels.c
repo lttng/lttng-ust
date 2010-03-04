@@ -72,8 +72,8 @@ static void release_channel_setting(struct kref *kref)
 		struct ltt_channel_setting, kref);
 	struct ltt_channel_setting *iter;
 
-	if (atomic_read(&index_kref.refcount) == 0
-	    && atomic_read(&setting->kref.refcount) == 0) {
+	if (uatomic_read(&index_kref.refcount) == 0
+	    && uatomic_read(&setting->kref.refcount) == 0) {
 		list_del(&setting->list);
 		kfree(setting);
 
@@ -113,7 +113,7 @@ int ltt_channels_register(const char *name)
 	mutex_lock(&ltt_channel_mutex);
 	setting = lookup_channel(name);
 	if (setting) {
-		if (atomic_read(&setting->kref.refcount) == 0)
+		if (uatomic_read(&setting->kref.refcount) == 0)
 			goto init_kref;
 		else {
 			kref_get(&setting->kref);
@@ -149,7 +149,7 @@ int ltt_channels_unregister(const char *name)
 
 	mutex_lock(&ltt_channel_mutex);
 	setting = lookup_channel(name);
-	if (!setting || atomic_read(&setting->kref.refcount) == 0) {
+	if (!setting || uatomic_read(&setting->kref.refcount) == 0) {
 		ret = -ENOENT;
 		goto end;
 	}
@@ -175,7 +175,7 @@ int ltt_channels_set_default(const char *name,
 
 	mutex_lock(&ltt_channel_mutex);
 	setting = lookup_channel(name);
-	if (!setting || atomic_read(&setting->kref.refcount) == 0) {
+	if (!setting || uatomic_read(&setting->kref.refcount) == 0) {
 		ret = -ENOENT;
 		goto end;
 	}
@@ -199,7 +199,7 @@ const char *ltt_channels_get_name_from_index(unsigned int index)
 	struct ltt_channel_setting *iter;
 
 	list_for_each_entry(iter, &ltt_channels, list)
-		if (iter->index == index && atomic_read(&iter->kref.refcount))
+		if (iter->index == index && uatomic_read(&iter->kref.refcount))
 			return iter->name;
 	return NULL;
 }
@@ -212,7 +212,7 @@ ltt_channels_get_setting_from_name(const char *name)
 
 	list_for_each_entry(iter, &ltt_channels, list)
 		if (!strcmp(iter->name, name)
-		    && atomic_read(&iter->kref.refcount))
+		    && uatomic_read(&iter->kref.refcount))
 			return iter;
 	return NULL;
 }
@@ -259,7 +259,7 @@ struct ust_channel *ltt_channels_trace_alloc(unsigned int *nr_channels,
 		WARN("ltt_channels_trace_alloc: no free_index; are there any probes connected?");
 		goto end;
 	}
-	if (!atomic_read(&index_kref.refcount))
+	if (!uatomic_read(&index_kref.refcount))
 		kref_init(&index_kref);
 	else
 		kref_get(&index_kref);
@@ -271,7 +271,7 @@ struct ust_channel *ltt_channels_trace_alloc(unsigned int *nr_channels,
 		goto end;
 	}
 	list_for_each_entry(iter, &ltt_channels, list) {
-		if (!atomic_read(&iter->kref.refcount))
+		if (!uatomic_read(&iter->kref.refcount))
 			continue;
 		channel[iter->index].subbuf_size = iter->subbuf_size;
 		channel[iter->index].subbuf_cnt = iter->subbuf_cnt;
