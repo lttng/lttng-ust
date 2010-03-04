@@ -80,5 +80,6 @@ extern int ust_safe_snprintf(char *str, size_t n, const char *fmt, ...);
 
 #define BUG_ON(condition) do { if (unlikely(condition)) ERR("condition not respected (BUG)"); } while(0)
 #define WARN_ON(condition) do { if (unlikely(condition)) WARN("condition not respected on line %s:%d", __FILE__, __LINE__); } while(0)
+#define WARN_ON_ONCE(condition) WARN_ON(condition)
 
 #endif /* USTERR_H */

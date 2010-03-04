@@ -3,9 +3,6 @@
 
 #include <kcompat.h>
 
-#include <string.h>
-#include <sys/time.h>
-
 /* FIXME: libkcompat must not define arch-specific local ops, as ust *must*
  * fallback to the normal atomic ops. Fix things so we don't add them and
  * break things accidentally.
@@ -15,17 +12,7 @@
         const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
         (type *)( (char *)__mptr - offsetof(type,member) );})
 
-#define KERN_DEBUG ""
-#define KERN_NOTICE ""
-#define KERN_INFO ""
-#define KERN_ERR ""
-#define KERN_ALERT ""
-#define KERN_WARNING ""
-
-#define WARN_ON_ONCE(msg) WARN_ON(msg)
-
 /* ERROR OPS */
-
 #define MAX_ERRNO	4095
 
 #define IS_ERR_VALUE(x) unlikely((x) >= (unsigned long)-MAX_ERRNO)
@@ -77,6 +64,7 @@ static inline long IS_ERR(const void *ptr)
 
 /* ATTRIBUTES */
 
+/* FIXME: define this */
 #define ____cacheline_aligned
 
 /* MATH */
@@ -166,6 +154,8 @@ static inline u64 trace_clock_read64(void)
 }
 #endif
 
+#include <sys/time.h>
+
 static inline u64 trace_clock_read64(void)
 {
 	struct timeval tv;
@@ -188,10 +178,5 @@ static inline u32 trace_clock_freq_scale(void)
 {
 	return 1;
 }
-
-
-/* PERCPU */
-
-#define __get_cpu_var(x) x
 
 #endif /* KERNELCOMPAT_H */
