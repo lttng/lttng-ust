@@ -674,6 +674,11 @@ int start_ustd(int fd)
 		PERROR("sigaction");
 		return 1;
 	}
+	result = sigaction(SIGINT, &sa, NULL);
+	if(result == -1) {
+		PERROR("sigaction");
+		return 1;
+	}
 
 	result = ustcomm_init_ustd(&ustd, sock_path);
 	if(result == -1) {
@@ -756,6 +761,9 @@ int start_ustd(int fd)
 				free_bufname:
 				free(bufname);
 			}
+			else {
+				WARN("unknown command: %s", recvbuf);
+			}
 
 			free(recvbuf);
 		}
@@ -771,6 +779,8 @@ int start_ustd(int fd)
 			pthread_mutex_unlock(&active_buffers_mutex);
 		}
 	}
+
+	ustcomm_fini_ustd(&ustd);
 
 	return 0;
 }

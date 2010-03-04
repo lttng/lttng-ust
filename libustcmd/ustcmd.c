@@ -26,6 +26,7 @@
 
 #include "ustcomm.h"
 #include "ustcmd.h"
+#include "usterr.h"
 
 pid_t *ustcmd_get_online_pids(void)
 {
@@ -116,7 +117,7 @@ int ustcmd_set_subbuf_size(const char *channel_size, pid_t pid)
 	asprintf(&cmd, "%s %s", "set_subbuf_size", channel_size);
 
 	result = ustcmd_send_cmd(cmd, pid, NULL);
-	if (result) {
+	if (result != 1) {
 		free(cmd);
 		return 1;
 	}
@@ -140,7 +141,7 @@ int ustcmd_set_subbuf_num(const char *channel_size, pid_t pid)
 	asprintf(&cmd, "%s %s", "set_subbuf_num", channel_size);
 
 	result = ustcmd_send_cmd(cmd, pid, NULL);
-	if (result) {
+	if (result != 1) {
 		free(cmd);
 		return 1;
 	}
@@ -161,7 +162,7 @@ int ustcmd_destroy_trace(pid_t pid)
 	int result;
 
 	result = ustcmd_send_cmd("trace_destroy", pid, NULL);
-	if (result) {
+	if (result != 1) {
 		return USTCMD_ERR_GEN;
 	}
 
@@ -179,7 +180,7 @@ int ustcmd_setup_and_start(pid_t pid)
 	int result;
 
 	result = ustcmd_send_cmd("start", pid, NULL);
-	if (result) {
+	if (result != 1) {
 		return USTCMD_ERR_GEN;
 	}
 
@@ -197,7 +198,7 @@ int ustcmd_create_trace(pid_t pid)
 	int result;
 
 	result = ustcmd_send_cmd("trace_create", pid, NULL);
-	if (result) {
+	if (result != 1) {
 		return USTCMD_ERR_GEN;
 	}
 
@@ -215,7 +216,7 @@ int ustcmd_start_trace(pid_t pid)
 	int result;
 
 	result = ustcmd_send_cmd("trace_start", pid, NULL);
-	if (result) {
+	if (result != 1) {
 		return USTCMD_ERR_GEN;
 	}
 
@@ -233,7 +234,7 @@ int ustcmd_alloc_trace(pid_t pid)
 	int result;
 
 	result = ustcmd_send_cmd("trace_alloc", pid, NULL);
-	if (result) {
+	if (result != 1) {
 		return USTCMD_ERR_GEN;
 	}
 
@@ -251,7 +252,7 @@ int ustcmd_stop_trace(pid_t pid)
 	int result;
 
 	result = ustcmd_send_cmd("trace_stop", pid, NULL);
-	if (result) {
+	if (result != 1) {
 		return USTCMD_ERR_GEN;
 	}
 
@@ -308,7 +309,7 @@ int ustcmd_free_cmsf(struct marker_status *cmsf)
  * @param cmsf	Pointer to CMSF array to be filled (callee allocates, caller
  *		frees with `ustcmd_free_cmsf')
  * @param pid	Targeted PID
- * @return	0 if successful, or errors {USTCMD_ERR_ARG, USTCMD_ERR_GEN}
+ * @return	0 if successful, or -1 on error
  */
 int ustcmd_get_cmsf(struct marker_status **cmsf, const pid_t pid)
 {
@@ -318,22 +319,22 @@ int ustcmd_get_cmsf(struct marker_status **cmsf, const pid_t pid)
 	unsigned int i = 0, cmsf_ind = 0;
 
 	if (cmsf == NULL) {
-		return USTCMD_ERR_ARG;
+		return -1;
 	}
 	result = ustcmd_send_cmd("list_markers", pid, &big_str);
-	if (result) {
-		return USTCMD_ERR_GEN;
+	if (result != 1) {
+		return -1;
 	}
 
-	if (big_str == NULL) {
-		fprintf(stderr, "ustcmd: error while getting markers list\n");
-		return USTCMD_ERR_GEN;
+	if (result != 1) {
+		ERR("error while getting markers list");
+		return -1;
 	}
 
 	tmp_cmsf = (struct marker_status *) malloc(sizeof(struct marker_status) *
 		(ustcmd_count_nl(big_str) + 1));
 	if (tmp_cmsf == NULL) {
-		return USTCMD_ERR_GEN;
+		return -1;
 	}
 
 	/* Parse received reply string (format: "[chan]/[mark] [st] [fs]"): */
@@ -365,30 +366,28 @@ int ustcmd_get_cmsf(struct marker_status **cmsf, const pid_t pid)
 }
 
 /**
- * Shoots a given command using ustcomm.
+ * Sends a given command to a traceable process
  *
- * @param cmd	Null-terminated command to shoot
+ * @param cmd	Null-terminated command to send
  * @param pid	Targeted PID
  * @param reply	Pointer to string to be filled with a reply string (must
  *		be NULL if no reply is needed for the given command).
- * @return	0 if successful, or errors {USTCMD_ERR_ARG, USTCMD_ERR_CONN}
+ * @return	-1 if successful, 0 on EOT, 1 on success
  */
 
 int ustcmd_send_cmd(const char *cmd, const pid_t pid, char **reply)
 {
 	struct ustcomm_connection conn;
-
-	if (cmd == NULL) {
-		return USTCMD_ERR_ARG;
-	}
+	int retval;
 
 	if (ustcomm_connect_app(pid, &conn)) {
-		fprintf(stderr, "ustcmd_send_cmd: could not connect to PID %u\n",
-			(unsigned int) pid);
-		return USTCMD_ERR_CONN;
+		ERR("could not connect to PID %u", (unsigned int) pid);
+		return -1;
 	}
 
-	ustcomm_send_request(&conn, cmd, reply);
+	retval = ustcomm_send_request(&conn, cmd, reply);
 
-	return 0;
+	ustcomm_close_app(&conn);
+
+	return retval;
 }

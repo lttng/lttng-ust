@@ -1411,7 +1411,7 @@ static void __attribute__((destructor)) keepalive()
 
 	destroy_traces();
 
-	ustcomm_fini_app(&ustcomm_app);
+	ustcomm_fini_app(&ustcomm_app, 0);
 }
 
 void ust_potential_exec(void)
@@ -1459,7 +1459,8 @@ static void ust_fork(void)
 		list_del(&bc->list);
 	}
 
-	ustcomm_free_app(&ustcomm_app);
+	/* free app, keeping socket file */
+	ustcomm_fini_app(&ustcomm_app, 1);
 
 	buffers_to_export = 0;
 	have_listener = 0;

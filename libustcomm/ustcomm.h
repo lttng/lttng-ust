@@ -67,12 +67,13 @@ extern int ustcomm_ustd_recv_message(struct ustcomm_ustd *ustd, char **msg, stru
 extern int ustcomm_app_recv_message(struct ustcomm_app *app, char **msg, struct ustcomm_source *src, int timeout);
 
 extern int ustcomm_init_app(pid_t pid, struct ustcomm_app *handle);
-extern void ustcomm_fini_app(struct ustcomm_app *handle);
+extern void ustcomm_fini_app(struct ustcomm_app *handle, int keep_socket_file);
 extern void ustcomm_free_app(struct ustcomm_app *app);
 
 extern int ustcomm_init_ustd(struct ustcomm_ustd *handle, const char *sock_path);
 
 extern int ustcomm_connect_app(pid_t pid, struct ustcomm_connection *conn);
+extern int ustcomm_close_app(struct ustcomm_connection *conn);
 extern int ustcomm_connect_path(const char *path, struct ustcomm_connection *conn, pid_t signalpid);
 extern int ustcomm_send_request(struct ustcomm_connection *conn, const char *req, char **reply);
 extern int ustcomm_send_reply(struct ustcomm_server *server, char *msg, struct ustcomm_source *src);

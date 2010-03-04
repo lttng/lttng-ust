@@ -249,6 +249,7 @@ static int recv_message_fd(int fd, char **recv_buf, int *recv_buf_size, int *rec
 
 			if(i == 0) {
 				/* problem */
+				WARN("received empty message");
 			}
 			*msg = strndup(*recv_buf, i);
 
@@ -321,7 +322,7 @@ int ustcomm_close_all_connections(struct ustcomm_server *server)
 	list_for_each_entry(conn, &server->connections, list) {
 		free(deletable_conn);
 		deletable_conn = conn;
-		close(conn->fd);
+		ustcomm_close_app(conn);
 		list_del(&conn->list);
 	}
 
@@ -360,7 +361,8 @@ int ustcomm_recv_message(struct ustcomm_server *server, char **msg, struct ustco
 		conn_table = (struct ustcomm_connection **) malloc(n_fds * sizeof(struct ustcomm_connection *));
 		if(conn_table == NULL) {
 			ERR("malloc returned NULL");
-			return -1;
+			retval = -1;
+			goto free_fds_return;
 		}
 
 		/* special idx 0 is for listening socket */
@@ -379,11 +381,14 @@ int ustcomm_recv_message(struct ustcomm_server *server, char **msg, struct ustco
 			/* nothing */;
 		if(result == -1) {
 			PERROR("poll");
-			return -1;
+			retval = -1;
+			goto free_conn_table_return;
 		}
 
-		if(result == 0)
-			return 0;
+		if(result == 0) {
+			retval = 0;
+			goto free_conn_table_return;
+		}
 
 		if(fds[0].revents) {
 			struct ustcomm_connection *newconn;
@@ -392,7 +397,8 @@ int ustcomm_recv_message(struct ustcomm_server *server, char **msg, struct ustco
 			result = newfd = accept(server->listen_fd, NULL, NULL);
 			if(result == -1) {
 				PERROR("accept");
-				return -1;
+				retval = -1;
+				goto free_conn_table_return;
 			}
 
 			newconn = (struct ustcomm_connection *) malloc(sizeof(struct ustcomm_connection));
@@ -425,14 +431,17 @@ int ustcomm_recv_message(struct ustcomm_server *server, char **msg, struct ustco
 					}
 				}
 				else {
-					goto free_fds_return;
+					goto free_conn_table_return;
 				}
 			}
 		}
 
 		free(fds);
+		free(conn_table);
 	}
 
+free_conn_table_return:
+	free(conn_table);
 free_fds_return:
 	free(fds);
 	return retval;
@@ -554,6 +563,11 @@ int ustcomm_send_request(struct ustcomm_connection *conn, const char *req, char 
 	return 1;
 }
 
+/* Return value:
+ *  0: success
+ * -1: error
+ */
+
 int ustcomm_connect_path(const char *path, struct ustcomm_connection *conn, pid_t signalpid)
 {
 	int fd;
@@ -600,6 +614,13 @@ int ustcomm_disconnect(struct ustcomm_connection *conn)
 	return close(conn->fd);
 }
 
+/* Open a connection to a traceable app.
+ *
+ * Return value:
+ *  0: success
+ * -1: error
+ */
+
 int ustcomm_connect_app(pid_t pid, struct ustcomm_connection *conn)
 {
 	int result;
@@ -613,6 +634,16 @@ int ustcomm_connect_app(pid_t pid, struct ustcomm_connection *conn)
 	}
 
 	return ustcomm_connect_path(path, conn, pid);
+}
+
+/* Close a connection to a traceable app. */
+
+int ustcomm_close_app(struct ustcomm_connection *conn)
+{
+	close(conn->fd);
+	free(conn->recv_buf);
+
+	return 0;
 }
 
 static int ensure_dir_exists(const char *dir)
@@ -678,16 +709,6 @@ free_name:
 	return -1;
 }
 
-void ustcomm_free_app(struct ustcomm_app *app)
-{
-	int result;
-	result = close(app->server.listen_fd);
-	if(result == -1) {
-		PERROR("close");
-		return;
-	}
-}
-
 /* Used by the daemon to initialize its server so applications
  * can connect to it.
  */
@@ -728,29 +749,49 @@ free_name:
 	return retval;
 }
 
-void ustcomm_fini_app(struct ustcomm_app *handle)
+static void ustcomm_fini_server(struct ustcomm_server *server, int keep_socket_file)
 {
 	int result;
 	struct stat st;
 
-	/* Destroy socket */
-	result = stat(handle->server.socketpath, &st);
-	if(result == -1) {
-		PERROR("stat (%s)", handle->server.socketpath);
-		return;
+	if(!keep_socket_file) {
+		/* Destroy socket */
+		result = stat(server->socketpath, &st);
+		if(result == -1) {
+			PERROR("stat (%s)", server->socketpath);
+			return;
+		}
+
+		/* Paranoid check before deleting. */
+		result = S_ISSOCK(st.st_mode);
+		if(!result) {
+			ERR("The socket we are about to delete is not a socket.");
+			return;
+		}
+
+		result = unlink(server->socketpath);
+		if(result == -1) {
+			PERROR("unlink");
+		}
 	}
 
-	/* Paranoid check before deleting. */
-	result = S_ISSOCK(st.st_mode);
-	if(!result) {
-		ERR("The socket we are about to delete is not a socket.");
+	free(server->socketpath);
+
+	result = close(server->listen_fd);
+	if(result == -1) {
+		PERROR("close");
 		return;
 	}
+}
 
-	result = unlink(handle->server.socketpath);
-	if(result == -1) {
-		PERROR("unlink");
-	}
+void ustcomm_fini_app(struct ustcomm_app *handle, int keep_socket_file)
+{
+	ustcomm_fini_server(&handle->server, keep_socket_file);
+}
+
+void ustcomm_fini_ustd(struct ustcomm_ustd *handle)
+{
+	ustcomm_fini_server(&handle->server, 0);
 }
 
 static const char *find_tok(const char *str)
