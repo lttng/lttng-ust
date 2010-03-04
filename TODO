@@ -2,6 +2,7 @@
 - fix FIXME's in the code
 - add compilation tests
 - test with smaller subbuffer sizes
+- add option to usttrace to select subbuffer size/count
 - correctly destroy buffers at trace destroy
 - add option to see subbuffer size and count
 - performance testing tool (in progress by Rafik Fahem)
