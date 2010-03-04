@@ -18,23 +18,10 @@
  * LTT marker control module over /proc
  */
 
-//ust// #include <linux/proc_fs.h>
-//ust// #include <linux/module.h>
-//ust// #include <linux/stat.h>
-//ust// #include <linux/vmalloc.h>
-//ust// #include <linux/marker.h>
-//ust// #include <linux/ltt-tracer.h>
-//ust// #include <linux/uaccess.h>
-//ust// #include <linux/string.h>
-//ust// #include <linux/ctype.h>
-//ust// #include <linux/list.h>
-//ust// #include <linux/mutex.h>
-//ust// #include <linux/seq_file.h>
-//ust// #include <linux/slab.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 #include <ust/kernelcompat.h>
-//#include "list.h"
 #include "tracer.h"
 #include "usterr.h"
 

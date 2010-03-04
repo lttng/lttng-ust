@@ -86,8 +86,8 @@ struct tp_probes {
 
 static inline void *allocate_probes(int count)
 {
-	struct tp_probes *p  = kmalloc(count * sizeof(void *)
-			+ sizeof(struct tp_probes), GFP_KERNEL);
+	struct tp_probes *p  = malloc(count * sizeof(void *)
+			+ sizeof(struct tp_probes));
 	return p == NULL ? NULL : p->probes;
 }
 
@@ -103,7 +103,7 @@ static inline void release_probes(void *old)
 			struct tp_probes, probes[0]);
 //ust//		call_rcu_sched(&tp_probes->u.rcu, rcu_free_old_probes);
 		synchronize_rcu();
-		kfree(tp_probes);
+		free(tp_probes);
 	}
 }
 
@@ -233,7 +233,7 @@ static struct tracepoint_entry *add_tracepoint(const char *name)
 	 * Using kmalloc here to allocate a variable length element. Could
 	 * cause some memory fragmentation if overused.
 	 */
-	e = kmalloc(sizeof(struct tracepoint_entry) + name_len, GFP_KERNEL);
+	e = malloc(sizeof(struct tracepoint_entry) + name_len);
 	if (!e)
 		return ERR_PTR(-ENOMEM);
 	memcpy(&e->name[0], name, name_len);
@@ -250,7 +250,7 @@ static struct tracepoint_entry *add_tracepoint(const char *name)
 static inline void remove_tracepoint(struct tracepoint_entry *e)
 {
 	hlist_del(&e->hlist);
-	kfree(e);
+	free(e);
 }
 
 /*
@@ -501,7 +501,7 @@ void tracepoint_probe_update_all(void)
 		list_del(&pos->u.list);
 //ust//		call_rcu_sched(&pos->u.rcu, rcu_free_old_probes);
 		synchronize_rcu();
-		kfree(pos);
+		free(pos);
 	}
 }
 //ust// EXPORT_SYMBOL_GPL(tracepoint_probe_update_all);

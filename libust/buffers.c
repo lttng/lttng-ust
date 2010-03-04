@@ -27,6 +27,7 @@
 #include <fcntl.h>
 #include <ust/kernelcompat.h>
 #include <kcompat/kref.h>
+#include <stdlib.h>
 #include "buffers.h"
 #include "channels.h"
 #include "tracer.h"
@@ -751,7 +752,7 @@ static void ust_buffers_destroy_buffer(struct ust_channel *ltt_chan, int cpu)
 		ltt_release_transport);
 	ltt_relay_print_buffer_errors(ltt_chan, cpu);
 //ust//	free(ltt_buf->commit_seq);
-	kfree(ltt_buf->commit_count);
+	free(ltt_buf->commit_count);
 	ltt_buf->commit_count = NULL;
 	kref_put(&ltt_chan->kref, ltt_relay_release_channel);
 	kref_put(&trace->kref, ltt_release_trace);

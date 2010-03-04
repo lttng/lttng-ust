@@ -15,27 +15,15 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
-//ust// #include <linux/module.h>
-//ust// #include <linux/mutex.h>
-//ust// #include <linux/types.h>
-//#include "jhash.h"
-//#include "list.h"
-//#include "rcupdate.h"
-//ust// #include <linux/marker.h>
-#include <errno.h>
-//ust// #include <linux/slab.h>
-//ust// #include <linux/immediate.h>
-//ust// #include <linux/sched.h>
-//ust// #include <linux/uaccess.h>
-//ust// #include <linux/user_marker.h>
-//ust// #include <linux/ltt-tracer.h>
 
+#include <stdlib.h>
+#include <errno.h>
 #define _LGPL_SOURCE
 #include <urcu-bp.h>
 
 #include <ust/kernelcompat.h>
-
 #include <ust/marker.h>
+
 #include "usterr.h"
 #include "channels.h"
 #include "tracercore.h"
@@ -248,7 +236,7 @@ static void free_old_closure(struct rcu_head *head)
 {
 	struct marker_entry *entry = container_of(head,
 		struct marker_entry, rcu);
-	kfree(entry->oldptr);
+	free(entry->oldptr);
 	/* Make sure we free the data before setting the pending flag to 0 */
 	smp_wmb();
 	entry->rcu_pending = 0;
@@ -310,8 +298,7 @@ marker_entry_add_probe(struct marker_entry *entry,
 				return ERR_PTR(-EBUSY);
 	}
 	/* + 2 : one for new probe, one for NULL func */
-	new = kzalloc((nr_probes + 2) * sizeof(struct marker_probe_closure),
-			GFP_KERNEL);
+	new = zmalloc((nr_probes + 2) * sizeof(struct marker_probe_closure));
 	if (new == NULL)
 		return ERR_PTR(-ENOMEM);
 	if (!old)
@@ -376,8 +363,7 @@ marker_entry_remove_probe(struct marker_entry *entry,
 		int j = 0;
 		/* N -> M, (N > 1, M > 1) */
 		/* + 1 for NULL */
-		new = kzalloc((nr_probes - nr_del + 1)
-			* sizeof(struct marker_probe_closure), GFP_KERNEL);
+		new = zmalloc((nr_probes - nr_del + 1) * sizeof(struct marker_probe_closure));
 		if (new == NULL)
 			return ERR_PTR(-ENOMEM);
 		for (i = 0; old[i].func; i++)
@@ -441,12 +427,11 @@ static struct marker_entry *add_marker(const char *channel, const char *name,
 		}
 	}
 	/*
-	 * Using kmalloc here to allocate a variable length element. Could
+	 * Using malloc here to allocate a variable length element. Could
 	 * cause some memory fragmentation if overused.
 	 */
-	e = kmalloc(sizeof(struct marker_entry)
-		    + channel_len + name_len + format_len,
-		    GFP_KERNEL);
+	e = malloc(sizeof(struct marker_entry)
+		    + channel_len + name_len + format_len);
 	if (!e)
 		return ERR_PTR(-ENOMEM);
 	memcpy(e->channel, channel, channel_len);
@@ -506,13 +491,13 @@ static int remove_marker(const char *channel, const char *name)
 		return -EBUSY;
 	hlist_del(&e->hlist);
 	if (e->format_allocated)
-		kfree(e->format);
+		free(e->format);
 	ret = ltt_channels_unregister(e->channel);
 	WARN_ON(ret);
 	/* Make sure the call_rcu has been executed */
 //ust//	if (e->rcu_pending)
 //ust//		rcu_barrier_sched();
-	kfree(e);
+	free(e);
 	return 0;
 }
 
@@ -521,7 +506,7 @@ static int remove_marker(const char *channel, const char *name)
  */
 static int marker_set_format(struct marker_entry *entry, const char *format)
 {
-	entry->format = kstrdup(format, GFP_KERNEL);
+	entry->format = strdup(format);
 	if (!entry->format)
 		return -ENOMEM;
 	entry->format_allocated = 1;
@@ -971,7 +956,7 @@ int marker_probe_unregister_private_data(marker_probe_func *probe,
 	struct marker_entry *entry;
 	int ret = 0;
 	struct marker_probe_closure *old;
-	const char *channel = NULL, *name = NULL;
+	char *channel = NULL, *name = NULL;
 
 	mutex_lock(&markers_mutex);
 	entry = get_marker_from_private_data(probe, probe_private);
@@ -982,8 +967,8 @@ int marker_probe_unregister_private_data(marker_probe_func *probe,
 //ust//	if (entry->rcu_pending)
 //ust//		rcu_barrier_sched();
 	old = marker_entry_remove_probe(entry, NULL, probe_private);
-	channel = kstrdup(entry->channel, GFP_KERNEL);
-	name = kstrdup(entry->name, GFP_KERNEL);
+	channel = strdup(entry->channel);
+	name = strdup(entry->name);
 	mutex_unlock(&markers_mutex);
 
 	marker_update_probes();
@@ -1004,8 +989,8 @@ int marker_probe_unregister_private_data(marker_probe_func *probe,
 	remove_marker(channel, name);
 end:
 	mutex_unlock(&markers_mutex);
-	kfree(channel);
-	kfree(name);
+	free(channel);
+	free(name);
 	return ret;
 }
 //ust// EXPORT_SYMBOL_GPL(marker_probe_unregister_private_data);
@@ -1200,7 +1185,7 @@ static void free_user_marker(char __user *state, struct hlist_head *head)
 	hlist_for_each_entry_safe(umark, pos, n, head, hlist) {
 		if (umark->state == state) {
 			hlist_del(&umark->hlist);
-			kfree(umark);
+			free(umark);
 		}
 	}
 }
@@ -1264,7 +1249,7 @@ void exit_user_markers(struct task_struct *p)
 		mutex_lock(&p->user_markers_mutex);
 		hlist_for_each_entry_safe(umark, pos, n, &p->user_markers,
 			hlist)
-		    kfree(umark);
+		    free(umark);
 		INIT_HLIST_HEAD(&p->user_markers);
 		p->user_markers_sequence++;
 		mutex_unlock(&p->user_markers_mutex);

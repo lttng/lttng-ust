@@ -23,15 +23,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-//ust// #include <linux/module.h>
-//ust// #include <linux/ltt-channels.h>
-//ust// #include <linux/mutex.h>
-//ust// #include <linux/vmalloc.h>
-
+#include <stdlib.h>
 #include <ust/kernelcompat.h>
+#include <ust/marker.h>
 #include "channels.h"
 #include "usterr.h"
-#include <ust/marker.h>
 
 /*
  * ltt_channel_mutex may be nested inside the LTT trace mutex.
@@ -75,13 +71,14 @@ static void release_channel_setting(struct kref *kref)
 	if (uatomic_read(&index_kref.refcount) == 0
 	    && uatomic_read(&setting->kref.refcount) == 0) {
 		list_del(&setting->list);
-		kfree(setting);
+		free(setting);
 
 		free_index = 0;
 		list_for_each_entry(iter, &ltt_channels, list) {
 			iter->index = free_index++;
 			iter->free_event_id = 0;
 		}
+		/* FIXME: why not run this? */
 //ust//		markers_compact_event_ids();
 	}
 }
@@ -120,7 +117,7 @@ int ltt_channels_register(const char *name)
 			goto end;
 		}
 	}
-	setting = kzalloc(sizeof(*setting), GFP_KERNEL);
+	setting = zmalloc(sizeof(*setting));
 	if (!setting) {
 		ret = -ENOMEM;
 		goto end;
@@ -264,8 +261,7 @@ struct ust_channel *ltt_channels_trace_alloc(unsigned int *nr_channels,
 	else
 		kref_get(&index_kref);
 	*nr_channels = free_index;
-	channel = kzalloc(sizeof(struct ust_channel) * free_index,
-			  GFP_KERNEL);
+	channel = zmalloc(sizeof(struct ust_channel) * free_index);
 	if (!channel) {
 		WARN("ltt_channel_struct: channel null after alloc");
 		goto end;
@@ -296,7 +292,7 @@ void ltt_channels_trace_free(struct ust_channel *channels)
 {
 	lock_markers();
 	mutex_lock(&ltt_channel_mutex);
-	kfree(channels);
+	free(channels);
 	kref_put(&index_kref, release_trace_channel);
 	mutex_unlock(&ltt_channel_mutex);
 	unlock_markers();

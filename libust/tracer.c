@@ -343,7 +343,7 @@ void ltt_release_trace(struct kref *kref)
 	struct ust_trace *trace = container_of(kref,
 			struct ust_trace, kref);
 	ltt_channels_trace_free(trace->channels);
-	kfree(trace);
+	free(trace);
 }
 
 static inline void prepare_chan_size_num(unsigned int *subbuf_size,
@@ -381,7 +381,7 @@ int _ltt_trace_setup(const char *trace_name)
 		goto traces_error;
 	}
 
-	new_trace = kzalloc(sizeof(struct ust_trace), GFP_KERNEL);
+	new_trace = zmalloc(sizeof(struct ust_trace));
 	if (!new_trace) {
 		ERR("Unable to allocate memory for trace %s", trace_name);
 		err = -ENOMEM;
@@ -423,7 +423,7 @@ int _ltt_trace_setup(const char *trace_name)
 	return 0;
 
 trace_free:
-	kfree(new_trace);
+	free(new_trace);
 traces_error:
 	return err;
 }
@@ -442,7 +442,7 @@ int ltt_trace_setup(const char *trace_name)
 static void _ltt_trace_free(struct ust_trace *trace)
 {
 	list_del(&trace->list);
-	kfree(trace);
+	free(trace);
 }
 
 int ltt_trace_set_type(const char *trace_name, const char *trace_type)

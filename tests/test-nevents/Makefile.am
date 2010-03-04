@@ -1,4 +1,4 @@
-#AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include
 
 noinst_PROGRAMS = prog
 prog_SOURCES = prog.c

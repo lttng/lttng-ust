@@ -73,16 +73,7 @@ static inline long IS_ERR(const void *ptr)
 
 /* MALLOCATION */
 
-#include <stdlib.h>
-
-#define kmalloc(s, t) malloc(s)
-#define kzalloc(s, t) zmalloc(s)
-#define kfree(p) free((void *)p)
-#define kstrdup(s, t) strdup(s)
-
 #define zmalloc(s) calloc(1, s)
-
-#define GFP_KERNEL
 
 /* ATTRIBUTES */
 
