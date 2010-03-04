@@ -50,6 +50,7 @@ if [ -z "$expected_count" ]; then
 	if [ "$cnt" -eq "0" ]; then
 		echo "ERROR"
 		echo "Did not find at least one instance of this event ($cnt)"
+		exit 1
 	else
 		echo "Success"
 		exit 0
