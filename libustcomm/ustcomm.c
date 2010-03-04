@@ -425,7 +425,9 @@ int ustcomm_recv_message(struct ustcomm_server *server, char **msg, struct ustco
 
 					list_for_each_entry(conn, &server->connections, list) {
 						if(conn->fd == fds[idx].fd) {
+							ustcomm_close_app(conn);
 							list_del(&conn->list);
+							free(conn);
 							break;
 						}
 					}
@@ -636,7 +638,10 @@ int ustcomm_connect_app(pid_t pid, struct ustcomm_connection *conn)
 	return ustcomm_connect_path(path, conn, pid);
 }
 
-/* Close a connection to a traceable app. */
+/* Close a connection to a traceable app. It frees the
+ * resources. It however does not free the
+ * ustcomm_connection itself.
+ */
 
 int ustcomm_close_app(struct ustcomm_connection *conn)
 {
@@ -784,10 +789,14 @@ static void ustcomm_fini_server(struct ustcomm_server *server, int keep_socket_f
 	}
 }
 
+/* Free a traceable application server */
+
 void ustcomm_fini_app(struct ustcomm_app *handle, int keep_socket_file)
 {
 	ustcomm_fini_server(&handle->server, keep_socket_file);
 }
+
+/* Free a ustd server */
 
 void ustcomm_fini_ustd(struct ustcomm_ustd *handle)
 {

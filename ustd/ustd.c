@@ -86,10 +86,9 @@ int get_subbuffer(struct buffer_info *buf)
 	if(result != 2 && result != 1) {
 		ERR("unable to parse response to get_subbuffer");
 		retval = -1;
+		free(received_msg);
 		goto end_rep;
 	}
-
-	DBG("received msg is %s", received_msg);
 
 	if(!strcmp(rep_code, "OK")) {
 		DBG("got subbuffer %s", buf->name);
@@ -400,6 +399,33 @@ error:
 	return NULL;
 }
 
+static void destroy_buffer(struct buffer_info *buf)
+{
+	int result;
+
+	result = ustcomm_close_app(&buf->conn);
+	if(result == -1) {
+		WARN("problem calling ustcomm_close_app");
+	}
+
+	result = shmdt(buf->mem);
+	if(result == -1) {
+		PERROR("shmdt");
+	}
+
+	result = shmdt(buf->bufstruct_mem);
+	if(result == -1) {
+		PERROR("shmdt");
+	}
+
+	result = close(buf->file_fd);
+	if(result == -1) {
+		PERROR("close");
+	}
+
+	free(buf);
+}
+
 int unwrite_last_subbuffer(struct buffer_info *buf)
 {
 	int result;
@@ -513,10 +539,6 @@ int consumer_loop(struct buffer_info *buf)
 	return 0;
 }
 
-void free_buffer(struct buffer_info *buf)
-{
-}
-
 struct consumer_thread_args {
 	pid_t pid;
 	const char *bufname;
@@ -537,7 +559,8 @@ void *consumer_thread(void *arg)
 
 	consumer_loop(buf);
 
-	free_buffer(buf);
+	free(args->bufname);
+	destroy_buffer(buf);
 
 	end:
 	/* bufname is free'd in free_buffer() */
@@ -549,6 +572,7 @@ int start_consuming_buffer(pid_t pid, const char *bufname)
 {
 	pthread_t thr;
 	struct consumer_thread_args *args;
+	int result;
 
 	DBG("beginning of start_consuming_buffer: args: pid %d bufname %s", pid, bufname);
 
@@ -558,7 +582,16 @@ int start_consuming_buffer(pid_t pid, const char *bufname)
 	args->bufname = strdup(bufname);
 	DBG("beginning2 of start_consuming_buffer: args: pid %d bufname %s", args->pid, args->bufname);
 
-	pthread_create(&thr, NULL, consumer_thread, args);
+	result = pthread_create(&thr, NULL, consumer_thread, args);
+	if(result == -1) {
+		ERR("pthread_create failed");
+		return -1;
+	}
+	result = pthread_detach(thr);
+	if(result == -1) {
+		ERR("pthread_detach failed");
+		return -1;
+	}
 	DBG("end of start_consuming_buffer: args: pid %d bufname %s", args->pid, args->bufname);
 
 	return 0;
