@@ -150,6 +150,61 @@ int ustcmd_set_subbuf_num(const char *channel_size, pid_t pid)
 	return 0;
 }
 
+/**
+ * Get subbuffer size.
+ *
+ * @param channel	Channel name
+ * @param pid		Traced process ID
+ * @return		subbuf size if successful, or error
+ */
+int ustcmd_get_subbuf_size(const char *channel, pid_t pid)
+{
+	char *cmd, *reply;
+	int result;
+
+	/* format: channel_cpu */
+	asprintf(&cmd, "%s %s_0", "get_subbuf_size", channel);
+
+	result = ustcmd_send_cmd(cmd, pid, &reply);
+	if (result) {
+		free(cmd);
+		free(reply);
+		return -1;
+	}
+
+	result = atoi(reply);
+	free(cmd);
+	free(reply);
+	return result;
+}
+
+/**
+ * Get subbuffer num.
+ *
+ * @param channel	Channel name
+ * @param pid		Traced process ID
+ * @return		subbuf cnf if successful, or error
+ */
+int ustcmd_get_subbuf_num(const char *channel, pid_t pid)
+{
+	char *cmd, *reply;
+	int result;
+
+	/* format: channel_cpu */
+	asprintf(&cmd, "%s %s_0", "get_n_subbufs", channel);
+
+	result = ustcmd_send_cmd(cmd, pid, &reply);
+	if (result) {
+		free(cmd);
+		free(reply);
+		return -1;
+	}
+
+	result = atoi(reply);
+	free(cmd);
+	free(reply);
+	return result;
+}
 
 /**
  * Destroys an UST trace according to a PID.

@@ -33,6 +33,8 @@ extern pid_t *ustcmd_get_online_pids(void);
 extern int ustcmd_set_marker_state(const char *, int, pid_t);
 extern int ustcmd_set_subbuf_size(const char *, pid_t);
 extern int ustcmd_set_subbuf_num(const char *, pid_t);
+extern int ustcmd_get_subbuf_size(const char *, pid_t);
+extern int ustcmd_get_subbuf_num(const char *, pid_t);
 extern int ustcmd_destroy_trace(pid_t);
 extern int ustcmd_setup_and_start(pid_t);
 extern int ustcmd_stop_trace(pid_t);

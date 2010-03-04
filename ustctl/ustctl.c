@@ -38,6 +38,8 @@ enum command {
 	GET_ONLINE_PIDS,
 	SET_SUBBUF_SIZE,
 	SET_SUBBUF_NUM,
+	GET_SUBBUF_SIZE,
+	GET_SUBBUF_NUM,
 	UNKNOWN
 };
 
@@ -62,6 +64,8 @@ Commands:\n\
     --destroy-trace\t\t\tDestroy the trace\n\
     --set-subbuf-size \"CHANNEL/bytes\"\tSet the size of subbuffers per channel\n\
     --set-subbuf-num \"CHANNEL/n\"\tSet the number of subbuffers per channel\n\
+    --get-subbuf-size \"CHANNEL\"\t\tGet the size of subbuffers per channel\n\
+    --get-subbuf-num \"CHANNEL\"\t\tGet the number of subbuffers per channel\n\
     --enable-marker \"CHANNEL/MARKER\"\tEnable a marker\n\
     --disable-marker \"CHANNEL/MARKER\"\tDisable a marker\n\
     --list-markers\t\t\tList the markers of the process, their\n\t\t\t\t\t  state and format string\n\
@@ -91,6 +95,8 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 			{ "online-pids", 0, 0, GET_ONLINE_PIDS },
 			{ "set-subbuf-size", 1, 0, SET_SUBBUF_SIZE },
 			{ "set-subbuf-num", 1, 0, SET_SUBBUF_NUM },
+			{ "get-subbuf-size", 1, 0, GET_SUBBUF_SIZE },
+			{ "get-subbuf-num", 1, 0, GET_SUBBUF_NUM },
 			{ 0, 0, 0, 0 }
 		};
 
@@ -113,6 +119,8 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 		case DISABLE_MARKER:
 		case SET_SUBBUF_SIZE:
 		case SET_SUBBUF_NUM:
+		case GET_SUBBUF_SIZE:
+		case GET_SUBBUF_NUM:
 			opts->regex = strdup(optarg);
 			break;
 
@@ -269,6 +277,26 @@ int main(int argc, char *argv[])
 
 			case SET_SUBBUF_NUM:
 				ustcmd_set_subbuf_num(opts.regex, *pidit);
+				break;
+
+			case GET_SUBBUF_SIZE:
+				result = ustcmd_get_subbuf_size(opts.regex, *pidit);
+				if (result == -1) {
+					ERR("error while trying to get_subuf_size with PID %u\n", (unsigned int) *pidit);
+					break;
+				}
+
+				printf("the size of subbufers is %d\n", result);
+				break;
+
+			case GET_SUBBUF_NUM:
+				result = ustcmd_get_subbuf_num(opts.regex, *pidit);
+				if (result == -1) {
+					ERR("error while trying to get_subuf_num with PID %u\n", (unsigned int) *pidit);
+					break;
+				}
+
+				printf("the number of subbufers is %d\n", result);
 				break;
 
 			case ALLOC_TRACE:
