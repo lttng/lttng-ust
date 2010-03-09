@@ -1107,10 +1107,10 @@ void *listener_main(void *p)
 	pthread_cleanup_pop(1);
 }
 
-volatile sig_atomic_t have_listener = 0;
 /* These should only be accessed in the parent thread,
  * not the listener.
  */
+static volatile sig_atomic_t have_listener = 0;
 static pthread_t listener_thread;
 
 void create_listener(void)
