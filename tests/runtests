@@ -62,8 +62,11 @@ TRACE_DIR="/tmp/ust-testsuite-manual-trace"
 rm -rf "$TRACE_DIR"
 mkdir "$TRACE_DIR"
 
-NOFAIL ustd -o "$TRACE_DIR" >/dev/null 2>&1 &
-USTD_PID=$!
+pidfilepath="/tmp/ust-testsuite-$USER-$(date +%Y%m%d%H%M%S%N)-ustd-pid"
+mkfifo -m 0600 "$pidfilepath"
+# It's not useful to run ustd in NOFAIL because it's running in the background
+ustd --pidfile "$pidfilepath" -o "$TRACE_DIR" >/dev/null 2>&1 &
+USTD_PID="$(<$pidfilepath)"
 
 LD_PRELOAD=/usr/local/lib/libust.so.0.0.0:/usr/local/lib/libmallocwrap.so find / >/dev/null 2>&1 &
 PID=$!
@@ -75,10 +78,12 @@ NOFAIL ustctl --create-trace $PID
 NOFAIL ustctl --alloc-trace $PID
 NOFAIL ustctl --start-trace $PID
 sleep 0.5
+
 NOFAIL ustctl --stop-trace $PID
 NOFAIL ustctl --destroy-trace $PID
 kill $PID
-kill $USTD_PID
+kill -SIGTERM $USTD_PID
+wait $USTD_PID
 
 NOFAIL $MATCHES -N "manual - find - ust.malloc" "^ust.malloc:" "$TRACE_DIR"
 
