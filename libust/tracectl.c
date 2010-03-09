@@ -23,7 +23,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-#include <sched.h>
 #include <fcntl.h>
 #include <poll.h>
 #include <regex.h>
@@ -36,8 +35,6 @@
 #include "ustcomm.h"
 #include "buffers.h"
 #include "marker-control.h"
-
-//#define USE_CLONE
 
 #define USTSIGNAL SIGIO
 
@@ -1111,32 +1108,24 @@ void *listener_main(void *p)
 }
 
 volatile sig_atomic_t have_listener = 0;
-#ifndef USE_CLONE
+/* These should only be accessed in the parent thread,
+ * not the listener.
+ */
 static pthread_t listener_thread;
-#endif
 
 void create_listener(void)
 {
-#ifdef USE_CLONE
-	static char listener_stack[16384];
 	int result;
-#endif
 
 	if(have_listener) {
 		WARN("not creating listener because we already had one");
 		return;
 	}
 
-#ifdef USE_CLONE
-	result = clone((int (*)(void *)) listener_main, listener_stack+sizeof(listener_stack)-1, CLONE_FS | CLONE_FILES | CLONE_VM | CLONE_SIGHAND | CLONE_THREAD, NULL);
+	result = pthread_create(&listener_thread, NULL, listener_main, NULL);
 	if(result == -1) {
-		perror("clone");
-		return;
+		PERROR("pthread_create");
 	}
-#else
-
-	pthread_create(&listener_thread, NULL, listener_main, NULL);
-#endif
 
 	have_listener = 1;
 }
