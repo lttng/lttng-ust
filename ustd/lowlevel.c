@@ -64,6 +64,8 @@ size_t subbuffer_data_size(void *subbuf)
 
 void finish_consuming_dead_subbuffer(struct buffer_info *buf)
 {
+	int result;
+
 	struct ust_buffer *ustbuf = buf->bufstruct_mem;
 
 	long write_offset = uatomic_read(&ustbuf->offset);
@@ -137,14 +139,22 @@ void finish_consuming_dead_subbuffer(struct buffer_info *buf)
 		}
 
 
-		patient_write(buf->file_fd, buf->mem + i_subbuf * buf->subbuf_size, valid_length);
+		result = patient_write(buf->file_fd, buf->mem + i_subbuf * buf->subbuf_size, valid_length);
+		if(result == -1) {
+			ERR("Error writing to buffer file");
+			return;
+		}
 
 		/* pad with empty bytes */
 		pad_size = PAGE_ALIGN(valid_length)-valid_length;
 		if(pad_size) {
 			tmp = malloc(pad_size);
 			memset(tmp, 0, pad_size);
-			patient_write(buf->file_fd, tmp, pad_size);
+			result = patient_write(buf->file_fd, tmp, pad_size);
+			if(result == -1) {
+				ERR("Error writing to buffer file");
+				return;
+			}
 			free(tmp);
 		}
 
