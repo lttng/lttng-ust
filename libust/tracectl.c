@@ -819,11 +819,18 @@ static int do_cmd_put_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 	return retval;
 }
 
+static void listener_cleanup(void *ptr)
+{
+	ustcomm_fini_app(&ustcomm_app, 0);
+}
+
 void *listener_main(void *p)
 {
 	int result;
 
 	DBG("LISTENER");
+
+	pthread_cleanup_push(listener_cleanup, NULL);
 
 	for(;;) {
 		char trace_name[] = "auto";
@@ -1099,17 +1106,20 @@ void *listener_main(void *p)
 	next_cmd:
 		free(recvbuf);
 	}
+
+	pthread_cleanup_pop(1);
 }
 
 volatile sig_atomic_t have_listener = 0;
+#ifndef USE_CLONE
+static pthread_t listener_thread;
+#endif
 
 void create_listener(void)
 {
 #ifdef USE_CLONE
 	static char listener_stack[16384];
 	int result;
-#else
-	pthread_t thread;
 #endif
 
 	if(have_listener) {
@@ -1125,7 +1135,7 @@ void create_listener(void)
 	}
 #else
 
-	pthread_create(&thread, NULL, listener_main, NULL);
+	pthread_create(&listener_thread, NULL, listener_main, NULL);
 #endif
 
 	have_listener = 1;
@@ -1385,6 +1395,20 @@ int restarting_usleep(useconds_t usecs)
 	return result;
 }
 
+static void stop_listener()
+{
+	int result;
+
+	result = pthread_cancel(listener_thread);
+	if(result == -1) {
+		PERROR("pthread_cancel");
+	}
+	result = pthread_join(listener_thread, NULL);
+	if(result == -1) {
+		PERROR("pthread_join");
+	}
+}
+
 /* This destructor keeps the process alive for a few seconds in order
  * to leave time to ustd to connect to its buffers. This is necessary
  * for programs whose execution is very short. It is also useful in all
@@ -1415,7 +1439,8 @@ static void __attribute__((destructor)) keepalive()
 
 	destroy_traces();
 
-	ustcomm_fini_app(&ustcomm_app, 0);
+	/* Ask the listener to stop and clean up. */
+	stop_listener();
 }
 
 void ust_potential_exec(void)
