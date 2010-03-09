@@ -59,7 +59,7 @@ char *pidfile = NULL;
 int active_buffers = 0;
 pthread_mutex_t active_buffers_mutex = PTHREAD_MUTEX_INITIALIZER;
 /* Whether a request to end the program was received. */
-sig_atomic_t terminate_req = 0;
+volatile sig_atomic_t terminate_req = 0;
 
 int get_subbuffer(struct buffer_info *buf)
 {
