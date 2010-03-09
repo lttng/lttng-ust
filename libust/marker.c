@@ -1361,7 +1361,6 @@ static void new_markers(struct marker *start, struct marker *end)
 int marker_register_lib(struct marker *markers_start, int markers_count)
 {
 	struct lib *pl;
-	struct marker_addr *addr;
 
 	pl = (struct lib *) malloc(sizeof(struct lib));
 

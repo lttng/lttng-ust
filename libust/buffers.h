@@ -17,7 +17,7 @@
 #include "header-inline.h"
 #include <usterr.h>
 
-/***** SHOULD BE REMOVED ***** */
+/***** FIXME: SHOULD BE REMOVED ***** */
 
 /*
  * BUFFER_TRUNC zeroes the subbuffer offset and the subbuffer number parts of
@@ -519,7 +519,9 @@ static __inline__ int ust_buffers_write(struct ust_buffer *buf, size_t offset,
 	return len;
 }
 
-int ust_buffers_get_subbuf(struct ust_buffer *buf, long *consumed);
-int ust_buffers_put_subbuf(struct ust_buffer *buf, unsigned long uconsumed_old);
+extern int ust_buffers_get_subbuf(struct ust_buffer *buf, long *consumed);
+extern int ust_buffers_put_subbuf(struct ust_buffer *buf, unsigned long uconsumed_old);
+
+extern void init_ustrelay_transport(void);
 
 #endif /* _UST_BUFFERS_H */
