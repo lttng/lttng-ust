@@ -232,9 +232,13 @@ void process_blocked_consumers(void)
 				continue;
 			}
 			if(result == 0) {
+				int res;
 				DBG("PRODUCER END");
 
-				close(bc->fd_producer);
+				res = close(bc->fd_producer);
+				if(res == -1) {
+					PERROR("close");
+				}
 
 				list_del(&bc->list);
 
