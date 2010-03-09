@@ -99,7 +99,7 @@ int get_subbuffer(struct buffer_info *buf)
 		goto end_rep;
 	}
 	else if(!strcmp(received_msg, "NOTFOUND")) {
-		WARN("For buffer %s, the trace was not found. This likely means it was destroyed by the user.", buf->name);
+		DBG("For buffer %s, the trace was not found. This likely means it was destroyed by the user.", buf->name);
 		retval = GET_SUBBUF_DONE;
 		goto end_rep;
 	}
@@ -160,7 +160,7 @@ int put_subbuffer(struct buffer_info *buf)
 		retval = PUT_SUBBUF_OK;
 	}
 	else if(!strcmp(received_msg, "NOTFOUND")) {
-		WARN("For buffer %s, the trace was not found. This likely means it was destroyed by the user.", buf->name);
+		DBG("For buffer %s, the trace was not found. This likely means it was destroyed by the user.", buf->name);
 		/* However, maybe this was not the last subbuffer. So
 		 * we return the program died.
 		 */
@@ -509,7 +509,7 @@ int consumer_loop(struct buffer_info *buf)
 			break;
 		}
 		else if(result == PUT_SUBBUF_DIED) {
-			WARN("application died while putting subbuffer");
+			DBG("application died while putting subbuffer");
 			/* Skip the first subbuffer. We are not sure it is trustable
 			 * because the put_subbuffer() did not complete.
 			 */
