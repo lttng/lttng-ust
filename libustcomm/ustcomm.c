@@ -421,8 +421,6 @@ int ustcomm_recv_message(struct ustcomm_server *server, char **msg, struct ustco
 
 				if(retval == 0) {
 					/* connection finished */
-					close(fds[idx].fd);
-
 					list_for_each_entry(conn, &server->connections, list) {
 						if(conn->fd == fds[idx].fd) {
 							ustcomm_close_app(conn);
