@@ -71,7 +71,7 @@ int get_subbuffer(struct buffer_info *buf)
 
 	asprintf(&send_msg, "get_subbuffer %s", buf->name);
 	result = ustcomm_send_request(&buf->conn, send_msg, &received_msg);
-	if((result == -1 && errno == EPIPE) || result == 0) {
+	if((result == -1 && (errno == ECONNRESET || errno == EPIPE)) || result == 0) {
 		DBG("app died while being traced");
 		retval = GET_SUBBUF_DIED;
 		goto end;
@@ -131,7 +131,7 @@ int put_subbuffer(struct buffer_info *buf)
 
 	asprintf(&send_msg, "put_subbuffer %s %ld", buf->name, buf->consumed_old);
 	result = ustcomm_send_request(&buf->conn, send_msg, &received_msg);
-	if(result < 0 && errno == ECONNRESET) {
+	if(result < 0 && (errno == ECONNRESET || errno == EPIPE)) {
 		retval = PUT_SUBBUF_DIED;
 		goto end;
 	}
