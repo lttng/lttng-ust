@@ -1,12 +1,5 @@
 #!/bin/bash
 
-function check_no_fail() {
-	if [ "$?" -ne "0" ]; then
-		echo "$0: Stopping because of error"
-		exit 1;
-	fi
-}
-
 function NOFAIL() {
 	"$@"
 	if [ "$?" -ne "0" ]; then
@@ -23,26 +16,45 @@ function starttest() {
 	echo "------------------------------------"
 }
 
+function check_trace_logs() {
+	TRACE=$1
+
+	for f in $(ls $1/*.log); do
+		NLINES=$(egrep "Warning|Error" $f | wc -l)
+		if [ "$NLINES" -ne "0" ]; then
+			echo "Errors/warnings found in $f"
+			return 1;
+		fi
+	done
+	return 0;
+}
+
 TESTDIR=$(dirname $0)
 MATCHES="$TESTDIR/trace_matches"
 
 starttest "Test-nevents"
 NOFAIL usttrace $TESTDIR/test-nevents/prog
-NOFAIL $MATCHES -N "an_event (100000)" -n 100000 "^ust.an_event:" $(usttrace -W)
-NOFAIL $MATCHES -N "another_event (100000)" -n 100000 "^ust.another_event:" $(usttrace -W)
+trace_loc=$(usttrace -W)
+NOFAIL $MATCHES -N "an_event (100000)" -n 100000 "^ust.an_event:" $trace_loc
+NOFAIL $MATCHES -N "another_event (100000)" -n 100000 "^ust.another_event:" $trace_loc
+NOFAIL check_trace_logs "$trace_loc"
 
 starttest "fork()/exec() test"
 NOFAIL usttrace -f $TESTDIR/fork/.libs/fork $TESTDIR/fork/.libs/fork2
-NOFAIL $MATCHES -N "fork - before_fork" "^ust.before_fork:" $(usttrace -W)
-NOFAIL $MATCHES -N "fork - after_fork_parent" "^ust.after_fork_parent:" $(usttrace -W)
-NOFAIL $MATCHES -N "fork - after_fork_child" "^ust.after_fork_child:" $(usttrace -W)
-NOFAIL $MATCHES -N "fork - before_exec" "^ust.before_exec:" $(usttrace -W)
-NOFAIL $MATCHES -N "fork - potential_exec" "^ust.potential_exec:" $(usttrace -W)
-NOFAIL $MATCHES -N "fork - after_exec" "^ust.after_exec:" $(usttrace -W)
+trace_loc=$(usttrace -W)
+NOFAIL $MATCHES -N "fork - before_fork" "^ust.before_fork:" $trace_loc
+NOFAIL $MATCHES -N "fork - after_fork_parent" "^ust.after_fork_parent:" $trace_loc
+NOFAIL $MATCHES -N "fork - after_fork_child" "^ust.after_fork_child:" $trace_loc
+NOFAIL $MATCHES -N "fork - before_exec" "^ust.before_exec:" $trace_loc
+NOFAIL $MATCHES -N "fork - potential_exec" "^ust.potential_exec:" $trace_loc
+NOFAIL $MATCHES -N "fork - after_exec" "^ust.after_exec:" $trace_loc
+NOFAIL check_trace_logs "$trace_loc"
 
 starttest "libmallocwrap"
 NOFAIL usttrace -lm $TESTDIR/test-libmallocwrap/.libs/prog
-NOFAIL $MATCHES -N "mallocwrap - malloc" -n 1000 "^ust.malloc:.*{ size = 1[0-9][0-9][0-9]," $(usttrace -W)
+trace_loc=$(usttrace -W)
+NOFAIL $MATCHES -N "mallocwrap - malloc" -n 1000 "^ust.malloc:.*{ size = 1[0-9][0-9][0-9]," $trace_loc
+NOFAIL check_trace_logs "$trace_loc"
 
 ### Manual mode test
 starttest "Manual mode tracing"
