@@ -100,7 +100,7 @@ int get_subbuffer(struct buffer_info *buf)
 	}
 	else if(!strcmp(received_msg, "NOTFOUND")) {
 		DBG("For buffer %s, the trace was not found. This likely means it was destroyed by the user.", buf->name);
-		retval = GET_SUBBUF_DONE;
+		retval = GET_SUBBUF_DIED;
 		goto end_rep;
 	}
 	else {
