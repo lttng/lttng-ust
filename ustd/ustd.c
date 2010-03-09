@@ -559,11 +559,10 @@ void *consumer_thread(void *arg)
 
 	consumer_loop(buf);
 
-	free(args->bufname);
+	free((void *)args->bufname);
 	destroy_buffer(buf);
 
 	end:
-	/* bufname is free'd in free_buffer() */
 	free(args);
 	return NULL;
 }
