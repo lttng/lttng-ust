@@ -654,7 +654,7 @@ static int do_cmd_get_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 	if(trace == NULL) {
 		int result;
 
-		WARN("Cannot find trace. It was likely destroyed by the user.");
+		DBG("Cannot find trace. It was likely destroyed by the user.");
 		result = ustcomm_send_reply(&ustcomm_app.server, "NOTFOUND", src);
 		if(result) {
 			ERR("ustcomm_send_reply failed");
@@ -761,7 +761,7 @@ static int do_cmd_put_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 	trace = _ltt_trace_find(trace_name);
 
 	if(trace == NULL) {
-		WARN("Cannot find trace. It was likely destroyed by the user.");
+		DBG("Cannot find trace. It was likely destroyed by the user.");
 		result = ustcomm_send_reply(&ustcomm_app.server, "NOTFOUND", src);
 		if(result) {
 			ERR("ustcomm_send_reply failed");
