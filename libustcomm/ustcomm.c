@@ -503,7 +503,7 @@ static int init_named_socket(const char *name, char **path_out)
 			PERROR("unlink of socket file");
 			goto close_sock;
 		}
-		WARN("socket already exists; overwriting");
+		DBG("socket already exists; overwriting");
 	}
 
 	result = bind(fd, (struct sockaddr *)&addr, sizeof(addr));
