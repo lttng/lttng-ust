@@ -125,6 +125,7 @@ AC_CONFIG_FILES([
 	libinterfork/Makefile
 	ustd/Makefile
 	ustctl/Makefile
+	libustcomm/Makefile
 	snprintf/Makefile
 ])
 AC_OUTPUT
