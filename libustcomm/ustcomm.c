@@ -37,22 +37,6 @@
 
 #define UNIX_PATH_MAX 108
 
-#define MSG_MAX 10000
-
-/* FIXME: ustcomm blocks on message sending, which might be problematic in
- * some cases. Fix the poll() usage so sends are buffered until they don't
- * block.
- */
-
-//static void bt(void)
-//{
-//	void *buffer[100];
-//	int result;
-//
-//	result = backtrace(&buffer, 100);
-//	backtrace_symbols_fd(buffer, result, STDERR_FILENO);
-//}
-
 static int mkdir_p(const char *path, mode_t mode)
 {
 	const char *path_p;

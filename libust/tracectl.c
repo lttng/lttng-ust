@@ -1007,55 +1007,6 @@ int process_client_cmd(char *recvbuf, struct ustcomm_source *src)
 
 		free(reply);
 	}
-//		else if(nth_token_is(recvbuf, "get_notifications", 0) == 1) {
-//			struct ust_trace *trace;
-//			char trace_name[] = "auto";
-//			int i;
-//			char *channel_name;
-//
-//			DBG("get_notifications");
-//
-//			channel_name = strdup_malloc(nth_token(recvbuf, 1));
-//			if(channel_name == NULL) {
-//				ERR("put_subbuf_size: cannot parse channel");
-//				goto next_cmd;
-//			}
-//
-//			ltt_lock_traces();
-//			trace = _ltt_trace_find(trace_name);
-//			ltt_unlock_traces();
-//
-//			if(trace == NULL) {
-//				ERR("cannot find trace!");
-//				return (void *)1;
-//			}
-//
-//			for(i=0; i<trace->nr_channels; i++) {
-//				struct rchan *rchan = trace->channels[i].trans_channel_data;
-//				int fd;
-//
-//				if(!strcmp(trace->channels[i].channel_name, channel_name)) {
-//					struct rchan_buf *rbuf = rchan->buf;
-//					struct ltt_channel_buf_struct *lttbuf = trace->channels[i].buf;
-//
-//					result = fd = ustcomm_app_detach_client(&ustcomm_app, src);
-//					if(result == -1) {
-//						ERR("ustcomm_app_detach_client failed");
-//						goto next_cmd;
-//					}
-//
-//					lttbuf->wake_consumer_arg = (void *) fd;
-//
-//					smp_wmb();
-//
-//					lttbuf->call_wake_consumer = 1;
-//
-//					break;
-//				}
-//			}
-//
-//			free(channel_name);
-//		}
 	else {
 		ERR("unable to parse message: %s", recvbuf);
 	}
