@@ -465,7 +465,6 @@ int write_current_subbuffer(struct buffer_info *buf)
 	result = patient_write(buf->file_fd, subbuf_mem, cur_sb_size);
 	if(result == -1) {
 		PERROR("write");
-		/* FIXME: maybe drop this trace */
 		return -1;
 	}
 
@@ -495,8 +494,10 @@ int consumer_loop(struct buffer_info *buf)
 		}
 
 		/* write data to file */
-		write_current_subbuffer(buf);
-		/* FIXME: handle return value? */
+		result = write_current_subbuffer(buf);
+		if(result == -1) {
+			ERR("Failed writing a subbuffer to file (channel=%s). Dropping this buffer.", buf->name);
+		}
 
 		/* put the subbuffer */
 		result = put_subbuffer(buf);
