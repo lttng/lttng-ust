@@ -35,6 +35,7 @@
 #include "ustcomm.h"
 #include "buffers.h"
 #include "marker-control.h"
+#include "multipoll.h"
 
 #define USTSIGNAL SIGIO
 
@@ -185,88 +186,67 @@ static void inform_consumer_daemon(const char *trace_name)
 	ltt_unlock_traces();
 }
 
-void process_blocked_consumers(void)
+int process_blkd_consumer_act(void *priv, int fd, short events)
 {
-	int n_fds = 0;
-	struct pollfd *fds;
-	struct blocked_consumer *bc;
-	int idx = 0;
-	char inbuf;
 	int result;
+	long consumed_old = 0;
+	char *reply;
+	struct blocked_consumer *bc = (struct blocked_consumer *) priv;
+	char inbuf;
 
-	list_for_each_entry(bc, &blocked_consumers, list) {
-		n_fds++;
-	}
-
-	fds = (struct pollfd *) malloc(n_fds * sizeof(struct pollfd));
-	if(fds == NULL) {
-		ERR("malloc returned NULL");
-		return;
-	}
-
-	list_for_each_entry(bc, &blocked_consumers, list) {
-		fds[idx].fd = bc->fd_producer;
-		fds[idx].events = POLLIN;
-		bc->tmp_poll_idx = idx;
-		idx++;
-	}
-
-	while((result = poll(fds, n_fds, 0)) == -1 && errno == EINTR)
-		/* nothing */;
+	result = read(bc->fd_producer, &inbuf, 1);
 	if(result == -1) {
-		PERROR("poll");
-		return;
+		PERROR("read");
+		return -1;
+	}
+	if(result == 0) {
+		int res;
+		DBG("listener: got messsage that a buffer ended");
+
+		res = close(bc->fd_producer);
+		if(res == -1) {
+			PERROR("close");
+		}
+
+		list_del(&bc->list);
+
+		result = ustcomm_send_reply(&bc->server, "END", &bc->src);
+		if(result < 0) {
+			ERR("ustcomm_send_reply failed");
+			return -1;
+		}
+
+		return 0;
 	}
 
+	result = ust_buffers_get_subbuf(bc->buf, &consumed_old);
+	if(result == -EAGAIN) {
+		WARN("missed buffer?");
+		return 0;
+	}
+	else if(result < 0) {
+		ERR("ust_buffers_get_subbuf: error: %s", strerror(-result));
+	}
+	asprintf(&reply, "%s %ld", "OK", consumed_old);
+	result = ustcomm_send_reply(&bc->server, reply, &bc->src);
+	if(result < 0) {
+		ERR("ustcomm_send_reply failed");
+		free(reply);
+		return -1;
+	}
+	free(reply);
+
+	list_del(&bc->list);
+
+	return 0;
+}
+
+void blocked_consumers_add_to_mp(struct mpentries *ent)
+{
+	struct blocked_consumer *bc;
+
 	list_for_each_entry(bc, &blocked_consumers, list) {
-		if(fds[bc->tmp_poll_idx].revents) {
-			long consumed_old = 0;
-			char *reply;
-
-			result = read(bc->fd_producer, &inbuf, 1);
-			if(result == -1) {
-				PERROR("read");
-				continue;
-			}
-			if(result == 0) {
-				int res;
-				DBG("PRODUCER END");
-
-				res = close(bc->fd_producer);
-				if(res == -1) {
-					PERROR("close");
-				}
-
-				list_del(&bc->list);
-
-				result = ustcomm_send_reply(&bc->server, "END", &bc->src);
-				if(result < 0) {
-					ERR("ustcomm_send_reply failed");
-					continue;
-				}
-
-				continue;
-			}
-
-			result = ust_buffers_get_subbuf(bc->buf, &consumed_old);
-			if(result == -EAGAIN) {
-				WARN("missed buffer?");
-				continue;
-			}
-			else if(result < 0) {
-				DBG("ust_buffers_get_subbuf: error: %s", strerror(-result));
-			}
-			asprintf(&reply, "%s %ld", "OK", consumed_old);
-			result = ustcomm_send_reply(&bc->server, reply, &bc->src);
-			if(result < 0) {
-				ERR("ustcomm_send_reply failed");
-				free(reply);
-				continue;
-			}
-			free(reply);
-
-			list_del(&bc->list);
-		}
+		multipoll_add(ent, bc->fd_producer, POLLIN, process_blkd_consumer_act, bc, NULL);
 	}
 
 }
@@ -821,232 +801,212 @@ static void listener_cleanup(void *ptr)
 	ustcomm_fini_app(&ustcomm_app, 0);
 }
 
-void *listener_main(void *p)
+int process_client_cmd(char *recvbuf, struct ustcomm_source *src)
 {
 	int result;
+	char trace_name[] = "auto";
+	char trace_type[] = "ustrelay";
+	int len;
 
-	DBG("LISTENER");
+	DBG("received a message! it's: %s", recvbuf);
+	len = strlen(recvbuf);
 
-	pthread_cleanup_push(listener_cleanup, NULL);
+	if(!strcmp(recvbuf, "print_markers")) {
+		print_markers(stderr);
+	}
+	else if(!strcmp(recvbuf, "list_markers")) {
+		char *ptr;
+		size_t size;
+		FILE *fp;
 
-	for(;;) {
-		char trace_name[] = "auto";
-		char trace_type[] = "ustrelay";
-		char *recvbuf;
-		int len;
-		struct ustcomm_source src;
+		fp = open_memstream(&ptr, &size);
+		print_markers(fp);
+		fclose(fp);
 
-		process_blocked_consumers();
+		result = ustcomm_send_reply(&ustcomm_app.server, ptr, src);
 
-		result = ustcomm_app_recv_message(&ustcomm_app, &recvbuf, &src, 5);
+		free(ptr);
+	}
+	else if(!strcmp(recvbuf, "start")) {
+		/* start is an operation that setups the trace, allocates it and starts it */
+		result = ltt_trace_setup(trace_name);
 		if(result < 0) {
-			WARN("error in ustcomm_app_recv_message");
-			continue;
-		}
-		else if(result == 0) {
-			/* no message */
-			continue;
+			ERR("ltt_trace_setup failed");
+			return -1;
 		}
 
-		DBG("received a message! it's: %s", recvbuf);
-		len = strlen(recvbuf);
-
-		if(!strcmp(recvbuf, "print_markers")) {
-			print_markers(stderr);
+		result = ltt_trace_set_type(trace_name, trace_type);
+		if(result < 0) {
+			ERR("ltt_trace_set_type failed");
+			return -1;
 		}
-		else if(!strcmp(recvbuf, "list_markers")) {
-			char *ptr;
-			size_t size;
-			FILE *fp;
 
-			fp = open_memstream(&ptr, &size);
-			print_markers(fp);
-			fclose(fp);
-
-			result = ustcomm_send_reply(&ustcomm_app.server, ptr, &src);
-
-			free(ptr);
+		result = ltt_trace_alloc(trace_name);
+		if(result < 0) {
+			ERR("ltt_trace_alloc failed");
+			return -1;
 		}
-		else if(!strcmp(recvbuf, "start")) {
-			/* start is an operation that setups the trace, allocates it and starts it */
-			result = ltt_trace_setup(trace_name);
-			if(result < 0) {
-				ERR("ltt_trace_setup failed");
-				return (void *)1;
-			}
 
-			result = ltt_trace_set_type(trace_name, trace_type);
-			if(result < 0) {
-				ERR("ltt_trace_set_type failed");
-				return (void *)1;
-			}
+		inform_consumer_daemon(trace_name);
 
-			result = ltt_trace_alloc(trace_name);
-			if(result < 0) {
-				ERR("ltt_trace_alloc failed");
-				return (void *)1;
-			}
-
-			inform_consumer_daemon(trace_name);
-
-			result = ltt_trace_start(trace_name);
-			if(result < 0) {
-				ERR("ltt_trace_start failed");
-				continue;
-			}
+		result = ltt_trace_start(trace_name);
+		if(result < 0) {
+			ERR("ltt_trace_start failed");
+			return -1;
 		}
-		else if(!strcmp(recvbuf, "trace_setup")) {
-			DBG("trace setup");
+	}
+	else if(!strcmp(recvbuf, "trace_setup")) {
+		DBG("trace setup");
 
-			result = ltt_trace_setup(trace_name);
-			if(result < 0) {
-				ERR("ltt_trace_setup failed");
-				return (void *)1;
-			}
-
-			result = ltt_trace_set_type(trace_name, trace_type);
-			if(result < 0) {
-				ERR("ltt_trace_set_type failed");
-				return (void *)1;
-			}
+		result = ltt_trace_setup(trace_name);
+		if(result < 0) {
+			ERR("ltt_trace_setup failed");
+			return -1;
 		}
-		else if(!strcmp(recvbuf, "trace_alloc")) {
-			DBG("trace alloc");
 
-			result = ltt_trace_alloc(trace_name);
-			if(result < 0) {
-				ERR("ltt_trace_alloc failed");
-				return (void *)1;
-			}
+		result = ltt_trace_set_type(trace_name, trace_type);
+		if(result < 0) {
+			ERR("ltt_trace_set_type failed");
+			return -1;
+		}
+	}
+	else if(!strcmp(recvbuf, "trace_alloc")) {
+		DBG("trace alloc");
+
+		result = ltt_trace_alloc(trace_name);
+		if(result < 0) {
+			ERR("ltt_trace_alloc failed");
+			return -1;
+		}
+		inform_consumer_daemon(trace_name);
+	}
+	else if(!strcmp(recvbuf, "trace_create")) {
+		DBG("trace create");
+
+		result = ltt_trace_setup(trace_name);
+		if(result < 0) {
+			ERR("ltt_trace_setup failed");
+			return -1;
+		}
+
+		result = ltt_trace_set_type(trace_name, trace_type);
+		if(result < 0) {
+			ERR("ltt_trace_set_type failed");
+			return -1;
+		}
+	}
+	else if(!strcmp(recvbuf, "trace_start")) {
+		DBG("trace start");
+
+		result = ltt_trace_alloc(trace_name);
+		if(result < 0) {
+			ERR("ltt_trace_alloc failed");
+			return -1;
+		}
+		if(!result) {
 			inform_consumer_daemon(trace_name);
 		}
-		else if(!strcmp(recvbuf, "trace_create")) {
-			DBG("trace create");
 
-			result = ltt_trace_setup(trace_name);
-			if(result < 0) {
-				ERR("ltt_trace_setup failed");
-				return (void *)1;
-			}
-
-			result = ltt_trace_set_type(trace_name, trace_type);
-			if(result < 0) {
-				ERR("ltt_trace_set_type failed");
-				return (void *)1;
-			}
+		result = ltt_trace_start(trace_name);
+		if(result < 0) {
+			ERR("ltt_trace_start failed");
+			return -1;
 		}
-		else if(!strcmp(recvbuf, "trace_start")) {
-			DBG("trace start");
+	}
+	else if(!strcmp(recvbuf, "trace_stop")) {
+		DBG("trace stop");
 
-			result = ltt_trace_alloc(trace_name);
-			if(result < 0) {
-				ERR("ltt_trace_alloc failed");
-				return (void *)1;
-			}
-			if(!result) {
-				inform_consumer_daemon(trace_name);
-			}
-
-			result = ltt_trace_start(trace_name);
-			if(result < 0) {
-				ERR("ltt_trace_start failed");
-				continue;
-			}
+		result = ltt_trace_stop(trace_name);
+		if(result < 0) {
+			ERR("ltt_trace_stop failed");
+			return -1;
 		}
-		else if(!strcmp(recvbuf, "trace_stop")) {
-			DBG("trace stop");
+	}
+	else if(!strcmp(recvbuf, "trace_destroy")) {
 
-			result = ltt_trace_stop(trace_name);
-			if(result < 0) {
-				ERR("ltt_trace_stop failed");
-				return (void *)1;
-			}
+		DBG("trace destroy");
+
+		result = ltt_trace_destroy(trace_name, 0);
+		if(result < 0) {
+			ERR("ltt_trace_destroy failed");
+			return -1;
 		}
-		else if(!strcmp(recvbuf, "trace_destroy")) {
+	}
+	else if(nth_token_is(recvbuf, "get_shmid", 0) == 1) {
+		do_cmd_get_shmid(recvbuf, src);
+	}
+	else if(nth_token_is(recvbuf, "get_n_subbufs", 0) == 1) {
+		do_cmd_get_n_subbufs(recvbuf, src);
+	}
+	else if(nth_token_is(recvbuf, "get_subbuf_size", 0) == 1) {
+		do_cmd_get_subbuf_size(recvbuf, src);
+	}
+	else if(nth_token_is(recvbuf, "load_probe_lib", 0) == 1) {
+		char *libfile;
 
-			DBG("trace destroy");
+		libfile = nth_token(recvbuf, 1);
 
-			result = ltt_trace_destroy(trace_name, 0);
-			if(result < 0) {
-				ERR("ltt_trace_destroy failed");
-				return (void *)1;
-			}
+		DBG("load_probe_lib loading %s", libfile);
+
+		free(libfile);
+	}
+	else if(nth_token_is(recvbuf, "get_subbuffer", 0) == 1) {
+		do_cmd_get_subbuffer(recvbuf, src);
+	}
+	else if(nth_token_is(recvbuf, "put_subbuffer", 0) == 1) {
+		do_cmd_put_subbuffer(recvbuf, src);
+	}
+	else if(nth_token_is(recvbuf, "set_subbuf_size", 0) == 1) {
+		do_cmd_set_subbuf_size(recvbuf, src);
+	}
+	else if(nth_token_is(recvbuf, "set_subbuf_num", 0) == 1) {
+		do_cmd_set_subbuf_num(recvbuf, src);
+	}
+	else if(nth_token_is(recvbuf, "enable_marker", 0) == 1) {
+		char *channel_slash_name = nth_token(recvbuf, 1);
+		char channel_name[256]="";
+		char marker_name[256]="";
+
+		result = sscanf(channel_slash_name, "%255[^/]/%255s", channel_name, marker_name);
+
+		if(channel_name == NULL || marker_name == NULL) {
+			WARN("invalid marker name");
+			goto next_cmd;
 		}
-		else if(nth_token_is(recvbuf, "get_shmid", 0) == 1) {
-			do_cmd_get_shmid(recvbuf, &src);
+
+		result = ltt_marker_connect(channel_name, marker_name, "default");
+		if(result < 0) {
+			WARN("could not enable marker; channel=%s, name=%s", channel_name, marker_name);
 		}
-		else if(nth_token_is(recvbuf, "get_n_subbufs", 0) == 1) {
-			do_cmd_get_n_subbufs(recvbuf, &src);
+	}
+	else if(nth_token_is(recvbuf, "disable_marker", 0) == 1) {
+		char *channel_slash_name = nth_token(recvbuf, 1);
+		char *marker_name;
+		char *channel_name;
+
+		result = sscanf(channel_slash_name, "%a[^/]/%as", &channel_name, &marker_name);
+
+		if(marker_name == NULL) {
 		}
-		else if(nth_token_is(recvbuf, "get_subbuf_size", 0) == 1) {
-			do_cmd_get_subbuf_size(recvbuf, &src);
+
+		result = ltt_marker_disconnect(channel_name, marker_name, "default");
+		if(result < 0) {
+			WARN("could not disable marker; channel=%s, name=%s", channel_name, marker_name);
 		}
-		else if(nth_token_is(recvbuf, "load_probe_lib", 0) == 1) {
-			char *libfile;
+	}
+	else if(nth_token_is(recvbuf, "get_pidunique", 0) == 1) {
+		char *reply;
 
-			libfile = nth_token(recvbuf, 1);
+		asprintf(&reply, "%lld", pidunique);
 
-			DBG("load_probe_lib loading %s", libfile);
-
-			free(libfile);
+		result = ustcomm_send_reply(&ustcomm_app.server, reply, src);
+		if(result) {
+			ERR("listener: get_pidunique: ustcomm_send_reply failed");
+			goto next_cmd;
 		}
-		else if(nth_token_is(recvbuf, "get_subbuffer", 0) == 1) {
-			do_cmd_get_subbuffer(recvbuf, &src);
-		}
-		else if(nth_token_is(recvbuf, "put_subbuffer", 0) == 1) {
-			do_cmd_put_subbuffer(recvbuf, &src);
-		}
-		else if(nth_token_is(recvbuf, "set_subbuf_size", 0) == 1) {
-			do_cmd_set_subbuf_size(recvbuf, &src);
-		}
-		else if(nth_token_is(recvbuf, "set_subbuf_num", 0) == 1) {
-			do_cmd_set_subbuf_num(recvbuf, &src);
-		}
-		else if(nth_token_is(recvbuf, "enable_marker", 0) == 1) {
-			char *channel_slash_name = nth_token(recvbuf, 1);
-			char channel_name[256]="";
-			char marker_name[256]="";
 
-			result = sscanf(channel_slash_name, "%255[^/]/%255s", channel_name, marker_name);
-
-			if(channel_name == NULL || marker_name == NULL) {
-				WARN("invalid marker name");
-				goto next_cmd;
-			}
-
-			result = ltt_marker_connect(channel_name, marker_name, "default");
-			if(result < 0) {
-				WARN("could not enable marker; channel=%s, name=%s", channel_name, marker_name);
-			}
-		}
-		else if(nth_token_is(recvbuf, "disable_marker", 0) == 1) {
-			char *channel_slash_name = nth_token(recvbuf, 1);
-			char *marker_name;
-			char *channel_name;
-
-			result = sscanf(channel_slash_name, "%a[^/]/%as", &channel_name, &marker_name);
-
-			if(marker_name == NULL) {
-			}
-
-			result = ltt_marker_disconnect(channel_name, marker_name, "default");
-			if(result < 0) {
-				WARN("could not disable marker; channel=%s, name=%s", channel_name, marker_name);
-			}
-		}
-		else if(nth_token_is(recvbuf, "get_pidunique", 0) == 1) {
-			char *reply;
-
-			asprintf(&reply, "%lld", pidunique);
-
-			result = ustcomm_send_reply(&ustcomm_app.server, reply, &src);
-			if(result) {
-				ERR("listener: get_pidunique: ustcomm_send_reply failed");
-				goto next_cmd;
-			}
-
-			free(reply);
-		}
+		free(reply);
+	}
 //		else if(nth_token_is(recvbuf, "get_notifications", 0) == 1) {
 //			struct ust_trace *trace;
 //			char trace_name[] = "auto";
@@ -1078,7 +1038,7 @@ void *listener_main(void *p)
 //					struct rchan_buf *rbuf = rchan->buf;
 //					struct ltt_channel_buf_struct *lttbuf = trace->channels[i].buf;
 //
-//					result = fd = ustcomm_app_detach_client(&ustcomm_app, &src);
+//					result = fd = ustcomm_app_detach_client(&ustcomm_app, src);
 //					if(result == -1) {
 //						ERR("ustcomm_app_detach_client failed");
 //						goto next_cmd;
@@ -1096,12 +1056,37 @@ void *listener_main(void *p)
 //
 //			free(channel_name);
 //		}
-		else {
-			ERR("unable to parse message: %s", recvbuf);
+	else {
+		ERR("unable to parse message: %s", recvbuf);
+	}
+
+next_cmd:
+
+	return 0;
+}
+
+void *listener_main(void *p)
+{
+	int result;
+
+	DBG("LISTENER");
+
+	pthread_cleanup_push(listener_cleanup, NULL);
+
+	for(;;) {
+		struct mpentries mpent;
+
+		multipoll_init(&mpent);
+
+		blocked_consumers_add_to_mp(&mpent);
+		ustcomm_mp_add_app_clients(&mpent, &ustcomm_app, process_client_cmd);
+
+		result = multipoll_poll(&mpent, -1);
+		if(result == -1) {
+			ERR("error in multipoll_poll");
 		}
 
-	next_cmd:
-		free(recvbuf);
+		multipoll_destroy(&mpent);
 	}
 
 	pthread_cleanup_pop(1);

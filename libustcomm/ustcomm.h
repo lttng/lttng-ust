@@ -22,6 +22,7 @@
 #include <sys/un.h>
 
 #include "kcompat.h"
+#include "multipoll.h"
 
 #define SOCK_DIR "/tmp/ust-app-socks"
 #define UST_SIGNAL SIGIO
@@ -58,6 +59,11 @@ struct ustcomm_source {
 	void *priv;
 };
 
+struct ustcomm_multipoll_conn_info {
+	struct ustcomm_connection *conn;
+	int (*cb)(char *msg, struct ustcomm_source *src);
+};
+
 extern char *strdup_malloc(const char *s);
 
 //int send_message_pid(pid_t pid, const char *msg, char **reply);
@@ -79,6 +85,7 @@ extern int ustcomm_send_request(struct ustcomm_connection *conn, const char *req
 extern int ustcomm_send_reply(struct ustcomm_server *server, char *msg, struct ustcomm_source *src);
 extern int ustcomm_disconnect(struct ustcomm_connection *conn);
 extern int ustcomm_close_all_connections(struct ustcomm_server *server);
+extern void ustcomm_mp_add_app_clients(struct mpentries *ent, struct ustcomm_app *app, int (*cb)(struct ustcomm_connection *conn, char *msg));
 
 extern int nth_token_is(const char *str, const char *token, int tok_no);
 

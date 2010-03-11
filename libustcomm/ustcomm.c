@@ -33,6 +33,7 @@
 #include "ustcomm.h"
 #include "usterr.h"
 #include "share.h"
+#include "multipoll.h"
 
 #define UNIX_PATH_MAX 108
 
@@ -885,3 +886,88 @@ char *nth_token(const char *str, int tok_no)
 	return retval;
 }
 
+/* Callback from multipoll.
+ * Receive a new connection on the listening socket.
+ */
+
+static int process_mp_incoming_conn(void *priv, int fd, short events)
+{
+	struct ustcomm_connection *newconn;
+	struct ustcomm_server *server = (struct ustcomm_server *) priv;
+	int newfd;
+	int result;
+
+	result = newfd = accept(server->listen_fd, NULL, NULL);
+	if(result == -1) {
+		PERROR("accept");
+		return -1;
+	}
+
+	newconn = (struct ustcomm_connection *) malloc(sizeof(struct ustcomm_connection));
+	if(newconn == NULL) {
+		ERR("malloc returned NULL");
+		return -1;
+	}
+
+	ustcomm_init_connection(newconn);
+	newconn->fd = newfd;
+
+	list_add(&newconn->list, &server->connections);
+
+	return 0;
+}
+
+/* Callback from multipoll.
+ * Receive a message on an existing connection.
+ */
+
+static int process_mp_conn_msg(void *priv, int fd, short revents)
+{
+	struct ustcomm_multipoll_conn_info *mpinfo = (struct ustcomm_multipoll_conn_info *) priv;
+	int result;
+	char *msg;
+	struct ustcomm_source src;
+
+	if(revents) {
+		src.fd = fd;
+
+		result = recv_message_conn(mpinfo->conn, &msg);
+		if(result == -1) {
+			ERR("error in recv_message_conn");
+		}
+
+		else if(result == 0) {
+			/* connection finished */
+			ustcomm_close_app(mpinfo->conn);
+			list_del(&mpinfo->conn->list);
+			free(mpinfo->conn);
+		}
+		else {
+			mpinfo->cb(msg, &src);
+			free(msg);
+		}
+	}
+
+	return 0;
+}
+
+int free_ustcomm_client_poll(void *data)
+{
+	free(data);
+	return 0;
+}
+
+void ustcomm_mp_add_app_clients(struct mpentries *ent, struct ustcomm_app *app, int (*cb)(struct ustcomm_connection *conn, char *msg))
+{
+	struct ustcomm_connection *conn;
+
+	/* add listener socket */
+	multipoll_add(ent, app->server.listen_fd, POLLIN, process_mp_incoming_conn, &app->server, NULL);
+
+	list_for_each_entry(conn, &app->server.connections, list) {
+		struct ustcomm_multipoll_conn_info *mpinfo = (struct ustcomm_multipoll_conn_info *) malloc(sizeof(struct ustcomm_multipoll_conn_info));
+		mpinfo->conn = conn;
+		mpinfo->cb = cb;
+		multipoll_add(ent, conn->fd, POLLIN, process_mp_conn_msg, mpinfo, free_ustcomm_client_poll);
+	}
+}
