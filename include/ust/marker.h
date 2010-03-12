@@ -29,7 +29,7 @@
 #include <ust/immediate.h>
 //ust// #include <linux/ltt-channels.h>
 #include <ust/kernelcompat.h>
-#include <kcompat/list.h>
+#include <urcu/list.h>
 #include <ust/processor.h>
 
 #include <bits/wordsize.h>

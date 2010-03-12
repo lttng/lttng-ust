@@ -20,6 +20,7 @@
 
 #include <sys/types.h>
 #include <sys/un.h>
+#include <urcu/list.h>
 
 #include "kcompat.h"
 #include "multipoll.h"

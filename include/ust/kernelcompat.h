@@ -19,6 +19,7 @@
 #define KERNELCOMPAT_H
 
 #include <kcompat.h>
+#include <urcu/list.h>
 
 /* FIXME: libkcompat must not define arch-specific local ops, as ust *must*
  * fallback to the normal atomic ops. Fix things so we don't add them and
