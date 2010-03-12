@@ -65,8 +65,6 @@ struct ustcomm_multipoll_conn_info {
 	int (*cb)(char *msg, struct ustcomm_source *src);
 };
 
-extern char *strdup_malloc(const char *s);
-
 //int send_message_pid(pid_t pid, const char *msg, char **reply);
 extern int ustcomm_request_consumer(pid_t pid, const char *channel);
 

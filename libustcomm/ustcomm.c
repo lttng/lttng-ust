@@ -86,20 +86,6 @@ static int mkdir_p(const char *path, mode_t mode)
 	return retval;
 }
 
-char *strdup_malloc(const char *s)
-{
-	char *retval;
-
-	if(s == NULL)
-		return NULL;
-
-	retval = (char *) malloc(strlen(s)+1);
-
-	strcpy(retval, s);
-
-	return retval;
-}
-
 static int signal_process(pid_t pid)
 {
 	return 0;

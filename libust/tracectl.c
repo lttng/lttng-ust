@@ -707,14 +707,14 @@ static int do_cmd_put_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 
 	DBG("put_subbuf");
 
-	channel_and_cpu = strdup_malloc(nth_token(recvbuf, 1));
+	channel_and_cpu = strdup(nth_token(recvbuf, 1));
 	if(channel_and_cpu == NULL) {
 		ERR("cannot parse channel");
 		retval = -1;
 		goto end;
 	}
 
-	consumed_old_str = strdup_malloc(nth_token(recvbuf, 2));
+	consumed_old_str = strdup(nth_token(recvbuf, 2));
 	if(consumed_old_str == NULL) {
 		ERR("cannot parse consumed_old");
 		retval = -1;
