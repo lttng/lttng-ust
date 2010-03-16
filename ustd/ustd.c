@@ -549,8 +549,32 @@ void *consumer_thread(void *arg)
 {
 	struct buffer_info *buf = (struct buffer_info *) arg;
 	struct consumer_thread_args *args = (struct consumer_thread_args *) arg;
+	int result;
+	sigset_t sigset;
 
 	DBG("GOT ARGS: pid %d bufname %s", args->pid, args->bufname);
+
+	/* Block signals that should be handled by the main thread. */
+	result = sigemptyset(&sigset);
+	if(result == -1) {
+		PERROR("sigemptyset");
+		goto end;
+	}
+	result = sigaddset(&sigset, SIGTERM);
+	if(result == -1) {
+		PERROR("sigaddset");
+		goto end;
+	}
+	result = sigaddset(&sigset, SIGINT);
+	if(result == -1) {
+		PERROR("sigaddset");
+		goto end;
+	}
+	result = sigprocmask(SIG_BLOCK, &sigset, NULL);
+	if(result == -1) {
+		PERROR("sigprocmask");
+		goto end;
+	}
 
 	buf = connect_buffer(args->pid, args->bufname);
 	if(buf == NULL) {
@@ -693,6 +717,7 @@ int start_ustd(int fd)
 	int result;
 	sigset_t sigset;
 	struct sigaction sa;
+	int timeout = -1;
 
 	result = sigemptyset(&sigset);
 	if(result == -1) {
@@ -701,7 +726,7 @@ int start_ustd(int fd)
 	}
 	sa.sa_handler = sigterm_handler;
 	sa.sa_mask = sigset;
-	sa.sa_flags = SA_RESTART;
+	sa.sa_flags = 0;
 	result = sigaction(SIGTERM, &sa, NULL);
 	if(result == -1) {
 		PERROR("sigaction");
@@ -768,12 +793,16 @@ int start_ustd(int fd)
 		char *recvbuf;
 
 		/* check for requests on our public socket */
-		result = ustcomm_ustd_recv_message(&ustd, &recvbuf, NULL, 100);
-		if(result == -1) {
+		result = ustcomm_ustd_recv_message(&ustd, &recvbuf, NULL, timeout);
+		if(result == -1 && errno == EINTR) {
+			/* Caught signal */
+			printf("Caught signal\n");
+		}
+		else if(result == -1) {
 			ERR("error in ustcomm_ustd_recv_message");
 			goto loop_end;
 		}
-		if(result > 0) {
+		else if(result > 0) {
 			if(!strncmp(recvbuf, "collect", 7)) {
 				pid_t pid;
 				char *bufname;
@@ -810,6 +839,7 @@ int start_ustd(int fd)
 				break;
 			}
 			pthread_mutex_unlock(&active_buffers_mutex);
+			timeout = 100;
 		}
 	}
 

@@ -247,9 +247,13 @@ static int recv_message_fd(int fd, char **recv_buf, int *recv_buf_size, int *rec
 				*recv_buf_size = 0;
 				return 0;
 			}
-			/* real error */
-			PERROR("recv");
-			return -1;
+			else if(errno == EINTR) {
+				return -1;
+			}
+			else {
+				PERROR("recv");
+				return -1;
+			}
 		}
 		if(result == 0) {
 			return 0;
@@ -348,15 +352,18 @@ int ustcomm_recv_message(struct ustcomm_server *server, char **msg, struct ustco
 			idx++;
 		}
 
-		while((result = poll(fds, n_fds, timeout)) == -1 && errno == EINTR)
-			/* nothing */;
-		if(result == -1) {
+		result = poll(fds, n_fds, timeout);
+		if(result == -1 && errno == EINTR) {
+			/* That's ok. ustd receives signals to notify it must shutdown. */
+			retval = -1;
+			goto free_conn_table_return;
+		}
+		else if(result == -1) {
 			PERROR("poll");
 			retval = -1;
 			goto free_conn_table_return;
 		}
-
-		if(result == 0) {
+		else if(result == 0) {
 			retval = 0;
 			goto free_conn_table_return;
 		}
