@@ -927,7 +927,7 @@ int free_ustcomm_client_poll(void *data)
 	return 0;
 }
 
-void ustcomm_mp_add_app_clients(struct mpentries *ent, struct ustcomm_app *app, int (*cb)(struct ustcomm_connection *conn, char *msg))
+void ustcomm_mp_add_app_clients(struct mpentries *ent, struct ustcomm_app *app, int (*cb)(char *recvbuf, struct ustcomm_source *src))
 {
 	struct ustcomm_connection *conn;
 

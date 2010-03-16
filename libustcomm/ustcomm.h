@@ -84,7 +84,7 @@ extern int ustcomm_send_request(struct ustcomm_connection *conn, const char *req
 extern int ustcomm_send_reply(struct ustcomm_server *server, char *msg, struct ustcomm_source *src);
 extern int ustcomm_disconnect(struct ustcomm_connection *conn);
 extern int ustcomm_close_all_connections(struct ustcomm_server *server);
-extern void ustcomm_mp_add_app_clients(struct mpentries *ent, struct ustcomm_app *app, int (*cb)(struct ustcomm_connection *conn, char *msg));
+extern void ustcomm_mp_add_app_clients(struct mpentries *ent, struct ustcomm_app *app, int (*cb)(char *recvbuf, struct ustcomm_source *src));
 
 extern int nth_token_is(const char *str, const char *token, int tok_no);
 
