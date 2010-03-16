@@ -5,6 +5,7 @@ UST web site and manual: http://lttng.org/ust
 
 Updated versions of this package may be found at:
 
+  * Website:  http://lttng.org/ust
   * Releases: http://lttng.org/files/ust/releases
   * GitWeb:   http://git.dorsal.polymtl.ca (project: ust)
   * Git:      git://git.dorsal.polymtl.ca/git/ust.git
@@ -14,25 +15,15 @@ Updated versions of this package may be found at:
 PREREQUISITES:
 
   - liburcu
-
     Userspace RCU library, by Mathieu Desnoyers and Paul E. McKenney
-      * Releases: http://lttng.org/files/ust/releases
+
+    -> This release was tested with liburcu v0.4.1
+
+      * Debian/Ubuntu package: liburcu-dev
+      * Website:  http://lttng.org/urcu
+      * Releases: http://lttng.org/files/urcu
       * GitWeb:   http://lttng.org/cgi-bin/gitweb.cgi?p=userspace-rcu.git;a=summary
       * Git:      git://lttng.org/userspace-rcu.git
-
-      -> This release was tested with liburcu v0.4.1
-
-
-  - libkcompat
-
-    Linux kernel userspace compatibility library.
-      (Provides userspace ports of some kernel APIs.)
-      * Releases: http://lttng.org/files/ust/releases
-      * GitWeb:   http://git.dorsal.polymtl.ca (project: libkcompat)
-      * Git:      git://git.dorsal.polymtl.ca/git/libkcompat.git
-
-      -> This release was tested with libkcompat v0.1
-
 
 
 INSTALLATION INSTRUCTIONS:
