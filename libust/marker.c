@@ -20,6 +20,7 @@
 #include <errno.h>
 #define _LGPL_SOURCE
 #include <urcu-bp.h>
+#include <urcu/rculist.h>
 
 #include <ust/kernelcompat.h>
 #include <ust/marker.h>

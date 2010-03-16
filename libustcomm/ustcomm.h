@@ -22,7 +22,7 @@
 #include <sys/un.h>
 #include <urcu/list.h>
 
-#include "kcompat.h"
+#include <ust/kcompat/kcompat.h>
 #include "multipoll.h"
 
 #define SOCK_DIR "/tmp/ust-app-socks"

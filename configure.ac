@@ -61,10 +61,6 @@ This error can also occur when the liburcu package's configure script has not be
 # urcu - check that URCU lib is available to compilation
 AC_CHECK_LIB([urcu-bp], [synchronize_rcu], [], [AC_MSG_ERROR([Cannot find liburcu-bp lib. Use [LDFLAGS]=-Ldir to specify its location.])])
 
-# kcompat
-
-AC_CHECK_HEADERS([kcompat.h], [], [AC_MSG_ERROR([Cannot find kcompat headers (kcompat.h). Use [CFLAGS]=-Idir to specify their location.])])
-
 # Check for various supplementary host information (beyond the
 # triplet) which might affect the library format choices.  E.g., we
 # can be building with `i686-unknown-linux-gnu-gcc -m64'

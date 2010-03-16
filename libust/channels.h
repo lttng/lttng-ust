@@ -25,7 +25,6 @@
 #include <errno.h>
 
 #include <ust/kernelcompat.h>
-#include <kcompat/kref.h>
 
 #define EVENTS_PER_CHANNEL	65536
 #define MAX_CPUS		32

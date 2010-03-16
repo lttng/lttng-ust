@@ -23,13 +23,13 @@
 #ifndef _UST_BUFFERS_H
 #define _UST_BUFFERS_H
 
-#include <kcompat/kref.h>
 #include <assert.h>
+#include <ust/kernelcompat.h>
+#include "usterr.h"
 #include "channels.h"
 #include "tracerconst.h"
 #include "tracercore.h"
 #include "header-inline.h"
-#include <usterr.h>
 
 /***** FIXME: SHOULD BE REMOVED ***** */
 

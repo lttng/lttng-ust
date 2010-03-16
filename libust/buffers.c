@@ -26,7 +26,6 @@
 #include <sys/shm.h>
 #include <fcntl.h>
 #include <ust/kernelcompat.h>
-#include <kcompat/kref.h>
 #include <stdlib.h>
 #include "buffers.h"
 #include "channels.h"
