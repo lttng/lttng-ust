@@ -796,7 +796,6 @@ int start_ustd(int fd)
 		result = ustcomm_ustd_recv_message(&ustd, &recvbuf, NULL, timeout);
 		if(result == -1 && errno == EINTR) {
 			/* Caught signal */
-			printf("Caught signal\n");
 		}
 		else if(result == -1) {
 			ERR("error in ustcomm_ustd_recv_message");
