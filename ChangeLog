@@ -1,18 +1,33 @@
-Changes in 0.3 since 0.2
-* fix several issues, stabilizing tracing of large applications
-* add --set-subbuf-size / --set-subbuf-num options to ustctl
-* add a signal safe implementation of snprintf
+2010-03-17  ust 0.4
+	* remove dependency on libkcompat
+	* use atomic ops from liburcu
+	* libmallocwrap: rename to libustinstr-malloc
+	* libinterfork: rename to libustfork
+	* add a testsuite
+	* add ustctl --get-subbuf-size and --get-subbuf-num
+	* updates for compilation with gcc-4.4
+	* remove periodical wakeup in listener thread
+	* change benign warnings to debug messages, not to confuse users
+	* ustd: fix destruction to free all file descriptors and memory
+	* libust: close all file descriptors on close
+	* remove periodical wakeup in daemon
+	* code cleanups
 
-Changes in 0.2 since 0.1
-* conversion of the buffering system to per-cpu
-* update to the liburcu 0.4 API
-* upgrade to trace format 2.6; the latest lttv may now be used
-* add support for clone() interception in libinterfork
-* port refactorings from the kernel tracer up to 0.173
-* enhancements/refactor of libustcomm
-* add sections in the manual about trace viewing and about tracing apps not linked to libust
-* debugging output is now enabled by adding -DUST_DEBUG to the CFLAGS
-* usttrace: change ustd socket name to ustd-sock-PID
-* change app socket directory name for something more descriptive (/tmp/ust-app-socks)
-* code cleanups
-* various bug fixes
+ust 0.3
+	* fix several issues, stabilizing tracing of large applications
+	* add --set-subbuf-size / --set-subbuf-num options to ustctl
+	* add a signal safe implementation of snprintf
+
+ust 0.2
+	* conversion of the buffering system to per-cpu
+	* update to the liburcu 0.4 API
+	* upgrade to trace format 2.6; the latest lttv may now be used
+	* add support for clone() interception in libinterfork
+	* port refactorings from the kernel tracer up to 0.173
+	* enhancements/refactor of libustcomm
+	* add sections in the manual about trace viewing and about tracing apps not linked to libust
+	* debugging output is now enabled by adding -DUST_DEBUG to the CFLAGS
+	* usttrace: change ustd socket name to ustd-sock-PID
+	* change app socket directory name for something more descriptive (/tmp/ust-app-socks)
+	* code cleanups
+	* various bug fixes
