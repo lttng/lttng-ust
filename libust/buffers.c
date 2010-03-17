@@ -635,12 +635,6 @@ static int ust_buffers_init_buffer(struct ust_trace *trace,
 	buf->data_ready_fd_read = fds[0];
 	buf->data_ready_fd_write = fds[1];
 
-	/* FIXME: do we actually need this? */
-	result = fcntl(fds[0], F_SETFL, O_NONBLOCK);
-	if(result == -1) {
-		PERROR("fcntl");
-	}
-
 //ust//	buf->commit_seq = malloc(sizeof(buf->commit_seq) * n_subbufs);
 //ust//	if(!ltt_buf->commit_seq) {
 //ust//		return -1;
