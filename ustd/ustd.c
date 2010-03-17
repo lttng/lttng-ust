@@ -584,10 +584,10 @@ void *consumer_thread(void *arg)
 
 	consumer_loop(buf);
 
-	free((void *)args->bufname);
 	destroy_buffer(buf);
 
 	end:
+	free((void *)args->bufname);
 	free(args);
 	return NULL;
 }
