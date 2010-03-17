@@ -123,28 +123,6 @@ static void print_markers(FILE *fp)
 
 static int init_socket(void);
 
-int fd_notif = -1;
-void notif_cb(void)
-{
-	int result;
-	struct trctl_msg msg;
-
-	/* FIXME: fd_notif should probably be protected by a spinlock */
-
-	if(fd_notif == -1)
-		return;
-
-	msg.type = MSG_NOTIF;
-	msg.size = sizeof(msg.type);
-
-	/* FIXME: don't block here */
-	result = write(fd_notif, &msg, msg.size+sizeof(msg.size));
-	if(result == -1) {
-		PERROR("write");
-		return;
-	}
-}
-
 /* Ask the daemon to collect a trace called trace_name and being
  * produced by this pid.
  *
