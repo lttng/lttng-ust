@@ -1,11 +1,11 @@
-- support multiple simultaneous traces
-- fix FIXME's in the code
-- add compilation tests
-- test with smaller subbuffer sizes
-- add option to usttrace to select subbuffer size/count
 - correctly destroy buffers at trace destroy
-- add option to see subbuffer size and count
-- performance testing tool (in progress by Rafik Fahem)
+- add multi-threaded test program
+- fix FIXME's in the code
+- support multiple simultaneous traces
+- add compilation tests
+- add option to usttrace to select subbuffer size/count
+- add option to see subbuffer size and count (need to test it)
+- performance testing tool (in progress by Douglas Santos)
 - profile with oprofile or similar to check for perf bottlenecks
 - improve support for combined kernel/userspace tracing
 - document API
