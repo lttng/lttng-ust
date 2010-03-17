@@ -28,7 +28,7 @@ if [ -x "${USTTRACE_DIR}/ustd/ustd" ] ; then
     # Use the not installed libraries instead
     USTD="${USTTRACE_DIR}/ustd/ustd"
     LIBINTERFORK_PATH="${USTTRACE_DIR}/libustfork/.libs/libustfork.so"
-    LIBMALLOCWRAP_PATH="${USTTRACE_DIR}/libmallocwrap/.libs/libmallocwrap.so"
+    LIBMALLOCWRAP_PATH="${USTTRACE_DIR}/libustinstr-malloc/.libs/libustinstr-malloc.so"
     LIBUST_PATH="${USTTRACE_DIR}/libust/.libs/libust.so"
 else
     # Use the libraries that the dynamic link finds
@@ -38,7 +38,7 @@ else
         exit 1
     fi
     LIBINTERFORK_PATH="libustfork.so"
-    LIBMALLOCWRAP_PATH="libmallocwrap.so"
+    LIBMALLOCWRAP_PATH="libustinstr-malloc.so"
     LIBUST_PATH="libust.so.0"
 fi
 
