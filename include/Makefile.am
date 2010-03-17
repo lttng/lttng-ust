@@ -7,6 +7,7 @@ nobase_include_HEADERS = \
 	ust/probe.h \
 	ust/ust.h \
 	ust/tracectl.h \
+	ust/kcompat/kcompat.h \
 	ust/kcompat/compiler.h \
 	ust/kcompat/disable.h \
 	ust/kcompat/hlist.h \
