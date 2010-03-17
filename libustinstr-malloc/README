@@ -1,8 +1,9 @@
-libmallocwrap is used for instrumenting calls to malloc(3) in a program, without
-need for recompiling it.
+libustinstr-malloc is used for instrumenting calls to malloc(3) in a program,
+without need for recompiling it.
 
-libmallocwrap defines a malloc() function that is instrumented with a marker. It
-also calls the libc malloc afterwards. When loaded with LD_PRELOAD, it replaces
-the libc malloc() function, in effect instrumenting all calls to malloc().
+libustinstr-malloc defines a malloc() function that is instrumented with a
+marker. It also calls the libc malloc afterwards. When loaded with LD_PRELOAD,
+it replaces the libc malloc() function, in effect instrumenting all calls to
+malloc().
 
 See the "run" script for a usage example.

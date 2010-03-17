@@ -17,7 +17,7 @@ PREREQUISITES:
   - liburcu
     Userspace RCU library, by Mathieu Desnoyers and Paul E. McKenney
 
-    -> This release was tested with liburcu v0.4.1
+    -> This release was tested with liburcu v0.4.3
 
       * Debian/Ubuntu package: liburcu-dev
       * Website:  http://lttng.org/urcu
@@ -28,7 +28,7 @@ PREREQUISITES:
 
 INSTALLATION INSTRUCTIONS:
 
-  - Download, compile and install liburcu and libkcompat.
+  - Download, compile and install liburcu.
   - In this package's tree, run ./configure.
   - Run make.
   - Run make install.
@@ -66,10 +66,10 @@ PACKAGE CONTENTS:
   - hello
     An example application that uses the userspace tracer.
 
-  - libmallocwrap
+  - libustinstr-malloc
     An example library that can be LD_PRELOAD'ed to instrument calls to malloc()
     in any program without need to recompile it.
 
-  - libinterfork
+  - libustfork
     A library that is LD_PRELOAD'ed, and that hijacks calls to several system
     calls in order to trace across these calls.
