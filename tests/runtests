@@ -87,6 +87,28 @@ wait $USTD_PID
 
 NOFAIL $MATCHES -N "manual - find - ust.malloc" "^ust.malloc:" "$TRACE_DIR"
 
+### Valgrind ustd ###
+starttest "ustd valgrind check"
+TRACE_DIR="/tmp/ust-testsuite-ustdvalgrind-trace"
+rm -rf "$TRACE_DIR"
+mkdir "$TRACE_DIR"
+
+pidfilepath="/tmp/ust-testsuite-$USER-$(date +%Y%m%d%H%M%S%N)-ustd-pid"
+mkfifo -m 0600 "$pidfilepath"
+# It's not useful to run ustd in NOFAIL because it's running in the background
+VALG_OUT=/tmp/ust-testsuite-valg.txt
+valgrind -q ustd --pidfile "$pidfilepath" -o "$TRACE_DIR" >/dev/null 2>"$VALG_OUT" &
+VALG_PID=$!
+USTD_PID="$(<$pidfilepath)"
+
+usttrace -s $TESTDIR/basic/.libs/basic
+
+kill -SIGTERM $USTD_PID
+wait $!
+
+echo "Valgrind output is in $VALG_OUT"
+NOFAIL [ -z "$(<$VALG_OUT)" ]
+
 echo "************************************"
 echo "$0: All passed"
 echo "************************************"
