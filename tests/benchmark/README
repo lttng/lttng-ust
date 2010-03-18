@@ -1,0 +1,9 @@
+UST Benchmark
+
+INSTALLATION INSTRUCTIONS:
+
+  - run ./install  to install and compile UST/benchmark
+  - run ./run  to perform the benchmark
+
+
+The trace files will be automatically saved at $HOME/.usttraces

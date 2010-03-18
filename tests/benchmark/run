@@ -1,0 +1,37 @@
+#!/bin/bash
+#
+# run ust benchmark
+#
+
+echo "ust benchmark"
+
+NR_EVENTS=2000000
+NR_CPUS=2
+echo "using $NR_CPUS processor(s)"
+echo "using $NR_EVENTS events per cpu"
+
+
+rm -f /tmp/bench.txt
+# without markers
+echo ">running without markers"
+t1=$(/usr/bin/time -f%e usttrace ./bench1 $NR_CPUS $NR_EVENTS 2>&1 1> /dev/null)
+echo " time=$t1 sec"
+
+
+rm -f /tmp/bench.txt
+# with markers
+echo ">running with markers activated"
+t2=$(/usr/bin/time -f%e usttrace ./bench2 $NR_CPUS $NR_EVENTS 2>&1 1> /dev/null)
+echo " time=$t2 sec"
+
+
+#penalty = t2 - t1
+echo
+penalty=$(echo "$t2 - $t1;" | bc)
+echo "time penalty=$penalty sec"
+
+#event = penalty / (nr_events * nr_cpus)
+event=$(echo "scale=8; ($penalty / ($NR_EVENTS * $NR_CPUS));" | bc)
+echo "time penalty per event=$event sec"
+
+rm -f /tmp/bench.txt
