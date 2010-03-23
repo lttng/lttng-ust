@@ -30,8 +30,8 @@ int multipoll_init(struct mpentries *ent)
 	ent->n_used = 0;
 	ent->n_avail = INITIAL_N_AVAIL;
 
-	ent->pollfds = (struct pollfd *) malloc(sizeof(struct pollfd) * 16);
-	ent->extras = (struct pollfd_extra *) malloc(sizeof(struct pollfd_extra) * 16);
+	ent->pollfds = (struct pollfd *) malloc(sizeof(struct pollfd) * INITIAL_N_AVAIL);
+	ent->extras = (struct pollfd_extra *) malloc(sizeof(struct pollfd_extra) * INITIAL_N_AVAIL);
 
 	return 0;
 }
