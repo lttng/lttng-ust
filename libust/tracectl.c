@@ -1303,12 +1303,12 @@ static void stop_listener()
 	int result;
 
 	result = pthread_cancel(listener_thread);
-	if(result == -1) {
-		PERROR("pthread_cancel");
+	if(result != 0) {
+		ERR("pthread_cancel: %s", strerror(result));
 	}
 	result = pthread_join(listener_thread, NULL);
-	if(result == -1) {
-		PERROR("pthread_join");
+	if(result != 0) {
+		ERR("pthread_join: %s", strerror(result));
 	}
 }
 
