@@ -678,10 +678,22 @@ int tracepoint_register_lib(struct tracepoint *tracepoints_start, int tracepoint
 	return 0;
 }
 
-int tracepoint_unregister_lib(struct tracepoint *tracepoints_start, int tracepoints_count)
+int tracepoint_unregister_lib(struct tracepoint *tracepoints_start)
 {
-	/*FIXME: implement; but before implementing, tracepoint_register_lib must
-          have appropriate locking. */
+	struct tracepoint_lib *lib;
+
+	mutex_lock(&tracepoints_mutex);
+
+	list_for_each_entry(lib, &libs, list) {
+		if(lib->tracepoints_start == tracepoints_start) {
+			struct tracepoint_lib *lib2free = lib;
+			list_del(&lib->list);
+			free(lib2free);
+			break;
+		}
+	}
+
+	mutex_unlock(&tracepoints_mutex);
 
 	return 0;
 }

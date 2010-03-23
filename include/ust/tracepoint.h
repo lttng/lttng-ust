@@ -200,6 +200,7 @@ struct tracepoint_lib {
 
 extern int tracepoint_register_lib(struct tracepoint *tracepoints_start,
 				   int tracepoints_count);
+extern int tracepoint_unregister_lib(struct tracepoint *tracepoints_start);
 
 #define TRACEPOINT_LIB							\
 	extern struct tracepoint __start___tracepoints[] __attribute__((weak, visibility("hidden"))); \
@@ -208,6 +209,11 @@ extern int tracepoint_register_lib(struct tracepoint *tracepoints_start,
 	{								\
 		tracepoint_register_lib(__start___tracepoints,		\
 					(((long)__stop___tracepoints)-((long)__start___tracepoints))/sizeof(struct tracepoint)); \
+	} \
+	\
+	static void __attribute__((destructor)) __tracepoints__destroy(void) \
+	{								\
+		tracepoint_unregister_lib(__start___tracepoints); \
 	}
 
 #endif /* _UST_TRACEPOINT_H */

@@ -1383,10 +1383,27 @@ int marker_register_lib(struct marker *markers_start, int markers_count)
 	return 0;
 }
 
-int marker_unregister_lib(struct marker *markers_start, int markers_count)
+int marker_unregister_lib(struct marker *markers_start)
 {
+	struct lib *lib;
+
 	/*FIXME: implement; but before implementing, marker_register_lib must
           have appropriate locking. */
+
+	lock_markers();
+
+	/* FIXME: we should probably take a mutex here on libs */
+//ust//	mutex_lock(&module_mutex);
+	list_for_each_entry(lib, &libs, list) {
+		if(lib->markers_start == markers_start) {
+			struct lib *lib2free = lib;
+			list_del(&lib->list);
+			free(lib2free);
+			break;
+		}
+	}
+
+	unlock_markers();
 
 	return 0;
 }
@@ -1397,7 +1414,11 @@ void __attribute__((constructor)) init_markers(void)
 {
 	if(!initialized) {
 		marker_register_lib(__start___markers, (((long)__stop___markers)-((long)__start___markers))/sizeof(struct marker));
-		//DBG("markers_start: %p, markers_stop: %p\n", __start___markers, __stop___markers);
 		initialized = 1;
 	}
+}
+
+void __attribute__((constructor)) destroy_markers(void)
+{
+	marker_unregister_lib(__start___markers);
 }

@@ -347,6 +347,7 @@ struct lib {
 };
 
 extern int marker_register_lib(struct marker *markers_start, int markers_count);
+extern int marker_unregister_lib(struct marker *markers_start);
 
 #define MARKER_LIB							\
 	extern struct marker __start___markers[] __attribute__((weak, visibility("hidden"))); \
@@ -355,6 +356,11 @@ extern int marker_register_lib(struct marker *markers_start, int markers_count);
 	static void __attribute__((constructor)) __markers__init(void)	\
 	{								\
 		marker_register_lib(__start___markers, (((long)__stop___markers)-((long)__start___markers))/sizeof(struct marker)); \
+	} \
+	\
+	static void __attribute__((destructor)) __markers__destroy(void)	\
+	{								\
+		marker_unregister_lib(__start___markers); \
 	}
 
 extern void marker_set_new_marker_cb(void (*cb)(struct marker *));
