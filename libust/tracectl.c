@@ -43,8 +43,6 @@
 #define MSG_NOTIF 1
 #define MSG_REGISTER_NOTIF 2
 
-char consumer_stack[10000];
-
 /* This should only be accessed by the constructor, before the creation
  * of the listener, and then only by the listener.
  */
