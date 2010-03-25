@@ -116,7 +116,7 @@ AC_CONFIG_FILES([
 	tests/simple_include/Makefile
 	tests/snprintf/Makefile
 	tests/test-nevents/Makefile
-	tests/test-libmallocwrap/Makefile
+	tests/test-libustinstr-malloc/Makefile
 	libustinstr-malloc/Makefile
 	libustfork/Makefile
 	ustd/Makefile

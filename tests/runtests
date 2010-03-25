@@ -50,10 +50,10 @@ NOFAIL $MATCHES -N "fork - potential_exec" "^ust.potential_exec:" $trace_loc
 NOFAIL $MATCHES -N "fork - after_exec" "^ust.after_exec:" $trace_loc
 NOFAIL check_trace_logs "$trace_loc"
 
-starttest "libmallocwrap"
-NOFAIL usttrace -lm $TESTDIR/test-libmallocwrap/.libs/prog
+starttest "libustinstr-malloc"
+NOFAIL usttrace -lm $TESTDIR/test-libustinstr-malloc/.libs/prog
 trace_loc=$(usttrace -W)
-NOFAIL $MATCHES -N "mallocwrap - malloc" -n 1000 "^ust.malloc:.*{ size = 1[0-9][0-9][0-9]," $trace_loc
+NOFAIL $MATCHES -N "libustinstr-malloc - malloc" -n 1000 "^ust.malloc:.*{ size = 1[0-9][0-9][0-9]," $trace_loc
 NOFAIL check_trace_logs "$trace_loc"
 
 ### Manual mode test
@@ -68,7 +68,7 @@ mkfifo -m 0600 "$pidfilepath"
 ustd --pidfile "$pidfilepath" -o "$TRACE_DIR" >/dev/null 2>&1 &
 USTD_PID="$(<$pidfilepath)"
 
-LD_PRELOAD=/usr/local/lib/libust.so.0.0.0:/usr/local/lib/libmallocwrap.so find / >/dev/null 2>&1 &
+LD_PRELOAD=/usr/local/lib/libust.so.0.0.0:/usr/local/lib/libustinstr-malloc.so find / >/dev/null 2>&1 &
 PID=$!
 sleep 0.1
 NOFAIL ustctl --list-markers "$PID" >/dev/null
