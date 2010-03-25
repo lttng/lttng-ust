@@ -11,24 +11,22 @@
 #include <unistd.h>
 #include <sched.h>
 #include <ust/marker.h>
+#include <time.h>
 
 static int nr_cpus;
 static unsigned long nr_events;
-pthread_mutex_t	mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void do_stuff(void)
 {
 	int v;
 	FILE *file;
-	int lock;
 
 	v = 1;
 
-	lock = pthread_mutex_lock(&mutex);
-	file = fopen("/tmp/bench.txt", "a");
+	file = fopen("/dev/null", "a");
 	fprintf(file, "%d", v);
 	fclose(file);
-	lock = pthread_mutex_unlock(&mutex);
+	time(NULL);
 
 #ifdef MARKER
 	trace_mark(ust, event, "event %d", v);
@@ -46,7 +44,6 @@ void *function(void *arg)
 	}
 	return NULL;
 }
-
 
 void usage(char **argv) {
 	printf("Usage: %s nr_cpus nr_events\n", argv[0]);
