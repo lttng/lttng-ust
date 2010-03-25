@@ -1,0 +1,48 @@
+.\" generated with Ronn/v0.4.1
+.\" http://github.com/rtomayko/ronn/
+.
+.TH "USTD" "1" "March 2010" "" ""
+.
+.SH "NAME"
+\fBustd\fR \-\- a daemon that collects trace data and writes it to the disk
+.
+.SH "SYNOPSIS"
+\fBustd\fR [\fIoptions\fR]
+.
+.SH "DESCRIPTION"
+\fBustd\fR is a program that collects trace data and writes it to the disk.
+.
+.SH "OPTIONS"
+These programs follow the usual GNU command line syntax, with long options
+starting with two dashes(`\-'). A summary of options is included below.
+.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Show summary of options.
+.
+.TP
+\fB\-o\fR \fIDIR\fR
+Specify the directory where to output the traces.
+.
+.TP
+\fB\-s\fR \fIPATH\fR
+Specify the path to use for the daemon socket.
+.
+.TP
+\fB\-d\fR
+Start as a daemon.
+.
+.TP
+\fB\-p\fR, \fB\-\-pidfile\fR=\fIFILE\fR
+Write the PID in this file (when using \-d).
+.
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Show version of program.
+.
+.SH "AUTHOR"
+\fBustd\fR was written by Pierre\-Marc Fournier.
+.
+.P
+This manual page was written by Jon Bernard <jbernard@debian.org>, for
+the Debian project (and may be used by others).

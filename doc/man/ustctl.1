@@ -1,0 +1,77 @@
+.\" generated with Ronn/v0.4.1
+.\" http://github.com/rtomayko/ronn/
+.
+.TH "USTCTL" "1" "March 2010" "" ""
+.
+.SH "NAME"
+\fBustctl\fR \-\- a program to control the tracing of userspace applications
+.
+.SH "SYNOPSIS"
+\fBustctl\fR [\fIcommand\fR] [\fIPIDs\fR]...
+.
+.SH "DESCRIPTION"
+\fBustclt\fR is a program to control the tracing of userspace applications. It can
+list markers, start the tracing, stop the tracing, enable/disable markers, etc.
+.
+.SH "OPTIONS"
+These programs follow the usual GNU command line syntax, with long options
+starting with two dashes(`\-'). A summary of options is included below.
+.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Show summary of options.
+.
+.TP
+\fB\-\-create\-trace\fR
+Create trace.
+.
+.TP
+\fB\-\-alloc\-trace\fR
+Alloc trace.
+.
+.TP
+\fB\-\-start\-trace\fR
+Start tracing.
+.
+.TP
+\fB\-\-stop\-trace\fR
+Stop tracing.
+.
+.TP
+\fB\-\-destroy\-trace\fR
+Destroy the trace.
+.
+.TP
+\fB\-\-set\-subbuf\-size\fR \fICHANNEL\fR/\fIbytes\fR
+Set the size of subbuffers per channel.
+.
+.TP
+\fB\-\-set\-subbuf\-num\fR \fICHANNEL\fR
+Set the number of subbuffers per channel.
+.
+.TP
+\fB\-\-get\-subbuf\-size\fR \fICHANNEL\fR
+Get the size of subbuffers per channel.
+.
+.TP
+\fB\-\-get\-subbuf\-num\fR \fICHANNEL\fR
+Get the number of subbuffers per channel.
+.
+.TP
+\fB\-\-enable\-marker\fR \fICHANNEL\fR/\fIMARKER\fR
+Enable a marker.
+.
+.TP
+\fB\-\-disable\-marker\fR \fICHANNEL\fR/\fIMARKER\fR
+Disable a marker.
+.
+.TP
+\fB\-\-list\-markers\fR
+List the markers of the process, their state and format string.
+.
+.SH "AUTHOR"
+\fBustctl\fR was written by Pierre\-Marc Fournier.
+.
+.P
+This manual page was written by Jon Bernard <jbernard@debian.org>, for
+the Debian project (and may be used by others).

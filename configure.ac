@@ -105,6 +105,7 @@ AC_MSG_RESULT($LIBFORMAT)
 
 AC_CONFIG_FILES([
 	Makefile
+	doc/Makefile
 	include/Makefile
 	libust/Makefile
 	tests/Makefile
