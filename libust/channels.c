@@ -45,6 +45,9 @@ static LIST_HEAD(ltt_channels);
 static unsigned int free_index;
 static struct kref index_kref;	/* Keeps track of allocated trace channels */
 
+int ust_channels_overwrite_by_default = 0;
+int ust_channels_request_collection_by_default = 1;
+
 static struct ltt_channel_setting *lookup_channel(const char *name)
 {
 	struct ltt_channel_setting *iter;
@@ -246,6 +249,7 @@ int ltt_channels_get_index_from_name(const char *name)
  */
 struct ust_channel *ltt_channels_trace_alloc(unsigned int *nr_channels,
 						    int overwrite,
+						    int request_collection,
 						    int active)
 {
 	struct ust_channel *channel = NULL;
@@ -272,6 +276,7 @@ struct ust_channel *ltt_channels_trace_alloc(unsigned int *nr_channels,
 		channel[iter->index].subbuf_size = iter->subbuf_size;
 		channel[iter->index].subbuf_cnt = iter->subbuf_cnt;
 		channel[iter->index].overwrite = overwrite;
+		channel[iter->index].request_collection = request_collection;
 		channel[iter->index].active = active;
 		channel[iter->index].channel_name = iter->name;
 	}

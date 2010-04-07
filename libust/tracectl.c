@@ -58,7 +58,7 @@ struct tracecmd { /* no padding */
 };
 
 /* volatile because shared between the listener and the main thread */
-volatile sig_atomic_t buffers_to_export = 0;
+int buffers_to_export = 0;
 
 struct trctl_msg {
 	/* size: the size of all the fields except size itself */
@@ -144,17 +144,19 @@ static void inform_consumer_daemon(const char *trace_name)
 	}
 
 	for(i=0; i < trace->nr_channels; i++) {
-		/* iterate on all cpus */
-		for(j=0; j<trace->channels[i].n_cpus; j++) {
-			char *buf;
-			asprintf(&buf, "%s_%d", trace->channels[i].channel_name, j);
-			result = ustcomm_request_consumer(pid, buf);
-			if(result == -1) {
-				WARN("Failed to request collection for channel %s. Is the daemon available?", trace->channels[i].channel_name);
-				/* continue even if fail */
+		if(trace->channels[i].request_collection) {
+			/* iterate on all cpus */
+			for(j=0; j<trace->channels[i].n_cpus; j++) {
+				char *buf;
+				asprintf(&buf, "%s_%d", trace->channels[i].channel_name, j);
+				result = ustcomm_request_consumer(pid, buf);
+				if(result == -1) {
+					WARN("Failed to request collection for channel %s. Is the daemon available?", trace->channels[i].channel_name);
+					/* continue even if fail */
+				}
+				free(buf);
+				STORE_SHARED(buffers_to_export, LOAD_SHARED(buffers_to_export)+1);
 			}
-			free(buf);
-			buffers_to_export++;
 		}
 	}
 
@@ -645,7 +647,7 @@ static int do_cmd_get_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 			 */
 			if(uatomic_read(&buf->consumed) == 0) {
 				DBG("decrementing buffers_to_export");
-				buffers_to_export--;
+				STORE_SHARED(buffers_to_export, LOAD_SHARED(buffers_to_export)-1);
 			}
 
 			break;
@@ -1152,6 +1154,26 @@ static void __attribute__((constructor)) init()
 		}
 	}
 
+	if(getenv("UST_OVERWRITE")) {
+		int val = atoi(getenv("UST_OVERWRITE"));
+		if(val == 0 || val == 1) {
+			STORE_SHARED(ust_channels_overwrite_by_default, val);
+		}
+		else {
+			WARN("invalid value for UST_OVERWRITE");
+		}
+	}
+
+	if(getenv("UST_AUTOCOLLECT")) {
+		int val = atoi(getenv("UST_AUTOCOLLECT"));
+		if(val == 0 || val == 1) {
+			STORE_SHARED(ust_channels_request_collection_by_default, val);
+		}
+		else {
+			WARN("invalid value for UST_AUTOCOLLECT");
+		}
+	}
+
 	if(getenv("UST_TRACE")) {
 		char trace_name[] = "auto";
 		char trace_type[] = "ustrelay";
@@ -1322,10 +1344,10 @@ static void stop_listener()
 
 static void __attribute__((destructor)) keepalive()
 {
-	if(trace_recording() && buffers_to_export) {
+	if(trace_recording() && LOAD_SHARED(buffers_to_export)) {
 		int total = 0;
 		DBG("Keeping process alive for consumer daemon...");
-		while(buffers_to_export) {
+		while(LOAD_SHARED(buffers_to_export)) {
 			const int interv = 200000;
 			restarting_usleep(interv);
 			total += interv;
@@ -1394,7 +1416,7 @@ static void ust_fork(void)
 	/* free app, keeping socket file */
 	ustcomm_fini_app(&ustcomm_app, 1);
 
-	buffers_to_export = 0;
+	STORE_SHARED(buffers_to_export, 0);
 	have_listener = 0;
 	init_socket();
 	create_listener();

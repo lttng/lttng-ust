@@ -389,7 +389,8 @@ int _ltt_trace_setup(const char *trace_name)
 	}
 	strncpy(new_trace->trace_name, trace_name, NAME_MAX);
 	new_trace->channels = ltt_channels_trace_alloc(&new_trace->nr_channels,
-						       0, 1);
+				ust_channels_overwrite_by_default,
+				ust_channels_request_collection_by_default, 1);
 	if (!new_trace->channels) {
 		ERR("Unable to allocate memory for chaninfo  %s\n", trace_name);
 		err = -ENOMEM;
