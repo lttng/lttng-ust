@@ -1,8 +1,11 @@
 - correctly destroy buffers at trace destroy
 - add multi-threaded test program
+- add dlopen() based test program
+- add automatic valgrind test of libust
 - fix FIXME's in the code
 - support multiple simultaneous traces
 - add compilation tests
+- fix the case where a lib is unloaded while markers are being connected with the auto probe connector. the marker mutex needs to be held to prevend the lib from being unloaded at that time. also, the library unregister function in marker.c should remove the markers from the hash table and call synchronize_rcu before returning
 - add option to usttrace to select subbuffer size/count
 - add option to see subbuffer size and count (need to test it)
 - performance testing tool (in progress by Douglas Santos)
