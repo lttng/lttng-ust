@@ -21,4 +21,4 @@ libust.so: libust.ldscript.in
 # It is very important to compile the initializer with PIC otherwise we
 # may get obscure errors when linking to shared libraries.
 libust-initializer.o: libust-initializer.c
-	$(CC) $(CFLAGS) -fPIC -c -I$(top_srcdir)/include -o $@ $<
+	$(CC) $(CFLAGS) -fno-strict-aliasing -fPIC -c -I$(top_srcdir)/include -o $@ $<

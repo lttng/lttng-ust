@@ -1,4 +1,5 @@
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/libustcomm
+AM_CFLAGS = -fno-strict-aliasing
 
 lib_LTLIBRARIES = libust.la
 
@@ -28,4 +29,4 @@ libust_la_LIBADD = \
 	$(top_builddir)/snprintf/libustsnprintf.la \
 	$(top_builddir)/libustcomm/libustcomm.la
 
-libust_la_CFLAGS = -DUST_COMPONENT="libust"
+libust_la_CFLAGS = -DUST_COMPONENT="libust" -fno-strict-aliasing
