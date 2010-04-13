@@ -44,7 +44,7 @@
 static inline u32 jhash(const void *key, u32 length, u32 initval)
 {
 	u32 a, b, c, len;
-	const u8 *k = key;
+	const u8 *k = (const u8 *) key;
 
 	len = length;
 	a = b = JHASH_GOLDEN_RATIO;
