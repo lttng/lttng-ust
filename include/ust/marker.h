@@ -25,17 +25,13 @@
 #define _UST_MARKER_H
 
 #include <stdarg.h>
-//ust// #include <linux/types.h>
 #include <ust/immediate.h>
-//ust// #include <linux/ltt-channels.h>
 #include <ust/kernelcompat.h>
 #include <urcu/list.h>
 #include <ust/processor.h>
 
 #include <bits/wordsize.h>
 
-//ust// struct module;
-//ust// struct task_struct;
 struct marker;
 
 /* To stringify the expansion of a define */
@@ -100,6 +96,7 @@ struct marker {
 		      * is not unusual as it can be the result of function inlining.		\
 		      */									\
 		     ".ifndef __mstrtab_" XSTR(channel) "_" XSTR(name) "_channel_" XSTR(unique) "\n\t"	\
+		     /*".section __markers_strings\n\t"*/					\
 		     ".section __markers_strings,\"aw\",@progbits\n\t"				\
 		     "__mstrtab_" XSTR(channel) "_" XSTR(name) "_channel_" XSTR(unique) ":\n\t"	\
 		     ".string \"" XSTR(channel) "\"\n\t"					\
@@ -111,6 +108,7 @@ struct marker {
 		     ".endif\n\t"								\
 		);										\
 		asm volatile (									\
+		     /*".section __markers\n\t"*/ \
 		     ".section __markers,\"aw\",@progbits\n\t"					\
 		     ".balign 8\n\t" 								\
 		     "2:\n\t" \
@@ -140,8 +138,22 @@ struct marker {
 #define DEFINE_MARKER(channel, name, format, unique, m)				\
 		_DEFINE_MARKER(channel, name, NULL, NULL, format, unique, m)
 
-#define DEFINE_MARKER_TP(channel, name, tp_name, tp_cb, format, unique, m)		\
-		_DEFINE_MARKER(channel, name, #tp_name, tp_cb, format, unique, m)
+#define DEFINE_MARKER_TP(channel, name, tp_name, tp_cb, format)		\
+		_DEFINE_MARKER_TP(channel, name, #tp_name, tp_cb, format)
+
+#define _DEFINE_MARKER_TP(channel, name, tp_name_str, tp_cb, format) \
+		static const char __mstrtab_##channel##_##name[]	\
+		__attribute__((section("__markers_strings")))		\
+		= #channel "\0" #name "\0" format;			\
+		static struct marker __mark_##channel##_##name		\
+		__attribute__((section("__markers"), aligned(8))) =	\
+		{ __mstrtab_##channel##_##name,				\
+		  &__mstrtab_##channel##_##name[sizeof(#channel)],	\
+		  &__mstrtab_##channel##_##name[sizeof(#channel) +	\
+						sizeof(#name)],		\
+		  0, 0, 0, 0, marker_probe_cb,				\
+		  { __mark_empty_function, NULL},			\
+		  NULL, tp_name_str, tp_cb }
 
 /*
  * Make sure the alignment of the structure in the __markers section will

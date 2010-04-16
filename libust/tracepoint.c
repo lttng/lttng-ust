@@ -19,23 +19,11 @@
  * Ported to userspace by Pierre-Marc Fournier.
  */
 
-//ust// #include <linux/module.h>
-//ust// #include <linux/mutex.h>
-//ust// #include <linux/types.h>
-//ust// #include <linux/jhash.h>
-//ust// #include <linux/list.h>
-//ust// #include <linux/rcupdate.h>
-//ust// #include <linux/tracepoint.h>
-//ust// #include <linux/err.h>
-//ust// #include <linux/slab.h>
-//ust// #include <linux/immediate.h>
-
 #include <errno.h>
 
 #include <ust/kernelcompat.h>
 #include <ust/tracepoint.h>
 #include "usterr.h"
-//#include "list.h"
 
 #define _LGPL_SOURCE
 #include <urcu-bp.h>
