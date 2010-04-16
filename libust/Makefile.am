@@ -20,7 +20,8 @@ libust_la_SOURCES = \
 	tracectl.c \
 	$(top_builddir)/libustcomm/multipoll.c \
 	tracerconst.h \
-	header-inline.h
+	header-inline.h \
+	type-serializer.c
 
 libust_la_LDFLAGS = -no-undefined -version-info 0:0:0
 

@@ -24,5 +24,7 @@
 #include <ust/processor.h>
 #include <ust/tracepoint.h>
 #include <ust/probe.h>
+#include <ust/type-serializer.h>
+#include <ust/core.h>
 
 #endif /* UST_H */

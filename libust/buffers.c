@@ -1213,12 +1213,14 @@ static int ltt_relay_try_reserve_slow(struct ust_channel *chan, struct ust_buffe
  * Return : -ENOSPC if not enough space, else returns 0.
  * It will take care of sub-buffer switching.
  */
-int ltt_reserve_slot_lockless_slow(struct ust_trace *trace,
-		struct ust_channel *chan, void **transport_data,
-		size_t data_size, size_t *slot_size, long *buf_offset, u64 *tsc,
-		unsigned int *rflags, int largest_align, int cpu)
+int ltt_reserve_slot_lockless_slow(struct ust_channel *chan,
+		struct ust_trace *trace, size_t data_size,
+		int largest_align, int cpu,
+		struct ust_buffer **ret_buf,
+		size_t *slot_size, long *buf_offset,
+		u64 *tsc, unsigned int *rflags)
 {
-	struct ust_buffer *buf = chan->buf[cpu];
+	struct ust_buffer *buf = *ret_buf = chan->buf[cpu];
 	struct ltt_reserve_switch_offsets offsets;
 
 	offsets.size = 0;
@@ -1296,8 +1298,7 @@ static void __attribute__((destructor)) ust_buffers_exit(void)
 	ltt_transport_unregister(&ust_relay_transport);
 }
 
-size_t ltt_write_event_header_slow(struct ust_trace *trace,
-		struct ust_channel *channel,
+size_t ltt_write_event_header_slow(struct ust_channel *channel,
 		struct ust_buffer *buf, long buf_offset,
 		u16 eID, u32 event_size,
 		u64 tsc, unsigned int rflags)

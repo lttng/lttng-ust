@@ -19,7 +19,7 @@
 #ifndef UST_HEADER_INLINE_H
 #define UST_HEADER_INLINE_H
 
-#include "tracercore.h"
+#include <ust/core.h>
 
 /*
  * ust_get_header_size

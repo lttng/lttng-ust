@@ -104,10 +104,12 @@ struct ust_buffer {
  */
 enum force_switch_mode { FORCE_ACTIVE, FORCE_FLUSH };
 
-extern int ltt_reserve_slot_lockless_slow(struct ust_trace *trace,
-		struct ust_channel *ltt_channel, void **transport_data,
-		size_t data_size, size_t *slot_size, long *buf_offset, u64 *tsc,
-		unsigned int *rflags, int largest_align, int cpu);
+extern int ltt_reserve_slot_lockless_slow(struct ust_channel *chan,
+		struct ust_trace *trace, size_t data_size,
+		int largest_align, int cpu,
+		struct ust_buffer **ret_buf,
+		size_t *slot_size, long *buf_offset,
+		u64 *tsc, unsigned int *rflags);
 
 extern void ltt_force_switch_lockless_slow(struct ust_buffer *buf,
 		enum force_switch_mode mode);
@@ -351,12 +353,14 @@ static __inline__ int ltt_relay_try_reserve(
 	return 0;
 }
 
-static __inline__ int ltt_reserve_slot(struct ust_trace *trace,
-		struct ust_channel *chan, void **transport_data,
-		size_t data_size, size_t *slot_size, long *buf_offset, u64 *tsc,
-		unsigned int *rflags, int largest_align, int cpu)
+static __inline__ int ltt_reserve_slot(struct ust_channel *chan,
+				       struct ust_trace *trace, size_t data_size,
+				       int largest_align, int cpu,
+				       struct ust_buffer **ret_buf,
+				       size_t *slot_size, long *buf_offset, u64 *tsc,
+				       unsigned int *rflags)
 {
-	struct ust_buffer *buf = chan->buf[cpu];
+	struct ust_buffer *buf = *ret_buf = chan->buf[cpu];
 	long o_begin, o_end, o_old;
 	size_t before_hdr_pad;
 
@@ -400,9 +404,10 @@ static __inline__ int ltt_reserve_slot(struct ust_trace *trace,
 	*buf_offset = o_begin + before_hdr_pad;
 	return 0;
 slow_path:
-	return ltt_reserve_slot_lockless_slow(trace, chan,
-		transport_data, data_size, slot_size, buf_offset, tsc,
-		rflags, largest_align, cpu);
+	return ltt_reserve_slot_lockless_slow(chan, trace, data_size,
+					      largest_align, cpu, ret_buf,
+					      slot_size, buf_offset, tsc,
+					      rflags);
 }
 
 /*

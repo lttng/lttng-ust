@@ -577,36 +577,36 @@ static int set_marker(struct marker_entry *entry, struct marker *elem,
 	smp_wmb();
 	elem->ptype = entry->ptype;
 
-//ust//	if (elem->tp_name && (active ^ _imv_read(elem->state))) {
-//ust//		WARN_ON(!elem->tp_cb);
-//ust//		/*
-//ust//		 * It is ok to directly call the probe registration because type
-//ust//		 * checking has been done in the __trace_mark_tp() macro.
-//ust//		 */
-//ust//
-//ust//		if (active) {
-//ust//			/*
-//ust//			 * try_module_get should always succeed because we hold
-//ust//			 * markers_mutex to get the tp_cb address.
-//ust//			 */
+	if (elem->tp_name && (active ^ _imv_read(elem->state))) {
+		WARN_ON(!elem->tp_cb);
+		/*
+		 * It is ok to directly call the probe registration because type
+		 * checking has been done in the __trace_mark_tp() macro.
+		 */
+
+		if (active) {
+			/*
+			 * try_module_get should always succeed because we hold
+			 * markers_mutex to get the tp_cb address.
+			 */
 //ust//			ret = try_module_get(__module_text_address(
 //ust//				(unsigned long)elem->tp_cb));
 //ust//			BUG_ON(!ret);
-//ust//			ret = tracepoint_probe_register_noupdate(
-//ust//				elem->tp_name,
-//ust//				elem->tp_cb);
-//ust//		} else {
-//ust//			ret = tracepoint_probe_unregister_noupdate(
-//ust//				elem->tp_name,
-//ust//				elem->tp_cb);
-//ust//			/*
-//ust//			 * tracepoint_probe_update_all() must be called
-//ust//			 * before the module containing tp_cb is unloaded.
-//ust//			 */
+			ret = tracepoint_probe_register_noupdate(
+				elem->tp_name,
+				elem->tp_cb);
+		} else {
+			ret = tracepoint_probe_unregister_noupdate(
+				elem->tp_name,
+				elem->tp_cb);
+			/*
+			 * tracepoint_probe_update_all() must be called
+			 * before the module containing tp_cb is unloaded.
+			 */
 //ust//			module_put(__module_text_address(
 //ust//				(unsigned long)elem->tp_cb));
-//ust//		}
-//ust//	}
+		}
+	}
 	elem->state__imv = active;
 
 	return ret;
@@ -620,24 +620,24 @@ static int set_marker(struct marker_entry *entry, struct marker *elem,
  */
 static void disable_marker(struct marker *elem)
 {
-//ust//	int ret;
-//ust//
-//ust//	/* leave "call" as is. It is known statically. */
-//ust//	if (elem->tp_name && _imv_read(elem->state)) {
-//ust//		WARN_ON(!elem->tp_cb);
-//ust//		/*
-//ust//		 * It is ok to directly call the probe registration because type
-//ust//		 * checking has been done in the __trace_mark_tp() macro.
-//ust//		 */
-//ust//		ret = tracepoint_probe_unregister_noupdate(elem->tp_name,
-//ust//			elem->tp_cb);
-//ust//		WARN_ON(ret);
-//ust//		/*
-//ust//		 * tracepoint_probe_update_all() must be called
-//ust//		 * before the module containing tp_cb is unloaded.
-//ust//		 */
+	int ret;
+
+	/* leave "call" as is. It is known statically. */
+	if (elem->tp_name && _imv_read(elem->state)) {
+		WARN_ON(!elem->tp_cb);
+		/*
+		 * It is ok to directly call the probe registration because type
+		 * checking has been done in the __trace_mark_tp() macro.
+		 */
+		ret = tracepoint_probe_unregister_noupdate(elem->tp_name,
+			elem->tp_cb);
+		WARN_ON(ret);
+		/*
+		 * tracepoint_probe_update_all() must be called
+		 * before the module containing tp_cb is unloaded.
+		 */
 //ust//		module_put(__module_text_address((unsigned long)elem->tp_cb));
-//ust//	}
+	}
 	elem->state__imv = 0;
 	elem->single.func = __mark_empty_function;
 	/* Update the function before setting the ptype */
@@ -746,7 +746,7 @@ static void marker_update_probes(void)
 	/* Markers in modules. */
 //ust//	module_update_markers();
 	lib_update_markers();
-//ust//	tracepoint_probe_update_all();
+	tracepoint_probe_update_all();
 	/* Update immediate values */
 	core_imv_update();
 //ust//	module_imv_update(); /* FIXME: need to port for libs? */
