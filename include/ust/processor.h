@@ -24,7 +24,7 @@
 extern __thread long ust_reg_stack[500];
 extern volatile __thread long *ust_reg_stack_ptr;
 
-#ifndef __x86_64
+#ifdef __i386
 
 struct registers {
 	short ss;
@@ -39,6 +39,15 @@ struct registers {
 	long eflags;
 	long esp;
 };
+
+static inline int fls(int x)
+{
+        int r;
+        asm("bsrl %1,%0\n\t"
+            "cmovzl %2,%0"
+            : "=&r" (r) : "rm" (x), "rm" (-1));
+        return r + 1;
+}
 
 #ifdef CONFIG_UST_GDB_INTEGRATION
 
@@ -198,11 +207,13 @@ struct registers {
 
 #define RELATIVE_ADDRESS(__rel_label__) __rel_label__
 
-#define ARCH_COPY_ADDR(src, dst) "lea " src "," dst
+#define ARCH_COPY_ADDR(dst) "lea 2b," dst "\n\t"
 
 #define _ASM_PTR ".long "
 
-#else /* below is code for x86-64 */
+#endif /* below is code for x86-64 */
+
+#ifdef __x86_64
 
 struct registers {
 	int padding; /* 4 bytes */
@@ -226,6 +237,15 @@ struct registers {
 	unsigned long rflags;
 	unsigned long rsp;
 };
+
+static inline int fls(int x)
+{
+        int r;
+        asm("bsrl %1,%0\n\t"
+            "cmovzl %2,%0"
+            : "=&r" (r) : "rm" (x), "rm" (-1));
+        return r + 1;
+}
 
 #ifdef CONFIG_UST_GDB_INTEGRATION
 
@@ -398,10 +418,32 @@ struct registers {
  * in a relocatable way. On x86-64, this uses a special (%rip) notation. */
 #define RELATIVE_ADDRESS(__rel_label__) __rel_label__(%%rip)
 
-#define ARCH_COPY_ADDR(src, dst) "lea " src "(%%rip)," dst
+#define ARCH_COPY_ADDR(dst) "lea 2b(%%rip)," dst "\n\t"
 
 #define _ASM_PTR ".quad "
 
-#endif
+#endif /* x86_64 */
+
+#ifdef __PPC__
+
+struct registers {
+};
+
+static __inline__ int fls(unsigned int x)
+{
+        int lz;
+
+        asm ("cntlzw %0,%1" : "=r" (lz) : "r" (x));
+        return 32 - lz;
+}
+
+#define ARCH_COPY_ADDR(dst) \
+		     "lis " dst ",2b@h\n\t" /* load high bytes */ \
+		     "ori " dst "," dst ",2b@l\n\t" /* load low bytes */
+
+#define _ASM_PTR ".long "
+#define save_registers(a)
+
+#endif /* __PPC__ */
 
 #endif /* UST_PROCESSOR_H */

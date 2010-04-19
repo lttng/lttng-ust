@@ -112,7 +112,7 @@ struct marker {
 		);										\
 		asm volatile (									\
 		     ".section __markers,\"aw\",@progbits\n\t"					\
-		     ".align 8\n\t"								\
+		     ".balign 8\n\t" 								\
 		     "2:\n\t" \
 		     _ASM_PTR "(__mstrtab_" XSTR(channel) "_" XSTR(name) "_channel_" XSTR(unique) ")\n\t" /* channel string */ \
 		     _ASM_PTR "(__mstrtab_" XSTR(channel) "_" XSTR(name) "_name_" XSTR(unique) ")\n\t" /* name string */ \
@@ -121,7 +121,7 @@ struct marker {
 		     ".byte 0\n\t" /* ptype */							\
 		     ".word 0\n\t" /* channel_id */						\
 		     ".word 0\n\t" /* event_id */						\
-		     ".align " XSTR(__WORDSIZE) " / 8\n\t" /* alignment */			\
+		     ".balign " XSTR(__WORDSIZE) " / 8\n\t" /* alignment */			\
 		     _ASM_PTR "(marker_probe_cb)\n\t" /* call */				\
 		     _ASM_PTR "(__mark_empty_function)\n\t" /* marker_probe_closure single.field1 */ \
 		     _ASM_PTR "0\n\t" /* marker_probe_closure single.field2 */			\
@@ -130,8 +130,8 @@ struct marker {
 		     _ASM_PTR "0\n\t" /* tp_cb */						\
 		     _ASM_PTR "(1f)\n\t" /* location */						\
 		     ".previous\n\t"								\
+		     ARCH_COPY_ADDR("%[outptr]")						\
 		     "1:\n\t"									\
-		     ARCH_COPY_ADDR("2b", "%[outptr]") "\n\t"					\
 		: [outptr] "=r" (m) );								\
 												\
 		save_registers(&regs)

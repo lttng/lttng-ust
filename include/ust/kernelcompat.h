@@ -87,6 +87,7 @@ static inline long IS_ERR(const void *ptr)
 
 /* MATH */
 
+#include <ust/processor.h>
 static inline unsigned int hweight32(unsigned int w)
 {
 	unsigned int res = w - ((w >> 1) & 0x55555555);
@@ -94,22 +95,6 @@ static inline unsigned int hweight32(unsigned int w)
 	res = (res + (res >> 4)) & 0x0F0F0F0F;
 	res = res + (res >> 8);
 	return (res + (res >> 16)) & 0x000000FF;
-}
-
-static inline int fls(int x)
-{
-        int r;
-//ust// #ifdef CONFIG_X86_CMOV
-        asm("bsrl %1,%0\n\t"
-            "cmovzl %2,%0"
-            : "=&r" (r) : "rm" (x), "rm" (-1));
-//ust// #else
-//ust//         asm("bsrl %1,%0\n\t"
-//ust//             "jnz 1f\n\t"
-//ust//             "movl $-1,%0\n"
-//ust//             "1:" : "=r" (r) : "rm" (x));
-//ust// #endif
-        return r + 1;
 }
 
 static __inline__ int get_count_order(unsigned int count)
