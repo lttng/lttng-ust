@@ -21,11 +21,9 @@
 #ifndef UST_TRACERCORE_H
 #define UST_TRACERCORE_H
 
-#include <ust/kernelcompat.h>
-//ust// #include <linux/percpu.h>
-
-/* ltt's root dir in debugfs */
-#define LTT_ROOT        "ltt"
+#include <ust/kcompat/kcompat.h>
+#include <ust/core.h>
+#include <urcu/list.h>
 
 /*
  * All modifications of ltt_traces must be done by ltt-tracer.c, while holding

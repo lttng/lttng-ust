@@ -21,7 +21,6 @@
 #include <ctype.h>
 #include <stdlib.h>
 
-#include <ust/kernelcompat.h>
 #include "tracer.h"
 #include "usterr.h"
 

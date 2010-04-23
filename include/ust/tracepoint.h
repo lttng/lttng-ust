@@ -24,15 +24,10 @@
  * Ported to userspace by Pierre-Marc Fournier.
  */
 
-//#include <linux/immediate.h>
-//#include <linux/types.h>
-//#include <linux/rcupdate.h>
-
 #define _LGPL_SOURCE
 #include <urcu-bp.h>
-
 #include <ust/immediate.h>
-#include <ust/kernelcompat.h>
+#include <ust/core.h>
 
 struct module;
 struct tracepoint;

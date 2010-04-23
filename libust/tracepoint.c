@@ -20,9 +20,9 @@
  */
 
 #include <errno.h>
-
-#include <ust/kernelcompat.h>
 #include <ust/tracepoint.h>
+#include <ust/core.h>
+#include <ust/kcompat/kcompat.h>
 #include "usterr.h"
 
 #define _LGPL_SOURCE

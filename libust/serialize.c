@@ -36,11 +36,10 @@
 #include <urcu-bp.h>
 #include <urcu/rculist.h>
 
-#include <ust/kernelcompat.h>
 #include <ust/core.h>
+#include <ust/clock.h>
 #include "buffers.h"
 #include "tracer.h"
-//#include "list.h"
 #include "usterr.h"
 #include "ust_snprintf.h"
 

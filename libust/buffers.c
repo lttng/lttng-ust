@@ -25,8 +25,10 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <fcntl.h>
-#include <ust/kernelcompat.h>
 #include <stdlib.h>
+
+#include <ust/clock.h>
+
 #include "buffers.h"
 #include "channels.h"
 #include "tracer.h"

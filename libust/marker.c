@@ -22,7 +22,7 @@
 #include <urcu-bp.h>
 #include <urcu/rculist.h>
 
-#include <ust/kernelcompat.h>
+#include <ust/core.h>
 #include <ust/marker.h>
 
 #include "usterr.h"

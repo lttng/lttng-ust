@@ -23,8 +23,9 @@
 
 #include <linux/limits.h>
 #include <errno.h>
-
-#include <ust/kernelcompat.h>
+#include <ust/kcompat/kcompat.h>
+#include <urcu/list.h>
+#include <ust/core.h>
 
 #define EVENTS_PER_CHANNEL	65536
 #define MAX_CPUS		32

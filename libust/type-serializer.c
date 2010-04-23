@@ -10,6 +10,7 @@
 #include <urcu/rculist.h>
 #include <ust/type-serializer.h>
 #include <ust/core.h>
+#include <ust/clock.h>
 #include "tracer.h"
 
 notrace

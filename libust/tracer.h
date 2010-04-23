@@ -26,12 +26,12 @@
 
 #include <sys/types.h>
 #include <stdarg.h>
-#include <ust/kernelcompat.h>
+#include <ust/marker.h>
+#include <ust/probe.h>
+#include <ust/core.h>
 #include "channels.h"
 #include "tracercore.h"
 #include "tracerconst.h"
-#include <ust/marker.h>
-#include <ust/probe.h>
 #include "buffers.h"
 
 /* Number of bytes to log with a read/write event */

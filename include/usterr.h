@@ -25,6 +25,8 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+#include <ust/core.h>
+
 #include "share.h"
 
 #ifndef UST_COMPONENT

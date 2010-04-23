@@ -34,7 +34,8 @@
 #include <urcu-bp.h>
 #include <urcu/rculist.h>
 
-#include <ust/kernelcompat.h>
+#include <ust/clock.h>
+
 #include "tracercore.h"
 #include "tracer.h"
 #include "usterr.h"

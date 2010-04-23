@@ -24,7 +24,6 @@
  */
 
 #include <stdlib.h>
-#include <ust/kernelcompat.h>
 #include <ust/marker.h>
 #include "channels.h"
 #include "usterr.h"

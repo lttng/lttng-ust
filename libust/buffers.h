@@ -24,7 +24,9 @@
 #define _UST_BUFFERS_H
 
 #include <assert.h>
-#include <ust/kernelcompat.h>
+
+#include <ust/core.h>
+
 #include "usterr.h"
 #include "channels.h"
 #include "tracerconst.h"

@@ -26,9 +26,10 @@
 
 #include <stdarg.h>
 #include <ust/immediate.h>
-#include <ust/kernelcompat.h>
+#include <ust/core.h>
 #include <urcu/list.h>
 #include <ust/processor.h>
+#include <ust/kcompat/kcompat.h>
 
 #include <bits/wordsize.h>
 
