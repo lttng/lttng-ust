@@ -459,7 +459,7 @@ static int do_cmd_get_subbuf_size(const char *recvbuf, struct ustcomm_source *sr
 static unsigned int poweroftwo(unsigned int x)
 {
     unsigned int power2 = 1;
-    unsigned int hardcoded = 2147483648; /* FIX max 2^31 */
+    unsigned int hardcoded = 2147483648u; /* FIX max 2^31 */
 
     if (x < 2)
         return 2;
