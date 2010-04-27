@@ -456,18 +456,18 @@ static int do_cmd_get_subbuf_size(const char *recvbuf, struct ustcomm_source *sr
 	return retval;
 }
 
-static unsigned int poweroftwo(unsigned int x)
+/* Return the power of two which is equal or higher to v */
+
+static unsigned int pow2_higher_or_eq(unsigned int v)
 {
-    unsigned int power2 = 1;
-    unsigned int hardcoded = 2147483648u; /* FIX max 2^31 */
+	int hb = fls(v);
+	int hbm1 = hb-1;
+	int retval = 1<<(hb-1);
 
-    if (x < 2)
-        return 2;
-
-    while (power2 < x && power2 < hardcoded)
-        power2 *= 2;
-
-    return power2;
+	if(v-retval == 0)
+		return retval;
+	else
+		return retval<<1;
 }
 
 static int do_cmd_set_subbuf_size(const char *recvbuf, struct ustcomm_source *src)
@@ -491,9 +491,10 @@ static int do_cmd_set_subbuf_size(const char *recvbuf, struct ustcomm_source *sr
 		goto end;
 	}
 
-	power = poweroftwo(size);
+	power = pow2_higher_or_eq(size);
+	power = max_t(unsigned int, 2u, power);
 	if (power != size)
-		WARN("using the next 2^n = %u\n", power);
+		WARN("using the next power of two for buffer size = %u\n", power);
 
 	ltt_lock_traces();
 	trace = _ltt_trace_find_setup(trace_name);
