@@ -1,4 +1,4 @@
-ACLOCAL_AMFLAGS = -I m4
+ACLOCAL_AMFLAGS = -I config
 
 # The order here is tricky. SUBDIRS applies both to compilation and
 # installation. Programs depending on the libs must be built after
