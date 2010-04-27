@@ -6,8 +6,9 @@ AC_INIT([ust], [0.4], [pierre-marc dot fournier at polymtl dot ca])
 AC_CONFIG_AUX_DIR([config])
 AC_CANONICAL_TARGET
 AC_CANONICAL_HOST
-AC_CONFIG_MACRO_DIR([m4])
+AC_CONFIG_MACRO_DIR([config])
 AM_INIT_AUTOMAKE([foreign])
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_SRCDIR([ustctl/ustctl.c])
 AC_CONFIG_HEADERS([config.h])
 
