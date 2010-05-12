@@ -116,6 +116,14 @@ trace_loc=$(usttrace -W)
 NOFAIL $MATCHES -N "from_library" -n 1 "^ust.from_library:" $trace_loc
 NOFAIL $MATCHES -N "from_main_before_lib" -n 1 "^ust.from_main_before_lib:" $trace_loc
 NOFAIL $MATCHES -N "from_main_after_lib" -n 1 "^ust.from_main_after_lib:" $trace_loc
+
+### same-line-marker ###
+starttest "same_line_marker"
+NOFAIL usttrace $TESTDIR/same_line_marker/same_line_marker
+trace_loc=$(usttrace -W)
+NOFAIL $MATCHES -N "same_line_event" -n 2 "^ust.same_line_event:" $trace_loc
+
+
 echo "************************************"
 echo "$0: All passed"
 echo "************************************"
