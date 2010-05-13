@@ -303,8 +303,8 @@ Another file, here tp.h, contains declarations for the tracepoint.
 @verbatim
 #include <ust/tracepoint.h>
 
-DECLARE_TRACE(mychannel_myevent, TPPROTO(int v, char *st),
-	      TPARGS(v, st));
+DECLARE_TRACE(mychannel_myevent, TP_PROTO(int v, char *st),
+	      TP_ARGS(v, st));
 @end verbatim
 @end example
 
