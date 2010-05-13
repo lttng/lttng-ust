@@ -53,6 +53,12 @@ starting with two dashes(`-'). A summary of options is included below.
   * `-s`:
     Use system-wide daemon instead of creating one for this session.
 
+  * `-S`:
+    Specify the subbuffer size.
+
+  * `-N`:
+    Specify the number of subbuffers.
+
   * `-W`:
     Undocumented option.
 
