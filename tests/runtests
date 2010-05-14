@@ -109,6 +109,13 @@ wait $!
 echo "Valgrind output is in $VALG_OUT"
 NOFAIL [ -z "$(<$VALG_OUT)" ]
 
+### dlopen ###
+starttest "dlopen"
+LD_LIBRARY_PATH=$TESTDIR/dlopen/.libs NOFAIL usttrace $TESTDIR/dlopen/dlopen
+trace_loc=$(usttrace -W)
+NOFAIL $MATCHES -N "from_library" -n 1 "^ust.from_library:" $trace_loc
+NOFAIL $MATCHES -N "from_main_before_lib" -n 1 "^ust.from_main_before_lib:" $trace_loc
+NOFAIL $MATCHES -N "from_main_after_lib" -n 1 "^ust.from_main_after_lib:" $trace_loc
 echo "************************************"
 echo "$0: All passed"
 echo "************************************"
