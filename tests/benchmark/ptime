@@ -1,0 +1,22 @@
+#!/usr/bin/python
+
+import sys
+import time
+import os
+
+def main():
+	args = sys.argv[1:]
+	if len(args) < 1:
+		print "usage: %s COMMAND" % sys.argv[0]
+		sys.exit(1)
+
+	cmd = args[0]
+
+	t1 = time.time()
+	os.system(cmd)
+	1
+	t2 = time.time()
+
+	print (t2-t1)
+
+main()
