@@ -109,9 +109,6 @@ wait $!
 echo "Valgrind output is in $VALG_OUT"
 NOFAIL [ -z "$(<$VALG_OUT)" ]
 
-### Valgrind libust ###
-starttest "libust valgrind check"
-
 echo "************************************"
 echo "$0: All passed"
 echo "************************************"
