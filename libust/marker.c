@@ -50,12 +50,12 @@ static LIST_HEAD(libs);
 
 void lock_markers(void)
 {
-	mutex_lock(&markers_mutex);
+	pthread_mutex_lock(&markers_mutex);
 }
 
 void unlock_markers(void)
 {
-	mutex_unlock(&markers_mutex);
+	pthread_mutex_unlock(&markers_mutex);
 }
 
 /*
@@ -661,9 +661,9 @@ int is_marker_enabled(const char *channel, const char *name)
 {
 	struct marker_entry *entry;
 
-	mutex_lock(&markers_mutex);
+	pthread_mutex_lock(&markers_mutex);
 	entry = get_marker(channel, name);
-	mutex_unlock(&markers_mutex);
+	pthread_mutex_unlock(&markers_mutex);
 
 	return entry && !!entry->refcount;
 }
@@ -681,7 +681,7 @@ void marker_update_probe_range(struct marker *begin,
 	struct marker *iter;
 	struct marker_entry *mark_entry;
 
-	mutex_lock(&markers_mutex);
+	pthread_mutex_lock(&markers_mutex);
 	for (iter = begin; iter < end; iter++) {
 		mark_entry = get_marker(iter->channel, iter->name);
 		if (mark_entry) {
@@ -707,7 +707,7 @@ void marker_update_probe_range(struct marker *begin,
 			disable_marker(iter);
 		}
 	}
-	mutex_unlock(&markers_mutex);
+	pthread_mutex_unlock(&markers_mutex);
 }
 
 static void lib_update_markers(void)
@@ -715,11 +715,11 @@ static void lib_update_markers(void)
 	struct lib *lib;
 
 	/* FIXME: we should probably take a mutex here on libs */
-//ust//	mutex_lock(&module_mutex);
+//ust//	pthread_mutex_lock(&module_mutex);
 	list_for_each_entry(lib, &libs, list)
 		marker_update_probe_range(lib->markers_start,
 				lib->markers_start + lib->markers_count);
-//ust//	mutex_unlock(&module_mutex);
+//ust//	pthread_mutex_unlock(&module_mutex);
 }
 
 /*
@@ -774,7 +774,7 @@ int marker_probe_register(const char *channel, const char *name,
 	struct marker_probe_closure *old;
 	int first_probe = 0;
 
-	mutex_lock(&markers_mutex);
+	pthread_mutex_lock(&markers_mutex);
 	entry = get_marker(channel, name);
 	if (!entry) {
 		first_probe = 1;
@@ -825,12 +825,12 @@ int marker_probe_register(const char *channel, const char *name,
 		else
 			goto end;
 	}
-	mutex_unlock(&markers_mutex);
+	pthread_mutex_unlock(&markers_mutex);
 
 	/* Activate marker if necessary */
 	marker_update_probes();
 
-	mutex_lock(&markers_mutex);
+	pthread_mutex_lock(&markers_mutex);
 	entry = get_marker(channel, name);
 	if (!entry)
 		goto end;
@@ -851,7 +851,7 @@ error_remove_marker:
 	ret_err = remove_marker(channel, name);
 	WARN_ON(ret_err);
 end:
-	mutex_unlock(&markers_mutex);
+	pthread_mutex_unlock(&markers_mutex);
 	return ret;
 }
 //ust// EXPORT_SYMBOL_GPL(marker_probe_register);
@@ -876,18 +876,18 @@ int marker_probe_unregister(const char *channel, const char *name,
 	struct marker_probe_closure *old;
 	int ret = -ENOENT;
 
-	mutex_lock(&markers_mutex);
+	pthread_mutex_lock(&markers_mutex);
 	entry = get_marker(channel, name);
 	if (!entry)
 		goto end;
 //ust//	if (entry->rcu_pending)
 //ust//		rcu_barrier_sched();
 	old = marker_entry_remove_probe(entry, probe, probe_private);
-	mutex_unlock(&markers_mutex);
+	pthread_mutex_unlock(&markers_mutex);
 
 	marker_update_probes();
 
-	mutex_lock(&markers_mutex);
+	pthread_mutex_lock(&markers_mutex);
 	entry = get_marker(channel, name);
 	if (!entry)
 		goto end;
@@ -902,7 +902,7 @@ int marker_probe_unregister(const char *channel, const char *name,
 	remove_marker(channel, name);	/* Ignore busy error message */
 	ret = 0;
 end:
-	mutex_unlock(&markers_mutex);
+	pthread_mutex_unlock(&markers_mutex);
 	return ret;
 }
 //ust// EXPORT_SYMBOL_GPL(marker_probe_unregister);
@@ -959,7 +959,7 @@ int marker_probe_unregister_private_data(marker_probe_func *probe,
 	struct marker_probe_closure *old;
 	char *channel = NULL, *name = NULL;
 
-	mutex_lock(&markers_mutex);
+	pthread_mutex_lock(&markers_mutex);
 	entry = get_marker_from_private_data(probe, probe_private);
 	if (!entry) {
 		ret = -ENOENT;
@@ -970,11 +970,11 @@ int marker_probe_unregister_private_data(marker_probe_func *probe,
 	old = marker_entry_remove_probe(entry, NULL, probe_private);
 	channel = strdup(entry->channel);
 	name = strdup(entry->name);
-	mutex_unlock(&markers_mutex);
+	pthread_mutex_unlock(&markers_mutex);
 
 	marker_update_probes();
 
-	mutex_lock(&markers_mutex);
+	pthread_mutex_lock(&markers_mutex);
 	entry = get_marker(channel, name);
 	if (!entry)
 		goto end;
@@ -989,7 +989,7 @@ int marker_probe_unregister_private_data(marker_probe_func *probe,
 	/* Ignore busy error message */
 	remove_marker(channel, name);
 end:
-	mutex_unlock(&markers_mutex);
+	pthread_mutex_unlock(&markers_mutex);
 	free(channel);
 	free(name);
 	return ret;
@@ -1085,7 +1085,7 @@ int lib_get_iter_markers(struct marker_iter *iter)
 	struct lib *iter_lib;
 	int found = 0;
 
-//ust//	mutex_lock(&module_mutex);
+//ust//	pthread_mutex_lock(&module_mutex);
 	list_for_each_entry(iter_lib, &libs, list) {
 		if (iter_lib < iter->lib)
 			continue;
@@ -1099,7 +1099,7 @@ int lib_get_iter_markers(struct marker_iter *iter)
 			break;
 		}
 	}
-//ust//	mutex_unlock(&module_mutex);
+//ust//	pthread_mutex_unlock(&module_mutex);
 	return found;
 }
 
@@ -1203,8 +1203,8 @@ static void free_user_marker(char __user *state, struct hlist_head *head)
 //ust// 	struct hlist_node *pos;
 //ust// 	struct marker_entry *entry;
 //ust// 
-//ust// 	mutex_lock(&markers_mutex);
-//ust// 	mutex_lock(&current->group_leader->user_markers_mutex);
+//ust// 	pthread_mutex_lock(&markers_mutex);
+//ust// 	pthread_mutex_lock(&current->group_leader->user_markers_mutex);
 //ust// 	if (strcmp(current->comm, "testprog") == 0)
 //ust// 		DBG("do update pending for testprog");
 //ust// 	hlist_for_each_entry(umark, pos,
@@ -1231,8 +1231,8 @@ static void free_user_marker(char __user *state, struct hlist_head *head)
 //ust// 		}
 //ust// 	}
 //ust// 	clear_thread_flag(TIF_MARKER_PENDING);
-//ust// 	mutex_unlock(&current->group_leader->user_markers_mutex);
-//ust// 	mutex_unlock(&markers_mutex);
+//ust// 	pthread_mutex_unlock(&current->group_leader->user_markers_mutex);
+//ust// 	pthread_mutex_unlock(&markers_mutex);
 //ust// }
 
 /*
@@ -1246,15 +1246,15 @@ void exit_user_markers(struct task_struct *p)
 	struct hlist_node *pos, *n;
 
 	if (thread_group_leader(p)) {
-		mutex_lock(&markers_mutex);
-		mutex_lock(&p->user_markers_mutex);
+		pthread_mutex_lock(&markers_mutex);
+		pthread_mutex_lock(&p->user_markers_mutex);
 		hlist_for_each_entry_safe(umark, pos, n, &p->user_markers,
 			hlist)
 		    free(umark);
 		INIT_HLIST_HEAD(&p->user_markers);
 		p->user_markers_sequence++;
-		mutex_unlock(&p->user_markers_mutex);
-		mutex_unlock(&markers_mutex);
+		pthread_mutex_unlock(&p->user_markers_mutex);
+		pthread_mutex_unlock(&markers_mutex);
 	}
 }
 
@@ -1262,9 +1262,9 @@ int is_marker_enabled(const char *channel, const char *name)
 {
 	struct marker_entry *entry;
 
-	mutex_lock(&markers_mutex);
+	pthread_mutex_lock(&markers_mutex);
 	entry = get_marker(channel, name);
-	mutex_unlock(&markers_mutex);
+	pthread_mutex_unlock(&markers_mutex);
 
 	return entry && !!entry->refcount;
 }
@@ -1310,7 +1310,7 @@ void ltt_dump_marker_state(struct ust_trace *trace)
 	struct hlist_node *node;
 	unsigned int i;
 
-	mutex_lock(&markers_mutex);
+	pthread_mutex_lock(&markers_mutex);
 	call_data.trace = trace;
 	call_data.serializer = NULL;
 
@@ -1338,7 +1338,7 @@ void ltt_dump_marker_state(struct ust_trace *trace)
 					entry->format);
 		}
 	}
-	mutex_unlock(&markers_mutex);
+	pthread_mutex_unlock(&markers_mutex);
 }
 //ust// EXPORT_SYMBOL_GPL(ltt_dump_marker_state);
 
@@ -1393,7 +1393,7 @@ int marker_unregister_lib(struct marker *markers_start)
 	lock_markers();
 
 	/* FIXME: we should probably take a mutex here on libs */
-//ust//	mutex_lock(&module_mutex);
+//ust//	pthread_mutex_lock(&module_mutex);
 	list_for_each_entry(lib, &libs, list) {
 		if(lib->markers_start == markers_start) {
 			struct lib *lib2free = lib;

@@ -109,7 +109,7 @@ int ltt_channels_register(const char *name)
 	struct ltt_channel_setting *setting;
 	int ret = 0;
 
-	mutex_lock(&ltt_channel_mutex);
+	pthread_mutex_lock(&ltt_channel_mutex);
 	setting = lookup_channel(name);
 	if (setting) {
 		if (uatomic_read(&setting->kref.refcount) == 0)
@@ -130,7 +130,7 @@ int ltt_channels_register(const char *name)
 init_kref:
 	kref_init(&setting->kref);
 end:
-	mutex_unlock(&ltt_channel_mutex);
+	pthread_mutex_unlock(&ltt_channel_mutex);
 	return ret;
 }
 //ust// EXPORT_SYMBOL_GPL(ltt_channels_register);
@@ -146,7 +146,7 @@ int ltt_channels_unregister(const char *name)
 	struct ltt_channel_setting *setting;
 	int ret = 0;
 
-	mutex_lock(&ltt_channel_mutex);
+	pthread_mutex_lock(&ltt_channel_mutex);
 	setting = lookup_channel(name);
 	if (!setting || uatomic_read(&setting->kref.refcount) == 0) {
 		ret = -ENOENT;
@@ -154,7 +154,7 @@ int ltt_channels_unregister(const char *name)
 	}
 	kref_put(&setting->kref, release_channel_setting);
 end:
-	mutex_unlock(&ltt_channel_mutex);
+	pthread_mutex_unlock(&ltt_channel_mutex);
 	return ret;
 }
 //ust// EXPORT_SYMBOL_GPL(ltt_channels_unregister);
@@ -172,7 +172,7 @@ int ltt_channels_set_default(const char *name,
 	struct ltt_channel_setting *setting;
 	int ret = 0;
 
-	mutex_lock(&ltt_channel_mutex);
+	pthread_mutex_lock(&ltt_channel_mutex);
 	setting = lookup_channel(name);
 	if (!setting || uatomic_read(&setting->kref.refcount) == 0) {
 		ret = -ENOENT;
@@ -181,7 +181,7 @@ int ltt_channels_set_default(const char *name,
 	setting->subbuf_size = subbuf_size;
 	setting->subbuf_cnt = subbuf_cnt;
 end:
-	mutex_unlock(&ltt_channel_mutex);
+	pthread_mutex_unlock(&ltt_channel_mutex);
 	return ret;
 }
 //ust// EXPORT_SYMBOL_GPL(ltt_channels_set_default);
@@ -254,7 +254,7 @@ struct ust_channel *ltt_channels_trace_alloc(unsigned int *nr_channels,
 	struct ust_channel *channel = NULL;
 	struct ltt_channel_setting *iter;
 
-	mutex_lock(&ltt_channel_mutex);
+	pthread_mutex_lock(&ltt_channel_mutex);
 	if (!free_index) {
 		WARN("ltt_channels_trace_alloc: no free_index; are there any probes connected?");
 		goto end;
@@ -280,7 +280,7 @@ struct ust_channel *ltt_channels_trace_alloc(unsigned int *nr_channels,
 		channel[iter->index].channel_name = iter->name;
 	}
 end:
-	mutex_unlock(&ltt_channel_mutex);
+	pthread_mutex_unlock(&ltt_channel_mutex);
 	return channel;
 }
 //ust// EXPORT_SYMBOL_GPL(ltt_channels_trace_alloc);
@@ -295,10 +295,10 @@ end:
 void ltt_channels_trace_free(struct ust_channel *channels)
 {
 	lock_markers();
-	mutex_lock(&ltt_channel_mutex);
+	pthread_mutex_lock(&ltt_channel_mutex);
 	free(channels);
 	kref_put(&index_kref, release_trace_channel);
-	mutex_unlock(&ltt_channel_mutex);
+	pthread_mutex_unlock(&ltt_channel_mutex);
 	unlock_markers();
 }
 //ust// EXPORT_SYMBOL_GPL(ltt_channels_trace_free);
@@ -352,9 +352,9 @@ int ltt_channels_get_event_id(const char *channel, const char *name)
 {
 	int ret;
 
-	mutex_lock(&ltt_channel_mutex);
+	pthread_mutex_lock(&ltt_channel_mutex);
 	ret = _ltt_channels_get_event_id(channel, name);
-	mutex_unlock(&ltt_channel_mutex);
+	pthread_mutex_unlock(&ltt_channel_mutex);
 	return ret;
 }
 

@@ -115,11 +115,6 @@ static inline long IS_ERR(const void *ptr)
 #define DEFINE_MUTEX(m) pthread_mutex_t (m) = PTHREAD_MUTEX_INITIALIZER;
 #define DECLARE_MUTEX(m) extern pthread_mutex_t (m);
 
-#define mutex_lock(m) pthread_mutex_lock(m)
-
-#define mutex_unlock(m) pthread_mutex_unlock(m)
-
-
 /* MALLOCATION */
 
 #define zmalloc(s) calloc(1, s)

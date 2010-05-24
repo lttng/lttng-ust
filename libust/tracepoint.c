@@ -285,7 +285,7 @@ void tracepoint_update_probe_range(struct tracepoint *begin,
 	struct tracepoint *iter;
 	struct tracepoint_entry *mark_entry;
 
-	mutex_lock(&tracepoints_mutex);
+	pthread_mutex_lock(&tracepoints_mutex);
 	for (iter = begin; iter < end; iter++) {
 		mark_entry = get_tracepoint(iter->name);
 		if (mark_entry) {
@@ -295,18 +295,18 @@ void tracepoint_update_probe_range(struct tracepoint *begin,
 			disable_tracepoint(iter);
 		}
 	}
-	mutex_unlock(&tracepoints_mutex);
+	pthread_mutex_unlock(&tracepoints_mutex);
 }
 
 static void lib_update_tracepoints(void)
 {
 	struct tracepoint_lib *lib;
 
-//ust//	mutex_lock(&module_mutex);
+//ust//	pthread_mutex_lock(&module_mutex);
 	list_for_each_entry(lib, &libs, list)
 		tracepoint_update_probe_range(lib->tracepoints_start,
 				lib->tracepoints_start + lib->tracepoints_count);
-//ust//	mutex_unlock(&module_mutex);
+//ust//	pthread_mutex_unlock(&module_mutex);
 }
 
 /*
@@ -353,9 +353,9 @@ int tracepoint_probe_register(const char *name, void *probe)
 {
 	void *old;
 
-	mutex_lock(&tracepoints_mutex);
+	pthread_mutex_lock(&tracepoints_mutex);
 	old = tracepoint_add_probe(name, probe);
-	mutex_unlock(&tracepoints_mutex);
+	pthread_mutex_unlock(&tracepoints_mutex);
 	if (IS_ERR(old))
 		return PTR_ERR(old);
 
@@ -395,9 +395,9 @@ int tracepoint_probe_unregister(const char *name, void *probe)
 {
 	void *old;
 
-	mutex_lock(&tracepoints_mutex);
+	pthread_mutex_lock(&tracepoints_mutex);
 	old = tracepoint_remove_probe(name, probe);
-	mutex_unlock(&tracepoints_mutex);
+	pthread_mutex_unlock(&tracepoints_mutex);
 	if (IS_ERR(old))
 		return PTR_ERR(old);
 
@@ -431,14 +431,14 @@ int tracepoint_probe_register_noupdate(const char *name, void *probe)
 {
 	void *old;
 
-	mutex_lock(&tracepoints_mutex);
+	pthread_mutex_lock(&tracepoints_mutex);
 	old = tracepoint_add_probe(name, probe);
 	if (IS_ERR(old)) {
-		mutex_unlock(&tracepoints_mutex);
+		pthread_mutex_unlock(&tracepoints_mutex);
 		return PTR_ERR(old);
 	}
 	tracepoint_add_old_probes(old);
-	mutex_unlock(&tracepoints_mutex);
+	pthread_mutex_unlock(&tracepoints_mutex);
 	return 0;
 }
 //ust// EXPORT_SYMBOL_GPL(tracepoint_probe_register_noupdate);
@@ -454,14 +454,14 @@ int tracepoint_probe_unregister_noupdate(const char *name, void *probe)
 {
 	void *old;
 
-	mutex_lock(&tracepoints_mutex);
+	pthread_mutex_lock(&tracepoints_mutex);
 	old = tracepoint_remove_probe(name, probe);
 	if (IS_ERR(old)) {
-		mutex_unlock(&tracepoints_mutex);
+		pthread_mutex_unlock(&tracepoints_mutex);
 		return PTR_ERR(old);
 	}
 	tracepoint_add_old_probes(old);
-	mutex_unlock(&tracepoints_mutex);
+	pthread_mutex_unlock(&tracepoints_mutex);
 	return 0;
 }
 //ust// EXPORT_SYMBOL_GPL(tracepoint_probe_unregister_noupdate);
@@ -474,15 +474,15 @@ void tracepoint_probe_update_all(void)
 	LIST_HEAD(release_probes);
 	struct tp_probes *pos, *next;
 
-	mutex_lock(&tracepoints_mutex);
+	pthread_mutex_lock(&tracepoints_mutex);
 	if (!need_update) {
-		mutex_unlock(&tracepoints_mutex);
+		pthread_mutex_unlock(&tracepoints_mutex);
 		return;
 	}
 	if (!list_empty(&old_probes))
 		list_replace_init(&old_probes, &release_probes);
 	need_update = 0;
-	mutex_unlock(&tracepoints_mutex);
+	pthread_mutex_unlock(&tracepoints_mutex);
 
 	tracepoint_update_probes();
 	list_for_each_entry_safe(pos, next, &release_probes, u.list) {
@@ -503,7 +503,7 @@ int lib_get_iter_tracepoints(struct tracepoint_iter *iter)
 	struct tracepoint_lib *iter_lib;
 	int found = 0;
 
-//ust//	mutex_lock(&module_mutex);
+//ust//	pthread_mutex_lock(&module_mutex);
 	list_for_each_entry(iter_lib, &libs, list) {
 		if (iter_lib < iter->lib)
 			continue;
@@ -517,7 +517,7 @@ int lib_get_iter_tracepoints(struct tracepoint_iter *iter)
 			break;
 		}
 	}
-//ust//	mutex_unlock(&module_mutex);
+//ust//	pthread_mutex_unlock(&module_mutex);
 	return found;
 }
 
@@ -652,9 +652,9 @@ int tracepoint_register_lib(struct tracepoint *tracepoints_start, int tracepoint
 	pl->tracepoints_count = tracepoints_count;
 
 	/* FIXME: maybe protect this with its own mutex? */
-	mutex_lock(&tracepoints_mutex);
+	pthread_mutex_lock(&tracepoints_mutex);
 	list_add(&pl->list, &libs);
-	mutex_unlock(&tracepoints_mutex);
+	pthread_mutex_unlock(&tracepoints_mutex);
 
 	new_tracepoints(tracepoints_start, tracepoints_start + tracepoints_count);
 
@@ -670,7 +670,7 @@ int tracepoint_unregister_lib(struct tracepoint *tracepoints_start)
 {
 	struct tracepoint_lib *lib;
 
-	mutex_lock(&tracepoints_mutex);
+	pthread_mutex_lock(&tracepoints_mutex);
 
 	list_for_each_entry(lib, &libs, list) {
 		if(lib->tracepoints_start == tracepoints_start) {
@@ -681,7 +681,7 @@ int tracepoint_unregister_lib(struct tracepoint *tracepoints_start)
 		}
 	}
 
-	mutex_unlock(&tracepoints_mutex);
+	pthread_mutex_unlock(&tracepoints_mutex);
 
 	return 0;
 }
