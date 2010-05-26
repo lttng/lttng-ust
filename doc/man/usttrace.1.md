@@ -62,6 +62,11 @@ starting with two dashes(`-'). A summary of options is included below.
   * `-W`:
     Undocumented option.
 
+## SEE ALSO
+
+ustctl(1), ustd(1)
+
+
 ## AUTHOR
 
 `usttrace` was written by Pierre-Marc Fournier.

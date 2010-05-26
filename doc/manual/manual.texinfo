@@ -418,6 +418,8 @@ $ ustctl --destroy-trace 1234
 @end verbatim
 @end example
 
+For more information about the manual mode, see the ustctl(1) man page.
+
 @node Using early tracing
 @section Using early tracing
 

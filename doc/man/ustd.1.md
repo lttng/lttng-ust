@@ -32,6 +32,10 @@ starting with two dashes(`-'). A summary of options is included below.
   * `-V`, `--version`:
     Show version of program.
 
+## SEE ALSO
+
+ustctl(1), usttrace(1)
+
 ## AUTHOR
 
 `ustd` was written by Pierre-Marc Fournier.
