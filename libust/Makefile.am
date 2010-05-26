@@ -27,6 +27,7 @@ libust_la_LDFLAGS = -no-undefined -version-info 0:0:0
 
 libust_la_LIBADD = \
 	-lpthread \
+	-lrt \
 	$(top_builddir)/snprintf/libustsnprintf.la \
 	$(top_builddir)/libustcomm/libustcomm.la
 

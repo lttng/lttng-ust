@@ -18,6 +18,7 @@
 #ifndef UST_CLOCK_H
 #define UST_CLOCK_H
 
+#include <time.h>
 #include <sys/time.h>
 #include <ust/kcompat/kcompat.h>
 
@@ -34,6 +35,9 @@
    For merging traces with the kernel, a time source compatible with that of
    the kernel is necessary.
 
+   Instead of gettimeofday(), we are now using clock_gettime for better
+   precision and monotonicity.
+
 */
 
 #define TRACE_CLOCK_GENERIC
@@ -41,13 +45,13 @@
 
 static __inline__ u64 trace_clock_read64(void)
 {
-	struct timeval tv;
+	struct timespec ts;
 	u64 retval;
 
-	gettimeofday(&tv, NULL);
-	retval = tv.tv_sec;
-	retval *= 1000000;
-	retval += tv.tv_usec;
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+	retval = ts.tv_sec;
+	retval *= 1000000000;
+	retval += ts.tv_nsec;
 
 	return retval;
 }
@@ -104,7 +108,7 @@ static __inline__ u64 trace_clock_read64(void)
 
 static __inline__ u64 trace_clock_frequency(void)
 {
-	return 1000000LL;
+	return 1000000000LL;
 }
 
 static __inline__ u32 trace_clock_freq_scale(void)
