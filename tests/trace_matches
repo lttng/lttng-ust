@@ -1,6 +1,8 @@
 #!/bin/bash
 
-RUNLTTV=~/devel/lttv/runlttv
+if [ -z "$RUNLTTV" ]; then
+	RUNLTTV=~/devel/lttv/runlttv
+fi
 
 function error() {
 	echo "$0: $@" >/dev/stderr
