@@ -36,7 +36,7 @@ Permission is granted to ...
 @node Top
 @top LTTng Userspace Tracer
 
-This manual is for UST 0.1.
+This manual is for UST 0.4.
 @end ifnottex
 
 @menu
@@ -47,6 +47,7 @@ This manual is for UST 0.1.
 * Recording a trace::
 * Viewing traces::
 * Performance::
+* Resource Usage::
 @c * Copying::          Your rights and freedoms.
 @end menu
 
@@ -95,7 +96,8 @@ Components licensed as GPL v2:
 @node Supported platforms
 @section Supported platforms
 
-UST can currently trace applications running on Linux, on the x86-32 and x86-64 architectures.
+UST can currently trace applications running on Linux, on the x86-32, x86-64
+and PowerPC 32 architectures.
 
 @node Installation
 @chapter Installation
@@ -273,10 +275,12 @@ provides more thorough type checking and discharges from the need to insert
 format strings directly in the code and to have format strings appear more than
 once if a given marker is reused.
 
-@quotation Note Although this example uses @emph{mychannel} as the channel, the
+@quotation Note
+Although this example uses @emph{mychannel} as the channel, the
 only channel name currently supported with early tracing is @strong{ust}. The
 @command{usttrace} tool always uses the early tracing mode. When using manual
-mode without early tracing, any channel name may be used.  @end quotation
+mode without early tracing, any channel name may be used.
+@end quotation
 
 A function instrumented with a tracepoint looks like this:
 
@@ -528,5 +532,38 @@ When doing so, it is necessary to use the same time source for the kernel
 tracer as well as the userspace tracer. Currently, the recommended method is to
 use the timestamp counter for both. The TSC can however only be used on architectures
 where it is synchronized across cores.
+
+@node Resource Usage
+@chapter Resource Usage
+
+The purpose of this section is to give an overview of the resource usage of libust. For
+a developer, knowing this can be important: because libust is linked with applications, it
+needs to share some resources with it. Some applications may make some assumptions that are in
+conflict with libust's usage of resources.
+
+In practice however, libust is designed to be transparent and is compatible
+with the vast majority of applications. This means no changes are required in
+the application (or library) being linked to libust.
+
+Libust is initialized by a constructor, which by definition runs before the main() function
+of the application starts. This constructor creates a thread called the @emph{listener thread}.
+The listener thread initializes a named socket and waits for connections for ustd or ustctl.
+
+Libust-specific code may:
+@itemize @bullet
+@item use @code{malloc()} and @code{free()}
+@item map shared memory segment in the process adress space
+@item intercept some library calls, specifically @code{fork()} and @code{clone()}
+@item do interprocess communication with the daemon or ustctl
+@item create and open named sockets
+
+@end itemize
+
+It will not:
+@itemize @bullet
+@item handle any signal (all signals are blocked in the listener thread)
+@item change any process-wide setting that could confuse the application
+@end itemize
+
 
 @bye
