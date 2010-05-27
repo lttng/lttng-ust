@@ -57,6 +57,9 @@ PACKAGE CONTENTS:
     A program to control the tracing of userspace applications. It can list
     markers, start the tracing, stop the tracing, enable/disable markers, etc.
 
+  - include
+    The public header files that will be installed on the system.
+
   - ustd
     The daemon that collects trace data and writes it to the disk.
 
