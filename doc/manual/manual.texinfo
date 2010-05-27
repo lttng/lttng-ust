@@ -113,14 +113,7 @@ ust
 This contains the tracing library, the ustd daemon, trace control tools
 and other helper tools.
 
-Repository: http://git.dorsal.polymtl.ca
-
-@item
-libkcompat
-
-This is a library that contains a userspace port of some kernel APIs.
-
-Repository: http://git.dorsal.polymtl.ca
+Repository: @url{http://git.dorsal.polymtl.ca}
 
 @item
 liburcu
@@ -129,20 +122,20 @@ This is the userspace read-copy update library by Mathieu Desnoyers.
 
 Available in Debian as package liburcu-dev.
 
-Home page: http://lttng.org/?q=node/18
+Home page: @url{http://lttng.org/urcu}
 
 @item
 LTTV
 
 LTTV is a graphical (and text) viewer for LTTng traces.
 
-Home page: http://lttng.org
+Home page: @url{http://lttng.org}
 
 @end itemize
 
-Libkcompat and liburcu should be installed first. UST may then be compiled
-and installed. LTTV has no dependency on the other packages; it may therefore
-be installed on a system which does not have UST installed.
+Liburcu should be installed first. UST may then be compiled and installed. LTTV
+has no dependency on the other packages; it may therefore be installed on a
+system which does not have UST installed.
 
 Refer to the README in each of these packages for installation instructions.
 
