@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <pthread.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -1031,15 +1032,36 @@ static pthread_t listener_thread;
 void create_listener(void)
 {
 	int result;
+	sigset_t sig_all_blocked;
+	sigset_t orig_parent_mask;
 
 	if(have_listener) {
 		WARN("not creating listener because we already had one");
 		return;
 	}
 
+	/* A new thread created by pthread_create inherits the signal mask
+	 * from the parent. To avoid any signal being received by the
+	 * listener thread, we block all signals temporarily in the parent,
+	 * while we create the listener thread.
+	 */
+
+	sigfillset(&sig_all_blocked);
+
+	result = pthread_sigmask(SIG_SETMASK, &sig_all_blocked, &orig_parent_mask);
+	if(result) {
+		PERROR("pthread_sigmask: %s", strerror(result));
+	}
+
 	result = pthread_create(&listener_thread, NULL, listener_main, NULL);
 	if(result == -1) {
 		PERROR("pthread_create");
+	}
+
+	/* Restore original signal mask in parent */
+	result = pthread_sigmask(SIG_SETMASK, &orig_parent_mask, NULL);
+	if(result) {
+		PERROR("pthread_sigmask: %s", strerror(result));
 	}
 
 	have_listener = 1;
