@@ -60,7 +60,7 @@ starting with two dashes(`-'). A summary of options is included below.
     Specify the number of subbuffers.
 
   * `-W`:
-    Undocumented option.
+    Print the location of the last trace saved in the usttrace output directory.
 
 ## SEE ALSO
 
