@@ -17,37 +17,21 @@
 #    You should have received a copy of the GNU General Public License
 #    along with LTTng-UST.  If not, see <http://www.gnu.org/licenses/>.
 
+TESTDIR=$(dirname $0)/..
 
-tests_failed=0
+source $TESTDIR/test_functions.sh
+source $TESTDIR/tap.sh
 
-TESTDIR=$(dirname $0)
+starttest "fork()/exec() test"
 
-function simple_harness_run() {
-    if ! "$TESTDIR/$@"; then
-	let tests_failed=$tests_failed+1
-    fi
-}
+plan_tests 8
 
-
-simple_harness_run test-nevents/test-nevents.sh
-
-simple_harness_run fork/fork.sh
-
-simple_harness_run test-libustinstr-malloc/test-libustinstr-malloc.sh
-
-simple_harness_run ./manual_mode_tracing.sh
-
-simple_harness_run ./valgrind_ustd.sh
-
-simple_harness_run dlopen/dlopen.sh
-
-simple_harness_run same_line_marker/same_line_marker.sh
-
-echo "************************************"
-if [[ $tests_failed -eq 0 ]]; then
-    echo "$0: All passed"
-else
-    echo "$0: $tests_failed tests failed"
-fi
-echo "************************************"
-exit 0
+okx usttrace -f $TESTDIR/fork/.libs/fork $TESTDIR/fork/.libs/fork2
+trace_loc=$(usttrace -W)
+trace_matches -N "before_fork" "^ust.before_fork:" $trace_loc
+trace_matches -N "after_fork_parent" "^ust.after_fork_parent:" $trace_loc
+trace_matches -N "after_fork_child" "^ust.after_fork_child:" $trace_loc
+trace_matches -N "before_exec" "^ust.before_exec:" $trace_loc
+trace_matches -N "potential_exec" "^ust.potential_exec:" $trace_loc
+trace_matches -N "after_exec" "^ust.after_exec:" $trace_loc
+check_trace_logs "$trace_loc"

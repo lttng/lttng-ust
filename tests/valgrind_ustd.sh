@@ -17,37 +17,38 @@
 #    You should have received a copy of the GNU General Public License
 #    along with LTTng-UST.  If not, see <http://www.gnu.org/licenses/>.
 
-
-tests_failed=0
-
 TESTDIR=$(dirname $0)
 
-function simple_harness_run() {
-    if ! "$TESTDIR/$@"; then
-	let tests_failed=$tests_failed+1
-    fi
-}
+source $TESTDIR/test_functions.sh
+source $TESTDIR/tap.sh
 
+starttest "ustd valgrind check"
 
-simple_harness_run test-nevents/test-nevents.sh
+plan_tests 2
 
-simple_harness_run fork/fork.sh
+TRACE_DIR="/tmp/ust-testsuite-ustdvalgrind-trace"
+rm -rf "$TRACE_DIR"
+mkdir "$TRACE_DIR"
 
-simple_harness_run test-libustinstr-malloc/test-libustinstr-malloc.sh
+pidfilepath="/tmp/ust-testsuite-$USER-$(date +%Y%m%d%H%M%S%N)-ustd-pid"
+mkfifo -m 0600 "$pidfilepath"
 
-simple_harness_run ./manual_mode_tracing.sh
+VALG_OUT=/tmp/ust-testsuite-valg.txt
+valgrind -q ustd --pidfile "$pidfilepath" -o "$TRACE_DIR" >/dev/null 2>"$VALG_OUT" &
+VALG_PID=$!
+USTD_PID="$(<$pidfilepath)"
 
-simple_harness_run ./valgrind_ustd.sh
+okx usttrace -s $TESTDIR/basic/.libs/basic
 
-simple_harness_run dlopen/dlopen.sh
+kill -SIGTERM $USTD_PID
+wait $!
 
-simple_harness_run same_line_marker/same_line_marker.sh
-
-echo "************************************"
-if [[ $tests_failed -eq 0 ]]; then
-    echo "$0: All passed"
+echo "Valgrind output is in $VALG_OUT"
+if [ -z "$(<$VALG_OUT)" ]; then
+    pass "Valgrind found no errors in ustd"
 else
-    echo "$0: $tests_failed tests failed"
+    fail "Valgrind found errors in ustd:"
+    cat $VALG_OUT | while read; do
+	diag $REPLY
+    done
 fi
-echo "************************************"
-exit 0
