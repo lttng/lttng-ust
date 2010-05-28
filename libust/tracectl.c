@@ -49,6 +49,8 @@
  */
 s64 pidunique = -1LL;
 
+extern struct chan_info_struct chan_infos[];
+
 struct list_head blocked_consumers = LIST_HEAD_INIT(blocked_consumers);
 
 static struct ustcomm_app ustcomm_app;
@@ -1114,6 +1116,11 @@ static void __attribute__((constructor)) init()
 {
 	int result;
 	char* autoprobe_val = NULL;
+	char* subbuffer_size_val = NULL;
+	char* subbuffer_count_val = NULL;
+	unsigned int subbuffer_size;
+	unsigned int subbuffer_count;
+	unsigned int power;
 
 	/* Assign the pidunique, to be able to differentiate the processes with same
 	 * pid, (before and after an exec).
@@ -1197,6 +1204,23 @@ static void __attribute__((constructor)) init()
 		}
 	}
 
+	subbuffer_size_val = getenv("UST_SUBBUF_SIZE");
+	if(subbuffer_size_val) {
+		sscanf(subbuffer_size_val, "%u", &subbuffer_size);
+		power = pow2_higher_or_eq(subbuffer_size);
+		if(power != subbuffer_size)
+			WARN("using the next power of two for buffer size = %u\n", power);
+		chan_infos[LTT_CHANNEL_UST].def_subbufsize = power;
+	}
+
+	subbuffer_count_val = getenv("UST_SUBBUF_NUM");
+	if(subbuffer_count_val) {
+		sscanf(subbuffer_count_val, "%u", &subbuffer_count);
+		if(subbuffer_count < 2)
+			subbuffer_count = 2;
+		chan_infos[LTT_CHANNEL_UST].def_subbufcount = subbuffer_count;
+	}
+
 	if(getenv("UST_TRACE")) {
 		char trace_name[] = "auto";
 		char trace_type[] = "ustrelay";
@@ -1262,7 +1286,6 @@ static void __attribute__((constructor)) init()
 		 * if the trace fails to start. */
 		inform_consumer_daemon(trace_name);
 	}
-
 
 	return;
 

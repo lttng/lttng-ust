@@ -54,9 +54,11 @@ function usage () {
 	echo "    -m    Instrument malloc calls." 2>/dev/stderr
 	echo "    -f    Also trace forked processes." 2>/dev/stderr
 	echo "    -s    Use system-wide daemon instead of creating one for this session." 2>/dev/stderr
+	echo "    -S    Specify the subbuffer size." 2>/dev/stderr
+	echo "    -N    Specify the number of subbuffers." 2>/dev/stderr
 }
 
-while getopts ":hlLmfsW" options; do
+while getopts ":hlLmfsWS:N:" options; do
 	case $options in
 		l) arg_preload_libust=1;;
 		L) arg_ld_std_ust=1;;
@@ -64,6 +66,8 @@ while getopts ":hlLmfsW" options; do
 		f) arg_preload_fork=1;;
 		s) arg_syswide_daemon=1;;
 		W) where=1;;
+		S) export UST_SUBBUF_SIZE=$OPTARG;;
+		N) export UST_SUBBUF_NUM=$OPTARG;;
 		h) usage;
 		   exit 0;;
 		\?) usage

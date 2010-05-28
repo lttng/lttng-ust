@@ -86,6 +86,12 @@ enum ltt_channels {
 	LTT_CHANNEL_UST,
 };
 
+struct chan_info_struct {
+	const char *name;
+	unsigned int def_subbufsize;
+	unsigned int def_subbufcount;
+};
+
 struct ltt_active_marker {
 	struct list_head node;		/* active markers list */
 	const char *channel;

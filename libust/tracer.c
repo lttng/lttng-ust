@@ -69,11 +69,7 @@ int (*ltt_statedump_functor)(struct ust_trace *trace) =
 					ltt_statedump_default;
 struct module *ltt_statedump_owner;
 
-struct chan_info_struct {
-	const char *name;
-	unsigned int def_subbufsize;
-	unsigned int def_subbufcount;
-} chan_infos[] = {
+struct chan_info_struct chan_infos[] = {
 	[LTT_CHANNEL_METADATA] = {
 		LTT_METADATA_CHANNEL,
 		LTT_DEFAULT_SUBBUF_SIZE_LOW,
