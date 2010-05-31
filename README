@@ -66,8 +66,8 @@ PACKAGE CONTENTS:
   - doc
     The documentation.
 
-  - hello
-    An example application that uses the userspace tracer.
+  - tests
+    Various test programs
 
   - libustinstr-malloc
     An example library that can be LD_PRELOAD'ed to instrument calls to malloc()
@@ -76,3 +76,16 @@ PACKAGE CONTENTS:
   - libustfork
     A library that is LD_PRELOAD'ed, and that hijacks calls to several system
     calls in order to trace across these calls.
+
+  - libustcmd
+    A library to control tracing in other processes. Used by ustctl.
+
+  - libustcomm
+    A static library shared between libust, ustd and libustcmd, that provides
+    functions that allow these components to communicate together.
+
+  - snprintf
+    An asynchronous signal-safe version of snprintf.
+
+  - java
+    A simple library that uses JNI to allow tracing in java programs.
