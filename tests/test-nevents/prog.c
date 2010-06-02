@@ -15,6 +15,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
+/* This test generates a trace of a certain number of events. It is used to
+ * check that no events are lost while tracing.
+ */
+
 #include <string.h>
 #include <stdlib.h>
 #include <ust/ust.h>

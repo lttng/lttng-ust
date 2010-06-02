@@ -18,12 +18,21 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
+/* Multipoll is a framework to poll on several file descriptors and to call
+ * a specific callback depending on the fd that had activity.
+ */
+
 #include <poll.h>
 #include <stdlib.h>
 #include "multipoll.h"
 #include "usterr.h"
 
 #define INITIAL_N_AVAIL 16
+
+/* multipoll_init
+ *
+ * Initialize an mpentries struct, which is initially empty of any fd.
+ */
 
 int multipoll_init(struct mpentries *ent)
 {
@@ -35,6 +44,9 @@ int multipoll_init(struct mpentries *ent)
 
 	return 0;
 }
+
+/* multipoll_destroy: free a struct mpentries
+ */
 
 int multipoll_destroy(struct mpentries *ent)
 {
@@ -51,6 +63,19 @@ int multipoll_destroy(struct mpentries *ent)
 
 	return 0;
 }
+
+/* multipoll_add
+ *
+ * Add a file descriptor to be waited on in a struct mpentries.
+ *
+ * @ent: the struct mpentries to add an fd to
+ * @fd: the fd to wait on
+ * @events: a mask of the types of events to wait on, see the poll(2) man page
+ * @func: the callback function to be called if there is activity on the fd
+ * @priv: the private pointer to pass to func
+ * @destroy_priv: a callback to destroy the priv pointer when the mpentries
+                  is destroyed; may be NULL
+ */
 
 int multipoll_add(struct mpentries *ent, int fd, short events, int (*func)(void *priv, int fd, short events), void *priv, int (*destroy_priv)(void *))
 {
@@ -73,6 +98,16 @@ int multipoll_add(struct mpentries *ent, int fd, short events, int (*func)(void 
 
 	return 0;
 }
+
+/* multipoll_poll: do the actual poll on a struct mpentries
+ *
+ * File descriptors should have been already added with multipoll_add().
+ *
+ * A struct mpentries may be reused for multiple multipoll_poll calls.
+ *
+ * @ent: the struct mpentries to poll on.
+ * @timeout: the timeout after which to return if there was no activity.
+ */
 
 int multipoll_poll(struct mpentries *ent, int timeout)
 {

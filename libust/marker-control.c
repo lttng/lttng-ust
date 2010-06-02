@@ -15,7 +15,11 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  *
- * LTT marker control module over /proc
+ */
+
+/* This file contains a high-level API for activating and deactivating markers,
+ * and making sure markers in a given library can be released when the library
+ * is unloaded.
  */
 
 #include <ctype.h>

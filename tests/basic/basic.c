@@ -15,6 +15,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
+/* Basic testing program that just records a few events. */
+
 #include <stdio.h>
 #include <unistd.h>
 

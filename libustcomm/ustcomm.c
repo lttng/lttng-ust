@@ -15,6 +15,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
+/* API used by UST components to communicate with each other via sockets. */
+
 #define _GNU_SOURCE
 #include <sys/types.h>
 #include <signal.h>

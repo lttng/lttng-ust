@@ -7,6 +7,9 @@
  *
  * Dual LGPL v2.1/GPL v2 license.
  */
+
+/* This file contains functions for tracepoint custom probes support. */
+
 #include <urcu/rculist.h>
 #include <ust/type-serializer.h>
 #include <ust/core.h>

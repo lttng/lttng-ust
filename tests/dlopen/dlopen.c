@@ -15,6 +15,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
+/* The aim of this test is to verify whether ust behaves correctly when
+ * tracing a marker that is in a dlopen()'d library. It also checks the
+ * library can be unloaded.
+ */
+
 #include <dlfcn.h>
 #include <stdio.h>
 #include <ust/marker.h>

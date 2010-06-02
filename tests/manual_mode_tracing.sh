@@ -17,6 +17,10 @@
 #    You should have received a copy of the GNU General Public License
 #    along with LTTng-UST.  If not, see <http://www.gnu.org/licenses/>.
 
+# This tests manual mode tracing, meaning the process is first started, then
+# the tracing is set up with ustctl. Then verifications are done to make sure
+# all the events that were supposed to be in the trace are there.
+
 TESTDIR=$(dirname $0)
 
 source $TESTDIR/test_functions.sh

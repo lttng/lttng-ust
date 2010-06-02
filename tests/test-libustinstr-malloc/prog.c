@@ -15,6 +15,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
+/* This program is used to test malloc instrumentation with libustinstr-malloc.
+ */
+
 #include <string.h>
 #include <stdlib.h>
 
