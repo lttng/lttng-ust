@@ -188,12 +188,12 @@ struct marker {
 
 #define __trace_mark_tp_counter(channel, name, unique, call_private, tp_name, tp_cb, format, args...) \
 	do {								\
-		struct marker m;					\
+		struct registers regs;								\
 		void __check_tp_type(void)				\
 		{							\
 			register_trace_##tp_name(tp_cb);		\
 		}							\
-		DEFINE_MARKER_TP(channel, name, tp_name, tp_cb, format, unique, m);\
+		DEFINE_MARKER_TP(channel, name, tp_name, tp_cb, format);\
 		__mark_check_format(format, ## args);			\
 		(*__mark_##channel##_##name.call)(&__mark_##channel##_##name, \
 			call_private, &regs, ## args);				\
