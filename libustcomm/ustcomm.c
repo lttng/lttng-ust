@@ -46,6 +46,7 @@ static int mkdir_p(const char *path, mode_t mode)
 
 	int retval = 0;
 	int result;
+	mode_t old_umask;
 
 	tmp = malloc(strlen(path) + 1);
 	if (tmp == NULL)
@@ -54,6 +55,7 @@ static int mkdir_p(const char *path, mode_t mode)
 	/* skip first / */
 	path_p = path+1;
 
+	old_umask = umask(0);
 	for(;;) {
 		while (*path_p != '/') {
 			if(*path_p == 0)
@@ -85,6 +87,7 @@ static int mkdir_p(const char *path, mode_t mode)
 	}
 
 	free(tmp);
+	umask(old_umask);
 	return retval;
 }
 
@@ -645,7 +648,8 @@ static int ensure_dir_exists(const char *dir)
 		/* ENOENT */
 		int result;
 
-		result = mkdir_p(dir, 0777);
+		/* mkdir mode to 0777 */
+		result = mkdir_p(dir, S_IRWXU | S_IRWXG | S_IRWXO);
 		if(result != 0) {
 			ERR("executing in recursive creation of directory %s", dir);
 			return -1;
