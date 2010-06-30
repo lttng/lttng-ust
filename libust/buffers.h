@@ -369,7 +369,7 @@ static __inline__ int ltt_reserve_slot(struct ust_channel *chan,
 	/*
 	 * Perform retryable operations.
 	 */
-	/* FIXME: make this rellay per cpu? */
+	/* FIXME: make this really per cpu? */
 	if (unlikely(LOAD_SHARED(ltt_nesting) > 4)) {
 		DBG("Dropping event because nesting is too deep.");
 		uatomic_inc(&buf->events_lost);
@@ -483,16 +483,8 @@ static __inline__ void ltt_commit_slot(
 	long endidx = SUBBUF_INDEX(offset_end - 1, chan);
 	long commit_count;
 
-#ifdef LTT_NO_IPI_BARRIER
 	smp_wmb();
-#else
-	/*
-	 * Must write slot data before incrementing commit count.
-	 * This compiler barrier is upgraded into a smp_mb() by the IPI
-	 * sent by get_subbuf().
-	 */
-	barrier();
-#endif
+
 	uatomic_add(&buf->commit_count[endidx].cc, slot_size);
 	/*
 	 * commit count read can race with concurrent OOO commit count updates.
