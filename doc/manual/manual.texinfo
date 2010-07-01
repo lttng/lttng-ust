@@ -36,7 +36,7 @@ Permission is granted to ...
 @node Top
 @top LTTng Userspace Tracer
 
-This manual is for UST 0.4.
+This manual is for UST 0.5.
 @end ifnottex
 
 @menu
@@ -48,6 +48,8 @@ This manual is for UST 0.4.
 * Viewing traces::
 * Performance::
 * Resource Usage::
+* List of environment variables detected by libust::
+* GDB integration::
 @c * Copying::          Your rights and freedoms.
 @end menu
 
@@ -363,7 +365,7 @@ The save location also contains logs of the tracing.
 
 When using @command{usttrace}, the early tracing is always active, which means
 that the tracing is guaranteed to be started by the time the process enters its
-main() function.
+@code{main()} function.
 
 Several @command{usttrace}'s may be run simultaneously without risk of
 conflict. This facilitates the use of the tracer by idependent users on a
@@ -538,9 +540,10 @@ In practice however, libust is designed to be transparent and is compatible
 with the vast majority of applications. This means no changes are required in
 the application (or library) being linked to libust.
 
-Libust is initialized by a constructor, which by definition runs before the main() function
-of the application starts. This constructor creates a thread called the @emph{listener thread}.
-The listener thread initializes a named socket and waits for connections for ustd or ustctl.
+Libust is initialized by a constructor, which by definition runs before the
+@code{main()} function of the application starts. This constructor creates a
+thread called the @emph{listener thread}.  The listener thread initializes a
+named socket and waits for connections for ustd or ustctl.
 
 Libust-specific code may:
 @itemize @bullet
@@ -558,5 +561,74 @@ It will not:
 @item change any process-wide setting that could confuse the application
 @end itemize
 
+@node List of environment variables detected by libust
+@appendix List of environment variables detected by libust
+
+The behavior of tracing can be influenced by setting special environment
+variables in the environment of the traced application. This section
+describes these variables.
+
+@itemize @bullet
+
+@item
+@env{UST_TRACE}
+
+If set to 1, start tracing as soon as the program starts. Tracing is
+guaranteed to be started by the time the @code{main()} function starts.
+
+@item
+@env{UST_AUTOPROBE}
+
+If set to @code{1}, enable all markers by the time the @code{main()} function starts.
+
+@item
+@env{UST_AUTOCOLLECT}
+
+If set to @code{0}, disable notification of daemon on trace start. Useful for
+performance tests.
+
+@item
+@env{UST_OVERWRITE}
+
+If set to @code{1}, enable overwriting of buffers on overrun.
+
+@item
+@env{UST_SUBBUF_NUM}
+
+If set, defines the default number of subbuffers per buffer.
+
+@item
+@env{UST_SUBBUF_SIZE}
+
+If set, defines the default size of subbuffers, in bytes.
+
+@end itemize
+
+@node GDB integration
+@appendix GDB integration
+
+GDB, the GNU Debugger, can use UST markers as GDB tracepoints (note GDB has its
+own concept of tracepoint). This feature is called GDB Static Tracepoints. When
+a GDB tracepoint is hit, GDB collects the marker arguments, as well as the
+state of the registers.
+
+In UST, support for GDB integration is not compiled in by default because of
+the cost of saving registers when a marker is hit. To enable it, run the
+@command{./configure} script with the @code{-DCONFIG_UST_GDB_INTEGRATION} flag
+in the @env{CFLAGS} environment variable. For example:
+
+@example
+@verbatim
+
+CFLAGS=-DCONFIG_UST_GDB_INTEGRATION ./configure
+
+@end verbatim
+@end example
+
+As of this writing, GDB Static Tracepoints have been submitted
+(@url{http://sourceware.org/ml/gdb-patches/2010-06/msg00592.html}) to the GDB
+mailing list.
+
+GDB integration is currently only supported on x86-32 and x86-64.
 
 @bye

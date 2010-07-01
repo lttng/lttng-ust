@@ -1,3 +1,16 @@
+2010-06-30  ust 0.5
+	* add support for PowerPC 32 architecture
+	* use clock_gettime(CLOCK_MONOTINIC) instead of gettimeofday()
+	* add several tests
+	* output test suite results in TAP format
+	* add support for traced library unregistration (useful with dlclose())
+	* add manpages
+	* compile with -fno-strict-antialiasing
+	* add support for channel overwrite and non-collection
+	* update tracepoint api from kernel
+	* fix various bugs and do various cleanups
+	* improve documentation
+
 2010-03-17  ust 0.4
 	* remove dependency on libkcompat
 	* use atomic ops from liburcu
