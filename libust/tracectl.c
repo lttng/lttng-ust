@@ -15,6 +15,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
+/* This file contains the implementation of the UST listener thread, which
+ * receives trace control commands. It also coordinates the initialization of
+ * libust.
+ */
+
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
