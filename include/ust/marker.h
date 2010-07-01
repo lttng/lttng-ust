@@ -129,8 +129,8 @@ struct marker {
 		     _ASM_PTR "0\n\t" /* tp_cb */						\
 		     _ASM_PTR "(1f)\n\t" /* location */						\
 		     ".previous\n\t"								\
-		     ARCH_COPY_ADDR("%[outptr]")						\
 		     "1:\n\t"									\
+		     ARCH_COPY_ADDR("%[outptr]")						\
 		: [outptr] "=r" (m) );								\
 												\
 		save_registers(&regs)
