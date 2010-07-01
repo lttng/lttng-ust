@@ -11,7 +11,6 @@ Updated versions of this package may be found at:
   * Git:      git://git.dorsal.polymtl.ca/git/ust.git
 
 
-
 PREREQUISITES:
 
   - liburcu
@@ -35,6 +34,8 @@ INSTALLATION INSTRUCTIONS:
   - Run ldconfig.
   - See the manual for usage instructions.
 
+  If compiling from the git repository, run ./bootstrap before running
+  the configure script, to generate it.
 
 
 TRACE VIEWER:
@@ -75,7 +76,8 @@ PACKAGE CONTENTS:
 
   - libustfork
     A library that is LD_PRELOAD'ed, and that hijacks calls to several system
-    calls in order to trace across these calls.
+    calls in order to trace across these calls. It _has_ to be LD_PRELOAD'ed
+    in order to hijack calls. In contrast, libust may be linked at build time.
 
   - libustcmd
     A library to control tracing in other processes. Used by ustctl.
