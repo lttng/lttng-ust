@@ -7,6 +7,7 @@ nobase_include_HEADERS = \
 	ust/ust.h \
 	ust/tracectl.h \
 	ust/core.h \
+	ust/clock.h \
 	ust/type-serializer.h \
 	ust/kcompat/kcompat.h \
 	ust/kcompat/compiler.h \
