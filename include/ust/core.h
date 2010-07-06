@@ -119,11 +119,6 @@ static inline long IS_ERR(const void *ptr)
 
 #define zmalloc(s) calloc(1, s)
 
-/* ATTRIBUTES */
-
-/* FIXME: define this */
-#define ____cacheline_aligned
-
 /* MATH */
 
 #include <ust/processor.h>

@@ -20,9 +20,12 @@
 
 #include <stddef.h>
 #include <string.h>
+#include <urcu-bp.h>
 
 extern __thread long ust_reg_stack[500];
 extern volatile __thread long *ust_reg_stack_ptr;
+
+#define ____cacheline_aligned __attribute__((aligned(CACHE_LINE_SIZE)))
 
 #ifdef __i386
 
