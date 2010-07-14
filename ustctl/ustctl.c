@@ -42,6 +42,7 @@ enum command {
 	GET_SUBBUF_NUM,
 	GET_SOCK_PATH,
 	SET_SOCK_PATH,
+	FORCE_SWITCH,
 	UNKNOWN
 };
 
@@ -73,6 +74,7 @@ Commands:\n\
     --enable-marker \"CHANNEL/MARKER\"\tEnable a marker\n\
     --disable-marker \"CHANNEL/MARKER\"\tDisable a marker\n\
     --list-markers\t\t\tList the markers of the process, their\n\t\t\t\t\t  state and format string\n\
+    --force-switch\t\t\tForce a subbuffer switch\n\
 \
 ");
 }
@@ -103,6 +105,7 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 			{ "get-subbuf-num", 1, 0, GET_SUBBUF_NUM },
 			{ "get-sock-path", 0, 0, GET_SOCK_PATH },
 			{ "set-sock-path", 1, 0, SET_SOCK_PATH },
+			{ "force-switch", 0, 0, FORCE_SWITCH },
 			{ 0, 0, 0, 0 }
 		};
 
@@ -329,6 +332,13 @@ int main(int argc, char *argv[])
 				result = ustcmd_set_sock_path(opts.regex, *pidit);
 				if (result) {
 					ERR("error while trying to set sock path for PID %u\n", (unsigned int) *pidit);
+				}
+				break;
+
+			case FORCE_SWITCH:
+				result = ustcmd_force_switch(*pidit);
+				if (result) {
+					ERR("error while trying to force switch for PID %u\n", (unsigned int) *pidit);
 				}
 				break;
 

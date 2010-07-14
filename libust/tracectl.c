@@ -788,6 +788,15 @@ static void listener_cleanup(void *ptr)
 	ustcomm_fini_app(&ustcomm_app, 0);
 }
 
+static void do_cmd_force_switch()
+{
+	struct blocked_consumer *bc;
+
+	list_for_each_entry(bc, &blocked_consumers, list) {
+		ltt_force_switch(bc->buf, FORCE_FLUSH);
+	}
+}
+
 int process_client_cmd(char *recvbuf, struct ustcomm_source *src)
 {
 	int result;
@@ -1012,6 +1021,9 @@ int process_client_cmd(char *recvbuf, struct ustcomm_source *src)
 		result = setenv("UST_DAEMON_SOCKET", sock_path, 1);
 		if(result)
 			ERR("cannot set UST_DAEMON_SOCKET environment variable");
+	}
+	else if(nth_token_is(recvbuf, "force_switch", 0) == 1) {
+		do_cmd_force_switch();
 	}
 	else {
 		ERR("unable to parse message: %s", recvbuf);

@@ -64,5 +64,6 @@ extern int ustcmd_send_cmd(const char *, pid_t, char **);
 extern int ustcmd_get_cmsf(struct marker_status **, pid_t);
 extern int ustcmd_set_sock_path(const char *, pid_t);
 extern int ustcmd_get_sock_path(char **, pid_t);
+extern int ustcmd_force_switch(pid_t);
 
 #endif /* _USTCMD_H */

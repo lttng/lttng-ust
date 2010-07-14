@@ -470,6 +470,18 @@ int ustcmd_get_sock_path(char **sock_path, pid_t pid)
 	return 0;
 }
 
+int ustcmd_force_switch(pid_t pid)
+{
+	int result;
+
+	result = ustcmd_send_cmd("force_switch", pid, NULL);
+	if (result != 1) {
+		return USTCMD_ERR_GEN;
+	}
+
+	return 0;
+}
+
 /**
  * Sends a given command to a traceable process
  *
