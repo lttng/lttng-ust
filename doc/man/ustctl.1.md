@@ -39,11 +39,17 @@ starting with two dashes(`-'). A summary of options is included below.
   * `--set-subbuf-num` <CHANNEL>:
     Set the number of subbuffers per buffer for CHANNEL. Must be a power of 2.
 
+  * `--set-sock-path`:
+    Set the path of the daemon socket.
+
   * `--get-subbuf-size` <CHANNEL>:
     Print the size of subbuffers per buffer for CHANNEL.
 
   * `--get-subbuf-num` <CHANNEL>:
     Print the number of subbuffers per buffer for CHANNEL.
+
+  * `--get-sock-path`:
+    Get the path of the daemon socket.
 
   * `--enable-marker` <CHANNEL>/<MARKER>:
     Enable a marker.
