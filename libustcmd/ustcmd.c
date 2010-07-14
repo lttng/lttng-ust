@@ -421,6 +421,56 @@ int ustcmd_get_cmsf(struct marker_status **cmsf, const pid_t pid)
 }
 
 /**
+ * Set socket path
+ *
+ * @param sock_path	Socket path
+ * @param pid		Traced process ID
+ * @return		0 if successful, or error
+ */
+int ustcmd_set_sock_path(const char *sock_path, pid_t pid)
+{
+	char *cmd;
+	int result;
+
+	asprintf(&cmd, "%s %s", "set_sock_path", sock_path);
+
+	result = ustcmd_send_cmd(cmd, pid, NULL);
+	if (result != 1) {
+		free(cmd);
+		return USTCMD_ERR_GEN;
+	}
+
+	free(cmd);
+	return 0;
+}
+
+/**
+ * Get socket path
+ *
+ * @param sock_path	Pointer to where the socket path will be returned
+ * @param pid		Traced process ID
+ * @return		0 if successful, or error
+ */
+int ustcmd_get_sock_path(char **sock_path, pid_t pid)
+{
+	char *cmd, *reply;
+	int result;
+
+	asprintf(&cmd, "%s", "get_sock_path");
+
+	result = ustcmd_send_cmd(cmd, pid, &reply);
+	if (result != 1) {
+		free(cmd);
+		free(reply);
+		return USTCMD_ERR_GEN;
+	}
+
+	free(cmd);
+	*sock_path = reply;
+	return 0;
+}
+
+/**
  * Sends a given command to a traceable process
  *
  * @param cmd	Null-terminated command to send

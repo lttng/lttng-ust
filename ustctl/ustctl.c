@@ -40,6 +40,8 @@ enum command {
 	SET_SUBBUF_NUM,
 	GET_SUBBUF_SIZE,
 	GET_SUBBUF_NUM,
+	GET_SOCK_PATH,
+	SET_SOCK_PATH,
 	UNKNOWN
 };
 
@@ -64,8 +66,10 @@ Commands:\n\
     --destroy-trace\t\t\tDestroy the trace\n\
     --set-subbuf-size \"CHANNEL/bytes\"\tSet the size of subbuffers per channel\n\
     --set-subbuf-num \"CHANNEL/n\"\tSet the number of subbuffers per channel\n\
+    --set-sock-path\t\t\tSet the path of the daemon socket\n\
     --get-subbuf-size \"CHANNEL\"\t\tGet the size of subbuffers per channel\n\
     --get-subbuf-num \"CHANNEL\"\t\tGet the number of subbuffers per channel\n\
+    --get-sock-path\t\t\tGet the path of the daemon socket\n\
     --enable-marker \"CHANNEL/MARKER\"\tEnable a marker\n\
     --disable-marker \"CHANNEL/MARKER\"\tDisable a marker\n\
     --list-markers\t\t\tList the markers of the process, their\n\t\t\t\t\t  state and format string\n\
@@ -97,6 +101,8 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 			{ "set-subbuf-num", 1, 0, SET_SUBBUF_NUM },
 			{ "get-subbuf-size", 1, 0, GET_SUBBUF_SIZE },
 			{ "get-subbuf-num", 1, 0, GET_SUBBUF_NUM },
+			{ "get-sock-path", 0, 0, GET_SOCK_PATH },
+			{ "set-sock-path", 1, 0, SET_SOCK_PATH },
 			{ 0, 0, 0, 0 }
 		};
 
@@ -121,6 +127,7 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 		case SET_SUBBUF_NUM:
 		case GET_SUBBUF_SIZE:
 		case GET_SUBBUF_NUM:
+		case SET_SOCK_PATH:
 			opts->regex = strdup(optarg);
 			break;
 
@@ -161,6 +168,7 @@ int main(int argc, char *argv[])
 {
 	pid_t *pidit;
 	int result;
+	char *tmp;
 	struct ust_opts opts;
 
 	progname = argv[0];
@@ -304,6 +312,23 @@ int main(int argc, char *argv[])
 				if (result) {
 					ERR("error while trying to alloc trace with PID %u\n", (unsigned int) *pidit);
 					break;
+				}
+				break;
+
+			case GET_SOCK_PATH:
+				result = ustcmd_get_sock_path(&tmp, *pidit);
+				if (result) {
+					ERR("error while trying to get sock path for PID %u\n", (unsigned int) *pidit);
+					break;
+				}
+				printf("the socket path is %s\n", tmp);
+				free(tmp);
+				break;
+
+			case SET_SOCK_PATH:
+				result = ustcmd_set_sock_path(opts.regex, *pidit);
+				if (result) {
+					ERR("error while trying to set sock path for PID %u\n", (unsigned int) *pidit);
 				}
 				break;
 
