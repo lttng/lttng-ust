@@ -21,7 +21,7 @@
 
 #include "buffers.h"
 #include "tracer.h"
-#include "ustd.h"
+#include "libustd.h"
 #include "usterr.h"
 
 /* This truncates to an offset in the buffer. */
@@ -62,7 +62,7 @@ size_t subbuffer_data_size(void *subbuf)
 }
 
 
-void finish_consuming_dead_subbuffer(struct buffer_info *buf)
+void finish_consuming_dead_subbuffer(struct libustd_callbacks *callbacks, struct buffer_info *buf)
 {
 	int result;
 
@@ -138,25 +138,8 @@ void finish_consuming_dead_subbuffer(struct buffer_info *buf)
 			assert(i_subbuf == (last_subbuf % buf->n_subbufs));
 		}
 
-
-		result = patient_write(buf->file_fd, buf->mem + i_subbuf * buf->subbuf_size, valid_length);
-		if(result == -1) {
-			ERR("Error writing to buffer file");
-			return;
-		}
-
-		/* pad with empty bytes */
-		pad_size = PAGE_ALIGN(valid_length)-valid_length;
-		if(pad_size) {
-			tmp = malloc(pad_size);
-			memset(tmp, 0, pad_size);
-			result = patient_write(buf->file_fd, tmp, pad_size);
-			if(result == -1) {
-				ERR("Error writing to buffer file");
-				return;
-			}
-			free(tmp);
-		}
+		if(callbacks->on_read_partial_subbuffer)
+			callbacks->on_read_partial_subbuffer(callbacks, buf, i_subbuf, valid_length);
 
 		if(i_subbuf == last_subbuf % buf->n_subbufs)
 			break;

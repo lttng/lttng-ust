@@ -5,7 +5,7 @@ ACLOCAL_AMFLAGS = -I config
 # libust and '.' (that contains the linker script). However, '.'
 # must be installed after libust so it can overwrite libust.so with
 # the linker script.
-SUBDIRS = snprintf libustcomm libust . tests libustinstr-malloc ustd ustctl libustfork include doc
+SUBDIRS = snprintf libustcomm libust . tests libustinstr-malloc libustd ustd ustctl libustfork include doc
 
 EXTRA_DIST = libust.ldscript.in libust-initializer.c
 dist_bin_SCRIPTS = usttrace

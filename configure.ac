@@ -123,6 +123,7 @@ AC_CONFIG_FILES([
 	tests/same_line_marker/Makefile
 	libustinstr-malloc/Makefile
 	libustfork/Makefile
+	libustd/Makefile
 	ustd/Makefile
 	ustctl/Makefile
 	libustcomm/Makefile
