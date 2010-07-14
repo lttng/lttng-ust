@@ -60,6 +60,9 @@ starting with two dashes(`-'). A summary of options is included below.
   * `--list-markers`:
     List the markers of the process, their state and format string.
 
+  * `--force-switch`:
+    Force a subbuffer switch. This will flush all the data currently held.
+
 ## LIFE CYCLE OF A TRACE
 
 Typically, the first step is to enable markers with `--enable-marker`. An

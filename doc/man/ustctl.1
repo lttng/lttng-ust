@@ -1,7 +1,7 @@
 .\" generated with Ronn/v0.6.6
 .\" http://github.com/rtomayko/ronn/
 .
-.TH "USTCTL" "1" "June 2010" "" ""
+.TH "USTCTL" "1" "July 2010" "" ""
 .
 .SH "NAME"
 \fBustctl\fR \- a program to control the tracing of userspace applications
@@ -74,6 +74,10 @@ Disable a marker\.
 .TP
 \fB\-\-list\-markers\fR
 List the markers of the process, their state and format string\.
+.
+.TP
+\fB\-\-force\-switch\fR
+Force a subbuffer switch\. This will flush all the data currently held\.
 .
 .SH "LIFE CYCLE OF A TRACE"
 Typically, the first step is to enable markers with \fB\-\-enable\-marker\fR\. An enabled marker generates an event when the control flow passes over it (assuming the trace is recording)\. A disabled marker produces nothing\. Enabling and disabling markers may however be done at any point, including while the trace is being recorded\.
