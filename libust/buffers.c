@@ -771,26 +771,6 @@ error:
 	return -1;
 }
 
-/*
- * LTTng channel flush function.
- *
- * Must be called when no tracing is active in the channel, because of
- * accesses across CPUs.
- */
-static notrace void ltt_relay_buffer_flush(struct ust_buffer *buf)
-{
-	int result;
-
-//ust//	buf->finalized = 1;
-	ltt_force_switch(buf, FORCE_FLUSH);
-
-	result = write(buf->data_ready_fd_write, "1", 1);
-	if(result == -1) {
-		PERROR("write (in ltt_relay_buffer_flush)");
-		ERR("this should never happen!");
-	}
-}
-
 static void ltt_relay_async_wakeup_chan(struct ust_channel *ltt_channel)
 {
 //ust//	unsigned int i;
@@ -813,7 +793,7 @@ static void ltt_relay_finish_buffer(struct ust_channel *channel, unsigned int cp
 
 	if (channel->buf[cpu]) {
 		struct ust_buffer *buf = channel->buf[cpu];
-		ltt_relay_buffer_flush(buf);
+		ltt_force_switch(buf, FORCE_FLUSH);
 //ust//		ltt_relay_wake_writers(ltt_buf);
 		/* closing the pipe tells the consumer the buffer is finished */
 		
