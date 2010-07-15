@@ -1070,8 +1070,9 @@ void create_listener(void)
 	if(result) {
 		PERROR("pthread_sigmask: %s", strerror(result));
 	}
-
-	have_listener = 1;
+	else {
+		have_listener = 1;
+	}
 }
 
 static int init_socket(void)
@@ -1369,9 +1370,12 @@ int restarting_usleep(useconds_t usecs)
 	return result;
 }
 
-static void stop_listener()
+static void stop_listener(void)
 {
 	int result;
+
+	if(!have_listener)
+		return;
 
 	result = pthread_cancel(listener_thread);
 	if(result != 0) {
