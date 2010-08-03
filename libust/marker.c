@@ -439,7 +439,7 @@ static struct marker_entry *add_marker(const char *channel, const char *name,
 	e->name = &e->channel[channel_len];
 	memcpy(e->name, name, name_len);
 	if (format) {
-		e->format = &e->name[channel_len + name_len];
+		e->format = &e->name[name_len];
 		memcpy(e->format, format, format_len);
 		if (strcmp(e->format, MARK_NOARGS) == 0)
 			e->call = marker_probe_cb_noarg;
