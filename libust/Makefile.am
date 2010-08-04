@@ -18,7 +18,6 @@ libust_la_SOURCES = \
 	tracercore.h \
 	serialize.c \
 	tracectl.c \
-	$(top_builddir)/libustcomm/multipoll.c \
 	tracerconst.h \
 	header-inline.h \
 	type-serializer.c
