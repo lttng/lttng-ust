@@ -64,8 +64,6 @@ size_t subbuffer_data_size(void *subbuf)
 
 void finish_consuming_dead_subbuffer(struct libustd_callbacks *callbacks, struct buffer_info *buf)
 {
-	int result;
-
 	struct ust_buffer *ustbuf = buf->bufstruct_mem;
 
 	long write_offset = uatomic_read(&ustbuf->offset);
@@ -95,7 +93,6 @@ void finish_consuming_dead_subbuffer(struct libustd_callbacks *callbacks, struct
 
 	/* Iterate on subbuffers to recover. */
 	for(i_subbuf = first_subbuf % buf->n_subbufs; ; i_subbuf++, i_subbuf %= buf->n_subbufs) {
-		void *tmp;
 		/* commit_seq is the offset in the buffer of the end of the last sequential commit.
 		 * Bytes beyond this limit cannot be recovered. This is a free-running counter. */
 		long commit_seq = uatomic_read(&ustbuf->commit_seq[i_subbuf]);
@@ -105,8 +102,6 @@ void finish_consuming_dead_subbuffer(struct libustd_callbacks *callbacks, struct
 		long commit_seq_mask = (~0UL >> n_subbufs_order);
 
 		struct ltt_subbuffer_header *header = (struct ltt_subbuffer_header *)((char *)buf->mem+i_subbuf*buf->subbuf_size);
-
-		int pad_size;
 
 		if((commit_seq & commit_seq_mask) == 0) {
 			/* There is nothing to do. */

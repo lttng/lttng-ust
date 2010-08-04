@@ -469,7 +469,6 @@ static int do_cmd_get_subbuf_size(const char *recvbuf, struct ustcomm_source *sr
 static unsigned int pow2_higher_or_eq(unsigned int v)
 {
 	int hb = fls(v);
-	int hbm1 = hb-1;
 	int retval = 1<<(hb-1);
 
 	if(v-retval == 0)

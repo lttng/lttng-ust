@@ -188,8 +188,6 @@ struct buffer_info *connect_buffer(struct libustd_instance *instance, pid_t pid,
 	char *send_msg;
 	char *received_msg;
 	int result;
-	char *tmp;
-	int fd;
 	struct shmid_ds shmds;
 
 	buf = (struct buffer_info *) malloc(sizeof(struct buffer_info));

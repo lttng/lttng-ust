@@ -636,7 +636,6 @@ notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
 	struct ust_channel *channel;
 	struct ust_trace *trace, *dest_trace = NULL;
 	struct ust_buffer *buf;
-	void *transport_data;
 	u64 tsc;
 	long buf_offset;
 	va_list args_copy;

@@ -343,11 +343,9 @@ void sigterm_handler(int sig)
 
 int start_ustd(int fd)
 {
-	struct ustcomm_ustd ustd;
 	int result;
 	sigset_t sigset;
 	struct sigaction sa;
-	int timeout = -1;
 
 	struct libustd_callbacks *callbacks = new_callbacks();
 	if(!callbacks) {
