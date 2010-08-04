@@ -24,9 +24,6 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
-#include "ustcomm.h"
-#include "ustcmd.h"
-
 #define USTCMD_ERR_CONN		1 /* Process connection error */
 #define USTCMD_ERR_ARG		2 /* Invalid function argument */
 #define USTCMD_ERR_GEN		3 /* General ustcmd error */

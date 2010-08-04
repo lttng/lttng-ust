@@ -58,7 +58,7 @@ int get_subbuffer(struct buffer_info *buf)
 	int result;
 
 	asprintf(&send_msg, "get_subbuffer %s", buf->name);
-	result = ustcomm_send_request(&buf->conn, send_msg, &received_msg);
+	result = ustcomm_send_request(buf->conn, send_msg, &received_msg);
 	if((result == -1 && (errno == ECONNRESET || errno == EPIPE)) || result == 0) {
 		DBG("app died while being traced");
 		retval = GET_SUBBUF_DIED;
@@ -118,7 +118,7 @@ int put_subbuffer(struct buffer_info *buf)
 	int result;
 
 	asprintf(&send_msg, "put_subbuffer %s %ld", buf->name, buf->consumed_old);
-	result = ustcomm_send_request(&buf->conn, send_msg, &received_msg);
+	result = ustcomm_send_request(buf->conn, send_msg, &received_msg);
 	if(result < 0 && (errno == ECONNRESET || errno == EPIPE)) {
 		retval = PUT_SUBBUF_DIED;
 		goto end;
@@ -196,11 +196,18 @@ struct buffer_info *connect_buffer(struct libustd_instance *instance, pid_t pid,
 		return NULL;
 	}
 
+	buf->conn = malloc(sizeof(struct ustcomm_connection));
+	if(buf->conn == NULL) {
+		ERR("add_buffer: insufficient memory");
+		free(buf);
+		return NULL;
+	}
+
 	buf->name = bufname;
 	buf->pid = pid;
 
 	/* connect to app */
-	result = ustcomm_connect_app(buf->pid, &buf->conn);
+	result = ustcomm_connect_app(buf->pid, buf->conn);
 	if(result) {
 		WARN("unable to connect to process, it probably died before we were able to connect");
 		return NULL;
@@ -208,7 +215,7 @@ struct buffer_info *connect_buffer(struct libustd_instance *instance, pid_t pid,
 
 	/* get pidunique */
 	asprintf(&send_msg, "get_pidunique");
-	result = ustcomm_send_request(&buf->conn, send_msg, &received_msg);
+	result = ustcomm_send_request(buf->conn, send_msg, &received_msg);
 	free(send_msg);
 	if(result == -1) {
 		ERR("problem in ustcomm_send_request(get_pidunique)");
@@ -228,7 +235,7 @@ struct buffer_info *connect_buffer(struct libustd_instance *instance, pid_t pid,
 
 	/* get shmid */
 	asprintf(&send_msg, "get_shmid %s", buf->name);
-	result = ustcomm_send_request(&buf->conn, send_msg, &received_msg);
+	result = ustcomm_send_request(buf->conn, send_msg, &received_msg);
 	free(send_msg);
 	if(result == -1) {
 		ERR("problem in ustcomm_send_request(get_shmid)");
@@ -248,7 +255,7 @@ struct buffer_info *connect_buffer(struct libustd_instance *instance, pid_t pid,
 
 	/* get n_subbufs */
 	asprintf(&send_msg, "get_n_subbufs %s", buf->name);
-	result = ustcomm_send_request(&buf->conn, send_msg, &received_msg);
+	result = ustcomm_send_request(buf->conn, send_msg, &received_msg);
 	free(send_msg);
 	if(result == -1) {
 		ERR("problem in ustcomm_send_request(g_n_subbufs)");
@@ -268,7 +275,7 @@ struct buffer_info *connect_buffer(struct libustd_instance *instance, pid_t pid,
 
 	/* get subbuf size */
 	asprintf(&send_msg, "get_subbuf_size %s", buf->name);
-	result = ustcomm_send_request(&buf->conn, send_msg, &received_msg);
+	result = ustcomm_send_request(buf->conn, send_msg, &received_msg);
 	free(send_msg);
 	if(result == -1) {
 		ERR("problem in ustcomm_send_request(get_subbuf_size)");
@@ -328,7 +335,7 @@ static void destroy_buffer(struct libustd_callbacks *callbacks,
 {
 	int result;
 
-	result = ustcomm_close_app(&buf->conn);
+	result = ustcomm_close_app(buf->conn);
 	if(result == -1) {
 		WARN("problem calling ustcomm_close_app");
 	}
@@ -346,6 +353,7 @@ static void destroy_buffer(struct libustd_callbacks *callbacks,
 	if(callbacks->on_close_buffer)
 		callbacks->on_close_buffer(callbacks, buf);
 
+	free(buf->conn);
 	free(buf);
 }
 
@@ -523,7 +531,7 @@ int libustd_start_instance(struct libustd_instance *instance)
 		char *recvbuf;
 
 		/* check for requests on our public socket */
-		result = ustcomm_ustd_recv_message(&instance->comm, &recvbuf, NULL, timeout);
+		result = ustcomm_ustd_recv_message(instance->comm, &recvbuf, NULL, timeout);
 		if(result == -1 && errno == EINTR) {
 			/* Caught signal */
 		}
@@ -586,10 +594,11 @@ int libustd_start_instance(struct libustd_instance *instance)
 void libustd_delete_instance(struct libustd_instance *instance)
 {
 	if(instance->is_init)
-		ustcomm_fini_ustd(&instance->comm);
+		ustcomm_fini_ustd(instance->comm);
 
 	pthread_mutex_destroy(&instance->mutex);
 	free(instance->sock_path);
+	free(instance->comm);
 	free(instance);
 }
 
@@ -642,6 +651,12 @@ struct libustd_instance *libustd_new_instance(
 	if(!instance)
 		return NULL;
 
+	instance->comm = malloc(sizeof(struct ustcomm_ustd));
+	if(!instance->comm) {
+		free(instance);
+		return NULL;
+	}
+
 	instance->callbacks = callbacks;
 	instance->quit_program = 0;
 	instance->is_init = 0;
@@ -659,7 +674,7 @@ struct libustd_instance *libustd_new_instance(
 int libustd_init_instance(struct libustd_instance *instance)
 {
 	int result;
-	result = ustcomm_init_ustd(&instance->comm, instance->sock_path);
+	result = ustcomm_init_ustd(instance->comm, instance->sock_path);
 	if(result == -1) {
 		ERR("failed to initialize socket");
 		return 1;
