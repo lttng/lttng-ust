@@ -858,7 +858,7 @@ static void ltt_reserve_switch_old_subbuf(
 	 * This compiler barrier is upgraded into a smp_wmb() by the IPI
 	 * sent by get_subbuf() when it does its smp_rmb().
 	 */
-	barrier();
+	smp_wmb();
 	uatomic_add(&buf->commit_count[oldidx].cc, padding_size);
 	commit_count = uatomic_read(&buf->commit_count[oldidx].cc);
 	ltt_check_deliver(chan, buf, offsets->old - 1, commit_count, oldidx);
@@ -887,7 +887,7 @@ static void ltt_reserve_switch_new_subbuf(
 	 * This compiler barrier is upgraded into a smp_wmb() by the IPI
 	 * sent by get_subbuf() when it does its smp_rmb().
 	 */
-	barrier();
+	smp_wmb();
 	uatomic_add(&buf->commit_count[beginidx].cc, ltt_subbuffer_header_size());
 	commit_count = uatomic_read(&buf->commit_count[beginidx].cc);
 	/* Check if the written buffer has to be delivered */
@@ -932,7 +932,7 @@ static void ltt_reserve_end_switch_current(
 	 * This compiler barrier is upgraded into a smp_wmb() by the IPI
 	 * sent by get_subbuf() when it does its smp_rmb().
 	 */
-	barrier();
+	smp_wmb();
 	uatomic_add(&buf->commit_count[endidx].cc, padding_size);
 	commit_count = uatomic_read(&buf->commit_count[endidx].cc);
 	ltt_check_deliver(chan, buf,
