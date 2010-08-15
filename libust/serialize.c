@@ -43,12 +43,28 @@
 #include "usterr.h"
 #include "ust_snprintf.h"
 
+/*
+ * Because UST core defines a non-const PAGE_SIZE, define PAGE_SIZE_STATIC here.
+ * It is just an approximation for the tracer stack.
+ */
+#define PAGE_SIZE_STATIC	4096
+
 enum ltt_type {
 	LTT_TYPE_SIGNED_INT,
 	LTT_TYPE_UNSIGNED_INT,
 	LTT_TYPE_STRING,
 	LTT_TYPE_NONE,
 };
+
+/*
+ * Special stack for the tracer. Keeps serialization offsets for each field.
+ * Per-thread. Deals with reentrancy from signals by simply ensuring that
+ * interrupting signals put the stack back to its original position.
+ */
+#define TRACER_STACK_LEN	(PAGE_SIZE_STATIC / sizeof(unsigned long))
+static unsigned long __thread tracer_stack[TRACER_STACK_LEN];
+
+static unsigned int __thread tracer_stack_pos;
 
 #define LTT_ATTRIBUTE_NETWORK_BYTE_ORDER (1<<1)
 
@@ -349,7 +365,9 @@ static inline size_t serialize_trace_data(struct ust_buffer *buf,
 		size_t buf_offset,
 		char trace_size, enum ltt_type trace_type,
 		char c_size, enum ltt_type c_type,
-		int *largest_align, va_list *args)
+		unsigned int *stack_pos_ctx,
+		int *largest_align,
+		va_list *args)
 {
 	union {
 		unsigned long v_ulong;
@@ -405,10 +423,20 @@ static inline size_t serialize_trace_data(struct ust_buffer *buf,
 		tmp.v_string.s = va_arg(*args, const char *);
 		if ((unsigned long)tmp.v_string.s < PAGE_SIZE)
 			tmp.v_string.s = "<NULL>";
-		tmp.v_string.len = strlen(tmp.v_string.s)+1;
+		if (!buf) {
+			/*
+			 * Reserve tracer stack entry.
+			 */
+			tracer_stack_pos++;
+			assert(tracer_stack_pos <= TRACER_STACK_LEN);
+			barrier();
+			tracer_stack[*stack_pos_ctx] =
+					strlen(tmp.v_string.s) + 1;
+		}
+		tmp.v_string.len = tracer_stack[(*stack_pos_ctx)++];
 		if (buf)
-			ust_buffers_write(buf, buf_offset, tmp.v_string.s,
-				tmp.v_string.len);
+			ust_buffers_strncpy(buf, buf_offset, tmp.v_string.s,
+					    tmp.v_string.len);
 		buf_offset += tmp.v_string.len;
 		goto copydone;
 	default:
@@ -508,7 +536,9 @@ copydone:
 
 notrace size_t ltt_serialize_data(struct ust_buffer *buf, size_t buf_offset,
 			struct ltt_serialize_closure *closure,
-			void *serialize_private, int *largest_align,
+			void *serialize_private,
+			unsigned int stack_pos_ctx,
+			int *largest_align,
 			const char *fmt, va_list *args)
 {
 	char trace_size = 0, c_size = 0;	/*
@@ -548,7 +578,9 @@ notrace size_t ltt_serialize_data(struct ust_buffer *buf, size_t buf_offset,
 			buf_offset = serialize_trace_data(buf,
 						buf_offset, trace_size,
 						trace_type, c_size, c_type,
-						largest_align, args);
+						&stack_pos_ctx,
+						largest_align,
+						args);
 			trace_size = 0;
 			c_size = 0;
 			trace_type = LTT_TYPE_NONE;
@@ -566,25 +598,29 @@ notrace size_t ltt_serialize_data(struct ust_buffer *buf, size_t buf_offset,
  * Assume that the padding for alignment starts at a sizeof(void *) address.
  */
 static notrace size_t ltt_get_data_size(struct ltt_serialize_closure *closure,
-				void *serialize_private, int *largest_align,
+				void *serialize_private,
+				unsigned int stack_pos_ctx, int *largest_align,
 				const char *fmt, va_list *args)
 {
 	ltt_serialize_cb cb = closure->callbacks[0];
 	closure->cb_idx = 0;
 	return (size_t)cb(NULL, 0, closure, serialize_private,
-				largest_align, fmt, args);
+			  stack_pos_ctx, largest_align, fmt, args);
 }
 
 static notrace
 void ltt_write_event_data(struct ust_buffer *buf, size_t buf_offset,
 				struct ltt_serialize_closure *closure,
-				void *serialize_private, int largest_align,
+				void *serialize_private,
+				unsigned int stack_pos_ctx,
+				int largest_align,
 				const char *fmt, va_list *args)
 {
 	ltt_serialize_cb cb = closure->callbacks[0];
 	closure->cb_idx = 0;
 	buf_offset += ltt_align(buf_offset, largest_align);
-	cb(buf, buf_offset, closure, serialize_private, NULL, fmt, args);
+	cb(buf, buf_offset, closure, serialize_private, stack_pos_ctx, NULL,
+	   fmt, args);
 }
 
 
@@ -609,6 +645,7 @@ notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
 	void *serialize_private = NULL;
 	int cpu;
 	unsigned int rflags;
+	unsigned int stack_pos_ctx;
 
 	/*
 	 * This test is useful for quickly exiting static tracing when no trace
@@ -622,6 +659,7 @@ notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
 
 	/* Force volatile access. */
 	STORE_SHARED(ltt_nesting, LOAD_SHARED(ltt_nesting) + 1);
+	stack_pos_ctx = tracer_stack_pos;
 	barrier();
 
 	pdata = (struct ltt_active_marker *)probe_data;
@@ -642,7 +680,8 @@ notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
 	 */
 	largest_align = 1;	/* must be non-zero for ltt_align */
 	data_size = ltt_get_data_size(&closure, serialize_private,
-					&largest_align, fmt, &args_copy);
+				      stack_pos_ctx, &largest_align,
+				      fmt, &args_copy);
 	largest_align = min_t(int, largest_align, sizeof(void *));
 	va_end(args_copy);
 
@@ -698,8 +737,9 @@ notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
 		buf_offset = ltt_write_event_header(channel, buf, buf_offset,
 					eID, data_size, tsc, rflags);
 		ltt_write_event_data(buf, buf_offset, &closure,
-					serialize_private,
-					largest_align, fmt, &args_copy);
+				     serialize_private,
+				     stack_pos_ctx, largest_align,
+				     fmt, &args_copy);
 		va_end(args_copy);
 		/* Out-of-order commit */
 		ltt_commit_slot(channel, buf, buf_offset, data_size, slot_size);
@@ -707,6 +747,7 @@ notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
 	}
 
 	barrier();
+	tracer_stack_pos = stack_pos_ctx;
 	STORE_SHARED(ltt_nesting, LOAD_SHARED(ltt_nesting) - 1);
 
 	rcu_read_unlock(); //ust// rcu_read_unlock_sched_notrace();

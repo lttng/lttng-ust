@@ -65,7 +65,8 @@ struct ltt_serialize_closure {
 extern size_t ltt_serialize_data(struct ust_buffer *buf, size_t buf_offset,
 			struct ltt_serialize_closure *closure,
 			void *serialize_private,
-			int *largest_align, const char *fmt, va_list *args);
+			unsigned int stack_pos_ctx, int *largest_align,
+			const char *fmt, va_list *args);
 
 struct ltt_probe_private_data {
 	struct ust_trace *trace;	/*

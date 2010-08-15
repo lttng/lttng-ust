@@ -513,22 +513,90 @@ static __inline__ void ltt_commit_slot(
 	ltt_write_commit_counter(chan, buf, endidx, buf_offset, commit_count, data_size);
 }
 
-void _ust_buffers_write(struct ust_buffer *buf, size_t offset,
-        const void *src, size_t len, ssize_t cpy);
+void _ust_buffers_strncpy_fixup(struct ust_buffer *buf, size_t offset,
+				size_t len, size_t copied, int terminated);
 
 static __inline__ int ust_buffers_write(struct ust_buffer *buf, size_t offset,
         const void *src, size_t len)
 {
-	size_t cpy;
 	size_t buf_offset = BUFFER_OFFSET(offset, buf->chan);
 
 	assert(buf_offset < buf->chan->subbuf_size*buf->chan->subbuf_cnt);
+	assert(buf_offset + len < buf->chan->subbuf_size*buf->chan->subbuf_cnt);
 
-	cpy = min_t(size_t, len, buf->buf_size - buf_offset);
-	ust_buffers_do_copy(buf->buf_data + buf_offset, src, cpy);
+	ust_buffers_do_copy(buf->buf_data + buf_offset, src, len);
 
-	if (unlikely(len != cpy))
-		_ust_buffers_write(buf, buf_offset, src, len, cpy);
+	return len;
+}
+
+/*
+ * ust_buffers_do_memset - write character into dest.
+ * @dest: destination
+ * @src: source character
+ * @len: length to write
+ */
+static __inline__
+void ust_buffers_do_memset(void *dest, char src, size_t len)
+{
+	/*
+	 * What we really want here is an __inline__ memset, but we
+	 * don't have constants, so gcc generally uses a function call.
+	 */
+	for (; len > 0; len--)
+		*(u8 *)dest++ = src;
+}
+
+/*
+ * ust_buffers_do_strncpy - copy a string up to a certain number of bytes
+ * @dest: destination
+ * @src: source
+ * @len: max. length to copy
+ * @terminated: output string ends with \0 (output)
+ *
+ * returns the number of bytes copied. Does not finalize with \0 if len is
+ * reached.
+ */
+static __inline__
+size_t ust_buffers_do_strncpy(void *dest, const void *src, size_t len,
+			      int *terminated)
+{
+	size_t orig_len = len;
+
+	*terminated = 0;
+	/*
+	 * What we really want here is an __inline__ strncpy, but we
+	 * don't have constants, so gcc generally uses a function call.
+	 */
+	for (; len > 0; len--) {
+		*(u8 *)dest = LOAD_SHARED(*(const u8 *)src);
+		/* Check with dest, because src may be modified concurrently */
+		if (*(const u8 *)dest == '\0') {
+			len--;
+			*terminated = 1;
+			break;
+		}
+		dest++;
+		src++;
+	}
+	return orig_len - len;
+}
+
+static __inline__
+int ust_buffers_strncpy(struct ust_buffer *buf, size_t offset, const void *src,
+			size_t len)
+{
+	size_t buf_offset = BUFFER_OFFSET(offset, buf->chan);
+	ssize_t copied;
+	int terminated;
+
+	assert(buf_offset < buf->chan->subbuf_size*buf->chan->subbuf_cnt);
+	assert(buf_offset + len < buf->chan->subbuf_size*buf->chan->subbuf_cnt);
+
+	copied = ust_buffers_do_strncpy(buf->buf_data + buf_offset,
+				        src, len, &terminated);
+	if (unlikely(copied < len || !terminated))
+		_ust_buffers_strncpy_fixup(buf, offset, len, copied,
+					   terminated);
 	return len;
 }
 

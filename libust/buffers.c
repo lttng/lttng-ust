@@ -70,28 +70,68 @@ static int get_n_cpus(void)
 	return n_cpus;
 }
 
-/* _ust_buffers_write()
+/**
+ * _ust_buffers_strncpy_fixup - Fix an incomplete string in a ltt_relay buffer.
+ * @buf : buffer
+ * @offset : offset within the buffer
+ * @len : length to write
+ * @copied: string actually copied
+ * @terminated: does string end with \0
  *
- * @buf: destination buffer
- * @offset: offset in destination
- * @src: source buffer
- * @len: length of source
- * @cpy: already copied
+ * Fills string with "X" if incomplete.
  */
-
-void _ust_buffers_write(struct ust_buffer *buf, size_t offset,
-        const void *src, size_t len, ssize_t cpy)
+void _ust_buffers_strncpy_fixup(struct ust_buffer *buf, size_t offset,
+				size_t len, size_t copied, int terminated)
 {
-	do {
-		len -= cpy;
-		src += cpy;
-		offset += cpy;
+	size_t buf_offset, cpy;
 
-		WARN_ON(offset >= buf->buf_size);
+	if (copied == len) {
+		/*
+		 * Deal with non-terminated string.
+		 */
+		assert(!terminated);
+		offset += copied - 1;
+		buf_offset = BUFFER_OFFSET(offset, buf->chan);
+		/*
+		 * Underlying layer should never ask for writes across
+		 * subbuffers.
+		 */
+		assert(buf_offset
+		       < buf->chan->subbuf_size*buf->chan->subbuf_cnt);
+		ust_buffers_do_memset(buf->buf_data + buf_offset, '\0', 1);
+		return;
+	}
 
-		cpy = min_t(size_t, len, buf->buf_size - offset);
-		ust_buffers_do_copy(buf->buf_data + offset, src, cpy);
-	} while (unlikely(len != cpy));
+	/*
+	 * Deal with incomplete string.
+	 * Overwrite string's \0 with X too.
+	 */
+	cpy = copied - 1;
+	assert(terminated);
+	len -= cpy;
+	offset += cpy;
+	buf_offset = BUFFER_OFFSET(offset, buf->chan);
+
+	/*
+	 * Underlying layer should never ask for writes across subbuffers.
+	 */
+	assert(buf_offset
+	       < buf->chan->subbuf_size*buf->chan->subbuf_cnt);
+
+	ust_buffers_do_memset(buf->buf_data + buf_offset,
+			      'X', len);
+
+	/*
+	 * Overwrite last 'X' with '\0'.
+	 */
+	offset += len - 1;
+	buf_offset = BUFFER_OFFSET(offset, buf->chan);
+	/*
+	 * Underlying layer should never ask for writes across subbuffers.
+	 */
+	assert(buf_offset
+	       < buf->chan->subbuf_size*buf->chan->subbuf_cnt);
+	ust_buffers_do_memset(buf->buf_data + buf_offset, '\0', 1);
 }
 
 static int ust_buffers_init_buffer(struct ust_trace *trace,

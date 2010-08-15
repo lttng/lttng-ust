@@ -28,7 +28,9 @@ struct ust_buffer;
 
 typedef size_t (*ltt_serialize_cb)(struct ust_buffer *buf, size_t buf_offset,
                         struct ltt_serialize_closure *closure,
-                        void *serialize_private, int *largest_align,
+                        void *serialize_private,
+			unsigned int stack_pos_ctx,
+			int *largest_align,
                         const char *fmt, va_list *args);
 
 struct ltt_available_probe {
