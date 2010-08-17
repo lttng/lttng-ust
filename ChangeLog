@@ -1,3 +1,14 @@
+2010-08-16  ust 0.6
+	* add ust strncpy interface for input robustness
+	* multiple memory barrier fix
+	* add libustd: contains the core functionality of ustd
+	* add get/set commands for daemon socket path
+	* fix cacheline aligned to use liburcu value
+	* fix usage of custom probes: use trace_mark_tp
+	* remove ltt_relay_buffer_flush function
+	* add ustctl manpage: force-switch and get/set-sock-path
+	* fix invalid array size and directory creation mode for ustd
+
 2010-06-30  ust 0.5
 	* add support for PowerPC 32 architecture
 	* use clock_gettime(CLOCK_MONOTINIC) instead of gettimeofday()
