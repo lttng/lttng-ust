@@ -522,7 +522,8 @@ static __inline__ int ust_buffers_write(struct ust_buffer *buf, size_t offset,
 	size_t buf_offset = BUFFER_OFFSET(offset, buf->chan);
 
 	assert(buf_offset < buf->chan->subbuf_size*buf->chan->subbuf_cnt);
-	assert(buf_offset + len < buf->chan->subbuf_size*buf->chan->subbuf_cnt);
+	assert(buf_offset + len
+	       <= buf->chan->subbuf_size*buf->chan->subbuf_cnt);
 
 	ust_buffers_do_copy(buf->buf_data + buf_offset, src, len);
 
@@ -590,7 +591,8 @@ int ust_buffers_strncpy(struct ust_buffer *buf, size_t offset, const void *src,
 	int terminated;
 
 	assert(buf_offset < buf->chan->subbuf_size*buf->chan->subbuf_cnt);
-	assert(buf_offset + len < buf->chan->subbuf_size*buf->chan->subbuf_cnt);
+	assert(buf_offset + len
+	       <= buf->chan->subbuf_size*buf->chan->subbuf_cnt);
 
 	copied = ust_buffers_do_strncpy(buf->buf_data + buf_offset,
 				        src, len, &terminated);
