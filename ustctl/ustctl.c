@@ -147,7 +147,7 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 	if (argc - optind > 0 && opts->cmd != GET_ONLINE_PIDS) {
 		int i;
 		int pididx=0;
-		opts->pids = malloc((argc-optind+1) * sizeof(pid_t));
+		opts->pids = zmalloc((argc-optind+1) * sizeof(pid_t));
 
 		for(i=optind; i<argc; i++) {
 			/* don't take any chances, use a long long */

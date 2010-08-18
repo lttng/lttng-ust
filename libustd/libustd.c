@@ -191,7 +191,7 @@ struct buffer_info *connect_buffer(struct libustd_instance *instance, pid_t pid,
 	int result;
 	struct shmid_ds shmds;
 
-	buf = (struct buffer_info *) malloc(sizeof(struct buffer_info));
+	buf = (struct buffer_info *) zmalloc(sizeof(struct buffer_info));
 	if(buf == NULL) {
 		ERR("add_buffer: insufficient memory");
 		return NULL;
@@ -495,7 +495,7 @@ int start_consuming_buffer(
 
 	DBG("beginning of start_consuming_buffer: args: pid %d bufname %s", pid, bufname);
 
-	args = (struct consumer_thread_args *) malloc(sizeof(struct consumer_thread_args));
+	args = (struct consumer_thread_args *) zmalloc(sizeof(struct consumer_thread_args));
 
 	args->pid = pid;
 	args->bufname = strdup(bufname);
@@ -648,7 +648,7 @@ struct libustd_instance *libustd_new_instance(
 	struct libustd_callbacks *callbacks, char *sock_path)
 {
 	struct libustd_instance *instance =
-		malloc(sizeof(struct libustd_instance));
+		zmalloc(sizeof(struct libustd_instance));
 	if(!instance)
 		return NULL;
 

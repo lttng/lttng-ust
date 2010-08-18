@@ -150,8 +150,7 @@ int on_read_partial_subbuffer(struct libustd_callbacks *data, struct buffer_info
 	/* pad with empty bytes */
 	pad_size = PAGE_ALIGN(valid_length)-valid_length;
 	if(pad_size) {
-		tmp = malloc(pad_size);
-		memset(tmp, 0, pad_size);
+		tmp = zmalloc(pad_size);
 		result = patient_write(buf_local->file_fd, tmp, pad_size);
 		if(result == -1) {
 			ERR("Error writing to buffer file");
@@ -168,7 +167,7 @@ int on_open_buffer(struct libustd_callbacks *data, struct buffer_info *buf)
 	int result;
 	int fd;
 	struct buffer_info_local *buf_local =
-		malloc(sizeof(struct buffer_info_local));
+		zmalloc(sizeof(struct buffer_info_local));
 
 	if(!buf_local) {
 		ERR("could not allocate buffer_info_local struct");
@@ -233,7 +232,7 @@ int on_put_error(struct libustd_callbacks *data, struct buffer_info *buf)
 struct libustd_callbacks *new_callbacks()
 {
 	struct libustd_callbacks *callbacks =
-		malloc(sizeof(struct libustd_callbacks));
+		zmalloc(sizeof(struct libustd_callbacks));
 
 	if(!callbacks)
 		return NULL;

@@ -48,7 +48,7 @@ static int mkdir_p(const char *path, mode_t mode)
 	int result;
 	mode_t old_umask;
 
-	tmp = malloc(strlen(path) + 1);
+	tmp = zmalloc(strlen(path) + 1);
 	if (tmp == NULL)
 		return -1;
 
@@ -332,15 +332,15 @@ int ustcomm_recv_message(struct ustcomm_server *server, char **msg, struct ustco
 			n_fds++;
 		}
 
-		fds = (struct pollfd *) malloc(n_fds * sizeof(struct pollfd));
+		fds = (struct pollfd *) zmalloc(n_fds * sizeof(struct pollfd));
 		if(fds == NULL) {
-			ERR("malloc returned NULL");
+			ERR("zmalloc returned NULL");
 			return -1;
 		}
 
-		conn_table = (struct ustcomm_connection **) malloc(n_fds * sizeof(struct ustcomm_connection *));
+		conn_table = (struct ustcomm_connection **) zmalloc(n_fds * sizeof(struct ustcomm_connection *));
 		if(conn_table == NULL) {
-			ERR("malloc returned NULL");
+			ERR("zmalloc returned NULL");
 			retval = -1;
 			goto free_fds_return;
 		}
@@ -384,9 +384,9 @@ int ustcomm_recv_message(struct ustcomm_server *server, char **msg, struct ustco
 				goto free_conn_table_return;
 			}
 
-			newconn = (struct ustcomm_connection *) malloc(sizeof(struct ustcomm_connection));
+			newconn = (struct ustcomm_connection *) zmalloc(sizeof(struct ustcomm_connection));
 			if(newconn == NULL) {
-				ERR("malloc returned NULL");
+				ERR("zmalloc returned NULL");
 				return -1;
 			}
 
@@ -886,9 +886,9 @@ static int process_mp_incoming_conn(void *priv, int fd, short events)
 		return -1;
 	}
 
-	newconn = (struct ustcomm_connection *) malloc(sizeof(struct ustcomm_connection));
+	newconn = (struct ustcomm_connection *) zmalloc(sizeof(struct ustcomm_connection));
 	if(newconn == NULL) {
-		ERR("malloc returned NULL");
+		ERR("zmalloc returned NULL");
 		return -1;
 	}
 
@@ -948,7 +948,7 @@ void ustcomm_mp_add_app_clients(struct mpentries *ent, struct ustcomm_app *app, 
 	multipoll_add(ent, app->server.listen_fd, POLLIN, process_mp_incoming_conn, &app->server, NULL);
 
 	list_for_each_entry(conn, &app->server.connections, list) {
-		struct ustcomm_multipoll_conn_info *mpinfo = (struct ustcomm_multipoll_conn_info *) malloc(sizeof(struct ustcomm_multipoll_conn_info));
+		struct ustcomm_multipoll_conn_info *mpinfo = (struct ustcomm_multipoll_conn_info *) zmalloc(sizeof(struct ustcomm_multipoll_conn_info));
 		mpinfo->conn = conn;
 		mpinfo->cb = cb;
 		multipoll_add(ent, conn->fd, POLLIN, process_mp_conn_msg, mpinfo, free_ustcomm_client_poll);
