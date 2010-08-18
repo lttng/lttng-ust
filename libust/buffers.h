@@ -96,7 +96,7 @@ struct ust_buffer {
 	unsigned int cpu;
 
 	/* commit count per subbuffer; must be at end of struct */
-	long commit_seq[0] ____cacheline_aligned; /* ATOMIC */
+	long commit_seq[0]; /* ATOMIC */
 } ____cacheline_aligned;
 
 /*
