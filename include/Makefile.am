@@ -16,6 +16,8 @@ nobase_include_HEADERS = \
 	ust/kcompat/jhash.h \
 	ust/kcompat/kref.h \
 	ust/kcompat/simple.h \
-	ust/kcompat/types.h
+	ust/kcompat/types.h \
+	ust/ustcmd.h \
+	ust/ustd.h
 
 noinst_HEADERS = share.h usterr.h ust_snprintf.h

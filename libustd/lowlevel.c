@@ -19,9 +19,9 @@
 #include <assert.h>
 #include <byteswap.h>
 
+#include "ust/ustd.h"
 #include "buffers.h"
 #include "tracer.h"
-#include "libustd.h"
 #include "usterr.h"
 
 /* This truncates to an offset in the buffer. */

@@ -4,7 +4,7 @@ AM_CFLAGS = -fno-strict-aliasing
 
 lib_LTLIBRARIES = libustd.la
 
-libustd_la_SOURCES = libustd.c lowlevel.c libustd.h
+libustd_la_SOURCES = libustd.c lowlevel.c lowlevel.h
 
 libustd_la_LDFLAGS = -no-undefined -version-info 0:0:0
 

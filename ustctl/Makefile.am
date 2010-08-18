@@ -5,12 +5,11 @@ AM_CFLAGS = -fno-strict-aliasing
 bin_PROGRAMS = ustctl
 
 ustctl_SOURCES = \
-	ustctl.c \
-	$(top_srcdir)/libustcmd/ustcmd.c \
-	$(top_srcdir)/libustcmd/ustcmd.h
+	ustctl.c
 
 ustctl_CFLAGS = -DUST_COMPONENT=ustctl -fno-strict-aliasing
 
 ustctl_LDADD = \
 	$(top_builddir)/snprintf/libustsnprintf.la \
-	$(top_builddir)/libustcomm/libustcomm.la
+	$(top_builddir)/libustcomm/libustcomm.la \
+	$(top_builddir)/libustcmd/libustcmd.la

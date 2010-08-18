@@ -22,8 +22,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
-#include "ustcomm.h"
-#include "ustcmd.h"
+#include "ust/ustcmd.h"
 #include "usterr.h"
 
 enum command {

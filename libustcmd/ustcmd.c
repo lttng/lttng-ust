@@ -25,7 +25,7 @@
 #include <dirent.h>
 
 #include "ustcomm.h"
-#include "ustcmd.h"
+#include "ust/ustcmd.h"
 #include "usterr.h"
 
 pid_t *ustcmd_get_online_pids(void)

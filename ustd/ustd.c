@@ -32,7 +32,7 @@
 #include <assert.h>
 #include <getopt.h>
 
-#include "libustd.h"
+#include "ust/ustd.h"
 #include "usterr.h"
 
 char *sock_path=NULL;
