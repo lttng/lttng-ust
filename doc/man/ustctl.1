@@ -1,116 +1,150 @@
-.\" generated with Ronn/v0.6.6
+.\" generated with Ronn/v0.5
 .\" http://github.com/rtomayko/ronn/
 .
-.TH "USTCTL" "1" "July 2010" "" ""
+.TH "USTCTL" "1" "August 2010" "" ""
 .
 .SH "NAME"
-\fBustctl\fR \- a program to control the tracing of userspace applications
+\fBustctl\fR \-\- a program to control the tracing of userspace applications
 .
 .SH "SYNOPSIS"
-\fBustctl\fR [\fIcommand\fR] [\fIPIDs\fR]\.\.\.
+\fBustctl\fR [\fIcommand\fR] [\fIPIDs\fR]...
 .
 .SH "DESCRIPTION"
-\fBustctl\fR is a program to control the tracing of userspace applications\. It can list markers, start the tracing, stop the tracing, enable/disable markers, etc\.
+\fBustctl\fR is a program to control the tracing of userspace applications. It can
+list markers, start the tracing, stop the tracing, enable/disable markers, etc.
 .
 .SH "OPTIONS"
-These programs follow the usual GNU command line syntax, with long options starting with two dashes(`\-\')\. A summary of options is included below\.
+These programs follow the usual GNU command line syntax, with long options
+starting with two dashes(`\-'). A summary of options is included below.
 .
 .TP
 \fB\-h\fR, \fB\-\-help\fR
-Show summary of options\.
+Show summary of options.
 .
 .TP
 \fB\-\-create\-trace\fR
-Create trace\.
+Create trace.
 .
 .TP
 \fB\-\-alloc\-trace\fR
-Allocate trace\.
+Allocate trace.
 .
 .TP
 \fB\-\-start\-trace\fR
-Start tracing\.
+Start tracing.
 .
 .TP
 \fB\-\-stop\-trace\fR
-Stop tracing\.
+Stop tracing.
 .
 .TP
 \fB\-\-destroy\-trace\fR
-Destroy the trace\.
+Destroy the trace.
 .
 .TP
 \fB\-\-set\-subbuf\-size\fR \fICHANNEL\fR/\fIbytes\fR
-Set the size of subbuffers in CHANNEL\.
+Set the size of subbuffers in CHANNEL.
 .
 .TP
 \fB\-\-set\-subbuf\-num\fR \fICHANNEL\fR
-Set the number of subbuffers per buffer for CHANNEL\. Must be a power of 2\.
+Set the number of subbuffers per buffer for CHANNEL. Must be a power of 2.
 .
 .TP
 \fB\-\-set\-sock\-path\fR
-Set the path of the daemon socket\.
+Set the path of the daemon socket.
 .
 .TP
 \fB\-\-get\-subbuf\-size\fR \fICHANNEL\fR
-Print the size of subbuffers per buffer for CHANNEL\.
+Print the size of subbuffers per buffer for CHANNEL.
 .
 .TP
 \fB\-\-get\-subbuf\-num\fR \fICHANNEL\fR
-Print the number of subbuffers per buffer for CHANNEL\.
+Print the number of subbuffers per buffer for CHANNEL.
 .
 .TP
 \fB\-\-get\-sock\-path\fR
-Get the path of the daemon socket\.
+Get the path of the daemon socket.
 .
 .TP
 \fB\-\-enable\-marker\fR \fICHANNEL\fR/\fIMARKER\fR
-Enable a marker\.
+Enable a marker.
 .
 .TP
 \fB\-\-disable\-marker\fR \fICHANNEL\fR/\fIMARKER\fR
-Disable a marker\.
+Disable a marker.
 .
 .TP
 \fB\-\-list\-markers\fR
-List the markers of the process, their state and format string\.
+List the markers of the process, their state and format string.
 .
 .TP
 \fB\-\-force\-switch\fR
-Force a subbuffer switch\. This will flush all the data currently held\.
+Force a subbuffer switch. This will flush all the data currently held.
 .
 .SH "LIFE CYCLE OF A TRACE"
-Typically, the first step is to enable markers with \fB\-\-enable\-marker\fR\. An enabled marker generates an event when the control flow passes over it (assuming the trace is recording)\. A disabled marker produces nothing\. Enabling and disabling markers may however be done at any point, including while the trace is being recorded\.
+Typically, the first step is to enable markers with \fB\-\-enable\-marker\fR. An
+enabled marker generates an event when the control flow passes over it
+(assuming the trace is recording). A disabled marker produces nothing. Enabling
+and disabling markers may however be done at any point, including while the
+trace is being recorded.
 .
 .P
-In order to record events, a trace is first created with \fB\-\-create\-trace\fR\. At this point, the subbuffer count and size may be changed with \fB\-\-set\-subbuf\-num\fR and \fB\-\-set\-subbuf\-size\fR\.
+In order to record events, a trace is first created with \fB\-\-create\-trace\fR. At
+this point, the subbuffer count and size may be changed with \fB\-\-set\-subbuf\-num\fR
+and \fB\-\-set\-subbuf\-size\fR.
 .
 .P
-Afterward, the trace may be allocated with \fB\-\-alloc\-trace\fR\. This allocates the buffers in memory, so once this is done, the subbuffer size and count can not be changed\. Trace allocation also causes the daemon to connect to the trace buffers and wait for data to arrive\. Explicit allocation is optional, as it is done automatically at trace start\.
+Afterward, the trace may be allocated with \fB\-\-alloc\-trace\fR. This allocates the
+buffers in memory, so once this is done, the subbuffer size and count can not
+be changed. Trace allocation also causes the daemon to connect to the trace
+buffers and wait for data to arrive. Explicit allocation is optional, as it is
+done automatically at trace start.
 .
 .P
-The trace may then be started with \fB\-\-start\-trace\fR\. This results in events being recorded in the buffer\. The daemon automatically collects these events\.
+The trace may then be started with \fB\-\-start\-trace\fR. This results in events
+being recorded in the buffer. The daemon automatically collects these events.
 .
 .P
-The trace may be stopped with \fB\-\-stop\-trace\fR, either definitely after all the wanted information is collected, or temporarily, before being started again with \fB\-\-start\-trace\fR\. This results in effectively \"pausing\" the recording\.
+The trace may be stopped with \fB\-\-stop\-trace\fR, either definitely after all the
+wanted information is collected, or temporarily, before being started again
+with \fB\-\-start\-trace\fR. This results in effectively 'pausing' the recording.
+After using \fB\-\-stop\-trace\fR, if a daemon is collecting the trace, it may not
+have flushed to the disk the full contents of the buffer yet.
 .
 .P
-Finally, when \fB\-\-destroy\-trace\fR is used, the trace buffers are unallocated\. However, the memory may not be effectively freed until the daemon finishes to collect them\.
+Finally, when \fB\-\-destroy\-trace\fR is used, the trace buffers are unallocated.
+However, the memory may not be effectively freed until the daemon finishes to
+collect them. When the trace is being collected by \fBustd\fR, this command
+guarantees its full contents is flushed to the disk.
 .
 .SH "STRUCTURE OF A TRACE"
-Each instrumentation point that is added in a program is associated to a channel\.
+Each instrumentation point that is added in a program is associated to a
+channel.
 .
 .P
-Trace events are put in buffers\. There is one buffer per channel, per cpu\. For example, on a system with 4 cores and tracing an application with 3 channels, there will be 12 buffers in total\. The content of each of these buffers is put in a distinct file in the trace directory\. For example, the \fBmetadata_2\fR file contains the data that was extracted from the buffer that contained the events from the metadata channel and having occurred on cpu 2\.
+Trace events are put in buffers. There is one buffer per channel, per cpu.
+For example, on a system with 4 cores and tracing an application with 3
+channels, there will be 12 buffers in total. The content of each of these
+buffers is put in a distinct file in the trace directory. For example, the \fBmetadata_2\fR file contains the data that was extracted from the buffer that
+contained the events from the metadata channel and having occurred on cpu 2.
 .
 .P
-In memory, each buffer is divided in subbuffers\. Subbuffers are equally\-sized, contiguous parts of a buffer\. The size of a buffer is equal to the number of subbuffers it contains times the size of each subbuffer\. When a subbuffer is full, it is collected by the daemon while the others are filled\. If, however, the buffer size is too small, buffer overflows may occur and result in event loss\. By default, the number of subbuffers per buffer is 2\. Subbuffer size for a given channel may be chosen with \fB\-\-set\-subbuf\-size\fR while the subbuffer count is set with \fB\-\-set\-subbuf\-num\fR\.
+In memory, each buffer is divided in subbuffers. Subbuffers are equally\-sized,
+contiguous parts of a buffer. The size of a buffer is equal to the number of
+subbuffers it contains times the size of each subbuffer. When a subbuffer is
+full, it is collected by the daemon while the others are filled. If, however,
+the buffer size is too small, buffer overflows may occur and result in event
+loss. By default, the number of subbuffers per buffer is 2. Subbuffer size
+for a given channel may be chosen with \fB\-\-set\-subbuf\-size\fR while the subbuffer
+count is set with \fB\-\-set\-subbuf\-num\fR.
 .
 .SH "SEE ALSO"
 usttrace(1), ustd(1)
 .
 .SH "AUTHOR"
-\fBustctl\fR was written by Pierre\-Marc Fournier\.
+\fBustctl\fR was written by Pierre\-Marc Fournier.
 .
 .P
-This manual page was written by Jon Bernard <jbernard@debian\.org>, for the Debian project (and may be used by others)\. It was updated by Pierre\-Marc Fournier\.
+This manual page was written by Jon Bernard <jbernard@debian.org>, for
+the Debian project (and may be used by others). It was updated by Pierre\-Marc
+Fournier.

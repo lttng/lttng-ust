@@ -86,11 +86,14 @@ being recorded in the buffer. The daemon automatically collects these events.
 
 The trace may be stopped with `--stop-trace`, either definitely after all the
 wanted information is collected, or temporarily, before being started again
-with `--start-trace`. This results in effectively "pausing" the recording.
+with `--start-trace`. This results in effectively 'pausing' the recording.
+After using `--stop-trace`, if a daemon is collecting the trace, it may not
+have flushed to the disk the full contents of the buffer yet.
 
 Finally, when `--destroy-trace` is used, the trace buffers are unallocated.
 However, the memory may not be effectively freed until the daemon finishes to
-collect them.
+collect them. When the trace is being collected by `ustd`, this command
+guarantees its full contents is flushed to the disk.
 
 ## STRUCTURE OF A TRACE
 
