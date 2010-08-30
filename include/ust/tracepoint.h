@@ -4,6 +4,7 @@
 /*
  * Copyright (C) 2008 Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
  * Copyright (C) 2009 Pierre-Marc Fournier
+ * Copyright (C) 2009 Steven Rostedt <rostedt@goodmis.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,6 +43,8 @@ struct tracepoint {
 					 * align these on the structure size.
 					 * Keep in sync with vmlinux.lds.h.
 					 */
+
+#define PARAMS(args...) args
 
 #define TP_PROTO(args...)	args
 #define TP_ARGS(args...)	args
@@ -205,5 +208,122 @@ extern int tracepoint_unregister_lib(struct tracepoint *tracepoints_start);
 	{								\
 		tracepoint_unregister_lib(__start___tracepoints); \
 	}
+
+
+#ifndef TRACE_EVENT
+/*
+ * For use with the TRACE_EVENT macro:
+ *
+ * We define a tracepoint, its arguments, its printf format
+ * and its 'fast binary record' layout.
+ *
+ * Firstly, name your tracepoint via TRACE_EVENT(name : the
+ * 'subsystem_event' notation is fine.
+ *
+ * Think about this whole construct as the
+ * 'trace_sched_switch() function' from now on.
+ *
+ *
+ *  TRACE_EVENT(sched_switch,
+ *
+ *	*
+ *	* A function has a regular function arguments
+ *	* prototype, declare it via TP_PROTO():
+ *	*
+ *
+ *	TP_PROTO(struct rq *rq, struct task_struct *prev,
+ *		 struct task_struct *next),
+ *
+ *	*
+ *	* Define the call signature of the 'function'.
+ *	* (Design sidenote: we use this instead of a
+ *	*  TP_PROTO1/TP_PROTO2/TP_PROTO3 ugliness.)
+ *	*
+ *
+ *	TP_ARGS(rq, prev, next),
+ *
+ *	*
+ *	* Fast binary tracing: define the trace record via
+ *	* TP_STRUCT__entry(). You can think about it like a
+ *	* regular C structure local variable definition.
+ *	*
+ *	* This is how the trace record is structured and will
+ *	* be saved into the ring buffer. These are the fields
+ *	* that will be exposed to readers.
+ *	*
+ *	* The declared 'local variable' is called '__entry'
+ *	*
+ *	* __field(pid_t, prev_prid) is equivalent to a standard declariton:
+ *	*
+ *	*	pid_t	prev_pid;
+ *	*
+ *	* __array(char, prev_comm, TASK_COMM_LEN) is equivalent to:
+ *	*
+ *	*	char	prev_comm[TASK_COMM_LEN];
+ *	*
+ *
+ *	TP_STRUCT__entry(
+ *		__array(	char,	prev_comm,	TASK_COMM_LEN	)
+ *		__field(	pid_t,	prev_pid			)
+ *		__field(	int,	prev_prio			)
+ *		__array(	char,	next_comm,	TASK_COMM_LEN	)
+ *		__field(	pid_t,	next_pid			)
+ *		__field(	int,	next_prio			)
+ *	),
+ *
+ *	*
+ *	* Assign the entry into the trace record, by embedding
+ *	* a full C statement block into TP_fast_assign(). You
+ *	* can refer to the trace record as '__entry' -
+ *	* otherwise you can put arbitrary C code in here.
+ *	*
+ *	* Note: this C code will execute every time a trace event
+ *	* happens, on an active tracepoint.
+ *	*
+ *
+ *	TP_fast_assign(
+ *		memcpy(__entry->next_comm, next->comm, TASK_COMM_LEN);
+ *		__entry->prev_pid	= prev->pid;
+ *		__entry->prev_prio	= prev->prio;
+ *		memcpy(__entry->prev_comm, prev->comm, TASK_COMM_LEN);
+ *		__entry->next_pid	= next->pid;
+ *		__entry->next_prio	= next->prio;
+ *	)
+ *
+ *	*
+ *	* Formatted output of a trace record via TP_printf().
+ *	* This is how the tracepoint will appear under debugging
+ *	* of tracepoints.
+ *	*
+ *	* (raw-binary tracing wont actually perform this step.)
+ *	*
+ *
+ *	TP_printf("task %s:%d [%d] ==> %s:%d [%d]",
+ *		__entry->prev_comm, __entry->prev_pid, __entry->prev_prio,
+ *		__entry->next_comm, __entry->next_pid, __entry->next_prio),
+ *
+ * );
+ *
+ * This macro construct is thus used for the regular printf format
+ * tracing setup.
+ *
+ * A set of (un)registration functions can be passed to the variant
+ * TRACE_EVENT_FN to perform any (un)registration work.
+ */
+
+#define DECLARE_TRACE_EVENT_CLASS(name, proto, args, tstruct, assign, print)
+#define DEFINE_TRACE_EVENT(template, name, proto, args)		\
+	DECLARE_TRACE(name, PARAMS(proto), PARAMS(args))
+#define DEFINE_TRACE_EVENT_PRINT(template, name, proto, args, print)	\
+	DECLARE_TRACE(name, PARAMS(proto), PARAMS(args))
+
+#define TRACE_EVENT(name, proto, args, struct, assign, print)	\
+	DECLARE_TRACE(name, PARAMS(proto), PARAMS(args))
+#define TRACE_EVENT_FN(name, proto, args, struct,		\
+		assign, print, reg, unreg)			\
+	DECLARE_TRACE(name, PARAMS(proto), PARAMS(args))
+
+#endif /* ifdef TRACE_EVENT (see note above) */
+
 
 #endif /* _UST_TRACEPOINT_H */

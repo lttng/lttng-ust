@@ -34,6 +34,7 @@
 #define __printf(a,b)                   __attribute__((format(printf,a,b)))
 #define  noinline                       __attribute__((noinline))
 #define __attribute_const__             __attribute__((__const__))
+#define __used                          __attribute__((used))
 #define __maybe_unused                  __attribute__((unused))
 
 #define notrace __attribute__((no_instrument_function))
