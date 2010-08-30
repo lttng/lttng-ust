@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# Run with nothing
+
+UST_AUTOCOLLECT=1 UST_AUTOPROBE=1 UST_TRACE=1 LD_LIBRARY_PATH=../../libust/.libs:../../../liburcu $1 .libs/trace_event_test
