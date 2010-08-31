@@ -15,30 +15,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include "tp.h"
-#include <ust/marker.h>
-#include "usterr.h"
+#include <ust/tracepoint.h>
 
-struct hello_trace_struct {
-	char *message;
-};
-
-struct hello_trace_struct hello_struct = {
-	.message = "ehlo\n",
-};
-
-DEFINE_TRACE(hello_tptest);
-
-void tptest_probe(void *data, int anint)
-{
-	struct hello_trace_struct *hello;
-	hello=(struct hello_trace_struct *)data;
-	DBG("in tracepoint probe...");
-	printf("this is the message: %s\n", hello->message);
-}
-
-static void __attribute__((constructor)) init()
-{
-	DBG("connecting tracepoint...\n");
-	register_trace_hello_tptest(tptest_probe, &hello_struct);
-}
+DECLARE_TRACE(hello_tptest,
+	      TP_PROTO(int anint),
+	      TP_ARGS(anint));

@@ -26,8 +26,8 @@
 
 #include <ust/marker.h>
 #include "usterr.h"
-#include "tp.h"
 #include "tracer.h"
+#include "tp.h"
 
 void inthandler(int sig)
 {
