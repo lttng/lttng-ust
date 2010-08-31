@@ -18,13 +18,14 @@
  * avoid this.
  */
 
-DECLARE_TRACE(ust_dummytp, TP_PROTO(void), TP_ARGS());
+DECLARE_TRACE(ust_dummytp, TP_PROTO(int anint), TP_ARGS(anint));
 DEFINE_TRACE(ust_dummytp);
 
 void dummy_libust_initializer_func(void)
 {
+	int i;
 	trace_mark(ust, dummymark, MARK_NOARGS);
-	trace_ust_dummytp();
+	trace_ust_dummytp(i);
 }
 
 MARKER_LIB;

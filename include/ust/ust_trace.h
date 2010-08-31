@@ -58,7 +58,7 @@
 	struct trace_raw_##name {					\
 		tstruct							\
 	};								\
-	static void trace_printf_##name(proto)				\
+	static void trace_printf_##name(void *dummy, proto)		\
 	{								\
 		struct trace_raw_##name entry_struct, *__entry;		\
 		__entry = &entry_struct;				\
@@ -68,8 +68,9 @@
 	}								\
 	static void __attribute__((constructor)) init_##name()		\
 	{								\
+		void *dummy;						\
 		printf("connecting tracepoint " #name "\n");		\
-		register_trace_##name(trace_printf_##name);		\
+		register_trace_##name(trace_printf_##name, dummy);	\
 	}
 
 

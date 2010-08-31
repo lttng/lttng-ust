@@ -10,6 +10,7 @@ Steven Rostedt		       <rostedt@goodmis.org>
 Frederic Weisbecker	       <fweisbec@gmail.com>
 Xiao Guangrong		       <xiaogunagrong@cn.fujitsu.com>
 Josh Stone		       <jistone@redhat.com>
+Lai Jiangshan		       <laijs@cn.fujitsu.com>
 
 The following copyright holders have agreed to LGPLv2.1+ re-licensing
 of their contributions to linux/include/stringify.h.

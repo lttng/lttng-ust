@@ -33,10 +33,15 @@
 struct module;
 struct tracepoint;
 
+struct probe {
+	void *func;
+	void *data;
+};
+
 struct tracepoint {
 	const char *name;		/* Tracepoint name */
 	DEFINE_IMV(char, state);	/* State. */
-	void **funcs;
+	struct probe *probes;
 } __attribute__((aligned(32)));		/*
 					 * Aligned on 32 bytes because it is
 					 * globally visible and gcc happily
@@ -58,16 +63,20 @@ struct tracepoint {
  */
 #define __DO_TRACE(tp, proto, args)					\
 	do {								\
-		void **it_func;						\
+		struct probe *it_probe_ptr;				\
+		void *it_func;						\
+		void *__data;						\
 									\
-		rcu_read_lock(); /*ust rcu_read_lock_sched_notrace();	*/			\
-		it_func = rcu_dereference((tp)->funcs);			\
-		if (it_func) {						\
+		rcu_read_lock();					\
+		it_probe_ptr = rcu_dereference((tp)->probes);		\
+		if (it_probe_ptr) {					\
 			do {						\
-				((void(*)(proto))(*it_func))(args);	\
-			} while (*(++it_func));				\
+				it_func	= (it_probe_ptr)->func;		\
+				__data = (it_probe_ptr)->data;		\
+				((void(*)(proto))(it_func))(args);	\
+			} while ((++it_probe_ptr)->func);		\
 		}							\
-		rcu_read_unlock(); /*ust rcu_read_unlock_sched_notrace(); */			\
+		rcu_read_unlock();					\
 	} while (0)
 
 #define __CHECK_TRACE(name, generic, proto, args)			\
@@ -93,37 +102,47 @@ struct tracepoint {
  * If generic is true, a variable read is used.
  * If generic is false, immediate values are used.
  */
-#define DECLARE_TRACE(name, proto, args)				\
+#define __DECLARE_TRACE(name, proto, args, data_proto, data_args)	\
 	extern struct tracepoint __tracepoint_##name;			\
 	static inline void trace_##name(proto)				\
 	{								\
-		__CHECK_TRACE(name, 0, TP_PROTO(proto), TP_ARGS(args));	\
+		__CHECK_TRACE(name, 0, TP_PROTO(data_proto),		\
+			      TP_ARGS(data_args));			\
 	}								\
 	static inline void _trace_##name(proto)				\
 	{								\
-		__CHECK_TRACE(name, 1, TP_PROTO(proto), TP_ARGS(args));	\
+		__CHECK_TRACE(name, 1, TP_PROTO(data_proto),		\
+			      TP_ARGS(data_args));			\
 	}								\
-	static inline int register_trace_##name(void (*probe)(proto))	\
+	static inline int						\
+	register_trace_##name(void (*probe)(data_proto), void *data)	\
 	{								\
-		return tracepoint_probe_register(#name, (void *)probe);	\
+		return tracepoint_probe_register(#name, (void *)probe,	\
+						 data);			\
+									\
 	}								\
-	static inline int unregister_trace_##name(void (*probe)(proto))	\
+	static inline int						\
+	unregister_trace_##name(void (*probe)(data_proto), void *data)	\
 	{								\
-		return tracepoint_probe_unregister(#name, (void *)probe);\
+		return tracepoint_probe_unregister(#name, (void *)probe, \
+						   data);		\
 	}
 
-#define DEFINE_TRACE(name)						\
+#define DEFINE_TRACE_FN(name, reg, unreg)					\
 	static const char __tpstrtab_##name[]				\
 	__attribute__((section("__tracepoints_strings"))) = #name;	\
 	struct tracepoint __tracepoint_##name				\
 	__attribute__((section("__tracepoints"), aligned(32))) =	\
 		{ __tpstrtab_##name, 0, NULL }
 
+#define DEFINE_TRACE(name)						\
+	DEFINE_TRACE_FN(name, NULL, NULL);
+
 extern void tracepoint_update_probe_range(struct tracepoint *begin,
 	struct tracepoint *end);
 
 #else /* !CONFIG_TRACEPOINTS */
-#define DECLARE_TRACE(name, proto, args)				\
+#define __DECLARE_TRACE(name, proto, args)				\
 	static inline void trace_##name(proto)				\
 	{ }								\
 	static inline void _trace_##name(proto)				\
@@ -146,20 +165,27 @@ static inline void tracepoint_update_probe_range(struct tracepoint *begin,
 { }
 #endif /* CONFIG_TRACEPOINTS */
 
+#define DECLARE_TRACE(name, proto, args)			\
+	__DECLARE_TRACE(name, PARAMS(proto), PARAMS(args),	\
+			PARAMS(void *__data, proto),		\
+			PARAMS(__data, args))
+
 /*
  * Connect a probe to a tracepoint.
  * Internal API, should not be used directly.
  */
-extern int tracepoint_probe_register(const char *name, void *probe);
+extern int tracepoint_probe_register(const char *name, void *probe, void *data);
 
 /*
  * Disconnect a probe from a tracepoint.
  * Internal API, should not be used directly.
  */
-extern int tracepoint_probe_unregister(const char *name, void *probe);
+extern int tracepoint_probe_unregister(const char *name, void *probe, void *data);
 
-extern int tracepoint_probe_register_noupdate(const char *name, void *probe);
-extern int tracepoint_probe_unregister_noupdate(const char *name, void *probe);
+extern int tracepoint_probe_register_noupdate(const char *name, void *probe,
+					      void *data);
+extern int tracepoint_probe_unregister_noupdate(const char *name, void *probe,
+						void *data);
 extern void tracepoint_probe_update_all(void);
 
 struct tracepoint_iter {
