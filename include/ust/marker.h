@@ -191,7 +191,7 @@ struct marker {
 		struct registers regs;								\
 		void __check_tp_type(void)				\
 		{							\
-			register_trace_##tp_name(tp_cb);		\
+			register_trace_##tp_name(tp_cb, call_private);		\
 		}							\
 		DEFINE_MARKER_TP(channel, name, tp_name, tp_cb, format);\
 		__mark_check_format(format, ## args);			\
@@ -213,7 +213,7 @@ extern void marker_update_probe_range(struct marker *begin,
 	do {								\
 		void __check_tp_type(void)				\
 		{							\
-			register_trace_##tp_name(tp_cb);		\
+			register_trace_##tp_name(tp_cb, call_private);		\
 		}							\
 		__mark_check_format(format, ## args);			\
 	} while (0)
