@@ -156,7 +156,11 @@ static void inform_consumer_daemon(const char *trace_name)
 			/* iterate on all cpus */
 			for(j=0; j<trace->channels[i].n_cpus; j++) {
 				char *buf;
-				asprintf(&buf, "%s_%d", trace->channels[i].channel_name, j);
+				if (asprintf(&buf, "%s_%d", trace->channels[i].channel_name, j) < 0) {
+                                       ERR("inform_consumer_daemon : asprintf failed (%s_%d)",
+					   trace->channels[i].channel_name, j);
+                                       goto finish;
+				}
 				result = ustcomm_request_consumer(pid, buf);
 				if(result == -1) {
 					WARN("Failed to request collection for channel %s. Is the daemon available?", trace->channels[i].channel_name);
@@ -213,7 +217,11 @@ int process_blkd_consumer_act(void *priv, int fd, short events)
 	else if(result < 0) {
 		ERR("ust_buffers_get_subbuf: error: %s", strerror(-result));
 	}
-	asprintf(&reply, "%s %ld", "OK", consumed_old);
+	if (asprintf(&reply, "%s %ld", "OK", consumed_old) < 0) {
+               ERR("process_blkd_consumer_act : asprintf failed (OK %ld)",
+		   consumed_old);
+               return -1;
+	}
 	result = ustcomm_send_reply(&bc->server, reply, &bc->src);
 	if(result < 0) {
 		ERR("ustcomm_send_reply failed");
@@ -250,7 +258,11 @@ void seperate_channel_cpu(const char *channel_and_cpu, char **channel, int *cpu)
 		*cpu = atoi(sep+1);
 	}
 
-	asprintf(channel, "%.*s", (int)(sep-channel_and_cpu), channel_and_cpu);
+	if (asprintf(channel, "%.*s", (int)(sep-channel_and_cpu), channel_and_cpu) < 0) {
+		ERR("seperate_channel_cpu : asprintf failed (%.*s)",
+		    (int)(sep-channel_and_cpu), channel_and_cpu);
+		return;
+	}
 }
 
 static int do_cmd_get_shmid(const char *recvbuf, struct ustcomm_source *src)
@@ -298,7 +310,12 @@ static int do_cmd_get_shmid(const char *recvbuf, struct ustcomm_source *src)
 
 //			DBG("the shmid for the requested channel is %d", buf->shmid);
 //			DBG("the shmid for its buffer structure is %d", channel->buf_struct_shmids);
-			asprintf(&reply, "%d %d", buf->shmid, channel->buf_struct_shmids[ch_cpu]);
+			if (asprintf(&reply, "%d %d", buf->shmid, channel->buf_struct_shmids[ch_cpu]) < 0) {
+				ERR("do_cmd_get_shmid : asprintf failed (%d %d)",
+				    buf->shmid, channel->buf_struct_shmids[ch_cpu]);
+				retval = -1;
+				goto free_short_chan_name;
+			}
 
 			result = ustcomm_send_reply(&ustcomm_app.server, reply, src);
 			if(result) {
@@ -369,7 +386,12 @@ static int do_cmd_get_n_subbufs(const char *recvbuf, struct ustcomm_source *src)
 			char *reply;
 
 			DBG("the n_subbufs for the requested channel is %d", channel->subbuf_cnt);
-			asprintf(&reply, "%d", channel->subbuf_cnt);
+			if (asprintf(&reply, "%d", channel->subbuf_cnt) < 0) {
+				ERR("do_cmd_get_n_subbufs : asprintf failed (%d)",
+				    channel->subbuf_cnt);
+				retval = -1;
+				goto free_short_chan_name;
+			}
 
 			result = ustcomm_send_reply(&ustcomm_app.server, reply, src);
 			if(result) {
@@ -438,7 +460,12 @@ static int do_cmd_get_subbuf_size(const char *recvbuf, struct ustcomm_source *sr
 			char *reply;
 
 			DBG("the subbuf_size for the requested channel is %zd", channel->subbuf_size);
-			asprintf(&reply, "%zd", channel->subbuf_size);
+			if (asprintf(&reply, "%zd", channel->subbuf_size) < 0) {
+				ERR("do_cmd_get_subbuf_size : asprintf failed (%zd)",
+				    channel->subbuf_size);
+				retval = -1;
+				goto free_short_chan_name;
+			}
 
 			result = ustcomm_send_reply(&ustcomm_app.server, reply, src);
 			if(result) {
@@ -746,11 +773,19 @@ static int do_cmd_put_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 			result = ust_buffers_put_subbuf(buf, consumed_old);
 			if(result < 0) {
 				WARN("ust_buffers_put_subbuf: error (subbuf=%s)", channel_and_cpu);
-				asprintf(&reply, "%s", "ERROR");
+				if (asprintf(&reply, "%s", "ERROR") < 0) {
+					ERR("do_cmd_put_subbuffer : asprintf failed (ERROR)");
+					retval = -1;
+					goto unlock_traces;
+				}
 			}
 			else {
 				DBG("ust_buffers_put_subbuf: success (subbuf=%s)", channel_and_cpu);
-				asprintf(&reply, "%s", "OK");
+				if (asprintf(&reply, "%s", "OK") < 0) {
+					ERR("do_cmd_put_subbuffer : asprintf failed (OK)");
+					retval = -1;
+					goto unlock_traces;
+				}
 			}
 
 			result = ustcomm_send_reply(&ustcomm_app.server, reply, src);
@@ -992,7 +1027,11 @@ int process_client_cmd(char *recvbuf, struct ustcomm_source *src)
 	else if(nth_token_is(recvbuf, "get_pidunique", 0) == 1) {
 		char *reply;
 
-		asprintf(&reply, "%lld", pidunique);
+		if (asprintf(&reply, "%lld", pidunique) < 0) {
+			ERR("process_client_cmd : asprintf failed (%lld)",
+			    pidunique);
+			goto next_cmd;
+		}
 
 		result = ustcomm_send_reply(&ustcomm_app.server, reply, src);
 		if(result) {
@@ -1005,7 +1044,11 @@ int process_client_cmd(char *recvbuf, struct ustcomm_source *src)
 	else if(nth_token_is(recvbuf, "get_sock_path", 0) == 1) {
 		char *reply = getenv("UST_DAEMON_SOCKET");
 		if(!reply) {
-			asprintf(&reply, "%s/%s", SOCK_DIR, "ustd");
+			if (asprintf(&reply, "%s/%s", SOCK_DIR, "ustd") < 0) {
+				ERR("process_client_cmd : asprintf failed (%s/ustd)",
+				    SOCK_DIR);
+				goto next_cmd;
+			}
 			result = ustcomm_send_reply(&ustcomm_app.server, reply, src);
 			free(reply);
 		}

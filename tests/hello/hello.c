@@ -77,13 +77,15 @@ int main()
 		usleep(100000);
 	}
 
-	scanf("%*s");
+	if (scanf("%*s") == EOF)
+		PERROR("scanf failed");
 
 	ltt_trace_stop("auto");
 	ltt_trace_destroy("auto", 0);
 
 	DBG("TRACE STOPPED");
-	scanf("%*s");
+	if (scanf("%*s") == EOF)
+		PERROR("scanf failed");
 
 	return 0;
 }

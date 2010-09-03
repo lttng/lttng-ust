@@ -163,7 +163,11 @@ int ustcomm_request_consumer(pid_t pid, const char *channel)
 		return -1;
 	}
 
-	asprintf(&msg, "collect %d %s", pid, channel); 
+	if (asprintf(&msg, "collect %d %s", pid, channel) < 0) {
+		ERR("ustcomm_request_consumer : asprintf failed (collect %d/%s)",
+		    pid, channel);
+		return -1;
+	}
 
 	/* don't signal it because it's the daemon */
 	result = ustcomm_connect_path(path, &conn, -1);
@@ -706,7 +710,11 @@ int ustcomm_init_ustd(struct ustcomm_ustd *handle, const char *sock_path)
 	int retval = 0;
 
 	if(sock_path) {
-		asprintf(&name, "%s", sock_path);
+		if (asprintf(&name, "%s", sock_path) < 0) {
+			ERR("ustcomm_init_ustd : asprintf failed (sock_path %s)",
+			    sock_path);
+			return -1;
+		}
 	}
 	else {
 		int result;
@@ -718,7 +726,11 @@ int ustcomm_init_ustd(struct ustcomm_ustd *handle, const char *sock_path)
 			return -1;
 		}
 
-		asprintf(&name, "%s/%s", SOCK_DIR, "ustd");
+		if (asprintf(&name, "%s/%s", SOCK_DIR, "ustd") < 0) {
+			ERR("ustcomm_init_ustd : asprintf failed (%s/ustd)",
+			    SOCK_DIR);
+			return -1;
+		}
 	}
 
 	handle->server.listen_fd = init_named_socket(name, &handle->server.socketpath);
@@ -864,7 +876,11 @@ char *nth_token(const char *str, int tok_no)
 		retval = NULL;
 	}
 
-	asprintf(&retval, "%.*s", (int)(end-start), start);
+	if (asprintf(&retval, "%.*s", (int)(end-start), start) < 0) {
+		ERR("nth_token : asprintf failed (%.*s)",
+		    (int)(end-start), start);
+		return NULL;
+	}
 
 	return retval;
 }

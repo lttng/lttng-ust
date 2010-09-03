@@ -90,7 +90,11 @@ int ustcmd_set_marker_state(const char *mn, int state, pid_t pid)
 		return USTCMD_ERR_ARG;
 	}
 
-	asprintf(&cmd, "%s %s", cmd_str[state], mn);
+	if (asprintf(&cmd, "%s %s", cmd_str[state], mn) < 0) {
+		ERR("ustcmd_set_marker_state : asprintf failed (%s %s)",
+		    cmd_str[state], mn);
+		return USTCMD_ERR_GEN;
+	}
 
 	result = ustcmd_send_cmd(cmd, pid, NULL);
 	if (result) {
@@ -114,7 +118,11 @@ int ustcmd_set_subbuf_size(const char *channel_size, pid_t pid)
 	char *cmd;
 	int result;
 
-	asprintf(&cmd, "%s %s", "set_subbuf_size", channel_size);
+	if (asprintf(&cmd, "%s %s", "set_subbuf_size", channel_size) < 0) {
+		ERR("ustcmd_set_subbuf_size : asprintf failed (set_subbuf_size %s)",
+		    channel_size);
+		return -1;
+	}
 
 	result = ustcmd_send_cmd(cmd, pid, NULL);
 	if (result != 1) {
@@ -138,7 +146,11 @@ int ustcmd_set_subbuf_num(const char *channel_size, pid_t pid)
 	char *cmd;
 	int result;
 
-	asprintf(&cmd, "%s %s", "set_subbuf_num", channel_size);
+	if (asprintf(&cmd, "%s %s", "set_subbuf_num", channel_size) < 0) {
+		ERR("ustcmd_set_subbuf_num : asprintf failed (set_subbuf_num %s",
+		    channel_size);
+		return -1;
+	}
 
 	result = ustcmd_send_cmd(cmd, pid, NULL);
 	if (result != 1) {
@@ -163,7 +175,11 @@ int ustcmd_get_subbuf_size(const char *channel, pid_t pid)
 	int result;
 
 	/* format: channel_cpu */
-	asprintf(&cmd, "%s %s_0", "get_subbuf_size", channel);
+	if (asprintf(&cmd, "%s %s_0", "get_subbuf_size", channel) < 0) {
+		ERR("ustcmd_get_subbuf_size : asprintf failed (get_subbuf_size, %s_0",
+		    channel);
+		return -1;
+	}
 
 	result = ustcmd_send_cmd(cmd, pid, &reply);
 	if (result) {
@@ -191,7 +207,11 @@ int ustcmd_get_subbuf_num(const char *channel, pid_t pid)
 	int result;
 
 	/* format: channel_cpu */
-	asprintf(&cmd, "%s %s_0", "get_n_subbufs", channel);
+	if (asprintf(&cmd, "%s %s_0", "get_n_subbufs", channel) < 0) {
+		ERR("ustcmd_get_subbuf_num : asprintf failed (get_n_subbufs, %s_0",
+		    channel);
+		return -1;
+	}
 
 	result = ustcmd_send_cmd(cmd, pid, &reply);
 	if (result) {
@@ -432,7 +452,11 @@ int ustcmd_set_sock_path(const char *sock_path, pid_t pid)
 	char *cmd;
 	int result;
 
-	asprintf(&cmd, "%s %s", "set_sock_path", sock_path);
+	if (asprintf(&cmd, "%s %s", "set_sock_path", sock_path) < 0) {
+		ERR("ustcmd_set_sock_path : asprintf failed (set_sock_path, %s",
+		    sock_path);
+		return -1;
+	}
 
 	result = ustcmd_send_cmd(cmd, pid, NULL);
 	if (result != 1) {
@@ -456,7 +480,10 @@ int ustcmd_get_sock_path(char **sock_path, pid_t pid)
 	char *cmd, *reply;
 	int result;
 
-	asprintf(&cmd, "%s", "get_sock_path");
+	if (asprintf(&cmd, "%s", "get_sock_path") < 0) {
+		ERR("ustcmd_get_sock_path : asprintf failed");
+		return USTCMD_ERR_GEN;
+	}
 
 	result = ustcmd_send_cmd(cmd, pid, &reply);
 	if (result != 1) {

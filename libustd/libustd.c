@@ -58,7 +58,12 @@ int get_subbuffer(struct buffer_info *buf)
 	int retval;
 	int result;
 
-	asprintf(&send_msg, "get_subbuffer %s", buf->name);
+	if (asprintf(&send_msg, "get_subbuffer %s", buf->name) < 0) {
+		ERR("get_subbuffer : asprintf failed (%s)",
+		    buf->name);
+		retval = -1;
+		goto end;
+	}
 	result = ustcomm_send_request(buf->conn, send_msg, &received_msg);
 	if((result == -1 && (errno == ECONNRESET || errno == EPIPE)) || result == 0) {
 		DBG("app died while being traced");
@@ -118,7 +123,12 @@ int put_subbuffer(struct buffer_info *buf)
 	int retval;
 	int result;
 
-	asprintf(&send_msg, "put_subbuffer %s %ld", buf->name, buf->consumed_old);
+	if (asprintf(&send_msg, "put_subbuffer %s %ld", buf->name, buf->consumed_old) < 0) {
+		ERR("put_subbuffer : asprintf failed (%s %ld)",
+		    buf->name, buf->consumed_old);
+		retval = -1;
+		goto end;
+	}
 	result = ustcomm_send_request(buf->conn, send_msg, &received_msg);
 	if(result < 0 && (errno == ECONNRESET || errno == EPIPE)) {
 		retval = PUT_SUBBUF_DIED;
@@ -215,7 +225,10 @@ struct buffer_info *connect_buffer(struct libustd_instance *instance, pid_t pid,
 	}
 
 	/* get pidunique */
-	asprintf(&send_msg, "get_pidunique");
+	if (asprintf(&send_msg, "get_pidunique") < 0) {
+		ERR("connect_buffer : asprintf failed (get_pidunique)");
+		return NULL;
+	}
 	result = ustcomm_send_request(buf->conn, send_msg, &received_msg);
 	free(send_msg);
 	if(result == -1) {
@@ -235,7 +248,11 @@ struct buffer_info *connect_buffer(struct libustd_instance *instance, pid_t pid,
 	DBG("got pidunique %lld", buf->pidunique);
 
 	/* get shmid */
-	asprintf(&send_msg, "get_shmid %s", buf->name);
+	if (asprintf(&send_msg, "get_shmid %s", buf->name) < 0) {
+		ERR("connect_buffer : asprintf failed (get_schmid %s)",
+		    buf->name);
+		return NULL;
+	}
 	result = ustcomm_send_request(buf->conn, send_msg, &received_msg);
 	free(send_msg);
 	if(result == -1) {
@@ -255,7 +272,11 @@ struct buffer_info *connect_buffer(struct libustd_instance *instance, pid_t pid,
 	DBG("got shmids %d %d", buf->shmid, buf->bufstruct_shmid);
 
 	/* get n_subbufs */
-	asprintf(&send_msg, "get_n_subbufs %s", buf->name);
+	if (asprintf(&send_msg, "get_n_subbufs %s", buf->name) < 0) {
+		ERR("connect_buffer : asprintf failed (get_n_subbufs %s)",
+		    buf->name);
+		return NULL;
+	}
 	result = ustcomm_send_request(buf->conn, send_msg, &received_msg);
 	free(send_msg);
 	if(result == -1) {
@@ -275,7 +296,11 @@ struct buffer_info *connect_buffer(struct libustd_instance *instance, pid_t pid,
 	DBG("got n_subbufs %d", buf->n_subbufs);
 
 	/* get subbuf size */
-	asprintf(&send_msg, "get_subbuf_size %s", buf->name);
+	if (asprintf(&send_msg, "get_subbuf_size %s", buf->name) < 0) {
+		ERR("connect_buffer : asprintf failed (get_subbuf_size %s)",
+		    buf->name);
+		return NULL;
+	}
 	result = ustcomm_send_request(buf->conn, send_msg, &received_msg);
 	free(send_msg);
 	if(result == -1) {

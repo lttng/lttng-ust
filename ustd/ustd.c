@@ -191,7 +191,11 @@ int on_open_buffer(struct libustd_callbacks *data, struct buffer_info *buf)
 		trace_path = USTD_DEFAULT_TRACE_PATH;
 	}
 
-	asprintf(&tmp, "%s/%u_%lld", trace_path, buf->pid, buf->pidunique);
+	if (asprintf(&tmp, "%s/%u_%lld", trace_path, buf->pid, buf->pidunique) < 0) {
+		ERR("on_open_buffer : asprintf failed (%s/%u_%lld)",
+		    trace_path, buf->pid, buf->pidunique);
+		return 1;
+	}
 	result = create_dir_if_needed(tmp);
 	if(result == -1) {
 		ERR("could not create directory %s", tmp);
@@ -200,7 +204,11 @@ int on_open_buffer(struct libustd_callbacks *data, struct buffer_info *buf)
 	}
 	free(tmp);
 
-	asprintf(&tmp, "%s/%u_%lld/%s", trace_path, buf->pid, buf->pidunique, buf->name);
+	if (asprintf(&tmp, "%s/%u_%lld/%s", trace_path, buf->pid, buf->pidunique, buf->name) < 0) {
+		ERR("on_open_buffer : asprintf failed (%s/%u_%lld/%s)",
+		    trace_path, buf->pid, buf->pidunique, buf->name);
+		return 1;
+	}
 	result = fd = open(tmp, O_WRONLY | O_CREAT | O_TRUNC | O_EXCL, 00600);
 	if(result == -1) {
 		PERROR("open");
