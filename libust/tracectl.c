@@ -282,12 +282,14 @@ static int do_cmd_get_shmid(const char *recvbuf, struct ustcomm_source *src)
 	channel_and_cpu = nth_token(recvbuf, 1);
 	if(channel_and_cpu == NULL) {
 		ERR("cannot parse channel");
+		retval = -1;
 		goto end;
 	}
 
 	seperate_channel_cpu(channel_and_cpu, &ch_name, &ch_cpu);
 	if(ch_cpu == -1) {
 		ERR("problem parsing channel name");
+		retval = -1;
 		goto free_short_chan_name;
 	}
 
@@ -360,12 +362,14 @@ static int do_cmd_get_n_subbufs(const char *recvbuf, struct ustcomm_source *src)
 	channel_and_cpu = nth_token(recvbuf, 1);
 	if(channel_and_cpu == NULL) {
 		ERR("cannot parse channel");
+		retval = -1;
 		goto end;
 	}
 
 	seperate_channel_cpu(channel_and_cpu, &ch_name, &ch_cpu);
 	if(ch_cpu == -1) {
 		ERR("problem parsing channel name");
+		retval = -1;
 		goto free_short_chan_name;
 	}
 
@@ -434,12 +438,14 @@ static int do_cmd_get_subbuf_size(const char *recvbuf, struct ustcomm_source *sr
 	channel_and_cpu = nth_token(recvbuf, 1);
 	if(channel_and_cpu == NULL) {
 		ERR("cannot parse channel");
+		retval = -1;
 		goto end;
 	}
 
 	seperate_channel_cpu(channel_and_cpu, &ch_name, &ch_cpu);
 	if(ch_cpu == -1) {
 		ERR("problem parsing channel name");
+		retval = -1;
 		goto free_short_chan_name;
 	}
 
@@ -522,6 +528,7 @@ static int do_cmd_set_subbuf_size(const char *recvbuf, struct ustcomm_source *sr
 
 	if(ch_name == NULL) {
 		ERR("cannot parse channel");
+		retval = -1;
 		goto end;
 	}
 
@@ -577,10 +584,12 @@ static int do_cmd_set_subbuf_num(const char *recvbuf, struct ustcomm_source *src
 
 	if(ch_name == NULL) {
 		ERR("cannot parse channel");
+		retval = -1;
 		goto end;
 	}
 	if (num < 2) {
 		ERR("subbuffer count should be greater than 2");
+		retval = -1;
 		goto end;
 	}
 
@@ -629,12 +638,14 @@ static int do_cmd_get_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 	channel_and_cpu = nth_token(recvbuf, 1);
 	if(channel_and_cpu == NULL) {
 		ERR("cannot parse channel");
+		retval = -1;
 		goto end;
 	}
 
 	seperate_channel_cpu(channel_and_cpu, &ch_name, &ch_cpu);
 	if(ch_cpu == -1) {
 		ERR("problem parsing channel name");
+		retval = -1;
 		goto free_short_chan_name;
 	}
 
