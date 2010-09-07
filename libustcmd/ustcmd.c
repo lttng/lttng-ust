@@ -97,7 +97,7 @@ int ustcmd_set_marker_state(const char *mn, int state, pid_t pid)
 	}
 
 	result = ustcmd_send_cmd(cmd, pid, NULL);
-	if (result) {
+	if (result != 1) {
 		free(cmd);
 		return USTCMD_ERR_GEN;
 	}
@@ -182,9 +182,8 @@ int ustcmd_get_subbuf_size(const char *channel, pid_t pid)
 	}
 
 	result = ustcmd_send_cmd(cmd, pid, &reply);
-	if (result) {
+	if (result != 1) {
 		free(cmd);
-		free(reply);
 		return -1;
 	}
 
@@ -214,9 +213,8 @@ int ustcmd_get_subbuf_num(const char *channel, pid_t pid)
 	}
 
 	result = ustcmd_send_cmd(cmd, pid, &reply);
-	if (result) {
+	if (result != 1) {
 		free(cmd);
-		free(reply);
 		return -1;
 	}
 
@@ -488,7 +486,6 @@ int ustcmd_get_sock_path(char **sock_path, pid_t pid)
 	result = ustcmd_send_cmd(cmd, pid, &reply);
 	if (result != 1) {
 		free(cmd);
-		free(reply);
 		return USTCMD_ERR_GEN;
 	}
 
@@ -516,7 +513,7 @@ int ustcmd_force_switch(pid_t pid)
  * @param pid	Targeted PID
  * @param reply	Pointer to string to be filled with a reply string (must
  *		be NULL if no reply is needed for the given command).
- * @return	-1 if successful, 0 on EOT, 1 on success
+ * @return	-1 if not successful, 0 on EOT, 1 on success
  */
 
 int ustcmd_send_cmd(const char *cmd, const pid_t pid, char **reply)
