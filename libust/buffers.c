@@ -777,11 +777,11 @@ static int ust_buffers_create_channel(const char *trace_name, struct ust_trace *
 	ltt_chan->commit_count_mask = (~0UL >> ltt_chan->n_subbufs_order);
 	ltt_chan->n_cpus = get_n_cpus();
 //ust//	ltt_chan->buf = percpu_alloc_mask(sizeof(struct ltt_channel_buf_struct), GFP_KERNEL, cpu_possible_map);
-	ltt_chan->buf = (void *) malloc(ltt_chan->n_cpus * sizeof(void *));
+	ltt_chan->buf = (void *) zmalloc(ltt_chan->n_cpus * sizeof(void *));
 	if(ltt_chan->buf == NULL) {
 		goto error;
 	}
-	ltt_chan->buf_struct_shmids = (int *) malloc(ltt_chan->n_cpus * sizeof(int));
+	ltt_chan->buf_struct_shmids = (int *) zmalloc(ltt_chan->n_cpus * sizeof(int));
 	if(ltt_chan->buf_struct_shmids == NULL)
 		goto free_buf;
 

@@ -675,9 +675,9 @@ static int do_cmd_get_subbuffer(const char *recvbuf, struct ustcomm_source *src)
 
 			found = 1;
 
-			bc = (struct blocked_consumer *) malloc(sizeof(struct blocked_consumer));
+			bc = (struct blocked_consumer *) zmalloc(sizeof(struct blocked_consumer));
 			if(bc == NULL) {
-				ERR("malloc returned NULL");
+				ERR("zmalloc returned NULL");
 				goto unlock_traces;
 			}
 			bc->fd_consumer = src->fd;

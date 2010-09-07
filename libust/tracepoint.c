@@ -74,7 +74,7 @@ struct tp_probes {
 
 static inline void *allocate_probes(int count)
 {
-	struct tp_probes *p  = malloc(count * sizeof(struct probe)
+	struct tp_probes *p  = zmalloc(count * sizeof(void *)
 			+ sizeof(struct tp_probes));
 	return p == NULL ? NULL : p->probes;
 }
@@ -225,10 +225,10 @@ static struct tracepoint_entry *add_tracepoint(const char *name)
 		}
 	}
 	/*
-	 * Using kmalloc here to allocate a variable length element. Could
+	 * Using zmalloc here to allocate a variable length element. Could
 	 * cause some memory fragmentation if overused.
 	 */
-	e = malloc(sizeof(struct tracepoint_entry) + name_len);
+	e = zmalloc(sizeof(struct tracepoint_entry) + name_len);
 	if (!e)
 		return ERR_PTR(-ENOMEM);
 	memcpy(&e->name[0], name, name_len);
@@ -661,7 +661,7 @@ int tracepoint_register_lib(struct tracepoint *tracepoints_start, int tracepoint
 {
 	struct tracepoint_lib *pl;
 
-	pl = (struct tracepoint_lib *) malloc(sizeof(struct tracepoint_lib));
+	pl = (struct tracepoint_lib *) zmalloc(sizeof(struct tracepoint_lib));
 
 	pl->tracepoints_start = tracepoints_start;
 	pl->tracepoints_count = tracepoints_count;

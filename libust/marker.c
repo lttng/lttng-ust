@@ -428,10 +428,10 @@ static struct marker_entry *add_marker(const char *channel, const char *name,
 		}
 	}
 	/*
-	 * Using malloc here to allocate a variable length element. Could
+	 * Using zmalloc here to allocate a variable length element. Could
 	 * cause some memory fragmentation if overused.
 	 */
-	e = malloc(sizeof(struct marker_entry)
+	e = zmalloc(sizeof(struct marker_entry)
 		    + channel_len + name_len + format_len);
 	if (!e)
 		return ERR_PTR(-ENOMEM);
@@ -1363,7 +1363,7 @@ int marker_register_lib(struct marker *markers_start, int markers_count)
 {
 	struct lib *pl;
 
-	pl = (struct lib *) malloc(sizeof(struct lib));
+	pl = (struct lib *) zmalloc(sizeof(struct lib));
 
 	pl->markers_start = markers_start;
 	pl->markers_count = markers_count;
