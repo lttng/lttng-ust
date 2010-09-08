@@ -337,6 +337,63 @@ extern int tracepoint_unregister_lib(struct tracepoint *tracepoints_start);
  * TRACE_EVENT_FN to perform any (un)registration work.
  */
 
+struct trace_event {
+	const char *name;
+	int (*regfunc)(void *data);
+	int (*unregfunc)(void *data);
+} __attribute__((aligned(32)));
+
+struct trace_event_lib {
+	struct trace_event *trace_events_start;
+	int trace_events_count;
+	struct list_head list;
+};
+
+struct trace_event_iter {
+	struct trace_event_lib *lib;
+	struct trace_event *trace_event;
+};
+
+extern void lock_trace_events(void);
+extern void unlock_trace_events(void);
+
+extern void trace_event_iter_start(struct trace_event_iter *iter);
+extern void trace_event_iter_next(struct trace_event_iter *iter);
+extern void trace_event_iter_reset(struct trace_event_iter *iter);
+
+extern int trace_event_get_iter_range(struct trace_event **trace_event,
+				      struct trace_event *begin,
+				      struct trace_event *end);
+
+extern void trace_event_update_process(void);
+extern int is_trace_event_enabled(const char *channel, const char *name);
+
+extern int trace_event_register_lib(struct trace_event *start_trace_events,
+				    int trace_event_count);
+
+extern int trace_event_unregister_lib(struct trace_event *start_trace_events);
+
+#define TRACE_EVENT_LIB							\
+	extern struct trace_event __start___trace_events[]		\
+	__attribute__((weak, visibility("hidden")));			\
+	extern struct trace_event __stop___trace_events[]		\
+	__attribute__((weak, visibility("hidden")));			\
+	static void __attribute__((constructor))			\
+	__trace_events__init(void)					\
+	{								\
+		long trace_event_count =((long)__stop___trace_events-	\
+					 (long)__start___trace_events)	\
+			/sizeof(struct trace_event);			\
+		trace_event_register_lib(__start___trace_events,	\
+					 trace_event_count);		\
+	}								\
+									\
+	static void __attribute__((destructor))				\
+	__trace_event__destroy(void)					\
+	{								\
+		trace_event_unregister_lib(__start___trace_events);	\
+	}
+
 #define DECLARE_TRACE_EVENT_CLASS(name, proto, args, tstruct, assign, print)
 #define DEFINE_TRACE_EVENT(template, name, proto, args)		\
 	DECLARE_TRACE(name, PARAMS(proto), PARAMS(args))

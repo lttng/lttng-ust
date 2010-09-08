@@ -23,6 +23,8 @@
  * to a printf
  */
 
+#include <stdio.h>
+
 /*
  * Stage 1. Create a struct and a printf calling function
  * that is connected to the tracepoint at load time.
@@ -66,6 +68,20 @@
 									\
 		printf(print);						\
 	}								\
+	static inline int register_event_##name(void *data)		\
+	{								\
+		return register_trace_##name(trace_printf_##name, data); \
+	}								\
+	static inline int unregister_event_##name(void *data)		\
+	{								\
+		return unregister_trace_##name(trace_printf_##name, data); \
+	}								\
+	struct trace_event __event_##name				\
+	__attribute__((section("__trace_events"), aligned(32)))	= {	\
+		__tpstrtab_##name,					\
+		register_event_##name,					\
+		unregister_event_##name					\
+	};								\
 	static void __attribute__((constructor)) init_##name()		\
 	{								\
 		void *dummy;						\

@@ -6,6 +6,7 @@ lib_LTLIBRARIES = libust.la
 libust_la_SOURCES = \
 	marker.c \
 	tracepoint.c \
+	trace_event.c \
 	channels.c \
 	channels.h \
 	marker-control.c \
