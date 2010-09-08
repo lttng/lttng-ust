@@ -7,7 +7,7 @@ ACLOCAL_AMFLAGS = -I config
 # the linker script.
 SUBDIRS = snprintf libustcomm libustcmd libust . tests libustinstr-malloc libustd ustd ustctl libustfork include doc
 
-EXTRA_DIST = libust.ldscript.in libust-initializer.c
+EXTRA_DIST = libust.ldscript.in libust-initializer.c libust-initializer.h
 dist_bin_SCRIPTS = usttrace
 
 ldscriptsdir = $(libdir)
@@ -21,4 +21,4 @@ libust.so: libust.ldscript.in
 # It is very important to compile the initializer with PIC otherwise we
 # may get obscure errors when linking to shared libraries.
 libust-initializer.o: libust-initializer.c
-	$(CC) $(CFLAGS) -fno-strict-aliasing -fPIC -c -I$(top_srcdir)/include -o $@ $<
+	$(CC) $(CFLAGS) -fno-strict-aliasing -fPIC -c -I$(top_srcdir)/include -I$(top_srcdir) -o $@ $<

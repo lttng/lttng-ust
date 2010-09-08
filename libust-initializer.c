@@ -21,12 +21,17 @@
 DECLARE_TRACE(ust_dummytp, TP_PROTO(int anint), TP_ARGS(anint));
 DEFINE_TRACE(ust_dummytp);
 
+#define CREATE_TRACE_POINTS
+#include "libust-initializer.h"
+
 void dummy_libust_initializer_func(void)
 {
 	int i;
 	trace_mark(ust, dummymark, MARK_NOARGS);
 	trace_ust_dummytp(i);
+	trace_ust_dummy_event(i);
 }
 
 MARKER_LIB;
 TRACEPOINT_LIB;
+TRACE_EVENT_LIB;
