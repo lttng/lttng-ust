@@ -154,8 +154,8 @@ tracepoint_entry_remove_probe(struct tracepoint_entry *entry, void *probe,
 	debug_print_probes(entry);
 	/* (N -> M), (N > 1, M >= 0) probes */
 	for (nr_probes = 0; old[nr_probes].func; nr_probes++) {
-		if ((!probe ||
-		     old[nr_probes].func == probe &&
+		if (!probe ||
+		     (old[nr_probes].func == probe &&
 		     old[nr_probes].data == data))
 			nr_del++;
 	}
