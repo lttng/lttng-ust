@@ -170,6 +170,7 @@ int main(int argc, char *argv[])
 {
 	pid_t *pidit;
 	int result;
+	int retval = EXIT_SUCCESS;
 	char *tmp;
 	struct ust_opts opts;
 
@@ -222,6 +223,7 @@ int main(int argc, char *argv[])
 				result = ustcmd_create_trace(*pidit);
 				if (result) {
 					ERR("error while trying to create trace with PID %u\n", (unsigned int) *pidit);
+					retval = EXIT_FAILURE;
 					break;
 				}
 				break;
@@ -230,6 +232,7 @@ int main(int argc, char *argv[])
 				result = ustcmd_start_trace(*pidit);
 				if (result) {
 					ERR("error while trying to for trace with PID %u\n", (unsigned int) *pidit);
+					retval = EXIT_FAILURE;
 					break;
 				}
 				break;
@@ -238,6 +241,7 @@ int main(int argc, char *argv[])
 				result = ustcmd_stop_trace(*pidit);
 				if (result) {
 					ERR("error while trying to stop trace for PID %u\n", (unsigned int) *pidit);
+					retval = EXIT_FAILURE;
 					break;
 				}
 				break;
@@ -246,6 +250,7 @@ int main(int argc, char *argv[])
 				result = ustcmd_destroy_trace(*pidit);
 				if (result) {
 					ERR("error while trying to destroy trace with PID %u\n", (unsigned int) *pidit);
+					retval = EXIT_FAILURE;
 					break;
 				}
 				break;
@@ -253,9 +258,8 @@ int main(int argc, char *argv[])
 			case LIST_MARKERS:
 				cmsf = NULL;
 				if (ustcmd_get_cmsf(&cmsf, *pidit)) {
-					fprintf(stderr,
-						"error while trying to list markers for"
-						" PID %u\n", (unsigned int) *pidit);
+					ERR("error while trying to list markers for PID %u\n", (unsigned int) *pidit);
+					retval = EXIT_FAILURE;
 					break;
 				}
 				unsigned int i = 0;
@@ -273,26 +277,49 @@ int main(int argc, char *argv[])
 				break;
 
 			case ENABLE_MARKER:
-				if(opts.regex)
-					ustcmd_set_marker_state(opts.regex, 1, *pidit);
+				if (opts.regex) {
+					if (ustcmd_set_marker_state(opts.regex, 1, *pidit)) {
+						ERR("error while trying to enable marker %s with PID %u\n",
+								opts.regex, (unsigned int) *pidit);
+						retval = EXIT_FAILURE;
+					}
+				}
 				break;
 			case DISABLE_MARKER:
-				if(opts.regex)
-					ustcmd_set_marker_state(opts.regex, 0, *pidit);
+				if (opts.regex) {
+					if (ustcmd_set_marker_state(opts.regex, 0, *pidit)) {
+						ERR("error while trying to disable marker %s with PID %u\n",
+								opts.regex, (unsigned int) *pidit);
+						retval = EXIT_FAILURE;
+					}
+				}
 				break;
 
 			case SET_SUBBUF_SIZE:
-				ustcmd_set_subbuf_size(opts.regex, *pidit);
+				if (opts.regex) {
+					if (ustcmd_set_subbuf_size(opts.regex, *pidit)) {
+						ERR("error while trying to set the size of subbuffers with PID %u\n",
+								(unsigned int) *pidit);
+						retval = EXIT_FAILURE;
+					}
+				}
 				break;
 
 			case SET_SUBBUF_NUM:
-				ustcmd_set_subbuf_num(opts.regex, *pidit);
+				if (opts.regex) {
+					if (ustcmd_set_subbuf_num(opts.regex, *pidit)) {
+						ERR("error while trying to set the number of subbuffers with PID %u\n",
+								(unsigned int) *pidit);
+						retval = EXIT_FAILURE;
+					}
+				}
 				break;
 
 			case GET_SUBBUF_SIZE:
 				result = ustcmd_get_subbuf_size(opts.regex, *pidit);
 				if (result == -1) {
 					ERR("error while trying to get_subuf_size with PID %u\n", (unsigned int) *pidit);
+					retval = EXIT_FAILURE;
 					break;
 				}
 
@@ -303,6 +330,7 @@ int main(int argc, char *argv[])
 				result = ustcmd_get_subbuf_num(opts.regex, *pidit);
 				if (result == -1) {
 					ERR("error while trying to get_subuf_num with PID %u\n", (unsigned int) *pidit);
+					retval = EXIT_FAILURE;
 					break;
 				}
 
@@ -313,7 +341,7 @@ int main(int argc, char *argv[])
 				result = ustcmd_alloc_trace(*pidit);
 				if (result) {
 					ERR("error while trying to alloc trace with PID %u\n", (unsigned int) *pidit);
-					break;
+					retval = EXIT_FAILURE;
 				}
 				break;
 
@@ -321,6 +349,7 @@ int main(int argc, char *argv[])
 				result = ustcmd_get_sock_path(&tmp, *pidit);
 				if (result) {
 					ERR("error while trying to get sock path for PID %u\n", (unsigned int) *pidit);
+					retval = EXIT_FAILURE;
 					break;
 				}
 				printf("the socket path is %s\n", tmp);
@@ -331,6 +360,7 @@ int main(int argc, char *argv[])
 				result = ustcmd_set_sock_path(opts.regex, *pidit);
 				if (result) {
 					ERR("error while trying to set sock path for PID %u\n", (unsigned int) *pidit);
+					retval = EXIT_FAILURE;
 				}
 				break;
 
@@ -338,12 +368,14 @@ int main(int argc, char *argv[])
 				result = ustcmd_force_switch(*pidit);
 				if (result) {
 					ERR("error while trying to force switch for PID %u\n", (unsigned int) *pidit);
+					retval = EXIT_FAILURE;
 				}
 				break;
 
 			default:
 				ERR("unknown command\n");
-			break;
+				retval = EXIT_FAILURE;
+				break;
 		}
 
 		pidit++;
@@ -356,6 +388,6 @@ int main(int argc, char *argv[])
 		free(opts.regex);
 	}
 
-	return 0;
+	return retval;
 }
 
