@@ -529,7 +529,7 @@ static int set_marker(struct marker_entry *entry, struct marker *elem,
 
 	if (entry->format) {
 		if (strcmp(entry->format, elem->format) != 0) {
-			DBG("Format mismatch for probe %s (%s), marker (%s)",
+			ERR("Format mismatch for probe %s (%s), marker (%s)",
 				entry->name,
 				entry->format,
 				elem->format);
