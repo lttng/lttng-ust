@@ -396,10 +396,6 @@ int ustcmd_get_cmsf(struct marker_status **cmsf, const pid_t pid)
 	}
 	result = ustcmd_send_cmd("list_markers", pid, &big_str);
 	if (result != 1) {
-		return -1;
-	}
-
-	if (result != 1) {
 		ERR("error while getting markers list");
 		return -1;
 	}
@@ -407,6 +403,7 @@ int ustcmd_get_cmsf(struct marker_status **cmsf, const pid_t pid)
 	tmp_cmsf = (struct marker_status *) malloc(sizeof(struct marker_status) *
 		(ustcmd_count_nl(big_str) + 1));
 	if (tmp_cmsf == NULL) {
+		ERR("Failed to allocate CMSF array");
 		return -1;
 	}
 
