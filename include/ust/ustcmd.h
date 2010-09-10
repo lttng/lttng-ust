@@ -43,6 +43,10 @@ struct marker_status {
 	char *fs; /* Format string (end of marker_status array if NULL) */
 };
 
+struct trace_event_status {
+	char *name;
+};
+
 extern pid_t *ustcmd_get_online_pids(void);
 extern int ustcmd_set_marker_state(const char *, int, pid_t);
 extern int ustcmd_set_subbuf_size(const char *, pid_t);
@@ -59,6 +63,8 @@ extern int ustcmd_free_cmsf(struct marker_status *);
 extern unsigned int ustcmd_count_nl(const char *);
 extern int ustcmd_send_cmd(const char *, pid_t, char **);
 extern int ustcmd_get_cmsf(struct marker_status **, pid_t);
+extern int ustcmd_free_tes(struct trace_event_status *);
+extern int ustcmd_get_tes(struct trace_event_status **, pid_t);
 extern int ustcmd_set_sock_path(const char *, pid_t);
 extern int ustcmd_get_sock_path(char **, pid_t);
 extern int ustcmd_force_switch(pid_t);

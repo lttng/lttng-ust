@@ -32,6 +32,7 @@ enum command {
 	STOP_TRACE,
 	DESTROY_TRACE,
 	LIST_MARKERS,
+	LIST_TRACE_EVENTS,
 	ENABLE_MARKER,
 	DISABLE_MARKER,
 	GET_ONLINE_PIDS,
@@ -73,6 +74,7 @@ Commands:\n\
     --enable-marker \"CHANNEL/MARKER\"\tEnable a marker\n\
     --disable-marker \"CHANNEL/MARKER\"\tDisable a marker\n\
     --list-markers\t\t\tList the markers of the process, their\n\t\t\t\t\t  state and format string\n\
+    --list-trace-events\t\t\tList the trace-events of the process\n\
     --force-switch\t\t\tForce a subbuffer switch\n\
 \
 ");
@@ -94,6 +96,7 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 			{ "stop-trace", 0, 0, STOP_TRACE },
 			{ "destroy-trace", 0, 0, DESTROY_TRACE },
 			{ "list-markers", 0, 0, LIST_MARKERS },
+			{ "list-trace-events", 0, 0, LIST_TRACE_EVENTS},
 			{ "enable-marker", 1, 0, ENABLE_MARKER },
 			{ "disable-marker", 1, 0, DISABLE_MARKER },
 			{ "help", 0, 0, 'h' },
@@ -216,6 +219,8 @@ int main(int argc, char *argv[])
 
 	pidit = opts.pids;
 	struct marker_status *cmsf = NULL;
+	struct trace_event_status *tes = NULL;
+	unsigned int i = 0;
 
 	while(*pidit != -1) {
 		switch (opts.cmd) {
@@ -262,7 +267,7 @@ int main(int argc, char *argv[])
 					retval = EXIT_FAILURE;
 					break;
 				}
-				unsigned int i = 0;
+				i = 0;
 				while (cmsf[i].channel != NULL) {
 					printf("{PID: %u, channel/marker: %s/%s, "
 						"state: %u, fmt: %s}\n",
@@ -276,6 +281,24 @@ int main(int argc, char *argv[])
 				ustcmd_free_cmsf(cmsf);
 				break;
 
+			case LIST_TRACE_EVENTS:
+				tes = NULL;
+				if (ustcmd_get_tes(&tes, *pidit)) {
+					ERR("error while trying to list "
+					    "trace_events for PID %u\n",
+					    (unsigned int) *pidit);
+					break;
+				}
+				i = 0;
+				while (tes[i].name != NULL) {
+					printf("{PID: %u, trace_event: %s}\n",
+					       (unsigned int) *pidit,
+					       tes[i].name);
+					++i;
+				}
+				ustcmd_free_tes(tes);
+
+				break;
 			case ENABLE_MARKER:
 				if (opts.regex) {
 					if (ustcmd_set_marker_state(opts.regex, 1, *pidit)) {

@@ -438,6 +438,83 @@ int ustcmd_get_cmsf(struct marker_status **cmsf, const pid_t pid)
 	return 0;
 }
 
+
+/**
+ * Frees a TES array.
+ *
+ * @param tes	TES array to free
+ * @return	0 if successful, or error USTCMD_ERR_ARG
+ */
+int ustcmd_free_tes(struct trace_event_status *tes)
+{
+	if (tes == NULL) {
+		return USTCMD_ERR_ARG;
+	}
+
+	unsigned int i = 0;
+	while (tes[i].name != NULL) {
+		free(tes[i].name);
+		++i;
+	}
+	free(tes);
+
+	return 0;
+}
+
+/**
+ * Gets trace_events string for a given PID.
+ *
+ * @param tes	Pointer to TES array to be filled (callee allocates, caller
+ *		frees with `ustcmd_free_tes')
+ * @param pid	Targeted PID
+ * @return	0 if successful, or -1 on error
+ */
+int ustcmd_get_tes(struct trace_event_status **tes,
+			    const pid_t pid)
+{
+	char *big_str = NULL;
+	int result;
+	struct trace_event_status *tmp_tes = NULL;
+	unsigned int i = 0, tes_ind = 0;
+
+	if (tes == NULL) {
+		return -1;
+	}
+
+	result = ustcmd_send_cmd("list_trace_events", pid, &big_str);
+	if (result != 1) {
+		ERR("error while getting trace_event list");
+		return -1;
+	}
+
+	tmp_tes = (struct trace_event_status *)
+		zmalloc(sizeof(struct trace_event_status) *
+			(ustcmd_count_nl(big_str) + 1));
+	if (tmp_tes == NULL) {
+		ERR("Failed to allocate TES array");
+		return -1;
+	}
+
+	/* Parse received reply string (format: "[name]"): */
+	while (big_str[i] != '\0') {
+		char state;
+
+		sscanf(big_str + i, "trace_event: %a[^\n]",
+			&tmp_tes[tes_ind].name);
+		while (big_str[i] != '\n') {
+			++i; /* Go to next '\n' */
+		}
+		++i; /* Skip current pointed '\n' */
+		++tes_ind;
+	}
+	tmp_tes[tes_ind].name = NULL;
+
+	*tes = tmp_tes;
+
+	free(big_str);
+	return 0;
+}
+
 /**
  * Set socket path
  *

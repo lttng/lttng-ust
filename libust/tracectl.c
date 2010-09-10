@@ -35,6 +35,7 @@
 #include <urcu/uatomic_arch.h>
 
 #include <ust/marker.h>
+#include <ust/tracepoint.h>
 #include <ust/tracectl.h>
 #include "tracer.h"
 #include "usterr.h"
@@ -125,6 +126,21 @@ static void print_markers(FILE *fp)
 		marker_iter_next(&iter);
 	}
 	unlock_markers();
+}
+
+static void print_trace_events(FILE *fp)
+{
+	struct trace_event_iter iter;
+
+	lock_trace_events();
+	trace_event_iter_reset(&iter);
+	trace_event_iter_start(&iter);
+
+	while(iter.trace_event) {
+		fprintf(fp, "trace_event: %s\n", iter.trace_event->name);
+		trace_event_iter_next(&iter);
+	}
+	unlock_trace_events();
 }
 
 static int init_socket(void);
@@ -867,8 +883,29 @@ int process_client_cmd(char *recvbuf, struct ustcomm_source *src)
 		result = ustcomm_send_reply(&ustcomm_app.server, ptr, src);
 
 		free(ptr);
-	}
-	else if(!strcmp(recvbuf, "start")) {
+	} else if (!strcmp(recvbuf, "print_trace_events")) {
+		print_trace_events(stderr);
+
+	} else if(!strcmp(recvbuf, "list_trace_events")) {
+		char *ptr;
+		size_t size;
+		FILE *fp;
+
+		fp = open_memstream(&ptr, &size);
+		if (fp == NULL) {
+			ERR("opening memstream failed");
+			return -1;
+		}
+		print_trace_events(fp);
+		fclose(fp);
+
+		result = ustcomm_send_reply(&ustcomm_app.server, ptr, src);
+		if (result < 0) {
+			ERR("list_trace_events failed");
+			return -1;
+		}
+		free(ptr);
+	} else if(!strcmp(recvbuf, "start")) {
 		/* start is an operation that setups the trace, allocates it and starts it */
 		result = ltt_trace_setup(trace_name);
 		if(result < 0) {
