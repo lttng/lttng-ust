@@ -1064,7 +1064,9 @@ int process_client_cmd(char *recvbuf, struct ustcomm_source *src)
 
 		result = sscanf(channel_slash_name, "%a[^/]/%as", &channel_name, &marker_name);
 
-		if(marker_name == NULL) {
+		if(channel_name == NULL || marker_name == NULL) {
+			WARN("invalid marker name");
+			goto next_cmd;
 		}
 
 		result = ltt_marker_disconnect(channel_name, marker_name, "default");
