@@ -527,7 +527,7 @@ static unsigned int pow2_higher_or_eq(unsigned int v)
 static int do_cmd_set_subbuf_size(const char *recvbuf, struct ustcomm_source *src)
 {
 	char *channel_slash_size;
-	char ch_name[256]="";
+	char *ch_name = NULL;
 	unsigned int size, power;
 	int retval = 0;
 	struct ust_trace *trace;
@@ -538,7 +538,7 @@ static int do_cmd_set_subbuf_size(const char *recvbuf, struct ustcomm_source *sr
 	DBG("set_subbuf_size");
 
 	channel_slash_size = nth_token(recvbuf, 1);
-	sscanf(channel_slash_size, "%255[^/]/%u", ch_name, &size);
+	sscanf(channel_slash_size, "%a[^/]/%u", &ch_name, &size);
 
 	if (ch_name == NULL) {
 		ERR("cannot parse channel");
@@ -577,13 +577,14 @@ static int do_cmd_set_subbuf_size(const char *recvbuf, struct ustcomm_source *sr
 
 	end:
 	ltt_unlock_traces();
+	free(ch_name);
 	return retval;
 }
 
 static int do_cmd_set_subbuf_num(const char *recvbuf, struct ustcomm_source *src)
 {
 	char *channel_slash_num;
-	char ch_name[256]="";
+	char *ch_name = NULL;
 	unsigned int num;
 	int retval = 0;
 	struct ust_trace *trace;
@@ -594,7 +595,7 @@ static int do_cmd_set_subbuf_num(const char *recvbuf, struct ustcomm_source *src
 	DBG("set_subbuf_num");
 
 	channel_slash_num = nth_token(recvbuf, 1);
-	sscanf(channel_slash_num, "%255[^/]/%u", ch_name, &num);
+	sscanf(channel_slash_num, "%a[^/]/%u", &ch_name, &num);
 
 	if (ch_name == NULL) {
 		ERR("cannot parse channel");
@@ -633,6 +634,7 @@ static int do_cmd_set_subbuf_num(const char *recvbuf, struct ustcomm_source *src
 
 	end:
 	ltt_unlock_traces();
+	free(ch_name);
 	return retval;
 }
 
@@ -1023,13 +1025,15 @@ int process_client_cmd(char *recvbuf, struct ustcomm_source *src)
 		do_cmd_set_subbuf_num(recvbuf, src);
 	} else if (nth_token_is(recvbuf, "enable_marker", 0) == 1) {
 		char *channel_slash_name = nth_token(recvbuf, 1);
-		char channel_name[256]="";
-		char marker_name[256]="";
+		char *channel_name = NULL;
+		char *marker_name = NULL;
 
-		result = sscanf(channel_slash_name, "%255[^/]/%255s", channel_name, marker_name);
+		result = sscanf(channel_slash_name, "%a[^/]/%as", &channel_name, &marker_name);
 
 		if (channel_name == NULL || marker_name == NULL) {
 			WARN("invalid marker name");
+			free(channel_name);
+			free(marker_name);
 			goto next_cmd;
 		}
 
@@ -1037,15 +1041,20 @@ int process_client_cmd(char *recvbuf, struct ustcomm_source *src)
 		if (result < 0) {
 			WARN("could not enable marker; channel=%s, name=%s", channel_name, marker_name);
 		}
+
+		free(channel_name);
+		free(marker_name);
 	} else if (nth_token_is(recvbuf, "disable_marker", 0) == 1) {
 		char *channel_slash_name = nth_token(recvbuf, 1);
-		char *marker_name;
-		char *channel_name;
+		char *marker_name = NULL;
+		char *channel_name = NULL;
 
 		result = sscanf(channel_slash_name, "%a[^/]/%as", &channel_name, &marker_name);
 
 		if (channel_name == NULL || marker_name == NULL) {
 			WARN("invalid marker name");
+			free(channel_name);
+			free(marker_name);
 			goto next_cmd;
 		}
 
@@ -1053,6 +1062,9 @@ int process_client_cmd(char *recvbuf, struct ustcomm_source *src)
 		if (result < 0) {
 			WARN("could not disable marker; channel=%s, name=%s", channel_name, marker_name);
 		}
+
+		free(channel_name);
+		free(marker_name);
 	} else if (nth_token_is(recvbuf, "get_pidunique", 0) == 1) {
 		char *reply;
 
