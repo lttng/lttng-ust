@@ -30,14 +30,11 @@
 #include <urcu/list.h>
 #include <ust/processor.h>
 #include <ust/kcompat/kcompat.h>
+#include <ust/kcompat/stringify.h>
 
 #include <bits/wordsize.h>
 
 struct marker;
-
-/* To stringify the expansion of a define */
-#define XSTR(d) STR(d)
-#define STR(s) #s
 
 /**
  * marker_probe_func - Type of a marker probe function
@@ -83,6 +80,8 @@ struct marker {
 #define CONFIG_MARKERS
 #ifdef CONFIG_MARKERS
 
+#define GET_MARKER(channel, name)	(__mark_##channel##_##name)
+
 #define _DEFINE_MARKER(channel, name, tp_name_str, tp_cb, format, unique, m)			\
 		struct registers regs;								\
 												\
@@ -96,14 +95,14 @@ struct marker {
 		      * will try to create the same symbols, resulting in a conflict. This	\
 		      * is not unusual as it can be the result of function inlining.		\
 		      */									\
-		     ".ifndef __mstrtab_" XSTR(channel) "_" XSTR(name) "_channel_" XSTR(unique) "\n\t"	\
+		     ".ifndef __mstrtab_" __stringify(channel) "_" __stringify(name) "_channel_" __stringify(unique) "\n\t"	\
 		     /*".section __markers_strings\n\t"*/					\
 		     ".section __markers_strings,\"aw\",@progbits\n\t"				\
-		     "__mstrtab_" XSTR(channel) "_" XSTR(name) "_channel_" XSTR(unique) ":\n\t"	\
-		     ".string \"" XSTR(channel) "\"\n\t"					\
-		     "__mstrtab_" XSTR(channel) "_" XSTR(name) "_name_" XSTR(unique) ":\n\t"	\
-		     ".string \"" XSTR(name) "\"\n\t"						\
-		     "__mstrtab_" XSTR(channel) "_" XSTR(name) "_format_" XSTR(unique) ":\n\t"	\
+		     "__mstrtab_" __stringify(channel) "_" __stringify(name) "_channel_" __stringify(unique) ":\n\t"	\
+		     ".string \"" __stringify(channel) "\"\n\t"					\
+		     "__mstrtab_" __stringify(channel) "_" __stringify(name) "_name_" __stringify(unique) ":\n\t"	\
+		     ".string \"" __stringify(name) "\"\n\t"						\
+		     "__mstrtab_" __stringify(channel) "_" __stringify(name) "_format_" __stringify(unique) ":\n\t"	\
 		     ".string " "\"" format "\"" "\n\t"						\
 		     ".previous\n\t"								\
 		     ".endif\n\t"								\
@@ -113,14 +112,14 @@ struct marker {
 		     ".section __markers,\"aw\",@progbits\n\t"					\
 		     ".balign 8\n\t" 								\
 		     "2:\n\t" \
-		     _ASM_PTR "(__mstrtab_" XSTR(channel) "_" XSTR(name) "_channel_" XSTR(unique) ")\n\t" /* channel string */ \
-		     _ASM_PTR "(__mstrtab_" XSTR(channel) "_" XSTR(name) "_name_" XSTR(unique) ")\n\t" /* name string */ \
-		     _ASM_PTR "(__mstrtab_" XSTR(channel) "_" XSTR(name) "_format_" XSTR(unique) ")\n\t" /* format string */ \
+		     _ASM_PTR "(__mstrtab_" __stringify(channel) "_" __stringify(name) "_channel_" __stringify(unique) ")\n\t" /* channel string */ \
+		     _ASM_PTR "(__mstrtab_" __stringify(channel) "_" __stringify(name) "_name_" __stringify(unique) ")\n\t" /* name string */ \
+		     _ASM_PTR "(__mstrtab_" __stringify(channel) "_" __stringify(name) "_format_" __stringify(unique) ")\n\t" /* format string */ \
 		     ".byte 0\n\t" /* state imv */						\
 		     ".byte 0\n\t" /* ptype */							\
 		     ".word 0\n\t" /* channel_id */						\
 		     ".word 0\n\t" /* event_id */						\
-		     ".balign " XSTR(__WORDSIZE) " / 8\n\t" /* alignment */			\
+		     ".balign " __stringify(__WORDSIZE) " / 8\n\t" /* alignment */			\
 		     _ASM_PTR "(marker_probe_cb)\n\t" /* call */				\
 		     _ASM_PTR "(__mark_empty_function)\n\t" /* marker_probe_closure single.field1 */ \
 		     _ASM_PTR "0\n\t" /* marker_probe_closure single.field2 */			\
@@ -146,7 +145,7 @@ struct marker {
 		static const char __mstrtab_##channel##_##name[]	\
 		__attribute__((section("__markers_strings")))		\
 		= #channel "\0" #name "\0" format;			\
-		static struct marker __mark_##channel##_##name		\
+		static struct marker GET_MARKER(channel, name)		\
 		__attribute__((section("__markers"), aligned(8))) =	\
 		{ __mstrtab_##channel##_##name,				\
 		  &__mstrtab_##channel##_##name[sizeof(#channel)],	\
@@ -195,14 +194,12 @@ struct marker {
 		}							\
 		DEFINE_MARKER_TP(channel, name, tp_name, tp_cb, format);\
 		__mark_check_format(format, ## args);			\
-		(*__mark_##channel##_##name.call)(&__mark_##channel##_##name, \
+		(*GET_MARKER(channel, name).call)(&GET_MARKER(channel, name), \
 			call_private, &regs, ## args);				\
 	} while (0)
 
 extern void marker_update_probe_range(struct marker *begin,
 	struct marker *end);
-
-#define GET_MARKER(channel, name)	(__mark_##channel##_##name)
 
 #else /* !CONFIG_MARKERS */
 #define DEFINE_MARKER(channel, name, tp_name, tp_cb, format, m)
