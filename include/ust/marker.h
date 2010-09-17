@@ -77,9 +77,6 @@ struct marker {
 	void *location;		/* Address of marker in code */
 } __attribute__((aligned(8)));
 
-#define CONFIG_MARKERS
-#ifdef CONFIG_MARKERS
-
 #define GET_MARKER(channel, name)	(__mark_##channel##_##name)
 
 #define _DEFINE_MARKER(channel, name, tp_name_str, tp_cb, format, unique, m)			\
@@ -199,25 +196,6 @@ struct marker {
 
 extern void marker_update_probe_range(struct marker *begin,
 	struct marker *end);
-
-#else /* !CONFIG_MARKERS */
-#define DEFINE_MARKER(channel, name, tp_name, tp_cb, format, m)
-#define __trace_mark(generic, channel, name, call_private, format, args...) \
-		__mark_check_format(format, ## args)
-#define __trace_mark_tp(channel, name, call_private, tp_name, tp_cb,	\
-		format, args...)					\
-	do {								\
-		void __check_tp_type(void)				\
-		{							\
-			register_trace_##tp_name(tp_cb, call_private);		\
-		}							\
-		__mark_check_format(format, ## args);			\
-	} while (0)
-static inline void marker_update_probe_range(struct marker *begin,
-	struct marker *end)
-{ }
-#define GET_MARKER(channel, name)
-#endif /* CONFIG_MARKERS */
 
 /**
  * trace_mark - Marker using code patching
