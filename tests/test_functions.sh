@@ -40,6 +40,7 @@ function check_trace_logs() {
 
 
 function trace_matches() {
+    local OPTIND=
 
     RUNLTTV=~/devel/lttv/runlttv
 
