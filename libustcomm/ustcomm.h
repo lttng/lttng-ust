@@ -23,73 +23,62 @@
 #include <urcu/list.h>
 
 #include <ust/kcompat/kcompat.h>
-#include "multipoll.h"
 
 #define SOCK_DIR "/tmp/ust-app-socks"
 #define UST_SIGNAL SIGIO
 
-struct ustcomm_connection {
+struct ustcomm_sock {
 	struct list_head list;
 	int fd;
-	/* Data that has not yet been consumed: */
-	char *recv_buf;
-	int recv_buf_size;
-	int recv_buf_alloc;
+	int epoll_fd;
 };
 
-/* ustcomm_server must be shallow-copyable */
-struct ustcomm_server {
-	/* the "server" socket for serving the external requests */
-	int listen_fd;
-	char *socketpath;
-
-	struct list_head connections;
+struct ustcomm_header {
+	int type;
+	long size;
+	int command;
+	int response;
+	int fd_included;
 };
 
-struct ustcomm_ustd {
-	struct ustcomm_server server;
-};
-
-struct ustcomm_app {
-	struct ustcomm_server server;
-};
-
-/* ustcomm_source must be shallow-copyable */
-struct ustcomm_source {
-	int fd;
-	void *priv;
-};
-
-struct ustcomm_multipoll_conn_info {
-	struct ustcomm_connection *conn;
-	int (*cb)(char *msg, struct ustcomm_source *src);
-};
 
 //int send_message_pid(pid_t pid, const char *msg, char **reply);
+
+/* Ensure directory existence, usefull for unix sockets */
+extern int ensure_dir_exists(const char *dir);
+
+/* Create and delete sockets */
+extern struct ustcomm_sock * ustcomm_init_sock(int fd, int epoll_fd,
+					       struct list_head *list);
+extern void ustcomm_del_sock(struct ustcomm_sock *sock, int keep_in_epoll);
+
+/* Create and delete named sockets */
+extern struct ustcomm_sock * ustcomm_init_named_socket(const char *name,
+						       int epoll_fd);
+extern void ustcomm_del_named_sock(struct ustcomm_sock *sock,
+				   int keep_socket_file);
+
+/* Send and receive functions for file descriptors */
+extern int ustcomm_send_fd(int sock, const struct ustcomm_header *header,
+			   const char *data, int *fd);
+extern int ustcomm_recv_fd(int sock, struct ustcomm_header *header,
+			   char **data, int *fd);
+
+/* Normal send and receive functions */
+extern int ustcomm_send(int sock, const struct ustcomm_header *header,
+			const char *data);
+extern int ustcomm_recv(int sock, struct ustcomm_header *header,
+			char **data);
+
+
 extern int ustcomm_request_consumer(pid_t pid, const char *channel);
-
-extern int ustcomm_ustd_recv_message(struct ustcomm_ustd *ustd, char **msg, struct ustcomm_source *src, int timeout);
-extern int ustcomm_app_recv_message(struct ustcomm_app *app, char **msg, struct ustcomm_source *src, int timeout);
-
-extern int ustcomm_init_app(pid_t pid, struct ustcomm_app *handle);
-extern void ustcomm_fini_app(struct ustcomm_app *handle, int keep_socket_file);
-extern void ustcomm_fini_ustd(struct ustcomm_ustd *handle);
-
-extern int ustcomm_init_ustd(struct ustcomm_ustd *handle, const char *sock_path);
-
-extern int ustcomm_connect_app(pid_t pid, struct ustcomm_connection *conn);
-extern int ustcomm_close_app(struct ustcomm_connection *conn);
-extern int ustcomm_connect_path(const char *path, struct ustcomm_connection *conn, pid_t signalpid);
-extern int ustcomm_send_request(struct ustcomm_connection *conn, const char *req, char **reply);
-extern int ustcomm_send_reply(struct ustcomm_server *server, char *msg, struct ustcomm_source *src);
-extern int ustcomm_disconnect(struct ustcomm_connection *conn);
-extern int ustcomm_close_all_connections(struct ustcomm_server *server);
-extern void ustcomm_mp_add_app_clients(struct mpentries *ent, struct ustcomm_app *app, int (*cb)(char *recvbuf, struct ustcomm_source *src));
-
+extern int ustcomm_connect_app(pid_t pid, int *app_fd);
+extern int ustcomm_connect_path(const char *path, int *connection_fd);
+extern int ustcomm_send_request(int sock, const char *req, char **reply);
+extern int ustcomm_send_reply(char *msg, int sock);
+extern int recv_message_conn(int sock, char **msg);
 extern int nth_token_is(const char *str, const char *token, int tok_no);
 
 extern char *nth_token(const char *str, int tok_no);
-
-extern int pid_is_online(pid_t);
 
 #endif /* USTCOMM_H */

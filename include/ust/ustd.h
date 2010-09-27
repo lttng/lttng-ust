@@ -29,16 +29,18 @@
 #include <pthread.h>
 #include <dirent.h>
 #include <ust/kcompat/kcompat.h>
+#include <urcu/list.h>
 
 #define USTD_DEFAULT_TRACE_PATH "/tmp/usttrace"
 
-struct ustcomm_connection;
-struct ustcomm_ustd;
+struct ustcomm_sock;
 
 struct buffer_info {
 	const char *name;
 	pid_t pid;
-	struct ustcomm_connection *conn;
+	int app_sock;
+	/* The pipe file descriptor */
+	int pipe_fd;
 
 	int shmid;
 	int bufstruct_shmid;
@@ -73,7 +75,9 @@ struct libustd_instance {
 	struct libustd_callbacks *callbacks;
 	int quit_program;
 	int is_init;
-	struct ustcomm_ustd *comm;
+	struct list_head connections;
+	int epoll_fd;
+	struct ustcomm_sock *listen_sock;
 	char *sock_path;
 	pthread_mutex_t mutex;
 	int active_buffers;

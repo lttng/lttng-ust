@@ -52,7 +52,12 @@ pid_t *ustcmd_get_online_pids(void)
 			!!strcmp(dirent->d_name, "ustd")) {
 
 			sscanf(dirent->d_name, "%u", (unsigned int *) &ret[i]);
-			if (pid_is_online(ret[i])) {
+			/* FIXME: Here we previously called pid_is_online, which
+			 * always returned 1, now I replaced it with just 1.
+			 * We need to figure out an intelligent way of solving
+			 * this, maybe connect-disconnect.
+			 */
+			if (1) {
 				ret_size += sizeof(pid_t);
 				ret = (pid_t *) realloc(ret, ret_size);
 				++i;
@@ -592,17 +597,17 @@ int ustcmd_force_switch(pid_t pid)
 
 int ustcmd_send_cmd(const char *cmd, const pid_t pid, char **reply)
 {
-	struct ustcomm_connection conn;
+	int app_fd;
 	int retval;
 
-	if (ustcomm_connect_app(pid, &conn)) {
+	if (ustcomm_connect_app(pid, &app_fd)) {
 		ERR("could not connect to PID %u", (unsigned int) pid);
 		return -1;
 	}
 
-	retval = ustcomm_send_request(&conn, cmd, reply);
+	retval = ustcomm_send_request(app_fd, cmd, reply);
 
-	ustcomm_close_app(&conn);
+	close(app_fd);
 
 	return retval;
 }

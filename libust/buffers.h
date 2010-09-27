@@ -82,6 +82,11 @@ struct ust_buffer {
 	int data_ready_fd_write;
 	/* the reading end of the pipe */
 	int data_ready_fd_read;
+	/*
+	 * List of buffers with an open pipe, used for fork and forced subbuffer
+	 * switch.
+	 */
+	struct list_head open_buffers_list;
 
 	unsigned int finalized;
 //ust//	struct timer_list switch_timer; /* timer for periodical switch */
