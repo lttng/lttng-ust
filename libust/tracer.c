@@ -337,7 +337,7 @@ void ltt_release_transport(struct kref *kref)
  */
 void ltt_release_trace(struct kref *kref)
 {
-	struct ust_trace *trace = container_of(kref,
+	struct ust_trace *trace = _ust_container_of(kref,
 			struct ust_trace, kref);
 	ltt_channels_trace_free(trace->channels);
 	free(trace);

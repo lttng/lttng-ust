@@ -87,7 +87,7 @@ static inline void *allocate_probes(int count)
 static inline void release_probes(void *old)
 {
 	if (old) {
-		struct tp_probes *tp_probes = container_of(old,
+		struct tp_probes *tp_probes = _ust_container_of(old,
 			struct tp_probes, probes[0]);
 //ust//		call_rcu_sched(&tp_probes->u.rcu, rcu_free_old_probes);
 		synchronize_rcu();
@@ -427,7 +427,7 @@ static void tracepoint_add_old_probes(void *old)
 {
 	need_update = 1;
 	if (old) {
-		struct tp_probes *tp_probes = container_of(old,
+		struct tp_probes *tp_probes = _ust_container_of(old,
 			struct tp_probes, probes[0]);
 		list_add(&tp_probes->u.list, &old_probes);
 	}

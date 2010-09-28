@@ -66,7 +66,7 @@ static struct ltt_channel_setting *lookup_channel(const char *name)
  */
 static void release_channel_setting(struct kref *kref)
 {
-	struct ltt_channel_setting *setting = container_of(kref,
+	struct ltt_channel_setting *setting = _ust_container_of(kref,
 		struct ltt_channel_setting, kref);
 	struct ltt_channel_setting *iter;
 

@@ -235,7 +235,7 @@ static notrace void marker_probe_cb_noarg(const struct marker *mdata,
 
 static void free_old_closure(struct rcu_head *head)
 {
-	struct marker_entry *entry = container_of(head,
+	struct marker_entry *entry = _ust_container_of(head,
 		struct marker_entry, rcu);
 	free(entry->oldptr);
 	/* Make sure we free the data before setting the pending flag to 0 */

@@ -203,7 +203,7 @@ int ust_buffers_create_buf(struct ust_channel *channel, int cpu)
 
 static void ust_buffers_destroy_channel(struct kref *kref)
 {
-	struct ust_channel *chan = container_of(kref, struct ust_channel, kref);
+	struct ust_channel *chan = _ust_container_of(kref, struct ust_channel, kref);
 	free(chan);
 }
 
@@ -225,7 +225,7 @@ static void ust_buffers_destroy_buf(struct ust_buffer *buf)
 /* called from kref_put */
 static void ust_buffers_remove_buf(struct kref *kref)
 {
-	struct ust_buffer *buf = container_of(kref, struct ust_buffer, kref);
+	struct ust_buffer *buf = _ust_container_of(kref, struct ust_buffer, kref);
 	ust_buffers_destroy_buf(buf);
 }
 
@@ -592,7 +592,7 @@ static void ltt_relay_print_buffer_errors(struct ust_channel *channel, int cpu)
 
 static void ltt_relay_release_channel(struct kref *kref)
 {
-	struct ust_channel *ltt_chan = container_of(kref,
+	struct ust_channel *ltt_chan = _ust_container_of(kref,
 			struct ust_channel, kref);
 	free(ltt_chan->buf);
 }
