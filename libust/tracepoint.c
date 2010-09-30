@@ -74,7 +74,7 @@ struct tp_probes {
 
 static inline void *allocate_probes(int count)
 {
-	struct tp_probes *p  = zmalloc(count * sizeof(void *)
+	struct tp_probes *p  = zmalloc(count * sizeof(struct probe)
 			+ sizeof(struct tp_probes));
 	return p == NULL ? NULL : p->probes;
 }
