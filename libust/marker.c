@@ -594,11 +594,11 @@ static int set_marker(struct marker_entry *entry, struct marker *elem,
 //ust//			BUG_ON(!ret);
 			ret = tracepoint_probe_register_noupdate(
 				elem->tp_name,
-				elem->tp_cb);
+				elem->tp_cb, NULL);
 		} else {
 			ret = tracepoint_probe_unregister_noupdate(
 				elem->tp_name,
-				elem->tp_cb);
+				elem->tp_cb, NULL);
 			/*
 			 * tracepoint_probe_update_all() must be called
 			 * before the module containing tp_cb is unloaded.
@@ -630,7 +630,7 @@ static void disable_marker(struct marker *elem)
 		 * checking has been done in the __trace_mark_tp() macro.
 		 */
 		ret = tracepoint_probe_unregister_noupdate(elem->tp_name,
-			elem->tp_cb);
+			elem->tp_cb, NULL);
 		WARN_ON(ret);
 		/*
 		 * tracepoint_probe_update_all() must be called
