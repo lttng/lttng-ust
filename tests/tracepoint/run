@@ -1,0 +1,17 @@
+#!/bin/bash
+
+TESTDIR=$(dirname $0)/..
+
+source $TESTDIR/test_functions.sh
+source $TESTDIR/tap.sh
+
+starttest "Testing Tracepoints"
+plan_tests 6
+
+okx usttrace $TESTDIR/tracepoint/tracepoint_test
+trace_loc=$(usttrace -W)
+trace_matches -N "probe1" -n "5" "probe = 13" $trace_loc
+trace_matches -N "probe2" -n "5" "probe = 42" $trace_loc
+trace_matches -N "probe3" -n "1" "probe = \"probe3\"" $trace_loc
+trace_matches -N "probe4" -n "100" "probe4 = 42" $trace_loc
+check_trace_logs "$trace_loc"

@@ -122,6 +122,7 @@ AC_CONFIG_FILES([
 	tests/dlopen/Makefile
 	tests/same_line_marker/Makefile
 	tests/trace_event/Makefile
+	tests/tracepoint/Makefile
 	tests/register_test/Makefile
 	libustinstr-malloc/Makefile
 	libustfork/Makefile
