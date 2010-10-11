@@ -34,7 +34,7 @@ pidfilepath="/tmp/ust-testsuite-$USER-$(date +%Y%m%d%H%M%S%N)-ustd-pid"
 mkfifo -m 0600 "$pidfilepath"
 
 VALG_OUT=/tmp/ust-testsuite-valg.txt
-valgrind -q ustd --pidfile "$pidfilepath" -o "$TRACE_DIR" >/dev/null 2>"$VALG_OUT" &
+valgrind --suppressions=$TESTDIR/valgrind_suppress.txt -q ustd --pidfile "$pidfilepath" -o "$TRACE_DIR" >/dev/null 2>"$VALG_OUT" &
 VALG_PID=$!
 USTD_PID="$(<$pidfilepath)"
 
