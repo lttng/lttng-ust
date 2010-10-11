@@ -25,7 +25,6 @@
 #include <ust/kcompat/kcompat.h>
 
 #define SOCK_DIR "/tmp/ust-app-socks"
-#define UST_SIGNAL SIGIO
 
 struct ustcomm_sock {
 	struct list_head list;
@@ -34,15 +33,86 @@ struct ustcomm_sock {
 };
 
 struct ustcomm_header {
-	int type;
-	long size;
 	int command;
-	int response;
+	long size;
+	int result;
 	int fd_included;
 };
 
+#define USTCOMM_BUFFER_SIZE ((1 << 12) - sizeof(struct ustcomm_header))
 
-//int send_message_pid(pid_t pid, const char *msg, char **reply);
+/* Specify a sata size that leaves margin at the end of a buffer
+ * in order to make sure that we never have more data than
+ * will fit in the buffer AND that the last chars (due to a
+ * pre-receive memset) will always be 0, terminating any string
+ */
+#define USTCOMM_DATA_SIZE (USTCOMM_BUFFER_SIZE - 20 * sizeof(void *))
+
+enum tracectl_commands {
+	ALLOC_TRACE,
+	CONSUME_BUFFER,
+	CREATE_TRACE,
+	DESTROY_TRACE,
+	DISABLE_MARKER,
+	ENABLE_MARKER,
+	EXIT,
+	FORCE_SUBBUF_SWITCH,
+	GET_BUF_SHMID_PIPE_FD,
+	GET_PIDUNIQUE,
+	GET_SOCK_PATH,
+	GET_SUBBUFFER,
+	GET_SUBBUF_NUM_SIZE,
+	LIST_MARKERS,
+	LIST_TRACE_EVENTS,
+	LOAD_PROBE_LIB,
+	NOTIFY_BUF_MAPPED,
+	PRINT_MARKERS,
+	PRINT_TRACE_EVENTS,
+	PUT_SUBBUFFER,
+	SETUP_TRACE,
+	SET_SOCK_PATH,
+	SET_SUBBUF_NUM,
+	SET_SUBBUF_SIZE,
+	START,
+	START_TRACE,
+	STOP_TRACE,
+};
+
+struct ustcomm_channel_info {
+	char *channel;
+	unsigned int subbuf_size;
+	unsigned int subbuf_num;
+	char data[USTCOMM_DATA_SIZE];
+};
+
+struct ustcomm_buffer_info {
+	char *channel;
+	int ch_cpu;
+	pid_t pid;
+	int buf_shmid;
+	int buf_struct_shmid;
+	long consumed_old;
+	char data[USTCOMM_DATA_SIZE];
+};
+
+struct ustcomm_marker_info {
+	char *channel;
+	char *marker;
+	char data[USTCOMM_DATA_SIZE];
+};
+
+struct ustcomm_sock_path {
+	char *sock_path;
+	char data[USTCOMM_DATA_SIZE];
+};
+
+struct ustcomm_pidunique {
+	s64 pidunique;
+};
+
+struct ustcomm_notify_buf_mapped {
+	char data[USTCOMM_DATA_SIZE];
+};
 
 /* Ensure directory existence, usefull for unix sockets */
 extern int ensure_dir_exists(const char *dir);
@@ -62,23 +132,81 @@ extern void ustcomm_del_named_sock(struct ustcomm_sock *sock,
 extern int ustcomm_send_fd(int sock, const struct ustcomm_header *header,
 			   const char *data, int *fd);
 extern int ustcomm_recv_fd(int sock, struct ustcomm_header *header,
-			   char **data, int *fd);
+			   char *data, int *fd);
 
 /* Normal send and receive functions */
 extern int ustcomm_send(int sock, const struct ustcomm_header *header,
 			const char *data);
 extern int ustcomm_recv(int sock, struct ustcomm_header *header,
-			char **data);
+			char *data);
 
+/* Receive and allocate data, not to be used inside libust */
+extern int ustcomm_recv_alloc(int sock,
+			      struct ustcomm_header *header,
+			      char **data);
+
+/* Request function, send and receive */
+extern int ustcomm_req(int sock,
+		       const struct ustcomm_header *req_header,
+		       const char *req_data,
+		       struct ustcomm_header *res_header,
+		       char *res_data);
 
 extern int ustcomm_request_consumer(pid_t pid, const char *channel);
 extern int ustcomm_connect_app(pid_t pid, int *app_fd);
 extern int ustcomm_connect_path(const char *path, int *connection_fd);
-extern int ustcomm_send_request(int sock, const char *req, char **reply);
-extern int ustcomm_send_reply(char *msg, int sock);
-extern int recv_message_conn(int sock, char **msg);
+
 extern int nth_token_is(const char *str, const char *token, int tok_no);
 
 extern char *nth_token(const char *str, int tok_no);
+
+/* String serialising functions, printf straight into a buffer */
+#define USTCOMM_POISON_PTR (void *)0x19831018
+
+extern char * ustcomm_print_data(char *data_field, int field_size,
+				 int *offset, const char *format, ...);
+extern char * ustcomm_restore_ptr(char *ptr, char *data_field,
+				  int data_field_size);
+
+#define COMPUTE_MSG_SIZE(struct_ptr, offset)				\
+	(size_t) (long)(struct_ptr)->data - (long)(struct_ptr) + (offset)
+
+/* Packing and unpacking functions, making life easier */
+extern int ustcomm_pack_channel_info(struct ustcomm_header *header,
+				     struct ustcomm_channel_info *ch_inf,
+				     const char *channel);
+
+extern int ustcomm_unpack_channel_info(struct ustcomm_channel_info *ch_inf);
+
+extern int ustcomm_pack_buffer_info(struct ustcomm_header *header,
+				    struct ustcomm_buffer_info *buf_inf,
+				    const char *channel,
+				    int channel_cpu);
+
+extern int ustcomm_unpack_buffer_info(struct ustcomm_buffer_info *buf_inf);
+
+extern int ustcomm_pack_marker_info(struct ustcomm_header *header,
+				    struct ustcomm_marker_info *marker_inf,
+				    const char *channel,
+				    const char *marker);
+
+extern int ustcomm_unpack_marker_info(struct ustcomm_marker_info *marker_inf);
+
+
+extern int ustcomm_pack_sock_path(struct ustcomm_header *header,
+				  struct ustcomm_sock_path *sock_path_inf,
+				  const char *socket_path);
+
+extern int ustcomm_unpack_sock_path(struct ustcomm_sock_path *sock_path_inf);
+
+/* Packing and requesting functions */
+extern int ustcomm_send_ch_req(int sock, char *channel, int command,
+			       struct ustcomm_header *recv_header,
+			       char *recv_data);
+
+extern int ustcomm_send_buf_req(int sock, char *channel, int ch_cpu,
+				int command,
+				struct ustcomm_header *recv_header,
+				char *recv_data);
 
 #endif /* USTCOMM_H */

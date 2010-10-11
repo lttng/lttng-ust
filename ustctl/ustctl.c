@@ -169,6 +169,53 @@ int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
 	return 0;
 }
 
+static int scan_ch_marker(const char *channel_marker, char **channel,
+			char **marker)
+{
+	int result;
+
+	*channel = NULL;
+	*marker = NULL;
+
+	result = sscanf(channel_marker, "%a[^/]/%as", channel, marker);
+	if (result != 2) {
+		if (errno) {
+			PERROR("Failed to read channel and marker names");
+		} else {
+			ERR("Failed to parse marker and channel names");
+		}
+		if (*channel) {
+			free(*channel);
+		}
+		if (*marker) {
+			free(*marker);
+		}
+		return -1;
+	} else {
+		return 0;
+	}
+}
+
+static int scan_ch_and_num(const char *ch_num, char **channel, unsigned int *num)
+{
+	int result;
+
+	*channel = NULL;
+
+	result = sscanf(ch_num, "%a[^/]/%u", channel, num);
+	if (result != 2) {
+		if (errno) {
+			PERROR("Failed to parse channel and number");
+		} else {
+			ERR("Failed to parse channel and number");
+		}
+		if (*channel) {
+			free(*channel);
+		}
+		return -1;
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	pid_t *pidit;
@@ -301,16 +348,31 @@ int main(int argc, char *argv[])
 				break;
 			case ENABLE_MARKER:
 				if (opts.regex) {
-					if (ustcmd_set_marker_state(opts.regex, 1, *pidit)) {
-						ERR("error while trying to enable marker %s with PID %u\n",
-								opts.regex, (unsigned int) *pidit);
+					char *channel, *marker;
+
+					if (scan_ch_marker(opts.regex,
+							   &channel, &marker)) {
+						retval = EXIT_FAILURE;
+						break;
+					}
+					if (ustcmd_set_marker_state(channel, marker, 1, *pidit)) {
+						PERROR("error while trying to enable marker %s with PID %u",
+						       opts.regex, (unsigned int) *pidit);
 						retval = EXIT_FAILURE;
 					}
 				}
+
 				break;
 			case DISABLE_MARKER:
 				if (opts.regex) {
-					if (ustcmd_set_marker_state(opts.regex, 0, *pidit)) {
+					char *channel, *marker;
+
+					if (scan_ch_marker(opts.regex,
+							   &channel, &marker)) {
+						retval = EXIT_FAILURE;
+						break;
+					}
+					if (ustcmd_set_marker_state(channel, marker, 0, *pidit)) {
 						ERR("error while trying to disable marker %s with PID %u\n",
 								opts.regex, (unsigned int) *pidit);
 						retval = EXIT_FAILURE;
@@ -320,7 +382,14 @@ int main(int argc, char *argv[])
 
 			case SET_SUBBUF_SIZE:
 				if (opts.regex) {
-					if (ustcmd_set_subbuf_size(opts.regex, *pidit)) {
+					char *channel;
+					unsigned int size;
+					if (scan_ch_and_num(opts.regex, &channel, &size)) {
+						retval = EXIT_FAILURE;
+						break;
+					}
+
+					if (ustcmd_set_subbuf_size(channel, size, *pidit)) {
 						ERR("error while trying to set the size of subbuffers with PID %u\n",
 								(unsigned int) *pidit);
 						retval = EXIT_FAILURE;
@@ -330,7 +399,19 @@ int main(int argc, char *argv[])
 
 			case SET_SUBBUF_NUM:
 				if (opts.regex) {
-					if (ustcmd_set_subbuf_num(opts.regex, *pidit)) {
+					char *channel;
+					unsigned int num;
+					if (scan_ch_and_num(opts.regex, &channel, &num)) {
+						retval = EXIT_FAILURE;
+						break;
+					}
+
+					if (num < 2) {
+						ERR("Subbuffer count should be greater or equal to 2");
+						retval = EXIT_FAILURE;
+						break;
+					}
+					if (ustcmd_set_subbuf_num(channel, num, *pidit)) {
 						ERR("error while trying to set the number of subbuffers with PID %u\n",
 								(unsigned int) *pidit);
 						retval = EXIT_FAILURE;

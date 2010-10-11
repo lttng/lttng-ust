@@ -277,58 +277,58 @@ del_sock:
 	ustcomm_del_sock(sock, keep_socket_file);
 }
 
+int ustcomm_recv_alloc(int sock,
+		       struct ustcomm_header *header,
+		       char **data) {
+	int result;
+	struct ustcomm_header peek_header;
+	struct iovec iov[2];
+	struct msghdr msg;
 
-/* Called by an app to ask the consumer daemon to connect to it. */
+	/* Just to make the caller fail hard */
+	*data = NULL;
 
-int ustcomm_request_consumer(pid_t pid, const char *channel)
-{
-	int result, daemon_fd;
-	int retval = 0;
-	char *msg=NULL;
-	char *explicit_daemon_socket_path, *daemon_path;
-
-	explicit_daemon_socket_path = getenv("UST_DAEMON_SOCKET");
-	if (explicit_daemon_socket_path) {
-		/* user specified explicitly a socket path */
-		result = asprintf(&daemon_path, "%s", explicit_daemon_socket_path);
-	} else {
-		/* just use the default path */
-		result = asprintf(&daemon_path, "%s/ustd", SOCK_DIR);
+	result = recv(sock, &peek_header, sizeof(peek_header),
+		      MSG_PEEK | MSG_WAITALL);
+	if (result <= 0) {
+		if(errno == ECONNRESET) {
+			return 0;
+		} else if (errno == EINTR) {
+			return -1;
+		} else if (result < 0) {
+			PERROR("recv");
+			return -1;
+		}
+		return 0;
 	}
+
+	memset(&msg, 0, sizeof(msg));
+
+	iov[0].iov_base = (char *)header;
+	iov[0].iov_len = sizeof(struct ustcomm_header);
+
+	msg.msg_iov = iov;
+	msg.msg_iovlen = 1;
+
+	if (peek_header.size) {
+		*data = zmalloc(peek_header.size);
+		if (!*data) {
+			return -ENOMEM;
+		}
+
+		iov[1].iov_base = *data;
+		iov[1].iov_len = peek_header.size;
+
+		msg.msg_iovlen++;
+	}
+
+	result = recvmsg(sock, &msg, MSG_WAITALL);
 	if (result < 0) {
-		ERR("string overflow allocating socket name");
-		return -1;
+		free(*data);
+		PERROR("recvmsg failed");
 	}
 
-	if (asprintf(&msg, "collect %d %s", pid, channel) < 0) {
-		ERR("ustcomm_request_consumer : asprintf failed (collect %d/%s)",
-		    pid, channel);
-		retval = -1;
-		goto free_daemon_path;
-	}
-
-	result = ustcomm_connect_path(daemon_path, &daemon_fd);
-	if (result < 0) {
-		WARN("ustcomm_connect_path failed, daemon_path: %s",
-		     daemon_path);
-		retval = -1;
-		goto del_string;
-	}
-
-	result = ustcomm_send_request(daemon_fd, msg, NULL);
-	if (result < 0) {
-		WARN("ustcomm_send_request failed, daemon path: %s",
-		     daemon_path);
-		retval = -1;
-	}
-
-	close(daemon_fd);
-del_string:
-	free(msg);
-free_daemon_path:
-	free(daemon_path);
-
-	return retval;
+	return result;
 }
 
 /* returns 1 to indicate a message was received
@@ -337,10 +337,9 @@ free_daemon_path:
  */
 int ustcomm_recv_fd(int sock,
 		    struct ustcomm_header *header,
-		    char **data, int *fd)
+		    char *data, int *fd)
 {
 	int result;
-	int retval;
 	struct ustcomm_header peek_header;
 	struct iovec iov[2];
 	struct msghdr msg;
@@ -369,16 +368,14 @@ int ustcomm_recv_fd(int sock,
 	msg.msg_iov = iov;
 	msg.msg_iovlen = 1;
 
-	if (peek_header.size) {
-		if (peek_header.size < 0 || peek_header.size > 100) {
-			WARN("big peek header! %d", peek_header.size);
-		}
-		*data = malloc(peek_header.size);
-		if (!*data) {
-			ERR("failed to allocate space for message");
+	if (peek_header.size && data) {
+		if (peek_header.size < 0 ||
+		    peek_header.size > USTCOMM_DATA_SIZE) {
+			ERR("big peek header! %d", peek_header.size);
+			return 0;
 		}
 
-		iov[1].iov_base = (char *)*data;
+		iov[1].iov_base = data;
 		iov[1].iov_len = peek_header.size;
 
 		msg.msg_iovlen++;
@@ -389,22 +386,12 @@ int ustcomm_recv_fd(int sock,
 		msg.msg_controllen = sizeof(buf);
 	}
 
-	result = recvmsg(sock, &msg,
-			 MSG_WAITALL);
-
+	result = recvmsg(sock, &msg, MSG_WAITALL);
 	if (result <= 0) {
-		if(errno == ECONNRESET) {
-			retval = 0;
-		} else if (errno == EINTR) {
-			retval = -1;
-		} else if (result < 0) {
-			PERROR("recv");
-			retval = -1;
-		} else {
-			retval = 0;
+		if (result < 0) {
+			PERROR("recvmsg failed");
 		}
-		free(*data);
-		return retval;
+		return result;
 	}
 
 	if (fd && peek_header.fd_included) {
@@ -429,18 +416,11 @@ int ustcomm_recv_fd(int sock,
 
 int ustcomm_recv(int sock,
 		 struct ustcomm_header *header,
-		 char **data)
+		 char *data)
 {
 	return ustcomm_recv_fd(sock, header, data, NULL);
 }
 
-
-int recv_message_conn(int sock, char **msg)
-{
-	struct ustcomm_header header;
-
-	return ustcomm_recv(sock, &header, msg);
-}
 
 int ustcomm_send_fd(int sock,
 		    const struct ustcomm_header *header,
@@ -461,7 +441,7 @@ int ustcomm_send_fd(int sock,
 	msg.msg_iov = iov;
 	msg.msg_iovlen = 1;
 
-	if (header->size) {
+	if (header->size && data) {
 		iov[1].iov_base = (char *)data;
 		iov[1].iov_len = header->size;
 
@@ -494,68 +474,20 @@ int ustcomm_send(int sock,
 	return ustcomm_send_fd(sock, header, data, NULL);
 }
 
-int ustcomm_send_reply(char *msg, int sock)
+int ustcomm_req(int sock,
+		const struct ustcomm_header *req_header,
+		const char *req_data,
+		struct ustcomm_header *res_header,
+		char *res_data)
 {
 	int result;
-	struct ustcomm_header header;
 
-	memset(&header, 0, sizeof(header));
-
-	header.size = strlen(msg) + 1;
-
-	result = ustcomm_send(sock, &header, msg);
-	if(result < 0) {
-		ERR("error in ustcomm_send");
-		return result;
-	}
-
-	return 0;
-}
-
-int ustcomm_send_req(int sock,
-		     const struct ustcomm_header *req_header,
-		     const char *data,
-		     char **response)
-{
-	int result;
-	struct ustcomm_header res_header;
-
-	result = ustcomm_send(sock, req_header, data);
+	result = ustcomm_send(sock, req_header, req_data);
 	if ( result <= 0) {
 		return result;
 	}
 
-	if (!response) {
-		return 1;
-	}
-
-	return ustcomm_recv(sock,
-			    &res_header,
-			    response);
-
-}
-
-/*
- * Return value:
- *   0: Success, but no reply because recv() returned 0
- *   1: Success
- *   -1: Error
- *
- * On error, the error message is printed, except on
- * ECONNRESET, which is normal when the application dies.
- */
-
-int ustcomm_send_request(int sock, const char *req, char **reply)
-{
-	struct ustcomm_header req_header;
-
-	req_header.size = strlen(req) + 1;
-
-	return ustcomm_send_req(sock,
-				&req_header,
-				req,
-				reply);
-
+	return ustcomm_recv(sock, res_header, res_data);
 }
 
 /* Return value:
@@ -659,95 +591,236 @@ int ensure_dir_exists(const char *dir)
 	return 0;
 }
 
-/* Used by the daemon to initialize its server so applications
- * can connect to it.
- */
-
-
-static const char *find_tok(const char *str)
+char * ustcomm_print_data(char *data_field, int field_size,
+			  int *offset, const char *format, ...)
 {
-	while(*str == ' ') {
-		str++;
+	va_list args;
+	int count, limit;
+	char *ptr = USTCOMM_POISON_PTR;
 
-		if(*str == 0)
-			return NULL;
+	limit = field_size - *offset;
+	va_start(args, format);
+	count = vsnprintf(&data_field[*offset], limit, format, args);
+	va_end(args);
+
+	if (count < limit && count > -1) {
+		ptr = NULL + *offset;
+		*offset = *offset + count + 1;
 	}
 
-	return str;
+	return ptr;
 }
 
-static const char *find_sep(const char *str)
+char * ustcomm_restore_ptr(char *ptr, char *data_field, int data_field_size)
 {
-	while(*str != ' ') {
-		str++;
-
-		if(*str == 0)
-			break;
-	}
-
-	return str;
-}
-
-int nth_token_is(const char *str, const char *token, int tok_no)
-{
-	int i;
-	const char *start;
-	const char *end;
-
-	for(i=0; i<=tok_no; i++) {
-		str = find_tok(str);
-		if(str == NULL)
-			return -1;
-
-		start = str;
-
-		str = find_sep(str);
-		if(str == NULL)
-			return -1;
-
-		end = str;
-	}
-
-	if(end-start != strlen(token))
-		return 0;
-
-	if(strncmp(start, token, end-start))
-		return 0;
-
-	return 1;
-}
-
-char *nth_token(const char *str, int tok_no)
-{
-	static char *retval = NULL;
-	int i;
-	const char *start;
-	const char *end;
-
-	for(i=0; i<=tok_no; i++) {
-		str = find_tok(str);
-		if(str == NULL)
-			return NULL;
-
-		start = str;
-
-		str = find_sep(str);
-		if(str == NULL)
-			return NULL;
-
-		end = str;
-	}
-
-	if(retval) {
-		free(retval);
-		retval = NULL;
-	}
-
-	if (asprintf(&retval, "%.*s", (int)(end-start), start) < 0) {
-		ERR("nth_token : asprintf failed (%.*s)",
-		    (int)(end-start), start);
+	if ((unsigned long)ptr > data_field_size ||
+	    ptr == USTCOMM_POISON_PTR) {
 		return NULL;
 	}
 
-	return retval;
+	return data_field + (long)ptr;
+}
+
+
+int ustcomm_pack_channel_info(struct ustcomm_header *header,
+			      struct ustcomm_channel_info *ch_inf,
+			      const char *channel)
+{
+	int offset = 0;
+
+	ch_inf->channel = ustcomm_print_data(ch_inf->data,
+					     sizeof(ch_inf->data),
+					     &offset,
+					     channel);
+
+	if (ch_inf->channel == USTCOMM_POISON_PTR) {
+		return -ENOMEM;
+	}
+
+	header->size = COMPUTE_MSG_SIZE(ch_inf, offset);
+
+	return 0;
+}
+
+
+int ustcomm_unpack_channel_info(struct ustcomm_channel_info *ch_inf)
+{
+	ch_inf->channel = ustcomm_restore_ptr(ch_inf->channel,
+					      ch_inf->data,
+					      sizeof(ch_inf->data));
+	if (!ch_inf->channel) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int ustcomm_pack_buffer_info(struct ustcomm_header *header,
+			     struct ustcomm_buffer_info *buf_inf,
+			     const char *channel,
+			     int channel_cpu)
+{
+	int offset = 0;
+
+	buf_inf->channel = ustcomm_print_data(buf_inf->data,
+					      sizeof(buf_inf->data),
+					      &offset,
+					      channel);
+
+	if (buf_inf->channel == USTCOMM_POISON_PTR) {
+		return -ENOMEM;
+	}
+
+	buf_inf->ch_cpu = channel_cpu;
+
+	header->size = COMPUTE_MSG_SIZE(buf_inf, offset);
+
+	return 0;
+}
+
+
+int ustcomm_unpack_buffer_info(struct ustcomm_buffer_info *buf_inf)
+{
+	buf_inf->channel = ustcomm_restore_ptr(buf_inf->channel,
+					       buf_inf->data,
+					       sizeof(buf_inf->data));
+	if (!buf_inf->channel) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int ustcomm_pack_marker_info(struct ustcomm_header *header,
+			     struct ustcomm_marker_info *marker_inf,
+			     const char *channel,
+			     const char *marker)
+{
+	int offset = 0;
+
+	marker_inf->channel = ustcomm_print_data(marker_inf->data,
+						 sizeof(marker_inf->data),
+						 &offset,
+						 channel);
+
+	if (marker_inf->channel == USTCOMM_POISON_PTR) {
+		return -ENOMEM;
+	}
+
+
+	marker_inf->marker = ustcomm_print_data(marker_inf->data,
+						 sizeof(marker_inf->data),
+						 &offset,
+						 marker);
+
+	if (marker_inf->marker == USTCOMM_POISON_PTR) {
+		return -ENOMEM;
+	}
+
+	header->size = COMPUTE_MSG_SIZE(marker_inf, offset);
+
+	return 0;
+}
+
+int ustcomm_unpack_marker_info(struct ustcomm_marker_info *marker_inf)
+{
+	marker_inf->channel = ustcomm_restore_ptr(marker_inf->channel,
+						  marker_inf->data,
+						  sizeof(marker_inf->data));
+	if (!marker_inf->channel) {
+		return -EINVAL;
+	}
+
+	marker_inf->marker = ustcomm_restore_ptr(marker_inf->marker,
+						 marker_inf->data,
+						 sizeof(marker_inf->data));
+	if (!marker_inf->marker) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int ustcomm_pack_sock_path(struct ustcomm_header *header,
+			   struct ustcomm_sock_path *sock_path_inf,
+			   const char *socket_path)
+{
+	int offset = 0;
+
+	sock_path_inf->sock_path =
+		ustcomm_print_data(sock_path_inf->data,
+				   sizeof(sock_path_inf->data),
+				   &offset,
+				   socket_path);
+
+	if (sock_path_inf->sock_path == USTCOMM_POISON_PTR) {
+		return -ENOMEM;
+	}
+
+	header->size = COMPUTE_MSG_SIZE(sock_path_inf, offset);
+
+	return 0;
+}
+
+int ustcomm_unpack_sock_path(struct ustcomm_sock_path *sock_path_inf)
+{
+	sock_path_inf->sock_path =
+		ustcomm_restore_ptr(sock_path_inf->sock_path,
+				    sock_path_inf->data,
+				    sizeof(sock_path_inf->data));
+	if (!sock_path_inf->sock_path) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int ustcomm_send_ch_req(int sock, char *channel, int command,
+			struct ustcomm_header *recv_header,
+			char *recv_data)
+{
+	struct ustcomm_header send_header;
+	struct ustcomm_channel_info ch_info;
+	int result;
+
+	result = ustcomm_pack_channel_info(&send_header,
+					   &ch_info,
+					   channel);
+	if (result < 0) {
+		return result;
+	}
+
+	send_header.command = command;
+
+	return ustcomm_req(sock,
+			   &send_header,
+			   (char *)&ch_info,
+			   recv_header,
+			   recv_data);
+}
+
+int ustcomm_send_buf_req(int sock, char *channel, int ch_cpu,
+			 int command,
+			 struct ustcomm_header *recv_header,
+			 char *recv_data)
+{
+	struct ustcomm_header send_header;
+	struct ustcomm_buffer_info buf_info;
+	int result;
+
+	result = ustcomm_pack_buffer_info(&send_header,
+					  &buf_info,
+					  channel,
+					  ch_cpu);
+	if (result < 0) {
+		return result;
+	}
+
+	send_header.command = command;
+
+	return ustcomm_req(sock,
+			   &send_header,
+			   (char *)&buf_info,
+			   recv_header,
+			   recv_data);
 }

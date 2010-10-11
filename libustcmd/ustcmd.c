@@ -28,6 +28,61 @@
 #include "ust/ustcmd.h"
 #include "usterr.h"
 
+static int do_cmd(const pid_t pid,
+		  const struct ustcomm_header *req_header,
+		  const char *req_data,
+		  struct ustcomm_header *res_header,
+		  char **res_data)
+{
+	int app_fd, result, saved_errno = 0;
+	char *recv_buf;
+
+	if (ustcomm_connect_app(pid, &app_fd)) {
+		ERR("could not connect to PID %u", (unsigned int) pid);
+		errno = ENOTCONN;
+		return -1;
+	}
+
+	recv_buf = zmalloc(USTCOMM_BUFFER_SIZE);
+	if (!recv_buf) {
+		saved_errno = ENOMEM;
+		goto close_app_fd;
+	}
+
+	result = ustcomm_req(app_fd, req_header, req_data, res_header, recv_buf);
+	if (result > 0) {
+		saved_errno = -res_header->result;
+		if (res_header->size == 0 || saved_errno > 0) {
+			free(recv_buf);
+		} else {
+			if (res_data) {
+				*res_data = recv_buf;
+			} else {
+				free(recv_buf);
+			}
+		}
+	} else {
+		ERR("ustcomm req failed");
+		if (result == 0) {
+			saved_errno = ENOTCONN;
+		} else {
+			saved_errno = -result;
+		}
+		free(recv_buf);
+	}
+
+close_app_fd:
+	close(app_fd);
+
+	errno = saved_errno;
+
+	if (errno) {
+		return -1;
+	}
+
+	return 0;
+}
+
 pid_t *ustcmd_get_online_pids(void)
 {
 	struct dirent *dirent;
@@ -43,13 +98,13 @@ pid_t *ustcmd_get_online_pids(void)
 
 	while ((dirent = readdir(dir))) {
 		if (!strcmp(dirent->d_name, ".") ||
-			!strcmp(dirent->d_name, "..")) {
+		    !strcmp(dirent->d_name, "..")) {
 
 			continue;
 		}
 
 		if (dirent->d_type != DT_DIR &&
-			!!strcmp(dirent->d_name, "ustd")) {
+		    !!strcmp(dirent->d_name, "ustd")) {
 
 			sscanf(dirent->d_name, "%u", (unsigned int *) &ret[i]);
 			/* FIXME: Here we previously called pid_is_online, which
@@ -68,7 +123,7 @@ pid_t *ustcmd_get_online_pids(void)
 	ret[i] = 0; /* Array end */
 
 	if (ret[0] == 0) {
-		 /* No PID at all */
+		/* No PID at all */
 		free(ret);
 		return NULL;
 	}
@@ -85,30 +140,26 @@ pid_t *ustcmd_get_online_pids(void)
  * @param pid	Traced process ID
  * @return	0 if successful, or errors {USTCMD_ERR_GEN, USTCMD_ERR_ARG}
  */
-int ustcmd_set_marker_state(const char *mn, int state, pid_t pid)
+int ustcmd_set_marker_state(const char *channel, const char *marker,
+			    int state, pid_t pid)
 {
-	char *cmd_str [] = {"disable_marker", "enable_marker"};
-	char *cmd;
+	struct ustcomm_header req_header, res_header;
+	struct ustcomm_marker_info marker_inf;
 	int result;
 
-	if (mn == NULL) {
-		return USTCMD_ERR_ARG;
+	result = ustcomm_pack_marker_info(&req_header,
+					  &marker_inf,
+					  channel,
+					  marker);
+	if (result < 0) {
+		errno = -result;
+		return -1;
 	}
 
-	if (asprintf(&cmd, "%s %s", cmd_str[state], mn) < 0) {
-		ERR("ustcmd_set_marker_state : asprintf failed (%s %s)",
-		    cmd_str[state], mn);
-		return USTCMD_ERR_GEN;
-	}
+	req_header.command = state ? ENABLE_MARKER : DISABLE_MARKER;
 
-	result = ustcmd_send_cmd(cmd, pid, NULL);
-	if (result != 1) {
-		free(cmd);
-		return USTCMD_ERR_GEN;
-	}
-
-	free(cmd);
-	return 0;
+	return do_cmd(pid, &req_header, (char *)&marker_inf,
+		      &res_header, NULL);
 }
 
 /**
@@ -118,25 +169,26 @@ int ustcmd_set_marker_state(const char *mn, int state, pid_t pid)
  * @param pid		Traced process ID
  * @return		0 if successful, or error
  */
-int ustcmd_set_subbuf_size(const char *channel_size, pid_t pid)
+int ustcmd_set_subbuf_size(const char *channel, unsigned int subbuf_size,
+			   pid_t pid)
 {
-	char *cmd;
+	struct ustcomm_header req_header, res_header;
+	struct ustcomm_channel_info ch_inf;
 	int result;
 
-	if (asprintf(&cmd, "%s %s", "set_subbuf_size", channel_size) < 0) {
-		ERR("ustcmd_set_subbuf_size : asprintf failed (set_subbuf_size %s)",
-		    channel_size);
+	result = ustcomm_pack_channel_info(&req_header,
+					   &ch_inf,
+					   channel);
+	if (result < 0) {
+		errno = -result;
 		return -1;
 	}
 
-	result = ustcmd_send_cmd(cmd, pid, NULL);
-	if (result != 1) {
-		free(cmd);
-		return 1;
-	}
+	req_header.command = SET_SUBBUF_SIZE;
+	ch_inf.subbuf_size = subbuf_size;
 
-	free(cmd);
-	return 0;
+	return do_cmd(pid, &req_header, (char *)&ch_inf,
+		      &res_header, NULL);
 }
 
 /**
@@ -146,56 +198,59 @@ int ustcmd_set_subbuf_size(const char *channel_size, pid_t pid)
  * @param pid		Traced process ID
  * @return		0 if successful, or error
  */
-int ustcmd_set_subbuf_num(const char *channel_size, pid_t pid)
+int ustcmd_set_subbuf_num(const char *channel, unsigned int num,
+			  pid_t pid)
 {
-	char *cmd;
+	struct ustcomm_header req_header, res_header;
+	struct ustcomm_channel_info ch_inf;
 	int result;
 
-	if (asprintf(&cmd, "%s %s", "set_subbuf_num", channel_size) < 0) {
-		ERR("ustcmd_set_subbuf_num : asprintf failed (set_subbuf_num %s",
-		    channel_size);
+	result = ustcomm_pack_channel_info(&req_header,
+					   &ch_inf,
+					   channel);
+	if (result < 0) {
+		errno = -result;
 		return -1;
 	}
 
-	result = ustcmd_send_cmd(cmd, pid, NULL);
-	if (result != 1) {
-		free(cmd);
-		return 1;
-	}
+	req_header.command = SET_SUBBUF_NUM;
+	ch_inf.subbuf_num = num;
 
-	free(cmd);
-	return 0;
+	return do_cmd(pid, &req_header, (char *)&ch_inf,
+		      &res_header, NULL);
+
 }
 
-/**
- * Get subbuffer size.
- *
- * @param channel	Channel name
- * @param pid		Traced process ID
- * @return		subbuf size if successful, or error
- */
-int ustcmd_get_subbuf_size(const char *channel, pid_t pid)
+static int ustcmd_get_subbuf_num_size(const char *channel, pid_t pid,
+			       int *num, int *size)
 {
-	char *cmd, *reply;
+	struct ustcomm_header req_header, res_header;
+	struct ustcomm_channel_info ch_inf, *ch_inf_res;
 	int result;
 
-	/* format: channel_cpu */
-	if (asprintf(&cmd, "%s %s_0", "get_subbuf_size", channel) < 0) {
-		ERR("ustcmd_get_subbuf_size : asprintf failed (get_subbuf_size, %s_0",
-		    channel);
+
+	result = ustcomm_pack_channel_info(&req_header,
+					   &ch_inf,
+					   channel);
+	if (result < 0) {
+		errno = -result;
 		return -1;
 	}
 
-	result = ustcmd_send_cmd(cmd, pid, &reply);
-	if (result != 1) {
-		free(cmd);
+	req_header.command = GET_SUBBUF_NUM_SIZE;
+
+	result = do_cmd(pid, &req_header, (char *)&ch_inf,
+			&res_header, (char **)&ch_inf_res);
+	if (result < 0) {
 		return -1;
 	}
 
-	result = atoi(reply);
-	free(cmd);
-	free(reply);
-	return result;
+	*num = ch_inf_res->subbuf_num;
+	*size = ch_inf_res->subbuf_size;
+
+	free(ch_inf_res);
+
+	return 0;
 }
 
 /**
@@ -207,26 +262,37 @@ int ustcmd_get_subbuf_size(const char *channel, pid_t pid)
  */
 int ustcmd_get_subbuf_num(const char *channel, pid_t pid)
 {
-	char *cmd, *reply;
-	int result;
+	int num, size, result;
 
-	/* format: channel_cpu */
-	if (asprintf(&cmd, "%s %s_0", "get_n_subbufs", channel) < 0) {
-		ERR("ustcmd_get_subbuf_num : asprintf failed (get_n_subbufs, %s_0",
-		    channel);
+	result = ustcmd_get_subbuf_num_size(channel, pid,
+					    &num, &size);
+	if (result < 0) {
+		errno = -result;
 		return -1;
 	}
 
-	result = ustcmd_send_cmd(cmd, pid, &reply);
-	if (result != 1) {
-		free(cmd);
+	return num;
+}
+
+/**
+ * Get subbuffer size.
+ *
+ * @param channel	Channel name
+ * @param pid		Traced process ID
+ * @return		subbuf size if successful, or error
+ */
+int ustcmd_get_subbuf_size(const char *channel, pid_t pid)
+{
+	int num, size, result;
+
+	result = ustcmd_get_subbuf_num_size(channel, pid,
+					    &num, &size);
+	if (result < 0) {
+		errno = -result;
 		return -1;
 	}
 
-	result = atoi(reply);
-	free(cmd);
-	free(reply);
-	return result;
+	return size;
 }
 
 /**
@@ -237,14 +303,12 @@ int ustcmd_get_subbuf_num(const char *channel, pid_t pid)
  */
 int ustcmd_destroy_trace(pid_t pid)
 {
-	int result;
+	struct ustcomm_header req_header, res_header;
 
-	result = ustcmd_send_cmd("trace_destroy", pid, NULL);
-	if (result != 1) {
-		return USTCMD_ERR_GEN;
-	}
+	req_header.command = DESTROY_TRACE;
+	req_header.size = 0;
 
-	return 0;
+	return do_cmd(pid, &req_header, NULL, &res_header, NULL);
 }
 
 /**
@@ -255,14 +319,12 @@ int ustcmd_destroy_trace(pid_t pid)
  */
 int ustcmd_setup_and_start(pid_t pid)
 {
-	int result;
+	struct ustcomm_header req_header, res_header;
 
-	result = ustcmd_send_cmd("start", pid, NULL);
-	if (result != 1) {
-		return USTCMD_ERR_GEN;
-	}
+	req_header.command = START;
+	req_header.size = 0;
 
-	return 0;
+	return do_cmd(pid, &req_header, NULL, &res_header, NULL);
 }
 
 /**
@@ -273,14 +335,12 @@ int ustcmd_setup_and_start(pid_t pid)
  */
 int ustcmd_create_trace(pid_t pid)
 {
-	int result;
+	struct ustcomm_header req_header, res_header;
 
-	result = ustcmd_send_cmd("trace_create", pid, NULL);
-	if (result != 1) {
-		return USTCMD_ERR_GEN;
-	}
+	req_header.command = CREATE_TRACE;
+	req_header.size = 0;
 
-	return 0;
+	return do_cmd(pid, &req_header, NULL, &res_header, NULL);
 }
 
 /**
@@ -291,14 +351,12 @@ int ustcmd_create_trace(pid_t pid)
  */
 int ustcmd_start_trace(pid_t pid)
 {
-	int result;
+	struct ustcomm_header req_header, res_header;
 
-	result = ustcmd_send_cmd("trace_start", pid, NULL);
-	if (result != 1) {
-		return USTCMD_ERR_GEN;
-	}
+	req_header.command = START_TRACE;
+	req_header.size = 0;
 
-	return 0;
+	return do_cmd(pid, &req_header, NULL, &res_header, NULL);
 }
 
 /**
@@ -309,14 +367,12 @@ int ustcmd_start_trace(pid_t pid)
  */
 int ustcmd_alloc_trace(pid_t pid)
 {
-	int result;
+	struct ustcomm_header req_header, res_header;
 
-	result = ustcmd_send_cmd("trace_alloc", pid, NULL);
-	if (result != 1) {
-		return USTCMD_ERR_GEN;
-	}
+	req_header.command = ALLOC_TRACE;
+	req_header.size = 0;
 
-	return 0;
+	return do_cmd(pid, &req_header, NULL, &res_header, NULL);
 }
 
 /**
@@ -327,14 +383,12 @@ int ustcmd_alloc_trace(pid_t pid)
  */
 int ustcmd_stop_trace(pid_t pid)
 {
-	int result;
+	struct ustcomm_header req_header, res_header;
 
-	result = ustcmd_send_cmd("trace_stop", pid, NULL);
-	if (result != 1) {
-		return USTCMD_ERR_GEN;
-	}
+	req_header.command = STOP_TRACE;
+	req_header.size = 0;
 
-	return 0;
+	return do_cmd(pid, &req_header, NULL, &res_header, NULL);
 }
 
 /**
@@ -391,22 +445,40 @@ int ustcmd_free_cmsf(struct marker_status *cmsf)
  */
 int ustcmd_get_cmsf(struct marker_status **cmsf, const pid_t pid)
 {
+	struct ustcomm_header req_header, res_header;
 	char *big_str = NULL;
-	int result;
+	int result, app_fd;
 	struct marker_status *tmp_cmsf = NULL;
 	unsigned int i = 0, cmsf_ind = 0;
 
 	if (cmsf == NULL) {
 		return -1;
 	}
-	result = ustcmd_send_cmd("list_markers", pid, &big_str);
-	if (result != 1) {
-		ERR("error while getting markers list");
+
+	if (ustcomm_connect_app(pid, &app_fd)) {
+		ERR("could not connect to PID %u", (unsigned int) pid);
 		return -1;
 	}
 
-	tmp_cmsf = (struct marker_status *) malloc(sizeof(struct marker_status) *
-		(ustcmd_count_nl(big_str) + 1));
+	req_header.command = LIST_MARKERS;
+	req_header.size = 0;
+
+	result = ustcomm_send(app_fd, &req_header, NULL);
+	if (result <= 0) {
+		PERROR("error while requesting markers list for process %d", pid);
+		return -1;
+	}
+
+	result = ustcomm_recv_alloc(app_fd, &res_header, &big_str);
+	if (result <= 0) {
+		ERR("error while receiving markers list");
+		return -1;
+	}
+
+	close(app_fd);
+
+	tmp_cmsf = (struct marker_status *) zmalloc(sizeof(struct marker_status) *
+						    (ustcmd_count_nl(big_str) + 1));
 	if (tmp_cmsf == NULL) {
 		ERR("Failed to allocate CMSF array");
 		return -1;
@@ -417,12 +489,12 @@ int ustcmd_get_cmsf(struct marker_status **cmsf, const pid_t pid)
 		char state;
 
 		sscanf(big_str + i, "marker: %a[^/]/%a[^ ] %c %a[^\n]",
-			&tmp_cmsf[cmsf_ind].channel,
-			&tmp_cmsf[cmsf_ind].marker,
-			&state,
-			&tmp_cmsf[cmsf_ind].fs);
+		       &tmp_cmsf[cmsf_ind].channel,
+		       &tmp_cmsf[cmsf_ind].marker,
+		       &state,
+		       &tmp_cmsf[cmsf_ind].fs);
 		tmp_cmsf[cmsf_ind].state = (state == USTCMD_MS_CHR_ON ?
-			USTCMD_MS_ON : USTCMD_MS_OFF); /* Marker state */
+					    USTCMD_MS_ON : USTCMD_MS_OFF); /* Marker state */
 
 		while (big_str[i] != '\n') {
 			++i; /* Go to next '\n' */
@@ -472,10 +544,11 @@ int ustcmd_free_tes(struct trace_event_status *tes)
  * @return	0 if successful, or -1 on error
  */
 int ustcmd_get_tes(struct trace_event_status **tes,
-			    const pid_t pid)
+		   const pid_t pid)
 {
+	struct ustcomm_header req_header, res_header;
 	char *big_str = NULL;
-	int result;
+	int result, app_fd;
 	struct trace_event_status *tmp_tes = NULL;
 	unsigned int i = 0, tes_ind = 0;
 
@@ -483,11 +556,27 @@ int ustcmd_get_tes(struct trace_event_status **tes,
 		return -1;
 	}
 
-	result = ustcmd_send_cmd("list_trace_events", pid, &big_str);
-	if (result != 1) {
-		ERR("error while getting trace_event list");
+	if (ustcomm_connect_app(pid, &app_fd)) {
+		ERR("could not connect to PID %u", (unsigned int) pid);
 		return -1;
 	}
+
+	req_header.command = LIST_TRACE_EVENTS;
+	req_header.size = 0;
+
+	result = ustcomm_send(app_fd, &req_header, NULL);
+	if (result != 1) {
+		ERR("error while requesting trace_event list");
+		return -1;
+	}
+
+	result = ustcomm_recv_alloc(app_fd, &res_header, &big_str);
+	if (result != 1) {
+		ERR("error while receiving markers list");
+		return -1;
+	}
+
+	close(app_fd);
 
 	tmp_tes = (struct trace_event_status *)
 		zmalloc(sizeof(struct trace_event_status) *
@@ -499,10 +588,8 @@ int ustcmd_get_tes(struct trace_event_status **tes,
 
 	/* Parse received reply string (format: "[name]"): */
 	while (big_str[i] != '\0') {
-		char state;
-
 		sscanf(big_str + i, "trace_event: %a[^\n]",
-			&tmp_tes[tes_ind].name);
+		       &tmp_tes[tes_ind].name);
 		while (big_str[i] != '\n') {
 			++i; /* Go to next '\n' */
 		}
@@ -526,23 +613,23 @@ int ustcmd_get_tes(struct trace_event_status **tes,
  */
 int ustcmd_set_sock_path(const char *sock_path, pid_t pid)
 {
-	char *cmd;
-	int result;
+	int offset = 0;
+	struct ustcomm_header req_header, res_header;
+	struct ustcomm_sock_path sock_path_msg;
 
-	if (asprintf(&cmd, "%s %s", "set_sock_path", sock_path) < 0) {
-		ERR("ustcmd_set_sock_path : asprintf failed (set_sock_path, %s",
-		    sock_path);
+	sock_path_msg.sock_path = ustcomm_print_data(sock_path_msg.data,
+						     sizeof(sock_path_msg.data),
+						     &offset,
+						     sock_path);
+	if (sock_path_msg.sock_path == USTCOMM_POISON_PTR) {
 		return -1;
 	}
 
-	result = ustcmd_send_cmd(cmd, pid, NULL);
-	if (result != 1) {
-		free(cmd);
-		return USTCMD_ERR_GEN;
-	}
+	req_header.command = SET_SOCK_PATH;
+	req_header.size = COMPUTE_MSG_SIZE(&sock_path_msg, offset);
 
-	free(cmd);
-	return 0;
+	return do_cmd(pid, &req_header, (char *)&sock_path_msg,
+		      &res_header, NULL);
 }
 
 /**
@@ -554,60 +641,38 @@ int ustcmd_set_sock_path(const char *sock_path, pid_t pid)
  */
 int ustcmd_get_sock_path(char **sock_path, pid_t pid)
 {
-	char *cmd, *reply;
 	int result;
+	struct ustcomm_header req_header, res_header;
+	struct ustcomm_sock_path *sock_path_msg;
 
-	if (asprintf(&cmd, "%s", "get_sock_path") < 0) {
-		ERR("ustcmd_get_sock_path : asprintf failed");
-		return USTCMD_ERR_GEN;
+	req_header.command = GET_SOCK_PATH;
+	req_header.size = 0;
+
+	result = do_cmd(pid, &req_header, NULL, &res_header,
+			(char **)&sock_path_msg);
+	if (result < 0) {
+		return -1;
 	}
 
-	result = ustcmd_send_cmd(cmd, pid, &reply);
-	if (result != 1) {
-		free(cmd);
-		return USTCMD_ERR_GEN;
+	result = ustcomm_unpack_sock_path(sock_path_msg);
+	if (result < 0) {
+		return result;
 	}
 
-	free(cmd);
-	*sock_path = reply;
+	*sock_path = strdup(sock_path_msg->sock_path);
+
+	free(sock_path_msg);
+
 	return 0;
 }
 
 int ustcmd_force_switch(pid_t pid)
 {
-	int result;
+	struct ustcomm_header req_header, res_header;
 
-	result = ustcmd_send_cmd("force_switch", pid, NULL);
-	if (result != 1) {
-		return USTCMD_ERR_GEN;
-	}
+	req_header.command = FORCE_SUBBUF_SWITCH;
+	req_header.size = 0;
 
-	return 0;
+	return do_cmd(pid, &req_header, NULL, &res_header, NULL);
 }
 
-/**
- * Sends a given command to a traceable process
- *
- * @param cmd	Null-terminated command to send
- * @param pid	Targeted PID
- * @param reply	Pointer to string to be filled with a reply string (must
- *		be NULL if no reply is needed for the given command).
- * @return	-1 if not successful, 0 on EOT, 1 on success
- */
-
-int ustcmd_send_cmd(const char *cmd, const pid_t pid, char **reply)
-{
-	int app_fd;
-	int retval;
-
-	if (ustcomm_connect_app(pid, &app_fd)) {
-		ERR("could not connect to PID %u", (unsigned int) pid);
-		return -1;
-	}
-
-	retval = ustcomm_send_request(app_fd, cmd, reply);
-
-	close(app_fd);
-
-	return retval;
-}

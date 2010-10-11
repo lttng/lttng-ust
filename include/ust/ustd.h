@@ -36,7 +36,10 @@
 struct ustcomm_sock;
 
 struct buffer_info {
-	const char *name;
+	char *name;
+	char *channel;
+	int channel_cpu;
+
 	pid_t pid;
 	int app_sock;
 	/* The pipe file descriptor */
