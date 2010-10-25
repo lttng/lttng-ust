@@ -45,6 +45,8 @@ simple_harness_run same_line_marker/same_line_marker.sh
 
 simple_harness_run tracepoint/run
 
+simple_harness_run ustcmd_function_tests/ustcmd_function_tests
+
 echo "************************************"
 if [[ $tests_failed -eq 0 ]]; then
     echo "$0: All passed"
