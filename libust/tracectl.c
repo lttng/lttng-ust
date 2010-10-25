@@ -50,6 +50,12 @@
  */
 s64 pidunique = -1LL;
 
+/* The process pid is used to detect a non-traceable fork
+ * and allow the non-traceable fork to be ignored
+ * by destructor sequences in libust
+ */
+static pid_t processpid = 0;
+
 static struct ustcomm_header _receive_header;
 static struct ustcomm_header *receive_header = &_receive_header;
 static char receive_buffer[USTCOMM_BUFFER_SIZE];
@@ -1201,6 +1207,7 @@ static void __attribute__((constructor)) init()
 	 * pid, (before and after an exec).
 	 */
 	pidunique = make_pidunique();
+	processpid = getpid();
 
 	DBG("Tracectl constructor");
 
@@ -1466,6 +1473,10 @@ static void stop_listener(void)
 
 static void __attribute__((destructor)) keepalive()
 {
+	if (processpid != getpid()) {
+		return;
+	}
+
 	if (trace_recording() && LOAD_SHARED(buffers_to_export)) {
 		int total = 0;
 		DBG("Keeping process alive for consumer daemon...");
@@ -1515,6 +1526,9 @@ static void ust_fork(void)
 
 	/* FIXME: technically, the locks could have been taken before the fork */
 	DBG("ust: forking");
+
+	/* Get the pid of the new process */
+	processpid = getpid();
 
 	/* break lock if necessary */
 	ltt_unlock_traces();
