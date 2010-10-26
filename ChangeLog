@@ -1,3 +1,27 @@
+2010-10-26 ust 0.8
+	* API CHANGE!!! Add data pointer to tracepoint probe
+	void *data is always the first argument to a tracepoint probe
+	* License LGPGv2.1 text and information added
+	* Update COPYING file
+	* Add TRACE_EVENT api proposal, not finalised
+	NOT usable at this point. Only bound to a printf.
+	ustctl command for listing trace event
+	* Multiple fixes
+	Compilation warnings
+	Value and error handling
+    	Fix bugs introduce by prior commits
+	Security fix (CVE-2010-3386)
+	Add exit status for ustctl
+	Change malloc to zmalloc for most of UST
+	Remove unused code, syntax cleanup and consistency for markers
+	* New UST internal communication protocol
+	Add message headers
+	Usage of epoll
+	* New testcases
+	* Try to decrease namespace pollution
+	* Fix valgrind for sendmsg bug
+	* tracectl destructor aware of fork
+
 2010-08-16  ust 0.6
 	* add ust strncpy interface for input robustness
 	* multiple memory barrier fix
