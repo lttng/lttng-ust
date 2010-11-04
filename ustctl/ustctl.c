@@ -216,6 +216,8 @@ static int scan_ch_and_num(const char *ch_num, char **channel, unsigned int *num
 	}
 }
 
+char *trace = "auto";
+
 int main(int argc, char *argv[])
 {
 	pid_t *pidit;
@@ -272,7 +274,7 @@ int main(int argc, char *argv[])
 	while(*pidit != -1) {
 		switch (opts.cmd) {
 			case CREATE_TRACE:
-				result = ustcmd_create_trace(*pidit);
+				result = ustcmd_create_trace(trace, *pidit);
 				if (result) {
 					ERR("error while trying to create trace with PID %u\n", (unsigned int) *pidit);
 					retval = EXIT_FAILURE;
@@ -281,7 +283,7 @@ int main(int argc, char *argv[])
 				break;
 
 			case START_TRACE:
-				result = ustcmd_start_trace(*pidit);
+				result = ustcmd_start_trace(trace, *pidit);
 				if (result) {
 					ERR("error while trying to for trace with PID %u\n", (unsigned int) *pidit);
 					retval = EXIT_FAILURE;
@@ -290,7 +292,7 @@ int main(int argc, char *argv[])
 				break;
 
 			case STOP_TRACE:
-				result = ustcmd_stop_trace(*pidit);
+				result = ustcmd_stop_trace(trace, *pidit);
 				if (result) {
 					ERR("error while trying to stop trace for PID %u\n", (unsigned int) *pidit);
 					retval = EXIT_FAILURE;
@@ -299,7 +301,7 @@ int main(int argc, char *argv[])
 				break;
 
 			case DESTROY_TRACE:
-				result = ustcmd_destroy_trace(*pidit);
+				result = ustcmd_destroy_trace(trace, *pidit);
 				if (result) {
 					ERR("error while trying to destroy trace with PID %u\n", (unsigned int) *pidit);
 					retval = EXIT_FAILURE;
@@ -355,7 +357,7 @@ int main(int argc, char *argv[])
 						retval = EXIT_FAILURE;
 						break;
 					}
-					if (ustcmd_set_marker_state(channel, marker, 1, *pidit)) {
+					if (ustcmd_set_marker_state(trace, channel, marker, 1, *pidit)) {
 						PERROR("error while trying to enable marker %s with PID %u",
 						       opts.regex, (unsigned int) *pidit);
 						retval = EXIT_FAILURE;
@@ -372,7 +374,7 @@ int main(int argc, char *argv[])
 						retval = EXIT_FAILURE;
 						break;
 					}
-					if (ustcmd_set_marker_state(channel, marker, 0, *pidit)) {
+					if (ustcmd_set_marker_state(trace, channel, marker, 0, *pidit)) {
 						ERR("error while trying to disable marker %s with PID %u\n",
 								opts.regex, (unsigned int) *pidit);
 						retval = EXIT_FAILURE;
@@ -389,7 +391,7 @@ int main(int argc, char *argv[])
 						break;
 					}
 
-					if (ustcmd_set_subbuf_size(channel, size, *pidit)) {
+					if (ustcmd_set_subbuf_size(trace, channel, size, *pidit)) {
 						ERR("error while trying to set the size of subbuffers with PID %u\n",
 								(unsigned int) *pidit);
 						retval = EXIT_FAILURE;
@@ -411,7 +413,7 @@ int main(int argc, char *argv[])
 						retval = EXIT_FAILURE;
 						break;
 					}
-					if (ustcmd_set_subbuf_num(channel, num, *pidit)) {
+					if (ustcmd_set_subbuf_num(trace, channel, num, *pidit)) {
 						ERR("error while trying to set the number of subbuffers with PID %u\n",
 								(unsigned int) *pidit);
 						retval = EXIT_FAILURE;
@@ -420,7 +422,7 @@ int main(int argc, char *argv[])
 				break;
 
 			case GET_SUBBUF_SIZE:
-				result = ustcmd_get_subbuf_size(opts.regex, *pidit);
+				result = ustcmd_get_subbuf_size(trace, opts.regex, *pidit);
 				if (result == -1) {
 					ERR("error while trying to get_subuf_size with PID %u\n", (unsigned int) *pidit);
 					retval = EXIT_FAILURE;
@@ -431,7 +433,7 @@ int main(int argc, char *argv[])
 				break;
 
 			case GET_SUBBUF_NUM:
-				result = ustcmd_get_subbuf_num(opts.regex, *pidit);
+				result = ustcmd_get_subbuf_num(trace, opts.regex, *pidit);
 				if (result == -1) {
 					ERR("error while trying to get_subuf_num with PID %u\n", (unsigned int) *pidit);
 					retval = EXIT_FAILURE;
@@ -442,7 +444,7 @@ int main(int argc, char *argv[])
 				break;
 
 			case ALLOC_TRACE:
-				result = ustcmd_alloc_trace(*pidit);
+				result = ustcmd_alloc_trace(trace, *pidit);
 				if (result) {
 					ERR("error while trying to alloc trace with PID %u\n", (unsigned int) *pidit);
 					retval = EXIT_FAILURE;

@@ -61,7 +61,7 @@ static int get_subbuffer(struct buffer_info *buf)
 	send_msg = &_send_msg;
 	recv_msg = &_recv_msg;
 
-	result = ustcomm_pack_buffer_info(send_hdr, send_msg,
+	result = ustcomm_pack_buffer_info(send_hdr, send_msg, buf->trace,
 					  buf->channel, buf->channel_cpu);
 	if (result < 0) {
 		return result;
@@ -105,7 +105,7 @@ static int put_subbuffer(struct buffer_info *buf)
 	recv_hdr = &_recv_hdr;
 	send_msg = &_send_msg;
 
-	result = ustcomm_pack_buffer_info(send_hdr, send_msg,
+	result = ustcomm_pack_buffer_info(send_hdr, send_msg, buf->trace,
 					  buf->channel, buf->channel_cpu);
 	if (result < 0) {
 		return result;
@@ -189,7 +189,7 @@ static int get_buf_shmid_pipe_fd(int sock, struct buffer_info *buf,
 	send_msg = &_send_msg;
 	recv_msg = &_recv_msg;
 
-	result = ustcomm_pack_buffer_info(send_hdr, send_msg,
+	result = ustcomm_pack_buffer_info(send_hdr, send_msg, buf->trace,
 					  buf->channel, buf->channel_cpu);
 	if (result < 0) {
 		ERR("Failed to pack buffer info");
@@ -234,7 +234,7 @@ static int get_subbuf_num_size(int sock, struct buffer_info *buf,
 	send_msg = &_send_msg;
 	recv_msg = &_recv_msg;
 
-	result = ustcomm_pack_channel_info(send_hdr, send_msg,
+	result = ustcomm_pack_channel_info(send_hdr, send_msg, buf->trace,
 					   buf->channel);
 	if (result < 0) {
 		return result;
@@ -266,7 +266,7 @@ static int notify_buffer_mapped(int sock, struct buffer_info *buf)
 	recv_hdr = &_recv_hdr;
 	send_msg = &_send_msg;
 
-	result = ustcomm_pack_buffer_info(send_hdr, send_msg,
+	result = ustcomm_pack_buffer_info(send_hdr, send_msg, buf->trace,
 					  buf->channel, buf->channel_cpu);
 	if (result < 0) {
 		return result;
@@ -285,7 +285,8 @@ static int notify_buffer_mapped(int sock, struct buffer_info *buf)
 
 
 struct buffer_info *connect_buffer(struct libustd_instance *instance, pid_t pid,
-				   const char *channel, int channel_cpu)
+				   const char *trace, const char *channel,
+				   int channel_cpu)
 {
 	struct buffer_info *buf;
 	int result;
@@ -297,9 +298,14 @@ struct buffer_info *connect_buffer(struct libustd_instance *instance, pid_t pid,
 		return NULL;
 	}
 
+	buf->trace = strdup(trace);
+	if (!buf->trace) {
+		goto free_buf;
+	}
+
 	buf->channel = strdup(channel);
 	if (!buf->channel) {
-		goto free_buf;
+		goto free_buf_trace;
 	}
 
 	result = asprintf(&buf->name, "%s_%d", channel, channel_cpu);
@@ -402,6 +408,9 @@ free_buf_name:
 
 free_buf_channel:
 	free(buf->channel);
+
+free_buf_trace:
+	free(buf->trace);
 
 free_buf:
 	free(buf);
@@ -508,6 +517,7 @@ int consumer_loop(struct libustd_instance *instance, struct buffer_info *buf)
 
 struct consumer_thread_args {
 	pid_t pid;
+	const char *trace;
 	const char *channel;
 	int channel_cpu;
 	struct libustd_instance *instance;
@@ -545,7 +555,7 @@ void *consumer_thread(void *arg)
 		goto end;
 	}
 
-	buf = connect_buffer(args->instance, args->pid,
+	buf = connect_buffer(args->instance, args->pid, args->trace,
 			     args->channel, args->channel_cpu);
 	if(buf == NULL) {
 		ERR("failed to connect to buffer");
@@ -567,7 +577,8 @@ void *consumer_thread(void *arg)
 }
 
 int start_consuming_buffer(struct libustd_instance *instance, pid_t pid,
-			   const char *channel, int channel_cpu)
+			   const char *trace, const char *channel,
+			   int channel_cpu)
 {
 	pthread_t thr;
 	struct consumer_thread_args *args;
@@ -582,11 +593,12 @@ int start_consuming_buffer(struct libustd_instance *instance, pid_t pid,
 	}
 
 	args->pid = pid;
+	args->trace = strdup(trace);
 	args->channel = strdup(channel);
 	args->channel_cpu = channel_cpu;
 	args->instance = instance;
-	DBG("beginning2 of start_consuming_buffer: args: pid %d bufname %s_%d",
-	    args->pid, args->channel, args->channel_cpu);
+	DBG("beginning2 of start_consuming_buffer: args: pid %d trace %s"
+	    " bufname %s_%d", args->pid, args->channel, args->channel_cpu);
 
 	result = pthread_create(&thr, NULL, consumer_thread, args);
 	if(result == -1) {
@@ -598,8 +610,8 @@ int start_consuming_buffer(struct libustd_instance *instance, pid_t pid,
 		ERR("pthread_detach failed");
 		return -1;
 	}
-	DBG("end of start_consuming_buffer: args: pid %d bufname %s_%d",
-	    args->pid, args->channel, args->channel_cpu);
+	DBG("end of start_consuming_buffer: args: pid %d trace %s "
+	    "bufname %s_%d", args->pid, args->channel, args->channel_cpu);
 
 	return 0;
 }
@@ -623,9 +635,11 @@ static void process_client_cmd(int sock, struct ustcomm_header *req_header,
 			return;
 		}
 
-		DBG("Going to consume buffer %s_%d in process %d",
-		    buf_inf->channel, buf_inf->ch_cpu, buf_inf->pid);
+		DBG("Going to consume trace %s buffer %s_%d in process %d",
+		    buf_inf->trace, buf_inf->channel, buf_inf->ch_cpu,
+		    buf_inf->pid);
 		result = start_consuming_buffer(instance, buf_inf->pid,
+						buf_inf->trace,
 						buf_inf->channel,
 						buf_inf->ch_cpu);
 		if (result < 0) {

@@ -149,8 +149,9 @@ static int connect_ustd(void)
 
 
 static void request_buffer_consumer(int sock,
-				   const char *channel,
-				   int cpu)
+				    const char *trace,
+				    const char *channel,
+				    int cpu)
 {
 	struct ustcomm_header send_header, recv_header;
 	struct ustcomm_buffer_info buf_inf;
@@ -158,6 +159,7 @@ static void request_buffer_consumer(int sock,
 
 	result = ustcomm_pack_buffer_info(&send_header,
 					  &buf_inf,
+					  trace,
 					  channel,
 					  cpu);
 
@@ -212,7 +214,8 @@ static void inform_consumer_daemon(const char *trace_name)
 			/* iterate on all cpus */
 			for (j=0; j<trace->channels[i].n_cpus; j++) {
 				ch_name = trace->channels[i].channel_name;
-				request_buffer_consumer(sock, ch_name, j);
+				request_buffer_consumer(sock, trace_name,
+							ch_name, j);
 				STORE_SHARED(buffers_to_export,
 					     LOAD_SHARED(buffers_to_export)+1);
 			}
@@ -545,10 +548,6 @@ static void force_subbuf_switch()
 /* Simple commands are those which need only respond with a return value. */
 static int process_simple_client_cmd(int command, char *recv_buf)
 {
-	int result;
-	char trace_type[] = "ustrelay";
-	char trace_name[] = "auto";
-
 	switch(command) {
 	case SET_SOCK_PATH:
 	{
@@ -564,6 +563,27 @@ static int process_simple_client_cmd(int command, char *recv_buf)
 		}
 		return setenv("UST_DAEMON_SOCKET", sock_msg->sock_path, 1);
 	}
+
+	case FORCE_SUBBUF_SWITCH:
+		/* FIXME: return codes? */
+		force_subbuf_switch();
+
+		break;
+
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+
+static int process_trace_cmd(int command, char *trace_name)
+{
+	int result;
+	char trace_type[] = "ustrelay";
+
+	switch(command) {
 	case START:
 		/* start is an operation that setups the trace, allocates it and starts it */
 		result = ltt_trace_setup(trace_name);
@@ -675,18 +695,11 @@ static int process_simple_client_cmd(int command, char *recv_buf)
 			return result;
 		}
 		return 0;
-	case FORCE_SUBBUF_SWITCH:
-		/* FIXME: return codes? */
-		force_subbuf_switch();
-
-		break;
-
-	default:
-		return -EINVAL;
 	}
 
 	return 0;
 }
+
 
 static void process_channel_cmd(int sock, int command,
 				struct ustcomm_channel_info *ch_inf)
@@ -695,14 +708,13 @@ static void process_channel_cmd(int sock, int command,
 	struct ustcomm_header *reply_header = &_reply_header;
 	struct ustcomm_channel_info *reply_msg =
 		(struct ustcomm_channel_info *)send_buffer;
-	char trace_name[] = "auto";
 	int result, offset = 0, num, size;
 
 	memset(reply_header, 0, sizeof(*reply_header));
 
 	switch (command) {
 	case GET_SUBBUF_NUM_SIZE:
-		result = get_subbuf_num_size(trace_name,
+		result = get_subbuf_num_size(ch_inf->trace,
 					     ch_inf->channel,
 					     &num, &size);
 		if (result < 0) {
@@ -719,13 +731,13 @@ static void process_channel_cmd(int sock, int command,
 
 		break;
 	case SET_SUBBUF_NUM:
-		reply_header->result = set_subbuf_num(trace_name,
+		reply_header->result = set_subbuf_num(ch_inf->trace,
 						      ch_inf->channel,
 						      ch_inf->subbuf_num);
 
 		break;
 	case SET_SUBBUF_SIZE:
-		reply_header->result = set_subbuf_size(trace_name,
+		reply_header->result = set_subbuf_size(ch_inf->trace,
 						       ch_inf->channel,
 						       ch_inf->subbuf_size);
 
@@ -744,7 +756,6 @@ static void process_buffer_cmd(int sock, int command,
 	struct ustcomm_header *reply_header = &_reply_header;
 	struct ustcomm_buffer_info *reply_msg =
 		(struct ustcomm_buffer_info *)send_buffer;
-	char trace_name[] = "auto";
 	int result, offset = 0, buf_shmid, buf_struct_shmid, buf_pipe_fd;
 	long consumed_old;
 
@@ -752,7 +763,8 @@ static void process_buffer_cmd(int sock, int command,
 
 	switch (command) {
 	case GET_BUF_SHMID_PIPE_FD:
-		result = get_buffer_shmid_pipe_fd(trace_name, buf_inf->channel,
+		result = get_buffer_shmid_pipe_fd(buf_inf->trace,
+						  buf_inf->channel,
 						  buf_inf->ch_cpu,
 						  &buf_shmid,
 						  &buf_struct_shmid,
@@ -777,12 +789,12 @@ static void process_buffer_cmd(int sock, int command,
 
 	case NOTIFY_BUF_MAPPED:
 		reply_header->result =
-			notify_buffer_mapped(trace_name,
+			notify_buffer_mapped(buf_inf->trace,
 					     buf_inf->channel,
 					     buf_inf->ch_cpu);
 		break;
 	case GET_SUBBUFFER:
-		result = get_subbuffer(trace_name, buf_inf->channel,
+		result = get_subbuffer(buf_inf->trace, buf_inf->channel,
 				       buf_inf->ch_cpu, &consumed_old);
 		if (result < 0) {
 			reply_header->result = result;
@@ -796,7 +808,7 @@ static void process_buffer_cmd(int sock, int command,
 
 		break;
 	case PUT_SUBBUFFER:
-		result = put_subbuffer(trace_name, buf_inf->channel,
+		result = put_subbuffer(buf_inf->trace, buf_inf->channel,
 				       buf_inf->ch_cpu,
 				       buf_inf->consumed_old);
 		reply_header->result = result;
@@ -1007,6 +1019,30 @@ static void process_client_cmd(struct ustcomm_header *recv_header,
 		reply_header->result = result;
 
 		goto send_response;
+	}
+	case START:
+	case SETUP_TRACE:
+	case ALLOC_TRACE:
+	case CREATE_TRACE:
+	case START_TRACE:
+	case STOP_TRACE:
+	case DESTROY_TRACE:
+	{
+		struct ustcomm_trace_info *trace_inf =
+			(struct ustcomm_trace_info *)recv_buf;
+
+		result = ustcomm_unpack_trace_info(trace_inf);
+		if (result < 0) {
+			ERR("couldn't unpack trace info");
+			reply_header->result = -EINVAL;
+			goto send_response;
+		}
+
+		reply_header->result =
+			process_trace_cmd(recv_header->command,
+					  trace_inf->trace);
+		goto send_response;
+
 	}
 	default:
 		reply_header->result =

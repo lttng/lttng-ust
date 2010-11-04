@@ -37,6 +37,7 @@ struct ustcomm_sock;
 
 struct buffer_info {
 	char *name;
+	char *trace;
 	char *channel;
 	int channel_cpu;
 

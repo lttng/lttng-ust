@@ -656,9 +656,19 @@ int ustcomm_unpack_trace_info(struct ustcomm_trace_info *trace_inf)
 
 int ustcomm_pack_channel_info(struct ustcomm_header *header,
 			      struct ustcomm_channel_info *ch_inf,
+			      const char *trace,
 			      const char *channel)
 {
 	int offset = 0;
+
+	ch_inf->trace = ustcomm_print_data(ch_inf->data,
+					   sizeof(ch_inf->data),
+					   &offset,
+					   trace);
+
+	if (ch_inf->trace == USTCOMM_POISON_PTR) {
+		return -ENOMEM;
+	}
 
 	ch_inf->channel = ustcomm_print_data(ch_inf->data,
 					     sizeof(ch_inf->data),
@@ -677,6 +687,13 @@ int ustcomm_pack_channel_info(struct ustcomm_header *header,
 
 int ustcomm_unpack_channel_info(struct ustcomm_channel_info *ch_inf)
 {
+	ch_inf->trace = ustcomm_restore_ptr(ch_inf->trace,
+					    ch_inf->data,
+					    sizeof(ch_inf->data));
+	if (!ch_inf->trace) {
+		return -EINVAL;
+	}
+
 	ch_inf->channel = ustcomm_restore_ptr(ch_inf->channel,
 					      ch_inf->data,
 					      sizeof(ch_inf->data));
@@ -689,10 +706,20 @@ int ustcomm_unpack_channel_info(struct ustcomm_channel_info *ch_inf)
 
 int ustcomm_pack_buffer_info(struct ustcomm_header *header,
 			     struct ustcomm_buffer_info *buf_inf,
+			     const char *trace,
 			     const char *channel,
 			     int channel_cpu)
 {
 	int offset = 0;
+
+	buf_inf->trace = ustcomm_print_data(buf_inf->data,
+					    sizeof(buf_inf->data),
+					    &offset,
+					    trace);
+
+	if (buf_inf->trace == USTCOMM_POISON_PTR) {
+		return -ENOMEM;
+	}
 
 	buf_inf->channel = ustcomm_print_data(buf_inf->data,
 					      sizeof(buf_inf->data),
@@ -713,6 +740,13 @@ int ustcomm_pack_buffer_info(struct ustcomm_header *header,
 
 int ustcomm_unpack_buffer_info(struct ustcomm_buffer_info *buf_inf)
 {
+	buf_inf->trace = ustcomm_restore_ptr(buf_inf->trace,
+					     buf_inf->data,
+					     sizeof(buf_inf->data));
+	if (!buf_inf->trace) {
+		return -EINVAL;
+	}
+
 	buf_inf->channel = ustcomm_restore_ptr(buf_inf->channel,
 					       buf_inf->data,
 					       sizeof(buf_inf->data));
@@ -725,10 +759,21 @@ int ustcomm_unpack_buffer_info(struct ustcomm_buffer_info *buf_inf)
 
 int ustcomm_pack_marker_info(struct ustcomm_header *header,
 			     struct ustcomm_marker_info *marker_inf,
+			     const char *trace,
 			     const char *channel,
 			     const char *marker)
 {
 	int offset = 0;
+
+	marker_inf->trace = ustcomm_print_data(marker_inf->data,
+					       sizeof(marker_inf->data),
+					       &offset,
+					       trace);
+
+	if (marker_inf->trace == USTCOMM_POISON_PTR) {
+		return -ENOMEM;
+	}
+
 
 	marker_inf->channel = ustcomm_print_data(marker_inf->data,
 						 sizeof(marker_inf->data),
@@ -756,6 +801,13 @@ int ustcomm_pack_marker_info(struct ustcomm_header *header,
 
 int ustcomm_unpack_marker_info(struct ustcomm_marker_info *marker_inf)
 {
+	marker_inf->trace = ustcomm_restore_ptr(marker_inf->trace,
+						marker_inf->data,
+						sizeof(marker_inf->data));
+	if (!marker_inf->trace) {
+		return -EINVAL;
+	}
+
 	marker_inf->channel = ustcomm_restore_ptr(marker_inf->channel,
 						  marker_inf->data,
 						  sizeof(marker_inf->data));

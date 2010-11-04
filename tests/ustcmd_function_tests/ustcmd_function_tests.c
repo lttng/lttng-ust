@@ -34,6 +34,7 @@ static void ustcmd_function_tests(pid_t pid)
 	struct marker_status *marker_status, *ms_ptr;
 	char *old_socket_path, *new_socket_path;
 	char *tmp_ustd_socket = "/tmp/tmp_ustd_socket";
+	char *trace = "auto";
 
 	printf("Connecting to pid %d\n", pid);
 
@@ -75,79 +76,79 @@ static void ustcmd_function_tests(pid_t pid)
 	free(old_socket_path);
 
 	/* Enable, disable markers */
-	tap_ok(!ustcmd_set_marker_state("ust", "bar", 1, pid),
+	tap_ok(!ustcmd_set_marker_state(trace, "ust", "bar", 1, pid),
 	       "ustcmd_set_marker_state - existing marker ust bar");
 
 	/* Create and allocate a trace */
-	tap_ok(!ustcmd_create_trace(pid), "ustcmd_create_trace");
+	tap_ok(!ustcmd_create_trace(trace, pid), "ustcmd_create_trace");
 
-	tap_ok(!ustcmd_alloc_trace(pid), "ustcmd_alloc_trace");
+	tap_ok(!ustcmd_alloc_trace(trace, pid), "ustcmd_alloc_trace");
 
 	/* Get subbuf size and number */
-	subbuf_num = ustcmd_get_subbuf_num("ust", pid);
+	subbuf_num = ustcmd_get_subbuf_num(trace, "ust", pid);
 	tap_ok(subbuf_num > 0, "ustcmd_get_subbuf_num - %d sub-buffers",
 	       subbuf_num);
 
-	subbuf_size = ustcmd_get_subbuf_size("ust", pid);
+	subbuf_size = ustcmd_get_subbuf_size(trace, "ust", pid);
 	tap_ok(subbuf_size, "ustcmd_get_subbuf_size - sub-buffer size is %d",
 	       subbuf_size);
 
 	/* Start the trace */
-	tap_ok(!ustcmd_start_trace(pid), "ustcmd_start_trace");
+	tap_ok(!ustcmd_start_trace(trace, pid), "ustcmd_start_trace");
 
 
 	/* Stop the trace and destroy it*/
-	tap_ok(!ustcmd_stop_trace(pid), "ustcmd_stop_trace");
+	tap_ok(!ustcmd_stop_trace(trace, pid), "ustcmd_stop_trace");
 
-	tap_ok(!ustcmd_destroy_trace(pid), "ustcmd_destroy_trace");
+	tap_ok(!ustcmd_destroy_trace(trace, pid), "ustcmd_destroy_trace");
 
 	/* Create a new trace */
-	tap_ok(!ustcmd_create_trace(pid), "ustcmd_create_trace - create a new trace");
+	tap_ok(!ustcmd_create_trace(trace, pid), "ustcmd_create_trace - create a new trace");
 
 	printf("Setting new subbufer number and sizes (doubling)\n");
 	new_subbuf_num = 2 * subbuf_num;
 	new_subbuf_size = 2 * subbuf_size;
 
-	tap_ok(!ustcmd_set_subbuf_num("ust", new_subbuf_num, pid),
+	tap_ok(!ustcmd_set_subbuf_num(trace, "ust", new_subbuf_num, pid),
 	       "ustcmd_set_subbuf_num");
 
-	tap_ok(!ustcmd_set_subbuf_size("ust", new_subbuf_size, pid),
+	tap_ok(!ustcmd_set_subbuf_size(trace, "ust", new_subbuf_size, pid),
 	       "ustcmd_set_subbuf_size");
 
 
 	/* Allocate the new trace */
-	tap_ok(!ustcmd_alloc_trace(pid), "ustcmd_alloc_trace - allocate the new trace");
+	tap_ok(!ustcmd_alloc_trace(trace, pid), "ustcmd_alloc_trace - allocate the new trace");
 
 
         /* Get subbuf size and number and compare with what was set */
-	subbuf_num = ustcmd_get_subbuf_num("ust", pid);
+	subbuf_num = ustcmd_get_subbuf_num(trace, "ust", pid);
 
-	subbuf_size = ustcmd_get_subbuf_size("ust", pid);
+	subbuf_size = ustcmd_get_subbuf_size(trace, "ust", pid);
 
 	tap_ok(subbuf_num == new_subbuf_num, "Set a new subbuf number, %d == %d",
 	       subbuf_num, new_subbuf_num);
 
 
-	result = ustcmd_get_subbuf_size("ust", pid);
+	result = ustcmd_get_subbuf_size(trace, "ust", pid);
 	tap_ok(subbuf_size == new_subbuf_size, "Set a new subbuf size, %d == %d",
 	       subbuf_size, new_subbuf_size);
 
-	tap_ok(!ustcmd_destroy_trace(pid), "ustcmd_destroy_trace - without ever starting");
+	tap_ok(!ustcmd_destroy_trace(trace, pid), "ustcmd_destroy_trace - without ever starting");
 
 
 	printf("##### Tests that definetly should work are completed #####\n");
 	printf("############## Start expected failure cases ##############\n");
 
-	tap_ok(ustcmd_set_marker_state("ust","bar", 1, pid),
+	tap_ok(ustcmd_set_marker_state(trace, "ust","bar", 1, pid),
 	       "Enable already enabled marker ust/bar");
 
-	tap_ok(ustcmd_set_marker_state("ustl", "blar", 1, pid),
+	tap_ok(ustcmd_set_marker_state(trace, "ustl", "blar", 1, pid),
 	       "Enable non-existent marker ustl blar");
 
-	tap_ok(ustcmd_start_trace(pid),
+	tap_ok(ustcmd_start_trace(trace, pid),
 	       "Start a non-existent trace");
 
-	tap_ok(ustcmd_destroy_trace(pid),
+	tap_ok(ustcmd_destroy_trace(trace, pid),
 	       "Destroy non-existent trace");
 
 	exit(tap_status() ? EXIT_FAILURE : EXIT_SUCCESS);

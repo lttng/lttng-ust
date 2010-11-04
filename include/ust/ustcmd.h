@@ -48,20 +48,22 @@ struct trace_event_status {
 };
 
 extern pid_t *ustcmd_get_online_pids(void);
-extern int ustcmd_set_marker_state(const char *channel, const char *marker,
-int state, pid_t pid);
-extern int ustcmd_set_subbuf_size(const char *channel, unsigned int subbuf_size,
+extern int ustcmd_set_marker_state(const char *trace, const char *channel,
+				   const char *marker, int state, pid_t pid);
+extern int ustcmd_set_subbuf_size(const char *trace, const char *channel,
+				  unsigned int subbuf_size, pid_t pid);
+extern int ustcmd_set_subbuf_num(const char *trace, const char *channel,
+				 unsigned int num, pid_t pid);
+extern int ustcmd_get_subbuf_size(const char *trace, const char *channel,
 				  pid_t pid);
-extern int ustcmd_set_subbuf_num(const char *channel, unsigned int num,
+extern int ustcmd_get_subbuf_num(const char *trace, const char *channel,
 				 pid_t pid);
-extern int ustcmd_get_subbuf_size(const char *channel, pid_t pid);
-extern int ustcmd_get_subbuf_num(const char *channel, pid_t pid);
-extern int ustcmd_destroy_trace(pid_t pid);
-extern int ustcmd_setup_and_start(pid_t pid);
-extern int ustcmd_stop_trace(pid_t pid);
-extern int ustcmd_create_trace(pid_t pid);
-extern int ustcmd_start_trace(pid_t pid);
-extern int ustcmd_alloc_trace(pid_t pid);
+extern int ustcmd_destroy_trace(const char *trace, pid_t pid);
+extern int ustcmd_setup_and_start(const char *trace, pid_t pid);
+extern int ustcmd_stop_trace(const char *trace, pid_t pid);
+extern int ustcmd_create_trace(const char *trace, pid_t pid);
+extern int ustcmd_start_trace(const char *trace, pid_t pid);
+extern int ustcmd_alloc_trace(const char *trace, pid_t pid);
 extern int ustcmd_free_cmsf(struct marker_status *);
 extern unsigned int ustcmd_count_nl(const char *);
 extern int ustcmd_get_cmsf(struct marker_status **, pid_t);

@@ -84,6 +84,7 @@ struct ustcomm_trace_info {
 };
 
 struct ustcomm_channel_info {
+	char *trace;
 	char *channel;
 	unsigned int subbuf_size;
 	unsigned int subbuf_num;
@@ -91,6 +92,7 @@ struct ustcomm_channel_info {
 };
 
 struct ustcomm_buffer_info {
+	char *trace;
 	char *channel;
 	int ch_cpu;
 	pid_t pid;
@@ -101,6 +103,7 @@ struct ustcomm_buffer_info {
 };
 
 struct ustcomm_marker_info {
+	char *trace;
 	char *channel;
 	char *marker;
 	char data[USTCOMM_DATA_SIZE];
@@ -185,12 +188,14 @@ extern int ustcomm_unpack_trace_info(struct ustcomm_trace_info *trace_inf);
 
 extern int ustcomm_pack_channel_info(struct ustcomm_header *header,
 				     struct ustcomm_channel_info *ch_inf,
+				     const char *trace,
 				     const char *channel);
 
 extern int ustcomm_unpack_channel_info(struct ustcomm_channel_info *ch_inf);
 
 extern int ustcomm_pack_buffer_info(struct ustcomm_header *header,
 				    struct ustcomm_buffer_info *buf_inf,
+				    const char *trace,
 				    const char *channel,
 				    int channel_cpu);
 
@@ -198,6 +203,7 @@ extern int ustcomm_unpack_buffer_info(struct ustcomm_buffer_info *buf_inf);
 
 extern int ustcomm_pack_marker_info(struct ustcomm_header *header,
 				    struct ustcomm_marker_info *marker_inf,
+				    const char *trace,
 				    const char *channel,
 				    const char *marker);
 

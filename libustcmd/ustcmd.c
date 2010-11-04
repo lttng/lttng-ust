@@ -140,8 +140,8 @@ pid_t *ustcmd_get_online_pids(void)
  * @param pid	Traced process ID
  * @return	0 if successful, or errors {USTCMD_ERR_GEN, USTCMD_ERR_ARG}
  */
-int ustcmd_set_marker_state(const char *channel, const char *marker,
-			    int state, pid_t pid)
+int ustcmd_set_marker_state(const char *trace, const char *channel,
+			    const char *marker, int state, pid_t pid)
 {
 	struct ustcomm_header req_header, res_header;
 	struct ustcomm_marker_info marker_inf;
@@ -149,6 +149,7 @@ int ustcmd_set_marker_state(const char *channel, const char *marker,
 
 	result = ustcomm_pack_marker_info(&req_header,
 					  &marker_inf,
+					  trace,
 					  channel,
 					  marker);
 	if (result < 0) {
@@ -169,8 +170,8 @@ int ustcmd_set_marker_state(const char *channel, const char *marker,
  * @param pid		Traced process ID
  * @return		0 if successful, or error
  */
-int ustcmd_set_subbuf_size(const char *channel, unsigned int subbuf_size,
-			   pid_t pid)
+int ustcmd_set_subbuf_size(const char *trace, const char *channel,
+			   unsigned int subbuf_size, pid_t pid)
 {
 	struct ustcomm_header req_header, res_header;
 	struct ustcomm_channel_info ch_inf;
@@ -178,6 +179,7 @@ int ustcmd_set_subbuf_size(const char *channel, unsigned int subbuf_size,
 
 	result = ustcomm_pack_channel_info(&req_header,
 					   &ch_inf,
+					   trace,
 					   channel);
 	if (result < 0) {
 		errno = -result;
@@ -198,8 +200,8 @@ int ustcmd_set_subbuf_size(const char *channel, unsigned int subbuf_size,
  * @param pid		Traced process ID
  * @return		0 if successful, or error
  */
-int ustcmd_set_subbuf_num(const char *channel, unsigned int num,
-			  pid_t pid)
+int ustcmd_set_subbuf_num(const char *trace, const char *channel,
+			  unsigned int num, pid_t pid)
 {
 	struct ustcomm_header req_header, res_header;
 	struct ustcomm_channel_info ch_inf;
@@ -207,6 +209,7 @@ int ustcmd_set_subbuf_num(const char *channel, unsigned int num,
 
 	result = ustcomm_pack_channel_info(&req_header,
 					   &ch_inf,
+					   trace,
 					   channel);
 	if (result < 0) {
 		errno = -result;
@@ -221,8 +224,8 @@ int ustcmd_set_subbuf_num(const char *channel, unsigned int num,
 
 }
 
-static int ustcmd_get_subbuf_num_size(const char *channel, pid_t pid,
-			       int *num, int *size)
+static int ustcmd_get_subbuf_num_size(const char *trace, const char *channel,
+				      pid_t pid, int *num, int *size)
 {
 	struct ustcomm_header req_header, res_header;
 	struct ustcomm_channel_info ch_inf, *ch_inf_res;
@@ -231,6 +234,7 @@ static int ustcmd_get_subbuf_num_size(const char *channel, pid_t pid,
 
 	result = ustcomm_pack_channel_info(&req_header,
 					   &ch_inf,
+					   trace,
 					   channel);
 	if (result < 0) {
 		errno = -result;
@@ -260,11 +264,11 @@ static int ustcmd_get_subbuf_num_size(const char *channel, pid_t pid,
  * @param pid		Traced process ID
  * @return		subbuf cnf if successful, or error
  */
-int ustcmd_get_subbuf_num(const char *channel, pid_t pid)
+int ustcmd_get_subbuf_num(const char *trace, const char *channel, pid_t pid)
 {
 	int num, size, result;
 
-	result = ustcmd_get_subbuf_num_size(channel, pid,
+	result = ustcmd_get_subbuf_num_size(trace, channel, pid,
 					    &num, &size);
 	if (result < 0) {
 		errno = -result;
@@ -281,11 +285,11 @@ int ustcmd_get_subbuf_num(const char *channel, pid_t pid)
  * @param pid		Traced process ID
  * @return		subbuf size if successful, or error
  */
-int ustcmd_get_subbuf_size(const char *channel, pid_t pid)
+int ustcmd_get_subbuf_size(const char *trace, const char *channel, pid_t pid)
 {
 	int num, size, result;
 
-	result = ustcmd_get_subbuf_num_size(channel, pid,
+	result = ustcmd_get_subbuf_num_size(trace, channel, pid,
 					    &num, &size);
 	if (result < 0) {
 		errno = -result;
@@ -295,20 +299,35 @@ int ustcmd_get_subbuf_size(const char *channel, pid_t pid)
 	return size;
 }
 
+
+static int do_trace_cmd(const char *trace, pid_t pid, int command)
+{
+	struct ustcomm_header req_header, res_header;
+	struct ustcomm_trace_info trace_inf;
+	int result;
+
+	result = ustcomm_pack_trace_info(&req_header,
+					 &trace_inf,
+					 trace);
+	if (result < 0) {
+		errno = -result;
+		return -1;
+	}
+
+	req_header.command = command;
+
+	return do_cmd(pid, &req_header, (char *)&trace_inf, &res_header, NULL);
+}
+
 /**
  * Destroys an UST trace according to a PID.
  *
  * @param pid	Traced process ID
  * @return	0 if successful, or error USTCMD_ERR_GEN
  */
-int ustcmd_destroy_trace(pid_t pid)
+int ustcmd_destroy_trace(const char *trace, pid_t pid)
 {
-	struct ustcomm_header req_header, res_header;
-
-	req_header.command = DESTROY_TRACE;
-	req_header.size = 0;
-
-	return do_cmd(pid, &req_header, NULL, &res_header, NULL);
+	return do_trace_cmd(trace, pid, DESTROY_TRACE);
 }
 
 /**
@@ -317,14 +336,9 @@ int ustcmd_destroy_trace(pid_t pid)
  * @param pid	Traced process ID
  * @return	0 if successful, or error USTCMD_ERR_GEN
  */
-int ustcmd_setup_and_start(pid_t pid)
+int ustcmd_setup_and_start(const char *trace, pid_t pid)
 {
-	struct ustcomm_header req_header, res_header;
-
-	req_header.command = START;
-	req_header.size = 0;
-
-	return do_cmd(pid, &req_header, NULL, &res_header, NULL);
+	return do_trace_cmd(trace, pid, START);
 }
 
 /**
@@ -333,14 +347,9 @@ int ustcmd_setup_and_start(pid_t pid)
  * @param pid	Traced process ID
  * @return	0 if successful, or error USTCMD_ERR_GEN
  */
-int ustcmd_create_trace(pid_t pid)
+int ustcmd_create_trace(const char *trace, pid_t pid)
 {
-	struct ustcomm_header req_header, res_header;
-
-	req_header.command = CREATE_TRACE;
-	req_header.size = 0;
-
-	return do_cmd(pid, &req_header, NULL, &res_header, NULL);
+	return do_trace_cmd(trace, pid, CREATE_TRACE);
 }
 
 /**
@@ -349,14 +358,9 @@ int ustcmd_create_trace(pid_t pid)
  * @param pid	Traced process ID
  * @return	0 if successful, or error USTCMD_ERR_GEN
  */
-int ustcmd_start_trace(pid_t pid)
+int ustcmd_start_trace(const char *trace, pid_t pid)
 {
-	struct ustcomm_header req_header, res_header;
-
-	req_header.command = START_TRACE;
-	req_header.size = 0;
-
-	return do_cmd(pid, &req_header, NULL, &res_header, NULL);
+	return do_trace_cmd(trace, pid, START_TRACE);
 }
 
 /**
@@ -365,14 +369,9 @@ int ustcmd_start_trace(pid_t pid)
  * @param pid	Traced process ID
  * @return	0 if successful, or error USTCMD_ERR_GEN
  */
-int ustcmd_alloc_trace(pid_t pid)
+int ustcmd_alloc_trace(const char *trace, pid_t pid)
 {
-	struct ustcomm_header req_header, res_header;
-
-	req_header.command = ALLOC_TRACE;
-	req_header.size = 0;
-
-	return do_cmd(pid, &req_header, NULL, &res_header, NULL);
+	return do_trace_cmd(trace, pid, ALLOC_TRACE);
 }
 
 /**
@@ -381,14 +380,9 @@ int ustcmd_alloc_trace(pid_t pid)
  * @param pid	Traced process ID
  * @return	0 if successful, or error USTCMD_ERR_GEN
  */
-int ustcmd_stop_trace(pid_t pid)
+int ustcmd_stop_trace(const char *trace, pid_t pid)
 {
-	struct ustcomm_header req_header, res_header;
-
-	req_header.command = STOP_TRACE;
-	req_header.size = 0;
-
-	return do_cmd(pid, &req_header, NULL, &res_header, NULL);
+	return do_trace_cmd(trace, pid, STOP_TRACE);
 }
 
 /**
