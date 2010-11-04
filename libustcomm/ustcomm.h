@@ -199,14 +199,4 @@ extern int ustcomm_pack_sock_path(struct ustcomm_header *header,
 
 extern int ustcomm_unpack_sock_path(struct ustcomm_sock_path *sock_path_inf);
 
-/* Packing and requesting functions */
-extern int ustcomm_send_ch_req(int sock, char *channel, int command,
-			       struct ustcomm_header *recv_header,
-			       char *recv_data);
-
-extern int ustcomm_send_buf_req(int sock, char *channel, int ch_cpu,
-				int command,
-				struct ustcomm_header *recv_header,
-				char *recv_data);
-
 #endif /* USTCOMM_H */
