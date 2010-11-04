@@ -78,6 +78,11 @@ enum tracectl_commands {
 	STOP_TRACE,
 };
 
+struct ustcomm_trace_info {
+	char *trace;
+	char data[USTCOMM_DATA_SIZE];
+};
+
 struct ustcomm_channel_info {
 	char *channel;
 	unsigned int subbuf_size;
@@ -172,6 +177,12 @@ extern char * ustcomm_restore_ptr(char *ptr, char *data_field,
 	(size_t) (long)(struct_ptr)->data - (long)(struct_ptr) + (offset)
 
 /* Packing and unpacking functions, making life easier */
+extern int ustcomm_pack_trace_info(struct ustcomm_header *header,
+				   struct ustcomm_trace_info *trace_inf,
+				   const char *trace);
+
+extern int ustcomm_unpack_trace_info(struct ustcomm_trace_info *trace_inf);
+
 extern int ustcomm_pack_channel_info(struct ustcomm_header *header,
 				     struct ustcomm_channel_info *ch_inf,
 				     const char *channel);
