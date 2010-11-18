@@ -56,9 +56,10 @@ function usage () {
 	echo "    -s    Use system-wide daemon instead of creating one for this session." 2>/dev/stderr
 	echo "    -S    Specify the subbuffer size." 2>/dev/stderr
 	echo "    -N    Specify the number of subbuffers." 2>/dev/stderr
+	echo "    -o    Output directory of the trace." 2>/dev/stderr
 }
 
-while getopts ":hlLmfsWS:N:" options; do
+while getopts ":hlLmfsWS:N:o:" options; do
 	case $options in
 		l) arg_preload_libust=1;;
 		L) arg_ld_std_ust=1;;
@@ -68,6 +69,7 @@ while getopts ":hlLmfsWS:N:" options; do
 		W) where=1;;
 		S) export UST_SUBBUF_SIZE=$OPTARG;;
 		N) export UST_SUBBUF_NUM=$OPTARG;;
+		o) OUTPUT_DIR=$OPTARG;;
 		h) usage;
 		   exit 0;;
 		\?) usage
@@ -100,9 +102,20 @@ then
 fi
 
 # Create directory for trace output
-DATESTRING="$(hostname)-$(date +%Y%m%d%H%M%S%N)"
-OUTDIR="$BASE_TRACE_DIR/$DATESTRING"
-mkdir -p "$OUTDIR"
+if [ -n "$OUTPUT_DIR" ]; then
+	OUTDIR=$OUTPUT_DIR
+else
+	DATESTRING="$(hostname)-$(date +%Y%m%d%H%M%S%N)"
+	OUTDIR="$BASE_TRACE_DIR/$DATESTRING"
+fi
+
+# Check if directory exist
+if [ ! -d "$OUTDIR" ]; then
+	mkdir -p $OUTDIR
+	if [ $? -eq 1 ]; then
+		exit 1
+	fi
+fi
 
 # Choose ustd socket path
 USTDSOCKPATH="/tmp/ustd-sock-$$"
