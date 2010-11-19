@@ -19,6 +19,7 @@ config/
 config.log
 config.status
 stamp-h1
+libtool
 
 ustctl/ustctl
 ustd/ustd
