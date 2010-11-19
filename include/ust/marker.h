@@ -330,7 +330,7 @@ struct lib {
 	struct marker_addr *markers_addr_start;
 #endif
 	int markers_count;
-	struct list_head list;
+	struct cds_list_head list;
 };
 
 extern int marker_register_lib(struct marker *markers_start, int markers_count);

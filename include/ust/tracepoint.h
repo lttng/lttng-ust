@@ -214,7 +214,7 @@ static inline void tracepoint_synchronize_unregister(void)
 struct tracepoint_lib {
 	struct tracepoint *tracepoints_start;
 	int tracepoints_count;
-	struct list_head list;
+	struct cds_list_head list;
 };
 
 extern int tracepoint_register_lib(struct tracepoint *tracepoints_start,
@@ -346,7 +346,7 @@ struct trace_event {
 struct trace_event_lib {
 	struct trace_event *trace_events_start;
 	int trace_events_count;
-	struct list_head list;
+	struct cds_list_head list;
 };
 
 struct trace_event_iter {

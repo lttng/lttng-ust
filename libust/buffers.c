@@ -43,7 +43,7 @@ struct ltt_reserve_switch_offsets {
 
 
 static DEFINE_MUTEX(ust_buffers_channels_mutex);
-static LIST_HEAD(ust_buffers_channels);
+static CDS_LIST_HEAD(ust_buffers_channels);
 
 static int get_n_cpus(void)
 {
@@ -288,7 +288,7 @@ int ust_buffers_channel_open(struct ust_channel *chan, size_t subbuf_size, size_
 		if (result == -1)
 			goto error;
 	}
-	list_add(&chan->list, &ust_buffers_channels);
+	cds_list_add(&chan->list, &ust_buffers_channels);
 	pthread_mutex_unlock(&ust_buffers_channels_mutex);
 
 	return 0;
@@ -320,7 +320,7 @@ void ust_buffers_channel_close(struct ust_channel *chan)
 			ust_buffers_close_buf(chan->buf[i]);
 	}
 
-	list_del(&chan->list);
+	cds_list_del(&chan->list);
 	kref_put(&chan->kref, ust_buffers_destroy_channel);
 	pthread_mutex_unlock(&ust_buffers_channels_mutex);
 }
@@ -349,7 +349,7 @@ static void ltt_buffer_begin(struct ust_buffer *buf,
 	header->cycle_count_begin = tsc;
 	header->data_size = 0xFFFFFFFF; /* for recognizing crashed buffers */
 	header->sb_size = 0xFFFFFFFF; /* for recognizing crashed buffers */
-	/* FIXME: add memory barrier? */
+	/* FIXME: add memory cmm_barrier? */
 	ltt_write_trace_header(channel->trace, header);
 }
 
@@ -386,7 +386,7 @@ static notrace void ltt_buf_unfull(struct ust_buffer *buf,
 }
 
 /*
- * Promote compiler barrier to a smp_mb().
+ * Promote compiler cmm_barrier to a smp_mb().
  * For the specific LTTng case, this IPI call should be removed if the
  * architecture does not reorder writes.  This should eventually be provided by
  * a separate architecture-specific infrastructure.
@@ -414,7 +414,7 @@ int ust_buffers_get_subbuf(struct ust_buffer *buf, long *consumed)
 	 * this is OK because then there is no wmb to execute there.
 	 * If our thread is executing on the same CPU as the on the buffers
 	 * belongs to, we don't have to synchronize it at all. If we are
-	 * migrated, the scheduler will take care of the memory barriers.
+	 * migrated, the scheduler will take care of the memory cmm_barriers.
 	 * Normally, smp_call_function_single() should ensure program order when
 	 * executing the remote function, which implies that it surrounds the
 	 * function execution with :
@@ -429,7 +429,7 @@ int ust_buffers_get_subbuf(struct ust_buffer *buf, long *consumed)
 	 * smp_mb()
 	 *
 	 * However, smp_call_function_single() does not seem to clearly execute
-	 * such barriers. It depends on spinlock semantic to provide the barrier
+	 * such cmm_barriers. It depends on spinlock semantic to provide the cmm_barrier
 	 * before executing the IPI and, when busy-looping, csd_lock_wait only
 	 * executes smp_mb() when it has to wait for the other CPU.
 	 *
@@ -437,9 +437,9 @@ int ust_buffers_get_subbuf(struct ust_buffer *buf, long *consumed)
 	 * required ourself, even if duplicated. It has no performance impact
 	 * anyway.
 	 *
-	 * smp_mb() is needed because smp_rmb() and smp_wmb() only order read vs
+	 * smp_mb() is needed because cmm_smp_rmb() and cmm_smp_wmb() only order read vs
 	 * read and write vs write. They do not ensure core synchronization. We
-	 * really have to ensure total order between the 3 barriers running on
+	 * really have to ensure total order between the 3 cmm_barriers running on
 	 * the 2 CPUs.
 	 */
 //ust// #ifdef LTT_NO_IPI_BARRIER
@@ -447,7 +447,7 @@ int ust_buffers_get_subbuf(struct ust_buffer *buf, long *consumed)
 	 * Local rmb to match the remote wmb to read the commit count before the
 	 * buffer data and the write offset.
 	 */
-	smp_rmb();
+	cmm_smp_rmb();
 //ust// #else
 //ust// 	if (raw_smp_processor_id() != buf->cpu) {
 //ust// 		smp_mb();	/* Total order with IPI handler smp_mb() */
@@ -895,10 +895,10 @@ static void ltt_reserve_switch_old_subbuf(
 
 	/*
 	 * Must write slot data before incrementing commit count.
-	 * This compiler barrier is upgraded into a smp_wmb() by the IPI
-	 * sent by get_subbuf() when it does its smp_rmb().
+	 * This compiler cmm_barrier is upgraded into a cmm_smp_wmb() by the IPI
+	 * sent by get_subbuf() when it does its cmm_smp_rmb().
 	 */
-	smp_wmb();
+	cmm_smp_wmb();
 	uatomic_add(&buf->commit_count[oldidx].cc, padding_size);
 	commit_count = uatomic_read(&buf->commit_count[oldidx].cc);
 	ltt_check_deliver(chan, buf, offsets->old - 1, commit_count, oldidx);
@@ -924,10 +924,10 @@ static void ltt_reserve_switch_new_subbuf(
 
 	/*
 	 * Must write slot data before incrementing commit count.
-	 * This compiler barrier is upgraded into a smp_wmb() by the IPI
-	 * sent by get_subbuf() when it does its smp_rmb().
+	 * This compiler cmm_barrier is upgraded into a cmm_smp_wmb() by the IPI
+	 * sent by get_subbuf() when it does its cmm_smp_rmb().
 	 */
-	smp_wmb();
+	cmm_smp_wmb();
 	uatomic_add(&buf->commit_count[beginidx].cc, ltt_subbuffer_header_size());
 	commit_count = uatomic_read(&buf->commit_count[beginidx].cc);
 	/* Check if the written buffer has to be delivered */
@@ -969,10 +969,10 @@ static void ltt_reserve_end_switch_current(
 
 	/*
 	 * Must write slot data before incrementing commit count.
-	 * This compiler barrier is upgraded into a smp_wmb() by the IPI
-	 * sent by get_subbuf() when it does its smp_rmb().
+	 * This compiler cmm_barrier is upgraded into a cmm_smp_wmb() by the IPI
+	 * sent by get_subbuf() when it does its cmm_smp_rmb().
 	 */
-	smp_wmb();
+	cmm_smp_wmb();
 	uatomic_add(&buf->commit_count[endidx].cc, padding_size);
 	commit_count = uatomic_read(&buf->commit_count[endidx].cc);
 	ltt_check_deliver(chan, buf,

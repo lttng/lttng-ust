@@ -61,14 +61,14 @@ struct ust_channel {
 
 	u32 version;
 	size_t alloc_size;
-	struct list_head list;
+	struct cds_list_head list;
 } ____cacheline_aligned;
 
 struct ltt_channel_setting {
 	unsigned int subbuf_size;
 	unsigned int subbuf_cnt;
 	struct kref kref;	/* Number of references to structure content */
-	struct list_head list;
+	struct cds_list_head list;
 	unsigned int index;	/* index of channel in trace channel array */
 	u16 free_event_id;	/* Next event ID to allocate */
 	char name[PATH_MAX];

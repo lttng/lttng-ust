@@ -25,7 +25,7 @@
 extern __thread long ust_reg_stack[500];
 extern volatile __thread long *ust_reg_stack_ptr;
 
-#define ____cacheline_aligned __attribute__((aligned(CACHE_LINE_SIZE)))
+#define ____cacheline_aligned __attribute__((aligned(CAA_CACHE_LINE_SIZE)))
 
 #ifdef __i386
 

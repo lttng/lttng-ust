@@ -94,7 +94,7 @@ struct chan_info_struct {
 };
 
 struct ltt_active_marker {
-	struct list_head node;		/* active markers list */
+	struct cds_list_head node;		/* active markers list */
 	const char *channel;
 	const char *name;
 	const char *format;
@@ -158,7 +158,7 @@ struct ltt_trace_ops {
 struct ltt_transport {
 	char *name;
 	struct module *owner;
-	struct list_head node;
+	struct cds_list_head node;
 	struct ltt_trace_ops ops;
 };
 
@@ -170,7 +170,7 @@ enum trace_mode { LTT_TRACE_NORMAL, LTT_TRACE_FLIGHT, LTT_TRACE_HYBRID };
 /* Per-trace information - each trace/flight recorder represented by one */
 struct ust_trace {
 	/* First 32 bytes cache-hot cacheline */
-	struct list_head list;
+	struct cds_list_head list;
 	struct ltt_trace_ops *ops;
 	int active;
 	/* Second 32 bytes cache-hot cacheline */

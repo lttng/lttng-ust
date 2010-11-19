@@ -27,7 +27,7 @@
 #include <urcu-bp.h>
 
 /* libraries that contain trace_events (struct trace_event_lib) */
-static LIST_HEAD(libs);
+static CDS_LIST_HEAD(libs);
 
 static DEFINE_MUTEX(trace_events_mutex);
 
@@ -47,7 +47,7 @@ int lib_get_iter_trace_events(struct trace_event_iter *iter)
 	struct trace_event_lib *iter_lib;
 	int found = 0;
 
-	list_for_each_entry(iter_lib, &libs, list) {
+	cds_list_for_each_entry(iter_lib, &libs, list) {
 		if (iter_lib < iter->lib)
 			continue;
 		else if (iter_lib > iter->lib)
@@ -128,7 +128,7 @@ int trace_event_register_lib(struct trace_event *trace_events_start,
 
 	/* FIXME: maybe protect this with its own mutex? */
 	pthread_mutex_lock(&trace_events_mutex);
-	list_add(&pl->list, &libs);
+	cds_list_add(&pl->list, &libs);
 	pthread_mutex_unlock(&trace_events_mutex);
 
 	DBG("just registered a trace_events section from %p and having %d trace_events", trace_events_start, trace_events_count);
@@ -142,10 +142,10 @@ int trace_event_unregister_lib(struct trace_event *trace_events_start)
 
 	pthread_mutex_lock(&trace_events_mutex);
 
-	list_for_each_entry(lib, &libs, list) {
+	cds_list_for_each_entry(lib, &libs, list) {
 		if(lib->trace_events_start == trace_events_start) {
 			struct trace_event_lib *lib2free = lib;
-			list_del(&lib->list);
+			cds_list_del(&lib->list);
 			free(lib2free);
 			break;
 		}

@@ -113,7 +113,7 @@ static struct sockaddr_un * create_sock_addr(const char *name,
 }
 
 struct ustcomm_sock * ustcomm_init_sock(int fd, int epoll_fd,
-					struct list_head *list)
+					struct cds_list_head *list)
 {
 	struct epoll_event ev;
 	struct ustcomm_sock *sock;
@@ -136,9 +136,9 @@ struct ustcomm_sock * ustcomm_init_sock(int fd, int epoll_fd,
 
 	sock->epoll_fd = epoll_fd;
 	if (list) {
-		list_add(&sock->list, list);
+		cds_list_add(&sock->list, list);
 	} else {
-		INIT_LIST_HEAD(&sock->list);
+		CDS_INIT_LIST_HEAD(&sock->list);
 	}
 
 	return sock;
@@ -146,7 +146,7 @@ struct ustcomm_sock * ustcomm_init_sock(int fd, int epoll_fd,
 
 void ustcomm_del_sock(struct ustcomm_sock *sock, int keep_in_epoll)
 {
-	list_del(&sock->list);
+	cds_list_del(&sock->list);
 	if (!keep_in_epoll) {
 		if (epoll_ctl(sock->epoll_fd, EPOLL_CTL_DEL, sock->fd, NULL) == -1) {
 			PERROR("epoll_ctl: failed to delete socket");

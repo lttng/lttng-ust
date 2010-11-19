@@ -66,9 +66,9 @@ static struct ustcomm_sock *listen_sock;
 
 extern struct chan_info_struct chan_infos[];
 
-static struct list_head open_buffers_list = LIST_HEAD_INIT(open_buffers_list);
+static struct cds_list_head open_buffers_list = CDS_LIST_HEAD_INIT(open_buffers_list);
 
-static struct list_head ust_socks = LIST_HEAD_INIT(ust_socks);
+static struct cds_list_head ust_socks = CDS_LIST_HEAD_INIT(ust_socks);
 
 /* volatile because shared between the listener and the main thread */
 int buffers_to_export = 0;
@@ -216,8 +216,8 @@ static void inform_consumer_daemon(const char *trace_name)
 				ch_name = trace->channels[i].channel_name;
 				request_buffer_consumer(sock, trace_name,
 							ch_name, j);
-				STORE_SHARED(buffers_to_export,
-					     LOAD_SHARED(buffers_to_export)+1);
+				CMM_STORE_SHARED(buffers_to_export,
+					     CMM_LOAD_SHARED(buffers_to_export)+1);
 			}
 		}
 	}
@@ -473,13 +473,13 @@ static int notify_buffer_mapped(const char *trace_name,
 	 */
 	if (uatomic_read(&buf->consumed) == 0) {
 		DBG("decrementing buffers_to_export");
-		STORE_SHARED(buffers_to_export, LOAD_SHARED(buffers_to_export)-1);
+		CMM_STORE_SHARED(buffers_to_export, CMM_LOAD_SHARED(buffers_to_export)-1);
 	}
 
 	/* The buffer has been exported, ergo, we can add it to the
 	 * list of open buffers
 	 */
-	list_add(&buf->open_buffers_list, &open_buffers_list);
+	cds_list_add(&buf->open_buffers_list, &open_buffers_list);
 
 unlock_traces:
 	ltt_unlock_traces();
@@ -539,7 +539,7 @@ static void force_subbuf_switch()
 {
 	struct ust_buffer *buf;
 
-	list_for_each_entry(buf, &open_buffers_list,
+	cds_list_for_each_entry(buf, &open_buffers_list,
 			    open_buffers_list) {
 		ltt_force_switch(buf, FORCE_FLUSH);
 	}
@@ -1312,7 +1312,7 @@ static void __attribute__((constructor)) init()
 	if (getenv("UST_OVERWRITE")) {
 		int val = atoi(getenv("UST_OVERWRITE"));
 		if (val == 0 || val == 1) {
-			STORE_SHARED(ust_channels_overwrite_by_default, val);
+			CMM_STORE_SHARED(ust_channels_overwrite_by_default, val);
 		} else {
 			WARN("invalid value for UST_OVERWRITE");
 		}
@@ -1321,7 +1321,7 @@ static void __attribute__((constructor)) init()
 	if (getenv("UST_AUTOCOLLECT")) {
 		int val = atoi(getenv("UST_AUTOCOLLECT"));
 		if (val == 0 || val == 1) {
-			STORE_SHARED(ust_channels_request_collection_by_default, val);
+			CMM_STORE_SHARED(ust_channels_request_collection_by_default, val);
 		} else {
 			WARN("invalid value for UST_AUTOCOLLECT");
 		}
@@ -1453,7 +1453,7 @@ static int trace_recording(void)
 
 	ltt_lock_traces();
 
-	list_for_each_entry(trace, &ltt_traces.head, list) {
+	cds_list_for_each_entry(trace, &ltt_traces.head, list) {
 		if (trace->active) {
 			retval = 1;
 			break;
@@ -1513,10 +1513,10 @@ static void __attribute__((destructor)) keepalive()
 		return;
 	}
 
-	if (trace_recording() && LOAD_SHARED(buffers_to_export)) {
+	if (trace_recording() && CMM_LOAD_SHARED(buffers_to_export)) {
 		int total = 0;
 		DBG("Keeping process alive for consumer daemon...");
-		while (LOAD_SHARED(buffers_to_export)) {
+		while (CMM_LOAD_SHARED(buffers_to_export)) {
 			const int interv = 200000;
 			restarting_usleep(interv);
 			total += interv;
@@ -1572,12 +1572,12 @@ static void ust_fork(void)
 	ltt_trace_stop("auto");
 	ltt_trace_destroy("auto", 1);
 	/* Delete all active connections, but leave them in the epoll set */
-	list_for_each_entry_safe(sock, sock_tmp, &ust_socks, list) {
+	cds_list_for_each_entry_safe(sock, sock_tmp, &ust_socks, list) {
 		ustcomm_del_sock(sock, 1);
 	}
 
 	/* Delete all blocked consumers */
-	list_for_each_entry_safe(buf, buf_tmp, &open_buffers_list,
+	cds_list_for_each_entry_safe(buf, buf_tmp, &open_buffers_list,
 				 open_buffers_list) {
 		result = close(buf->data_ready_fd_read);
 		if (result == -1) {
@@ -1587,7 +1587,7 @@ static void ust_fork(void)
 		if (result == -1) {
 			PERROR("close");
 		}
-		list_del(&buf->open_buffers_list);
+		cds_list_del(&buf->open_buffers_list);
 	}
 
 	/* Clean up the listener socket and epoll, keeping the scoket file */
@@ -1595,7 +1595,7 @@ static void ust_fork(void)
 	close(epoll_fd);
 
 	/* Re-start the launch sequence */
-	STORE_SHARED(buffers_to_export, 0);
+	CMM_STORE_SHARED(buffers_to_export, 0);
 	have_listener = 0;
 
 	/* Set up epoll */

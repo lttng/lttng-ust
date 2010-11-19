@@ -38,7 +38,7 @@ struct ltt_available_probe {
         const char *format;
         marker_probe_func *probe_func;
         ltt_serialize_cb callbacks[LTT_NR_CALLBACKS];
-        struct list_head node;          /* registered probes list */
+        struct cds_list_head node;          /* registered probes list */
 };
 
 extern int ltt_probe_register(struct ltt_available_probe *pdata); 

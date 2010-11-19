@@ -33,7 +33,7 @@
  * ltt_channel_mutex mutex may be nested inside markers mutex.
  */
 static DEFINE_MUTEX(ltt_channel_mutex);
-static LIST_HEAD(ltt_channels);
+static CDS_LIST_HEAD(ltt_channels);
 /*
  * Index of next channel in array. Makes sure that as long as a trace channel is
  * allocated, no array index will be re-used when a channel is freed and then
@@ -51,7 +51,7 @@ static struct ltt_channel_setting *lookup_channel(const char *name)
 {
 	struct ltt_channel_setting *iter;
 
-	list_for_each_entry(iter, &ltt_channels, list)
+	cds_list_for_each_entry(iter, &ltt_channels, list)
 		if (strcmp(name, iter->name) == 0)
 			return iter;
 	return NULL;
@@ -72,11 +72,11 @@ static void release_channel_setting(struct kref *kref)
 
 	if (uatomic_read(&index_kref.refcount) == 0
 	    && uatomic_read(&setting->kref.refcount) == 0) {
-		list_del(&setting->list);
+		cds_list_del(&setting->list);
 		free(setting);
 
 		free_index = 0;
-		list_for_each_entry(iter, &ltt_channels, list) {
+		cds_list_for_each_entry(iter, &ltt_channels, list) {
 			iter->index = free_index++;
 			iter->free_event_id = 0;
 		}
@@ -94,7 +94,7 @@ static void release_trace_channel(struct kref *kref)
 {
 	struct ltt_channel_setting *iter, *n;
 
-	list_for_each_entry_safe(iter, n, &ltt_channels, list)
+	cds_list_for_each_entry_safe(iter, n, &ltt_channels, list)
 		release_channel_setting(&iter->kref);
 }
 
@@ -124,7 +124,7 @@ int ltt_channels_register(const char *name)
 		ret = -ENOMEM;
 		goto end;
 	}
-	list_add(&setting->list, &ltt_channels);
+	cds_list_add(&setting->list, &ltt_channels);
 	strncpy(setting->name, name, PATH_MAX-1);
 	setting->index = free_index++;
 init_kref:
@@ -197,7 +197,7 @@ const char *ltt_channels_get_name_from_index(unsigned int index)
 {
 	struct ltt_channel_setting *iter;
 
-	list_for_each_entry(iter, &ltt_channels, list)
+	cds_list_for_each_entry(iter, &ltt_channels, list)
 		if (iter->index == index && uatomic_read(&iter->kref.refcount))
 			return iter->name;
 	return NULL;
@@ -209,7 +209,7 @@ ltt_channels_get_setting_from_name(const char *name)
 {
 	struct ltt_channel_setting *iter;
 
-	list_for_each_entry(iter, &ltt_channels, list)
+	cds_list_for_each_entry(iter, &ltt_channels, list)
 		if (!strcmp(iter->name, name)
 		    && uatomic_read(&iter->kref.refcount))
 			return iter;
@@ -269,7 +269,7 @@ struct ust_channel *ltt_channels_trace_alloc(unsigned int *nr_channels,
 		WARN("ltt_channel_struct: channel null after alloc");
 		goto end;
 	}
-	list_for_each_entry(iter, &ltt_channels, list) {
+	cds_list_for_each_entry(iter, &ltt_channels, list) {
 		if (!uatomic_read(&iter->kref.refcount))
 			continue;
 		channel[iter->index].subbuf_size = iter->subbuf_size;

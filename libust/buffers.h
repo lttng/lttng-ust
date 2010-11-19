@@ -86,7 +86,7 @@ struct ust_buffer {
 	 * List of buffers with an open pipe, used for fork and forced subbuffer
 	 * switch.
 	 */
-	struct list_head open_buffers_list;
+	struct cds_list_head open_buffers_list;
 
 	unsigned int finalized;
 //ust//	struct timer_list switch_timer; /* timer for periodical switch */
@@ -276,7 +276,7 @@ static __inline__ int ltt_poll_deliver(struct ust_channel *chan, struct ust_buff
 	consumed_idx = SUBBUF_INDEX(consumed_old, buf->chan);
 	commit_count = uatomic_read(&buf->commit_count[consumed_idx].cc_sb);
 	/*
-	 * No memory barrier here, since we are only interested
+	 * No memory cmm_barrier here, since we are only interested
 	 * in a statistically correct polling result. The next poll will
 	 * get the data is we are racing. The mb() that ensures correct
 	 * memory order is in get_subbuf.
@@ -375,7 +375,7 @@ static __inline__ int ltt_reserve_slot(struct ust_channel *chan,
 	 * Perform retryable operations.
 	 */
 	/* FIXME: make this really per cpu? */
-	if (unlikely(LOAD_SHARED(ltt_nesting) > 4)) {
+	if (unlikely(CMM_LOAD_SHARED(ltt_nesting) > 4)) {
 		DBG("Dropping event because nesting is too deep.");
 		uatomic_inc(&buf->events_lost);
 		return -EPERM;
@@ -488,7 +488,7 @@ static __inline__ void ltt_commit_slot(
 	long endidx = SUBBUF_INDEX(offset_end - 1, chan);
 	long commit_count;
 
-	smp_wmb();
+	cmm_smp_wmb();
 
 	uatomic_add(&buf->commit_count[endidx].cc, slot_size);
 	/*
@@ -574,7 +574,7 @@ size_t ust_buffers_do_strncpy(void *dest, const void *src, size_t len,
 	 * don't have constants, so gcc generally uses a function call.
 	 */
 	for (; len > 0; len--) {
-		*(u8 *)dest = LOAD_SHARED(*(const u8 *)src);
+		*(u8 *)dest = CMM_LOAD_SHARED(*(const u8 *)src);
 		/* Check with dest, because src may be modified concurrently */
 		if (*(const u8 *)dest == '\0') {
 			len--;

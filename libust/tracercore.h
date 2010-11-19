@@ -32,8 +32,8 @@
  * list.
  */
 struct ltt_traces {
-	struct list_head setup_head;	/* Pre-allocated traces list */
-	struct list_head head;		/* Allocated Traces list */
+	struct cds_list_head setup_head;	/* Pre-allocated traces list */
+	struct cds_list_head head;		/* Allocated Traces list */
 	unsigned int num_active_traces;	/* Number of active traces */
 } ____cacheline_aligned;
 

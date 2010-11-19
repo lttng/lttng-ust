@@ -31,7 +31,7 @@
 #define DEFAULT_CHANNEL "cpu"
 #define DEFAULT_PROBE "default"
 
-LIST_HEAD(probes_list);
+CDS_LIST_HEAD(probes_list);
 
 /*
  * Mutex protecting the probe slab cache.
@@ -47,11 +47,11 @@ struct ltt_available_probe default_probe = {
 };
 
 //ust//static struct kmem_cache *markers_loaded_cachep;
-static LIST_HEAD(markers_loaded_list);
+static CDS_LIST_HEAD(markers_loaded_list);
 /*
  * List sorted by name strcmp order.
  */
-static LIST_HEAD(probes_registered_list);
+static CDS_LIST_HEAD(probes_registered_list);
 
 //ust// static struct proc_dir_entry *pentry;
 
@@ -64,7 +64,7 @@ static struct ltt_available_probe *get_probe_from_name(const char *pname)
 
 	if (!pname)
 		pname = DEFAULT_PROBE;
-	list_for_each_entry(iter, &probes_registered_list, node) {
+	cds_list_for_each_entry(iter, &probes_registered_list, node) {
 		comparison = strcmp(pname, iter->name);
 		if (!comparison)
 			found = 1;
@@ -108,19 +108,19 @@ int ltt_probe_register(struct ltt_available_probe *pdata)
 	struct ltt_available_probe *iter;
 
 	pthread_mutex_lock(&probes_mutex);
-	list_for_each_entry_reverse(iter, &probes_registered_list, node) {
+	cds_list_for_each_entry_reverse(iter, &probes_registered_list, node) {
 		comparison = strcmp(pdata->name, iter->name);
 		if (!comparison) {
 			ret = -EBUSY;
 			goto end;
 		} else if (comparison > 0) {
 			/* We belong to the location right after iter. */
-			list_add(&pdata->node, &iter->node);
+			cds_list_add(&pdata->node, &iter->node);
 			goto end;
 		}
 	}
 	/* Should be added at the head of the list */
-	list_add(&pdata->node, &probes_registered_list);
+	cds_list_add(&pdata->node, &probes_registered_list);
 end:
 	pthread_mutex_unlock(&probes_mutex);
 	return ret;
@@ -135,17 +135,17 @@ int ltt_probe_unregister(struct ltt_available_probe *pdata)
 	struct ltt_active_marker *amark, *tmp;
 
 	pthread_mutex_lock(&probes_mutex);
-	list_for_each_entry_safe(amark, tmp, &markers_loaded_list, node) {
+	cds_list_for_each_entry_safe(amark, tmp, &markers_loaded_list, node) {
 		if (amark->probe == pdata) {
 			ret = marker_probe_unregister_private_data(
 				pdata->probe_func, amark);
 			if (ret)
 				goto end;
-			list_del(&amark->node);
+			cds_list_del(&amark->node);
 			free(amark);
 		}
 	}
-	list_del(&pdata->node);
+	cds_list_del(&pdata->node);
 end:
 	pthread_mutex_unlock(&probes_mutex);
 	return ret;
@@ -189,7 +189,7 @@ int ltt_marker_connect(const char *channel, const char *mname,
 	if (ret)
 		free(pdata);
 	else
-		list_add(&pdata->node, &markers_loaded_list);
+		cds_list_add(&pdata->node, &markers_loaded_list);
 end:
 	pthread_mutex_unlock(&probes_mutex);
 	ltt_unlock_traces();
@@ -227,7 +227,7 @@ int ltt_marker_disconnect(const char *channel, const char *mname,
 	if (ret)
 		goto end;
 	else {
-		list_del(&pdata->node);
+		cds_list_del(&pdata->node);
 		free(pdata);
 	}
 end:
@@ -391,10 +391,10 @@ static void disconnect_all_markers(void)
 {
 	struct ltt_active_marker *pdata, *tmp;
 
-	list_for_each_entry_safe(pdata, tmp, &markers_loaded_list, node) {
+	cds_list_for_each_entry_safe(pdata, tmp, &markers_loaded_list, node) {
 		marker_probe_unregister_private_data(pdata->probe->probe_func,
 			pdata);
-		list_del(&pdata->node);
+		cds_list_del(&pdata->node);
 		free(pdata);
 	}
 }

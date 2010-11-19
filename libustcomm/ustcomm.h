@@ -27,7 +27,7 @@
 #define SOCK_DIR "/tmp/ust-app-socks"
 
 struct ustcomm_sock {
-	struct list_head list;
+	struct cds_list_head list;
 	int fd;
 	int epoll_fd;
 };
@@ -127,7 +127,7 @@ extern int ensure_dir_exists(const char *dir);
 
 /* Create and delete sockets */
 extern struct ustcomm_sock * ustcomm_init_sock(int fd, int epoll_fd,
-					       struct list_head *list);
+					       struct cds_list_head *list);
 extern void ustcomm_del_sock(struct ustcomm_sock *sock, int keep_in_epoll);
 
 /* Create and delete named sockets */

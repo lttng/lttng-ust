@@ -79,7 +79,7 @@ struct libustd_instance {
 	struct libustd_callbacks *callbacks;
 	int quit_program;
 	int is_init;
-	struct list_head connections;
+	struct cds_list_head connections;
 	int epoll_fd;
 	struct ustcomm_sock *listen_sock;
 	char *sock_path;

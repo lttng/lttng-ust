@@ -22,8 +22,8 @@
 
 /* Traces structures */
 struct ltt_traces ltt_traces = {
-	.setup_head = LIST_HEAD_INIT(ltt_traces.setup_head),
-	.head = LIST_HEAD_INIT(ltt_traces.head),
+	.setup_head = CDS_LIST_HEAD_INIT(ltt_traces.setup_head),
+	.head = CDS_LIST_HEAD_INIT(ltt_traces.head),
 };
 
 /* Traces list writer locking */

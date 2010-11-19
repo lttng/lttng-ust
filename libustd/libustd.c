@@ -863,7 +863,7 @@ static int init_ustd_socket(struct libustd_instance *instance)
 		goto close_epoll;
 	}
 
-	INIT_LIST_HEAD(&instance->connections);
+	CDS_INIT_LIST_HEAD(&instance->connections);
 
 	free(name);
 

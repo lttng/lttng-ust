@@ -43,7 +43,7 @@ void _ltt_specialized_trace(const struct marker *mdata, void *probe_data,
 	cpu = ust_get_cpu();
 
 	/* Force volatile access. */
-	STORE_SHARED(ltt_nesting, LOAD_SHARED(ltt_nesting) + 1);
+	CMM_STORE_SHARED(ltt_nesting, CMM_LOAD_SHARED(ltt_nesting) + 1);
 
 	/*
 	 * asm volatile and "memory" clobber prevent the compiler from moving
@@ -52,7 +52,7 @@ void _ltt_specialized_trace(const struct marker *mdata, void *probe_data,
 	 * traps, divisions by 0, ...) are triggered within the incremented
 	 * nesting count section.
 	 */
-	barrier();
+	cmm_barrier();
 	eID = mdata->event_id;
 	chan_index = mdata->channel_id;
 
@@ -60,7 +60,7 @@ void _ltt_specialized_trace(const struct marker *mdata, void *probe_data,
 	 * Iterate on each trace, typically small number of active traces,
 	 * list iteration with prefetch is usually slower.
 	 */
-	list_for_each_entry_rcu(trace, &ltt_traces.head, list) {
+	cds_list_for_each_entry_rcu(trace, &ltt_traces.head, list) {
 		if (unlikely(!trace->active))
 			continue;
 //ust//		if (unlikely(!ltt_run_filter(trace, eID)))
@@ -109,7 +109,7 @@ void _ltt_specialized_trace(const struct marker *mdata, void *probe_data,
 	 * traps, divisions by 0, ...) are triggered within the incremented
 	 * nesting count section.
 	 */
-	barrier();
-	STORE_SHARED(ltt_nesting, LOAD_SHARED(ltt_nesting) - 1);
+	cmm_barrier();
+	CMM_STORE_SHARED(ltt_nesting, CMM_LOAD_SHARED(ltt_nesting) - 1);
 	rcu_read_unlock();
 }

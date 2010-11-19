@@ -429,7 +429,7 @@ static inline size_t serialize_trace_data(struct ust_buffer *buf,
 			 */
 			tracer_stack_pos++;
 			assert(tracer_stack_pos <= TRACER_STACK_LEN);
-			barrier();
+			cmm_barrier();
 			tracer_stack[*stack_pos_ctx] =
 					strlen(tmp.v_string.s) + 1;
 		}
@@ -657,9 +657,9 @@ notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
 	cpu = ust_get_cpu();
 
 	/* Force volatile access. */
-	STORE_SHARED(ltt_nesting, LOAD_SHARED(ltt_nesting) + 1);
+	CMM_STORE_SHARED(ltt_nesting, CMM_LOAD_SHARED(ltt_nesting) + 1);
 	stack_pos_ctx = tracer_stack_pos;
-	barrier();
+	cmm_barrier();
 
 	pdata = (struct ltt_active_marker *)probe_data;
 	eID = mdata->event_id;
@@ -685,7 +685,7 @@ notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
 	va_end(args_copy);
 
 	/* Iterate on each trace */
-	list_for_each_entry_rcu(trace, &ltt_traces.head, list) {
+	cds_list_for_each_entry_rcu(trace, &ltt_traces.head, list) {
 		/*
 		 * Expect the filter to filter out events. If we get here,
 		 * we went through tracepoint activation as a first step.
@@ -745,9 +745,9 @@ notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
 		DBG("just commited event (%s/%s) at offset %ld and size %zd", mdata->channel, mdata->name, buf_offset, slot_size);
 	}
 
-	barrier();
+	cmm_barrier();
 	tracer_stack_pos = stack_pos_ctx;
-	STORE_SHARED(ltt_nesting, LOAD_SHARED(ltt_nesting) - 1);
+	CMM_STORE_SHARED(ltt_nesting, CMM_LOAD_SHARED(ltt_nesting) - 1);
 
 	rcu_read_unlock(); //ust// rcu_read_unlock_sched_notrace();
 }
