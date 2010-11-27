@@ -59,8 +59,6 @@
 #include <ust/kcompat/simple.h>
 #include <ust/kcompat/compiler.h>
 #include <ust/kcompat/types.h>
-#include <ust/kcompat/hlist.h>
-
 #include <ust/kcompat/jhash.h>
 
 #include <ust/kcompat/disable.h>

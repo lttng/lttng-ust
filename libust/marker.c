@@ -21,6 +21,7 @@
 #define _LGPL_SOURCE
 #include <urcu-bp.h>
 #include <urcu/rculist.h>
+#include <urcu/hlist.h>
 
 #include <ust/core.h>
 #include <ust/marker.h>
@@ -64,7 +65,7 @@ void unlock_markers(void)
  */
 #define MARKER_HASH_BITS 6
 #define MARKER_TABLE_SIZE (1 << MARKER_HASH_BITS)
-static struct hlist_head marker_table[MARKER_TABLE_SIZE];
+static struct cds_hlist_head marker_table[MARKER_TABLE_SIZE];
 
 /*
  * Note about RCU :
@@ -75,7 +76,7 @@ static struct hlist_head marker_table[MARKER_TABLE_SIZE];
  * marker entries modifications are protected by the markers_mutex.
  */
 struct marker_entry {
-	struct hlist_node hlist;
+	struct cds_hlist_node hlist;
 	char *format;
 	char *name;
 			/* Probe wrapper */
@@ -386,8 +387,8 @@ marker_entry_remove_probe(struct marker_entry *entry,
  */
 static struct marker_entry *get_marker(const char *channel, const char *name)
 {
-	struct hlist_head *head;
-	struct hlist_node *node;
+	struct cds_hlist_head *head;
+	struct cds_hlist_node *node;
 	struct marker_entry *e;
 	size_t channel_len = strlen(channel) + 1;
 	size_t name_len = strlen(name) + 1;
@@ -395,7 +396,7 @@ static struct marker_entry *get_marker(const char *channel, const char *name)
 
 	hash = jhash(channel, channel_len-1, 0) ^ jhash(name, name_len-1, 0);
 	head = &marker_table[hash & ((1 << MARKER_HASH_BITS)-1)];
-	hlist_for_each_entry(e, node, head, hlist) {
+	cds_hlist_for_each_entry(e, node, head, hlist) {
 		if (!strcmp(channel, e->channel) && !strcmp(name, e->name))
 			return e;
 	}
@@ -409,8 +410,8 @@ static struct marker_entry *get_marker(const char *channel, const char *name)
 static struct marker_entry *add_marker(const char *channel, const char *name,
 		const char *format)
 {
-	struct hlist_head *head;
-	struct hlist_node *node;
+	struct cds_hlist_head *head;
+	struct cds_hlist_node *node;
 	struct marker_entry *e;
 	size_t channel_len = strlen(channel) + 1;
 	size_t name_len = strlen(name) + 1;
@@ -421,7 +422,7 @@ static struct marker_entry *add_marker(const char *channel, const char *name,
 	if (format)
 		format_len = strlen(format) + 1;
 	head = &marker_table[hash & ((1 << MARKER_HASH_BITS)-1)];
-	hlist_for_each_entry(e, node, head, hlist) {
+	cds_hlist_for_each_entry(e, node, head, hlist) {
 		if (!strcmp(channel, e->channel) && !strcmp(name, e->name)) {
 			DBG("Marker %s.%s busy", channel, name);
 			return ERR_PTR(-EBUSY);	/* Already there */
@@ -459,7 +460,7 @@ static struct marker_entry *add_marker(const char *channel, const char *name,
 	e->format_allocated = 0;
 	e->refcount = 0;
 	e->rcu_pending = 0;
-	hlist_add_head(&e->hlist, head);
+	cds_hlist_add_head(&e->hlist, head);
 	return e;
 }
 
@@ -469,8 +470,8 @@ static struct marker_entry *add_marker(const char *channel, const char *name,
  */
 static int remove_marker(const char *channel, const char *name)
 {
-	struct hlist_head *head;
-	struct hlist_node *node;
+	struct cds_hlist_head *head;
+	struct cds_hlist_node *node;
 	struct marker_entry *e;
 	int found = 0;
 	size_t channel_len = strlen(channel) + 1;
@@ -480,7 +481,7 @@ static int remove_marker(const char *channel, const char *name)
 
 	hash = jhash(channel, channel_len-1, 0) ^ jhash(name, name_len-1, 0);
 	head = &marker_table[hash & ((1 << MARKER_HASH_BITS)-1)];
-	hlist_for_each_entry(e, node, head, hlist) {
+	cds_hlist_for_each_entry(e, node, head, hlist) {
 		if (!strcmp(channel, e->channel) && !strcmp(name, e->name)) {
 			found = 1;
 			break;
@@ -490,7 +491,7 @@ static int remove_marker(const char *channel, const char *name)
 		return -ENOENT;
 	if (e->single.func != __mark_empty_function)
 		return -EBUSY;
-	hlist_del(&e->hlist);
+	cds_hlist_del(&e->hlist);
 	if (e->format_allocated)
 		free(e->format);
 	ret = ltt_channels_unregister(e->channel);
@@ -912,12 +913,12 @@ get_marker_from_private_data(marker_probe_func *probe, void *probe_private)
 {
 	struct marker_entry *entry;
 	unsigned int i;
-	struct hlist_head *head;
-	struct hlist_node *node;
+	struct cds_hlist_head *head;
+	struct cds_hlist_node *node;
 
 	for (i = 0; i < MARKER_TABLE_SIZE; i++) {
 		head = &marker_table[i];
-		hlist_for_each_entry(entry, node, head, hlist) {
+		cds_hlist_for_each_entry(entry, node, head, hlist) {
 			if (!entry->ptype) {
 				if (entry->single.func == probe
 						&& entry->single.probe_private
@@ -1013,8 +1014,8 @@ end:
 void *marker_get_private_data(const char *channel, const char *name,
 			      marker_probe_func *probe, int num)
 {
-	struct hlist_head *head;
-	struct hlist_node *node;
+	struct cds_hlist_head *head;
+	struct cds_hlist_node *node;
 	struct marker_entry *e;
 	size_t channel_len = strlen(channel) + 1;
 	size_t name_len = strlen(name) + 1;
@@ -1023,7 +1024,7 @@ void *marker_get_private_data(const char *channel, const char *name,
 
 	hash = jhash(channel, channel_len-1, 0) ^ jhash(name, name_len-1, 0);
 	head = &marker_table[hash & ((1 << MARKER_HASH_BITS)-1)];
-	hlist_for_each_entry(e, node, head, hlist) {
+	cds_hlist_for_each_entry(e, node, head, hlist) {
 		if (!strcmp(channel, e->channel) && !strcmp(name, e->name)) {
 			if (!e->ptype) {
 				if (num == 0 && e->single.func == probe)
@@ -1178,14 +1179,14 @@ void marker_iter_reset(struct marker_iter *iter)
 /*
  * must be called with current->user_markers_mutex held
  */
-static void free_user_marker(char __user *state, struct hlist_head *head)
+static void free_user_marker(char __user *state, struct cds_hlist_head *head)
 {
 	struct user_marker *umark;
-	struct hlist_node *pos, *n;
+	struct cds_hlist_node *pos, *n;
 
-	hlist_for_each_entry_safe(umark, pos, n, head, hlist) {
+	cds_hlist_for_each_entry_safe(umark, pos, n, head, hlist) {
 		if (umark->state == state) {
-			hlist_del(&umark->hlist);
+			cds_hlist_del(&umark->hlist);
 			free(umark);
 		}
 	}
@@ -1243,12 +1244,12 @@ static void free_user_marker(char __user *state, struct hlist_head *head)
 void exit_user_markers(struct task_struct *p)
 {
 	struct user_marker *umark;
-	struct hlist_node *pos, *n;
+	struct cds_hlist_node *pos, *n;
 
 	if (thread_group_leader(p)) {
 		pthread_mutex_lock(&markers_mutex);
 		pthread_mutex_lock(&p->user_markers_mutex);
-		hlist_for_each_entry_safe(umark, pos, n, &p->user_markers,
+		cds_hlist_for_each_entry_safe(umark, pos, n, &p->user_markers,
 			hlist)
 		    free(umark);
 		INIT_HLIST_HEAD(&p->user_markers);
@@ -1306,8 +1307,8 @@ void ltt_dump_marker_state(struct ust_trace *trace)
 {
 	struct marker_entry *entry;
 	struct ltt_probe_private_data call_data;
-	struct hlist_head *head;
-	struct hlist_node *node;
+	struct cds_hlist_head *head;
+	struct cds_hlist_node *node;
 	unsigned int i;
 
 	pthread_mutex_lock(&markers_mutex);
@@ -1316,7 +1317,7 @@ void ltt_dump_marker_state(struct ust_trace *trace)
 
 	for (i = 0; i < MARKER_TABLE_SIZE; i++) {
 		head = &marker_table[i];
-		hlist_for_each_entry(entry, node, head, hlist) {
+		cds_hlist_for_each_entry(entry, node, head, hlist) {
 			__trace_mark(0, metadata, core_marker_id,
 				&call_data,
 				"channel %s name %s event_id %hu "

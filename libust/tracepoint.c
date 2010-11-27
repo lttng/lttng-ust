@@ -27,6 +27,7 @@
 
 #define _LGPL_SOURCE
 #include <urcu-bp.h>
+#include <urcu/hlist.h>
 
 //extern struct tracepoint __start___tracepoints[] __attribute__((visibility("hidden")));
 //extern struct tracepoint __stop___tracepoints[] __attribute__((visibility("hidden")));
@@ -49,7 +50,7 @@ static DEFINE_MUTEX(tracepoints_mutex);
  */
 #define TRACEPOINT_HASH_BITS 6
 #define TRACEPOINT_TABLE_SIZE (1 << TRACEPOINT_HASH_BITS)
-static struct hlist_head tracepoint_table[TRACEPOINT_TABLE_SIZE];
+static struct cds_hlist_head tracepoint_table[TRACEPOINT_TABLE_SIZE];
 
 /*
  * Note about RCU :
@@ -58,7 +59,7 @@ static struct hlist_head tracepoint_table[TRACEPOINT_TABLE_SIZE];
  * Tracepoint entries modifications are protected by the tracepoints_mutex.
  */
 struct tracepoint_entry {
-	struct hlist_node hlist;
+	struct cds_hlist_node hlist;
 	struct probe *probes;
 	int refcount;	/* Number of times armed. 0 if disarmed. */
 	char name[0];
@@ -192,13 +193,13 @@ tracepoint_entry_remove_probe(struct tracepoint_entry *entry, void *probe,
  */
 static struct tracepoint_entry *get_tracepoint(const char *name)
 {
-	struct hlist_head *head;
-	struct hlist_node *node;
+	struct cds_hlist_head *head;
+	struct cds_hlist_node *node;
 	struct tracepoint_entry *e;
 	u32 hash = jhash(name, strlen(name), 0);
 
 	head = &tracepoint_table[hash & (TRACEPOINT_TABLE_SIZE - 1)];
-	hlist_for_each_entry(e, node, head, hlist) {
+	cds_hlist_for_each_entry(e, node, head, hlist) {
 		if (!strcmp(name, e->name))
 			return e;
 	}
@@ -211,14 +212,14 @@ static struct tracepoint_entry *get_tracepoint(const char *name)
  */
 static struct tracepoint_entry *add_tracepoint(const char *name)
 {
-	struct hlist_head *head;
-	struct hlist_node *node;
+	struct cds_hlist_head *head;
+	struct cds_hlist_node *node;
 	struct tracepoint_entry *e;
 	size_t name_len = strlen(name) + 1;
 	u32 hash = jhash(name, name_len-1, 0);
 
 	head = &tracepoint_table[hash & (TRACEPOINT_TABLE_SIZE - 1)];
-	hlist_for_each_entry(e, node, head, hlist) {
+	cds_hlist_for_each_entry(e, node, head, hlist) {
 		if (!strcmp(name, e->name)) {
 			DBG("tracepoint %s busy", name);
 			return ERR_PTR(-EEXIST);	/* Already there */
@@ -234,7 +235,7 @@ static struct tracepoint_entry *add_tracepoint(const char *name)
 	memcpy(&e->name[0], name, name_len);
 	e->probes = NULL;
 	e->refcount = 0;
-	hlist_add_head(&e->hlist, head);
+	cds_hlist_add_head(&e->hlist, head);
 	return e;
 }
 
@@ -244,7 +245,7 @@ static struct tracepoint_entry *add_tracepoint(const char *name)
  */
 static inline void remove_tracepoint(struct tracepoint_entry *e)
 {
-	hlist_del(&e->hlist);
+	cds_hlist_del(&e->hlist);
 	free(e);
 }
 
