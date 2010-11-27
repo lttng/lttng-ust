@@ -24,8 +24,11 @@
 #include <linux/limits.h>
 #include <errno.h>
 #include <ust/kcompat/kcompat.h>
-#include <urcu/list.h>
 #include <ust/core.h>
+
+#define _LGPL_SOURCE
+#include <urcu/list.h>
+#include <urcu/urcu_ref.h>
 
 #define EVENTS_PER_CHANNEL	65536
 #define MAX_CPUS		32
@@ -52,7 +55,7 @@ struct ust_channel {
 						 */
 	/* End of first 32 bytes cacheline */
 
-	struct kref kref;	/* Channel transport reference count */
+	struct urcu_ref urcu_ref;	/* Channel transport reference count */
 	size_t subbuf_size;
 	int subbuf_size_order;
 	unsigned int subbuf_cnt;
@@ -67,7 +70,7 @@ struct ust_channel {
 struct ltt_channel_setting {
 	unsigned int subbuf_size;
 	unsigned int subbuf_cnt;
-	struct kref kref;	/* Number of references to structure content */
+	struct urcu_ref urcu_ref;	/* Number of references to structure content */
 	struct cds_list_head list;
 	unsigned int index;	/* index of channel in trace channel array */
 	u16 free_event_id;	/* Next event ID to allocate */

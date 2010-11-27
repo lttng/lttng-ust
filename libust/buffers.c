@@ -197,13 +197,13 @@ int ust_buffers_create_buf(struct ust_channel *channel, int cpu)
 		return -1;
 
 	buf->chan = channel;
-	kref_get(&channel->kref);
+	urcu_ref_get(&channel->urcu_ref);
 	return 0;
 }
 
-static void ust_buffers_destroy_channel(struct kref *kref)
+static void ust_buffers_destroy_channel(struct urcu_ref *urcu_ref)
 {
-	struct ust_channel *chan = _ust_container_of(kref, struct ust_channel, kref);
+	struct ust_channel *chan = _ust_container_of(urcu_ref, struct ust_channel, urcu_ref);
 	free(chan);
 }
 
@@ -219,13 +219,13 @@ static void ust_buffers_destroy_buf(struct ust_buffer *buf)
 
 //ust//	chan->buf[buf->cpu] = NULL;
 	free(buf);
-	kref_put(&chan->kref, ust_buffers_destroy_channel);
+	urcu_ref_put(&chan->urcu_ref, ust_buffers_destroy_channel);
 }
 
-/* called from kref_put */
-static void ust_buffers_remove_buf(struct kref *kref)
+/* called from urcu_ref_put */
+static void ust_buffers_remove_buf(struct urcu_ref *urcu_ref)
 {
-	struct ust_buffer *buf = _ust_container_of(kref, struct ust_buffer, kref);
+	struct ust_buffer *buf = _ust_container_of(urcu_ref, struct ust_buffer, urcu_ref);
 	ust_buffers_destroy_buf(buf);
 }
 
@@ -237,7 +237,7 @@ int ust_buffers_open_buf(struct ust_channel *chan, int cpu)
 	if (result == -1)
 		return -1;
 
-	kref_init(&chan->buf[cpu]->kref);
+	urcu_ref_init(&chan->buf[cpu]->urcu_ref);
 
 	result = ust_buffers_init_buffer(chan->trace, chan, chan->buf[cpu], chan->subbuf_cnt);
 	if(result == -1)
@@ -254,7 +254,7 @@ int ust_buffers_open_buf(struct ust_channel *chan, int cpu)
  */
 static void ust_buffers_close_buf(struct ust_buffer *buf)
 {
-	kref_put(&buf->kref, ust_buffers_remove_buf);
+	urcu_ref_put(&buf->urcu_ref, ust_buffers_remove_buf);
 }
 
 int ust_buffers_channel_open(struct ust_channel *chan, size_t subbuf_size, size_t subbuf_cnt)
@@ -280,7 +280,7 @@ int ust_buffers_channel_open(struct ust_channel *chan, size_t subbuf_size, size_
 	chan->subbuf_size_order = get_count_order(subbuf_size);
 	chan->alloc_size = subbuf_size * subbuf_cnt;
 
-	kref_init(&chan->kref);
+	urcu_ref_init(&chan->urcu_ref);
 
 	pthread_mutex_lock(&ust_buffers_channels_mutex);
 	for(i=0; i<chan->n_cpus; i++) {
@@ -301,7 +301,7 @@ error:
 		do {} while(0);
 	}
 
-	kref_put(&chan->kref, ust_buffers_destroy_channel);
+	urcu_ref_put(&chan->urcu_ref, ust_buffers_destroy_channel);
 	pthread_mutex_unlock(&ust_buffers_channels_mutex);
 	return -1;
 }
@@ -321,7 +321,7 @@ void ust_buffers_channel_close(struct ust_channel *chan)
 	}
 
 	cds_list_del(&chan->list);
-	kref_put(&chan->kref, ust_buffers_destroy_channel);
+	urcu_ref_put(&chan->urcu_ref, ust_buffers_destroy_channel);
 	pthread_mutex_unlock(&ust_buffers_channels_mutex);
 }
 
@@ -590,10 +590,10 @@ static void ltt_relay_print_buffer_errors(struct ust_channel *channel, int cpu)
 	ltt_relay_print_errors(trace, channel, cpu);
 }
 
-static void ltt_relay_release_channel(struct kref *kref)
+static void ltt_relay_release_channel(struct urcu_ref *urcu_ref)
 {
-	struct ust_channel *ltt_chan = _ust_container_of(kref,
-			struct ust_channel, kref);
+	struct ust_channel *ltt_chan = _ust_container_of(urcu_ref,
+			struct ust_channel, urcu_ref);
 	free(ltt_chan->buf);
 }
 
@@ -648,9 +648,9 @@ static int ust_buffers_init_buffer(struct ust_trace *trace,
 		zmalloc(sizeof(*buf->commit_count) * n_subbufs);
 	if (!buf->commit_count)
 		return -ENOMEM;
-	kref_get(&trace->kref);
-	kref_get(&trace->ltt_transport_kref);
-	kref_get(&ltt_chan->kref);
+	urcu_ref_get(&trace->urcu_ref);
+	urcu_ref_get(&trace->ltt_transport_urcu_ref);
+	urcu_ref_get(&ltt_chan->urcu_ref);
 	uatomic_set(&buf->offset, ltt_subbuffer_header_size());
 	uatomic_set(&buf->consumed, 0);
 	uatomic_set(&buf->active_readers, 0);
@@ -694,14 +694,14 @@ static void ust_buffers_destroy_buffer(struct ust_channel *ltt_chan, int cpu)
 	struct ust_trace *trace = ltt_chan->trace;
 	struct ust_buffer *ltt_buf = ltt_chan->buf[cpu];
 
-	kref_put(&ltt_chan->trace->ltt_transport_kref,
+	urcu_ref_put(&ltt_chan->trace->ltt_transport_urcu_ref,
 		ltt_release_transport);
 	ltt_relay_print_buffer_errors(ltt_chan, cpu);
 //ust//	free(ltt_buf->commit_seq);
 	free(ltt_buf->commit_count);
 	ltt_buf->commit_count = NULL;
-	kref_put(&ltt_chan->kref, ltt_relay_release_channel);
-	kref_put(&trace->kref, ltt_release_trace);
+	urcu_ref_put(&ltt_chan->urcu_ref, ltt_relay_release_channel);
+	urcu_ref_put(&trace->urcu_ref, ltt_release_trace);
 //ust//	wake_up_interruptible(&trace->kref_wq);
 }
 
@@ -769,7 +769,7 @@ static int ust_buffers_create_channel(const char *trace_name, struct ust_trace *
 {
 	int result;
 
-	kref_init(&ltt_chan->kref);
+	urcu_ref_init(&ltt_chan->urcu_ref);
 
 	ltt_chan->trace = trace;
 	ltt_chan->overwrite = overwrite;
@@ -859,7 +859,7 @@ static void ltt_relay_finish_channel(struct ust_channel *channel)
 static void ltt_relay_remove_channel(struct ust_channel *channel)
 {
 	ust_buffers_channel_close(channel);
-	kref_put(&channel->kref, ltt_relay_release_channel);
+	urcu_ref_put(&channel->urcu_ref, ltt_relay_release_channel);
 }
 
 /*

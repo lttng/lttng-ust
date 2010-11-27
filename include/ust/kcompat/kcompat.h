@@ -63,6 +63,4 @@
 
 #include <ust/kcompat/disable.h>
 
-#include <ust/kcompat/kref.h>
-
 #endif /* KCOMPAT_H */

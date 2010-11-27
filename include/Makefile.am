@@ -15,7 +15,6 @@ nobase_include_HEADERS = \
 	ust/kcompat/compiler.h \
 	ust/kcompat/disable.h \
 	ust/kcompat/jhash.h \
-	ust/kcompat/kref.h \
 	ust/kcompat/simple.h \
 	ust/kcompat/types.h \
 	ust/kcompat/stringify.h \

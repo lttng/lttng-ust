@@ -324,7 +324,7 @@ struct ust_trace *_ltt_trace_find_setup(const char *trace_name)
  * ltt_release_transport - Release an LTT transport
  * @kref : reference count on the transport
  */
-void ltt_release_transport(struct kref *kref)
+void ltt_release_transport(struct urcu_ref *urcu_ref)
 {
 //ust// 	struct ust_trace *trace = container_of(kref,
 //ust// 			struct ust_trace, ltt_transport_kref);
@@ -335,10 +335,10 @@ void ltt_release_transport(struct kref *kref)
  * ltt_release_trace - Release a LTT trace
  * @kref : reference count on the trace
  */
-void ltt_release_trace(struct kref *kref)
+void ltt_release_trace(struct urcu_ref *urcu_ref)
 {
-	struct ust_trace *trace = _ust_container_of(kref,
-			struct ust_trace, kref);
+	struct ust_trace *trace = _ust_container_of(urcu_ref,
+			struct ust_trace, urcu_ref);
 	ltt_channels_trace_free(trace->channels);
 	free(trace);
 }
@@ -640,9 +640,9 @@ int ltt_trace_alloc(const char *trace_name)
 		goto traces_error;
 	}
 
-	kref_init(&trace->kref);
-	kref_init(&trace->ltt_transport_kref);
-//ust//	init_waitqueue_head(&trace->kref_wq);
+	urcu_ref_init(&trace->urcu_ref);
+	urcu_ref_init(&trace->ltt_transport_urcu_ref);
+//ust//	init_waitqueue_head(&trace->urcu_ref_wq);
 	trace->active = 0;
 //ust//	get_trace_clock();
 	trace->freq_scale = trace_clock_freq_scale();
@@ -811,7 +811,7 @@ static void __ltt_trace_destroy(struct ust_trace *trace, int drop)
 			trace->ops->remove_channel(chan);
 	}
 
-	kref_put(&trace->ltt_transport_kref, ltt_release_transport);
+	urcu_ref_put(&trace->ltt_transport_urcu_ref, ltt_release_transport);
 
 //ust//	module_put(trace->transport->owner);
 
@@ -824,7 +824,7 @@ static void __ltt_trace_destroy(struct ust_trace *trace, int drop)
 //ust//		__wait_event_interruptible(trace->kref_wq,
 //ust//			(atomic_read(&trace->kref.refcount) == 1), ret);
 //ust//	}
-	kref_put(&trace->kref, ltt_release_trace);
+	urcu_ref_put(&trace->urcu_ref, ltt_release_trace);
 }
 
 int ltt_trace_destroy(const char *trace_name, int drop)

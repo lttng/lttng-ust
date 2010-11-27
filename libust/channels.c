@@ -38,11 +38,11 @@ static CDS_LIST_HEAD(ltt_channels);
  * Index of next channel in array. Makes sure that as long as a trace channel is
  * allocated, no array index will be re-used when a channel is freed and then
  * another channel is allocated. This index is cleared and the array indexeds
- * get reassigned when the index_kref goes back to 0, which indicates that no
+ * get reassigned when the index_urcu_ref goes back to 0, which indicates that no
  * more trace channels are allocated.
  */
 static unsigned int free_index;
-static struct kref index_kref;	/* Keeps track of allocated trace channels */
+static struct urcu_ref index_urcu_ref;	/* Keeps track of allocated trace channels */
 
 int ust_channels_overwrite_by_default = 0;
 int ust_channels_request_collection_by_default = 1;
@@ -64,14 +64,14 @@ static struct ltt_channel_setting *lookup_channel(const char *name)
  *
  * Called with lock_markers() and channels mutex held.
  */
-static void release_channel_setting(struct kref *kref)
+static void release_channel_setting(struct urcu_ref *urcu_ref)
 {
-	struct ltt_channel_setting *setting = _ust_container_of(kref,
-		struct ltt_channel_setting, kref);
+	struct ltt_channel_setting *setting = _ust_container_of(urcu_ref,
+		struct ltt_channel_setting, urcu_ref);
 	struct ltt_channel_setting *iter;
 
-	if (uatomic_read(&index_kref.refcount) == 0
-	    && uatomic_read(&setting->kref.refcount) == 0) {
+	if (uatomic_read(&index_urcu_ref.refcount) == 0
+	    && uatomic_read(&setting->urcu_ref.refcount) == 0) {
 		cds_list_del(&setting->list);
 		free(setting);
 
@@ -90,12 +90,12 @@ static void release_channel_setting(struct kref *kref)
  *
  * Called with lock_markers() and channels mutex held.
  */
-static void release_trace_channel(struct kref *kref)
+static void release_trace_channel(struct urcu_ref *urcu_ref)
 {
 	struct ltt_channel_setting *iter, *n;
 
 	cds_list_for_each_entry_safe(iter, n, &ltt_channels, list)
-		release_channel_setting(&iter->kref);
+		release_channel_setting(&iter->urcu_ref);
 }
 
 /**
@@ -112,10 +112,10 @@ int ltt_channels_register(const char *name)
 	pthread_mutex_lock(&ltt_channel_mutex);
 	setting = lookup_channel(name);
 	if (setting) {
-		if (uatomic_read(&setting->kref.refcount) == 0)
-			goto init_kref;
+		if (uatomic_read(&setting->urcu_ref.refcount) == 0)
+			goto init_urcu_ref;
 		else {
-			kref_get(&setting->kref);
+			urcu_ref_get(&setting->urcu_ref);
 			goto end;
 		}
 	}
@@ -127,8 +127,8 @@ int ltt_channels_register(const char *name)
 	cds_list_add(&setting->list, &ltt_channels);
 	strncpy(setting->name, name, PATH_MAX-1);
 	setting->index = free_index++;
-init_kref:
-	kref_init(&setting->kref);
+init_urcu_ref:
+	urcu_ref_init(&setting->urcu_ref);
 end:
 	pthread_mutex_unlock(&ltt_channel_mutex);
 	return ret;
@@ -148,11 +148,11 @@ int ltt_channels_unregister(const char *name)
 
 	pthread_mutex_lock(&ltt_channel_mutex);
 	setting = lookup_channel(name);
-	if (!setting || uatomic_read(&setting->kref.refcount) == 0) {
+	if (!setting || uatomic_read(&setting->urcu_ref.refcount) == 0) {
 		ret = -ENOENT;
 		goto end;
 	}
-	kref_put(&setting->kref, release_channel_setting);
+	urcu_ref_put(&setting->urcu_ref, release_channel_setting);
 end:
 	pthread_mutex_unlock(&ltt_channel_mutex);
 	return ret;
@@ -174,7 +174,7 @@ int ltt_channels_set_default(const char *name,
 
 	pthread_mutex_lock(&ltt_channel_mutex);
 	setting = lookup_channel(name);
-	if (!setting || uatomic_read(&setting->kref.refcount) == 0) {
+	if (!setting || uatomic_read(&setting->urcu_ref.refcount) == 0) {
 		ret = -ENOENT;
 		goto end;
 	}
@@ -198,7 +198,7 @@ const char *ltt_channels_get_name_from_index(unsigned int index)
 	struct ltt_channel_setting *iter;
 
 	cds_list_for_each_entry(iter, &ltt_channels, list)
-		if (iter->index == index && uatomic_read(&iter->kref.refcount))
+		if (iter->index == index && uatomic_read(&iter->urcu_ref.refcount))
 			return iter->name;
 	return NULL;
 }
@@ -211,7 +211,7 @@ ltt_channels_get_setting_from_name(const char *name)
 
 	cds_list_for_each_entry(iter, &ltt_channels, list)
 		if (!strcmp(iter->name, name)
-		    && uatomic_read(&iter->kref.refcount))
+		    && uatomic_read(&iter->urcu_ref.refcount))
 			return iter;
 	return NULL;
 }
@@ -259,10 +259,10 @@ struct ust_channel *ltt_channels_trace_alloc(unsigned int *nr_channels,
 		WARN("ltt_channels_trace_alloc: no free_index; are there any probes connected?");
 		goto end;
 	}
-	if (!uatomic_read(&index_kref.refcount))
-		kref_init(&index_kref);
+	if (!uatomic_read(&index_urcu_ref.refcount))
+		urcu_ref_init(&index_urcu_ref);
 	else
-		kref_get(&index_kref);
+		urcu_ref_get(&index_urcu_ref);
 	*nr_channels = free_index;
 	channel = zmalloc(sizeof(struct ust_channel) * free_index);
 	if (!channel) {
@@ -270,7 +270,7 @@ struct ust_channel *ltt_channels_trace_alloc(unsigned int *nr_channels,
 		goto end;
 	}
 	cds_list_for_each_entry(iter, &ltt_channels, list) {
-		if (!uatomic_read(&iter->kref.refcount))
+		if (!uatomic_read(&iter->urcu_ref.refcount))
 			continue;
 		channel[iter->index].subbuf_size = iter->subbuf_size;
 		channel[iter->index].subbuf_cnt = iter->subbuf_cnt;
@@ -297,7 +297,7 @@ void ltt_channels_trace_free(struct ust_channel *channels)
 	lock_markers();
 	pthread_mutex_lock(&ltt_channel_mutex);
 	free(channels);
-	kref_put(&index_kref, release_trace_channel);
+	urcu_ref_put(&index_urcu_ref, release_trace_channel);
 	pthread_mutex_unlock(&ltt_channel_mutex);
 	unlock_markers();
 }

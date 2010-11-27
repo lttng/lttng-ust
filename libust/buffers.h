@@ -94,7 +94,7 @@ struct ust_buffer {
 
 	struct ust_channel *chan;
 
-	struct kref kref;
+	struct urcu_ref urcu_ref;
 	void *buf_data;
 	size_t buf_size;
 	int shmid;
