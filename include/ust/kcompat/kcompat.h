@@ -61,6 +61,4 @@
 #include <ust/kcompat/types.h>
 #include <ust/kcompat/jhash.h>
 
-#include <ust/kcompat/disable.h>
-
 #endif /* KCOMPAT_H */
