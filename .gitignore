@@ -10,6 +10,7 @@ Makefile
 *.lo
 Makefile.in
 *.loT
+*.info
 configure
 aclocal.m4
 autom4te.cache/
