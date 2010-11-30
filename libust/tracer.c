@@ -795,9 +795,6 @@ static void __ltt_trace_destroy(struct ust_trace *trace, int drop)
 		}
 	}
 
-	return; /* FIXME: temporary for ust */
-//ust//	flush_scheduled_work();
-
 	/*
 	 * The currently destroyed trace is not in the trace list anymore,
 	 * so it's safe to call the async wakeup ourself. It will deliver
