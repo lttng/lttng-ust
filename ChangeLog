@@ -1,3 +1,8 @@
+2010-12-03 ust 0.9
+	* Cleaned up namespace
+	* Compatible with userspace-rcu version 0.5.2
+	* Fixed a minor bug in a test
+
 2010-10-26 ust 0.8
 	* API CHANGE!!! Add data pointer to tracepoint probe
 	void *data is always the first argument to a tracepoint probe
