@@ -548,20 +548,18 @@ static void force_subbuf_switch()
 /* Simple commands are those which need only respond with a return value. */
 static int process_simple_client_cmd(int command, char *recv_buf)
 {
+	int result;
+
 	switch(command) {
 	case SET_SOCK_PATH:
 	{
-		struct ustcomm_sock_path *sock_msg;
-		sock_msg = (struct ustcomm_sock_path *)recv_buf;
-		sock_msg->sock_path =
-			ustcomm_restore_ptr(sock_msg->sock_path,
-					    sock_msg->data,
-					    sizeof(sock_msg->data));
-		if (!sock_msg->sock_path) {
-
-			return -EINVAL;
+		struct ustcomm_single_field *sock_msg;
+		sock_msg = (struct ustcomm_single_field *)recv_buf;
+		result = ustcomm_unpack_single_field(sock_msg);
+		if (result < 0) {
+			return result;
 		}
-		return setenv("UST_DAEMON_SOCKET", sock_msg->sock_path, 1);
+		return setenv("UST_DAEMON_SOCKET", sock_msg->field, 1);
 	}
 
 	case FORCE_SUBBUF_SWITCH:
@@ -999,22 +997,22 @@ static void process_client_cmd(struct ustcomm_header *recv_header,
 	}
 	case GET_SOCK_PATH:
 	{
-		struct ustcomm_sock_path *sock_msg;
+		struct ustcomm_single_field *sock_msg;
 		char *sock_path_env;
 
-		sock_msg = (struct ustcomm_sock_path *)send_buf;
+		sock_msg = (struct ustcomm_single_field *)send_buf;
 
 		sock_path_env = getenv("UST_DAEMON_SOCKET");
 
 		if (!sock_path_env) {
-			result = ustcomm_pack_sock_path(reply_header,
-							sock_msg,
-							SOCK_DIR "/ustd");
+			result = ustcomm_pack_single_field(reply_header,
+							   sock_msg,
+							   SOCK_DIR "/ustd");
 
 		} else {
-			result = ustcomm_pack_sock_path(reply_header,
-							sock_msg,
-							sock_path_env);
+			result = ustcomm_pack_single_field(reply_header,
+							   sock_msg,
+							   sock_path_env);
 		}
 		reply_header->result = result;
 
@@ -1028,10 +1026,10 @@ static void process_client_cmd(struct ustcomm_header *recv_header,
 	case STOP_TRACE:
 	case DESTROY_TRACE:
 	{
-		struct ustcomm_trace_info *trace_inf =
-			(struct ustcomm_trace_info *)recv_buf;
+		struct ustcomm_single_field *trace_inf =
+			(struct ustcomm_single_field *)recv_buf;
 
-		result = ustcomm_unpack_trace_info(trace_inf);
+		result = ustcomm_unpack_single_field(trace_inf);
 		if (result < 0) {
 			ERR("couldn't unpack trace info");
 			reply_header->result = -EINVAL;
@@ -1040,7 +1038,7 @@ static void process_client_cmd(struct ustcomm_header *recv_header,
 
 		reply_header->result =
 			process_trace_cmd(recv_header->command,
-					  trace_inf->trace);
+					  trace_inf->field);
 		goto send_response;
 
 	}

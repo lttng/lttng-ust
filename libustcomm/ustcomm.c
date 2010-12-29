@@ -621,33 +621,32 @@ char * ustcomm_restore_ptr(char *ptr, char *data_field, int data_field_size)
 	return data_field + (long)ptr;
 }
 
-int ustcomm_pack_trace_info(struct ustcomm_header *header,
-			    struct ustcomm_trace_info *trace_inf,
-			    const char *trace)
+int ustcomm_pack_single_field(struct ustcomm_header *header,
+			      struct ustcomm_single_field *single_field,
+			      const char *string)
 {
 	int offset = 0;
 
-	trace_inf->trace = ustcomm_print_data(trace_inf->data,
-					      sizeof(trace_inf->data),
-					      &offset,
-					      trace);
+	single_field->field = ustcomm_print_data(single_field->data,
+						 sizeof(single_field->data),
+						 &offset,
+						 string);
 
-	if (trace_inf->trace == USTCOMM_POISON_PTR) {
+	if (single_field->field == USTCOMM_POISON_PTR) {
 		return -ENOMEM;
 	}
 
-	header->size = COMPUTE_MSG_SIZE(trace_inf, offset);
+	header->size = COMPUTE_MSG_SIZE(single_field, offset);
 
 	return 0;
 }
 
-
-int ustcomm_unpack_trace_info(struct ustcomm_trace_info *trace_inf)
+int ustcomm_unpack_single_field(struct ustcomm_single_field *single_field)
 {
-	trace_inf->trace = ustcomm_restore_ptr(trace_inf->trace,
-					       trace_inf->data,
-					       sizeof(trace_inf->data));
-	if (!trace_inf->trace) {
+	single_field->field = ustcomm_restore_ptr(single_field->field,
+						  single_field->data,
+						  sizeof(single_field->data));
+	if (!single_field->field) {
 		return -EINVAL;
 	}
 
@@ -819,40 +818,6 @@ int ustcomm_unpack_marker_info(struct ustcomm_marker_info *marker_inf)
 						 marker_inf->data,
 						 sizeof(marker_inf->data));
 	if (!marker_inf->marker) {
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
-int ustcomm_pack_sock_path(struct ustcomm_header *header,
-			   struct ustcomm_sock_path *sock_path_inf,
-			   const char *socket_path)
-{
-	int offset = 0;
-
-	sock_path_inf->sock_path =
-		ustcomm_print_data(sock_path_inf->data,
-				   sizeof(sock_path_inf->data),
-				   &offset,
-				   socket_path);
-
-	if (sock_path_inf->sock_path == USTCOMM_POISON_PTR) {
-		return -ENOMEM;
-	}
-
-	header->size = COMPUTE_MSG_SIZE(sock_path_inf, offset);
-
-	return 0;
-}
-
-int ustcomm_unpack_sock_path(struct ustcomm_sock_path *sock_path_inf)
-{
-	sock_path_inf->sock_path =
-		ustcomm_restore_ptr(sock_path_inf->sock_path,
-				    sock_path_inf->data,
-				    sizeof(sock_path_inf->data));
-	if (!sock_path_inf->sock_path) {
 		return -EINVAL;
 	}
 

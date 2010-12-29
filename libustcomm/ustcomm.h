@@ -78,8 +78,8 @@ enum tracectl_commands {
 	STOP_TRACE,
 };
 
-struct ustcomm_trace_info {
-	char *trace;
+struct ustcomm_single_field {
+	char *field;
 	char data[USTCOMM_DATA_SIZE];
 };
 
@@ -106,11 +106,6 @@ struct ustcomm_marker_info {
 	char *trace;
 	char *channel;
 	char *marker;
-	char data[USTCOMM_DATA_SIZE];
-};
-
-struct ustcomm_sock_path {
-	char *sock_path;
 	char data[USTCOMM_DATA_SIZE];
 };
 
@@ -180,11 +175,11 @@ extern char * ustcomm_restore_ptr(char *ptr, char *data_field,
 	(size_t) (long)(struct_ptr)->data - (long)(struct_ptr) + (offset)
 
 /* Packing and unpacking functions, making life easier */
-extern int ustcomm_pack_trace_info(struct ustcomm_header *header,
-				   struct ustcomm_trace_info *trace_inf,
+extern int ustcomm_pack_single_field(struct ustcomm_header *header,
+				   struct ustcomm_single_field *sf,
 				   const char *trace);
 
-extern int ustcomm_unpack_trace_info(struct ustcomm_trace_info *trace_inf);
+extern int ustcomm_unpack_single_field(struct ustcomm_single_field *sf);
 
 extern int ustcomm_pack_channel_info(struct ustcomm_header *header,
 				     struct ustcomm_channel_info *ch_inf,
@@ -208,12 +203,5 @@ extern int ustcomm_pack_marker_info(struct ustcomm_header *header,
 				    const char *marker);
 
 extern int ustcomm_unpack_marker_info(struct ustcomm_marker_info *marker_inf);
-
-
-extern int ustcomm_pack_sock_path(struct ustcomm_header *header,
-				  struct ustcomm_sock_path *sock_path_inf,
-				  const char *socket_path);
-
-extern int ustcomm_unpack_sock_path(struct ustcomm_sock_path *sock_path_inf);
 
 #endif /* USTCOMM_H */

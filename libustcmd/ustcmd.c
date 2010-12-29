@@ -303,12 +303,12 @@ int ustcmd_get_subbuf_size(const char *trace, const char *channel, pid_t pid)
 static int do_trace_cmd(const char *trace, pid_t pid, int command)
 {
 	struct ustcomm_header req_header, res_header;
-	struct ustcomm_trace_info trace_inf;
+	struct ustcomm_single_field trace_inf;
 	int result;
 
-	result = ustcomm_pack_trace_info(&req_header,
-					 &trace_inf,
-					 trace);
+	result = ustcomm_pack_single_field(&req_header,
+					   &trace_inf,
+					   trace);
 	if (result < 0) {
 		errno = -result;
 		return -1;
@@ -607,20 +607,19 @@ int ustcmd_get_tes(struct trace_event_status **tes,
  */
 int ustcmd_set_sock_path(const char *sock_path, pid_t pid)
 {
-	int offset = 0;
+	int result;
 	struct ustcomm_header req_header, res_header;
-	struct ustcomm_sock_path sock_path_msg;
+	struct ustcomm_single_field sock_path_msg;
 
-	sock_path_msg.sock_path = ustcomm_print_data(sock_path_msg.data,
-						     sizeof(sock_path_msg.data),
-						     &offset,
-						     sock_path);
-	if (sock_path_msg.sock_path == USTCOMM_POISON_PTR) {
+	result = ustcomm_pack_single_field(&req_header,
+					   &sock_path_msg,
+					   sock_path);
+	if (result < 0) {
+		errno = -result;
 		return -1;
 	}
 
 	req_header.command = SET_SOCK_PATH;
-	req_header.size = COMPUTE_MSG_SIZE(&sock_path_msg, offset);
 
 	return do_cmd(pid, &req_header, (char *)&sock_path_msg,
 		      &res_header, NULL);
@@ -637,7 +636,7 @@ int ustcmd_get_sock_path(char **sock_path, pid_t pid)
 {
 	int result;
 	struct ustcomm_header req_header, res_header;
-	struct ustcomm_sock_path *sock_path_msg;
+	struct ustcomm_single_field *sock_path_msg;
 
 	req_header.command = GET_SOCK_PATH;
 	req_header.size = 0;
@@ -648,12 +647,12 @@ int ustcmd_get_sock_path(char **sock_path, pid_t pid)
 		return -1;
 	}
 
-	result = ustcomm_unpack_sock_path(sock_path_msg);
+	result = ustcomm_unpack_single_field(sock_path_msg);
 	if (result < 0) {
 		return result;
 	}
 
-	*sock_path = strdup(sock_path_msg->sock_path);
+	*sock_path = strdup(sock_path_msg->field);
 
 	free(sock_path_msg);
 
