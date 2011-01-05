@@ -1,13 +1,13 @@
-ustd(1) -- a daemon that collects trace data and writes it to the disk
+ust-consumerd(1) -- a daemon that collects trace data and writes it to the disk
 ======================================================================
 
 ## SYNOPSIS
 
-`ustd` [<options>]
+`ust-consumerd` [<options>]
 
 ## DESCRIPTION
 
-`ustd` is a program that collects trace data and writes it to the disk.
+`ust-consumerd` is a program that collects trace data and writes it to the disk.
 
 ## OPTIONS
 
@@ -38,7 +38,7 @@ ustctl(1), usttrace(1)
 
 ## AUTHOR
 
-`ustd` was written by Pierre-Marc Fournier.
+`ust-consumerd` was written by Pierre-Marc Fournier.
 
 This manual page was written by Jon Bernard &lt;jbernard@debian.org&gt;, for
 the Debian project (and may be used by others).

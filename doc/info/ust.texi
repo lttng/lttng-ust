@@ -92,7 +92,7 @@ Components licensed as GPL v2:
 @itemize @bullet
 @item ustctl
 @item libustcmd
-@item ustd
+@item ust-consumerd
 @end itemize
 
 @node Supported platforms
@@ -112,7 +112,7 @@ The following packages are required:
 @item
 ust
 
-This contains the tracing library, the ustd daemon, trace control tools
+This contains the tracing library, the ust-consumerd daemon, trace control tools
 and other helper tools.
 
 Repository: @url{http://git.dorsal.polymtl.ca}
@@ -385,11 +385,11 @@ First the daemon must be started.
 # Make sure the directory for the communication sockets exists.
 $ mkdir /tmp/ustsocks
 
-# Make sure the directory where ustd will write the trace exists.
+# Make sure the directory where ust-consumerd will write the trace exists.
 $ mkdir /tmp/trace
 
 # Start the daemon
-$ ustd
+$ ust-consumerd
 
 # We assume the program we want to trace is already running and that
 # it has pid 1234.
@@ -543,7 +543,7 @@ the application (or library) being linked to libust.
 Libust is initialized by a constructor, which by definition runs before the
 @code{main()} function of the application starts. This constructor creates a
 thread called the @emph{listener thread}.  The listener thread initializes a
-named socket and waits for connections for ustd or ustctl.
+named socket and waits for connections for ust-consumerd or ustctl.
 
 Libust-specific code may:
 @itemize @bullet

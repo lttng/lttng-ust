@@ -9,14 +9,14 @@ function error() {
 
 function sighandler() {
 	echo "Caught Ctrl-C"
-	if [ -z "$USTDPID" ]; then
-		USTDPID="$(<$pidfilepath)"
+	if [ -z "$UST_CONSUMERDPID" ]; then
+		UST_CONSUMERDPID="$(<$pidfilepath)"
 	fi
 	# Tell the daemon to die
-	kill -SIGTERM "$USTDPID"
+	kill -SIGTERM "$UST_CONSUMERDPID"
 
-	echo "Waiting for ustd to shutdown..."
-	wait "$USTDPID"
+	echo "Waiting for ust-consumerd to shutdown..."
+	wait "$UST_CONSUMERDPID"
 
 	rm "$pidfilepath"
 
@@ -24,17 +24,17 @@ function sighandler() {
 }
 
 USTTRACE_DIR="$(dirname $0)"
-if [ -x "${USTTRACE_DIR}/ustd/ustd" ] ; then
+if [ -x "${USTTRACE_DIR}/ust-consumerd/ust-consumerd" ] ; then
     # Use the not installed libraries instead
-    USTD="${USTTRACE_DIR}/ustd/ustd"
+    UST_CONSUMERD="${USTTRACE_DIR}/ust-consumerd/ust-consumerd"
     LIBINTERFORK_PATH="${USTTRACE_DIR}/libustfork/.libs/libustfork.so"
     LIBMALLOCWRAP_PATH="${USTTRACE_DIR}/libustinstr-malloc/.libs/libustinstr-malloc.so"
     LIBUST_PATH="${USTTRACE_DIR}/libust/.libs/libust.so"
 else
     # Use the libraries that the dynamic link finds
-    USTD="ustd"
-    if [ ! -x "$(which ustd 2>/dev/null)" ]; then
-        error "cannot find an executable ustd; make sure its location is in the PATH"
+    UST_CONSUMERD="ust-consumerd"
+    if [ ! -x "$(which ust-consumerd 2>/dev/null)" ]; then
+        error "cannot find an executable ust-consumerd; make sure its location is in the PATH"
         exit 1
     fi
     LIBINTERFORK_PATH="libustfork.so"
@@ -117,25 +117,25 @@ if [ ! -d "$OUTDIR" ]; then
 	fi
 fi
 
-# Choose ustd socket path
-USTDSOCKPATH="/tmp/ustd-sock-$$"
+# Choose ust-consumerd socket path
+UST_CONSUMERDSOCKPATH="/tmp/ust-consumerd-sock-$$"
 
 if [ "$arg_syswide_daemon" != "1" ];
 then
-	pidfilepath="/tmp/usttrace-$USER-$(date +%Y%m%d%H%M%S%N)-ustd-pid"
+	pidfilepath="/tmp/usttrace-$USER-$(date +%Y%m%d%H%M%S%N)-ust-consumerd-pid"
 	trap "sighandler $pidfilepath" SIGINT
 	mkfifo -m 0600 "$pidfilepath"
 	# Start daemon
-	$USTD --pidfile "$pidfilepath" -s "$USTDSOCKPATH" -o "$OUTDIR" >"$OUTDIR/ustd.log" 2>&1 &
-	# ustd sets up its server socket
-	# ustd opens the pidfile, blocks because no one has opened it
+	$UST_CONSUMERD --pidfile "$pidfilepath" -s "$UST_CONSUMERDSOCKPATH" -o "$OUTDIR" >"$OUTDIR/ust-consumerd.log" 2>&1 &
+	# ust-consumerd sets up its server socket
+	# ust-consumerd opens the pidfile, blocks because no one has opened it
 	# we open pidfile
 	# we block reading pidfile
-	# ustd writes to pidfile
-	# ustd closes pidfile
+	# ust-consumerd writes to pidfile
+	# ust-consumerd closes pidfile
 	# we unblock reading pidfile
-	USTDPID="$(<$pidfilepath)"
-	export UST_DAEMON_SOCKET="$USTDSOCKPATH"
+	UST_CONSUMERDPID="$(<$pidfilepath)"
+	export UST_DAEMON_SOCKET="$UST_CONSUMERDSOCKPATH"
 fi
 
 # Establish the environment for the command
@@ -206,10 +206,10 @@ fi
 if [ "$arg_syswide_daemon" != "1" ];
 then
 	# Tell the daemon to die
-	kill -SIGTERM "$USTDPID"
+	kill -SIGTERM "$UST_CONSUMERDPID"
 
-	echo "Waiting for ustd to shutdown..."
-	wait "$USTDPID"
+	echo "Waiting for ust-consumerd to shutdown..."
+	wait "$UST_CONSUMERDPID"
 
 	rm "$pidfilepath"
 fi

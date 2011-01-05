@@ -64,7 +64,7 @@ starting with two dashes(`-'). A summary of options is included below.
 
 ## SEE ALSO
 
-ustctl(1), ustd(1)
+ustctl(1), ust-consumerd(1)
 
 
 ## AUTHOR

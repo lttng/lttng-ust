@@ -61,7 +61,7 @@ PACKAGE CONTENTS:
   - include
     The public header files that will be installed on the system.
 
-  - ustd
+  - ust-consumerd
     The daemon that collects trace data and writes it to the disk.
 
   - doc
@@ -83,8 +83,12 @@ PACKAGE CONTENTS:
     A library to control tracing in other processes. Used by ustctl.
 
   - libustcomm
-    A static library shared between libust, ustd and libustcmd, that provides
-    functions that allow these components to communicate together.
+    A static library shared between libust, ust-consumerd and libustcmd, that
+    provides functions that allow these components to communicate together.
+
+  - libustconsumer
+    A library to create ust consumers by registering callbacks, used by
+    ust-consumerd.
 
   - snprintf
     An asynchronous signal-safe version of snprintf.

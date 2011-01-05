@@ -37,7 +37,7 @@ simple_harness_run test-libustinstr-malloc/test-libustinstr-malloc.sh
 
 simple_harness_run ./manual_mode_tracing.sh
 
-simple_harness_run ./valgrind_ustd.sh
+simple_harness_run ./valgrind_ust-consumerd.sh
 
 simple_harness_run dlopen/dlopen.sh
 

@@ -1,5 +1,5 @@
 /*
- * libustd header file
+ * libustconsumer header file
  *
  * Copyright 2005-2010 -
  * 		 Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
@@ -23,15 +23,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef USTD_H
-#define USTD_H
+#ifndef _USTCONSUMER_H
+#define _USTCONSUMER_H
 
 #include <pthread.h>
 #include <dirent.h>
 #include <ust/kcompat/kcompat.h>
 #include <urcu/list.h>
 
-#define USTD_DEFAULT_TRACE_PATH "/tmp/usttrace"
+#define USTCONSUMER_DEFAULT_TRACE_PATH "/tmp/usttrace"
 
 struct ustcomm_sock;
 
@@ -68,15 +68,15 @@ struct buffer_info {
 	void *user_data;
 };
 
-struct libustd_callbacks;
+struct ustconsumer_callbacks;
 
 /**
- * struct libustd_instance - Contains the data associated with a trace instance.
+ * struct ustconsumer_instance - Contains the data associated with a trace instance.
  * The lib user can read but MUST NOT change any attributes but callbacks.
  * @callbacks: Contains the necessary callbacks for a tracing session.
  */
-struct libustd_instance {
-	struct libustd_callbacks *callbacks;
+struct ustconsumer_instance {
+	struct ustconsumer_callbacks *callbacks;
 	int quit_program;
 	int is_init;
 	struct cds_list_head connections;
@@ -88,11 +88,11 @@ struct libustd_instance {
 };
 
 /**
-* struct libustd_callbacks - Contains the necessary callbacks for a tracing
+* struct ustconsumer_callbacks - Contains the necessary callbacks for a tracing
 * session. The user can set the unnecessary functions to NULL if he does not
 * need them.
 */
-struct libustd_callbacks {
+struct ustconsumer_callbacks {
 	/**
 	 * on_open_buffer - Is called after a buffer is attached to process memory
 	 *
@@ -104,7 +104,7 @@ struct libustd_callbacks {
 	 *
 	 * It has to be thread safe, because it is called by many threads.
 	 */
-	int (*on_open_buffer)(struct libustd_callbacks *data,
+	int (*on_open_buffer)(struct ustconsumer_callbacks *data,
 				struct buffer_info *buf);
 
 	/**
@@ -118,7 +118,7 @@ struct libustd_callbacks {
 	 *
 	 * It has to be thread safe, because it is called by many threads.
 	 */
-	int (*on_close_buffer)(struct libustd_callbacks *data,
+	int (*on_close_buffer)(struct ustconsumer_callbacks *data,
 				struct buffer_info *buf);
 
 	/**
@@ -132,7 +132,7 @@ struct libustd_callbacks {
 	 *
 	 * It has to be thread safe, because it is called by many threads.
 	 */
-	int (*on_read_subbuffer)(struct libustd_callbacks *data,
+	int (*on_read_subbuffer)(struct ustconsumer_callbacks *data,
 				struct buffer_info *buf);
 
 	/**
@@ -149,7 +149,7 @@ struct libustd_callbacks {
 	 *
 	 * It has to be thread safe, because it is called by many threads.
 	 */
-	int (*on_read_partial_subbuffer)(struct libustd_callbacks *data,
+	int (*on_read_partial_subbuffer)(struct ustconsumer_callbacks *data,
 					struct buffer_info *buf,
 					long subbuf_index,
 					unsigned long valid_length);
@@ -166,7 +166,7 @@ struct libustd_callbacks {
 	 *
 	 * It has to be thread safe, because it is called by many threads.
 	 */
-	int (*on_put_error)(struct libustd_callbacks *data,
+	int (*on_put_error)(struct ustconsumer_callbacks *data,
 				struct buffer_info *buf);
 
 	/**
@@ -179,7 +179,7 @@ struct libustd_callbacks {
 	 *
 	 * It has to be thread safe, because it is called by many threads.
 	 */
-	int (*on_new_thread)(struct libustd_callbacks *data);
+	int (*on_new_thread)(struct ustconsumer_callbacks *data);
 
 	/**
 	 * on_close_thread - Is called just before a thread is destroyed
@@ -191,7 +191,7 @@ struct libustd_callbacks {
 	 *
 	 * It has to be thread safe, because it is called by many threads.
 	 */
-	int (*on_close_thread)(struct libustd_callbacks *data);
+	int (*on_close_thread)(struct ustconsumer_callbacks *data);
 
 	/**
 	 * on_trace_end - Is called at the very end of the tracing session. At
@@ -205,9 +205,9 @@ struct libustd_callbacks {
 	 *
 	 * After this callback is called, no other callback will be called
 	 * again and the tracing instance will be deleted automatically by
-	 * libustd. After this call, the user must not use the libustd instance.
+	 * libustconsumer. After this call, the user must not use the libustconsumer instance.
 	 */
-	int (*on_trace_end)(struct libustd_instance *instance);
+	int (*on_trace_end)(struct ustconsumer_instance *instance);
 
 	/**
 	 * The library's data.
@@ -216,7 +216,7 @@ struct libustd_callbacks {
 };
 
 /**
- * libustd_new_instance - Is called to create a new tracing session.
+ * ustconsumer_new_instance - Is called to create a new tracing session.
  *
  * @callbacks:    Pointer to a callbacks structure that contain the user
  *                callbacks and data.
@@ -224,48 +224,48 @@ struct libustd_callbacks {
  *
  * Returns the instance if the function succeeds else NULL.
  */
-struct libustd_instance *
-libustd_new_instance(
-	struct libustd_callbacks *callbacks, char *sock_path);
+struct ustconsumer_instance *
+ustconsumer_new_instance(
+	struct ustconsumer_callbacks *callbacks, char *sock_path);
 
 /**
- * libustd_delete_instance - Is called to free a libustd_instance struct
+ * ustconsumer_delete_instance - Is called to free a ustconsumer_instance struct
  *
  * @instance: The tracing session instance that needs to be freed.
  *
  * This function should only be called if the instance has not been started,
- * as it will automatically be called at the end of libustd_start_instance.
+ * as it will automatically be called at the end of ustconsumer_start_instance.
  */
-void libustd_delete_instance(struct libustd_instance *instance);
+void ustconsumer_delete_instance(struct ustconsumer_instance *instance);
 
 /**
- * libustd_init_instance - Is called to initiliaze a new tracing session
+ * ustconsumer_init_instance - Is called to initiliaze a new tracing session
  *
  * @instance: The tracing session instance that needs to be started.
  *
  * Returns 0 if the function succeeds.
  *
- * This function must be called between libustd_new_instance and
- * libustd_start_instance. It sets up the communication between the library
+ * This function must be called between ustconsumer_new_instance and
+ * ustconsumer_start_instance. It sets up the communication between the library
  * and the tracing application.
  */
-int libustd_init_instance(struct libustd_instance *instance);
+int ustconsumer_init_instance(struct ustconsumer_instance *instance);
 
 /**
- * libustd_start_instance - Is called to start a new tracing session.
+ * ustconsumer_start_instance - Is called to start a new tracing session.
  *
  * @instance: The tracing session instance that needs to be started.
  *
  * Returns 0 if the function succeeds.
  *
  * This is a blocking function. The caller will be blocked on it until the
- * tracing session is stopped by the user using libustd_stop_instance or until
+ * tracing session is stopped by the user using ustconsumer_stop_instance or until
  * the traced application terminates
  */
-int libustd_start_instance(struct libustd_instance *instance);
+int ustconsumer_start_instance(struct ustconsumer_instance *instance);
 
 /**
- * libustd_stop_instance - Is called to stop a tracing session.
+ * ustconsumer_stop_instance - Is called to stop a tracing session.
  *
  * @instance: The tracing session instance that needs to be stoped.
  * @send_msg: If true, a message will be sent to the listening thread through
@@ -276,12 +276,12 @@ int libustd_start_instance(struct libustd_instance *instance);
  *
  * Returns 0 if the function succeeds.
  *
- * This function returns immediately, it only tells libustd to stop the
+ * This function returns immediately, it only tells libustconsumer to stop the
  * instance. The on_trace_end callback will be called when the tracing session
- * will really be stopped. The instance is deleted automatically by libustd
+ * will really be stopped. The instance is deleted automatically by libustconsumer
  * after on_trace_end is called.
  */
-int libustd_stop_instance(struct libustd_instance *instance, int send_msg);
+int ustconsumer_stop_instance(struct ustconsumer_instance *instance, int send_msg);
 
-#endif /* USTD_H */
+#endif /* _USTCONSUMER_H */
 

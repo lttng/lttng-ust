@@ -19,7 +19,7 @@
 - save_registers: save them only when the marker is active (complicated because we need to know their value at the address that is put in struct marker)
 - make streaming work, including periodical flush
 - make a system (signal-based?) that allow the listener thread to not be started initially
-- ustd should work as a pool of threads
+- ust-consumerd should work as a pool of threads
 - support more than one marker with the same channel and name on the same line?
 - make a mode where the listener thread can poll buffers to check if they are ready to be collected
   This is to guarantee there will never be a system call in the tracing path. Currently there is a system

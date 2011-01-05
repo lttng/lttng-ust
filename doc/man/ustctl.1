@@ -114,7 +114,7 @@ have flushed to the disk the full contents of the buffer yet.
 .P
 Finally, when \fB\-\-destroy\-trace\fR is used, the trace buffers are unallocated.
 However, the memory may not be effectively freed until the daemon finishes to
-collect them. When the trace is being collected by \fBustd\fR, this command
+collect them. When the trace is being collected by \fBust-consumerd\fR, this command
 guarantees its full contents is flushed to the disk.
 .
 .SH "STRUCTURE OF A TRACE"
@@ -139,7 +139,7 @@ for a given channel may be chosen with \fB\-\-set\-subbuf\-size\fR while the sub
 count is set with \fB\-\-set\-subbuf\-num\fR.
 .
 .SH "SEE ALSO"
-usttrace(1), ustd(1)
+usttrace(1), ust-consumerd(1)
 .
 .SH "AUTHOR"
 \fBustctl\fR was written by Pierre\-Marc Fournier.

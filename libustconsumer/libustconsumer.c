@@ -32,7 +32,7 @@
 #include <errno.h>
 #include <assert.h>
 
-#include <ust/ustd.h>
+#include <ust/ustconsumer.h>
 #include "lowlevel.h"
 #include "usterr.h"
 #include "ustcomm.h"
@@ -140,7 +140,7 @@ static int put_subbuffer(struct buffer_info *buf)
 
 void decrement_active_buffers(void *arg)
 {
-	struct libustd_instance *instance = arg;
+	struct ustconsumer_instance *instance = arg;
 	pthread_mutex_lock(&instance->mutex);
 	instance->active_buffers--;
 	pthread_mutex_unlock(&instance->mutex);
@@ -284,7 +284,7 @@ static int notify_buffer_mapped(int sock, struct buffer_info *buf)
 }
 
 
-struct buffer_info *connect_buffer(struct libustd_instance *instance, pid_t pid,
+struct buffer_info *connect_buffer(struct ustconsumer_instance *instance, pid_t pid,
 				   const char *trace, const char *channel,
 				   int channel_cpu)
 {
@@ -417,7 +417,7 @@ free_buf:
 	return NULL;
 }
 
-static void destroy_buffer(struct libustd_callbacks *callbacks,
+static void destroy_buffer(struct ustconsumer_callbacks *callbacks,
 			struct buffer_info *buf)
 {
 	int result;
@@ -443,7 +443,7 @@ static void destroy_buffer(struct libustd_callbacks *callbacks,
 	free(buf);
 }
 
-int consumer_loop(struct libustd_instance *instance, struct buffer_info *buf)
+int consumer_loop(struct ustconsumer_instance *instance, struct buffer_info *buf)
 {
 	int result, read_result;
 	char read_buf;
@@ -520,7 +520,7 @@ struct consumer_thread_args {
 	const char *trace;
 	const char *channel;
 	int channel_cpu;
-	struct libustd_instance *instance;
+	struct ustconsumer_instance *instance;
 };
 
 void *consumer_thread(void *arg)
@@ -576,7 +576,7 @@ void *consumer_thread(void *arg)
 	return NULL;
 }
 
-int start_consuming_buffer(struct libustd_instance *instance, pid_t pid,
+int start_consuming_buffer(struct ustconsumer_instance *instance, pid_t pid,
 			   const char *trace, const char *channel,
 			   int channel_cpu)
 {
@@ -616,7 +616,7 @@ int start_consuming_buffer(struct libustd_instance *instance, pid_t pid,
 	return 0;
 }
 static void process_client_cmd(int sock, struct ustcomm_header *req_header,
-			       char *recvbuf, struct libustd_instance *instance)
+			       char *recvbuf, struct ustconsumer_instance *instance)
 {
 	int result;
 	struct ustcomm_header _res_header;
@@ -665,7 +665,7 @@ static void process_client_cmd(int sock, struct ustcomm_header *req_header,
 
 #define MAX_EVENTS 10
 
-int libustd_start_instance(struct libustd_instance *instance)
+int ustconsumer_start_instance(struct ustconsumer_instance *instance)
 {
 	struct ustcomm_header recv_hdr;
 	char recv_buf[USTCOMM_BUFFER_SIZE];
@@ -675,7 +675,7 @@ int libustd_start_instance(struct libustd_instance *instance)
 	int result, epoll_fd, accept_fd, nfds, i, addr_size, timeout;
 
 	if(!instance->is_init) {
-		ERR("libustd instance not initialized");
+		ERR("libustconsumer instance not initialized");
 		return 1;
 	}
 	epoll_fd = instance->epoll_fd;
@@ -688,7 +688,7 @@ int libustd_start_instance(struct libustd_instance *instance)
 		if (nfds == -1 && errno == EINTR) {
 			/* Caught signal */
 		} else if (nfds == -1) {
-			PERROR("libustd_start_instance: epoll_wait failed");
+			PERROR("ustconsumer_start_instance: epoll_wait failed");
 			continue;
 		}
 
@@ -700,7 +700,7 @@ int libustd_start_instance(struct libustd_instance *instance)
 						   &addr,
 						   (socklen_t *)&addr_size);
 				if (accept_fd == -1) {
-					PERROR("libustd_start_instance: "
+					PERROR("ustconsumer_start_instance: "
 					       "accept failed");
 					continue;
 				}
@@ -734,13 +734,13 @@ int libustd_start_instance(struct libustd_instance *instance)
 	if(instance->callbacks->on_trace_end)
 		instance->callbacks->on_trace_end(instance);
 
-	libustd_delete_instance(instance);
+	ustconsumer_delete_instance(instance);
 
 	return 0;
 }
 
 /* FIXME: threads and connections !? */
-void libustd_delete_instance(struct libustd_instance *instance)
+void ustconsumer_delete_instance(struct ustconsumer_instance *instance)
 {
 	if (instance->is_init) {
 		ustcomm_del_named_sock(instance->listen_sock, 0);
@@ -755,7 +755,7 @@ void libustd_delete_instance(struct libustd_instance *instance)
 /* FIXME: Do something about the fixed path length, maybe get rid
  * of the whole concept and use a pipe?
  */
-int libustd_stop_instance(struct libustd_instance *instance, int send_msg)
+int ustconsumer_stop_instance(struct ustconsumer_instance *instance, int send_msg)
 {
 	int result;
 	int fd;
@@ -796,12 +796,12 @@ int libustd_stop_instance(struct libustd_instance *instance, int send_msg)
 	return 0;
 }
 
-struct libustd_instance
-*libustd_new_instance(struct libustd_callbacks *callbacks,
+struct ustconsumer_instance
+*ustconsumer_new_instance(struct ustconsumer_callbacks *callbacks,
 		      char *sock_path)
 {
-	struct libustd_instance *instance =
-		zmalloc(sizeof(struct libustd_instance));
+	struct ustconsumer_instance *instance =
+		zmalloc(sizeof(struct ustconsumer_instance));
 	if(!instance) {
 		return NULL;
 	}
@@ -821,13 +821,13 @@ struct libustd_instance
 	return instance;
 }
 
-static int init_ustd_socket(struct libustd_instance *instance)
+static int init_ustconsumer_socket(struct ustconsumer_instance *instance)
 {
 	char *name;
 
 	if (instance->sock_path) {
 		if (asprintf(&name, "%s", instance->sock_path) < 0) {
-			ERR("ustcomm_init_ustd : asprintf failed (sock_path %s)",
+			ERR("ustcomm_init_ustconsumer : asprintf failed (sock_path %s)",
 			    instance->sock_path);
 			return -1;
 		}
@@ -841,8 +841,8 @@ static int init_ustd_socket(struct libustd_instance *instance)
 			return -1;
 		}
 
-		if (asprintf(&name, "%s/%s", SOCK_DIR, "ustd") < 0) {
-			ERR("ustcomm_init_ustd : asprintf failed (%s/ustd)",
+		if (asprintf(&name, "%s/%s", SOCK_DIR, "ustconsumer") < 0) {
+			ERR("ustcomm_init_ustconsumer : asprintf failed (%s/ustconsumer)",
 			    SOCK_DIR);
 			return -1;
 		}
@@ -877,10 +877,10 @@ free_name:
 	return -1;
 }
 
-int libustd_init_instance(struct libustd_instance *instance)
+int ustconsumer_init_instance(struct ustconsumer_instance *instance)
 {
 	int result;
-	result = init_ustd_socket(instance);
+	result = init_ustconsumer_socket(instance);
 	if(result == -1) {
 		ERR("failed to initialize socket");
 		return 1;

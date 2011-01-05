@@ -23,4 +23,4 @@ stamp-h1
 libtool
 
 ustctl/ustctl
-ustd/ustd
+ust-consumerd/ust-consumerd

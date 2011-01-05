@@ -19,7 +19,7 @@
 #include <assert.h>
 #include <byteswap.h>
 
-#include "ust/ustd.h"
+#include "ust/ustconsumer.h"
 #include "buffers.h"
 #include "tracer.h"
 #include "usterr.h"
@@ -62,7 +62,7 @@ size_t subbuffer_data_size(void *subbuf)
 }
 
 
-void finish_consuming_dead_subbuffer(struct libustd_callbacks *callbacks, struct buffer_info *buf)
+void finish_consuming_dead_subbuffer(struct ustconsumer_callbacks *callbacks, struct buffer_info *buf)
 {
 	struct ust_buffer *ustbuf = buf->bufstruct_mem;
 

@@ -122,10 +122,10 @@ static void print_trace_events(FILE *fp)
 	unlock_trace_events();
 }
 
-static int connect_ustd(void)
+static int connect_ustconsumer(void)
 {
 	int result, fd;
-	char default_daemon_path[] = SOCK_DIR "/ustd";
+	char default_daemon_path[] = SOCK_DIR "/ustconsumer";
 	char *explicit_daemon_path, *daemon_path;
 
 	explicit_daemon_path = getenv("UST_DAEMON_SOCKET");
@@ -139,7 +139,7 @@ static int connect_ustd(void)
 
 	result = ustcomm_connect_path(daemon_path, &fd);
 	if (result < 0) {
-		WARN("connect_ustd failed, daemon_path: %s",
+		WARN("connect_ustconsumer failed, daemon_path: %s",
 		     daemon_path);
 		return result;
 	}
@@ -194,12 +194,12 @@ static void inform_consumer_daemon(const char *trace_name)
 	struct ust_trace *trace;
 	const char *ch_name;
 
-	sock = connect_ustd();
+	sock = connect_ustconsumer();
 	if (sock < 0) {
 		return;
 	}
 
-	DBG("Connected to ustd");
+	DBG("Connected to ustconsumer");
 
 	ltt_lock_traces();
 
@@ -1007,7 +1007,7 @@ static void process_client_cmd(struct ustcomm_header *recv_header,
 		if (!sock_path_env) {
 			result = ustcomm_pack_single_field(reply_header,
 							   sock_msg,
-							   SOCK_DIR "/ustd");
+							   SOCK_DIR "/ustconsumer");
 
 		} else {
 			result = ustcomm_pack_single_field(reply_header,
@@ -1496,7 +1496,7 @@ static void stop_listener(void)
 }
 
 /* This destructor keeps the process alive for a few seconds in order
- * to leave time to ustd to connect to its buffers. This is necessary
+ * to leave time for ustconsumer to connect to its buffers. This is necessary
  * for programs whose execution is very short. It is also useful in all
  * programs when tracing is started close to the end of the program
  * execution.

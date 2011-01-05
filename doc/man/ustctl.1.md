@@ -92,7 +92,7 @@ have flushed to the disk the full contents of the buffer yet.
 
 Finally, when `--destroy-trace` is used, the trace buffers are unallocated.
 However, the memory may not be effectively freed until the daemon finishes to
-collect them. When the trace is being collected by `ustd`, this command
+collect them. When the trace is being collected by `ust-consumerd`, this command
 guarantees its full contents is flushed to the disk.
 
 ## STRUCTURE OF A TRACE
@@ -118,7 +118,7 @@ count is set with `--set-subbuf-num`.
 
 ## SEE ALSO
 
-usttrace(1), ustd(1)
+usttrace(1), ust-consumerd(1)
 
 ## AUTHOR
 

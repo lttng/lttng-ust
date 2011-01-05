@@ -18,6 +18,6 @@ nobase_include_HEADERS = \
 	ust/kcompat/types.h \
 	ust/kcompat/stringify.h \
 	ust/ustcmd.h \
-	ust/ustd.h
+	ust/ustconsumer.h
 
 noinst_HEADERS = share.h usterr.h ust_snprintf.h

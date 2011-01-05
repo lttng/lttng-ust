@@ -34,11 +34,11 @@ TRACE_DIR="/tmp/ust-testsuite-manual-trace"
 rm -rf "$TRACE_DIR"
 mkdir "$TRACE_DIR"
 
-pidfilepath="/tmp/ust-testsuite-$USER-$(date +%Y%m%d%H%M%S%N)-ustd-pid"
+pidfilepath="/tmp/ust-testsuite-$USER-$(date +%Y%m%d%H%M%S%N)-ust-consumerd-pid"
 mkfifo -m 0600 "$pidfilepath"
 
-ustd --pidfile "$pidfilepath" -o "$TRACE_DIR" >/dev/null 2>&1 &
-USTD_PID="$(<$pidfilepath)"
+ust-consumerd --pidfile "$pidfilepath" -o "$TRACE_DIR" >/dev/null 2>&1 &
+UST_CONSUMERD_PID="$(<$pidfilepath)"
 
 LD_PRELOAD=/usr/local/lib/libust.so.0.0.0:/usr/local/lib/libustinstr-malloc.so find -L / >/dev/null 2>&1 &
 PID=$!
@@ -54,7 +54,7 @@ sleep 0.5
 okx ustctl --stop-trace $PID
 okx ustctl --destroy-trace $PID
 kill $PID
-kill -SIGTERM $USTD_PID
-wait $USTD_PID
+kill -SIGTERM $UST_CONSUMERD_PID
+wait $UST_CONSUMERD_PID
 
 trace_matches -N "ust.malloc" "^ust.malloc:" "$TRACE_DIR"

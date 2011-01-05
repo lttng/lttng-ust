@@ -104,7 +104,7 @@ pid_t *ustcmd_get_online_pids(void)
 		}
 
 		if (dirent->d_type != DT_DIR &&
-		    !!strcmp(dirent->d_name, "ustd")) {
+		    !!strcmp(dirent->d_name, "ust-consumer")) {
 
 			sscanf(dirent->d_name, "%u", (unsigned int *) &ret[i]);
 			/* FIXME: Here we previously called pid_is_online, which

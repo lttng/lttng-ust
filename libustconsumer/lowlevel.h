@@ -26,9 +26,9 @@
 #ifndef LOWLEVEL_H
 #define LOWLEVEL_H
 
-#include <ust/ustd.h>
+#include "ust/ustconsumer.h"
 
-void finish_consuming_dead_subbuffer(struct libustd_callbacks *callbacks, struct buffer_info *buf);
+void finish_consuming_dead_subbuffer(struct ustconsumer_callbacks *callbacks, struct buffer_info *buf);
 size_t subbuffer_data_size(void *subbuf);
 
 #endif /* LOWLEVEL_H */

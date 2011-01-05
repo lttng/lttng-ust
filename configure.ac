@@ -129,8 +129,8 @@ AC_CONFIG_FILES([
 	tests/ustcmd_function_tests/Makefile
 	libustinstr-malloc/Makefile
 	libustfork/Makefile
-	libustd/Makefile
-	ustd/Makefile
+	libustconsumer/Makefile
+	ust-consumerd/Makefile
 	ustctl/Makefile
 	libustcomm/Makefile
 	libustcmd/Makefile

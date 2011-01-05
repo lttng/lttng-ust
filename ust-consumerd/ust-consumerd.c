@@ -32,7 +32,7 @@
 #include <assert.h>
 #include <getopt.h>
 
-#include "ust/ustd.h"
+#include "ust/ustconsumer.h"
 #include "usterr.h"
 
 char *sock_path=NULL;
@@ -40,7 +40,7 @@ char *trace_path=NULL;
 int daemon_mode = 0;
 char *pidfile = NULL;
 
-struct libustd_instance *instance;
+struct ustconsumer_instance *instance;
 
 struct buffer_info_local {
 	/* output file */
@@ -128,12 +128,12 @@ int write_current_subbuffer(struct buffer_info *buf)
 	return 0;
 }
 
-int on_read_subbuffer(struct libustd_callbacks *data, struct buffer_info *buf)
+int on_read_subbuffer(struct ustconsumer_callbacks *data, struct buffer_info *buf)
 {
 	return write_current_subbuffer(buf);
 }
 
-int on_read_partial_subbuffer(struct libustd_callbacks *data, struct buffer_info *buf,
+int on_read_partial_subbuffer(struct ustconsumer_callbacks *data, struct buffer_info *buf,
 				long subbuf_index, unsigned long valid_length)
 {
 	struct buffer_info_local *buf_local = buf->user_data;
@@ -161,7 +161,7 @@ int on_read_partial_subbuffer(struct libustd_callbacks *data, struct buffer_info
 
 }
 
-int on_open_buffer(struct libustd_callbacks *data, struct buffer_info *buf)
+int on_open_buffer(struct ustconsumer_callbacks *data, struct buffer_info *buf)
 {
 	char *tmp;
 	int result;
@@ -182,13 +182,13 @@ int on_open_buffer(struct libustd_callbacks *data, struct buffer_info *buf)
 		 * of the risk of typo when using trace path override. We don't
 		 * want to risk creating plenty of useless directories in that case.
 		 */
-		result = create_dir_if_needed(USTD_DEFAULT_TRACE_PATH);
+		result = create_dir_if_needed(USTCONSUMER_DEFAULT_TRACE_PATH);
 		if(result == -1) {
-			ERR("could not create directory %s", USTD_DEFAULT_TRACE_PATH);
+			ERR("could not create directory %s", USTCONSUMER_DEFAULT_TRACE_PATH);
 			return 1;
 		}
 
-		trace_path = USTD_DEFAULT_TRACE_PATH;
+		trace_path = USTCONSUMER_DEFAULT_TRACE_PATH;
 	}
 
 	if (asprintf(&tmp, "%s/%u_%lld", trace_path, buf->pid, buf->pidunique) < 0) {
@@ -221,7 +221,7 @@ int on_open_buffer(struct libustd_callbacks *data, struct buffer_info *buf)
 	return 0;
 }
 
-int on_close_buffer(struct libustd_callbacks *data, struct buffer_info *buf)
+int on_close_buffer(struct ustconsumer_callbacks *data, struct buffer_info *buf)
 {
 	struct buffer_info_local *buf_local = buf->user_data;
 	int result = close(buf_local->file_fd);
@@ -232,15 +232,15 @@ int on_close_buffer(struct libustd_callbacks *data, struct buffer_info *buf)
 	return 0;
 }
 
-int on_put_error(struct libustd_callbacks *data, struct buffer_info *buf)
+int on_put_error(struct ustconsumer_callbacks *data, struct buffer_info *buf)
 {
 	unwrite_last_subbuffer(buf);
 }
 
-struct libustd_callbacks *new_callbacks()
+struct ustconsumer_callbacks *new_callbacks()
 {
-	struct libustd_callbacks *callbacks =
-		zmalloc(sizeof(struct libustd_callbacks));
+	struct ustconsumer_callbacks *callbacks =
+		zmalloc(sizeof(struct ustconsumer_callbacks));
 
 	if(!callbacks)
 		return NULL;
@@ -278,7 +278,7 @@ int is_directory(const char *dir)
 
 void usage(void)
 {
-	fprintf(stderr, "Usage:\nustd OPTIONS\n\nOptions:\n"
+	fprintf(stderr, "Usage:\nust-consumerd OPTIONS\n\nOptions:\n"
 			"\t-h\t\tDisplay this usage.\n"
 			"\t-o DIR\t\tSpecify the directory where to output the traces.\n"
 			"\t-s PATH\t\tSpecify the path to use for the daemon socket.\n"
@@ -345,16 +345,16 @@ int parse_args(int argc, char **argv)
 
 void sigterm_handler(int sig)
 {
-	libustd_stop_instance(instance, 0);
+	ustconsumer_stop_instance(instance, 0);
 }
 
-int start_ustd(int fd)
+int start_ustconsumer(int fd)
 {
 	int result;
 	sigset_t sigset;
 	struct sigaction sa;
 
-	struct libustd_callbacks *callbacks = new_callbacks();
+	struct ustconsumer_callbacks *callbacks = new_callbacks();
 	if(!callbacks) {
 		PERROR("new_callbacks");
 		return 1;
@@ -379,15 +379,15 @@ int start_ustd(int fd)
 		return 1;
 	}
 
-	instance = libustd_new_instance(callbacks, sock_path);
+	instance = ustconsumer_new_instance(callbacks, sock_path);
 	if(!instance) {
-		ERR("failed to create libustd instance");
+		ERR("failed to create ustconsumer instance");
 		return 1;
 	}
 
-	result = libustd_init_instance(instance);
+	result = ustconsumer_init_instance(instance);
 	if(result) {
-		ERR("failed to initialize libustd instance");
+		ERR("failed to initialize ustconsumer instance");
 		return 1;
 	}
 
@@ -435,14 +435,14 @@ int start_ustd(int fd)
 		}
 	}
 
-	libustd_start_instance(instance);
+	ustconsumer_start_instance(instance);
 
 	free(callbacks);
 
 	return 0;
 }
 
-int start_ustd_daemon()
+int start_ustconsumer_daemon()
 {
 	int result;
 	int fd[2];
@@ -456,7 +456,7 @@ int start_ustd_daemon()
 		return -1;
 	}
 	else if(result == 0) {
-		return start_ustd(fd[1]);
+		return start_ustconsumer(fd[1]);
 	}
 	else {
 		char buf;
@@ -495,10 +495,10 @@ int main(int argc, char **argv)
 	}
 
 	if(daemon_mode) {
-		result = start_ustd_daemon();
+		result = start_ustconsumer_daemon();
 	}
 	else {
-		result = start_ustd(-1);
+		result = start_ustconsumer(-1);
 	}
 
 	return result;

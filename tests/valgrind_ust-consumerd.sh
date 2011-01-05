@@ -22,32 +22,32 @@ TESTDIR=$(dirname $0)
 source $TESTDIR/test_functions.sh
 source $TESTDIR/tap.sh
 
-starttest "ustd valgrind check"
+starttest "ust-consumerd valgrind check"
 
 plan_tests 2
 
-TRACE_DIR="/tmp/ust-testsuite-ustdvalgrind-trace"
+TRACE_DIR="/tmp/ust-testsuite-ust-consumerdvalgrind-trace"
 rm -rf "$TRACE_DIR"
 mkdir "$TRACE_DIR"
 
-pidfilepath="/tmp/ust-testsuite-$USER-$(date +%Y%m%d%H%M%S%N)-ustd-pid"
+pidfilepath="/tmp/ust-testsuite-$USER-$(date +%Y%m%d%H%M%S%N)-ust-consumerd-pid"
 mkfifo -m 0600 "$pidfilepath"
 
 VALG_OUT=/tmp/ust-testsuite-valg.txt
-valgrind --suppressions=$TESTDIR/valgrind_suppress.txt -q ustd --pidfile "$pidfilepath" -o "$TRACE_DIR" >/dev/null 2>"$VALG_OUT" &
+valgrind --suppressions=$TESTDIR/valgrind_suppress.txt -q ust-consumerd --pidfile "$pidfilepath" -o "$TRACE_DIR" >/dev/null 2>"$VALG_OUT" &
 VALG_PID=$!
-USTD_PID="$(<$pidfilepath)"
+UST_CONSUMERD_PID="$(<$pidfilepath)"
 
 okx usttrace -s $TESTDIR/basic/.libs/basic
 
-kill -SIGTERM $USTD_PID
+kill -SIGTERM $UST_CONSUMERD_PID
 wait $!
 
 echo "Valgrind output is in $VALG_OUT"
 if [ -z "$(<$VALG_OUT)" ]; then
-    pass "Valgrind found no errors in ustd"
+    pass "Valgrind found no errors in ust-consumerd"
 else
-    fail "Valgrind found errors in ustd:"
+    fail "Valgrind found errors in ust-consumerd:"
     cat $VALG_OUT | while read; do
 	diag $REPLY
     done
