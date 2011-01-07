@@ -5,7 +5,7 @@ AM_CFLAGS = -fno-strict-aliasing
 bin_PROGRAMS = ustctl
 
 ustctl_SOURCES = \
-	ustctl.c
+	ustctl.c marker_cmds.c trace_cmds.c channel_cmds.c cli.c cli.h scanning_functions.c scanning_functions.h
 
 ustctl_CFLAGS = -DUST_COMPONENT=ustctl -fno-strict-aliasing
 
