@@ -62,6 +62,10 @@ This error can also occur when the liburcu package's configure script has not be
 # urcu - check that URCU lib is available to compilation
 AC_CHECK_LIB([urcu-bp], [synchronize_rcu], [], [AC_MSG_ERROR([Cannot find liburcu-bp lib. Use [LDFLAGS]=-Ldir to specify its location.])])
 
+# urcu - check that URCU lib is at least version 0.5
+AC_CHECK_DECL([cds_list_add(list_t *newp, list_t *head)], [], [AC_MSG_ERROR([liburcu 0.5 or newer is needed, please update your version or use [LDFLAGS]=-Ldir to specify the right location.])], [[#include <urcu/list.h>]])
+
+
 # Check for various supplementary host information (beyond the
 # triplet) which might affect the library format choices.  E.g., we
 # can be building with `i686-unknown-linux-gnu-gcc -m64'
