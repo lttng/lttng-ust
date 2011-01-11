@@ -40,7 +40,7 @@ UST_CONSUMERD_PID="$(<$pidfilepath)"
 
 okx usttrace -s $TESTDIR/basic/.libs/basic
 
-kill -SIGTERM $UST_CONSUMERD_PID
+kill -SIGTERM ${UST_CONSUMERD_PID}
 wait $!
 
 echo "Valgrind output is in $VALG_OUT"

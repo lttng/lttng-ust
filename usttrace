@@ -9,14 +9,14 @@ function error() {
 
 function sighandler() {
 	echo "Caught Ctrl-C"
-	if [ -z "$UST_CONSUMERDPID" ]; then
-		UST_CONSUMERDPID="$(<$pidfilepath)"
+	if [ -z "${UST_CONSUMERD_PID}" ]; then
+		UST_CONSUMERD_PID="$(<$pidfilepath)"
 	fi
 	# Tell the daemon to die
-	kill -SIGTERM "$UST_CONSUMERDPID"
+	kill -SIGTERM "${UST_CONSUMERD_PID}"
 
 	echo "Waiting for ust-consumerd to shutdown..."
-	wait "$UST_CONSUMERDPID"
+	wait "${UST_CONSUMERD_PID}"
 
 	rm "$pidfilepath"
 
@@ -118,7 +118,7 @@ if [ ! -d "$OUTDIR" ]; then
 fi
 
 # Choose ust-consumerd socket path
-UST_CONSUMERDSOCKPATH="/tmp/ust-consumerd-sock-$$"
+UST_CONSUMERD_SOCKPATH="/tmp/ust-consumerd-sock-$$"
 
 if [ "$arg_syswide_daemon" != "1" ];
 then
@@ -126,7 +126,7 @@ then
 	trap "sighandler $pidfilepath" SIGINT
 	mkfifo -m 0600 "$pidfilepath"
 	# Start daemon
-	$UST_CONSUMERD --pidfile "$pidfilepath" -s "$UST_CONSUMERDSOCKPATH" -o "$OUTDIR" >"$OUTDIR/ust-consumerd.log" 2>&1 &
+	${UST_CONSUMERD} --pidfile "$pidfilepath" -s "${UST_CONSUMERD_SOCKPATH}" -o "$OUTDIR" >"$OUTDIR/ust-consumerd.log" 2>&1 &
 	# ust-consumerd sets up its server socket
 	# ust-consumerd opens the pidfile, blocks because no one has opened it
 	# we open pidfile
@@ -134,8 +134,8 @@ then
 	# ust-consumerd writes to pidfile
 	# ust-consumerd closes pidfile
 	# we unblock reading pidfile
-	UST_CONSUMERDPID="$(<$pidfilepath)"
-	export UST_DAEMON_SOCKET="$UST_CONSUMERDSOCKPATH"
+	UST_CONSUMERD_PID="$(<$pidfilepath)"
+	export UST_DAEMON_SOCKET="${UST_CONSUMERD_SOCKPATH}"
 fi
 
 # Establish the environment for the command
@@ -206,10 +206,10 @@ fi
 if [ "$arg_syswide_daemon" != "1" ];
 then
 	# Tell the daemon to die
-	kill -SIGTERM "$UST_CONSUMERDPID"
+	kill -SIGTERM "${UST_CONSUMERD_PID}"
 
 	echo "Waiting for ust-consumerd to shutdown..."
-	wait "$UST_CONSUMERDPID"
+	wait "${UST_CONSUMERD_PID}"
 
 	rm "$pidfilepath"
 fi

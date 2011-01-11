@@ -54,7 +54,7 @@ sleep 0.5
 okx ustctl --stop-trace $PID
 okx ustctl --destroy-trace $PID
 kill $PID
-kill -SIGTERM $UST_CONSUMERD_PID
-wait $UST_CONSUMERD_PID
+kill -SIGTERM ${UST_CONSUMERD_PID}
+wait ${UST_CONSUMERD_PID}
 
 trace_matches -N "ust.malloc" "^ust.malloc:" "$TRACE_DIR"
