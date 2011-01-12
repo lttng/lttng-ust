@@ -15,8 +15,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#ifndef UST_CLOCK_H
-#define UST_CLOCK_H
+#ifndef _UST_CLOCK_H
+#define _UST_CLOCK_H
 
 #include <time.h>
 #include <sys/time.h>
@@ -29,56 +29,30 @@
    - gettimeofday() clock
 
    Microbenchmarks on Linux 2.6.30 on Core2 Duo 3GHz (functions are inlined):
-     Calls (100000000) to tsc(): 4004035641 cycles or 40 cycles/call
-     Calls (100000000) to gettimeofday(): 9723158352 cycles or 97 cycles/call
+	 Calls (100000000) to tsc(): 4004035641 cycles or 40 cycles/call
+	 Calls (100000000) to gettimeofday(): 9723158352 cycles or 97 cycles/call
 
    For merging traces with the kernel, a time source compatible with that of
    the kernel is necessary.
 
    Instead of gettimeofday(), we are now using clock_gettime for better
    precision and monotonicity.
-
 */
 
-#define TRACE_CLOCK_GENERIC
-#ifdef TRACE_CLOCK_GENERIC
-
-static __inline__ u64 trace_clock_read64(void)
-{
+#if __i386__ || __x86_64__
+/* Only available for x86 arch */
+#define CLOCK_TRACE_FREQ  14
+#define CLOCK_TRACE  15
+union lttng_timespec {
 	struct timespec ts;
-	u64 retval;
+	u64 lttng_ts;
+};
+#endif /* __i386__ || __x86_64__ */
 
-	clock_gettime(CLOCK_MONOTONIC, &ts);
-	retval = ts.tv_sec;
-	retval *= 1000000000;
-	retval += ts.tv_nsec;
+static int ust_clock_source;
 
-	return retval;
-}
-
-#else
-
-#if __i386 || __x86_64
-
-/* WARNING: Make sure to set frequency and scaling functions that will not
- * result in lttv timestamps (sec.nsec) with seconds greater than 2**32-1.
- */
-static __inline__ u64 trace_clock_read64(void)
-{
-	uint32_t low;
-	uint32_t high;
-	uint64_t retval;
-	__asm__ volatile ("rdtsc\n" : "=a" (low), "=d" (high));
-
-	retval = high;
-	retval <<= 32;
-	return retval | low;
-}
-
-#endif /* __i386 || __x86_64 */
-
-#ifdef __PPC__
-
+/* Choosing correct trace clock */
+#if __PPC__
 static __inline__ u64 trace_clock_read64(void)
 {
 	unsigned long tb_l;
@@ -93,8 +67,8 @@ static __inline__ u64 trace_clock_read64(void)
 		"mftbu %[rhigh2]\n\t"
 		"cmpw %[rhigh],%[rhigh2]\n\t"
 		"bne 1b\n\t"
-	: [rhigh] "=r" (tb_h), [rhigh2] "=r" (tb_h2), [rlow] "=r" (tb_l));
-	
+		: [rhigh] "=r" (tb_h), [rhigh2] "=r" (tb_h2), [rlow] "=r" (tb_l));
+
 	tb = tb_h;
 	tb <<= 32;
 	tb |= tb_l;
@@ -102,12 +76,42 @@ static __inline__ u64 trace_clock_read64(void)
 	return tb;
 }
 
-#endif /* __PPC__ */
+#else	/* !__PPC__ */
 
-#endif /* ! UST_TRACE_CLOCK_GENERIC */
+static __inline__ u64 trace_clock_read64(void)
+{
+	struct timespec ts;
+	u64 retval;
+	union lttng_timespec *lts = (union lttng_timespec *) &ts;
+
+	clock_gettime(ust_clock_source, &ts);
+	/*
+	 * Clock source can change when loading the binary (tracectl.c)
+	 * so we must check if the clock source has changed before
+	 * returning the correct value
+	 */
+	if (likely(ust_clock_source == CLOCK_TRACE)) {
+		retval = lts->lttng_ts;
+	} else { /* CLOCK_MONOTONIC */
+		retval = ts.tv_sec;
+		retval *= 1000000000;
+		retval += ts.tv_nsec;
+	}
+
+	return retval;
+}
+
+#endif /* __PPC__ */
 
 static __inline__ u64 trace_clock_frequency(void)
 {
+	struct timespec ts;
+	union lttng_timespec *lts = (union lttng_timespec *) &ts;
+
+	if (likely(ust_clock_source == CLOCK_TRACE)) {
+		clock_gettime(CLOCK_TRACE_FREQ, &ts);
+		return lts->lttng_ts;
+	}
 	return 1000000000LL;
 }
 
@@ -116,4 +120,4 @@ static __inline__ u32 trace_clock_freq_scale(void)
 	return 1;
 }
 
-#endif /* UST_CLOCK_H */
+#endif /* _UST_CLOCK_H */

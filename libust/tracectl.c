@@ -39,6 +39,7 @@
 #include <ust/marker.h>
 #include <ust/tracepoint.h>
 #include <ust/tracectl.h>
+#include <ust/clock.h>
 #include "tracer.h"
 #include "usterr.h"
 #include "ustcomm.h"
@@ -1261,6 +1262,15 @@ static void __attribute__((constructor)) init()
 	}
 
 	create_listener();
+
+	/* Get clock the clock source type */
+	struct timespec ts;
+	/* Default clock source */
+	ust_clock_source = CLOCK_TRACE;
+	if (clock_gettime(ust_clock_source, &ts) != 0) {
+		ust_clock_source = CLOCK_MONOTONIC;
+		DBG("UST traces will not be synchronized with LTTng traces");
+	}
 
 	autoprobe_val = getenv("UST_AUTOPROBE");
 	if (autoprobe_val) {
