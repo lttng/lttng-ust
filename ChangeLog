@@ -1,3 +1,8 @@
+2011-01-14 ust 0.11
+	* Fix a serious bug in the newly introduced synchronized timer
+	implementation.
+	* Increase compatibility of an autoconf test
+
 2011-01-14 ust 0.10
 	* Run time check for lttng clock source providing synchronized
 	timestamps
