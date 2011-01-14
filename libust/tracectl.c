@@ -1232,6 +1232,7 @@ free_name:
 
 static void __attribute__((constructor)) init()
 {
+	struct timespec ts;
 	int result;
 	char* autoprobe_val = NULL;
 	char* subbuffer_size_val = NULL;
@@ -1266,7 +1267,7 @@ static void __attribute__((constructor)) init()
 	create_listener();
 
 	/* Get clock the clock source type */
-	struct timespec ts;
+
 	/* Default clock source */
 	ust_clock_source = CLOCK_TRACE;
 	if (clock_gettime(ust_clock_source, &ts) != 0) {
