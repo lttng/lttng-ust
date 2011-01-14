@@ -1,3 +1,9 @@
+2011-01-14 ust 0.10
+	* Run time check for lttng clock source providing synchronized
+	timestamps
+	* Rename of ustd and libustd to ust-consumerd and libustconsumer,
+	remember to run ldconfig
+
 2010-12-03 ust 0.9
 	* Cleaned up namespace
 	* Compatible with userspace-rcu version 0.5.2

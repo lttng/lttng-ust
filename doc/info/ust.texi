@@ -36,7 +36,7 @@ Permission is granted to ...
 @node Top
 @top LTTng Userspace Tracer
 
-This manual is for UST 0.5.
+This manual is for UST 0.10.
 @end ifnottex
 
 @menu
