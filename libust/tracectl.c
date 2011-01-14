@@ -74,6 +74,8 @@ static struct cds_list_head ust_socks = CDS_LIST_HEAD_INIT(ust_socks);
 /* volatile because shared between the listener and the main thread */
 int buffers_to_export = 0;
 
+int ust_clock_source;
+
 static long long make_pidunique(void)
 {
 	s64 retval;

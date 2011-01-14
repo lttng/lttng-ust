@@ -49,7 +49,7 @@ union lttng_timespec {
 };
 #endif /* __i386__ || __x86_64__ */
 
-static int ust_clock_source;
+extern int ust_clock_source;
 
 /* Choosing correct trace clock */
 #if __PPC__
