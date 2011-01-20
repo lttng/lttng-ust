@@ -395,25 +395,25 @@ $ ust-consumerd
 # it has pid 1234.
 
 # List the available markers
-$ ustctl --list-markers 1234
+$ ustctl list-markers 1234
 # A column indicates 0 for an inactive marker and 1 for an active marker.
 
 # Enable a marker
-$ ustctl --enable-marker ust/mymark 1234
+$ ustctl enable-marker 1234 auto ust/mymark
 
 # Create a trace
-$ ustctl --create-trace 1234
+$ ustctl create-trace 1234 auto
 
 # Start tracing
-$ ustctl --start-trace 1234
+$ ustctl start-trace 1234 auto
 
 # Do things...
 
 # Stop tracing
-$ ustctl --stop-trace 1234
+$ ustctl stop-trace 1234 auto
 
 # Destroy the trace
-$ ustctl --destroy-trace 1234
+$ ustctl destroy-trace 1234 auto
 @end verbatim
 @end example
 

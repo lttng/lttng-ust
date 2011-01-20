@@ -3,7 +3,7 @@ ustctl(1) -- a program to control the tracing of userspace applications
 
 ## SYNOPSIS
 
-`ustctl` [<command>] [<PIDs>]...
+`ustctl` [<COMMAND>] [<ARGS>]...
 
 ## DESCRIPTION
 
@@ -16,81 +16,86 @@ These programs follow the usual GNU command line syntax, with long options
 starting with two dashes(`-'). A summary of options is included below.
 
   * `-h`, `--help`:
-    Show summary of options.
+    Show summary of commands.
 
-  * `--create-trace`:
+## COMMANDS
+
+`ustctl` accepts commands followed by arguments for each respective command.
+Most commands require the pid of the application being traced.
+
+  * `create-trace` <PID> <TRACE>:
     Create trace.
 
-  * `--alloc-trace`:
+  * `alloc-trace` <PID> <TRACE>:
     Allocate trace.
 
-  * `--start-trace`:
+  * `start-trace` <PID> <TRACE>:
     Start tracing.
 
-  * `--stop-trace`:
+  * `stop-trace` <PID> <TRACE>:
     Stop tracing.
 
-  * `--destroy-trace`:
+  * `destroy-trace` <PID> <TRACE>:
     Destroy the trace.
 
-  * `--set-subbuf-size` <CHANNEL>/<bytes>:
+  * `set-subbuf-size`  <PID> <TRACE> <CHANNEL>/<bytes>:
     Set the size of subbuffers in CHANNEL.
 
-  * `--set-subbuf-num` <CHANNEL>:
+  * `set-subbuf-num`  <PID> <TRACE> <CHANNEL>/<nr>:
     Set the number of subbuffers per buffer for CHANNEL. Must be a power of 2.
 
-  * `--set-sock-path`:
+  * `set-sock-path` <PID> <SOCKPATH>:
     Set the path of the daemon socket.
 
-  * `--get-subbuf-size` <CHANNEL>:
+  * `get-subbuf-size` <PID> <TRACE> <CHANNEL>:
     Print the size of subbuffers per buffer for CHANNEL.
 
-  * `--get-subbuf-num` <CHANNEL>:
+  * `get-subbuf-num` <PID> <TRACE> <CHANNEL>:
     Print the number of subbuffers per buffer for CHANNEL.
 
-  * `--get-sock-path`:
+  * `get-sock-path` <PID>:
     Get the path of the daemon socket.
 
-  * `--enable-marker` <CHANNEL>/<MARKER>:
+  * `enable-marker` <PID> <TRACE> <CHANNEL>/<MARKER>:
     Enable a marker.
 
-  * `--disable-marker` <CHANNEL>/<MARKER>:
+  * `disable-marker` <PID> <TRACE> <CHANNEL>/<MARKER>:
     Disable a marker.
 
-  * `--list-markers`:
+  * `list-markers` <PID>:
     List the markers of the process, their state and format string.
 
-  * `--force-switch`:
+  * `force-subbuf-switch` <PID> <TRACE>:
     Force a subbuffer switch. This will flush all the data currently held.
 
 ## LIFE CYCLE OF A TRACE
 
-Typically, the first step is to enable markers with `--enable-marker`. An
+Typically, the first step is to enable markers with `enable-marker`. An
 enabled marker generates an event when the control flow passes over it
 (assuming the trace is recording). A disabled marker produces nothing. Enabling
 and disabling markers may however be done at any point, including while the
 trace is being recorded.
 
-In order to record events, a trace is first created with `--create-trace`. At
-this point, the subbuffer count and size may be changed with `--set-subbuf-num`
-and `--set-subbuf-size`.
+In order to record events, a trace is first created with `create-trace`. At
+this point, the subbuffer count and size may be changed with `set-subbuf-num`
+and `set-subbuf-size`.
 
-Afterward, the trace may be allocated with `--alloc-trace`. This allocates the
+Afterward, the trace may be allocated with `alloc-trace`. This allocates the
 buffers in memory, so once this is done, the subbuffer size and count can not
 be changed. Trace allocation also causes the daemon to connect to the trace
 buffers and wait for data to arrive. Explicit allocation is optional, as it is
 done automatically at trace start.
 
-The trace may then be started with `--start-trace`. This results in events
+The trace may then be started with `start-trace`. This results in events
 being recorded in the buffer. The daemon automatically collects these events.
 
-The trace may be stopped with `--stop-trace`, either definitely after all the
+The trace may be stopped with `stop-trace`, either definitely after all the
 wanted information is collected, or temporarily, before being started again
-with `--start-trace`. This results in effectively 'pausing' the recording.
-After using `--stop-trace`, if a daemon is collecting the trace, it may not
+with `start-trace`. This results in effectively 'pausing' the recording.
+After using `stop-trace`, if a daemon is collecting the trace, it may not
 have flushed to the disk the full contents of the buffer yet.
 
-Finally, when `--destroy-trace` is used, the trace buffers are unallocated.
+Finally, when `destroy-trace` is used, the trace buffers are unallocated.
 However, the memory may not be effectively freed until the daemon finishes to
 collect them. When the trace is being collected by `ust-consumerd`, this command
 guarantees its full contents is flushed to the disk.
@@ -113,8 +118,8 @@ subbuffers it contains times the size of each subbuffer. When a subbuffer is
 full, it is collected by the daemon while the others are filled. If, however,
 the buffer size is too small, buffer overflows may occur and result in event
 loss. By default, the number of subbuffers per buffer is 2. Subbuffer size
-for a given channel may be chosen with `--set-subbuf-size` while the subbuffer
-count is set with `--set-subbuf-num`.
+for a given channel may be chosen with `set-subbuf-size` while the subbuffer
+count is set with `set-subbuf-num`.
 
 ## SEE ALSO
 
