@@ -1,0 +1,4 @@
+probe process("./.libs/tracepoint_benchmark").function("single_trace") { 
+	printf("%d : %s\n", gettimeofday_ns(), $$parms); 
+}
+

@@ -1,3 +1,5 @@
+SUBDIRS = benchmark
+
 AM_CPPFLAGS = -I$(top_srcdir)/include
 
 noinst_PROGRAMS = tracepoint_test

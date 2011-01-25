@@ -128,6 +128,7 @@ AC_CONFIG_FILES([
 	tests/same_line_marker/Makefile
 	tests/trace_event/Makefile
 	tests/tracepoint/Makefile
+	tests/tracepoint/benchmark/Makefile
 	tests/register_test/Makefile
 	tests/ustcmd_function_tests/Makefile
 	libustinstr-malloc/Makefile
