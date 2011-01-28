@@ -15,18 +15,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-/* Simple function tests for ustcmd */
+/* Simple function tests for ustctl */
 
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
 
 #include <ust/marker.h>
-#include <ust/ustcmd.h>
+#include <ust/ustctl.h>
 
 #include "tap.h"
 
-static void ustcmd_function_tests(pid_t pid)
+static void ustctl_function_tests(pid_t pid)
 {
 	int result;
 	unsigned int subbuf_size, subbuf_num;
@@ -39,8 +39,8 @@ static void ustcmd_function_tests(pid_t pid)
 	printf("Connecting to pid %d\n", pid);
 
 	/* marker status array functions */
-	result = ustcmd_get_cmsf(&marker_status, pid);
-	tap_ok(!result, "ustcmd_get_cmsf");
+	result = ustctl_get_cmsf(&marker_status, pid);
+	tap_ok(!result, "ustctl_get_cmsf");
 
 	result = 0;
 	for (ms_ptr = marker_status; ms_ptr->channel; ms_ptr++) {
@@ -51,104 +51,104 @@ static void ustcmd_function_tests(pid_t pid)
 	}
 	tap_ok(result, "Found channel \"ust\", marker \"bar\"");
 
-	tap_ok(!ustcmd_free_cmsf(marker_status), "ustcmd_free_cmsf");
+	tap_ok(!ustctl_free_cmsf(marker_status), "ustctl_free_cmsf");
 
 	/* Get and set the socket path */
-	tap_ok(!ustcmd_get_sock_path(&old_socket_path, pid),
-	       "ustcmd_get_sock_path");
+	tap_ok(!ustctl_get_sock_path(&old_socket_path, pid),
+	       "ustctl_get_sock_path");
 
 	printf("Socket path: %s\n", old_socket_path);
 
-	tap_ok(!ustcmd_set_sock_path(tmp_ustd_socket, pid),
-	       "ustcmd_set_sock_path - set a new path");
+	tap_ok(!ustctl_set_sock_path(tmp_ustd_socket, pid),
+	       "ustctl_set_sock_path - set a new path");
 
-	tap_ok(!ustcmd_get_sock_path(&new_socket_path, pid),
-	       "ustcmd_get_sock_path - get the new path");
+	tap_ok(!ustctl_get_sock_path(&new_socket_path, pid),
+	       "ustctl_get_sock_path - get the new path");
 
 	tap_ok(!strcmp(new_socket_path, tmp_ustd_socket),
 	       "Compare the set path and the retrieved path");
 
 	free(new_socket_path);
 
-	tap_ok(!ustcmd_set_sock_path(old_socket_path, pid),
+	tap_ok(!ustctl_set_sock_path(old_socket_path, pid),
 	       "Reset the socket path");
 
 	free(old_socket_path);
 
 	/* Enable, disable markers */
-	tap_ok(!ustcmd_set_marker_state(trace, "ust", "bar", 1, pid),
-	       "ustcmd_set_marker_state - existing marker ust bar");
+	tap_ok(!ustctl_set_marker_state(trace, "ust", "bar", 1, pid),
+	       "ustctl_set_marker_state - existing marker ust bar");
 
 	/* Create and allocate a trace */
-	tap_ok(!ustcmd_create_trace(trace, pid), "ustcmd_create_trace");
+	tap_ok(!ustctl_create_trace(trace, pid), "ustctl_create_trace");
 
-	tap_ok(!ustcmd_alloc_trace(trace, pid), "ustcmd_alloc_trace");
+	tap_ok(!ustctl_alloc_trace(trace, pid), "ustctl_alloc_trace");
 
 	/* Get subbuf size and number */
-	subbuf_num = ustcmd_get_subbuf_num(trace, "ust", pid);
-	tap_ok(subbuf_num > 0, "ustcmd_get_subbuf_num - %d sub-buffers",
+	subbuf_num = ustctl_get_subbuf_num(trace, "ust", pid);
+	tap_ok(subbuf_num > 0, "ustctl_get_subbuf_num - %d sub-buffers",
 	       subbuf_num);
 
-	subbuf_size = ustcmd_get_subbuf_size(trace, "ust", pid);
-	tap_ok(subbuf_size, "ustcmd_get_subbuf_size - sub-buffer size is %d",
+	subbuf_size = ustctl_get_subbuf_size(trace, "ust", pid);
+	tap_ok(subbuf_size, "ustctl_get_subbuf_size - sub-buffer size is %d",
 	       subbuf_size);
 
 	/* Start the trace */
-	tap_ok(!ustcmd_start_trace(trace, pid), "ustcmd_start_trace");
+	tap_ok(!ustctl_start_trace(trace, pid), "ustctl_start_trace");
 
 
 	/* Stop the trace and destroy it*/
-	tap_ok(!ustcmd_stop_trace(trace, pid), "ustcmd_stop_trace");
+	tap_ok(!ustctl_stop_trace(trace, pid), "ustctl_stop_trace");
 
-	tap_ok(!ustcmd_destroy_trace(trace, pid), "ustcmd_destroy_trace");
+	tap_ok(!ustctl_destroy_trace(trace, pid), "ustctl_destroy_trace");
 
 	/* Create a new trace */
-	tap_ok(!ustcmd_create_trace(trace, pid), "ustcmd_create_trace - create a new trace");
+	tap_ok(!ustctl_create_trace(trace, pid), "ustctl_create_trace - create a new trace");
 
 	printf("Setting new subbufer number and sizes (doubling)\n");
 	new_subbuf_num = 2 * subbuf_num;
 	new_subbuf_size = 2 * subbuf_size;
 
-	tap_ok(!ustcmd_set_subbuf_num(trace, "ust", new_subbuf_num, pid),
-	       "ustcmd_set_subbuf_num");
+	tap_ok(!ustctl_set_subbuf_num(trace, "ust", new_subbuf_num, pid),
+	       "ustctl_set_subbuf_num");
 
-	tap_ok(!ustcmd_set_subbuf_size(trace, "ust", new_subbuf_size, pid),
-	       "ustcmd_set_subbuf_size");
+	tap_ok(!ustctl_set_subbuf_size(trace, "ust", new_subbuf_size, pid),
+	       "ustctl_set_subbuf_size");
 
 
 	/* Allocate the new trace */
-	tap_ok(!ustcmd_alloc_trace(trace, pid), "ustcmd_alloc_trace - allocate the new trace");
+	tap_ok(!ustctl_alloc_trace(trace, pid), "ustctl_alloc_trace - allocate the new trace");
 
 
         /* Get subbuf size and number and compare with what was set */
-	subbuf_num = ustcmd_get_subbuf_num(trace, "ust", pid);
+	subbuf_num = ustctl_get_subbuf_num(trace, "ust", pid);
 
-	subbuf_size = ustcmd_get_subbuf_size(trace, "ust", pid);
+	subbuf_size = ustctl_get_subbuf_size(trace, "ust", pid);
 
 	tap_ok(subbuf_num == new_subbuf_num, "Set a new subbuf number, %d == %d",
 	       subbuf_num, new_subbuf_num);
 
 
-	result = ustcmd_get_subbuf_size(trace, "ust", pid);
+	result = ustctl_get_subbuf_size(trace, "ust", pid);
 	tap_ok(subbuf_size == new_subbuf_size, "Set a new subbuf size, %d == %d",
 	       subbuf_size, new_subbuf_size);
 
-	tap_ok(!ustcmd_destroy_trace(trace, pid), "ustcmd_destroy_trace - without ever starting");
+	tap_ok(!ustctl_destroy_trace(trace, pid), "ustctl_destroy_trace - without ever starting");
 
 
 	printf("##### Tests that definetly should work are completed #####\n");
 	printf("############## Start expected failure cases ##############\n");
 
-	tap_ok(ustcmd_set_marker_state(trace, "ust","bar", 1, pid),
+	tap_ok(ustctl_set_marker_state(trace, "ust","bar", 1, pid),
 	       "Enable already enabled marker ust/bar");
 
-	tap_ok(ustcmd_set_marker_state(trace, "ustl", "blar", 1, pid),
+	tap_ok(ustctl_set_marker_state(trace, "ustl", "blar", 1, pid),
 	       "Enable non-existent marker ustl blar");
 
-	tap_ok(ustcmd_start_trace(trace, pid),
+	tap_ok(ustctl_start_trace(trace, pid),
 	       "Start a non-existent trace");
 
-	tap_ok(ustcmd_destroy_trace(trace, pid),
+	tap_ok(ustctl_destroy_trace(trace, pid),
 	       "Destroy non-existent trace");
 
 	exit(tap_status() ? EXIT_FAILURE : EXIT_SUCCESS);
@@ -164,7 +164,7 @@ int main()
 
 	tap_plan(27);
 
-	printf("Function tests for ustcmd\n");
+	printf("Function tests for ustctl\n");
 
 	parent_pid = getpid();
 	child_pid = fork();
@@ -177,7 +177,7 @@ int main()
 
 		wait(&status);
 	} else {
-		ustcmd_function_tests(parent_pid);
+		ustctl_function_tests(parent_pid);
 	}
 
 	exit(status ? EXIT_FAILURE : EXIT_SUCCESS);

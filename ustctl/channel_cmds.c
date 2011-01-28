@@ -17,7 +17,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <ust/ustcmd.h>
+#include <ust/ustctl.h>
 #include "scanning_functions.h"
 #include "usterr.h"
 #include "cli.h"
@@ -38,7 +38,7 @@ static int set_subbuf_size(int argc, char *argv[])
 			free(channel);
 		return -1;
 	}
-	if (ustcmd_set_subbuf_size(argv[2], channel, size, pid)) {
+	if (ustctl_set_subbuf_size(argv[2], channel, size, pid)) {
 		ERR("error while trying to set the size of subbuffers "
 		    "for PID %u\n",
 		    pid);
@@ -66,7 +66,7 @@ static int set_subbuf_num(int argc, char *argv[])
 			free(channel);
 		return -1;
 	}
-	if (ustcmd_set_subbuf_num(argv[2], channel, num, pid)) {
+	if (ustctl_set_subbuf_num(argv[2], channel, num, pid)) {
 		ERR("error while trying to set the number of subbuffers for PID %u\n",
 		    pid);
 		result = -1;
@@ -84,7 +84,7 @@ static int get_subbuf_size(int argc, char *argv[])
 
 	pid = parse_pid(argv[1]);
 
-	if ((size = ustcmd_get_subbuf_size(argv[2], argv[3], pid)) < 0) {
+	if ((size = ustctl_get_subbuf_size(argv[2], argv[3], pid)) < 0) {
 		ERR("error while trying to get the subbuffer size from PID %u\n",
 		    pid);
 		return -1;
@@ -102,7 +102,7 @@ static int get_subbuf_num(int argc, char *argv[])
 
 	pid = parse_pid(argv[1]);
 
-	if ((num = ustcmd_get_subbuf_num(argv[2], argv[3], pid)) < 0) {
+	if ((num = ustctl_get_subbuf_num(argv[2], argv[3], pid)) < 0) {
 		ERR("error while trying to get the subbuffer size from PID %u\n",
 		    pid);
 		return -1;

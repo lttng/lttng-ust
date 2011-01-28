@@ -17,7 +17,7 @@
 
 #define _GNU_SOURCE
 #include <stdio.h>
-#include <ust/ustcmd.h>
+#include <ust/ustctl.h>
 #include "usterr.h"
 
 

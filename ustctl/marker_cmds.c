@@ -17,7 +17,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <ust/ustcmd.h>
+#include <ust/ustctl.h>
 #include "scanning_functions.h"
 #include "usterr.h"
 #include "cli.h"
@@ -30,7 +30,7 @@ static int list_markers(int argc, char *argv[])
 
 	pid = parse_pid(argv[1]);
 
-	if (ustcmd_get_cmsf(&cmsf, pid)) {
+	if (ustctl_get_cmsf(&cmsf, pid)) {
 		ERR("error while trying to list markers for PID %u\n", pid);
 		return -1;
 	}
@@ -43,7 +43,7 @@ static int list_markers(int argc, char *argv[])
 		       cmsf[i].state,
 		       cmsf[i].fs);
 	}
-	ustcmd_free_cmsf(cmsf);
+	ustctl_free_cmsf(cmsf);
 	return 0;
 }
 
@@ -68,7 +68,7 @@ static int enable_marker(int argc, char *argv[])
 			if (marker)
 				free(marker);
 		}
-		if (ustcmd_set_marker_state(argv[2], channel, marker, 1, pid)) {
+		if (ustctl_set_marker_state(argv[2], channel, marker, 1, pid)) {
 			PERROR("error while trying to enable marker %s with PID %u",
 			       argv[i], pid);
 			result = -1;
@@ -101,7 +101,7 @@ static int disable_marker(int argc, char *argv[])
 				free(marker);
 			return -1;
 		}
-		if (ustcmd_set_marker_state(argv[2], channel, marker, 0, pid)) {
+		if (ustctl_set_marker_state(argv[2], channel, marker, 0, pid)) {
 			PERROR("error while trying to disable marker %s with PID %u",
 			       argv[i], pid);
 			result = -1;

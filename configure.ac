@@ -130,14 +130,14 @@ AC_CONFIG_FILES([
 	tests/tracepoint/Makefile
 	tests/tracepoint/benchmark/Makefile
 	tests/register_test/Makefile
-	tests/ustcmd_function_tests/Makefile
+	tests/libustctl_function_tests/Makefile
 	libustinstr-malloc/Makefile
 	libustfork/Makefile
 	libustconsumer/Makefile
 	ust-consumerd/Makefile
 	ustctl/Makefile
 	libustcomm/Makefile
-	libustcmd/Makefile
+	libustctl/Makefile
 	snprintf/Makefile
 ])
 AC_OUTPUT

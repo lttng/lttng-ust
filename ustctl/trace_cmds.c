@@ -17,7 +17,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <ust/ustcmd.h>
+#include <ust/ustctl.h>
 #include "scanning_functions.h"
 #include "usterr.h"
 #include "cli.h"
@@ -29,7 +29,7 @@ static int create_trace(int argc, char *argv[])
 
 	pid = parse_pid(argv[1]);
 
-	if (ustcmd_create_trace(argv[2], pid)) {
+	if (ustctl_create_trace(argv[2], pid)) {
 		ERR("Failed to create trace %s for PID %u\n", argv[2], pid);
 		return -1;
 	}
@@ -43,7 +43,7 @@ static int alloc_trace(int argc, char *argv[])
 
 	pid = parse_pid(argv[1]);
 
-	if (ustcmd_alloc_trace(argv[2], pid)) {
+	if (ustctl_alloc_trace(argv[2], pid)) {
 		ERR("Failed to allocate trace %s for PID %u\n", argv[2], pid);
 		return -1;
 	}
@@ -56,7 +56,7 @@ static int start_trace(int argc, char *argv[])
 
 	pid = parse_pid(argv[1]);
 
-	if (ustcmd_start_trace(argv[2], pid)) {
+	if (ustctl_start_trace(argv[2], pid)) {
 		ERR("Failed to start trace %s for PID %u\n", argv[2], pid);
 		return -1;
 	}
@@ -69,7 +69,7 @@ static int stop_trace(int argc, char *argv[])
 
 	pid = parse_pid(argv[1]);
 
-	if (ustcmd_stop_trace(argv[2], pid)) {
+	if (ustctl_stop_trace(argv[2], pid)) {
 		ERR("Failed to stop trace %s for PID %u\n", argv[2], pid);
 		return -1;
 	}
@@ -82,7 +82,7 @@ static int destroy_trace(int argc, char *argv[])
 
 	pid = parse_pid(argv[1]);
 
-	if (ustcmd_destroy_trace(argv[2], pid)) {
+	if (ustctl_destroy_trace(argv[2], pid)) {
 		ERR("Failed to destroy trace %s for PID %u\n", argv[2], pid);
 		return -1;
 	}
@@ -95,7 +95,7 @@ static int force_subbuf_switch(int argc, char *argv[])
 
 	pid = parse_pid(argv[1]);
 
-	if (ustcmd_force_switch(pid)) {
+	if (ustctl_force_switch(pid)) {
 		ERR("error while trying to force switch for PID %u\n", pid);
 		return -1;
 	}

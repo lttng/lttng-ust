@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
-#include "ust/ustcmd.h"
+#include "ust/ustctl.h"
 #include "usterr.h"
 #include "cli.h"
 #include "scanning_functions.h"
@@ -111,7 +111,7 @@ static int list_trace_events(int argc, char *argv[])
 
 	pid = parse_pid(argv[1]);
 
-	if (ustcmd_get_tes(&tes, pid)) {
+	if (ustctl_get_tes(&tes, pid)) {
 		ERR("error while trying to list "
 		    "trace_events for PID %u\n",
 		    pid);
@@ -123,7 +123,7 @@ static int list_trace_events(int argc, char *argv[])
 		       pid,
 		       tes[i].name);
 	}
-	ustcmd_free_tes(tes);
+	ustctl_free_tes(tes);
 
 	return 0;
 }
@@ -134,7 +134,7 @@ static int set_sock_path(int argc, char *argv[])
 
 	pid = parse_pid(argv[1]);
 
-	if (ustcmd_set_sock_path(argv[2], pid)) {
+	if (ustctl_set_sock_path(argv[2], pid)) {
 		ERR("error while trying to set sock path for PID %u\n", pid);
 		return -1;
 	}
@@ -149,7 +149,7 @@ static int get_sock_path(int argc, char *argv[])
 
 	pid = parse_pid(argv[1]);
 
-	if (ustcmd_get_sock_path(&sock_path, pid)) {
+	if (ustctl_get_sock_path(&sock_path, pid)) {
 		ERR("error while trying to get sock path for PID %u\n", pid);
 		return -1;
 	}

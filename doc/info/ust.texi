@@ -91,7 +91,7 @@ Components licensed as LGPL v2.1:
 Components licensed as GPL v2:
 @itemize @bullet
 @item ustctl
-@item libustcmd
+@item libustctl
 @item ust-consumerd
 @end itemize
 
