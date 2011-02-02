@@ -42,17 +42,18 @@ UST_CONSUMERD_PID="$(<$pidfilepath)"
 
 LD_PRELOAD=/usr/local/lib/libust.so.0.0.0:/usr/local/lib/libustinstr-malloc.so find -L / >/dev/null 2>&1 &
 PID=$!
+TRACE=auto
 sleep 0.1
-okx ustctl --list-markers "$PID"
-okx ustctl --enable-marker ust/malloc $PID
-okx ustctl --enable-marker ust/free $PID
-okx ustctl --create-trace $PID
-okx ustctl --alloc-trace $PID
-okx ustctl --start-trace $PID
+okx ustctl list-markers $PID
+okx ustctl enable-marker $PID $TRACE ust/malloc
+okx ustctl enable-marker $PID $TRACE ust/free
+okx ustctl create-trace $PID $TRACE
+okx ustctl alloc-trace $PID $TRACE
+okx ustctl start-trace $PID $TRACE
 sleep 0.5
 
-okx ustctl --stop-trace $PID
-okx ustctl --destroy-trace $PID
+okx ustctl stop-trace $PID $TRACE
+okx ustctl destroy-trace $PID $TRACE
 kill $PID
 kill -SIGTERM ${UST_CONSUMERD_PID}
 wait ${UST_CONSUMERD_PID}

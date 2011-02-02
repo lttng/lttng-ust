@@ -25,7 +25,7 @@
 #include <dirent.h>
 
 #include "ustcomm.h"
-#include "ust/ustcmd.h"
+#include "ust/ustctl.h"
 #include "usterr.h"
 
 static int do_cmd(const pid_t pid,
@@ -83,7 +83,7 @@ close_app_fd:
 	return 0;
 }
 
-pid_t *ustcmd_get_online_pids(void)
+pid_t *ustctl_get_online_pids(void)
 {
 	struct dirent *dirent;
 	DIR *dir;
@@ -133,14 +133,14 @@ pid_t *ustcmd_get_online_pids(void)
 }
 
 /**
- * Sets marker state (USTCMD_MS_ON or USTCMD_MS_OFF).
+ * Sets marker state (USTCTL_MS_ON or USTCTL_MS_OFF).
  *
  * @param mn	Marker name
  * @param state	Marker's new state
  * @param pid	Traced process ID
- * @return	0 if successful, or errors {USTCMD_ERR_GEN, USTCMD_ERR_ARG}
+ * @return	0 if successful, or errors {USTCTL_ERR_GEN, USTCTL_ERR_ARG}
  */
-int ustcmd_set_marker_state(const char *trace, const char *channel,
+int ustctl_set_marker_state(const char *trace, const char *channel,
 			    const char *marker, int state, pid_t pid)
 {
 	struct ustcomm_header req_header, res_header;
@@ -170,7 +170,7 @@ int ustcmd_set_marker_state(const char *trace, const char *channel,
  * @param pid		Traced process ID
  * @return		0 if successful, or error
  */
-int ustcmd_set_subbuf_size(const char *trace, const char *channel,
+int ustctl_set_subbuf_size(const char *trace, const char *channel,
 			   unsigned int subbuf_size, pid_t pid)
 {
 	struct ustcomm_header req_header, res_header;
@@ -200,7 +200,7 @@ int ustcmd_set_subbuf_size(const char *trace, const char *channel,
  * @param pid		Traced process ID
  * @return		0 if successful, or error
  */
-int ustcmd_set_subbuf_num(const char *trace, const char *channel,
+int ustctl_set_subbuf_num(const char *trace, const char *channel,
 			  unsigned int num, pid_t pid)
 {
 	struct ustcomm_header req_header, res_header;
@@ -224,7 +224,7 @@ int ustcmd_set_subbuf_num(const char *trace, const char *channel,
 
 }
 
-static int ustcmd_get_subbuf_num_size(const char *trace, const char *channel,
+static int ustctl_get_subbuf_num_size(const char *trace, const char *channel,
 				      pid_t pid, int *num, int *size)
 {
 	struct ustcomm_header req_header, res_header;
@@ -264,11 +264,11 @@ static int ustcmd_get_subbuf_num_size(const char *trace, const char *channel,
  * @param pid		Traced process ID
  * @return		subbuf cnf if successful, or error
  */
-int ustcmd_get_subbuf_num(const char *trace, const char *channel, pid_t pid)
+int ustctl_get_subbuf_num(const char *trace, const char *channel, pid_t pid)
 {
 	int num, size, result;
 
-	result = ustcmd_get_subbuf_num_size(trace, channel, pid,
+	result = ustctl_get_subbuf_num_size(trace, channel, pid,
 					    &num, &size);
 	if (result < 0) {
 		errno = -result;
@@ -285,11 +285,11 @@ int ustcmd_get_subbuf_num(const char *trace, const char *channel, pid_t pid)
  * @param pid		Traced process ID
  * @return		subbuf size if successful, or error
  */
-int ustcmd_get_subbuf_size(const char *trace, const char *channel, pid_t pid)
+int ustctl_get_subbuf_size(const char *trace, const char *channel, pid_t pid)
 {
 	int num, size, result;
 
-	result = ustcmd_get_subbuf_num_size(trace, channel, pid,
+	result = ustctl_get_subbuf_num_size(trace, channel, pid,
 					    &num, &size);
 	if (result < 0) {
 		errno = -result;
@@ -323,9 +323,9 @@ static int do_trace_cmd(const char *trace, pid_t pid, int command)
  * Destroys an UST trace according to a PID.
  *
  * @param pid	Traced process ID
- * @return	0 if successful, or error USTCMD_ERR_GEN
+ * @return	0 if successful, or error USTCTL_ERR_GEN
  */
-int ustcmd_destroy_trace(const char *trace, pid_t pid)
+int ustctl_destroy_trace(const char *trace, pid_t pid)
 {
 	return do_trace_cmd(trace, pid, DESTROY_TRACE);
 }
@@ -334,9 +334,9 @@ int ustcmd_destroy_trace(const char *trace, pid_t pid)
  * Starts an UST trace (and setups it) according to a PID.
  *
  * @param pid	Traced process ID
- * @return	0 if successful, or error USTCMD_ERR_GEN
+ * @return	0 if successful, or error USTCTL_ERR_GEN
  */
-int ustcmd_setup_and_start(const char *trace, pid_t pid)
+int ustctl_setup_and_start(const char *trace, pid_t pid)
 {
 	return do_trace_cmd(trace, pid, START);
 }
@@ -345,9 +345,9 @@ int ustcmd_setup_and_start(const char *trace, pid_t pid)
  * Creates an UST trace according to a PID.
  *
  * @param pid	Traced process ID
- * @return	0 if successful, or error USTCMD_ERR_GEN
+ * @return	0 if successful, or error USTCTL_ERR_GEN
  */
-int ustcmd_create_trace(const char *trace, pid_t pid)
+int ustctl_create_trace(const char *trace, pid_t pid)
 {
 	return do_trace_cmd(trace, pid, CREATE_TRACE);
 }
@@ -356,9 +356,9 @@ int ustcmd_create_trace(const char *trace, pid_t pid)
  * Starts an UST trace according to a PID.
  *
  * @param pid	Traced process ID
- * @return	0 if successful, or error USTCMD_ERR_GEN
+ * @return	0 if successful, or error USTCTL_ERR_GEN
  */
-int ustcmd_start_trace(const char *trace, pid_t pid)
+int ustctl_start_trace(const char *trace, pid_t pid)
 {
 	return do_trace_cmd(trace, pid, START_TRACE);
 }
@@ -367,9 +367,9 @@ int ustcmd_start_trace(const char *trace, pid_t pid)
  * Alloc an UST trace according to a PID.
  *
  * @param pid	Traced process ID
- * @return	0 if successful, or error USTCMD_ERR_GEN
+ * @return	0 if successful, or error USTCTL_ERR_GEN
  */
-int ustcmd_alloc_trace(const char *trace, pid_t pid)
+int ustctl_alloc_trace(const char *trace, pid_t pid)
 {
 	return do_trace_cmd(trace, pid, ALLOC_TRACE);
 }
@@ -378,9 +378,9 @@ int ustcmd_alloc_trace(const char *trace, pid_t pid)
  * Stops an UST trace according to a PID.
  *
  * @param pid	Traced process ID
- * @return	0 if successful, or error USTCMD_ERR_GEN
+ * @return	0 if successful, or error USTCTL_ERR_GEN
  */
-int ustcmd_stop_trace(const char *trace, pid_t pid)
+int ustctl_stop_trace(const char *trace, pid_t pid)
 {
 	return do_trace_cmd(trace, pid, STOP_TRACE);
 }
@@ -391,7 +391,7 @@ int ustcmd_stop_trace(const char *trace, pid_t pid)
  * @param str	String to search in
  * @return	Total newlines count
  */
-unsigned int ustcmd_count_nl(const char *str)
+unsigned int ustctl_count_nl(const char *str)
 {
 	unsigned int i = 0, tot = 0;
 
@@ -409,12 +409,12 @@ unsigned int ustcmd_count_nl(const char *str)
  * Frees a CMSF array.
  *
  * @param cmsf	CMSF array to free
- * @return	0 if successful, or error USTCMD_ERR_ARG
+ * @return	0 if successful, or error USTCTL_ERR_ARG
  */
-int ustcmd_free_cmsf(struct marker_status *cmsf)
+int ustctl_free_cmsf(struct marker_status *cmsf)
 {
 	if (cmsf == NULL) {
-		return USTCMD_ERR_ARG;
+		return USTCTL_ERR_ARG;
 	}
 
 	unsigned int i = 0;
@@ -433,11 +433,11 @@ int ustcmd_free_cmsf(struct marker_status *cmsf)
  * Gets channel/marker/state/format string for a given PID.
  *
  * @param cmsf	Pointer to CMSF array to be filled (callee allocates, caller
- *		frees with `ustcmd_free_cmsf')
+ *		frees with `ustctl_free_cmsf')
  * @param pid	Targeted PID
  * @return	0 if successful, or -1 on error
  */
-int ustcmd_get_cmsf(struct marker_status **cmsf, const pid_t pid)
+int ustctl_get_cmsf(struct marker_status **cmsf, const pid_t pid)
 {
 	struct ustcomm_header req_header, res_header;
 	char *big_str = NULL;
@@ -472,7 +472,7 @@ int ustcmd_get_cmsf(struct marker_status **cmsf, const pid_t pid)
 	close(app_fd);
 
 	tmp_cmsf = (struct marker_status *) zmalloc(sizeof(struct marker_status) *
-						    (ustcmd_count_nl(big_str) + 1));
+						    (ustctl_count_nl(big_str) + 1));
 	if (tmp_cmsf == NULL) {
 		ERR("Failed to allocate CMSF array");
 		return -1;
@@ -487,8 +487,8 @@ int ustcmd_get_cmsf(struct marker_status **cmsf, const pid_t pid)
 		       &tmp_cmsf[cmsf_ind].marker,
 		       &state,
 		       &tmp_cmsf[cmsf_ind].fs);
-		tmp_cmsf[cmsf_ind].state = (state == USTCMD_MS_CHR_ON ?
-					    USTCMD_MS_ON : USTCMD_MS_OFF); /* Marker state */
+		tmp_cmsf[cmsf_ind].state = (state == USTCTL_MS_CHR_ON ?
+					    USTCTL_MS_ON : USTCTL_MS_OFF); /* Marker state */
 
 		while (big_str[i] != '\n') {
 			++i; /* Go to next '\n' */
@@ -511,12 +511,12 @@ int ustcmd_get_cmsf(struct marker_status **cmsf, const pid_t pid)
  * Frees a TES array.
  *
  * @param tes	TES array to free
- * @return	0 if successful, or error USTCMD_ERR_ARG
+ * @return	0 if successful, or error USTCTL_ERR_ARG
  */
-int ustcmd_free_tes(struct trace_event_status *tes)
+int ustctl_free_tes(struct trace_event_status *tes)
 {
 	if (tes == NULL) {
-		return USTCMD_ERR_ARG;
+		return USTCTL_ERR_ARG;
 	}
 
 	unsigned int i = 0;
@@ -533,11 +533,11 @@ int ustcmd_free_tes(struct trace_event_status *tes)
  * Gets trace_events string for a given PID.
  *
  * @param tes	Pointer to TES array to be filled (callee allocates, caller
- *		frees with `ustcmd_free_tes')
+ *		frees with `ustctl_free_tes')
  * @param pid	Targeted PID
  * @return	0 if successful, or -1 on error
  */
-int ustcmd_get_tes(struct trace_event_status **tes,
+int ustctl_get_tes(struct trace_event_status **tes,
 		   const pid_t pid)
 {
 	struct ustcomm_header req_header, res_header;
@@ -574,7 +574,7 @@ int ustcmd_get_tes(struct trace_event_status **tes,
 
 	tmp_tes = (struct trace_event_status *)
 		zmalloc(sizeof(struct trace_event_status) *
-			(ustcmd_count_nl(big_str) + 1));
+			(ustctl_count_nl(big_str) + 1));
 	if (tmp_tes == NULL) {
 		ERR("Failed to allocate TES array");
 		return -1;
@@ -605,7 +605,7 @@ int ustcmd_get_tes(struct trace_event_status **tes,
  * @param pid		Traced process ID
  * @return		0 if successful, or error
  */
-int ustcmd_set_sock_path(const char *sock_path, pid_t pid)
+int ustctl_set_sock_path(const char *sock_path, pid_t pid)
 {
 	int result;
 	struct ustcomm_header req_header, res_header;
@@ -632,7 +632,7 @@ int ustcmd_set_sock_path(const char *sock_path, pid_t pid)
  * @param pid		Traced process ID
  * @return		0 if successful, or error
  */
-int ustcmd_get_sock_path(char **sock_path, pid_t pid)
+int ustctl_get_sock_path(char **sock_path, pid_t pid)
 {
 	int result;
 	struct ustcomm_header req_header, res_header;
@@ -659,7 +659,7 @@ int ustcmd_get_sock_path(char **sock_path, pid_t pid)
 	return 0;
 }
 
-int ustcmd_force_switch(pid_t pid)
+int ustctl_force_switch(pid_t pid)
 {
 	struct ustcomm_header req_header, res_header;
 

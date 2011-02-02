@@ -1,4 +1,5 @@
 /* Copyright (C) 2009  Pierre-Marc Fournier
+ * Copyright (C) 2011  Ericsson AB, Nils Carlson <nils.carlson@ericsson.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,478 +23,168 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
-#include "ust/ustcmd.h"
+#include "ust/ustctl.h"
 #include "usterr.h"
+#include "cli.h"
+#include "scanning_functions.h"
 
-enum command {
-	CREATE_TRACE=1000,
-	ALLOC_TRACE,
-	START_TRACE,
-	STOP_TRACE,
-	DESTROY_TRACE,
-	LIST_MARKERS,
-	LIST_TRACE_EVENTS,
-	ENABLE_MARKER,
-	DISABLE_MARKER,
-	GET_ONLINE_PIDS,
-	SET_SUBBUF_SIZE,
-	SET_SUBBUF_NUM,
-	GET_SUBBUF_SIZE,
-	GET_SUBBUF_NUM,
-	GET_SOCK_PATH,
-	SET_SOCK_PATH,
-	FORCE_SWITCH,
-	UNKNOWN
-};
-
-struct ust_opts {
-	enum command cmd;
-	pid_t *pids;
-	char *regex;
-};
-
-char *progname = NULL;
-
-void usage(void)
+void usage(const char *process_name)
 {
-	fprintf(stderr, "usage: %s COMMAND PIDs...\n", progname);
-	fprintf(stderr, "\nControl the tracing of a process that supports LTTng Userspace Tracing.\n\
-\n\
-Commands:\n\
-    --create-trace\t\t\tCreate trace\n\
-    --alloc-trace\t\t\tAlloc trace\n\
-    --start-trace\t\t\tStart tracing\n\
-    --stop-trace\t\t\tStop tracing\n\
-    --destroy-trace\t\t\tDestroy the trace\n\
-    --set-subbuf-size \"CHANNEL/bytes\"\tSet the size of subbuffers per channel\n\
-    --set-subbuf-num \"CHANNEL/n\"\tSet the number of subbuffers per channel\n\
-    --set-sock-path\t\t\tSet the path of the daemon socket\n\
-    --get-subbuf-size \"CHANNEL\"\t\tGet the size of subbuffers per channel\n\
-    --get-subbuf-num \"CHANNEL\"\t\tGet the number of subbuffers per channel\n\
-    --get-sock-path\t\t\tGet the path of the daemon socket\n\
-    --enable-marker \"CHANNEL/MARKER\"\tEnable a marker\n\
-    --disable-marker \"CHANNEL/MARKER\"\tDisable a marker\n\
-    --list-markers\t\t\tList the markers of the process, their\n\t\t\t\t\t  state and format string\n\
-    --list-trace-events\t\t\tList the trace-events of the process\n\
-    --force-switch\t\t\tForce a subbuffer switch\n\
-\
-");
+	fprintf(stderr, "Usage: %s COMMAND [ARGS]...\n", process_name);
+	fprintf(stderr,
+		"Control tracing within a process that supports UST,\n"
+		" the Userspace Tracing libary\n"
+		"Options:\n"
+		"  -h[<cmd>], --help[=<cmd>]        "
+		"help, for a command if provided\n"
+		"  -l, --list                       "
+		"short list of commands\n"
+		"  -e, --extended-list              "
+	       "extented list of commands with help\n"
+		"Commands:\n");
+	list_cli_cmds(CLI_DESCRIPTIVE_LIST);
 }
 
-int parse_opts_long(int argc, char **argv, struct ust_opts *opts)
+struct option options[] =
 {
-	int c;
+	{"help", 2, NULL, 'h'},
+	{"list", 0, NULL, 'l'},
+	{"extended-list", 0, NULL, 'e'},
+	{NULL, 0, NULL, 0},
+};
 
-	opts->pids = NULL;
-	opts->regex = NULL;
+int main(int argc, char *argv[])
+{
+	struct cli_cmd *cli_cmd;
+	int opt;
 
-	while (1) {
-		int option_index = 0;
-		static struct option long_options[] = {
-			{ "create-trace", 0, 0, CREATE_TRACE },
-			{ "alloc-trace", 0, 0, ALLOC_TRACE },
-			{ "start-trace", 0, 0, START_TRACE },
-			{ "stop-trace", 0, 0, STOP_TRACE },
-			{ "destroy-trace", 0, 0, DESTROY_TRACE },
-			{ "list-markers", 0, 0, LIST_MARKERS },
-			{ "list-trace-events", 0, 0, LIST_TRACE_EVENTS},
-			{ "enable-marker", 1, 0, ENABLE_MARKER },
-			{ "disable-marker", 1, 0, DISABLE_MARKER },
-			{ "help", 0, 0, 'h' },
-			{ "online-pids", 0, 0, GET_ONLINE_PIDS },
-			{ "set-subbuf-size", 1, 0, SET_SUBBUF_SIZE },
-			{ "set-subbuf-num", 1, 0, SET_SUBBUF_NUM },
-			{ "get-subbuf-size", 1, 0, GET_SUBBUF_SIZE },
-			{ "get-subbuf-num", 1, 0, GET_SUBBUF_NUM },
-			{ "get-sock-path", 0, 0, GET_SOCK_PATH },
-			{ "set-sock-path", 1, 0, SET_SOCK_PATH },
-			{ "force-switch", 0, 0, FORCE_SWITCH },
-			{ 0, 0, 0, 0 }
-		};
+	if(argc <= 1) {
+		fprintf(stderr, "No operation specified.\n");
+		usage(argv[0]);
+		exit(EXIT_FAILURE);
+	}
 
-		c = getopt_long(argc, argv, "h", long_options, &option_index);
-		if (c == -1)
-			break;
-
-		if(c >= 1000)
-			opts->cmd = c;
-
-		switch (c) {
-		case 0:
-			printf("option %s", long_options[option_index].name);
-			if (optarg)
-				printf(" with arg %s", optarg);
-			printf("\n");
-			break;
-
-		case ENABLE_MARKER:
-		case DISABLE_MARKER:
-		case SET_SUBBUF_SIZE:
-		case SET_SUBBUF_NUM:
-		case GET_SUBBUF_SIZE:
-		case GET_SUBBUF_NUM:
-		case SET_SOCK_PATH:
-			opts->regex = strdup(optarg);
-			break;
-
+	while ((opt = getopt_long(argc, argv, "+h::le",
+				  options, NULL)) != -1) {
+		switch (opt) {
 		case 'h':
-			usage();
-			exit(0);
-
-		case '?':
-			fprintf(stderr, "Invalid argument\n\n");
-			usage();
-			exit(1);
+			if (!optarg) {
+				usage(argv[0]);
+			} else {
+				if (cli_print_help(optarg)) {
+					fprintf(stderr, "No such command %s\n",
+						optarg);
+				}
+			}
+			exit(EXIT_FAILURE);
+			break;
+		case 'l':
+			list_cli_cmds(CLI_SIMPLE_LIST);
+			exit(EXIT_FAILURE);
+			break;
+		case 'e':
+			list_cli_cmds(CLI_EXTENDED_LIST);
+			exit(EXIT_FAILURE);
+		default:
+			fprintf(stderr, "Unknown option\n");
+			break;
 		}
 	}
 
-	if (argc - optind > 0 && opts->cmd != GET_ONLINE_PIDS) {
-		int i;
-		int pididx=0;
-		opts->pids = zmalloc((argc-optind+1) * sizeof(pid_t));
+	cli_cmd = find_cli_cmd(argv[optind]);
+	if (!cli_cmd) {
+		fprintf(stderr, "No such command %s\n",
+			argv[optind]);
+		exit(EXIT_FAILURE);
+	}
 
-		for(i=optind; i<argc; i++) {
-			/* don't take any chances, use a long long */
-			long long tmp;
-			char *endptr;
-			tmp = strtoull(argv[i], &endptr, 10);
-			if(*endptr != '\0') {
-				ERR("The pid \"%s\" is invalid.", argv[i]);
-				return 1;
-			}
-			opts->pids[pididx++] = (pid_t) tmp;
-		}
-		opts->pids[pididx] = -1;
+	cli_dispatch_cmd(cli_cmd, argc - optind, &argv[optind]);
+
+	return 0;
+}
+
+static int list_trace_events(int argc, char *argv[])
+{
+	struct trace_event_status *tes = NULL;
+	int i;
+	pid_t pid;
+
+	pid = parse_pid(argv[1]);
+
+	if (ustctl_get_tes(&tes, pid)) {
+		ERR("error while trying to list "
+		    "trace_events for PID %u\n",
+		    pid);
+		return -1;
+	}
+	i = 0;
+	for (i = 0; tes[i].name; i++) {
+		printf("{PID: %u, trace_event: %s}\n",
+		       pid,
+		       tes[i].name);
+	}
+	ustctl_free_tes(tes);
+
+	return 0;
+}
+
+static int set_sock_path(int argc, char *argv[])
+{
+	pid_t pid;
+
+	pid = parse_pid(argv[1]);
+
+	if (ustctl_set_sock_path(argv[2], pid)) {
+		ERR("error while trying to set sock path for PID %u\n", pid);
+		return -1;
 	}
 
 	return 0;
 }
 
-static int scan_ch_marker(const char *channel_marker, char **channel,
-			char **marker)
+static int get_sock_path(int argc, char *argv[])
 {
-	int result;
+	pid_t pid;
+	char *sock_path;
 
-	*channel = NULL;
-	*marker = NULL;
+	pid = parse_pid(argv[1]);
 
-	result = sscanf(channel_marker, "%a[^/]/%as", channel, marker);
-	if (result != 2) {
-		if (errno) {
-			PERROR("Failed to read channel and marker names");
-		} else {
-			ERR("Failed to parse marker and channel names");
-		}
-		if (*channel) {
-			free(*channel);
-		}
-		if (*marker) {
-			free(*marker);
-		}
-		return -1;
-	} else {
-		return 0;
-	}
-}
-
-static int scan_ch_and_num(const char *ch_num, char **channel, unsigned int *num)
-{
-	int result;
-
-	*channel = NULL;
-
-	result = sscanf(ch_num, "%a[^/]/%u", channel, num);
-	if (result != 2) {
-		if (errno) {
-			PERROR("Failed to parse channel and number");
-		} else {
-			ERR("Failed to parse channel and number");
-		}
-		if (*channel) {
-			free(*channel);
-		}
+	if (ustctl_get_sock_path(&sock_path, pid)) {
+		ERR("error while trying to get sock path for PID %u\n", pid);
 		return -1;
 	}
+	printf("The socket path is %s\n", sock_path);
+	free(sock_path);
+
+	return 0;
 }
 
-char *trace = "auto";
-
-int main(int argc, char *argv[])
-{
-	pid_t *pidit;
-	int result;
-	int retval = EXIT_SUCCESS;
-	char *tmp;
-	struct ust_opts opts;
-
-	progname = argv[0];
-
-	if(argc <= 1) {
-		fprintf(stderr, "No operation specified.\n");
-		usage();
-		exit(EXIT_FAILURE);
-	}
-
-	result = parse_opts_long(argc, argv, &opts);
-	if(result) {
-		fprintf(stderr, "\n");
-		usage();
-		exit(EXIT_FAILURE);
-	}
-
-	if(opts.pids == NULL && opts.cmd != GET_ONLINE_PIDS) {
-		fprintf(stderr, "No pid specified.\n");
-		usage();
-		exit(EXIT_FAILURE);
-	}
-	if(opts.cmd == UNKNOWN) {
-		fprintf(stderr, "No command specified.\n");
-		usage();
-		exit(EXIT_FAILURE);
-	}
-	if (opts.cmd == GET_ONLINE_PIDS) {
-		pid_t *pp = ustcmd_get_online_pids();
-		unsigned int i = 0;
-
-		if (pp) {
-			while (pp[i] != 0) {
-				printf("%u\n", (unsigned int) pp[i]);
-				++i;
-			}
-			free(pp);
-		}
-
-		exit(EXIT_SUCCESS);
-	}
-
-	pidit = opts.pids;
-	struct marker_status *cmsf = NULL;
-	struct trace_event_status *tes = NULL;
-	unsigned int i = 0;
-
-	while(*pidit != -1) {
-		switch (opts.cmd) {
-			case CREATE_TRACE:
-				result = ustcmd_create_trace(trace, *pidit);
-				if (result) {
-					ERR("error while trying to create trace with PID %u\n", (unsigned int) *pidit);
-					retval = EXIT_FAILURE;
-					break;
-				}
-				break;
-
-			case START_TRACE:
-				result = ustcmd_start_trace(trace, *pidit);
-				if (result) {
-					ERR("error while trying to for trace with PID %u\n", (unsigned int) *pidit);
-					retval = EXIT_FAILURE;
-					break;
-				}
-				break;
-
-			case STOP_TRACE:
-				result = ustcmd_stop_trace(trace, *pidit);
-				if (result) {
-					ERR("error while trying to stop trace for PID %u\n", (unsigned int) *pidit);
-					retval = EXIT_FAILURE;
-					break;
-				}
-				break;
-
-			case DESTROY_TRACE:
-				result = ustcmd_destroy_trace(trace, *pidit);
-				if (result) {
-					ERR("error while trying to destroy trace with PID %u\n", (unsigned int) *pidit);
-					retval = EXIT_FAILURE;
-					break;
-				}
-				break;
-
-			case LIST_MARKERS:
-				cmsf = NULL;
-				if (ustcmd_get_cmsf(&cmsf, *pidit)) {
-					ERR("error while trying to list markers for PID %u\n", (unsigned int) *pidit);
-					retval = EXIT_FAILURE;
-					break;
-				}
-				i = 0;
-				while (cmsf[i].channel != NULL) {
-					printf("{PID: %u, channel/marker: %s/%s, "
-						"state: %u, fmt: %s}\n",
-						(unsigned int) *pidit,
-						cmsf[i].channel,
-						cmsf[i].marker,
-						cmsf[i].state,
-						cmsf[i].fs);
-					++i;
-				}
-				ustcmd_free_cmsf(cmsf);
-				break;
-
-			case LIST_TRACE_EVENTS:
-				tes = NULL;
-				if (ustcmd_get_tes(&tes, *pidit)) {
-					ERR("error while trying to list "
-					    "trace_events for PID %u\n",
-					    (unsigned int) *pidit);
-					break;
-				}
-				i = 0;
-				while (tes[i].name != NULL) {
-					printf("{PID: %u, trace_event: %s}\n",
-					       (unsigned int) *pidit,
-					       tes[i].name);
-					++i;
-				}
-				ustcmd_free_tes(tes);
-
-				break;
-			case ENABLE_MARKER:
-				if (opts.regex) {
-					char *channel, *marker;
-
-					if (scan_ch_marker(opts.regex,
-							   &channel, &marker)) {
-						retval = EXIT_FAILURE;
-						break;
-					}
-					if (ustcmd_set_marker_state(trace, channel, marker, 1, *pidit)) {
-						PERROR("error while trying to enable marker %s with PID %u",
-						       opts.regex, (unsigned int) *pidit);
-						retval = EXIT_FAILURE;
-					}
-				}
-
-				break;
-			case DISABLE_MARKER:
-				if (opts.regex) {
-					char *channel, *marker;
-
-					if (scan_ch_marker(opts.regex,
-							   &channel, &marker)) {
-						retval = EXIT_FAILURE;
-						break;
-					}
-					if (ustcmd_set_marker_state(trace, channel, marker, 0, *pidit)) {
-						ERR("error while trying to disable marker %s with PID %u\n",
-								opts.regex, (unsigned int) *pidit);
-						retval = EXIT_FAILURE;
-					}
-				}
-				break;
-
-			case SET_SUBBUF_SIZE:
-				if (opts.regex) {
-					char *channel;
-					unsigned int size;
-					if (scan_ch_and_num(opts.regex, &channel, &size)) {
-						retval = EXIT_FAILURE;
-						break;
-					}
-
-					if (ustcmd_set_subbuf_size(trace, channel, size, *pidit)) {
-						ERR("error while trying to set the size of subbuffers with PID %u\n",
-								(unsigned int) *pidit);
-						retval = EXIT_FAILURE;
-					}
-				}
-				break;
-
-			case SET_SUBBUF_NUM:
-				if (opts.regex) {
-					char *channel;
-					unsigned int num;
-					if (scan_ch_and_num(opts.regex, &channel, &num)) {
-						retval = EXIT_FAILURE;
-						break;
-					}
-
-					if (num < 2) {
-						ERR("Subbuffer count should be greater or equal to 2");
-						retval = EXIT_FAILURE;
-						break;
-					}
-					if (ustcmd_set_subbuf_num(trace, channel, num, *pidit)) {
-						ERR("error while trying to set the number of subbuffers with PID %u\n",
-								(unsigned int) *pidit);
-						retval = EXIT_FAILURE;
-					}
-				}
-				break;
-
-			case GET_SUBBUF_SIZE:
-				result = ustcmd_get_subbuf_size(trace, opts.regex, *pidit);
-				if (result == -1) {
-					ERR("error while trying to get_subuf_size with PID %u\n", (unsigned int) *pidit);
-					retval = EXIT_FAILURE;
-					break;
-				}
-
-				printf("the size of subbufers is %d\n", result);
-				break;
-
-			case GET_SUBBUF_NUM:
-				result = ustcmd_get_subbuf_num(trace, opts.regex, *pidit);
-				if (result == -1) {
-					ERR("error while trying to get_subuf_num with PID %u\n", (unsigned int) *pidit);
-					retval = EXIT_FAILURE;
-					break;
-				}
-
-				printf("the number of subbufers is %d\n", result);
-				break;
-
-			case ALLOC_TRACE:
-				result = ustcmd_alloc_trace(trace, *pidit);
-				if (result) {
-					ERR("error while trying to alloc trace with PID %u\n", (unsigned int) *pidit);
-					retval = EXIT_FAILURE;
-				}
-				break;
-
-			case GET_SOCK_PATH:
-				result = ustcmd_get_sock_path(&tmp, *pidit);
-				if (result) {
-					ERR("error while trying to get sock path for PID %u\n", (unsigned int) *pidit);
-					retval = EXIT_FAILURE;
-					break;
-				}
-				printf("the socket path is %s\n", tmp);
-				free(tmp);
-				break;
-
-			case SET_SOCK_PATH:
-				result = ustcmd_set_sock_path(opts.regex, *pidit);
-				if (result) {
-					ERR("error while trying to set sock path for PID %u\n", (unsigned int) *pidit);
-					retval = EXIT_FAILURE;
-				}
-				break;
-
-			case FORCE_SWITCH:
-				result = ustcmd_force_switch(*pidit);
-				if (result) {
-					ERR("error while trying to force switch for PID %u\n", (unsigned int) *pidit);
-					retval = EXIT_FAILURE;
-				}
-				break;
-
-			default:
-				ERR("unknown command\n");
-				retval = EXIT_FAILURE;
-				break;
-		}
-
-		pidit++;
-	}
-
-	if (opts.pids != NULL) {
-		free(opts.pids);
-	}
-	if (opts.regex != NULL) {
-		free(opts.regex);
-	}
-
-	return retval;
-}
-
+struct cli_cmd __cli_cmds general_cmds[] = {
+	{
+		.name = "list-trace-events",
+		.description = "List trace-events for a given pid",
+		.help_text = "list-trace-events <pid>\n"
+		"List the trace-events in a process\n",
+		.function = list_trace_events,
+		.desired_args = 1,
+		.desired_args_op = CLI_EQ,
+	},
+	{
+		.name = "set-sock-path",
+		.description = "Set the path to the consumer daemon socket",
+		.help_text = "set-sock-path <pid> <sock-path>\n"
+		"Set the path to the consumer daemon socket\n",
+		.function = set_sock_path,
+		.desired_args = 2,
+		.desired_args_op = CLI_EQ,
+	},
+	{
+		.name = "get-sock-path",
+		.description = "Get the path to the consumer daemon socket",
+		.help_text = "get-sock-path <pid>\n"
+		"Get the path to the consumer daemon socket\n",
+		.function = get_sock_path,
+		.desired_args = 1,
+		.desired_args_op = CLI_EQ,
+	},
+};

@@ -1,4 +1,4 @@
-SUBDIRS = . hello hello2 basic basic_long fork simple_include snprintf test-nevents test-libustinstr-malloc dlopen same_line_marker trace_event register_test tracepoint ustcmd_function_tests
+SUBDIRS = . hello hello2 basic basic_long fork simple_include snprintf test-nevents test-libustinstr-malloc dlopen same_line_marker trace_event register_test tracepoint libustctl_function_tests
 
 dist_noinst_SCRIPTS = test_loop runtests trace_matches
 

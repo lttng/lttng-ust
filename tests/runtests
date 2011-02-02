@@ -45,7 +45,7 @@ simple_harness_run same_line_marker/same_line_marker.sh
 
 simple_harness_run tracepoint/run
 
-simple_harness_run ustcmd_function_tests/ustcmd_function_tests
+simple_harness_run libustctl_function_tests/libustctl_function_tests
 
 echo "************************************"
 if [[ $tests_failed -eq 0 ]]; then
