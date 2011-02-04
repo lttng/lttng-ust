@@ -25,19 +25,18 @@
 static int list_markers(int argc, char *argv[])
 {
 	struct marker_status *cmsf = NULL;
-	int i;
-	pid_t pid;
+	int i, sock;
 
-	pid = parse_pid(argv[1]);
+	sock = parse_and_connect_pid(argv[1]);
 
-	if (ustctl_get_cmsf(&cmsf, pid)) {
-		ERR("error while trying to list markers for PID %u\n", pid);
+	if (ustctl_get_cmsf(sock, &cmsf)) {
+		ERR("error while trying to list markers for PID %s\n", argv[1]);
 		return -1;
 	}
 	for (i = 0; cmsf[i].channel; i++) {
-		printf("{PID: %u, channel/marker: %s/%s, "
+		printf("{PID: %s, channel/marker: %s/%s, "
 		       "state: %u, fmt: %s}\n",
-		       (unsigned int) pid,
+		       argv[1],
 		       cmsf[i].channel,
 		       cmsf[i].marker,
 		       cmsf[i].state,
@@ -49,11 +48,10 @@ static int list_markers(int argc, char *argv[])
 
 static int enable_marker(int argc, char *argv[])
 {
-	int i, result = 0;
-	pid_t pid;
+	int i, sock, result = 0;
 	char *channel, *marker;
 
-	pid = parse_pid(argv[1]);
+	sock = parse_and_connect_pid(argv[1]);
 
 	for (i = 3; i < argc; i++) {
 		channel = NULL;
@@ -68,9 +66,9 @@ static int enable_marker(int argc, char *argv[])
 			if (marker)
 				free(marker);
 		}
-		if (ustctl_set_marker_state(argv[2], channel, marker, 1, pid)) {
-			PERROR("error while trying to enable marker %s with PID %u",
-			       argv[i], pid);
+		if (ustctl_set_marker_state(sock, argv[2], channel, marker, 1)) {
+			PERROR("error while trying to enable marker %s with PID %s",
+			       argv[i], argv[1]);
 			result = -1;
 		}
 		free(channel);
@@ -82,11 +80,10 @@ static int enable_marker(int argc, char *argv[])
 
 static int disable_marker(int argc, char *argv[])
 {
-	int i, result = 0;
-	pid_t pid;
+	int i, sock, result = 0;
 	char *channel, *marker;
 
-	pid = parse_pid(argv[1]);
+	sock = parse_and_connect_pid(argv[1]);
 
 	for (i = 3; i < argc; i++) {
 		channel = NULL;
@@ -101,9 +98,9 @@ static int disable_marker(int argc, char *argv[])
 				free(marker);
 			return -1;
 		}
-		if (ustctl_set_marker_state(argv[2], channel, marker, 0, pid)) {
-			PERROR("error while trying to disable marker %s with PID %u",
-			       argv[i], pid);
+		if (ustctl_set_marker_state(sock, argv[2], channel, marker, 0)) {
+			PERROR("error while trying to disable marker %s with PID %s",
+			       argv[i], argv[1]);
 			result = -1;
 		}
 		free(channel);

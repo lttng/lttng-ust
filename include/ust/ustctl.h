@@ -48,29 +48,51 @@ struct trace_event_status {
 };
 
 extern pid_t *ustctl_get_online_pids(void);
-extern int ustctl_set_marker_state(const char *trace, const char *channel,
-				   const char *marker, int state, pid_t pid);
-extern int ustctl_set_subbuf_size(const char *trace, const char *channel,
-				  unsigned int subbuf_size, pid_t pid);
-extern int ustctl_set_subbuf_num(const char *trace, const char *channel,
-				 unsigned int num, pid_t pid);
-extern int ustctl_get_subbuf_size(const char *trace, const char *channel,
-				  pid_t pid);
-extern int ustctl_get_subbuf_num(const char *trace, const char *channel,
-				 pid_t pid);
-extern int ustctl_destroy_trace(const char *trace, pid_t pid);
-extern int ustctl_setup_and_start(const char *trace, pid_t pid);
-extern int ustctl_stop_trace(const char *trace, pid_t pid);
-extern int ustctl_create_trace(const char *trace, pid_t pid);
-extern int ustctl_start_trace(const char *trace, pid_t pid);
-extern int ustctl_alloc_trace(const char *trace, pid_t pid);
+
+extern int ustctl_connect_pid(pid_t pid);
+
+extern int ustctl_set_marker_state(int sock, const char *trace,
+				   const char *channel, const char *marker,
+				   int state);
+
+extern int ustctl_set_subbuf_size(int sock, const char *trace,
+				  const char *channel,
+				  unsigned int subbuf_size);
+
+extern int ustctl_set_subbuf_num(int sock, const char *trace,
+				 const char *channel,
+				 unsigned int num);
+
+extern int ustctl_get_subbuf_size(int sock, const char *trace,
+				  const char *channel);
+
+extern int ustctl_get_subbuf_num(pid_t pid, const char *trace,
+				 const char *channel);
+
+extern int ustctl_destroy_trace(int sock, const char *trace);
+
+extern int ustctl_setup_and_start(int sock, const char *trace);
+
+extern int ustctl_stop_trace(int sock, const char *trace);
+
+extern int ustctl_create_trace(int sock, const char *trace);
+
+extern int ustctl_start_trace(int sock, const char *trace);
+
+extern int ustctl_alloc_trace(int sock, const char *trace);
+
 extern int ustctl_free_cmsf(struct marker_status *);
-extern unsigned int ustctl_count_nl(const char *);
-extern int ustctl_get_cmsf(struct marker_status **, pid_t);
 extern int ustctl_free_tes(struct trace_event_status *);
-extern int ustctl_get_tes(struct trace_event_status **, pid_t);
-extern int ustctl_set_sock_path(const char *sock_path, pid_t pid);
-extern int ustctl_get_sock_path(char **sock_path, pid_t pid);
-extern int ustctl_force_switch(pid_t pid);
+extern unsigned int ustctl_count_nl(const char *);
+
+extern int ustctl_get_cmsf(int sock, struct marker_status **);
+
+extern int ustctl_get_tes(int sock, struct trace_event_status **);
+
+extern int ustctl_set_sock_path(int sock, const char *sock_path);
+
+extern int ustctl_get_sock_path(int sock, char **sock_path);
+
+extern int ustctl_force_switch(int sock, const char *trace);
 
 #endif /* _USTCTL_H */

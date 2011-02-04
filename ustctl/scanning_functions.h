@@ -17,7 +17,7 @@
 #ifndef __SCANNING_FUNCTIONS_H
 #define __SCANNING_FUNCTIONS_H
 
-pid_t parse_pid(const char *pid_string);
+int parse_and_connect_pid(const char *pid_string);
 
 int scan_ch_marker(const char *channel_marker, char **channel, char **marker);
 

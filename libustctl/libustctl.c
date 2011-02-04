@@ -1,4 +1,5 @@
 /* Copyright (C) 2009  Pierre-Marc Fournier, Philippe Proulx-Barrette
+ * Copyright (C) 2011  Ericsson AB
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,28 +29,22 @@
 #include "ust/ustctl.h"
 #include "usterr.h"
 
-static int do_cmd(const pid_t pid,
+static int do_cmd(int sock,
 		  const struct ustcomm_header *req_header,
 		  const char *req_data,
 		  struct ustcomm_header *res_header,
 		  char **res_data)
 {
-	int app_fd, result, saved_errno = 0;
+	int result, saved_errno = 0;
 	char *recv_buf;
-
-	if (ustcomm_connect_app(pid, &app_fd)) {
-		ERR("could not connect to PID %u", (unsigned int) pid);
-		errno = ENOTCONN;
-		return -1;
-	}
 
 	recv_buf = zmalloc(USTCOMM_BUFFER_SIZE);
 	if (!recv_buf) {
 		saved_errno = ENOMEM;
-		goto close_app_fd;
+		goto out;
 	}
 
-	result = ustcomm_req(app_fd, req_header, req_data, res_header, recv_buf);
+	result = ustcomm_req(sock, req_header, req_data, res_header, recv_buf);
 	if (result > 0) {
 		saved_errno = -res_header->result;
 		if (res_header->size == 0 || saved_errno > 0) {
@@ -71,16 +66,26 @@ static int do_cmd(const pid_t pid,
 		free(recv_buf);
 	}
 
-close_app_fd:
-	close(app_fd);
-
+out:
 	errno = saved_errno;
-
 	if (errno) {
 		return -1;
 	}
 
 	return 0;
+}
+
+int ustctl_connect_pid(pid_t pid)
+{
+	int sock;
+
+	if (ustcomm_connect_app(pid, &sock)) {
+		ERR("could not connect to PID %u", (unsigned int) pid);
+		errno = ENOTCONN;
+		return -1;
+	}
+
+	return sock;
 }
 
 pid_t *ustctl_get_online_pids(void)
@@ -140,8 +145,8 @@ pid_t *ustctl_get_online_pids(void)
  * @param pid	Traced process ID
  * @return	0 if successful, or errors {USTCTL_ERR_GEN, USTCTL_ERR_ARG}
  */
-int ustctl_set_marker_state(const char *trace, const char *channel,
-			    const char *marker, int state, pid_t pid)
+int ustctl_set_marker_state(int sock, const char *trace, const char *channel,
+			    const char *marker, int state)
 {
 	struct ustcomm_header req_header, res_header;
 	struct ustcomm_marker_info marker_inf;
@@ -159,7 +164,7 @@ int ustctl_set_marker_state(const char *trace, const char *channel,
 
 	req_header.command = state ? ENABLE_MARKER : DISABLE_MARKER;
 
-	return do_cmd(pid, &req_header, (char *)&marker_inf,
+	return do_cmd(sock, &req_header, (char *)&marker_inf,
 		      &res_header, NULL);
 }
 
@@ -170,8 +175,8 @@ int ustctl_set_marker_state(const char *trace, const char *channel,
  * @param pid		Traced process ID
  * @return		0 if successful, or error
  */
-int ustctl_set_subbuf_size(const char *trace, const char *channel,
-			   unsigned int subbuf_size, pid_t pid)
+int ustctl_set_subbuf_size(int sock, const char *trace, const char *channel,
+			   unsigned int subbuf_size)
 {
 	struct ustcomm_header req_header, res_header;
 	struct ustcomm_channel_info ch_inf;
@@ -189,7 +194,7 @@ int ustctl_set_subbuf_size(const char *trace, const char *channel,
 	req_header.command = SET_SUBBUF_SIZE;
 	ch_inf.subbuf_size = subbuf_size;
 
-	return do_cmd(pid, &req_header, (char *)&ch_inf,
+	return do_cmd(sock, &req_header, (char *)&ch_inf,
 		      &res_header, NULL);
 }
 
@@ -200,8 +205,8 @@ int ustctl_set_subbuf_size(const char *trace, const char *channel,
  * @param pid		Traced process ID
  * @return		0 if successful, or error
  */
-int ustctl_set_subbuf_num(const char *trace, const char *channel,
-			  unsigned int num, pid_t pid)
+int ustctl_set_subbuf_num(int sock, const char *trace, const char *channel,
+			  unsigned int num)
 {
 	struct ustcomm_header req_header, res_header;
 	struct ustcomm_channel_info ch_inf;
@@ -219,13 +224,14 @@ int ustctl_set_subbuf_num(const char *trace, const char *channel,
 	req_header.command = SET_SUBBUF_NUM;
 	ch_inf.subbuf_num = num;
 
-	return do_cmd(pid, &req_header, (char *)&ch_inf,
+	return do_cmd(sock, &req_header, (char *)&ch_inf,
 		      &res_header, NULL);
 
 }
 
-static int ustctl_get_subbuf_num_size(const char *trace, const char *channel,
-				      pid_t pid, int *num, int *size)
+
+static int ustctl_get_subbuf_num_size(int sock, const char *trace, const char *channel,
+				      int *num, int *size)
 {
 	struct ustcomm_header req_header, res_header;
 	struct ustcomm_channel_info ch_inf, *ch_inf_res;
@@ -243,7 +249,7 @@ static int ustctl_get_subbuf_num_size(const char *trace, const char *channel,
 
 	req_header.command = GET_SUBBUF_NUM_SIZE;
 
-	result = do_cmd(pid, &req_header, (char *)&ch_inf,
+	result = do_cmd(sock, &req_header, (char *)&ch_inf,
 			&res_header, (char **)&ch_inf_res);
 	if (result < 0) {
 		return -1;
@@ -264,11 +270,11 @@ static int ustctl_get_subbuf_num_size(const char *trace, const char *channel,
  * @param pid		Traced process ID
  * @return		subbuf cnf if successful, or error
  */
-int ustctl_get_subbuf_num(const char *trace, const char *channel, pid_t pid)
+int ustctl_get_subbuf_num(int sock, const char *trace, const char *channel)
 {
 	int num, size, result;
 
-	result = ustctl_get_subbuf_num_size(trace, channel, pid,
+	result = ustctl_get_subbuf_num_size(sock, trace, channel,
 					    &num, &size);
 	if (result < 0) {
 		errno = -result;
@@ -285,11 +291,11 @@ int ustctl_get_subbuf_num(const char *trace, const char *channel, pid_t pid)
  * @param pid		Traced process ID
  * @return		subbuf size if successful, or error
  */
-int ustctl_get_subbuf_size(const char *trace, const char *channel, pid_t pid)
+int ustctl_get_subbuf_size(int sock, const char *trace, const char *channel)
 {
 	int num, size, result;
 
-	result = ustctl_get_subbuf_num_size(trace, channel, pid,
+	result = ustctl_get_subbuf_num_size(sock, trace, channel,
 					    &num, &size);
 	if (result < 0) {
 		errno = -result;
@@ -299,8 +305,7 @@ int ustctl_get_subbuf_size(const char *trace, const char *channel, pid_t pid)
 	return size;
 }
 
-
-static int do_trace_cmd(const char *trace, pid_t pid, int command)
+static int do_trace_cmd(int sock, const char *trace, int command)
 {
 	struct ustcomm_header req_header, res_header;
 	struct ustcomm_single_field trace_inf;
@@ -316,7 +321,7 @@ static int do_trace_cmd(const char *trace, pid_t pid, int command)
 
 	req_header.command = command;
 
-	return do_cmd(pid, &req_header, (char *)&trace_inf, &res_header, NULL);
+	return do_cmd(sock, &req_header, (char *)&trace_inf, &res_header, NULL);
 }
 
 /**
@@ -325,9 +330,9 @@ static int do_trace_cmd(const char *trace, pid_t pid, int command)
  * @param pid	Traced process ID
  * @return	0 if successful, or error USTCTL_ERR_GEN
  */
-int ustctl_destroy_trace(const char *trace, pid_t pid)
+int ustctl_destroy_trace(int sock, const char *trace)
 {
-	return do_trace_cmd(trace, pid, DESTROY_TRACE);
+	return do_trace_cmd(sock, trace, DESTROY_TRACE);
 }
 
 /**
@@ -336,9 +341,9 @@ int ustctl_destroy_trace(const char *trace, pid_t pid)
  * @param pid	Traced process ID
  * @return	0 if successful, or error USTCTL_ERR_GEN
  */
-int ustctl_setup_and_start(const char *trace, pid_t pid)
+int ustctl_setup_and_start(int sock, const char *trace)
 {
-	return do_trace_cmd(trace, pid, START);
+	return do_trace_cmd(sock, trace, START);
 }
 
 /**
@@ -347,9 +352,9 @@ int ustctl_setup_and_start(const char *trace, pid_t pid)
  * @param pid	Traced process ID
  * @return	0 if successful, or error USTCTL_ERR_GEN
  */
-int ustctl_create_trace(const char *trace, pid_t pid)
+int ustctl_create_trace(int sock, const char *trace)
 {
-	return do_trace_cmd(trace, pid, CREATE_TRACE);
+	return do_trace_cmd(sock, trace, CREATE_TRACE);
 }
 
 /**
@@ -358,9 +363,9 @@ int ustctl_create_trace(const char *trace, pid_t pid)
  * @param pid	Traced process ID
  * @return	0 if successful, or error USTCTL_ERR_GEN
  */
-int ustctl_start_trace(const char *trace, pid_t pid)
+int ustctl_start_trace(int sock, const char *trace)
 {
-	return do_trace_cmd(trace, pid, START_TRACE);
+	return do_trace_cmd(sock, trace, START_TRACE);
 }
 
 /**
@@ -369,9 +374,9 @@ int ustctl_start_trace(const char *trace, pid_t pid)
  * @param pid	Traced process ID
  * @return	0 if successful, or error USTCTL_ERR_GEN
  */
-int ustctl_alloc_trace(const char *trace, pid_t pid)
+int ustctl_alloc_trace(int sock, const char *trace)
 {
-	return do_trace_cmd(trace, pid, ALLOC_TRACE);
+	return do_trace_cmd(sock, trace, ALLOC_TRACE);
 }
 
 /**
@@ -380,9 +385,9 @@ int ustctl_alloc_trace(const char *trace, pid_t pid)
  * @param pid	Traced process ID
  * @return	0 if successful, or error USTCTL_ERR_GEN
  */
-int ustctl_stop_trace(const char *trace, pid_t pid)
+int ustctl_stop_trace(int sock, const char *trace)
 {
-	return do_trace_cmd(trace, pid, STOP_TRACE);
+	return do_trace_cmd(sock, trace, STOP_TRACE);
 }
 
 /**
@@ -437,11 +442,11 @@ int ustctl_free_cmsf(struct marker_status *cmsf)
  * @param pid	Targeted PID
  * @return	0 if successful, or -1 on error
  */
-int ustctl_get_cmsf(struct marker_status **cmsf, const pid_t pid)
+int ustctl_get_cmsf(int sock, struct marker_status **cmsf)
 {
 	struct ustcomm_header req_header, res_header;
 	char *big_str = NULL;
-	int result, app_fd;
+	int result;
 	struct marker_status *tmp_cmsf = NULL;
 	unsigned int i = 0, cmsf_ind = 0;
 
@@ -449,27 +454,20 @@ int ustctl_get_cmsf(struct marker_status **cmsf, const pid_t pid)
 		return -1;
 	}
 
-	if (ustcomm_connect_app(pid, &app_fd)) {
-		ERR("could not connect to PID %u", (unsigned int) pid);
-		return -1;
-	}
-
 	req_header.command = LIST_MARKERS;
 	req_header.size = 0;
 
-	result = ustcomm_send(app_fd, &req_header, NULL);
+	result = ustcomm_send(sock, &req_header, NULL);
 	if (result <= 0) {
-		PERROR("error while requesting markers list for process %d", pid);
+		PERROR("error while requesting markers list");
 		return -1;
 	}
 
-	result = ustcomm_recv_alloc(app_fd, &res_header, &big_str);
+	result = ustcomm_recv_alloc(sock, &res_header, &big_str);
 	if (result <= 0) {
 		ERR("error while receiving markers list");
 		return -1;
 	}
-
-	close(app_fd);
 
 	tmp_cmsf = (struct marker_status *) zmalloc(sizeof(struct marker_status) *
 						    (ustctl_count_nl(big_str) + 1));
@@ -506,7 +504,6 @@ int ustctl_get_cmsf(struct marker_status **cmsf, const pid_t pid)
 	return 0;
 }
 
-
 /**
  * Frees a TES array.
  *
@@ -537,12 +534,11 @@ int ustctl_free_tes(struct trace_event_status *tes)
  * @param pid	Targeted PID
  * @return	0 if successful, or -1 on error
  */
-int ustctl_get_tes(struct trace_event_status **tes,
-		   const pid_t pid)
+int ustctl_get_tes(int sock, struct trace_event_status **tes)
 {
 	struct ustcomm_header req_header, res_header;
 	char *big_str = NULL;
-	int result, app_fd;
+	int result;
 	struct trace_event_status *tmp_tes = NULL;
 	unsigned int i = 0, tes_ind = 0;
 
@@ -550,27 +546,20 @@ int ustctl_get_tes(struct trace_event_status **tes,
 		return -1;
 	}
 
-	if (ustcomm_connect_app(pid, &app_fd)) {
-		ERR("could not connect to PID %u", (unsigned int) pid);
-		return -1;
-	}
-
 	req_header.command = LIST_TRACE_EVENTS;
 	req_header.size = 0;
 
-	result = ustcomm_send(app_fd, &req_header, NULL);
+	result = ustcomm_send(sock, &req_header, NULL);
 	if (result != 1) {
 		ERR("error while requesting trace_event list");
 		return -1;
 	}
 
-	result = ustcomm_recv_alloc(app_fd, &res_header, &big_str);
+	result = ustcomm_recv_alloc(sock, &res_header, &big_str);
 	if (result != 1) {
 		ERR("error while receiving markers list");
 		return -1;
 	}
-
-	close(app_fd);
 
 	tmp_tes = (struct trace_event_status *)
 		zmalloc(sizeof(struct trace_event_status) *
@@ -599,13 +588,13 @@ int ustctl_get_tes(struct trace_event_status **tes,
 }
 
 /**
- * Set socket path
+ * Set sock path
  *
- * @param sock_path	Socket path
+ * @param sock_path	Sock path
  * @param pid		Traced process ID
  * @return		0 if successful, or error
  */
-int ustctl_set_sock_path(const char *sock_path, pid_t pid)
+int ustctl_set_sock_path(int sock, const char *sock_path)
 {
 	int result;
 	struct ustcomm_header req_header, res_header;
@@ -621,18 +610,18 @@ int ustctl_set_sock_path(const char *sock_path, pid_t pid)
 
 	req_header.command = SET_SOCK_PATH;
 
-	return do_cmd(pid, &req_header, (char *)&sock_path_msg,
+	return do_cmd(sock, &req_header, (char *)&sock_path_msg,
 		      &res_header, NULL);
 }
 
 /**
- * Get socket path
+ * Get sock path
  *
- * @param sock_path	Pointer to where the socket path will be returned
+ * @param sock_path	Pointer to where the sock path will be returned
  * @param pid		Traced process ID
  * @return		0 if successful, or error
  */
-int ustctl_get_sock_path(char **sock_path, pid_t pid)
+int ustctl_get_sock_path(int sock, char **sock_path)
 {
 	int result;
 	struct ustcomm_header req_header, res_header;
@@ -641,7 +630,7 @@ int ustctl_get_sock_path(char **sock_path, pid_t pid)
 	req_header.command = GET_SOCK_PATH;
 	req_header.size = 0;
 
-	result = do_cmd(pid, &req_header, NULL, &res_header,
+	result = do_cmd(sock, &req_header, NULL, &res_header,
 			(char **)&sock_path_msg);
 	if (result < 0) {
 		return -1;
@@ -659,13 +648,12 @@ int ustctl_get_sock_path(char **sock_path, pid_t pid)
 	return 0;
 }
 
-int ustctl_force_switch(pid_t pid)
+int ustctl_force_switch(int sock, const char *trace)
 {
 	struct ustcomm_header req_header, res_header;
 
 	req_header.command = FORCE_SUBBUF_SWITCH;
 	req_header.size = 0;
 
-	return do_cmd(pid, &req_header, NULL, &res_header, NULL);
+	return do_cmd(sock, &req_header, NULL, &res_header, NULL);
 }
-

@@ -25,12 +25,12 @@
 
 static int create_trace(int argc, char *argv[])
 {
-	pid_t pid;
+	int sock;
 
-	pid = parse_pid(argv[1]);
+	sock = parse_and_connect_pid(argv[1]);
 
-	if (ustctl_create_trace(argv[2], pid)) {
-		ERR("Failed to create trace %s for PID %u\n", argv[2], pid);
+	if (ustctl_create_trace(sock, argv[2])) {
+		ERR("Failed to create trace %s for PID %u\n", argv[2], argv[1]);
 		return -1;
 	}
 
@@ -39,12 +39,12 @@ static int create_trace(int argc, char *argv[])
 
 static int alloc_trace(int argc, char *argv[])
 {
-	pid_t pid;
+	int sock;
 
-	pid = parse_pid(argv[1]);
+	sock = parse_and_connect_pid(argv[1]);
 
-	if (ustctl_alloc_trace(argv[2], pid)) {
-		ERR("Failed to allocate trace %s for PID %u\n", argv[2], pid);
+	if (ustctl_alloc_trace(sock, argv[2])) {
+		ERR("Failed to allocate trace %s for PID %s\n", argv[2], argv[1]);
 		return -1;
 	}
 	return 0;
@@ -52,12 +52,12 @@ static int alloc_trace(int argc, char *argv[])
 
 static int start_trace(int argc, char *argv[])
 {
-	pid_t pid;
+	int sock;
 
-	pid = parse_pid(argv[1]);
+	sock = parse_and_connect_pid(argv[1]);
 
-	if (ustctl_start_trace(argv[2], pid)) {
-		ERR("Failed to start trace %s for PID %u\n", argv[2], pid);
+	if (ustctl_start_trace(sock, argv[2])) {
+		ERR("Failed to start trace %s for PID %s\n", argv[2], argv[1]);
 		return -1;
 	}
 	return 0;
@@ -65,12 +65,12 @@ static int start_trace(int argc, char *argv[])
 
 static int stop_trace(int argc, char *argv[])
 {
-	pid_t pid;
+	int sock;
 
-	pid = parse_pid(argv[1]);
+	sock = parse_and_connect_pid(argv[1]);
 
-	if (ustctl_stop_trace(argv[2], pid)) {
-		ERR("Failed to stop trace %s for PID %u\n", argv[2], pid);
+	if (ustctl_stop_trace(sock, argv[2])) {
+		ERR("Failed to stop trace %s for PID %s\n", argv[2], argv[1]);
 		return -1;
 	}
 	return 0;
@@ -78,12 +78,12 @@ static int stop_trace(int argc, char *argv[])
 
 static int destroy_trace(int argc, char *argv[])
 {
-	pid_t pid;
+	int sock;
 
-	pid = parse_pid(argv[1]);
+	sock = parse_and_connect_pid(argv[1]);
 
-	if (ustctl_destroy_trace(argv[2], pid)) {
-		ERR("Failed to destroy trace %s for PID %u\n", argv[2], pid);
+	if (ustctl_destroy_trace(sock, argv[2])) {
+		ERR("Failed to destroy trace %s for PID %s\n", argv[2], argv[1]);
 		return -1;
 	}
 	return 0;
@@ -91,12 +91,12 @@ static int destroy_trace(int argc, char *argv[])
 
 static int force_subbuf_switch(int argc, char *argv[])
 {
-	pid_t pid;
+	int sock;
 
-	pid = parse_pid(argv[1]);
+	sock = parse_and_connect_pid(argv[1]);
 
-	if (ustctl_force_switch(pid)) {
-		ERR("error while trying to force switch for PID %u\n", pid);
+	if (ustctl_force_switch(sock, argv[2])) {
+		ERR("error while trying to force switch for PID %s\n", argv[1]);
 		return -1;
 	}
 

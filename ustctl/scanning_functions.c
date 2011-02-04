@@ -21,9 +21,10 @@
 #include "usterr.h"
 
 
-pid_t parse_pid(const char *pid_string)
+int parse_and_connect_pid(const char *pid_string)
 {
 	pid_t pid;
+	int sock;
 
 	errno = 0;
 	pid = strtoull(pid_string, NULL, 10);
@@ -32,7 +33,13 @@ pid_t parse_pid(const char *pid_string)
 		exit(EXIT_FAILURE);
 	}
 
-	return pid;
+	sock = ustctl_connect_pid(pid);
+	if (sock < 0) {
+		perror("Failed to connect to process");
+		exit(EXIT_FAILURE);
+	}
+
+	return sock;
 }
 
 int scan_ch_marker(const char *channel_marker, char **channel, char **marker)

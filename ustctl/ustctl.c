@@ -106,21 +106,20 @@ int main(int argc, char *argv[])
 static int list_trace_events(int argc, char *argv[])
 {
 	struct trace_event_status *tes = NULL;
-	int i;
-	pid_t pid;
+	int i, sock;
 
-	pid = parse_pid(argv[1]);
+	sock = parse_and_connect_pid(argv[1]);
 
-	if (ustctl_get_tes(&tes, pid)) {
+	if (ustctl_get_tes(sock, &tes)) {
 		ERR("error while trying to list "
-		    "trace_events for PID %u\n",
-		    pid);
+		    "trace_events for PID %s\n",
+		    argv[1]);
 		return -1;
 	}
 	i = 0;
 	for (i = 0; tes[i].name; i++) {
-		printf("{PID: %u, trace_event: %s}\n",
-		       pid,
+		printf("{PID: %s, trace_event: %s}\n",
+		       argv[1],
 		       tes[i].name);
 	}
 	ustctl_free_tes(tes);
@@ -130,12 +129,12 @@ static int list_trace_events(int argc, char *argv[])
 
 static int set_sock_path(int argc, char *argv[])
 {
-	pid_t pid;
+	int sock;
 
-	pid = parse_pid(argv[1]);
+	sock = parse_and_connect_pid(argv[1]);
 
-	if (ustctl_set_sock_path(argv[2], pid)) {
-		ERR("error while trying to set sock path for PID %u\n", pid);
+	if (ustctl_set_sock_path(sock, argv[2])) {
+		ERR("error while trying to set sock path for PID %s\n", argv[1]);
 		return -1;
 	}
 
@@ -144,13 +143,13 @@ static int set_sock_path(int argc, char *argv[])
 
 static int get_sock_path(int argc, char *argv[])
 {
-	pid_t pid;
+	int sock;
 	char *sock_path;
 
-	pid = parse_pid(argv[1]);
+	sock = parse_and_connect_pid(argv[1]);
 
-	if (ustctl_get_sock_path(&sock_path, pid)) {
-		ERR("error while trying to get sock path for PID %u\n", pid);
+	if (ustctl_get_sock_path(sock, &sock_path)) {
+		ERR("error while trying to get sock path for PID %s\n", argv[1]);
 		return -1;
 	}
 	printf("The socket path is %s\n", sock_path);

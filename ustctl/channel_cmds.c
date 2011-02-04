@@ -24,12 +24,11 @@
 
 static int set_subbuf_size(int argc, char *argv[])
 {
-	int result = 0;
-	pid_t pid;
+	int sock, result = 0;
 	char *channel = NULL;
 	unsigned int size;
 
-	pid = parse_pid(argv[1]);
+	sock = parse_and_connect_pid(argv[1]);
 
 	if (scan_ch_and_num(argv[3], &channel, &size)) {
 		fprintf(stderr, "Failed to scan channel and size from"
@@ -38,10 +37,10 @@ static int set_subbuf_size(int argc, char *argv[])
 			free(channel);
 		return -1;
 	}
-	if (ustctl_set_subbuf_size(argv[2], channel, size, pid)) {
+	if (ustctl_set_subbuf_size(sock, argv[2], channel, size)) {
 		ERR("error while trying to set the size of subbuffers "
-		    "for PID %u\n",
-		    pid);
+		    "for PID %s\n",
+		    argv[1]);
 		result = -1;
 	}
 
@@ -52,12 +51,11 @@ static int set_subbuf_size(int argc, char *argv[])
 
 static int set_subbuf_num(int argc, char *argv[])
 {
-	int result = 0;
-	pid_t pid;
+	int sock, result = 0;
 	char *channel = NULL;
 	unsigned int num;
 
-	pid = parse_pid(argv[1]);
+	sock = parse_and_connect_pid(argv[1]);
 
 	if (scan_ch_and_num(argv[3], &channel, &num)) {
 		fprintf(stderr, "Failed to scan channel and number from"
@@ -66,9 +64,9 @@ static int set_subbuf_num(int argc, char *argv[])
 			free(channel);
 		return -1;
 	}
-	if (ustctl_set_subbuf_num(argv[2], channel, num, pid)) {
-		ERR("error while trying to set the number of subbuffers for PID %u\n",
-		    pid);
+	if (ustctl_set_subbuf_num(sock, argv[2], channel, num)) {
+		ERR("error while trying to set the number of subbuffers for PID %s\n",
+		    argv[1]);
 		result = -1;
 	}
 
@@ -79,14 +77,14 @@ static int set_subbuf_num(int argc, char *argv[])
 
 static int get_subbuf_size(int argc, char *argv[])
 {
-	pid_t pid;
+	int sock;
 	unsigned int size;
 
-	pid = parse_pid(argv[1]);
+	sock = parse_and_connect_pid(argv[1]);
 
-	if ((size = ustctl_get_subbuf_size(argv[2], argv[3], pid)) < 0) {
-		ERR("error while trying to get the subbuffer size from PID %u\n",
-		    pid);
+	if ((size = ustctl_get_subbuf_size(sock, argv[2], argv[3])) < 0) {
+		ERR("error while trying to get the subbuffer size from PID %s\n",
+		    argv[1]);
 		return -1;
 	}
 
@@ -97,14 +95,14 @@ static int get_subbuf_size(int argc, char *argv[])
 
 static int get_subbuf_num(int argc, char *argv[])
 {
-	pid_t pid;
+	int sock;
 	unsigned int num;
 
-	pid = parse_pid(argv[1]);
+	sock = parse_and_connect_pid(argv[1]);
 
-	if ((num = ustctl_get_subbuf_num(argv[2], argv[3], pid)) < 0) {
-		ERR("error while trying to get the subbuffer size from PID %u\n",
-		    pid);
+	if ((num = ustctl_get_subbuf_num(sock, argv[2], argv[3])) < 0) {
+		ERR("error while trying to get the subbuffer size from PID %s\n",
+		    argv[1]);
 		return -1;
 	}
 

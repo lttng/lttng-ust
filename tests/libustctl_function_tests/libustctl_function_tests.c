@@ -30,7 +30,7 @@
 
 static void ustctl_function_tests(pid_t pid)
 {
-	int result;
+	int result, sock;
 	unsigned int subbuf_size, subbuf_num;
 	unsigned int new_subbuf_size, new_subbuf_num;
 	struct marker_status *marker_status, *ms_ptr;
@@ -40,8 +40,11 @@ static void ustctl_function_tests(pid_t pid)
 
 	printf("Connecting to pid %d\n", pid);
 
+	sock = ustctl_connect_pid(pid);
+	tap_ok(sock > 0, "ustctl_connect_pid");
+
 	/* marker status array functions */
-	result = ustctl_get_cmsf(&marker_status, pid);
+	result = ustctl_get_cmsf(sock, &marker_status);
 	tap_ok(!result, "ustctl_get_cmsf");
 
 	result = 0;
@@ -56,15 +59,15 @@ static void ustctl_function_tests(pid_t pid)
 	tap_ok(!ustctl_free_cmsf(marker_status), "ustctl_free_cmsf");
 
 	/* Get and set the socket path */
-	tap_ok(!ustctl_get_sock_path(&old_socket_path, pid),
+	tap_ok(!ustctl_get_sock_path(sock, &old_socket_path),
 	       "ustctl_get_sock_path");
 
 	printf("Socket path: %s\n", old_socket_path);
 
-	tap_ok(!ustctl_set_sock_path(tmp_ustd_socket, pid),
+	tap_ok(!ustctl_set_sock_path(sock, tmp_ustd_socket),
 	       "ustctl_set_sock_path - set a new path");
 
-	tap_ok(!ustctl_get_sock_path(&new_socket_path, pid),
+	tap_ok(!ustctl_get_sock_path(sock, &new_socket_path),
 	       "ustctl_get_sock_path - get the new path");
 
 	tap_ok(!strcmp(new_socket_path, tmp_ustd_socket),
@@ -72,90 +75,91 @@ static void ustctl_function_tests(pid_t pid)
 
 	free(new_socket_path);
 
-	tap_ok(!ustctl_set_sock_path(old_socket_path, pid),
+	tap_ok(!ustctl_set_sock_path(sock, old_socket_path),
 	       "Reset the socket path");
 
 	free(old_socket_path);
 
 	/* Enable, disable markers */
-	tap_ok(!ustctl_set_marker_state(trace, "ust", "bar", 1, pid),
+	tap_ok(!ustctl_set_marker_state(sock, trace, "ust", "bar", 1),
 	       "ustctl_set_marker_state - existing marker ust bar");
 
 	/* Create and allocate a trace */
-	tap_ok(!ustctl_create_trace(trace, pid), "ustctl_create_trace");
+	tap_ok(!ustctl_create_trace(sock, trace), "ustctl_create_trace");
 
-	tap_ok(!ustctl_alloc_trace(trace, pid), "ustctl_alloc_trace");
+	tap_ok(!ustctl_alloc_trace(sock, trace), "ustctl_alloc_trace");
 
 	/* Get subbuf size and number */
-	subbuf_num = ustctl_get_subbuf_num(trace, "ust", pid);
+	subbuf_num = ustctl_get_subbuf_num(sock, trace, "ust");
 	tap_ok(subbuf_num > 0, "ustctl_get_subbuf_num - %d sub-buffers",
 	       subbuf_num);
 
-	subbuf_size = ustctl_get_subbuf_size(trace, "ust", pid);
+	subbuf_size = ustctl_get_subbuf_size(sock, trace, "ust");
 	tap_ok(subbuf_size, "ustctl_get_subbuf_size - sub-buffer size is %d",
 	       subbuf_size);
 
 	/* Start the trace */
-	tap_ok(!ustctl_start_trace(trace, pid), "ustctl_start_trace");
+	tap_ok(!ustctl_start_trace(sock, trace), "ustctl_start_trace");
 
 
 	/* Stop the trace and destroy it*/
-	tap_ok(!ustctl_stop_trace(trace, pid), "ustctl_stop_trace");
+	tap_ok(!ustctl_stop_trace(sock, trace), "ustctl_stop_trace");
 
-	tap_ok(!ustctl_destroy_trace(trace, pid), "ustctl_destroy_trace");
+	tap_ok(!ustctl_destroy_trace(sock, trace), "ustctl_destroy_trace");
 
 	/* Create a new trace */
-	tap_ok(!ustctl_create_trace(trace, pid), "ustctl_create_trace - create a new trace");
+	tap_ok(!ustctl_create_trace(sock, trace), "ustctl_create_trace - create a new trace");
 
 	printf("Setting new subbufer number and sizes (doubling)\n");
 	new_subbuf_num = 2 * subbuf_num;
 	new_subbuf_size = 2 * subbuf_size;
 
-	tap_ok(!ustctl_set_subbuf_num(trace, "ust", new_subbuf_num, pid),
+	tap_ok(!ustctl_set_subbuf_num(sock, trace, "ust", new_subbuf_num),
 	       "ustctl_set_subbuf_num");
 
-	tap_ok(!ustctl_set_subbuf_size(trace, "ust", new_subbuf_size, pid),
+	tap_ok(!ustctl_set_subbuf_size(sock, trace, "ust", new_subbuf_size),
 	       "ustctl_set_subbuf_size");
 
 
 	/* Allocate the new trace */
-	tap_ok(!ustctl_alloc_trace(trace, pid), "ustctl_alloc_trace - allocate the new trace");
+	tap_ok(!ustctl_alloc_trace(sock, trace), "ustctl_alloc_trace - allocate the new trace");
 
 
         /* Get subbuf size and number and compare with what was set */
-	subbuf_num = ustctl_get_subbuf_num(trace, "ust", pid);
+	subbuf_num = ustctl_get_subbuf_num(sock, trace, "ust");
 
-	subbuf_size = ustctl_get_subbuf_size(trace, "ust", pid);
+	subbuf_size = ustctl_get_subbuf_size(sock, trace, "ust");
 
 	tap_ok(subbuf_num == new_subbuf_num, "Set a new subbuf number, %d == %d",
 	       subbuf_num, new_subbuf_num);
 
 
-	result = ustctl_get_subbuf_size(trace, "ust", pid);
+	result = ustctl_get_subbuf_size(sock, trace, "ust");
 	tap_ok(subbuf_size == new_subbuf_size, "Set a new subbuf size, %d == %d",
 	       subbuf_size, new_subbuf_size);
 
-	tap_ok(!ustctl_destroy_trace(trace, pid), "ustctl_destroy_trace - without ever starting");
+	tap_ok(!ustctl_destroy_trace(sock, trace), "ustctl_destroy_trace - without ever starting");
 
 	/*
 	 * Activate a non-existent marker, this should be possible as the marker
 	 * can be loaded at a later time.
 	 */
-	tap_ok(ustctl_set_marker_state(trace, "ustl", "blar", 1, pid) == 0,
+	tap_ok(ustctl_set_marker_state(sock, trace, "ustl", "blar", 1) == 0,
 	       "Enable non-existent marker ustl blar");
 
 	printf("##### Tests that definetly should work are completed #####\n");
 	printf("############## Start expected failure cases ##############\n");
 
-	tap_ok(ustctl_set_marker_state(trace, "ust","bar", 1, pid),
+	tap_ok(ustctl_set_marker_state(sock, trace, "ust","bar", 1),
 	       "Enable already enabled marker ust/bar");
+
 	tap_ok(EEXIST == errno,
 	       "Right error code for enabling an already enabled marker");
 
-	tap_ok(ustctl_start_trace(trace, pid),
+	tap_ok(ustctl_start_trace(sock, trace),
 	       "Start a non-existent trace");
 
-	tap_ok(ustctl_destroy_trace(trace, pid),
+	tap_ok(ustctl_destroy_trace(sock, trace),
 	       "Destroy non-existent trace");
 
 	exit(tap_status() ? EXIT_FAILURE : EXIT_SUCCESS);
@@ -167,7 +171,7 @@ int main(int argc, char **argv)
 	int i, status;
 	pid_t parent_pid, child_pid;
 
-	tap_plan(28);
+	tap_plan(29);
 
 	printf("Function tests for ustctl\n");
 
