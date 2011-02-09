@@ -24,3 +24,19 @@ libtool
 
 ustctl/ustctl
 ust-consumerd/ust-consumerd
+
+tests/basic/basic
+tests/basic_long/basic_long
+tests/dlopen/dlopen
+tests/fork/fork
+tests/fork/fork2
+tests/hello/hello
+tests/hello2/hello2
+tests/libustctl_function_tests/libustctl_function_tests
+tests/register_test/register_test
+tests/same_line_marker/same_line_marker
+tests/test-libustinstr-malloc/prog
+tests/test-nevents/prog
+tests/trace_event/trace_event_test
+tests/tracepoint/benchmark/tracepoint_benchmark
+tests/tracepoint/tracepoint_test
