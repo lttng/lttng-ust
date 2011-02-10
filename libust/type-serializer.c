@@ -82,6 +82,14 @@ void _ltt_specialized_trace(const struct marker *mdata, void *probe_data,
 		if (!chan->active)
 			continue;
 
+		/* If a new cpu was plugged since the trace was started, we did
+		 * not add it to the trace, and therefore we write the event to
+		 * cpu 0.
+		 */
+		if(cpu >= chan->n_cpus) {
+			cpu = 0;
+		}
+
 		/* reserve space : header and data */
 		ret = ltt_reserve_slot(chan, trace, data_size, largest_align,
 				       cpu, &buf, &slot_size, &buf_offset, &tsc,
