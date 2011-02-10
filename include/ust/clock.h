@@ -39,7 +39,6 @@
    precision and monotonicity.
 */
 
-#if __i386__ || __x86_64__
 /* Only available for x86 arch */
 #define CLOCK_TRACE_FREQ  14
 #define CLOCK_TRACE  15
@@ -47,36 +46,10 @@ union lttng_timespec {
 	struct timespec ts;
 	u64 lttng_ts;
 };
-#endif /* __i386__ || __x86_64__ */
 
 extern int ust_clock_source;
 
 /* Choosing correct trace clock */
-#if __PPC__
-static __inline__ u64 trace_clock_read64(void)
-{
-	unsigned long tb_l;
-	unsigned long tb_h;
-	unsigned long tb_h2;
-	u64 tb;
-
-	__asm__ (
-		"1:\n\t"
-		"mftbu %[rhigh]\n\t"
-		"mftb %[rlow]\n\t"
-		"mftbu %[rhigh2]\n\t"
-		"cmpw %[rhigh],%[rhigh2]\n\t"
-		"bne 1b\n\t"
-		: [rhigh] "=r" (tb_h), [rhigh2] "=r" (tb_h2), [rlow] "=r" (tb_l));
-
-	tb = tb_h;
-	tb <<= 32;
-	tb |= tb_l;
-
-	return tb;
-}
-
-#else	/* !__PPC__ */
 
 static __inline__ u64 trace_clock_read64(void)
 {
@@ -101,17 +74,18 @@ static __inline__ u64 trace_clock_read64(void)
 	return retval;
 }
 
-#endif /* __PPC__ */
 
 static __inline__ u64 trace_clock_frequency(void)
 {
 	struct timespec ts;
 	union lttng_timespec *lts = (union lttng_timespec *) &ts;
 
+#if __i386__ || __x86_64__
 	if (likely(ust_clock_source == CLOCK_TRACE)) {
 		clock_gettime(CLOCK_TRACE_FREQ, &ts);
 		return lts->lttng_ts;
 	}
+#endif
 	return 1000000000LL;
 }
 
