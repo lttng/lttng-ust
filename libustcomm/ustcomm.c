@@ -371,7 +371,7 @@ int ustcomm_recv_fd(int sock,
 	if (peek_header.size && data) {
 		if (peek_header.size < 0 ||
 		    peek_header.size > USTCOMM_DATA_SIZE) {
-			ERR("big peek header! %d", peek_header.size);
+			ERR("big peek header! %ld", peek_header.size);
 			return 0;
 		}
 

@@ -18,6 +18,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 
 static int tap_planned = -1;
 static int tap_count = 1;

@@ -355,7 +355,7 @@ static int set_subbuf_size(const char *trace_name, const char *ch_name,
 	}
 
 	channel->subbuf_size = power;
-	DBG("the set_subbuf_size for the requested channel is %u", channel->subbuf_size);
+	DBG("the set_subbuf_size for the requested channel is %zu", channel->subbuf_size);
 
 unlock_traces:
 	ltt_unlock_traces();
@@ -393,7 +393,7 @@ static int set_subbuf_num(const char *trace_name, const char *ch_name,
 	}
 
 	channel->subbuf_cnt = num;
-	DBG("the set_subbuf_cnt for the requested channel is %zd", channel->subbuf_cnt);
+	DBG("the set_subbuf_cnt for the requested channel is %u", channel->subbuf_cnt);
 
 unlock_traces:
 	ltt_unlock_traces();

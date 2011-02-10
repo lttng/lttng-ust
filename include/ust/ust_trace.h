@@ -84,7 +84,7 @@
 	};								\
 	static void __attribute__((constructor)) init_##name()		\
 	{								\
-		void *dummy;						\
+		void *dummy = NULL;					\
 		register_trace_##name(trace_printf_##name, dummy);	\
 	}
 

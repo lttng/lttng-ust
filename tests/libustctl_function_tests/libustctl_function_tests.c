@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 
 #include <ust/marker.h>
 #include <ust/ustctl.h>
@@ -155,12 +156,10 @@ static void ustctl_function_tests(pid_t pid)
 
 }
 
-
-int main()
+int main(int argc, char **argv)
 {
-	int i, status, pipefd[2];
+	int i, status;
 	pid_t parent_pid, child_pid;
-	FILE *pipe_file;
 
 	tap_plan(27);
 

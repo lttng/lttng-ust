@@ -25,6 +25,7 @@
 
 #include <ust/core.h>
 #include <ust/marker.h>
+#include <ust/tracepoint.h>
 
 #include "usterr.h"
 #include "channels.h"

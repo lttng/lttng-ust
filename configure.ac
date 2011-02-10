@@ -52,6 +52,8 @@ AC_C_INLINE
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([gettimeofday munmap socket strerror strtol])
 
+CFLAGS="-Wall $CFLAGS"
+
 # URCU
 
 # urcu - check if we just find the headers it out of the box.

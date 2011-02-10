@@ -26,10 +26,9 @@ DEFINE_TRACE(ust_dummytp);
 
 void dummy_libust_initializer_func(void)
 {
-	int i;
 	trace_mark(ust, dummymark, MARK_NOARGS);
-	trace_ust_dummytp(i);
-	trace_ust_dummy_event(i);
+	trace_ust_dummytp(0);
+	trace_ust_dummy_event(0);
 }
 
 MARKER_LIB;

@@ -26,6 +26,7 @@
 #include <assert.h>
 
 #include <ust/core.h>
+#include <ust/clock.h>
 
 #include "usterr.h"
 #include "channels.h"

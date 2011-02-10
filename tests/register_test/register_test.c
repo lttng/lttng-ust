@@ -79,10 +79,11 @@ static void * register_thread_main(void *data)
 		}
 		printf("Unregistered all\n");
 	}
+	return NULL;
 }
 
 
-int main()
+int main(int argc, char **argv)
 {
 	pthread_t register_thread;
 	int i;

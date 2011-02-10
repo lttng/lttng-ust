@@ -655,6 +655,7 @@ static int unmap_buf_structs(struct ust_channel *chan)
 			PERROR("shmdt");
 		}
 	}
+	return 0;
 }
 
 /*

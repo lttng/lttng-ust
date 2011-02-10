@@ -27,4 +27,5 @@ int main(int argc, char * argv[])
 		time=trace_clock_read64();
 		trace_test(time, i);
 	}
+	return 0;
 }

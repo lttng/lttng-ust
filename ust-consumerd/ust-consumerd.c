@@ -33,6 +33,7 @@
 #include <getopt.h>
 
 #include "ust/ustconsumer.h"
+#include "../libustconsumer/lowlevel.h"
 #include "usterr.h"
 
 char *sock_path=NULL;
@@ -144,7 +145,7 @@ int on_read_partial_subbuffer(struct ustconsumer_callbacks *data, struct buffer_
 	result = patient_write(buf_local->file_fd, buf->mem + subbuf_index * buf->subbuf_size, valid_length);
 	if(result == -1) {
 		ERR("Error writing to buffer file");
-		return;
+		return result;
 	}
 
 	/* pad with empty bytes */
@@ -154,11 +155,11 @@ int on_read_partial_subbuffer(struct ustconsumer_callbacks *data, struct buffer_
 		result = patient_write(buf_local->file_fd, tmp, pad_size);
 		if(result == -1) {
 			ERR("Error writing to buffer file");
-			return;
+			return result;
 		}
 		free(tmp);
 	}
-
+	return result;
 }
 
 int on_open_buffer(struct ustconsumer_callbacks *data, struct buffer_info *buf)
@@ -234,7 +235,7 @@ int on_close_buffer(struct ustconsumer_callbacks *data, struct buffer_info *buf)
 
 int on_put_error(struct ustconsumer_callbacks *data, struct buffer_info *buf)
 {
-	unwrite_last_subbuffer(buf);
+	return unwrite_last_subbuffer(buf);
 }
 
 struct ustconsumer_callbacks *new_callbacks()

@@ -487,6 +487,7 @@ int consumer_loop(struct ustconsumer_instance *instance, struct buffer_info *buf
 			/* Skip the first subbuffer. We are not sure it is trustable
 			 * because the put_subbuffer() did not complete.
 			 */
+			/* TODO: check on_put_error return value */
 			if(instance->callbacks->on_put_error)
 				instance->callbacks->on_put_error(instance->callbacks, buf);
 
@@ -598,7 +599,7 @@ int start_consuming_buffer(struct ustconsumer_instance *instance, pid_t pid,
 	args->channel_cpu = channel_cpu;
 	args->instance = instance;
 	DBG("beginning2 of start_consuming_buffer: args: pid %d trace %s"
-	    " bufname %s_%d", args->pid, args->channel, args->channel_cpu);
+	    " bufname %s_%d", args->pid, args->trace, args->channel, args->channel_cpu);
 
 	result = pthread_create(&thr, NULL, consumer_thread, args);
 	if(result == -1) {
@@ -611,7 +612,7 @@ int start_consuming_buffer(struct ustconsumer_instance *instance, pid_t pid,
 		return -1;
 	}
 	DBG("end of start_consuming_buffer: args: pid %d trace %s "
-	    "bufname %s_%d", args->pid, args->channel, args->channel_cpu);
+	    "bufname %s_%d", args->pid, args->channel, args->trace, args->channel_cpu);
 
 	return 0;
 }
