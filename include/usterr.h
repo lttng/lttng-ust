@@ -42,7 +42,8 @@
  * signal handlers, so we must use a print method which is signal safe.
  */
 
-extern int ust_safe_snprintf(char *str, size_t n, const char *fmt, ...);
+extern int ust_safe_snprintf(char *str, size_t n, const char *fmt, ...)
+	__attribute__ ((format (printf, 3, 4)));
 
 #define sigsafe_print_err(fmt, args...) \
 { \
