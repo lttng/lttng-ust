@@ -45,6 +45,11 @@
 extern int ust_safe_snprintf(char *str, size_t n, const char *fmt, ...)
 	__attribute__ ((format (printf, 3, 4)));
 
+static inline void __attribute__ ((format (printf, 1, 2)))
+	__check_ust_safe_fmt(const char *fmt, ...)
+{
+}
+
 #define sigsafe_print_err(fmt, args...) \
 { \
 	/* Can't use dynamic allocation. Limit ourselves to 250 chars. */ \
@@ -74,8 +79,8 @@ extern int ust_safe_snprintf(char *str, size_t n, const char *fmt, ...)
 # define DBG(fmt, args...) ERRMSG(fmt, ## args)
 # define DBG_raw(fmt, args...) do { sigsafe_print_err(fmt, ## args); fflush(stderr); } while(0)
 #else
-# define DBG(fmt, args...) do {} while(0)
-# define DBG_raw(fmt, args...) do {} while(0)
+# define DBG(fmt, args...) __check_ust_safe_fmt(fmt, ## args)
+# define DBG_raw(fmt, args...) __check_ust_safe_fmt(fmt, ## args)
 #endif
 #define WARN(fmt, args...) ERRMSG("Warning: " fmt, ## args)
 #define ERR(fmt, args...) ERRMSG("Error: " fmt, ## args)
