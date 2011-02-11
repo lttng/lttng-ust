@@ -55,7 +55,7 @@ void tptest_probe(void *data, int anint)
 
 static void * register_thread_main(void *data)
 {
-	int ret, i, j = 0;
+	int i, j = 0;
 
 	struct hello_trace_struct hello[HELLO_LENGTH];
 

@@ -89,7 +89,7 @@ static void trace_event_get_iter(struct trace_event_iter *iter)
 	int found = 0;
 
 	found = lib_get_iter_trace_events(iter);
-end:
+
 	if (!found)
 		trace_event_iter_reset(iter);
 }

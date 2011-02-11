@@ -1243,6 +1243,10 @@ size_t ltt_write_event_header_slow(struct ust_channel *channel,
 	case LTT_RFLAG_ID:
 		header.id_time = 31 << LTT_TSC_BITS;
 		break;
+	default:
+		WARN_ON_ONCE(1);
+		header.id_time = 0;
+		break;
 	}
 
 	header.id_time |= (u32)tsc & LTT_TSC_MASK;

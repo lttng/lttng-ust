@@ -37,7 +37,7 @@ static void *_tap_comment_stdout(void *_unused)
 		if (strncmp(line, "_TAP", 4)) {
 			fprintf(normal_stdout, "# %s", line);
 		} else {
-			fprintf(normal_stdout, &line[4]);
+			fprintf(normal_stdout, "# %s", &line[4]);
 		}
 	}
 	pthread_exit(0);

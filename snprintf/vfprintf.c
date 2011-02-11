@@ -239,7 +239,7 @@ int ust_safe_vfprintf(LFILE *fp, const char *fmt0, va_list ap)
 	int dprec;		/* a copy of prec if %[diouxX], 0 otherwise */
 	int realsz;		/* field size expanded by dprec */
 	int size;		/* size of converted field or string */
-	const char *xdigs;	/* digits for %[xX] conversion */
+	const char *xdigs = NULL;	/* digits for %[xX] conversion */
 #define NIOV 8
 	struct __suio uio;	/* output information: summary */
 	struct __siov iov[NIOV];/* ... and individual io vectors */

@@ -828,7 +828,7 @@ static void process_marker_cmd(int sock, int command,
 {
 	struct ustcomm_header _reply_header;
 	struct ustcomm_header *reply_header = &_reply_header;
-	int result;
+	int result = 0;
 
 	memset(reply_header, 0, sizeof(*reply_header));
 

@@ -445,7 +445,8 @@ static void destroy_buffer(struct ustconsumer_callbacks *callbacks,
 
 int consumer_loop(struct ustconsumer_instance *instance, struct buffer_info *buf)
 {
-	int result, read_result;
+	int result = 0;
+	int read_result;
 	char read_buf;
 
 	pthread_cleanup_push(decrement_active_buffers, instance);
