@@ -75,7 +75,11 @@ struct marker {
 	const char *tp_name;	/* Optional tracepoint name */
 	void *tp_cb;		/* Optional tracepoint callback */
 	void *location;		/* Address of marker in code */
-} __attribute__((aligned(8)));
+} __attribute__((aligned(128)));/*
+				 * Aligned on 128 bytes because it is
+				 * globally visible and gcc happily
+				 * align these on the structure size.
+				 */
 
 #define GET_MARKER(channel, name)	(__mark_##channel##_##name)
 
@@ -143,7 +147,7 @@ struct marker {
 		__attribute__((section("__markers_strings")))		\
 		= #channel "\0" #name "\0" format;			\
 		static struct marker GET_MARKER(channel, name)		\
-		__attribute__((section("__markers"), aligned(8))) =	\
+		__attribute__((section("__markers"), aligned(128))) =	\
 		{ __mstrtab_##channel##_##name,				\
 			&__mstrtab_##channel##_##name[sizeof(#channel)],	\
 			&__mstrtab_##channel##_##name[sizeof(#channel) + sizeof(#name)],		\
