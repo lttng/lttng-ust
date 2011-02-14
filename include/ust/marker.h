@@ -111,7 +111,7 @@ struct marker {
 		asm volatile (									\
 			/*".section __markers\n\t"*/ \
 			".section __markers,\"aw\",@progbits\n\t"					\
-			".balign 8\n\t"								\
+			".balign 128\n\t"								\
 			"2:\n\t" \
 			_ASM_PTR "(__mstrtab_" __stringify(channel) "_" __stringify(name) "_channel_" __stringify(unique) ")\n\t" /* channel string */ \
 			_ASM_PTR "(__mstrtab_" __stringify(channel) "_" __stringify(name) "_name_" __stringify(unique) ")\n\t" /* name string */ \
