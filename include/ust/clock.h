@@ -74,20 +74,24 @@ static __inline__ u64 trace_clock_read64(void)
 	return retval;
 }
 
-
+#if __i386__ || __x86_64__
 static __inline__ u64 trace_clock_frequency(void)
 {
 	struct timespec ts;
 	union lttng_timespec *lts = (union lttng_timespec *) &ts;
 
-#if __i386__ || __x86_64__
 	if (likely(ust_clock_source == CLOCK_TRACE)) {
 		clock_gettime(CLOCK_TRACE_FREQ, &ts);
 		return lts->lttng_ts;
 	}
-#endif
 	return 1000000000LL;
 }
+#else /* #if __i386__ || __x86_64__ */
+static __inline__ u64 trace_clock_frequency(void)
+{
+	return 1000000000LL;
+}
+#endif /* #else #if __i386__ || __x86_64__ */
 
 static __inline__ u32 trace_clock_freq_scale(void)
 {
