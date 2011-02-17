@@ -42,8 +42,6 @@ function check_trace_logs() {
 function trace_matches() {
     local OPTIND=
 
-    RUNLTTV=~/devel/lttv/runlttv
-
     if [ ! -x "$RUNLTTV" ]; then
 	echo "$0: $RUNLTTV not executable. Edit \$RUNLTTV to point to your lttv source directory." >/dev/stderr
 	exit 1;
