@@ -126,7 +126,6 @@ struct marker {
 			".previous\n\t"								\
 			/*".section __markers_ptrs\n\t"*/ \
 			".section __markers_ptrs,\"a\"\n\t"					\
-			".balign 8\n\t"								\
 			_ASM_PTR "(2b)\n\t"							\
 			".previous\n\t"								\
 			"1:\n\t"								\
