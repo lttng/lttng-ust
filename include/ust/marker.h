@@ -94,7 +94,7 @@ struct marker {
 			 */									\
 			".ifndef __mstrtab_" __stringify(channel) "_" __stringify(name) "_channel_" __stringify(unique) "\n\t"	\
 			/*".section __markers_strings\n\t"*/					\
-			".section __markers_strings,\"aw\",@progbits\n\t"				\
+			".section __markers_strings,\"aw\"\n\t"					\
 			"__mstrtab_" __stringify(channel) "_" __stringify(name) "_channel_" __stringify(unique) ":\n\t"	\
 			".string \"" __stringify(channel) "\"\n\t"					\
 			"__mstrtab_" __stringify(channel) "_" __stringify(name) "_name_" __stringify(unique) ":\n\t"	\
@@ -106,7 +106,7 @@ struct marker {
 		);										\
 		asm volatile (									\
 			/*".section __markers\n\t"*/ \
-			".section __markers,\"aw\",@progbits\n\t"					\
+			".section __markers,\"aw\"\n\t"						\
 			"2:\n\t" \
 			_ASM_PTR "(__mstrtab_" __stringify(channel) "_" __stringify(name) "_channel_" __stringify(unique) ")\n\t" /* channel string */ \
 			_ASM_PTR "(__mstrtab_" __stringify(channel) "_" __stringify(name) "_name_" __stringify(unique) ")\n\t" /* name string */ \
@@ -125,7 +125,7 @@ struct marker {
 			_ASM_PTR "(1f)\n\t" /* location */						\
 			".previous\n\t"								\
 			/*".section __markers_ptrs\n\t"*/ \
-			".section __markers_ptrs,\"a\",@progbits\n\t"				\
+			".section __markers_ptrs,\"a\"\n\t"					\
 			".balign 8\n\t"								\
 			_ASM_PTR "(2b)\n\t"							\
 			".previous\n\t"								\
