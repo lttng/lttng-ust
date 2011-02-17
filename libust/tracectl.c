@@ -100,11 +100,11 @@ static void print_markers(FILE *fp)
 
 	while (iter.marker) {
 		fprintf(fp, "marker: %s/%s %d \"%s\" %p\n",
-			iter.marker->channel,
-			iter.marker->name,
-			(int)imv_read(iter.marker->state),
-			iter.marker->format,
-			iter.marker->location);
+			(*iter.marker)->channel,
+			(*iter.marker)->name,
+			(int)imv_read((*iter.marker)->state),
+			(*iter.marker)->format,
+			(*iter.marker)->location);
 		marker_iter_next(&iter);
 	}
 	unlock_markers();
@@ -1314,8 +1314,8 @@ static void __attribute__((constructor)) init()
 
 		DBG("now iterating on markers already registered");
 		while (iter.marker) {
-			DBG("now iterating on marker %s", iter.marker->name);
-			auto_probe_connect(iter.marker);
+			DBG("now iterating on marker %s", (*iter.marker)->name);
+			auto_probe_connect(*iter.marker);
 			marker_iter_next(&iter);
 		}
 	}

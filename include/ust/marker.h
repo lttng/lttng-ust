@@ -75,11 +75,7 @@ struct marker {
 	const char *tp_name;	/* Optional tracepoint name */
 	void *tp_cb;		/* Optional tracepoint callback */
 	void *location;		/* Address of marker in code */
-} __attribute__((aligned(128)));/*
-				 * Aligned on 128 bytes because it is
-				 * globally visible and gcc happily
-				 * align these on the structure size.
-				 */
+};
 
 #define GET_MARKER(channel, name)	(__mark_##channel##_##name)
 
@@ -111,7 +107,6 @@ struct marker {
 		asm volatile (									\
 			/*".section __markers\n\t"*/ \
 			".section __markers,\"aw\",@progbits\n\t"					\
-			".balign 128\n\t"								\
 			"2:\n\t" \
 			_ASM_PTR "(__mstrtab_" __stringify(channel) "_" __stringify(name) "_channel_" __stringify(unique) ")\n\t" /* channel string */ \
 			_ASM_PTR "(__mstrtab_" __stringify(channel) "_" __stringify(name) "_name_" __stringify(unique) ")\n\t" /* name string */ \
@@ -129,7 +124,12 @@ struct marker {
 			_ASM_PTR "0\n\t" /* tp_cb */						\
 			_ASM_PTR "(1f)\n\t" /* location */						\
 			".previous\n\t"								\
-			"1:\n\t"									\
+			/*".section __markers_ptrs\n\t"*/ \
+			".section __markers_ptrs,\"a\",@progbits\n\t"				\
+			".balign 8\n\t"								\
+			_ASM_PTR "(2b)\n\t"							\
+			".previous\n\t"								\
+			"1:\n\t"								\
 			ARCH_COPY_ADDR("%[outptr]")						\
 		: [outptr] "=r" (m) );								\
 												\
@@ -147,13 +147,16 @@ struct marker {
 		__attribute__((section("__markers_strings")))		\
 		= #channel "\0" #name "\0" format;			\
 		static struct marker GET_MARKER(channel, name)		\
-		__attribute__((section("__markers"), aligned(128))) =	\
+		__attribute__((section("__markers"))) =			\
 		{ __mstrtab_##channel##_##name,				\
 			&__mstrtab_##channel##_##name[sizeof(#channel)],	\
 			&__mstrtab_##channel##_##name[sizeof(#channel) + sizeof(#name)],		\
 			0, 0, 0, 0, marker_probe_cb,				\
 			{ __mark_empty_function, NULL},			\
-			NULL, tp_name_str, tp_cb }
+			NULL, tp_name_str, tp_cb };			\
+		static struct marker * const __mark_ptr_##channel##_##name	\
+			__attribute__((used, section("__markers_ptrs"))) =	\
+			&GET_MARKER(channel, name);
 
 /*
  * Make sure the alignment of the structure in the __markers section will
@@ -198,8 +201,8 @@ struct marker {
 			call_private, &regs, ## args);				\
 	} while (0)
 
-extern void marker_update_probe_range(struct marker *begin,
-	struct marker *end);
+extern void marker_update_probe_range(struct marker * const *begin,
+	struct marker * const *end);
 
 /**
  * trace_mark - Marker using code patching
@@ -302,15 +305,15 @@ extern void *marker_get_private_data(const char *channel, const char *name,
 struct marker_iter {
 //ust//	struct module *module;
 	struct lib *lib;
-	struct marker *marker;
+	struct marker * const *marker;
 };
 
 extern void marker_iter_start(struct marker_iter *iter);
 extern void marker_iter_next(struct marker_iter *iter);
 extern void marker_iter_stop(struct marker_iter *iter);
 extern void marker_iter_reset(struct marker_iter *iter);
-extern int marker_get_iter_range(struct marker **marker, struct marker *begin,
-	struct marker *end);
+extern int marker_get_iter_range(struct marker * const **marker, struct marker * const *begin,
+	struct marker * const *end);
 
 extern void marker_update_process(void);
 extern int is_marker_enabled(const char *channel, const char *name);
@@ -329,7 +332,7 @@ struct marker_addr {
 };
 
 struct lib {
-	struct marker *markers_start;
+	struct marker * const *markers_start;
 #ifdef CONFIG_UST_GDB_INTEGRATION
 	struct marker_addr *markers_addr_start;
 #endif
@@ -337,16 +340,18 @@ struct lib {
 	struct cds_list_head list;
 };
 
-extern int marker_register_lib(struct marker *markers_start, int markers_count);
-extern int marker_unregister_lib(struct marker *markers_start);
+extern int marker_register_lib(struct marker * const *markers_start, int markers_count);
+extern int marker_unregister_lib(struct marker * const *markers_start);
 
 #define MARKER_LIB							\
-	extern struct marker __start___markers[] __attribute__((weak, visibility("hidden"))); \
-	extern struct marker __stop___markers[] __attribute__((weak, visibility("hidden"))); \
+	extern struct marker * const __start___markers[] __attribute__((weak, visibility("hidden"))); \
+	extern struct marker * const __stop___markers[] __attribute__((weak, visibility("hidden"))); \
 									\
 	static void __attribute__((constructor)) __markers__init(void)	\
 	{								\
-		marker_register_lib(__start___markers, (((long)__stop___markers)-((long)__start___markers))/sizeof(struct marker)); \
+		marker_register_lib(__start___markers,			\
+			(((long)__stop___markers) - ((long)__start___markers))	\
+				/ sizeof(*__start___markers));		\
 	} \
 	\
 	static void __attribute__((destructor)) __markers__destroy(void)	\

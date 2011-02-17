@@ -35,8 +35,8 @@
 __thread long ust_reg_stack[500];
 volatile __thread long *ust_reg_stack_ptr = (long *) 0;
 
-extern struct marker __start___markers[] __attribute__((visibility("hidden")));
-extern struct marker __stop___markers[] __attribute__((visibility("hidden")));
+extern struct marker * const __start___markers[] __attribute__((visibility("hidden")));
+extern struct marker * const __stop___markers[] __attribute__((visibility("hidden")));
 
 /* Set to 1 to enable marker debug output */
 static const int marker_debug;
@@ -677,17 +677,17 @@ int is_marker_enabled(const char *channel, const char *name)
  *
  * Updates the probe callback corresponding to a range of markers.
  */
-void marker_update_probe_range(struct marker *begin,
-	struct marker *end)
+void marker_update_probe_range(struct marker * const *begin,
+	struct marker * const *end)
 {
-	struct marker *iter;
+	struct marker * const *iter;
 	struct marker_entry *mark_entry;
 
 	pthread_mutex_lock(&markers_mutex);
 	for (iter = begin; iter < end; iter++) {
-		mark_entry = get_marker(iter->channel, iter->name);
+		mark_entry = get_marker((*iter)->channel, (*iter)->name);
 		if (mark_entry) {
-			set_marker(mark_entry, iter, !!mark_entry->refcount);
+			set_marker(mark_entry, *iter, !!mark_entry->refcount);
 			/*
 			 * ignore error, continue
 			 */
@@ -702,11 +702,11 @@ void marker_update_probe_range(struct marker *begin,
 				   "channel %s name %s event_id %hu "
 				   "int #1u%zu long #1u%zu pointer #1u%zu "
 				   "size_t #1u%zu alignment #1u%u",
-				   iter->channel, iter->name, mark_entry->event_id,
+				   (*iter)->channel, (*iter)->name, mark_entry->event_id,
 				   sizeof(int), sizeof(long), sizeof(void *),
 				   sizeof(size_t), ltt_get_alignment());
 		} else {
-			disable_marker(iter);
+			disable_marker(*iter);
 		}
 	}
 	pthread_mutex_unlock(&markers_mutex);
@@ -1114,8 +1114,9 @@ int lib_get_iter_markers(struct marker_iter *iter)
  * Returns whether a next marker has been found (1) or not (0).
  * Will return the first marker in the range if the input marker is NULL.
  */
-int marker_get_iter_range(struct marker **marker, struct marker *begin,
-	struct marker *end)
+int marker_get_iter_range(struct marker * const **marker,
+	struct marker * const *begin,
+	struct marker * const *end)
 {
 	if (!*marker && begin != end) {
 		*marker = begin;
@@ -1351,17 +1352,17 @@ void marker_set_new_marker_cb(void (*cb)(struct marker *))
 	new_marker_cb = cb;
 }
 
-static void new_markers(struct marker *start, struct marker *end)
+static void new_markers(struct marker * const *start, struct marker * const *end)
 {
-	if(new_marker_cb) {
-		struct marker *m;
+	if (new_marker_cb) {
+		struct marker * const *m;
 		for(m=start; m < end; m++) {
-			new_marker_cb(m);
+			new_marker_cb(*m);
 		}
 	}
 }
 
-int marker_register_lib(struct marker *markers_start, int markers_count)
+int marker_register_lib(struct marker * const *markers_start, int markers_count)
 {
 	struct lib *pl;
 
@@ -1385,7 +1386,7 @@ int marker_register_lib(struct marker *markers_start, int markers_count)
 	return 0;
 }
 
-int marker_unregister_lib(struct marker *markers_start)
+int marker_unregister_lib(struct marker * const *markers_start)
 {
 	struct lib *lib;
 
@@ -1415,7 +1416,9 @@ static int initialized = 0;
 void __attribute__((constructor)) init_markers(void)
 {
 	if(!initialized) {
-		marker_register_lib(__start___markers, (((long)__stop___markers)-((long)__start___markers))/sizeof(struct marker));
+		marker_register_lib(__start___markers,
+			(((long)__stop___markers) - ((long)__start___markers))
+				/ sizeof(*__start___markers));
 		initialized = 1;
 	}
 }
