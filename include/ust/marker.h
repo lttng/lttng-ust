@@ -344,19 +344,19 @@ extern int marker_register_lib(struct marker * const *markers_start, int markers
 extern int marker_unregister_lib(struct marker * const *markers_start);
 
 #define MARKER_LIB							\
-	extern struct marker * const __start___markers[] __attribute__((weak, visibility("hidden"))); \
-	extern struct marker * const __stop___markers[] __attribute__((weak, visibility("hidden"))); \
+	extern struct marker * const __start___markers_ptrs[] __attribute__((weak, visibility("hidden"))); \
+	extern struct marker * const __stop___markers_ptrs[] __attribute__((weak, visibility("hidden"))); \
 									\
 	static void __attribute__((constructor)) __markers__init(void)	\
 	{								\
-		marker_register_lib(__start___markers,			\
-			(((long)__stop___markers) - ((long)__start___markers))	\
-				/ sizeof(*__start___markers));		\
-	} \
-	\
-	static void __attribute__((destructor)) __markers__destroy(void)	\
+		marker_register_lib(__start___markers_ptrs,		\
+				    __stop___markers_ptrs		\
+				    - __start___markers_ptrs);		\
+	}								\
+									\
+	static void __attribute__((destructor)) __markers__destroy(void)\
 	{								\
-		marker_unregister_lib(__start___markers); \
+		marker_unregister_lib(__start___markers_ptrs);		\
 	}
 
 extern void marker_set_new_marker_cb(void (*cb)(struct marker *));

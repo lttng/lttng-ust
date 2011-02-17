@@ -35,8 +35,8 @@
 __thread long ust_reg_stack[500];
 volatile __thread long *ust_reg_stack_ptr = (long *) 0;
 
-extern struct marker * const __start___markers[] __attribute__((visibility("hidden")));
-extern struct marker * const __stop___markers[] __attribute__((visibility("hidden")));
+extern struct marker * const __start___markers_ptrs[] __attribute__((visibility("hidden")));
+extern struct marker * const __stop___markers_ptrs[] __attribute__((visibility("hidden")));
 
 /* Set to 1 to enable marker debug output */
 static const int marker_debug;
@@ -743,10 +743,6 @@ static void lib_update_markers(void)
  */
 static void marker_update_probes(void)
 {
-	/* Core kernel markers */
-//ust//	marker_update_probe_range(__start___markers, __stop___markers);
-	/* Markers in modules. */
-//ust//	module_update_markers();
 	lib_update_markers();
 	tracepoint_probe_update_all();
 	/* Update immediate values */
@@ -1132,17 +1128,7 @@ static void marker_get_iter(struct marker_iter *iter)
 {
 	int found = 0;
 
-	/* Core kernel markers */
-	if (!iter->lib) {
-		/* ust FIXME: how come we cannot disable the following line? we shouldn't need core stuff */
-		found = marker_get_iter_range(&iter->marker,
-				__start___markers, __stop___markers);
-		if (found)
-			goto end;
-	}
-	/* Markers in modules. */
 	found = lib_get_iter_markers(iter);
-end:
 	if (!found)
 		marker_iter_reset(iter);
 }
@@ -1415,15 +1401,15 @@ static int initialized = 0;
 
 void __attribute__((constructor)) init_markers(void)
 {
-	if(!initialized) {
-		marker_register_lib(__start___markers,
-			(((long)__stop___markers) - ((long)__start___markers))
-				/ sizeof(*__start___markers));
+	if (!initialized) {
+		marker_register_lib(__start___markers_ptrs,
+			__stop___markers_ptrs
+			- __start___markers_ptrs);
 		initialized = 1;
 	}
 }
 
 void __attribute__((constructor)) destroy_markers(void)
 {
-	marker_unregister_lib(__start___markers);
+	marker_unregister_lib(__start___markers_ptrs);
 }
