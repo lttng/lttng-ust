@@ -287,24 +287,24 @@ static void disable_tracepoint(struct tracepoint *elem)
  *
  * Updates the probe callback corresponding to a range of tracepoints.
  */
-void tracepoint_update_probe_range(struct tracepoint *begin,
-				   struct tracepoint *end)
+void tracepoint_update_probe_range(struct tracepoint * const *begin,
+				   struct tracepoint * const *end)
 {
-	struct tracepoint *iter;
+	struct tracepoint * const *iter;
 	struct tracepoint_entry *mark_entry;
 
 	pthread_mutex_lock(&tracepoints_mutex);
 	for (iter = begin; iter < end; iter++) {
-		if (!iter->name) {
-			disable_tracepoint(iter);
+		if (!(*iter)->name) {
+			disable_tracepoint(*iter);
 			continue;
 		}
-		mark_entry = get_tracepoint(iter->name);
+		mark_entry = get_tracepoint((*iter)->name);
 		if (mark_entry) {
-			set_tracepoint(&mark_entry, iter,
+			set_tracepoint(&mark_entry, *iter,
 					!!mark_entry->refcount);
 		} else {
-			disable_tracepoint(iter);
+			disable_tracepoint(*iter);
 		}
 	}
 	pthread_mutex_unlock(&tracepoints_mutex);
@@ -547,8 +547,8 @@ int lib_get_iter_tracepoints(struct tracepoint_iter *iter)
  * Will return the first tracepoint in the range if the input tracepoint is
  * NULL.
  */
-int tracepoint_get_iter_range(struct tracepoint **tracepoint,
-	struct tracepoint *begin, struct tracepoint *end)
+int tracepoint_get_iter_range(struct tracepoint * const **tracepoint,
+	struct tracepoint * const *begin, struct tracepoint * const *end)
 {
 	if (!*tracepoint && begin != end) {
 		*tracepoint = begin;
@@ -648,17 +648,17 @@ void tracepoint_set_new_tracepoint_cb(void (*cb)(struct tracepoint *))
 	new_tracepoint_cb = cb;
 }
 
-static void new_tracepoints(struct tracepoint *start, struct tracepoint *end)
+static void new_tracepoints(struct tracepoint * const *start, struct tracepoint * const *end)
 {
-	if(new_tracepoint_cb) {
-		struct tracepoint *t;
+	if (new_tracepoint_cb) {
+		struct tracepoint * const *t;
 		for(t=start; t < end; t++) {
-			new_tracepoint_cb(t);
+			new_tracepoint_cb(*t);
 		}
 	}
 }
 
-int tracepoint_register_lib(struct tracepoint *tracepoints_start, int tracepoints_count)
+int tracepoint_register_lib(struct tracepoint * const *tracepoints_start, int tracepoints_count)
 {
 	struct tracepoint_lib *pl;
 
@@ -682,14 +682,14 @@ int tracepoint_register_lib(struct tracepoint *tracepoints_start, int tracepoint
 	return 0;
 }
 
-int tracepoint_unregister_lib(struct tracepoint *tracepoints_start)
+int tracepoint_unregister_lib(struct tracepoint * const *tracepoints_start)
 {
 	struct tracepoint_lib *lib;
 
 	pthread_mutex_lock(&tracepoints_mutex);
 
 	cds_list_for_each_entry(lib, &libs, list) {
-		if(lib->tracepoints_start == tracepoints_start) {
+		if (lib->tracepoints_start == tracepoints_start) {
 			struct tracepoint_lib *lib2free = lib;
 			cds_list_del(&lib->list);
 			free(lib2free);
