@@ -76,12 +76,15 @@
 	{								\
 		return unregister_trace_##name(trace_printf_##name, data); \
 	}								\
-	struct trace_event __event_##name				\
-	__attribute__((section("__trace_events"), aligned(32)))	= {	\
+	struct trace_event __event_##name = {				\
 		__tpstrtab_##name,					\
 		register_event_##name,					\
 		unregister_event_##name					\
 	};								\
+	static struct trace_event * const __event_ptrs_##name		\
+	__attribute__((used, section("__trace_events_ptrs"))) =		\
+		&__event_##name;					\
+									\
 	static void __attribute__((constructor)) init_##name()		\
 	{								\
 		void *dummy = NULL;					\

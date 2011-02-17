@@ -119,7 +119,7 @@ static void print_trace_events(FILE *fp)
 	trace_event_iter_start(&iter);
 
 	while (iter.trace_event) {
-		fprintf(fp, "trace_event: %s\n", iter.trace_event->name);
+		fprintf(fp, "trace_event: %s\n", (*iter.trace_event)->name);
 		trace_event_iter_next(&iter);
 	}
 	unlock_trace_events();

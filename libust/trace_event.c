@@ -72,8 +72,9 @@ int lib_get_iter_trace_events(struct trace_event_iter *iter)
  * Returns whether a next trace_event has been found (1) or not (0).
  * Will return the first trace_event in the range if the input trace_event is NULL.
  */
-int trace_event_get_iter_range(struct trace_event **trace_event, struct trace_event *begin,
-	struct trace_event *end)
+int trace_event_get_iter_range(struct trace_event * const **trace_event,
+	struct trace_event * const *begin,
+	struct trace_event * const *end)
 {
 	if (!*trace_event && begin != end) {
 		*trace_event = begin;
@@ -116,7 +117,7 @@ void trace_event_iter_reset(struct trace_event_iter *iter)
 	iter->trace_event = NULL;
 }
 
-int trace_event_register_lib(struct trace_event *trace_events_start,
+int trace_event_register_lib(struct trace_event * const *trace_events_start,
 			     int trace_events_count)
 {
 	struct trace_event_lib *pl;
@@ -136,7 +137,7 @@ int trace_event_register_lib(struct trace_event *trace_events_start,
 	return 0;
 }
 
-int trace_event_unregister_lib(struct trace_event *trace_events_start)
+int trace_event_unregister_lib(struct trace_event * const *trace_events_start)
 {
 	struct trace_event_lib *lib;
 
