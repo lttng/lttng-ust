@@ -224,14 +224,14 @@ extern int tracepoint_unregister_lib(struct tracepoint * const *tracepoints_star
 	extern struct tracepoint * const __stop___tracepoints_ptrs[] __attribute__((weak, visibility("hidden"))); \
 	static void __attribute__((constructor)) __tracepoints__init(void)	\
 	{									\
-		tracepoint_register_lib(__start___tracepoints,			\
-					__stop___tracepoints -			\
-					__start___tracepoints);			\
+		tracepoint_register_lib(__start___tracepoints_ptrs,			\
+					__stop___tracepoints_ptrs -			\
+					__start___tracepoints_ptrs);			\
 	}									\
 										\
 	static void __attribute__((destructor)) __tracepoints__destroy(void)	\
 	{									\
-		tracepoint_unregister_lib(__start___tracepoints);		\
+		tracepoint_unregister_lib(__start___tracepoints_ptrs);		\
 	}
 
 
