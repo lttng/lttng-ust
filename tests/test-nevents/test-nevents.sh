@@ -25,9 +25,10 @@ source $TESTDIR/tap.sh
 starttest "Test-nevents"
 
 plan_tests 4
+USTTRACE="$TESTDIR/../usttrace"
 
-okx usttrace $TESTDIR/test-nevents/prog
-trace_loc=$(usttrace -W)
+okx $USTTRACE -L $TESTDIR/test-nevents/prog
+trace_loc=$($USTTRACE -W)
 trace_matches -N "an_event" -n 100000 "^ust.an_event:" $trace_loc
 trace_matches -N "another_event" -n 100000 "^ust.another_event:" $trace_loc
 check_trace_logs "$trace_loc"

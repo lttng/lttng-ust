@@ -25,8 +25,9 @@ source $TESTDIR/tap.sh
 starttest "libustinstr-malloc"
 
 plan_tests 3
+USTTRACE="$TESTDIR/../usttrace"
 
-okx usttrace -lm $TESTDIR/test-libustinstr-malloc/.libs/prog
-trace_loc=$(usttrace -W)
+okx $USTTRACE -L -lm $TESTDIR/test-libustinstr-malloc/.libs/prog
+trace_loc=$($USTTRACE -W)
 trace_matches -N "libustinstr-malloc - malloc" -n 1000 "^ust.malloc:.*{ size = 1[0-9][0-9][0-9]," $trace_loc
 check_trace_logs "$trace_loc"

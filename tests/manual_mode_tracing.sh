@@ -37,23 +37,25 @@ mkdir "$TRACE_DIR"
 pidfilepath="/tmp/ust-testsuite-$USER-$(date +%Y%m%d%H%M%S%N)-ust-consumerd-pid"
 mkfifo -m 0600 "$pidfilepath"
 
-ust-consumerd --pidfile "$pidfilepath" -o "$TRACE_DIR" >/dev/null 2>&1 &
+UST_CONSUMERD="$TESTDIR/../ust-consumerd/ust-consumerd"
+$UST_CONSUMERD --pidfile "$pidfilepath" -o "$TRACE_DIR" >/dev/null 2>&1 &
 UST_CONSUMERD_PID="$(<$pidfilepath)"
 
 LD_PRELOAD=/usr/local/lib/libust.so.0.0.0:/usr/local/lib/libustinstr-malloc.so find -L / >/dev/null 2>&1 &
 PID=$!
 TRACE=auto
+USTCTL="$TESTDIR/../ustctl/ustctl"
 sleep 0.1
-okx ustctl list-markers $PID
-okx ustctl enable-marker $PID $TRACE ust/malloc
-okx ustctl enable-marker $PID $TRACE ust/free
-okx ustctl create-trace $PID $TRACE
-okx ustctl alloc-trace $PID $TRACE
-okx ustctl start-trace $PID $TRACE
+okx $USTCTL list-markers $PID
+okx $USTCTL enable-marker $PID $TRACE ust/malloc
+okx $USTCTL enable-marker $PID $TRACE ust/free
+okx $USTCTL create-trace $PID $TRACE
+okx $USTCTL alloc-trace $PID $TRACE
+okx $USTCTL start-trace $PID $TRACE
 sleep 0.5
 
-okx ustctl stop-trace $PID $TRACE
-okx ustctl destroy-trace $PID $TRACE
+okx $USTCTL stop-trace $PID $TRACE
+okx $USTCTL destroy-trace $PID $TRACE
 kill $PID
 kill -SIGTERM ${UST_CONSUMERD_PID}
 wait ${UST_CONSUMERD_PID}

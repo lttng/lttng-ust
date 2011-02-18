@@ -25,9 +25,10 @@ source $TESTDIR/tap.sh
 starttest "fork()/exec() test"
 
 plan_tests 8
+USTTRACE="$TESTDIR/../usttrace"
 
-okx usttrace -f $TESTDIR/fork/.libs/fork $TESTDIR/fork/.libs/fork2
-trace_loc=$(usttrace -W)
+okx $USTTRACE -L -f $TESTDIR/fork/.libs/fork $TESTDIR/fork/.libs/fork2
+trace_loc=$($USTTRACE -W)
 trace_matches -N "before_fork" "^ust.before_fork:" $trace_loc
 trace_matches -N "after_fork_parent" "^ust.after_fork_parent:" $trace_loc
 trace_matches -N "after_fork_child" "^ust.after_fork_child:" $trace_loc

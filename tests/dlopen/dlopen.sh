@@ -25,9 +25,10 @@ source $TESTDIR/tap.sh
 starttest "dlopen"
 
 plan_tests 4
+USTTRACE="$TESTDIR/../usttrace"
 
-LD_LIBRARY_PATH=$TESTDIR/dlopen/.libs okx usttrace $TESTDIR/dlopen/dlopen
-trace_loc=$(usttrace -W)
+LD_LIBRARY_PATH=$TESTDIR/dlopen/.libs okx $USTTRACE -L $TESTDIR/dlopen/dlopen
+trace_loc=$($USTTRACE -W)
 trace_matches -N "from_library" -n 1 "^ust.from_library:" $trace_loc
 trace_matches -N "from_main_before_lib" -n 1 "^ust.from_main_before_lib:" $trace_loc
 trace_matches -N "from_main_after_lib" -n 1 "^ust.from_main_after_lib:" $trace_loc

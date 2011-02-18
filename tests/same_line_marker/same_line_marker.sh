@@ -25,7 +25,8 @@ source $TESTDIR/tap.sh
 starttest "same_line_marker"
 
 plan_tests 2
+USTTRACE="$TESTDIR/../usttrace"
 
-okx usttrace $TESTDIR/same_line_marker/same_line_marker
-trace_loc=$(usttrace -W)
+okx $USTTRACE -L $TESTDIR/same_line_marker/same_line_marker
+trace_loc=$($USTTRACE -W)
 trace_matches -N "same_line_event" -n 2 "^ust.same_line_event:" $trace_loc
