@@ -42,9 +42,44 @@ function check_trace_logs() {
 function trace_matches() {
     local OPTIND=
 
-    if [ ! -x "$RUNLTTV" ]; then
-	echo "$0: $RUNLTTV not executable. Edit \$RUNLTTV to point to your lttv source directory." >/dev/stderr
+    #Get a textdump command
+    # if RUNLTTV is defined try to use it
+    # if LTTV variable is defined try to use it
+    # try to find lttv in the path
+    # try to find runlttv in std paths (devel/lttv/runlttv and ust/../lttv/runlttv
+
+    if [ ! -d "$RUNLTTV" -a -x "$RUNLTTV" ]; then
+	LTTV_TEXTDUMP_CMD="$RUNLTTV -m text "
+	LTTV_TRACE_PREFIX=""
+	
+    elif [ -d "$RUNLTTV" -a -x "$RUNLTTV/runlttv" ]; then 
+	LTTV_TEXTDUMP_CMD="$RUNLTTV/runlttv -m text "
+	LTTV_TRACE_PREFIX=""
+
+    elif [ ! -d "$LTTV" -a -x "$LTTV" ]; then
+	LTTV_TEXTDUMP_CMD="$LTTV -m textDump "
+	LTTV_TRACE_PREFIX="-t"
+
+    elif [ -d "$LTTV" -a -x "$LTTV/lttv" ]; then
+	LTTV_TEXTDUMP_CMD="$LTTV/lttv -m textDump "
+	LTTV_TRACE_PREFIX="-t"
+	
+    elif [ -x "$(which lttv.real)" ]; then
+	LTTV_TEXTDUMP_CMD="$(which lttv.real) -m textDump ";
+	LTTV_TRACE_PREFIX="-t"
+	
+    elif [ -x "~/devel/lttv/runlttv" ]; then
+	LTTV_TEXTDUMP_CMD="~/devel/lttv/runlttv -m text ";
+	LTTV_TRACE_PREFIX=""
+
+    elif [ -x "$(dirname `readlink -f $0`)/../../lttv/runlttv" ]; then
+	LTTV_TEXTDUMP_CMD="$(dirname `readlink -f $0`)/../../lttv/runlttv -m text "
+	LTTV_TRACE_PREFIX=""
+
+    else
+	echo "$0: No lttv found. Edit \$RUNLTTV to point to your lttv source directory or \$LTTV to you lttv executable." >/dev/stderr
 	exit 1;
+
     fi
 
     while getopts ":n:N:" options; do
@@ -69,8 +104,11 @@ function trace_matches() {
 	return 1
     fi
     traces=$(find "$2" -mindepth 1 -maxdepth 1 -type d)
-
-    cnt=$($RUNLTTV -m text "$traces" | grep "$pattern" | wc -l)
+    lttv_trace_cmd=$LTTV_TEXTDUMP_CMD
+    for trace in $traces; do
+	lttv_trace_cmd="$lttv_trace_cmd $LTTV_TRACE_PREFIX $trace"
+    done
+    cnt=$($lttv_trace_cmd | grep "$pattern" | wc -l)
     if [ -z "$expected_count" ]; then
 	if [ "$cnt" -eq "0" ]; then
 	    fail "Did not find at least one instance of $name in trace"
