@@ -2,6 +2,11 @@
 
 TESTDIR=$(dirname $0)/..
 
+if [ ! -x "$TESTDIR/tracepoint/tracepoint_test" ]; then
+    echo "tracepoint_test executable is not present"
+    exit 1
+fi
+
 source $TESTDIR/test_functions.sh
 source $TESTDIR/tap.sh
 
