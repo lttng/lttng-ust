@@ -1581,7 +1581,6 @@ static void ust_fork(void)
 	ltt_unlock_traces();
 
 	ltt_trace_stop("auto");
-	ltt_trace_destroy("auto", 1);
 	/* Delete all active connections, but leave them in the epoll set */
 	cds_list_for_each_entry_safe(sock, sock_tmp, &ust_socks, list) {
 		ustcomm_del_sock(sock, 1);
@@ -1600,6 +1599,8 @@ static void ust_fork(void)
 		}
 		cds_list_del(&buf->open_buffers_list);
 	}
+
+	ltt_trace_destroy("auto", 1);
 
 	/* Clean up the listener socket and epoll, keeping the scoket file */
 	ustcomm_del_named_sock(listen_sock, 1);
