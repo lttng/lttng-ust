@@ -58,6 +58,9 @@ static void tap_comment_stdout(void)
 		goto close_pipe;
 	}
 
+	/* Set it before we create the reading thread */
+	setlinebuf(pipe_r_file);
+
 	stdout_fileno = fileno(stdout);
 	if (stdout_fileno < 0) {
 		perror("# Couldn't get fileno for stdout!?");
@@ -112,7 +115,7 @@ static void tap_comment_stdout(void)
 
 	setlinebuf(stdout);
 	setlinebuf(stderr);
-	setlinebuf(pipe_r_file);
+
 
 	return;
 
