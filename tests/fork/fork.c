@@ -34,6 +34,9 @@ int main(int argc, char **argv, char *env[])
 	printf("Fork test program, parent pid is %d\n", getpid());
 	trace_mark(ust, before_fork, MARK_NOARGS);
 
+	/* Sleep here to make sure the consumer is initialized before we fork */
+	sleep(1);
+
 	result = fork();
 	if(result == -1) {
 		perror("fork");
