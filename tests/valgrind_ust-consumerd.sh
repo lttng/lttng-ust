@@ -17,7 +17,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with LTTng-UST.  If not, see <http://www.gnu.org/licenses/>.
 
-if [ -n "$(which valgrind)" ]; then
+if ! which valgrind > /dev/null; then
     echo "$0: Valgrind not found on the system." >/dev/stderr
     exit 1;
 fi
