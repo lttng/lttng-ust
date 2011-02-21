@@ -41,7 +41,9 @@ UST_CONSUMERD="$TESTDIR/../ust-consumerd/ust-consumerd"
 $UST_CONSUMERD --pidfile "$pidfilepath" -o "$TRACE_DIR" >/dev/null 2>&1 &
 UST_CONSUMERD_PID="$(<$pidfilepath)"
 
-LD_PRELOAD=/usr/local/lib/libust.so.0.0.0:/usr/local/lib/libustinstr-malloc.so find -L / >/dev/null 2>&1 &
+LIB_UST="$TESTDIR/../libust/.libs/libust.so.0.0.0"
+LIB_UST_MALLOC="$TESTDIR/../libustinstr-malloc/.libs/libustinstr-malloc.so"
+LD_PRELOAD="$LIB_UST:$LIB_UST_MALLOC" find -L / >/dev/null 2>&1 &
 PID=$!
 TRACE=auto
 USTCTL="$TESTDIR/../ustctl/ustctl"
