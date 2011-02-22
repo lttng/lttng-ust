@@ -13,7 +13,7 @@ sighandler() {
 		UST_CONSUMERD_PID=`cat $pidfilepath`
 	fi
 	# Tell the daemon to die
-	kill -SIGTERM "${UST_CONSUMERD_PID}"
+	kill -TERM "${UST_CONSUMERD_PID}"
 
 	echo "Waiting for ust-consumerd to shutdown..."
 	wait "${UST_CONSUMERD_PID}"
@@ -206,7 +206,7 @@ fi
 if [ "$arg_syswide_daemon" != "1" ];
 then
 	# Tell the daemon to die
-	kill -SIGTERM "${UST_CONSUMERD_PID}"
+	kill -TERM "${UST_CONSUMERD_PID}"
 
 	echo "Waiting for ust-consumerd to shutdown..."
 	wait "${UST_CONSUMERD_PID}"
