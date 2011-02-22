@@ -476,4 +476,19 @@ static __inline__ int fls(unsigned int x)
 
 #endif
 
+#ifdef __arm__
+
+struct registers {
+};
+
+#define ARCH_COPY_ADDR(dst) "ldr "dst", =2b\n\t" \
+		"b 55f\n\t" \
+		".ltorg\n\t" \
+		"55:\n\t"
+
+#define _ASM_PTR ".long "
+#define save_registers(a)
+
+#endif /* __arm__ */
+
 #endif /* UST_PROCESSOR_H */
