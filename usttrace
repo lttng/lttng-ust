@@ -1,16 +1,16 @@
-#!/bin/bash
+#!/bin/sh
 
 # usttrace  by Pierre-Marc Fournier 2009
 # Distributed under the GPLv2.
 
-function error() {
+error() {
 	echo "$0: error: $1" 2>/dev/stderr
 }
 
-function sighandler() {
+sighandler() {
 	echo "Caught Ctrl-C"
 	if [ -z "${UST_CONSUMERD_PID}" ]; then
-		UST_CONSUMERD_PID="$(<$pidfilepath)"
+		UST_CONSUMERD_PID=`cat $pidfilepath`
 	fi
 	# Tell the daemon to die
 	kill -SIGTERM "${UST_CONSUMERD_PID}"
@@ -44,7 +44,7 @@ fi
 
 BASE_TRACE_DIR="${HOME}/.usttraces"
 
-function usage () {
+usage() {
 	echo "usage:  $0 OPTIONS COMMAND" 2>/dev/stderr
 	echo "" 2>/dev/stderr
 	echo "Options:" 2>/dev/stderr
@@ -134,7 +134,7 @@ then
 	# ust-consumerd writes to pidfile
 	# ust-consumerd closes pidfile
 	# we unblock reading pidfile
-	UST_CONSUMERD_PID="$(<$pidfilepath)"
+	UST_CONSUMERD_PID=`cat $pidfilepath`
 	export UST_DAEMON_SOCKET="${UST_CONSUMERD_SOCKPATH}"
 fi
 
