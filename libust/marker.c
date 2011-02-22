@@ -1423,7 +1423,7 @@ void __attribute__((constructor)) init_markers(void)
 	}
 }
 
-void __attribute__((constructor)) destroy_markers(void)
+void __attribute__((destructor)) destroy_markers(void)
 {
 	marker_unregister_lib(__start___markers_ptrs);
 }
