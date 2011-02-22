@@ -621,7 +621,7 @@ static void process_client_cmd(int sock, struct ustcomm_header *req_header,
 			       char *recvbuf, struct ustconsumer_instance *instance)
 {
 	int result;
-	struct ustcomm_header _res_header;
+	struct ustcomm_header _res_header = {0};
 	struct ustcomm_header *res_header = &_res_header;
 	struct ustcomm_buffer_info *buf_inf;
 
