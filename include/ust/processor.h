@@ -214,9 +214,7 @@ static inline int fls(int x)
 
 #define _ASM_PTR ".long "
 
-#endif /* below is code for x86-64 */
-
-#ifdef __x86_64
+#elif defined(__x86_64)
 
 struct registers {
 	int padding; /* 4 bytes */
@@ -425,9 +423,7 @@ static inline int fls(int x)
 
 #define _ASM_PTR ".quad "
 
-#endif /* x86_64 */
-
-#ifdef __PPC__
+#elif defined(__PPC__)
 
 struct registers {
 };
@@ -447,6 +443,37 @@ static __inline__ int fls(unsigned int x)
 #define _ASM_PTR ".long "
 #define save_registers(a)
 
-#endif /* __PPC__ */
+#else /* arch-agnostic */
+
+static __inline__ int fls(unsigned int x)
+{
+	int r = 32;
+
+	if (!x)
+		return 0;
+	if (!(x & 0xFFFF0000U)) {
+		x <<= 16;
+		r -= 16;
+	}
+	if (!(x & 0xFF000000U)) {
+		x <<= 8;
+		r -= 8;
+	}
+	if (!(x & 0xF0000000U)) {
+		x <<= 4;
+		r -= 4;
+	}
+	if (!(x & 0xC0000000U)) {
+		x <<= 2;
+		r -= 2;
+	}
+	if (!(x & 0x80000000U)) {
+		x <<= 1;
+		r -= 1;
+	}
+	return r;
+}
+
+#endif
 
 #endif /* UST_PROCESSOR_H */
