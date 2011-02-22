@@ -1350,7 +1350,7 @@ static void new_markers(struct marker * const *start, struct marker * const *end
 
 int marker_register_lib(struct marker * const *markers_start, int markers_count)
 {
-	struct lib *pl;
+	struct lib *pl, *iter;
 
 	pl = (struct lib *) zmalloc(sizeof(struct lib));
 
@@ -1359,7 +1359,21 @@ int marker_register_lib(struct marker * const *markers_start, int markers_count)
 
 	/* FIXME: maybe protect this with its own mutex? */
 	lock_markers();
+
+	/*
+	 * We sort the libs by struct lib pointer address.
+	 */
+	cds_list_for_each_entry_reverse(iter, &libs, list) {
+		BUG_ON(iter == pl);    /* Should never be in the list twice */
+		if (iter < pl) {
+			/* We belong to the location right after iter. */
+			cds_list_add(&pl->list, &iter->list);
+			goto lib_added;
+		}
+	}
+	/* We should be added at the head of the list */
 	cds_list_add(&pl->list, &libs);
+lib_added:
 	unlock_markers();
 
 	new_markers(markers_start, markers_start + markers_count);

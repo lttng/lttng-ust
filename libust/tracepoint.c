@@ -660,7 +660,7 @@ static void new_tracepoints(struct tracepoint * const *start, struct tracepoint 
 
 int tracepoint_register_lib(struct tracepoint * const *tracepoints_start, int tracepoints_count)
 {
-	struct tracepoint_lib *pl;
+	struct tracepoint_lib *pl, *iter;
 
 	pl = (struct tracepoint_lib *) zmalloc(sizeof(struct tracepoint_lib));
 
@@ -669,7 +669,20 @@ int tracepoint_register_lib(struct tracepoint * const *tracepoints_start, int tr
 
 	/* FIXME: maybe protect this with its own mutex? */
 	pthread_mutex_lock(&tracepoints_mutex);
+	/*
+	 * We sort the libs by struct lib pointer address.
+	 */
+	cds_list_for_each_entry_reverse(iter, &libs, list) {
+		BUG_ON(iter == pl);    /* Should never be in the list twice */
+		if (iter < pl) {
+			/* We belong to the location right after iter. */
+			cds_list_add(&pl->list, &iter->list);
+			goto lib_added;
+		}
+	}
+	/* We should be added at the head of the list */
 	cds_list_add(&pl->list, &libs);
+lib_added:
 	pthread_mutex_unlock(&tracepoints_mutex);
 
 	new_tracepoints(tracepoints_start, tracepoints_start + tracepoints_count);

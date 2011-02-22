@@ -120,7 +120,7 @@ void trace_event_iter_reset(struct trace_event_iter *iter)
 int trace_event_register_lib(struct trace_event * const *trace_events_start,
 			     int trace_events_count)
 {
-	struct trace_event_lib *pl;
+	struct trace_event_lib *pl, *iter;
 
 	pl = (struct trace_event_lib *) malloc(sizeof(struct trace_event_lib));
 
@@ -129,7 +129,20 @@ int trace_event_register_lib(struct trace_event * const *trace_events_start,
 
 	/* FIXME: maybe protect this with its own mutex? */
 	pthread_mutex_lock(&trace_events_mutex);
+	/*
+	 * We sort the libs by struct lib pointer address.
+	 */
+	cds_list_for_each_entry_reverse(iter, &libs, list) {
+		BUG_ON(iter == pl);    /* Should never be in the list twice */
+		if (iter < pl) {
+			/* We belong to the location right after iter. */
+			cds_list_add(&pl->list, &iter->list);
+			goto lib_added;
+		}
+	}
+	/* We should be added at the head of the list */
 	cds_list_add(&pl->list, &libs);
+lib_added:
 	pthread_mutex_unlock(&trace_events_mutex);
 
 	DBG("just registered a trace_events section from %p and having %d trace_events", trace_events_start, trace_events_count);
