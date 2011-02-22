@@ -17,11 +17,6 @@
 #    You should have received a copy of the GNU General Public License
 #    along with LTTng-UST.  If not, see <http://www.gnu.org/licenses/>.
 
-if ! which valgrind > /dev/null; then
-    echo "$0: Valgrind not found on the system." >/dev/stderr
-    exit 1;
-fi
-
 TESTDIR=$(dirname $0)
 
 source $TESTDIR/test_functions.sh
@@ -29,21 +24,30 @@ source $TESTDIR/tap.sh
 
 starttest "ust-consumerd valgrind check"
 
+if ! which valgrind > /dev/null; then
+    echo "$0: Valgrind not found on the system." >/dev/stderr
+    exit 1;
+fi
+
 plan_tests 2
 
-TRACE_DIR="/tmp/ust-testsuite-ust-consumerdvalgrind-trace"
+TRACE_DIR="/tmp/ust-testsuite-$USER-ust-consumerdvalgrind-trace"
 rm -rf "$TRACE_DIR"
 mkdir "$TRACE_DIR"
 
 pidfilepath="/tmp/ust-testsuite-$USER-$(date +%Y%m%d%H%M%S%N)-ust-consumerd-pid"
 mkfifo -m 0600 "$pidfilepath"
 
-VALG_OUT=/tmp/ust-testsuite-valg.txt
-valgrind --suppressions=$TESTDIR/valgrind_suppress.txt -q ust-consumerd --pidfile "$pidfilepath" -o "$TRACE_DIR" >/dev/null 2>"$VALG_OUT" &
+UST_CONSUMERD="$TESTDIR/../ust-consumerd/.libs/ust-consumerd"
+USTTRACE="$TESTDIR/../usttrace"
+
+VALG_OUT=/tmp/ust-testsuite-$USER-valg.txt
+export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$TESTDIR/../libustconsumer/.libs/"
+valgrind --suppressions=$TESTDIR/valgrind_suppress.txt -q $UST_CONSUMERD --pidfile "$pidfilepath" -o "$TRACE_DIR" >/dev/null 2>"$VALG_OUT" &
 VALG_PID=$!
 UST_CONSUMERD_PID="$(<$pidfilepath)"
 
-okx usttrace -s $TESTDIR/basic/.libs/basic
+okx $USTTRACE -L -s $TESTDIR/basic/.libs/basic
 
 kill -SIGTERM ${UST_CONSUMERD_PID}
 wait $!
@@ -54,6 +58,6 @@ if [ -z "$(<$VALG_OUT)" ]; then
 else
     fail "Valgrind found errors in ust-consumerd:"
     cat $VALG_OUT | while read; do
-	diag $REPLY
+	diag "$REPLY"
     done
 fi
