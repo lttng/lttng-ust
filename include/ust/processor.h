@@ -293,7 +293,7 @@ static inline int fls(int x)
 	     /* Start TLS access of private reg stack pointer */ \
 	     ".byte 0x66\n\t" \
 	     "leaq ust_reg_stack_ptr@tlsgd(%%rip), %%rdi\n\t" \
-	     ".word 0x6666\n\t" \
+	     ".hword 0x6666\n\t" \
 	     "rex64\n\t" \
 	     "call __tls_get_addr@plt\n\t" \
 	     /* --- End TLS access */ \
@@ -305,7 +305,7 @@ static inline int fls(int x)
 	     /* Start TLS access of private reg stack */ \
 	     ".byte 0x66\n\t" \
 	     "leaq ust_reg_stack@tlsgd(%%rip), %%rdi\n\t" \
-	     ".word 0x6666\n\t" \
+	     ".hword 0x6666\n\t" \
 	     "rex64\n\t" \
 	     "call __tls_get_addr@plt\n\t" \
 	     /* --- End TLS access */ \

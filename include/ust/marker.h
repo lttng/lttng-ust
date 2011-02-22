@@ -113,8 +113,8 @@ struct marker {
 			_ASM_PTR "(__mstrtab_" __stringify(channel) "_" __stringify(name) "_format_" __stringify(unique) ")\n\t" /* format string */ \
 			".byte 0\n\t" /* state imv */						\
 			".byte 0\n\t" /* ptype */							\
-			".word 0\n\t" /* channel_id */						\
-			".word 0\n\t" /* event_id */						\
+			".hword 0\n\t" /* channel_id */						\
+			".hword 0\n\t" /* event_id */						\
 			".balign " __stringify(__WORDSIZE) " / 8\n\t" /* alignment */			\
 			_ASM_PTR "(marker_probe_cb)\n\t" /* call */				\
 			_ASM_PTR "(__mark_empty_function)\n\t" /* marker_probe_closure single.field1 */ \
