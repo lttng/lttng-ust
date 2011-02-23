@@ -123,7 +123,7 @@ UST_CONSUMERD_SOCKPATH="/tmp/ust-consumerd-sock-$$"
 if [ "$arg_syswide_daemon" != "1" ];
 then
 	pidfilepath="/tmp/usttrace-$USER-$(date +%Y%m%d%H%M%S%N)-ust-consumerd-pid"
-	trap "sighandler $pidfilepath" SIGINT
+	trap "sighandler $pidfilepath" INT
 	mkfifo -m 0600 "$pidfilepath"
 	# Start daemon
 	${UST_CONSUMERD} --pidfile "$pidfilepath" -s "${UST_CONSUMERD_SOCKPATH}" -o "$OUTDIR" >"$OUTDIR/ust-consumerd.log" 2>&1 &
