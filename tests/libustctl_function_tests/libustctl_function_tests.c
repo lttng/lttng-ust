@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <errno.h>
 
 #include <ust/marker.h>
 #include <ust/ustctl.h>
@@ -136,15 +137,16 @@ static void ustctl_function_tests(pid_t pid)
 
 	tap_ok(!ustctl_destroy_trace(trace, pid), "ustctl_destroy_trace - without ever starting");
 
+	tap_ok(ustctl_set_marker_state(trace, "ustl", "blar", 1, pid) == 0,
+	       "Enable non-existent marker ustl blar");
 
 	printf("##### Tests that definetly should work are completed #####\n");
 	printf("############## Start expected failure cases ##############\n");
 
 	tap_ok(ustctl_set_marker_state(trace, "ust","bar", 1, pid),
 	       "Enable already enabled marker ust/bar");
-
-	tap_ok(ustctl_set_marker_state(trace, "ustl", "blar", 1, pid),
-	       "Enable non-existent marker ustl blar");
+	tap_ok(EEXIST == errno, 
+	       "Right error code for enabling an already enabled marker");
 
 	tap_ok(ustctl_start_trace(trace, pid),
 	       "Start a non-existent trace");
@@ -161,7 +163,7 @@ int main(int argc, char **argv)
 	int i, status;
 	pid_t parent_pid, child_pid;
 
-	tap_plan(27);
+	tap_plan(28);
 
 	printf("Function tests for ustctl\n");
 
