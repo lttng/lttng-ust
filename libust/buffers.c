@@ -319,13 +319,10 @@ static int open_channel(struct ust_channel *chan, size_t subbuf_size,
 
 	return 0;
 
-	/* Jump directly inside the loop to close the buffers that were already
-	 * opened. */
-	for(; i>=0; i--) {
-		close_buf(chan->buf[i]);
+	/* Error handling */
 error:
-		do {} while(0);
-	}
+	for(i--; i >= 0; i--)
+		close_buf(chan->buf[i]);
 
 	pthread_mutex_unlock(&ust_buffers_channels_mutex);
 	return -1;
