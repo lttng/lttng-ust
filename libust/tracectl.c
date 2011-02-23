@@ -1569,6 +1569,7 @@ static void ust_fork(void)
 {
 	struct ust_buffer *buf, *buf_tmp;
 	struct ustcomm_sock *sock, *sock_tmp;
+	struct ust_trace *trace, *trace_tmp;
 	int result;
 
 	/* FIXME: technically, the locks could have been taken before the fork */
@@ -1580,7 +1581,14 @@ static void ust_fork(void)
 	/* break lock if necessary */
 	ltt_unlock_traces();
 
-	ltt_trace_stop("auto");
+	/*
+	 * FIXME: This could be prettier, we loop over the list twice and
+	 * following good locking practice should lock around the loop
+	 */
+	cds_list_for_each_entry_safe(trace, trace_tmp, &ltt_traces.head, list) {
+		ltt_trace_stop(trace->trace_name);
+	}
+
 	/* Delete all active connections, but leave them in the epoll set */
 	cds_list_for_each_entry_safe(sock, sock_tmp, &ust_socks, list) {
 		ustcomm_del_sock(sock, 1);
@@ -1589,18 +1597,16 @@ static void ust_fork(void)
 	/* Delete all blocked consumers */
 	cds_list_for_each_entry_safe(buf, buf_tmp, &open_buffers_list,
 				 open_buffers_list) {
-		result = close(buf->data_ready_fd_read);
-		if (result == -1) {
-			PERROR("close");
-		}
-		result = close(buf->data_ready_fd_write);
-		if (result == -1) {
-			PERROR("close");
-		}
 		cds_list_del(&buf->open_buffers_list);
 	}
 
-	ltt_trace_destroy("auto", 1);
+	/*
+	 * FIXME: This could be prettier, we loop over the list twice and
+	 * following good locking practice should lock around the loop
+	 */
+	cds_list_for_each_entry_safe(trace, trace_tmp, &ltt_traces.head, list) {
+		ltt_trace_destroy(trace->trace_name, 1);
+	}
 
 	/* Clean up the listener socket and epoll, keeping the scoket file */
 	ustcomm_del_named_sock(listen_sock, 1);
