@@ -137,6 +137,10 @@ static void ustctl_function_tests(pid_t pid)
 
 	tap_ok(!ustctl_destroy_trace(trace, pid), "ustctl_destroy_trace - without ever starting");
 
+	/*
+	 * Activate a non-existent marker, this should be possible as the marker
+	 * can be loaded at a later time.
+	 */
 	tap_ok(ustctl_set_marker_state(trace, "ustl", "blar", 1, pid) == 0,
 	       "Enable non-existent marker ustl blar");
 
@@ -145,7 +149,7 @@ static void ustctl_function_tests(pid_t pid)
 
 	tap_ok(ustctl_set_marker_state(trace, "ust","bar", 1, pid),
 	       "Enable already enabled marker ust/bar");
-	tap_ok(EEXIST == errno, 
+	tap_ok(EEXIST == errno,
 	       "Right error code for enabling an already enabled marker");
 
 	tap_ok(ustctl_start_trace(trace, pid),
