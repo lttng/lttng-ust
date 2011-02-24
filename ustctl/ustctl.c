@@ -45,8 +45,33 @@ void usage(const char *process_name)
 	list_cli_cmds(CLI_DESCRIPTIVE_LIST);
 }
 
+/*
+ * Provide backward compatibility for scripts that make use of the
+ * --commands in ustctl version <= 0.11
+ */
+enum command {
+	CREATE_TRACE=1000,
+	ALLOC_TRACE,
+	START_TRACE,
+	STOP_TRACE,
+	DESTROY_TRACE,
+	LIST_MARKERS,
+	LIST_TRACE_EVENTS,
+	ENABLE_MARKER,
+	DISABLE_MARKER,
+};
+
 struct option options[] =
 {
+	{ "create-trace", 0, 0, CREATE_TRACE },
+	{ "alloc-trace", 0, 0, ALLOC_TRACE },
+	{ "start-trace", 0, 0, START_TRACE },
+	{ "stop-trace", 0, 0, STOP_TRACE },
+	{ "destroy-trace", 0, 0, DESTROY_TRACE },
+	{ "list-markers", 0, 0, LIST_MARKERS },
+	{ "list-trace-events", 0, 0, LIST_TRACE_EVENTS},
+	{ "enable-marker", 0, 0, ENABLE_MARKER },
+	{ "disable-marker", 0, 0, DISABLE_MARKER },
 	{"help", 2, NULL, 'h'},
 	{"list", 0, NULL, 'l'},
 	{"extended-list", 0, NULL, 'e'},
@@ -56,7 +81,9 @@ struct option options[] =
 int main(int argc, char *argv[])
 {
 	struct cli_cmd *cli_cmd;
+	char **args = argv;
 	int opt;
+	int i;
 
 	if(argc <= 1) {
 		fprintf(stderr, "No operation specified.\n");
@@ -85,20 +112,48 @@ int main(int argc, char *argv[])
 		case 'e':
 			list_cli_cmds(CLI_EXTENDED_LIST);
 			exit(EXIT_FAILURE);
+		case LIST_MARKERS:
+		case LIST_TRACE_EVENTS:
+		case CREATE_TRACE:
+		case ALLOC_TRACE:
+		case START_TRACE:
+		case STOP_TRACE:
+		case DESTROY_TRACE:
+		case ENABLE_MARKER:
+		case DISABLE_MARKER:
+			args = (char **)malloc(sizeof(char **) * argc + 3);
+			optind--;
+			args[optind] = strdup(&argv[optind][2]);
+			for (i = optind + 1; i < argc; i++) {
+				args[i] = argv[i];
+			}
+			if (opt >= CREATE_TRACE && opt <= DESTROY_TRACE) {
+				args[argc] = strdup("auto");
+				argc++;
+			}
+			if (opt >= ENABLE_MARKER && opt <= DISABLE_MARKER) {
+				args[argc] = args[argc - 2];
+				args[argc - 2] = args[argc - 1];
+				args[argc - 1] = strdup("auto");
+				argc++;
+			}
+			args[argc] = NULL;
+			goto do_cli;
 		default:
 			fprintf(stderr, "Unknown option\n");
 			break;
 		}
 	}
 
-	cli_cmd = find_cli_cmd(argv[optind]);
+do_cli:
+	cli_cmd = find_cli_cmd(args[optind]);
 	if (!cli_cmd) {
 		fprintf(stderr, "No such command %s\n",
-			argv[optind]);
+			args[optind]);
 		exit(EXIT_FAILURE);
 	}
 
-	cli_dispatch_cmd(cli_cmd, argc - optind, &argv[optind]);
+	cli_dispatch_cmd(cli_cmd, argc - optind, &args[optind]);
 
 	return 0;
 }
