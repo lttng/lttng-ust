@@ -30,7 +30,7 @@ static int create_trace(int argc, char *argv[])
 	sock = parse_and_connect_pid(argv[1]);
 
 	if (ustctl_create_trace(sock, argv[2])) {
-		ERR("Failed to create trace %s for PID %u\n", argv[2], argv[1]);
+		ERR("Failed to create trace %s for PID %s\n", argv[2], argv[1]);
 		return -1;
 	}
 
