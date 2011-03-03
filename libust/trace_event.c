@@ -76,12 +76,14 @@ int trace_event_get_iter_range(struct trace_event * const **trace_event,
 	struct trace_event * const *begin,
 	struct trace_event * const *end)
 {
-	if (!*trace_event && begin != end) {
+	if (!*trace_event && begin != end)
 		*trace_event = begin;
-		return 1;
+	while (*trace_event >= begin && *trace_event < end) {
+		if (!**trace_event)
+			(*trace_event)++;	/* skip dummy */
+		else
+			return 1;
 	}
-	if (*trace_event >= begin && *trace_event < end)
-		return 1;
 	return 0;
 }
 
@@ -145,7 +147,8 @@ int trace_event_register_lib(struct trace_event * const *trace_events_start,
 lib_added:
 	pthread_mutex_unlock(&trace_events_mutex);
 
-	DBG("just registered a trace_events section from %p and having %d trace_events", trace_events_start, trace_events_count);
+	/* trace_events_count - 1: skip dummy */
+	DBG("just registered a trace_events section from %p and having %d trace_events", trace_events_start, trace_events_count - 1);
 
 	return 0;
 }

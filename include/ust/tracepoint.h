@@ -222,6 +222,8 @@ extern int tracepoint_unregister_lib(struct tracepoint * const *tracepoints_star
 #define TRACEPOINT_LIB							\
 	extern struct tracepoint * const __start___tracepoints_ptrs[] __attribute__((weak, visibility("hidden"))); \
 	extern struct tracepoint * const __stop___tracepoints_ptrs[] __attribute__((weak, visibility("hidden"))); \
+	static struct tracepoint * const __tracepoint_ptr_dummy		\
+	__attribute__((used, section("__tracepoints_ptrs"))) = NULL;	\
 	static void __attribute__((constructor)) __tracepoints__init(void)	\
 	{									\
 		tracepoint_register_lib(__start___tracepoints_ptrs,			\
@@ -377,6 +379,8 @@ extern int trace_event_unregister_lib(struct trace_event * const *start_trace_ev
 	__attribute__((weak, visibility("hidden")));			\
 	extern struct trace_event * const __stop___trace_events_ptrs[]	\
 	__attribute__((weak, visibility("hidden")));			\
+	static struct trace_event * const __event_ptrs_dummy		\
+	__attribute__((used, section("__trace_events_ptrs"))) =	NULL;	\
 	static void __attribute__((constructor))			\
 	__trace_events__init(void)					\
 	{								\

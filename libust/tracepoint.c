@@ -295,6 +295,8 @@ void tracepoint_update_probe_range(struct tracepoint * const *begin,
 
 	pthread_mutex_lock(&tracepoints_mutex);
 	for (iter = begin; iter < end; iter++) {
+		if (!*iter)
+			continue;	/* skip dummy */
 		if (!(*iter)->name) {
 			disable_tracepoint(*iter);
 			continue;
@@ -550,12 +552,14 @@ int lib_get_iter_tracepoints(struct tracepoint_iter *iter)
 int tracepoint_get_iter_range(struct tracepoint * const **tracepoint,
 	struct tracepoint * const *begin, struct tracepoint * const *end)
 {
-	if (!*tracepoint && begin != end) {
+	if (!*tracepoint && begin != end)
 		*tracepoint = begin;
-		return 1;
+	while (*tracepoint >= begin && *tracepoint < end) {
+		if (!**tracepoint)
+			(*tracepoint)++;	/* skip dummy */
+		else
+			return 1;
 	}
-	if (*tracepoint >= begin && *tracepoint < end)
-		return 1;
 	return 0;
 }
 //ust// EXPORT_SYMBOL_GPL(tracepoint_get_iter_range);
@@ -652,8 +656,10 @@ static void new_tracepoints(struct tracepoint * const *start, struct tracepoint 
 {
 	if (new_tracepoint_cb) {
 		struct tracepoint * const *t;
-		for(t=start; t < end; t++) {
-			new_tracepoint_cb(*t);
+
+		for(t = start; t < end; t++) {
+			if (*t)
+				new_tracepoint_cb(*t);
 		}
 	}
 }
@@ -690,7 +696,8 @@ lib_added:
 	/* FIXME: update just the loaded lib */
 	lib_update_tracepoints();
 
-	DBG("just registered a tracepoints section from %p and having %d tracepoints", tracepoints_start, tracepoints_count);
+	/* tracepoints_count - 1: skip dummy */
+	DBG("just registered a tracepoints section from %p and having %d tracepoints", tracepoints_start, tracepoints_count - 1);
 
 	return 0;
 }

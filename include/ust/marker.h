@@ -345,6 +345,8 @@ extern int marker_unregister_lib(struct marker * const *markers_start);
 #define MARKER_LIB							\
 	extern struct marker * const __start___markers_ptrs[] __attribute__((weak, visibility("hidden"))); \
 	extern struct marker * const __stop___markers_ptrs[] __attribute__((weak, visibility("hidden"))); \
+	static struct marker * const __mark_ptr_dummy			\
+		__attribute__((used, section("__markers_ptrs"))) = NULL;\
 									\
 	static void __attribute__((constructor)) __markers__init(void)	\
 	{								\

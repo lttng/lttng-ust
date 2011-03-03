@@ -685,6 +685,8 @@ void marker_update_probe_range(struct marker * const *begin,
 
 	pthread_mutex_lock(&markers_mutex);
 	for (iter = begin; iter < end; iter++) {
+		if (!*iter)
+			continue;	/* skip dummy */
 		mark_entry = get_marker((*iter)->channel, (*iter)->name);
 		if (mark_entry) {
 			set_marker(mark_entry, *iter, !!mark_entry->refcount);
@@ -1114,12 +1116,14 @@ int marker_get_iter_range(struct marker * const **marker,
 	struct marker * const *begin,
 	struct marker * const *end)
 {
-	if (!*marker && begin != end) {
+	if (!*marker && begin != end)
 		*marker = begin;
-		return 1;
+	while (*marker >= begin && *marker < end) {
+		if (!**marker)
+			(*marker)++;	/* skip dummy */
+		else
+			return 1;
 	}
-	if (*marker >= begin && *marker < end)
-		return 1;
 	return 0;
 }
 //ust// EXPORT_SYMBOL_GPL(marker_get_iter_range);
@@ -1342,8 +1346,10 @@ static void new_markers(struct marker * const *start, struct marker * const *end
 {
 	if (new_marker_cb) {
 		struct marker * const *m;
-		for(m=start; m < end; m++) {
-			new_marker_cb(*m);
+
+		for(m = start; m < end; m++) {
+			if (*m)
+				new_marker_cb(*m);
 		}
 	}
 }
@@ -1381,7 +1387,8 @@ lib_added:
 	/* FIXME: update just the loaded lib */
 	lib_update_markers();
 
-	DBG("just registered a markers section from %p and having %d markers", markers_start, markers_count);
+	/* markers_count - 1: skip dummy */
+	DBG("just registered a markers section from %p and having %d markers", markers_start, markers_count - 1);
 	
 	return 0;
 }
