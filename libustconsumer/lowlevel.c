@@ -130,6 +130,7 @@ void finish_consuming_dead_subbuffer(struct ustconsumer_callbacks *callbacks, st
 	long consumed_offset = uatomic_read(&ustbuf->consumed);
 
 	long i_subbuf;
+	int ret;
 
 	DBG("processing dead buffer (%s)", buf->name);
 	DBG("consumed offset is %ld (%s)", consumed_offset, buf->name);
@@ -187,13 +188,12 @@ void finish_consuming_dead_subbuffer(struct ustconsumer_callbacks *callbacks, st
 			assert(i_subbuf == (last_subbuf % buf->n_subbufs));
 		}
 
-		/* TODO: check on_read_partial_subbuffer return value */
 		if(callbacks->on_read_partial_subbuffer)
-			callbacks->on_read_partial_subbuffer(callbacks, buf, i_subbuf, valid_length);
+			ret = callbacks->on_read_partial_subbuffer(callbacks, buf, i_subbuf, valid_length);
 
-		/* Manually increment the consumed offset */
-		/* TODO ybrosseau 2011-03-02: Should only be done if the previous read was successful */
-		uatomic_add(&ustbuf->consumed, buf->subbuf_size);
+		/* Increment the consumed offset */
+		if (ret >= 0)
+			uatomic_add(&ustbuf->consumed, buf->subbuf_size);
 
 		if(i_subbuf == last_subbuf % buf->n_subbufs)
 			break;
