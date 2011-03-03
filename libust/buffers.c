@@ -146,7 +146,13 @@ static void ltt_buffer_begin(struct ust_buffer *buf,
 	header->cycle_count_begin = tsc;
 	header->data_size = 0xFFFFFFFF; /* for recognizing crashed buffers */
 	header->sb_size = 0xFFFFFFFF; /* for recognizing crashed buffers */
-	/* FIXME: add memory barrier? */
+	/*
+	 * No memory barrier needed to order data_data/sb_size vs commit count
+	 * update, because commit count update contains a compiler barrier that
+	 * ensures the order of the writes are OK from a program POV. It only
+	 * matters for crash dump recovery which is not executed concurrently,
+	 * so memory write order does not matter.
+	 */
 	ltt_write_trace_header(channel->trace, header);
 }
 
@@ -356,7 +362,6 @@ static notrace void ltt_buffer_end(struct ust_buffer *buf,
 				subbuf_idx * buf->chan->subbuf_size);
 	u32 data_size = SUBBUF_OFFSET(offset - 1, buf->chan) + 1;
 
-	header->data_size = data_size;
 	header->sb_size = PAGE_ALIGN(data_size);
 	header->cycle_count_end = tsc;
 	header->events_lost = uatomic_read(&buf->events_lost);
@@ -364,6 +369,13 @@ static notrace void ltt_buffer_end(struct ust_buffer *buf,
 	if(unlikely(header->events_lost > 0)) {
 		DBG("Some events (%d) were lost in %s_%d", header->events_lost, buf->chan->channel_name, buf->cpu);
 	}
+	/*
+	 * Makes sure data_size write happens after write of the rest of the
+	 * buffer end data, because data_size is used to identify a completely
+	 * written subbuffer in a crash dump.
+	 */
+	cmm_barrier();
+	header->data_size = data_size;
 }
 
 /*
