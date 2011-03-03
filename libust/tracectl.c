@@ -63,6 +63,16 @@ static char receive_buffer[USTCOMM_BUFFER_SIZE];
 static char send_buffer[USTCOMM_BUFFER_SIZE];
 
 static int epoll_fd;
+
+/*
+ * Listener thread data vs fork() protection mechanism. Ensures that no listener
+ * thread mutexes and data structures are being concurrently modified or held by
+ * other threads when fork() is executed.
+ */
+static pthread_mutex_t listener_thread_data_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+/* Mutex protecting listen_sock. Nests inside listener_thread_data_mutex. */
+static pthread_mutex_t listen_sock_mutex = PTHREAD_MUTEX_INITIALIZER;
 static struct ustcomm_sock *listen_sock;
 
 extern struct chan_info_struct chan_infos[];
@@ -535,7 +545,12 @@ unlock_traces:
 
 static void listener_cleanup(void *ptr)
 {
-	ustcomm_del_named_sock(listen_sock, 0);
+	pthread_mutex_lock(&listen_sock_mutex);
+	if (listen_sock) {
+		ustcomm_del_named_sock(listen_sock, 0);
+		listen_sock = NULL;
+	}
+	pthread_mutex_unlock(&listen_sock_mutex);
 }
 
 static void force_subbuf_switch()
@@ -1080,6 +1095,7 @@ void *listener_main(void *p)
 		}
 
 		for (i = 0; i < nfds; i++) {
+			pthread_mutex_lock(&listener_thread_data_mutex);
 			epoll_sock = (struct ustcomm_sock *)events[i].data.ptr;
 			if (epoll_sock == listen_sock) {
 				addr_size = sizeof(struct sockaddr);
@@ -1108,6 +1124,7 @@ void *listener_main(void *p)
 							   epoll_sock->fd);
 				}
 			}
+			pthread_mutex_unlock(&listener_thread_data_mutex);
 		}
 	}
 
@@ -1578,9 +1595,6 @@ static void ust_fork(void)
 	/* Get the pid of the new process */
 	processpid = getpid();
 
-	/* break lock if necessary */
-	ltt_unlock_traces();
-
 	/*
 	 * FIXME: This could be prettier, we loop over the list twice and
 	 * following good locking practice should lock around the loop
@@ -1608,8 +1622,11 @@ static void ust_fork(void)
 		ltt_trace_destroy(trace->trace_name, 1);
 	}
 
-	/* Clean up the listener socket and epoll, keeping the scoket file */
-	ustcomm_del_named_sock(listen_sock, 1);
+	/* Clean up the listener socket and epoll, keeping the socket file */
+	if (listen_sock) {
+		ustcomm_del_named_sock(listen_sock, 1);
+		listen_sock = NULL;
+	}
 	close(epoll_fd);
 
 	/* Re-start the launch sequence */
@@ -1664,12 +1681,25 @@ void ust_before_fork(ust_fork_info_t *fork_info)
                 PERROR("sigprocmask");
                 return;
         }
+
+	/*
+	 * Take the fork lock to make sure we are not in the middle of
+	 * something in the listener thread.
+	 */
+	pthread_mutex_lock(&listener_thread_data_mutex);
+	/*
+	 * Hold listen_sock_mutex to protect from listen_sock teardown.
+	 */
+	pthread_mutex_lock(&listen_sock_mutex);
 }
 
 /* Don't call this function directly in a traced program */
 static void ust_after_fork_common(ust_fork_info_t *fork_info)
 {
 	int result;
+
+	pthread_mutex_unlock(&listen_sock_mutex);
+	pthread_mutex_unlock(&listener_thread_data_mutex);
 
         /* Restore signals */
         result = sigprocmask(SIG_SETMASK, &fork_info->orig_sigs, NULL);
