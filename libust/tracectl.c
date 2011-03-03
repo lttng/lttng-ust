@@ -543,6 +543,11 @@ unlock_traces:
 	return retval;
 }
 
+static void release_listener_mutex(void *ptr)
+{
+	pthread_mutex_unlock(&listener_thread_data_mutex);
+}
+
 static void listener_cleanup(void *ptr)
 {
 	pthread_mutex_lock(&listen_sock_mutex);
@@ -1096,6 +1101,7 @@ void *listener_main(void *p)
 
 		for (i = 0; i < nfds; i++) {
 			pthread_mutex_lock(&listener_thread_data_mutex);
+			pthread_cleanup_push(release_listener_mutex, NULL);
 			epoll_sock = (struct ustcomm_sock *)events[i].data.ptr;
 			if (epoll_sock == listen_sock) {
 				addr_size = sizeof(struct sockaddr);
@@ -1124,7 +1130,7 @@ void *listener_main(void *p)
 							   epoll_sock->fd);
 				}
 			}
-			pthread_mutex_unlock(&listener_thread_data_mutex);
+			pthread_cleanup_pop(1);	/* release listener mutex */
 		}
 	}
 
