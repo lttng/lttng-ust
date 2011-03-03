@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
 		case DESTROY_TRACE:
 		case ENABLE_MARKER:
 		case DISABLE_MARKER:
-			args = (char **)malloc(sizeof(char **) * argc + 3);
+			args = (char **)malloc(sizeof(char *) * (argc + 3));
 			optind--;
 			args[optind] = strdup(&argv[optind][2]);
 			for (i = optind + 1; i < argc; i++) {
