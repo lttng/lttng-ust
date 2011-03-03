@@ -1711,7 +1711,7 @@ static void ust_after_fork_common(ust_fork_info_t *fork_info)
 
 void ust_after_fork_parent(ust_fork_info_t *fork_info)
 {
-	/* Reenable signals */
+	/* Release mutexes and reenable signals */
 	ust_after_fork_common(fork_info);
 }
 
@@ -1720,7 +1720,15 @@ void ust_after_fork_child(ust_fork_info_t *fork_info)
 	/* First sanitize the child */
 	ust_fork();
 
-	/* Then reenable interrupts */
+	/* Then release mutexes and reenable signals */
 	ust_after_fork_common(fork_info);
+
+	/*
+	 * Make sure we clean up the urcu-bp thread list in the child by running
+	 * the garbage collection before any pthread_create can be called.
+	 * Failure to do so could lead to a deadlock caused by reuse of a thread
+	 * ID before urcu-bp garbage collection is performed.
+	 */
+	synchronize_rcu();
 }
 
