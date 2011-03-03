@@ -57,6 +57,10 @@ struct buffer_info {
 	int n_subbufs;
 	/* size of each subbuffer */
 	int subbuf_size;
+	/* subbuf size count order */
+	int subbuf_size_order;
+	/* alloc size of all subbuf */
+	int alloc_size;
 
 	/* the buffer information struct */
 	void *bufstruct_mem;

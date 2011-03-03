@@ -353,6 +353,10 @@ struct buffer_info *connect_buffer(struct ustconsumer_instance *instance, pid_t 
 		goto close_fifo;
 	}
 
+	/* Set subbuffer's information */
+	buf->subbuf_size_order = get_count_order(buf->subbuf_size);
+	buf->alloc_size = buf->subbuf_size * buf->n_subbufs;
+
 	/* attach memory */
 	buf->mem = shmat(buf->shmid, NULL, 0);
 	if(buf->mem == (void *) 0) {
