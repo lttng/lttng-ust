@@ -957,7 +957,7 @@ static void process_client_cmd(struct ustcomm_header *recv_header,
 		print_markers(fp);
 		fclose(fp);
 
-		reply_header->size = size;
+		reply_header->size = size + 1;	/* Include final \0 */
 
 		result = ustcomm_send(sock, reply_header, ptr);
 
@@ -983,7 +983,7 @@ static void process_client_cmd(struct ustcomm_header *recv_header,
 		print_trace_events(fp);
 		fclose(fp);
 
-		reply_header->size = size;
+		reply_header->size = size + 1;	/* Include final \0 */
 
 		result = ustcomm_send(sock, reply_header, ptr);
 
