@@ -1387,8 +1387,7 @@ lib_added:
 	/* FIXME: update just the loaded lib */
 	lib_update_markers();
 
-	/* markers_count - 1: skip dummy */
-	DBG("just registered a markers section from %p and having %d markers", markers_start, markers_count - 1);
+	DBG("just registered a markers section from %p and having %d markers (minus dummy markers)", markers_start, markers_count);
 	
 	return 0;
 }

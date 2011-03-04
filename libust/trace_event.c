@@ -148,7 +148,7 @@ lib_added:
 	pthread_mutex_unlock(&trace_events_mutex);
 
 	/* trace_events_count - 1: skip dummy */
-	DBG("just registered a trace_events section from %p and having %d trace_events", trace_events_start, trace_events_count - 1);
+	DBG("just registered a trace_events section from %p and having %d trace_events (minus dummy trace_event)", trace_events_start, trace_events_count);
 
 	return 0;
 }

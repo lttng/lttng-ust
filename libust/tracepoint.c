@@ -697,7 +697,7 @@ lib_added:
 	lib_update_tracepoints();
 
 	/* tracepoints_count - 1: skip dummy */
-	DBG("just registered a tracepoints section from %p and having %d tracepoints", tracepoints_start, tracepoints_count - 1);
+	DBG("just registered a tracepoints section from %p and having %d tracepoints (minus dummy tracepoints)", tracepoints_start, tracepoints_count);
 
 	return 0;
 }
