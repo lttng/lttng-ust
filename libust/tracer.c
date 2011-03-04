@@ -902,11 +902,11 @@ int ltt_trace_start(const char *trace_name)
 	ltt_unlock_traces();
 
 	/*
-	 * Call the kernel state dump.
-	 * Events will be mixed with real kernel events, it's ok.
+	 * Call the process-wide state dump.
 	 * Notice that there is no protection on the trace : that's exactly
 	 * why we iterate on the list and check for trace equality instead of
-	 * directly using this trace handle inside the logging function.
+	 * directly using this trace handle inside the logging function: we want
+	 * to record events only in a single trace in the trace session list.
 	 */
 
 	ltt_dump_marker_state(trace);

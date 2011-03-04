@@ -693,20 +693,6 @@ void marker_update_probe_range(struct marker * const *begin,
 			/*
 			 * ignore error, continue
 			 */
-
-			/* This is added for UST. We emit a core_marker_id event
-			 * for markers that are already registered to a probe
-			 * upon library load. Otherwise, no core_marker_id will
-			 * be generated for these markers. Is this the right thing
-			 * to do?
-			 */
-			trace_mark(metadata, core_marker_id,
-				   "channel %s name %s event_id %hu "
-				   "int #1u%zu long #1u%zu pointer #1u%zu "
-				   "size_t #1u%zu alignment #1u%u",
-				   (*iter)->channel, (*iter)->name, mark_entry->event_id,
-				   sizeof(int), sizeof(long), sizeof(void *),
-				   sizeof(size_t), ltt_get_alignment());
 		} else {
 			disable_marker(*iter);
 		}
