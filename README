@@ -16,7 +16,7 @@ PREREQUISITES:
   - liburcu
     Userspace RCU library, by Mathieu Desnoyers and Paul E. McKenney
 
-    -> This release was tested with liburcu v0.4.6
+    -> This release was tested with liburcu v0.5.4
 
       * Debian/Ubuntu package: liburcu-dev
       * Website:  http://lttng.org/urcu
