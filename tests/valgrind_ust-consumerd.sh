@@ -45,6 +45,14 @@ VALG_OUT=/tmp/ust-testsuite-$USER-valg.txt
 export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$TESTDIR/../libustconsumer/.libs/"
 valgrind --suppressions=$TESTDIR/valgrind_suppress.txt -q $UST_CONSUMERD --pidfile "$pidfilepath" -o "$TRACE_DIR" >/dev/null 2>"$VALG_OUT" &
 VALG_PID=$!
+
+# Paranoid check that valgrind is alive or we will hang forever on the fifo
+if ! ps $VALG_PID > /dev/null; then
+    echo "Valgrind appears to have died, giving up"
+    rm $pidfilepath
+    exit
+fi
+
 UST_CONSUMERD_PID="$(<$pidfilepath)"
 
 okx $USTTRACE -L -s $TESTDIR/basic/.libs/basic
@@ -61,3 +69,5 @@ else
 	diag "$REPLY"
     done
 fi
+
+rm $pidfilepath
