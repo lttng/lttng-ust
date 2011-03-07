@@ -426,6 +426,11 @@ static void destroy_buffer(struct ustconsumer_callbacks *callbacks,
 {
 	int result;
 
+	result = close(buf->pipe_fd);
+	if(result == -1) {
+		WARN("problem closing the pipe fd");
+	}
+
 	result = close(buf->app_sock);
 	if(result == -1) {
 		WARN("problem calling ustcomm_close_app");
