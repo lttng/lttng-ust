@@ -379,6 +379,12 @@ int ustctl_alloc_trace(int sock, const char *trace)
 	return do_trace_cmd(sock, trace, ALLOC_TRACE);
 }
 
+
+int ustctl_force_switch(int sock, const char *trace)
+{
+	return do_trace_cmd(sock, trace, FORCE_SUBBUF_SWITCH);
+}
+
 /**
  * Stops an UST trace according to a PID.
  *
@@ -646,14 +652,4 @@ int ustctl_get_sock_path(int sock, char **sock_path)
 	free(sock_path_msg);
 
 	return 0;
-}
-
-int ustctl_force_switch(int sock, const char *trace)
-{
-	struct ustcomm_header req_header, res_header;
-
-	req_header.command = FORCE_SUBBUF_SWITCH;
-	req_header.size = 0;
-
-	return do_cmd(sock, &req_header, NULL, &res_header, NULL);
 }

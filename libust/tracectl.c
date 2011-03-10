@@ -558,14 +558,30 @@ static void listener_cleanup(void *ptr)
 	pthread_mutex_unlock(&listen_sock_mutex);
 }
 
-static void force_subbuf_switch()
+static int force_subbuf_switch(const char *trace_name)
 {
-	struct ust_buffer *buf;
+	struct ust_trace *trace;
+	int i, j, retval = 0;
 
-	cds_list_for_each_entry(buf, &open_buffers_list,
-			    open_buffers_list) {
-		ltt_force_switch(buf, FORCE_FLUSH);
+	ltt_lock_traces();
+	trace = _ltt_trace_find(trace_name);
+	if (!trace) {
+                retval = -ENODATA;
+                DBG("Cannot find trace. It was likely destroyed by the user.");
+                goto unlock_traces;
+        }
+
+	for (i = 0; i < trace->nr_channels; i++) {
+		for (j = 0; j < trace->channels[i].n_cpus; j++) {
+			ltt_force_switch(trace->channels[i].buf[j],
+					 FORCE_FLUSH);
+		}
 	}
+
+unlock_traces:
+	ltt_unlock_traces();
+
+	return retval;
 }
 
 /* Simple commands are those which need only respond with a return value. */
@@ -584,12 +600,6 @@ static int process_simple_client_cmd(int command, char *recv_buf)
 		}
 		return setenv("UST_DAEMON_SOCKET", sock_msg->field, 1);
 	}
-
-	case FORCE_SUBBUF_SWITCH:
-		/* FIXME: return codes? */
-		force_subbuf_switch();
-
-		break;
 
 	default:
 		return -EINVAL;
@@ -713,6 +723,15 @@ static int process_trace_cmd(int command, char *trace_name)
 		result = ltt_trace_destroy(trace_name, 0);
 		if (result < 0) {
 			ERR("ltt_trace_destroy failed");
+			return result;
+		}
+		return 0;
+	case FORCE_SUBBUF_SWITCH:
+		DBG("force switch");
+
+		result = force_subbuf_switch(trace_name);
+		if (result < 0) {
+			ERR("force_subbuf_switch failed");
 			return result;
 		}
 		return 0;
@@ -1048,6 +1067,7 @@ static void process_client_cmd(struct ustcomm_header *recv_header,
 	case START_TRACE:
 	case STOP_TRACE:
 	case DESTROY_TRACE:
+	case FORCE_SUBBUF_SWITCH:
 	{
 		struct ustcomm_single_field *trace_inf =
 			(struct ustcomm_single_field *)recv_buf;
