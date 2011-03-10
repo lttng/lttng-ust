@@ -1591,7 +1591,6 @@ void ust_potential_exec(void)
 
 static void ust_fork(void)
 {
-	struct ust_buffer *buf, *buf_tmp;
 	struct ustcomm_sock *sock, *sock_tmp;
 	struct ust_trace *trace, *trace_tmp;
 	int result;
