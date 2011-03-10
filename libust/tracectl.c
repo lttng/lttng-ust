@@ -77,8 +77,6 @@ static struct ustcomm_sock *listen_sock;
 
 extern struct chan_info_struct chan_infos[];
 
-static struct cds_list_head open_buffers_list = CDS_LIST_HEAD_INIT(open_buffers_list);
-
 static struct cds_list_head ust_socks = CDS_LIST_HEAD_INIT(ust_socks);
 
 /* volatile because shared between the listener and the main thread */
@@ -488,11 +486,6 @@ static int notify_buffer_mapped(const char *trace_name,
 		DBG("decrementing buffers_to_export");
 		CMM_STORE_SHARED(buffers_to_export, CMM_LOAD_SHARED(buffers_to_export)-1);
 	}
-
-	/* The buffer has been exported, ergo, we can add it to the
-	 * list of open buffers
-	 */
-	cds_list_add(&buf->open_buffers_list, &open_buffers_list);
 
 unlock_traces:
 	ltt_unlock_traces();
@@ -1620,12 +1613,6 @@ static void ust_fork(void)
 	/* Delete all active connections, but leave them in the epoll set */
 	cds_list_for_each_entry_safe(sock, sock_tmp, &ust_socks, list) {
 		ustcomm_del_sock(sock, 1);
-	}
-
-	/* Delete all blocked consumers */
-	cds_list_for_each_entry_safe(buf, buf_tmp, &open_buffers_list,
-				 open_buffers_list) {
-		cds_list_del(&buf->open_buffers_list);
 	}
 
 	/*
