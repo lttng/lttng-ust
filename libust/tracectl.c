@@ -584,31 +584,6 @@ unlock_traces:
 	return retval;
 }
 
-/* Simple commands are those which need only respond with a return value. */
-static int process_simple_client_cmd(int command, char *recv_buf)
-{
-	int result;
-
-	switch(command) {
-	case SET_SOCK_PATH:
-	{
-		struct ustcomm_single_field *sock_msg;
-		sock_msg = (struct ustcomm_single_field *)recv_buf;
-		result = ustcomm_unpack_single_field(sock_msg);
-		if (result < 0) {
-			return result;
-		}
-		return setenv("UST_DAEMON_SOCKET", sock_msg->field, 1);
-	}
-
-	default:
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
-
 static int process_trace_cmd(int command, char *trace_name)
 {
 	int result;
@@ -1060,6 +1035,21 @@ static void process_client_cmd(struct ustcomm_header *recv_header,
 
 		goto send_response;
 	}
+	case SET_SOCK_PATH:
+	{
+		struct ustcomm_single_field *sock_msg;
+		sock_msg = (struct ustcomm_single_field *)recv_buf;
+		result = ustcomm_unpack_single_field(sock_msg);
+		if (result < 0) {
+			reply_header->result = -EINVAL;
+			goto send_response;
+		}
+
+		reply_header->result = setenv("UST_DAEMON_SOCKET",
+					      sock_msg->field, 1);
+
+		goto send_response;
+	}
 	case START:
 	case SETUP_TRACE:
 	case ALLOC_TRACE:
@@ -1086,11 +1076,9 @@ static void process_client_cmd(struct ustcomm_header *recv_header,
 
 	}
 	default:
-		reply_header->result =
-			process_simple_client_cmd(recv_header->command,
-						  recv_buf);
-		goto send_response;
+		reply_header->result = -EINVAL;
 
+		goto send_response;
 	}
 
 	return;
