@@ -1,3 +1,11 @@
+2011-03-14 ust 0.12
+	* ARM support
+	* Fix lots of low-level bugs, mostly courtesy of Mathieu and Yannick
+	* Introduce new ustctl cli
+	* API CHANGE!!! libustcmd renamed to libustctl
+	* API CHANGE!!! libustctl now uses sockets instead of pids
+	* Short signal names in scripts for busybox compatibility
+
 2011-01-14 ust 0.11
 	* Fix a serious bug in the newly introduced synchronized timer
 	implementation.
