@@ -40,35 +40,6 @@
 #include "tracer.h"
 #include "usterr.h"
 
-//ust// static void async_wakeup(unsigned long data);
-//ust// 
-//ust// static DEFINE_TIMER(ltt_async_wakeup_timer, async_wakeup, 0, 0);
-
-/* Default callbacks for modules */
-notrace int ltt_filter_control_default(enum ltt_filter_control_msg msg,
-		struct ust_trace *trace)
-{
-	return 0;
-}
-
-int ltt_statedump_default(struct ust_trace *trace)
-{
-	return 0;
-}
-
-/* Callbacks for registered modules */
-
-int (*ltt_filter_control_functor)
-	(enum ltt_filter_control_msg msg, struct ust_trace *trace) =
-					ltt_filter_control_default;
-struct module *ltt_filter_control_owner;
-
-/* These function pointers are protected by a trace activation check */
-struct module *ltt_run_filter_owner;
-int (*ltt_statedump_functor)(struct ust_trace *trace) =
-					ltt_statedump_default;
-struct module *ltt_statedump_owner;
-
 struct chan_info_struct chan_infos[] = {
 	[LTT_CHANNEL_METADATA] = {
 		LTT_METADATA_CHANNEL,
@@ -96,91 +67,6 @@ static enum ltt_channels get_channel_type_from_name(const char *name)
 	return LTT_CHANNEL_UST;
 }
 
-/**
- * ltt_module_register - LTT module registration
- * @name: module type
- * @function: callback to register
- * @owner: module which owns the callback
- *
- * The module calling this registration function must ensure that no
- * trap-inducing code will be executed by "function". E.g. vmalloc_sync_all()
- * must be called between a vmalloc and the moment the memory is made visible to
- * "function". This registration acts as a vmalloc_sync_all. Therefore, only if
- * the module allocates virtual memory after its registration must it
- * synchronize the TLBs.
- */
-//ust// int ltt_module_register(enum ltt_module_function name, void *function,
-//ust// 		struct module *owner)
-//ust// {
-//ust// 	int ret = 0;
-//ust// 
-//ust// 	/*
-//ust// 	 * Make sure no page fault can be triggered by the module about to be
-//ust// 	 * registered. We deal with this here so we don't have to call
-//ust// 	 * vmalloc_sync_all() in each module's init.
-//ust// 	 */
-//ust// 	vmalloc_sync_all();
-//ust// 
-//ust// 	switch (name) {
-//ust// 	case LTT_FUNCTION_RUN_FILTER:
-//ust// 		if (ltt_run_filter_owner != NULL) {
-//ust// 			ret = -EEXIST;
-//ust// 			goto end;
-//ust// 		}
-//ust// 		ltt_filter_register((ltt_run_filter_functor)function);
-//ust// 		ltt_run_filter_owner = owner;
-//ust// 		break;
-//ust// 	case LTT_FUNCTION_FILTER_CONTROL:
-//ust// 		if (ltt_filter_control_owner != NULL) {
-//ust// 			ret = -EEXIST;
-//ust// 			goto end;
-//ust// 		}
-//ust// 		ltt_filter_control_functor =
-//ust// 			(int (*)(enum ltt_filter_control_msg,
-//ust// 			struct ust_trace *))function;
-//ust// 		ltt_filter_control_owner = owner;
-//ust// 		break;
-//ust// 	case LTT_FUNCTION_STATEDUMP:
-//ust// 		if (ltt_statedump_owner != NULL) {
-//ust// 			ret = -EEXIST;
-//ust// 			goto end;
-//ust// 		}
-//ust// 		ltt_statedump_functor =
-//ust// 			(int (*)(struct ust_trace *))function;
-//ust// 		ltt_statedump_owner = owner;
-//ust// 		break;
-//ust// 	}
-//ust// 
-//ust// end:
-//ust// 
-//ust// 	return ret;
-//ust// }
-
-/**
- * ltt_module_unregister - LTT module unregistration
- * @name: module type
- */
-//ust// void ltt_module_unregister(enum ltt_module_function name)
-//ust// {
-//ust// 	switch (name) {
-//ust// 	case LTT_FUNCTION_RUN_FILTER:
-//ust// 		ltt_filter_unregister();
-//ust// 		ltt_run_filter_owner = NULL;
-//ust// 		/* Wait for preempt sections to finish */
-//ust// 		synchronize_sched();
-//ust// 		break;
-//ust// 	case LTT_FUNCTION_FILTER_CONTROL:
-//ust// 		ltt_filter_control_functor = ltt_filter_control_default;
-//ust// 		ltt_filter_control_owner = NULL;
-//ust// 		break;
-//ust// 	case LTT_FUNCTION_STATEDUMP:
-//ust// 		ltt_statedump_functor = ltt_statedump_default;
-//ust// 		ltt_statedump_owner = NULL;
-//ust// 		break;
-//ust// 	}
-//ust// 
-//ust// }
-
 static CDS_LIST_HEAD(ltt_transport_list);
 /* transport mutex, nests inside traces mutex (ltt_lock_traces) */
 static DEFINE_MUTEX(ltt_transport_mutex);
@@ -198,13 +84,6 @@ static DEFINE_MUTEX(ltt_transport_mutex);
  */
 void ltt_transport_register(struct ltt_transport *transport)
 {
-	/*
-	 * Make sure no page fault can be triggered by the module about to be
-	 * registered. We deal with this here so we don't have to call
-	 * vmalloc_sync_all() in each module's init.
-	 */
-//ust//	vmalloc_sync_all();
-
 	pthread_mutex_lock(&ltt_transport_mutex);
 	cds_list_add_tail(&transport->node, &ltt_transport_list);
 	pthread_mutex_unlock(&ltt_transport_mutex);
@@ -259,35 +138,6 @@ static void trace_async_wakeup(struct ust_trace *trace)
 	}
 }
 
-//ust// /* Timer to send async wakeups to the readers */
-//ust// static void async_wakeup(unsigned long data)
-//ust// {
-//ust// 	struct ust_trace *trace;
-//ust// 
-//ust// 	/*
-//ust// 	 * PREEMPT_RT does not allow spinlocks to be taken within preempt
-//ust// 	 * disable sections (spinlock taken in wake_up). However, mainline won't
-//ust// 	 * allow mutex to be taken in interrupt context. Ugly.
-//ust// 	 * A proper way to do this would be to turn the timer into a
-//ust// 	 * periodically woken up thread, but it adds to the footprint.
-//ust// 	 */
-//ust// #ifndef CONFIG_PREEMPT_RT
-//ust// 	rcu_read_lock_sched();
-//ust// #else
-//ust// 	ltt_lock_traces();
-//ust// #endif
-//ust// 	cds_list_for_each_entry_rcu(trace, &ltt_traces.head, list) {
-//ust// 		trace_async_wakeup(trace);
-//ust// 	}
-//ust// #ifndef CONFIG_PREEMPT_RT
-//ust// 	rcu_read_unlock_sched();
-//ust// #else
-//ust// 	ltt_unlock_traces();
-//ust// #endif
-//ust// 
-//ust// 	mod_timer(&ltt_async_wakeup_timer, jiffies + LTT_PERCPU_TIMER_INTERVAL);
-//ust// }
-
 /**
  * _ltt_trace_find - find a trace by given name.
  * trace_name: trace name
@@ -327,9 +177,7 @@ struct ust_trace *_ltt_trace_find_setup(const char *trace_name)
  */
 void ltt_release_transport(struct urcu_ref *urcu_ref)
 {
-//ust// 	struct ust_trace *trace = container_of(kref,
-//ust// 			struct ust_trace, ltt_transport_kref);
-//ust// 	trace->ops->remove_dirs(trace);
+	return;
 }
 
 /**
@@ -626,7 +474,6 @@ int ltt_trace_alloc(const char *trace_name)
 	int err = 0;
 	struct ust_trace *trace;
 	unsigned int subbuf_size, subbuf_cnt;
-//ust//	unsigned long flags;
 	int chan;
 	const char *channel_name;
 
@@ -646,9 +493,7 @@ int ltt_trace_alloc(const char *trace_name)
 
 	urcu_ref_init(&trace->urcu_ref);
 	urcu_ref_init(&trace->ltt_transport_urcu_ref);
-//ust//	init_waitqueue_head(&trace->urcu_ref_wq);
 	trace->active = 0;
-//ust//	get_trace_clock();
 	trace->freq_scale = trace_clock_freq_scale();
 
 	if (!trace->transport) {
@@ -656,24 +501,11 @@ int ltt_trace_alloc(const char *trace_name)
 		err = -EINVAL;
 		goto transport_error;
 	}
-//ust//	if (!try_module_get(trace->transport->owner)) {
-//ust//		ERR("Can't lock transport module");
-//ust//		err = -ENODEV;
-//ust//		goto transport_error;
-//ust//	}
 	trace->ops = &trace->transport->ops;
 
-//ust//	err = trace->ops->create_dirs(trace);
-//ust//	if (err) {
-//ust//		ERR("Can't create dir for trace %s", trace_name);
-//ust//		goto dirs_error;
-//ust//	}
-
-//ust//	local_irq_save(flags);
 	trace->start_freq = trace_clock_frequency();
 	trace->start_tsc = trace_clock_read64();
 	gettimeofday(&trace->start_time, NULL); //ust// changed /* FIXME: is this ok? */
-//ust//	local_irq_restore(flags);
 
 	for (chan = 0; chan < trace->nr_channels; chan++) {
 		if (!(trace->channels[chan].active))
@@ -697,13 +529,7 @@ int ltt_trace_alloc(const char *trace_name)
 	}
 
 	cds_list_del(&trace->list);
-//ust//	if (cds_list_empty(&ltt_traces.head)) {
-//ust//		mod_timer(&ltt_async_wakeup_timer,
-//ust//				jiffies + LTT_PERCPU_TIMER_INTERVAL);
-//ust//		set_kernel_trace_flag_all_tasks();
-//ust//	}
 	cds_list_add_rcu(&trace->list, &ltt_traces.head);
-//ust//	synchronize_sched();
 
 	ltt_unlock_traces();
 
@@ -714,42 +540,11 @@ create_channel_error:
 		if (trace->channels[chan].active)
 			trace->ops->remove_channel(&trace->channels[chan]);
 
-//ust// dirs_error:
-//ust//	module_put(trace->transport->owner);
 transport_error:
-//ust//	put_trace_clock();
 traces_error:
 	ltt_unlock_traces();
 	return err;
 }
-
-/*
- * It is worked as a wrapper for current version of ltt_control.ko.
- * We will make a new ltt_control based on debugfs, and control each channel's
- * buffer.
- */
-//ust// static int ltt_trace_create(const char *trace_name, const char *trace_type,
-//ust// 		enum trace_mode mode,
-//ust// 		unsigned int subbuf_size_low, unsigned int n_subbufs_low,
-//ust// 		unsigned int subbuf_size_med, unsigned int n_subbufs_med,
-//ust// 		unsigned int subbuf_size_high, unsigned int n_subbufs_high)
-//ust// {
-//ust// 	int err = 0;
-//ust// 
-//ust// 	err = ltt_trace_setup(trace_name);
-//ust// 	if (IS_ERR_VALUE(err))
-//ust// 		return err;
-//ust// 
-//ust// 	err = ltt_trace_set_type(trace_name, trace_type);
-//ust// 	if (IS_ERR_VALUE(err))
-//ust// 		return err;
-//ust// 
-//ust// 	err = ltt_trace_alloc(trace_name);
-//ust// 	if (IS_ERR_VALUE(err))
-//ust// 		return err;
-//ust// 
-//ust// 	return err;
-//ust// }
 
 /* Must be called while sure that trace is in the list. */
 static int _ltt_trace_destroy(struct ust_trace *trace)
@@ -765,21 +560,12 @@ static int _ltt_trace_destroy(struct ust_trace *trace)
 		err = -EBUSY;
 		goto active_error;
 	}
-	/* Everything went fine */
+
 	cds_list_del_rcu(&trace->list);
 	synchronize_rcu();
-	if (cds_list_empty(&ltt_traces.head)) {
-//ust//		clear_kernel_trace_flag_all_tasks();
-		/*
-		 * We stop the asynchronous delivery of reader wakeup, but
-		 * we must make one last check for reader wakeups pending
-		 * later in __ltt_trace_destroy.
-		 */
-//ust//		del_timer_sync(&ltt_async_wakeup_timer);
-	}
+
 	return 0;
 
-	/* error handling */
 active_error:
 traces_error:
 	return err;
@@ -814,17 +600,6 @@ static void __ltt_trace_destroy(struct ust_trace *trace, int drop)
 
 	urcu_ref_put(&trace->ltt_transport_urcu_ref, ltt_release_transport);
 
-//ust//	module_put(trace->transport->owner);
-
-	/*
-	 * Wait for lttd readers to release the files, therefore making sure
-	 * the last subbuffers have been read.
-	 */
-//ust//	if (atomic_read(&trace->kref.refcount) > 1) {
-//ust//		int ret = 0;
-//ust//		__wait_event_interruptible(trace->kref_wq,
-//ust//			(atomic_read(&trace->kref.refcount) == 1), ret);
-//ust//	}
 	urcu_ref_put(&trace->urcu_ref, ltt_release_trace);
 }
 
@@ -844,7 +619,6 @@ int ltt_trace_destroy(const char *trace_name, int drop)
 		ltt_unlock_traces();
 
 		__ltt_trace_destroy(trace, drop);
-//ust//		put_trace_clock();
 
 		return 0;
 	}
@@ -858,7 +632,6 @@ int ltt_trace_destroy(const char *trace_name, int drop)
 
 	err = -ENOENT;
 
-	/* Error handling */
 error:
 	ltt_unlock_traces();
 	return err;
@@ -875,18 +648,11 @@ static int _ltt_trace_start(struct ust_trace *trace)
 	}
 	if (trace->active)
 		DBG("Tracing already active for trace %s", trace->trace_name);
-//ust//	if (!try_module_get(ltt_run_filter_owner)) {
-//ust//		err = -ENODEV;
-//ust//		ERR("Cannot lock filter module");
-//ust//		goto get_ltt_run_filter_error;
-//ust//	}
 	trace->active = 1;
 	/* Read by trace points without protection : be careful */
 	ltt_traces.num_active_traces++;
 	return err;
 
-	/* error handling */
-//ust// get_ltt_run_filter_error:
 traces_error:
 	return err;
 }
@@ -915,14 +681,6 @@ int ltt_trace_start(const char *trace_name)
 
 	ltt_dump_marker_state(trace);
 
-//ust//	if (!try_module_get(ltt_statedump_owner)) {
-//ust//		err = -ENODEV;
-//ust//		ERR("Cannot lock state dump module");
-//ust//	} else {
-		ltt_statedump_functor(trace);
-//ust//		module_put(ltt_statedump_owner);
-//ust//	}
-
 	return err;
 
 	/* Error handling */
@@ -945,13 +703,9 @@ static int _ltt_trace_stop(struct ust_trace *trace)
 	if (trace->active) {
 		trace->active = 0;
 		ltt_traces.num_active_traces--;
-//ust//		synchronize_sched(); /* Wait for each tracing to be finished */
 	}
-//ust//	module_put(ltt_run_filter_owner);
-	/* Everything went fine */
 	return 0;
 
-	/* Error handling */
 traces_error:
 	return err;
 }
@@ -964,48 +718,6 @@ int ltt_trace_stop(const char *trace_name)
 	ltt_lock_traces();
 	trace = _ltt_trace_find(trace_name);
 	err = _ltt_trace_stop(trace);
-	ltt_unlock_traces();
-	return err;
-}
-
-/**
- * ltt_filter_control - Trace filter control in-kernel API
- * @msg: Action to perform on the filter
- * @trace_name: Trace on which the action must be done
- */
-int ltt_filter_control(enum ltt_filter_control_msg msg, const char *trace_name)
-{
-	int err;
-	struct ust_trace *trace;
-
-	DBG("ltt_filter_control : trace %s", trace_name);
-	ltt_lock_traces();
-	trace = _ltt_trace_find(trace_name);
-	if (trace == NULL) {
-		ERR("Trace does not exist. Cannot proxy control request");
-		err = -ENOENT;
-		goto trace_error;
-	}
-//ust//	if (!try_module_get(ltt_filter_control_owner)) {
-//ust//		err = -ENODEV;
-//ust//		goto get_module_error;
-//ust//	}
-	switch (msg) {
-	case LTT_FILTER_DEFAULT_ACCEPT:
-		DBG("Proxy filter default accept %s", trace_name);
-		err = (*ltt_filter_control_functor)(msg, trace);
-		break;
-	case LTT_FILTER_DEFAULT_REJECT:
-		DBG("Proxy filter default reject %s", trace_name);
-		err = (*ltt_filter_control_functor)(msg, trace);
-		break;
-	default:
-		err = -EPERM;
-	}
-//ust//	module_put(ltt_filter_control_owner);
-
-//ust// get_module_error:
-trace_error:
 	ltt_unlock_traces();
 	return err;
 }
