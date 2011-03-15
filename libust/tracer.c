@@ -182,7 +182,8 @@ static enum ltt_channels get_channel_type_from_name(const char *name)
 //ust// }
 
 static CDS_LIST_HEAD(ltt_transport_list);
-
+/* transport mutex, nests inside traces mutex (ltt_lock_traces) */
+static DEFINE_MUTEX(ltt_transport_mutex);
 /**
  * ltt_transport_register - LTT transport registration
  * @transport: transport structure
@@ -204,9 +205,9 @@ void ltt_transport_register(struct ltt_transport *transport)
 	 */
 //ust//	vmalloc_sync_all();
 
-	ltt_lock_traces();
+	pthread_mutex_lock(&ltt_transport_mutex);
 	cds_list_add_tail(&transport->node, &ltt_transport_list);
-	ltt_unlock_traces();
+	pthread_mutex_unlock(&ltt_transport_mutex);
 }
 
 /**
@@ -215,9 +216,9 @@ void ltt_transport_register(struct ltt_transport *transport)
  */
 void ltt_transport_unregister(struct ltt_transport *transport)
 {
-	ltt_lock_traces();
+	pthread_mutex_lock(&ltt_transport_mutex);
 	cds_list_del(&transport->node);
-	ltt_unlock_traces();
+	pthread_mutex_unlock(&ltt_transport_mutex);
 }
 
 static inline int is_channel_overwrite(enum ltt_channels chan,
@@ -458,12 +459,15 @@ int ltt_trace_set_type(const char *trace_name, const char *trace_type)
 		goto traces_error;
 	}
 
+	pthread_mutex_lock(&ltt_transport_mutex);
 	cds_list_for_each_entry(tran_iter, &ltt_transport_list, node) {
 		if (!strcmp(tran_iter->name, trace_type)) {
 			transport = tran_iter;
 			break;
 		}
 	}
+	pthread_mutex_unlock(&ltt_transport_mutex);
+
 	if (!transport) {
 		ERR("Transport %s is not present", trace_type);
 		err = -EINVAL;
