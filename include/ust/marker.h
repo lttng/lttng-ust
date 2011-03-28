@@ -80,7 +80,7 @@ struct marker {
 #define GET_MARKER(channel, name)	(__mark_##channel##_##name)
 
 #define _DEFINE_MARKER(channel, name, tp_name_str, tp_cb, format, unique, m)			\
-		struct registers regs;								\
+		struct registers __marker_regs;							\
 												\
 		/* This next asm has to be a basic inline asm (no input/output/clobber), 	\
 		 * because it must not require %-sign escaping, as we most certainly		\
@@ -132,7 +132,7 @@ struct marker {
 			ARCH_COPY_ADDR("%[outptr]")						\
 		: [outptr] "=r" (m) );								\
 												\
-		save_registers(&regs)
+		save_registers(&__marker_regs)
 
 
 #define DEFINE_MARKER(channel, name, format, unique, m)				\
@@ -172,15 +172,15 @@ struct marker {
 
 #define __trace_mark_counter(generic, channel, name, unique, call_private, format, args...) \
 	do {								\
-		struct marker *m;					\
-		DEFINE_MARKER(channel, name, format, unique, m);			\
+		struct marker *__marker_counter_ptr;			\
+		DEFINE_MARKER(channel, name, format, unique, __marker_counter_ptr);	\
 		__mark_check_format(format, ## args);			\
 		if (!generic) {						\
-			if (unlikely(imv_read(m->state))) \
-				(m->call)(m, call_private, &regs, ## args);		\
+			if (unlikely(imv_read(__marker_counter_ptr->state))) \
+				(__marker_counter_ptr->call)(__marker_counter_ptr, call_private, &__marker_regs, ## args);	\
 		} else {						\
-			if (unlikely(_imv_read(m->state))) \
-				(m->call)(m, call_private, &regs, ## args);		\
+			if (unlikely(_imv_read(__marker_counter_ptr->state))) \
+				(__marker_counter_ptr->call)(__marker_counter_ptr, call_private, &__marker_regs, ## args);		\
 		}							\
 	} while (0)
 
@@ -189,7 +189,7 @@ struct marker {
 
 #define __trace_mark_tp_counter(channel, name, unique, call_private, tp_name, tp_cb, format, args...) \
 	do {								\
-		struct registers regs;								\
+		struct registers __marker_regs;				\
 		void __check_tp_type(void)				\
 		{							\
 			register_trace_##tp_name(tp_cb, call_private);		\
@@ -197,7 +197,7 @@ struct marker {
 		DEFINE_MARKER_TP(channel, name, tp_name, tp_cb, format);\
 		__mark_check_format(format, ## args);			\
 		(*GET_MARKER(channel, name).call)(&GET_MARKER(channel, name), \
-			call_private, &regs, ## args);				\
+			call_private, &__marker_regs, ## args);				\
 	} while (0)
 
 extern void marker_update_probe_range(struct marker * const *begin,
