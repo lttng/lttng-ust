@@ -846,7 +846,7 @@ static int init_ustconsumer_socket(struct ustconsumer_instance *instance)
 		int result;
 
 		/* Only check if socket dir exists if we are using the default directory */
-		result = ensure_dir_exists(SOCK_DIR);
+		result = ensure_dir_exists(SOCK_DIR, S_IRWXU | S_IRWXG | S_IRWXO);
 		if (result == -1) {
 			ERR("Unable to create socket directory %s", SOCK_DIR);
 			return -1;

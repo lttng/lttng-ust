@@ -119,7 +119,7 @@ struct ustcomm_notify_buf_mapped {
 };
 
 /* Ensure directory existence, usefull for unix sockets */
-extern int ensure_dir_exists(const char *dir);
+extern int ensure_dir_exists(const char *dir, mode_t mode);
 
 /* Create and delete sockets */
 extern struct ustcomm_sock * ustcomm_init_sock(int fd, int epoll_fd,

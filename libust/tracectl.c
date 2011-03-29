@@ -1236,7 +1236,7 @@ static struct ustcomm_sock * init_app_socket(int epoll_fd)
 		goto free_dir_name;
 	}
 
-	result = ensure_dir_exists(dir_name);
+	result = ensure_dir_exists(dir_name, S_IRWXU);
 	if (result == -1) {
 		ERR("Unable to create socket directory %s, UST thread bailing",
 		    dir_name);

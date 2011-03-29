@@ -588,27 +588,33 @@ free_dir_name:
 	return retval;
 }
 
-int ensure_dir_exists(const char *dir)
+int ensure_dir_exists(const char *dir, mode_t mode)
 {
 	struct stat st;
 	int result;
 
-	if(!strcmp(dir, ""))
+	if (!strcmp(dir, ""))
 		return -1;
 
 	result = stat(dir, &st);
-	if(result == -1 && errno != ENOENT) {
+	if (result < 0 && errno != ENOENT) {
 		return -1;
-	}
-	else if(result == -1) {
+	} else if (result < 0) {
 		/* ENOENT */
 		int result;
 
-		/* mkdir mode to 0777 */
-		result = mkdir_p(dir, S_IRWXU | S_IRWXG | S_IRWXO);
+		result = mkdir_p(dir, mode);
 		if(result != 0) {
 			ERR("executing in recursive creation of directory %s", dir);
 			return -1;
+		}
+	} else {
+		if (st.st_mode != mode) {
+			result = chmod(dir, mode);
+			if (result < 0) {
+				ERR("couldn't set directory mode on %s", dir);
+				return -1;
+			}
 		}
 	}
 
