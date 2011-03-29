@@ -25,6 +25,7 @@
 #include <ust/kcompat/kcompat.h>
 
 #define SOCK_DIR "/tmp/ust-app-socks"
+#define USER_SOCK_DIR "/tmp/ust-socks-"
 
 struct ustcomm_sock {
 	struct cds_list_head list;
@@ -156,6 +157,9 @@ extern int ustcomm_req(int sock,
 		       char *res_data);
 
 extern int ustcomm_request_consumer(pid_t pid, const char *channel);
+
+/* Returns the current users socket directory, must be freed */
+extern char *ustcomm_user_sock_dir(void);
 extern int ustcomm_connect_app(pid_t pid, int *app_fd);
 extern int ustcomm_connect_path(const char *path, int *connection_fd);
 

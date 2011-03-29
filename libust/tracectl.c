@@ -1221,37 +1221,41 @@ static void auto_probe_connect(struct marker *m)
 
 static struct ustcomm_sock * init_app_socket(int epoll_fd)
 {
-	char *name;
+	char *dir_name, *sock_name;
 	int result;
-	struct ustcomm_sock *sock;
+	struct ustcomm_sock *sock = NULL;
 
-	result = asprintf(&name, "%s/%d", SOCK_DIR, (int)getpid());
+	dir_name = ustcomm_user_sock_dir();
+	if (!dir_name)
+		return NULL;
+
+	result = asprintf(&sock_name, "%s/%d", dir_name, (int)getpid());
 	if (result < 0) {
 		ERR("string overflow allocating socket name, "
 		    "UST thread bailing");
-		return NULL;
+		goto free_dir_name;
 	}
 
-	result = ensure_dir_exists(SOCK_DIR);
+	result = ensure_dir_exists(dir_name);
 	if (result == -1) {
 		ERR("Unable to create socket directory %s, UST thread bailing",
-		    SOCK_DIR);
-		goto free_name;
+		    dir_name);
+		goto free_sock_name;
 	}
 
-	sock = ustcomm_init_named_socket(name, epoll_fd);
+	sock = ustcomm_init_named_socket(sock_name, epoll_fd);
 	if (!sock) {
 		ERR("Error initializing named socket (%s). Check that directory"
-		    "exists and that it is writable. UST thread bailing", name);
-		goto free_name;
+		    "exists and that it is writable. UST thread bailing", sock_name);
+		goto free_sock_name;
 	}
 
-	free(name);
-	return sock;
+free_sock_name:
+	free(sock_name);
+free_dir_name:
+	free(dir_name);
 
-free_name:
-	free(name);
-	return NULL;
+	return sock;
 }
 
 static void __attribute__((constructor)) init()

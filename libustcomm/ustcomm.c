@@ -533,6 +533,21 @@ close_sock:
 	return -1;
 }
 
+/* Returns the current users socket directory, must be freed */
+char *ustcomm_user_sock_dir(void)
+{
+	int result;
+	char *sock_dir = NULL;
+
+	result = asprintf(&sock_dir, "%s%s", USER_SOCK_DIR,
+			  cuserid(NULL));
+	if (result < 0) {
+		ERR("string overflow allocating directory name");
+		return NULL;
+	}
+
+	return sock_dir;
+}
 
 /* Open a connection to a traceable app.
  *
@@ -545,21 +560,30 @@ int ustcomm_connect_app(pid_t pid, int *app_fd)
 {
 	int result;
 	int retval = 0;
-	char *name;
+	char *dir_name, *sock_name;
 
-	result = asprintf(&name, "%s/%d", SOCK_DIR, pid);
+	dir_name = ustcomm_user_sock_dir();
+	if (!dir_name)
+		return -ENOMEM;
+
+	result = asprintf(&sock_name, "%s/%d", dir_name, pid);
 	if (result < 0) {
 		ERR("failed to allocate socket name");
-		return -1;
+		retval = -1;
+		goto free_dir_name;
 	}
 
-	result = ustcomm_connect_path(name, app_fd);
+	result = ustcomm_connect_path(sock_name, app_fd);
 	if (result < 0) {
 		ERR("failed to connect to app");
 		retval = -1;
+		goto free_sock_name;
 	}
 
-	free(name);
+free_sock_name:
+	free(sock_name);
+free_dir_name:
+	free(dir_name);
 
 	return retval;
 }
