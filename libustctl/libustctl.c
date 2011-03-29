@@ -88,53 +88,74 @@ int ustctl_connect_pid(pid_t pid)
 	return sock;
 }
 
-pid_t *ustctl_get_online_pids(void)
+static void get_pids_in_dir(DIR *dir, pid_t **pid_list,
+			    unsigned int *pid_list_size)
 {
 	struct dirent *dirent;
-	DIR *dir;
-	unsigned int ret_size = 1 * sizeof(pid_t), i = 0;
-
-	dir = opendir(SOCK_DIR);
-	if (!dir) {
-		return NULL;
-	}
-
-	pid_t *ret = (pid_t *) malloc(ret_size);
+	unsigned int read_pid;
 
 	while ((dirent = readdir(dir))) {
 		if (!strcmp(dirent->d_name, ".") ||
-		    !strcmp(dirent->d_name, "..")) {
+		    !strcmp(dirent->d_name, "..") ||
+		    !strcmp(dirent->d_name, "ust-consumer") ||
+		    dirent->d_type == DT_DIR) {
 
 			continue;
 		}
 
-		if (dirent->d_type != DT_DIR &&
-		    !!strcmp(dirent->d_name, "ust-consumer")) {
+		sscanf(dirent->d_name, "%u", &read_pid);
 
-			sscanf(dirent->d_name, "%u", (unsigned int *) &ret[i]);
-			/* FIXME: Here we previously called pid_is_online, which
-			 * always returned 1, now I replaced it with just 1.
-			 * We need to figure out an intelligent way of solving
-			 * this, maybe connect-disconnect.
-			 */
-			if (1) {
-				ret_size += sizeof(pid_t);
-				ret = (pid_t *) realloc(ret, ret_size);
-				++i;
-			}
+		(*pid_list)[*pid_list_size - 1] = read_pid;
+		/* FIXME: Here we previously called pid_is_online, which
+		 * always returned 1, now I replaced it with just 1.
+		 * We need to figure out an intelligent way of solving
+		 * this, maybe connect-disconnect.
+		 */
+		if (1) {
+			(*pid_list_size)++;
+			*pid_list = realloc(*pid_list,
+					    *pid_list_size * sizeof(pid_t));
 		}
 	}
 
-	ret[i] = 0; /* Array end */
+	(*pid_list)[*pid_list_size - 1] = 0; /* Array end */
+}
 
-	if (ret[0] == 0) {
-		/* No PID at all */
-		free(ret);
+pid_t *ustctl_get_online_pids(void)
+{
+	char *dir_name;
+	DIR *dir;
+	unsigned int pid_list_size = 1;
+	pid_t *pid_list = NULL;
+
+	dir_name = ustcomm_user_sock_dir();
+	if (!dir_name) {
 		return NULL;
 	}
 
+	dir = opendir(dir_name);
+	if (!dir) {
+		goto free_dir_name;
+	}
+
+	pid_list = malloc(pid_list_size * sizeof(pid_t));
+
+	get_pids_in_dir(dir, &pid_list, &pid_list_size);
+
+	if (pid_list[0] == 0) {
+		/* No PID at all */
+		free(pid_list);
+		pid_list = NULL;
+		goto close_dir;
+	}
+
+close_dir:
 	closedir(dir);
-	return ret;
+
+free_dir_name:
+	free(dir_name);
+
+	return pid_list;
 }
 
 /**
