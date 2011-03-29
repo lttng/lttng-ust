@@ -213,6 +213,25 @@ static int get_sock_path(int argc, char *argv[])
 	return 0;
 }
 
+static int list_pids(int argc, char *argv[])
+{
+	pid_t *pid_list;
+	int i;
+
+	pid_list = ustctl_get_online_pids();
+	if (!pid_list) {
+		return -1;
+	}
+
+	for (i = 0; pid_list[i]; i++) {
+		printf("%ld\n", (long)pid_list[i]);
+	}
+
+	free(pid_list);
+
+	return 0;
+}
+
 struct cli_cmd __cli_cmds general_cmds[] = {
 	{
 		.name = "list-trace-events",
@@ -239,6 +258,15 @@ struct cli_cmd __cli_cmds general_cmds[] = {
 		"Get the path to the consumer daemon socket\n",
 		.function = get_sock_path,
 		.desired_args = 1,
+		.desired_args_op = CLI_EQ,
+	},
+	{
+		.name = "list-pids",
+		.description = "List traceable pids",
+		.help_text = "list-pids\n"
+		"List the traceable pids for the current user\n",
+		.function = list_pids,
+		.desired_args = 0,
 		.desired_args_op = CLI_EQ,
 	},
 };
