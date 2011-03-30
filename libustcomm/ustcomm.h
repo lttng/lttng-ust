@@ -25,7 +25,9 @@
 #include <ust/kcompat/kcompat.h>
 
 #define SOCK_DIR "/tmp/ust-app-socks"
-#define USER_SOCK_DIR "/tmp/ust-socks-"
+#define USER_TMP_DIR "/tmp"
+#define USER_SOCK_DIR_BASE "ust-socks-"
+#define USER_SOCK_DIR USER_TMP_DIR "/" USER_SOCK_DIR_BASE
 
 struct ustcomm_sock {
 	struct cds_list_head list;

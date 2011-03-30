@@ -121,7 +121,7 @@ static void get_pids_in_dir(DIR *dir, pid_t **pid_list,
 	(*pid_list)[*pid_list_size - 1] = 0; /* Array end */
 }
 
-pid_t *ustctl_get_online_pids(void)
+static pid_t *get_pids_non_root(void)
 {
 	char *dir_name;
 	DIR *dir;
@@ -139,6 +139,9 @@ pid_t *ustctl_get_online_pids(void)
 	}
 
 	pid_list = malloc(pid_list_size * sizeof(pid_t));
+	if (!pid_list) {
+		goto close_dir;
+	}
 
 	get_pids_in_dir(dir, &pid_list, &pid_list_size);
 
@@ -156,6 +159,62 @@ free_dir_name:
 	free(dir_name);
 
 	return pid_list;
+}
+
+static pid_t *get_pids_root(void)
+{
+	char *dir_name;
+	DIR *tmp_dir, *dir;
+	unsigned int pid_list_size = 1;
+	pid_t *pid_list = NULL;
+	struct dirent *dirent;
+
+	tmp_dir = opendir(USER_TMP_DIR);
+	if (!tmp_dir) {
+		return NULL;
+	}
+
+	pid_list = malloc(pid_list_size * sizeof(pid_t));
+	if (!pid_list) {
+		goto close_tmp_dir;
+	}
+
+	while ((dirent = readdir(tmp_dir))) {
+		/* Compare the dir to check for the USER_SOCK_DIR_BASE prefix */
+		if (!strncmp(dirent->d_name, USER_SOCK_DIR_BASE,
+			     strlen(USER_SOCK_DIR_BASE))) {
+
+			if (asprintf(&dir_name, USER_TMP_DIR "/%s", dirent->d_name) < 0) {
+				goto close_tmp_dir;
+			}
+
+			dir = opendir(dir_name);
+
+			free(dir_name);
+
+			if (!dir) {
+				continue;
+			}
+
+			get_pids_in_dir(dir, &pid_list, &pid_list_size);
+
+			closedir(dir);
+		}
+	}
+
+close_tmp_dir:
+	closedir(tmp_dir);
+
+	return pid_list;
+}
+
+pid_t *ustctl_get_online_pids(void)
+{
+	if (geteuid()) {
+		return get_pids_non_root();
+	} else {
+		return get_pids_root();
+	}
 }
 
 /**
