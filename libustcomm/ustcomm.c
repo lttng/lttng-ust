@@ -18,6 +18,7 @@
 /* API used by UST components to communicate with each other via sockets. */
 
 #define _GNU_SOURCE
+#include <dirent.h>
 #include <sys/types.h>
 #include <signal.h>
 #include <errno.h>
@@ -556,7 +557,7 @@ char *ustcomm_user_sock_dir(void)
  * -1: error
  */
 
-int ustcomm_connect_app(pid_t pid, int *app_fd)
+static int connect_app_non_root(pid_t pid, int *app_fd)
 {
 	int result;
 	int retval = 0;
@@ -586,6 +587,57 @@ free_dir_name:
 	free(dir_name);
 
 	return retval;
+}
+
+
+
+static int connect_app_root(pid_t pid, int *app_fd)
+{
+	DIR *tmp_dir;
+	struct dirent *dirent;
+	char *sock_name;
+	int result;
+
+	tmp_dir = opendir(USER_TMP_DIR);
+	if (!tmp_dir) {
+		return -1;
+	}
+
+	while ((dirent = readdir(tmp_dir))) {
+		if (!strncmp(dirent->d_name, USER_SOCK_DIR_BASE,
+			     strlen(USER_SOCK_DIR_BASE))) {
+
+			if (asprintf(&sock_name, USER_TMP_DIR "/%s/%u",
+				     dirent->d_name, pid) < 0) {
+				goto close_tmp_dir;
+			}
+
+			result = ustcomm_connect_path(sock_name, app_fd);
+
+			free(sock_name);
+
+			if (result == 0) {
+				goto close_tmp_dir;
+			}
+		}
+	}
+
+close_tmp_dir:
+	closedir(tmp_dir);
+
+	return result;
+}
+
+int ustcomm_connect_app(pid_t pid, int *app_fd)
+{
+	*app_fd = 0;
+
+	if (geteuid()) {
+		return connect_app_non_root(pid, app_fd);
+	} else {
+		return connect_app_root(pid, app_fd);
+	}
+
 }
 
 int ensure_dir_exists(const char *dir, mode_t mode)
