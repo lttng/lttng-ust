@@ -88,11 +88,29 @@ int ustctl_connect_pid(pid_t pid)
 	return sock;
 }
 
-static void get_pids_in_dir(DIR *dir, pid_t **pid_list,
+static int realloc_pid_list(pid_t **pid_list, unsigned int *pid_list_size)
+{
+	pid_t *new_pid_list;
+	unsigned int new_pid_list_size = 2 * *pid_list_size;
+
+	new_pid_list = realloc(*pid_list,
+			       new_pid_list_size * sizeof(pid_t));
+	if (!*new_pid_list) {
+		return -1;
+	}
+
+	*pid_list = new_pid_list;
+	*pid_list_size = new_pid_list_size;
+
+	return 0;
+}
+
+static int get_pids_in_dir(DIR *dir, pid_t **pid_list,
+			    unsigned int *pid_list_index,
 			    unsigned int *pid_list_size)
 {
 	struct dirent *dirent;
-	unsigned int read_pid;
+	long read_pid;
 
 	while ((dirent = readdir(dir))) {
 		if (!strcmp(dirent->d_name, ".") ||
@@ -103,29 +121,40 @@ static void get_pids_in_dir(DIR *dir, pid_t **pid_list,
 			continue;
 		}
 
-		sscanf(dirent->d_name, "%u", &read_pid);
+		errno = 0;
+		read_pid = strtol(dirent->d_name, NULL, 10);
+		if (errno) {
+			continue;
+		}
 
-		(*pid_list)[*pid_list_size - 1] = read_pid;
-		/* FIXME: Here we previously called pid_is_online, which
+		/*
+		 * FIXME: Here we previously called pid_is_online, which
 		 * always returned 1, now I replaced it with just 1.
 		 * We need to figure out an intelligent way of solving
 		 * this, maybe connect-disconnect.
 		 */
 		if (1) {
-			(*pid_list_size)++;
-			*pid_list = realloc(*pid_list,
-					    *pid_list_size * sizeof(pid_t));
+
+			(*pid_list)[(*pid_list_index)++] = read_pid;
+
+			if (*pid_list_index == *pid_list_size) {
+				if (realloc_pid_list(pid_list, pid_list_size)) {
+					return -1;
+				}
+			}
 		}
 	}
 
-	(*pid_list)[*pid_list_size - 1] = 0; /* Array end */
+	(*pid_list)[*pid_list_index] = 0; /* Array end */
+
+	return 0;
 }
 
 static pid_t *get_pids_non_root(void)
 {
 	char *dir_name;
 	DIR *dir;
-	unsigned int pid_list_size = 1;
+	unsigned int pid_list_index = 0, pid_list_size = 1;
 	pid_t *pid_list = NULL;
 
 	dir_name = ustcomm_user_sock_dir();
@@ -143,13 +172,9 @@ static pid_t *get_pids_non_root(void)
 		goto close_dir;
 	}
 
-	get_pids_in_dir(dir, &pid_list, &pid_list_size);
-
-	if (pid_list[0] == 0) {
-		/* No PID at all */
-		free(pid_list);
-		pid_list = NULL;
-		goto close_dir;
+	if (get_pids_in_dir(dir, &pid_list, &pid_list_index, &pid_list_size)) {
+		/* if any errors are encountered, force freeing of the list */
+		pid_list[0] = 0;
 	}
 
 close_dir:
@@ -165,9 +190,10 @@ static pid_t *get_pids_root(void)
 {
 	char *dir_name;
 	DIR *tmp_dir, *dir;
-	unsigned int pid_list_size = 1;
+	unsigned int pid_list_index = 0, pid_list_size = 1;
 	pid_t *pid_list = NULL;
 	struct dirent *dirent;
+	int result;
 
 	tmp_dir = opendir(USER_TMP_DIR);
 	if (!tmp_dir) {
@@ -184,7 +210,8 @@ static pid_t *get_pids_root(void)
 		if (!strncmp(dirent->d_name, USER_SOCK_DIR_BASE,
 			     strlen(USER_SOCK_DIR_BASE))) {
 
-			if (asprintf(&dir_name, USER_TMP_DIR "/%s", dirent->d_name) < 0) {
+			if (asprintf(&dir_name, USER_TMP_DIR "/%s",
+				     dirent->d_name) < 0) {
 				goto close_tmp_dir;
 			}
 
@@ -196,9 +223,19 @@ static pid_t *get_pids_root(void)
 				continue;
 			}
 
-			get_pids_in_dir(dir, &pid_list, &pid_list_size);
+			result = get_pids_in_dir(dir, &pid_list, &pid_list_index,
+						 &pid_list_size);
 
 			closedir(dir);
+
+			if (result) {
+				/*
+				 * if any errors are encountered,
+				 * force freeing of the list
+				 */
+				pid_list[0] = 0;
+				break;
+			}
 		}
 	}
 
@@ -210,11 +247,21 @@ close_tmp_dir:
 
 pid_t *ustctl_get_online_pids(void)
 {
+	pid_t *pid_list;
+
 	if (geteuid()) {
-		return get_pids_non_root();
+		pid_list = get_pids_non_root();
 	} else {
-		return get_pids_root();
+		pid_list = get_pids_root();
 	}
+
+	if (pid_list && pid_list[0] == 0) {
+		/* No PID at all */
+		free(pid_list);
+		pid_list = NULL;
+	}
+
+	return pid_list;
 }
 
 /**
