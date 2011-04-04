@@ -15,8 +15,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#ifndef _USTERR_H
-#define _USTERR_H
+#ifndef _USTERR_SIGNAL_SAFE_H
+#define _USTERR_SIGNAL_SAFE_H
 
 #include <string.h>
 #include <sys/types.h>
@@ -30,6 +30,7 @@
 #include "share.h"
 
 #ifndef UST_COMPONENT
+//#error UST_COMPONENT is undefined
 #define UST_COMPONENT libust
 #endif
 
@@ -37,19 +38,46 @@
 #define XSTR(d) STR(d)
 #define STR(s) #s
 
-/* A dummy function to force format checking */
+/* We sometimes print in the tracing path, and tracing can occur in
+ * signal handlers, so we must use a print method which is signal safe.
+ */
+
+extern int ust_safe_snprintf(char *str, size_t n, const char *fmt, ...)
+	__attribute__ ((format (printf, 3, 4)));
+
 static inline void __attribute__ ((format (printf, 1, 2)))
 	__check_ust_safe_fmt(const char *fmt, ...)
 {
 }
 
+#define sigsafe_print_err(fmt, args...) \
+{ \
+	/* Can't use dynamic allocation. Limit ourselves to 250 chars. */ \
+	char ____buf[250]; \
+	int ____saved_errno; \
+\
+	/* Save the errno. */ \
+	____saved_errno = errno; \
+\
+	ust_safe_snprintf(____buf, sizeof(____buf), fmt, ## args); \
+\
+	/* Add end of string in case of buffer overflow. */ \
+	____buf[sizeof(____buf)-1] = 0; \
+\
+	patient_write(STDERR_FILENO, ____buf, strlen(____buf)); \
+	/* Can't print errors because we are in the error printing code path. */ \
+\
+	/* Restore errno, in order to be async-signal safe. */ \
+	errno = ____saved_errno; \
+}
+
 #define UST_STR_COMPONENT XSTR(UST_COMPONENT)
 
-#define ERRMSG(fmt, args...) do { fprintf(stderr, UST_STR_COMPONENT "[%ld/%ld]: " fmt " (in %s() at " __FILE__ ":" XSTR(__LINE__) ")\n", (long) getpid(), (long) syscall(SYS_gettid), ## args, __func__); } while(0)
+#define ERRMSG(fmt, args...) do { sigsafe_print_err(UST_STR_COMPONENT "[%ld/%ld]: " fmt " (in %s() at " __FILE__ ":" XSTR(__LINE__) ")\n", (long) getpid(), (long) syscall(SYS_gettid), ## args, __func__); fflush(stderr); } while(0)
 
 #ifdef UST_DEBUG
 # define DBG(fmt, args...) ERRMSG(fmt, ## args)
-# define DBG_raw(fmt, args...) do { fprintf(stderr, fmt, ## args); } while(0)
+# define DBG_raw(fmt, args...) do { sigsafe_print_err(fmt, ## args); fflush(stderr); } while(0)
 #else
 # define DBG(fmt, args...) __check_ust_safe_fmt(fmt, ## args)
 # define DBG_raw(fmt, args...) __check_ust_safe_fmt(fmt, ## args)
@@ -79,4 +107,4 @@ static inline void __attribute__ ((format (printf, 1, 2)))
 #define WARN_ON(condition) do { if (unlikely(condition)) WARN("condition not respected on line %s:%d", __FILE__, __LINE__); } while(0)
 #define WARN_ON_ONCE(condition) WARN_ON(condition)
 
-#endif /* _USTERR_H */
+#endif /* _USTERR_SIGNAL_SAFE_H */

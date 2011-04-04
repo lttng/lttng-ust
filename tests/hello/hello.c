@@ -25,8 +25,8 @@
 #include <signal.h>
 
 #include <ust/marker.h>
+#include <ust/ustctl.h>
 #include "usterr.h"
-#include "tracer.h"
 #include "tp.h"
 
 void inthandler(int sig)
@@ -80,8 +80,8 @@ int main()
 	if (scanf("%*s") == EOF)
 		PERROR("scanf failed");
 
-	ltt_trace_stop("auto");
-	ltt_trace_destroy("auto", 0);
+	ustctl_stop_trace(getpid(), "auto");
+	ustctl_destroy_trace(getpid(), "auto");
 
 	DBG("TRACE STOPPED");
 	if (scanf("%*s") == EOF)

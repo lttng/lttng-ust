@@ -23,7 +23,7 @@
 #include <ust/tracepoint.h>
 #include <ust/core.h>
 #include <ust/kcompat/kcompat.h>
-#include "usterr.h"
+#include "usterr_signal_safe.h"
 
 #define _LGPL_SOURCE
 #include <urcu-bp.h>

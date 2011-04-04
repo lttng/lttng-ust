@@ -26,7 +26,7 @@
 #include <stdlib.h>
 
 #include "tracer.h"
-#include "usterr.h"
+#include "usterr_signal_safe.h"
 
 #define DEFAULT_CHANNEL "cpu"
 #define DEFAULT_PROBE "default"

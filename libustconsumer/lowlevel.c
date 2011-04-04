@@ -22,7 +22,7 @@
 #include "ust/ustconsumer.h"
 #include "buffers.h"
 #include "tracer.h"
-#include "usterr.h"
+#include "usterr_signal_safe.h"
 
 /* This truncates to an offset in the buffer. */
 #define USTD_BUFFER_TRUNC(offset, bufinfo) \

@@ -1,3 +1,4 @@
+- remove libustconsumers dependency on libustsnprintf (usterr_signal_safe.h)
 - correctly destroy buffers at trace destroy
 - add multi-threaded test program
 - add dlopen() based test program

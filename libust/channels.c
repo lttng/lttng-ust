@@ -26,7 +26,7 @@
 #include <stdlib.h>
 #include <ust/marker.h>
 #include "channels.h"
-#include "usterr.h"
+#include "usterr_signal_safe.h"
 
 /*
  * ltt_channel_mutex may be nested inside the LTT trace mutex.

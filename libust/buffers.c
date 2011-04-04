@@ -33,7 +33,7 @@
 #include "channels.h"
 #include "tracer.h"
 #include "tracercore.h"
-#include "usterr.h"
+#include "usterr_signal_safe.h"
 
 struct ltt_reserve_switch_offsets {
 	long begin, end, old;

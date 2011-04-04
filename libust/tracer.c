@@ -38,7 +38,7 @@
 
 #include "tracercore.h"
 #include "tracer.h"
-#include "usterr.h"
+#include "usterr_signal_safe.h"
 
 struct chan_info_struct chan_infos[] = {
 	[LTT_CHANNEL_METADATA] = {

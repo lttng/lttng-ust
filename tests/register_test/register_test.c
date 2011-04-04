@@ -27,7 +27,6 @@
 
 #include <ust/marker.h>
 #include "usterr.h"
-#include "tracer.h"
 #include "tp.h"
 
 DEFINE_TRACE(hello_tptest);

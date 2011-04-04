@@ -34,7 +34,7 @@
 
 #include <ust/ustconsumer.h>
 #include "lowlevel.h"
-#include "usterr.h"
+#include "usterr_signal_safe.h"
 #include "ustcomm.h"
 
 #define GET_SUBBUF_OK 1

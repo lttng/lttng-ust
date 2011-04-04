@@ -41,7 +41,7 @@
 #include <ust/tracectl.h>
 #include <ust/clock.h>
 #include "tracer.h"
-#include "usterr.h"
+#include "usterr_signal_safe.h"
 #include "ustcomm.h"
 #include "buffers.h"
 #include "marker-control.h"

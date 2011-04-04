@@ -28,7 +28,7 @@
 #include <ust/core.h>
 #include <ust/clock.h>
 
-#include "usterr.h"
+#include "usterr_signal_safe.h"
 #include "channels.h"
 #include "tracerconst.h"
 #include "tracercore.h"

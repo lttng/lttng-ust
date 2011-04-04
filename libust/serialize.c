@@ -40,7 +40,7 @@
 #include <ust/clock.h>
 #include "buffers.h"
 #include "tracer.h"
-#include "usterr.h"
+#include "usterr_signal_safe.h"
 #include "ust_snprintf.h"
 
 /*
