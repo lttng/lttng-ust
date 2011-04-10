@@ -28,7 +28,7 @@ int main()
 {
 	int (*fptr)();
 
-	trace_mark(ust, from_main_before_lib, "%s", "Event occured in the main program before"
+	trace_mark(from_main_before_lib, "%s", "Event occured in the main program before"
 						" the opening of the library\n");
 	void *lib_handle = dlopen("libdummy.so", RTLD_LAZY);
 
@@ -47,7 +47,7 @@ int main()
 	(*fptr)();
 	dlclose(lib_handle);
 
-	trace_mark(ust, from_main_after_lib,"%s", "Event occured in the main program after "
+	trace_mark(from_main_after_lib,"%s", "Event occured in the main program after "
 						"the library has been closed\n");
 
 	return 0;

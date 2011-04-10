@@ -24,7 +24,7 @@ int main()
 {
 	printf("IN FORK2\n");
 
-	trace_mark(ust, after_exec, MARK_NOARGS);
+	trace_mark(after_exec, MARK_NOARGS);
 
 	return 0;
 }

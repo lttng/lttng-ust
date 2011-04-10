@@ -75,7 +75,7 @@ void *malloc(size_t size)
 
 	retval = plibc_malloc(size);
 
-	trace_mark(ust, malloc, "size %d ptr %p", (int)size, retval);
+	trace_mark(malloc, "size %d ptr %p", (int)size, retval);
 
 	return retval;
 }
@@ -92,7 +92,7 @@ void free(void *ptr)
 		}
 	}
 
-	trace_mark(ust, free, "ptr %p", ptr);
+	trace_mark(free, "ptr %p", ptr);
 
 	plibc_free(ptr);
 }

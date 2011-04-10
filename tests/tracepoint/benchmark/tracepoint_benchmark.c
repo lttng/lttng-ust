@@ -34,7 +34,7 @@ DEFINE_TRACE(ust_event);
 
 void tp_probe(void *data, unsigned int p1);
 
-DEFINE_MARKER_TP(ust, event, ust_event, tp_probe, "p1 %u");
+DEFINE_MARKER_TP(event, ust_event, tp_probe, "p1 %u");
 
 /*
  * Probe 1 --> ust_event
@@ -43,7 +43,7 @@ void tp_probe(void *data, unsigned int p1)
 {
 	struct marker *marker;
 
-	marker = &GET_MARKER(ust, event);
+	marker = &GET_MARKER(event);
 	ltt_specialized_trace(marker, data, &p1, sizeof(p1), sizeof(p1));
 }
 

@@ -19,5 +19,5 @@
 
 void exported_function()
 {
-  trace_mark(ust, from_library, "%s", "Event occured in library function");
+  trace_mark(from_library, "%s", "Event occured in library function");
 }

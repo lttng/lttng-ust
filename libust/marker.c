@@ -447,7 +447,7 @@ static struct marker_entry *add_marker(const char *channel, const char *name,
 			e->call = marker_probe_cb_noarg;
 		else
 			e->call = marker_probe_cb;
-		trace_mark(metadata, core_marker_format,
+		__trace_mark(0, metadata, core_marker_format, NULL,
 			   "channel %s name %s format %s",
 			   e->channel, e->name, e->format);
 	} else {
@@ -514,7 +514,7 @@ static int marker_set_format(struct marker_entry *entry, const char *format)
 		return -ENOMEM;
 	entry->format_allocated = 1;
 
-	trace_mark(metadata, core_marker_format,
+	__trace_mark(0, metadata, core_marker_format, NULL,
 		   "channel %s name %s format %s",
 		   entry->channel, entry->name, entry->format);
 	return 0;
@@ -781,7 +781,7 @@ int marker_probe_register(const char *channel, const char *name,
 			goto error_unregister_channel;
 		entry->event_id = ret;
 		ret = 0;
-		trace_mark(metadata, core_marker_id,
+		__trace_mark(0, metadata, core_marker_id, NULL,
 			   "channel %s name %s event_id %hu "
 			   "int #1u%zu long #1u%zu pointer #1u%zu "
 			   "size_t #1u%zu alignment #1u%u",

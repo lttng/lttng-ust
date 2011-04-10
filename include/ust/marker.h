@@ -77,7 +77,7 @@ struct marker {
 	void *location;		/* Address of marker in code */
 };
 
-#define GET_MARKER(channel, name)	(__mark_##channel##_##name)
+#define GET_MARKER(name)		(__mark_ust_##name)
 
 #define _DEFINE_MARKER(channel, name, tp_name_str, tp_cb, format, unique, m)			\
 		struct registers __marker_regs;							\
@@ -135,17 +135,17 @@ struct marker {
 		save_registers(&__marker_regs)
 
 
-#define DEFINE_MARKER(channel, name, format, unique, m)				\
-		_DEFINE_MARKER(channel, name, NULL, NULL, format, unique, m)
+#define DEFINE_MARKER(name, format, unique, m)					\
+		_DEFINE_MARKER(ust, name, NULL, NULL, format, unique, m)
 
-#define DEFINE_MARKER_TP(channel, name, tp_name, tp_cb, format)		\
-		_DEFINE_MARKER_TP(channel, name, #tp_name, tp_cb, format)
+#define DEFINE_MARKER_TP(name, tp_name, tp_cb, format)				\
+		_DEFINE_MARKER_TP(ust, name, #tp_name, tp_cb, format)
 
 #define _DEFINE_MARKER_TP(channel, name, tp_name_str, tp_cb, format) \
 		static const char __mstrtab_##channel##_##name[]	\
 		__attribute__((section("__markers_strings")))		\
 		= #channel "\0" #name "\0" format;			\
-		static struct marker GET_MARKER(channel, name)		\
+		static struct marker __mark_##channel##_##name		\
 		__attribute__((section("__markers"))) =			\
 		{ __mstrtab_##channel##_##name,				\
 			&__mstrtab_##channel##_##name[sizeof(#channel)],	\
@@ -155,7 +155,7 @@ struct marker {
 			NULL, tp_name_str, tp_cb };			\
 		static struct marker * const __mark_ptr_##channel##_##name	\
 			__attribute__((used, section("__markers_ptrs"))) =	\
-			&GET_MARKER(channel, name);
+			&__mark_##channel##_##name;
 
 /*
  * Make sure the alignment of the structure in the __markers section will
@@ -173,7 +173,7 @@ struct marker {
 #define __trace_mark_counter(generic, channel, name, unique, call_private, format, args...) \
 	do {								\
 		struct marker *__marker_counter_ptr;			\
-		DEFINE_MARKER(channel, name, format, unique, __marker_counter_ptr);	\
+		_DEFINE_MARKER(channel, name, NULL, NULL, format, unique, __marker_counter_ptr);	\
 		__mark_check_format(format, ## args);			\
 		if (!generic) {						\
 			if (unlikely(imv_read(__marker_counter_ptr->state))) \
@@ -194,9 +194,9 @@ struct marker {
 		{							\
 			register_trace_##tp_name(tp_cb, call_private);		\
 		}							\
-		DEFINE_MARKER_TP(channel, name, tp_name, tp_cb, format);\
+		_DEFINE_MARKER_TP(channel, name, #tp_name, tp_cb, format);	\
 		__mark_check_format(format, ## args);			\
-		(*GET_MARKER(channel, name).call)(&GET_MARKER(channel, name), \
+		(*__mark_##channel##_##name.call)(&__mark_##channel##_##name,	\
 			call_private, &__marker_regs, ## args);				\
 	} while (0)
 
@@ -205,7 +205,6 @@ extern void marker_update_probe_range(struct marker * const *begin,
 
 /**
  * trace_mark - Marker using code patching
- * @channel: marker channel (where to send the data), not quoted.
  * @name: marker name, not quoted.
  * @format: format string
  * @args...: variable argument list
@@ -213,12 +212,11 @@ extern void marker_update_probe_range(struct marker * const *begin,
  * Places a marker using optimized code patching technique (imv_read())
  * to be enabled when immediate values are present.
  */
-#define trace_mark(channel, name, format, args...) \
-	__trace_mark(0, channel, name, NULL, format, ## args)
+#define trace_mark(name, format, args...) \
+	__trace_mark(0, ust, name, NULL, format, ## args)
 
 /**
  * _trace_mark - Marker using variable read
- * @channel: marker channel (where to send the data), not quoted.
  * @name: marker name, not quoted.
  * @format: format string
  * @args...: variable argument list
@@ -227,12 +225,11 @@ extern void marker_update_probe_range(struct marker * const *begin,
  * enabled. Should be used for markers in code paths where instruction
  * modification based enabling is not welcome.
  */
-#define _trace_mark(channel, name, format, args...) \
-	__trace_mark(1, channel, name, NULL, format, ## args)
+#define _trace_mark(name, format, args...) \
+	__trace_mark(1, ust, name, NULL, format, ## args)
 
 /**
  * trace_mark_tp - Marker in a tracepoint callback
- * @channel: marker channel (where to send the data), not quoted.
  * @name: marker name, not quoted.
  * @tp_name: tracepoint name, not quoted.
  * @tp_cb: tracepoint callback. Should have an associated global symbol so it
@@ -242,8 +239,8 @@ extern void marker_update_probe_range(struct marker * const *begin,
  *
  * Places a marker in a tracepoint callback.
  */
-#define trace_mark_tp(channel, name, tp_name, tp_cb, format, args...)	\
-	__trace_mark_tp(channel, name, NULL, tp_name, tp_cb, format, ## args)
+#define trace_mark_tp(name, tp_name, tp_cb, format, args...)	\
+	__trace_mark_tp(ust, name, NULL, tp_name, tp_cb, format, ## args)
 
 /**
  * MARK_NOARGS - Format string for a marker with no argument.

@@ -19,6 +19,6 @@
 
 int main()
 {
-  trace_mark(ust, same_line_event, "%s","An event occured in the same line"); trace_mark(ust, same_line_event, "%s","An event occured in the same line");
+  trace_mark(same_line_event, "%s","An event occured in the same line"); trace_mark(same_line_event, "%s","An event occured in the same line");
 	return 0;
 }

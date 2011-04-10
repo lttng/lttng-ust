@@ -30,8 +30,8 @@ int main()
 	int i;
 
 	for(i=0; i<N_ITER; i++) {
-		trace_mark(ust, an_event, "%d", i);
-		trace_mark(ust, another_event, "%s", "Hello, World!");
+		trace_mark(an_event, "%d", i);
+		trace_mark(another_event, "%s", "Hello, World!");
 	}
 
 	return 0;
