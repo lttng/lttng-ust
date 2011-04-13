@@ -29,7 +29,6 @@
 #include <urcu-bp.h>
 #include <ust/core.h>
 
-struct module;
 struct tracepoint;
 
 struct probe {
@@ -199,7 +198,6 @@ extern int tracepoint_probe_unregister_noupdate(const char *name, void *probe,
 extern void tracepoint_probe_update_all(void);
 
 struct tracepoint_iter {
-//ust//	struct module *module;
 	struct tracepoint_lib *lib;
 	struct tracepoint * const *tracepoint;
 };
