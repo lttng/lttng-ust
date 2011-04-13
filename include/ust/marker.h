@@ -25,7 +25,6 @@
 #define _UST_MARKER_H
 
 #include <stdarg.h>
-#include <ust/immediate.h>
 #include <ust/core.h>
 #include <urcu/list.h>
 #include <ust/processor.h>
@@ -64,7 +63,7 @@ struct ust_marker {
 	const char *format;	/* Marker format string, describing the
 				 * variable argument list.
 				 */
-	DEFINE_IMV(char, state);/* Immediate value state. */
+	char state;		/* State. */
 	char ptype;		/* probe type : 0 : single, 1 : multi */
 				/* Probe wrapper */
 	u16 channel_id;		/* Numeric channel identifier, dynamic */
@@ -161,27 +160,18 @@ struct ust_marker {
  * Make sure the alignment of the structure in the __ust_marker section will
  * not add unwanted padding between the beginning of the section and the
  * structure. Force alignment to the same alignment as the section start.
- *
- * The "generic" argument controls which marker enabling mechanism must be used.
- * If generic is true, a variable read is used.
- * If generic is false, immediate values are used.
  */
 
-#define __ust_marker(generic, channel, name, call_private, format, args...) \
-	__ust_marker_counter(generic, channel, name, __LINE__, call_private, format, ## args)
+#define __ust_marker(channel, name, call_private, format, args...) \
+	__ust_marker_counter(channel, name, __LINE__, call_private, format, ## args)
 
-#define __ust_marker_counter(generic, channel, name, unique, call_private, format, args...) \
+#define __ust_marker_counter(channel, name, unique, call_private, format, args...) \
 	do {								\
 		struct ust_marker *__ust_marker_counter_ptr;			\
 		_DEFINE_UST_MARKER(channel, name, NULL, NULL, format, unique, __ust_marker_counter_ptr);	\
 		__ust_marker_check_format(format, ## args);		\
-		if (!generic) {						\
-			if (unlikely(imv_read(__ust_marker_counter_ptr->state))) \
-				(__ust_marker_counter_ptr->call)(__ust_marker_counter_ptr, call_private, &__ust_marker_regs, ## args);	\
-		} else {						\
-			if (unlikely(_imv_read(__ust_marker_counter_ptr->state))) \
-				(__ust_marker_counter_ptr->call)(__ust_marker_counter_ptr, call_private, &__ust_marker_regs, ## args);		\
-		}							\
+		if (unlikely(__ust_marker_counter_ptr->state)) \
+			(__ust_marker_counter_ptr->call)(__ust_marker_counter_ptr, call_private, &__ust_marker_regs, ## args);		\
 	} while (0)
 
 #define __ust_marker_tp(channel, name, call_private, tp_name, tp_cb, format, args...) \
@@ -209,24 +199,10 @@ extern void ust_marker_update_probe_range(struct ust_marker * const *begin,
  * @format: format string
  * @args...: variable argument list
  *
- * Places a marker using optimized code patching technique (imv_read())
- * to be enabled when immediate values are present.
+ * Places a marker at caller site.
  */
 #define ust_marker(name, format, args...) \
-	__ust_marker(0, ust, name, NULL, format, ## args)
-
-/**
- * _ust_marker - Marker using variable read
- * @name: marker name, not quoted.
- * @format: format string
- * @args...: variable argument list
- *
- * Places a marker using a standard memory read (_imv_read()) to be
- * enabled. Should be used for markers in code paths where instruction
- * modification based enabling is not welcome.
- */
-#define _ust_marker(name, format, args...) \
-	__ust_marker(1, ust, name, NULL, format, ## args)
+	__ust_marker(ust, name, NULL, format, ## args)
 
 /**
  * ust_marker_tp - Marker in a tracepoint callback

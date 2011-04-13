@@ -18,7 +18,6 @@
 #ifndef UST_H
 #define UST_H
 
-#include <ust/immediate.h>
 #include <ust/marker.h>
 #include <ust/processor.h>
 #include <ust/tracepoint.h>

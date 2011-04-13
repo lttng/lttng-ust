@@ -110,7 +110,7 @@ static void print_ust_marker(FILE *fp)
 		fprintf(fp, "ust_marker: %s/%s %d \"%s\" %p\n",
 			(*iter.ust_marker)->channel,
 			(*iter.ust_marker)->name,
-			(int)imv_read((*iter.ust_marker)->state),
+			(int)(*iter.ust_marker)->state,
 			(*iter.ust_marker)->format,
 			(*iter.ust_marker)->location);
 		ust_marker_iter_next(&iter);

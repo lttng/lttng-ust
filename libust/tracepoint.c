@@ -265,7 +265,7 @@ static void set_tracepoint(struct tracepoint_entry **entry,
 	 * is used.
 	 */
 	rcu_assign_pointer(elem->probes, (*entry)->probes);
-	elem->state__imv = active;
+	elem->state = active;
 }
 
 /*
@@ -276,7 +276,7 @@ static void set_tracepoint(struct tracepoint_entry **entry,
  */
 static void disable_tracepoint(struct tracepoint *elem)
 {
-	elem->state__imv = 0;
+	elem->state = 0;
 	rcu_assign_pointer(elem->probes, NULL);
 }
 
@@ -333,9 +333,6 @@ static void tracepoint_update_probes(void)
 //ust//		__stop___tracepoints);
 	/* tracepoints in modules. */
 	lib_update_tracepoints();
-	/* Update immediate values */
-	core_imv_update();
-//ust//	module_imv_update();
 }
 
 static struct probe *

@@ -448,7 +448,7 @@ static struct ust_marker_entry *add_ust_marker(const char *channel, const char *
 			e->call = ust_marker_probe_cb_noarg;
 		else
 			e->call = ust_marker_probe_cb;
-		__ust_marker(0, metadata, core_marker_format, NULL,
+		__ust_marker(metadata, core_marker_format, NULL,
 			   "channel %s name %s format %s",
 			   e->channel, e->name, e->format);
 	} else {
@@ -515,7 +515,7 @@ static int ust_marker_set_format(struct ust_marker_entry *entry, const char *for
 		return -ENOMEM;
 	entry->format_allocated = 1;
 
-	__ust_marker(0, metadata, core_marker_format, NULL,
+	__ust_marker(metadata, core_marker_format, NULL,
 		   "channel %s name %s format %s",
 		   entry->channel, entry->name, entry->format);
 	return 0;
@@ -580,7 +580,7 @@ static int set_ust_marker(struct ust_marker_entry *entry, struct ust_marker *ele
 	cmm_smp_wmb();
 	elem->ptype = entry->ptype;
 
-	if (elem->tp_name && (active ^ _imv_read(elem->state))) {
+	if (elem->tp_name && (active ^ elem->state)) {
 		WARN_ON(!elem->tp_cb);
 		/*
 		 * It is ok to directly call the probe registration because type
@@ -610,7 +610,7 @@ static int set_ust_marker(struct ust_marker_entry *entry, struct ust_marker *ele
 //ust//				(unsigned long)elem->tp_cb));
 		}
 	}
-	elem->state__imv = active;
+	elem->state = active;
 
 	return ret;
 }
@@ -626,7 +626,7 @@ static void disable_ust_marker(struct ust_marker *elem)
 	int ret;
 
 	/* leave "call" as is. It is known statically. */
-	if (elem->tp_name && _imv_read(elem->state)) {
+	if (elem->tp_name && elem->state) {
 		WARN_ON(!elem->tp_cb);
 		/*
 		 * It is ok to directly call the probe registration because type
@@ -641,7 +641,7 @@ static void disable_ust_marker(struct ust_marker *elem)
 		 */
 //ust//		module_put(__module_text_address((unsigned long)elem->tp_cb));
 	}
-	elem->state__imv = 0;
+	elem->state = 0;
 	elem->single.func = __ust_marker_empty_function;
 	/* Update the function before setting the ptype */
 	cmm_smp_wmb();
@@ -734,9 +734,6 @@ static void ust_marker_update_probes(void)
 {
 	lib_update_ust_marker();
 	tracepoint_probe_update_all();
-	/* Update immediate values */
-	core_imv_update();
-//ust//	module_imv_update(); /* FIXME: need to port for libs? */
 	ust_marker_update_processes();
 }
 
@@ -782,7 +779,7 @@ int ust_marker_probe_register(const char *channel, const char *name,
 			goto error_unregister_channel;
 		entry->event_id = ret;
 		ret = 0;
-		__ust_marker(0, metadata, core_marker_id, NULL,
+		__ust_marker(metadata, core_marker_id, NULL,
 			   "channel %s name %s event_id %hu "
 			   "int #1u%zu long #1u%zu pointer #1u%zu "
 			   "size_t #1u%zu alignment #1u%u",
@@ -1297,7 +1294,7 @@ void ltt_dump_ust_marker_state(struct ust_trace *trace)
 	for (i = 0; i < ust_marker_TABLE_SIZE; i++) {
 		head = &ust_marker_table[i];
 		cds_hlist_for_each_entry(entry, node, head, hlist) {
-			__ust_marker(0, metadata, core_marker_id,
+			__ust_marker(metadata, core_marker_id,
 				&call_data,
 				"channel %s name %s event_id %hu "
 				"int #1u%zu long #1u%zu pointer #1u%zu "
@@ -1309,7 +1306,7 @@ void ltt_dump_ust_marker_state(struct ust_trace *trace)
 				sizeof(void *), sizeof(size_t),
 				ltt_get_alignment());
 			if (entry->format)
-				__ust_marker(0, metadata,
+				__ust_marker(metadata,
 					core_marker_format,
 					&call_data,
 					"channel %s name %s format %s",

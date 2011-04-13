@@ -27,7 +27,6 @@
 
 #define _LGPL_SOURCE
 #include <urcu-bp.h>
-#include <ust/immediate.h>
 #include <ust/core.h>
 
 struct module;
@@ -40,7 +39,7 @@ struct probe {
 
 struct tracepoint {
 	const char *name;		/* Tracepoint name */
-	DEFINE_IMV(char, state);	/* State. */
+	char state;			/* State. */
 	struct probe *probes;
 };
 
@@ -86,39 +85,23 @@ struct tracepoint {
 		rcu_read_unlock();					\
 	} while (0)
 
-#define __CHECK_TRACE(name, generic, proto, args)			\
+#define __CHECK_TRACE(name, proto, args)				\
 	do {								\
-		if (!generic) {						\
-			if (unlikely(imv_read(__tracepoint_##name.state))) \
-				__DO_TRACE(&__tracepoint_##name,	\
-					TP_PROTO(proto), TP_ARGS(args));	\
-		} else {						\
-			if (unlikely(_imv_read(__tracepoint_##name.state))) \
-				__DO_TRACE(&__tracepoint_##name,	\
-					TP_PROTO(proto), TP_ARGS(args));	\
-		}							\
+		if (unlikely(__tracepoint_##name.state))		\
+			__DO_TRACE(&__tracepoint_##name,		\
+				TP_PROTO(proto), TP_ARGS(args));	\
 	} while (0)
 
 /*
  * Make sure the alignment of the structure in the __tracepoints section will
  * not add unwanted padding between the beginning of the section and the
  * structure. Force alignment to the same alignment as the section start.
- *
- * The "generic" argument, passed to the declared __trace_##name inline
- * function controls which tracepoint enabling mechanism must be used.
- * If generic is true, a variable read is used.
- * If generic is false, immediate values are used.
  */
 #define __DECLARE_TRACE(name, proto, args, data_proto, data_args)	\
 	extern struct tracepoint __tracepoint_##name;			\
 	static inline void __trace_##name(proto)			\
 	{								\
-		__CHECK_TRACE(name, 0, TP_PROTO(data_proto),		\
-			      TP_ARGS(data_args));			\
-	}								\
-	static inline void _trace_##name(proto)				\
-	{								\
-		__CHECK_TRACE(name, 1, TP_PROTO(data_proto),		\
+		__CHECK_TRACE(name, TP_PROTO(data_proto),		\
 			      TP_ARGS(data_args));			\
 	}								\
 	static inline int						\
