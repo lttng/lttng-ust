@@ -65,13 +65,13 @@ static void * register_thread_main(void *data)
 	}
 
 	for (i=0; i<1000; i++) {
-		while (!register_trace_hello_tptest(tptest_probe,
+		while (!register_tracepoint(hello_tptest, tptest_probe,
 						    &hello[j%HELLO_LENGTH])) {
 			usleep(10);
 			j++;
 		}
 		printf("Registered all\n");
-		while (!unregister_trace_hello_tptest(tptest_probe,
+		while (!unregister_tracepoint(hello_tptest, tptest_probe,
 						      &hello[j%HELLO_LENGTH])) {
 			usleep(10);
 			j++;
@@ -89,7 +89,7 @@ int main(int argc, char **argv)
 
 	pthread_create(&register_thread, NULL, register_thread_main, NULL);
 	for(i=0; i<1000000; i++) {
-		trace_hello_tptest(i);
+		tracepoint(hello_tptest, i);
 	}
 
 	return 0;

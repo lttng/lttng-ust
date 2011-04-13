@@ -25,7 +25,7 @@ int main(int argc, char * argv[])
 	static unsigned long time, i;
 	for (i=0; i<10; i++) {
 		time=trace_clock_read64();
-		trace_test(time, i);
+		tracepoint(test, time, i);
 	}
 	return 0;
 }

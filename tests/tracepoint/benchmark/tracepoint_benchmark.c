@@ -49,12 +49,12 @@ void tp_probe(void *data, unsigned int p1)
 
 static void __attribute__((constructor)) init()
 {
-	register_trace_ust_event(tp_probe, NULL);
+	register_tracepoint(ust_event, tp_probe, NULL);
 }
 
 void single_trace(unsigned int v)
 {
-	trace_ust_event(v);
+	tracepoint(ust_event, v);
 }
 
 void do_trace(void)

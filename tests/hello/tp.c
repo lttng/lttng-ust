@@ -40,5 +40,5 @@ void tptest_probe(void *data, int anint)
 static void __attribute__((constructor)) init()
 {
 	DBG("connecting tracepoint...\n");
-	register_trace_hello_tptest(tptest_probe, &hello_struct);
+	register_tracepoint(hello_tptest, tptest_probe, &hello_struct);
 }

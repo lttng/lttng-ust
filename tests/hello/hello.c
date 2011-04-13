@@ -73,7 +73,7 @@ int main()
 	for(i=0; i<50; i++) {
 		ust_marker(bar, "str %s", "FOOBAZ");
 		ust_marker(bar2, "number1 %d number2 %d", 53, 9800);
-		trace_hello_tptest(i);
+		tracepoint(hello_tptest, i);
 		usleep(100000);
 	}
 

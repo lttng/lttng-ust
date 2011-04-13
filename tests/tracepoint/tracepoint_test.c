@@ -90,18 +90,18 @@ void tp_probe(void *data, unsigned int p1)
 
 static void __attribute__((constructor)) init()
 {
-	register_trace_ust_event(tp_probe, NULL);
-	register_trace_ust_event(tp_probe2, NULL);
-	register_trace_ust_event(tp_probe3, &msg_probe3);
-	register_trace_ust_event2(tp_probe4, NULL);
+	register_tracepoint(ust_event, tp_probe, NULL);
+	register_tracepoint(ust_event, tp_probe2, NULL);
+	register_tracepoint(ust_event, tp_probe3, &msg_probe3);
+	register_tracepoint(ust_event2, tp_probe4, NULL);
 }
 
 int main(int argc, char **argv) {
 	unsigned int v = 42;
 	/* Tracepoint 1 : ust_event */
-	trace_ust_event(v);
+	tracepoint(ust_event, v);
 	/* Tracepoint 2 : ust_event2 */
-	trace_ust_event2(v);
+	tracepoint(ust_event2, v);
 
 	return 0;
 }

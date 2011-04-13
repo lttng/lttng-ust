@@ -49,6 +49,18 @@ struct tracepoint {
 #define TP_PROTO(args...)	args
 #define TP_ARGS(args...)	args
 
+/*
+ * Tracepoints should be added to the instrumented code using the
+ * "tracepoint()" macro.
+ */
+#define tracepoint(name, args...)	__trace_##name(args)
+
+#define register_tracepoint(name, probe, data)			\
+		__register_trace_##name(probe, data)
+
+#define unregister_tracepoint(name, probe, data)		\
+		__unregister_trace_##name(probe, data)
+
 #define CONFIG_TRACEPOINTS
 #ifdef CONFIG_TRACEPOINTS
 
@@ -99,7 +111,7 @@ struct tracepoint {
  */
 #define __DECLARE_TRACE(name, proto, args, data_proto, data_args)	\
 	extern struct tracepoint __tracepoint_##name;			\
-	static inline void trace_##name(proto)				\
+	static inline void __trace_##name(proto)			\
 	{								\
 		__CHECK_TRACE(name, 0, TP_PROTO(data_proto),		\
 			      TP_ARGS(data_args));			\
@@ -110,14 +122,14 @@ struct tracepoint {
 			      TP_ARGS(data_args));			\
 	}								\
 	static inline int						\
-	register_trace_##name(void (*probe)(data_proto), void *data)	\
+	__register_trace_##name(void (*probe)(data_proto), void *data)	\
 	{								\
 		return tracepoint_probe_register(#name, (void *)probe,	\
 						 data);			\
 									\
 	}								\
 	static inline int						\
-	unregister_trace_##name(void (*probe)(data_proto), void *data)	\
+	__unregister_trace_##name(void (*probe)(data_proto), void *data)\
 	{								\
 		return tracepoint_probe_unregister(#name, (void *)probe, \
 						   data);		\
@@ -145,11 +157,11 @@ extern void tracepoint_update_probe_range(struct tracepoint * const *begin,
 	{ }								\
 	static inline void _trace_##name(proto)				\
 	{ }								\
-	static inline int register_trace_##name(void (*probe)(proto), void *data)	\
+	static inline int __register_trace_##name(void (*probe)(proto), void *data)	\
 	{								\
 		return -ENOSYS;						\
 	}								\
-	static inline int unregister_trace_##name(void (*probe)(proto), void *data)	\
+	static inline int __unregister_trace_##name(void (*probe)(proto), void *data)	\
 	{								\
 		return -ENOSYS;						\
 	}

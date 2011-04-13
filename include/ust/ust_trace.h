@@ -70,11 +70,11 @@
 	}								\
 	static inline int register_event_##name(void *data)		\
 	{								\
-		return register_trace_##name(trace_printf_##name, data); \
+		return register_tracepoint(name, trace_printf_##name, data); \
 	}								\
 	static inline int unregister_event_##name(void *data)		\
 	{								\
-		return unregister_trace_##name(trace_printf_##name, data); \
+		return unregister_tracepoint(name, trace_printf_##name, data); \
 	}								\
 	struct trace_event __event_##name = {				\
 		__tpstrtab_##name,					\
@@ -88,7 +88,7 @@
 	static void __attribute__((constructor)) init_##name()		\
 	{								\
 		void *dummy = NULL;					\
-		register_trace_##name(trace_printf_##name, dummy);	\
+		register_tracepoint(name, trace_printf_##name, dummy);	\
 	}
 
 
