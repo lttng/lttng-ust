@@ -24,7 +24,7 @@ int main()
 {
 	printf("IN FORK2\n");
 
-	ust_marker(after_exec, MARK_NOARGS);
+	ust_marker(after_exec, UST_MARKER_NOARGS);
 
 	return 0;
 }

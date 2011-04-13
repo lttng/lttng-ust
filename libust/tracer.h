@@ -48,9 +48,9 @@
 #define LTT_ARCH_VARIANT		LTT_ARCH_VARIANT_NONE
 #endif
 
-struct ltt_active_marker;
+struct ltt_active_ust_marker;
 
-/* Maximum number of callbacks per marker */
+/* Maximum number of callbacks per ust_marker */
 #define LTT_NR_CALLBACKS	10
 
 struct ltt_serialize_closure;
@@ -93,7 +93,7 @@ struct chan_info_struct {
 	unsigned int def_subbufcount;
 };
 
-struct ltt_active_marker {
+struct ltt_active_ust_marker {
 	struct cds_list_head node;		/* active markers list */
 	const char *channel;
 	const char *name;
@@ -101,30 +101,30 @@ struct ltt_active_marker {
 	struct ltt_available_probe *probe;
 };
 
-struct marker; //ust//
-extern void ltt_vtrace(const struct marker *mdata, void *probe_data,
+struct ust_marker; //ust//
+extern void ltt_vtrace(const struct ust_marker *mdata, void *probe_data,
 	struct registers *regs, void *call_data, const char *fmt, va_list *args);
-extern void ltt_trace(const struct marker *mdata, void *probe_data,
+extern void ltt_trace(const struct ust_marker *mdata, void *probe_data,
 	struct registers *regs, void *call_data, const char *fmt, ...);
 
 /*
  * Unique ID assigned to each registered probe.
  */
-enum marker_id {
-	MARKER_ID_SET_MARKER_ID = 0,	/* Static IDs available (range 0-7) */
-	MARKER_ID_SET_MARKER_FORMAT,
-	MARKER_ID_COMPACT,		/* Compact IDs (range: 8-127)	    */
-	MARKER_ID_DYNAMIC,		/* Dynamic IDs (range: 128-65535)   */
+enum ust_marker_id {
+	UST_MARKER_ID_SET_MARKER_ID = 0,	/* Static IDs available (range 0-7) */
+	UST_MARKER_ID_SET_MARKER_FORMAT,
+	UST_MARKER_ID_COMPACT,		/* Compact IDs (range: 8-127)	    */
+	UST_MARKER_ID_DYNAMIC,		/* Dynamic IDs (range: 128-65535)   */
 };
 
 /* static ids 0-1 reserved for internal use. */
-#define MARKER_CORE_IDS		2
-static __inline__ enum marker_id marker_id_type(uint16_t id)
+#define UST_MARKER_CORE_IDS		2
+static __inline__ enum ust_marker_id ust_marker_id_type(uint16_t id)
 {
-	if (id < MARKER_CORE_IDS)
-		return (enum marker_id)id;
+	if (id < UST_MARKER_CORE_IDS)
+		return (enum ust_marker_id)id;
 	else
-		return MARKER_ID_DYNAMIC;
+		return UST_MARKER_ID_DYNAMIC;
 }
 
 struct user_dbg_data {
@@ -445,7 +445,7 @@ extern void ltt_core_unregister(void);
 extern void ltt_release_trace(struct urcu_ref *urcu_ref);
 extern void ltt_release_transport(struct urcu_ref *urcu_ref);
 
-extern void ltt_dump_marker_state(struct ust_trace *trace);
+extern void ltt_dump_ust_marker_state(struct ust_trace *trace);
 
 extern void ltt_lock_traces(void);
 extern void ltt_unlock_traces(void);

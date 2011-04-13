@@ -17,7 +17,7 @@
 #include "tracer.h"
 
 notrace
-void _ltt_specialized_trace(const struct marker *mdata, void *probe_data,
+void _ltt_specialized_trace(const struct ust_marker *mdata, void *probe_data,
 		void *serialize_private, unsigned int data_size,
 		unsigned int largest_align)
 {

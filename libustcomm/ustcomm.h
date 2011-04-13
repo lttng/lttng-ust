@@ -105,10 +105,10 @@ struct ustcomm_buffer_info {
 	char data[USTCOMM_DATA_SIZE];
 };
 
-struct ustcomm_marker_info {
+struct ustcomm_ust_marker_info {
 	char *trace;
 	char *channel;
-	char *marker;
+	char *ust_marker;
 	char data[USTCOMM_DATA_SIZE];
 };
 
@@ -202,12 +202,12 @@ extern int ustcomm_pack_buffer_info(struct ustcomm_header *header,
 
 extern int ustcomm_unpack_buffer_info(struct ustcomm_buffer_info *buf_inf);
 
-extern int ustcomm_pack_marker_info(struct ustcomm_header *header,
-				    struct ustcomm_marker_info *marker_inf,
+extern int ustcomm_pack_ust_marker_info(struct ustcomm_header *header,
+				    struct ustcomm_ust_marker_info *ust_marker_inf,
 				    const char *trace,
 				    const char *channel,
-				    const char *marker);
+				    const char *ust_marker);
 
-extern int ustcomm_unpack_marker_info(struct ustcomm_marker_info *marker_inf);
+extern int ustcomm_unpack_ust_marker_info(struct ustcomm_ust_marker_info *ust_marker_inf);
 
 #endif /* USTCOMM_H */

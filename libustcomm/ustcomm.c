@@ -838,68 +838,68 @@ int ustcomm_unpack_buffer_info(struct ustcomm_buffer_info *buf_inf)
 	return 0;
 }
 
-int ustcomm_pack_marker_info(struct ustcomm_header *header,
-			     struct ustcomm_marker_info *marker_inf,
+int ustcomm_pack_ust_marker_info(struct ustcomm_header *header,
+			     struct ustcomm_ust_marker_info *ust_marker_inf,
 			     const char *trace,
 			     const char *channel,
-			     const char *marker)
+			     const char *ust_marker)
 {
 	int offset = 0;
 
-	marker_inf->trace = ustcomm_print_data(marker_inf->data,
-					       sizeof(marker_inf->data),
+	ust_marker_inf->trace = ustcomm_print_data(ust_marker_inf->data,
+					       sizeof(ust_marker_inf->data),
 					       &offset,
 					       trace);
 
-	if (marker_inf->trace == USTCOMM_POISON_PTR) {
+	if (ust_marker_inf->trace == USTCOMM_POISON_PTR) {
 		return -ENOMEM;
 	}
 
 
-	marker_inf->channel = ustcomm_print_data(marker_inf->data,
-						 sizeof(marker_inf->data),
+	ust_marker_inf->channel = ustcomm_print_data(ust_marker_inf->data,
+						 sizeof(ust_marker_inf->data),
 						 &offset,
 						 channel);
 
-	if (marker_inf->channel == USTCOMM_POISON_PTR) {
+	if (ust_marker_inf->channel == USTCOMM_POISON_PTR) {
 		return -ENOMEM;
 	}
 
 
-	marker_inf->marker = ustcomm_print_data(marker_inf->data,
-						 sizeof(marker_inf->data),
+	ust_marker_inf->ust_marker = ustcomm_print_data(ust_marker_inf->data,
+						 sizeof(ust_marker_inf->data),
 						 &offset,
-						 marker);
+						 ust_marker);
 
-	if (marker_inf->marker == USTCOMM_POISON_PTR) {
+	if (ust_marker_inf->ust_marker == USTCOMM_POISON_PTR) {
 		return -ENOMEM;
 	}
 
-	header->size = COMPUTE_MSG_SIZE(marker_inf, offset);
+	header->size = COMPUTE_MSG_SIZE(ust_marker_inf, offset);
 
 	return 0;
 }
 
-int ustcomm_unpack_marker_info(struct ustcomm_marker_info *marker_inf)
+int ustcomm_unpack_ust_marker_info(struct ustcomm_ust_marker_info *ust_marker_inf)
 {
-	marker_inf->trace = ustcomm_restore_ptr(marker_inf->trace,
-						marker_inf->data,
-						sizeof(marker_inf->data));
-	if (!marker_inf->trace) {
+	ust_marker_inf->trace = ustcomm_restore_ptr(ust_marker_inf->trace,
+						ust_marker_inf->data,
+						sizeof(ust_marker_inf->data));
+	if (!ust_marker_inf->trace) {
 		return -EINVAL;
 	}
 
-	marker_inf->channel = ustcomm_restore_ptr(marker_inf->channel,
-						  marker_inf->data,
-						  sizeof(marker_inf->data));
-	if (!marker_inf->channel) {
+	ust_marker_inf->channel = ustcomm_restore_ptr(ust_marker_inf->channel,
+						  ust_marker_inf->data,
+						  sizeof(ust_marker_inf->data));
+	if (!ust_marker_inf->channel) {
 		return -EINVAL;
 	}
 
-	marker_inf->marker = ustcomm_restore_ptr(marker_inf->marker,
-						 marker_inf->data,
-						 sizeof(marker_inf->data));
-	if (!marker_inf->marker) {
+	ust_marker_inf->ust_marker = ustcomm_restore_ptr(ust_marker_inf->ust_marker,
+						 ust_marker_inf->data,
+						 sizeof(ust_marker_inf->data));
+	if (!ust_marker_inf->ust_marker) {
 		return -EINVAL;
 	}
 

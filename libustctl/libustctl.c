@@ -265,25 +265,25 @@ pid_t *ustctl_get_online_pids(void)
 }
 
 /**
- * Sets marker state (USTCTL_MS_ON or USTCTL_MS_OFF).
+ * Sets ust_marker state (USTCTL_MS_ON or USTCTL_MS_OFF).
  *
  * @param mn	Marker name
  * @param state	Marker's new state
  * @param pid	Traced process ID
  * @return	0 if successful, or errors {USTCTL_ERR_GEN, USTCTL_ERR_ARG}
  */
-int ustctl_set_marker_state(int sock, const char *trace, const char *channel,
-			    const char *marker, int state)
+int ustctl_set_ust_marker_state(int sock, const char *trace, const char *channel,
+			    const char *ust_marker, int state)
 {
 	struct ustcomm_header req_header, res_header;
-	struct ustcomm_marker_info marker_inf;
+	struct ustcomm_ust_marker_info ust_marker_inf;
 	int result;
 
-	result = ustcomm_pack_marker_info(&req_header,
-					  &marker_inf,
+	result = ustcomm_pack_ust_marker_info(&req_header,
+					  &ust_marker_inf,
 					  trace,
 					  channel,
-					  marker);
+					  ust_marker);
 	if (result < 0) {
 		errno = -result;
 		return -1;
@@ -291,7 +291,7 @@ int ustctl_set_marker_state(int sock, const char *trace, const char *channel,
 
 	req_header.command = state ? ENABLE_MARKER : DISABLE_MARKER;
 
-	return do_cmd(sock, &req_header, (char *)&marker_inf,
+	return do_cmd(sock, &req_header, (char *)&ust_marker_inf,
 		      &res_header, NULL);
 }
 
@@ -549,7 +549,7 @@ unsigned int ustctl_count_nl(const char *str)
  * @param cmsf	CMSF array to free
  * @return	0 if successful, or error USTCTL_ERR_ARG
  */
-int ustctl_free_cmsf(struct marker_status *cmsf)
+int ustctl_free_cmsf(struct ust_marker_status *cmsf)
 {
 	if (cmsf == NULL) {
 		return USTCTL_ERR_ARG;
@@ -558,7 +558,7 @@ int ustctl_free_cmsf(struct marker_status *cmsf)
 	unsigned int i = 0;
 	while (cmsf[i].channel != NULL) {
 		free(cmsf[i].channel);
-		free(cmsf[i].marker);
+		free(cmsf[i].ust_marker);
 		free(cmsf[i].fs);
 		++i;
 	}
@@ -568,19 +568,19 @@ int ustctl_free_cmsf(struct marker_status *cmsf)
 }
 
 /**
- * Gets channel/marker/state/format string for a given PID.
+ * Gets channel/ust_marker/state/format string for a given PID.
  *
  * @param cmsf	Pointer to CMSF array to be filled (callee allocates, caller
  *		frees with `ustctl_free_cmsf')
  * @param pid	Targeted PID
  * @return	0 if successful, or -1 on error
  */
-int ustctl_get_cmsf(int sock, struct marker_status **cmsf)
+int ustctl_get_cmsf(int sock, struct ust_marker_status **cmsf)
 {
 	struct ustcomm_header req_header, res_header;
 	char *big_str = NULL;
 	int result;
-	struct marker_status *tmp_cmsf = NULL;
+	struct ust_marker_status *tmp_cmsf = NULL;
 	unsigned int i = 0, cmsf_ind = 0;
 
 	if (cmsf == NULL) {
@@ -592,17 +592,17 @@ int ustctl_get_cmsf(int sock, struct marker_status **cmsf)
 
 	result = ustcomm_send(sock, &req_header, NULL);
 	if (result <= 0) {
-		PERROR("error while requesting markers list");
+		PERROR("error while requesting ust_marker list");
 		return -1;
 	}
 
 	result = ustcomm_recv_alloc(sock, &res_header, &big_str);
 	if (result <= 0) {
-		ERR("error while receiving markers list");
+		ERR("error while receiving ust_marker list");
 		return -1;
 	}
 
-	tmp_cmsf = (struct marker_status *) zmalloc(sizeof(struct marker_status) *
+	tmp_cmsf = (struct ust_marker_status *) zmalloc(sizeof(struct ust_marker_status) *
 						    (ustctl_count_nl(big_str) + 1));
 	if (tmp_cmsf == NULL) {
 		ERR("Failed to allocate CMSF array");
@@ -613,9 +613,9 @@ int ustctl_get_cmsf(int sock, struct marker_status **cmsf)
 	while (big_str[i] != '\0') {
 		char state;
 
-		sscanf(big_str + i, "marker: %a[^/]/%a[^ ] %c %a[^\n]",
+		sscanf(big_str + i, "ust_marker: %a[^/]/%a[^ ] %c %a[^\n]",
 		       &tmp_cmsf[cmsf_ind].channel,
-		       &tmp_cmsf[cmsf_ind].marker,
+		       &tmp_cmsf[cmsf_ind].ust_marker,
 		       &state,
 		       &tmp_cmsf[cmsf_ind].fs);
 		tmp_cmsf[cmsf_ind].state = (state == USTCTL_MS_CHR_ON ?
@@ -628,7 +628,7 @@ int ustctl_get_cmsf(int sock, struct marker_status **cmsf)
 		++cmsf_ind;
 	}
 	tmp_cmsf[cmsf_ind].channel = NULL;
-	tmp_cmsf[cmsf_ind].marker = NULL;
+	tmp_cmsf[cmsf_ind].ust_marker = NULL;
 	tmp_cmsf[cmsf_ind].fs = NULL;
 
 	*cmsf = tmp_cmsf;
@@ -690,7 +690,7 @@ int ustctl_get_tes(int sock, struct trace_event_status **tes)
 
 	result = ustcomm_recv_alloc(sock, &res_header, &big_str);
 	if (result != 1) {
-		ERR("error while receiving markers list");
+		ERR("error while receiving ust_marker list");
 		return -1;
 	}
 

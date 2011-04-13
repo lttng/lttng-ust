@@ -11,6 +11,6 @@
 #include <ust/marker.h>
 #include <ust/tracepoint.h>
 
-MARKER_LIB;
+UST_MARKER_LIB;
 TRACEPOINT_LIB;
 TRACE_EVENT_LIB;

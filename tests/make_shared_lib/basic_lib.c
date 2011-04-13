@@ -7,4 +7,4 @@ void myfunc(void)
 	printf("testfunc\n");
 }
 
-//MARKER_LIB
+//UST_MARKER_LIB

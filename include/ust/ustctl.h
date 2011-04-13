@@ -36,11 +36,11 @@
 #define USTCTL_SOCK_PATH	"/tmp/socks/"
 
 /* Channel/marker/state/format string (cmsf) info. structure */
-struct marker_status {
-	char *channel; /* Channel name (end of marker_status array if NULL) */
-	char *marker; /* Marker name (end of marker_status array if NULL) */
+struct ust_marker_status {
+	char *channel; /* Channel name (end of ust_marker_status array if NULL) */
+	char *ust_marker; /* Marker name (end of ust_marker_status array if NULL) */
 	int state; /* State (0 := marker disabled, 1 := marker enabled) */
-	char *fs; /* Format string (end of marker_status array if NULL) */
+	char *fs; /* Format string (end of ust_marker_status array if NULL) */
 };
 
 struct trace_event_status {
@@ -51,8 +51,8 @@ extern pid_t *ustctl_get_online_pids(void);
 
 extern int ustctl_connect_pid(pid_t pid);
 
-extern int ustctl_set_marker_state(int sock, const char *trace,
-				   const char *channel, const char *marker,
+extern int ustctl_set_ust_marker_state(int sock, const char *trace,
+				   const char *channel, const char *ust_marker,
 				   int state);
 
 extern int ustctl_set_subbuf_size(int sock, const char *trace,
@@ -81,11 +81,11 @@ extern int ustctl_start_trace(int sock, const char *trace);
 
 extern int ustctl_alloc_trace(int sock, const char *trace);
 
-extern int ustctl_free_cmsf(struct marker_status *);
+extern int ustctl_free_cmsf(struct ust_marker_status *);
 extern int ustctl_free_tes(struct trace_event_status *);
 extern unsigned int ustctl_count_nl(const char *);
 
-extern int ustctl_get_cmsf(int sock, struct marker_status **);
+extern int ustctl_get_cmsf(int sock, struct ust_marker_status **);
 
 extern int ustctl_get_tes(int sock, struct trace_event_status **);
 

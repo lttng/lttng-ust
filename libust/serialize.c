@@ -624,12 +624,12 @@ void ltt_write_event_data(struct ust_buffer *buf, size_t buf_offset,
 }
 
 
-notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
+notrace void ltt_vtrace(const struct ust_marker *mdata, void *probe_data,
 			struct registers *regs, void *call_data,
 			const char *fmt, va_list *args)
 {
 	int largest_align, ret;
-	struct ltt_active_marker *pdata;
+	struct ltt_active_ust_marker *pdata;
 	uint16_t eID;
 	size_t data_size, slot_size;
 	unsigned int chan_index;
@@ -661,7 +661,7 @@ notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
 	stack_pos_ctx = tracer_stack_pos;
 	cmm_barrier();
 
-	pdata = (struct ltt_active_marker *)probe_data;
+	pdata = (struct ltt_active_ust_marker *)probe_data;
 	eID = mdata->event_id;
 	chan_index = mdata->channel_id;
 	closure.callbacks = pdata->probe->callbacks;
@@ -752,7 +752,7 @@ notrace void ltt_vtrace(const struct marker *mdata, void *probe_data,
 	rcu_read_unlock(); //ust// rcu_read_unlock_sched_notrace();
 }
 
-notrace void ltt_trace(const struct marker *mdata, void *probe_data,
+notrace void ltt_trace(const struct ust_marker *mdata, void *probe_data,
 		       struct registers *regs, void *call_data,
 		       const char *fmt, ...)
 {

@@ -98,24 +98,24 @@ static long long make_pidunique(void)
 	return retval;
 }
 
-static void print_markers(FILE *fp)
+static void print_ust_marker(FILE *fp)
 {
-	struct marker_iter iter;
+	struct ust_marker_iter iter;
 
-	lock_markers();
-	marker_iter_reset(&iter);
-	marker_iter_start(&iter);
+	lock_ust_marker();
+	ust_marker_iter_reset(&iter);
+	ust_marker_iter_start(&iter);
 
-	while (iter.marker) {
-		fprintf(fp, "marker: %s/%s %d \"%s\" %p\n",
-			(*iter.marker)->channel,
-			(*iter.marker)->name,
-			(int)imv_read((*iter.marker)->state),
-			(*iter.marker)->format,
-			(*iter.marker)->location);
-		marker_iter_next(&iter);
+	while (iter.ust_marker) {
+		fprintf(fp, "ust_marker: %s/%s %d \"%s\" %p\n",
+			(*iter.ust_marker)->channel,
+			(*iter.ust_marker)->name,
+			(int)imv_read((*iter.ust_marker)->state),
+			(*iter.ust_marker)->format,
+			(*iter.ust_marker)->location);
+		ust_marker_iter_next(&iter);
 	}
-	unlock_markers();
+	unlock_ust_marker();
 }
 
 static void print_trace_events(FILE *fp)
@@ -830,8 +830,8 @@ static void process_buffer_cmd(int sock, int command,
 
 }
 
-static void process_marker_cmd(int sock, int command,
-			       struct ustcomm_marker_info *marker_inf)
+static void process_ust_marker_cmd(int sock, int command,
+			       struct ustcomm_ust_marker_info *ust_marker_inf)
 {
 	struct ustcomm_header _reply_header;
 	struct ustcomm_header *reply_header = &_reply_header;
@@ -842,26 +842,26 @@ static void process_marker_cmd(int sock, int command,
 	switch(command) {
 	case ENABLE_MARKER:
 
-		result = ltt_marker_connect(marker_inf->channel,
-					    marker_inf->marker,
+		result = ltt_ust_marker_connect(ust_marker_inf->channel,
+					    ust_marker_inf->ust_marker,
 					    "default");
 		if (result < 0) {
-			WARN("could not enable marker; channel=%s,"
+			WARN("could not enable ust_marker; channel=%s,"
 			     " name=%s",
-			     marker_inf->channel,
-			     marker_inf->marker);
+			     ust_marker_inf->channel,
+			     ust_marker_inf->ust_marker);
 
 		}
 		break;
 	case DISABLE_MARKER:
-		result = ltt_marker_disconnect(marker_inf->channel,
-					       marker_inf->marker,
+		result = ltt_ust_marker_disconnect(ust_marker_inf->channel,
+					       ust_marker_inf->ust_marker,
 					       "default");
 		if (result < 0) {
-			WARN("could not disable marker; channel=%s,"
+			WARN("could not disable ust_marker; channel=%s,"
 			     " name=%s",
-			     marker_inf->channel,
-			     marker_inf->marker);
+			     ust_marker_inf->channel,
+			     ust_marker_inf->ust_marker);
 		}
 		break;
 	}
@@ -919,15 +919,15 @@ static void process_client_cmd(struct ustcomm_header *recv_header,
 	case ENABLE_MARKER:
 	case DISABLE_MARKER:
 	{
-		struct ustcomm_marker_info *marker_inf;
-		marker_inf = (struct ustcomm_marker_info *)recv_buf;
-		result = ustcomm_unpack_marker_info(marker_inf);
+		struct ustcomm_ust_marker_info *ust_marker_inf;
+		ust_marker_inf = (struct ustcomm_ust_marker_info *)recv_buf;
+		result = ustcomm_unpack_ust_marker_info(ust_marker_inf);
 		if (result < 0) {
-			ERR("couldn't unpack marker info");
+			ERR("couldn't unpack ust_marker info");
 			reply_header->result = -EINVAL;
 			goto send_response;
 		}
-		process_marker_cmd(sock, recv_header->command, marker_inf);
+		process_ust_marker_cmd(sock, recv_header->command, ust_marker_inf);
 		return;
 	}
 	case LIST_MARKERS:
@@ -941,7 +941,7 @@ static void process_client_cmd(struct ustcomm_header *recv_header,
 			ERR("opening memstream failed");
 			return;
 		}
-		print_markers(fp);
+		print_ust_marker(fp);
 		fclose(fp);
 
 		reply_header->size = size + 1;	/* Include final \0 */
@@ -951,7 +951,7 @@ static void process_client_cmd(struct ustcomm_header *recv_header,
 		free(ptr);
 
 		if (result < 0) {
-			PERROR("failed to send markers list");
+			PERROR("failed to send ust_marker list");
 		}
 
 		break;
@@ -1188,7 +1188,7 @@ void create_listener(void)
 static int autoprobe_method = AUTOPROBE_DISABLED;
 static regex_t autoprobe_regex;
 
-static void auto_probe_connect(struct marker *m)
+static void auto_probe_connect(struct ust_marker *m)
 {
 	int result;
 
@@ -1200,7 +1200,7 @@ static void auto_probe_connect(struct marker *m)
 	} else if (autoprobe_method == AUTOPROBE_ENABLE_REGEX) {
 		result = asprintf(&concat_name, "%s/%s", m->channel, m->name);
 		if (result == -1) {
-			ERR("auto_probe_connect: asprintf failed (marker %s/%s)",
+			ERR("auto_probe_connect: asprintf failed (ust_marker %s/%s)",
 				m->channel, m->name);
 			return;
 		}
@@ -1211,11 +1211,11 @@ static void auto_probe_connect(struct marker *m)
 		free(concat_name);
 	}
 
-	result = ltt_marker_connect(m->channel, m->name, probe_name);
+	result = ltt_ust_marker_connect(m->channel, m->name, probe_name);
 	if (result && result != -EEXIST)
-		ERR("ltt_marker_connect (marker = %s/%s, errno = %d)", m->channel, m->name, -result);
+		ERR("ltt_ust_marker_connect (ust_marker = %s/%s, errno = %d)", m->channel, m->name, -result);
 
-	DBG("auto connected marker %s (addr: %p) %s to probe default", m->channel, m, m->name);
+	DBG("auto connected ust_marker %s (addr: %p) %s to probe default", m->channel, m, m->name);
 
 }
 
@@ -1305,18 +1305,18 @@ static void __attribute__((constructor)) init()
 
 	autoprobe_val = getenv("UST_AUTOPROBE");
 	if (autoprobe_val) {
-		struct marker_iter iter;
+		struct ust_marker_iter iter;
 
 		DBG("Autoprobe enabled.");
 
-		/* Ensure markers are initialized */
-		//init_markers();
+		/* Ensure ust_marker are initialized */
+		//init_ust_marker();
 
-		/* Ensure marker control is initialized, for the probe */
-		init_marker_control();
+		/* Ensure ust_marker control is initialized, for the probe */
+		init_ust_marker_control();
 
 		/* first, set the callback that will connect the
-		 * probe on new markers
+		 * probe on new ust_marker
 		 */
 		if (autoprobe_val[0] == '/') {
 			result = regcomp(&autoprobe_regex, autoprobe_val+1, 0);
@@ -1334,17 +1334,17 @@ static void __attribute__((constructor)) init()
 			autoprobe_method = AUTOPROBE_ENABLE_ALL;
 		}
 
-		marker_set_new_marker_cb(auto_probe_connect);
+		ust_marker_set_new_ust_marker_cb(auto_probe_connect);
 
 		/* Now, connect the probes that were already registered. */
-		marker_iter_reset(&iter);
-		marker_iter_start(&iter);
+		ust_marker_iter_reset(&iter);
+		ust_marker_iter_start(&iter);
 
-		DBG("now iterating on markers already registered");
-		while (iter.marker) {
-			DBG("now iterating on marker %s", (*iter.marker)->name);
-			auto_probe_connect(*iter.marker);
-			marker_iter_next(&iter);
+		DBG("now iterating on ust_marker already registered");
+		while (iter.ust_marker) {
+			DBG("now iterating on ust_marker %s", (*iter.ust_marker)->name);
+			auto_probe_connect(*iter.ust_marker);
+			ust_marker_iter_next(&iter);
 		}
 	}
 
@@ -1389,11 +1389,11 @@ static void __attribute__((constructor)) init()
 
 		DBG("starting early tracing");
 
-		/* Ensure marker control is initialized */
-		init_marker_control();
+		/* Ensure ust_marker control is initialized */
+		init_ust_marker_control();
 
-		/* Ensure markers are initialized */
-		init_markers();
+		/* Ensure ust_marker are initialized */
+		init_ust_marker();
 
 		/* Ensure buffers are initialized, for the transport to be available.
 		 * We are about to set a trace type and it will fail without this.
@@ -1401,7 +1401,7 @@ static void __attribute__((constructor)) init()
 		init_ustrelay_transport();
 
 		/* FIXME: When starting early tracing (here), depending on the
-		 * order of constructors, it is very well possible some marker
+		 * order of constructors, it is very well possible some ust_marker
 		 * sections are not yet registered. Because of this, some
 		 * channels may not be registered. Yet, we are about to ask the
 		 * daemon to collect the channels. Channels which are not yet
@@ -1576,7 +1576,7 @@ static void __attribute__((destructor)) keepalive()
 
 void ust_potential_exec(void)
 {
-	ust_marker(potential_exec, MARK_NOARGS);
+	ust_marker(potential_exec, UST_MARKER_NOARGS);
 
 	DBG("test");
 

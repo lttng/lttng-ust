@@ -36,16 +36,16 @@ typedef size_t (*ltt_serialize_cb)(struct ust_buffer *buf, size_t buf_offset,
 struct ltt_available_probe {
         const char *name;               /* probe name */
         const char *format;
-        marker_probe_func *probe_func;
+        ust_marker_probe_func *probe_func;
         ltt_serialize_cb callbacks[LTT_NR_CALLBACKS];
         struct cds_list_head node;          /* registered probes list */
 };
 
 extern int ltt_probe_register(struct ltt_available_probe *pdata); 
 extern int ltt_probe_unregister(struct ltt_available_probe *pdata); 
-extern int ltt_marker_connect(const char *channel, const char *mname, 
+extern int ltt_ust_marker_connect(const char *channel, const char *mname, 
                 const char *pname); 
-extern int ltt_marker_disconnect(const char *channel, const char *mname, 
+extern int ltt_ust_marker_disconnect(const char *channel, const char *mname, 
                 const char *pname);
 
 #endif /* _UST_PROBE_H */

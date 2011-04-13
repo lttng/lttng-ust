@@ -32,7 +32,7 @@ int main(int argc, char **argv, char *env[])
 	}
 
 	printf("Fork test program, parent pid is %d\n", getpid());
-	ust_marker(before_fork, MARK_NOARGS);
+	ust_marker(before_fork, UST_MARKER_NOARGS);
 
 	/* Sleep here to make sure the consumer is initialized before we fork */
 	sleep(1);
@@ -47,7 +47,7 @@ int main(int argc, char **argv, char *env[])
 
 		printf("Child pid is %d\n", getpid());
 
-		ust_marker(after_fork_child, MARK_NOARGS);
+		ust_marker(after_fork_child, UST_MARKER_NOARGS);
 
 		ust_marker(before_exec, "pid %d", getpid());
 
@@ -60,7 +60,7 @@ int main(int argc, char **argv, char *env[])
 		ust_marker(after_exec, "pid %d", getpid());
 	}
 	else {
-		ust_marker(after_fork_parent, MARK_NOARGS);
+		ust_marker(after_fork_parent, UST_MARKER_NOARGS);
 	}
 
 	return 0;

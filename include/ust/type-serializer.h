@@ -9,7 +9,7 @@
  * largest_align must be non-zero, equal to the minimum between the largest type
  * and sizeof(void *).
  */
-extern void _ltt_specialized_trace(const struct marker *mdata, void *probe_data,
+extern void _ltt_specialized_trace(const struct ust_marker *mdata, void *probe_data,
 		void *serialize_private, unsigned int data_size,
 		unsigned int largest_align);
 
@@ -18,7 +18,7 @@ extern void _ltt_specialized_trace(const struct marker *mdata, void *probe_data,
  * dumb-proof. It will make sure 0 is changed into 1 and unsigned long long is
  * changed into sizeof(void *) on 32-bit architectures.
  */
-static inline void ltt_specialized_trace(const struct marker *mdata,
+static inline void ltt_specialized_trace(const struct ust_marker *mdata,
 		void *probe_data,
 		void *serialize_private, unsigned int data_size,
 		unsigned int largest_align)

@@ -97,4 +97,4 @@ void free(void *ptr)
 	plibc_free(ptr);
 }
 
-MARKER_LIB
+UST_MARKER_LIB

@@ -679,7 +679,7 @@ int ltt_trace_start(const char *trace_name)
 	 * to record events only in a single trace in the trace session list.
 	 */
 
-	ltt_dump_marker_state(trace);
+	ltt_dump_ust_marker_state(trace);
 
 	return err;
 

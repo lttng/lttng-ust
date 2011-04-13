@@ -24,7 +24,7 @@
 
 static int list_markers(int argc, char *argv[])
 {
-	struct marker_status *cmsf = NULL;
+	struct ust_marker_status *cmsf = NULL;
 	int i, sock;
 
 	sock = parse_and_connect_pid(argv[1]);
@@ -38,7 +38,7 @@ static int list_markers(int argc, char *argv[])
 		       "state: %u, fmt: %s}\n",
 		       argv[1],
 		       cmsf[i].channel,
-		       cmsf[i].marker,
+		       cmsf[i].ust_marker,
 		       cmsf[i].state,
 		       cmsf[i].fs);
 	}
@@ -66,7 +66,7 @@ static int enable_marker(int argc, char *argv[])
 			if (marker)
 				free(marker);
 		}
-		if (ustctl_set_marker_state(sock, argv[2], channel, marker, 1)) {
+		if (ustctl_set_ust_marker_state(sock, argv[2], channel, marker, 1)) {
 			PERROR("error while trying to enable marker %s with PID %s",
 			       argv[i], argv[1]);
 			result = -1;
@@ -98,7 +98,7 @@ static int disable_marker(int argc, char *argv[])
 				free(marker);
 			return -1;
 		}
-		if (ustctl_set_marker_state(sock, argv[2], channel, marker, 0)) {
+		if (ustctl_set_ust_marker_state(sock, argv[2], channel, marker, 0)) {
 			PERROR("error while trying to disable marker %s with PID %s",
 			       argv[i], argv[1]);
 			result = -1;
@@ -110,7 +110,7 @@ static int disable_marker(int argc, char *argv[])
 	return result;
 }
 
-struct cli_cmd __cli_cmds marker_cmds[] = {
+struct cli_cmd __cli_cmds ust_marker_cmds[] = {
 	{
 		.name = "list-markers",
 		.description = "List markers for a given pid",

@@ -10,4 +10,4 @@ JNIEXPORT void JNICALL Java_UST_ust_1java_1event (JNIEnv *env, jobject jobj, jst
 	ust_marker(ust, java_event, "name %s args %s", ev_name_cstr, args_cstr);
 }
 
-MARKER_LIB
+UST_MARKER_LIB

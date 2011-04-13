@@ -294,12 +294,12 @@ end:
  */
 void ltt_channels_trace_free(struct ust_channel *channels)
 {
-	lock_markers();
+	lock_ust_marker();
 	pthread_mutex_lock(&ltt_channel_mutex);
 	free(channels);
 	urcu_ref_put(&index_urcu_ref, release_trace_channel);
 	pthread_mutex_unlock(&ltt_channel_mutex);
-	unlock_markers();
+	unlock_ust_marker();
 }
 //ust// EXPORT_SYMBOL_GPL(ltt_channels_trace_free);
 
