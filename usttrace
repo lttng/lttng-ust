@@ -4,7 +4,7 @@
 # Distributed under the GPLv2.
 
 error() {
-	echo "$0: error: $1" 2>/dev/stderr
+	echo "$0: error: $1" 1>&2
 }
 
 sighandler() {
@@ -45,18 +45,18 @@ fi
 BASE_TRACE_DIR="${HOME}/.usttraces"
 
 usage() {
-	echo "usage:  $0 OPTIONS COMMAND" 2>/dev/stderr
-	echo "" 2>/dev/stderr
-	echo "Options:" 2>/dev/stderr
-	echo "    -l    Runtime link with UST library." 2>/dev/stderr
-	echo "          (Needed only if program was not linked at compile time with libust.)" 2>/dev/stderr
-	echo "    -L    Add path to ust libraries to LD_LIBRARY_PATH." 2>/dev/stderr
-	echo "    -m    Instrument malloc calls." 2>/dev/stderr
-	echo "    -f    Also trace forked processes." 2>/dev/stderr
-	echo "    -s    Use system-wide daemon instead of creating one for this session." 2>/dev/stderr
-	echo "    -S    Specify the subbuffer size." 2>/dev/stderr
-	echo "    -N    Specify the number of subbuffers." 2>/dev/stderr
-	echo "    -o    Output directory of the trace." 2>/dev/stderr
+	echo "usage:  $0 OPTIONS COMMAND" 1>&2
+	echo "" 1>&2
+	echo "Options:" 1>&2
+	echo "    -l    Runtime link with UST library." 1>&2
+	echo "          (Needed only if program was not linked at compile time with libust.)" 1>&2
+	echo "    -L    Add path to ust libraries to LD_LIBRARY_PATH." 1>&2
+	echo "    -m    Instrument malloc calls." 1>&2
+	echo "    -f    Also trace forked processes." 1>&2
+	echo "    -s    Use system-wide daemon instead of creating one for this session." 1>&2
+	echo "    -S    Specify the subbuffer size." 1>&2
+	echo "    -N    Specify the number of subbuffers." 1>&2
+	echo "    -o    Output directory of the trace." 1>&2
 }
 
 while getopts ":hlLmfsWS:N:o:" options; do

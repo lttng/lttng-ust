@@ -25,7 +25,7 @@ source $TESTDIR/tap.sh
 starttest "ust-consumerd valgrind check"
 
 if ! which valgrind > /dev/null; then
-    echo "$0: Valgrind not found on the system." >/dev/stderr
+    echo "$0: Valgrind not found on the system." 1>&2
     exit 1;
 fi
 

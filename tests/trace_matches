@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function error() {
-	echo "$0: $@" >/dev/stderr
+	echo "$0: $@" 1>&2
 }
 
 function usage() {
@@ -43,7 +43,7 @@ elif [ -x "$(dirname `readlink -f $0`)/../../lttv/runlttv" ]; then
 	LTTV_TRACE_PREFIX=""
 
 else
-	echo "$0: No lttv found. Edit \$RUNLTTV to point to your lttv source directory or \$LTTV to you lttv executable." >/dev/stderr
+	echo "$0: No lttv found. Edit \$RUNLTTV to point to your lttv source directory or \$LTTV to you lttv executable." 1>&2
 	exit 1;
 
 fi

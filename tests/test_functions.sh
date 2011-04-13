@@ -77,7 +77,7 @@ function trace_matches() {
 	LTTV_TRACE_PREFIX=""
 
     else
-	echo "$0: No lttv found. Edit \$RUNLTTV to point to your lttv source directory or \$LTTV to you lttv executable." >/dev/stderr
+	echo "$0: No lttv found. Edit \$RUNLTTV to point to your lttv source directory or \$LTTV to you lttv executable." 1>&2
 	exit 1;
 
     fi
