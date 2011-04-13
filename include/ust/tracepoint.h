@@ -175,10 +175,27 @@ static inline void tracepoint_update_probe_range(struct tracepoint *begin,
 { }
 #endif /* CONFIG_TRACEPOINTS */
 
-#define DECLARE_TRACE(name, proto, args)			\
-	__DECLARE_TRACE(name, PARAMS(proto), PARAMS(args),	\
-			PARAMS(void *__data, proto),		\
-			PARAMS(__data, args))
+/*
+ * The need for the DECLARE_TRACE_NOARGS() is to handle the prototype
+ * (void). "void" is a special value in a function prototype and can
+ * not be combined with other arguments. Since the DECLARE_TRACE()
+ * macro adds a data element at the beginning of the prototype,
+ * we need a way to differentiate "(void *data, proto)" from
+ * "(void *data, void)". The second prototype is invalid.
+ *
+ * DECLARE_TRACE_NOARGS() passes "void" as the tracepoint prototype
+ * and "void *__data" as the callback prototype.
+ *
+ * DECLARE_TRACE() passes "proto" as the tracepoint protoype and
+ * "void *__data, proto" as the callback prototype.
+ */
+#define DECLARE_TRACE_NOARGS(name)					\
+		__DECLARE_TRACE(name, void, , void *__data, __data)
+
+#define DECLARE_TRACE(name, proto, args)				\
+		__DECLARE_TRACE(name, PARAMS(proto), PARAMS(args),	\
+				PARAMS(void *__data, proto),		\
+				PARAMS(__data, args))
 
 /*
  * Connect a probe to a tracepoint.
