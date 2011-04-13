@@ -20,3 +20,5 @@
 DECLARE_TRACE(hello_tptest,
 	      TP_PROTO(int anint),
 	      TP_ARGS(anint));
+
+DECLARE_TRACE_NOARGS(hello_tptest2);

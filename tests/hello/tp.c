@@ -37,8 +37,13 @@ void tptest_probe(void *data, int anint)
 	printf("this is the message: %s\n", hello->message);
 }
 
+void tptest2_probe(void *data)
+{
+}
+
 static void __attribute__((constructor)) init()
 {
 	DBG("connecting tracepoint...\n");
 	register_tracepoint(hello_tptest, tptest_probe, &hello_struct);
+	register_tracepoint(hello_tptest2, tptest2_probe, &hello_struct);
 }
