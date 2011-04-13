@@ -1,19 +1,22 @@
 Nils Carlson
 Aug 30th, 2010
+Mathieu Desnoyers
+April 13th, 2011
 
-The following copyright holders have agreed to LGPLv2.1+ re-licensing
-of their contributions to linux/include/tracepoint.h,
+The following copyright holders have agreed to LGPLv2.1 (not later)
+re-licensing of their contributions to linux/include/tracepoint.h,
 linux/trace/define_trace.h as concerns the TRACE_EVENT macro.
 
-Mathieu Desnoyer	       <mathieu.desnoyers@efficios.com>
+Mathieu Desnoyers	       <mathieu.desnoyers@efficios.com>
 Steven Rostedt		       <rostedt@goodmis.org>
+			       https://lkml.org/lkml/2011/4/13/484
 Frederic Weisbecker	       <fweisbec@gmail.com>
 Xiao Guangrong		       <xiaogunagrong@cn.fujitsu.com>
 Josh Stone		       <jistone@redhat.com>
 Lai Jiangshan		       <laijs@cn.fujitsu.com>
 
-The following copyright holders have agreed to LGPLv2.1+ re-licensing
-of their contributions to linux/include/stringify.h.
+The following copyright holders have agreed to LGPLv2.1 (not later)
+re-licensing of their contributions to linux/include/stringify.h.
 
 Zhaolei				<zhaolei@cn.fujitsu.com>
 
