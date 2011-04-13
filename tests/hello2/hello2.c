@@ -37,8 +37,8 @@ int main()
 	printf("Hello, World!\n");
 
 	for(i=0; i<500; i++) {
-		trace_mark(bar, "str %d", i);
-		trace_mark(bar2, "number1 %d number2 %d", (int)53, (int)9800);
+		ust_marker(bar, "str %d", i);
+		ust_marker(bar2, "number1 %d number2 %d", (int)53, (int)9800);
 	}
 
 //	ltt_trace_stop("auto");

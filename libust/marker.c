@@ -447,7 +447,7 @@ static struct marker_entry *add_marker(const char *channel, const char *name,
 			e->call = marker_probe_cb_noarg;
 		else
 			e->call = marker_probe_cb;
-		__trace_mark(0, metadata, core_marker_format, NULL,
+		__ust_marker(0, metadata, core_marker_format, NULL,
 			   "channel %s name %s format %s",
 			   e->channel, e->name, e->format);
 	} else {
@@ -514,7 +514,7 @@ static int marker_set_format(struct marker_entry *entry, const char *format)
 		return -ENOMEM;
 	entry->format_allocated = 1;
 
-	__trace_mark(0, metadata, core_marker_format, NULL,
+	__ust_marker(0, metadata, core_marker_format, NULL,
 		   "channel %s name %s format %s",
 		   entry->channel, entry->name, entry->format);
 	return 0;
@@ -583,7 +583,7 @@ static int set_marker(struct marker_entry *entry, struct marker *elem,
 		WARN_ON(!elem->tp_cb);
 		/*
 		 * It is ok to directly call the probe registration because type
-		 * checking has been done in the __trace_mark_tp() macro.
+		 * checking has been done in the __ust_marker_tp() macro.
 		 */
 
 		if (active) {
@@ -629,7 +629,7 @@ static void disable_marker(struct marker *elem)
 		WARN_ON(!elem->tp_cb);
 		/*
 		 * It is ok to directly call the probe registration because type
-		 * checking has been done in the __trace_mark_tp() macro.
+		 * checking has been done in the __ust_marker_tp() macro.
 		 */
 		ret = tracepoint_probe_unregister_noupdate(elem->tp_name,
 			elem->tp_cb, NULL);
@@ -781,7 +781,7 @@ int marker_probe_register(const char *channel, const char *name,
 			goto error_unregister_channel;
 		entry->event_id = ret;
 		ret = 0;
-		__trace_mark(0, metadata, core_marker_id, NULL,
+		__ust_marker(0, metadata, core_marker_id, NULL,
 			   "channel %s name %s event_id %hu "
 			   "int #1u%zu long #1u%zu pointer #1u%zu "
 			   "size_t #1u%zu alignment #1u%u",
@@ -1296,7 +1296,7 @@ void ltt_dump_marker_state(struct ust_trace *trace)
 	for (i = 0; i < MARKER_TABLE_SIZE; i++) {
 		head = &marker_table[i];
 		cds_hlist_for_each_entry(entry, node, head, hlist) {
-			__trace_mark(0, metadata, core_marker_id,
+			__ust_marker(0, metadata, core_marker_id,
 				&call_data,
 				"channel %s name %s event_id %hu "
 				"int #1u%zu long #1u%zu pointer #1u%zu "
@@ -1308,7 +1308,7 @@ void ltt_dump_marker_state(struct ust_trace *trace)
 				sizeof(void *), sizeof(size_t),
 				ltt_get_alignment());
 			if (entry->format)
-				__trace_mark(0, metadata,
+				__ust_marker(0, metadata,
 					core_marker_format,
 					&call_data,
 					"channel %s name %s format %s",

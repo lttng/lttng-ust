@@ -16,7 +16,7 @@
  */
 
 /*
- * This test is aimed at testing tracepoint *with* trace_mark :
+ * This test is aimed at testing tracepoint *with* ust_marker :
  *
  * 1) tracepoint named : "ust_event"
  * 	-) Probe 1 registered and recording the value 13 (x5)
@@ -47,7 +47,7 @@ void tp_probe4(void *data, unsigned int p4)
 {
 	int i;
 	for (i = 0; i < 100; i++) {
-		trace_mark_tp(event2, ust_event2, tp_probe4, "probe4 %u", p4);
+		ust_marker_tp(event2, ust_event2, tp_probe4, "probe4 %u", p4);
 	}
 }
 
@@ -60,7 +60,7 @@ void tp_probe3(void *data, unsigned int p3)
 {
 	struct message *msg;
 	msg = (struct message*) data;
-	trace_mark_tp(event_msg, ust_event_msg,
+	ust_marker_tp(event_msg, ust_event_msg,
 			tp_probe3, "probe %s", msg->payload);
 }
 
@@ -72,7 +72,7 @@ void tp_probe2(void *data, unsigned int p2)
 {
 	int i;
 	for (i = 0; i < 5; i++) {
-		trace_mark_tp(event, ust_event, tp_probe2, "probe %u", 13);
+		ust_marker_tp(event, ust_event, tp_probe2, "probe %u", 13);
 	}
 }
 
@@ -84,7 +84,7 @@ void tp_probe(void *data, unsigned int p1)
 {
 	int i;
 	for (i = 0; i < 5; i++) {
-		trace_mark_tp(event, ust_event, tp_probe, "probe %u", p1);
+		ust_marker_tp(event, ust_event, tp_probe, "probe %u", p1);
 	}
 }
 

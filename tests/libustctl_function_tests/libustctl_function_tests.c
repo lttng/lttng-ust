@@ -179,8 +179,8 @@ int main(int argc, char **argv)
 	child_pid = fork();
 	if (child_pid) {
 		for(i=0; i<10; i++) {
-			trace_mark(bar, "str %s", "FOOBAZ");
-			trace_mark(bar2, "number1 %d number2 %d", 53, 9800);
+			ust_marker(bar, "str %s", "FOOBAZ");
+			ust_marker(bar2, "number1 %d number2 %d", 53, 9800);
 			usleep(100000);
 		}
 

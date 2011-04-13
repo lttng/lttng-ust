@@ -7,7 +7,7 @@ JNIEXPORT void JNICALL Java_UST_ust_1java_1event (JNIEnv *env, jobject jobj, jst
 	const char *ev_name_cstr = (*env)->GetStringUTFChars(env, ev_name, &iscopy);
 	const char *args_cstr = (*env)->GetStringUTFChars(env, args, &iscopy);
 
-	trace_mark(ust, java_event, "name %s args %s", ev_name_cstr, args_cstr);
+	ust_marker(ust, java_event, "name %s args %s", ev_name_cstr, args_cstr);
 }
 
 MARKER_LIB

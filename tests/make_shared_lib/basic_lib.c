@@ -3,7 +3,7 @@
 
 void myfunc(void)
 {
-	trace_mark(in_lib, MARK_NOARGS);
+	ust_marker(in_lib, MARK_NOARGS);
 	printf("testfunc\n");
 }
 

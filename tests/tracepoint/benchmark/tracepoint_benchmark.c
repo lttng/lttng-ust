@@ -18,7 +18,7 @@
  */
 
 /*
- * This test is aimed at testing tracepoint *with* trace_mark :
+ * This test is aimed at testing tracepoint *with* ust_marker :
  *
  * 1) tracepoint named : "ust_event"
  * 	-) Probe 1 registered and recording the value 42

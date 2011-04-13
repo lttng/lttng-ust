@@ -162,10 +162,10 @@ int main(int argc, char **argv)
 	/* ... set values of v and st ... */
 
 	/* a marker: */
-	trace_mark(ust, myevent, "firstarg %d secondarg %s", v, st);
+	ust_marker(ust, myevent, "firstarg %d secondarg %s", v, st);
 
 	/* a marker without arguments: */
-	trace_mark(ust, myotherevent, MARK_NOARGS);
+	ust_marker(ust, myotherevent, MARK_NOARGS);
 
 	return 0;
 }
@@ -240,17 +240,17 @@ int main(int argc, char **argv)
 	/* ... set values of v and st ... */
 
 	/* a marker: */
-	trace_mark(main, myevent, "firstarg %d secondarg %s", v, st);
+	ust_marker(main, myevent, "firstarg %d secondarg %s", v, st);
 
 	/* another marker without arguments: */
-	trace_mark(main, myotherevent, MARK_NOARGS);
+	ust_marker(main, myotherevent, MARK_NOARGS);
 
 	return 0;
 }
 @end verbatim
 @end example
 
-The invocation of the trace_mark() macro requires at least 3 arguments. The
+The invocation of the ust_marker() macro requires at least 3 arguments. The
 first, here "main", is the name of the event category. It is also the name of
 the channel the event will go in. The second, here "myevent" is the name of the
 event. The third is a format string that announces the names and the types of
@@ -318,7 +318,7 @@ DEFINE_TRACE(mychannel_myevent);
 
 void mychannel_myevent_probe(int v, char *st)
 {
-	trace_mark(mychannel, myevent, "v %d st %s", v, st);
+	ust_marker(mychannel, myevent, "v %d st %s", v, st);
 }
 
 static void __attribute__((constructor)) init()

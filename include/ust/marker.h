@@ -167,10 +167,10 @@ struct marker {
  * If generic is false, immediate values are used.
  */
 
-#define __trace_mark(generic, channel, name, call_private, format, args...) \
-	__trace_mark_counter(generic, channel, name, __LINE__, call_private, format, ## args)
+#define __ust_marker(generic, channel, name, call_private, format, args...) \
+	__ust_marker_counter(generic, channel, name, __LINE__, call_private, format, ## args)
 
-#define __trace_mark_counter(generic, channel, name, unique, call_private, format, args...) \
+#define __ust_marker_counter(generic, channel, name, unique, call_private, format, args...) \
 	do {								\
 		struct marker *__marker_counter_ptr;			\
 		_DEFINE_MARKER(channel, name, NULL, NULL, format, unique, __marker_counter_ptr);	\
@@ -184,10 +184,10 @@ struct marker {
 		}							\
 	} while (0)
 
-#define __trace_mark_tp(channel, name, call_private, tp_name, tp_cb, format, args...) \
-	__trace_mark_tp_counter(channel, name, __LINE__, call_private, tp_name, tp_cb, format, ## args)
+#define __ust_marker_tp(channel, name, call_private, tp_name, tp_cb, format, args...) \
+	__ust_marker_tp_counter(channel, name, __LINE__, call_private, tp_name, tp_cb, format, ## args)
 
-#define __trace_mark_tp_counter(channel, name, unique, call_private, tp_name, tp_cb, format, args...) \
+#define __ust_marker_tp_counter(channel, name, unique, call_private, tp_name, tp_cb, format, args...) \
 	do {								\
 		struct registers __marker_regs;				\
 		void __check_tp_type(void)				\
@@ -204,7 +204,7 @@ extern void marker_update_probe_range(struct marker * const *begin,
 	struct marker * const *end);
 
 /**
- * trace_mark - Marker using code patching
+ * ust_marker - Marker using code patching
  * @name: marker name, not quoted.
  * @format: format string
  * @args...: variable argument list
@@ -212,11 +212,11 @@ extern void marker_update_probe_range(struct marker * const *begin,
  * Places a marker using optimized code patching technique (imv_read())
  * to be enabled when immediate values are present.
  */
-#define trace_mark(name, format, args...) \
-	__trace_mark(0, ust, name, NULL, format, ## args)
+#define ust_marker(name, format, args...) \
+	__ust_marker(0, ust, name, NULL, format, ## args)
 
 /**
- * _trace_mark - Marker using variable read
+ * _ust_marker - Marker using variable read
  * @name: marker name, not quoted.
  * @format: format string
  * @args...: variable argument list
@@ -225,11 +225,11 @@ extern void marker_update_probe_range(struct marker * const *begin,
  * enabled. Should be used for markers in code paths where instruction
  * modification based enabling is not welcome.
  */
-#define _trace_mark(name, format, args...) \
-	__trace_mark(1, ust, name, NULL, format, ## args)
+#define _ust_marker(name, format, args...) \
+	__ust_marker(1, ust, name, NULL, format, ## args)
 
 /**
- * trace_mark_tp - Marker in a tracepoint callback
+ * ust_marker_tp - Marker in a tracepoint callback
  * @name: marker name, not quoted.
  * @tp_name: tracepoint name, not quoted.
  * @tp_cb: tracepoint callback. Should have an associated global symbol so it
@@ -239,8 +239,8 @@ extern void marker_update_probe_range(struct marker * const *begin,
  *
  * Places a marker in a tracepoint callback.
  */
-#define trace_mark_tp(name, tp_name, tp_cb, format, args...)	\
-	__trace_mark_tp(ust, name, NULL, tp_name, tp_cb, format, ## args)
+#define ust_marker_tp(name, tp_name, tp_cb, format, args...)	\
+	__ust_marker_tp(ust, name, NULL, tp_name, tp_cb, format, ## args)
 
 /**
  * MARK_NOARGS - Format string for a marker with no argument.

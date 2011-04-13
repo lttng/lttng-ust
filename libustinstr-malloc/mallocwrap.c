@@ -53,7 +53,7 @@ __I_FUNC_TYPE __I_FUNC_NAME(__I_FUNC_ARGS)						\
 		}									\
 	}										\
 											\
-	trace_mark(ust, __I_FUNC_NAME, __I_TRACE_FMT, __I_TRACE_ARGS);			\
+	ust_marker(ust, __I_FUNC_NAME, __I_TRACE_FMT, __I_TRACE_ARGS);			\
 											\
 	return plibc_ ## __I_FUNC_NAME (__I_CALL_ARGS);					\
 }
@@ -75,7 +75,7 @@ void *malloc(size_t size)
 
 	retval = plibc_malloc(size);
 
-	trace_mark(malloc, "size %d ptr %p", (int)size, retval);
+	ust_marker(malloc, "size %d ptr %p", (int)size, retval);
 
 	return retval;
 }
@@ -92,7 +92,7 @@ void free(void *ptr)
 		}
 	}
 
-	trace_mark(free, "ptr %p", ptr);
+	ust_marker(free, "ptr %p", ptr);
 
 	plibc_free(ptr);
 }

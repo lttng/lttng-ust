@@ -1576,7 +1576,7 @@ static void __attribute__((destructor)) keepalive()
 
 void ust_potential_exec(void)
 {
-	trace_mark(potential_exec, MARK_NOARGS);
+	ust_marker(potential_exec, MARK_NOARGS);
 
 	DBG("test");
 

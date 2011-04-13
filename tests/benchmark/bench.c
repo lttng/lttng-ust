@@ -29,7 +29,7 @@ void do_stuff(void)
 	time(NULL);
 
 #ifdef MARKER
-	trace_mark(event, "event %d", v);
+	ust_marker(event, "event %d", v);
 #endif
 
 }
