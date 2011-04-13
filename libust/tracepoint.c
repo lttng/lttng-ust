@@ -60,7 +60,7 @@ static struct cds_hlist_head tracepoint_table[TRACEPOINT_TABLE_SIZE];
  */
 struct tracepoint_entry {
 	struct cds_hlist_node hlist;
-	struct probe *probes;
+	struct tracepoint_probe *probes;
 	int refcount;	/* Number of times armed. 0 if disarmed. */
 	char name[0];
 };
@@ -70,12 +70,12 @@ struct tp_probes {
 //ust//		struct rcu_head rcu;
 		struct cds_list_head list;
 	} u;
-	struct probe probes[0];
+	struct tracepoint_probe probes[0];
 };
 
 static inline void *allocate_probes(int count)
 {
-	struct tp_probes *p  = zmalloc(count * sizeof(struct probe)
+	struct tp_probes *p  = zmalloc(count * sizeof(struct tracepoint_probe)
 			+ sizeof(struct tp_probes));
 	return p == NULL ? NULL : p->probes;
 }
@@ -112,7 +112,7 @@ tracepoint_entry_add_probe(struct tracepoint_entry *entry,
 			   void *probe, void *data)
 {
 	int nr_probes = 0;
-	struct probe *old, *new;
+	struct tracepoint_probe *old, *new;
 
 	WARN_ON(!probe);
 
@@ -130,7 +130,7 @@ tracepoint_entry_add_probe(struct tracepoint_entry *entry,
 	if (new == NULL)
 		return ERR_PTR(-ENOMEM);
 	if (old)
-		memcpy(new, old, nr_probes * sizeof(struct probe));
+		memcpy(new, old, nr_probes * sizeof(struct tracepoint_probe));
 	new[nr_probes].func = probe;
 	new[nr_probes].data = data;
 	new[nr_probes + 1].func = NULL;
@@ -145,7 +145,7 @@ tracepoint_entry_remove_probe(struct tracepoint_entry *entry, void *probe,
 			      void *data)
 {
 	int nr_probes = 0, nr_del = 0, i;
-	struct probe *old, *new;
+	struct tracepoint_probe *old, *new;
 
 	old = entry->probes;
 
@@ -335,17 +335,17 @@ static void tracepoint_update_probes(void)
 	lib_update_tracepoints();
 }
 
-static struct probe *
+static struct tracepoint_probe *
 tracepoint_add_probe(const char *name, void *probe, void *data)
 {
 	struct tracepoint_entry *entry;
-	struct probe *old;
+	struct tracepoint_probe *old;
 
 	entry = get_tracepoint(name);
 	if (!entry) {
 		entry = add_tracepoint(name);
 		if (IS_ERR(entry))
-			return (struct probe *)entry;
+			return (struct tracepoint_probe *)entry;
 	}
 	old = tracepoint_entry_add_probe(entry, probe, data);
 	if (IS_ERR(old) && !entry->refcount)

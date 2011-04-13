@@ -31,7 +31,7 @@
 
 struct tracepoint;
 
-struct probe {
+struct tracepoint_probe {
 	void *func;
 	void *data;
 };
@@ -39,11 +39,10 @@ struct probe {
 struct tracepoint {
 	const char *name;		/* Tracepoint name */
 	char state;			/* State. */
-	struct probe *probes;
+	struct tracepoint_probe *probes;
 };
 
-#define PARAMS(args...) args
-
+#define TP_PARAMS(args...)	args
 #define TP_PROTO(args...)	args
 #define TP_ARGS(args...)	args
 
@@ -68,18 +67,18 @@ struct tracepoint {
  */
 #define __DO_TRACE(tp, proto, args)					\
 	do {								\
-		struct probe *it_probe_ptr;				\
-		void *it_func;						\
-		void *__data;						\
+		struct tracepoint_probe *__tp_it_probe_ptr;		\
+		void *__tp_it_func;					\
+		void *__tp_cb_data;					\
 									\
 		rcu_read_lock();					\
-		it_probe_ptr = rcu_dereference((tp)->probes);		\
-		if (it_probe_ptr) {					\
+		__tp_it_probe_ptr = rcu_dereference((tp)->probes);	\
+		if (__tp_it_probe_ptr) {				\
 			do {						\
-				it_func	= (it_probe_ptr)->func;		\
-				__data = (it_probe_ptr)->data;		\
-				((void(*)(proto))(it_func))(args);	\
-			} while ((++it_probe_ptr)->func);		\
+				__tp_it_func = __tp_it_probe_ptr->func;	\
+				__tp_cb_data = __tp_it_probe_ptr->data;	\
+				((void(*)(proto))__tp_it_func)(args);	\
+			} while ((++__tp_it_probe_ptr)->func);		\
 		}							\
 		rcu_read_unlock();					\
 	} while (0)
@@ -166,18 +165,18 @@ static inline void tracepoint_update_probe_range(struct tracepoint *begin,
  * "(void *data, void)". The second prototype is invalid.
  *
  * DECLARE_TRACE_NOARGS() passes "void" as the tracepoint prototype
- * and "void *__data" as the callback prototype.
+ * and "void *__tp_cb_data" as the callback prototype.
  *
  * DECLARE_TRACE() passes "proto" as the tracepoint protoype and
- * "void *__data, proto" as the callback prototype.
+ * "void *__tp_cb_data, proto" as the callback prototype.
  */
 #define DECLARE_TRACE_NOARGS(name)					\
-		__DECLARE_TRACE(name, void, , void *__data, __data)
+		__DECLARE_TRACE(name, void, , void *__tp_cb_data, __tp_cb_data)
 
 #define DECLARE_TRACE(name, proto, args)				\
-		__DECLARE_TRACE(name, PARAMS(proto), PARAMS(args),	\
-				PARAMS(void *__data, proto),		\
-				PARAMS(__data, args))
+		__DECLARE_TRACE(name, TP_PARAMS(proto), TP_PARAMS(args),\
+				TP_PARAMS(void *__tp_cb_data, proto),	\
+				TP_PARAMS(__tp_cb_data, args))
 
 /*
  * Connect a probe to a tracepoint.
@@ -407,15 +406,15 @@ extern int trace_event_unregister_lib(struct trace_event * const *start_trace_ev
 
 #define DECLARE_TRACE_EVENT_CLASS(name, proto, args, tstruct, assign, print)
 #define DEFINE_TRACE_EVENT(template, name, proto, args)		\
-	DECLARE_TRACE(name, PARAMS(proto), PARAMS(args))
+	DECLARE_TRACE(name, TP_PARAMS(proto), TP_PARAMS(args))
 #define DEFINE_TRACE_EVENT_PRINT(template, name, proto, args, print)	\
-	DECLARE_TRACE(name, PARAMS(proto), PARAMS(args))
+	DECLARE_TRACE(name, TP_PARAMS(proto), TP_PARAMS(args))
 
 #define TRACE_EVENT(name, proto, args, struct, assign, print)	\
-	DECLARE_TRACE(name, PARAMS(proto), PARAMS(args))
+	DECLARE_TRACE(name, TP_PARAMS(proto), TP_PARAMS(args))
 #define TRACE_EVENT_FN(name, proto, args, struct,		\
 		assign, print, reg, unreg)			\
-	DECLARE_TRACE(name, PARAMS(proto), PARAMS(args))
+	DECLARE_TRACE(name, TP_PARAMS(proto), TP_PARAMS(args))
 
 #endif /* ifdef TRACE_EVENT (see note above) */
 

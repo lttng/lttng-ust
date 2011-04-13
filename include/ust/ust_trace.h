@@ -32,12 +32,12 @@
 #undef TRACE_EVENT
 #define TRACE_EVENT(name, proto, args, tstruct, assign, print)		\
 	DECLARE_TRACE_EVENT_CLASS(name,					\
-				  PARAMS(proto),			\
-				  PARAMS(args),				\
-				  PARAMS(tstruct),			\
-				  PARAMS(assign),			\
-				  PARAMS(print));			\
-	DEFINE_TRACE_EVENT(name, name, PARAMS(proto), PARAMS(args));
+				  TP_PARAMS(proto),			\
+				  TP_PARAMS(args),			\
+				  TP_PARAMS(tstruct),			\
+				  TP_PARAMS(assign),			\
+				  TP_PARAMS(print));			\
+	DEFINE_TRACE_EVENT(name, name, TP_PARAMS(proto), TP_PARAMS(args));
 
 #undef __field
 #define __field(type, item)		type	item;
