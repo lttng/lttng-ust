@@ -124,7 +124,7 @@ struct ust_marker {
 			_ASM_PTR "(1f)\n\t" /* location */						\
 			".previous\n\t"								\
 			/*".section __ust_marker_ptrs\n\t"*/ \
-			".section __ust_marker_ptrs,\"a\"\n\t"					\
+			".section __ust_marker_ptrs,\"aw\"\n\t"					\
 			_ASM_PTR "(2b)\n\t"							\
 			".previous\n\t"								\
 			"1:\n\t"								\
