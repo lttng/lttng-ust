@@ -21,12 +21,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
+#define _LGPL_SOURCE
 #include <linux/limits.h>
 #include <errno.h>
 #include <ust/kcompat/kcompat.h>
 #include <ust/core.h>
-
-#define _LGPL_SOURCE
 #include <urcu/list.h>
 #include <urcu/urcu_ref.h>
 

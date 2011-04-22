@@ -16,9 +16,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
+#define _LGPL_SOURCE
 #include <stdlib.h>
 #include <errno.h>
-#define _LGPL_SOURCE
 #include <urcu-bp.h>
 #include <urcu/rculist.h>
 #include <urcu/hlist.h>

@@ -19,15 +19,15 @@
  * Ported to userspace by Pierre-Marc Fournier.
  */
 
+#define _LGPL_SOURCE
 #include <errno.h>
 #include <ust/tracepoint.h>
 #include <ust/core.h>
 #include <ust/kcompat/kcompat.h>
-#include "usterr_signal_safe.h"
-
-#define _LGPL_SOURCE
 #include <urcu-bp.h>
 #include <urcu/hlist.h>
+
+#include "usterr_signal_safe.h"
 
 //extern struct tracepoint __start___tracepoints[] __attribute__((visibility("hidden")));
 //extern struct tracepoint __stop___tracepoints[] __attribute__((visibility("hidden")));

@@ -17,14 +17,14 @@
  *
  */
 
+#define _LGPL_SOURCE
 #include <errno.h>
 #include <ust/tracepoint.h>
 #include <ust/core.h>
 #include <ust/kcompat/kcompat.h>
-#include "usterr_signal_safe.h"
-
-#define _LGPL_SOURCE
 #include <urcu-bp.h>
+
+#include "usterr_signal_safe.h"
 
 /* libraries that contain trace_events (struct trace_event_lib) */
 static CDS_LIST_HEAD(libs);

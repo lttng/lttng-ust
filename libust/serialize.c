@@ -25,6 +25,7 @@
  */
 
 #define _GNU_SOURCE
+#define _LGPL_SOURCE
 #include <unistd.h>
 #include <sys/syscall.h>
 #include <stdarg.h>
@@ -32,7 +33,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#define _LGPL_SOURCE
 #include <urcu-bp.h>
 #include <urcu/rculist.h>
 

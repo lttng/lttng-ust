@@ -25,9 +25,9 @@
  * Ported to userspace by Pierre-Marc Fournier.
  */
 
-#define _LGPL_SOURCE
 #include <urcu-bp.h>
 #include <ust/core.h>
+#include <urcu/list.h>
 
 struct tracepoint;
 
