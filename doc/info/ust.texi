@@ -162,10 +162,10 @@ int main(int argc, char **argv)
 	/* ... set values of v and st ... */
 
 	/* a marker: */
-	ust_marker(ust, myevent, "firstarg %d secondarg %s", v, st);
+	ust_marker(myevent, "firstarg %d secondarg %s", v, st);
 
 	/* a marker without arguments: */
-	ust_marker(ust, myotherevent, MARK_NOARGS);
+	ust_marker(myotherevent, MARK_NOARGS);
 
 	return 0;
 }
@@ -240,22 +240,21 @@ int main(int argc, char **argv)
 	/* ... set values of v and st ... */
 
 	/* a marker: */
-	ust_marker(main, myevent, "firstarg %d secondarg %s", v, st);
+	ust_marker(myevent, "firstarg %d secondarg %s", v, st);
 
 	/* another marker without arguments: */
-	ust_marker(main, myotherevent, MARK_NOARGS);
+	ust_marker(myotherevent, MARK_NOARGS);
 
 	return 0;
 }
 @end verbatim
 @end example
 
-The invocation of the ust_marker() macro requires at least 3 arguments. The
-first, here "main", is the name of the event category. It is also the name of
-the channel the event will go in. The second, here "myevent" is the name of the
-event. The third is a format string that announces the names and the types of
-the event arguments. Its format resembles that of a printf() format string; it
-is described thoroughly in Appendix x.
+The invocation of the ust_marker() macro requires at least 2 arguments. The
+first, "myevent", is the name of the event. The second is a format string
+that announces the names and the types of the event arguments. Its
+format resembles that of a printf() format string; it is described
+thoroughly in Appendix x.
 
 A given Marker may appear more than once in the same program. Other Markers may
 have the same name and a different format string, although this might induce
@@ -271,10 +270,7 @@ format strings directly in the code and to have format strings appear more than
 once if a given marker is reused.
 
 @quotation Note
-Although this example uses @emph{mychannel} as the channel, the
-only channel name currently supported with early tracing is @strong{ust}. The
-@command{usttrace} tool always uses the early tracing mode. When using manual
-mode without early tracing, any channel name may be used.
+The @command{usttrace} tool always uses the early tracing mode.
 @end quotation
 
 A function instrumented with a tracepoint looks like this:
@@ -283,7 +279,7 @@ A function instrumented with a tracepoint looks like this:
 @verbatim
 #include "tp.h"
 
-void function()
+void function(void)
 {
 	int v;
 	char *st;
@@ -291,7 +287,7 @@ void function()
 	/* ... set values of v and st ... */
 
 	/* a tracepoint: */
-	trace_mychannel_myevent(v, st);
+	trace_myevent(v, st);
 }
 @end verbatim
 @end example
@@ -302,8 +298,8 @@ Another file, here tp.h, contains declarations for the tracepoint.
 @verbatim
 #include <ust/tracepoint.h>
 
-DECLARE_TRACE(mychannel_myevent, TP_PROTO(int v, char *st),
-	      TP_ARGS(v, st));
+DECLARE_TRACEPOINT(myevent, TP_PROTO(int v, char *st),
+		   TP_ARGS(v, st));
 @end verbatim
 @end example
 
@@ -314,16 +310,16 @@ A third file, here tp.c, contains definitions for the tracepoint.
 #include <ust/marker.h>
 #include "tp.h"
 
-DEFINE_TRACE(mychannel_myevent);
+DEFINE_TRACEPOINT(myevent);
 
-void mychannel_myevent_probe(int v, char *st)
+void myevent_probe(int v, char *st)
 {
-	ust_marker(mychannel, myevent, "v %d st %s", v, st);
+	ust_marker(myevent, "v %d st %s", v, st);
 }
 
 static void __attribute__((constructor)) init()
 {
-	register_trace_mychannel_myevent(mychannel_myevent_probe);
+	register_trace_myevent(myevent_probe);
 }
 @end verbatim
 @end example
