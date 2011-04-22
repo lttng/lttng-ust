@@ -17,8 +17,8 @@
 
 #include <ust/tracepoint.h>
 
-DECLARE_TRACE(hello_tptest,
-	      TP_PROTO(int anint),
-	      TP_ARGS(anint));
+DECLARE_TRACEPOINT(hello_tptest,
+		   TP_PROTO(int anint),
+		   TP_ARGS(anint));
 
-DECLARE_TRACE_NOARGS(hello_tptest2);
+DECLARE_TRACEPOINT_NOARGS(hello_tptest2);

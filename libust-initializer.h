@@ -17,12 +17,12 @@
 #undef TRACE_SYSTEM
 #define TRACE_SYSTEM ust_dummy
 
-#if !defined(_TRACE_EVENT_TEST_H) || defined(TRACE_HEADER_MULTI_READ)
-#define _TRACE_EVENT_TEST_H
+#if !defined(_TRACEPOINT_EVENT_TEST_H) || defined(TRACE_HEADER_MULTI_READ)
+#define _TRACEPOINT_EVENT_TEST_H
 
 #include <ust/tracepoint.h>
 
-TRACE_EVENT(ust_dummy_event,
+TRACEPOINT_EVENT(ust_dummy_event,
 
 	TP_PROTO(int dummy_int),
 
@@ -39,7 +39,7 @@ TRACE_EVENT(ust_dummy_event,
 	TP_printf("dummy=%d", __entry->dummy)
 );
 
-#endif /* _TRACE_EVENT_TEST_H */
+#endif /* _TRACEPOINT_EVENT_TEST_H */
 
 /* This part must be outside protection */
 #undef TRACE_INCLUDE_PATH

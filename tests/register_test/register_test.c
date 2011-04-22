@@ -29,7 +29,7 @@
 #include "usterr.h"
 #include "tp.h"
 
-DEFINE_TRACE(hello_tptest);
+DEFINE_TRACEPOINT(hello_tptest);
 
 
 struct hello_trace_struct {

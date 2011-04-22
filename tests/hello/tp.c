@@ -27,7 +27,7 @@ struct hello_trace_struct hello_struct = {
 	.message = "ehlo\n",
 };
 
-DEFINE_TRACE(hello_tptest);
+DEFINE_TRACEPOINT(hello_tptest);
 
 void tptest_probe(void *data, int anint)
 {

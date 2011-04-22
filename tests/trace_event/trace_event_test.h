@@ -17,12 +17,12 @@
 #undef TRACE_SYSTEM
 #define TRACE_SYSTEM trace_event_test
 
-#if !defined(_TRACE_EVENT_TEST_H) || defined(TRACE_HEADER_MULTI_READ)
-#define _TRACE_EVENT_TEST_H
+#if !defined(_TRACEPOINT_EVENT_TEST_H) || defined(TRACE_HEADER_MULTI_READ)
+#define _TRACEPOINT_EVENT_TEST_H
 
 #include <ust/tracepoint.h>
 
-TRACE_EVENT(test,
+TRACEPOINT_EVENT(test,
 
 	TP_PROTO(unsigned long time, unsigned long count),
 
@@ -41,7 +41,7 @@ TRACE_EVENT(test,
 	TP_printf("time=%lu count=%lu", __entry->time, __entry->count)
 );
 
-#endif /* _TRACE_EVENT_TEST_H */
+#endif /* _TRACEPOINT_EVENT_TEST_H */
 
 /* This part must be outside protection */
 #undef TRACE_INCLUDE_PATH

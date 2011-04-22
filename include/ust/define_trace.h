@@ -32,33 +32,33 @@
  *     modules must be used.
  */
 
-#ifdef CREATE_TRACE_POINTS
+#ifdef TRACEPOINT_CREATE_PROBES
 
 /* Prevent recursion */
-#undef CREATE_TRACE_POINTS
+#undef TRACEPOINT_CREATE_PROBES
 
 #include <ust/kcompat/stringify.h>
 
-#undef TRACE_EVENT
-#define TRACE_EVENT(name, proto, args, tstruct, assign, print)	\
-	DEFINE_TRACE(name)
+#undef TRACEPOINT_EVENT
+#define TRACEPOINT_EVENT(name, proto, args, tstruct, assign, print)	\
+	DEFINE_TRACEPOINT(name)
 
-#undef TRACE_EVENT_FN
-#define TRACE_EVENT_FN(name, proto, args, tstruct,		\
+#undef TRACEPOINT_EVENT_FN
+#define TRACEPOINT_EVENT_FN(name, proto, args, tstruct,		\
 		assign, print, reg, unreg)			\
-	DEFINE_TRACE_FN(name, reg, unreg)
+	DEFINE_TRACEPOINT_FN(name, reg, unreg)
 
-#undef DEFINE_TRACE_EVENT
-#define DEFINE_TRACE_EVENT(template, name, proto, args) \
-	DEFINE_TRACE(name)
+#undef DEFINE_TRACEPOINT_EVENT
+#define DEFINE_TRACEPOINT_EVENT(template, name, proto, args) \
+	DEFINE_TRACEPOINT(name)
 
-#undef DEFINE_TRACE_EVENT_PRINT
-#define DEFINE_TRACE_EVENT_PRINT(template, name, proto, args, print)	\
-	DEFINE_TRACE(name)
+#undef DEFINE_TRACEPOINT_EVENT_PRINT
+#define DEFINE_TRACEPOINT_EVENT_PRINT(template, name, proto, args, print)	\
+	DEFINE_TRACEPOINT(name)
 
-#undef DECLARE_TRACE
-#define DECLARE_TRACE(name, proto, args)	\
-	DEFINE_TRACE(name)
+#undef DECLARE_TRACEPOINT
+#define DECLARE_TRACEPOINT(name, proto, args)	\
+	DEFINE_TRACEPOINT(name)
 
 #undef TRACE_INCLUDE
 #undef __TRACE_INCLUDE
@@ -82,21 +82,21 @@
 
 #include TRACE_INCLUDE(TRACE_INCLUDE_FILE)
 
-/* Make all open coded DECLARE_TRACE nops */
-#undef DECLARE_TRACE
-#define DECLARE_TRACE(name, proto, args)
+/* Make all open coded DECLARE_TRACEPOINT nops */
+#undef DECLARE_TRACEPOINT
+#define DECLARE_TRACEPOINT(name, proto, args)
 
 #ifndef CONFIG_NO_EVENT_TRACING
 #include <ust/ust_trace.h>
 #endif
 
-#undef TRACE_EVENT
-#undef TRACE_EVENT_FN
-#undef DECLARE_TRACE_EVENT_CLASS
-#undef DEFINE_TRACE_EVENT
-#undef DEFINE_TRACE_EVENT_PRINT
+#undef TRACEPOINT_EVENT
+#undef TRACEPOINT_EVENT_FN
+#undef DECLARE_TRACEPOINT_EVENT_CLASS
+#undef DEFINE_TRACEPOINT_EVENT
+#undef DEFINE_TRACEPOINT_EVENT_PRINT
 #undef TRACE_HEADER_MULTI_READ
-#undef DECLARE_TRACE
+#undef DECLARE_TRACEPOINT
 
 /* Only undef what we defined in this file */
 #ifdef UNDEF_TRACE_INCLUDE_FILE
@@ -110,6 +110,6 @@
 #endif
 
 /* We may be processing more files */
-#define CREATE_TRACE_POINTS
+#define TRACEPOINT_CREATE_PROBES
 
-#endif /* CREATE_TRACE_POINTS */
+#endif /* TRACEPOINT_CREATE_PROBES */

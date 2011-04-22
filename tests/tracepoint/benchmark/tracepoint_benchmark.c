@@ -30,7 +30,7 @@
 
 #define NR_EVENTS	10000000
 
-DEFINE_TRACE(ust_event);
+DEFINE_TRACEPOINT(ust_event);
 
 void tp_probe(void *data, unsigned int p1);
 

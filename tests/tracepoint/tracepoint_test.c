@@ -32,8 +32,8 @@
 #include <ust/marker.h>
 #include "tracepoint_test.h"
 
-DEFINE_TRACE(ust_event);
-DEFINE_TRACE(ust_event2);
+DEFINE_TRACEPOINT(ust_event);
+DEFINE_TRACEPOINT(ust_event2);
 
 static struct message msg_probe3 = {
 	.payload = "probe3",

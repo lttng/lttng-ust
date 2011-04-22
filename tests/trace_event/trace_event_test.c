@@ -17,7 +17,7 @@
 #include <stdio.h>
 #include <ust/clock.h>
 
-#define CREATE_TRACE_POINTS
+#define TRACEPOINT_CREATE_PROBES
 #include "trace_event_test.h"
 
 int main(int argc, char * argv[])
