@@ -237,6 +237,12 @@ extern void ust_marker_update_probe_range(struct ust_marker * const *begin,
  */
 #define UST_MARKER_NOARGS " "
 
+/**
+ * MARKER_NOARGS - Compatibility API. Will be *DEPRECATED*. Use
+ * UST_MARKER_NOARGS instead.
+ */
+#define MARK_NOARGS	UST_MARKER_NOARGS
+
 extern void lock_ust_marker(void);
 extern void unlock_ust_marker(void);
 
