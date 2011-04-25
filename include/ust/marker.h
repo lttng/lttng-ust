@@ -204,6 +204,20 @@ extern void ust_marker_update_probe_range(struct ust_marker * const *begin,
 #define ust_marker(name, format, args...) \
 	__ust_marker(ust, name, NULL, format, ## args)
 
+
+/*
+ * trace_mark() -- TO BE DEPRECATED
+ * @channel: name prefix, not quoted. Ignored.
+ * @name: marker name, not quoted.
+ * @format: format string
+ * @args...: variable argument list
+ *
+ * Kept as a compatibility API and will be *DEPRECATED* in favor of
+ * ust_marker().
+ */
+#define trace_mark(channel, name, format, args...)	\
+	ust_marker(ust, name, format, args)
+
 /**
  * ust_marker_tp - Marker in a tracepoint callback
  * @name: marker name, not quoted.
