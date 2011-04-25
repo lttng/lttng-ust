@@ -216,7 +216,7 @@ extern void ust_marker_update_probe_range(struct ust_marker * const *begin,
  * ust_marker().
  */
 #define trace_mark(channel, name, format, args...)	\
-	ust_marker(ust, name, format, ## args)
+	ust_marker(name, format, ## args)
 
 /**
  * ust_marker_tp - Marker in a tracepoint callback
