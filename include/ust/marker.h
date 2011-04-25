@@ -353,6 +353,12 @@ extern int ust_marker_unregister_lib(struct ust_marker * const *ust_marker_start
 		ust_marker_unregister_lib(__start___ust_marker_ptrs);	\
 	}
 
+/*
+ * MARKER_LIB is kept for backward compatibility and will be
+ * *DEPRECATED*. Use UST_MARKER_LIB instead.
+ */
+#define MARKER_LIB	UST_MARKER_LIB
+
 extern void ust_marker_set_new_ust_marker_cb(void (*cb)(struct ust_marker *));
 extern void init_ust_marker(void);
 
