@@ -64,9 +64,9 @@ void unlock_ust_marker(void)
  * ust_marker hash table, containing the active ust_marker.
  * Protected by module_mutex.
  */
-#define ust_marker_HASH_BITS 6
-#define ust_marker_TABLE_SIZE (1 << ust_marker_HASH_BITS)
-static struct cds_hlist_head ust_marker_table[ust_marker_TABLE_SIZE];
+#define UST_MARKER_HASH_BITS 6
+#define UST_MARKER_TABLE_SIZE (1 << UST_MARKER_HASH_BITS)
+static struct cds_hlist_head ust_marker_table[UST_MARKER_TABLE_SIZE];
 
 /*
  * Note about RCU :
@@ -397,7 +397,7 @@ static struct ust_marker_entry *get_ust_marker(const char *channel, const char *
 	u32 hash;
 
 	hash = jhash(channel, channel_len-1, 0) ^ jhash(name, name_len-1, 0);
-	head = &ust_marker_table[hash & ((1 << ust_marker_HASH_BITS)-1)];
+	head = &ust_marker_table[hash & ((1 << UST_MARKER_HASH_BITS)-1)];
 	cds_hlist_for_each_entry(e, node, head, hlist) {
 		if (!strcmp(channel, e->channel) && !strcmp(name, e->name))
 			return e;
@@ -423,7 +423,7 @@ static struct ust_marker_entry *add_ust_marker(const char *channel, const char *
 	hash = jhash(channel, channel_len-1, 0) ^ jhash(name, name_len-1, 0);
 	if (format)
 		format_len = strlen(format) + 1;
-	head = &ust_marker_table[hash & ((1 << ust_marker_HASH_BITS)-1)];
+	head = &ust_marker_table[hash & ((1 << UST_MARKER_HASH_BITS)-1)];
 	cds_hlist_for_each_entry(e, node, head, hlist) {
 		if (!strcmp(channel, e->channel) && !strcmp(name, e->name)) {
 			DBG("ust_marker %s.%s busy", channel, name);
@@ -482,7 +482,7 @@ static int remove_ust_marker(const char *channel, const char *name)
 	int ret;
 
 	hash = jhash(channel, channel_len-1, 0) ^ jhash(name, name_len-1, 0);
-	head = &ust_marker_table[hash & ((1 << ust_marker_HASH_BITS)-1)];
+	head = &ust_marker_table[hash & ((1 << UST_MARKER_HASH_BITS)-1)];
 	cds_hlist_for_each_entry(e, node, head, hlist) {
 		if (!strcmp(channel, e->channel) && !strcmp(name, e->name)) {
 			found = 1;
@@ -899,7 +899,7 @@ get_ust_marker_from_private_data(ust_marker_probe_func *probe, void *probe_priva
 	struct cds_hlist_head *head;
 	struct cds_hlist_node *node;
 
-	for (i = 0; i < ust_marker_TABLE_SIZE; i++) {
+	for (i = 0; i < UST_MARKER_TABLE_SIZE; i++) {
 		head = &ust_marker_table[i];
 		cds_hlist_for_each_entry(entry, node, head, hlist) {
 			if (!entry->ptype) {
@@ -1006,7 +1006,7 @@ void *ust_marker_get_private_data(const char *channel, const char *name,
 	u32 hash;
 
 	hash = jhash(channel, channel_len-1, 0) ^ jhash(name, name_len-1, 0);
-	head = &ust_marker_table[hash & ((1 << ust_marker_HASH_BITS)-1)];
+	head = &ust_marker_table[hash & ((1 << UST_MARKER_HASH_BITS)-1)];
 	cds_hlist_for_each_entry(e, node, head, hlist) {
 		if (!strcmp(channel, e->channel) && !strcmp(name, e->name)) {
 			if (!e->ptype) {
@@ -1044,7 +1044,7 @@ void *ust_marker_get_private_data(const char *channel, const char *name,
 //ust// 	struct hlist_node *node;
 //ust// 	int ret;
 //ust// 
-//ust// 	for (i = 0; i < ust_marker_TABLE_SIZE; i++) {
+//ust// 	for (i = 0; i < UST_MARKER_TABLE_SIZE; i++) {
 //ust// 		head = &ust_marker_table[i];
 //ust// 		hlist_for_each_entry(entry, node, head, hlist) {
 //ust// 			ret = ltt_channels_get_index_from_name(entry->channel);
@@ -1207,7 +1207,7 @@ static void free_user_ust_marker(char __user *state, struct cds_hlist_head *head
 //ust// 			}
 //ust// 		}
 //ust// 	}
-//ust// 	clear_thread_flag(TIF_ust_marker_PENDING);
+//ust// 	clear_thread_flag(TIF_UST_MARKER_PENDING);
 //ust// 	pthread_mutex_unlock(&current->group_leader->user_ust_marker_mutex);
 //ust// 	pthread_mutex_unlock(&ust_marker_mutex);
 //ust// }
@@ -1291,7 +1291,7 @@ void ltt_dump_ust_marker_state(struct ust_trace *trace)
 	call_data.trace = trace;
 	call_data.serializer = NULL;
 
-	for (i = 0; i < ust_marker_TABLE_SIZE; i++) {
+	for (i = 0; i < UST_MARKER_TABLE_SIZE; i++) {
 		head = &ust_marker_table[i];
 		cds_hlist_for_each_entry(entry, node, head, hlist) {
 			__ust_marker(metadata, core_marker_id,
