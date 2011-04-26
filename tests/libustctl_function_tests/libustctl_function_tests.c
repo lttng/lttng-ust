@@ -22,6 +22,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include <string.h>
 
 #include <ust/marker.h>
 #include <ust/ustctl.h>
