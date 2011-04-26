@@ -16,7 +16,7 @@ ldscripts_DATA = libust.so libust-initializer.o
 CLEANFILES = $(ldscripts_DATA) ./tests/libust-initializer.Po
 
 libust.so: libust.ldscript.in
-	$(SED) -e "s@\@FORMAT\@@$(LIBFORMAT)@" < $< > $@
+	$(SED) -e $(if $(LIBFORMAT),"s@\@FORMAT\@@$(LIBFORMAT)@","s@.*\@FORMAT\@.*@@") < $< > $@
 
 # It is very important to compile the initializer with PIC otherwise we
 # may get obscure errors when linking to shared libraries.

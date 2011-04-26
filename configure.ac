@@ -109,6 +109,7 @@ changequote([,])dnl
 	s390) LIBFORMAT="elf32-s390" ;;
 	s390x) LIBFORMAT="elf64-s390" ;;
 	arm) LIBFORMAT="elf32-littlearm" ;;
+	mips*) LIBFORMAT="" ;;
 	*) AC_MSG_ERROR([unable to detect library format (unsupported architecture ($host_cpu)?)]) ;;
 esac
 AC_SUBST(LIBFORMAT)
