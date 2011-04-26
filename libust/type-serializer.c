@@ -10,10 +10,13 @@
 
 /* This file contains functions for tracepoint custom probes support. */
 
+#define _GNU_SOURCE
+#define _LGPL_SOURCE
 #include <urcu/rculist.h>
 #include <ust/type-serializer.h>
 #include <ust/core.h>
 #include <ust/clock.h>
+#include <urcu-bp.h>
 #include "tracer.h"
 
 notrace

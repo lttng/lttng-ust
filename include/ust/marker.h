@@ -5,6 +5,7 @@
  *
  * (C) Copyright 2006 Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
  * (C) Copyright 2009 Pierre-Marc Fournier <pierre-marc dot fournier at polymtl dot ca>
+ * (C) Copyright 2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -27,9 +28,7 @@
 #include <stdarg.h>
 #include <ust/core.h>
 #include <urcu/list.h>
-#include <ust/processor.h>
 #include <ust/kcompat/kcompat.h>
-#include <ust/kcompat/stringify.h>
 
 #include <bits/wordsize.h>
 
@@ -49,7 +48,7 @@ struct ust_marker;
  * format string to recover the variable argument list.
  */
 typedef void ust_marker_probe_func(const struct ust_marker *mdata,
-		void *probe_private, struct registers *regs, void *call_private,
+		void *probe_private, void *call_private,
 		const char *fmt, va_list *args);
 
 struct ust_marker_probe_closure {
@@ -68,93 +67,46 @@ struct ust_marker {
 				/* Probe wrapper */
 	u16 channel_id;		/* Numeric channel identifier, dynamic */
 	u16 event_id;		/* Numeric event identifier, dynamic */
-	void (*call)(const struct ust_marker *mdata, void *call_private, struct registers *regs, ...);
+	void (*call)(const struct ust_marker *mdata, void *call_private, ...);
 	struct ust_marker_probe_closure single;
 	struct ust_marker_probe_closure *multi;
 	const char *tp_name;	/* Optional tracepoint name */
 	void *tp_cb;		/* Optional tracepoint callback */
-	void *location;		/* Address of marker in code */
 };
 
-#define GET_UST_MARKER(name)		(__ust_marker_ust_##name)
+#define GET_UST_MARKER(name)		(__ust_marker_def_##name)
 
-#define _DEFINE_UST_MARKER(channel, name, tp_name_str, tp_cb, format, unique, m)			\
-		struct registers __ust_marker_regs;							\
-												\
-		/* This next asm has to be a basic inline asm (no input/output/clobber), 	\
-		 * because it must not require %-sign escaping, as we most certainly		\
-		 * have some %-signs in the format string.					\
-		 */										\
-		asm volatile (									\
-			/* We only define these symbols if they have not yet been defined. Indeed, \
-			 * if two markers with the same channel/name are on the same line, they	\
-			 * will try to create the same symbols, resulting in a conflict. This	\
-			 * is not unusual as it can be the result of function inlining.		\
-			 */									\
-			".ifndef __mstrtab_" __stringify(channel) "_" __stringify(name) "_channel_" __stringify(unique) "\n\t"	\
-			/*".section __ust_marker_strings\n\t"*/					\
-			".section __ust_marker_strings,\"aw\"\n\t"					\
-			"__mstrtab_" __stringify(channel) "_" __stringify(name) "_channel_" __stringify(unique) ":\n\t"	\
-			".string \"" __stringify(channel) "\"\n\t"					\
-			"__mstrtab_" __stringify(channel) "_" __stringify(name) "_name_" __stringify(unique) ":\n\t"	\
-			".string \"" __stringify(name) "\"\n\t"						\
-			"__mstrtab_" __stringify(channel) "_" __stringify(name) "_format_" __stringify(unique) ":\n\t"	\
-			".string " "\"" format "\"" "\n\t"						\
-			".previous\n\t"								\
-			".endif\n\t"								\
-		);										\
-		asm volatile (									\
-			/*".section __ust_marker\n\t"*/ \
-			".section __ust_marker,\"aw\"\n\t"						\
-			"2:\n\t" \
-			_ASM_PTR "(__mstrtab_" __stringify(channel) "_" __stringify(name) "_channel_" __stringify(unique) ")\n\t" /* channel string */ \
-			_ASM_PTR "(__mstrtab_" __stringify(channel) "_" __stringify(name) "_name_" __stringify(unique) ")\n\t" /* name string */ \
-			_ASM_PTR "(__mstrtab_" __stringify(channel) "_" __stringify(name) "_format_" __stringify(unique) ")\n\t" /* format string */ \
-			".byte 0\n\t" /* state imv */						\
-			".byte 0\n\t" /* ptype */							\
-			".hword 0\n\t" /* channel_id */						\
-			".hword 0\n\t" /* event_id */						\
-			".balign " __stringify(__WORDSIZE) " / 8\n\t" /* alignment */			\
-			_ASM_PTR "(ust_marker_probe_cb)\n\t" /* call */				\
-			_ASM_PTR "(__ust_marker_empty_function)\n\t" /* ust_marker_probe_closure single.field1 */ \
-			_ASM_PTR "0\n\t" /* ust_marker_probe_closure single.field2 */			\
-			_ASM_PTR "0\n\t" /* ust_marker_probe_closure *multi */				\
-			_ASM_PTR "0\n\t" /* tp_name */						\
-			_ASM_PTR "0\n\t" /* tp_cb */						\
-			_ASM_PTR "(1f)\n\t" /* location */						\
-			".previous\n\t"								\
-			/*".section __ust_marker_ptrs\n\t"*/ \
-			".section __ust_marker_ptrs,\"aw\"\n\t"					\
-			_ASM_PTR "(2b)\n\t"							\
-			".previous\n\t"								\
-			"1:\n\t"								\
-			ARCH_COPY_ADDR("%[outptr]")						\
-		: [outptr] "=r" (m) );								\
-												\
-		save_registers(&__ust_marker_regs)
+/*
+ * We keep the "channel" as internal field for marker.c *only*. It will be
+ * removed soon.
+ */
 
+/*
+ * __ust_marker_ptrs section is not const (read-only) because it needs to be
+ * read-write to let the linker apply relocations and keep the object PIC.
+ */
+#define _DEFINE_UST_MARKER(channel, name, tp_name_str, tp_cb, format)	\
+		static const char __mstrtab_##channel##_##name[]	\
+		__attribute__((section("__ust_markers_strings")))	\
+		= #channel "\0" #name "\0" format;			\
+		static struct ust_marker __ust_marker_def_##name	\
+		__attribute__((section("__ust_markers"))) =		\
+		{ __mstrtab_##channel##_##name,				\
+		  &__mstrtab_##channel##_##name[sizeof(#channel)],	\
+		  &__mstrtab_##channel##_##name[sizeof(#channel) +	\
+						sizeof(#name)],		\
+		  0, 0, 0, 0, ust_marker_probe_cb,			\
+		  { __ust_marker_empty_function, NULL},			\
+		  NULL, tp_name_str, tp_cb };				\
+		static struct ust_marker * __ust_marker_ptr_##name	\
+			__attribute__((used, section("__ust_marker_ptrs"))) =	\
+			&__ust_marker_def_##name
 
-#define DEFINE_UST_MARKER(name, format, unique, m)			\
-		_DEFINE_UST_MARKER(ust, name, NULL, NULL, format, unique, m)
+#define DEFINE_UST_MARKER(name, format)					\
+		_DEFINE_UST_MARKER(ust, name, NULL, NULL, format)
 
 #define DEFINE_UST_MARKER_TP(name, tp_name, tp_cb, format)		\
-		_DEFINE_UST_MARKER_TP(ust, name, #tp_name, tp_cb, format)
-
-#define _DEFINE_UST_MARKER_TP(channel, name, tp_name_str, tp_cb, format)\
-		static const char __mstrtab_##channel##_##name[]	\
-		__attribute__((section("__ust_marker_strings")))	\
-		= #channel "\0" #name "\0" format;			\
-		static struct ust_marker __ust_marker_##channel##_##name\
-		__attribute__((section("__ust_marker"))) =		\
-		{ __mstrtab_##channel##_##name,				\
-			&__mstrtab_##channel##_##name[sizeof(#channel)],\
-			&__mstrtab_##channel##_##name[sizeof(#channel) + sizeof(#name)],		\
-			0, 0, 0, 0, ust_marker_probe_cb,		\
-			{ __ust_marker_empty_function, NULL},		\
-			NULL, tp_name_str, tp_cb };			\
-		static struct ust_marker * const __ust_marker_ptr_##channel##_##name	\
-			__attribute__((used, section("__ust_marker_ptrs"))) =	\
-			&__ust_marker_##channel##_##name;
+		_DEFINE_UST_MARKER(ust, name, #tp_name, tp_cb, format)
 
 /*
  * Make sure the alignment of the structure in the __ust_marker section will
@@ -162,32 +114,27 @@ struct ust_marker {
  * structure. Force alignment to the same alignment as the section start.
  */
 
-#define __ust_marker(channel, name, call_private, format, args...) \
-	__ust_marker_counter(channel, name, __LINE__, call_private, format, ## args)
-
-#define __ust_marker_counter(channel, name, unique, call_private, format, args...) \
+#define __ust_marker(channel, name, call_private, format, args...)	\
 	do {								\
-		struct ust_marker *__ust_marker_counter_ptr;			\
-		_DEFINE_UST_MARKER(channel, name, NULL, NULL, format, unique, __ust_marker_counter_ptr);	\
+		_DEFINE_UST_MARKER(channel, name, NULL, NULL, format);	\
 		__ust_marker_check_format(format, ## args);		\
-		if (unlikely(__ust_marker_counter_ptr->state)) \
-			(__ust_marker_counter_ptr->call)(__ust_marker_counter_ptr, call_private, &__ust_marker_regs, ## args);		\
+		if (unlikely(__ust_marker_def_##name.state))		\
+			(__ust_marker_def_##name.call)			\
+				(&__ust_marker_def_##name, call_private,\
+				## args);				\
 	} while (0)
 
-#define __ust_marker_tp(channel, name, call_private, tp_name, tp_cb, format, args...) \
-	__ust_marker_tp_counter(channel, name, __LINE__, call_private, tp_name, tp_cb, format, ## args)
-
-#define __ust_marker_tp_counter(channel, name, unique, call_private, tp_name, tp_cb, format, args...) \
+#define __ust_marker_tp(name, call_private, tp_name, tp_cb,		\
+			format, args...)				\
 	do {								\
-		struct registers __ust_marker_regs;				\
 		void __check_tp_type(void)				\
 		{							\
-			register_trace_##tp_name(tp_cb, call_private);		\
+			register_trace_##tp_name(tp_cb, call_private);	\
 		}							\
-		_DEFINE_UST_MARKER_TP(channel, name, #tp_name, tp_cb, format);	\
+		DEFINE_UST_MARKER_TP(name, #tp_name, tp_cb, format);	\
 		__ust_marker_check_format(format, ## args);		\
-		(*__ust_marker_##channel##_##name.call)(&__ust_marker_##channel##_##name,	\
-			call_private, &__ust_marker_regs, ## args);				\
+		(*__ust_marker_def_##name.call)				\
+			(&__ust_marker_def_##name, call_private, ## args);	\
 	} while (0)
 
 extern void ust_marker_update_probe_range(struct ust_marker * const *begin,
@@ -262,7 +209,7 @@ static inline void __printf(1, 2) ___ust_marker_check_format(const char *fmt, ..
 extern ust_marker_probe_func __ust_marker_empty_function;
 
 extern void ust_marker_probe_cb(const struct ust_marker *mdata,
-	void *call_private, struct registers *regs, ...);
+	void *call_private, ...);
 
 /*
  * Connect a probe to a marker.
@@ -325,9 +272,6 @@ struct ust_marker_addr {
 
 struct ust_marker_lib {
 	struct ust_marker * const *ust_marker_start;
-#ifdef CONFIG_UST_GDB_INTEGRATION
-	struct ust_marker_addr *ust_marker_addr_start;
-#endif
 	int ust_marker_count;
 	struct cds_list_head list;
 };
@@ -338,8 +282,8 @@ extern int ust_marker_unregister_lib(struct ust_marker * const *ust_marker_start
 #define UST_MARKER_LIB							\
 	extern struct ust_marker * const __start___ust_marker_ptrs[] __attribute__((weak, visibility("hidden"))); \
 	extern struct ust_marker * const __stop___ust_marker_ptrs[] __attribute__((weak, visibility("hidden"))); \
-	static struct ust_marker * const __ust_marker_ptr_dummy			\
-		__attribute__((used, section("__ust_marker_ptrs"))) = NULL;\
+	static struct ust_marker * __ust_marker_ptr_dummy		\
+		__attribute__((used, section("__ust_marker_ptrs")));	\
 									\
 	static void __attribute__((constructor)) __ust_marker__init(void)	\
 	{								\

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007 Mathieu Desnoyers
+ * Copyright (C) 2007-2011 Mathieu Desnoyers
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -81,7 +81,7 @@ struct ust_marker_entry {
 	char *format;
 	char *name;
 			/* Probe wrapper */
-	void (*call)(const struct ust_marker *mdata, void *call_private, struct registers *regs, ...);
+	void (*call)(const struct ust_marker *mdata, void *call_private, ...);
 	struct ust_marker_probe_closure single;
 	struct ust_marker_probe_closure *multi;
 	int refcount;	/* Number of times armed. 0 if disarmed. */
@@ -118,7 +118,7 @@ static void ust_marker_update_processes(void)
  * execution flow of preemptible code.
  */
 notrace void __ust_marker_empty_function(const struct ust_marker *mdata,
-	void *probe_private, struct registers *regs, void *call_private, const char *fmt, va_list *args)
+	void *probe_private, void *call_private, const char *fmt, va_list *args)
 {
 }
 //ust// EXPORT_SYMBOL_GPL(__ust_marker_empty_function);
@@ -134,7 +134,7 @@ notrace void __ust_marker_empty_function(const struct ust_marker *mdata,
  * rcu_dereference() for the pointer read.
  */
 notrace void ust_marker_probe_cb(const struct ust_marker *mdata,
-		void *call_private, struct registers *regs, ...)
+		void *call_private, ...)
 {
 	va_list args;
 	char ptype;
@@ -155,8 +155,8 @@ notrace void ust_marker_probe_cb(const struct ust_marker *mdata,
 		/* Must read the ptr before private data. They are not data
 		 * dependant, so we put an explicit cmm_smp_rmb() here. */
 		cmm_smp_rmb();
-		va_start(args, regs);
-		func(mdata, mdata->single.probe_private, regs, call_private,
+		va_start(args, call_private);
+		func(mdata, mdata->single.probe_private, call_private,
 			mdata->format, &args);
 		va_end(args);
 	} else {
@@ -176,9 +176,9 @@ notrace void ust_marker_probe_cb(const struct ust_marker *mdata,
 		 */
 		cmm_smp_read_barrier_depends();
 		for (i = 0; multi[i].func; i++) {
-			va_start(args, regs);
+			va_start(args, call_private);
 			multi[i].func(mdata, multi[i].probe_private,
-				regs, call_private, mdata->format, &args);
+				call_private, mdata->format, &args);
 			va_end(args);
 		}
 	}
@@ -195,7 +195,7 @@ notrace void ust_marker_probe_cb(const struct ust_marker *mdata,
  * Should be connected to ust_marker "UST_MARKER_NOARGS".
  */
 static notrace void ust_marker_probe_cb_noarg(const struct ust_marker *mdata,
-		void *call_private, struct registers *regs, ...)
+		void *call_private, ...)
 {
 	va_list args;	/* not initialized */
 	char ptype;
@@ -211,7 +211,7 @@ static notrace void ust_marker_probe_cb_noarg(const struct ust_marker *mdata,
 		/* Must read the ptr before private data. They are not data
 		 * dependant, so we put an explicit cmm_smp_rmb() here. */
 		cmm_smp_rmb();
-		func(mdata, mdata->single.probe_private, regs, call_private,
+		func(mdata, mdata->single.probe_private, call_private,
 			mdata->format, &args);
 	} else {
 		struct ust_marker_probe_closure *multi;
@@ -230,7 +230,7 @@ static notrace void ust_marker_probe_cb_noarg(const struct ust_marker *mdata,
 		 */
 		cmm_smp_read_barrier_depends();
 		for (i = 0; multi[i].func; i++)
-			multi[i].func(mdata, multi[i].probe_private, regs,
+			multi[i].func(mdata, multi[i].probe_private,
 				call_private, mdata->format, &args);
 	}
 //ust//	rcu_read_unlock_sched_notrace();

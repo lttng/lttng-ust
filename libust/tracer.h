@@ -103,9 +103,9 @@ struct ltt_active_ust_marker {
 
 struct ust_marker; //ust//
 extern void ltt_vtrace(const struct ust_marker *mdata, void *probe_data,
-	struct registers *regs, void *call_data, const char *fmt, va_list *args);
+	void *call_data, const char *fmt, va_list *args);
 extern void ltt_trace(const struct ust_marker *mdata, void *probe_data,
-	struct registers *regs, void *call_data, const char *fmt, ...);
+	void *call_data, const char *fmt, ...);
 
 /*
  * Unique ID assigned to each registered probe.

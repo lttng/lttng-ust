@@ -113,7 +113,10 @@ static void print_ust_marker(FILE *fp)
 			(*iter.ust_marker)->name,
 			(int)(*iter.ust_marker)->state,
 			(*iter.ust_marker)->format,
-			(*iter.ust_marker)->location);
+			NULL);	/*
+				 * location is null for now, will be added
+				 * to a different table.
+				 */
 		ust_marker_iter_next(&iter);
 	}
 	unlock_ust_marker();

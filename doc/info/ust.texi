@@ -606,25 +606,6 @@ If set, defines the default size of subbuffers, in bytes.
 GDB, the GNU Debugger, can use UST markers as GDB tracepoints (note GDB has its
 own concept of tracepoint). This feature is called GDB Static Tracepoints. When
 a GDB tracepoint is hit, GDB collects the marker arguments, as well as the
-state of the registers.
-
-In UST, support for GDB integration is not compiled in by default because of
-the cost of saving registers when a marker is hit. To enable it, run the
-@command{./configure} script with the @code{-DCONFIG_UST_GDB_INTEGRATION} flag
-in the @env{CFLAGS} environment variable. For example:
-
-@example
-@verbatim
-
-CFLAGS=-DCONFIG_UST_GDB_INTEGRATION ./configure
-
-@end verbatim
-@end example
-
-As of this writing, GDB Static Tracepoints have been submitted
-(@url{http://sourceware.org/ml/gdb-patches/2010-06/msg00592.html}) to the GDB
-mailing list.
-
-GDB integration is currently only supported on x86-32 and x86-64.
+state of the registers. Support for GDB is currently work in progress.
 
 @bye

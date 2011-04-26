@@ -625,7 +625,7 @@ void ltt_write_event_data(struct ust_buffer *buf, size_t buf_offset,
 
 
 notrace void ltt_vtrace(const struct ust_marker *mdata, void *probe_data,
-			struct registers *regs, void *call_data,
+			void *call_data,
 			const char *fmt, va_list *args)
 {
 	int largest_align, ret;
@@ -753,13 +753,13 @@ notrace void ltt_vtrace(const struct ust_marker *mdata, void *probe_data,
 }
 
 notrace void ltt_trace(const struct ust_marker *mdata, void *probe_data,
-		       struct registers *regs, void *call_data,
+		       void *call_data,
 		       const char *fmt, ...)
 {
 	va_list args;
 
 	va_start(args, fmt);
-	ltt_vtrace(mdata, probe_data, regs, call_data, fmt, &args);
+	ltt_vtrace(mdata, probe_data, call_data, fmt, &args);
 	va_end(args);
 }
 
