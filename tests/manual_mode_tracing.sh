@@ -43,7 +43,14 @@ UST_CONSUMERD_PID="$(<$pidfilepath)"
 
 LIB_UST="$TESTDIR/../libust/.libs/libust.so.0.0.0"
 LIB_UST_MALLOC="$TESTDIR/../libustinstr-malloc/.libs/libustinstr-malloc.so"
-LD_PRELOAD="$LIB_UST:$LIB_UST_MALLOC" find -L / >/dev/null 2>&1 &
+# Check to see if find supports -L
+find . -maxdepth 0 -L > /dev/null 2>&1
+if [ $? = 0 ] ; then
+   USE_L="-L"
+else
+   USE_L=""
+fi
+LD_PRELOAD="$LIB_UST:$LIB_UST_MALLOC" find $USE_L / >/dev/null 2>&1 &
 PID=$!
 TRACE=auto
 USTCTL="$TESTDIR/../ustctl/ustctl"
