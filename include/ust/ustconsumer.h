@@ -89,6 +89,7 @@ struct ustconsumer_instance {
 	char *sock_path;
 	pthread_mutex_t mutex;
 	int active_buffers;
+	int active_threads;
 };
 
 /**

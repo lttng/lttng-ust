@@ -543,6 +543,10 @@ void *consumer_thread(void *arg)
 	int result;
 	sigset_t sigset;
 
+	pthread_mutex_lock(&args->instance->mutex);
+	args->instance->active_threads++;
+	pthread_mutex_unlock(&args->instance->mutex);
+
 	if(args->instance->callbacks->on_new_thread)
 		args->instance->callbacks->on_new_thread(args->instance->callbacks);
 
@@ -583,6 +587,10 @@ void *consumer_thread(void *arg)
 
 	if(args->instance->callbacks->on_close_thread)
 		args->instance->callbacks->on_close_thread(args->instance->callbacks);
+
+	pthread_mutex_lock(&args->instance->mutex);
+	args->instance->active_threads--;
+	pthread_mutex_unlock(&args->instance->mutex);
 
 	free((void *)args->channel);
 	free(args);
@@ -735,7 +743,7 @@ int ustconsumer_start_instance(struct ustconsumer_instance *instance)
 
 		if (instance->quit_program) {
 			pthread_mutex_lock(&instance->mutex);
-			if(instance->active_buffers == 0) {
+			if (instance->active_buffers == 0 && instance->active_threads == 0) {
 				pthread_mutex_unlock(&instance->mutex);
 				break;
 			}
