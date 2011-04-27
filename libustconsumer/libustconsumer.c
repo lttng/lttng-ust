@@ -477,6 +477,8 @@ int consumer_loop(struct ustconsumer_instance *instance, struct buffer_info *buf
 			DBG("App died while being traced");
 			finish_consuming_dead_subbuffer(instance->callbacks, buf);
 			break;
+		} else if (read_result == -1 && errno == EINTR) {
+			continue;
 		}
 
 		if(instance->callbacks->on_read_subbuffer)
@@ -783,8 +785,11 @@ int ustconsumer_stop_instance(struct ustconsumer_instance *instance, int send_ms
 
 	struct sockaddr_un addr;
 
+socket_again:
 	result = fd = socket(PF_UNIX, SOCK_STREAM, 0);
 	if(result == -1) {
+		if (errno == EINTR)
+			goto socket_again;
 		PERROR("socket");
 		return 1;
 	}
@@ -794,13 +799,21 @@ int ustconsumer_stop_instance(struct ustconsumer_instance *instance, int send_ms
 	strncpy(addr.sun_path, instance->sock_path, UNIX_PATH_MAX);
 	addr.sun_path[UNIX_PATH_MAX-1] = '\0';
 
+connect_again:
 	result = connect(fd, (struct sockaddr *)&addr, sizeof(addr));
 	if(result == -1) {
+		if (errno == EINTR)
+			goto connect_again;
 		PERROR("connect");
 	}
 
-	while(bytes != sizeof(msg))
-		bytes += send(fd, msg, sizeof(msg), 0);
+	while(bytes != sizeof(msg)) {
+		int inc = send(fd, msg, sizeof(msg), 0);
+		if (inc < 0 && errno != EINTR)
+			break;
+		else
+			bytes += inc;
+	}
 
 	close(fd);
 

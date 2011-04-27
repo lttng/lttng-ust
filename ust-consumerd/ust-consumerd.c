@@ -210,7 +210,11 @@ int on_open_buffer(struct ustconsumer_callbacks *data, struct buffer_info *buf)
 		    trace_path, buf->pid, buf->pidunique, buf->name);
 		return 1;
 	}
+again:
 	result = fd = open(tmp, O_WRONLY | O_CREAT | O_TRUNC | O_EXCL, 00600);
+	if (result == -1 && errno == EINTR)
+		goto again;
+
 	if(result == -1) {
 		PERROR("open");
 		ERR("failed opening trace file %s", tmp);
@@ -225,7 +229,12 @@ int on_open_buffer(struct ustconsumer_callbacks *data, struct buffer_info *buf)
 int on_close_buffer(struct ustconsumer_callbacks *data, struct buffer_info *buf)
 {
 	struct buffer_info_local *buf_local = buf->user_data;
-	int result = close(buf_local->file_fd);
+	int result;
+
+again:
+	result = close(buf_local->file_fd);
+	if (result == -1 && errno == EINTR)
+		goto again;
 	free(buf_local);
 	if(result == -1) {
 		PERROR("close");
