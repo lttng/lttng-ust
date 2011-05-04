@@ -19,11 +19,12 @@
 #define UST_CORE_H
 
 #include <sys/types.h>
+#include <ust/config.h>
 
 #define likely(x)	__builtin_expect(!!(x), 1)
 #define unlikely(x)	__builtin_expect(!!(x), 0)
 
-#if defined(CONFIG_LTT) && defined(CONFIG_LTT_ALIGNMENT)
+#ifndef HAVE_EFFICIENT_UNALIGNED_ACCESS
 
 /*
  * Calculate the offset needed to align the type.
@@ -42,7 +43,7 @@ static inline int ltt_get_alignment(void)
 	return sizeof(void *);
 }
 
-#else
+#else /* HAVE_EFFICIENT_UNALIGNED_ACCESS */
 
 static inline unsigned int ltt_align(size_t align_drift,
 		 size_t size_of_type)
@@ -56,7 +57,7 @@ static inline int ltt_get_alignment(void)
 {
 	return 0;
 }
-#endif /* defined(CONFIG_LTT) && defined(CONFIG_LTT_ALIGNMENT) */
+#endif /* HAVE_EFFICIENT_UNALIGNED_ACCESS */
 
 
 /* ARRAYS */

@@ -9,7 +9,8 @@ AC_CONFIG_MACRO_DIR([config])
 AM_INIT_AUTOMAKE([foreign])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_SRCDIR([ustctl/ustctl.c])
-AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_HEADERS([config.h include/ust/config.h])
+AH_TEMPLATE([HAVE_EFFICIENT_UNALIGNED_ACCESS], [Use efficient unaligned access.])
 
 # Checks for programs.
 AC_PROG_CC
@@ -108,12 +109,37 @@ changequote([,])dnl
 	ppc64) LIBFORMAT="elf64-powerpc" ;;
 	s390) LIBFORMAT="elf32-s390" ;;
 	s390x) LIBFORMAT="elf64-s390" ;;
+        armv5) LIBFORMAT="elf32-littlearm"; NO_UNALIGNED_ACCESS=1 ;;
 	arm) LIBFORMAT="elf32-littlearm" ;;
 	mips*) LIBFORMAT="" ;;
 	*) AC_MSG_ERROR([unable to detect library format (unsupported architecture ($host_cpu)?)]) ;;
 esac
 AC_SUBST(LIBFORMAT)
 AC_MSG_RESULT($LIBFORMAT)
+
+if test "x$host_cpu" = "xarm" ; then
+AC_MSG_CHECKING([checking for armv5])
+AC_TRY_COMPILE(
+[
+],
+[
+#ifndef __ARM_ARCH_5TEJ__
+#error "no arm5 here"
+#endif
+],
+[
+	AC_MSG_RESULT([yes])
+	NO_UNALIGNED_ACCESS=1
+]
+,
+[
+	AC_MSG_RESULT([no])
+]
+)
+fi
+if test x$NO_UNALIGNED_ACCESS = x ; then
+AC_DEFINE([HAVE_EFFICIENT_UNALIGNED_ACCESS], [1])
+fi
 
 AC_CONFIG_FILES([
 	Makefile

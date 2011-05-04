@@ -7,6 +7,7 @@ nobase_include_HEADERS = \
 	ust/probe.h \
 	ust/ust.h \
 	ust/tracectl.h \
+	ust/config.h \
 	ust/core.h \
 	ust/clock.h \
 	ust/type-serializer.h \
