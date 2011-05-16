@@ -162,6 +162,13 @@ extern int ustcomm_request_consumer(pid_t pid, const char *channel);
 
 /* Returns the current users socket directory, must be freed */
 extern char *ustcomm_user_sock_dir(void);
+
+/* Get the st_m_time from proc*/
+extern time_t ustcomm_pid_st_mtime(pid_t pid);
+
+/* Check that a socket is live */
+extern int ustcomm_is_socket_live(char *sock_name, pid_t *read_pid);
+
 extern int ustcomm_connect_app(pid_t pid, int *app_fd);
 extern int ustcomm_connect_path(const char *path, int *connection_fd);
 

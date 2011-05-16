@@ -1228,12 +1228,19 @@ static struct ustcomm_sock * init_app_socket(int epoll_fd)
 	char *dir_name, *sock_name;
 	int result;
 	struct ustcomm_sock *sock = NULL;
+	time_t mtime;
 
 	dir_name = ustcomm_user_sock_dir();
 	if (!dir_name)
 		return NULL;
 
-	result = asprintf(&sock_name, "%s/%d", dir_name, (int)getpid());
+	mtime = ustcomm_pid_st_mtime(getpid());
+	if (!mtime) {
+		goto free_dir_name;
+	}
+
+	result = asprintf(&sock_name, "%s/%d.%ld", dir_name,
+			  (int) getpid(), (long) mtime);
 	if (result < 0) {
 		ERR("string overflow allocating socket name, "
 		    "UST thread bailing");

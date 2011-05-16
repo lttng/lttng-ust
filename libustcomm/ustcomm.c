@@ -22,6 +22,7 @@
 #include <sys/types.h>
 #include <signal.h>
 #include <errno.h>
+#include <limits.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
@@ -550,6 +551,127 @@ char *ustcomm_user_sock_dir(void)
 	return sock_dir;
 }
 
+static int time_and_pid_from_socket_name(char *sock_name, unsigned long *time,
+					 pid_t *pid)
+{
+	char *saveptr, *pid_m_time_str;
+	char *sock_basename = strdup(basename(sock_name));
+
+	if (!sock_basename) {
+		return -1;
+	}
+
+	/* This is the pid */
+	pid_m_time_str = strtok_r(sock_basename, ".", &saveptr);
+	if (!pid_m_time_str) {
+		goto out_err;
+	}
+
+	errno = 0;
+	*pid = (pid_t)strtoul(pid_m_time_str, NULL, 10);
+	if (errno) {
+		goto out_err;
+	}
+
+	/* This should be the time-stamp */
+	pid_m_time_str = strtok_r(NULL, ".", &saveptr);
+	if (!pid_m_time_str) {
+		goto out_err;
+	}
+
+	errno = 0;
+	*time = strtoul(pid_m_time_str, NULL, 10);
+	if (errno) {
+		goto out_err;
+	}
+
+	return 0;
+
+out_err:
+	free(sock_basename);
+	return -1;
+}
+
+time_t ustcomm_pid_st_mtime(pid_t pid)
+{
+	struct stat proc_stat;
+	char proc_name[PATH_MAX];
+
+	if (snprintf(proc_name, PATH_MAX - 1, "/proc/%ld", (long) pid) < 0) {
+		return 0;
+	}
+
+	if (stat(proc_name, &proc_stat)) {
+		return 0;
+	}
+
+	return proc_stat.st_mtime;
+}
+
+int ustcomm_is_socket_live(char *sock_name, pid_t *read_pid)
+{
+	time_t time_from_pid;
+	unsigned long time_from_sock;
+	pid_t pid;
+
+	if (time_and_pid_from_socket_name(sock_name, &time_from_sock, &pid)) {
+		return 0;
+	}
+
+	if (read_pid) {
+		*read_pid = pid;
+	}
+
+	time_from_pid = ustcomm_pid_st_mtime(pid);
+	if (!time_from_pid) {
+		return 0;
+	}
+
+	if ((unsigned long) time_from_pid == time_from_sock) {
+		return 1;
+	}
+
+	return 0;
+}
+
+#define MAX_SOCK_PATH_BASE_LEN 100
+
+static int ustcomm_get_sock_name(char *dir_name, pid_t pid, char *sock_name)
+{
+	struct dirent *dirent;
+	char sock_path_base[MAX_SOCK_PATH_BASE_LEN];
+	int len;
+	DIR *dir = opendir(dir_name);
+
+	snprintf(sock_path_base, MAX_SOCK_PATH_BASE_LEN - 1,
+		 "%ld.", (long) pid);
+	len = strlen(sock_path_base);
+
+	while ((dirent = readdir(dir))) {
+		if (!strcmp(dirent->d_name, ".") ||
+		    !strcmp(dirent->d_name, "..") ||
+		    !strcmp(dirent->d_name, "ust-consumer") ||
+		    dirent->d_type == DT_DIR ||
+		    strncmp(dirent->d_name, sock_path_base, len)) {
+			continue;
+		}
+
+		if (ustcomm_is_socket_live(dirent->d_name, NULL)) {
+			if (snprintf(sock_name, PATH_MAX - 1, "%s/%s",
+				     dir_name, dirent->d_name) < 0) {
+				PERROR("path longer than PATH_MAX?");
+				goto out_err;
+			}
+			closedir(dir);
+			return 0;
+		}
+	}
+
+out_err:
+	closedir(dir);
+	return -1;
+}
+
 /* Open a connection to a traceable app.
  *
  * Return value:
@@ -561,16 +683,15 @@ static int connect_app_non_root(pid_t pid, int *app_fd)
 {
 	int result;
 	int retval = 0;
-	char *dir_name, *sock_name;
+	char *dir_name;
+	char sock_name[PATH_MAX];
 
 	dir_name = ustcomm_user_sock_dir();
 	if (!dir_name)
 		return -ENOMEM;
 
-	result = asprintf(&sock_name, "%s/%d", dir_name, pid);
-	if (result < 0) {
-		ERR("failed to allocate socket name");
-		retval = -1;
+	if (ustcomm_get_sock_name(dir_name, pid, sock_name)) {
+		retval = -ENOENT;
 		goto free_dir_name;
 	}
 
@@ -578,11 +699,9 @@ static int connect_app_non_root(pid_t pid, int *app_fd)
 	if (result < 0) {
 		ERR("failed to connect to app");
 		retval = -1;
-		goto free_sock_name;
+		goto free_dir_name;
 	}
 
-free_sock_name:
-	free(sock_name);
 free_dir_name:
 	free(dir_name);
 
@@ -595,8 +714,8 @@ static int connect_app_root(pid_t pid, int *app_fd)
 {
 	DIR *tmp_dir;
 	struct dirent *dirent;
-	char *sock_name;
-	int result;
+	char dir_name[PATH_MAX], sock_name[PATH_MAX];
+	int result = -1;
 
 	tmp_dir = opendir(USER_TMP_DIR);
 	if (!tmp_dir) {
@@ -607,14 +726,16 @@ static int connect_app_root(pid_t pid, int *app_fd)
 		if (!strncmp(dirent->d_name, USER_SOCK_DIR_BASE,
 			     strlen(USER_SOCK_DIR_BASE))) {
 
-			if (asprintf(&sock_name, USER_TMP_DIR "/%s/%u",
-				     dirent->d_name, pid) < 0) {
-				goto close_tmp_dir;
+			if (snprintf(dir_name, PATH_MAX - 1, "%s/%s", USER_TMP_DIR,
+				     dirent->d_name) < 0) {
+				continue;
+			}
+
+			if (ustcomm_get_sock_name(dir_name, pid, sock_name)) {
+				continue;
 			}
 
 			result = ustcomm_connect_path(sock_name, app_fd);
-
-			free(sock_name);
 
 			if (result == 0) {
 				goto close_tmp_dir;

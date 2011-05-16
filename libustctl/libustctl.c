@@ -110,7 +110,7 @@ static int get_pids_in_dir(DIR *dir, pid_t **pid_list,
 			    unsigned int *pid_list_size)
 {
 	struct dirent *dirent;
-	long read_pid;
+	pid_t read_pid;
 
 	while ((dirent = readdir(dir))) {
 		if (!strcmp(dirent->d_name, ".") ||
@@ -121,21 +121,9 @@ static int get_pids_in_dir(DIR *dir, pid_t **pid_list,
 			continue;
 		}
 
-		errno = 0;
-		read_pid = strtol(dirent->d_name, NULL, 10);
-		if (errno) {
-			continue;
-		}
+		if (ustcomm_is_socket_live(dirent->d_name, &read_pid)) {
 
-		/*
-		 * FIXME: Here we previously called pid_is_online, which
-		 * always returned 1, now I replaced it with just 1.
-		 * We need to figure out an intelligent way of solving
-		 * this, maybe connect-disconnect.
-		 */
-		if (1) {
-
-			(*pid_list)[(*pid_list_index)++] = read_pid;
+			(*pid_list)[(*pid_list_index)++] = (long) read_pid;
 
 			if (*pid_list_index == *pid_list_size) {
 				if (realloc_pid_list(pid_list, pid_list_size)) {
