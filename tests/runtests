@@ -48,6 +48,8 @@ simple_harness_run same_line_marker/same_line_marker.sh
 
 simple_harness_run libustctl_function_tests/libustctl_function_tests
 
+simple_harness_run exit-fast/exit-fast.sh
+
 echo "************************************"
 if [[ $tests_failed -eq 0 ]]; then
     echo "$0: All passed"

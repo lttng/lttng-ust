@@ -40,3 +40,4 @@ tests/test-nevents/prog
 tests/trace_event/trace_event_test
 tests/tracepoint/benchmark/tracepoint_benchmark
 tests/tracepoint/tracepoint_test
+tests/exit-fast/exit-fast

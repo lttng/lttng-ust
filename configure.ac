@@ -165,6 +165,7 @@ AC_CONFIG_FILES([
 	tests/tracepoint/benchmark/Makefile
 	tests/register_test/Makefile
 	tests/libustctl_function_tests/Makefile
+	tests/exit-fast/Makefile
 	libustinstr-malloc/Makefile
 	libustfork/Makefile
 	libustconsumer/Makefile
