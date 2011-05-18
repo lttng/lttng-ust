@@ -1,3 +1,19 @@
+2011-05-19 ust 0.13
+	* API CHANGE!!! trace_mark has been deprecated, new ust_maker, without
+	channel name. ex. ust_marker(name, <format>, args...)
+	* Instrumentation API CHANGE!!! change from trace_<name>(args...) to
+	tracepoint(name, args...), register_trace_<name>(...) to
+	register_tracepoint(name, ...) and unregister_trace_<name>(...) to
+	unregister_tracepoint(name, ...)
+	* Instrumentation API CHANGE!!! TRACE_EVENT -> TRACEPOINT_EVENT etc
+	* Mutliple ust-consumerd fixes
+	* Fix a bug in the tracepoint ptrs section
+	* Clarify licenses
+	* Busybox support in most scripts added
+	* Remove some dead code
+	* List only online pids and pids that can be accessed by current users
+	using libustctl
+
 2011-03-14 ust 0.12
 	* ARM support
 	* Fix lots of low-level bugs, mostly courtesy of Mathieu and Yannick
