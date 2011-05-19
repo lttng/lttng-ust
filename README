@@ -46,6 +46,12 @@ TRACE VIEWER:
   This release has been tested with LTTV 0.12.32.
 
 
+CONTACT:
+
+  Maintainer: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+  Mailing list: ltt-dev@lists.casi.polymtl.ca
+
+
 PACKAGE CONTENTS:
 
   This package contains the following elements.
