@@ -151,19 +151,10 @@ extern void ust_marker_update_probe_range(struct ust_marker * const *begin,
 #define ust_marker(name, format, args...) \
 	__ust_marker(ust, name, NULL, format, ## args)
 
-
-/*
- * trace_mark() -- TO BE DEPRECATED
- * @channel: name prefix, not quoted. Ignored.
- * @name: marker name, not quoted.
- * @format: format string
- * @args...: variable argument list
- *
- * Kept as a compatibility API and will be *DEPRECATED* in favor of
- * ust_marker().
- */
-#define trace_mark(channel, name, format, args...)	\
-	ust_marker(name, format, ## args)
+static inline __attribute__((deprecated))
+void __trace_mark_is_deprecated()
+{
+}
 
 /**
  * ust_marker_tp - Marker in a tracepoint callback
@@ -183,12 +174,6 @@ extern void ust_marker_update_probe_range(struct ust_marker * const *begin,
  * UST_MARKER_NOARGS - Format string for a marker with no argument.
  */
 #define UST_MARKER_NOARGS " "
-
-/**
- * MARKER_NOARGS - Compatibility API. Will be *DEPRECATED*. Use
- * UST_MARKER_NOARGS instead.
- */
-#define MARK_NOARGS	UST_MARKER_NOARGS
 
 extern void lock_ust_marker(void);
 extern void unlock_ust_marker(void);
@@ -297,13 +282,40 @@ extern int ust_marker_unregister_lib(struct ust_marker * const *ust_marker_start
 		ust_marker_unregister_lib(__start___ust_marker_ptrs);	\
 	}
 
+extern void ust_marker_set_new_ust_marker_cb(void (*cb)(struct ust_marker *));
+extern void init_ust_marker(void);
+
+/*
+ * trace_mark() -- TO BE DEPRECATED
+ * @channel: name prefix, not quoted. Ignored.
+ * @name: marker name, not quoted.
+ * @format: format string
+ * @args...: variable argument list
+ *
+ * Kept as a compatibility API and will be *DEPRECATED* in favor of
+ * ust_marker().
+ */
+#define trace_mark(channel, name, format, args...)	\
+	__trace_mark_is_deprecated();			\
+	ust_marker(name, format, ## args)
+
+static inline __attribute__((deprecated))
+void __MARKER_LIB_IS_DEPRECATED()
+{
+}
+
 /*
  * MARKER_LIB is kept for backward compatibility and will be
  * *DEPRECATED*. Use UST_MARKER_LIB instead.
  */
-#define MARKER_LIB	UST_MARKER_LIB
+#define MARKER_LIB			\
+	__MARKER_LIB_IS_DEPRECATED();	\
+	UST_MARKER_LIB
 
-extern void ust_marker_set_new_ust_marker_cb(void (*cb)(struct ust_marker *));
-extern void init_ust_marker(void);
+/**
+ * MARKER_NOARGS - Compatibility API. Will be *DEPRECATED*. Use
+ * UST_MARKER_NOARGS instead.
+ */
+#define MARK_NOARGS	UST_MARKER_NOARGS
 
 #endif /* _UST_MARKER_H */
