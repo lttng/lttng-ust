@@ -20,6 +20,7 @@
 #define _LGPL_SOURCE
 #include <errno.h>
 #include <ust/tracepoint.h>
+#include <ust/tracepoint-internal.h>
 #include <ust/core.h>
 #include <ust/kcompat/kcompat.h>
 #include <urcu-bp.h>

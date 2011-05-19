@@ -29,8 +29,6 @@
 #include <ust/core.h>
 #include <urcu/list.h>
 
-struct tracepoint;
-
 struct tracepoint_probe {
 	void *func;
 	void *data;
@@ -42,24 +40,33 @@ struct tracepoint {
 	struct tracepoint_probe *probes;
 };
 
-#define TP_PARAMS(args...)	args
-#define TP_PROTO(args...)	args
-#define TP_ARGS(args...)	args
-
 /*
  * Tracepoints should be added to the instrumented code using the
  * "tracepoint()" macro.
  */
 #define tracepoint(name, args...)	__trace_##name(args)
 
-#define register_tracepoint(name, probe, data)			\
-		__register_trace_##name(probe, data)
-
-#define unregister_tracepoint(name, probe, data)		\
-		__unregister_trace_##name(probe, data)
-
-#define CONFIG_TRACEPOINTS
-#ifdef CONFIG_TRACEPOINTS
+/*
+ * Library should be made known to libust by declaring TRACEPOINT_LIB in
+ * the source file. (Usually at the end of the file, in the outermost
+ * scope).
+ */
+#define TRACEPOINT_LIB							\
+	extern struct tracepoint * const __start___tracepoints_ptrs[] __attribute__((weak, visibility("hidden"))); \
+	extern struct tracepoint * const __stop___tracepoints_ptrs[] __attribute__((weak, visibility("hidden"))); \
+	static struct tracepoint * __tracepoint_ptr_dummy		\
+	__attribute__((used, section("__tracepoints_ptrs")));		\
+	static void __attribute__((constructor)) __tracepoints__init(void) \
+	{								\
+		tracepoint_register_lib(__start___tracepoints_ptrs,	\
+					__stop___tracepoints_ptrs -	\
+					__start___tracepoints_ptrs);	\
+	}								\
+									\
+	static void __attribute__((destructor)) __tracepoints__destroy(void) \
+	{								\
+		tracepoint_unregister_lib(__start___tracepoints_ptrs);	\
+	}
 
 /*
  * it_func[0] is never NULL because there is at least one element in the array
@@ -83,6 +90,10 @@ struct tracepoint {
 		rcu_read_unlock();					\
 	} while (0)
 
+#define TP_PARAMS(args...)	args
+#define TP_PROTO(args...)	args
+#define TP_ARGS(args...)	args
+
 #define __CHECK_TRACE(name, proto, args)				\
 	do {								\
 		if (unlikely(__tracepoint_##name.state))		\
@@ -105,63 +116,19 @@ struct tracepoint {
 	static inline int						\
 	__register_trace_##name(void (*probe)(data_proto), void *data)	\
 	{								\
-		return tracepoint_probe_register(#name, (void *)probe,	\
+		return __tracepoint_probe_register(#name, (void *)probe,\
 						 data);			\
 									\
 	}								\
 	static inline int						\
 	__unregister_trace_##name(void (*probe)(data_proto), void *data)\
 	{								\
-		return tracepoint_probe_unregister(#name, (void *)probe, \
+		return __tracepoint_probe_unregister(#name, (void *)probe, \
 						   data);		\
 	}
 
 /*
- * __tracepoints_ptrs section is not const (read-only) to let the linker update
- * the pointer, allowing PIC code.
- */
-#define DEFINE_TRACEPOINT_FN(name, reg, unreg)				\
-	static const char __tpstrtab_##name[]				\
-	__attribute__((section("__tracepoints_strings"))) = #name;	\
-	struct tracepoint __tracepoint_##name				\
-	__attribute__((section("__tracepoints"))) =			\
-		{ __tpstrtab_##name, 0, NULL };				\
-	static struct tracepoint * __tracepoint_ptr_##name		\
-	__attribute__((used, section("__tracepoints_ptrs"))) =		\
-		&__tracepoint_##name;
-
-#define DEFINE_TRACEPOINT(name)						\
-	DEFINE_TRACEPOINT_FN(name, NULL, NULL)
-
-extern void tracepoint_update_probe_range(struct tracepoint * const *begin,
-	struct tracepoint * const *end);
-
-#else /* !CONFIG_TRACEPOINTS */
-#define __DECLARE_TRACEPOINT(name, proto, args)				\
-	static inline void trace_##name(proto)				\
-	{ }								\
-	static inline void _trace_##name(proto)				\
-	{ }								\
-	static inline int __register_trace_##name(void (*probe)(proto), void *data)	\
-	{								\
-		return -ENOSYS;						\
-	}								\
-	static inline int __unregister_trace_##name(void (*probe)(proto), void *data)	\
-	{								\
-		return -ENOSYS;						\
-	}
-
-#define DEFINE_TRACEPOINT(name)
-#define EXPORT_TRACEPOINT_SYMBOL_GPL(name)
-#define EXPORT_TRACEPOINT_SYMBOL(name)
-
-static inline void tracepoint_update_probe_range(struct tracepoint *begin,
-	struct tracepoint *end)
-{ }
-#endif /* CONFIG_TRACEPOINTS */
-
-/*
- * The need for the DECLARE_TRACEPOINT_NOARGS() is to handle the prototype
+ * The need for the _DECLARE_TRACEPOINT_NOARGS() is to handle the prototype
  * (void). "void" is a special value in a function prototype and can
  * not be combined with other arguments. Since the DECLARE_TRACEPOINT()
  * macro adds a data element at the beginning of the prototype,
@@ -174,53 +141,47 @@ static inline void tracepoint_update_probe_range(struct tracepoint *begin,
  * DECLARE_TRACEPOINT() passes "proto" as the tracepoint protoype and
  * "void *__tp_cb_data, proto" as the callback prototype.
  */
-#define DECLARE_TRACEPOINT_NOARGS(name)					\
-		__DECLARE_TRACEPOINT(name, void, , void *__tp_cb_data, __tp_cb_data)
+#define _DECLARE_TRACEPOINT_NOARGS(name)				\
+	__DECLARE_TRACEPOINT(name, void, , void *__tp_cb_data, __tp_cb_data)
 
-#define DECLARE_TRACEPOINT(name, proto, args)				\
-		__DECLARE_TRACEPOINT(name, TP_PARAMS(proto), TP_PARAMS(args),\
-				TP_PARAMS(void *__tp_cb_data, proto),	\
-				TP_PARAMS(__tp_cb_data, args))
+#define _DECLARE_TRACEPOINT(name, proto, args)				\
+	__DECLARE_TRACEPOINT(name, TP_PARAMS(proto), TP_PARAMS(args),	\
+			TP_PARAMS(void *__tp_cb_data, proto),		\
+			TP_PARAMS(__tp_cb_data, args))
+
+/*
+ * __tracepoints_ptrs section is not const (read-only) to let the linker update
+ * the pointer, allowing PIC code.
+ */
+#define _DEFINE_TRACEPOINT(name)					\
+	static const char __tpstrtab_##name[]				\
+	__attribute__((section("__tracepoints_strings"))) = #name;	\
+	struct tracepoint __tracepoint_##name				\
+	__attribute__((section("__tracepoints"))) =			\
+		{ __tpstrtab_##name, 0, NULL };				\
+	static struct tracepoint * __tracepoint_ptr_##name		\
+	__attribute__((used, section("__tracepoints_ptrs"))) =		\
+		&__tracepoint_##name;
+
+
+#define __register_tracepoint(name, probe, data)			\
+		__register_trace_##name(probe, data)
+#define __unregister_tracepoint(name, probe, data)			\
+		__unregister_trace_##name(probe, data)
 
 /*
  * Connect a probe to a tracepoint.
- * Internal API, should not be used directly.
+ * Internal API.
  */
-extern int tracepoint_probe_register(const char *name, void *probe, void *data);
+extern
+int __tracepoint_probe_register(const char *name, void *probe, void *data);
 
 /*
  * Disconnect a probe from a tracepoint.
- * Internal API, should not be used directly.
+ * Internal API.
  */
-extern int tracepoint_probe_unregister(const char *name, void *probe, void *data);
-
-extern int tracepoint_probe_register_noupdate(const char *name, void *probe,
-					      void *data);
-extern int tracepoint_probe_unregister_noupdate(const char *name, void *probe,
-						void *data);
-extern void tracepoint_probe_update_all(void);
-
-struct tracepoint_iter {
-	struct tracepoint_lib *lib;
-	struct tracepoint * const *tracepoint;
-};
-
-extern void tracepoint_iter_start(struct tracepoint_iter *iter);
-extern void tracepoint_iter_next(struct tracepoint_iter *iter);
-extern void tracepoint_iter_stop(struct tracepoint_iter *iter);
-extern void tracepoint_iter_reset(struct tracepoint_iter *iter);
-extern int tracepoint_get_iter_range(struct tracepoint * const **tracepoint,
-	struct tracepoint * const *begin, struct tracepoint * const *end);
-
-/*
- * tracepoint_synchronize_unregister must be called between the last tracepoint
- * probe unregistration and the end of module exit to make sure there is no
- * caller executing a probe when it is freed.
- */
-static inline void tracepoint_synchronize_unregister(void)
-{
-//ust//	synchronize_sched();
-}
+extern
+int __tracepoint_probe_unregister(const char *name, void *probe, void *data);
 
 struct tracepoint_lib {
 	struct tracepoint * const *tracepoints_start;
@@ -228,26 +189,11 @@ struct tracepoint_lib {
 	struct cds_list_head list;
 };
 
-extern int tracepoint_register_lib(struct tracepoint * const *tracepoints_start,
-				   int tracepoints_count);
-extern int tracepoint_unregister_lib(struct tracepoint * const *tracepoints_start);
-
-#define TRACEPOINT_LIB							\
-	extern struct tracepoint * const __start___tracepoints_ptrs[] __attribute__((weak, visibility("hidden"))); \
-	extern struct tracepoint * const __stop___tracepoints_ptrs[] __attribute__((weak, visibility("hidden"))); \
-	static struct tracepoint * __tracepoint_ptr_dummy		\
-	__attribute__((used, section("__tracepoints_ptrs")));		\
-	static void __attribute__((constructor)) __tracepoints__init(void)	\
-	{									\
-		tracepoint_register_lib(__start___tracepoints_ptrs,			\
-					__stop___tracepoints_ptrs -			\
-					__start___tracepoints_ptrs);			\
-	}									\
-										\
-	static void __attribute__((destructor)) __tracepoints__destroy(void)	\
-	{									\
-		tracepoint_unregister_lib(__start___tracepoints_ptrs);		\
-	}
+extern
+int tracepoint_register_lib(struct tracepoint * const *tracepoints_start,
+			    int tracepoints_count);
+extern
+int tracepoint_unregister_lib(struct tracepoint * const *tracepoints_start);
 
 
 #ifndef TRACEPOINT_EVENT
@@ -284,108 +230,61 @@ extern int tracepoint_unregister_lib(struct tracepoint * const *tracepoints_star
  *
  *	*
  *	* Fast binary tracing: define the trace record via
- *	* TP_STRUCT__entry(). You can think about it like a
+ *	* TP_FIELDS(). You can think about it like a
  *	* regular C structure local variable definition.
  *	*
  *	* This is how the trace record is structured and will
  *	* be saved into the ring buffer. These are the fields
  *	* that will be exposed to readers.
  *	*
- *	* The declared 'local variable' is called '__entry'
+ *	* tp_field(pid_t, prev_pid, prev->pid) is equivalent
+ *	* to a standard declaraton:
  *	*
- *	* __field(pid_t, prev_prid) is equivalent to a standard declariton:
+ *	*	pid_t prev_pid;
  *	*
- *	*	pid_t	prev_pid;
+ *	* followed by an assignment:
  *	*
- *	* __array(char, prev_comm, TASK_COMM_LEN) is equivalent to:
+ *	*	prev_pid = prev->pid;
  *	*
- *	*	char	prev_comm[TASK_COMM_LEN];
+ *	* tp_array(char, prev_comm, TASK_COMM_LEN, prev->comm) is
+ *	* equivalent to:
  *	*
- *
- *	TP_STRUCT__entry(
- *		__array(	char,	prev_comm,	TASK_COMM_LEN	)
- *		__field(	pid_t,	prev_pid			)
- *		__field(	int,	prev_prio			)
- *		__array(	char,	next_comm,	TASK_COMM_LEN	)
- *		__field(	pid_t,	next_pid			)
- *		__field(	int,	next_prio			)
- *	),
- *
+ *	*	char prev_comm[TASK_COMM_LEN];
  *	*
- *	* Assign the entry into the trace record, by embedding
- *	* a full C statement block into TP_fast_assign(). You
- *	* can refer to the trace record as '__entry' -
- *	* otherwise you can put arbitrary C code in here.
+ *	* followed by an assignment:
  *	*
- *	* Note: this C code will execute every time a trace event
- *	* happens, on an active tracepoint.
+ *	*	memcpy(prev_comm, prev->comm, TASK_COMM_LEN);
  *	*
  *
- *	TP_fast_assign(
- *		memcpy(__entry->next_comm, next->comm, TASK_COMM_LEN);
- *		__entry->prev_pid	= prev->pid;
- *		__entry->prev_prio	= prev->prio;
- *		memcpy(__entry->prev_comm, prev->comm, TASK_COMM_LEN);
- *		__entry->next_pid	= next->pid;
- *		__entry->next_prio	= next->prio;
+ *	TP_FIELDS(
+ *		tp_array(char,	prev_comm, TASK_COMM_LEN, prev->comm)
+ *		tp_field(pid_t,	prev_pid,  prev->pid)
+ *		tp_field(int,	prev_prio, prev->prio)
+ *		tp_array(char,	next_comm, TASK_COMM_LEN, next->comm)
+ *		tp_field(pid_t,	next_pid,  next->pid)
+ *		tp_field(int,	next_prio, next->prio)
  *	)
- *
- *	*
- *	* Formatted output of a trace record via TP_printf().
- *	* This is how the tracepoint will appear under debugging
- *	* of tracepoints.
- *	*
- *	* (raw-binary tracing wont actually perform this step.)
- *	*
- *
- *	TP_printf("task %s:%d [%d] ==> %s:%d [%d]",
- *		__entry->prev_comm, __entry->prev_pid, __entry->prev_prio,
- *		__entry->next_comm, __entry->next_pid, __entry->next_prio),
- *
  * );
- *
- * This macro construct is thus used for the regular printf format
- * tracing setup.
- *
- * A set of (un)registration functions can be passed to the variant
- * TRACEPOINT_EVENT_FN to perform any (un)registration work.
  */
 
-struct trace_event {
-	const char *name;
-	int (*regfunc)(void *data);
-	int (*unregfunc)(void *data);
-};
+#define TRACEPOINT_EVENT(name, proto, args, fields)			\
+	_DECLARE_TRACEPOINT(name, TP_PARAMS(proto), TP_PARAMS(args))
 
-struct trace_event_lib {
-	struct trace_event * const *trace_events_start;
-	int trace_events_count;
-	struct cds_list_head list;
-};
+#define TRACEPOINT_EVENT_CLASS(name, proto, args, fields)
+#define TRACEPOINT_EVENT_INSTANCE(template, name, proto, args)		\
+	_DECLARE_TRACEPOINT(name, TP_PARAMS(proto), TP_PARAMS(args))
 
-struct trace_event_iter {
-	struct trace_event_lib *lib;
-	struct trace_event * const *trace_event;
-};
+/*
+ * Declaration of tracepoints that take 0 argument.
+ */
+#define TRACEPOINT_EVENT_NOARGS(name, fields)				\
+	_DECLARE_TRACEPOINT_NOARGS(name)
 
-extern void lock_trace_events(void);
-extern void unlock_trace_events(void);
+#define TRACEPOINT_EVENT_CLASS_NOARGS(name, fields)
+#define TRACEPOINT_EVENT_INSTANCE_NOARGS(template, name)		\
+	_DECLARE_TRACEPOINT_NOARGS(name)
 
-extern void trace_event_iter_start(struct trace_event_iter *iter);
-extern void trace_event_iter_next(struct trace_event_iter *iter);
-extern void trace_event_iter_reset(struct trace_event_iter *iter);
 
-extern int trace_event_get_iter_range(struct trace_event * const **trace_event,
-				      struct trace_event * const *begin,
-				      struct trace_event * const *end);
-
-extern void trace_event_update_process(void);
-extern int is_trace_event_enabled(const char *channel, const char *name);
-
-extern int trace_event_register_lib(struct trace_event * const *start_trace_events,
-				    int trace_event_count);
-
-extern int trace_event_unregister_lib(struct trace_event * const *start_trace_events);
 
 #define TRACEPOINT_EVENT_LIB						\
 	extern struct trace_event * const __start___trace_events_ptrs[]	\
@@ -408,19 +307,22 @@ extern int trace_event_unregister_lib(struct trace_event * const *start_trace_ev
 		trace_event_unregister_lib(__start___trace_events_ptrs);\
 	}
 
-#define DECLARE_TRACEPOINT_EVENT_CLASS(name, proto, args, tstruct, assign, print)
-#define DEFINE_TRACEPOINT_EVENT(template, name, proto, args)		\
-	DECLARE_TRACEPOINT(name, TP_PARAMS(proto), TP_PARAMS(args))
-#define DEFINE_TRACEPOINT_EVENT_PRINT(template, name, proto, args, print)\
-	DECLARE_TRACEPOINT(name, TP_PARAMS(proto), TP_PARAMS(args))
+struct trace_event {
+	const char *name;
+};
 
-#define TRACEPOINT_EVENT(name, proto, args, struct, assign, print)	\
-	DECLARE_TRACEPOINT(name, TP_PARAMS(proto), TP_PARAMS(args))
-#define TRACEPOINT_EVENT_FN(name, proto, args, struct,		\
-		assign, print, reg, unreg)			\
-	DECLARE_TRACEPOINT(name, TP_PARAMS(proto), TP_PARAMS(args))
+struct trace_event_lib {
+	struct trace_event * const *trace_events_start;
+	int trace_events_count;
+	struct cds_list_head list;
+};
 
-#endif /* ifdef TRACEPOINT_EVENT (see note above) */
+extern
+int trace_event_register_lib(struct trace_event * const *start_trace_events,
+			     int trace_event_count);
+extern
+int trace_event_unregister_lib(struct trace_event * const *start_trace_events);
 
+#endif /* #ifndef TRACEPOINT_EVENT */
 
 #endif /* _UST_TRACEPOINT_H */

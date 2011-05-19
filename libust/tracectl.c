@@ -39,6 +39,7 @@
 
 #include <ust/marker.h>
 #include <ust/tracepoint.h>
+#include <ust/tracepoint-internal.h>
 #include <ust/tracectl.h>
 #include <ust/clock.h>
 #include "tracer.h"

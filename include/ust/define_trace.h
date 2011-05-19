@@ -40,25 +40,20 @@
 #include <ust/kcompat/stringify.h>
 
 #undef TRACEPOINT_EVENT
-#define TRACEPOINT_EVENT(name, proto, args, tstruct, assign, print)	\
-	DEFINE_TRACEPOINT(name)
+#define TRACEPOINT_EVENT(name, proto, args, fields)		\
+	_DEFINE_TRACEPOINT(name)
 
-#undef TRACEPOINT_EVENT_FN
-#define TRACEPOINT_EVENT_FN(name, proto, args, tstruct,		\
-		assign, print, reg, unreg)			\
-	DEFINE_TRACEPOINT_FN(name, reg, unreg)
+#undef TRACEPOINT_EVENT_INSTANCE
+#define TRACEPOINT_EVENT_INSTANCE(template, name, proto, args)	\
+	_DEFINE_TRACEPOINT(name)
 
-#undef DEFINE_TRACEPOINT_EVENT
-#define DEFINE_TRACEPOINT_EVENT(template, name, proto, args) \
-	DEFINE_TRACEPOINT(name)
+#undef TRACEPOINT_EVENT_NOARGS
+#define TRACEPOINT_EVENT_NOARGS(name, fields)			\
+	_DEFINE_TRACEPOINT(name)
 
-#undef DEFINE_TRACEPOINT_EVENT_PRINT
-#define DEFINE_TRACEPOINT_EVENT_PRINT(template, name, proto, args, print)	\
-	DEFINE_TRACEPOINT(name)
-
-#undef DECLARE_TRACEPOINT
-#define DECLARE_TRACEPOINT(name, proto, args)	\
-	DEFINE_TRACEPOINT(name)
+#undef TRACEPOINT_EVENT_INSTANCE_NOARGS
+#define TRACEPOINT_EVENT_INSTANCE_NOARGS(template, name)	\
+	_DEFINE_TRACEPOINT(name)
 
 #undef TRACE_INCLUDE
 #undef __TRACE_INCLUDE
@@ -82,21 +77,17 @@
 
 #include TRACE_INCLUDE(TRACE_INCLUDE_FILE)
 
-/* Make all open coded DECLARE_TRACEPOINT nops */
-#undef DECLARE_TRACEPOINT
-#define DECLARE_TRACEPOINT(name, proto, args)
-
 #ifndef CONFIG_NO_EVENT_TRACING
 #include <ust/ust_trace.h>
 #endif
 
 #undef TRACEPOINT_EVENT
-#undef TRACEPOINT_EVENT_FN
-#undef DECLARE_TRACEPOINT_EVENT_CLASS
-#undef DEFINE_TRACEPOINT_EVENT
-#undef DEFINE_TRACEPOINT_EVENT_PRINT
+#undef TRACEPOINT_EVENT_CLASS
+#undef TRACEPOINT_EVENT_INSTANCE
+#undef TRACEPOINT_EVENT_NOARGS
+#undef TRACEPOINT_EVENT_CLASS_NOARGS
+#undef TRACEPOINT_EVENT_INSTANCE_NOARGS
 #undef TRACE_HEADER_MULTI_READ
-#undef DECLARE_TRACEPOINT
 
 /* Only undef what we defined in this file */
 #ifdef UNDEF_TRACE_INCLUDE_FILE

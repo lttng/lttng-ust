@@ -25,12 +25,12 @@
  */
 
 #include <stdio.h>
+
+#define TRACEPOINT_CREATE_PROBES
 #include "tracepoint_benchmark.h"
 #include <ust/type-serializer.h>
 
 #define NR_EVENTS	10000000
-
-DEFINE_TRACEPOINT(ust_event);
 
 void tp_probe(void *data, unsigned int p1);
 
@@ -49,7 +49,7 @@ void tp_probe(void *data, unsigned int p1)
 
 static void __attribute__((constructor)) init()
 {
-	register_tracepoint(ust_event, tp_probe, NULL);
+	__register_tracepoint(ust_event, tp_probe, NULL);
 }
 
 void single_trace(unsigned int v)

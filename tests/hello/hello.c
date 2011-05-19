@@ -1,4 +1,6 @@
-/* Copyright (C) 2009  Pierre-Marc Fournier
+/*
+ * Copyright (C) 2009  Pierre-Marc Fournier
+ * Copyright (C) 2011  Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,7 +43,7 @@ int init_int_handler(void)
 	struct sigaction act;
 
 	result = sigemptyset(&act.sa_mask);
-	if(result == -1) {
+	if (result == -1) {
 		PERROR("sigemptyset");
 		return -1;
 	}
@@ -53,7 +55,7 @@ int init_int_handler(void)
 	 * syscalls to disturb the traced program as little as possible.
 	 */
 	result = sigaction(SIGINT, &act, NULL);
-	if(result == -1) {
+	if (result == -1) {
 		PERROR("sigaction");
 		return -1;
 	}
@@ -70,7 +72,7 @@ int main()
 	printf("Hello, World!\n");
 
 	sleep(1);
-	for(i=0; i<50; i++) {
+	for (i = 0; i < 50; i++) {
 		ust_marker(bar, "str %s", "FOOBAZ");
 		ust_marker(bar2, "number1 %d number2 %d", 53, 9800);
 		tracepoint(hello_tptest, i);

@@ -22,6 +22,7 @@
 #define _LGPL_SOURCE
 #include <errno.h>
 #include <ust/tracepoint.h>
+#include <ust/tracepoint-internal.h>
 #include <ust/core.h>
 #include <ust/kcompat/kcompat.h>
 #include <urcu-bp.h>
@@ -354,14 +355,14 @@ tracepoint_add_probe(const char *name, void *probe, void *data)
 }
 
 /**
- * tracepoint_probe_register -  Connect a probe to a tracepoint
+ * __tracepoint_probe_register -  Connect a probe to a tracepoint
  * @name: tracepoint name
  * @probe: probe handler
  *
  * Returns 0 if ok, error value on error.
  * The probe address must at least be aligned on the architecture pointer size.
  */
-int tracepoint_probe_register(const char *name, void *probe, void *data)
+int __tracepoint_probe_register(const char *name, void *probe, void *data)
 {
 	void *old;
 
@@ -375,7 +376,6 @@ int tracepoint_probe_register(const char *name, void *probe, void *data)
 	release_probes(old);
 	return 0;
 }
-//ust// EXPORT_SYMBOL_GPL(tracepoint_probe_register);
 
 static void *tracepoint_remove_probe(const char *name, void *probe, void *data)
 {
@@ -404,7 +404,7 @@ static void *tracepoint_remove_probe(const char *name, void *probe, void *data)
  * itself uses stop_machine(), which insures that every preempt disabled section
  * have finished.
  */
-int tracepoint_probe_unregister(const char *name, void *probe, void *data)
+int __tracepoint_probe_unregister(const char *name, void *probe, void *data)
 {
 	void *old;
 
@@ -418,7 +418,6 @@ int tracepoint_probe_unregister(const char *name, void *probe, void *data)
 	release_probes(old);
 	return 0;
 }
-//ust// EXPORT_SYMBOL_GPL(tracepoint_probe_unregister);
 
 static CDS_LIST_HEAD(old_probes);
 static int need_update;

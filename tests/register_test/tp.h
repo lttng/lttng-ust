@@ -1,4 +1,11 @@
-/* Copyright (C) 2009  Pierre-Marc Fournier
+#undef TRACE_SYSTEM
+#define TRACE_SYSTEM tp
+
+#if !defined(_TRACE_TP_H) || defined(TRACE_HEADER_MULTI_READ)
+#define _TRACE_TP_H
+
+/*
+ * Copyright (C) 2011  Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,6 +24,17 @@
 
 #include <ust/tracepoint.h>
 
-DECLARE_TRACEPOINT(hello_tptest,
-		   TP_PROTO(int anint),
-		   TP_ARGS(anint));
+TRACEPOINT_EVENT(hello_tptest,
+		 TP_PROTO(int anint),
+		 TP_ARGS(anint),
+		 TP_FIELDS());
+
+#endif /* _TRACE_TP_H */
+
+#undef TRACE_INCLUDE_PATH
+#define TRACE_INCLUDE_PATH .
+#undef TRACE_INCLUDE_FILE
+#define TRACE_INCLUDE_FILE tp
+
+/* This part must be outside protection */
+#include <ust/define_trace.h>

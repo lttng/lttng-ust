@@ -1,4 +1,6 @@
-/* Copyright (C) 2010 Nils Carlson
+/*
+ * Copyright (C) 2010 Nils Carlson
+ * Copyright (C) 2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -27,10 +29,9 @@
 
 #include <ust/marker.h>
 #include "usterr.h"
+
+#define TRACEPOINT_CREATE_PROBES
 #include "tp.h"
-
-DEFINE_TRACEPOINT(hello_tptest);
-
 
 struct hello_trace_struct {
 	char *message;
@@ -44,7 +45,7 @@ void tptest_probe(void *data, int anint)
 {
 	struct hello_trace_struct *hello;
 	char message[30];
-	hello=(struct hello_trace_struct *)data;
+	hello = (struct hello_trace_struct *)data;
 	//printf("this is the message: %s\n", hello->message);
 	snprintf(message, 30, "this is the %s\n", hello->message);
 }
@@ -52,27 +53,26 @@ void tptest_probe(void *data, int anint)
 
 #define HELLO_LENGTH 100
 
-static void * register_thread_main(void *data)
+static void *register_thread_main(void *data)
 {
 	int i, j = 0;
-
 	struct hello_trace_struct hello[HELLO_LENGTH];
 
-	for (i=0; i<HELLO_LENGTH; i++) {
-		hello[i].message = malloc(6*sizeof(char));
-		hello[i].message[0] = 'a'+i%25;
+	for (i = 0; i < HELLO_LENGTH; i++) {
+		hello[i].message = malloc(6 * sizeof(char));
+		hello[i].message[0] = 'a' + (i % 25);
 		memcpy(&hello[i].message[1], "ello", 5);
 	}
 
-	for (i=0; i<1000; i++) {
-		while (!register_tracepoint(hello_tptest, tptest_probe,
-						    &hello[j%HELLO_LENGTH])) {
+	for (i = 0; i < 1000; i++) {
+		while (!__register_tracepoint(hello_tptest, tptest_probe,
+					      &hello[j % HELLO_LENGTH])) {
 			usleep(10);
 			j++;
 		}
 		printf("Registered all\n");
-		while (!unregister_tracepoint(hello_tptest, tptest_probe,
-						      &hello[j%HELLO_LENGTH])) {
+		while (!__unregister_tracepoint(hello_tptest, tptest_probe,
+						&hello[j % HELLO_LENGTH])) {
 			usleep(10);
 			j++;
 		}
@@ -88,7 +88,7 @@ int main(int argc, char **argv)
 	int i;
 
 	pthread_create(&register_thread, NULL, register_thread_main, NULL);
-	for(i=0; i<1000000; i++) {
+	for(i = 0; i < 1000000; i++) {
 		tracepoint(hello_tptest, i);
 	}
 

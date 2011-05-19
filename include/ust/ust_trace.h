@@ -19,67 +19,48 @@
  */
 
 /*
- * This whole file is currently a dummy, mapping a TRACEPOINT_EVENT
- * to a printf
+ * This whole file is currently a dummy.
  */
 
 #include <stdio.h>
 
-/*
- * Stage 1. Create a struct and a printf calling function
- * that is connected to the tracepoint at load time.
- */
 #undef TRACEPOINT_EVENT
-#define TRACEPOINT_EVENT(name, proto, args, tstruct, assign, print)	\
-	DECLARE_TRACEPOINT_EVENT_CLASS(name,				\
-				  TP_PARAMS(proto),			\
-				  TP_PARAMS(args),			\
-				  TP_PARAMS(tstruct),			\
-				  TP_PARAMS(assign),			\
-				  TP_PARAMS(print));			\
-	DEFINE_TRACEPOINT_EVENT(name, name, TP_PARAMS(proto), TP_PARAMS(args));
+#define TRACEPOINT_EVENT(name, proto, args, fields)			\
+	TRACEPOINT_EVENT_CLASS(name,					\
+			TP_PARAMS(proto),				\
+			TP_PARAMS(args),				\
+			TP_PARAMS(fields));				\
+	TRACEPOINT_EVENT_INSTANCE(name, name, TP_PARAMS(proto),		\
+			TP_PARAMS(args));
 
-#undef __field
-#define __field(type, item)		type	item;
+#undef TRACEPOINT_EVENT_NOARGS
+#define TRACEPOINT_EVENT_NOARGS(name, fields)				\
+	TRACEPOINT_EVENT_CLASS_NOARGS(name,				\
+			TP_PARAMS(fields));				\
+	TRACEPOINT_EVENT_INSTANCE_NOARGS(name, name);
 
-#undef TP_STRUCT__entry
-#define TP_STRUCT__entry(args...) args
+#undef tp_field
+#define tp_field(type, item, src)	type	item;
 
-#undef TP_printf
-#define TP_printf(fmt, args...) fmt "\n", args
+#undef TP_FIELDS
+#define TP_FIELDS(args...) args
 
-#undef TP_fast_assign
-#define TP_fast_assign(args...) args
+#undef TRACEPOINT_EVENT_INSTANCE
+#define TRACEPOINT_EVENT_INSTANCE(template, name, proto, args)
 
-#undef DEFINE_TRACEPOINT_EVENT
-#define DEFINE_TRACEPOINT_EVENT(template, name, proto, args)
+#undef TRACEPOINT_EVENT_INSTANCE_NOARGS
+#define TRACEPOINT_EVENT_INSTANCE_NOARGS(template, name)
 
-
-#undef DECLARE_TRACEPOINT_EVENT_CLASS
-#define DECLARE_TRACEPOINT_EVENT_CLASS(name, proto, args, tstruct, assign, print)	\
+#undef TRACEPOINT_EVENT_CLASS
+#define TRACEPOINT_EVENT_CLASS(name, proto, args, fields)		\
 	struct trace_raw_##name {					\
-		tstruct							\
+		fields							\
 	};								\
 	static void trace_printf_##name(void *dummy, proto)		\
 	{								\
-		struct trace_raw_##name entry_struct, *__entry;		\
-		__entry = &entry_struct;				\
-		{ assign };					\
-									\
-		printf(print);						\
-	}								\
-	static inline int register_event_##name(void *data)		\
-	{								\
-		return register_tracepoint(name, trace_printf_##name, data); \
-	}								\
-	static inline int unregister_event_##name(void *data)		\
-	{								\
-		return unregister_tracepoint(name, trace_printf_##name, data); \
 	}								\
 	struct trace_event __event_##name = {				\
 		__tpstrtab_##name,					\
-		register_event_##name,					\
-		unregister_event_##name					\
 	};								\
 	static struct trace_event * const __event_ptrs_##name		\
 	__attribute__((used, section("__trace_events_ptrs"))) =		\
@@ -88,8 +69,28 @@
 	static void __attribute__((constructor)) init_##name()		\
 	{								\
 		void *dummy = NULL;					\
-		register_tracepoint(name, trace_printf_##name, dummy);	\
+		__register_tracepoint(name, trace_printf_##name, dummy);\
 	}
 
+#undef TRACEPOINT_EVENT_CLASS_NOARGS
+#define TRACEPOINT_EVENT_CLASS_NOARGS(name, fields)			\
+	struct trace_raw_##name {					\
+		fields							\
+	};								\
+	static void trace_printf_##name(void *dummy)			\
+	{								\
+	}								\
+	struct trace_event __event_##name = {				\
+		__tpstrtab_##name,					\
+	};								\
+	static struct trace_event * const __event_ptrs_##name		\
+	__attribute__((used, section("__trace_events_ptrs"))) =		\
+		&__event_##name;					\
+									\
+	static void __attribute__((constructor)) init_##name()		\
+	{								\
+		void *dummy = NULL;					\
+		__register_tracepoint(name, trace_printf_##name, dummy);\
+	}
 
 #include TRACE_INCLUDE(TRACE_INCLUDE_FILE)

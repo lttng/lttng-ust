@@ -26,6 +26,7 @@
 #include <ust/core.h>
 #include <ust/marker.h>
 #include <ust/tracepoint.h>
+#include <ust/tracepoint-internal.h>
 
 #include "usterr_signal_safe.h"
 #include "channels.h"
