@@ -26,7 +26,6 @@
  */
 
 #include <urcu-bp.h>
-#include <ust/core.h>
 #include <urcu/list.h>
 
 struct tracepoint_probe {

@@ -20,7 +20,7 @@ libust_la_SOURCES = \
 	serialize.c \
 	tracectl.c \
 	tracerconst.h \
-	header-inline.h \
+	type-serializer.h \
 	type-serializer.c
 
 libust_la_LDFLAGS = -no-undefined -version-info 0:0:0

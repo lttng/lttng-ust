@@ -20,7 +20,6 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <signal.h>
-#include <ust/ust.h>
 #include <sched.h>
 #include <stdarg.h>
 #include <ust/tracectl.h>

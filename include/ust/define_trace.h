@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2009     Steven Rostedt <srostedt@redhat.com>
+ * Copyright (C) 2011     Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,7 +38,7 @@
 /* Prevent recursion */
 #undef TRACEPOINT_CREATE_PROBES
 
-#include <ust/kcompat/stringify.h>
+#include <ust/stringify.h>
 
 #undef TRACEPOINT_EVENT
 #define TRACEPOINT_EVENT(name, proto, args, fields)		\

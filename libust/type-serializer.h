@@ -4,6 +4,7 @@
 #include <ust/marker.h>
 #include <ust/marker-internal.h>
 #include <ust/core.h>
+#include "buffers.h"
 
 /*
  * largest_align must be non-zero, equal to the minimum between the largest type

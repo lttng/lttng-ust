@@ -21,7 +21,7 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <ust/ust.h>
+#include <ust/marker.h>
 
 #define N_ITER 100000
 

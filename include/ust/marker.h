@@ -26,10 +26,10 @@
  */
 
 #include <stdarg.h>
+#include <stdint.h>
+#include <stddef.h>
 #include <bits/wordsize.h>
 #include <urcu/list.h>
-#include <ust/core.h>
-#include <ust/kcompat/kcompat.h>
 
 struct ust_marker;
 
@@ -64,8 +64,8 @@ struct ust_marker {
 	char state;		/* State. */
 	char ptype;		/* probe type : 0 : single, 1 : multi */
 				/* Probe wrapper */
-	u16 channel_id;		/* Numeric channel identifier, dynamic */
-	u16 event_id;		/* Numeric event identifier, dynamic */
+	uint16_t channel_id;	/* Numeric channel identifier, dynamic */
+	uint16_t event_id;	/* Numeric event identifier, dynamic */
 	void (*call)(const struct ust_marker *mdata, void *call_private, ...);
 	struct ust_marker_probe_closure single;
 	struct ust_marker_probe_closure *multi;
@@ -109,7 +109,7 @@ struct ust_marker {
 	do {								\
 		_DEFINE_UST_MARKER(channel, name, NULL, NULL, format);	\
 		__ust_marker_check_format(format, ## args);		\
-		if (unlikely(__ust_marker_def_##name.state))		\
+		if (__builtin_expect(!!(__ust_marker_def_##name.state), 0)) \
 			(__ust_marker_def_##name.call)			\
 				(&__ust_marker_def_##name, call_private,\
 				## args);				\
@@ -138,7 +138,8 @@ void __trace_mark_is_deprecated()
 
 /* To be used for string format validity checking with gcc */
 static inline
-void __printf(1, 2) ___ust_marker_check_format(const char *fmt, ...)
+void __attribute__((format(printf, 1, 2)))
+ ___ust_marker_check_format(const char *fmt, ...)
 {
 }
 

@@ -146,7 +146,7 @@ void decrement_active_buffers(void *arg)
 	pthread_mutex_unlock(&instance->mutex);
 }
 
-static int get_pidunique(int sock, s64 *pidunique)
+static int get_pidunique(int sock, int64_t *pidunique)
 {
 	struct ustcomm_header _send_hdr, *send_hdr;
 	struct ustcomm_header _recv_hdr, *recv_hdr;

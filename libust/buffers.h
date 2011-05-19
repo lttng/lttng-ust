@@ -32,7 +32,6 @@
 #include "channels.h"
 #include "tracerconst.h"
 #include "tracercore.h"
-#include "header-inline.h"
 
 /***** FIXME: SHOULD BE REMOVED ***** */
 
@@ -122,6 +121,40 @@ extern int ltt_reserve_slot_lockless_slow(struct ust_channel *chan,
 extern void ltt_force_switch_lockless_slow(struct ust_buffer *buf,
 		enum force_switch_mode mode);
 
+#ifndef HAVE_EFFICIENT_UNALIGNED_ACCESS
+
+/*
+ * Calculate the offset needed to align the type.
+ * size_of_type must be non-zero.
+ */
+static inline unsigned int ltt_align(size_t align_drift, size_t size_of_type)
+{
+	size_t alignment = min(sizeof(void *), size_of_type);
+	return (alignment - align_drift) & (alignment - 1);
+}
+/* Default arch alignment */
+#define LTT_ALIGN
+
+static inline int ltt_get_alignment(void)
+{
+	return sizeof(void *);
+}
+
+#else /* HAVE_EFFICIENT_UNALIGNED_ACCESS */
+
+static inline unsigned int ltt_align(size_t align_drift,
+		 size_t size_of_type)
+{
+	return 0;
+}
+
+#define LTT_ALIGN __attribute__((packed))
+
+static inline int ltt_get_alignment(void)
+{
+	return 0;
+}
+#endif /* HAVE_EFFICIENT_UNALIGNED_ACCESS */
 
 static __inline__ void ust_buffers_do_copy(void *dest, const void *src, size_t len)
 {
@@ -193,6 +226,63 @@ static __inline__ int last_tsc_overflow(struct ust_buffer *ltt_buf,
 		return 0;
 }
 #endif
+
+/*
+ * ust_get_header_size
+ *
+ * Calculate alignment offset to 32-bits. This is the alignment offset of the
+ * event header.
+ *
+ * Important note :
+ * The event header must be 32-bits. The total offset calculated here :
+ *
+ * Alignment of header struct on 32 bits (min arch size, header size)
+ * + sizeof(header struct)  (32-bits)
+ * + (opt) u16 (ext. event id)
+ * + (opt) u16 (event_size) (if event_size == 0xFFFFUL, has ext. event size)
+ * + (opt) u32 (ext. event size)
+ * + (opt) u64 full TSC (aligned on min(64-bits, arch size))
+ *
+ * The payload must itself determine its own alignment from the biggest type it
+ * contains.
+ * */
+static __inline__ unsigned char ust_get_header_size(
+		struct ust_channel *channel,
+		size_t offset,
+		size_t data_size,
+		size_t *before_hdr_pad,
+		unsigned int rflags)
+{
+	size_t orig_offset = offset;
+	size_t padding;
+
+	padding = ltt_align(offset, sizeof(struct ltt_event_header));
+	offset += padding;
+	offset += sizeof(struct ltt_event_header);
+
+	if(unlikely(rflags)) {
+		switch (rflags) {
+		case LTT_RFLAG_ID_SIZE_TSC:
+			offset += sizeof(u16) + sizeof(u16);
+			if (data_size >= 0xFFFFU)
+				offset += sizeof(u32);
+			offset += ltt_align(offset, sizeof(u64));
+			offset += sizeof(u64);
+			break;
+		case LTT_RFLAG_ID_SIZE:
+			offset += sizeof(u16) + sizeof(u16);
+			if (data_size >= 0xFFFFU)
+				offset += sizeof(u32);
+			break;
+		case LTT_RFLAG_ID:
+			offset += sizeof(u16);
+			break;
+		}
+	}
+
+	*before_hdr_pad = padding;
+	return offset - orig_offset;
+}
 
 static __inline__ void ltt_reserve_push_reader(
 		struct ust_channel *rchan,

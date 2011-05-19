@@ -28,7 +28,9 @@
 
 #define TRACEPOINT_CREATE_PROBES
 #include "tracepoint_benchmark.h"
-#include <ust/type-serializer.h>
+
+/* Yes, this is now internal. */
+#include "../../../libust/type-serializer.h"
 
 #define NR_EVENTS	10000000
 

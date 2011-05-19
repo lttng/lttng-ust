@@ -24,6 +24,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <signal.h>
+#include <inttypes.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -192,8 +193,8 @@ int on_open_buffer(struct ustconsumer_callbacks *data, struct buffer_info *buf)
 		trace_path = USTCONSUMER_DEFAULT_TRACE_PATH;
 	}
 
-	if (asprintf(&tmp, "%s/%u_%lld", trace_path, buf->pid, buf->pidunique) < 0) {
-		ERR("on_open_buffer : asprintf failed (%s/%u_%lld)",
+	if (asprintf(&tmp, "%s/%u_%" PRId64 "", trace_path, buf->pid, buf->pidunique) < 0) {
+		ERR("on_open_buffer : asprintf failed (%s/%u_%" PRId64 ")",
 		    trace_path, buf->pid, buf->pidunique);
 		return 1;
 	}
@@ -205,8 +206,8 @@ int on_open_buffer(struct ustconsumer_callbacks *data, struct buffer_info *buf)
 	}
 	free(tmp);
 
-	if (asprintf(&tmp, "%s/%u_%lld/%s", trace_path, buf->pid, buf->pidunique, buf->name) < 0) {
-		ERR("on_open_buffer : asprintf failed (%s/%u_%lld/%s)",
+	if (asprintf(&tmp, "%s/%u_%" PRId64 "/%s", trace_path, buf->pid, buf->pidunique, buf->name) < 0) {
+		ERR("on_open_buffer : asprintf failed (%s/%u_%" PRId64 "/%s)",
 		    trace_path, buf->pid, buf->pidunique, buf->name);
 		return 1;
 	}

@@ -28,7 +28,7 @@
 
 #include <pthread.h>
 #include <dirent.h>
-#include <ust/kcompat/kcompat.h>
+#include <unistd.h>
 #include <urcu/list.h>
 
 #define USTCONSUMER_DEFAULT_TRACE_PATH "/tmp/usttrace"
@@ -67,7 +67,7 @@ struct buffer_info {
 
 	long consumed_old;
 
-	s64 pidunique;
+	int64_t pidunique;
 
 	void *user_data;
 };

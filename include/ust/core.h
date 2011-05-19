@@ -24,42 +24,6 @@
 #define likely(x)	__builtin_expect(!!(x), 1)
 #define unlikely(x)	__builtin_expect(!!(x), 0)
 
-#ifndef HAVE_EFFICIENT_UNALIGNED_ACCESS
-
-/*
- * Calculate the offset needed to align the type.
- * size_of_type must be non-zero.
- */
-static inline unsigned int ltt_align(size_t align_drift, size_t size_of_type)
-{
-	size_t alignment = min(sizeof(void *), size_of_type);
-	return (alignment - align_drift) & (alignment - 1);
-}
-/* Default arch alignment */
-#define LTT_ALIGN
-
-static inline int ltt_get_alignment(void)
-{
-	return sizeof(void *);
-}
-
-#else /* HAVE_EFFICIENT_UNALIGNED_ACCESS */
-
-static inline unsigned int ltt_align(size_t align_drift,
-		 size_t size_of_type)
-{
-	return 0;
-}
-
-#define LTT_ALIGN __attribute__((packed))
-
-static inline int ltt_get_alignment(void)
-{
-	return 0;
-}
-#endif /* HAVE_EFFICIENT_UNALIGNED_ACCESS */
-
-
 /* ARRAYS */
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))

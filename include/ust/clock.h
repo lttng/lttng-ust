@@ -20,7 +20,9 @@
 
 #include <time.h>
 #include <sys/time.h>
-#include <ust/kcompat/kcompat.h>
+#include <stdint.h>
+#include <stddef.h>
+#include <ust/core.h>
 
 /* TRACE CLOCK */
 
@@ -44,17 +46,17 @@
 #define CLOCK_TRACE  15
 union lttng_timespec {
 	struct timespec ts;
-	u64 lttng_ts;
+	uint64_t lttng_ts;
 };
 
 extern int ust_clock_source;
 
 /* Choosing correct trace clock */
 
-static __inline__ u64 trace_clock_read64(void)
+static __inline__ uint64_t trace_clock_read64(void)
 {
 	struct timespec ts;
-	u64 retval;
+	uint64_t retval;
 	union lttng_timespec *lts = (union lttng_timespec *) &ts;
 
 	clock_gettime(ust_clock_source, &ts);
@@ -75,7 +77,7 @@ static __inline__ u64 trace_clock_read64(void)
 }
 
 #if __i386__ || __x86_64__
-static __inline__ u64 trace_clock_frequency(void)
+static __inline__ uint64_t trace_clock_frequency(void)
 {
 	struct timespec ts;
 	union lttng_timespec *lts = (union lttng_timespec *) &ts;
@@ -87,13 +89,13 @@ static __inline__ u64 trace_clock_frequency(void)
 	return 1000000000LL;
 }
 #else /* #if __i386__ || __x86_64__ */
-static __inline__ u64 trace_clock_frequency(void)
+static __inline__ uint64_t trace_clock_frequency(void)
 {
 	return 1000000000LL;
 }
 #endif /* #else #if __i386__ || __x86_64__ */
 
-static __inline__ u32 trace_clock_freq_scale(void)
+static __inline__ uint32_t trace_clock_freq_scale(void)
 {
 	return 1;
 }

@@ -20,7 +20,9 @@
 
 #include <signal.h>
 #include <string.h>
-#include <ust/ust.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <ust/marker.h>
 
 int main(int argc, char *argv[])
 {
