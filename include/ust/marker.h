@@ -1,3 +1,6 @@
+#ifndef _UST_MARKER_H
+#define _UST_MARKER_H
+
 /*
  * Code markup for dynamic and static tracing.
  *
@@ -22,15 +25,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#ifndef _UST_MARKER_H
-#define _UST_MARKER_H
-
 #include <stdarg.h>
-#include <ust/core.h>
-#include <urcu/list.h>
-#include <ust/kcompat/kcompat.h>
-
 #include <bits/wordsize.h>
+#include <urcu/list.h>
+#include <ust/core.h>
+#include <ust/kcompat/kcompat.h>
 
 struct ust_marker;
 
@@ -74,8 +73,6 @@ struct ust_marker {
 	void *tp_cb;		/* Optional tracepoint callback */
 };
 
-#define GET_UST_MARKER(name)		(__ust_marker_def_##name)
-
 /*
  * We keep the "channel" as internal field for marker.c *only*. It will be
  * removed soon.
@@ -99,14 +96,8 @@ struct ust_marker {
 		  { __ust_marker_empty_function, NULL},			\
 		  NULL, tp_name_str, tp_cb };				\
 		static struct ust_marker * __ust_marker_ptr_##name	\
-			__attribute__((used, section("__ust_marker_ptrs"))) =	\
+			__attribute__((used, section("__ust_marker_ptrs"))) = \
 			&__ust_marker_def_##name
-
-#define DEFINE_UST_MARKER(name, format)					\
-		_DEFINE_UST_MARKER(ust, name, NULL, NULL, format)
-
-#define DEFINE_UST_MARKER_TP(name, tp_name, tp_cb, format)		\
-		_DEFINE_UST_MARKER(ust, name, #tp_name, tp_cb, format)
 
 /*
  * Make sure the alignment of the structure in the __ust_marker section will
@@ -123,22 +114,6 @@ struct ust_marker {
 				(&__ust_marker_def_##name, call_private,\
 				## args);				\
 	} while (0)
-
-#define __ust_marker_tp(name, call_private, tp_name, tp_cb,		\
-			format, args...)				\
-	do {								\
-		void __check_tp_type(void)				\
-		{							\
-			register_trace_##tp_name(tp_cb, call_private);	\
-		}							\
-		DEFINE_UST_MARKER_TP(name, #tp_name, tp_cb, format);	\
-		__ust_marker_check_format(format, ## args);		\
-		(*__ust_marker_def_##name.call)				\
-			(&__ust_marker_def_##name, call_private, ## args);	\
-	} while (0)
-
-extern void ust_marker_update_probe_range(struct ust_marker * const *begin,
-	struct ust_marker * const *end);
 
 /**
  * ust_marker - Marker using code patching
@@ -157,31 +132,13 @@ void __trace_mark_is_deprecated()
 }
 
 /**
- * ust_marker_tp - Marker in a tracepoint callback
- * @name: marker name, not quoted.
- * @tp_name: tracepoint name, not quoted.
- * @tp_cb: tracepoint callback. Should have an associated global symbol so it
- *         is not optimized away by the compiler (should not be static).
- * @format: format string
- * @args...: variable argument list
- *
- * Places a marker in a tracepoint callback.
- */
-#define ust_marker_tp(name, tp_name, tp_cb, format, args...)	\
-	__ust_marker_tp(ust, name, NULL, tp_name, tp_cb, format, ## args)
-
-/**
  * UST_MARKER_NOARGS - Format string for a marker with no argument.
  */
 #define UST_MARKER_NOARGS " "
 
-extern void lock_ust_marker(void);
-extern void unlock_ust_marker(void);
-
-extern void ust_marker_compact_event_ids(void);
-
 /* To be used for string format validity checking with gcc */
-static inline void __printf(1, 2) ___ust_marker_check_format(const char *fmt, ...)
+static inline
+void __printf(1, 2) ___ust_marker_check_format(const char *fmt, ...)
 {
 }
 
@@ -196,73 +153,11 @@ extern ust_marker_probe_func __ust_marker_empty_function;
 extern void ust_marker_probe_cb(const struct ust_marker *mdata,
 	void *call_private, ...);
 
-/*
- * Connect a probe to a marker.
- * private data pointer must be a valid allocated memory address, or NULL.
- */
-extern int ust_marker_probe_register(const char *channel, const char *name,
-	const char *format, ust_marker_probe_func *probe, void *probe_private);
-
-/*
- * Returns the private data given to ust_marker_probe_register.
- */
-extern int ust_marker_probe_unregister(const char *channel, const char *name,
-	ust_marker_probe_func *probe, void *probe_private);
-/*
- * Unregister a marker by providing the registered private data.
- */
-extern int ust_marker_probe_unregister_private_data(ust_marker_probe_func *probe,
-	void *probe_private);
-
-extern void *ust_marker_get_private_data(const char *channel, const char *name,
-	ust_marker_probe_func *probe, int num);
-
-/*
- * ust_marker_synchronize_unregister must be called between the last marker probe
- * unregistration and the first one of
- * - the end of module exit function
- * - the free of any resource used by the probes
- * to ensure the code and data are valid for any possibly running probes.
- */
-#define ust_marker_synchronize_unregister() synchronize_sched()
-
-struct ust_marker_iter {
-//ust//	struct module *module;
-	struct ust_marker_lib *lib;
-	struct ust_marker * const *ust_marker;
-};
-
-extern void ust_marker_iter_start(struct ust_marker_iter *iter);
-extern void ust_marker_iter_next(struct ust_marker_iter *iter);
-extern void ust_marker_iter_stop(struct ust_marker_iter *iter);
-extern void ust_marker_iter_reset(struct ust_marker_iter *iter);
-extern int ust_marker_get_iter_range(struct ust_marker * const **marker, struct ust_marker * const *begin,
-	struct ust_marker * const *end);
-
-extern void ust_marker_update_process(void);
-extern int is_ust_marker_enabled(const char *channel, const char *name);
-
-//ust// #ifdef CONFIG_UST_MARKER_USERSPACE
-//ust// extern void exit_user_ust_marker(struct task_struct *p);
-//ust// #else
-//ust// static inline void exit_user_ust_marker(struct task_struct *p)
-//ust// {
-//ust// }
-//ust// #endif
-
-struct ust_marker_addr {
-	struct ust_marker *marker;
-	void *addr;
-};
-
 struct ust_marker_lib {
 	struct ust_marker * const *ust_marker_start;
 	int ust_marker_count;
 	struct cds_list_head list;
 };
-
-extern int ust_marker_register_lib(struct ust_marker * const *ust_marker_start, int ust_marker_count);
-extern int ust_marker_unregister_lib(struct ust_marker * const *ust_marker_start);
 
 #define UST_MARKER_LIB							\
 	extern struct ust_marker * const __start___ust_marker_ptrs[] __attribute__((weak, visibility("hidden"))); \
@@ -270,29 +165,32 @@ extern int ust_marker_unregister_lib(struct ust_marker * const *ust_marker_start
 	static struct ust_marker * __ust_marker_ptr_dummy		\
 		__attribute__((used, section("__ust_marker_ptrs")));	\
 									\
-	static void __attribute__((constructor)) __ust_marker__init(void)	\
+	static void __attribute__((constructor)) __ust_marker__init(void) \
 	{								\
 		ust_marker_register_lib(__start___ust_marker_ptrs,	\
 				    __stop___ust_marker_ptrs		\
-				    - __start___ust_marker_ptrs);		\
+				    - __start___ust_marker_ptrs);	\
 	}								\
 									\
-	static void __attribute__((destructor)) __ust_marker__destroy(void)\
+	static void __attribute__((destructor)) __ust_marker__destroy(void) \
 	{								\
 		ust_marker_unregister_lib(__start___ust_marker_ptrs);	\
 	}
 
-extern void ust_marker_set_new_ust_marker_cb(void (*cb)(struct ust_marker *));
-extern void init_ust_marker(void);
+extern
+int ust_marker_register_lib(struct ust_marker * const *ust_marker_start,
+			    int ust_marker_count);
+extern
+int ust_marker_unregister_lib(struct ust_marker * const *ust_marker_start);
 
 /*
- * trace_mark() -- TO BE DEPRECATED
+ * trace_mark() -- DEPRECATED
  * @channel: name prefix, not quoted. Ignored.
  * @name: marker name, not quoted.
  * @format: format string
  * @args...: variable argument list
  *
- * Kept as a compatibility API and will be *DEPRECATED* in favor of
+ * Kept as a compatibility API and is *DEPRECATED* in favor of
  * ust_marker().
  */
 #define trace_mark(channel, name, format, args...)	\
@@ -305,15 +203,15 @@ void __MARKER_LIB_IS_DEPRECATED()
 }
 
 /*
- * MARKER_LIB is kept for backward compatibility and will be
- * *DEPRECATED*. Use UST_MARKER_LIB instead.
+ * MARKER_LIB is kept for backward compatibility and is *DEPRECATED*.
+ * Use UST_MARKER_LIB instead.
  */
 #define MARKER_LIB			\
 	__MARKER_LIB_IS_DEPRECATED();	\
 	UST_MARKER_LIB
 
 /**
- * MARKER_NOARGS - Compatibility API. Will be *DEPRECATED*. Use
+ * MARKER_NOARGS - Compatibility API. *DEPRECATED*. Use
  * UST_MARKER_NOARGS instead.
  */
 #define MARK_NOARGS	UST_MARKER_NOARGS

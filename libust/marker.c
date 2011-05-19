@@ -25,6 +25,7 @@
 
 #include <ust/core.h>
 #include <ust/marker.h>
+#include <ust/marker-internal.h>
 #include <ust/tracepoint.h>
 #include <ust/tracepoint-internal.h>
 

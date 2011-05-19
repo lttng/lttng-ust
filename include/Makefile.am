@@ -10,7 +10,6 @@ nobase_include_HEADERS = \
 	ust/config.h \
 	ust/core.h \
 	ust/clock.h \
-	ust/type-serializer.h \
 	ust/kcompat/kcompat.h \
 	ust/kcompat/compiler.h \
 	ust/kcompat/jhash.h \
@@ -20,4 +19,6 @@ nobase_include_HEADERS = \
 	ust/ustctl.h \
 	ust/ustconsumer.h
 
-noinst_HEADERS = share.h usterr.h ust_snprintf.h usterr_signal_safe.h
+noinst_HEADERS = share.h usterr.h ust_snprintf.h usterr_signal_safe.h \
+	ust/marker-internal.h ust/tracepoint-internal.h \
+	ust/type-serializer.h

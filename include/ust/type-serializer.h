@@ -1,8 +1,8 @@
 #ifndef _LTT_TYPE_SERIALIZER_H
 #define _LTT_TYPE_SERIALIZER_H
 
-//ust// #include "tracer.h"
 #include <ust/marker.h>
+#include <ust/marker-internal.h>
 #include <ust/core.h>
 
 /*
@@ -178,4 +178,5 @@ struct serialize_l4412228 {
 	uint64_t f8;
 	unsigned char end_field[0];
 } LTT_ALIGN;
+
 #endif /* _LTT_TYPE_SERIALIZER_H */

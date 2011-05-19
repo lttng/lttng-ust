@@ -25,6 +25,7 @@
 
 #include <stdlib.h>
 #include <ust/marker.h>
+#include <ust/marker-internal.h>
 #include "channels.h"
 #include "usterr_signal_safe.h"
 

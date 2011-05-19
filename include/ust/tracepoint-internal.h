@@ -32,6 +32,7 @@
 #include <urcu-bp.h>
 #include <ust/core.h>
 #include <urcu/list.h>
+#include <ust/tracepoint.h>
 
 extern void tracepoint_update_probe_range(struct tracepoint * const *begin,
 	struct tracepoint * const *end);
