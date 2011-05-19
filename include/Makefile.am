@@ -20,4 +20,4 @@ nobase_include_HEADERS = \
 	ust/ustctl.h \
 	ust/ustconsumer.h
 
-noinst_HEADERS = share.h usterr.h ust_snprintf.h
+noinst_HEADERS = share.h usterr.h ust_snprintf.h usterr_signal_safe.h
