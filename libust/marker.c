@@ -34,9 +34,6 @@
 #include "tracercore.h"
 #include "tracer.h"
 
-__thread long ust_reg_stack[500];
-volatile __thread long *ust_reg_stack_ptr = (long *) 0;
-
 extern struct ust_marker * const __start___ust_marker_ptrs[] __attribute__((visibility("hidden")));
 extern struct ust_marker * const __stop___ust_marker_ptrs[] __attribute__((visibility("hidden")));
 
@@ -44,13 +41,11 @@ extern struct ust_marker * const __stop___ust_marker_ptrs[] __attribute__((visib
 static const int ust_marker_debug;
 
 /*
- * ust_marker_mutex nests inside module_mutex. ust_marker mutex protects
- * the builtin and module ust_marker and the hash table.
+ * ust_marker mutex protects the builtin and module ust_marker and the
+ * hash table, as well as the ust_marker_libs list.
  */
 static DEFINE_MUTEX(ust_marker_mutex);
-
 static CDS_LIST_HEAD(ust_marker_libs);
-
 
 void lock_ust_marker(void)
 {
@@ -64,11 +59,16 @@ void unlock_ust_marker(void)
 
 /*
  * ust_marker hash table, containing the active ust_marker.
- * Protected by module_mutex.
+ * Protected by ust_marker mutex.
  */
 #define UST_MARKER_HASH_BITS 6
 #define UST_MARKER_TABLE_SIZE (1 << UST_MARKER_HASH_BITS)
 static struct cds_hlist_head ust_marker_table[UST_MARKER_TABLE_SIZE];
+
+struct ust_marker_probe_array {
+	struct rcu_head rcu;
+	struct ust_marker_probe_closure c[0];
+};
 
 /*
  * Note about RCU :
@@ -85,25 +85,14 @@ struct ust_marker_entry {
 			/* Probe wrapper */
 	void (*call)(const struct ust_marker *mdata, void *call_private, ...);
 	struct ust_marker_probe_closure single;
-	struct ust_marker_probe_closure *multi;
+	struct ust_marker_probe_array *multi;
 	int refcount;	/* Number of times armed. 0 if disarmed. */
-	struct rcu_head rcu;
-	void *oldptr;
-	int rcu_pending;
 	u16 channel_id;
 	u16 event_id;
 	unsigned char ptype:1;
 	unsigned char format_allocated:1;
 	char channel[0];	/* Contains channel'\0'name'\0'format'\0' */
 };
-
-#ifdef CONFIG_UST_MARKER_USERSPACE
-static void ust_marker_update_processes(void);
-#else
-static void ust_marker_update_processes(void)
-{
-}
-#endif
 
 /**
  * __ust_marker_empty_function - Empty probe callback
@@ -123,7 +112,6 @@ notrace void __ust_marker_empty_function(const struct ust_marker *mdata,
 	void *probe_private, void *call_private, const char *fmt, va_list *args)
 {
 }
-//ust// EXPORT_SYMBOL_GPL(__ust_marker_empty_function);
 
 /*
  * ust_marker_probe_cb Callback that prepares the variable argument list for probes.
@@ -146,7 +134,7 @@ notrace void ust_marker_probe_cb(const struct ust_marker *mdata,
 	 * sure the teardown of the callbacks can be done correctly when they
 	 * are in modules and they insure RCU read coherency.
 	 */
-//ust//	rcu_read_lock_sched_notrace();
+	rcu_read_lock();
 	ptype = mdata->ptype;
 	if (likely(!ptype)) {
 		ust_marker_probe_func *func;
@@ -162,7 +150,7 @@ notrace void ust_marker_probe_cb(const struct ust_marker *mdata,
 			mdata->format, &args);
 		va_end(args);
 	} else {
-		struct ust_marker_probe_closure *multi;
+		struct ust_marker_probe_array *multi;
 		int i;
 		/*
 		 * Read mdata->ptype before mdata->multi.
@@ -177,16 +165,15 @@ notrace void ust_marker_probe_cb(const struct ust_marker *mdata,
 		 * in the fast path, so put the explicit cmm_barrier here.
 		 */
 		cmm_smp_read_barrier_depends();
-		for (i = 0; multi[i].func; i++) {
+		for (i = 0; multi->c[i].func; i++) {
 			va_start(args, call_private);
-			multi[i].func(mdata, multi[i].probe_private,
+			multi->c[i].func(mdata, multi->c[i].probe_private,
 				call_private, mdata->format, &args);
 			va_end(args);
 		}
 	}
-//ust//	rcu_read_unlock_sched_notrace();
+	rcu_read_unlock();
 }
-//ust// EXPORT_SYMBOL_GPL(ust_marker_probe_cb);
 
 /*
  * ust_marker_probe_cb Callback that does not prepare the variable argument list.
@@ -202,7 +189,7 @@ static notrace void ust_marker_probe_cb_noarg(const struct ust_marker *mdata,
 	va_list args;	/* not initialized */
 	char ptype;
 
-//ust//	rcu_read_lock_sched_notrace();
+	rcu_read_lock();
 	ptype = mdata->ptype;
 	if (likely(!ptype)) {
 		ust_marker_probe_func *func;
@@ -216,7 +203,7 @@ static notrace void ust_marker_probe_cb_noarg(const struct ust_marker *mdata,
 		func(mdata, mdata->single.probe_private, call_private,
 			mdata->format, &args);
 	} else {
-		struct ust_marker_probe_closure *multi;
+		struct ust_marker_probe_array *multi;
 		int i;
 		/*
 		 * Read mdata->ptype before mdata->multi.
@@ -231,21 +218,18 @@ static notrace void ust_marker_probe_cb_noarg(const struct ust_marker *mdata,
 		 * in the fast path, so put the explicit cmm_barrier here.
 		 */
 		cmm_smp_read_barrier_depends();
-		for (i = 0; multi[i].func; i++)
-			multi[i].func(mdata, multi[i].probe_private,
+		for (i = 0; multi->c[i].func; i++)
+			multi->c[i].func(mdata, multi->c[i].probe_private,
 				call_private, mdata->format, &args);
 	}
-//ust//	rcu_read_unlock_sched_notrace();
+	rcu_read_unlock();
 }
 
 static void free_old_closure(struct rcu_head *head)
 {
-	struct ust_marker_entry *entry = _ust_container_of(head,
-		struct ust_marker_entry, rcu);
-	free(entry->oldptr);
-	/* Make sure we free the data before setting the pending flag to 0 */
-	cmm_smp_wmb();
-	entry->rcu_pending = 0;
+	struct ust_marker_probe_array *multi =
+		_ust_container_of(head, struct ust_marker_probe_array, rcu);
+	free(multi);
 }
 
 static void debug_print_probes(struct ust_marker_entry *entry)
@@ -260,19 +244,19 @@ static void debug_print_probes(struct ust_marker_entry *entry)
 			entry->single.func,
 			entry->single.probe_private);
 	} else {
-		for (i = 0; entry->multi[i].func; i++)
+		for (i = 0; entry->multi->c[i].func; i++)
 			DBG("Multi probe %d : %p %p", i,
-				entry->multi[i].func,
-				entry->multi[i].probe_private);
+				entry->multi->c[i].func,
+				entry->multi->c[i].probe_private);
 	}
 }
 
-static struct ust_marker_probe_closure *
+static struct ust_marker_probe_array *
 ust_marker_entry_add_probe(struct ust_marker_entry *entry,
 		ust_marker_probe_func *probe, void *probe_private)
 {
 	int nr_probes = 0;
-	struct ust_marker_probe_closure *old, *new;
+	struct ust_marker_probe_array *old, *new;
 
 	WARN_ON(!probe);
 
@@ -297,23 +281,24 @@ ust_marker_entry_add_probe(struct ust_marker_entry *entry,
 		}
 	} else {
 		/* (N -> N+1), (N != 0, 1) probes */
-		for (nr_probes = 0; old[nr_probes].func; nr_probes++)
-			if (old[nr_probes].func == probe
-					&& old[nr_probes].probe_private
+		for (nr_probes = 0; old->c[nr_probes].func; nr_probes++)
+			if (old->c[nr_probes].func == probe
+					&& old->c[nr_probes].probe_private
 						== probe_private)
 				return ERR_PTR(-EBUSY);
 	}
 	/* + 2 : one for new probe, one for NULL func */
-	new = zmalloc((nr_probes + 2) * sizeof(struct ust_marker_probe_closure));
+	new = zmalloc(sizeof(struct ust_marker_probe_array)
+		      + ((nr_probes + 2) * sizeof(struct ust_marker_probe_closure)));
 	if (new == NULL)
 		return ERR_PTR(-ENOMEM);
 	if (!old)
-		new[0] = entry->single;
+		new->c[0] = entry->single;
 	else
-		memcpy(new, old,
+		memcpy(&new->c[0], &old->c[0],
 			nr_probes * sizeof(struct ust_marker_probe_closure));
-	new[nr_probes].func = probe;
-	new[nr_probes].probe_private = probe_private;
+	new->c[nr_probes].func = probe;
+	new->c[nr_probes].probe_private = probe_private;
 	entry->refcount = nr_probes + 1;
 	entry->multi = new;
 	entry->ptype = 1;
@@ -321,12 +306,12 @@ ust_marker_entry_add_probe(struct ust_marker_entry *entry,
 	return old;
 }
 
-static struct ust_marker_probe_closure *
+static struct ust_marker_probe_array *
 ust_marker_entry_remove_probe(struct ust_marker_entry *entry,
 		ust_marker_probe_func *probe, void *probe_private)
 {
 	int nr_probes = 0, nr_del = 0, i;
-	struct ust_marker_probe_closure *old, *new;
+	struct ust_marker_probe_array *old, *new;
 
 	old = entry->multi;
 
@@ -344,9 +329,9 @@ ust_marker_entry_remove_probe(struct ust_marker_entry *entry,
 		return NULL;
 	} else {
 		/* (N -> M), (N > 1, M >= 0) probes */
-		for (nr_probes = 0; old[nr_probes].func; nr_probes++) {
-			if ((!probe || old[nr_probes].func == probe)
-					&& old[nr_probes].probe_private
+		for (nr_probes = 0; old->c[nr_probes].func; nr_probes++) {
+			if ((!probe || old->c[nr_probes].func == probe)
+					&& old->c[nr_probes].probe_private
 						== probe_private)
 				nr_del++;
 		}
@@ -359,23 +344,24 @@ ust_marker_entry_remove_probe(struct ust_marker_entry *entry,
 		entry->ptype = 0;
 	} else if (nr_probes - nr_del == 1) {
 		/* N -> 1, (N > 1) */
-		for (i = 0; old[i].func; i++)
-			if ((probe && old[i].func != probe) ||
-					old[i].probe_private != probe_private)
-				entry->single = old[i];
+		for (i = 0; old->c[i].func; i++)
+			if ((probe && old->c[i].func != probe) ||
+					old->c[i].probe_private != probe_private)
+				entry->single = old->c[i];
 		entry->refcount = 1;
 		entry->ptype = 0;
 	} else {
 		int j = 0;
 		/* N -> M, (N > 1, M > 1) */
 		/* + 1 for NULL */
-		new = zmalloc((nr_probes - nr_del + 1) * sizeof(struct ust_marker_probe_closure));
+		new = zmalloc(sizeof(struct ust_marker_probe_array)
+			      + ((nr_probes - nr_del + 1) * sizeof(struct ust_marker_probe_closure)));
 		if (new == NULL)
 			return ERR_PTR(-ENOMEM);
-		for (i = 0; old[i].func; i++)
-			if ((probe && old[i].func != probe) ||
-					old[i].probe_private != probe_private)
-				new[j++] = old[i];
+		for (i = 0; old->c[i].func; i++)
+			if ((probe && old->c[i].func != probe) ||
+					old->c[i].probe_private != probe_private)
+				new->c[j++] = old->c[i];
 		entry->refcount = nr_probes - nr_del;
 		entry->ptype = 1;
 		entry->multi = new;
@@ -463,7 +449,6 @@ static struct ust_marker_entry *add_ust_marker(const char *channel, const char *
 	e->ptype = 0;
 	e->format_allocated = 0;
 	e->refcount = 0;
-	e->rcu_pending = 0;
 	cds_hlist_add_head(&e->hlist, head);
 	return e;
 }
@@ -500,9 +485,6 @@ static int remove_ust_marker(const char *channel, const char *name)
 		free(e->format);
 	ret = ltt_channels_unregister(e->channel);
 	WARN_ON(ret);
-	/* Make sure the call_rcu has been executed */
-//ust//	if (e->rcu_pending)
-//ust//		rcu_cmm_barrier_sched();
 	free(e);
 	return 0;
 }
@@ -590,26 +572,17 @@ static int set_ust_marker(struct ust_marker_entry *entry, struct ust_marker *ele
 		 */
 
 		if (active) {
-			/*
-			 * try_module_get should always succeed because we hold
-			 * ust_marker_mutex to get the tp_cb address.
-			 */
-//ust//			ret = try_module_get(__module_text_address(
-//ust//				(unsigned long)elem->tp_cb));
-//ust//			BUG_ON(!ret);
 			ret = tracepoint_probe_register_noupdate(
 				elem->tp_name,
 				elem->tp_cb, NULL);
 		} else {
+			/*
+			 * tracepoint_probe_update_all() must be called
+			 * before the library containing tp_cb is unloaded.
+			 */
 			ret = tracepoint_probe_unregister_noupdate(
 				elem->tp_name,
 				elem->tp_cb, NULL);
-			/*
-			 * tracepoint_probe_update_all() must be called
-			 * before the module containing tp_cb is unloaded.
-			 */
-//ust//			module_put(__module_text_address(
-//ust//				(unsigned long)elem->tp_cb));
 		}
 	}
 	elem->state = active;
@@ -621,7 +594,7 @@ static int set_ust_marker(struct ust_marker_entry *entry, struct ust_marker *ele
  * Disable a ust_marker and its probe callback.
  * Note: only waiting an RCU period after setting elem->call to the empty
  * function insures that the original callback is not used anymore. This insured
- * by rcu_read_lock_sched around the call site.
+ * by rcu_read_lock around the call site.
  */
 static void disable_ust_marker(struct ust_marker *elem)
 {
@@ -634,14 +607,13 @@ static void disable_ust_marker(struct ust_marker *elem)
 		 * It is ok to directly call the probe registration because type
 		 * checking has been done in the __ust_marker_tp() macro.
 		 */
-		ret = tracepoint_probe_unregister_noupdate(elem->tp_name,
-			elem->tp_cb, NULL);
-		WARN_ON(ret);
 		/*
 		 * tracepoint_probe_update_all() must be called
 		 * before the module containing tp_cb is unloaded.
 		 */
-//ust//		module_put(__module_text_address((unsigned long)elem->tp_cb));
+		ret = tracepoint_probe_unregister_noupdate(elem->tp_name,
+			elem->tp_cb, NULL);
+		WARN_ON(ret);
 	}
 	elem->state = 0;
 	elem->single.func = __ust_marker_empty_function;
@@ -680,13 +652,13 @@ int is_ust_marker_enabled(const char *channel, const char *name)
  *
  * Updates the probe callback corresponding to a range of ust_marker.
  */
+static
 void ust_marker_update_probe_range(struct ust_marker * const *begin,
 	struct ust_marker * const *end)
 {
 	struct ust_marker * const *iter;
 	struct ust_marker_entry *mark_entry;
 
-	pthread_mutex_lock(&ust_marker_mutex);
 	for (iter = begin; iter < end; iter++) {
 		if (!*iter)
 			continue;	/* skip dummy */
@@ -700,19 +672,17 @@ void ust_marker_update_probe_range(struct ust_marker * const *begin,
 			disable_ust_marker(*iter);
 		}
 	}
-	pthread_mutex_unlock(&ust_marker_mutex);
 }
 
 static void lib_update_ust_marker(void)
 {
 	struct ust_marker_lib *lib;
 
-	/* FIXME: we should probably take a mutex here on libs */
-//ust//	pthread_mutex_lock(&module_mutex);
+	pthread_mutex_lock(&ust_marker_mutex);
 	cds_list_for_each_entry(lib, &ust_marker_libs, list)
 		ust_marker_update_probe_range(lib->ust_marker_start,
 				lib->ust_marker_start + lib->ust_marker_count);
-//ust//	pthread_mutex_unlock(&module_mutex);
+	pthread_mutex_unlock(&ust_marker_mutex);
 }
 
 /*
@@ -736,7 +706,6 @@ static void ust_marker_update_probes(void)
 {
 	lib_update_ust_marker();
 	tracepoint_probe_update_all();
-	ust_marker_update_processes();
 }
 
 /**
@@ -757,7 +726,7 @@ int ust_marker_probe_register(const char *channel, const char *name,
 {
 	struct ust_marker_entry *entry;
 	int ret = 0, ret_err;
-	struct ust_marker_probe_closure *old;
+	struct ust_marker_probe_array *old;
 	int first_probe = 0;
 
 	pthread_mutex_lock(&ust_marker_mutex);
@@ -797,12 +766,6 @@ int ust_marker_probe_register(const char *channel, const char *name,
 			goto end;
 	}
 
-	/*
-	 * If we detect that a call_rcu is pending for this ust_marker,
-	 * make sure it's executed now.
-	 */
-//ust//	if (entry->rcu_pending)
-//ust//		rcu_cmm_barrier_sched();
 	old = ust_marker_entry_add_probe(entry, probe, probe_private);
 	if (IS_ERR(old)) {
 		ret = PTR_ERR(old);
@@ -816,19 +779,11 @@ int ust_marker_probe_register(const char *channel, const char *name,
 	/* Activate ust_marker if necessary */
 	ust_marker_update_probes();
 
-	pthread_mutex_lock(&ust_marker_mutex);
-	entry = get_ust_marker(channel, name);
-	if (!entry)
-		goto end;
-//ust//	if (entry->rcu_pending)
-//ust//		rcu_cmm_barrier_sched();
-	entry->oldptr = old;
-	entry->rcu_pending = 1;
-	/* write rcu_pending before calling the RCU callback */
-	cmm_smp_wmb();
-//ust//	call_rcu_sched(&entry->rcu, free_old_closure);
-	synchronize_rcu(); free_old_closure(&entry->rcu);
-	goto end;
+	if (old) {
+		synchronize_rcu();
+		free_old_closure(&old->rcu);
+	}
+	return ret;
 
 error_unregister_channel:
 	ret_err = ltt_channels_unregister(channel);
@@ -840,7 +795,6 @@ end:
 	pthread_mutex_unlock(&ust_marker_mutex);
 	return ret;
 }
-//ust// EXPORT_SYMBOL_GPL(ust_marker_probe_register);
 
 /**
  * ust_marker_probe_unregister -  Disconnect a probe from a ust_marker
@@ -859,42 +813,34 @@ int ust_marker_probe_unregister(const char *channel, const char *name,
 			    ust_marker_probe_func *probe, void *probe_private)
 {
 	struct ust_marker_entry *entry;
-	struct ust_marker_probe_closure *old;
-	int ret = -ENOENT;
+	struct ust_marker_probe_array *old;
+	int ret = 0;
 
 	pthread_mutex_lock(&ust_marker_mutex);
 	entry = get_ust_marker(channel, name);
-	if (!entry)
+	if (!entry) {
+		ret = -ENOENT;
 		goto end;
-//ust//	if (entry->rcu_pending)
-//ust//		rcu_cmm_barrier_sched();
+	}
 	old = ust_marker_entry_remove_probe(entry, probe, probe_private);
 	pthread_mutex_unlock(&ust_marker_mutex);
 
 	ust_marker_update_probes();
 
-	pthread_mutex_lock(&ust_marker_mutex);
-	entry = get_ust_marker(channel, name);
-	if (!entry)
-		goto end;
-//ust//	if (entry->rcu_pending)
-//ust//		rcu_cmm_barrier_sched();
-	entry->oldptr = old;
-	entry->rcu_pending = 1;
-	/* write rcu_pending before calling the RCU callback */
-	cmm_smp_wmb();
-//ust//	call_rcu_sched(&entry->rcu, free_old_closure);
-	synchronize_rcu(); free_old_closure(&entry->rcu);
-	remove_ust_marker(channel, name);	/* Ignore busy error message */
-	ret = 0;
+	if (old) {
+		synchronize_rcu();
+		free_old_closure(&old->rcu);
+	}
+	return ret;
+
 end:
 	pthread_mutex_unlock(&ust_marker_mutex);
 	return ret;
 }
-//ust// EXPORT_SYMBOL_GPL(ust_marker_probe_unregister);
 
 static struct ust_marker_entry *
-get_ust_marker_from_private_data(ust_marker_probe_func *probe, void *probe_private)
+get_ust_marker_from_private_data(ust_marker_probe_func *probe,
+				 void *probe_private)
 {
 	struct ust_marker_entry *entry;
 	unsigned int i;
@@ -910,11 +856,11 @@ get_ust_marker_from_private_data(ust_marker_probe_func *probe, void *probe_priva
 						== probe_private)
 					return entry;
 			} else {
-				struct ust_marker_probe_closure *closure;
+				struct ust_marker_probe_array *closure;
 				closure = entry->multi;
-				for (i = 0; closure[i].func; i++) {
-					if (closure[i].func == probe &&
-							closure[i].probe_private
+				for (i = 0; closure->c[i].func; i++) {
+					if (closure->c[i].func == probe &&
+							closure->c[i].probe_private
 							== probe_private)
 						return entry;
 				}
@@ -942,45 +888,37 @@ int ust_marker_probe_unregister_private_data(ust_marker_probe_func *probe,
 {
 	struct ust_marker_entry *entry;
 	int ret = 0;
-	struct ust_marker_probe_closure *old;
+	struct ust_marker_probe_array *old;
 	char *channel = NULL, *name = NULL;
 
 	pthread_mutex_lock(&ust_marker_mutex);
 	entry = get_ust_marker_from_private_data(probe, probe_private);
 	if (!entry) {
 		ret = -ENOENT;
-		goto end;
+		goto unlock;
 	}
-//ust//	if (entry->rcu_pending)
-//ust//		rcu_cmm_barrier_sched();
 	old = ust_marker_entry_remove_probe(entry, NULL, probe_private);
 	channel = strdup(entry->channel);
 	name = strdup(entry->name);
+	/* Ignore busy error message */
+	remove_ust_marker(channel, name);
 	pthread_mutex_unlock(&ust_marker_mutex);
 
 	ust_marker_update_probes();
 
-	pthread_mutex_lock(&ust_marker_mutex);
-	entry = get_ust_marker(channel, name);
-	if (!entry)
-		goto end;
-//ust//	if (entry->rcu_pending)
-//ust//		rcu_cmm_barrier_sched();
-	entry->oldptr = old;
-	entry->rcu_pending = 1;
-	/* write rcu_pending before calling the RCU callback */
-	cmm_smp_wmb();
-//ust//	call_rcu_sched(&entry->rcu, free_old_closure);
-	synchronize_rcu(); free_old_closure(&entry->rcu);
-	/* Ignore busy error message */
-	remove_ust_marker(channel, name);
-end:
+	if (old) {
+		synchronize_rcu();
+		free_old_closure(&old->rcu);
+	}
+	goto end;
+
+unlock:
 	pthread_mutex_unlock(&ust_marker_mutex);
+end:
 	free(channel);
 	free(name);
 	return ret;
 }
-//ust// EXPORT_SYMBOL_GPL(ust_marker_probe_unregister_private_data);
 
 /**
  * ust_marker_get_private_data - Get a ust_marker's probe private data
@@ -1015,78 +953,20 @@ void *ust_marker_get_private_data(const char *channel, const char *name,
 				if (num == 0 && e->single.func == probe)
 					return e->single.probe_private;
 			} else {
-				struct ust_marker_probe_closure *closure;
+				struct ust_marker_probe_array *closure;
 				int match = 0;
 				closure = e->multi;
-				for (i = 0; closure[i].func; i++) {
-					if (closure[i].func != probe)
+				for (i = 0; closure->c[i].func; i++) {
+					if (closure->c[i].func != probe)
 						continue;
 					if (match++ == num)
-						return closure[i].probe_private;
+						return closure->c[i].probe_private;
 				}
 			}
 			break;
 		}
 	}
 	return ERR_PTR(-ENOENT);
-}
-//ust// EXPORT_SYMBOL_GPL(ust_marker_get_private_data);
-
-/**
- * ust_marker_compact_event_ids - Compact ust_marker event IDs and reassign channels
- *
- * Called when no channel users are active by the channel infrastructure.
- * Called with lock_ust_marker() and channel mutex held.
- */
-//ust// void ust_marker_compact_event_ids(void)
-//ust// {
-//ust// 	struct ust_marker_entry *entry;
-//ust// 	unsigned int i;
-//ust// 	struct hlist_head *head;
-//ust// 	struct hlist_node *node;
-//ust// 	int ret;
-//ust// 
-//ust// 	for (i = 0; i < UST_MARKER_TABLE_SIZE; i++) {
-//ust// 		head = &ust_marker_table[i];
-//ust// 		hlist_for_each_entry(entry, node, head, hlist) {
-//ust// 			ret = ltt_channels_get_index_from_name(entry->channel);
-//ust// 			WARN_ON(ret < 0);
-//ust// 			entry->channel_id = ret;
-//ust// 			ret = _ltt_channels_get_event_id(entry->channel,
-//ust// 							 entry->name);
-//ust// 			WARN_ON(ret < 0);
-//ust// 			entry->event_id = ret;
-//ust// 		}
-//ust// 	}
-//ust// }
-
-//ust//#ifdef CONFIG_MODULES
-
-/*
- * Returns 0 if current not found.
- * Returns 1 if current found.
- */
-int lib_get_iter_ust_marker(struct ust_marker_iter *iter)
-{
-	struct ust_marker_lib *iter_lib;
-	int found = 0;
-
-//ust//	pthread_mutex_lock(&module_mutex);
-	cds_list_for_each_entry(iter_lib, &ust_marker_libs, list) {
-		if (iter_lib < iter->lib)
-			continue;
-		else if (iter_lib > iter->lib)
-			iter->ust_marker = NULL;
-		found = ust_marker_get_iter_range(&iter->ust_marker,
-			iter_lib->ust_marker_start,
-			iter_lib->ust_marker_start + iter_lib->ust_marker_count);
-		if (found) {
-			iter->lib = iter_lib;
-			break;
-		}
-	}
-//ust//	pthread_mutex_unlock(&module_mutex);
-	return found;
 }
 
 /**
@@ -1097,7 +977,9 @@ int lib_get_iter_ust_marker(struct ust_marker_iter *iter)
  *
  * Returns whether a next ust_marker has been found (1) or not (0).
  * Will return the first ust_marker in the range if the input ust_marker is NULL.
+ * Called with markers mutex held.
  */
+static
 int ust_marker_get_iter_range(struct ust_marker * const **ust_marker,
 	struct ust_marker * const *begin,
 	struct ust_marker * const *end)
@@ -1112,8 +994,35 @@ int ust_marker_get_iter_range(struct ust_marker * const **ust_marker,
 	}
 	return 0;
 }
-//ust// EXPORT_SYMBOL_GPL(ust_marker_get_iter_range);
 
+/*
+ * Returns 0 if current not found.
+ * Returns 1 if current found.
+ * Called with markers mutex held.
+ */
+static
+int lib_get_iter_ust_marker(struct ust_marker_iter *iter)
+{
+	struct ust_marker_lib *iter_lib;
+	int found = 0;
+
+	cds_list_for_each_entry(iter_lib, &ust_marker_libs, list) {
+		if (iter_lib < iter->lib)
+			continue;
+		else if (iter_lib > iter->lib)
+			iter->ust_marker = NULL;
+		found = ust_marker_get_iter_range(&iter->ust_marker,
+			iter_lib->ust_marker_start,
+			iter_lib->ust_marker_start + iter_lib->ust_marker_count);
+		if (found) {
+			iter->lib = iter_lib;
+			break;
+		}
+	}
+	return found;
+}
+
+/* Called with markers mutex held. */
 static void ust_marker_get_iter(struct ust_marker_iter *iter)
 {
 	int found = 0;
@@ -1123,12 +1032,13 @@ static void ust_marker_get_iter(struct ust_marker_iter *iter)
 		ust_marker_iter_reset(iter);
 }
 
+/* Called with markers mutex held. */
 void ust_marker_iter_start(struct ust_marker_iter *iter)
 {
 	ust_marker_get_iter(iter);
 }
-//ust// EXPORT_SYMBOL_GPL(ust_marker_iter_start);
 
+/* Called with markers mutex held. */
 void ust_marker_iter_next(struct ust_marker_iter *iter)
 {
 	iter->ust_marker++;
@@ -1139,147 +1049,18 @@ void ust_marker_iter_next(struct ust_marker_iter *iter)
 	 */
 	ust_marker_get_iter(iter);
 }
-//ust// EXPORT_SYMBOL_GPL(ust_marker_iter_next);
 
+/* Called with markers mutex held. */
 void ust_marker_iter_stop(struct ust_marker_iter *iter)
 {
 }
-//ust// EXPORT_SYMBOL_GPL(ust_marker_iter_stop);
 
+/* Called with markers mutex held. */
 void ust_marker_iter_reset(struct ust_marker_iter *iter)
 {
 	iter->lib = NULL;
 	iter->ust_marker = NULL;
 }
-//ust// EXPORT_SYMBOL_GPL(ust_marker_iter_reset);
-
-#ifdef CONFIG_UST_MARKER_USERSPACE
-/*
- * must be called with current->user_ust_marker_mutex held
- */
-static void free_user_ust_marker(char __user *state, struct cds_hlist_head *head)
-{
-	struct user_ust_marker *umark;
-	struct cds_hlist_node *pos, *n;
-
-	cds_hlist_for_each_entry_safe(umark, pos, n, head, hlist) {
-		if (umark->state == state) {
-			cds_hlist_del(&umark->hlist);
-			free(umark);
-		}
-	}
-}
-
-/*
- * Update current process.
- * Note that we have to wait a whole scheduler period before we are sure that
- * every running userspace threads have their ust_marker updated.
- * (synchronize_sched() can be used to insure this).
- */
-//ust// void ust_marker_update_process(void)
-//ust// {
-//ust// 	struct user_ust_marker *umark;
-//ust// 	struct hlist_node *pos;
-//ust// 	struct ust_marker_entry *entry;
-//ust// 
-//ust// 	pthread_mutex_lock(&ust_marker_mutex);
-//ust// 	pthread_mutex_lock(&current->group_leader->user_ust_marker_mutex);
-//ust// 	if (strcmp(current->comm, "testprog") == 0)
-//ust// 		DBG("do update pending for testprog");
-//ust// 	hlist_for_each_entry(umark, pos,
-//ust// 			&current->group_leader->user_ust_marker, hlist) {
-//ust// 		DBG("Updating ust_marker %s in %s", umark->name, current->comm);
-//ust// 		entry = get_ust_marker("userspace", umark->name);
-//ust// 		if (entry) {
-//ust// 			if (entry->format &&
-//ust// 				strcmp(entry->format, umark->format) != 0) {
-//ust// 				WARN("error, wrong format in process %s",
-//ust// 					current->comm);
-//ust// 				break;
-//ust// 			}
-//ust// 			if (put_user(!!entry->refcount, umark->state)) {
-//ust// 				WARN("ust_marker in %s caused a fault",
-//ust// 					current->comm);
-//ust// 				break;
-//ust// 			}
-//ust// 		} else {
-//ust// 			if (put_user(0, umark->state)) {
-//ust// 				WARN("ust_marker in %s caused a fault", current->comm);
-//ust// 				break;
-//ust// 			}
-//ust// 		}
-//ust// 	}
-//ust// 	clear_thread_flag(TIF_UST_MARKER_PENDING);
-//ust// 	pthread_mutex_unlock(&current->group_leader->user_ust_marker_mutex);
-//ust// 	pthread_mutex_unlock(&ust_marker_mutex);
-//ust// }
-
-/*
- * Called at process exit and upon do_execve().
- * We assume that when the leader exits, no more references can be done to the
- * leader structure by the other threads.
- */
-void exit_user_ust_marker(struct task_struct *p)
-{
-	struct user_ust_marker *umark;
-	struct cds_hlist_node *pos, *n;
-
-	if (thread_group_leader(p)) {
-		pthread_mutex_lock(&ust_marker_mutex);
-		pthread_mutex_lock(&p->user_ust_marker_mutex);
-		cds_hlist_for_each_entry_safe(umark, pos, n, &p->user_ust_marker,
-			hlist)
-		    free(umark);
-		INIT_HLIST_HEAD(&p->user_ust_marker);
-		p->user_ust_marker_sequence++;
-		pthread_mutex_unlock(&p->user_ust_marker_mutex);
-		pthread_mutex_unlock(&ust_marker_mutex);
-	}
-}
-
-int is_ust_marker_enabled(const char *channel, const char *name)
-{
-	struct ust_marker_entry *entry;
-
-	pthread_mutex_lock(&ust_marker_mutex);
-	entry = get_ust_marker(channel, name);
-	pthread_mutex_unlock(&ust_marker_mutex);
-
-	return entry && !!entry->refcount;
-}
-//ust// #endif
-
-int ust_marker_module_notify(struct notifier_block *self,
-			 unsigned long val, void *data)
-{
-	struct module *mod = data;
-
-	switch (val) {
-	case MODULE_STATE_COMING:
-		ust_marker_update_probe_range(mod->ust_marker,
-			mod->ust_marker + mod->num_ust_marker);
-		break;
-	case MODULE_STATE_GOING:
-		ust_marker_update_probe_range(mod->ust_marker,
-			mod->ust_marker + mod->num_ust_marker);
-		break;
-	}
-	return 0;
-}
-
-struct notifier_block ust_marker_module_nb = {
-	.notifier_call = ust_marker_module_notify,
-	.priority = 0,
-};
-
-//ust// static int init_ust_marker(void)
-//ust// {
-//ust// 	return register_module_notifier(&ust_marker_module_nb);
-//ust// }
-//ust// __initcall(init_ust_marker);
-/* TODO: call ust_marker_module_nb() when a library is linked at runtime (dlopen)? */
-
-#endif /* CONFIG_MODULES */
 
 void ltt_dump_ust_marker_state(struct ust_trace *trace)
 {
@@ -1319,7 +1100,6 @@ void ltt_dump_ust_marker_state(struct ust_trace *trace)
 	}
 	pthread_mutex_unlock(&ust_marker_mutex);
 }
-//ust// EXPORT_SYMBOL_GPL(ltt_dump_ust_marker_state);
 
 static void (*new_ust_marker_cb)(struct ust_marker *) = NULL;
 
@@ -1328,7 +1108,8 @@ void ust_marker_set_new_ust_marker_cb(void (*cb)(struct ust_marker *))
 	new_ust_marker_cb = cb;
 }
 
-static void new_ust_marker(struct ust_marker * const *start, struct ust_marker * const *end)
+static void new_ust_marker(struct ust_marker * const *start,
+			   struct ust_marker * const *end)
 {
 	if (new_ust_marker_cb) {
 		struct ust_marker * const *m;
@@ -1340,7 +1121,8 @@ static void new_ust_marker(struct ust_marker * const *start, struct ust_marker *
 	}
 }
 
-int ust_marker_register_lib(struct ust_marker * const *ust_marker_start, int ust_marker_count)
+int ust_marker_register_lib(struct ust_marker * const *ust_marker_start,
+			    int ust_marker_count)
 {
 	struct ust_marker_lib *pl, *iter;
 
@@ -1349,7 +1131,6 @@ int ust_marker_register_lib(struct ust_marker * const *ust_marker_start, int ust
 	pl->ust_marker_start = ust_marker_start;
 	pl->ust_marker_count = ust_marker_count;
 
-	/* FIXME: maybe protect this with its own mutex? */
 	lock_ust_marker();
 
 	/*
@@ -1370,7 +1151,7 @@ lib_added:
 
 	new_ust_marker(ust_marker_start, ust_marker_start + ust_marker_count);
 
-	/* FIXME: update just the loaded lib */
+	/* TODO: update just the loaded lib */
 	lib_update_ust_marker();
 
 	DBG("just registered a ust_marker section from %p and having %d ust_marker (minus dummy ust_marker)", ust_marker_start, ust_marker_count);
@@ -1382,13 +1163,7 @@ int ust_marker_unregister_lib(struct ust_marker * const *ust_marker_start)
 {
 	struct ust_marker_lib *lib;
 
-	/*FIXME: implement; but before implementing, ust_marker_register_lib must
-          have appropriate locking. */
-
 	lock_ust_marker();
-
-	/* FIXME: we should probably take a mutex here on libs */
-//ust//	pthread_mutex_lock(&module_mutex);
 	cds_list_for_each_entry(lib, &ust_marker_libs, list) {
 		if(lib->ust_marker_start == ust_marker_start) {
 			struct ust_marker_lib *lib2free = lib;
@@ -1397,7 +1172,6 @@ int ust_marker_unregister_lib(struct ust_marker * const *ust_marker_start)
 			break;
 		}
 	}
-
 	unlock_ust_marker();
 
 	return 0;

@@ -68,9 +68,6 @@
 #define ust_marker_tp(name, tp_name, tp_cb, format, args...)	\
 	__ust_marker_tp(ust, name, NULL, tp_name, tp_cb, format, ## args)
 
-extern void ust_marker_update_probe_range(struct ust_marker * const *begin,
-	struct ust_marker * const *end);
-
 extern void lock_ust_marker(void);
 extern void unlock_ust_marker(void);
 
@@ -115,10 +112,7 @@ extern void ust_marker_iter_start(struct ust_marker_iter *iter);
 extern void ust_marker_iter_next(struct ust_marker_iter *iter);
 extern void ust_marker_iter_stop(struct ust_marker_iter *iter);
 extern void ust_marker_iter_reset(struct ust_marker_iter *iter);
-extern int ust_marker_get_iter_range(struct ust_marker * const **marker, struct ust_marker * const *begin,
-	struct ust_marker * const *end);
 
-extern void ust_marker_update_process(void);
 extern int is_ust_marker_enabled(const char *channel, const char *name);
 
 extern void ust_marker_set_new_ust_marker_cb(void (*cb)(struct ust_marker *));

@@ -32,6 +32,7 @@
 #include <urcu/list.h>
 
 struct ust_marker;
+struct ust_marker_probe_array;
 
 /**
  * ust_marker_probe_func - Type of a marker probe function
@@ -68,7 +69,7 @@ struct ust_marker {
 	uint16_t event_id;	/* Numeric event identifier, dynamic */
 	void (*call)(const struct ust_marker *mdata, void *call_private, ...);
 	struct ust_marker_probe_closure single;
-	struct ust_marker_probe_closure *multi;
+	struct ust_marker_probe_array *multi;
 	const char *tp_name;	/* Optional tracepoint name */
 	void *tp_cb;		/* Optional tracepoint callback */
 };
