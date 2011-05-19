@@ -6,6 +6,7 @@ Makefile
 .libs/
 .deps/
 *~
+*.a
 *.la
 *.lo
 Makefile.in

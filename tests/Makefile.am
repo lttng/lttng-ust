@@ -2,13 +2,9 @@ SUBDIRS = . hello hello2 basic basic_long fork simple_include snprintf test-neve
 
 dist_noinst_SCRIPTS = test_loop runtests trace_matches
 
-lib_LTLIBRARIES = libtap.la
+noinst_LIBRARIES = libtap.a
 
-libtap_la_SOURCES = \
+libtap_a_SOURCES = \
 	tap.c \
 	tap.h
 
-libtap_la_LDFLAGS = -no-undefined -version-info 0:0:0
-
-libtap_la_LIBADD = \
-	-lpthread
