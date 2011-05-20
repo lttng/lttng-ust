@@ -17,11 +17,11 @@
 
 #include <stdio.h>
 #include <string.h>
+#include "ust_snprintf.h"
 
 int main()
 {
 	char buf[100];
-
 	char *expected;
 
 	expected = "header 9999, hello, 005, '    9'";

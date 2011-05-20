@@ -15,6 +15,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include <ust/ust.h>
+#include <ust/tracepoint.h>
+#include <ust/marker.h>
 
 int main () { return 0; }
