@@ -1709,7 +1709,6 @@ static void ust_after_fork_common(ust_fork_info_t *fork_info)
 
 	pthread_mutex_unlock(&listen_sock_mutex);
 	pthread_mutex_unlock(&listener_thread_data_mutex);
-
         /* Restore signals */
         result = sigprocmask(SIG_SETMASK, &fork_info->orig_sigs, NULL);
         if (result == -1) {
@@ -1733,7 +1732,7 @@ void ust_after_fork_child(ust_fork_info_t *fork_info)
 	/* Sanitize the child */
 	ust_fork();
 
-	/* Then release mutexes and reenable signals */
+	/* Release mutexes and reenable signals */
 	ust_after_fork_common(fork_info);
 }
 

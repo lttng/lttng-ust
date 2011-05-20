@@ -31,6 +31,8 @@
 #define DEFAULT_CHANNEL "cpu"
 #define DEFAULT_PROBE "default"
 
+static int initialized;
+
 CDS_LIST_HEAD(probes_list);
 
 /*
@@ -52,10 +54,6 @@ static CDS_LIST_HEAD(ust_markers_loaded_list);
  * List sorted by name strcmp order.
  */
 static CDS_LIST_HEAD(probes_registered_list);
-
-//ust// static struct proc_dir_entry *pentry;
-
-//ust// static struct file_operations ltt_fops;
 
 static struct ltt_available_probe *get_probe_from_name(const char *pname)
 {
@@ -235,158 +233,6 @@ end:
 	return ret;
 }
 
-/*
- * function handling proc entry write.
- *
- * connect <channel name> <ust_marker name> [<probe name>]]
- * disconnect <channel name> <ust_marker name> [<probe name>]
- */
-//ust// static ssize_t ltt_write(struct file *file, const char __user *buffer,
-//ust// 			   size_t count, loff_t *offset)
-//ust// {
-//ust// 	char *kbuf;
-//ust// 	char *iter, *ust_marker_action, *arg[4];
-//ust// 	ssize_t ret;
-//ust// 	int i;
-//ust// 
-//ust// 	if (!count)
-//ust// 		return -EINVAL;
-//ust// 
-//ust// 	kbuf = vmalloc(count + 1);
-//ust// 	kbuf[count] = '\0';		/* Transform into a string */
-//ust// 	ret = copy_from_user(kbuf, buffer, count);
-//ust// 	if (ret) {
-//ust// 		ret = -EINVAL;
-//ust// 		goto end;
-//ust// 	}
-//ust// 	get_ust_marker_string(kbuf, &ust_marker_action, &iter);
-//ust// 	if (!ust_marker_action || ust_marker_action == iter) {
-//ust// 		ret = -EINVAL;
-//ust// 		goto end;
-//ust// 	}
-//ust// 	for (i = 0; i < 4; i++) {
-//ust// 		arg[i] = NULL;
-//ust// 		if (iter < kbuf + count) {
-//ust// 			iter++;			/* skip the added '\0' */
-//ust// 			get_ust_marker_string(iter, &arg[i], &iter);
-//ust// 			if (arg[i] == iter)
-//ust// 				arg[i] = NULL;
-//ust// 		}
-//ust// 	}
-//ust// 
-//ust// 	if (!arg[0] || !arg[1]) {
-//ust// 		ret = -EINVAL;
-//ust// 		goto end;
-//ust// 	}
-//ust// 
-//ust// 	if (!strcmp(ust_marker_action, "connect")) {
-//ust// 		ret = ltt_ust_marker_connect(arg[0], arg[1], arg[2]);
-//ust// 		if (ret)
-//ust// 			goto end;
-//ust// 	} else if (!strcmp(ust_marker_action, "disconnect")) {
-//ust// 		ret = ltt_ust_marker_disconnect(arg[0], arg[1], arg[2]);
-//ust// 		if (ret)
-//ust// 			goto end;
-//ust// 	}
-//ust// 	ret = count;
-//ust// end:
-//ust// 	vfree(kbuf);
-//ust// 	return ret;
-//ust// }
-//ust// 
-//ust// static void *s_next(struct seq_file *m, void *p, loff_t *pos)
-//ust// {
-//ust// 	struct ust_marker_iter *iter = m->private;
-//ust// 
-//ust// 	ust_marker_iter_next(iter);
-//ust// 	if (!iter->ust_marker) {
-//ust// 		/*
-//ust// 		 * Setting the iter module to -1UL will make sure
-//ust// 		 * that no module can possibly hold the current ust_marker.
-//ust// 		 */
-//ust// 		iter->module = (void *)-1UL;
-//ust// 		return NULL;
-//ust// 	}
-//ust// 	return iter->ust_marker;
-//ust// }
-//ust// 
-//ust// static void *s_start(struct seq_file *m, loff_t *pos)
-//ust// {
-//ust// 	struct ust_marker_iter *iter = m->private;
-//ust// 
-//ust// 	if (!*pos)
-//ust// 		ust_marker_iter_reset(iter);
-//ust// 	ust_marker_iter_start(iter);
-//ust// 	if (!iter->ust_marker) {
-//ust// 		/*
-//ust// 		 * Setting the iter module to -1UL will make sure
-//ust// 		 * that no module can possibly hold the current ust_marker.
-//ust// 		 */
-//ust// 		iter->module = (void *)-1UL;
-//ust// 		return NULL;
-//ust// 	}
-//ust// 	return iter->ust_marker;
-//ust// }
-//ust// 
-//ust// static void s_stop(struct seq_file *m, void *p)
-//ust// {
-//ust// 	ust_marker_iter_stop(m->private);
-//ust// }
-//ust// 
-//ust// static int s_show(struct seq_file *m, void *p)
-//ust// {
-//ust// 	struct ust_marker_iter *iter = m->private;
-//ust// 
-//ust// 	seq_printf(m, "channel: %s ust_marker: %s format: \"%s\" state: %d "
-//ust// 		"event_id: %hu call: 0x%p probe %s : 0x%p\n",
-//ust// 		iter->ust_marker->channel,
-//ust// 		iter->ust_marker->name, iter->ust_marker->format,
-//ust// 		_imv_read(iter->ust_marker->state),
-//ust// 		iter->ust_marker->event_id,
-//ust// 		iter->ust_marker->call,
-//ust// 		iter->ust_marker->ptype ? "multi" : "single",
-//ust// 		iter->ust_marker->ptype ?
-//ust// 		(void*)iter->ust_marker->multi : (void*)iter->ust_marker->single.func);
-//ust// 	return 0;
-//ust// }
-//ust// 
-//ust// static const struct seq_operations ltt_seq_op = {
-//ust// 	.start = s_start,
-//ust// 	.next = s_next,
-//ust// 	.stop = s_stop,
-//ust// 	.show = s_show,
-//ust// };
-//ust// 
-//ust// static int ltt_open(struct inode *inode, struct file *file)
-//ust// {
-//ust// 	/*
-//ust// 	 * Iterator kept in m->private.
-//ust// 	 * Restart iteration on all modules between reads because we do not lock
-//ust// 	 * the module mutex between those.
-//ust// 	 */
-//ust// 	int ret;
-//ust// 	struct ust_marker_iter *iter;
-//ust// 
-//ust// 	iter = kzalloc(sizeof(*iter), GFP_KERNEL);
-//ust// 	if (!iter)
-//ust// 		return -ENOMEM;
-//ust// 
-//ust// 	ret = seq_open(file, &ltt_seq_op);
-//ust// 	if (ret == 0)
-//ust// 		((struct seq_file *)file->private_data)->private = iter;
-//ust// 	else
-//ust// 		kfree(iter);
-//ust// 	return ret;
-//ust// }
-//ust// 
-//ust// static struct file_operations ltt_fops = {
-//ust// 	.write = ltt_write,
-//ust// 	.open = ltt_open,
-//ust// 	.read = seq_read,
-//ust// 	.llseek = seq_lseek,
-//ust// 	.release = seq_release_private,
-//ust// };
-
 static void disconnect_all_ust_markers(void)
 {
 	struct ltt_active_ust_marker *pdata, *tmp;
@@ -398,8 +244,6 @@ static void disconnect_all_ust_markers(void)
 		free(pdata);
 	}
 }
-
-static char initialized = 0;
 
 void __attribute__((constructor)) init_ust_marker_control(void)
 {

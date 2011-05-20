@@ -3,7 +3,7 @@
  * LTTng userspace tracer buffering system
  *
  * Copyright (C) 2009 - Pierre-Marc Fournier (pierre-marc dot fournier at polymtl dot ca)
- * Copyright (C) 2008 - Mathieu Desnoyers (mathieu.desnoyers@polymtl.ca)
+ * Copyright (C) 2008-2011 - Mathieu Desnoyers (mathieu.desnoyers@polymtl.ca)
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,6 +18,11 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
+ */
+
+/*
+ * Note: this code does not support the ref/noref flag and reader-owned
+ * subbuffer scheme needed for flight recorder mode.
  */
 
 #include <unistd.h>
@@ -44,6 +49,9 @@ struct ltt_reserve_switch_offsets {
 
 static DEFINE_MUTEX(ust_buffers_channels_mutex);
 static CDS_LIST_HEAD(ust_buffers_channels);
+
+static void ltt_force_switch(struct ust_buffer *buf,
+		enum force_switch_mode mode);
 
 static int get_n_cpus(void)
 {
@@ -332,10 +340,14 @@ static void close_channel(struct ust_channel *chan)
 		return;
 
 	pthread_mutex_lock(&ust_buffers_channels_mutex);
-	for(i=0; i<chan->n_cpus; i++) {
-	/* FIXME: if we make it here, then all buffers were necessarily allocated. Moreover, we don't
-	 * initialize to NULL so we cannot use this check. Should we? */
-//ust//		if (chan->buf[i])
+	/*
+	 * checking for chan->buf[i] being NULL or not is useless in
+	 * practice because we allocate buffers for all possible cpus.
+	 * However, should we decide to change this and only allocate
+	 * for online cpus, this check becomes useful.
+	 */
+	for (i=0; i<chan->n_cpus; i++) {
+		if (chan->buf[i])
 			close_buf(chan->buf[i]);
 	}
 
@@ -343,11 +355,6 @@ static void close_channel(struct ust_channel *chan)
 
 	pthread_mutex_unlock(&ust_buffers_channels_mutex);
 }
-
-static void ltt_force_switch(struct ust_buffer *buf,
-		enum force_switch_mode mode);
-
-
 
 /*
  * offset is assumed to never be 0 here : never deliver a completely empty
@@ -412,51 +419,13 @@ int ust_buffers_get_subbuf(struct ust_buffer *buf, long *consumed)
 	 * data and the write offset. Correct consumed offset ordering
 	 * wrt commit count is insured by the use of cmpxchg to update
 	 * the consumed offset.
-	 * smp_call_function_single can fail if the remote CPU is offline,
-	 * this is OK because then there is no wmb to execute there.
-	 * If our thread is executing on the same CPU as the on the buffers
-	 * belongs to, we don't have to synchronize it at all. If we are
-	 * migrated, the scheduler will take care of the memory cmm_barriers.
-	 * Normally, smp_call_function_single() should ensure program order when
-	 * executing the remote function, which implies that it surrounds the
-	 * function execution with :
-	 * smp_mb()
-	 * send IPI
-	 * csd_lock_wait
-	 *                recv IPI
-	 *                smp_mb()
-	 *                exec. function
-	 *                smp_mb()
-	 *                csd unlock
-	 * smp_mb()
-	 *
-	 * However, smp_call_function_single() does not seem to clearly execute
-	 * such barriers. It depends on spinlock semantic to provide the barrier
-	 * before executing the IPI and, when busy-looping, csd_lock_wait only
-	 * executes smp_mb() when it has to wait for the other CPU.
-	 *
-	 * I don't trust this code. Therefore, let's add the smp_mb() sequence
-	 * required ourself, even if duplicated. It has no performance impact
-	 * anyway.
-	 *
-	 * smp_mb() is needed because cmm_smp_rmb() and cmm_smp_wmb() only order read vs
-	 * read and write vs write. They do not ensure core synchronization. We
-	 * really have to ensure total order between the 3 cmm_barriers running on
-	 * the 2 CPUs.
 	 */
-//ust// #ifdef LTT_NO_IPI_BARRIER
+
 	/*
 	 * Local rmb to match the remote wmb to read the commit count before the
 	 * buffer data and the write offset.
 	 */
 	cmm_smp_rmb();
-//ust// #else
-//ust// 	if (raw_smp_processor_id() != buf->cpu) {
-//ust// 		smp_mb();	/* Total order with IPI handler smp_mb() */
-//ust// 		smp_call_function_single(buf->cpu, remote_mb, NULL, 1);
-//ust// 		smp_mb();	/* Total order with IPI handler smp_mb() */
-//ust// 	}
-//ust// #endif
 
 	write_offset = uatomic_read(&buf->offset);
 	/*
@@ -479,12 +448,6 @@ int ust_buffers_get_subbuf(struct ust_buffer *buf, long *consumed)
 	   == 0) {
 		return -EAGAIN;
 	}
-
-	/* FIXME: is this ok to disable the reading feature? */
-//ust//	retval = update_read_sb_index(buf, consumed_idx);
-//ust//	if (retval)
-//ust//		return retval;
-
 	*consumed = consumed_old;
 
 	return 0;
@@ -499,14 +462,12 @@ int ust_buffers_put_subbuf(struct ust_buffer *buf, unsigned long uconsumed_old)
 	consumed_old = consumed_old | uconsumed_old;
 	consumed_new = SUBBUF_ALIGN(consumed_old, buf->chan);
 
-//ust//	spin_lock(&ltt_buf->full_lock);
 	if (uatomic_cmpxchg(&buf->consumed, consumed_old,
 				consumed_new)
 	    != consumed_old) {
 		/* We have been pushed by the writer : the last
 		 * buffer read _is_ corrupted! It can also
 		 * happen if this is a buffer we never got. */
-//ust//		spin_unlock(&ltt_buf->full_lock);
 		return -EIO;
 	} else {
 		/* tell the client that buffer is now unfull */
@@ -515,7 +476,6 @@ int ust_buffers_put_subbuf(struct ust_buffer *buf, unsigned long uconsumed_old)
 		index = SUBBUF_INDEX(consumed_old, buf->chan);
 		data = BUFFER_OFFSET(consumed_old, buf->chan);
 		ltt_buf_unfull(buf, index, data);
-//ust//		spin_unlock(&ltt_buf->full_lock);
 	}
 	return 0;
 }
@@ -656,24 +616,10 @@ static void remove_channel(struct ust_channel *chan)
 
 static void ltt_relay_async_wakeup_chan(struct ust_channel *ltt_channel)
 {
-//ust//	unsigned int i;
-//ust//	struct rchan *rchan = ltt_channel->trans_channel_data;
-//ust//
-//ust//	for_each_possible_cpu(i) {
-//ust//		struct ltt_channel_buf_struct *ltt_buf =
-//ust//			percpu_ptr(ltt_channel->buf, i);
-//ust//
-//ust//		if (uatomic_read(&ltt_buf->wakeup_readers) == 1) {
-//ust//			uatomic_set(&ltt_buf->wakeup_readers, 0);
-//ust//			wake_up_interruptible(&rchan->buf[i]->read_wait);
-//ust//		}
-//ust//	}
 }
 
 static void ltt_relay_finish_buffer(struct ust_channel *channel, unsigned int cpu)
 {
-//	int result;
-
 	if (channel->buf[cpu]) {
 		struct ust_buffer *buf = channel->buf[cpu];
 		ltt_force_switch(buf, FORCE_FLUSH);
@@ -688,7 +634,7 @@ static void finish_channel(struct ust_channel *channel)
 {
 	unsigned int i;
 
-	for(i=0; i<channel->n_cpus; i++) {
+	for (i=0; i<channel->n_cpus; i++) {
 		ltt_relay_finish_buffer(channel, i);
 	}
 }
@@ -914,14 +860,12 @@ void ltt_force_switch_lockless_slow(struct ust_buffer *buf,
 	 */
 	if (mode == FORCE_ACTIVE) {
 		ltt_reserve_push_reader(chan, buf, offsets.end - 1);
-//ust//		ltt_clear_noref_flag(chan, buf, SUBBUF_INDEX(offsets.end - 1, chan));
 	}
 
 	/*
 	 * Switch old subbuffer if needed.
 	 */
 	if (offsets.end_switch_old) {
-//ust//		ltt_clear_noref_flag(rchan, buf, SUBBUF_INDEX(offsets.old - 1, rchan));
 		ltt_reserve_switch_old_subbuf(chan, buf, &offsets, &tsc);
 	}
 
@@ -1100,15 +1044,9 @@ int ltt_reserve_slot_lockless_slow(struct ust_channel *chan,
 	ltt_reserve_push_reader(chan, buf, offsets.end - 1);
 
 	/*
-	 * Clear noref flag for this subbuffer.
-	 */
-//ust//	ltt_clear_noref_flag(chan, buf, SUBBUF_INDEX(offsets.end - 1, chan));
-
-	/*
 	 * Switch old subbuffer if needed.
 	 */
 	if (unlikely(offsets.end_switch_old)) {
-//ust//		ltt_clear_noref_flag(chan, buf, SUBBUF_INDEX(offsets.old - 1, chan));
 		ltt_reserve_switch_old_subbuf(chan, buf, &offsets, tsc);
 		DBG("Switching %s_%d", chan->channel_name, cpu);
 	}

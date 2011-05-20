@@ -33,8 +33,6 @@
 #include "tracerconst.h"
 #include "tracercore.h"
 
-/***** FIXME: SHOULD BE REMOVED ***** */
-
 /*
  * BUFFER_TRUNC zeroes the subbuffer offset and the subbuffer number parts of
  * the offset, which leaves only the buffer number.
@@ -56,6 +54,20 @@
 #define UST_CHANNEL_VERSION		8
 
 /**************************************/
+
+/*
+ * TODO: using "long" type for struct ust_buffer (control structure
+ * shared between traced apps and the consumer) is a very bad idea when
+ * we get to systems with mixed 32/64-bit processes.
+ *
+ * But on 64-bit system, we want the full power of 64-bit counters,
+ * which wraps less often. Therefore, it's not as easy as "use 32-bit
+ * types everywhere".
+ *
+ * One way to deal with this is to:
+ * 1) Design 64-bit consumer so it can detect 32-bit and 64-bit apps.
+ * 2) The 32-bit consumer only supports 32-bit apps.
+ */
 
 struct commit_counters {
 	long cc;			/* ATOMIC */
@@ -105,9 +117,9 @@ struct ust_buffer {
 } ____cacheline_aligned;
 
 /*
- * A switch is done during tracing or as a final flush after tracing (so it
- * won't write in the new sub-buffer).
- * FIXME: make this message clearer
+ * A switch is either done during tracing (FORCE_ACTIVE) or as a final
+ * flush after tracing (with FORCE_FLUSH). FORCE_FLUSH ensures we won't
+ * write in the new sub-buffer).
  */
 enum force_switch_mode { FORCE_ACTIVE, FORCE_FLUSH };
 
@@ -415,12 +427,6 @@ static __inline__ int ltt_relay_try_reserve(
 
 	*tsc = trace_clock_read64();
 
-//ust// #ifdef CONFIG_LTT_VMCORE
-//ust// 	prefetch(&buf->commit_count[SUBBUF_INDEX(*o_begin, rchan)]);
-//ust// 	prefetch(&buf->commit_seq[SUBBUF_INDEX(*o_begin, rchan)]);
-//ust// #else
-//ust// 	prefetchw(&buf->commit_count[SUBBUF_INDEX(*o_begin, rchan)]);
-//ust// #endif
 	if (last_tsc_overflow(buf, *tsc))
 		*rflags = LTT_RFLAG_ID_SIZE_TSC;
 
@@ -465,7 +471,6 @@ static __inline__ int ltt_reserve_slot(struct ust_channel *chan,
 	/*
 	 * Perform retryable operations.
 	 */
-	/* FIXME: make this really per cpu? */
 	if (unlikely(CMM_LOAD_SHARED(ltt_nesting) > 4)) {
 		DBG("Dropping event because nesting is too deep.");
 		uatomic_inc(&buf->events_lost);
@@ -494,11 +499,6 @@ static __inline__ int ltt_reserve_slot(struct ust_channel *chan,
 	 */
 	ltt_reserve_push_reader(chan, buf, o_end - 1);
 
-	/*
-	 * Clear noref flag for this subbuffer.
-	 */
-//ust//	ltt_clear_noref_flag(chan, buf, SUBBUF_INDEX(o_end - 1, chan));
-
 	*buf_offset = o_begin + before_hdr_pad;
 	return 0;
 slow_path:
@@ -525,7 +525,6 @@ static __inline__ void ltt_force_switch(struct ust_buffer *buf,
  * commit count reaches back the reserve offset (module subbuffer size). It is
  * useful for crash dump.
  */
-//ust// #ifdef CONFIG_LTT_VMCORE
 static __inline__ void ltt_write_commit_counter(struct ust_channel *chan,
 		struct ust_buffer *buf, long idx, long buf_offset,
 		long commit_count, size_t data_size)
@@ -551,12 +550,6 @@ static __inline__ void ltt_write_commit_counter(struct ust_channel *chan,
 
 	DBG("commit_seq for channel %s_%d, subbuf %ld is now %ld", buf->chan->channel_name, buf->cpu, idx, commit_count);
 }
-//ust// #else
-//ust// static __inline__ void ltt_write_commit_counter(struct ust_buffer *buf,
-//ust// 		long idx, long buf_offset, long commit_count, size_t data_size)
-//ust// {
-//ust// }
-//ust// #endif
 
 /*
  * Atomic unordered slot commit. Increments the commit count in the

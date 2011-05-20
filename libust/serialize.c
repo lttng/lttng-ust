@@ -653,7 +653,7 @@ notrace void ltt_vtrace(const struct ust_marker *mdata, void *probe_data,
 	if (unlikely(ltt_traces.num_active_traces == 0))
 		return;
 
-	rcu_read_lock(); //ust// rcu_read_lock_sched_notrace();
+	rcu_read_lock();
 	cpu = ust_get_cpu();
 
 	/* Force volatile access. */
@@ -713,11 +713,12 @@ notrace void ltt_vtrace(const struct ust_marker *mdata, void *probe_data,
 		if (!channel->active)
 			continue;
 
-		/* If a new cpu was plugged since the trace was started, we did
+		/*
+		 * If a new cpu was plugged since the trace was started, we did
 		 * not add it to the trace, and therefore we write the event to
 		 * cpu 0.
 		 */
-		if(cpu >= channel->n_cpus) {
+		if (cpu >= channel->n_cpus) {
 			cpu = 0;
 		}
 
@@ -730,7 +731,6 @@ notrace void ltt_vtrace(const struct ust_marker *mdata, void *probe_data,
 
 		va_copy(args_copy, *args);
 		/* FIXME : could probably encapsulate transport better. */
-//ust//		buf = ((struct rchan *)channel->trans_channel_data)->buf[cpu];
 		buf = channel->buf[cpu];
 		/* Out-of-order write : header and data */
 		buf_offset = ltt_write_event_header(channel, buf, buf_offset,
@@ -749,7 +749,7 @@ notrace void ltt_vtrace(const struct ust_marker *mdata, void *probe_data,
 	tracer_stack_pos = stack_pos_ctx;
 	CMM_STORE_SHARED(ltt_nesting, CMM_LOAD_SHARED(ltt_nesting) - 1);
 
-	rcu_read_unlock(); //ust// rcu_read_unlock_sched_notrace();
+	rcu_read_unlock();
 }
 
 notrace void ltt_trace(const struct ust_marker *mdata, void *probe_data,
@@ -771,7 +771,7 @@ static notrace void skip_space(const char **ps)
 
 static notrace void copy_token(char **out, const char **in)
 {
-	while(**in != ' ' && **in != '\0') {
+	while (**in != ' ' && **in != '\0') {
 		**out = **in;
 		(*out)++;
 		(*in)++;
@@ -808,23 +808,23 @@ int serialize_to_text(char *outbuf, int bufsize, const char *fmt, va_list ap)
 	int result;
 	enum { none, cfmt, tracefmt, argname } prev_token = none;
 
-	while(*orig_fmt_p != '\0') {
-		if(*orig_fmt_p == '%') {
+	while (*orig_fmt_p != '\0') {
+		if (*orig_fmt_p == '%') {
 			prev_token = cfmt;
 			copy_token(&new_fmt_p, &orig_fmt_p);
 		}
-		else if(*orig_fmt_p == '#') {
+		else if (*orig_fmt_p == '#') {
 			prev_token = tracefmt;
 			do {
 				orig_fmt_p++;
-			} while(*orig_fmt_p != ' ' && *orig_fmt_p != '\0');
+			} while (*orig_fmt_p != ' ' && *orig_fmt_p != '\0');
 		}
-		else if(*orig_fmt_p == ' ') {
-			if(prev_token == argname) {
+		else if (*orig_fmt_p == ' ') {
+			if (prev_token == argname) {
 				*new_fmt_p = '=';
 				new_fmt_p++;
 			}
-			else if(prev_token == cfmt) {
+			else if (prev_token == cfmt) {
 				*new_fmt_p = ' ';
 				new_fmt_p++;
 			}
@@ -839,7 +839,7 @@ int serialize_to_text(char *outbuf, int bufsize, const char *fmt, va_list ap)
 
 	*new_fmt_p = '\0';
 
-	if(outbuf == NULL) {
+	if (outbuf == NULL) {
 		/* use this false_buffer for compatibility with pre-C99 */
 		outbuf = &false_buf;
 		bufsize = 1;
