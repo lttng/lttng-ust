@@ -22,7 +22,9 @@
 
 /*
  * Note: this code does not support the ref/noref flag and reader-owned
- * subbuffer scheme needed for flight recorder mode.
+ * subbuffer scheme. Therefore, flight recorder mode uses a mechanism
+ * where the reader can read corrupted data (and detect this), thus
+ * returning -EIO.
  */
 
 #include <unistd.h>
