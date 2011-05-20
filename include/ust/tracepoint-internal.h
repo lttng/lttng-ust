@@ -34,9 +34,6 @@
 #include <urcu/list.h>
 #include <ust/tracepoint.h>
 
-extern void tracepoint_update_probe_range(struct tracepoint * const *begin,
-	struct tracepoint * const *end);
-
 extern int tracepoint_probe_register_noupdate(const char *name, void *probe,
 					      void *data);
 extern int tracepoint_probe_unregister_noupdate(const char *name, void *probe,
@@ -83,5 +80,7 @@ extern int trace_event_get_iter_range(struct trace_event * const **trace_event,
 
 extern void trace_event_update_process(void);
 extern int is_trace_event_enabled(const char *channel, const char *name);
+
+extern void init_tracepoint(void);
 
 #endif /* _UST_TRACEPOINT_INTERNAL_H */

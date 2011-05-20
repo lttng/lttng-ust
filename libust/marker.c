@@ -19,6 +19,7 @@
 #define _LGPL_SOURCE
 #include <stdlib.h>
 #include <errno.h>
+#include <pthread.h>
 #include <urcu-bp.h>
 #include <urcu/rculist.h>
 #include <urcu/hlist.h>
@@ -39,6 +40,8 @@ extern struct ust_marker * const __stop___ust_marker_ptrs[] __attribute__((visib
 
 /* Set to 1 to enable ust_marker debug output */
 static const int ust_marker_debug;
+static int initialized;
+static void (*new_ust_marker_cb)(struct ust_marker *);
 
 /*
  * ust_marker mutex protects the builtin and module ust_marker and the
@@ -47,14 +50,21 @@ static const int ust_marker_debug;
 static DEFINE_MUTEX(ust_marker_mutex);
 static CDS_LIST_HEAD(ust_marker_libs);
 
+/*
+ * Allow nested mutex for mutex listing and nested enable.
+ */
+static __thread int nested_mutex;
+
 void lock_ust_marker(void)
 {
-	pthread_mutex_lock(&ust_marker_mutex);
+	if (!(nested_mutex++))
+		pthread_mutex_lock(&ust_marker_mutex);
 }
 
 void unlock_ust_marker(void)
 {
-	pthread_mutex_unlock(&ust_marker_mutex);
+	if (!(--nested_mutex))
+		pthread_mutex_unlock(&ust_marker_mutex);
 }
 
 /*
@@ -638,9 +648,9 @@ int is_ust_marker_enabled(const char *channel, const char *name)
 {
 	struct ust_marker_entry *entry;
 
-	pthread_mutex_lock(&ust_marker_mutex);
+	lock_ust_marker();
 	entry = get_ust_marker(channel, name);
-	pthread_mutex_unlock(&ust_marker_mutex);
+	unlock_ust_marker();
 
 	return entry && !!entry->refcount;
 }
@@ -678,11 +688,11 @@ static void lib_update_ust_marker(void)
 {
 	struct ust_marker_lib *lib;
 
-	pthread_mutex_lock(&ust_marker_mutex);
+	lock_ust_marker();
 	cds_list_for_each_entry(lib, &ust_marker_libs, list)
 		ust_marker_update_probe_range(lib->ust_marker_start,
 				lib->ust_marker_start + lib->ust_marker_count);
-	pthread_mutex_unlock(&ust_marker_mutex);
+	unlock_ust_marker();
 }
 
 /*
@@ -729,7 +739,7 @@ int ust_marker_probe_register(const char *channel, const char *name,
 	struct ust_marker_probe_array *old;
 	int first_probe = 0;
 
-	pthread_mutex_lock(&ust_marker_mutex);
+	lock_ust_marker();
 	entry = get_ust_marker(channel, name);
 	if (!entry) {
 		first_probe = 1;
@@ -774,7 +784,7 @@ int ust_marker_probe_register(const char *channel, const char *name,
 		else
 			goto end;
 	}
-	pthread_mutex_unlock(&ust_marker_mutex);
+	unlock_ust_marker();
 
 	/* Activate ust_marker if necessary */
 	ust_marker_update_probes();
@@ -792,7 +802,7 @@ error_remove_ust_marker:
 	ret_err = remove_ust_marker(channel, name);
 	WARN_ON(ret_err);
 end:
-	pthread_mutex_unlock(&ust_marker_mutex);
+	unlock_ust_marker();
 	return ret;
 }
 
@@ -816,14 +826,14 @@ int ust_marker_probe_unregister(const char *channel, const char *name,
 	struct ust_marker_probe_array *old;
 	int ret = 0;
 
-	pthread_mutex_lock(&ust_marker_mutex);
+	lock_ust_marker();
 	entry = get_ust_marker(channel, name);
 	if (!entry) {
 		ret = -ENOENT;
 		goto end;
 	}
 	old = ust_marker_entry_remove_probe(entry, probe, probe_private);
-	pthread_mutex_unlock(&ust_marker_mutex);
+	unlock_ust_marker();
 
 	ust_marker_update_probes();
 
@@ -834,7 +844,7 @@ int ust_marker_probe_unregister(const char *channel, const char *name,
 	return ret;
 
 end:
-	pthread_mutex_unlock(&ust_marker_mutex);
+	unlock_ust_marker();
 	return ret;
 }
 
@@ -891,7 +901,7 @@ int ust_marker_probe_unregister_private_data(ust_marker_probe_func *probe,
 	struct ust_marker_probe_array *old;
 	char *channel = NULL, *name = NULL;
 
-	pthread_mutex_lock(&ust_marker_mutex);
+	lock_ust_marker();
 	entry = get_ust_marker_from_private_data(probe, probe_private);
 	if (!entry) {
 		ret = -ENOENT;
@@ -902,7 +912,7 @@ int ust_marker_probe_unregister_private_data(ust_marker_probe_func *probe,
 	name = strdup(entry->name);
 	/* Ignore busy error message */
 	remove_ust_marker(channel, name);
-	pthread_mutex_unlock(&ust_marker_mutex);
+	unlock_ust_marker();
 
 	ust_marker_update_probes();
 
@@ -913,7 +923,7 @@ int ust_marker_probe_unregister_private_data(ust_marker_probe_func *probe,
 	goto end;
 
 unlock:
-	pthread_mutex_unlock(&ust_marker_mutex);
+	unlock_ust_marker();
 end:
 	free(channel);
 	free(name);
@@ -1032,9 +1042,9 @@ static void ust_marker_get_iter(struct ust_marker_iter *iter)
 		ust_marker_iter_reset(iter);
 }
 
-/* Called with markers mutex held. */
 void ust_marker_iter_start(struct ust_marker_iter *iter)
 {
+	lock_ust_marker();
 	ust_marker_get_iter(iter);
 }
 
@@ -1050,12 +1060,11 @@ void ust_marker_iter_next(struct ust_marker_iter *iter)
 	ust_marker_get_iter(iter);
 }
 
-/* Called with markers mutex held. */
 void ust_marker_iter_stop(struct ust_marker_iter *iter)
 {
+	unlock_ust_marker();
 }
 
-/* Called with markers mutex held. */
 void ust_marker_iter_reset(struct ust_marker_iter *iter)
 {
 	iter->lib = NULL;
@@ -1070,7 +1079,7 @@ void ltt_dump_ust_marker_state(struct ust_trace *trace)
 	struct cds_hlist_node *node;
 	unsigned int i;
 
-	pthread_mutex_lock(&ust_marker_mutex);
+	lock_ust_marker();
 	call_data.trace = trace;
 	call_data.serializer = NULL;
 
@@ -1098,10 +1107,8 @@ void ltt_dump_ust_marker_state(struct ust_trace *trace)
 					entry->format);
 		}
 	}
-	pthread_mutex_unlock(&ust_marker_mutex);
+	unlock_ust_marker();
 }
-
-static void (*new_ust_marker_cb)(struct ust_marker *) = NULL;
 
 void ust_marker_set_new_ust_marker_cb(void (*cb)(struct ust_marker *))
 {
@@ -1114,7 +1121,7 @@ static void new_ust_marker(struct ust_marker * const *start,
 	if (new_ust_marker_cb) {
 		struct ust_marker * const *m;
 
-		for(m = start; m < end; m++) {
+		for (m = start; m < end; m++) {
 			if (*m)
 				new_ust_marker_cb(*m);
 		}
@@ -1177,11 +1184,10 @@ int ust_marker_unregister_lib(struct ust_marker * const *ust_marker_start)
 	return 0;
 }
 
-static int initialized = 0;
-
 void __attribute__((constructor)) init_ust_marker(void)
 {
 	if (!initialized) {
+		init_tracepoint();
 		ust_marker_register_lib(__start___ust_marker_ptrs,
 			__stop___ust_marker_ptrs
 			- __start___ust_marker_ptrs);

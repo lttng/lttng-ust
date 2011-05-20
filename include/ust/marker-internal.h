@@ -68,9 +68,6 @@
 #define ust_marker_tp(name, tp_name, tp_cb, format, args...)	\
 	__ust_marker_tp(ust, name, NULL, tp_name, tp_cb, format, ## args)
 
-extern void lock_ust_marker(void);
-extern void unlock_ust_marker(void);
-
 extern void ust_marker_compact_event_ids(void);
 
 /*
@@ -117,5 +114,8 @@ extern int is_ust_marker_enabled(const char *channel, const char *name);
 
 extern void ust_marker_set_new_ust_marker_cb(void (*cb)(struct ust_marker *));
 extern void init_ust_marker(void);
+
+void lock_ust_marker(void);
+void unlock_ust_marker(void);
 
 #endif /* _UST_MARKER_INTERNAL_H */

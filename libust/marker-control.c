@@ -403,14 +403,10 @@ static char initialized = 0;
 
 void __attribute__((constructor)) init_ust_marker_control(void)
 {
-	if(!initialized) {
+	if (!initialized) {
 		int ret;
 
-//ust//	pentry = create_proc_entry("ltt", S_IRUSR|S_IWUSR, NULL);
-//ust//	if (!pentry)
-//ust//		return -EBUSY;
-//ust//	ust_markers_loaded_cachep = KMEM_CACHE(ltt_active_ust_marker, 0);
-
+		init_ust_marker();
 		ret = ltt_probe_register(&default_probe);
 		BUG_ON(ret);
 		ret = ltt_ust_marker_connect("metadata", "core_marker_format",
@@ -418,18 +414,14 @@ void __attribute__((constructor)) init_ust_marker_control(void)
 		BUG_ON(ret);
 		ret = ltt_ust_marker_connect("metadata", "core_marker_id", DEFAULT_PROBE);
 		BUG_ON(ret);
-//ust//	pentry->proc_fops = &ltt_fops;
-
 		initialized = 1;
 	}
 }
-//ust// module_init(ust_marker_control_init);
 
 static void __attribute__((destructor)) ust_marker_control_exit(void)
 {
 	int ret;
 
-//ust//	remove_proc_entry("ltt", NULL);
 	ret = ltt_ust_marker_disconnect("metadata", "core_marker_format",
 				    DEFAULT_PROBE);
 	BUG_ON(ret);
@@ -439,11 +431,5 @@ static void __attribute__((destructor)) ust_marker_control_exit(void)
 	ret = ltt_probe_unregister(&default_probe);
 	BUG_ON(ret);
 	disconnect_all_ust_markers();
-//ust//	kmem_cache_destroy(ust_markers_loaded_cachep);
-//ust//	ust_marker_synchronize_unregister();
+	ust_marker_synchronize_unregister();
 }
-//ust// module_exit(ust_marker_control_exit);
-
-//ust// MODULE_LICENSE("GPL");
-//ust// MODULE_AUTHOR("Mathieu Desnoyers");
-//ust// MODULE_DESCRIPTION("Linux Trace Toolkit Marker Control");

@@ -104,7 +104,6 @@ static void print_ust_marker(FILE *fp)
 {
 	struct ust_marker_iter iter;
 
-	lock_ust_marker();
 	ust_marker_iter_reset(&iter);
 	ust_marker_iter_start(&iter);
 
@@ -120,7 +119,7 @@ static void print_ust_marker(FILE *fp)
 				 */
 		ust_marker_iter_next(&iter);
 	}
-	unlock_ust_marker();
+	ust_marker_iter_stop(&iter);
 }
 
 static void print_trace_events(FILE *fp)
@@ -1315,17 +1314,16 @@ static void __attribute__((constructor)) init()
 		DBG("UST traces will not be synchronized with LTTng traces");
 	}
 
+	if (getenv("UST_TRACE") || getenv("UST_AUTOPROBE")) {
+		/* Ensure ust_marker control is initialized */
+		init_ust_marker_control();
+	}
+
 	autoprobe_val = getenv("UST_AUTOPROBE");
 	if (autoprobe_val) {
 		struct ust_marker_iter iter;
 
 		DBG("Autoprobe enabled.");
-
-		/* Ensure ust_marker are initialized */
-		//init_ust_marker();
-
-		/* Ensure ust_marker control is initialized, for the probe */
-		init_ust_marker_control();
 
 		/* first, set the callback that will connect the
 		 * probe on new ust_marker
@@ -1358,6 +1356,7 @@ static void __attribute__((constructor)) init()
 			auto_probe_connect(*iter.ust_marker);
 			ust_marker_iter_next(&iter);
 		}
+		ust_marker_iter_stop(&iter);
 	}
 
 	if (getenv("UST_OVERWRITE")) {
@@ -1400,12 +1399,6 @@ static void __attribute__((constructor)) init()
 		char trace_type[] = "ustrelay";
 
 		DBG("starting early tracing");
-
-		/* Ensure ust_marker control is initialized */
-		init_ust_marker_control();
-
-		/* Ensure ust_marker are initialized */
-		init_ust_marker();
 
 		/* Ensure buffers are initialized, for the transport to be available.
 		 * We are about to set a trace type and it will fail without this.
