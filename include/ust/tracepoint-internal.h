@@ -62,9 +62,6 @@ static inline void tracepoint_synchronize_unregister(void)
 	synchronize_rcu();
 }
 
-extern void lock_trace_events(void);
-extern void unlock_trace_events(void);
-
 struct trace_event_iter {
 	struct trace_event_lib *lib;
 	struct trace_event * const *trace_event;
@@ -72,11 +69,8 @@ struct trace_event_iter {
 
 extern void trace_event_iter_start(struct trace_event_iter *iter);
 extern void trace_event_iter_next(struct trace_event_iter *iter);
+extern void trace_event_iter_stop(struct trace_event_iter *iter);
 extern void trace_event_iter_reset(struct trace_event_iter *iter);
-
-extern int trace_event_get_iter_range(struct trace_event * const **trace_event,
-				      struct trace_event * const *begin,
-				      struct trace_event * const *end);
 
 extern void trace_event_update_process(void);
 extern int is_trace_event_enabled(const char *channel, const char *name);

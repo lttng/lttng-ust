@@ -29,20 +29,33 @@
 
 /* libraries that contain trace_events (struct trace_event_lib) */
 static CDS_LIST_HEAD(libs);
-
+/*
+ * Nested mutex is not required here, but provide the same guaranteed
+ * for start/stop iteration vs nested ops as markers and tracepoints.
+ */
+static __thread int nested_mutex;
 static DEFINE_MUTEX(trace_events_mutex);
 
+static
+int trace_event_get_iter_range(struct trace_event * const **trace_event,
+	struct trace_event * const *begin,
+	struct trace_event * const *end);
+
+static
 void lock_trace_events(void)
 {
-	pthread_mutex_lock(&trace_events_mutex);
+	if (!(nested_mutex++))
+		pthread_mutex_lock(&trace_events_mutex);
 }
 
+static
 void unlock_trace_events(void)
 {
-	pthread_mutex_unlock(&trace_events_mutex);
+	if (!(--nested_mutex))
+		pthread_mutex_unlock(&trace_events_mutex);
 }
 
-
+static
 int lib_get_iter_trace_events(struct trace_event_iter *iter)
 {
 	struct trace_event_lib *iter_lib;
@@ -72,7 +85,9 @@ int lib_get_iter_trace_events(struct trace_event_iter *iter)
  *
  * Returns whether a next trace_event has been found (1) or not (0).
  * Will return the first trace_event in the range if the input trace_event is NULL.
+ * Called with trace event mutex held.
  */
+static
 int trace_event_get_iter_range(struct trace_event * const **trace_event,
 	struct trace_event * const *begin,
 	struct trace_event * const *end)
@@ -100,9 +115,13 @@ static void trace_event_get_iter(struct trace_event_iter *iter)
 
 void trace_event_iter_start(struct trace_event_iter *iter)
 {
+	lock_trace_events();
 	trace_event_get_iter(iter);
 }
 
+/*
+ * Called with trace event mutex held.
+ */
 void trace_event_iter_next(struct trace_event_iter *iter)
 {
 	iter->trace_event++;
@@ -112,6 +131,11 @@ void trace_event_iter_next(struct trace_event_iter *iter)
 	 * trace_events from following modules if necessary.
 	 */
 	trace_event_get_iter(iter);
+}
+
+void trace_event_iter_stop(struct trace_event_iter *iter)
+{
+	unlock_trace_events();
 }
 
 void trace_event_iter_reset(struct trace_event_iter *iter)
@@ -130,8 +154,7 @@ int trace_event_register_lib(struct trace_event * const *trace_events_start,
 	pl->trace_events_start = trace_events_start;
 	pl->trace_events_count = trace_events_count;
 
-	/* FIXME: maybe protect this with its own mutex? */
-	pthread_mutex_lock(&trace_events_mutex);
+	lock_trace_events();
 	/*
 	 * We sort the libs by struct lib pointer address.
 	 */
@@ -146,7 +169,7 @@ int trace_event_register_lib(struct trace_event * const *trace_events_start,
 	/* We should be added at the head of the list */
 	cds_list_add(&pl->list, &libs);
 lib_added:
-	pthread_mutex_unlock(&trace_events_mutex);
+	unlock_trace_events();
 
 	/* trace_events_count - 1: skip dummy */
 	DBG("just registered a trace_events section from %p and having %d trace_events (minus dummy trace_event)", trace_events_start, trace_events_count);
@@ -158,8 +181,7 @@ int trace_event_unregister_lib(struct trace_event * const *trace_events_start)
 {
 	struct trace_event_lib *lib;
 
-	pthread_mutex_lock(&trace_events_mutex);
-
+	unlock_trace_events();
 	cds_list_for_each_entry(lib, &libs, list) {
 		if(lib->trace_events_start == trace_events_start) {
 			struct trace_event_lib *lib2free = lib;
@@ -168,8 +190,7 @@ int trace_event_unregister_lib(struct trace_event * const *trace_events_start)
 			break;
 		}
 	}
-
-	pthread_mutex_unlock(&trace_events_mutex);
+	unlock_trace_events();
 
 	return 0;
 }

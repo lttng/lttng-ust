@@ -126,7 +126,6 @@ static void print_trace_events(FILE *fp)
 {
 	struct trace_event_iter iter;
 
-	lock_trace_events();
 	trace_event_iter_reset(&iter);
 	trace_event_iter_start(&iter);
 
@@ -134,7 +133,7 @@ static void print_trace_events(FILE *fp)
 		fprintf(fp, "trace_event: %s\n", (*iter.trace_event)->name);
 		trace_event_iter_next(&iter);
 	}
-	unlock_trace_events();
+	trace_event_iter_stop(&iter);
 }
 
 static int connect_ustconsumer(void)
