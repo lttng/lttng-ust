@@ -43,4 +43,4 @@ TRACEPOINT_EVENT(test,
 #undef TRACE_INCLUDE_PATH
 #define TRACE_INCLUDE_PATH .
 #define TRACE_INCLUDE_FILE trace_event_test
-#include <ust/define_trace.h>
+#include <ust/tracepoint_event.h>

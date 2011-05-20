@@ -37,4 +37,4 @@ TRACEPOINT_EVENT(hello_tptest,
 #define TRACE_INCLUDE_FILE tp
 
 /* This part must be outside protection */
-#include <ust/define_trace.h>
+#include <ust/tracepoint_event.h>

@@ -29,7 +29,7 @@
  *
  * TRACE_INCLUDE_PATH if the path is something other than core kernel include/trace
  *     then this macro can define the path to use. Note, the path is relative to
- *     define_trace.h, not the file including it. Full path names for out of tree
+ *     tracepoint_event.h, not the file including it. Full path names for out of tree
  *     modules must be used.
  */
 
@@ -38,7 +38,10 @@
 /* Prevent recursion */
 #undef TRACEPOINT_CREATE_PROBES
 
-#include <ust/stringify.h>
+#ifndef __tp_stringify
+#define __tp_stringify_1(x...)	#x
+#define __tp_stringify(x...)	__tp_stringify_1(x)
+#endif
 
 #undef TRACEPOINT_EVENT
 #define TRACEPOINT_EVENT(name, proto, args, fields)		\
@@ -68,7 +71,7 @@
 # define __TRACE_INCLUDE(system) <trace/events/system.h>
 # define UNDEF_TRACE_INCLUDE_PATH
 #else
-# define __TRACE_INCLUDE(system) __stringify(TRACE_INCLUDE_PATH/system.h)
+# define __TRACE_INCLUDE(system) __tp_stringify(TRACE_INCLUDE_PATH/system.h)
 #endif
 
 # define TRACE_INCLUDE(system) __TRACE_INCLUDE(system)
@@ -79,7 +82,7 @@
 #include TRACE_INCLUDE(TRACE_INCLUDE_FILE)
 
 #ifndef CONFIG_NO_EVENT_TRACING
-#include <ust/ust_trace.h>
+#include <ust/probe.h>
 #endif
 
 #undef TRACEPOINT_EVENT

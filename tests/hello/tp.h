@@ -40,4 +40,4 @@ TRACEPOINT_EVENT_NOARGS(hello_tptest2,
 #define TRACE_INCLUDE_FILE tp
 
 /* This part must be outside protection */
-#include <ust/define_trace.h>
+#include <ust/tracepoint_event.h>

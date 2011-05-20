@@ -37,4 +37,4 @@ TRACEPOINT_EVENT(ust_event,
 #define TRACE_INCLUDE_FILE tracepoint_benchmark
 
 /* This part must be outside protection */
-#include <ust/define_trace.h>
+#include <ust/tracepoint_event.h>

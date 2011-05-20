@@ -28,7 +28,7 @@
 #include <stdarg.h>
 #include <ust/marker.h>
 #include <ust/marker-internal.h>
-#include <ust/probe.h>
+#include <ust/probe-internal.h>
 #include <ust/core.h>
 #include "channels.h"
 #include "tracercore.h"
