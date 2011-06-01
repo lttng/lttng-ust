@@ -1,0 +1,13 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: LTTng Userspace Tracer
+Description: The Userspace Tracer (UST) is a library accompanied by a set of tools to trace userspace code. 
+Version: @PACKAGE_VERSION@
+Requires:
+Requires.private: liburcu-bp
+Libs: -L${libdir} -lust
+Cflags: -I${includedir} 
+

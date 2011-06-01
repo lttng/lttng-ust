@@ -174,5 +174,6 @@ AC_CONFIG_FILES([
 	libustcomm/Makefile
 	libustctl/Makefile
 	snprintf/Makefile
+	ust.pc
 ])
 AC_OUTPUT

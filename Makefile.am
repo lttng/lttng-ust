@@ -22,3 +22,6 @@ libust.so: libust.ldscript.in
 # may get obscure errors when linking to shared libraries.
 libust-initializer.o: libust-initializer.c
 	$(CC) $(CFLAGS) -fno-strict-aliasing -fPIC -c -I$(top_srcdir)/include -I$(top_srcdir) -o $@ $<
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = ust.pc
