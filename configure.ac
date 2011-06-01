@@ -11,6 +11,14 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_SRCDIR([ustctl/ustctl.c])
 AC_CONFIG_HEADERS([config.h include/ust/config.h])
 AH_TEMPLATE([HAVE_EFFICIENT_UNALIGNED_ACCESS], [Use efficient unaligned access.])
+# Compute minor/major version numbers
+major_version=`echo AC_PACKAGE_VERSION | sed 's/\..*//'`
+minor_version=`echo AC_PACKAGE_VERSION | sed 's/.*\.//' | sed 's/^0//'`
+AC_SUBST([MAJOR_VERSION], [$major_version])
+AC_SUBST([MINOR_VERSION], [$minor_version])
+AC_DEFINE_UNQUOTED([VERSION_MAJOR], $major_version, [UST major version number])
+AC_DEFINE_UNQUOTED([VERSION_MINOR], $minor_version, [UST minor version number])
+
 
 # Checks for programs.
 AC_PROG_CC
@@ -175,5 +183,6 @@ AC_CONFIG_FILES([
 	libustctl/Makefile
 	snprintf/Makefile
 	ust.pc
+	include/ust/version.h
 ])
 AC_OUTPUT

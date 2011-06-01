@@ -23,6 +23,7 @@ config.status
 stamp-h1
 libtool
 ust.pc
+include/ust/version.h
 
 ustctl/ustctl
 ust-consumerd/ust-consumerd

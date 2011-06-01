@@ -2,7 +2,8 @@ nobase_include_HEADERS = \
 	ust/marker.h \
 	ust/tracepoint.h \
 	ust/tracepoint_event.h \
-	ust/probe.h
+	ust/probe.h \
+	ust/version.h
 
 noinst_HEADERS = \
 	share.h \
