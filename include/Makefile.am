@@ -20,7 +20,6 @@ noinst_HEADERS = \
 	ust/kcompat/kcompat.h \
 	ust/kcompat/jhash.h \
 	ust/kcompat/compiler.h \
-	ust/kcompat/simple.h \
 	ust/kcompat/types.h \
 	ust/tracectl.h \
 	ust/ustctl.h \

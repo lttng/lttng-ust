@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <pthread.h>
+#include <urcu-call-rcu.h>
 #include <urcu-bp.h>
 #include <urcu/rculist.h>
 #include <urcu/hlist.h>

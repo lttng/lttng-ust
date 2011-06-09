@@ -56,7 +56,6 @@
 #include <urcu/arch.h>
 
 /* Kernel libs */
-#include <ust/kcompat/simple.h>
 #include <ust/kcompat/compiler.h>
 #include <ust/kcompat/types.h>
 #include <ust/kcompat/jhash.h>
