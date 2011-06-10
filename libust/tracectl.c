@@ -34,7 +34,7 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <regex.h>
-#include <urcu/uatomic_arch.h>
+#include <urcu/uatomic.h>
 #include <urcu/list.h>
 
 #include <ust/marker.h>

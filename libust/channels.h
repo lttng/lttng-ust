@@ -27,7 +27,7 @@
 #include <ust/kcompat/kcompat.h>
 #include <ust/core.h>
 #include <urcu/list.h>
-#include <urcu/urcu_ref.h>
+#include <urcu/ref.h>
 
 #define EVENTS_PER_CHANNEL	65536
 #define MAX_CPUS		32
