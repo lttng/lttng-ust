@@ -36,7 +36,7 @@ Permission is granted to ...
 @node Top
 @top LTTng Userspace Tracer
 
-This manual is for UST 0.11.
+This manual is for UST 0.14.
 @end ifnottex
 
 @menu
@@ -115,7 +115,7 @@ ust
 This contains the tracing library, the ust-consumerd daemon, trace control tools
 and other helper tools.
 
-Repository: @url{http://git.dorsal.polymtl.ca}
+Repository: @url{http://lttng.org/ust}
 
 @item
 liburcu
@@ -263,69 +263,10 @@ some confusion at analysis time.
 @node Tracepoints
 @section Tracepoints
 
-The Tracepoints API uses the Markers, but provides a higher-level abstraction.
-Whereas the markers API provides limited type checking, the Tracepoints API
-provides more thorough type checking and discharges from the need to insert
-format strings directly in the code and to have format strings appear more than
-once if a given marker is reused.
-
-@quotation Note
-The @command{usttrace} tool always uses the early tracing mode.
-@end quotation
-
-A function instrumented with a tracepoint looks like this:
-
-@example
-@verbatim
-#include "tp.h"
-
-void function(void)
-{
-	int v;
-	char *st;
-
-	/* ... set values of v and st ... */
-
-	/* a tracepoint: */
-	trace_myevent(v, st);
-}
-@end verbatim
-@end example
-
-Another file, here tp.h, contains declarations for the tracepoint.
-
-@example
-@verbatim
-#include <ust/tracepoint.h>
-
-DECLARE_TRACEPOINT(myevent, TP_PROTO(int v, char *st),
-		   TP_ARGS(v, st));
-@end verbatim
-@end example
-
-A third file, here tp.c, contains definitions for the tracepoint.
-
-@example
-@verbatim
-#include <ust/marker.h>
-#include "tp.h"
-
-DEFINE_TRACEPOINT(myevent);
-
-void myevent_probe(int v, char *st)
-{
-	ust_marker(myevent, "v %d st %s", v, st);
-}
-
-static void __attribute__((constructor)) init()
-{
-	register_trace_myevent(myevent_probe);
-}
-@end verbatim
-@end example
-
-Here, tp.h and tp.c could contain declarations and definitions for other
-tracepoints. The constructor would contain other register_* calls.
+The Tracepoint API is superseded by TRACEPOINT_EVENT() (which uses the
+Tracepoints internally). At this stage, TRACEPOINT_EVENT() is work in
+progress. While we complete this API, please use the ust_marker() API
+provided by ust/marker.h.
 
 @node Recording a trace
 @chapter Recording a trace
