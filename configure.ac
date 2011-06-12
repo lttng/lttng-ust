@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT([ust], [0.13], [nils dot carlson at ericsson dot com])
+AC_INIT([ust], [0.14], [mathieu dot desnoyers at efficios dot com])
 AC_CONFIG_AUX_DIR([config])
 AC_CANONICAL_TARGET
 AC_CANONICAL_HOST

@@ -1,3 +1,19 @@
+2011-06-12 ust 0.14
+	* Rename trace_mark() API to ust_marker(). Old macros kept for
+	  slow deprecation.
+	* Tracepoint API is now private to UST.
+	* Introduction of the TRACEPOINT_EVENT API (work in progress).
+	  Please use ust_marker() API while we complete TRACEPOINT_EVENT.
+	* Privatize many headers which should have always been internal
+	  to UST. At the moment, only marker.h should be included by
+	  applications. When the TRACEPOINT_EVENT API will be completed,
+	  then other headers will be useful for the application
+	  (tracepoint_event.h, tracepoint.h and, indirectly, probe.h).
+	* Markers: merge fixes from LTTng 0.249 into marker.[ch].
+	* Add ust/version.h header file, which exports the UST version
+	  installed.
+	* Move to liburcu 0.6. Update dependencies.
+
 2011-05-19 ust 0.13
 	* API CHANGE!!! trace_mark has been deprecated, new ust_maker, without
 	channel name. ex. ust_marker(name, <format>, args...)
