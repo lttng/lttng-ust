@@ -10,6 +10,7 @@ noinst_HEADERS = \
 	usterr.h \
 	ust_snprintf.h \
 	usterr_signal_safe.h \
+	ust/compat.h \
 	ust/config.h \
 	ust/core.h \
 	ust/marker-internal.h \

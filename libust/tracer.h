@@ -30,6 +30,7 @@
 #include <ust/marker-internal.h>
 #include <ust/probe-internal.h>
 #include <ust/core.h>
+#include <ust/compat.h>
 #include "channels.h"
 #include "tracercore.h"
 #include "tracerconst.h"
