@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT([ust], [0.14], [mathieu dot desnoyers at efficios dot com])
+AC_INIT([ust], [1.9.0], [mathieu dot desnoyers at efficios dot com])
 AC_CONFIG_AUX_DIR([config])
 AC_CANONICAL_TARGET
 AC_CANONICAL_HOST
@@ -26,18 +26,8 @@ AC_PROG_MAKE_SET
 AC_PROG_LIBTOOL
 
 ## Checks for libraries.
-## FIXME: Replace `main' with a function in `-ldl':
-#AC_CHECK_LIB([dl], [main])
-## FIXME: Replace `main' with a function in `-lmarkers':
-#AC_CHECK_LIB([markers], [main])
-## FIXME: Replace `main' with a function in `-lpthread':
-#AC_CHECK_LIB([pthread], [main])
-## FIXME: Replace `main' with a function in `-ltracectl':
-#AC_CHECK_LIB([tracectl], [main])
-## FIXME: Replace `main' with a function in `-ltracing':
-#AC_CHECK_LIB([tracing], [main])
-## FIXME: Replace `main' with a function in `-lurcu':
-#AC_CHECK_LIB([urcu], [main])
+AC_CHECK_LIB([dl], [dlopen])
+AC_CHECK_LIB([pthread], [pthread_create])
 
 # Checks for header files.
 #AC_CHECK_HEADERS([fcntl.h stdint.h stdlib.h string.h sys/socket.h sys/time.h unistd.h])
@@ -172,11 +162,6 @@ AC_CONFIG_FILES([
 	tests/exit-fast/Makefile
 	libustinstr-malloc/Makefile
 	libustfork/Makefile
-	libustconsumer/Makefile
-	ust-consumerd/Makefile
-	ustctl/Makefile
-	libustcomm/Makefile
-	libustctl/Makefile
 	snprintf/Makefile
 	ust.pc
 	include/ust/version.h
