@@ -6,11 +6,7 @@ lib_LTLIBRARIES = libringbuffer.la
 libringbuffer_la_SOURCES = \
 	ring_buffer_backend.c \
 	ring_buffer_frontend.c \
-	ring_buffer_iterator.c \
-	ring_buffer_vfs.c \
-	ring_buffer_splice.c \
-	ring_buffer_mmap.c \
-	../libprio_heap/lttng_prio_heap.c
+	ring_buffer_abi.c
 
 libringbuffer_la_LDFLAGS = -no-undefined -version-info 0:0:0
 

@@ -38,6 +38,8 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
+#include <urcu/compiler.h>
+
 #include "config.h"
 #include "backend.h"
 #include "frontend.h"
@@ -158,7 +160,7 @@ int lib_ring_buffer_create(struct lib_ring_buffer *buf,
 			   struct channel_backend *chanb, int cpu)
 {
 	const struct lib_ring_buffer_config *config = chanb->config;
-	struct channel *chan = container_of(chanb, struct channel, backend);
+	struct channel *chan = caa_container_of(chanb, struct channel, backend);
 	void *priv = chanb->priv;
 	unsigned int num_subbuf;
 	size_t subbuf_header_size;
@@ -391,7 +393,7 @@ int __cpuinit lib_ring_buffer_cpu_hp_callback(struct notifier_block *nb,
 					      void *hcpu)
 {
 	unsigned int cpu = (unsigned long)hcpu;
-	struct channel *chan = container_of(nb, struct channel,
+	struct channel *chan = caa_container_of(nb, struct channel,
 					    cpu_hp_notifier);
 	struct lib_ring_buffer *buf = per_cpu_ptr(chan->backend.buf, cpu);
 	const struct lib_ring_buffer_config *config = chan->backend.config;
@@ -447,7 +449,7 @@ static int notrace ring_buffer_tick_nohz_callback(struct notifier_block *nb,
 						  unsigned long val,
 						  void *data)
 {
-	struct channel *chan = container_of(nb, struct channel,
+	struct channel *chan = caa_container_of(nb, struct channel,
 					    tick_nohz_notifier);
 	const struct lib_ring_buffer_config *config = chan->backend.config;
 	struct lib_ring_buffer *buf;
@@ -687,7 +689,7 @@ EXPORT_SYMBOL_GPL(channel_create);
 static
 void channel_release(struct kref *kref)
 {
-	struct channel *chan = container_of(kref, struct channel, ref);
+	struct channel *chan = caa_container_of(kref, struct channel, ref);
 	channel_free(chan);
 }
 
@@ -729,7 +731,7 @@ void *channel_destroy(struct channel *chan)
 			 * Perform flush before writing to finalized.
 			 */
 			smp_wmb();
-			ACCESS_ONCE(buf->finalized) = 1;
+			CMM_ACCESS_ONCE(buf->finalized) = 1;
 			wake_up_interruptible(&buf->read_wait);
 		}
 	} else {
@@ -743,10 +745,10 @@ void *channel_destroy(struct channel *chan)
 		 * Perform flush before writing to finalized.
 		 */
 		smp_wmb();
-		ACCESS_ONCE(buf->finalized) = 1;
+		CMM_ACCESS_ONCE(buf->finalized) = 1;
 		wake_up_interruptible(&buf->read_wait);
 	}
-	ACCESS_ONCE(chan->finalized) = 1;
+	CMM_ACCESS_ONCE(chan->finalized) = 1;
 	wake_up_interruptible(&chan->hp_wait);
 	wake_up_interruptible(&chan->read_wait);
 	kref_put(&chan->ref, channel_release);
@@ -820,7 +822,7 @@ int lib_ring_buffer_snapshot(struct lib_ring_buffer *buf,
 	int finalized;
 
 retry:
-	finalized = ACCESS_ONCE(buf->finalized);
+	finalized = CMM_ACCESS_ONCE(buf->finalized);
 	/*
 	 * Read finalized before counters.
 	 */
@@ -908,7 +910,7 @@ int lib_ring_buffer_get_subbuf(struct lib_ring_buffer *buf,
 	int finalized;
 
 retry:
-	finalized = ACCESS_ONCE(buf->finalized);
+	finalized = CMM_ACCESS_ONCE(buf->finalized);
 	/*
 	 * Read finalized before counters.
 	 */

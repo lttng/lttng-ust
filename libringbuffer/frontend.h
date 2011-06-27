@@ -16,6 +16,9 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
+#include <urcu/compiler.h>
+#include <urcu/uatomic.h>
+
 /* Internal helpers */
 #include "frontend_internal.h"
 
@@ -60,7 +63,7 @@ void *channel_destroy(struct channel *chan);
 #define for_each_channel_cpu(cpu, chan)					\
 	for ((cpu) = -1;						\
 		({ (cpu) = cpumask_next(cpu, (chan)->backend.cpumask);	\
-		   smp_read_barrier_depends(); (cpu) < nr_cpu_ids; });)
+		   cmm_smp_read_barrier_depends(); (cpu) < nr_cpu_ids; });)
 
 extern struct lib_ring_buffer *channel_get_ring_buffer(
 				const struct lib_ring_buffer_config *config,
@@ -118,7 +121,7 @@ static inline
 unsigned long lib_ring_buffer_get_consumed(const struct lib_ring_buffer_config *config,
 					   struct lib_ring_buffer *buf)
 {
-	return atomic_long_read(&buf->consumed);
+	return uatomic_read(&buf->consumed);
 }
 
 /*
@@ -129,11 +132,11 @@ static inline
 int lib_ring_buffer_is_finalized(const struct lib_ring_buffer_config *config,
 				 struct lib_ring_buffer *buf)
 {
-	int finalized = ACCESS_ONCE(buf->finalized);
+	int finalized = CMM_ACCESS_ONCE(buf->finalized);
 	/*
 	 * Read finalized before counters.
 	 */
-	smp_rmb();
+	cmm_smp_rmb();
 	return finalized;
 }
 
@@ -146,7 +149,7 @@ int lib_ring_buffer_channel_is_finalized(const struct channel *chan)
 static inline
 int lib_ring_buffer_channel_is_disabled(const struct channel *chan)
 {
-	return atomic_read(&chan->record_disabled);
+	return uatomic_read(&chan->record_disabled);
 }
 
 static inline

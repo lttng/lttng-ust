@@ -14,6 +14,10 @@
  * the reader in flight recorder mode.
  */
 
+#include <unistd.h>
+
+#include "ust/core.h"
+
 /* Internal helpers */
 #include "backend_internal.h"
 #include "frontend_internal.h"
@@ -24,10 +28,6 @@
 
 extern size_t lib_ring_buffer_read(struct lib_ring_buffer_backend *bufb,
 				   size_t offset, void *dest, size_t len);
-
-extern int __lib_ring_buffer_copy_to_user(struct lib_ring_buffer_backend *bufb,
-					  size_t offset, void __user *dest,
-					  size_t len);
 
 extern int lib_ring_buffer_read_cstr(struct lib_ring_buffer_backend *bufb,
 				     size_t offset, void *dest, size_t len);
@@ -76,7 +76,7 @@ void lib_ring_buffer_write(const struct lib_ring_buffer_config *config,
 
 	offset &= chanb->buf_size - 1;
 	sbidx = offset >> chanb->subbuf_size_order;
-	index = (offset & (chanb->subbuf_size - 1)) >> PAGE_SHIFT;
+	index = (offset & (chanb->subbuf_size - 1)) >> get_count_order(PAGE_SIZE);
 	pagecpy = min_t(size_t, len, (-offset) & ~PAGE_MASK);
 	id = bufb->buf_wsb[sbidx].id;
 	sb_bindex = subbuffer_id_get_index(config, id);
@@ -123,10 +123,5 @@ unsigned long lib_ring_buffer_get_records_unread(
 	}
 	return records_unread;
 }
-
-ssize_t lib_ring_buffer_file_splice_read(struct file *in, loff_t *ppos,
-					 struct pipe_inode_info *pipe,
-					 size_t len, unsigned int flags);
-loff_t lib_ring_buffer_no_llseek(struct file *file, loff_t offset, int origin);
 
 #endif /* _LINUX_RING_BUFFER_BACKEND_H */

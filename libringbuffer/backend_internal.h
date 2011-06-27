@@ -11,6 +11,9 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
+#include <unistd.h>
+#include <urcu/compiler.h>
+
 #include "config.h"
 #include "backend_types.h"
 #include "frontend_types.h"
@@ -52,7 +55,7 @@ extern void _lib_ring_buffer_write(struct lib_ring_buffer_backend *bufb,
  * sampling and subbuffer ID exchange).
  */
 
-#define HALF_ULONG_BITS		(BITS_PER_LONG >> 1)
+#define HALF_ULONG_BITS		(CAA_BITS_PER_LONG >> 1)
 
 #define SB_ID_OFFSET_SHIFT	(HALF_ULONG_BITS + 1)
 #define SB_ID_OFFSET_COUNT	(1UL << SB_ID_OFFSET_SHIFT)
@@ -145,7 +148,7 @@ void subbuffer_id_set_noref_offset(const struct lib_ring_buffer_config *config,
 		tmp |= offset << SB_ID_OFFSET_SHIFT;
 		tmp |= SB_ID_NOREF_MASK;
 		/* Volatile store, read concurrently by readers. */
-		ACCESS_ONCE(*id) = tmp;
+		CMM_ACCESS_ONCE(*id) = tmp;
 	}
 }
 
@@ -300,7 +303,7 @@ void lib_ring_buffer_clear_noref(const struct lib_ring_buffer_config *config,
 	 * Performing a volatile access to read the sb_pages, because we want to
 	 * read a coherent version of the pointer and the associated noref flag.
 	 */
-	id = ACCESS_ONCE(bufb->buf_wsb[idx].id);
+	id = CMM_ACCESS_ONCE(bufb->buf_wsb[idx].id);
 	for (;;) {
 		/* This check is called on the fast path for each record. */
 		if (likely(!subbuffer_id_is_noref(config, id))) {
@@ -314,7 +317,7 @@ void lib_ring_buffer_clear_noref(const struct lib_ring_buffer_config *config,
 		}
 		new_id = id;
 		subbuffer_id_clear_noref(config, &new_id);
-		new_id = cmpxchg(&bufb->buf_wsb[idx].id, id, new_id);
+		new_id = uatomic_cmpxchg(&bufb->buf_wsb[idx].id, id, new_id);
 		if (likely(new_id == id))
 			break;
 		id = new_id;
@@ -350,7 +353,7 @@ void lib_ring_buffer_set_noref_offset(const struct lib_ring_buffer_config *confi
 	 * Memory barrier that ensures counter stores are ordered before set
 	 * noref and offset.
 	 */
-	smp_mb();
+	cmm_smp_mb();
 	subbuffer_id_set_noref_offset(config, &bufb->buf_wsb[idx].id, offset);
 }
 
@@ -369,7 +372,7 @@ int update_read_sb_index(const struct lib_ring_buffer_config *config,
 	if (config->mode == RING_BUFFER_OVERWRITE) {
 		/*
 		 * Exchange the target writer subbuffer with our own unused
-		 * subbuffer. No need to use ACCESS_ONCE() here to read the
+		 * subbuffer. No need to use CMM_ACCESS_ONCE() here to read the
 		 * old_wpage, because the value read will be confirmed by the
 		 * following cmpxchg().
 		 */
@@ -387,7 +390,7 @@ int update_read_sb_index(const struct lib_ring_buffer_config *config,
 			     !subbuffer_id_is_noref(config, bufb->buf_rsb.id));
 		subbuffer_id_set_noref_offset(config, &bufb->buf_rsb.id,
 					      consumed_count);
-		new_id = cmpxchg(&bufb->buf_wsb[consumed_idx].id, old_id,
+		new_id = uatomic_cmpxchg(&bufb->buf_wsb[consumed_idx].id, old_id,
 				 bufb->buf_rsb.id);
 		if (unlikely(old_id != new_id))
 			return -EAGAIN;

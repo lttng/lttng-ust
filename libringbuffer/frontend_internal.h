@@ -16,10 +16,11 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
+#include <urcu/compiler.h>
+
 #include "config.h"
 #include "backend_types.h"
 #include "frontend_types.h"
-#include "../lib_prio_heap/lttng_prio_heap.h"	/* For per-CPU read-side iterator */
 
 /* Buffer offset macros */
 
@@ -81,7 +82,7 @@ unsigned long subbuf_index(unsigned long offset, struct channel *chan)
  * last_tsc atomically.
  */
 
-#if (BITS_PER_LONG == 32)
+#if (CAA_BITS_PER_LONG == 32)
 static inline
 void save_last_tsc(const struct lib_ring_buffer_config *config,
 		   struct lib_ring_buffer *buf, u64 tsc)
@@ -154,7 +155,7 @@ void lib_ring_buffer_reserve_push_reader(struct lib_ring_buffer *buf,
 	unsigned long consumed_old, consumed_new;
 
 	do {
-		consumed_old = atomic_long_read(&buf->consumed);
+		consumed_old = uatomic_read(&buf->consumed);
 		/*
 		 * If buffer is in overwrite mode, push the reader consumed
 		 * count if the write position has reached it and we are not
@@ -170,7 +171,7 @@ void lib_ring_buffer_reserve_push_reader(struct lib_ring_buffer *buf,
 			consumed_new = subbuf_align(consumed_old, chan);
 		else
 			return;
-	} while (unlikely(atomic_long_cmpxchg(&buf->consumed, consumed_old,
+	} while (unlikely(uatomic_cmpxchg(&buf->consumed, consumed_old,
 					      consumed_new) != consumed_old));
 }
 
@@ -191,7 +192,7 @@ int lib_ring_buffer_poll_deliver(const struct lib_ring_buffer_config *config,
 {
 	unsigned long consumed_old, consumed_idx, commit_count, write_offset;
 
-	consumed_old = atomic_long_read(&buf->consumed);
+	consumed_old = uatomic_read(&buf->consumed);
 	consumed_idx = subbuf_index(consumed_old, chan);
 	commit_count = v_read(config, &buf->commit_cold[consumed_idx].cc_sb);
 	/*
@@ -354,7 +355,7 @@ void lib_ring_buffer_check_deliver(const struct lib_ring_buffer_config *config,
 			 * respect to writers coming into the subbuffer after
 			 * wrap around, and also order wrt concurrent readers.
 			 */
-			smp_mb();
+			cmm_smp_mb();
 			/* End of exclusive subbuffer access */
 			v_set(config, &buf->commit_cold[idx].cc_sb,
 			      commit_count);
@@ -365,10 +366,10 @@ void lib_ring_buffer_check_deliver(const struct lib_ring_buffer_config *config,
 			 * RING_BUFFER_WAKEUP_BY_WRITER wakeup is not lock-free.
 			 */
 			if (config->wakeup == RING_BUFFER_WAKEUP_BY_WRITER
-			    && atomic_long_read(&buf->active_readers)
+			    && uatomic_read(&buf->active_readers)
 			    && lib_ring_buffer_poll_deliver(config, buf, chan)) {
-				wake_up_interruptible(&buf->read_wait);
-				wake_up_interruptible(&chan->read_wait);
+				//wake_up_interruptible(&buf->read_wait);
+				//wake_up_interruptible(&chan->read_wait);
 			}
 
 		}
@@ -419,6 +420,6 @@ extern int lib_ring_buffer_create(struct lib_ring_buffer *buf,
 extern void lib_ring_buffer_free(struct lib_ring_buffer *buf);
 
 /* Keep track of trap nesting inside ring buffer code */
-DECLARE_PER_CPU(unsigned int, lib_ring_buffer_nesting);
+extern __thread unsigned int lib_ring_buffer_nesting;
 
 #endif /* _LINUX_RING_BUFFER_FRONTEND_INTERNAL_H */

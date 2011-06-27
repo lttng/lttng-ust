@@ -82,7 +82,25 @@ static inline long IS_ERR(const void *ptr)
 
 /* MALLOCATION */
 
-#define zmalloc(s) calloc(1, s)
+#include <stdlib.h>
+
+static inline
+void *zmalloc(size_t len)
+{
+	return calloc(1, len);
+}
+
+static inline
+void *malloc_align(size_t len)
+{
+	return malloc(ALIGN(len, CAA_CACHE_LINE_SIZE));
+}
+
+static inline
+void *zmalloc_align(size_t len)
+{
+	return calloc(1, ALIGN(len, CAA_CACHE_LINE_SIZE));
+}
 
 /* MATH */
 
@@ -109,5 +127,13 @@ static __inline__ int get_count_order(unsigned int count)
 #define _ust_container_of(ptr, type, member) ({                      \
         const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
         (type *)( (char *)__mptr - offsetof(type,member) );})
+
+#ifndef inline_memcpy
+#define inline_memcpy memcpy
+#endif
+
+#ifndef __same_type
+#define __same_type(a, b) __builtin_types_compatible_p(typeof(a), typeof(b))
+#endif
 
 #endif /* UST_CORE_H */
