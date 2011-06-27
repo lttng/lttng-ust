@@ -139,6 +139,8 @@ int ltt_channel_enable(struct ltt_channel *channel)
 {
 	int old;
 
+	if (channel == channel->session->metadata)
+		return -EPERM;
 	old = xchg(&channel->enabled, 1);
 	if (old)
 		return -EEXIST;
@@ -149,6 +151,8 @@ int ltt_channel_disable(struct ltt_channel *channel)
 {
 	int old;
 
+	if (channel == channel->session->metadata)
+		return -EPERM;
 	old = xchg(&channel->enabled, 0);
 	if (!old)
 		return -EEXIST;
@@ -159,6 +163,8 @@ int ltt_event_enable(struct ltt_event *event)
 {
 	int old;
 
+	if (event->chan == event->chan->session->metadata)
+		return -EPERM;
 	old = xchg(&event->enabled, 1);
 	if (old)
 		return -EEXIST;
@@ -169,6 +175,8 @@ int ltt_event_disable(struct ltt_event *event)
 {
 	int old;
 
+	if (event->chan == event->chan->session->metadata)
+		return -EPERM;
 	old = xchg(&event->enabled, 0);
 	if (!old)
 		return -EEXIST;
