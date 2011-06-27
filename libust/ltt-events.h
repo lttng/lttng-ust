@@ -273,6 +273,7 @@ int ltt_event_disable(struct ltt_event *event);
 void ltt_transport_register(struct ltt_transport *transport);
 void ltt_transport_unregister(struct ltt_transport *transport);
 
+void synchronize_trace(void);
 int ltt_debugfs_abi_init(void);
 void ltt_debugfs_abi_exit(void);
 

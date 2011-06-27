@@ -34,8 +34,6 @@ int _ltt_event_metadata_statedump(struct ltt_session *session,
 static
 int _ltt_session_metadata_statedump(struct ltt_session *session);
 
-
-static
 void synchronize_trace(void)
 {
 	synchronize_sched();
@@ -108,12 +106,9 @@ int ltt_session_enable(struct ltt_session *session)
 
 	ACCESS_ONCE(session->active) = 1;
 	ACCESS_ONCE(session->been_active) = 1;
-	synchronize_trace();	/* Wait for in-flight events to complete */
 	ret = _ltt_session_metadata_statedump(session);
-	if (ret) {
+	if (ret)
 		ACCESS_ONCE(session->active) = 0;
-		synchronize_trace();	/* Wait for in-flight events to complete */
-	}
 end:
 	mutex_unlock(&sessions_mutex);
 	return ret;
@@ -129,7 +124,6 @@ int ltt_session_disable(struct ltt_session *session)
 		goto end;
 	}
 	ACCESS_ONCE(session->active) = 0;
-	synchronize_trace();	/* Wait for in-flight events to complete */
 end:
 	mutex_unlock(&sessions_mutex);
 	return ret;
