@@ -8,14 +8,9 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
-#include <linux/module.h>
-#include <linux/fs.h>
-#include <linux/compat.h>
-
-#include "../../wrapper/ringbuffer/backend.h"
-#include "../../wrapper/ringbuffer/frontend.h"
-#include "../../wrapper/ringbuffer/vfs.h"
-#include "../../wrapper/poll.h"
+#include "backend.h"
+#include "frontend.h"
+#include "vfs.h"
 
 static int put_ulong(unsigned long val, unsigned long arg)
 {

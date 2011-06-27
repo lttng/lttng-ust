@@ -14,8 +14,8 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
-#include "../../wrapper/ringbuffer/backend.h"
-#include "../../wrapper/ringbuffer/frontend.h"
+#include "backend.h"
+#include "frontend.h"
 
 /*
  * lib_ring_buffer_get_next_record advances the buffer read position to the next

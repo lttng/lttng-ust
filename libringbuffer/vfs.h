@@ -14,9 +14,6 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
-#include <linux/fs.h>
-#include <linux/poll.h>
-
 /* VFS API */
 
 extern const struct file_operations lib_ring_buffer_file_operations;

@@ -14,18 +14,9 @@
  * the reader in flight recorder mode.
  */
 
-#include <linux/types.h>
-#include <linux/sched.h>
-#include <linux/timer.h>
-#include <linux/wait.h>
-#include <linux/poll.h>
-#include <linux/list.h>
-#include <linux/fs.h>
-#include <linux/mm.h>
-
 /* Internal helpers */
-#include "../../wrapper/ringbuffer/backend_internal.h"
-#include "../../wrapper/ringbuffer/frontend_internal.h"
+#include "backend_internal.h"
+#include "frontend_internal.h"
 
 /* Ring buffer backend API */
 

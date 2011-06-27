@@ -13,10 +13,7 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
-#include "../../wrapper/ringbuffer/iterator.h"
-#include <linux/jiffies.h>
-#include <linux/delay.h>
-#include <linux/module.h>
+#include "iterator.h"
 
 /*
  * Safety factor taking into account internal kernel interrupt latency.

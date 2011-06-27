@@ -38,15 +38,11 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
-#include <linux/delay.h>
-#include <linux/module.h>
-#include <linux/percpu.h>
-
-#include "../../wrapper/ringbuffer/config.h"
-#include "../../wrapper/ringbuffer/backend.h"
-#include "../../wrapper/ringbuffer/frontend.h"
-#include "../../wrapper/ringbuffer/iterator.h"
-#include "../../wrapper/ringbuffer/nohz.h"
+#include "config.h"
+#include "backend.h"
+#include "frontend.h"
+#include "iterator.h"
+#include "nohz.h"
 
 /*
  * Internal structure representing offsets to use at a sub-buffer switch.

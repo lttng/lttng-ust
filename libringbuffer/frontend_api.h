@@ -17,8 +17,7 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
-#include "../../wrapper/ringbuffer/frontend.h"
-#include <linux/errno.h>
+#include "frontend.h"
 
 /**
  * lib_ring_buffer_get_cpu - Precedes ring buffer reserve/commit.

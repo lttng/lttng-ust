@@ -16,28 +16,8 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
-#include <linux/pipe_fs_i.h>
-#include <linux/rcupdate.h>
-#include <linux/cpumask.h>
-#include <linux/module.h>
-#include <linux/bitops.h>
-#include <linux/splice.h>
-#include <linux/string.h>
-#include <linux/timer.h>
-#include <linux/sched.h>
-#include <linux/cache.h>
-#include <linux/time.h>
-#include <linux/slab.h>
-#include <linux/init.h>
-#include <linux/stat.h>
-#include <linux/cpu.h>
-#include <linux/fs.h>
-
-#include <asm/atomic.h>
-#include <asm/local.h>
-
 /* Internal helpers */
-#include "../../wrapper/ringbuffer/frontend_internal.h"
+#include "frontend_internal.h"
 
 /* Buffer creation/removal and setup operations */
 

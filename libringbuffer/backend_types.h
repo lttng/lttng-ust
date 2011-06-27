@@ -11,9 +11,6 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
-#include <linux/cpumask.h>
-#include <linux/types.h>
-
 struct lib_ring_buffer_backend_page {
 	void *virt;			/* page virtual address (cached) */
 	struct page *page;		/* pointer to page structure */

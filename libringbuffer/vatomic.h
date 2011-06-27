@@ -9,9 +9,6 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
-#include <asm/atomic.h>
-#include <asm/local.h>
-
 /*
  * Same data type (long) accessed differently depending on configuration.
  * v field is for non-atomic access (protected by mutual exclusion).

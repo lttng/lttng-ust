@@ -16,10 +16,9 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
-#include <linux/kref.h>
-#include "../../wrapper/ringbuffer/config.h"
-#include "../../wrapper/ringbuffer/backend_types.h"
-#include "../../lib/prio_heap/lttng_prio_heap.h"	/* For per-CPU read-side iterator */
+#include "config.h"
+#include "backend_types.h"
+#include "../lib_prio_heap/lttng_prio_heap.h"	/* For per-CPU read-side iterator */
 
 /*
  * A switch is done during tracing or as a final flush after tracing (so it
