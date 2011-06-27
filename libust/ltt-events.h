@@ -164,6 +164,7 @@ struct lttng_probe_desc {
 struct ltt_event {
 	unsigned int id;
 	struct ltt_channel *chan;
+	int enabled;
 	const struct lttng_event_desc *desc;
 	void *filter;
 	struct lttng_ctx *ctx;
@@ -211,6 +212,7 @@ struct ltt_channel_ops {
 struct ltt_channel {
 	unsigned int id;
 	struct channel *chan;		/* Channel buffers */
+	int enabled;
 	struct lttng_ctx *ctx;
 	/* Event ID management */
 	struct ltt_session *session;
@@ -243,8 +245,8 @@ struct ltt_transport {
 };
 
 struct ltt_session *ltt_session_create(void);
-int ltt_session_start(struct ltt_session *session);
-int ltt_session_stop(struct ltt_session *session);
+int ltt_session_enable(struct ltt_session *session);
+int ltt_session_disable(struct ltt_session *session);
 void ltt_session_destroy(struct ltt_session *session);
 
 struct ltt_channel *ltt_channel_create(struct ltt_session *session,
@@ -262,6 +264,11 @@ struct ltt_channel *ltt_global_channel_create(struct ltt_session *session,
 struct ltt_event *ltt_event_create(struct ltt_channel *chan,
 				   struct lttng_kernel_event *event_param,
 				   void *filter);
+
+int ltt_channel_enable(struct ltt_channel *channel);
+int ltt_channel_disable(struct ltt_channel *channel);
+int ltt_event_enable(struct ltt_event *event);
+int ltt_event_disable(struct ltt_event *event);
 
 void ltt_transport_register(struct ltt_transport *transport);
 void ltt_transport_unregister(struct ltt_transport *transport);

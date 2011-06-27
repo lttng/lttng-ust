@@ -82,7 +82,7 @@ void ltt_session_destroy(struct ltt_session *session)
 	kfree(session);
 }
 
-int ltt_session_start(struct ltt_session *session)
+int ltt_session_enable(struct ltt_session *session)
 {
 	int ret = 0;
 	struct ltt_channel *chan;
@@ -119,7 +119,7 @@ end:
 	return ret;
 }
 
-int ltt_session_stop(struct ltt_session *session)
+int ltt_session_disable(struct ltt_session *session)
 {
 	int ret = 0;
 
@@ -133,6 +133,46 @@ int ltt_session_stop(struct ltt_session *session)
 end:
 	mutex_unlock(&sessions_mutex);
 	return ret;
+}
+
+int ltt_channel_enable(struct ltt_channel *channel)
+{
+	int old;
+
+	old = xchg(&channel->enabled, 1);
+	if (old)
+		return -EEXIST;
+	return 0;
+}
+
+int ltt_channel_disable(struct ltt_channel *channel)
+{
+	int old;
+
+	old = xchg(&channel->enabled, 0);
+	if (!old)
+		return -EEXIST;
+	return 0;
+}
+
+int ltt_event_enable(struct ltt_event *event)
+{
+	int old;
+
+	old = xchg(&event->enabled, 1);
+	if (old)
+		return -EEXIST;
+	return 0;
+}
+
+int ltt_event_disable(struct ltt_event *event)
+{
+	int old;
+
+	old = xchg(&event->enabled, 0);
+	if (!old)
+		return -EEXIST;
+	return 0;
 }
 
 static struct ltt_transport *ltt_transport_find(const char *name)
@@ -180,6 +220,7 @@ struct ltt_channel *ltt_channel_create(struct ltt_session *session,
 			read_timer_interval);
 	if (!chan->chan)
 		goto create_error;
+	chan->enabled = 1;
 	chan->ops = &transport->ops;
 	list_add(&chan->list, &session->chan);
 	mutex_unlock(&sessions_mutex);
@@ -232,6 +273,7 @@ struct ltt_event *ltt_event_create(struct ltt_channel *chan,
 	event->chan = chan;
 	event->filter = filter;
 	event->id = chan->free_event_id++;
+	event->enabled = 1;
 	event->instrumentation = event_param->instrumentation;
 	/* Populate ltt_event structure before tracepoint registration. */
 	smp_wmb();
