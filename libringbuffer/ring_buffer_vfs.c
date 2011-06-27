@@ -240,6 +240,9 @@ long lib_ring_buffer_ioctl(struct file *filp, unsigned int cmd, unsigned long ar
 		return put_ulong(buf->backend.array[sb_bindex]->mmap_offset,
 				 arg);
 	}
+	case RING_BUFFER_FLUSH:
+		lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE);
+		return 0;
 	default:
 		return -ENOIOCTLCMD;
 	}
@@ -350,6 +353,9 @@ long lib_ring_buffer_compat_ioctl(struct file *filp, unsigned int cmd,
 			return -EINVAL;
 		return put_ulong(read_offset, arg);
 	}
+	case RING_BUFFER_FLUSH:
+		lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE);
+		return 0;
 	default:
 		return -ENOIOCTLCMD;
 	}

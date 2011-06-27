@@ -80,5 +80,7 @@ long lib_ring_buffer_compat_ioctl(struct file *filp, unsigned int cmd,
 #define RING_BUFFER_GET_MMAP_LEN		_IOR(0xF6, 0x0A, unsigned long)
 /* returns the offset of the subbuffer belonging to the mmap reader. */
 #define RING_BUFFER_GET_MMAP_READ_OFFSET	_IOR(0xF6, 0x0B, unsigned long)
+/* flush the current sub-buffer */
+#define RING_BUFFER_FLUSH			_IO(0xF6, 0x0C)
 
 #endif /* _LINUX_RING_BUFFER_VFS_H */
