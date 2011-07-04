@@ -20,6 +20,7 @@
 
 #include <sys/types.h>
 #include <ust/config.h>
+#include <urcu/arch.h>
 
 #define likely(x)	__builtin_expect(!!(x), 1)
 #define unlikely(x)	__builtin_expect(!!(x), 0)

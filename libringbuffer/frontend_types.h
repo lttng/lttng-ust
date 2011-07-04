@@ -16,6 +16,8 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
+#include <string.h>
+
 #include <urcu/list.h>
 #include <urcu/uatomic.h>
 #include <urcu/ref.h>
@@ -25,6 +27,7 @@
 #include "usterr_signal_safe.h"
 #include "config.h"
 #include "backend_types.h"
+#include "shm.h"
 
 /*
  * A switch is done during tracing or as a final flush after tracing (so it
@@ -49,24 +52,25 @@ struct channel {
 	//wait_queue_head_t read_wait;		/* reader wait queue */
 	int finalized;				/* Has channel been finalized */
 	struct urcu_ref ref;			/* Reference count */
-};
+	DECLARE_SHMP(struct shm_header, shm_header);
+} ____cacheline_aligned;
 
 /* Per-subbuffer commit counters used on the hot path */
 struct commit_counters_hot {
 	union v_atomic cc;		/* Commit counter */
 	union v_atomic seq;		/* Consecutive commits */
-};
+} ____cacheline_aligned;
 
 /* Per-subbuffer commit counters used only on cold paths */
 struct commit_counters_cold {
 	union v_atomic cc_sb;		/* Incremented _once_ at sb switch */
-};
+} ____cacheline_aligned;
 
 /* ring buffer state */
 struct lib_ring_buffer {
 	/* First 32 bytes cache-hot cacheline */
 	union v_atomic offset;		/* Current offset in the buffer */
-	struct commit_counters_hot *commit_hot;
+	DECLARE_SHMP(struct commit_counters_hot, commit_hot);
 					/* Commit count per sub-buffer */
 	long consumed;			/*
 					 * Current offset in the buffer
@@ -80,7 +84,7 @@ struct lib_ring_buffer {
 
 	struct lib_ring_buffer_backend backend;	/* Associated backend */
 
-	struct commit_counters_cold *commit_cold;
+	DECLARE_SHMP(struct commit_counters_cold, commit_cold);
 					/* Commit count per sub-buffer */
 	long active_readers;		/*
 					 * Active readers count
@@ -102,7 +106,7 @@ struct lib_ring_buffer {
 	int get_subbuf:1;		/* Sub-buffer being held by reader */
 	int switch_timer_enabled:1;	/* Protected by ring_buffer_nohz_lock */
 	int read_timer_enabled:1;	/* Protected by ring_buffer_nohz_lock */
-};
+} ____cacheline_aligned;
 
 static inline
 void *channel_get_private(struct channel *chan)

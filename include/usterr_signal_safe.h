@@ -62,7 +62,7 @@ static inline void __attribute__ ((format (printf, 1, 2)))
 	ust_safe_snprintf(____buf, sizeof(____buf), fmt, ## args); \
 \
 	/* Add end of string in case of buffer overflow. */ \
-	____buf[sizeof(____buf)-1] = 0; \
+	____buf[sizeof(____buf) - 1] = 0; \
 \
 	patient_write(STDERR_FILENO, ____buf, strlen(____buf)); \
 	/* Can't print errors because we are in the error printing code path. */ \

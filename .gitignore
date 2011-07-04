@@ -15,7 +15,8 @@ Makefile.in
 configure
 aclocal.m4
 autom4te.cache/
-config.h
+/config.h
+/include/ust/config.h
 /config.h.in
 config/
 config.log

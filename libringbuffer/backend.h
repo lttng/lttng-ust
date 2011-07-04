@@ -32,10 +32,6 @@ extern size_t lib_ring_buffer_read(struct lib_ring_buffer_backend *bufb,
 extern int lib_ring_buffer_read_cstr(struct lib_ring_buffer_backend *bufb,
 				     size_t offset, void *dest, size_t len);
 
-extern struct page **
-lib_ring_buffer_read_get_page(struct lib_ring_buffer_backend *bufb, size_t offset,
-			      void ***virt);
-
 /*
  * Return the address where a given offset is located.
  * Should be used to get the current subbuffer header pointer. Given we know
@@ -68,29 +64,27 @@ void lib_ring_buffer_write(const struct lib_ring_buffer_config *config,
 {
 	struct lib_ring_buffer_backend *bufb = &ctx->buf->backend;
 	struct channel_backend *chanb = &ctx->chan->backend;
-	size_t sbidx, index;
+	size_t sbidx;
 	size_t offset = ctx->buf_offset;
-	ssize_t pagecpy;
 	struct lib_ring_buffer_backend_pages *rpages;
 	unsigned long sb_bindex, id;
 
 	offset &= chanb->buf_size - 1;
 	sbidx = offset >> chanb->subbuf_size_order;
-	index = (offset & (chanb->subbuf_size - 1)) >> get_count_order(PAGE_SIZE);
-	pagecpy = min_t(size_t, len, (-offset) & ~PAGE_MASK);
-	id = bufb->buf_wsb[sbidx].id;
+	id = shmp(bufb->buf_wsb)[sbidx].id;
 	sb_bindex = subbuffer_id_get_index(config, id);
-	rpages = bufb->array[sb_bindex];
+	rpages = shmp(bufb->array)[sb_bindex];
 	CHAN_WARN_ON(ctx->chan,
 		     config->mode == RING_BUFFER_OVERWRITE
 		     && subbuffer_id_is_noref(config, id));
-	if (likely(pagecpy == len))
-		lib_ring_buffer_do_copy(config,
-					rpages->p[index].virt
-					    + (offset & ~PAGE_MASK),
-					src, len);
-	else
-		_lib_ring_buffer_write(bufb, offset, src, len, 0);
+	/*
+	 * Underlying layer should never ask for writes across
+	 * subbuffers.
+	 */
+	CHAN_WARN_ON(chanb, offset >= chanb->buf_size);
+	lib_ring_buffer_do_copy(config,
+				shmp(rpages->p) + (offset & ~(chanb->subbuf_size - 1)),
+				src, len);
 	ctx->buf_offset += len;
 }
 
@@ -109,16 +103,16 @@ unsigned long lib_ring_buffer_get_records_unread(
 	unsigned long records_unread = 0, sb_bindex, id;
 	unsigned int i;
 
-	for (i = 0; i < bufb->chan->backend.num_subbuf; i++) {
-		id = bufb->buf_wsb[i].id;
+	for (i = 0; i < shmp(bufb->chan)->backend.num_subbuf; i++) {
+		id = shmp(bufb->buf_wsb)[i].id;
 		sb_bindex = subbuffer_id_get_index(config, id);
-		pages = bufb->array[sb_bindex];
+		pages = shmp(bufb->array)[sb_bindex];
 		records_unread += v_read(config, &pages->records_unread);
 	}
 	if (config->mode == RING_BUFFER_OVERWRITE) {
 		id = bufb->buf_rsb.id;
 		sb_bindex = subbuffer_id_get_index(config, id);
-		pages = bufb->array[sb_bindex];
+		pages = shmp(bufb->array)[sb_bindex];
 		records_unread += v_read(config, &pages->records_unread);
 	}
 	return records_unread;

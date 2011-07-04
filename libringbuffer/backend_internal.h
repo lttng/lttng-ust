@@ -17,20 +17,22 @@
 #include "config.h"
 #include "backend_types.h"
 #include "frontend_types.h"
+#include "shm.h"
 
 /* Ring buffer backend API presented to the frontend */
 
 /* Ring buffer and channel backend create/free */
 
 int lib_ring_buffer_backend_create(struct lib_ring_buffer_backend *bufb,
-				   struct channel_backend *chan, int cpu);
+				   struct channel_backend *chan, int cpu,
+				   struct shm_header *shm_header);
 void channel_backend_unregister_notifiers(struct channel_backend *chanb);
 void lib_ring_buffer_backend_free(struct lib_ring_buffer_backend *bufb);
 int channel_backend_init(struct channel_backend *chanb,
 			 const char *name,
 			 const struct lib_ring_buffer_config *config,
 			 void *priv, size_t subbuf_size,
-			 size_t num_subbuf);
+			 size_t num_subbuf, struct shm_header *shm_header);
 void channel_backend_free(struct channel_backend *chanb);
 
 void lib_ring_buffer_backend_reset(struct lib_ring_buffer_backend *bufb);
@@ -185,8 +187,8 @@ void subbuffer_count_record(const struct lib_ring_buffer_config *config,
 {
 	unsigned long sb_bindex;
 
-	sb_bindex = subbuffer_id_get_index(config, bufb->buf_wsb[idx].id);
-	v_inc(config, &bufb->array[sb_bindex]->records_commit);
+	sb_bindex = subbuffer_id_get_index(config, shmp(bufb->buf_wsb)[idx].id);
+	v_inc(config, &shmp(bufb->array)[sb_bindex]->records_commit);
 }
 
 /*
@@ -201,9 +203,9 @@ void subbuffer_consume_record(const struct lib_ring_buffer_config *config,
 
 	sb_bindex = subbuffer_id_get_index(config, bufb->buf_rsb.id);
 	CHAN_WARN_ON(bufb->chan,
-		     !v_read(config, &bufb->array[sb_bindex]->records_unread));
+		     !v_read(config, &shmp(bufb->array)[sb_bindex]->records_unread));
 	/* Non-atomic decrement protected by exclusive subbuffer access */
-	_v_dec(config, &bufb->array[sb_bindex]->records_unread);
+	_v_dec(config, &shmp(bufb->array)[sb_bindex]->records_unread);
 	v_inc(config, &bufb->records_read);
 }
 
@@ -215,8 +217,8 @@ unsigned long subbuffer_get_records_count(
 {
 	unsigned long sb_bindex;
 
-	sb_bindex = subbuffer_id_get_index(config, bufb->buf_wsb[idx].id);
-	return v_read(config, &bufb->array[sb_bindex]->records_commit);
+	sb_bindex = subbuffer_id_get_index(config, shmp(bufb->buf_wsb)[idx].id);
+	return v_read(config, &shmp(bufb->array)[sb_bindex]->records_commit);
 }
 
 /*
@@ -234,8 +236,8 @@ unsigned long subbuffer_count_records_overrun(
 	struct lib_ring_buffer_backend_pages *pages;
 	unsigned long overruns, sb_bindex;
 
-	sb_bindex = subbuffer_id_get_index(config, bufb->buf_wsb[idx].id);
-	pages = bufb->array[sb_bindex];
+	sb_bindex = subbuffer_id_get_index(config, shmp(bufb->buf_wsb)[idx].id);
+	pages = shmp(bufb->array)[sb_bindex];
 	overruns = v_read(config, &pages->records_unread);
 	v_set(config, &pages->records_unread,
 	      v_read(config, &pages->records_commit));
@@ -253,8 +255,8 @@ void subbuffer_set_data_size(const struct lib_ring_buffer_config *config,
 	struct lib_ring_buffer_backend_pages *pages;
 	unsigned long sb_bindex;
 
-	sb_bindex = subbuffer_id_get_index(config, bufb->buf_wsb[idx].id);
-	pages = bufb->array[sb_bindex];
+	sb_bindex = subbuffer_id_get_index(config, shmp(bufb->buf_wsb)[idx].id);
+	pages = shmp(bufb->array)[sb_bindex];
 	pages->data_size = data_size;
 }
 
@@ -267,7 +269,7 @@ unsigned long subbuffer_get_read_data_size(
 	unsigned long sb_bindex;
 
 	sb_bindex = subbuffer_id_get_index(config, bufb->buf_rsb.id);
-	pages = bufb->array[sb_bindex];
+	pages = shmp(bufb->array)[sb_bindex];
 	return pages->data_size;
 }
 
@@ -280,8 +282,8 @@ unsigned long subbuffer_get_data_size(
 	struct lib_ring_buffer_backend_pages *pages;
 	unsigned long sb_bindex;
 
-	sb_bindex = subbuffer_id_get_index(config, bufb->buf_wsb[idx].id);
-	pages = bufb->array[sb_bindex];
+	sb_bindex = subbuffer_id_get_index(config, shmp(bufb->buf_wsb)[idx].id);
+	pages = shmp(bufb->array)[sb_bindex];
 	return pages->data_size;
 }
 
@@ -303,7 +305,7 @@ void lib_ring_buffer_clear_noref(const struct lib_ring_buffer_config *config,
 	 * Performing a volatile access to read the sb_pages, because we want to
 	 * read a coherent version of the pointer and the associated noref flag.
 	 */
-	id = CMM_ACCESS_ONCE(bufb->buf_wsb[idx].id);
+	id = CMM_ACCESS_ONCE(shmp(bufb->buf_wsb)[idx].id);
 	for (;;) {
 		/* This check is called on the fast path for each record. */
 		if (likely(!subbuffer_id_is_noref(config, id))) {
@@ -317,7 +319,7 @@ void lib_ring_buffer_clear_noref(const struct lib_ring_buffer_config *config,
 		}
 		new_id = id;
 		subbuffer_id_clear_noref(config, &new_id);
-		new_id = uatomic_cmpxchg(&bufb->buf_wsb[idx].id, id, new_id);
+		new_id = uatomic_cmpxchg(&shmp(bufb->buf_wsb)[idx].id, id, new_id);
 		if (likely(new_id == id))
 			break;
 		id = new_id;
@@ -348,13 +350,13 @@ void lib_ring_buffer_set_noref_offset(const struct lib_ring_buffer_config *confi
 	 * readers of the noref flag.
 	 */
 	CHAN_WARN_ON(bufb->chan,
-		     subbuffer_id_is_noref(config, bufb->buf_wsb[idx].id));
+		     subbuffer_id_is_noref(config, shmp(bufb->buf_wsb)[idx].id));
 	/*
 	 * Memory barrier that ensures counter stores are ordered before set
 	 * noref and offset.
 	 */
 	cmm_smp_mb();
-	subbuffer_id_set_noref_offset(config, &bufb->buf_wsb[idx].id, offset);
+	subbuffer_id_set_noref_offset(config, &shmp(bufb->buf_wsb)[idx].id, offset);
 }
 
 /**
@@ -376,7 +378,7 @@ int update_read_sb_index(const struct lib_ring_buffer_config *config,
 		 * old_wpage, because the value read will be confirmed by the
 		 * following cmpxchg().
 		 */
-		old_id = bufb->buf_wsb[consumed_idx].id;
+		old_id = shmp(bufb->buf_wsb)[consumed_idx].id;
 		if (unlikely(!subbuffer_id_is_noref(config, old_id)))
 			return -EAGAIN;
 		/*
@@ -390,14 +392,14 @@ int update_read_sb_index(const struct lib_ring_buffer_config *config,
 			     !subbuffer_id_is_noref(config, bufb->buf_rsb.id));
 		subbuffer_id_set_noref_offset(config, &bufb->buf_rsb.id,
 					      consumed_count);
-		new_id = uatomic_cmpxchg(&bufb->buf_wsb[consumed_idx].id, old_id,
+		new_id = uatomic_cmpxchg(&shmp(bufb->buf_wsb)[consumed_idx].id, old_id,
 				 bufb->buf_rsb.id);
 		if (unlikely(old_id != new_id))
 			return -EAGAIN;
 		bufb->buf_rsb.id = new_id;
 	} else {
 		/* No page exchange, use the writer page directly */
-		bufb->buf_rsb.id = bufb->buf_wsb[consumed_idx].id;
+		bufb->buf_rsb.id = shmp(bufb->buf_wsb)[consumed_idx].id;
 	}
 	return 0;
 }

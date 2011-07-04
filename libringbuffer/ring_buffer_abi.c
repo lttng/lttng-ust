@@ -374,8 +374,3 @@ const struct file_operations lib_ring_buffer_file_operations = {
 	.compat_ioctl = lib_ring_buffer_compat_ioctl,
 #endif
 };
-EXPORT_SYMBOL_GPL(lib_ring_buffer_file_operations);
-
-MODULE_LICENSE("GPL and additional rights");
-MODULE_AUTHOR("Mathieu Desnoyers");
-MODULE_DESCRIPTION("Ring Buffer Library VFS");

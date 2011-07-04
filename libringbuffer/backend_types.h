@@ -11,17 +11,14 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
-struct lib_ring_buffer_backend_page {
-	void *virt;			/* page virtual address (cached) */
-	struct page *page;		/* pointer to page structure */
-};
+#include "shm.h"
 
 struct lib_ring_buffer_backend_pages {
 	unsigned long mmap_offset;	/* offset of the subbuffer in mmap */
 	union v_atomic records_commit;	/* current records committed count */
 	union v_atomic records_unread;	/* records to read */
 	unsigned long data_size;	/* Amount of data to read from subbuf */
-	struct lib_ring_buffer_backend_page p[];
+	DECLARE_SHMP(char, p);		/* Backing memory map */
 };
 
 struct lib_ring_buffer_backend_subbuffer {
@@ -37,17 +34,17 @@ struct lib_ring_buffer;
 
 struct lib_ring_buffer_backend {
 	/* Array of ring_buffer_backend_subbuffer for writer */
-	struct lib_ring_buffer_backend_subbuffer *buf_wsb;
+	DECLARE_SHMP(struct lib_ring_buffer_backend_subbuffer, buf_wsb);
 	/* ring_buffer_backend_subbuffer for reader */
 	struct lib_ring_buffer_backend_subbuffer buf_rsb;
 	/*
 	 * Pointer array of backend pages, for whole buffer.
 	 * Indexed by ring_buffer_backend_subbuffer identifier (id) index.
 	 */
-	struct lib_ring_buffer_backend_pages **array;
-	unsigned int num_pages_per_subbuf;
+	DECLARE_SHMP(struct lib_ring_buffer_backend_pages *, array);
+	DECLARE_SHMP(char, memory_map);	/* memory mapping */
 
-	struct channel *chan;		/* Associated channel */
+	DECLARE_SHMP(struct channel, chan);	/* Associated channel */
 	int cpu;			/* This buffer's cpu. -1 if global. */
 	union v_atomic records_read;	/* Number of records read */
 	unsigned int allocated:1;	/* Bool: is buffer allocated ? */
@@ -63,8 +60,7 @@ struct channel_backend {
 					 */
 	unsigned int buf_size_order;	/* Order of buffer size */
 	int extra_reader_sb:1;		/* Bool: has extra reader subbuffer */
-	struct lib_ring_buffer *buf;	/* Channel per-cpu buffers */
-
+	DECLARE_SHMP(struct lib_ring_buffer, buf); /* Channel per-cpu buffers */
 	unsigned long num_subbuf;	/* Number of sub-buffers for writer */
 	u64 start_tsc;			/* Channel creation TSC value */
 	void *priv;			/* Client-specific information */

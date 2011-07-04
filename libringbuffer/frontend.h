@@ -19,6 +19,7 @@
 #include <urcu/compiler.h>
 #include <urcu/uatomic.h>
 
+#include "smp.h"
 /* Internal helpers */
 #include "frontend_internal.h"
 
@@ -41,7 +42,8 @@ struct channel *channel_create(const struct lib_ring_buffer_config *config,
 			       void *buf_addr,
 			       size_t subbuf_size, size_t num_subbuf,
 			       unsigned int switch_timer_interval,
-			       unsigned int read_timer_interval);
+			       unsigned int read_timer_interval,
+			       int *shmid);
 
 /*
  * channel_destroy returns the private data pointer. It finalizes all channel's
@@ -61,9 +63,7 @@ void *channel_destroy(struct channel *chan);
  * only performed at channel destruction.
  */
 #define for_each_channel_cpu(cpu, chan)					\
-	for ((cpu) = -1;						\
-		({ (cpu) = cpumask_next(cpu, (chan)->backend.cpumask);	\
-		   cmm_smp_read_barrier_depends(); (cpu) < nr_cpu_ids; });)
+	for_each_possible_cpu(cpu)
 
 extern struct lib_ring_buffer *channel_get_ring_buffer(
 				const struct lib_ring_buffer_config *config,
@@ -104,7 +104,7 @@ static inline void lib_ring_buffer_put_next_subbuf(struct lib_ring_buffer *buf)
 {
 	lib_ring_buffer_put_subbuf(buf);
 	lib_ring_buffer_move_consumer(buf, subbuf_align(buf->cons_snapshot,
-						    buf->backend.chan));
+						    shmp(buf->backend.chan)));
 }
 
 extern void channel_reset(struct channel *chan);

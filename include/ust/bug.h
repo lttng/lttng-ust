@@ -9,6 +9,9 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
+#define BUILD_BUG_ON(condition)					\
+	((void) sizeof(char[-!!(condition)]))
+
 /**
  * BUILD_RUNTIME_BUG_ON - check condition at build (if constant) or runtime
  * @condition: the condition which should be false.

@@ -13,6 +13,7 @@
 #include "config.h"
 #include "backend.h"
 #include "frontend.h"
+#include "smp.h"
 
 /**
  * lib_ring_buffer_backend_allocate - allocate a channel buffer
@@ -26,67 +27,49 @@ static
 int lib_ring_buffer_backend_allocate(const struct lib_ring_buffer_config *config,
 				     struct lib_ring_buffer_backend *bufb,
 				     size_t size, size_t num_subbuf,
-				     int extra_reader_sb)
+				     int extra_reader_sb,
+				     struct shm_header *shm_header)
 {
-	struct channel_backend *chanb = &bufb->chan->backend;
-	unsigned long j, num_pages, num_pages_per_subbuf, page_idx = 0;
+	struct channel_backend *chanb = &shmp(bufb->chan)->backend;
 	unsigned long subbuf_size, mmap_offset = 0;
 	unsigned long num_subbuf_alloc;
-	struct page **pages;
-	void **virt;
 	unsigned long i;
 
-	num_pages = size >> get_count_order(PAGE_SIZE);
-	num_pages_per_subbuf = num_pages >> get_count_order(num_subbuf);
 	subbuf_size = chanb->subbuf_size;
 	num_subbuf_alloc = num_subbuf;
 
-	if (extra_reader_sb) {
-		num_pages += num_pages_per_subbuf; /* Add pages for reader */
+	if (extra_reader_sb)
 		num_subbuf_alloc++;
-	}
 
-	pages = malloc_align(sizeof(*pages) * num_pages);
-	if (unlikely(!pages))
-		goto pages_error;
-
-	virt = malloc_align(sizeof(*virt) * num_pages);
-	if (unlikely(!virt))
-		goto virt_error;
-
-	bufb->array = malloc_align(sizeof(*bufb->array) * num_subbuf_alloc);
-	if (unlikely(!bufb->array))
+	set_shmp(bufb->array, zalloc_shm(shm_header,
+			sizeof(*bufb->array) * num_subbuf_alloc));
+	if (unlikely(!shmp(bufb->array)))
 		goto array_error;
 
-	for (i = 0; i < num_pages; i++) {
-		pages[i] = alloc_pages_node(cpu_to_node(max(bufb->cpu, 0)),
-					    GFP_KERNEL | __GFP_ZERO, 0);
-		if (unlikely(!pages[i]))
-			goto depopulate;
-		virt[i] = page_address(pages[i]);
-	}
-	bufb->num_pages_per_subbuf = num_pages_per_subbuf;
+	set_shmp(bufb->memory_map, zalloc_shm(shm_header,
+			subbuf_size * num_subbuf_alloc));
+	if (unlikely(!shmp(bufb->memory_map)))
+		goto memory_map_error;
 
 	/* Allocate backend pages array elements */
 	for (i = 0; i < num_subbuf_alloc; i++) {
-		bufb->array[i] =
-			zmalloc_align(
+		set_shmp(bufb->array[i],
+			zalloc_shm(shm_header,
 				sizeof(struct lib_ring_buffer_backend_pages) +
-				sizeof(struct lib_ring_buffer_backend_page)
-				* num_pages_per_subbuf);
-		if (!bufb->array[i])
+				subbuf_size));
+		if (!shmp(bufb->array[i]))
 			goto free_array;
 	}
 
 	/* Allocate write-side subbuffer table */
-	bufb->buf_wsb = zmalloc_align(
+	bufb->buf_wsb = zalloc_shm(shm_header,
 				sizeof(struct lib_ring_buffer_backend_subbuffer)
 				* num_subbuf);
-	if (unlikely(!bufb->buf_wsb))
+	if (unlikely(!shmp(bufb->buf_wsb)))
 		goto free_array;
 
 	for (i = 0; i < num_subbuf; i++)
-		bufb->buf_wsb[i].id = subbuffer_id(config, 0, 1, i);
+		shmp(bufb->buf_wsb)[i].id = subbuffer_id(config, 0, 1, i);
 
 	/* Assign read-side subbuffer table */
 	if (extra_reader_sb)
@@ -97,73 +80,50 @@ int lib_ring_buffer_backend_allocate(const struct lib_ring_buffer_config *config
 
 	/* Assign pages to page index */
 	for (i = 0; i < num_subbuf_alloc; i++) {
-		for (j = 0; j < num_pages_per_subbuf; j++) {
-			CHAN_WARN_ON(chanb, page_idx > num_pages);
-			bufb->array[i]->p[j].virt = virt[page_idx];
-			bufb->array[i]->p[j].page = pages[page_idx];
-			page_idx++;
-		}
+		set_shmp(shmp(bufb->array)[i]->p,
+			 &shmp(bufb->memory_map)[i * subbuf_size]);
 		if (config->output == RING_BUFFER_MMAP) {
-			bufb->array[i]->mmap_offset = mmap_offset;
+			shmp(bufb->array)[i]->mmap_offset = mmap_offset;
 			mmap_offset += subbuf_size;
 		}
 	}
 
-	kfree(virt);
-	kfree(pages);
 	return 0;
 
 free_array:
-	for (i = 0; (i < num_subbuf_alloc && bufb->array[i]); i++)
-		kfree(bufb->array[i]);
-depopulate:
-	/* Free all allocated pages */
-	for (i = 0; (i < num_pages && pages[i]); i++)
-		__free_page(pages[i]);
-	kfree(bufb->array);
+	/* bufb->array[i] will be freed by shm teardown */
+memory_map_error:
+	/* bufb->array will be freed by shm teardown */
 array_error:
-	kfree(virt);
-virt_error:
-	kfree(pages);
-pages_error:
 	return -ENOMEM;
 }
 
 int lib_ring_buffer_backend_create(struct lib_ring_buffer_backend *bufb,
-				   struct channel_backend *chanb, int cpu)
+				   struct channel_backend *chanb, int cpu,
+				   struct shm_header *shm_header)
 {
 	const struct lib_ring_buffer_config *config = chanb->config;
 
-	bufb->chan = caa_container_of(chanb, struct channel, backend);
+	set_shmp(&bufb->chan, caa_container_of(chanb, struct channel, backend));
 	bufb->cpu = cpu;
 
 	return lib_ring_buffer_backend_allocate(config, bufb, chanb->buf_size,
 						chanb->num_subbuf,
-						chanb->extra_reader_sb);
+						chanb->extra_reader_sb,
+						shm_header);
 }
 
 void lib_ring_buffer_backend_free(struct lib_ring_buffer_backend *bufb)
 {
-	struct channel_backend *chanb = &bufb->chan->backend;
-	unsigned long i, j, num_subbuf_alloc;
-
-	num_subbuf_alloc = chanb->num_subbuf;
-	if (chanb->extra_reader_sb)
-		num_subbuf_alloc++;
-
-	kfree(bufb->buf_wsb);
-	for (i = 0; i < num_subbuf_alloc; i++) {
-		for (j = 0; j < bufb->num_pages_per_subbuf; j++)
-			__free_page(bufb->array[i]->p[j].page);
-		kfree(bufb->array[i]);
-	}
-	kfree(bufb->array);
+	/* bufb->buf_wsb will be freed by shm teardown */
+	/* bufb->array[i] will be freed by shm teardown */
+	/* bufb->array will be freed by shm teardown */
 	bufb->allocated = 0;
 }
 
 void lib_ring_buffer_backend_reset(struct lib_ring_buffer_backend *bufb)
 {
-	struct channel_backend *chanb = &bufb->chan->backend;
+	struct channel_backend *chanb = &shmp(bufb->chan)->backend;
 	const struct lib_ring_buffer_config *config = chanb->config;
 	unsigned long num_subbuf_alloc;
 	unsigned int i;
@@ -173,7 +133,7 @@ void lib_ring_buffer_backend_reset(struct lib_ring_buffer_backend *bufb)
 		num_subbuf_alloc++;
 
 	for (i = 0; i < chanb->num_subbuf; i++)
-		bufb->buf_wsb[i].id = subbuffer_id(config, 0, 1, i);
+		shmp(bufb->buf_wsb)[i].id = subbuffer_id(config, 0, 1, i);
 	if (chanb->extra_reader_sb)
 		bufb->buf_rsb.id = subbuffer_id(config, 0, 1,
 						num_subbuf_alloc - 1);
@@ -182,9 +142,9 @@ void lib_ring_buffer_backend_reset(struct lib_ring_buffer_backend *bufb)
 
 	for (i = 0; i < num_subbuf_alloc; i++) {
 		/* Don't reset mmap_offset */
-		v_set(config, &bufb->array[i]->records_commit, 0);
-		v_set(config, &bufb->array[i]->records_unread, 0);
-		bufb->array[i]->data_size = 0;
+		v_set(config, &shmp(bufb->array)[i]->records_commit, 0);
+		v_set(config, &shmp(bufb->array)[i]->records_unread, 0);
+		shmp(bufb->array)[i]->data_size = 0;
 		/* Don't reset backend page and virt addresses */
 	}
 	/* Don't reset num_pages_per_subbuf, cpu, allocated */
@@ -208,52 +168,6 @@ void channel_backend_reset(struct channel_backend *chanb)
 	chanb->start_tsc = config->cb.ring_buffer_clock_read(chan);
 }
 
-#ifdef CONFIG_HOTPLUG_CPU
-/**
- *	lib_ring_buffer_cpu_hp_callback - CPU hotplug callback
- *	@nb: notifier block
- *	@action: hotplug action to take
- *	@hcpu: CPU number
- *
- *	Returns the success/failure of the operation. (%NOTIFY_OK, %NOTIFY_BAD)
- */
-static
-int __cpuinit lib_ring_buffer_cpu_hp_callback(struct notifier_block *nb,
-					      unsigned long action,
-					      void *hcpu)
-{
-	unsigned int cpu = (unsigned long)hcpu;
-	struct channel_backend *chanb = caa_container_of(nb, struct channel_backend,
-						     cpu_hp_notifier);
-	const struct lib_ring_buffer_config *config = chanb->config;
-	struct lib_ring_buffer *buf;
-	int ret;
-
-	CHAN_WARN_ON(chanb, config->alloc == RING_BUFFER_ALLOC_GLOBAL);
-
-	switch (action) {
-	case CPU_UP_PREPARE:
-	case CPU_UP_PREPARE_FROZEN:
-		buf = per_cpu_ptr(chanb->buf, cpu);
-		ret = lib_ring_buffer_create(buf, chanb, cpu);
-		if (ret) {
-			printk(KERN_ERR
-			  "ring_buffer_cpu_hp_callback: cpu %d "
-			  "buffer creation failed\n", cpu);
-			return NOTIFY_BAD;
-		}
-		break;
-	case CPU_DEAD:
-	case CPU_DEAD_FROZEN:
-		/* No need to do a buffer switch here, because it will happen
-		 * when tracing is stopped, or will be done by switch timer CPU
-		 * DEAD callback. */
-		break;
-	}
-	return NOTIFY_OK;
-}
-#endif
-
 /**
  * channel_backend_init - initialize a channel backend
  * @chanb: channel backend
@@ -263,6 +177,7 @@ int __cpuinit lib_ring_buffer_cpu_hp_callback(struct notifier_block *nb,
  * @parent: dentry of parent directory, %NULL for root directory
  * @subbuf_size: size of sub-buffers (> PAGE_SIZE, power of 2)
  * @num_subbuf: number of sub-buffers (power of 2)
+ * @shm_header: shared memory header
  *
  * Returns channel pointer if successful, %NULL otherwise.
  *
@@ -275,7 +190,8 @@ int __cpuinit lib_ring_buffer_cpu_hp_callback(struct notifier_block *nb,
 int channel_backend_init(struct channel_backend *chanb,
 			 const char *name,
 			 const struct lib_ring_buffer_config *config,
-			 void *priv, size_t subbuf_size, size_t num_subbuf)
+			 void *priv, size_t subbuf_size, size_t num_subbuf,
+			 struct shm_header *shm_header)
 {
 	struct channel *chan = caa_container_of(chanb, struct channel, backend);
 	unsigned int i;
@@ -310,58 +226,42 @@ int channel_backend_init(struct channel_backend *chanb,
 	chanb->extra_reader_sb =
 			(config->mode == RING_BUFFER_OVERWRITE) ? 1 : 0;
 	chanb->num_subbuf = num_subbuf;
-	strlcpy(chanb->name, name, NAME_MAX);
+	strncpy(chanb->name, name, NAME_MAX);
+	chanb->name[NAME_MAX - 1] = '\0';
 	chanb->config = config;
 
 	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU) {
-		if (!zalloc_cpumask_var(&chanb->cpumask, GFP_KERNEL))
-			return -ENOMEM;
-	}
+		struct lib_ring_buffer *buf;
+		size_t alloc_size;
 
-	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU) {
 		/* Allocating the buffer per-cpu structures */
-		chanb->buf = alloc_percpu(struct lib_ring_buffer);
-		if (!chanb->buf)
-			goto free_cpumask;
+		alloc_size = sizeof(struct lib_ring_buffer);
+		buf = zalloc_shm(shm_header, alloc_size * num_possible_cpus());
+		if (!buf)
+			goto end;
+		set_shmp(chanb->buf, buf);
 
 		/*
-		 * In case of non-hotplug cpu, if the ring-buffer is allocated
-		 * in early initcall, it will not be notified of secondary cpus.
-		 * In that off case, we need to allocate for all possible cpus.
+		 * We need to allocate for all possible cpus.
 		 */
-#ifdef CONFIG_HOTPLUG_CPU
-		/*
-		 * buf->backend.allocated test takes care of concurrent CPU
-		 * hotplug.
-		 * Priority higher than frontend, so we create the ring buffer
-		 * before we start the timer.
-		 */
-		chanb->cpu_hp_notifier.notifier_call =
-				lib_ring_buffer_cpu_hp_callback;
-		chanb->cpu_hp_notifier.priority = 5;
-		register_hotcpu_notifier(&chanb->cpu_hp_notifier);
-
-		get_online_cpus();
-		for_each_online_cpu(i) {
-			ret = lib_ring_buffer_create(per_cpu_ptr(chanb->buf, i),
-						 chanb, i);
-			if (ret)
-				goto free_bufs;	/* cpu hotplug locked */
-		}
-		put_online_cpus();
-#else
 		for_each_possible_cpu(i) {
-			ret = lib_ring_buffer_create(per_cpu_ptr(chanb->buf, i),
-						 chanb, i);
+			ret = lib_ring_buffer_create(&shmp(chanb->buf)[i],
+						     chanb, i, shm_header);
 			if (ret)
 				goto free_bufs;	/* cpu hotplug locked */
 		}
-#endif
 	} else {
-		chanb->buf = kzalloc(sizeof(struct lib_ring_buffer), GFP_KERNEL);
-		if (!chanb->buf)
-			goto free_cpumask;
-		ret = lib_ring_buffer_create(chanb->buf, chanb, -1);
+		struct lib_ring_buffer *buf;
+		size_t alloc_size;
+
+		alloc_size = sizeof(struct lib_ring_buffer);
+		chanb->buf = zmalloc(sizeof(struct lib_ring_buffer));
+		buf = zalloc_shm(shm_header, alloc_size);
+		if (!buf)
+			goto end;
+		set_shmp(chanb->buf, buf);
+		ret = lib_ring_buffer_create(shmp(chanb->buf), chanb, -1,
+					     shm_header);
 		if (ret)
 			goto free_bufs;
 	}
@@ -372,36 +272,16 @@ int channel_backend_init(struct channel_backend *chanb,
 free_bufs:
 	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU) {
 		for_each_possible_cpu(i) {
-			struct lib_ring_buffer *buf = per_cpu_ptr(chanb->buf, i);
+			struct lib_ring_buffer *buf = &shmp(chanb->buf)[i];
 
 			if (!buf->backend.allocated)
 				continue;
 			lib_ring_buffer_free(buf);
 		}
-#ifdef CONFIG_HOTPLUG_CPU
-		put_online_cpus();
-#endif
-		free_percpu(chanb->buf);
-	} else
-		kfree(chanb->buf);
-free_cpumask:
-	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU)
-		free_cpumask_var(chanb->cpumask);
+	}
+	/* We only free the buffer data upon shm teardown */
+end:
 	return -ENOMEM;
-}
-
-/**
- * channel_backend_unregister_notifiers - unregister notifiers
- * @chan: the channel
- *
- * Holds CPU hotplug.
- */
-void channel_backend_unregister_notifiers(struct channel_backend *chanb)
-{
-	const struct lib_ring_buffer_config *config = chanb->config;
-
-	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU)
-		unregister_hotcpu_notifier(&chanb->cpu_hp_notifier);
 }
 
 /**
@@ -417,66 +297,20 @@ void channel_backend_free(struct channel_backend *chanb)
 
 	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU) {
 		for_each_possible_cpu(i) {
-			struct lib_ring_buffer *buf = per_cpu_ptr(chanb->buf, i);
+			struct lib_ring_buffer *buf = &shmp(chanb->buf)[i];
 
 			if (!buf->backend.allocated)
 				continue;
 			lib_ring_buffer_free(buf);
 		}
-		free_cpumask_var(chanb->cpumask);
-		free_percpu(chanb->buf);
 	} else {
-		struct lib_ring_buffer *buf = chanb->buf;
+		struct lib_ring_buffer *buf = shmp(chanb->buf);
 
 		CHAN_WARN_ON(chanb, !buf->backend.allocated);
 		lib_ring_buffer_free(buf);
-		kfree(buf);
 	}
+	/* We only free the buffer data upon shm teardown */
 }
-
-/**
- * lib_ring_buffer_write - write data to a ring_buffer buffer.
- * @bufb : buffer backend
- * @offset : offset within the buffer
- * @src : source address
- * @len : length to write
- * @pagecpy : page size copied so far
- */
-void _lib_ring_buffer_write(struct lib_ring_buffer_backend *bufb, size_t offset,
-			    const void *src, size_t len, ssize_t pagecpy)
-{
-	struct channel_backend *chanb = &bufb->chan->backend;
-	const struct lib_ring_buffer_config *config = chanb->config;
-	size_t sbidx, index;
-	struct lib_ring_buffer_backend_pages *rpages;
-	unsigned long sb_bindex, id;
-
-	do {
-		len -= pagecpy;
-		src += pagecpy;
-		offset += pagecpy;
-		sbidx = offset >> chanb->subbuf_size_order;
-		index = (offset & (chanb->subbuf_size - 1)) >> get_count_order(PAGE_SIZE);
-
-		/*
-		 * Underlying layer should never ask for writes across
-		 * subbuffers.
-		 */
-		CHAN_WARN_ON(chanb, offset >= chanb->buf_size);
-
-		pagecpy = min_t(size_t, len, PAGE_SIZE - (offset & ~PAGE_MASK));
-		id = bufb->buf_wsb[sbidx].id;
-		sb_bindex = subbuffer_id_get_index(config, id);
-		rpages = bufb->array[sb_bindex];
-		CHAN_WARN_ON(chanb, config->mode == RING_BUFFER_OVERWRITE
-			     && subbuffer_id_is_noref(config, id));
-		lib_ring_buffer_do_copy(config,
-					rpages->p[index].virt
-						+ (offset & ~PAGE_MASK),
-					src, pagecpy);
-	} while (unlikely(len != pagecpy));
-}
-EXPORT_SYMBOL_GPL(_lib_ring_buffer_write);
 
 /**
  * lib_ring_buffer_read - read data from ring_buffer_buffer.
@@ -491,42 +325,30 @@ EXPORT_SYMBOL_GPL(_lib_ring_buffer_write);
 size_t lib_ring_buffer_read(struct lib_ring_buffer_backend *bufb, size_t offset,
 			    void *dest, size_t len)
 {
-	struct channel_backend *chanb = &bufb->chan->backend;
+	struct channel_backend *chanb = &shmp(bufb->chan)->backend;
 	const struct lib_ring_buffer_config *config = chanb->config;
-	size_t index;
-	ssize_t pagecpy, orig_len;
+	ssize_t orig_len;
 	struct lib_ring_buffer_backend_pages *rpages;
 	unsigned long sb_bindex, id;
 
 	orig_len = len;
 	offset &= chanb->buf_size - 1;
-	index = (offset & (chanb->subbuf_size - 1)) >> get_count_order(PAGE_SIZE);
+
 	if (unlikely(!len))
 		return 0;
-	for (;;) {
-		pagecpy = min_t(size_t, len, PAGE_SIZE - (offset & ~PAGE_MASK));
-		id = bufb->buf_rsb.id;
-		sb_bindex = subbuffer_id_get_index(config, id);
-		rpages = bufb->array[sb_bindex];
-		CHAN_WARN_ON(chanb, config->mode == RING_BUFFER_OVERWRITE
-			     && subbuffer_id_is_noref(config, id));
-		memcpy(dest, rpages->p[index].virt + (offset & ~PAGE_MASK),
-		       pagecpy);
-		len -= pagecpy;
-		if (likely(!len))
-			break;
-		dest += pagecpy;
-		offset += pagecpy;
-		index = (offset & (chanb->subbuf_size - 1)) >> get_count_order(PAGE_SIZE);
-		/*
-		 * Underlying layer should never ask for reads across
-		 * subbuffers.
-		 */
-		CHAN_WARN_ON(chanb, offset >= chanb->buf_size);
-	}
+	id = bufb->buf_rsb.id;
+	sb_bindex = subbuffer_id_get_index(config, id);
+	rpages = shmp(bufb->array)[sb_bindex];
+	/*
+	 * Underlying layer should never ask for reads across
+	 * subbuffers.
+	 */
+	CHAN_WARN_ON(chanb, offset >= chanb->buf_size);
+	CHAN_WARN_ON(chanb, config->mode == RING_BUFFER_OVERWRITE
+		     && subbuffer_id_is_noref(config, id));
+	memcpy(dest, shmp(rpages->p) + (offset & ~(chanb->subbuf_size - 1)), len);
 	return orig_len;
 }
-EXPORT_SYMBOL_GPL(lib_ring_buffer_read);
 
 /**
  * lib_ring_buffer_read_cstr - read a C-style string from ring_buffer.
@@ -541,79 +363,33 @@ EXPORT_SYMBOL_GPL(lib_ring_buffer_read);
 int lib_ring_buffer_read_cstr(struct lib_ring_buffer_backend *bufb, size_t offset,
 			      void *dest, size_t len)
 {
-	struct channel_backend *chanb = &bufb->chan->backend;
+	struct channel_backend *chanb = &shmp(bufb->chan)->backend;
 	const struct lib_ring_buffer_config *config = chanb->config;
-	size_t index;
-	ssize_t pagecpy, pagelen, strpagelen, orig_offset;
+	ssize_t string_len, orig_offset;
 	char *str;
 	struct lib_ring_buffer_backend_pages *rpages;
 	unsigned long sb_bindex, id;
 
 	offset &= chanb->buf_size - 1;
-	index = (offset & (chanb->subbuf_size - 1)) >> get_count_order(PAGE_SIZE);
 	orig_offset = offset;
-	for (;;) {
-		id = bufb->buf_rsb.id;
-		sb_bindex = subbuffer_id_get_index(config, id);
-		rpages = bufb->array[sb_bindex];
-		CHAN_WARN_ON(chanb, config->mode == RING_BUFFER_OVERWRITE
-			     && subbuffer_id_is_noref(config, id));
-		str = (char *)rpages->p[index].virt + (offset & ~PAGE_MASK);
-		pagelen = PAGE_SIZE - (offset & ~PAGE_MASK);
-		strpagelen = strnlen(str, pagelen);
-		if (len) {
-			pagecpy = min_t(size_t, len, strpagelen);
-			if (dest) {
-				memcpy(dest, str, pagecpy);
-				dest += pagecpy;
-			}
-			len -= pagecpy;
-		}
-		offset += strpagelen;
-		index = (offset & (chanb->subbuf_size - 1)) >> get_count_order(PAGE_SIZE);
-		if (strpagelen < pagelen)
-			break;
-		/*
-		 * Underlying layer should never ask for reads across
-		 * subbuffers.
-		 */
-		CHAN_WARN_ON(chanb, offset >= chanb->buf_size);
-	}
-	if (dest && len)
-		((char *)dest)[0] = 0;
-	return offset - orig_offset;
-}
-EXPORT_SYMBOL_GPL(lib_ring_buffer_read_cstr);
-
-/**
- * lib_ring_buffer_read_get_page - Get a whole page to read from
- * @bufb : buffer backend
- * @offset : offset within the buffer
- * @virt : pointer to page address (output)
- *
- * Should be protected by get_subbuf/put_subbuf.
- * Returns the pointer to the page struct pointer.
- */
-struct page **lib_ring_buffer_read_get_page(struct lib_ring_buffer_backend *bufb,
-					    size_t offset, void ***virt)
-{
-	size_t index;
-	struct lib_ring_buffer_backend_pages *rpages;
-	struct channel_backend *chanb = &bufb->chan->backend;
-	const struct lib_ring_buffer_config *config = chanb->config;
-	unsigned long sb_bindex, id;
-
-	offset &= chanb->buf_size - 1;
-	index = (offset & (chanb->subbuf_size - 1)) >> get_count_order(PAGE_SIZE);
 	id = bufb->buf_rsb.id;
 	sb_bindex = subbuffer_id_get_index(config, id);
-	rpages = bufb->array[sb_bindex];
+	rpages = shmp(bufb->array)[sb_bindex];
+	/*
+	 * Underlying layer should never ask for reads across
+	 * subbuffers.
+	 */
+	CHAN_WARN_ON(chanb, offset >= chanb->buf_size);
 	CHAN_WARN_ON(chanb, config->mode == RING_BUFFER_OVERWRITE
 		     && subbuffer_id_is_noref(config, id));
-	*virt = &rpages->p[index].virt;
-	return &rpages->p[index].page;
+	str = (char *)shmp(rpages->p) + (offset & ~(chanb->subbuf_size - 1));
+	string_len = strnlen(str, len);
+	if (dest && len) {
+		memcpy(dest, str, string_len);
+		((char *)dest)[0] = 0;
+	}
+	return offset - orig_offset;
 }
-EXPORT_SYMBOL_GPL(lib_ring_buffer_read_get_page);
 
 /**
  * lib_ring_buffer_read_offset_address - get address of a buffer location
@@ -628,22 +404,19 @@ EXPORT_SYMBOL_GPL(lib_ring_buffer_read_get_page);
 void *lib_ring_buffer_read_offset_address(struct lib_ring_buffer_backend *bufb,
 					  size_t offset)
 {
-	size_t index;
 	struct lib_ring_buffer_backend_pages *rpages;
-	struct channel_backend *chanb = &bufb->chan->backend;
+	struct channel_backend *chanb = &shmp(bufb->chan)->backend;
 	const struct lib_ring_buffer_config *config = chanb->config;
 	unsigned long sb_bindex, id;
 
 	offset &= chanb->buf_size - 1;
-	index = (offset & (chanb->subbuf_size - 1)) >> get_count_order(PAGE_SIZE);
 	id = bufb->buf_rsb.id;
 	sb_bindex = subbuffer_id_get_index(config, id);
-	rpages = bufb->array[sb_bindex];
+	rpages = shmp(bufb->array)[sb_bindex];
 	CHAN_WARN_ON(chanb, config->mode == RING_BUFFER_OVERWRITE
 		     && subbuffer_id_is_noref(config, id));
-	return rpages->p[index].virt + (offset & ~PAGE_MASK);
+	return shmp(rpages->p) + (offset & ~(chanb->subbuf_size - 1));
 }
-EXPORT_SYMBOL_GPL(lib_ring_buffer_read_offset_address);
 
 /**
  * lib_ring_buffer_offset_address - get address of a location within the buffer
@@ -658,20 +431,18 @@ EXPORT_SYMBOL_GPL(lib_ring_buffer_read_offset_address);
 void *lib_ring_buffer_offset_address(struct lib_ring_buffer_backend *bufb,
 				     size_t offset)
 {
-	size_t sbidx, index;
+	size_t sbidx;
 	struct lib_ring_buffer_backend_pages *rpages;
-	struct channel_backend *chanb = &bufb->chan->backend;
+	struct channel_backend *chanb = &shmp(bufb->chan)->backend;
 	const struct lib_ring_buffer_config *config = chanb->config;
 	unsigned long sb_bindex, id;
 
 	offset &= chanb->buf_size - 1;
 	sbidx = offset >> chanb->subbuf_size_order;
-	index = (offset & (chanb->subbuf_size - 1)) >> get_count_order(PAGE_SIZE);
-	id = bufb->buf_wsb[sbidx].id;
+	id = shmp(bufb->buf_wsb)[sbidx].id;
 	sb_bindex = subbuffer_id_get_index(config, id);
-	rpages = bufb->array[sb_bindex];
+	rpages = shmp(bufb->array)[sb_bindex];
 	CHAN_WARN_ON(chanb, config->mode == RING_BUFFER_OVERWRITE
 		     && subbuffer_id_is_noref(config, id));
-	return rpages->p[index].virt + (offset & ~PAGE_MASK);
+	return shmp(rpages->p) + (offset & ~(chanb->subbuf_size - 1));
 }
-EXPORT_SYMBOL_GPL(lib_ring_buffer_offset_address);
