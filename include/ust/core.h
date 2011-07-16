@@ -1,4 +1,8 @@
-/* Copyright (C) 2010  Pierre-Marc Fournier
+#ifndef UST_CORE_H
+#define UST_CORE_H
+
+/*
+ * Copyright (C) 2010  Pierre-Marc Fournier
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,9 +18,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
-
-#ifndef UST_CORE_H
-#define UST_CORE_H
 
 #include <sys/types.h>
 #include <ust/config.h>

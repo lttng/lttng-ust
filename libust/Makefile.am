@@ -6,10 +6,8 @@ lib_LTLIBRARIES = libust.la
 libust_la_SOURCES = \
 	tracepoint.c \
 	trace_event.c \
-	tracer.h \
-	tracercore.c \
-	tracercore.h \
-	tracerconst.h
+	ltt-tracer.h \
+	ltt-tracer-core.h
 
 #removed: buffers.c buffers.h
 
