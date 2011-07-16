@@ -1,5 +1,5 @@
 /*
- * ring_buffer_vfs.c
+ * ring_buffer_abi.c
  *
  * Copyright (C) 2009-2010 - Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
@@ -10,7 +10,7 @@
 
 #include "backend.h"
 #include "frontend.h"
-#include "vfs.h"
+#include <ust/ring-buffer-abi.h>
 
 static int put_ulong(unsigned long val, unsigned long arg)
 {

@@ -19,11 +19,10 @@
  * all copies or substantial portions of the Software.
  */
 
-#include "../ltt-endian.h"
-
-#ifndef CHAR_BIT
-#define CHAR_BIT 8
-#endif
+#include <stdint.h>	/* C99 5.2.4.2 Numerical limits */
+#include <limits.h>	/* C99 5.2.4.2 Numerical limits */
+#include <endian.h>	/* Non-standard BIG_ENDIAN, LITTLE_ENDIAN, BYTE_ORDER */
+#include <assert.h>
 
 /* We can't shift a int from 32 bit, >> 32 and << 32 on int is undefined */
 #define _bt_piecewise_rshift(_v, _shift)				\
@@ -201,7 +200,7 @@ do {									\
  * bt_bitfield_write_be - write integer to a bitfield in big endian
  */
 
-#if (__BYTE_ORDER == __LITTLE_ENDIAN)
+#if (BYTE_ORDER == LITTLE_ENDIAN)
 
 #define bt_bitfield_write(ptr, type, _start, _length, _v)		\
 	_bt_bitfield_write_le(ptr, type, _start, _length, _v)
@@ -212,7 +211,7 @@ do {									\
 #define bt_bitfield_write_be(ptr, type, _start, _length, _v)		\
 	_bt_bitfield_write_be(ptr, unsigned char, _start, _length, _v)
 
-#elif (__BYTE_ORDER == __BIG_ENDIAN)
+#elif (BYTE_ORDER == BIG_ENDIAN)
 
 #define bt_bitfield_write(ptr, type, _start, _length, _v)		\
 	_bt_bitfield_write_be(ptr, type, _start, _length, _v)
@@ -369,7 +368,7 @@ do {									\
  * bt_bitfield_read_be - read integer from a bitfield in big endian
  */
 
-#if (__BYTE_ORDER == __LITTLE_ENDIAN)
+#if (BYTE_ORDER == LITTLE_ENDIAN)
 
 #define bt_bitfield_read(_ptr, type, _start, _length, _vptr)		\
 	_bt_bitfield_read_le(_ptr, type, _start, _length, _vptr)
@@ -380,7 +379,7 @@ do {									\
 #define bt_bitfield_read_be(_ptr, type, _start, _length, _vptr)		\
 	_bt_bitfield_read_be(_ptr, unsigned char, _start, _length, _vptr)
 
-#elif (__BYTE_ORDER == __BIG_ENDIAN)
+#elif (BYTE_ORDER == BIG_ENDIAN)
 
 #define bt_bitfield_read(_ptr, type, _start, _length, _vptr)		\
 	_bt_bitfield_read_be(_ptr, type, _start, _length, _vptr)
@@ -391,7 +390,7 @@ do {									\
 #define bt_bitfield_read_be(_ptr, type, _start, _length, _vptr)		\
 	_bt_bitfield_read_be(_ptr, type, _start, _length, _vptr)
 
-#else /* (__BYTE_ORDER == __PDP_ENDIAN) */
+#else /* (BYTE_ORDER == PDP_ENDIAN) */
 
 #error "Byte order not supported"
 

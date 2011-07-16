@@ -138,4 +138,35 @@ static __inline__ int get_count_order(unsigned int count)
 #define __same_type(a, b) __builtin_types_compatible_p(typeof(a), typeof(b))
 #endif
 
+#ifndef UST_VALGRIND
+
+static __inline__ int ust_get_cpu(void)
+{
+	int cpu;
+
+	cpu = sched_getcpu();
+	if (likely(cpu >= 0))
+		return cpu;
+	/*
+	 * If getcpu(2) is not implemented in the Kernel use CPU 0 as fallback.
+	 */
+	return 0;
+}
+
+#else	/* #else #ifndef UST_VALGRIND */
+
+static __inline__ int ust_get_cpu(void)
+{
+	/*
+	 * Valgrind does not support the sched_getcpu() vsyscall.
+	 * It causes it to detect a segfault in the program and stop it.
+	 * So if we want to check libust with valgrind, we have to refrain
+	 * from using this call. TODO: it would probably be better to return
+	 * other values too, to better test it.
+	 */
+	return 0;
+}
+
+#endif	/* #else #ifndef UST_VALGRIND */
+
 #endif /* UST_CORE_H */

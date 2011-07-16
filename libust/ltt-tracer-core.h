@@ -30,10 +30,12 @@
 #define RING_BUFFER_ALIGN
 #endif
 
+#include "usterr_signal_safe.h"
+#include "ust/bug.h"
 #include "../libringbuffer/config.h"
 
 struct ltt_session;
 struct ltt_channel;
 struct ltt_event;
 
-#define /* _LTT_TRACER_CORE_H */
+#endif /* _LTT_TRACER_CORE_H */

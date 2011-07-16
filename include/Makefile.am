@@ -3,7 +3,9 @@ nobase_include_HEADERS = \
 	ust/tracepoint.h \
 	ust/tracepoint_event.h \
 	ust/probe.h \
-	ust/version.h
+	ust/version.h \
+	ust/lttng-ust-abi.h \
+	ust/ringbuffer-abi.h
 
 noinst_HEADERS = \
 	share.h \

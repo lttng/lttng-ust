@@ -11,10 +11,10 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
-#include <linux/list.h>
-#include <linux/uuid.h>
-#include <linux/kprobes.h>
-#include "ltt-debugfs-abi.h"
+#include <urcu/list.h>
+#include <uuid/uuid.h>
+#include <stdint.h>
+#include <ust/lttng-ust-abi.h>
 
 #undef is_signed_type
 #define is_signed_type(type)		(((type)(-1)) < 0)
@@ -22,8 +22,6 @@
 struct ltt_channel;
 struct ltt_session;
 struct lib_ring_buffer_ctx;
-struct perf_event;
-struct perf_event_attr;
 
 /* Type description */
 
@@ -126,12 +124,6 @@ struct lttng_ctx_field {
 		       struct lib_ring_buffer_ctx *ctx,
 		       struct ltt_channel *chan);
 	union {
-		struct {
-			struct perf_event **e;	/* per-cpu array */
-			struct notifier_block nb;
-			int hp_enable;
-			struct perf_event_attr *attr;
-		} perf_counter;
 	} u;
 	void (*destroy)(struct lttng_ctx_field *field);
 };
@@ -148,13 +140,12 @@ struct lttng_event_desc {
 	const struct lttng_event_ctx *ctx;	/* context */
 	const struct lttng_event_field *fields;	/* event payload */
 	unsigned int nr_fields;
-	struct module *owner;
 };
 
 struct lttng_probe_desc {
 	const struct lttng_event_desc *event_desc;
 	unsigned int nr_events;
-	struct list_head head;			/* chain registered probes */
+	struct cds_list_head head;		/* chain registered probes */
 };
 
 /*
@@ -168,17 +159,10 @@ struct ltt_event {
 	const struct lttng_event_desc *desc;
 	void *filter;
 	struct lttng_ctx *ctx;
-	enum lttng_kernel_instrumentation instrumentation;
+	enum lttng_ust_instrumentation instrumentation;
 	union {
-		struct {
-			struct kprobe kp;
-			char *symbol_name;
-		} kprobe;
-		struct {
-			char *symbol_name;
-		} ftrace;
 	} u;
-	struct list_head list;		/* Event list */
+	struct cds_list_head list;		/* Event list */
 	int metadata_dumped:1;
 };
 
@@ -188,7 +172,8 @@ struct ltt_channel_ops {
 				void *buf_addr,
 				size_t subbuf_size, size_t num_subbuf,
 				unsigned int switch_timer_interval,
-				unsigned int read_timer_interval);
+				unsigned int read_timer_interval,
+				int *shmid);
 	void (*channel_destroy)(struct channel *chan);
 	struct lib_ring_buffer *(*buffer_read_open)(struct channel *chan);
 	void (*buffer_read_close)(struct lib_ring_buffer *buf);
@@ -203,8 +188,8 @@ struct ltt_channel_ops {
 	 * may change due to concurrent writes.
 	 */
 	size_t (*packet_avail_size)(struct channel *chan);
-	wait_queue_head_t *(*get_reader_wait_queue)(struct channel *chan);
-	wait_queue_head_t *(*get_hp_wait_queue)(struct channel *chan);
+	//wait_queue_head_t *(*get_reader_wait_queue)(struct channel *chan);
+	//wait_queue_head_t *(*get_hp_wait_queue)(struct channel *chan);
 	int (*is_finalized)(struct channel *chan);
 	int (*is_disabled)(struct channel *chan);
 };
@@ -218,7 +203,7 @@ struct ltt_channel {
 	struct ltt_session *session;
 	struct file *file;		/* File associated to channel */
 	unsigned int free_event_id;	/* Next event ID to allocate */
-	struct list_head list;		/* Channel list */
+	struct cds_list_head list;	/* Channel list */
 	struct ltt_channel_ops *ops;
 	int header_type;		/* 0: unset, 1: compact, 2: large */
 	int metadata_dumped:1;
@@ -229,18 +214,17 @@ struct ltt_session {
 	int been_active;		/* Has trace session been active ? */
 	struct file *file;		/* File associated to session */
 	struct ltt_channel *metadata;	/* Metadata channel */
-	struct list_head chan;		/* Channel list head */
-	struct list_head events;	/* Event list head */
-	struct list_head list;		/* Session list */
+	struct cds_list_head chan;	/* Channel list head */
+	struct cds_list_head events;	/* Event list head */
+	struct cds_list_head list;	/* Session list */
 	unsigned int free_chan_id;	/* Next chan ID to allocate */
-	uuid_le uuid;			/* Trace session unique ID */
+	uuid_t uuid;			/* Trace session unique ID */
 	int metadata_dumped:1;
 };
 
 struct ltt_transport {
 	char *name;
-	struct module *owner;
-	struct list_head node;
+	struct cds_list_head node;
 	struct ltt_channel_ops ops;
 };
 
@@ -262,7 +246,7 @@ struct ltt_channel *ltt_global_channel_create(struct ltt_session *session,
 				       unsigned int read_timer_interval);
 
 struct ltt_event *ltt_event_create(struct ltt_channel *chan,
-				   struct lttng_kernel_event *event_param,
+				   struct lttng_ust_event *event_param,
 				   void *filter);
 
 int ltt_channel_enable(struct ltt_channel *channel);
@@ -274,8 +258,8 @@ void ltt_transport_register(struct ltt_transport *transport);
 void ltt_transport_unregister(struct ltt_transport *transport);
 
 void synchronize_trace(void);
-int ltt_debugfs_abi_init(void);
-void ltt_debugfs_abi_exit(void);
+//int ltt_debugfs_abi_init(void);
+//void ltt_debugfs_abi_exit(void);
 
 int ltt_probe_register(struct lttng_probe_desc *desc);
 void ltt_probe_unregister(struct lttng_probe_desc *desc);
@@ -287,71 +271,8 @@ struct lttng_ctx_field *lttng_append_context(struct lttng_ctx **ctx);
 void lttng_remove_context_field(struct lttng_ctx **ctx,
 				struct lttng_ctx_field *field);
 void lttng_destroy_context(struct lttng_ctx *ctx);
-int lttng_add_pid_to_ctx(struct lttng_ctx **ctx);
-int lttng_add_comm_to_ctx(struct lttng_ctx **ctx);
-int lttng_add_prio_to_ctx(struct lttng_ctx **ctx);
-int lttng_add_nice_to_ctx(struct lttng_ctx **ctx);
-int lttng_add_perf_counter_to_ctx(uint32_t type,
-				  uint64_t config,
-				  const char *name,
-				  struct lttng_ctx **ctx);
+int lttng_add_vtid_to_ctx(struct lttng_ctx **ctx);
 
-#ifdef CONFIG_KPROBES
-int lttng_kprobes_register(const char *name,
-		const char *symbol_name,
-		uint64_t offset,
-		uint64_t addr,
-		struct ltt_event *event);
-void lttng_kprobes_unregister(struct ltt_event *event);
-void lttng_kprobes_destroy_private(struct ltt_event *event);
-#else
-static inline
-int lttng_kprobes_register(const char *name,
-		const char *symbol_name,
-		uint64_t offset,
-		uint64_t addr,
-		struct ltt_event *event)
-{
-	return -ENOSYS;
-}
-
-static inline
-void lttng_kprobes_unregister(struct ltt_event *event)
-{
-}
-
-static inline
-void lttng_kprobes_destroy_private(struct ltt_event *event)
-{
-}
-#endif
-
-#ifdef CONFIG_DYNAMIC_FTRACE
-int lttng_ftrace_register(const char *name,
-			  const char *symbol_name,
-			  struct ltt_event *event);
-void lttng_ftrace_unregister(struct ltt_event *event);
-void lttng_ftrace_destroy_private(struct ltt_event *event);
-#else
-static inline
-int lttng_ftrace_register(const char *name,
-			  const char *symbol_name,
-			  struct ltt_event *event)
-{
-	return -ENOSYS;
-}
-
-static inline
-void lttng_ftrace_unregister(struct ltt_event *event)
-{
-}
-
-static inline
-void lttng_ftrace_destroy_private(struct ltt_event *event)
-{
-}
-#endif
-
-extern const struct file_operations lttng_tracepoint_list_fops;
+//extern const struct file_operations lttng_tracepoint_list_fops;
 
 #endif /* _LTT_EVENTS_H */

@@ -18,14 +18,17 @@
  */
 
 #include "frontend.h"
+#include "ust/core.h"
+#include <urcu-bp.h>
+#include <urcu/compiler.h>
 
 /**
  * lib_ring_buffer_get_cpu - Precedes ring buffer reserve/commit.
  *
- * Disables preemption (acts as a RCU read-side critical section) and keeps a
- * ring buffer nesting count as supplementary safety net to ensure tracer client
- * code will never trigger an endless recursion. Returns the processor ID on
- * success, -EPERM on failure (nesting count too high).
+ * Grabs RCU read-side lock and keeps a ring buffer nesting count as
+ * supplementary safety net to ensure tracer client code will never
+ * trigger an endless recursion. Returns the processor ID on success,
+ * -EPERM on failure (nesting count too high).
  *
  * asm volatile and "memory" clobber prevent the compiler from moving
  * instructions out of the ring buffer nesting count. This is required to ensure
@@ -38,15 +41,15 @@ int lib_ring_buffer_get_cpu(const struct lib_ring_buffer_config *config)
 {
 	int cpu, nesting;
 
-	rcu_read_lock_sched_notrace();
-	cpu = smp_processor_id();
+	rcu_read_lock();
+	cpu = ust_get_cpu();
 	nesting = ++lib_ring_buffer_nesting;	/* TLS */
-	barrier();
+	cmm_barrier();
 
 	if (unlikely(nesting > 4)) {
 		WARN_ON_ONCE(1);
 		lib_ring_buffer_nesting--;	/* TLS */
-		rcu_read_unlock_sched_notrace();
+		rcu_read_unlock();
 		return -EPERM;
 	} else
 		return cpu;
@@ -58,9 +61,9 @@ int lib_ring_buffer_get_cpu(const struct lib_ring_buffer_config *config)
 static inline
 void lib_ring_buffer_put_cpu(const struct lib_ring_buffer_config *config)
 {
-	barrier();
+	cmm_barrier();
 	lib_ring_buffer_nesting--;		/* TLS */
-	rcu_read_unlock_sched_notrace();
+	rcu_read_unlock();
 }
 
 /*
@@ -89,7 +92,7 @@ int lib_ring_buffer_try_reserve(const struct lib_ring_buffer_config *config,
 	 * commit counter to increment it and commit seq value to compare it to
 	 * the commit counter.
 	 */
-	prefetch(&buf->commit_hot[subbuf_index(*o_begin, chan)]);
+	//prefetch(&buf->commit_hot[subbuf_index(*o_begin, chan)]);
 
 	if (last_tsc_overflow(config, buf, ctx->tsc))
 		ctx->rflags |= RING_BUFFER_RFLAG_FULL_TSC;
@@ -147,14 +150,14 @@ int lib_ring_buffer_reserve(const struct lib_ring_buffer_config *config,
 	unsigned long o_begin, o_end, o_old;
 	size_t before_hdr_pad = 0;
 
-	if (atomic_read(&chan->record_disabled))
+	if (uatomic_read(&chan->record_disabled))
 		return -EAGAIN;
 
 	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU)
-		buf = per_cpu_ptr(chan->backend.buf, ctx->cpu);
+		buf = &shmp(chan->backend.buf)[ctx->cpu];
 	else
-		buf = chan->backend.buf;
-	if (atomic_read(&buf->record_disabled))
+		buf = shmp(chan->backend.buf);
+	if (uatomic_read(&buf->record_disabled))
 		return -EAGAIN;
 	ctx->buf = buf;
 
@@ -245,17 +248,9 @@ void lib_ring_buffer_commit(const struct lib_ring_buffer_config *config,
 	 * Order all writes to buffer before the commit count update that will
 	 * determine that the subbuffer is full.
 	 */
-	if (config->ipi == RING_BUFFER_IPI_BARRIER) {
-		/*
-		 * Must write slot data before incrementing commit count.  This
-		 * compiler barrier is upgraded into a smp_mb() by the IPI sent
-		 * by get_subbuf().
-		 */
-		barrier();
-	} else
-		smp_wmb();
+	cmm_smp_wmb();
 
-	v_add(config, ctx->slot_size, &buf->commit_hot[endidx].cc);
+	v_add(config, ctx->slot_size, &shmp(buf->commit_hot)[endidx].cc);
 
 	/*
 	 * commit count read can race with concurrent OOO commit count updates.
@@ -275,7 +270,7 @@ void lib_ring_buffer_commit(const struct lib_ring_buffer_config *config,
 	 *   count reaches back the reserve offset for a specific sub-buffer,
 	 *   which is completely independent of the order.
 	 */
-	commit_count = v_read(config, &buf->commit_hot[endidx].cc);
+	commit_count = v_read(config, &shmp(buf->commit_hot)[endidx].cc);
 
 	lib_ring_buffer_check_deliver(config, buf, chan, offset_end - 1,
 				      commit_count, endidx);
@@ -330,28 +325,28 @@ static inline
 void channel_record_disable(const struct lib_ring_buffer_config *config,
 			    struct channel *chan)
 {
-	atomic_inc(&chan->record_disabled);
+	uatomic_inc(&chan->record_disabled);
 }
 
 static inline
 void channel_record_enable(const struct lib_ring_buffer_config *config,
 			   struct channel *chan)
 {
-	atomic_dec(&chan->record_disabled);
+	uatomic_dec(&chan->record_disabled);
 }
 
 static inline
 void lib_ring_buffer_record_disable(const struct lib_ring_buffer_config *config,
 				    struct lib_ring_buffer *buf)
 {
-	atomic_inc(&buf->record_disabled);
+	uatomic_inc(&buf->record_disabled);
 }
 
 static inline
 void lib_ring_buffer_record_enable(const struct lib_ring_buffer_config *config,
 				   struct lib_ring_buffer *buf)
 {
-	atomic_dec(&buf->record_disabled);
+	uatomic_dec(&buf->record_disabled);
 }
 
 #endif /* _LINUX_RING_BUFFER_FRONTEND_API_H */

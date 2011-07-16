@@ -7,7 +7,12 @@ libust_la_SOURCES = \
 	tracepoint.c \
 	trace_event.c \
 	ltt-tracer.h \
-	ltt-tracer-core.h
+	ltt-tracer-core.h \
+	ltt-ring-buffer-client.h \
+	ltt-ring-buffer-client-discard.c \
+	ltt-ring-buffer-client-overwrite.c \
+	ltt-ring-buffer-metadata-client.h \
+	ltt-ring-buffer-metadata-client.c
 
 #removed: buffers.c buffers.h
 
