@@ -40,12 +40,12 @@ int lib_ring_buffer_get_cpu(const struct lib_ring_buffer_config *config)
 
 	rcu_read_lock_sched_notrace();
 	cpu = smp_processor_id();
-	nesting = ++per_cpu(lib_ring_buffer_nesting, cpu);
+	nesting = ++lib_ring_buffer_nesting;	/* TLS */
 	barrier();
 
 	if (unlikely(nesting > 4)) {
 		WARN_ON_ONCE(1);
-		per_cpu(lib_ring_buffer_nesting, cpu)--;
+		lib_ring_buffer_nesting--;	/* TLS */
 		rcu_read_unlock_sched_notrace();
 		return -EPERM;
 	} else
@@ -59,7 +59,7 @@ static inline
 void lib_ring_buffer_put_cpu(const struct lib_ring_buffer_config *config)
 {
 	barrier();
-	__get_cpu_var(lib_ring_buffer_nesting)--;
+	lib_ring_buffer_nesting--;		/* TLS */
 	rcu_read_unlock_sched_notrace();
 }
 
