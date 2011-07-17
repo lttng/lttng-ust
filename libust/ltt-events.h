@@ -238,7 +238,8 @@ struct ltt_channel *ltt_channel_create(struct ltt_session *session,
 				       void *buf_addr,
 				       size_t subbuf_size, size_t num_subbuf,
 				       unsigned int switch_timer_interval,
-				       unsigned int read_timer_interval);
+				       unsigned int read_timer_interval,
+				       int *shmid);
 struct ltt_channel *ltt_global_channel_create(struct ltt_session *session,
 				       int overwrite, void *buf_addr,
 				       size_t subbuf_size, size_t num_subbuf,

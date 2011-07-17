@@ -8,21 +8,25 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
-#include <linux/module.h>
-#include <linux/list.h>
-#include <linux/mutex.h>
-#include <linux/sched.h>
-#include <linux/slab.h>
-#include <linux/jiffies.h>
-#include <linux/uuid.h>
-#include "wrapper/vmalloc.h"	/* for wrapper_vmalloc_sync_all() */
+#define _GNU_SOURCE
+#include <stdio.h>
+#include <urcu/list.h>
+#include <pthread.h>
+#include <urcu-bp.h>
+#include <urcu/compiler.h>
+#include <urcu/uatomic.h>
+#include <uuid/uuid.h>
+#include <ust/tracepoint.h>
+#include <errno.h>
+#include "usterr_signal_safe.h"
+#include "ust/core.h"
 #include "ltt-events.h"
 #include "ltt-tracer.h"
+#include "ust/wait.h"
 
-static LIST_HEAD(sessions);
-static LIST_HEAD(ltt_transport_list);
+static CDS_LIST_HEAD(sessions);
+static CDS_LIST_HEAD(ltt_transport_list);
 static DEFINE_MUTEX(sessions_mutex);
-static struct kmem_cache *event_cache;
 
 static void _ltt_event_destroy(struct ltt_event *event);
 static void _ltt_channel_destroy(struct ltt_channel *chan);
@@ -36,25 +40,22 @@ int _ltt_session_metadata_statedump(struct ltt_session *session);
 
 void synchronize_trace(void)
 {
-	synchronize_sched();
-#ifdef CONFIG_PREEMPT_RT
 	synchronize_rcu();
-#endif
 }
 
 struct ltt_session *ltt_session_create(void)
 {
 	struct ltt_session *session;
 
-	mutex_lock(&sessions_mutex);
-	session = kzalloc(sizeof(struct ltt_session), GFP_KERNEL);
+	pthread_mutex_lock(&sessions_mutex);
+	session = zmalloc(sizeof(struct ltt_session));
 	if (!session)
 		return NULL;
-	INIT_LIST_HEAD(&session->chan);
-	INIT_LIST_HEAD(&session->events);
-	uuid_le_gen(&session->uuid);
-	list_add(&session->list, &sessions);
-	mutex_unlock(&sessions_mutex);
+	CDS_INIT_LIST_HEAD(&session->chan);
+	CDS_INIT_LIST_HEAD(&session->events);
+	uuid_generate(session->uuid);
+	cds_list_add(&session->list, &sessions);
+	pthread_mutex_unlock(&sessions_mutex);
 	return session;
 }
 
@@ -64,20 +65,20 @@ void ltt_session_destroy(struct ltt_session *session)
 	struct ltt_event *event, *tmpevent;
 	int ret;
 
-	mutex_lock(&sessions_mutex);
-	ACCESS_ONCE(session->active) = 0;
-	list_for_each_entry(event, &session->events, list) {
+	pthread_mutex_lock(&sessions_mutex);
+	CMM_ACCESS_ONCE(session->active) = 0;
+	cds_list_for_each_entry(event, &session->events, list) {
 		ret = _ltt_event_unregister(event);
 		WARN_ON(ret);
 	}
 	synchronize_trace();	/* Wait for in-flight events to complete */
-	list_for_each_entry_safe(event, tmpevent, &session->events, list)
+	cds_list_for_each_entry_safe(event, tmpevent, &session->events, list)
 		_ltt_event_destroy(event);
-	list_for_each_entry_safe(chan, tmpchan, &session->chan, list)
+	cds_list_for_each_entry_safe(chan, tmpchan, &session->chan, list)
 		_ltt_channel_destroy(chan);
-	list_del(&session->list);
-	mutex_unlock(&sessions_mutex);
-	kfree(session);
+	cds_list_del(&session->list);
+	pthread_mutex_unlock(&sessions_mutex);
+	free(session);
 }
 
 int ltt_session_enable(struct ltt_session *session)
@@ -85,7 +86,7 @@ int ltt_session_enable(struct ltt_session *session)
 	int ret = 0;
 	struct ltt_channel *chan;
 
-	mutex_lock(&sessions_mutex);
+	pthread_mutex_lock(&sessions_mutex);
 	if (session->active) {
 		ret = -EBUSY;
 		goto end;
@@ -95,7 +96,7 @@ int ltt_session_enable(struct ltt_session *session)
 	 * Snapshot the number of events per channel to know the type of header
 	 * we need to use.
 	 */
-	list_for_each_entry(chan, &session->chan, list) {
+	cds_list_for_each_entry(chan, &session->chan, list) {
 		if (chan->header_type)
 			continue;		/* don't change it if session stop/restart */
 		if (chan->free_event_id < 31)
@@ -104,13 +105,13 @@ int ltt_session_enable(struct ltt_session *session)
 			chan->header_type = 2;	/* large */
 	}
 
-	ACCESS_ONCE(session->active) = 1;
-	ACCESS_ONCE(session->been_active) = 1;
+	CMM_ACCESS_ONCE(session->active) = 1;
+	CMM_ACCESS_ONCE(session->been_active) = 1;
 	ret = _ltt_session_metadata_statedump(session);
 	if (ret)
-		ACCESS_ONCE(session->active) = 0;
+		CMM_ACCESS_ONCE(session->active) = 0;
 end:
-	mutex_unlock(&sessions_mutex);
+	pthread_mutex_unlock(&sessions_mutex);
 	return ret;
 }
 
@@ -118,14 +119,14 @@ int ltt_session_disable(struct ltt_session *session)
 {
 	int ret = 0;
 
-	mutex_lock(&sessions_mutex);
+	pthread_mutex_lock(&sessions_mutex);
 	if (!session->active) {
 		ret = -EBUSY;
 		goto end;
 	}
-	ACCESS_ONCE(session->active) = 0;
+	CMM_ACCESS_ONCE(session->active) = 0;
 end:
-	mutex_unlock(&sessions_mutex);
+	pthread_mutex_unlock(&sessions_mutex);
 	return ret;
 }
 
@@ -135,7 +136,7 @@ int ltt_channel_enable(struct ltt_channel *channel)
 
 	if (channel == channel->session->metadata)
 		return -EPERM;
-	old = xchg(&channel->enabled, 1);
+	old = uatomic_xchg(&channel->enabled, 1);
 	if (old)
 		return -EEXIST;
 	return 0;
@@ -147,7 +148,7 @@ int ltt_channel_disable(struct ltt_channel *channel)
 
 	if (channel == channel->session->metadata)
 		return -EPERM;
-	old = xchg(&channel->enabled, 0);
+	old = uatomic_xchg(&channel->enabled, 0);
 	if (!old)
 		return -EEXIST;
 	return 0;
@@ -159,7 +160,7 @@ int ltt_event_enable(struct ltt_event *event)
 
 	if (event->chan == event->chan->session->metadata)
 		return -EPERM;
-	old = xchg(&event->enabled, 1);
+	old = uatomic_xchg(&event->enabled, 1);
 	if (old)
 		return -EEXIST;
 	return 0;
@@ -171,7 +172,7 @@ int ltt_event_disable(struct ltt_event *event)
 
 	if (event->chan == event->chan->session->metadata)
 		return -EPERM;
-	old = xchg(&event->enabled, 0);
+	old = uatomic_xchg(&event->enabled, 0);
 	if (!old)
 		return -EEXIST;
 	return 0;
@@ -181,7 +182,7 @@ static struct ltt_transport *ltt_transport_find(const char *name)
 {
 	struct ltt_transport *transport;
 
-	list_for_each_entry(transport, &ltt_transport_list, node) {
+	cds_list_for_each_entry(transport, &ltt_transport_list, node) {
 		if (!strcmp(transport->name, name))
 			return transport;
 	}
@@ -193,21 +194,22 @@ struct ltt_channel *ltt_channel_create(struct ltt_session *session,
 				       void *buf_addr,
 				       size_t subbuf_size, size_t num_subbuf,
 				       unsigned int switch_timer_interval,
-				       unsigned int read_timer_interval)
+				       unsigned int read_timer_interval,
+				       int *shmid)
 {
 	struct ltt_channel *chan;
 	struct ltt_transport *transport;
 
-	mutex_lock(&sessions_mutex);
+	pthread_mutex_lock(&sessions_mutex);
 	if (session->been_active)
 		goto active;	/* Refuse to add channel to active session */
 	transport = ltt_transport_find(transport_name);
 	if (!transport) {
-		printk(KERN_WARNING "LTTng transport %s not found\n",
+		DBG("LTTng transport %s not found\n",
 		       transport_name);
 		goto notransport;
 	}
-	chan = kzalloc(sizeof(struct ltt_channel), GFP_KERNEL);
+	chan = zmalloc(sizeof(struct ltt_channel));
 	if (!chan)
 		goto nomem;
 	chan->session = session;
@@ -219,21 +221,21 @@ struct ltt_channel *ltt_channel_create(struct ltt_session *session,
 	 */
 	chan->chan = transport->ops.channel_create("[lttng]", chan, buf_addr,
 			subbuf_size, num_subbuf, switch_timer_interval,
-			read_timer_interval);
+			read_timer_interval, shmid);
 	if (!chan->chan)
 		goto create_error;
 	chan->enabled = 1;
 	chan->ops = &transport->ops;
-	list_add(&chan->list, &session->chan);
-	mutex_unlock(&sessions_mutex);
+	cds_list_add(&chan->list, &session->chan);
+	pthread_mutex_unlock(&sessions_mutex);
 	return chan;
 
 create_error:
-	kfree(chan);
+	free(chan);
 nomem:
 notransport:
 active:
-	mutex_unlock(&sessions_mutex);
+	pthread_mutex_unlock(&sessions_mutex);
 	return NULL;
 }
 
@@ -244,32 +246,32 @@ static
 void _ltt_channel_destroy(struct ltt_channel *chan)
 {
 	chan->ops->channel_destroy(chan->chan);
-	list_del(&chan->list);
+	cds_list_del(&chan->list);
 	lttng_destroy_context(chan->ctx);
-	kfree(chan);
+	free(chan);
 }
 
 /*
  * Supports event creation while tracing session is active.
  */
 struct ltt_event *ltt_event_create(struct ltt_channel *chan,
-				   struct lttng_kernel_event *event_param,
+				   struct lttng_ust_event *event_param,
 				   void *filter)
 {
 	struct ltt_event *event;
 	int ret;
 
-	mutex_lock(&sessions_mutex);
+	pthread_mutex_lock(&sessions_mutex);
 	if (chan->free_event_id == -1UL)
 		goto full;
 	/*
 	 * This is O(n^2) (for each event, the loop is called at event
 	 * creation). Might require a hash if we have lots of events.
 	 */
-	list_for_each_entry(event, &chan->session->events, list)
+	cds_list_for_each_entry(event, &chan->session->events, list)
 		if (!strcmp(event->desc->name, event_param->name))
 			goto exist;
-	event = kmem_cache_zalloc(event_cache, GFP_KERNEL);
+	event = zmalloc(sizeof(struct ltt_event));
 	if (!event)
 		goto cache_error;
 	event->chan = chan;
@@ -278,37 +280,17 @@ struct ltt_event *ltt_event_create(struct ltt_channel *chan,
 	event->enabled = 1;
 	event->instrumentation = event_param->instrumentation;
 	/* Populate ltt_event structure before tracepoint registration. */
-	smp_wmb();
+	cmm_smp_wmb();
 	switch (event_param->instrumentation) {
-	case LTTNG_KERNEL_TRACEPOINT:
+	case LTTNG_UST_TRACEPOINT:
 		event->desc = ltt_event_get(event_param->name);
 		if (!event->desc)
 			goto register_error;
-		ret = tracepoint_probe_register(event_param->name,
+		ret = __tracepoint_probe_register(event_param->name,
 				event->desc->probe_callback,
 				event);
 		if (ret)
 			goto register_error;
-		break;
-	case LTTNG_KERNEL_KPROBE:
-		ret = lttng_kprobes_register(event_param->name,
-				event_param->u.kprobe.symbol_name,
-				event_param->u.kprobe.offset,
-				event_param->u.kprobe.addr,
-				event);
-		if (ret)
-			goto register_error;
-		ret = try_module_get(event->desc->owner);
-		WARN_ON_ONCE(!ret);
-		break;
-	case LTTNG_KERNEL_FUNCTION:
-		ret = lttng_ftrace_register(event_param->name,
-				event_param->u.ftrace.symbol_name,
-				event);
-		if (ret)
-			goto register_error;
-		ret = try_module_get(event->desc->owner);
-		WARN_ON_ONCE(!ret);
 		break;
 	default:
 		WARN_ON_ONCE(1);
@@ -316,21 +298,21 @@ struct ltt_event *ltt_event_create(struct ltt_channel *chan,
 	ret = _ltt_event_metadata_statedump(chan->session, chan, event);
 	if (ret)
 		goto statedump_error;
-	list_add(&event->list, &chan->session->events);
-	mutex_unlock(&sessions_mutex);
+	cds_list_add(&event->list, &chan->session->events);
+	pthread_mutex_unlock(&sessions_mutex);
 	return event;
 
 statedump_error:
-	WARN_ON_ONCE(tracepoint_probe_unregister(event_param->name,
+	WARN_ON_ONCE(__tracepoint_probe_unregister(event_param->name,
 				event->desc->probe_callback,
 				event));
 	ltt_event_put(event->desc);
 register_error:
-	kmem_cache_free(event_cache, event);
+	free(event);
 cache_error:
 exist:
 full:
-	mutex_unlock(&sessions_mutex);
+	pthread_mutex_unlock(&sessions_mutex);
 	return NULL;
 }
 
@@ -342,20 +324,12 @@ int _ltt_event_unregister(struct ltt_event *event)
 	int ret = -EINVAL;
 
 	switch (event->instrumentation) {
-	case LTTNG_KERNEL_TRACEPOINT:
-		ret = tracepoint_probe_unregister(event->desc->name,
+	case LTTNG_UST_TRACEPOINT:
+		ret = __tracepoint_probe_unregister(event->desc->name,
 						  event->desc->probe_callback,
 						  event);
 		if (ret)
 			return ret;
-		break;
-	case LTTNG_KERNEL_KPROBE:
-		lttng_kprobes_unregister(event);
-		ret = 0;
-		break;
-	case LTTNG_KERNEL_FUNCTION:
-		lttng_ftrace_unregister(event);
-		ret = 0;
 		break;
 	default:
 		WARN_ON_ONCE(1);
@@ -370,23 +344,15 @@ static
 void _ltt_event_destroy(struct ltt_event *event)
 {
 	switch (event->instrumentation) {
-	case LTTNG_KERNEL_TRACEPOINT:
+	case LTTNG_UST_TRACEPOINT:
 		ltt_event_put(event->desc);
-		break;
-	case LTTNG_KERNEL_KPROBE:
-		module_put(event->desc->owner);
-		lttng_kprobes_destroy_private(event);
-		break;
-	case LTTNG_KERNEL_FUNCTION:
-		module_put(event->desc->owner);
-		lttng_ftrace_destroy_private(event);
 		break;
 	default:
 		WARN_ON_ONCE(1);
 	}
-	list_del(&event->list);
+	cds_list_del(&event->list);
 	lttng_destroy_context(event->ctx);
-	kmem_cache_free(event_cache, event);
+	free(event);
 }
 
 /*
@@ -400,17 +366,17 @@ int lttng_metadata_printf(struct ltt_session *session,
 {
 	struct lib_ring_buffer_ctx ctx;
 	struct ltt_channel *chan = session->metadata;
-	char *str;
+	char *str = NULL;
 	int ret = 0, waitret;
 	size_t len, reserve_len, pos;
 	va_list ap;
 
-	WARN_ON_ONCE(!ACCESS_ONCE(session->active));
+	WARN_ON_ONCE(!CMM_ACCESS_ONCE(session->active));
 
 	va_start(ap, fmt);
-	str = kvasprintf(GFP_KERNEL, fmt, ap);
+	ret = vasprintf(&str, fmt, ap);
 	va_end(ap);
-	if (!str)
+	if (ret < 0)
 		return -ENOMEM;
 
 	len = strlen(str);
@@ -428,17 +394,17 @@ int lttng_metadata_printf(struct ltt_session *session,
 		 * we need to bail out after timeout or being
 		 * interrupted.
 		 */
-		waitret = wait_event_interruptible_timeout(*chan->ops->get_reader_wait_queue(chan->chan),
+		waitret = wait_cond_interruptible_timeout(
 			({
 				ret = chan->ops->event_reserve(&ctx, 0);
 				ret != -ENOBUFS || !ret;
 			}),
-			msecs_to_jiffies(LTTNG_METADATA_TIMEOUT_MSEC));
-		if (!waitret || waitret == -ERESTARTSYS || ret) {
-			printk(KERN_WARNING "LTTng: Failure to write metadata to buffers (%s)\n",
-				waitret == -ERESTARTSYS ? "interrupted" :
+			LTTNG_METADATA_TIMEOUT_MSEC);
+		if (!waitret || waitret == -EINTR || ret) {
+			DBG("LTTng: Failure to write metadata to buffers (%s)\n",
+				waitret == -EINTR ? "interrupted" :
 					(ret == -ENOBUFS ? "timeout" : "I/O error"));
-			if (waitret == -ERESTARTSYS)
+			if (waitret == -EINTR)
 				ret = waitret;
 			goto end;
 		}
@@ -446,7 +412,7 @@ int lttng_metadata_printf(struct ltt_session *session,
 		chan->ops->event_commit(&ctx);
 	}
 end:
-	kfree(str);
+	free(str);
 	return ret;
 }
 
@@ -469,7 +435,7 @@ int _ltt_field_statedump(struct ltt_session *session,
 					? "UTF8"
 					: "ASCII",
 			field->type.u.basic.integer.base,
-#ifdef __BIG_ENDIAN
+#ifdef BIG_ENDIAN
 			field->type.u.basic.integer.reverse_byte_order ? " byte_order = le;" : "",
 #else
 			field->type.u.basic.integer.reverse_byte_order ? " byte_order = be;" : "",
@@ -498,7 +464,7 @@ int _ltt_field_statedump(struct ltt_session *session,
 					? "UTF8"
 					: "ASCII",
 			elem_type->u.basic.integer.base,
-#ifdef __BIG_ENDIAN
+#ifdef BIG_ENDIAN
 			elem_type->u.basic.integer.reverse_byte_order ? " byte_order = le;" : "",
 #else
 			elem_type->u.basic.integer.reverse_byte_order ? " byte_order = be;" : "",
@@ -524,7 +490,7 @@ int _ltt_field_statedump(struct ltt_session *session,
 					? "UTF8"
 					: "ASCII"),
 			length_type->u.basic.integer.base,
-#ifdef __BIG_ENDIAN
+#ifdef BIG_ENDIAN
 			length_type->u.basic.integer.reverse_byte_order ? " byte_order = le;" : "",
 #else
 			length_type->u.basic.integer.reverse_byte_order ? " byte_order = be;" : "",
@@ -544,7 +510,7 @@ int _ltt_field_statedump(struct ltt_session *session,
 					? "UTF8"
 					: "ASCII"),
 			elem_type->u.basic.integer.base,
-#ifdef __BIG_ENDIAN
+#ifdef BIG_ENDIAN
 			elem_type->u.basic.integer.reverse_byte_order ? " byte_order = le;" : "",
 #else
 			elem_type->u.basic.integer.reverse_byte_order ? " byte_order = be;" : "",
@@ -613,7 +579,7 @@ int _ltt_event_metadata_statedump(struct ltt_session *session,
 {
 	int ret = 0;
 
-	if (event->metadata_dumped || !ACCESS_ONCE(session->active))
+	if (event->metadata_dumped || !CMM_ACCESS_ONCE(session->active))
 		return 0;
 	if (chan == session->metadata)
 		return 0;
@@ -677,7 +643,7 @@ int _ltt_channel_metadata_statedump(struct ltt_session *session,
 {
 	int ret = 0;
 
-	if (chan->metadata_dumped || !ACCESS_ONCE(session->active))
+	if (chan->metadata_dumped || !CMM_ACCESS_ONCE(session->active))
 		return 0;
 	if (chan == session->metadata)
 		return 0;
@@ -782,18 +748,18 @@ int _ltt_event_header_declare(struct ltt_session *session)
 static
 int _ltt_session_metadata_statedump(struct ltt_session *session)
 {
-	unsigned char *uuid_c = session->uuid.b;
-	unsigned char uuid_s[37];
+	unsigned char *uuid_c = session->uuid;
+	char uuid_s[37];
 	struct ltt_channel *chan;
 	struct ltt_event *event;
 	int ret = 0;
 
-	if (!ACCESS_ONCE(session->active))
+	if (!CMM_ACCESS_ONCE(session->active))
 		return 0;
 	if (session->metadata_dumped)
 		goto skip_session;
 	if (!session->metadata) {
-		printk(KERN_WARNING "LTTng: attempt to start tracing, but metadata channel is not found. Operation abort.\n");
+		DBG("LTTng: attempt to start tracing, but metadata channel is not found. Operation abort.\n");
 		return -EPERM;
 	}
 
@@ -830,7 +796,7 @@ int _ltt_session_metadata_statedump(struct ltt_session *session)
 		CTF_VERSION_MAJOR,
 		CTF_VERSION_MINOR,
 		uuid_s,
-#ifdef __BIG_ENDIAN
+#ifdef BIG_ENDIAN
 		"be"
 #else
 		"le"
@@ -848,13 +814,13 @@ int _ltt_session_metadata_statedump(struct ltt_session *session)
 		goto end;
 
 skip_session:
-	list_for_each_entry(chan, &session->chan, list) {
+	cds_list_for_each_entry(chan, &session->chan, list) {
 		ret = _ltt_channel_metadata_statedump(session, chan);
 		if (ret)
 			goto end;
 	}
 
-	list_for_each_entry(event, &session->events, list) {
+	cds_list_for_each_entry(event, &session->events, list) {
 		ret = _ltt_event_metadata_statedump(session, event->chan, event);
 		if (ret)
 			goto end;
@@ -869,27 +835,14 @@ end:
  * @transport: transport structure
  *
  * Registers a transport which can be used as output to extract the data out of
- * LTTng. The module calling this registration function must ensure that no
- * trap-inducing code will be executed by the transport functions. E.g.
- * vmalloc_sync_all() must be called between a vmalloc and the moment the memory
- * is made visible to the transport function. This registration acts as a
- * vmalloc_sync_all. Therefore, only if the module allocates virtual memory
- * after its registration must it synchronize the TLBs.
+ * LTTng.
  */
 void ltt_transport_register(struct ltt_transport *transport)
 {
-	/*
-	 * Make sure no page fault can be triggered by the module about to be
-	 * registered. We deal with this here so we don't have to call
-	 * vmalloc_sync_all() in each module's init.
-	 */
-	wrapper_vmalloc_sync_all();
-
-	mutex_lock(&sessions_mutex);
-	list_add_tail(&transport->node, &ltt_transport_list);
-	mutex_unlock(&sessions_mutex);
+	pthread_mutex_lock(&sessions_mutex);
+	cds_list_add_tail(&transport->node, &ltt_transport_list);
+	pthread_mutex_unlock(&sessions_mutex);
 }
-EXPORT_SYMBOL_GPL(ltt_transport_register);
 
 /**
  * ltt_transport_unregister - LTT transport unregistration
@@ -897,42 +850,16 @@ EXPORT_SYMBOL_GPL(ltt_transport_register);
  */
 void ltt_transport_unregister(struct ltt_transport *transport)
 {
-	mutex_lock(&sessions_mutex);
-	list_del(&transport->node);
-	mutex_unlock(&sessions_mutex);
-}
-EXPORT_SYMBOL_GPL(ltt_transport_unregister);
-
-static int __init ltt_events_init(void)
-{
-	int ret;
-
-	event_cache = KMEM_CACHE(ltt_event, 0);
-	if (!event_cache)
-		return -ENOMEM;
-	ret = ltt_debugfs_abi_init();
-	if (ret)
-		goto error_abi;
-	return 0;
-error_abi:
-	kmem_cache_destroy(event_cache);
-	return ret;
+	pthread_mutex_lock(&sessions_mutex);
+	cds_list_del(&transport->node);
+	pthread_mutex_unlock(&sessions_mutex);
 }
 
-module_init(ltt_events_init);
-
-static void __exit ltt_events_exit(void)
+static
+void __attribute__((destructor)) ltt_events_exit(void)
 {
 	struct ltt_session *session, *tmpsession;
 
-	ltt_debugfs_abi_exit();
-	list_for_each_entry_safe(session, tmpsession, &sessions, list)
+	cds_list_for_each_entry_safe(session, tmpsession, &sessions, list)
 		ltt_session_destroy(session);
-	kmem_cache_destroy(event_cache);
 }
-
-module_exit(ltt_events_exit);
-
-MODULE_LICENSE("GPL and additional rights");
-MODULE_AUTHOR("Mathieu Desnoyers <mathieu.desnoyers@efficios.com>");
-MODULE_DESCRIPTION("LTTng Events");

@@ -12,7 +12,8 @@ libust_la_SOURCES = \
 	ltt-ring-buffer-client-discard.c \
 	ltt-ring-buffer-client-overwrite.c \
 	ltt-ring-buffer-metadata-client.h \
-	ltt-ring-buffer-metadata-client.c
+	ltt-ring-buffer-metadata-client.c \
+	ltt-events.c
 
 #removed: buffers.c buffers.h
 

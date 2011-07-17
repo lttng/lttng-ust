@@ -25,4 +25,5 @@ noinst_HEADERS = \
 	ust/kcompat/compiler.h \
 	ust/kcompat/types.h \
 	ust/tracectl.h \
-	ust/stringify.h
+	ust/stringify.h \
+	ust/wait.h
