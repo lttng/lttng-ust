@@ -7,8 +7,8 @@ Updated versions of this package may be found at:
 
   * Website:  http://lttng.org/ust
   * Releases: http://lttng.org/files/ust/releases
-  * GitWeb:   http://git.dorsal.polymtl.ca (project: ust)
-  * Git:      git://git.dorsal.polymtl.ca/git/ust.git
+  * GitWeb:   http://git.lttng.org (project: ust)
+  * Git:      git://git.lttng.org/ust.git
 
 
 PREREQUISITES:
