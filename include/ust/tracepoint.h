@@ -2,7 +2,7 @@
 #define _UST_TRACEPOINT_H
 
 /*
- * Copyright (C) 2008 Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
+ * Copyright (C) 2008-2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  * Copyright (C) 2009 Pierre-Marc Fournier
  * Copyright (C) 2009 Steven Rostedt <rostedt@goodmis.org>
  *
