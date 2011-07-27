@@ -11,6 +11,8 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
+#include <stdint.h>
+
 #define LTTNG_UST_SYM_NAME_LEN	128
 
 enum lttng_ust_instrumentation {

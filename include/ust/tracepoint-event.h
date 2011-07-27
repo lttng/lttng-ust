@@ -82,7 +82,7 @@
 #include TRACE_INCLUDE(TRACE_INCLUDE_FILE)
 
 #ifndef CONFIG_NO_EVENT_TRACING
-#include <ust/probe.h>
+#include <ust/lttng-tracepoint-event.h>
 #endif
 
 #undef TRACEPOINT_EVENT

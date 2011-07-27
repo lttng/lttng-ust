@@ -1,8 +1,8 @@
-#ifndef _LTT_EVENTS_H
-#define _LTT_EVENTS_H
+#ifndef _UST_LTTNG_EVENTS_H
+#define _UST_LTTNG_EVENTS_H
 
 /*
- * ltt-events.h
+ * ust/lttng-events.h
  *
  * Copyright 2010 (c) - Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
@@ -201,18 +201,19 @@ struct ltt_channel {
 	struct lttng_ctx *ctx;
 	/* Event ID management */
 	struct ltt_session *session;
-	struct file *file;		/* File associated to channel */
+	int objd;			/* Object associated to channel */
 	unsigned int free_event_id;	/* Next event ID to allocate */
 	struct cds_list_head list;	/* Channel list */
 	struct ltt_channel_ops *ops;
 	int header_type;		/* 0: unset, 1: compact, 2: large */
+	int shmid;			/* shared memory ID */
 	int metadata_dumped:1;
 };
 
 struct ltt_session {
 	int active;			/* Is trace session active ? */
 	int been_active;		/* Has trace session been active ? */
-	struct file *file;		/* File associated to session */
+	int objd;			/* Object associated to session */
 	struct ltt_channel *metadata;	/* Metadata channel */
 	struct cds_list_head chan;	/* Channel list head */
 	struct cds_list_head events;	/* Event list head */
@@ -238,8 +239,7 @@ struct ltt_channel *ltt_channel_create(struct ltt_session *session,
 				       void *buf_addr,
 				       size_t subbuf_size, size_t num_subbuf,
 				       unsigned int switch_timer_interval,
-				       unsigned int read_timer_interval,
-				       int *shmid);
+				       unsigned int read_timer_interval);
 struct ltt_channel *ltt_global_channel_create(struct ltt_session *session,
 				       int overwrite, void *buf_addr,
 				       size_t subbuf_size, size_t num_subbuf,
@@ -276,4 +276,4 @@ int lttng_add_vtid_to_ctx(struct lttng_ctx **ctx);
 
 //extern const struct file_operations lttng_tracepoint_list_fops;
 
-#endif /* _LTT_EVENTS_H */
+#endif /* _UST_LTTNG_EVENTS_H */

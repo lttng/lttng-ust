@@ -1,8 +1,10 @@
 nobase_include_HEADERS = \
 	ust/marker.h \
 	ust/tracepoint.h \
-	ust/tracepoint_event.h \
-	ust/probe.h \
+	ust/tracepoint-event.h \
+	ust/lttng-tracepoint-event.h \
+	ust/lttng-tracepoint-event-reset.h \
+	ust/lttng-events.h \
 	ust/version.h \
 	ust/lttng-ust-abi.h \
 	ust/ringbuffer-abi.h

@@ -199,17 +199,48 @@ int tracepoint_unregister_lib(struct tracepoint * const *tracepoints_start);
 /*
  * For use with the TRACEPOINT_EVENT macro:
  *
- * We define a tracepoint, its arguments, its printf format
- * and its 'fast binary record' layout.
+ * We define a tracepoint, its arguments, and its 'fast binary record'
+ * layout.
  *
- * Firstly, name your tracepoint via TRACEPOINT_EVENT(name : the
- * 'subsystem_event' notation is fine.
+ * Firstly, name your tracepoint via TRACEPOINT_EVENT(name,
  *
- * Think about this whole construct as the
- * 'trace_sched_switch() function' from now on.
+ * The "name" MUST follow these rules to ensure no namespace clash
+ * occurs:
+ *
+ * For projects (applications and libraries) for which an entity
+ * specific to the project controls the source code and thus its
+ * tracepoints (typically with a scope larger than a single company):
+ *
+ * either:
+ *   project_component_event
+ * or:
+ *   project_event
+ *
+ * Where "project" is the name of the project,
+ *       "component" is the name of the project component where the
+ *         tracepoint is located (optional),
+ *       "event" is the name of the tracepoint event.
+ *
+ * For projects issued from a single company wishing to advertise that
+ * the company controls the source code and thus the tracepoints, the
+ * "com_" prefix should be used:
+ *
+ * either:
+ *   com_company_project_component_event
+ * or:
+ *   com_company_project_event
+ *
+ * Where "company" is the name of the company,
+ *       "project" is the name of the project,
+ *       "component" is the name of the project component where the
+ *         tracepoint is located (optional),
+ *       "event" is the name of the tracepoint event.
  *
  *
- *  TRACEPOINT_EVENT(sched_switch,
+ * As an example, let's consider a user-space application "someproject"
+ * that would have an internal thread scheduler:
+ *
+ *  TRACEPOINT_EVENT(someproject_sched_switch,
  *
  *	*
  *	* A function has a regular function arguments
@@ -236,7 +267,7 @@ int tracepoint_unregister_lib(struct tracepoint * const *tracepoints_start);
  *	* be saved into the ring buffer. These are the fields
  *	* that will be exposed to readers.
  *	*
- *	* tp_field(pid_t, prev_pid, prev->pid) is equivalent
+ *	* ctf_integer(pid_t, prev_pid, prev->pid) is equivalent
  *	* to a standard declaraton:
  *	*
  *	*	pid_t prev_pid;
@@ -245,7 +276,7 @@ int tracepoint_unregister_lib(struct tracepoint * const *tracepoints_start);
  *	*
  *	*	prev_pid = prev->pid;
  *	*
- *	* tp_array(char, prev_comm, TASK_COMM_LEN, prev->comm) is
+ *	* ctf_array(char, prev_comm, prev->comm, TASK_COMM_LEN) is
  *	* equivalent to:
  *	*
  *	*	char prev_comm[TASK_COMM_LEN];
@@ -256,14 +287,14 @@ int tracepoint_unregister_lib(struct tracepoint * const *tracepoints_start);
  *	*
  *
  *	TP_FIELDS(
- *		tp_array(char,	prev_comm, TASK_COMM_LEN, prev->comm)
- *		tp_field(pid_t,	prev_pid,  prev->pid)
- *		tp_field(int,	prev_prio, prev->prio)
- *		tp_array(char,	next_comm, TASK_COMM_LEN, next->comm)
- *		tp_field(pid_t,	next_pid,  next->pid)
- *		tp_field(int,	next_prio, next->prio)
+ *		ctf_array(char, prev_comm, prev->comm, TASK_COMM_LEN)
+ *		ctf_integer(pid_t, prev_pid,  prev->pid)
+ *		ctf_integer(int, prev_prio, prev->prio)
+ *		ctf_array(char, next_comm, next->comm, TASK_COMM_LEN)
+ *		ctf_integer(pid_t, next_pid,  next->pid)
+ *		ctf_integer(int, next_prio, next->prio)
  *	)
- * );
+ * )
  */
 
 #define TRACEPOINT_EVENT(name, proto, args, fields)			\
@@ -282,45 +313,6 @@ int tracepoint_unregister_lib(struct tracepoint * const *tracepoints_start);
 #define TRACEPOINT_EVENT_CLASS_NOARGS(name, fields)
 #define TRACEPOINT_EVENT_INSTANCE_NOARGS(template, name)		\
 	_DECLARE_TRACEPOINT_NOARGS(name)
-
-
-
-#define TRACEPOINT_EVENT_LIB						\
-	extern struct trace_event * const __start___trace_events_ptrs[]	\
-	__attribute__((weak, visibility("hidden")));			\
-	extern struct trace_event * const __stop___trace_events_ptrs[]	\
-	__attribute__((weak, visibility("hidden")));			\
-	static struct trace_event * __event_ptrs_dummy			\
-	__attribute__((used, section("__trace_events_ptrs")));		\
-	static void __attribute__((constructor))			\
-	__trace_events__init(void)					\
-	{								\
-		trace_event_register_lib(__start___trace_events_ptrs,	\
-					 __stop___trace_events_ptrs -	\
-					 __start___trace_events_ptrs);	\
-	}								\
-									\
-	static void __attribute__((destructor))				\
-	__trace_event__destroy(void)					\
-	{								\
-		trace_event_unregister_lib(__start___trace_events_ptrs);\
-	}
-
-struct trace_event {
-	const char *name;
-};
-
-struct trace_event_lib {
-	struct trace_event * const *trace_events_start;
-	int trace_events_count;
-	struct cds_list_head list;
-};
-
-extern
-int trace_event_register_lib(struct trace_event * const *start_trace_events,
-			     int trace_event_count);
-extern
-int trace_event_unregister_lib(struct trace_event * const *start_trace_events);
 
 #endif /* #ifndef TRACEPOINT_EVENT */
 
