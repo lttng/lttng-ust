@@ -197,7 +197,36 @@ int tracepoint_unregister_lib(struct tracepoint * const *tracepoints_start);
 
 #ifndef TRACEPOINT_EVENT
 /*
- * For use with the TRACEPOINT_EVENT macro:
+ * Usage of the TRACEPOINT_EVENT macro:
+ *
+ * In short, an example:
+ *
+ * TRACEPOINT_EVENT(< [com_company_]project_[component_]_event >,
+ *     TP_PROTO(int arg0, void *arg1, char *string, size_t strlen,
+ *              long *arg4, size_t arg4_len),
+ *     TP_ARGS(arg0, arg1, string, strlen, arg4, arg4_len),
+ *     TP_FIELDS(
+ *
+ *         * Integer, printed in base 10 * 
+ *         ctf_integer(int, field_a, arg0)
+ *
+ *         * Integer, printed with 0x base 16 * 
+ *         ctf_integer_hex(unsigned long, field_d, arg1)
+ *
+ *         * Array Sequence, printed as UTF8-encoded array of bytes * 
+ *         ctf_array_text(char, field_b, string, FIXED_LEN)
+ *         ctf_sequence_text(char, field_c, string, size_t, strlen)
+ *
+ *         * String, printed as UTF8-encoded string * 
+ *         ctf_string(field_e, string)
+ *
+ *         * Array sequence of signed integer values * 
+ *         ctf_array(long, field_f, arg4, FIXED_LEN4)
+ *         ctf_sequence(long, field_g, arg4, size_t, arg4_len)
+ *     )
+ * )
+ *
+ * In more detail:
  *
  * We define a tracepoint, its arguments, and its 'fast binary record'
  * layout.
