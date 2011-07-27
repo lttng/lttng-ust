@@ -16,6 +16,9 @@
 #include "ltt-events.h"
 #include "ltt-tracer.h"
 
+/*
+ * Note: as we append context information, the pointer location may change.
+ */
 struct lttng_ctx_field *lttng_append_context(struct lttng_ctx **ctx_p)
 {
 	struct lttng_ctx_field *field;
