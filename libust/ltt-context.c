@@ -45,6 +45,9 @@ struct lttng_ctx_field *lttng_append_context(struct lttng_ctx **ctx_p)
 }
 EXPORT_SYMBOL_GPL(lttng_append_context);
 
+/*
+ * Remove last context field.
+ */
 void lttng_remove_context_field(struct lttng_ctx **ctx_p,
 				struct lttng_ctx_field *field)
 {
@@ -52,6 +55,7 @@ void lttng_remove_context_field(struct lttng_ctx **ctx_p,
 
 	ctx = *ctx_p;
 	ctx->nr_fields--;
+	WARN_ON_ONCE(&ctx->fields[ctx->nr_fields] != field);
 	memset(&ctx->fields[ctx->nr_fields], 0, sizeof(struct lttng_ctx_field));
 }
 EXPORT_SYMBOL_GPL(lttng_remove_context_field);
