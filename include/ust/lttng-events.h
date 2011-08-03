@@ -15,6 +15,8 @@
 #include <uuid/uuid.h>
 #include <stdint.h>
 #include <ust/lttng-ust-abi.h>
+#include <endian.h>
+#include <float.h>
 
 #undef is_signed_type
 #define is_signed_type(type)		(((type)(-1)) < 0)
@@ -32,6 +34,7 @@ enum abstract_types {
 	atype_array,
 	atype_sequence,
 	atype_string,
+	atype_float,
 	NR_ABSTRACT_TYPES,
 };
 
@@ -71,6 +74,33 @@ struct lttng_integer_type {
 	enum lttng_string_encodings encoding;
 };
 
+#define _float_mant_dig(_type)						\
+	(sizeof(_type) == sizeof(float) ? FLT_MANT_DIG			\
+		: (sizeof(_type) == sizeof(double) ? DBL_MANT_DIG	\
+		: (sizeof(_type) == sizeof(long double) ? LDBL_MANT_DIG	\
+		: 0)))
+
+#define __type_float(_type)					\
+	{							\
+	    .atype = atype_float,				\
+	    .u.basic._float =					\
+		{						\
+		  .exp_dig = sizeof(_type) * CHAR_BIT		\
+				- _float_mant_dig(_type),	\
+		  .mant_dig = _float_mant_dig(_type),		\
+		  .alignment = ltt_alignof(_type) * CHAR_BIT,	\
+		  .signedness = is_signed_type(_type),		\
+		  .reverse_byte_order = __BYTE_ORDER != __FLOAT_WORD_ORDER, \
+		},						\
+	}							\
+
+struct lttng_float_type {
+	unsigned int exp_dig;		/* exponent digits, in bits */
+	unsigned int mant_dig;		/* mantissa digits, in bits */
+	unsigned short alignment;	/* in bits */
+	unsigned int reverse_byte_order:1;
+};
+
 union _lttng_basic_type {
 	struct lttng_integer_type integer;
 	struct {
@@ -79,6 +109,7 @@ union _lttng_basic_type {
 	struct {
 		enum lttng_string_encodings encoding;
 	} string;
+	struct lttng_float_type _float;
 };
 
 struct lttng_basic_type {

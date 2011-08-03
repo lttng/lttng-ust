@@ -11,6 +11,9 @@
 #undef ctf_integer_ext
 #define ctf_integer_ext(_type, _item, _src, _byte_order, _base)
 
+#undef ctf_float
+#define ctf_float(_type, _item, _src)
+
 #undef ctf_array_encoded
 #define ctf_array_encoded(_type, _item, _src, _length, _encoding)
 

@@ -98,6 +98,13 @@
 	  .type = __type_integer(_type, _byte_order, _base, none),\
 	},
 
+#undef ctf_float
+#define ctf_float(_type, _item, _src)				\
+	{							\
+	  .name = #_item,					\
+	  .type = __type_float(_type),				\
+	},
+
 #undef ctf_array_encoded
 #define ctf_array_encoded(_type, _item, _src, _length, _encoding) \
 	{							\
@@ -234,6 +241,11 @@ static struct lttng_probe_desc TP_ID(__probe_desc___, TRACE_SYSTEM) = {
 	__event_len += lib_ring_buffer_align(__event_len, ltt_alignof(_type)); \
 	__event_len += sizeof(_type);
 
+#undef ctf_float
+#define ctf_float(_type, _item, _src)		      			       \
+	__event_len += lib_ring_buffer_align(__event_len, ltt_alignof(_type)); \
+	__event_len += sizeof(_type);
+
 #undef ctf_array_encoded
 #define ctf_array_encoded(_type, _item, _src, _length)			       \
 	__event_len += lib_ring_buffer_align(__event_len, ltt_alignof(_type)); \
@@ -289,6 +301,10 @@ static inline size_t __event_get_size__##_name(size_t *__dynamic_len, _proto) \
 #define ctf_integer_ext(_type, _item, _src, _byte_order, _base)		       \
 	__event_align = max_t(size_t, __event_align, ltt_alignof(_type));
 
+#undef ctf_float
+#define ctf_float(_type, _item, _src)					       \
+	__event_align = max_t(size_t, __event_align, ltt_alignof(_type));
+
 #undef ctf_array_encoded
 #define ctf_array_encoded(_type, _item, _src, _length)			       \
 	__event_align = max_t(size_t, __event_align, ltt_alignof(_type));
@@ -336,6 +352,14 @@ static inline size_t __event_get_align__##_name(_proto)			      \
 
 #undef ctf_integer_ext
 #define ctf_integer_ext(_type, _item, _src, _byte_order, _base)	        \
+	{								\
+		_type __tmp = (_src);					\
+		lib_ring_buffer_align_ctx(&ctx, ltt_alignof(__tmp));	\
+		__chan->ops->event_write(&ctx, &__tmp, sizeof(__tmp));	\
+	}
+
+#undef ctf_float
+#define ctf_float(_type, _item, _src)				        \
 	{								\
 		_type __tmp = (_src);					\
 		lib_ring_buffer_align_ctx(&ctx, ltt_alignof(__tmp));	\
