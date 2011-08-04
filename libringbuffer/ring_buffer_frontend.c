@@ -56,6 +56,22 @@
 #endif
 
 /*
+ * Use POSIX SHM: shm_open(3) and shm_unlink(3).
+ * close(2) to close the fd returned by shm_open.
+ * shm_unlink releases the shared memory object name.
+ * ftruncate(2) sets the size of the memory object.
+ * mmap/munmap maps the shared memory obj to a virtual address in the
+ * calling proceess (should be done both in libust and consumer).
+ * See shm_overview(7) for details.
+ * Pass file descriptor returned by shm_open(3) to ltt-sessiond through
+ * a UNIX socket.
+ *
+ * Since we don't need to access the object using its name, we can
+ * immediately shm_unlink(3) it, and only keep the handle with its file
+ * descriptor.
+ */
+
+/*
  * Internal structure representing offsets to use at a sub-buffer switch.
  */
 struct switch_offsets {
