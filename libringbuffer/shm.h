@@ -11,6 +11,7 @@
 
 #include <stdint.h>
 #include "ust/core.h"
+#include "usterr_signal_safe.h"
 
 #define SHM_MAGIC	0x54335433
 #define SHM_MAJOR	0
@@ -37,6 +38,11 @@ struct shm_header {
 	size_t shm_size, shm_allocated;
 
 	DECLARE_SHMP(struct channel, chan);
+};
+
+struct shm_handle {
+	struct shm_header *header;	/* beginning of mapping */
+	int shmfd;			/* process-local file descriptor */
 };
 
 #define shmp(shm_offset)		\
@@ -66,6 +72,13 @@ void *zalloc_shm(struct shm_header *shm_header, size_t len)
 	ret = (char *) shm_header + shm_header->shm_allocated;
 	shm_header->shm_allocated += len;
 	return ret;
+}
+
+static inline
+void align_shm(struct shm_header *shm_header, size_t align)
+{
+	size_t offset_len = offset_align(shm_header->shm_allocated, align);
+	shm_header->shm_allocated += offset_len;
 }
 
 #endif /* _LIBRINGBUFFER_SHM_H */

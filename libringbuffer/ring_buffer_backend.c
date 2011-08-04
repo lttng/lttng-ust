@@ -14,6 +14,7 @@
 #include "backend.h"
 #include "frontend.h"
 #include "smp.h"
+#include "shm.h"
 
 /**
  * lib_ring_buffer_backend_allocate - allocate a channel buffer
@@ -41,11 +42,18 @@ int lib_ring_buffer_backend_allocate(const struct lib_ring_buffer_config *config
 	if (extra_reader_sb)
 		num_subbuf_alloc++;
 
+	/* Align the entire buffer backend data on PAGE_SIZE */
+	align_shm(shm_header, PAGE_SIZE);
 	set_shmp(bufb->array, zalloc_shm(shm_header,
 			sizeof(*bufb->array) * num_subbuf_alloc));
 	if (unlikely(!shmp(bufb->array)))
 		goto array_error;
 
+	/*
+	 * This is the largest element (the buffer pages) which needs to
+	 * be aligned on PAGE_SIZE.
+	 */
+	align_shm(shm_header, PAGE_SIZE);
 	set_shmp(bufb->memory_map, zalloc_shm(shm_header,
 			subbuf_size * num_subbuf_alloc));
 	if (unlikely(!shmp(bufb->memory_map)))
@@ -53,15 +61,16 @@ int lib_ring_buffer_backend_allocate(const struct lib_ring_buffer_config *config
 
 	/* Allocate backend pages array elements */
 	for (i = 0; i < num_subbuf_alloc; i++) {
+		align_shm(shm_header, __alignof__(struct lib_ring_buffer_backend_pages));
 		set_shmp(bufb->array[i],
 			zalloc_shm(shm_header,
-				sizeof(struct lib_ring_buffer_backend_pages) +
-				subbuf_size));
+				sizeof(struct lib_ring_buffer_backend_pages)));
 		if (!shmp(bufb->array[i]))
 			goto free_array;
 	}
 
 	/* Allocate write-side subbuffer table */
+	align_shm(shm_header, __alignof__(struct lib_ring_buffer_backend_subbuffer));
 	bufb->buf_wsb = zalloc_shm(shm_header,
 				sizeof(struct lib_ring_buffer_backend_subbuffer)
 				* num_subbuf);
@@ -87,6 +96,12 @@ int lib_ring_buffer_backend_allocate(const struct lib_ring_buffer_config *config
 			mmap_offset += subbuf_size;
 		}
 	}
+	/*
+	 * Align the end of each buffer backend data on PAGE_SIZE, to
+	 * behave like an array which contains elements that need to be
+	 * aligned on PAGE_SIZE.
+	 */
+	align_shm(shm_header, PAGE_SIZE);
 
 	return 0;
 
@@ -235,6 +250,7 @@ int channel_backend_init(struct channel_backend *chanb,
 		size_t alloc_size;
 
 		/* Allocating the buffer per-cpu structures */
+		align_shm(shm_header, __alignof__(struct lib_ring_buffer));
 		alloc_size = sizeof(struct lib_ring_buffer);
 		buf = zalloc_shm(shm_header, alloc_size * num_possible_cpus());
 		if (!buf)
@@ -254,8 +270,8 @@ int channel_backend_init(struct channel_backend *chanb,
 		struct lib_ring_buffer *buf;
 		size_t alloc_size;
 
+		align_shm(shm_header, __alignof__(struct lib_ring_buffer));
 		alloc_size = sizeof(struct lib_ring_buffer);
-		chanb->buf = zmalloc(sizeof(struct lib_ring_buffer));
 		buf = zalloc_shm(shm_header, alloc_size);
 		if (!buf)
 			goto end;

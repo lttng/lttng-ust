@@ -37,13 +37,12 @@
  */
 
 extern
-struct channel *channel_create(const struct lib_ring_buffer_config *config,
-			       const char *name, void *priv,
-			       void *buf_addr,
-			       size_t subbuf_size, size_t num_subbuf,
-			       unsigned int switch_timer_interval,
-			       unsigned int read_timer_interval,
-			       int *shmid);
+struct shm_handle *channel_create(const struct lib_ring_buffer_config *config,
+				const char *name, void *priv,
+				void *buf_addr,
+				size_t subbuf_size, size_t num_subbuf,
+				unsigned int switch_timer_interval,
+				unsigned int read_timer_interval);
 
 /*
  * channel_destroy returns the private data pointer. It finalizes all channel's
@@ -51,7 +50,7 @@ struct channel *channel_create(const struct lib_ring_buffer_config *config,
  * channel.
  */
 extern
-void *channel_destroy(struct channel *chan);
+void *channel_destroy(struct shm_handle *handle);
 
 
 /* Buffer read operations */

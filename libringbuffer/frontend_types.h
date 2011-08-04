@@ -20,7 +20,6 @@
 
 #include <urcu/list.h>
 #include <urcu/uatomic.h>
-#include <urcu/ref.h>
 
 #include "ust/core.h"
 
@@ -51,7 +50,6 @@ struct channel {
 	unsigned long read_timer_interval;	/* Reader wakeup (jiffies) */
 	//wait_queue_head_t read_wait;		/* reader wait queue */
 	int finalized;				/* Has channel been finalized */
-	struct urcu_ref ref;			/* Reference count */
 	DECLARE_SHMP(struct shm_header, shm_header);
 } ____cacheline_aligned;
 

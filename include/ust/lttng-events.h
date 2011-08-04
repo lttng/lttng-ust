@@ -237,7 +237,7 @@ struct ltt_channel {
 	struct cds_list_head list;	/* Channel list */
 	struct ltt_channel_ops *ops;
 	int header_type;		/* 0: unset, 1: compact, 2: large */
-	int shmid;			/* shared memory ID */
+	int shmfd;			/* shared-memory file descriptor */
 	int metadata_dumped:1;
 };
 
