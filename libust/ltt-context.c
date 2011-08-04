@@ -12,8 +12,8 @@
 #include <linux/list.h>
 #include <linux/mutex.h>
 #include <linux/slab.h>
+#include <ust/lttng-events.h>
 #include "wrapper/vmalloc.h"	/* for wrapper_vmalloc_sync_all() */
-#include "ltt-events.h"
 #include "ltt-tracer.h"
 
 /*

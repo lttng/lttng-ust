@@ -27,12 +27,12 @@
 #include <stdint.h>
 #include <ust/core.h>
 #include <ust/compat.h>
+#include <ust/lttng-events.h>
 #include "ltt-tracer-core.h"
-#include "ltt-events.h"
 
-#define LTTNG_VERSION 0
-#define LTTNG_PATCHLEVEL 9
-#define LTTNG_SUBLEVEL 1
+#define LTTNG_UST_VERSION 0
+#define LTTNG_UST_PATCHLEVEL 9
+#define LTTNG_UST_SUBLEVEL 1
 
 #ifndef CHAR_BIT
 #define CHAR_BIT 8

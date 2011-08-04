@@ -12,8 +12,7 @@
 #include <linux/list.h>
 #include <linux/mutex.h>
 #include <linux/seq_file.h>
-
-#include "ltt-events.h"
+#include <ust/lttng-events.h>
 
 static LIST_HEAD(probe_list);
 static DEFINE_MUTEX(probe_mutex);

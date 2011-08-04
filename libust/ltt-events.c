@@ -18,9 +18,11 @@
 #include <uuid/uuid.h>
 #include <ust/tracepoint.h>
 #include <errno.h>
+#include <sys/shm.h>
+#include <sys/ipc.h>
+#include <ust/lttng-events.h>
 #include "usterr_signal_safe.h"
 #include "ust/core.h"
-#include "ltt-events.h"
 #include "ltt-tracer.h"
 #include "ust/wait.h"
 
@@ -194,8 +196,7 @@ struct ltt_channel *ltt_channel_create(struct ltt_session *session,
 				       void *buf_addr,
 				       size_t subbuf_size, size_t num_subbuf,
 				       unsigned int switch_timer_interval,
-				       unsigned int read_timer_interval,
-				       int *shmid)
+				       unsigned int read_timer_interval)
 {
 	struct ltt_channel *chan;
 	struct ltt_transport *transport;
@@ -214,6 +215,7 @@ struct ltt_channel *ltt_channel_create(struct ltt_session *session,
 		goto nomem;
 	chan->session = session;
 	chan->id = session->free_chan_id++;
+	//chan->shmid = shmget(getpid(), shmlen, IPC_CREAT | IPC_EXCL | 0700);
 	/*
 	 * Note: the channel creation op already writes into the packet
 	 * headers. Therefore the "chan" information used as input
