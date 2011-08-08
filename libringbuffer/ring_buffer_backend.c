@@ -10,7 +10,7 @@
 
 #include "ust/core.h"
 
-#include "config.h"
+#include <ust/ringbuffer-config.h>
 #include "backend.h"
 #include "frontend.h"
 #include "smp.h"

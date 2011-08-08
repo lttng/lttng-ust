@@ -24,7 +24,7 @@
 #include "ust/core.h"
 
 #include "usterr_signal_safe.h"
-#include "config.h"
+#include <ust/ringbuffer-config.h>
 #include "backend_types.h"
 #include "shm.h"
 

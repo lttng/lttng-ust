@@ -8,13 +8,13 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
-#include <linux/module.h>
-#include <linux/list.h>
-#include <linux/mutex.h>
-#include <linux/seq_file.h>
+#include <string.h>
+#include <errno.h>
+#include <urcu/list.h>
+#include <ust/core.h>
 #include <ust/lttng-events.h>
 
-static LIST_HEAD(probe_list);
+static CDS_LIST_HEAD(probe_list);
 static DEFINE_MUTEX(probe_mutex);
 
 static
@@ -23,7 +23,7 @@ const struct lttng_event_desc *find_event(const char *name)
 	struct lttng_probe_desc *probe_desc;
 	int i;
 
-	list_for_each_entry(probe_desc, &probe_list, head) {
+	cds_list_for_each_entry(probe_desc, &probe_list, head) {
 		for (i = 0; i < probe_desc->nr_events; i++) {
 			if (!strcmp(probe_desc->event_desc[i].name, name))
 				return &probe_desc->event_desc[i];
@@ -37,7 +37,7 @@ int ltt_probe_register(struct lttng_probe_desc *desc)
 	int ret = 0;
 	int i;
 
-	mutex_lock(&probe_mutex);
+	pthread_mutex_lock(&probe_mutex);
 	/*
 	 * TODO: This is O(N^2). Turn into a hash table when probe registration
 	 * overhead becomes an issue.
@@ -48,51 +48,44 @@ int ltt_probe_register(struct lttng_probe_desc *desc)
 			goto end;
 		}
 	}
-	list_add(&desc->head, &probe_list);
+	cds_list_add(&desc->head, &probe_list);
 end:
-	mutex_unlock(&probe_mutex);
+	pthread_mutex_unlock(&probe_mutex);
 	return ret;
 }
-EXPORT_SYMBOL_GPL(ltt_probe_register);
 
 void ltt_probe_unregister(struct lttng_probe_desc *desc)
 {
-	mutex_lock(&probe_mutex);
-	list_del(&desc->head);
-	mutex_unlock(&probe_mutex);
+	pthread_mutex_lock(&probe_mutex);
+	cds_list_del(&desc->head);
+	pthread_mutex_unlock(&probe_mutex);
 }
-EXPORT_SYMBOL_GPL(ltt_probe_unregister);
 
 const struct lttng_event_desc *ltt_event_get(const char *name)
 {
 	const struct lttng_event_desc *event;
-	int ret;
 
-	mutex_lock(&probe_mutex);
+	pthread_mutex_lock(&probe_mutex);
 	event = find_event(name);
-	mutex_unlock(&probe_mutex);
+	pthread_mutex_unlock(&probe_mutex);
 	if (!event)
 		return NULL;
-	ret = try_module_get(event->owner);
-	WARN_ON_ONCE(!ret);
 	return event;
 }
-EXPORT_SYMBOL_GPL(ltt_event_get);
 
 void ltt_event_put(const struct lttng_event_desc *event)
 {
-	module_put(event->owner);
 }
-EXPORT_SYMBOL_GPL(ltt_event_put);
 
+#if 0
 static
 void *tp_list_start(struct seq_file *m, loff_t *pos)
 {
 	struct lttng_probe_desc *probe_desc;
 	int iter = 0, i;
 
-	mutex_lock(&probe_mutex);
-	list_for_each_entry(probe_desc, &probe_list, head) {
+	pthread_mutex_lock(&probe_mutex);
+	cds_list_for_each_entry(probe_desc, &probe_list, head) {
 		for (i = 0; i < probe_desc->nr_events; i++) {
 			if (iter++ >= *pos)
 				return (void *) &probe_desc->event_desc[i];
@@ -109,7 +102,7 @@ void *tp_list_next(struct seq_file *m, void *p, loff_t *ppos)
 	int iter = 0, i;
 
 	(*ppos)++;
-	list_for_each_entry(probe_desc, &probe_list, head) {
+	cds_list_for_each_entry(probe_desc, &probe_list, head) {
 		for (i = 0; i < probe_desc->nr_events; i++) {
 			if (iter++ >= *ppos)
 				return (void *) &probe_desc->event_desc[i];
@@ -122,7 +115,7 @@ void *tp_list_next(struct seq_file *m, void *p, loff_t *ppos)
 static
 void tp_list_stop(struct seq_file *m, void *p)
 {
-	mutex_unlock(&probe_mutex);
+	pthread_mutex_unlock(&probe_mutex);
 }
 
 static
@@ -160,3 +153,4 @@ const struct file_operations lttng_tracepoint_list_fops = {
 	.llseek = seq_lseek,
 	.release = seq_release,
 };
+#endif //0

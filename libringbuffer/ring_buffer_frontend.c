@@ -46,7 +46,7 @@
 #include <urcu/ref.h>
 
 #include "smp.h"
-#include "config.h"
+#include <ust/ringbuffer-config.h>
 #include "backend.h"
 #include "frontend.h"
 #include "shm.h"
@@ -381,7 +381,7 @@ static void channel_unregister_notifiers(struct channel *chan)
 		lib_ring_buffer_stop_switch_timer(buf);
 		lib_ring_buffer_stop_read_timer(buf);
 	}
-	channel_backend_unregister_notifiers(&chan->backend);
+	//channel_backend_unregister_notifiers(&chan->backend);
 }
 
 static void channel_free(struct shm_handle *handle)
@@ -418,8 +418,6 @@ static void channel_free(struct shm_handle *handle)
  *                         padding to let readers get those sub-buffers.
  *                         Used for live streaming.
  * @read_timer_interval: Time interval (in us) to wake up pending readers.
- * @shmfd: shared memory file descriptor (output, needs to be closed by
- *         the caller)
  *
  * Holds cpu hotplug.
  * Returns NULL on failure.

@@ -18,7 +18,7 @@
 
 #include <urcu/compiler.h>
 
-#include "config.h"
+#include <ust/ringbuffer-config.h>
 #include "backend_types.h"
 #include "frontend_types.h"
 #include "shm.h"

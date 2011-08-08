@@ -6,7 +6,7 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
-/* Reset macros used within TRACE_EVENT to "nothing" */
+/* Reset macros used within TRACEPOINT_EVENT to "nothing" */
 
 #undef ctf_integer_ext
 #define ctf_integer_ext(_type, _item, _src, _byte_order, _base)
@@ -36,5 +36,11 @@
 #undef TRACEPOINT_EVENT_CLASS
 #define TRACEPOINT_EVENT_CLASS(_name, _proto, _args, _fields)
 
+#undef TRACEPOINT_EVENT_CLASS_NOARGS
+#define TRACEPOINT_EVENT_CLASS_NOARGS(_name, _fields)
+
 #undef TRACEPOINT_EVENT_INSTANCE
 #define TRACEPOINT_EVENT_INSTANCE(_template, _name, _proto, _args)
+
+#undef TRACEPOINT_EVENT_INSTANCE_NOARGS
+#define TRACEPOINT_EVENT_INSTANCE_NOARGS(_template, _name)

@@ -32,7 +32,7 @@
 
 #include "usterr_signal_safe.h"
 #include "ust/bug.h"
-#include "../libringbuffer/config.h"
+#include <ust/ringbuffer-config.h>
 
 struct ltt_session;
 struct ltt_channel;

@@ -1,8 +1,8 @@
-#undef TRACE_SYSTEM
-#define TRACE_SYSTEM tp
+#undef TRACEPOINT_SYSTEM
+#define TRACEPOINT_SYSTEM tp
 
-#if !defined(_TRACE_TP_H) || defined(TRACE_HEADER_MULTI_READ)
-#define _TRACE_TP_H
+#if !defined(_TRACEPOINT_TP_H) || defined(TRACEPOINT_HEADER_MULTI_READ)
+#define _TRACEPOINT_TP_H
 
 /*
  * Copyright (C) 2011  Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
@@ -24,20 +24,20 @@
 
 #include <ust/tracepoint.h>
 
-TRACEPOINT_EVENT(hello_tptest,
+TRACEPOINT_EVENT(ust_tests_hello_tptest,
 		 TP_PROTO(int anint),
 		 TP_ARGS(anint),
-		 TP_FIELDS());
+		 TP_FIELDS())
 
-TRACEPOINT_EVENT_NOARGS(hello_tptest2,
-			TP_FIELDS());
+TRACEPOINT_EVENT_NOARGS(ust_tests_hello_tptest_sighandler,
+			TP_FIELDS())
 
-#endif /* _TRACE_TP_H */
+#endif /* _TRACEPOINT_TP_H */
 
-#undef TRACE_INCLUDE_PATH
-#define TRACE_INCLUDE_PATH .
-#undef TRACE_INCLUDE_FILE
-#define TRACE_INCLUDE_FILE tp
+#undef TRACEPOINT_INCLUDE_PATH
+#define TRACEPOINT_INCLUDE_PATH .
+#undef TRACEPOINT_INCLUDE_FILE
+#define TRACEPOINT_INCLUDE_FILE tp
 
 /* This part must be outside protection */
-#include <ust/tracepoint_event.h>
+#include <ust/tracepoint-event.h>

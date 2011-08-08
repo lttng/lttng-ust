@@ -8,9 +8,8 @@
  * published by the Free  Software Foundation.
  */
 
-#include <ust/marker.h>
+//DISABLED #include <ust/marker.h>
 #include <ust/tracepoint.h>
 
-UST_MARKER_LIB;
+//DISABLED UST_MARKER_LIB;
 TRACEPOINT_LIB;
-TRACEPOINT_EVENT_LIB;

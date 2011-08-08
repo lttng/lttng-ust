@@ -18,7 +18,9 @@
  */
 
 #include <stdio.h>
+#include <urcu/compiler.h>
 #include <ust/lttng-events.h>
+#include <ust/ringbuffer-config.h>
 
 /*
  * Macro declarations used for all stages.
@@ -79,6 +81,15 @@
 			     TP_PARAMS(fields))		\
 	TRACEPOINT_EVENT_INSTANCE(name, name, TP_PARAMS(proto), TP_PARAMS(args))
 
+#undef TRACEPOINT_EVENT_NOARGS
+#define TRACEPOINT_EVENT_NOARGS(name, fields)		\
+	TRACEPOINT_EVENT_CLASS_NOARGS(name,		\
+			     TP_PARAMS(fields))		\
+	TRACEPOINT_EVENT_INSTANCE_NOARGS(name, name)
+
+/* Helpers */
+#define _TP_ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+
 /*
  * Stage 1 of the trace events.
  *
@@ -86,8 +97,8 @@
  * Each event produce an array of fields.
  */
 
-/* Reset all macros within TRACE_EVENT */
-#include "lttng-tracepoint-events-reset.h"
+/* Reset all macros within TRACEPOINT_EVENT */
+#include <ust/lttng-tracepoint-event-reset.h>
 
 /* Named field types must be defined in lttng-types.h */
 
@@ -150,13 +161,17 @@
 #undef TP_FIELDS
 #define TP_FIELDS(args...) args	/* Only one used in this phase */
 
-#undef TRACEPOINT_EVENT_CLASS
-#define TRACEPOINT_EVENT_CLASS(_name, _proto, _args, _fields)		     \
+#undef TRACEPOINT_EVENT_CLASS_NOARGS
+#define TRACEPOINT_EVENT_CLASS_NOARGS(_name, _fields)		   	     \
 	static const struct lttng_event_field __event_fields___##_name[] = { \
 		_fields							     \
 	};
 
-#include TRACE_INCLUDE(TRACE_INCLUDE_FILE)
+#undef TRACEPOINT_EVENT_CLASS
+#define TRACEPOINT_EVENT_CLASS(_name, _proto, _args, _fields)		     \
+	TRACEPOINT_EVENT_CLASS_NOARGS(_name, _fields)
+
+#include TRACEPOINT_INCLUDE(TRACEPOINT_INCLUDE_FILE)
 
 /*
  * Stage 2 of the trace events.
@@ -164,17 +179,21 @@
  * Create probe callback prototypes.
  */
 
-/* Reset all macros within TRACE_EVENT */
-#include "lttng-tracepoint-events-reset.h"
+/* Reset all macros within TRACEPOINT_EVENT */
+#include <ust/lttng-tracepoint-event-reset.h>
 
 #undef TP_PROTO
 #define TP_PROTO(args...) args
 
 #undef TRACEPOINT_EVENT_CLASS
-#define TRACEPOINT_EVENT_CLASS(_name, _proto, _args, _fields)	\
+#define TRACEPOINT_EVENT_CLASS(_name, _proto, _args, _fields)		     \
 static void __event_probe__##_name(void *__data, _proto);
 
-#include TRACE_INCLUDE(TRACE_INCLUDE_FILE)
+#undef TRACEPOINT_EVENT_CLASS_NOARGS
+#define TRACEPOINT_EVENT_CLASS_NOARGS(_name, _fields)			     \
+static void __event_probe__##_name(void *__data);
+
+#include TRACEPOINT_INCLUDE(TRACEPOINT_INCLUDE_FILE)
 
 /*
  * Stage 3 of the trace events.
@@ -184,23 +203,27 @@ static void __event_probe__##_name(void *__data, _proto);
 
 /* Named field types must be defined in lttng-types.h */
 
-/* Reset all macros within TRACE_EVENT */
-#include "lttng-tracepoint-events-reset.h"
+/* Reset all macros within TRACEPOINT_EVENT */
+#include <ust/lttng-tracepoint-event-reset.h>
 
-#undef TRACEPOINT_EVENT_INSTANCE
-#define TRACEPOINT_EVENT_INSTANCE(_template, _name, _proto, _args)	       \
+#undef TRACEPOINT_EVENT_INSTANCE_NOARGS
+#define TRACEPOINT_EVENT_INSTANCE_NOARGS(_template, _name)		       \
 		{							       \
 			.fields = __event_fields___##_template,		       \
 			.name = #_name,					       \
 			.probe_callback = (void *) &__event_probe__##_template,\
-			.nr_fields = ARRAY_SIZE(__event_fields___##_template), \
+			.nr_fields = _TP_ARRAY_SIZE(__event_fields___##_template), \
 		},
+
+#undef TRACEPOINT_EVENT_INSTANCE
+#define TRACEPOINT_EVENT_INSTANCE(_template, _name, _proto, _args)	       \
+	TRACEPOINT_EVENT_INSTANCE_NOARGS(_template, _name)
 
 #define TP_ID1(_token, _system)	_token##_system
 #define TP_ID(_token, _system)	TP_ID1(_token, _system)
 
-static const struct lttng_event_desc TP_ID(__event_desc___, TRACE_SYSTEM)[] = {
-#include TRACE_INCLUDE(TRACE_INCLUDE_FILE)
+static const struct lttng_event_desc TP_ID(__event_desc___, TRACEPOINT_SYSTEM)[] = {
+#include TRACEPOINT_INCLUDE(TRACEPOINT_INCLUDE_FILE)
 };
 
 #undef TP_ID1
@@ -217,9 +240,9 @@ static const struct lttng_event_desc TP_ID(__event_desc___, TRACE_SYSTEM)[] = {
 #define TP_ID(_token, _system)	TP_ID1(_token, _system)
 
 /* non-const because list head will be modified when registered. */
-static struct lttng_probe_desc TP_ID(__probe_desc___, TRACE_SYSTEM) = {
-	.event_desc = TP_ID(__event_desc___, TRACE_SYSTEM),
-	.nr_events = ARRAY_SIZE(TP_ID(__event_desc___, TRACE_SYSTEM)),
+static struct lttng_probe_desc TP_ID(__probe_desc___, TRACEPOINT_SYSTEM) = {
+	.event_desc = TP_ID(__event_desc___, TRACEPOINT_SYSTEM),
+	.nr_events = _TP_ARRAY_SIZE(TP_ID(__event_desc___, TRACEPOINT_SYSTEM)),
 };
 
 #undef TP_ID1
@@ -231,8 +254,8 @@ static struct lttng_probe_desc TP_ID(__probe_desc___, TRACE_SYSTEM) = {
  * Create static inline function that calculates event size.
  */
 
-/* Reset all macros within TRACE_EVENT */
-#include "lttng-tracepoint-events-reset.h"
+/* Reset all macros within TRACEPOINT_EVENT */
+#include <ust/lttng-tracepoint-event-reset.h>
 
 /* Named field types must be defined in lttng-types.h */
 
@@ -284,7 +307,20 @@ static inline size_t __event_get_size__##_name(size_t *__dynamic_len, _proto) \
 	return __event_len;						      \
 }
 
-#include TRACE_INCLUDE(TRACE_INCLUDE_FILE)
+#undef TRACEPOINT_EVENT_CLASS_NOARGS
+#define TRACEPOINT_EVENT_CLASS_NOARGS(_name, _fields)			      \
+static inline size_t __event_get_size__##_name(size_t *__dynamic_len)	      \
+{									      \
+	size_t __event_len = 0;						      \
+	unsigned int __dynamic_len_idx = 0;				      \
+									      \
+	if (0)								      \
+		(void) __dynamic_len_idx;	/* don't warn if unused */    \
+	_fields								      \
+	return __event_len;						      \
+}
+
+#include TRACEPOINT_INCLUDE(TRACEPOINT_INCLUDE_FILE)
 
 /*
  * Stage 6 of the trace events.
@@ -292,8 +328,8 @@ static inline size_t __event_get_size__##_name(size_t *__dynamic_len, _proto) \
  * Create static inline function that calculates event payload alignment.
  */
 
-/* Reset all macros within TRACE_EVENT */
-#include "lttng-tracepoint-events-reset.h"
+/* Reset all macros within TRACEPOINT_EVENT */
+#include <ust/lttng-tracepoint-event-reset.h>
 
 /* Named field types must be defined in lttng-types.h */
 
@@ -333,7 +369,16 @@ static inline size_t __event_get_align__##_name(_proto)			      \
 	return __event_align;						      \
 }
 
-#include TRACE_INCLUDE(TRACE_INCLUDE_FILE)
+#undef TRACEPOINT_EVENT_CLASS_NOARGS
+#define TRACEPOINT_EVENT_CLASS_NOARGS(_name, _fields)			      \
+static inline size_t __event_get_align__##_name(void)			      \
+{									      \
+	size_t __event_align = 1;					      \
+	_fields								      \
+	return __event_align;						      \
+}
+
+#include TRACEPOINT_INCLUDE(TRACEPOINT_INCLUDE_FILE)
 
 
 /*
@@ -347,8 +392,8 @@ static inline size_t __event_get_align__##_name(_proto)			      \
  * execution order, jumping to the appropriate assignment block.
  */
 
-/* Reset all macros within TRACE_EVENT */
-#include "lttng-tracepoint-events-reset.h"
+/* Reset all macros within TRACEPOINT_EVENT */
+#include <ust/lttng-tracepoint-event-reset.h>
 
 #undef ctf_integer_ext
 #define ctf_integer_ext(_type, _item, _src, _byte_order, _base)	        \
@@ -409,16 +454,16 @@ static void __event_probe__##_name(void *__data, _proto)		      \
 	struct lib_ring_buffer_ctx ctx;					      \
 	size_t __event_len, __event_align;				      \
 	size_t __dynamic_len_idx = 0;					      \
-	size_t __dynamic_len[ARRAY_SIZE(__event_fields___##_name)];	      \
+	size_t __dynamic_len[_TP_ARRAY_SIZE(__event_fields___##_name)];	      \
 	int __ret;							      \
 									      \
 	if (0)								      \
 		(void) __dynamic_len_idx;	/* don't warn if unused */    \
-	if (unlikely(!ACCESS_ONCE(__chan->session->active)))		      \
+	if (unlikely(!CMM_ACCESS_ONCE(__chan->session->active)))	      \
 		return;							      \
-	if (unlikely(!ACCESS_ONCE(__chan->enabled)))			      \
+	if (unlikely(!CMM_ACCESS_ONCE(__chan->enabled)))		      \
 		return;							      \
-	if (unlikely(!ACCESS_ONCE(__event->enabled)))			      \
+	if (unlikely(!CMM_ACCESS_ONCE(__event->enabled)))		      \
 		return;							      \
 	__event_len = __event_get_size__##_name(__dynamic_len, _args);	      \
 	__event_align = __event_get_align__##_name(_args);		      \
@@ -431,7 +476,38 @@ static void __event_probe__##_name(void *__data, _proto)		      \
 	__chan->ops->event_commit(&ctx);				      \
 }
 
-#include TRACE_INCLUDE(TRACE_INCLUDE_FILE)
+#undef TRACEPOINT_EVENT_CLASS_NOARGS
+#define TRACEPOINT_EVENT_CLASS_NOARGS(_name, _fields)			      \
+static void __event_probe__##_name(void *__data)			      \
+{									      \
+	struct ltt_event *__event = __data;				      \
+	struct ltt_channel *__chan = __event->chan;			      \
+	struct lib_ring_buffer_ctx ctx;					      \
+	size_t __event_len, __event_align;				      \
+	size_t __dynamic_len_idx = 0;					      \
+	size_t __dynamic_len[_TP_ARRAY_SIZE(__event_fields___##_name)];	      \
+	int __ret;							      \
+									      \
+	if (0)								      \
+		(void) __dynamic_len_idx;	/* don't warn if unused */    \
+	if (unlikely(!CMM_ACCESS_ONCE(__chan->session->active)))	      \
+		return;							      \
+	if (unlikely(!CMM_ACCESS_ONCE(__chan->enabled)))		      \
+		return;							      \
+	if (unlikely(!CMM_ACCESS_ONCE(__event->enabled)))		      \
+		return;							      \
+	__event_len = __event_get_size__##_name(__dynamic_len);		      \
+	__event_align = __event_get_align__##_name();			      \
+	lib_ring_buffer_ctx_init(&ctx, __chan->chan, __event, __event_len,    \
+				 __event_align, -1);			      \
+	__ret = __chan->ops->event_reserve(&ctx, __event->id);		      \
+	if (__ret < 0)							      \
+		return;							      \
+	_fields								      \
+	__chan->ops->event_commit(&ctx);				      \
+}
+
+#include TRACEPOINT_INCLUDE(TRACEPOINT_INCLUDE_FILE)
 
 /*
  * Stage 8 of the trace events.
@@ -439,25 +515,25 @@ static void __event_probe__##_name(void *__data, _proto)		      \
  * Register/unregister probes at module load/unload.
  */
 
-/* Reset all macros within TRACE_EVENT */
-#include "lttng-tracepoint-events-reset.h"
+/* Reset all macros within TRACEPOINT_EVENT */
+#include <ust/lttng-tracepoint-event-reset.h>
 
 #define TP_ID1(_token, _system)	_token##_system
 #define TP_ID(_token, _system)	TP_ID1(_token, _system)
 
 static void __attribute__((constructor))
-TP_ID(__lttng_events_init__, TRACE_SYSTEM)(void)
+TP_ID(__lttng_events_init__, TRACEPOINT_SYSTEM)(void)
 {
 	int ret;
 
-	ret = ltt_probe_register(&TP_ID(__probe_desc___, TRACE_SYSTEM));
+	ret = ltt_probe_register(&TP_ID(__probe_desc___, TRACEPOINT_SYSTEM));
 	assert(!ret);
 }
 
 static void __attribute__((destructor))
-TP_ID(__lttng_events_exit__, TRACE_SYSTEM)(void)
+TP_ID(__lttng_events_exit__, TRACEPOINT_SYSTEM)(void)
 {
-	ltt_probe_unregister(&TP_ID(__probe_desc___, TRACE_SYSTEM));
+	ltt_probe_unregister(&TP_ID(__probe_desc___, TRACEPOINT_SYSTEM));
 }
 
 #undef TP_ID1

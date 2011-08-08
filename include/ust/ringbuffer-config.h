@@ -293,6 +293,6 @@ int lib_ring_buffer_check_config(const struct lib_ring_buffer_config *config,
 	return 0;
 }
 
-#include "vatomic.h"
+#include <ust/vatomic.h>
 
 #endif /* _LINUX_RING_BUFFER_CONFIG_H */

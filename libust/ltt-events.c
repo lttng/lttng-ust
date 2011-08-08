@@ -25,6 +25,7 @@
 #include "ust/core.h"
 #include "ltt-tracer.h"
 #include "ust/wait.h"
+#include "../libringbuffer/shm.h"
 
 static CDS_LIST_HEAD(sessions);
 static CDS_LIST_HEAD(ltt_transport_list);
@@ -215,15 +216,15 @@ struct ltt_channel *ltt_channel_create(struct ltt_session *session,
 		goto nomem;
 	chan->session = session;
 	chan->id = session->free_chan_id++;
-	//chan->shmid = shmget(getpid(), shmlen, IPC_CREAT | IPC_EXCL | 0700);
 	/*
 	 * Note: the channel creation op already writes into the packet
 	 * headers. Therefore the "chan" information used as input
 	 * should be already accessible.
 	 */
-	chan->chan = transport->ops.channel_create("[lttng]", chan, buf_addr,
+	chan->handle = transport->ops.channel_create("[lttng]", chan, buf_addr,
 			subbuf_size, num_subbuf, switch_timer_interval,
-			read_timer_interval, shmid);
+			read_timer_interval);
+	chan->chan = shmp(chan->handle->header->chan);
 	if (!chan->chan)
 		goto create_error;
 	chan->enabled = 1;
@@ -247,7 +248,7 @@ active:
 static
 void _ltt_channel_destroy(struct ltt_channel *chan)
 {
-	chan->ops->channel_destroy(chan->chan);
+	chan->ops->channel_destroy(chan->handle);
 	cds_list_del(&chan->list);
 	lttng_destroy_context(chan->ctx);
 	free(chan);

@@ -21,16 +21,18 @@
  * in their file should include this file. The following are macros that the
  * trace file may define:
  *
- * TRACE_SYSTEM defines the system the tracepoint is for
+ * TRACEPOINT_SYSTEM defines the system the tracepoint is for:
+ *     < [com_company_]project_[component_] >
  *
- * TRACE_INCLUDE_FILE if the file name is something other than TRACE_SYSTEM.h
- *     This macro may be defined to tell define_trace.h what file to include.
- *     Note, leave off the ".h".
+ * TRACEPOINT_INCLUDE_FILE if the file name is something other than
+ *     TRACEPOINT_SYSTEM.h. This macro may be defined to tell
+ *     define_trace.h what file to include.  Note, leave off the ".h".
  *
- * TRACE_INCLUDE_PATH if the path is something other than core kernel include/trace
- *     then this macro can define the path to use. Note, the path is relative to
- *     tracepoint_event.h, not the file including it. Full path names for out of tree
- *     modules must be used.
+ * TRACEPOINT_INCLUDE_PATH if the path is something other than core
+ *     kernel include/trace then this macro can define the path to use.
+ *     Note, the path is relative to tracepoint_event.h, not the file
+ *     including it. Full path names for out of tree modules must be
+ *     used.
  */
 
 #ifdef TRACEPOINT_CREATE_PROBES
@@ -59,27 +61,28 @@
 #define TRACEPOINT_EVENT_INSTANCE_NOARGS(template, name)	\
 	_DEFINE_TRACEPOINT(name)
 
-#undef TRACE_INCLUDE
-#undef __TRACE_INCLUDE
+#undef TRACEPOINT_INCLUDE
+#undef __TRACEPOINT_INCLUDE
 
-#ifndef TRACE_INCLUDE_FILE
-# define TRACE_INCLUDE_FILE TRACE_SYSTEM
-# define UNDEF_TRACE_INCLUDE_FILE
+#ifndef TRACEPOINT_INCLUDE_FILE
+# define TRACEPOINT_INCLUDE_FILE TRACEPOINT_SYSTEM
+# define UNDEF_TRACEPOINT_INCLUDE_FILE
 #endif
 
-#ifndef TRACE_INCLUDE_PATH
-# define __TRACE_INCLUDE(system) <trace/events/system.h>
-# define UNDEF_TRACE_INCLUDE_PATH
+#ifndef TRACEPOINT_INCLUDE_PATH
+# define __TRACEPOINT_INCLUDE(system) <tracepoint/system.h>
+# define UNDEF_TRACEPOINT_INCLUDE_PATH
 #else
-# define __TRACE_INCLUDE(system) __tp_stringify(TRACE_INCLUDE_PATH/system.h)
+# define __TRACEPOINT_INCLUDE(system)				\
+	__tp_stringify(TRACEPOINT_INCLUDE_PATH/system.h)
 #endif
 
-# define TRACE_INCLUDE(system) __TRACE_INCLUDE(system)
+# define TRACEPOINT_INCLUDE(system) __TRACEPOINT_INCLUDE(system)
 
 /* Let the trace headers be reread */
-#define TRACE_HEADER_MULTI_READ
+#define TRACEPOINT_HEADER_MULTI_READ
 
-#include TRACE_INCLUDE(TRACE_INCLUDE_FILE)
+#include TRACEPOINT_INCLUDE(TRACEPOINT_INCLUDE_FILE)
 
 #ifndef CONFIG_NO_EVENT_TRACING
 #include <ust/lttng-tracepoint-event.h>
@@ -91,17 +94,17 @@
 #undef TRACEPOINT_EVENT_NOARGS
 #undef TRACEPOINT_EVENT_CLASS_NOARGS
 #undef TRACEPOINT_EVENT_INSTANCE_NOARGS
-#undef TRACE_HEADER_MULTI_READ
+#undef TRACEPOINT_HEADER_MULTI_READ
 
 /* Only undef what we defined in this file */
-#ifdef UNDEF_TRACE_INCLUDE_FILE
-# undef TRACE_INCLUDE_FILE
-# undef UNDEF_TRACE_INCLUDE_FILE
+#ifdef UNDEF_TRACEPOINT_INCLUDE_FILE
+# undef TRACEPOINT_INCLUDE_FILE
+# undef UNDEF_TRACEPOINT_INCLUDE_FILE
 #endif
 
-#ifdef UNDEF_TRACE_INCLUDE_PATH
-# undef TRACE_INCLUDE_PATH
-# undef UNDEF_TRACE_INCLUDE_PATH
+#ifdef UNDEF_TRACEPOINT_INCLUDE_PATH
+# undef TRACEPOINT_INCLUDE_PATH
+# undef UNDEF_TRACEPOINT_INCLUDE_PATH
 #endif
 
 /* We may be processing more files */

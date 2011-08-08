@@ -8,13 +8,10 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
-#include <linux/module.h>
-#include <linux/list.h>
-#include <linux/mutex.h>
-#include <linux/slab.h>
 #include <ust/lttng-events.h>
-#include "wrapper/vmalloc.h"	/* for wrapper_vmalloc_sync_all() */
-#include "ltt-tracer.h"
+#include <ust/core.h>
+#include <string.h>
+#include <usterr_signal_safe.h>
 
 /*
  * Note: as we append context information, the pointer location may change.
@@ -25,7 +22,7 @@ struct lttng_ctx_field *lttng_append_context(struct lttng_ctx **ctx_p)
 	struct lttng_ctx *ctx;
 
 	if (!*ctx_p) {
-		*ctx_p = kzalloc(sizeof(struct lttng_ctx), GFP_KERNEL);
+		*ctx_p = zmalloc(sizeof(struct lttng_ctx));
 		if (!*ctx_p)
 			return NULL;
 	}
@@ -34,19 +31,18 @@ struct lttng_ctx_field *lttng_append_context(struct lttng_ctx **ctx_p)
 		struct lttng_ctx_field *new_fields;
 
 		ctx->allocated_fields = max_t(size_t, 1, 2 * ctx->allocated_fields);
-		new_fields = kzalloc(ctx->allocated_fields * sizeof(struct lttng_ctx_field), GFP_KERNEL);
+		new_fields = zmalloc(ctx->allocated_fields * sizeof(struct lttng_ctx_field));
 		if (!new_fields)
 			return NULL;
 		if (ctx->fields)
 			memcpy(new_fields, ctx->fields, sizeof(*ctx->fields) * ctx->nr_fields);
-		kfree(ctx->fields);
+		free(ctx->fields);
 		ctx->fields = new_fields;
 	}
 	field = &ctx->fields[ctx->nr_fields];
 	ctx->nr_fields++;
 	return field;
 }
-EXPORT_SYMBOL_GPL(lttng_append_context);
 
 /*
  * Remove last context field.
@@ -61,7 +57,6 @@ void lttng_remove_context_field(struct lttng_ctx **ctx_p,
 	WARN_ON_ONCE(&ctx->fields[ctx->nr_fields] != field);
 	memset(&ctx->fields[ctx->nr_fields], 0, sizeof(struct lttng_ctx_field));
 }
-EXPORT_SYMBOL_GPL(lttng_remove_context_field);
 
 void lttng_destroy_context(struct lttng_ctx *ctx)
 {
@@ -73,6 +68,6 @@ void lttng_destroy_context(struct lttng_ctx *ctx)
 		if (ctx->fields[i].destroy)
 			ctx->fields[i].destroy(&ctx->fields[i]);
 	}
-	kfree(ctx->fields);
-	kfree(ctx);
+	free(ctx->fields);
+	free(ctx);
 }

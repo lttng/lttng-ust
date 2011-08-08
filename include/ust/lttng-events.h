@@ -197,15 +197,16 @@ struct ltt_event {
 	int metadata_dumped:1;
 };
 
+struct channel;
+
 struct ltt_channel_ops {
-	struct channel *(*channel_create)(const char *name,
+	struct shm_handle *(*channel_create)(const char *name,
 				struct ltt_channel *ltt_chan,
 				void *buf_addr,
 				size_t subbuf_size, size_t num_subbuf,
 				unsigned int switch_timer_interval,
-				unsigned int read_timer_interval,
-				int *shmid);
-	void (*channel_destroy)(struct channel *chan);
+				unsigned int read_timer_interval);
+	void (*channel_destroy)(struct shm_handle *handle);
 	struct lib_ring_buffer *(*buffer_read_open)(struct channel *chan);
 	void (*buffer_read_close)(struct lib_ring_buffer *buf);
 	int (*event_reserve)(struct lib_ring_buffer_ctx *ctx,
@@ -237,7 +238,7 @@ struct ltt_channel {
 	struct cds_list_head list;	/* Channel list */
 	struct ltt_channel_ops *ops;
 	int header_type;		/* 0: unset, 1: compact, 2: large */
-	int shmfd;			/* shared-memory file descriptor */
+	struct shm_handle *handle;	/* shared-memory handle */
 	int metadata_dumped:1;
 };
 

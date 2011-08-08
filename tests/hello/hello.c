@@ -4,8 +4,8 @@
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
+ * License as published by the Free Software Foundation; version 2.1 of
+ * the License.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -26,15 +26,13 @@
 #include <fcntl.h>
 #include <signal.h>
 
-#include <ust/marker.h>
-#include <ust/ustctl.h>
 #include "usterr.h"
 #include "tp.h"
 
 void inthandler(int sig)
 {
-	printf("in handler\n");
-	exit(0);
+	printf("in SIGUSR1 handler\n");
+	tracepoint(ust_tests_hello_tptest_sighandler);
 }
 
 int init_int_handler(void)
@@ -54,7 +52,7 @@ int init_int_handler(void)
 	/* Only defer ourselves. Also, try to restart interrupted
 	 * syscalls to disturb the traced program as little as possible.
 	 */
-	result = sigaction(SIGINT, &act, NULL);
+	result = sigaction(SIGUSR1, &act, NULL);
 	if (result == -1) {
 		PERROR("sigaction");
 		return -1;
@@ -63,7 +61,7 @@ int init_int_handler(void)
 	return 0;
 }
 
-int main()
+int main(int argc, char **argv)
 {
 	int i;
 
@@ -72,22 +70,10 @@ int main()
 	printf("Hello, World!\n");
 
 	sleep(1);
+
 	for (i = 0; i < 50; i++) {
-		ust_marker(bar, "str %s", "FOOBAZ");
-		ust_marker(bar2, "number1 %d number2 %d", 53, 9800);
-		tracepoint(hello_tptest, i);
+		tracepoint(ust_tests_hello_tptest, i);
 		usleep(100000);
 	}
-
-	if (scanf("%*s") == EOF)
-		PERROR("scanf failed");
-
-	ustctl_stop_trace(getpid(), "auto");
-	ustctl_destroy_trace(getpid(), "auto");
-
-	DBG("TRACE STOPPED");
-	if (scanf("%*s") == EOF)
-		PERROR("scanf failed");
-
 	return 0;
 }
