@@ -1056,6 +1056,7 @@ static char initialized = 0;
 
 void __attribute__((constructor)) init_ustrelay_transport(void)
 {
+	init_usterr();
 	if(!initialized) {
 		ltt_transport_register(&ust_relay_transport);
 		initialized = 1;

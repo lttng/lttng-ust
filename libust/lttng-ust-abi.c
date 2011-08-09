@@ -706,6 +706,7 @@ static const struct objd_ops lttng_event_ops = {
 
 void __attribute__((constructor)) lttng_ust_abi_init(void)
 {
+	init_usterr();
 	/* TODO: initialize socket */
 }
 

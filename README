@@ -38,6 +38,19 @@ INSTALLATION INSTRUCTIONS:
   the configure script, to generate it.
 
 
+USAGE:
+
+  - Create an instrumentation header following the tracepoint examples.
+    (see tracepoint.h and tests/hello/tp.h).
+  - Link application with -lust.
+  - (TODO: start tracing with the "lttng" command from lttng-tools)
+
+  Note: libust debug can be activated by either of the following means:
+    - Setting the environment variable "UST_DEBUG" when launching the
+      application.
+    - Compiling libust with -DUST_DEBUG.
+
+
 TRACE VIEWER:
 
   LTTV is used for viewing UST traces. LTTV may be obtained at

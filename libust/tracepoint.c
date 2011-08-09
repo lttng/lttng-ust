@@ -690,6 +690,7 @@ int tracepoint_unregister_lib(struct tracepoint * const *tracepoints_start)
 
 void __attribute__((constructor)) init_tracepoint(void)
 {
+	init_usterr();
 	if (!initialized) {
 		tracepoint_register_lib(__start___tracepoints_ptrs,
 			__stop___tracepoints_ptrs

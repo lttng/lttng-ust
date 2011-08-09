@@ -16,7 +16,8 @@ libust_la_SOURCES = \
 	ltt-context.c \
 	ltt-probes.c \
 	lttng-ust-abi.c \
-	lttng-ust-comm.c
+	lttng-ust-comm.c \
+	ust-core.c
 
 #removed: buffers.c buffers.h
 

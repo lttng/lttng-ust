@@ -1,9 +1,14 @@
-/* Copyright (C) 2009  Pierre-Marc Fournier
+#ifndef _USTERR_SIGNAL_SAFE_H
+#define _USTERR_SIGNAL_SAFE_H
+
+/*
+ * Copyright (C) 2009  Pierre-Marc Fournier
+ * Copyright (C) 2011  Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
+ * License as published by the Free Software Foundation; version 2.1 of
+ * the License.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -15,9 +20,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#ifndef _USTERR_SIGNAL_SAFE_H
-#define _USTERR_SIGNAL_SAFE_H
-
 #include <string.h>
 #include <sys/types.h>
 #include <sys/syscall.h>
@@ -28,6 +30,20 @@
 #include <ust/core.h>
 
 #include "share.h"
+
+enum ust_loglevel {
+	UST_LOGLEVEL_UNKNOWN = 0,
+	UST_LOGLEVEL_NORMAL,
+	UST_LOGLEVEL_DEBUG,
+};
+
+extern volatile enum ust_loglevel ust_loglevel;
+void init_usterr(void);
+
+static inline int ust_debug(void)
+{
+	return ust_loglevel == UST_LOGLEVEL_DEBUG;
+}
 
 #ifndef UST_COMPONENT
 //#error UST_COMPONENT is undefined
@@ -50,37 +66,61 @@ static inline void __attribute__ ((format (printf, 1, 2)))
 {
 }
 
-#define sigsafe_print_err(fmt, args...) \
-{ \
+#define sigsafe_print_err(fmt, args...)					\
+{									\
 	/* Can't use dynamic allocation. Limit ourselves to 250 chars. */ \
-	char ____buf[250]; \
-	int ____saved_errno; \
-\
-	/* Save the errno. */ \
-	____saved_errno = errno; \
-\
-	ust_safe_snprintf(____buf, sizeof(____buf), fmt, ## args); \
-\
-	/* Add end of string in case of buffer overflow. */ \
-	____buf[sizeof(____buf) - 1] = 0; \
-\
-	patient_write(STDERR_FILENO, ____buf, strlen(____buf)); \
-	/* Can't print errors because we are in the error printing code path. */ \
-\
-	/* Restore errno, in order to be async-signal safe. */ \
-	errno = ____saved_errno; \
+	char ____buf[250];						\
+	int ____saved_errno;						\
+									\
+	/* Save the errno. */						\
+	____saved_errno = errno;					\
+									\
+	ust_safe_snprintf(____buf, sizeof(____buf), fmt, ## args);	\
+									\
+	/* Add end of string in case of buffer overflow. */		\
+	____buf[sizeof(____buf) - 1] = 0;				\
+									\
+	patient_write(STDERR_FILENO, ____buf, strlen(____buf));		\
+	/*								\
+	 * Can't print errors because we are in the error printing code \
+	 * path.							\
+	 */								\
+									\
+	/* Restore errno, in order to be async-signal safe. */		\
+	errno = ____saved_errno;					\
 }
 
 #define UST_STR_COMPONENT XSTR(UST_COMPONENT)
 
-#define ERRMSG(fmt, args...) do { sigsafe_print_err(UST_STR_COMPONENT "[%ld/%ld]: " fmt " (in %s() at " __FILE__ ":" XSTR(__LINE__) ")\n", (long) getpid(), (long) syscall(SYS_gettid), ## args, __func__); fflush(stderr); } while(0)
+#define ERRMSG(fmt, args...)			\
+	do {					\
+		sigsafe_print_err(UST_STR_COMPONENT "[%ld/%ld]: " fmt " (in %s() at " __FILE__ ":" XSTR(__LINE__) ")\n",	\
+		(long) getpid(),		\
+		(long) syscall(SYS_gettid),	\
+		## args, __func__);		\
+		fflush(stderr);			\
+	} while(0)
 
 #ifdef UST_DEBUG
-# define DBG(fmt, args...) ERRMSG(fmt, ## args)
-# define DBG_raw(fmt, args...) do { sigsafe_print_err(fmt, ## args); fflush(stderr); } while(0)
+# define DBG(fmt, args...)			ERRMSG(fmt, ## args)
+# define DBG_raw(fmt, args...)					\
+	do {							\
+		sigsafe_print_err(fmt, ## args);		\
+		fflush(stderr);					\
+	} while(0)
 #else
-# define DBG(fmt, args...) __check_ust_safe_fmt(fmt, ## args)
-# define DBG_raw(fmt, args...) __check_ust_safe_fmt(fmt, ## args)
+# define DBG(fmt, args...)					\
+	do {							\
+		if (ust_debug())				\
+			ERRMSG(fmt, ## args);			\
+	} while (0)
+# define DBG_raw(fmt, args...)					\
+	do {							\
+		if (ust_debug()) {				\
+			sigsafe_print_err(fmt, ## args);	\
+			fflush(stderr);				\
+		}						\
+	} while(0)
 #endif
 #define WARN(fmt, args...) ERRMSG("Warning: " fmt, ## args)
 #define ERR(fmt, args...) ERRMSG("Error: " fmt, ## args)
@@ -103,8 +143,17 @@ static inline void __attribute__ ((format (printf, 1, 2)))
 	} while(0);
 #endif
 
-#define BUG_ON(condition) do { if (unlikely(condition)) ERR("condition not respected (BUG)"); } while(0)
-#define WARN_ON(condition) do { if (unlikely(condition)) WARN("condition not respected on line %s:%d", __FILE__, __LINE__); } while(0)
+#define BUG_ON(condition)					\
+	do {							\
+		if (unlikely(condition))			\
+			ERR("condition not respected (BUG) on line %s:%d", __FILE__, __LINE__);	\
+	} while(0)
+#define WARN_ON(condition)					\
+	do {							\
+		if (unlikely(condition))			\
+			WARN("condition not respected on line %s:%d", __FILE__, __LINE__); \
+	} while(0)
 #define WARN_ON_ONCE(condition) WARN_ON(condition)
+
 
 #endif /* _USTERR_SIGNAL_SAFE_H */
