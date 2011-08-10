@@ -26,8 +26,7 @@
 #include <fcntl.h>
 #include <signal.h>
 
-#include "usterr.h"
-#include "tp.h"
+#include "ust_tests_hello.h"
 
 void inthandler(int sig)
 {
@@ -42,7 +41,7 @@ int init_int_handler(void)
 
 	result = sigemptyset(&act.sa_mask);
 	if (result == -1) {
-		PERROR("sigemptyset");
+		perror("sigemptyset");
 		return -1;
 	}
 
@@ -54,7 +53,7 @@ int init_int_handler(void)
 	 */
 	result = sigaction(SIGUSR1, &act, NULL);
 	if (result == -1) {
-		PERROR("sigaction");
+		perror("sigaction");
 		return -1;
 	}
 

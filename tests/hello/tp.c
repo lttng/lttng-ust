@@ -19,4 +19,4 @@
  */
 
 #define TRACEPOINT_CREATE_PROBES
-#include "tp.h"
+#include "ust_tests_hello.h"

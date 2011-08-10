@@ -1,8 +1,8 @@
 #undef TRACEPOINT_SYSTEM
-#define TRACEPOINT_SYSTEM tp
+#define TRACEPOINT_SYSTEM ust_tests_hello
 
-#if !defined(_TRACEPOINT_TP_H) || defined(TRACEPOINT_HEADER_MULTI_READ)
-#define _TRACEPOINT_TP_H
+#if !defined(_TRACEPOINT_UST_TESTS_HELLO_H) || defined(TRACEPOINT_HEADER_MULTI_READ)
+#define _TRACEPOINT_UST_TESTS_HELLO_H
 
 /*
  * Copyright (C) 2011  Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
@@ -29,9 +29,9 @@ TRACEPOINT_EVENT(ust_tests_hello_tptest,
 			TP_ARGS(anint),
 			TP_FIELDS(
 				ctf_integer(int, intfield, anint)
-				ctf_integer_hex(int, intfield, anint)
-				ctf_integer_network(int, intfield, anint)
-				ctf_integer_network_hex(int, intfield, anint)
+				ctf_integer_hex(int, intfield2, anint)
+				ctf_integer_network(int, intfield3, anint)
+				ctf_integer_network_hex(int, intfield4, anint)
 			))
 
 TRACEPOINT_EVENT_NOARGS(ust_tests_hello_tptest_sighandler,
@@ -42,7 +42,7 @@ TRACEPOINT_EVENT_NOARGS(ust_tests_hello_tptest_sighandler,
 #undef TRACEPOINT_INCLUDE_PATH
 #define TRACEPOINT_INCLUDE_PATH .
 #undef TRACEPOINT_INCLUDE_FILE
-#define TRACEPOINT_INCLUDE_FILE tp
+#define TRACEPOINT_INCLUDE_FILE ust_tests_hello
 
 /* This part must be outside protection */
 #include <ust/tracepoint-event.h>

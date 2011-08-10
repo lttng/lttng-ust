@@ -279,7 +279,7 @@ static struct lttng_probe_desc TP_ID(__probe_desc___, TRACEPOINT_SYSTEM) = {
 	__event_len += sizeof(_type);
 
 #undef ctf_array_encoded
-#define ctf_array_encoded(_type, _item, _src, _length)			       \
+#define ctf_array_encoded(_type, _item, _src, _length, _encoding)	       \
 	__event_len += lib_ring_buffer_align(__event_len, lttng_alignof(_type)); \
 	__event_len += sizeof(_type) * (_length);
 
@@ -351,7 +351,7 @@ static inline size_t __event_get_size__##_name(size_t *__dynamic_len)	      \
 	__event_align = _tp_max_t(size_t, __event_align, lttng_alignof(_type));
 
 #undef ctf_array_encoded
-#define ctf_array_encoded(_type, _item, _src, _length)			       \
+#define ctf_array_encoded(_type, _item, _src, _length, _encoding)	       \
 	__event_align = _tp_max_t(size_t, __event_align, lttng_alignof(_type));
 
 #undef ctf_sequence_encoded
@@ -421,7 +421,7 @@ static inline size_t __event_get_align__##_name(void)			      \
 	}
 
 #undef ctf_array_encoded
-#define ctf_array_encoded(_type, _item, _src, _length)		        \
+#define ctf_array_encoded(_type, _item, _src, _length, _encoding)       \
 	lib_ring_buffer_align_ctx(&ctx, lttng_alignof(_type));		\
 	__chan->ops->event_write(&ctx, _src, _length);
 
