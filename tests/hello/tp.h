@@ -29,6 +29,9 @@ TRACEPOINT_EVENT(ust_tests_hello_tptest,
 			TP_ARGS(anint),
 			TP_FIELDS(
 				ctf_integer(int, intfield, anint)
+				ctf_integer_hex(int, intfield, anint)
+				ctf_integer_network(int, intfield, anint)
+				ctf_integer_network_hex(int, intfield, anint)
 			))
 
 TRACEPOINT_EVENT_NOARGS(ust_tests_hello_tptest_sighandler,
