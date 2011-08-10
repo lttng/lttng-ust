@@ -11,7 +11,7 @@
 #include <ust/lttng-events.h>
 #include <ust/core.h>
 #include <string.h>
-#include <usterr_signal_safe.h>
+#include <ust/usterr-signal-safe.h>
 
 /*
  * Note: as we append context information, the pointer location may change.

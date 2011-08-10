@@ -15,11 +15,9 @@
 #include <uuid/uuid.h>
 #include <stdint.h>
 #include <ust/lttng-ust-abi.h>
+#include <ust/lttng-tracer.h>
 #include <endian.h>
 #include <float.h>
-
-#undef is_signed_type
-#define is_signed_type(type)		(((type)(-1)) < 0)
 
 struct ltt_channel;
 struct ltt_session;
@@ -57,8 +55,8 @@ struct lttng_enum_entry {
 	    .u.basic.integer =					\
 		{						\
 		  .size = sizeof(_type) * CHAR_BIT,		\
-		  .alignment = ltt_alignof(_type) * CHAR_BIT,	\
-		  .signedness = is_signed_type(_type),		\
+		  .alignment = lttng_alignof(_type) * CHAR_BIT,	\
+		  .signedness = lttng_is_signed_type(_type),	\
 		  .reverse_byte_order = _byte_order != __BYTE_ORDER,	\
 		  .base = _base,				\
 		  .encoding = lttng_encode_##_encoding,		\
@@ -88,8 +86,8 @@ struct lttng_integer_type {
 		  .exp_dig = sizeof(_type) * CHAR_BIT		\
 				- _float_mant_dig(_type),	\
 		  .mant_dig = _float_mant_dig(_type),		\
-		  .alignment = ltt_alignof(_type) * CHAR_BIT,	\
-		  .signedness = is_signed_type(_type),		\
+		  .alignment = lttng_alignof(_type) * CHAR_BIT,	\
+		  .signedness = lttng_is_signed_type(_type),	\
 		  .reverse_byte_order = __BYTE_ORDER != __FLOAT_WORD_ORDER, \
 		},						\
 	}							\

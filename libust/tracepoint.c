@@ -28,7 +28,7 @@
 #include <urcu-bp.h>
 #include <urcu/hlist.h>
 
-#include "usterr_signal_safe.h"
+#include <ust/usterr-signal-safe.h>
 
 extern struct tracepoint * const __start___tracepoints_ptrs[]
 	__attribute__((visibility("hidden")));

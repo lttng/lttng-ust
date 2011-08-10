@@ -10,8 +10,8 @@
  */
 
 #include <stdint.h>
+#include <ust/usterr-signal-safe.h>
 #include "ust/core.h"
-#include "usterr_signal_safe.h"
 
 #define SHM_MAGIC	0x54335433
 #define SHM_MAJOR	0

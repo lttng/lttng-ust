@@ -30,23 +30,9 @@
 #include <ust/lttng-events.h>
 #include "ltt-tracer-core.h"
 
-#define LTTNG_UST_VERSION 0
-#define LTTNG_UST_PATCHLEVEL 9
-#define LTTNG_UST_SUBLEVEL 1
-
-#ifndef CHAR_BIT
-#define CHAR_BIT 8
-#endif
-
 /* Number of bytes to log with a read/write event */
 #define LTT_LOG_RW_SIZE			32L
 #define LTT_MAX_SMALL_SIZE		0xFFFFU
-
-#ifdef RING_BUFFER_ALIGN
-#define ltt_alignof(type)	__alignof__(type)
-#else
-#define ltt_alignof(type)	1
-#endif
 
 /* Tracer properties */
 #define CTF_MAGIC_NUMBER		0xC1FC1FC1

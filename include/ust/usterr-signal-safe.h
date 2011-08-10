@@ -29,7 +29,7 @@
 
 #include <ust/core.h>
 
-#include "share.h"
+#include <ust/share.h>
 
 enum ust_loglevel {
 	UST_LOGLEVEL_UNKNOWN = 0,
@@ -51,8 +51,8 @@ static inline int ust_debug(void)
 #endif
 
 /* To stringify the expansion of a define */
-#define XSTR(d) STR(d)
-#define STR(s) #s
+#define UST_XSTR(d) UST_STR(d)
+#define UST_STR(s) #s
 
 /* We sometimes print in the tracing path, and tracing can occur in
  * signal handlers, so we must use a print method which is signal safe.
@@ -90,11 +90,11 @@ static inline void __attribute__ ((format (printf, 1, 2)))
 	errno = ____saved_errno;					\
 }
 
-#define UST_STR_COMPONENT XSTR(UST_COMPONENT)
+#define UST_STR_COMPONENT UST_XSTR(UST_COMPONENT)
 
 #define ERRMSG(fmt, args...)			\
 	do {					\
-		sigsafe_print_err(UST_STR_COMPONENT "[%ld/%ld]: " fmt " (in %s() at " __FILE__ ":" XSTR(__LINE__) ")\n",	\
+		sigsafe_print_err(UST_STR_COMPONENT "[%ld/%ld]: " fmt " (in %s() at " __FILE__ ":" UST_XSTR(__LINE__) ")\n",	\
 		(long) getpid(),		\
 		(long) syscall(SYS_gettid),	\
 		## args, __func__);		\
@@ -154,6 +154,5 @@ static inline void __attribute__ ((format (printf, 1, 2)))
 			WARN("condition not respected on line %s:%d", __FILE__, __LINE__); \
 	} while(0)
 #define WARN_ON_ONCE(condition) WARN_ON(condition)
-
 
 #endif /* _USTERR_SIGNAL_SAFE_H */

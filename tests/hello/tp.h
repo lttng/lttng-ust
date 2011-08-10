@@ -25,9 +25,11 @@
 #include <ust/tracepoint.h>
 
 TRACEPOINT_EVENT(ust_tests_hello_tptest,
-		 TP_PROTO(int anint),
-		 TP_ARGS(anint),
-		 TP_FIELDS())
+			TP_PROTO(int anint),
+			TP_ARGS(anint),
+			TP_FIELDS(
+				ctf_integer(int, intfield, anint)
+			))
 
 TRACEPOINT_EVENT_NOARGS(ust_tests_hello_tptest_sighandler,
 			TP_FIELDS())

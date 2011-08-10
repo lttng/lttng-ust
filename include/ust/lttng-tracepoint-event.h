@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <urcu/compiler.h>
 #include <ust/lttng-events.h>
+#include <ust/usterr-signal-safe.h>
 #include <ust/ringbuffer-config.h>
 
 /*
@@ -89,6 +90,14 @@
 
 /* Helpers */
 #define _TP_ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+
+#define _tp_max_t(type, x, y)				\
+	({						\
+		type __max1 = (x);              	\
+		type __max2 = (y);              	\
+		__max1 > __max2 ? __max1: __max2;	\
+	})
+
 
 /*
  * Stage 1 of the trace events.
@@ -169,7 +178,7 @@
 
 #undef TRACEPOINT_EVENT_CLASS
 #define TRACEPOINT_EVENT_CLASS(_name, _proto, _args, _fields)		     \
-	TRACEPOINT_EVENT_CLASS_NOARGS(_name, _fields)
+	TRACEPOINT_EVENT_CLASS_NOARGS(_name, TP_PARAMS(_fields))
 
 #include TRACEPOINT_INCLUDE(TRACEPOINT_INCLUDE_FILE)
 
@@ -261,25 +270,25 @@ static struct lttng_probe_desc TP_ID(__probe_desc___, TRACEPOINT_SYSTEM) = {
 
 #undef ctf_integer_ext
 #define ctf_integer_ext(_type, _item, _src, _byte_order, _base)		       \
-	__event_len += lib_ring_buffer_align(__event_len, ltt_alignof(_type)); \
+	__event_len += lib_ring_buffer_align(__event_len, lttng_alignof(_type)); \
 	__event_len += sizeof(_type);
 
 #undef ctf_float
 #define ctf_float(_type, _item, _src)		      			       \
-	__event_len += lib_ring_buffer_align(__event_len, ltt_alignof(_type)); \
+	__event_len += lib_ring_buffer_align(__event_len, lttng_alignof(_type)); \
 	__event_len += sizeof(_type);
 
 #undef ctf_array_encoded
 #define ctf_array_encoded(_type, _item, _src, _length)			       \
-	__event_len += lib_ring_buffer_align(__event_len, ltt_alignof(_type)); \
+	__event_len += lib_ring_buffer_align(__event_len, lttng_alignof(_type)); \
 	__event_len += sizeof(_type) * (_length);
 
 #undef ctf_sequence_encoded
 #define ctf_sequence_encoded(_type, _item, _src, _length_type,	\
 			_src_length, _encoding)			\
-	__event_len += lib_ring_buffer_align(__event_len, ltt_alignof(_length_type));   \
+	__event_len += lib_ring_buffer_align(__event_len, lttng_alignof(_length_type));   \
 	__event_len += sizeof(_length_type);				       \
-	__event_len += lib_ring_buffer_align(__event_len, ltt_alignof(_type)); \
+	__event_len += lib_ring_buffer_align(__event_len, lttng_alignof(_type)); \
 	__dynamic_len[__dynamic_len_idx] = (_length);			       \
 	__event_len += sizeof(_type) * __dynamic_len[__dynamic_len_idx];       \
 	__dynamic_len_idx++;
@@ -335,21 +344,21 @@ static inline size_t __event_get_size__##_name(size_t *__dynamic_len)	      \
 
 #undef ctf_integer_ext
 #define ctf_integer_ext(_type, _item, _src, _byte_order, _base)		       \
-	__event_align = max_t(size_t, __event_align, ltt_alignof(_type));
+	__event_align = _tp_max_t(size_t, __event_align, lttng_alignof(_type));
 
 #undef ctf_float
 #define ctf_float(_type, _item, _src)					       \
-	__event_align = max_t(size_t, __event_align, ltt_alignof(_type));
+	__event_align = _tp_max_t(size_t, __event_align, lttng_alignof(_type));
 
 #undef ctf_array_encoded
 #define ctf_array_encoded(_type, _item, _src, _length)			       \
-	__event_align = max_t(size_t, __event_align, ltt_alignof(_type));
+	__event_align = _tp_max_t(size_t, __event_align, lttng_alignof(_type));
 
 #undef ctf_sequence_encoded
 #define ctf_sequence_encoded(_type, _item, _src, _length_type,	\
 			_src_length, _encoding)			\
-	__event_align = max_t(size_t, __event_align, ltt_alignof(_length_type));	  \
-	__event_align = max_t(size_t, __event_align, ltt_alignof(_type));
+	__event_align = _tp_max_t(size_t, __event_align, lttng_alignof(_length_type));	  \
+	__event_align = _tp_max_t(size_t, __event_align, lttng_alignof(_type));
 
 #undef ctf_string
 #define ctf_string(_item, _src)
@@ -399,7 +408,7 @@ static inline size_t __event_get_align__##_name(void)			      \
 #define ctf_integer_ext(_type, _item, _src, _byte_order, _base)	        \
 	{								\
 		_type __tmp = (_src);					\
-		lib_ring_buffer_align_ctx(&ctx, ltt_alignof(__tmp));	\
+		lib_ring_buffer_align_ctx(&ctx, lttng_alignof(__tmp));	\
 		__chan->ops->event_write(&ctx, &__tmp, sizeof(__tmp));	\
 	}
 
@@ -407,13 +416,13 @@ static inline size_t __event_get_align__##_name(void)			      \
 #define ctf_float(_type, _item, _src)				        \
 	{								\
 		_type __tmp = (_src);					\
-		lib_ring_buffer_align_ctx(&ctx, ltt_alignof(__tmp));	\
+		lib_ring_buffer_align_ctx(&ctx, lttng_alignof(__tmp));	\
 		__chan->ops->event_write(&ctx, &__tmp, sizeof(__tmp));	\
 	}
 
 #undef ctf_array_encoded
 #define ctf_array_encoded(_type, _item, _src, _length)		        \
-	lib_ring_buffer_align_ctx(&ctx, ltt_alignof(_type));		\
+	lib_ring_buffer_align_ctx(&ctx, lttng_alignof(_type));		\
 	__chan->ops->event_write(&ctx, _src, _length);
 
 #undef ctf_sequence_encoded
@@ -421,10 +430,10 @@ static inline size_t __event_get_align__##_name(void)			      \
 			_src_length, _encoding)			\
 	{								\
 		_length_type __tmpl = __dynamic_len[__dynamic_len_idx];	\
-		lib_ring_buffer_align_ctx(&ctx, ltt_alignof(_length_type));    \
+		lib_ring_buffer_align_ctx(&ctx, lttng_alignof(_length_type));    \
 		__chan->ops->event_write(&ctx, &__tmpl, sizeof(_length_type)); \
 	}								\
-	lib_ring_buffer_align_ctx(&ctx, ltt_alignof(_type));		\
+	lib_ring_buffer_align_ctx(&ctx, lttng_alignof(_type));		\
 	__chan->ops->event_write(&ctx, _src,				\
 		sizeof(_type) * __get_sequence_len(dest));
 

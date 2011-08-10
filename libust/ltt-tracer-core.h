@@ -23,15 +23,11 @@
 
 #include <ust/kcompat/kcompat.h>
 #include <ust/core.h>
+#include <ust/lttng-tracer.h>
 #include <urcu/list.h>
-
-#ifndef CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS
-/* Align data on its natural alignment */
-#define RING_BUFFER_ALIGN
-#endif
-
-#include "usterr_signal_safe.h"
+#include <ust/usterr-signal-safe.h>
 #include "ust/bug.h"
+
 #include <ust/ringbuffer-config.h>
 
 struct ltt_session;

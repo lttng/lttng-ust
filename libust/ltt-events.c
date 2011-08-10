@@ -21,7 +21,7 @@
 #include <sys/shm.h>
 #include <sys/ipc.h>
 #include <ust/lttng-events.h>
-#include "usterr_signal_safe.h"
+#include <ust/usterr-signal-safe.h>
 #include "ust/core.h"
 #include "ltt-tracer.h"
 #include "ust/wait.h"
@@ -753,8 +753,8 @@ int _ltt_event_header_declare(struct ltt_session *session)
 	"		} extended;\n"
 	"	} v;\n"
 	"} align(%u);\n\n",
-	ltt_alignof(uint32_t) * CHAR_BIT,
-	ltt_alignof(uint16_t) * CHAR_BIT
+	lttng_alignof(uint32_t) * CHAR_BIT,
+	lttng_alignof(uint16_t) * CHAR_BIT
 	);
 }
 
@@ -805,10 +805,10 @@ int _ltt_session_metadata_statedump(struct ltt_session *session)
 		"		uint32_t stream_id;\n"
 		"	};\n"
 		"};\n\n",
-		ltt_alignof(uint8_t) * CHAR_BIT,
-		ltt_alignof(uint16_t) * CHAR_BIT,
-		ltt_alignof(uint32_t) * CHAR_BIT,
-		ltt_alignof(uint64_t) * CHAR_BIT,
+		lttng_alignof(uint8_t) * CHAR_BIT,
+		lttng_alignof(uint16_t) * CHAR_BIT,
+		lttng_alignof(uint32_t) * CHAR_BIT,
+		lttng_alignof(uint64_t) * CHAR_BIT,
 		CTF_VERSION_MAJOR,
 		CTF_VERSION_MINOR,
 		uuid_s,

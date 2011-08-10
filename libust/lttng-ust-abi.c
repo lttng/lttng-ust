@@ -28,7 +28,7 @@
 #include <urcu/compiler.h>
 #include <urcu/list.h>
 #include <ust/lttng-events.h>
-#include "usterr_signal_safe.h"
+#include <ust/usterr-signal-safe.h>
 #include "ust/core.h"
 #include "ltt-tracer.h"
 

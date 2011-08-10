@@ -18,7 +18,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include <usterr_signal_safe.h>
+#include <ust/usterr-signal-safe.h>
 #include <stdlib.h>
 
 volatile enum ust_loglevel ust_loglevel;
