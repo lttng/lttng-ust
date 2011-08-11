@@ -141,6 +141,7 @@ AC_CONFIG_FILES([
 	doc/man/Makefile
 	doc/info/Makefile
 	include/Makefile
+	liblttng-sessiond-comm/Makefile
 	libringbuffer/Makefile
 	libust/Makefile
 	tests/Makefile

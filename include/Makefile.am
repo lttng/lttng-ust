@@ -16,6 +16,7 @@ nobase_include_HEADERS = \
 # note: usterr-signal-safe.h, core.h and share.h need namespace cleanup.
 
 noinst_HEADERS = \
+	lttng-sessiond-comm.h \
 	usterr.h \
 	ust_snprintf.h \
 	ust/compat.h \
