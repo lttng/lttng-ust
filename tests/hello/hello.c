@@ -63,6 +63,7 @@ int init_int_handler(void)
 int main(int argc, char **argv)
 {
 	int i;
+	long values[] = { 1, 2, 3 };
 
 	init_int_handler();
 
@@ -71,7 +72,7 @@ int main(int argc, char **argv)
 	sleep(1);
 
 	for (i = 0; i < 50; i++) {
-		tracepoint(ust_tests_hello_tptest, i);
+		tracepoint(ust_tests_hello_tptest, i, values);
 		usleep(100000);
 	}
 	return 0;
