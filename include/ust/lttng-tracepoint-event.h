@@ -289,7 +289,7 @@ static struct lttng_probe_desc TP_ID(__probe_desc___, TRACEPOINT_SYSTEM) = {
 	__event_len += lib_ring_buffer_align(__event_len, lttng_alignof(_length_type));   \
 	__event_len += sizeof(_length_type);				       \
 	__event_len += lib_ring_buffer_align(__event_len, lttng_alignof(_type)); \
-	__dynamic_len[__dynamic_len_idx] = (_length);			       \
+	__dynamic_len[__dynamic_len_idx] = (_src_length);		       \
 	__event_len += sizeof(_type) * __dynamic_len[__dynamic_len_idx];       \
 	__dynamic_len_idx++;
 
@@ -430,20 +430,21 @@ static inline size_t __event_get_align__##_name(void)			      \
 			_src_length, _encoding)			\
 	{								\
 		_length_type __tmpl = __dynamic_len[__dynamic_len_idx];	\
-		lib_ring_buffer_align_ctx(&ctx, lttng_alignof(_length_type));    \
+		lib_ring_buffer_align_ctx(&ctx, lttng_alignof(_length_type));  \
 		__chan->ops->event_write(&ctx, &__tmpl, sizeof(_length_type)); \
 	}								\
 	lib_ring_buffer_align_ctx(&ctx, lttng_alignof(_type));		\
 	__chan->ops->event_write(&ctx, _src,				\
-		sizeof(_type) * __get_sequence_len(dest));
+		sizeof(_type) * __get_dynamic_len(dest));
 
 #undef ctf_string
 #define ctf_string(_item, _src)					        \
-	tp_memcpy(dest, _src, __get_sequence_len(dest))
+	lib_ring_buffer_align_ctx(&ctx, lttng_alignof(*(_src)));	\
+	__chan->ops->event_write(&ctx, _src, __get_dynamic_len(dest));
 
 /* Beware: this get len actually consumes the len value */
-#undef __get_sequence_len
-#define __get_sequence_len(field)	__dynamic_len[__dynamic_len_idx++]
+#undef __get_dynamic_len
+#define __get_dynamic_len(field)	__dynamic_len[__dynamic_len_idx++]
 
 #undef TP_PROTO
 #define TP_PROTO(args...) args
@@ -517,6 +518,8 @@ static void __event_probe__##_name(void *__data)			      \
 }
 
 #include TRACEPOINT_INCLUDE(TRACEPOINT_INCLUDE_FILE)
+
+#undef __get_dynamic_len
 
 /*
  * Stage 8 of the trace events.

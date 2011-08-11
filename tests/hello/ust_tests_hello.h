@@ -25,14 +25,21 @@
 #include <ust/tracepoint.h>
 
 TRACEPOINT_EVENT(ust_tests_hello_tptest,
-			TP_PROTO(int anint, long *values),
-			TP_ARGS(anint, values),
+			TP_PROTO(int anint, long *values,
+				 char *text, size_t textlen),
+			TP_ARGS(anint, values, text, textlen),
 			TP_FIELDS(
 				ctf_integer(int, intfield, anint)
 				ctf_integer_hex(int, intfield2, anint)
 				ctf_integer_network(int, intfield3, anint)
 				ctf_integer_network_hex(int, intfield4, anint)
 				ctf_array(long, arrfield1, values, 3)
+				ctf_array_text(char, arrfield2, text, 10)
+				ctf_sequence(char, seqfield1, text,
+					     size_t, textlen)
+				ctf_sequence_text(char, seqfield2, text,
+					     size_t, textlen)
+				ctf_string(stringfield, text)
 			))
 
 TRACEPOINT_EVENT_NOARGS(ust_tests_hello_tptest_sighandler,
