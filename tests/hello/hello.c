@@ -66,6 +66,8 @@ int main(int argc, char **argv)
 	int i;
 	long values[] = { 1, 2, 3 };
 	char text[10] = "test";
+	double dbl = 2.0;
+	float flt = 2222.0;
 
 	init_int_handler();
 
@@ -75,7 +77,7 @@ int main(int argc, char **argv)
 
 	for (i = 0; i < 50; i++) {
 		tracepoint(ust_tests_hello_tptest, i, values,
-			   text, strlen(text));
+			   text, strlen(text), dbl, flt);
 		usleep(100000);
 	}
 	return 0;

@@ -43,6 +43,8 @@
 #define ctf_integer_network_hex(_type, _item, _src)		\
 	ctf_integer_ext(_type, _item, _src, BIG_ENDIAN, 16)
 
+/* ctf_float is redefined at each step */
+
 #undef ctf_array
 #define ctf_array(_type, _item, _src, _length)			\
 	ctf_array_encoded(_type, _item, _src, _length, none)

@@ -26,8 +26,10 @@
 
 TRACEPOINT_EVENT(ust_tests_hello_tptest,
 			TP_PROTO(int anint, long *values,
-				 char *text, size_t textlen),
-			TP_ARGS(anint, values, text, textlen),
+				 char *text, size_t textlen,
+				 double doublearg, float floatarg),
+			TP_ARGS(anint, values, text, textlen,
+				doublearg, floatarg),
 			TP_FIELDS(
 				ctf_integer(int, intfield, anint)
 				ctf_integer_hex(int, intfield2, anint)
@@ -40,6 +42,8 @@ TRACEPOINT_EVENT(ust_tests_hello_tptest,
 				ctf_sequence_text(char, seqfield2, text,
 					     size_t, textlen)
 				ctf_string(stringfield, text)
+				ctf_float(float, floatfield, floatarg)
+				ctf_float(double, doublefield, doublearg)
 			))
 
 TRACEPOINT_EVENT_NOARGS(ust_tests_hello_tptest_sighandler,

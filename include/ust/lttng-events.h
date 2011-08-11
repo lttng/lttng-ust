@@ -87,7 +87,6 @@ struct lttng_integer_type {
 				- _float_mant_dig(_type),	\
 		  .mant_dig = _float_mant_dig(_type),		\
 		  .alignment = lttng_alignof(_type) * CHAR_BIT,	\
-		  .signedness = lttng_is_signed_type(_type),	\
 		  .reverse_byte_order = __BYTE_ORDER != __FLOAT_WORD_ORDER, \
 		},						\
 	}							\
