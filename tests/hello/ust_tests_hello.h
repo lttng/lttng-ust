@@ -44,10 +44,12 @@ TRACEPOINT_EVENT(ust_tests_hello_tptest,
 				ctf_string(stringfield, text)
 				ctf_float(float, floatfield, floatarg)
 				ctf_float(double, doublefield, doublearg)
-			))
+			)
+		)
 
 TRACEPOINT_EVENT_NOARGS(ust_tests_hello_tptest_sighandler,
-			TP_FIELDS())
+			TP_FIELDS()
+		)
 
 #endif /* _TRACEPOINT_TP_H */
 
