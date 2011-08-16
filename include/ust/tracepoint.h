@@ -201,7 +201,7 @@ int tracepoint_unregister_lib(struct tracepoint * const *tracepoints_start);
  *
  * In short, an example:
  *
- * TRACEPOINT_EVENT(< [com_company_]project_[component_]_event >,
+ * TRACEPOINT_EVENT(< [com_company_]project_[component_]event >,
  *     TP_PROTO(int arg0, void *arg1, char *string, size_t strlen,
  *              long *arg4, size_t arg4_len),
  *     TP_ARGS(arg0, arg1, string, strlen, arg4, arg4_len),
@@ -246,8 +246,10 @@ int tracepoint_unregister_lib(struct tracepoint * const *tracepoints_start);
  *   project_event
  *
  * Where "project" is the name of the project,
- *       "component" is the name of the project component where the
- *         tracepoint is located (optional),
+ *       "component" is the name of the project component (which may
+ *       include several levels of sub-components, e.g.
+ *       ...component_subcomponent_...) where the tracepoint is located
+ *       (optional),
  *       "event" is the name of the tracepoint event.
  *
  * For projects issued from a single company wishing to advertise that
@@ -261,8 +263,10 @@ int tracepoint_unregister_lib(struct tracepoint * const *tracepoints_start);
  *
  * Where "company" is the name of the company,
  *       "project" is the name of the project,
- *       "component" is the name of the project component where the
- *         tracepoint is located (optional),
+ *       "component" is the name of the project component (which may
+ *       include several levels of sub-components, e.g.
+ *       ...component_subcomponent_...) where the tracepoint is located
+ *       (optional),
  *       "event" is the name of the tracepoint event.
  *
  *
