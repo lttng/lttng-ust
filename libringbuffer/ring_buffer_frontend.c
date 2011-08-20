@@ -125,9 +125,9 @@ void lib_ring_buffer_reset(struct lib_ring_buffer *buf,
 	 */
 	v_set(config, &buf->offset, 0);
 	for (i = 0; i < chan->backend.num_subbuf; i++) {
-		v_set(config, &shmp(handle, buf->commit_hot)[i].cc, 0);
-		v_set(config, &shmp(handle, buf->commit_hot)[i].seq, 0);
-		v_set(config, &shmp(handle, buf->commit_cold)[i].cc_sb, 0);
+		v_set(config, &shmp_index(handle, buf->commit_hot, i)->cc, 0);
+		v_set(config, &shmp_index(handle, buf->commit_hot, i)->seq, 0);
+		v_set(config, &shmp_index(handle, buf->commit_cold, i)->cc_sb, 0);
 	}
 	uatomic_set(&buf->consumed, 0);
 	uatomic_set(&buf->record_disabled, 0);
@@ -216,10 +216,10 @@ int lib_ring_buffer_create(struct lib_ring_buffer *buf,
 	 */
 	subbuf_header_size = config->cb.subbuffer_header_size();
 	v_set(config, &buf->offset, subbuf_header_size);
-	subbuffer_id_clear_noref(config, &shmp(handle, buf->backend.buf_wsb)[0].id);
+	subbuffer_id_clear_noref(config, &shmp_index(handle, buf->backend.buf_wsb, 0)->id);
 	tsc = config->cb.ring_buffer_clock_read(shmp(handle, buf->backend.chan));
 	config->cb.buffer_begin(buf, tsc, 0, handle);
-	v_add(config, subbuf_header_size, &shmp(handle, buf->commit_hot)[0].cc);
+	v_add(config, subbuf_header_size, &shmp_index(handle, buf->commit_hot, 0)->cc);
 
 	if (config->cb.buffer_create) {
 		ret = config->cb.buffer_create(buf, priv, cpu, chanb->name, handle);
@@ -715,7 +715,7 @@ retry:
 	cmm_smp_rmb();
 	consumed_cur = uatomic_read(&buf->consumed);
 	consumed_idx = subbuf_index(consumed, chan);
-	commit_count = v_read(config, &shmp(handle, buf->commit_cold)[consumed_idx].cc_sb);
+	commit_count = v_read(config, &shmp_index(handle, buf->commit_cold, consumed_idx)->cc_sb);
 	/*
 	 * Make sure we read the commit count before reading the buffer
 	 * data and the write offset. Correct consumed offset ordering
@@ -820,9 +820,9 @@ void lib_ring_buffer_put_subbuf(struct lib_ring_buffer *buf,
 	 */
 	read_sb_bindex = subbuffer_id_get_index(config, bufb->buf_rsb.id);
 	v_add(config, v_read(config,
-			     &shmp(handle, shmp(handle, bufb->array)[read_sb_bindex].shmp)->records_unread),
+			     &shmp(handle, shmp_index(handle, bufb->array, read_sb_bindex)->shmp)->records_unread),
 	      &bufb->records_read);
-	v_set(config, &shmp(handle, shmp(handle, bufb->array)[read_sb_bindex].shmp)->records_unread, 0);
+	v_set(config, &shmp(handle, shmp_index(handle, bufb->array, read_sb_bindex)->shmp)->records_unread, 0);
 	CHAN_WARN_ON(chan, config->mode == RING_BUFFER_OVERWRITE
 		     && subbuffer_id_is_noref(config, bufb->buf_rsb.id));
 	subbuffer_id_set_noref(config, &bufb->buf_rsb.id);
@@ -860,8 +860,8 @@ void lib_ring_buffer_print_subbuffer_errors(struct lib_ring_buffer *buf,
 	unsigned long cons_idx, commit_count, commit_count_sb;
 
 	cons_idx = subbuf_index(cons_offset, chan);
-	commit_count = v_read(config, &shmp(handle, buf->commit_hot)[cons_idx].cc);
-	commit_count_sb = v_read(config, &shmp(handle, buf->commit_cold)[cons_idx].cc_sb);
+	commit_count = v_read(config, &shmp_index(handle, buf->commit_hot, cons_idx)->cc);
+	commit_count_sb = v_read(config, &shmp_index(handle, buf->commit_cold, cons_idx)->cc_sb);
 
 	if (subbuf_offset(commit_count, chan) != 0)
 		ERRMSG("ring buffer %s, cpu %d: "
@@ -965,8 +965,8 @@ void lib_ring_buffer_switch_old_start(struct lib_ring_buffer *buf,
 	 */
 	cmm_smp_wmb();
 	v_add(config, config->cb.subbuffer_header_size(),
-	      &shmp(handle, buf->commit_hot)[oldidx].cc);
-	commit_count = v_read(config, &shmp(handle, buf->commit_hot)[oldidx].cc);
+	      &shmp_index(handle, buf->commit_hot, oldidx)->cc);
+	commit_count = v_read(config, &shmp_index(handle, buf->commit_hot, oldidx)->cc);
 	/* Check if the written buffer has to be delivered */
 	lib_ring_buffer_check_deliver(config, buf, chan, offsets->old,
 				      commit_count, oldidx, handle);
@@ -1005,8 +1005,8 @@ void lib_ring_buffer_switch_old_end(struct lib_ring_buffer *buf,
 	 * determine that the subbuffer is full.
 	 */
 	cmm_smp_wmb();
-	v_add(config, padding_size, &shmp(handle, buf->commit_hot)[oldidx].cc);
-	commit_count = v_read(config, &shmp(handle, buf->commit_hot)[oldidx].cc);
+	v_add(config, padding_size, &shmp_index(handle, buf->commit_hot, oldidx)->cc);
+	commit_count = v_read(config, &shmp_index(handle, buf->commit_hot, oldidx)->cc);
 	lib_ring_buffer_check_deliver(config, buf, chan, offsets->old - 1,
 				      commit_count, oldidx, handle);
 	lib_ring_buffer_write_commit_counter(config, buf, chan, oldidx,
@@ -1040,8 +1040,8 @@ void lib_ring_buffer_switch_new_start(struct lib_ring_buffer *buf,
 	 */
 	cmm_smp_wmb();
 	v_add(config, config->cb.subbuffer_header_size(),
-	      &shmp(handle, buf->commit_hot)[beginidx].cc);
-	commit_count = v_read(config, &shmp(handle, buf->commit_hot)[beginidx].cc);
+	      &shmp_index(handle, buf->commit_hot, beginidx)->cc);
+	commit_count = v_read(config, &shmp_index(handle, buf->commit_hot, beginidx)->cc);
 	/* Check if the written buffer has to be delivered */
 	lib_ring_buffer_check_deliver(config, buf, chan, offsets->begin,
 				      commit_count, beginidx, handle);
@@ -1078,8 +1078,8 @@ void lib_ring_buffer_switch_new_end(struct lib_ring_buffer *buf,
 	 * determine that the subbuffer is full.
 	 */
 	cmm_smp_wmb();
-	v_add(config, padding_size, &shmp(handle, buf->commit_hot)[endidx].cc);
-	commit_count = v_read(config, &shmp(handle, buf->commit_hot)[endidx].cc);
+	v_add(config, padding_size, &shmp_index(handle, buf->commit_hot, endidx)->cc);
+	commit_count = v_read(config, &shmp_index(handle, buf->commit_hot, endidx)->cc);
 	lib_ring_buffer_check_deliver(config, buf, chan, offsets->end - 1,
 				  commit_count, endidx, handle);
 	lib_ring_buffer_write_commit_counter(config, buf, chan, endidx,
@@ -1270,7 +1270,7 @@ int lib_ring_buffer_try_reserve_slow(struct lib_ring_buffer *buf,
 		  (buf_trunc(offsets->begin, chan)
 		   >> chan->backend.num_subbuf_order)
 		  - ((unsigned long) v_read(config,
-					    &shmp(handle, buf->commit_cold)[sb_index].cc_sb)
+					    &shmp_index(handle, buf->commit_cold, sb_index)->cc_sb)
 		     & chan->commit_count_mask);
 		if (likely(reserve_commit_diff == 0)) {
 			/* Next subbuffer not being written to. */

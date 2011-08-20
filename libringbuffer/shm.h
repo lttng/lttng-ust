@@ -19,27 +19,31 @@
  * both the index and offset with known boundaries.
  */
 static inline
-char *_shmp(struct shm_object_table *table, struct shm_ref *ref)
+char *_shmp_offset(struct shm_object_table *table, struct shm_ref *ref,
+		   size_t offset)
 {
 	struct shm_object *obj;
-	size_t index, offset;
+	size_t index, ref_offset;
 
 	index = (size_t) ref->index;
 	if (unlikely(index >= table->allocated_len))
 		return NULL;
 	obj = &table->objects[index];
-	offset = (size_t) ref->offset;
-	if (unlikely(offset >= obj->memory_map_size))
+	ref_offset = (size_t) ref->offset;
+	ref_offset += offset;
+	if (unlikely(ref_offset >= obj->memory_map_size))
 		return NULL;
-	return &obj->memory_map[offset];
+	return &obj->memory_map[ref_offset];
 }
 
-#define shmp(handle, ref)						\
+#define shmp_index(handle, ref, offset)					\
 	({								\
 		__typeof__((ref)._type) ____ptr_ret;			\
-		____ptr_ret = (__typeof__(____ptr_ret)) _shmp((handle)->table, &(ref)._ref);	\
+		____ptr_ret = (__typeof__(____ptr_ret)) _shmp_offset((handle)->table, &(ref)._ref, ((offset) * sizeof(*____ptr_ret)));	\
 		____ptr_ret;						\
 	})
+
+#define shmp(handle, ref)	shmp_index(handle, ref, 0)
 
 static inline
 void _set_shmp(struct shm_ref *ref, struct shm_ref src)

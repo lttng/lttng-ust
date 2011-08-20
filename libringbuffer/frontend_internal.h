@@ -185,7 +185,7 @@ void lib_ring_buffer_vmcore_check_deliver(const struct lib_ring_buffer_config *c
 					  struct shm_handle *handle)
 {
 	if (config->oops == RING_BUFFER_OOPS_CONSISTENCY)
-		v_set(config, &shmp(handle, buf->commit_hot)[idx].seq, commit_count);
+		v_set(config, &shmp_index(handle, buf->commit_hot, idx)->seq, commit_count);
 }
 
 static inline
@@ -198,7 +198,7 @@ int lib_ring_buffer_poll_deliver(const struct lib_ring_buffer_config *config,
 
 	consumed_old = uatomic_read(&buf->consumed);
 	consumed_idx = subbuf_index(consumed_old, chan);
-	commit_count = v_read(config, &shmp(handle, buf->commit_cold)[consumed_idx].cc_sb);
+	commit_count = v_read(config, &shmp_index(handle, buf->commit_cold, consumed_idx)->cc_sb);
 	/*
 	 * No memory barrier here, since we are only interested
 	 * in a statistically correct polling result. The next poll will
@@ -275,7 +275,7 @@ int lib_ring_buffer_reserve_committed(const struct lib_ring_buffer_config *confi
 	do {
 		offset = v_read(config, &buf->offset);
 		idx = subbuf_index(offset, chan);
-		commit_count = v_read(config, &shmp(handle, buf->commit_hot)[idx].cc);
+		commit_count = v_read(config, &shmp_index(handle, buf->commit_hot, idx)->cc);
 	} while (offset != v_read(config, &buf->offset));
 
 	return ((buf_trunc(offset, chan) >> chan->backend.num_subbuf_order)
@@ -324,7 +324,7 @@ void lib_ring_buffer_check_deliver(const struct lib_ring_buffer_config *config,
 		 * The subbuffer size is least 2 bytes (minimum size: 1 page).
 		 * This guarantees that old_commit_count + 1 != commit_count.
 		 */
-		if (likely(v_cmpxchg(config, &shmp(handle, buf->commit_cold)[idx].cc_sb,
+		if (likely(v_cmpxchg(config, &shmp_index(handle, buf->commit_cold, idx)->cc_sb,
 					 old_commit_count, old_commit_count + 1)
 			   == old_commit_count)) {
 			/*
@@ -367,7 +367,7 @@ void lib_ring_buffer_check_deliver(const struct lib_ring_buffer_config *config,
 			 */
 			cmm_smp_mb();
 			/* End of exclusive subbuffer access */
-			v_set(config, &shmp(handle, buf->commit_cold)[idx].cc_sb,
+			v_set(config, &shmp_index(handle, buf->commit_cold, idx)->cc_sb,
 			      commit_count);
 			lib_ring_buffer_vmcore_check_deliver(config, buf,
 						 commit_count, idx, handle);
@@ -431,9 +431,9 @@ void lib_ring_buffer_write_commit_counter(const struct lib_ring_buffer_config *c
 	if (unlikely(subbuf_offset(offset - commit_count, chan)))
 		return;
 
-	commit_seq_old = v_read(config, &shmp(handle, buf->commit_hot)[idx].seq);
+	commit_seq_old = v_read(config, &shmp_index(handle, buf->commit_hot, idx)->seq);
 	while ((long) (commit_seq_old - commit_count) < 0)
-		commit_seq_old = v_cmpxchg(config, &shmp(handle, buf->commit_hot)[idx].seq,
+		commit_seq_old = v_cmpxchg(config, &shmp_index(handle, buf->commit_hot, idx)->seq,
 					   commit_seq_old, commit_count);
 }
 

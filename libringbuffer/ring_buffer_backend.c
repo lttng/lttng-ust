@@ -65,7 +65,7 @@ int lib_ring_buffer_backend_allocate(const struct lib_ring_buffer_config *config
 		set_shmp(shmp(handle, bufb->array)[i].shmp,
 			zalloc_shm(shmobj,
 				sizeof(struct lib_ring_buffer_backend_pages)));
-		if (!shmp(handle, shmp(handle, bufb->array)[i].shmp))
+		if (!shmp(handle, shmp_index(handle, bufb->array, i)->shmp))
 			goto free_array;
 	}
 
@@ -78,7 +78,7 @@ int lib_ring_buffer_backend_allocate(const struct lib_ring_buffer_config *config
 		goto free_array;
 
 	for (i = 0; i < num_subbuf; i++)
-		shmp(handle, bufb->buf_wsb)[i].id = subbuffer_id(config, 0, 1, i);
+		shmp_index(handle, bufb->buf_wsb, i)->id = subbuffer_id(config, 0, 1, i);
 
 	/* Assign read-side subbuffer table */
 	if (extra_reader_sb)
@@ -95,10 +95,10 @@ int lib_ring_buffer_backend_allocate(const struct lib_ring_buffer_config *config
 		ref.offset = bufb->memory_map._ref.offset;
 		ref.offset += i * subbuf_size;
 
-		set_shmp(shmp(handle, shmp(handle, bufb->array)[i].shmp)->p,
+		set_shmp(shmp(handle, shmp_index(handle, bufb->array, i)->shmp)->p,
 			 ref);
 		if (config->output == RING_BUFFER_MMAP) {
-			shmp(handle, shmp(handle, bufb->array)[i].shmp)->mmap_offset = mmap_offset;
+			shmp(handle, shmp_index(handle, bufb->array, i)->shmp)->mmap_offset = mmap_offset;
 			mmap_offset += subbuf_size;
 		}
 	}
@@ -150,7 +150,7 @@ void lib_ring_buffer_backend_reset(struct lib_ring_buffer_backend *bufb,
 		num_subbuf_alloc++;
 
 	for (i = 0; i < chanb->num_subbuf; i++)
-		shmp(handle, bufb->buf_wsb)[i].id = subbuffer_id(config, 0, 1, i);
+		shmp_index(handle, bufb->buf_wsb, i)->id = subbuffer_id(config, 0, 1, i);
 	if (chanb->extra_reader_sb)
 		bufb->buf_rsb.id = subbuffer_id(config, 0, 1,
 						num_subbuf_alloc - 1);
@@ -159,9 +159,9 @@ void lib_ring_buffer_backend_reset(struct lib_ring_buffer_backend *bufb,
 
 	for (i = 0; i < num_subbuf_alloc; i++) {
 		/* Don't reset mmap_offset */
-		v_set(config, &shmp(handle, shmp(handle, bufb->array)[i].shmp)->records_commit, 0);
-		v_set(config, &shmp(handle, shmp(handle, bufb->array)[i].shmp)->records_unread, 0);
-		shmp(handle, shmp(handle, bufb->array)[i].shmp)->data_size = 0;
+		v_set(config, &shmp(handle, shmp_index(handle, bufb->array, i)->shmp)->records_commit, 0);
+		v_set(config, &shmp(handle, shmp_index(handle, bufb->array, i)->shmp)->records_unread, 0);
+		shmp(handle, shmp_index(handle, bufb->array, i)->shmp)->data_size = 0;
 		/* Don't reset backend page and virt addresses */
 	}
 	/* Don't reset num_pages_per_subbuf, cpu, allocated */
@@ -378,7 +378,7 @@ size_t lib_ring_buffer_read(struct lib_ring_buffer_backend *bufb, size_t offset,
 		return 0;
 	id = bufb->buf_rsb.id;
 	sb_bindex = subbuffer_id_get_index(config, id);
-	rpages = &shmp(handle, bufb->array)[sb_bindex];
+	rpages = shmp_index(handle, bufb->array, sb_bindex);
 	/*
 	 * Underlying layer should never ask for reads across
 	 * subbuffers.
@@ -386,7 +386,7 @@ size_t lib_ring_buffer_read(struct lib_ring_buffer_backend *bufb, size_t offset,
 	CHAN_WARN_ON(chanb, offset >= chanb->buf_size);
 	CHAN_WARN_ON(chanb, config->mode == RING_BUFFER_OVERWRITE
 		     && subbuffer_id_is_noref(config, id));
-	memcpy(dest, shmp(handle, shmp(handle, rpages->shmp)->p) + (offset & ~(chanb->subbuf_size - 1)), len);
+	memcpy(dest, shmp_index(handle, shmp(handle, rpages->shmp)->p, offset & ~(chanb->subbuf_size - 1)), len);
 	return orig_len;
 }
 
@@ -414,7 +414,7 @@ int lib_ring_buffer_read_cstr(struct lib_ring_buffer_backend *bufb, size_t offse
 	orig_offset = offset;
 	id = bufb->buf_rsb.id;
 	sb_bindex = subbuffer_id_get_index(config, id);
-	rpages = &shmp(handle, bufb->array)[sb_bindex];
+	rpages = shmp_index(handle, bufb->array, sb_bindex);
 	/*
 	 * Underlying layer should never ask for reads across
 	 * subbuffers.
@@ -422,7 +422,7 @@ int lib_ring_buffer_read_cstr(struct lib_ring_buffer_backend *bufb, size_t offse
 	CHAN_WARN_ON(chanb, offset >= chanb->buf_size);
 	CHAN_WARN_ON(chanb, config->mode == RING_BUFFER_OVERWRITE
 		     && subbuffer_id_is_noref(config, id));
-	str = (char *)shmp(handle, shmp(handle, rpages->shmp)->p) + (offset & ~(chanb->subbuf_size - 1));
+	str = shmp_index(handle, shmp(handle, rpages->shmp)->p, offset & ~(chanb->subbuf_size - 1));
 	string_len = strnlen(str, len);
 	if (dest && len) {
 		memcpy(dest, str, string_len);
@@ -453,10 +453,10 @@ void *lib_ring_buffer_read_offset_address(struct lib_ring_buffer_backend *bufb,
 	offset &= chanb->buf_size - 1;
 	id = bufb->buf_rsb.id;
 	sb_bindex = subbuffer_id_get_index(config, id);
-	rpages = &shmp(handle, bufb->array)[sb_bindex];
+	rpages = shmp_index(handle, bufb->array, sb_bindex);
 	CHAN_WARN_ON(chanb, config->mode == RING_BUFFER_OVERWRITE
 		     && subbuffer_id_is_noref(config, id));
-	return shmp(handle, shmp(handle, rpages->shmp)->p) + (offset & ~(chanb->subbuf_size - 1));
+	return shmp_index(handle, shmp(handle, rpages->shmp)->p, offset & ~(chanb->subbuf_size - 1));
 }
 
 /**
@@ -481,10 +481,10 @@ void *lib_ring_buffer_offset_address(struct lib_ring_buffer_backend *bufb,
 
 	offset &= chanb->buf_size - 1;
 	sbidx = offset >> chanb->subbuf_size_order;
-	id = shmp(handle, bufb->buf_wsb)[sbidx].id;
+	id = shmp_index(handle, bufb->buf_wsb, sbidx)->id;
 	sb_bindex = subbuffer_id_get_index(config, id);
-	rpages = &shmp(handle, bufb->array)[sb_bindex];
+	rpages = shmp_index(handle, bufb->array, sb_bindex);
 	CHAN_WARN_ON(chanb, config->mode == RING_BUFFER_OVERWRITE
 		     && subbuffer_id_is_noref(config, id));
-	return shmp(handle, shmp(handle, rpages->shmp)->p) + (offset & ~(chanb->subbuf_size - 1));
+	return shmp_index(handle, shmp(handle, rpages->shmp)->p, offset & ~(chanb->subbuf_size - 1));
 }

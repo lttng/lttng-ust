@@ -253,7 +253,7 @@ void lib_ring_buffer_commit(const struct lib_ring_buffer_config *config,
 	 */
 	cmm_smp_wmb();
 
-	v_add(config, ctx->slot_size, &shmp(handle, buf->commit_hot)[endidx].cc);
+	v_add(config, ctx->slot_size, &shmp_index(handle, buf->commit_hot, endidx)->cc);
 
 	/*
 	 * commit count read can race with concurrent OOO commit count updates.
@@ -273,7 +273,7 @@ void lib_ring_buffer_commit(const struct lib_ring_buffer_config *config,
 	 *   count reaches back the reserve offset for a specific sub-buffer,
 	 *   which is completely independent of the order.
 	 */
-	commit_count = v_read(config, &shmp(handle, buf->commit_hot)[endidx].cc);
+	commit_count = v_read(config, &shmp_index(handle, buf->commit_hot, endidx)->cc);
 
 	lib_ring_buffer_check_deliver(config, buf, chan, offset_end - 1,
 				      commit_count, endidx, handle);
