@@ -26,7 +26,7 @@
 #include <ust/usterr-signal-safe.h>
 #include <ust/ringbuffer-config.h>
 #include "backend_types.h"
-#include "shm.h"
+#include "shm_internal.h"
 
 /*
  * A switch is done during tracing or as a final flush after tracing (so it
@@ -50,7 +50,6 @@ struct channel {
 	unsigned long read_timer_interval;	/* Reader wakeup (jiffies) */
 	//wait_queue_head_t read_wait;		/* reader wait queue */
 	int finalized;				/* Has channel been finalized */
-	DECLARE_SHMP(struct shm_header, shm_header);
 } ____cacheline_aligned;
 
 /* Per-subbuffer commit counters used on the hot path */

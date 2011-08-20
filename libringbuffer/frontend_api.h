@@ -146,6 +146,7 @@ int lib_ring_buffer_reserve(const struct lib_ring_buffer_config *config,
 			    struct lib_ring_buffer_ctx *ctx)
 {
 	struct channel *chan = ctx->chan;
+	struct shm_handle *handle = ctx->handle;
 	struct lib_ring_buffer *buf;
 	unsigned long o_begin, o_end, o_old;
 	size_t before_hdr_pad = 0;
@@ -154,9 +155,9 @@ int lib_ring_buffer_reserve(const struct lib_ring_buffer_config *config,
 		return -EAGAIN;
 
 	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU)
-		buf = &shmp(chan->backend.buf)[ctx->cpu];
+		buf = shmp(handle, chan->backend.buf[ctx->cpu].shmp);
 	else
-		buf = shmp(chan->backend.buf);
+		buf = shmp(handle, chan->backend.buf[0].shmp);
 	if (uatomic_read(&buf->record_disabled))
 		return -EAGAIN;
 	ctx->buf = buf;
@@ -189,7 +190,7 @@ int lib_ring_buffer_reserve(const struct lib_ring_buffer_config *config,
 	 * Clear noref flag for this subbuffer.
 	 */
 	lib_ring_buffer_clear_noref(config, &ctx->buf->backend,
-				subbuf_index(o_end - 1, chan));
+				subbuf_index(o_end - 1, chan), handle);
 
 	ctx->pre_offset = o_begin;
 	ctx->buf_offset = o_begin + before_hdr_pad;
@@ -214,9 +215,10 @@ slow_path:
  */
 static inline
 void lib_ring_buffer_switch(const struct lib_ring_buffer_config *config,
-			    struct lib_ring_buffer *buf, enum switch_mode mode)
+			    struct lib_ring_buffer *buf, enum switch_mode mode,
+			    struct shm_handle *handle)
 {
-	lib_ring_buffer_switch_slow(buf, mode);
+	lib_ring_buffer_switch_slow(buf, mode, handle);
 }
 
 /* See ring_buffer_frontend_api.h for lib_ring_buffer_reserve(). */
@@ -234,6 +236,7 @@ void lib_ring_buffer_commit(const struct lib_ring_buffer_config *config,
 			    const struct lib_ring_buffer_ctx *ctx)
 {
 	struct channel *chan = ctx->chan;
+	struct shm_handle *handle = ctx->handle;
 	struct lib_ring_buffer *buf = ctx->buf;
 	unsigned long offset_end = ctx->buf_offset;
 	unsigned long endidx = subbuf_index(offset_end - 1, chan);
@@ -242,7 +245,7 @@ void lib_ring_buffer_commit(const struct lib_ring_buffer_config *config,
 	/*
 	 * Must count record before incrementing the commit count.
 	 */
-	subbuffer_count_record(config, &buf->backend, endidx);
+	subbuffer_count_record(config, &buf->backend, endidx, handle);
 
 	/*
 	 * Order all writes to buffer before the commit count update that will
@@ -250,7 +253,7 @@ void lib_ring_buffer_commit(const struct lib_ring_buffer_config *config,
 	 */
 	cmm_smp_wmb();
 
-	v_add(config, ctx->slot_size, &shmp(buf->commit_hot)[endidx].cc);
+	v_add(config, ctx->slot_size, &shmp(handle, buf->commit_hot)[endidx].cc);
 
 	/*
 	 * commit count read can race with concurrent OOO commit count updates.
@@ -270,17 +273,17 @@ void lib_ring_buffer_commit(const struct lib_ring_buffer_config *config,
 	 *   count reaches back the reserve offset for a specific sub-buffer,
 	 *   which is completely independent of the order.
 	 */
-	commit_count = v_read(config, &shmp(buf->commit_hot)[endidx].cc);
+	commit_count = v_read(config, &shmp(handle, buf->commit_hot)[endidx].cc);
 
 	lib_ring_buffer_check_deliver(config, buf, chan, offset_end - 1,
-				      commit_count, endidx);
+				      commit_count, endidx, handle);
 	/*
 	 * Update used size at each commit. It's needed only for extracting
 	 * ring_buffer buffers from vmcore, after crash.
 	 */
 	lib_ring_buffer_write_commit_counter(config, buf, chan, endidx,
 					     ctx->buf_offset, commit_count,
-					 ctx->slot_size);
+					     ctx->slot_size, handle);
 }
 
 /**

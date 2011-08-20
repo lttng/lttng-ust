@@ -25,17 +25,20 @@
 
 int lib_ring_buffer_backend_create(struct lib_ring_buffer_backend *bufb,
 				   struct channel_backend *chan, int cpu,
-				   struct shm_header *shm_header);
+				   struct shm_handle *handle,
+				   struct shm_object *shmobj);
 void channel_backend_unregister_notifiers(struct channel_backend *chanb);
 void lib_ring_buffer_backend_free(struct lib_ring_buffer_backend *bufb);
 int channel_backend_init(struct channel_backend *chanb,
 			 const char *name,
 			 const struct lib_ring_buffer_config *config,
 			 void *priv, size_t subbuf_size,
-			 size_t num_subbuf, struct shm_header *shm_header);
-void channel_backend_free(struct channel_backend *chanb);
+			 size_t num_subbuf, struct shm_handle *handle);
+void channel_backend_free(struct channel_backend *chanb,
+			  struct shm_handle *handle);
 
-void lib_ring_buffer_backend_reset(struct lib_ring_buffer_backend *bufb);
+void lib_ring_buffer_backend_reset(struct lib_ring_buffer_backend *bufb,
+				   struct shm_handle *handle);
 void channel_backend_reset(struct channel_backend *chanb);
 
 int lib_ring_buffer_backend_init(void);
@@ -183,12 +186,12 @@ int subbuffer_id_check_index(const struct lib_ring_buffer_config *config,
 static inline
 void subbuffer_count_record(const struct lib_ring_buffer_config *config,
 			    struct lib_ring_buffer_backend *bufb,
-			    unsigned long idx)
+			    unsigned long idx, struct shm_handle *handle)
 {
 	unsigned long sb_bindex;
 
-	sb_bindex = subbuffer_id_get_index(config, shmp(bufb->buf_wsb)[idx].id);
-	v_inc(config, &shmp(bufb->array)[sb_bindex]->records_commit);
+	sb_bindex = subbuffer_id_get_index(config, shmp(handle, bufb->buf_wsb)[idx].id);
+	v_inc(config, &shmp(handle, (shmp(handle, bufb->array)[sb_bindex]).shmp)->records_commit);
 }
 
 /*
@@ -197,15 +200,16 @@ void subbuffer_count_record(const struct lib_ring_buffer_config *config,
  */
 static inline
 void subbuffer_consume_record(const struct lib_ring_buffer_config *config,
-			      struct lib_ring_buffer_backend *bufb)
+			      struct lib_ring_buffer_backend *bufb,
+			      struct shm_handle *handle)
 {
 	unsigned long sb_bindex;
 
 	sb_bindex = subbuffer_id_get_index(config, bufb->buf_rsb.id);
-	CHAN_WARN_ON(bufb->chan,
-		     !v_read(config, &shmp(bufb->array)[sb_bindex]->records_unread));
+	CHAN_WARN_ON(shmp(handle, bufb->chan),
+		     !v_read(config, &shmp(handle, (shmp(handle, bufb->array)[sb_bindex]).shmp)->records_unread));
 	/* Non-atomic decrement protected by exclusive subbuffer access */
-	_v_dec(config, &shmp(bufb->array)[sb_bindex]->records_unread);
+	_v_dec(config, &shmp(handle, (shmp(handle, bufb->array)[sb_bindex]).shmp)->records_unread);
 	v_inc(config, &bufb->records_read);
 }
 
@@ -213,12 +217,13 @@ static inline
 unsigned long subbuffer_get_records_count(
 				const struct lib_ring_buffer_config *config,
 				struct lib_ring_buffer_backend *bufb,
-				unsigned long idx)
+				unsigned long idx,
+				struct shm_handle *handle)
 {
 	unsigned long sb_bindex;
 
-	sb_bindex = subbuffer_id_get_index(config, shmp(bufb->buf_wsb)[idx].id);
-	return v_read(config, &shmp(bufb->array)[sb_bindex]->records_commit);
+	sb_bindex = subbuffer_id_get_index(config, shmp(handle, bufb->buf_wsb)[idx].id);
+	return v_read(config, &shmp(handle, (shmp(handle, bufb->array)[sb_bindex]).shmp)->records_commit);
 }
 
 /*
@@ -231,17 +236,18 @@ static inline
 unsigned long subbuffer_count_records_overrun(
 				const struct lib_ring_buffer_config *config,
 				struct lib_ring_buffer_backend *bufb,
-				unsigned long idx)
+				unsigned long idx,
+				struct shm_handle *handle)
 {
-	struct lib_ring_buffer_backend_pages *pages;
+	struct lib_ring_buffer_backend_pages_shmp *pages;
 	unsigned long overruns, sb_bindex;
 
-	sb_bindex = subbuffer_id_get_index(config, shmp(bufb->buf_wsb)[idx].id);
-	pages = shmp(bufb->array)[sb_bindex];
-	overruns = v_read(config, &pages->records_unread);
-	v_set(config, &pages->records_unread,
-	      v_read(config, &pages->records_commit));
-	v_set(config, &pages->records_commit, 0);
+	sb_bindex = subbuffer_id_get_index(config, shmp(handle, bufb->buf_wsb)[idx].id);
+	pages = &shmp(handle, bufb->array)[sb_bindex];
+	overruns = v_read(config, &shmp(handle, pages->shmp)->records_unread);
+	v_set(config, &shmp(handle, pages->shmp)->records_unread,
+	      v_read(config, &shmp(handle, pages->shmp)->records_commit));
+	v_set(config, &shmp(handle, pages->shmp)->records_commit, 0);
 
 	return overruns;
 }
@@ -250,41 +256,44 @@ static inline
 void subbuffer_set_data_size(const struct lib_ring_buffer_config *config,
 			     struct lib_ring_buffer_backend *bufb,
 			     unsigned long idx,
-			     unsigned long data_size)
+			     unsigned long data_size,
+			     struct shm_handle *handle)
 {
-	struct lib_ring_buffer_backend_pages *pages;
+	struct lib_ring_buffer_backend_pages_shmp *pages;
 	unsigned long sb_bindex;
 
-	sb_bindex = subbuffer_id_get_index(config, shmp(bufb->buf_wsb)[idx].id);
-	pages = shmp(bufb->array)[sb_bindex];
-	pages->data_size = data_size;
+	sb_bindex = subbuffer_id_get_index(config, shmp(handle, bufb->buf_wsb)[idx].id);
+	pages = &shmp(handle, bufb->array)[sb_bindex];
+	shmp(handle, pages->shmp)->data_size = data_size;
 }
 
 static inline
 unsigned long subbuffer_get_read_data_size(
 				const struct lib_ring_buffer_config *config,
-				struct lib_ring_buffer_backend *bufb)
+				struct lib_ring_buffer_backend *bufb,
+				struct shm_handle *handle)
 {
-	struct lib_ring_buffer_backend_pages *pages;
+	struct lib_ring_buffer_backend_pages_shmp *pages;
 	unsigned long sb_bindex;
 
 	sb_bindex = subbuffer_id_get_index(config, bufb->buf_rsb.id);
-	pages = shmp(bufb->array)[sb_bindex];
-	return pages->data_size;
+	pages = &shmp(handle, bufb->array)[sb_bindex];
+	return shmp(handle, pages->shmp)->data_size;
 }
 
 static inline
 unsigned long subbuffer_get_data_size(
 				const struct lib_ring_buffer_config *config,
 				struct lib_ring_buffer_backend *bufb,
-				unsigned long idx)
+				unsigned long idx,
+				struct shm_handle *handle)
 {
-	struct lib_ring_buffer_backend_pages *pages;
+	struct lib_ring_buffer_backend_pages_shmp *pages;
 	unsigned long sb_bindex;
 
-	sb_bindex = subbuffer_id_get_index(config, shmp(bufb->buf_wsb)[idx].id);
-	pages = shmp(bufb->array)[sb_bindex];
-	return pages->data_size;
+	sb_bindex = subbuffer_id_get_index(config, shmp(handle, bufb->buf_wsb)[idx].id);
+	pages = &shmp(handle, bufb->array)[sb_bindex];
+	return shmp(handle, pages->shmp)->data_size;
 }
 
 /**
@@ -294,7 +303,8 @@ unsigned long subbuffer_get_data_size(
 static inline
 void lib_ring_buffer_clear_noref(const struct lib_ring_buffer_config *config,
 				 struct lib_ring_buffer_backend *bufb,
-				 unsigned long idx)
+				 unsigned long idx,
+				 struct shm_handle *handle)
 {
 	unsigned long id, new_id;
 
@@ -305,7 +315,7 @@ void lib_ring_buffer_clear_noref(const struct lib_ring_buffer_config *config,
 	 * Performing a volatile access to read the sb_pages, because we want to
 	 * read a coherent version of the pointer and the associated noref flag.
 	 */
-	id = CMM_ACCESS_ONCE(shmp(bufb->buf_wsb)[idx].id);
+	id = CMM_ACCESS_ONCE(shmp(handle, bufb->buf_wsb)[idx].id);
 	for (;;) {
 		/* This check is called on the fast path for each record. */
 		if (likely(!subbuffer_id_is_noref(config, id))) {
@@ -319,7 +329,7 @@ void lib_ring_buffer_clear_noref(const struct lib_ring_buffer_config *config,
 		}
 		new_id = id;
 		subbuffer_id_clear_noref(config, &new_id);
-		new_id = uatomic_cmpxchg(&shmp(bufb->buf_wsb)[idx].id, id, new_id);
+		new_id = uatomic_cmpxchg(&shmp(handle, bufb->buf_wsb)[idx].id, id, new_id);
 		if (likely(new_id == id))
 			break;
 		id = new_id;
@@ -333,7 +343,8 @@ void lib_ring_buffer_clear_noref(const struct lib_ring_buffer_config *config,
 static inline
 void lib_ring_buffer_set_noref_offset(const struct lib_ring_buffer_config *config,
 				      struct lib_ring_buffer_backend *bufb,
-				      unsigned long idx, unsigned long offset)
+				      unsigned long idx, unsigned long offset,
+				      struct shm_handle *handle)
 {
 	if (config->mode != RING_BUFFER_OVERWRITE)
 		return;
@@ -349,14 +360,14 @@ void lib_ring_buffer_set_noref_offset(const struct lib_ring_buffer_config *confi
 	 * subbuffer_set_noref() uses a volatile store to deal with concurrent
 	 * readers of the noref flag.
 	 */
-	CHAN_WARN_ON(bufb->chan,
-		     subbuffer_id_is_noref(config, shmp(bufb->buf_wsb)[idx].id));
+	CHAN_WARN_ON(shmp(handle, bufb->chan),
+		     subbuffer_id_is_noref(config, shmp(handle, bufb->buf_wsb)[idx].id));
 	/*
 	 * Memory barrier that ensures counter stores are ordered before set
 	 * noref and offset.
 	 */
 	cmm_smp_mb();
-	subbuffer_id_set_noref_offset(config, &shmp(bufb->buf_wsb)[idx].id, offset);
+	subbuffer_id_set_noref_offset(config, &shmp(handle, bufb->buf_wsb)[idx].id, offset);
 }
 
 /**
@@ -367,7 +378,8 @@ int update_read_sb_index(const struct lib_ring_buffer_config *config,
 			 struct lib_ring_buffer_backend *bufb,
 			 struct channel_backend *chanb,
 			 unsigned long consumed_idx,
-			 unsigned long consumed_count)
+			 unsigned long consumed_count,
+			 struct shm_handle *handle)
 {
 	unsigned long old_id, new_id;
 
@@ -378,7 +390,7 @@ int update_read_sb_index(const struct lib_ring_buffer_config *config,
 		 * old_wpage, because the value read will be confirmed by the
 		 * following cmpxchg().
 		 */
-		old_id = shmp(bufb->buf_wsb)[consumed_idx].id;
+		old_id = shmp(handle, bufb->buf_wsb)[consumed_idx].id;
 		if (unlikely(!subbuffer_id_is_noref(config, old_id)))
 			return -EAGAIN;
 		/*
@@ -388,18 +400,18 @@ int update_read_sb_index(const struct lib_ring_buffer_config *config,
 		if (unlikely(!subbuffer_id_compare_offset(config, old_id,
 							  consumed_count)))
 			return -EAGAIN;
-		CHAN_WARN_ON(bufb->chan,
+		CHAN_WARN_ON(shmp(handle, bufb->chan),
 			     !subbuffer_id_is_noref(config, bufb->buf_rsb.id));
 		subbuffer_id_set_noref_offset(config, &bufb->buf_rsb.id,
 					      consumed_count);
-		new_id = uatomic_cmpxchg(&shmp(bufb->buf_wsb)[consumed_idx].id, old_id,
+		new_id = uatomic_cmpxchg(&shmp(handle, bufb->buf_wsb)[consumed_idx].id, old_id,
 				 bufb->buf_rsb.id);
 		if (unlikely(old_id != new_id))
 			return -EAGAIN;
 		bufb->buf_rsb.id = new_id;
 	} else {
 		/* No page exchange, use the writer page directly */
-		bufb->buf_rsb.id = shmp(bufb->buf_wsb)[consumed_idx].id;
+		bufb->buf_rsb.id = shmp(handle, bufb->buf_wsb)[consumed_idx].id;
 	}
 	return 0;
 }

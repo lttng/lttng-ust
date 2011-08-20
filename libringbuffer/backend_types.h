@@ -11,7 +11,7 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
-#include "shm.h"
+#include "shm_internal.h"
 
 struct lib_ring_buffer_backend_pages {
 	unsigned long mmap_offset;	/* offset of the subbuffer in mmap */
@@ -32,6 +32,10 @@ struct lib_ring_buffer_backend_subbuffer {
 struct channel;
 struct lib_ring_buffer;
 
+struct lib_ring_buffer_backend_pages_shmp {
+	DECLARE_SHMP(struct lib_ring_buffer_backend_pages, shmp);
+};
+
 struct lib_ring_buffer_backend {
 	/* Array of ring_buffer_backend_subbuffer for writer */
 	DECLARE_SHMP(struct lib_ring_buffer_backend_subbuffer, buf_wsb);
@@ -41,13 +45,17 @@ struct lib_ring_buffer_backend {
 	 * Pointer array of backend pages, for whole buffer.
 	 * Indexed by ring_buffer_backend_subbuffer identifier (id) index.
 	 */
-	DECLARE_SHMP(struct lib_ring_buffer_backend_pages *, array);
+	DECLARE_SHMP(struct lib_ring_buffer_backend_pages_shmp, array);
 	DECLARE_SHMP(char, memory_map);	/* memory mapping */
 
 	DECLARE_SHMP(struct channel, chan);	/* Associated channel */
 	int cpu;			/* This buffer's cpu. -1 if global. */
 	union v_atomic records_read;	/* Number of records read */
 	unsigned int allocated:1;	/* Bool: is buffer allocated ? */
+};
+
+struct lib_ring_buffer_shmp {
+	DECLARE_SHMP(struct lib_ring_buffer, shmp); /* Channel per-cpu buffers */
 };
 
 struct channel_backend {
@@ -60,12 +68,12 @@ struct channel_backend {
 					 */
 	unsigned int buf_size_order;	/* Order of buffer size */
 	int extra_reader_sb:1;		/* Bool: has extra reader subbuffer */
-	DECLARE_SHMP(struct lib_ring_buffer, buf); /* Channel per-cpu buffers */
 	unsigned long num_subbuf;	/* Number of sub-buffers for writer */
 	u64 start_tsc;			/* Channel creation TSC value */
 	void *priv;			/* Client-specific information */
 	const struct lib_ring_buffer_config *config; /* Ring buffer configuration */
 	char name[NAME_MAX];		/* Channel name */
+	struct lib_ring_buffer_shmp buf[];
 };
 
 #endif /* _LINUX_RING_BUFFER_BACKEND_TYPES_H */

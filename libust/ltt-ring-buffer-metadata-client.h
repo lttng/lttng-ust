@@ -76,13 +76,15 @@ static size_t client_packet_header_size(void)
 }
 
 static void client_buffer_begin(struct lib_ring_buffer *buf, u64 tsc,
-				unsigned int subbuf_idx)
+				unsigned int subbuf_idx,
+				struct shm_handle *handle)
 {
-	struct channel *chan = shmp(buf->backend.chan);
+	struct channel *chan = shmp(handle, buf->backend.chan);
 	struct metadata_packet_header *header =
 		(struct metadata_packet_header *)
 			lib_ring_buffer_offset_address(&buf->backend,
-				subbuf_idx * chan->backend.subbuf_size);
+				subbuf_idx * chan->backend.subbuf_size,
+				handle);
 	struct ltt_channel *ltt_chan = channel_get_private(chan);
 	struct ltt_session *session = ltt_chan->session;
 
@@ -101,13 +103,15 @@ static void client_buffer_begin(struct lib_ring_buffer *buf, u64 tsc,
  * subbuffer. data_size is between 1 and subbuf_size.
  */
 static void client_buffer_end(struct lib_ring_buffer *buf, u64 tsc,
-			      unsigned int subbuf_idx, unsigned long data_size)
+			      unsigned int subbuf_idx, unsigned long data_size,
+			      struct shm_handle *handle)
 {
-	struct channel *chan = shmp(buf->backend.chan);
+	struct channel *chan = shmp(handle, buf->backend.chan);
 	struct metadata_packet_header *header =
 		(struct metadata_packet_header *)
 			lib_ring_buffer_offset_address(&buf->backend,
-				subbuf_idx * chan->backend.subbuf_size);
+				subbuf_idx * chan->backend.subbuf_size,
+				handle);
 	unsigned long records_lost = 0;
 
 	header->content_size = data_size * CHAR_BIT;		/* in bits */
@@ -119,12 +123,15 @@ static void client_buffer_end(struct lib_ring_buffer *buf, u64 tsc,
 }
 
 static int client_buffer_create(struct lib_ring_buffer *buf, void *priv,
-				int cpu, const char *name)
+				int cpu, const char *name,
+				struct shm_handle *handle)
 {
 	return 0;
 }
 
-static void client_buffer_finalize(struct lib_ring_buffer *buf, void *priv, int cpu)
+static void client_buffer_finalize(struct lib_ring_buffer *buf,
+				   void *priv, int cpu,
+				   struct shm_handle *handle)
 {
 }
 
@@ -149,38 +156,42 @@ static const struct lib_ring_buffer_config client_config = {
 };
 
 static
-struct shm_handle *_channel_create(const char *name,
+struct ltt_channel *_channel_create(const char *name,
 				struct ltt_channel *ltt_chan, void *buf_addr,
 				size_t subbuf_size, size_t num_subbuf,
 				unsigned int switch_timer_interval,
 				unsigned int read_timer_interval)
 {
-	return channel_create(&client_config, name, ltt_chan, buf_addr,
+	ltt_chan->handle = channel_create(&client_config, name, ltt_chan, buf_addr,
 			      subbuf_size, num_subbuf, switch_timer_interval,
 			      read_timer_interval);
+	ltt_chan->chan = shmp(handle, handle->chan);
+	return ltt_chan;
 }
 
 static
-void ltt_channel_destroy(struct shm_handle *handle)
+void ltt_channel_destroy(struct ltt_channel *ltt_chan)
 {
-	channel_destroy(handle);
+	channel_destroy(ltt_chan->chan, ltt_chan->handle);
 }
 
 static
-struct lib_ring_buffer *ltt_buffer_read_open(struct channel *chan)
+struct lib_ring_buffer *ltt_buffer_read_open(struct channel *chan,
+					     struct shm_handle *handle)
 {
 	struct lib_ring_buffer *buf;
 
-	buf = channel_get_ring_buffer(&client_config, chan, 0);
-	if (!lib_ring_buffer_open_read(buf))
+	buf = channel_get_ring_buffer(&client_config, chan, 0, handle);
+	if (!lib_ring_buffer_open_read(buf, handle))
 		return buf;
 	return NULL;
 }
 
 static
-void ltt_buffer_read_close(struct lib_ring_buffer *buf)
+void ltt_buffer_read_close(struct lib_ring_buffer *buf,
+			   struct shm_handle *handle)
 {
-	lib_ring_buffer_release_read(buf);
+	lib_ring_buffer_release_read(buf, handle);
 }
 
 static
@@ -203,13 +214,13 @@ void ltt_event_write(struct lib_ring_buffer_ctx *ctx, const void *src,
 }
 
 static
-size_t ltt_packet_avail_size(struct channel *chan)
+size_t ltt_packet_avail_size(struct channel *chan, struct shm_handle *handle)
 			     
 {
 	unsigned long o_begin;
 	struct lib_ring_buffer *buf;
 
-	buf = shmp(chan->backend.buf);	/* Only for global buffer ! */
+	buf = shmp(handle, chan->backend.buf[0].shmp);	/* Only for global buffer ! */
 	o_begin = v_read(&client_config, &buf->offset);
 	if (subbuf_offset(o_begin, chan) != 0) {
 		return chan->backend.subbuf_size - subbuf_offset(o_begin, chan);

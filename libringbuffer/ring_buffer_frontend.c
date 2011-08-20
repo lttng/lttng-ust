@@ -85,16 +85,18 @@ __thread unsigned int lib_ring_buffer_nesting;
 
 static
 void lib_ring_buffer_print_errors(struct channel *chan,
-				  struct lib_ring_buffer *buf, int cpu);
+				  struct lib_ring_buffer *buf, int cpu,
+				  struct shm_handle *handle);
 
 /*
  * Must be called under cpu hotplug protection.
  */
-void lib_ring_buffer_free(struct lib_ring_buffer *buf)
+void lib_ring_buffer_free(struct lib_ring_buffer *buf,
+			  struct shm_handle *handle)
 {
-	struct channel *chan = shmp(buf->backend.chan);
+	struct channel *chan = shmp(handle, buf->backend.chan);
 
-	lib_ring_buffer_print_errors(chan, buf, buf->backend.cpu);
+	lib_ring_buffer_print_errors(chan, buf, buf->backend.cpu, handle);
 	/* buf->commit_hot will be freed by shm teardown */
 	/* buf->commit_cold will be freed by shm teardown */
 
@@ -110,9 +112,10 @@ void lib_ring_buffer_free(struct lib_ring_buffer *buf)
  * should not be using the iterator concurrently with reset. The previous
  * current iterator record is reset.
  */
-void lib_ring_buffer_reset(struct lib_ring_buffer *buf)
+void lib_ring_buffer_reset(struct lib_ring_buffer *buf,
+			   struct shm_handle *handle)
 {
-	struct channel *chan = shmp(buf->backend.chan);
+	struct channel *chan = shmp(handle, buf->backend.chan);
 	const struct lib_ring_buffer_config *config = chan->backend.config;
 	unsigned int i;
 
@@ -122,14 +125,14 @@ void lib_ring_buffer_reset(struct lib_ring_buffer *buf)
 	 */
 	v_set(config, &buf->offset, 0);
 	for (i = 0; i < chan->backend.num_subbuf; i++) {
-		v_set(config, &shmp(buf->commit_hot)[i].cc, 0);
-		v_set(config, &shmp(buf->commit_hot)[i].seq, 0);
-		v_set(config, &shmp(buf->commit_cold)[i].cc_sb, 0);
+		v_set(config, &shmp(handle, buf->commit_hot)[i].cc, 0);
+		v_set(config, &shmp(handle, buf->commit_hot)[i].seq, 0);
+		v_set(config, &shmp(handle, buf->commit_cold)[i].cc_sb, 0);
 	}
 	uatomic_set(&buf->consumed, 0);
 	uatomic_set(&buf->record_disabled, 0);
 	v_set(config, &buf->last_tsc, 0);
-	lib_ring_buffer_backend_reset(&buf->backend);
+	lib_ring_buffer_backend_reset(&buf->backend, handle);
 	/* Don't reset number of active readers */
 	v_set(config, &buf->records_lost_full, 0);
 	v_set(config, &buf->records_lost_wrap, 0);
@@ -166,7 +169,8 @@ void channel_reset(struct channel *chan)
  */
 int lib_ring_buffer_create(struct lib_ring_buffer *buf,
 			   struct channel_backend *chanb, int cpu,
-			   struct shm_header *shm_header)
+			   struct shm_handle *handle,
+			   struct shm_object *shmobj)
 {
 	const struct lib_ring_buffer_config *config = chanb->config;
 	struct channel *chan = caa_container_of(chanb, struct channel, backend);
@@ -181,26 +185,24 @@ int lib_ring_buffer_create(struct lib_ring_buffer *buf,
 		return 0;
 
 	ret = lib_ring_buffer_backend_create(&buf->backend, &chan->backend,
-			cpu, shm_header);
+			cpu, handle, shmobj);
 	if (ret)
 		return ret;
 
-	align_shm(shm_header,
-		max(__alignof__(struct commit_counters_hot),
-		    __alignof__(struct commit_counters_cold)));
-	set_shmp(&buf->commit_hot,
-		 zalloc_shm(shm_header,
-			sizeof(*buf->commit_hot) * chan->backend.num_subbuf));
-	if (!shmp(buf->commit_hot)) {
+	align_shm(shmobj, __alignof__(struct commit_counters_hot));
+	set_shmp(buf->commit_hot,
+		 zalloc_shm(shmobj,
+			sizeof(struct commit_counters_hot) * chan->backend.num_subbuf));
+	if (!shmp(handle, buf->commit_hot)) {
 		ret = -ENOMEM;
 		goto free_chanbuf;
 	}
 
-	align_shm(shm_header, __alignof__(struct commit_counters_cold));
-	set_shmp(&buf->commit_cold,
-		 zalloc_shm(shm_header,
-			sizeof(*buf->commit_cold) * chan->backend.num_subbuf));
-	if (!shmp(buf->commit_cold)) {
+	align_shm(shmobj, __alignof__(struct commit_counters_cold));
+	set_shmp(buf->commit_cold,
+		 zalloc_shm(shmobj,
+			sizeof(struct commit_counters_cold) * chan->backend.num_subbuf));
+	if (!shmp(handle, buf->commit_cold)) {
 		ret = -ENOMEM;
 		goto free_commit;
 	}
@@ -214,13 +216,13 @@ int lib_ring_buffer_create(struct lib_ring_buffer *buf,
 	 */
 	subbuf_header_size = config->cb.subbuffer_header_size();
 	v_set(config, &buf->offset, subbuf_header_size);
-	subbuffer_id_clear_noref(config, &shmp(buf->backend.buf_wsb)[0].id);
-	tsc = config->cb.ring_buffer_clock_read(shmp(buf->backend.chan));
-	config->cb.buffer_begin(buf, tsc, 0);
-	v_add(config, subbuf_header_size, &shmp(buf->commit_hot)[0].cc);
+	subbuffer_id_clear_noref(config, &shmp(handle, buf->backend.buf_wsb)[0].id);
+	tsc = config->cb.ring_buffer_clock_read(shmp(handle, buf->backend.chan));
+	config->cb.buffer_begin(buf, tsc, 0, handle);
+	v_add(config, subbuf_header_size, &shmp(handle, buf->commit_hot)[0].cc);
 
 	if (config->cb.buffer_create) {
-		ret = config->cb.buffer_create(buf, priv, cpu, chanb->name);
+		ret = config->cb.buffer_create(buf, priv, cpu, chanb->name, handle);
 		if (ret)
 			goto free_init;
 	}
@@ -237,17 +239,18 @@ free_chanbuf:
 	return ret;
 }
 
+#if 0
 static void switch_buffer_timer(unsigned long data)
 {
 	struct lib_ring_buffer *buf = (struct lib_ring_buffer *)data;
-	struct channel *chan = shmp(buf->backend.chan);
+	struct channel *chan = shmp(handle, buf->backend.chan);
 	const struct lib_ring_buffer_config *config = chan->backend.config;
 
 	/*
 	 * Only flush buffers periodically if readers are active.
 	 */
 	if (uatomic_read(&buf->active_readers))
-		lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE);
+		lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE, handle);
 
 	//TODO timers
 	//if (config->alloc == RING_BUFFER_ALLOC_PER_CPU)
@@ -257,10 +260,12 @@ static void switch_buffer_timer(unsigned long data)
 	//	mod_timer(&buf->switch_timer,
 	//		  jiffies + chan->switch_timer_interval);
 }
+#endif //0
 
-static void lib_ring_buffer_start_switch_timer(struct lib_ring_buffer *buf)
+static void lib_ring_buffer_start_switch_timer(struct lib_ring_buffer *buf,
+			   struct shm_handle *handle)
 {
-	struct channel *chan = shmp(buf->backend.chan);
+	struct channel *chan = shmp(handle, buf->backend.chan);
 	const struct lib_ring_buffer_config *config = chan->backend.config;
 
 	if (!chan->switch_timer_interval || buf->switch_timer_enabled)
@@ -277,9 +282,10 @@ static void lib_ring_buffer_start_switch_timer(struct lib_ring_buffer *buf)
 	buf->switch_timer_enabled = 1;
 }
 
-static void lib_ring_buffer_stop_switch_timer(struct lib_ring_buffer *buf)
+static void lib_ring_buffer_stop_switch_timer(struct lib_ring_buffer *buf,
+			   struct shm_handle *handle)
 {
-	struct channel *chan = shmp(buf->backend.chan);
+	struct channel *chan = shmp(handle, buf->backend.chan);
 
 	if (!chan->switch_timer_interval || !buf->switch_timer_enabled)
 		return;
@@ -289,13 +295,14 @@ static void lib_ring_buffer_stop_switch_timer(struct lib_ring_buffer *buf)
 	buf->switch_timer_enabled = 0;
 }
 
+#if 0
 /*
  * Polling timer to check the channels for data.
  */
 static void read_buffer_timer(unsigned long data)
 {
 	struct lib_ring_buffer *buf = (struct lib_ring_buffer *)data;
-	struct channel *chan = shmp(buf->backend.chan);
+	struct channel *chan = shmp(handle, buf->backend.chan);
 	const struct lib_ring_buffer_config *config = chan->backend.config;
 
 	CHAN_WARN_ON(chan, !buf->backend.allocated);
@@ -315,10 +322,12 @@ static void read_buffer_timer(unsigned long data)
 	//	mod_timer(&buf->read_timer,
 	//		  jiffies + chan->read_timer_interval);
 }
+#endif //0
 
-static void lib_ring_buffer_start_read_timer(struct lib_ring_buffer *buf)
+static void lib_ring_buffer_start_read_timer(struct lib_ring_buffer *buf,
+			   struct shm_handle *handle)
 {
-	struct channel *chan = shmp(buf->backend.chan);
+	struct channel *chan = shmp(handle, buf->backend.chan);
 	const struct lib_ring_buffer_config *config = chan->backend.config;
 
 	if (config->wakeup != RING_BUFFER_WAKEUP_BY_TIMER
@@ -339,9 +348,10 @@ static void lib_ring_buffer_start_read_timer(struct lib_ring_buffer *buf)
 	buf->read_timer_enabled = 1;
 }
 
-static void lib_ring_buffer_stop_read_timer(struct lib_ring_buffer *buf)
+static void lib_ring_buffer_stop_read_timer(struct lib_ring_buffer *buf,
+			   struct shm_handle *handle)
 {
-	struct channel *chan = shmp(buf->backend.chan);
+	struct channel *chan = shmp(handle, buf->backend.chan);
 	const struct lib_ring_buffer_config *config = chan->backend.config;
 
 	if (config->wakeup != RING_BUFFER_WAKEUP_BY_TIMER
@@ -355,7 +365,7 @@ static void lib_ring_buffer_stop_read_timer(struct lib_ring_buffer *buf)
 	 * do one more check to catch data that has been written in the last
 	 * timer period.
 	 */
-	if (lib_ring_buffer_poll_deliver(config, buf, chan)) {
+	if (lib_ring_buffer_poll_deliver(config, buf, chan, handle)) {
 		//TODO
 		//wake_up_interruptible(&buf->read_wait);
 		//wake_up_interruptible(&chan->read_wait);
@@ -363,45 +373,36 @@ static void lib_ring_buffer_stop_read_timer(struct lib_ring_buffer *buf)
 	buf->read_timer_enabled = 0;
 }
 
-static void channel_unregister_notifiers(struct channel *chan)
+static void channel_unregister_notifiers(struct channel *chan,
+			   struct shm_handle *handle)
 {
 	const struct lib_ring_buffer_config *config = chan->backend.config;
 	int cpu;
 
 	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU) {
 		for_each_possible_cpu(cpu) {
-			struct lib_ring_buffer *buf = &shmp(chan->backend.buf)[cpu];
+			struct lib_ring_buffer *buf = shmp(handle, chan->backend.buf[cpu].shmp);
 
-			lib_ring_buffer_stop_switch_timer(buf);
-			lib_ring_buffer_stop_read_timer(buf);
+			lib_ring_buffer_stop_switch_timer(buf, handle);
+			lib_ring_buffer_stop_read_timer(buf, handle);
 		}
 	} else {
-		struct lib_ring_buffer *buf = shmp(chan->backend.buf);
+		struct lib_ring_buffer *buf = shmp(handle, chan->backend.buf[0].shmp);
 
-		lib_ring_buffer_stop_switch_timer(buf);
-		lib_ring_buffer_stop_read_timer(buf);
+		lib_ring_buffer_stop_switch_timer(buf, handle);
+		lib_ring_buffer_stop_read_timer(buf, handle);
 	}
 	//channel_backend_unregister_notifiers(&chan->backend);
 }
 
-static void channel_free(struct shm_handle *handle)
+static void channel_free(struct channel *chan, struct shm_handle *handle)
 {
-	struct shm_header *header = handle->header;
-	struct channel *chan = shmp(header->chan);
 	int ret;
 
-	channel_backend_free(&chan->backend);
+	channel_backend_free(&chan->backend, handle);
 	/* chan is freed by shm teardown */
-	ret = munmap(header, header->shm_size);
-	if (ret) {
-		PERROR("umnmap");
-		assert(0);
-	}
-	ret = close(handle->shmfd);
-	if (ret) {
-		PERROR("close");
-		assert(0);
-	}
+	shm_object_table_destroy(handle->table);
+	free(handle);
 }
 
 /**
@@ -428,12 +429,11 @@ struct shm_handle *channel_create(const struct lib_ring_buffer_config *config,
 		   size_t num_subbuf, unsigned int switch_timer_interval,
 		   unsigned int read_timer_interval)
 {
-	int ret, cpu, shmfd;
+	int ret, cpu;
+	size_t shmsize;
 	struct channel *chan;
-	size_t shmsize, bufshmsize, bufshmalign;
-	struct shm_header *shm_header;
-	unsigned long num_subbuf_alloc;
 	struct shm_handle *handle;
+	struct shm_object *shmobj;
 
 	if (lib_ring_buffer_check_config(config, switch_timer_interval,
 					 read_timer_interval))
@@ -443,88 +443,28 @@ struct shm_handle *channel_create(const struct lib_ring_buffer_config *config,
 	if (!handle)
 		return NULL;
 
+	/* Allocate table for channel + per-cpu buffers */
+	handle->table = shm_object_table_create(1 + num_possible_cpus());
+	if (!handle->table)
+		goto error_table_alloc;
+
 	/* Calculate the shm allocation layout */
-	shmsize = sizeof(struct shm_header);
-	shmsize += offset_align(shmsize, __alignof__(struct channel));
-	shmsize += sizeof(struct channel);
+	shmsize = sizeof(struct channel);
+	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU)
+		shmsize += sizeof(struct lib_ring_buffer_shmp) * num_possible_cpus();
+	else
+		shmsize += sizeof(struct lib_ring_buffer_shmp);
 
-	/* Per-cpu buffer size: control (prior to backend) */
-	shmsize += offset_align(shmsize, __alignof__(struct lib_ring_buffer));
-	bufshmsize = sizeof(struct lib_ring_buffer);
-	shmsize += bufshmsize * num_possible_cpus();
-
-	/* Per-cpu buffer size: backend */
-	shmsize += offset_align(shmsize, PAGE_SIZE);
-	/* num_subbuf + 1 is the worse case */
-	num_subbuf_alloc = num_subbuf + 1;
-	bufshmsize = sizeof(struct lib_ring_buffer_backend_pages *) * num_subbuf_alloc;
-	bufshmsize += offset_align(bufshmsize, PAGE_SIZE);
-	bufshmsize += subbuf_size * num_subbuf_alloc;
-	bufshmsize += offset_align(bufshmsize, __alignof__(struct lib_ring_buffer_backend_pages));
-	bufshmsize += sizeof(struct lib_ring_buffer_backend_pages) * num_subbuf_alloc;
-	bufshmsize += offset_align(bufshmsize, __alignof__(struct lib_ring_buffer_backend_subbuffer));
-	bufshmsize += sizeof(struct lib_ring_buffer_backend_subbuffer) * num_subbuf;
-	bufshmsize += offset_align(bufshmsize, PAGE_SIZE);
-	shmsize += bufshmsize * num_possible_cpus();
-
-	/* Per-cpu buffer size: control (after backend) */
-	shmsize += offset_align(shmsize,
-			max(__alignof__(struct commit_counters_hot),
-			    __alignof__(struct commit_counters_cold)));
-	bufshmsize = sizeof(struct commit_counters_hot) * num_subbuf;
-	bufshmsize += offset_align(bufshmsize, __alignof__(struct commit_counters_cold));
-	bufshmsize += sizeof(struct commit_counters_cold) * num_subbuf;
-	shmsize += bufshmsize * num_possible_cpus();
-
-	/*
-	 * Allocate shm, and immediately unlink its shm oject, keeping
-	 * only the file descriptor as a reference to the object. If it
-	 * already exists (caused by short race window during which the
-	 * global object exists in a concurrent shm_open), simply retry.
-	 */
-	do {
-		shmfd = shm_open("/ust-shm-tmp",
-				  O_CREAT | O_EXCL | O_RDWR, 0700);
-	} while (shmfd < 0 && errno == EEXIST);
-	if (shmfd < 0) {
-		PERROR("shm_open");
-		goto error_shm_open;
-	}
-	ret = shm_unlink("/ust-shm-tmp");
-	if (ret) {
-		PERROR("shm_unlink");
-		goto error_unlink;
-	}
-	ret = ftruncate(shmfd, shmsize);
-	if (ret) {
-		PERROR("ftruncate");
-		goto error_ftruncate;
-	}
-
-	shm_header = mmap(NULL, shmsize, PROT_READ | PROT_WRITE,
-			  MAP_SHARED, shmfd, 0);
-	if (shm_header == MAP_FAILED) {
-		PERROR("mmap");
-		goto error_mmap;
-	}
-
-	shm_header->magic = SHM_MAGIC;
-	shm_header->major = SHM_MAJOR;
-	shm_header->major = SHM_MINOR;
-	shm_header->bits_per_long = CAA_BITS_PER_LONG;
-	shm_header->shm_size = shmsize;
-	shm_header->shm_allocated = sizeof(struct shm_header);
-
-	align_shm(shm_header, __alignof__(struct channel));
-	chan = zalloc_shm(shm_header, sizeof(struct channel));
+	shmobj = shm_object_table_append(handle->table, shmsize);
+	set_shmp(handle->chan, zalloc_shm(shmobj, sizeof(struct channel)));
+	chan = shmp(handle, handle->chan);
 	if (!chan)
-		goto destroy_shmem;
-	set_shmp(shm_header->chan, chan);
+		goto error_append;
 
 	ret = channel_backend_init(&chan->backend, name, config, priv,
-				   subbuf_size, num_subbuf, shm_header);
+				   subbuf_size, num_subbuf, handle);
 	if (ret)
-		goto destroy_shmem;
+		goto error_backend_init;
 
 	chan->commit_count_mask = (~0UL >> chan->backend.num_subbuf_order);
 	//TODO
@@ -541,44 +481,31 @@ struct shm_handle *channel_create(const struct lib_ring_buffer_config *config,
 		 * In that off case, we need to allocate for all possible cpus.
 		 */
 		for_each_possible_cpu(cpu) {
-			struct lib_ring_buffer *buf = &shmp(chan->backend.buf)[cpu];
-			lib_ring_buffer_start_switch_timer(buf);
-			lib_ring_buffer_start_read_timer(buf);
+			struct lib_ring_buffer *buf = shmp(handle, chan->backend.buf[cpu].shmp);
+			lib_ring_buffer_start_switch_timer(buf, handle);
+			lib_ring_buffer_start_read_timer(buf, handle);
 		}
 	} else {
-		struct lib_ring_buffer *buf = shmp(chan->backend.buf);
+		struct lib_ring_buffer *buf = shmp(handle, chan->backend.buf[0].shmp);
 
-		lib_ring_buffer_start_switch_timer(buf);
-		lib_ring_buffer_start_read_timer(buf);
+		lib_ring_buffer_start_switch_timer(buf, handle);
+		lib_ring_buffer_start_read_timer(buf, handle);
 	}
 
-	handle->header = shm_header;
-	handle->shmfd = shmfd;
 	return handle;
 
-destroy_shmem:
-	ret = munmap(shm_header, shmsize);
-	if (ret) {
-		PERROR("umnmap");
-		assert(0);
-	}
-error_mmap:
-error_ftruncate:
-error_unlink:
-	ret = close(shmfd);
-	if (ret) {
-		PERROR("close");
-		assert(0);
-	}
-error_shm_open:
+error_backend_init:
+error_append:
+	shm_object_table_destroy(handle->table);
+error_table_alloc:
 	free(handle);
 	return NULL;
 }
 
 static
-void channel_release(struct shm_handle *handle)
+void channel_release(struct channel *chan, struct shm_handle *handle)
 {
-	channel_free(handle);
+	channel_free(chan, handle);
 }
 
 /**
@@ -592,26 +519,25 @@ void channel_release(struct shm_handle *handle)
  * They should release their handle at that point.  Returns the private
  * data pointer.
  */
-void *channel_destroy(struct shm_handle *handle)
+void *channel_destroy(struct channel *chan, struct shm_handle *handle)
 {
-	struct shm_header *header = handle->header;
-	struct channel *chan = shmp(header->chan);
 	const struct lib_ring_buffer_config *config = chan->backend.config;
 	void *priv;
 	int cpu;
 
-	channel_unregister_notifiers(chan);
+	channel_unregister_notifiers(chan, handle);
 
 	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU) {
 		for_each_channel_cpu(cpu, chan) {
-			struct lib_ring_buffer *buf = &shmp(chan->backend.buf)[cpu];
+			struct lib_ring_buffer *buf = shmp(handle, chan->backend.buf[cpu].shmp);
 
 			if (config->cb.buffer_finalize)
 				config->cb.buffer_finalize(buf,
 							   chan->backend.priv,
-							   cpu);
+							   cpu, handle);
 			if (buf->backend.allocated)
-				lib_ring_buffer_switch_slow(buf, SWITCH_FLUSH);
+				lib_ring_buffer_switch_slow(buf, SWITCH_FLUSH,
+						handle);
 			/*
 			 * Perform flush before writing to finalized.
 			 */
@@ -620,12 +546,13 @@ void *channel_destroy(struct shm_handle *handle)
 			//wake_up_interruptible(&buf->read_wait);
 		}
 	} else {
-		struct lib_ring_buffer *buf = shmp(chan->backend.buf);
+		struct lib_ring_buffer *buf = shmp(handle, chan->backend.buf[0].shmp);
 
 		if (config->cb.buffer_finalize)
-			config->cb.buffer_finalize(buf, chan->backend.priv, -1);
+			config->cb.buffer_finalize(buf, chan->backend.priv, -1, handle);
 		if (buf->backend.allocated)
-			lib_ring_buffer_switch_slow(buf, SWITCH_FLUSH);
+			lib_ring_buffer_switch_slow(buf, SWITCH_FLUSH,
+						handle);
 		/*
 		 * Perform flush before writing to finalized.
 		 */
@@ -640,24 +567,26 @@ void *channel_destroy(struct shm_handle *handle)
 	 * sessiond/consumer are keeping a reference on the shm file
 	 * descriptor directly. No need to refcount.
 	 */
-	channel_release(handle);
+	channel_release(chan, handle);
 	priv = chan->backend.priv;
 	return priv;
 }
 
 struct lib_ring_buffer *channel_get_ring_buffer(
 					const struct lib_ring_buffer_config *config,
-					struct channel *chan, int cpu)
+					struct channel *chan, int cpu,
+					struct shm_handle *handle)
 {
 	if (config->alloc == RING_BUFFER_ALLOC_GLOBAL)
-		return shmp(chan->backend.buf);
+		return shmp(handle, chan->backend.buf[0].shmp);
 	else
-		return &shmp(chan->backend.buf)[cpu];
+		return shmp(handle, chan->backend.buf[cpu].shmp);
 }
 
-int lib_ring_buffer_open_read(struct lib_ring_buffer *buf)
+int lib_ring_buffer_open_read(struct lib_ring_buffer *buf,
+			      struct shm_handle *handle)
 {
-	struct channel *chan = shmp(buf->backend.chan);
+	struct channel *chan = shmp(handle, buf->backend.chan);
 
 	if (uatomic_cmpxchg(&buf->active_readers, 0, 1) != 0)
 		return -EBUSY;
@@ -665,9 +594,10 @@ int lib_ring_buffer_open_read(struct lib_ring_buffer *buf)
 	return 0;
 }
 
-void lib_ring_buffer_release_read(struct lib_ring_buffer *buf)
+void lib_ring_buffer_release_read(struct lib_ring_buffer *buf,
+				  struct shm_handle *handle)
 {
-	struct channel *chan = shmp(buf->backend.chan);
+	struct channel *chan = shmp(handle, buf->backend.chan);
 
 	CHAN_WARN_ON(chan, uatomic_read(&buf->active_readers) != 1);
 	cmm_smp_mb();
@@ -685,9 +615,10 @@ void lib_ring_buffer_release_read(struct lib_ring_buffer *buf)
  */
 
 int lib_ring_buffer_snapshot(struct lib_ring_buffer *buf,
-			     unsigned long *consumed, unsigned long *produced)
+			     unsigned long *consumed, unsigned long *produced,
+			     struct shm_handle *handle)
 {
-	struct channel *chan = shmp(buf->backend.chan);
+	struct channel *chan = shmp(handle, buf->backend.chan);
 	const struct lib_ring_buffer_config *config = chan->backend.config;
 	unsigned long consumed_cur, write_offset;
 	int finalized;
@@ -738,10 +669,11 @@ nodata:
  * @consumed_new: new consumed count value
  */
 void lib_ring_buffer_move_consumer(struct lib_ring_buffer *buf,
-				   unsigned long consumed_new)
+				   unsigned long consumed_new,
+				   struct shm_handle *handle)
 {
 	struct lib_ring_buffer_backend *bufb = &buf->backend;
-	struct channel *chan = shmp(bufb->chan);
+	struct channel *chan = shmp(handle, bufb->chan);
 	unsigned long consumed;
 
 	CHAN_WARN_ON(chan, uatomic_read(&buf->active_readers) != 1);
@@ -766,9 +698,10 @@ void lib_ring_buffer_move_consumer(struct lib_ring_buffer *buf,
  * data to read at consumed position, or 0 if the get operation succeeds.
  */
 int lib_ring_buffer_get_subbuf(struct lib_ring_buffer *buf,
-			       unsigned long consumed)
+			       unsigned long consumed,
+			       struct shm_handle *handle)
 {
-	struct channel *chan = shmp(buf->backend.chan);
+	struct channel *chan = shmp(handle, buf->backend.chan);
 	const struct lib_ring_buffer_config *config = chan->backend.config;
 	unsigned long consumed_cur, consumed_idx, commit_count, write_offset;
 	int ret;
@@ -782,7 +715,7 @@ retry:
 	cmm_smp_rmb();
 	consumed_cur = uatomic_read(&buf->consumed);
 	consumed_idx = subbuf_index(consumed, chan);
-	commit_count = v_read(config, &shmp(buf->commit_cold)[consumed_idx].cc_sb);
+	commit_count = v_read(config, &shmp(handle, buf->commit_cold)[consumed_idx].cc_sb);
 	/*
 	 * Make sure we read the commit count before reading the buffer
 	 * data and the write offset. Correct consumed offset ordering
@@ -832,7 +765,8 @@ retry:
 	 * looking for matches the one contained in the subbuffer id.
 	 */
 	ret = update_read_sb_index(config, &buf->backend, &chan->backend,
-				   consumed_idx, buf_trunc_val(consumed, chan));
+				   consumed_idx, buf_trunc_val(consumed, chan),
+				   handle);
 	if (ret)
 		goto retry;
 	subbuffer_id_clear_noref(config, &buf->backend.buf_rsb.id);
@@ -857,10 +791,11 @@ nodata:
  * lib_ring_buffer_put_subbuf - release exclusive subbuffer access
  * @buf: ring buffer
  */
-void lib_ring_buffer_put_subbuf(struct lib_ring_buffer *buf)
+void lib_ring_buffer_put_subbuf(struct lib_ring_buffer *buf,
+				struct shm_handle *handle)
 {
 	struct lib_ring_buffer_backend *bufb = &buf->backend;
-	struct channel *chan = shmp(bufb->chan);
+	struct channel *chan = shmp(handle, bufb->chan);
 	const struct lib_ring_buffer_config *config = chan->backend.config;
 	unsigned long read_sb_bindex, consumed_idx, consumed;
 
@@ -885,9 +820,9 @@ void lib_ring_buffer_put_subbuf(struct lib_ring_buffer *buf)
 	 */
 	read_sb_bindex = subbuffer_id_get_index(config, bufb->buf_rsb.id);
 	v_add(config, v_read(config,
-			     &shmp(bufb->array)[read_sb_bindex]->records_unread),
+			     &shmp(handle, shmp(handle, bufb->array)[read_sb_bindex].shmp)->records_unread),
 	      &bufb->records_read);
-	v_set(config, &shmp(bufb->array)[read_sb_bindex]->records_unread, 0);
+	v_set(config, &shmp(handle, shmp(handle, bufb->array)[read_sb_bindex].shmp)->records_unread, 0);
 	CHAN_WARN_ON(chan, config->mode == RING_BUFFER_OVERWRITE
 		     && subbuffer_id_is_noref(config, bufb->buf_rsb.id));
 	subbuffer_id_set_noref(config, &bufb->buf_rsb.id);
@@ -902,7 +837,8 @@ void lib_ring_buffer_put_subbuf(struct lib_ring_buffer *buf)
 	 */
 	consumed_idx = subbuf_index(consumed, chan);
 	update_read_sb_index(config, &buf->backend, &chan->backend,
-			     consumed_idx, buf_trunc_val(consumed, chan));
+			     consumed_idx, buf_trunc_val(consumed, chan),
+			     handle);
 	/*
 	 * update_read_sb_index return value ignored. Don't exchange sub-buffer
 	 * if the writer concurrently updated it.
@@ -917,14 +853,15 @@ static
 void lib_ring_buffer_print_subbuffer_errors(struct lib_ring_buffer *buf,
 					    struct channel *chan,
 					    unsigned long cons_offset,
-					    int cpu)
+					    int cpu,
+					    struct shm_handle *handle)
 {
 	const struct lib_ring_buffer_config *config = chan->backend.config;
 	unsigned long cons_idx, commit_count, commit_count_sb;
 
 	cons_idx = subbuf_index(cons_offset, chan);
-	commit_count = v_read(config, &shmp(buf->commit_hot)[cons_idx].cc);
-	commit_count_sb = v_read(config, &shmp(buf->commit_cold)[cons_idx].cc_sb);
+	commit_count = v_read(config, &shmp(handle, buf->commit_hot)[cons_idx].cc);
+	commit_count_sb = v_read(config, &shmp(handle, buf->commit_cold)[cons_idx].cc_sb);
 
 	if (subbuf_offset(commit_count, chan) != 0)
 		ERRMSG("ring buffer %s, cpu %d: "
@@ -942,7 +879,8 @@ void lib_ring_buffer_print_subbuffer_errors(struct lib_ring_buffer *buf,
 static
 void lib_ring_buffer_print_buffer_errors(struct lib_ring_buffer *buf,
 					 struct channel *chan,
-					 void *priv, int cpu)
+					 void *priv, int cpu,
+					 struct shm_handle *handle)
 {
 	const struct lib_ring_buffer_config *config = chan->backend.config;
 	unsigned long write_offset, cons_offset;
@@ -972,12 +910,13 @@ void lib_ring_buffer_print_buffer_errors(struct lib_ring_buffer *buf,
 		     - cons_offset) > 0;
 	     cons_offset = subbuf_align(cons_offset, chan))
 		lib_ring_buffer_print_subbuffer_errors(buf, chan, cons_offset,
-						       cpu);
+						       cpu, handle);
 }
 
 static
 void lib_ring_buffer_print_errors(struct channel *chan,
-				  struct lib_ring_buffer *buf, int cpu)
+				  struct lib_ring_buffer *buf, int cpu,
+				  struct shm_handle *handle)
 {
 	const struct lib_ring_buffer_config *config = chan->backend.config;
 	void *priv = chan->backend.priv;
@@ -999,7 +938,7 @@ void lib_ring_buffer_print_errors(struct channel *chan,
 		       v_read(config, &buf->records_lost_wrap),
 		       v_read(config, &buf->records_lost_big));
 
-	lib_ring_buffer_print_buffer_errors(buf, chan, priv, cpu);
+	lib_ring_buffer_print_buffer_errors(buf, chan, priv, cpu, handle);
 }
 
 /*
@@ -1011,13 +950,14 @@ static
 void lib_ring_buffer_switch_old_start(struct lib_ring_buffer *buf,
 				      struct channel *chan,
 				      struct switch_offsets *offsets,
-				      u64 tsc)
+				      u64 tsc,
+				      struct shm_handle *handle)
 {
 	const struct lib_ring_buffer_config *config = chan->backend.config;
 	unsigned long oldidx = subbuf_index(offsets->old, chan);
 	unsigned long commit_count;
 
-	config->cb.buffer_begin(buf, tsc, oldidx);
+	config->cb.buffer_begin(buf, tsc, oldidx, handle);
 
 	/*
 	 * Order all writes to buffer before the commit count update that will
@@ -1025,14 +965,15 @@ void lib_ring_buffer_switch_old_start(struct lib_ring_buffer *buf,
 	 */
 	cmm_smp_wmb();
 	v_add(config, config->cb.subbuffer_header_size(),
-	      &shmp(buf->commit_hot)[oldidx].cc);
-	commit_count = v_read(config, &shmp(buf->commit_hot)[oldidx].cc);
+	      &shmp(handle, buf->commit_hot)[oldidx].cc);
+	commit_count = v_read(config, &shmp(handle, buf->commit_hot)[oldidx].cc);
 	/* Check if the written buffer has to be delivered */
 	lib_ring_buffer_check_deliver(config, buf, chan, offsets->old,
-				      commit_count, oldidx);
+				      commit_count, oldidx, handle);
 	lib_ring_buffer_write_commit_counter(config, buf, chan, oldidx,
 					     offsets->old, commit_count,
-					     config->cb.subbuffer_header_size());
+					     config->cb.subbuffer_header_size(),
+					     handle);
 }
 
 /*
@@ -1047,7 +988,8 @@ static
 void lib_ring_buffer_switch_old_end(struct lib_ring_buffer *buf,
 				    struct channel *chan,
 				    struct switch_offsets *offsets,
-				    u64 tsc)
+				    u64 tsc,
+				    struct shm_handle *handle)
 {
 	const struct lib_ring_buffer_config *config = chan->backend.config;
 	unsigned long oldidx = subbuf_index(offsets->old - 1, chan);
@@ -1055,20 +997,21 @@ void lib_ring_buffer_switch_old_end(struct lib_ring_buffer *buf,
 
 	data_size = subbuf_offset(offsets->old - 1, chan) + 1;
 	padding_size = chan->backend.subbuf_size - data_size;
-	subbuffer_set_data_size(config, &buf->backend, oldidx, data_size);
+	subbuffer_set_data_size(config, &buf->backend, oldidx, data_size,
+				handle);
 
 	/*
 	 * Order all writes to buffer before the commit count update that will
 	 * determine that the subbuffer is full.
 	 */
 	cmm_smp_wmb();
-	v_add(config, padding_size, &shmp(buf->commit_hot)[oldidx].cc);
-	commit_count = v_read(config, &shmp(buf->commit_hot)[oldidx].cc);
+	v_add(config, padding_size, &shmp(handle, buf->commit_hot)[oldidx].cc);
+	commit_count = v_read(config, &shmp(handle, buf->commit_hot)[oldidx].cc);
 	lib_ring_buffer_check_deliver(config, buf, chan, offsets->old - 1,
-				      commit_count, oldidx);
+				      commit_count, oldidx, handle);
 	lib_ring_buffer_write_commit_counter(config, buf, chan, oldidx,
 					     offsets->old, commit_count,
-					     padding_size);
+					     padding_size, handle);
 }
 
 /*
@@ -1082,13 +1025,14 @@ static
 void lib_ring_buffer_switch_new_start(struct lib_ring_buffer *buf,
 				      struct channel *chan,
 				      struct switch_offsets *offsets,
-				      u64 tsc)
+				      u64 tsc,
+				      struct shm_handle *handle)
 {
 	const struct lib_ring_buffer_config *config = chan->backend.config;
 	unsigned long beginidx = subbuf_index(offsets->begin, chan);
 	unsigned long commit_count;
 
-	config->cb.buffer_begin(buf, tsc, beginidx);
+	config->cb.buffer_begin(buf, tsc, beginidx, handle);
 
 	/*
 	 * Order all writes to buffer before the commit count update that will
@@ -1096,14 +1040,15 @@ void lib_ring_buffer_switch_new_start(struct lib_ring_buffer *buf,
 	 */
 	cmm_smp_wmb();
 	v_add(config, config->cb.subbuffer_header_size(),
-	      &shmp(buf->commit_hot)[beginidx].cc);
-	commit_count = v_read(config, &shmp(buf->commit_hot)[beginidx].cc);
+	      &shmp(handle, buf->commit_hot)[beginidx].cc);
+	commit_count = v_read(config, &shmp(handle, buf->commit_hot)[beginidx].cc);
 	/* Check if the written buffer has to be delivered */
 	lib_ring_buffer_check_deliver(config, buf, chan, offsets->begin,
-				      commit_count, beginidx);
+				      commit_count, beginidx, handle);
 	lib_ring_buffer_write_commit_counter(config, buf, chan, beginidx,
 					     offsets->begin, commit_count,
-					     config->cb.subbuffer_header_size());
+					     config->cb.subbuffer_header_size(),
+					     handle);
 }
 
 /*
@@ -1114,9 +1059,10 @@ void lib_ring_buffer_switch_new_start(struct lib_ring_buffer *buf,
  */
 static
 void lib_ring_buffer_switch_new_end(struct lib_ring_buffer *buf,
-					    struct channel *chan,
-					    struct switch_offsets *offsets,
-					    u64 tsc)
+				    struct channel *chan,
+				    struct switch_offsets *offsets,
+				    u64 tsc,
+				    struct shm_handle *handle)
 {
 	const struct lib_ring_buffer_config *config = chan->backend.config;
 	unsigned long endidx = subbuf_index(offsets->end - 1, chan);
@@ -1124,20 +1070,21 @@ void lib_ring_buffer_switch_new_end(struct lib_ring_buffer *buf,
 
 	data_size = subbuf_offset(offsets->end - 1, chan) + 1;
 	padding_size = chan->backend.subbuf_size - data_size;
-	subbuffer_set_data_size(config, &buf->backend, endidx, data_size);
+	subbuffer_set_data_size(config, &buf->backend, endidx, data_size,
+				handle);
 
 	/*
 	 * Order all writes to buffer before the commit count update that will
 	 * determine that the subbuffer is full.
 	 */
 	cmm_smp_wmb();
-	v_add(config, padding_size, &shmp(buf->commit_hot)[endidx].cc);
-	commit_count = v_read(config, &shmp(buf->commit_hot)[endidx].cc);
+	v_add(config, padding_size, &shmp(handle, buf->commit_hot)[endidx].cc);
+	commit_count = v_read(config, &shmp(handle, buf->commit_hot)[endidx].cc);
 	lib_ring_buffer_check_deliver(config, buf, chan, offsets->end - 1,
-				  commit_count, endidx);
+				  commit_count, endidx, handle);
 	lib_ring_buffer_write_commit_counter(config, buf, chan, endidx,
 					     offsets->end, commit_count,
-					     padding_size);
+					     padding_size, handle);
 }
 
 /*
@@ -1208,9 +1155,10 @@ int lib_ring_buffer_try_switch_slow(enum switch_mode mode,
  * operations, this function must be called from the CPU which owns the buffer
  * for a ACTIVE flush.
  */
-void lib_ring_buffer_switch_slow(struct lib_ring_buffer *buf, enum switch_mode mode)
+void lib_ring_buffer_switch_slow(struct lib_ring_buffer *buf, enum switch_mode mode,
+				 struct shm_handle *handle)
 {
-	struct channel *chan = shmp(buf->backend.chan);
+	struct channel *chan = shmp(handle, buf->backend.chan);
 	const struct lib_ring_buffer_config *config = chan->backend.config;
 	struct switch_offsets offsets;
 	unsigned long oldidx;
@@ -1242,20 +1190,20 @@ void lib_ring_buffer_switch_slow(struct lib_ring_buffer *buf, enum switch_mode m
 	lib_ring_buffer_reserve_push_reader(buf, chan, offsets.old);
 
 	oldidx = subbuf_index(offsets.old, chan);
-	lib_ring_buffer_clear_noref(config, &buf->backend, oldidx);
+	lib_ring_buffer_clear_noref(config, &buf->backend, oldidx, handle);
 
 	/*
 	 * May need to populate header start on SWITCH_FLUSH.
 	 */
 	if (offsets.switch_old_start) {
-		lib_ring_buffer_switch_old_start(buf, chan, &offsets, tsc);
+		lib_ring_buffer_switch_old_start(buf, chan, &offsets, tsc, handle);
 		offsets.old += config->cb.subbuffer_header_size();
 	}
 
 	/*
 	 * Switch old subbuffer.
 	 */
-	lib_ring_buffer_switch_old_end(buf, chan, &offsets, tsc);
+	lib_ring_buffer_switch_old_end(buf, chan, &offsets, tsc, handle);
 }
 
 /*
@@ -1272,6 +1220,7 @@ int lib_ring_buffer_try_reserve_slow(struct lib_ring_buffer *buf,
 				     struct lib_ring_buffer_ctx *ctx)
 {
 	const struct lib_ring_buffer_config *config = chan->backend.config;
+	struct shm_handle *handle = ctx->handle;
 	unsigned long reserve_commit_diff;
 
 	offsets->begin = v_read(config, &buf->offset);
@@ -1321,7 +1270,7 @@ int lib_ring_buffer_try_reserve_slow(struct lib_ring_buffer *buf,
 		  (buf_trunc(offsets->begin, chan)
 		   >> chan->backend.num_subbuf_order)
 		  - ((unsigned long) v_read(config,
-					    &shmp(buf->commit_cold)[sb_index].cc_sb)
+					    &shmp(handle, buf->commit_cold)[sb_index].cc_sb)
 		     & chan->commit_count_mask);
 		if (likely(reserve_commit_diff == 0)) {
 			/* Next subbuffer not being written to. */
@@ -1406,15 +1355,16 @@ int lib_ring_buffer_try_reserve_slow(struct lib_ring_buffer *buf,
 int lib_ring_buffer_reserve_slow(struct lib_ring_buffer_ctx *ctx)
 {
 	struct channel *chan = ctx->chan;
+	struct shm_handle *handle = ctx->handle;
 	const struct lib_ring_buffer_config *config = chan->backend.config;
 	struct lib_ring_buffer *buf;
 	struct switch_offsets offsets;
 	int ret;
 
 	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU)
-		buf = &shmp(chan->backend.buf)[ctx->cpu];
+		buf = shmp(handle, chan->backend.buf[ctx->cpu].shmp);
 	else
-		buf = shmp(chan->backend.buf);
+		buf = shmp(handle, chan->backend.buf[0].shmp);
 	ctx->buf = buf;
 
 	offsets.size = 0;
@@ -1445,25 +1395,27 @@ int lib_ring_buffer_reserve_slow(struct lib_ring_buffer_ctx *ctx)
 	 * Clear noref flag for this subbuffer.
 	 */
 	lib_ring_buffer_clear_noref(config, &buf->backend,
-				    subbuf_index(offsets.end - 1, chan));
+				    subbuf_index(offsets.end - 1, chan),
+				    handle);
 
 	/*
 	 * Switch old subbuffer if needed.
 	 */
 	if (unlikely(offsets.switch_old_end)) {
 		lib_ring_buffer_clear_noref(config, &buf->backend,
-					    subbuf_index(offsets.old - 1, chan));
-		lib_ring_buffer_switch_old_end(buf, chan, &offsets, ctx->tsc);
+					    subbuf_index(offsets.old - 1, chan),
+					    handle);
+		lib_ring_buffer_switch_old_end(buf, chan, &offsets, ctx->tsc, handle);
 	}
 
 	/*
 	 * Populate new subbuffer.
 	 */
 	if (unlikely(offsets.switch_new_start))
-		lib_ring_buffer_switch_new_start(buf, chan, &offsets, ctx->tsc);
+		lib_ring_buffer_switch_new_start(buf, chan, &offsets, ctx->tsc, handle);
 
 	if (unlikely(offsets.switch_new_end))
-		lib_ring_buffer_switch_new_end(buf, chan, &offsets, ctx->tsc);
+		lib_ring_buffer_switch_new_end(buf, chan, &offsets, ctx->tsc, handle);
 
 	ctx->slot_size = offsets.size;
 	ctx->pre_offset = offsets.begin;

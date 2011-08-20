@@ -480,7 +480,7 @@ static void __event_probe__##_name(void *__data, _proto)		      \
 	__event_len = __event_get_size__##_name(__dynamic_len, _args);	      \
 	__event_align = __event_get_align__##_name(_args);		      \
 	lib_ring_buffer_ctx_init(&ctx, __chan->chan, __event, __event_len,    \
-				 __event_align, -1);			      \
+				 __event_align, -1, __chan->handle);	      \
 	__ret = __chan->ops->event_reserve(&ctx, __event->id);		      \
 	if (__ret < 0)							      \
 		return;							      \
@@ -511,7 +511,7 @@ static void __event_probe__##_name(void *__data)			      \
 	__event_len = __event_get_size__##_name(__dynamic_len);		      \
 	__event_align = __event_get_align__##_name();			      \
 	lib_ring_buffer_ctx_init(&ctx, __chan->chan, __event, __event_len,    \
-				 __event_align, -1);			      \
+				 __event_align, -1, __chan->handle);	      \
 	__ret = __chan->ops->event_reserve(&ctx, __event->id);		      \
 	if (__ret < 0)							      \
 		return;							      \

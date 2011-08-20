@@ -221,10 +221,9 @@ struct ltt_channel *ltt_channel_create(struct ltt_session *session,
 	 * headers. Therefore the "chan" information used as input
 	 * should be already accessible.
 	 */
-	chan->handle = transport->ops.channel_create("[lttng]", chan, buf_addr,
+	transport->ops.channel_create("[lttng]", chan, buf_addr,
 			subbuf_size, num_subbuf, switch_timer_interval,
 			read_timer_interval);
-	chan->chan = shmp(chan->handle->header->chan);
 	if (!chan->chan)
 		goto create_error;
 	chan->enabled = 1;
@@ -248,7 +247,7 @@ active:
 static
 void _ltt_channel_destroy(struct ltt_channel *chan)
 {
-	chan->ops->channel_destroy(chan->handle);
+	chan->ops->channel_destroy(chan);
 	cds_list_del(&chan->list);
 	lttng_destroy_context(chan->ctx);
 	free(chan);
@@ -387,10 +386,10 @@ int lttng_metadata_printf(struct ltt_session *session,
 
 	for (pos = 0; pos < len; pos += reserve_len) {
 		reserve_len = min_t(size_t,
-				chan->ops->packet_avail_size(chan->chan),
+				chan->ops->packet_avail_size(chan->chan, chan->handle),
 				len - pos);
 		lib_ring_buffer_ctx_init(&ctx, chan->chan, NULL, reserve_len,
-					 sizeof(char), -1);
+					 sizeof(char), -1, chan->handle);
 		/*
 		 * We don't care about metadata buffer's records lost
 		 * count, because we always retry here. Report error if

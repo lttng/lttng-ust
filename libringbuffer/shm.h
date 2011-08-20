@@ -12,73 +12,60 @@
 #include <stdint.h>
 #include <ust/usterr-signal-safe.h>
 #include "ust/core.h"
+#include "shm_types.h"
 
 #define SHM_MAGIC	0x54335433
 #define SHM_MAJOR	0
 #define SHM_MINOR	1
 
 /*
- * Defining a max shm offset, for debugging purposes.
+ * Pointer dereferencing. We don't trust the shm_ref, so we validate
+ * both the index and offset with known boundaries.
  */
-#if (CAA_BITS_PER_LONG == 32)
-/* Define the maximum shared memory size to 128MB on 32-bit machines */
-#define MAX_SHM_SIZE	134217728
-#else
-/* Define the maximum shared memory size to 8GB on 64-bit machines */
-#define MAX_SHM_SIZE	8589934592
-#endif
-
-#define DECLARE_SHMP(type, name)	type *****name
-
-struct shm_header {
-	uint32_t magic;
-	uint8_t major;
-	uint8_t minor;
-	uint8_t bits_per_long;
-	size_t shm_size, shm_allocated;
-
-	DECLARE_SHMP(struct channel, chan);
-};
-
-struct shm_handle {
-	struct shm_header *header;	/* beginning of mapping */
-	int shmfd;			/* process-local file descriptor */
-};
-
-#define shmp(shm_offset)		\
-	((__typeof__(****(shm_offset))) (((char *) &(shm_offset)) + (ptrdiff_t) (shm_offset)))
-
-#define _shmp_abs(a)	((a < 0) ? -(a) : (a))
-
 static inline
-void _set_shmp(ptrdiff_t *shm_offset, void *ptr)
+char *_shmp(struct shm_object_table *table, struct shm_ref *ref)
 {
-	*shm_offset = (((char *) ptr) - ((char *) shm_offset));
-	assert(_shmp_abs(*shm_offset) < MAX_SHM_SIZE);
-}
+	struct shm_object *obj;
+	size_t index, offset;
 
-#define set_shmp(shm_offset, ptr)	\
-	_set_shmp((ptrdiff_t *) ****(shm_offset), ptr)
-
-/* Shared memory is already zeroed by shmget */
-/* *NOT* multithread-safe (should be protected by mutex) */
-static inline
-void *zalloc_shm(struct shm_header *shm_header, size_t len)
-{
-	void *ret;
-
-	if (shm_header->shm_size - shm_header->shm_allocated < len)
+	index = (size_t) ref->index;
+	if (unlikely(index >= table->allocated_len))
 		return NULL;
-	ret = (char *) shm_header + shm_header->shm_allocated;
-	shm_header->shm_allocated += len;
-	return ret;
+	obj = &table->objects[index];
+	offset = (size_t) ref->offset;
+	if (unlikely(offset >= obj->memory_map_size))
+		return NULL;
+	return &obj->memory_map[offset];
 }
 
+#define shmp(handle, ref)						\
+	({								\
+		__typeof__((ref)._type) ____ptr_ret;			\
+		____ptr_ret = (__typeof__(____ptr_ret)) _shmp((handle)->table, &(ref)._ref);	\
+		____ptr_ret;						\
+	})
+
 static inline
-void align_shm(struct shm_header *shm_header, size_t align)
+void _set_shmp(struct shm_ref *ref, struct shm_ref src)
 {
-	size_t offset_len = offset_align(shm_header->shm_allocated, align);
-	shm_header->shm_allocated += offset_len;
+	*ref = src;
 }
+
+#define set_shmp(ref, src)	_set_shmp(&(ref)._ref, src)
+
+struct shm_object_table *shm_object_table_create(size_t max_nb_obj);
+void shm_object_table_destroy(struct shm_object_table *table);
+struct shm_object *shm_object_table_append(struct shm_object_table *table,
+					   size_t memory_map_size);
+
+/*
+ * zalloc_shm - allocate memory within a shm object.
+ *
+ * Shared memory is already zeroed by shmget.
+ * *NOT* multithread-safe (should be protected by mutex).
+ * Returns a -1, -1 tuple on error.
+ */
+struct shm_ref zalloc_shm(struct shm_object *obj, size_t len);
+void align_shm(struct shm_object *obj, size_t align);
 
 #endif /* _LIBRINGBUFFER_SHM_H */

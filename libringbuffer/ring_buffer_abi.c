@@ -241,7 +241,7 @@ long lib_ring_buffer_ioctl(struct file *filp, unsigned int cmd, unsigned long ar
 				 arg);
 	}
 	case RING_BUFFER_FLUSH:
-		lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE);
+		lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE, handle);
 		return 0;
 	default:
 		return -ENOIOCTLCMD;
@@ -354,7 +354,7 @@ long lib_ring_buffer_compat_ioctl(struct file *filp, unsigned int cmd,
 		return put_ulong(read_offset, arg);
 	}
 	case RING_BUFFER_FLUSH:
-		lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE);
+		lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE, handle);
 		return 0;
 	default:
 		return -ENOIOCTLCMD;

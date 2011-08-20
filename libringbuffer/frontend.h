@@ -50,7 +50,7 @@ struct shm_handle *channel_create(const struct lib_ring_buffer_config *config,
  * channel.
  */
 extern
-void *channel_destroy(struct shm_handle *handle);
+void *channel_destroy(struct channel *chan, struct shm_handle *handle);
 
 
 /* Buffer read operations */
@@ -66,48 +66,59 @@ void *channel_destroy(struct shm_handle *handle);
 
 extern struct lib_ring_buffer *channel_get_ring_buffer(
 				const struct lib_ring_buffer_config *config,
-				struct channel *chan, int cpu);
-extern int lib_ring_buffer_open_read(struct lib_ring_buffer *buf);
-extern void lib_ring_buffer_release_read(struct lib_ring_buffer *buf);
+				struct channel *chan, int cpu,
+				struct shm_handle *handle);
+extern int lib_ring_buffer_open_read(struct lib_ring_buffer *buf,
+				     struct shm_handle *handle);
+extern void lib_ring_buffer_release_read(struct lib_ring_buffer *buf,
+					 struct shm_handle *handle);
 
 /*
  * Read sequence: snapshot, many get_subbuf/put_subbuf, move_consumer.
  */
 extern int lib_ring_buffer_snapshot(struct lib_ring_buffer *buf,
 				    unsigned long *consumed,
-				    unsigned long *produced);
+				    unsigned long *produced,
+				    struct shm_handle *handle);
 extern void lib_ring_buffer_move_consumer(struct lib_ring_buffer *buf,
-					  unsigned long consumed_new);
+					  unsigned long consumed_new,
+					  struct shm_handle *handle);
 
 extern int lib_ring_buffer_get_subbuf(struct lib_ring_buffer *buf,
-				      unsigned long consumed);
-extern void lib_ring_buffer_put_subbuf(struct lib_ring_buffer *buf);
+				      unsigned long consumed,
+				      struct shm_handle *handle);
+extern void lib_ring_buffer_put_subbuf(struct lib_ring_buffer *buf,
+				       struct shm_handle *handle);
 
 /*
  * lib_ring_buffer_get_next_subbuf/lib_ring_buffer_put_next_subbuf are helpers
  * to read sub-buffers sequentially.
  */
-static inline int lib_ring_buffer_get_next_subbuf(struct lib_ring_buffer *buf)
+static inline int lib_ring_buffer_get_next_subbuf(struct lib_ring_buffer *buf,
+						  struct shm_handle *handle)
 {
 	int ret;
 
 	ret = lib_ring_buffer_snapshot(buf, &buf->cons_snapshot,
-				       &buf->prod_snapshot);
+				       &buf->prod_snapshot, handle);
 	if (ret)
 		return ret;
-	ret = lib_ring_buffer_get_subbuf(buf, buf->cons_snapshot);
+	ret = lib_ring_buffer_get_subbuf(buf, buf->cons_snapshot, handle);
 	return ret;
 }
 
-static inline void lib_ring_buffer_put_next_subbuf(struct lib_ring_buffer *buf)
+static inline
+void lib_ring_buffer_put_next_subbuf(struct lib_ring_buffer *buf,
+				     struct shm_handle *handle)
 {
-	lib_ring_buffer_put_subbuf(buf);
+	lib_ring_buffer_put_subbuf(buf, handle);
 	lib_ring_buffer_move_consumer(buf, subbuf_align(buf->cons_snapshot,
-						    shmp(buf->backend.chan)));
+							shmp(handle, buf->backend.chan)), handle);
 }
 
 extern void channel_reset(struct channel *chan);
-extern void lib_ring_buffer_reset(struct lib_ring_buffer *buf);
+extern void lib_ring_buffer_reset(struct lib_ring_buffer *buf,
+				  struct shm_handle *handle);
 
 static inline
 unsigned long lib_ring_buffer_get_offset(const struct lib_ring_buffer_config *config,
@@ -154,9 +165,10 @@ int lib_ring_buffer_channel_is_disabled(const struct channel *chan)
 static inline
 unsigned long lib_ring_buffer_get_read_data_size(
 				const struct lib_ring_buffer_config *config,
-				struct lib_ring_buffer *buf)
+				struct lib_ring_buffer *buf,
+				struct shm_handle *handle)
 {
-	return subbuffer_get_read_data_size(config, &buf->backend);
+	return subbuffer_get_read_data_size(config, &buf->backend, handle);
 }
 
 static inline

@@ -195,17 +195,20 @@ struct ltt_event {
 };
 
 struct channel;
+struct shm_handle;
 
 struct ltt_channel_ops {
-	struct shm_handle *(*channel_create)(const char *name,
+	struct ltt_channel *(*channel_create)(const char *name,
 				struct ltt_channel *ltt_chan,
 				void *buf_addr,
 				size_t subbuf_size, size_t num_subbuf,
 				unsigned int switch_timer_interval,
 				unsigned int read_timer_interval);
-	void (*channel_destroy)(struct shm_handle *handle);
-	struct lib_ring_buffer *(*buffer_read_open)(struct channel *chan);
-	void (*buffer_read_close)(struct lib_ring_buffer *buf);
+	void (*channel_destroy)(struct ltt_channel *ltt_chan);
+	struct lib_ring_buffer *(*buffer_read_open)(struct channel *chan,
+				struct shm_handle *handle);
+	void (*buffer_read_close)(struct lib_ring_buffer *buf,
+				struct shm_handle *handle);
 	int (*event_reserve)(struct lib_ring_buffer_ctx *ctx,
 			     uint32_t event_id);
 	void (*event_commit)(struct lib_ring_buffer_ctx *ctx);
@@ -216,7 +219,8 @@ struct ltt_channel_ops {
 	 * packet. Note that the size returned is only a hint, since it
 	 * may change due to concurrent writes.
 	 */
-	size_t (*packet_avail_size)(struct channel *chan);
+	size_t (*packet_avail_size)(struct channel *chan,
+				    struct shm_handle *handle);
 	//wait_queue_head_t *(*get_reader_wait_queue)(struct channel *chan);
 	//wait_queue_head_t *(*get_hp_wait_queue)(struct channel *chan);
 	int (*is_finalized)(struct channel *chan);

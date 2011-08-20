@@ -20,6 +20,7 @@ struct lib_ring_buffer;
 struct channel;
 struct lib_ring_buffer_config;
 struct lib_ring_buffer_ctx;
+struct shm_handle *handle;
 
 /*
  * Ring buffer client callbacks. Only used by slow path, never on fast path.
@@ -40,20 +41,25 @@ struct lib_ring_buffer_client_cb {
 	/* Slow path only, at subbuffer switch */
 	size_t (*subbuffer_header_size) (void);
 	void (*buffer_begin) (struct lib_ring_buffer *buf, u64 tsc,
-			      unsigned int subbuf_idx);
+			      unsigned int subbuf_idx,
+			      struct shm_handle *handle);
 	void (*buffer_end) (struct lib_ring_buffer *buf, u64 tsc,
-			    unsigned int subbuf_idx, unsigned long data_size);
+			    unsigned int subbuf_idx, unsigned long data_size,
+			    struct shm_handle *handle);
 
 	/* Optional callbacks (can be set to NULL) */
 
 	/* Called at buffer creation/finalize */
 	int (*buffer_create) (struct lib_ring_buffer *buf, void *priv,
-			      int cpu, const char *name);
+			      int cpu, const char *name,
+			      struct shm_handle *handle);
 	/*
 	 * Clients should guarantee that no new reader handle can be opened
 	 * after finalize.
 	 */
-	void (*buffer_finalize) (struct lib_ring_buffer *buf, void *priv, int cpu);
+	void (*buffer_finalize) (struct lib_ring_buffer *buf,
+				 void *priv, int cpu,
+				 struct shm_handle *handle);
 
 	/*
 	 * Extract header length, payload length and timestamp from event
@@ -63,7 +69,8 @@ struct lib_ring_buffer_client_cb {
 	void (*record_get) (const struct lib_ring_buffer_config *config,
 			    struct channel *chan, struct lib_ring_buffer *buf,
 			    size_t offset, size_t *header_len,
-			    size_t *payload_len, u64 *timestamp);
+			    size_t *payload_len, u64 *timestamp,
+			    struct shm_handle *handle);
 };
 
 /*
@@ -165,6 +172,7 @@ struct lib_ring_buffer_ctx {
 	/* input received by lib_ring_buffer_reserve(), saved here. */
 	struct channel *chan;		/* channel */
 	void *priv;			/* client private data */
+	struct shm_handle *handle;	/* shared-memory handle */
 	size_t data_size;		/* size of payload */
 	int largest_align;		/*
 					 * alignment of the largest element
@@ -202,7 +210,7 @@ static inline
 void lib_ring_buffer_ctx_init(struct lib_ring_buffer_ctx *ctx,
 			      struct channel *chan, void *priv,
 			      size_t data_size, int largest_align,
-			      int cpu)
+			      int cpu, struct shm_handle *handle)
 {
 	ctx->chan = chan;
 	ctx->priv = priv;
@@ -210,6 +218,7 @@ void lib_ring_buffer_ctx_init(struct lib_ring_buffer_ctx *ctx,
 	ctx->largest_align = largest_align;
 	ctx->cpu = cpu;
 	ctx->rflags = 0;
+	ctx->handle = handle;
 }
 
 /*

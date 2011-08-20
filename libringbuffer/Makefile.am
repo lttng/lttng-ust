@@ -7,6 +7,7 @@ noinst_HEADERS = \
 	smp.h
 
 libringbuffer_la_SOURCES = \
+	shm.c \
 	smp.c \
 	ring_buffer_backend.c \
 	ring_buffer_frontend.c
