@@ -251,7 +251,7 @@ long lttng_abi_add_context(int objd,
 
 	switch (context_param->ctx) {
 	case LTTNG_UST_CONTEXT_VTID:
-		return lttng_add_vtid_to_ctx(ctx);
+		//TODO return lttng_add_vtid_to_ctx(ctx);
 	default:
 		return -EINVAL;
 	}
