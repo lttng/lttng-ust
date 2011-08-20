@@ -14,10 +14,6 @@
 #include "ust/core.h"
 #include "shm_types.h"
 
-#define SHM_MAGIC	0x54335433
-#define SHM_MAJOR	0
-#define SHM_MINOR	1
-
 /*
  * Pointer dereferencing. We don't trust the shm_ref, so we validate
  * both the index and offset with known boundaries.
