@@ -68,4 +68,33 @@ struct shm_object *shm_object_table_append(struct shm_object_table *table,
 struct shm_ref zalloc_shm(struct shm_object *obj, size_t len);
 void align_shm(struct shm_object *obj, size_t align);
 
+static inline
+int shm_get_wakeup_fd(struct shm_handle *handle, struct shm_ref *ref)
+{
+	struct shm_object_table *table = handle->table;
+	struct shm_object *obj;
+	size_t index;
+
+	index = (size_t) ref->index;
+	if (unlikely(index >= table->allocated_len))
+		return -EPERM;
+	obj = &table->objects[index];
+	return obj->wait_fd[1];
+
+}
+
+static inline
+int shm_get_wait_fd(struct shm_handle *handle, struct shm_ref *ref)
+{
+	struct shm_object_table *table = handle->table;
+	struct shm_object *obj;
+	size_t index;
+
+	index = (size_t) ref->index;
+	if (unlikely(index >= table->allocated_len))
+		return -EPERM;
+	obj = &table->objects[index];
+	return obj->wait_fd[0];
+}
+
 #endif /* _LIBRINGBUFFER_SHM_H */

@@ -378,8 +378,19 @@ void lib_ring_buffer_check_deliver(const struct lib_ring_buffer_config *config,
 			if (config->wakeup == RING_BUFFER_WAKEUP_BY_WRITER
 			    && uatomic_read(&buf->active_readers)
 			    && lib_ring_buffer_poll_deliver(config, buf, chan, handle)) {
-				//wake_up_interruptible(&buf->read_wait);
-				//wake_up_interruptible(&chan->read_wait);
+				int wakeup_fd = shm_get_wakeup_fd(handle, &buf->self._ref);
+
+				if (wakeup_fd >= 0) {
+					int ret;
+					/*
+					 * Wake-up the other end by
+					 * writing a null byte in the
+					 * pipe (non-blocking).
+					 */
+					do {
+						ret = write(wakeup_fd, "", 1);
+					} while (ret == -1L && errno == EINTR);
+				}
 			}
 
 		}

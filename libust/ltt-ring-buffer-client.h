@@ -362,13 +362,13 @@ static const struct lib_ring_buffer_config client_config = {
 
 	.tsc_bits = 32,
 	.alloc = RING_BUFFER_ALLOC_PER_CPU,
-	.sync = RING_BUFFER_SYNC_PER_CPU,
+	.sync = RING_BUFFER_SYNC_GLOBAL,
 	.mode = RING_BUFFER_MODE_TEMPLATE,
 	.backend = RING_BUFFER_PAGE,
-	.output = RING_BUFFER_SPLICE,
+	.output = RING_BUFFER_MMAP,
 	.oops = RING_BUFFER_OOPS_CONSISTENCY,
-	.ipi = RING_BUFFER_IPI_BARRIER,
-	.wakeup = RING_BUFFER_WAKEUP_BY_TIMER,
+	.ipi = RING_BUFFER_NO_IPI_BARRIER,
+	.wakeup = RING_BUFFER_WAKEUP_BY_WRITER,
 };
 
 static

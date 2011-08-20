@@ -103,6 +103,8 @@ struct lib_ring_buffer {
 	int get_subbuf:1;		/* Sub-buffer being held by reader */
 	int switch_timer_enabled:1;	/* Protected by ring_buffer_nohz_lock */
 	int read_timer_enabled:1;	/* Protected by ring_buffer_nohz_lock */
+	/* shmp pointer to self */
+	DECLARE_SHMP(struct lib_ring_buffer, self);
 } ____cacheline_aligned;
 
 static inline

@@ -283,6 +283,7 @@ int channel_backend_init(struct channel_backend *chanb,
 			buf = shmp(handle, chanb->buf[i].shmp);
 			if (!buf)
 				goto end;
+			set_shmp(buf->self, chanb->buf[i].shmp._ref);
 			ret = lib_ring_buffer_create(buf, chanb, i,
 					handle, shmobj);
 			if (ret)

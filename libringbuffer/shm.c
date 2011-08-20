@@ -49,6 +49,12 @@ struct shm_object *shm_object_table_append(struct shm_object_table *table,
 			goto error_fcntl;
 		}
 	}
+	/* The write end of the pipe needs to be non-blocking */
+	ret = fcntl(waitfd[1], F_SETFL, O_NONBLOCK);
+	if (ret < 0) {
+		PERROR("fcntl");
+		goto error_fcntl;
+	}
 	*obj->wait_fd = *waitfd;
 
 	/* shm_fd: create shm */
