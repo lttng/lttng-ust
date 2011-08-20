@@ -20,26 +20,27 @@
  */
 static inline
 char *_shmp_offset(struct shm_object_table *table, struct shm_ref *ref,
-		   size_t offset)
+		   size_t idx, size_t elem_size)
 {
 	struct shm_object *obj;
-	size_t index, ref_offset;
+	size_t objindex, ref_offset;
 
-	index = (size_t) ref->index;
-	if (unlikely(index >= table->allocated_len))
+	objindex = (size_t) ref->index;
+	if (unlikely(objindex >= table->allocated_len))
 		return NULL;
-	obj = &table->objects[index];
+	obj = &table->objects[objindex];
 	ref_offset = (size_t) ref->offset;
-	ref_offset += offset;
-	if (unlikely(ref_offset >= obj->memory_map_size))
+	ref_offset += idx * elem_size;
+	/* Check if part of the element returned would exceed the limits. */
+	if (unlikely(ref_offset + elem_size > obj->memory_map_size))
 		return NULL;
 	return &obj->memory_map[ref_offset];
 }
 
-#define shmp_index(handle, ref, offset)					\
+#define shmp_index(handle, ref, index)					\
 	({								\
 		__typeof__((ref)._type) ____ptr_ret;			\
-		____ptr_ret = (__typeof__(____ptr_ret)) _shmp_offset((handle)->table, &(ref)._ref, ((offset) * sizeof(*____ptr_ret)));	\
+		____ptr_ret = (__typeof__(____ptr_ret)) _shmp_offset((handle)->table, &(ref)._ref, index, sizeof(*____ptr_ret));	\
 		____ptr_ret;						\
 	})
 
