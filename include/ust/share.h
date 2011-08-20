@@ -1,4 +1,5 @@
-/* Copyright (C) 2009  Pierre-Marc Fournier
+/*
+ * Copyright (C) 2009  Pierre-Marc Fournier
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -27,7 +28,8 @@
 
 #include <errno.h>
 
-/* This write is patient because it restarts if it was incomplete.
+/*
+ * This write is patient because it restarts if it was incomplete.
  */
 
 static __inline__ ssize_t patient_write(int fd, const void *buf, size_t count)
@@ -37,16 +39,16 @@ static __inline__ ssize_t patient_write(int fd, const void *buf, size_t count)
 
 	for(;;) {
 		result = write(fd, bufc, count);
-		if(result == -1 && errno == EINTR) {
+		if (result == -1 && errno == EINTR) {
 			continue;
 		}
-		if(result <= 0) {
+		if (result <= 0) {
 			return result;
 		}
 		count -= result;
 		bufc += result;
 
-		if(count == 0) {
+		if (count == 0) {
 			break;
 		}
 	}
@@ -61,21 +63,21 @@ static __inline__ ssize_t patient_send(int fd, const void *buf, size_t count, in
 
 	for(;;) {
 		result = send(fd, bufc, count, flags);
-		if(result == -1 && errno == EINTR) {
+		if (result == -1 && errno == EINTR) {
 			continue;
 		}
-		if(result <= 0) {
+		if (result <= 0) {
 			return result;
 		}
 		count -= result;
 		bufc += result;
 
-		if(count == 0) {
+		if (count == 0) {
 			break;
 		}
 	}
 
-	return bufc-(const char *)buf;
+	return bufc - (const char *) buf;
 }
 
 #endif /* UST_SHARE_H */
