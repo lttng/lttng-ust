@@ -17,6 +17,11 @@
 /*
  * Pointer dereferencing. We don't trust the shm_ref, so we validate
  * both the index and offset with known boundaries.
+ *
+ * "shmp" and "shmp_index" guarantee that it's safe to use the pointer
+ * target type, even in the occurrence of shm_ref modification by an
+ * untrusted process having write access to the shm_ref. We return a
+ * NULL pointer if the ranges are invalid.
  */
 static inline
 char *_shmp_offset(struct shm_object_table *table, struct shm_ref *ref,
