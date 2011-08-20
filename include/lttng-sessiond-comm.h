@@ -175,6 +175,26 @@ struct lttcomm_lttng_msg {
 };
 
 /*
+ * Data structure for the response from UST to the session daemon.
+ * cmd_type is sent back in the reply for validation.
+ */
+struct lttcomm_ust_msg {
+	uint32_t cmd_type;	/* enum lttcomm_sessiond_command */
+	uint32_t ret_code;	/* enum enum lttcomm_return_code */
+	union {
+		struct {
+			uint32_t handle;	/* session handle */
+		} session;
+		struct {
+			uint32_t handle;	/* channel handle */
+		} channel;
+		struct {
+			uint32_t handle;	/* event handle */
+		} event;
+	} u;
+};
+
+/*
  * Data structures for the kconsumerd communications
  *
  * The header structure is sent to the kconsumerd daemon to inform
