@@ -25,15 +25,18 @@
 #include <errno.h>
 #include <lttng-sessiond-comm.h>
 #include <ust/usterr-signal-safe.h>
+#include <pthread.h>
 
 /* Socket from app (connect) to session daemon (listen) for communication */
 static int global_apps_socket = -1;
 static char global_apps_sock_path[PATH_MAX] = DEFAULT_GLOBAL_APPS_UNIX_SOCK;
+static pthread_t global_ust_listener;
 
 /* TODO: allow global_apps_sock_path override */
 
 static int local_apps_socket = -1;
 static char local_apps_sock_path[PATH_MAX];
+static pthread_t local_ust_listener;
 
 static
 int connect_global_apps_socket(void)
@@ -87,6 +90,63 @@ int register_app_to_sessiond(int socket)
 	return ret;
 }
 
+
+static
+int parse_message(struct lttcomm_session_msg *lsm)
+{
+	switch (lsm->cmd_type) {
+	case LTTNG_CREATE_SESSION:
+		DBG("Handling create session message");
+
+
+		break;
+	default:
+		ERR("Unimplemented command %d", (int) lsm->cmd_type);
+		return -1;
+	}
+	return 0;
+}
+
+static
+void *ust_listener_thread(void *arg)
+{
+	int sock = *(int *) arg;
+	int ret;
+
+	for (;;) {
+		ssize_t len;
+		struct lttcomm_session_msg lsm;
+
+		/* Receive session handle */
+		len = lttcomm_recv_unix_sock(sock, &lsm, sizeof(lsm));
+		switch (len) {
+		case 0:	/* orderly shutdown */
+			DBG("ltt-sessiond has performed an orderly shutdown\n");
+			goto end;
+		case sizeof(lsm):
+			DBG("message received\n");
+			ret = parse_message(&lsm);
+			if (ret) {
+				ERR("Error parsing message\n");
+			}
+			continue;
+		case -1:
+			if (errno == ECONNRESET) {
+				ERR("remote end closed connection\n");
+				goto end;
+			}
+			goto end;
+		default:
+			ERR("incorrect message size: %zd\n", len);
+			continue;
+		}
+
+	}
+end:
+	return NULL;
+}
+
+
 /*
  * sessiond monitoring thread: monitor presence of global and per-user
  * sessiond by polling the application common named pipe.
@@ -124,6 +184,8 @@ void __attribute__((constructor)) lttng_ust_comm_init(void)
 		if (ret < 0) {
 			ERR("Error registering app to local apps socket");
 		}
+		ret = pthread_create(&local_ust_listener, NULL,
+				ust_listener_thread, &local_apps_socket);
 	}
 }
 
@@ -145,6 +207,16 @@ void __attribute__((destructor)) lttng_ust_comm_exit(void)
 	}
 #endif
 	if (local_apps_socket >= 0) {
+		/*
+		 * Using pthread_cancel here because:
+		 * A) we don't want to hang application teardown.
+		 * B) the thread is not allocating any resource.
+		 */
+		ret = pthread_cancel(local_ust_listener);
+		if (ret) {
+			ERR("Error joining local ust listener thread");
+		}
+
 		ret = close(local_apps_socket);
 		if (ret) {
 			ERR("Error closing local apps socket");
