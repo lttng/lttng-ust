@@ -46,25 +46,33 @@
 #define LTTCOMM_ERR_INDEX(code) (code - LTTCOMM_OK)
 
 enum lttcomm_ust_command {
-	/* Tracer command */
-	LTTNG_ADD_CONTEXT,
-	LTTNG_CALIBRATE,
-	LTTNG_DISABLE_CHANNEL,
-	LTTNG_DISABLE_EVENT,
-	LTTNG_DISABLE_ALL_EVENT,
-	LTTNG_ENABLE_CHANNEL,
-	LTTNG_ENABLE_EVENT,
-	LTTNG_ENABLE_ALL_EVENT,
-	/* Session daemon command */
-	LTTNG_CREATE_SESSION,
-	LTTNG_DESTROY_SESSION,
-	LTTNG_LIST_CHANNELS,
-	LTTNG_LIST_DOMAINS,
-	LTTNG_LIST_EVENTS,
-	LTTNG_LIST_SESSIONS,
-	LTTNG_LIST_TRACEPOINTS,
-	LTTNG_START_TRACE,
-	LTTNG_STOP_TRACE,
+	LTTNG_UST_CREATE_SESSION,
+	LTTNG_UST_RELEASE_SESSION,
+	LTTNG_UST_VERSION,
+	LTTNG_UST_LIST_TRACEPOINTS,
+	LTTNG_UST_WAIT_QUIESCENT,
+	LTTNG_UST_CALIBRATE,
+
+	/* Apply on session handle */
+	LTTNG_UST_METADATA,	/* release with LTTNG_UST_RELEASE_CHANNEL */
+	LTTNG_UST_CHANNEL,
+	LTTNG_UST_RELEASE_CHANNEL,
+	LTTNG_UST_SESSION_START,
+	LTTNG_UST_SESSION_STOP,
+
+	/* Apply on channel handle */
+	LTTNG_UST_STREAM,
+	LTTNG_UST_RELEASE_STREAM,
+	LTTNG_UST_EVENT,
+	LTTNG_UST_RELEASE_EVENT,
+
+	/* Apply on event and channel handle */
+	LTTNG_UST_CONTEXT,
+	LTTNG_UST_RELEASE_CONTEXT,
+
+	/* Apply on event, channel and session handle */
+	LTTNG_UST_ENABLE,
+	LTTNG_UST_DISABLE,
 };
 
 /*
@@ -127,12 +135,62 @@ enum lttcomm_return_code {
 	LTTCOMM_NR,						/* Last element */
 };
 
+#define LTTNG_SYM_NAME_LEN	128
+
+enum lttng_ust_instrumentation {
+	LTTNG_UST_TRACEPOINT	= 0,
+	LTTNG_UST_PROBE		= 1,
+	LTTNG_UST_FUNCTION	= 2,
+};
+
+enum lttng_ust_output {
+	LTTNG_UST_MMAP		= 0,
+};
+
+struct lttng_ust_tracer_version {
+	uint32_t version;
+	uint32_t patchlevel;
+	uint32_t sublevel;
+};
+
+struct lttng_ust_channel {
+	int overwrite;				/* 1: overwrite, 0: discard */
+	uint64_t subbuf_size;			/* in bytes */
+	uint64_t num_subbuf;
+	unsigned int switch_timer_interval;	/* usecs */
+	unsigned int read_timer_interval;	/* usecs */
+	enum lttng_ust_output output;		/* output mode */
+};
+
+struct lttng_ust_event {
+	char name[LTTNG_SYM_NAME_LEN];	/* event name */
+	enum lttng_ust_instrumentation instrumentation;
+	/* Per instrumentation type configuration */
+	union {
+	} u;
+};
+
+enum lttng_ust_context_type {
+	LTTNG_KERNEL_CONTEXT_VTID		= 0,
+};
+
+struct lttng_ust_context {
+	enum lttng_ust_context_type ctx;
+	union {
+	} u;
+};
+
 /*
  * Data structure for the commands sent from sessiond to UST.
  */
 struct lttcomm_ust_msg {
 	uint32_t cmd_type;    /* enum lttcomm_ust_command */
+	uint32_t handle;
 	union {
+		struct lttng_ust_tracer_version version;
+		struct lttng_ust_channel channel;
+		struct lttng_ust_event event;
+		struct lttng_ust_context context;
 	} u;
 };
 
@@ -143,28 +201,9 @@ struct lttcomm_ust_msg {
 struct lttcomm_ust_reply {
 	uint32_t cmd_type;	/* enum lttcomm_sessiond_command */
 	uint32_t ret_code;	/* enum enum lttcomm_return_code */
+	uint32_t ret_val;	/* return value */
 	union {
-		struct {
-			uint32_t handle;	/* session handle */
-		} session;
-		struct {
-			uint32_t handle;	/* channel handle */
-		} channel;
-		struct {
-			uint32_t handle;	/* event handle */
-		} event;
 	} u;
-};
-
-/*
- * Data structures for the kconsumerd communications
- *
- * The header structure is sent to the kconsumerd daemon to inform
- * how many lttcomm_kconsumerd_msg it is about to receive
- */
-struct lttcomm_kconsumerd_header {
-	uint32_t payload_size;
-	uint32_t cmd_type;	/* enum kconsumerd_command */
 };
 
 extern int lttcomm_create_unix_sock(const char *pathname);

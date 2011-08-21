@@ -75,13 +75,13 @@ int handle_message(int sock, struct lttcomm_ust_msg *lum)
 	int ret;
 
 	switch (lum->cmd_type) {
-	case LTTNG_CREATE_SESSION:
+	case LTTNG_UST_CREATE_SESSION:
 	{
 		struct lttcomm_ust_reply lur;
 
 		DBG("Handling create session message");
 		memset(&lur, 0, sizeof(lur));
-		lur.cmd_type = LTTNG_CREATE_SESSION;
+		lur.cmd_type = LTTNG_UST_CREATE_SESSION;
 
 		/* ... */
 		ret = 0;
@@ -90,7 +90,7 @@ int handle_message(int sock, struct lttcomm_ust_msg *lum)
 			lur.ret_code = LTTCOMM_OK;
 		else
 			lur.ret_code = LTTCOMM_SESSION_FAIL;
-		lur.u.session.handle = 42;
+		lur.ret_val = 42;
 		len = lttcomm_send_unix_sock(sock, &lur, sizeof(lur));
 		switch (len) {
 		case sizeof(lur):
