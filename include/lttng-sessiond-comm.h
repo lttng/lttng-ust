@@ -45,7 +45,7 @@
  */
 #define LTTCOMM_ERR_INDEX(code) (code - LTTCOMM_OK)
 
-enum lttcomm_sessiond_command {
+enum lttcomm_ust_command {
 	/* Tracer command */
 	LTTNG_ADD_CONTEXT,
 	LTTNG_CALIBRATE,
@@ -128,57 +128,19 @@ enum lttcomm_return_code {
 };
 
 /*
- * Data structure received from lttng client to session daemon.
+ * Data structure for the commands sent from sessiond to UST.
  */
-struct lttcomm_session_msg {
-	uint32_t cmd_type;    /* enum lttcomm_sessiond_command */
-	struct lttng_session session;
-	struct lttng_domain domain;
+struct lttcomm_ust_msg {
+	uint32_t cmd_type;    /* enum lttcomm_ust_command */
 	union {
-		struct {
-			char channel_name[NAME_MAX];
-			char name[NAME_MAX];
-		} disable;
-		/* Event data */
-		struct {
-			char channel_name[NAME_MAX];
-			struct lttng_event event;
-		} enable;
-		/* Create channel */
-		struct {
-			struct lttng_channel chan;
-		} channel;
-		/* Context */
-		struct {
-			char channel_name[NAME_MAX];
-			char event_name[NAME_MAX];
-			struct lttng_event_context ctx;
-		} context;
-		/* List */
-		struct {
-			char channel_name[NAME_MAX];
-		} list;
-		struct lttng_calibrate calibrate;
 	} u;
-};
-
-/*
- * Data structure for the response from sessiond to the lttng client.
- */
-struct lttcomm_lttng_msg {
-	uint32_t cmd_type;   /* enum lttcomm_sessiond_command */
-	uint32_t ret_code;   /* enum lttcomm_return_code */
-	uint32_t pid;        /* pid_t */
-	uint32_t data_size;
-	/* Contains: trace_name + data */
-	char payload[];
 };
 
 /*
  * Data structure for the response from UST to the session daemon.
  * cmd_type is sent back in the reply for validation.
  */
-struct lttcomm_ust_msg {
+struct lttcomm_ust_reply {
 	uint32_t cmd_type;	/* enum lttcomm_sessiond_command */
 	uint32_t ret_code;	/* enum enum lttcomm_return_code */
 	union {
@@ -203,16 +165,6 @@ struct lttcomm_ust_msg {
 struct lttcomm_kconsumerd_header {
 	uint32_t payload_size;
 	uint32_t cmd_type;	/* enum kconsumerd_command */
-};
-
-/* lttcomm_kconsumerd_msg represents a file descriptor to consume the
- * data and a path name to write it
- */
-struct lttcomm_kconsumerd_msg {
-	char path_name[PATH_MAX];
-	int fd;
-	uint32_t state;    /* enum lttcomm_kconsumerd_fd_state */
-	unsigned long max_sb_size; /* the subbuffer size for this channel */
 };
 
 extern int lttcomm_create_unix_sock(const char *pathname);

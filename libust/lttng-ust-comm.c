@@ -69,15 +69,15 @@ int register_app_to_sessiond(int socket)
 
 
 static
-int handle_message(int sock, struct lttcomm_session_msg *lsm)
+int handle_message(int sock, struct lttcomm_ust_msg *lum)
 {
 	ssize_t len;
 	int ret;
 
-	switch (lsm->cmd_type) {
+	switch (lum->cmd_type) {
 	case LTTNG_CREATE_SESSION:
 	{
-		struct lttcomm_ust_msg lur;
+		struct lttcomm_ust_reply lur;
 
 		DBG("Handling create session message");
 		memset(&lur, 0, sizeof(lur));
@@ -109,7 +109,7 @@ int handle_message(int sock, struct lttcomm_session_msg *lsm)
 		break;
 	}
 	default:
-		ERR("Unimplemented command %d", (int) lsm->cmd_type);
+		ERR("Unimplemented command %d", (int) lum->cmd_type);
 		return -1;
 	}
 	return 0;
@@ -141,17 +141,17 @@ restart:
 	}
 	for (;;) {
 		ssize_t len;
-		struct lttcomm_session_msg lsm;
+		struct lttcomm_ust_msg lum;
 
 		/* Receive session handle */
-		len = lttcomm_recv_unix_sock(sock, &lsm, sizeof(lsm));
+		len = lttcomm_recv_unix_sock(sock, &lum, sizeof(lum));
 		switch (len) {
 		case 0:	/* orderly shutdown */
 			DBG("ltt-sessiond has performed an orderly shutdown\n");
 			goto end;
-		case sizeof(lsm):
+		case sizeof(lum):
 			DBG("message received\n");
-			ret = handle_message(sock, &lsm);
+			ret = handle_message(sock, &lum);
 			if (ret) {
 				ERR("Error handling message\n");
 			}
