@@ -40,6 +40,9 @@
 /* Queue size of listen(2) */
 #define MAX_LISTEN 10
 
+#define LTTNG_UST_COMM_VERSION_MAJOR		0
+#define LTTNG_UST_COMM_VERSION_MINOR		1
+
 /* Get the error code index from 0 since
  * LTTCOMM_OK start at 1000
  */

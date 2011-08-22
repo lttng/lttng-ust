@@ -54,10 +54,14 @@ int register_app_to_sessiond(int socket)
 {
 	ssize_t ret;
 	struct {
+		uint32_t major;
+		uint32_t minor;
 		pid_t pid;
 		uid_t uid;
 	} reg_msg;
 
+	reg_msg.major = LTTNG_UST_COMM_VERSION_MAJOR;
+	reg_msg.minor = LTTNG_UST_COMM_VERSION_MINOR;
 	reg_msg.pid = getpid();
 	reg_msg.uid = getuid();
 
