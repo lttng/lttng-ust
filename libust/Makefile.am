@@ -29,6 +29,6 @@ libust_la_LIBADD = \
 	-luuid \
 	$(top_builddir)/snprintf/libustsnprintf.la \
 	$(top_builddir)/libringbuffer/libringbuffer.la \
-	$(top_builddir)/liblttng-sessiond-comm/liblttng-sessiond-comm.la
+	$(top_builddir)/liblttng-ust-comm/liblttng-ust-comm.la
 
 libust_la_CFLAGS = -DUST_COMPONENT="libust" -fno-strict-aliasing

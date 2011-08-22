@@ -704,14 +704,7 @@ static const struct objd_ops lttng_event_ops = {
 	.cmd = lttng_event_cmd,
 };
 
-void __attribute__((constructor)) lttng_ust_abi_init(void)
-{
-	init_usterr();
-	/* TODO: initialize socket */
-}
-
-static
-void __attribute__((destructor)) lttng_ust_abi_exit(void)
+void lttng_ust_abi_exit(void)
 {
 	/* TODO: teardown socket */
 	objd_table_destroy();

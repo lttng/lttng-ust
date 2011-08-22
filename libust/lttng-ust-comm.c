@@ -23,7 +23,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <errno.h>
-#include <lttng-sessiond-comm.h>
+#include <ust/lttng-ust-abi.h>
+#include <lttng-ust-comm.h>
 #include <ust/usterr-signal-safe.h>
 #include <pthread.h>
 
@@ -79,13 +80,13 @@ int handle_message(int sock, struct lttcomm_ust_msg *lum)
 	int ret;
 
 	switch (lum->cmd_type) {
-	case LTTNG_UST_CREATE_SESSION:
+	case UST_CREATE_SESSION:
 	{
 		struct lttcomm_ust_reply lur;
 
 		DBG("Handling create session message");
 		memset(&lur, 0, sizeof(lur));
-		lur.cmd_type = LTTNG_UST_CREATE_SESSION;
+		lur.cmd_type = UST_CREATE_SESSION;
 
 		/* ... */
 		ret = 0;
@@ -224,4 +225,5 @@ void __attribute__((destructor)) lttng_ust_comm_exit(void)
 	if (ret) {
 		ERR("Error cancelling local ust listener thread");
 	}
+	lttng_ust_abi_exit();
 }

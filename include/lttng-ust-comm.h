@@ -1,5 +1,5 @@
-#ifndef _LTTNG_SESSIOND_COMM_H
-#define _LTTNG_SESSIOND_COMM_H
+#ifndef _LTTNG_UST_COMM_H
+#define _LTTNG_UST_COMM_H
 
 /*
  * Copyright (C) 2011 - David Goulet <david.goulet@polymtl.ca>
@@ -28,6 +28,7 @@
 
 #include <limits.h>
 #include <lttng/lttng.h>
+#include <ust/lttng-ust-abi.h>
 
 #define LTTNG_RUNDIR                        "/var/run/lttng"
 
@@ -40,42 +41,39 @@
 /* Queue size of listen(2) */
 #define MAX_LISTEN 10
 
-#define LTTNG_UST_COMM_VERSION_MAJOR		0
-#define LTTNG_UST_COMM_VERSION_MINOR		1
-
 /* Get the error code index from 0 since
  * LTTCOMM_OK start at 1000
  */
 #define LTTCOMM_ERR_INDEX(code) (code - LTTCOMM_OK)
 
 enum lttcomm_ust_command {
-	LTTNG_UST_CREATE_SESSION,
-	LTTNG_UST_RELEASE_SESSION,
-	LTTNG_UST_VERSION,
-	LTTNG_UST_LIST_TRACEPOINTS,
-	LTTNG_UST_WAIT_QUIESCENT,
-	LTTNG_UST_CALIBRATE,
+	UST_CREATE_SESSION,
+	UST_RELEASE_SESSION,
+	UST_VERSION,
+	UST_LIST_TRACEPOINTS,
+	UST_WAIT_QUIESCENT,
+	UST_CALIBRATE,
 
 	/* Apply on session handle */
-	LTTNG_UST_METADATA,	/* release with LTTNG_UST_RELEASE_CHANNEL */
-	LTTNG_UST_CHANNEL,
-	LTTNG_UST_RELEASE_CHANNEL,
-	LTTNG_UST_SESSION_START,
-	LTTNG_UST_SESSION_STOP,
+	UST_METADATA,	/* release with UST_RELEASE_CHANNEL */
+	UST_CHANNEL,
+	UST_RELEASE_CHANNEL,
+	UST_SESSION_START,
+	UST_SESSION_STOP,
 
 	/* Apply on channel handle */
-	LTTNG_UST_STREAM,
-	LTTNG_UST_RELEASE_STREAM,
-	LTTNG_UST_EVENT,
-	LTTNG_UST_RELEASE_EVENT,
+	UST_STREAM,
+	UST_RELEASE_STREAM,
+	UST_EVENT,
+	UST_RELEASE_EVENT,
 
 	/* Apply on event and channel handle */
-	LTTNG_UST_CONTEXT,
-	LTTNG_UST_RELEASE_CONTEXT,
+	UST_CONTEXT,
+	UST_RELEASE_CONTEXT,
 
 	/* Apply on event, channel and session handle */
-	LTTNG_UST_ENABLE,
-	LTTNG_UST_DISABLE,
+	UST_ENABLE,
+	UST_DISABLE,
 };
 
 /*
@@ -138,51 +136,6 @@ enum lttcomm_return_code {
 	LTTCOMM_NR,						/* Last element */
 };
 
-#define LTTNG_SYM_NAME_LEN	128
-
-enum lttng_ust_instrumentation {
-	LTTNG_UST_TRACEPOINT	= 0,
-	LTTNG_UST_PROBE		= 1,
-	LTTNG_UST_FUNCTION	= 2,
-};
-
-enum lttng_ust_output {
-	LTTNG_UST_MMAP		= 0,
-};
-
-struct lttng_ust_tracer_version {
-	uint32_t version;
-	uint32_t patchlevel;
-	uint32_t sublevel;
-};
-
-struct lttng_ust_channel {
-	int overwrite;				/* 1: overwrite, 0: discard */
-	uint64_t subbuf_size;			/* in bytes */
-	uint64_t num_subbuf;
-	unsigned int switch_timer_interval;	/* usecs */
-	unsigned int read_timer_interval;	/* usecs */
-	enum lttng_ust_output output;		/* output mode */
-};
-
-struct lttng_ust_event {
-	char name[LTTNG_SYM_NAME_LEN];	/* event name */
-	enum lttng_ust_instrumentation instrumentation;
-	/* Per instrumentation type configuration */
-	union {
-	} u;
-};
-
-enum lttng_ust_context_type {
-	LTTNG_KERNEL_CONTEXT_VTID		= 0,
-};
-
-struct lttng_ust_context {
-	enum lttng_ust_context_type ctx;
-	union {
-	} u;
-};
-
 /*
  * Data structure for the commands sent from sessiond to UST.
  */
@@ -221,4 +174,4 @@ extern ssize_t lttcomm_recv_unix_sock(int sock, void *buf, size_t len);
 extern ssize_t lttcomm_send_unix_sock(int sock, void *buf, size_t len);
 extern const char *lttcomm_get_readable_code(enum lttcomm_return_code code);
 
-#endif	/* _LTTNG_SESSIOND_COMM_H */
+#endif	/* _LTTNG_UST_COMM_H */

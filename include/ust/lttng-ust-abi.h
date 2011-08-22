@@ -15,20 +15,24 @@
 
 #define LTTNG_UST_SYM_NAME_LEN	128
 
+#define LTTNG_UST_COMM_VERSION_MAJOR		0
+#define LTTNG_UST_COMM_VERSION_MINOR		1
+
 enum lttng_ust_instrumentation {
 	LTTNG_UST_TRACEPOINT	= 0,
+	LTTNG_UST_PROBE		= 1,
+	LTTNG_UST_FUNCTION	= 2,
 };
 
-/*
- * LTTng consumer mode
- */
 enum lttng_ust_output {
-	LTTNG_UST_MMAP	= 0,
+	LTTNG_UST_MMAP		= 0,
 };
 
-/*
- * LTTng DebugFS ABI structures.
- */
+struct lttng_ust_tracer_version {
+	uint32_t version;
+	uint32_t patchlevel;
+	uint32_t sublevel;
+};
 
 struct lttng_ust_channel {
 	int overwrite;				/* 1: overwrite, 0: discard */
@@ -36,7 +40,7 @@ struct lttng_ust_channel {
 	uint64_t num_subbuf;
 	unsigned int switch_timer_interval;	/* usecs */
 	unsigned int read_timer_interval;	/* usecs */
-	enum lttng_ust_output output;		/* mmap */
+	enum lttng_ust_output output;		/* output mode */
 };
 
 struct lttng_ust_event {
@@ -45,12 +49,6 @@ struct lttng_ust_event {
 	/* Per instrumentation type configuration */
 	union {
 	} u;
-};
-
-struct lttng_ust_tracer_version {
-	uint32_t version;
-	uint32_t patchlevel;
-	uint32_t sublevel;
 };
 
 enum lttng_ust_context_type {
@@ -94,5 +92,7 @@ struct lttng_ust_context {
 /* Event, Channel and Session ioctl */
 #define LTTNG_UST_ENABLE			_UST_CMD(0x80)
 #define LTTNG_UST_DISABLE			_UST_CMD(0x81)
+
+void lttng_ust_abi_exit(void);
 
 #endif /* _LTTNG_UST_ABI_H */
