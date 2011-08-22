@@ -117,7 +117,11 @@ int lttcomm_connect_unix_sock(const char *pathname)
 	int fd;
 	int ret;
 
-	fd = socket(PF_UNIX, SOCK_STREAM, 0);
+	/*
+	 * libust threads require the close-on-exec flag for all
+	 * resources so it does not leak file descriptors upon exec.
+	 */
+	fd = socket(PF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
 	if (fd < 0) {
 		perror("socket");
 		ret = fd;
