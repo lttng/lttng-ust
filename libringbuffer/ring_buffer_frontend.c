@@ -567,8 +567,8 @@ void *channel_destroy(struct channel *chan, struct shm_handle *handle)
 	 * sessiond/consumer are keeping a reference on the shm file
 	 * descriptor directly. No need to refcount.
 	 */
-	channel_release(chan, handle);
 	priv = chan->backend.priv;
+	channel_release(chan, handle);
 	return priv;
 }
 
