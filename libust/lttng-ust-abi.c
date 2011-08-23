@@ -100,7 +100,8 @@ int objd_alloc(void *private_data, const struct objd_ops *ops)
 end:
 	obj->u.s.private_data = private_data;
 	obj->u.s.ops = ops;
-	obj->u.s.f_count = 1;
+	obj->u.s.f_count = 2;	/* count == 1 : object is allocated */
+				/* count == 2 : allocated + hold ref */
 	return obj - objd_table.array;
 }
 
@@ -108,6 +109,8 @@ static
 struct obj *_objd_get(int id)
 {
 	if (id >= objd_table.len)
+		return NULL;
+	if (!objd_table.array[id].u.s.f_count)
 		return NULL;
 	return &objd_table.array[id];
 }
@@ -132,7 +135,8 @@ static
 const struct objd_ops *objd_ops(int id)
 {
 	struct obj *obj = _objd_get(id);
-	assert(obj);
+	if (!obj)
+		return NULL;
 	return obj->u.s.ops;
 }
 
@@ -144,6 +148,8 @@ void objd_free(int id)
 	assert(obj);
 	obj->u.freelist_next = objd_table.freelist_head;
 	objd_table.freelist_head = obj - objd_table.array;
+	assert(obj->u.s.f_count == 1);
+	obj->u.s.f_count = 0;	/* deallocated */
 }
 
 static
@@ -159,9 +165,13 @@ int objd_unref(int id)
 
 	if (!obj)
 		return -EINVAL;
-	if (!(--obj->u.s.f_count)) {
+	if (obj->u.s.f_count == 1) {
+		ERR("Reference counting error\n");
+		return -EINVAL;
+	}
+	if ((--obj->u.s.f_count) == 1) {
 		const struct objd_ops *ops = objd_ops(id);
-
+		
 		if (ops->release)
 			ops->release(id);
 		objd_free(id);
@@ -172,6 +182,18 @@ int objd_unref(int id)
 static
 void objd_table_destroy(void)
 {
+	int i;
+
+	for (i = 0; i < objd_table.allocated_len; i++) {
+		struct obj *obj = _objd_get(i);
+		const struct objd_ops *ops;
+
+		if (!obj)
+			continue;
+		ops = obj->u.s.ops;
+		if (ops->release)
+			ops->release(i);
+	}
 	free(objd_table.array);
 }
 

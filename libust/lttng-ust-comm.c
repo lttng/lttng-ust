@@ -99,9 +99,9 @@ int send_reply(int sock, struct lttcomm_ust_reply *lur)
 {
 	ssize_t len;
 
-	len = lttcomm_send_unix_sock(sock, &lur, sizeof(lur));
+	len = lttcomm_send_unix_sock(sock, lur, sizeof(*lur));
 	switch (len) {
-	case sizeof(lur):
+	case sizeof(*lur):
 		DBG("message successfully sent");
 		return 0;
 	case -1:
