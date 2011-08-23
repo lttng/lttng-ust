@@ -45,18 +45,21 @@ struct sock_info {
 	char sock_path[PATH_MAX];
 	int socket;
 	pthread_t ust_listener;	/* listener thread */
+	int root_handle;
 };
 
 /* Socket from app (connect) to session daemon (listen) for communication */
 struct sock_info global_apps = {
 	.sock_path = DEFAULT_GLOBAL_APPS_UNIX_SOCK,
 	.socket = -1,
+	.root_handle = -1,
 };
 
 /* TODO: allow global_apps_sock_path override */
 
 struct sock_info local_apps = {
 	.socket = -1,
+	.root_handle = -1,
 };
 
 static
@@ -120,57 +123,74 @@ static
 int handle_message(int sock, struct lttcomm_ust_msg *lum)
 {
 	int ret = 0;
+	const struct objd_ops *ops;
+	struct lttcomm_ust_reply lur;
 
 	pthread_mutex_lock(&lttng_ust_comm_mutex);
 
+	memset(&lur, 0, sizeof(lur));
+
 	if (lttng_ust_comm_should_quit) {
-		ret = 0;
+		ret = -EPERM;
 		goto end;
 	}
 
-	switch (lum->cmd_type) {
-	case UST_CREATE_SESSION:
-	{
-		struct lttcomm_ust_reply lur;
-
-		DBG("Handling create session message");
-		memset(&lur, 0, sizeof(lur));
-		lur.cmd_type = UST_CREATE_SESSION;
-		ret = lttng_abi_create_session();
-		if (ret >= 0) {
-			lur.ret_val = ret;
-			lur.ret_code = LTTCOMM_OK;
-		} else {
-			lur.ret_code = LTTCOMM_SESSION_FAIL;
-		}
-		ret = send_reply(sock, &lur);
-		break;
+	ops = objd_ops(lum->handle);
+	if (!ops) {
+		ret = -ENOENT;
+		goto end;
 	}
-	case UST_RELEASE:
-	{
-		struct lttcomm_ust_reply lur;
 
-		DBG("Handling release message, handle: %d",
-			lum->handle);
-		memset(&lur, 0, sizeof(lur));
-		lur.cmd_type = UST_RELEASE;
-		ret = objd_unref(lum->handle);
-		if (!ret) {
-			lur.ret_code = LTTCOMM_OK;
-		} else {
-			lur.ret_code = LTTCOMM_ERR;
-		}
-		ret = send_reply(sock, &lur);
+	switch (lum->cmd) {
+	case LTTNG_UST_RELEASE:
+		if (lum->handle == LTTNG_UST_ROOT_HANDLE)
+			ret = -EPERM;
+		else
+			ret = objd_unref(lum->handle);
 		break;
-	}
 	default:
-		ERR("Unimplemented command %d", (int) lum->cmd_type);
-		ret = -1;
-		goto end;
+		if (ops->cmd)
+			ret = ops->cmd(lum->handle, lum->cmd,
+					(unsigned long) &lum->u);
+		else
+			ret = -ENOSYS;
+		break;
 	}
+
 end:
+	lur.handle = lum->handle;
+	lur.cmd = lum->cmd;
+	lur.ret_val = ret;
+	if (ret >= 0) {
+		lur.ret_code = LTTCOMM_OK;
+	} else {
+		lur.ret_code = LTTCOMM_SESSION_FAIL;
+	}
+	ret = send_reply(sock, &lur);
+
 	pthread_mutex_unlock(&lttng_ust_comm_mutex);
 	return ret;
+}
+
+static
+void cleanup_sock_info(struct sock_info *sock_info)
+{
+	int ret;
+
+	if (sock_info->socket != -1) {
+		ret = close(sock_info->socket);
+		if (ret) {
+			ERR("Error closing local apps socket");
+		}
+		sock_info->socket = -1;
+	}
+	if (sock_info->root_handle != -1) {
+		ret = objd_unref(sock_info->root_handle);
+		if (ret) {
+			ERR("Error unref root handle");
+		}
+		sock_info->root_handle = -1;
+	}
 }
 
 /*
@@ -202,6 +222,7 @@ restart:
 		}
 		sock_info->socket = -1;
 	}
+
 	/* Check for sessiond availability with pipe TODO */
 
 	/* Register */
@@ -211,22 +232,37 @@ restart:
 		pthread_mutex_unlock(&lttng_ust_comm_mutex);
 		sleep(5);
 		goto restart;
-	} else {
-		sock_info->socket = sock = ret;
-		pthread_mutex_unlock(&lttng_ust_comm_mutex);
+	}
+
+	sock_info->socket = sock = ret;
+
+	/*
+	 * Create only one root handle per listener thread for the whole
+	 * process lifetime.
+	 */
+	if (sock_info->root_handle == -1) {
+		ret = lttng_abi_create_root_handle();
+		if (ret) {
+			ERR("Error creating root handle");
+			pthread_mutex_unlock(&lttng_ust_comm_mutex);
+			goto quit;
+		}
+		sock_info->root_handle = ret;
 	}
 
 	ret = register_app_to_sessiond(sock);
 	if (ret < 0) {
 		ERR("Error registering app to local apps socket");
+		pthread_mutex_unlock(&lttng_ust_comm_mutex);
 		sleep(5);
 		goto restart;
 	}
+	pthread_mutex_unlock(&lttng_ust_comm_mutex);
+
 	for (;;) {
 		ssize_t len;
 		struct lttcomm_ust_msg lum;
 
-		/* Receive session handle */
 		len = lttcomm_recv_unix_sock(sock, &lum, sizeof(lum));
 		switch (len) {
 		case 0:	/* orderly shutdown */
@@ -307,20 +343,15 @@ void __attribute__((destructor)) lttng_ust_comm_exit(void)
 		ERR("Error cancelling global ust listener thread");
 	}
 #endif //0
-	if (global_apps.socket != -1) {
-		ret = close(global_apps.socket);
-		assert(!ret);
-	}
+
+	cleanup_sock_info(&global_apps);
 
 	ret = pthread_cancel(local_apps.ust_listener);
 	if (ret) {
 		ERR("Error cancelling local ust listener thread");
 	}
 
-	if (local_apps.socket != -1) {
-		ret = close(local_apps.socket);
-		assert(!ret);
-	}
+	cleanup_sock_info(&local_apps);
 
 	lttng_ust_abi_exit();
 	ltt_events_exit();

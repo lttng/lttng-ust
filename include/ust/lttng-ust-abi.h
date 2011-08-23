@@ -65,6 +65,11 @@ struct lttng_ust_context {
 #define _UST_CMDR(minor, type)			(minor)
 #define _UST_CMDW(minor, type)			(minor)
 
+/* Handled by object descriptor */
+#define LTTNG_UST_RELEASE			_UST_CMD(0x1)
+
+/* Handled by object cmd */
+
 /* LTTng-UST commands */
 #define LTTNG_UST_SESSION			_UST_CMD(0x40)
 #define LTTNG_UST_TRACER_VERSION		\
@@ -72,7 +77,7 @@ struct lttng_ust_context {
 #define LTTNG_UST_TRACEPOINT_LIST		_UST_CMD(0x42)
 #define LTTNG_UST_WAIT_QUIESCENT		_UST_CMD(0x43)
 
-/* Session FD ioctl */
+/* Session FD commands */
 #define LTTNG_UST_METADATA			\
 	_UST_CMDW(0x50, struct lttng_ust_channel)
 #define LTTNG_UST_CHANNEL			\
@@ -80,22 +85,35 @@ struct lttng_ust_context {
 #define LTTNG_UST_SESSION_START			_UST_CMD(0x52)
 #define LTTNG_UST_SESSION_STOP			_UST_CMD(0x53)
 
-/* Channel FD ioctl */
+/* Channel FD commands */
 #define LTTNG_UST_STREAM			_UST_CMD(0x60)
 #define LTTNG_UST_EVENT			\
 	_UST_CMDW(0x61, struct lttng_ust_event)
 
-/* Event and Channel FD ioctl */
+/* Event and Channel FD commands */
 #define LTTNG_UST_CONTEXT			\
 	_UST_CMDW(0x70, struct lttng_ust_context)
 
-/* Event, Channel and Session ioctl */
+/* Event, Channel and Session commands */
 #define LTTNG_UST_ENABLE			_UST_CMD(0x80)
 #define LTTNG_UST_DISABLE			_UST_CMD(0x81)
 
-void lttng_ust_abi_exit(void);
-int lttng_abi_create_session(void);
+#define LTTNG_UST_ROOT_HANDLE	0
+
+struct obj;
+
+struct objd_ops {
+	long (*cmd)(int objd, unsigned int cmd, unsigned long arg);
+	int (*release)(int objd);
+};
+
+/* Create root handle. Always ID 0. */
+int lttng_abi_create_root_handle(void);
+
+const struct objd_ops *objd_ops(int id);
 int objd_unref(int id);
+
+void lttng_ust_abi_exit(void);
 void ltt_events_exit(void);
 
 #endif /* _LTTNG_UST_ABI_H */

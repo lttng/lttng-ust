@@ -46,32 +46,6 @@
  */
 #define LTTCOMM_ERR_INDEX(code) (code - LTTCOMM_OK)
 
-enum lttcomm_ust_command {
-	UST_CREATE_SESSION,
-	UST_VERSION,
-	UST_LIST_TRACEPOINTS,
-	UST_WAIT_QUIESCENT,
-	UST_CALIBRATE,
-
-	/* Apply on session handle */
-	UST_METADATA,	/* release with UST_RELEASE_CHANNEL */
-	UST_CHANNEL,
-	UST_SESSION_START,
-	UST_SESSION_STOP,
-
-	/* Apply on channel handle */
-	UST_STREAM,
-	UST_EVENT,
-
-	/* Apply on event and channel handle */
-	UST_CONTEXT,
-
-	/* Apply on event, channel and session handle */
-	UST_RELEASE,
-	UST_ENABLE,
-	UST_DISABLE,
-};
-
 /*
  * lttcomm error code.
  */
@@ -136,8 +110,8 @@ enum lttcomm_return_code {
  * Data structure for the commands sent from sessiond to UST.
  */
 struct lttcomm_ust_msg {
-	uint32_t cmd_type;    /* enum lttcomm_ust_command */
 	uint32_t handle;
+	uint32_t cmd;
 	union {
 		struct lttng_ust_tracer_version version;
 		struct lttng_ust_channel channel;
@@ -151,7 +125,8 @@ struct lttcomm_ust_msg {
  * cmd_type is sent back in the reply for validation.
  */
 struct lttcomm_ust_reply {
-	uint32_t cmd_type;	/* enum lttcomm_sessiond_command */
+	uint32_t handle;
+	uint32_t cmd;
 	uint32_t ret_code;	/* enum enum lttcomm_return_code */
 	uint32_t ret_val;	/* return value */
 	union {

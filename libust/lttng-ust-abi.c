@@ -37,13 +37,6 @@
  * by the caller.
  */
 
-struct obj;
-
-struct objd_ops {
-	long (*cmd)(int objd, unsigned int cmd, unsigned long arg);
-	int (*release)(int objd);
-};
-
 struct obj {
 	union {
 		struct {
@@ -131,10 +124,10 @@ void objd_set_private(int id, void *private_data)
 	obj->u.s.private_data = private_data;
 }
 
-static
 const struct objd_ops *objd_ops(int id)
 {
 	struct obj *obj = _objd_get(id);
+
 	if (!obj)
 		return NULL;
 	return obj->u.s.ops;
@@ -212,6 +205,15 @@ enum channel_type {
 	PER_CPU_CHANNEL,
 	METADATA_CHANNEL,
 };
+
+int lttng_abi_create_root_handle(void)
+{
+	int root_handle;
+
+	root_handle = objd_alloc(NULL, &lttng_ops);
+	assert(root_handle == 0);
+	return root_handle;
+}
 
 int lttng_abi_create_session(void)
 {
@@ -355,7 +357,6 @@ create_error:
 	return;		/* not allowed to return error */
 }
 
-static
 int lttng_abi_create_channel(int session_objd,
 			     struct lttng_ust_channel *chan_param,
 			     enum channel_type channel_type)
