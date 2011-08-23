@@ -249,7 +249,7 @@ restart:
 		case sizeof(lum):
 			DBG("message received\n");
 			ret = handle_message(sock, &lum);
-			if (ret) {
+			if (ret < 0) {
 				ERR("Error handling message\n");
 			}
 			continue;
