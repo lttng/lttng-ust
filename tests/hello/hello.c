@@ -40,6 +40,7 @@ int init_int_handler(void)
 	int result;
 	struct sigaction act;
 
+	memset(&act, 0, sizeof(act));
 	result = sigemptyset(&act.sa_mask);
 	if (result == -1) {
 		perror("sigemptyset");

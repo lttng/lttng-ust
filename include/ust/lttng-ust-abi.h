@@ -94,5 +94,8 @@ struct lttng_ust_context {
 #define LTTNG_UST_DISABLE			_UST_CMD(0x81)
 
 void lttng_ust_abi_exit(void);
+int lttng_abi_create_session(void);
+int objd_unref(int id);
+void ltt_events_exit(void);
 
 #endif /* _LTTNG_UST_ABI_H */

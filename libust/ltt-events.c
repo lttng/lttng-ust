@@ -50,10 +50,10 @@ struct ltt_session *ltt_session_create(void)
 {
 	struct ltt_session *session;
 
-	pthread_mutex_lock(&sessions_mutex);
 	session = zmalloc(sizeof(struct ltt_session));
 	if (!session)
 		return NULL;
+	pthread_mutex_lock(&sessions_mutex);
 	CDS_INIT_LIST_HEAD(&session->chan);
 	CDS_INIT_LIST_HEAD(&session->events);
 	uuid_generate(session->uuid);
@@ -870,8 +870,7 @@ void ltt_transport_unregister(struct ltt_transport *transport)
 	pthread_mutex_unlock(&sessions_mutex);
 }
 
-static
-void __attribute__((destructor)) ltt_events_exit(void)
+void ltt_events_exit(void)
 {
 	struct ltt_session *session, *tmpsession;
 

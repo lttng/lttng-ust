@@ -153,11 +153,12 @@ void objd_ref(int id)
 	obj->u.s.f_count++;
 }
 
-static
-void objd_unref(int id)
+int objd_unref(int id)
 {
 	struct obj *obj = _objd_get(id);
 
+	if (!obj)
+		return -EINVAL;
 	if (!(--obj->u.s.f_count)) {
 		const struct objd_ops *ops = objd_ops(id);
 
@@ -165,6 +166,7 @@ void objd_unref(int id)
 			ops->release(id);
 		objd_free(id);
 	}
+	return 0;
 }
 
 static
@@ -189,7 +191,6 @@ enum channel_type {
 	METADATA_CHANNEL,
 };
 
-static
 int lttng_abi_create_session(void)
 {
 	struct ltt_session *session;
@@ -396,7 +397,12 @@ int lttng_abi_create_channel(int session_objd,
 	return chan_objd;
 
 chan_error:
-	objd_unref(chan_objd);
+	{
+		int err;
+
+		err = objd_unref(chan_objd);
+		assert(!err);
+	}
 objd_error:
 	return ret;
 }
@@ -454,17 +460,20 @@ long lttng_session_cmd(int objd, unsigned int cmd, unsigned long arg)
  * individual file is released).
  */
 static
-int lttng_session_release(int objd)
+int lttng_release_session(int objd)
 {
 	struct ltt_session *session = objd_private(objd);
 
-	if (session)
+	if (session) {
 		ltt_session_destroy(session);
-	return 0;
+		return 0;
+	} else {
+		return -EINVAL;
+	}
 }
 
 static const struct objd_ops lttng_session_ops = {
-	.release = lttng_session_release,
+	.release = lttng_release_session,
 	.cmd = lttng_session_cmd,
 };
 
@@ -527,7 +536,12 @@ int lttng_abi_create_event(int channel_objd,
 	return event_objd;
 
 event_error:
-	objd_unref(event_objd);
+	{
+		int err;
+
+		err = objd_unref(event_objd);
+		assert(!err);
+	}
 objd_error:
 	return ret;
 }
@@ -639,7 +653,7 @@ int lttng_channel_release(int objd)
 	struct ltt_channel *channel = objd_private(objd);
 
 	if (channel)
-		objd_unref(channel->session->objd);
+		return objd_unref(channel->session->objd);
 	return 0;
 }
 
@@ -694,7 +708,7 @@ int lttng_event_release(int objd)
 	struct ltt_event *event = objd_private(objd);
 
 	if (event)
-		objd_unref(event->chan->objd);
+		return objd_unref(event->chan->objd);
 	return 0;
 }
 
@@ -706,6 +720,5 @@ static const struct objd_ops lttng_event_ops = {
 
 void lttng_ust_abi_exit(void)
 {
-	/* TODO: teardown socket */
 	objd_table_destroy();
 }

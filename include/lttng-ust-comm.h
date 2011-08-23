@@ -48,7 +48,6 @@
 
 enum lttcomm_ust_command {
 	UST_CREATE_SESSION,
-	UST_RELEASE_SESSION,
 	UST_VERSION,
 	UST_LIST_TRACEPOINTS,
 	UST_WAIT_QUIESCENT,
@@ -57,21 +56,18 @@ enum lttcomm_ust_command {
 	/* Apply on session handle */
 	UST_METADATA,	/* release with UST_RELEASE_CHANNEL */
 	UST_CHANNEL,
-	UST_RELEASE_CHANNEL,
 	UST_SESSION_START,
 	UST_SESSION_STOP,
 
 	/* Apply on channel handle */
 	UST_STREAM,
-	UST_RELEASE_STREAM,
 	UST_EVENT,
-	UST_RELEASE_EVENT,
 
 	/* Apply on event and channel handle */
 	UST_CONTEXT,
-	UST_RELEASE_CONTEXT,
 
 	/* Apply on event, channel and session handle */
+	UST_RELEASE,
 	UST_ENABLE,
 	UST_DISABLE,
 };

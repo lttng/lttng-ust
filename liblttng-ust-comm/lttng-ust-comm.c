@@ -273,7 +273,14 @@ ssize_t lttcomm_send_unix_sock(int sock, void *buf, size_t len)
 	msg.msg_iov = iov;
 	msg.msg_iovlen = 1;
 
-	ret = sendmsg(sock, &msg, 0);
+	/*
+	 * Using the MSG_NOSIGNAL when sending data from sessiond to
+	 * libust, so libust does not receive an unhandled SIGPIPE or
+	 * SIGURG. The sessiond receiver side can be made more resilient
+	 * by ignoring SIGPIPE, but we don't have this luxury on the
+	 * libust side.
+	 */
+	ret = sendmsg(sock, &msg, MSG_NOSIGNAL);
 	if (ret < 0) {
 		perror("sendmsg");
 	}
