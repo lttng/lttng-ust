@@ -209,6 +209,7 @@ restart:
 	if (ret < 0) {
 		ERR("Error connecting to global apps socket");
 		pthread_mutex_unlock(&lttng_ust_comm_mutex);
+		sleep(5);
 		goto restart;
 	} else {
 		sock_info->socket = sock = ret;
