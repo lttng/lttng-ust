@@ -165,7 +165,9 @@ struct ltt_channel *_channel_create(const char *name,
 	ltt_chan->handle = channel_create(&client_config, name, ltt_chan, buf_addr,
 			      subbuf_size, num_subbuf, switch_timer_interval,
 			      read_timer_interval);
-	ltt_chan->chan = shmp(handle, handle->chan);
+	if (!ltt_chan->handle)
+		return NULL;
+	ltt_chan->chan = shmp(ltt_chan->handle, ltt_chan->handle->chan);
 	return ltt_chan;
 }
 
