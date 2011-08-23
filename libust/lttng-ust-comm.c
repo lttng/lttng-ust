@@ -339,30 +339,44 @@ quit:
 	return NULL;
 }
 
+/*
+ * Return values: -1: don't wait. 0: wait forever. 1: timeout wait.
+ */
 static
 int get_timeout(struct timespec *constructor_timeout)
 {
-	struct timespec constructor_delay =
-		{
-			.tv_sec = LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_S,
-		  	.tv_nsec = LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_NS,
-		};
-	struct timespec realtime;
+	long constructor_delay_ms = LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_MS;
+	char *str_delay;
 	int ret;
 
-	ret = clock_gettime(CLOCK_REALTIME, &realtime);
-	if (ret)
-		return ret;
+	str_delay = getenv("UST_REGISTER_TIMEOUT");
+	if (str_delay) {
+		constructor_delay_ms = strtol(str_delay, NULL, 10);
+	}
 
-	constructor_timeout->tv_sec =
-		realtime.tv_sec + constructor_delay.tv_sec;
+	switch (constructor_delay_ms) {
+	case -1:/* fall-through */
+	case 0:
+		return constructor_delay_ms;
+	default:
+		break;
+	}
+
+	/*
+	 * If we are unable to find the current time, don't wait.
+	 */
+	ret = clock_gettime(CLOCK_REALTIME, constructor_timeout);
+	if (ret) {
+		return -1;
+	}
+
 	constructor_timeout->tv_nsec =
-		constructor_delay.tv_nsec + realtime.tv_nsec;
+		constructor_timeout->tv_nsec + (constructor_delay_ms * 1000000UL);
 	if (constructor_timeout->tv_nsec >= 1000000000UL) {
 		constructor_timeout->tv_sec++;
 		constructor_timeout->tv_nsec -= 1000000000UL;
 	}
-	return 0;
+	return 1;
 }
 
 /*
@@ -374,12 +388,12 @@ int get_timeout(struct timespec *constructor_timeout)
 void __attribute__((constructor)) lttng_ust_comm_init(void)
 {
 	struct timespec constructor_timeout;
+	int timeout_mode;
 	int ret;
 
 	init_usterr();
 
-	ret = get_timeout(&constructor_timeout);
-	assert(!ret);
+	timeout_mode = get_timeout(&constructor_timeout);
 
 	ret = sem_init(&constructor_wait, 0, 2);
 	assert(!ret);
@@ -401,14 +415,23 @@ void __attribute__((constructor)) lttng_ust_comm_init(void)
 	ret = pthread_create(&local_apps.ust_listener, NULL,
 			ust_listener_thread, &local_apps);
 
-	ret = sem_timedwait(&constructor_wait, &constructor_timeout);
-	if (ret < 0 && errno == ETIMEDOUT) {
-		ERR("Timed out waiting for ltt-sessiond");
-	} else {
+	switch (timeout_mode) {
+	case 1:	/* timeout wait */
+		ret = sem_timedwait(&constructor_wait, &constructor_timeout);
+		if (ret < 0 && errno == ETIMEDOUT) {
+			ERR("Timed out waiting for ltt-sessiond");
+		} else {
+			assert(!ret);
+		}
+		break;
+	case 0:	/* wait forever */
+		ret = sem_wait(&constructor_wait);
 		assert(!ret);
+		break;
+	case -1:/* no timeout */
+		break;
 	}
 	pthread_mutex_unlock(&lttng_ust_comm_mutex);
-
 }
 
 void __attribute__((destructor)) lttng_ust_comm_exit(void)

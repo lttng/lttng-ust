@@ -31,11 +31,12 @@
 #include <ust/lttng-ust-abi.h>
 
 /*
- * TODO: allow override of constructor timeout with an environment
- * variable.
+ * Default timeout the application waits for the sessiond to send its
+ * "register done" command. Can be overridden with the environment
+ * variable "UST_REGISTER_TIMEOUT". Note that if the sessiond is not
+ * found, the application proceeds directly without any delay.
  */
-#define LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_S		3
-#define LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_NS	0
+#define LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_MS	3000
 
 #define LTTNG_RUNDIR                        "/var/run/lttng"
 

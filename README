@@ -45,10 +45,18 @@ USAGE:
   - Link application with -lust.
   - (TODO: start tracing with the "lttng" command from lttng-tools)
 
-  Note: libust debug can be activated by either of the following means:
-    - Setting the environment variable "UST_DEBUG" when launching the
-      application.
-    - Compiling libust with -DUST_DEBUG.
+ENVIRONMENT VARIABLES:
+
+  - libust debug can be activated by setting the environment variable
+    "UST_DEBUG" when launching the application. It can also be enabled
+    at compile-time by compiling libust with -DUST_DEBUG.
+
+  - The environment variable "UST_REGISTER_TIMEOUT" can be used to
+    specify how long the applications should wait for sessiond
+    "registration done" command before proceeding to execute the main
+    program. The default is 3000ms (3 seconds). The timeout value is
+    specified in milliseconds. The value -1 means "don't wait". The value
+    0 means "wait forever".
 
 
 TRACE VIEWER:
