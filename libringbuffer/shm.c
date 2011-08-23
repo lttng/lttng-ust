@@ -98,8 +98,8 @@ struct shm_object *shm_object_table_append(struct shm_object_table *table,
 	obj->memory_map = memory_map;
 	obj->memory_map_size = memory_map_size;
 	obj->allocated_len = 0;
+	obj->index = table->allocated_len++;
 
-	table->allocated_len++;
 	return obj;
 
 error_mmap:
