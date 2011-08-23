@@ -120,7 +120,6 @@ error_fcntl:
 		}
 	}
 error_pipe:
-	free(obj);
 	return NULL;
 	
 }

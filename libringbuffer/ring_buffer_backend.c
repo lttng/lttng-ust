@@ -278,6 +278,8 @@ int channel_backend_init(struct channel_backend *chanb,
 			struct shm_object *shmobj;
 
 			shmobj = shm_object_table_append(handle->table, shmsize);
+			if (!shmobj)
+				goto end;
 			align_shm(shmobj, __alignof__(struct lib_ring_buffer));
 			set_shmp(chanb->buf[i].shmp, zalloc_shm(shmobj, sizeof(struct lib_ring_buffer)));
 			buf = shmp(handle, chanb->buf[i].shmp);
@@ -294,6 +296,8 @@ int channel_backend_init(struct channel_backend *chanb,
 		struct lib_ring_buffer *buf;
 
 		shmobj = shm_object_table_append(handle->table, shmsize);
+		if (!shmobj)
+			goto end;
 		align_shm(shmobj, __alignof__(struct lib_ring_buffer));
 		set_shmp(chanb->buf[0].shmp, zalloc_shm(shmobj, sizeof(struct lib_ring_buffer)));
 		buf = shmp(handle, chanb->buf[0].shmp);
