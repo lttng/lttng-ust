@@ -257,7 +257,7 @@ int ltt_is_disabled(struct channel *chan)
 }
 
 static struct ltt_transport ltt_relay_transport = {
-	.name = "relay-" RING_BUFFER_MODE_TEMPLATE_STRING,
+	.name = "relay-" RING_BUFFER_MODE_TEMPLATE_STRING "-mmap",
 	.ops = {
 		.channel_create = _channel_create,
 		.channel_destroy = ltt_channel_destroy,

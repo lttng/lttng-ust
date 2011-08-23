@@ -215,6 +215,7 @@ int lttng_abi_create_root_handle(void)
 	return root_handle;
 }
 
+static
 int lttng_abi_create_session(void)
 {
 	struct ltt_session *session;
