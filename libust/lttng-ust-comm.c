@@ -27,6 +27,8 @@
 #include <lttng-ust-comm.h>
 #include <ust/usterr-signal-safe.h>
 #include <pthread.h>
+#include <semaphore.h>
+#include <time.h>
 #include <assert.h>
 
 /*
@@ -39,9 +41,22 @@ static pthread_mutex_t lttng_ust_comm_mutex = PTHREAD_MUTEX_INITIALIZER;
 static int lttng_ust_comm_should_quit;
 
 /*
+ * Wait for either of these before continuing to the main
+ * program:
+ * - the register_done message from sessiond daemon
+ *   (will let the sessiond daemon enable sessions before main
+ *   starts.)
+ * - sessiond daemon is not reachable.
+ * - timeout (ensuring applications are resilient to session
+ *   daemon problems).
+ */
+static sem_t constructor_wait;
+
+/*
  * Info about socket and associated listener thread.
  */
 struct sock_info {
+	const char *name;
 	char sock_path[PATH_MAX];
 	int socket;
 	pthread_t ust_listener;	/* listener thread */
@@ -50,6 +65,7 @@ struct sock_info {
 
 /* Socket from app (connect) to session daemon (listen) for communication */
 struct sock_info global_apps = {
+	.name = "global",
 	.sock_path = DEFAULT_GLOBAL_APPS_UNIX_SOCK,
 	.socket = -1,
 	.root_handle = -1,
@@ -58,6 +74,7 @@ struct sock_info global_apps = {
 /* TODO: allow global_apps_sock_path override */
 
 struct sock_info local_apps = {
+	.name = "local",
 	.socket = -1,
 	.root_handle = -1,
 };
@@ -120,7 +137,18 @@ int send_reply(int sock, struct lttcomm_ust_reply *lur)
 }
 
 static
-int handle_message(int sock, struct lttcomm_ust_msg *lum)
+int handle_register_done(void)
+{
+	int ret;
+
+	ret = sem_post(&constructor_wait);
+	assert(!ret);
+	return 0;
+}
+
+static
+int handle_message(struct sock_info *sock_info,
+		int sock, struct lttcomm_ust_msg *lum)
 {
 	int ret = 0;
 	const struct objd_ops *ops;
@@ -142,6 +170,12 @@ int handle_message(int sock, struct lttcomm_ust_msg *lum)
 	}
 
 	switch (lum->cmd) {
+	case LTTNG_UST_REGISTER_DONE:
+		if (lum->handle == LTTNG_UST_ROOT_HANDLE)
+			ret = handle_register_done();
+		else
+			ret = -EINVAL;
+		break;
 	case LTTNG_UST_RELEASE:
 		if (lum->handle == LTTNG_UST_ROOT_HANDLE)
 			ret = -EPERM;
@@ -218,7 +252,7 @@ restart:
 	if (sock_info->socket != -1) {
 		ret = close(sock_info->socket);
 		if (ret) {
-			ERR("Error closing local apps socket");
+			ERR("Error closing %s apps socket", sock_info->name);
 		}
 		sock_info->socket = -1;
 	}
@@ -228,7 +262,13 @@ restart:
 	/* Register */
 	ret = lttcomm_connect_unix_sock(sock_info->sock_path);
 	if (ret < 0) {
-		ERR("Error connecting to global apps socket");
+		ERR("Error connecting to %s apps socket", sock_info->name);
+		/*
+		 * If we cannot find the sessiond daemon, don't delay
+		 * constructor execution.
+		 */
+		ret = handle_register_done();
+		assert(!ret);
 		pthread_mutex_unlock(&lttng_ust_comm_mutex);
 		sleep(5);
 		goto restart;
@@ -252,7 +292,13 @@ restart:
 
 	ret = register_app_to_sessiond(sock);
 	if (ret < 0) {
-		ERR("Error registering app to local apps socket");
+		ERR("Error registering to %s apps socket", sock_info->name);
+		/*
+		 * If we cannot register to the sessiond daemon, don't
+		 * delay constructor execution.
+		 */
+		ret = handle_register_done();
+		assert(!ret);
 		pthread_mutex_unlock(&lttng_ust_comm_mutex);
 		sleep(5);
 		goto restart;
@@ -266,23 +312,23 @@ restart:
 		len = lttcomm_recv_unix_sock(sock, &lum, sizeof(lum));
 		switch (len) {
 		case 0:	/* orderly shutdown */
-			DBG("ltt-sessiond has performed an orderly shutdown\n");
+			DBG("%s ltt-sessiond has performed an orderly shutdown\n", sock_info->name);
 			goto end;
 		case sizeof(lum):
 			DBG("message received\n");
-			ret = handle_message(sock, &lum);
+			ret = handle_message(sock_info, sock, &lum);
 			if (ret < 0) {
-				ERR("Error handling message\n");
+				ERR("Error handling message for %s socket", sock_info->name);
 			}
 			continue;
 		case -1:
 			if (errno == ECONNRESET) {
-				ERR("remote end closed connection\n");
+				ERR("%s remote end closed connection\n", sock_info->name);
 				goto end;
 			}
 			goto end;
 		default:
-			ERR("incorrect message size: %zd\n", len);
+			ERR("incorrect message size (%s socket): %zd\n", sock_info->name, len);
 			continue;
 		}
 
@@ -293,6 +339,31 @@ quit:
 	return NULL;
 }
 
+static
+int get_timeout(struct timespec *constructor_timeout)
+{
+	struct timespec constructor_delay =
+		{
+			.tv_sec = LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_S,
+		  	.tv_nsec = LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_NS,
+		};
+	struct timespec realtime;
+	int ret;
+
+	ret = clock_gettime(CLOCK_REALTIME, &realtime);
+	if (ret)
+		return ret;
+
+	constructor_timeout->tv_sec =
+		realtime.tv_sec + constructor_delay.tv_sec;
+	constructor_timeout->tv_nsec =
+		constructor_delay.tv_nsec + realtime.tv_nsec;
+	if (constructor_timeout->tv_nsec >= 1000000000UL) {
+		constructor_timeout->tv_sec++;
+		constructor_timeout->tv_nsec -= 1000000000UL;
+	}
+	return 0;
+}
 
 /*
  * sessiond monitoring thread: monitor presence of global and per-user
@@ -302,20 +373,42 @@ quit:
 
 void __attribute__((constructor)) lttng_ust_comm_init(void)
 {
+	struct timespec constructor_timeout;
 	int ret;
 
 	init_usterr();
+
+	ret = get_timeout(&constructor_timeout);
+	assert(!ret);
+
+	ret = sem_init(&constructor_wait, 0, 2);
+	assert(!ret);
 
 	ret = setup_local_apps_socket();
 	if (ret) {
 		ERR("Error setting up to local apps socket");
 	}
-#if 0
+
+	/*
+	 * Wait for the pthread cond to let us continue to main program
+	 * execution. Hold mutex across thread creation, so we start
+	 * waiting for the condition before the threads can signal its
+	 * completion.
+	 */
+	pthread_mutex_lock(&lttng_ust_comm_mutex);
 	ret = pthread_create(&global_apps.ust_listener, NULL,
 			ust_listener_thread, &global_apps);
-#endif //0
 	ret = pthread_create(&local_apps.ust_listener, NULL,
 			ust_listener_thread, &local_apps);
+
+	ret = sem_timedwait(&constructor_wait, &constructor_timeout);
+	if (ret < 0 && errno == ETIMEDOUT) {
+		ERR("Timed out waiting for ltt-sessiond");
+	} else {
+		assert(!ret);
+	}
+	pthread_mutex_unlock(&lttng_ust_comm_mutex);
+
 }
 
 void __attribute__((destructor)) lttng_ust_comm_exit(void)

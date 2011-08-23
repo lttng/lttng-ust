@@ -30,6 +30,13 @@
 #include <lttng/lttng.h>
 #include <ust/lttng-ust-abi.h>
 
+/*
+ * TODO: allow override of constructor timeout with an environment
+ * variable.
+ */
+#define LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_S		3
+#define LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_NS	0
+
 #define LTTNG_RUNDIR                        "/var/run/lttng"
 
 /* Default unix socket path */
