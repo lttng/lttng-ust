@@ -34,7 +34,7 @@ struct shm_object *shm_object_table_append(struct shm_object_table *table,
 
 	if (table->allocated_len >= table->size)
 		return NULL;
-	obj = &table->objects[table->allocated_len++];
+	obj = &table->objects[table->allocated_len];
 
 	/* wait_fd: create pipe */
 	ret = pipe(waitfd);
@@ -55,7 +55,7 @@ struct shm_object *shm_object_table_append(struct shm_object_table *table,
 		PERROR("fcntl");
 		goto error_fcntl;
 	}
-	*obj->wait_fd = *waitfd;
+	memcpy(obj->wait_fd, waitfd, sizeof(waitfd));
 
 	/* shm_fd: create shm */
 
@@ -98,6 +98,8 @@ struct shm_object *shm_object_table_append(struct shm_object_table *table,
 	obj->memory_map = memory_map;
 	obj->memory_map_size = memory_map_size;
 	obj->allocated_len = 0;
+
+	table->allocated_len++;
 	return obj;
 
 error_mmap:
