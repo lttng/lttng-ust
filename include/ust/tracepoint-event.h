@@ -28,11 +28,13 @@
  *     TRACEPOINT_SYSTEM.h. This macro may be defined to tell
  *     define_trace.h what file to include.  Note, leave off the ".h".
  *
- * TRACEPOINT_INCLUDE_PATH if the path is something other than core
- *     kernel include/trace then this macro can define the path to use.
- *     Note, the path is relative to tracepoint_event.h, not the file
- *     including it. Full path names for out of tree modules must be
- *     used.
+ * TRACEPOINT_INCLUDE_PATH if the path is something other than within
+ *     the system's include/tracepoint/ path, then this macro can define
+ *     the path to use. This path is relative to tracepoint-event.h, or
+ *     to the include search path. Trick: Use a
+ *       #define TRACEPOINT_INCLUDE_PATH .
+ *     combined with -Ipath_to_header as compiler argument to allow
+ *     searching for a header within your project build tree.
  */
 
 #ifdef TRACEPOINT_CREATE_PROBES
