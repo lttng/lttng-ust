@@ -277,13 +277,13 @@ static struct ltt_transport ltt_relay_transport = {
 static
 void __attribute__((constructor)) ltt_ring_buffer_client_init(void)
 {
-	printf("LTT : ltt ring buffer client init\n");
+	DBG("LTT : ltt ring buffer client init\n");
 	ltt_transport_register(&ltt_relay_transport);
 }
 
 static
 void __attribute__((destructor)) ltt_ring_buffer_client_exit(void)
 {
-	printf("LTT : ltt ring buffer client exit\n");
+	DBG("LTT : ltt ring buffer client exit\n");
 	ltt_transport_unregister(&ltt_relay_transport);
 }
