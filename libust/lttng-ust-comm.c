@@ -95,9 +95,30 @@ int register_app_to_sessiond(int socket)
 }
 
 static
-int handle_message(int sock, struct lttcomm_ust_msg *lum)
+int send_reply(int sock, struct lttcomm_ust_reply *lur)
 {
 	ssize_t len;
+
+	len = lttcomm_send_unix_sock(sock, &lur, sizeof(lur));
+	switch (len) {
+	case sizeof(lur):
+		DBG("message successfully sent");
+		return 0;
+	case -1:
+		if (errno == ECONNRESET) {
+			printf("remote end closed connection\n");
+			return 0;
+		}
+		return -1;
+	default:
+		printf("incorrect message size: %zd\n", len);
+		return -1;
+	}
+}
+
+static
+int handle_message(int sock, struct lttcomm_ust_msg *lum)
+{
 	int ret = 0;
 
 	pthread_mutex_lock(&lttng_ust_comm_mutex);
@@ -115,7 +136,6 @@ int handle_message(int sock, struct lttcomm_ust_msg *lum)
 		DBG("Handling create session message");
 		memset(&lur, 0, sizeof(lur));
 		lur.cmd_type = UST_CREATE_SESSION;
-
 		ret = lttng_abi_create_session();
 		if (ret >= 0) {
 			lur.ret_val = ret;
@@ -123,24 +143,7 @@ int handle_message(int sock, struct lttcomm_ust_msg *lum)
 		} else {
 			lur.ret_code = LTTCOMM_SESSION_FAIL;
 		}
-		len = lttcomm_send_unix_sock(sock, &lur, sizeof(lur));
-		switch (len) {
-		case sizeof(lur):
-			DBG("message successfully sent");
-			break;
-		case -1:
-			if (errno == ECONNRESET) {
-				printf("remote end closed connection\n");
-				ret = 0;
-				goto end;
-			}
-			ret = -1;
-			goto end;
-		default:
-			printf("incorrect message size: %zd\n", len);
-			ret = -1;
-			goto end;
-		}
+		ret = send_reply(sock, &lur);
 		break;
 	}
 	case UST_RELEASE:
@@ -151,31 +154,13 @@ int handle_message(int sock, struct lttcomm_ust_msg *lum)
 			lum->handle);
 		memset(&lur, 0, sizeof(lur));
 		lur.cmd_type = UST_RELEASE;
-
 		ret = objd_unref(lum->handle);
 		if (!ret) {
 			lur.ret_code = LTTCOMM_OK;
 		} else {
 			lur.ret_code = LTTCOMM_ERR;
 		}
-		len = lttcomm_send_unix_sock(sock, &lur, sizeof(lur));
-		switch (len) {
-		case sizeof(lur):
-			DBG("message successfully sent\n");
-			break;
-		case -1:
-			if (errno == ECONNRESET) {
-				printf("remote end closed connection\n");
-				ret = 0;
-				goto end;
-			}
-			ret = -1;
-			goto end;
-		default:
-			printf("incorrect message size: %zd\n", len);
-			ret = -1;
-			goto end;
-		}
+		ret = send_reply(sock, &lur);
 		break;
 	}
 	default:
