@@ -84,9 +84,7 @@
 
 #include TRACEPOINT_INCLUDE(TRACEPOINT_INCLUDE_FILE)
 
-#ifndef CONFIG_NO_EVENT_TRACING
 #include <ust/lttng-tracepoint-event.h>
-#endif
 
 #undef TRACEPOINT_EVENT
 #undef TRACEPOINT_EVENT_CLASS
