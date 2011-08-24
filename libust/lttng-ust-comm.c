@@ -30,6 +30,7 @@
 #include <semaphore.h>
 #include <time.h>
 #include <assert.h>
+#include <urcu/uatomic.h>
 
 /*
  * communication thread mutex. Held when handling a command, also held
@@ -51,6 +52,7 @@ static int lttng_ust_comm_should_quit;
  *   daemon problems).
  */
 static sem_t constructor_wait;
+static int sem_count = { 2 };
 
 /*
  * Info about socket and associated listener thread.
@@ -141,8 +143,11 @@ int handle_register_done(void)
 {
 	int ret;
 
-	ret = sem_post(&constructor_wait);
-	assert(!ret);
+	ret = uatomic_add_return(&sem_count, -1);
+	if (ret == 0) {
+		ret = sem_post(&constructor_wait);
+		assert(!ret);
+	}
 	return 0;
 }
 
@@ -369,9 +374,9 @@ int get_timeout(struct timespec *constructor_timeout)
 	if (ret) {
 		return -1;
 	}
-
-	constructor_timeout->tv_nsec =
-		constructor_timeout->tv_nsec + (constructor_delay_ms * 1000000UL);
+	constructor_timeout->tv_sec += constructor_delay_ms / 1000UL;
+	constructor_timeout->tv_nsec +=
+		(constructor_delay_ms % 1000UL) * 1000000UL;
 	if (constructor_timeout->tv_nsec >= 1000000000UL) {
 		constructor_timeout->tv_sec++;
 		constructor_timeout->tv_nsec -= 1000000000UL;
@@ -395,7 +400,7 @@ void __attribute__((constructor)) lttng_ust_comm_init(void)
 
 	timeout_mode = get_timeout(&constructor_timeout);
 
-	ret = sem_init(&constructor_wait, 0, 2);
+	ret = sem_init(&constructor_wait, 0, 0);
 	assert(!ret);
 
 	ret = setup_local_apps_socket();
@@ -403,13 +408,6 @@ void __attribute__((constructor)) lttng_ust_comm_init(void)
 		ERR("Error setting up to local apps socket");
 	}
 
-	/*
-	 * Wait for the pthread cond to let us continue to main program
-	 * execution. Hold mutex across thread creation, so we start
-	 * waiting for the condition before the threads can signal its
-	 * completion.
-	 */
-	pthread_mutex_lock(&lttng_ust_comm_mutex);
 	ret = pthread_create(&global_apps.ust_listener, NULL,
 			ust_listener_thread, &global_apps);
 	ret = pthread_create(&local_apps.ust_listener, NULL,
@@ -417,7 +415,10 @@ void __attribute__((constructor)) lttng_ust_comm_init(void)
 
 	switch (timeout_mode) {
 	case 1:	/* timeout wait */
-		ret = sem_timedwait(&constructor_wait, &constructor_timeout);
+		do {
+			ret = sem_timedwait(&constructor_wait,
+					&constructor_timeout);
+		} while (ret < 0 && errno == EINTR);
 		if (ret < 0 && errno == ETIMEDOUT) {
 			ERR("Timed out waiting for ltt-sessiond");
 		} else {
@@ -425,13 +426,14 @@ void __attribute__((constructor)) lttng_ust_comm_init(void)
 		}
 		break;
 	case -1:/* wait forever */
-		ret = sem_wait(&constructor_wait);
+		do {
+			ret = sem_wait(&constructor_wait);
+		} while (ret < 0 && errno == EINTR);
 		assert(!ret);
 		break;
 	case 0:	/* no timeout */
 		break;
 	}
-	pthread_mutex_unlock(&lttng_ust_comm_mutex);
 }
 
 void __attribute__((destructor)) lttng_ust_comm_exit(void)
