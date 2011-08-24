@@ -52,6 +52,9 @@ static int lttng_ust_comm_should_quit;
  *   daemon problems).
  */
 static sem_t constructor_wait;
+/*
+ * Doing this for both the global and local sessiond.
+ */
 static int sem_count = { 2 };
 
 /*
