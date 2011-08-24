@@ -55,8 +55,8 @@ ENVIRONMENT VARIABLES:
     specify how long the applications should wait for sessiond
     "registration done" command before proceeding to execute the main
     program. The default is 3000ms (3 seconds). The timeout value is
-    specified in milliseconds. The value -1 means "don't wait". The value
-    0 means "wait forever".
+    specified in milliseconds. The value 0 means "don't wait". The value
+    -1 means "wait forever".
 
 
 TRACE VIEWER:

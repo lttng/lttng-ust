@@ -424,11 +424,11 @@ void __attribute__((constructor)) lttng_ust_comm_init(void)
 			assert(!ret);
 		}
 		break;
-	case 0:	/* wait forever */
+	case -1:/* wait forever */
 		ret = sem_wait(&constructor_wait);
 		assert(!ret);
 		break;
-	case -1:/* no timeout */
+	case 0:	/* no timeout */
 		break;
 	}
 	pthread_mutex_unlock(&lttng_ust_comm_mutex);
