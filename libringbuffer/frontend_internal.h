@@ -386,6 +386,20 @@ void lib_ring_buffer_check_deliver(const struct lib_ring_buffer_config *config,
 					 * Wake-up the other end by
 					 * writing a null byte in the
 					 * pipe (non-blocking).
+					 * Important note: Because
+					 * writing into the pipe is
+					 * non-blocking (and therefore
+					 * we allow dropping wakeup
+					 * data, as long as there is
+					 * wakeup data present in the
+					 * pipe buffer to wake up the
+					 * consumer), the consumer
+					 * should perform the following
+					 * sequence for waiting:
+					 * 1) empty the pipe (reads).
+					 * 2) check if there is data in
+					 *    the buffer.
+					 * 3) wait on the pipe (poll).
 					 */
 					do {
 						ret = write(wakeup_fd, "", 1);
