@@ -76,10 +76,11 @@ int main(int argc, char **argv)
 
 	sleep(1);
 
-	for (i = 0; i < 50; i++) {
+	//for (i = 0; i < 50; i++) {
+	for (i = 0; i < 1000000; i++) {
 		tracepoint(ust_tests_hello_tptest, i, values,
 			   text, strlen(text), dbl, flt);
-		usleep(100000);
+		//usleep(100000);
 	}
 	return 0;
 }
