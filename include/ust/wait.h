@@ -38,7 +38,7 @@
 			}					\
 			__pollret = poll(NULL, 0, 10);	/* wait 10ms */	\
 			if (__pollret < 0) {			\
-				__ret = __pollret;		\
+				__ret = -errno;			\
 				break;				\
 			}					\
 			__timeout -= 10;			\
