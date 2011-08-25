@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2009-2010 - Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
- * Ring Buffer VFS file operations.
+ * Ring Buffer ABI operations.
  *
  * Dual LGPL v2.1/GPL v2 license.
  */
