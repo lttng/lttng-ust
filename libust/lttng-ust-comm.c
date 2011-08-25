@@ -165,9 +165,7 @@ int handle_register_done(struct sock_info *sock_info)
 		return 0;
 	sock_info->constructor_sem_posted = 1;
 	ret = uatomic_add_return(&sem_count, -1);
-	fprintf(stderr, "DEC ret %d\n", ret);
 	if (ret == 0) {
-		fprintf(stderr, "POST\n");
 		ret = sem_post(&constructor_wait);
 		assert(!ret);
 	}
