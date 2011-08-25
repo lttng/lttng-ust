@@ -30,7 +30,7 @@
 		int __timeout = _timeout;			\
 								\
 		for (;;) {					\
-			if (!(_cond))				\
+			if (_cond)				\
 				break;				\
 			if (__timeout <= 0) {			\
 				__ret = -ETIMEDOUT;		\

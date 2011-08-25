@@ -402,7 +402,7 @@ int lttng_metadata_printf(struct ltt_session *session,
 				ret != -ENOBUFS || !ret;
 			}),
 			LTTNG_METADATA_TIMEOUT_MSEC);
-		if (!waitret || waitret == -EINTR || ret) {
+		if (waitret == -ETIMEDOUT || waitret == -EINTR || ret) {
 			DBG("LTTng: Failure to write metadata to buffers (%s)\n",
 				waitret == -EINTR ? "interrupted" :
 					(ret == -ENOBUFS ? "timeout" : "I/O error"));
