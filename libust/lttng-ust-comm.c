@@ -122,6 +122,7 @@ int register_app_to_sessiond(int socket)
 		uint32_t major;
 		uint32_t minor;
 		pid_t pid;
+		pid_t ppid;
 		uid_t uid;
 		char name[16];	/* process name */
 	} reg_msg;
@@ -129,6 +130,7 @@ int register_app_to_sessiond(int socket)
 	reg_msg.major = LTTNG_UST_COMM_VERSION_MAJOR;
 	reg_msg.minor = LTTNG_UST_COMM_VERSION_MINOR;
 	reg_msg.pid = getpid();
+	reg_msg.ppid = getppid();
 	reg_msg.uid = getuid();
 	prctl_ret = prctl(PR_GET_NAME, (unsigned long) reg_msg.name, 0, 0, 0);
 	if (prctl_ret) {
