@@ -62,7 +62,7 @@ int lib_ring_buffer_backend_allocate(const struct lib_ring_buffer_config *config
 	/* Allocate backend pages array elements */
 	for (i = 0; i < num_subbuf_alloc; i++) {
 		align_shm(shmobj, __alignof__(struct lib_ring_buffer_backend_pages));
-		set_shmp(shmp(handle, bufb->array)[i].shmp,
+		set_shmp(shmp_index(handle, bufb->array, i)->shmp,
 			zalloc_shm(shmobj,
 				sizeof(struct lib_ring_buffer_backend_pages)));
 		if (!shmp(handle, shmp_index(handle, bufb->array, i)->shmp))
@@ -390,7 +390,7 @@ size_t lib_ring_buffer_read(struct lib_ring_buffer_backend *bufb, size_t offset,
 	CHAN_WARN_ON(chanb, offset >= chanb->buf_size);
 	CHAN_WARN_ON(chanb, config->mode == RING_BUFFER_OVERWRITE
 		     && subbuffer_id_is_noref(config, id));
-	memcpy(dest, shmp_index(handle, shmp(handle, rpages->shmp)->p, offset & ~(chanb->subbuf_size - 1)), len);
+	memcpy(dest, shmp_index(handle, shmp(handle, rpages->shmp)->p, offset & (chanb->subbuf_size - 1)), len);
 	return orig_len;
 }
 
@@ -426,7 +426,7 @@ int lib_ring_buffer_read_cstr(struct lib_ring_buffer_backend *bufb, size_t offse
 	CHAN_WARN_ON(chanb, offset >= chanb->buf_size);
 	CHAN_WARN_ON(chanb, config->mode == RING_BUFFER_OVERWRITE
 		     && subbuffer_id_is_noref(config, id));
-	str = shmp_index(handle, shmp(handle, rpages->shmp)->p, offset & ~(chanb->subbuf_size - 1));
+	str = shmp_index(handle, shmp(handle, rpages->shmp)->p, offset & (chanb->subbuf_size - 1));
 	string_len = strnlen(str, len);
 	if (dest && len) {
 		memcpy(dest, str, string_len);
@@ -460,7 +460,7 @@ void *lib_ring_buffer_read_offset_address(struct lib_ring_buffer_backend *bufb,
 	rpages = shmp_index(handle, bufb->array, sb_bindex);
 	CHAN_WARN_ON(chanb, config->mode == RING_BUFFER_OVERWRITE
 		     && subbuffer_id_is_noref(config, id));
-	return shmp_index(handle, shmp(handle, rpages->shmp)->p, offset & ~(chanb->subbuf_size - 1));
+	return shmp_index(handle, shmp(handle, rpages->shmp)->p, offset & (chanb->subbuf_size - 1));
 }
 
 /**
@@ -482,6 +482,7 @@ void *lib_ring_buffer_offset_address(struct lib_ring_buffer_backend *bufb,
 	struct channel_backend *chanb = &shmp(handle, bufb->chan)->backend;
 	const struct lib_ring_buffer_config *config = chanb->config;
 	unsigned long sb_bindex, id;
+	void *ret;
 
 	offset &= chanb->buf_size - 1;
 	sbidx = offset >> chanb->subbuf_size_order;
@@ -490,5 +491,5 @@ void *lib_ring_buffer_offset_address(struct lib_ring_buffer_backend *bufb,
 	rpages = shmp_index(handle, bufb->array, sb_bindex);
 	CHAN_WARN_ON(chanb, config->mode == RING_BUFFER_OVERWRITE
 		     && subbuffer_id_is_noref(config, id));
-	return shmp_index(handle, shmp(handle, rpages->shmp)->p, offset & ~(chanb->subbuf_size - 1));
+	return shmp_index(handle, shmp(handle, rpages->shmp)->p, offset & (chanb->subbuf_size - 1));
 }

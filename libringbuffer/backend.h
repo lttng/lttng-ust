@@ -88,7 +88,7 @@ void lib_ring_buffer_write(const struct lib_ring_buffer_config *config,
 	 */
 	CHAN_WARN_ON(chanb, offset >= chanb->buf_size);
 	lib_ring_buffer_do_copy(config,
-				shmp_index(handle, shmp(handle, rpages->shmp)->p, offset & ~(chanb->subbuf_size - 1)),
+				shmp_index(handle, shmp(handle, rpages->shmp)->p, offset & (chanb->subbuf_size - 1)),
 				src, len);
 	ctx->buf_offset += len;
 }
