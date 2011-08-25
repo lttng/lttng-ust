@@ -12,4 +12,8 @@
 
 #define RING_BUFFER_MODE_TEMPLATE		RING_BUFFER_DISCARD
 #define RING_BUFFER_MODE_TEMPLATE_STRING	"metadata"
+#define RING_BUFFER_MODE_TEMPLATE_INIT	\
+	ltt_ring_buffer_metadata_client_init
+#define RING_BUFFER_MODE_TEMPLATE_EXIT	\
+	ltt_ring_buffer_metadata_client_exit
 #include "ltt-ring-buffer-metadata-client.h"

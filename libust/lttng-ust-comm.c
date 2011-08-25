@@ -23,14 +23,21 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <errno.h>
-#include <ust/lttng-ust-abi.h>
-#include <lttng-ust-comm.h>
-#include <ust/usterr-signal-safe.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <time.h>
 #include <assert.h>
 #include <urcu/uatomic.h>
+
+#include <lttng-ust-comm.h>
+#include <ust/usterr-signal-safe.h>
+#include <ust/lttng-ust-abi.h>
+#include <ust/tracepoint.h>
+
+/*
+ * Has lttng ust comm constructor been called ?
+ */
+static int initialized;
 
 /*
  * communication thread mutex. Held when handling a command, also held
@@ -66,6 +73,7 @@ struct sock_info {
 	int socket;
 	pthread_t ust_listener;	/* listener thread */
 	int root_handle;
+	int constructor_sem_posted;;
 };
 
 /* Socket from app (connect) to session daemon (listen) for communication */
@@ -83,6 +91,13 @@ struct sock_info local_apps = {
 	.socket = -1,
 	.root_handle = -1,
 };
+
+extern void ltt_ring_buffer_client_overwrite_init(void);
+extern void ltt_ring_buffer_client_discard_init(void);
+extern void ltt_ring_buffer_metadata_client_init(void);
+extern void ltt_ring_buffer_client_overwrite_exit(void);
+extern void ltt_ring_buffer_client_discard_exit(void);
+extern void ltt_ring_buffer_metadata_client_exit(void);
 
 static
 int setup_local_apps_socket(void)
@@ -142,12 +157,17 @@ int send_reply(int sock, struct lttcomm_ust_reply *lur)
 }
 
 static
-int handle_register_done(void)
+int handle_register_done(struct sock_info *sock_info)
 {
 	int ret;
 
+	if (sock_info->constructor_sem_posted)
+		return 0;
+	sock_info->constructor_sem_posted = 1;
 	ret = uatomic_add_return(&sem_count, -1);
+	fprintf(stderr, "DEC ret %d\n", ret);
 	if (ret == 0) {
+		fprintf(stderr, "POST\n");
 		ret = sem_post(&constructor_wait);
 		assert(!ret);
 	}
@@ -180,7 +200,7 @@ int handle_message(struct sock_info *sock_info,
 	switch (lum->cmd) {
 	case LTTNG_UST_REGISTER_DONE:
 		if (lum->handle == LTTNG_UST_ROOT_HANDLE)
-			ret = handle_register_done();
+			ret = handle_register_done(sock_info);
 		else
 			ret = -EINVAL;
 		break;
@@ -275,7 +295,7 @@ restart:
 		 * If we cannot find the sessiond daemon, don't delay
 		 * constructor execution.
 		 */
-		ret = handle_register_done();
+		ret = handle_register_done(sock_info);
 		assert(!ret);
 		pthread_mutex_unlock(&lttng_ust_comm_mutex);
 		sleep(5);
@@ -305,7 +325,7 @@ restart:
 		 * If we cannot register to the sessiond daemon, don't
 		 * delay constructor execution.
 		 */
-		ret = handle_register_done();
+		ret = handle_register_done(sock_info);
 		assert(!ret);
 		pthread_mutex_unlock(&lttng_ust_comm_mutex);
 		sleep(5);
@@ -393,13 +413,26 @@ int get_timeout(struct timespec *constructor_timeout)
  */
 /* TODO */
 
-void __attribute__((constructor)) lttng_ust_comm_init(void)
+void __attribute__((constructor)) lttng_ust_init(void)
 {
 	struct timespec constructor_timeout;
 	int timeout_mode;
 	int ret;
 
+	if (uatomic_xchg(&initialized, 1) == 1)
+		return;
+
+	/*
+	 * We want precise control over the order in which we construct
+	 * our sub-libraries vs starting to receive commands from
+	 * sessiond (otherwise leading to errors when trying to create
+	 * sessiond before the init functions are completed).
+	 */
 	init_usterr();
+	init_tracepoint();
+	ltt_ring_buffer_metadata_client_init();
+	ltt_ring_buffer_client_overwrite_init();
+	ltt_ring_buffer_client_discard_init();
 
 	timeout_mode = get_timeout(&constructor_timeout);
 
@@ -439,7 +472,7 @@ void __attribute__((constructor)) lttng_ust_comm_init(void)
 	}
 }
 
-void __attribute__((destructor)) lttng_ust_comm_exit(void)
+void __attribute__((destructor)) lttng_ust_exit(void)
 {
 	int ret;
 
@@ -476,4 +509,8 @@ void __attribute__((destructor)) lttng_ust_comm_exit(void)
 
 	lttng_ust_abi_exit();
 	ltt_events_exit();
+	ltt_ring_buffer_client_discard_exit();
+	ltt_ring_buffer_client_overwrite_exit();
+	ltt_ring_buffer_metadata_client_exit();
+	exit_tracepoint();
 }

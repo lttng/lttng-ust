@@ -27,6 +27,7 @@
 #include <ust/kcompat/kcompat.h>
 #include <urcu-bp.h>
 #include <urcu/hlist.h>
+#include <urcu/uatomic.h>
 
 #include <ust/usterr-signal-safe.h>
 
@@ -637,6 +638,8 @@ int tracepoint_register_lib(struct tracepoint * const *tracepoints_start,
 {
 	struct tracepoint_lib *pl, *iter;
 
+	init_tracepoint();
+
 	pl = (struct tracepoint_lib *) zmalloc(sizeof(struct tracepoint_lib));
 
 	pl->tracepoints_start = tracepoints_start;
@@ -688,18 +691,17 @@ int tracepoint_unregister_lib(struct tracepoint * const *tracepoints_start)
 	return 0;
 }
 
-void __attribute__((constructor)) init_tracepoint(void)
+void init_tracepoint(void)
 {
+	if (uatomic_xchg(&initialized, 1) == 1)
+		return;
 	init_usterr();
-	if (!initialized) {
-		tracepoint_register_lib(__start___tracepoints_ptrs,
-			__stop___tracepoints_ptrs
-			- __start___tracepoints_ptrs);
-		initialized = 1;
-	}
+	tracepoint_register_lib(__start___tracepoints_ptrs,
+		__stop___tracepoints_ptrs
+		- __start___tracepoints_ptrs);
 }
 
-void __attribute__((destructor)) destroy_tracepoint(void)
+void exit_tracepoint(void)
 {
 	tracepoint_unregister_lib(__start___tracepoints_ptrs);
 }

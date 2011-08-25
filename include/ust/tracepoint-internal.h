@@ -76,5 +76,6 @@ extern void trace_event_update_process(void);
 extern int is_trace_event_enabled(const char *channel, const char *name);
 
 extern void init_tracepoint(void);
+extern void exit_tracepoint(void);
 
 #endif /* _UST_TRACEPOINT_INTERNAL_H */

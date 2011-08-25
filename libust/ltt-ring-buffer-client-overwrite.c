@@ -12,4 +12,8 @@
 
 #define RING_BUFFER_MODE_TEMPLATE		RING_BUFFER_OVERWRITE
 #define RING_BUFFER_MODE_TEMPLATE_STRING	"overwrite"
+#define RING_BUFFER_MODE_TEMPLATE_INIT	\
+	ltt_ring_buffer_client_overwrite_init
+#define RING_BUFFER_MODE_TEMPLATE_EXIT	\
+	ltt_ring_buffer_client_overwrite_exit
 #include "ltt-ring-buffer-client.h"
