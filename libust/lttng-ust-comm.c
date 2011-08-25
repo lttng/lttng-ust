@@ -124,6 +124,7 @@ int register_app_to_sessiond(int socket)
 		pid_t pid;
 		pid_t ppid;
 		uid_t uid;
+		gid_t gid;
 		char name[16];	/* process name */
 	} reg_msg;
 
@@ -132,6 +133,7 @@ int register_app_to_sessiond(int socket)
 	reg_msg.pid = getpid();
 	reg_msg.ppid = getppid();
 	reg_msg.uid = getuid();
+	reg_msg.gid = getgid();
 	prctl_ret = prctl(PR_GET_NAME, (unsigned long) reg_msg.name, 0, 0, 0);
 	if (prctl_ret) {
 		ERR("Error executing prctl");
