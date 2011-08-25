@@ -21,6 +21,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/prctl.h>
 #include <unistd.h>
 #include <errno.h>
 #include <pthread.h>
@@ -116,17 +117,24 @@ static
 int register_app_to_sessiond(int socket)
 {
 	ssize_t ret;
+	int prctl_ret;
 	struct {
 		uint32_t major;
 		uint32_t minor;
 		pid_t pid;
 		uid_t uid;
+		char name[16];	/* process name */
 	} reg_msg;
 
 	reg_msg.major = LTTNG_UST_COMM_VERSION_MAJOR;
 	reg_msg.minor = LTTNG_UST_COMM_VERSION_MINOR;
 	reg_msg.pid = getpid();
 	reg_msg.uid = getuid();
+	prctl_ret = prctl(PR_GET_NAME, (unsigned long) reg_msg.name, 0, 0, 0);
+	if (prctl_ret) {
+		ERR("Error executing prctl");
+		return -errno;
+	}
 
 	ret = lttcomm_send_unix_sock(socket, &reg_msg, sizeof(reg_msg));
 	if (ret >= 0 && ret != sizeof(reg_msg))
