@@ -213,7 +213,7 @@ int channel_backend_init(struct channel_backend *chanb,
 	struct channel *chan = caa_container_of(chanb, struct channel, backend);
 	unsigned int i;
 	int ret;
-	size_t shmsize = 0, bufshmsize = 0, num_subbuf_alloc;
+	size_t shmsize = 0, num_subbuf_alloc;
 
 	if (!name)
 		return -EPERM;
@@ -257,11 +257,11 @@ int channel_backend_init(struct channel_backend *chanb,
 	num_subbuf_alloc = num_subbuf + 1;
 	shmsize += offset_align(shmsize, __alignof__(struct lib_ring_buffer_backend_pages_shmp));
 	shmsize += sizeof(struct lib_ring_buffer_backend_pages_shmp) * num_subbuf_alloc;
-	shmsize += offset_align(bufshmsize, PAGE_SIZE);
+	shmsize += offset_align(shmsize, PAGE_SIZE);
 	shmsize += subbuf_size * num_subbuf_alloc;
-	shmsize += offset_align(bufshmsize, __alignof__(struct lib_ring_buffer_backend_pages));
+	shmsize += offset_align(shmsize, __alignof__(struct lib_ring_buffer_backend_pages));
 	shmsize += sizeof(struct lib_ring_buffer_backend_pages) * num_subbuf_alloc;
-	shmsize += offset_align(bufshmsize, __alignof__(struct lib_ring_buffer_backend_subbuffer));
+	shmsize += offset_align(shmsize, __alignof__(struct lib_ring_buffer_backend_subbuffer));
 	shmsize += sizeof(struct lib_ring_buffer_backend_subbuffer) * num_subbuf;
 	/* Per-cpu buffer size: control (after backend) */
 	shmsize += offset_align(shmsize, __alignof__(struct commit_counters_hot));
