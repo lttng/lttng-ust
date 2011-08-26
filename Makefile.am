@@ -6,7 +6,7 @@ ACLOCAL_AMFLAGS = -I config
 # must be installed after libust so it can overwrite libust.so with
 # the linker script.
 SUBDIRS = snprintf liblttng-ust-comm libringbuffer libust include doc tests \
-		java
+		libustjava
 
 #temporarily disabled
 # . libustinstr-malloc libustfork

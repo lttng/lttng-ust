@@ -160,7 +160,7 @@ fi
 if test "$with_jni_interface" = "yes"; then
         AC_CHECK_HEADERS([jni.h],,AC_MSG_ERROR([
 missing jni.h
-Make sure Sun Java, OpenJDK or GCJ is installed and that this header file exists in the system path.
+Make sure Sun Java or OpenJDK or GCJ is installed and that this header file exists in the system path.
 Use --with-java-jdk=DIR flag to point to your java include files or desactivate the JNI interface.]))
 fi
 AM_CONDITIONAL(BUILD_JNI_INTERFACE, test "$with_jni_interface" = "yes")
@@ -197,6 +197,6 @@ AC_CONFIG_FILES([
 	snprintf/Makefile
 	ust.pc
 	include/ust/version.h
-	java/Makefile
+	libustjava/Makefile
 ])
 AC_OUTPUT

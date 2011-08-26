@@ -10,6 +10,3 @@ dependency: openjdk-6-jdk
 
 dependency: gcj-4.4-jdk
 ./configure --with-java-jdk=/usr/lib/jvm/java-gcj --with-jni-interface
-
-Our testing shows that sun java6 and openjdk 6 build fine, but not gcj
-4.4.
