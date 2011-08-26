@@ -34,6 +34,7 @@
 #include <ust/usterr-signal-safe.h>
 #include <ust/lttng-ust-abi.h>
 #include <ust/tracepoint.h>
+#include <ust/tracepoint-internal.h>
 
 /*
  * Has lttng ust comm constructor been called ?
@@ -113,7 +114,7 @@ int setup_local_apps(void)
 	 */
 	if (getuid() != geteuid()) {
 		local_apps.allowed = 0;
-		return;
+		return 0;
 	} else {
 		local_apps.allowed = 1;
 	}
