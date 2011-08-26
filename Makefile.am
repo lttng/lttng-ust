@@ -1,7 +1,7 @@
 ACLOCAL_AMFLAGS = -I config
 
-SUBDIRS = . snprintf liblttng-ust-comm libringbuffer libust include doc tests \
-		libustjava libustfork
+SUBDIRS = . snprintf liblttng-ust-comm libringbuffer libust include doc \
+		libustjava libustfork tests
 
 #temporarily disabled
 # . libustinstr-malloc
