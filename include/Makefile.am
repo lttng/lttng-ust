@@ -11,7 +11,8 @@ nobase_include_HEADERS = \
 	ust/lttng-tracer.h \
 	ust/usterr-signal-safe.h \
 	ust/core.h \
-	ust/share.h
+	ust/share.h \
+	ust/ust.h
 
 # note: usterr-signal-safe.h, core.h and share.h need namespace cleanup.
 
@@ -30,6 +31,5 @@ noinst_HEADERS = \
 	ust/kcompat/jhash.h \
 	ust/kcompat/compiler.h \
 	ust/kcompat/types.h \
-	ust/tracectl.h \
 	ust/stringify.h \
 	ust/wait.h

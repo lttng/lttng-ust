@@ -28,6 +28,7 @@
 #include <semaphore.h>
 #include <time.h>
 #include <assert.h>
+#include <signal.h>
 #include <urcu/uatomic.h>
 
 #include <lttng-ust-comm.h>
@@ -35,6 +36,7 @@
 #include <ust/lttng-ust-abi.h>
 #include <ust/tracepoint.h>
 #include <ust/tracepoint-internal.h>
+#include <ust/ust.h>
 
 /*
  * Has lttng ust comm constructor been called ?
@@ -540,4 +542,59 @@ void __attribute__((destructor)) lttng_ust_exit(void)
 	ltt_ring_buffer_client_overwrite_exit();
 	ltt_ring_buffer_metadata_client_exit();
 	exit_tracepoint();
+}
+
+/*
+ * We exclude the worker threads across fork and clone (except
+ * CLONE_VM), because these system calls only keep the forking thread
+ * running in the child.  Therefore, we don't want to call fork or clone
+ * in the middle of an tracepoint or ust tracing state modification.
+ * Holding this mutex protects these structures across fork and clone.
+ */
+void ust_before_fork(ust_fork_info_t *fork_info)
+{
+	/*
+	 * Disable signals. This is to avoid that the child intervenes
+	 * before it is properly setup for tracing. It is safer to
+	 * disable all signals, because then we know we are not breaking
+	 * anything by restoring the original mask.
+         */
+	sigset_t all_sigs;
+	int ret;
+
+	/* Disable signals */
+	sigfillset(&all_sigs);
+	ret = sigprocmask(SIG_BLOCK, &all_sigs, &fork_info->orig_sigs);
+	if (ret == -1) {
+		PERROR("sigprocmask");
+	}
+	pthread_mutex_lock(&lttng_ust_comm_mutex);
+	rcu_bp_before_fork();
+}
+
+static void ust_after_fork_common(ust_fork_info_t *fork_info)
+{
+	int ret;
+
+	pthread_mutex_unlock(&lttng_ust_comm_mutex);
+	/* Restore signals */
+	ret = sigprocmask(SIG_SETMASK, &fork_info->orig_sigs, NULL);
+	if (ret == -1) {
+		PERROR("sigprocmask");
+	}
+}
+
+void ust_after_fork_parent(ust_fork_info_t *fork_info)
+{
+	rcu_bp_after_fork_parent();
+	/* Release mutexes and reenable signals */
+	ust_after_fork_common(fork_info);
+}
+
+void ust_after_fork_child(ust_fork_info_t *fork_info)
+{
+	/* Release urcu mutexes */
+	rcu_bp_after_fork_child();
+	/* Release mutexes and reenable signals */
+	ust_after_fork_common(fork_info);
 }

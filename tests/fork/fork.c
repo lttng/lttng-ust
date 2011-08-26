@@ -1,9 +1,11 @@
-/* Copyright (C) 2009  Pierre-Marc Fournier
+/*
+ * Copyright (C) 2009  Pierre-Marc Fournier
+ * Copyright (C) 2011  Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
+ * License as published by the Free Software Foundation; version 2.1 of
+ * the License.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -20,47 +22,41 @@
 #include <sys/types.h>
 #include <stdlib.h>
 
-#include <ust/marker.h>
+#define TRACEPOINT_CREATE_PROBES
+#include "ust_tests_fork.h"
+TRACEPOINT_LIB
 
 int main(int argc, char **argv, char *env[])
 {
 	int result;
 
-	if(argc < 2 ) {
+	if (argc < 2) {
 		fprintf(stderr, "usage: fork PROG_TO_EXEC\n");
 		exit(1);
 	}
 
 	printf("Fork test program, parent pid is %d\n", getpid());
-	ust_marker(before_fork, UST_MARKER_NOARGS);
-
-	/* Sleep here to make sure the consumer is initialized before we fork */
-	sleep(1);
+	tracepoint(ust_tests_fork_before_fork);
 
 	result = fork();
-	if(result == -1) {
+	if (result == -1) {
 		perror("fork");
 		return 1;
 	}
-	if(result == 0) {
-		char *args[] = {"fork2", NULL};
+	if (result == 0) {
+		char *args[] = { "fork2", NULL };
 
 		printf("Child pid is %d\n", getpid());
 
-		ust_marker(after_fork_child, UST_MARKER_NOARGS);
-
-		ust_marker(before_exec, "pid %d", getpid());
+		tracepoint(ust_tests_fork_after_fork_child, getpid());
 
 		result = execve(argv[1], args, env);
-		if(result == -1) {
+		if (result == -1) {
 			perror("execve");
 			return 1;
 		}
-
-		ust_marker(after_exec, "pid %d", getpid());
-	}
-	else {
-		ust_marker(after_fork_parent, UST_MARKER_NOARGS);
+	} else {
+		tracepoint(ust_tests_fork_after_fork_parent);
 	}
 
 	return 0;
