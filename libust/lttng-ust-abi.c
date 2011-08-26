@@ -188,6 +188,9 @@ void objd_table_destroy(void)
 			ops->release(i);
 	}
 	free(objd_table.array);
+	objd_table.array = NULL;
+	objd_table.len = 0;
+	objd_table.allocated_len = 0;
 	objd_table.freelist_head = -1;
 }
 
