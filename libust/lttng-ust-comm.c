@@ -501,12 +501,10 @@ void __attribute__((destructor)) lttng_ust_exit(void)
 	lttng_ust_comm_should_quit = 1;
 	pthread_mutex_unlock(&lttng_ust_comm_mutex);
 
-#if 0
 	ret = pthread_cancel(global_apps.ust_listener);
 	if (ret) {
 		ERR("Error cancelling global ust listener thread");
 	}
-#endif //0
 
 	cleanup_sock_info(&global_apps);
 
