@@ -30,6 +30,7 @@
 #include <urcu/uatomic.h>
 
 #include <ust/usterr-signal-safe.h>
+#include "ltt-tracer-core.h"
 
 /* Set to 1 to enable tracepoint debug output */
 static const int tracepoint_debug;

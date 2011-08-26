@@ -37,6 +37,7 @@
 #include <ust/tracepoint.h>
 #include <ust/tracepoint-internal.h>
 #include <ust/ust.h>
+#include "ltt-tracer-core.h"
 
 /*
  * Has lttng ust comm constructor been called ?
