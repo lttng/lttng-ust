@@ -82,11 +82,7 @@ struct shm_object *shm_object_table_append(struct shm_object_table *table,
 		PERROR("shm_open");
 		goto error_shm_open;
 	}
-	ret = shm_unlink("ust-shm-tmp");
-	if (ret) {
-		PERROR("shm_unlink");
-		goto error_unlink;
-	}
+	(void) shm_unlink("ust-shm-tmp");
 	ret = ftruncate(shmfd, memory_map_size);
 	if (ret) {
 		PERROR("ftruncate");
