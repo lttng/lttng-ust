@@ -1,3 +1,0 @@
-This is ust-consumerd, the UST consumer daemon.
-
-This daemon is used to collect the traces for the traced programs and write them to disk.

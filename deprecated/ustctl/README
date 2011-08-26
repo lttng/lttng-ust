@@ -1,3 +1,0 @@
-ustctl is a helper application used to control tracing on programs that support tracing.
-
-It can list markers, enable/disable markers, start tracing and stop tracing.
