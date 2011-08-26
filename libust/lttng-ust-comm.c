@@ -279,6 +279,7 @@ void cleanup_sock_info(struct sock_info *sock_info)
 		}
 		sock_info->root_handle = -1;
 	}
+	sock_info->constructor_sem_posted = 0;
 }
 
 /*
@@ -619,7 +620,7 @@ void ust_after_fork_child(ust_fork_info_t *fork_info)
 	/* Release urcu mutexes */
 	rcu_bp_after_fork_child();
 	lttng_ust_cleanup(0);
-	lttng_ust_init();
 	/* Release mutexes and reenable signals */
 	ust_after_fork_common(fork_info);
+	lttng_ust_init();
 }
