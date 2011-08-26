@@ -1,7 +1,3 @@
 #!/bin/sh
 
-# Run with nothing
-
-#UST_AUTOPROBE=1 UST_TRACE=1 LD_LIBRARY_PATH=$LD_LIBRARY_PATH:../../libust/.libs:../../../liburcu $1 .libs/fork
-#UST_AUTOPROBE=1 UST_TRACE=1 LD_LIBRARY_PATH=$LD_LIBRARY_PATH:../../libust/.libs:../../../liburcu LD_PRELOAD=../../libinterfork/.libs/libinterfork.so $1 .libs/fork
-#LD_LIBRARY_PATH=$LD_LIBRARY_PATH:../../libust/.libs:../../../liburcu .libs/fork
+.libs/fork $1
