@@ -1,3 +1,15 @@
 This directory contains a simple API for instrumenting java applications.
 
-Look at the example in the tests/java directory for usage.
+Configuration examples to build this library:
+
+dependency: sun-java6-jdk
+./configure --with-java-jdk=/usr/lib/jvm/java-6-sun --with-jni-interface
+
+dependency: openjdk-6-jdk
+./configure --with-java-jdk=/usr/lib/jvm/java-6-openjdk --with-jni-interface
+
+dependency: gcj-4.4-jdk
+./configure --with-java-jdk=/usr/lib/jvm/java-gcj --with-jni-interface
+
+Our testing shows that sun java6 and openjdk 6 build fine, but not gcj
+4.4.

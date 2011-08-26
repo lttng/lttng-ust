@@ -5,7 +5,8 @@ ACLOCAL_AMFLAGS = -I config
 # libust and '.' (that contains the linker script). However, '.'
 # must be installed after libust so it can overwrite libust.so with
 # the linker script.
-SUBDIRS = snprintf liblttng-ust-comm libringbuffer libust include doc tests
+SUBDIRS = snprintf liblttng-ust-comm libringbuffer libust include doc tests \
+		java
 
 #temporarily disabled
 # . libustinstr-malloc libustfork

@@ -122,3 +122,4 @@ PACKAGE CONTENTS:
 
   - java
     A simple library that uses JNI to allow tracing in java programs.
+    See java/README for build instructions.
