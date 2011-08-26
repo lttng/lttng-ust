@@ -46,26 +46,35 @@ struct tracepoint {
 #define tracepoint(name, args...)	__trace_##name(args)
 
 /*
- * Library should be made known to libust by declaring TRACEPOINT_LIB in
- * the source file. (Usually at the end of the file, in the outermost
- * scope).
+ * These weak symbols, the constructor, and destructor take care of
+ * registering only _one_ instance of the tracepoints per shared-ojbect
+ * (or for the whole main program).
+ * The dummy tracepoint entry ensures that the start/stop pointers get
+ * initialized by the linker when no tracepoints are present in a
+ * shared-object (or main program).
  */
-#define TRACEPOINT_LIB							\
-	extern struct tracepoint * const __start___tracepoints_ptrs[] __attribute__((weak, visibility("hidden"))); \
-	extern struct tracepoint * const __stop___tracepoints_ptrs[] __attribute__((weak, visibility("hidden"))); \
-	static struct tracepoint * __tracepoint_ptr_dummy		\
-	__attribute__((used, section("__tracepoints_ptrs")));		\
-	static void __attribute__((constructor)) __tracepoints__init(void) \
-	{								\
-		tracepoint_register_lib(__start___tracepoints_ptrs,	\
-					__stop___tracepoints_ptrs -	\
-					__start___tracepoints_ptrs);	\
-	}								\
-									\
-	static void __attribute__((destructor)) __tracepoints__destroy(void) \
-	{								\
-		tracepoint_unregister_lib(__start___tracepoints_ptrs);	\
-	}
+extern struct tracepoint * const __start___tracepoints_ptrs[]
+	__attribute__((weak, visibility("hidden")));
+extern struct tracepoint * const __stop___tracepoints_ptrs[]
+	__attribute__((weak, visibility("hidden")));
+int __tracepoint_registered
+	__attribute__((weak, visibility("hidden")));
+
+static void __attribute__((constructor)) __tracepoints__init(void)
+{
+	if (__tracepoint_registered++)
+		return;
+	tracepoint_register_lib(__start___tracepoints_ptrs,
+				__stop___tracepoints_ptrs -
+				__start___tracepoints_ptrs);
+}
+
+static void __attribute__((destructor)) __tracepoints__destroy(void)
+{
+	if (--__tracepoint_registered)
+		return;
+	tracepoint_unregister_lib(__start___tracepoints_ptrs);
+}
 
 /*
  * it_func[0] is never NULL because there is at least one element in the array
@@ -181,12 +190,6 @@ int __tracepoint_probe_register(const char *name, void *probe, void *data);
  */
 extern
 int __tracepoint_probe_unregister(const char *name, void *probe, void *data);
-
-struct tracepoint_lib {
-	struct tracepoint * const *tracepoints_start;
-	int tracepoints_count;
-	struct cds_list_head list;
-};
 
 extern
 int tracepoint_register_lib(struct tracepoint * const *tracepoints_start,

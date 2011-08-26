@@ -34,6 +34,12 @@
 #include <urcu/list.h>
 #include <ust/tracepoint.h>
 
+struct tracepoint_lib {
+	struct tracepoint * const *tracepoints_start;
+	int tracepoints_count;
+	struct cds_list_head list;
+};
+
 extern int tracepoint_probe_register_noupdate(const char *name, void *probe,
 					      void *data);
 extern int tracepoint_probe_unregister_noupdate(const char *name, void *probe,

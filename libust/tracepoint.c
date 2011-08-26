@@ -31,14 +31,6 @@
 
 #include <ust/usterr-signal-safe.h>
 
-extern struct tracepoint * const __start___tracepoints_ptrs[]
-	__attribute__((visibility("hidden")));
-extern struct tracepoint * const __stop___tracepoints_ptrs[]
-	__attribute__((visibility("hidden")));
-
-static struct tracepoint * __tracepoint_ptr_dummy
-	__attribute__((used, section("__tracepoints_ptrs")));
-
 /* Set to 1 to enable tracepoint debug output */
 static const int tracepoint_debug;
 static int initialized;
@@ -667,8 +659,8 @@ lib_added:
 	/* TODO: update just the loaded lib */
 	lib_update_tracepoints();
 
-	/* tracepoints_count - 1: skip dummy */
-	DBG("just registered a tracepoints section from %p and having %d tracepoints (minus dummy tracepoints)", tracepoints_start, tracepoints_count);
+	DBG("just registered a tracepoints section from %p and having %d tracepoints",
+		tracepoints_start, tracepoints_count);
 
 	return 0;
 }
@@ -696,12 +688,8 @@ void init_tracepoint(void)
 	if (uatomic_xchg(&initialized, 1) == 1)
 		return;
 	init_usterr();
-	tracepoint_register_lib(__start___tracepoints_ptrs,
-		__stop___tracepoints_ptrs
-		- __start___tracepoints_ptrs);
 }
 
 void exit_tracepoint(void)
 {
-	tracepoint_unregister_lib(__start___tracepoints_ptrs);
 }

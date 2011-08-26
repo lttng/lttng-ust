@@ -13,5 +13,3 @@ JNIEXPORT void JNICALL Java_UST_ust_1java_1event (JNIEnv *env, jobject jobj,
 
 	tracepoint(ust_java_event, ev_name_cstr, args_cstr);
 }
-
-TRACEPOINT_LIB

@@ -28,7 +28,6 @@
 #include <string.h>
 
 #include "ust_tests_hello.h"
-TRACEPOINT_LIB
 
 void inthandler(int sig)
 {
