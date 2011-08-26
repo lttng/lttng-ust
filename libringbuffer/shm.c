@@ -106,7 +106,6 @@ struct shm_object *shm_object_table_append(struct shm_object_table *table,
 
 error_mmap:
 error_ftruncate:
-error_unlink:
 	ret = close(shmfd);
 	if (ret) {
 		PERROR("close");
