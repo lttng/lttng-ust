@@ -84,7 +84,6 @@ static
 int add_pending_probe(struct ltt_event *event, const char *name)
 {
 	struct cds_hlist_head *head;
-	struct cds_hlist_node *node;
 	struct ust_pending_probe *e;
 	size_t name_len = strlen(name) + 1;
 	u32 hash = jhash(name, name_len - 1, 0);
