@@ -74,7 +74,8 @@ struct sock_info {
 	int socket;
 	pthread_t ust_listener;	/* listener thread */
 	int root_handle;
-	int constructor_sem_posted;;
+	int constructor_sem_posted;
+	int allowed;
 };
 
 /* Socket from app (connect) to session daemon (listen) for communication */
@@ -83,6 +84,7 @@ struct sock_info global_apps = {
 	.sock_path = DEFAULT_GLOBAL_APPS_UNIX_SOCK,
 	.socket = -1,
 	.root_handle = -1,
+	.allowed = 1,
 };
 
 /* TODO: allow global_apps_sock_path override */
@@ -91,6 +93,7 @@ struct sock_info local_apps = {
 	.name = "local",
 	.socket = -1,
 	.root_handle = -1,
+	.allowed = 0,	/* Check setuid bit first */
 };
 
 extern void ltt_ring_buffer_client_overwrite_init(void);
@@ -101,10 +104,19 @@ extern void ltt_ring_buffer_client_discard_exit(void);
 extern void ltt_ring_buffer_metadata_client_exit(void);
 
 static
-int setup_local_apps_socket(void)
+int setup_local_apps(void)
 {
 	const char *home_dir;
 
+	/*
+	 * Disallow per-user tracing for setuid binaries.
+	 */
+	if (getuid() != geteuid()) {
+		local_apps.allowed = 0;
+		return;
+	} else {
+		local_apps.allowed = 1;
+	}
 	home_dir = (const char *) getenv("HOME");
 	if (!home_dir)
 		return -ENOENT;
@@ -449,15 +461,19 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	ret = sem_init(&constructor_wait, 0, 0);
 	assert(!ret);
 
-	ret = setup_local_apps_socket();
+	ret = setup_local_apps();
 	if (ret) {
-		ERR("Error setting up to local apps socket");
+		ERR("Error setting up to local apps");
 	}
-
-	ret = pthread_create(&global_apps.ust_listener, NULL,
-			ust_listener_thread, &global_apps);
 	ret = pthread_create(&local_apps.ust_listener, NULL,
 			ust_listener_thread, &local_apps);
+
+	if (local_apps.allowed) {
+		ret = pthread_create(&global_apps.ust_listener, NULL,
+				ust_listener_thread, &global_apps);
+	} else {
+		handle_register_done(&local_apps);
+	}
 
 	switch (timeout_mode) {
 	case 1:	/* timeout wait */
@@ -508,12 +524,14 @@ void __attribute__((destructor)) lttng_ust_exit(void)
 
 	cleanup_sock_info(&global_apps);
 
-	ret = pthread_cancel(local_apps.ust_listener);
-	if (ret) {
-		ERR("Error cancelling local ust listener thread");
-	}
+	if (local_apps.allowed) {
+		ret = pthread_cancel(local_apps.ust_listener);
+		if (ret) {
+			ERR("Error cancelling local ust listener thread");
+		}
 
-	cleanup_sock_info(&local_apps);
+		cleanup_sock_info(&local_apps);
+	}
 
 	lttng_ust_abi_exit();
 	ltt_events_exit();
