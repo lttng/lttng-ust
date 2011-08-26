@@ -67,8 +67,14 @@ struct shm_object *shm_object_table_append(struct shm_object_table *table,
 	 * We specifically do _not_ use the / at the beginning of the
 	 * pathname so that some OS implementations can keep it local to
 	 * the process (POSIX leaves this implementation-defined).
+	 * Ignore the shm_unlink errors, because we handle leaks that
+	 * could occur by applications crashing between shm_open and
+	 * shm_unlink by unlinking the shm before every open. Therefore,
+	 * we can only leak one single shm (and only if the application
+	 * crashes between shm_open and the following shm_unlink).
 	 */
 	do {
+		(void) shm_unlink("ust-shm-tmp");
 		shmfd = shm_open("ust-shm-tmp",
 				 O_CREAT | O_EXCL | O_RDWR, 0700);
 	} while (shmfd < 0 && errno == EEXIST);
