@@ -11,6 +11,7 @@
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <urcu/list.h>
+#include <urcu/hlist.h>
 #include <pthread.h>
 #include <urcu-bp.h>
 #include <urcu/compiler.h>
@@ -24,12 +25,46 @@
 #include <ust/usterr-signal-safe.h>
 #include "ust/core.h"
 #include "ltt-tracer.h"
+#include "ltt-tracer-core.h"
 #include "ust/wait.h"
 #include "../libringbuffer/shm.h"
 
+typedef u32 uint32_t;
+#include <ust/kcompat/jhash.h>
+
+/*
+ * The sessions mutex is the centralized mutex across UST tracing
+ * control and probe registration.
+ */
+static DEFINE_MUTEX(sessions_mutex);
+
+void lock_ust(void)
+{
+	pthread_mutex_lock(&sessions_mutex);
+}
+
+void unlock_ust(void)
+{
+	pthread_mutex_unlock(&sessions_mutex);
+}
+
 static CDS_LIST_HEAD(sessions);
 static CDS_LIST_HEAD(ltt_transport_list);
-static DEFINE_MUTEX(sessions_mutex);
+
+/*
+ * Pending probes hash table, containing the registered ltt events for
+ * which tracepoint probes are still missing. Protected by the sessions
+ * mutex.
+ */
+#define PENDING_PROBE_HASH_BITS		6
+#define PENDING_PROBE_HASH_SIZE		(1 << PENDING_PROBE_HASH_BITS)
+static struct cds_hlist_head pending_probe_table[PENDING_PROBE_HASH_SIZE];
+
+struct ust_pending_probe {
+	struct ltt_event *event;
+	struct cds_hlist_node node;
+	char name[];
+};
 
 static void _ltt_event_destroy(struct ltt_event *event);
 static void _ltt_channel_destroy(struct ltt_channel *chan);
@@ -40,6 +75,81 @@ int _ltt_event_metadata_statedump(struct ltt_session *session,
 				  struct ltt_event *event);
 static
 int _ltt_session_metadata_statedump(struct ltt_session *session);
+
+/*
+ * called at event creation if probe is missing.
+ * called with session mutex held.
+ */
+static
+int add_pending_probe(struct ltt_event *event, const char *name)
+{
+	struct cds_hlist_head *head;
+	struct cds_hlist_node *node;
+	struct ust_pending_probe *e;
+	size_t name_len = strlen(name) + 1;
+	u32 hash = jhash(name, name_len - 1, 0);
+
+	head = &pending_probe_table[hash & (PENDING_PROBE_HASH_SIZE - 1)];
+	e = zmalloc(sizeof(struct ust_pending_probe) + name_len);
+	if (!e)
+		return -ENOMEM;
+	memcpy(&e->name[0], name, name_len);
+	cds_hlist_add_head(&e->node, head);
+	e->event = event;
+	event->pending_probe = e;
+	return 0;
+}
+
+/*
+ * remove a pending probe. called when at event teardown and when an
+ * event is fixed (probe is loaded).
+ * called with session mutex held.
+ */
+static
+void remove_pending_probe(struct ust_pending_probe *e)
+{
+	if (!e)
+		return;
+	cds_hlist_del(&e->node);
+	free(e);
+}
+
+/*
+ * Called at library load: connect the probe on the events pending on
+ * probe load.
+ * called with session mutex held.
+ */
+int pending_probe_fix_events(const struct lttng_event_desc *desc)
+{
+	struct cds_hlist_head *head;
+	struct cds_hlist_node *node, *p;
+	struct ust_pending_probe *e;
+	const char *name = desc->name;
+	size_t name_len = strlen(name) + 1;
+	u32 hash = jhash(name, name_len - 1, 0);
+	int ret = 0;
+
+	head = &pending_probe_table[hash & (PENDING_PROBE_HASH_SIZE - 1)];
+	cds_hlist_for_each_entry_safe(e, node, p, head, node) {
+		struct ltt_event *event;
+		struct ltt_channel *chan;
+
+		if (strcmp(name, e->name))
+			continue;
+		event = e->event;
+		chan = event->chan;
+		assert(!event->desc);
+		event->desc = desc;
+		event->pending_probe = NULL;
+		remove_pending_probe(e);
+		ret |= __tracepoint_probe_register(name,
+				event->desc->probe_callback,
+				event);
+		ret |= _ltt_event_metadata_statedump(chan->session, chan,
+				event);
+	}
+	return ret;
+}
 
 void synchronize_trace(void)
 {
@@ -264,21 +374,25 @@ struct ltt_event *ltt_event_create(struct ltt_channel *chan,
 	int ret;
 
 	pthread_mutex_lock(&sessions_mutex);
-	if (chan->free_event_id == -1UL)
+	if (chan->used_event_id == -1UL)
 		goto full;
 	/*
 	 * This is O(n^2) (for each event, the loop is called at event
 	 * creation). Might require a hash if we have lots of events.
 	 */
 	cds_list_for_each_entry(event, &chan->session->events, list)
-		if (!strcmp(event->desc->name, event_param->name))
+		if (event->desc && !strcmp(event->desc->name, event_param->name))
 			goto exist;
 	event = zmalloc(sizeof(struct ltt_event));
 	if (!event)
 		goto cache_error;
 	event->chan = chan;
 	event->filter = filter;
-	event->id = chan->free_event_id++;
+	/*
+	 * used_event_id counts the maximum number of event IDs that can
+	 * register if all probes register.
+	 */
+	chan->used_event_id++;
 	event->enabled = 1;
 	event->instrumentation = event_param->instrumentation;
 	/* Populate ltt_event structure before tracepoint registration. */
@@ -286,29 +400,44 @@ struct ltt_event *ltt_event_create(struct ltt_channel *chan,
 	switch (event_param->instrumentation) {
 	case LTTNG_UST_TRACEPOINT:
 		event->desc = ltt_event_get(event_param->name);
-		if (!event->desc)
-			goto register_error;
-		ret = __tracepoint_probe_register(event_param->name,
-				event->desc->probe_callback,
-				event);
-		if (ret)
-			goto register_error;
+		if (event->desc) {
+			ret = __tracepoint_probe_register(event_param->name,
+					event->desc->probe_callback,
+					event);
+			if (ret)
+				goto register_error;
+			event->id = chan->free_event_id++;
+		} else {
+			/*
+			 * If the probe is not present, event->desc stays NULL,
+			 * waiting for the probe to register, and the event->id
+			 * stays unallocated.
+			 */
+			ret = add_pending_probe(event, event_param->name);
+			if (ret)
+				goto add_pending_error;
+		}
 		break;
 	default:
 		WARN_ON_ONCE(1);
 	}
-	ret = _ltt_event_metadata_statedump(chan->session, chan, event);
-	if (ret)
-		goto statedump_error;
+	if (event->desc) {
+		ret = _ltt_event_metadata_statedump(chan->session, chan, event);
+		if (ret)
+			goto statedump_error;
+	}
 	cds_list_add(&event->list, &chan->session->events);
 	pthread_mutex_unlock(&sessions_mutex);
 	return event;
 
 statedump_error:
-	WARN_ON_ONCE(__tracepoint_probe_unregister(event_param->name,
-				event->desc->probe_callback,
-				event));
-	ltt_event_put(event->desc);
+	if (event->desc) {
+		WARN_ON_ONCE(__tracepoint_probe_unregister(event_param->name,
+					event->desc->probe_callback,
+					event));
+		ltt_event_put(event->desc);
+	}
+add_pending_error:
 register_error:
 	free(event);
 cache_error:
@@ -327,11 +456,16 @@ int _ltt_event_unregister(struct ltt_event *event)
 
 	switch (event->instrumentation) {
 	case LTTNG_UST_TRACEPOINT:
-		ret = __tracepoint_probe_unregister(event->desc->name,
-						  event->desc->probe_callback,
-						  event);
-		if (ret)
-			return ret;
+		if (event->desc) {
+			ret = __tracepoint_probe_unregister(event->desc->name,
+							  event->desc->probe_callback,
+							  event);
+			if (ret)
+				return ret;
+		} else {
+			remove_pending_probe(event->pending_probe);
+			ret = 0;
+		}
 		break;
 	default:
 		WARN_ON_ONCE(1);
@@ -347,7 +481,9 @@ void _ltt_event_destroy(struct ltt_event *event)
 {
 	switch (event->instrumentation) {
 	case LTTNG_UST_TRACEPOINT:
-		ltt_event_put(event->desc);
+		if (event->desc) {
+			ltt_event_put(event->desc);
+		}
 		break;
 	default:
 		WARN_ON_ONCE(1);
@@ -597,6 +733,11 @@ int _ltt_event_metadata_statedump(struct ltt_session *session,
 	if (event->metadata_dumped || !CMM_ACCESS_ONCE(session->active))
 		return 0;
 	if (chan == session->metadata)
+		return 0;
+	/*
+	 * Don't print events for which probe load is pending.
+	 */
+	if (!event->desc)
 		return 0;
 
 	ret = lttng_metadata_printf(session,

@@ -176,6 +176,8 @@ struct lttng_probe_desc {
 	struct cds_list_head head;		/* chain registered probes */
 };
 
+struct ust_pending_probe;
+
 /*
  * ltt_event structure is referred to by the tracing fast path. It must be
  * kept small.
@@ -191,6 +193,7 @@ struct ltt_event {
 	union {
 	} u;
 	struct cds_list_head list;		/* Event list */
+	struct ust_pending_probe *pending_probe;
 	int metadata_dumped:1;
 };
 
@@ -236,6 +239,7 @@ struct ltt_channel {
 	struct ltt_session *session;
 	int objd;			/* Object associated to channel */
 	unsigned int free_event_id;	/* Next event ID to allocate */
+	unsigned int used_event_id;	/* Max allocated event IDs */
 	struct cds_list_head list;	/* Channel list */
 	struct ltt_channel_ops *ops;
 	int header_type;		/* 0: unset, 1: compact, 2: large */
@@ -297,6 +301,7 @@ void synchronize_trace(void);
 
 int ltt_probe_register(struct lttng_probe_desc *desc);
 void ltt_probe_unregister(struct lttng_probe_desc *desc);
+int pending_probe_fix_events(const struct lttng_event_desc *desc);
 const struct lttng_event_desc *ltt_event_get(const char *name);
 void ltt_event_put(const struct lttng_event_desc *desc);
 int ltt_probes_init(void);

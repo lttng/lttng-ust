@@ -14,8 +14,12 @@
 #include <ust/core.h>
 #include <ust/lttng-events.h>
 
+#include "ltt-tracer-core.h"
+
+/*
+ * probe list is protected by lock_ust()/unlock_ust().
+ */
 static CDS_LIST_HEAD(probe_list);
-static DEFINE_MUTEX(probe_mutex);
 
 static
 const struct lttng_event_desc *find_event(const char *name)
@@ -37,7 +41,7 @@ int ltt_probe_register(struct lttng_probe_desc *desc)
 	int ret = 0;
 	int i;
 
-	pthread_mutex_lock(&probe_mutex);
+	lock_ust();
 	/*
 	 * TODO: This is O(N^2). Turn into a hash table when probe registration
 	 * overhead becomes an issue.
@@ -49,25 +53,34 @@ int ltt_probe_register(struct lttng_probe_desc *desc)
 		}
 	}
 	cds_list_add(&desc->head, &probe_list);
+
+	/*
+	 * fix the events awaiting probe load.
+	 */
+	for (i = 0; i < desc->nr_events; i++) {
+		ret = pending_probe_fix_events(&desc->event_desc[i]);
+		assert(!ret);
+	}
 end:
-	pthread_mutex_unlock(&probe_mutex);
+	unlock_ust();
 	return ret;
 }
 
 void ltt_probe_unregister(struct lttng_probe_desc *desc)
 {
-	pthread_mutex_lock(&probe_mutex);
+	lock_ust();
 	cds_list_del(&desc->head);
-	pthread_mutex_unlock(&probe_mutex);
+	unlock_ust();
 }
 
+/*
+ * called with UST lock held.
+ */
 const struct lttng_event_desc *ltt_event_get(const char *name)
 {
 	const struct lttng_event_desc *event;
 
-	pthread_mutex_lock(&probe_mutex);
 	event = find_event(name);
-	pthread_mutex_unlock(&probe_mutex);
 	if (!event)
 		return NULL;
 	return event;
