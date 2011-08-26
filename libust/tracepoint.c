@@ -40,29 +40,12 @@ static void (*new_tracepoint_cb)(struct tracepoint *);
 static CDS_LIST_HEAD(libs);
 
 /*
- * Allow nested mutex for mutex listing and nested enable.
+ * The UST lock protects the library tracepoints, the hash table, and
+ * the library list.
+ * All calls to the tracepoint API must be protected by the UST lock,
+ * excepts calls to tracepoint_register_lib and
+ * tracepoint_unregister_lib, which take the UST lock themselves.
  */
-static __thread int nested_mutex;
-
-/*
- * Tracepoints mutex protects the library tracepoints, the hash table,
- * and the library list.
- */
-static pthread_mutex_t tracepoints_mutex;
-
-static
-void lock_tracepoints(void)
-{
-	if (!(nested_mutex++))
-		pthread_mutex_lock(&tracepoints_mutex);
-}
-
-static
-void unlock_tracepoints(void)
-{
-	if (!(--nested_mutex))
-		pthread_mutex_unlock(&tracepoints_mutex);
-}
 
 /*
  * Tracepoint hash table, containing the active tracepoints.
@@ -257,7 +240,7 @@ static struct tracepoint_entry *add_tracepoint(const char *name)
 
 /*
  * Remove the tracepoint from the tracepoint hash table. Must be called with
- * mutex_lock held.
+ * ust_lock held.
  */
 static inline void remove_tracepoint(struct tracepoint_entry *e)
 {
@@ -331,12 +314,10 @@ static void lib_update_tracepoints(void)
 {
 	struct tracepoint_lib *lib;
 
-	lock_tracepoints();
 	cds_list_for_each_entry(lib, &libs, list) {
 		tracepoint_update_probe_range(lib->tracepoints_start,
 				lib->tracepoints_start + lib->tracepoints_count);
 	}
-	unlock_tracepoints();
 }
 
 /*
@@ -373,14 +354,13 @@ tracepoint_add_probe(const char *name, void *probe, void *data)
  *
  * Returns 0 if ok, error value on error.
  * The probe address must at least be aligned on the architecture pointer size.
+ * Called with the UST lock held.
  */
 int __tracepoint_probe_register(const char *name, void *probe, void *data)
 {
 	void *old;
 
-	lock_tracepoints();
 	old = tracepoint_add_probe(name, probe, data);
-	unlock_tracepoints();
 	if (IS_ERR(old))
 		return PTR_ERR(old);
 
@@ -411,18 +391,13 @@ static void *tracepoint_remove_probe(const char *name, void *probe, void *data)
  * @probe: probe function pointer
  * @probe: probe data pointer
  *
- * We do not need to call a synchronize_sched to make sure the probes have
- * finished running before doing a module unload, because the module unload
- * itself uses stop_machine(), which insures that every preempt disabled section
- * have finished.
+ * Called with the UST lock held.
  */
 int __tracepoint_probe_unregister(const char *name, void *probe, void *data)
 {
 	void *old;
 
-	lock_tracepoints();
 	old = tracepoint_remove_probe(name, probe, data);
-	unlock_tracepoints();
 	if (IS_ERR(old))
 		return PTR_ERR(old);
 
@@ -447,20 +422,18 @@ static void tracepoint_add_old_probes(void *old)
  * @probe: probe handler
  *
  * caller must call tracepoint_probe_update_all()
+ * Called with the UST lock held.
  */
 int tracepoint_probe_register_noupdate(const char *name, void *probe,
 				       void *data)
 {
 	void *old;
 
-	lock_tracepoints();
 	old = tracepoint_add_probe(name, probe, data);
 	if (IS_ERR(old)) {
-		unlock_tracepoints();
 		return PTR_ERR(old);
 	}
 	tracepoint_add_old_probes(old);
-	unlock_tracepoints();
 	return 0;
 }
 
@@ -470,40 +443,36 @@ int tracepoint_probe_register_noupdate(const char *name, void *probe,
  * @probe: probe function pointer
  *
  * caller must call tracepoint_probe_update_all()
+ * Called with the UST lock held.
  */
 int tracepoint_probe_unregister_noupdate(const char *name, void *probe,
 					 void *data)
 {
 	void *old;
 
-	lock_tracepoints();
 	old = tracepoint_remove_probe(name, probe, data);
 	if (IS_ERR(old)) {
-		unlock_tracepoints();
 		return PTR_ERR(old);
 	}
 	tracepoint_add_old_probes(old);
-	unlock_tracepoints();
 	return 0;
 }
 
 /**
  * tracepoint_probe_update_all -  update tracepoints
+ * Called with the UST lock held.
  */
 void tracepoint_probe_update_all(void)
 {
 	CDS_LIST_HEAD(release_probes);
 	struct tp_probes *pos, *next;
 
-	lock_tracepoints();
 	if (!need_update) {
-		unlock_tracepoints();
 		return;
 	}
 	if (!cds_list_empty(&old_probes))
 		cds_list_replace_init(&old_probes, &release_probes);
 	need_update = 0;
-	unlock_tracepoints();
 
 	tracepoint_update_probes();
 	cds_list_for_each_entry_safe(pos, next, &release_probes, u.list) {
@@ -578,14 +547,16 @@ static void tracepoint_get_iter(struct tracepoint_iter *iter)
 		tracepoint_iter_reset(iter);
 }
 
+/*
+ * Called with UST lock held.
+ */
 void tracepoint_iter_start(struct tracepoint_iter *iter)
 {
-	lock_tracepoints();
 	tracepoint_get_iter(iter);
 }
 
 /*
- * Called with tracepoint mutex held.
+ * Called with UST lock held.
  */
 void tracepoint_iter_next(struct tracepoint_iter *iter)
 {
@@ -598,9 +569,11 @@ void tracepoint_iter_next(struct tracepoint_iter *iter)
 	tracepoint_get_iter(iter);
 }
 
+/*
+ * Called with UST lock held.
+ */
 void tracepoint_iter_stop(struct tracepoint_iter *iter)
 {
-	unlock_tracepoints();
 }
 
 void tracepoint_iter_reset(struct tracepoint_iter *iter)
@@ -637,7 +610,7 @@ int tracepoint_register_lib(struct tracepoint * const *tracepoints_start,
 	pl->tracepoints_start = tracepoints_start;
 	pl->tracepoints_count = tracepoints_count;
 
-	lock_tracepoints();
+	ust_lock();
 	/*
 	 * We sort the libs by struct lib pointer address.
 	 */
@@ -652,12 +625,11 @@ int tracepoint_register_lib(struct tracepoint * const *tracepoints_start,
 	/* We should be added at the head of the list */
 	cds_list_add(&pl->list, &libs);
 lib_added:
-	unlock_tracepoints();
-
 	new_tracepoints(tracepoints_start, tracepoints_start + tracepoints_count);
 
 	/* TODO: update just the loaded lib */
 	lib_update_tracepoints();
+	ust_unlock();
 
 	DBG("just registered a tracepoints section from %p and having %d tracepoints",
 		tracepoints_start, tracepoints_count);
@@ -669,7 +641,7 @@ int tracepoint_unregister_lib(struct tracepoint * const *tracepoints_start)
 {
 	struct tracepoint_lib *lib;
 
-	lock_tracepoints();
+	ust_lock();
 	cds_list_for_each_entry(lib, &libs, list) {
 		if (lib->tracepoints_start == tracepoints_start) {
 			struct tracepoint_lib *lib2free = lib;
@@ -678,7 +650,7 @@ int tracepoint_unregister_lib(struct tracepoint * const *tracepoints_start)
 			break;
 		}
 	}
-	unlock_tracepoints();
+	ust_unlock();
 
 	return 0;
 }
@@ -692,4 +664,5 @@ void init_tracepoint(void)
 
 void exit_tracepoint(void)
 {
+	initialized = 0;
 }

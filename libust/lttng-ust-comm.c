@@ -44,10 +44,10 @@
 static int initialized;
 
 /*
- * communication thread mutex. Held when handling a command, also held
- * by fork() to deal with removal of threads, and by exit path.
+ * The ust_lock/ust_unlock lock is used as a communication thread mutex.
+ * Held when handling a command, also held by fork() to deal with
+ * removal of threads, and by exit path.
  */
-static pthread_mutex_t lttng_ust_comm_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Should the ust comm thread quit ? */
 static int lttng_ust_comm_should_quit;
@@ -207,7 +207,7 @@ int handle_message(struct sock_info *sock_info,
 	const struct objd_ops *ops;
 	struct lttcomm_ust_reply lur;
 
-	pthread_mutex_lock(&lttng_ust_comm_mutex);
+	ust_lock();
 
 	memset(&lur, 0, sizeof(lur));
 
@@ -255,7 +255,7 @@ end:
 	}
 	ret = send_reply(sock, &lur);
 
-	pthread_mutex_unlock(&lttng_ust_comm_mutex);
+	ust_unlock();
 	return ret;
 }
 
@@ -295,10 +295,10 @@ void *ust_listener_thread(void *arg)
 
 	/* Restart trying to connect to the session daemon */
 restart:
-	pthread_mutex_lock(&lttng_ust_comm_mutex);
+	ust_lock();
 
 	if (lttng_ust_comm_should_quit) {
-		pthread_mutex_unlock(&lttng_ust_comm_mutex);
+		ust_unlock();
 		goto quit;
 	}
 
@@ -322,7 +322,7 @@ restart:
 		 */
 		ret = handle_register_done(sock_info);
 		assert(!ret);
-		pthread_mutex_unlock(&lttng_ust_comm_mutex);
+		ust_unlock();
 		sleep(5);
 		goto restart;
 	}
@@ -337,7 +337,7 @@ restart:
 		ret = lttng_abi_create_root_handle();
 		if (ret) {
 			ERR("Error creating root handle");
-			pthread_mutex_unlock(&lttng_ust_comm_mutex);
+			ust_unlock();
 			goto quit;
 		}
 		sock_info->root_handle = ret;
@@ -352,11 +352,11 @@ restart:
 		 */
 		ret = handle_register_done(sock_info);
 		assert(!ret);
-		pthread_mutex_unlock(&lttng_ust_comm_mutex);
+		ust_unlock();
 		sleep(5);
 		goto restart;
 	}
-	pthread_mutex_unlock(&lttng_ust_comm_mutex);
+	ust_unlock();
 
 	for (;;) {
 		ssize_t len;
@@ -501,6 +501,27 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	}
 }
 
+static
+void lttng_ust_cleanup(int exiting)
+{
+	cleanup_sock_info(&global_apps);
+	if (local_apps.allowed) {
+		cleanup_sock_info(&local_apps);
+	}
+	lttng_ust_abi_exit();
+	ltt_events_exit();
+	ltt_ring_buffer_client_discard_exit();
+	ltt_ring_buffer_client_overwrite_exit();
+	ltt_ring_buffer_metadata_client_exit();
+	exit_tracepoint();
+	if (!exiting) {
+		/* Reinitialize values for fork */
+		sem_count = 2;
+		lttng_ust_comm_should_quit = 0;
+		initialized = 0;
+	}
+}
+
 void __attribute__((destructor)) lttng_ust_exit(void)
 {
 	int ret;
@@ -516,32 +537,21 @@ void __attribute__((destructor)) lttng_ust_exit(void)
 	 * mutexes to ensure it is not in a mutex critical section when
 	 * pthread_cancel is later called.
 	 */
-	pthread_mutex_lock(&lttng_ust_comm_mutex);
+	ust_lock();
 	lttng_ust_comm_should_quit = 1;
-	pthread_mutex_unlock(&lttng_ust_comm_mutex);
+	ust_unlock();
 
 	ret = pthread_cancel(global_apps.ust_listener);
 	if (ret) {
 		ERR("Error cancelling global ust listener thread");
 	}
-
-	cleanup_sock_info(&global_apps);
-
 	if (local_apps.allowed) {
 		ret = pthread_cancel(local_apps.ust_listener);
 		if (ret) {
 			ERR("Error cancelling local ust listener thread");
 		}
-
-		cleanup_sock_info(&local_apps);
 	}
-
-	lttng_ust_abi_exit();
-	ltt_events_exit();
-	ltt_ring_buffer_client_discard_exit();
-	ltt_ring_buffer_client_overwrite_exit();
-	ltt_ring_buffer_metadata_client_exit();
-	exit_tracepoint();
+	lttng_ust_cleanup(1);
 }
 
 /*
@@ -568,7 +578,7 @@ void ust_before_fork(ust_fork_info_t *fork_info)
 	if (ret == -1) {
 		PERROR("sigprocmask");
 	}
-	pthread_mutex_lock(&lttng_ust_comm_mutex);
+	ust_lock();
 	rcu_bp_before_fork();
 }
 
@@ -576,7 +586,8 @@ static void ust_after_fork_common(ust_fork_info_t *fork_info)
 {
 	int ret;
 
-	pthread_mutex_unlock(&lttng_ust_comm_mutex);
+	DBG("process %d", getpid());
+	ust_unlock();
 	/* Restore signals */
 	ret = sigprocmask(SIG_SETMASK, &fork_info->orig_sigs, NULL);
 	if (ret == -1) {
@@ -586,15 +597,28 @@ static void ust_after_fork_common(ust_fork_info_t *fork_info)
 
 void ust_after_fork_parent(ust_fork_info_t *fork_info)
 {
+	DBG("process %d", getpid());
 	rcu_bp_after_fork_parent();
 	/* Release mutexes and reenable signals */
 	ust_after_fork_common(fork_info);
 }
 
+/*
+ * After fork, in the child, we need to cleanup all the leftover state,
+ * except the worker thread which already magically disappeared thanks
+ * to the weird Linux fork semantics. After tyding up, we call
+ * lttng_ust_init() again to start over as a new PID.
+ *
+ * This is meant for forks() that have tracing in the child between the
+ * fork and following exec call (if there is any).
+ */
 void ust_after_fork_child(ust_fork_info_t *fork_info)
 {
+	DBG("process %d", getpid());
 	/* Release urcu mutexes */
 	rcu_bp_after_fork_child();
+	lttng_ust_cleanup(0);
+	lttng_ust_init();
 	/* Release mutexes and reenable signals */
 	ust_after_fork_common(fork_info);
 }

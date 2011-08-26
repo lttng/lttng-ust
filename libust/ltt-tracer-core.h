@@ -34,7 +34,7 @@ struct ltt_session;
 struct ltt_channel;
 struct ltt_event;
 
-void lock_ust(void);
-void unlock_ust(void);
+void ust_lock(void);
+void ust_unlock(void);
 
 #endif /* _LTT_TRACER_CORE_H */

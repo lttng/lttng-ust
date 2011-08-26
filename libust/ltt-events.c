@@ -34,16 +34,17 @@ typedef u32 uint32_t;
 
 /*
  * The sessions mutex is the centralized mutex across UST tracing
- * control and probe registration.
+ * control and probe registration. All operations within this file are
+ * called by the communication thread, under ust_lock protection.
  */
 static DEFINE_MUTEX(sessions_mutex);
 
-void lock_ust(void)
+void ust_lock(void)
 {
 	pthread_mutex_lock(&sessions_mutex);
 }
 
-void unlock_ust(void)
+void ust_unlock(void)
 {
 	pthread_mutex_unlock(&sessions_mutex);
 }
@@ -162,12 +163,10 @@ struct ltt_session *ltt_session_create(void)
 	session = zmalloc(sizeof(struct ltt_session));
 	if (!session)
 		return NULL;
-	pthread_mutex_lock(&sessions_mutex);
 	CDS_INIT_LIST_HEAD(&session->chan);
 	CDS_INIT_LIST_HEAD(&session->events);
 	uuid_generate(session->uuid);
 	cds_list_add(&session->list, &sessions);
-	pthread_mutex_unlock(&sessions_mutex);
 	return session;
 }
 
@@ -177,7 +176,6 @@ void ltt_session_destroy(struct ltt_session *session)
 	struct ltt_event *event, *tmpevent;
 	int ret;
 
-	pthread_mutex_lock(&sessions_mutex);
 	CMM_ACCESS_ONCE(session->active) = 0;
 	cds_list_for_each_entry(event, &session->events, list) {
 		ret = _ltt_event_unregister(event);
@@ -189,7 +187,6 @@ void ltt_session_destroy(struct ltt_session *session)
 	cds_list_for_each_entry_safe(chan, tmpchan, &session->chan, list)
 		_ltt_channel_destroy(chan);
 	cds_list_del(&session->list);
-	pthread_mutex_unlock(&sessions_mutex);
 	free(session);
 }
 
@@ -198,7 +195,6 @@ int ltt_session_enable(struct ltt_session *session)
 	int ret = 0;
 	struct ltt_channel *chan;
 
-	pthread_mutex_lock(&sessions_mutex);
 	if (session->active) {
 		ret = -EBUSY;
 		goto end;
@@ -223,7 +219,6 @@ int ltt_session_enable(struct ltt_session *session)
 	if (ret)
 		CMM_ACCESS_ONCE(session->active) = 0;
 end:
-	pthread_mutex_unlock(&sessions_mutex);
 	return ret;
 }
 
@@ -231,14 +226,12 @@ int ltt_session_disable(struct ltt_session *session)
 {
 	int ret = 0;
 
-	pthread_mutex_lock(&sessions_mutex);
 	if (!session->active) {
 		ret = -EBUSY;
 		goto end;
 	}
 	CMM_ACCESS_ONCE(session->active) = 0;
 end:
-	pthread_mutex_unlock(&sessions_mutex);
 	return ret;
 }
 
@@ -311,7 +304,6 @@ struct ltt_channel *ltt_channel_create(struct ltt_session *session,
 	struct ltt_channel *chan;
 	struct ltt_transport *transport;
 
-	pthread_mutex_lock(&sessions_mutex);
 	if (session->been_active)
 		goto active;	/* Refuse to add channel to active session */
 	transport = ltt_transport_find(transport_name);
@@ -338,7 +330,6 @@ struct ltt_channel *ltt_channel_create(struct ltt_session *session,
 	chan->enabled = 1;
 	chan->ops = &transport->ops;
 	cds_list_add(&chan->list, &session->chan);
-	pthread_mutex_unlock(&sessions_mutex);
 	return chan;
 
 create_error:
@@ -346,7 +337,6 @@ create_error:
 nomem:
 notransport:
 active:
-	pthread_mutex_unlock(&sessions_mutex);
 	return NULL;
 }
 
@@ -372,7 +362,6 @@ struct ltt_event *ltt_event_create(struct ltt_channel *chan,
 	struct ltt_event *event;
 	int ret;
 
-	pthread_mutex_lock(&sessions_mutex);
 	if (chan->used_event_id == -1UL)
 		goto full;
 	/*
@@ -426,7 +415,6 @@ struct ltt_event *ltt_event_create(struct ltt_channel *chan,
 			goto statedump_error;
 	}
 	cds_list_add(&event->list, &chan->session->events);
-	pthread_mutex_unlock(&sessions_mutex);
 	return event;
 
 statedump_error:
@@ -442,7 +430,6 @@ register_error:
 cache_error:
 exist:
 full:
-	pthread_mutex_unlock(&sessions_mutex);
 	return NULL;
 }
 
@@ -494,7 +481,7 @@ void _ltt_event_destroy(struct ltt_event *event)
 
 /*
  * We have exclusive access to our metadata buffer (protected by the
- * sessions_mutex), so we can do racy operations such as looking for
+ * ust_lock), so we can do racy operations such as looking for
  * remaining space left in packet and write, since mutual exclusion
  * protects us from concurrent writes.
  */
@@ -990,24 +977,21 @@ end:
  * @transport: transport structure
  *
  * Registers a transport which can be used as output to extract the data out of
- * LTTng.
+ * LTTng. Called with ust_lock held.
  */
 void ltt_transport_register(struct ltt_transport *transport)
 {
-	pthread_mutex_lock(&sessions_mutex);
 	cds_list_add_tail(&transport->node, &ltt_transport_list);
-	pthread_mutex_unlock(&sessions_mutex);
 }
 
 /**
  * ltt_transport_unregister - LTT transport unregistration
  * @transport: transport structure
+ * Called with ust_lock held.
  */
 void ltt_transport_unregister(struct ltt_transport *transport)
 {
-	pthread_mutex_lock(&sessions_mutex);
 	cds_list_del(&transport->node);
-	pthread_mutex_unlock(&sessions_mutex);
 }
 
 void ltt_events_exit(void)

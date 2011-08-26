@@ -17,7 +17,7 @@
 #include "ltt-tracer-core.h"
 
 /*
- * probe list is protected by lock_ust()/unlock_ust().
+ * probe list is protected by ust_lock()/ust_unlock().
  */
 static CDS_LIST_HEAD(probe_list);
 
@@ -41,7 +41,7 @@ int ltt_probe_register(struct lttng_probe_desc *desc)
 	int ret = 0;
 	int i;
 
-	lock_ust();
+	ust_lock();
 	/*
 	 * TODO: This is O(N^2). Turn into a hash table when probe registration
 	 * overhead becomes an issue.
@@ -62,15 +62,15 @@ int ltt_probe_register(struct lttng_probe_desc *desc)
 		assert(!ret);
 	}
 end:
-	unlock_ust();
+	ust_unlock();
 	return ret;
 }
 
 void ltt_probe_unregister(struct lttng_probe_desc *desc)
 {
-	lock_ust();
+	ust_lock();
 	cds_list_del(&desc->head);
-	unlock_ust();
+	ust_unlock();
 }
 
 /*
