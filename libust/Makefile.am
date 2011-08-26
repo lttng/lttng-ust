@@ -21,8 +21,6 @@ libust_la_SOURCES = \
 	probes/lttng-probe-ust.c \
 	probes/lttng-probe-ust.h
 
-#removed: buffers.c buffers.h
-
 libust_la_LDFLAGS = -no-undefined -version-info 0:0:0
 
 libust_la_LIBADD = \
