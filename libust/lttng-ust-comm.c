@@ -22,6 +22,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/prctl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
 #include <pthread.h>
@@ -74,30 +77,39 @@ static int sem_count = { 2 };
  */
 struct sock_info {
 	const char *name;
-	char sock_path[PATH_MAX];
-	int socket;
 	pthread_t ust_listener;	/* listener thread */
 	int root_handle;
 	int constructor_sem_posted;
 	int allowed;
+
+	char sock_path[PATH_MAX];
+	int socket;
+
+	char wait_shm_path[PATH_MAX];
+	char *wait_shm_mmap;
 };
 
 /* Socket from app (connect) to session daemon (listen) for communication */
 struct sock_info global_apps = {
 	.name = "global",
-	.sock_path = DEFAULT_GLOBAL_APPS_UNIX_SOCK,
-	.socket = -1,
+
 	.root_handle = -1,
 	.allowed = 1,
+
+	.sock_path = DEFAULT_GLOBAL_APPS_UNIX_SOCK,
+	.socket = -1,
+
+	.wait_shm_path = DEFAULT_GLOBAL_APPS_WAIT_SHM_PATH,
 };
 
 /* TODO: allow global_apps_sock_path override */
 
 struct sock_info local_apps = {
 	.name = "local",
-	.socket = -1,
 	.root_handle = -1,
 	.allowed = 0,	/* Check setuid bit first */
+
+	.socket = -1,
 };
 
 extern void ltt_ring_buffer_client_overwrite_init(void);
@@ -111,11 +123,13 @@ static
 int setup_local_apps(void)
 {
 	const char *home_dir;
+	uid_t uid;
 
+	uid = getuid();
 	/*
 	 * Disallow per-user tracing for setuid binaries.
 	 */
-	if (getuid() != geteuid()) {
+	if (uid != geteuid()) {
 		local_apps.allowed = 0;
 		return 0;
 	} else {
@@ -126,6 +140,8 @@ int setup_local_apps(void)
 		return -ENOENT;
 	snprintf(local_apps.sock_path, PATH_MAX,
 		 DEFAULT_HOME_APPS_UNIX_SOCK, home_dir);
+	snprintf(local_apps.wait_shm_path, PATH_MAX,
+		 DEFAULT_HOME_APPS_WAIT_SHM_PATH, uid);
 	return 0;
 }
 
@@ -268,7 +284,7 @@ void cleanup_sock_info(struct sock_info *sock_info)
 	if (sock_info->socket != -1) {
 		ret = close(sock_info->socket);
 		if (ret) {
-			ERR("Error closing local apps socket");
+			ERR("Error closing apps socket");
 		}
 		sock_info->socket = -1;
 	}
@@ -280,6 +296,117 @@ void cleanup_sock_info(struct sock_info *sock_info)
 		sock_info->root_handle = -1;
 	}
 	sock_info->constructor_sem_posted = 0;
+	if (sock_info->wait_shm_mmap) {
+		ret = munmap(sock_info->wait_shm_mmap, sysconf(_SC_PAGE_SIZE));
+		if (ret) {
+			ERR("Error unmapping wait shm");
+		}
+		sock_info->wait_shm_mmap = NULL;
+	}
+}
+
+static
+char *get_map_shm(struct sock_info *sock_info)
+{
+	size_t mmap_size = sysconf(_SC_PAGE_SIZE);
+	int wait_shm_fd, ret;
+	char *wait_shm_mmap;
+
+	/*
+	 * Get existing (read-only) shm, or open new shm.
+	 * First try to open read-only.
+	 */
+	wait_shm_fd = shm_open(sock_info->wait_shm_path,
+			O_RDONLY, 0700);
+	if (wait_shm_fd >= 0)
+		goto got_shm;
+	/*
+	 * Real-only open did not work. If it is because it did
+	 * not exist, try creating it. Else it's a failure that
+	 * prohibits using shm.
+	 */
+	if (errno != ENOENT) {
+		ERR("Error opening shm %s", sock_info->wait_shm_path);
+		goto error;
+	}
+	wait_shm_fd = shm_open(sock_info->wait_shm_path,
+			O_RDWR | O_CREAT | O_EXCL, 0700);
+	if (wait_shm_fd >= 0)
+		goto created_shm;
+	if (errno != EEXIST) {
+		ERR("Error opening shm %s", sock_info->wait_shm_path);
+		goto error;
+	}
+	/*
+	 * If another process beat us to create the shm, we are
+	 * pretty certain the shm is available for us in
+	 * read-only mode.
+	 */
+	wait_shm_fd = shm_open(sock_info->wait_shm_path,
+			O_RDWR | O_CREAT | O_EXCL, 0700);
+	if (wait_shm_fd >= 0)
+		goto got_shm;
+	else
+		goto error;
+
+created_shm:
+	ret = ftruncate(wait_shm_fd, mmap_size);
+	if (ret) {
+		PERROR("ftruncate");
+		ret = close(wait_shm_fd);
+		if (ret) {
+			ERR("Error closing fd");
+		}
+		wait_shm_fd = -1;
+		goto error;
+	}
+got_shm:
+	wait_shm_mmap = mmap(NULL, mmap_size, PROT_READ,
+		  MAP_SHARED, wait_shm_fd, 0);
+	if (wait_shm_mmap == MAP_FAILED) {
+		PERROR("mmap");
+		goto error;
+	}
+	/* close shm fd immediately after taking the mmap reference */
+	ret = close(wait_shm_fd);
+	if (ret) {
+		ERR("Error closing fd");
+	}
+	return wait_shm_mmap;
+
+error:
+	return NULL;
+}
+
+static
+void wait_for_sessiond(struct sock_info *sock_info)
+{
+	ust_lock();
+	if (lttng_ust_comm_should_quit) {
+		goto quit;
+	}
+	if (!sock_info->wait_shm_mmap) {
+		sock_info->wait_shm_mmap = get_map_shm(sock_info);
+		if (!sock_info->wait_shm_mmap)
+			goto error;
+	}
+	ust_unlock();
+
+	DBG("Waiting for %s apps sessiond", sock_info->name);
+	/* Wait for futex wakeup TODO */
+	sleep(5);
+
+	return;
+
+quit:
+	ust_unlock();
+	return;
+
+error:
+	ust_unlock();
+	/* Error handling: fallback on a 5 seconds sleep. */
+	sleep(5);
+	return;
 }
 
 /*
@@ -312,8 +439,6 @@ restart:
 		sock_info->socket = -1;
 	}
 
-	/* Check for sessiond availability with pipe TODO */
-
 	/* Register */
 	ret = lttcomm_connect_unix_sock(sock_info->sock_path);
 	if (ret < 0) {
@@ -325,7 +450,9 @@ restart:
 		ret = handle_register_done(sock_info);
 		assert(!ret);
 		ust_unlock();
-		sleep(5);
+
+		/* Wait for sessiond availability with pipe */
+		wait_for_sessiond(sock_info);
 		goto restart;
 	}
 
@@ -355,7 +482,7 @@ restart:
 		ret = handle_register_done(sock_info);
 		assert(!ret);
 		ust_unlock();
-		sleep(5);
+		wait_for_sessiond(sock_info);
 		goto restart;
 	}
 	ust_unlock();
