@@ -81,6 +81,7 @@ struct sock_info {
 	int root_handle;
 	int constructor_sem_posted;
 	int allowed;
+	int global;
 
 	char sock_path[PATH_MAX];
 	int socket;
@@ -92,6 +93,7 @@ struct sock_info {
 /* Socket from app (connect) to session daemon (listen) for communication */
 struct sock_info global_apps = {
 	.name = "global",
+	.global = 1,
 
 	.root_handle = -1,
 	.allowed = 1,
@@ -106,6 +108,7 @@ struct sock_info global_apps = {
 
 struct sock_info local_apps = {
 	.name = "local",
+	.global = 0,
 	.root_handle = -1,
 	.allowed = 0,	/* Check setuid bit first */
 
@@ -311,13 +314,18 @@ char *get_map_shm(struct sock_info *sock_info)
 	size_t mmap_size = sysconf(_SC_PAGE_SIZE);
 	int wait_shm_fd, ret;
 	char *wait_shm_mmap;
+	int mode;
+
+	mode = S_IRUSR | S_IRGRP;
+	if (sock_info->global)
+		mode |= S_IROTH;
 
 	/*
 	 * Get existing (read-only) shm, or open new shm.
 	 * First try to open read-only.
 	 */
 	wait_shm_fd = shm_open(sock_info->wait_shm_path,
-			O_RDONLY, 0700);
+			O_RDONLY, mode);
 	if (wait_shm_fd >= 0)
 		goto got_shm;
 	/*
@@ -330,7 +338,7 @@ char *get_map_shm(struct sock_info *sock_info)
 		goto error;
 	}
 	wait_shm_fd = shm_open(sock_info->wait_shm_path,
-			O_RDWR | O_CREAT | O_EXCL, 0700);
+			O_RDWR | O_CREAT | O_EXCL, mode | S_IWUSR);
 	if (wait_shm_fd >= 0)
 		goto created_shm;
 	if (errno != EEXIST) {
@@ -343,7 +351,7 @@ char *get_map_shm(struct sock_info *sock_info)
 	 * read-only mode.
 	 */
 	wait_shm_fd = shm_open(sock_info->wait_shm_path,
-			O_RDWR | O_CREAT | O_EXCL, 0700);
+			O_RDWR | O_CREAT | O_EXCL, mode);
 	if (wait_shm_fd >= 0)
 		goto got_shm;
 	else
@@ -359,6 +367,11 @@ created_shm:
 		}
 		wait_shm_fd = -1;
 		goto error;
+	}
+	/* Drop write access ASAP */
+	ret = chmod(sock_info->wait_shm_path, mode);
+	if (ret) {
+		PERROR("chmod");
 	}
 got_shm:
 	wait_shm_mmap = mmap(NULL, mmap_size, PROT_READ,
