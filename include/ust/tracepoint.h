@@ -170,9 +170,6 @@ int tracepoint_unregister_lib(struct tracepoint * const *tracepoints_start);
  * These weak symbols, the constructor, and destructor take care of
  * registering only _one_ instance of the tracepoints per shared-ojbect
  * (or for the whole main program).
- * The dummy tracepoint entry ensures that the start/stop pointers get
- * initialized by the linker when no tracepoints are present in a
- * shared-object (or main program).
  */
 extern struct tracepoint * const __start___tracepoints_ptrs[]
 	__attribute__((weak, visibility("hidden")));
