@@ -74,7 +74,11 @@ struct shm_object *shm_object_table_append(struct shm_object_table *table,
 	 * crashes between shm_open and the following shm_unlink).
 	 */
 	do {
-		(void) shm_unlink("ust-shm-tmp");
+		ret = shm_unlink("ust-shm-tmp");
+		if (ret < 0 && errno != ENOENT) {
+			PERROR("shm_unlink");
+			goto error_shm_unlink;
+		}
 		shmfd = shm_open("ust-shm-tmp",
 				 O_CREAT | O_EXCL | O_RDWR, 0700);
 	} while (shmfd < 0 && errno == EEXIST);
@@ -82,7 +86,11 @@ struct shm_object *shm_object_table_append(struct shm_object_table *table,
 		PERROR("shm_open");
 		goto error_shm_open;
 	}
-	(void) shm_unlink("ust-shm-tmp");
+	ret = shm_unlink("ust-shm-tmp");
+	if (ret < 0 && errno != ENOENT) {
+		PERROR("shm_unlink");
+		goto error_shm_release;
+	}
 	ret = ftruncate(shmfd, memory_map_size);
 	if (ret) {
 		PERROR("ftruncate");
@@ -106,11 +114,13 @@ struct shm_object *shm_object_table_append(struct shm_object_table *table,
 
 error_mmap:
 error_ftruncate:
+error_shm_release:
 	ret = close(shmfd);
 	if (ret) {
 		PERROR("close");
 		assert(0);
 	}
+error_shm_unlink:
 error_shm_open:
 error_fcntl:
 	for (i = 0; i < 2; i++) {
