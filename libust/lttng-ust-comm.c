@@ -311,48 +311,35 @@ void cleanup_sock_info(struct sock_info *sock_info)
 }
 
 /*
- * Using fork to set umask to 0777 in the child process (not
- * multi-thread safe).
+ * Using fork to set umask in the child process (not multi-thread safe).
+ * We deal with the shm_open vs ftruncate race (happening when the
+ * sessiond owns the shm and does not let everybody modify it, to ensure
+ * safety against shm_unlink) by simply letting the mmap fail and
+ * retrying after a few seconds.
+ * For global shm, everybody has rw access to it until the sessiond
+ * starts.
  */
 static
 int get_wait_shm(struct sock_info *sock_info, size_t mmap_size)
 {
 	int wait_shm_fd, ret;
-	int read_mode;
 	pid_t pid;
 
 	/*
-	 * At this point, we should be able to open it for
-	 * reading. If it fails, then it's because there is
-	 * something wrong: bail out in that case.
+	 * Try to open read-only.
 	 */
-	read_mode = S_IRUSR | S_IRGRP;
-	if (sock_info->global)
-		read_mode |= S_IROTH;
-
-	/*
-	 * Try to open read-only. If it is set read-only, it
-	 * means the shm size has been already set with
-	 * ftruncate. Note: all processes creating shm need to
-	 * call ftruncate on the shm before restricting its
-	 * access rights to read-only. The shm should never be
-	 * unlinked. It a rogue process try to create a non-accessible
-	 * shm or to unlink it, the worse-case scenario is that we don't
-	 * use the shm wakeup method and sleep/retry instead.
-	 */
-	wait_shm_fd = shm_open(sock_info->wait_shm_path,
-			O_RDONLY, read_mode);
+	wait_shm_fd = shm_open(sock_info->wait_shm_path, O_RDONLY, 0);
 	if (wait_shm_fd >= 0) {
 		goto end;
 	} else if (wait_shm_fd < 0 && errno != ENOENT) {
 		/*
-		 * Real-only open did not work. It's a failure
-		 * that prohibits using shm.
+		 * Real-only open did not work, and it's not because the
+		 * entry was not present. It's a failure that prohibits
+		 * using shm.
 		 */
 		ERR("Error opening shm %s", sock_info->wait_shm_path);
 		goto end;
 	}
-
 	/*
 	 * If the open failed because the file did not exist, try
 	 * creating it ourself.
@@ -373,8 +360,7 @@ int get_wait_shm(struct sock_info *sock_info, size_t mmap_size)
 		/*
 		 * Try to open read-only again after creation.
 		 */
-		wait_shm_fd = shm_open(sock_info->wait_shm_path,
-				O_RDONLY, read_mode);
+		wait_shm_fd = shm_open(sock_info->wait_shm_path, O_RDONLY, 0);
 		if (wait_shm_fd < 0) {
 			/*
 			 * Real-only open did not work. It's a failure
@@ -388,21 +374,18 @@ int get_wait_shm(struct sock_info *sock_info, size_t mmap_size)
 		int create_mode;
 
 		/* Child */
-		create_mode = S_IRUSR | S_IRGRP | S_IWUSR | S_IWGRP;
+		create_mode = S_IRUSR | S_IWUSR | S_IRGRP;
 		if (sock_info->global)
-			create_mode |= S_IROTH | S_IWOTH;
+			create_mode |= S_IROTH | S_IWGRP | S_IWOTH;
 		/*
 		 * We're alone in a child process, so we can modify the
 		 * process-wide umask.
 		 */
-		umask(create_mode);
+		umask(~create_mode);
 		/*
-		 * First try creating shm (or get rw access). We need to start
-		 * by this because of the ftruncate vs concurrent map race.
-		 * We need to give write access to everyone because of the
-		 * ftruncate vs mmap race too. We don't do an exclusive
-		 * open, because we allow other processes to
-		 * create+ftruncate it concurrently.
+		 * Try creating shm (or get rw access).
+		 * We don't do an exclusive open, because we allow other
+		 * processes to create+ftruncate it concurrently.
 		 */
 		wait_shm_fd = shm_open(sock_info->wait_shm_path,
 				O_RDWR | O_CREAT, create_mode);
@@ -412,28 +395,55 @@ int get_wait_shm(struct sock_info *sock_info, size_t mmap_size)
 				PERROR("ftruncate");
 				exit(EXIT_FAILURE);
 			}
-			ret = fchmod(wait_shm_fd, read_mode);
-			if (ret) {
-				PERROR("fchmod");
-				exit(EXIT_FAILURE);
-			}
 			exit(EXIT_SUCCESS);
 		}
-		if (errno != EACCES) {
+		/*
+		 * For local shm, we need to have rw access to accept
+		 * opening it: this means the local sessiond will be
+		 * able to wake us up. For global shm, we open it even
+		 * if rw access is not granted, because the root.root
+		 * sessiond will be able to override all rights and wake
+		 * us up.
+		 */
+		if (!sock_info->global && errno != EACCES) {
 			ERR("Error opening shm %s", sock_info->wait_shm_path);
 			exit(EXIT_FAILURE);
 		}
 		/*
-		 * The shm exists, but we cannot open it RW. It means it
-		 * has already been setup and ftruncated, so we can
-		 * let the child exit.
+		 * The shm exists, but we cannot open it RW. Report
+		 * success.
 		 */
 		exit(EXIT_SUCCESS);
 	} else {
 		return -1;
 	}
 end:
+	if (wait_shm_fd >= 0 && !sock_info->global) {
+		struct stat statbuf;
+
+		/*
+		 * Ensure that our user is the owner of the shm file for
+		 * local shm. If we do not own the file, it means our
+		 * sessiond will not have access to wake us up (there is
+		 * probably a rogue process trying to fake our
+		 * sessiond). Fallback to polling method in this case.
+		 */
+		ret = fstat(wait_shm_fd, &statbuf);
+		if (ret) {
+			PERROR("fstat");
+			goto error_close;
+		}
+		if (statbuf.st_uid != getuid())
+			goto error_close;
+	}
 	return wait_shm_fd;
+
+error_close:
+	ret = close(wait_shm_fd);
+	if (ret) {
+		PERROR("Error closing fd");
+	}
+	return -1;
 }
 
 static
@@ -449,14 +459,14 @@ char *get_map_shm(struct sock_info *sock_info)
 	}
 	wait_shm_mmap = mmap(NULL, mmap_size, PROT_READ,
 		  MAP_SHARED, wait_shm_fd, 0);
-	if (wait_shm_mmap == MAP_FAILED) {
-		PERROR("mmap");
-		goto error;
-	}
 	/* close shm fd immediately after taking the mmap reference */
 	ret = close(wait_shm_fd);
 	if (ret) {
-		ERR("Error closing fd");
+		PERROR("Error closing fd");
+	}
+	if (wait_shm_mmap == MAP_FAILED) {
+		DBG("mmap error (can be caused by race with sessiond). Fallback to poll mode.");
+		goto error;
 	}
 	return wait_shm_mmap;
 
