@@ -456,6 +456,8 @@ struct shm_handle *channel_create(const struct lib_ring_buffer_config *config,
 		shmsize += sizeof(struct lib_ring_buffer_shmp);
 
 	shmobj = shm_object_table_append(handle->table, shmsize);
+	if (!shmobj)
+		goto error_append;
 	set_shmp(handle->chan, zalloc_shm(shmobj, sizeof(struct channel)));
 	chan = shmp(handle, handle->chan);
 	if (!chan)
