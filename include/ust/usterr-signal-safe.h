@@ -54,6 +54,8 @@ static inline int ust_debug(void)
 #define UST_XSTR(d) UST_STR(d)
 #define UST_STR(s) #s
 
+#define USTERR_MAX_LEN	512
+
 /* We sometimes print in the tracing path, and tracing can occur in
  * signal handlers, so we must use a print method which is signal safe.
  */
@@ -68,8 +70,8 @@ static inline void __attribute__ ((format (printf, 1, 2)))
 
 #define sigsafe_print_err(fmt, args...)					\
 {									\
-	/* Can't use dynamic allocation. Limit ourselves to 250 chars. */ \
-	char ____buf[250];						\
+	/* Can't use dynamic allocation. Limit ourselves to USTERR_MAX_LEN chars. */ \
+	char ____buf[USTERR_MAX_LEN];					\
 	int ____saved_errno;						\
 									\
 	/* Save the errno. */						\

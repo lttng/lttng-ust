@@ -119,6 +119,8 @@ struct sock_info local_apps = {
 	.socket = -1,
 };
 
+static int wait_poll_fallback;
+
 extern void ltt_ring_buffer_client_overwrite_init(void);
 extern void ltt_ring_buffer_client_discard_init(void);
 extern void ltt_ring_buffer_metadata_client_init(void);
@@ -485,6 +487,9 @@ void wait_for_sessiond(struct sock_info *sock_info)
 	if (lttng_ust_comm_should_quit) {
 		goto quit;
 	}
+	if (wait_poll_fallback) {
+		goto error;
+	}
 	if (!sock_info->wait_shm_mmap) {
 		sock_info->wait_shm_mmap = get_map_shm(sock_info);
 		if (!sock_info->wait_shm_mmap)
@@ -497,11 +502,16 @@ void wait_for_sessiond(struct sock_info *sock_info)
 	if (uatomic_read((int32_t *) sock_info->wait_shm_mmap) == 0) {
 		ret = futex_async((int32_t *) sock_info->wait_shm_mmap,
 			FUTEX_WAIT, 0, NULL, NULL, 0);
-		/*
-		 * FIXME: Currently, futexes on read-only shm seems to
-		 * EFAULT.
-		 */
 		if (ret < 0) {
+			if (errno == EFAULT) {
+				wait_poll_fallback = 1;
+				ERR(
+"Linux kernels 2.6.33 to 3.0 (with the exception of stable versions) "
+"do not support FUTEX_WAKE on read-only memory mappings correctly. "
+"Please upgrade your kernel "
+"(fix is commit 9ea71503a8ed9184d2d0b8ccc4d269d05f7940ae in Linux kernel "
+"mainline). LTTng-UST will use polling mode fallback.");
+			}
 			PERROR("futex");
 			sleep(5);
 		}
