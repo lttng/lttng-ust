@@ -31,7 +31,7 @@ struct shm_object_table *shm_object_table_create(size_t max_nb_obj)
 struct shm_object *shm_object_table_append(struct shm_object_table *table,
 					   size_t memory_map_size)
 {
-	int shmfd, waitfd[2], ret, i;
+	int shmfd, waitfd[2], ret, i, sigblocked = 0;
 	struct shm_object *obj;
 	char *memory_map;
 	char tmp_name[NAME_MAX] = "ust-shm-tmp-XXXXXX";
@@ -75,6 +75,7 @@ struct shm_object *shm_object_table_append(struct shm_object_table *table,
 		PERROR("pthread_sigmask");
 		goto error_pthread_sigmask;
 	}
+	sigblocked = 1;
 
 	/*
 	 * Allocate shm, and immediately unlink its shm oject, keeping
@@ -107,10 +108,11 @@ struct shm_object *shm_object_table_append(struct shm_object_table *table,
 		PERROR("shm_unlink");
 		goto error_shm_release;
 	}
+	sigblocked = 0;
 	ret = pthread_sigmask(SIG_SETMASK, &orig_sigs, NULL);
 	if (ret == -1) {
 		PERROR("pthread_sigmask");
-		goto error_shm_release;
+		goto error_sigmask_release;
 	}
 	ret = ftruncate(shmfd, memory_map_size);
 	if (ret) {
@@ -136,12 +138,19 @@ struct shm_object *shm_object_table_append(struct shm_object_table *table,
 error_mmap:
 error_ftruncate:
 error_shm_release:
+error_sigmask_release:
 	ret = close(shmfd);
 	if (ret) {
 		PERROR("close");
 		assert(0);
 	}
 error_shm_open:
+	if (sigblocked) {
+		ret = pthread_sigmask(SIG_SETMASK, &orig_sigs, NULL);
+		if (ret == -1) {
+			PERROR("pthread_sigmask");
+		}
+	}
 error_pthread_sigmask:
 error_fcntl:
 	for (i = 0; i < 2; i++) {
