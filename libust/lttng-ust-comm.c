@@ -19,6 +19,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#define _LGPL_SOURCE
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/prctl.h>
@@ -35,6 +36,7 @@
 #include <assert.h>
 #include <signal.h>
 #include <urcu/uatomic.h>
+#include <urcu/futex.h>
 
 #include <lttng-ust-comm.h>
 #include <ust/usterr-signal-safe.h>
@@ -477,6 +479,8 @@ error:
 static
 void wait_for_sessiond(struct sock_info *sock_info)
 {
+	int ret;
+
 	ust_lock();
 	if (lttng_ust_comm_should_quit) {
 		goto quit;
@@ -489,9 +493,19 @@ void wait_for_sessiond(struct sock_info *sock_info)
 	ust_unlock();
 
 	DBG("Waiting for %s apps sessiond", sock_info->name);
-	/* Wait for futex wakeup TODO */
-	sleep(5);
-
+	/* Wait for futex wakeup */
+	if (uatomic_read((int32_t *) sock_info->wait_shm_mmap) == 0) {
+		ret = futex_async((int32_t *) sock_info->wait_shm_mmap,
+			FUTEX_WAIT, 0, NULL, NULL, 0);
+		/*
+		 * FIXME: Currently, futexes on read-only shm seems to
+		 * EFAULT.
+		 */
+		if (ret < 0) {
+			PERROR("futex");
+			sleep(5);
+		}
+	}
 	return;
 
 quit:
