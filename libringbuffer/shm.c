@@ -13,6 +13,9 @@
 #include <sys/stat.h>	/* For mode constants */
 #include <fcntl.h>	/* For O_* constants */
 #include <assert.h>
+#include <stdio.h>
+#include <signal.h>
+#include <dirent.h>
 #include <ust/align.h>
 
 struct shm_object_table *shm_object_table_create(size_t max_nb_obj)
@@ -31,6 +34,8 @@ struct shm_object *shm_object_table_append(struct shm_object_table *table,
 	int shmfd, waitfd[2], ret, i;
 	struct shm_object *obj;
 	char *memory_map;
+	char tmp_name[NAME_MAX] = "ust-shm-tmp-XXXXXX";
+	sigset_t all_sigs, orig_sigs;
 
 	if (table->allocated_len >= table->size)
 		return NULL;
@@ -60,6 +65,18 @@ struct shm_object *shm_object_table_append(struct shm_object_table *table,
 	/* shm_fd: create shm */
 
 	/*
+	 * Theoretically, we could leak a shm if the application crashes
+	 * between open and unlink. Disable signals on this thread for
+	 * increased safety against this scenario.
+	 */
+	sigfillset(&all_sigs);
+	ret = pthread_sigmask(SIG_BLOCK, &all_sigs, &orig_sigs);
+	if (ret == -1) {
+		PERROR("pthread_sigmask");
+		goto error_pthread_sigmask;
+	}
+
+	/*
 	 * Allocate shm, and immediately unlink its shm oject, keeping
 	 * only the file descriptor as a reference to the object. If it
 	 * already exists (caused by short race window during which the
@@ -67,28 +84,32 @@ struct shm_object *shm_object_table_append(struct shm_object_table *table,
 	 * We specifically do _not_ use the / at the beginning of the
 	 * pathname so that some OS implementations can keep it local to
 	 * the process (POSIX leaves this implementation-defined).
-	 * Ignore the shm_unlink errors, because we handle leaks that
-	 * could occur by applications crashing between shm_open and
-	 * shm_unlink by unlinking the shm before every open. Therefore,
-	 * we can only leak one single shm (and only if the application
-	 * crashes between shm_open and the following shm_unlink).
 	 */
 	do {
-		ret = shm_unlink("ust-shm-tmp");
-		if (ret < 0 && errno != ENOENT) {
-			PERROR("shm_unlink");
-			goto error_shm_unlink;
+		/*
+		 * Using mktemp filename with O_CREAT | O_EXCL open
+		 * flags.
+		 */
+		mktemp(tmp_name);
+		if (tmp_name[0] == '\0') {
+			PERROR("mktemp");
+			goto error_shm_open;
 		}
-		shmfd = shm_open("ust-shm-tmp",
+		shmfd = shm_open(tmp_name,
 				 O_CREAT | O_EXCL | O_RDWR, 0700);
-	} while (shmfd < 0 && errno == EEXIST);
+	} while (shmfd < 0 && (errno == EEXIST || errno == EACCES));
 	if (shmfd < 0) {
 		PERROR("shm_open");
 		goto error_shm_open;
 	}
-	ret = shm_unlink("ust-shm-tmp");
+	ret = shm_unlink(tmp_name);
 	if (ret < 0 && errno != ENOENT) {
 		PERROR("shm_unlink");
+		goto error_shm_release;
+	}
+	ret = pthread_sigmask(SIG_SETMASK, &orig_sigs, NULL);
+	if (ret == -1) {
+		PERROR("pthread_sigmask");
 		goto error_shm_release;
 	}
 	ret = ftruncate(shmfd, memory_map_size);
@@ -120,8 +141,8 @@ error_shm_release:
 		PERROR("close");
 		assert(0);
 	}
-error_shm_unlink:
 error_shm_open:
+error_pthread_sigmask:
 error_fcntl:
 	for (i = 0; i < 2; i++) {
 		ret = close(waitfd[i]);
