@@ -24,6 +24,8 @@
 #include <sys/prctl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
@@ -308,72 +310,143 @@ void cleanup_sock_info(struct sock_info *sock_info)
 	}
 }
 
+/*
+ * Using fork to set umask to 0777 in the child process (not
+ * multi-thread safe).
+ */
+static
+int get_wait_shm(struct sock_info *sock_info, size_t mmap_size)
+{
+	int wait_shm_fd, ret;
+	int read_mode;
+	pid_t pid;
+
+	/*
+	 * At this point, we should be able to open it for
+	 * reading. If it fails, then it's because there is
+	 * something wrong: bail out in that case.
+	 */
+	read_mode = S_IRUSR | S_IRGRP;
+	if (sock_info->global)
+		read_mode |= S_IROTH;
+
+	/*
+	 * Try to open read-only. If it is set read-only, it
+	 * means the shm size has been already set with
+	 * ftruncate. Note: all processes creating shm need to
+	 * call ftruncate on the shm before restricting its
+	 * access rights to read-only. The shm should never be
+	 * unlinked. It a rogue process try to create a non-accessible
+	 * shm or to unlink it, the worse-case scenario is that we don't
+	 * use the shm wakeup method and sleep/retry instead.
+	 */
+	wait_shm_fd = shm_open(sock_info->wait_shm_path,
+			O_RDONLY, read_mode);
+	if (wait_shm_fd >= 0) {
+		goto end;
+	} else if (wait_shm_fd < 0 && errno != ENOENT) {
+		/*
+		 * Real-only open did not work. It's a failure
+		 * that prohibits using shm.
+		 */
+		ERR("Error opening shm %s", sock_info->wait_shm_path);
+		goto end;
+	}
+
+	/*
+	 * If the open failed because the file did not exist, try
+	 * creating it ourself.
+	 */
+	pid = fork();
+	if (pid > 0) {
+		int status;
+
+		/*
+		 * Parent: wait for child to return, in which case the
+		 * shared memory map will have been created.
+		 */
+		pid = wait(&status);
+		if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+			wait_shm_fd = -1;
+			goto end;
+		}
+		/*
+		 * Try to open read-only again after creation.
+		 */
+		wait_shm_fd = shm_open(sock_info->wait_shm_path,
+				O_RDONLY, read_mode);
+		if (wait_shm_fd < 0) {
+			/*
+			 * Real-only open did not work. It's a failure
+			 * that prohibits using shm.
+			 */
+			ERR("Error opening shm %s", sock_info->wait_shm_path);
+			goto end;
+		}
+		goto end;
+	} else if (pid == 0) {
+		int create_mode;
+
+		/* Child */
+		create_mode = S_IRUSR | S_IRGRP | S_IWUSR | S_IWGRP;
+		if (sock_info->global)
+			create_mode |= S_IROTH | S_IWOTH;
+		/*
+		 * We're alone in a child process, so we can modify the
+		 * process-wide umask.
+		 */
+		umask(create_mode);
+		/*
+		 * First try creating shm (or get rw access). We need to start
+		 * by this because of the ftruncate vs concurrent map race.
+		 * We need to give write access to everyone because of the
+		 * ftruncate vs mmap race too. We don't do an exclusive
+		 * open, because we allow other processes to
+		 * create+ftruncate it concurrently.
+		 */
+		wait_shm_fd = shm_open(sock_info->wait_shm_path,
+				O_RDWR | O_CREAT, create_mode);
+		if (wait_shm_fd >= 0) {
+			ret = ftruncate(wait_shm_fd, mmap_size);
+			if (ret) {
+				PERROR("ftruncate");
+				exit(EXIT_FAILURE);
+			}
+			ret = fchmod(wait_shm_fd, read_mode);
+			if (ret) {
+				PERROR("fchmod");
+				exit(EXIT_FAILURE);
+			}
+			exit(EXIT_SUCCESS);
+		}
+		if (errno != EACCES) {
+			ERR("Error opening shm %s", sock_info->wait_shm_path);
+			exit(EXIT_FAILURE);
+		}
+		/*
+		 * The shm exists, but we cannot open it RW. It means it
+		 * has already been setup and ftruncated, so we can
+		 * let the child exit.
+		 */
+		exit(EXIT_SUCCESS);
+	} else {
+		return -1;
+	}
+end:
+	return wait_shm_fd;
+}
+
 static
 char *get_map_shm(struct sock_info *sock_info)
 {
 	size_t mmap_size = sysconf(_SC_PAGE_SIZE);
 	int wait_shm_fd, ret;
 	char *wait_shm_mmap;
-	int mode;
 
-	mode = S_IRUSR | S_IRGRP;
-	if (sock_info->global)
-		mode |= S_IROTH;
-
-	/*
-	 * Get existing (read-only) shm, or open new shm.
-	 * First try to open read-only.
-	 */
-	wait_shm_fd = shm_open(sock_info->wait_shm_path,
-			O_RDONLY, mode);
-	if (wait_shm_fd >= 0)
-		goto got_shm;
-	/*
-	 * Real-only open did not work. If it is because it did
-	 * not exist, try creating it. Else it's a failure that
-	 * prohibits using shm.
-	 */
-	if (errno != ENOENT) {
-		ERR("Error opening shm %s", sock_info->wait_shm_path);
+	wait_shm_fd = get_wait_shm(sock_info, mmap_size);
+	if (wait_shm_fd < 0) {
 		goto error;
 	}
-	wait_shm_fd = shm_open(sock_info->wait_shm_path,
-			O_RDWR | O_CREAT | O_EXCL, mode | S_IWUSR);
-	if (wait_shm_fd >= 0)
-		goto created_shm;
-	if (errno != EEXIST) {
-		ERR("Error opening shm %s", sock_info->wait_shm_path);
-		goto error;
-	}
-	/*
-	 * If another process beat us to create the shm, we are
-	 * pretty certain the shm is available for us in
-	 * read-only mode.
-	 */
-	wait_shm_fd = shm_open(sock_info->wait_shm_path,
-			O_RDWR | O_CREAT | O_EXCL, mode);
-	if (wait_shm_fd >= 0)
-		goto got_shm;
-	else
-		goto error;
-
-created_shm:
-	ret = ftruncate(wait_shm_fd, mmap_size);
-	if (ret) {
-		PERROR("ftruncate");
-		ret = close(wait_shm_fd);
-		if (ret) {
-			ERR("Error closing fd");
-		}
-		wait_shm_fd = -1;
-		goto error;
-	}
-	/* Drop write access ASAP */
-	ret = chmod(sock_info->wait_shm_path, mode);
-	if (ret) {
-		PERROR("chmod");
-	}
-got_shm:
 	wait_shm_mmap = mmap(NULL, mmap_size, PROT_READ,
 		  MAP_SHARED, wait_shm_fd, 0);
 	if (wait_shm_mmap == MAP_FAILED) {

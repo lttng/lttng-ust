@@ -47,7 +47,7 @@
 #define DEFAULT_HOME_CLIENT_UNIX_SOCK       "%s/.client-ltt-sessiond"
 
 #define DEFAULT_GLOBAL_APPS_WAIT_SHM_PATH   "/lttng-ust-apps-wait"
-#define DEFAULT_HOME_APPS_WAIT_SHM_PATH     "/%u-lttng-ust-apps-wait"
+#define DEFAULT_HOME_APPS_WAIT_SHM_PATH     "/lttng-ust-apps-wait-%u"
 
 /* Queue size of listen(2) */
 #define MAX_LISTEN 10
