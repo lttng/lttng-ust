@@ -513,7 +513,6 @@ void wait_for_sessiond(struct sock_info *sock_info)
 "mainline). LTTng-UST will use polling mode fallback.");
 			}
 			PERROR("futex");
-			sleep(5);
 		}
 	}
 	return;
@@ -524,8 +523,6 @@ quit:
 
 error:
 	ust_unlock();
-	/* Error handling: fallback on a 5 seconds sleep. */
-	sleep(5);
 	return;
 }
 
@@ -540,10 +537,25 @@ static
 void *ust_listener_thread(void *arg)
 {
 	struct sock_info *sock_info = arg;
-	int sock, ret;
+	int sock, ret, prev_connect_failed = 0, has_waited = 0;
 
 	/* Restart trying to connect to the session daemon */
 restart:
+	if (prev_connect_failed) {
+		/* Wait for sessiond availability with pipe */
+		wait_for_sessiond(sock_info);
+		if (has_waited) {
+			has_waited = 0;
+			/*
+			 * Sleep for 5 seconds before retrying after a
+			 * sequence of failure / wait / failure. This
+			 * deals with a killed or broken session daemon.
+			 */
+			sleep(5);
+		}
+		has_waited = 1;
+		prev_connect_failed = 0;
+	}
 	ust_lock();
 
 	if (lttng_ust_comm_should_quit) {
@@ -563,6 +575,7 @@ restart:
 	ret = lttcomm_connect_unix_sock(sock_info->sock_path);
 	if (ret < 0) {
 		ERR("Error connecting to %s apps socket", sock_info->name);
+		prev_connect_failed = 1;
 		/*
 		 * If we cannot find the sessiond daemon, don't delay
 		 * constructor execution.
@@ -570,9 +583,6 @@ restart:
 		ret = handle_register_done(sock_info);
 		assert(!ret);
 		ust_unlock();
-
-		/* Wait for sessiond availability with pipe */
-		wait_for_sessiond(sock_info);
 		goto restart;
 	}
 
@@ -595,6 +605,7 @@ restart:
 	ret = register_app_to_sessiond(sock);
 	if (ret < 0) {
 		ERR("Error registering to %s apps socket", sock_info->name);
+		prev_connect_failed = 1;
 		/*
 		 * If we cannot register to the sessiond daemon, don't
 		 * delay constructor execution.
@@ -602,7 +613,6 @@ restart:
 		ret = handle_register_done(sock_info);
 		assert(!ret);
 		ust_unlock();
-		wait_for_sessiond(sock_info);
 		goto restart;
 	}
 	ust_unlock();
