@@ -217,6 +217,9 @@ int handle_register_done(struct sock_info *sock_info)
 	if (sock_info->constructor_sem_posted)
 		return 0;
 	sock_info->constructor_sem_posted = 1;
+	if (uatomic_read(&sem_count) <= 0) {
+		return 0;
+	}
 	ret = uatomic_add_return(&sem_count, -1);
 	if (ret == 0) {
 		ret = sem_post(&constructor_wait);
