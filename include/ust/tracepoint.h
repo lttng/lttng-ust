@@ -392,9 +392,11 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
  *              TP_LOGLEVEL(LOG_DEBUG,   7)
  *      )
  *
- * 2) Then, declare tracepoint loglevels for tracepoints. The first
- *    field is the name of the tracepoint, the second field is the
- *    loglevel name.
+ * 2) Then, declare tracepoint loglevels for tracepoints. A
+ *    TRACEPOINT_EVENT should be declared prior to the the
+ *    TRACEPOINT_LOGLEVEL for a given tracepoint name. The first field
+ *    is the name of the tracepoint, the second field is the loglevel
+ *    name.
  *
  *      TRACEPOINT_LOGLEVEL(< [com_company_]project_[component_]event >,
  *              < loglevel_name >)
