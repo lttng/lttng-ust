@@ -232,6 +232,7 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
  *
  * Firstly, name your tracepoint via TRACEPOINT_EVENT(name,
  *
+ * The name should be a proper C99 identifier.
  * The "name" MUST follow these rules to ensure no namespace clash
  * occurs:
  *
@@ -327,6 +328,13 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
  *		ctf_integer(int, next_prio, next->prio)
  *	)
  * )
+ *
+ * Do _NOT_ add comma (,) nor semicolon (;) after the TRACEPOINT_EVENT
+ * declaration.
+ *
+ * The TRACEPOINT_SYSTEM must be defined when declaring a
+ * TRACEPOINT_EVENT. See ust/tracepoint-event.h for information about
+ * usage of other macros controlling TRACEPOINT_EVENT.
  */
 
 #define TRACEPOINT_EVENT(name, proto, args, fields)			\
@@ -347,5 +355,60 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
 	_DECLARE_TRACEPOINT_NOARGS(name)
 
 #endif /* #ifndef TRACEPOINT_EVENT */
+
+#ifndef TRACEPOINT_LOGLEVEL
+
+/*
+ * Tracepoint Loglevel Declaration Facility
+ *
+ * This is a place-holder the tracepoint loglevel declaration,
+ * overridden by the tracer implementation.
+ *
+ * Typical use of these loglevels:
+ *
+ * 1) Declare the mapping between loglevel names and an integer values
+ *    within TRACEPOINT_LOGLEVEL_ENUM, using TP_LOGLEVEL for each tuple.
+ *    Do _NOT_ add comma (,) nor semicolon (;) between the
+ *    TRACEPOINT_LOGLEVEL_ENUM entries. Do _NOT_ add comma (,) nor
+ *    semicolon (;) after the TRACEPOINT_LOGLEVEL_ENUM declaration.  The
+ *    name should be a proper C99 identifier.
+ *
+ *      TRACEPOINT_LOGLEVEL_ENUM(
+ *              TP_LOGLEVEL( < loglevel_name >, < value > )
+ *              TP_LOGLEVEL( < loglevel_name >, < value > )
+ *              ...
+ *      )
+ *
+ *    e.g.:
+ *
+ *      TRACEPOINT_LOGLEVEL_ENUM(
+ *              TP_LOGLEVEL(LOG_EMERG,   0)
+ *              TP_LOGLEVEL(LOG_ALERT,   1)
+ *              TP_LOGLEVEL(LOG_CRIT,    2)
+ *              TP_LOGLEVEL(LOG_ERR,     3)
+ *              TP_LOGLEVEL(LOG_WARNING, 4)
+ *              TP_LOGLEVEL(LOG_NOTICE,  5)
+ *              TP_LOGLEVEL(LOG_INFO,    6)
+ *              TP_LOGLEVEL(LOG_DEBUG,   7)
+ *      )
+ *
+ * 2) Then, declare tracepoint loglevels for tracepoints. The first
+ *    field is the name of the tracepoint, the second field is the
+ *    loglevel name.
+ *
+ *      TRACEPOINT_LOGLEVEL(< [com_company_]project_[component_]event >,
+ *              < loglevel_name >)
+ *
+ * The TRACEPOINT_SYSTEM must be defined when declaring a
+ * TRACEPOINT_LOGLEVEL_ENUM and TRACEPOINT_LOGLEVEL. The tracepoint
+ * loglevel enumeration apply to the entire TRACEPOINT_SYSTEM. Only one
+ * tracepoint loglevel enumeration should be declared per tracepoint
+ * system.
+ */
+
+#define TRACEPOINT_LOGLEVEL_ENUM()
+#define TRACEPOINT_LOGLEVEL(name, loglevel)
+
+#endif /* #ifndef TRACEPOINT_LOGLEVEL */
 
 #endif /* _UST_TRACEPOINT_H */
