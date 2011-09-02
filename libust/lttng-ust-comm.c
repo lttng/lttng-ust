@@ -184,10 +184,6 @@ int register_app_to_sessiond(int socket)
 	ret = lttcomm_send_unix_sock(socket, &reg_msg, sizeof(reg_msg));
 	if (ret >= 0 && ret != sizeof(reg_msg))
 		return -EIO;
-	ret = fdatasync(socket);
-	if (ret) {
-		return -errno;
-	}
 	return ret;
 }
 
@@ -195,17 +191,11 @@ static
 int send_reply(int sock, struct lttcomm_ust_reply *lur)
 {
 	ssize_t len;
-	int ret;
 
 	len = lttcomm_send_unix_sock(sock, lur, sizeof(*lur));
 	switch (len) {
 	case sizeof(*lur):
 		DBG("message successfully sent");
-		ret = fdatasync(sock);
-		if (ret) {
-			DBG("fdatasync error");
-			return -1;
-		}
 		return 0;
 	case -1:
 		if (errno == ECONNRESET) {
