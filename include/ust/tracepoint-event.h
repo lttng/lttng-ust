@@ -37,6 +37,10 @@
  *     searching for a header within your project build tree.
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef TRACEPOINT_CREATE_PROBES
 
 /* Prevent recursion */
@@ -111,3 +115,7 @@
 #define TRACEPOINT_CREATE_PROBES
 
 #endif /* TRACEPOINT_CREATE_PROBES */
+
+#ifdef __cplusplus 
+}
+#endif
