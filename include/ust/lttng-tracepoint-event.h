@@ -318,19 +318,6 @@ static inline size_t __event_get_size__##_name(size_t *__dynamic_len, _proto) \
 	return __event_len;						      \
 }
 
-#undef TRACEPOINT_EVENT_CLASS_NOARGS
-#define TRACEPOINT_EVENT_CLASS_NOARGS(_name, _fields)			      \
-static inline size_t __event_get_size__##_name(size_t *__dynamic_len)	      \
-{									      \
-	size_t __event_len = 0;						      \
-	unsigned int __dynamic_len_idx = 0;				      \
-									      \
-	if (0)								      \
-		(void) __dynamic_len_idx;	/* don't warn if unused */    \
-	_fields								      \
-	return __event_len;						      \
-}
-
 #include TRACEPOINT_INCLUDE(TRACEPOINT_INCLUDE_FILE)
 
 /*
@@ -374,15 +361,6 @@ static inline size_t __event_get_size__##_name(size_t *__dynamic_len)	      \
 #undef TRACEPOINT_EVENT_CLASS
 #define TRACEPOINT_EVENT_CLASS(_name, _proto, _args, _fields)		      \
 static inline size_t __event_get_align__##_name(_proto)			      \
-{									      \
-	size_t __event_align = 1;					      \
-	_fields								      \
-	return __event_align;						      \
-}
-
-#undef TRACEPOINT_EVENT_CLASS_NOARGS
-#define TRACEPOINT_EVENT_CLASS_NOARGS(_name, _fields)			      \
-static inline size_t __event_get_align__##_name(void)			      \
 {									      \
 	size_t __event_align = 1;					      \
 	_fields								      \
@@ -496,20 +474,16 @@ static void __event_probe__##_name(void *__data)			      \
 	struct ltt_channel *__chan = __event->chan;			      \
 	struct lib_ring_buffer_ctx ctx;					      \
 	size_t __event_len, __event_align;				      \
-	size_t __dynamic_len_idx = 0;					      \
-	size_t __dynamic_len[_TP_ARRAY_SIZE(__event_fields___##_name)];	      \
 	int __ret;							      \
 									      \
-	if (0)								      \
-		(void) __dynamic_len_idx;	/* don't warn if unused */    \
 	if (unlikely(!CMM_ACCESS_ONCE(__chan->session->active)))	      \
 		return;							      \
 	if (unlikely(!CMM_ACCESS_ONCE(__chan->enabled)))		      \
 		return;							      \
 	if (unlikely(!CMM_ACCESS_ONCE(__event->enabled)))		      \
 		return;							      \
-	__event_len = __event_get_size__##_name(__dynamic_len);		      \
-	__event_align = __event_get_align__##_name();			      \
+	__event_len = 0;						      \
+	__event_align = 1;						      \
 	lib_ring_buffer_ctx_init(&ctx, __chan->chan, __event, __event_len,    \
 				 __event_align, -1, __chan->handle);	      \
 	__ret = __chan->ops->event_reserve(&ctx, __event->id);		      \
