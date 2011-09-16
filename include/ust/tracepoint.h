@@ -28,6 +28,10 @@
 #include <urcu-bp.h>
 #include <urcu/list.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct tracepoint_probe {
 	void *func;
 	void *data;
@@ -61,7 +65,7 @@ struct tracepoint {
 			do {						\
 				__tp_it_func = __tp_it_probe_ptr->func;	\
 				__tp_cb_data = __tp_it_probe_ptr->data;	\
-				((void(*)(proto))__tp_it_func)(args);	\
+				URCU_FORCE_CAST(void(*)(proto), __tp_it_func)(args); \
 			} while ((++__tp_it_probe_ptr)->func);		\
 		}							\
 		rcu_read_unlock();					\
@@ -412,5 +416,9 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
 #define TRACEPOINT_LOGLEVEL(name, loglevel)
 
 #endif /* #ifndef TRACEPOINT_LOGLEVEL */
+
+#ifdef __cplusplus 
+}
+#endif
 
 #endif /* _UST_TRACEPOINT_H */

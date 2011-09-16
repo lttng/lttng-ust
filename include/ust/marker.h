@@ -31,6 +31,10 @@
 #include <bits/wordsize.h>
 #include <urcu/list.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct ust_marker;
 struct ust_marker_probe_array;
 
@@ -217,5 +221,9 @@ void __MARKER_LIB_IS_DEPRECATED()
  * UST_MARKER_NOARGS instead.
  */
 #define MARK_NOARGS	UST_MARKER_NOARGS
+
+#ifdef __cplusplus 
+}
+#endif
 
 #endif /* _UST_MARKER_H */

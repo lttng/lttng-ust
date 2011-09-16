@@ -20,6 +20,10 @@
 #ifndef _UST_H
 #define _UST_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct ust_fork_info {
 	sigset_t orig_sigs;
 } ust_fork_info_t;
@@ -27,5 +31,9 @@ typedef struct ust_fork_info {
 extern void ust_before_fork(ust_fork_info_t *fork_info);
 extern void ust_after_fork_parent(ust_fork_info_t *fork_info);
 extern void ust_after_fork_child(ust_fork_info_t *fork_info);
+
+#ifdef __cplusplus 
+}
+#endif
 
 #endif /* _UST_H */
