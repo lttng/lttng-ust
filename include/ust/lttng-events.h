@@ -209,7 +209,9 @@ struct ltt_channel_ops {
 				unsigned int read_timer_interval);
 	void (*channel_destroy)(struct ltt_channel *ltt_chan);
 	struct lib_ring_buffer *(*buffer_read_open)(struct channel *chan,
-				struct shm_handle *handle);
+				struct shm_handle *handle,
+				int *shm_fd, int *wait_fd,
+				uint64_t *memory_map_size);
 	void (*buffer_read_close)(struct lib_ring_buffer *buf,
 				struct shm_handle *handle);
 	int (*event_reserve)(struct lib_ring_buffer_ctx *ctx,

@@ -482,7 +482,6 @@ void *lib_ring_buffer_offset_address(struct lib_ring_buffer_backend *bufb,
 	struct channel_backend *chanb = &shmp(handle, bufb->chan)->backend;
 	const struct lib_ring_buffer_config *config = chanb->config;
 	unsigned long sb_bindex, id;
-	void *ret;
 
 	offset &= chanb->buf_size - 1;
 	sbidx = offset >> chanb->subbuf_size_order;

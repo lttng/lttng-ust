@@ -103,4 +103,22 @@ int shm_get_wait_fd(struct shm_handle *handle, struct shm_ref *ref)
 	return obj->wait_fd[0];
 }
 
+static inline
+int shm_get_object_data(struct shm_handle *handle, struct shm_ref *ref,
+		int *shm_fd, int *wait_fd, uint64_t *memory_map_size)
+{
+	struct shm_object_table *table = handle->table;
+	struct shm_object *obj;
+	size_t index;
+
+	index = (size_t) ref->index;
+	if (unlikely(index >= table->allocated_len))
+		return -EPERM;
+	obj = &table->objects[index];
+	*shm_fd = obj->shm_fd;
+	*wait_fd = obj->wait_fd[0];
+	*memory_map_size = obj->memory_map_size;
+	return 0;
+}
+
 #endif /* _LIBRINGBUFFER_SHM_H */

@@ -577,12 +577,23 @@ void *channel_destroy(struct channel *chan, struct shm_handle *handle)
 struct lib_ring_buffer *channel_get_ring_buffer(
 					const struct lib_ring_buffer_config *config,
 					struct channel *chan, int cpu,
-					struct shm_handle *handle)
+					struct shm_handle *handle,
+					int *shm_fd, int *wait_fd,
+					uint64_t *memory_map_size)
 {
-	if (config->alloc == RING_BUFFER_ALLOC_GLOBAL)
+	struct shm_ref *ref;
+
+	if (config->alloc == RING_BUFFER_ALLOC_GLOBAL) {
+		ref = &chan->backend.buf[0].shmp._ref;
+		shm_get_object_data(handle, ref, shm_fd, wait_fd,
+			memory_map_size);
 		return shmp(handle, chan->backend.buf[0].shmp);
-	else
+	} else {
+		ref = &chan->backend.buf[cpu].shmp._ref;
+		shm_get_object_data(handle, ref, shm_fd, wait_fd,
+			memory_map_size);
 		return shmp(handle, chan->backend.buf[cpu].shmp);
+	}
 }
 
 int lib_ring_buffer_open_read(struct lib_ring_buffer *buf,

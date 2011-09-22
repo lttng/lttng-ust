@@ -126,6 +126,7 @@ struct lttcomm_ust_msg {
 	union {
 		struct lttng_ust_tracer_version version;
 		struct lttng_ust_channel channel;
+		struct lttng_ust_stream stream;
 		struct lttng_ust_event event;
 		struct lttng_ust_context context;
 	} u;
@@ -141,6 +142,9 @@ struct lttcomm_ust_reply {
 	uint32_t ret_code;	/* enum enum lttcomm_return_code */
 	uint32_t ret_val;	/* return value */
 	union {
+		struct {
+			uint64_t memory_map_size;
+		} stream;
 	} u;
 };
 

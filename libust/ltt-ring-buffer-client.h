@@ -399,13 +399,17 @@ void ltt_channel_destroy(struct ltt_channel *ltt_chan)
 
 static
 struct lib_ring_buffer *ltt_buffer_read_open(struct channel *chan,
-					     struct shm_handle *handle)
+					     struct shm_handle *handle,
+					     int *shm_fd, int *wait_fd,
+					     uint64_t *memory_map_size)
 {
 	struct lib_ring_buffer *buf;
 	int cpu;
 
 	for_each_channel_cpu(cpu, chan) {
-		buf = channel_get_ring_buffer(&client_config, chan, cpu, handle);
+		buf = channel_get_ring_buffer(&client_config, chan,
+				cpu, handle, shm_fd, wait_fd,
+				memory_map_size);
 		if (!lib_ring_buffer_open_read(buf, handle))
 			return buf;
 	}

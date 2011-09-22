@@ -204,6 +204,7 @@ static const struct objd_ops lttng_session_ops;
 static const struct objd_ops lttng_channel_ops;
 static const struct objd_ops lttng_metadata_ops;
 static const struct objd_ops lttng_event_ops;
+static const struct objd_ops lib_ring_buffer_objd_ops;
 
 enum channel_type {
 	PER_CPU_CHANNEL,
@@ -505,35 +506,46 @@ static const struct objd_ops lttng_session_ops = {
 	.cmd = lttng_session_cmd,
 };
 
-#if 0
+struct stream_priv_data {
+	struct lib_ring_buffer *buf;
+	struct ltt_channel *ltt_chan;
+};
+
 static
-int lttng_abi_open_stream(int channel_objd)
+int lttng_abi_open_stream(int channel_objd, struct lttng_ust_stream *info)
 {
 	struct ltt_channel *channel = objd_private(channel_objd);
 	struct lib_ring_buffer *buf;
+	struct stream_priv_data *priv;
 	int stream_objd, ret;
 
-	buf = channel->ops->buffer_read_open(channel->chan);
+	buf = channel->ops->buffer_read_open(channel->chan, channel->handle,
+			&info->shm_fd, &info->wait_fd, &info->memory_map_size);
 	if (!buf)
 		return -ENOENT;
 
-	stream_objd = objd_alloc(buf, &lib_ring_buffer_objd_ops);
+	priv = zmalloc(sizeof(*priv));
+	if (!priv) {
+		ret = -ENOMEM;
+		goto alloc_error;
+	}
+	priv->buf = buf;
+	priv->ltt_chan = channel;
+	stream_objd = objd_alloc(priv, &lib_ring_buffer_objd_ops);
 	if (stream_objd < 0) {
 		ret = stream_objd;
 		goto objd_error;
 	}
-	/*
-	 * The stream holds a reference to the channel within the generic ring
-	 * buffer library, so no need to hold a refcount on the channel and
-	 * session files here.
-	 */
+	/* Hold a reference on the channel object descriptor */
+	objd_ref(channel_objd);
 	return stream_objd;
 
 objd_error:
-	channel->ops->buffer_read_close(buf);
+	free(priv);
+alloc_error:
+	channel->ops->buffer_read_close(buf, channel->handle);
 	return ret;
 }
-#endif //0
 
 static
 int lttng_abi_create_event(int channel_objd,
@@ -603,8 +615,13 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg)
 
 	switch (cmd) {
 	case LTTNG_UST_STREAM:
-		return -ENOSYS;	//TODO
-		//return lttng_abi_open_stream(objd);
+	{
+		struct lttng_ust_stream *stream;
+
+		stream = (struct lttng_ust_stream *) arg;
+		/* stream used as output */
+		return lttng_abi_open_stream(objd, stream);
+	}
 	case LTTNG_UST_EVENT:
 		return lttng_abi_create_event(objd, (struct lttng_ust_event *) arg);
 	case LTTNG_UST_CONTEXT:
@@ -638,8 +655,13 @@ long lttng_metadata_cmd(int objd, unsigned int cmd, unsigned long arg)
 {
 	switch (cmd) {
 	case LTTNG_UST_STREAM:
-		return -ENOSYS;	//TODO
-		//return lttng_abi_open_stream(objd);
+	{
+		struct lttng_ust_stream *stream;
+
+		stream = (struct lttng_ust_stream *) arg;
+		/* stream used as output */
+		return lttng_abi_open_stream(objd, stream);
+	}
 	default:
 		return -EINVAL;
 	}
@@ -694,6 +716,50 @@ static const struct objd_ops lttng_channel_ops = {
 static const struct objd_ops lttng_metadata_ops = {
 	.release = lttng_channel_release,
 	.cmd = lttng_metadata_cmd,
+};
+
+/**
+ *	lttng_rb_cmd - lttng ring buffer control through object descriptors
+ *
+ *	@objd: the object descriptor
+ *	@cmd: the command
+ *	@arg: command arg
+ *
+ *	This object descriptor implements lttng commands:
+ *		(None for now. Access is done directly though shm.)
+ *		TODO: Add buffer flush.
+ */
+static
+long lttng_rb_cmd(int objd, unsigned int cmd, unsigned long arg)
+{
+	struct stream_priv_data *priv = objd_private(objd);
+
+	switch (cmd) {
+	default:
+		return -EINVAL;
+	}
+}
+
+static
+int lttng_rb_release(int objd)
+{
+	struct stream_priv_data *priv = objd_private(objd);
+	struct lib_ring_buffer *buf;
+	struct ltt_channel *channel;
+
+	if (priv) {
+		buf = priv->buf;
+		channel = priv->ltt_chan;
+		free(priv);
+
+		return objd_unref(channel->objd);
+	}
+	return 0;
+}
+
+static const struct objd_ops lib_ring_buffer_objd_ops = {
+	.release = lttng_rb_release,
+	.cmd = lttng_rb_cmd,
 };
 
 /**

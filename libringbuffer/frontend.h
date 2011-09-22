@@ -67,7 +67,9 @@ void *channel_destroy(struct channel *chan, struct shm_handle *handle);
 extern struct lib_ring_buffer *channel_get_ring_buffer(
 				const struct lib_ring_buffer_config *config,
 				struct channel *chan, int cpu,
-				struct shm_handle *handle);
+				struct shm_handle *handle,
+				int *shm_fd, int *wait_fd,
+				uint64_t *memory_map_size);
 extern int lib_ring_buffer_open_read(struct lib_ring_buffer *buf,
 				     struct shm_handle *handle);
 extern void lib_ring_buffer_release_read(struct lib_ring_buffer *buf,

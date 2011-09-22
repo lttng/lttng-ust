@@ -282,8 +282,33 @@ end:
 	} else {
 		lur.ret_code = LTTCOMM_SESSION_FAIL;
 	}
+	if (lum->cmd == LTTNG_UST_STREAM) {
+		/*
+		 * Special-case reply to send stream info.
+		 * Use lum.u output.
+		 */
+		lur.u.stream.memory_map_size = lum->u.stream.memory_map_size;
+	}
 	ret = send_reply(sock, &lur);
 
+	if (lum->cmd == LTTNG_UST_STREAM && ret >= 0) {
+		/* we also need to send the file descriptors. */
+		ret = lttcomm_send_fds_unix_sock(sock,
+			&lum->u.stream.shm_fd, &lum->u.stream.shm_fd,
+			1, sizeof(int));
+		if (ret < 0) {
+			perror("send shm_fd");
+			goto error;
+		}
+		ret = lttcomm_send_fds_unix_sock(sock,
+			&lum->u.stream.wait_fd, &lum->u.stream.wait_fd,
+			1, sizeof(int));
+		if (ret < 0) {
+			perror("send wait_fd");
+			goto error;
+		}
+	}
+error:
 	ust_unlock();
 	return ret;
 }
