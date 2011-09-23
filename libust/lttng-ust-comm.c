@@ -294,6 +294,7 @@ end:
 		shm_fd = lum->u.stream.shm_fd;
 		wait_fd = lum->u.stream.wait_fd;
 		break;
+	case LTTNG_UST_METADATA:
 	case LTTNG_UST_CHANNEL:
 		lur.u.channel.memory_map_size = lum->u.channel.memory_map_size;
 		shm_fd = lum->u.channel.shm_fd;
@@ -306,7 +307,9 @@ end:
 		goto error;
 	}
 
-	if ((lum->cmd == LTTNG_UST_STREAM || lum->cmd == LTTNG_UST_CHANNEL)
+	if ((lum->cmd == LTTNG_UST_STREAM
+	     || lum->cmd == LTTNG_UST_CHANNEL
+	     || lum->cmd == LTTNG_UST_METADATA)
 			&& lur.ret_code == LTTCOMM_OK) {
 		/* we also need to send the file descriptors. */
 		ret = lttcomm_send_fds_unix_sock(sock,

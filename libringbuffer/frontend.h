@@ -62,7 +62,8 @@ int channel_handle_add_stream(struct shm_handle *handle,
  * channel.
  */
 extern
-void *channel_destroy(struct channel *chan, struct shm_handle *handle);
+void *channel_destroy(struct channel *chan, struct shm_handle *handle,
+		int shadow);
 
 
 /* Buffer read operations */
@@ -83,9 +84,11 @@ extern struct lib_ring_buffer *channel_get_ring_buffer(
 				int *shm_fd, int *wait_fd,
 				uint64_t *memory_map_size);
 extern int lib_ring_buffer_open_read(struct lib_ring_buffer *buf,
-				     struct shm_handle *handle);
+				     struct shm_handle *handle,
+				     int shadow);
 extern void lib_ring_buffer_release_read(struct lib_ring_buffer *buf,
-					 struct shm_handle *handle);
+					 struct shm_handle *handle,
+					 int shadow);
 
 /*
  * Read sequence: snapshot, many get_subbuf/put_subbuf, move_consumer.

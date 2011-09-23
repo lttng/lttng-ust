@@ -397,7 +397,7 @@ struct ltt_channel *_channel_create(const char *name,
 static
 void ltt_channel_destroy(struct ltt_channel *ltt_chan)
 {
-	channel_destroy(ltt_chan->chan, ltt_chan->handle);
+	channel_destroy(ltt_chan->chan, ltt_chan->handle, 0);
 }
 
 static
@@ -413,7 +413,7 @@ struct lib_ring_buffer *ltt_buffer_read_open(struct channel *chan,
 		buf = channel_get_ring_buffer(&client_config, chan,
 				cpu, handle, shm_fd, wait_fd,
 				memory_map_size);
-		if (!lib_ring_buffer_open_read(buf, handle))
+		if (!lib_ring_buffer_open_read(buf, handle, 0))
 			return buf;
 	}
 	return NULL;
@@ -423,7 +423,7 @@ static
 void ltt_buffer_read_close(struct lib_ring_buffer *buf,
 			   struct shm_handle *handle)
 {
-	lib_ring_buffer_release_read(buf, handle);
+	lib_ring_buffer_release_read(buf, handle, 0);
 }
 
 static

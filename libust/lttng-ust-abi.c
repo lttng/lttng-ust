@@ -179,13 +179,8 @@ void objd_table_destroy(void)
 
 	for (i = 0; i < objd_table.allocated_len; i++) {
 		struct obj *obj = _objd_get(i);
-		const struct objd_ops *ops;
 
-		if (!obj)
-			continue;
-		ops = obj->u.s.ops;
-		if (ops->release)
-			ops->release(i);
+		(void) objd_unref(i);
 	}
 	free(objd_table.array);
 	objd_table.array = NULL;
@@ -754,6 +749,7 @@ int lttng_rb_release(int objd)
 		buf = priv->buf;
 		channel = priv->ltt_chan;
 		free(priv);
+		channel->ops->buffer_read_close(buf, channel->handle);
 
 		return objd_unref(channel->objd);
 	}

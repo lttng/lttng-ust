@@ -214,6 +214,8 @@ void shmp_object_destroy(struct shm_object *obj)
 		assert(0);
 	}
 	for (i = 0; i < 2; i++) {
+		if (obj->wait_fd[i] < 0)
+			continue;
 		ret = close(obj->wait_fd[i]);
 		if (ret) {
 			PERROR("close");

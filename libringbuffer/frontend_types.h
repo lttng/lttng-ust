@@ -87,6 +87,7 @@ struct lib_ring_buffer {
 					 * Active readers count
 					 * standard atomic access (shared)
 					 */
+	long active_shadow_readers;
 					/* Dropped records */
 	union v_atomic records_lost_full;	/* Buffer full */
 	union v_atomic records_lost_wrap;	/* Nested wrap-around */
