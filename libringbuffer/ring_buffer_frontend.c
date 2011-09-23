@@ -643,6 +643,8 @@ struct lib_ring_buffer *channel_get_ring_buffer(
 			memory_map_size);
 		return shmp(handle, chan->backend.buf[0].shmp);
 	} else {
+		if (cpu >= num_possible_cpus())
+			return NULL;
 		ref = &chan->backend.buf[cpu].shmp._ref;
 		shm_get_object_data(handle, ref, shm_fd, wait_fd,
 			memory_map_size);
