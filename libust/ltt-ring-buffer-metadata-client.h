@@ -23,6 +23,8 @@ struct metadata_packet_header {
 	uint8_t  compression_scheme;	/* 0 if unused */
 	uint8_t  encryption_scheme;	/* 0 if unused */
 	uint8_t  checksum_scheme;	/* 0 if unused */
+	uint8_t  major;			/* CTF spec major version number */
+	uint8_t  minor;			/* CTF spec minor version number */
 	uint8_t  header_end[0];
 };
 
@@ -96,6 +98,9 @@ static void client_buffer_begin(struct lib_ring_buffer *buf, u64 tsc,
 	header->compression_scheme = 0;	/* 0 if unused */
 	header->encryption_scheme = 0;	/* 0 if unused */
 	header->checksum_scheme = 0;	/* 0 if unused */
+	header->major = CTF_SPEC_MAJOR;
+	header->minor = CTF_SPEC_MINOR;
+
 }
 
 /*

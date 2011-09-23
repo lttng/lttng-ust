@@ -37,6 +37,12 @@
 /* Tracer properties */
 #define CTF_MAGIC_NUMBER		0xC1FC1FC1
 #define TSDL_MAGIC_NUMBER		0x75D11D57
+
+/* CTF specification version followed */
+#define CTF_SPEC_MAJOR			1
+#define CTF_SPEC_MINOR			8
+
+/* Tracer major/minor versions */
 #define CTF_VERSION_MAJOR		0
 #define CTF_VERSION_MINOR		1
 

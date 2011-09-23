@@ -10,6 +10,7 @@
 
 #define _GNU_SOURCE
 #include <stdio.h>
+#include <endian.h>
 #include <urcu/list.h>
 #include <urcu/hlist.h>
 #include <pthread.h>
@@ -562,7 +563,7 @@ int _ltt_field_statedump(struct ltt_session *session,
 					? "UTF8"
 					: "ASCII",
 			field->type.u.basic.integer.base,
-#ifdef __BIG_ENDIAN
+#if (BYTE_ORDER == BIG_ENDIAN)
 			field->type.u.basic.integer.reverse_byte_order ? " byte_order = le;" : "",
 #else
 			field->type.u.basic.integer.reverse_byte_order ? " byte_order = be;" : "",
@@ -571,11 +572,11 @@ int _ltt_field_statedump(struct ltt_session *session,
 		break;
 	case atype_float:
 		ret = lttng_metadata_printf(session,
-			"		floating_point { exp_dig = %u; mant_dig = %u; align = %u; } _%s;\n",
+			"		floating_point { exp_dig = %u; mant_dig = %u; align = %u;%s } _%s;\n",
 			field->type.u.basic._float.exp_dig,
 			field->type.u.basic._float.mant_dig,
 			field->type.u.basic._float.alignment,
-#ifdef __BIG_ENDIAN
+#if (BYTE_ORDER == BIG_ENDIAN)
 			field->type.u.basic.integer.reverse_byte_order ? " byte_order = le;" : "",
 #else
 			field->type.u.basic.integer.reverse_byte_order ? " byte_order = be;" : "",
@@ -604,7 +605,7 @@ int _ltt_field_statedump(struct ltt_session *session,
 					? "UTF8"
 					: "ASCII",
 			elem_type->u.basic.integer.base,
-#ifdef __BIG_ENDIAN
+#if (BYTE_ORDER == BIG_ENDIAN)
 			elem_type->u.basic.integer.reverse_byte_order ? " byte_order = le;" : "",
 #else
 			elem_type->u.basic.integer.reverse_byte_order ? " byte_order = be;" : "",
@@ -630,7 +631,7 @@ int _ltt_field_statedump(struct ltt_session *session,
 					? "UTF8"
 					: "ASCII"),
 			length_type->u.basic.integer.base,
-#ifdef __BIG_ENDIAN
+#if (BYTE_ORDER == BIG_ENDIAN)
 			length_type->u.basic.integer.reverse_byte_order ? " byte_order = le;" : "",
 #else
 			length_type->u.basic.integer.reverse_byte_order ? " byte_order = be;" : "",
@@ -650,7 +651,7 @@ int _ltt_field_statedump(struct ltt_session *session,
 					? "UTF8"
 					: "ASCII"),
 			elem_type->u.basic.integer.base,
-#ifdef __BIG_ENDIAN
+#if (BYTE_ORDER == BIG_ENDIAN)
 			elem_type->u.basic.integer.reverse_byte_order ? " byte_order = le;" : "",
 #else
 			elem_type->u.basic.integer.reverse_byte_order ? " byte_order = be;" : "",
@@ -941,7 +942,7 @@ int _ltt_session_metadata_statedump(struct ltt_session *session)
 		CTF_VERSION_MAJOR,
 		CTF_VERSION_MINOR,
 		uuid_s,
-#ifdef __BIG_ENDIAN
+#if (BYTE_ORDER == BIG_ENDIAN)
 		"be"
 #else
 		"le"
