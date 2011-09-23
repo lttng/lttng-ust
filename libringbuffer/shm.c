@@ -165,6 +165,39 @@ error_pipe:
 	
 }
 
+struct shm_object *shm_object_table_append_shadow(struct shm_object_table *table,
+			int shm_fd, int wait_fd, size_t memory_map_size)
+{
+	struct shm_object *obj;
+	char *memory_map;
+
+	if (table->allocated_len >= table->size)
+		return NULL;
+	obj = &table->objects[table->allocated_len];
+
+	/* wait_fd: set read end of the pipe. */
+	obj->wait_fd[0] = wait_fd;
+	obj->wait_fd[1] = -1;	/* write end is unset. */
+	obj->shm_fd = shm_fd;
+
+	/* memory_map: mmap */
+	memory_map = mmap(NULL, memory_map_size, PROT_READ | PROT_WRITE,
+			  MAP_SHARED, shm_fd, 0);
+	if (memory_map == MAP_FAILED) {
+		PERROR("mmap");
+		goto error_mmap;
+	}
+	obj->memory_map = memory_map;
+	obj->memory_map_size = memory_map_size;
+	obj->allocated_len = memory_map_size;
+	obj->index = table->allocated_len++;
+
+	return obj;
+
+error_mmap:
+	return NULL;
+}
+
 static
 void shmp_object_destroy(struct shm_object *obj)
 {

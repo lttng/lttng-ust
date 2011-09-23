@@ -71,7 +71,7 @@ struct channel_backend {
 	unsigned long num_subbuf;	/* Number of sub-buffers for writer */
 	u64 start_tsc;			/* Channel creation TSC value */
 	void *priv;			/* Client-specific information */
-	const struct lib_ring_buffer_config *config; /* Ring buffer configuration */
+	struct lib_ring_buffer_config config; /* Ring buffer configuration */
 	char name[NAME_MAX];		/* Channel name */
 	struct lib_ring_buffer_shmp buf[];
 };

@@ -74,7 +74,7 @@ int main(int argc, char **argv)
 
 	printf("Hello, World!\n");
 
-	sleep(1);
+	sleep(10);
 
 	//for (i = 0; i < 50; i++) {
 	for (i = 0; i < 1000000; i++) {

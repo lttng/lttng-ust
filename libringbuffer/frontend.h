@@ -42,7 +42,19 @@ struct shm_handle *channel_create(const struct lib_ring_buffer_config *config,
 				void *buf_addr,
 				size_t subbuf_size, size_t num_subbuf,
 				unsigned int switch_timer_interval,
-				unsigned int read_timer_interval);
+				unsigned int read_timer_interval,
+				int *shm_fd, int *wait_fd,
+				uint64_t *memory_map_size);
+
+/* channel_handle_create - for consumer. */
+extern
+struct shm_handle *channel_handle_create(int shm_fd, int wait_fd,
+					uint64_t memory_map_size);
+
+/* channel_handle_add_stream - for consumer. */
+extern
+int channel_handle_add_stream(struct shm_handle *handle,
+		int shm_fd, int wait_fd, uint64_t memory_map_size);
 
 /*
  * channel_destroy returns the private data pointer. It finalizes all channel's

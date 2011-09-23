@@ -380,11 +380,14 @@ struct ltt_channel *_channel_create(const char *name,
 				struct ltt_channel *ltt_chan, void *buf_addr,
 				size_t subbuf_size, size_t num_subbuf,
 				unsigned int switch_timer_interval,
-				unsigned int read_timer_interval)
+				unsigned int read_timer_interval,
+				int *shm_fd, int *wait_fd,
+				uint64_t *memory_map_size)
 {
 	ltt_chan->handle = channel_create(&client_config, name, ltt_chan, buf_addr,
 			      subbuf_size, num_subbuf, switch_timer_interval,
-			      read_timer_interval);
+			      read_timer_interval, shm_fd, wait_fd,
+			      memory_map_size);
 	if (!ltt_chan->handle)
 		return NULL;
 	ltt_chan->chan = shmp(ltt_chan->handle, ltt_chan->handle->chan);

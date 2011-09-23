@@ -144,6 +144,9 @@ struct lttcomm_ust_reply {
 	union {
 		struct {
 			uint64_t memory_map_size;
+		} channel;
+		struct {
+			uint64_t memory_map_size;
 		} stream;
 	} u;
 };

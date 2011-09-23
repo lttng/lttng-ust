@@ -206,7 +206,9 @@ struct ltt_channel_ops {
 				void *buf_addr,
 				size_t subbuf_size, size_t num_subbuf,
 				unsigned int switch_timer_interval,
-				unsigned int read_timer_interval);
+				unsigned int read_timer_interval,
+				int *shm_fd, int *wait_fd,
+				uint64_t *memory_map_size);
 	void (*channel_destroy)(struct ltt_channel *ltt_chan);
 	struct lib_ring_buffer *(*buffer_read_open)(struct channel *chan,
 				struct shm_handle *handle,
@@ -278,12 +280,16 @@ struct ltt_channel *ltt_channel_create(struct ltt_session *session,
 				       void *buf_addr,
 				       size_t subbuf_size, size_t num_subbuf,
 				       unsigned int switch_timer_interval,
-				       unsigned int read_timer_interval);
+				       unsigned int read_timer_interval,
+				       int *shm_fd, int *wait_fd,
+				       uint64_t *memory_map_size);
 struct ltt_channel *ltt_global_channel_create(struct ltt_session *session,
 				       int overwrite, void *buf_addr,
 				       size_t subbuf_size, size_t num_subbuf,
 				       unsigned int switch_timer_interval,
-				       unsigned int read_timer_interval);
+				       unsigned int read_timer_interval,
+				       int *shm_fd, int *wait_fd,
+				       uint64_t *memory_map_size);
 
 struct ltt_event *ltt_event_create(struct ltt_channel *chan,
 				   struct lttng_ust_event *event_param,

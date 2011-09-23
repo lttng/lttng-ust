@@ -299,7 +299,9 @@ struct ltt_channel *ltt_channel_create(struct ltt_session *session,
 				       void *buf_addr,
 				       size_t subbuf_size, size_t num_subbuf,
 				       unsigned int switch_timer_interval,
-				       unsigned int read_timer_interval)
+				       unsigned int read_timer_interval,
+				       int *shm_fd, int *wait_fd,
+				       uint64_t *memory_map_size)
 {
 	struct ltt_channel *chan;
 	struct ltt_transport *transport;
@@ -324,7 +326,8 @@ struct ltt_channel *ltt_channel_create(struct ltt_session *session,
 	 */
 	transport->ops.channel_create("[lttng]", chan, buf_addr,
 			subbuf_size, num_subbuf, switch_timer_interval,
-			read_timer_interval);
+			read_timer_interval, shm_fd, wait_fd,
+			memory_map_size);
 	if (!chan->chan)
 		goto create_error;
 	chan->enabled = 1;

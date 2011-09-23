@@ -408,7 +408,10 @@ int lttng_abi_create_channel(int session_objd,
 				  chan_param->subbuf_size,
 				  chan_param->num_subbuf,
 				  chan_param->switch_timer_interval,
-				  chan_param->read_timer_interval);
+				  chan_param->read_timer_interval,
+				  &chan_param->shm_fd,
+				  &chan_param->wait_fd,
+				  &chan_param->memory_map_size);
 	if (!chan) {
 		ret = -EINVAL;
 		goto chan_error;

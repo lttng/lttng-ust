@@ -60,6 +60,8 @@ void _set_shmp(struct shm_ref *ref, struct shm_ref src)
 #define set_shmp(ref, src)	_set_shmp(&(ref)._ref, src)
 
 struct shm_object_table *shm_object_table_create(size_t max_nb_obj);
+struct shm_object *shm_object_table_append_shadow(struct shm_object_table *table,
+			int shm_fd, int wait_fd, size_t memory_map_size);
 void shm_object_table_destroy(struct shm_object_table *table);
 struct shm_object *shm_object_table_append(struct shm_object_table *table,
 					   size_t memory_map_size);
@@ -117,7 +119,7 @@ int shm_get_object_data(struct shm_handle *handle, struct shm_ref *ref,
 	obj = &table->objects[index];
 	*shm_fd = obj->shm_fd;
 	*wait_fd = obj->wait_fd[0];
-	*memory_map_size = obj->memory_map_size;
+	*memory_map_size = obj->allocated_len;
 	return 0;
 }
 

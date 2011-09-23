@@ -235,6 +235,7 @@ int handle_message(struct sock_info *sock_info,
 	int ret = 0;
 	const struct objd_ops *ops;
 	struct lttcomm_ust_reply lur;
+	int shm_fd, wait_fd;
 
 	ust_lock();
 
@@ -280,28 +281,43 @@ end:
 	if (ret >= 0) {
 		lur.ret_code = LTTCOMM_OK;
 	} else {
-		lur.ret_code = LTTCOMM_SESSION_FAIL;
+		//lur.ret_code = LTTCOMM_SESSION_FAIL;
+		lur.ret_code = ret;
 	}
-	if (lum->cmd == LTTNG_UST_STREAM) {
+	switch (lum->cmd) {
+	case LTTNG_UST_STREAM:
 		/*
 		 * Special-case reply to send stream info.
 		 * Use lum.u output.
 		 */
 		lur.u.stream.memory_map_size = lum->u.stream.memory_map_size;
+		shm_fd = lum->u.stream.shm_fd;
+		wait_fd = lum->u.stream.wait_fd;
+		break;
+	case LTTNG_UST_CHANNEL:
+		lur.u.channel.memory_map_size = lum->u.channel.memory_map_size;
+		shm_fd = lum->u.channel.shm_fd;
+		wait_fd = lum->u.channel.wait_fd;
+		break;
 	}
 	ret = send_reply(sock, &lur);
+	if (ret < 0) {
+		perror("error sending reply");
+		goto error;
+	}
 
-	if (lum->cmd == LTTNG_UST_STREAM && ret >= 0) {
+	if ((lum->cmd == LTTNG_UST_STREAM || lum->cmd == LTTNG_UST_CHANNEL)
+			&& lur.ret_code == LTTCOMM_OK) {
 		/* we also need to send the file descriptors. */
 		ret = lttcomm_send_fds_unix_sock(sock,
-			&lum->u.stream.shm_fd, &lum->u.stream.shm_fd,
+			&shm_fd, &shm_fd,
 			1, sizeof(int));
 		if (ret < 0) {
 			perror("send shm_fd");
 			goto error;
 		}
 		ret = lttcomm_send_fds_unix_sock(sock,
-			&lum->u.stream.wait_fd, &lum->u.stream.wait_fd,
+			&wait_fd, &wait_fd,
 			1, sizeof(int));
 		if (ret < 0) {
 			perror("send wait_fd");
