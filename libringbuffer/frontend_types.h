@@ -44,12 +44,15 @@ struct channel {
 						 * subbuffer index.
 						 */
 
-	struct channel_backend backend;		/* Associated backend */
-
 	unsigned long switch_timer_interval;	/* Buffer flush (jiffies) */
 	unsigned long read_timer_interval;	/* Reader wakeup (jiffies) */
 	//wait_queue_head_t read_wait;		/* reader wait queue */
 	int finalized;				/* Has channel been finalized */
+	/*
+	 * Associated backend contains a variable-length array. Needs to
+	 * be last member.
+	 */
+	struct channel_backend backend;		/* Associated backend */
 } ____cacheline_aligned;
 
 /* Per-subbuffer commit counters used on the hot path */
