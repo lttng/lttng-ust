@@ -13,6 +13,8 @@
  */
 
 #include <errno.h>
+#include "ust/lttng-tracer.h"
+#include "ust/usterr-signal-safe.h"
 #include "ust/kcompat/kcompat.h"
 #include "ust/align.h"
 
