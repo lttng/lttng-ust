@@ -146,6 +146,9 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 		ret |= __tracepoint_probe_register(name,
 				event->desc->probe_callback,
 				event);
+		if (ret)
+			continue;
+		event->id = chan->free_event_id++;
 		ret |= _ltt_event_metadata_statedump(chan->session, chan,
 				event);
 	}
