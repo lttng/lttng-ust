@@ -403,7 +403,7 @@ static inline size_t __event_get_align__##_name(_proto)			      \
 #undef ctf_array_encoded
 #define ctf_array_encoded(_type, _item, _src, _length, _encoding)       \
 	lib_ring_buffer_align_ctx(&ctx, lttng_alignof(_type));		\
-	__chan->ops->event_write(&ctx, _src, _length);
+	__chan->ops->event_write(&ctx, _src, sizeof(_type) * (_length));
 
 #undef ctf_sequence_encoded
 #define ctf_sequence_encoded(_type, _item, _src, _length_type,		\
