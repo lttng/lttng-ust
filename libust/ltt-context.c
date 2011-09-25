@@ -3,15 +3,30 @@
  *
  * Copyright 2011 (c) - Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
- * LTTng trace/channel/event context management.
+ * LTTng UST trace/channel/event context management.
  *
  * Dual LGPL v2.1/GPL v2 license.
  */
 
 #include <ust/lttng-events.h>
+#include <ust/lttng-tracer.h>
 #include <ust/core.h>
 #include <string.h>
-#include <ust/usterr-signal-safe.h>
+#include <assert.h>
+
+int lttng_find_context(struct lttng_ctx *ctx, const char *name)
+{
+	unsigned int i;
+
+	for (i = 0; i < ctx->nr_fields; i++) {
+		/* Skip allocated (but non-initialized) contexts */
+		if (!ctx->fields[i].event_field.name)
+			continue;
+		if (!strcmp(ctx->fields[i].event_field.name, name))
+			return 1;
+	}
+	return 0;
+}
 
 /*
  * Note: as we append context information, the pointer location may change.
@@ -54,7 +69,7 @@ void lttng_remove_context_field(struct lttng_ctx **ctx_p,
 
 	ctx = *ctx_p;
 	ctx->nr_fields--;
-	WARN_ON_ONCE(&ctx->fields[ctx->nr_fields] != field);
+	assert(&ctx->fields[ctx->nr_fields] == field);
 	memset(&ctx->fields[ctx->nr_fields], 0, sizeof(struct lttng_ctx_field));
 }
 

@@ -13,13 +13,14 @@ libust_la_SOURCES = \
 	ltt-ring-buffer-metadata-client.h \
 	ltt-ring-buffer-metadata-client.c \
 	ltt-events.c \
-	ltt-context.c \
 	ltt-probes.c \
 	lttng-ust-abi.c \
 	lttng-ust-comm.c \
 	ust-core.c \
 	probes/lttng-probe-ust.c \
-	probes/lttng-probe-ust.h
+	probes/lttng-probe-ust.h \
+	lttng-context-pthread-id.c \
+	ltt-context.c
 
 libust_la_LDFLAGS = -no-undefined -version-info 0:0:0
 

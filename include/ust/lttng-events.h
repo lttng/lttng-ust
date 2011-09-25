@@ -317,11 +317,12 @@ const struct lttng_event_desc *ltt_event_get(const char *name);
 void ltt_event_put(const struct lttng_event_desc *desc);
 int ltt_probes_init(void);
 void ltt_probes_exit(void);
-struct lttng_ctx_field *lttng_append_context(struct lttng_ctx **ctx);
-void lttng_remove_context_field(struct lttng_ctx **ctx,
+int lttng_find_context(struct lttng_ctx *ctx, const char *name);
+struct lttng_ctx_field *lttng_append_context(struct lttng_ctx **ctx_p);
+void lttng_remove_context_field(struct lttng_ctx **ctx_p,
 				struct lttng_ctx_field *field);
 void lttng_destroy_context(struct lttng_ctx *ctx);
-int lttng_add_vtid_to_ctx(struct lttng_ctx **ctx);
+int lttng_add_pthread_id_to_ctx(struct lttng_ctx **ctx);
 
 //extern const struct file_operations lttng_tracepoint_list_fops;
 
