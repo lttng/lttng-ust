@@ -198,6 +198,7 @@ void ltt_write_event_header(const struct lib_ring_buffer_config *config,
 
 	ctx_record(ctx, ltt_chan, ltt_chan->ctx);
 	ctx_record(ctx, ltt_chan, event->ctx);
+	lib_ring_buffer_align_ctx(ctx, ctx->largest_align);
 
 	return;
 
@@ -261,6 +262,7 @@ void ltt_write_event_header_slow(const struct lib_ring_buffer_config *config,
 	}
 	ctx_record(ctx, ltt_chan, ltt_chan->ctx);
 	ctx_record(ctx, ltt_chan, event->ctx);
+	lib_ring_buffer_align_ctx(ctx, ctx->largest_align);
 }
 
 static const struct lib_ring_buffer_config client_config;
