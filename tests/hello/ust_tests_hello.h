@@ -29,17 +29,17 @@ extern "C" {
 #include <ust/tracepoint.h>
 
 TRACEPOINT_EVENT(ust_tests_hello_tptest,
-	TP_PROTO(int anint, long *values,
+	TP_PROTO(int anint, int netint, long *values,
 		 char *text, size_t textlen,
 		 double doublearg, float floatarg),
-	TP_ARGS(anint, values, text, textlen,
+	TP_ARGS(anint, netint, values, text, textlen,
 		doublearg, floatarg),
 	TP_FIELDS(
 		ctf_integer(int, intfield, anint)
 		ctf_integer_hex(int, intfield2, anint)
 		ctf_integer(long, longfield, anint)
-		ctf_integer_network(int, intfield3, anint)
-		ctf_integer_network_hex(int, intfield4, anint)
+		ctf_integer_network(int, netintfield, netint)
+		ctf_integer_network_hex(int, netintfieldhex, netint)
 		ctf_array(long, arrfield1, values, 3)
 		ctf_array_text(char, arrfield2, text, 10)
 		ctf_sequence(char, seqfield1, text,

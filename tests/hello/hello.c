@@ -26,6 +26,7 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <string.h>
+#include <arpa/inet.h>
 
 #include "ust_tests_hello.h"
 
@@ -64,7 +65,7 @@ int init_int_handler(void)
 
 int main(int argc, char **argv)
 {
-	int i;
+	int i, netint;
 	long values[] = { 1, 2, 3 };
 	char text[10] = "test";
 	double dbl = 2.0;
@@ -78,7 +79,8 @@ int main(int argc, char **argv)
 
 	//for (i = 0; i < 50; i++) {
 	for (i = 0; i < 1000000; i++) {
-		tracepoint(ust_tests_hello_tptest, i, values,
+		netint = htonl(i);
+		tracepoint(ust_tests_hello_tptest, i, netint, values,
 			   text, strlen(text), dbl, flt);
 		//usleep(100000);
 	}
