@@ -21,7 +21,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#ifndef CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS
+#include <ust/config.h>
+
+#ifndef HAVE_EFFICIENT_UNALIGNED_ACCESS
 /* Align data on its natural alignment */
 #define RING_BUFFER_ALIGN
 #endif
