@@ -72,11 +72,14 @@ struct lttng_integer_type {
 	enum lttng_string_encodings encoding;
 };
 
+/*
+ * Only float and double are supported. long double is not supported at
+ * the moment.
+ */
 #define _float_mant_dig(_type)						\
 	(sizeof(_type) == sizeof(float) ? FLT_MANT_DIG			\
 		: (sizeof(_type) == sizeof(double) ? DBL_MANT_DIG	\
-		: (sizeof(_type) == sizeof(long double) ? LDBL_MANT_DIG	\
-		: 0)))
+		: 0))
 
 #define __type_float(_type)					\
 	{							\
