@@ -177,11 +177,8 @@ void objd_table_destroy(void)
 {
 	int i;
 
-	for (i = 0; i < objd_table.allocated_len; i++) {
-		struct obj *obj = _objd_get(i);
-
+	for (i = 0; i < objd_table.allocated_len; i++)
 		(void) objd_unref(i);
-	}
 	free(objd_table.array);
 	objd_table.array = NULL;
 	objd_table.len = 0;
@@ -730,7 +727,7 @@ static const struct objd_ops lttng_metadata_ops = {
 static
 long lttng_rb_cmd(int objd, unsigned int cmd, unsigned long arg)
 {
-	struct stream_priv_data *priv = objd_private(objd);
+	//struct stream_priv_data *priv = objd_private(objd);
 
 	switch (cmd) {
 	default:

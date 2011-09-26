@@ -826,7 +826,7 @@ int main(int argc, char **argv)
 	const char *home_dir;
 	int ret, wait_shm_fd;
 	struct sigaction act;
-	mode_t old_umask;
+	mode_t old_umask = 0;
 
 	set_ulimit();
 

@@ -810,7 +810,7 @@ int main(int argc, const char **argv)
 	const char *home_dir;
 	int ret, wait_shm_fd;
 	struct sigaction act;
-	mode_t old_umask;
+	mode_t old_umask = 0;
 	const char *outputpath;
 	const char **event_names;
 	unsigned int nr_events;
