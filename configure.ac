@@ -177,6 +177,7 @@ AC_CONFIG_FILES([
 	tests/Makefile
 	tests/hello/Makefile
 	tests/ust-basic-tracing/Makefile
+	tests/ust-multi-test/Makefile
 	tests/hello2/Makefile
 	tests/basic/Makefile
 	tests/basic_long/Makefile
