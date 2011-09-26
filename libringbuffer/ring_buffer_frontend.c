@@ -266,7 +266,7 @@ static void lib_ring_buffer_start_switch_timer(struct lib_ring_buffer *buf,
 			   struct shm_handle *handle)
 {
 	struct channel *chan = shmp(handle, buf->backend.chan);
-	const struct lib_ring_buffer_config *config = &chan->backend.config;
+	//const struct lib_ring_buffer_config *config = &chan->backend.config;
 
 	if (!chan->switch_timer_interval || buf->switch_timer_enabled)
 		return;
@@ -398,8 +398,6 @@ static void channel_unregister_notifiers(struct channel *chan,
 static void channel_free(struct channel *chan, struct shm_handle *handle,
 		int shadow)
 {
-	int ret;
-
 	if (!shadow)
 		channel_backend_free(&chan->backend, handle);
 	/* chan is freed by shm teardown */
@@ -656,8 +654,6 @@ int lib_ring_buffer_open_read(struct lib_ring_buffer *buf,
 			      struct shm_handle *handle,
 			      int shadow)
 {
-	struct channel *chan = shmp(handle, buf->backend.chan);
-
 	if (shadow) {
 		if (uatomic_cmpxchg(&buf->active_shadow_readers, 0, 1) != 0)
 			return -EBUSY;
