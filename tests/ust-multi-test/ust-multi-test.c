@@ -167,6 +167,11 @@ static int lttcomm_recv_fd(int sock)
 	struct cmsghdr *cmsg;
 	char recv_fd[CMSG_SPACE(sizeof(int))];
 	struct msghdr msg = { 0 };
+	union {
+		unsigned char vc[4];
+		int vi;
+	} tmp;
+	int i;
 
 	/* Prepare to receive the structures */
 	iov[0].iov_base = &data_fd;
@@ -197,7 +202,9 @@ static int lttcomm_recv_fd(int sock)
 		goto end;
 	}
 	/* this is our fd */
-	ret = ((int *) CMSG_DATA(cmsg))[0];
+	for (i = 0; i < sizeof(int); i++)
+		tmp.vc[i] = CMSG_DATA(cmsg)[0];
+	ret = tmp.vi;
 	printf("received fd %d\n", ret);
 end:
 	return ret;
