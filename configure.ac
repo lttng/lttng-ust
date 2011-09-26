@@ -176,6 +176,7 @@ AC_CONFIG_FILES([
 	libust/Makefile
 	tests/Makefile
 	tests/hello/Makefile
+	tests/ust-basic-tracing/Makefile
 	tests/hello2/Makefile
 	tests/basic/Makefile
 	tests/basic_long/Makefile
