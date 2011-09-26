@@ -203,7 +203,7 @@ static int lttcomm_recv_fd(int sock)
 	}
 	/* this is our fd */
 	for (i = 0; i < sizeof(int); i++)
-		tmp.vc[i] = CMSG_DATA(cmsg)[0];
+		tmp.vc[i] = CMSG_DATA(cmsg)[i];
 	ret = tmp.vi;
 	printf("received fd %d\n", ret);
 end:
