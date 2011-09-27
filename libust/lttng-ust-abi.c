@@ -208,7 +208,6 @@ int lttng_abi_create_root_handle(void)
 	int root_handle;
 
 	root_handle = objd_alloc(NULL, &lttng_ops);
-	assert(root_handle == 0);
 	return root_handle;
 }
 
