@@ -641,7 +641,7 @@ restart:
 	 */
 	if (sock_info->root_handle == -1) {
 		ret = lttng_abi_create_root_handle();
-		if (ret) {
+		if (ret < 0) {
 			ERR("Error creating root handle");
 			ust_unlock();
 			goto quit;
