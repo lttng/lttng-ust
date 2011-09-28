@@ -321,7 +321,9 @@ void lttng_remove_context_field(struct lttng_ctx **ctx_p,
 				struct lttng_ctx_field *field);
 void lttng_destroy_context(struct lttng_ctx *ctx);
 int lttng_add_vtid_to_ctx(struct lttng_ctx **ctx);
+int lttng_add_vpid_to_ctx(struct lttng_ctx **ctx);
 int lttng_add_pthread_id_to_ctx(struct lttng_ctx **ctx);
 void lttng_context_vtid_reset(void);
+void lttng_context_vpid_reset(void);
 
 #endif /* _UST_LTTNG_EVENTS_H */

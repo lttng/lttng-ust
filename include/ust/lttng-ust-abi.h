@@ -67,7 +67,8 @@ struct lttng_ust_event {
 
 enum lttng_ust_context_type {
 	LTTNG_UST_CONTEXT_VTID			= 0,
-	LTTNG_UST_CONTEXT_PTHREAD_ID		= 1,
+	LTTNG_UST_CONTEXT_VPID			= 1,
+	LTTNG_UST_CONTEXT_PTHREAD_ID		= 2,
 };
 
 struct lttng_ust_context {

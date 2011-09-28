@@ -276,6 +276,8 @@ long lttng_abi_add_context(int objd,
 		return lttng_add_pthread_id_to_ctx(ctx);
 	case LTTNG_UST_CONTEXT_VTID:
 		return lttng_add_vtid_to_ctx(ctx);
+	case LTTNG_UST_CONTEXT_VPID:
+		return lttng_add_vpid_to_ctx(ctx);
 	default:
 		return -EINVAL;
 	}
