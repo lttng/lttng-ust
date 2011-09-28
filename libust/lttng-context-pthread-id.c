@@ -49,7 +49,7 @@ int lttng_add_pthread_id_to_ctx(struct lttng_ctx **ctx)
 	field->event_field.type.atype = atype_integer;
 	field->event_field.type.u.basic.integer.size = sizeof(unsigned long) * CHAR_BIT;
 	field->event_field.type.u.basic.integer.alignment = lttng_alignof(unsigned long) * CHAR_BIT;
-	field->event_field.type.u.basic.integer.signedness = lttng_is_signed_type(pid_t);
+	field->event_field.type.u.basic.integer.signedness = lttng_is_signed_type(unsigned long);
 	field->event_field.type.u.basic.integer.reverse_byte_order = 0;
 	field->event_field.type.u.basic.integer.base = 10;
 	field->event_field.type.u.basic.integer.encoding = lttng_encode_none;

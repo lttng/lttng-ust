@@ -19,6 +19,7 @@ libust_la_SOURCES = \
 	ust-core.c \
 	probes/lttng-probe-ust.c \
 	probes/lttng-probe-ust.h \
+	lttng-context-vtid.c \
 	lttng-context-pthread-id.c \
 	ltt-context.c
 

@@ -565,11 +565,12 @@ int send_app_msgs(int sock, const char *outputpath,
 		printf("received event handle %u\n", event_handle[k]);
 	}
 
-	/* Attach pthread_id context */
+	/* Attach vtid context */
 	memset(&lum, 0, sizeof(lum));
 	lum.handle = channel_data.handle;
 	lum.cmd = LTTNG_UST_CONTEXT;
-	lum.u.context.ctx = LTTNG_UST_CONTEXT_PTHREAD_ID;
+	lum.u.context.ctx = LTTNG_UST_CONTEXT_VTID;
+	//lum.u.context.ctx = LTTNG_UST_CONTEXT_PTHREAD_ID;
 	ret = send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;

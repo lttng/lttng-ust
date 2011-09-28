@@ -307,8 +307,6 @@ void ltt_transport_register(struct ltt_transport *transport);
 void ltt_transport_unregister(struct ltt_transport *transport);
 
 void synchronize_trace(void);
-//int ltt_debugfs_abi_init(void);
-//void ltt_debugfs_abi_exit(void);
 
 int ltt_probe_register(struct lttng_probe_desc *desc);
 void ltt_probe_unregister(struct lttng_probe_desc *desc);
@@ -322,8 +320,7 @@ struct lttng_ctx_field *lttng_append_context(struct lttng_ctx **ctx_p);
 void lttng_remove_context_field(struct lttng_ctx **ctx_p,
 				struct lttng_ctx_field *field);
 void lttng_destroy_context(struct lttng_ctx *ctx);
+int lttng_add_vtid_to_ctx(struct lttng_ctx **ctx);
 int lttng_add_pthread_id_to_ctx(struct lttng_ctx **ctx);
-
-//extern const struct file_operations lttng_tracepoint_list_fops;
 
 #endif /* _UST_LTTNG_EVENTS_H */
