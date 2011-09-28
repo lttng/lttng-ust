@@ -38,6 +38,16 @@ static inline pid_t gettid(void)
  */
 static __thread pid_t cached_vtid;
 
+/*
+ * Upon fork or clone, the TID assigned to our thread is not the same as
+ * we kept in cache. Luckily, we are the only thread surviving in the
+ * child process, so we can simply clear our cached version.
+ */
+void lttng_context_vtid_reset(void)
+{
+	cached_vtid = 0;
+}
+
 static
 size_t vtid_get_size(size_t offset)
 {
