@@ -56,6 +56,7 @@ static struct object_data metadata_data;
 static struct object_data channel_data;
 static struct object_data stream_data[MAX_NR_STREAMS];
 static int event_handle[MAX_NR_EVENTS];
+static int context_handle;
 
 static int apps_socket = -1;
 static char apps_sock_path[PATH_MAX];
@@ -564,6 +565,17 @@ int send_app_msgs(int sock, const char *outputpath,
 		printf("received event handle %u\n", event_handle[k]);
 	}
 
+	/* Attach pthread_id context */
+	memset(&lum, 0, sizeof(lum));
+	lum.handle = channel_data.handle;
+	lum.cmd = LTTNG_UST_CONTEXT;
+	lum.u.context.ctx = LTTNG_UST_CONTEXT_PTHREAD_ID;
+	ret = send_app_cmd(sock, &lum, &lur);
+	if (ret)
+		return ret;
+	context_handle = lur.ret_val;
+	printf("received context handle %u\n", context_handle);
+
 	/* Get references to channel streams */
 	ret = open_streams(sock, channel_data.handle,
 			stream_data, MAX_NR_STREAMS);
@@ -601,6 +613,14 @@ int send_app_msgs(int sock, const char *outputpath,
 	/* Release streams */
 	ret = close_streams(sock, stream_data,
 			MAX_NR_STREAMS);
+	if (ret)
+		return ret;
+
+	/* Release context */
+	memset(&lum, 0, sizeof(lum));
+	lum.handle = context_handle;
+	lum.cmd = LTTNG_UST_RELEASE;
+	ret = send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
 

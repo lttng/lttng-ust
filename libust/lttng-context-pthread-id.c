@@ -17,8 +17,8 @@ size_t pthread_id_get_size(size_t offset)
 {
 	size_t size = 0;
 
-	size += lib_ring_buffer_align(offset, lttng_alignof(pid_t));
-	size += sizeof(pid_t);
+	size += lib_ring_buffer_align(offset, lttng_alignof(unsigned long));
+	size += sizeof(unsigned long);
 	return size;
 }
 
@@ -47,8 +47,8 @@ int lttng_add_pthread_id_to_ctx(struct lttng_ctx **ctx)
 	}
 	field->event_field.name = "pthread_id";
 	field->event_field.type.atype = atype_integer;
-	field->event_field.type.u.basic.integer.size = sizeof(pid_t) * CHAR_BIT;
-	field->event_field.type.u.basic.integer.alignment = lttng_alignof(pid_t) * CHAR_BIT;
+	field->event_field.type.u.basic.integer.size = sizeof(unsigned long) * CHAR_BIT;
+	field->event_field.type.u.basic.integer.alignment = lttng_alignof(unsigned long) * CHAR_BIT;
 	field->event_field.type.u.basic.integer.signedness = lttng_is_signed_type(pid_t);
 	field->event_field.type.u.basic.integer.reverse_byte_order = 0;
 	field->event_field.type.u.basic.integer.base = 10;
