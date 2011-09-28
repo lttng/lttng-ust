@@ -22,6 +22,7 @@ libust_la_SOURCES = \
 	lttng-context-vtid.c \
 	lttng-context-vpid.c \
 	lttng-context-pthread-id.c \
+	lttng-context-procname.c \
 	ltt-context.c
 
 libust_la_LDFLAGS = -no-undefined -version-info 0:0:0

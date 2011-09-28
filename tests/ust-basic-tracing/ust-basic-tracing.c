@@ -571,6 +571,8 @@ int send_app_msgs(int sock, const char *outputpath,
 	lum.cmd = LTTNG_UST_CONTEXT;
 	lum.u.context.ctx = LTTNG_UST_CONTEXT_VTID;
 	//lum.u.context.ctx = LTTNG_UST_CONTEXT_PTHREAD_ID;
+	//lum.u.context.ctx = LTTNG_UST_CONTEXT_VPID;
+	//lum.u.context.ctx = LTTNG_UST_CONTEXT_PROCNAME;
 	ret = send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;

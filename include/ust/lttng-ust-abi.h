@@ -69,6 +69,7 @@ enum lttng_ust_context_type {
 	LTTNG_UST_CONTEXT_VTID			= 0,
 	LTTNG_UST_CONTEXT_VPID			= 1,
 	LTTNG_UST_CONTEXT_PTHREAD_ID		= 2,
+	LTTNG_UST_CONTEXT_PROCNAME		= 3,
 };
 
 struct lttng_ust_context {
