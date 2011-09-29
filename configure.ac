@@ -101,6 +101,7 @@ changequote([,])dnl
 	x86_64) LIBFORMAT="elf64-x86-64" ;;
 	powerpc) LIBFORMAT="elf32-powerpc" ;;
 	ppc64) LIBFORMAT="elf64-powerpc" ;;
+	powerpc64) LIBFORMAT="elf64-powerpc" ;;
 	s390) LIBFORMAT="elf32-s390"; NO_UNALIGNED_ACCESS=1 ;;
 	s390x) LIBFORMAT="elf64-s390"; NO_UNALIGNED_ACCESS=1 ;;
         armv5) LIBFORMAT="elf32-littlearm"; NO_UNALIGNED_ACCESS=1 ;;
