@@ -5,6 +5,7 @@ nobase_include_HEADERS = \
 	ust/lttng-tracepoint-event.h \
 	ust/lttng-tracepoint-event-reset.h \
 	ust/lttng-events.h \
+	ust/lttng-ust-ctl.h \
 	ust/version.h \
 	ust/lttng-ust-abi.h \
 	ust/ringbuffer-abi.h \

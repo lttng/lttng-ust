@@ -76,141 +76,6 @@ static void handle_signals(int signo)
 	quit_program = 1;
 }
 
-static int send_app_msg(int sock, struct lttcomm_ust_msg *lum)
-{
-	ssize_t len;
-
-	len = lttcomm_send_unix_sock(sock, lum, sizeof(*lum));
-	switch (len) {
-	case sizeof(*lum):
-		printf("message successfully sent\n");
-		break;
-	case -1:
-		if (errno == ECONNRESET) {
-			printf("remote end closed connection\n");
-			return 0;
-		}
-		return -1;
-	default:
-		printf("incorrect message size: %zd\n", len);
-		return -1;
-	}
-	return 0;
-}
-
-static int recv_app_reply(int sock, struct lttcomm_ust_reply *lur,
-			  uint32_t expected_handle, uint32_t expected_cmd)
-{
-	ssize_t len;
-
-	memset(lur, 0, sizeof(*lur));
-	len = lttcomm_recv_unix_sock(sock, lur, sizeof(*lur));
-	switch (len) {
-	case 0:	/* orderly shutdown */
-		printf("Application has performed an orderly shutdown\n");
-		return -EINVAL;
-	case sizeof(*lur):
-		printf("result message received\n");
-		if (lur->handle != expected_handle) {
-			printf("Unexpected result message handle\n");
-			return -EINVAL;
-		}
-
-		if (lur->cmd != expected_cmd) {
-			printf("Unexpected result message command\n");
-			return -EINVAL;
-		}
-		if (lur->ret_code != LTTCOMM_OK) {
-			printf("remote operation failed with code %d.\n",
-				lur->ret_code);
-			return lur->ret_code;
-		}
-		return 0;
-	case -1:
-		if (errno == ECONNRESET) {
-			printf("remote end closed connection\n");
-			return -EINVAL;
-		}
-		return -1;
-	default:
-		printf("incorrect message size: %zd\n", len);
-		return len > 0 ? -1 : len;
-	}
-}
-
-static int send_app_cmd(int sock,
-			struct lttcomm_ust_msg *lum,
-			struct lttcomm_ust_reply *lur)
-{
-	int ret;
-
-	ret = send_app_msg(sock, lum);
-	if (ret)
-		return ret;
-	ret = recv_app_reply(sock, lur, lum->handle, lum->cmd);
-	if (ret)
-		return ret;
-	return 0;
-}
-
-
-/*
- * Receives a single fd from socket.
- *
- * Returns the size of received data
- */
-static int lttcomm_recv_fd(int sock)
-{
-	struct iovec iov[1];
-	int ret = 0;
-	int data_fd;
-	struct cmsghdr *cmsg;
-	char recv_fd[CMSG_SPACE(sizeof(int))];
-	struct msghdr msg = { 0 };
-	union {
-		unsigned char vc[4];
-		int vi;
-	} tmp;
-	int i;
-
-	/* Prepare to receive the structures */
-	iov[0].iov_base = &data_fd;
-	iov[0].iov_len = sizeof(data_fd);
-	msg.msg_iov = iov;
-	msg.msg_iovlen = 1;
-	msg.msg_control = recv_fd;
-	msg.msg_controllen = sizeof(recv_fd);
-
-	printf("Waiting to receive fd\n");
-	if ((ret = recvmsg(sock, &msg, 0)) < 0) {
-		perror("recvmsg");
-		goto end;
-	}
-	if (ret != sizeof(data_fd)) {
-		printf("Received %d bytes, expected %ld", ret, sizeof(data_fd));
-		goto end;
-	}
-	cmsg = CMSG_FIRSTHDR(&msg);
-	if (!cmsg) {
-		printf("Invalid control message header\n");
-		ret = -1;
-		goto end;
-	}
-	if (cmsg->cmsg_level != SOL_SOCKET || cmsg->cmsg_type != SCM_RIGHTS) {
-		printf("Didn't received any fd\n");
-		ret = -1;
-		goto end;
-	}
-	/* this is our fd */
-	for (i = 0; i < sizeof(int); i++)
-		tmp.vc[i] = CMSG_DATA(cmsg)[i];
-	ret = tmp.vi;
-	printf("received fd %d\n", ret);
-end:
-	return ret;
-}
-
-
 static
 int open_streams(int sock, int channel_handle, struct object_data *stream_datas,
 		int nr_check)
@@ -218,29 +83,29 @@ int open_streams(int sock, int channel_handle, struct object_data *stream_datas,
 	int ret, k = 0;
 
 	for (;;) {
-		struct lttcomm_ust_msg lum;
-		struct lttcomm_ust_reply lur;
+		struct ustcomm_ust_msg lum;
+		struct ustcomm_ust_reply lur;
 
 		memset(&lum, 0, sizeof(lum));
 		lum.handle = channel_handle;
 		lum.cmd = LTTNG_UST_STREAM;
-		ret = send_app_cmd(sock, &lum, &lur);
+		ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 		if (!ret) {
 			assert(k < nr_check);
 			stream_datas[k].handle = lur.ret_val;
 			printf("received stream handle %u\n",
 				stream_datas[k].handle);
-			if (lur.ret_code == LTTCOMM_OK) {
+			if (lur.ret_code == USTCOMM_OK) {
 				ssize_t len;
 
 				stream_datas[k].memory_map_size = lur.u.stream.memory_map_size;
 				/* get shm fd */
-				len = lttcomm_recv_fd(sock);
+				len = ustcomm_recv_fd(sock);
 				if (len < 0)
 					return -EINVAL;
 				stream_datas[k].shm_fd = len;
 				/* get wait fd */
-				len = lttcomm_recv_fd(sock);
+				len = ustcomm_recv_fd(sock);
 				if (len < 0)
 					return -EINVAL;
 				stream_datas[k].wait_fd = len;
@@ -261,15 +126,15 @@ int close_streams(int sock, struct object_data *stream_datas, int nr_check)
 	int ret, k;
 
 	for (k = 0; k < nr_check; k++) {
-		struct lttcomm_ust_msg lum;
-		struct lttcomm_ust_reply lur;
+		struct ustcomm_ust_msg lum;
+		struct ustcomm_ust_reply lur;
 
 		if (!stream_datas[k].handle)
 			continue;
 		memset(&lum, 0, sizeof(lum));
 		lum.handle = stream_datas[k].handle;
 		lum.cmd = LTTNG_UST_RELEASE;
-		ret = send_app_cmd(sock, &lum, &lur);
+		ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 		if (ret) {
 			printf("Error closing stream\n");
 			return ret;
@@ -475,8 +340,8 @@ int consume_buffers(void)
 
 int send_app_msgs(int sock)
 {
-	struct lttcomm_ust_msg lum;
-	struct lttcomm_ust_reply lur;
+	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_reply lur;
 	int ret, i, j, k;
 
 	for (i = 0; i < NR_SESSIONS; i++) {
@@ -484,7 +349,7 @@ int send_app_msgs(int sock)
 		memset(&lum, 0, sizeof(lum));
 		lum.handle = LTTNG_UST_ROOT_HANDLE;
 		lum.cmd = LTTNG_UST_SESSION;
-		ret = send_app_cmd(sock, &lum, &lur);
+		ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 		if (ret)
 			return ret;
 		session_handle[i] = lur.ret_val;
@@ -500,22 +365,22 @@ int send_app_msgs(int sock)
 		lum.u.channel.switch_timer_interval = 0;
 		lum.u.channel.read_timer_interval = 0;
 		lum.u.channel.output = LTTNG_UST_MMAP;
-		ret = send_app_cmd(sock, &lum, &lur);
+		ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 		if (ret)
 			return ret;
 		metadata_data[i].handle = lur.ret_val;
 		printf("received metadata handle %u\n", metadata_data[i].handle);
-		if (lur.ret_code == LTTCOMM_OK) {
+		if (lur.ret_code == USTCOMM_OK) {
 			ssize_t len;
 
 			metadata_data[i].memory_map_size = lur.u.channel.memory_map_size;
 			/* get shm fd */
-			len = lttcomm_recv_fd(sock);
+			len = ustcomm_recv_fd(sock);
 			if (len < 0)
 				return -EINVAL;
 			metadata_data[i].shm_fd = len;
 			/* get wait fd */
-			len = lttcomm_recv_fd(sock);
+			len = ustcomm_recv_fd(sock);
 			if (len < 0)
 				return -EINVAL;
 			metadata_data[i].wait_fd = len;
@@ -542,22 +407,22 @@ int send_app_msgs(int sock)
 			lum.u.channel.switch_timer_interval = 0;
 			lum.u.channel.read_timer_interval = 0;
 			lum.u.channel.output = LTTNG_UST_MMAP;
-			ret = send_app_cmd(sock, &lum, &lur);
+			ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 			if (ret)
 				return ret;
 			channel_data[i][j].handle = lur.ret_val;
 			printf("received channel handle %u\n", channel_data[i][j].handle);
-			if (lur.ret_code == LTTCOMM_OK) {
+			if (lur.ret_code == USTCOMM_OK) {
 				ssize_t len;
 
 				channel_data[i][j].memory_map_size = lur.u.channel.memory_map_size;
 				/* get shm fd */
-				len = lttcomm_recv_fd(sock);
+				len = ustcomm_recv_fd(sock);
 				if (len < 0)
 					return -EINVAL;
 				channel_data[i][j].shm_fd = len;
 				/* get wait fd */
-				len = lttcomm_recv_fd(sock);
+				len = ustcomm_recv_fd(sock);
 				if (len < 0)
 					return -EINVAL;
 				channel_data[i][j].wait_fd = len;
@@ -571,7 +436,7 @@ int send_app_msgs(int sock)
 				strncpy(lum.u.event.name, evname[k],
 					LTTNG_UST_SYM_NAME_LEN);
 				lum.u.event.instrumentation = LTTNG_UST_TRACEPOINT;
-				ret = send_app_cmd(sock, &lum, &lur);
+				ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 				if (ret)
 					return ret;
 				event_handle[i][j][k] = lur.ret_val;
@@ -590,7 +455,7 @@ int send_app_msgs(int sock)
 		memset(&lum, 0, sizeof(lum));
 		lum.handle = session_handle[i];
 		lum.cmd = LTTNG_UST_SESSION_START;
-		ret = send_app_cmd(sock, &lum, &lur);
+		ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 		if (ret)
 			return ret;
 		printf("Session handle %u started.\n", session_handle[i]);
@@ -600,7 +465,7 @@ int send_app_msgs(int sock)
 	memset(&lum, 0, sizeof(lum));
 	lum.handle = LTTNG_UST_ROOT_HANDLE;
 	lum.cmd = LTTNG_UST_REGISTER_DONE;
-	ret = send_app_cmd(sock, &lum, &lur);
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
 	printf("Registration done acknowledged.\n");
@@ -627,14 +492,14 @@ int send_app_msgs(int sock)
 				memset(&lum, 0, sizeof(lum));
 				lum.handle = event_handle[i][j][k];
 				lum.cmd = LTTNG_UST_RELEASE;
-				ret = send_app_cmd(sock, &lum, &lur);
+				ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 				if (ret)
 					return ret;
 			}
 			memset(&lum, 0, sizeof(lum));
 			lum.handle = channel_data[i][j].handle;
 			lum.cmd = LTTNG_UST_RELEASE;
-			ret = send_app_cmd(sock, &lum, &lur);
+			ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 			if (ret)
 				return ret;
 			if (channel_data[i][j].shm_fd >= 0) {
@@ -657,7 +522,7 @@ int send_app_msgs(int sock)
 		memset(&lum, 0, sizeof(lum));
 		lum.handle = metadata_data[i].handle;
 		lum.cmd = LTTNG_UST_RELEASE;
-		ret = send_app_cmd(sock, &lum, &lur);
+		ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 		if (ret)
 			return ret;
 		if (metadata_data[i].shm_fd >= 0) {
@@ -675,7 +540,7 @@ int send_app_msgs(int sock)
 		memset(&lum, 0, sizeof(lum));
 		lum.handle = session_handle[i];
 		lum.cmd = LTTNG_UST_RELEASE;
-		ret = send_app_cmd(sock, &lum, &lur);
+		ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 		if (ret)
 			return ret;
 	}
@@ -898,7 +763,7 @@ int main(int argc, char **argv)
 			 DEFAULT_HOME_APPS_UNIX_SOCK, home_dir);
 	}
 
-	ret = lttcomm_create_unix_sock(apps_sock_path);
+	ret = ustcomm_create_unix_sock(apps_sock_path);
 	if (ret < 0) {
 		perror("create error");
 		return ret;
@@ -916,7 +781,7 @@ int main(int argc, char **argv)
 		}
 		umask(old_umask);
 	}
-	ret = lttcomm_listen_unix_sock(apps_socket);
+	ret = ustcomm_listen_unix_sock(apps_socket);
 	if (ret < 0) {
 		perror("listen error");
 		return ret;
@@ -947,7 +812,7 @@ int main(int argc, char **argv)
 			break;
 
 		printf("Accepting application registration\n");
-		sock = lttcomm_accept_unix_sock(apps_socket);
+		sock = ustcomm_accept_unix_sock(apps_socket);
 		if (sock < 0) {
 			perror("accept error");
 			goto end;
@@ -957,9 +822,9 @@ int main(int argc, char **argv)
 		 * Basic recv here to handle the very simple data
 		 * that the libust send to register (reg_msg).
 		 */
-		len = lttcomm_recv_unix_sock(sock, &reg_msg, sizeof(reg_msg));
+		len = ustcomm_recv_unix_sock(sock, &reg_msg, sizeof(reg_msg));
 		if (len < 0 || len != sizeof(reg_msg)) {
-			perror("lttcomm_recv_unix_sock");
+			perror("ustcomm_recv_unix_sock");
 			continue;
 		}
 		memcpy(bufname, reg_msg.name, 16);

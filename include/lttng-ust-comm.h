@@ -27,7 +27,7 @@
  */
 
 #include <limits.h>
-#include <lttng/lttng.h>
+#include <unistd.h>
 #include <ust/lttng-ust-abi.h>
 
 /*
@@ -52,83 +52,83 @@
 /* Queue size of listen(2) */
 #define MAX_LISTEN 10
 
-/* Get the error code index from 0 since
- * LTTCOMM_OK start at 1000
+/* Get the error code index from 0. USTCOMM_ERR starts at 1000.
  */
-#define LTTCOMM_ERR_INDEX(code) (code - LTTCOMM_OK)
+#define USTCOMM_ERR_INDEX(code) (code - USTCOMM_ERR)
 
 /*
- * lttcomm error code.
+ * ustcomm error code.
  */
-enum lttcomm_return_code {
-	LTTCOMM_OK = 1000,				/* Ok */
-	LTTCOMM_ERR,					/* Unknown Error */
-	LTTCOMM_UND,					/* Undefine command */
-	LTTCOMM_NOT_IMPLEMENTED,        /* Command not implemented */
-	LTTCOMM_UNKNOWN_DOMAIN,         /* Tracing domain not known */
-	LTTCOMM_ALLOC_FAIL,				/* Trace allocation fail */
-	LTTCOMM_NO_SESSION,				/* No session found */
-	LTTCOMM_CREATE_FAIL,			/* Create trace fail */
-	LTTCOMM_SESSION_FAIL,			/* Create session fail */
-	LTTCOMM_START_FAIL,				/* Start tracing fail */
-	LTTCOMM_STOP_FAIL,				/* Stop tracing fail */
-	LTTCOMM_LIST_FAIL,				/* Listing apps fail */
-	LTTCOMM_NO_APPS,				/* No traceable application */
-	LTTCOMM_SESS_NOT_FOUND,			/* Session name not found */
-	LTTCOMM_NO_TRACE,				/* No trace exist */
-	LTTCOMM_FATAL,					/* Session daemon had a fatal error */
-	LTTCOMM_NO_TRACEABLE,			/* Error for non traceable app */
-	LTTCOMM_SELECT_SESS,			/* Must select a session */
-	LTTCOMM_EXIST_SESS,				/* Session name already exist */
-	LTTCOMM_NO_EVENT,				/* No event found */
-	LTTCOMM_KERN_NA,				/* Kernel tracer unavalable */
-	LTTCOMM_KERN_EVENT_EXIST,       /* Kernel event already exists */
-	LTTCOMM_KERN_SESS_FAIL,			/* Kernel create session failed */
-	LTTCOMM_KERN_CHAN_FAIL,			/* Kernel create channel failed */
-	LTTCOMM_KERN_CHAN_NOT_FOUND,	/* Kernel channel not found */
-	LTTCOMM_KERN_CHAN_DISABLE_FAIL, /* Kernel disable channel failed */
-	LTTCOMM_KERN_CHAN_ENABLE_FAIL,  /* Kernel enable channel failed */
-	LTTCOMM_KERN_CONTEXT_FAIL,      /* Kernel add context failed */
-	LTTCOMM_KERN_ENABLE_FAIL,		/* Kernel enable event failed */
-	LTTCOMM_KERN_DISABLE_FAIL,		/* Kernel disable event failed */
-	LTTCOMM_KERN_META_FAIL,			/* Kernel open metadata failed */
-	LTTCOMM_KERN_START_FAIL,		/* Kernel start trace failed */
-	LTTCOMM_KERN_STOP_FAIL,			/* Kernel stop trace failed */
-	LTTCOMM_KERN_CONSUMER_FAIL,		/* Kernel consumer start failed */
-	LTTCOMM_KERN_STREAM_FAIL,		/* Kernel create stream failed */
-	LTTCOMM_KERN_DIR_FAIL,			/* Kernel trace directory creation failed */
-	LTTCOMM_KERN_DIR_EXIST,			/* Kernel trace directory exist */
-	LTTCOMM_KERN_NO_SESSION,		/* No kernel session found */
-	LTTCOMM_KERN_LIST_FAIL,			/* Kernel listing events failed */
-	KCONSUMERD_COMMAND_SOCK_READY,	/* when kconsumerd command socket ready */
-	KCONSUMERD_SUCCESS_RECV_FD,		/* success on receiving fds */
-	KCONSUMERD_ERROR_RECV_FD,		/* error on receiving fds */
-	KCONSUMERD_POLL_ERROR,			/* Error in polling thread in kconsumerd */
-	KCONSUMERD_POLL_NVAL,			/* Poll on closed fd */
-	KCONSUMERD_POLL_HUP,			/* All fds have hungup */
-	KCONSUMERD_EXIT_SUCCESS,		/* kconsumerd exiting normally */
-	KCONSUMERD_EXIT_FAILURE,		/* kconsumerd exiting on error */
-	KCONSUMERD_OUTFD_ERROR,			/* error opening the tracefile */
-	KCONSUMERD_SPLICE_EBADF,		/* EBADF from splice(2) */
-	KCONSUMERD_SPLICE_EINVAL,		/* EINVAL from splice(2) */
-	KCONSUMERD_SPLICE_ENOMEM,		/* ENOMEM from splice(2) */
-	KCONSUMERD_SPLICE_ESPIPE,		/* ESPIPE from splice(2) */
+enum ustcomm_return_code {
+	USTCOMM_OK = 0,					/* Ok */
+	/* Range 1 to 999 used for standard error numbers (errno.h) */
+	USTCOMM_ERR = 1000,				/* Unknown Error */
+	USTCOMM_UND,					/* Undefine command */
+	USTCOMM_NOT_IMPLEMENTED,        /* Command not implemented */
+	USTCOMM_UNKNOWN_DOMAIN,         /* Tracing domain not known */
+	USTCOMM_ALLOC_FAIL,				/* Trace allocation fail */
+	USTCOMM_NO_SESSION,				/* No session found */
+	USTCOMM_CREATE_FAIL,			/* Create trace fail */
+	USTCOMM_SESSION_FAIL,			/* Create session fail */
+	USTCOMM_START_FAIL,				/* Start tracing fail */
+	USTCOMM_STOP_FAIL,				/* Stop tracing fail */
+	USTCOMM_LIST_FAIL,				/* Listing apps fail */
+	USTCOMM_NO_APPS,				/* No traceable application */
+	USTCOMM_SESS_NOT_FOUND,			/* Session name not found */
+	USTCOMM_NO_TRACE,				/* No trace exist */
+	USTCOMM_FATAL,					/* Session daemon had a fatal error */
+	USTCOMM_NO_TRACEABLE,			/* Error for non traceable app */
+	USTCOMM_SELECT_SESS,			/* Must select a session */
+	USTCOMM_EXIST_SESS,				/* Session name already exist */
+	USTCOMM_NO_EVENT,				/* No event found */
+	USTCOMM_KERN_NA,				/* Kernel tracer unavalable */
+	USTCOMM_KERN_EVENT_EXIST,       /* Kernel event already exists */
+	USTCOMM_KERN_SESS_FAIL,			/* Kernel create session failed */
+	USTCOMM_KERN_CHAN_FAIL,			/* Kernel create channel failed */
+	USTCOMM_KERN_CHAN_NOT_FOUND,	/* Kernel channel not found */
+	USTCOMM_KERN_CHAN_DISABLE_FAIL, /* Kernel disable channel failed */
+	USTCOMM_KERN_CHAN_ENABLE_FAIL,  /* Kernel enable channel failed */
+	USTCOMM_KERN_CONTEXT_FAIL,      /* Kernel add context failed */
+	USTCOMM_KERN_ENABLE_FAIL,		/* Kernel enable event failed */
+	USTCOMM_KERN_DISABLE_FAIL,		/* Kernel disable event failed */
+	USTCOMM_KERN_META_FAIL,			/* Kernel open metadata failed */
+	USTCOMM_KERN_START_FAIL,		/* Kernel start trace failed */
+	USTCOMM_KERN_STOP_FAIL,			/* Kernel stop trace failed */
+	USTCOMM_KERN_CONSUMER_FAIL,		/* Kernel consumer start failed */
+	USTCOMM_KERN_STREAM_FAIL,		/* Kernel create stream failed */
+	USTCOMM_KERN_DIR_FAIL,			/* Kernel trace directory creation failed */
+	USTCOMM_KERN_DIR_EXIST,			/* Kernel trace directory exist */
+	USTCOMM_KERN_NO_SESSION,		/* No kernel session found */
+	USTCOMM_KERN_LIST_FAIL,			/* Kernel listing events failed */
+	USTCONSUMER_COMMAND_SOCK_READY,	/* when kconsumerd command socket ready */
+	USTCONSUMER_SUCCESS_RECV_FD,		/* success on receiving fds */
+	USTCONSUMER_ERROR_RECV_FD,		/* error on receiving fds */
+	USTCONSUMER_POLL_ERROR,			/* Error in polling thread in kconsumerd */
+	USTCONSUMER_POLL_NVAL,			/* Poll on closed fd */
+	USTCONSUMER_POLL_HUP,			/* All fds have hungup */
+	USTCONSUMER_EXIT_SUCCESS,		/* kconsumerd exiting normally */
+	USTCONSUMER_EXIT_FAILURE,		/* kconsumerd exiting on error */
+	USTCONSUMER_OUTFD_ERROR,			/* error opening the tracefile */
+	USTCONSUMER_SPLICE_EBADF,		/* EBADF from splice(2) */
+	USTCONSUMER_SPLICE_EINVAL,		/* EINVAL from splice(2) */
+	USTCONSUMER_SPLICE_ENOMEM,		/* ENOMEM from splice(2) */
+	USTCONSUMER_SPLICE_ESPIPE,		/* ESPIPE from splice(2) */
 	/* MUST be last element */
-	LTTCOMM_NR,						/* Last element */
+	USTCOMM_NR,						/* Last element */
 };
 
 /*
  * Data structure for the commands sent from sessiond to UST.
  */
-struct lttcomm_ust_msg {
+struct ustcomm_ust_msg {
 	uint32_t handle;
 	uint32_t cmd;
 	union {
-		struct lttng_ust_tracer_version version;
 		struct lttng_ust_channel channel;
 		struct lttng_ust_stream stream;
 		struct lttng_ust_event event;
 		struct lttng_ust_context context;
+		struct lttng_ust_tracer_version version;
 	} u;
 };
 
@@ -136,10 +136,10 @@ struct lttcomm_ust_msg {
  * Data structure for the response from UST to the session daemon.
  * cmd_type is sent back in the reply for validation.
  */
-struct lttcomm_ust_reply {
+struct ustcomm_ust_reply {
 	uint32_t handle;
 	uint32_t cmd;
-	uint32_t ret_code;	/* enum enum lttcomm_return_code */
+	uint32_t ret_code;	/* enum enum ustcomm_return_code */
 	uint32_t ret_val;	/* return value */
 	union {
 		struct {
@@ -148,19 +148,27 @@ struct lttcomm_ust_reply {
 		struct {
 			uint64_t memory_map_size;
 		} stream;
+		struct lttng_ust_tracer_version version;
 	} u;
 };
 
-extern int lttcomm_create_unix_sock(const char *pathname);
-extern int lttcomm_connect_unix_sock(const char *pathname);
-extern int lttcomm_accept_unix_sock(int sock);
-extern int lttcomm_listen_unix_sock(int sock);
-extern int lttcomm_close_unix_sock(int sock);
+extern int ustcomm_create_unix_sock(const char *pathname);
+extern int ustcomm_connect_unix_sock(const char *pathname);
+extern int ustcomm_accept_unix_sock(int sock);
+extern int ustcomm_listen_unix_sock(int sock);
+extern int ustcomm_close_unix_sock(int sock);
 /* Send fd(s) over a unix socket. */
-extern ssize_t lttcomm_send_fds_unix_sock(int sock, void *buf, int *fds,
+extern ssize_t ustcomm_send_fds_unix_sock(int sock, void *buf, int *fds,
 		size_t nb_fd, size_t len);
-extern ssize_t lttcomm_recv_unix_sock(int sock, void *buf, size_t len);
-extern ssize_t lttcomm_send_unix_sock(int sock, void *buf, size_t len);
-extern const char *lttcomm_get_readable_code(enum lttcomm_return_code code);
+extern ssize_t ustcomm_recv_unix_sock(int sock, void *buf, size_t len);
+extern ssize_t ustcomm_send_unix_sock(int sock, void *buf, size_t len);
+extern const char *ustcomm_get_readable_code(int code);
+extern int ustcomm_send_app_msg(int sock, struct ustcomm_ust_msg *lum);
+extern int ustcomm_recv_app_reply(int sock, struct ustcomm_ust_reply *lur,
+		uint32_t expected_handle, uint32_t expected_cmd);
+extern int ustcomm_send_app_cmd(int sock,
+		struct ustcomm_ust_msg *lum,
+		struct ustcomm_ust_reply *lur);
+int ustcomm_recv_fd(int sock);
 
 #endif	/* _LTTNG_UST_COMM_H */

@@ -460,7 +460,10 @@ struct shm_handle *channel_create(const struct lib_ring_buffer_config *config,
 	shmobj = shm_object_table_append(handle->table, shmsize);
 	if (!shmobj)
 		goto error_append;
+	/* struct channel is at object 0, offset 0 (hardcoded) */
 	set_shmp(handle->chan, zalloc_shm(shmobj, sizeof(struct channel)));
+	assert(handle->chan._ref.index == 0);
+	assert(handle->chan._ref.offset == 0);
 	chan = shmp(handle, handle->chan);
 	if (!chan)
 		goto error_append;
@@ -526,7 +529,9 @@ struct shm_handle *channel_handle_create(int shm_fd, int wait_fd,
 			shm_fd, wait_fd, memory_map_size);
 	if (!object)
 		goto error_table_object;
-
+	/* struct channel is at object 0, offset 0 (hardcoded) */
+	handle->chan._ref.index = 0;
+	handle->chan._ref.offset = 0;
 	return handle;
 
 error_table_object:

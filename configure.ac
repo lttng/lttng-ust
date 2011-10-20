@@ -175,6 +175,7 @@ AC_CONFIG_FILES([
 	liblttng-ust-comm/Makefile
 	libringbuffer/Makefile
 	libust/Makefile
+	libustctl/Makefile
 	tests/Makefile
 	tests/hello/Makefile
 	tests/ust-basic-tracing/Makefile

@@ -27,91 +27,88 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include <assert.h>
+#include <errno.h>
 
 #include <lttng-ust-comm.h>
 
 /*
  * Human readable error message.
  */
-static const char *lttcomm_readable_code[] = {
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_OK) ] = "Success",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_ERR) ] = "Unknown error",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_UND) ] = "Undefined command",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_NOT_IMPLEMENTED) ] = "Not implemented",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_UNKNOWN_DOMAIN) ] = "Unknown tracing domain",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_NO_SESSION) ] = "No session found",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_LIST_FAIL) ] = "Unable to list traceable apps",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_NO_APPS) ] = "No traceable apps found",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_SESS_NOT_FOUND) ] = "Session name not found",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_NO_TRACE) ] = "No trace found",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_FATAL) ] = "Fatal error of the session daemon",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_CREATE_FAIL) ] = "Create trace failed",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_START_FAIL) ] = "Start trace failed",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_STOP_FAIL) ] = "Stop trace failed",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_NO_TRACEABLE) ] = "App is not traceable",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_SELECT_SESS) ] = "A session MUST be selected",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_EXIST_SESS) ] = "Session name already exist",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_KERN_NA) ] = "Kernel tracer not available",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_KERN_EVENT_EXIST) ] = "Kernel event already exists",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_KERN_SESS_FAIL) ] = "Kernel create session failed",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_KERN_CHAN_FAIL) ] = "Kernel create channel failed",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_KERN_CHAN_NOT_FOUND) ] = "Kernel channel not found",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_KERN_CHAN_DISABLE_FAIL) ] = "Disable kernel channel failed",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_KERN_CHAN_ENABLE_FAIL) ] = "Enable kernel channel failed",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_KERN_CONTEXT_FAIL) ] = "Add kernel context failed",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_KERN_ENABLE_FAIL) ] = "Enable kernel event failed",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_KERN_DISABLE_FAIL) ] = "Disable kernel event failed",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_KERN_META_FAIL) ] = "Opening metadata failed",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_KERN_START_FAIL) ] = "Starting kernel trace failed",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_KERN_STOP_FAIL) ] = "Stoping kernel trace failed",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_KERN_CONSUMER_FAIL) ] = "Kernel consumer start failed",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_KERN_STREAM_FAIL) ] = "Kernel create stream failed",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_KERN_DIR_FAIL) ] = "Kernel trace directory creation failed",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_KERN_DIR_EXIST) ] = "Kernel trace directory already exist",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_KERN_NO_SESSION) ] = "No kernel session found",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_KERN_LIST_FAIL) ] = "Listing kernel events failed",
-	[ LTTCOMM_ERR_INDEX(KCONSUMERD_COMMAND_SOCK_READY) ] = "Kconsumerd command socket ready",
-	[ LTTCOMM_ERR_INDEX(KCONSUMERD_SUCCESS_RECV_FD) ] = "Kconsumerd success on receiving fds",
-	[ LTTCOMM_ERR_INDEX(KCONSUMERD_ERROR_RECV_FD) ] = "Kconsumerd error on receiving fds",
-	[ LTTCOMM_ERR_INDEX(KCONSUMERD_POLL_ERROR) ] = "Kconsumerd error in polling thread",
-	[ LTTCOMM_ERR_INDEX(KCONSUMERD_POLL_NVAL) ] = "Kconsumerd polling on closed fd",
-	[ LTTCOMM_ERR_INDEX(KCONSUMERD_POLL_HUP) ] = "Kconsumerd all fd hung up",
-	[ LTTCOMM_ERR_INDEX(KCONSUMERD_EXIT_SUCCESS) ] = "Kconsumerd exiting normally",
-	[ LTTCOMM_ERR_INDEX(KCONSUMERD_EXIT_FAILURE) ] = "Kconsumerd exiting on error",
-	[ LTTCOMM_ERR_INDEX(KCONSUMERD_OUTFD_ERROR) ] = "Kconsumerd error opening the tracefile",
-	[ LTTCOMM_ERR_INDEX(KCONSUMERD_SPLICE_EBADF) ] = "Kconsumerd splice EBADF",
-	[ LTTCOMM_ERR_INDEX(KCONSUMERD_SPLICE_EINVAL) ] = "Kconsumerd splice EINVAL",
-	[ LTTCOMM_ERR_INDEX(KCONSUMERD_SPLICE_ENOMEM) ] = "Kconsumerd splice ENOMEM",
-	[ LTTCOMM_ERR_INDEX(KCONSUMERD_SPLICE_ESPIPE) ] = "Kconsumerd splice ESPIPE",
-	[ LTTCOMM_ERR_INDEX(LTTCOMM_NO_EVENT) ] = "Event not found",
+static const char *ustcomm_readable_code[] = {
+	[ USTCOMM_ERR_INDEX(USTCOMM_ERR) ] = "Unknown error",
+	[ USTCOMM_ERR_INDEX(USTCOMM_UND) ] = "Undefined command",
+	[ USTCOMM_ERR_INDEX(USTCOMM_NOT_IMPLEMENTED) ] = "Not implemented",
+	[ USTCOMM_ERR_INDEX(USTCOMM_UNKNOWN_DOMAIN) ] = "Unknown tracing domain",
+	[ USTCOMM_ERR_INDEX(USTCOMM_NO_SESSION) ] = "No session found",
+	[ USTCOMM_ERR_INDEX(USTCOMM_LIST_FAIL) ] = "Unable to list traceable apps",
+	[ USTCOMM_ERR_INDEX(USTCOMM_NO_APPS) ] = "No traceable apps found",
+	[ USTCOMM_ERR_INDEX(USTCOMM_SESS_NOT_FOUND) ] = "Session name not found",
+	[ USTCOMM_ERR_INDEX(USTCOMM_NO_TRACE) ] = "No trace found",
+	[ USTCOMM_ERR_INDEX(USTCOMM_FATAL) ] = "Fatal error of the session daemon",
+	[ USTCOMM_ERR_INDEX(USTCOMM_CREATE_FAIL) ] = "Create trace failed",
+	[ USTCOMM_ERR_INDEX(USTCOMM_START_FAIL) ] = "Start trace failed",
+	[ USTCOMM_ERR_INDEX(USTCOMM_STOP_FAIL) ] = "Stop trace failed",
+	[ USTCOMM_ERR_INDEX(USTCOMM_NO_TRACEABLE) ] = "App is not traceable",
+	[ USTCOMM_ERR_INDEX(USTCOMM_SELECT_SESS) ] = "A session MUST be selected",
+	[ USTCOMM_ERR_INDEX(USTCOMM_EXIST_SESS) ] = "Session name already exist",
+	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_NA) ] = "UST tracer not available",
+	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_EVENT_EXIST) ] = "UST event already exists",
+	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_SESS_FAIL) ] = "UST create session failed",
+	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_CHAN_FAIL) ] = "UST create channel failed",
+	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_CHAN_NOT_FOUND) ] = "UST channel not found",
+	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_CHAN_DISABLE_FAIL) ] = "Disable UST channel failed",
+	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_CHAN_ENABLE_FAIL) ] = "Enable UST channel failed",
+	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_CONTEXT_FAIL) ] = "Add UST context failed",
+	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_ENABLE_FAIL) ] = "Enable UST event failed",
+	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_DISABLE_FAIL) ] = "Disable UST event failed",
+	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_META_FAIL) ] = "Opening metadata failed",
+	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_START_FAIL) ] = "Starting UST trace failed",
+	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_STOP_FAIL) ] = "Stoping UST trace failed",
+	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_CONSUMER_FAIL) ] = "UST consumer start failed",
+	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_STREAM_FAIL) ] = "UST create stream failed",
+	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_DIR_FAIL) ] = "UST trace directory creation failed",
+	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_DIR_EXIST) ] = "UST trace directory already exist",
+	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_NO_SESSION) ] = "No UST session found",
+	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_LIST_FAIL) ] = "Listing UST events failed",
+	[ USTCOMM_ERR_INDEX(USTCONSUMER_COMMAND_SOCK_READY) ] = "UST consumer command socket ready",
+	[ USTCOMM_ERR_INDEX(USTCONSUMER_SUCCESS_RECV_FD) ] = "UST consumer success on receiving fds",
+	[ USTCOMM_ERR_INDEX(USTCONSUMER_ERROR_RECV_FD) ] = "UST consumer error on receiving fds",
+	[ USTCOMM_ERR_INDEX(USTCONSUMER_POLL_ERROR) ] = "UST consumer error in polling thread",
+	[ USTCOMM_ERR_INDEX(USTCONSUMER_POLL_NVAL) ] = "UST consumer polling on closed fd",
+	[ USTCOMM_ERR_INDEX(USTCONSUMER_POLL_HUP) ] = "UST consumer all fd hung up",
+	[ USTCOMM_ERR_INDEX(USTCONSUMER_EXIT_SUCCESS) ] = "UST consumer exiting normally",
+	[ USTCOMM_ERR_INDEX(USTCONSUMER_EXIT_FAILURE) ] = "UST consumer exiting on error",
+	[ USTCOMM_ERR_INDEX(USTCONSUMER_OUTFD_ERROR) ] = "UST consumer error opening the tracefile",
+	[ USTCOMM_ERR_INDEX(USTCONSUMER_SPLICE_EBADF) ] = "UST consumer splice EBADF",
+	[ USTCOMM_ERR_INDEX(USTCONSUMER_SPLICE_EINVAL) ] = "UST consumer splice EINVAL",
+	[ USTCOMM_ERR_INDEX(USTCONSUMER_SPLICE_ENOMEM) ] = "UST consumer splice ENOMEM",
+	[ USTCOMM_ERR_INDEX(USTCONSUMER_SPLICE_ESPIPE) ] = "UST consumer splice ESPIPE",
+	[ USTCOMM_ERR_INDEX(USTCOMM_NO_EVENT) ] = "Event not found",
 };
 
 /*
  *  lttcom_get_readable_code
  *
  *  Return ptr to string representing a human readable
- *  error code from the lttcomm_return_code enum.
- *
- *  These code MUST be negative in other to treat that
- *  as an error value.
+ *  error code from the ustcomm_return_code enum.
  */
-const char *lttcomm_get_readable_code(enum lttcomm_return_code code)
+const char *ustcomm_get_readable_code(int code)
 {
-	int tmp_code = -code;
-
-	if (tmp_code >= LTTCOMM_OK && tmp_code < LTTCOMM_NR) {
-		return lttcomm_readable_code[LTTCOMM_ERR_INDEX(tmp_code)];
+	if (code == USTCOMM_OK) {
+		return "Success";
 	}
-
-	return "Unknown error code";
+	if (code >= USTCOMM_ERR && code < USTCOMM_NR) {
+		return ustcomm_readable_code[USTCOMM_ERR_INDEX(code)];
+	}
+	return strerror(code);
 }
 
 /*
- * 	lttcomm_connect_unix_sock
+ * 	ustcomm_connect_unix_sock
  *
  * 	Connect to unix socket using the path name.
  */
-int lttcomm_connect_unix_sock(const char *pathname)
+int ustcomm_connect_unix_sock(const char *pathname)
 {
 	struct sockaddr_un sun;
 	int fd;
@@ -152,12 +149,12 @@ error:
 }
 
 /*
- * 	lttcomm_accept_unix_sock
+ * 	ustcomm_accept_unix_sock
  *
  *	Do an accept(2) on the sock and return the
  *	new file descriptor. The socket MUST be bind(2) before.
  */
-int lttcomm_accept_unix_sock(int sock)
+int ustcomm_accept_unix_sock(int sock)
 {
 	int new_fd;
 	struct sockaddr_un sun;
@@ -177,12 +174,12 @@ error:
 }
 
 /*
- * 	lttcomm_create_unix_sock
+ * 	ustcomm_create_unix_sock
  *
  * 	Creates a AF_UNIX local socket using pathname
  * 	bind the socket upon creation and return the fd.
  */
-int lttcomm_create_unix_sock(const char *pathname)
+int ustcomm_create_unix_sock(const char *pathname)
 {
 	struct sockaddr_un sun;
 	int fd;
@@ -214,11 +211,11 @@ error:
 }
 
 /*
- * 	lttcomm_listen_unix_sock
+ * 	ustcomm_listen_unix_sock
  *
  * 	Make the socket listen using MAX_LISTEN.
  */
-int lttcomm_listen_unix_sock(int sock)
+int ustcomm_listen_unix_sock(int sock)
 {
 	int ret;
 
@@ -231,13 +228,13 @@ int lttcomm_listen_unix_sock(int sock)
 }
 
 /*
- * 	lttcomm_recv_unix_sock
+ * 	ustcomm_recv_unix_sock
  *
  *  Receive data of size len in put that data into
  *  the buf param. Using recvmsg API.
  *  Return the size of received data.
  */
-ssize_t lttcomm_recv_unix_sock(int sock, void *buf, size_t len)
+ssize_t ustcomm_recv_unix_sock(int sock, void *buf, size_t len)
 {
 	struct msghdr msg = { 0 };
 	struct iovec iov[1];
@@ -257,12 +254,12 @@ ssize_t lttcomm_recv_unix_sock(int sock, void *buf, size_t len)
 }
 
 /*
- * 	lttcomm_send_unix_sock
+ * 	ustcomm_send_unix_sock
  *
  * 	Send buf data of size len. Using sendmsg API.
  * 	Return the size of sent data.
  */
-ssize_t lttcomm_send_unix_sock(int sock, void *buf, size_t len)
+ssize_t ustcomm_send_unix_sock(int sock, void *buf, size_t len)
 {
 	struct msghdr msg = { 0 };
 	struct iovec iov[1];
@@ -289,11 +286,11 @@ ssize_t lttcomm_send_unix_sock(int sock, void *buf, size_t len)
 }
 
 /*
- *  lttcomm_close_unix_sock
+ *  ustcomm_close_unix_sock
  *
  *  Shutdown cleanly a unix socket.
  */
-int lttcomm_close_unix_sock(int sock)
+int ustcomm_close_unix_sock(int sock)
 {
 	int ret;
 
@@ -307,11 +304,11 @@ int lttcomm_close_unix_sock(int sock)
 }
 
 /*
- *  lttcomm_send_fds_unix_sock
+ *  ustcomm_send_fds_unix_sock
  *
  *  Send multiple fds on a unix socket.
  */
-ssize_t lttcomm_send_fds_unix_sock(int sock, void *buf, int *fds, size_t nb_fd, size_t len)
+ssize_t ustcomm_send_fds_unix_sock(int sock, void *buf, int *fds, size_t nb_fd, size_t len)
 {
 	struct msghdr msg = { 0 };
 	struct cmsghdr *cmptr;
@@ -347,5 +344,139 @@ ssize_t lttcomm_send_fds_unix_sock(int sock, void *buf, int *fds, size_t nb_fd, 
 		perror("sendmsg");
 	}
 
+	return ret;
+}
+
+int ustcomm_send_app_msg(int sock, struct ustcomm_ust_msg *lum)
+{
+	ssize_t len;
+
+	len = ustcomm_send_unix_sock(sock, lum, sizeof(*lum));
+	switch (len) {
+	case sizeof(*lum):
+		printf("message successfully sent\n");
+		break;
+	case -1:
+		if (errno == ECONNRESET) {
+			printf("remote end closed connection\n");
+			return 0;
+		}
+		return -1;
+	default:
+		printf("incorrect message size: %zd\n", len);
+		return -1;
+	}
+	return 0;
+}
+
+int ustcomm_recv_app_reply(int sock, struct ustcomm_ust_reply *lur,
+			  uint32_t expected_handle, uint32_t expected_cmd)
+{
+	ssize_t len;
+
+	memset(lur, 0, sizeof(*lur));
+	len = ustcomm_recv_unix_sock(sock, lur, sizeof(*lur));
+	switch (len) {
+	case 0:	/* orderly shutdown */
+		printf("Application has performed an orderly shutdown\n");
+		return -EINVAL;
+	case sizeof(*lur):
+		printf("result message received\n");
+		if (lur->handle != expected_handle) {
+			printf("Unexpected result message handle\n");
+			return -EINVAL;
+		}
+
+		if (lur->cmd != expected_cmd) {
+			printf("Unexpected result message command\n");
+			return -EINVAL;
+		}
+		if (lur->ret_code != USTCOMM_OK) {
+			printf("remote operation failed with code %d.\n",
+				lur->ret_code);
+			return lur->ret_code;
+		}
+		return 0;
+	case -1:
+		if (errno == ECONNRESET) {
+			printf("remote end closed connection\n");
+			return -EINVAL;
+		}
+		return -1;
+	default:
+		printf("incorrect message size: %zd\n", len);
+		return len > 0 ? -1 : len;
+	}
+}
+
+int ustcomm_send_app_cmd(int sock,
+			struct ustcomm_ust_msg *lum,
+			struct ustcomm_ust_reply *lur)
+{
+	int ret;
+
+	ret = ustcomm_send_app_msg(sock, lum);
+	if (ret)
+		return ret;
+	ret = ustcomm_recv_app_reply(sock, lur, lum->handle, lum->cmd);
+	if (ret)
+		return ret;
+	return 0;
+}
+
+
+/*
+ * Receives a single fd from socket.
+ *
+ * Returns the size of received data
+ */
+int ustcomm_recv_fd(int sock)
+{
+	struct iovec iov[1];
+	int ret = 0;
+	int data_fd;
+	struct cmsghdr *cmsg;
+	char recv_fd[CMSG_SPACE(sizeof(int))];
+	struct msghdr msg = { 0 };
+	union {
+		unsigned char vc[4];
+		int vi;
+	} tmp;
+	int i;
+
+	/* Prepare to receive the structures */
+	iov[0].iov_base = &data_fd;
+	iov[0].iov_len = sizeof(data_fd);
+	msg.msg_iov = iov;
+	msg.msg_iovlen = 1;
+	msg.msg_control = recv_fd;
+	msg.msg_controllen = sizeof(recv_fd);
+
+	printf("Waiting to receive fd\n");
+	if ((ret = recvmsg(sock, &msg, 0)) < 0) {
+		perror("recvmsg");
+		goto end;
+	}
+	if (ret != sizeof(data_fd)) {
+		printf("Received %d bytes, expected %ld", ret, sizeof(data_fd));
+		goto end;
+	}
+	cmsg = CMSG_FIRSTHDR(&msg);
+	if (!cmsg) {
+		printf("Invalid control message header\n");
+		ret = -1;
+		goto end;
+	}
+	if (cmsg->cmsg_level != SOL_SOCKET || cmsg->cmsg_type != SCM_RIGHTS) {
+		printf("Didn't received any fd\n");
+		ret = -1;
+		goto end;
+	}
+	/* this is our fd */
+	for (i = 0; i < sizeof(int); i++)
+		tmp.vc[i] = CMSG_DATA(cmsg)[i];
+	ret = tmp.vi;
+	printf("received fd %d\n", ret);
+end:
 	return ret;
 }

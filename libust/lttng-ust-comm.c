@@ -182,18 +182,18 @@ int register_app_to_sessiond(int socket)
 		return -errno;
 	}
 
-	ret = lttcomm_send_unix_sock(socket, &reg_msg, sizeof(reg_msg));
+	ret = ustcomm_send_unix_sock(socket, &reg_msg, sizeof(reg_msg));
 	if (ret >= 0 && ret != sizeof(reg_msg))
 		return -EIO;
 	return ret;
 }
 
 static
-int send_reply(int sock, struct lttcomm_ust_reply *lur)
+int send_reply(int sock, struct ustcomm_ust_reply *lur)
 {
 	ssize_t len;
 
-	len = lttcomm_send_unix_sock(sock, lur, sizeof(*lur));
+	len = ustcomm_send_unix_sock(sock, lur, sizeof(*lur));
 	switch (len) {
 	case sizeof(*lur):
 		DBG("message successfully sent");
@@ -231,11 +231,11 @@ int handle_register_done(struct sock_info *sock_info)
 
 static
 int handle_message(struct sock_info *sock_info,
-		int sock, struct lttcomm_ust_msg *lum)
+		int sock, struct ustcomm_ust_msg *lum)
 {
 	int ret = 0;
 	const struct objd_ops *ops;
-	struct lttcomm_ust_reply lur;
+	struct ustcomm_ust_reply lur;
 	int shm_fd, wait_fd;
 
 	ust_lock();
@@ -280,9 +280,9 @@ end:
 	lur.cmd = lum->cmd;
 	lur.ret_val = ret;
 	if (ret >= 0) {
-		lur.ret_code = LTTCOMM_OK;
+		lur.ret_code = USTCOMM_OK;
 	} else {
-		//lur.ret_code = LTTCOMM_SESSION_FAIL;
+		//lur.ret_code = USTCOMM_SESSION_FAIL;
 		lur.ret_code = ret;
 	}
 	switch (lum->cmd) {
@@ -301,6 +301,9 @@ end:
 		shm_fd = lum->u.channel.shm_fd;
 		wait_fd = lum->u.channel.wait_fd;
 		break;
+	case LTTNG_UST_VERSION:
+		lur.u.version = lum->u.version;
+		break;
 	}
 	ret = send_reply(sock, &lur);
 	if (ret < 0) {
@@ -311,16 +314,16 @@ end:
 	if ((lum->cmd == LTTNG_UST_STREAM
 	     || lum->cmd == LTTNG_UST_CHANNEL
 	     || lum->cmd == LTTNG_UST_METADATA)
-			&& lur.ret_code == LTTCOMM_OK) {
+			&& lur.ret_code == USTCOMM_OK) {
 		/* we also need to send the file descriptors. */
-		ret = lttcomm_send_fds_unix_sock(sock,
+		ret = ustcomm_send_fds_unix_sock(sock,
 			&shm_fd, &shm_fd,
 			1, sizeof(int));
 		if (ret < 0) {
 			perror("send shm_fd");
 			goto error;
 		}
-		ret = lttcomm_send_fds_unix_sock(sock,
+		ret = ustcomm_send_fds_unix_sock(sock,
 			&wait_fd, &wait_fd,
 			1, sizeof(int));
 		if (ret < 0) {
@@ -620,7 +623,7 @@ restart:
 	}
 
 	/* Register */
-	ret = lttcomm_connect_unix_sock(sock_info->sock_path);
+	ret = ustcomm_connect_unix_sock(sock_info->sock_path);
 	if (ret < 0) {
 		ERR("Error connecting to %s apps socket", sock_info->name);
 		prev_connect_failed = 1;
@@ -667,9 +670,9 @@ restart:
 
 	for (;;) {
 		ssize_t len;
-		struct lttcomm_ust_msg lum;
+		struct ustcomm_ust_msg lum;
 
-		len = lttcomm_recv_unix_sock(sock, &lum, sizeof(lum));
+		len = ustcomm_recv_unix_sock(sock, &lum, sizeof(lum));
 		switch (len) {
 		case 0:	/* orderly shutdown */
 			DBG("%s ltt-sessiond has performed an orderly shutdown\n", sock_info->name);
