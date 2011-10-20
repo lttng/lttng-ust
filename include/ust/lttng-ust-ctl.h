@@ -71,7 +71,6 @@ struct lttng_ust_calibrate;
 int ustctl_calibrate(int sock, struct lttng_ust_calibrate *calibrate);
 
 /* TODO: object_data send/recv between sessiond and consumer */
-/* TODO: release shm_handle */
 
 /*
  * Map channel shm_handle and add streams. Typically performed by the
@@ -80,6 +79,11 @@ int ustctl_calibrate(int sock, struct lttng_ust_calibrate *calibrate);
 struct shm_handle *ustctl_map_channel(struct object_data *chan_data);
 int ustctl_add_stream(struct shm_handle *shm_handle,
 		struct object_data *stream_data);
+/*
+ * Note: the object_data from which the shm_handle is derived can only
+ * be released after unmapping the handle.
+ */
+void ustctl_unmap_channel(struct shm_handle *shm_handle);
 
 /* Buffer operations */
 

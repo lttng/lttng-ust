@@ -444,6 +444,14 @@ int ustctl_add_stream(struct shm_handle *handle,
 	return 0;
 }
 
+void ustctl_unmap_channel(struct shm_handle *handle)
+{
+	struct channel *chan;
+
+	chan = shmp(handle, handle->chan);
+	channel_destroy(chan, handle, 1);
+}
+
 /* For mmap mode, readable without "get" operation */
 
 /* returns the length to mmap. */
