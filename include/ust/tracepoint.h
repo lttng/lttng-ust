@@ -99,7 +99,6 @@ struct tracepoint {
 	{								\
 		return __tracepoint_probe_register(#name, (void *)probe,\
 						 data);			\
-									\
 	}								\
 	static inline int						\
 	__unregister_trace_##name(void (*probe)(data_proto), void *data)\
