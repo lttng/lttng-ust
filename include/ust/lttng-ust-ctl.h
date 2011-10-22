@@ -90,6 +90,12 @@ void ustctl_unmap_channel(struct shm_handle *shm_handle);
 struct shm_handle;
 struct lib_ring_buffer;
 
+/* Open/close stream buffers for read */
+struct lib_ring_buffer *ustctl_open_stream_read(struct shm_handle *handle,
+		int cpu);
+void ustctl_close_stream_read(struct shm_handle *handle,
+                struct lib_ring_buffer *buf);
+
 /* For mmap mode, readable without "get" operation */
 int ustctl_get_mmap_len(struct shm_handle *handle,
 		struct lib_ring_buffer *buf,

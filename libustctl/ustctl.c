@@ -452,6 +452,31 @@ void ustctl_unmap_channel(struct shm_handle *handle)
 	channel_destroy(chan, handle, 1);
 }
 
+struct lib_ring_buffer *ustctl_open_stream_read(struct shm_handle *handle,
+	int cpu)
+{
+	struct channel *chan = handle->shadow_chan;
+	int shm_fd, wait_fd;
+	uint64_t memory_map_size;
+	struct lib_ring_buffer *buf;
+	int ret;
+
+	buf = channel_get_ring_buffer(&chan->backend.config,
+		chan, cpu, handle, &shm_fd, &wait_fd, &memory_map_size);
+	if (!buf)
+		return NULL;
+	ret = lib_ring_buffer_open_read(buf, handle, 1);
+	if (ret)
+		return NULL;
+	return buf;
+}
+
+void ustctl_close_stream_read(struct shm_handle *handle,
+		struct lib_ring_buffer *buf)
+{
+	lib_ring_buffer_release_read(buf, handle, 1);
+}
+
 /* For mmap mode, readable without "get" operation */
 
 /* returns the length to mmap. */
