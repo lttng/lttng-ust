@@ -401,14 +401,14 @@ int ustctl_wait_quiescent(int sock)
 	return 0;
 }
 
-int ustctl_flush_buffers(int sock, struct object_data *channel_data)
+int ustctl_flush_buffer(int sock, struct object_data *channel_data)
 {
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
 
 	memset(&lum, 0, sizeof(lum));
 	lum.handle = channel_data->handle;
-	lum.cmd = LTTNG_UST_FLUSH_BUFFERS;
+	lum.cmd = LTTNG_UST_FLUSH_BUFFER;
 	return ustcomm_send_app_cmd(sock, &lum, &lur);
 }
 

@@ -632,8 +632,8 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg)
 		return ltt_channel_enable(channel);
 	case LTTNG_UST_DISABLE:
 		return ltt_channel_disable(channel);
-	case LTTNG_UST_FLUSH_BUFFERS:
-		return channel->ops->flush_buffers(channel->chan, channel->handle);
+	case LTTNG_UST_FLUSH_BUFFER:
+		return channel->ops->flush_buffer(channel->chan, channel->handle);
 	default:
 		return -EINVAL;
 	}
@@ -666,8 +666,8 @@ long lttng_metadata_cmd(int objd, unsigned int cmd, unsigned long arg)
 		/* stream used as output */
 		return lttng_abi_open_stream(objd, stream);
 	}
-	case LTTNG_UST_FLUSH_BUFFERS:
-		return channel->ops->flush_buffers(channel->chan, channel->handle);
+	case LTTNG_UST_FLUSH_BUFFER:
+		return channel->ops->flush_buffer(channel->chan, channel->handle);
 	default:
 		return -EINVAL;
 	}

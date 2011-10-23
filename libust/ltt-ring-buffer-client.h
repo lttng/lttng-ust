@@ -504,7 +504,7 @@ int ltt_is_disabled(struct channel *chan)
 }
 
 static
-int ltt_flush_buffers(struct channel *chan, struct shm_handle *handle)
+int ltt_flush_buffer(struct channel *chan, struct shm_handle *handle)
 {
 	struct lib_ring_buffer *buf;
 	int cpu;
@@ -537,7 +537,7 @@ static struct ltt_transport ltt_relay_transport = {
 		//.get_hp_wait_queue = ltt_get_hp_wait_queue,
 		.is_finalized = ltt_is_finalized,
 		.is_disabled = ltt_is_disabled,
-		.flush_buffers = ltt_flush_buffers,
+		.flush_buffer = ltt_flush_buffer,
 	},
 };
 

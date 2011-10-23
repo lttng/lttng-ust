@@ -68,7 +68,7 @@ int ustctl_tracer_version(int sock, struct lttng_ust_tracer_version *v);
 int ustctl_wait_quiescent(int sock);
 
 /* Flush each buffers in this channel */
-int ustctl_flush_buffers(int sock, struct object_data *channel_data);
+int ustctl_flush_buffer(int sock, struct object_data *channel_data);
 
 /* not implemented yet */
 struct lttng_ust_calibrate;
