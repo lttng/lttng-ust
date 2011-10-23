@@ -352,14 +352,20 @@ int ustctl_disable(int sock, struct object_data *object)
 	return 0;
 }
 
-int ustctl_start_session(int sock, struct object_data *object)
+int ustctl_start_session(int sock, int handle)
 {
-	return ustctl_enable(sock, object);
+	struct object_data obj;
+
+	obj.handle = handle;
+	return ustctl_enable(sock, &obj);
 }
 
-int ustctl_stop_session(int sock, struct object_data *object)
+int ustctl_stop_session(int sock, int handle)
 {
-	return ustctl_disable(sock, object);
+	struct object_data obj;
+
+	obj.handle = handle;
+	return ustctl_disable(sock, &obj);
 }
 
 

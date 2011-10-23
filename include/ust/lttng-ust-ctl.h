@@ -60,8 +60,8 @@ int ustctl_add_context(int sock, struct lttng_ust_context *ctx,
 
 int ustctl_enable(int sock, struct object_data *object);
 int ustctl_disable(int sock, struct object_data *object);
-int ustctl_start_session(int sock, struct object_data *object);
-int ustctl_stop_session(int sock, struct object_data *object);
+int ustctl_start_session(int sock, int handle);
+int ustctl_stop_session(int sock, int handle);
 
 int ustctl_tracepoint_list(int sock);	/* not implemented yet */
 int ustctl_tracer_version(int sock, struct lttng_ust_tracer_version *v);
