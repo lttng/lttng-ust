@@ -26,6 +26,8 @@
 #include "../libringbuffer/backend.h"
 #include "../libringbuffer/frontend.h"
 
+volatile enum ust_loglevel ust_loglevel;
+
 static
 void init_object(struct object_data *data)
 {
