@@ -50,7 +50,7 @@
 #define DEFAULT_HOME_APPS_WAIT_SHM_PATH     "/lttng-ust-apps-wait-%u"
 
 /* Queue size of listen(2) */
-#define MAX_LISTEN 10
+#define LTTNG_UST_COMM_MAX_LISTEN 10
 
 /* Get the error code index from 0. USTCOMM_ERR starts at 1000.
  */

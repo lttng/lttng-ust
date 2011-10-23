@@ -8,6 +8,7 @@ nobase_include_HEADERS = \
 	ust/lttng-ust-ctl.h \
 	ust/version.h \
 	ust/lttng-ust-abi.h \
+	ust/lttng-ust-comm.h \
 	ust/ringbuffer-abi.h \
 	ust/lttng-tracer.h \
 	ust/usterr-signal-safe.h \
@@ -19,7 +20,6 @@ nobase_include_HEADERS = \
 # note: usterr-signal-safe.h, core.h and share.h need namespace cleanup.
 
 noinst_HEADERS = \
-	lttng-ust-comm.h \
 	usterr.h \
 	ust_snprintf.h \
 	ust/compat.h \

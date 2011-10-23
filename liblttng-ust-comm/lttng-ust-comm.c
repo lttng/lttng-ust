@@ -29,7 +29,7 @@
 #include <assert.h>
 #include <errno.h>
 
-#include <lttng-ust-comm.h>
+#include <ust/lttng-ust-comm.h>
 
 /*
  * Human readable error message.
@@ -213,13 +213,13 @@ error:
 /*
  * 	ustcomm_listen_unix_sock
  *
- * 	Make the socket listen using MAX_LISTEN.
+ * 	Make the socket listen using LTTNG_UST_COMM_MAX_LISTEN.
  */
 int ustcomm_listen_unix_sock(int sock)
 {
 	int ret;
 
-	ret = listen(sock, MAX_LISTEN);
+	ret = listen(sock, LTTNG_UST_COMM_MAX_LISTEN);
 	if (ret < 0) {
 		perror("listen");
 	}

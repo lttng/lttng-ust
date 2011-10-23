@@ -21,7 +21,7 @@
 #include <ust/lttng-ust-ctl.h>
 #include <ust/lttng-ust-abi.h>
 #include <ust/usterr-signal-safe.h>
-#include "lttng-ust-comm.h"
+#include <ust/lttng-ust-comm.h>
 
 #include "../libringbuffer/backend.h"
 #include "../libringbuffer/frontend.h"

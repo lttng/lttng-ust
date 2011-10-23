@@ -1,5 +1,5 @@
 AM_CPPFLAGS = -I$(top_srcdir)/include
 
-noinst_LTLIBRARIES = liblttng-ust-comm.la
+lib_LTLIBRARIES = liblttng-ust-comm.la
 
 liblttng_ust_comm_la_SOURCES = lttng-ust-comm.c
