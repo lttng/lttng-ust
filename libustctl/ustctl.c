@@ -56,6 +56,32 @@ void release_object(int sock, struct object_data *data)
 }
 
 /*
+ * Send registration done packet to the application.
+ */
+int ustctl_register_done(int sock)
+{
+	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_reply lur;
+	int ret;
+
+	DBG("Sending register done command to %d", sock);
+	memset(&lum, 0, sizeof(lum));
+	lum.handle = LTTNG_UST_ROOT_HANDLE;
+	lum.cmd = LTTNG_UST_REGISTER_DONE;
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+	if (ret)
+		return ret;
+	if (lur.ret_code != USTCOMM_OK) {
+		DBG("Return code: %s", ustcomm_get_readable_code(lur.ret_code));
+		goto error;
+	}
+	return 0;
+
+error:
+	return -1;
+}
+
+/*
  * returns session handle.
  */
 int ustctl_create_session(int sock)

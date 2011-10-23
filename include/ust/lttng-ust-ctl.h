@@ -41,6 +41,7 @@ struct object_data {
 	uint64_t memory_map_size;
 };
 
+int ustctl_register_done(int sock);
 int ustctl_create_session(int sock);
 int ustctl_open_metadata(int sock, int session_handle,
 		struct lttng_ust_channel_attr *chops,
