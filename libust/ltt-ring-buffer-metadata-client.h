@@ -269,6 +269,21 @@ int ltt_is_disabled(struct channel *chan)
 	return lib_ring_buffer_channel_is_disabled(chan);
 }
 
+static
+int ltt_flush_buffers(struct channel *chan, struct shm_handle *handle)
+{
+	struct lib_ring_buffer *buf;
+	int shm_fd, wait_fd;
+	uint64_t memory_map_size;
+
+	buf = channel_get_ring_buffer(&client_config, chan,
+			0, handle, &shm_fd, &wait_fd,
+			&memory_map_size);
+	lib_ring_buffer_switch(&client_config, buf,
+			SWITCH_ACTIVE, handle);
+	return 0;
+}
+
 static struct ltt_transport ltt_relay_transport = {
 	.name = "relay-" RING_BUFFER_MODE_TEMPLATE_STRING "-mmap",
 	.ops = {
@@ -284,6 +299,7 @@ static struct ltt_transport ltt_relay_transport = {
 		//.get_hp_wait_queue = ltt_get_hp_wait_queue,
 		.is_finalized = ltt_is_finalized,
 		.is_disabled = ltt_is_disabled,
+		.flush_buffers = ltt_flush_buffers,
 	},
 };
 

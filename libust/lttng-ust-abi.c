@@ -632,6 +632,8 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg)
 		return ltt_channel_enable(channel);
 	case LTTNG_UST_DISABLE:
 		return ltt_channel_disable(channel);
+	case LTTNG_UST_FLUSH_BUFFERS:
+		return channel->ops->flush_buffers(channel->chan, channel->handle);
 	default:
 		return -EINVAL;
 	}
@@ -653,6 +655,8 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg)
 static
 long lttng_metadata_cmd(int objd, unsigned int cmd, unsigned long arg)
 {
+	struct ltt_channel *channel = objd_private(objd);
+
 	switch (cmd) {
 	case LTTNG_UST_STREAM:
 	{
@@ -662,6 +666,8 @@ long lttng_metadata_cmd(int objd, unsigned int cmd, unsigned long arg)
 		/* stream used as output */
 		return lttng_abi_open_stream(objd, stream);
 	}
+	case LTTNG_UST_FLUSH_BUFFERS:
+		return channel->ops->flush_buffers(channel->chan, channel->handle);
 	default:
 		return -EINVAL;
 	}
@@ -727,13 +733,10 @@ static const struct objd_ops lttng_metadata_ops = {
  *
  *	This object descriptor implements lttng commands:
  *		(None for now. Access is done directly though shm.)
- *		TODO: Add buffer flush.
  */
 static
 long lttng_rb_cmd(int objd, unsigned int cmd, unsigned long arg)
 {
-	//struct stream_priv_data *priv = objd_private(objd);
-
 	switch (cmd) {
 	default:
 		return -EINVAL;
