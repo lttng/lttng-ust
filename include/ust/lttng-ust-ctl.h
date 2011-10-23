@@ -70,8 +70,6 @@ int ustctl_wait_quiescent(int sock);
 struct lttng_ust_calibrate;
 int ustctl_calibrate(int sock, struct lttng_ust_calibrate *calibrate);
 
-/* TODO: object_data send/recv between sessiond and consumer */
-
 /*
  * Map channel shm_handle and add streams. Typically performed by the
  * consumer to map the objects into its memory space.
@@ -89,6 +87,9 @@ void ustctl_unmap_channel(struct shm_handle *shm_handle);
 
 struct shm_handle;
 struct lib_ring_buffer;
+
+void *ustctl_get_mmap_base(struct shm_handle *handle,
+		struct lib_ring_buffer *buf);
 
 /* Open/close stream buffers for read */
 struct lib_ring_buffer *ustctl_open_stream_read(struct shm_handle *handle,
@@ -108,6 +109,8 @@ int ustctl_get_max_subbuf_size(struct shm_handle *handle,
  * For mmap mode, operate on the current packet (between get/put or
  * get_next/put_next).
  */
+void *ustctl_get_mmap_base(struct shm_handle *handle,
+		struct lib_ring_buffer *buf);
 int ustctl_get_mmap_read_offset(struct shm_handle *handle,
 		struct lib_ring_buffer *buf, unsigned long *off);
 int ustctl_get_subbuf_size(struct shm_handle *handle,

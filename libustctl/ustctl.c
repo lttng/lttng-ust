@@ -479,6 +479,12 @@ void ustctl_close_stream_read(struct shm_handle *handle,
 
 /* For mmap mode, readable without "get" operation */
 
+void *ustctl_get_mmap_base(struct shm_handle *handle,
+		struct lib_ring_buffer *buf)
+{
+	return shmp(handle, buf->backend.memory_map);
+}
+
 /* returns the length to mmap. */
 int ustctl_get_mmap_len(struct shm_handle *handle,
 		struct lib_ring_buffer *buf,
