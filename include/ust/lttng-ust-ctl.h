@@ -55,7 +55,7 @@ int ustctl_create_event(int sock, struct lttng_ust_event *ev,
 		struct object_data *channel_data,
 		struct object_data **event_data);
 int ustctl_add_context(int sock, struct lttng_ust_context *ctx,
-		struct object_data *channel_data,
+		struct object_data *obj_data,
 		struct object_data **context_data);
 
 int ustctl_enable(int sock, struct object_data *object);

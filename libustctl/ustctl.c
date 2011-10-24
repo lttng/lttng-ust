@@ -291,7 +291,7 @@ int ustctl_create_event(int sock, struct lttng_ust_event *ev,
 }
 
 int ustctl_add_context(int sock, struct lttng_ust_context *ctx,
-		struct object_data *channel_data,
+		struct object_data *obj_data,
 		struct object_data **_context_data)
 {
 	struct ustcomm_ust_msg lum;
@@ -304,7 +304,7 @@ int ustctl_add_context(int sock, struct lttng_ust_context *ctx,
 		return -ENOMEM;
 	init_object(context_data);
 	memset(&lum, 0, sizeof(lum));
-	lum.handle = channel_data->handle;
+	lum.handle = obj_data->handle;
 	lum.cmd = LTTNG_UST_CONTEXT;
 	lum.u.context.ctx = ctx->ctx;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
