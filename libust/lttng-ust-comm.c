@@ -556,7 +556,7 @@ void wait_for_sessiond(struct sock_info *sock_info)
 		if (ret < 0) {
 			if (errno == EFAULT) {
 				wait_poll_fallback = 1;
-				ERR(
+				WARN(
 "Linux kernels 2.6.33 to 3.0 (with the exception of stable versions) "
 "do not support FUTEX_WAKE on read-only memory mappings correctly. "
 "Please upgrade your kernel "
