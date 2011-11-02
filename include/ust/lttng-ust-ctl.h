@@ -34,7 +34,7 @@ struct lttng_ust_channel_attr {
 	enum lttng_ust_output output;		/* splice, mmap */
 };
 
-struct object_data {
+struct lttng_ust_object_data {
 	int handle;
 	int shm_fd;
 	int wait_fd;
@@ -45,21 +45,21 @@ int ustctl_register_done(int sock);
 int ustctl_create_session(int sock);
 int ustctl_open_metadata(int sock, int session_handle,
 		struct lttng_ust_channel_attr *chops,
-		struct object_data **metadata_data);
+		struct lttng_ust_object_data **metadata_data);
 int ustctl_create_channel(int sock, int session_handle,
 		struct lttng_ust_channel_attr *chops,
-		struct object_data **channel_data);
-int ustctl_create_stream(int sock, struct object_data *channel_data,
-		struct object_data **stream_data);
+		struct lttng_ust_object_data **channel_data);
+int ustctl_create_stream(int sock, struct lttng_ust_object_data *channel_data,
+		struct lttng_ust_object_data **stream_data);
 int ustctl_create_event(int sock, struct lttng_ust_event *ev,
-		struct object_data *channel_data,
-		struct object_data **event_data);
+		struct lttng_ust_object_data *channel_data,
+		struct lttng_ust_object_data **event_data);
 int ustctl_add_context(int sock, struct lttng_ust_context *ctx,
-		struct object_data *obj_data,
-		struct object_data **context_data);
+		struct lttng_ust_object_data *obj_data,
+		struct lttng_ust_object_data **context_data);
 
-int ustctl_enable(int sock, struct object_data *object);
-int ustctl_disable(int sock, struct object_data *object);
+int ustctl_enable(int sock, struct lttng_ust_object_data *object);
+int ustctl_disable(int sock, struct lttng_ust_object_data *object);
 int ustctl_start_session(int sock, int handle);
 int ustctl_stop_session(int sock, int handle);
 
@@ -68,7 +68,7 @@ int ustctl_tracer_version(int sock, struct lttng_ust_tracer_version *v);
 int ustctl_wait_quiescent(int sock);
 
 /* Flush each buffers in this channel */
-int ustctl_flush_buffer(int sock, struct object_data *channel_data);
+int ustctl_flush_buffer(int sock, struct lttng_ust_object_data *channel_data);
 
 /* not implemented yet */
 struct lttng_ust_calibrate;
@@ -78,11 +78,11 @@ int ustctl_calibrate(int sock, struct lttng_ust_calibrate *calibrate);
  * Map channel shm_handle and add streams. Typically performed by the
  * consumer to map the objects into its memory space.
  */
-struct shm_handle *ustctl_map_channel(struct object_data *chan_data);
+struct shm_handle *ustctl_map_channel(struct lttng_ust_object_data *chan_data);
 int ustctl_add_stream(struct shm_handle *shm_handle,
-		struct object_data *stream_data);
+		struct lttng_ust_object_data *stream_data);
 /*
- * Note: the object_data from which the shm_handle is derived can only
+ * Note: the lttng_ust_object_data from which the shm_handle is derived can only
  * be released after unmapping the handle.
  */
 void ustctl_unmap_channel(struct shm_handle *shm_handle);
@@ -137,6 +137,6 @@ int ustctl_put_subbuf(struct shm_handle *handle,
 		struct lib_ring_buffer *buf);
 
 /* Release object created by members of this API */
-void release_object(int sock, struct object_data *data);
+void release_object(int sock, struct lttng_ust_object_data *data);
 
 #endif /* _LTTNG_UST_CTL_H */

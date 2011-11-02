@@ -51,7 +51,7 @@ const char *evname[] = {
 	"ust_tests_hello_dontexist",
 };
 
-struct object_data {
+struct lttng_ust_object_data {
 	int handle;
 	int shm_fd;
 	int wait_fd;
@@ -59,10 +59,10 @@ struct object_data {
 };
 
 static int session_handle[NR_SESSIONS];
-static struct object_data metadata_stream_data[NR_SESSIONS];
-static struct object_data metadata_data[NR_SESSIONS];
-static struct object_data channel_data[NR_SESSIONS][NR_CHANNELS];
-static struct object_data stream_data[NR_SESSIONS][NR_CHANNELS][MAX_NR_STREAMS];
+static struct lttng_ust_object_data metadata_stream_data[NR_SESSIONS];
+static struct lttng_ust_object_data metadata_data[NR_SESSIONS];
+static struct lttng_ust_object_data channel_data[NR_SESSIONS][NR_CHANNELS];
+static struct lttng_ust_object_data stream_data[NR_SESSIONS][NR_CHANNELS][MAX_NR_STREAMS];
 static int event_handle[NR_SESSIONS][NR_CHANNELS][NR_EVENTS];
 
 static int apps_socket = -1;
@@ -77,7 +77,7 @@ static void handle_signals(int signo)
 }
 
 static
-int open_streams(int sock, int channel_handle, struct object_data *stream_datas,
+int open_streams(int sock, int channel_handle, struct lttng_ust_object_data *stream_datas,
 		int nr_check)
 {
 	int ret, k = 0;
@@ -121,7 +121,7 @@ int open_streams(int sock, int channel_handle, struct object_data *stream_datas,
 }
 
 static
-int close_streams(int sock, struct object_data *stream_datas, int nr_check)
+int close_streams(int sock, struct lttng_ust_object_data *stream_datas, int nr_check)
 {
 	int ret, k;
 
@@ -158,8 +158,8 @@ int close_streams(int sock, struct object_data *stream_datas, int nr_check)
 }
 
 static
-struct shm_handle *map_channel(struct object_data *chan_data,
-		struct object_data *stream_datas, int nr_check)
+struct shm_handle *map_channel(struct lttng_ust_object_data *chan_data,
+		struct lttng_ust_object_data *stream_datas, int nr_check)
 {
 	struct shm_handle *handle;
 	struct channel *chan;
@@ -178,7 +178,7 @@ struct shm_handle *map_channel(struct object_data *chan_data,
 	chan = shmp(handle, handle->chan);
 
 	for (k = 0; k < nr_check; k++) {
-		struct object_data *stream_data = &stream_datas[k];
+		struct lttng_ust_object_data *stream_data = &stream_datas[k];
 
 		if (!stream_data->handle)
 			break;

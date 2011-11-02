@@ -29,7 +29,7 @@
 volatile enum ust_loglevel ust_loglevel;
 
 static
-void init_object(struct object_data *data)
+void init_object(struct lttng_ust_object_data *data)
 {
 	data->handle = -1;
 	data->shm_fd = -1;
@@ -37,7 +37,7 @@ void init_object(struct object_data *data)
 	data->memory_map_size = 0;
 }
 
-void release_object(int sock, struct object_data *data)
+void release_object(int sock, struct lttng_ust_object_data *data)
 {
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
@@ -105,11 +105,11 @@ int ustctl_create_session(int sock)
 /* open the metadata global channel */
 int ustctl_open_metadata(int sock, int session_handle,
 		struct lttng_ust_channel_attr *chops,
-		struct object_data **_metadata_data)
+		struct lttng_ust_object_data **_metadata_data)
 {
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
-	struct object_data *metadata_data;
+	struct lttng_ust_object_data *metadata_data;
 	int ret;
 
 	metadata_data = malloc(sizeof(*metadata_data));
@@ -158,11 +158,11 @@ error:
 
 int ustctl_create_channel(int sock, int session_handle,
 		struct lttng_ust_channel_attr *chops,
-		struct object_data **_channel_data)
+		struct lttng_ust_object_data **_channel_data)
 {
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
-	struct object_data *channel_data;
+	struct lttng_ust_object_data *channel_data;
 	int ret;
 
 	channel_data = malloc(sizeof(*channel_data));
@@ -214,12 +214,12 @@ error:
  * Return 0 on success.
  * Return negative error value on error.
  */
-int ustctl_create_stream(int sock, struct object_data *channel_data,
-		struct object_data **_stream_data)
+int ustctl_create_stream(int sock, struct lttng_ust_object_data *channel_data,
+		struct lttng_ust_object_data **_stream_data)
 {
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
-	struct object_data *stream_data;
+	struct lttng_ust_object_data *stream_data;
 	int ret, fd;
 
 	stream_data = malloc(sizeof(*stream_data));
@@ -261,12 +261,12 @@ error:
 }
 
 int ustctl_create_event(int sock, struct lttng_ust_event *ev,
-		struct object_data *channel_data,
-		struct object_data **_event_data)
+		struct lttng_ust_object_data *channel_data,
+		struct lttng_ust_object_data **_event_data)
 {
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
-	struct object_data *event_data;
+	struct lttng_ust_object_data *event_data;
 	int ret;
 
 	event_data = malloc(sizeof(*event_data));
@@ -291,12 +291,12 @@ int ustctl_create_event(int sock, struct lttng_ust_event *ev,
 }
 
 int ustctl_add_context(int sock, struct lttng_ust_context *ctx,
-		struct object_data *obj_data,
-		struct object_data **_context_data)
+		struct lttng_ust_object_data *obj_data,
+		struct lttng_ust_object_data **_context_data)
 {
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
-	struct object_data *context_data;
+	struct lttng_ust_object_data *context_data;
 	int ret;
 
 	context_data = malloc(sizeof(*context_data));
@@ -319,7 +319,7 @@ int ustctl_add_context(int sock, struct lttng_ust_context *ctx,
 }
 
 /* Enable event, channel and session ioctl */
-int ustctl_enable(int sock, struct object_data *object)
+int ustctl_enable(int sock, struct lttng_ust_object_data *object)
 {
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
@@ -336,7 +336,7 @@ int ustctl_enable(int sock, struct object_data *object)
 }
 
 /* Disable event, channel and session ioctl */
-int ustctl_disable(int sock, struct object_data *object)
+int ustctl_disable(int sock, struct lttng_ust_object_data *object)
 {
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
@@ -354,7 +354,7 @@ int ustctl_disable(int sock, struct object_data *object)
 
 int ustctl_start_session(int sock, int handle)
 {
-	struct object_data obj;
+	struct lttng_ust_object_data obj;
 
 	obj.handle = handle;
 	return ustctl_enable(sock, &obj);
@@ -362,7 +362,7 @@ int ustctl_start_session(int sock, int handle)
 
 int ustctl_stop_session(int sock, int handle)
 {
-	struct object_data obj;
+	struct lttng_ust_object_data obj;
 
 	obj.handle = handle;
 	return ustctl_disable(sock, &obj);
@@ -407,7 +407,7 @@ int ustctl_wait_quiescent(int sock)
 	return 0;
 }
 
-int ustctl_flush_buffer(int sock, struct object_data *channel_data)
+int ustctl_flush_buffer(int sock, struct lttng_ust_object_data *channel_data)
 {
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
@@ -426,7 +426,7 @@ int ustctl_calibrate(int sock, struct lttng_ust_calibrate *calibrate)
 /* Buffer operations */
 
 /* Map channel shm into process memory */
-struct shm_handle *ustctl_map_channel(struct object_data *chan_data)
+struct shm_handle *ustctl_map_channel(struct lttng_ust_object_data *chan_data)
 {
 	struct shm_handle *handle;
 	struct channel *chan;
@@ -465,7 +465,7 @@ struct shm_handle *ustctl_map_channel(struct object_data *chan_data)
 
 /* Add stream to channel shm and map its shm into process memory */
 int ustctl_add_stream(struct shm_handle *handle,
-		struct object_data *stream_data)
+		struct lttng_ust_object_data *stream_data)
 {
 	int ret;
 
