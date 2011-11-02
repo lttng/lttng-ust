@@ -67,7 +67,7 @@ struct commit_counters_cold {
 } ____cacheline_aligned;
 
 /* ring buffer state */
-struct lib_ring_buffer {
+struct lttng_ust_lib_ring_buffer {
 	/* First 32 bytes cache-hot cacheline */
 	union v_atomic offset;		/* Current offset in the buffer */
 	DECLARE_SHMP(struct commit_counters_hot, commit_hot);
@@ -82,7 +82,7 @@ struct lib_ring_buffer {
 					 * Last timestamp written in the buffer.
 					 */
 
-	struct lib_ring_buffer_backend backend;	/* Associated backend */
+	struct lttng_ust_lib_ring_buffer_backend backend;	/* Associated backend */
 
 	DECLARE_SHMP(struct commit_counters_cold, commit_cold);
 					/* Commit count per sub-buffer */
@@ -108,7 +108,7 @@ struct lib_ring_buffer {
 	int switch_timer_enabled:1;	/* Protected by ring_buffer_nohz_lock */
 	int read_timer_enabled:1;	/* Protected by ring_buffer_nohz_lock */
 	/* shmp pointer to self */
-	DECLARE_SHMP(struct lib_ring_buffer, self);
+	DECLARE_SHMP(struct lttng_ust_lib_ring_buffer, self);
 } ____cacheline_aligned;
 
 static inline
@@ -119,7 +119,7 @@ void *channel_get_private(struct channel *chan)
 
 /*
  * Issue warnings and disable channels upon internal error.
- * Can receive struct lib_ring_buffer or struct lib_ring_buffer_backend
+ * Can receive struct lttng_ust_lib_ring_buffer or struct lttng_ust_lib_ring_buffer_backend
  * parameters.
  */
 #define CHAN_WARN_ON(c, cond)						\

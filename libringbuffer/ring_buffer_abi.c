@@ -34,7 +34,7 @@ static int compat_put_ulong(compat_ulong_t val, unsigned long arg)
  */
 int lib_ring_buffer_open(struct inode *inode, struct file *file)
 {
-	struct lib_ring_buffer *buf = inode->i_private;
+	struct lttng_ust_lib_ring_buffer *buf = inode->i_private;
 	int ret;
 
 	ret = lib_ring_buffer_open_read(buf);
@@ -61,7 +61,7 @@ release_read:
  */
 int lib_ring_buffer_release(struct inode *inode, struct file *file)
 {
-	struct lib_ring_buffer *buf = file->private_data;
+	struct lttng_ust_lib_ring_buffer *buf = file->private_data;
 
 	lib_ring_buffer_release_read(buf);
 
@@ -78,9 +78,9 @@ int lib_ring_buffer_release(struct inode *inode, struct file *file)
 unsigned int lib_ring_buffer_poll(struct file *filp, poll_table *wait)
 {
 	unsigned int mask = 0;
-	struct lib_ring_buffer *buf = filp->private_data;
+	struct lttng_ust_lib_ring_buffer *buf = filp->private_data;
 	struct channel *chan = buf->backend.chan;
-	const struct lib_ring_buffer_config *config = chan->backend.config;
+	const struct lttng_ust_lib_ring_buffer_config *config = chan->backend.config;
 	int finalized, disabled;
 
 	if (filp->f_mode & FMODE_READ) {
@@ -155,9 +155,9 @@ retry:
  */
 long lib_ring_buffer_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
-	struct lib_ring_buffer *buf = filp->private_data;
+	struct lttng_ust_lib_ring_buffer *buf = filp->private_data;
 	struct channel *chan = buf->backend.chan;
-	const struct lib_ring_buffer_config *config = chan->backend.config;
+	const struct lttng_ust_lib_ring_buffer_config *config = chan->backend.config;
 
 	if (lib_ring_buffer_channel_is_disabled(chan))
 		return -EIO;
@@ -252,9 +252,9 @@ long lib_ring_buffer_ioctl(struct file *filp, unsigned int cmd, unsigned long ar
 long lib_ring_buffer_compat_ioctl(struct file *filp, unsigned int cmd,
 				  unsigned long arg)
 {
-	struct lib_ring_buffer *buf = filp->private_data;
+	struct lttng_ust_lib_ring_buffer *buf = filp->private_data;
 	struct channel *chan = buf->backend.chan;
-	const struct lib_ring_buffer_config *config = chan->backend.config;
+	const struct lttng_ust_lib_ring_buffer_config *config = chan->backend.config;
 
 	if (lib_ring_buffer_channel_is_disabled(chan))
 		return -EIO;

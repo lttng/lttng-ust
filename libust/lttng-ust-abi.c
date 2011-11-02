@@ -507,7 +507,7 @@ static const struct objd_ops lttng_session_ops = {
 };
 
 struct stream_priv_data {
-	struct lib_ring_buffer *buf;
+	struct lttng_ust_lib_ring_buffer *buf;
 	struct ltt_channel *ltt_chan;
 };
 
@@ -515,7 +515,7 @@ static
 int lttng_abi_open_stream(int channel_objd, struct lttng_ust_stream *info)
 {
 	struct ltt_channel *channel = objd_private(channel_objd);
-	struct lib_ring_buffer *buf;
+	struct lttng_ust_lib_ring_buffer *buf;
 	struct stream_priv_data *priv;
 	int stream_objd, ret;
 
@@ -747,7 +747,7 @@ static
 int lttng_rb_release(int objd)
 {
 	struct stream_priv_data *priv = objd_private(objd);
-	struct lib_ring_buffer *buf;
+	struct lttng_ust_lib_ring_buffer *buf;
 	struct ltt_channel *channel;
 
 	if (priv) {

@@ -441,7 +441,7 @@ static void __event_probe__##_name(void *__data, _proto)		      \
 {									      \
 	struct ltt_event *__event = __data;				      \
 	struct ltt_channel *__chan = __event->chan;			      \
-	struct lib_ring_buffer_ctx __ctx;				      \
+	struct lttng_ust_lib_ring_buffer_ctx __ctx;				      \
 	size_t __event_len, __event_align;				      \
 	size_t __dynamic_len_idx = 0;					      \
 	size_t __dynamic_len[_TP_ARRAY_SIZE(__event_fields___##_name)];	      \
@@ -472,7 +472,7 @@ static void __event_probe__##_name(void *__data)			      \
 {									      \
 	struct ltt_event *__event = __data;				      \
 	struct ltt_channel *__chan = __event->chan;			      \
-	struct lib_ring_buffer_ctx __ctx;				      \
+	struct lttng_ust_lib_ring_buffer_ctx __ctx;				      \
 	size_t __event_len, __event_align;				      \
 	int __ret;							      \
 									      \

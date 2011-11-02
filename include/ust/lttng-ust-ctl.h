@@ -71,20 +71,20 @@ void ustctl_unmap_channel(struct lttng_ust_shm_handle *lttng_ust_shm_handle);
 /* Buffer operations */
 
 struct lttng_ust_shm_handle;
-struct lib_ring_buffer;
+struct lttng_ust_lib_ring_buffer;
 
 /* Open/close stream buffers for read */
-struct lib_ring_buffer *ustctl_open_stream_read(struct lttng_ust_shm_handle *handle,
+struct lttng_ust_lib_ring_buffer *ustctl_open_stream_read(struct lttng_ust_shm_handle *handle,
 		int cpu);
 void ustctl_close_stream_read(struct lttng_ust_shm_handle *handle,
-                struct lib_ring_buffer *buf);
+                struct lttng_ust_lib_ring_buffer *buf);
 
 /* For mmap mode, readable without "get" operation */
 int ustctl_get_mmap_len(struct lttng_ust_shm_handle *handle,
-		struct lib_ring_buffer *buf,
+		struct lttng_ust_lib_ring_buffer *buf,
 		unsigned long *len);
 int ustctl_get_max_subbuf_size(struct lttng_ust_shm_handle *handle,
-		struct lib_ring_buffer *buf,
+		struct lttng_ust_lib_ring_buffer *buf,
 		unsigned long *len);
 
 /*
@@ -92,30 +92,30 @@ int ustctl_get_max_subbuf_size(struct lttng_ust_shm_handle *handle,
  * get_next/put_next).
  */
 void *ustctl_get_mmap_base(struct lttng_ust_shm_handle *handle,
-		struct lib_ring_buffer *buf);
+		struct lttng_ust_lib_ring_buffer *buf);
 int ustctl_get_mmap_read_offset(struct lttng_ust_shm_handle *handle,
-		struct lib_ring_buffer *buf, unsigned long *off);
+		struct lttng_ust_lib_ring_buffer *buf, unsigned long *off);
 int ustctl_get_subbuf_size(struct lttng_ust_shm_handle *handle,
-		struct lib_ring_buffer *buf, unsigned long *len);
+		struct lttng_ust_lib_ring_buffer *buf, unsigned long *len);
 int ustctl_get_padded_subbuf_size(struct lttng_ust_shm_handle *handle,
-		struct lib_ring_buffer *buf, unsigned long *len);
+		struct lttng_ust_lib_ring_buffer *buf, unsigned long *len);
 int ustctl_get_next_subbuf(struct lttng_ust_shm_handle *handle,
-		struct lib_ring_buffer *buf);
+		struct lttng_ust_lib_ring_buffer *buf);
 int ustctl_put_next_subbuf(struct lttng_ust_shm_handle *handle,
-		struct lib_ring_buffer *buf);
+		struct lttng_ust_lib_ring_buffer *buf);
 
 /* snapshot */
 
 int ustctl_snapshot(struct lttng_ust_shm_handle *handle,
-		struct lib_ring_buffer *buf);
+		struct lttng_ust_lib_ring_buffer *buf);
 int ustctl_snapshot_get_consumed(struct lttng_ust_shm_handle *handle,
-		struct lib_ring_buffer *buf, unsigned long *pos);
+		struct lttng_ust_lib_ring_buffer *buf, unsigned long *pos);
 int ustctl_snapshot_get_produced(struct lttng_ust_shm_handle *handle,
-		struct lib_ring_buffer *buf, unsigned long *pos);
+		struct lttng_ust_lib_ring_buffer *buf, unsigned long *pos);
 int ustctl_get_subbuf(struct lttng_ust_shm_handle *handle,
-		struct lib_ring_buffer *buf, unsigned long *pos);
+		struct lttng_ust_lib_ring_buffer *buf, unsigned long *pos);
 int ustctl_put_subbuf(struct lttng_ust_shm_handle *handle,
-		struct lib_ring_buffer *buf);
+		struct lttng_ust_lib_ring_buffer *buf);
 
 /* Release object created by members of this API */
 void release_object(int sock, struct lttng_ust_object_data *data);

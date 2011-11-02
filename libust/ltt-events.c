@@ -495,7 +495,7 @@ void _ltt_event_destroy(struct ltt_event *event)
 int lttng_metadata_printf(struct ltt_session *session,
 			  const char *fmt, ...)
 {
-	struct lib_ring_buffer_ctx ctx;
+	struct lttng_ust_lib_ring_buffer_ctx ctx;
 	struct ltt_channel *chan = session->metadata;
 	char *str = NULL;
 	int ret = 0, waitret;

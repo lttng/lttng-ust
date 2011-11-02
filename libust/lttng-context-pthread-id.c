@@ -24,7 +24,7 @@ size_t pthread_id_get_size(size_t offset)
 
 static
 void pthread_id_record(struct lttng_ctx_field *field,
-		 struct lib_ring_buffer_ctx *ctx,
+		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		 struct ltt_channel *chan)
 {
 	unsigned long pthread_id;

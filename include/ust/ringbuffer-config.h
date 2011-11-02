@@ -18,10 +18,10 @@
 #include "ust/kcompat/kcompat.h"
 #include "ust/align.h"
 
-struct lib_ring_buffer;
+struct lttng_ust_lib_ring_buffer;
 struct channel;
-struct lib_ring_buffer_config;
-struct lib_ring_buffer_ctx;
+struct lttng_ust_lib_ring_buffer_config;
+struct lttng_ust_lib_ring_buffer_ctx;
 struct lttng_ust_shm_handle *handle;
 
 /*
@@ -30,36 +30,36 @@ struct lttng_ust_shm_handle *handle;
  * provided as inline functions too.  These may simply return 0 if not used by
  * the client.
  */
-struct lib_ring_buffer_client_cb {
+struct lttng_ust_lib_ring_buffer_client_cb {
 	/* Mandatory callbacks */
 
 	/* A static inline version is also required for fast path */
 	u64 (*ring_buffer_clock_read) (struct channel *chan);
-	size_t (*record_header_size) (const struct lib_ring_buffer_config *config,
+	size_t (*record_header_size) (const struct lttng_ust_lib_ring_buffer_config *config,
 				      struct channel *chan, size_t offset,
 				      size_t *pre_header_padding,
-				      struct lib_ring_buffer_ctx *ctx);
+				      struct lttng_ust_lib_ring_buffer_ctx *ctx);
 
 	/* Slow path only, at subbuffer switch */
 	size_t (*subbuffer_header_size) (void);
-	void (*buffer_begin) (struct lib_ring_buffer *buf, u64 tsc,
+	void (*buffer_begin) (struct lttng_ust_lib_ring_buffer *buf, u64 tsc,
 			      unsigned int subbuf_idx,
 			      struct lttng_ust_shm_handle *handle);
-	void (*buffer_end) (struct lib_ring_buffer *buf, u64 tsc,
+	void (*buffer_end) (struct lttng_ust_lib_ring_buffer *buf, u64 tsc,
 			    unsigned int subbuf_idx, unsigned long data_size,
 			    struct lttng_ust_shm_handle *handle);
 
 	/* Optional callbacks (can be set to NULL) */
 
 	/* Called at buffer creation/finalize */
-	int (*buffer_create) (struct lib_ring_buffer *buf, void *priv,
+	int (*buffer_create) (struct lttng_ust_lib_ring_buffer *buf, void *priv,
 			      int cpu, const char *name,
 			      struct lttng_ust_shm_handle *handle);
 	/*
 	 * Clients should guarantee that no new reader handle can be opened
 	 * after finalize.
 	 */
-	void (*buffer_finalize) (struct lib_ring_buffer *buf,
+	void (*buffer_finalize) (struct lttng_ust_lib_ring_buffer *buf,
 				 void *priv, int cpu,
 				 struct lttng_ust_shm_handle *handle);
 
@@ -68,8 +68,8 @@ struct lib_ring_buffer_client_cb {
 	 * record. Used by buffer iterators. Timestamp is only used by channel
 	 * iterator.
 	 */
-	void (*record_get) (const struct lib_ring_buffer_config *config,
-			    struct channel *chan, struct lib_ring_buffer *buf,
+	void (*record_get) (const struct lttng_ust_lib_ring_buffer_config *config,
+			    struct channel *chan, struct lttng_ust_lib_ring_buffer *buf,
 			    size_t offset, size_t *header_len,
 			    size_t *payload_len, u64 *timestamp,
 			    struct lttng_ust_shm_handle *handle);
@@ -114,7 +114,7 @@ struct lib_ring_buffer_client_cb {
  * RING_BUFFER_WAKEUP_NONE does not perform any wakeup whatsoever. The client
  * has the responsibility to perform wakeups.
  */
-struct lib_ring_buffer_config {
+struct lttng_ust_lib_ring_buffer_config {
 	enum {
 		RING_BUFFER_ALLOC_PER_CPU,
 		RING_BUFFER_ALLOC_GLOBAL,
@@ -160,7 +160,7 @@ struct lib_ring_buffer_config {
 	 *   0 and 64 disable the timestamp compression scheme.
 	 */
 	unsigned int tsc_bits;
-	struct lib_ring_buffer_client_cb cb;
+	struct lttng_ust_lib_ring_buffer_client_cb cb;
 };
 
 /*
@@ -170,7 +170,7 @@ struct lib_ring_buffer_config {
  * lib_ring_buffer_try_discard_reserve(), lib_ring_buffer_align_ctx() and
  * lib_ring_buffer_write().
  */
-struct lib_ring_buffer_ctx {
+struct lttng_ust_lib_ring_buffer_ctx {
 	/* input received by lib_ring_buffer_reserve(), saved here. */
 	struct channel *chan;		/* channel */
 	void *priv;			/* client private data */
@@ -183,7 +183,7 @@ struct lib_ring_buffer_ctx {
 	int cpu;			/* processor id */
 
 	/* output from lib_ring_buffer_reserve() */
-	struct lib_ring_buffer *buf;	/*
+	struct lttng_ust_lib_ring_buffer *buf;	/*
 					 * buffer corresponding to processor id
 					 * for this channel
 					 */
@@ -209,7 +209,7 @@ struct lib_ring_buffer_ctx {
  * @cpu: processor id
  */
 static inline
-void lib_ring_buffer_ctx_init(struct lib_ring_buffer_ctx *ctx,
+void lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			      struct channel *chan, void *priv,
 			      size_t data_size, int largest_align,
 			      int cpu, struct lttng_ust_shm_handle *handle)
@@ -281,7 +281,7 @@ unsigned int lib_ring_buffer_align(size_t align_drift, size_t size_of_type)
  * @ctx: ring buffer context.
  */
 static inline
-void lib_ring_buffer_align_ctx(struct lib_ring_buffer_ctx *ctx,
+void lib_ring_buffer_align_ctx(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			   size_t alignment)
 {
 	ctx->buf_offset += lib_ring_buffer_align(ctx->buf_offset,
@@ -293,7 +293,7 @@ void lib_ring_buffer_align_ctx(struct lib_ring_buffer_ctx *ctx,
  * Used internally to check for valid configurations at channel creation.
  */
 static inline
-int lib_ring_buffer_check_config(const struct lib_ring_buffer_config *config,
+int lib_ring_buffer_check_config(const struct lttng_ust_lib_ring_buffer_config *config,
 			     unsigned int switch_timer_interval,
 			     unsigned int read_timer_interval)
 {

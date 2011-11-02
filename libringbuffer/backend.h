@@ -26,11 +26,11 @@
 
 /* Ring buffer backend access (read/write) */
 
-extern size_t lib_ring_buffer_read(struct lib_ring_buffer_backend *bufb,
+extern size_t lib_ring_buffer_read(struct lttng_ust_lib_ring_buffer_backend *bufb,
 				   size_t offset, void *dest, size_t len,
 				   struct lttng_ust_shm_handle *handle);
 
-extern int lib_ring_buffer_read_cstr(struct lib_ring_buffer_backend *bufb,
+extern int lib_ring_buffer_read_cstr(struct lttng_ust_lib_ring_buffer_backend *bufb,
 				     size_t offset, void *dest, size_t len,
 				     struct lttng_ust_shm_handle *handle);
 
@@ -41,11 +41,11 @@ extern int lib_ring_buffer_read_cstr(struct lib_ring_buffer_backend *bufb,
  * as long as the write is never bigger than a page size.
  */
 extern void *
-lib_ring_buffer_offset_address(struct lib_ring_buffer_backend *bufb,
+lib_ring_buffer_offset_address(struct lttng_ust_lib_ring_buffer_backend *bufb,
 			       size_t offset,
 			       struct lttng_ust_shm_handle *handle);
 extern void *
-lib_ring_buffer_read_offset_address(struct lib_ring_buffer_backend *bufb,
+lib_ring_buffer_read_offset_address(struct lttng_ust_lib_ring_buffer_backend *bufb,
 				    size_t offset,
 				    struct lttng_ust_shm_handle *handle);
 
@@ -62,16 +62,16 @@ lib_ring_buffer_read_offset_address(struct lib_ring_buffer_backend *bufb,
  * if copy is crossing a page boundary.
  */
 static inline
-void lib_ring_buffer_write(const struct lib_ring_buffer_config *config,
-			   struct lib_ring_buffer_ctx *ctx,
+void lib_ring_buffer_write(const struct lttng_ust_lib_ring_buffer_config *config,
+			   struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			   const void *src, size_t len)
 {
-	struct lib_ring_buffer_backend *bufb = &ctx->buf->backend;
+	struct lttng_ust_lib_ring_buffer_backend *bufb = &ctx->buf->backend;
 	struct channel_backend *chanb = &ctx->chan->backend;
 	struct lttng_ust_shm_handle *handle = ctx->handle;
 	size_t sbidx;
 	size_t offset = ctx->buf_offset;
-	struct lib_ring_buffer_backend_pages_shmp *rpages;
+	struct lttng_ust_lib_ring_buffer_backend_pages_shmp *rpages;
 	unsigned long sb_bindex, id;
 
 	offset &= chanb->buf_size - 1;
@@ -100,12 +100,12 @@ void lib_ring_buffer_write(const struct lib_ring_buffer_config *config,
  */
 static inline
 unsigned long lib_ring_buffer_get_records_unread(
-				const struct lib_ring_buffer_config *config,
-				struct lib_ring_buffer *buf,
+				const struct lttng_ust_lib_ring_buffer_config *config,
+				struct lttng_ust_lib_ring_buffer *buf,
 				struct lttng_ust_shm_handle *handle)
 {
-	struct lib_ring_buffer_backend *bufb = &buf->backend;
-	struct lib_ring_buffer_backend_pages_shmp *pages;
+	struct lttng_ust_lib_ring_buffer_backend *bufb = &buf->backend;
+	struct lttng_ust_lib_ring_buffer_backend_pages_shmp *pages;
 	unsigned long records_unread = 0, sb_bindex, id;
 	unsigned int i;
 

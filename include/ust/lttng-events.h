@@ -21,7 +21,7 @@
 
 struct ltt_channel;
 struct ltt_session;
-struct lib_ring_buffer_ctx;
+struct lttng_ust_lib_ring_buffer_ctx;
 
 /* Type description */
 
@@ -152,7 +152,7 @@ struct lttng_ctx_field {
 	struct lttng_event_field event_field;
 	size_t (*get_size)(size_t offset);
 	void (*record)(struct lttng_ctx_field *field,
-		       struct lib_ring_buffer_ctx *ctx,
+		       struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		       struct ltt_channel *chan);
 	union {
 	} u;
@@ -213,16 +213,16 @@ struct ltt_channel_ops {
 				int *shm_fd, int *wait_fd,
 				uint64_t *memory_map_size);
 	void (*channel_destroy)(struct ltt_channel *ltt_chan);
-	struct lib_ring_buffer *(*buffer_read_open)(struct channel *chan,
+	struct lttng_ust_lib_ring_buffer *(*buffer_read_open)(struct channel *chan,
 				struct lttng_ust_shm_handle *handle,
 				int *shm_fd, int *wait_fd,
 				uint64_t *memory_map_size);
-	void (*buffer_read_close)(struct lib_ring_buffer *buf,
+	void (*buffer_read_close)(struct lttng_ust_lib_ring_buffer *buf,
 				struct lttng_ust_shm_handle *handle);
-	int (*event_reserve)(struct lib_ring_buffer_ctx *ctx,
+	int (*event_reserve)(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			     uint32_t event_id);
-	void (*event_commit)(struct lib_ring_buffer_ctx *ctx);
-	void (*event_write)(struct lib_ring_buffer_ctx *ctx, const void *src,
+	void (*event_commit)(struct lttng_ust_lib_ring_buffer_ctx *ctx);
+	void (*event_write)(struct lttng_ust_lib_ring_buffer_ctx *ctx, const void *src,
 			    size_t len);
 	/*
 	 * packet_avail_size returns the available size in the current
