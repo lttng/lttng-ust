@@ -51,13 +51,6 @@ const char *evname[] = {
 	"ust_tests_hello_dontexist",
 };
 
-struct lttng_ust_object_data {
-	int handle;
-	int shm_fd;
-	int wait_fd;
-	uint64_t memory_map_size;
-};
-
 static int session_handle[NR_SESSIONS];
 static struct lttng_ust_object_data metadata_stream_data[NR_SESSIONS];
 static struct lttng_ust_object_data metadata_data[NR_SESSIONS];

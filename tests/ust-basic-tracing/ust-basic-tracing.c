@@ -43,13 +43,6 @@
 #define MAX_NR_STREAMS	64
 #define MAX_NR_EVENTS	128
 
-struct lttng_ust_object_data {
-	int handle;
-	int shm_fd;
-	int wait_fd;
-	uint64_t memory_map_size;
-};
-
 static int session_handle;
 static struct lttng_ust_object_data metadata_stream_data;
 static struct lttng_ust_object_data metadata_data;
