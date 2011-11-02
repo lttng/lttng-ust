@@ -151,10 +151,10 @@ int close_streams(int sock, struct lttng_ust_object_data *stream_datas, int nr_c
 }
 
 static
-struct shm_handle *map_channel(struct lttng_ust_object_data *chan_data,
+struct lttng_ust_shm_handle *map_channel(struct lttng_ust_object_data *chan_data,
 		struct lttng_ust_object_data *stream_datas, int nr_check)
 {
-	struct shm_handle *handle;
+	struct lttng_ust_shm_handle *handle;
 	struct channel *chan;
 	int k, ret;
 
@@ -195,7 +195,7 @@ error_destroy:
 }
 
 static
-void unmap_channel(struct shm_handle *handle)
+void unmap_channel(struct lttng_ust_shm_handle *handle)
 {
 	struct channel *chan;
 
@@ -205,7 +205,7 @@ void unmap_channel(struct shm_handle *handle)
 }
 
 static
-int consume_stream(struct shm_handle *handle, int cpu, char *outfile)
+int consume_stream(struct lttng_ust_shm_handle *handle, int cpu, char *outfile)
 {
 	struct channel *chan;
 	struct lib_ring_buffer *buf;
@@ -283,7 +283,7 @@ int consume_buffers(void)
 
 	for (i = 0; i < NR_SESSIONS; i++) {
 		char pathname[PATH_MAX];
-		struct shm_handle *handle;
+		struct lttng_ust_shm_handle *handle;
 
 		snprintf(pathname, PATH_MAX - 1, "/tmp/testtrace%u", i);
 		old_umask = umask(0);

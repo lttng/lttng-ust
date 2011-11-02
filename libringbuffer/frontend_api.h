@@ -146,7 +146,7 @@ int lib_ring_buffer_reserve(const struct lib_ring_buffer_config *config,
 			    struct lib_ring_buffer_ctx *ctx)
 {
 	struct channel *chan = ctx->chan;
-	struct shm_handle *handle = ctx->handle;
+	struct lttng_ust_shm_handle *handle = ctx->handle;
 	struct lib_ring_buffer *buf;
 	unsigned long o_begin, o_end, o_old;
 	size_t before_hdr_pad = 0;
@@ -216,7 +216,7 @@ slow_path:
 static inline
 void lib_ring_buffer_switch(const struct lib_ring_buffer_config *config,
 			    struct lib_ring_buffer *buf, enum switch_mode mode,
-			    struct shm_handle *handle)
+			    struct lttng_ust_shm_handle *handle)
 {
 	lib_ring_buffer_switch_slow(buf, mode, handle);
 }
@@ -236,7 +236,7 @@ void lib_ring_buffer_commit(const struct lib_ring_buffer_config *config,
 			    const struct lib_ring_buffer_ctx *ctx)
 {
 	struct channel *chan = ctx->chan;
-	struct shm_handle *handle = ctx->handle;
+	struct lttng_ust_shm_handle *handle = ctx->handle;
 	struct lib_ring_buffer *buf = ctx->buf;
 	unsigned long offset_end = ctx->buf_offset;
 	unsigned long endidx = subbuf_index(offset_end - 1, chan);

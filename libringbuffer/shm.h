@@ -77,7 +77,7 @@ struct shm_ref zalloc_shm(struct shm_object *obj, size_t len);
 void align_shm(struct shm_object *obj, size_t align);
 
 static inline
-int shm_get_wakeup_fd(struct shm_handle *handle, struct shm_ref *ref)
+int shm_get_wakeup_fd(struct lttng_ust_shm_handle *handle, struct shm_ref *ref)
 {
 	struct shm_object_table *table = handle->table;
 	struct shm_object *obj;
@@ -92,7 +92,7 @@ int shm_get_wakeup_fd(struct shm_handle *handle, struct shm_ref *ref)
 }
 
 static inline
-int shm_get_wait_fd(struct shm_handle *handle, struct shm_ref *ref)
+int shm_get_wait_fd(struct lttng_ust_shm_handle *handle, struct shm_ref *ref)
 {
 	struct shm_object_table *table = handle->table;
 	struct shm_object *obj;
@@ -106,7 +106,7 @@ int shm_get_wait_fd(struct shm_handle *handle, struct shm_ref *ref)
 }
 
 static inline
-int shm_get_object_data(struct shm_handle *handle, struct shm_ref *ref,
+int shm_get_object_data(struct lttng_ust_shm_handle *handle, struct shm_ref *ref,
 		int *shm_fd, int *wait_fd, uint64_t *memory_map_size)
 {
 	struct shm_object_table *table = handle->table;

@@ -29,7 +29,7 @@ int lib_ring_buffer_backend_allocate(const struct lib_ring_buffer_config *config
 				     struct lib_ring_buffer_backend *bufb,
 				     size_t size, size_t num_subbuf,
 				     int extra_reader_sb,
-				     struct shm_handle *handle,
+				     struct lttng_ust_shm_handle *handle,
 				     struct shm_object *shmobj)
 {
 	struct channel_backend *chanb = &shmp(handle, bufb->chan)->backend;
@@ -115,7 +115,7 @@ array_error:
 
 int lib_ring_buffer_backend_create(struct lib_ring_buffer_backend *bufb,
 				   struct channel_backend *chanb, int cpu,
-				   struct shm_handle *handle,
+				   struct lttng_ust_shm_handle *handle,
 				   struct shm_object *shmobj)
 {
 	const struct lib_ring_buffer_config *config = &chanb->config;
@@ -138,7 +138,7 @@ void lib_ring_buffer_backend_free(struct lib_ring_buffer_backend *bufb)
 }
 
 void lib_ring_buffer_backend_reset(struct lib_ring_buffer_backend *bufb,
-				   struct shm_handle *handle)
+				   struct lttng_ust_shm_handle *handle)
 {
 	struct channel_backend *chanb = &shmp(handle, bufb->chan)->backend;
 	const struct lib_ring_buffer_config *config = &chanb->config;
@@ -194,7 +194,7 @@ void channel_backend_reset(struct channel_backend *chanb)
  * @parent: dentry of parent directory, %NULL for root directory
  * @subbuf_size: size of sub-buffers (> PAGE_SIZE, power of 2)
  * @num_subbuf: number of sub-buffers (power of 2)
- * @shm_handle: shared memory handle
+ * @lttng_ust_shm_handle: shared memory handle
  *
  * Returns channel pointer if successful, %NULL otherwise.
  *
@@ -208,7 +208,7 @@ int channel_backend_init(struct channel_backend *chanb,
 			 const char *name,
 			 const struct lib_ring_buffer_config *config,
 			 void *priv, size_t subbuf_size, size_t num_subbuf,
-			 struct shm_handle *handle)
+			 struct lttng_ust_shm_handle *handle)
 {
 	struct channel *chan = caa_container_of(chanb, struct channel, backend);
 	unsigned int i;
@@ -334,7 +334,7 @@ end:
  * Destroy all channel buffers and frees the channel.
  */
 void channel_backend_free(struct channel_backend *chanb,
-			  struct shm_handle *handle)
+			  struct lttng_ust_shm_handle *handle)
 {
 	const struct lib_ring_buffer_config *config = &chanb->config;
 	unsigned int i;
@@ -367,7 +367,7 @@ void channel_backend_free(struct channel_backend *chanb,
  * Returns the length copied.
  */
 size_t lib_ring_buffer_read(struct lib_ring_buffer_backend *bufb, size_t offset,
-			    void *dest, size_t len, struct shm_handle *handle)
+			    void *dest, size_t len, struct lttng_ust_shm_handle *handle)
 {
 	struct channel_backend *chanb = &shmp(handle, bufb->chan)->backend;
 	const struct lib_ring_buffer_config *config = &chanb->config;
@@ -405,7 +405,7 @@ size_t lib_ring_buffer_read(struct lib_ring_buffer_backend *bufb, size_t offset,
  * Should be protected by get_subbuf/put_subbuf.
  */
 int lib_ring_buffer_read_cstr(struct lib_ring_buffer_backend *bufb, size_t offset,
-			      void *dest, size_t len, struct shm_handle *handle)
+			      void *dest, size_t len, struct lttng_ust_shm_handle *handle)
 {
 	struct channel_backend *chanb = &shmp(handle, bufb->chan)->backend;
 	const struct lib_ring_buffer_config *config = &chanb->config;
@@ -447,7 +447,7 @@ int lib_ring_buffer_read_cstr(struct lib_ring_buffer_backend *bufb, size_t offse
  */
 void *lib_ring_buffer_read_offset_address(struct lib_ring_buffer_backend *bufb,
 					  size_t offset,
-					  struct shm_handle *handle)
+					  struct lttng_ust_shm_handle *handle)
 {
 	struct lib_ring_buffer_backend_pages_shmp *rpages;
 	struct channel_backend *chanb = &shmp(handle, bufb->chan)->backend;
@@ -475,7 +475,7 @@ void *lib_ring_buffer_read_offset_address(struct lib_ring_buffer_backend *bufb,
  */
 void *lib_ring_buffer_offset_address(struct lib_ring_buffer_backend *bufb,
 				     size_t offset,
-				     struct shm_handle *handle)
+				     struct lttng_ust_shm_handle *handle)
 {
 	size_t sbidx;
 	struct lib_ring_buffer_backend_pages_shmp *rpages;

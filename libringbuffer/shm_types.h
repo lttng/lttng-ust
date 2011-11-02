@@ -29,7 +29,7 @@ struct shm_object_table {
 	struct shm_object objects[];
 };
 
-struct shm_handle {
+struct lttng_ust_shm_handle {
 	struct shm_object_table *table;
 	DECLARE_SHMP(struct channel, chan);
 	/*

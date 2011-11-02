@@ -25,7 +25,7 @@
 
 int lib_ring_buffer_backend_create(struct lib_ring_buffer_backend *bufb,
 				   struct channel_backend *chan, int cpu,
-				   struct shm_handle *handle,
+				   struct lttng_ust_shm_handle *handle,
 				   struct shm_object *shmobj);
 void channel_backend_unregister_notifiers(struct channel_backend *chanb);
 void lib_ring_buffer_backend_free(struct lib_ring_buffer_backend *bufb);
@@ -33,12 +33,12 @@ int channel_backend_init(struct channel_backend *chanb,
 			 const char *name,
 			 const struct lib_ring_buffer_config *config,
 			 void *priv, size_t subbuf_size,
-			 size_t num_subbuf, struct shm_handle *handle);
+			 size_t num_subbuf, struct lttng_ust_shm_handle *handle);
 void channel_backend_free(struct channel_backend *chanb,
-			  struct shm_handle *handle);
+			  struct lttng_ust_shm_handle *handle);
 
 void lib_ring_buffer_backend_reset(struct lib_ring_buffer_backend *bufb,
-				   struct shm_handle *handle);
+				   struct lttng_ust_shm_handle *handle);
 void channel_backend_reset(struct channel_backend *chanb);
 
 int lib_ring_buffer_backend_init(void);
@@ -186,7 +186,7 @@ int subbuffer_id_check_index(const struct lib_ring_buffer_config *config,
 static inline
 void subbuffer_count_record(const struct lib_ring_buffer_config *config,
 			    struct lib_ring_buffer_backend *bufb,
-			    unsigned long idx, struct shm_handle *handle)
+			    unsigned long idx, struct lttng_ust_shm_handle *handle)
 {
 	unsigned long sb_bindex;
 
@@ -201,7 +201,7 @@ void subbuffer_count_record(const struct lib_ring_buffer_config *config,
 static inline
 void subbuffer_consume_record(const struct lib_ring_buffer_config *config,
 			      struct lib_ring_buffer_backend *bufb,
-			      struct shm_handle *handle)
+			      struct lttng_ust_shm_handle *handle)
 {
 	unsigned long sb_bindex;
 
@@ -218,7 +218,7 @@ unsigned long subbuffer_get_records_count(
 				const struct lib_ring_buffer_config *config,
 				struct lib_ring_buffer_backend *bufb,
 				unsigned long idx,
-				struct shm_handle *handle)
+				struct lttng_ust_shm_handle *handle)
 {
 	unsigned long sb_bindex;
 
@@ -237,7 +237,7 @@ unsigned long subbuffer_count_records_overrun(
 				const struct lib_ring_buffer_config *config,
 				struct lib_ring_buffer_backend *bufb,
 				unsigned long idx,
-				struct shm_handle *handle)
+				struct lttng_ust_shm_handle *handle)
 {
 	struct lib_ring_buffer_backend_pages_shmp *pages;
 	unsigned long overruns, sb_bindex;
@@ -257,7 +257,7 @@ void subbuffer_set_data_size(const struct lib_ring_buffer_config *config,
 			     struct lib_ring_buffer_backend *bufb,
 			     unsigned long idx,
 			     unsigned long data_size,
-			     struct shm_handle *handle)
+			     struct lttng_ust_shm_handle *handle)
 {
 	struct lib_ring_buffer_backend_pages_shmp *pages;
 	unsigned long sb_bindex;
@@ -271,7 +271,7 @@ static inline
 unsigned long subbuffer_get_read_data_size(
 				const struct lib_ring_buffer_config *config,
 				struct lib_ring_buffer_backend *bufb,
-				struct shm_handle *handle)
+				struct lttng_ust_shm_handle *handle)
 {
 	struct lib_ring_buffer_backend_pages_shmp *pages;
 	unsigned long sb_bindex;
@@ -286,7 +286,7 @@ unsigned long subbuffer_get_data_size(
 				const struct lib_ring_buffer_config *config,
 				struct lib_ring_buffer_backend *bufb,
 				unsigned long idx,
-				struct shm_handle *handle)
+				struct lttng_ust_shm_handle *handle)
 {
 	struct lib_ring_buffer_backend_pages_shmp *pages;
 	unsigned long sb_bindex;
@@ -304,7 +304,7 @@ static inline
 void lib_ring_buffer_clear_noref(const struct lib_ring_buffer_config *config,
 				 struct lib_ring_buffer_backend *bufb,
 				 unsigned long idx,
-				 struct shm_handle *handle)
+				 struct lttng_ust_shm_handle *handle)
 {
 	unsigned long id, new_id;
 
@@ -344,7 +344,7 @@ static inline
 void lib_ring_buffer_set_noref_offset(const struct lib_ring_buffer_config *config,
 				      struct lib_ring_buffer_backend *bufb,
 				      unsigned long idx, unsigned long offset,
-				      struct shm_handle *handle)
+				      struct lttng_ust_shm_handle *handle)
 {
 	if (config->mode != RING_BUFFER_OVERWRITE)
 		return;
@@ -379,7 +379,7 @@ int update_read_sb_index(const struct lib_ring_buffer_config *config,
 			 struct channel_backend *chanb,
 			 unsigned long consumed_idx,
 			 unsigned long consumed_count,
-			 struct shm_handle *handle)
+			 struct lttng_ust_shm_handle *handle)
 {
 	unsigned long old_id, new_id;
 

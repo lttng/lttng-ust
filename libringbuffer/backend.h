@@ -28,11 +28,11 @@
 
 extern size_t lib_ring_buffer_read(struct lib_ring_buffer_backend *bufb,
 				   size_t offset, void *dest, size_t len,
-				   struct shm_handle *handle);
+				   struct lttng_ust_shm_handle *handle);
 
 extern int lib_ring_buffer_read_cstr(struct lib_ring_buffer_backend *bufb,
 				     size_t offset, void *dest, size_t len,
-				     struct shm_handle *handle);
+				     struct lttng_ust_shm_handle *handle);
 
 /*
  * Return the address where a given offset is located.
@@ -43,11 +43,11 @@ extern int lib_ring_buffer_read_cstr(struct lib_ring_buffer_backend *bufb,
 extern void *
 lib_ring_buffer_offset_address(struct lib_ring_buffer_backend *bufb,
 			       size_t offset,
-			       struct shm_handle *handle);
+			       struct lttng_ust_shm_handle *handle);
 extern void *
 lib_ring_buffer_read_offset_address(struct lib_ring_buffer_backend *bufb,
 				    size_t offset,
-				    struct shm_handle *handle);
+				    struct lttng_ust_shm_handle *handle);
 
 /**
  * lib_ring_buffer_write - write data to a buffer backend
@@ -68,7 +68,7 @@ void lib_ring_buffer_write(const struct lib_ring_buffer_config *config,
 {
 	struct lib_ring_buffer_backend *bufb = &ctx->buf->backend;
 	struct channel_backend *chanb = &ctx->chan->backend;
-	struct shm_handle *handle = ctx->handle;
+	struct lttng_ust_shm_handle *handle = ctx->handle;
 	size_t sbidx;
 	size_t offset = ctx->buf_offset;
 	struct lib_ring_buffer_backend_pages_shmp *rpages;
@@ -102,7 +102,7 @@ static inline
 unsigned long lib_ring_buffer_get_records_unread(
 				const struct lib_ring_buffer_config *config,
 				struct lib_ring_buffer *buf,
-				struct shm_handle *handle)
+				struct lttng_ust_shm_handle *handle)
 {
 	struct lib_ring_buffer_backend *bufb = &buf->backend;
 	struct lib_ring_buffer_backend_pages_shmp *pages;

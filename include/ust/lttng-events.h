@@ -201,7 +201,7 @@ struct ltt_event {
 };
 
 struct channel;
-struct shm_handle;
+struct lttng_ust_shm_handle;
 
 struct ltt_channel_ops {
 	struct ltt_channel *(*channel_create)(const char *name,
@@ -214,11 +214,11 @@ struct ltt_channel_ops {
 				uint64_t *memory_map_size);
 	void (*channel_destroy)(struct ltt_channel *ltt_chan);
 	struct lib_ring_buffer *(*buffer_read_open)(struct channel *chan,
-				struct shm_handle *handle,
+				struct lttng_ust_shm_handle *handle,
 				int *shm_fd, int *wait_fd,
 				uint64_t *memory_map_size);
 	void (*buffer_read_close)(struct lib_ring_buffer *buf,
-				struct shm_handle *handle);
+				struct lttng_ust_shm_handle *handle);
 	int (*event_reserve)(struct lib_ring_buffer_ctx *ctx,
 			     uint32_t event_id);
 	void (*event_commit)(struct lib_ring_buffer_ctx *ctx);
@@ -230,12 +230,12 @@ struct ltt_channel_ops {
 	 * may change due to concurrent writes.
 	 */
 	size_t (*packet_avail_size)(struct channel *chan,
-				    struct shm_handle *handle);
+				    struct lttng_ust_shm_handle *handle);
 	//wait_queue_head_t *(*get_reader_wait_queue)(struct channel *chan);
 	//wait_queue_head_t *(*get_hp_wait_queue)(struct channel *chan);
 	int (*is_finalized)(struct channel *chan);
 	int (*is_disabled)(struct channel *chan);
-	int (*flush_buffer)(struct channel *chan, struct shm_handle *handle);
+	int (*flush_buffer)(struct channel *chan, struct lttng_ust_shm_handle *handle);
 };
 
 struct ltt_channel {
@@ -251,7 +251,7 @@ struct ltt_channel {
 	struct cds_list_head list;	/* Channel list */
 	struct ltt_channel_ops *ops;
 	int header_type;		/* 0: unset, 1: compact, 2: large */
-	struct shm_handle *handle;	/* shared-memory handle */
+	struct lttng_ust_shm_handle *handle;	/* shared-memory handle */
 	int metadata_dumped:1;
 };
 

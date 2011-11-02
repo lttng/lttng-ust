@@ -79,7 +79,7 @@ static size_t client_packet_header_size(void)
 
 static void client_buffer_begin(struct lib_ring_buffer *buf, u64 tsc,
 				unsigned int subbuf_idx,
-				struct shm_handle *handle)
+				struct lttng_ust_shm_handle *handle)
 {
 	struct channel *chan = shmp(handle, buf->backend.chan);
 	struct metadata_packet_header *header =
@@ -109,7 +109,7 @@ static void client_buffer_begin(struct lib_ring_buffer *buf, u64 tsc,
  */
 static void client_buffer_end(struct lib_ring_buffer *buf, u64 tsc,
 			      unsigned int subbuf_idx, unsigned long data_size,
-			      struct shm_handle *handle)
+			      struct lttng_ust_shm_handle *handle)
 {
 	struct channel *chan = shmp(handle, buf->backend.chan);
 	struct metadata_packet_header *header =
@@ -129,14 +129,14 @@ static void client_buffer_end(struct lib_ring_buffer *buf, u64 tsc,
 
 static int client_buffer_create(struct lib_ring_buffer *buf, void *priv,
 				int cpu, const char *name,
-				struct shm_handle *handle)
+				struct lttng_ust_shm_handle *handle)
 {
 	return 0;
 }
 
 static void client_buffer_finalize(struct lib_ring_buffer *buf,
 				   void *priv, int cpu,
-				   struct shm_handle *handle)
+				   struct lttng_ust_shm_handle *handle)
 {
 }
 
@@ -187,7 +187,7 @@ void ltt_channel_destroy(struct ltt_channel *ltt_chan)
 
 static
 struct lib_ring_buffer *ltt_buffer_read_open(struct channel *chan,
-					     struct shm_handle *handle,
+					     struct lttng_ust_shm_handle *handle,
 					     int *shm_fd, int *wait_fd,
 					     uint64_t *memory_map_size)
 {
@@ -202,7 +202,7 @@ struct lib_ring_buffer *ltt_buffer_read_open(struct channel *chan,
 
 static
 void ltt_buffer_read_close(struct lib_ring_buffer *buf,
-			   struct shm_handle *handle)
+			   struct lttng_ust_shm_handle *handle)
 {
 	lib_ring_buffer_release_read(buf, handle, 0);
 }
@@ -227,7 +227,7 @@ void ltt_event_write(struct lib_ring_buffer_ctx *ctx, const void *src,
 }
 
 static
-size_t ltt_packet_avail_size(struct channel *chan, struct shm_handle *handle)
+size_t ltt_packet_avail_size(struct channel *chan, struct lttng_ust_shm_handle *handle)
 			     
 {
 	unsigned long o_begin;
@@ -270,7 +270,7 @@ int ltt_is_disabled(struct channel *chan)
 }
 
 static
-int ltt_flush_buffer(struct channel *chan, struct shm_handle *handle)
+int ltt_flush_buffer(struct channel *chan, struct lttng_ust_shm_handle *handle)
 {
 	struct lib_ring_buffer *buf;
 	int shm_fd, wait_fd;

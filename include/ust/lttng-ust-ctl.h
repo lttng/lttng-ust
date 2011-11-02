@@ -56,34 +56,34 @@ struct lttng_ust_calibrate;
 int ustctl_calibrate(int sock, struct lttng_ust_calibrate *calibrate);
 
 /*
- * Map channel shm_handle and add streams. Typically performed by the
+ * Map channel lttng_ust_shm_handle and add streams. Typically performed by the
  * consumer to map the objects into its memory space.
  */
-struct shm_handle *ustctl_map_channel(struct lttng_ust_object_data *chan_data);
-int ustctl_add_stream(struct shm_handle *shm_handle,
+struct lttng_ust_shm_handle *ustctl_map_channel(struct lttng_ust_object_data *chan_data);
+int ustctl_add_stream(struct lttng_ust_shm_handle *lttng_ust_shm_handle,
 		struct lttng_ust_object_data *stream_data);
 /*
- * Note: the lttng_ust_object_data from which the shm_handle is derived can only
+ * Note: the lttng_ust_object_data from which the lttng_ust_shm_handle is derived can only
  * be released after unmapping the handle.
  */
-void ustctl_unmap_channel(struct shm_handle *shm_handle);
+void ustctl_unmap_channel(struct lttng_ust_shm_handle *lttng_ust_shm_handle);
 
 /* Buffer operations */
 
-struct shm_handle;
+struct lttng_ust_shm_handle;
 struct lib_ring_buffer;
 
 /* Open/close stream buffers for read */
-struct lib_ring_buffer *ustctl_open_stream_read(struct shm_handle *handle,
+struct lib_ring_buffer *ustctl_open_stream_read(struct lttng_ust_shm_handle *handle,
 		int cpu);
-void ustctl_close_stream_read(struct shm_handle *handle,
+void ustctl_close_stream_read(struct lttng_ust_shm_handle *handle,
                 struct lib_ring_buffer *buf);
 
 /* For mmap mode, readable without "get" operation */
-int ustctl_get_mmap_len(struct shm_handle *handle,
+int ustctl_get_mmap_len(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf,
 		unsigned long *len);
-int ustctl_get_max_subbuf_size(struct shm_handle *handle,
+int ustctl_get_max_subbuf_size(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf,
 		unsigned long *len);
 
@@ -91,30 +91,30 @@ int ustctl_get_max_subbuf_size(struct shm_handle *handle,
  * For mmap mode, operate on the current packet (between get/put or
  * get_next/put_next).
  */
-void *ustctl_get_mmap_base(struct shm_handle *handle,
+void *ustctl_get_mmap_base(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf);
-int ustctl_get_mmap_read_offset(struct shm_handle *handle,
+int ustctl_get_mmap_read_offset(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf, unsigned long *off);
-int ustctl_get_subbuf_size(struct shm_handle *handle,
+int ustctl_get_subbuf_size(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf, unsigned long *len);
-int ustctl_get_padded_subbuf_size(struct shm_handle *handle,
+int ustctl_get_padded_subbuf_size(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf, unsigned long *len);
-int ustctl_get_next_subbuf(struct shm_handle *handle,
+int ustctl_get_next_subbuf(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf);
-int ustctl_put_next_subbuf(struct shm_handle *handle,
+int ustctl_put_next_subbuf(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf);
 
 /* snapshot */
 
-int ustctl_snapshot(struct shm_handle *handle,
+int ustctl_snapshot(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf);
-int ustctl_snapshot_get_consumed(struct shm_handle *handle,
+int ustctl_snapshot_get_consumed(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf, unsigned long *pos);
-int ustctl_snapshot_get_produced(struct shm_handle *handle,
+int ustctl_snapshot_get_produced(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf, unsigned long *pos);
-int ustctl_get_subbuf(struct shm_handle *handle,
+int ustctl_get_subbuf(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf, unsigned long *pos);
-int ustctl_put_subbuf(struct shm_handle *handle,
+int ustctl_put_subbuf(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf);
 
 /* Release object created by members of this API */

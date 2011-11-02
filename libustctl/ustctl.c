@@ -426,9 +426,9 @@ int ustctl_calibrate(int sock, struct lttng_ust_calibrate *calibrate)
 /* Buffer operations */
 
 /* Map channel shm into process memory */
-struct shm_handle *ustctl_map_channel(struct lttng_ust_object_data *chan_data)
+struct lttng_ust_shm_handle *ustctl_map_channel(struct lttng_ust_object_data *chan_data)
 {
-	struct shm_handle *handle;
+	struct lttng_ust_shm_handle *handle;
 	struct channel *chan;
 	size_t chan_size;
 
@@ -440,7 +440,7 @@ struct shm_handle *ustctl_map_channel(struct lttng_ust_object_data *chan_data)
 		return NULL;
 	}
 	/*
-	 * Set to -1 because the shm_handle destruction will take care
+	 * Set to -1 because the lttng_ust_shm_handle destruction will take care
 	 * of closing shm_fd and wait_fd.
 	 */
 	chan_data->shm_fd = -1;
@@ -464,7 +464,7 @@ struct shm_handle *ustctl_map_channel(struct lttng_ust_object_data *chan_data)
 }
 
 /* Add stream to channel shm and map its shm into process memory */
-int ustctl_add_stream(struct shm_handle *handle,
+int ustctl_add_stream(struct lttng_ust_shm_handle *handle,
 		struct lttng_ust_object_data *stream_data)
 {
 	int ret;
@@ -481,7 +481,7 @@ int ustctl_add_stream(struct shm_handle *handle,
 		return ret;
 	}
 	/*
-	 * Set to -1 because the shm_handle destruction will take care
+	 * Set to -1 because the lttng_ust_shm_handle destruction will take care
 	 * of closing shm_fd and wait_fd.
 	 */
 	stream_data->shm_fd = -1;
@@ -489,7 +489,7 @@ int ustctl_add_stream(struct shm_handle *handle,
 	return 0;
 }
 
-void ustctl_unmap_channel(struct shm_handle *handle)
+void ustctl_unmap_channel(struct lttng_ust_shm_handle *handle)
 {
 	struct channel *chan;
 
@@ -497,7 +497,7 @@ void ustctl_unmap_channel(struct shm_handle *handle)
 	channel_destroy(chan, handle, 1);
 }
 
-struct lib_ring_buffer *ustctl_open_stream_read(struct shm_handle *handle,
+struct lib_ring_buffer *ustctl_open_stream_read(struct lttng_ust_shm_handle *handle,
 	int cpu)
 {
 	struct channel *chan = handle->shadow_chan;
@@ -516,7 +516,7 @@ struct lib_ring_buffer *ustctl_open_stream_read(struct shm_handle *handle,
 	return buf;
 }
 
-void ustctl_close_stream_read(struct shm_handle *handle,
+void ustctl_close_stream_read(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf)
 {
 	lib_ring_buffer_release_read(buf, handle, 1);
@@ -524,14 +524,14 @@ void ustctl_close_stream_read(struct shm_handle *handle,
 
 /* For mmap mode, readable without "get" operation */
 
-void *ustctl_get_mmap_base(struct shm_handle *handle,
+void *ustctl_get_mmap_base(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf)
 {
 	return shmp(handle, buf->backend.memory_map);
 }
 
 /* returns the length to mmap. */
-int ustctl_get_mmap_len(struct shm_handle *handle,
+int ustctl_get_mmap_len(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf,
 		unsigned long *len)
 {
@@ -550,7 +550,7 @@ int ustctl_get_mmap_len(struct shm_handle *handle,
 }
 
 /* returns the maximum size for sub-buffers. */
-int ustctl_get_max_subbuf_size(struct shm_handle *handle,
+int ustctl_get_max_subbuf_size(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf,
 		unsigned long *len)
 {
@@ -566,7 +566,7 @@ int ustctl_get_max_subbuf_size(struct shm_handle *handle,
  */
 
 /* returns the offset of the subbuffer belonging to the mmap reader. */
-int ustctl_get_mmap_read_offset(struct shm_handle *handle,
+int ustctl_get_mmap_read_offset(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf, unsigned long *off)
 {
 	struct channel *chan = handle->shadow_chan;
@@ -581,7 +581,7 @@ int ustctl_get_mmap_read_offset(struct shm_handle *handle,
 }
 
 /* returns the size of the current sub-buffer, without padding (for mmap). */
-int ustctl_get_subbuf_size(struct shm_handle *handle,
+int ustctl_get_subbuf_size(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf, unsigned long *len)
 {
 	struct channel *chan = handle->shadow_chan;
@@ -592,7 +592,7 @@ int ustctl_get_subbuf_size(struct shm_handle *handle,
 }
 
 /* returns the size of the current sub-buffer, without padding (for mmap). */
-int ustctl_get_padded_subbuf_size(struct shm_handle *handle,
+int ustctl_get_padded_subbuf_size(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf, unsigned long *len)
 {
 	struct channel *chan = handle->shadow_chan;
@@ -604,7 +604,7 @@ int ustctl_get_padded_subbuf_size(struct shm_handle *handle,
 }
 
 /* Get exclusive read access to the next sub-buffer that can be read. */
-int ustctl_get_next_subbuf(struct shm_handle *handle,
+int ustctl_get_next_subbuf(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf)
 {
 	return lib_ring_buffer_get_next_subbuf(buf, handle);
@@ -612,7 +612,7 @@ int ustctl_get_next_subbuf(struct shm_handle *handle,
 
 
 /* Release exclusive sub-buffer access, move consumer forward. */
-int ustctl_put_next_subbuf(struct shm_handle *handle,
+int ustctl_put_next_subbuf(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf)
 {
 	lib_ring_buffer_put_next_subbuf(buf, handle);
@@ -622,7 +622,7 @@ int ustctl_put_next_subbuf(struct shm_handle *handle,
 /* snapshot */
 
 /* Get a snapshot of the current ring buffer producer and consumer positions */
-int ustctl_snapshot(struct shm_handle *handle,
+int ustctl_snapshot(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf)
 {
 	return lib_ring_buffer_snapshot(buf, &buf->cons_snapshot,
@@ -630,7 +630,7 @@ int ustctl_snapshot(struct shm_handle *handle,
 }
 
 /* Get the consumer position (iteration start) */
-int ustctl_snapshot_get_consumed(struct shm_handle *handle,
+int ustctl_snapshot_get_consumed(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf, unsigned long *pos)
 {
 	*pos = buf->cons_snapshot;
@@ -638,7 +638,7 @@ int ustctl_snapshot_get_consumed(struct shm_handle *handle,
 }
 
 /* Get the producer position (iteration end) */
-int ustctl_snapshot_get_produced(struct shm_handle *handle,
+int ustctl_snapshot_get_produced(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf, unsigned long *pos)
 {
 	*pos = buf->prod_snapshot;
@@ -646,21 +646,21 @@ int ustctl_snapshot_get_produced(struct shm_handle *handle,
 }
 
 /* Get exclusive read access to the specified sub-buffer position */
-int ustctl_get_subbuf(struct shm_handle *handle,
+int ustctl_get_subbuf(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf, unsigned long *pos)
 {
 	return lib_ring_buffer_get_subbuf(buf, *pos, handle);
 }
 
 /* Release exclusive sub-buffer access */
-int ustctl_put_subbuf(struct shm_handle *handle,
+int ustctl_put_subbuf(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf)
 {
 	lib_ring_buffer_put_subbuf(buf, handle);
 	return 0;
 }
 
-int ustctl_buffer_flush(struct shm_handle *handle,
+int ustctl_buffer_flush(struct lttng_ust_shm_handle *handle,
 		struct lib_ring_buffer *buf)
 {
 	lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE, handle);

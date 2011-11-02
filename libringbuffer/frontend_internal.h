@@ -145,7 +145,7 @@ int lib_ring_buffer_reserve_slow(struct lib_ring_buffer_ctx *ctx);
 extern
 void lib_ring_buffer_switch_slow(struct lib_ring_buffer *buf,
 				 enum switch_mode mode,
-				 struct shm_handle *handle);
+				 struct lttng_ust_shm_handle *handle);
 
 /* Buffer write helpers */
 
@@ -182,7 +182,7 @@ void lib_ring_buffer_vmcore_check_deliver(const struct lib_ring_buffer_config *c
 					  struct lib_ring_buffer *buf,
 				          unsigned long commit_count,
 				          unsigned long idx,
-					  struct shm_handle *handle)
+					  struct lttng_ust_shm_handle *handle)
 {
 	if (config->oops == RING_BUFFER_OOPS_CONSISTENCY)
 		v_set(config, &shmp_index(handle, buf->commit_hot, idx)->seq, commit_count);
@@ -192,7 +192,7 @@ static inline
 int lib_ring_buffer_poll_deliver(const struct lib_ring_buffer_config *config,
 				 struct lib_ring_buffer *buf,
 			         struct channel *chan,
-				 struct shm_handle *handle)
+				 struct lttng_ust_shm_handle *handle)
 {
 	unsigned long consumed_old, consumed_idx, commit_count, write_offset;
 
@@ -243,7 +243,7 @@ static inline
 unsigned long lib_ring_buffer_get_data_size(const struct lib_ring_buffer_config *config,
 					    struct lib_ring_buffer *buf,
 					    unsigned long idx,
-					    struct shm_handle *handle)
+					    struct lttng_ust_shm_handle *handle)
 {
 	return subbuffer_get_data_size(config, &buf->backend, idx, handle);
 }
@@ -257,7 +257,7 @@ static inline
 int lib_ring_buffer_reserve_committed(const struct lib_ring_buffer_config *config,
 				      struct lib_ring_buffer *buf,
 				      struct channel *chan,
-				      struct shm_handle *handle)
+				      struct lttng_ust_shm_handle *handle)
 {
 	unsigned long offset, idx, commit_count;
 
@@ -289,7 +289,7 @@ void lib_ring_buffer_check_deliver(const struct lib_ring_buffer_config *config,
 			           unsigned long offset,
 				   unsigned long commit_count,
 			           unsigned long idx,
-				   struct shm_handle *handle)
+				   struct lttng_ust_shm_handle *handle)
 {
 	unsigned long old_commit_count = commit_count
 					 - chan->backend.subbuf_size;
@@ -428,7 +428,7 @@ void lib_ring_buffer_write_commit_counter(const struct lib_ring_buffer_config *c
 				          unsigned long buf_offset,
 				          unsigned long commit_count,
 				          size_t slot_size,
-					  struct shm_handle *handle)
+					  struct lttng_ust_shm_handle *handle)
 {
 	unsigned long offset, commit_seq_old;
 
@@ -454,10 +454,10 @@ void lib_ring_buffer_write_commit_counter(const struct lib_ring_buffer_config *c
 
 extern int lib_ring_buffer_create(struct lib_ring_buffer *buf,
 				  struct channel_backend *chanb, int cpu,
-				  struct shm_handle *handle,
+				  struct lttng_ust_shm_handle *handle,
 				  struct shm_object *shmobj);
 extern void lib_ring_buffer_free(struct lib_ring_buffer *buf,
-				 struct shm_handle *handle);
+				 struct lttng_ust_shm_handle *handle);
 
 /* Keep track of trap nesting inside ring buffer code */
 extern __thread unsigned int lib_ring_buffer_nesting;

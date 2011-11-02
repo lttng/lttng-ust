@@ -37,7 +37,7 @@
  */
 
 extern
-struct shm_handle *channel_create(const struct lib_ring_buffer_config *config,
+struct lttng_ust_shm_handle *channel_create(const struct lib_ring_buffer_config *config,
 				const char *name, void *priv,
 				void *buf_addr,
 				size_t subbuf_size, size_t num_subbuf,
@@ -48,12 +48,12 @@ struct shm_handle *channel_create(const struct lib_ring_buffer_config *config,
 
 /* channel_handle_create - for consumer. */
 extern
-struct shm_handle *channel_handle_create(int shm_fd, int wait_fd,
+struct lttng_ust_shm_handle *channel_handle_create(int shm_fd, int wait_fd,
 					uint64_t memory_map_size);
 
 /* channel_handle_add_stream - for consumer. */
 extern
-int channel_handle_add_stream(struct shm_handle *handle,
+int channel_handle_add_stream(struct lttng_ust_shm_handle *handle,
 		int shm_fd, int wait_fd, uint64_t memory_map_size);
 
 /*
@@ -62,7 +62,7 @@ int channel_handle_add_stream(struct shm_handle *handle,
  * channel.
  */
 extern
-void *channel_destroy(struct channel *chan, struct shm_handle *handle,
+void *channel_destroy(struct channel *chan, struct lttng_ust_shm_handle *handle,
 		int shadow);
 
 
@@ -80,14 +80,14 @@ void *channel_destroy(struct channel *chan, struct shm_handle *handle,
 extern struct lib_ring_buffer *channel_get_ring_buffer(
 				const struct lib_ring_buffer_config *config,
 				struct channel *chan, int cpu,
-				struct shm_handle *handle,
+				struct lttng_ust_shm_handle *handle,
 				int *shm_fd, int *wait_fd,
 				uint64_t *memory_map_size);
 extern int lib_ring_buffer_open_read(struct lib_ring_buffer *buf,
-				     struct shm_handle *handle,
+				     struct lttng_ust_shm_handle *handle,
 				     int shadow);
 extern void lib_ring_buffer_release_read(struct lib_ring_buffer *buf,
-					 struct shm_handle *handle,
+					 struct lttng_ust_shm_handle *handle,
 					 int shadow);
 
 /*
@@ -96,23 +96,23 @@ extern void lib_ring_buffer_release_read(struct lib_ring_buffer *buf,
 extern int lib_ring_buffer_snapshot(struct lib_ring_buffer *buf,
 				    unsigned long *consumed,
 				    unsigned long *produced,
-				    struct shm_handle *handle);
+				    struct lttng_ust_shm_handle *handle);
 extern void lib_ring_buffer_move_consumer(struct lib_ring_buffer *buf,
 					  unsigned long consumed_new,
-					  struct shm_handle *handle);
+					  struct lttng_ust_shm_handle *handle);
 
 extern int lib_ring_buffer_get_subbuf(struct lib_ring_buffer *buf,
 				      unsigned long consumed,
-				      struct shm_handle *handle);
+				      struct lttng_ust_shm_handle *handle);
 extern void lib_ring_buffer_put_subbuf(struct lib_ring_buffer *buf,
-				       struct shm_handle *handle);
+				       struct lttng_ust_shm_handle *handle);
 
 /*
  * lib_ring_buffer_get_next_subbuf/lib_ring_buffer_put_next_subbuf are helpers
  * to read sub-buffers sequentially.
  */
 static inline int lib_ring_buffer_get_next_subbuf(struct lib_ring_buffer *buf,
-						  struct shm_handle *handle)
+						  struct lttng_ust_shm_handle *handle)
 {
 	int ret;
 
@@ -126,7 +126,7 @@ static inline int lib_ring_buffer_get_next_subbuf(struct lib_ring_buffer *buf,
 
 static inline
 void lib_ring_buffer_put_next_subbuf(struct lib_ring_buffer *buf,
-				     struct shm_handle *handle)
+				     struct lttng_ust_shm_handle *handle)
 {
 	lib_ring_buffer_put_subbuf(buf, handle);
 	lib_ring_buffer_move_consumer(buf, subbuf_align(buf->cons_snapshot,
@@ -135,7 +135,7 @@ void lib_ring_buffer_put_next_subbuf(struct lib_ring_buffer *buf,
 
 extern void channel_reset(struct channel *chan);
 extern void lib_ring_buffer_reset(struct lib_ring_buffer *buf,
-				  struct shm_handle *handle);
+				  struct lttng_ust_shm_handle *handle);
 
 static inline
 unsigned long lib_ring_buffer_get_offset(const struct lib_ring_buffer_config *config,
@@ -183,7 +183,7 @@ static inline
 unsigned long lib_ring_buffer_get_read_data_size(
 				const struct lib_ring_buffer_config *config,
 				struct lib_ring_buffer *buf,
-				struct shm_handle *handle)
+				struct lttng_ust_shm_handle *handle)
 {
 	return subbuffer_get_read_data_size(config, &buf->backend, handle);
 }
