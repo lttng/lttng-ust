@@ -39,7 +39,7 @@ int get_cpu(void)
 	int cpu;
 
 	cpu = sched_getcpu();
-	if (likely(cpu >= 0))
+	if (caa_likely(cpu >= 0))
 		return cpu;
 	/*
 	 * If getcpu(2) is not implemented in the Kernel use CPU 0 as fallback.

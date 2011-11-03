@@ -33,7 +33,7 @@ static pid_t cached_vpid;
 static inline
 pid_t wrapper_getpid(void)
 {
-	if (unlikely(!cached_vpid))
+	if (caa_unlikely(!cached_vpid))
 		cached_vpid = getpid();
 	return cached_vpid;
 }

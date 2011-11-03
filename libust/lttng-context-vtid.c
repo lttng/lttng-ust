@@ -63,7 +63,7 @@ void vtid_record(struct lttng_ctx_field *field,
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		 struct ltt_channel *chan)
 {
-	if (unlikely(!cached_vtid))
+	if (caa_unlikely(!cached_vtid))
 		cached_vtid = gettid();
 	lib_ring_buffer_align_ctx(ctx, lttng_alignof(cached_vtid));
 	chan->ops->event_write(ctx, &cached_vtid, sizeof(cached_vtid));

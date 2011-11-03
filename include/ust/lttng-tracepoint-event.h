@@ -449,11 +449,11 @@ static void __event_probe__##_name(void *__data, _proto)		      \
 									      \
 	if (0)								      \
 		(void) __dynamic_len_idx;	/* don't warn if unused */    \
-	if (unlikely(!CMM_ACCESS_ONCE(__chan->session->active)))	      \
+	if (caa_unlikely(!CMM_ACCESS_ONCE(__chan->session->active)))	      \
 		return;							      \
-	if (unlikely(!CMM_ACCESS_ONCE(__chan->enabled)))		      \
+	if (caa_unlikely(!CMM_ACCESS_ONCE(__chan->enabled)))		      \
 		return;							      \
-	if (unlikely(!CMM_ACCESS_ONCE(__event->enabled)))		      \
+	if (caa_unlikely(!CMM_ACCESS_ONCE(__event->enabled)))		      \
 		return;							      \
 	__event_len = __event_get_size__##_name(__dynamic_len, _args);	      \
 	__event_align = __event_get_align__##_name(_args);		      \
@@ -476,11 +476,11 @@ static void __event_probe__##_name(void *__data)			      \
 	size_t __event_len, __event_align;				      \
 	int __ret;							      \
 									      \
-	if (unlikely(!CMM_ACCESS_ONCE(__chan->session->active)))	      \
+	if (caa_unlikely(!CMM_ACCESS_ONCE(__chan->session->active)))	      \
 		return;							      \
-	if (unlikely(!CMM_ACCESS_ONCE(__chan->enabled)))		      \
+	if (caa_unlikely(!CMM_ACCESS_ONCE(__chan->enabled)))		      \
 		return;							      \
-	if (unlikely(!CMM_ACCESS_ONCE(__event->enabled)))		      \
+	if (caa_unlikely(!CMM_ACCESS_ONCE(__event->enabled)))		      \
 		return;							      \
 	__event_len = 0;						      \
 	__event_align = 1;						      \

@@ -318,7 +318,7 @@ void lib_ring_buffer_clear_noref(const struct lttng_ust_lib_ring_buffer_config *
 	id = CMM_ACCESS_ONCE(shmp_index(handle, bufb->buf_wsb, idx)->id);
 	for (;;) {
 		/* This check is called on the fast path for each record. */
-		if (likely(!subbuffer_id_is_noref(config, id))) {
+		if (caa_likely(!subbuffer_id_is_noref(config, id))) {
 			/*
 			 * Store after load dependency ordering the writes to
 			 * the subbuffer after load and test of the noref flag
@@ -330,7 +330,7 @@ void lib_ring_buffer_clear_noref(const struct lttng_ust_lib_ring_buffer_config *
 		new_id = id;
 		subbuffer_id_clear_noref(config, &new_id);
 		new_id = uatomic_cmpxchg(&shmp_index(handle, bufb->buf_wsb, idx)->id, id, new_id);
-		if (likely(new_id == id))
+		if (caa_likely(new_id == id))
 			break;
 		id = new_id;
 	}
@@ -391,13 +391,13 @@ int update_read_sb_index(const struct lttng_ust_lib_ring_buffer_config *config,
 		 * following cmpxchg().
 		 */
 		old_id = shmp_index(handle, bufb->buf_wsb, consumed_idx)->id;
-		if (unlikely(!subbuffer_id_is_noref(config, old_id)))
+		if (caa_unlikely(!subbuffer_id_is_noref(config, old_id)))
 			return -EAGAIN;
 		/*
 		 * Make sure the offset count we are expecting matches the one
 		 * indicated by the writer.
 		 */
-		if (unlikely(!subbuffer_id_compare_offset(config, old_id,
+		if (caa_unlikely(!subbuffer_id_compare_offset(config, old_id,
 							  consumed_count)))
 			return -EAGAIN;
 		CHAN_WARN_ON(shmp(handle, bufb->chan),
@@ -406,7 +406,7 @@ int update_read_sb_index(const struct lttng_ust_lib_ring_buffer_config *config,
 					      consumed_count);
 		new_id = uatomic_cmpxchg(&shmp_index(handle, bufb->buf_wsb, consumed_idx)->id, old_id,
 				 bufb->buf_rsb.id);
-		if (unlikely(old_id != new_id))
+		if (caa_unlikely(old_id != new_id))
 			return -EAGAIN;
 		bufb->buf_rsb.id = new_id;
 	} else {

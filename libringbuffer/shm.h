@@ -31,13 +31,13 @@ char *_shmp_offset(struct shm_object_table *table, struct shm_ref *ref,
 	size_t objindex, ref_offset;
 
 	objindex = (size_t) ref->index;
-	if (unlikely(objindex >= table->allocated_len))
+	if (caa_unlikely(objindex >= table->allocated_len))
 		return NULL;
 	obj = &table->objects[objindex];
 	ref_offset = (size_t) ref->offset;
 	ref_offset += idx * elem_size;
 	/* Check if part of the element returned would exceed the limits. */
-	if (unlikely(ref_offset + elem_size > obj->memory_map_size))
+	if (caa_unlikely(ref_offset + elem_size > obj->memory_map_size))
 		return NULL;
 	return &obj->memory_map[ref_offset];
 }
@@ -84,7 +84,7 @@ int shm_get_wakeup_fd(struct lttng_ust_shm_handle *handle, struct shm_ref *ref)
 	size_t index;
 
 	index = (size_t) ref->index;
-	if (unlikely(index >= table->allocated_len))
+	if (caa_unlikely(index >= table->allocated_len))
 		return -EPERM;
 	obj = &table->objects[index];
 	return obj->wait_fd[1];
@@ -99,7 +99,7 @@ int shm_get_wait_fd(struct lttng_ust_shm_handle *handle, struct shm_ref *ref)
 	size_t index;
 
 	index = (size_t) ref->index;
-	if (unlikely(index >= table->allocated_len))
+	if (caa_unlikely(index >= table->allocated_len))
 		return -EPERM;
 	obj = &table->objects[index];
 	return obj->wait_fd[0];
@@ -114,7 +114,7 @@ int shm_get_object_data(struct lttng_ust_shm_handle *handle, struct shm_ref *ref
 	size_t index;
 
 	index = (size_t) ref->index;
-	if (unlikely(index >= table->allocated_len))
+	if (caa_unlikely(index >= table->allocated_len))
 		return -EPERM;
 	obj = &table->objects[index];
 	*shm_fd = obj->shm_fd;

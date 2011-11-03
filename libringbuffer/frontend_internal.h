@@ -107,7 +107,7 @@ int last_tsc_overflow(const struct lttng_ust_lib_ring_buffer_config *config,
 		return 0;
 
 	tsc_shifted = (unsigned long)(tsc >> config->tsc_bits);
-	if (unlikely(tsc_shifted
+	if (caa_unlikely(tsc_shifted
 		     - (unsigned long)v_read(config, &buf->last_tsc)))
 		return 1;
 	else
@@ -131,7 +131,7 @@ int last_tsc_overflow(const struct lttng_ust_lib_ring_buffer_config *config,
 	if (config->tsc_bits == 0 || config->tsc_bits == 64)
 		return 0;
 
-	if (unlikely((tsc - v_read(config, &buf->last_tsc))
+	if (caa_unlikely((tsc - v_read(config, &buf->last_tsc))
 		     >> config->tsc_bits))
 		return 1;
 	else
@@ -167,13 +167,13 @@ void lib_ring_buffer_reserve_push_reader(struct lttng_ust_lib_ring_buffer *buf,
 		 * write position sub-buffer index in the buffer being the one
 		 * which will win this loop.
 		 */
-		if (unlikely(subbuf_trunc(offset, chan)
+		if (caa_unlikely(subbuf_trunc(offset, chan)
 			      - subbuf_trunc(consumed_old, chan)
 			     >= chan->backend.buf_size))
 			consumed_new = subbuf_align(consumed_old, chan);
 		else
 			return;
-	} while (unlikely(uatomic_cmpxchg(&buf->consumed, consumed_old,
+	} while (caa_unlikely(uatomic_cmpxchg(&buf->consumed, consumed_old,
 					      consumed_new) != consumed_old));
 }
 
@@ -296,7 +296,7 @@ void lib_ring_buffer_check_deliver(const struct lttng_ust_lib_ring_buffer_config
 	u64 tsc;
 
 	/* Check if all commits have been done */
-	if (unlikely((buf_trunc(offset, chan) >> chan->backend.num_subbuf_order)
+	if (caa_unlikely((buf_trunc(offset, chan) >> chan->backend.num_subbuf_order)
 		     - (old_commit_count & chan->commit_count_mask) == 0)) {
 		/*
 		 * If we succeeded at updating cc_sb below, we are the subbuffer
@@ -324,7 +324,7 @@ void lib_ring_buffer_check_deliver(const struct lttng_ust_lib_ring_buffer_config
 		 * The subbuffer size is least 2 bytes (minimum size: 1 page).
 		 * This guarantees that old_commit_count + 1 != commit_count.
 		 */
-		if (likely(v_cmpxchg(config, &shmp_index(handle, buf->commit_cold, idx)->cc_sb,
+		if (caa_likely(v_cmpxchg(config, &shmp_index(handle, buf->commit_cold, idx)->cc_sb,
 					 old_commit_count, old_commit_count + 1)
 			   == old_commit_count)) {
 			/*
@@ -443,7 +443,7 @@ void lib_ring_buffer_write_commit_counter(const struct lttng_ust_lib_ring_buffer
 	 * buffer full/empty mismatch because offset is never zero here
 	 * (subbuffer header and record headers have non-zero length).
 	 */
-	if (unlikely(subbuf_offset(offset - commit_count, chan)))
+	if (caa_unlikely(subbuf_offset(offset - commit_count, chan)))
 		return;
 
 	commit_seq_old = v_read(config, &shmp_index(handle, buf->commit_hot, idx)->seq);

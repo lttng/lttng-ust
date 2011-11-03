@@ -28,7 +28,7 @@ char *wrapper_getprocname(void)
 {
 	int ret;
 
-	if (unlikely(!cached_procname[0])) {
+	if (caa_unlikely(!cached_procname[0])) {
 		ret = prctl(PR_GET_NAME, (unsigned long) cached_procname,
 			0, 0, 0);
 		assert(!ret);

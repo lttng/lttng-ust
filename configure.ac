@@ -59,6 +59,27 @@ CFLAGS="-Wall $CFLAGS"
 AC_CHECK_HEADERS([urcu-bp.h], [], [AC_MSG_ERROR([Cannot find [URCU] headers (urcu-bp.h). Use [CFLAGS]=-Idir to specify their location.
 This error can also occur when the liburcu package's configure script has not been run.])])
 
+AC_MSG_CHECKING([caa_likely()])
+AC_TRY_COMPILE(
+[
+#include <urcu/compiler.h>
+],
+[
+void fct(void)
+{
+	if (caa_likely(1)) {
+	}
+}
+],
+[
+	AC_MSG_RESULT([yes])
+],
+[
+	AC_MSG_RESULT([no])
+	AC_MSG_ERROR([Please upgrade your version of liburcu to 0.6.6 or better])
+]
+)
+
 # urcu - check that URCU lib is available to compilation
 AC_CHECK_LIB([urcu-bp], [synchronize_rcu_bp], [], [AC_MSG_ERROR([Cannot find liburcu-bp lib. Use [LDFLAGS]=-Ldir to specify its location.])])
 

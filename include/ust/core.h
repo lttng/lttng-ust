@@ -23,9 +23,7 @@
 #include <sys/types.h>
 #include <ust/config.h>
 #include <urcu/arch.h>
-
-#define likely(x)	__builtin_expect(!!(x), 1)
-#define unlikely(x)	__builtin_expect(!!(x), 0)
+#include <urcu/compiler.h>
 
 /* ARRAYS */
 
@@ -45,7 +43,7 @@
 /* ERROR OPS */
 #define MAX_ERRNO	4095
 
-#define IS_ERR_VALUE(x) unlikely((x) >= (unsigned long)-MAX_ERRNO)
+#define IS_ERR_VALUE(x) caa_unlikely((x) >= (unsigned long)-MAX_ERRNO)
 
 static inline void *ERR_PTR(long error)
 {
@@ -146,7 +144,7 @@ static __inline__ int ust_get_cpu(void)
 	int cpu;
 
 	cpu = sched_getcpu();
-	if (likely(cpu >= 0))
+	if (caa_likely(cpu >= 0))
 		return cpu;
 	/*
 	 * If getcpu(2) is not implemented in the Kernel use CPU 0 as fallback.

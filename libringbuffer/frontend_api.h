@@ -46,7 +46,7 @@ int lib_ring_buffer_get_cpu(const struct lttng_ust_lib_ring_buffer_config *confi
 	nesting = ++lib_ring_buffer_nesting;	/* TLS */
 	cmm_barrier();
 
-	if (unlikely(nesting > 4)) {
+	if (caa_unlikely(nesting > 4)) {
 		WARN_ON_ONCE(1);
 		lib_ring_buffer_nesting--;	/* TLS */
 		rcu_read_unlock();
@@ -97,7 +97,7 @@ int lib_ring_buffer_try_reserve(const struct lttng_ust_lib_ring_buffer_config *c
 	if (last_tsc_overflow(config, buf, ctx->tsc))
 		ctx->rflags |= RING_BUFFER_RFLAG_FULL_TSC;
 
-	if (unlikely(subbuf_offset(*o_begin, chan) == 0))
+	if (caa_unlikely(subbuf_offset(*o_begin, chan) == 0))
 		return 1;
 
 	ctx->slot_size = record_header_size(config, chan, *o_begin,
@@ -105,7 +105,7 @@ int lib_ring_buffer_try_reserve(const struct lttng_ust_lib_ring_buffer_config *c
 	ctx->slot_size +=
 		lib_ring_buffer_align(*o_begin + ctx->slot_size,
 				      ctx->largest_align) + ctx->data_size;
-	if (unlikely((subbuf_offset(*o_begin, chan) + ctx->slot_size)
+	if (caa_unlikely((subbuf_offset(*o_begin, chan) + ctx->slot_size)
 		     > chan->backend.subbuf_size))
 		return 1;
 
@@ -115,7 +115,7 @@ int lib_ring_buffer_try_reserve(const struct lttng_ust_lib_ring_buffer_config *c
 	 */
 	*o_end = *o_begin + ctx->slot_size;
 
-	if (unlikely((subbuf_offset(*o_end, chan)) == 0))
+	if (caa_unlikely((subbuf_offset(*o_end, chan)) == 0))
 		/*
 		 * The offset_end will fall at the very beginning of the next
 		 * subbuffer.
@@ -165,11 +165,11 @@ int lib_ring_buffer_reserve(const struct lttng_ust_lib_ring_buffer_config *confi
 	/*
 	 * Perform retryable operations.
 	 */
-	if (unlikely(lib_ring_buffer_try_reserve(config, ctx, &o_begin,
+	if (caa_unlikely(lib_ring_buffer_try_reserve(config, ctx, &o_begin,
 						 &o_end, &o_old, &before_hdr_pad)))
 		goto slow_path;
 
-	if (unlikely(v_cmpxchg(config, &ctx->buf->offset, o_old, o_end)
+	if (caa_unlikely(v_cmpxchg(config, &ctx->buf->offset, o_old, o_end)
 		     != o_old))
 		goto slow_path;
 
@@ -317,7 +317,7 @@ int lib_ring_buffer_try_discard_reserve(const struct lttng_ust_lib_ring_buffer_c
 	 */
 	save_last_tsc(config, buf, 0ULL);
 
-	if (likely(v_cmpxchg(config, &buf->offset, end_offset, ctx->pre_offset)
+	if (caa_likely(v_cmpxchg(config, &buf->offset, end_offset, ctx->pre_offset)
 		   != end_offset))
 		return -EPERM;
 	else

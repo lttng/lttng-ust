@@ -46,7 +46,7 @@ int lib_ring_buffer_backend_allocate(const struct lttng_ust_lib_ring_buffer_conf
 	align_shm(shmobj, __alignof__(struct lttng_ust_lib_ring_buffer_backend_pages_shmp));
 	set_shmp(bufb->array, zalloc_shm(shmobj,
 			sizeof(struct lttng_ust_lib_ring_buffer_backend_pages_shmp) * num_subbuf_alloc));
-	if (unlikely(!shmp(handle, bufb->array)))
+	if (caa_unlikely(!shmp(handle, bufb->array)))
 		goto array_error;
 
 	/*
@@ -56,7 +56,7 @@ int lib_ring_buffer_backend_allocate(const struct lttng_ust_lib_ring_buffer_conf
 	align_shm(shmobj, PAGE_SIZE);
 	set_shmp(bufb->memory_map, zalloc_shm(shmobj,
 			subbuf_size * num_subbuf_alloc));
-	if (unlikely(!shmp(handle, bufb->memory_map)))
+	if (caa_unlikely(!shmp(handle, bufb->memory_map)))
 		goto memory_map_error;
 
 	/* Allocate backend pages array elements */
@@ -74,7 +74,7 @@ int lib_ring_buffer_backend_allocate(const struct lttng_ust_lib_ring_buffer_conf
 	set_shmp(bufb->buf_wsb, zalloc_shm(shmobj,
 				sizeof(struct lttng_ust_lib_ring_buffer_backend_subbuffer)
 				* num_subbuf));
-	if (unlikely(!shmp(handle, bufb->buf_wsb)))
+	if (caa_unlikely(!shmp(handle, bufb->buf_wsb)))
 		goto free_array;
 
 	for (i = 0; i < num_subbuf; i++)
@@ -378,7 +378,7 @@ size_t lib_ring_buffer_read(struct lttng_ust_lib_ring_buffer_backend *bufb, size
 	orig_len = len;
 	offset &= chanb->buf_size - 1;
 
-	if (unlikely(!len))
+	if (caa_unlikely(!len))
 		return 0;
 	id = bufb->buf_rsb.id;
 	sb_bindex = subbuffer_id_get_index(config, id);

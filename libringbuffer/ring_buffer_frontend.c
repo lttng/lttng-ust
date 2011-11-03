@@ -1212,7 +1212,7 @@ int lib_ring_buffer_try_switch_slow(enum switch_mode mode,
 	 * quiescence guarantees for the fusion merge.
 	 */
 	if (mode == SWITCH_FLUSH || off > 0) {
-		if (unlikely(off == 0)) {
+		if (caa_unlikely(off == 0)) {
 			/*
 			 * The client does not save any header information.
 			 * Don't switch empty subbuffer on finalize, because it
@@ -1323,7 +1323,7 @@ int lib_ring_buffer_try_reserve_slow(struct lttng_ust_lib_ring_buffer *buf,
 	if (last_tsc_overflow(config, buf, ctx->tsc))
 		ctx->rflags |= RING_BUFFER_RFLAG_FULL_TSC;
 
-	if (unlikely(subbuf_offset(offsets->begin, ctx->chan) == 0)) {
+	if (caa_unlikely(subbuf_offset(offsets->begin, ctx->chan) == 0)) {
 		offsets->switch_new_start = 1;		/* For offsets->begin */
 	} else {
 		offsets->size = config->cb.record_header_size(config, chan,
@@ -1334,19 +1334,19 @@ int lib_ring_buffer_try_reserve_slow(struct lttng_ust_lib_ring_buffer *buf,
 			lib_ring_buffer_align(offsets->begin + offsets->size,
 					      ctx->largest_align)
 			+ ctx->data_size;
-		if (unlikely(subbuf_offset(offsets->begin, chan) +
+		if (caa_unlikely(subbuf_offset(offsets->begin, chan) +
 			     offsets->size > chan->backend.subbuf_size)) {
 			offsets->switch_old_end = 1;	/* For offsets->old */
 			offsets->switch_new_start = 1;	/* For offsets->begin */
 		}
 	}
-	if (unlikely(offsets->switch_new_start)) {
+	if (caa_unlikely(offsets->switch_new_start)) {
 		unsigned long sb_index;
 
 		/*
 		 * We are typically not filling the previous buffer completely.
 		 */
-		if (likely(offsets->switch_old_end))
+		if (caa_likely(offsets->switch_old_end))
 			offsets->begin = subbuf_align(offsets->begin, chan);
 		offsets->begin = offsets->begin
 				 + config->cb.subbuffer_header_size();
@@ -1358,9 +1358,9 @@ int lib_ring_buffer_try_reserve_slow(struct lttng_ust_lib_ring_buffer *buf,
 		  - ((unsigned long) v_read(config,
 					    &shmp_index(handle, buf->commit_cold, sb_index)->cc_sb)
 		     & chan->commit_count_mask);
-		if (likely(reserve_commit_diff == 0)) {
+		if (caa_likely(reserve_commit_diff == 0)) {
 			/* Next subbuffer not being written to. */
-			if (unlikely(config->mode != RING_BUFFER_OVERWRITE &&
+			if (caa_unlikely(config->mode != RING_BUFFER_OVERWRITE &&
 				subbuf_trunc(offsets->begin, chan)
 				 - subbuf_trunc((unsigned long)
 				     uatomic_read(&buf->consumed), chan)
@@ -1398,7 +1398,7 @@ int lib_ring_buffer_try_reserve_slow(struct lttng_ust_lib_ring_buffer *buf,
 			lib_ring_buffer_align(offsets->begin + offsets->size,
 					      ctx->largest_align)
 			+ ctx->data_size;
-		if (unlikely(subbuf_offset(offsets->begin, chan)
+		if (caa_unlikely(subbuf_offset(offsets->begin, chan)
 			     + offsets->size > chan->backend.subbuf_size)) {
 			/*
 			 * Record too big for subbuffers, report error, don't
@@ -1420,7 +1420,7 @@ int lib_ring_buffer_try_reserve_slow(struct lttng_ust_lib_ring_buffer *buf,
 	}
 	offsets->end = offsets->begin + offsets->size;
 
-	if (unlikely(subbuf_offset(offsets->end, chan) == 0)) {
+	if (caa_unlikely(subbuf_offset(offsets->end, chan) == 0)) {
 		/*
 		 * The offset_end will fall at the very beginning of the next
 		 * subbuffer.
@@ -1458,9 +1458,9 @@ int lib_ring_buffer_reserve_slow(struct lttng_ust_lib_ring_buffer_ctx *ctx)
 	do {
 		ret = lib_ring_buffer_try_reserve_slow(buf, chan, &offsets,
 						       ctx);
-		if (unlikely(ret))
+		if (caa_unlikely(ret))
 			return ret;
-	} while (unlikely(v_cmpxchg(config, &buf->offset, offsets.old,
+	} while (caa_unlikely(v_cmpxchg(config, &buf->offset, offsets.old,
 				    offsets.end)
 			  != offsets.old));
 
@@ -1487,7 +1487,7 @@ int lib_ring_buffer_reserve_slow(struct lttng_ust_lib_ring_buffer_ctx *ctx)
 	/*
 	 * Switch old subbuffer if needed.
 	 */
-	if (unlikely(offsets.switch_old_end)) {
+	if (caa_unlikely(offsets.switch_old_end)) {
 		lib_ring_buffer_clear_noref(config, &buf->backend,
 					    subbuf_index(offsets.old - 1, chan),
 					    handle);
@@ -1497,10 +1497,10 @@ int lib_ring_buffer_reserve_slow(struct lttng_ust_lib_ring_buffer_ctx *ctx)
 	/*
 	 * Populate new subbuffer.
 	 */
-	if (unlikely(offsets.switch_new_start))
+	if (caa_unlikely(offsets.switch_new_start))
 		lib_ring_buffer_switch_new_start(buf, chan, &offsets, ctx->tsc, handle);
 
-	if (unlikely(offsets.switch_new_end))
+	if (caa_unlikely(offsets.switch_new_end))
 		lib_ring_buffer_switch_new_end(buf, chan, &offsets, ctx->tsc, handle);
 
 	ctx->slot_size = offsets.size;

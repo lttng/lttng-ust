@@ -77,7 +77,7 @@ struct tracepoint {
 
 #define __CHECK_TRACE(name, proto, args)				\
 	do {								\
-		if (unlikely(__tracepoint_##name.state))		\
+		if (caa_unlikely(__tracepoint_##name.state))		\
 			__DO_TRACE(&__tracepoint_##name,		\
 				TP_PROTO(proto), TP_ARGS(args));	\
 	} while (0)

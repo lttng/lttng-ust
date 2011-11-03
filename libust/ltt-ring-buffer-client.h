@@ -59,7 +59,7 @@ size_t ctx_get_size(size_t offset, struct lttng_ctx *ctx)
 	int i;
 	size_t orig_offset = offset;
 
-	if (likely(!ctx))
+	if (caa_likely(!ctx))
 		return 0;
 	for (i = 0; i < ctx->nr_fields; i++)
 		offset += ctx->fields[i].get_size(offset);
@@ -73,7 +73,7 @@ void ctx_record(struct lttng_ust_lib_ring_buffer_ctx *bufctx,
 {
 	int i;
 
-	if (likely(!ctx))
+	if (caa_likely(!ctx))
 		return;
 	for (i = 0; i < ctx->nr_fields; i++)
 		ctx->fields[i].record(&ctx->fields[i], bufctx, chan);
@@ -169,7 +169,7 @@ void ltt_write_event_header(const struct lttng_ust_lib_ring_buffer_config *confi
 	struct ltt_channel *ltt_chan = channel_get_private(ctx->chan);
 	struct ltt_event *event = ctx->priv;
 
-	if (unlikely(ctx->rflags))
+	if (caa_unlikely(ctx->rflags))
 		goto slow_path;
 
 	switch (ltt_chan->header_type) {

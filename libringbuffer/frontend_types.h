@@ -125,7 +125,7 @@ void *channel_get_private(struct channel *chan)
 #define CHAN_WARN_ON(c, cond)						\
 	({								\
 		struct channel *__chan;					\
-		int _____ret = unlikely(cond);				\
+		int _____ret = caa_unlikely(cond);				\
 		if (_____ret) {						\
 			if (__same_type(*(c), struct channel_backend))	\
 				__chan = caa_container_of((void *) (c),	\
