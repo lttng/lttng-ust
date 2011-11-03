@@ -234,7 +234,7 @@ int handle_message(struct sock_info *sock_info,
 		int sock, struct ustcomm_ust_msg *lum)
 {
 	int ret = 0;
-	const struct objd_ops *ops;
+	const struct lttng_ust_objd_ops *ops;
 	struct ustcomm_ust_reply lur;
 	int shm_fd, wait_fd;
 

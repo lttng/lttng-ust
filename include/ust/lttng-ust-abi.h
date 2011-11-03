@@ -139,9 +139,9 @@ struct lttng_ust_object_data {
 
 #define LTTNG_UST_ROOT_HANDLE	0
 
-struct obj;
+struct lttng_ust_obj;
 
-struct objd_ops {
+struct lttng_ust_objd_ops {
 	long (*cmd)(int objd, unsigned int cmd, unsigned long arg);
 	int (*release)(int objd);
 };
@@ -149,7 +149,7 @@ struct objd_ops {
 /* Create root handle. Always ID 0. */
 int lttng_abi_create_root_handle(void);
 
-const struct objd_ops *objd_ops(int id);
+const struct lttng_ust_objd_ops *objd_ops(int id);
 int objd_unref(int id);
 
 void lttng_ust_abi_exit(void);

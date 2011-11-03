@@ -37,31 +37,31 @@
  * by the caller.
  */
 
-struct obj {
+struct lttng_ust_obj {
 	union {
 		struct {
 			void *private_data;
-			const struct objd_ops *ops;
+			const struct lttng_ust_objd_ops *ops;
 			int f_count;
 		} s;
 		int freelist_next;	/* offset freelist. end is -1. */
 	} u;
 };
 
-struct objd_table {
-	struct obj *array;
+struct lttng_ust_objd_table {
+	struct lttng_ust_obj *array;
 	unsigned int len, allocated_len;
 	int freelist_head;		/* offset freelist head. end is -1 */
 };
 
-static struct objd_table objd_table = {
+static struct lttng_ust_objd_table objd_table = {
 	.freelist_head = -1,
 };
 
 static
-int objd_alloc(void *private_data, const struct objd_ops *ops)
+int objd_alloc(void *private_data, const struct lttng_ust_objd_ops *ops)
 {
-	struct obj *obj;
+	struct lttng_ust_obj *obj;
 
 	if (objd_table.freelist_head != -1) {
 		obj = &objd_table.array[objd_table.freelist_head];
@@ -71,7 +71,7 @@ int objd_alloc(void *private_data, const struct objd_ops *ops)
 
 	if (objd_table.len >= objd_table.allocated_len) {
 		unsigned int new_allocated_len, old_allocated_len;
-		struct obj *new_table, *old_table;
+		struct lttng_ust_obj *new_table, *old_table;
 
 		old_allocated_len = objd_table.allocated_len;
 		old_table = objd_table.array;
@@ -79,11 +79,11 @@ int objd_alloc(void *private_data, const struct objd_ops *ops)
 			new_allocated_len = 1;
 		else
 			new_allocated_len = old_allocated_len << 1;
-		new_table = zmalloc(sizeof(struct obj) * new_allocated_len);
+		new_table = zmalloc(sizeof(struct lttng_ust_obj) * new_allocated_len);
 		if (!new_table)
 			return -ENOMEM;
 		memcpy(new_table, old_table,
-		       sizeof(struct obj) * old_allocated_len);
+		       sizeof(struct lttng_ust_obj) * old_allocated_len);
 		free(old_table);
 		objd_table.array = new_table;
 		objd_table.allocated_len = new_allocated_len;
@@ -99,7 +99,7 @@ end:
 }
 
 static
-struct obj *_objd_get(int id)
+struct lttng_ust_obj *_objd_get(int id)
 {
 	if (id >= objd_table.len)
 		return NULL;
@@ -111,7 +111,7 @@ struct obj *_objd_get(int id)
 static
 void *objd_private(int id)
 {
-	struct obj *obj = _objd_get(id);
+	struct lttng_ust_obj *obj = _objd_get(id);
 	assert(obj);
 	return obj->u.s.private_data;
 }
@@ -119,14 +119,14 @@ void *objd_private(int id)
 static
 void objd_set_private(int id, void *private_data)
 {
-	struct obj *obj = _objd_get(id);
+	struct lttng_ust_obj *obj = _objd_get(id);
 	assert(obj);
 	obj->u.s.private_data = private_data;
 }
 
-const struct objd_ops *objd_ops(int id)
+const struct lttng_ust_objd_ops *objd_ops(int id)
 {
-	struct obj *obj = _objd_get(id);
+	struct lttng_ust_obj *obj = _objd_get(id);
 
 	if (!obj)
 		return NULL;
@@ -136,7 +136,7 @@ const struct objd_ops *objd_ops(int id)
 static
 void objd_free(int id)
 {
-	struct obj *obj = _objd_get(id);
+	struct lttng_ust_obj *obj = _objd_get(id);
 
 	assert(obj);
 	obj->u.freelist_next = objd_table.freelist_head;
@@ -148,13 +148,13 @@ void objd_free(int id)
 static
 void objd_ref(int id)
 {
-	struct obj *obj = _objd_get(id);
+	struct lttng_ust_obj *obj = _objd_get(id);
 	obj->u.s.f_count++;
 }
 
 int objd_unref(int id)
 {
-	struct obj *obj = _objd_get(id);
+	struct lttng_ust_obj *obj = _objd_get(id);
 
 	if (!obj)
 		return -EINVAL;
@@ -163,7 +163,7 @@ int objd_unref(int id)
 		return -EINVAL;
 	}
 	if ((--obj->u.s.f_count) == 1) {
-		const struct objd_ops *ops = objd_ops(id);
+		const struct lttng_ust_objd_ops *ops = objd_ops(id);
 		
 		if (ops->release)
 			ops->release(id);
@@ -191,12 +191,12 @@ void objd_table_destroy(void)
  * We send commands over a socket.
  */
 
-static const struct objd_ops lttng_ops;
-static const struct objd_ops lttng_session_ops;
-static const struct objd_ops lttng_channel_ops;
-static const struct objd_ops lttng_metadata_ops;
-static const struct objd_ops lttng_event_ops;
-static const struct objd_ops lib_ring_buffer_objd_ops;
+static const struct lttng_ust_objd_ops lttng_ops;
+static const struct lttng_ust_objd_ops lttng_session_ops;
+static const struct lttng_ust_objd_ops lttng_channel_ops;
+static const struct lttng_ust_objd_ops lttng_metadata_ops;
+static const struct lttng_ust_objd_ops lttng_event_ops;
+static const struct lttng_ust_objd_ops lib_ring_buffer_objd_ops;
 
 enum channel_type {
 	PER_CPU_CHANNEL,
@@ -324,7 +324,7 @@ long lttng_cmd(int objd, unsigned int cmd, unsigned long arg)
 	}
 }
 
-static const struct objd_ops lttng_ops = {
+static const struct lttng_ust_objd_ops lttng_ops = {
 	.cmd = lttng_cmd,
 };
 
@@ -365,7 +365,7 @@ int lttng_abi_create_channel(int session_objd,
 			     enum channel_type channel_type)
 {
 	struct ltt_session *session = objd_private(session_objd);
-	const struct objd_ops *ops;
+	const struct lttng_ust_objd_ops *ops;
 	const char *transport_name;
 	struct ltt_channel *chan;
 	int chan_objd;
@@ -501,7 +501,7 @@ int lttng_release_session(int objd)
 	}
 }
 
-static const struct objd_ops lttng_session_ops = {
+static const struct lttng_ust_objd_ops lttng_session_ops = {
 	.release = lttng_release_session,
 	.cmd = lttng_session_cmd,
 };
@@ -713,13 +713,13 @@ int lttng_channel_release(int objd)
 	return 0;
 }
 
-static const struct objd_ops lttng_channel_ops = {
+static const struct lttng_ust_objd_ops lttng_channel_ops = {
 	.release = lttng_channel_release,
 	//.poll = lttng_channel_poll,
 	.cmd = lttng_channel_cmd,
 };
 
-static const struct objd_ops lttng_metadata_ops = {
+static const struct lttng_ust_objd_ops lttng_metadata_ops = {
 	.release = lttng_channel_release,
 	.cmd = lttng_metadata_cmd,
 };
@@ -761,7 +761,7 @@ int lttng_rb_release(int objd)
 	return 0;
 }
 
-static const struct objd_ops lib_ring_buffer_objd_ops = {
+static const struct lttng_ust_objd_ops lib_ring_buffer_objd_ops = {
 	.release = lttng_rb_release,
 	.cmd = lttng_rb_cmd,
 };
@@ -811,7 +811,7 @@ int lttng_event_release(int objd)
 }
 
 /* TODO: filter control ioctl */
-static const struct objd_ops lttng_event_ops = {
+static const struct lttng_ust_objd_ops lttng_event_ops = {
 	.release = lttng_event_release,
 	.cmd = lttng_event_cmd,
 };
