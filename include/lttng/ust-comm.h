@@ -43,8 +43,8 @@
 /* Default unix socket path */
 #define DEFAULT_GLOBAL_CLIENT_UNIX_SOCK     LTTNG_RUNDIR "/client-lttng-sessiond"
 #define DEFAULT_GLOBAL_APPS_UNIX_SOCK       LTTNG_RUNDIR "/apps-lttng-sessiond"
-#define DEFAULT_HOME_APPS_UNIX_SOCK         "%s/.apps-ltt-sessiond"
-#define DEFAULT_HOME_CLIENT_UNIX_SOCK       "%s/.client-ltt-sessiond"
+#define DEFAULT_HOME_APPS_UNIX_SOCK         "%s/.apps-lttng-sessiond"
+#define DEFAULT_HOME_CLIENT_UNIX_SOCK       "%s/.client-lttng-sessiond"
 
 #define DEFAULT_GLOBAL_APPS_WAIT_SHM_PATH   "/lttng-ust-apps-wait"
 #define DEFAULT_HOME_APPS_WAIT_SHM_PATH     "/lttng-ust-apps-wait-%u"
