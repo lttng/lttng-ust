@@ -153,6 +153,6 @@ const struct objd_ops *objd_ops(int id);
 int objd_unref(int id);
 
 void lttng_ust_abi_exit(void);
-void ltt_events_exit(void);
+void lttng_ust_events_exit(void);
 
 #endif /* _LTTNG_UST_ABI_H */

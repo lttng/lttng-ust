@@ -819,7 +819,7 @@ void lttng_ust_cleanup(int exiting)
 		cleanup_sock_info(&local_apps);
 	}
 	lttng_ust_abi_exit();
-	ltt_events_exit();
+	lttng_ust_events_exit();
 	ltt_ring_buffer_client_discard_exit();
 	ltt_ring_buffer_client_overwrite_exit();
 	ltt_ring_buffer_metadata_client_exit();

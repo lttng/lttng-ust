@@ -1001,7 +1001,7 @@ void ltt_transport_unregister(struct ltt_transport *transport)
 	cds_list_del(&transport->node);
 }
 
-void ltt_events_exit(void)
+void lttng_ust_events_exit(void)
 {
 	struct ltt_session *session, *tmpsession;
 
