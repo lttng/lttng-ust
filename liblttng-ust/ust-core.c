@@ -28,7 +28,7 @@ void init_usterr(void)
 	char *ust_debug;
 
 	if (ust_loglevel == UST_LOGLEVEL_UNKNOWN) {
-		ust_debug = getenv("UST_DEBUG");
+		ust_debug = getenv("LTTNG_UST_DEBUG");
 		if (ust_debug)
 			ust_loglevel = UST_LOGLEVEL_DEBUG;
 		else

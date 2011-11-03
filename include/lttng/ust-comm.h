@@ -33,7 +33,7 @@
 /*
  * Default timeout the application waits for the sessiond to send its
  * "register done" command. Can be overridden with the environment
- * variable "UST_REGISTER_TIMEOUT". Note that if the sessiond is not
+ * variable "LTTNG_UST_REGISTER_TIMEOUT". Note that if the sessiond is not
  * found, the application proceeds directly without any delay.
  */
 #define LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_MS	3000

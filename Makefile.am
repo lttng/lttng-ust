@@ -1,10 +1,14 @@
 ACLOCAL_AMFLAGS = -I config
 
-SUBDIRS = . snprintf liblttng-ust-comm libringbuffer libust libustctl \
-		include doc libustjava libustfork tests
+SUBDIRS = . include doc snprintf libringbuffer liblttng-ust-comm \
+		liblttng-ust \
+		liblttng-ust-ctl \
+		liblttng-ust-fork \
+		liblttng-ust-java \
+		tests
 
 #temporarily disabled
-# . libustinstr-malloc
+# liblttng-ust-malloc
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = ust.pc

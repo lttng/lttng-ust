@@ -1,9 +1,9 @@
 AM_CPPFLAGS = -I$(top_srcdir)/include
 AM_CFLAGS = -fno-strict-aliasing
 
-lib_LTLIBRARIES = libust.la
+lib_LTLIBRARIES = liblttng-ust.la
 
-libust_la_SOURCES = \
+liblttng_ust_la_SOURCES = \
 	tracepoint.c \
 	ltt-tracer.h \
 	ltt-tracer-core.h \
@@ -25,9 +25,9 @@ libust_la_SOURCES = \
 	lttng-context-procname.c \
 	ltt-context.c
 
-libust_la_LDFLAGS = -no-undefined -version-info 0:0:0
+liblttng_ust_la_LDFLAGS = -no-undefined -version-info 0:0:0
 
-libust_la_LIBADD = \
+liblttng_ust_la_LIBADD = \
 	-lpthread \
 	-lrt \
 	-luuid \
@@ -35,4 +35,4 @@ libust_la_LIBADD = \
 	$(top_builddir)/libringbuffer/libringbuffer.la \
 	$(top_builddir)/liblttng-ust-comm/liblttng-ust-comm.la
 
-libust_la_CFLAGS = -DUST_COMPONENT="libust" -fno-strict-aliasing
+liblttng_ust_la_CFLAGS = -DUST_COMPONENT="liblttng-ust" -fno-strict-aliasing

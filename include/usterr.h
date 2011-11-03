@@ -63,7 +63,7 @@ static inline int ust_debug(void)
 			__func__);				\
 	} while(0)
 
-#ifdef UST_DEBUG
+#ifdef LTTNG_UST_DEBUG
 # define DBG(fmt, args...)		ERRMSG(fmt, ## args)
 # define DBG_raw(fmt, args...)					\
 	do {							\

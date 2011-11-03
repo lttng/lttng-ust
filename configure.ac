@@ -189,14 +189,19 @@ AM_CONDITIONAL(BUILD_JNI_INTERFACE, test "$with_jni_interface" = "yes")
 
 AC_CONFIG_FILES([
 	Makefile
+	include/Makefile
+	include/lttng/version.h
 	doc/Makefile
 	doc/man/Makefile
 	doc/info/Makefile
-	include/Makefile
-	liblttng-ust-comm/Makefile
+	snprintf/Makefile
 	libringbuffer/Makefile
-	libust/Makefile
-	libustctl/Makefile
+	liblttng-ust-comm/Makefile
+	liblttng-ust/Makefile
+	liblttng-ust-ctl/Makefile
+	liblttng-ust-fork/Makefile
+	liblttng-ust-java/Makefile
+	liblttng-ust-malloc/Makefile
 	tests/Makefile
 	tests/hello/Makefile
 	tests/ust-basic-tracing/Makefile
@@ -217,11 +222,6 @@ AC_CONFIG_FILES([
 	tests/register_test/Makefile
 	tests/libustctl_function_tests/Makefile
 	tests/exit-fast/Makefile
-	libustinstr-malloc/Makefile
-	libustfork/Makefile
-	snprintf/Makefile
 	ust.pc
-	include/lttng/version.h
-	libustjava/Makefile
 ])
 AC_OUTPUT

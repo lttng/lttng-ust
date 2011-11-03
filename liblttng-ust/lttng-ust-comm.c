@@ -712,7 +712,7 @@ int get_timeout(struct timespec *constructor_timeout)
 	char *str_delay;
 	int ret;
 
-	str_delay = getenv("UST_REGISTER_TIMEOUT");
+	str_delay = getenv("LTTNG_UST_REGISTER_TIMEOUT");
 	if (str_delay) {
 		constructor_delay_ms = strtol(str_delay, NULL, 10);
 	}
