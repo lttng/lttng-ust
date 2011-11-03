@@ -11,4 +11,4 @@ SUBDIRS = . include doc snprintf libringbuffer liblttng-ust-comm \
 # liblttng-ust-malloc
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = ust.pc
+pkgconfig_DATA = lttng-ust.pc

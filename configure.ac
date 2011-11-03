@@ -222,6 +222,6 @@ AC_CONFIG_FILES([
 	tests/register_test/Makefile
 	tests/libustctl_function_tests/Makefile
 	tests/exit-fast/Makefile
-	ust.pc
+	lttng-ust.pc
 ])
 AC_OUTPUT
