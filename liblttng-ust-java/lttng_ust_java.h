@@ -22,9 +22,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include <ust/tracepoint.h>
+#include <lttng/tracepoint.h>
 
-TRACEPOINT_EVENT(ust_java_event,
+TRACEPOINT_EVENT(lttng_ust_java_string,
 	TP_PROTO(const char *name, const char *args),
 	TP_ARGS(name, args),
 	TP_FIELDS(
@@ -38,7 +38,7 @@ TRACEPOINT_EVENT(ust_java_event,
 #undef TRACEPOINT_INCLUDE_PATH
 #define TRACEPOINT_INCLUDE_PATH .
 #undef TRACEPOINT_INCLUDE_FILE
-#define TRACEPOINT_INCLUDE_FILE ust_java
+#define TRACEPOINT_INCLUDE_FILE lttng_ust_java
 
 /* This part must be outside protection */
-#include <ust/tracepoint-event.h>
+#include <lttng/tracepoint-event.h>
