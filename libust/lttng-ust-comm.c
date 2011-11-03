@@ -264,7 +264,7 @@ int handle_message(struct sock_info *sock_info,
 		if (lum->handle == LTTNG_UST_ROOT_HANDLE)
 			ret = -EPERM;
 		else
-			ret = objd_unref(lum->handle);
+			ret = lttng_ust_objd_unref(lum->handle);
 		break;
 	default:
 		if (ops->cmd)
@@ -349,7 +349,7 @@ void cleanup_sock_info(struct sock_info *sock_info)
 		sock_info->socket = -1;
 	}
 	if (sock_info->root_handle != -1) {
-		ret = objd_unref(sock_info->root_handle);
+		ret = lttng_ust_objd_unref(sock_info->root_handle);
 		if (ret) {
 			ERR("Error unref root handle");
 		}

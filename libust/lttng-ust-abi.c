@@ -152,7 +152,7 @@ void objd_ref(int id)
 	obj->u.s.f_count++;
 }
 
-int objd_unref(int id)
+int lttng_ust_objd_unref(int id)
 {
 	struct lttng_ust_obj *obj = _objd_get(id);
 
@@ -178,7 +178,7 @@ void objd_table_destroy(void)
 	int i;
 
 	for (i = 0; i < objd_table.allocated_len; i++)
-		(void) objd_unref(i);
+		(void) lttng_ust_objd_unref(i);
 	free(objd_table.array);
 	objd_table.array = NULL;
 	objd_table.len = 0;
@@ -429,7 +429,7 @@ chan_error:
 	{
 		int err;
 
-		err = objd_unref(chan_objd);
+		err = lttng_ust_objd_unref(chan_objd);
 		assert(!err);
 	}
 objd_error:
@@ -579,7 +579,7 @@ event_error:
 	{
 		int err;
 
-		err = objd_unref(event_objd);
+		err = lttng_ust_objd_unref(event_objd);
 		assert(!err);
 	}
 objd_error:
@@ -709,7 +709,7 @@ int lttng_channel_release(int objd)
 	struct ltt_channel *channel = objd_private(objd);
 
 	if (channel)
-		return objd_unref(channel->session->objd);
+		return lttng_ust_objd_unref(channel->session->objd);
 	return 0;
 }
 
@@ -756,7 +756,7 @@ int lttng_rb_release(int objd)
 		free(priv);
 		channel->ops->buffer_read_close(buf, channel->handle);
 
-		return objd_unref(channel->objd);
+		return lttng_ust_objd_unref(channel->objd);
 	}
 	return 0;
 }
@@ -806,7 +806,7 @@ int lttng_event_release(int objd)
 	struct ltt_event *event = objd_private(objd);
 
 	if (event)
-		return objd_unref(event->chan->objd);
+		return lttng_ust_objd_unref(event->chan->objd);
 	return 0;
 }
 
