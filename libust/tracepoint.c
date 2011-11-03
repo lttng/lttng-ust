@@ -21,15 +21,15 @@
 
 #define _LGPL_SOURCE
 #include <errno.h>
-#include <ust/tracepoint.h>
-#include <ust/tracepoint-internal.h>
-#include <ust/core.h>
-#include <ust/kcompat/kcompat.h>
+#include <lttng/tracepoint.h>
+#include <lttng/tracepoint-internal.h>
+#include <lttng/core.h>
+#include <lttng/kcompat/kcompat.h>
 #include <urcu-bp.h>
 #include <urcu/hlist.h>
 #include <urcu/uatomic.h>
 
-#include <ust/usterr-signal-safe.h>
+#include <lttng/usterr-signal-safe.h>
 #include "ltt-tracer-core.h"
 
 /* Set to 1 to enable tracepoint debug output */

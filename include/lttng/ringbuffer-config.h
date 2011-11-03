@@ -13,10 +13,10 @@
  */
 
 #include <errno.h>
-#include "ust/lttng-tracer.h"
-#include "ust/usterr-signal-safe.h"
-#include "ust/kcompat/kcompat.h"
-#include "ust/align.h"
+#include "lttng/ust-tracer.h"
+#include "lttng/usterr-signal-safe.h"
+#include "lttng/kcompat/kcompat.h"
+#include "lttng/align.h"
 
 struct lttng_ust_lib_ring_buffer;
 struct channel;
@@ -304,6 +304,6 @@ int lib_ring_buffer_check_config(const struct lttng_ust_lib_ring_buffer_config *
 	return 0;
 }
 
-#include <ust/vatomic.h>
+#include <lttng/vatomic.h>
 
 #endif /* _LINUX_RING_BUFFER_CONFIG_H */

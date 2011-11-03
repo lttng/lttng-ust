@@ -25,9 +25,9 @@
 
 #include <stdarg.h>
 #include <stdint.h>
-#include <ust/core.h>
-#include <ust/compat.h>
-#include <ust/lttng-events.h>
+#include <lttng/core.h>
+#include <lttng/compat.h>
+#include <lttng/ust-events.h>
 #include "ltt-tracer-core.h"
 
 /* Number of bytes to log with a read/write event */

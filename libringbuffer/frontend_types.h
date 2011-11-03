@@ -21,10 +21,10 @@
 #include <urcu/list.h>
 #include <urcu/uatomic.h>
 
-#include "ust/core.h"
+#include "lttng/core.h"
 
-#include <ust/usterr-signal-safe.h>
-#include <ust/ringbuffer-config.h>
+#include <lttng/usterr-signal-safe.h>
+#include <lttng/ringbuffer-config.h>
 #include "backend_types.h"
 #include "shm_internal.h"
 

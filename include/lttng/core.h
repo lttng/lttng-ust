@@ -21,7 +21,7 @@
  */
 
 #include <sys/types.h>
-#include <ust/config.h>
+#include <lttng/config.h>
 #include <urcu/arch.h>
 #include <urcu/compiler.h>
 
@@ -105,7 +105,7 @@ void *zmalloc_align(size_t len)
 
 /* MATH */
 
-#include <ust/processor.h>
+#include <lttng/processor.h>
 static inline unsigned int hweight32(unsigned int w)
 {
 	unsigned int res = w - ((w >> 1) & 0x55555555);

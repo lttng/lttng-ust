@@ -1,5 +1,5 @@
 /*
- * lttng-tracepoint-events-reset.h
+ * lttng/ust-tracepoint-events-reset.h
  *
  * Copyright (C) 2010-2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *

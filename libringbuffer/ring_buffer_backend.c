@@ -8,9 +8,9 @@
 
 #include <urcu/arch.h>
 
-#include "ust/core.h"
+#include "lttng/core.h"
 
-#include <ust/ringbuffer-config.h>
+#include <lttng/ringbuffer-config.h>
 #include "backend.h"
 #include "frontend.h"
 #include "smp.h"

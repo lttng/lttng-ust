@@ -26,7 +26,7 @@
 #include <stdarg.h>
 #include "usterr.h"
 
-#include <ust/ust.h>
+#include <lttng/ust.h>
 
 struct user_desc;
 

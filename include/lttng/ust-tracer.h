@@ -21,7 +21,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include <ust/config.h>
+#include <lttng/config.h>
 
 #ifndef HAVE_EFFICIENT_UNALIGNED_ACCESS
 /* Align data on its natural alignment */

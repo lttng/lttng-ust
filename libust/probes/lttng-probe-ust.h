@@ -22,7 +22,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include <ust/tracepoint.h>
+#include <lttng/tracepoint.h>
 
 TRACEPOINT_EVENT(lttng_metadata,
 
@@ -48,4 +48,4 @@ TRACEPOINT_EVENT(lttng_metadata,
 #endif /* _TRACEPOINT_LTTNG_UST_H */
 
 /* This part must be outside protection */
-#include <ust/tracepoint-event.h>
+#include <lttng/tracepoint-event.h>

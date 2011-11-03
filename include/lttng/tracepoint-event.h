@@ -90,7 +90,7 @@ extern "C" {
 
 #include TRACEPOINT_INCLUDE(TRACEPOINT_INCLUDE_FILE)
 
-#include <ust/lttng-tracepoint-event.h>
+#include <lttng/ust-tracepoint-event.h>
 
 #undef TRACEPOINT_EVENT
 #undef TRACEPOINT_EVENT_CLASS

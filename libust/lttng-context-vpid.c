@@ -9,9 +9,9 @@
 
 #include <sys/types.h>
 #include <unistd.h>
-#include <ust/lttng-events.h>
-#include <ust/lttng-tracer.h>
-#include <ust/ringbuffer-config.h>
+#include <lttng/ust-events.h>
+#include <lttng/ust-tracer.h>
+#include <lttng/ringbuffer-config.h>
 
 #ifdef __linux__
 static inline

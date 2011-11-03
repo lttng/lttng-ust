@@ -8,9 +8,9 @@
  */
 
 #include <sys/prctl.h>
-#include <ust/lttng-events.h>
-#include <ust/lttng-tracer.h>
-#include <ust/ringbuffer-config.h>
+#include <lttng/ust-events.h>
+#include <lttng/ust-tracer.h>
+#include <lttng/ringbuffer-config.h>
 #include <assert.h>
 
 #define PROCNAME_LEN	17	/* includes \0 */

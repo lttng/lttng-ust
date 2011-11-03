@@ -22,7 +22,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include <ust/tracepoint.h>
+#include <lttng/tracepoint.h>
 #include <sys/types.h>
 
 TRACEPOINT_EVENT_NOARGS(ust_tests_fork_before_fork,
@@ -53,4 +53,4 @@ TRACEPOINT_EVENT_NOARGS(ust_tests_fork_after_exec,
 #define TRACEPOINT_INCLUDE_FILE ust_tests_fork
 
 /* This part must be outside protection */
-#include <ust/tracepoint-event.h>
+#include <lttng/tracepoint-event.h>

@@ -11,8 +11,8 @@
 #include <string.h>
 #include <errno.h>
 #include <urcu/list.h>
-#include <ust/core.h>
-#include <ust/lttng-events.h>
+#include <lttng/core.h>
+#include <lttng/ust-events.h>
 
 #include "ltt-tracer-core.h"
 

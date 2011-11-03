@@ -14,8 +14,8 @@
 #include <urcu/list.h>
 #include <uuid/uuid.h>
 #include <stdint.h>
-#include <ust/lttng-ust-abi.h>
-#include <ust/lttng-tracer.h>
+#include <lttng/ust-abi.h>
+#include <lttng/ust-tracer.h>
 #include <endian.h>
 #include <float.h>
 

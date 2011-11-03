@@ -30,9 +30,9 @@
  */
 
 #include <urcu-bp.h>
-#include <ust/core.h>
+#include <lttng/core.h>
 #include <urcu/list.h>
-#include <ust/tracepoint.h>
+#include <lttng/tracepoint.h>
 
 struct tracepoint_lib {
 	struct tracepoint * const *tracepoints_start;

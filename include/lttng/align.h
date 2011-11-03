@@ -2,14 +2,14 @@
 #define _UST_ALIGN_H
 
 /*
- * ust/align.h
+ * lttng/align.h
  *
  * (C) Copyright 2010-2011 - Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
  * Dual LGPL v2.1/GPL v2 license.
  */
 
-#include <ust/bug.h>
+#include <lttng/bug.h>
 
 /*
  * Align pointer on natural object alignment.

@@ -9,8 +9,8 @@
  */
 
 #include <stdint.h>
-#include <ust/lttng-events.h>
-#include "ust/bitfield.h"
+#include <lttng/ust-events.h>
+#include "lttng/bitfield.h"
 #include "ltt-tracer.h"
 #include "../libringbuffer/frontend_types.h"
 

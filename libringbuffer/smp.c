@@ -1,5 +1,5 @@
 /*
- * libust/smp.c
+ * libringbuffer/smp.c
  *
  * Copyright 2011 (c) - Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
@@ -7,7 +7,7 @@
  */
 
 #include <unistd.h>
-#include "ust/core.h"
+#include "lttng/core.h"
 #include "usterr.h"
 #include <pthread.h>
 #include "smp.h"

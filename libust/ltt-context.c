@@ -8,9 +8,9 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
-#include <ust/lttng-events.h>
-#include <ust/lttng-tracer.h>
-#include <ust/core.h>
+#include <lttng/ust-events.h>
+#include <lttng/ust-tracer.h>
+#include <lttng/core.h>
 #include <string.h>
 #include <assert.h>
 

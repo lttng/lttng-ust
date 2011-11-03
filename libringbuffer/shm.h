@@ -10,8 +10,8 @@
  */
 
 #include <stdint.h>
-#include <ust/usterr-signal-safe.h>
-#include "ust/core.h"
+#include <lttng/usterr-signal-safe.h>
+#include "lttng/core.h"
 #include "shm_types.h"
 
 /*

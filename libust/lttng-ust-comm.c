@@ -38,13 +38,13 @@
 #include <urcu/uatomic.h>
 #include <urcu/futex.h>
 
-#include <lttng-ust-comm.h>
-#include <ust/lttng-events.h>
-#include <ust/usterr-signal-safe.h>
-#include <ust/lttng-ust-abi.h>
-#include <ust/tracepoint.h>
-#include <ust/tracepoint-internal.h>
-#include <ust/ust.h>
+#include <lttng/ust-comm.h>
+#include <lttng/ust-events.h>
+#include <lttng/usterr-signal-safe.h>
+#include <lttng/ust-abi.h>
+#include <lttng/tracepoint.h>
+#include <lttng/tracepoint-internal.h>
+#include <lttng/ust.h>
 #include "ltt-tracer-core.h"
 
 /*

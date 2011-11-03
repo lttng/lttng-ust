@@ -2,7 +2,7 @@
 #define _LTTNG_UST_ABI_H
 
 /*
- * lttng-ust-abi.h
+ * lttng/ust-abi.h
  *
  * Copyright 2010-2011 (c) - Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *

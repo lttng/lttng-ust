@@ -10,7 +10,7 @@
 
 #include "backend.h"
 #include "frontend.h"
-#include <ust/ring-buffer-abi.h>
+#include <lttng/ring-buffer-abi.h>
 
 static int put_ulong(unsigned long val, unsigned long arg)
 {

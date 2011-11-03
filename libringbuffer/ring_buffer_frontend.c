@@ -46,7 +46,7 @@
 #include <urcu/ref.h>
 
 #include "smp.h"
-#include <ust/ringbuffer-config.h>
+#include <lttng/ringbuffer-config.h>
 #include "backend.h"
 #include "frontend.h"
 #include "shm.h"

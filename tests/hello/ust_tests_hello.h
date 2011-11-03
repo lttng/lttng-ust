@@ -26,7 +26,7 @@ extern "C" {
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include <ust/tracepoint.h>
+#include <lttng/tracepoint.h>
 
 TRACEPOINT_EVENT(ust_tests_hello_tptest,
 	TP_PROTO(int anint, int netint, long *values,
@@ -64,7 +64,7 @@ TRACEPOINT_EVENT_NOARGS(ust_tests_hello_tptest_sighandler,
 #define TRACEPOINT_INCLUDE_FILE ust_tests_hello
 
 /* This part must be outside protection */
-#include <ust/tracepoint-event.h>
+#include <lttng/tracepoint-event.h>
 
 #ifdef __cplusplus 
 }

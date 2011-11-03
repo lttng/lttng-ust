@@ -19,9 +19,9 @@
 
 #include <stdio.h>
 #include <urcu/compiler.h>
-#include <ust/lttng-events.h>
-#include <ust/usterr-signal-safe.h>
-#include <ust/ringbuffer-config.h>
+#include <lttng/ust-events.h>
+#include <lttng/usterr-signal-safe.h>
+#include <lttng/ringbuffer-config.h>
 
 /*
  * Macro declarations used for all stages.
@@ -109,9 +109,7 @@
  */
 
 /* Reset all macros within TRACEPOINT_EVENT */
-#include <ust/lttng-tracepoint-event-reset.h>
-
-/* Named field types must be defined in lttng-types.h */
+#include <lttng/ust-tracepoint-event-reset.h>
 
 #undef ctf_integer_ext
 #define ctf_integer_ext(_type, _item, _src, _byte_order, _base)	\
@@ -191,7 +189,7 @@
  */
 
 /* Reset all macros within TRACEPOINT_EVENT */
-#include <ust/lttng-tracepoint-event-reset.h>
+#include <lttng/ust-tracepoint-event-reset.h>
 
 #undef TP_PROTO
 #define TP_PROTO(args...) args
@@ -212,10 +210,8 @@ static void __event_probe__##_name(void *__data);
  * Create an array of events.
  */
 
-/* Named field types must be defined in lttng-types.h */
-
 /* Reset all macros within TRACEPOINT_EVENT */
-#include <ust/lttng-tracepoint-event-reset.h>
+#include <lttng/ust-tracepoint-event-reset.h>
 
 #undef TRACEPOINT_EVENT_INSTANCE_NOARGS
 #define TRACEPOINT_EVENT_INSTANCE_NOARGS(_template, _name)		       \
@@ -266,9 +262,7 @@ static struct lttng_probe_desc TP_ID(__probe_desc___, TRACEPOINT_SYSTEM) = {
  */
 
 /* Reset all macros within TRACEPOINT_EVENT */
-#include <ust/lttng-tracepoint-event-reset.h>
-
-/* Named field types must be defined in lttng-types.h */
+#include <lttng/ust-tracepoint-event-reset.h>
 
 #undef ctf_integer_ext
 #define ctf_integer_ext(_type, _item, _src, _byte_order, _base)		       \
@@ -327,9 +321,7 @@ static inline size_t __event_get_size__##_name(size_t *__dynamic_len, _proto) \
  */
 
 /* Reset all macros within TRACEPOINT_EVENT */
-#include <ust/lttng-tracepoint-event-reset.h>
-
-/* Named field types must be defined in lttng-types.h */
+#include <lttng/ust-tracepoint-event-reset.h>
 
 #undef ctf_integer_ext
 #define ctf_integer_ext(_type, _item, _src, _byte_order, _base)		       \
@@ -382,7 +374,7 @@ static inline size_t __event_get_align__##_name(_proto)			      \
  */
 
 /* Reset all macros within TRACEPOINT_EVENT */
-#include <ust/lttng-tracepoint-event-reset.h>
+#include <lttng/ust-tracepoint-event-reset.h>
 
 #undef ctf_integer_ext
 #define ctf_integer_ext(_type, _item, _src, _byte_order, _base)	        \
@@ -504,7 +496,7 @@ static void __event_probe__##_name(void *__data)			      \
  */
 
 /* Reset all macros within TRACEPOINT_EVENT */
-#include <ust/lttng-tracepoint-event-reset.h>
+#include <lttng/ust-tracepoint-event-reset.h>
 
 #define TP_ID1(_token, _system)	_token##_system
 #define TP_ID(_token, _system)	TP_ID1(_token, _system)

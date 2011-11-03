@@ -18,20 +18,20 @@
 #include <urcu/compiler.h>
 #include <urcu/uatomic.h>
 #include <uuid/uuid.h>
-#include <ust/tracepoint.h>
+#include <lttng/tracepoint.h>
 #include <errno.h>
 #include <sys/shm.h>
 #include <sys/ipc.h>
-#include <ust/lttng-events.h>
-#include <ust/usterr-signal-safe.h>
-#include "ust/core.h"
+#include <lttng/ust-events.h>
+#include <lttng/usterr-signal-safe.h>
+#include "lttng/core.h"
 #include "ltt-tracer.h"
 #include "ltt-tracer-core.h"
-#include "ust/wait.h"
+#include "lttng/wait.h"
 #include "../libringbuffer/shm.h"
 
 typedef u32 uint32_t;
-#include <ust/kcompat/jhash.h>
+#include <lttng/kcompat/jhash.h>
 
 /*
  * The sessions mutex is the centralized mutex across UST tracing

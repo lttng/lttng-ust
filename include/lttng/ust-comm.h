@@ -28,7 +28,7 @@
 
 #include <limits.h>
 #include <unistd.h>
-#include <ust/lttng-ust-abi.h>
+#include <lttng/ust-abi.h>
 
 /*
  * Default timeout the application waits for the sessiond to send its

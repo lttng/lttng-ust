@@ -8,8 +8,8 @@ AC_CANONICAL_HOST
 AC_CONFIG_MACRO_DIR([config])
 AM_INIT_AUTOMAKE([foreign])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
-AC_CONFIG_SRCDIR([include/ust/tracepoint.h])
-AC_CONFIG_HEADERS([config.h include/ust/config.h])
+AC_CONFIG_SRCDIR([include/lttng/tracepoint.h])
+AC_CONFIG_HEADERS([config.h include/lttng/config.h])
 AH_TEMPLATE([HAVE_EFFICIENT_UNALIGNED_ACCESS], [Use efficient unaligned access.])
 # Compute minor/major version numbers
 major_version=`echo AC_PACKAGE_VERSION | sed 's/\..*//'`
@@ -221,7 +221,7 @@ AC_CONFIG_FILES([
 	libustfork/Makefile
 	snprintf/Makefile
 	ust.pc
-	include/ust/version.h
+	include/lttng/version.h
 	libustjava/Makefile
 ])
 AC_OUTPUT

@@ -16,7 +16,7 @@
 
 #include <unistd.h>
 
-#include "ust/core.h"
+#include "lttng/core.h"
 
 /* Internal helpers */
 #include "backend_internal.h"

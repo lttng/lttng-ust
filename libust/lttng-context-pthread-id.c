@@ -8,9 +8,9 @@
  */
 
 #include <pthread.h>
-#include <ust/lttng-events.h>
-#include <ust/lttng-tracer.h>
-#include <ust/ringbuffer-config.h>
+#include <lttng/ust-events.h>
+#include <lttng/ust-tracer.h>
+#include <lttng/ringbuffer-config.h>
 
 static
 size_t pthread_id_get_size(size_t offset)

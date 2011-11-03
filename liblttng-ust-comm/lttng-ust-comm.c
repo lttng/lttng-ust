@@ -29,7 +29,7 @@
 #include <assert.h>
 #include <errno.h>
 
-#include <ust/lttng-ust-comm.h>
+#include <lttng/ust-comm.h>
 
 /*
  * Human readable error message.

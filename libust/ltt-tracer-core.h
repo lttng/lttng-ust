@@ -21,14 +21,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include <ust/kcompat/kcompat.h>
-#include <ust/core.h>
-#include <ust/lttng-tracer.h>
+#include <lttng/kcompat/kcompat.h>
+#include <lttng/core.h>
+#include <lttng/ust-tracer.h>
 #include <urcu/list.h>
-#include <ust/usterr-signal-safe.h>
-#include "ust/bug.h"
+#include <lttng/usterr-signal-safe.h>
+#include "lttng/bug.h"
 
-#include <ust/ringbuffer-config.h>
+#include <lttng/ringbuffer-config.h>
 
 struct ltt_session;
 struct ltt_channel;

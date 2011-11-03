@@ -24,12 +24,12 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
-#include <ust/lttng-ust-abi.h>
+#include <lttng/ust-abi.h>
 #include <urcu/compiler.h>
 #include <urcu/list.h>
-#include <ust/lttng-events.h>
-#include <ust/usterr-signal-safe.h>
-#include "ust/core.h"
+#include <lttng/ust-events.h>
+#include <lttng/usterr-signal-safe.h>
+#include "lttng/core.h"
 #include "ltt-tracer.h"
 
 /*

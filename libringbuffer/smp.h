@@ -9,7 +9,7 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
-#include <ust/core.h>
+#include <lttng/core.h>
 
 /*
  * 4kB of per-cpu data available. Enough to hold the control structures,
