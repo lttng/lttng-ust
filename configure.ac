@@ -29,6 +29,11 @@ AC_PROG_LIBTOOL
 AC_CHECK_LIB([dl], [dlopen])
 AC_CHECK_LIB([pthread], [pthread_create])
 
+# Check for libuuid
+AC_CHECK_LIB([uuid], [uuid_generate], [],
+	[AC_MSG_ERROR([Cannot find libuuid. Use [LDFLAGS]=-Ldir to specify its location.])]
+)
+
 # Checks for header files.
 #AC_CHECK_HEADERS([fcntl.h stdint.h stdlib.h string.h sys/socket.h sys/time.h unistd.h])
 
