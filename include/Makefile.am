@@ -15,7 +15,8 @@ nobase_include_HEADERS = \
 	lttng/config.h \
 	lttng/share.h \
 	lttng/ust.h \
-	lttng/core.h
+	lttng/core.h \
+	lttng/processor.h
 
 # note: usterr-signal-safe.h, core.h and share.h need namespace cleanup.
 
@@ -33,5 +34,4 @@ noinst_HEADERS = \
 	lttng/kcompat/types.h \
 	lttng/stringify.h \
 	lttng/wait.h \
-	lttng/ringbuffer-config.h \
-	lttng/processor.h
+	lttng/ringbuffer-config.h
