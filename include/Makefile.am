@@ -17,7 +17,14 @@ nobase_include_HEADERS = \
 	lttng/ust.h \
 	lttng/core.h \
 	lttng/processor.h \
-	lttng/ringbuffer-config.h
+	lttng/kcompat/kcompat.h \
+	lttng/kcompat/jhash.h \
+	lttng/kcompat/compiler.h \
+	lttng/kcompat/types.h \
+	lttng/ringbuffer-config.h \
+	lttng/align.h \
+	lttng/bug.h \
+	lttng/vatomic.h
 
 # note: usterr-signal-safe.h, core.h and share.h need namespace cleanup.
 
@@ -29,9 +36,5 @@ noinst_HEADERS = \
 	lttng/tracepoint-internal.h \
 	lttng/clock.h \
 	lttng/probe-internal.h \
-	lttng/kcompat/kcompat.h \
-	lttng/kcompat/jhash.h \
-	lttng/kcompat/compiler.h \
-	lttng/kcompat/types.h \
 	lttng/stringify.h \
 	lttng/wait.h
