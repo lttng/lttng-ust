@@ -650,8 +650,11 @@ int ustctl_put_subbuf(struct lttng_ust_shm_handle *handle,
 }
 
 int ustctl_flush_buffer(struct lttng_ust_shm_handle *handle,
-		struct lttng_ust_lib_ring_buffer *buf)
+		struct lttng_ust_lib_ring_buffer *buf,
+		int producer_active)
 {
-	lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE, handle);
+	lib_ring_buffer_switch_slow(buf,
+		producer_active ? SWITCH_ACTIVE : SWITCH_FLUSH,
+		handle);
 	return 0;
 }

@@ -115,7 +115,8 @@ int ustctl_put_subbuf(struct lttng_ust_shm_handle *handle,
 		struct lttng_ust_lib_ring_buffer *buf);
 
 int ustctl_flush_buffer(struct lttng_ust_shm_handle *handle,
-		struct lttng_ust_lib_ring_buffer *buf);
+		struct lttng_ust_lib_ring_buffer *buf,
+		int producer_active);
 
 /* Release object created by members of this API */
 void ustctl_release_object(int sock, struct lttng_ust_object_data *data);
