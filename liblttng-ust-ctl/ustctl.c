@@ -449,6 +449,12 @@ struct lttng_ust_shm_handle *ustctl_map_channel(struct lttng_ust_object_data *ch
 		return NULL;
 	}
 	memcpy(handle->shadow_chan, chan, chan_size);
+	/*
+	 * The callback pointers in the producer are invalid in the
+	 * consumer. Zero them out.
+	 */
+	memset(&handle->shadow_chan->backend.config.cb, 0,
+		sizeof(handle->shadow_chan->backend.config.cb));
 	return handle;
 }
 
