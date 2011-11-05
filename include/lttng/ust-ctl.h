@@ -48,9 +48,6 @@ int ustctl_tracepoint_list(int sock);	/* not implemented yet */
 int ustctl_tracer_version(int sock, struct lttng_ust_tracer_version *v);
 int ustctl_wait_quiescent(int sock);
 
-/* Flush each buffers in this channel */
-int ustctl_flush_buffer(int sock, struct lttng_ust_object_data *channel_data);
-
 /* not implemented yet */
 struct lttng_ust_calibrate;
 int ustctl_calibrate(int sock, struct lttng_ust_calibrate *calibrate);
@@ -117,7 +114,10 @@ int ustctl_get_subbuf(struct lttng_ust_shm_handle *handle,
 int ustctl_put_subbuf(struct lttng_ust_shm_handle *handle,
 		struct lttng_ust_lib_ring_buffer *buf);
 
+int ustctl_flush_buffer(struct lttng_ust_shm_handle *handle,
+		struct lttng_ust_lib_ring_buffer *buf);
+
 /* Release object created by members of this API */
-void release_object(int sock, struct lttng_ust_object_data *data);
+void ustctl_release_object(int sock, struct lttng_ust_object_data *data);
 
 #endif /* _LTTNG_UST_CTL_H */

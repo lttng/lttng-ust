@@ -37,7 +37,7 @@ void init_object(struct lttng_ust_object_data *data)
 	data->memory_map_size = 0;
 }
 
-void release_object(int sock, struct lttng_ust_object_data *data)
+void ustctl_release_object(int sock, struct lttng_ust_object_data *data)
 {
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
@@ -152,7 +152,7 @@ int ustctl_open_metadata(int sock, int session_handle,
 	return 0;
 
 error:
-	release_object(sock, metadata_data);
+	ustctl_release_object(sock, metadata_data);
 	return -EINVAL;
 }
 
@@ -205,7 +205,7 @@ int ustctl_create_channel(int sock, int session_handle,
 	return 0;
 
 error:
-	release_object(sock, channel_data);
+	ustctl_release_object(sock, channel_data);
 	return -EINVAL;
 }
 
@@ -256,7 +256,7 @@ int ustctl_create_stream(int sock, struct lttng_ust_object_data *channel_data,
 	return ret;
 
 error:
-	release_object(sock, stream_data);
+	ustctl_release_object(sock, stream_data);
 	return -EINVAL;
 }
 
@@ -405,17 +405,6 @@ int ustctl_wait_quiescent(int sock)
 		return ret;
 	DBG("waited for quiescent state");
 	return 0;
-}
-
-int ustctl_flush_buffer(int sock, struct lttng_ust_object_data *channel_data)
-{
-	struct ustcomm_ust_msg lum;
-	struct ustcomm_ust_reply lur;
-
-	memset(&lum, 0, sizeof(lum));
-	lum.handle = channel_data->handle;
-	lum.cmd = LTTNG_UST_FLUSH_BUFFER;
-	return ustcomm_send_app_cmd(sock, &lum, &lur);
 }
 
 int ustctl_calibrate(int sock, struct lttng_ust_calibrate *calibrate)
@@ -660,7 +649,7 @@ int ustctl_put_subbuf(struct lttng_ust_shm_handle *handle,
 	return 0;
 }
 
-int ustctl_buffer_flush(struct lttng_ust_shm_handle *handle,
+int ustctl_flush_buffer(struct lttng_ust_shm_handle *handle,
 		struct lttng_ust_lib_ring_buffer *buf)
 {
 	lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE, handle);
