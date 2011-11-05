@@ -114,7 +114,7 @@ int ustctl_get_subbuf(struct lttng_ust_shm_handle *handle,
 int ustctl_put_subbuf(struct lttng_ust_shm_handle *handle,
 		struct lttng_ust_lib_ring_buffer *buf);
 
-int ustctl_flush_buffer(struct lttng_ust_shm_handle *handle,
+void ustctl_flush_buffer(struct lttng_ust_shm_handle *handle,
 		struct lttng_ust_lib_ring_buffer *buf,
 		int producer_active);
 
