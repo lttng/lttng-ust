@@ -37,4 +37,5 @@ noinst_HEADERS = \
 	lttng/clock.h \
 	lttng/probe-internal.h \
 	lttng/stringify.h \
-	lttng/wait.h
+	lttng/wait.h \
+	lttng/bitfield.h

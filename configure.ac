@@ -192,6 +192,24 @@ Use --with-java-jdk=DIR flag to point to your java include files or desactivate 
 fi
 AM_CONDITIONAL(BUILD_JNI_INTERFACE, test "$with_jni_interface" = "yes")
 
+#currently disabled.
+	#liblttng-ust-malloc/Makefile
+	#tests/hello2/Makefile
+	#tests/basic/Makefile
+	#tests/simple_include/Makefile
+	#tests/snprintf/Makefile
+	#tests/test-nevents/Makefile
+	#tests/test-libustinstr-malloc/Makefile
+	#tests/dlopen/Makefile
+	#tests/same_line_marker/Makefile
+	#tests/trace_event/Makefile
+	#tests/tracepoint/Makefile
+	#tests/tracepoint/benchmark/Makefile
+	#tests/register_test/Makefile
+	#tests/libustctl_function_#tests/Makefile
+	#tests/exit-fast/Makefile
+	#tests/basic_long/Makefile
+
 AC_CONFIG_FILES([
 	Makefile
 	include/Makefile
@@ -206,27 +224,11 @@ AC_CONFIG_FILES([
 	liblttng-ust-ctl/Makefile
 	liblttng-ust-fork/Makefile
 	liblttng-ust-java/Makefile
-	liblttng-ust-malloc/Makefile
 	tests/Makefile
 	tests/hello/Makefile
+	tests/fork/Makefile
 	tests/ust-basic-tracing/Makefile
 	tests/ust-multi-test/Makefile
-	tests/hello2/Makefile
-	tests/basic/Makefile
-	tests/basic_long/Makefile
-	tests/fork/Makefile
-	tests/simple_include/Makefile
-	tests/snprintf/Makefile
-	tests/test-nevents/Makefile
-	tests/test-libustinstr-malloc/Makefile
-	tests/dlopen/Makefile
-	tests/same_line_marker/Makefile
-	tests/trace_event/Makefile
-	tests/tracepoint/Makefile
-	tests/tracepoint/benchmark/Makefile
-	tests/register_test/Makefile
-	tests/libustctl_function_tests/Makefile
-	tests/exit-fast/Makefile
 	lttng-ust.pc
 ])
 AC_OUTPUT

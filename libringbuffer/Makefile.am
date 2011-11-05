@@ -3,14 +3,18 @@ AM_CFLAGS = -fno-strict-aliasing
 
 noinst_LTLIBRARIES = libringbuffer.la
 
-noinst_HEADERS = \
-	smp.h
-
 libringbuffer_la_SOURCES = \
 	shm.c \
+	shm.h \
 	smp.c \
+	shm.h shm_types.h shm_internal.h \
 	ring_buffer_backend.c \
-	ring_buffer_frontend.c
+	ring_buffer_frontend.c \
+	api.h \
+	backend.h backend_internal.h backend_types.h \
+	frontend_api.h frontend.h frontend_internal.h frontend_types.h \
+	nohz.h
+	
 
 libringbuffer_la_LDFLAGS = -no-undefined -version-info 0:0:0
 
