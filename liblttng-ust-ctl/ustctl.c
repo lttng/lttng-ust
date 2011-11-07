@@ -23,6 +23,7 @@
 #include <lttng/usterr-signal-safe.h>
 #include <lttng/ust-comm.h>
 #include <lttng/ust-events.h>
+#include <sys/mman.h>
 
 #include "../libringbuffer/backend.h"
 #include "../libringbuffer/frontend.h"
@@ -422,6 +423,7 @@ struct lttng_ust_shm_handle *ustctl_map_channel(struct lttng_ust_object_data *ch
 	struct channel *chan;
 	size_t chan_size;
 	struct lttng_ust_lib_ring_buffer_config *config;
+	int ret;
 
 	handle = channel_handle_create(chan_data->shm_fd,
 		chan_data->wait_fd,
@@ -474,6 +476,15 @@ struct lttng_ust_shm_handle *ustctl_map_channel(struct lttng_ust_object_data *ch
 		channel_destroy(chan, handle, 1);
 		return NULL;
 	}
+	/* Replace the object table pointer. */
+	ret = munmap(handle->table->objects[0].memory_map,
+		handle->table->objects[0].memory_map_size);
+	if (ret) {
+		perror("munmap");
+		assert(0);
+	}
+	handle->table->objects[0].memory_map = (char *) handle->shadow_chan;
+	handle->table->objects[0].is_shadow = 1;
 	return handle;
 }
 

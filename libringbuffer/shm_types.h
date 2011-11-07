@@ -19,6 +19,7 @@ struct shm_object {
 	int shm_fd;	/* shm fd */
 	int wait_fd[2];	/* fd for wait/wakeup */
 	char *memory_map;
+	int is_shadow;
 	size_t memory_map_size;
 	size_t allocated_len;
 };

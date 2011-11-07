@@ -203,11 +203,13 @@ void shmp_object_destroy(struct shm_object *obj)
 {
 	int ret, i;
 
-        ret = munmap(obj->memory_map, obj->memory_map_size);
-        if (ret) {
-                PERROR("umnmap");
-                assert(0);
-        }
+	if (!obj->is_shadow) {
+		ret = munmap(obj->memory_map, obj->memory_map_size);
+		if (ret) {
+			PERROR("umnmap");
+			assert(0);
+		}
+	}
 	ret = close(obj->shm_fd);
 	if (ret) {
 		PERROR("close");

@@ -161,7 +161,7 @@ static const struct lttng_ust_lib_ring_buffer_config client_config = {
 	.client_type = LTTNG_CLIENT_TYPE,
 };
 
-const struct lttng_ust_lib_ring_buffer_config *LTTNG_CLIENT_CALLBACKS = &client_config;
+const struct lttng_ust_lib_ring_buffer_client_cb *LTTNG_CLIENT_CALLBACKS = &client_config.cb;
 
 static
 struct ltt_channel *_channel_create(const char *name,

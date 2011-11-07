@@ -339,9 +339,9 @@ int lttng_add_procname_to_ctx(struct lttng_ctx **ctx);
 void lttng_context_vtid_reset(void);
 void lttng_context_vpid_reset(void);
 
-const struct lttng_ust_lib_ring_buffer_config *lttng_client_callbacks_metadata;
-const struct lttng_ust_lib_ring_buffer_config *lttng_client_callbacks_discard;
-const struct lttng_ust_lib_ring_buffer_config *lttng_client_callbacks_overwrite;
+const struct lttng_ust_lib_ring_buffer_client_cb *lttng_client_callbacks_metadata;
+const struct lttng_ust_lib_ring_buffer_client_cb *lttng_client_callbacks_discard;
+const struct lttng_ust_lib_ring_buffer_client_cb *lttng_client_callbacks_overwrite;
 
 struct cds_list_head ltt_transport_list;
 struct ltt_transport *ltt_transport_find(const char *name);
