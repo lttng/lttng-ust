@@ -161,6 +161,12 @@ struct lttng_ust_lib_ring_buffer_config {
 	 */
 	unsigned int tsc_bits;
 	struct lttng_ust_lib_ring_buffer_client_cb cb;
+	/*
+	 * client_type is used by the consumer process (which is in a
+	 * different address space) to lookup the appropriate client
+	 * callbacks and update the cb pointers.
+	 */
+	int client_type;
 };
 
 /*

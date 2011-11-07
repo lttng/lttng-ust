@@ -16,4 +16,6 @@
 	ltt_ring_buffer_client_discard_init
 #define RING_BUFFER_MODE_TEMPLATE_EXIT	\
 	ltt_ring_buffer_client_discard_exit
+#define LTTNG_CLIENT_TYPE			LTTNG_CLIENT_DISCARD
+#define LTTNG_CLIENT_CALLBACKS			lttng_client_callbacks_discard
 #include "ltt-ring-buffer-client.h"

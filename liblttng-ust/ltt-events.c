@@ -51,7 +51,6 @@ void ust_unlock(void)
 }
 
 static CDS_LIST_HEAD(sessions);
-static CDS_LIST_HEAD(ltt_transport_list);
 
 /*
  * Pending probes hash table, containing the registered ltt events for
@@ -285,17 +284,6 @@ int ltt_event_disable(struct ltt_event *event)
 	if (!old)
 		return -EEXIST;
 	return 0;
-}
-
-static struct ltt_transport *ltt_transport_find(const char *name)
-{
-	struct ltt_transport *transport;
-
-	cds_list_for_each_entry(transport, &ltt_transport_list, node) {
-		if (!strcmp(transport->name, name))
-			return transport;
-	}
-	return NULL;
 }
 
 struct ltt_channel *ltt_channel_create(struct ltt_session *session,
@@ -977,28 +965,6 @@ skip_session:
 	session->metadata_dumped = 1;
 end:
 	return ret;
-}
-
-/**
- * ltt_transport_register - LTT transport registration
- * @transport: transport structure
- *
- * Registers a transport which can be used as output to extract the data out of
- * LTTng. Called with ust_lock held.
- */
-void ltt_transport_register(struct ltt_transport *transport)
-{
-	cds_list_add_tail(&transport->node, &ltt_transport_list);
-}
-
-/**
- * ltt_transport_unregister - LTT transport unregistration
- * @transport: transport structure
- * Called with ust_lock held.
- */
-void ltt_transport_unregister(struct ltt_transport *transport)
-{
-	cds_list_del(&transport->node);
 }
 
 void lttng_ust_events_exit(void)

@@ -22,6 +22,7 @@
 #include <lttng/ust-abi.h>
 #include <lttng/usterr-signal-safe.h>
 #include <lttng/ust-comm.h>
+#include <lttng/ust-events.h>
 
 #include "../libringbuffer/backend.h"
 #include "../libringbuffer/frontend.h"
@@ -420,6 +421,7 @@ struct lttng_ust_shm_handle *ustctl_map_channel(struct lttng_ust_object_data *ch
 	struct lttng_ust_shm_handle *handle;
 	struct channel *chan;
 	size_t chan_size;
+	struct lttng_ust_lib_ring_buffer_config *config;
 
 	handle = channel_handle_create(chan_data->shm_fd,
 		chan_data->wait_fd,
@@ -451,10 +453,27 @@ struct lttng_ust_shm_handle *ustctl_map_channel(struct lttng_ust_object_data *ch
 	memcpy(handle->shadow_chan, chan, chan_size);
 	/*
 	 * The callback pointers in the producer are invalid in the
-	 * consumer. Zero them out.
+	 * consumer. We need to look them up here.
 	 */
-	memset(&handle->shadow_chan->backend.config.cb, 0,
-		sizeof(handle->shadow_chan->backend.config.cb));
+	config = &handle->shadow_chan->backend.config;
+	switch (config->client_type) {
+	case LTTNG_CLIENT_METADATA:
+		memcpy(&config->cb, lttng_client_callbacks_metadata,
+			sizeof(config->cb));
+		break;
+	case LTTNG_CLIENT_DISCARD:
+		memcpy(&config->cb, lttng_client_callbacks_discard,
+			sizeof(config->cb));
+		break;
+	case LTTNG_CLIENT_OVERWRITE:
+		memcpy(&config->cb, lttng_client_callbacks_overwrite,
+			sizeof(config->cb));
+		break;
+	default:
+		ERR("Unknown client type %d", config->client_type);
+		channel_destroy(chan, handle, 1);
+		return NULL;
+	}
 	return handle;
 }
 

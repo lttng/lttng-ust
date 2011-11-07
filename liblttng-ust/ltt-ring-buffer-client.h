@@ -375,7 +375,10 @@ static const struct lttng_ust_lib_ring_buffer_config client_config = {
 	.oops = RING_BUFFER_OOPS_CONSISTENCY,
 	.ipi = RING_BUFFER_NO_IPI_BARRIER,
 	.wakeup = RING_BUFFER_WAKEUP_BY_WRITER,
+	.client_type = LTTNG_CLIENT_TYPE,
 };
+
+const struct lttng_ust_lib_ring_buffer_config *LTTNG_CLIENT_CALLBACKS = &client_config;
 
 static
 struct ltt_channel *_channel_create(const char *name,

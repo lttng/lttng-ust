@@ -19,7 +19,10 @@
  */
 
 #include <lttng/usterr-signal-safe.h>
+#include <lttng/ust-events.h>
 #include <stdlib.h>
+
+CDS_LIST_HEAD(ltt_transport_list);
 
 volatile enum ust_loglevel ust_loglevel;
 
@@ -34,4 +37,37 @@ void init_usterr(void)
 		else
 			ust_loglevel = UST_LOGLEVEL_NORMAL;
 	}
+}
+
+struct ltt_transport *ltt_transport_find(const char *name)
+{
+	struct ltt_transport *transport;
+
+	cds_list_for_each_entry(transport, &ltt_transport_list, node) {
+		if (!strcmp(transport->name, name))
+			return transport;
+	}
+	return NULL;
+}
+
+/**
+ * ltt_transport_register - LTT transport registration
+ * @transport: transport structure
+ *
+ * Registers a transport which can be used as output to extract the data out of
+ * LTTng. Called with ust_lock held.
+ */
+void ltt_transport_register(struct ltt_transport *transport)
+{
+	cds_list_add_tail(&transport->node, &ltt_transport_list);
+}
+
+/**
+ * ltt_transport_unregister - LTT transport unregistration
+ * @transport: transport structure
+ * Called with ust_lock held.
+ */
+void ltt_transport_unregister(struct ltt_transport *transport)
+{
+	cds_list_del(&transport->node);
 }

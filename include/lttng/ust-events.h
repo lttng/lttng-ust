@@ -23,6 +23,17 @@ struct ltt_channel;
 struct ltt_session;
 struct lttng_ust_lib_ring_buffer_ctx;
 
+/*
+ * LTTng client type enumeration. Used by the consumer to map the
+ * callbacks from its own address space.
+ */
+enum lttng_client_types {
+	LTTNG_CLIENT_METADATA = 0,
+	LTTNG_CLIENT_DISCARD = 1,
+	LTTNG_CLIENT_OVERWRITE = 2,
+	LTTNG_NR_CLIENT_TYPES,
+};
+
 /* Type description */
 
 /* Update the astract_types name table in lttng-types.c along with this enum */
@@ -327,5 +338,12 @@ int lttng_add_pthread_id_to_ctx(struct lttng_ctx **ctx);
 int lttng_add_procname_to_ctx(struct lttng_ctx **ctx);
 void lttng_context_vtid_reset(void);
 void lttng_context_vpid_reset(void);
+
+const struct lttng_ust_lib_ring_buffer_config *lttng_client_callbacks_metadata;
+const struct lttng_ust_lib_ring_buffer_config *lttng_client_callbacks_discard;
+const struct lttng_ust_lib_ring_buffer_config *lttng_client_callbacks_overwrite;
+
+struct cds_list_head ltt_transport_list;
+struct ltt_transport *ltt_transport_find(const char *name);
 
 #endif /* _UST_LTTNG_EVENTS_H */

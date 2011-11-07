@@ -452,6 +452,7 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 
 	/* Calculate the shm allocation layout */
 	shmsize = sizeof(struct channel);
+	shmsize += offset_align(shmsize, __alignof__(struct lttng_ust_lib_ring_buffer_shmp));
 	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU)
 		shmsize += sizeof(struct lttng_ust_lib_ring_buffer_shmp) * num_possible_cpus();
 	else
@@ -461,7 +462,7 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 	if (!shmobj)
 		goto error_append;
 	/* struct channel is at object 0, offset 0 (hardcoded) */
-	set_shmp(handle->chan, zalloc_shm(shmobj, sizeof(struct channel)));
+	set_shmp(handle->chan, zalloc_shm(shmobj, shmsize));
 	assert(handle->chan._ref.index == 0);
 	assert(handle->chan._ref.offset == 0);
 	chan = shmp(handle, handle->chan);
