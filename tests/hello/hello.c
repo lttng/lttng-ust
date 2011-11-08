@@ -33,7 +33,7 @@
 void inthandler(int sig)
 {
 	printf("in SIGUSR1 handler\n");
-	tracepoint(ust_tests_hello_tptest_sighandler);
+	tracepoint(ust_tests_hello, tptest_sighandler);
 }
 
 int init_int_handler(void)
@@ -80,7 +80,7 @@ int main(int argc, char **argv)
 	//for (i = 0; i < 50; i++) {
 	for (i = 0; i < 1000000; i++) {
 		netint = htonl(i);
-		tracepoint(ust_tests_hello_tptest, i, netint, values,
+		tracepoint(ust_tests_hello, tptest, i, netint, values,
 			   text, strlen(text), dbl, flt);
 		//usleep(100000);
 	}

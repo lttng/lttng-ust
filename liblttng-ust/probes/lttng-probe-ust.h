@@ -24,7 +24,7 @@
 
 #include <lttng/tracepoint.h>
 
-TRACEPOINT_EVENT(lttng_metadata,
+TRACEPOINT_EVENT(lttng, metadata,
 
 	TP_PROTO(const char *str),
 

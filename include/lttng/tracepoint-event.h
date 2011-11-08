@@ -52,20 +52,20 @@ extern "C" {
 #endif
 
 #undef TRACEPOINT_EVENT
-#define TRACEPOINT_EVENT(name, proto, args, fields)		\
-	_DEFINE_TRACEPOINT(name)
+#define TRACEPOINT_EVENT(provider, name, proto, args, fields)		\
+	_DEFINE_TRACEPOINT(provider, name)
 
 #undef TRACEPOINT_EVENT_INSTANCE
-#define TRACEPOINT_EVENT_INSTANCE(template, name, proto, args)	\
-	_DEFINE_TRACEPOINT(name)
+#define TRACEPOINT_EVENT_INSTANCE(provider, template, name, proto, args)	\
+	_DEFINE_TRACEPOINT(provider, name)
 
 #undef TRACEPOINT_EVENT_NOARGS
-#define TRACEPOINT_EVENT_NOARGS(name, fields)			\
-	_DEFINE_TRACEPOINT(name)
+#define TRACEPOINT_EVENT_NOARGS(provider, name, fields)			\
+	_DEFINE_TRACEPOINT(provider, name)
 
 #undef TRACEPOINT_EVENT_INSTANCE_NOARGS
-#define TRACEPOINT_EVENT_INSTANCE_NOARGS(template, name)	\
-	_DEFINE_TRACEPOINT(name)
+#define TRACEPOINT_EVENT_INSTANCE_NOARGS(provider, template, name)	\
+	_DEFINE_TRACEPOINT(provider, name)
 
 #undef TRACEPOINT_INCLUDE
 #undef __TRACEPOINT_INCLUDE

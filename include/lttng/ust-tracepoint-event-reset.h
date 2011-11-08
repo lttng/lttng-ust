@@ -34,13 +34,13 @@
 #define TP_FIELDS(args...)
 
 #undef TRACEPOINT_EVENT_CLASS
-#define TRACEPOINT_EVENT_CLASS(_name, _proto, _args, _fields)
+#define TRACEPOINT_EVENT_CLASS(_provider, _name, _proto, _args, _fields)
 
 #undef TRACEPOINT_EVENT_CLASS_NOARGS
-#define TRACEPOINT_EVENT_CLASS_NOARGS(_name, _fields)
+#define TRACEPOINT_EVENT_CLASS_NOARGS(_provider, _name, _fields)
 
 #undef TRACEPOINT_EVENT_INSTANCE
-#define TRACEPOINT_EVENT_INSTANCE(_template, _name, _proto, _args)
+#define TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _proto, _args)
 
 #undef TRACEPOINT_EVENT_INSTANCE_NOARGS
-#define TRACEPOINT_EVENT_INSTANCE_NOARGS(_template, _name)
+#define TRACEPOINT_EVENT_INSTANCE_NOARGS(_provider, _template, _name)

@@ -25,11 +25,11 @@
 #include <lttng/tracepoint.h>
 #include <sys/types.h>
 
-TRACEPOINT_EVENT_NOARGS(ust_tests_fork_before_fork,
+TRACEPOINT_EVENT_NOARGS(ust_tests_fork, before_fork,
 	TP_FIELDS()
 )
 
-TRACEPOINT_EVENT(ust_tests_fork_after_fork_child,
+TRACEPOINT_EVENT(ust_tests_fork, after_fork_child,
 	TP_PROTO(pid_t pid),
 	TP_ARGS(pid),
 	TP_FIELDS(
@@ -37,11 +37,11 @@ TRACEPOINT_EVENT(ust_tests_fork_after_fork_child,
 	)
 )
 
-TRACEPOINT_EVENT_NOARGS(ust_tests_fork_after_fork_parent,
+TRACEPOINT_EVENT_NOARGS(ust_tests_fork, after_fork_parent,
 	TP_FIELDS()
 )
 
-TRACEPOINT_EVENT_NOARGS(ust_tests_fork_after_exec,
+TRACEPOINT_EVENT_NOARGS(ust_tests_fork, after_exec,
 	TP_FIELDS()
 )
 

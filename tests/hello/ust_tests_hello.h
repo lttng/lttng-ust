@@ -28,7 +28,7 @@ extern "C" {
 
 #include <lttng/tracepoint.h>
 
-TRACEPOINT_EVENT(ust_tests_hello_tptest,
+TRACEPOINT_EVENT(ust_tests_hello, tptest,
 	TP_PROTO(int anint, int netint, long *values,
 		 char *text, size_t textlen,
 		 double doublearg, float floatarg),
@@ -52,7 +52,7 @@ TRACEPOINT_EVENT(ust_tests_hello_tptest,
 	)
 )
 
-TRACEPOINT_EVENT_NOARGS(ust_tests_hello_tptest_sighandler,
+TRACEPOINT_EVENT_NOARGS(ust_tests_hello, tptest_sighandler,
 	TP_FIELDS()
 )
 

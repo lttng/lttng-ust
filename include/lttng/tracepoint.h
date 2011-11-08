@@ -47,7 +47,8 @@ struct tracepoint {
  * Tracepoints should be added to the instrumented code using the
  * "tracepoint()" macro.
  */
-#define tracepoint(name, args...)	__trace_##name(args)
+#define tracepoint(provider, name, args...)	\
+		__trace_##provider##___##name(args)
 
 /*
  * it_func[0] is never NULL because there is at least one element in the array
@@ -75,10 +76,10 @@ struct tracepoint {
 #define TP_PROTO(args...)	args
 #define TP_ARGS(args...)	args
 
-#define __CHECK_TRACE(name, proto, args)				\
+#define __CHECK_TRACE(provider, name, proto, args)			\
 	do {								\
-		if (caa_unlikely(__tracepoint_##name.state))		\
-			__DO_TRACE(&__tracepoint_##name,		\
+		if (caa_unlikely(__tracepoint_##provider##___##name.state))	\
+			__DO_TRACE(&__tracepoint_##provider##___##name,	\
 				TP_PROTO(proto), TP_ARGS(args));	\
 	} while (0)
 
@@ -87,23 +88,23 @@ struct tracepoint {
  * not add unwanted padding between the beginning of the section and the
  * structure. Force alignment to the same alignment as the section start.
  */
-#define __DECLARE_TRACEPOINT(name, proto, args, data_proto, data_args)	\
-	extern struct tracepoint __tracepoint_##name;			\
-	static inline void __trace_##name(proto)			\
+#define __DECLARE_TRACEPOINT(provider, name, proto, args, data_proto, data_args)	\
+	extern struct tracepoint __tracepoint_##provider##___##name;	\
+	static inline void __trace_##provider##___##name(proto)		\
 	{								\
-		__CHECK_TRACE(name, TP_PROTO(data_proto),		\
+		__CHECK_TRACE(provider, name, TP_PROTO(data_proto),	\
 			      TP_ARGS(data_args));			\
 	}								\
 	static inline int						\
-	__register_trace_##name(void (*probe)(data_proto), void *data)	\
+	__register_trace_##provider##___##name(void (*probe)(data_proto), void *data)	\
 	{								\
-		return __tracepoint_probe_register(#name, (void *)probe,\
+		return __tracepoint_probe_register(#provider ":" #name, (void *) probe,	\
 						 data);			\
 	}								\
 	static inline int						\
-	__unregister_trace_##name(void (*probe)(data_proto), void *data)\
+	__unregister_trace_##provider##___##name(void (*probe)(data_proto), void *data)	\
 	{								\
-		return __tracepoint_probe_unregister(#name, (void *)probe, \
+		return __tracepoint_probe_unregister(#provider ":" #name, (void *) probe, \
 						   data);		\
 	}
 
@@ -121,11 +122,11 @@ struct tracepoint {
  * DECLARE_TRACEPOINT() passes "proto" as the tracepoint protoype and
  * "void *__tp_cb_data, proto" as the callback prototype.
  */
-#define _DECLARE_TRACEPOINT_NOARGS(name)				\
-	__DECLARE_TRACEPOINT(name, void, , void *__tp_cb_data, __tp_cb_data)
+#define _DECLARE_TRACEPOINT_NOARGS(provider, name)			\
+	__DECLARE_TRACEPOINT(provider, name, void, , void *__tp_cb_data, __tp_cb_data)
 
-#define _DECLARE_TRACEPOINT(name, proto, args)				\
-	__DECLARE_TRACEPOINT(name, TP_PARAMS(proto), TP_PARAMS(args),	\
+#define _DECLARE_TRACEPOINT(provider, name, proto, args)		\
+	__DECLARE_TRACEPOINT(provider, name, TP_PARAMS(proto), TP_PARAMS(args),	\
 			TP_PARAMS(void *__tp_cb_data, proto),		\
 			TP_PARAMS(__tp_cb_data, args))
 
@@ -133,21 +134,22 @@ struct tracepoint {
  * __tracepoints_ptrs section is not const (read-only) to let the linker update
  * the pointer, allowing PIC code.
  */
-#define _DEFINE_TRACEPOINT(name)					\
-	static const char __tpstrtab_##name[]				\
-	__attribute__((section("__tracepoints_strings"))) = #name;	\
-	struct tracepoint __tracepoint_##name				\
+#define _DEFINE_TRACEPOINT(provider, name)				\
+	static const char __tpstrtab_##provider##___##name[]		\
+	__attribute__((section("__tracepoints_strings"))) =		\
+		#provider ":" #name;					\
+	struct tracepoint __tracepoint_##provider##___##name		\
 	__attribute__((section("__tracepoints"))) =			\
-		{ __tpstrtab_##name, 0, NULL };				\
-	static struct tracepoint * __tracepoint_ptr_##name		\
+		{ __tpstrtab_##provider##___##name, 0, NULL };		\
+	static struct tracepoint * __tracepoint_ptr_##provider##___##name	\
 	__attribute__((used, section("__tracepoints_ptrs"))) =		\
-		&__tracepoint_##name;
+		&__tracepoint_##provider##___##name;
 
 
-#define __register_tracepoint(name, probe, data)			\
-		__register_trace_##name(probe, data)
-#define __unregister_tracepoint(name, probe, data)			\
-		__unregister_trace_##name(probe, data)
+#define __register_tracepoint(provider, name, probe, data)		\
+		__register_trace_##provider##___##name(probe, data)
+#define __unregister_tracepoint(provider, name, probe, data)		\
+		__unregister_trace_##provider##___##name(probe, data)
 
 /*
  * Connect a probe to a tracepoint.
@@ -203,7 +205,7 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
  *
  * In short, an example:
  *
- * TRACEPOINT_EVENT(< [com_company_]project_[component_]event >,
+ * TRACEPOINT_EVENT(< [com_company_]project[_component] >, < event >,
  *     TP_PROTO(int arg0, void *arg1, char *string, size_t strlen,
  *              long *arg4, size_t arg4_len),
  *     TP_ARGS(arg0, arg1, string, strlen, arg4, arg4_len),
@@ -233,20 +235,20 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
  * We define a tracepoint, its arguments, and its 'fast binary record'
  * layout.
  *
- * Firstly, name your tracepoint via TRACEPOINT_EVENT(name,
+ * Firstly, name your tracepoint via TRACEPOINT_EVENT(provider, name,
  *
- * The name should be a proper C99 identifier.
- * The "name" MUST follow these rules to ensure no namespace clash
- * occurs:
+ * The provider and name should be a proper C99 identifier.
+ * The "provider" and "name" MUST follow these rules to ensure no
+ * namespace clash occurs:
  *
  * For projects (applications and libraries) for which an entity
  * specific to the project controls the source code and thus its
  * tracepoints (typically with a scope larger than a single company):
  *
  * either:
- *   project_component_event
+ *   project_component, event
  * or:
- *   project_event
+ *   project, event
  *
  * Where "project" is the name of the project,
  *       "component" is the name of the project component (which may
@@ -260,9 +262,9 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
  * "com_" prefix should be used:
  *
  * either:
- *   com_company_project_component_event
+ *   com_company_project_component, event
  * or:
- *   com_company_project_event
+ *   com_company_project, event
  *
  * Where "company" is the name of the company,
  *       "project" is the name of the project,
@@ -272,11 +274,13 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
  *       (optional),
  *       "event" is the name of the tracepoint event.
  *
+ * the provider identifier is limited to 127 characters.
+ * the "event" identifier is limited to 127 characters.
  *
  * As an example, let's consider a user-space application "someproject"
  * that would have an internal thread scheduler:
  *
- *  TRACEPOINT_EVENT(someproject_sched_switch,
+ *  TRACEPOINT_EVENT(someproject_sched, switch,
  *
  *	*
  *	* A function has a regular function arguments
@@ -340,22 +344,22 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
  * usage of other macros controlling TRACEPOINT_EVENT.
  */
 
-#define TRACEPOINT_EVENT(name, proto, args, fields)			\
-	_DECLARE_TRACEPOINT(name, TP_PARAMS(proto), TP_PARAMS(args))
+#define TRACEPOINT_EVENT(provider, name, proto, args, fields)		\
+	_DECLARE_TRACEPOINT(provider, name, TP_PARAMS(proto), TP_PARAMS(args))
 
-#define TRACEPOINT_EVENT_CLASS(name, proto, args, fields)
-#define TRACEPOINT_EVENT_INSTANCE(template, name, proto, args)		\
-	_DECLARE_TRACEPOINT(name, TP_PARAMS(proto), TP_PARAMS(args))
+#define TRACEPOINT_EVENT_CLASS(provider, name, proto, args, fields)
+#define TRACEPOINT_EVENT_INSTANCE(provider, template, name, proto, args)\
+	_DECLARE_TRACEPOINT(provider, name, TP_PARAMS(proto), TP_PARAMS(args))
 
 /*
  * Declaration of tracepoints that take 0 argument.
  */
-#define TRACEPOINT_EVENT_NOARGS(name, fields)				\
-	_DECLARE_TRACEPOINT_NOARGS(name)
+#define TRACEPOINT_EVENT_NOARGS(provider, name, fields)			\
+	_DECLARE_TRACEPOINT_NOARGS(provider, name)
 
-#define TRACEPOINT_EVENT_CLASS_NOARGS(name, fields)
-#define TRACEPOINT_EVENT_INSTANCE_NOARGS(template, name)		\
-	_DECLARE_TRACEPOINT_NOARGS(name)
+#define TRACEPOINT_EVENT_CLASS_NOARGS(provider, name, fields)
+#define TRACEPOINT_EVENT_INSTANCE_NOARGS(provider, template, name)	\
+	_DECLARE_TRACEPOINT_NOARGS(provider, name)
 
 #endif /* #ifndef TRACEPOINT_EVENT */
 
@@ -401,7 +405,7 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
  *    is the name of the tracepoint, the second field is the loglevel
  *    name.
  *
- *      TRACEPOINT_LOGLEVEL(< [com_company_]project_[component_]event >,
+ *      TRACEPOINT_LOGLEVEL(< [com_company_]project[_component] >, < event >,
  *              < loglevel_name >)
  *
  * The TRACEPOINT_SYSTEM must be defined when declaring a

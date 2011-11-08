@@ -25,7 +25,7 @@ int main()
 {
 	printf("IN FORK2\n");
 
-	tracepoint(ust_tests_fork_after_exec);
+	tracepoint(ust_tests_fork, after_exec);
 
 	return 0;
 }

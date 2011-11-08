@@ -718,7 +718,7 @@ int _ltt_event_metadata_statedump(struct ltt_session *session,
 
 	ret = lttng_metadata_printf(session,
 		"event {\n"
-		"	name = %s;\n"
+		"	name = \"%s\";\n"
 		"	id = %u;\n"
 		"	stream_id = %u;\n",
 		event->desc->name,

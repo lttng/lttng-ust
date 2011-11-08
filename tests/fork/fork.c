@@ -35,7 +35,7 @@ int main(int argc, char **argv, char *env[])
 	}
 
 	printf("Fork test program, parent pid is %d\n", getpid());
-	tracepoint(ust_tests_fork_before_fork);
+	tracepoint(ust_tests_fork, before_fork);
 
 	result = fork();
 	if (result == -1) {
@@ -47,7 +47,7 @@ int main(int argc, char **argv, char *env[])
 
 		printf("Child pid is %d\n", getpid());
 
-		tracepoint(ust_tests_fork_after_fork_child, getpid());
+		tracepoint(ust_tests_fork, after_fork_child, getpid());
 
 		result = execve(argv[1], args, env);
 		if (result == -1) {
@@ -55,7 +55,7 @@ int main(int argc, char **argv, char *env[])
 			return 1;
 		}
 	} else {
-		tracepoint(ust_tests_fork_after_fork_parent);
+		tracepoint(ust_tests_fork, after_fork_parent);
 	}
 
 	return 0;
