@@ -70,7 +70,7 @@ struct channel_backend {
 	int extra_reader_sb:1;		/* Bool: has extra reader subbuffer */
 	unsigned long num_subbuf;	/* Number of sub-buffers for writer */
 	u64 start_tsc;			/* Channel creation TSC value */
-	void *priv;			/* Client-specific information */
+	DECLARE_SHMP(void *, priv_data);/* Client-specific information */
 	struct lttng_ust_lib_ring_buffer_config config; /* Ring buffer configuration */
 	char name[NAME_MAX];		/* Channel name */
 	struct lttng_ust_lib_ring_buffer_shmp buf[];

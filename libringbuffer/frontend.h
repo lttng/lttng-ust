@@ -34,11 +34,19 @@
  * buf_addr is a pointer the the beginning of the preallocated buffer contiguous
  * address mapping. It is used only by RING_BUFFER_STATIC configuration. It can
  * be set to NULL for other backends.
+ *
+ * priv_data (output) is set to a pointer into a "priv_data_len"-sized
+ * memory area for client-specific data. This memory is managed by lib
+ * ring buffer. priv_data_align is the alignment required for the
+ * private data area.
  */
 
 extern
 struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buffer_config *config,
-				const char *name, void *priv,
+				const char *name,
+				void **priv_data,
+				size_t priv_data_align,
+				size_t priv_data_size,
 				void *buf_addr,
 				size_t subbuf_size, size_t num_subbuf,
 				unsigned int switch_timer_interval,
@@ -57,12 +65,11 @@ int channel_handle_add_stream(struct lttng_ust_shm_handle *handle,
 		int shm_fd, int wait_fd, uint64_t memory_map_size);
 
 /*
- * channel_destroy returns the private data pointer. It finalizes all channel's
- * buffers, waits for readers to release all references, and destroys the
- * channel.
+ * channel_destroy finalizes all channel's buffers, waits for readers to
+ * release all references, and destroys the channel.
  */
 extern
-void *channel_destroy(struct channel *chan, struct lttng_ust_shm_handle *handle,
+void channel_destroy(struct channel *chan, struct lttng_ust_shm_handle *handle,
 		int shadow);
 
 

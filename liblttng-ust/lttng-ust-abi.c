@@ -419,9 +419,10 @@ int lttng_abi_create_channel(int session_objd,
 		session->metadata = chan;
 		lttng_metadata_create_events(chan_objd);
 	}
-
 	/* The channel created holds a reference on the session */
 	objd_ref(session_objd);
+	/* Copy of session UUID for consumer (availability through shm) */
+	memcpy(chan->uuid, session->uuid, sizeof(session->uuid));
 
 	return chan_objd;
 

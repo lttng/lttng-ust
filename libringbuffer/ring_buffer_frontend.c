@@ -174,7 +174,7 @@ int lib_ring_buffer_create(struct lttng_ust_lib_ring_buffer *buf,
 {
 	const struct lttng_ust_lib_ring_buffer_config *config = &chanb->config;
 	struct channel *chan = caa_container_of(chanb, struct channel, backend);
-	void *priv = chanb->priv;
+	void *priv = channel_get_private(chan);
 	unsigned int num_subbuf;
 	size_t subbuf_header_size;
 	u64 tsc;
@@ -409,7 +409,8 @@ static void channel_free(struct channel *chan, struct lttng_ust_shm_handle *hand
  * channel_create - Create channel.
  * @config: ring buffer instance configuration
  * @name: name of the channel
- * @priv: ring buffer client private data
+ * @priv_data: ring buffer client private data area pointer (output)
+ * @priv_data_size: length, in bytes, of the private data area.
  * @buf_addr: pointer the the beginning of the preallocated buffer contiguous
  *            address mapping. It is used only by RING_BUFFER_STATIC
  *            configuration. It can be set to NULL for other backends.
@@ -424,14 +425,17 @@ static void channel_free(struct channel *chan, struct lttng_ust_shm_handle *hand
  * Returns NULL on failure.
  */
 struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buffer_config *config,
-		   const char *name, void *priv, void *buf_addr,
-		   size_t subbuf_size,
+		   const char *name,
+		   void **priv_data,
+		   size_t priv_data_align,
+		   size_t priv_data_size,
+		   void *buf_addr, size_t subbuf_size,
 		   size_t num_subbuf, unsigned int switch_timer_interval,
 		   unsigned int read_timer_interval,
 		   int *shm_fd, int *wait_fd, uint64_t *memory_map_size)
 {
 	int ret, cpu;
-	size_t shmsize;
+	size_t shmsize, chansize;
 	struct channel *chan;
 	struct lttng_ust_shm_handle *handle;
 	struct shm_object *shmobj;
@@ -457,19 +461,37 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 		shmsize += sizeof(struct lttng_ust_lib_ring_buffer_shmp) * num_possible_cpus();
 	else
 		shmsize += sizeof(struct lttng_ust_lib_ring_buffer_shmp);
+	chansize = shmsize;
+	shmsize += offset_align(shmsize, priv_data_align);
+	shmsize += priv_data_size;
 
 	shmobj = shm_object_table_append(handle->table, shmsize);
 	if (!shmobj)
 		goto error_append;
 	/* struct channel is at object 0, offset 0 (hardcoded) */
-	set_shmp(handle->chan, zalloc_shm(shmobj, shmsize));
+	set_shmp(handle->chan, zalloc_shm(shmobj, chansize));
 	assert(handle->chan._ref.index == 0);
 	assert(handle->chan._ref.offset == 0);
 	chan = shmp(handle, handle->chan);
 	if (!chan)
 		goto error_append;
 
-	ret = channel_backend_init(&chan->backend, name, config, priv,
+	/* space for private data */
+	if (priv_data_size) {
+		DECLARE_SHMP(void, priv_data_alloc);
+
+		align_shm(shmobj, priv_data_align);
+		chan->priv_data_offset = shmobj->allocated_len;
+		set_shmp(priv_data_alloc, zalloc_shm(shmobj, priv_data_size));
+		if (!shmp(handle, priv_data_alloc))
+			goto error_append;
+		*priv_data = channel_get_private(chan);
+	} else {
+		chan->priv_data_offset = -1;
+		*priv_data = NULL;
+	}
+
+	ret = channel_backend_init(&chan->backend, name, config,
 				   subbuf_size, num_subbuf, handle);
 	if (ret)
 		goto error_backend_init;
@@ -570,19 +592,17 @@ void channel_release(struct channel *chan, struct lttng_ust_shm_handle *handle,
  * Call "destroy" callback, finalize channels, decrement the channel
  * reference count. Note that when readers have completed data
  * consumption of finalized channels, get_subbuf() will return -ENODATA.
- * They should release their handle at that point.  Returns the private
- * data pointer.
+ * They should release their handle at that point. 
  */
-void *channel_destroy(struct channel *chan, struct lttng_ust_shm_handle *handle,
+void channel_destroy(struct channel *chan, struct lttng_ust_shm_handle *handle,
 		int shadow)
 {
 	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
-	void *priv;
 	int cpu;
 
 	if (shadow) {
 		channel_release(chan, handle, shadow);
-		return NULL;
+		return;
 	}
 
 	channel_unregister_notifiers(chan, handle);
@@ -593,7 +613,7 @@ void *channel_destroy(struct channel *chan, struct lttng_ust_shm_handle *handle,
 
 			if (config->cb.buffer_finalize)
 				config->cb.buffer_finalize(buf,
-							   chan->backend.priv,
+							   channel_get_private(chan),
 							   cpu, handle);
 			if (buf->backend.allocated)
 				lib_ring_buffer_switch_slow(buf, SWITCH_FLUSH,
@@ -609,7 +629,7 @@ void *channel_destroy(struct channel *chan, struct lttng_ust_shm_handle *handle,
 		struct lttng_ust_lib_ring_buffer *buf = shmp(handle, chan->backend.buf[0].shmp);
 
 		if (config->cb.buffer_finalize)
-			config->cb.buffer_finalize(buf, chan->backend.priv, -1, handle);
+			config->cb.buffer_finalize(buf, channel_get_private(chan), -1, handle);
 		if (buf->backend.allocated)
 			lib_ring_buffer_switch_slow(buf, SWITCH_FLUSH,
 						handle);
@@ -627,9 +647,8 @@ void *channel_destroy(struct channel *chan, struct lttng_ust_shm_handle *handle,
 	 * sessiond/consumer are keeping a reference on the shm file
 	 * descriptor directly. No need to refcount.
 	 */
-	priv = chan->backend.priv;
 	channel_release(chan, handle, shadow);
-	return priv;
+	return;
 }
 
 struct lttng_ust_lib_ring_buffer *channel_get_ring_buffer(
@@ -1006,7 +1025,7 @@ void lib_ring_buffer_print_errors(struct channel *chan,
 				  struct lttng_ust_shm_handle *handle)
 {
 	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
-	void *priv = chan->backend.priv;
+	void *priv = channel_get_private(chan);
 
 	ERRMSG("ring buffer %s, cpu %d: %lu records written, "
 			  "%lu records overrun\n",

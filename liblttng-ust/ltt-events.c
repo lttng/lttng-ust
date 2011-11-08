@@ -295,7 +295,7 @@ struct ltt_channel *ltt_channel_create(struct ltt_session *session,
 				       int *shm_fd, int *wait_fd,
 				       uint64_t *memory_map_size)
 {
-	struct ltt_channel *chan;
+	struct ltt_channel *chan = NULL;
 	struct ltt_transport *transport;
 
 	if (session->been_active)
@@ -306,30 +306,25 @@ struct ltt_channel *ltt_channel_create(struct ltt_session *session,
 		       transport_name);
 		goto notransport;
 	}
-	chan = zmalloc(sizeof(struct ltt_channel));
-	if (!chan)
-		goto nomem;
-	chan->session = session;
-	chan->id = session->free_chan_id++;
 	/*
 	 * Note: the channel creation op already writes into the packet
 	 * headers. Therefore the "chan" information used as input
 	 * should be already accessible.
 	 */
-	transport->ops.channel_create("[lttng]", chan, buf_addr,
+	chan = transport->ops.channel_create("[lttng]", buf_addr,
 			subbuf_size, num_subbuf, switch_timer_interval,
 			read_timer_interval, shm_fd, wait_fd,
 			memory_map_size);
-	if (!chan->chan)
+	if (!chan)
 		goto create_error;
+	chan->session = session;
+	chan->id = session->free_chan_id++;
 	chan->enabled = 1;
 	chan->ops = &transport->ops;
 	cds_list_add(&chan->list, &session->chan);
 	return chan;
 
 create_error:
-	free(chan);
-nomem:
 notransport:
 active:
 	return NULL;
@@ -341,10 +336,9 @@ active:
 static
 void _ltt_channel_destroy(struct ltt_channel *chan)
 {
-	chan->ops->channel_destroy(chan);
 	cds_list_del(&chan->list);
 	lttng_destroy_context(chan->ctx);
-	free(chan);
+	chan->ops->channel_destroy(chan);
 }
 
 /*

@@ -216,7 +216,6 @@ struct lttng_ust_shm_handle;
 
 struct ltt_channel_ops {
 	struct ltt_channel *(*channel_create)(const char *name,
-				struct ltt_channel *ltt_chan,
 				void *buf_addr,
 				size_t subbuf_size, size_t num_subbuf,
 				unsigned int switch_timer_interval,
@@ -250,7 +249,12 @@ struct ltt_channel_ops {
 };
 
 struct ltt_channel {
-	unsigned int id;
+	/*
+	 * The pointers located in this private data are NOT safe to be
+	 * dereferenced by the consumer. The only operations the
+	 * consumer process is designed to be allowed to do is to read
+	 * and perform subbuffer flush.
+	 */
 	struct channel *chan;		/* Channel buffers */
 	int enabled;
 	struct lttng_ctx *ctx;
@@ -264,6 +268,11 @@ struct ltt_channel {
 	int header_type;		/* 0: unset, 1: compact, 2: large */
 	struct lttng_ust_shm_handle *handle;	/* shared-memory handle */
 	int metadata_dumped:1;
+
+	/* Channel ID, available for consumer too */
+	unsigned int id;
+	/* Copy of session UUID for consumer (availability through shm) */
+	uuid_t uuid;			/* Trace session unique ID */
 };
 
 struct ltt_session {

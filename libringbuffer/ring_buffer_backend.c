@@ -190,7 +190,6 @@ void channel_backend_reset(struct channel_backend *chanb)
  * @chanb: channel backend
  * @name: channel name
  * @config: client ring buffer configuration
- * @priv: client private data
  * @parent: dentry of parent directory, %NULL for root directory
  * @subbuf_size: size of sub-buffers (> PAGE_SIZE, power of 2)
  * @num_subbuf: number of sub-buffers (power of 2)
@@ -207,7 +206,7 @@ void channel_backend_reset(struct channel_backend *chanb)
 int channel_backend_init(struct channel_backend *chanb,
 			 const char *name,
 			 const struct lttng_ust_lib_ring_buffer_config *config,
-			 void *priv, size_t subbuf_size, size_t num_subbuf,
+			 size_t subbuf_size, size_t num_subbuf,
 			 struct lttng_ust_shm_handle *handle)
 {
 	struct channel *chan = caa_container_of(chanb, struct channel, backend);
@@ -235,7 +234,6 @@ int channel_backend_init(struct channel_backend *chanb,
 	if (ret)
 		return ret;
 
-	chanb->priv = priv;
 	chanb->buf_size = num_subbuf * subbuf_size;
 	chanb->subbuf_size = subbuf_size;
 	chanb->buf_size_order = get_count_order(chanb->buf_size);

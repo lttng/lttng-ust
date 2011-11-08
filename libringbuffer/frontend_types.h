@@ -48,6 +48,7 @@ struct channel {
 	unsigned long read_timer_interval;	/* Reader wakeup (jiffies) */
 	//wait_queue_head_t read_wait;		/* reader wait queue */
 	int finalized;				/* Has channel been finalized */
+	size_t priv_data_offset;
 	/*
 	 * Associated backend contains a variable-length array. Needs to
 	 * be last member.
@@ -114,7 +115,7 @@ struct lttng_ust_lib_ring_buffer {
 static inline
 void *channel_get_private(struct channel *chan)
 {
-	return chan->backend.priv;
+	return ((char *) chan) + chan->priv_data_offset;
 }
 
 /*

@@ -88,10 +88,9 @@ static void client_buffer_begin(struct lttng_ust_lib_ring_buffer *buf, u64 tsc,
 				subbuf_idx * chan->backend.subbuf_size,
 				handle);
 	struct ltt_channel *ltt_chan = channel_get_private(chan);
-	struct ltt_session *session = ltt_chan->session;
 
 	header->magic = TSDL_MAGIC_NUMBER;
-	memcpy(header->uuid, session->uuid, sizeof(session->uuid));
+	memcpy(header->uuid, ltt_chan->uuid, sizeof(ltt_chan->uuid));
 	header->checksum = 0;		/* 0 if unused */
 	header->content_size = 0xFFFFFFFF; /* in bits, for debugging */
 	header->packet_size = 0xFFFFFFFF;  /* in bits, for debugging */
@@ -165,19 +164,26 @@ const struct lttng_ust_lib_ring_buffer_client_cb *LTTNG_CLIENT_CALLBACKS = &clie
 
 static
 struct ltt_channel *_channel_create(const char *name,
-				struct ltt_channel *ltt_chan, void *buf_addr,
+				void *buf_addr,
 				size_t subbuf_size, size_t num_subbuf,
 				unsigned int switch_timer_interval,
 				unsigned int read_timer_interval,
 				int *shm_fd, int *wait_fd,
 				uint64_t *memory_map_size)
 {
-	ltt_chan->handle = channel_create(&client_config, name, ltt_chan, buf_addr,
-			      subbuf_size, num_subbuf, switch_timer_interval,
-			      read_timer_interval, shm_fd, wait_fd,
-			      memory_map_size);
-	if (!ltt_chan->handle)
+	void *priv;
+	struct ltt_channel *ltt_chan = NULL;
+	struct lttng_ust_shm_handle *handle;
+
+	handle = channel_create(&client_config, name,
+			&priv, __alignof__(*ltt_chan), sizeof(*ltt_chan),
+			buf_addr, subbuf_size, num_subbuf,
+			switch_timer_interval, read_timer_interval,
+			shm_fd, wait_fd, memory_map_size);
+	if (!handle)
 		return NULL;
+	ltt_chan = priv;
+	ltt_chan->handle = handle;
 	ltt_chan->chan = shmp(ltt_chan->handle, ltt_chan->handle->chan);
 	return ltt_chan;
 }
