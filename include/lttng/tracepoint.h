@@ -274,8 +274,7 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
  *       (optional),
  *       "event" is the name of the tracepoint event.
  *
- * the provider identifier is limited to 127 characters.
- * the "event" identifier is limited to 127 characters.
+ * the provider:event identifier is limited to 127 characters.
  *
  * As an example, let's consider a user-space application "someproject"
  * that would have an internal thread scheduler:
