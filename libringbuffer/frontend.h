@@ -47,6 +47,7 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 				void **priv_data,
 				size_t priv_data_align,
 				size_t priv_data_size,
+				void *priv_data_init,
 				void *buf_addr,
 				size_t subbuf_size, size_t num_subbuf,
 				unsigned int switch_timer_interval,

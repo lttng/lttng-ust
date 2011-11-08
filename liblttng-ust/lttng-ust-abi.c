@@ -370,6 +370,7 @@ int lttng_abi_create_channel(int session_objd,
 	struct ltt_channel *chan;
 	int chan_objd;
 	int ret = 0;
+	struct ltt_channel chan_priv_init;
 
 	chan_objd = objd_alloc(NULL, &lttng_channel_ops);
 	if (chan_objd < 0) {
@@ -397,6 +398,10 @@ int lttng_abi_create_channel(int session_objd,
 		transport_name = "<unknown>";
 		break;
 	}
+	memset(&chan_priv_init, 0, sizeof(chan_priv_init));
+	/* Copy of session UUID for consumer (availability through shm) */
+	memcpy(chan_priv_init.uuid, session->uuid, sizeof(session->uuid));
+	
 	/*
 	 * We tolerate no failure path after channel creation. It will stay
 	 * invariant for the rest of the session.
@@ -408,7 +413,8 @@ int lttng_abi_create_channel(int session_objd,
 				  chan_param->read_timer_interval,
 				  &chan_param->shm_fd,
 				  &chan_param->wait_fd,
-				  &chan_param->memory_map_size);
+				  &chan_param->memory_map_size,
+				  &chan_priv_init);
 	if (!chan) {
 		ret = -EINVAL;
 		goto chan_error;
@@ -421,8 +427,6 @@ int lttng_abi_create_channel(int session_objd,
 	}
 	/* The channel created holds a reference on the session */
 	objd_ref(session_objd);
-	/* Copy of session UUID for consumer (availability through shm) */
-	memcpy(chan->uuid, session->uuid, sizeof(session->uuid));
 
 	return chan_objd;
 

@@ -411,6 +411,7 @@ static void channel_free(struct channel *chan, struct lttng_ust_shm_handle *hand
  * @name: name of the channel
  * @priv_data: ring buffer client private data area pointer (output)
  * @priv_data_size: length, in bytes, of the private data area.
+ * @priv_data_init: initialization data for private data.
  * @buf_addr: pointer the the beginning of the preallocated buffer contiguous
  *            address mapping. It is used only by RING_BUFFER_STATIC
  *            configuration. It can be set to NULL for other backends.
@@ -429,6 +430,7 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 		   void **priv_data,
 		   size_t priv_data_align,
 		   size_t priv_data_size,
+		   void *priv_data_init,
 		   void *buf_addr, size_t subbuf_size,
 		   size_t num_subbuf, unsigned int switch_timer_interval,
 		   unsigned int read_timer_interval,
@@ -486,6 +488,7 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 		if (!shmp(handle, priv_data_alloc))
 			goto error_append;
 		*priv_data = channel_get_private(chan);
+		memcpy(*priv_data, priv_data_init, priv_data_size);
 	} else {
 		chan->priv_data_offset = -1;
 		*priv_data = NULL;

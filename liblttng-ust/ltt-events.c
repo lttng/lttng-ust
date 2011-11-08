@@ -293,7 +293,8 @@ struct ltt_channel *ltt_channel_create(struct ltt_session *session,
 				       unsigned int switch_timer_interval,
 				       unsigned int read_timer_interval,
 				       int *shm_fd, int *wait_fd,
-				       uint64_t *memory_map_size)
+				       uint64_t *memory_map_size,
+				       struct ltt_channel *chan_priv_init)
 {
 	struct ltt_channel *chan = NULL;
 	struct ltt_transport *transport;
@@ -306,6 +307,8 @@ struct ltt_channel *ltt_channel_create(struct ltt_session *session,
 		       transport_name);
 		goto notransport;
 	}
+	chan_priv_init->id = session->free_chan_id++;
+	chan_priv_init->session = session;
 	/*
 	 * Note: the channel creation op already writes into the packet
 	 * headers. Therefore the "chan" information used as input
@@ -314,11 +317,9 @@ struct ltt_channel *ltt_channel_create(struct ltt_session *session,
 	chan = transport->ops.channel_create("[lttng]", buf_addr,
 			subbuf_size, num_subbuf, switch_timer_interval,
 			read_timer_interval, shm_fd, wait_fd,
-			memory_map_size);
+			memory_map_size, chan_priv_init);
 	if (!chan)
 		goto create_error;
-	chan->session = session;
-	chan->id = session->free_chan_id++;
 	chan->enabled = 1;
 	chan->ops = &transport->ops;
 	cds_list_add(&chan->list, &session->chan);

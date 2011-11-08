@@ -386,7 +386,8 @@ struct ltt_channel *_channel_create(const char *name,
 				unsigned int switch_timer_interval,
 				unsigned int read_timer_interval,
 				int *shm_fd, int *wait_fd,
-				uint64_t *memory_map_size)
+				uint64_t *memory_map_size,
+				struct ltt_channel *chan_priv_init)
 {
 	void *priv;
 	struct ltt_channel *ltt_chan = NULL;
@@ -394,6 +395,7 @@ struct ltt_channel *_channel_create(const char *name,
 
 	handle = channel_create(&client_config, name,
 			&priv, __alignof__(*ltt_chan), sizeof(*ltt_chan),
+			chan_priv_init,
 			buf_addr, subbuf_size, num_subbuf,
 			switch_timer_interval, read_timer_interval,
 			shm_fd, wait_fd, memory_map_size);
