@@ -24,8 +24,6 @@
 
 CDS_LIST_HEAD(ltt_transport_list);
 
-volatile enum ust_loglevel ust_loglevel;
-
 void init_usterr(void)
 {
 	char *ust_debug;

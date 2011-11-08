@@ -625,7 +625,7 @@ restart:
 	/* Register */
 	ret = ustcomm_connect_unix_sock(sock_info->sock_path);
 	if (ret < 0) {
-		ERR("Error connecting to %s apps socket", sock_info->name);
+		DBG("Info: sessiond not accepting connections to %s apps socket", sock_info->name);
 		prev_connect_failed = 1;
 		/*
 		 * If we cannot find the sessiond daemon, don't delay
