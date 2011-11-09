@@ -370,10 +370,39 @@ int ustctl_stop_session(int sock, int handle)
 	return ustctl_disable(sock, &obj);
 }
 
-
 int ustctl_tracepoint_list(int sock)
 {
-	return -ENOSYS;	/* not implemented */
+	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_reply lur;
+	int ret, tp_list_handle;
+
+	memset(&lum, 0, sizeof(lum));
+	lum.handle = LTTNG_UST_ROOT_HANDLE;
+	lum.cmd = LTTNG_UST_TRACEPOINT_LIST;
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+	if (ret)
+		return ret;
+	tp_list_handle = lur.ret_val;
+	DBG("received tracepoint list handle %u", tp_list_handle);
+	return tp_list_handle;
+}
+
+int ustctl_tracepoint_list_get(int sock, int tp_list_handle,
+		char iter[LTTNG_UST_SYM_NAME_LEN])
+{
+	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_reply lur;
+	int ret;
+
+	memset(&lum, 0, sizeof(lum));
+	lum.handle = tp_list_handle;
+	lum.cmd = LTTNG_UST_TRACEPOINT_LIST_GET;
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+	if (ret)
+		return ret;
+	DBG("received tracepoint list entry %s", lur.u.tracepoint_list_entry);
+	memcpy(iter, lur.u.tracepoint_list_entry, LTTNG_UST_SYM_NAME_LEN);
+	return 0;
 }
 
 int ustctl_tracer_version(int sock, struct lttng_ust_tracer_version *v)

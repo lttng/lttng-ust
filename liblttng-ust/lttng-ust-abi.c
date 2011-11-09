@@ -523,10 +523,13 @@ static
 long lttng_tracepoint_list_cmd(int objd, unsigned int cmd, unsigned long arg)
 {
 	struct ltt_tracepoint_list *list = objd_private(objd);
+	char *str = (char *) arg;
 
 	switch (cmd) {
 	case LTTNG_UST_TRACEPOINT_LIST_GET:
-		ltt_tracepoint_list_get(list, (char *) arg);
+		ltt_tracepoint_list_get(list, str);
+		if (str[0] == '\0')
+			return -ENOENT;
 		return 0;
 	default:
 		return -EINVAL;

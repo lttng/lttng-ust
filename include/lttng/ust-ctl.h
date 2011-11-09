@@ -44,7 +44,18 @@ int ustctl_disable(int sock, struct lttng_ust_object_data *object);
 int ustctl_start_session(int sock, int handle);
 int ustctl_stop_session(int sock, int handle);
 
-int ustctl_tracepoint_list(int sock);	/* not implemented yet */
+/*
+ * ustctl_tracepoint_list returns a tracepoint list handle, or negative
+ * error value.
+ */
+int ustctl_tracepoint_list(int sock);
+/*
+ * ustctl_tracepoint_list_get is used to iterate on the tp list
+ * handle. End is iteration is reached when -ENOENT is returned.
+ */
+int ustctl_tracepoint_list_get(int sock, int tp_list_handle,
+		char iter[LTTNG_UST_SYM_NAME_LEN]);
+
 int ustctl_tracer_version(int sock, struct lttng_ust_tracer_version *v);
 int ustctl_wait_quiescent(int sock);
 

@@ -150,6 +150,7 @@ struct ustcomm_ust_reply {
 			uint64_t memory_map_size;
 		} stream;
 		struct lttng_ust_tracer_version version;
+		char tracepoint_list_entry[LTTNG_UST_SYM_NAME_LEN];
 	} u;
 };
 
