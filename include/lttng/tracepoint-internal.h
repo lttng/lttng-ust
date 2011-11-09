@@ -1,5 +1,5 @@
-#ifndef _UST_TRACEPOINT_INTERNAL_H
-#define _UST_TRACEPOINT_INTERNAL_H
+#ifndef _LTTNG_TRACEPOINT_INTERNAL_H
+#define _LTTNG_TRACEPOINT_INTERNAL_H
 
 /*
  * tracepoint-internal.h
@@ -25,14 +25,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  *
  * Heavily inspired from the Linux Kernel Markers.
- *
- * Ported to userspace by Pierre-Marc Fournier.
  */
 
 #include <urcu-bp.h>
 #include <lttng/core.h>
 #include <urcu/list.h>
-#include <lttng/tracepoint.h>
+#include <lttng/tracepoint-types.h>
 
 struct tracepoint_lib {
 	struct tracepoint * const *tracepoints_start;
@@ -84,4 +82,4 @@ extern int is_trace_event_enabled(const char *channel, const char *name);
 extern void init_tracepoint(void);
 extern void exit_tracepoint(void);
 
-#endif /* _UST_TRACEPOINT_INTERNAL_H */
+#endif /* _LTTNG_TRACEPOINT_INTERNAL_H */

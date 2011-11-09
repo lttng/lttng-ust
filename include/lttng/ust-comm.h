@@ -129,6 +129,7 @@ struct ustcomm_ust_msg {
 		struct lttng_ust_event event;
 		struct lttng_ust_context context;
 		struct lttng_ust_tracer_version version;
+		char tracepoint_list_entry[LTTNG_UST_SYM_NAME_LEN];
 	} u;
 };
 

@@ -1,8 +1,8 @@
-#ifndef _UST_LTTNG_EVENTS_H
-#define _UST_LTTNG_EVENTS_H
+#ifndef _LTTNG_UST_EVENTS_H
+#define _LTTNG_UST_EVENTS_H
 
 /*
- * ust/lttng-events.h
+ * lttng/ust-events.h
  *
  * Copyright 2010 (c) - Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
@@ -18,6 +18,7 @@
 #include <lttng/ust-tracer.h>
 #include <endian.h>
 #include <float.h>
+#include <lttng/tracepoint-internal.h>
 
 struct ltt_channel;
 struct ltt_session;
@@ -295,6 +296,11 @@ struct ltt_transport {
 	struct ltt_channel_ops ops;
 };
 
+struct ltt_tracepoint_list {
+	struct tracepoint_iter iter;
+	int got_first;
+};
+
 struct ltt_session *ltt_session_create(void);
 int ltt_session_enable(struct ltt_session *session);
 int ltt_session_disable(struct ltt_session *session);
@@ -357,4 +363,4 @@ const struct lttng_ust_lib_ring_buffer_client_cb *lttng_client_callbacks_overwri
 struct cds_list_head ltt_transport_list;
 struct ltt_transport *ltt_transport_find(const char *name);
 
-#endif /* _UST_LTTNG_EVENTS_H */
+#endif /* _LTTNG_UST_EVENTS_H */

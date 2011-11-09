@@ -1,5 +1,5 @@
-#ifndef _UST_TRACEPOINT_H
-#define _UST_TRACEPOINT_H
+#ifndef _LTTNG_TRACEPOINT_H
+#define _LTTNG_TRACEPOINT_H
 
 /*
  * Copyright (C) 2008-2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
@@ -21,27 +21,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  *
  * Heavily inspired from the Linux Kernel Markers.
- *
- * Ported to userspace by Pierre-Marc Fournier.
  */
 
 #include <urcu-bp.h>
 #include <urcu/list.h>
+#include <lttng/tracepoint-types.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-struct tracepoint_probe {
-	void *func;
-	void *data;
-};
-
-struct tracepoint {
-	const char *name;		/* Tracepoint name */
-	char state;			/* State. */
-	struct tracepoint_probe *probes;
-};
 
 /*
  * Tracepoints should be added to the instrumented code using the
@@ -423,4 +411,4 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
 }
 #endif
 
-#endif /* _UST_TRACEPOINT_H */
+#endif /* _LTTNG_TRACEPOINT_H */

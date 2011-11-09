@@ -1,6 +1,7 @@
 nobase_include_HEADERS = \
 	lttng/marker.h \
 	lttng/tracepoint.h \
+	lttng/tracepoint-types.h \
 	lttng/tracepoint-event.h \
 	lttng/ust-tracepoint-event.h \
 	lttng/ust-tracepoint-event-reset.h \

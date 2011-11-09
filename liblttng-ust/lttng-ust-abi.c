@@ -32,6 +32,9 @@
 #include "lttng/core.h"
 #include "ltt-tracer.h"
 
+static
+int lttng_abi_tracepoint_list(void);
+
 /*
  * Object descriptor table. Should be protected from concurrent access
  * by the caller.
@@ -197,6 +200,7 @@ static const struct lttng_ust_objd_ops lttng_channel_ops;
 static const struct lttng_ust_objd_ops lttng_metadata_ops;
 static const struct lttng_ust_objd_ops lttng_event_ops;
 static const struct lttng_ust_objd_ops lib_ring_buffer_objd_ops;
+static const struct lttng_ust_objd_ops lttng_tracepoint_list_ops;
 
 enum channel_type {
 	PER_CPU_CHANNEL,
@@ -232,26 +236,6 @@ objd_error:
 	ltt_session_destroy(session);
 	return ret;
 }
-
-#if 0
-static
-int lttng_abi_tracepoint_list(void)
-{
-	int list_objd, ret;
-
-	/* TODO: Create list private data */
-	list_objd = objd_alloc(NULL, &lttng_tracepoint_list_ops);
-	if (list_objd < 0) {
-		ret = list_objd;
-		goto objd_error;
-	}
-
-	return list_objd;
-
-objd_error:
-	return ret;
-}
-#endif //0
 
 static
 long lttng_abi_tracer_version(int objd,
@@ -314,8 +298,7 @@ long lttng_cmd(int objd, unsigned int cmd, unsigned long arg)
 		return lttng_abi_tracer_version(objd,
 				(struct lttng_ust_tracer_version *) arg);
 	case LTTNG_UST_TRACEPOINT_LIST:
-		return -ENOSYS;	//TODO
-		//return lttng_abi_tracepoint_list();
+		return lttng_abi_tracepoint_list();
 	case LTTNG_UST_WAIT_QUIESCENT:
 		synchronize_trace();
 		return 0;
@@ -509,6 +492,95 @@ int lttng_release_session(int objd)
 static const struct lttng_ust_objd_ops lttng_session_ops = {
 	.release = lttng_release_session,
 	.cmd = lttng_session_cmd,
+};
+
+/*
+ * beware: we don't keep the mutex over the send, but we must walk the
+ * whole list each time we are called again. So sending one tracepoint
+ * at a time means this is O(n^2). TODO: do as in the kernel and send
+ * multiple tracepoints for each call to amortize this cost.
+ */
+static
+void ltt_tracepoint_list_get(struct ltt_tracepoint_list *list,
+		char *tp_list_entry)
+{
+	if (!list->got_first) {
+		tracepoint_iter_start(&list->iter);
+		list->got_first = 1;
+		goto copy;
+	}
+	tracepoint_iter_next(&list->iter);
+copy:
+	if (!list->iter.tracepoint) {
+		tp_list_entry[0] = '\0';	/* end of list */
+	} else {
+		memcpy(tp_list_entry, (*list->iter.tracepoint)->name,
+			LTTNG_UST_SYM_NAME_LEN);
+	}
+}
+
+static
+long lttng_tracepoint_list_cmd(int objd, unsigned int cmd, unsigned long arg)
+{
+	struct ltt_tracepoint_list *list = objd_private(objd);
+
+	switch (cmd) {
+	case LTTNG_UST_TRACEPOINT_LIST_GET:
+		ltt_tracepoint_list_get(list, (char *) arg);
+		return 0;
+	default:
+		return -EINVAL;
+	}
+}
+
+static
+int lttng_abi_tracepoint_list(void)
+{
+	int list_objd, ret;
+	struct ltt_tracepoint_list *list;
+
+	list_objd = objd_alloc(NULL, &lttng_tracepoint_list_ops);
+	if (list_objd < 0) {
+		ret = list_objd;
+		goto objd_error;
+	}
+	list = zmalloc(sizeof(*list));
+	if (!list) {
+		ret = -ENOMEM;
+		goto alloc_error;
+	}
+	objd_set_private(list_objd, list);
+
+	return list_objd;
+
+alloc_error:
+	{
+		int err;
+
+		err = lttng_ust_objd_unref(list_objd);
+		assert(!err);
+	}
+objd_error:
+	return ret;
+}
+
+static
+int lttng_release_tracepoint_list(int objd)
+{
+	struct ltt_tracepoint_list *list = objd_private(objd);
+
+	if (list) {
+		tracepoint_iter_stop(&list->iter);
+		free(list);
+		return 0;
+	} else {
+		return -EINVAL;
+	}
+}
+
+static const struct lttng_ust_objd_ops lttng_tracepoint_list_ops = {
+	.release = lttng_release_tracepoint_list,
+	.cmd = lttng_tracepoint_list_cmd,
 };
 
 struct stream_priv_data {
