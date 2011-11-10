@@ -175,7 +175,6 @@ int lib_ring_buffer_create(struct lttng_ust_lib_ring_buffer *buf,
 	const struct lttng_ust_lib_ring_buffer_config *config = &chanb->config;
 	struct channel *chan = caa_container_of(chanb, struct channel, backend);
 	void *priv = channel_get_private(chan);
-	unsigned int num_subbuf;
 	size_t subbuf_header_size;
 	u64 tsc;
 	int ret;
@@ -206,9 +205,6 @@ int lib_ring_buffer_create(struct lttng_ust_lib_ring_buffer *buf,
 		ret = -ENOMEM;
 		goto free_commit;
 	}
-
-	num_subbuf = chan->backend.num_subbuf;
-	//init_waitqueue_head(&buf->read_wait);
 
 	/*
 	 * Write the subbuffer header for first subbuffer so we know the total

@@ -325,7 +325,6 @@ void lttng_metadata_create_events(int channel_objd)
 		.name = "lttng_metadata",
 	};
 	struct ltt_event *event;
-	int ret;
 
 	/*
 	 * We tolerate no failure path after event creation. It will stay
@@ -333,7 +332,6 @@ void lttng_metadata_create_events(int channel_objd)
 	 */
 	event = ltt_event_create(channel, &metadata_params, NULL);
 	if (!event) {
-		ret = -EINVAL;
 		goto create_error;
 	}
 	return;
@@ -355,11 +353,6 @@ int lttng_abi_create_channel(int session_objd,
 	int ret = 0;
 	struct ltt_channel chan_priv_init;
 
-	chan_objd = objd_alloc(NULL, &lttng_channel_ops);
-	if (chan_objd < 0) {
-		ret = chan_objd;
-		goto objd_error;
-	}
 	switch (channel_type) {
 	case PER_CPU_CHANNEL:
 		if (chan_param->output == LTTNG_UST_MMAP) {
@@ -379,7 +372,12 @@ int lttng_abi_create_channel(int session_objd,
 		break;
 	default:
 		transport_name = "<unknown>";
-		break;
+		return -EINVAL;
+	}
+	chan_objd = objd_alloc(NULL, ops);
+	if (chan_objd < 0) {
+		ret = chan_objd;
+		goto objd_error;
 	}
 	memset(&chan_priv_init, 0, sizeof(chan_priv_init));
 	/* Copy of session UUID for consumer (availability through shm) */
