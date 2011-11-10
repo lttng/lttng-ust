@@ -70,19 +70,24 @@ int main(int argc, char **argv)
 	char text[10] = "test";
 	double dbl = 2.0;
 	float flt = 2222.0;
+	int delay = 0;
 
 	init_int_handler();
 
-	printf("Hello, World!\n");
+	if (argc == 2)
+		delay = atoi(argv[1]);
 
-	sleep(10);
+	fprintf(stderr, "Hello, World!\n");
 
-	//for (i = 0; i < 50; i++) {
+	sleep(delay);
+
+	fprintf(stderr, "Tracing... ");
 	for (i = 0; i < 1000000; i++) {
 		netint = htonl(i);
 		tracepoint(ust_tests_hello, tptest, i, netint, values,
 			   text, strlen(text), dbl, flt);
 		//usleep(100000);
 	}
+	fprintf(stderr, " done.\n");
 	return 0;
 }
