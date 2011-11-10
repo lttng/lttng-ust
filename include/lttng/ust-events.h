@@ -360,7 +360,6 @@ const struct lttng_ust_lib_ring_buffer_client_cb *lttng_client_callbacks_metadat
 const struct lttng_ust_lib_ring_buffer_client_cb *lttng_client_callbacks_discard;
 const struct lttng_ust_lib_ring_buffer_client_cb *lttng_client_callbacks_overwrite;
 
-struct cds_list_head ltt_transport_list;
 struct ltt_transport *ltt_transport_find(const char *name);
 
 #endif /* _LTTNG_UST_EVENTS_H */

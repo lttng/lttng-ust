@@ -22,7 +22,7 @@
 #include <lttng/ust-events.h>
 #include <stdlib.h>
 
-CDS_LIST_HEAD(ltt_transport_list);
+static CDS_LIST_HEAD(ltt_transport_list);
 
 void init_usterr(void)
 {
