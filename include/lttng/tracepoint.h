@@ -326,7 +326,7 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
  * Do _NOT_ add comma (,) nor semicolon (;) after the TRACEPOINT_EVENT
  * declaration.
  *
- * The TRACEPOINT_SYSTEM must be defined when declaring a
+ * The TRACEPOINT_PROVIDER must be defined when declaring a
  * TRACEPOINT_EVENT. See ust/tracepoint-event.h for information about
  * usage of other macros controlling TRACEPOINT_EVENT.
  */
@@ -395,11 +395,11 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
  *      TRACEPOINT_LOGLEVEL(< [com_company_]project[_component] >, < event >,
  *              < loglevel_name >)
  *
- * The TRACEPOINT_SYSTEM must be defined when declaring a
+ * The TRACEPOINT_PROVIDER must be defined when declaring a
  * TRACEPOINT_LOGLEVEL_ENUM and TRACEPOINT_LOGLEVEL. The tracepoint
- * loglevel enumeration apply to the entire TRACEPOINT_SYSTEM. Only one
+ * loglevel enumeration apply to the entire TRACEPOINT_PROVIDER. Only one
  * tracepoint loglevel enumeration should be declared per tracepoint
- * system.
+ * provider.
  */
 
 #define TRACEPOINT_LOGLEVEL_ENUM()

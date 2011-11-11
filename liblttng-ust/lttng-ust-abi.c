@@ -322,7 +322,7 @@ void lttng_metadata_create_events(int channel_objd)
 	struct ltt_channel *channel = objd_private(channel_objd);
 	static struct lttng_ust_event metadata_params = {
 		.instrumentation = LTTNG_UST_TRACEPOINT,
-		.name = "lttng:metadata",
+		.name = "lttng_ust:metadata",
 	};
 	struct ltt_event *event;
 
@@ -513,7 +513,8 @@ copy:
 	if (!list->iter.tracepoint) {
 		tp_list_entry[0] = '\0';	/* end of list */
 	} else {
-		if (!strcmp((*list->iter.tracepoint)->name, "lttng:metadata"))
+		if (!strcmp((*list->iter.tracepoint)->name,
+				"lttng_ust:metadata"))
 			goto next;
 		memcpy(tp_list_entry, (*list->iter.tracepoint)->name,
 			LTTNG_UST_SYM_NAME_LEN);

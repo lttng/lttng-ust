@@ -1,8 +1,8 @@
-#undef TRACEPOINT_SYSTEM
-#define TRACEPOINT_SYSTEM ust_java
+#undef TRACEPOINT_PROVIDER
+#define TRACEPOINT_PROVIDER lttng_ust_java
 
-#if !defined(_TRACEPOINT_UST_JAVA_H) || defined(TRACEPOINT_HEADER_MULTI_READ)
-#define _TRACEPOINT_UST_JAVA_H
+#if !defined(_TRACEPOINT_LTTNG_UST_JAVA_H) || defined(TRACEPOINT_HEADER_MULTI_READ)
+#define _TRACEPOINT_LTTNG_UST_JAVA_H
 
 /*
  * Copyright (C) 2011  Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
@@ -24,7 +24,7 @@
 
 #include <lttng/tracepoint.h>
 
-TRACEPOINT_EVENT(lttng_ust_java_string,
+TRACEPOINT_EVENT(lttng_ust_java, string,
 	TP_PROTO(const char *name, const char *args),
 	TP_VARS(name, args),
 	TP_FIELDS(
@@ -33,7 +33,7 @@ TRACEPOINT_EVENT(lttng_ust_java_string,
 	)
 )
 
-#endif /* _TRACEPOINT_UST_JAVA_H */
+#endif /* _TRACEPOINT_LTTNG_UST_JAVA_H */
 
 #undef TRACEPOINT_INCLUDE_PATH
 #define TRACEPOINT_INCLUDE_PATH .

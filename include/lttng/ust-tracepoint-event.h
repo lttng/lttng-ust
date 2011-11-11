@@ -226,10 +226,10 @@ static void __event_probe__##_provider##___##_name(void *__data);
 #define TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _proto, _args)	       \
 	TRACEPOINT_EVENT_INSTANCE_NOARGS(_provider, _template, _name)
 
-#define TP_ID1(_token, _system)	_token##_system
-#define TP_ID(_token, _system)	TP_ID1(_token, _system)
+#define TP_ID1(_token, _provider)	_token##_provider
+#define TP_ID(_token, _provider)	TP_ID1(_token, _provider)
 
-static const struct lttng_event_desc TP_ID(__event_desc___, TRACEPOINT_SYSTEM)[] = {
+static const struct lttng_event_desc TP_ID(__event_desc___, TRACEPOINT_PROVIDER)[] = {
 #include TRACEPOINT_INCLUDE(TRACEPOINT_INCLUDE_FILE)
 };
 
@@ -243,13 +243,13 @@ static const struct lttng_event_desc TP_ID(__event_desc___, TRACEPOINT_SYSTEM)[]
  * Create a toplevel descriptor for the whole probe.
  */
 
-#define TP_ID1(_token, _system)	_token##_system
-#define TP_ID(_token, _system)	TP_ID1(_token, _system)
+#define TP_ID1(_token, _provider)	_token##_provider
+#define TP_ID(_token, _provider)	TP_ID1(_token, _provider)
 
 /* non-const because list head will be modified when registered. */
-static struct lttng_probe_desc TP_ID(__probe_desc___, TRACEPOINT_SYSTEM) = {
-	.event_desc = TP_ID(__event_desc___, TRACEPOINT_SYSTEM),
-	.nr_events = _TP_ARRAY_SIZE(TP_ID(__event_desc___, TRACEPOINT_SYSTEM)),
+static struct lttng_probe_desc TP_ID(__probe_desc___, TRACEPOINT_PROVIDER) = {
+	.event_desc = TP_ID(__event_desc___, TRACEPOINT_PROVIDER),
+	.nr_events = _TP_ARRAY_SIZE(TP_ID(__event_desc___, TRACEPOINT_PROVIDER)),
 };
 
 #undef TP_ID1
@@ -498,22 +498,22 @@ static void __event_probe__##_provider##___##_name(void *__data)	      \
 /* Reset all macros within TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 
-#define TP_ID1(_token, _system)	_token##_system
-#define TP_ID(_token, _system)	TP_ID1(_token, _system)
+#define TP_ID1(_token, _provider)	_token##_provider
+#define TP_ID(_token, _provider)	TP_ID1(_token, _provider)
 
 static void __attribute__((constructor))
-TP_ID(__lttng_events_init__, TRACEPOINT_SYSTEM)(void)
+TP_ID(__lttng_events_init__, TRACEPOINT_PROVIDER)(void)
 {
 	int ret;
 
-	ret = ltt_probe_register(&TP_ID(__probe_desc___, TRACEPOINT_SYSTEM));
+	ret = ltt_probe_register(&TP_ID(__probe_desc___, TRACEPOINT_PROVIDER));
 	assert(!ret);
 }
 
 static void __attribute__((destructor))
-TP_ID(__lttng_events_exit__, TRACEPOINT_SYSTEM)(void)
+TP_ID(__lttng_events_exit__, TRACEPOINT_PROVIDER)(void)
 {
-	ltt_probe_unregister(&TP_ID(__probe_desc___, TRACEPOINT_SYSTEM));
+	ltt_probe_unregister(&TP_ID(__probe_desc___, TRACEPOINT_PROVIDER));
 }
 
 #undef TP_ID1

@@ -1,5 +1,5 @@
-#undef TRACEPOINT_SYSTEM
-#define TRACEPOINT_SYSTEM lttng_ust
+#undef TRACEPOINT_PROVIDER
+#define TRACEPOINT_PROVIDER lttng_ust
 
 #if !defined(_TRACEPOINT_LTTNG_UST_H) || defined(TRACEPOINT_HEADER_MULTI_READ)
 #define _TRACEPOINT_LTTNG_UST_H
@@ -24,7 +24,7 @@
 
 #include <lttng/tracepoint.h>
 
-TRACEPOINT_EVENT(lttng, metadata,
+TRACEPOINT_EVENT(lttng_ust, metadata,
 
 	TP_PROTO(const char *str),
 

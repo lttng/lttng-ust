@@ -21,11 +21,11 @@
  * in their file should include this file. The following are macros that the
  * trace file may define:
  *
- * TRACEPOINT_SYSTEM defines the system the tracepoint is for:
+ * TRACEPOINT_PROVIDER defines the provider the tracepoint is for:
  *     < [com_company_]project_[component_] >
  *
  * TRACEPOINT_INCLUDE_FILE if the file name is something other than
- *     TRACEPOINT_SYSTEM.h. This macro may be defined to tell
+ *     TRACEPOINT_PROVIDER.h. This macro may be defined to tell
  *     define_trace.h what file to include.  Note, leave off the ".h".
  *
  * TRACEPOINT_INCLUDE_PATH if the path is something other than within
@@ -71,19 +71,19 @@ extern "C" {
 #undef __TRACEPOINT_INCLUDE
 
 #ifndef TRACEPOINT_INCLUDE_FILE
-# define TRACEPOINT_INCLUDE_FILE TRACEPOINT_SYSTEM
+# define TRACEPOINT_INCLUDE_FILE TRACEPOINT_PROVIDER
 # define UNDEF_TRACEPOINT_INCLUDE_FILE
 #endif
 
 #ifndef TRACEPOINT_INCLUDE_PATH
-# define __TRACEPOINT_INCLUDE(system) <tracepoint/system.h>
+# define __TRACEPOINT_INCLUDE(provider) <tracepoint/provider.h>
 # define UNDEF_TRACEPOINT_INCLUDE_PATH
 #else
-# define __TRACEPOINT_INCLUDE(system)				\
-	__tp_stringify(TRACEPOINT_INCLUDE_PATH/system.h)
+# define __TRACEPOINT_INCLUDE(provider)				\
+	__tp_stringify(TRACEPOINT_INCLUDE_PATH/provider.h)
 #endif
 
-# define TRACEPOINT_INCLUDE(system) __TRACEPOINT_INCLUDE(system)
+# define TRACEPOINT_INCLUDE(provider) __TRACEPOINT_INCLUDE(provider)
 
 /* Let the trace headers be reread */
 #define TRACEPOINT_HEADER_MULTI_READ
