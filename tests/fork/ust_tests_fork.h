@@ -31,7 +31,7 @@ TRACEPOINT_EVENT_NOARGS(ust_tests_fork, before_fork,
 
 TRACEPOINT_EVENT(ust_tests_fork, after_fork_child,
 	TP_PROTO(pid_t pid),
-	TP_ARGS(pid),
+	TP_VARS(pid),
 	TP_FIELDS(
 		ctf_integer(pid_t, pid, pid)
 	)

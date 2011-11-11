@@ -421,8 +421,8 @@ static inline size_t __event_get_align__##_provider##___##_name(_proto)	      \
 #undef TP_PROTO
 #define TP_PROTO(args...) args
 
-#undef TP_ARGS
-#define TP_ARGS(args...) args
+#undef TP_VARS
+#define TP_VARS(args...) args
 
 #undef TP_FIELDS
 #define TP_FIELDS(args...) args

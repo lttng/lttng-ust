@@ -29,7 +29,7 @@ TRACEPOINT_EVENT(test,
 
 	TP_PROTO(unsigned long time, unsigned long count),
 
-	TP_ARGS(time, count),
+	TP_VARS(time, count),
 
 	TP_FIELDS(
 		tp_field(unsigned long, time, time)

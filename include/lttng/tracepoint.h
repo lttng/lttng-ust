@@ -62,13 +62,13 @@ extern "C" {
 
 #define TP_PARAMS(args...)	args
 #define TP_PROTO(args...)	args
-#define TP_ARGS(args...)	args
+#define TP_VARS(args...)	args
 
 #define __CHECK_TRACE(provider, name, proto, args)			\
 	do {								\
 		if (caa_unlikely(__tracepoint_##provider##___##name.state))	\
 			__DO_TRACE(&__tracepoint_##provider##___##name,	\
-				TP_PROTO(proto), TP_ARGS(args));	\
+				TP_PROTO(proto), TP_VARS(args));	\
 	} while (0)
 
 /*
@@ -81,7 +81,7 @@ extern "C" {
 	static inline void __trace_##provider##___##name(proto)		\
 	{								\
 		__CHECK_TRACE(provider, name, TP_PROTO(data_proto),	\
-			      TP_ARGS(data_args));			\
+			      TP_VARS(data_args));			\
 	}								\
 	static inline int						\
 	__register_trace_##provider##___##name(void (*probe)(data_proto), void *data)	\
@@ -196,7 +196,7 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
  * TRACEPOINT_EVENT(< [com_company_]project[_component] >, < event >,
  *     TP_PROTO(int arg0, void *arg1, char *string, size_t strlen,
  *              long *arg4, size_t arg4_len),
- *     TP_ARGS(arg0, arg1, string, strlen, arg4, arg4_len),
+ *     TP_VARS(arg0, arg1, string, strlen, arg4, arg4_len),
  *     TP_FIELDS(
  *
  *         * Integer, printed in base 10 * 
@@ -283,7 +283,7 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
  *	*  TP_PROTO1/TP_PROTO2/TP_PROTO3 ugliness.)
  *	*
  *
- *	TP_ARGS(rq, prev, next),
+ *	TP_VARS(rq, prev, next),
  *
  *	*
  *	* Fast binary tracing: define the trace record via

@@ -27,8 +27,8 @@
 #undef TP_PROTO
 #define TP_PROTO(args...)
 
-#undef TP_ARGS
-#define TP_ARGS(args...)
+#undef TP_VARS
+#define TP_VARS(args...)
 
 #undef TP_FIELDS
 #define TP_FIELDS(args...)

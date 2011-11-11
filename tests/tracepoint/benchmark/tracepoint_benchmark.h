@@ -26,7 +26,7 @@
 
 TRACEPOINT_EVENT(ust_event,
 		 TP_PROTO(unsigned int v),
-		 TP_ARGS(v),
+		 TP_VARS(v),
 		 TP_FIELDS());
 
 #endif /* _TRACE_TRACEPOINT_BENCHMARK_H */

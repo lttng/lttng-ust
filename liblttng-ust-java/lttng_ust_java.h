@@ -26,7 +26,7 @@
 
 TRACEPOINT_EVENT(lttng_ust_java_string,
 	TP_PROTO(const char *name, const char *args),
-	TP_ARGS(name, args),
+	TP_VARS(name, args),
 	TP_FIELDS(
 		ctf_string(name, name)
 		ctf_string(args, args)

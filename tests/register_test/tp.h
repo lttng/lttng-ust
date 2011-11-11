@@ -26,7 +26,7 @@
 
 TRACEPOINT_EVENT(hello_tptest,
 		 TP_PROTO(int anint),
-		 TP_ARGS(anint),
+		 TP_VARS(anint),
 		 TP_FIELDS());
 
 #endif /* _TRACE_TP_H */
