@@ -100,6 +100,48 @@
 		__max1 > __max2 ? __max1: __max2;	\
 	})
 
+/*
+ * Stage 0 of the trace events.
+ *
+ * Check that each TRACEPOINT_EVENT provider argument match the
+ * TRACEPOINT_PROVIDER by creating dummy callbacks.
+ */
+
+/* Reset all macros within TRACEPOINT_EVENT */
+#include <lttng/ust-tracepoint-event-reset.h>
+
+#define TP_ID1(_token, _provider)	_token##_provider
+#define TP_ID(_token, _provider)	TP_ID1(_token, _provider)
+
+static inline
+void TP_ID(__tracepoint_provider_mismatch_, TRACEPOINT_PROVIDER)(void)
+{
+}
+
+#undef TRACEPOINT_EVENT_CLASS
+#define TRACEPOINT_EVENT_CLASS(_provider, _name, _proto, _args, _fields) \
+	__tracepoint_provider_mismatch_##_provider();
+
+#undef TRACEPOINT_EVENT_CLASS_NOARGS
+#define TRACEPOINT_EVENT_CLASS_NOARGS(_provider, _name, _fields)	 \
+	__tracepoint_provider_mismatch_##_provider();
+
+#undef TRACEPOINT_EVENT_INSTANCE
+#define TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _proto, _args) \
+	__tracepoint_provider_mismatch_##_provider();
+
+#undef TRACEPOINT_EVENT_INSTANCE_NOARGS
+#define TRACEPOINT_EVENT_INSTANCE_NOARGS(_provider, _template, _name)	 \
+	__tracepoint_provider_mismatch_##_provider();
+
+static __attribute__((unused))
+void TP_ID(__tracepoint_provider_check_, TRACEPOINT_PROVIDER)(void)
+{
+#include TRACEPOINT_INCLUDE(TRACEPOINT_INCLUDE_FILE)
+}
+
+#undef TP_ID1
+#undef TP_ID
 
 /*
  * Stage 1 of the trace events.
