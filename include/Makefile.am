@@ -9,7 +9,6 @@ nobase_include_HEADERS = \
 	lttng/ust-ctl.h \
 	lttng/version.h \
 	lttng/ust-abi.h \
-	lttng/ust-comm.h \
 	lttng/ringbuffer-abi.h \
 	lttng/ust-tracer.h \
 	lttng/usterr-signal-safe.h \
@@ -32,6 +31,7 @@ nobase_include_HEADERS = \
 noinst_HEADERS = \
 	usterr.h \
 	ust_snprintf.h \
+	lttng/ust-comm.h \
 	lttng/compat.h \
 	lttng/marker-internal.h \
 	lttng/tracepoint-internal.h \
