@@ -129,14 +129,6 @@ int lib_ring_buffer_backend_create(struct lttng_ust_lib_ring_buffer_backend *buf
 						handle, shmobj);
 }
 
-void lib_ring_buffer_backend_free(struct lttng_ust_lib_ring_buffer_backend *bufb)
-{
-	/* bufb->buf_wsb will be freed by shm teardown */
-	/* bufb->array[i] will be freed by shm teardown */
-	/* bufb->array will be freed by shm teardown */
-	bufb->allocated = 0;
-}
-
 void lib_ring_buffer_backend_reset(struct lttng_ust_lib_ring_buffer_backend *bufb,
 				   struct lttng_ust_shm_handle *handle)
 {
@@ -311,15 +303,6 @@ int channel_backend_init(struct channel_backend *chanb,
 	return 0;
 
 free_bufs:
-	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU) {
-		for_each_possible_cpu(i) {
-			struct lttng_ust_lib_ring_buffer *buf = shmp(handle, chanb->buf[i].shmp);
-
-			if (!buf->backend.allocated)
-				continue;
-			lib_ring_buffer_free(buf, handle);
-		}
-	}
 	/* We only free the buffer data upon shm teardown */
 end:
 	return -ENOMEM;
@@ -334,24 +317,7 @@ end:
 void channel_backend_free(struct channel_backend *chanb,
 			  struct lttng_ust_shm_handle *handle)
 {
-	const struct lttng_ust_lib_ring_buffer_config *config = &chanb->config;
-	unsigned int i;
-
-	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU) {
-		for_each_possible_cpu(i) {
-			struct lttng_ust_lib_ring_buffer *buf = shmp(handle, chanb->buf[i].shmp);
-
-			if (!buf->backend.allocated)
-				continue;
-			lib_ring_buffer_free(buf, handle);
-		}
-	} else {
-		struct lttng_ust_lib_ring_buffer *buf = shmp(handle, chanb->buf[0].shmp);
-
-		CHAN_WARN_ON(chanb, !buf->backend.allocated);
-		lib_ring_buffer_free(buf, handle);
-	}
-	/* We only free the buffer data upon shm teardown */
+	/* SHM teardown takes care of everything */
 }
 
 /**

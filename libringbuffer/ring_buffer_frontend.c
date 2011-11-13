@@ -83,25 +83,14 @@ struct switch_offsets {
 
 __thread unsigned int lib_ring_buffer_nesting;
 
+/*
+ * TODO: this is unused. Errors are saved within the ring buffer.
+ * Eventually, allow consumerd to print these errors.
+ */
 static
 void lib_ring_buffer_print_errors(struct channel *chan,
 				  struct lttng_ust_lib_ring_buffer *buf, int cpu,
 				  struct lttng_ust_shm_handle *handle);
-
-/*
- * Must be called under cpu hotplug protection.
- */
-void lib_ring_buffer_free(struct lttng_ust_lib_ring_buffer *buf,
-			  struct lttng_ust_shm_handle *handle)
-{
-	struct channel *chan = shmp(handle, buf->backend.chan);
-
-	lib_ring_buffer_print_errors(chan, buf, buf->backend.cpu, handle);
-	/* buf->commit_hot will be freed by shm teardown */
-	/* buf->commit_cold will be freed by shm teardown */
-
-	lib_ring_buffer_backend_free(&buf->backend);
-}
 
 /**
  * lib_ring_buffer_reset - Reset ring buffer to initial values.
@@ -231,7 +220,6 @@ free_init:
 free_commit:
 	/* commit_hot will be freed by shm teardown */
 free_chanbuf:
-	lib_ring_buffer_backend_free(&buf->backend);
 	return ret;
 }
 
@@ -596,9 +584,6 @@ void channel_release(struct channel *chan, struct lttng_ust_shm_handle *handle,
 void channel_destroy(struct channel *chan, struct lttng_ust_shm_handle *handle,
 		int shadow)
 {
-	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
-	int cpu;
-
 	if (shadow) {
 		channel_release(chan, handle, shadow);
 		return;
@@ -606,42 +591,11 @@ void channel_destroy(struct channel *chan, struct lttng_ust_shm_handle *handle,
 
 	channel_unregister_notifiers(chan, handle);
 
-	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU) {
-		for_each_channel_cpu(cpu, chan) {
-			struct lttng_ust_lib_ring_buffer *buf = shmp(handle, chan->backend.buf[cpu].shmp);
+	/*
+	 * Note: the consumer takes care of finalizing and switching the
+	 * buffers.
+	 */
 
-			if (config->cb.buffer_finalize)
-				config->cb.buffer_finalize(buf,
-							   channel_get_private(chan),
-							   cpu, handle);
-			if (buf->backend.allocated)
-				lib_ring_buffer_switch_slow(buf, SWITCH_FLUSH,
-						handle);
-			/*
-			 * Perform flush before writing to finalized.
-			 */
-			cmm_smp_wmb();
-			CMM_ACCESS_ONCE(buf->finalized) = 1;
-			//wake_up_interruptible(&buf->read_wait);
-		}
-	} else {
-		struct lttng_ust_lib_ring_buffer *buf = shmp(handle, chan->backend.buf[0].shmp);
-
-		if (config->cb.buffer_finalize)
-			config->cb.buffer_finalize(buf, channel_get_private(chan), -1, handle);
-		if (buf->backend.allocated)
-			lib_ring_buffer_switch_slow(buf, SWITCH_FLUSH,
-						handle);
-		/*
-		 * Perform flush before writing to finalized.
-		 */
-		cmm_smp_wmb();
-		CMM_ACCESS_ONCE(buf->finalized) = 1;
-		//wake_up_interruptible(&buf->read_wait);
-	}
-	CMM_ACCESS_ONCE(chan->finalized) = 1;
-	//wake_up_interruptible(&chan->hp_wait);
-	//wake_up_interruptible(&chan->read_wait);
 	/*
 	 * sessiond/consumer are keeping a reference on the shm file
 	 * descriptor directly. No need to refcount.

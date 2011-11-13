@@ -32,6 +32,8 @@
 #include "lttng/core.h"
 #include "ltt-tracer.h"
 
+static int lttng_ust_abi_close_in_progress;
+
 static
 int lttng_abi_tracepoint_list(void);
 
@@ -836,7 +838,21 @@ int lttng_rb_release(int objd)
 		buf = priv->buf;
 		channel = priv->ltt_chan;
 		free(priv);
-		channel->ops->buffer_read_close(buf, channel->handle);
+		/*
+		 * If we are at ABI exit, we don't want to close the
+		 * buffer opened for read: it is being shared between
+		 * the parent and child (right after fork), and we don't
+		 * want the child to close it for the parent. For a real
+		 * exit, we don't care about marking it as closed, as
+		 * the consumer daemon (if there is one) will do fine
+		 * even if we don't mark it as "closed" for reading on
+		 * our side.
+		 * We only mark it as closed if it is being explicitely
+		 * released by the session daemon with an explicit
+		 * release command.
+		 */
+		if (!lttng_ust_abi_close_in_progress)
+			channel->ops->buffer_read_close(buf, channel->handle);
 
 		return lttng_ust_objd_unref(channel->objd);
 	}
@@ -900,5 +916,7 @@ static const struct lttng_ust_objd_ops lttng_event_ops = {
 
 void lttng_ust_abi_exit(void)
 {
+	lttng_ust_abi_close_in_progress = 1;
 	objd_table_destroy();
+	lttng_ust_abi_close_in_progress = 0;
 }
