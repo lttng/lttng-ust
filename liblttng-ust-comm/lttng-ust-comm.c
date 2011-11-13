@@ -355,16 +355,15 @@ int ustcomm_send_app_msg(int sock, struct ustcomm_ust_msg *lum)
 	len = ustcomm_send_unix_sock(sock, lum, sizeof(*lum));
 	switch (len) {
 	case sizeof(*lum):
-		printf("message successfully sent\n");
 		break;
 	case -1:
 		if (errno == ECONNRESET) {
-			printf("remote end closed connection\n");
+			fprintf(stderr, "remote end closed connection\n");
 			return 0;
 		}
 		return -1;
 	default:
-		printf("incorrect message size: %zd\n", len);
+		fprintf(stderr, "incorrect message size: %zd\n", len);
 		return -1;
 	}
 	return 0;
@@ -379,33 +378,31 @@ int ustcomm_recv_app_reply(int sock, struct ustcomm_ust_reply *lur,
 	len = ustcomm_recv_unix_sock(sock, lur, sizeof(*lur));
 	switch (len) {
 	case 0:	/* orderly shutdown */
-		printf("Application has performed an orderly shutdown\n");
 		return -EINVAL;
 	case sizeof(*lur):
-		printf("result message received\n");
 		if (lur->handle != expected_handle) {
-			printf("Unexpected result message handle\n");
+			fprintf(stderr, "Unexpected result message handle\n");
 			return -EINVAL;
 		}
 
 		if (lur->cmd != expected_cmd) {
-			printf("Unexpected result message command\n");
+			fprintf(stderr, "Unexpected result message command\n");
 			return -EINVAL;
 		}
 		if (lur->ret_code != USTCOMM_OK) {
-			printf("remote operation failed with code %d.\n",
+			fprintf(stderr, "remote operation failed with code %d.\n",
 				lur->ret_code);
 			return lur->ret_code;
 		}
 		return 0;
 	case -1:
 		if (errno == ECONNRESET) {
-			printf("remote end closed connection\n");
+			fprintf(stderr, "remote end closed connection\n");
 			return -EINVAL;
 		}
 		return -1;
 	default:
-		printf("incorrect message size: %zd\n", len);
+		fprintf(stderr, "incorrect message size: %zd\n", len);
 		return len > 0 ? -1 : len;
 	}
 }
@@ -453,23 +450,22 @@ int ustcomm_recv_fd(int sock)
 	msg.msg_control = recv_fd;
 	msg.msg_controllen = sizeof(recv_fd);
 
-	printf("Waiting to receive fd\n");
 	if ((ret = recvmsg(sock, &msg, 0)) < 0) {
 		perror("recvmsg");
 		goto end;
 	}
 	if (ret != sizeof(data_fd)) {
-		printf("Received %d bytes, expected %ld", ret, sizeof(data_fd));
+		fprintf(stderr, "Received %d bytes, expected %ld", ret, sizeof(data_fd));
 		goto end;
 	}
 	cmsg = CMSG_FIRSTHDR(&msg);
 	if (!cmsg) {
-		printf("Invalid control message header\n");
+		fprintf(stderr, "Invalid control message header\n");
 		ret = -1;
 		goto end;
 	}
 	if (cmsg->cmsg_level != SOL_SOCKET || cmsg->cmsg_type != SCM_RIGHTS) {
-		printf("Didn't received any fd\n");
+		fprintf(stderr, "Didn't received any fd\n");
 		ret = -1;
 		goto end;
 	}
@@ -477,7 +473,7 @@ int ustcomm_recv_fd(int sock)
 	for (i = 0; i < sizeof(int); i++)
 		tmp.vc[i] = CMSG_DATA(cmsg)[i];
 	ret = tmp.vi;
-	printf("received fd %d\n", ret);
+	fprintf(stderr, "received fd %d\n", ret);
 end:
 	return ret;
 }
