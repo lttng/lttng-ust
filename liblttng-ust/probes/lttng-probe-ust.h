@@ -45,5 +45,5 @@ TRACEPOINT_EVENT(lttng_ust, metadata,
 
 #endif /* _TRACEPOINT_LTTNG_UST_H */
 
-/* This part must be outside protection */
+/* This part must be outside ifdef protection */
 #include <lttng/tracepoint-event.h>

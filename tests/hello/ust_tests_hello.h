@@ -62,7 +62,7 @@ TRACEPOINT_EVENT(ust_tests_hello, tptest_sighandler,
 #undef TRACEPOINT_INCLUDE_FILE
 #define TRACEPOINT_INCLUDE_FILE ust_tests_hello
 
-/* This part must be outside protection */
+/* This part must be outside ifdef protection */
 #include <lttng/tracepoint-event.h>
 
 #ifdef __cplusplus 
