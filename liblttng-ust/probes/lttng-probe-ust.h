@@ -26,9 +26,7 @@
 
 TRACEPOINT_EVENT(lttng_ust, metadata,
 
-	TP_PROTO(const char *str),
-
-	TP_VARS(str),
+	TP_ARGS(const char *, str),
 
 	/*
 	 * Not exactly a string: more a sequence of bytes (dynamic

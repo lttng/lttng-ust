@@ -77,18 +77,11 @@
  */
 
 #undef TRACEPOINT_EVENT
-#define TRACEPOINT_EVENT(provider, name, proto, args, fields)	\
+#define TRACEPOINT_EVENT(provider, name, args, fields)	\
 	TRACEPOINT_EVENT_CLASS(provider, name,		\
-			     TP_PARAMS(proto),		\
 			     TP_PARAMS(args),		\
 			     TP_PARAMS(fields))		\
-	TRACEPOINT_EVENT_INSTANCE(provider, name, name, TP_PARAMS(proto), TP_PARAMS(args))
-
-#undef TRACEPOINT_EVENT_NOARGS
-#define TRACEPOINT_EVENT_NOARGS(provider, name, fields)	\
-	TRACEPOINT_EVENT_CLASS_NOARGS(provider, name,	\
-			     TP_PARAMS(fields))		\
-	TRACEPOINT_EVENT_INSTANCE_NOARGS(provider, name, name)
+	TRACEPOINT_EVENT_INSTANCE(provider, name, name, TP_PARAMS(args))
 
 /* Helpers */
 #define _TP_ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
@@ -119,19 +112,11 @@ void TP_ID(__tracepoint_provider_mismatch_, TRACEPOINT_PROVIDER)(void)
 }
 
 #undef TRACEPOINT_EVENT_CLASS
-#define TRACEPOINT_EVENT_CLASS(_provider, _name, _proto, _args, _fields) \
-	__tracepoint_provider_mismatch_##_provider();
-
-#undef TRACEPOINT_EVENT_CLASS_NOARGS
-#define TRACEPOINT_EVENT_CLASS_NOARGS(_provider, _name, _fields)	 \
+#define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields) 	\
 	__tracepoint_provider_mismatch_##_provider();
 
 #undef TRACEPOINT_EVENT_INSTANCE
-#define TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _proto, _args) \
-	__tracepoint_provider_mismatch_##_provider();
-
-#undef TRACEPOINT_EVENT_INSTANCE_NOARGS
-#define TRACEPOINT_EVENT_INSTANCE_NOARGS(_provider, _template, _name)	 \
+#define TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	\
 	__tracepoint_provider_mismatch_##_provider();
 
 static __attribute__((unused))
@@ -212,15 +197,11 @@ void TP_ID(__tracepoint_provider_check_, TRACEPOINT_PROVIDER)(void)
 #undef TP_FIELDS
 #define TP_FIELDS(args...) args	/* Only one used in this phase */
 
-#undef TRACEPOINT_EVENT_CLASS_NOARGS
-#define TRACEPOINT_EVENT_CLASS_NOARGS(_provider, _name, _fields)		   	     \
-	static const struct lttng_event_field __event_fields___##_provider##___##_name[] = { \
-		_fields							     \
-	};
-
 #undef TRACEPOINT_EVENT_CLASS
-#define TRACEPOINT_EVENT_CLASS(_provider, _name, _proto, _args, _fields)		     \
-	TRACEPOINT_EVENT_CLASS_NOARGS(_provider, _name, TP_PARAMS(_fields))
+#define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)		   	     \
+	static const struct lttng_event_field __event_fields___##_provider##___##_name[] = { \
+		_fields									     \
+	};
 
 #include TRACEPOINT_INCLUDE(TRACEPOINT_INCLUDE_FILE)
 
@@ -233,16 +214,12 @@ void TP_ID(__tracepoint_provider_check_, TRACEPOINT_PROVIDER)(void)
 /* Reset all macros within TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 
-#undef TP_PROTO
-#define TP_PROTO(args...) args
+#undef TP_ARGS
+#define TP_ARGS(args...) args
 
 #undef TRACEPOINT_EVENT_CLASS
-#define TRACEPOINT_EVENT_CLASS(_provider, _name, _proto, _args, _fields)		     \
-static void __event_probe__##_provider##___##_name(void *__data, _proto);
-
-#undef TRACEPOINT_EVENT_CLASS_NOARGS
-#define TRACEPOINT_EVENT_CLASS_NOARGS(_provider, _name, _fields)			     \
-static void __event_probe__##_provider##___##_name(void *__data);
+#define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)		\
+static void __event_probe__##_provider##___##_name(_TP_ARGS_PROTO_DATA(_args));
 
 #include TRACEPOINT_INCLUDE(TRACEPOINT_INCLUDE_FILE)
 
@@ -255,18 +232,14 @@ static void __event_probe__##_provider##___##_name(void *__data);
 /* Reset all macros within TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 
-#undef TRACEPOINT_EVENT_INSTANCE_NOARGS
-#define TRACEPOINT_EVENT_INSTANCE_NOARGS(_provider, _template, _name)	       \
+#undef TRACEPOINT_EVENT_INSTANCE
+#define TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	       \
 		{							       \
 			.fields = __event_fields___##_provider##___##_template,\
 			.name = #_provider ":" #_name,			       \
 			.probe_callback = (void *) &__event_probe__##_provider##___##_template,\
 			.nr_fields = _TP_ARRAY_SIZE(__event_fields___##_provider##___##_template), \
 		},
-
-#undef TRACEPOINT_EVENT_INSTANCE
-#define TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _proto, _args)	       \
-	TRACEPOINT_EVENT_INSTANCE_NOARGS(_provider, _template, _name)
 
 #define TP_ID1(_token, _provider)	_token##_provider
 #define TP_ID(_token, _provider)	TP_ID1(_token, _provider)
@@ -335,15 +308,15 @@ static struct lttng_probe_desc TP_ID(__probe_desc___, TRACEPOINT_PROVIDER) = {
 #define ctf_string(_item, _src)						       \
 	__event_len += __dynamic_len[__dynamic_len_idx++] = strlen(_src) + 1;
 
-#undef TP_PROTO
-#define TP_PROTO(args...) args
+#undef TP_ARGS
+#define TP_ARGS(args...) args
 
 #undef TP_FIELDS
 #define TP_FIELDS(args...) args
 
 #undef TRACEPOINT_EVENT_CLASS
-#define TRACEPOINT_EVENT_CLASS(_provider, _name, _proto, _args, _fields)      \
-static inline size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, _proto) \
+#define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)      \
+static inline size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, _TP_ARGS_PROTO_DATA(_args)) \
 {									      \
 	size_t __event_len = 0;						      \
 	unsigned int __dynamic_len_idx = 0;				      \
@@ -386,15 +359,16 @@ static inline size_t __event_get_size__##_provider##___##_name(size_t *__dynamic
 #undef ctf_string
 #define ctf_string(_item, _src)
 
-#undef TP_PROTO
-#define TP_PROTO(args...) args
+#undef TP_ARGS
+#define TP_ARGS(args...) args
 
 #undef TP_FIELDS
 #define TP_FIELDS(args...) args
 
 #undef TRACEPOINT_EVENT_CLASS
-#define TRACEPOINT_EVENT_CLASS(_provider, _name, _proto, _args, _fields)      \
-static inline size_t __event_get_align__##_provider##___##_name(_proto)	      \
+#define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
+static inline								      \
+size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 {									      \
 	size_t __event_align = 1;					      \
 	_fields								      \
@@ -460,20 +434,17 @@ static inline size_t __event_get_align__##_provider##___##_name(_proto)	      \
 #undef __get_dynamic_len
 #define __get_dynamic_len(field)	__dynamic_len[__dynamic_len_idx++]
 
-#undef TP_PROTO
-#define TP_PROTO(args...) args
-
-#undef TP_VARS
-#define TP_VARS(args...) args
+#undef TP_ARGS
+#define TP_ARGS(args...) args
 
 #undef TP_FIELDS
 #define TP_FIELDS(args...) args
 
 #undef TRACEPOINT_EVENT_CLASS
-#define TRACEPOINT_EVENT_CLASS(_provider, _name, _proto, _args, _fields)      \
-static void __event_probe__##_provider##___##_name(void *__data, _proto)      \
+#define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
+static void __event_probe__##_provider##___##_name(_TP_ARGS_PROTO_DATA(_args))\
 {									      \
-	struct ltt_event *__event = __data;				      \
+	struct ltt_event *__event = __tp_cb_data;			      \
 	struct ltt_channel *__chan = __event->chan;			      \
 	struct lttng_ust_lib_ring_buffer_ctx __ctx;				      \
 	size_t __event_len, __event_align;				      \
@@ -489,35 +460,9 @@ static void __event_probe__##_provider##___##_name(void *__data, _proto)      \
 		return;							      \
 	if (caa_unlikely(!CMM_ACCESS_ONCE(__event->enabled)))		      \
 		return;							      \
-	__event_len = __event_get_size__##_provider##___##_name(__dynamic_len, _args);	      \
-	__event_align = __event_get_align__##_provider##___##_name(_args);		      \
-	lib_ring_buffer_ctx_init(&__ctx, __chan->chan, __event, __event_len,  \
-				 __event_align, -1, __chan->handle);	      \
-	__ret = __chan->ops->event_reserve(&__ctx, __event->id);	      \
-	if (__ret < 0)							      \
-		return;							      \
-	_fields								      \
-	__chan->ops->event_commit(&__ctx);				      \
-}
-
-#undef TRACEPOINT_EVENT_CLASS_NOARGS
-#define TRACEPOINT_EVENT_CLASS_NOARGS(_provider, _name, _fields)	      \
-static void __event_probe__##_provider##___##_name(void *__data)	      \
-{									      \
-	struct ltt_event *__event = __data;				      \
-	struct ltt_channel *__chan = __event->chan;			      \
-	struct lttng_ust_lib_ring_buffer_ctx __ctx;				      \
-	size_t __event_len, __event_align;				      \
-	int __ret;							      \
-									      \
-	if (caa_unlikely(!CMM_ACCESS_ONCE(__chan->session->active)))	      \
-		return;							      \
-	if (caa_unlikely(!CMM_ACCESS_ONCE(__chan->enabled)))		      \
-		return;							      \
-	if (caa_unlikely(!CMM_ACCESS_ONCE(__event->enabled)))		      \
-		return;							      \
-	__event_len = 0;						      \
-	__event_align = 1;						      \
+	__event_len = __event_get_size__##_provider##___##_name(__dynamic_len,\
+		 _TP_ARGS_VARS_DATA(_args));				      \
+	__event_align = __event_get_align__##_provider##___##_name(_TP_ARGS_VARS(_args)); \
 	lib_ring_buffer_ctx_init(&__ctx, __chan->chan, __event, __event_len,  \
 				 __event_align, -1, __chan->handle);	      \
 	__ret = __chan->ops->event_reserve(&__ctx, __event->id);	      \

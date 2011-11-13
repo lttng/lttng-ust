@@ -24,23 +24,14 @@
 #undef ctf_string
 #define ctf_string(_item, _src)
 
-#undef TP_PROTO
-#define TP_PROTO(args...)
-
-#undef TP_VARS
-#define TP_VARS(args...)
+#undef TP_ARGS
+#define TP_ARGS(args...)
 
 #undef TP_FIELDS
 #define TP_FIELDS(args...)
 
 #undef TRACEPOINT_EVENT_CLASS
-#define TRACEPOINT_EVENT_CLASS(_provider, _name, _proto, _args, _fields)
-
-#undef TRACEPOINT_EVENT_CLASS_NOARGS
-#define TRACEPOINT_EVENT_CLASS_NOARGS(_provider, _name, _fields)
+#define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)
 
 #undef TRACEPOINT_EVENT_INSTANCE
-#define TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _proto, _args)
-
-#undef TRACEPOINT_EVENT_INSTANCE_NOARGS
-#define TRACEPOINT_EVENT_INSTANCE_NOARGS(_provider, _template, _name)
+#define TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)

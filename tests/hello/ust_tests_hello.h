@@ -29,11 +29,9 @@ extern "C" {
 #include <lttng/tracepoint.h>
 
 TRACEPOINT_EVENT(ust_tests_hello, tptest,
-	TP_PROTO(int anint, int netint, long *values,
-		 char *text, size_t textlen,
-		 double doublearg, float floatarg),
-	TP_VARS(anint, netint, values, text, textlen,
-		doublearg, floatarg),
+	TP_ARGS(int, anint, int, netint, long *, values,
+		 char *, text, size_t, textlen,
+		 double, doublearg, float, floatarg),
 	TP_FIELDS(
 		ctf_integer(int, intfield, anint)
 		ctf_integer_hex(int, intfield2, anint)
@@ -52,7 +50,8 @@ TRACEPOINT_EVENT(ust_tests_hello, tptest,
 	)
 )
 
-TRACEPOINT_EVENT_NOARGS(ust_tests_hello, tptest_sighandler,
+TRACEPOINT_EVENT(ust_tests_hello, tptest_sighandler,
+	TP_ARGS(),
 	TP_FIELDS()
 )
 

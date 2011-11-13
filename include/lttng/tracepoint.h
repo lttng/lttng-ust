@@ -42,7 +42,7 @@ extern "C" {
  * it_func[0] is never NULL because there is at least one element in the array
  * when the array itself is non NULL.
  */
-#define __DO_TRACE(tp, proto, args)					\
+#define __DO_TRACE(tp, proto, vars)					\
 	do {								\
 		struct tracepoint_probe *__tp_it_probe_ptr;		\
 		void *__tp_it_func;					\
@@ -54,21 +54,97 @@ extern "C" {
 			do {						\
 				__tp_it_func = __tp_it_probe_ptr->func;	\
 				__tp_cb_data = __tp_it_probe_ptr->data;	\
-				URCU_FORCE_CAST(void(*)(proto), __tp_it_func)(args); \
+				URCU_FORCE_CAST(void(*)(proto), __tp_it_func)(vars); \
 			} while ((++__tp_it_probe_ptr)->func);		\
 		}							\
 		rcu_read_unlock();					\
 	} while (0)
 
 #define TP_PARAMS(args...)	args
-#define TP_PROTO(args...)	args
-#define TP_VARS(args...)	args
+#define TP_ARGS(args...)	args
+
+/*
+ * TP_ARGS takes tuples of type, argument separated by a comma. It can
+ * take up to 10 tuples (which means that less than 10 tuples is fine
+ * too). Each tuple is also separated by a comma.
+ */
+
+#define TP_COMBINE_TOKENS1(_tokena, _tokenb)       _tokena##_tokenb
+#define TP_COMBINE_TOKENS(_tokena, _tokenb)        TP_COMBINE_TOKENS1(_tokena, _tokenb)
+
+/* _TP_EVEN* extracts the vars names. */
+#define _TP_EVEN0()
+#define _TP_EVEN2(a,b)						b
+#define _TP_EVEN4(a,b,c,d)					b,d
+#define _TP_EVEN6(a,b,c,d,e,f)					b,d,f
+#define _TP_EVEN8(a,b,c,d,e,f,g,h)				b,d,f,h
+#define _TP_EVEN10(a,b,c,d,e,f,g,h,i,j)				b,d,f,h,j
+#define _TP_EVEN12(a,b,c,d,e,f,g,h,i,j,k,l)			b,d,f,h,j,l
+#define _TP_EVEN14(a,b,c,d,e,f,g,h,i,j,k,l,m,n)			b,d,f,h,j,l,n
+#define _TP_EVEN16(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p)		b,d,f,h,j,l,n,p
+#define _TP_EVEN18(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r)		b,d,f,h,j,l,n,p,r
+#define _TP_EVEN20(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t)	b,d,f,h,j,l,n,p,r,t
+
+#define _TP_EVEN_DATA0()						__tp_cb_data
+#define _TP_EVEN_DATA2(a,b)						__tp_cb_data,b
+#define _TP_EVEN_DATA4(a,b,c,d)						__tp_cb_data,b,d
+#define _TP_EVEN_DATA6(a,b,c,d,e,f)					__tp_cb_data,b,d,f
+#define _TP_EVEN_DATA8(a,b,c,d,e,f,g,h)					__tp_cb_data,b,d,f,h
+#define _TP_EVEN_DATA10(a,b,c,d,e,f,g,h,i,j)				__tp_cb_data,b,d,f,h,j
+#define _TP_EVEN_DATA12(a,b,c,d,e,f,g,h,i,j,k,l)			__tp_cb_data,b,d,f,h,j,l
+#define _TP_EVEN_DATA14(a,b,c,d,e,f,g,h,i,j,k,l,m,n)			__tp_cb_data,b,d,f,h,j,l,n
+#define _TP_EVEN_DATA16(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p)		__tp_cb_data,b,d,f,h,j,l,n,p
+#define _TP_EVEN_DATA18(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r)		__tp_cb_data,b,d,f,h,j,l,n,p,r
+#define _TP_EVEN_DATA20(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t)	__tp_cb_data,b,d,f,h,j,l,n,p,r,t
+
+/* _TP_SPLIT extracts tuples of type, var */
+#define _TP_SPLIT0()
+#define _TP_SPLIT2(a,b)						a b
+#define _TP_SPLIT4(a,b,c,d)					a b,c d
+#define _TP_SPLIT6(a,b,c,d,e,f)					a b,c d,e f
+#define _TP_SPLIT8(a,b,c,d,e,f,g,h)				a b,c d,e f,g h
+#define _TP_SPLIT10(a,b,c,d,e,f,g,h,i,j)			a b,c d,e f,g h,i j
+#define _TP_SPLIT12(a,b,c,d,e,f,g,h,i,j,k,l)			a b,c d,e f,g h,i j,k l
+#define _TP_SPLIT14(a,b,c,d,e,f,g,h,i,j,k,l,m,n)		a b,c d,e f,g h,i j,k l,m n
+#define _TP_SPLIT16(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p)		a b,c d,e f,g h,i j,k l,m n,o p
+#define _TP_SPLIT18(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r)	a b,c d,e f,g h,i j,k l,m n,o p,q r
+#define _TP_SPLIT20(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t)	a b,c d,e f,g h,i j,k l,m n,o p,q r,s t
+
+#define _TP_SPLIT_DATA0()						void *__tp_cb_data
+#define _TP_SPLIT_DATA2(a,b)						void *__tp_cb_data,a b
+#define _TP_SPLIT_DATA4(a,b,c,d)					void *__tp_cb_data,a b,c d
+#define _TP_SPLIT_DATA6(a,b,c,d,e,f)					void *__tp_cb_data,a b,c d,e f
+#define _TP_SPLIT_DATA8(a,b,c,d,e,f,g,h)				void *__tp_cb_data,a b,c d,e f,g h
+#define _TP_SPLIT_DATA10(a,b,c,d,e,f,g,h,i,j)				void *__tp_cb_data,a b,c d,e f,g h,i j
+#define _TP_SPLIT_DATA12(a,b,c,d,e,f,g,h,i,j,k,l)			void *__tp_cb_data,a b,c d,e f,g h,i j,k l
+#define _TP_SPLIT_DATA14(a,b,c,d,e,f,g,h,i,j,k,l,m,n)			void *__tp_cb_data,a b,c d,e f,g h,i j,k l,m n
+#define _TP_SPLIT_DATA16(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p)		void *__tp_cb_data,a b,c d,e f,g h,i j,k l,m n,o p
+#define _TP_SPLIT_DATA18(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r)		void *__tp_cb_data,a b,c d,e f,g h,i j,k l,m n,o p,q r
+#define _TP_SPLIT_DATA20(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t)	void *__tp_cb_data,a b,c d,e f,g h,i j,k l,m n,o p,q r,s t
+
+/* Preprocessor trick to count arguments. Inspired from sdt.h. */
+#define _TP_NARGS(...)	__TP_NARGS(__VA_ARGS__, 20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0)
+#define __TP_NARGS(_0,_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15,_16,_17,_18,_19,_20, N, ...) N
+#define _TP_PROTO_N(N, ...)	\
+	TP_PARAMS(TP_COMBINE_TOKENS(_TP_SPLIT, N)(__VA_ARGS__))
+#define _TP_VARS_N(N, ...)	\
+	TP_PARAMS(TP_COMBINE_TOKENS(_TP_EVEN, N)(__VA_ARGS__))
+#define _TP_PROTO_DATA_N(N, ...)	\
+	TP_PARAMS(TP_COMBINE_TOKENS(_TP_SPLIT_DATA, N)(__VA_ARGS__))
+#define _TP_VARS_DATA_N(N, ...)	\
+	TP_PARAMS(TP_COMBINE_TOKENS(_TP_EVEN_DATA, N)(__VA_ARGS__))
+
+#define _TP_ARGS_PROTO(...)		_TP_PROTO_N(_TP_NARGS(0, ##__VA_ARGS__), ##__VA_ARGS__)
+#define _TP_ARGS_VARS(...)		_TP_VARS_N(_TP_NARGS(0, ##__VA_ARGS__), ##__VA_ARGS__)
+
+#define _TP_ARGS_PROTO_DATA(...)	_TP_PROTO_DATA_N(_TP_NARGS(0, ##__VA_ARGS__), ##__VA_ARGS__)
+#define _TP_ARGS_VARS_DATA(...)		_TP_VARS_DATA_N(_TP_NARGS(0, ##__VA_ARGS__), ##__VA_ARGS__)
 
 #define __CHECK_TRACE(provider, name, proto, args)			\
 	do {								\
 		if (caa_unlikely(__tracepoint_##provider##___##name.state))	\
 			__DO_TRACE(&__tracepoint_##provider##___##name,	\
-				TP_PROTO(proto), TP_VARS(args));	\
+				TP_PARAMS(proto), TP_PARAMS(args));	\
 	} while (0)
 
 /*
@@ -80,8 +156,8 @@ extern "C" {
 	extern struct tracepoint __tracepoint_##provider##___##name;	\
 	static inline void __trace_##provider##___##name(proto)		\
 	{								\
-		__CHECK_TRACE(provider, name, TP_PROTO(data_proto),	\
-			      TP_VARS(data_args));			\
+		__CHECK_TRACE(provider, name, TP_PARAMS(data_proto),	\
+			      TP_PARAMS(data_args));			\
 	}								\
 	static inline int						\
 	__register_trace_##provider##___##name(void (*probe)(data_proto), void *data)	\
@@ -96,27 +172,9 @@ extern "C" {
 						   data);		\
 	}
 
-/*
- * The need for the _DECLARE_TRACEPOINT_NOARGS() is to handle the prototype
- * (void). "void" is a special value in a function prototype and can
- * not be combined with other arguments. Since the DECLARE_TRACEPOINT()
- * macro adds a data element at the beginning of the prototype,
- * we need a way to differentiate "(void *data, proto)" from
- * "(void *data, void)". The second prototype is invalid.
- *
- * DECLARE_TRACEPOINT_NOARGS() passes "void" as the tracepoint prototype
- * and "void *__tp_cb_data" as the callback prototype.
- *
- * DECLARE_TRACEPOINT() passes "proto" as the tracepoint protoype and
- * "void *__tp_cb_data, proto" as the callback prototype.
- */
-#define _DECLARE_TRACEPOINT_NOARGS(provider, name)			\
-	__DECLARE_TRACEPOINT(provider, name, void, , void *__tp_cb_data, __tp_cb_data)
-
-#define _DECLARE_TRACEPOINT(provider, name, proto, args)		\
-	__DECLARE_TRACEPOINT(provider, name, TP_PARAMS(proto), TP_PARAMS(args),	\
-			TP_PARAMS(void *__tp_cb_data, proto),		\
-			TP_PARAMS(__tp_cb_data, args))
+#define _DECLARE_TRACEPOINT(provider, name, args)			\
+	__DECLARE_TRACEPOINT(provider, name, _TP_ARGS_PROTO(args), _TP_ARGS_VARS(args),	\
+			_TP_ARGS_PROTO_DATA(args), _TP_ARGS_VARS_DATA(args))
 
 /*
  * __tracepoints_ptrs section is not const (read-only) to let the linker update
@@ -194,9 +252,11 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
  * In short, an example:
  *
  * TRACEPOINT_EVENT(< [com_company_]project[_component] >, < event >,
- *     TP_PROTO(int arg0, void *arg1, char *string, size_t strlen,
- *              long *arg4, size_t arg4_len),
- *     TP_VARS(arg0, arg1, string, strlen, arg4, arg4_len),
+ *
+ *     * TP_ARGS takes from 0 to 10 "type, field_name" pairs *
+ *
+ *     TP_ARGS(int, arg0, void *, arg1, char *, string, size_t, strlen,
+ *             long *, arg4, size_t, arg4_len),
  *     TP_FIELDS(
  *
  *         * Integer, printed in base 10 * 
@@ -270,20 +330,12 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
  *  TRACEPOINT_EVENT(someproject_sched, switch,
  *
  *	*
- *	* A function has a regular function arguments
- *	* prototype, declare it via TP_PROTO():
+ *	* Arguments to pass to the tracepoint. Supports from
+ *	* 0 to 10 "type, name" tuples.
  *	*
  *
- *	TP_PROTO(struct rq *rq, struct task_struct *prev,
- *		 struct task_struct *next),
- *
- *	*
- *	* Define the call signature of the 'function'.
- *	* (Design sidenote: we use this instead of a
- *	*  TP_PROTO1/TP_PROTO2/TP_PROTO3 ugliness.)
- *	*
- *
- *	TP_VARS(rq, prev, next),
+ *	TP_ARGS(struct rq *, rq, struct task_struct *, prev,
+ *		struct task_struct *, next),
  *
  *	*
  *	* Fast binary tracing: define the trace record via
@@ -331,22 +383,12 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
  * usage of other macros controlling TRACEPOINT_EVENT.
  */
 
-#define TRACEPOINT_EVENT(provider, name, proto, args, fields)		\
-	_DECLARE_TRACEPOINT(provider, name, TP_PARAMS(proto), TP_PARAMS(args))
+#define TRACEPOINT_EVENT(provider, name, args, fields)		\
+	_DECLARE_TRACEPOINT(provider, name, TP_PARAMS(args))
 
-#define TRACEPOINT_EVENT_CLASS(provider, name, proto, args, fields)
-#define TRACEPOINT_EVENT_INSTANCE(provider, template, name, proto, args)\
-	_DECLARE_TRACEPOINT(provider, name, TP_PARAMS(proto), TP_PARAMS(args))
-
-/*
- * Declaration of tracepoints that take 0 argument.
- */
-#define TRACEPOINT_EVENT_NOARGS(provider, name, fields)			\
-	_DECLARE_TRACEPOINT_NOARGS(provider, name)
-
-#define TRACEPOINT_EVENT_CLASS_NOARGS(provider, name, fields)
-#define TRACEPOINT_EVENT_INSTANCE_NOARGS(provider, template, name)	\
-	_DECLARE_TRACEPOINT_NOARGS(provider, name)
+#define TRACEPOINT_EVENT_CLASS(provider, name, args, fields)
+#define TRACEPOINT_EVENT_INSTANCE(provider, template, name, args)\
+	_DECLARE_TRACEPOINT(provider, name, TP_PARAMS(args))
 
 #endif /* #ifndef TRACEPOINT_EVENT */
 

@@ -52,19 +52,11 @@ extern "C" {
 #endif
 
 #undef TRACEPOINT_EVENT
-#define TRACEPOINT_EVENT(provider, name, proto, args, fields)		\
+#define TRACEPOINT_EVENT(provider, name, args, fields)			\
 	_DEFINE_TRACEPOINT(provider, name)
 
 #undef TRACEPOINT_EVENT_INSTANCE
-#define TRACEPOINT_EVENT_INSTANCE(provider, template, name, proto, args)	\
-	_DEFINE_TRACEPOINT(provider, name)
-
-#undef TRACEPOINT_EVENT_NOARGS
-#define TRACEPOINT_EVENT_NOARGS(provider, name, fields)			\
-	_DEFINE_TRACEPOINT(provider, name)
-
-#undef TRACEPOINT_EVENT_INSTANCE_NOARGS
-#define TRACEPOINT_EVENT_INSTANCE_NOARGS(provider, template, name)	\
+#define TRACEPOINT_EVENT_INSTANCE(provider, template, name, args)	\
 	_DEFINE_TRACEPOINT(provider, name)
 
 #undef TRACEPOINT_INCLUDE
@@ -95,9 +87,6 @@ extern "C" {
 #undef TRACEPOINT_EVENT
 #undef TRACEPOINT_EVENT_CLASS
 #undef TRACEPOINT_EVENT_INSTANCE
-#undef TRACEPOINT_EVENT_NOARGS
-#undef TRACEPOINT_EVENT_CLASS_NOARGS
-#undef TRACEPOINT_EVENT_INSTANCE_NOARGS
 #undef TRACEPOINT_HEADER_MULTI_READ
 
 /* Only undef what we defined in this file */
