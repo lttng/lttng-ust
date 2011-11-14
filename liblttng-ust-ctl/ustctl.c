@@ -39,6 +39,10 @@ void init_object(struct lttng_ust_object_data *data)
 	data->memory_map_size = 0;
 }
 
+/*
+ * If sock is negative, it means we don't have to notify the other side
+ * (e.g. application has already vanished).
+ */
 void ustctl_release_object(int sock, struct lttng_ust_object_data *data)
 {
 	struct ustcomm_ust_msg lum;
@@ -49,11 +53,13 @@ void ustctl_release_object(int sock, struct lttng_ust_object_data *data)
 		close(data->shm_fd);
 	if (data->wait_fd >= 0)
 		close(data->wait_fd);
-	memset(&lum, 0, sizeof(lum));
-	lum.handle = data->handle;
-	lum.cmd = LTTNG_UST_RELEASE;
-	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
-	assert(!ret);
+	if (sock >= 0) {
+		memset(&lum, 0, sizeof(lum));
+		lum.handle = data->handle;
+		lum.cmd = LTTNG_UST_RELEASE;
+		ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+		assert(!ret);
+	}
 	free(data);
 }
 
