@@ -245,6 +245,17 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
 	tracepoint_unregister_lib(__start___tracepoints_ptrs);
 }
 
+#ifdef __cplusplus 
+}
+#endif
+
+#endif /* _LTTNG_TRACEPOINT_H */
+
+/*
+ * For multiple probe generation, we need to redefine TRACEPOINT_EVENT
+ * each time tracepoint.h is included.
+ */
+
 #ifndef TRACEPOINT_EVENT
 /*
  * Usage of the TRACEPOINT_EVENT macro:
@@ -448,9 +459,3 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
 #define TRACEPOINT_LOGLEVEL(name, loglevel)
 
 #endif /* #ifndef TRACEPOINT_LOGLEVEL */
-
-#ifdef __cplusplus 
-}
-#endif
-
-#endif /* _LTTNG_TRACEPOINT_H */
