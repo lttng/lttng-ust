@@ -18,5 +18,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+/*
+ * Note: TRACEPOINT_CREATE_PROBES can only be defined within LGPL C
+ * files. See comment in lttng/tracepoint-event.h for detail.
+ */
 #define TRACEPOINT_CREATE_PROBES
 #include "ust_tests_demo.h"

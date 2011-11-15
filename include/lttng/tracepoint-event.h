@@ -35,6 +35,19 @@
  *       #define TRACEPOINT_INCLUDE_PATH .
  *     combined with -Ipath_to_header as compiler argument to allow
  *     searching for a header within your project build tree.
+ *
+ * Note considering licensing:
+ *
+ * Including the tracepoint-event.h header without the
+ * TRACEPOINT_CREATE_PROBES macro defined is fine within any application
+ * source code, even for non-LGPL-compatible applications.
+ *
+ * However, TRACEPOINT_CREATE_PROBES should only be defined within
+ * LGPL-compatible C files. This means that the tracepoint probe object
+ * should be relinkable when distributed, either by providing it as a
+ * dynamically linkable shared object (.so library), or by providing the
+ * build scripts and object files required to relink the object if
+ * statically linked.
  */
 
 #ifdef __cplusplus
