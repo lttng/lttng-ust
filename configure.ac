@@ -226,6 +226,7 @@ AC_CONFIG_FILES([
 	liblttng-ust-java/Makefile
 	tests/Makefile
 	tests/hello/Makefile
+	tests/demo/Makefile
 	tests/fork/Makefile
 	tests/ust-basic-tracing/Makefile
 	tests/ust-multi-test/Makefile
