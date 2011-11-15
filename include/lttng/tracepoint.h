@@ -73,7 +73,9 @@ extern "C" {
 #define TP_COMBINE_TOKENS(_tokena, _tokenb)        TP_COMBINE_TOKENS1(_tokena, _tokenb)
 
 /* _TP_EVEN* extracts the vars names. */
+/* 0 and 1 are for void */
 #define _TP_EVEN0()
+#define _TP_EVEN1(a)
 #define _TP_EVEN2(a,b)						b
 #define _TP_EVEN4(a,b,c,d)					b,d
 #define _TP_EVEN6(a,b,c,d,e,f)					b,d,f
@@ -85,7 +87,9 @@ extern "C" {
 #define _TP_EVEN18(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r)		b,d,f,h,j,l,n,p,r
 #define _TP_EVEN20(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t)	b,d,f,h,j,l,n,p,r,t
 
+/* 0 and 1 are for void */
 #define _TP_EVEN_DATA0()						__tp_cb_data
+#define _TP_EVEN_DATA1(a)						__tp_cb_data
 #define _TP_EVEN_DATA2(a,b)						__tp_cb_data,b
 #define _TP_EVEN_DATA4(a,b,c,d)						__tp_cb_data,b,d
 #define _TP_EVEN_DATA6(a,b,c,d,e,f)					__tp_cb_data,b,d,f
@@ -98,7 +102,9 @@ extern "C" {
 #define _TP_EVEN_DATA20(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t)	__tp_cb_data,b,d,f,h,j,l,n,p,r,t
 
 /* _TP_SPLIT extracts tuples of type, var */
+/* 0 and 1 are for void */
 #define _TP_SPLIT0()
+#define _TP_SPLIT1(a)
 #define _TP_SPLIT2(a,b)						a b
 #define _TP_SPLIT4(a,b,c,d)					a b,c d
 #define _TP_SPLIT6(a,b,c,d,e,f)					a b,c d,e f
@@ -110,7 +116,9 @@ extern "C" {
 #define _TP_SPLIT18(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r)	a b,c d,e f,g h,i j,k l,m n,o p,q r
 #define _TP_SPLIT20(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t)	a b,c d,e f,g h,i j,k l,m n,o p,q r,s t
 
+/* 0 and 1 are for void */
 #define _TP_SPLIT_DATA0()						void *__tp_cb_data
+#define _TP_SPLIT_DATA1(a)						void *__tp_cb_data
 #define _TP_SPLIT_DATA2(a,b)						void *__tp_cb_data,a b
 #define _TP_SPLIT_DATA4(a,b,c,d)					void *__tp_cb_data,a b,c d
 #define _TP_SPLIT_DATA6(a,b,c,d,e,f)					void *__tp_cb_data,a b,c d,e f
