@@ -390,8 +390,12 @@ int ustcomm_recv_app_reply(int sock, struct ustcomm_ust_reply *lur,
 			return -EINVAL;
 		}
 		if (lur->ret_code != USTCOMM_OK) {
-			fprintf(stderr, "remote operation failed with code %d.\n",
-				lur->ret_code);
+			/*
+			 * Some errors are normal.. we should put this
+			 * in a debug level message...
+			 * fprintf(stderr, "remote operation failed with code %d.\n",
+			 *	lur->ret_code);
+			 */
 			return lur->ret_code;
 		}
 		return 0;
@@ -473,7 +477,10 @@ int ustcomm_recv_fd(int sock)
 	for (i = 0; i < sizeof(int); i++)
 		tmp.vc[i] = CMSG_DATA(cmsg)[i];
 	ret = tmp.vi;
-	fprintf(stderr, "received fd %d\n", ret);
+	/*
+	 * Useful for fd leak debug.
+	 * fprintf(stderr, "received fd %d\n", ret);
+	 */
 end:
 	return ret;
 }
