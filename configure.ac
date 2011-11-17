@@ -11,10 +11,12 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_SRCDIR([include/lttng/tracepoint.h])
 AC_CONFIG_HEADERS([config.h include/lttng/config.h])
 AH_TEMPLATE([HAVE_EFFICIENT_UNALIGNED_ACCESS], [Use efficient unaligned access.])
+
 # Compute minor/major/patchlevel version numbers
-major_version=$(echo AC_PACKAGE_VERSION | sed 's/\([^.]\)*\.\([^.]*\)\.\([^.]*\)/\1/)')
-minor_version=$(echo AC_PACKAGE_VERSION | sed 's/\([^.]\)*\.\([^.]*\)\.\([^.]*\)/\2/)')
-patchlevel_version=$(echo AC_PACKAGE_VERSION | sed 's/\([^.]\)*\.\([^.]*\)\.\([^.]*\)/\3/)')
+AC_PROG_SED
+major_version=$(echo AC_PACKAGE_VERSION | sed 's/^\([[0-9]]\)*\.[[0-9]]*\.[[0-9]]*$/\1/')
+minor_version=$(echo AC_PACKAGE_VERSION | sed 's/^[[0-9]]*\.\([[0-9]]*\)\.[[0-9]]*$/\1/')
+patchlevel_version=$(echo AC_PACKAGE_VERSION | sed 's/^[[0-9]]*\.[[0-9]]*\.\([[0-9]]*\)$/\1/')
 AC_SUBST([MAJOR_VERSION], [$major_version])
 AC_SUBST([MINOR_VERSION], [$minor_version])
 AC_SUBST([PATCHLEVEL_VERSION], [$patchlevel_version])

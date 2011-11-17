@@ -15,20 +15,14 @@
  */
 
 struct tracepoint_probe {
-	void *callback;
-	void *priv;
+	void *func;
+	void *data;
 };
 
 struct tracepoint {
 	const char *name;
 	int state;
 	struct tracepoint_probe *probes;
-};
-
-struct tracepoint_lib {
-	struct cds_list_head list;
-	struct tracepoint tracepoints_start;
-	int tracepoints_count;
 };
 
 #endif /* _LTTNG_TRACEPOINT_TYPES_H */

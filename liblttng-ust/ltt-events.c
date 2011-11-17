@@ -87,7 +87,7 @@ int add_pending_probe(struct ltt_event *event, const char *name)
 	struct cds_hlist_head *head;
 	struct ust_pending_probe *e;
 	size_t name_len = strlen(name) + 1;
-	u32 hash = jhash(name, name_len - 1, 0);
+	uint32_t hash = jhash(name, name_len - 1, 0);
 
 	head = &pending_probe_table[hash & (PENDING_PROBE_HASH_SIZE - 1)];
 	e = zmalloc(sizeof(struct ust_pending_probe) + name_len);
@@ -126,7 +126,7 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 	struct ust_pending_probe *e;
 	const char *name = desc->name;
 	size_t name_len = strlen(name) + 1;
-	u32 hash = jhash(name, name_len - 1, 0);
+	uint32_t hash = jhash(name, name_len - 1, 0);
 	int ret = 0;
 
 	head = &pending_probe_table[hash & (PENDING_PROBE_HASH_SIZE - 1)];

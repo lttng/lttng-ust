@@ -22,7 +22,6 @@
 #define _LGPL_SOURCE
 #include <errno.h>
 #include <lttng/tracepoint.h>
-#include <lttng/tracepoint-internal.h>
 #include <lttng/core.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -33,6 +32,7 @@
 #include <urcu/compiler.h>
 
 #include <lttng/usterr-signal-safe.h>
+#include "tracepoint-internal.h"
 #include "ltt-tracer-core.h"
 
 /* Set to 1 to enable tracepoint debug output */
@@ -199,7 +199,7 @@ static struct tracepoint_entry *get_tracepoint(const char *name)
 	struct cds_hlist_head *head;
 	struct cds_hlist_node *node;
 	struct tracepoint_entry *e;
-	u32 hash = jhash(name, strlen(name), 0);
+	uint32_t hash = jhash(name, strlen(name), 0);
 
 	head = &tracepoint_table[hash & (TRACEPOINT_TABLE_SIZE - 1)];
 	cds_hlist_for_each_entry(e, node, head, hlist) {
@@ -219,7 +219,7 @@ static struct tracepoint_entry *add_tracepoint(const char *name)
 	struct cds_hlist_node *node;
 	struct tracepoint_entry *e;
 	size_t name_len = strlen(name) + 1;
-	u32 hash = jhash(name, name_len-1, 0);
+	uint32_t hash = jhash(name, name_len-1, 0);
 
 	head = &tracepoint_table[hash & (TRACEPOINT_TABLE_SIZE - 1)];
 	cds_hlist_for_each_entry(e, node, head, hlist) {

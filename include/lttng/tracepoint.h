@@ -22,10 +22,10 @@
 extern "C" {
 #endif
 
-#define tracepoint(provider, name, ...)					  \
-	do {								  \
-		if (caa_unlikely(__tracepoint_##provider##_##name.state)) \
-			__tracepoint_##provider##_##name(__VA_ARGS__);	  \
+#define tracepoint(provider, name, ...)					    \
+	do {								    \
+		if (caa_unlikely(__tracepoint_##provider##___##name.state)) \
+			__tracepoint_cb_##provider##___##name(__VA_ARGS__); \
 	} while (0)
 
 #define TP_ARGS(...)       __VA_ARGS__
@@ -39,7 +39,7 @@ extern "C" {
 #define _TP_COMBINE_TOKENS1(_tokena, _tokenb)       _tokena##_tokenb
 #define _TP_COMBINE_TOKENS(_tokena, _tokenb)        _TP_COMBINE_TOKENS1(_tokena, _tokenb)
 
-/* _TP_EXVAR* extract the vars names. */
+/* _TP_EXVAR* extract the var names. */
 #define _TP_EXVAR0()
 #define _TP_EXVAR2(a,b)						b
 #define _TP_EXVAR4(a,b,c,d)					b,d
@@ -92,44 +92,45 @@ extern "C" {
 /* Preprocessor trick to count arguments. Inspired from sdt.h. */
 #define _TP_NARGS(...)			__TP_NARGS(__VA_ARGS__, 20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0)
 #define __TP_NARGS(_0,_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15,_16,_17,_18,_19,_20, N, ...)	N
-#define _TP_PROTO_N(N, ...)		_TP_PARAMS(TP_COMBINE_TOKENS(_TP_SPLIT, N)(__VA_ARGS__))
-#define _TP_VARS_N(N, ...)		_TP_PARAMS(TP_COMBINE_TOKENS(_TP_EVEN, N)(__VA_ARGS__))
-#define _TP_DATA_PROTO_N(N, ...)	_TP_PARAMS(TP_COMBINE_TOKENS(_TP_SPLIT_DATA, N)(__VA_ARGS__))
-#define _TP_DATA_VARS_N(N, ...)		_TP_PARAMS(TP_COMBINE_TOKENS(_TP_EVEN_DATA, N)(__VA_ARGS__))
+#define _TP_PROTO_N(N, ...)		_TP_PARAMS(_TP_COMBINE_TOKENS(_TP_EXPROTO, N)(__VA_ARGS__))
+#define _TP_VAR_N(N, ...)		_TP_PARAMS(_TP_COMBINE_TOKENS(_TP_EXVAR, N)(__VA_ARGS__))
+#define _TP_DATA_PROTO_N(N, ...)	_TP_PARAMS(_TP_COMBINE_TOKENS(_TP_EXDATA_PROTO, N)(__VA_ARGS__))
+#define _TP_DATA_VAR_N(N, ...)		_TP_PARAMS(_TP_COMBINE_TOKENS(_TP_EXDATA_VAR, N)(__VA_ARGS__))
 #define _TP_ARGS_PROTO(...)		_TP_PROTO_N(_TP_NARGS(0, ##__VA_ARGS__), ##__VA_ARGS__)
-#define _TP_ARGS_VARS(...)		_TP_VARS_N(_TP_NARGS(0, ##__VA_ARGS__), ##__VA_ARGS__)
+#define _TP_ARGS_VAR(...)		_TP_VAR_N(_TP_NARGS(0, ##__VA_ARGS__), ##__VA_ARGS__)
 #define _TP_ARGS_DATA_PROTO(...)	_TP_DATA_PROTO_N(_TP_NARGS(0, ##__VA_ARGS__), ##__VA_ARGS__)
-#define _TP_ARGS_DATA_VARS(...)		_TP_DATA_VARS_N(_TP_NARGS(0, ##__VA_ARGS__), ##__VA_ARGS__)
+#define _TP_ARGS_DATA_VAR(...)		_TP_DATA_VAR_N(_TP_NARGS(0, ##__VA_ARGS__), ##__VA_ARGS__)
 #define _TP_PARAMS(...)			__VA_ARGS__
 
 #define _DECLARE_TRACEPOINT(provider, name, ...)			 		\
-extern struct tracepoint __tracepoint_##provider##_##name;				\
-static inline void __tracepoint_##provider##_##name(_TP_ARGS_DATA_PROTO(__VA_ARGS__))	\
+extern struct tracepoint __tracepoint_##provider##___##name;				\
+static inline void __tracepoint_cb_##provider##___##name(_TP_ARGS_PROTO(__VA_ARGS__))	\
 {											\
 	struct tracepoint_probe *__tp_probe;						\
 											\
 	rcu_read_lock_bp();								\
-	p = rcu_dereference(__tracepoint_##provider##_##name.probes);			\
-	if (caa_unlikely(!p))								\
+	__tp_probe = rcu_dereference(__tracepoint_##provider##___##name.probes);	\
+	if (caa_unlikely(!__tp_probe))							\
 		goto end;								\
 	do {										\
-		void *__tp_data = p->priv;						\
+		void *__tp_cb =	__tp_probe->func;					\
+		void *__tp_data = __tp_probe->data;					\
 											\
-		(*p->callback)(_TP_ARGS_DATA_VARS(__VA_ARGS__));			\
-		__tp_probe++;								\
-	} while (*__tp_probe);								\
+		URCU_FORCE_CAST(void (*)(_TP_ARGS_DATA_PROTO(__VA_ARGS__)), __tp_cb)	\
+				(_TP_ARGS_DATA_VAR(__VA_ARGS__));			\
+	} while ((++__tp_probe)->func);							\
 end:											\
 	rcu_read_unlock_bp();								\
 }											\
-static inline void __tracepoint_register_##provider##_##name(char *name,		\
-		void *callback, void *priv)						\
+static inline void __tracepoint_register_##provider##___##name(char *name,		\
+		void *func, void *data)							\
 {											\
-	__tracepoint_probe_register(name, callback, data);				\
+	__tracepoint_probe_register(name, func, data);					\
 }											\
-static inline void __tracepoint_unregister_##provider##_##name(char *name,		\
-		void *callback, void *priv)						\
+static inline void __tracepoint_unregister_##provider##___##name(char *name,		\
+		void *func, void *data)							\
 {											\
-	__tracepoint_probe_unregister(name, callback, data);				\
+	__tracepoint_probe_unregister(name, func, data);				\
 }
 
 /*
@@ -148,8 +149,8 @@ static inline void __tracepoint_unregister_##provider##_##name(char *name,		\
 		__attribute__((used, section("__tracepoints_ptrs"))) =		\
 			&__tracepoint_##provider##___##name;
 
-extern int __tracepoint_probe_register(const char *name, void *callback, void *priv);
-extern int __tracepoint_probe_unregister(const char *name, void *callback, void *priv);
+extern int __tracepoint_probe_register(const char *name, void *func, void *data);
+extern int __tracepoint_probe_unregister(const char *name, void *func, void *data);
 extern int tracepoint_register_lib(struct tracepoint * const *tracepoints_start,
 		int tracepoints_count);
 extern int tracepoint_unregister_lib(struct tracepoint * const *tracepoints_start);

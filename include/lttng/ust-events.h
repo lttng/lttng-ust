@@ -156,7 +156,7 @@ struct lttng_enum {
 	const char *name;
 	struct lttng_type container_type;
 	const struct lttng_enum_entry *entries;
-	nsigned int len;
+	unsigned int len;
 };
 
 /* Event field description */

@@ -34,8 +34,7 @@ struct metadata_record_header {
 
 static const struct lttng_ust_lib_ring_buffer_config client_config;
 
-static inline
-u64 lib_ring_buffer_clock_read(struct channel *chan)
+static inline uint64_t lib_ring_buffer_clock_read(struct channel *chan)
 {
 	return 0;
 }
@@ -51,7 +50,7 @@ unsigned char record_header_size(const struct lttng_ust_lib_ring_buffer_config *
 
 #include "../libringbuffer/api.h"
 
-static u64 client_ring_buffer_clock_read(struct channel *chan)
+static uint64_t client_ring_buffer_clock_read(struct channel *chan)
 {
 	return 0;
 }
@@ -77,7 +76,7 @@ static size_t client_packet_header_size(void)
 	return offsetof(struct metadata_packet_header, header_end);
 }
 
-static void client_buffer_begin(struct lttng_ust_lib_ring_buffer *buf, u64 tsc,
+static void client_buffer_begin(struct lttng_ust_lib_ring_buffer *buf, uint64_t tsc,
 				unsigned int subbuf_idx,
 				struct lttng_ust_shm_handle *handle)
 {
@@ -106,7 +105,7 @@ static void client_buffer_begin(struct lttng_ust_lib_ring_buffer *buf, u64 tsc,
  * offset is assumed to never be 0 here : never deliver a completely empty
  * subbuffer. data_size is between 1 and subbuf_size.
  */
-static void client_buffer_end(struct lttng_ust_lib_ring_buffer *buf, u64 tsc,
+static void client_buffer_end(struct lttng_ust_lib_ring_buffer *buf, uint64_t tsc,
 			      unsigned int subbuf_idx, unsigned long data_size,
 			      struct lttng_ust_shm_handle *handle)
 {

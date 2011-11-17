@@ -42,8 +42,7 @@
 #include <lttng/ust-events.h>
 #include <lttng/usterr-signal-safe.h>
 #include <lttng/ust-abi.h>
-#include <lttng/tracepoint.h>
-#include <lttng/tracepoint-internal.h>
+#include "tracepoint-internal.h"
 #include <lttng/ust.h>
 #include "ltt-tracer-core.h"
 
@@ -301,7 +300,7 @@ end:
 		shm_fd = lum->u.channel.shm_fd;
 		wait_fd = lum->u.channel.wait_fd;
 		break;
-	case LTTNG_UST_VERSION:
+	case LTTNG_UST_TRACER_VERSION:
 		lur.u.version = lum->u.version;
 		break;
 	case LTTNG_UST_TRACEPOINT_LIST_GET:
@@ -904,7 +903,7 @@ static void ust_after_fork_common(sigset_t *restore_sigset)
 	DBG("process %d", getpid());
 	ust_unlock();
 	/* Restore signals */
-	ret = sigprocmask(SIG_SETMASK, &restore_sigset, NULL);
+	ret = sigprocmask(SIG_SETMASK, restore_sigset, NULL);
 	if (ret == -1) {
 		PERROR("sigprocmask");
 	}
