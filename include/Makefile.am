@@ -1,5 +1,4 @@
 nobase_include_HEADERS = \
-	lttng/marker.h \
 	lttng/tracepoint.h \
 	lttng/tracepoint-types.h \
 	lttng/tracepoint-event.h \
@@ -33,7 +32,6 @@ noinst_HEADERS = \
 	ust_snprintf.h \
 	lttng/ust-comm.h \
 	lttng/compat.h \
-	lttng/marker-internal.h \
 	lttng/clock.h \
 	lttng/probe-internal.h \
 	lttng/stringify.h \
