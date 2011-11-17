@@ -38,14 +38,9 @@
 static __inline__ uint64_t trace_clock_read64(void)
 {
 	struct timespec ts;
-	uint64_t retval;
 
 	clock_gettime(CLOCK_MONOTONIC, &ts);
-	retval = ts.tv_sec;
-	retval *= 1000000000;
-	retval += ts.tv_nsec;
-
-	return retval;
+	return (ts.tv_sec * 1000000000) + ts.tv_nsec;
 }
 
 #if __i386__ || __x86_64__
