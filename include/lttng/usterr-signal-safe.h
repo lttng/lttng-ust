@@ -67,29 +67,18 @@ static inline void __attribute__ ((format (printf, 1, 2)))
 {
 }
 
+/* Can't use dynamic allocation. Limit ourselves to USTERR_MAX_LEN chars. */
+/* Add end of string in case of buffer overflow. */
 #define sigsafe_print_err(fmt, args...)					\
-{									\
-	/* Can't use dynamic allocation. Limit ourselves to USTERR_MAX_LEN chars. */ \
+do {									\
 	char ____buf[USTERR_MAX_LEN];					\
 	int ____saved_errno;						\
-									\
-	/* Save the errno. */						\
-	____saved_errno = errno;					\
-									\
+	____saved_errno = errno;	/* signal-safety */		\
 	ust_safe_snprintf(____buf, sizeof(____buf), fmt, ## args);	\
-									\
-	/* Add end of string in case of buffer overflow. */		\
 	____buf[sizeof(____buf) - 1] = 0;				\
-									\
 	patient_write(STDERR_FILENO, ____buf, strlen(____buf));		\
-	/*								\
-	 * Can't print errors because we are in the error printing code \
-	 * path.							\
-	 */								\
-									\
-	/* Restore errno, in order to be async-signal safe. */		\
-	errno = ____saved_errno;					\
-}
+	errno = ____saved_errno;	/* signal-safety */		\
+} while (0)
 
 #define UST_STR_COMPONENT UST_XSTR(UST_COMPONENT)
 
