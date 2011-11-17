@@ -35,8 +35,11 @@ extern "C" {
  * Tracepoints should be added to the instrumented code using the
  * "tracepoint()" macro.
  */
-#define tracepoint(provider, name, args...)	\
-		__trace_##provider##___##name(args)
+#define tracepoint(provider, name, args...)					\
+	do {									\
+		if (caa_unlikely(__tracepoint_##provider##___##name.state))	\
+			__trace_##provider##___##name(args);			\
+	} while (0)
 
 /*
  * it_func[0] is never NULL because there is at least one element in the array
@@ -148,13 +151,6 @@ extern "C" {
 #define _TP_ARGS_PROTO_DATA(...)	_TP_PROTO_DATA_N(_TP_NARGS(0, ##__VA_ARGS__), ##__VA_ARGS__)
 #define _TP_ARGS_VARS_DATA(...)		_TP_VARS_DATA_N(_TP_NARGS(0, ##__VA_ARGS__), ##__VA_ARGS__)
 
-#define __CHECK_TRACE(provider, name, proto, args)			\
-	do {								\
-		if (caa_unlikely(__tracepoint_##provider##___##name.state))	\
-			__DO_TRACE(&__tracepoint_##provider##___##name,	\
-				TP_PARAMS(proto), TP_PARAMS(args));	\
-	} while (0)
-
 /*
  * Make sure the alignment of the structure in the __tracepoints section will
  * not add unwanted padding between the beginning of the section and the
@@ -164,8 +160,8 @@ extern "C" {
 	extern struct tracepoint __tracepoint_##provider##___##name;	\
 	static inline void __trace_##provider##___##name(proto)		\
 	{								\
-		__CHECK_TRACE(provider, name, TP_PARAMS(data_proto),	\
-			      TP_PARAMS(data_args));			\
+		__DO_TRACE(&__tracepoint_##provider##___##name,		\
+			TP_PARAMS(data_proto), TP_PARAMS(data_args));	\
 	}								\
 	static inline int						\
 	__register_trace_##provider##___##name(void (*probe)(data_proto), void *data)	\
