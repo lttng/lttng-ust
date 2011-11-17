@@ -27,11 +27,11 @@
 #include "lttng/core.h"
 #include "ltt-tracer.h"
 #include "ltt-tracer-core.h"
-#include "lttng/wait.h"
+#include "wait.h"
 #include "../libringbuffer/shm.h"
-
-typedef u32 uint32_t;
-#include <lttng/kcompat/jhash.h>
+#include <stdint.h>
+#include <stddef.h>
+#include <urcu/arch.h>
 
 /*
  * The sessions mutex is the centralized mutex across UST tracing

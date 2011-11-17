@@ -36,9 +36,9 @@ enum lttng_ust_output {
 };
 
 struct lttng_ust_tracer_version {
-	uint32_t version;
+	uint32_t major;
+	uint32_t minor;
 	uint32_t patchlevel;
-	uint32_t sublevel;
 };
 
 struct lttng_ust_channel {

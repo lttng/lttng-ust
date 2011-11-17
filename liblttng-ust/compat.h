@@ -1,8 +1,8 @@
-#ifndef _LTTNG_UST_H
-#define _LTTNG_UST_H
+#ifndef _UST_COMPAT_H
+#define _UST_COMPAT_H
 
 /*
- * Copyright (c) 2011 - Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+ * Copyright (C) 2011   Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -14,16 +14,17 @@
  * modified is included with the above copyright notice.
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <sys/syscall.h>
 
-extern void ust_before_fork(sigset_t *save_sigset);
-extern void ust_after_fork_parent(sigset_t *restore_sigset);
-extern void ust_after_fork_child(sigset_t *restore_sigset);
+#ifdef __UCLIBC__
+#define __getcpu(cpu, node, cache)	syscall(__NR_getcpu, cpu, node, cache)
+static inline
+int sched_getcpu(void)
+{
+	int c, s;
 
-#ifdef __cplusplus 
+	s = __getcpu(&c, NULL, NULL);
+	return (s == -1) ? s : c;
 }
-#endif
-
-#endif /* _LTTNG_UST_H */
+#endif	/* __UCLIBC__ */
+#endif /* _UST_COMPAT_H */

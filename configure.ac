@@ -11,13 +11,16 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_SRCDIR([include/lttng/tracepoint.h])
 AC_CONFIG_HEADERS([config.h include/lttng/config.h])
 AH_TEMPLATE([HAVE_EFFICIENT_UNALIGNED_ACCESS], [Use efficient unaligned access.])
-# Compute minor/major version numbers
-major_version=`echo AC_PACKAGE_VERSION | sed 's/\..*//'`
-minor_version=`echo AC_PACKAGE_VERSION | sed 's/.*\.//' | sed 's/^0//'`
+# Compute minor/major/patchlevel version numbers
+major_version=$(echo AC_PACKAGE_VERSION | sed 's/\([^.]\)*\.\([^.]*\)\.\([^.]*\)/\1/)'
+minor_version=$(echo AC_PACKAGE_VERSION | sed 's/\([^.]\)*\.\([^.]*\)\.\([^.]*\)/\2/)'
+patchlevel_version=$(echo AC_PACKAGE_VERSION | sed 's/\([^.]\)*\.\([^.]*\)\.\([^.]*\)/\3/)'
 AC_SUBST([MAJOR_VERSION], [$major_version])
 AC_SUBST([MINOR_VERSION], [$minor_version])
+AC_SUBST([PATCHLEVEL_VERSION], [$patchlevel_version])
 AC_DEFINE_UNQUOTED([VERSION_MAJOR], $major_version, [UST major version number])
 AC_DEFINE_UNQUOTED([VERSION_MINOR], $minor_version, [UST minor version number])
+AC_DEFINE_UNQUOTED([VERSION_PATCHLEVEL], $patchlevel_version, [UST patchlevel version number])
 
 
 # Checks for programs.
@@ -213,7 +216,7 @@ AM_CONDITIONAL(BUILD_JNI_INTERFACE, test "$with_jni_interface" = "yes")
 AC_CONFIG_FILES([
 	Makefile
 	include/Makefile
-	include/lttng/version.h
+	include/lttng/ust-version.h
 	doc/Makefile
 	doc/man/Makefile
 	doc/info/Makefile

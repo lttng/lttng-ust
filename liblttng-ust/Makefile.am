@@ -18,7 +18,9 @@ liblttng_ust_runtime_la_SOURCES = \
 	ltt-context.c \
 	ltt-events.c \
 	tracepoint.c \
-	tracepoint-internal.h
+	tracepoint-internal.h \
+	clock.h \
+	wait.h
 
 liblttng_ust_support_la_SOURCES = \
 	ltt-tracer.h \

@@ -45,6 +45,7 @@
 #include <urcu/compiler.h>
 #include <urcu/ref.h>
 
+#include "vatomic.h"
 #include "smp.h"
 #include <lttng/ringbuffer-config.h>
 #include "backend.h"

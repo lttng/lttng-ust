@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <lttng/ust-events.h>
 #include "lttng/bitfield.h"
-#include "lttng/clock.h"
+#include "clock.h"
 #include "ltt-tracer.h"
 #include "../libringbuffer/frontend_types.h"
 

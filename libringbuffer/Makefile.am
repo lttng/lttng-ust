@@ -11,7 +11,7 @@ libringbuffer_la_SOURCES = \
 	api.h \
 	backend.h backend_internal.h backend_types.h \
 	frontend_api.h frontend.h frontend_internal.h frontend_types.h \
-	nohz.h
+	nohz.h vatomic.h
 	
 
 libringbuffer_la_LDFLAGS = -no-undefined -version-info 0:0:0

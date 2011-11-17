@@ -24,10 +24,13 @@
 #include <lttng/tracepoint.h>
 #include <lttng/tracepoint-internal.h>
 #include <lttng/core.h>
-#include <lttng/kcompat/kcompat.h>
+#include <stdint.h>
+#include <stddef.h>
+#include <urcu/arch.h>
 #include <urcu-bp.h>
 #include <urcu/hlist.h>
 #include <urcu/uatomic.h>
+#include <urcu/compiler.h>
 
 #include <lttng/usterr-signal-safe.h>
 #include "ltt-tracer-core.h"
@@ -89,7 +92,7 @@ static inline void *allocate_probes(int count)
 static inline void release_probes(void *old)
 {
 	if (old) {
-		struct tp_probes *tp_probes = _ust_container_of(old,
+		struct tp_probes *tp_probes = caa_container_of(old,
 			struct tp_probes, probes[0]);
 		synchronize_rcu();
 		free(tp_probes);
@@ -411,7 +414,7 @@ static void tracepoint_add_old_probes(void *old)
 {
 	need_update = 1;
 	if (old) {
-		struct tp_probes *tp_probes = _ust_container_of(old,
+		struct tp_probes *tp_probes = caa_container_of(old,
 			struct tp_probes, probes[0]);
 		cds_list_add(&tp_probes->u.list, &old_probes);
 	}

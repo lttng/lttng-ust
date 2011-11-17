@@ -21,7 +21,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include <lttng/kcompat/kcompat.h>
+#include <stdint.h>
+#include <stddef.h>
+#include <urcu/arch.h>
 #include <lttng/core.h>
 #include <lttng/ust-tracer.h>
 #include <urcu/list.h>

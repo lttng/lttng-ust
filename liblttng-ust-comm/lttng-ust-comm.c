@@ -30,7 +30,7 @@
 #include <assert.h>
 #include <errno.h>
 
-#include <lttng/ust-comm.h>
+#include <ust-comm.h>
 
 /*
  * Human readable error message.

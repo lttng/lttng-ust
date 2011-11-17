@@ -54,18 +54,18 @@ struct channel {
 	 * be last member.
 	 */
 	struct channel_backend backend;		/* Associated backend */
-} ____cacheline_aligned;
+} __attribute__((aligned(CAA_CACHE_LINE_SIZE)));
 
 /* Per-subbuffer commit counters used on the hot path */
 struct commit_counters_hot {
 	union v_atomic cc;		/* Commit counter */
 	union v_atomic seq;		/* Consecutive commits */
-} ____cacheline_aligned;
+} __attribute__((aligned(CAA_CACHE_LINE_SIZE)));
 
 /* Per-subbuffer commit counters used only on cold paths */
 struct commit_counters_cold {
 	union v_atomic cc_sb;		/* Incremented _once_ at sb switch */
-} ____cacheline_aligned;
+} __attribute__((aligned(CAA_CACHE_LINE_SIZE)));
 
 /* ring buffer state */
 struct lttng_ust_lib_ring_buffer {
@@ -110,7 +110,7 @@ struct lttng_ust_lib_ring_buffer {
 	int read_timer_enabled:1;	/* Protected by ring_buffer_nohz_lock */
 	/* shmp pointer to self */
 	DECLARE_SHMP(struct lttng_ust_lib_ring_buffer, self);
-} ____cacheline_aligned;
+} __attribute__((aligned(CAA_CACHE_LINE_SIZE)));
 
 static inline
 void *channel_get_private(struct channel *chan)

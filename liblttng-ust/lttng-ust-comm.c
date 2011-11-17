@@ -38,7 +38,7 @@
 #include <urcu/uatomic.h>
 #include <urcu/futex.h>
 
-#include <lttng/ust-comm.h>
+#include <ust-comm.h>
 #include <lttng/ust-events.h>
 #include <lttng/usterr-signal-safe.h>
 #include <lttng/ust-abi.h>
@@ -876,7 +876,7 @@ void __attribute__((destructor)) lttng_ust_exit(void)
  * in the middle of an tracepoint or ust tracing state modification.
  * Holding this mutex protects these structures across fork and clone.
  */
-void ust_before_fork(ust_fork_info_t *fork_info)
+void ust_before_fork(sigset_t *save_sigset)
 {
 	/*
 	 * Disable signals. This is to avoid that the child intervenes
@@ -889,7 +889,7 @@ void ust_before_fork(ust_fork_info_t *fork_info)
 
 	/* Disable signals */
 	sigfillset(&all_sigs);
-	ret = sigprocmask(SIG_BLOCK, &all_sigs, &fork_info->orig_sigs);
+	ret = sigprocmask(SIG_BLOCK, &all_sigs, save_sigset);
 	if (ret == -1) {
 		PERROR("sigprocmask");
 	}
@@ -897,25 +897,25 @@ void ust_before_fork(ust_fork_info_t *fork_info)
 	rcu_bp_before_fork();
 }
 
-static void ust_after_fork_common(ust_fork_info_t *fork_info)
+static void ust_after_fork_common(sigset_t *restore_sigset)
 {
 	int ret;
 
 	DBG("process %d", getpid());
 	ust_unlock();
 	/* Restore signals */
-	ret = sigprocmask(SIG_SETMASK, &fork_info->orig_sigs, NULL);
+	ret = sigprocmask(SIG_SETMASK, &restore_sigset, NULL);
 	if (ret == -1) {
 		PERROR("sigprocmask");
 	}
 }
 
-void ust_after_fork_parent(ust_fork_info_t *fork_info)
+void ust_after_fork_parent(sigset_t *restore_sigset)
 {
 	DBG("process %d", getpid());
 	rcu_bp_after_fork_parent();
 	/* Release mutexes and reenable signals */
-	ust_after_fork_common(fork_info);
+	ust_after_fork_common(restore_sigset);
 }
 
 /*
@@ -927,7 +927,7 @@ void ust_after_fork_parent(ust_fork_info_t *fork_info)
  * This is meant for forks() that have tracing in the child between the
  * fork and following exec call (if there is any).
  */
-void ust_after_fork_child(ust_fork_info_t *fork_info)
+void ust_after_fork_child(sigset_t *restore_sigset)
 {
 	DBG("process %d", getpid());
 	/* Release urcu mutexes */
@@ -935,6 +935,6 @@ void ust_after_fork_child(ust_fork_info_t *fork_info)
 	lttng_ust_cleanup(0);
 	lttng_context_vtid_reset();
 	/* Release mutexes and reenable signals */
-	ust_after_fork_common(fork_info);
+	ust_after_fork_common(restore_sigset);
 	lttng_ust_init();
 }

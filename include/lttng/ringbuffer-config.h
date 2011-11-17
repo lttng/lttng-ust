@@ -22,7 +22,9 @@
 #include <errno.h>
 #include "lttng/ust-tracer.h"
 #include "lttng/usterr-signal-safe.h"
-#include "lttng/kcompat/kcompat.h"
+#include <stdint.h>
+#include <stddef.h>
+#include <urcu/arch.h>
 #include "lttng/align.h"
 
 struct lttng_ust_lib_ring_buffer;

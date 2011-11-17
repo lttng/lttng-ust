@@ -1,7 +1,9 @@
-#ifndef _LTTNG_UST_H
-#define _LTTNG_UST_H
+#ifndef _LTTNG_UST_VERSION_H
+#define _LTTNG_UST_VERSION_H
 
 /*
+ * lttng/ust-version.h.in. Contains the LTTng-UST versions 
+ * 
  * Copyright (c) 2011 - Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
@@ -14,16 +16,9 @@
  * modified is included with the above copyright notice.
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#define LTTNG_UST_MAJOR_VERSION @MAJOR_VERSION@
+#define LTTNG_UST_MINOR_VERSION @MINOR_VERSION@
+#define LTTNG_UST_PATCHLEVEL_VERSION @PATCHLEVEL_VERSION@
+#define LTTNG_UST_VERSION @PACKAGE_VERSION@
 
-extern void ust_before_fork(sigset_t *save_sigset);
-extern void ust_after_fork_parent(sigset_t *restore_sigset);
-extern void ust_after_fork_child(sigset_t *restore_sigset);
-
-#ifdef __cplusplus 
-}
-#endif
-
-#endif /* _LTTNG_UST_H */
+#endif  /* _LTTNG_UST_VERSION_H */

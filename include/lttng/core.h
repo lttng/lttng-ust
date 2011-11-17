@@ -105,7 +105,6 @@ void *zmalloc_align(size_t len)
 
 /* MATH */
 
-#include <lttng/processor.h>
 static inline unsigned int hweight32(unsigned int w)
 {
 	unsigned int res = w - ((w >> 1) & 0x55555555);
@@ -114,20 +113,6 @@ static inline unsigned int hweight32(unsigned int w)
 	res = res + (res >> 8);
 	return (res + (res >> 16)) & 0x000000FF;
 }
-
-static __inline__ int get_count_order(unsigned int count)
-{
-	int order;
-	
-	order = fls(count) - 1;
-	if (count & (count - 1))
-		order++;
-	return order;
-}
-
-#define _ust_container_of(ptr, type, member) ({                      \
-        const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
-        (type *)( (char *)__mptr - offsetof(type,member) );})
 
 #ifndef inline_memcpy
 #define inline_memcpy memcpy
@@ -139,30 +124,29 @@ static __inline__ int get_count_order(unsigned int count)
 
 #ifndef UST_VALGRIND
 
+/*
+ * If getcpu(2) is not implemented in the Kernel use CPU 0 as fallback.
+ */
 static __inline__ int ust_get_cpu(void)
 {
-	int cpu;
+	int cpu = sched_getcpu();
 
-	cpu = sched_getcpu();
 	if (caa_likely(cpu >= 0))
 		return cpu;
-	/*
-	 * If getcpu(2) is not implemented in the Kernel use CPU 0 as fallback.
-	 */
 	return 0;
 }
 
 #else	/* #else #ifndef UST_VALGRIND */
 
+/*
+ * Valgrind does not support the sched_getcpu() vsyscall.
+ * It causes it to detect a segfault in the program and stop it.
+ * So if we want to check libust with valgrind, we have to refrain
+ * from using this call. TODO: it would probably be better to return
+ * other values too, to better test it.
+ */
 static __inline__ int ust_get_cpu(void)
 {
-	/*
-	 * Valgrind does not support the sched_getcpu() vsyscall.
-	 * It causes it to detect a segfault in the program and stop it.
-	 * So if we want to check libust with valgrind, we have to refrain
-	 * from using this call. TODO: it would probably be better to return
-	 * other values too, to better test it.
-	 */
 	return 0;
 }
 

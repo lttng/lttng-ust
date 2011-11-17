@@ -249,9 +249,9 @@ static
 long lttng_abi_tracer_version(int objd,
 	struct lttng_ust_tracer_version *v)
 {
-	v->version = LTTNG_UST_VERSION;
+	v->major = LTTNG_UST_MAJOR;
+	v->minor = LTTNG_UST_MINOR;
 	v->patchlevel = LTTNG_UST_PATCHLEVEL;
-	v->sublevel = LTTNG_UST_SUBLEVEL;
 	return 0;
 }
 

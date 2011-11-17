@@ -1,5 +1,5 @@
-#ifndef _LTTNG_UST_H
-#define _LTTNG_UST_H
+#ifndef _LTTNG_TRACEPOINT_TYPES_H
+#define _LTTNG_TRACEPOINT_TYPES_H
 
 /*
  * Copyright (c) 2011 - Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
@@ -14,16 +14,21 @@
  * modified is included with the above copyright notice.
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+struct tracepoint_probe {
+	void *callback;
+	void *priv;
+};
 
-extern void ust_before_fork(sigset_t *save_sigset);
-extern void ust_after_fork_parent(sigset_t *restore_sigset);
-extern void ust_after_fork_child(sigset_t *restore_sigset);
+struct tracepoint {
+	const char *name;
+	int state;
+	struct tracepoint_probe *probes;
+};
 
-#ifdef __cplusplus 
-}
-#endif
+struct tracepoint_lib {
+	struct cds_list_head list;
+	struct tracepoint tracepoints_start;
+	int tracepoints_count;
+};
 
-#endif /* _LTTNG_UST_H */
+#endif /* _LTTNG_TRACEPOINT_TYPES_H */
