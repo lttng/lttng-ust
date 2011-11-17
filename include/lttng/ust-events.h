@@ -25,7 +25,6 @@
 #include <lttng/ust-tracer.h>
 #include <endian.h>
 #include <float.h>
-#include <lttng/tracepoint-internal.h>
 
 struct ltt_channel;
 struct ltt_session;
@@ -301,11 +300,6 @@ struct ltt_transport {
 	char *name;
 	struct cds_list_head node;
 	struct ltt_channel_ops ops;
-};
-
-struct ltt_tracepoint_list {
-	struct tracepoint_iter iter;
-	int got_first;
 };
 
 struct ltt_session *ltt_session_create(void);

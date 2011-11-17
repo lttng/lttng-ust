@@ -31,6 +31,12 @@
 #include <lttng/usterr-signal-safe.h>
 #include "lttng/core.h"
 #include "ltt-tracer.h"
+#include "tracepoint-internal.h"
+
+struct ltt_tracepoint_list {
+	struct tracepoint_iter iter;
+	int got_first;
+};
 
 static int lttng_ust_abi_close_in_progress;
 

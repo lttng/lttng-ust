@@ -34,7 +34,6 @@ noinst_HEADERS = \
 	lttng/ust-comm.h \
 	lttng/compat.h \
 	lttng/marker-internal.h \
-	lttng/tracepoint-internal.h \
 	lttng/clock.h \
 	lttng/probe-internal.h \
 	lttng/stringify.h \
