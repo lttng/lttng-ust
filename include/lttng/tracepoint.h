@@ -103,6 +103,7 @@ extern "C" {
 #define _TP_PARAMS(...)			__VA_ARGS__
 
 #define _DECLARE_TRACEPOINT(provider, name, ...)			 		\
+extern struct tracepoint __tracepoint_##provider##_##name;				\
 static inline void __tracepoint_##provider##_##name(_TP_ARGS_DATA_PROTO(__VA_ARGS__))	\
 {											\
 	struct tracepoint_probe *__tp_probe;						\
