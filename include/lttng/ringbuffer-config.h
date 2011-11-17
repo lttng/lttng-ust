@@ -43,7 +43,7 @@ struct lttng_ust_lib_ring_buffer_client_cb {
 	/* Mandatory callbacks */
 
 	/* A static inline version is also required for fast path */
-	u64 (*ring_buffer_clock_read) (struct channel *chan);
+	uint64_t (*ring_buffer_clock_read) (struct channel *chan);
 	size_t (*record_header_size) (const struct lttng_ust_lib_ring_buffer_config *config,
 				      struct channel *chan, size_t offset,
 				      size_t *pre_header_padding,
@@ -51,10 +51,10 @@ struct lttng_ust_lib_ring_buffer_client_cb {
 
 	/* Slow path only, at subbuffer switch */
 	size_t (*subbuffer_header_size) (void);
-	void (*buffer_begin) (struct lttng_ust_lib_ring_buffer *buf, u64 tsc,
+	void (*buffer_begin) (struct lttng_ust_lib_ring_buffer *buf, uint64_t tsc,
 			      unsigned int subbuf_idx,
 			      struct lttng_ust_shm_handle *handle);
-	void (*buffer_end) (struct lttng_ust_lib_ring_buffer *buf, u64 tsc,
+	void (*buffer_end) (struct lttng_ust_lib_ring_buffer *buf, uint64_t tsc,
 			    unsigned int subbuf_idx, unsigned long data_size,
 			    struct lttng_ust_shm_handle *handle);
 
@@ -80,7 +80,7 @@ struct lttng_ust_lib_ring_buffer_client_cb {
 	void (*record_get) (const struct lttng_ust_lib_ring_buffer_config *config,
 			    struct channel *chan, struct lttng_ust_lib_ring_buffer *buf,
 			    size_t offset, size_t *header_len,
-			    size_t *payload_len, u64 *timestamp,
+			    size_t *payload_len, uint64_t *timestamp,
 			    struct lttng_ust_shm_handle *handle);
 };
 
@@ -210,7 +210,7 @@ struct lttng_ust_lib_ring_buffer_ctx {
 					 * prior to record header alignment
 					 * padding.
 					 */
-	u64 tsc;			/* time-stamp counter value */
+	uint64_t tsc;			/* time-stamp counter value */
 	unsigned int rflags;		/* reservation flags */
 };
 

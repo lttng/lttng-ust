@@ -86,7 +86,7 @@ unsigned long subbuf_index(unsigned long offset, struct channel *chan)
 #if (CAA_BITS_PER_LONG == 32)
 static inline
 void save_last_tsc(const struct lttng_ust_lib_ring_buffer_config *config,
-		   struct lttng_ust_lib_ring_buffer *buf, u64 tsc)
+		   struct lttng_ust_lib_ring_buffer *buf, uint64_t tsc)
 {
 	if (config->tsc_bits == 0 || config->tsc_bits == 64)
 		return;
@@ -99,7 +99,7 @@ void save_last_tsc(const struct lttng_ust_lib_ring_buffer_config *config,
 
 static inline
 int last_tsc_overflow(const struct lttng_ust_lib_ring_buffer_config *config,
-		      struct lttng_ust_lib_ring_buffer *buf, u64 tsc)
+		      struct lttng_ust_lib_ring_buffer *buf, uint64_t tsc)
 {
 	unsigned long tsc_shifted;
 
@@ -116,7 +116,7 @@ int last_tsc_overflow(const struct lttng_ust_lib_ring_buffer_config *config,
 #else
 static inline
 void save_last_tsc(const struct lttng_ust_lib_ring_buffer_config *config,
-		   struct lttng_ust_lib_ring_buffer *buf, u64 tsc)
+		   struct lttng_ust_lib_ring_buffer *buf, uint64_t tsc)
 {
 	if (config->tsc_bits == 0 || config->tsc_bits == 64)
 		return;
@@ -126,7 +126,7 @@ void save_last_tsc(const struct lttng_ust_lib_ring_buffer_config *config,
 
 static inline
 int last_tsc_overflow(const struct lttng_ust_lib_ring_buffer_config *config,
-		      struct lttng_ust_lib_ring_buffer *buf, u64 tsc)
+		      struct lttng_ust_lib_ring_buffer *buf, uint64_t tsc)
 {
 	if (config->tsc_bits == 0 || config->tsc_bits == 64)
 		return 0;
@@ -293,7 +293,7 @@ void lib_ring_buffer_check_deliver(const struct lttng_ust_lib_ring_buffer_config
 {
 	unsigned long old_commit_count = commit_count
 					 - chan->backend.subbuf_size;
-	u64 tsc;
+	uint64_t tsc;
 
 	/* Check if all commits have been done */
 	if (caa_unlikely((buf_trunc(offset, chan) >> chan->backend.num_subbuf_order)

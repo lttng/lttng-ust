@@ -10,8 +10,8 @@
 
 #include "lttng/core.h"
 
-#include "uatomic.h"
 #include <lttng/ringbuffer-config.h>
+#include "vatomic.h"
 #include "backend.h"
 #include "frontend.h"
 #include "smp.h"

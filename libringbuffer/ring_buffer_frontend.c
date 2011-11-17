@@ -45,9 +45,9 @@
 #include <urcu/compiler.h>
 #include <urcu/ref.h>
 
-#include "vatomic.h"
 #include "smp.h"
 #include <lttng/ringbuffer-config.h>
+#include "vatomic.h"
 #include "backend.h"
 #include "frontend.h"
 #include "shm.h"
@@ -166,7 +166,7 @@ int lib_ring_buffer_create(struct lttng_ust_lib_ring_buffer *buf,
 	struct channel *chan = caa_container_of(chanb, struct channel, backend);
 	void *priv = channel_get_private(chan);
 	size_t subbuf_header_size;
-	u64 tsc;
+	uint64_t tsc;
 	int ret;
 
 	/* Test for cpu hotplug */
@@ -1010,7 +1010,7 @@ static
 void lib_ring_buffer_switch_old_start(struct lttng_ust_lib_ring_buffer *buf,
 				      struct channel *chan,
 				      struct switch_offsets *offsets,
-				      u64 tsc,
+				      uint64_t tsc,
 				      struct lttng_ust_shm_handle *handle)
 {
 	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
@@ -1048,7 +1048,7 @@ static
 void lib_ring_buffer_switch_old_end(struct lttng_ust_lib_ring_buffer *buf,
 				    struct channel *chan,
 				    struct switch_offsets *offsets,
-				    u64 tsc,
+				    uint64_t tsc,
 				    struct lttng_ust_shm_handle *handle)
 {
 	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
@@ -1085,7 +1085,7 @@ static
 void lib_ring_buffer_switch_new_start(struct lttng_ust_lib_ring_buffer *buf,
 				      struct channel *chan,
 				      struct switch_offsets *offsets,
-				      u64 tsc,
+				      uint64_t tsc,
 				      struct lttng_ust_shm_handle *handle)
 {
 	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
@@ -1121,7 +1121,7 @@ static
 void lib_ring_buffer_switch_new_end(struct lttng_ust_lib_ring_buffer *buf,
 				    struct channel *chan,
 				    struct switch_offsets *offsets,
-				    u64 tsc,
+				    uint64_t tsc,
 				    struct lttng_ust_shm_handle *handle)
 {
 	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
@@ -1157,7 +1157,7 @@ int lib_ring_buffer_try_switch_slow(enum switch_mode mode,
 				    struct lttng_ust_lib_ring_buffer *buf,
 				    struct channel *chan,
 				    struct switch_offsets *offsets,
-				    u64 *tsc)
+				    uint64_t *tsc)
 {
 	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
 	unsigned long off;
@@ -1222,7 +1222,7 @@ void lib_ring_buffer_switch_slow(struct lttng_ust_lib_ring_buffer *buf, enum swi
 	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
 	struct switch_offsets offsets;
 	unsigned long oldidx;
-	u64 tsc;
+	uint64_t tsc;
 
 	offsets.size = 0;
 
