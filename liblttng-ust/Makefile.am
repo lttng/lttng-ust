@@ -21,7 +21,8 @@ liblttng_ust_runtime_la_SOURCES = \
 	tracepoint-internal.h \
 	clock.h \
 	wait.h \
-	jhash.h
+	jhash.h \
+	error.h
 
 liblttng_ust_support_la_SOURCES = \
 	ltt-tracer.h \

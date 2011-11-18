@@ -22,7 +22,6 @@
 #define _LGPL_SOURCE
 #include <errno.h>
 #include <lttng/tracepoint.h>
-#include <lttng/core.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <urcu/arch.h>
@@ -35,6 +34,7 @@
 #include "tracepoint-internal.h"
 #include "ltt-tracer-core.h"
 #include "jhash.h"
+#include "error.h"
 
 /* Set to 1 to enable tracepoint debug output */
 static const int tracepoint_debug;
