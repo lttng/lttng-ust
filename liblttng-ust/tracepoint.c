@@ -34,6 +34,7 @@
 #include <lttng/usterr-signal-safe.h>
 #include "tracepoint-internal.h"
 #include "ltt-tracer-core.h"
+#include "jhash.h"
 
 /* Set to 1 to enable tracepoint debug output */
 static const int tracepoint_debug;

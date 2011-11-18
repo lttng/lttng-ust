@@ -32,6 +32,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <urcu/arch.h>
+#include "jhash.h"
 
 /*
  * The sessions mutex is the centralized mutex across UST tracing
