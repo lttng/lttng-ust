@@ -11,7 +11,6 @@ nobase_include_HEADERS = \
 	lttng/ringbuffer-abi.h \
 	lttng/ust-tracer.h \
 	lttng/config.h \
-	lttng/share.h \
 	lttng/ust.h \
 	lttng/ringbuffer-config.h \
 	lttng/align.h \
@@ -25,4 +24,5 @@ noinst_HEADERS = \
 	ust_snprintf.h \
 	ust-comm.h \
 	lttng/bitfield.h \
-	helper.h
+	helper.h \
+	share.h
