@@ -402,8 +402,6 @@ int __tracepoint_probe_unregister(const char *name, void *probe, void *data)
 {
 	void *old;
 
-	fprintf(stderr, "TEST REGISTER %s\n", name);
-
 	old = tracepoint_remove_probe(name, probe, data);
 	if (IS_ERR(old))
 		return PTR_ERR(old);
