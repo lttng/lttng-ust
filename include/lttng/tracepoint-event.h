@@ -37,6 +37,9 @@ extern "C" {
 
 #define TRACEPOINT_HEADER_MULTI_READ
 #include TRACEPOINT_INCLUDE
+
+#include <lttng/ust-tracepoint-event.h>
+
 #undef TRACEPOINT_HEADER_MULTI_READ
 
 #define TRACEPOINT_CREATE_PROBES
