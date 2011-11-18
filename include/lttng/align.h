@@ -17,12 +17,13 @@
  */
 
 #include <lttng/bug.h>
+#include <unistd.h>
 
-/*
- * Align pointer on natural object alignment.
- */
-#define object_align(obj)	PTR_ALIGN(obj, __alignof__(*(obj)))
-#define object_align_floor(obj)	PTR_ALIGN_FLOOR(obj, __alignof__(*(obj)))
+#define PAGE_SIZE		sysconf(_SC_PAGE_SIZE)
+#define PAGE_MASK		(~(PAGE_SIZE - 1))
+#define __ALIGN_MASK(v, mask)	(((v) + (mask)) & ~(mask))
+#define ALIGN(v, align)		__ALIGN_MASK(v, (typeof(v)) (align) - 1)
+#define PAGE_ALIGN(addr)	ALIGN(addr, PAGE_SIZE)
 
 /**
  * offset_align - Calculate the offset needed to align an object on its natural

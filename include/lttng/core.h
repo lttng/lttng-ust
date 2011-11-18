@@ -25,16 +25,6 @@
 #include <urcu/arch.h>
 #include <urcu/compiler.h>
 
-/* ALIGNMENT SHORTCUTS */
-
-#include <unistd.h>
-
-#define ALIGN(x,a)		__ALIGN_MASK(x,(typeof(x))(a)-1)
-#define __ALIGN_MASK(x,mask)	(((x)+(mask))&~(mask))
-#define PAGE_ALIGN(addr) ALIGN(addr, PAGE_SIZE)
-#define PAGE_SIZE sysconf(_SC_PAGE_SIZE)
-#define PAGE_MASK (~(PAGE_SIZE-1))
-
 /* Min / Max */
 
 #define min_t(type, x, y) ({                    \
@@ -56,18 +46,6 @@ static inline
 void *zmalloc(size_t len)
 {
 	return calloc(1, len);
-}
-
-static inline
-void *malloc_align(size_t len)
-{
-	return malloc(ALIGN(len, CAA_CACHE_LINE_SIZE));
-}
-
-static inline
-void *zmalloc_align(size_t len)
-{
-	return calloc(1, ALIGN(len, CAA_CACHE_LINE_SIZE));
 }
 
 /* MATH */
