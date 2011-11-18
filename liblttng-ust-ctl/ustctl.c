@@ -20,9 +20,10 @@
 #include <string.h>
 #include <lttng/ust-ctl.h>
 #include <lttng/ust-abi.h>
-#include <lttng/usterr-signal-safe.h>
 #include <lttng/ust-events.h>
 #include <sys/mman.h>
+
+#include <usterr-signal-safe.h>
 #include <ust-comm.h>
 
 #include "../libringbuffer/backend.h"

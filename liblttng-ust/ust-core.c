@@ -18,9 +18,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include <lttng/usterr-signal-safe.h>
-#include <lttng/ust-events.h>
 #include <stdlib.h>
+#include <lttng/ust-events.h>
+#include <usterr-signal-safe.h>
 
 static CDS_LIST_HEAD(ltt_transport_list);
 

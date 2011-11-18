@@ -10,7 +10,7 @@
  */
 
 #include <stdint.h>
-#include <lttng/usterr-signal-safe.h>
+#include <usterr-signal-safe.h>
 #include <urcu/compiler.h>
 #include "shm_types.h"
 

@@ -21,7 +21,6 @@
 
 #include <errno.h>
 #include "lttng/ust-tracer.h"
-#include "lttng/usterr-signal-safe.h"
 #include <stdint.h>
 #include <stddef.h>
 #include <urcu/arch.h>

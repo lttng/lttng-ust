@@ -18,6 +18,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include <lttng/usterr-signal-safe.h>
+#include <usterr-signal-safe.h>
 
 volatile enum ust_loglevel ust_loglevel;

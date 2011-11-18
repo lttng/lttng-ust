@@ -14,25 +14,29 @@
 #include <urcu/list.h>
 #include <urcu/hlist.h>
 #include <pthread.h>
-#include <urcu-bp.h>
-#include <urcu/compiler.h>
-#include <urcu/uatomic.h>
 #include <uuid/uuid.h>
-#include <lttng/tracepoint.h>
 #include <errno.h>
 #include <sys/shm.h>
 #include <sys/ipc.h>
+#include <stdint.h>
+#include <stddef.h>
+
+#include <urcu-bp.h>
+#include <urcu/compiler.h>
+#include <urcu/uatomic.h>
+#include <urcu/arch.h>
+
+#include <lttng/tracepoint.h>
 #include <lttng/ust-events.h>
-#include <lttng/usterr-signal-safe.h>
+
+#include <usterr-signal-safe.h>
+#include <helper.h>
+
 #include "ltt-tracer.h"
 #include "ltt-tracer-core.h"
 #include "wait.h"
 #include "../libringbuffer/shm.h"
-#include <stdint.h>
-#include <stddef.h>
-#include <urcu/arch.h>
 #include "jhash.h"
-#include <helper.h>
 
 /*
  * The sessions mutex is the centralized mutex across UST tracing

@@ -14,8 +14,8 @@
 #include <stdio.h>
 #include <urcu/compiler.h>
 #include <lttng/ust-events.h>
-#include <lttng/usterr-signal-safe.h>
 #include <lttng/ringbuffer-config.h>
+#include <string.h>
 
 /*
  * Macro declarations used for all stages.

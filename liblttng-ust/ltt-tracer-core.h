@@ -24,12 +24,11 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <urcu/arch.h>
-#include <lttng/ust-tracer.h>
 #include <urcu/list.h>
-#include <lttng/usterr-signal-safe.h>
-#include "lttng/bug.h"
-
+#include <lttng/ust-tracer.h>
+#include <lttng/bug.h>
 #include <lttng/ringbuffer-config.h>
+#include <usterr-signal-safe.h>
 
 struct ltt_session;
 struct ltt_channel;

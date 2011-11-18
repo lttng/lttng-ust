@@ -10,7 +10,6 @@ nobase_include_HEADERS = \
 	lttng/ust-abi.h \
 	lttng/ringbuffer-abi.h \
 	lttng/ust-tracer.h \
-	lttng/usterr-signal-safe.h \
 	lttng/config.h \
 	lttng/share.h \
 	lttng/ust.h \
@@ -22,6 +21,7 @@ nobase_include_HEADERS = \
 
 noinst_HEADERS = \
 	usterr.h \
+	usterr-signal-safe.h \
 	ust_snprintf.h \
 	ust-comm.h \
 	lttng/bitfield.h \

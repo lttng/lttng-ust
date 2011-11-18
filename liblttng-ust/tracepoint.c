@@ -21,17 +21,20 @@
 
 #define _LGPL_SOURCE
 #include <errno.h>
-#include <lttng/tracepoint.h>
 #include <stdint.h>
 #include <stddef.h>
+
 #include <urcu/arch.h>
 #include <urcu-bp.h>
 #include <urcu/hlist.h>
 #include <urcu/uatomic.h>
 #include <urcu/compiler.h>
+
+#include <lttng/tracepoint.h>
+
+#include <usterr-signal-safe.h>
 #include <helper.h>
 
-#include <lttng/usterr-signal-safe.h>
 #include "tracepoint-internal.h"
 #include "ltt-tracer-core.h"
 #include "jhash.h"

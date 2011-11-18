@@ -28,11 +28,11 @@
 #include <urcu/compiler.h>
 #include <urcu/list.h>
 #include <lttng/ust-events.h>
-#include <lttng/usterr-signal-safe.h>
 #include <lttng/ust-version.h>
+#include <usterr-signal-safe.h>
+#include <helper.h>
 #include "ltt-tracer.h"
 #include "tracepoint-internal.h"
-#include <helper.h>
 
 struct ltt_tracepoint_list {
 	struct tracepoint_iter iter;
