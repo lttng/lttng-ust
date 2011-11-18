@@ -15,7 +15,8 @@ libustsnprintf_la_SOURCES = \
 	vfprintf.c \
 	wcio.h \
 	wsetup.c \
-	core.c
+	core.c \
+	patient_write.c
 
 libustsnprintf_la_LDFLAGS = -no-undefined -static
-libustsnprintf_la_CFLAGS = -DUST_COMPONENT="ust_snprintf" -fPIC -fno-strict-aliasing
+libustsnprintf_la_CFLAGS = -DUST_COMPONENT="lttng_ust_snprintf" -fPIC -fno-strict-aliasing

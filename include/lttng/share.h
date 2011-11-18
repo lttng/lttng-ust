@@ -14,6 +14,8 @@
  * modified is included with the above copyright notice.
  */
 
+#include <stdlib.h>
+
 ssize_t patient_write(int fd, const void *buf, size_t count);
 ssize_t patient_send(int fd, const void *buf, size_t count, int flags);
 

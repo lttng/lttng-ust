@@ -44,10 +44,8 @@ TRACEPOINT_EVENT(ust_tests_fork, after_exec,
 
 #endif /* _TRACEPOINT_UST_TESTS_FORK_H */
 
-#undef TRACEPOINT_INCLUDE_PATH
-#define TRACEPOINT_INCLUDE_PATH .
 #undef TRACEPOINT_INCLUDE_FILE
-#define TRACEPOINT_INCLUDE_FILE ust_tests_fork
+#define TRACEPOINT_INCLUDE_FILE ./ust_tests_fork.h
 
 /* This part must be outside ifdef protection */
 #include <lttng/tracepoint-event.h>

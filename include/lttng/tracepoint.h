@@ -272,7 +272,6 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
  * the provider:event identifier is limited to 127 characters.
  */
 
-
 #define TRACEPOINT_EVENT(provider, name, args, fields)			\
 	_DECLARE_TRACEPOINT(provider, name, _TP_PARAMS(args))
 

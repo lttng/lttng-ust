@@ -22,11 +22,14 @@ extern "C" {
 
 #undef TRACEPOINT_EVENT_INSTANCE
 #define TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	\
-	_DEFINE_TRACEPOINT(provider, name)
+	_DEFINE_TRACEPOINT(_provider, _name)
 
 #undef TRACEPOINT_EVENT
 #define TRACEPOINT_EVENT(_provider, _name, _args, _fields)		\
-	TRACEPOINT_EVENT_INSTANCE(_provider, _name, _name, _TP_PARAMS(_args))
+	TRACEPOINT_EVENT_CLASS(_provider, _name, _TP_PARAMS(_args),	\
+			_TP_PARAMS(_fields))				\
+	TRACEPOINT_EVENT_INSTANCE(_provider, _name, _name,		\
+			_TP_PARAMS(_args))
 
 #define TRACEPOINT_INCLUDE	__tp_stringify(TRACEPOINT_INCLUDE_FILE)
 

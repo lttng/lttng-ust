@@ -48,4 +48,4 @@ liblttng_ust_la_LIBADD = \
 	$(top_builddir)/liblttng-ust-comm/liblttng-ust-comm.la \
 	liblttng-ust-runtime.la liblttng-ust-support.la
 
-liblttng_ust_la_CFLAGS = -DUST_COMPONENT="liblttng-ust" -fno-strict-aliasing
+liblttng_ust_la_CFLAGS = -DUST_COMPONENT="liblttng_ust" -fno-strict-aliasing

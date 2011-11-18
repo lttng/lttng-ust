@@ -33,7 +33,7 @@ struct user_desc;
 pid_t fork(void)
 {
 	static pid_t (*plibc_func)(void) = NULL;
-	ust_fork_info_t fork_info;
+	sigset_t sigset;
 	pid_t retval;
 
 	if (plibc_func == NULL) {
@@ -44,14 +44,14 @@ pid_t fork(void)
 		}
 	}
 
-	ust_before_fork(&fork_info);
+	ust_before_fork(&sigset);
 	/* Do the real fork */
 	retval = plibc_func();
 	if (retval == 0) {
 		/* child */
-		ust_after_fork_child(&fork_info);
+		ust_after_fork_child(&sigset);
 	} else {
-		ust_after_fork_parent(&fork_info);
+		ust_after_fork_parent(&sigset);
 	}
 	return retval;
 }
@@ -59,7 +59,7 @@ pid_t fork(void)
 struct ustfork_clone_info {
 	int (*fn)(void *);
 	void *arg;
-	ust_fork_info_t fork_info;
+	sigset_t sigset;
 };
 
 static int clone_fn(void *arg)
@@ -67,7 +67,7 @@ static int clone_fn(void *arg)
 	struct ustfork_clone_info *info = (struct ustfork_clone_info *) arg;
 
 	/* clone is now done and we are in child */
-	ust_after_fork_child(&info->fork_info);
+	ust_after_fork_child(&info->sigset);
 	return info->fn(info->arg);
 }
 
@@ -109,11 +109,11 @@ int clone(int (*fn)(void *), void *child_stack, int flags, void *arg, ...)
 		/* Creating a real process, we need to intervene. */
 		struct ustfork_clone_info info = { fn: fn, arg: arg };
 
-		ust_before_fork(&info.fork_info);
+		ust_before_fork(&info.sigset);
 		retval = plibc_func(clone_fn, child_stack, flags, &info,
 				ptid, tls, ctid);
 		/* The child doesn't get here. */
-		ust_after_fork_parent(&info.fork_info);
+		ust_after_fork_parent(&info.sigset);
 	}
 	return retval;
 }
