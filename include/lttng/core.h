@@ -107,12 +107,4 @@ static inline unsigned int hweight32(unsigned int w)
 	return (res + (res >> 16)) & 0x000000FF;
 }
 
-#ifndef inline_memcpy
-#define inline_memcpy memcpy
-#endif
-
-#ifndef __same_type
-#define __same_type(a, b) __builtin_types_compatible_p(typeof(a), typeof(b))
-#endif
-
 #endif /* UST_CORE_H */

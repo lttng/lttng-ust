@@ -416,6 +416,10 @@ int update_read_sb_index(const struct lttng_ust_lib_ring_buffer_config *config,
 	return 0;
 }
 
+#ifndef inline_memcpy
+#define inline_memcpy(dest, src, n)	memcpy(dest, src, n)
+#endif
+
 /*
  * Use the architecture-specific memcpy implementation for constant-sized
  * inputs, but rely on an inline memcpy for length statically unknown.

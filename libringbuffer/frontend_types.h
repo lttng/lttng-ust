@@ -119,6 +119,10 @@ void *channel_get_private(struct channel *chan)
 	return ((char *) chan) + chan->priv_data_offset;
 }
 
+#ifndef __rb_same_type
+#define __rb_same_type(a, b)	__builtin_types_compatible_p(typeof(a), typeof(b))
+#endif
+
 /*
  * Issue warnings and disable channels upon internal error.
  * Can receive struct lttng_ust_lib_ring_buffer or struct lttng_ust_lib_ring_buffer_backend
@@ -129,11 +133,11 @@ void *channel_get_private(struct channel *chan)
 		struct channel *__chan;					\
 		int _____ret = caa_unlikely(cond);				\
 		if (_____ret) {						\
-			if (__same_type(*(c), struct channel_backend))	\
+			if (__rb_same_type(*(c), struct channel_backend))	\
 				__chan = caa_container_of((void *) (c),	\
 							struct channel, \
 							backend);	\
-			else if (__same_type(*(c), struct channel))	\
+			else if (__rb_same_type(*(c), struct channel))	\
 				__chan = (void *) (c);			\
 			else						\
 				BUG_ON(1);				\
