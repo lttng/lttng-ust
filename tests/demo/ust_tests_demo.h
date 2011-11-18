@@ -61,10 +61,8 @@ TRACEPOINT_EVENT(ust_tests_demo, done,
 
 #endif /* _TRACEPOINT_UST_TESTS_DEMO_H */
 
-#undef TRACEPOINT_INCLUDE_PATH
-#define TRACEPOINT_INCLUDE_PATH .
 #undef TRACEPOINT_INCLUDE_FILE
-#define TRACEPOINT_INCLUDE_FILE ust_tests_demo
+#define TRACEPOINT_INCLUDE_FILE ./ust_tests_demo.h
 
 /* This part must be outside ifdef protection */
 #include <lttng/tracepoint-event.h>
