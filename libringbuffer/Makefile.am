@@ -4,7 +4,7 @@ AM_CFLAGS = -fno-strict-aliasing
 noinst_LTLIBRARIES = libringbuffer.la
 
 libringbuffer_la_SOURCES = \
-	smp.h smp.c \
+	smp.h smp.c getcpu.h \
 	shm.c shm.h shm_types.h shm_internal.h \
 	ring_buffer_backend.c \
 	ring_buffer_frontend.c \

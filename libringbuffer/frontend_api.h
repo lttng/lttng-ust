@@ -42,7 +42,7 @@ int lib_ring_buffer_get_cpu(const struct lttng_ust_lib_ring_buffer_config *confi
 	int cpu, nesting;
 
 	rcu_read_lock();
-	cpu = ust_get_cpu();
+	cpu = lttng_ust_get_cpu();
 	nesting = ++lib_ring_buffer_nesting;	/* TLS */
 	cmm_barrier();
 

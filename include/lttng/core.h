@@ -74,13 +74,6 @@ static inline long IS_ERR(const void *ptr)
 	__max1 > __max2 ? __max1: __max2; })
 
 
-/* MUTEXES */
-
-#include <pthread.h>
-
-#define DEFINE_MUTEX(m) pthread_mutex_t (m) = PTHREAD_MUTEX_INITIALIZER;
-#define DECLARE_MUTEX(m) extern pthread_mutex_t (m);
-
 /* MALLOCATION */
 
 #include <stdlib.h>
@@ -121,35 +114,5 @@ static inline unsigned int hweight32(unsigned int w)
 #ifndef __same_type
 #define __same_type(a, b) __builtin_types_compatible_p(typeof(a), typeof(b))
 #endif
-
-#ifndef UST_VALGRIND
-
-/*
- * If getcpu(2) is not implemented in the Kernel use CPU 0 as fallback.
- */
-static __inline__ int ust_get_cpu(void)
-{
-	int cpu = sched_getcpu();
-
-	if (caa_likely(cpu >= 0))
-		return cpu;
-	return 0;
-}
-
-#else	/* #else #ifndef UST_VALGRIND */
-
-/*
- * Valgrind does not support the sched_getcpu() vsyscall.
- * It causes it to detect a segfault in the program and stop it.
- * So if we want to check libust with valgrind, we have to refrain
- * from using this call. TODO: it would probably be better to return
- * other values too, to better test it.
- */
-static __inline__ int ust_get_cpu(void)
-{
-	return 0;
-}
-
-#endif	/* #else #ifndef UST_VALGRIND */
 
 #endif /* UST_CORE_H */

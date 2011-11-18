@@ -39,7 +39,7 @@
  * control and probe registration. All operations within this file are
  * called by the communication thread, under ust_lock protection.
  */
-static DEFINE_MUTEX(sessions_mutex);
+static pthread_mutex_t sessions_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void ust_lock(void)
 {
