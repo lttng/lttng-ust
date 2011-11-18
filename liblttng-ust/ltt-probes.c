@@ -13,6 +13,7 @@
 #include <urcu/list.h>
 #include <lttng/core.h>
 #include <lttng/ust-events.h>
+#include <assert.h>
 
 #include "ltt-tracer-core.h"
 

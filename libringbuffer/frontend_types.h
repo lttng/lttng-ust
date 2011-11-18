@@ -27,6 +27,7 @@
 #include <lttng/ringbuffer-config.h>
 #include "backend_types.h"
 #include "shm_internal.h"
+#include "vatomic.h"
 
 /*
  * A switch is done during tracing or as a final flush after tracing (so it

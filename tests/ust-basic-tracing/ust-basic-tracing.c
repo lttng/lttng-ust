@@ -36,7 +36,7 @@
 #include <assert.h>
 #include <sys/socket.h>
 
-#include <lttng/ust-comm.h>
+#include <ust-comm.h>
 #include "../../libringbuffer/backend.h"
 #include "../../libringbuffer/frontend.h"
 

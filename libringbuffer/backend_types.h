@@ -13,6 +13,7 @@
 
 #include <limits.h>
 #include "shm_internal.h"
+#include "vatomic.h"
 
 struct lttng_ust_lib_ring_buffer_backend_pages {
 	unsigned long mmap_offset;	/* offset of the subbuffer in mmap */

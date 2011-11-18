@@ -319,6 +319,4 @@ int lib_ring_buffer_check_config(const struct lttng_ust_lib_ring_buffer_config *
 	return 0;
 }
 
-#include <lttng/vatomic.h>
-
 #endif /* _LINUX_RING_BUFFER_CONFIG_H */
