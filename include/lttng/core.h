@@ -25,11 +25,6 @@
 #include <urcu/arch.h>
 #include <urcu/compiler.h>
 
-/* ARRAYS */
-
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
-
-
 /* ALIGNMENT SHORTCUTS */
 
 #include <unistd.h>
