@@ -24,7 +24,6 @@
 #include <sys/ipc.h>
 #include <lttng/ust-events.h>
 #include <lttng/usterr-signal-safe.h>
-#include "lttng/core.h"
 #include "ltt-tracer.h"
 #include "ltt-tracer-core.h"
 #include "wait.h"
@@ -33,6 +32,7 @@
 #include <stddef.h>
 #include <urcu/arch.h>
 #include "jhash.h"
+#include <helper.h>
 
 /*
  * The sessions mutex is the centralized mutex across UST tracing

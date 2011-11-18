@@ -27,7 +27,6 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include <lttng/core.h>
 #include "lttng/share.h"
 
 enum ust_loglevel {

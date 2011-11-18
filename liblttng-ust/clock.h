@@ -24,7 +24,6 @@
 #include <sys/time.h>
 #include <stdint.h>
 #include <stddef.h>
-#include <lttng/core.h>
 
 /* TRACE CLOCK */
 

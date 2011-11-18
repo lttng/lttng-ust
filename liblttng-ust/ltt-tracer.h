@@ -25,7 +25,6 @@
 
 #include <stdarg.h>
 #include <stdint.h>
-#include <lttng/core.h>
 #include <lttng/ust-events.h>
 #include "ltt-tracer-core.h"
 #include "compat.h"

@@ -475,4 +475,20 @@ static inline int get_count_order(unsigned int count)
 	return order;
 }
 
+static inline
+unsigned int hweight32(unsigned int value)
+{
+	unsigned int r;
+
+	r = value;
+	r = r - ((r >> 1) & 0x55555555);
+	r = (r & 0x33333333) + ((r >> 2) & 0x33333333);
+	r += r >> 4;
+	r &= 0x0F0F0F0F;
+	r += r >> 8;
+	r += r >> 16;
+	r &= 0x000000FF;
+	return r;
+}
+
 #endif /* _LINUX_RING_BUFFER_BACKEND_INTERNAL_H */

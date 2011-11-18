@@ -8,8 +8,6 @@
 
 #include <urcu/arch.h>
 
-#include "lttng/core.h"
-
 #include <lttng/ringbuffer-config.h>
 #include "vatomic.h"
 #include "backend.h"

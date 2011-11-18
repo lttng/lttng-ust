@@ -10,7 +10,7 @@
 
 #include <lttng/ust-events.h>
 #include <lttng/ust-tracer.h>
-#include <lttng/core.h>
+#include <helper.h>
 #include <string.h>
 #include <assert.h>
 

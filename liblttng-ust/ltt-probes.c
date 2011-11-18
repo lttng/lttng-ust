@@ -11,7 +11,6 @@
 #include <string.h>
 #include <errno.h>
 #include <urcu/list.h>
-#include <lttng/core.h>
 #include <lttng/ust-events.h>
 #include <assert.h>
 

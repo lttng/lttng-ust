@@ -44,6 +44,7 @@
 #include <fcntl.h>
 #include <urcu/compiler.h>
 #include <urcu/ref.h>
+#include <helper.h>
 
 #include "smp.h"
 #include <lttng/ringbuffer-config.h>

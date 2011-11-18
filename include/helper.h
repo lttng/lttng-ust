@@ -1,10 +1,8 @@
-#ifndef _LTT_TRACER_CORE_H
-#define _LTT_TRACER_CORE_H
+#ifndef _LTTNG_UST_HELPER_H
+#define _LTTNG_UST_HELPER_H
 
 /*
- * Copyright (C) 2005-2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
- *
- * This contains the core definitions for the Linux Trace Toolkit.
+ * Copyright (C) 2011  Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,21 +19,26 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include <stdint.h>
-#include <stddef.h>
-#include <urcu/arch.h>
-#include <lttng/ust-tracer.h>
-#include <urcu/list.h>
-#include <lttng/usterr-signal-safe.h>
-#include "lttng/bug.h"
+#include <stdlib.h>
 
-#include <lttng/ringbuffer-config.h>
+static inline
+void *zmalloc(size_t len)
+{
+	return calloc(len, 1);
+}
 
-struct ltt_session;
-struct ltt_channel;
-struct ltt_event;
+#define max_t(type, x, y)				\
+	({						\
+		type __max1 = (x);              	\
+		type __max2 = (y);              	\
+		__max1 > __max2 ? __max1: __max2;	\
+	})
 
-void ust_lock(void);
-void ust_unlock(void);
+#define min_t(type, x, y)				\
+	({						\
+		type __min1 = (x);              	\
+		type __min2 = (y);              	\
+		__min1 <= __min2 ? __min1: __min2;	\
+	})
 
-#endif /* _LTT_TRACER_CORE_H */
+#endif /* _LTTNG_UST_HELPER_H */

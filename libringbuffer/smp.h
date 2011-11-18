@@ -9,7 +9,6 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
-#include <lttng/core.h>
 #include "getcpu.h"
 
 /*

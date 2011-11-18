@@ -17,6 +17,7 @@
 #include <signal.h>
 #include <dirent.h>
 #include <lttng/align.h>
+#include <helper.h>
 
 struct shm_object_table *shm_object_table_create(size_t max_nb_obj)
 {

@@ -29,6 +29,7 @@
 #include <urcu/hlist.h>
 #include <urcu/uatomic.h>
 #include <urcu/compiler.h>
+#include <helper.h>
 
 #include <lttng/usterr-signal-safe.h>
 #include "tracepoint-internal.h"

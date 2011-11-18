@@ -18,7 +18,6 @@
  */
 
 #include "frontend.h"
-#include "lttng/core.h"
 #include <urcu-bp.h>
 #include <urcu/compiler.h>
 

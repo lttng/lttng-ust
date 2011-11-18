@@ -11,7 +11,7 @@
 
 #include <stdint.h>
 #include <lttng/usterr-signal-safe.h>
-#include "lttng/core.h"
+#include <urcu/compiler.h>
 #include "shm_types.h"
 
 /*

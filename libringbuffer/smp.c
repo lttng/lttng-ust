@@ -7,7 +7,6 @@
  */
 
 #include <unistd.h>
-#include "lttng/core.h"
 #include "usterr.h"
 #include <pthread.h>
 #include "smp.h"
