@@ -13,9 +13,6 @@
 
 /* Define to "nothing" all macros used for TRACEPOINT_EVENT */
 
-#undef TRACEPOINT_EVENT
-#define TRACEPOINT_EVENT(_provider, _name, _args, _fields)
-
 #undef TRACEPOINT_EVENT_CLASS
 #define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)
 

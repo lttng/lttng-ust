@@ -417,9 +417,9 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 #define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
 static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))\
 {									      \
-	struct ltt_event *__event = __tp_cb_data;			      \
+	struct ltt_event *__event = __tp_data;				      \
 	struct ltt_channel *__chan = __event->chan;			      \
-	struct lttng_ust_lib_ring_buffer_ctx __ctx;				      \
+	struct lttng_ust_lib_ring_buffer_ctx __ctx;			      \
 	size_t __event_len, __event_align;				      \
 	size_t __dynamic_len_idx = 0;					      \
 	size_t __dynamic_len[_TP_ARRAY_SIZE(__event_fields___##_provider##___##_name)];	      \
