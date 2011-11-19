@@ -459,7 +459,7 @@ int ustcomm_recv_fd(int sock)
 		goto end;
 	}
 	if (ret != sizeof(data_fd)) {
-		fprintf(stderr, "Received %d bytes, expected %ld", ret, sizeof(data_fd));
+		fprintf(stderr, "Received %d bytes, expected %zd", ret, sizeof(data_fd));
 		goto end;
 	}
 	cmsg = CMSG_FIRSTHDR(&msg);
