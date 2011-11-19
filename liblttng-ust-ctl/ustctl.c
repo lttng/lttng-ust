@@ -61,7 +61,6 @@ void ustctl_release_object(int sock, struct lttng_ust_object_data *data)
 		ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 		assert(!ret);
 	}
-	free(data);
 }
 
 /*
@@ -162,6 +161,7 @@ int ustctl_open_metadata(int sock, int session_handle,
 
 error:
 	ustctl_release_object(sock, metadata_data);
+	free(metadata_data);
 	return -EINVAL;
 }
 
@@ -215,6 +215,7 @@ int ustctl_create_channel(int sock, int session_handle,
 
 error:
 	ustctl_release_object(sock, channel_data);
+	free(channel_data);
 	return -EINVAL;
 }
 
@@ -266,6 +267,7 @@ int ustctl_create_stream(int sock, struct lttng_ust_object_data *channel_data,
 
 error:
 	ustctl_release_object(sock, stream_data);
+	free(stream_data);
 	return -EINVAL;
 }
 
