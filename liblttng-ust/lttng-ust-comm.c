@@ -683,6 +683,20 @@ restart:
 		switch (len) {
 		case 0:	/* orderly shutdown */
 			DBG("%s ltt-sessiond has performed an orderly shutdown\n", sock_info->name);
+			ust_lock();
+			/*
+			 * Either sessiond has shutdown or refused us by closing the socket.
+			 * In either case, we don't want to delay construction execution,
+			 * and we need to wait before retry.
+			 */
+			prev_connect_failed = 1;
+			/*
+			 * If we cannot register to the sessiond daemon, don't
+			 * delay constructor execution.
+			 */
+			ret = handle_register_done(sock_info);
+			assert(!ret);
+			ust_unlock();
 			goto end;
 		case sizeof(lum):
 			DBG("message received\n");
@@ -692,6 +706,7 @@ restart:
 			}
 			continue;
 		case -1:
+			DBG("Receive failed from lttng-sessiond with errno %d", errno);
 			if (errno == ECONNRESET) {
 				ERR("%s remote end closed connection\n", sock_info->name);
 				goto end;
