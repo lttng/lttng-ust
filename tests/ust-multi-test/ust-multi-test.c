@@ -259,7 +259,7 @@ int consume_stream(struct lttng_ust_shm_handle *handle, int cpu, char *outfile)
 		printf("WRITE: copy %lu bytes\n", read_size);
 		copy_size = write(outfd, ptr, read_size);
 		if (copy_size < read_size) {
-			printf("write issue: copied %zd, expected %lu\n", copy_size, read_size);
+			printf("write issue: copied %lu, expected %lu\n", copy_size, read_size);
 		}
 		lib_ring_buffer_put_next_subbuf(buf, handle);
 	}
