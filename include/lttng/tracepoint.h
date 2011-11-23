@@ -334,7 +334,7 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
  * provider.
  */
 
-#define TRACEPOINT_LOGLEVEL_ENUM()
-#define TRACEPOINT_LOGLEVEL(name, loglevel)
+#define TRACEPOINT_LOGLEVEL_ENUM(...)
+#define TRACEPOINT_LOGLEVEL(provider, name, loglevel)
 
 #endif /* #ifndef TRACEPOINT_LOGLEVEL */

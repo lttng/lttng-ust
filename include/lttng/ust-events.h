@@ -195,6 +195,7 @@ struct lttng_probe_desc {
 	const struct lttng_event_desc *event_desc;
 	unsigned int nr_events;
 	struct cds_list_head head;		/* chain registered probes */
+	struct tracepoint_loglevel *loglevels;
 };
 
 struct ust_pending_probe;
@@ -300,6 +301,17 @@ struct ltt_transport {
 	char *name;
 	struct cds_list_head node;
 	struct ltt_channel_ops ops;
+};
+
+struct tracepoint_loglevel_enum_entry  {
+	const char *identifier;
+	long value;
+};
+
+/* mapping between tracepoint and loglevel */
+struct tracepoint_loglevel {
+	const char *name;
+	const struct tracepoint_loglevel_enum_entry *loglevel;
 };
 
 struct ltt_session *ltt_session_create(void);

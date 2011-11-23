@@ -23,6 +23,12 @@ extern "C" {
 
 #include <lttng/tracepoint.h>
 
+TRACEPOINT_LOGLEVEL_ENUM(
+	TP_LOGLEVEL(critical, 0)
+	TP_LOGLEVEL(warning, 1)
+	TP_LOGLEVEL(debug, 2)
+)
+
 TRACEPOINT_EVENT(ust_tests_demo, loop,
 	TP_ARGS(int, anint, int, netint, long *, values,
 		 char *, text, size_t, textlen,
@@ -44,6 +50,7 @@ TRACEPOINT_EVENT(ust_tests_demo, loop,
 		ctf_float(double, doublefield, doublearg)
 	)
 )
+TRACEPOINT_LOGLEVEL(ust_tests_demo, loop, debug)
 
 TRACEPOINT_EVENT(ust_tests_demo, starting,
 	TP_ARGS(int, value),
@@ -51,6 +58,7 @@ TRACEPOINT_EVENT(ust_tests_demo, starting,
 		ctf_integer(int, value, value)
 	)
 )
+TRACEPOINT_LOGLEVEL(ust_tests_demo, starting, critical)
 
 TRACEPOINT_EVENT(ust_tests_demo, done,
 	TP_ARGS(int, value),
@@ -58,6 +66,7 @@ TRACEPOINT_EVENT(ust_tests_demo, done,
 		ctf_integer(int, value, value)
 	)
 )
+TRACEPOINT_LOGLEVEL(ust_tests_demo, done, critical)
 
 #endif /* _TRACEPOINT_UST_TESTS_DEMO_H */
 

@@ -238,18 +238,6 @@ static const struct lttng_event_desc _TP_COMBINE_TOKENS(__event_desc___, TRACEPO
 /*
  * Stage 4 of tracepoint event generation.
  *
- * Create a toplevel descriptor for the whole probe.
- */
-
-/* non-const because list head will be modified when registered. */
-static struct lttng_probe_desc _TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PROVIDER) = {
-	.event_desc = _TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER),
-	.nr_events = _TP_ARRAY_SIZE(_TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER)),
-};
-
-/*
- * Stage 5 of tracepoint event generation.
- *
  * Create static inline function that calculates event size.
  */
 
@@ -307,7 +295,7 @@ static inline size_t __event_get_size__##_provider##___##_name(size_t *__dynamic
 #include TRACEPOINT_INCLUDE
 
 /*
- * Stage 6 of tracepoint event generation.
+ * Stage 5 of tracepoint event generation.
  *
  * Create static inline function that calculates event payload alignment.
  */
@@ -356,7 +344,7 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 
 
 /*
- * Stage 7 of tracepoint event generation.
+ * Stage 6 of tracepoint event generation.
  *
  * Create the probe function. This function calls event size calculation
  * and writes event data into the buffer.
@@ -450,7 +438,84 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))\
 #undef __get_dynamic_len
 
 /*
+ * Stage 7.1 of tracepoint event generation.
+ *
+ * Tracepoint loglevel enumeration definition generation.
+ */
+
+/* Reset all macros within TRACEPOINT_EVENT */
+#include <lttng/ust-tracepoint-event-reset.h>
+
+#undef TRACEPOINT_LOGLEVEL_ENUM
+#define TRACEPOINT_LOGLEVEL_ENUM(...)	__VA_ARGS__
+
+#undef TP_LOGLEVEL
+#define TP_LOGLEVEL(_identifier, _value)		\
+static const struct tracepoint_loglevel_enum_entry	\
+	_TP_COMBINE_TOKENS(_TP_COMBINE_TOKENS(TRACEPOINT_PROVIDER, __tp_loglevel_enum_entry__), _identifier) =	\
+	{						\
+		.identifier = #_identifier,		\
+		.value = (_value),			\
+	};
+
+#include TRACEPOINT_INCLUDE
+
+/*
+ * Stage 7.2 of tracepoint event generation.
+ *
+ * Tracepoint loglevel enumeration array generation.
+ */
+
+/* Reset all macros within TRACEPOINT_EVENT */
+#include <lttng/ust-tracepoint-event-reset.h>
+
+#undef TRACEPOINT_LOGLEVEL_ENUM
+#define TRACEPOINT_LOGLEVEL_ENUM(...)	__VA_ARGS__
+
+#undef TP_LOGLEVEL
+#define TP_LOGLEVEL(_identifier, _value)		\
+	&_TP_COMBINE_TOKENS(_TP_COMBINE_TOKENS(TRACEPOINT_PROVIDER, __tp_loglevel_enum_entry__), _identifier),
+
+static const struct tracepoint_loglevel_enum_entry *_TP_COMBINE_TOKENS(__tracepoint_loglevel_enum__, TRACEPOINT_PROVIDER)[] __attribute__((unused)) =
+{
+#include TRACEPOINT_INCLUDE
+};
+
+/*
  * Stage 8 of tracepoint event generation.
+ *
+ * Tracepoint loglevel definition generation.
+ */
+
+/* Reset all macros within TRACEPOINT_EVENT */
+#include <lttng/ust-tracepoint-event-reset.h>
+
+#undef TRACEPOINT_LOGLEVEL
+#define TRACEPOINT_LOGLEVEL(__provider, __name, __loglevel)	\
+{								\
+	.name = #__provider ":" #__name,			\
+	.loglevel = &_TP_COMBINE_TOKENS(_TP_COMBINE_TOKENS(TRACEPOINT_PROVIDER, __tp_loglevel_enum_entry__), __loglevel), \
+},
+
+static struct tracepoint_loglevel _TP_COMBINE_TOKENS(__tracepoint_loglevels__, TRACEPOINT_PROVIDER)[] = {
+#include TRACEPOINT_INCLUDE
+};
+
+/*
+ * Stage 9 of tracepoint event generation.
+ *
+ * Create a toplevel descriptor for the whole probe.
+ */
+
+/* non-const because list head will be modified when registered. */
+static struct lttng_probe_desc _TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PROVIDER) = {
+	.event_desc = _TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER),
+	.nr_events = _TP_ARRAY_SIZE(_TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER)),
+	.loglevels = _TP_COMBINE_TOKENS(__tracepoint_loglevels__, TRACEPOINT_PROVIDER),
+};
+
+/*
+ * Stage 10 of tracepoint event generation.
  *
  * Register/unregister probes at module load/unload.
  */

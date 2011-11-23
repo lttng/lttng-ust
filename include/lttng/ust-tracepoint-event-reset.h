@@ -40,3 +40,9 @@
 
 #undef ctf_string
 #define ctf_string(_item, _src)
+
+#undef  TRACEPOINT_LOGLEVEL_ENUM
+#define TRACEPOINT_LOGLEVEL_ENUM(...)
+
+#undef TRACEPOINT_LOGLEVEL
+#define TRACEPOINT_LOGLEVEL(provider, name, loglevel)
