@@ -495,7 +495,7 @@ void tracepoint_probe_update_all(void)
  * Returns 0 if current not found.
  * Returns 1 if current found.
  *
- * Called with tracepoint mutex held
+ * Called with UST lock held
  */
 int lib_get_iter_tracepoints(struct tracepoint_iter *iter)
 {
@@ -527,7 +527,7 @@ int lib_get_iter_tracepoints(struct tracepoint_iter *iter)
  * Returns whether a next tracepoint has been found (1) or not (0).
  * Will return the first tracepoint in the range if the input tracepoint is
  * NULL.
- * Called with tracepoint mutex held.
+ * Called with UST lock held.
  */
 int tracepoint_get_iter_range(struct tracepoint * const **tracepoint,
 	struct tracepoint * const *begin, struct tracepoint * const *end)
@@ -544,7 +544,7 @@ int tracepoint_get_iter_range(struct tracepoint * const **tracepoint,
 }
 
 /*
- * Called with tracepoint mutex held.
+ * Called with UST lock held.
  */
 static void tracepoint_get_iter(struct tracepoint_iter *iter)
 {
@@ -573,7 +573,7 @@ void tracepoint_iter_next(struct tracepoint_iter *iter)
 	/*
 	 * iter->tracepoint may be invalid because we blindly incremented it.
 	 * Make sure it is valid by marshalling on the tracepoints, getting the
-	 * tracepoints from following modules if necessary.
+	 * tracepoints from following library if necessary.
 	 */
 	tracepoint_get_iter(iter);
 }
