@@ -293,29 +293,30 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
  * Typical use of these loglevels:
  *
  * 1) Declare the mapping between loglevel names and an integer values
- *    within TRACEPOINT_LOGLEVEL_ENUM, using TP_LOGLEVEL for each tuple.
- *    Do _NOT_ add comma (,) nor semicolon (;) between the
- *    TRACEPOINT_LOGLEVEL_ENUM entries. Do _NOT_ add comma (,) nor
- *    semicolon (;) after the TRACEPOINT_LOGLEVEL_ENUM declaration.  The
- *    name should be a proper C99 identifier.
+ *    within TRACEPOINT_LOGLEVEL_ENUM(), using tp_loglevel() for each
+ *    tuple. Do _NOT_ add comma (,) nor semicolon (;) between the
+ *    tp_loglevel entries contained within TRACEPOINT_LOGLEVEL_ENUM().
+ *    Do _NOT_ add comma (,) nor semicolon (;) after the
+ *    TRACEPOINT_LOGLEVEL_ENUM() declaration.  The name should be a
+ *    proper C99 identifier.
  *
  *      TRACEPOINT_LOGLEVEL_ENUM(
- *              TP_LOGLEVEL( < loglevel_name >, < value > )
- *              TP_LOGLEVEL( < loglevel_name >, < value > )
+ *              tp_loglevel( < loglevel_name >, < value > )
+ *              tp_loglevel( < loglevel_name >, < value > )
  *              ...
  *      )
  *
  *    e.g.:
  *
  *      TRACEPOINT_LOGLEVEL_ENUM(
- *              TP_LOGLEVEL(LOG_EMERG,   0)
- *              TP_LOGLEVEL(LOG_ALERT,   1)
- *              TP_LOGLEVEL(LOG_CRIT,    2)
- *              TP_LOGLEVEL(LOG_ERR,     3)
- *              TP_LOGLEVEL(LOG_WARNING, 4)
- *              TP_LOGLEVEL(LOG_NOTICE,  5)
- *              TP_LOGLEVEL(LOG_INFO,    6)
- *              TP_LOGLEVEL(LOG_DEBUG,   7)
+ *              tp_loglevel(LOG_EMERG,   0)
+ *              tp_loglevel(LOG_ALERT,   1)
+ *              tp_loglevel(LOG_CRIT,    2)
+ *              tp_loglevel(LOG_ERR,     3)
+ *              tp_loglevel(LOG_WARNING, 4)
+ *              tp_loglevel(LOG_NOTICE,  5)
+ *              tp_loglevel(LOG_INFO,    6)
+ *              tp_loglevel(LOG_DEBUG,   7)
  *      )
  *
  * 2) Then, declare tracepoint loglevels for tracepoints. A

@@ -449,8 +449,8 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))\
 #undef TRACEPOINT_LOGLEVEL_ENUM
 #define TRACEPOINT_LOGLEVEL_ENUM(...)	__VA_ARGS__
 
-#undef TP_LOGLEVEL
-#define TP_LOGLEVEL(_identifier, _value)		\
+#undef tp_loglevel
+#define tp_loglevel(_identifier, _value)		\
 static const struct tracepoint_loglevel_enum_entry	\
 	_TP_COMBINE_TOKENS(_TP_COMBINE_TOKENS(TRACEPOINT_PROVIDER, __tp_loglevel_enum_entry__), _identifier) =	\
 	{						\
@@ -472,8 +472,8 @@ static const struct tracepoint_loglevel_enum_entry	\
 #undef TRACEPOINT_LOGLEVEL_ENUM
 #define TRACEPOINT_LOGLEVEL_ENUM(...)	__VA_ARGS__
 
-#undef TP_LOGLEVEL
-#define TP_LOGLEVEL(_identifier, _value)		\
+#undef tp_loglevel
+#define tp_loglevel(_identifier, _value)		\
 	&_TP_COMBINE_TOKENS(_TP_COMBINE_TOKENS(TRACEPOINT_PROVIDER, __tp_loglevel_enum_entry__), _identifier),
 
 static const struct tracepoint_loglevel_enum_entry *_TP_COMBINE_TOKENS(__tracepoint_loglevel_enum__, TRACEPOINT_PROVIDER)[] __attribute__((unused)) =
