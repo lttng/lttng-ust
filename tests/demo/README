@@ -1,1 +1,7 @@
-This is a hello world application used to test the LTTng userspace tracer.
+This is a demo application used to test the LTTng userspace tracer.
+
+demo-trace shell script preloads the provider shared objects before
+executing the demo. Executing "demo" without the shell wrapper will not
+provide any tracing support. This ensures the demo binary can be
+distributed on distros without depending on having liblttng-ust.so in
+place. Note: the "demo" program must be compiled with "-ldl".

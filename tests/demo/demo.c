@@ -28,7 +28,10 @@
 #include <string.h>
 #include <arpa/inet.h>
 
+#define TRACEPOINT_DEFINE
 #include "ust_tests_demo.h"
+#include "ust_tests_demo2.h"
+#include "ust_tests_demo3.h"
 
 int main(int argc, char **argv)
 {
@@ -50,10 +53,11 @@ int main(int argc, char **argv)
 	tracepoint(ust_tests_demo, starting, 123);
 	for (i = 0; i < 5; i++) {
 		netint = htonl(i);
-		tracepoint(ust_tests_demo, loop, i, netint, values,
+		tracepoint(ust_tests_demo2, loop, i, netint, values,
 			   text, strlen(text), dbl, flt);
 	}
 	tracepoint(ust_tests_demo, done, 456);
+	tracepoint(ust_tests_demo3, done, 42);
 	fprintf(stderr, " done.\n");
 	return 0;
 }

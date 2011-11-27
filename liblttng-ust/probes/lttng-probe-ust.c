@@ -8,9 +8,6 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
-/*
- * Create LTTng tracepoint probes.
- */
+#define TRACEPOINT_DEFINE
 #define TRACEPOINT_CREATE_PROBES
-
 #include "lttng-probe-ust.h"

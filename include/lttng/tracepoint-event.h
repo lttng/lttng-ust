@@ -21,8 +21,7 @@ extern "C" {
 #define __tp_stringify(x)	__tp_stringify1(x)
 
 #undef TRACEPOINT_EVENT_INSTANCE
-#define TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	\
-	_DEFINE_TRACEPOINT(_provider, _name)
+#define TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)
 
 #undef TRACEPOINT_EVENT
 #define TRACEPOINT_EVENT(_provider, _name, _args, _fields)		\

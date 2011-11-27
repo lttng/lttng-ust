@@ -28,6 +28,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 
+#define TRACEPOINT_DEFINE
 #include "ust_tests_hello.h"
 
 void inthandler(int sig)

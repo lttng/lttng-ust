@@ -17,6 +17,7 @@
 #include <urcu-bp.h>
 #include <tracepoint-types.h>
 #include <urcu/compiler.h>
+#include <dlfcn.h>	/* for dlopen */
 
 #ifdef __cplusplus
 extern "C" {
@@ -108,8 +109,10 @@ static inline void __tracepoint_cb_##provider##___##name(_TP_ARGS_PROTO(__VA_ARG
 {											\
 	struct tracepoint_probe *__tp_probe;						\
 											\
+	if (!rcu_read_lock_bp)								\
+		return;									\
 	rcu_read_lock_bp();								\
-	__tp_probe = rcu_dereference(__tracepoint_##provider##___##name.probes);	\
+	__tp_probe = rcu_dereference_bp(__tracepoint_##provider##___##name.probes);	\
 	if (caa_unlikely(!__tp_probe))							\
 		goto end;								\
 	do {										\
@@ -133,6 +136,11 @@ static inline void __tracepoint_unregister_##provider##___##name(char *name,		\
 	__tracepoint_probe_unregister(name, func, data);				\
 }
 
+extern int __tracepoint_probe_register(const char *name, void *func, void *data);
+extern int __tracepoint_probe_unregister(const char *name, void *func, void *data);
+
+#ifdef TRACEPOINT_DEFINE
+
 /*
  * Note: to allow PIC code, we need to allow the linker to update the pointers
  * in the __tracepoints_ptrs section.
@@ -149,11 +157,10 @@ static inline void __tracepoint_unregister_##provider##___##name(char *name,		\
 		__attribute__((used, section("__tracepoints_ptrs"))) =		\
 			&__tracepoint_##provider##___##name;
 
-extern int __tracepoint_probe_register(const char *name, void *func, void *data);
-extern int __tracepoint_probe_unregister(const char *name, void *func, void *data);
-extern int tracepoint_register_lib(struct tracepoint * const *tracepoints_start,
+static int (*tracepoint_register_lib)(struct tracepoint * const *tracepoints_start,
 		int tracepoints_count);
-extern int tracepoint_unregister_lib(struct tracepoint * const *tracepoints_start);
+static int (*tracepoint_unregister_lib)(struct tracepoint * const *tracepoints_start);
+static void *liblttngust_handle;
 
 /*
  * These weak symbols, the constructor, and destructor take care of
@@ -171,6 +178,14 @@ static void __attribute__((constructor)) __tracepoints__init(void)
 {
 	if (__tracepoint_registered++)
 		return;
+
+	liblttngust_handle = dlopen("liblttng-ust.so", RTLD_NOW | RTLD_GLOBAL);
+	if (!liblttngust_handle)
+		return;
+	tracepoint_register_lib = dlsym(liblttngust_handle,
+					"tracepoint_register_lib");
+	tracepoint_unregister_lib = dlsym(liblttngust_handle,
+					"tracepoint_unregister_lib");
 	tracepoint_register_lib(__start___tracepoints_ptrs,
 				__stop___tracepoints_ptrs -
 				__start___tracepoints_ptrs);
@@ -178,10 +193,24 @@ static void __attribute__((constructor)) __tracepoints__init(void)
 
 static void __attribute__((destructor)) __tracepoints__destroy(void)
 {
+	int ret;
 	if (--__tracepoint_registered)
 		return;
-	tracepoint_unregister_lib(__start___tracepoints_ptrs);
+	if (tracepoint_unregister_lib)
+		tracepoint_unregister_lib(__start___tracepoints_ptrs);
+	if (liblttngust_handle) {
+		tracepoint_unregister_lib = NULL;
+		tracepoint_register_lib = NULL;
+		ret = dlclose(liblttngust_handle);
+		assert(!ret);
+	}
 }
+
+#else /* TRACEPOINT_DEFINE */
+
+#define _DEFINE_TRACEPOINT(provider, name)
+
+#endif /* #else TRACEPOINT_DEFINE */
 
 #ifdef __cplusplus
 }
@@ -273,12 +302,14 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
  */
 
 #define TRACEPOINT_EVENT(provider, name, args, fields)			\
-	_DECLARE_TRACEPOINT(provider, name, _TP_PARAMS(args))
+	_DECLARE_TRACEPOINT(provider, name, _TP_PARAMS(args))		\
+	_DEFINE_TRACEPOINT(provider, name)
 
 #define TRACEPOINT_EVENT_CLASS(provider, name, args, fields)
 
 #define TRACEPOINT_EVENT_INSTANCE(provider, _template, name, args)	\
-	_DECLARE_TRACEPOINT(provider, name, _TP_PARAMS(args))
+	_DECLARE_TRACEPOINT(provider, name, _TP_PARAMS(args))		\
+	_DEFINE_TRACEPOINT(provider, name)
 
 #endif /* #ifndef TRACEPOINT_EVENT */
 

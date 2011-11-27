@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#define TRACEPOINT_DEFINE
 #define TRACEPOINT_CREATE_PROBES
 #include "ust_tests_fork.h"
 
