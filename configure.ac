@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT([lttng-ust], [1.9.0], [mathieu dot desnoyers at efficios dot com])
+AC_INIT([lttng-ust],[1.9.0],[mathieu dot desnoyers at efficios dot com])
 AC_CONFIG_AUX_DIR([config])
 AC_CANONICAL_TARGET
 AC_CANONICAL_HOST
@@ -29,7 +29,7 @@ AC_DEFINE_UNQUOTED([VERSION_PATCHLEVEL], $patchlevel_version, [UST patchlevel ve
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_MAKE_SET
-AC_PROG_LIBTOOL
+LT_INIT
 
 ## Checks for libraries.
 AC_CHECK_LIB([dl], [dlopen])
@@ -71,25 +71,21 @@ AC_CHECK_HEADERS([urcu-bp.h], [], [AC_MSG_ERROR([Cannot find [URCU] headers (urc
 This error can also occur when the liburcu package's configure script has not been run.])])
 
 AC_MSG_CHECKING([caa_likely()])
-AC_TRY_COMPILE(
-[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <urcu/compiler.h>
-],
-[
+]], [[
 void fct(void)
 {
 	if (caa_likely(1)) {
 	}
 }
-],
-[
+]])],[
 	AC_MSG_RESULT([yes])
-],
-[
+],[
 	AC_MSG_RESULT([no])
 	AC_MSG_ERROR([Please upgrade your version of liburcu to 0.6.6 or better])
-]
-)
+
+])
 
 # urcu - check that URCU lib is available to compilation
 AC_CHECK_LIB([urcu-bp], [synchronize_rcu_bp], [], [AC_MSG_ERROR([Cannot find liburcu-bp lib. Use [LDFLAGS]=-Ldir to specify its location.])])
@@ -146,23 +142,19 @@ AC_MSG_RESULT($LIBFORMAT)
 
 if test "x$host_cpu" = "xarm" ; then
 AC_MSG_CHECKING([checking for armv5])
-AC_TRY_COMPILE(
-[
-],
-[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+]], [[
 #ifndef __ARM_ARCH_5TEJ__
 #error "no arm5 here"
 #endif
-],
-[
+]])],[
 	AC_MSG_RESULT([yes])
 	NO_UNALIGNED_ACCESS=1
-]
-,
-[
+
+],[
 	AC_MSG_RESULT([no])
-]
-)
+
+])
 fi
 if test x$NO_UNALIGNED_ACCESS = x ; then
 AC_DEFINE([HAVE_EFFICIENT_UNALIGNED_ACCESS], [1])
