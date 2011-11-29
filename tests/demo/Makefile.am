@@ -1,6 +1,4 @@
 AM_CPPFLAGS = -I$(top_srcdir)/include
-# The demo program only depends on libdl.
-LIBS = -ldl
 
 lib_LTLIBRARIES = liblttng-ust-provider-ust-tests-demo.la \
 	liblttng-ust-provider-ust-tests-demo3.la
@@ -20,3 +18,5 @@ liblttng_ust_provider_ust_tests_demo3_la_LIBADD = \
 
 noinst_PROGRAMS = demo
 demo_SOURCES = demo.c ust_tests_demo.h
+# The demo program only depends on libdl.
+demo_LIBS = -ldl
