@@ -27,6 +27,7 @@ AC_DEFINE_UNQUOTED([VERSION_PATCHLEVEL], $patchlevel_version, [UST patchlevel ve
 
 # Checks for programs.
 AC_PROG_CC
+AC_PROG_CXX
 AC_PROG_MAKE_SET
 AC_PROG_LIBTOOL
 
@@ -231,6 +232,7 @@ AC_CONFIG_FILES([
 	liblttng-ust-java/Makefile
 	tests/Makefile
 	tests/hello/Makefile
+	tests/hello.cxx/Makefile
 	tests/demo/Makefile
 	tests/fork/Makefile
 	tests/ust-basic-tracing/Makefile
