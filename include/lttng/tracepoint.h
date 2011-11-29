@@ -182,10 +182,14 @@ static void __attribute__((constructor)) __tracepoints__init(void)
 	liblttngust_handle = dlopen("liblttng-ust.so", RTLD_NOW | RTLD_GLOBAL);
 	if (!liblttngust_handle)
 		return;
-	tracepoint_register_lib = dlsym(liblttngust_handle,
-					"tracepoint_register_lib");
-	tracepoint_unregister_lib = dlsym(liblttngust_handle,
-					"tracepoint_unregister_lib");
+	tracepoint_register_lib =
+		URCU_FORCE_CAST(int (*)(struct tracepoint * const *, int),
+				dlsym(liblttngust_handle,
+					"tracepoint_register_lib"));
+	tracepoint_unregister_lib =
+		URCU_FORCE_CAST(int (*)(struct tracepoint * const *),
+				dlsym(liblttngust_handle,
+					"tracepoint_unregister_lib"));
 	tracepoint_register_lib(__start___tracepoints_ptrs,
 				__stop___tracepoints_ptrs -
 				__start___tracepoints_ptrs);
