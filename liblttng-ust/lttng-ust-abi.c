@@ -334,13 +334,14 @@ void lttng_metadata_create_events(int channel_objd)
 		.name = "lttng_ust:metadata",
 	};
 	struct ltt_event *event;
+	int ret;
 
 	/*
 	 * We tolerate no failure path after event creation. It will stay
 	 * invariant for the rest of the session.
 	 */
-	event = ltt_event_create(channel, &metadata_params, NULL);
-	if (!event) {
+	ret = ltt_event_create(channel, &metadata_params, NULL, &event);
+	if (ret < 0) {
 		goto create_error;
 	}
 	return;
@@ -656,9 +657,8 @@ int lttng_abi_create_event(int channel_objd,
 	 * We tolerate no failure path after event creation. It will stay
 	 * invariant for the rest of the session.
 	 */
-	event = ltt_event_create(channel, event_param, NULL);
-	if (!event) {
-		ret = -EINVAL;
+	ret = ltt_event_create(channel, event_param, NULL, &event);
+	if (ret < 0) {
 		goto event_error;
 	}
 	objd_set_private(event_objd, event);

@@ -350,25 +350,33 @@ void _ltt_channel_destroy(struct ltt_channel *chan)
 /*
  * Supports event creation while tracing session is active.
  */
-struct ltt_event *ltt_event_create(struct ltt_channel *chan,
-				   struct lttng_ust_event *event_param,
-				   void *filter)
+int ltt_event_create(struct ltt_channel *chan,
+		struct lttng_ust_event *event_param,
+		void *filter,
+		struct ltt_event **_event)
 {
 	struct ltt_event *event;
-	int ret;
+	int ret = 0;
 
-	if (chan->used_event_id == -1UL)
+	if (chan->used_event_id == -1UL) {
+		ret = -ENOMEM;
 		goto full;
+	}
 	/*
 	 * This is O(n^2) (for each event, the loop is called at event
 	 * creation). Might require a hash if we have lots of events.
 	 */
-	cds_list_for_each_entry(event, &chan->session->events, list)
-		if (event->desc && !strcmp(event->desc->name, event_param->name))
+	cds_list_for_each_entry(event, &chan->session->events, list) {
+		if (event->desc && !strcmp(event->desc->name, event_param->name)) {
+			ret = -EEXIST;
 			goto exist;
+		}
+	}
 	event = zmalloc(sizeof(struct ltt_event));
-	if (!event)
+	if (!event) {
+		ret = -ENOMEM;
 		goto cache_error;
+	}
 	event->chan = chan;
 	event->filter = filter;
 	/*
@@ -410,7 +418,8 @@ struct ltt_event *ltt_event_create(struct ltt_channel *chan,
 			goto statedump_error;
 	}
 	cds_list_add(&event->list, &chan->session->events);
-	return event;
+	*_event = event;
+	return 0;
 
 statedump_error:
 	if (event->desc) {
@@ -425,7 +434,7 @@ register_error:
 cache_error:
 exist:
 full:
-	return NULL;
+	return ret;
 }
 
 /*
