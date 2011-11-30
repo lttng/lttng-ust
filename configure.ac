@@ -29,7 +29,7 @@ AC_DEFINE_UNQUOTED([VERSION_PATCHLEVEL], $patchlevel_version, [UST patchlevel ve
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_MAKE_SET
-LT_INIT
+m4_ifdef([LT_INIT], [LT_INIT], [AC_PROG_LIBTOOL])
 
 ## Checks for libraries.
 AC_CHECK_LIB([dl], [dlopen])
