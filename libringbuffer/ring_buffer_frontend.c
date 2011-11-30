@@ -947,12 +947,6 @@ void lib_ring_buffer_print_buffer_errors(struct lttng_ust_lib_ring_buffer *buf,
 	unsigned long write_offset, cons_offset;
 
 	/*
-	 * Can be called in the error path of allocation when
-	 * trans_channel_data is not yet set.
-	 */
-	if (!chan)
-		return;
-	/*
 	 * No need to order commit_count, write_offset and cons_offset reads
 	 * because we execute at teardown when no more writer nor reader
 	 * references are left.
