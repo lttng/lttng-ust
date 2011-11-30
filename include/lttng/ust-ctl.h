@@ -130,6 +130,6 @@ void ustctl_flush_buffer(struct lttng_ust_shm_handle *handle,
 		int producer_active);
 
 /* Release object created by members of this API */
-void ustctl_release_object(int sock, struct lttng_ust_object_data *data);
+int ustctl_release_object(int sock, struct lttng_ust_object_data *data);
 
 #endif /* _LTTNG_UST_CTL_H */

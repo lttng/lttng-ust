@@ -44,23 +44,34 @@ void init_object(struct lttng_ust_object_data *data)
  * If sock is negative, it means we don't have to notify the other side
  * (e.g. application has already vanished).
  */
-void ustctl_release_object(int sock, struct lttng_ust_object_data *data)
+int ustctl_release_object(int sock, struct lttng_ust_object_data *data)
 {
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
 	int ret;
 
-	if (data->shm_fd >= 0)
-		close(data->shm_fd);
-	if (data->wait_fd >= 0)
-		close(data->wait_fd);
+	if (data->shm_fd >= 0) {
+		ret = close(data->shm_fd);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+	if (data->wait_fd >= 0) {
+		ret = close(data->wait_fd);
+		if (ret < 0) {
+			return ret;
+		}
+	}
 	if (sock >= 0) {
 		memset(&lum, 0, sizeof(lum));
 		lum.handle = data->handle;
 		lum.cmd = LTTNG_UST_RELEASE;
 		ret = ustcomm_send_app_cmd(sock, &lum, &lur);
-		assert(!ret);
+		if (ret < 0) {
+			return ret;
+		}
 	}
+	return 0;
 }
 
 /*
@@ -160,7 +171,7 @@ int ustctl_open_metadata(int sock, int session_handle,
 	return 0;
 
 error:
-	ustctl_release_object(sock, metadata_data);
+	(void) ustctl_release_object(sock, metadata_data);
 	free(metadata_data);
 	return -EINVAL;
 }
@@ -214,7 +225,7 @@ int ustctl_create_channel(int sock, int session_handle,
 	return 0;
 
 error:
-	ustctl_release_object(sock, channel_data);
+	(void) ustctl_release_object(sock, channel_data);
 	free(channel_data);
 	return -EINVAL;
 }
@@ -266,7 +277,7 @@ int ustctl_create_stream(int sock, struct lttng_ust_object_data *channel_data,
 	return ret;
 
 error:
-	ustctl_release_object(sock, stream_data);
+	(void) ustctl_release_object(sock, stream_data);
 	free(stream_data);
 	return -EINVAL;
 }
