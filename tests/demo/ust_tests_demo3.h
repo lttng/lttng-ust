@@ -35,7 +35,7 @@ TRACEPOINT_EVENT(ust_tests_demo3, done,
 		ctf_integer(int, value, value)
 	)
 )
-TRACEPOINT_LOGLEVEL(ust_tests_demo, done, test1)
+TRACEPOINT_LOGLEVEL(ust_tests_demo3, done, test1)
 
 #endif /* _TRACEPOINT_UST_TESTS_DEMO3_H */
 

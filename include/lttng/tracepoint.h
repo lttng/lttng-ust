@@ -37,8 +37,18 @@ extern "C" {
  * fine too).
  * Each tuple is also separated by a comma.
  */
-#define _TP_COMBINE_TOKENS1(_tokena, _tokenb)       _tokena##_tokenb
-#define _TP_COMBINE_TOKENS(_tokena, _tokenb)        _TP_COMBINE_TOKENS1(_tokena, _tokenb)
+#define __TP_COMBINE_TOKENS(_tokena, _tokenb)				\
+		_tokena##_tokenb
+#define _TP_COMBINE_TOKENS(_tokena, _tokenb)				\
+		__TP_COMBINE_TOKENS(_tokena, _tokenb)
+#define __TP_COMBINE_TOKENS3(_tokena, _tokenb, _tokenc)			\
+		_tokena##_tokenb##_tokenc
+#define _TP_COMBINE_TOKENS3(_tokena, _tokenb, _tokenc)			\
+		__TP_COMBINE_TOKENS3(_tokena, _tokenb, _tokenc)
+#define __TP_COMBINE_TOKENS4(_tokena, _tokenb, _tokenc, _tokend)	\
+		_tokena##_tokenb##_tokenc##_tokend
+#define _TP_COMBINE_TOKENS4(_tokena, _tokenb, _tokenc, _tokend)		\
+		__TP_COMBINE_TOKENS4(_tokena, _tokenb, _tokenc, _tokend)
 
 /* _TP_EXVAR* extract the var names. */
 #define _TP_EXVAR0()

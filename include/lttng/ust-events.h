@@ -183,19 +183,32 @@ struct lttng_ctx {
 	unsigned int allocated_fields;
 };
 
+struct tracepoint_loglevel_entry  {
+	const char *identifier;
+	long value;
+};
+
 struct lttng_event_desc {
 	const char *name;
 	void *probe_callback;
 	const struct lttng_event_ctx *ctx;	/* context */
 	const struct lttng_event_field *fields;	/* event payload */
 	unsigned int nr_fields;
+	const struct tracepoint_loglevel_entry **loglevel;
 };
 
 struct lttng_probe_desc {
-	const struct lttng_event_desc *event_desc;
+	const char *provider;
+	const struct lttng_event_desc **event_desc;
 	unsigned int nr_events;
+	const struct tracepoint_loglevel_entry **loglevels;
+	unsigned int nr_loglevels;
 	struct cds_list_head head;		/* chain registered probes */
-	struct tracepoint_loglevel *loglevels;
+};
+
+struct tp_loglevel_iter {
+	struct lttng_probe_desc *desc;
+	const struct tracepoint_loglevel_entry *loglevel;
 };
 
 struct ust_pending_probe;
@@ -301,17 +314,6 @@ struct ltt_transport {
 	char *name;
 	struct cds_list_head node;
 	struct ltt_channel_ops ops;
-};
-
-struct tracepoint_loglevel_enum_entry  {
-	const char *identifier;
-	long value;
-};
-
-/* mapping between tracepoint and loglevel */
-struct tracepoint_loglevel {
-	const char *name;
-	const struct tracepoint_loglevel_enum_entry *loglevel;
 };
 
 struct ltt_session *ltt_session_create(void);

@@ -215,29 +215,6 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));
 /*
  * Stage 3 of tracepoint event generation.
  *
- * Create an array of events.
- */
-
-/* Reset all macros within TRACEPOINT_EVENT */
-#include <lttng/ust-tracepoint-event-reset.h>
-
-#undef TRACEPOINT_EVENT_INSTANCE
-#define TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	       \
-		{							       \
-			.fields = __event_fields___##_provider##___##_template,\
-			.name = #_provider ":" #_name,			       \
-			.probe_callback = (void *) &__event_probe__##_provider##___##_template,\
-			.nr_fields = _TP_ARRAY_SIZE(__event_fields___##_provider##___##_template), \
-		},
-
-static const struct lttng_event_desc _TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER)[] = {
-#include TRACEPOINT_INCLUDE
-};
-
-
-/*
- * Stage 4 of tracepoint event generation.
- *
  * Create static inline function that calculates event size.
  */
 
@@ -295,7 +272,7 @@ static inline size_t __event_get_size__##_provider##___##_name(size_t *__dynamic
 #include TRACEPOINT_INCLUDE
 
 /*
- * Stage 5 of tracepoint event generation.
+ * Stage 4 of tracepoint event generation.
  *
  * Create static inline function that calculates event payload alignment.
  */
@@ -344,7 +321,7 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 
 
 /*
- * Stage 6 of tracepoint event generation.
+ * Stage 5 of tracepoint event generation.
  *
  * Create the probe function. This function calls event size calculation
  * and writes event data into the buffer.
@@ -438,7 +415,7 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))\
 #undef __get_dynamic_len
 
 /*
- * Stage 7.1 of tracepoint event generation.
+ * Stage 6.1 of tracepoint event generation.
  *
  * Tracepoint loglevel enumeration definition generation.
  */
@@ -451,9 +428,8 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))\
 
 #undef tp_loglevel
 #define tp_loglevel(_identifier, _value)		\
-static const struct tracepoint_loglevel_enum_entry	\
-	_TP_COMBINE_TOKENS(_TP_COMBINE_TOKENS(TRACEPOINT_PROVIDER, __tp_loglevel_enum_entry__), _identifier) =	\
-	{						\
+static const struct tracepoint_loglevel_entry		\
+	_TP_COMBINE_TOKENS4(__tp_loglevel_entry__, TRACEPOINT_PROVIDER, ___, _identifier) = {	\
 		.identifier = #_identifier,		\
 		.value = (_value),			\
 	};
@@ -461,7 +437,7 @@ static const struct tracepoint_loglevel_enum_entry	\
 #include TRACEPOINT_INCLUDE
 
 /*
- * Stage 7.2 of tracepoint event generation.
+ * Stage 6.2 of tracepoint event generation.
  *
  * Tracepoint loglevel enumeration array generation.
  */
@@ -474,32 +450,75 @@ static const struct tracepoint_loglevel_enum_entry	\
 
 #undef tp_loglevel
 #define tp_loglevel(_identifier, _value)		\
-	&_TP_COMBINE_TOKENS(_TP_COMBINE_TOKENS(TRACEPOINT_PROVIDER, __tp_loglevel_enum_entry__), _identifier),
+	&_TP_COMBINE_TOKENS4(__tp_loglevel_entry__, TRACEPOINT_PROVIDER, ___, _identifier),	\
 
-static const struct tracepoint_loglevel_enum_entry *_TP_COMBINE_TOKENS(__tracepoint_loglevel_enum__, TRACEPOINT_PROVIDER)[] __attribute__((unused)) =
-{
+static const struct tracepoint_loglevel_entry *_TP_COMBINE_TOKENS(__tracepoint_loglevel_enum__, TRACEPOINT_PROVIDER)[] = {
 #include TRACEPOINT_INCLUDE
 };
 
 /*
- * Stage 8 of tracepoint event generation.
+ * Stage 7 of tracepoint event generation.
  *
- * Tracepoint loglevel definition generation.
+ * Tracepoint loglevel mapping definition generation. We generate a
+ * symbol for each mapping for a provider/event to ensure at most a 1 to
+ * 1 mapping between events and loglevels. If the symbol is repeated,
+ * the compiler will complain.
  */
 
 /* Reset all macros within TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 
 #undef TRACEPOINT_LOGLEVEL
-#define TRACEPOINT_LOGLEVEL(__provider, __name, __loglevel)	\
-{								\
-	.name = #__provider ":" #__name,			\
-	.loglevel = &_TP_COMBINE_TOKENS(_TP_COMBINE_TOKENS(TRACEPOINT_PROVIDER, __tp_loglevel_enum_entry__), __loglevel), \
-},
+#define TRACEPOINT_LOGLEVEL(__provider, __name, __loglevel)		\
+static const struct tracepoint_loglevel_entry *				\
+	_loglevel_mapping___##__provider##___##__name =			\
+		&__tp_loglevel_entry__##__provider##___##__loglevel;
 
-static struct tracepoint_loglevel _TP_COMBINE_TOKENS(__tracepoint_loglevels__, TRACEPOINT_PROVIDER)[] = {
+#include TRACEPOINT_INCLUDE
+
+/*
+ * Stage 8.1 of tracepoint event generation.
+ *
+ * Create events description structures. We use a weakref because
+ * loglevels are optional. If not declared, the event will point to the
+ * a loglevel that contains NULL.
+ */
+
+/* Reset all macros within TRACEPOINT_EVENT */
+#include <lttng/ust-tracepoint-event-reset.h>
+
+#undef TRACEPOINT_EVENT_INSTANCE
+#define TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	       \
+static const struct tracepoint_loglevel_entry *				       \
+	__ref_loglevel_mapping___##_provider##___##_name		       \
+	__attribute__((weakref ("_loglevel_mapping___" #_provider "___" #_name))); \
+const struct lttng_event_desc __event_desc___##_provider##_##_name = {	       \
+	.fields = __event_fields___##_provider##___##_template,		       \
+	.name = #_provider ":" #_name,					       \
+	.probe_callback = (void *) &__event_probe__##_provider##___##_template,\
+	.nr_fields = _TP_ARRAY_SIZE(__event_fields___##_provider##___##_template), \
+	.loglevel = &__ref_loglevel_mapping___##_provider##___##_name,	       \
+};
+
+#include TRACEPOINT_INCLUDE
+
+/*
+ * Stage 8.2 of tracepoint event generation.
+ *
+ * Create array of events.
+ */
+
+/* Reset all macros within TRACEPOINT_EVENT */
+#include <lttng/ust-tracepoint-event-reset.h>
+
+#undef TRACEPOINT_EVENT_INSTANCE
+#define TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	       \
+	&__event_desc___##_provider##_##_name,
+
+static const struct lttng_event_desc *_TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER)[] = {
 #include TRACEPOINT_INCLUDE
 };
+
 
 /*
  * Stage 9 of tracepoint event generation.
@@ -509,9 +528,11 @@ static struct tracepoint_loglevel _TP_COMBINE_TOKENS(__tracepoint_loglevels__, T
 
 /* non-const because list head will be modified when registered. */
 static struct lttng_probe_desc _TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PROVIDER) = {
+	.provider = __tp_stringify(TRACEPOINT_PROVIDER),
 	.event_desc = _TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER),
 	.nr_events = _TP_ARRAY_SIZE(_TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER)),
-	.loglevels = _TP_COMBINE_TOKENS(__tracepoint_loglevels__, TRACEPOINT_PROVIDER),
+	.loglevels = _TP_COMBINE_TOKENS(__tracepoint_loglevel_enum__, TRACEPOINT_PROVIDER),
+	.nr_loglevels = _TP_ARRAY_SIZE(_TP_COMBINE_TOKENS(__tracepoint_loglevel_enum__, TRACEPOINT_PROVIDER)),
 };
 
 /*

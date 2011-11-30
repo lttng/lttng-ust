@@ -409,6 +409,13 @@ int ltt_event_create(struct ltt_channel *chan,
 				goto add_pending_error;
 		}
 		break;
+	case LTTNG_UST_TRACEPOINT_LOGLEVEL:
+		/*
+		 * TODO: add tracepoint loglevel to hash table, with
+		 * event info. Enable all events corresponding to
+		 * loglevel.
+		 */
+		break;
 	default:
 		WARN_ON_ONCE(1);
 	}

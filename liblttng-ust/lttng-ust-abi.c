@@ -39,10 +39,18 @@ struct ltt_tracepoint_list {
 	int got_first;
 };
 
+struct ltt_loglevel_list {
+	struct loglevel_iter *iter;
+	int got_first;
+};
+
 static int lttng_ust_abi_close_in_progress;
 
 static
 int lttng_abi_tracepoint_list(void);
+
+static
+int lttng_abi_loglevel_list(void);
 
 /*
  * Object descriptor table. Should be protected from concurrent access
@@ -210,6 +218,7 @@ static const struct lttng_ust_objd_ops lttng_metadata_ops;
 static const struct lttng_ust_objd_ops lttng_event_ops;
 static const struct lttng_ust_objd_ops lib_ring_buffer_objd_ops;
 static const struct lttng_ust_objd_ops lttng_tracepoint_list_ops;
+static const struct lttng_ust_objd_ops lttng_loglevel_list_ops;
 
 enum channel_type {
 	PER_CPU_CHANNEL,
@@ -294,6 +303,8 @@ long lttng_abi_add_context(int objd,
  *		Returns a file descriptor listing available tracepoints
  *	LTTNG_UST_WAIT_QUIESCENT
  *		Returns after all previously running probes have completed
+ *	LTTNG_UST_LOGLEVEL_LIST
+ *		Returns a file descriptor listing available loglevels
  *
  * The returned session will be deleted when its file descriptor is closed.
  */
@@ -311,6 +322,8 @@ long lttng_cmd(int objd, unsigned int cmd, unsigned long arg)
 	case LTTNG_UST_WAIT_QUIESCENT:
 		synchronize_trace();
 		return 0;
+	case LTTNG_UST_LOGLEVEL_LIST:
+		return lttng_abi_loglevel_list();
 	default:
 		return -EINVAL;
 	}
@@ -596,6 +609,112 @@ int lttng_release_tracepoint_list(int objd)
 static const struct lttng_ust_objd_ops lttng_tracepoint_list_ops = {
 	.release = lttng_release_tracepoint_list,
 	.cmd = lttng_tracepoint_list_cmd,
+};
+
+/*
+ * beware: we don't keep the mutex over the send, but we must walk the
+ * whole list each time we are called again. So sending one loglevel
+ * entry at a time means this is O(n^2). TODO: do as in the kernel and
+ * send multiple tracepoints for each call to amortize this cost.
+ */
+static
+void ltt_loglevel_list_get(struct ltt_loglevel_list *list,
+		const char *loglevel_provider,
+		const char *loglevel,
+		long *value)
+{
+#if 0
+next:
+	if (!list->got_first) {
+		//tp_loglevel_iter_start(&list->iter);
+		list->got_first = 1;
+		goto copy;
+	}
+	//tp_loglevel_iter_next(&list->iter);
+copy:
+	if (!list->iter->desc.provider) {
+		loglevel_provider[0] = '\0';	/* end of list */
+	} else {
+		memcpy(loglevel_provider, list->iter->desc.provider,
+			LTTNG_UST_SYM_NAME_LEN);
+		memcpy(loglevel, list->iter.loglevel,
+			LTTNG_UST_SYM_NAME_LEN);
+		*value = list->iter.value;
+	}
+#endif
+}
+
+static
+long lttng_loglevel_list_cmd(int objd, unsigned int cmd, unsigned long arg)
+{
+	struct ltt_loglevel_list *list = objd_private(objd);
+	struct lttng_ust_loglevel *loglevel_list_entry =
+		(struct lttng_ust_loglevel *) arg;
+
+	switch (cmd) {
+	case LTTNG_UST_LOGLEVEL_LIST_GET:
+/*
+		ltt_tracepoint_list_get(list,
+			loglevel_list_entry->provider,
+			loglevel_list_entry->loglevel,
+			&loglevel_list_entry->value);
+		if (loglevel_list_entry->provider[0] == '\0')
+			return -ENOENT;
+*/
+		return 0;
+	default:
+		return -EINVAL;
+	}
+}
+
+static
+int lttng_abi_loglevel_list(void)
+{
+	int list_objd, ret;
+	struct ltt_loglevel_list *list;
+
+	list_objd = objd_alloc(NULL, &lttng_loglevel_list_ops);
+	if (list_objd < 0) {
+		ret = list_objd;
+		goto objd_error;
+	}
+	list = zmalloc(sizeof(*list));
+	if (!list) {
+		ret = -ENOMEM;
+		goto alloc_error;
+	}
+	objd_set_private(list_objd, list);
+
+	return list_objd;
+
+alloc_error:
+	{
+		int err;
+
+		err = lttng_ust_objd_unref(list_objd);
+		assert(!err);
+	}
+objd_error:
+	return ret;
+}
+
+static
+int lttng_release_loglevel_list(int objd)
+{
+	struct ltt_loglevel_list *list = objd_private(objd);
+
+	if (list) {
+		//tp_loglevel_iter_stop(&list->iter);
+		free(list);
+		return 0;
+	} else {
+		return -EINVAL;
+	}
+}
+
+static const struct lttng_ust_objd_ops lttng_loglevel_list_ops = {
+	.release = lttng_release_loglevel_list,
+	.cmd = lttng_loglevel_list_cmd,
 };
 
 struct stream_priv_data {
