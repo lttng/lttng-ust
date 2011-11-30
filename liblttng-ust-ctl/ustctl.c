@@ -408,7 +408,7 @@ int ustctl_tracepoint_list(int sock)
 }
 
 int ustctl_tracepoint_list_get(int sock, int tp_list_handle,
-		char iter[LTTNG_UST_SYM_NAME_LEN])
+		struct ustctl_tracepoint_iter *iter)
 {
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
@@ -421,7 +421,7 @@ int ustctl_tracepoint_list_get(int sock, int tp_list_handle,
 	if (ret)
 		return ret;
 	DBG("received tracepoint list entry %s", lur.u.tracepoint_list_entry);
-	memcpy(iter, lur.u.tracepoint_list_entry, LTTNG_UST_SYM_NAME_LEN);
+	memcpy(iter->name, lur.u.tracepoint_list_entry, LTTNG_UST_SYM_NAME_LEN);
 	return 0;
 }
 

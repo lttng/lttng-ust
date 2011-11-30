@@ -98,12 +98,6 @@ struct lttng_ust_channel_attr {
 	enum lttng_ust_output output;		/* splice, mmap */
 };
 
-struct lttng_ust_loglevel {
-	char provider[LTTNG_UST_SYM_NAME_LEN];
-	char loglevel[LTTNG_UST_SYM_NAME_LEN];
-	int64_t value;
-};
-
 struct lttng_ust_object_data {
 	int handle;
 	int shm_fd;
@@ -127,7 +121,6 @@ struct lttng_ust_object_data {
 #define LTTNG_UST_TRACEPOINT_LIST		_UST_CMD(0x42)
 #define LTTNG_UST_WAIT_QUIESCENT		_UST_CMD(0x43)
 #define LTTNG_UST_REGISTER_DONE			_UST_CMD(0x44)
-#define LTTNG_UST_LOGLEVEL_LIST			_UST_CMD(0x45)
 
 /* Session FD commands */
 #define LTTNG_UST_METADATA			\
@@ -154,9 +147,6 @@ struct lttng_ust_object_data {
 
 /* Tracepoint list commands */
 #define LTTNG_UST_TRACEPOINT_LIST_GET		_UST_CMD(0x90)
-
-/* Loglevel list commands */
-#define LTTNG_UST_LOGLEVEL_LIST_GET		_UST_CMD(0xA0)
 
 #define LTTNG_UST_ROOT_HANDLE	0
 
