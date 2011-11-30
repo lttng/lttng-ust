@@ -98,6 +98,12 @@ struct lttng_ust_channel_attr {
 	enum lttng_ust_output output;		/* splice, mmap */
 };
 
+struct lttng_ust_tracepoint_iter {
+	char name[LTTNG_UST_SYM_NAME_LEN];	/* provider:name */
+	char loglevel[LTTNG_UST_SYM_NAME_LEN];	/* loglevel */
+	int64_t loglevel_value;
+};
+
 struct lttng_ust_object_data {
 	int handle;
 	int shm_fd;

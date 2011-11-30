@@ -22,12 +22,6 @@
 
 #include <lttng/ust-abi.h>
 
-struct ustctl_tracepoint_iter {
-	char name[LTTNG_UST_SYM_NAME_LEN];	/* provider:name */
-	char loglevel[LTTNG_UST_SYM_NAME_LEN];	/* provider:loglevel */
-	int64_t loglevel_value;
-};
-
 int ustctl_register_done(int sock);
 int ustctl_create_session(int sock);
 int ustctl_open_metadata(int sock, int session_handle,
@@ -60,7 +54,7 @@ int ustctl_tracepoint_list(int sock);
  * handle. End is iteration is reached when -ENOENT is returned.
  */
 int ustctl_tracepoint_list_get(int sock, int tp_list_handle,
-		struct ustctl_tracepoint_iter *iter);
+		struct lttng_ust_tracepoint_iter *iter);
 
 int ustctl_tracer_version(int sock, struct lttng_ust_tracer_version *v);
 int ustctl_wait_quiescent(int sock);

@@ -129,7 +129,7 @@ struct ustcomm_ust_msg {
 		struct lttng_ust_event event;
 		struct lttng_ust_context context;
 		struct lttng_ust_tracer_version version;
-		char tracepoint_list_entry[LTTNG_UST_SYM_NAME_LEN];
+		struct lttng_ust_tracepoint_iter tracepoint;
 	} u;
 };
 
@@ -150,7 +150,7 @@ struct ustcomm_ust_reply {
 			uint64_t memory_map_size;
 		} stream;
 		struct lttng_ust_tracer_version version;
-		char tracepoint_list_entry[LTTNG_UST_SYM_NAME_LEN];
+		struct lttng_ust_tracepoint_iter tracepoint;
 	} u;
 };
 

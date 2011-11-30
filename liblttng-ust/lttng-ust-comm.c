@@ -307,9 +307,7 @@ end:
 		lur.u.version = lum->u.version;
 		break;
 	case LTTNG_UST_TRACEPOINT_LIST_GET:
-		memcpy(lur.u.tracepoint_list_entry,
-			lum->u.tracepoint_list_entry,
-			LTTNG_UST_SYM_NAME_LEN);
+		memcpy(&lur.u.tracepoint, &lum->u.tracepoint, sizeof(lur.u.tracepoint));
 		break;
 	}
 	ret = send_reply(sock, &lur);

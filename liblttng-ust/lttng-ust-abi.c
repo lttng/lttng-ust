@@ -510,7 +510,7 @@ static const struct lttng_ust_objd_ops lttng_session_ops = {
  */
 static
 void ltt_tracepoint_list_get(struct ltt_tracepoint_list *list,
-		char *tp_list_entry)
+		struct lttng_ust_tracepoint_iter *tracepoint)
 {
 next:
 	if (!list->got_first) {
@@ -521,13 +521,27 @@ next:
 	tracepoint_iter_next(&list->iter);
 copy:
 	if (!list->iter.tracepoint) {
-		tp_list_entry[0] = '\0';	/* end of list */
+		tracepoint->name[0] = '\0';	/* end of list */
 	} else {
 		if (!strcmp((*list->iter.tracepoint)->name,
 				"lttng_ust:metadata"))
 			goto next;
-		memcpy(tp_list_entry, (*list->iter.tracepoint)->name,
+		memcpy(tracepoint->name, (*list->iter.tracepoint)->name,
 			LTTNG_UST_SYM_NAME_LEN);
+#if 0
+		if ((*list->iter.tracepoint)->loglevel) {
+			memcpy(tracepoint->loglevel,
+				(*list->iter.tracepoint)->loglevel->identifier,
+				LTTNG_UST_SYM_NAME_LEN);
+			tracepoint->loglevel_value =
+				(*list->iter.tracepoint)->loglevel->value;
+		} else {
+#endif
+			tracepoint->loglevel[0] = '\0';
+			tracepoint->loglevel_value = 0;
+#if 0
+		}
+#endif
 	}
 }
 
@@ -535,12 +549,13 @@ static
 long lttng_tracepoint_list_cmd(int objd, unsigned int cmd, unsigned long arg)
 {
 	struct ltt_tracepoint_list *list = objd_private(objd);
-	char *str = (char *) arg;
+	struct lttng_ust_tracepoint_iter *tp =
+		(struct lttng_ust_tracepoint_iter *) arg;
 
 	switch (cmd) {
 	case LTTNG_UST_TRACEPOINT_LIST_GET:
-		ltt_tracepoint_list_get(list, str);
-		if (str[0] == '\0')
+		ltt_tracepoint_list_get(list, tp);
+		if (tp->name[0] == '\0')
 			return -ENOENT;
 		return 0;
 	default:
