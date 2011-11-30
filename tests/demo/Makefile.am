@@ -1,6 +1,12 @@
 AM_CPPFLAGS = -I$(top_srcdir)/include
 
-lib_LTLIBRARIES = liblttng-ust-provider-ust-tests-demo.la \
+# We install the plugins into the /tmp/lttng-ust-divert directory to
+# please libtool, which absolutely needs a target install location. We
+# don't want to pollute the system with test program plugins.
+# We use the .so in .libs/ for the tests.
+noinst_plugins_libdir = "/tmp/lttng-ust-divert"
+
+noinst_plugins_lib_LTLIBRARIES = liblttng-ust-provider-ust-tests-demo.la \
 	liblttng-ust-provider-ust-tests-demo3.la
 
 #contains ust_tests_demo.h and ust_tests_demo2.h provider probes
