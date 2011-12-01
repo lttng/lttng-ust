@@ -53,7 +53,7 @@ struct lttng_ust_lib_ring_buffer_backend {
 	DECLARE_SHMP(struct channel, chan);	/* Associated channel */
 	int cpu;			/* This buffer's cpu. -1 if global. */
 	union v_atomic records_read;	/* Number of records read */
-	unsigned int allocated:1;	/* Bool: is buffer allocated ? */
+	unsigned int allocated:1;	/* is buffer allocated ? */
 };
 
 struct lttng_ust_lib_ring_buffer_shmp {
@@ -69,7 +69,7 @@ struct channel_backend {
 					 * for writer.
 					 */
 	unsigned int buf_size_order;	/* Order of buffer size */
-	int extra_reader_sb:1;		/* Bool: has extra reader subbuffer */
+	unsigned int extra_reader_sb:1;	/* has extra reader subbuffer ? */
 	unsigned long num_subbuf;	/* Number of sub-buffers for writer */
 	uint64_t start_tsc;		/* Channel creation TSC value */
 	DECLARE_SHMP(void *, priv_data);/* Client-specific information */

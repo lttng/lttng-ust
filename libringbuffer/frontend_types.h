@@ -104,9 +104,9 @@ struct lttng_ust_lib_ring_buffer {
 	unsigned long get_subbuf_consumed;	/* Read-side consumed */
 	unsigned long prod_snapshot;	/* Producer count snapshot */
 	unsigned long cons_snapshot;	/* Consumer count snapshot */
-	int get_subbuf:1;		/* Sub-buffer being held by reader */
-	int switch_timer_enabled:1;	/* Protected by ring_buffer_nohz_lock */
-	int read_timer_enabled:1;	/* Protected by ring_buffer_nohz_lock */
+	unsigned int get_subbuf:1,	/* Sub-buffer being held by reader */
+		switch_timer_enabled:1,	/* Protected by ring_buffer_nohz_lock */
+		read_timer_enabled:1;	/* Protected by ring_buffer_nohz_lock */
 	/* shmp pointer to self */
 	DECLARE_SHMP(struct lttng_ust_lib_ring_buffer, self);
 } __attribute__((aligned(CAA_CACHE_LINE_SIZE)));

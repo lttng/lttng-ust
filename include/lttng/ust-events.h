@@ -229,7 +229,7 @@ struct ltt_event {
 	} u;
 	struct cds_list_head list;		/* Event list */
 	struct ust_pending_probe *pending_probe;
-	int metadata_dumped:1;
+	unsigned int metadata_dumped:1;
 };
 
 struct channel;
@@ -289,7 +289,7 @@ struct ltt_channel {
 	struct ltt_channel_ops *ops;
 	int header_type;		/* 0: unset, 1: compact, 2: large */
 	struct lttng_ust_shm_handle *handle;	/* shared-memory handle */
-	int metadata_dumped:1;
+	unsigned int metadata_dumped:1;
 
 	/* Channel ID, available for consumer too */
 	unsigned int id;
@@ -307,7 +307,7 @@ struct ltt_session {
 	struct cds_list_head list;	/* Session list */
 	unsigned int free_chan_id;	/* Next chan ID to allocate */
 	uuid_t uuid;			/* Trace session unique ID */
-	int metadata_dumped:1;
+	unsigned int metadata_dumped:1;
 };
 
 struct ltt_transport {
