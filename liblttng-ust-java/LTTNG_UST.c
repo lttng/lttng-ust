@@ -14,5 +14,5 @@ JNIEXPORT void JNICALL Java_LTTNG_UST_ust_1java_1event (JNIEnv *env,
 							&iscopy);
 	const char *args_cstr = (*env)->GetStringUTFChars(env, args, &iscopy);
 
-	tracepoint(lttng_ust_java_string, ev_name_cstr, args_cstr);
+	tracepoint(lttng_ust_java, string, ev_name_cstr, args_cstr);
 }
