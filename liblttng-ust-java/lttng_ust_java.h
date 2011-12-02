@@ -35,7 +35,7 @@ TRACEPOINT_EVENT(lttng_ust_java, string,
 #endif /* _TRACEPOINT_LTTNG_UST_JAVA_H */
 
 #undef TRACEPOINT_INCLUDE_FILE
-#define TRACEPOINT_INCLUDE_FILE ./lttng_ust_java
+#define TRACEPOINT_INCLUDE_FILE ./lttng_ust_java.h
 
 /* This part must be outside protection */
 #include <lttng/tracepoint-event.h>
