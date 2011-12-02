@@ -168,34 +168,38 @@ AC_DEFINE([HAVE_EFFICIENT_UNALIGNED_ACCESS], [1])
 fi
 
 # Set compile flags to java include files if given
-AC_ARG_WITH(java_jdk, [  --with-java-jdk=DIR     use java jdk from DIR. Ex : $JAVA_HOME.], JAVA_SDK=$withval,)
-if test $JAVA_SDK; then
-        if test -d $JAVA_SDK; then
-                AC_MSG_RESULT([using java include in $JAVA_SDK])
-                SUBDIRS=`find $JAVA_SDK/include -type d`
+AC_ARG_WITH([java-jdk],
+	[AS_HELP_STRING([--with-java-jdk=DIR],[use the Java JDK in DIR. Ex : $JAVA_HOME.])],
+	[JAVA_JDK=$withval],
+	[JAVA_JDK=""]
+)
+AS_IF([test $JAVA_JDK],[
+	AS_IF([test -d $JAVA_JDK],[
+                AC_MSG_RESULT([using Java includes in $JAVA_SDK])
+                SUBDIRS=`find $JAVA_JDK/include -type d`
 		CFLAGS+=" "
                 CFLAGS+=`for x in $SUBDIRS; do echo -n "-I$x "; done`
 		CFLAGS+=" "
-        else
-                AC_MSG_ERROR(Unable to find java include file in $JAVA_JDK)
-        fi
-fi
+        ],[
+                AC_MSG_ERROR(Unable to find Java include files in $JAVA_JDK)
+        ])
+])
 
 # Check for JNI header files if requested
-AC_ARG_WITH(jni-interface, [  --with-jni-interface    build JNI interface between C and java. Need java include files.
-			  [[default=no]]])
+AC_ARG_WITH([jni-interface],
+	[AS_HELP_STRING([--with-jni-interface],[build JNI interface between C and Java. Needs Java include files [default=no]])],
+	[jni_interface=$withval],
+	[jni_interface=no]
+)
 
-if test -z "$with_jni_interface"; then
-        with_jni_interface=${with_jni_interface_default-no}
-fi
-
-if test "$with_jni_interface" = "yes"; then
-        AC_CHECK_HEADERS([jni.h],,AC_MSG_ERROR([
-missing jni.h
-Make sure Sun Java or OpenJDK or GCJ is installed and that this header file exists in the system path.
-Use --with-java-jdk=DIR flag to point to your java include files or desactivate the JNI interface.]))
-fi
-AM_CONDITIONAL(BUILD_JNI_INTERFACE, test "$with_jni_interface" = "yes")
+AS_IF([test "x$jni_interface" = "xyes"],[
+        AC_CHECK_HEADERS([jni.h],[],[
+        AC_MSG_ERROR([missing jni.h
+Make sure Sun Java, OpenJDK or GCJ is installed and that this header file exists in the system path.
+Use the --with-java-jdk=DIR flag to point to your Java include files, or disable the JNI interface.])
+	])
+])
+AM_CONDITIONAL([BUILD_JNI_INTERFACE], [test "x$jni_interface" = "xyes"])
 
 #currently disabled.
 	#liblttng-ust-malloc/Makefile
