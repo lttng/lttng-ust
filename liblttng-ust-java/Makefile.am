@@ -16,6 +16,6 @@ LTTNG_UST.class: LTTNG_UST.java
 	javac -d "$(builddir)" "$(srcdir)/LTTNG_UST.java"
 
 LTTNG_UST.h: LTTNG_UST.class
-	javah -jni LTTNG_UST
+	javah -jni LTTNG_UST.class
 
 endif
