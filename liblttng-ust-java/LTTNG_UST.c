@@ -1,5 +1,6 @@
 #include <jni.h>
 
+#define TRACEPOINT_DEFINE
 #define TRACEPOINT_CREATE_PROBES
 #include "lttng_ust_java.h"
 
