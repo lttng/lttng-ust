@@ -25,8 +25,7 @@
 #include <lttng/tracepoint.h>
 
 TRACEPOINT_EVENT(lttng_ust_java, string,
-	TP_PROTO(const char *name, const char *args),
-	TP_VARS(name, args),
+	TP_ARGS(const char *, name, const char *, args),
 	TP_FIELDS(
 		ctf_string(name, name)
 		ctf_string(args, args)
@@ -35,10 +34,8 @@ TRACEPOINT_EVENT(lttng_ust_java, string,
 
 #endif /* _TRACEPOINT_LTTNG_UST_JAVA_H */
 
-#undef TRACEPOINT_INCLUDE_PATH
-#define TRACEPOINT_INCLUDE_PATH .
 #undef TRACEPOINT_INCLUDE_FILE
-#define TRACEPOINT_INCLUDE_FILE lttng_ust_java
+#define TRACEPOINT_INCLUDE_FILE ./lttng_ust_java
 
 /* This part must be outside protection */
 #include <lttng/tracepoint-event.h>
