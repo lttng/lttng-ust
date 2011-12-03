@@ -29,21 +29,9 @@ struct tracepoint_lib {
 	int tracepoints_count;
 };
 
-struct tracepoint_iter {
-	struct tracepoint_lib *lib;
-	struct tracepoint * const *tracepoint;
-};
-
 extern int tracepoint_probe_register_noupdate(const char *name, void *callback, void *priv);
 extern int tracepoint_probe_unregister_noupdate(const char *name, void *callback, void *priv);
 extern void tracepoint_probe_update_all(void);
-
-extern void tracepoint_iter_start(struct tracepoint_iter *iter);
-extern void tracepoint_iter_next(struct tracepoint_iter *iter);
-extern void tracepoint_iter_stop(struct tracepoint_iter *iter);
-extern void tracepoint_iter_reset(struct tracepoint_iter *iter);
-extern int tracepoint_get_iter_range(struct tracepoint * const **tracepoint,
-	struct tracepoint * const *begin, struct tracepoint * const *end);
 
 /*
  * call after disconnection of last probe implemented within a

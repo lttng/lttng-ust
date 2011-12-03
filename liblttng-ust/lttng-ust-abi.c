@@ -34,11 +34,6 @@
 #include "ltt-tracer.h"
 #include "tracepoint-internal.h"
 
-struct ltt_tracepoint_list {
-	struct tracepoint_iter iter;
-	int got_first;
-};
-
 static int lttng_ust_abi_close_in_progress;
 
 static
@@ -502,62 +497,26 @@ static const struct lttng_ust_objd_ops lttng_session_ops = {
 	.cmd = lttng_session_cmd,
 };
 
-/*
- * beware: we don't keep the mutex over the send, but we must walk the
- * whole list each time we are called again. So sending one tracepoint
- * at a time means this is O(n^2). TODO: do as in the kernel and send
- * multiple tracepoints for each call to amortize this cost.
- */
-static
-void ltt_tracepoint_list_get(struct ltt_tracepoint_list *list,
-		struct lttng_ust_tracepoint_iter *tracepoint)
-{
-next:
-	if (!list->got_first) {
-		tracepoint_iter_start(&list->iter);
-		list->got_first = 1;
-		goto copy;
-	}
-	tracepoint_iter_next(&list->iter);
-copy:
-	if (!list->iter.tracepoint) {
-		tracepoint->name[0] = '\0';	/* end of list */
-	} else {
-		if (!strcmp((*list->iter.tracepoint)->name,
-				"lttng_ust:metadata"))
-			goto next;
-		memcpy(tracepoint->name, (*list->iter.tracepoint)->name,
-			LTTNG_UST_SYM_NAME_LEN);
-#if 0
-		if ((*list->iter.tracepoint)->loglevel) {
-			memcpy(tracepoint->loglevel,
-				(*list->iter.tracepoint)->loglevel->identifier,
-				LTTNG_UST_SYM_NAME_LEN);
-			tracepoint->loglevel_value =
-				(*list->iter.tracepoint)->loglevel->value;
-		} else {
-#endif
-			tracepoint->loglevel[0] = '\0';
-			tracepoint->loglevel_value = 0;
-#if 0
-		}
-#endif
-	}
-}
-
 static
 long lttng_tracepoint_list_cmd(int objd, unsigned int cmd, unsigned long arg)
 {
-	struct ltt_tracepoint_list *list = objd_private(objd);
+	struct lttng_ust_tracepoint_list *list = objd_private(objd);
 	struct lttng_ust_tracepoint_iter *tp =
 		(struct lttng_ust_tracepoint_iter *) arg;
+	struct lttng_ust_tracepoint_iter *iter;
 
 	switch (cmd) {
 	case LTTNG_UST_TRACEPOINT_LIST_GET:
-		ltt_tracepoint_list_get(list, tp);
-		if (tp->name[0] == '\0')
+	{
+	retry:
+		iter = lttng_ust_tracepoint_list_get_iter_next(list);
+		if (!iter)
 			return -ENOENT;
+		if (!strcmp(iter->name, "lttng_ust:metadata"))
+			goto retry;
+		memcpy(tp, iter, sizeof(*tp));
 		return 0;
+	}
 	default:
 		return -EINVAL;
 	}
@@ -567,7 +526,7 @@ static
 int lttng_abi_tracepoint_list(void)
 {
 	int list_objd, ret;
-	struct ltt_tracepoint_list *list;
+	struct lttng_ust_tracepoint_list *list;
 
 	list_objd = objd_alloc(NULL, &lttng_tracepoint_list_ops);
 	if (list_objd < 0) {
@@ -581,8 +540,15 @@ int lttng_abi_tracepoint_list(void)
 	}
 	objd_set_private(list_objd, list);
 
+	/* populate list by walking on all registered probes. */
+	ret = ltt_probes_get_event_list(list);
+	if (ret) {
+		goto list_error;
+	}
 	return list_objd;
 
+list_error:
+	free(list);
 alloc_error:
 	{
 		int err;
@@ -597,10 +563,10 @@ objd_error:
 static
 int lttng_release_tracepoint_list(int objd)
 {
-	struct ltt_tracepoint_list *list = objd_private(objd);
+	struct lttng_ust_tracepoint_list *list = objd_private(objd);
 
 	if (list) {
-		tracepoint_iter_stop(&list->iter);
+		ltt_probes_prune_event_list(list);
 		free(list);
 		return 0;
 	} else {

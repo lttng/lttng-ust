@@ -13,6 +13,7 @@
 #include <urcu/list.h>
 #include <lttng/ust-events.h>
 #include <assert.h>
+#include <helper.h>
 
 #include "ltt-tracer-core.h"
 
@@ -120,4 +121,80 @@ const struct lttng_event_desc *ltt_event_get(const char *name)
 
 void ltt_event_put(const struct lttng_event_desc *event)
 {
+}
+
+void ltt_probes_prune_event_list(struct lttng_ust_tracepoint_list *list)
+{
+	struct tp_list_entry *list_entry, *tmp;
+
+	cds_list_for_each_entry_safe(list_entry, tmp, &list->head, head) {
+		cds_list_del(&list_entry->head);
+		free(list_entry);
+	}
+}
+
+/*
+ * called with UST lock held.
+ */
+int ltt_probes_get_event_list(struct lttng_ust_tracepoint_list *list)
+{
+	struct lttng_probe_desc *probe_desc;
+	int i;
+
+	CDS_INIT_LIST_HEAD(&list->head);
+	cds_list_for_each_entry(probe_desc, &probe_list, head) {
+		for (i = 0; i < probe_desc->nr_events; i++) {
+			struct tp_list_entry *list_entry;
+
+			list_entry = zmalloc(sizeof(*list_entry));
+			if (!list_entry)
+				goto err_nomem;
+			cds_list_add(&list_entry->head, &list->head);
+			strncpy(list_entry->tp.name,
+				probe_desc->event_desc[i]->name,
+				LTTNG_UST_SYM_NAME_LEN);
+			list_entry->tp.name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+			if (!probe_desc->event_desc[i]->loglevel) {
+				list_entry->tp.loglevel[0] = '\0';
+				list_entry->tp.loglevel_value = 0;
+			} else {
+				strncpy(list_entry->tp.loglevel,
+					(*probe_desc->event_desc[i]->loglevel)->identifier,
+					LTTNG_UST_SYM_NAME_LEN);
+				list_entry->tp.loglevel[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+				list_entry->tp.loglevel_value =
+					(*probe_desc->event_desc[i]->loglevel)->value;
+			}
+		}
+	}
+	if (cds_list_empty(&list->head))
+		list->iter = NULL;
+	else
+		list->iter =
+			cds_list_first_entry(&list->head, struct tp_list_entry, head);
+	return 0;
+
+err_nomem:
+	ltt_probes_prune_event_list(list);
+	return -ENOMEM;
+}
+
+/*
+ * Return current iteration position, advance internal iterator to next.
+ * Return NULL if end of list.
+ */
+struct lttng_ust_tracepoint_iter *
+	lttng_ust_tracepoint_list_get_iter_next(struct lttng_ust_tracepoint_list *list)
+{
+	struct tp_list_entry *entry;
+
+	if (!list->iter)
+		return NULL;
+	entry = list->iter;
+	if (entry->head.next == &list->head)
+		list->iter = NULL;
+	else
+		list->iter = cds_list_entry(entry->head.next,
+				struct tp_list_entry, head);
+	return &entry->tp;
 }

@@ -206,9 +206,14 @@ struct lttng_probe_desc {
 	struct cds_list_head head;		/* chain registered probes */
 };
 
-struct tp_loglevel_iter {
-	struct lttng_probe_desc *desc;
-	const struct tracepoint_loglevel_entry *loglevel;
+struct tp_list_entry {
+	struct lttng_ust_tracepoint_iter tp;
+	struct cds_list_head head;
+};
+
+struct lttng_ust_tracepoint_list {
+	struct tp_list_entry *iter;
+	struct cds_list_head head;
 };
 
 struct ust_pending_probe;
@@ -377,5 +382,10 @@ const struct lttng_ust_lib_ring_buffer_client_cb *lttng_client_callbacks_discard
 const struct lttng_ust_lib_ring_buffer_client_cb *lttng_client_callbacks_overwrite;
 
 struct ltt_transport *ltt_transport_find(const char *name);
+
+int ltt_probes_get_event_list(struct lttng_ust_tracepoint_list *list);
+void ltt_probes_prune_event_list(struct lttng_ust_tracepoint_list *list);
+struct lttng_ust_tracepoint_iter *
+	lttng_ust_tracepoint_list_get_iter_next(struct lttng_ust_tracepoint_list *list);
 
 #endif /* _LTTNG_UST_EVENTS_H */
