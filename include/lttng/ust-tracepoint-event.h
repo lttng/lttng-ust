@@ -118,6 +118,25 @@ void _TP_COMBINE_TOKENS(__tracepoint_provider_check_, TRACEPOINT_PROVIDER)(void)
 }
 
 /*
+ * Stage 0.1 of tracepoint event generation.
+ *
+ * Check that each TRACEPOINT_EVENT provider:name does not exceed the
+ * tracepoint name length limit.
+ */
+
+/* Reset all macros within TRACEPOINT_EVENT */
+#include <lttng/ust-tracepoint-event-reset.h>
+
+#undef TRACEPOINT_EVENT_INSTANCE
+#define TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	\
+static const char							\
+	__tp_name_len_check##_provider##___##_name[LTTNG_UST_SYM_NAME_LEN] \
+	__attribute__((unused)) =					\
+		#_provider ":" #_name;
+
+#include TRACEPOINT_INCLUDE
+
+/*
  * Stage 1 of tracepoint event generation.
  *
  * Create event field type metadata section.
