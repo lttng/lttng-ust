@@ -45,7 +45,10 @@ static const int tracepoint_debug;
 static int initialized;
 static void (*new_tracepoint_cb)(struct tracepoint *);
 
-/* libraries that contain tracepoints (struct tracepoint_lib) */
+/*
+ * libraries that contain tracepoints (struct tracepoint_lib).
+ * Protected by UST lock.
+ */
 static CDS_LIST_HEAD(libs);
 
 /*
@@ -58,7 +61,7 @@ static CDS_LIST_HEAD(libs);
 
 /*
  * Tracepoint hash table, containing the active tracepoints.
- * Protected by tracepoints_mutex.
+ * Protected by ust lock.
  */
 #define TRACEPOINT_HASH_BITS 6
 #define TRACEPOINT_TABLE_SIZE (1 << TRACEPOINT_HASH_BITS)
@@ -71,7 +74,7 @@ static int need_update;
  * Note about RCU :
  * It is used to to delay the free of multiple probes array until a quiescent
  * state is reached.
- * Tracepoint entries modifications are protected by the tracepoints_mutex.
+ * Tracepoint entries modifications are protected by the ust lock.
  */
 struct tracepoint_entry {
 	struct cds_hlist_node hlist;
@@ -87,14 +90,14 @@ struct tp_probes {
 	struct tracepoint_probe probes[0];
 };
 
-static inline void *allocate_probes(int count)
+static void *allocate_probes(int count)
 {
 	struct tp_probes *p  = zmalloc(count * sizeof(struct tracepoint_probe)
 			+ sizeof(struct tp_probes));
 	return p == NULL ? NULL : p->probes;
 }
 
-static inline void release_probes(void *old)
+static void release_probes(void *old)
 {
 	if (old) {
 		struct tp_probes *tp_probes = caa_container_of(old,
@@ -196,7 +199,7 @@ tracepoint_entry_remove_probe(struct tracepoint_entry *entry, void *probe,
 
 /*
  * Get tracepoint if the tracepoint is present in the tracepoint hash table.
- * Must be called with tracepoints_mutex held.
+ * Must be called with ust lock held.
  * Returns NULL if not present.
  */
 static struct tracepoint_entry *get_tracepoint(const char *name)
@@ -216,7 +219,7 @@ static struct tracepoint_entry *get_tracepoint(const char *name)
 
 /*
  * Add the tracepoint to the tracepoint hash table. Must be called with
- * tracepoints_mutex held.
+ * ust lock held.
  */
 static struct tracepoint_entry *add_tracepoint(const char *name)
 {
@@ -251,7 +254,7 @@ static struct tracepoint_entry *add_tracepoint(const char *name)
  * Remove the tracepoint from the tracepoint hash table. Must be called with
  * ust_lock held.
  */
-static inline void remove_tracepoint(struct tracepoint_entry *e)
+static void remove_tracepoint(struct tracepoint_entry *e)
 {
 	cds_hlist_del(&e->hlist);
 	free(e);
