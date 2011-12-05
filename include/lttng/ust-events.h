@@ -19,6 +19,7 @@
  */
 
 #include <urcu/list.h>
+#include <urcu/hlist.h>
 #include <uuid/uuid.h>
 #include <stdint.h>
 #include <lttng/ust-abi.h>
@@ -188,6 +189,22 @@ struct tracepoint_loglevel_entry  {
 	long value;
 };
 
+/*
+ * Entry describing an active loglevel, along with the event attribute
+ * and channel information configuring the events that need to be
+ * enabled.
+ */
+struct loglevel_entry {
+	struct cds_hlist_node hlist;
+	struct ltt_channel *chan;
+	struct lttng_ctx *ctx;	/* TODO */
+	struct lttng_ust_event event_param;
+	struct cds_list_head events;	/* list of events enabled */
+	struct cds_list_head list;	/* per-session list of loglevels */
+	unsigned int enabled:1;
+	char name[0];
+};
+
 struct lttng_event_desc {
 	const char *name;
 	void *probe_callback;
@@ -221,6 +238,9 @@ struct ust_pending_probe;
 /*
  * ltt_event structure is referred to by the tracing fast path. It must be
  * kept small.
+ * Note about loglevel_list: this list is only used to enable/disable
+ * events on a per-loglevel basis. The events created internally by the
+ * loglevel are only freed when the session is destroyed.
  */
 struct ltt_event {
 	unsigned int id;
@@ -233,6 +253,7 @@ struct ltt_event {
 	union {
 	} u;
 	struct cds_list_head list;		/* Event list */
+	struct cds_list_head loglevel_list;	/* Event list for loglevel */
 	struct ust_pending_probe *pending_probe;
 	unsigned int metadata_dumped:1;
 };
@@ -309,6 +330,7 @@ struct ltt_session {
 	struct ltt_channel *metadata;	/* Metadata channel */
 	struct cds_list_head chan;	/* Channel list head */
 	struct cds_list_head events;	/* Event list head */
+	struct cds_list_head loglevels;	/* Loglevel list head */
 	struct cds_list_head list;	/* Session list */
 	unsigned int free_chan_id;	/* Next chan ID to allocate */
 	uuid_t uuid;			/* Trace session unique ID */
@@ -387,5 +409,16 @@ int ltt_probes_get_event_list(struct lttng_ust_tracepoint_list *list);
 void ltt_probes_prune_event_list(struct lttng_ust_tracepoint_list *list);
 struct lttng_ust_tracepoint_iter *
 	lttng_ust_tracepoint_list_get_iter_next(struct lttng_ust_tracepoint_list *list);
+
+struct loglevel_entry *get_loglevel(const char *name);
+struct loglevel_entry *add_loglevel(const char *name,
+	struct ltt_channel *chan,
+	struct lttng_ust_event *event_param);
+void _remove_loglevel(struct loglevel_entry *e);
+int ltt_loglevel_enable(struct loglevel_entry *loglevel);
+int ltt_loglevel_disable(struct loglevel_entry *loglevel);
+int ltt_loglevel_create(struct ltt_channel *chan,
+	struct lttng_ust_event *event_param,
+	struct loglevel_entry **_entry);
 
 #endif /* _LTTNG_UST_EVENTS_H */

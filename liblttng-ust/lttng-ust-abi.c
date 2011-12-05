@@ -203,6 +203,7 @@ static const struct lttng_ust_objd_ops lttng_session_ops;
 static const struct lttng_ust_objd_ops lttng_channel_ops;
 static const struct lttng_ust_objd_ops lttng_metadata_ops;
 static const struct lttng_ust_objd_ops lttng_event_ops;
+static const struct lttng_ust_objd_ops lttng_loglevel_ops;
 static const struct lttng_ust_objd_ops lib_ring_buffer_objd_ops;
 static const struct lttng_ust_objd_ops lttng_tracepoint_list_ops;
 
@@ -658,6 +659,44 @@ objd_error:
 	return ret;
 }
 
+static
+int lttng_abi_create_loglevel(int channel_objd,
+			      struct lttng_ust_event *event_param)
+{
+	struct ltt_channel *channel = objd_private(channel_objd);
+	struct loglevel_entry *loglevel;
+	int loglevel_objd, ret;
+
+	event_param->name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+	loglevel_objd = objd_alloc(NULL, &lttng_loglevel_ops);
+	if (loglevel_objd < 0) {
+		ret = loglevel_objd;
+		goto objd_error;
+	}
+	/*
+	 * We tolerate no failure path after loglevel creation. It will
+	 * stay invariant for the rest of the session.
+	 */
+	ret = ltt_loglevel_create(channel, event_param, &loglevel);
+	if (ret < 0) {
+		goto loglevel_error;
+	}
+	objd_set_private(loglevel_objd, loglevel);
+	/* The loglevel holds a reference on the channel */
+	objd_ref(channel_objd);
+	return loglevel_objd;
+
+loglevel_error:
+	{
+		int err;
+
+		err = lttng_ust_objd_unref(loglevel_objd);
+		assert(!err);
+	}
+objd_error:
+	return ret;
+}
+
 /**
  *	lttng_channel_cmd - lttng control through object descriptors
  *
@@ -695,7 +734,15 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg)
 		return lttng_abi_open_stream(objd, stream);
 	}
 	case LTTNG_UST_EVENT:
-		return lttng_abi_create_event(objd, (struct lttng_ust_event *) arg);
+	{
+		struct lttng_ust_event *event_param =
+			(struct lttng_ust_event *) arg;
+		if (event_param->instrumentation == LTTNG_UST_TRACEPOINT_LOGLEVEL) {
+			return lttng_abi_create_loglevel(objd, event_param);
+		} else {
+			return lttng_abi_create_event(objd, event_param);
+		}
+	}
 	case LTTNG_UST_CONTEXT:
 		return lttng_abi_add_context(objd,
 				(struct lttng_ust_context *) arg,
@@ -900,6 +947,60 @@ int lttng_event_release(int objd)
 static const struct lttng_ust_objd_ops lttng_event_ops = {
 	.release = lttng_event_release,
 	.cmd = lttng_event_cmd,
+};
+
+/**
+ *	lttng_loglevel_cmd - lttng control through object descriptors
+ *
+ *	@objd: the object descriptor
+ *	@cmd: the command
+ *	@arg: command arg
+ *
+ *	This object descriptor implements lttng commands:
+ *	LTTNG_UST_CONTEXT
+ *		Prepend a context field to each record of events of this
+ *		loglevel.
+ *	LTTNG_UST_ENABLE
+ *		Enable recording for these loglevel events (weak enable)
+ *	LTTNG_UST_DISABLE
+ *		Disable recording for these loglevel events (strong disable)
+ */
+static
+long lttng_loglevel_cmd(int objd, unsigned int cmd, unsigned long arg)
+{
+	struct loglevel_entry *loglevel = objd_private(objd);
+
+	switch (cmd) {
+	case LTTNG_UST_CONTEXT:
+		return -ENOSYS;	/* not implemented yet */
+#if 0
+		return lttng_abi_add_context(objd,
+				(struct lttng_ust_context *) arg,
+				&loglevel->ctx, loglevel->chan->session);
+#endif
+	case LTTNG_UST_ENABLE:
+		return ltt_loglevel_enable(loglevel);
+	case LTTNG_UST_DISABLE:
+		return ltt_loglevel_disable(loglevel);
+	default:
+		return -EINVAL;
+	}
+}
+
+static
+int lttng_loglevel_release(int objd)
+{
+	struct loglevel_entry *loglevel = objd_private(objd);
+
+	if (loglevel)
+		return lttng_ust_objd_unref(loglevel->chan->objd);
+	return 0;
+}
+
+/* TODO: filter control ioctl */
+static const struct lttng_ust_objd_ops lttng_loglevel_ops = {
+	.release = lttng_loglevel_release,
+	.cmd = lttng_loglevel_cmd,
 };
 
 void lttng_ust_abi_exit(void)

@@ -31,6 +31,7 @@
 
 #include <usterr-signal-safe.h>
 #include <helper.h>
+#include "error.h"
 
 #include "ltt-tracer.h"
 #include "ltt-tracer-core.h"
@@ -73,6 +74,7 @@ struct ust_pending_probe {
 };
 
 static void _ltt_event_destroy(struct ltt_event *event);
+static void _ltt_loglevel_destroy(struct loglevel_entry *entry);
 static void _ltt_channel_destroy(struct ltt_channel *chan);
 static int _ltt_event_unregister(struct ltt_event *event);
 static
@@ -134,6 +136,11 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 	uint32_t hash = jhash(name, name_len - 1, 0);
 	int ret = 0;
 
+	/* TODO:
+	 * For this event, we need to lookup the loglevel. If active (in
+	 * the active loglevels hash table), we must create the event.
+	 */
+
 	head = &pending_probe_table[hash & (PENDING_PROBE_HASH_SIZE - 1)];
 	cds_hlist_for_each_entry_safe(e, node, p, head, node) {
 		struct ltt_event *event;
@@ -173,6 +180,7 @@ struct ltt_session *ltt_session_create(void)
 		return NULL;
 	CDS_INIT_LIST_HEAD(&session->chan);
 	CDS_INIT_LIST_HEAD(&session->events);
+	CDS_INIT_LIST_HEAD(&session->loglevels);
 	uuid_generate(session->uuid);
 	cds_list_add(&session->list, &sessions);
 	return session;
@@ -182,6 +190,7 @@ void ltt_session_destroy(struct ltt_session *session)
 {
 	struct ltt_channel *chan, *tmpchan;
 	struct ltt_event *event, *tmpevent;
+	struct loglevel_entry *loglevel, *tmploglevel;
 	int ret;
 
 	CMM_ACCESS_ONCE(session->active) = 0;
@@ -190,6 +199,8 @@ void ltt_session_destroy(struct ltt_session *session)
 		WARN_ON(ret);
 	}
 	synchronize_trace();	/* Wait for in-flight events to complete */
+	cds_list_for_each_entry_safe(loglevel, tmploglevel, &session->loglevels, list)
+		_ltt_loglevel_destroy(loglevel);
 	cds_list_for_each_entry_safe(event, tmpevent, &session->events, list)
 		_ltt_event_destroy(event);
 	cds_list_for_each_entry_safe(chan, tmpchan, &session->chan, list)
@@ -347,6 +358,26 @@ void _ltt_channel_destroy(struct ltt_channel *chan)
 	chan->ops->channel_destroy(chan);
 }
 
+int ltt_loglevel_create(struct ltt_channel *chan,
+	struct lttng_ust_event *event_param,
+	struct loglevel_entry **_entry)
+{
+	struct loglevel_entry *entry;
+
+	entry = add_loglevel(event_param->name, chan, event_param);
+	if (!entry || IS_ERR(entry)) {
+		return PTR_ERR(entry);
+	}
+	*_entry = entry;
+	return 0;
+}
+
+static
+void _ltt_loglevel_destroy(struct loglevel_entry *entry)
+{
+	_remove_loglevel(entry);
+}
+
 /*
  * Supports event creation while tracing session is active.
  */
@@ -410,11 +441,7 @@ int ltt_event_create(struct ltt_channel *chan,
 		}
 		break;
 	case LTTNG_UST_TRACEPOINT_LOGLEVEL:
-		/*
-		 * TODO: add tracepoint loglevel to hash table, with
-		 * event info. Enable all events corresponding to
-		 * loglevel.
-		 */
+		assert(0);
 		break;
 	default:
 		WARN_ON_ONCE(1);

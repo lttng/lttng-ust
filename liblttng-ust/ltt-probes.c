@@ -11,16 +11,27 @@
 #include <string.h>
 #include <errno.h>
 #include <urcu/list.h>
+#include <urcu/hlist.h>
 #include <lttng/ust-events.h>
 #include <assert.h>
 #include <helper.h>
 
 #include "ltt-tracer-core.h"
+#include "jhash.h"
+#include "error.h"
 
 /*
  * probe list is protected by ust_lock()/ust_unlock().
  */
 static CDS_LIST_HEAD(probe_list);
+
+/*
+ * Loglevel hash table, containing the active loglevels.
+ * Protected by ust lock.
+ */
+#define LOGLEVEL_HASH_BITS 6
+#define LOGLEVEL_TABLE_SIZE (1 << LOGLEVEL_HASH_BITS)
+static struct cds_hlist_head loglevel_table[LOGLEVEL_TABLE_SIZE];
 
 static
 const struct lttng_probe_desc *find_provider(const char *provider)
@@ -197,4 +208,158 @@ struct lttng_ust_tracepoint_iter *
 		list->iter = cds_list_entry(entry->head.next,
 				struct tp_list_entry, head);
 	return &entry->tp;
+}
+
+/*
+ * Get loglevel if the loglevel is present in the loglevel hash table.
+ * Must be called with ust lock held.
+ * Returns NULL if not present.
+ */
+struct loglevel_entry *get_loglevel(const char *name)
+{
+	struct cds_hlist_head *head;
+	struct cds_hlist_node *node;
+	struct loglevel_entry *e;
+	uint32_t hash = jhash(name, strlen(name), 0);
+
+	head = &loglevel_table[hash & (LOGLEVEL_TABLE_SIZE - 1)];
+	cds_hlist_for_each_entry(e, node, head, hlist) {
+		if (!strcmp(name, e->name))
+			return e;
+	}
+	return NULL;
+}
+
+/*
+ * marshall all probes/all events and create those that fit the
+ * loglevel. Add them to the events list as created.
+ */
+static
+void _probes_create_loglevel_events(struct loglevel_entry *loglevel)
+{
+	struct lttng_probe_desc *probe_desc;
+	int i;
+
+	cds_list_for_each_entry(probe_desc, &probe_list, head) {
+		for (i = 0; i < probe_desc->nr_events; i++) {
+			const struct tracepoint_loglevel_entry *ev_ll;
+
+			if (!(probe_desc->event_desc[i]->loglevel))
+				continue;
+			ev_ll = *probe_desc->event_desc[i]->loglevel;
+			if (!strcmp(ev_ll->identifier, loglevel->name)) {
+				struct ltt_event *ev;
+				int ret;
+
+				/* create event */
+				ret = ltt_event_create(loglevel->chan,
+					&loglevel->event_param, NULL,
+					&ev);
+				/*
+				 * TODO: report error.
+				 */
+				if (ret)
+					continue;
+				cds_list_add(&ev->loglevel_list,
+					&loglevel->events);
+			}
+				
+		}
+	}
+}
+
+/*
+ * Add the loglevel to the loglevel hash table. Must be called with
+ * ust lock held.
+ */
+struct loglevel_entry *add_loglevel(const char *name,
+	struct ltt_channel *chan,
+	struct lttng_ust_event *event_param)
+{
+	struct cds_hlist_head *head;
+	struct cds_hlist_node *node;
+	struct loglevel_entry *e;
+	size_t name_len = strlen(name) + 1;
+	uint32_t hash = jhash(name, name_len-1, 0);
+
+	head = &loglevel_table[hash & (LOGLEVEL_TABLE_SIZE - 1)];
+	cds_hlist_for_each_entry(e, node, head, hlist) {
+		if (!strcmp(name, e->name)) {
+			DBG("loglevel %s busy", name);
+			return ERR_PTR(-EEXIST);	/* Already there */
+		}
+	}
+	/*
+	 * Using zmalloc here to allocate a variable length element. Could
+	 * cause some memory fragmentation if overused.
+	 */
+	e = zmalloc(sizeof(struct loglevel_entry) + name_len);
+	if (!e)
+		return ERR_PTR(-ENOMEM);
+	memcpy(&e->name[0], name, name_len);
+	e->chan = chan;
+	e->enabled = 1;
+	memcpy(&e->event_param, event_param, sizeof(e->event_param));
+	cds_hlist_add_head(&e->hlist, head);
+	CDS_INIT_LIST_HEAD(&e->events);
+	_probes_create_loglevel_events(e);
+	cds_list_add(&e->list, &chan->session->loglevels);
+	return e;
+}
+
+/*
+ * Remove the loglevel from the loglevel hash table. Must be called with
+ * ust_lock held. Only called at session teardown.
+ */
+void _remove_loglevel(struct loglevel_entry *loglevel)
+{
+	struct ltt_event *ev, *tmp;
+
+	/*
+	 * Just remove the events owned (for enable/disable) by this
+	 * loglevel from the list. The session teardown will take care
+	 * of freeing the event memory.
+	 */
+	cds_list_for_each_entry_safe(ev, tmp, &loglevel->events, list) {
+		cds_list_del(&ev->list);
+	}
+	cds_hlist_del(&loglevel->hlist);
+	cds_list_del(&loglevel->list);
+	free(loglevel);
+}
+
+int ltt_loglevel_enable(struct loglevel_entry *loglevel)
+{
+	struct ltt_event *ev;
+	int ret;
+
+	if (loglevel->enabled)
+		return -EEXIST;
+	cds_list_for_each_entry(ev, &loglevel->events, list) {
+		ret = ltt_event_enable(ev);
+		if (ret) {
+			DBG("Error: enable error.\n");
+			return ret;
+		}
+	}
+	loglevel->enabled = 1;
+	return 0;
+}
+
+int ltt_loglevel_disable(struct loglevel_entry *loglevel)
+{
+	struct ltt_event *ev;
+	int ret;
+
+	if (!loglevel->enabled)
+		return -EEXIST;
+	cds_list_for_each_entry(ev, &loglevel->events, list) {
+		ret = ltt_event_disable(ev);
+		if (ret) {
+			DBG("Error: disable error.\n");
+			return ret;
+		}
+	}
+	loglevel->enabled = 0;
+	return 0;
 }
