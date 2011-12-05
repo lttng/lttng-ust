@@ -15,7 +15,7 @@
  */
 
 #include <urcu-bp.h>
-#include <tracepoint-types.h>
+#include <lttng/tracepoint-types.h>
 #include <urcu/compiler.h>
 #include <dlfcn.h>	/* for dlopen */
 
