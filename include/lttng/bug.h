@@ -2,7 +2,7 @@
 #define _LTTNG_BUG_H
 
 /*
- * lib/bug.h
+ * lttng/bug.h
  *
  * (C) Copyright 2010-2011 - Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
@@ -14,14 +14,27 @@
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
- *
  */
 
-#define BUILD_BUG_ON(condition)					\
+#include <urcu/compiler.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#define LTTNG_BUG_ON(condition)						\
+	do {								\
+		if (caa_unlikely(condition)) {				\
+			fprintf(stderr,					\
+				"LTTng BUG in file %s, line %d.\n",	\
+				__FILE__, __LINE__);			\
+			exit(EXIT_FAILURE);				\
+		}							\
+	} while (0)
+
+#define LTTNG_BUILD_BUG_ON(condition)					\
 	((void) sizeof(char[-!!(condition)]))
 
 /**
- * BUILD_RUNTIME_BUG_ON - check condition at build (if constant) or runtime
+ * LTTNG_BUILD_RUNTIME_BUG_ON - check condition at build (if constant) or runtime
  * @condition: the condition which should be false.
  *
  * If the condition is a constant and true, the compiler will generate a build
@@ -29,12 +42,12 @@
  * if the condition is ever true. If the condition is constant and false, no
  * code is emitted.
  */
-#define BUILD_RUNTIME_BUG_ON(condition)				\
+#define LTTNG_BUILD_RUNTIME_BUG_ON(condition)			\
 	do {							\
 		if (__builtin_constant_p(condition))		\
-			BUILD_BUG_ON(condition);		\
+			LTTNG_BUILD_BUG_ON(condition);		\
 		else						\
-			BUG_ON(condition);			\
+			LTTNG_BUG_ON(condition);		\
 	} while (0)
 
 #endif
