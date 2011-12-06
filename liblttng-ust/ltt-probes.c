@@ -264,7 +264,7 @@ void _probes_create_loglevel_events(struct loglevel_entry *entry,
 			if (!(event_desc->loglevel))
 				continue;
 			ev_ll = *event_desc->loglevel;
-			if (isalpha(entry->name[0])) {
+			if (isdigit(entry->name[0])) {
 				if (atoll(entry->name) == ev_ll->value) {
 					match = 1;
 				}
