@@ -258,7 +258,7 @@ void _probes_create_loglevel_events(struct loglevel_entry *entry,
 		for (i = 0; i < probe_desc->nr_events; i++) {
 			const struct tracepoint_loglevel_entry *ev_ll;
 			const struct lttng_event_desc *event_desc;
-			int match;
+			int match = 0;
 
 			event_desc = probe_desc->event_desc[i];
 			if (!(event_desc->loglevel))
