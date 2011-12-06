@@ -303,6 +303,7 @@ struct session_loglevel *add_loglevel(const char *name,
 			return ERR_PTR(-ENOMEM);
 		memcpy(&e->name[0], name, name_len);
 		cds_hlist_add_head(&e->hlist, head);
+		CDS_INIT_LIST_HEAD(&e->session_list);
 	}
 
 	/* session loglevel */
@@ -318,6 +319,7 @@ struct session_loglevel *add_loglevel(const char *name,
 	sl->chan = chan;
 	sl->enabled = 1;
 	memcpy(&sl->event_param, event_param, sizeof(sl->event_param));
+	sl->event_param.instrumentation = LTTNG_UST_TRACEPOINT;
 	CDS_INIT_LIST_HEAD(&sl->events);
 	cds_list_add(&sl->list, &chan->session->loglevels);
 	cds_list_add(&sl->session_list, &e->session_list);
