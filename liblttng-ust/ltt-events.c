@@ -147,6 +147,8 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 
 		ev_ll = *desc->loglevel;
 		loglevel = get_loglevel(ev_ll->identifier);
+		if (!loglevel)
+			loglevel = get_loglevel_value(ev_ll->value);
 		if (loglevel) {
 			struct session_loglevel *sl;
 

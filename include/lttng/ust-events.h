@@ -422,6 +422,7 @@ struct lttng_ust_tracepoint_iter *
 	lttng_ust_tracepoint_list_get_iter_next(struct lttng_ust_tracepoint_list *list);
 
 struct loglevel_entry *get_loglevel(const char *name);
+struct loglevel_entry *get_loglevel_value(int64_t value);
 struct session_loglevel *add_loglevel(const char *name,
 	struct ltt_channel *chan,
 	struct lttng_ust_event *event_param);

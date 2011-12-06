@@ -15,6 +15,7 @@
 #include <lttng/ust-events.h>
 #include <assert.h>
 #include <helper.h>
+#include <ctype.h>
 
 #include "ltt-tracer-core.h"
 #include "jhash.h"
@@ -230,6 +231,17 @@ struct loglevel_entry *get_loglevel(const char *name)
 	return NULL;
 }
 
+struct loglevel_entry *get_loglevel_value(int64_t value)
+{
+	char name[LTTNG_UST_SYM_NAME_LEN];
+	int ret;
+
+	ret = snprintf(name, LTTNG_UST_SYM_NAME_LEN, "%lld", (long long) value);
+	if (ret < 0)
+		return NULL;
+	return get_loglevel(name);
+}
+
 /*
  * marshall all probes/all events and create those that fit the
  * loglevel. Add them to the events list as created.
@@ -246,12 +258,21 @@ void _probes_create_loglevel_events(struct loglevel_entry *entry,
 		for (i = 0; i < probe_desc->nr_events; i++) {
 			const struct tracepoint_loglevel_entry *ev_ll;
 			const struct lttng_event_desc *event_desc;
+			int match;
 
 			event_desc = probe_desc->event_desc[i];
 			if (!(event_desc->loglevel))
 				continue;
 			ev_ll = *event_desc->loglevel;
-			if (!strcmp(ev_ll->identifier, entry->name)) {
+			if (isalpha(entry->name[0])) {
+				if (atoll(entry->name) == ev_ll->value) {
+					match = 1;
+				}
+			} else if (!strcmp(ev_ll->identifier, entry->name)) {
+				match = 1;
+			}
+
+			if (match) {
 				struct ltt_event *ev;
 				int ret;
 
