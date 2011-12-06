@@ -239,28 +239,35 @@ void _probes_create_loglevel_events(struct loglevel_entry *entry,
 				struct session_loglevel *loglevel)
 {
 	struct lttng_probe_desc *probe_desc;
+	struct lttng_ust_event event_param;
 	int i;
 
 	cds_list_for_each_entry(probe_desc, &probe_list, head) {
 		for (i = 0; i < probe_desc->nr_events; i++) {
 			const struct tracepoint_loglevel_entry *ev_ll;
+			const struct lttng_event_desc *event_desc;
 
-			if (!(probe_desc->event_desc[i]->loglevel))
+			event_desc = probe_desc->event_desc[i];
+			if (!(event_desc->loglevel))
 				continue;
-			ev_ll = *probe_desc->event_desc[i]->loglevel;
+			ev_ll = *event_desc->loglevel;
 			if (!strcmp(ev_ll->identifier, entry->name)) {
 				struct ltt_event *ev;
 				int ret;
 
+				memcpy(&event_param, &loglevel->event_param,
+						sizeof(event_param));
+				memcpy(event_param.name,
+					event_desc->name,
+					sizeof(event_param.name));
 				/* create event */
 				ret = ltt_event_create(loglevel->chan,
-					&loglevel->event_param, NULL,
+					&event_param, NULL,
 					&ev);
-				/*
-				 * TODO: report error.
-				 */
-				if (ret)
+				if (ret) {
+					DBG("Error creating event");
 					continue;
+				}
 				cds_list_add(&ev->loglevel_list,
 					&loglevel->events);
 			}

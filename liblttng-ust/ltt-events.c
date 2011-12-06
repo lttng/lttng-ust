@@ -135,6 +135,7 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 	size_t name_len = strlen(name) + 1;
 	uint32_t hash = jhash(name, name_len - 1, 0);
 	int ret = 0;
+	struct lttng_ust_event event_param;
 
 	/*
 	 * For this event, we need to lookup the loglevel. If active (in
@@ -154,15 +155,19 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 				struct ltt_event *ev;
 				int ret;
 
+				memcpy(&event_param, &sl->event_param,
+						sizeof(event_param));
+				memcpy(event_param.name,
+					desc->name,
+					sizeof(event_param.name));
 				/* create event */
 				ret = ltt_event_create(sl->chan,
-					&sl->event_param, NULL,
+					&event_param, NULL,
 					&ev);
-				/*
-				 * TODO: report error.
-				 */
-				if (ret)
+				if (ret) {
+					DBG("Error creating event");
 					continue;
+				}
 				cds_list_add(&ev->loglevel_list,
 					&sl->events);
 			}
