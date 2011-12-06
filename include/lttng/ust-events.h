@@ -189,19 +189,30 @@ struct tracepoint_loglevel_entry  {
 	long value;
 };
 
+struct loglevel_entry;
+
 /*
- * Entry describing an active loglevel, along with the event attribute
- * and channel information configuring the events that need to be
- * enabled.
+ * Entry describing a per-session active loglevel, along with the event
+ * attribute and channel information configuring the events that need to
+ * be enabled.
  */
-struct loglevel_entry {
-	struct cds_hlist_node hlist;
+struct session_loglevel {
 	struct ltt_channel *chan;
 	struct lttng_ctx *ctx;	/* TODO */
 	struct lttng_ust_event event_param;
 	struct cds_list_head events;	/* list of events enabled */
 	struct cds_list_head list;	/* per-session list of loglevels */
+	struct cds_list_head session_list;
+	struct loglevel_entry *entry;
 	unsigned int enabled:1;
+};
+
+/*
+ * Entry describing an active loglevel (per name) for all sessions.
+ */
+struct loglevel_entry {
+	struct cds_hlist_node hlist;
+	struct cds_list_head session_list;
 	char name[0];
 };
 
@@ -411,14 +422,14 @@ struct lttng_ust_tracepoint_iter *
 	lttng_ust_tracepoint_list_get_iter_next(struct lttng_ust_tracepoint_list *list);
 
 struct loglevel_entry *get_loglevel(const char *name);
-struct loglevel_entry *add_loglevel(const char *name,
+struct session_loglevel *add_loglevel(const char *name,
 	struct ltt_channel *chan,
 	struct lttng_ust_event *event_param);
-void _remove_loglevel(struct loglevel_entry *e);
-int ltt_loglevel_enable(struct loglevel_entry *loglevel);
-int ltt_loglevel_disable(struct loglevel_entry *loglevel);
+void _remove_loglevel(struct session_loglevel *loglevel);
+int ltt_loglevel_enable(struct session_loglevel *loglevel);
+int ltt_loglevel_disable(struct session_loglevel *loglevel);
 int ltt_loglevel_create(struct ltt_channel *chan,
 	struct lttng_ust_event *event_param,
-	struct loglevel_entry **_entry);
+	struct session_loglevel **sl);
 
 #endif /* _LTTNG_UST_EVENTS_H */

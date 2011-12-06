@@ -664,7 +664,7 @@ int lttng_abi_create_loglevel(int channel_objd,
 			      struct lttng_ust_event *event_param)
 {
 	struct ltt_channel *channel = objd_private(channel_objd);
-	struct loglevel_entry *loglevel;
+	struct session_loglevel *loglevel;
 	int loglevel_objd, ret;
 
 	event_param->name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
@@ -968,7 +968,7 @@ static const struct lttng_ust_objd_ops lttng_event_ops = {
 static
 long lttng_loglevel_cmd(int objd, unsigned int cmd, unsigned long arg)
 {
-	struct loglevel_entry *loglevel = objd_private(objd);
+	struct session_loglevel *loglevel = objd_private(objd);
 
 	switch (cmd) {
 	case LTTNG_UST_CONTEXT:
@@ -990,7 +990,7 @@ long lttng_loglevel_cmd(int objd, unsigned int cmd, unsigned long arg)
 static
 int lttng_loglevel_release(int objd)
 {
-	struct loglevel_entry *loglevel = objd_private(objd);
+	struct session_loglevel *loglevel = objd_private(objd);
 
 	if (loglevel)
 		return lttng_ust_objd_unref(loglevel->chan->objd);

@@ -74,7 +74,7 @@ struct ust_pending_probe {
 };
 
 static void _ltt_event_destroy(struct ltt_event *event);
-static void _ltt_loglevel_destroy(struct loglevel_entry *entry);
+static void _ltt_loglevel_destroy(struct session_loglevel *sl);
 static void _ltt_channel_destroy(struct ltt_channel *chan);
 static int _ltt_event_unregister(struct ltt_event *event);
 static
@@ -136,10 +136,38 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 	uint32_t hash = jhash(name, name_len - 1, 0);
 	int ret = 0;
 
-	/* TODO:
+	/*
 	 * For this event, we need to lookup the loglevel. If active (in
 	 * the active loglevels hash table), we must create the event.
 	 */
+	if (desc->loglevel) {
+		const struct tracepoint_loglevel_entry *ev_ll;
+		struct loglevel_entry *loglevel;
+
+		ev_ll = *desc->loglevel;
+		loglevel = get_loglevel(ev_ll->identifier);
+		if (loglevel) {
+			struct session_loglevel *sl;
+
+			cds_list_for_each_entry(sl, &loglevel->session_list,
+					session_list) {
+				struct ltt_event *ev;
+				int ret;
+
+				/* create event */
+				ret = ltt_event_create(sl->chan,
+					&sl->event_param, NULL,
+					&ev);
+				/*
+				 * TODO: report error.
+				 */
+				if (ret)
+					continue;
+				cds_list_add(&ev->loglevel_list,
+					&sl->events);
+			}
+		}
+	}
 
 	head = &pending_probe_table[hash & (PENDING_PROBE_HASH_SIZE - 1)];
 	cds_hlist_for_each_entry_safe(e, node, p, head, node) {
@@ -190,7 +218,7 @@ void ltt_session_destroy(struct ltt_session *session)
 {
 	struct ltt_channel *chan, *tmpchan;
 	struct ltt_event *event, *tmpevent;
-	struct loglevel_entry *loglevel, *tmploglevel;
+	struct session_loglevel *loglevel, *tmploglevel;
 	int ret;
 
 	CMM_ACCESS_ONCE(session->active) = 0;
@@ -360,22 +388,22 @@ void _ltt_channel_destroy(struct ltt_channel *chan)
 
 int ltt_loglevel_create(struct ltt_channel *chan,
 	struct lttng_ust_event *event_param,
-	struct loglevel_entry **_entry)
+	struct session_loglevel **_sl)
 {
-	struct loglevel_entry *entry;
+	struct session_loglevel *sl;
 
-	entry = add_loglevel(event_param->name, chan, event_param);
-	if (!entry || IS_ERR(entry)) {
-		return PTR_ERR(entry);
+	sl = add_loglevel(event_param->name, chan, event_param);
+	if (!sl || IS_ERR(sl)) {
+		return PTR_ERR(sl);
 	}
-	*_entry = entry;
+	*_sl = sl;
 	return 0;
 }
 
 static
-void _ltt_loglevel_destroy(struct loglevel_entry *entry)
+void _ltt_loglevel_destroy(struct session_loglevel *sl)
 {
-	_remove_loglevel(entry);
+	_remove_loglevel(sl);
 }
 
 /*

@@ -235,7 +235,8 @@ struct loglevel_entry *get_loglevel(const char *name)
  * loglevel. Add them to the events list as created.
  */
 static
-void _probes_create_loglevel_events(struct loglevel_entry *loglevel)
+void _probes_create_loglevel_events(struct loglevel_entry *entry,
+				struct session_loglevel *loglevel)
 {
 	struct lttng_probe_desc *probe_desc;
 	int i;
@@ -247,7 +248,7 @@ void _probes_create_loglevel_events(struct loglevel_entry *loglevel)
 			if (!(probe_desc->event_desc[i]->loglevel))
 				continue;
 			ev_ll = *probe_desc->event_desc[i]->loglevel;
-			if (!strcmp(ev_ll->identifier, loglevel->name)) {
+			if (!strcmp(ev_ll->identifier, entry->name)) {
 				struct ltt_event *ev;
 				int ret;
 
@@ -263,7 +264,6 @@ void _probes_create_loglevel_events(struct loglevel_entry *loglevel)
 				cds_list_add(&ev->loglevel_list,
 					&loglevel->events);
 			}
-				
 		}
 	}
 }
@@ -272,46 +272,64 @@ void _probes_create_loglevel_events(struct loglevel_entry *loglevel)
  * Add the loglevel to the loglevel hash table. Must be called with
  * ust lock held.
  */
-struct loglevel_entry *add_loglevel(const char *name,
+struct session_loglevel *add_loglevel(const char *name,
 	struct ltt_channel *chan,
 	struct lttng_ust_event *event_param)
 {
 	struct cds_hlist_head *head;
 	struct cds_hlist_node *node;
 	struct loglevel_entry *e;
+	struct session_loglevel *sl;
 	size_t name_len = strlen(name) + 1;
 	uint32_t hash = jhash(name, name_len-1, 0);
+	int found = 0;
 
+	/* loglevel entry */
 	head = &loglevel_table[hash & (LOGLEVEL_TABLE_SIZE - 1)];
 	cds_hlist_for_each_entry(e, node, head, hlist) {
 		if (!strcmp(name, e->name)) {
-			DBG("loglevel %s busy", name);
+			found = 1;
+			break;
+		}
+	}
+
+	if (!found) {
+		/*
+		 * Using zmalloc here to allocate a variable length element. Could
+		 * cause some memory fragmentation if overused.
+		 */
+		e = zmalloc(sizeof(struct loglevel_entry) + name_len);
+		if (!e)
+			return ERR_PTR(-ENOMEM);
+		memcpy(&e->name[0], name, name_len);
+		cds_hlist_add_head(&e->hlist, head);
+	}
+
+	/* session loglevel */
+	cds_list_for_each_entry(sl, &e->session_list, session_list) {
+		if (chan == sl->chan) {
+			DBG("loglevel %s busy for this channel", name);
 			return ERR_PTR(-EEXIST);	/* Already there */
 		}
 	}
-	/*
-	 * Using zmalloc here to allocate a variable length element. Could
-	 * cause some memory fragmentation if overused.
-	 */
-	e = zmalloc(sizeof(struct loglevel_entry) + name_len);
-	if (!e)
+	sl = zmalloc(sizeof(struct session_loglevel));
+	if (!sl)
 		return ERR_PTR(-ENOMEM);
-	memcpy(&e->name[0], name, name_len);
-	e->chan = chan;
-	e->enabled = 1;
-	memcpy(&e->event_param, event_param, sizeof(e->event_param));
-	cds_hlist_add_head(&e->hlist, head);
-	CDS_INIT_LIST_HEAD(&e->events);
-	_probes_create_loglevel_events(e);
-	cds_list_add(&e->list, &chan->session->loglevels);
-	return e;
+	sl->chan = chan;
+	sl->enabled = 1;
+	memcpy(&sl->event_param, event_param, sizeof(sl->event_param));
+	CDS_INIT_LIST_HEAD(&sl->events);
+	cds_list_add(&sl->list, &chan->session->loglevels);
+	cds_list_add(&sl->session_list, &e->session_list);
+	_probes_create_loglevel_events(e, sl);
+	return sl;
 }
 
 /*
  * Remove the loglevel from the loglevel hash table. Must be called with
  * ust_lock held. Only called at session teardown.
  */
-void _remove_loglevel(struct loglevel_entry *loglevel)
+void _remove_loglevel(struct session_loglevel *loglevel)
 {
 	struct ltt_event *ev, *tmp;
 
@@ -323,12 +341,16 @@ void _remove_loglevel(struct loglevel_entry *loglevel)
 	cds_list_for_each_entry_safe(ev, tmp, &loglevel->events, list) {
 		cds_list_del(&ev->list);
 	}
-	cds_hlist_del(&loglevel->hlist);
+	cds_list_del(&loglevel->session_list);
 	cds_list_del(&loglevel->list);
+	if (cds_list_empty(&loglevel->entry->session_list)) {
+		cds_hlist_del(&loglevel->entry->hlist);
+		free(loglevel->entry);
+	}
 	free(loglevel);
 }
 
-int ltt_loglevel_enable(struct loglevel_entry *loglevel)
+int ltt_loglevel_enable(struct session_loglevel *loglevel)
 {
 	struct ltt_event *ev;
 	int ret;
@@ -346,7 +368,7 @@ int ltt_loglevel_enable(struct loglevel_entry *loglevel)
 	return 0;
 }
 
-int ltt_loglevel_disable(struct loglevel_entry *loglevel)
+int ltt_loglevel_disable(struct session_loglevel *loglevel)
 {
 	struct ltt_event *ev;
 	int ret;
