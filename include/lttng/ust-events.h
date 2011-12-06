@@ -216,6 +216,31 @@ struct loglevel_entry {
 	char name[0];
 };
 
+/*
+ * Entry describing a per-session active wildcard, along with the event
+ * attribute and channel information configuring the events that need to
+ * be enabled.
+ */
+struct session_wildcard {
+	struct ltt_channel *chan;
+	struct lttng_ctx *ctx;	/* TODO */
+	struct lttng_ust_event event_param;
+	struct cds_list_head events;	/* list of events enabled */
+	struct cds_list_head list;	/* per-session list of wildcards */
+	struct cds_list_head session_list;
+	struct wildcard_entry *entry;
+	unsigned int enabled:1;
+};
+
+/*
+ * Entry describing an active wildcard (per name) for all sessions.
+ */
+struct wildcard_entry {
+	struct cds_list_head list;
+	struct cds_list_head session_list;
+	char name[0];
+};
+
 struct lttng_event_desc {
 	const char *name;
 	void *probe_callback;
@@ -265,6 +290,7 @@ struct ltt_event {
 	} u;
 	struct cds_list_head list;		/* Event list */
 	struct cds_list_head loglevel_list;	/* Event list for loglevel */
+	struct cds_list_head wildcard_list;	/* Event list for wildcard */
 	struct ust_pending_probe *pending_probe;
 	unsigned int metadata_dumped:1;
 };
@@ -342,6 +368,7 @@ struct ltt_session {
 	struct cds_list_head chan;	/* Channel list head */
 	struct cds_list_head events;	/* Event list head */
 	struct cds_list_head loglevels;	/* Loglevel list head */
+	struct cds_list_head wildcards;	/* Wildcard list head */
 	struct cds_list_head list;	/* Session list */
 	unsigned int free_chan_id;	/* Next chan ID to allocate */
 	uuid_t uuid;			/* Trace session unique ID */
@@ -432,5 +459,16 @@ int ltt_loglevel_disable(struct session_loglevel *loglevel);
 int ltt_loglevel_create(struct ltt_channel *chan,
 	struct lttng_ust_event *event_param,
 	struct session_loglevel **sl);
+
+struct wildcard_entry *match_wildcard(const char *name);
+struct session_wildcard *add_wildcard(const char *name,
+	struct ltt_channel *chan,
+	struct lttng_ust_event *event_param);
+void _remove_wildcard(struct session_wildcard *wildcard);
+int ltt_wildcard_enable(struct session_wildcard *wildcard);
+int ltt_wildcard_disable(struct session_wildcard *wildcard);
+int ltt_wildcard_create(struct ltt_channel *chan,
+	struct lttng_ust_event *event_param,
+	struct session_wildcard **sl);
 
 #endif /* _LTTNG_UST_EVENTS_H */

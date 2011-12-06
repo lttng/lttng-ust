@@ -204,6 +204,7 @@ static const struct lttng_ust_objd_ops lttng_channel_ops;
 static const struct lttng_ust_objd_ops lttng_metadata_ops;
 static const struct lttng_ust_objd_ops lttng_event_ops;
 static const struct lttng_ust_objd_ops lttng_loglevel_ops;
+static const struct lttng_ust_objd_ops lttng_wildcard_ops;
 static const struct lttng_ust_objd_ops lib_ring_buffer_objd_ops;
 static const struct lttng_ust_objd_ops lttng_tracepoint_list_ops;
 
@@ -697,6 +698,44 @@ objd_error:
 	return ret;
 }
 
+static
+int lttng_abi_create_wildcard(int channel_objd,
+			      struct lttng_ust_event *event_param)
+{
+	struct ltt_channel *channel = objd_private(channel_objd);
+	struct session_wildcard *wildcard;
+	int wildcard_objd, ret;
+
+	event_param->name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+	wildcard_objd = objd_alloc(NULL, &lttng_wildcard_ops);
+	if (wildcard_objd < 0) {
+		ret = wildcard_objd;
+		goto objd_error;
+	}
+	/*
+	 * We tolerate no failure path after wildcard creation. It will
+	 * stay invariant for the rest of the session.
+	 */
+	ret = ltt_wildcard_create(channel, event_param, &wildcard);
+	if (ret < 0) {
+		goto wildcard_error;
+	}
+	objd_set_private(wildcard_objd, wildcard);
+	/* The wildcard holds a reference on the channel */
+	objd_ref(channel_objd);
+	return wildcard_objd;
+
+wildcard_error:
+	{
+		int err;
+
+		err = lttng_ust_objd_unref(wildcard_objd);
+		assert(!err);
+	}
+objd_error:
+	return ret;
+}
+
 /**
  *	lttng_channel_cmd - lttng control through object descriptors
  *
@@ -740,7 +779,12 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg)
 		if (event_param->instrumentation == LTTNG_UST_TRACEPOINT_LOGLEVEL) {
 			return lttng_abi_create_loglevel(objd, event_param);
 		} else {
-			return lttng_abi_create_event(objd, event_param);
+			if (event_param->name[strlen(event_param->name) - 1] == '*') {
+				/* If ends with wildcard, create wildcard. */
+				return lttng_abi_create_wildcard(objd, event_param);
+			} else {
+				return lttng_abi_create_event(objd, event_param);
+			}
 		}
 	}
 	case LTTNG_UST_CONTEXT:
@@ -1001,6 +1045,60 @@ int lttng_loglevel_release(int objd)
 static const struct lttng_ust_objd_ops lttng_loglevel_ops = {
 	.release = lttng_loglevel_release,
 	.cmd = lttng_loglevel_cmd,
+};
+
+/**
+ *	lttng_wildcard_cmd - lttng control through object descriptors
+ *
+ *	@objd: the object descriptor
+ *	@cmd: the command
+ *	@arg: command arg
+ *
+ *	This object descriptor implements lttng commands:
+ *	LTTNG_UST_CONTEXT
+ *		Prepend a context field to each record of events of this
+ *		wildcard.
+ *	LTTNG_UST_ENABLE
+ *		Enable recording for these wildcard events (weak enable)
+ *	LTTNG_UST_DISABLE
+ *		Disable recording for these wildcard events (strong disable)
+ */
+static
+long lttng_wildcard_cmd(int objd, unsigned int cmd, unsigned long arg)
+{
+	struct session_wildcard *wildcard = objd_private(objd);
+
+	switch (cmd) {
+	case LTTNG_UST_CONTEXT:
+		return -ENOSYS;	/* not implemented yet */
+#if 0
+		return lttng_abi_add_context(objd,
+				(struct lttng_ust_context *) arg,
+				&wildcard->ctx, wildcard->chan->session);
+#endif
+	case LTTNG_UST_ENABLE:
+		return ltt_wildcard_enable(wildcard);
+	case LTTNG_UST_DISABLE:
+		return ltt_wildcard_disable(wildcard);
+	default:
+		return -EINVAL;
+	}
+}
+
+static
+int lttng_wildcard_release(int objd)
+{
+	struct session_wildcard *wildcard = objd_private(objd);
+
+	if (wildcard)
+		return lttng_ust_objd_unref(wildcard->chan->objd);
+	return 0;
+}
+
+/* TODO: filter control ioctl */
+static const struct lttng_ust_objd_ops lttng_wildcard_ops = {
+	.release = lttng_wildcard_release,
+	.cmd = lttng_wildcard_cmd,
 };
 
 void lttng_ust_abi_exit(void)

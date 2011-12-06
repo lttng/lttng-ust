@@ -75,6 +75,7 @@ struct ust_pending_probe {
 
 static void _ltt_event_destroy(struct ltt_event *event);
 static void _ltt_loglevel_destroy(struct session_loglevel *sl);
+static void _ltt_wildcard_destroy(struct session_wildcard *sw);
 static void _ltt_channel_destroy(struct ltt_channel *chan);
 static int _ltt_event_unregister(struct ltt_event *event);
 static
@@ -176,6 +177,38 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 		}
 	}
 
+	/* Wildcard */
+	{
+		struct wildcard_entry *wildcard;
+
+		wildcard = match_wildcard(desc->name);
+		if (strcmp(desc->name, "lttng_ust:metadata") && wildcard) {
+			struct session_wildcard *sw;
+
+			cds_list_for_each_entry(sw, &wildcard->session_list,
+					session_list) {
+				struct ltt_event *ev;
+				int ret;
+
+				memcpy(&event_param, &sw->event_param,
+						sizeof(event_param));
+				memcpy(event_param.name,
+					desc->name,
+					sizeof(event_param.name));
+				/* create event */
+				ret = ltt_event_create(sw->chan,
+					&event_param, NULL,
+					&ev);
+				if (ret) {
+					DBG("Error creating event");
+					continue;
+				}
+				cds_list_add(&ev->wildcard_list,
+					&sw->events);
+			}
+		}
+	}
+
 	head = &pending_probe_table[hash & (PENDING_PROBE_HASH_SIZE - 1)];
 	cds_hlist_for_each_entry_safe(e, node, p, head, node) {
 		struct ltt_event *event;
@@ -216,6 +249,7 @@ struct ltt_session *ltt_session_create(void)
 	CDS_INIT_LIST_HEAD(&session->chan);
 	CDS_INIT_LIST_HEAD(&session->events);
 	CDS_INIT_LIST_HEAD(&session->loglevels);
+	CDS_INIT_LIST_HEAD(&session->wildcards);
 	uuid_generate(session->uuid);
 	cds_list_add(&session->list, &sessions);
 	return session;
@@ -226,6 +260,7 @@ void ltt_session_destroy(struct ltt_session *session)
 	struct ltt_channel *chan, *tmpchan;
 	struct ltt_event *event, *tmpevent;
 	struct session_loglevel *loglevel, *tmploglevel;
+	struct session_wildcard *wildcard, *tmpwildcard;
 	int ret;
 
 	CMM_ACCESS_ONCE(session->active) = 0;
@@ -236,6 +271,8 @@ void ltt_session_destroy(struct ltt_session *session)
 	synchronize_trace();	/* Wait for in-flight events to complete */
 	cds_list_for_each_entry_safe(loglevel, tmploglevel, &session->loglevels, list)
 		_ltt_loglevel_destroy(loglevel);
+	cds_list_for_each_entry_safe(wildcard, tmpwildcard, &session->wildcards, list)
+		_ltt_wildcard_destroy(wildcard);
 	cds_list_for_each_entry_safe(event, tmpevent, &session->events, list)
 		_ltt_event_destroy(event);
 	cds_list_for_each_entry_safe(chan, tmpchan, &session->chan, list)
@@ -411,6 +448,26 @@ static
 void _ltt_loglevel_destroy(struct session_loglevel *sl)
 {
 	_remove_loglevel(sl);
+}
+
+int ltt_wildcard_create(struct ltt_channel *chan,
+	struct lttng_ust_event *event_param,
+	struct session_wildcard **_sw)
+{
+	struct session_wildcard *sw;
+
+	sw = add_wildcard(event_param->name, chan, event_param);
+	if (!sw || IS_ERR(sw)) {
+		return PTR_ERR(sw);
+	}
+	*_sw = sw;
+	return 0;
+}
+
+static
+void _ltt_wildcard_destroy(struct session_wildcard *sw)
+{
+	_remove_wildcard(sw);
 }
 
 /*
@@ -809,6 +866,19 @@ int _ltt_event_metadata_statedump(struct ltt_session *session,
 		event->chan->id);
 	if (ret)
 		goto end;
+
+	if (event->desc->loglevel) {
+		const struct tracepoint_loglevel_entry *ll_entry;
+
+		ll_entry = *event->desc->loglevel;
+		ret = lttng_metadata_printf(session,
+			"	loglevel.identifier = \"%s\";\n"
+			"	loglevel.value = %lld;\n",
+			ll_entry->identifier,
+			(long long) ll_entry->value);
+		if (ret)
+			goto end;
+	}
 
 	if (event->ctx) {
 		ret = lttng_metadata_printf(session,
