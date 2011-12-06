@@ -323,6 +323,7 @@ struct session_loglevel *add_loglevel(const char *name,
 	CDS_INIT_LIST_HEAD(&sl->events);
 	cds_list_add(&sl->list, &chan->session->loglevels);
 	cds_list_add(&sl->session_list, &e->session_list);
+	sl->entry = e;
 	_probes_create_loglevel_events(e, sl);
 	return sl;
 }
