@@ -113,13 +113,19 @@ extern "C" {
 #define _TP_ARGS_DATA_VAR(...)		_TP_DATA_VAR_N(_TP_NARGS(0, ##__VA_ARGS__), ##__VA_ARGS__)
 #define _TP_PARAMS(...)			__VA_ARGS__
 
+#ifdef _LGPL_SOURCE
+#define _TP_RCU_LINK_TEST()	1
+#else
+#define _TP_RCU_LINK_TEST()	rcu_read_lock_bp
+#endif
+
 #define _DECLARE_TRACEPOINT(provider, name, ...)			 		\
 extern struct tracepoint __tracepoint_##provider##___##name;				\
 static inline void __tracepoint_cb_##provider##___##name(_TP_ARGS_PROTO(__VA_ARGS__))	\
 {											\
 	struct tracepoint_probe *__tp_probe;						\
 											\
-	if (!rcu_read_lock_bp)								\
+	if (!_TP_RCU_LINK_TEST())							\
 		return;									\
 	rcu_read_lock_bp();								\
 	__tp_probe = rcu_dereference_bp(__tracepoint_##provider##___##name.probes);	\
