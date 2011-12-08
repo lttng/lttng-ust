@@ -375,8 +375,9 @@ void _remove_loglevel(struct session_loglevel *loglevel)
 	 * loglevel from the list. The session teardown will take care
 	 * of freeing the event memory.
 	 */
-	cds_list_for_each_entry_safe(ev, tmp, &loglevel->events, list) {
-		cds_list_del(&ev->list);
+	cds_list_for_each_entry_safe(ev, tmp, &loglevel->events,
+			loglevel_list) {
+		cds_list_del(&ev->loglevel_list);
 	}
 	cds_list_del(&loglevel->session_list);
 	cds_list_del(&loglevel->list);
@@ -394,7 +395,7 @@ int ltt_loglevel_enable(struct session_loglevel *loglevel)
 
 	if (loglevel->enabled)
 		return -EEXIST;
-	cds_list_for_each_entry(ev, &loglevel->events, list) {
+	cds_list_for_each_entry(ev, &loglevel->events, loglevel_list) {
 		ret = ltt_event_enable(ev);
 		if (ret) {
 			DBG("Error: enable error.\n");
@@ -412,7 +413,7 @@ int ltt_loglevel_disable(struct session_loglevel *loglevel)
 
 	if (!loglevel->enabled)
 		return -EEXIST;
-	cds_list_for_each_entry(ev, &loglevel->events, list) {
+	cds_list_for_each_entry(ev, &loglevel->events, loglevel_list) {
 		ret = ltt_event_disable(ev);
 		if (ret) {
 			DBG("Error: disable error.\n");
@@ -565,8 +566,9 @@ void _remove_wildcard(struct session_wildcard *wildcard)
 	 * wildcard from the list. The session teardown will take care
 	 * of freeing the event memory.
 	 */
-	cds_list_for_each_entry_safe(ev, tmp, &wildcard->events, list) {
-		cds_list_del(&ev->list);
+	cds_list_for_each_entry_safe(ev, tmp, &wildcard->events,
+			wildcard_list) {
+		cds_list_del(&ev->wildcard_list);
 	}
 	cds_list_del(&wildcard->session_list);
 	cds_list_del(&wildcard->list);
@@ -584,7 +586,7 @@ int ltt_wildcard_enable(struct session_wildcard *wildcard)
 
 	if (wildcard->enabled)
 		return -EEXIST;
-	cds_list_for_each_entry(ev, &wildcard->events, list) {
+	cds_list_for_each_entry(ev, &wildcard->events, wildcard_list) {
 		ret = ltt_event_enable(ev);
 		if (ret) {
 			DBG("Error: enable error.\n");
@@ -602,7 +604,7 @@ int ltt_wildcard_disable(struct session_wildcard *wildcard)
 
 	if (!wildcard->enabled)
 		return -EEXIST;
-	cds_list_for_each_entry(ev, &wildcard->events, list) {
+	cds_list_for_each_entry(ev, &wildcard->events, wildcard_list) {
 		ret = ltt_event_disable(ev);
 		if (ret) {
 			DBG("Error: disable error.\n");
