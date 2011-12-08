@@ -466,6 +466,22 @@ int ustctl_calibrate(int sock, struct lttng_ust_calibrate *calibrate)
 	return -ENOSYS;
 }
 
+int ustctl_sock_flush_buffer(int sock, struct lttng_ust_object_data *object)
+{
+	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_reply lur;
+	int ret;
+
+	memset(&lum, 0, sizeof(lum));
+	lum.handle = object->handle;
+	lum.cmd = LTTNG_UST_FLUSH_BUFFER;
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+	if (ret)
+		return ret;
+	DBG("flushed buffer handle %u", object->handle);
+	return 0;
+}
+
 /* Buffer operations */
 
 /* Map channel shm into process memory */
