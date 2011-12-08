@@ -579,3 +579,25 @@ void exit_tracepoint(void)
 {
 	initialized = 0;
 }
+
+/*
+ * Create the wrapper symbols.
+ */
+#undef tp_rcu_read_lock_bp
+#undef tp_rcu_read_unlock_bp
+#undef tp_rcu_dereference_bp
+
+void tp_rcu_read_lock_bp(void)
+{
+	rcu_read_lock_bp();
+}
+
+void tp_rcu_read_unlock_bp(void)
+{
+	rcu_read_unlock_bp();
+}
+
+void *tp_rcu_dereference_sym_bp(void *p)
+{
+	return rcu_dereference_bp(p);
+}

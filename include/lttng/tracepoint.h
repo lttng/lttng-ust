@@ -14,10 +14,11 @@
  * modified is included with the above copyright notice.
  */
 
-#include <urcu-bp.h>
 #include <lttng/tracepoint-types.h>
+#include <lttng/tracepoint-rcu.h>
 #include <urcu/compiler.h>
 #include <dlfcn.h>	/* for dlopen */
+#include <assert.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -113,22 +114,16 @@ extern "C" {
 #define _TP_ARGS_DATA_VAR(...)		_TP_DATA_VAR_N(_TP_NARGS(0, ##__VA_ARGS__), ##__VA_ARGS__)
 #define _TP_PARAMS(...)			__VA_ARGS__
 
-#ifdef _LGPL_SOURCE
-#define _TP_RCU_LINK_TEST()	1
-#else
-#define _TP_RCU_LINK_TEST()	rcu_read_lock_bp
-#endif
-
 #define _DECLARE_TRACEPOINT(provider, name, ...)			 		\
 extern struct tracepoint __tracepoint_##provider##___##name;				\
 static inline void __tracepoint_cb_##provider##___##name(_TP_ARGS_PROTO(__VA_ARGS__))	\
 {											\
 	struct tracepoint_probe *__tp_probe;						\
 											\
-	if (!_TP_RCU_LINK_TEST())							\
+	if (!TP_RCU_LINK_TEST())							\
 		return;									\
-	rcu_read_lock_bp();								\
-	__tp_probe = rcu_dereference_bp(__tracepoint_##provider##___##name.probes);	\
+	tp_rcu_read_lock_bp();								\
+	__tp_probe = tp_rcu_dereference_bp(__tracepoint_##provider##___##name.probes);	\
 	if (caa_unlikely(!__tp_probe))							\
 		goto end;								\
 	do {										\
@@ -139,7 +134,7 @@ static inline void __tracepoint_cb_##provider##___##name(_TP_ARGS_PROTO(__VA_ARG
 				(_TP_ARGS_DATA_VAR(__VA_ARGS__));			\
 	} while ((++__tp_probe)->func);							\
 end:											\
-	rcu_read_unlock_bp();								\
+	tp_rcu_read_unlock_bp();							\
 }											\
 static inline void __tracepoint_register_##provider##___##name(char *name,		\
 		void *func, void *data)							\
@@ -206,6 +201,20 @@ static void __attribute__((constructor)) __tracepoints__init(void)
 		URCU_FORCE_CAST(int (*)(struct tracepoint * const *),
 				dlsym(liblttngust_handle,
 					"tracepoint_unregister_lib"));
+#ifndef _LGPL_SOURCE
+	tp_rcu_read_lock_bp =
+		URCU_FORCE_CAST(void (*)(void),
+				dlsym(liblttngust_handle,
+					"tp_rcu_read_lock_bp"));
+	tp_rcu_read_unlock_bp =
+		URCU_FORCE_CAST(void (*)(void),
+				dlsym(liblttngust_handle,
+					"tp_rcu_read_unlock_bp"));
+	tp_rcu_dereference_sym_bp =
+		URCU_FORCE_CAST(void *(*)(void *p),
+				dlsym(liblttngust_handle,
+					"tp_rcu_dereference_sym_bp"));
+#endif
 	tracepoint_register_lib(__start___tracepoints_ptrs,
 				__stop___tracepoints_ptrs -
 				__start___tracepoints_ptrs);

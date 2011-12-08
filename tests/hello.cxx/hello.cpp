@@ -27,6 +27,7 @@
 #include <signal.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <stdlib.h>
 
 #define TRACEPOINT_DEFINE
 #include "ust_tests_hello.h"
