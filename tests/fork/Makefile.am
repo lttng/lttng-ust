@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -Wsystem-headers
 
 noinst_PROGRAMS = fork fork2
 fork_SOURCES = fork.c ust_tests_fork.h

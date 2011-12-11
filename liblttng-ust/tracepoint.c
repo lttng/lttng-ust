@@ -31,6 +31,7 @@
 #include <urcu/compiler.h>
 
 #include <lttng/tracepoint.h>
+#include <lttng/ust-abi.h>	/* for LTTNG_UST_SYM_NAME_LEN */
 
 #include <usterr-signal-safe.h>
 #include <helper.h>
@@ -207,11 +208,17 @@ static struct tracepoint_entry *get_tracepoint(const char *name)
 	struct cds_hlist_head *head;
 	struct cds_hlist_node *node;
 	struct tracepoint_entry *e;
-	uint32_t hash = jhash(name, strlen(name), 0);
+	size_t name_len = strlen(name);
+	uint32_t hash;
 
+	if (name_len > LTTNG_UST_SYM_NAME_LEN - 1) {
+		WARN("Truncating tracepoint name %s which exceeds size limits of %u chars", name, LTTNG_UST_SYM_NAME_LEN - 1);
+		name_len = LTTNG_UST_SYM_NAME_LEN - 1;
+	}
+	hash = jhash(name, name_len, 0);
 	head = &tracepoint_table[hash & (TRACEPOINT_TABLE_SIZE - 1)];
 	cds_hlist_for_each_entry(e, node, head, hlist) {
-		if (!strcmp(name, e->name))
+		if (!strncmp(name, e->name, LTTNG_UST_SYM_NAME_LEN - 1))
 			return e;
 	}
 	return NULL;
@@ -226,12 +233,17 @@ static struct tracepoint_entry *add_tracepoint(const char *name)
 	struct cds_hlist_head *head;
 	struct cds_hlist_node *node;
 	struct tracepoint_entry *e;
-	size_t name_len = strlen(name) + 1;
-	uint32_t hash = jhash(name, name_len-1, 0);
+	size_t name_len = strlen(name);
+	uint32_t hash;
 
+	if (name_len > LTTNG_UST_SYM_NAME_LEN - 1) {
+		WARN("Truncating tracepoint name %s which exceeds size limits of %u chars", name, LTTNG_UST_SYM_NAME_LEN - 1);
+		name_len = LTTNG_UST_SYM_NAME_LEN - 1;
+	}
+	hash = jhash(name, name_len, 0);
 	head = &tracepoint_table[hash & (TRACEPOINT_TABLE_SIZE - 1)];
 	cds_hlist_for_each_entry(e, node, head, hlist) {
-		if (!strcmp(name, e->name)) {
+		if (!strncmp(name, e->name, LTTNG_UST_SYM_NAME_LEN - 1)) {
 			DBG("tracepoint %s busy", name);
 			return ERR_PTR(-EEXIST);	/* Already there */
 		}
@@ -240,10 +252,11 @@ static struct tracepoint_entry *add_tracepoint(const char *name)
 	 * Using zmalloc here to allocate a variable length element. Could
 	 * cause some memory fragmentation if overused.
 	 */
-	e = zmalloc(sizeof(struct tracepoint_entry) + name_len);
+	e = zmalloc(sizeof(struct tracepoint_entry) + name_len + 1);
 	if (!e)
 		return ERR_PTR(-ENOMEM);
-	memcpy(&e->name[0], name, name_len);
+	memcpy(&e->name[0], name, name_len + 1);
+	e->name[name_len] = '\0';
 	e->probes = NULL;
 	e->refcount = 0;
 	cds_hlist_add_head(&e->hlist, head);
@@ -266,7 +279,7 @@ static void remove_tracepoint(struct tracepoint_entry *e)
 static void set_tracepoint(struct tracepoint_entry **entry,
 	struct tracepoint *elem, int active)
 {
-	WARN_ON(strcmp((*entry)->name, elem->name) != 0);
+	WARN_ON(strncmp((*entry)->name, elem->name, LTTNG_UST_SYM_NAME_LEN - 1) != 0);
 
 	/*
 	 * rcu_assign_pointer has a cmm_smp_wmb() which makes sure that the new

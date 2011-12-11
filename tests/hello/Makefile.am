@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -Wsystem-headers
 
 noinst_PROGRAMS = hello
 hello_SOURCES = hello.c tp.c ust_tests_hello.h

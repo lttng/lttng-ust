@@ -94,14 +94,20 @@ int add_pending_probe(struct ltt_event *event, const char *name)
 {
 	struct cds_hlist_head *head;
 	struct ust_pending_probe *e;
-	size_t name_len = strlen(name) + 1;
-	uint32_t hash = jhash(name, name_len - 1, 0);
+	size_t name_len = strlen(name);
+	uint32_t hash;
 
+	if (name_len > LTTNG_UST_SYM_NAME_LEN - 1) {
+		WARN("Truncating tracepoint name %s which exceeds size limits of %u chars", name, LTTNG_UST_SYM_NAME_LEN - 1);
+		name_len = LTTNG_UST_SYM_NAME_LEN - 1;
+	}
+	hash = jhash(name, name_len, 0);
 	head = &pending_probe_table[hash & (PENDING_PROBE_HASH_SIZE - 1)];
 	e = zmalloc(sizeof(struct ust_pending_probe) + name_len);
 	if (!e)
 		return -ENOMEM;
-	memcpy(&e->name[0], name, name_len);
+	memcpy(&e->name[0], name, name_len + 1);
+	e->name[name_len] = '\0';
 	cds_hlist_add_head(&e->node, head);
 	e->event = event;
 	event->pending_probe = e;
@@ -133,10 +139,10 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 	struct cds_hlist_node *node, *p;
 	struct ust_pending_probe *e;
 	const char *name = desc->name;
-	size_t name_len = strlen(name) + 1;
-	uint32_t hash = jhash(name, name_len - 1, 0);
 	int ret = 0;
 	struct lttng_ust_event event_param;
+	size_t name_len = strlen(name);
+	uint32_t hash;
 
 	/*
 	 * For this event, we need to lookup the loglevel. If active (in
@@ -209,12 +215,17 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 		}
 	}
 
+	if (name_len > LTTNG_UST_SYM_NAME_LEN - 1) {
+		WARN("Truncating tracepoint name %s which exceeds size limits of %u chars", name, LTTNG_UST_SYM_NAME_LEN - 1);
+		name_len = LTTNG_UST_SYM_NAME_LEN - 1;
+	}
+	hash = jhash(name, name_len, 0);
 	head = &pending_probe_table[hash & (PENDING_PROBE_HASH_SIZE - 1)];
 	cds_hlist_for_each_entry_safe(e, node, p, head, node) {
 		struct ltt_event *event;
 		struct ltt_channel *chan;
 
-		if (strcmp(name, e->name))
+		if (strncmp(name, e->name, LTTNG_UST_SYM_NAME_LEN - 1))
 			continue;
 		event = e->event;
 		chan = event->chan;
@@ -490,7 +501,9 @@ int ltt_event_create(struct ltt_channel *chan,
 	 * creation). Might require a hash if we have lots of events.
 	 */
 	cds_list_for_each_entry(event, &chan->session->events, list) {
-		if (event->desc && !strcmp(event->desc->name, event_param->name)) {
+		if (event->desc && !strncmp(event->desc->name,
+				event_param->name,
+				LTTNG_UST_SYM_NAME_LEN - 1)) {
 			ret = -EEXIST;
 			goto exist;
 		}

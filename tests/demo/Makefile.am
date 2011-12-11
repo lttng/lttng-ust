@@ -1,4 +1,6 @@
-AM_CPPFLAGS = -I$(top_srcdir)/include
+# -Wsystem-headers is needed to print warnings in the tracepoint
+# description file.
+AM_CPPFLAGS = -I$(top_srcdir)/include -Wsystem-headers
 
 # We install the plugins into the /tmp/lttng-ust-divert directory to
 # please libtool, which absolutely needs a target install location. We

@@ -60,7 +60,8 @@ const struct lttng_event_desc *find_event(const char *name)
 
 	cds_list_for_each_entry(probe_desc, &probe_list, head) {
 		for (i = 0; i < probe_desc->nr_events; i++) {
-			if (!strcmp(probe_desc->event_desc[i]->name, name))
+			if (!strncmp(probe_desc->event_desc[i]->name, name,
+					LTTNG_UST_SYM_NAME_LEN - 1))
 				return probe_desc->event_desc[i];
 		}
 	}
@@ -227,11 +228,17 @@ struct loglevel_entry *get_loglevel(const char *name)
 	struct cds_hlist_head *head;
 	struct cds_hlist_node *node;
 	struct loglevel_entry *e;
-	uint32_t hash = jhash(name, strlen(name), 0);
+	size_t name_len = strlen(name);
+	uint32_t hash;
 
+	if (name_len > LTTNG_UST_SYM_NAME_LEN - 1) {
+		WARN("Truncating loglevel name %s which exceeds size limits of %u chars", name, LTTNG_UST_SYM_NAME_LEN - 1);
+		name_len = LTTNG_UST_SYM_NAME_LEN - 1;
+	}
+	hash = jhash(name, name_len, 0);
 	head = &loglevel_table[hash & (LOGLEVEL_TABLE_SIZE - 1)];
 	cds_hlist_for_each_entry(e, node, head, hlist) {
-		if (!strcmp(name, e->name))
+		if (!strncmp(name, e->name, LTTNG_UST_SYM_NAME_LEN - 1))
 			return e;
 	}
 	return NULL;
@@ -274,7 +281,8 @@ void _probes_create_loglevel_events(struct loglevel_entry *entry,
 				if (atoll(entry->name) == ev_ll->value) {
 					match = 1;
 				}
-			} else if (!strcmp(ev_ll->identifier, entry->name)) {
+			} else if (!strncmp(ev_ll->identifier, entry->name,
+					LTTNG_UST_SYM_NAME_LEN - 1)) {
 				match = 1;
 			}
 
@@ -314,14 +322,19 @@ struct session_loglevel *add_loglevel(const char *name,
 	struct cds_hlist_node *node;
 	struct loglevel_entry *e;
 	struct session_loglevel *sl;
-	size_t name_len = strlen(name) + 1;
-	uint32_t hash = jhash(name, name_len-1, 0);
 	int found = 0;
+	size_t name_len = strlen(name);
+	uint32_t hash;
 
+	if (name_len > LTTNG_UST_SYM_NAME_LEN - 1) {
+		WARN("Truncating loglevel name %s which exceeds size limits of %u chars", name, LTTNG_UST_SYM_NAME_LEN - 1);
+		name_len = LTTNG_UST_SYM_NAME_LEN - 1;
+	}
+	hash = jhash(name, name_len, 0);
 	/* loglevel entry */
 	head = &loglevel_table[hash & (LOGLEVEL_TABLE_SIZE - 1)];
 	cds_hlist_for_each_entry(e, node, head, hlist) {
-		if (!strcmp(name, e->name)) {
+		if (!strncmp(name, e->name, LTTNG_UST_SYM_NAME_LEN - 1)) {
 			found = 1;
 			break;
 		}
@@ -332,10 +345,11 @@ struct session_loglevel *add_loglevel(const char *name,
 		 * Using zmalloc here to allocate a variable length element. Could
 		 * cause some memory fragmentation if overused.
 		 */
-		e = zmalloc(sizeof(struct loglevel_entry) + name_len);
+		e = zmalloc(sizeof(struct loglevel_entry) + name_len + 1);
 		if (!e)
 			return ERR_PTR(-ENOMEM);
-		memcpy(&e->name[0], name, name_len);
+		memcpy(&e->name[0], name, name_len + 1);
+		e->name[name_len] = '\0';
 		cds_hlist_add_head(&e->hlist, head);
 		CDS_INIT_LIST_HEAD(&e->session_list);
 	}
@@ -512,7 +526,7 @@ struct session_wildcard *add_wildcard(const char *name,
 
 	/* wildcard entry */
 	cds_list_for_each_entry(e, &wildcard_list, list) {
-		if (!strcmp(name, e->name)) {
+		if (!strncmp(name, e->name, LTTNG_UST_SYM_NAME_LEN - 1)) {
 			found = 1;
 			break;
 		}
