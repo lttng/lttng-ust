@@ -40,6 +40,23 @@ void init_object(struct lttng_ust_object_data *data)
 	data->memory_map_size = 0;
 }
 
+int ustctl_release_handle(int sock, int handle)
+{
+	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_reply lur;
+	int ret;
+
+	if (sock >= 0) {
+		memset(&lum, 0, sizeof(lum));
+		lum.handle = handle;
+		lum.cmd = LTTNG_UST_RELEASE;
+		ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+	return 0;
+}
 /*
  * If sock is negative, it means we don't have to notify the other side
  * (e.g. application has already vanished).
@@ -62,16 +79,7 @@ int ustctl_release_object(int sock, struct lttng_ust_object_data *data)
 			return ret;
 		}
 	}
-	if (sock >= 0) {
-		memset(&lum, 0, sizeof(lum));
-		lum.handle = data->handle;
-		lum.cmd = LTTNG_UST_RELEASE;
-		ret = ustcomm_send_app_cmd(sock, &lum, &lur);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-	return 0;
+	return ustctl_release_handle(sock, data->handle);
 }
 
 /*
