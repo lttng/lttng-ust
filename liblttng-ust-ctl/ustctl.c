@@ -63,8 +63,6 @@ int ustctl_release_handle(int sock, int handle)
  */
 int ustctl_release_object(int sock, struct lttng_ust_object_data *data)
 {
-	struct ustcomm_ust_msg lum;
-	struct ustcomm_ust_reply lur;
 	int ret;
 
 	if (data->shm_fd >= 0) {
