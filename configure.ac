@@ -223,9 +223,6 @@ AC_CONFIG_FILES([
 	Makefile
 	include/Makefile
 	include/lttng/ust-version.h
-	doc/Makefile
-	doc/man/Makefile
-	doc/info/Makefile
 	snprintf/Makefile
 	libringbuffer/Makefile
 	liblttng-ust-comm/Makefile
