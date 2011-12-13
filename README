@@ -1,14 +1,14 @@
-LTTNG USERSPACE TRACER (UST)
+LTTNG USERSPACE TRACER (LTTng-UST)
 ----------------------------
 
-UST web site and manual: http://lttng.org/ust
+UST web site: http://lttng.org/lttng2.0
 
 Updated versions of this package may be found at:
 
-  * Website:  http://lttng.org/ust
-  * Releases: http://lttng.org/files/ust/releases
-  * GitWeb:   http://git.lttng.org (project: ust)
-  * Git:      git://git.lttng.org/ust.git
+  * Website:  http://lttng.org/lttng2.0
+  * Releases: http://lttng.org/files/lttng-ust
+  * GitWeb:   http://git.lttng.org (project: lttng-ust)
+  * Git:      git://git.lttng.org/lttng-ust.git
 
 
 PREREQUISITES:
@@ -100,7 +100,7 @@ TRACE VIEWER:
 CONTACT:
 
   Maintainer: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
-  Mailing list: ltt-dev@lists.casi.polymtl.ca
+  Mailing list: lttng-dev@lists.lttng.org
 
 
 PACKAGE CONTENTS:
