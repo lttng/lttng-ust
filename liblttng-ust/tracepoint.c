@@ -524,6 +524,20 @@ static void new_tracepoints(struct tracepoint * const *start, struct tracepoint 
 	}
 }
 
+static
+void lib_disable_tracepoints(struct tracepoint * const *begin,
+			struct tracepoint * const *end)
+{
+	struct tracepoint * const *iter;
+
+	for (iter = begin; iter < end; iter++) {
+		if (!*iter)
+			continue;	/* skip dummy */
+		disable_tracepoint(*iter);
+	}
+
+}
+
 int tracepoint_register_lib(struct tracepoint * const *tracepoints_start,
 			    int tracepoints_count)
 {
@@ -566,18 +580,34 @@ lib_added:
 int tracepoint_unregister_lib(struct tracepoint * const *tracepoints_start)
 {
 	struct tracepoint_lib *lib;
+	int tracepoints_count;
 
 	ust_lock();
 	cds_list_for_each_entry(lib, &libs, list) {
 		if (lib->tracepoints_start == tracepoints_start) {
 			struct tracepoint_lib *lib2free = lib;
+
 			cds_list_del(&lib->list);
+			tracepoints_count = lib->tracepoints_count;
 			free(lib2free);
-			break;
+			goto found;
 		}
 	}
+	goto end;
+found:
+	/*
+	 * Force tracepoint disarm for all tracepoints of this lib.
+	 * This takes care of destructor of library that would leave a
+	 * LD_PRELOAD wrapper override function enabled for tracing, but
+	 * the session teardown would not be able to reach the
+	 * tracepoint anymore to disable it.
+	 */
+	lib_disable_tracepoints(tracepoints_start,
+			tracepoints_start + tracepoints_count);
+	DBG("just unregistered a tracepoints section from %p",
+		tracepoints_start);
+end:
 	ust_unlock();
-
 	return 0;
 }
 

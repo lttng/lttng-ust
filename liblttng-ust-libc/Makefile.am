@@ -1,0 +1,9 @@
+AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CFLAGS = -fno-strict-aliasing
+
+lib_LTLIBRARIES = liblttng-ust-libc.la
+liblttng_ust_libc_la_SOURCES = lttng-ust-malloc.c
+liblttng_ust_libc_la_LIBADD = -ldl
+
+noinst_SCRIPTS = run
+EXTRA_DIST = run

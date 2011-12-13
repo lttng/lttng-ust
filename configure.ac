@@ -202,7 +202,6 @@ Use the --with-java-jdk=DIR flag to point to your Java include files, or disable
 AM_CONDITIONAL([BUILD_JNI_INTERFACE], [test "x$jni_interface" = "xyes"])
 
 #currently disabled.
-	#liblttng-ust-malloc/Makefile
 	#tests/hello2/Makefile
 	#tests/basic/Makefile
 	#tests/simple_include/Makefile
@@ -230,6 +229,7 @@ AC_CONFIG_FILES([
 	liblttng-ust-ctl/Makefile
 	liblttng-ust-fork/Makefile
 	liblttng-ust-java/Makefile
+	liblttng-ust-libc/Makefile
 	tests/Makefile
 	tests/hello/Makefile
 	tests/hello.cxx/Makefile

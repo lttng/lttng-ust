@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2009  Pierre-Marc Fournier
+ * Copyright (C) 2011  Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,7 +21,10 @@
 #include <dlfcn.h>
 #include <sys/types.h>
 #include <stdio.h>
-#include <ust/marker.h>
+
+#define TRACEPOINT_DEFINE
+#define TRACEPOINT_CREATE_PROBES
+#include "ust_libc.h"
 
 void *malloc(size_t size)
 {
@@ -34,11 +38,8 @@ void *malloc(size_t size)
 			return NULL;
 		}
 	}
-
 	retval = plibc_malloc(size);
-
-	ust_marker(malloc, "size %d ptr %p", (int)size, retval);
-
+	tracepoint(ust_libc, malloc, size, retval);
 	return retval;
 }
 
@@ -53,10 +54,6 @@ void free(void *ptr)
 			return;
 		}
 	}
-
-	ust_marker(free, "ptr %p", ptr);
-
+	tracepoint(ust_libc, free, ptr);
 	plibc_free(ptr);
 }
-
-UST_MARKER_LIB

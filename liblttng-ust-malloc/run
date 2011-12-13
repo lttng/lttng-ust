@@ -1,3 +1,0 @@
-#!/bin/sh
-
-LD_VERBOSE=1 LD_LIBRARY_PATH=.:../libust/.libs:../../liburcu LD_PRELOAD=liburcu.so:libust.so:.libs/libmallocwrap.so $1

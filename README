@@ -117,9 +117,10 @@ PACKAGE CONTENTS:
   - tests
     Various test programs
 
-  - liblttng-ust-malloc
-    An example library that can be LD_PRELOAD'ed to instrument calls to malloc()
-    in any program without need to recompile it.
+  - liblttng-ust-libc
+    An example library that can be LD_PRELOAD'ed to instrument some
+    calls to libc (currently malloc() and free()) in any program without
+    need to recompile it.
 
   - liblttng-ust-fork
     A library that is LD_PRELOAD'ed, and that hijacks calls to several system

@@ -1,0 +1,9 @@
+liblttng-ust-libc is used for instrumenting some calls to libc in a
+program, without need for recompiling it.
+
+This library defines a malloc() function that is instrumented with a
+tracepoint. It also calls the libc malloc afterwards. When loaded with
+LD_PRELOAD, it replaces the libc malloc() function, in effect
+instrumenting all calls to malloc(). The same is performed for free().
+
+See the "run" script for a usage example.
