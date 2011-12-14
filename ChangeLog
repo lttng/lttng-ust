@@ -1,2 +1,7 @@
+2011-12-14 lttng-ust 1.9.2
+	* Add missing ust_libc.h to Makefile.am
+	* Use DBG instead of WARN for futex_wake workaround message
+	* Make dlopen more robust by using the .0 target for the library
+
 2011-12-13 lttng-ust 1.9.1
 	* First LTTng-UST 2.0 prerelease.
