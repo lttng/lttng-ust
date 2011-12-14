@@ -37,7 +37,7 @@ liblttng_ust_support_la_SOURCES = \
 
 liblttng_ust_la_SOURCES =
 
-liblttng_ust_la_LDFLAGS = -no-undefined -version-info 0:0:0
+liblttng_ust_la_LDFLAGS = -no-undefined -version-info $(LTTNG_UST_LIBRARY_VERSION)
 
 liblttng_ust_support_la_LIBADD = \
 	$(top_builddir)/libringbuffer/libringbuffer.la

@@ -2,6 +2,13 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_INIT([lttng-ust],[1.9.1],[mathieu dot desnoyers at efficios dot com])
+
+# Following the numbering scheme proposed by libtool for the library version
+# http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
+AC_SUBST([LTTNG_UST_LIBRARY_VERSION], [0:0:0])
+# note: remember to update tracepoint.h dlopen() to match this version
+# number. TODO: eventually automate by exporting the major number.
+
 AC_CONFIG_AUX_DIR([config])
 AC_CANONICAL_TARGET
 AC_CANONICAL_HOST

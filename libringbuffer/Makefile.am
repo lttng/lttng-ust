@@ -13,9 +13,6 @@ libringbuffer_la_SOURCES = \
 	frontend_api.h frontend.h frontend_internal.h frontend_types.h \
 	nohz.h vatomic.h
 	
-
-libringbuffer_la_LDFLAGS = -no-undefined -version-info 0:0:0
-
 libringbuffer_la_LIBADD = \
 	-lpthread \
 	-lrt
