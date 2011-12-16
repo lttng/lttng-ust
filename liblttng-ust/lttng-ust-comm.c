@@ -567,8 +567,8 @@ void wait_for_sessiond(struct sock_info *sock_info)
 "Please upgrade your kernel "
 "(fix is commit 9ea71503a8ed9184d2d0b8ccc4d269d05f7940ae in Linux kernel "
 "mainline). LTTng-UST will use polling mode fallback.");
+				PERROR("futex");
 			}
-			PERROR("futex");
 		}
 	}
 	return;
