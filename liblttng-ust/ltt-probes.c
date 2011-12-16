@@ -105,7 +105,8 @@ int ltt_probe_register(struct lttng_probe_desc *desc)
 	/* We should be added at the head of the list */
 	cds_list_add(&desc->head, &probe_list);
 desc_added:
-
+	DBG("just registered probe %s containing %u events",
+		desc->provider, desc->nr_events);
 	/*
 	 * fix the events awaiting probe load.
 	 */
@@ -122,6 +123,7 @@ void ltt_probe_unregister(struct lttng_probe_desc *desc)
 {
 	ust_lock();
 	cds_list_del(&desc->head);
+	DBG("just unregistered probe %s", desc->provider);
 	ust_unlock();
 }
 
