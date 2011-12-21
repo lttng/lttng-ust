@@ -39,7 +39,7 @@ static __inline__ uint64_t trace_clock_read64(void)
 	struct timespec ts;
 
 	clock_gettime(CLOCK_MONOTONIC, &ts);
-	return (ts.tv_sec * 1000000000) + ts.tv_nsec;
+	return ((uint64_t) ts.tv_sec * 1000000000ULL) + ts.tv_nsec;
 }
 
 static __inline__ uint32_t trace_clock_freq_scale(void)
