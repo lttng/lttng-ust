@@ -413,7 +413,7 @@ int get_wait_shm(struct sock_info *sock_info, size_t mmap_size)
 		 * shared memory map will have been created.
 		 */
 		pid = wait(&status);
-		if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+		if (pid < 0 || !WIFEXITED(status) || WEXITSTATUS(status) != 0) {
 			wait_shm_fd = -1;
 			goto end;
 		}
