@@ -42,13 +42,6 @@ static __inline__ uint64_t trace_clock_read64(void)
 	return (ts.tv_sec * 1000000000) + ts.tv_nsec;
 }
 
-#if __i386__ || __x86_64__
-static __inline__ uint64_t trace_clock_frequency(void)
-{
-	return 1000000000LL;
-}
-#endif /* #else #if __i386__ || __x86_64__ */
-
 static __inline__ uint32_t trace_clock_freq_scale(void)
 {
 	return 1;
