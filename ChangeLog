@@ -1,3 +1,10 @@
+2011-12-21 lttng-ust 1.9.3
+	* Fix clock source overflow on 32-bit archs
+	* Remove unused trace_clock_frequency
+	* check for negative wait() return value
+	* Add DBG message when registering a probe
+	* Only show futex warning "perror" in debug mode
+
 2011-12-14 lttng-ust 1.9.2
 	* Add missing ust_libc.h to Makefile.am
 	* Use DBG instead of WARN for futex_wake workaround message
