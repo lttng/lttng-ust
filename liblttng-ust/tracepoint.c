@@ -47,22 +47,35 @@ static int initialized;
 static void (*new_tracepoint_cb)(struct tracepoint *);
 
 /*
+ * tracepoint_mutex nests inside UST mutex.
+ *
+ * Note about interaction with fork/clone: UST does not hold the
+ * tracepoint mutex across fork/clone because it is either:
+ * - nested within UST mutex, in which case holding the UST mutex across
+ *   fork/clone suffice,
+ * - taken by a library constructor, which should never race with a
+ *   fork/clone if the application is expected to continue running with
+ *   the same memory layout (no following exec()).
+ */
+static pthread_mutex_t tracepoint_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+/*
  * libraries that contain tracepoints (struct tracepoint_lib).
- * Protected by UST lock.
+ * Protected by tracepoint mutex.
  */
 static CDS_LIST_HEAD(libs);
 
 /*
- * The UST lock protects the library tracepoints, the hash table, and
+ * The tracepoint mutex protects the library tracepoints, the hash table, and
  * the library list.
- * All calls to the tracepoint API must be protected by the UST lock,
+ * All calls to the tracepoint API must be protected by the tracepoint mutex,
  * excepts calls to tracepoint_register_lib and
- * tracepoint_unregister_lib, which take the UST lock themselves.
+ * tracepoint_unregister_lib, which take the tracepoint mutex themselves.
  */
 
 /*
  * Tracepoint hash table, containing the active tracepoints.
- * Protected by ust lock.
+ * Protected by tracepoint mutex.
  */
 #define TRACEPOINT_HASH_BITS 6
 #define TRACEPOINT_TABLE_SIZE (1 << TRACEPOINT_HASH_BITS)
@@ -75,7 +88,7 @@ static int need_update;
  * Note about RCU :
  * It is used to to delay the free of multiple probes array until a quiescent
  * state is reached.
- * Tracepoint entries modifications are protected by the ust lock.
+ * Tracepoint entries modifications are protected by the tracepoint mutex.
  */
 struct tracepoint_entry {
 	struct cds_hlist_node hlist;
@@ -202,7 +215,7 @@ tracepoint_entry_remove_probe(struct tracepoint_entry *entry, void *probe,
 
 /*
  * Get tracepoint if the tracepoint is present in the tracepoint hash table.
- * Must be called with ust lock held.
+ * Must be called with tracepoint mutex held.
  * Returns NULL if not present.
  */
 static struct tracepoint_entry *get_tracepoint(const char *name)
@@ -228,7 +241,7 @@ static struct tracepoint_entry *get_tracepoint(const char *name)
 
 /*
  * Add the tracepoint to the tracepoint hash table. Must be called with
- * ust lock held.
+ * tracepoint mutex held.
  */
 static struct tracepoint_entry *add_tracepoint(const char *name)
 {
@@ -267,7 +280,7 @@ static struct tracepoint_entry *add_tracepoint(const char *name)
 
 /*
  * Remove the tracepoint from the tracepoint hash table. Must be called with
- * ust_lock held.
+ * tracepoint mutex held.
  */
 static void remove_tracepoint(struct tracepoint_entry *e)
 {
@@ -381,19 +394,25 @@ tracepoint_add_probe(const char *name, void *probe, void *data)
  *
  * Returns 0 if ok, error value on error.
  * The probe address must at least be aligned on the architecture pointer size.
- * Called with the UST lock held.
+ * Called with the tracepoint mutex held.
  */
 int __tracepoint_probe_register(const char *name, void *probe, void *data)
 {
 	void *old;
+	int ret = 0;
 
+	pthread_mutex_lock(&tracepoint_mutex);
 	old = tracepoint_add_probe(name, probe, data);
-	if (IS_ERR(old))
-		return PTR_ERR(old);
+	if (IS_ERR(old)) {
+		ret = PTR_ERR(old);
+		goto end;
+	}
 
 	tracepoint_update_probes();		/* may update entry */
 	release_probes(old);
-	return 0;
+end:
+	pthread_mutex_unlock(&tracepoint_mutex);
+	return ret;
 }
 
 static void *tracepoint_remove_probe(const char *name, void *probe, void *data)
@@ -417,20 +436,23 @@ static void *tracepoint_remove_probe(const char *name, void *probe, void *data)
  * @name: tracepoint name
  * @probe: probe function pointer
  * @probe: probe data pointer
- *
- * Called with the UST lock held.
  */
 int __tracepoint_probe_unregister(const char *name, void *probe, void *data)
 {
 	void *old;
+	int ret = 0;
 
+	pthread_mutex_lock(&tracepoint_mutex);
 	old = tracepoint_remove_probe(name, probe, data);
-	if (IS_ERR(old))
-		return PTR_ERR(old);
-
+	if (IS_ERR(old)) {
+		ret = PTR_ERR(old);
+		goto end;
+	}
 	tracepoint_update_probes();		/* may update entry */
 	release_probes(old);
-	return 0;
+end:
+	pthread_mutex_unlock(&tracepoint_mutex);
+	return ret;
 }
 
 static void tracepoint_add_old_probes(void *old)
@@ -449,19 +471,23 @@ static void tracepoint_add_old_probes(void *old)
  * @probe: probe handler
  *
  * caller must call tracepoint_probe_update_all()
- * Called with the UST lock held.
  */
 int tracepoint_probe_register_noupdate(const char *name, void *probe,
 				       void *data)
 {
 	void *old;
+	int ret = 0;
 
+	pthread_mutex_lock(&tracepoint_mutex);
 	old = tracepoint_add_probe(name, probe, data);
 	if (IS_ERR(old)) {
-		return PTR_ERR(old);
+		ret = PTR_ERR(old);
+		goto end;
 	}
 	tracepoint_add_old_probes(old);
-	return 0;
+end:
+	pthread_mutex_unlock(&tracepoint_mutex);
+	return ret;
 }
 
 /**
@@ -470,32 +496,37 @@ int tracepoint_probe_register_noupdate(const char *name, void *probe,
  * @probe: probe function pointer
  *
  * caller must call tracepoint_probe_update_all()
- * Called with the UST lock held.
+ * Called with the tracepoint mutex held.
  */
 int tracepoint_probe_unregister_noupdate(const char *name, void *probe,
 					 void *data)
 {
 	void *old;
+	int ret = 0;
 
+	pthread_mutex_lock(&tracepoint_mutex);
 	old = tracepoint_remove_probe(name, probe, data);
 	if (IS_ERR(old)) {
-		return PTR_ERR(old);
+		ret = PTR_ERR(old);
+		goto end;
 	}
 	tracepoint_add_old_probes(old);
-	return 0;
+end:
+	pthread_mutex_unlock(&tracepoint_mutex);
+	return ret;
 }
 
 /**
  * tracepoint_probe_update_all -  update tracepoints
- * Called with the UST lock held.
  */
 void tracepoint_probe_update_all(void)
 {
 	CDS_LIST_HEAD(release_probes);
 	struct tp_probes *pos, *next;
 
+	pthread_mutex_lock(&tracepoint_mutex);
 	if (!need_update) {
-		return;
+		goto end;
 	}
 	if (!cds_list_empty(&old_probes))
 		cds_list_replace_init(&old_probes, &release_probes);
@@ -507,6 +538,8 @@ void tracepoint_probe_update_all(void)
 		synchronize_rcu();
 		free(pos);
 	}
+end:
+	pthread_mutex_unlock(&tracepoint_mutex);
 }
 
 void tracepoint_set_new_tracepoint_cb(void (*cb)(struct tracepoint *))
@@ -552,7 +585,7 @@ int tracepoint_register_lib(struct tracepoint * const *tracepoints_start,
 	pl->tracepoints_start = tracepoints_start;
 	pl->tracepoints_count = tracepoints_count;
 
-	ust_lock();
+	pthread_mutex_lock(&tracepoint_mutex);
 	/*
 	 * We sort the libs by struct lib pointer address.
 	 */
@@ -571,7 +604,7 @@ lib_added:
 
 	/* TODO: update just the loaded lib */
 	lib_update_tracepoints();
-	ust_unlock();
+	pthread_mutex_unlock(&tracepoint_mutex);
 
 	DBG("just registered a tracepoints section from %p and having %d tracepoints",
 		tracepoints_start, tracepoints_count);
@@ -584,7 +617,7 @@ int tracepoint_unregister_lib(struct tracepoint * const *tracepoints_start)
 	struct tracepoint_lib *lib;
 	int tracepoints_count;
 
-	ust_lock();
+	pthread_mutex_lock(&tracepoint_mutex);
 	cds_list_for_each_entry(lib, &libs, list) {
 		if (lib->tracepoints_start == tracepoints_start) {
 			struct tracepoint_lib *lib2free = lib;
@@ -609,7 +642,7 @@ found:
 	DBG("just unregistered a tracepoints section from %p",
 		tracepoints_start);
 end:
-	ust_unlock();
+	pthread_mutex_unlock(&tracepoint_mutex);
 	return 0;
 }
 

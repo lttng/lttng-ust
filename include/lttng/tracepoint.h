@@ -190,7 +190,7 @@ static void __attribute__((constructor)) __tracepoints__init(void)
 	if (__tracepoint_registered++)
 		return;
 
-	liblttngust_handle = dlopen("liblttng-ust.so.0", RTLD_NOW | RTLD_GLOBAL);
+	liblttngust_handle = dlopen("liblttng-ust-tracepoint.so.0", RTLD_NOW | RTLD_GLOBAL);
 	if (!liblttngust_handle)
 		return;
 	tracepoint_register_lib =
