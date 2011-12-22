@@ -87,6 +87,8 @@ struct tracepoint_entry {
 struct tp_probes {
 	union {
 		struct cds_list_head list;
+		/* Field below only used for call_rcu scheme */
+		/* struct rcu_head head; */
 	} u;
 	struct tracepoint_probe probes[0];
 };
