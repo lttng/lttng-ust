@@ -1,3 +1,7 @@
+2011-12-23 lttng-ust 1.9.4
+	* Split liblttng-ust into liblttng-ust and liblttng-ust-tracepoint libs
+	* Comment the union field (only used in call_rcu scheme)
+
 2011-12-21 lttng-ust 1.9.3
 	* Fix clock source overflow on 32-bit archs
 	* Remove unused trace_clock_frequency
