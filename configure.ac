@@ -85,7 +85,7 @@ AC_CHECK_HEADERS([urcu-bp.h], [], [AC_MSG_ERROR([Cannot find [URCU] headers (urc
 This error can also occur when the liburcu package's configure script has not been run.])])
 
 AC_MSG_CHECKING([caa_likely()])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 #include <urcu/compiler.h>
 ]], [[
 void fct(void)
@@ -156,7 +156,7 @@ AC_MSG_RESULT($LIBFORMAT)
 
 if test "x$host_cpu" = "xarm" ; then
 AC_MSG_CHECKING([checking for armv5])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 ]], [[
 #ifndef __ARM_ARCH_5TEJ__
 #error "no arm5 here"
