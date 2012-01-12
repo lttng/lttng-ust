@@ -507,11 +507,23 @@ struct lttng_ust_shm_handle *ustctl_map_channel(struct lttng_ust_object_data *ch
 		return NULL;
 	}
 	/*
-	 * Set to -1 because the lttng_ust_shm_handle destruction will take care
-	 * of closing shm_fd and wait_fd.
+	 * Set to -1, and then close the shm fd, and set the handle shm
+	 * fd to -1 too. We don't need the shm fds after they have been
+	 * mapped.
+	 * The wait_fd is set to -1 in chan_data because it is now owned
+	 * by the handle.
 	 */
 	chan_data->shm_fd = -1;
 	chan_data->wait_fd = -1;
+
+	/* chan is object 0. This is hardcoded. */
+	if (handle->table->objects[0].shm_fd >= 0) {
+		ret = close(handle->table->objects[0].shm_fd);
+		if (ret) {
+			perror("Error closing shm_fd");
+		}
+		handle->table->objects[0].shm_fd = -1;
+	}
 
 	/*
 	 * TODO: add consistency checks to be resilient if the
@@ -596,6 +608,9 @@ void ustctl_unmap_channel(struct lttng_ust_shm_handle *handle)
 	channel_destroy(chan, handle, 1);
 }
 
+/*
+ * ustctl closes the shm_fd fds after mapping it.
+ */
 struct lttng_ust_lib_ring_buffer *ustctl_open_stream_read(struct lttng_ust_shm_handle *handle,
 	int cpu)
 {
@@ -612,6 +627,16 @@ struct lttng_ust_lib_ring_buffer *ustctl_open_stream_read(struct lttng_ust_shm_h
 	ret = lib_ring_buffer_open_read(buf, handle, 1);
 	if (ret)
 		return NULL;
+	/*
+	 * We can close shm_fd early, right after is has been mapped.
+	 */
+	if (*shm_fd >= 0) {
+		ret = close(*shm_fd);
+		if (ret) {
+			perror("Error closing shm_fd");
+		}
+		*shm_fd = -1;
+	}
 	return buf;
 }
 
