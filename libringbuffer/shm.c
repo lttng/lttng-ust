@@ -211,10 +211,12 @@ void shmp_object_destroy(struct shm_object *obj)
 			assert(0);
 		}
 	}
-	ret = close(obj->shm_fd);
-	if (ret) {
-		PERROR("close");
-		assert(0);
+	if (obj->shm_fd >= 0) {
+		ret = close(obj->shm_fd);
+		if (ret) {
+			PERROR("close");
+			assert(0);
+		}
 	}
 	for (i = 0; i < 2; i++) {
 		if (obj->wait_fd[i] < 0)

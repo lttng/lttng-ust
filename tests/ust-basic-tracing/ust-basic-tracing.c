@@ -203,8 +203,8 @@ int consume_stream(struct lttng_ust_shm_handle *handle, int cpu, char *outfile)
 	struct channel *chan;
 	struct lttng_ust_lib_ring_buffer *buf;
 	int outfd, ret;
-	int shm_fd, wait_fd;
-	uint64_t memory_map_size;
+	int *shm_fd, *wait_fd;
+	uint64_t *memory_map_size;
 
 	chan = shmp(handle, handle->chan);
 

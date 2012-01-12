@@ -401,8 +401,8 @@ struct ltt_channel *ltt_channel_create(struct ltt_session *session,
 				       size_t subbuf_size, size_t num_subbuf,
 				       unsigned int switch_timer_interval,
 				       unsigned int read_timer_interval,
-				       int *shm_fd, int *wait_fd,
-				       uint64_t *memory_map_size,
+				       int **shm_fd, int **wait_fd,
+				       uint64_t **memory_map_size,
 				       struct ltt_channel *chan_priv_init)
 {
 	struct ltt_channel *chan = NULL;

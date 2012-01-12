@@ -239,6 +239,7 @@ int handle_message(struct sock_info *sock_info,
 	const struct lttng_ust_objd_ops *ops;
 	struct ustcomm_ust_reply lur;
 	int shm_fd, wait_fd;
+	union ust_args args;
 
 	ust_lock();
 
@@ -271,7 +272,8 @@ int handle_message(struct sock_info *sock_info,
 	default:
 		if (ops->cmd)
 			ret = ops->cmd(lum->handle, lum->cmd,
-					(unsigned long) &lum->u);
+					(unsigned long) &lum->u,
+					&args);
 		else
 			ret = -ENOSYS;
 		break;
@@ -293,15 +295,15 @@ end:
 		 * Special-case reply to send stream info.
 		 * Use lum.u output.
 		 */
-		lur.u.stream.memory_map_size = lum->u.stream.memory_map_size;
-		shm_fd = lum->u.stream.shm_fd;
-		wait_fd = lum->u.stream.wait_fd;
+		lur.u.stream.memory_map_size = *args.stream.memory_map_size;
+		shm_fd = *args.stream.shm_fd;
+		wait_fd = *args.stream.wait_fd;
 		break;
 	case LTTNG_UST_METADATA:
 	case LTTNG_UST_CHANNEL:
-		lur.u.channel.memory_map_size = lum->u.channel.memory_map_size;
-		shm_fd = lum->u.channel.shm_fd;
-		wait_fd = lum->u.channel.wait_fd;
+		lur.u.channel.memory_map_size = *args.channel.memory_map_size;
+		shm_fd = *args.channel.shm_fd;
+		wait_fd = *args.channel.wait_fd;
 		break;
 	case LTTNG_UST_TRACER_VERSION:
 		lur.u.version = lum->u.version;
@@ -336,6 +338,48 @@ end:
 			goto error;
 		}
 	}
+	/*
+	 * We still have the memory map reference, and the fds have been
+	 * sent to the sessiond. We can therefore close those fds.
+	 */
+	if (lur.ret_code == USTCOMM_OK) {
+		switch (lum->cmd) {
+		case LTTNG_UST_STREAM:
+			if (shm_fd >= 0) {
+				ret = close(shm_fd);
+				if (ret) {
+					PERROR("Error closing stream shm_fd");
+				}
+				*args.stream.shm_fd = -1;
+			}
+			if (wait_fd >= 0) {
+				ret = close(wait_fd);
+				if (ret) {
+					PERROR("Error closing stream wait_fd");
+				}
+				*args.stream.wait_fd = -1;
+			}
+			break;
+		case LTTNG_UST_METADATA:
+		case LTTNG_UST_CHANNEL:
+			if (shm_fd >= 0) {
+				ret = close(shm_fd);
+				if (ret) {
+					PERROR("Error closing channel shm_fd");
+				}
+				*args.channel.shm_fd = -1;
+			}
+			if (wait_fd >= 0) {
+				ret = close(wait_fd);
+				if (ret) {
+					PERROR("Error closing channel wait_fd");
+				}
+				*args.channel.wait_fd = -1;
+			}
+			break;
+		}
+	}
+
 error:
 	ust_unlock();
 	return ret;

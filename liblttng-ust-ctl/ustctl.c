@@ -600,8 +600,8 @@ struct lttng_ust_lib_ring_buffer *ustctl_open_stream_read(struct lttng_ust_shm_h
 	int cpu)
 {
 	struct channel *chan = handle->shadow_chan;
-	int shm_fd, wait_fd;
-	uint64_t memory_map_size;
+	int *shm_fd, *wait_fd;
+	uint64_t *memory_map_size;
 	struct lttng_ust_lib_ring_buffer *buf;
 	int ret;
 

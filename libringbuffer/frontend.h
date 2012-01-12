@@ -52,8 +52,8 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 				size_t subbuf_size, size_t num_subbuf,
 				unsigned int switch_timer_interval,
 				unsigned int read_timer_interval,
-				int *shm_fd, int *wait_fd,
-				uint64_t *memory_map_size);
+				int **shm_fd, int **wait_fd,
+				uint64_t **memory_map_size);
 
 /* channel_handle_create - for consumer. */
 extern
@@ -89,8 +89,8 @@ extern struct lttng_ust_lib_ring_buffer *channel_get_ring_buffer(
 				const struct lttng_ust_lib_ring_buffer_config *config,
 				struct channel *chan, int cpu,
 				struct lttng_ust_shm_handle *handle,
-				int *shm_fd, int *wait_fd,
-				uint64_t *memory_map_size);
+				int **shm_fd, int **wait_fd,
+				uint64_t **memory_map_size);
 extern int lib_ring_buffer_open_read(struct lttng_ust_lib_ring_buffer *buf,
 				     struct lttng_ust_shm_handle *handle,
 				     int shadow);

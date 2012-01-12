@@ -281,6 +281,7 @@ long lttng_abi_add_context(int objd,
  *	@objd: the object descriptor
  *	@cmd: the command
  *	@arg: command arg
+ *	@uargs: UST arguments (internal)
  *
  *	This descriptor implements lttng commands:
  *	LTTNG_UST_SESSION
@@ -295,7 +296,8 @@ long lttng_abi_add_context(int objd,
  * The returned session will be deleted when its file descriptor is closed.
  */
 static
-long lttng_cmd(int objd, unsigned int cmd, unsigned long arg)
+long lttng_cmd(int objd, unsigned int cmd, unsigned long arg,
+	union ust_args *uargs)
 {
 	switch (cmd) {
 	case LTTNG_UST_SESSION:
@@ -350,7 +352,8 @@ create_error:
 
 int lttng_abi_create_channel(int session_objd,
 			     struct lttng_ust_channel *chan_param,
-			     enum channel_type channel_type)
+			     enum channel_type channel_type,
+			     union ust_args *uargs)
 {
 	struct ltt_session *session = objd_private(session_objd);
 	const struct lttng_ust_objd_ops *ops;
@@ -399,9 +402,9 @@ int lttng_abi_create_channel(int session_objd,
 				  chan_param->num_subbuf,
 				  chan_param->switch_timer_interval,
 				  chan_param->read_timer_interval,
-				  &chan_param->shm_fd,
-				  &chan_param->wait_fd,
-				  &chan_param->memory_map_size,
+				  &uargs->channel.shm_fd,
+				  &uargs->channel.wait_fd,
+				  &uargs->channel.memory_map_size,
 				  &chan_priv_init);
 	if (!chan) {
 		ret = -EINVAL;
@@ -435,6 +438,7 @@ objd_error:
  *	@obj: the object
  *	@cmd: the command
  *	@arg: command arg
+ *	@uargs: UST arguments (internal)
  *
  *	This descriptor implements lttng commands:
  *	LTTNG_UST_CHANNEL
@@ -449,7 +453,8 @@ objd_error:
  * The returned channel will be deleted when its file descriptor is closed.
  */
 static
-long lttng_session_cmd(int objd, unsigned int cmd, unsigned long arg)
+long lttng_session_cmd(int objd, unsigned int cmd, unsigned long arg,
+	union ust_args *uargs)
 {
 	struct ltt_session *session = objd_private(objd);
 
@@ -457,7 +462,7 @@ long lttng_session_cmd(int objd, unsigned int cmd, unsigned long arg)
 	case LTTNG_UST_CHANNEL:
 		return lttng_abi_create_channel(objd,
 				(struct lttng_ust_channel *) arg,
-				PER_CPU_CHANNEL);
+				PER_CPU_CHANNEL, uargs);
 	case LTTNG_UST_SESSION_START:
 	case LTTNG_UST_ENABLE:
 		return ltt_session_enable(session);
@@ -467,7 +472,7 @@ long lttng_session_cmd(int objd, unsigned int cmd, unsigned long arg)
 	case LTTNG_UST_METADATA:
 		return lttng_abi_create_channel(objd,
 				(struct lttng_ust_channel *) arg,
-				METADATA_CHANNEL);
+				METADATA_CHANNEL, uargs);
 	default:
 		return -EINVAL;
 	}
@@ -500,7 +505,8 @@ static const struct lttng_ust_objd_ops lttng_session_ops = {
 };
 
 static
-long lttng_tracepoint_list_cmd(int objd, unsigned int cmd, unsigned long arg)
+long lttng_tracepoint_list_cmd(int objd, unsigned int cmd, unsigned long arg,
+	union ust_args *uargs)
 {
 	struct lttng_ust_tracepoint_list *list = objd_private(objd);
 	struct lttng_ust_tracepoint_iter *tp =
@@ -587,7 +593,8 @@ struct stream_priv_data {
 };
 
 static
-int lttng_abi_open_stream(int channel_objd, struct lttng_ust_stream *info)
+int lttng_abi_open_stream(int channel_objd, struct lttng_ust_stream *info,
+		union ust_args *uargs)
 {
 	struct ltt_channel *channel = objd_private(channel_objd);
 	struct lttng_ust_lib_ring_buffer *buf;
@@ -595,7 +602,9 @@ int lttng_abi_open_stream(int channel_objd, struct lttng_ust_stream *info)
 	int stream_objd, ret;
 
 	buf = channel->ops->buffer_read_open(channel->chan, channel->handle,
-			&info->shm_fd, &info->wait_fd, &info->memory_map_size);
+			&uargs->stream.shm_fd,
+			&uargs->stream.wait_fd,
+			&uargs->stream.memory_map_size);
 	if (!buf)
 		return -ENOENT;
 
@@ -742,6 +751,7 @@ objd_error:
  *	@objd: the object descriptor
  *	@cmd: the command
  *	@arg: command arg
+ *	@uargs: UST arguments (internal)
  *
  *	This object descriptor implements lttng commands:
  *      LTTNG_UST_STREAM
@@ -759,7 +769,8 @@ objd_error:
  * Channel and event file descriptors also hold a reference on the session.
  */
 static
-long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg)
+long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg,
+	union ust_args *uargs)
 {
 	struct ltt_channel *channel = objd_private(objd);
 
@@ -770,7 +781,7 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg)
 
 		stream = (struct lttng_ust_stream *) arg;
 		/* stream used as output */
-		return lttng_abi_open_stream(objd, stream);
+		return lttng_abi_open_stream(objd, stream, uargs);
 	}
 	case LTTNG_UST_EVENT:
 	{
@@ -808,6 +819,7 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg)
  *	@objd: the object descriptor
  *	@cmd: the command
  *	@arg: command arg
+ *	@uargs: UST arguments (internal)
  *
  *	This object descriptor implements lttng commands:
  *      LTTNG_UST_STREAM
@@ -816,7 +828,8 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg)
  * Channel and event file descriptors also hold a reference on the session.
  */
 static
-long lttng_metadata_cmd(int objd, unsigned int cmd, unsigned long arg)
+long lttng_metadata_cmd(int objd, unsigned int cmd, unsigned long arg,
+	union ust_args *uargs)
 {
 	struct ltt_channel *channel = objd_private(objd);
 
@@ -827,7 +840,7 @@ long lttng_metadata_cmd(int objd, unsigned int cmd, unsigned long arg)
 
 		stream = (struct lttng_ust_stream *) arg;
 		/* stream used as output */
-		return lttng_abi_open_stream(objd, stream);
+		return lttng_abi_open_stream(objd, stream, uargs);
 	}
 	case LTTNG_UST_FLUSH_BUFFER:
 		return channel->ops->flush_buffer(channel->chan, channel->handle);
@@ -893,12 +906,14 @@ static const struct lttng_ust_objd_ops lttng_metadata_ops = {
  *	@objd: the object descriptor
  *	@cmd: the command
  *	@arg: command arg
+ *	@uargs: UST arguments (internal)
  *
  *	This object descriptor implements lttng commands:
  *		(None for now. Access is done directly though shm.)
  */
 static
-long lttng_rb_cmd(int objd, unsigned int cmd, unsigned long arg)
+long lttng_rb_cmd(int objd, unsigned int cmd, unsigned long arg,
+	union ust_args *uargs)
 {
 	switch (cmd) {
 	default:
@@ -949,6 +964,7 @@ static const struct lttng_ust_objd_ops lib_ring_buffer_objd_ops = {
  *	@objd: the object descriptor
  *	@cmd: the command
  *	@arg: command arg
+ *	@uargs: UST arguments (internal)
  *
  *	This object descriptor implements lttng commands:
  *	LTTNG_UST_CONTEXT
@@ -959,7 +975,8 @@ static const struct lttng_ust_objd_ops lib_ring_buffer_objd_ops = {
  *		Disable recording for this event (strong disable)
  */
 static
-long lttng_event_cmd(int objd, unsigned int cmd, unsigned long arg)
+long lttng_event_cmd(int objd, unsigned int cmd, unsigned long arg,
+	union ust_args *uargs)
 {
 	struct ltt_event *event = objd_private(objd);
 
@@ -999,6 +1016,7 @@ static const struct lttng_ust_objd_ops lttng_event_ops = {
  *	@objd: the object descriptor
  *	@cmd: the command
  *	@arg: command arg
+ *	@uargs: UST arguments (internal)
  *
  *	This object descriptor implements lttng commands:
  *	LTTNG_UST_CONTEXT
@@ -1010,7 +1028,8 @@ static const struct lttng_ust_objd_ops lttng_event_ops = {
  *		Disable recording for these loglevel events (strong disable)
  */
 static
-long lttng_loglevel_cmd(int objd, unsigned int cmd, unsigned long arg)
+long lttng_loglevel_cmd(int objd, unsigned int cmd, unsigned long arg,
+	union ust_args *uargs)
 {
 	struct session_loglevel *loglevel = objd_private(objd);
 
@@ -1053,6 +1072,7 @@ static const struct lttng_ust_objd_ops lttng_loglevel_ops = {
  *	@objd: the object descriptor
  *	@cmd: the command
  *	@arg: command arg
+ *	@uargs: UST arguments (internal)
  *
  *	This object descriptor implements lttng commands:
  *	LTTNG_UST_CONTEXT
@@ -1064,7 +1084,8 @@ static const struct lttng_ust_objd_ops lttng_loglevel_ops = {
  *		Disable recording for these wildcard events (strong disable)
  */
 static
-long lttng_wildcard_cmd(int objd, unsigned int cmd, unsigned long arg)
+long lttng_wildcard_cmd(int objd, unsigned int cmd, unsigned long arg,
+	union ust_args *uargs)
 {
 	struct session_wildcard *wildcard = objd_private(objd);
 

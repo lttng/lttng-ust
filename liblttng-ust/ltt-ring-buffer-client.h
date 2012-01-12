@@ -385,8 +385,8 @@ struct ltt_channel *_channel_create(const char *name,
 				size_t subbuf_size, size_t num_subbuf,
 				unsigned int switch_timer_interval,
 				unsigned int read_timer_interval,
-				int *shm_fd, int *wait_fd,
-				uint64_t *memory_map_size,
+				int **shm_fd, int **wait_fd,
+				uint64_t **memory_map_size,
 				struct ltt_channel *chan_priv_init)
 {
 	void *priv;
@@ -416,8 +416,8 @@ void ltt_channel_destroy(struct ltt_channel *ltt_chan)
 static
 struct lttng_ust_lib_ring_buffer *ltt_buffer_read_open(struct channel *chan,
 					     struct lttng_ust_shm_handle *handle,
-					     int *shm_fd, int *wait_fd,
-					     uint64_t *memory_map_size)
+					     int **shm_fd, int **wait_fd,
+					     uint64_t **memory_map_size)
 {
 	struct lttng_ust_lib_ring_buffer *buf;
 	int cpu;
@@ -521,8 +521,8 @@ int ltt_flush_buffer(struct channel *chan, struct lttng_ust_shm_handle *handle)
 	int cpu;
 
 	for_each_channel_cpu(cpu, chan) {
-		int shm_fd, wait_fd;
-		uint64_t memory_map_size;
+		int *shm_fd, *wait_fd;
+		uint64_t *memory_map_size;
 
 		buf = channel_get_ring_buffer(&client_config, chan,
 				cpu, handle, &shm_fd, &wait_fd,
