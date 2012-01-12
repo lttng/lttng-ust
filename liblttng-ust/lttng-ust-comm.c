@@ -340,7 +340,9 @@ end:
 	}
 	/*
 	 * We still have the memory map reference, and the fds have been
-	 * sent to the sessiond. We can therefore close those fds.
+	 * sent to the sessiond. We can therefore close those fds. Note
+	 * that we keep the write side of the wait_fd open, but close
+	 * the read side.
 	 */
 	if (lur.ret_code == USTCOMM_OK) {
 		switch (lum->cmd) {
