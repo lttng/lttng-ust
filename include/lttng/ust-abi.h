@@ -51,14 +51,7 @@ struct lttng_ust_channel {
 	enum lttng_ust_output output;		/* output mode */
 };
 
-/*
- * This structure is only used internally within UST. It is not per-se
- * part of the communication between sessiond and UST.
- */
 struct lttng_ust_stream {
-	int shm_fd;
-	int wait_fd;
-	uint64_t memory_map_size;
 };
 
 struct lttng_ust_event {
