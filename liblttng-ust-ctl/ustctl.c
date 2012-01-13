@@ -135,7 +135,7 @@ int ustctl_open_metadata(int sock, int session_handle,
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
 	struct lttng_ust_object_data *metadata_data;
-	int ret;
+	int ret, err = 0;
 
 	metadata_data = malloc(sizeof(*metadata_data));
 	if (!metadata_data)
@@ -166,13 +166,21 @@ int ustctl_open_metadata(int sock, int session_handle,
 	/* get shm fd */
 	ret = ustcomm_recv_fd(sock);
 	if (ret < 0)
-		goto error;
-	metadata_data->shm_fd = ret;
+		err = 1;
+	else
+		metadata_data->shm_fd = ret;
+	/*
+	 * We need to get the second FD even if the first fails, because
+	 * libust expects us to read the two FDs.
+	 */
 	/* get wait fd */
 	ret = ustcomm_recv_fd(sock);
 	if (ret < 0)
+		err = 1;
+	else
+		metadata_data->wait_fd = ret;
+	if (err)
 		goto error;
-	metadata_data->wait_fd = ret;
 	*_metadata_data = metadata_data;
 	return 0;
 
@@ -189,7 +197,7 @@ int ustctl_create_channel(int sock, int session_handle,
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
 	struct lttng_ust_object_data *channel_data;
-	int ret;
+	int ret, err = 0;
 
 	channel_data = malloc(sizeof(*channel_data));
 	if (!channel_data)
@@ -220,13 +228,21 @@ int ustctl_create_channel(int sock, int session_handle,
 	/* get shm fd */
 	ret = ustcomm_recv_fd(sock);
 	if (ret < 0)
-		goto error;
-	channel_data->shm_fd = ret;
+		err = 1;
+	else
+		channel_data->shm_fd = ret;
+	/*
+	 * We need to get the second FD even if the first fails, because
+	 * libust expects us to read the two FDs.
+	 */
 	/* get wait fd */
 	ret = ustcomm_recv_fd(sock);
 	if (ret < 0)
+		err = 1;
+	else
+		channel_data->wait_fd = ret;
+	if (err)
 		goto error;
-	channel_data->wait_fd = ret;
 	*_channel_data = channel_data;
 	return 0;
 
@@ -247,7 +263,7 @@ int ustctl_create_stream(int sock, struct lttng_ust_object_data *channel_data,
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
 	struct lttng_ust_object_data *stream_data;
-	int ret, fd;
+	int ret, fd, err = 0;
 
 	stream_data = malloc(sizeof(*stream_data));
 	if (!stream_data)
@@ -272,13 +288,21 @@ int ustctl_create_stream(int sock, struct lttng_ust_object_data *channel_data,
 	/* get shm fd */
 	fd = ustcomm_recv_fd(sock);
 	if (fd < 0)
-		goto error;
-	stream_data->shm_fd = fd;
+		err = 1;
+	else
+		stream_data->shm_fd = fd;
+	/*
+	 * We need to get the second FD even if the first fails, because
+	 * libust expects us to read the two FDs.
+	 */
 	/* get wait fd */
 	fd = ustcomm_recv_fd(sock);
 	if (fd < 0)
+		err = 1;
+	else
+		stream_data->wait_fd = fd;
+	if (err)
 		goto error;
-	stream_data->wait_fd = fd;
 	*_stream_data = stream_data;
 	return ret;
 
