@@ -365,7 +365,7 @@ static const struct lttng_ust_lib_ring_buffer_config client_config = {
 	.cb.buffer_create = client_buffer_create,
 	.cb.buffer_finalize = client_buffer_finalize,
 
-	.tsc_bits = 32,
+	.tsc_bits = 27,
 	.alloc = RING_BUFFER_ALLOC_PER_CPU,
 	.sync = RING_BUFFER_SYNC_GLOBAL,
 	.mode = RING_BUFFER_MODE_TEMPLATE,
