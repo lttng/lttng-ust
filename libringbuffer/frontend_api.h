@@ -93,18 +93,8 @@ int lib_ring_buffer_try_reserve(const struct lttng_ust_lib_ring_buffer_config *c
 	 */
 	//prefetch(&buf->commit_hot[subbuf_index(*o_begin, chan)]);
 
-	/*
-	 * Because we don't use any timer in the application, we
-	 * currently cannot guarantee that we have frequent
-	 * events that let us detect 27-bit overflows.
-	 * Therefore, for now, we force event headers
-	 * to contain 64-bit timestamps.
-	 */
-	ctx->rflags |= RING_BUFFER_RFLAG_FULL_TSC;
-#if 0
 	if (last_tsc_overflow(config, buf, ctx->tsc))
 		ctx->rflags |= RING_BUFFER_RFLAG_FULL_TSC;
-#endif //0
 
 	if (caa_unlikely(subbuf_offset(*o_begin, chan) == 0))
 		return 1;

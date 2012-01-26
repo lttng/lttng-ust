@@ -309,10 +309,20 @@ int ltt_session_enable(struct ltt_session *session)
 	cds_list_for_each_entry(chan, &session->chan, list) {
 		if (chan->header_type)
 			continue;		/* don't change it if session stop/restart */
+		/*
+		 * Because we don't use any timer in the application, we
+		 * currently cannot guarantee that we have frequent
+		 * events that let us detect 27-bit overflows.
+		 * Therefore, for now, we force large event headers,
+		 * which contain 64-bit timestamps.
+		 */
+		chan->header_type = 2;  /* large */
+#if 0
 		if (chan->free_event_id < 31)
 			chan->header_type = 1;	/* compact */
 		else
 			chan->header_type = 2;	/* large */
+#endif //0
 	}
 
 	CMM_ACCESS_ONCE(session->active) = 1;
