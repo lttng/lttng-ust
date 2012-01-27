@@ -34,7 +34,8 @@
 
 /* Choosing correct trace clock */
 
-static __inline__ uint64_t trace_clock_read64(void)
+static __inline__
+uint64_t trace_clock_read64(void)
 {
 	struct timespec ts;
 
@@ -42,9 +43,16 @@ static __inline__ uint64_t trace_clock_read64(void)
 	return ((uint64_t) ts.tv_sec * 1000000000ULL) + ts.tv_nsec;
 }
 
-static __inline__ uint32_t trace_clock_freq_scale(void)
+static __inline__
+uint64_t trace_clock_freq(void)
 {
-	return 1;
+	return 1000000000ULL;
+}
+
+static __inline__
+const char *trace_clock_uuid(void)
+{
+	return "CLOCK_MONOTONIC";
 }
 
 #endif /* _UST_CLOCK_H */
