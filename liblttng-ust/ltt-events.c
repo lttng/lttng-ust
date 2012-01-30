@@ -1075,7 +1075,7 @@ static
 int _ltt_session_metadata_statedump(struct ltt_session *session)
 {
 	unsigned char *uuid_c = session->uuid;
-	char uuid_s[37];
+	char uuid_s[37], clock_uuid_s[CLOCK_UUID_LEN];
 	struct ltt_channel *chan;
 	struct ltt_event *event;
 	int ret = 0;
@@ -1133,15 +1133,27 @@ int _ltt_session_metadata_statedump(struct ltt_session *session)
 
 	ret = lttng_metadata_printf(session,
 		"clock {\n"
-		"	name = %s;\n"
-		"	uuid = %s;\n"
+		"	name = %s;\n",
+		"monotonic"
+		);
+	if (ret)
+		goto end;
+
+	if (!trace_clock_uuid(clock_uuid_s)) {
+		ret = lttng_metadata_printf(session,
+			"	uuid = \"%s\";\n",
+			clock_uuid_s
+			);
+		if (ret)
+			goto end;
+	}
+
+	ret = lttng_metadata_printf(session,
 		"	description = \"Monotonic Clock\";\n"
 		"	freq = %" PRIu64 "; /* Frequency, in Hz */\n"
 		"	/* clock value offset from Epoch is: offset * (1/freq) */\n"
 		"	offset = %" PRIu64 ";\n"
 		"};\n\n",
-		"monotonic",
-		trace_clock_uuid(),
 		trace_clock_freq(),
 		measure_clock_offset()
 		);

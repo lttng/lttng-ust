@@ -24,6 +24,12 @@
 #include <sys/time.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <stdio.h>
+
+/*
+ * Includes final \0.
+ */
+#define CLOCK_UUID_LEN		37
 
 /* TRACE CLOCK */
 
@@ -50,9 +56,30 @@ uint64_t trace_clock_freq(void)
 }
 
 static __inline__
-const char *trace_clock_uuid(void)
+const int trace_clock_uuid(char *uuid)
 {
-	return "CLOCK_MONOTONIC";
+	int ret = 0;
+	size_t len;
+	FILE *fp;
+
+	/*
+	 * boot_id needs to be read once before being used concurrently
+	 * to deal with a Linux kernel race. A fix is proposed for
+	 * upstream, but the work-around is needed for older kernels.
+	 */
+	fp = fopen("/proc/sys/kernel/random/boot_id", "r");
+	if (!fp) {
+		return -ENOENT;
+	}
+	len = fread(uuid, 1, CLOCK_UUID_LEN - 1, fp);
+	if (len < CLOCK_UUID_LEN - 1) {
+		ret = -EINVAL;
+		goto end;
+	}
+	uuid[CLOCK_UUID_LEN - 1] = '\0';
+end:
+	fclose(fp);
+	return ret;
 }
 
 #endif /* _UST_CLOCK_H */
