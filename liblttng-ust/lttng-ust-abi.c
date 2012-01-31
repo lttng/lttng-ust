@@ -670,44 +670,6 @@ objd_error:
 }
 
 static
-int lttng_abi_create_loglevel(int channel_objd,
-			      struct lttng_ust_event *event_param)
-{
-	struct ltt_channel *channel = objd_private(channel_objd);
-	struct session_loglevel *loglevel;
-	int loglevel_objd, ret;
-
-	event_param->name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
-	loglevel_objd = objd_alloc(NULL, &lttng_loglevel_ops);
-	if (loglevel_objd < 0) {
-		ret = loglevel_objd;
-		goto objd_error;
-	}
-	/*
-	 * We tolerate no failure path after loglevel creation. It will
-	 * stay invariant for the rest of the session.
-	 */
-	ret = ltt_loglevel_create(channel, event_param, &loglevel);
-	if (ret < 0) {
-		goto loglevel_error;
-	}
-	objd_set_private(loglevel_objd, loglevel);
-	/* The loglevel holds a reference on the channel */
-	objd_ref(channel_objd);
-	return loglevel_objd;
-
-loglevel_error:
-	{
-		int err;
-
-		err = lttng_ust_objd_unref(loglevel_objd);
-		assert(!err);
-	}
-objd_error:
-	return ret;
-}
-
-static
 int lttng_abi_create_wildcard(int channel_objd,
 			      struct lttng_ust_event *event_param)
 {
@@ -787,15 +749,11 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg,
 	{
 		struct lttng_ust_event *event_param =
 			(struct lttng_ust_event *) arg;
-		if (event_param->instrumentation == LTTNG_UST_TRACEPOINT_LOGLEVEL) {
-			return lttng_abi_create_loglevel(objd, event_param);
+		if (event_param->name[strlen(event_param->name) - 1] == '*') {
+			/* If ends with wildcard, create wildcard. */
+			return lttng_abi_create_wildcard(objd, event_param);
 		} else {
-			if (event_param->name[strlen(event_param->name) - 1] == '*') {
-				/* If ends with wildcard, create wildcard. */
-				return lttng_abi_create_wildcard(objd, event_param);
-			} else {
-				return lttng_abi_create_event(objd, event_param);
-			}
+			return lttng_abi_create_event(objd, event_param);
 		}
 	}
 	case LTTNG_UST_CONTEXT:

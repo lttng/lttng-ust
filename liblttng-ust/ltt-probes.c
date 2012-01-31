@@ -315,6 +315,7 @@ void _probes_create_loglevel_events(struct loglevel_entry *entry,
 /*
  * Add the loglevel to the loglevel hash table. Must be called with
  * ust lock held.
+ * TODO: should be integrated with events and wildcards.
  */
 struct session_loglevel *add_loglevel(const char *name,
 	struct ltt_channel *chan,
