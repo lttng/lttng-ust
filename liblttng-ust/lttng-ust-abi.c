@@ -203,7 +203,6 @@ static const struct lttng_ust_objd_ops lttng_session_ops;
 static const struct lttng_ust_objd_ops lttng_channel_ops;
 static const struct lttng_ust_objd_ops lttng_metadata_ops;
 static const struct lttng_ust_objd_ops lttng_event_ops;
-static const struct lttng_ust_objd_ops lttng_loglevel_ops;
 static const struct lttng_ust_objd_ops lttng_wildcard_ops;
 static const struct lttng_ust_objd_ops lib_ring_buffer_objd_ops;
 static const struct lttng_ust_objd_ops lttng_tracepoint_list_ops;
@@ -966,62 +965,6 @@ int lttng_event_release(int objd)
 static const struct lttng_ust_objd_ops lttng_event_ops = {
 	.release = lttng_event_release,
 	.cmd = lttng_event_cmd,
-};
-
-/**
- *	lttng_loglevel_cmd - lttng control through object descriptors
- *
- *	@objd: the object descriptor
- *	@cmd: the command
- *	@arg: command arg
- *	@uargs: UST arguments (internal)
- *
- *	This object descriptor implements lttng commands:
- *	LTTNG_UST_CONTEXT
- *		Prepend a context field to each record of events of this
- *		loglevel.
- *	LTTNG_UST_ENABLE
- *		Enable recording for these loglevel events (weak enable)
- *	LTTNG_UST_DISABLE
- *		Disable recording for these loglevel events (strong disable)
- */
-static
-long lttng_loglevel_cmd(int objd, unsigned int cmd, unsigned long arg,
-	union ust_args *uargs)
-{
-	struct session_loglevel *loglevel = objd_private(objd);
-
-	switch (cmd) {
-	case LTTNG_UST_CONTEXT:
-		return -ENOSYS;	/* not implemented yet */
-#if 0
-		return lttng_abi_add_context(objd,
-				(struct lttng_ust_context *) arg,
-				&loglevel->ctx, loglevel->chan->session);
-#endif
-	case LTTNG_UST_ENABLE:
-		return ltt_loglevel_enable(loglevel);
-	case LTTNG_UST_DISABLE:
-		return ltt_loglevel_disable(loglevel);
-	default:
-		return -EINVAL;
-	}
-}
-
-static
-int lttng_loglevel_release(int objd)
-{
-	struct session_loglevel *loglevel = objd_private(objd);
-
-	if (loglevel)
-		return lttng_ust_objd_unref(loglevel->chan->objd);
-	return 0;
-}
-
-/* TODO: filter control ioctl */
-static const struct lttng_ust_objd_ops lttng_loglevel_ops = {
-	.release = lttng_loglevel_release,
-	.cmd = lttng_loglevel_cmd,
 };
 
 /**

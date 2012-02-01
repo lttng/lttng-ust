@@ -189,33 +189,6 @@ struct tracepoint_loglevel_entry  {
 	long value;
 };
 
-struct loglevel_entry;
-
-/*
- * Entry describing a per-session active loglevel, along with the event
- * attribute and channel information configuring the events that need to
- * be enabled.
- */
-struct session_loglevel {
-	struct ltt_channel *chan;
-	struct lttng_ctx *ctx;	/* TODO */
-	struct lttng_ust_event event_param;
-	struct cds_list_head events;	/* list of events enabled */
-	struct cds_list_head list;	/* per-session list of loglevels */
-	struct cds_list_head session_list;
-	struct loglevel_entry *entry;
-	unsigned int enabled:1;
-};
-
-/*
- * Entry describing an active loglevel (per name) for all sessions.
- */
-struct loglevel_entry {
-	struct cds_hlist_node hlist;
-	struct cds_list_head session_list;
-	char name[0];
-};
-
 /*
  * Entry describing a per-session active wildcard, along with the event
  * attribute and channel information configuring the events that need to
@@ -227,7 +200,7 @@ struct session_wildcard {
 	struct lttng_ust_event event_param;
 	struct cds_list_head events;	/* list of events enabled */
 	struct cds_list_head list;	/* per-session list of wildcards */
-	struct cds_list_head session_list;
+	struct cds_list_head session_list; /* node of session wildcard list */
 	struct wildcard_entry *entry;
 	unsigned int enabled:1;
 };
@@ -236,7 +209,9 @@ struct session_wildcard {
  * Entry describing an active wildcard (per name) for all sessions.
  */
 struct wildcard_entry {
+	/* node of global wildcards list */
 	struct cds_list_head list;
+	/* head of session list to which this wildcard apply */
 	struct cds_list_head session_list;
 	char name[0];
 };
@@ -289,7 +264,6 @@ struct ltt_event {
 	union {
 	} u;
 	struct cds_list_head list;		/* Event list */
-	struct cds_list_head loglevel_list;	/* Event list for loglevel */
 	struct cds_list_head wildcard_list;	/* Event list for wildcard */
 	struct ust_pending_probe *pending_probe;
 	unsigned int metadata_dumped:1;
@@ -367,7 +341,6 @@ struct ltt_session {
 	struct ltt_channel *metadata;	/* Metadata channel */
 	struct cds_list_head chan;	/* Channel list head */
 	struct cds_list_head events;	/* Event list head */
-	struct cds_list_head loglevels;	/* Loglevel list head */
 	struct cds_list_head wildcards;	/* Wildcard list head */
 	struct cds_list_head list;	/* Session list */
 	unsigned int free_chan_id;	/* Next chan ID to allocate */
@@ -447,18 +420,6 @@ int ltt_probes_get_event_list(struct lttng_ust_tracepoint_list *list);
 void ltt_probes_prune_event_list(struct lttng_ust_tracepoint_list *list);
 struct lttng_ust_tracepoint_iter *
 	lttng_ust_tracepoint_list_get_iter_next(struct lttng_ust_tracepoint_list *list);
-
-struct loglevel_entry *get_loglevel(const char *name);
-struct loglevel_entry *get_loglevel_value(int64_t value);
-struct session_loglevel *add_loglevel(const char *name,
-	struct ltt_channel *chan,
-	struct lttng_ust_event *event_param);
-void _remove_loglevel(struct session_loglevel *loglevel);
-int ltt_loglevel_enable(struct session_loglevel *loglevel);
-int ltt_loglevel_disable(struct session_loglevel *loglevel);
-int ltt_loglevel_create(struct ltt_channel *chan,
-	struct lttng_ust_event *event_param,
-	struct session_loglevel **sl);
 
 struct wildcard_entry *match_wildcard(const char *name);
 struct session_wildcard *add_wildcard(const char *name,

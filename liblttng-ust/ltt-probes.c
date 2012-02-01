@@ -27,14 +27,6 @@
 static CDS_LIST_HEAD(probe_list);
 
 /*
- * Loglevel hash table, containing the active loglevels.
- * Protected by ust lock.
- */
-#define LOGLEVEL_HASH_BITS 6
-#define LOGLEVEL_TABLE_SIZE (1 << LOGLEVEL_HASH_BITS)
-static struct cds_hlist_head loglevel_table[LOGLEVEL_TABLE_SIZE];
-
-/*
  * Wildcard list, containing the active wildcards.
  * Protected by ust lock.
  */
@@ -220,227 +212,6 @@ struct lttng_ust_tracepoint_iter *
 	return &entry->tp;
 }
 
-/*
- * Get loglevel if the loglevel is present in the loglevel hash table.
- * Must be called with ust lock held.
- * Returns NULL if not present.
- */
-struct loglevel_entry *get_loglevel(const char *name)
-{
-	struct cds_hlist_head *head;
-	struct cds_hlist_node *node;
-	struct loglevel_entry *e;
-	size_t name_len = strlen(name);
-	uint32_t hash;
-
-	if (name_len > LTTNG_UST_SYM_NAME_LEN - 1) {
-		WARN("Truncating loglevel name %s which exceeds size limits of %u chars", name, LTTNG_UST_SYM_NAME_LEN - 1);
-		name_len = LTTNG_UST_SYM_NAME_LEN - 1;
-	}
-	hash = jhash(name, name_len, 0);
-	head = &loglevel_table[hash & (LOGLEVEL_TABLE_SIZE - 1)];
-	cds_hlist_for_each_entry(e, node, head, hlist) {
-		if (!strncmp(name, e->name, LTTNG_UST_SYM_NAME_LEN - 1))
-			return e;
-	}
-	return NULL;
-}
-
-struct loglevel_entry *get_loglevel_value(int64_t value)
-{
-	char name[LTTNG_UST_SYM_NAME_LEN];
-	int ret;
-
-	ret = snprintf(name, LTTNG_UST_SYM_NAME_LEN, "%lld", (long long) value);
-	if (ret < 0)
-		return NULL;
-	return get_loglevel(name);
-}
-
-/*
- * marshall all probes/all events and create those that fit the
- * loglevel. Add them to the events list as created.
- */
-static
-void _probes_create_loglevel_events(struct loglevel_entry *entry,
-				struct session_loglevel *loglevel)
-{
-	struct lttng_probe_desc *probe_desc;
-	struct lttng_ust_event event_param;
-	int i;
-
-	cds_list_for_each_entry(probe_desc, &probe_list, head) {
-		for (i = 0; i < probe_desc->nr_events; i++) {
-			const struct tracepoint_loglevel_entry *ev_ll;
-			const struct lttng_event_desc *event_desc;
-			int match = 0;
-
-			event_desc = probe_desc->event_desc[i];
-			if (!(event_desc->loglevel))
-				continue;
-			ev_ll = *event_desc->loglevel;
-			if (isdigit(entry->name[0])) {
-				if (atoll(entry->name) == ev_ll->value) {
-					match = 1;
-				}
-			} else if (!strncmp(ev_ll->identifier, entry->name,
-					LTTNG_UST_SYM_NAME_LEN - 1)) {
-				match = 1;
-			}
-
-			if (match) {
-				struct ltt_event *ev;
-				int ret;
-
-				memcpy(&event_param, &loglevel->event_param,
-						sizeof(event_param));
-				memcpy(event_param.name,
-					event_desc->name,
-					sizeof(event_param.name));
-				/* create event */
-				ret = ltt_event_create(loglevel->chan,
-					&event_param, NULL,
-					&ev);
-				if (ret) {
-					DBG("Error creating event");
-					continue;
-				}
-				cds_list_add(&ev->loglevel_list,
-					&loglevel->events);
-			}
-		}
-	}
-}
-
-/*
- * Add the loglevel to the loglevel hash table. Must be called with
- * ust lock held.
- * TODO: should be integrated with events and wildcards.
- */
-struct session_loglevel *add_loglevel(const char *name,
-	struct ltt_channel *chan,
-	struct lttng_ust_event *event_param)
-{
-	struct cds_hlist_head *head;
-	struct cds_hlist_node *node;
-	struct loglevel_entry *e;
-	struct session_loglevel *sl;
-	int found = 0;
-	size_t name_len = strlen(name);
-	uint32_t hash;
-
-	if (name_len > LTTNG_UST_SYM_NAME_LEN - 1) {
-		WARN("Truncating loglevel name %s which exceeds size limits of %u chars", name, LTTNG_UST_SYM_NAME_LEN - 1);
-		name_len = LTTNG_UST_SYM_NAME_LEN - 1;
-	}
-	hash = jhash(name, name_len, 0);
-	/* loglevel entry */
-	head = &loglevel_table[hash & (LOGLEVEL_TABLE_SIZE - 1)];
-	cds_hlist_for_each_entry(e, node, head, hlist) {
-		if (!strncmp(name, e->name, LTTNG_UST_SYM_NAME_LEN - 1)) {
-			found = 1;
-			break;
-		}
-	}
-
-	if (!found) {
-		/*
-		 * Using zmalloc here to allocate a variable length element. Could
-		 * cause some memory fragmentation if overused.
-		 */
-		e = zmalloc(sizeof(struct loglevel_entry) + name_len + 1);
-		if (!e)
-			return ERR_PTR(-ENOMEM);
-		memcpy(&e->name[0], name, name_len + 1);
-		e->name[name_len] = '\0';
-		cds_hlist_add_head(&e->hlist, head);
-		CDS_INIT_LIST_HEAD(&e->session_list);
-	}
-
-	/* session loglevel */
-	cds_list_for_each_entry(sl, &e->session_list, session_list) {
-		if (chan == sl->chan) {
-			DBG("loglevel %s busy for this channel", name);
-			return ERR_PTR(-EEXIST);	/* Already there */
-		}
-	}
-	sl = zmalloc(sizeof(struct session_loglevel));
-	if (!sl)
-		return ERR_PTR(-ENOMEM);
-	sl->chan = chan;
-	sl->enabled = 1;
-	memcpy(&sl->event_param, event_param, sizeof(sl->event_param));
-	sl->event_param.instrumentation = LTTNG_UST_TRACEPOINT;
-	CDS_INIT_LIST_HEAD(&sl->events);
-	cds_list_add(&sl->list, &chan->session->loglevels);
-	cds_list_add(&sl->session_list, &e->session_list);
-	sl->entry = e;
-	_probes_create_loglevel_events(e, sl);
-	return sl;
-}
-
-/*
- * Remove the loglevel from the loglevel hash table. Must be called with
- * ust_lock held. Only called at session teardown.
- */
-void _remove_loglevel(struct session_loglevel *loglevel)
-{
-	struct ltt_event *ev, *tmp;
-
-	/*
-	 * Just remove the events owned (for enable/disable) by this
-	 * loglevel from the list. The session teardown will take care
-	 * of freeing the event memory.
-	 */
-	cds_list_for_each_entry_safe(ev, tmp, &loglevel->events,
-			loglevel_list) {
-		cds_list_del(&ev->loglevel_list);
-	}
-	cds_list_del(&loglevel->session_list);
-	cds_list_del(&loglevel->list);
-	if (cds_list_empty(&loglevel->entry->session_list)) {
-		cds_hlist_del(&loglevel->entry->hlist);
-		free(loglevel->entry);
-	}
-	free(loglevel);
-}
-
-int ltt_loglevel_enable(struct session_loglevel *loglevel)
-{
-	struct ltt_event *ev;
-	int ret;
-
-	if (loglevel->enabled)
-		return -EEXIST;
-	cds_list_for_each_entry(ev, &loglevel->events, loglevel_list) {
-		ret = ltt_event_enable(ev);
-		if (ret) {
-			DBG("Error: enable error.\n");
-			return ret;
-		}
-	}
-	loglevel->enabled = 1;
-	return 0;
-}
-
-int ltt_loglevel_disable(struct session_loglevel *loglevel)
-{
-	struct ltt_event *ev;
-	int ret;
-
-	if (!loglevel->enabled)
-		return -EEXIST;
-	cds_list_for_each_entry(ev, &loglevel->events, loglevel_list) {
-		ret = ltt_event_disable(ev);
-		if (ret) {
-			DBG("Error: disable error.\n");
-			return ret;
-		}
-	}
-	loglevel->enabled = 0;
-	return 0;
-}
-
 /* WILDCARDS */
 
 /*
@@ -488,6 +259,11 @@ void _probes_create_wildcard_events(struct wildcard_entry *entry,
 					&& (strlen(entry->name) == 1
 						|| !strncmp(event_desc->name, entry->name,
 							strlen(entry->name) - 1))) {
+				/* TODO: get value from loglevel. */
+
+				/* TODO: check if loglevel match */
+				//if (event_desc->loglevel
+				//	&& (*event_desc->loglevel)->value ...)
 				match = 1;
 			}
 			if (match) {
@@ -515,7 +291,7 @@ void _probes_create_wildcard_events(struct wildcard_entry *entry,
 }
 
 /*
- * Add the wildcard to the wildcard hash table. Must be called with
+ * Add the wildcard to the wildcard list. Must be called with
  * ust lock held.
  */
 struct session_wildcard *add_wildcard(const char *name,
@@ -527,7 +303,7 @@ struct session_wildcard *add_wildcard(const char *name,
 	size_t name_len = strlen(name) + 1;
 	int found = 0;
 
-	/* wildcard entry */
+	/* try to find global wildcard entry */
 	cds_list_for_each_entry(e, &wildcard_list, list) {
 		if (!strncmp(name, e->name, LTTNG_UST_SYM_NAME_LEN - 1)) {
 			found = 1;
@@ -537,8 +313,9 @@ struct session_wildcard *add_wildcard(const char *name,
 
 	if (!found) {
 		/*
-		 * Using zmalloc here to allocate a variable length element. Could
-		 * cause some memory fragmentation if overused.
+		 * Create global wildcard entry if not found. Using
+		 * zmalloc here to allocate a variable length element.
+		 * Could cause some memory fragmentation if overused.
 		 */
 		e = zmalloc(sizeof(struct wildcard_entry) + name_len);
 		if (!e)
@@ -571,7 +348,7 @@ struct session_wildcard *add_wildcard(const char *name,
 }
 
 /*
- * Remove the wildcard from the wildcard hash table. Must be called with
+ * Remove the wildcard from the wildcard list. Must be called with
  * ust_lock held. Only called at session teardown.
  */
 void _remove_wildcard(struct session_wildcard *wildcard)

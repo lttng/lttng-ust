@@ -77,7 +77,6 @@ struct ust_pending_probe {
 };
 
 static void _ltt_event_destroy(struct ltt_event *event);
-static void _ltt_loglevel_destroy(struct session_loglevel *sl);
 static void _ltt_wildcard_destroy(struct session_wildcard *sw);
 static void _ltt_channel_destroy(struct ltt_channel *chan);
 static int _ltt_event_unregister(struct ltt_event *event);
@@ -147,49 +146,13 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 	size_t name_len = strlen(name);
 	uint32_t hash;
 
-	/*
-	 * For this event, we need to lookup the loglevel. If active (in
-	 * the active loglevels hash table), we must create the event.
-	 */
-	if (desc->loglevel) {
-		const struct tracepoint_loglevel_entry *ev_ll;
-		struct loglevel_entry *loglevel;
-
-		ev_ll = *desc->loglevel;
-		loglevel = get_loglevel(ev_ll->identifier);
-		if (!loglevel)
-			loglevel = get_loglevel_value(ev_ll->value);
-		if (loglevel) {
-			struct session_loglevel *sl;
-
-			cds_list_for_each_entry(sl, &loglevel->session_list,
-					session_list) {
-				struct ltt_event *ev;
-				int ret;
-
-				memcpy(&event_param, &sl->event_param,
-						sizeof(event_param));
-				memcpy(event_param.name,
-					desc->name,
-					sizeof(event_param.name));
-				/* create event */
-				ret = ltt_event_create(sl->chan,
-					&event_param, NULL,
-					&ev);
-				if (ret) {
-					DBG("Error creating event");
-					continue;
-				}
-				cds_list_add(&ev->loglevel_list,
-					&sl->events);
-			}
-		}
-	}
-
 	/* Wildcard */
 	{
 		struct wildcard_entry *wildcard;
 
+				/* TODO: get value from loglevel. */
+
+				/* TODO: check if loglevel match */
 		wildcard = match_wildcard(desc->name);
 		if (strcmp(desc->name, "lttng_ust:metadata") && wildcard) {
 			struct session_wildcard *sw;
@@ -228,6 +191,9 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 		struct ltt_event *event;
 		struct ltt_channel *chan;
 
+				/* TODO: get value from loglevel. */
+
+				/* TODO: check if loglevel match */
 		if (strncmp(name, e->name, LTTNG_UST_SYM_NAME_LEN - 1))
 			continue;
 		event = e->event;
@@ -262,7 +228,6 @@ struct ltt_session *ltt_session_create(void)
 		return NULL;
 	CDS_INIT_LIST_HEAD(&session->chan);
 	CDS_INIT_LIST_HEAD(&session->events);
-	CDS_INIT_LIST_HEAD(&session->loglevels);
 	CDS_INIT_LIST_HEAD(&session->wildcards);
 	uuid_generate(session->uuid);
 	cds_list_add(&session->list, &sessions);
@@ -273,7 +238,6 @@ void ltt_session_destroy(struct ltt_session *session)
 {
 	struct ltt_channel *chan, *tmpchan;
 	struct ltt_event *event, *tmpevent;
-	struct session_loglevel *loglevel, *tmploglevel;
 	struct session_wildcard *wildcard, *tmpwildcard;
 	int ret;
 
@@ -283,8 +247,6 @@ void ltt_session_destroy(struct ltt_session *session)
 		WARN_ON(ret);
 	}
 	synchronize_trace();	/* Wait for in-flight events to complete */
-	cds_list_for_each_entry_safe(loglevel, tmploglevel, &session->loglevels, list)
-		_ltt_loglevel_destroy(loglevel);
 	cds_list_for_each_entry_safe(wildcard, tmpwildcard, &session->wildcards, list)
 		_ltt_wildcard_destroy(wildcard);
 	cds_list_for_each_entry_safe(event, tmpevent, &session->events, list)
@@ -444,26 +406,6 @@ void _ltt_channel_destroy(struct ltt_channel *chan)
 	chan->ops->channel_destroy(chan);
 }
 
-int ltt_loglevel_create(struct ltt_channel *chan,
-	struct lttng_ust_event *event_param,
-	struct session_loglevel **_sl)
-{
-	struct session_loglevel *sl;
-
-	sl = add_loglevel(event_param->name, chan, event_param);
-	if (!sl || IS_ERR(sl)) {
-		return PTR_ERR(sl);
-	}
-	*_sl = sl;
-	return 0;
-}
-
-static
-void _ltt_loglevel_destroy(struct session_loglevel *sl)
-{
-	_remove_loglevel(sl);
-}
-
 int ltt_wildcard_create(struct ltt_channel *chan,
 	struct lttng_ust_event *event_param,
 	struct session_wildcard **_sw)
@@ -530,6 +472,9 @@ int ltt_event_create(struct ltt_channel *chan,
 	switch (event_param->instrumentation) {
 	case LTTNG_UST_TRACEPOINT:
 		event->desc = ltt_event_get(event_param->name);
+				/* TODO: get value from loglevel. */
+
+				/* TODO: check if loglevel match */
 		if (event->desc) {
 			ret = __tracepoint_probe_register(event_param->name,
 					event->desc->probe_callback,
