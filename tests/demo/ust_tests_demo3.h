@@ -23,19 +23,13 @@ extern "C" {
 
 #include <lttng/tracepoint.h>
 
-TRACEPOINT_LOGLEVEL_ENUM(
-	tp_loglevel(test0, 0)
-	tp_loglevel(test1, 1)
-	tp_loglevel(test2, 2)
-)
-
 TRACEPOINT_EVENT(ust_tests_demo3, done,
 	TP_ARGS(int, value),
 	TP_FIELDS(
 		ctf_integer(int, value, value)
 	)
 )
-TRACEPOINT_LOGLEVEL(ust_tests_demo3, done, test1)
+TRACEPOINT_LOGLEVEL(ust_tests_demo3, done, TRACE_WARNING)
 
 #endif /* _TRACEPOINT_UST_TESTS_DEMO3_H */
 

@@ -453,7 +453,22 @@ static const struct tracepoint_loglevel_entry		\
 		.value = (_value),			\
 	};
 
-#include TRACEPOINT_INCLUDE
+tp_loglevel(TRACE_EMERG,	0)
+tp_loglevel(TRACE_ALERT,	1)
+tp_loglevel(TRACE_CRIT,		2)
+tp_loglevel(TRACE_ERR,		3)
+tp_loglevel(TRACE_WARNING,	4)
+tp_loglevel(TRACE_NOTICE,	5)
+tp_loglevel(TRACE_INFO,		6)
+tp_loglevel(TRACE_SYSTEM,	7)
+tp_loglevel(TRACE_PROCESS,	8)
+tp_loglevel(TRACE_MODULE,	9)
+tp_loglevel(TRACE_UNIT,		10)
+tp_loglevel(TRACE_CLASS,	11)
+tp_loglevel(TRACE_OBJECT,	12)
+tp_loglevel(TRACE_FUNCTION,	13)
+tp_loglevel(TRACE_PRINTF,	14)
+tp_loglevel(TRACE_DEBUG,	15)
 
 /*
  * Stage 6.2 of tracepoint event generation.
@@ -464,15 +479,27 @@ static const struct tracepoint_loglevel_entry		\
 /* Reset all macros within TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 
-#undef TRACEPOINT_LOGLEVEL_ENUM
-#define TRACEPOINT_LOGLEVEL_ENUM(...)	__VA_ARGS__
-
 #undef tp_loglevel
 #define tp_loglevel(_identifier, _value)		\
 	&_TP_COMBINE_TOKENS4(__tp_loglevel_entry__, TRACEPOINT_PROVIDER, ___, _identifier),	\
 
 static const struct tracepoint_loglevel_entry *_TP_COMBINE_TOKENS(__tracepoint_loglevel_enum__, TRACEPOINT_PROVIDER)[] = {
-#include TRACEPOINT_INCLUDE
+	tp_loglevel(TRACE_EMERG,	0)
+	tp_loglevel(TRACE_ALERT,	1)
+	tp_loglevel(TRACE_CRIT,		2)
+	tp_loglevel(TRACE_ERR,		3)
+	tp_loglevel(TRACE_WARNING,	4)
+	tp_loglevel(TRACE_NOTICE,	5)
+	tp_loglevel(TRACE_INFO,		6)
+	tp_loglevel(TRACE_SYSTEM,	7)
+	tp_loglevel(TRACE_PROCESS,	8)
+	tp_loglevel(TRACE_MODULE,	9)
+	tp_loglevel(TRACE_UNIT,		10)
+	tp_loglevel(TRACE_CLASS,	11)
+	tp_loglevel(TRACE_OBJECT,	12)
+	tp_loglevel(TRACE_FUNCTION,	13)
+	tp_loglevel(TRACE_PRINTF,	14)
+	tp_loglevel(TRACE_DEBUG,	15)
 };
 
 /*

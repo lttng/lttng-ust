@@ -345,54 +345,75 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
 #ifndef TRACEPOINT_LOGLEVEL
 
 /*
- * Tracepoint Loglevel Declaration Facility
- *
- * This is a place-holder the tracepoint loglevel declaration,
- * overridden by the tracer implementation.
+ * Tracepoint Loglevels
  *
  * Typical use of these loglevels:
  *
- * 1) Declare the mapping between loglevel names and an integer values
- *    within TRACEPOINT_LOGLEVEL_ENUM(), using tp_loglevel() for each
- *    tuple. Do _NOT_ add comma (,) nor semicolon (;) between the
- *    tp_loglevel entries contained within TRACEPOINT_LOGLEVEL_ENUM().
- *    Do _NOT_ add comma (,) nor semicolon (;) after the
- *    TRACEPOINT_LOGLEVEL_ENUM() declaration.  The name should be a
- *    proper C99 identifier.
+ * The loglevels go from 0 to 15. Higher numbers imply the most
+ * verbosity (higher event throughput expected.
  *
- *      TRACEPOINT_LOGLEVEL_ENUM(
- *              tp_loglevel( < loglevel_name >, < value > )
- *              tp_loglevel( < loglevel_name >, < value > )
- *              ...
- *      )
+ * Loglevels 0 through 6, and loglevel 15, match syslog(3) loglevels
+ * semantic. Loglevels 7 through 14 offer more fine-grained selection of
+ * traced information.
  *
- *    e.g.:
+ * TRACE_EMERG    0
+ * system is unusable
  *
- *      TRACEPOINT_LOGLEVEL_ENUM(
- *              tp_loglevel(LOG_EMERG,   0)
- *              tp_loglevel(LOG_ALERT,   1)
- *              tp_loglevel(LOG_CRIT,    2)
- *              tp_loglevel(LOG_ERR,     3)
- *              tp_loglevel(LOG_WARNING, 4)
- *              tp_loglevel(LOG_NOTICE,  5)
- *              tp_loglevel(LOG_INFO,    6)
- *              tp_loglevel(LOG_DEBUG,   7)
- *      )
+ * TRACE_ALERT    1
+ * action must be taken immediately
  *
- * 2) Then, declare tracepoint loglevels for tracepoints. A
- *    TRACEPOINT_EVENT should be declared prior to the the
- *    TRACEPOINT_LOGLEVEL for a given tracepoint name. The first field
- *    is the name of the tracepoint, the second field is the loglevel
- *    name.
+ * TRACE_CRIT     2
+ * critical conditions
+ *
+ * TRACE_ERR      3
+ * error conditions
+ *
+ * TRACE_WARNING  4
+ * warning conditions
+ *
+ * TRACE_NOTICE   5
+ * normal, but significant, condition
+ *
+ * TRACE_INFO     6
+ * informational message
+ *
+ * TRACE_DEBUG_SYSTEM   7
+ * information has system-level scope
+ *
+ * TRACE_PROCESS  8
+ * information has process-level scope
+ *
+ * TRACE_MODULE   9
+ * information has module (executable/library) scope
+ *
+ * TRACE_UNIT     10
+ * information has compilation unit scope
+ *
+ * TRACE_CLASS    11
+ * information has class-level scope
+ *
+ * TRACE_OBJECT   12
+ * information has object-level scope
+ *
+ * TRACE_FUNCTION 13
+ * information has function-level scope
+ *
+ * TRACE_PRINTF   14
+ * tracepoint_printf message
+ *
+ * TRACE_DEBUG    15
+ * debug-level message
+ *
+ * Declare tracepoint loglevels for tracepoints. A TRACEPOINT_EVENT
+ * should be declared prior to the the TRACEPOINT_LOGLEVEL for a given
+ * tracepoint name. The first field is the name of the tracepoint, the
+ * second field is the loglevel name.
  *
  *      TRACEPOINT_LOGLEVEL(< [com_company_]project[_component] >, < event >,
  *              < loglevel_name >)
  *
- * The TRACEPOINT_PROVIDER must be defined when declaring a
- * TRACEPOINT_LOGLEVEL_ENUM and TRACEPOINT_LOGLEVEL. The tracepoint
- * loglevel enumeration apply to the entire TRACEPOINT_PROVIDER. Only one
- * tracepoint loglevel enumeration should be declared per tracepoint
- * provider.
+ * The TRACEPOINT_PROVIDER must be already declared before declaring a
+ * TRACEPOINT_LOGLEVEL.
  */
 
 #define TRACEPOINT_LOGLEVEL_ENUM(...)
