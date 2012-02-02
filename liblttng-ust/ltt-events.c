@@ -150,8 +150,6 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 	{
 		struct wildcard_entry *wildcard;
 
-				/* TODO: get value from loglevel. */
-
 				/* TODO: check if loglevel match */
 		wildcard = match_wildcard(desc->name);
 		if (strcmp(desc->name, "lttng_ust:metadata") && wildcard) {
@@ -190,8 +188,6 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 	cds_hlist_for_each_entry_safe(e, node, p, head, node) {
 		struct ltt_event *event;
 		struct ltt_channel *chan;
-
-				/* TODO: get value from loglevel. */
 
 				/* TODO: check if loglevel match */
 		if (strncmp(name, e->name, LTTNG_UST_SYM_NAME_LEN - 1))
@@ -472,8 +468,6 @@ int ltt_event_create(struct ltt_channel *chan,
 	switch (event_param->instrumentation) {
 	case LTTNG_UST_TRACEPOINT:
 		event->desc = ltt_event_get(event_param->name);
-				/* TODO: get value from loglevel. */
-
 				/* TODO: check if loglevel match */
 		if (event->desc) {
 			ret = __tracepoint_probe_register(event_param->name,
@@ -826,14 +820,12 @@ int _ltt_event_metadata_statedump(struct ltt_session *session,
 		goto end;
 
 	if (event->desc->loglevel) {
-		const struct tracepoint_loglevel_entry *ll_entry;
+		const int *ll_entry;
 
 		ll_entry = *event->desc->loglevel;
 		ret = lttng_metadata_printf(session,
-			"	loglevel.identifier = \"%s\";\n"
-			"	loglevel.value = %lld;\n",
-			ll_entry->identifier,
-			(long long) ll_entry->value);
+			"	loglevel = %d;\n",
+			ll_entry);
 		if (ret)
 			goto end;
 	}

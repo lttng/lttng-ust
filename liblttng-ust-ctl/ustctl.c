@@ -450,10 +450,9 @@ int ustctl_tracepoint_list_get(int sock, int tp_list_handle,
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
-	DBG("received tracepoint list entry name %s loglevel %s loglevel_value %lld",
+	DBG("received tracepoint list entry name %s loglevel %d",
 		lur.u.tracepoint.name,
-		lur.u.tracepoint.loglevel,
-		(unsigned long long) lur.u.tracepoint.loglevel_value);
+		lur.u.tracepoint.loglevel);
 	memcpy(iter, &lur.u.tracepoint, sizeof(*iter));
 	return 0;
 }

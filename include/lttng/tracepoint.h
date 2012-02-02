@@ -377,7 +377,7 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
  * TRACE_INFO     6
  * informational message
  *
- * TRACE_DEBUG_SYSTEM   7
+ * TRACE_SYSTEM   7
  * information has system-level scope
  *
  * TRACE_PROCESS  8
@@ -416,7 +416,25 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
  * TRACEPOINT_LOGLEVEL.
  */
 
-#define TRACEPOINT_LOGLEVEL_ENUM(...)
+enum {
+	TRACE_EMERG	= 0,
+	TRACE_ALERT	= 1,
+	TRACE_CRIT	= 2,
+	TRACE_ERR	= 3,
+	TRACE_WARNING	= 4,
+	TRACE_NOTICE	= 5,
+	TRACE_INFO	= 6,
+	TRACE_SYSTEM	= 7,
+	TRACE_PROCESS	= 8,
+	TRACE_MODULE	= 9,
+	TRACE_UNIT	= 10,
+	TRACE_CLASS	= 11,
+	TRACE_OBJECT	= 12,
+	TRACE_FUNCTION	= 13,
+	TRACE_PRINTF	= 14,
+	TRACE_DEBUG	= 15,
+};
+
 #define TRACEPOINT_LOGLEVEL(provider, name, loglevel)
 
 #endif /* #ifndef TRACEPOINT_LOGLEVEL */

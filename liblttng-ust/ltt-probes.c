@@ -17,6 +17,7 @@
 #include <helper.h>
 #include <ctype.h>
 
+#include "tracepoint-internal.h"
 #include "ltt-tracer-core.h"
 #include "jhash.h"
 #include "error.h"
@@ -168,15 +169,9 @@ int ltt_probes_get_event_list(struct lttng_ust_tracepoint_list *list)
 				LTTNG_UST_SYM_NAME_LEN);
 			list_entry->tp.name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
 			if (!probe_desc->event_desc[i]->loglevel) {
-				list_entry->tp.loglevel[0] = '\0';
-				list_entry->tp.loglevel_value = 0;
+				list_entry->tp.loglevel = TRACE_DEFAULT;
 			} else {
-				strncpy(list_entry->tp.loglevel,
-					(*probe_desc->event_desc[i]->loglevel)->identifier,
-					LTTNG_UST_SYM_NAME_LEN);
-				list_entry->tp.loglevel[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
-				list_entry->tp.loglevel_value =
-					(*probe_desc->event_desc[i]->loglevel)->value;
+				list_entry->tp.loglevel = *(*probe_desc->event_desc[i]->loglevel);
 			}
 		}
 	}
@@ -259,11 +254,9 @@ void _probes_create_wildcard_events(struct wildcard_entry *entry,
 					&& (strlen(entry->name) == 1
 						|| !strncmp(event_desc->name, entry->name,
 							strlen(entry->name) - 1))) {
-				/* TODO: get value from loglevel. */
-
 				/* TODO: check if loglevel match */
 				//if (event_desc->loglevel
-				//	&& (*event_desc->loglevel)->value ...)
+				//	&& (*event_desc->loglevel) ...)
 				match = 1;
 			}
 			if (match) {

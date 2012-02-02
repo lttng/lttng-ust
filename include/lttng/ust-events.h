@@ -184,11 +184,6 @@ struct lttng_ctx {
 	unsigned int allocated_fields;
 };
 
-struct tracepoint_loglevel_entry  {
-	const char *identifier;
-	long value;
-};
-
 /*
  * Entry describing a per-session active wildcard, along with the event
  * attribute and channel information configuring the events that need to
@@ -222,15 +217,13 @@ struct lttng_event_desc {
 	const struct lttng_event_ctx *ctx;	/* context */
 	const struct lttng_event_field *fields;	/* event payload */
 	unsigned int nr_fields;
-	const struct tracepoint_loglevel_entry **loglevel;
+	const int **loglevel;
 };
 
 struct lttng_probe_desc {
 	const char *provider;
 	const struct lttng_event_desc **event_desc;
 	unsigned int nr_events;
-	const struct tracepoint_loglevel_entry **loglevels;
-	unsigned int nr_loglevels;
 	struct cds_list_head head;		/* chain registered probes */
 };
 
@@ -249,9 +242,6 @@ struct ust_pending_probe;
 /*
  * ltt_event structure is referred to by the tracing fast path. It must be
  * kept small.
- * Note about loglevel_list: this list is only used to enable/disable
- * events on a per-loglevel basis. The events created internally by the
- * loglevel are only freed when the session is destroyed.
  */
 struct ltt_event {
 	unsigned int id;
