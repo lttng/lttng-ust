@@ -446,8 +446,10 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))\
 #include <lttng/ust-tracepoint-event-reset.h>
 
 #undef TRACEPOINT_LOGLEVEL
-#define TRACEPOINT_LOGLEVEL(__provider, __name, __loglevel)		\
-static const int _loglevel___##__provider##___##__name = __loglevel;
+#define TRACEPOINT_LOGLEVEL(__provider, __name, __loglevel)		   \
+static const int _loglevel_value___##__provider##___##__name = __loglevel; \
+static const int *_loglevel___##__provider##___##__name =		   \
+		&_loglevel_value___##__provider##___##__name;
 
 #include TRACEPOINT_INCLUDE
 

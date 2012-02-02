@@ -330,6 +330,8 @@ void lttng_metadata_create_events(int channel_objd)
 	static struct lttng_ust_event metadata_params = {
 		.instrumentation = LTTNG_UST_TRACEPOINT,
 		.name = "lttng_ust:metadata",
+		.loglevel_type = LTTNG_UST_LOGLEVEL_ALL,
+		.loglevel = TRACE_DEFAULT,
 	};
 	struct ltt_event *event;
 	int ret;

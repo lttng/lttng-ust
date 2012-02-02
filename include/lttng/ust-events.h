@@ -208,6 +208,8 @@ struct wildcard_entry {
 	struct cds_list_head list;
 	/* head of session list to which this wildcard apply */
 	struct cds_list_head session_list;
+	enum lttng_ust_loglevel_type loglevel_type;
+	int loglevel;
 	char name[0];
 };
 
@@ -411,15 +413,15 @@ void ltt_probes_prune_event_list(struct lttng_ust_tracepoint_list *list);
 struct lttng_ust_tracepoint_iter *
 	lttng_ust_tracepoint_list_get_iter_next(struct lttng_ust_tracepoint_list *list);
 
-struct wildcard_entry *match_wildcard(const char *name);
-struct session_wildcard *add_wildcard(const char *name,
-	struct ltt_channel *chan,
-	struct lttng_ust_event *event_param);
-void _remove_wildcard(struct session_wildcard *wildcard);
 int ltt_wildcard_enable(struct session_wildcard *wildcard);
 int ltt_wildcard_disable(struct session_wildcard *wildcard);
 int ltt_wildcard_create(struct ltt_channel *chan,
 	struct lttng_ust_event *event_param,
 	struct session_wildcard **sl);
+int ltt_loglevel_match(const struct lttng_event_desc *desc,
+		enum lttng_ust_loglevel_type req_type,
+		int req_loglevel);
+void ltt_probes_create_wildcard_events(struct wildcard_entry *entry,
+				struct session_wildcard *wildcard);
 
 #endif /* _LTTNG_UST_EVENTS_H */

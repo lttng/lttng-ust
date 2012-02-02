@@ -331,6 +331,8 @@ int ustctl_create_event(int sock, struct lttng_ust_event *ev,
 	strncpy(lum.u.event.name, ev->name,
 		LTTNG_UST_SYM_NAME_LEN);
 	lum.u.event.instrumentation = ev->instrumentation;
+	lum.u.event.loglevel_type = ev->loglevel_type;
+	lum.u.event.loglevel = ev->loglevel;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret) {
 		free(event_data);
