@@ -13,11 +13,11 @@
 #include <urcu/list.h>
 #include <urcu/hlist.h>
 #include <lttng/ust-events.h>
+#include <lttng/tracepoint.h>
 #include <assert.h>
 #include <helper.h>
 #include <ctype.h>
 
-#include "tracepoint-internal.h"
 #include "ltt-tracer-core.h"
 #include "jhash.h"
 #include "error.h"

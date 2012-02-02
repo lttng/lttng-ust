@@ -23,11 +23,6 @@
 #include <urcu-bp.h>
 #include <lttng/tracepoint-types.h>
 
-/*
- * default loglevel.
- */
-#define TRACE_DEFAULT		15
-
 struct tracepoint_lib {
 	struct cds_list_head list;
 	struct tracepoint * const *tracepoints_start;

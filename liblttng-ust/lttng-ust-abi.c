@@ -29,10 +29,10 @@
 #include <urcu/list.h>
 #include <lttng/ust-events.h>
 #include <lttng/ust-version.h>
+#include <lttng/tracepoint.h>
 #include <usterr-signal-safe.h>
 #include <helper.h>
 #include "ltt-tracer.h"
-#include "tracepoint-internal.h"
 
 static int lttng_ust_abi_close_in_progress;
 

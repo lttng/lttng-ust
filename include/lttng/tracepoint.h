@@ -378,31 +378,31 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
  * informational message
  *
  * TRACE_SYSTEM   7
- * information has system-level scope
+ * information has system-level scope (set of programs)
  *
- * TRACE_PROCESS  8
- * information has process-level scope
+ * TRACE_PROGRAM  8
+ * information has program-level scope (set of processes)
  *
- * TRACE_MODULE   9
- * information has module (executable/library) scope
+ * TRACE_PROCESS  9
+ * information has process-level scope (set of modules)
  *
- * TRACE_UNIT     10
- * information has compilation unit scope
+ * TRACE_MODULE   10
+ * information has module (executable/library) scope (set of units)
  *
- * TRACE_CLASS    11
- * information has class-level scope
+ * TRACE_UNIT     11
+ * information has compilation unit scope (set of functions)
  *
- * TRACE_OBJECT   12
- * information has object-level scope
- *
- * TRACE_FUNCTION 13
+ * TRACE_FUNCTION 12
  * information has function-level scope
  *
- * TRACE_PRINTF   14
- * tracepoint_printf message
+ * TRACE_DEFAULT  13
+ * default trace loglevel (TRACEPOINT_EVENT default)
+ *
+ * TRACE_VERBOSE  14
+ * verbose information
  *
  * TRACE_DEBUG    15
- * debug-level message
+ * debug-level message (trace_printf default)
  *
  * Declare tracepoint loglevels for tracepoints. A TRACEPOINT_EVENT
  * should be declared prior to the the TRACEPOINT_LOGLEVEL for a given
@@ -425,13 +425,13 @@ enum {
 	TRACE_NOTICE	= 5,
 	TRACE_INFO	= 6,
 	TRACE_SYSTEM	= 7,
-	TRACE_PROCESS	= 8,
-	TRACE_MODULE	= 9,
-	TRACE_UNIT	= 10,
-	TRACE_CLASS	= 11,
-	TRACE_OBJECT	= 12,
-	TRACE_FUNCTION	= 13,
-	TRACE_PRINTF	= 14,
+	TRACE_PROGRAM   = 8,
+	TRACE_PROCESS	= 9,
+	TRACE_MODULE	= 10,
+	TRACE_UNIT	= 11,
+	TRACE_FUNCTION	= 12,
+	TRACE_DEFAULT	= 13,
+	TRACE_VERBOSE	= 14,
 	TRACE_DEBUG	= 15,
 };
 
