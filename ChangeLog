@@ -1,3 +1,33 @@
+2012-02-02 lttng-ust 1.9.5
+	* UST comm ABI: Add padding, push version to 2.0
+	* Update loglevel names
+	* Implement loglevels as event and wildcard attributes
+	* Update loglevel ABI: only loglevel value/enum is known by UST
+	* Pre-assign fixed loglevels
+	* Remove old (now unused) loglevel control code entirely
+	* Update loglevel selection ABI
+	* Use boot_id as monotonic clock uuid
+	* clock: add clock description to metadata
+	* Properly fix the timekeeping overflow detection
+	* Revert "Fix timestamps for slow-paced event rates"
+	* Revert "Force 64-bit timestamps"
+	* Declare struct lttng_ust_calibrate
+	* Force 64-bit timestamps
+	* demo program: ensure we don't link demo on useless libs
+	* ust comm: Receive second FD even if 1st receive failed
+	* ust consumer: close shm fd after mapping it
+	* Add a comment about which wait fd is closed early by UST.
+	* Remove leftover structure in ust-abi.h
+	* Close stream and channel file descriptors as soon as passed to
+	  sessiond
+	* Fix AC_LANG_SOURCE usage: only takes one parameter
+	* Fix timestamps for slow-paced event rates
+	* configure.ac: Use AC_LANG_SOURCE for if else macros
+	* Add execution instructions to the demo test program
+	* Force the building of shared noinst libraries in the demo test
+	  program.
+	* Only print the futex perror in debug mode
+
 2011-12-23 lttng-ust 1.9.4
 	* Split liblttng-ust into liblttng-ust and liblttng-ust-tracepoint libs
 	* Comment the union field (only used in call_rcu scheme)
