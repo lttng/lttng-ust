@@ -20,8 +20,8 @@ struct shm_object {
 	int wait_fd[2];	/* fd for wait/wakeup */
 	char *memory_map;
 	int is_shadow;
-	uint64_t memory_map_size;
-	size_t allocated_len;
+	size_t memory_map_size;
+	uint64_t allocated_len;
 };
 
 struct shm_object_table {
