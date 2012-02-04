@@ -237,6 +237,7 @@ AC_CONFIG_FILES([
 	liblttng-ust-libc/Makefile
 	tests/Makefile
 	tests/hello/Makefile
+	tests/hello-static-lib/Makefile
 	tests/hello.cxx/Makefile
 	tests/demo/Makefile
 	tests/fork/Makefile
