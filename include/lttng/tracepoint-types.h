@@ -23,6 +23,7 @@ struct tracepoint {
 	const char *name;
 	int state;
 	struct tracepoint_probe *probes;
+	int *tracepoint_provider_ref;
 };
 
 #endif /* _LTTNG_TRACEPOINT_TYPES_H */

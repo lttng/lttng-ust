@@ -153,17 +153,34 @@ extern int __tracepoint_probe_unregister(const char *name, void *func, void *dat
 #ifdef TRACEPOINT_DEFINE
 
 /*
+ * When TRACEPOINT_PROBE_DYNAMIC_LINKAGE is defined, we do not emit a
+ * unresolved symbol that requires the provider to be linked in. When
+ * TRACEPOINT_PROBE_DYNAMIC_LINKAGE is not defined, we emit an
+ * unresolved symbol that depends on having the provider linked in,
+ * otherwise the linker complains. This deals with use of static
+ * libraries, ensuring that the linker does not remove the provider
+ * object from the executable.
+ */
+#ifdef TRACEPOINT_PROBE_DYNAMIC_LINKAGE
+#define _TRACEPOINT_UNDEFINED_REF(provider)
+#else	/* TRACEPOINT_PROBE_DYNAMIC_LINKAGE */
+#define _TRACEPOINT_UNDEFINED_REF(provider)	\
+	&__tracepoint_provider_##provider,
+#endif /* TRACEPOINT_PROBE_DYNAMIC_LINKAGE */
+
+/*
  * Note: to allow PIC code, we need to allow the linker to update the pointers
  * in the __tracepoints_ptrs section.
  * Therefore, this section is _not_ const (read-only).
  */
 #define _DEFINE_TRACEPOINT(provider, name)					\
+	extern int __tracepoint_provider_##provider; 				\
 	static const char __tp_strtab_##provider##___##name[]			\
 		__attribute__((section("__tracepoints_strings"))) =		\
 			#provider ":" #name;					\
 	struct tracepoint __tracepoint_##provider##___##name			\
 		__attribute__((section("__tracepoints"))) =			\
-			{ __tp_strtab_##provider##___##name, 0, NULL };		\
+			{ __tp_strtab_##provider##___##name, 0, NULL, _TRACEPOINT_UNDEFINED_REF(provider) };		\
 	static struct tracepoint * __tracepoint_ptr_##provider##___##name	\
 		__attribute__((used, section("__tracepoints_ptrs"))) =		\
 			&__tracepoint_##provider##___##name;
