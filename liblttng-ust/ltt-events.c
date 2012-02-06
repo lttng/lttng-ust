@@ -22,6 +22,7 @@
 #include <stddef.h>
 #include <inttypes.h>
 #include <time.h>
+#include <sys/prctl.h>
 #include "clock.h"
 
 #include <urcu-bp.h>
@@ -42,6 +43,8 @@
 #include "wait.h"
 #include "../libringbuffer/shm.h"
 #include "jhash.h"
+
+#define PROCNAME_LEN 17
 
 /*
  * The sessions mutex is the centralized mutex across UST tracing
@@ -1088,6 +1091,7 @@ int _ltt_session_metadata_statedump(struct ltt_session *session)
 	struct ltt_channel *chan;
 	struct ltt_event *event;
 	int ret = 0;
+	char procname[PROCNAME_LEN] = "";
 
 	if (!CMM_ACCESS_ONCE(session->active))
 		return 0;
@@ -1136,6 +1140,22 @@ int _ltt_session_metadata_statedump(struct ltt_session *session)
 #else
 		"le"
 #endif
+		);
+	if (ret)
+		goto end;
+
+	/* ignore error, just use empty string if error. */
+	(void) prctl(PR_GET_NAME, (unsigned long) procname, 0, 0, 0);
+	procname[PROCNAME_LEN - 1] = '\0';
+	ret = lttng_metadata_printf(session,
+		"env {\n"
+		"	vpid = %d;\n"
+		"	procname = \"%s\";\n"
+		"	domain = %s;\n"
+		"};\n\n",
+		(int) getpid(),
+		procname,
+		"ust"
 		);
 	if (ret)
 		goto end;
