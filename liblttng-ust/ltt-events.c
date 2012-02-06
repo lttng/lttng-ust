@@ -260,8 +260,7 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 		struct ltt_event *event;
 		struct ltt_channel *chan;
 
-		event = e->event;
-		if (!ltt_loglevel_match(event->desc,
+		if (!ltt_loglevel_match(desc,
 				e->loglevel_type,
 				e->loglevel)) {
 			continue;
@@ -269,6 +268,7 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 		if (strncmp(name, e->name, LTTNG_UST_SYM_NAME_LEN - 1)) {
 			continue;
 		}
+		event = e->event;
 		chan = event->chan;
 		assert(!event->desc);
 		event->desc = desc;
@@ -512,12 +512,18 @@ int ltt_event_create(struct ltt_channel *chan,
 	 */
 	if (event_param->instrumentation == LTTNG_UST_TRACEPOINT) {
 		desc = ltt_event_get(event_param->name);
-		if (!ltt_loglevel_match(desc,
-				event_param->loglevel_type,
-				event_param->loglevel)) {
-			ret = -EPERM;
-			goto no_loglevel_match;
+		if (desc) {
+			if (!ltt_loglevel_match(desc,
+					event_param->loglevel_type,
+					event_param->loglevel)) {
+				ret = -EPERM;
+				goto no_loglevel_match;
+			}
 		}
+		/*
+		 * If descriptor is not there, it will be added to
+		 * pending probes.
+		 */
 	}
 	event = zmalloc(sizeof(struct ltt_event));
 	if (!event) {
