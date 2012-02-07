@@ -366,59 +366,56 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
  *
  * Typical use of these loglevels:
  *
- * The loglevels go from 0 to 15. Higher numbers imply the most
+ * The loglevels go from 0 to 14. Higher numbers imply the most
  * verbosity (higher event throughput expected.
  *
- * Loglevels 0 through 6, and loglevel 15, match syslog(3) loglevels
- * semantic. Loglevels 7 through 14 offer more fine-grained selection of
- * traced information.
+ * Loglevels 0 through 6, and loglevel 14, match syslog(3) loglevels
+ * semantic. Loglevels 7 through 13 offer more fine-grained selection of
+ * debug information.
  *
- * TRACE_EMERG    0
+ * TRACE_EMERG           0
  * system is unusable
  *
- * TRACE_ALERT    1
+ * TRACE_ALERT           1
  * action must be taken immediately
  *
- * TRACE_CRIT     2
+ * TRACE_CRIT            2
  * critical conditions
  *
- * TRACE_ERR      3
+ * TRACE_ERR             3
  * error conditions
  *
- * TRACE_WARNING  4
+ * TRACE_WARNING         4
  * warning conditions
  *
- * TRACE_NOTICE   5
+ * TRACE_NOTICE          5
  * normal, but significant, condition
  *
- * TRACE_INFO     6
+ * TRACE_INFO            6
  * informational message
  *
- * TRACE_SYSTEM   7
- * information has system-level scope (set of programs)
+ * TRACE_DEBUG_SYSTEM    7
+ * debug information with system-level scope (set of programs)
  *
- * TRACE_PROGRAM  8
- * information has program-level scope (set of processes)
+ * TRACE_DEBUG_PROGRAM   8
+ * debug information with program-level scope (set of processes)
  *
- * TRACE_PROCESS  9
- * information has process-level scope (set of modules)
+ * TRACE_DEBUG_PROCESS   9
+ * debug information with process-level scope (set of modules)
  *
- * TRACE_MODULE   10
- * information has module (executable/library) scope (set of units)
+ * TRACE_DEBUG_MODULE    10
+ * debug information with module (executable/library) scope (set of units)
  *
- * TRACE_UNIT     11
- * information has compilation unit scope (set of functions)
+ * TRACE_DEBUG_UNIT      11
+ * debug information with compilation unit scope (set of functions)
  *
- * TRACE_FUNCTION 12
- * information has function-level scope
+ * TRACE_DEBUG_FUNCTION  12
+ * debug information with function-level scope
  *
- * TRACE_DEFAULT  13
- * default trace loglevel (TRACEPOINT_EVENT default)
+ * TRACE_DEBUG_LINE      13
+ * debug information with line-level scope (TRACEPOINT_EVENT default)
  *
- * TRACE_VERBOSE  14
- * verbose information
- *
- * TRACE_DEBUG    15
+ * TRACE_DEBUG           14
  * debug-level message (trace_printf default)
  *
  * Declare tracepoint loglevels for tracepoints. A TRACEPOINT_EVENT
@@ -434,22 +431,21 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
  */
 
 enum {
-	TRACE_EMERG	= 0,
-	TRACE_ALERT	= 1,
-	TRACE_CRIT	= 2,
-	TRACE_ERR	= 3,
-	TRACE_WARNING	= 4,
-	TRACE_NOTICE	= 5,
-	TRACE_INFO	= 6,
-	TRACE_SYSTEM	= 7,
-	TRACE_PROGRAM   = 8,
-	TRACE_PROCESS	= 9,
-	TRACE_MODULE	= 10,
-	TRACE_UNIT	= 11,
-	TRACE_FUNCTION	= 12,
-	TRACE_DEFAULT	= 13,
-	TRACE_VERBOSE	= 14,
-	TRACE_DEBUG	= 15,
+	TRACE_EMERG		= 0,
+	TRACE_ALERT		= 1,
+	TRACE_CRIT		= 2,
+	TRACE_ERR		= 3,
+	TRACE_WARNING		= 4,
+	TRACE_NOTICE		= 5,
+	TRACE_INFO		= 6,
+	TRACE_DEBUG_SYSTEM	= 7,
+	TRACE_DEBUG_PROGRAM	= 8,
+	TRACE_DEBUG_PROCESS	= 9,
+	TRACE_DEBUG_MODULE	= 10,
+	TRACE_DEBUG_UNIT	= 11,
+	TRACE_DEBUG_FUNCTION	= 12,
+	TRACE_DEBUG_LINE	= 13,
+	TRACE_DEBUG		= 14,
 };
 
 #define TRACEPOINT_LOGLEVEL(provider, name, loglevel)

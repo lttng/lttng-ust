@@ -23,6 +23,8 @@
 #include <urcu-bp.h>
 #include <lttng/tracepoint-types.h>
 
+#define TRACE_DEFAULT	TRACE_DEBUG_LINE
+
 struct tracepoint_lib {
 	struct cds_list_head list;
 	struct tracepoint * const *tracepoints_start;

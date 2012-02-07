@@ -30,6 +30,7 @@
 #include <lttng/ust-events.h>
 #include <lttng/ust-version.h>
 #include <lttng/tracepoint.h>
+#include "tracepoint-internal.h"
 #include <usterr-signal-safe.h>
 #include <helper.h>
 #include "ltt-tracer.h"
