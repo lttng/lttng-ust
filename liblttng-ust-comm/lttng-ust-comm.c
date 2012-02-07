@@ -237,9 +237,11 @@ int ustcomm_listen_unix_sock(int sock)
  */
 ssize_t ustcomm_recv_unix_sock(int sock, void *buf, size_t len)
 {
-	struct msghdr msg = { 0 };
+	struct msghdr msg;
 	struct iovec iov[1];
 	ssize_t ret = -1;
+
+	memset(&msg, 0, sizeof(msg));
 
 	iov[0].iov_base = buf;
 	iov[0].iov_len = len;
@@ -262,9 +264,11 @@ ssize_t ustcomm_recv_unix_sock(int sock, void *buf, size_t len)
  */
 ssize_t ustcomm_send_unix_sock(int sock, void *buf, size_t len)
 {
-	struct msghdr msg = { 0 };
+	struct msghdr msg;
 	struct iovec iov[1];
 	ssize_t ret = -1;
+
+	memset(&msg, 0, sizeof(msg));
 
 	iov[0].iov_base = buf;
 	iov[0].iov_len = len;
@@ -311,12 +315,14 @@ int ustcomm_close_unix_sock(int sock)
  */
 ssize_t ustcomm_send_fds_unix_sock(int sock, void *buf, int *fds, size_t nb_fd, size_t len)
 {
-	struct msghdr msg = { 0 };
+	struct msghdr msg;
 	struct cmsghdr *cmptr;
 	struct iovec iov[1];
 	ssize_t ret = -1;
 	unsigned int sizeof_fds = nb_fd * sizeof(int);
 	char tmp[CMSG_SPACE(sizeof_fds)];
+
+	memset(&msg, 0, sizeof(msg));
 
 	/*
 	 * Note: the consumerd receiver only supports receiving one FD per
@@ -439,12 +445,14 @@ int ustcomm_recv_fd(int sock)
 	int data_fd;
 	struct cmsghdr *cmsg;
 	char recv_fd[CMSG_SPACE(sizeof(int))];
-	struct msghdr msg = { 0 };
+	struct msghdr msg;
 	union {
 		unsigned char vc[4];
 		int vi;
 	} tmp;
 	int i;
+
+	memset(&msg, 0, sizeof(msg));
 
 	/* Prepare to receive the structures */
 	iov[0].iov_base = &data_fd;
