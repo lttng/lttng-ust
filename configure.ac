@@ -234,7 +234,7 @@ AC_CONFIG_FILES([
 	liblttng-ust-ctl/Makefile
 	liblttng-ust-fork/Makefile
 	liblttng-ust-java/Makefile
-	liblttng-ust-libc/Makefile
+	liblttng-ust-libc-wrapper/Makefile
 	tests/Makefile
 	tests/hello/Makefile
 	tests/hello-static-lib/Makefile

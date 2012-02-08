@@ -4,7 +4,7 @@ SUBDIRS = . include snprintf libringbuffer liblttng-ust-comm \
 		liblttng-ust \
 		liblttng-ust-ctl \
 		liblttng-ust-fork \
-		liblttng-ust-libc \
+		liblttng-ust-libc-wrapper \
 		tests
 
 if BUILD_JNI_INTERFACE

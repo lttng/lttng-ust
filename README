@@ -144,7 +144,7 @@ PACKAGE CONTENTS:
   - tests
     Various test programs
 
-  - liblttng-ust-libc
+  - liblttng-ust-libc-wrapper
     An example library that can be LD_PRELOAD'ed to instrument some
     calls to libc (currently malloc() and free()) in any program without
     need to recompile it.
