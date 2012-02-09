@@ -401,6 +401,8 @@ int __tracepoint_probe_register(const char *name, void *probe, void *data)
 	void *old;
 	int ret = 0;
 
+	DBG("Registering probe to tracepoint %s", name);
+
 	pthread_mutex_lock(&tracepoint_mutex);
 	old = tracepoint_add_probe(name, probe, data);
 	if (IS_ERR(old)) {
@@ -441,6 +443,8 @@ int __tracepoint_probe_unregister(const char *name, void *probe, void *data)
 {
 	void *old;
 	int ret = 0;
+
+	DBG("Un-registering probe from tracepoint %s", name);
 
 	pthread_mutex_lock(&tracepoint_mutex);
 	old = tracepoint_remove_probe(name, probe, data);
@@ -503,6 +507,8 @@ int tracepoint_probe_unregister_noupdate(const char *name, void *probe,
 {
 	void *old;
 	int ret = 0;
+
+	DBG("Un-registering probe from tracepoint %s", name);
 
 	pthread_mutex_lock(&tracepoint_mutex);
 	old = tracepoint_remove_probe(name, probe, data);
@@ -608,6 +614,13 @@ lib_added:
 
 	DBG("just registered a tracepoints section from %p and having %d tracepoints",
 		tracepoints_start, tracepoints_count);
+	if (ust_debug()) {
+		int i;
+
+		for (i = 0; i < tracepoints_count; i++) {
+			DBG("registered tracepoint: %s", tracepoints_start[i]->name);
+		}
+	}
 
 	return 0;
 }
