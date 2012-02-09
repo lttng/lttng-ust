@@ -114,16 +114,16 @@ extern "C" {
 #define _TP_ARGS_DATA_VAR(...)		_TP_DATA_VAR_N(_TP_NARGS(0, ##__VA_ARGS__), ##__VA_ARGS__)
 #define _TP_PARAMS(...)			__VA_ARGS__
 
-#define _DECLARE_TRACEPOINT(provider, name, ...)			 		\
-extern struct tracepoint __tracepoint_##provider##___##name;				\
-static inline void __tracepoint_cb_##provider##___##name(_TP_ARGS_PROTO(__VA_ARGS__))	\
+#define _DECLARE_TRACEPOINT(_provider, _name, ...)			 		\
+extern struct tracepoint __tracepoint_##_provider##___##_name;				\
+static inline void __tracepoint_cb_##_provider##___##_name(_TP_ARGS_PROTO(__VA_ARGS__))	\
 {											\
 	struct tracepoint_probe *__tp_probe;						\
 											\
 	if (!TP_RCU_LINK_TEST())							\
 		return;									\
 	tp_rcu_read_lock_bp();								\
-	__tp_probe = tp_rcu_dereference_bp(__tracepoint_##provider##___##name.probes);	\
+	__tp_probe = tp_rcu_dereference_bp(__tracepoint_##_provider##___##_name.probes); \
 	if (caa_unlikely(!__tp_probe))							\
 		goto end;								\
 	do {										\
@@ -136,12 +136,12 @@ static inline void __tracepoint_cb_##provider##___##name(_TP_ARGS_PROTO(__VA_ARG
 end:											\
 	tp_rcu_read_unlock_bp();							\
 }											\
-static inline void __tracepoint_register_##provider##___##name(char *name,		\
+static inline void __tracepoint_register_##_provider##___##_name(char *name,		\
 		void *func, void *data)							\
 {											\
 	__tracepoint_probe_register(name, func, data);					\
 }											\
-static inline void __tracepoint_unregister_##provider##___##name(char *name,		\
+static inline void __tracepoint_unregister_##_provider##___##_name(char *name,		\
 		void *func, void *data)							\
 {											\
 	__tracepoint_probe_unregister(name, func, data);				\
