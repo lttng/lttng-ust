@@ -18,6 +18,7 @@
 #include <lttng/tracepoint-rcu.h>
 #include <urcu/compiler.h>
 #include <dlfcn.h>	/* for dlopen */
+#include <string.h>	/* for memset */
 #include <assert.h>
 
 #ifdef __cplusplus
@@ -150,6 +151,25 @@ static inline void __tracepoint_unregister_##_provider##___##_name(char *name,		
 extern int __tracepoint_probe_register(const char *name, void *func, void *data);
 extern int __tracepoint_probe_unregister(const char *name, void *func, void *data);
 
+/*
+ * tracepoint dynamic linkage handling (callbacks). Hidden visibility:
+ * shared across objects in a module/main executable.
+ */
+struct tracepoint_dlopen {
+	void *liblttngust_handle;
+
+	int (*tracepoint_register_lib)(struct tracepoint * const *tracepoints_start,
+		int tracepoints_count);
+	int (*tracepoint_unregister_lib)(struct tracepoint * const *tracepoints_start);
+#ifndef _LGPL_SOURCE
+	void (*rcu_read_lock_sym_bp)(void);
+	void (*rcu_read_unlock_sym_bp)(void);
+	void *(*rcu_dereference_sym_bp)(void *p);
+#endif
+};
+
+extern struct tracepoint_dlopen tracepoint_dlopen;
+
 #ifdef TRACEPOINT_DEFINE
 
 /*
@@ -185,11 +205,6 @@ extern int __tracepoint_probe_unregister(const char *name, void *func, void *dat
 		__attribute__((used, section("__tracepoints_ptrs"))) =		\
 			&__tracepoint_##provider##___##name;
 
-static int (*tracepoint_register_lib)(struct tracepoint * const *tracepoints_start,
-		int tracepoints_count);
-static int (*tracepoint_unregister_lib)(struct tracepoint * const *tracepoints_start);
-static void *liblttngust_handle;
-
 /*
  * These weak symbols, the constructor, and destructor take care of
  * registering only _one_ instance of the tracepoints per shared-ojbect
@@ -201,38 +216,41 @@ extern struct tracepoint * const __stop___tracepoints_ptrs[]
 	__attribute__((weak, visibility("hidden")));
 int __tracepoint_registered
 	__attribute__((weak, visibility("hidden")));
+struct tracepoint_dlopen tracepoint_dlopen
+	__attribute__((weak, visibility("hidden")));
 
 static void __attribute__((constructor)) __tracepoints__init(void)
 {
 	if (__tracepoint_registered++)
 		return;
 
-	liblttngust_handle = dlopen("liblttng-ust-tracepoint.so.0", RTLD_NOW | RTLD_GLOBAL);
-	if (!liblttngust_handle)
+	tracepoint_dlopen.liblttngust_handle =
+		dlopen("liblttng-ust-tracepoint.so.0", RTLD_NOW | RTLD_GLOBAL);
+	if (!tracepoint_dlopen.liblttngust_handle)
 		return;
-	tracepoint_register_lib =
+	tracepoint_dlopen.tracepoint_register_lib =
 		URCU_FORCE_CAST(int (*)(struct tracepoint * const *, int),
-				dlsym(liblttngust_handle,
+				dlsym(tracepoint_dlopen.liblttngust_handle,
 					"tracepoint_register_lib"));
-	tracepoint_unregister_lib =
+	tracepoint_dlopen.tracepoint_unregister_lib =
 		URCU_FORCE_CAST(int (*)(struct tracepoint * const *),
-				dlsym(liblttngust_handle,
+				dlsym(tracepoint_dlopen.liblttngust_handle,
 					"tracepoint_unregister_lib"));
 #ifndef _LGPL_SOURCE
-	tp_rcu_read_lock_bp =
+	tracepoint_dlopen.rcu_read_lock_sym_bp =
 		URCU_FORCE_CAST(void (*)(void),
-				dlsym(liblttngust_handle,
+				dlsym(tracepoint_dlopen.liblttngust_handle,
 					"tp_rcu_read_lock_bp"));
-	tp_rcu_read_unlock_bp =
+	tracepoint_dlopen.rcu_read_unlock_sym_bp =
 		URCU_FORCE_CAST(void (*)(void),
-				dlsym(liblttngust_handle,
+				dlsym(tracepoint_dlopen.liblttngust_handle,
 					"tp_rcu_read_unlock_bp"));
-	tp_rcu_dereference_sym_bp =
+	tracepoint_dlopen.rcu_dereference_sym_bp =
 		URCU_FORCE_CAST(void *(*)(void *p),
-				dlsym(liblttngust_handle,
+				dlsym(tracepoint_dlopen.liblttngust_handle,
 					"tp_rcu_dereference_sym_bp"));
 #endif
-	tracepoint_register_lib(__start___tracepoints_ptrs,
+	tracepoint_dlopen.tracepoint_register_lib(__start___tracepoints_ptrs,
 				__stop___tracepoints_ptrs -
 				__start___tracepoints_ptrs);
 }
@@ -240,15 +258,15 @@ static void __attribute__((constructor)) __tracepoints__init(void)
 static void __attribute__((destructor)) __tracepoints__destroy(void)
 {
 	int ret;
+
 	if (--__tracepoint_registered)
 		return;
-	if (tracepoint_unregister_lib)
-		tracepoint_unregister_lib(__start___tracepoints_ptrs);
-	if (liblttngust_handle) {
-		tracepoint_unregister_lib = NULL;
-		tracepoint_register_lib = NULL;
-		ret = dlclose(liblttngust_handle);
+	if (tracepoint_dlopen.tracepoint_unregister_lib)
+		tracepoint_dlopen.tracepoint_unregister_lib(__start___tracepoints_ptrs);
+	if (tracepoint_dlopen.liblttngust_handle) {
+		ret = dlclose(tracepoint_dlopen.liblttngust_handle);
 		assert(!ret);
+		memset(&tracepoint_dlopen, 0, sizeof(tracepoint_dlopen));
 	}
 }
 
