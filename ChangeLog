@@ -1,3 +1,23 @@
+2012-02-09 lttng-ust 1.9.6
+	* Fix tracepoint.h multiple .o within module/core exec linkage bug
+	* tracepoint: name -> _name to fix possible namespace clash
+	* Add debug printout to tracepoint.c
+	* Rename liblttng-ust-libc to liblttng-ust-libc-wrapper
+	* Update hardcoded loglevel
+	* Add "easy_ust" example
+	* Update gitignore
+	* Zero-initialize struct msghdr
+	* Add environment information
+	* Fix event-specific enabling
+	* Update static lib linking
+	* liblttng-ust-libc: fix linking
+	* liblttng-ust-libc: fix lib dependency
+	* Install README and ChangeLog into system doc
+	* Add hello-static-lib test
+	* Fix static provider linking: introduce TRACEPOINT_PROBE_DYNAMIC_LINKAGE
+	* Fix 32-bit type: allocated len is used
+	* Fix 32-bit type mismatch
+
 2012-02-02 lttng-ust 1.9.5
 	* UST comm ABI: Add padding, push version to 2.0
 	* Update loglevel names
