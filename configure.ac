@@ -16,8 +16,11 @@ AC_CONFIG_MACRO_DIR([config])
 AM_INIT_AUTOMAKE([foreign])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_SRCDIR([include/lttng/tracepoint.h])
+
+# Configuration options, which will be installed in the config.h
 AC_CONFIG_HEADERS([config.h include/lttng/config.h])
 AH_TEMPLATE([HAVE_EFFICIENT_UNALIGNED_ACCESS], [Use efficient unaligned access.])
+AH_TEMPLATE([HAVE_SDT_INTEGRATION], [DTrace/GDB/SystemTap integration via sdt.h])
 
 # Compute minor/major/patchlevel version numbers
 AC_PROG_SED
@@ -205,6 +208,23 @@ Use the --with-java-jdk=DIR flag to point to your Java include files, or disable
 	])
 ])
 AM_CONDITIONAL([BUILD_JNI_INTERFACE], [test "x$jni_interface" = "xyes"])
+
+# sdt.h integration
+AC_ARG_WITH([sdt],
+	[AS_HELP_STRING([--with-sdt],[provide DTrace, GDB and SystemTap integration via sdt.h [default=no]])],
+	[with_sdt=$withval],
+	[with_sdt="no"]
+)
+
+AS_IF([test "x$with_sdt" = "xyes"],[
+	AC_CHECK_HEADERS([sys/sdt.h], [
+		AC_DEFINE([HAVE_SDT_INTEGRATION], [1])
+	],[
+		AC_MSG_ERROR([The sdt.h integration was requested
+but this header file cannot be found. Make sure it is installed
+or use CFLAGS=-I/path/ to specify a non-standard path to sys/sdt.h])
+	])
+])
 
 #currently disabled.
 	#tests/hello2/Makefile

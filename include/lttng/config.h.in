@@ -3,3 +3,5 @@
 /* Use efficient unaligned access. */
 #undef HAVE_EFFICIENT_UNALIGNED_ACCESS
 
+/* DTrace/GDB/SystemTap integration via sdt.h */
+#undef HAVE_SDT_INTEGRATION
