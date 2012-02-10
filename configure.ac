@@ -217,12 +217,20 @@ AC_ARG_WITH([sdt],
 )
 
 AS_IF([test "x$with_sdt" = "xyes"],[
-	AC_CHECK_HEADERS([sys/sdt.h], [
+	AC_MSG_CHECKING([STAP_PROBEV()])
+	AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+	#define SDT_USE_VARIADIC
+	#include <sys/sdt.h>
+	void fct(void)
+	{
+		STAP_PROBEV(provider,name,1,2,3,4,5,6,7,8,9,10);
+	}
+	]])],[
+		AC_MSG_RESULT([yes])
 		AC_DEFINE([LTTNG_UST_HAVE_SDT_INTEGRATION], [1])
 	],[
-		AC_MSG_ERROR([The sdt.h integration was requested
-but this header file cannot be found. Make sure it is installed
-or use CFLAGS=-I/path/ to specify a non-standard path to sys/sdt.h])
+		AC_MSG_RESULT([no])
+		AC_MSG_ERROR([The sdt.h integration was requested but the STAP_PROBEV define cannot be used. Make sure it is installed, and up to date, or use CFLAGS=-I/path/ to specify a non-standard path to sys/sdt.h])
 	])
 ])
 
