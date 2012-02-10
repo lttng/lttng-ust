@@ -20,6 +20,14 @@
 #include <dlfcn.h>	/* for dlopen */
 #include <string.h>	/* for memset */
 #include <assert.h>
+#include <lttng/ust-config.h>	/* for sdt */
+
+#ifdef LTTNG_UST_HAVE_SDT_INTEGRATION
+#define SDT_USE_VARIADIC
+#include <sys/sdt.h>
+#else
+#define STAP_PROBEV(...)
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,6 +35,7 @@ extern "C" {
 
 #define tracepoint(provider, name, ...)					    \
 	do {								    \
+		STAP_PROBEV(provider, name ## __VA_ARGS__);		    \
 		if (caa_unlikely(__tracepoint_##provider##___##name.state)) \
 			__tracepoint_cb_##provider##___##name(__VA_ARGS__); \
 	} while (0)
