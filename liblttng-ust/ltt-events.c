@@ -878,6 +878,7 @@ int _ltt_event_metadata_statedump(struct ltt_session *session,
 				  struct ltt_event *event)
 {
 	int ret = 0;
+	int loglevel = TRACE_DEFAULT;
 
 	if (event->metadata_dumped || !CMM_ACCESS_ONCE(session->active))
 		return 0;
@@ -900,13 +901,14 @@ int _ltt_event_metadata_statedump(struct ltt_session *session,
 	if (ret)
 		goto end;
 
-	if (event->desc->loglevel) {
-		ret = lttng_metadata_printf(session,
-			"	loglevel = %d;\n",
-			*(*event->desc->loglevel));
-		if (ret)
-			goto end;
-	}
+	if (event->desc->loglevel)
+		loglevel = *(*event->desc->loglevel);
+
+	ret = lttng_metadata_printf(session,
+		"	loglevel = %d;\n",
+		loglevel);
+	if (ret)
+		goto end;
 
 	if (event->ctx) {
 		ret = lttng_metadata_printf(session,
