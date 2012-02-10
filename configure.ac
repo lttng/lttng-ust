@@ -265,4 +265,21 @@ AC_CONFIG_FILES([
 	tests/ust-multi-test/Makefile
 	lttng-ust.pc
 ])
+
 AC_OUTPUT
+
+# Report on the configuration options
+AS_ECHO()
+AS_ECHO("LTTng-UST will be built with the following options:")
+AS_ECHO("Library format: $LIBFORMAT")
+
+AS_ECHO()
+AS_ECHO_N("Java support (JNI): ")
+AS_IF([test "x$jni_interface" = "xyes"], [AS_ECHO("Enabled")], [AS_ECHO("Disabled")])
+
+AS_ECHO_N("sdt.h integration:  ")
+AS_IF([test "x$with_sdt" = "xyes"], [AS_ECHO("Enabled")], [AS_ECHO("Disabled")])
+
+AS_ECHO()
+AS_ECHO("Type 'make' to compile.")
+
