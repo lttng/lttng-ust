@@ -20,7 +20,7 @@ AC_CONFIG_SRCDIR([include/lttng/tracepoint.h])
 # Configuration options, which will be installed in the config.h
 AC_CONFIG_HEADERS([config.h include/lttng/ust-config.h])
 AH_TEMPLATE([LTTNG_UST_HAVE_EFFICIENT_UNALIGNED_ACCESS], [Use efficient unaligned access.])
-AH_TEMPLATE([LTTNG_UST_HAVE_SDT_INTEGRATION], [DTrace/GDB/SystemTap integration via sdt.h])
+AH_TEMPLATE([LTTNG_UST_HAVE_SDT_INTEGRATION], [SystemTap integration via sdt.h])
 
 # Compute minor/major/patchlevel version numbers
 AC_PROG_SED
@@ -211,7 +211,7 @@ AM_CONDITIONAL([BUILD_JNI_INTERFACE], [test "x$jni_interface" = "xyes"])
 
 # sdt.h integration
 AC_ARG_WITH([sdt],
-	[AS_HELP_STRING([--with-sdt],[provide DTrace, GDB and SystemTap integration via sdt.h [default=no]])],
+	[AS_HELP_STRING([--with-sdt],[provide SystemTap integration via sdt.h [default=no]])],
 	[with_sdt=$withval],
 	[with_sdt="no"]
 )
