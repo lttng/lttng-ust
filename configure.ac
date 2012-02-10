@@ -18,9 +18,9 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_SRCDIR([include/lttng/tracepoint.h])
 
 # Configuration options, which will be installed in the config.h
-AC_CONFIG_HEADERS([config.h include/lttng/config.h])
-AH_TEMPLATE([HAVE_EFFICIENT_UNALIGNED_ACCESS], [Use efficient unaligned access.])
-AH_TEMPLATE([HAVE_SDT_INTEGRATION], [DTrace/GDB/SystemTap integration via sdt.h])
+AC_CONFIG_HEADERS([config.h include/lttng/ust-config.h])
+AH_TEMPLATE([LTTNG_UST_HAVE_EFFICIENT_UNALIGNED_ACCESS], [Use efficient unaligned access.])
+AH_TEMPLATE([LTTNG_UST_HAVE_SDT_INTEGRATION], [DTrace/GDB/SystemTap integration via sdt.h])
 
 # Compute minor/major/patchlevel version numbers
 AC_PROG_SED
@@ -172,7 +172,7 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 ])
 fi
 if test x$NO_UNALIGNED_ACCESS = x ; then
-AC_DEFINE([HAVE_EFFICIENT_UNALIGNED_ACCESS], [1])
+AC_DEFINE([LTTNG_UST_HAVE_EFFICIENT_UNALIGNED_ACCESS], [1])
 fi
 
 # Set compile flags to java include files if given
@@ -218,7 +218,7 @@ AC_ARG_WITH([sdt],
 
 AS_IF([test "x$with_sdt" = "xyes"],[
 	AC_CHECK_HEADERS([sys/sdt.h], [
-		AC_DEFINE([HAVE_SDT_INTEGRATION], [1])
+		AC_DEFINE([LTTNG_UST_HAVE_SDT_INTEGRATION], [1])
 	],[
 		AC_MSG_ERROR([The sdt.h integration was requested
 but this header file cannot be found. Make sure it is installed

@@ -16,10 +16,10 @@
  * modified is included with the above copyright notice.
  */
 
-#include <lttng/config.h>
+#include <lttng/ust-config.h>
 #include <lttng/ust-version.h>
 
-#ifndef HAVE_EFFICIENT_UNALIGNED_ACCESS
+#ifndef LTTNG_UST_HAVE_EFFICIENT_UNALIGNED_ACCESS
 /* Align data on its natural alignment */
 #define RING_BUFFER_ALIGN
 #endif

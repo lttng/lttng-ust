@@ -1,7 +1,7 @@
 /* ust/config.h.in. Manually generated for control over the contained defs. */
 
 /* Use efficient unaligned access. */
-#undef HAVE_EFFICIENT_UNALIGNED_ACCESS
+#undef LTTNG_UST_HAVE_EFFICIENT_UNALIGNED_ACCESS
 
 /* DTrace/GDB/SystemTap integration via sdt.h */
-#undef HAVE_SDT_INTEGRATION
+#undef LTTNG_UST_HAVE_SDT_INTEGRATION

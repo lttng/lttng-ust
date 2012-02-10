@@ -11,7 +11,7 @@ nobase_include_HEADERS = \
 	lttng/ust-abi.h \
 	lttng/ringbuffer-abi.h \
 	lttng/ust-tracer.h \
-	lttng/config.h \
+	lttng/ust-config.h \
 	lttng/ust.h \
 	lttng/ringbuffer-config.h \
 	lttng/align.h \
