@@ -92,7 +92,8 @@ __thread unsigned int lib_ring_buffer_nesting;
 static
 void lib_ring_buffer_print_errors(struct channel *chan,
 				  struct lttng_ust_lib_ring_buffer *buf, int cpu,
-				  struct lttng_ust_shm_handle *handle);
+				  struct lttng_ust_shm_handle *handle)
+	__attribute__((unused));
 
 /**
  * lib_ring_buffer_reset - Reset ring buffer to initial values.
