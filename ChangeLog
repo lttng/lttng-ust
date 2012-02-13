@@ -1,3 +1,15 @@
+2012-02-13 lttng-ust 1.9.7
+	* liblttng-ust-java: add missing -classpath ./
+	* Only specify that sdt.h provides system integration for now
+	* Add STAP_PROBEV check ton configure.ac
+	* Add sdt.h integration
+	* Remove extern C around probe header
+	* Move lttng/config.h to lttng/ust-config.h, and use LTTNG_UST_ namespace
+	* Add a configure report at the end of the output
+	* Add sdt.h integration option
+	* Set default loglevel in metadata
+	* Fix: LTTng-UST java jni wrapper does not build with OpenJDK
+
 2012-02-09 lttng-ust 1.9.6
 	* Fix tracepoint.h multiple .o within module/core exec linkage bug
 	* tracepoint: name -> _name to fix possible namespace clash
