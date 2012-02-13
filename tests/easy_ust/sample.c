@@ -26,7 +26,7 @@ int main(int argc, char **argv)
 	int i = 0;
 
 	for (i = 0; i < 100000; i++) {
-		tracepoint(sample_component, message,  "Hello World\n");
+		tracepoint(sample_component, message, "Hello World\n");
 		usleep(1);
 	}
 	return 0;
