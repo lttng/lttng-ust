@@ -35,7 +35,7 @@ extern "C" {
 
 #define tracepoint(provider, name, ...)					    \
 	do {								    \
-		STAP_PROBEV(provider, name ## __VA_ARGS__);		    \
+		STAP_PROBEV(provider, name, ## __VA_ARGS__);		    \
 		if (caa_unlikely(__tracepoint_##provider##___##name.state)) \
 			__tracepoint_cb_##provider##___##name(__VA_ARGS__); \
 	} while (0)
