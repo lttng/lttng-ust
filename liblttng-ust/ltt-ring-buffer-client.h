@@ -8,6 +8,7 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
+#define _GNU_SOURCE
 #include <stdint.h>
 #include <lttng/ust-events.h>
 #include "lttng/bitfield.h"

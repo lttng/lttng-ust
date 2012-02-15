@@ -6,6 +6,7 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
+#define _GNU_SOURCE
 #include <unistd.h>
 #include "usterr.h"
 #include <pthread.h>

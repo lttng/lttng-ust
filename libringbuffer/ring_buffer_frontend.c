@@ -38,6 +38,7 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
+#define _GNU_SOURCE
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <sys/stat.h>

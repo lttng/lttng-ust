@@ -6,6 +6,7 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
+#define _GNU_SOURCE
 #include <urcu/arch.h>
 
 #include <lttng/ringbuffer-config.h>
