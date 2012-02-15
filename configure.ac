@@ -70,7 +70,7 @@ AC_C_INLINE
 
 # Checks for library functions.
 AC_FUNC_MALLOC
-AC_CHECK_FUNCS([gettimeofday munmap socket strerror strtol])
+AC_CHECK_FUNCS([gettimeofday munmap socket strerror strtol sched_getcpu sysconf])
 
 CFLAGS="-Wall $CFLAGS"
 
