@@ -8,6 +8,7 @@
  * Dual LGPL v2.1/GPL v2 license.
  */
 
+#define _GNU_SOURCE
 #include "ltt-tracer.h"
 
 #define RING_BUFFER_MODE_TEMPLATE		RING_BUFFER_OVERWRITE
