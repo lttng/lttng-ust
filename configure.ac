@@ -253,6 +253,8 @@ AS_IF([test "x$with_sdt" = "xyes"],[
 
 AC_CONFIG_FILES([
 	Makefile
+	doc/Makefile
+	doc/examples/Makefile
 	include/Makefile
 	include/lttng/ust-version.h
 	snprintf/Makefile
