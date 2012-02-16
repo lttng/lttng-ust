@@ -20,17 +20,30 @@ LIBS = -ldl -llttng-ust
 
 all: sample
 
-sample: sample.o sample-tp.o
+sample: sample.o sample_tracepoint.o
 	$(CC) $(LIBS) -o $@ $^
 
 sample.o: sample.c sample_tracepoint.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-sample-tp.o: sample_tracepoint.c sample_tracepoint.h
-	$(CC) $(CFLAGS) -I. -c -o $@ $<
+# Use this command to compile the .c manually
+#sample_tracepoint.o: sample_tracepoint.c sample_tracepoint.h
+#	$(CC) $(CFLAGS) -I. -c -o $@ $<
+
+# This rule generate .o only and depends on rules for generating
+# the .h and .c
+%.o: %.tp %.c %.h
+	tools/lttng-gen-tp -o $@ $<
+
+# The following rule can be used to generate all files instead of having one
+# for each file type. Note that the sample.o has a dependency on the
+# .h, so you need to change that if you remove the %.h rule.
+#%.o: %.tp
+#	lttng-gen-tp $<
 
 %.h: %.tp
 	lttng-gen-tp -o $@ $<
+
 %.c: %.tp
 	lttng-gen-tp -o $@ $<
 

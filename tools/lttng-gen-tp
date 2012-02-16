@@ -19,6 +19,8 @@
 import sys
 import getopt
 import re
+import os
+import subprocess
 
 class Usage(Exception):
     def __init__(self, msg):
@@ -90,6 +92,59 @@ class CFile:
                                            headerFilename = headerFilename))
         outputFile.close()
 
+class ObjFile:
+    def __init__(self, filename, template):
+        self.outputFilename = filename
+        self.template = template
+    def _detectCC(self):
+        cc = ""
+        if os.environ.has_key('CC'):
+            cc = os.environ['CC']
+            try:
+                subprocess.call(cc,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+            except OSError, msg:
+                print "Invalid CC environment variable"
+                cc = ""
+
+        else:
+            # Try c first, if that fails try gcc
+            try:
+                useCC = True
+                subprocess.call("cc",
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+            except OSError, msg:
+                useCC = False
+            if useCC:
+                cc = "cc"
+
+            else:
+                try:
+                    useGCC = True
+                    subprocess.call("gcc",
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
+                except OSError, msg:
+                    useGCC = False
+                if useGCC:
+                    cc = "gcc"
+        return cc
+
+    def write(self):
+        cFilename = self.outputFilename.replace(".o",".c")
+        cc = self._detectCC()
+        if cc == "":
+            raise RuntimeError("No C Compiler detected")
+        if os.environ.has_key('CFLAGS'):
+            cflags = os.environ['CFLAGS']
+        else:
+            cflags = ""
+
+        command = cc + " -c " + cflags + " -I. -llttng-ust" + " -o " + self.outputFilename + " " + cFilename
+        subprocess.call(command.split())
+
 class TemplateFile:
     def __init__(self, filename):
         self.domain = ""
@@ -132,9 +187,9 @@ usage="""
 
  If no OUTPUT_FILE is given, the .h and .c file will be generated.
  (The basename of the template file with be used for the generated file.
-  for example sample.tp will generate sample.h and sample.c)
+  for example sample.tp will generate sample.h, sample.c and sample.o)
 
- When using the -o option, the OUTPUT_FILE must end with either .h or .c
+ When using the -o option, the OUTPUT_FILE must end with either .h, .c or .o
  The -o option can be repeated multiple times.
 
  The template file must contains TRACEPOINT_EVENT and TRACEPOINT_LOGLEVEL
@@ -168,8 +223,10 @@ def main(argv=None):
 
     doCFile = None
     doHeader = None
+    doObj = None
     headerFilename = None
     cFilename = None
+    objFilename = None
 
     if len(outputNames) > 0:
         if len(args) > 1:
@@ -184,13 +241,15 @@ def main(argv=None):
                 doCFile = True
                 cFilename = outputName
             elif outputName[-2:] == ".o":
-                print "Not yet implemented, sorry"
+                doObj = True
+                objFilename = outputName
             else:
                 print "output file type unsupported"
                 return(4)
     else:
         doHeader = True
         doCFile = True
+        doObj = True
 
     # process arguments
     for arg in args:
@@ -210,6 +269,13 @@ def main(argv=None):
                 curFilename = re.sub("\.tp$",".c",arg)
             dotc = CFile(curFilename, tpl)
             dotc.write()
+        if doObj:
+            if objFilename:
+                curFilename = objFilename
+            else:
+                curFilename = re.sub("\.tp$",".o",arg)
+            dotobj = ObjFile(curFilename, tpl)
+            dotobj.write()
 
 if __name__ == "__main__":
     sys.exit(main())
