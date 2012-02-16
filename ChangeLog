@@ -1,3 +1,18 @@
+2012-02-16 lttng-ust 1.9.8
+	* Fix comment in tracepoint.h
+	* Add loglevel info to manpage
+	* Remove stale binary file
+	* Add lttng-ust(3)
+	* Add a man page for lttng-gen-tp
+	* Install easy-ust and gen-tp examples in doc/
+	* Create the lttng-gen-tp tools as an helper to generate UST .h and .c files
+	* Add missing #define _GNU_SOURCE for sched_getcpu()
+	* Define _GNU_SOURCE for all implementation files rather than getcpu.h
+	* Add sched_getcpu and sysconf to AC_CHECK_FUNCS
+	* Mark lib_ring_buffer_print_errors unused
+	* Cleanup: remove extra space from easy_ust example
+	* Add missing comma to tracepoint STAP_PROBEV call
+
 2012-02-13 lttng-ust 1.9.7
 	* liblttng-ust-java: add missing -classpath ./
 	* Only specify that sdt.h provides system integration for now
