@@ -150,6 +150,79 @@ TRACEPOINT_EVENT(
 )
 .fi
 
+.SH "ASSIGNING LOGLEVEL TO EVENTS"
+
+.nf
+
+Optionally, a loglevel can be assigned to a TRACEPOINT_EVENT using the
+following construct:
+
+	TRACEPOINT_LOGLEVEL(< [com_company_]project[_component] >,
+		< event >, < loglevel_name >)
+
+ The first field is the provider name, the second field is the name of
+the tracepoint, and the third field is the loglevel name.  A
+TRACEPOINT_EVENT should be declared prior to the the TRACEPOINT_LOGLEVEL
+for a given tracepoint name. The TRACEPOINT_PROVIDER must be already
+declared before declaring a TRACEPOINT_LOGLEVEL.
+
+The loglevels go from 0 to 14. Higher numbers imply the most verbosity
+(higher event throughput expected.
+  
+Loglevels 0 through 6, and loglevel 14, match syslog(3) loglevels
+semantic. Loglevels 7 through 13 offer more fine-grained selection of
+debug information.
+  
+   TRACE_EMERG           0
+   system is unusable
+  
+   TRACE_ALERT           1
+   action must be taken immediately
+  
+   TRACE_CRIT            2
+   critical conditions
+  
+   TRACE_ERR             3
+   error conditions
+  
+   TRACE_WARNING         4
+   warning conditions
+  
+   TRACE_NOTICE          5
+   normal, but significant, condition
+  
+   TRACE_INFO            6
+   informational message
+  
+   TRACE_DEBUG_SYSTEM    7
+   debug information with system-level scope (set of programs)
+  
+   TRACE_DEBUG_PROGRAM   8
+   debug information with program-level scope (set of processes)
+  
+   TRACE_DEBUG_PROCESS   9
+   debug information with process-level scope (set of modules)
+  
+   TRACE_DEBUG_MODULE    10
+   debug information with module (executable/library) scope (set of
+   units)
+  
+   TRACE_DEBUG_UNIT      11
+   debug information with compilation unit scope (set of functions)
+  
+   TRACE_DEBUG_FUNCTION  12
+   debug information with function-level scope
+  
+   TRACE_DEBUG_LINE      13
+   debug information with line-level scope (TRACEPOINT_EVENT default)
+  
+   TRACE_DEBUG           14
+   debug-level message (trace_printf default)
+
+See lttng(1) for information on how to use LTTng-UST loglevels.
+
+.fi
+
 .SH "ADDING TRACEPOINTS TO YOUR CODE"
 
 .nf
