@@ -1,0 +1,275 @@
+.TH "LTTNG-UST" "3" "February 16, 2012" "" ""
+
+.SH "NAME"
+lttng-ust \(em Linux Trace Toolkit Next Generation User-Space Tracer
+
+.SH "SYNOPSIS"
+
+.PP
+.nf
+Link liblttng-ust.so with applications, following this manpage.
+.fi
+.SH "DESCRIPTION"
+
+.PP
+LTTng-UST, the Linux Trace Toolkit Next Generation Userspace Tracer, is
+port of the low-overhead tracing capabilities of the LTTng kernel tracer
+to user-space. The library "liblttng-ust" enables tracing of
+applications and libraries.
+
+.SH "USAGE"
+.PP
+The simple way to generate the lttng-ust tracepoint probes is to use the
+lttng-gen-tp(1) tool. See the lttng-gen-tp(1) manpage for explanation.
+.PP
+
+.PP
+Here is the way to do it manually, without the lttng-gen-tp(1) helper
+script, through an example:
+.PP
+
+.SH "CREATION OF TRACEPOINT PROVIDER"
+
+.nf
+
+To create a tracepoint provider, within a build tree similar to
+examples/easy-ust installed with lttng-ust documentation, a
+sample_component_provider.h for the general layout. This manpage will
+focus on the various types that can be recorded into a trace event:
+
+TRACEPOINT_EVENT(
+	/*
+	 * provider name, not a variable but a string starting with a
+	 * letter and containing either letters, numbers or underscores. 
+	 * Needs to be the same as TRACEPOINT_PROVIDER. Needs to
+	 * follow the namespacing guide-lines in lttng/tracepoint.h:
+	 * 
+	 * Must be included before include tracepoint provider 
+	 * ex.: project_event
+	 * ex.: project_component_event
+	 *
+	 * Optional company name goes here
+	 *  ex.: com_efficios_project_component_event
+	 *
+	 * In this example, "sample" is the project, and "component" is the
+	 * component.
+	 */
+	sample_component,
+
+	/*
+	 * tracepoint name, same format as sample provider. Does not
+	 * need to be declared before. in this case the name is
+	 * "message" 
+	 */
+	message,
+
+	/*
+	 * TP_ARGS macro contains the arguments passed for the tracepoint 
+	 * it is in the following format
+	 *	      TP_ARGS(type1, name1, type2, name2, ... type10,
+				 name10)
+	 * where there can be from zero to ten elements. 
+	 * typeN is the datatype, such as int, struct or double **. 
+	 * name is the variable name (in "int myInt" the name would be
+	 * myint) 
+	 *	      TP_ARGS() is valid to mean no arguments
+	 *	      TP_ARGS(void) is valid too
+	 */
+	TP_ARGS(int, anint, int, netint, long *, values,
+		 char *, text, size_t, textlen,
+		 double, doublearg, float, floatarg),
+
+	/*
+	 * TP_FIELDS describes how to write the fields of the trace event. 
+	 * You can put expressions in the "argument expression" area,
+	 * typically using the input arguments from TP_ARGS.
+	 */
+	TP_FIELDS(
+		/*
+		 * ctf_integer: standard integer field.
+		 * args: (type, field name, argument expression)
+		 */
+		ctf_integer(int, intfield, anint)
+		ctf_integer(long, longfield, anint)
+
+		/*
+		 * ctf_integer_hex: integer field printed as hexadecimal.
+		 * args: (type, field name, argument expression)
+		 */
+		ctf_integer_hex(int, intfield2, anint)
+
+		/*
+		 * ctf_integer_network: integer field in network byte
+		 * order. (_hex: printed as hexadecimal too)
+		 * args: (type, field name, argument expression)
+		 */
+		ctf_integer_network(int, netintfield, netint)
+		ctf_integer_network_hex(int, netintfieldhex, netint)
+
+		/*
+		 * ctf_array: a statically-sized array.
+		 * args: (type, field name, argument expression, value)
+		 */ 
+		ctf_array(long, arrfield1, values, 3)
+
+		/*
+		 * ctf_array_text: a statically-sized array, printed as
+		 * a string. No need to be terminated by a null
+		 * character.
+		 */ 
+		ctf_array_text(char, arrfield2, text, 10)
+
+		/*
+		 * ctf_sequence: a dynamically-sized array.
+		 * args: (type, field name, argument expression,
+		 *	type of length expression, length expression)
+		 */ 
+		ctf_sequence(char, seqfield1, text,
+			     size_t, textlen)
+
+		/*
+		 * ctf_sequence_text: a dynamically-sized array, printed
+		 * as string. No need to be null-terminated.
+		 */
+		ctf_sequence_text(char, seqfield2, text,
+			     size_t, textlen)
+
+		/*
+		 * ctf_string: null-terminated string.
+		 * args: (field name, argument expression)
+		 */
+		ctf_string(stringfield, text)
+
+		/*
+		 * ctf_float: floating-point number.
+		 * args: (type, field name, argument expression)
+		 */
+		ctf_float(float, floatfield, floatarg)
+		ctf_float(double, doublefield, doublearg)
+	)
+)
+.fi
+
+.SH "ADDING TRACEPOINTS TO YOUR CODE"
+
+.nf
+
+Include the provider header in each C files you plan to instrument,
+following the building/linking directives in the next section.
+
+For instance, add within a function:
+
+		tracepoint(ust_tests_hello, tptest, i, netint, values,
+			text, strlen(text), dbl, flt);
+
+As a call to the tracepoint. It will only be activated when requested by
+lttng(1) through lttng-sessiond(8).
+
+.fi
+
+.SH "BUILDING/LINKING THE TRACEPOINT PROVIDER"
+
+.nf
+There are 2 ways to compile the Tracepoint Provider with the
+application: either statically or dynamically. Please follow
+carefully:
+
+  1.1) Compile the Tracepoint provider with the application, either
+       directly or through a static library (.a):
+    - Into exactly one object of your application: define
+      "TRACEPOINT_DEFINE" and include the tracepoint provider.
+    - Use "-I." for the compilation unit containing the tracepoint
+      provider include (e.g. tp.c).
+    - Link application with "-ldl".
+    - If building the provider directly into the application,
+      link the application with "-llttng-ust".
+    - If building a static library for the provider, link the static
+      library with "-lllttng-ust".
+    - Include the tracepoint provider header into all C files using
+      the provider.
+    - Example:
+        tests/hello/  hello.c tp.c ust_tests_hello.h Makefile.example
+
+  2) Compile the Tracepoint Provider separately from the application,
+     using dynamic linking:
+    - Into exactly one object of your application: define
+      "TRACEPOINT_DEFINE" _and_ also define
+      "TRACEPOINT_PROBE_DYNAMIC_LINKAGE", then include the tracepoint
+      provider header.
+    - Include the tracepoint provider header into all instrumented C
+      files that use the provider.
+    - Compile the tracepoint provider with "-I.".
+    - Link the tracepoint provider with "-llttng-ust".
+    - Link application with "-ldl".
+    - Set a LD_PRELOAD environment to preload the tracepoint provider
+      shared object before starting the application when tracing is
+      needed.
+    - Example:
+      - tests/demo/   demo.c  tp*.c ust_tests_demo*.h demo-trace
+
+  - Note about dlopen() usage: due to locking side-effects due to the
+    way libc lazily resolves Thread-Local Storage (TLS) symbols when a
+    library is dlopen'd, linking the tracepoint probe or liblttng-ust
+    with dlopen() is discouraged. They should be linked with the
+    application using "-llibname" or loaded with LD_PRELOAD.
+  - Enable instrumentation and control tracing with the "lttng" command
+    from lttng-tools. See lttng-tools doc/quickstart.txt.
+
+.fi
+
+.SH "ENVIRONMENT VARIABLES"
+
+.PP
+.IP "LTTNG_UST_DEBUG"
+Activate liblttng-ust debug output.
+.PP
+.IP "LTTNG_UST_REGISTER_TIMEOUT"
+The environment variable "LTTNG_UST_REGISTER_TIMEOUT" can be used to
+specify how long the applications should wait for sessiond
+"registration done" command before proceeding to execute the main
+program. The default is 3000ms (3 seconds). The timeout value is
+specified in milliseconds. The value 0 means "don't wait". The value
+-1 means "wait forever". Setting this environment variable to 0 is
+recommended for applications with time constraints on the process
+startup time.
+.PP
+
+.SH "SEE ALSO"
+
+.PP
+lttng-gen-tp(1), lttng(1), babeltrace(1), lttng-sessiond(8)
+.PP
+.SH "BUGS"
+
+.PP
+No knows bugs at this point.
+
+If you encounter any issues or usability problem, please report it on
+our mailing list <lttng-dev@lists.lttng.org> to help improve this
+project.
+.SH "CREDITS"
+
+liblttng-ust is distributed under the GNU Lesser General Public License
+version 2.1. The headers are distributed under the MIT license.
+.PP
+See http://lttng.org for more information on the LTTng project.
+.PP
+Mailing list for support and development: <lttng-dev@lists.lttng.org>.
+.PP
+You can find us on IRC server irc.oftc.net (OFTC) in #lttng.
+.PP
+.SH "THANKS"
+
+Thanks to Ericsson for funding this work, providing real-life use-cases,
+and testing.
+
+Special thanks to Michel Dagenais and the DORSAL laboratory at
+Polytechnique de Montreal for the LTTng journey.
+.PP
+.SH "AUTHORS"
+
+.PP
+liblttng-ust was originally written by Mathieu Desnoyers, with additional
+contributions from various other people. It is currently maintained by
+Mathieu Desnoyers <mathieu.desnoyers@efficios.com>.
+.PP
