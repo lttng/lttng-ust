@@ -1,0 +1,15 @@
+TRACEPOINT_EVENT(
+	sample_tracepoint,
+	message, // C++ Style comment
+	TP_ARGS(char *, text),
+	TP_FIELDS(
+		ctf_string(message, text)
+		  )
+)
+/*
+ * Longer comments
+ */
+TRACEPOINT_LOGLEVEL(
+	sample_tracepoint,
+	message,
+	TRACE_WARNING)

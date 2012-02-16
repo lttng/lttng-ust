@@ -1,0 +1,215 @@
+#!/usr/bin/python
+#
+# Copyright (c)  2012 Yannick Brosseau <yannick.brosseau@gmail.com>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; only version 2
+# of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+import sys
+import getopt
+import re
+
+class Usage(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+
+class HeaderFile:
+    HEADER_TPL="""
+#undef TRACEPOINT_PROVIDER
+#define TRACEPOINT_PROVIDER {providerName}
+
+#undef TRACEPOINT_INCLUDE_FILE
+#define TRACEPOINT_INCLUDE_FILE ./{headerFilename}
+
+#ifdef __cplusplus
+#extern "C"{{
+#endif /*__cplusplus */
+
+
+#if !defined({includeGuard}) || defined(TRACEPOINT_HEADER_MULTI_READ)
+#define {includeGuard}
+
+#include <lttng/tracepoint.h>
+
+"""
+    FOOTER_TPL="""
+#endif /* {includeGuard} */
+
+#include <lttng/tracepoint-event.h>
+
+#ifdef __cplusplus
+}}
+#endif /*__cplusplus */
+
+"""
+    def __init__(self, filename, template):
+        self.outputFilename = filename
+        self.template = template
+
+    def write(self):
+        outputFile = open(self.outputFilename,"w")
+        includeGuard = "_"+self.outputFilename.upper().replace(".","_")
+
+        outputFile.write(HeaderFile.HEADER_TPL.format(providerName=self.template.domain,
+                                           includeGuard = includeGuard,
+                                           headerFilename = self.outputFilename))
+        outputFile.write(self.template.text)
+        outputFile.write(HeaderFile.FOOTER_TPL.format(includeGuard = includeGuard))
+        outputFile.close()
+
+class CFile:
+    FILE_TPL="""
+#define TRACEPOINT_CREATE_PROBES
+/*
+ * The header containing our TRACEPOINT_EVENTs.
+ */
+#define TRACEPOINT_DEFINE
+#include "{headerFilename}"
+"""
+    def __init__(self, filename, template):
+        self.outputFilename = filename
+        self.template = template
+
+    def write(self):
+        outputFile = open(self.outputFilename,"w")
+
+        headerFilename = self.outputFilename.replace(".c",".h")
+
+        outputFile.write(CFile.FILE_TPL.format(
+                                           headerFilename = headerFilename))
+        outputFile.close()
+
+class TemplateFile:
+    def __init__(self, filename):
+        self.domain = ""
+        self.inputFilename = filename
+        self.parseTemplate()
+
+
+    def parseTemplate(self):
+        f = open(self.inputFilename,"r")
+
+        self.text = f.read()
+
+        #Remove # comments (from input and output file
+        self.text = re.sub("#.*$","",self.text,flags=re.MULTILINE)
+        #Remove // comments
+        nolinecomment = re.sub("\/\/.*$","",self.text,flags=re.MULTILINE)
+        #Remove all spaces and lines
+        cleantext = re.sub("\s*","",nolinecomment)
+        #Remove multine C style comments
+        nocomment = re.sub("/\*.*?\*/","",cleantext)
+        entries = re.split("TRACEPOINT_.*?",nocomment)
+
+        for entry in entries:
+            if entry != '':
+                decomp = re.findall("(\w*?)\((\w*?),(\w*?),", entry)
+                typea = decomp[0][0]
+                domain = decomp[0][1]
+                name = decomp[0][2]
+
+                if self.domain == "":
+                    self.domain = domain
+                else:
+                    if self.domain != domain:
+                        print "Warning: different domain provided (%s,%s)" % (self.domain, domain)
+
+usage="""
+ lttng-gen-tp - Generate the LTTng-UST header and source based on a simple template
+
+ usage: lttng-gen-tp TEMPLATE_FILE [-o OUTPUT_FILE][-o OUTPUT_FILE]
+
+ If no OUTPUT_FILE is given, the .h and .c file will be generated.
+ (The basename of the template file with be used for the generated file.
+  for example sample.tp will generate sample.h and sample.c)
+
+ When using the -o option, the OUTPUT_FILE must end with either .h or .c
+ The -o option can be repeated multiple times.
+
+ The template file must contains TRACEPOINT_EVENT and TRACEPOINT_LOGLEVEL
+ as per defined in the lttng/tracepoint.h file.
+ See the lttng-ust(3) man page for more details on the format.
+"""
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv
+
+    try:
+        try:
+            opts, args = getopt.gnu_getopt(argv[1:], "ho:a", ["help"])
+        except getopt.error, msg:
+             raise Usage(msg)
+
+    except Usage, err:
+        print >>sys.stderr, err.msg
+        print >>sys.stderr, "for help use --help"
+        return 2
+
+    outputNames = []
+    for o, a in opts:
+        if o in ("-h", "--help"):
+            print usage
+            return(0)
+        if o in ("-o",""):
+            outputNames.append(a)
+        if o in ("-a",""):
+            all = True
+
+    doCFile = None
+    doHeader = None
+    headerFilename = None
+    cFilename = None
+
+    if len(outputNames) > 0:
+        if len(args) > 1:
+            print "Cannot process more than one input if you specify an output"
+            return(3)
+
+        for outputName in outputNames:
+            if outputName[-2:] == ".h":
+                doHeader = True
+                headerFilename = outputName
+            elif outputName[-2:] == ".c":
+                doCFile = True
+                cFilename = outputName
+            elif outputName[-2:] == ".o":
+                print "Not yet implemented, sorry"
+            else:
+                print "output file type unsupported"
+                return(4)
+    else:
+        doHeader = True
+        doCFile = True
+
+    # process arguments
+    for arg in args:
+
+        tpl = TemplateFile(arg)
+        if doHeader:
+            if headerFilename:
+                curFilename = headerFilename
+            else:
+                curFilename = re.sub("\.tp$",".h",arg)
+            doth = HeaderFile(curFilename, tpl)
+            doth.write()
+        if doCFile:
+            if cFilename:
+                curFilename = cFilename
+            else:
+                curFilename = re.sub("\.tp$",".c",arg)
+            dotc = CFile(curFilename, tpl)
+            dotc.write()
+
+if __name__ == "__main__":
+    sys.exit(main())
