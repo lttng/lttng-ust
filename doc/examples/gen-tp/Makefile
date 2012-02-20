@@ -33,7 +33,7 @@ sample.o: sample.c sample_tracepoint.h
 # This rule generate .o only and depends on rules for generating
 # the .h and .c
 %.o: %.tp %.c %.h
-	tools/lttng-gen-tp -o $@ $<
+	lttng-gen-tp -o $@ $<
 
 # The following rule can be used to generate all files instead of having one
 # for each file type. Note that the sample.o has a dependency on the
