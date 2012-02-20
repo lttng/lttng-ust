@@ -1,3 +1,8 @@
+2012-02-20 lttng-ust 2.0.0-rc1
+	* Standardize version across toolchain
+	* Fix a typo in gen-tp Makefile
+	* Implement the .o file generation in lttng-gen-tp
+
 2012-02-16 lttng-ust 1.9.8
 	* Fix comment in tracepoint.h
 	* Add loglevel info to manpage
