@@ -1134,8 +1134,8 @@ int _ltt_session_metadata_statedump(struct ltt_session *session)
 		lttng_alignof(uint16_t) * CHAR_BIT,
 		lttng_alignof(uint32_t) * CHAR_BIT,
 		lttng_alignof(uint64_t) * CHAR_BIT,
-		CTF_VERSION_MAJOR,
-		CTF_VERSION_MINOR,
+		CTF_SPEC_MAJOR,
+		CTF_SPEC_MINOR,
 		uuid_s,
 #if (BYTE_ORDER == BIG_ENDIAN)
 		"be"
@@ -1153,11 +1153,17 @@ int _ltt_session_metadata_statedump(struct ltt_session *session)
 		"env {\n"
 		"	vpid = %d;\n"
 		"	procname = \"%s\";\n"
-		"	domain = %s;\n"
+		"	domain = \"ust\";\n"
+		"	tracer_name = \"lttng-ust\";\n"
+		"	tracer_major = %u;\n"
+		"	tracer_minor = %u;\n"
+		"	tracer_patchlevel = %u;\n"
 		"};\n\n",
 		(int) getpid(),
 		procname,
-		"ust"
+		LTTNG_UST_MAJOR_VERSION,
+		LTTNG_UST_MINOR_VERSION,
+		LTTNG_UST_PATCHLEVEL_VERSION
 		);
 	if (ret)
 		goto end;

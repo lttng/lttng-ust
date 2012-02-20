@@ -41,10 +41,6 @@
 #define CTF_SPEC_MAJOR			1
 #define CTF_SPEC_MINOR			8
 
-/* Tracer major/minor versions */
-#define CTF_VERSION_MAJOR		0
-#define CTF_VERSION_MINOR		1
-
 /*
  * Number of milliseconds to retry before failing metadata writes on buffer full
  * condition. (10 seconds)
