@@ -175,6 +175,7 @@ changequote([,])dnl
 	  fi
 	  ;;
 	x86_64) LIBFORMAT="elf64-x86-64" ;;
+	amd64) LIBFORMAT="elf64-x86-64" ;;
 	powerpc) LIBFORMAT="elf32-powerpc" ;;
 	ppc64) LIBFORMAT="elf64-powerpc" ;;
 	powerpc64) LIBFORMAT="elf64-powerpc" ;;
