@@ -37,5 +37,11 @@ liblttng_ust_provider_ust_tests_demo3_la_LDFLAGS = \
 
 noinst_PROGRAMS = demo
 demo_SOURCES = demo.c ust_tests_demo.h
-# The demo program only depends on libdl.
-demo_LDFLAGS = -ldl
+# The demo program only depends on libdl/libc for dlopen().
+if LTTNG_UST_BUILD_WITH_LIBDL
+demo_LDADD = -ldl
+endif
+if LTTNG_UST_BUILD_WITH_LIBC_DL
+demo_LDADD = -lc
+endif
+

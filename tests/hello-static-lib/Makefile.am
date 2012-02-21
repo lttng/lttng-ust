@@ -8,7 +8,14 @@ liblttng_ust_provider_ust_test_hello_la_LIBADD = \
 
 noinst_PROGRAMS = hello
 hello_SOURCES = hello.c
-hello_LDADD = -ldl liblttng-ust-provider-ust-test-hello.la
+hello_LDADD = liblttng-ust-provider-ust-test-hello.la
+
+if LTTNG_UST_BUILD_WITH_LIBDL
+hello_LDADD += -ldl
+endif
+if LTTNG_UST_BUILD_WITH_LIBC_DL
+hello_LDADD += -lc
+endif
 
 noinst_SCRIPTS = run
 EXTRA_DIST = run

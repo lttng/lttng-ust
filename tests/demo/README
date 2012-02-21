@@ -4,7 +4,8 @@ demo-trace shell script preloads the provider shared objects before
 executing the demo. Executing "demo" without the shell wrapper will not
 provide any tracing support. This ensures the demo binary can be
 distributed on distros without depending on having liblttng-ust.so in
-place. Note: the "demo" program must be compiled with "-ldl".
+place. Note: the "demo" program must be compiled with "-ldl" on Linux,
+with "-lc" on BSD.
 
 The simplest command to trace the demo program are:
 lttng create
