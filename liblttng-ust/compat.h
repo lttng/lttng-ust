@@ -15,28 +15,6 @@
  */
 
 /*
- * sched_getcpu.
- */
-#ifdef __linux__
-
-#ifdef __UCLIBC__
-#include <sys/syscall.h>
-#define __getcpu(cpu, node, cache)	syscall(__NR_getcpu, cpu, node, cache)
-static inline
-int sched_getcpu(void)
-{
-	int c, s;
-
-	s = __getcpu(&c, NULL, NULL);
-	return (s == -1) ? s : c;
-}
-#endif	/* __UCLIBC__ */
-
-#else
-#error "Please add support for your OS into liblttng-ust/compat.h."
-#endif
-
-/*
  * lttng_ust_getprocname.
  */
 #ifdef __linux__
