@@ -77,7 +77,7 @@ struct lttng_enum_entry {
 		  .size = sizeof(_type) * CHAR_BIT,		\
 		  .alignment = lttng_alignof(_type) * CHAR_BIT,	\
 		  .signedness = lttng_is_signed_type(_type),	\
-		  .reverse_byte_order = _byte_order != __BYTE_ORDER,	\
+		  .reverse_byte_order = _byte_order != BYTE_ORDER,	\
 		  .base = _base,				\
 		  .encoding = lttng_encode_##_encoding,		\
 		},						\
