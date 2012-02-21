@@ -55,4 +55,10 @@ void lttng_ust_getprocname(char *name)
 
 #endif
 
+#include <errno.h>
+
+#ifndef ENODATA
+#define ENODATA	ENOMSG
+#endif
+
 #endif /* _UST_COMPAT_H */

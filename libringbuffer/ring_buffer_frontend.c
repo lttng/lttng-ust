@@ -53,6 +53,7 @@
 #include "backend.h"
 #include "frontend.h"
 #include "shm.h"
+#include "../liblttng-ust/compat.h"	/* For ENODATA */
 
 #ifndef max
 #define max(a, b)	((a) > (b) ? (a) : (b))
