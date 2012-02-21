@@ -10,7 +10,6 @@
 
 #define _GNU_SOURCE
 #include <stdio.h>
-#include <endian.h>
 #include <urcu/list.h>
 #include <urcu/hlist.h>
 #include <pthread.h>
@@ -23,6 +22,7 @@
 #include <inttypes.h>
 #include <time.h>
 #include <sys/prctl.h>
+#include <lttng/ust-endian.h>
 #include "clock.h"
 
 #include <urcu-bp.h>
