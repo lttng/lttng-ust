@@ -8,6 +8,7 @@
 
 #define _GNU_SOURCE
 #include <urcu/arch.h>
+#include <limits.h>
 
 #include <lttng/ringbuffer-config.h>
 #include "vatomic.h"
