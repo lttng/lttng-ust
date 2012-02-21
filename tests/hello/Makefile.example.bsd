@@ -1,0 +1,8 @@
+# Example makefile for build outside of the LTTng-UST tree.
+
+hello:
+	${CC} -O2 -I. -o hello -lc -llttng-ust hello.c tp.c
+
+.PHONY: clean
+clean:
+	rm -f hello
