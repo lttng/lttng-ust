@@ -20,7 +20,7 @@
 
 #ifdef __linux__
 #include <endian.h>
-#elif __FreeBSD__
+#elif defined(__FreeBSD__)
 #include <machine/endian.h>
 #else
 #error "Please add support for your OS into lttng/ust-endian.h."
