@@ -27,6 +27,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+#include "lttng/ust-tid.h"
 #include "share.h"
 
 enum ust_loglevel {
@@ -57,7 +58,7 @@ static inline int ust_debug(void)
 	do {							\
 		fprintf(stderr, UST_STR_COMPONENT "[%ld/%ld]: " fmt " (in %s() at " __FILE__ ":" XSTR(__LINE__) ")\n",				\
 			(long) getpid(),			\
-			(long) syscall(SYS_gettid),		\
+			(long) gettid(),			\
 			## args,				\
 			__func__);				\
 	} while(0)
