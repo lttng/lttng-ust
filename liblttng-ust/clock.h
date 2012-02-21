@@ -25,7 +25,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdio.h>
-#include "uuid.h"
+#include "lttng-ust-uuid.h"
 
 /* TRACE CLOCK */
 

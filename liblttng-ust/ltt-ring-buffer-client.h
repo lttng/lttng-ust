@@ -12,7 +12,7 @@
 #include <lttng/ust-events.h>
 #include "lttng/bitfield.h"
 #include "clock.h"
-#include "uuid.h"
+#include "lttng-ust-uuid.h"
 #include "ltt-tracer.h"
 #include "../libringbuffer/frontend_types.h"
 
