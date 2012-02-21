@@ -21,9 +21,9 @@
  */
 #define LTTNG_UST_UUID_STR_LEN		37
 
+#ifdef LTTNG_UST_HAVE_LIBUUID
 #include <uuid/uuid.h>
 
-#ifdef LTTNG_UST_HAVE_LIBUUID
 static inline
 int lttng_ust_uuid_generate(unsigned char *uuid_out)
 {
