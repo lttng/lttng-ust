@@ -383,7 +383,7 @@ error:
 }
 
 static
-void cleanup_sock_info(struct sock_info *sock_info)
+void cleanup_sock_info(struct sock_info *sock_info, int exiting)
 {
 	int ret;
 
@@ -402,7 +402,18 @@ void cleanup_sock_info(struct sock_info *sock_info)
 		sock_info->root_handle = -1;
 	}
 	sock_info->constructor_sem_posted = 0;
-	if (sock_info->wait_shm_mmap) {
+	/*
+	 * When called from process exit, we allow this memory map to be
+	 * released by the OS at exit(), because removing it prior to
+	 * this can cause a segmentation fault when using the
+	 * futex_async timer-based fallback. And we cannot join those
+	 * threads because sys_futex does not react to the cancellation
+	 * request.
+	 *
+	 * So we actually _do_ release it only after a fork, since all
+	 * threads have vanished anyway.
+	 */
+	if (!exiting && sock_info->wait_shm_mmap) {
 		ret = munmap(sock_info->wait_shm_mmap, sysconf(_SC_PAGE_SIZE));
 		if (ret) {
 			ERR("Error unmapping wait shm");
@@ -876,9 +887,9 @@ void __attribute__((constructor)) lttng_ust_init(void)
 static
 void lttng_ust_cleanup(int exiting)
 {
-	cleanup_sock_info(&global_apps);
+	cleanup_sock_info(&global_apps, exiting);
 	if (local_apps.allowed) {
-		cleanup_sock_info(&local_apps);
+		cleanup_sock_info(&local_apps, exiting);
 	}
 	lttng_ust_abi_exit();
 	lttng_ust_events_exit();
@@ -923,6 +934,10 @@ void __attribute__((destructor)) lttng_ust_exit(void)
 			ERR("Error cancelling local ust listener thread");
 		}
 	}
+	/*
+	 * We cannot join the threads because they might be waiting on
+	 * sys_futex. Simply let the OS exit() clean up those threads.
+	 */
 	lttng_ust_cleanup(1);
 }
 
