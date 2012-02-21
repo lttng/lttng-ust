@@ -383,7 +383,7 @@ error:
 }
 
 static
-void cleanup_sock_info(struct sock_info *sock_info)
+void cleanup_sock_info(struct sock_info *sock_info, int exiting)
 {
 	int ret;
 
@@ -402,7 +402,13 @@ void cleanup_sock_info(struct sock_info *sock_info)
 		sock_info->root_handle = -1;
 	}
 	sock_info->constructor_sem_posted = 0;
-	if (sock_info->wait_shm_mmap) {
+	/*
+	 * wait_shm_mmap is used by listener threads outside of the
+	 * ust lock, so we cannot tear it down ourselves, because we
+	 * cannot join on these threads. Leave this task to the OS
+	 * process exit.
+	 */
+	if (!exiting && sock_info->wait_shm_mmap) {
 		ret = munmap(sock_info->wait_shm_mmap, sysconf(_SC_PAGE_SIZE));
 		if (ret) {
 			ERR("Error unmapping wait shm");
@@ -578,7 +584,7 @@ error:
 static
 void wait_for_sessiond(struct sock_info *sock_info)
 {
-	int ret, oldtype;
+	int ret;
 
 	ust_lock();
 	if (lttng_ust_comm_should_quit) {
@@ -595,14 +601,6 @@ void wait_for_sessiond(struct sock_info *sock_info)
 	ust_unlock();
 
 	DBG("Waiting for %s apps sessiond", sock_info->name);
-	/*
-	 * sys_futex does not honor pthread cancel requests. Set to
-	 * async.
-	 */
-	ret = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &oldtype);
-	if (ret) {
-		ERR("Error setting thread cancel type");
-	}
 	/* Wait for futex wakeup */
 	if (uatomic_read((int32_t *) sock_info->wait_shm_mmap) == 0) {
 		ret = futex_async((int32_t *) sock_info->wait_shm_mmap,
@@ -620,10 +618,6 @@ void wait_for_sessiond(struct sock_info *sock_info)
 					PERROR("futex");
 			}
 		}
-	}
-	ret = pthread_setcanceltype(oldtype, &oldtype);
-	if (ret) {
-		ERR("Error setting thread cancel type");
 	}
 	return;
 
@@ -888,10 +882,17 @@ void __attribute__((constructor)) lttng_ust_init(void)
 static
 void lttng_ust_cleanup(int exiting)
 {
-	cleanup_sock_info(&global_apps);
+	cleanup_sock_info(&global_apps, exiting);
 	if (local_apps.allowed) {
-		cleanup_sock_info(&local_apps);
+		cleanup_sock_info(&local_apps, exiting);
 	}
+	/*
+	 * The teardown in this function all affect data structures
+	 * accessed under the UST lock by the listener thread. This
+	 * lock, along with the lttng_ust_comm_should_quit flag, ensure
+	 * that none of these threads are accessing this data at this
+	 * point.
+	 */
 	lttng_ust_abi_exit();
 	lttng_ust_events_exit();
 	ltt_ring_buffer_client_discard_exit();
@@ -936,17 +937,14 @@ void __attribute__((destructor)) lttng_ust_exit(void)
 			ERR("Error cancelling local ust listener thread");
 		}
 	}
-	/* join threads */
-	ret = pthread_join(global_apps.ust_listener, NULL);
-	if (ret) {
-		ERR("Error joining global ust listener thread");
-	}
-	if (local_apps.allowed) {
-		ret = pthread_join(local_apps.ust_listener, NULL);
-		if (ret) {
-			ERR("Error joining local ust listener thread");
-		}
-	}
+	/*
+	 * Do NOT join threads: use of sys_futex makes it impossible to
+	 * join the threads without using async-cancel, but async-cancel
+	 * is delivered by a signal, which could hit the target thread
+	 * anywhere in its code path, including while the ust_lock() is
+	 * held, causing a deadlock for the other thread. Let the OS
+	 * cleanup the threads if there are stalled in a syscall.
+	 */
 	lttng_ust_cleanup(1);
 }
 
