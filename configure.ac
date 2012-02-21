@@ -116,7 +116,7 @@ AS_IF([test "x$TEXINFO" != "xyes"],[
 # URCU
 
 # urcu - check if we just find the headers it out of the box.
-AC_CHECK_HEADERS([urcu-bp.h], [], [AC_MSG_ERROR([Cannot find [URCU] headers (urcu-bp.h). Use [CFLAGS]=-Idir to specify their location.
+AC_CHECK_HEADERS([urcu-bp.h], [], [AC_MSG_ERROR([Cannot find [URCU] headers (urcu-bp.h). Use [CPPFLAGS]=-Idir to specify their location.
 This error can also occur when the liburcu package's configure script has not been run.])])
 
 AC_MSG_CHECKING([caa_likely()])
@@ -218,9 +218,9 @@ AS_IF([test $JAVA_JDK],[
 	AS_IF([test -d $JAVA_JDK],[
                 AC_MSG_RESULT([using Java includes in $JAVA_SDK])
                 SUBDIRS=`find $JAVA_JDK/include -type d`
-		CFLAGS+=" "
-                CFLAGS+=`for x in $SUBDIRS; do echo -n "-I$x "; done`
-		CFLAGS+=" "
+		CPPFLAGS+=" "
+                CPPFLAGS+=`for x in $SUBDIRS; do echo -n "-I$x "; done`
+		CPPFLAGS+=" "
         ],[
                 AC_MSG_ERROR(Unable to find Java include files in $JAVA_JDK)
         ])
@@ -263,7 +263,7 @@ AS_IF([test "x$with_sdt" = "xyes"],[
 		AC_DEFINE([LTTNG_UST_HAVE_SDT_INTEGRATION], [1])
 	],[
 		AC_MSG_RESULT([no])
-		AC_MSG_ERROR([The sdt.h integration was requested but the STAP_PROBEV define cannot be used. Make sure it is installed, and up to date, or use CFLAGS=-I/path/ to specify a non-standard path to sys/sdt.h])
+		AC_MSG_ERROR([The sdt.h integration was requested but the STAP_PROBEV define cannot be used. Make sure it is installed, and up to date, or use CPPFLAGS=-I/path/ to specify a non-standard path to sys/sdt.h])
 	])
 ])
 
