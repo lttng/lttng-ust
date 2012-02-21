@@ -42,6 +42,7 @@
 #include <ust-comm.h>
 #include <../../libringbuffer/backend.h>
 #include <../../libringbuffer/frontend.h>
+#include "../../liblttng-ust/compat.h"	/* For ENODATA */
 
 #define NR_SESSIONS	4
 #define NR_CHANNELS	1
