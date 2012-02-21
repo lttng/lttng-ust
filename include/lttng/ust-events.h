@@ -24,7 +24,7 @@
 #include <stdint.h>
 #include <lttng/ust-abi.h>
 #include <lttng/ust-tracer.h>
-#include <endian.h>
+#include <lttng/ust-endian.h>
 #include <float.h>
 
 struct ltt_channel;
