@@ -26,4 +26,12 @@
 #error "Please add support for your OS into lttng/ust-endian.h."
 #endif
 
+#ifndef FLOAT_WORD_ORDER
+#ifdef __FLOAT_WORD_ORDER
+#define FLOAT_WORD_ORDER	__FLOAT_WORD_ORDER
+#else /* __FLOAT_WORD_ORDER */
+#define FLOAT_WORD_ORDER	BYTE_ORDER
+#endif /* __FLOAT_WORD_ORDER */
+#endif /* FLOAT_WORD_ORDER */
+
 #endif /* _LTTNG_UST_ENDIAN_H */

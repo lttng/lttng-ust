@@ -110,7 +110,7 @@ struct lttng_integer_type {
 				- _float_mant_dig(_type),	\
 		  .mant_dig = _float_mant_dig(_type),		\
 		  .alignment = lttng_alignof(_type) * CHAR_BIT,	\
-		  .reverse_byte_order = __BYTE_ORDER != __FLOAT_WORD_ORDER, \
+		  .reverse_byte_order = BYTE_ORDER != FLOAT_WORD_ORDER, \
 		},						\
 	}							\
 
