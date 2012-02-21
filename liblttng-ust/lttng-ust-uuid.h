@@ -40,7 +40,7 @@ int lttng_ust_uuid_generate(unsigned char *uuid_out)
 {
 	uint32_t status;
 
-	uuid_create(uuid_out, &status);
+	uuid_create((char *) uuid_out, &status);
 	if (status == uuid_s_ok)
 		return 0;
 	else
