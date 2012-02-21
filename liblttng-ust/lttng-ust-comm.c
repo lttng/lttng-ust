@@ -383,7 +383,7 @@ error:
 }
 
 static
-void cleanup_sock_info(struct sock_info *sock_info, int exiting)
+void cleanup_sock_info(struct sock_info *sock_info)
 {
 	int ret;
 
@@ -402,18 +402,7 @@ void cleanup_sock_info(struct sock_info *sock_info, int exiting)
 		sock_info->root_handle = -1;
 	}
 	sock_info->constructor_sem_posted = 0;
-	/*
-	 * When called from process exit, we allow this memory map to be
-	 * released by the OS at exit(), because removing it prior to
-	 * this can cause a segmentation fault when using the
-	 * futex_async timer-based fallback. And we cannot join those
-	 * threads because sys_futex does not react to the cancellation
-	 * request.
-	 *
-	 * So we actually _do_ release it only after a fork, since all
-	 * threads have vanished anyway.
-	 */
-	if (!exiting && sock_info->wait_shm_mmap) {
+	if (sock_info->wait_shm_mmap) {
 		ret = munmap(sock_info->wait_shm_mmap, sysconf(_SC_PAGE_SIZE));
 		if (ret) {
 			ERR("Error unmapping wait shm");
@@ -589,7 +578,7 @@ error:
 static
 void wait_for_sessiond(struct sock_info *sock_info)
 {
-	int ret;
+	int ret, oldtype;
 
 	ust_lock();
 	if (lttng_ust_comm_should_quit) {
@@ -606,6 +595,14 @@ void wait_for_sessiond(struct sock_info *sock_info)
 	ust_unlock();
 
 	DBG("Waiting for %s apps sessiond", sock_info->name);
+	/*
+	 * sys_futex does not honor pthread cancel requests. Set to
+	 * async.
+	 */
+	ret = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &oldtype);
+	if (ret) {
+		ERR("Error setting thread cancel type");
+	}
 	/* Wait for futex wakeup */
 	if (uatomic_read((int32_t *) sock_info->wait_shm_mmap) == 0) {
 		ret = futex_async((int32_t *) sock_info->wait_shm_mmap,
@@ -623,6 +620,10 @@ void wait_for_sessiond(struct sock_info *sock_info)
 					PERROR("futex");
 			}
 		}
+	}
+	ret = pthread_setcanceltype(oldtype, &oldtype);
+	if (ret) {
+		ERR("Error setting thread cancel type");
 	}
 	return;
 
@@ -887,9 +888,9 @@ void __attribute__((constructor)) lttng_ust_init(void)
 static
 void lttng_ust_cleanup(int exiting)
 {
-	cleanup_sock_info(&global_apps, exiting);
+	cleanup_sock_info(&global_apps);
 	if (local_apps.allowed) {
-		cleanup_sock_info(&local_apps, exiting);
+		cleanup_sock_info(&local_apps);
 	}
 	lttng_ust_abi_exit();
 	lttng_ust_events_exit();
@@ -924,6 +925,7 @@ void __attribute__((destructor)) lttng_ust_exit(void)
 	lttng_ust_comm_should_quit = 1;
 	ust_unlock();
 
+	/* cancel threads */
 	ret = pthread_cancel(global_apps.ust_listener);
 	if (ret) {
 		ERR("Error cancelling global ust listener thread");
@@ -934,10 +936,17 @@ void __attribute__((destructor)) lttng_ust_exit(void)
 			ERR("Error cancelling local ust listener thread");
 		}
 	}
-	/*
-	 * We cannot join the threads because they might be waiting on
-	 * sys_futex. Simply let the OS exit() clean up those threads.
-	 */
+	/* join threads */
+	ret = pthread_join(global_apps.ust_listener, NULL);
+	if (ret) {
+		ERR("Error joining global ust listener thread");
+	}
+	if (local_apps.allowed) {
+		ret = pthread_join(local_apps.ust_listener, NULL);
+		if (ret) {
+			ERR("Error joining local ust listener thread");
+		}
+	}
 	lttng_ust_cleanup(1);
 }
 
