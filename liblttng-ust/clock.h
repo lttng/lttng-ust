@@ -25,11 +25,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdio.h>
-
-/*
- * Includes final \0.
- */
-#define CLOCK_UUID_LEN		37
+#include "uuid.h"
 
 /* TRACE CLOCK */
 
@@ -71,12 +67,12 @@ const int trace_clock_uuid(char *uuid)
 	if (!fp) {
 		return -ENOENT;
 	}
-	len = fread(uuid, 1, CLOCK_UUID_LEN - 1, fp);
-	if (len < CLOCK_UUID_LEN - 1) {
+	len = fread(uuid, 1, LTTNG_UST_UUID_STR_LEN - 1, fp);
+	if (len < LTTNG_UST_UUID_STR_LEN - 1) {
 		ret = -EINVAL;
 		goto end;
 	}
-	uuid[CLOCK_UUID_LEN - 1] = '\0';
+	uuid[LTTNG_UST_UUID_STR_LEN - 1] = '\0';
 end:
 	fclose(fp);
 	return ret;
