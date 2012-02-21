@@ -22,7 +22,6 @@
 #define _LGPL_SOURCE
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/prctl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -46,6 +45,7 @@
 #include <usterr-signal-safe.h>
 #include "tracepoint-internal.h"
 #include "ltt-tracer-core.h"
+#include "compat.h"
 
 /*
  * Has lttng ust comm constructor been called ?
@@ -159,7 +159,6 @@ static
 int register_app_to_sessiond(int socket)
 {
 	ssize_t ret;
-	int prctl_ret;
 	struct {
 		uint32_t major;
 		uint32_t minor;
@@ -178,11 +177,7 @@ int register_app_to_sessiond(int socket)
 	reg_msg.uid = getuid();
 	reg_msg.gid = getgid();
 	reg_msg.bits_per_long = CAA_BITS_PER_LONG;
-	prctl_ret = prctl(PR_GET_NAME, (unsigned long) reg_msg.name, 0, 0, 0);
-	if (prctl_ret) {
-		ERR("Error executing prctl");
-		return -errno;
-	}
+	lttng_ust_getprocname(reg_msg.name);
 
 	ret = ustcomm_send_unix_sock(socket, &reg_msg, sizeof(reg_msg));
 	if (ret >= 0 && ret != sizeof(reg_msg))
