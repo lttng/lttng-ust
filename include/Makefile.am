@@ -25,6 +25,7 @@ noinst_HEADERS = \
 	usterr-signal-safe.h \
 	ust_snprintf.h \
 	ust-comm.h \
+	lttng/ust-tid.h \
 	lttng/bitfield.h \
 	helper.h \
 	share.h

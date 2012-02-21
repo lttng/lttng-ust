@@ -26,8 +26,8 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
-
 #include <share.h>
+#include "lttng/ust-tid.h"
 
 enum ust_loglevel {
 	UST_LOGLEVEL_UNKNOWN = 0,
@@ -85,7 +85,7 @@ do {									\
 	do {					\
 		sigsafe_print_err(UST_STR_COMPONENT "[%ld/%ld]: " fmt " (in %s() at " __FILE__ ":" UST_XSTR(__LINE__) ")\n",	\
 		(long) getpid(),		\
-		(long) syscall(SYS_gettid),	\
+		(long) gettid(),		\
 		## args, __func__);		\
 		fflush(stderr);			\
 	} while(0)
