@@ -495,7 +495,7 @@ int ltt_event_create(struct ltt_channel *chan,
 	struct ltt_event *event;
 	int ret = 0;
 
-	if (chan->used_event_id == -1UL) {
+	if (chan->used_event_id == -1U) {
 		ret = -ENOMEM;
 		goto full;
 	}
