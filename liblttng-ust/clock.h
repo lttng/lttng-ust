@@ -52,7 +52,7 @@ uint64_t trace_clock_freq(void)
 }
 
 static __inline__
-const int trace_clock_uuid(char *uuid)
+int trace_clock_uuid(char *uuid)
 {
 	int ret = 0;
 	size_t len;
