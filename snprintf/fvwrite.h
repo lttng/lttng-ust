@@ -35,14 +35,14 @@
 /*
  * I/O descriptors for __sfvwrite().
  */
-struct __siov {
+struct __lttng_ust_siov {
 	void	*iov_base;
 	size_t	iov_len;
 };
-struct __suio {
-	struct	__siov *uio_iov;
+struct __lttng_ust_suio {
+	struct	__lttng_ust_siov *uio_iov;
 	int	uio_iovcnt;
 	int	uio_resid;
 };
 
-extern int __sfvwrite(LFILE *, struct __suio *);
+extern int __sfvwrite(LTTNG_UST_LFILE *, struct __lttng_ust_suio *);

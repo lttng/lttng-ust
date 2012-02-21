@@ -46,11 +46,11 @@
  * to the three different kinds of output buffering is handled here.
  */
 int
-__sfvwrite(LFILE *fp, struct __suio *uio)
+__sfvwrite(LTTNG_UST_LFILE *fp, struct __lttng_ust_suio *uio)
 {
 	size_t len;
 	char *p;
-	struct __siov *iov;
+	struct __lttng_ust_siov *iov;
 	int w, s;
 	char *nl;
 	int nlknown, nldist;

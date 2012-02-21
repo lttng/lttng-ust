@@ -42,27 +42,27 @@
 #include "wcio.h"
 #include "fileext.h"
 
-int	__sflush(LFILE *);
-LFILE	*__sfp(void);
-int	__srefill(LFILE *);
+int	__sflush(LTTNG_UST_LFILE *);
+LTTNG_UST_LFILE	*__sfp(void);
+int	__srefill(LTTNG_UST_LFILE *);
 int	__sread(void *, char *, int);
 int	__swrite(void *, const char *, int);
 fpos_t	__sseek(void *, fpos_t, int);
 int	__sclose(void *);
 void	__sinit(void);
 void	_cleanup(void);
-void	__smakebuf(LFILE *);
-int	__swhatbuf(LFILE *, size_t *, int *);
-int	_fwalk(int (*)(LFILE *));
-int	__swsetup(LFILE *);
+void	__smakebuf(LTTNG_UST_LFILE *);
+int	__swhatbuf(LTTNG_UST_LFILE *, size_t *, int *);
+int	_fwalk(int (*)(LTTNG_UST_LFILE *));
+int	__swsetup(LTTNG_UST_LFILE *);
 int	__sflags(const char *, int *);
-wint_t __fgetwc_unlock(LFILE *);
+wint_t __fgetwc_unlock(LTTNG_UST_LFILE *);
 
 extern void __atexit_register_cleanup(void (*)(void));
 extern int __sdidinit;
 
 /*
- * Return true if the given LFILE cannot be written now.
+ * Return true if the given LTTNG_UST_LFILE cannot be written now.
  */
 #define	cantwrite(fp) \
 	((((fp)->_flags & __SWR) == 0 || (fp)->_bf._base == NULL) && \

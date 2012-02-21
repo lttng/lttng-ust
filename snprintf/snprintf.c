@@ -42,8 +42,8 @@ int ust_safe_vsnprintf(char *str, size_t n, const char *fmt, va_list ap)
 {
 	int ret;
 	char dummy;
-	LFILE f;
-	struct __sfileext fext;
+	LTTNG_UST_LFILE f;
+	struct __lttng_ust_sfileext fext;
 
 	/* While snprintf(3) specifies size_t stdio uses an int internally */
 	if (n > INT_MAX)
