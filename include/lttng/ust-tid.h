@@ -34,7 +34,7 @@ static inline pid_t gettid(void)
 #include <sys/types.h>
 #include <unistd.h>
 
-#warning "use pid as tid"
+/* Fall-back on getpid for tid if not available. */
 static inline pid_t gettid(void)
 {
 	return getpid();
