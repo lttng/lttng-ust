@@ -42,7 +42,6 @@
 #include <ust-comm.h>
 #include "../../libringbuffer/backend.h"
 #include "../../libringbuffer/frontend.h"
-#include "../../liblttng-ust/compat.h"	/* For ENODATA */
 
 #define MAX_NR_STREAMS	64
 #define MAX_NR_EVENTS	128
