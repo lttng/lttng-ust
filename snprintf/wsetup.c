@@ -42,7 +42,7 @@
  * _wsetup returns 0 if OK to write, nonzero otherwise.
  */
 int
-__swsetup(LTTNG_UST_LFILE *fp)
+__swsetup(LFILE *fp)
 {
 	/* make sure stdio is set up */
 //	if (!__sdidinit)
