@@ -16,9 +16,7 @@
 # provider probe.
 
 CC = gcc
-
-LIBS = -ldl -llttng-ust		#On Linux
-#LIBS = -lc -llttng-ust		#On BSD
+LIBS = -ldl -llttng-ust
 
 all: sample
 

@@ -16,8 +16,7 @@
 # the "html" target helps for documentation (req. code2html)
 
 CC = gcc
-LIBS = -ldl -llttng-ust		# On Linux
-#LIBS = -lc -llttng-ust		# On BSD
+LIBS = -ldl -llttng-ust
 CFLAGS = -I.
 
 all: sample

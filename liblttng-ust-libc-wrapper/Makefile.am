@@ -5,16 +5,9 @@ lib_LTLIBRARIES = liblttng-ust-libc-wrapper.la
 liblttng_ust_libc_wrapper_la_SOURCES = \
 	lttng-ust-malloc.c \
 	ust_libc.h
-liblttng_ust_libc_wrapper_la_LIBADD = \
+liblttng_ust_libc_wrapper_la_LIBADD = -ldl \
 	-L$(top_builddir)/liblttng-ust/.libs \
 	-llttng-ust
-
-if LTTNG_UST_BUILD_WITH_LIBDL
-liblttng_ust_libc_wrapper_la_LIBADD += -ldl
-endif
-if LTTNG_UST_BUILD_WITH_LIBC_DL
-liblttng_ust_libc_wrapper_la_LIBADD += -lc
-endif
 
 noinst_SCRIPTS = run
 EXTRA_DIST = run
