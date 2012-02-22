@@ -34,7 +34,7 @@ liblttng_ust_runtime_la_SOURCES = \
 	wait.h \
 	jhash.h \
 	error.h \
-	lttng-ust-uuid.h
+	uuid.h
 
 liblttng_ust_support_la_SOURCES = \
 	ltt-tracer.h \
