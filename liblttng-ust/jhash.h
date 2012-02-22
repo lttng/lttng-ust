@@ -17,7 +17,7 @@
  */
 
 #include <urcu/compiler.h>
-#include <lttng/ust-endian.h>
+#include <endian.h>
 
 /*
  * Hash function
