@@ -20,13 +20,12 @@
 
 #include <urcu/list.h>
 #include <urcu/hlist.h>
+#include <uuid/uuid.h>
 #include <stdint.h>
 #include <lttng/ust-abi.h>
 #include <lttng/ust-tracer.h>
 #include <lttng/ust-endian.h>
 #include <float.h>
-
-#define LTTNG_UST_UUID_LEN		16
 
 struct ltt_channel;
 struct ltt_session;
@@ -324,7 +323,7 @@ struct ltt_channel {
 	/* Channel ID, available for consumer too */
 	unsigned int id;
 	/* Copy of session UUID for consumer (availability through shm) */
-	unsigned char uuid[LTTNG_UST_UUID_LEN]; /* Trace session unique ID */
+	uuid_t uuid;			/* Trace session unique ID */
 };
 
 struct ltt_session {
@@ -337,7 +336,7 @@ struct ltt_session {
 	struct cds_list_head wildcards;	/* Wildcard list head */
 	struct cds_list_head list;	/* Session list */
 	unsigned int free_chan_id;	/* Next chan ID to allocate */
-	unsigned char uuid[LTTNG_UST_UUID_LEN]; /* Trace session unique ID */
+	uuid_t uuid;			/* Trace session unique ID */
 	unsigned int metadata_dumped:1;
 };
 

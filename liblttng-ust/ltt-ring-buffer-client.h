@@ -12,7 +12,6 @@
 #include <lttng/ust-events.h>
 #include "lttng/bitfield.h"
 #include "clock.h"
-#include "uuid.h"
 #include "ltt-tracer.h"
 #include "../libringbuffer/frontend_types.h"
 
@@ -32,7 +31,7 @@ struct packet_header {
 					 * Trace magic number.
 					 * contains endianness information.
 					 */
-	uint8_t uuid[LTTNG_UST_UUID_LEN];
+	uint8_t uuid[16];
 	uint32_t stream_id;
 
 	struct {

@@ -13,6 +13,7 @@
 #include <urcu/list.h>
 #include <urcu/hlist.h>
 #include <pthread.h>
+#include <uuid/uuid.h>
 #include <errno.h>
 #include <sys/shm.h>
 #include <sys/ipc.h>
@@ -35,7 +36,6 @@
 #include <helper.h>
 #include "error.h"
 #include "compat.h"
-#include "uuid.h"
 
 #include "tracepoint-internal.h"
 #include "ltt-tracer.h"
@@ -295,7 +295,6 @@ void synchronize_trace(void)
 struct ltt_session *ltt_session_create(void)
 {
 	struct ltt_session *session;
-	int ret;
 
 	session = zmalloc(sizeof(struct ltt_session));
 	if (!session)
@@ -303,10 +302,7 @@ struct ltt_session *ltt_session_create(void)
 	CDS_INIT_LIST_HEAD(&session->chan);
 	CDS_INIT_LIST_HEAD(&session->events);
 	CDS_INIT_LIST_HEAD(&session->wildcards);
-	ret = lttng_ust_uuid_generate(session->uuid);
-	if (ret != 0) {
-		session->uuid[0] = '\0';
-	}
+	uuid_generate(session->uuid);
 	cds_list_add(&session->list, &sessions);
 	return session;
 }
@@ -1091,8 +1087,7 @@ static
 int _ltt_session_metadata_statedump(struct ltt_session *session)
 {
 	unsigned char *uuid_c = session->uuid;
-	char uuid_s[LTTNG_UST_UUID_STR_LEN],
-		clock_uuid_s[LTTNG_UST_UUID_STR_LEN];
+	char uuid_s[37], clock_uuid_s[CLOCK_UUID_LEN];
 	struct ltt_channel *chan;
 	struct ltt_event *event;
 	int ret = 0;
