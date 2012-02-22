@@ -46,20 +46,8 @@ AC_CHECK_LIB([dl], [dlopen])
 AC_CHECK_LIB([pthread], [pthread_create])
 
 # Check for libuuid
-AC_CHECK_LIB([uuid], [uuid_generate],
-[
-	AC_DEFINE_UNQUOTED([LTTNG_UST_HAVE_LIBUUID], 1, [Has libuuid support.])
-],
-[
-	# libuuid not found, check for uuid_create in libc.
-	AC_CHECK_LIB([c], [uuid_create],
-	[
-		AC_DEFINE_UNQUOTED([LTTNG_UST_HAVE_LIBC_UUID], 1, [Has libc uuid support.])
-	],
-	[
-		AC_MSG_ERROR([Cannot find libuuid uuid_generate nor libc uuid_create. Use [LDFLAGS]=-Ldir to specify its location.])
-	])
-]
+AC_CHECK_LIB([uuid], [uuid_generate], [],
+	[AC_MSG_ERROR([Cannot find libuuid. Use [LDFLAGS]=-Ldir to specify its location.])]
 )
 
 # Checks for header files.
