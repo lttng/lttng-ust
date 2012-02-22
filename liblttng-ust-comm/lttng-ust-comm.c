@@ -29,7 +29,6 @@
 #include <unistd.h>
 #include <assert.h>
 #include <errno.h>
-#include <fcntl.h>
 
 #include <ust-comm.h>
 
@@ -120,16 +119,11 @@ int ustcomm_connect_unix_sock(const char *pathname)
 	 * libust threads require the close-on-exec flag for all
 	 * resources so it does not leak file descriptors upon exec.
 	 */
-	fd = socket(PF_UNIX, SOCK_STREAM, 0);
+	fd = socket(PF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
 	if (fd < 0) {
 		perror("socket");
 		ret = fd;
 		goto error;
-	}
-	ret = fcntl(fd, F_SETFD, FD_CLOEXEC);
-	if (ret < 0) {
-		perror("fcntl");
-		goto error_fcntl;
 	}
 
 	memset(&sun, 0, sizeof(sun));
@@ -150,7 +144,6 @@ int ustcomm_connect_unix_sock(const char *pathname)
 	return fd;
 
 error_connect:
-error_fcntl:
 	close(fd);
 error:
 	return ret;
