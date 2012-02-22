@@ -21,6 +21,7 @@
 #include <stddef.h>
 #include <inttypes.h>
 #include <time.h>
+#include <sys/prctl.h>
 #include <lttng/ust-endian.h>
 #include "clock.h"
 
@@ -35,7 +36,6 @@
 #include <usterr-signal-safe.h>
 #include <helper.h>
 #include "error.h"
-#include "compat.h"
 
 #include "tracepoint-internal.h"
 #include "ltt-tracer.h"
@@ -43,6 +43,8 @@
 #include "wait.h"
 #include "../libringbuffer/shm.h"
 #include "jhash.h"
+
+#define PROCNAME_LEN 17
 
 /*
  * The sessions mutex is the centralized mutex across UST tracing
@@ -1091,7 +1093,7 @@ int _ltt_session_metadata_statedump(struct ltt_session *session)
 	struct ltt_channel *chan;
 	struct ltt_event *event;
 	int ret = 0;
-	char procname[LTTNG_UST_PROCNAME_LEN] = "";
+	char procname[PROCNAME_LEN] = "";
 
 	if (!CMM_ACCESS_ONCE(session->active))
 		return 0;
@@ -1145,8 +1147,8 @@ int _ltt_session_metadata_statedump(struct ltt_session *session)
 		goto end;
 
 	/* ignore error, just use empty string if error. */
-	lttng_ust_getprocname(procname);
-	procname[LTTNG_UST_PROCNAME_LEN - 1] = '\0';
+	(void) prctl(PR_GET_NAME, (unsigned long) procname, 0, 0, 0);
+	procname[PROCNAME_LEN - 1] = '\0';
 	ret = lttng_metadata_printf(session,
 		"env {\n"
 		"	vpid = %d;\n"
