@@ -87,10 +87,7 @@ static inline int ust_debug(void)
 #define ERR(fmt, args...) ERRMSG("Error: " fmt, ## args)
 #define BUG(fmt, args...) ERRMSG("BUG: " fmt, ## args)
 
-#if !defined(__linux__) || ((_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !defined(_GNU_SOURCE))
-/*
- * Version using XSI strerror_r.
- */
+#if (_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !defined(_GNU_SOURCE)
 #define PERROR(call, args...)\
 	do { \
 		char buf[200] = "Error in strerror_r()"; \
@@ -98,9 +95,6 @@ static inline int ust_debug(void)
 		ERRMSG("Error: " call ": %s", ## args, buf); \
 	} while(0);
 #else
-/*
- * Version using GNU strerror_r, for linux with appropriate defines.
- */
 #define PERROR(call, args...)\
 	do { \
 		char *buf; \
