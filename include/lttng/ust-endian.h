@@ -23,7 +23,7 @@
 #elif defined(__FreeBSD__)
 #include <machine/endian.h>
 #else
-#error "Please add support for your OS into lttng/ust-endian.h."
+#error "Please add support for your OS."
 #endif
 
 #ifndef FLOAT_WORD_ORDER
