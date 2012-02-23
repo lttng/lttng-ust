@@ -66,6 +66,9 @@ int ustctl_release_object(int sock, struct lttng_ust_object_data *data)
 {
 	int ret;
 
+	if (!data)
+		return -EINVAL;
+
 	if (data->shm_fd >= 0) {
 		ret = close(data->shm_fd);
 		if (ret < 0) {
@@ -138,6 +141,9 @@ int ustctl_open_metadata(int sock, int session_handle,
 	struct lttng_ust_object_data *metadata_data;
 	int ret, err = 0;
 
+	if (!chops || !_metadata_data)
+		return -EINVAL;
+
 	metadata_data = malloc(sizeof(*metadata_data));
 	if (!metadata_data)
 		return -ENOMEM;
@@ -199,6 +205,9 @@ int ustctl_create_channel(int sock, int session_handle,
 	struct ustcomm_ust_reply lur;
 	struct lttng_ust_object_data *channel_data;
 	int ret, err = 0;
+
+	if (!chops || !_channel_data)
+		return -EINVAL;
 
 	channel_data = malloc(sizeof(*channel_data));
 	if (!channel_data)
@@ -266,6 +275,9 @@ int ustctl_create_stream(int sock, struct lttng_ust_object_data *channel_data,
 	struct lttng_ust_object_data *stream_data;
 	int ret, fd, err = 0;
 
+	if (!channel_data || !_stream_data)
+		return -EINVAL;
+
 	stream_data = malloc(sizeof(*stream_data));
 	if (!stream_data)
 		return -ENOMEM;
@@ -322,6 +334,9 @@ int ustctl_create_event(int sock, struct lttng_ust_event *ev,
 	struct lttng_ust_object_data *event_data;
 	int ret;
 
+	if (!channel_data || !_event_data)
+		return -EINVAL;
+
 	event_data = malloc(sizeof(*event_data));
 	if (!event_data)
 		return -ENOMEM;
@@ -354,6 +369,9 @@ int ustctl_add_context(int sock, struct lttng_ust_context *ctx,
 	struct lttng_ust_object_data *context_data;
 	int ret;
 
+	if (!obj_data || !_context_data)
+		return -EINVAL;
+
 	context_data = malloc(sizeof(*context_data));
 	if (!context_data)
 		return -ENOMEM;
@@ -380,6 +398,9 @@ int ustctl_enable(int sock, struct lttng_ust_object_data *object)
 	struct ustcomm_ust_reply lur;
 	int ret;
 
+	if (!object)
+		return -EINVAL;
+
 	memset(&lum, 0, sizeof(lum));
 	lum.handle = object->handle;
 	lum.cmd = LTTNG_UST_ENABLE;
@@ -396,6 +417,9 @@ int ustctl_disable(int sock, struct lttng_ust_object_data *object)
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
 	int ret;
+
+	if (!object)
+		return -EINVAL;
 
 	memset(&lum, 0, sizeof(lum));
 	lum.handle = object->handle;
@@ -447,6 +471,9 @@ int ustctl_tracepoint_list_get(int sock, int tp_list_handle,
 	struct ustcomm_ust_reply lur;
 	int ret;
 
+	if (!iter)
+		return -EINVAL;
+
 	memset(&lum, 0, sizeof(lum));
 	lum.handle = tp_list_handle;
 	lum.cmd = LTTNG_UST_TRACEPOINT_LIST_GET;
@@ -465,6 +492,9 @@ int ustctl_tracer_version(int sock, struct lttng_ust_tracer_version *v)
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
 	int ret;
+
+	if (!v)
+		return -EINVAL;
 
 	memset(&lum, 0, sizeof(lum));
 	lum.handle = LTTNG_UST_ROOT_HANDLE;
@@ -495,6 +525,9 @@ int ustctl_wait_quiescent(int sock)
 
 int ustctl_calibrate(int sock, struct lttng_ust_calibrate *calibrate)
 {
+	if (!calibrate)
+		return -EINVAL;
+
 	return -ENOSYS;
 }
 
@@ -503,6 +536,9 @@ int ustctl_sock_flush_buffer(int sock, struct lttng_ust_object_data *object)
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
 	int ret;
+
+	if (!object)
+		return -EINVAL;
 
 	memset(&lum, 0, sizeof(lum));
 	lum.handle = object->handle;
@@ -524,6 +560,9 @@ struct lttng_ust_shm_handle *ustctl_map_channel(struct lttng_ust_object_data *ch
 	size_t chan_size;
 	struct lttng_ust_lib_ring_buffer_config *config;
 	int ret;
+
+	if (!chan_data)
+		return NULL;
 
 	handle = channel_handle_create(chan_data->shm_fd,
 		chan_data->wait_fd,
@@ -606,6 +645,9 @@ int ustctl_add_stream(struct lttng_ust_shm_handle *handle,
 {
 	int ret;
 
+	if (!handle || !stream_data)
+		return -EINVAL;
+
 	if (!stream_data->handle)
 		return -ENOENT;
 	/* map stream */
@@ -630,6 +672,7 @@ void ustctl_unmap_channel(struct lttng_ust_shm_handle *handle)
 {
 	struct channel *chan;
 
+	assert(handle);
 	chan = shmp(handle, handle->chan);
 	channel_destroy(chan, handle, 1);
 }
@@ -645,6 +688,9 @@ struct lttng_ust_lib_ring_buffer *ustctl_open_stream_read(struct lttng_ust_shm_h
 	uint64_t *memory_map_size;
 	struct lttng_ust_lib_ring_buffer *buf;
 	int ret;
+
+	if (!handle)
+		return NULL;
 
 	buf = channel_get_ring_buffer(&chan->backend.config,
 		chan, cpu, handle, &shm_fd, &wait_fd, &memory_map_size);
@@ -669,6 +715,7 @@ struct lttng_ust_lib_ring_buffer *ustctl_open_stream_read(struct lttng_ust_shm_h
 void ustctl_close_stream_read(struct lttng_ust_shm_handle *handle,
 		struct lttng_ust_lib_ring_buffer *buf)
 {
+	assert(handle && buf);
 	lib_ring_buffer_release_read(buf, handle, 1);
 }
 
@@ -677,6 +724,8 @@ void ustctl_close_stream_read(struct lttng_ust_shm_handle *handle,
 void *ustctl_get_mmap_base(struct lttng_ust_shm_handle *handle,
 		struct lttng_ust_lib_ring_buffer *buf)
 {
+	if (!handle || !buf)
+		return NULL;
 	return shmp(handle, buf->backend.memory_map);
 }
 
@@ -687,6 +736,9 @@ int ustctl_get_mmap_len(struct lttng_ust_shm_handle *handle,
 {
 	unsigned long mmap_buf_len;
 	struct channel *chan = handle->shadow_chan;
+
+	if (!handle || !buf || !len)
+		return -EINVAL;
 
 	if (chan->backend.config.output != RING_BUFFER_MMAP)
 		return -EINVAL;
@@ -706,6 +758,9 @@ int ustctl_get_max_subbuf_size(struct lttng_ust_shm_handle *handle,
 {
 	struct channel *chan = handle->shadow_chan;
 
+	if (!handle || !buf || !len)
+		return -EINVAL;
+
 	*len = chan->backend.subbuf_size;
 	return 0;
 }
@@ -722,6 +777,9 @@ int ustctl_get_mmap_read_offset(struct lttng_ust_shm_handle *handle,
 	struct channel *chan = handle->shadow_chan;
 	unsigned long sb_bindex;
 
+	if (!handle || !buf || !off)
+		return -EINVAL;
+
 	if (chan->backend.config.output != RING_BUFFER_MMAP)
 		return -EINVAL;
 	sb_bindex = subbuffer_id_get_index(&chan->backend.config,
@@ -736,6 +794,9 @@ int ustctl_get_subbuf_size(struct lttng_ust_shm_handle *handle,
 {
 	struct channel *chan = handle->shadow_chan;
 
+	if (!handle || !buf || !len)
+		return -EINVAL;
+
 	*len = lib_ring_buffer_get_read_data_size(&chan->backend.config, buf,
 		handle);
 	return 0;
@@ -747,6 +808,9 @@ int ustctl_get_padded_subbuf_size(struct lttng_ust_shm_handle *handle,
 {
 	struct channel *chan = handle->shadow_chan;
 
+	if (!handle || !buf || !len)
+		return -EINVAL;
+
 	*len = lib_ring_buffer_get_read_data_size(&chan->backend.config, buf,
 		handle);
 	*len = PAGE_ALIGN(*len);
@@ -757,6 +821,9 @@ int ustctl_get_padded_subbuf_size(struct lttng_ust_shm_handle *handle,
 int ustctl_get_next_subbuf(struct lttng_ust_shm_handle *handle,
 		struct lttng_ust_lib_ring_buffer *buf)
 {
+	if (!handle || !buf)
+		return -EINVAL;
+
 	return lib_ring_buffer_get_next_subbuf(buf, handle);
 }
 
@@ -765,6 +832,9 @@ int ustctl_get_next_subbuf(struct lttng_ust_shm_handle *handle,
 int ustctl_put_next_subbuf(struct lttng_ust_shm_handle *handle,
 		struct lttng_ust_lib_ring_buffer *buf)
 {
+	if (!handle || !buf)
+		return -EINVAL;
+
 	lib_ring_buffer_put_next_subbuf(buf, handle);
 	return 0;
 }
@@ -775,6 +845,9 @@ int ustctl_put_next_subbuf(struct lttng_ust_shm_handle *handle,
 int ustctl_snapshot(struct lttng_ust_shm_handle *handle,
 		struct lttng_ust_lib_ring_buffer *buf)
 {
+	if (!handle || !buf)
+		return -EINVAL;
+
 	return lib_ring_buffer_snapshot(buf, &buf->cons_snapshot,
 			&buf->prod_snapshot, handle);
 }
@@ -783,6 +856,9 @@ int ustctl_snapshot(struct lttng_ust_shm_handle *handle,
 int ustctl_snapshot_get_consumed(struct lttng_ust_shm_handle *handle,
 		struct lttng_ust_lib_ring_buffer *buf, unsigned long *pos)
 {
+	if (!handle || !buf || !pos)
+		return -EINVAL;
+
 	*pos = buf->cons_snapshot;
 	return 0;
 }
@@ -791,6 +867,9 @@ int ustctl_snapshot_get_consumed(struct lttng_ust_shm_handle *handle,
 int ustctl_snapshot_get_produced(struct lttng_ust_shm_handle *handle,
 		struct lttng_ust_lib_ring_buffer *buf, unsigned long *pos)
 {
+	if (!handle || !buf || !pos)
+		return -EINVAL;
+
 	*pos = buf->prod_snapshot;
 	return 0;
 }
@@ -799,6 +878,9 @@ int ustctl_snapshot_get_produced(struct lttng_ust_shm_handle *handle,
 int ustctl_get_subbuf(struct lttng_ust_shm_handle *handle,
 		struct lttng_ust_lib_ring_buffer *buf, unsigned long *pos)
 {
+	if (!handle || !buf || !pos)
+		return -EINVAL;
+
 	return lib_ring_buffer_get_subbuf(buf, *pos, handle);
 }
 
@@ -806,6 +888,9 @@ int ustctl_get_subbuf(struct lttng_ust_shm_handle *handle,
 int ustctl_put_subbuf(struct lttng_ust_shm_handle *handle,
 		struct lttng_ust_lib_ring_buffer *buf)
 {
+	if (!handle || !buf)
+		return -EINVAL;
+
 	lib_ring_buffer_put_subbuf(buf, handle);
 	return 0;
 }
@@ -814,6 +899,7 @@ void ustctl_flush_buffer(struct lttng_ust_shm_handle *handle,
 		struct lttng_ust_lib_ring_buffer *buf,
 		int producer_active)
 {
+	assert(handle && buf);
 	lib_ring_buffer_switch_slow(buf,
 		producer_active ? SWITCH_ACTIVE : SWITCH_FLUSH,
 		handle);
