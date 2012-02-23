@@ -284,28 +284,30 @@ end:
 		//lur.ret_code = USTCOMM_SESSION_FAIL;
 		lur.ret_code = ret;
 	}
-	switch (lum->cmd) {
-	case LTTNG_UST_STREAM:
-		/*
-		 * Special-case reply to send stream info.
-		 * Use lum.u output.
-		 */
-		lur.u.stream.memory_map_size = *args.stream.memory_map_size;
-		shm_fd = *args.stream.shm_fd;
-		wait_fd = *args.stream.wait_fd;
-		break;
-	case LTTNG_UST_METADATA:
-	case LTTNG_UST_CHANNEL:
-		lur.u.channel.memory_map_size = *args.channel.memory_map_size;
-		shm_fd = *args.channel.shm_fd;
-		wait_fd = *args.channel.wait_fd;
-		break;
-	case LTTNG_UST_TRACER_VERSION:
-		lur.u.version = lum->u.version;
-		break;
-	case LTTNG_UST_TRACEPOINT_LIST_GET:
-		memcpy(&lur.u.tracepoint, &lum->u.tracepoint, sizeof(lur.u.tracepoint));
-		break;
+	if (ret >= 0) {
+		switch (lum->cmd) {
+		case LTTNG_UST_STREAM:
+			/*
+			 * Special-case reply to send stream info.
+			 * Use lum.u output.
+			 */
+			lur.u.stream.memory_map_size = *args.stream.memory_map_size;
+			shm_fd = *args.stream.shm_fd;
+			wait_fd = *args.stream.wait_fd;
+			break;
+		case LTTNG_UST_METADATA:
+		case LTTNG_UST_CHANNEL:
+			lur.u.channel.memory_map_size = *args.channel.memory_map_size;
+			shm_fd = *args.channel.shm_fd;
+			wait_fd = *args.channel.wait_fd;
+			break;
+		case LTTNG_UST_TRACER_VERSION:
+			lur.u.version = lum->u.version;
+			break;
+		case LTTNG_UST_TRACEPOINT_LIST_GET:
+			memcpy(&lur.u.tracepoint, &lum->u.tracepoint, sizeof(lur.u.tracepoint));
+			break;
+		}
 	}
 	ret = send_reply(sock, &lur);
 	if (ret < 0) {
