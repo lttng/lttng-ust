@@ -1341,6 +1341,7 @@ int lib_ring_buffer_try_reserve_slow(struct lttng_ust_lib_ring_buffer *buf,
 				 * and we are full : record is lost.
 				 */
 				v_inc(config, &buf->records_lost_full);
+				DBG("Record lost: buffer is full\n");
 				return -ENOBUFS;
 			} else {
 				/*
@@ -1358,6 +1359,7 @@ int lib_ring_buffer_try_reserve_slow(struct lttng_ust_lib_ring_buffer *buf,
 			 * many nested writes over a reserve/commit pair.
 			 */
 			v_inc(config, &buf->records_lost_wrap);
+			DBG("Record lost: buffer wrap-around\n");
 			return -EIO;
 		}
 		offsets->size =
@@ -1376,6 +1378,7 @@ int lib_ring_buffer_try_reserve_slow(struct lttng_ust_lib_ring_buffer *buf,
 			 * complete the sub-buffer switch.
 			 */
 			v_inc(config, &buf->records_lost_big);
+			DBG("Record lost: record size (%zu bytes) is too large for buffer\n", offsets->size);
 			return -ENOSPC;
 		} else {
 			/*
