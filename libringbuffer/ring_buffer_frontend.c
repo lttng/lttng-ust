@@ -59,6 +59,9 @@
 #define max(a, b)	((a) > (b) ? (a) : (b))
 #endif
 
+/* Print DBG() messages about events lost only every 1048576 hits */
+#define DBG_PRINT_NR_LOST	(1UL << 20)
+
 /*
  * Use POSIX SHM: shm_open(3) and shm_unlink(3).
  * close(2) to close the fd returned by shm_open.
@@ -1337,11 +1340,19 @@ int lib_ring_buffer_try_reserve_slow(struct lttng_ust_lib_ring_buffer *buf,
 				 - subbuf_trunc((unsigned long)
 				     uatomic_read(&buf->consumed), chan)
 				>= chan->backend.buf_size)) {
+				unsigned long nr_lost;
+
 				/*
 				 * We do not overwrite non consumed buffers
 				 * and we are full : record is lost.
 				 */
+				nr_lost = v_read(config, &buf->records_lost_full);
 				v_inc(config, &buf->records_lost_full);
+				if ((nr_lost & (DBG_PRINT_NR_LOST - 1)) == 0) {
+					DBG("%lu or more records lost in (%s:%d) (buffer full)\n",
+						nr_lost + 1, chan->backend.name,
+						buf->backend.cpu);
+				}
 				return -ENOBUFS;
 			} else {
 				/*
@@ -1352,13 +1363,21 @@ int lib_ring_buffer_try_reserve_slow(struct lttng_ust_lib_ring_buffer *buf,
 				 */
 			}
 		} else {
+			unsigned long nr_lost;
+
 			/*
 			 * Next subbuffer reserve offset does not match the
 			 * commit offset. Drop record in producer-consumer and
 			 * overwrite mode. Caused by either a writer OOPS or too
 			 * many nested writes over a reserve/commit pair.
 			 */
+			nr_lost = v_read(config, &buf->records_lost_wrap);
 			v_inc(config, &buf->records_lost_wrap);
+			if ((nr_lost & (DBG_PRINT_NR_LOST - 1)) == 0) {
+				DBG("%lu or more records lost in (%s:%d) (wrap-around)\n",
+					nr_lost + 1, chan->backend.name,
+					buf->backend.cpu);
+			}
 			return -EIO;
 		}
 		offsets->size =
@@ -1372,11 +1391,20 @@ int lib_ring_buffer_try_reserve_slow(struct lttng_ust_lib_ring_buffer *buf,
 			+ ctx->data_size;
 		if (caa_unlikely(subbuf_offset(offsets->begin, chan)
 			     + offsets->size > chan->backend.subbuf_size)) {
+			unsigned long nr_lost;
+
 			/*
 			 * Record too big for subbuffers, report error, don't
 			 * complete the sub-buffer switch.
 			 */
+			nr_lost = v_read(config, &buf->records_lost_big);
 			v_inc(config, &buf->records_lost_big);
+			if ((nr_lost & (DBG_PRINT_NR_LOST - 1)) == 0) {
+				DBG("%lu or more records lost in (%s:%d) record size "
+					" of %zu bytes is too large for buffer\n",
+					nr_lost + 1, chan->backend.name,
+					buf->backend.cpu, offsets->size);
+			}
 			return -ENOSPC;
 		} else {
 			/*
