@@ -15,12 +15,14 @@
 #include "shm_internal.h"
 #include "vatomic.h"
 
+#define RB_BACKEND_PAGES_PADDING	16
 struct lttng_ust_lib_ring_buffer_backend_pages {
 	unsigned long mmap_offset;	/* offset of the subbuffer in mmap */
 	union v_atomic records_commit;	/* current records committed count */
 	union v_atomic records_unread;	/* records to read */
 	unsigned long data_size;	/* Amount of data to read from subbuf */
 	DECLARE_SHMP(char, p);		/* Backing memory map */
+	char padding[RB_BACKEND_PAGES_PADDING];
 };
 
 struct lttng_ust_lib_ring_buffer_backend_subbuffer {
@@ -38,6 +40,7 @@ struct lttng_ust_lib_ring_buffer_backend_pages_shmp {
 	DECLARE_SHMP(struct lttng_ust_lib_ring_buffer_backend_pages, shmp);
 };
 
+#define RB_BACKEND_RING_BUFFER_PADDING		64
 struct lttng_ust_lib_ring_buffer_backend {
 	/* Array of ring_buffer_backend_subbuffer for writer */
 	DECLARE_SHMP(struct lttng_ust_lib_ring_buffer_backend_subbuffer, buf_wsb);
@@ -54,12 +57,14 @@ struct lttng_ust_lib_ring_buffer_backend {
 	int cpu;			/* This buffer's cpu. -1 if global. */
 	union v_atomic records_read;	/* Number of records read */
 	unsigned int allocated:1;	/* is buffer allocated ? */
+	char padding[RB_BACKEND_RING_BUFFER_PADDING];
 };
 
 struct lttng_ust_lib_ring_buffer_shmp {
 	DECLARE_SHMP(struct lttng_ust_lib_ring_buffer, shmp); /* Channel per-cpu buffers */
 };
 
+#define RB_BACKEND_CHANNEL_PADDING	64
 struct channel_backend {
 	unsigned long buf_size;		/* Size of the buffer */
 	unsigned long subbuf_size;	/* Sub-buffer size */
@@ -75,6 +80,7 @@ struct channel_backend {
 	DECLARE_SHMP(void *, priv_data);/* Client-specific information */
 	struct lttng_ust_lib_ring_buffer_config config; /* Ring buffer configuration */
 	char name[NAME_MAX];		/* Channel name */
+	char padding[RB_BACKEND_CHANNEL_PADDING];
 	struct lttng_ust_lib_ring_buffer_shmp buf[];
 };
 
