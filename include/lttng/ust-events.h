@@ -215,6 +215,7 @@ struct lttng_event_desc {
 	const struct lttng_event_field *fields;	/* event payload */
 	unsigned int nr_fields;
 	const int **loglevel;
+	const char *signature;	/* Argument types/names received */
 	char padding[LTTNG_UST_EVENT_DESC_PADDING];
 };
 

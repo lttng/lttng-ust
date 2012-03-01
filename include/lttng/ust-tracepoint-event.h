@@ -76,7 +76,7 @@
 			 _TP_PARAMS(_args),			\
 			 _TP_PARAMS(_fields))			\
 	TRACEPOINT_EVENT_INSTANCE(_provider, _name, _name,	\
-			 _TP_PARAMS(args))
+			 _TP_PARAMS(_args))
 
 /* Helpers */
 #define _TP_ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
@@ -434,6 +434,25 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))\
 #undef __get_dynamic_len
 
 /*
+ * Stage 5.1 of tracepoint event generation.
+ *
+ * Create probe signature
+ */
+
+/* Reset all macros within TRACEPOINT_EVENT */
+#include <lttng/ust-tracepoint-event-reset.h>
+
+#undef TP_ARGS
+#define TP_ARGS(args...) #args
+
+#undef TRACEPOINT_EVENT_CLASS
+#define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	\
+const char __tp_event_signature___##_provider##___##_name[] = 		\
+		_args;
+
+#include TRACEPOINT_INCLUDE
+
+/*
  * Stage 6 of tracepoint event generation.
  *
  * Tracepoint loglevel mapping definition generation. We generate a
@@ -475,6 +494,7 @@ const struct lttng_event_desc __event_desc___##_provider##_##_name = {	       \
 	.probe_callback = (void *) &__event_probe__##_provider##___##_template,\
 	.nr_fields = _TP_ARRAY_SIZE(__event_fields___##_provider##___##_template), \
 	.loglevel = &__ref_loglevel___##_provider##___##_name,		       \
+	.signature = __tp_event_signature___##_provider##___##_template,       \
 };
 
 #include TRACEPOINT_INCLUDE
