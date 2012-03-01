@@ -835,6 +835,7 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	 */
 	lttng_fixup_event_tls();
 	lttng_fixup_ringbuffer_tls();
+	lttng_fixup_vtid_tls();
 
 	/*
 	 * We want precise control over the order in which we construct

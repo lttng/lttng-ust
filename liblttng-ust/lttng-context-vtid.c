@@ -13,6 +13,7 @@
 #include <lttng/ust-tracer.h>
 #include <lttng/ringbuffer-config.h>
 #include <lttng/ust-tid.h>
+#include "ltt-tracer-core.h"
 
 /*
  * We cache the result to ensure we don't trigger a system call for
@@ -73,4 +74,12 @@ int lttng_add_vtid_to_ctx(struct lttng_ctx **ctx)
 	field->get_size = vtid_get_size;
 	field->record = vtid_record;
 	return 0;
+}
+
+/*
+ * Force a read (imply TLS fixup for dlopen) of TLS variables.
+ */
+void lttng_fixup_vtid_tls(void)
+{
+	asm volatile ("" : : "m" (cached_vtid));
 }
