@@ -279,7 +279,7 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 		remove_pending_probe(e);
 		ret |= __tracepoint_probe_register(name,
 				event->desc->probe_callback,
-				event);
+				event, event->desc->signature);
 		if (ret)
 			continue;
 		event->id = chan->free_event_id++;
@@ -550,7 +550,7 @@ int ltt_event_create(struct ltt_channel *chan,
 		if (event->desc) {
 			ret = __tracepoint_probe_register(event_param->name,
 					event->desc->probe_callback,
-					event);
+					event, event->desc->signature);
 			if (ret)
 				goto register_error;
 			event->id = chan->free_event_id++;

@@ -149,7 +149,8 @@ end:											\
 static inline void __tracepoint_register_##_provider##___##_name(char *name,		\
 		void *func, void *data)							\
 {											\
-	__tracepoint_probe_register(name, func, data);					\
+	__tracepoint_probe_register(name, func, data,					\
+		__tracepoint_##_provider##___##_name.signature);			\
 }											\
 static inline void __tracepoint_unregister_##_provider##___##_name(char *name,		\
 		void *func, void *data)							\
@@ -157,7 +158,8 @@ static inline void __tracepoint_unregister_##_provider##___##_name(char *name,		
 	__tracepoint_probe_unregister(name, func, data);				\
 }
 
-extern int __tracepoint_probe_register(const char *name, void *func, void *data);
+extern int __tracepoint_probe_register(const char *name, void *func, void *data,
+		const char *signature);
 extern int __tracepoint_probe_unregister(const char *name, void *func, void *data);
 
 /*

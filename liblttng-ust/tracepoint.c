@@ -94,6 +94,7 @@ struct tracepoint_entry {
 	struct cds_hlist_node hlist;
 	struct tracepoint_probe *probes;
 	int refcount;	/* Number of times armed. 0 if disarmed. */
+	const char *signature;
 	char name[0];
 };
 
@@ -243,7 +244,8 @@ static struct tracepoint_entry *get_tracepoint(const char *name)
  * Add the tracepoint to the tracepoint hash table. Must be called with
  * tracepoint mutex held.
  */
-static struct tracepoint_entry *add_tracepoint(const char *name)
+static struct tracepoint_entry *add_tracepoint(const char *name,
+		const char *signature)
 {
 	struct cds_hlist_head *head;
 	struct cds_hlist_node *node;
@@ -274,6 +276,7 @@ static struct tracepoint_entry *add_tracepoint(const char *name)
 	e->name[name_len] = '\0';
 	e->probes = NULL;
 	e->refcount = 0;
+	e->signature = signature;
 	cds_hlist_add_head(&e->hlist, head);
 	return e;
 }
@@ -295,6 +298,23 @@ static void set_tracepoint(struct tracepoint_entry **entry,
 	struct tracepoint *elem, int active)
 {
 	WARN_ON(strncmp((*entry)->name, elem->name, LTTNG_UST_SYM_NAME_LEN - 1) != 0);
+	/*
+	 * Check that signatures match before connecting a probe to a
+	 * tracepoint. Warn the user if they don't.
+	 */
+	if (strcmp(elem->signature, (*entry)->signature) != 0) {
+		static int warned = 0;
+
+		/* Only print once, don't flood console. */
+		if (!warned) {
+			WARN("Tracepoint signature mismatch, not enabling one or more tracepoints. Ensure that the tracepoint probes prototypes match the application.");
+			WARN("Tracepoint \"%s\" signatures: call: \"%s\" vs probe: \"%s\".",
+				elem->name, elem->signature, (*entry)->signature);
+			warned = 1;
+		}
+		/* Don't accept connecting non-matching signatures. */
+		return;
+	}
 
 	/*
 	 * rcu_assign_pointer has a cmm_smp_wmb() which makes sure that the new
@@ -370,14 +390,15 @@ static void tracepoint_update_probes(void)
 }
 
 static struct tracepoint_probe *
-tracepoint_add_probe(const char *name, void *probe, void *data)
+tracepoint_add_probe(const char *name, void *probe, void *data,
+		const char *signature)
 {
 	struct tracepoint_entry *entry;
 	struct tracepoint_probe *old;
 
 	entry = get_tracepoint(name);
 	if (!entry) {
-		entry = add_tracepoint(name);
+		entry = add_tracepoint(name, signature);
 		if (IS_ERR(entry))
 			return (struct tracepoint_probe *)entry;
 	}
@@ -396,7 +417,8 @@ tracepoint_add_probe(const char *name, void *probe, void *data)
  * The probe address must at least be aligned on the architecture pointer size.
  * Called with the tracepoint mutex held.
  */
-int __tracepoint_probe_register(const char *name, void *probe, void *data)
+int __tracepoint_probe_register(const char *name, void *probe, void *data,
+		const char *signature)
 {
 	void *old;
 	int ret = 0;
@@ -404,7 +426,7 @@ int __tracepoint_probe_register(const char *name, void *probe, void *data)
 	DBG("Registering probe to tracepoint %s", name);
 
 	pthread_mutex_lock(&tracepoint_mutex);
-	old = tracepoint_add_probe(name, probe, data);
+	old = tracepoint_add_probe(name, probe, data, signature);
 	if (IS_ERR(old)) {
 		ret = PTR_ERR(old);
 		goto end;
@@ -477,13 +499,13 @@ static void tracepoint_add_old_probes(void *old)
  * caller must call tracepoint_probe_update_all()
  */
 int tracepoint_probe_register_noupdate(const char *name, void *probe,
-				       void *data)
+				       void *data, const char *signature)
 {
 	void *old;
 	int ret = 0;
 
 	pthread_mutex_lock(&tracepoint_mutex);
-	old = tracepoint_add_probe(name, probe, data);
+	old = tracepoint_add_probe(name, probe, data, signature);
 	if (IS_ERR(old)) {
 		ret = PTR_ERR(old);
 		goto end;
