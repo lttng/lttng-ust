@@ -37,4 +37,6 @@ struct ltt_event;
 void ust_lock(void);
 void ust_unlock(void);
 
+void lttng_fixup_event_tls(void);
+
 #endif /* _LTT_TRACER_CORE_H */

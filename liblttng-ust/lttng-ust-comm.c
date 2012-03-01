@@ -828,6 +828,13 @@ void __attribute__((constructor)) lttng_ust_init(void)
 		return;
 
 	/*
+	 * Fixup interdependency between TLS fixup mutex (which happens
+	 * to be the dynamic linker mutex) and ust_lock, taken within
+	 * the ust lock.
+	 */
+	lttng_fixup_event_tls();
+
+	/*
 	 * We want precise control over the order in which we construct
 	 * our sub-libraries vs starting to receive commands from
 	 * sessiond (otherwise leading to errors when trying to create
