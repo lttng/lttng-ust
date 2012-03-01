@@ -191,10 +191,9 @@ extern struct tracepoint_dlopen tracepoint_dlopen;
  * object from the executable.
  */
 #ifdef TRACEPOINT_PROBE_DYNAMIC_LINKAGE
-#define _TRACEPOINT_UNDEFINED_REF(provider)
+#define _TRACEPOINT_UNDEFINED_REF(provider)	NULL
 #else	/* TRACEPOINT_PROBE_DYNAMIC_LINKAGE */
-#define _TRACEPOINT_UNDEFINED_REF(provider)	\
-	&__tracepoint_provider_##provider,
+#define _TRACEPOINT_UNDEFINED_REF(provider)	&__tracepoint_provider_##provider
 #endif /* TRACEPOINT_PROBE_DYNAMIC_LINKAGE */
 
 /*
@@ -202,17 +201,25 @@ extern struct tracepoint_dlopen tracepoint_dlopen;
  * in the __tracepoints_ptrs section.
  * Therefore, this section is _not_ const (read-only).
  */
-#define _DEFINE_TRACEPOINT(provider, name)					\
-	extern int __tracepoint_provider_##provider; 				\
-	static const char __tp_strtab_##provider##___##name[]			\
+#define _TP_EXTRACT_STRING(...)	#__VA_ARGS__
+
+#define _DEFINE_TRACEPOINT(_provider, _name, _args)				\
+	extern int __tracepoint_provider_##_provider; 				\
+	static const char __tp_strtab_##_provider##___##_name[]			\
 		__attribute__((section("__tracepoints_strings"))) =		\
-			#provider ":" #name;					\
-	struct tracepoint __tracepoint_##provider##___##name			\
+			#_provider ":" #_name;					\
+	struct tracepoint __tracepoint_##_provider##___##_name			\
 		__attribute__((section("__tracepoints"))) =			\
-			{ __tp_strtab_##provider##___##name, 0, NULL, _TRACEPOINT_UNDEFINED_REF(provider) };		\
-	static struct tracepoint * __tracepoint_ptr_##provider##___##name	\
+		{								\
+			__tp_strtab_##_provider##___##_name,			\
+			0,							\
+			NULL,							\
+			_TRACEPOINT_UNDEFINED_REF(_provider), 			\
+			_TP_EXTRACT_STRING(_args),				\
+		};								\
+	static struct tracepoint * __tracepoint_ptr_##_provider##___##_name	\
 		__attribute__((used, section("__tracepoints_ptrs"))) =		\
-			&__tracepoint_##provider##___##name;
+			&__tracepoint_##_provider##___##_name;
 
 /*
  * These weak symbols, the constructor, and destructor take care of
@@ -281,7 +288,7 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
 
 #else /* TRACEPOINT_DEFINE */
 
-#define _DEFINE_TRACEPOINT(provider, name)
+#define _DEFINE_TRACEPOINT(_provider, _name, _args)
 
 #endif /* #else TRACEPOINT_DEFINE */
 
@@ -376,13 +383,13 @@ static void __attribute__((destructor)) __tracepoints__destroy(void)
 
 #define TRACEPOINT_EVENT(provider, name, args, fields)			\
 	_DECLARE_TRACEPOINT(provider, name, _TP_PARAMS(args))		\
-	_DEFINE_TRACEPOINT(provider, name)
+	_DEFINE_TRACEPOINT(provider, name, _TP_PARAMS(args))
 
 #define TRACEPOINT_EVENT_CLASS(provider, name, args, fields)
 
 #define TRACEPOINT_EVENT_INSTANCE(provider, _template, name, args)	\
 	_DECLARE_TRACEPOINT(provider, name, _TP_PARAMS(args))		\
-	_DEFINE_TRACEPOINT(provider, name)
+	_DEFINE_TRACEPOINT(provider, name, _TP_PARAMS(args))
 
 #endif /* #ifndef TRACEPOINT_EVENT */
 

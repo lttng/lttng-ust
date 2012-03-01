@@ -25,6 +25,7 @@ struct tracepoint {
 	int state;
 	struct tracepoint_probe *probes;
 	int *tracepoint_provider_ref;
+	const char *signature;
 	char padding[TRACEPOINT_PADDING];
 };
 
