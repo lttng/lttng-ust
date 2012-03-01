@@ -32,6 +32,11 @@ struct ltt_session;
 struct lttng_ust_lib_ring_buffer_ctx;
 
 /*
+ * Data structures used by tracepoint event declarations, and by the
+ * tracer. Those structures have padding for future extension.
+ */
+
+/*
  * LTTng client type enumeration. Used by the consumer to map the
  * callbacks from its own address space.
  */
@@ -63,9 +68,11 @@ enum lttng_string_encodings {
 	NR_STRING_ENCODINGS,
 };
 
+#define LTTNG_UST_ENUM_ENTRY_PADDING	16
 struct lttng_enum_entry {
 	unsigned long long start, end;	/* start and end are inclusive */
 	const char *string;
+	char padding[LTTNG_UST_ENUM_ENTRY_PADDING];
 };
 
 #define __type_integer(_type, _byte_order, _base, _encoding)	\
@@ -82,6 +89,7 @@ struct lttng_enum_entry {
 		},						\
 	}							\
 
+#define LTTNG_UST_INTEGER_TYPE_PADDING	24
 struct lttng_integer_type {
 	unsigned int size;		/* in bits */
 	unsigned short alignment;	/* in bits */
@@ -89,6 +97,7 @@ struct lttng_integer_type {
 	unsigned int reverse_byte_order:1;
 	unsigned int base;		/* 2, 8, 10, 16, for pretty print */
 	enum lttng_string_encodings encoding;
+	char padding[LTTNG_UST_INTEGER_TYPE_PADDING];
 };
 
 /*
@@ -113,13 +122,16 @@ struct lttng_integer_type {
 		},						\
 	}							\
 
+#define LTTNG_UST_FLOAT_TYPE_PADDING	24
 struct lttng_float_type {
 	unsigned int exp_dig;		/* exponent digits, in bits */
 	unsigned int mant_dig;		/* mantissa digits, in bits */
 	unsigned short alignment;	/* in bits */
 	unsigned int reverse_byte_order:1;
+	char padding[LTTNG_UST_FLOAT_TYPE_PADDING];
 };
 
+#define LTTNG_UST_BASIC_TYPE_PADDING	128
 union _lttng_basic_type {
 	struct lttng_integer_type integer;
 	struct {
@@ -129,6 +141,7 @@ union _lttng_basic_type {
 		enum lttng_string_encodings encoding;
 	} string;
 	struct lttng_float_type _float;
+	char padding[LTTNG_UST_BASIC_TYPE_PADDING];
 };
 
 struct lttng_basic_type {
@@ -138,6 +151,7 @@ struct lttng_basic_type {
 	} u;
 };
 
+#define LTTNG_UST_TYPE_PADDING	128
 struct lttng_type {
 	enum abstract_types atype;
 	union {
@@ -150,23 +164,29 @@ struct lttng_type {
 			struct lttng_basic_type length_type;
 			struct lttng_basic_type elem_type;
 		} sequence;
+		char padding[LTTNG_UST_TYPE_PADDING];
 	} u;
 };
 
+#define LTTNG_UST_ENUM_TYPE_PADDING	24
 struct lttng_enum {
 	const char *name;
 	struct lttng_type container_type;
 	const struct lttng_enum_entry *entries;
 	unsigned int len;
+	char padding[LTTNG_UST_ENUM_TYPE_PADDING];
 };
 
 /* Event field description */
 
+#define LTTNG_UST_EVENT_FIELD_PADDING	32
 struct lttng_event_field {
 	const char *name;
 	struct lttng_type type;
+	char padding[LTTNG_UST_EVENT_FIELD_PADDING];
 };
 
+#define LTTNG_UST_CTX_FIELD_PADDING	40
 struct lttng_ctx_field {
 	struct lttng_event_field event_field;
 	size_t (*get_size)(size_t offset);
@@ -174,15 +194,40 @@ struct lttng_ctx_field {
 		       struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		       struct ltt_channel *chan);
 	union {
+		char padding[LTTNG_UST_CTX_FIELD_PADDING];
 	} u;
 	void (*destroy)(struct lttng_ctx_field *field);
 };
 
+#define LTTNG_UST_CTX_PADDING	24
 struct lttng_ctx {
 	struct lttng_ctx_field *fields;
 	unsigned int nr_fields;
 	unsigned int allocated_fields;
+	char padding[LTTNG_UST_CTX_PADDING];
 };
+
+#define LTTNG_UST_EVENT_DESC_PADDING	40
+struct lttng_event_desc {
+	const char *name;
+	void *probe_callback;
+	const struct lttng_event_ctx *ctx;	/* context */
+	const struct lttng_event_field *fields;	/* event payload */
+	unsigned int nr_fields;
+	const int **loglevel;
+	char padding[LTTNG_UST_EVENT_DESC_PADDING];
+};
+
+#define LTTNG_UST_PROBE_DESC_PADDING	40
+struct lttng_probe_desc {
+	const char *provider;
+	const struct lttng_event_desc **event_desc;
+	unsigned int nr_events;
+	struct cds_list_head head;		/* chain registered probes */
+	char padding[LTTNG_UST_PROBE_DESC_PADDING];
+};
+
+/* Data structures used by the tracer. */
 
 /*
  * Entry describing a per-session active wildcard, along with the event
@@ -211,22 +256,6 @@ struct wildcard_entry {
 	enum lttng_ust_loglevel_type loglevel_type;
 	int loglevel;
 	char name[0];
-};
-
-struct lttng_event_desc {
-	const char *name;
-	void *probe_callback;
-	const struct lttng_event_ctx *ctx;	/* context */
-	const struct lttng_event_field *fields;	/* event payload */
-	unsigned int nr_fields;
-	const int **loglevel;
-};
-
-struct lttng_probe_desc {
-	const char *provider;
-	const struct lttng_event_desc **event_desc;
-	unsigned int nr_events;
-	struct cds_list_head head;		/* chain registered probes */
 };
 
 struct tp_list_entry {
