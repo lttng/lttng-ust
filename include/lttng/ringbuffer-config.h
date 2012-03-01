@@ -24,6 +24,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <urcu/arch.h>
+#include <string.h>
 #include "lttng/align.h"
 
 struct lttng_ust_lib_ring_buffer;
@@ -122,6 +123,7 @@ struct lttng_ust_lib_ring_buffer_client_cb {
  * RING_BUFFER_WAKEUP_NONE does not perform any wakeup whatsoever. The client
  * has the responsibility to perform wakeups.
  */
+#define LTTNG_UST_RING_BUFFER_CONFIG_PADDING	32
 struct lttng_ust_lib_ring_buffer_config {
 	enum {
 		RING_BUFFER_ALLOC_PER_CPU,
@@ -175,6 +177,7 @@ struct lttng_ust_lib_ring_buffer_config {
 	 * callbacks and update the cb pointers.
 	 */
 	int client_type;
+	char padding[LTTNG_UST_RING_BUFFER_CONFIG_PADDING];
 };
 
 /*
@@ -184,6 +187,7 @@ struct lttng_ust_lib_ring_buffer_config {
  * lib_ring_buffer_try_discard_reserve(), lib_ring_buffer_align_ctx() and
  * lib_ring_buffer_write().
  */
+#define LTTNG_UST_RING_BUFFER_CTX_PADDING	24
 struct lttng_ust_lib_ring_buffer_ctx {
 	/* input received by lib_ring_buffer_reserve(), saved here. */
 	struct channel *chan;		/* channel */
@@ -211,6 +215,7 @@ struct lttng_ust_lib_ring_buffer_ctx {
 					 */
 	uint64_t tsc;			/* time-stamp counter value */
 	unsigned int rflags;		/* reservation flags */
+	char padding[LTTNG_UST_RING_BUFFER_CTX_PADDING];
 };
 
 /**
@@ -235,6 +240,7 @@ void lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 	ctx->cpu = cpu;
 	ctx->rflags = 0;
 	ctx->handle = handle;
+	memset(ctx->padding, 0, LTTNG_UST_RING_BUFFER_CTX_PADDING);
 }
 
 /*

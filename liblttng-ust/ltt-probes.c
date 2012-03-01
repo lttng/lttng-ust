@@ -99,7 +99,12 @@ desc_added:
 	 * fix the events awaiting probe load.
 	 */
 	for (i = 0; i < desc->nr_events; i++) {
-		ret = pending_probe_fix_events(desc->event_desc[i]);
+		const struct lttng_event_desc *ed;
+
+		ed = desc->event_desc[i];
+		DBG("Registered event probe \"%s\" with signature \"%s\"",
+			ed->name, ed->signature);
+		ret = pending_probe_fix_events(ed);
 		assert(!ret);
 	}
 end:

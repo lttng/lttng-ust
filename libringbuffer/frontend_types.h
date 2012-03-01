@@ -34,6 +34,7 @@
 enum switch_mode { SWITCH_ACTIVE, SWITCH_FLUSH };
 
 /* channel: collection of per-cpu ring buffers. */
+#define RB_CHANNEL_PADDING	64
 struct channel {
 	int record_disabled;
 	unsigned long commit_count_mask;	/*
@@ -53,20 +54,26 @@ struct channel {
 	 * be last member.
 	 */
 	struct channel_backend backend;		/* Associated backend */
+	char padding[RB_CHANNEL_PADDING];
 } __attribute__((aligned(CAA_CACHE_LINE_SIZE)));
 
 /* Per-subbuffer commit counters used on the hot path */
+#define RB_COMMIT_COUNT_HOT_PADDING	16
 struct commit_counters_hot {
 	union v_atomic cc;		/* Commit counter */
 	union v_atomic seq;		/* Consecutive commits */
+	char padding[RB_COMMIT_COUNT_HOT_PADDING];
 } __attribute__((aligned(CAA_CACHE_LINE_SIZE)));
 
 /* Per-subbuffer commit counters used only on cold paths */
+#define RB_COMMIT_COUNT_COLD_PADDING	24
 struct commit_counters_cold {
 	union v_atomic cc_sb;		/* Incremented _once_ at sb switch */
+	char padding[RB_COMMIT_COUNT_COLD_PADDING];
 } __attribute__((aligned(CAA_CACHE_LINE_SIZE)));
 
 /* ring buffer state */
+#define RB_RING_BUFFER_PADDING		64
 struct lttng_ust_lib_ring_buffer {
 	/* First 32 bytes cache-hot cacheline */
 	union v_atomic offset;		/* Current offset in the buffer */
@@ -109,6 +116,7 @@ struct lttng_ust_lib_ring_buffer {
 		read_timer_enabled:1;	/* Protected by ring_buffer_nohz_lock */
 	/* shmp pointer to self */
 	DECLARE_SHMP(struct lttng_ust_lib_ring_buffer, self);
+	char padding[RB_RING_BUFFER_PADDING];
 } __attribute__((aligned(CAA_CACHE_LINE_SIZE)));
 
 static inline

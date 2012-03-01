@@ -31,8 +31,11 @@ struct tracepoint_lib {
 	int tracepoints_count;
 };
 
-extern int tracepoint_probe_register_noupdate(const char *name, void *callback, void *priv);
-extern int tracepoint_probe_unregister_noupdate(const char *name, void *callback, void *priv);
+extern int tracepoint_probe_register_noupdate(const char *name,
+		void *callback, void *priv,
+		const char *signature);
+extern int tracepoint_probe_unregister_noupdate(const char *name,
+		void *callback, void *priv);
 extern void tracepoint_probe_update_all(void);
 
 /*
