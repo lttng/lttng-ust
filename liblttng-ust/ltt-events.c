@@ -1455,3 +1455,16 @@ int ltt_wildcard_disable(struct session_wildcard *wildcard)
 	wildcard->enabled = 0;
 	return 0;
 }
+
+/*
+ * Take the TLS "fault" in libuuid if dlopen'd, which can take the
+ * dynamic linker mutex, outside of the UST lock, since the UST lock is
+ * taken in constructors, which are called with dynamic linker mutex
+ * held.
+ */
+void lttng_fixup_event_tls(void)
+{
+	unsigned char uuid[37];
+
+	(void) uuid_generate(uuid);
+}
