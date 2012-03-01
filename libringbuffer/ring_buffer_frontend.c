@@ -53,6 +53,7 @@
 #include "backend.h"
 #include "frontend.h"
 #include "shm.h"
+#include "tlsfixup.h"
 #include "../liblttng-ust/compat.h"	/* For ENODATA */
 
 #ifndef max
@@ -1507,4 +1508,12 @@ int lib_ring_buffer_reserve_slow(struct lttng_ust_lib_ring_buffer_ctx *ctx)
 	ctx->pre_offset = offsets.begin;
 	ctx->buf_offset = offsets.begin + offsets.pre_header_padding;
 	return 0;
+}
+
+/*
+ * Force a read (imply TLS fixup for dlopen) of TLS variables.
+ */
+void lttng_fixup_ringbuffer_tls(void)
+{
+	asm volatile ("" : : "m" (lib_ring_buffer_nesting));
 }

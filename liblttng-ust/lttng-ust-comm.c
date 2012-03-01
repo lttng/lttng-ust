@@ -46,6 +46,7 @@
 #include "tracepoint-internal.h"
 #include "ltt-tracer-core.h"
 #include "compat.h"
+#include "../libringbuffer/tlsfixup.h"
 
 /*
  * Has lttng ust comm constructor been called ?
@@ -833,6 +834,7 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	 * the ust lock.
 	 */
 	lttng_fixup_event_tls();
+	lttng_fixup_ringbuffer_tls();
 
 	/*
 	 * We want precise control over the order in which we construct
