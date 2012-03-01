@@ -19,11 +19,13 @@ struct tracepoint_probe {
 	void *data;
 };
 
+#define TRACEPOINT_PADDING	16
 struct tracepoint {
 	const char *name;
 	int state;
 	struct tracepoint_probe *probes;
 	int *tracepoint_provider_ref;
+	char padding[TRACEPOINT_PADDING];
 };
 
 #endif /* _LTTNG_TRACEPOINT_TYPES_H */
