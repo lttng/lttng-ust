@@ -90,15 +90,11 @@ USAGE:
     - Link application with "-ldl".
     - Set a LD_PRELOAD environment to preload the tracepoint provider
       shared object before starting the application when tracing is
-      needed.
+      needed. Another way is to dlopen the tracepoint probe when needed
+      by the application.
     - Example:
       - tests/demo/   demo.c  tp*.c ust_tests_demo*.h demo-trace
 
-  - Note about dlopen() usage: due to locking side-effects due to the
-    way libc lazily resolves Thread-Local Storage (TLS) symbols when a
-    library is dlopen'd, linking the tracepoint probe or liblttng-ust
-    with dlopen() is discouraged. They should be linked with the
-    application using "-llibname" or loaded with LD_PRELOAD.
   - Enable instrumentation and control tracing with the "lttng" command
     from lttng-tools. See lttng-tools doc/quickstart.txt.
 
