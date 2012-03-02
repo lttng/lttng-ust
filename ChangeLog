@@ -1,3 +1,32 @@
+2012-03-02 lttng-ust 2.0.0-rc2
+	* Manpage fixes
+	* Fix: dmesg printout should not print metadata warnings
+	* Fix: use transport name as channel name
+	* Fix: Add signature check in tracepoint activation
+	* Fix: add tracepoint signature at tracepoint definition site
+	* Fix: keep event probe signature, for use by event probe signature check
+	* Fix ABI: add padding to structures shared between UST and consumer
+	* Fix ABI: add padding to tracepoint and ring buffer config public structu
+	* Fix ABI: Adding missing padding in tracepoint event structures
+	* Fix: Add include/lttng/ust-config.h to git ignore
+	* Fix effect: update README about dlopen()
+	* Fix: fixup vtid TLS
+	* Fix: fixup ringbuffer tls at constructor by forcing read
+	* Fix: fix deadlock with dlopen() lttng-ust
+	* Fix: only print event errors every 1048576 hits
+	* Fix: add missing debug printout to identify the cause of lost events
+	* fix: liblttng-ust-ctl should check for incorrect parameters
+	* fix: ust comm error handling segfault
+	* Fix: Return -EINVAL instead of print warning if non power of 2 size/num_
+	* fix: on exit, leave thread/mmap reclaim to OS
+	* fix: Handle sys_futex with async cancel, add missing pthread_join
+	* fix: Only munmap the wait page when not exiting from process
+	* Use CPPFLAGS instead of CFLAGS for -I
+	* Fix type range comparison always false for 64-bit arch
+	* demo: remove useless libs
+	* tests: include missing headers
+	* Add missing limits.h include for NAME_MAX
+
 2012-02-20 lttng-ust 2.0.0-rc1
 	* Standardize version across toolchain
 	* Fix a typo in gen-tp Makefile
