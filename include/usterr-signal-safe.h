@@ -22,7 +22,6 @@
 
 #include <string.h>
 #include <sys/types.h>
-#include <sys/syscall.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
