@@ -983,23 +983,30 @@ void lib_ring_buffer_print_errors(struct channel *chan,
 	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
 	void *priv = channel_get_private(chan);
 
-	DBG("ring buffer %s, cpu %d: %lu records written, "
-			  "%lu records overrun\n",
-			  chan->backend.name, cpu,
-			  v_read(config, &buf->records_count),
-			  v_read(config, &buf->records_overrun));
+	if (!strcmp(chan->backend.name, "relay-metadata-mmap")) {
+		DBG("ring buffer %s: %lu records written, "
+			"%lu records overrun\n",
+			chan->backend.name,
+			v_read(config, &buf->records_count),
+			v_read(config, &buf->records_overrun));
+	} else {
+		DBG("ring buffer %s, cpu %d: %lu records written, "
+			"%lu records overrun\n",
+			chan->backend.name, cpu,
+			v_read(config, &buf->records_count),
+			v_read(config, &buf->records_overrun));
 
-	if (v_read(config, &buf->records_lost_full)
-	    || v_read(config, &buf->records_lost_wrap)
-	    || v_read(config, &buf->records_lost_big))
-		DBG("ring buffer %s, cpu %d: records were lost. Caused by:\n"
-		       "  [ %lu buffer full, %lu nest buffer wrap-around, "
-		       "%lu event too big ]\n",
-		       chan->backend.name, cpu,
-		       v_read(config, &buf->records_lost_full),
-		       v_read(config, &buf->records_lost_wrap),
-		       v_read(config, &buf->records_lost_big));
-
+		if (v_read(config, &buf->records_lost_full)
+		    || v_read(config, &buf->records_lost_wrap)
+		    || v_read(config, &buf->records_lost_big))
+			DBG("ring buffer %s, cpu %d: records were lost. Caused by:\n"
+				"  [ %lu buffer full, %lu nest buffer wrap-around, "
+				"%lu event too big ]\n",
+				chan->backend.name, cpu,
+				v_read(config, &buf->records_lost_full),
+				v_read(config, &buf->records_lost_wrap),
+				v_read(config, &buf->records_lost_big));
+	}
 	lib_ring_buffer_print_buffer_errors(buf, chan, priv, cpu, handle);
 }
 

@@ -455,7 +455,7 @@ struct ltt_channel *ltt_channel_create(struct ltt_session *session,
 	 * headers. Therefore the "chan" information used as input
 	 * should be already accessible.
 	 */
-	chan = transport->ops.channel_create("[lttng]", buf_addr,
+	chan = transport->ops.channel_create(transport_name, buf_addr,
 			subbuf_size, num_subbuf, switch_timer_interval,
 			read_timer_interval, shm_fd, wait_fd,
 			memory_map_size, chan_priv_init);

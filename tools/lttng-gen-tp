@@ -158,9 +158,11 @@ class TemplateFile:
         self.text = f.read()
 
         #Remove # comments (from input and output file
-        self.text = re.sub("#.*$","",self.text,flags=re.MULTILINE)
+        removeComments = re.compile("#.*$",flags=re.MULTILINE)
+        self.text = removeComments.sub("",self.text)
         #Remove // comments
-        nolinecomment = re.sub("\/\/.*$","",self.text,flags=re.MULTILINE)
+        removeLineComment = re.compile("\/\/.*$",flags=re.MULTILINE)
+        nolinecomment = removeLineComment.sub("",self.text)
         #Remove all spaces and lines
         cleantext = re.sub("\s*","",nolinecomment)
         #Remove multine C style comments
