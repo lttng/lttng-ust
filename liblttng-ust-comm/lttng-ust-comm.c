@@ -255,7 +255,9 @@ ssize_t ustcomm_recv_unix_sock(int sock, void *buf, size_t len)
 	msg.msg_iov = iov;
 	msg.msg_iovlen = 1;
 
-	ret = recvmsg(sock, &msg, 0);
+	do {
+		ret = recvmsg(sock, &msg, 0);
+	} while (ret < 0 && errno == EINTR);
 	if (ret < 0) {
 		perror("recvmsg");
 	}
@@ -469,7 +471,10 @@ int ustcomm_recv_fd(int sock)
 	msg.msg_control = recv_fd;
 	msg.msg_controllen = sizeof(recv_fd);
 
-	if ((ret = recvmsg(sock, &msg, 0)) < 0) {
+	do {
+		ret = recvmsg(sock, &msg, 0);
+	} while (ret < 0 && errno == EINTR);
+	if (ret < 0) {
 		perror("recvmsg");
 		goto end;
 	}
