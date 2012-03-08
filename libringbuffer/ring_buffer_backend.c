@@ -218,11 +218,12 @@ int channel_backend_init(struct channel_backend *chanb,
 		return -EINVAL;
 
 	/*
-	 * Make sure the number of subbuffers and subbuffer size are power of 2.
+	 * Make sure the number of subbuffers and subbuffer size are
+	 * power of 2, and nonzero.
 	 */
-	if (hweight32(subbuf_size) != 1)
+	if (!subbuf_size || (subbuf_size & (subbuf_size - 1)))
 		return -EINVAL;
-	if (hweight32(num_subbuf) != 1)
+	if (!num_subbuf || (num_subbuf & (num_subbuf - 1)))
 		return -EINVAL;
 
 	ret = subbuffer_id_check_index(config, num_subbuf);
