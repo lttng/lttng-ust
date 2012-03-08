@@ -210,9 +210,6 @@ int channel_backend_init(struct channel_backend *chanb,
 	if (!name)
 		return -EPERM;
 
-	if (!(subbuf_size && num_subbuf))
-		return -EPERM;
-
 	/* Check that the subbuffer size is larger than a page. */
 	if (subbuf_size < PAGE_SIZE)
 		return -EINVAL;
