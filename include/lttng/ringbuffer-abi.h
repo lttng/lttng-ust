@@ -1,24 +1,25 @@
-#ifndef _UST_RING_BUFFER_ABI_H
-#define _UST_RING_BUFFER_ABI_H
+#ifndef _LTTNG_RING_BUFFER_ABI_H
+#define _LTTNG_RING_BUFFER_ABI_H
 
 /*
- * ust/ringbuffer-abi.h
+ * lttng/ringbuffer-abi.h
  *
- * (C) Copyright 2005-2010 - Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+ * (C) Copyright 2005-2012 - Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
  * Wait-free ring buffer ABI.
  *
  * Author:
  *	Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
- * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
- * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- * Permission is hereby granted to use or copy this program
- * for any purpose,  provided the above notices are retained on all copies.
- * Permission to modify the code and to distribute modified code is granted,
- * provided the above notices are retained, and a notice that the code was
- * modified is included with the above copyright notice.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  */
 
 #define _UST_CMD(minor)				(minor)
@@ -71,4 +72,4 @@
 /* flush the current sub-buffer */
 #define RING_BUFFER_FLUSH			_UST_CMD(0x0C)
 
-#endif /* _UST_RING_BUFFER_ABI_H */
+#endif /* _LTTNG_RING_BUFFER_ABI_H */

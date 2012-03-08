@@ -1,12 +1,24 @@
-#ifndef _LINUX_RING_BUFFER_NOHZ_H
-#define _LINUX_RING_BUFFER_NOHZ_H
+#ifndef _LTTNG_RING_BUFFER_NOHZ_H
+#define _LTTNG_RING_BUFFER_NOHZ_H
 
 /*
- * ringbuffer/nohz.h
+ * libringbuffer/nohz.h
  *
- * Copyright (C) 2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+ * Copyright (C) 2011-2012 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
- * Dual LGPL v2.1/GPL v2 license.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; only
+ * version 2.1 of the License.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #ifdef CONFIG_LIB_RING_BUFFER
@@ -27,4 +39,4 @@ static inline void lib_ring_buffer_tick_nohz_restart(void)
 }
 #endif
 
-#endif /* _LINUX_RING_BUFFER_NOHZ_H */
+#endif /* _LTTNG_RING_BUFFER_NOHZ_H */

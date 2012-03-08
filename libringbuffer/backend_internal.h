@@ -1,14 +1,26 @@
-#ifndef _LINUX_RING_BUFFER_BACKEND_INTERNAL_H
-#define _LINUX_RING_BUFFER_BACKEND_INTERNAL_H
+#ifndef _LTTNG_RING_BUFFER_BACKEND_INTERNAL_H
+#define _LTTNG_RING_BUFFER_BACKEND_INTERNAL_H
 
 /*
- * linux/ringbuffer/backend_internal.h
- *
- * Copyright (C) 2008-2010 - Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+ * libringbuffer/backend_internal.h
  *
  * Ring buffer backend (internal helpers).
  *
- * Dual LGPL v2.1/GPL v2 license.
+ * Copyright (C) 2005-2012 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; only
+ * version 2.1 of the License.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <unistd.h>
@@ -475,4 +487,4 @@ static inline int get_count_order(unsigned int count)
 	return order;
 }
 
-#endif /* _LINUX_RING_BUFFER_BACKEND_INTERNAL_H */
+#endif /* _LTTNG_RING_BUFFER_BACKEND_INTERNAL_H */
