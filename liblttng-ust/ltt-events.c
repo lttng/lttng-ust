@@ -1088,7 +1088,7 @@ uint64_t measure_clock_offset(void)
 		return 0;
 	monotonic[1] = trace_clock_read64();
 	offset = (monotonic[0] + monotonic[1]) >> 1;
-	realtime = rts.tv_sec * 1000000000ULL;
+	realtime = (uint64_t) rts.tv_sec * 1000000000ULL;
 	realtime += rts.tv_nsec;
 	offset = realtime - offset;
 	return offset;
