@@ -251,7 +251,7 @@ ssize_t ustcomm_recv_unix_sock(int sock, void *buf, size_t len)
 	do {
 		ret = recvmsg(sock, &msg, 0);
 	} while (ret < 0 && errno == EINTR);
-	if (ret < 0) {
+	if (ret < 0 && errno != EPIPE) {
 		perror("recvmsg");
 	}
 
@@ -285,7 +285,7 @@ ssize_t ustcomm_send_unix_sock(int sock, void *buf, size_t len)
 	 * libust side.
 	 */
 	ret = sendmsg(sock, &msg, MSG_NOSIGNAL);
-	if (ret < 0) {
+	if (ret < 0 && errno != EPIPE) {
 		perror("sendmsg");
 	}
 
@@ -349,7 +349,7 @@ ssize_t ustcomm_send_fds_unix_sock(int sock, void *buf, int *fds, size_t nb_fd, 
 	msg.msg_iovlen = 1;
 
 	ret = sendmsg(sock, &msg, 0);
-	if (ret < 0) {
+	if (ret < 0 && errno != EPIPE) {
 		perror("sendmsg");
 	}
 
@@ -468,7 +468,9 @@ int ustcomm_recv_fd(int sock)
 		ret = recvmsg(sock, &msg, 0);
 	} while (ret < 0 && errno == EINTR);
 	if (ret < 0) {
-		perror("recvmsg");
+		if (errno != EPIPE) {
+			perror("recvmsg");
+		}
 		goto end;
 	}
 	if (ret != sizeof(data_fd)) {
