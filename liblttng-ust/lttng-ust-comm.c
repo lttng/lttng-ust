@@ -396,7 +396,7 @@ void cleanup_sock_info(struct sock_info *sock_info, int exiting)
 	int ret;
 
 	if (sock_info->socket != -1) {
-		ret = close(sock_info->socket);
+		ret = ustcomm_close_unix_sock(sock_info->socket);
 		if (ret) {
 			ERR("Error closing apps socket");
 		}
@@ -676,7 +676,7 @@ restart:
 	}
 
 	if (sock_info->socket != -1) {
-		ret = close(sock_info->socket);
+		ret = ustcomm_close_unix_sock(sock_info->socket);
 		if (ret) {
 			ERR("Error closing %s apps socket", sock_info->name);
 		}

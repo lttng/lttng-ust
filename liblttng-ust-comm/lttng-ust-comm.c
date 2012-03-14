@@ -301,10 +301,9 @@ int ustcomm_close_unix_sock(int sock)
 {
 	int ret;
 
-	/* Shutdown receptions and transmissions */
-	ret = shutdown(sock, SHUT_RDWR);
+	ret = close(sock);
 	if (ret < 0) {
-		perror("shutdown");
+		perror("close");
 	}
 
 	return ret;
