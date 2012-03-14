@@ -284,7 +284,9 @@ ssize_t ustcomm_send_unix_sock(int sock, void *buf, size_t len)
 	 * by ignoring SIGPIPE, but we don't have this luxury on the
 	 * libust side.
 	 */
-	ret = sendmsg(sock, &msg, MSG_NOSIGNAL);
+	do {
+		ret = sendmsg(sock, &msg, MSG_NOSIGNAL);
+	} while (ret < 0 && errno == EINTR);
 	if (ret < 0 && errno != EPIPE) {
 		perror("sendmsg");
 	}
@@ -347,7 +349,9 @@ ssize_t ustcomm_send_fds_unix_sock(int sock, void *buf, int *fds, size_t nb_fd, 
 	msg.msg_iov = iov;
 	msg.msg_iovlen = 1;
 
-	ret = sendmsg(sock, &msg, 0);
+	do {
+		ret = sendmsg(sock, &msg, MSG_NOSIGNAL);
+	} while (ret < 0 && errno == EINTR);
 	if (ret < 0 && errno != EPIPE) {
 		perror("sendmsg");
 	}
