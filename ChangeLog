@@ -1,3 +1,17 @@
+2012-03-16 lttng-ust 2.0.0-rc3
+	* Fix: sendmsg should retry on EINTR, and use MSG_NOSIGNAL
+	* fix: ustcomm_close_unix_sock should close, not shutdown
+	* Fix: do not print EPIPE perror, as it is an expected error
+	* Ensure that multiplication of clock offset is done on 64-bit
+	* Add 2 missing licenses in deprecated tests
+	* Remove unbuild and unused (deprecated) make_shared_lib test
+	* License text standardization, add missing licenses
+	* Cleanup: remove duplicate check for 0 num_subbuf and subbuf_size
+	* Fix: power of 2 size check should apply to size_t type, not uint32_t
+	* Fix: recvmsg should handle EINTR
+	* Make lttng-gen-tp work on python 2.6
+	* Make lttng-gen-tp executable
+
 2012-03-02 lttng-ust 2.0.0-rc2
 	* Manpage fixes
 	* Fix: dmesg printout should not print metadata warnings
