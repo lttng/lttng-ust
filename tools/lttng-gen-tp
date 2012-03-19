@@ -207,6 +207,8 @@ def main(argv=None):
             opts, args = getopt.gnu_getopt(argv[1:], "ho:a", ["help"])
         except getopt.error, msg:
              raise Usage(msg)
+        if len(args) == 0:
+            raise Usage("No template file given")
 
     except Usage, err:
         print >>sys.stderr, err.msg
@@ -256,28 +258,37 @@ def main(argv=None):
     # process arguments
     for arg in args:
 
-        tpl = TemplateFile(arg)
-        if doHeader:
-            if headerFilename:
-                curFilename = headerFilename
-            else:
-                curFilename = re.sub("\.tp$",".h",arg)
-            doth = HeaderFile(curFilename, tpl)
-            doth.write()
-        if doCFile:
-            if cFilename:
-                curFilename = cFilename
-            else:
-                curFilename = re.sub("\.tp$",".c",arg)
-            dotc = CFile(curFilename, tpl)
-            dotc.write()
-        if doObj:
-            if objFilename:
-                curFilename = objFilename
-            else:
-                curFilename = re.sub("\.tp$",".o",arg)
-            dotobj = ObjFile(curFilename, tpl)
-            dotobj.write()
-
+        tpl = None
+        try:
+            tpl = TemplateFile(arg)
+        except IOError as args:
+            print "Cannot read input file " + args.filename + " " + args.strerror
+            return -1
+        try:
+            if doHeader:
+                if headerFilename:
+                    curFilename = headerFilename
+                else:
+                    curFilename = re.sub("\.tp$",".h",arg)
+                doth = HeaderFile(curFilename, tpl)
+                doth.write()
+            if doCFile:
+                if cFilename:
+                    curFilename = cFilename
+                else:
+                    curFilename = re.sub("\.tp$",".c",arg)
+                dotc = CFile(curFilename, tpl)
+                dotc.write()
+            if doObj:
+                if objFilename:
+                    curFilename = objFilename
+                else:
+                    curFilename = re.sub("\.tp$",".o",arg)
+                dotobj = ObjFile(curFilename, tpl)
+                dotobj.write()
+        except IOError as args:
+            print "Cannot write output file " + args.filename + " " + args.strerror 
+            return -1
+        
 if __name__ == "__main__":
     sys.exit(main())
