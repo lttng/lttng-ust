@@ -22,7 +22,7 @@
 #include <urcu/compiler.h>
 #include <sched.h>
 
-#ifdef UST_VALGRIND
+#ifdef LTTNG_UST_DEBUG_VALGRIND
 
 /*
  * Fallback on cpu 0 if liblttng-ust is build with Valgrind support.

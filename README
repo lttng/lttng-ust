@@ -113,6 +113,10 @@ ENVIRONMENT VARIABLES:
     recommended for applications with time constraints on the process
     startup time.
 
+  - The compilation flag "-DLTTNG_UST_DEBUG_VALGRIND" should be enabled
+    at build time to allow liblttng-ust to be used with valgrind
+    (side-effect: disables per-cpu buffering).
+
 
 TRACE VIEWER:
 
