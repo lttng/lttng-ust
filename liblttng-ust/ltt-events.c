@@ -181,20 +181,20 @@ int add_pending_probe(struct ltt_event *event, const char *name,
 {
 	struct cds_hlist_head *head;
 	struct ust_pending_probe *e;
-	size_t name_len = strlen(name);
+	size_t name_len = strlen(name) + 1;
 	uint32_t hash;
 
-	if (name_len > LTTNG_UST_SYM_NAME_LEN - 1) {
-		WARN("Truncating tracepoint name %s which exceeds size limits of %u chars", name, LTTNG_UST_SYM_NAME_LEN - 1);
-		name_len = LTTNG_UST_SYM_NAME_LEN - 1;
+	if (name_len > LTTNG_UST_SYM_NAME_LEN) {
+		WARN("Truncating tracepoint name %s which exceeds size limits of %u chars", name, LTTNG_UST_SYM_NAME_LEN);
+		name_len = LTTNG_UST_SYM_NAME_LEN;
 	}
-	hash = jhash(name, name_len, 0);
+	hash = jhash(name, name_len - 1, 0);
 	head = &pending_probe_table[hash & (PENDING_PROBE_HASH_SIZE - 1)];
 	e = zmalloc(sizeof(struct ust_pending_probe) + name_len);
 	if (!e)
 		return -ENOMEM;
-	memcpy(&e->name[0], name, name_len + 1);
-	e->name[name_len] = '\0';
+	memcpy(&e->name[0], name, name_len);
+	e->name[name_len - 1] = '\0';
 	e->loglevel_type = loglevel_type;
 	e->loglevel = loglevel;
 	cds_hlist_add_head(&e->node, head);
@@ -230,7 +230,7 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 	const char *name = desc->name;
 	int ret = 0;
 	struct lttng_ust_event event_param;
-	size_t name_len = strlen(name);
+	size_t name_len = strlen(name) + 1;
 	uint32_t hash;
 
 	/* Wildcard */
@@ -265,11 +265,11 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 		}
 	}
 
-	if (name_len > LTTNG_UST_SYM_NAME_LEN - 1) {
-		WARN("Truncating tracepoint name %s which exceeds size limits of %u chars", name, LTTNG_UST_SYM_NAME_LEN - 1);
-		name_len = LTTNG_UST_SYM_NAME_LEN - 1;
+	if (name_len > LTTNG_UST_SYM_NAME_LEN) {
+		WARN("Truncating tracepoint name %s which exceeds size limits of %u chars", name, LTTNG_UST_SYM_NAME_LEN);
+		name_len = LTTNG_UST_SYM_NAME_LEN;
 	}
-	hash = jhash(name, name_len, 0);
+	hash = jhash(name, name_len - 1, 0);
 	head = &pending_probe_table[hash & (PENDING_PROBE_HASH_SIZE - 1)];
 	cds_hlist_for_each_entry_safe(e, node, p, head, node) {
 		struct ltt_event *event;
