@@ -1,3 +1,7 @@
+2012-03-20 lttng-ust 2.0.0
+	* First STABLE version
+	* Add version name
+
 2012-03-20 lttng-ust 2.0.0-rc4
 	* Fix out-of-bound write in ltt-events.c
 	* Document LTTNG_UST_DEBUG_VALGRIND compilation flag

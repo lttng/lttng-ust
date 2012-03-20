@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT([lttng-ust],[2.0.0-rc4],[mathieu dot desnoyers at efficios dot com])
+AC_INIT([lttng-ust],[2.0.0],[mathieu dot desnoyers at efficios dot com])
 
 # Following the numbering scheme proposed by libtool for the library version
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
@@ -34,8 +34,10 @@ AC_DEFINE_UNQUOTED([VERSION_MAJOR], $major_version, [UST major version number])
 AC_DEFINE_UNQUOTED([VERSION_MINOR], $minor_version, [UST minor version number])
 AC_DEFINE_UNQUOTED([VERSION_PATCHLEVEL], $patchlevel_version, [UST patchlevel version number])
 
-AC_DEFINE_UNQUOTED([VERSION_NAME], "TBD", [UST version name])
-AC_DEFINE_UNQUOTED([VERSION_DESCRIPTION], "TBD", [UST version description])
+version_name="Annedd'ale"
+version_description="New type of beer, 100% from Quebec, flavored with sapin beaumier needles, with a touch of hops."
+AC_DEFINE_UNQUOTED([VERSION_NAME], [$version_name], [UST version name])
+AC_DEFINE_UNQUOTED([VERSION_DESCRIPTION], [$version_description], [UST version description])
 
 # Checks for programs.
 AC_PROG_CC
@@ -280,6 +282,10 @@ AC_CONFIG_FILES([
 ])
 
 AC_OUTPUT
+
+AS_ECHO()
+AS_ECHO("Version name: $version_name")
+AS_ECHO("$version_description")
 
 # Report on the configuration options
 AS_ECHO()
