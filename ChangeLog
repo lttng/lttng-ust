@@ -1,3 +1,9 @@
+2012-03-20 lttng-ust 2.0.0-rc4
+	* Fix out-of-bound write in ltt-events.c
+	* Document LTTNG_UST_DEBUG_VALGRIND compilation flag
+	* Update COPYING
+	* Add exception handling to lttng-gen-tp io operations
+
 2012-03-16 lttng-ust 2.0.0-rc3
 	* Fix: sendmsg should retry on EINTR, and use MSG_NOSIGNAL
 	* fix: ustcomm_close_unix_sock should close, not shutdown
