@@ -1356,6 +1356,8 @@ struct session_wildcard *add_wildcard(struct ltt_channel *chan,
 		if (!e)
 			return ERR_PTR(-ENOMEM);
 		memcpy(&e->name[0], event_param->name, name_len);
+		e->loglevel_type = event_param->loglevel_type;
+		e->loglevel = event_param->loglevel;
 		cds_list_add(&e->list, &wildcard_list);
 		CDS_INIT_LIST_HEAD(&e->session_list);
 	}
