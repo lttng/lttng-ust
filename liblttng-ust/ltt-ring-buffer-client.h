@@ -366,11 +366,8 @@ static void client_buffer_end(struct lttng_ust_lib_ring_buffer *buf, uint64_t ts
 	header->ctx.timestamp_end = tsc;
 	header->ctx.content_size = data_size * CHAR_BIT; 	/* in bits */
 	header->ctx.packet_size = PAGE_ALIGN(data_size) * CHAR_BIT; /* in bits */
-	/*
-	 * We do not care about the records lost count, because the metadata
-	 * channel waits and retry.
-	 */
-	(void) lib_ring_buffer_get_records_lost_full(&client_config, buf);
+
+	records_lost += lib_ring_buffer_get_records_lost_full(&client_config, buf);
 	records_lost += lib_ring_buffer_get_records_lost_wrap(&client_config, buf);
 	records_lost += lib_ring_buffer_get_records_lost_big(&client_config, buf);
 	header->ctx.events_discarded = records_lost;
