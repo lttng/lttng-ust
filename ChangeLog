@@ -1,3 +1,9 @@
+2012-03-29 lttng-ust 2.0.1
+	* Use bsd-compatible fcntl for close-on-exec on socket
+	* Fix multi-session wildcard support
+	* Fix event lost count when buffer is full
+	* Remove inappropriate \n from easy-ust sample
+
 2012-03-20 lttng-ust 2.0.0
 	* First STABLE version
 	* Add version name
