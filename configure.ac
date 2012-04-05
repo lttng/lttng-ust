@@ -36,8 +36,8 @@ AC_DEFINE_UNQUOTED([VERSION_PATCHLEVEL], $patchlevel_version, [UST patchlevel ve
 
 version_name="Annedd'ale"
 version_description="New type of beer, 100% from Quebec, flavored with sapin beaumier needles, with a touch of hops."
-AC_DEFINE_UNQUOTED([VERSION_NAME], [$version_name], [UST version name])
-AC_DEFINE_UNQUOTED([VERSION_DESCRIPTION], [$version_description], [UST version description])
+AC_DEFINE_UNQUOTED([VERSION_NAME], ["$version_name"], [UST version name])
+AC_DEFINE_UNQUOTED([VERSION_DESCRIPTION], ["$version_description"], [UST version description])
 
 # Checks for programs.
 AC_PROG_CC
