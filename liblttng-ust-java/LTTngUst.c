@@ -16,10 +16,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-class LTTNG_UST {
-	public static native void lttng_ust_java_string(String name, String arg);
-	static {
-		System.loadLibrary("lttng-ust-java");
-	}
-}
+#include <jni.h>
 
+#define TRACEPOINT_DEFINE
+#define TRACEPOINT_CREATE_PROBES
+#include "lttng_ust_java.h"
+
+JNIEXPORT void JNICALL Java_org_lttng_ust_LTTngUst_tracepointString(JNIEnv *env,
+						jobject jobj,
+						jstring ev_name,
+						jstring args)
+{
+	jboolean iscopy;
+	const char *ev_name_cstr = (*env)->GetStringUTFChars(env, ev_name,
+							&iscopy);
+	const char *args_cstr = (*env)->GetStringUTFChars(env, args, &iscopy);
+
+	tracepoint(lttng_ust_java, string, ev_name_cstr, args_cstr);
+
+	(*env)->ReleaseStringUTFChars(env, ev_name, ev_name_cstr);
+	(*env)->ReleaseStringUTFChars(env, args, args_cstr);
+}
