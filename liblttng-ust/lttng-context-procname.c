@@ -20,13 +20,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include <sys/prctl.h>
 #include <lttng/ust-events.h>
 #include <lttng/ust-tracer.h>
 #include <lttng/ringbuffer-config.h>
 #include <assert.h>
-
-#define PROCNAME_LEN	17	/* includes \0 */
+#include "compat.h"
 
 /*
  * We cache the result to ensure we don't trigger a system call for
@@ -39,12 +37,9 @@ static char cached_procname[17];
 static inline
 char *wrapper_getprocname(void)
 {
-	int ret;
-
 	if (caa_unlikely(!cached_procname[0])) {
-		ret = prctl(PR_GET_NAME, (unsigned long) cached_procname,
-			0, 0, 0);
-		assert(!ret);
+		lttng_ust_getprocname(cached_procname);
+		cached_procname[LTTNG_UST_PROCNAME_LEN - 1] = '\0';
 	}
 	return cached_procname;
 }
@@ -59,7 +54,7 @@ size_t procname_get_size(size_t offset)
 {
 	size_t size = 0;
 
-	size += PROCNAME_LEN;
+	size += LTTNG_UST_PROCNAME_LEN;
 	return size;
 }
 
@@ -71,7 +66,7 @@ void procname_record(struct lttng_ctx_field *field,
 	char *procname;
 
 	procname = wrapper_getprocname();
-	chan->ops->event_write(ctx, procname, PROCNAME_LEN);
+	chan->ops->event_write(ctx, procname, LTTNG_UST_PROCNAME_LEN);
 }
 
 int lttng_add_procname_to_ctx(struct lttng_ctx **ctx)
@@ -94,7 +89,7 @@ int lttng_add_procname_to_ctx(struct lttng_ctx **ctx)
 	field->event_field.type.u.array.elem_type.u.basic.integer.reverse_byte_order = 0;
 	field->event_field.type.u.array.elem_type.u.basic.integer.base = 10;
 	field->event_field.type.u.array.elem_type.u.basic.integer.encoding = lttng_encode_UTF8;
-	field->event_field.type.u.array.length = PROCNAME_LEN;
+	field->event_field.type.u.array.length = LTTNG_UST_PROCNAME_LEN;
 	field->get_size = procname_get_size;
 	field->record = procname_record;
 	return 0;

@@ -48,7 +48,7 @@ struct shm_object *shm_object_table_append(struct shm_object_table *table,
 	int shmfd, waitfd[2], ret, i, sigblocked = 0;
 	struct shm_object *obj;
 	char *memory_map;
-	char tmp_name[NAME_MAX] = "ust-shm-tmp-XXXXXX";
+	char tmp_name[NAME_MAX] = "/ust-shm-tmp-XXXXXX";
 	sigset_t all_sigs, orig_sigs;
 
 	if (table->allocated_len >= table->size)

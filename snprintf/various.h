@@ -35,7 +35,7 @@
 
 #include <stdarg.h>
 
-struct __sbuf {
+struct __lttng_ust_sbuf {
         unsigned char *_base;
         int     _size;
 };
@@ -64,13 +64,13 @@ struct __sbuf {
  * _ub._base becomes non-nil (i.e., a stream has ungetc() data iff
  * _ub._base!=NULL) and _up and _ur save the current values of _p and _r.
  */
-typedef struct __sFILE {
+typedef struct __lttng_ust_sFILE {
         unsigned char *_p;      /* current position in (some) buffer */
         int     _r;             /* read space left for getc() */
         int     _w;             /* write space left for putc() */
         short   _flags;         /* flags, below; this FILE is free if 0 */
         short   _file;          /* fileno, if Unix descriptor, else -1 */
-        struct  __sbuf _bf;     /* the buffer (at least 1 byte, if !NULL) */
+        struct  __lttng_ust_sbuf _bf;     /* the buffer (at least 1 byte, if !NULL) */
         int     _lbfsize;       /* 0 or -_bf._size, for inline putc */
 
         /* operations */
@@ -81,7 +81,7 @@ typedef struct __sFILE {
         int     (*_write)(void *, const char *, int);
 
         /* extension data, to avoid further ABI breakage */
-        struct  __sbuf _ext;
+        struct  __lttng_ust_sbuf _ext;
         /* data for long sequences of ungetc() */
         unsigned char *_up;     /* saved _p when _p is doing ungetc data */
         int     _ur;            /* saved _r when _r is counting ungetc data */
@@ -91,12 +91,12 @@ typedef struct __sFILE {
         unsigned char _nbuf[1]; /* guarantee a getc() buffer */
 
         /* separate buffer for fgetln() when line crosses buffer boundary */
-        struct  __sbuf _lb;     /* buffer for fgetln() */
+        struct  __lttng_ust_sbuf _lb;     /* buffer for fgetln() */
 
         /* Unix stdio files get aligned to block boundaries on fseek() */
         int     _blksize;       /* stat.st_blksize (may be != _bf._size) */
         fpos_t  _offset;        /* current lseek offset */
-} LFILE;
+} LTTNG_UST_LFILE;
 
 #define __SLBF  0x0001          /* line buffered */
 #define __SNBF  0x0002          /* unbuffered */
@@ -117,8 +117,8 @@ typedef struct __sFILE {
 
 #define __sferror(p)    (((p)->_flags & __SERR) != 0)
 
-extern int ust_safe_fflush(LFILE *fp);
-extern int ust_safe_vfprintf(LFILE *fp, const char *fmt0, va_list ap);
+extern int ust_safe_fflush(LTTNG_UST_LFILE *fp);
+extern int ust_safe_vfprintf(LTTNG_UST_LFILE *fp, const char *fmt0, va_list ap);
 
 extern size_t ust_safe_mbrtowc(wchar_t *pwc, const char *s, size_t n, mbstate_t *ps);
 

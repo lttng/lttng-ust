@@ -46,13 +46,45 @@ AC_PROG_MAKE_SET
 LT_INIT
 
 ## Checks for libraries.
-AC_CHECK_LIB([dl], [dlopen])
+AC_CHECK_LIB([dl], [dlopen],
+[
+	have_libdl=yes
+],
+[
+	#libdl not found, check for dlopen in libc.
+	AC_CHECK_LIB([c], [dlopen],
+	[
+		have_libc_dl=yes
+	],
+	[
+		AC_MSG_ERROR([Cannot find dlopen in libdl nor libc. Use [LDFLAGS]=-Ldir to specify their location.])
+	])
+])
+AM_CONDITIONAL([LTTNG_UST_BUILD_WITH_LIBDL], [test "x$have_libdl" = "xyes"])
+AM_CONDITIONAL([LTTNG_UST_BUILD_WITH_LIBC_DL], [test "x$have_libc_dl" = "xyes"])
+
 AC_CHECK_LIB([pthread], [pthread_create])
 
 # Check for libuuid
-AC_CHECK_LIB([uuid], [uuid_generate], [],
-	[AC_MSG_ERROR([Cannot find libuuid. Use [LDFLAGS]=-Ldir to specify its location.])]
+AC_CHECK_LIB([uuid], [uuid_generate],
+[
+	AC_DEFINE_UNQUOTED([LTTNG_UST_HAVE_LIBUUID], 1, [Has libuuid support.])
+	have_libuuid=yes
+],
+[
+	# libuuid not found, check for uuid_create in libc.
+	AC_CHECK_LIB([c], [uuid_create],
+	[
+		AC_DEFINE_UNQUOTED([LTTNG_UST_HAVE_LIBC_UUID], 1, [Has libc uuid support.])
+		have_libc_uuid=yes
+	],
+	[
+		AC_MSG_ERROR([Cannot find libuuid uuid_generate nor libc uuid_create. Use [LDFLAGS]=-Ldir to specify their location.])
+	])
+]
 )
+AM_CONDITIONAL([LTTNG_UST_BUILD_WITH_LIBUUID], [test "x$have_libuuid" = "xyes"])
+AM_CONDITIONAL([LTTNG_UST_BUILD_WITH_LIBC_UUID], [test "x$have_libc_uuid" = "xyes"])
 
 # Checks for header files.
 #AC_CHECK_HEADERS([fcntl.h stdint.h stdlib.h string.h sys/socket.h sys/time.h unistd.h])
@@ -147,6 +179,7 @@ changequote([,])dnl
 	  fi
 	  ;;
 	x86_64) LIBFORMAT="elf64-x86-64" ;;
+	amd64) LIBFORMAT="elf64-x86-64" ;;
 	powerpc) LIBFORMAT="elf32-powerpc" ;;
 	ppc64) LIBFORMAT="elf64-powerpc" ;;
 	powerpc64) LIBFORMAT="elf64-powerpc" ;;

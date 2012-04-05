@@ -21,12 +21,13 @@
 
 #include <urcu/list.h>
 #include <urcu/hlist.h>
-#include <uuid/uuid.h>
 #include <stdint.h>
 #include <lttng/ust-abi.h>
 #include <lttng/ust-tracer.h>
-#include <endian.h>
+#include <lttng/ust-endian.h>
 #include <float.h>
+
+#define LTTNG_UST_UUID_LEN		16
 
 struct ltt_channel;
 struct ltt_session;
@@ -84,7 +85,7 @@ struct lttng_enum_entry {
 		  .size = sizeof(_type) * CHAR_BIT,		\
 		  .alignment = lttng_alignof(_type) * CHAR_BIT,	\
 		  .signedness = lttng_is_signed_type(_type),	\
-		  .reverse_byte_order = _byte_order != __BYTE_ORDER,	\
+		  .reverse_byte_order = _byte_order != BYTE_ORDER,	\
 		  .base = _base,				\
 		  .encoding = lttng_encode_##_encoding,		\
 		},						\
@@ -119,7 +120,7 @@ struct lttng_integer_type {
 				- _float_mant_dig(_type),	\
 		  .mant_dig = _float_mant_dig(_type),		\
 		  .alignment = lttng_alignof(_type) * CHAR_BIT,	\
-		  .reverse_byte_order = __BYTE_ORDER != __FLOAT_WORD_ORDER, \
+		  .reverse_byte_order = BYTE_ORDER != FLOAT_WORD_ORDER, \
 		},						\
 	}							\
 
@@ -354,7 +355,7 @@ struct ltt_channel {
 	/* Channel ID, available for consumer too */
 	unsigned int id;
 	/* Copy of session UUID for consumer (availability through shm) */
-	uuid_t uuid;			/* Trace session unique ID */
+	unsigned char uuid[LTTNG_UST_UUID_LEN]; /* Trace session unique ID */
 };
 
 struct ltt_session {
@@ -367,7 +368,7 @@ struct ltt_session {
 	struct cds_list_head wildcards;	/* Wildcard list head */
 	struct cds_list_head list;	/* Session list */
 	unsigned int free_chan_id;	/* Next chan ID to allocate */
-	uuid_t uuid;			/* Trace session unique ID */
+	unsigned char uuid[LTTNG_UST_UUID_LEN]; /* Trace session unique ID */
 	unsigned int metadata_dumped:1;
 };
 

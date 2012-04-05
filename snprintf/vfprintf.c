@@ -92,7 +92,7 @@ static int __grow_type_table(unsigned char **typetable, int *tablesize);
  * then reset it so that it can be reused.
  */
 static int
-__sprint(LFILE *fp, struct __suio *uio)
+__sprint(LTTNG_UST_LFILE *fp, struct __lttng_ust_suio *uio)
 {
 	int err;
 
@@ -112,10 +112,10 @@ __sprint(LFILE *fp, struct __suio *uio)
  * worries about ungetc buffers and so forth.
  */
 //static int
-//__sbprintf(LFILE *fp, const char *fmt, va_list ap)
+//__sbprintf(LTTNG_UST_LFILE *fp, const char *fmt, va_list ap)
 //{
 //	int ret;
-//	LFILE fake;
+//	LTTNG_UST_LFILE fake;
 //	struct __sfileext fakeext;
 //	unsigned char buf[BUFSIZ];
 //
@@ -189,13 +189,13 @@ static int exponent(char *, int, int);
 #define CHARINT		0x0800		/* 8 bit integer */
 #define MAXINT		0x1000		/* largest integer size (intmax_t) */
 
-int ust_safe_vfprintf(LFILE *fp, const char *fmt0, va_list ap)
+int ust_safe_vfprintf(LTTNG_UST_LFILE *fp, const char *fmt0, va_list ap)
 {
 	char *fmt;		/* format string */
 	int ch;			/* character from fmt */
 	int n, n2;		/* handy integers (short term usage) */
 	char *cp;		/* handy char pointer (short term usage) */
-	struct __siov *iovp;	/* for PRINT macro */
+	struct __lttng_ust_siov *iovp;	/* for PRINT macro */
 	int flags;		/* flags as above */
 	int ret;		/* return value accumulator */
 	int width;		/* width from format (%8d), or 0 */
@@ -241,8 +241,8 @@ int ust_safe_vfprintf(LFILE *fp, const char *fmt0, va_list ap)
 	int size;		/* size of converted field or string */
 	const char *xdigs = NULL;	/* digits for %[xX] conversion */
 #define NIOV 8
-	struct __suio uio;	/* output information: summary */
-	struct __siov iov[NIOV];/* ... and individual io vectors */
+	struct __lttng_ust_suio uio;	/* output information: summary */
+	struct __lttng_ust_siov iov[NIOV];/* ... and individual io vectors */
 	char buf[BUF];		/* buffer with space for digits of uintmax_t */
 	char ox[2];		/* space for 0x; ox[1] is either x, X, or \0 */
 	union arg *argtable;	/* args, built due to positional arg */

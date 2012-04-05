@@ -32,12 +32,12 @@
 /*
  * file extension
  */
-struct __sfileext {
-	struct	__sbuf _ub; /* ungetc buffer */
+struct __lttng_ust_sfileext {
+	struct	__lttng_ust_sbuf _ub; /* ungetc buffer */
 	struct wchar_io_data _wcio;	/* wide char io status */
 };
 
-#define _EXT(fp) ((struct __sfileext *)((fp)->_ext._base))
+#define _EXT(fp) ((struct __lttng_ust_sfileext *)((fp)->_ext._base))
 #define _UB(fp) _EXT(fp)->_ub
 
 #define _FILEEXT_INIT(fp) \

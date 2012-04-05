@@ -36,7 +36,7 @@
 #include "local.h"
 
 /* Flush a single file, or (if fp is NULL) all files.  */
-int ust_safe_fflush(LFILE *fp)
+int ust_safe_fflush(LTTNG_UST_LFILE *fp)
 {
 
 	if (fp == NULL)
@@ -50,7 +50,7 @@ int ust_safe_fflush(LFILE *fp)
 }
 
 int
-__sflush(LFILE *fp)
+__sflush(LTTNG_UST_LFILE *fp)
 {
 	unsigned char *p;
 	int n, t;

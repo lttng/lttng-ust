@@ -42,6 +42,7 @@
 #include <ust-comm.h>
 #include <../../libringbuffer/backend.h>
 #include <../../libringbuffer/frontend.h>
+#include "../../liblttng-ust/compat.h"	/* For ENODATA */
 
 #define NR_SESSIONS	4
 #define NR_CHANNELS	1
@@ -229,7 +230,7 @@ int consume_stream(struct lttng_ust_shm_handle *handle, int cpu, char *outfile)
 	}
 
 	/* copy */
-	outfd = open(outfile, O_WRONLY | O_CREAT | O_LARGEFILE | O_TRUNC,
+	outfd = open(outfile, O_WRONLY | O_CREAT | O_TRUNC,
 			S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 	if (outfd < 0) {
 		perror("open output");

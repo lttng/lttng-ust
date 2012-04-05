@@ -28,7 +28,7 @@
 
 struct metadata_packet_header {
 	uint32_t magic;			/* 0x75D11D57 */
-	uint8_t  uuid[16];		/* Unique Universal Identifier */
+	uint8_t  uuid[LTTNG_UST_UUID_LEN]; /* Unique Universal Identifier */
 	uint32_t checksum;		/* 0 if unused */
 	uint32_t content_size;		/* in bits */
 	uint32_t packet_size;		/* in bits */

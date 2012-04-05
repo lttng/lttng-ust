@@ -22,11 +22,9 @@
 
 #define _GNU_SOURCE
 #include <stdio.h>
-#include <endian.h>
 #include <urcu/list.h>
 #include <urcu/hlist.h>
 #include <pthread.h>
-#include <uuid/uuid.h>
 #include <errno.h>
 #include <sys/shm.h>
 #include <sys/ipc.h>
@@ -34,7 +32,7 @@
 #include <stddef.h>
 #include <inttypes.h>
 #include <time.h>
-#include <sys/prctl.h>
+#include <lttng/ust-endian.h>
 #include "clock.h"
 
 #include <urcu-bp.h>
@@ -48,6 +46,8 @@
 #include <usterr-signal-safe.h>
 #include <helper.h>
 #include "error.h"
+#include "compat.h"
+#include "lttng-ust-uuid.h"
 
 #include "tracepoint-internal.h"
 #include "ltt-tracer.h"
@@ -55,8 +55,6 @@
 #include "wait.h"
 #include "../libringbuffer/shm.h"
 #include "jhash.h"
-
-#define PROCNAME_LEN 17
 
 /*
  * The sessions mutex is the centralized mutex across UST tracing
@@ -309,6 +307,7 @@ void synchronize_trace(void)
 struct ltt_session *ltt_session_create(void)
 {
 	struct ltt_session *session;
+	int ret;
 
 	session = zmalloc(sizeof(struct ltt_session));
 	if (!session)
@@ -316,7 +315,10 @@ struct ltt_session *ltt_session_create(void)
 	CDS_INIT_LIST_HEAD(&session->chan);
 	CDS_INIT_LIST_HEAD(&session->events);
 	CDS_INIT_LIST_HEAD(&session->wildcards);
-	uuid_generate(session->uuid);
+	ret = lttng_ust_uuid_generate(session->uuid);
+	if (ret != 0) {
+		session->uuid[0] = '\0';
+	}
 	cds_list_add(&session->list, &sessions);
 	return session;
 }
@@ -1101,11 +1103,12 @@ static
 int _ltt_session_metadata_statedump(struct ltt_session *session)
 {
 	unsigned char *uuid_c = session->uuid;
-	char uuid_s[37], clock_uuid_s[CLOCK_UUID_LEN];
+	char uuid_s[LTTNG_UST_UUID_STR_LEN],
+		clock_uuid_s[LTTNG_UST_UUID_STR_LEN];
 	struct ltt_channel *chan;
 	struct ltt_event *event;
 	int ret = 0;
-	char procname[PROCNAME_LEN] = "";
+	char procname[LTTNG_UST_PROCNAME_LEN] = "";
 
 	if (!CMM_ACCESS_ONCE(session->active))
 		return 0;
@@ -1159,8 +1162,8 @@ int _ltt_session_metadata_statedump(struct ltt_session *session)
 		goto end;
 
 	/* ignore error, just use empty string if error. */
-	(void) prctl(PR_GET_NAME, (unsigned long) procname, 0, 0, 0);
-	procname[PROCNAME_LEN - 1] = '\0';
+	lttng_ust_getprocname(procname);
+	procname[LTTNG_UST_PROCNAME_LEN - 1] = '\0';
 	ret = lttng_metadata_printf(session,
 		"env {\n"
 		"	vpid = %d;\n"
@@ -1478,7 +1481,7 @@ int ltt_wildcard_disable(struct session_wildcard *wildcard)
  */
 void lttng_fixup_event_tls(void)
 {
-	unsigned char uuid[37];
+	unsigned char uuid[LTTNG_UST_UUID_STR_LEN];
 
-	(void) uuid_generate(uuid);
+	(void) lttng_ust_uuid_generate(uuid);
 }

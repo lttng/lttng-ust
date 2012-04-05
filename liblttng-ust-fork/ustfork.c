@@ -28,8 +28,6 @@
 
 #include <lttng/ust.h>
 
-struct user_desc;
-
 pid_t fork(void)
 {
 	static pid_t (*plibc_func)(void) = NULL;
@@ -55,6 +53,10 @@ pid_t fork(void)
 	}
 	return retval;
 }
+
+#ifdef __linux__
+
+struct user_desc;
 
 struct ustfork_clone_info {
 	int (*fn)(void *);
@@ -117,3 +119,41 @@ int clone(int (*fn)(void *), void *child_stack, int flags, void *arg, ...)
 	}
 	return retval;
 }
+
+#elif defined (__FreeBSD__)
+
+pid_t rfork(int flags)
+{
+	static pid_t (*plibc_func)(void) = NULL;
+	sigset_t sigset;
+	pid_t retval;
+
+	if (plibc_func == NULL) {
+		plibc_func = dlsym(RTLD_NEXT, "rfork");
+		if (plibc_func == NULL) {
+			fprintf(stderr, "libustfork: unable to find \"rfork\" symbol\n");
+			return -1;
+		}
+	}
+
+	ust_before_fork(&sigset);
+	/* Do the real rfork */
+	retval = plibc_func();
+	if (retval == 0) {
+		/* child */
+		ust_after_fork_child(&sigset);
+	} else {
+		ust_after_fork_parent(&sigset);
+	}
+	return retval;
+}
+
+/*
+ * On BSD, no need to override vfork, because it runs in the context of
+ * the parent, with parent waiting until execve or exit is executed in
+ * the child.
+ */
+
+#else
+#warning "Unknown OS. You might want to ensure that fork/clone/vfork/fork handling is complete."
+#endif

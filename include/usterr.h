@@ -22,11 +22,11 @@
 
 #include <string.h>
 #include <sys/types.h>
-#include <sys/syscall.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 
+#include "lttng/ust-tid.h"
 #include "share.h"
 
 enum ust_loglevel {
@@ -57,7 +57,7 @@ static inline int ust_debug(void)
 	do {							\
 		fprintf(stderr, UST_STR_COMPONENT "[%ld/%ld]: " fmt " (in %s() at " __FILE__ ":" XSTR(__LINE__) ")\n",				\
 			(long) getpid(),			\
-			(long) syscall(SYS_gettid),		\
+			(long) gettid(),			\
 			## args,				\
 			__func__);				\
 	} while(0)
@@ -86,7 +86,10 @@ static inline int ust_debug(void)
 #define ERR(fmt, args...) ERRMSG("Error: " fmt, ## args)
 #define BUG(fmt, args...) ERRMSG("BUG: " fmt, ## args)
 
-#if (_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !defined(_GNU_SOURCE)
+#if !defined(__linux__) || ((_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !defined(_GNU_SOURCE))
+/*
+ * Version using XSI strerror_r.
+ */
 #define PERROR(call, args...)\
 	do { \
 		char buf[200] = "Error in strerror_r()"; \
@@ -94,6 +97,9 @@ static inline int ust_debug(void)
 		ERRMSG("Error: " call ": %s", ## args, buf); \
 	} while(0);
 #else
+/*
+ * Version using GNU strerror_r, for linux with appropriate defines.
+ */
 #define PERROR(call, args...)\
 	do { \
 		char *buf; \

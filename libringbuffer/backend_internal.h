@@ -448,7 +448,7 @@ do {								\
 
 /* arch-agnostic implementation */
 
-static inline int fls(unsigned int x)
+static inline int lttng_ust_fls(unsigned int x)
 {
 	int r = 32;
 
@@ -481,7 +481,7 @@ static inline int get_count_order(unsigned int count)
 {
 	int order;
 
-	order = fls(count) - 1;
+	order = lttng_ust_fls(count) - 1;
 	if (count & (count - 1))
 		order++;
 	return order;
