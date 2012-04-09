@@ -325,19 +325,29 @@ end:
 	     || lum->cmd == LTTNG_UST_CHANNEL
 	     || lum->cmd == LTTNG_UST_METADATA)
 			&& lur.ret_code == USTCOMM_OK) {
+		int sendret = 0;
+
 		/* we also need to send the file descriptors. */
 		ret = ustcomm_send_fds_unix_sock(sock,
 			&shm_fd, &shm_fd,
 			1, sizeof(int));
 		if (ret < 0) {
 			perror("send shm_fd");
-			goto error;
+			sendret = ret;
 		}
+		/*
+		 * The sessiond expects 2 file descriptors, even upon
+		 * error.
+		 */
 		ret = ustcomm_send_fds_unix_sock(sock,
 			&wait_fd, &wait_fd,
 			1, sizeof(int));
 		if (ret < 0) {
 			perror("send wait_fd");
+			goto error;
+		}
+		if (sendret) {
+			ret = sendret;
 			goto error;
 		}
 	}
