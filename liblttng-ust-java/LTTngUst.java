@@ -18,7 +18,7 @@
 
 package org.lttng.ust;
 
-public class LTTngUst {
+class LTTngUst {
 	public static native void tracepointString(String name, String arg);
 	static {
 		System.loadLibrary("lttng-ust-java");
