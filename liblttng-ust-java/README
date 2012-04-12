@@ -10,3 +10,8 @@ dependency: openjdk-6-jdk
 
 dependency: gcj-4.4-jdk
 ./configure --with-java-jdk=/usr/lib/jvm/java-gcj --with-jni-interface
+
+
+After building, you can use the liblttng-ust-java.jar file in a Java project.
+It requires the liblttng-ust-java.so* files (which get installed when doing
+`make install') so make sure those are in the linker's library path.
