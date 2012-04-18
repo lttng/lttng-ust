@@ -21,7 +21,7 @@ LIBS = -ldl -llttng-ust
 all: sample
 
 sample: sample.o sample_tracepoint.o
-	$(CC) $(LIBS) -o $@ $^
+	$(CC) -o $@ $^ $(LIBS)
 
 sample.o: sample.c sample_tracepoint.h
 	$(CC) $(CFLAGS) -c -o $@ $<

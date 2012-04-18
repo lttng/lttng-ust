@@ -22,7 +22,7 @@ CFLAGS = -I.
 all: sample
 
 sample: sample.o tp.o
-	$(CC) $(LIBS) -o $@ $^
+	$(CC) -o $@ $^ $(LIBS)
 
 sample.o: sample.c sample_component_provider.h
 	$(CC) $(CFLAGS) -c -o $@ $<
