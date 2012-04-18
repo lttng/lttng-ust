@@ -1,3 +1,8 @@
+2012-04-18 lttng-ust 2.0.2
+	* Fix: examples Makefiles should pass $(LIBS) at last
+	* Fix: ustctl need to send the second fd upon error of 1st fd
+	* Fix: Make the JNI interface actually work
+
 2012-03-29 lttng-ust 2.0.1
 	* Use bsd-compatible fcntl for close-on-exec on socket
 	* Fix multi-session wildcard support
