@@ -9,9 +9,10 @@ SUBDIRS = . include snprintf libringbuffer liblttng-ust-comm \
 		tests \
 		doc
 
-if BUILD_JNI_INTERFACE
-SUBDIRS += liblttng-ust-java
-endif
+#disabled for 2.0
+#if BUILD_JNI_INTERFACE
+#SUBDIRS += liblttng-ust-java
+#endif
 
 #temporarily disabled
 # liblttng-ust-malloc

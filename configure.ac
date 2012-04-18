@@ -255,6 +255,8 @@ AS_IF([test "x$with_sdt" = "xyes"],[
 	#tests/exit-fast/Makefile
 	#tests/basic_long/Makefile
 
+#	liblttng-ust-java/Makefile
+
 AC_CONFIG_FILES([
 	Makefile
 	doc/Makefile
@@ -267,7 +269,6 @@ AC_CONFIG_FILES([
 	liblttng-ust/Makefile
 	liblttng-ust-ctl/Makefile
 	liblttng-ust-fork/Makefile
-	liblttng-ust-java/Makefile
 	liblttng-ust-libc-wrapper/Makefile
 	tools/Makefile
 	tests/Makefile
