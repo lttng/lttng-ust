@@ -1,4 +1,5 @@
 2012-04-18 lttng-ust 2.0.2
+	* Fix: drop unusable liblttng-ust-java.so
 	* Fix: examples Makefiles should pass $(LIBS) at last
 	* Fix: ustctl need to send the second fd upon error of 1st fd
 
