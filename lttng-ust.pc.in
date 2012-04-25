@@ -8,6 +8,6 @@ Description: The LTTng Userspace Tracer (UST) is a library accompanied by a set 
 Version: @PACKAGE_VERSION@
 Requires:
 Requires.private: liburcu-bp
-Libs: -L${libdir} -llttng-ust
+Libs: -L${libdir} -llttng-ust -ldl
 Cflags: -I${includedir} 
 
