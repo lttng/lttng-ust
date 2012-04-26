@@ -41,7 +41,10 @@ int lttng_ust_get_cpu(void)
  */
 #ifdef __linux__
 
-#ifdef __UCLIBC__
+/* old uClibc versions didn't have sched_getcpu */
+#if defined(__UCLIBC__) && __UCLIBC_MAJOR__ == 0 && \
+	(__UCLIBC_MINOR__ < 9 || \
+	 (__UCLIBC_MINOR__ == 9 && __UCLIBC_SUBLEVEL__ <= 32))
 #include <sys/syscall.h>
 #define __getcpu(cpu, node, cache)	syscall(__NR_getcpu, cpu, node, cache)
 /*
