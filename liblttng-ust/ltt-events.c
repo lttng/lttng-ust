@@ -1020,7 +1020,7 @@ int _ltt_stream_packet_context_declare(struct ltt_session *session)
 		"struct packet_context {\n"
 		"	uint64_clock_monotonic_t timestamp_begin;\n"
 		"	uint64_clock_monotonic_t timestamp_end;\n"
-		"	uint32_t events_discarded;\n"
+		"	unsigned long events_discarded;\n"
 		"	uint32_t content_size;\n"
 		"	uint32_t packet_size;\n"
 		"	uint32_t cpu_id;\n"
@@ -1131,6 +1131,7 @@ int _ltt_session_metadata_statedump(struct ltt_session *session)
 		"typealias integer { size = 16; align = %u; signed = false; } := uint16_t;\n"
 		"typealias integer { size = 32; align = %u; signed = false; } := uint32_t;\n"
 		"typealias integer { size = 64; align = %u; signed = false; } := uint64_t;\n"
+		"typealias integer { size = %u; align = %u; signed = false; } := unsigned long;\n"
 		"typealias integer { size = 5; align = 1; signed = false; } := uint5_t;\n"
 		"typealias integer { size = 27; align = 1; signed = false; } := uint27_t;\n"
 		"\n"
@@ -1149,6 +1150,8 @@ int _ltt_session_metadata_statedump(struct ltt_session *session)
 		lttng_alignof(uint16_t) * CHAR_BIT,
 		lttng_alignof(uint32_t) * CHAR_BIT,
 		lttng_alignof(uint64_t) * CHAR_BIT,
+		sizeof(unsigned long) * CHAR_BIT,
+		lttng_alignof(unsigned long) * CHAR_BIT,
 		CTF_SPEC_MAJOR,
 		CTF_SPEC_MINOR,
 		uuid_s,

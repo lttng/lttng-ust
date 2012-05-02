@@ -51,7 +51,7 @@ struct packet_header {
 		/* Stream packet context */
 		uint64_t timestamp_begin;	/* Cycle count at subbuffer start */
 		uint64_t timestamp_end;		/* Cycle count at subbuffer end */
-		uint32_t events_discarded;	/*
+		unsigned long events_discarded;	/*
 						 * Events lost in this subbuffer since
 						 * the beginning of the trace.
 						 * (may overflow)
