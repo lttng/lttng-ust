@@ -271,6 +271,16 @@ struct lttng_ust_tracepoint_list {
 	struct cds_list_head head;
 };
 
+struct tp_field_list_entry {
+	struct lttng_ust_field_iter field;
+	struct cds_list_head head;
+};
+
+struct lttng_ust_field_list {
+	struct tp_field_list_entry *iter;
+	struct cds_list_head head;
+};
+
 struct ust_pending_probe;
 
 /*
@@ -444,6 +454,10 @@ int ltt_probes_get_event_list(struct lttng_ust_tracepoint_list *list);
 void ltt_probes_prune_event_list(struct lttng_ust_tracepoint_list *list);
 struct lttng_ust_tracepoint_iter *
 	lttng_ust_tracepoint_list_get_iter_next(struct lttng_ust_tracepoint_list *list);
+int ltt_probes_get_field_list(struct lttng_ust_field_list *list);
+void ltt_probes_prune_field_list(struct lttng_ust_field_list *list);
+struct lttng_ust_field_iter *
+	lttng_ust_field_list_get_iter_next(struct lttng_ust_field_list *list);
 
 int ltt_wildcard_enable(struct session_wildcard *wildcard);
 int ltt_wildcard_disable(struct session_wildcard *wildcard);

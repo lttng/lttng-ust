@@ -219,6 +219,89 @@ struct lttng_ust_tracepoint_iter *
 	return &entry->tp;
 }
 
+void ltt_probes_prune_field_list(struct lttng_ust_field_list *list)
+{
+	struct tp_field_list_entry *list_entry, *tmp;
+
+	cds_list_for_each_entry_safe(list_entry, tmp, &list->head, head) {
+		cds_list_del(&list_entry->head);
+		free(list_entry);
+	}
+}
+
+/*
+ * called with UST lock held.
+ */
+int ltt_probes_get_field_list(struct lttng_ust_field_list *list)
+{
+	struct lttng_probe_desc *probe_desc;
+	int i;
+
+	CDS_INIT_LIST_HEAD(&list->head);
+	cds_list_for_each_entry(probe_desc, &probe_list, head) {
+		for (i = 0; i < probe_desc->nr_events; i++) {
+			const struct lttng_event_desc *event_desc =
+				probe_desc->event_desc[i];
+			int j;
+
+			for (j = 0; j < event_desc->nr_fields; j++) {
+				const struct lttng_event_field *event_field =
+					&event_desc->fields[j];
+				struct tp_field_list_entry *list_entry;
+
+				list_entry = zmalloc(sizeof(*list_entry));
+				if (!list_entry)
+					goto err_nomem;
+				cds_list_add(&list_entry->head, &list->head);
+				strncpy(list_entry->field.event_name,
+					event_desc->name,
+					LTTNG_UST_SYM_NAME_LEN);
+				list_entry->field.event_name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+				strncpy(list_entry->field.field_name,
+					event_field->name,
+					LTTNG_UST_SYM_NAME_LEN);
+				list_entry->field.field_name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+				if (!event_desc->loglevel) {
+					list_entry->field.loglevel = TRACE_DEFAULT;
+				} else {
+					list_entry->field.loglevel = *(*event_desc->loglevel);
+				}
+			}
+		}
+	}
+	if (cds_list_empty(&list->head))
+		list->iter = NULL;
+	else
+		list->iter =
+			cds_list_first_entry(&list->head,
+				struct tp_field_list_entry, head);
+	return 0;
+
+err_nomem:
+	ltt_probes_prune_field_list(list);
+	return -ENOMEM;
+}
+
+/*
+ * Return current iteration position, advance internal iterator to next.
+ * Return NULL if end of list.
+ */
+struct lttng_ust_field_iter *
+	lttng_ust_field_list_get_iter_next(struct lttng_ust_field_list *list)
+{
+	struct tp_field_list_entry *entry;
+
+	if (!list->iter)
+		return NULL;
+	entry = list->iter;
+	if (entry->head.next == &list->head)
+		list->iter = NULL;
+	else
+		list->iter = cds_list_entry(entry->head.next,
+				struct tp_field_list_entry, head);
+	return &entry->field;
+}
+
 /*
  * marshall all probes/all events and create those that fit the
  * wildcard. Add them to the events list as created.
