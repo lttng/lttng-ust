@@ -46,7 +46,6 @@
 enum switch_mode { SWITCH_ACTIVE, SWITCH_FLUSH };
 
 /* channel: collection of per-cpu ring buffers. */
-#define RB_CHANNEL_PADDING	64
 struct channel {
 	int record_disabled;
 	unsigned long commit_count_mask;	/*
@@ -61,12 +60,12 @@ struct channel {
 	//wait_queue_head_t read_wait;		/* reader wait queue */
 	int finalized;				/* Has channel been finalized */
 	size_t priv_data_offset;
+	/* Note: padding field is missing */
 	/*
 	 * Associated backend contains a variable-length array. Needs to
 	 * be last member.
 	 */
 	struct channel_backend backend;		/* Associated backend */
-	char padding[RB_CHANNEL_PADDING];
 } __attribute__((aligned(CAA_CACHE_LINE_SIZE)));
 
 /* Per-subbuffer commit counters used on the hot path */
