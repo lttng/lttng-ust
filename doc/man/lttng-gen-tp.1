@@ -29,7 +29,10 @@ link it with your application.
 Refer to the UST documentation for the
 advantages and disadvantage of each form.
 To compile the resulting .c file, you need to add the options
-"\-llttng-ust \-I."
+"\-llttng-ust \-I.".
+Note for C++ support: although an application instrumented with
+tracepoints can be compiled with g++, tracepoint probes should be
+compiled with gcc (only tested with gcc so far).
 
 .SH "OPTIONS"
 

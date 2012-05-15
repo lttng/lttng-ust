@@ -287,6 +287,9 @@ carefully:
     application using "\-llibname" or loaded with LD_PRELOAD.
   - Enable instrumentation and control tracing with the "lttng" command
     from lttng-tools. See lttng-tools doc/quickstart.txt.
+  - Note for C++ support: although an application instrumented with
+    tracepoints can be compiled with g++, tracepoint probes should be
+    compiled with gcc (only tested with gcc so far).
 
 .fi
 
