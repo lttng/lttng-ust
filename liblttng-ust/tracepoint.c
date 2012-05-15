@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <stdio.h>
 
 #include <urcu/arch.h>
 #include <urcu-bp.h>
