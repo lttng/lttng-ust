@@ -47,8 +47,8 @@
  * works in c++. 
  */
 #ifdef __cplusplus
-#extern "C"{
-#endif /*__cplusplus */
+extern "C" {
+#endif /* __cplusplus */
 
 /*
  * Add this precompiler conditionals to ensure the tracepoint event generation
@@ -140,4 +140,4 @@ TRACEPOINT_LOGLEVEL(
  */
 #ifdef __cplusplus
 }
-#endif /*__cplusplus */
+#endif /* __cplusplus */

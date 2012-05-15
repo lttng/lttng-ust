@@ -35,8 +35,8 @@ class HeaderFile:
 #define TRACEPOINT_INCLUDE_FILE ./{headerFilename}
 
 #ifdef __cplusplus
-#extern "C"{{
-#endif /*__cplusplus */
+extern "C"{{
+#endif /* __cplusplus */
 
 
 #if !defined({includeGuard}) || defined(TRACEPOINT_HEADER_MULTI_READ)
@@ -52,7 +52,7 @@ class HeaderFile:
 
 #ifdef __cplusplus
 }}
-#endif /*__cplusplus */
+#endif /* __cplusplus */
 
 """
     def __init__(self, filename, template):
