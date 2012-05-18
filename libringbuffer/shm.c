@@ -31,6 +31,45 @@
 #include <lttng/align.h>
 #include <helper.h>
 #include <limits.h>
+#include <helper.h>
+
+/*
+ * Ensure we have the required amount of space available by writing 0
+ * into the entire buffer. Not doing so can trigger SIGBUS when going
+ * beyond the available shm space.
+ */
+static
+int zero_file(int fd, size_t len)
+{
+	ssize_t retlen;
+	size_t written = 0;
+	char *zeropage;
+	long pagelen;
+	int ret;
+
+	pagelen = sysconf(_SC_PAGESIZE);
+	if (pagelen < 0)
+		return (int) pagelen;
+	zeropage = calloc(pagelen, 1);
+	if (!zeropage)
+		return -ENOMEM;
+
+	while (len > written) {
+		do {
+			retlen = write(fd, zeropage,
+				min_t(size_t, pagelen, len - written));
+		} while (retlen == -1UL && errno == EINTR);
+		if (retlen < 0) {
+			ret = (int) retlen;
+			goto error;
+		}
+		written += retlen;
+	}
+	ret = 0;
+error:
+	free(zeropage);
+	return ret;
+}
 
 struct shm_object_table *shm_object_table_create(size_t max_nb_obj)
 {
@@ -128,6 +167,11 @@ struct shm_object *shm_object_table_append(struct shm_object_table *table,
 		PERROR("pthread_sigmask");
 		goto error_sigmask_release;
 	}
+	ret = zero_file(shmfd, memory_map_size);
+	if (ret) {
+		PERROR("zero_file");
+		goto error_zero_file;
+	}
 	ret = ftruncate(shmfd, memory_map_size);
 	if (ret) {
 		PERROR("ftruncate");
@@ -152,6 +196,7 @@ struct shm_object *shm_object_table_append(struct shm_object_table *table,
 error_mmap:
 error_ftruncate:
 error_shm_release:
+error_zero_file:
 error_sigmask_release:
 	ret = close(shmfd);
 	if (ret) {
