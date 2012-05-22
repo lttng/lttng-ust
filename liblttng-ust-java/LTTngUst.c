@@ -35,6 +35,20 @@ JNIEXPORT void JNICALL Java_org_lttng_ust_LTTngUst_tracepointInt(JNIEnv *env,
 	(*env)->ReleaseStringUTFChars(env, ev_name, ev_name_cstr);
 }
 
+JNIEXPORT void JNICALL Java_org_lttng_ust_LTTngUst_tracepointIntInt(JNIEnv *env,
+						jobject jobj,
+						jstring ev_name,
+						jint payload1,
+						jint payload2)
+{
+	jboolean iscopy;
+	const char *ev_name_cstr = (*env)->GetStringUTFChars(env, ev_name, &iscopy);
+
+	tracepoint(lttng_ust_java, int_int_event, ev_name_cstr, payload1, payload2);
+
+	(*env)->ReleaseStringUTFChars(env, ev_name, ev_name_cstr);
+}
+
 JNIEXPORT void JNICALL Java_org_lttng_ust_LTTngUst_tracepointLong(JNIEnv *env,
 						jobject jobj,
 						jstring ev_name,
@@ -44,6 +58,20 @@ JNIEXPORT void JNICALL Java_org_lttng_ust_LTTngUst_tracepointLong(JNIEnv *env,
 	const char *ev_name_cstr = (*env)->GetStringUTFChars(env, ev_name, &iscopy);
 
 	tracepoint(lttng_ust_java, long_event, ev_name_cstr, payload);
+
+	(*env)->ReleaseStringUTFChars(env, ev_name, ev_name_cstr);
+}
+
+JNIEXPORT void JNICALL Java_org_lttng_ust_LTTngUst_tracepointLongLong(JNIEnv *env,
+						jobject jobj,
+						jstring ev_name,
+						jlong payload1,
+						jlong payload2)
+{
+	jboolean iscopy;
+	const char *ev_name_cstr = (*env)->GetStringUTFChars(env, ev_name, &iscopy);
+
+	tracepoint(lttng_ust_java, long_long_event, ev_name_cstr, payload1, payload2);
 
 	(*env)->ReleaseStringUTFChars(env, ev_name, ev_name_cstr);
 }

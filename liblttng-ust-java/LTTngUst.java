@@ -57,6 +57,20 @@ public abstract class LTTngUst {
     public static native void tracepointInt(String name, int payload);
 
     /**
+     * Insert a tracepoint with a payload consisting of two integers.
+     *
+     * @param name
+     *            The name assigned to this event. For best performance, this
+     *            should be a statically-defined String, or a literal.
+     * @param payload1
+     *            The first int payload
+     * @param payload2
+     *            The second int payload
+     */
+    public static native void
+    tracepointIntInt(String name, int payload1, int payload2);
+
+    /**
      * Insert a tracepoint with a payload of type Long
      *
      * @param name
@@ -66,6 +80,20 @@ public abstract class LTTngUst {
      *            The long payload
      */
     public static native void tracepointLong(String name, long payload);
+
+    /**
+     * Insert a tracepoint with a payload consisting of two longs.
+     *
+     * @param name
+     *            The name assigned to this event. For best performance, this
+     *            should be a statically-defined String, or a literal.
+     * @param payload1
+     *            The first long payload
+     * @param payload2
+     *            The second long payload
+     */
+    public static native void
+    tracepointLongLong(String name, long payload1, long payload2);
 
     /**
      * Insert a tracepoint with a String payload.
