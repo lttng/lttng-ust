@@ -24,11 +24,27 @@
 
 #include <lttng/tracepoint.h>
 
-TRACEPOINT_EVENT(lttng_ust_java, string,
-	TP_ARGS(const char *, name, const char *, args),
+TRACEPOINT_EVENT(lttng_ust_java, int_event,
+	TP_ARGS(const char *, name, int, payload),
 	TP_FIELDS(
 		ctf_string(name, name)
-		ctf_string(args, args)
+		ctf_integer(int, int_payload, payload)
+	)
+)
+
+TRACEPOINT_EVENT(lttng_ust_java, long_event,
+	TP_ARGS(const char *, name, long, payload),
+	TP_FIELDS(
+		ctf_string(name, name)
+		ctf_integer(long, long_payload, payload)
+	)
+)
+
+TRACEPOINT_EVENT(lttng_ust_java, string_event,
+	TP_ARGS(const char *, name, const char *, payload),
+	TP_FIELDS(
+		ctf_string(name, name)
+		ctf_string(string_payload, payload)
 	)
 )
 

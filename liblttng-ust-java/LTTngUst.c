@@ -22,18 +22,44 @@
 #define TRACEPOINT_CREATE_PROBES
 #include "lttng_ust_java.h"
 
+JNIEXPORT void JNICALL Java_org_lttng_ust_LTTngUst_tracepointInt(JNIEnv *env,
+						jobject jobj,
+						jstring ev_name,
+						jint payload)
+{
+	jboolean iscopy;
+	const char *ev_name_cstr = (*env)->GetStringUTFChars(env, ev_name, &iscopy);
+
+	tracepoint(lttng_ust_java, int_event, ev_name_cstr, payload);
+
+	(*env)->ReleaseStringUTFChars(env, ev_name, ev_name_cstr);
+}
+
+JNIEXPORT void JNICALL Java_org_lttng_ust_LTTngUst_tracepointLong(JNIEnv *env,
+						jobject jobj,
+						jstring ev_name,
+						jlong payload)
+{
+	jboolean iscopy;
+	const char *ev_name_cstr = (*env)->GetStringUTFChars(env, ev_name, &iscopy);
+
+	tracepoint(lttng_ust_java, long_event, ev_name_cstr, payload);
+
+	(*env)->ReleaseStringUTFChars(env, ev_name, ev_name_cstr);
+}
+
 JNIEXPORT void JNICALL Java_org_lttng_ust_LTTngUst_tracepointString(JNIEnv *env,
 						jobject jobj,
 						jstring ev_name,
-						jstring args)
+						jstring payload)
 {
 	jboolean iscopy;
-	const char *ev_name_cstr = (*env)->GetStringUTFChars(env, ev_name,
-							&iscopy);
-	const char *args_cstr = (*env)->GetStringUTFChars(env, args, &iscopy);
+	const char *ev_name_cstr = (*env)->GetStringUTFChars(env, ev_name, &iscopy);
+	const char *payload_cstr = (*env)->GetStringUTFChars(env, payload, &iscopy);
 
-	tracepoint(lttng_ust_java, string, ev_name_cstr, args_cstr);
+	tracepoint(lttng_ust_java, string_event, ev_name_cstr, payload_cstr);
 
 	(*env)->ReleaseStringUTFChars(env, ev_name, ev_name_cstr);
-	(*env)->ReleaseStringUTFChars(env, args, args_cstr);
+	(*env)->ReleaseStringUTFChars(env, payload, payload_cstr);
 }
+
