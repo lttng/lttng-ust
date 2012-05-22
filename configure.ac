@@ -197,22 +197,6 @@ AS_IF([test $JAVA_JDK],[
         ])
 ])
 
-# Check for JNI header files if requested
-AC_ARG_WITH([jni-interface],
-	[AS_HELP_STRING([--with-jni-interface],[build JNI interface between C and Java. Needs Java include files [default=no]])],
-	[jni_interface=$withval],
-	[jni_interface=no]
-)
-
-AS_IF([test "x$jni_interface" = "xyes"],[
-        AC_CHECK_HEADERS([jni.h],[],[
-        AC_MSG_ERROR([missing jni.h
-Make sure Sun Java, OpenJDK or GCJ is installed and that this header file exists in the system path.
-Use the --with-java-jdk=DIR flag to point to your Java include files, or disable the JNI interface.])
-	])
-])
-AM_CONDITIONAL([BUILD_JNI_INTERFACE], [test "x$jni_interface" = "xyes"])
-
 # sdt.h integration
 AC_ARG_WITH([sdt],
 	[AS_HELP_STRING([--with-sdt],[provide SystemTap integration via sdt.h [default=no]])],
@@ -294,9 +278,6 @@ AS_ECHO("LTTng-UST will be built with the following options:")
 AS_ECHO("Library format: $LIBFORMAT")
 
 AS_ECHO()
-AS_ECHO_N("Java support (JNI): ")
-AS_IF([test "x$jni_interface" = "xyes"], [AS_ECHO("Enabled")], [AS_ECHO("Disabled")])
-
 AS_ECHO_N("sdt.h integration:  ")
 AS_IF([test "x$with_sdt" = "xyes"], [AS_ECHO("Enabled")], [AS_ECHO("Disabled")])
 
