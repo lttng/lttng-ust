@@ -18,7 +18,7 @@
  * modified is included with the above copyright notice.
  */
 
-#ifdef __linux__
+#if (defined(__linux__) || defined(__CYGWIN__))
 #include <endian.h>
 #elif defined(__FreeBSD__)
 #include <machine/endian.h>
