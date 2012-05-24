@@ -78,11 +78,11 @@ int lttng_ust_get_cpu(void)
 }
 #endif	/* __UCLIBC__ */
 
-#elif defined(__FreeBSD__)
+#elif (defined(__FreeBSD__) || defined(__CYGWIN__))
 
 /*
- * FreeBSD does not allow query of CPU ID. Always use CPU number 0, with
- * the assocated performance degradation on SMP.
+ * FreeBSD and Cygwin do not allow query of CPU ID. Always use CPU
+ * number 0, with the assocated performance degradation on SMP.
  */
 static inline
 int lttng_ust_get_cpu(void)
