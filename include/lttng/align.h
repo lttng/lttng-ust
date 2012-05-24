@@ -19,8 +19,12 @@
 
 #include <lttng/bug.h>
 #include <unistd.h>
+#include <limits.h>
 
+#ifndef PAGE_SIZE	/* Cygwin limits.h defines its own PAGE_SIZE */
 #define PAGE_SIZE		sysconf(_SC_PAGE_SIZE)
+#endif
+
 #define PAGE_MASK		(~(PAGE_SIZE - 1))
 #define __ALIGN_MASK(v, mask)	(((v) + (mask)) & ~(mask))
 #define ALIGN(v, align)		__ALIGN_MASK(v, (typeof(v)) (align) - 1)
