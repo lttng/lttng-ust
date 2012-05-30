@@ -236,6 +236,7 @@ int handle_message(struct sock_info *sock_info,
 	struct ustcomm_ust_reply lur;
 	int shm_fd, wait_fd;
 	union ust_args args;
+	ssize_t len;
 
 	ust_lock();
 
@@ -344,6 +345,22 @@ end:
 		if (sendret) {
 			ret = sendret;
 			goto error;
+		}
+	}
+	/*
+	 * LTTNG_UST_TRACEPOINT_FIELD_LIST_GET needs to send the field
+	 * after the reply.
+	 */
+	if (lur.ret_code == USTCOMM_OK) {
+		switch (lum->cmd) {
+		case LTTNG_UST_TRACEPOINT_FIELD_LIST_GET:
+			len = ustcomm_send_unix_sock(sock,
+				&args.field_list.entry,
+				sizeof(args.field_list.entry));
+			if (len != sizeof(args.field_list.entry)) {
+				ret = -1;
+				goto error;
+			}
 		}
 	}
 	/*

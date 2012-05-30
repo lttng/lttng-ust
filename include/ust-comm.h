@@ -155,6 +155,11 @@ struct ustcomm_ust_reply {
 	} u;
 };
 
+/*
+ * LTTNG_UST_TRACEPOINT_FIELD_LIST reply is followed by a
+ * struct lttng_ust_field_iter field.
+ */
+
 extern int ustcomm_create_unix_sock(const char *pathname);
 extern int ustcomm_connect_unix_sock(const char *pathname);
 extern int ustcomm_accept_unix_sock(int sock);

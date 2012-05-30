@@ -261,6 +261,36 @@ int ltt_probes_get_field_list(struct lttng_ust_field_list *list)
 					event_field->name,
 					LTTNG_UST_SYM_NAME_LEN);
 				list_entry->field.field_name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+				switch (event_field->type.atype) {
+				case atype_integer:
+					list_entry->field.type = LTTNG_UST_FIELD_INTEGER;
+					break;
+				case atype_string:
+					list_entry->field.type = LTTNG_UST_FIELD_STRING;
+					break;
+				case atype_array:
+					if (event_field->type.u.array.elem_type.atype != atype_integer
+						|| event_field->type.u.array.elem_type.u.basic.integer.encoding == lttng_encode_none)
+						list_entry->field.type = LTTNG_UST_FIELD_OTHER;
+					else
+						list_entry->field.type = LTTNG_UST_FIELD_STRING;
+					break;
+				case atype_sequence:
+					if (event_field->type.u.sequence.elem_type.atype != atype_integer
+						|| event_field->type.u.sequence.elem_type.u.basic.integer.encoding == lttng_encode_none)
+						list_entry->field.type = LTTNG_UST_FIELD_OTHER;
+					else
+						list_entry->field.type = LTTNG_UST_FIELD_STRING;
+					break;
+				case atype_float:
+					list_entry->field.type = LTTNG_UST_FIELD_FLOAT;
+					break;
+				case atype_enum:
+					list_entry->field.type = LTTNG_UST_FIELD_ENUM;
+					break;
+				default:
+					list_entry->field.type = LTTNG_UST_FIELD_OTHER;
+				}
 				if (!event_desc->loglevel) {
 					list_entry->field.loglevel = TRACE_DEFAULT;
 				} else {

@@ -614,8 +614,7 @@ long lttng_tracepoint_field_list_cmd(int objd, unsigned int cmd,
 	unsigned long arg, union ust_args *uargs)
 {
 	struct lttng_ust_field_list *list = objd_private(objd);
-	struct lttng_ust_field_iter *tp =
-		(struct lttng_ust_field_iter *) arg;
+	struct lttng_ust_field_iter *tp = &uargs->field_list.entry;
 	struct lttng_ust_field_iter *iter;
 
 	switch (cmd) {

@@ -486,6 +486,52 @@ int ustctl_tracepoint_list_get(int sock, int tp_list_handle,
 	return 0;
 }
 
+int ustctl_tracepoint_field_list(int sock)
+{
+	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_reply lur;
+	int ret, tp_field_list_handle;
+
+	memset(&lum, 0, sizeof(lum));
+	lum.handle = LTTNG_UST_ROOT_HANDLE;
+	lum.cmd = LTTNG_UST_TRACEPOINT_FIELD_LIST;
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+	if (ret)
+		return ret;
+	tp_field_list_handle = lur.ret_val;
+	DBG("received tracepoint field list handle %u", tp_field_list_handle);
+	return tp_field_list_handle;
+}
+
+int ustctl_tracepoint_field_list_get(int sock, int tp_field_list_handle,
+		struct lttng_ust_field_iter *iter)
+{
+	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_reply lur;
+	int ret;
+	ssize_t len;
+
+	if (!iter)
+		return -EINVAL;
+
+	memset(&lum, 0, sizeof(lum));
+	lum.handle = tp_field_list_handle;
+	lum.cmd = LTTNG_UST_TRACEPOINT_FIELD_LIST_GET;
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+	if (ret)
+		return ret;
+	len = ustcomm_recv_unix_sock(sock, iter, sizeof(*iter));
+	if (len != sizeof(*iter)) {
+		return -EINVAL;
+	}
+	DBG("received tracepoint field list entry event_name %s event_loglevel %d field_name %s field_type %d",
+		iter->event_name,
+		iter->loglevel,
+		iter->field_name,
+		iter->type);
+	return 0;
+}
+
 int ustctl_tracer_version(int sock, struct lttng_ust_tracer_version *v)
 {
 	struct ustcomm_ust_msg lum;
