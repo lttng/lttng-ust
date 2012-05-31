@@ -520,6 +520,10 @@ int ustctl_tracepoint_field_list_get(int sock, int tp_field_list_handle,
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
+	if (lur.ret_code != USTCOMM_OK) {
+		DBG("Return code: %s", ustcomm_get_readable_code(lur.ret_code));
+		return -EINVAL;
+	}
 	len = ustcomm_recv_unix_sock(sock, iter, sizeof(*iter));
 	if (len != sizeof(*iter)) {
 		return -EINVAL;
