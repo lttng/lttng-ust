@@ -832,6 +832,7 @@ int get_timeout(struct timespec *constructor_timeout)
 void __attribute__((constructor)) lttng_ust_init(void)
 {
 	struct timespec constructor_timeout;
+	sigset_t sig_all_blocked, orig_parent_mask;
 	int timeout_mode;
 	int ret;
 
@@ -868,6 +869,18 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	if (ret) {
 		ERR("Error setting up to local apps");
 	}
+
+	/* A new thread created by pthread_create inherits the signal mask
+	 * from the parent. To avoid any signal being received by the
+	 * listener thread, we block all signals temporarily in the parent,
+	 * while we create the listener thread.
+	 */
+	sigfillset(&sig_all_blocked);
+	ret = pthread_sigmask(SIG_SETMASK, &sig_all_blocked, &orig_parent_mask);
+	if (ret) {
+		PERROR("pthread_sigmask: %s", strerror(ret));
+	}
+
 	ret = pthread_create(&local_apps.ust_listener, NULL,
 			ust_listener_thread, &local_apps);
 
@@ -876,6 +889,12 @@ void __attribute__((constructor)) lttng_ust_init(void)
 				ust_listener_thread, &global_apps);
 	} else {
 		handle_register_done(&local_apps);
+	}
+
+	/* Restore original signal mask in parent */
+	ret = pthread_sigmask(SIG_SETMASK, &orig_parent_mask, NULL);
+	if (ret) {
+		PERROR("pthread_sigmask: %s", strerror(ret));
 	}
 
 	switch (timeout_mode) {
