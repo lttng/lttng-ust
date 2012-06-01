@@ -1,3 +1,16 @@
+2012-06-01 lttng-ust 2.0.3
+	* Fix: Block all signals in listener thread
+	* Remove jni support for configure
+	* Fix: don't SIGBUS when filesystem is full
+	* tracepoint: include stdio.h for NULL definition
+	* manpage update: document that probes need gcc
+	* Fix: remove # in front on extern "C" {
+	* Cleanup: don't use GNU old-style field designator extension
+	* Fix: remove padding field after variable sized array
+	* Fix: lttng-ust.pc needs to specify -ldl
+	* Update changelog after liblttng-ust-java removal
+	* Fix: drop unusable liblttng-ust-java.so
+
 2012-04-18 lttng-ust 2.0.2
 	* Fix: drop unusable liblttng-ust-java.so
 	* Fix: examples Makefiles should pass $(LIBS) at last
