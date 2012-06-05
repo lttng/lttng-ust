@@ -23,11 +23,13 @@ extern "C" {
  */
 
 #include <lttng/tracepoint.h>
+#include <stdbool.h>
 
 TRACEPOINT_EVENT(ust_tests_hello, tptest,
 	TP_ARGS(int, anint, int, netint, long *, values,
-		 char *, text, size_t, textlen,
-		 double, doublearg, float, floatarg),
+		char *, text, size_t, textlen,
+		double, doublearg, float, floatarg,
+		bool, boolarg),
 	TP_FIELDS(
 		ctf_integer(int, intfield, anint)
 		ctf_integer_hex(int, intfield2, anint)
@@ -43,6 +45,7 @@ TRACEPOINT_EVENT(ust_tests_hello, tptest,
 		ctf_string(stringfield, text)
 		ctf_float(float, floatfield, floatarg)
 		ctf_float(double, doublefield, doublearg)
+		ctf_integer(bool, boolfield, boolarg)
 	)
 )
 
