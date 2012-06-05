@@ -28,6 +28,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #define TRACEPOINT_DEFINE
 #include "ust_tests_hello.h"
@@ -73,6 +74,7 @@ int main(int argc, char **argv)
 	double dbl = 2.0;
 	float flt = 2222.0;
 	int delay = 0;
+	bool mybool = 123;	/* should print "1" */
 
 	init_int_handler();
 
@@ -87,7 +89,7 @@ int main(int argc, char **argv)
 	for (i = 0; i < 1000000; i++) {
 		netint = htonl(i);
 		tracepoint(ust_tests_hello, tptest, i, netint, values,
-			   text, strlen(text), dbl, flt);
+			   text, strlen(text), dbl, flt, mybool);
 		//usleep(100000);
 	}
 	fprintf(stderr, " done.\n");
