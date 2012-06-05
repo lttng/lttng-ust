@@ -444,14 +444,18 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))\
 #include <lttng/ust-tracepoint-event-reset.h>
 
 #undef TP_ARGS
-#define TP_ARGS(args...) #args
+#define TP_ARGS(args...) args
+
+#define _TP_EXTRACT_STRING2(...)	#__VA_ARGS__
 
 #undef TRACEPOINT_EVENT_CLASS
 #define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	\
 const char __tp_event_signature___##_provider##___##_name[] = 		\
-		_args;
+		_TP_EXTRACT_STRING2(_args);
 
 #include TRACEPOINT_INCLUDE
+
+#undef _TP_EXTRACT_STRING2
 
 /*
  * Stage 6 of tracepoint event generation.
