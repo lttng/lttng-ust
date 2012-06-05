@@ -682,7 +682,7 @@ void ustctl_unmap_channel(struct lttng_ust_shm_handle *handle)
 struct lttng_ust_lib_ring_buffer *ustctl_open_stream_read(struct lttng_ust_shm_handle *handle,
 	int cpu)
 {
-	struct channel *chan = handle->shadow_chan;
+	struct channel *chan;
 	int *shm_fd, *wait_fd;
 	uint64_t *memory_map_size;
 	struct lttng_ust_lib_ring_buffer *buf;
@@ -691,6 +691,7 @@ struct lttng_ust_lib_ring_buffer *ustctl_open_stream_read(struct lttng_ust_shm_h
 	if (!handle)
 		return NULL;
 
+	chan = handle->shadow_chan;
 	buf = channel_get_ring_buffer(&chan->backend.config,
 		chan, cpu, handle, &shm_fd, &wait_fd, &memory_map_size);
 	if (!buf)
@@ -734,11 +735,12 @@ int ustctl_get_mmap_len(struct lttng_ust_shm_handle *handle,
 		unsigned long *len)
 {
 	unsigned long mmap_buf_len;
-	struct channel *chan = handle->shadow_chan;
+	struct channel *chan;
 
 	if (!handle || !buf || !len)
 		return -EINVAL;
 
+	chan = handle->shadow_chan;
 	if (chan->backend.config.output != RING_BUFFER_MMAP)
 		return -EINVAL;
 	mmap_buf_len = chan->backend.buf_size;
@@ -755,11 +757,12 @@ int ustctl_get_max_subbuf_size(struct lttng_ust_shm_handle *handle,
 		struct lttng_ust_lib_ring_buffer *buf,
 		unsigned long *len)
 {
-	struct channel *chan = handle->shadow_chan;
+	struct channel *chan;
 
 	if (!handle || !buf || !len)
 		return -EINVAL;
 
+	chan = handle->shadow_chan;
 	*len = chan->backend.subbuf_size;
 	return 0;
 }
@@ -773,12 +776,13 @@ int ustctl_get_max_subbuf_size(struct lttng_ust_shm_handle *handle,
 int ustctl_get_mmap_read_offset(struct lttng_ust_shm_handle *handle,
 		struct lttng_ust_lib_ring_buffer *buf, unsigned long *off)
 {
-	struct channel *chan = handle->shadow_chan;
+	struct channel *chan;
 	unsigned long sb_bindex;
 
 	if (!handle || !buf || !off)
 		return -EINVAL;
 
+	chan = handle->shadow_chan;
 	if (chan->backend.config.output != RING_BUFFER_MMAP)
 		return -EINVAL;
 	sb_bindex = subbuffer_id_get_index(&chan->backend.config,
@@ -791,11 +795,12 @@ int ustctl_get_mmap_read_offset(struct lttng_ust_shm_handle *handle,
 int ustctl_get_subbuf_size(struct lttng_ust_shm_handle *handle,
 		struct lttng_ust_lib_ring_buffer *buf, unsigned long *len)
 {
-	struct channel *chan = handle->shadow_chan;
+	struct channel *chan;
 
 	if (!handle || !buf || !len)
 		return -EINVAL;
 
+	chan = handle->shadow_chan;
 	*len = lib_ring_buffer_get_read_data_size(&chan->backend.config, buf,
 		handle);
 	return 0;
@@ -805,11 +810,12 @@ int ustctl_get_subbuf_size(struct lttng_ust_shm_handle *handle,
 int ustctl_get_padded_subbuf_size(struct lttng_ust_shm_handle *handle,
 		struct lttng_ust_lib_ring_buffer *buf, unsigned long *len)
 {
-	struct channel *chan = handle->shadow_chan;
+	struct channel *chan;
 
 	if (!handle || !buf || !len)
 		return -EINVAL;
 
+	chan = handle->shadow_chan;
 	*len = lib_ring_buffer_get_read_data_size(&chan->backend.config, buf,
 		handle);
 	*len = PAGE_ALIGN(*len);
