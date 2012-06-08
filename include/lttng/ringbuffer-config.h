@@ -32,7 +32,7 @@ struct lttng_ust_lib_ring_buffer;
 struct channel;
 struct lttng_ust_lib_ring_buffer_config;
 struct lttng_ust_lib_ring_buffer_ctx;
-struct lttng_ust_shm_handle *handle;
+struct lttng_ust_shm_handle;
 
 /*
  * Ring buffer client callbacks. Only used by slow path, never on fast path.
