@@ -88,7 +88,7 @@ extern "C" {
 #define _TP_EXDATA_VAR20(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t)	__tp_data,b,d,f,h,j,l,n,p,r,t
 
 /* _TP_EXPROTO* extract tuples of type, var */
-#define _TP_EXPROTO0()
+#define _TP_EXPROTO0()						void
 #define _TP_EXPROTO2(a,b)					a b
 #define _TP_EXPROTO4(a,b,c,d)					a b,c d
 #define _TP_EXPROTO6(a,b,c,d,e,f)				a b,c d,e f
