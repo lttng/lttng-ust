@@ -33,7 +33,7 @@
 
 #define tp_rcu_dereference_bp(p)					     \
 	({								     \
-		typeof(p) _________p1 =	URCU_FORCE_CAST(typeof(p),	     \
+		__typeof__(p) _________p1 = URCU_FORCE_CAST(__typeof__(p),   \
 			tracepoint_dlopen.rcu_dereference_sym_bp(URCU_FORCE_CAST(void *, p))); \
 		(_________p1);						     \
 	})

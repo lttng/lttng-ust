@@ -27,7 +27,7 @@
 
 #define PAGE_MASK		(~(PAGE_SIZE - 1))
 #define __ALIGN_MASK(v, mask)	(((v) + (mask)) & ~(mask))
-#define ALIGN(v, align)		__ALIGN_MASK(v, (typeof(v)) (align) - 1)
+#define ALIGN(v, align)		__ALIGN_MASK(v, (__typeof__(v)) (align) - 1)
 #define PAGE_ALIGN(addr)	ALIGN(addr, PAGE_SIZE)
 
 /**
