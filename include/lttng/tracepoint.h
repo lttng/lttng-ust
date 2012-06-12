@@ -62,8 +62,12 @@ extern "C" {
 #define _TP_COMBINE_TOKENS4(_tokena, _tokenb, _tokenc, _tokend)		\
 		__TP_COMBINE_TOKENS4(_tokena, _tokenb, _tokenc, _tokend)
 
-/* _TP_EXVAR* extract the var names. */
+/*
+ * _TP_EXVAR* extract the var names.
+ * _TP_EXVAR1 and _TP_EXDATA_VAR1 are needed for -std=c99.
+ */
 #define _TP_EXVAR0()
+#define _TP_EXVAR1(a)
 #define _TP_EXVAR2(a,b)						b
 #define _TP_EXVAR4(a,b,c,d)					b,d
 #define _TP_EXVAR6(a,b,c,d,e,f)					b,d,f
@@ -76,6 +80,7 @@ extern "C" {
 #define _TP_EXVAR20(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t)	b,d,f,h,j,l,n,p,r,t
 
 #define _TP_EXDATA_VAR0()						__tp_data
+#define _TP_EXDATA_VAR1(a)						__tp_data
 #define _TP_EXDATA_VAR2(a,b)						__tp_data,b
 #define _TP_EXDATA_VAR4(a,b,c,d)					__tp_data,b,d
 #define _TP_EXDATA_VAR6(a,b,c,d,e,f)					__tp_data,b,d,f
@@ -87,8 +92,12 @@ extern "C" {
 #define _TP_EXDATA_VAR18(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r)		__tp_data,b,d,f,h,j,l,n,p,r
 #define _TP_EXDATA_VAR20(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t)	__tp_data,b,d,f,h,j,l,n,p,r,t
 
-/* _TP_EXPROTO* extract tuples of type, var */
+/*
+ * _TP_EXPROTO* extract tuples of type, var.
+ * _TP_EXPROTO1 and _TP_EXDATA_PROTO1 are needed for -std=c99.
+ */
 #define _TP_EXPROTO0()						void
+#define _TP_EXPROTO1(a)						void
 #define _TP_EXPROTO2(a,b)					a b
 #define _TP_EXPROTO4(a,b,c,d)					a b,c d
 #define _TP_EXPROTO6(a,b,c,d,e,f)				a b,c d,e f
@@ -101,6 +110,7 @@ extern "C" {
 #define _TP_EXPROTO20(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t)	a b,c d,e f,g h,i j,k l,m n,o p,q r,s t
 
 #define _TP_EXDATA_PROTO0()						void *__tp_data
+#define _TP_EXDATA_PROTO1(a)						void *__tp_data
 #define _TP_EXDATA_PROTO2(a,b)						void *__tp_data,a b
 #define _TP_EXDATA_PROTO4(a,b,c,d)					void *__tp_data,a b,c d
 #define _TP_EXDATA_PROTO6(a,b,c,d,e,f)					void *__tp_data,a b,c d,e f
