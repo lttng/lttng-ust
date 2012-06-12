@@ -204,7 +204,7 @@ static const char							\
 	},
 
 #undef TP_FIELDS
-#define TP_FIELDS(args...) args	/* Only one used in this phase */
+#define TP_FIELDS(...) __VA_ARGS__	/* Only one used in this phase */
 
 #undef TRACEPOINT_EVENT_CLASS
 #define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)		   	     \
@@ -224,7 +224,7 @@ static const char							\
 #include <lttng/ust-tracepoint-event-reset.h>
 
 #undef TP_ARGS
-#define TP_ARGS(args...) args
+#define TP_ARGS(...) __VA_ARGS__
 
 #undef TRACEPOINT_EVENT_CLASS
 #define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)		\
@@ -271,10 +271,10 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));
 	__event_len += __dynamic_len[__dynamic_len_idx++] = strlen(_src) + 1;
 
 #undef TP_ARGS
-#define TP_ARGS(args...) args
+#define TP_ARGS(...) __VA_ARGS__
 
 #undef TP_FIELDS
-#define TP_FIELDS(args...) args
+#define TP_FIELDS(...) __VA_ARGS__
 
 #undef TRACEPOINT_EVENT_CLASS
 #define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)      \
@@ -322,10 +322,10 @@ static inline size_t __event_get_size__##_provider##___##_name(size_t *__dynamic
 #define ctf_string(_item, _src)
 
 #undef TP_ARGS
-#define TP_ARGS(args...) args
+#define TP_ARGS(...) __VA_ARGS__
 
 #undef TP_FIELDS
-#define TP_FIELDS(args...) args
+#define TP_FIELDS(...) __VA_ARGS__
 
 #undef TRACEPOINT_EVENT_CLASS
 #define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
@@ -393,10 +393,10 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 #define __get_dynamic_len(field)	__dynamic_len[__dynamic_len_idx++]
 
 #undef TP_ARGS
-#define TP_ARGS(args...) args
+#define TP_ARGS(...) __VA_ARGS__
 
 #undef TP_FIELDS
-#define TP_FIELDS(args...) args
+#define TP_FIELDS(...) __VA_ARGS__
 
 #undef TRACEPOINT_EVENT_CLASS
 #define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
@@ -444,7 +444,7 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))\
 #include <lttng/ust-tracepoint-event-reset.h>
 
 #undef TP_ARGS
-#define TP_ARGS(args...) args
+#define TP_ARGS(...) __VA_ARGS__
 
 #define _TP_EXTRACT_STRING2(...)	#__VA_ARGS__
 
