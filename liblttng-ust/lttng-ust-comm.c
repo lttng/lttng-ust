@@ -79,6 +79,12 @@ static sem_t constructor_wait;
 static int sem_count = { 2 };
 
 /*
+ * Counting nesting within lttng-ust. Used to ensure that calling fork()
+ * from liblttng-ust does not execute the pre/post fork handlers.
+ */
+static int __thread lttng_ust_nest_count;
+
+/*
  * Info about socket and associated listener thread.
  */
 struct sock_info {
@@ -481,7 +487,9 @@ int get_wait_shm(struct sock_info *sock_info, size_t mmap_size)
 	 * If the open failed because the file did not exist, try
 	 * creating it ourself.
 	 */
+	lttng_ust_nest_count++;
 	pid = fork();
+	lttng_ust_nest_count--;
 	if (pid > 0) {
 		int status;
 
@@ -1031,6 +1039,8 @@ void ust_before_fork(sigset_t *save_sigset)
 	sigset_t all_sigs;
 	int ret;
 
+	if (lttng_ust_nest_count)
+		return;
 	/* Disable signals */
 	sigfillset(&all_sigs);
 	ret = sigprocmask(SIG_BLOCK, &all_sigs, save_sigset);
@@ -1056,6 +1066,8 @@ static void ust_after_fork_common(sigset_t *restore_sigset)
 
 void ust_after_fork_parent(sigset_t *restore_sigset)
 {
+	if (lttng_ust_nest_count)
+		return;
 	DBG("process %d", getpid());
 	rcu_bp_after_fork_parent();
 	/* Release mutexes and reenable signals */
@@ -1073,6 +1085,8 @@ void ust_after_fork_parent(sigset_t *restore_sigset)
  */
 void ust_after_fork_child(sigset_t *restore_sigset)
 {
+	if (lttng_ust_nest_count)
+		return;
 	DBG("process %d", getpid());
 	/* Release urcu mutexes */
 	rcu_bp_after_fork_child();
