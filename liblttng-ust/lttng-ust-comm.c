@@ -895,15 +895,20 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	sigfillset(&sig_all_blocked);
 	ret = pthread_sigmask(SIG_SETMASK, &sig_all_blocked, &orig_parent_mask);
 	if (ret) {
-		PERROR("pthread_sigmask: %s", strerror(ret));
+		ERR("pthread_sigmask: %s", strerror(ret));
 	}
 
 	ret = pthread_create(&global_apps.ust_listener, NULL,
 			ust_listener_thread, &global_apps);
-
+	if (ret) {
+		ERR("pthread_create global: %s", strerror(ret));
+	}
 	if (local_apps.allowed) {
 		ret = pthread_create(&local_apps.ust_listener, NULL,
 				ust_listener_thread, &local_apps);
+		if (ret) {
+			ERR("pthread_create local: %s", strerror(ret));
+		}
 	} else {
 		handle_register_done(&local_apps);
 	}
@@ -911,7 +916,7 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	/* Restore original signal mask in parent */
 	ret = pthread_sigmask(SIG_SETMASK, &orig_parent_mask, NULL);
 	if (ret) {
-		PERROR("pthread_sigmask: %s", strerror(ret));
+		ERR("pthread_sigmask: %s", strerror(ret));
 	}
 
 	switch (timeout_mode) {
@@ -987,12 +992,14 @@ void __attribute__((destructor)) lttng_ust_exit(void)
 	/* cancel threads */
 	ret = pthread_cancel(global_apps.ust_listener);
 	if (ret) {
-		ERR("Error cancelling global ust listener thread");
+		ERR("Error cancelling global ust listener thread: %s",
+			strerror(ret));
 	}
 	if (local_apps.allowed) {
 		ret = pthread_cancel(local_apps.ust_listener);
 		if (ret) {
-			ERR("Error cancelling local ust listener thread");
+			ERR("Error cancelling local ust listener thread: %s",
+				strerror(ret));
 		}
 	}
 	/*
