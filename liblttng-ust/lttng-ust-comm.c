@@ -898,12 +898,12 @@ void __attribute__((constructor)) lttng_ust_init(void)
 		PERROR("pthread_sigmask: %s", strerror(ret));
 	}
 
-	ret = pthread_create(&local_apps.ust_listener, NULL,
-			ust_listener_thread, &local_apps);
+	ret = pthread_create(&global_apps.ust_listener, NULL,
+			ust_listener_thread, &global_apps);
 
 	if (local_apps.allowed) {
-		ret = pthread_create(&global_apps.ust_listener, NULL,
-				ust_listener_thread, &global_apps);
+		ret = pthread_create(&local_apps.ust_listener, NULL,
+				ust_listener_thread, &local_apps);
 	} else {
 		handle_register_done(&local_apps);
 	}
