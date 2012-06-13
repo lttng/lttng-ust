@@ -136,6 +136,15 @@ extern void ltt_ring_buffer_client_overwrite_exit(void);
 extern void ltt_ring_buffer_client_discard_exit(void);
 extern void ltt_ring_buffer_metadata_client_exit(void);
 
+/*
+ * Force a read (imply TLS fixup for dlopen) of TLS variables.
+ */
+static
+void lttng_fixup_nest_count_tls(void)
+{
+	asm volatile ("" : : "m" (lttng_ust_nest_count));
+}
+
 static
 int setup_local_apps(void)
 {
@@ -872,6 +881,7 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	lttng_fixup_event_tls();
 	lttng_fixup_ringbuffer_tls();
 	lttng_fixup_vtid_tls();
+	lttng_fixup_nest_count_tls();
 
 	/*
 	 * We want precise control over the order in which we construct
