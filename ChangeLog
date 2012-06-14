@@ -1,3 +1,16 @@
+2012-06-14 lttng-ust 2.0.4
+	* Fix: perform TLS fixup of nest count outside of UST mutex
+	* Fix: liblttng-ust-fork deadlock
+	* Fix: handle pthread errors
+	* Fix: local apps allowed should disable local (not global) tracing
+	* Fix strict ISO-C compatibility for ust-tracepoint-event.h public header
+	* Fix: support -std=c99 in tracepoint macros
+	* Fix: tracepoint.h should not generate old-style definitions
+	* Fix: don't define variables in headers
+	* test "hello": add boolean test
+	* Fix: perform macro expansion on tracepoint signatures
+	* UST check pointer/de-reference order
+
 2012-06-01 lttng-ust 2.0.3
 	* Fix: Block all signals in listener thread
 	* Remove jni support for configure
