@@ -1,9 +1,10 @@
 AM_CPPFLAGS = -I$(top_srcdir)/include -Wsystem-headers
 
 noinst_PROGRAMS = hello
-hello_SOURCES = hello.c tp.c ust_tests_hello.h
+#hello_SOURCES = hello.c tp.c ust_tests_hello.h
+hello_SOURCES = hello.c ust_tests_hello.h
 hello_LDADD = $(top_builddir)/liblttng-ust/liblttng-ust.la
-hello_CFLAGS = -Werror=old-style-definition
+hello_CFLAGS = -Werror=old-style-definition --std=c99 -pedantic
 
 if LTTNG_UST_BUILD_WITH_LIBDL
 hello_LDADD += -ldl
