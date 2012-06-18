@@ -31,9 +31,12 @@
 #define tp_rcu_read_lock_bp	tracepoint_dlopen.rcu_read_lock_sym_bp
 #define tp_rcu_read_unlock_bp	tracepoint_dlopen.rcu_read_unlock_sym_bp
 
-#define tp_rcu_dereference_bp(p)					   \
-		URCU_FORCE_CAST(__typeof__(p),				   \
-			tracepoint_dlopen.rcu_dereference_sym_bp(URCU_FORCE_CAST(void *, p)))
+#define tp_rcu_dereference_bp(p)					     \
+	({								     \
+		__typeof__(p) _________p1 = URCU_FORCE_CAST(__typeof__(p),   \
+			tracepoint_dlopen.rcu_dereference_sym_bp(URCU_FORCE_CAST(void *, p))); \
+		(_________p1);						     \
+	})
 
 #define TP_RCU_LINK_TEST()	tp_rcu_read_lock_bp
 
