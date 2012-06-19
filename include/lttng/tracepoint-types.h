@@ -16,7 +16,7 @@
  */
 
 struct tracepoint_probe {
-	void *func;
+	void (*func)(void);
 	void *data;
 };
 

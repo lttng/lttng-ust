@@ -138,7 +138,7 @@ static void debug_print_probes(struct tracepoint_entry *entry)
 
 static void *
 tracepoint_entry_add_probe(struct tracepoint_entry *entry,
-			   void *probe, void *data)
+			   void (*probe)(void), void *data)
 {
 	int nr_probes = 0;
 	struct tracepoint_probe *old, *new;
@@ -170,8 +170,8 @@ tracepoint_entry_add_probe(struct tracepoint_entry *entry,
 }
 
 static void *
-tracepoint_entry_remove_probe(struct tracepoint_entry *entry, void *probe,
-			      void *data)
+tracepoint_entry_remove_probe(struct tracepoint_entry *entry,
+			      void (*probe)(void), void *data)
 {
 	int nr_probes = 0, nr_del = 0, i;
 	struct tracepoint_probe *old, *new;
@@ -391,7 +391,7 @@ static void tracepoint_update_probes(void)
 }
 
 static struct tracepoint_probe *
-tracepoint_add_probe(const char *name, void *probe, void *data,
+tracepoint_add_probe(const char *name, void (*probe)(void), void *data,
 		const char *signature)
 {
 	struct tracepoint_entry *entry;
@@ -418,8 +418,8 @@ tracepoint_add_probe(const char *name, void *probe, void *data,
  * The probe address must at least be aligned on the architecture pointer size.
  * Called with the tracepoint mutex held.
  */
-int __tracepoint_probe_register(const char *name, void *probe, void *data,
-		const char *signature)
+int __tracepoint_probe_register(const char *name, void (*probe)(void),
+		void *data, const char *signature)
 {
 	void *old;
 	int ret = 0;
@@ -440,7 +440,8 @@ end:
 	return ret;
 }
 
-static void *tracepoint_remove_probe(const char *name, void *probe, void *data)
+static void *tracepoint_remove_probe(const char *name, void (*probe)(void),
+		void *data)
 {
 	struct tracepoint_entry *entry;
 	void *old;
@@ -462,7 +463,8 @@ static void *tracepoint_remove_probe(const char *name, void *probe, void *data)
  * @probe: probe function pointer
  * @probe: probe data pointer
  */
-int __tracepoint_probe_unregister(const char *name, void *probe, void *data)
+int __tracepoint_probe_unregister(const char *name, void (*probe)(void),
+		void *data)
 {
 	void *old;
 	int ret = 0;
@@ -499,7 +501,7 @@ static void tracepoint_add_old_probes(void *old)
  *
  * caller must call tracepoint_probe_update_all()
  */
-int tracepoint_probe_register_noupdate(const char *name, void *probe,
+int tracepoint_probe_register_noupdate(const char *name, void (*probe)(void),
 				       void *data, const char *signature)
 {
 	void *old;
@@ -525,7 +527,7 @@ end:
  * caller must call tracepoint_probe_update_all()
  * Called with the tracepoint mutex held.
  */
-int tracepoint_probe_unregister_noupdate(const char *name, void *probe,
+int tracepoint_probe_unregister_noupdate(const char *name, void (*probe)(void),
 					 void *data)
 {
 	void *old;

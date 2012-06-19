@@ -500,7 +500,7 @@ void _ltt_channel_destroy(struct ltt_channel *chan)
  */
 int ltt_event_create(struct ltt_channel *chan,
 		struct lttng_ust_event *event_param,
-		void *filter,
+		void (*filter)(struct ltt_event *event),
 		struct ltt_event **_event)
 {
 	const struct lttng_event_desc *desc = NULL;	/* silence gcc */
