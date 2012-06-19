@@ -148,7 +148,7 @@ static inline void __tracepoint_cb_##_provider##___##_name(_TP_ARGS_PROTO(__VA_A
 	if (caa_unlikely(!__tp_probe))							\
 		goto end;								\
 	do {										\
-		void *__tp_cb =	__tp_probe->func;					\
+		void (*__tp_cb)(void) = __tp_probe->func;					\
 		void *__tp_data = __tp_probe->data;					\
 											\
 		URCU_FORCE_CAST(void (*)(_TP_ARGS_DATA_PROTO(__VA_ARGS__)), __tp_cb)	\
@@ -158,20 +158,21 @@ end:											\
 	tp_rcu_read_unlock_bp();							\
 }											\
 static inline void __tracepoint_register_##_provider##___##_name(char *name,		\
-		void *func, void *data)							\
+		void (*func)(void), void *data)							\
 {											\
 	__tracepoint_probe_register(name, func, data,					\
 		__tracepoint_##_provider##___##_name.signature);			\
 }											\
 static inline void __tracepoint_unregister_##_provider##___##_name(char *name,		\
-		void *func, void *data)							\
+		void (*func)(void), void *data)							\
 {											\
 	__tracepoint_probe_unregister(name, func, data);				\
 }
 
-extern int __tracepoint_probe_register(const char *name, void *func, void *data,
-		const char *signature);
-extern int __tracepoint_probe_unregister(const char *name, void *func, void *data);
+extern int __tracepoint_probe_register(const char *name, void (*func)(void),
+		void *data, const char *signature);
+extern int __tracepoint_probe_unregister(const char *name, void (*func)(void),
+		void *data);
 
 /*
  * tracepoint dynamic linkage handling (callbacks). Hidden visibility:

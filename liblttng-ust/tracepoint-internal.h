@@ -32,10 +32,10 @@ struct tracepoint_lib {
 };
 
 extern int tracepoint_probe_register_noupdate(const char *name,
-		void *callback, void *priv,
+		void (*callback)(void), void *priv,
 		const char *signature);
 extern int tracepoint_probe_unregister_noupdate(const char *name,
-		void *callback, void *priv);
+		void (*callback)(void), void *priv);
 extern void tracepoint_probe_update_all(void);
 
 /*

@@ -211,7 +211,7 @@ struct lttng_ctx {
 #define LTTNG_UST_EVENT_DESC_PADDING	40
 struct lttng_event_desc {
 	const char *name;
-	void *probe_callback;
+	void (*probe_callback)(void);
 	const struct lttng_event_ctx *ctx;	/* context */
 	const struct lttng_event_field *fields;	/* event payload */
 	unsigned int nr_fields;
@@ -271,6 +271,7 @@ struct lttng_ust_tracepoint_list {
 };
 
 struct ust_pending_probe;
+struct ltt_event;
 
 /*
  * ltt_event structure is referred to by the tracing fast path. It must be
@@ -281,7 +282,7 @@ struct ltt_event {
 	struct ltt_channel *chan;
 	int enabled;
 	const struct lttng_event_desc *desc;
-	void *filter;
+	void (*filter)(struct ltt_event *event);
 	struct lttng_ctx *ctx;
 	enum lttng_ust_instrumentation instrumentation;
 	union {
@@ -401,7 +402,7 @@ struct ltt_channel *ltt_global_channel_create(struct ltt_session *session,
 
 int ltt_event_create(struct ltt_channel *chan,
 		struct lttng_ust_event *event_param,
-		void *filter,
+		void (*filter)(struct ltt_event *event),
 		struct ltt_event **event);
 
 int ltt_channel_enable(struct ltt_channel *channel);

@@ -496,7 +496,7 @@ static const int *							       \
 const struct lttng_event_desc __event_desc___##_provider##_##_name = {	       \
 	.fields = __event_fields___##_provider##___##_template,		       \
 	.name = #_provider ":" #_name,					       \
-	.probe_callback = (void *) &__event_probe__##_provider##___##_template,\
+	.probe_callback = (void (*)(void)) &__event_probe__##_provider##___##_template,\
 	.nr_fields = _TP_ARRAY_SIZE(__event_fields___##_provider##___##_template), \
 	.loglevel = &__ref_loglevel___##_provider##___##_name,		       \
 	.signature = __tp_event_signature___##_provider##___##_template,       \
