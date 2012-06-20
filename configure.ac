@@ -110,13 +110,6 @@ AC_CHECK_FUNCS([gettimeofday munmap socket strerror strtol sched_getcpu sysconf]
 
 CFLAGS="-Wall $CFLAGS"
 
-# Check for texinfo, required for building the documentation
-# TODO: make this (and building the documentation) optional
-AC_CHECK_PROG([TEXINFO], [makeinfo], [yes])
-AS_IF([test "x$TEXINFO" != "xyes"],[
-	AC_MSG_ERROR([Please install the 'texinfo' program and make sure 'makeinfo' is in the PATH.])
-])
-
 # URCU
 
 # urcu - check if we just find the headers it out of the box.
