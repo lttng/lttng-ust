@@ -172,13 +172,9 @@ int ustcomm_accept_unix_sock(int sock)
 	new_fd = accept(sock, (struct sockaddr *) &sun, &len);
 	if (new_fd < 0) {
 		perror("accept");
-		goto error;
+		return -1;
 	}
-
 	return new_fd;
-
-error:
-	return -1;
 }
 
 /*
