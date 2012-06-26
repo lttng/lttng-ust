@@ -681,7 +681,7 @@ error:
  * This thread does not allocate any resource, except within
  * handle_message, within mutex protection. This mutex protects against
  * fork and exit.
- * The other moment it allocates resources is at socket connexion, which
+ * The other moment it allocates resources is at socket connection, which
  * is also protected by the mutex.
  */
 static
