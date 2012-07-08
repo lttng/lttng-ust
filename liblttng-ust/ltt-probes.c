@@ -372,7 +372,7 @@ void ltt_probes_create_wildcard_events(struct wildcard_entry *entry,
 					sizeof(event_param.name));
 				/* create event */
 				ret = ltt_event_create(wildcard->chan,
-					&event_param, NULL,
+					&event_param, NULL, NULL,
 					&ev);
 				if (ret) {
 					DBG("Error creating event");

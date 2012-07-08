@@ -292,6 +292,69 @@ static inline size_t __event_get_size__##_provider##___##_name(size_t *__dynamic
 #include TRACEPOINT_INCLUDE
 
 /*
+ * Stage 3.1 of tracepoint event generation.
+ *
+ * Create static inline function that layout the filter stack data.
+ */
+
+/* Reset all macros within TRACEPOINT_EVENT */
+#include <lttng/ust-tracepoint-event-reset.h>
+
+#undef ctf_integer_ext
+#define ctf_integer_ext(_type, _item, _src, _byte_order, _base)		       \
+	if (lttng_is_signed_type(_type))				       \
+		*(int64_t *) __stack_data = (int64_t) (_type) (_src);	       \
+	else								       \
+		*(uint64_t *) __stack_data = (uint64_t) (_type) (_src);	       \
+	__stack_data += sizeof(int64_t);
+
+#undef ctf_float
+#define ctf_float(_type, _item, _src)					       \
+	*(double *) __stack_data = (double) (_type) (_src);		       \
+	__stack_data += sizeof(double);
+
+#undef ctf_array_encoded
+#define ctf_array_encoded(_type, _item, _src, _length, _encoding)	       \
+	*(unsigned long *) __stack_data = (unsigned long) (_length);	       \
+	__stack_data += sizeof(unsigned long);				       \
+	*(const void **) __stack_data = (_src);				       \
+	__stack_data += sizeof(void *);
+
+#undef ctf_sequence_encoded
+#define ctf_sequence_encoded(_type, _item, _src, _length_type,		       \
+			_src_length, _encoding)				       \
+	*(unsigned long *) __stack_data = (unsigned long) (_src_length);       \
+	__stack_data += sizeof(unsigned long);				       \
+	*(const void **) __stack_data = (_src);				       \
+	__stack_data += sizeof(void *);
+
+#undef ctf_string
+#define ctf_string(_item, _src)						       \
+	*(unsigned long *) __stack_data = (unsigned long) (strlen(_src) + 1);  \
+	__stack_data += sizeof(unsigned long);				       \
+	*(const void **) __stack_data = (_src);				       \
+	__stack_data += sizeof(void *);
+
+#undef TP_ARGS
+#define TP_ARGS(...) __VA_ARGS__
+
+#undef TP_FIELDS
+#define TP_FIELDS(...) __VA_ARGS__
+
+#undef TRACEPOINT_EVENT_CLASS
+#define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
+static inline								      \
+void __event_prepare_filter_stack__##_provider##___##_name(char *__stack_data,\
+						 _TP_ARGS_DATA_PROTO(_args))  \
+{									      \
+	_fields								      \
+}
+
+#include TRACEPOINT_INCLUDE
+
+
+
+/*
  * Stage 4 of tracepoint event generation.
  *
  * Create static inline function that calculates event payload alignment.
@@ -398,6 +461,12 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 #undef TP_FIELDS
 #define TP_FIELDS(...) __VA_ARGS__
 
+/*
+ * Using twice size for filter stack data to hold size and pointer for
+ * each field (worse case). For integers, max size required is 64-bit.
+ * Same for double-precision floats. Those fit within
+ * 2*sizeof(unsigned long) for all supported architectures.
+ */
 #undef TRACEPOINT_EVENT_CLASS
 #define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
 static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))\
@@ -408,7 +477,8 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))\
 	size_t __event_len, __event_align;				      \
 	size_t __dynamic_len_idx = 0;					      \
 	union {								      \
-		size_t __dynamic_len[_TP_ARRAY_SIZE(__event_fields___##_provider##___##_name)];	      \
+		size_t __dynamic_len[_TP_ARRAY_SIZE(__event_fields___##_provider##___##_name)]; \
+		char __filter_stack_data[2 * sizeof(unsigned long) * _TP_ARRAY_SIZE(__event_fields___##_provider##___##_name)]; \
 	} __stackvar;							      \
 	int __ret;							      \
 									      \
@@ -420,7 +490,13 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))\
 		return;							      \
 	if (caa_unlikely(!CMM_ACCESS_ONCE(__event->enabled)))		      \
 		return;							      \
-	__event_len = __event_get_size__##_provider##___##_name(__stackvar.__dynamic_len,\
+	if (caa_unlikely(__event->filter)) {				      \
+		__event_prepare_filter_stack__##_provider##___##_name(__stackvar.__filter_stack_data, \
+			_TP_ARGS_DATA_VAR(_args));				      \
+		if (caa_likely(!__event->filter(__event->filter_data, __stackvar.__filter_stack_data))) \
+			return;						      \
+	}								      \
+	__event_len = __event_get_size__##_provider##___##_name(__stackvar.__dynamic_len, \
 		 _TP_ARGS_DATA_VAR(_args));				      \
 	__event_align = __event_get_align__##_provider##___##_name(_TP_ARGS_VAR(_args)); \
 	lib_ring_buffer_ctx_init(&__ctx, __chan->chan, __event, __event_len,  \

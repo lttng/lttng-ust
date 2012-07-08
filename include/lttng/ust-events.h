@@ -293,7 +293,8 @@ struct ltt_event {
 	struct ltt_channel *chan;
 	int enabled;
 	const struct lttng_event_desc *desc;
-	void (*filter)(struct ltt_event *event);
+	int (*filter)(void *filter_data, const char *filter_stack_data);
+	void *filter_data;
 	struct lttng_ctx *ctx;
 	enum lttng_ust_instrumentation instrumentation;
 	union {
@@ -413,7 +414,9 @@ struct ltt_channel *ltt_global_channel_create(struct ltt_session *session,
 
 int ltt_event_create(struct ltt_channel *chan,
 		struct lttng_ust_event *event_param,
-		void (*filter)(struct ltt_event *event),
+		int (*filter)(void *filter_data,
+			const char *filter_stack_data),
+		void *filter_data,
 		struct ltt_event **event);
 
 int ltt_channel_enable(struct ltt_channel *channel);

@@ -251,7 +251,7 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 					sizeof(event_param.name));
 				/* create event */
 				ret = ltt_event_create(sw->chan,
-					&event_param, NULL,
+					&event_param, NULL, NULL,
 					&ev);
 				if (ret) {
 					DBG("Error creating event");
@@ -500,7 +500,9 @@ void _ltt_channel_destroy(struct ltt_channel *chan)
  */
 int ltt_event_create(struct ltt_channel *chan,
 		struct lttng_ust_event *event_param,
-		void (*filter)(struct ltt_event *event),
+		int (*filter)(void *filter_data,
+			const char *filter_stack_data),
+		void *filter_data,
 		struct ltt_event **_event)
 {
 	const struct lttng_event_desc *desc = NULL;	/* silence gcc */
@@ -549,6 +551,7 @@ int ltt_event_create(struct ltt_channel *chan,
 	}
 	event->chan = chan;
 	event->filter = filter;
+	event->filter_data = filter_data;
 	/*
 	 * used_event_id counts the maximum number of event IDs that can
 	 * register if all probes register.
