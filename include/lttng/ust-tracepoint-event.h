@@ -375,7 +375,7 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 #define ctf_sequence_encoded(_type, _item, _src, _length_type,		\
 			_src_length, _encoding)			\
 	{								\
-		_length_type __tmpl = __dynamic_len[__dynamic_len_idx];	\
+		_length_type __tmpl = __stackvar.__dynamic_len[__dynamic_len_idx]; \
 		lib_ring_buffer_align_ctx(&__ctx, lttng_alignof(_length_type));\
 		__chan->ops->event_write(&__ctx, &__tmpl, sizeof(_length_type));\
 	}								\
@@ -390,7 +390,7 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 
 /* Beware: this get len actually consumes the len value */
 #undef __get_dynamic_len
-#define __get_dynamic_len(field)	__dynamic_len[__dynamic_len_idx++]
+#define __get_dynamic_len(field)	__stackvar.__dynamic_len[__dynamic_len_idx++]
 
 #undef TP_ARGS
 #define TP_ARGS(...) __VA_ARGS__
@@ -407,7 +407,9 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))\
 	struct lttng_ust_lib_ring_buffer_ctx __ctx;			      \
 	size_t __event_len, __event_align;				      \
 	size_t __dynamic_len_idx = 0;					      \
-	size_t __dynamic_len[_TP_ARRAY_SIZE(__event_fields___##_provider##___##_name)];	      \
+	union {								      \
+		size_t __dynamic_len[_TP_ARRAY_SIZE(__event_fields___##_provider##___##_name)];	      \
+	} __stackvar;							      \
 	int __ret;							      \
 									      \
 	if (0)								      \
@@ -418,7 +420,7 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))\
 		return;							      \
 	if (caa_unlikely(!CMM_ACCESS_ONCE(__event->enabled)))		      \
 		return;							      \
-	__event_len = __event_get_size__##_provider##___##_name(__dynamic_len,\
+	__event_len = __event_get_size__##_provider##___##_name(__stackvar.__dynamic_len,\
 		 _TP_ARGS_DATA_VAR(_args));				      \
 	__event_align = __event_get_align__##_provider##___##_name(_TP_ARGS_VAR(_args)); \
 	lib_ring_buffer_ctx_init(&__ctx, __chan->chan, __event, __event_len,  \
