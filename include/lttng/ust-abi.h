@@ -165,6 +165,13 @@ struct lttng_ust_calibrate {
 	} u;
 };
 
+#define FILTER_BYTECODE_MAX_LEN		65536
+struct lttng_ust_filter_bytecode {
+	uint16_t len;
+	uint16_t reloc_table_offset;
+	char data[0];
+};
+
 #define _UST_CMD(minor)				(minor)
 #define _UST_CMDR(minor, type)			(minor)
 #define _UST_CMDW(minor, type)			(minor)
@@ -209,6 +216,9 @@ struct lttng_ust_calibrate {
 /* Tracepoint list commands */
 #define LTTNG_UST_TRACEPOINT_LIST_GET		_UST_CMD(0x90)
 #define LTTNG_UST_TRACEPOINT_FIELD_LIST_GET	_UST_CMD(0x91)
+
+/* Event FD commands */
+#define LTTNG_UST_FILTER			_UST_CMD(0xA0)
 
 #define LTTNG_UST_ROOT_HANDLE	0
 

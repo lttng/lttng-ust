@@ -245,6 +245,7 @@ struct session_wildcard {
 	struct cds_list_head list;	/* per-session list of wildcards */
 	struct cds_list_head session_list; /* node of session wildcard list */
 	struct wildcard_entry *entry;
+	struct lttng_ust_filter_bytecode *filter_bytecode;
 	unsigned int enabled:1;
 };
 
@@ -257,6 +258,7 @@ struct wildcard_entry {
 	/* head of session list to which this wildcard apply */
 	struct cds_list_head session_list;
 	enum lttng_ust_loglevel_type loglevel_type;
+	struct lttng_ust_filter_bytecode *filter_bytecode;
 	int loglevel;
 	char name[0];
 };
@@ -283,6 +285,7 @@ struct lttng_ust_field_list {
 
 struct ust_pending_probe;
 struct ltt_event;
+struct lttng_ust_filter_bytecode;
 
 /*
  * ltt_event structure is referred to by the tracing fast path. It must be
@@ -302,6 +305,7 @@ struct ltt_event {
 	struct cds_list_head list;		/* Event list */
 	struct cds_list_head wildcard_list;	/* Event list for wildcard */
 	struct ust_pending_probe *pending_probe;
+	struct lttng_ust_filter_bytecode *filter_bytecode;
 	unsigned int metadata_dumped:1;
 };
 
@@ -414,9 +418,6 @@ struct ltt_channel *ltt_global_channel_create(struct ltt_session *session,
 
 int ltt_event_create(struct ltt_channel *chan,
 		struct lttng_ust_event *event_param,
-		int (*filter)(void *filter_data,
-			const char *filter_stack_data),
-		void *filter_data,
 		struct ltt_event **event);
 
 int ltt_channel_enable(struct ltt_channel *channel);
@@ -473,5 +474,12 @@ int ltt_loglevel_match(const struct lttng_event_desc *desc,
 		int req_loglevel);
 void ltt_probes_create_wildcard_events(struct wildcard_entry *entry,
 				struct session_wildcard *wildcard);
+int lttng_filter_event_attach_bytecode(struct ltt_event *event,
+                struct lttng_ust_filter_bytecode *filter);
+int lttng_filter_wildcard_attach_bytecode(struct session_wildcard *wildcard,
+                struct lttng_ust_filter_bytecode *filter);
+void lttng_filter_event_link_bytecode(struct ltt_event *event,
+		struct lttng_ust_filter_bytecode *filter_bytecode);
+void lttng_filter_wildcard_link_bytecode(struct session_wildcard *wildcard);
 
 #endif /* _LTTNG_UST_EVENTS_H */

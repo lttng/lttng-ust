@@ -131,6 +131,10 @@ struct ustcomm_ust_msg {
 		struct lttng_ust_context context;
 		struct lttng_ust_tracer_version version;
 		struct lttng_ust_tracepoint_iter tracepoint;
+		struct {
+			uint16_t data_size;	/* following filter data */
+			uint16_t reloc_offset;
+		} filter;
 	} u;
 };
 

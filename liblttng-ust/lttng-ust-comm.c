@@ -281,6 +281,56 @@ int handle_message(struct sock_info *sock_info,
 		else
 			ret = lttng_ust_objd_unref(lum->handle);
 		break;
+	case LTTNG_UST_FILTER:
+	{
+		/* Receive filter data */
+		struct {
+			uint16_t len;
+			uint16_t reloc_offset;
+			char data[FILTER_BYTECODE_MAX_LEN];
+		} filter_data;
+
+		if (lum->u.filter.data_size > 65536) {
+			ERR("Filter data size is too large: %u bytes\n",
+				lum->u.filter.data_size);
+			ret = -EINVAL;
+			goto error;
+		}
+		len = ustcomm_recv_unix_sock(sock, filter_data.data,
+				lum->u.filter.data_size);
+		switch (len) {
+		case 0:	/* orderly shutdown */
+			ret = 0;
+			goto error;
+		case -1:
+			DBG("Receive failed from lttng-sessiond with errno %d", errno);
+			if (errno == ECONNRESET) {
+				ERR("%s remote end closed connection\n", sock_info->name);
+				ret = -EINVAL;
+				goto error;
+			}
+			ret = -EINVAL;
+			goto end;
+		default:
+			if (len == lum->u.filter.data_size) {
+				DBG("filter data received\n");
+				break;
+			} else {
+				ERR("incorrect filter data message size: %zd\n", len);
+				ret = -EINVAL;
+				goto end;
+			}
+		}
+		filter_data.len = lum->u.filter.data_size;
+		filter_data.reloc_offset = lum->u.filter.reloc_offset;
+		if (ops->cmd)
+			ret = ops->cmd(lum->handle, lum->cmd,
+					(unsigned long) &filter_data,
+					&args);
+		else
+			ret = -ENOSYS;
+		break;
+	}
 	default:
 		if (ops->cmd)
 			ret = ops->cmd(lum->handle, lum->cmd,

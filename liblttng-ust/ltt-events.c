@@ -251,14 +251,15 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 					sizeof(event_param.name));
 				/* create event */
 				ret = ltt_event_create(sw->chan,
-					&event_param, NULL, NULL,
-					&ev);
+					&event_param, &ev);
 				if (ret) {
 					DBG("Error creating event");
 					continue;
 				}
 				cds_list_add(&ev->wildcard_list,
 					&sw->events);
+				lttng_filter_event_link_bytecode(ev,
+					sw->filter_bytecode);
 			}
 		}
 	}
@@ -500,9 +501,6 @@ void _ltt_channel_destroy(struct ltt_channel *chan)
  */
 int ltt_event_create(struct ltt_channel *chan,
 		struct lttng_ust_event *event_param,
-		int (*filter)(void *filter_data,
-			const char *filter_stack_data),
-		void *filter_data,
 		struct ltt_event **_event)
 {
 	const struct lttng_event_desc *desc = NULL;	/* silence gcc */
@@ -550,8 +548,6 @@ int ltt_event_create(struct ltt_channel *chan,
 		goto cache_error;
 	}
 	event->chan = chan;
-	event->filter = filter;
-	event->filter_data = filter_data;
 	/*
 	 * used_event_id counts the maximum number of event IDs that can
 	 * register if all probes register.
@@ -656,6 +652,8 @@ void _ltt_event_destroy(struct ltt_event *event)
 	}
 	cds_list_del(&event->list);
 	lttng_destroy_context(event->ctx);
+	free(event->filter_bytecode);
+	free(event->filter_data);
 	free(event);
 }
 
@@ -1420,6 +1418,7 @@ void _remove_wildcard(struct session_wildcard *wildcard)
 		cds_list_del(&wildcard->entry->list);
 		free(wildcard->entry);
 	}
+	free(wildcard->filter_bytecode);
 	free(wildcard);
 }
 

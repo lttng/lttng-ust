@@ -361,7 +361,7 @@ void lttng_metadata_create_events(int channel_objd)
 	 * We tolerate no failure path after event creation. It will stay
 	 * invariant for the rest of the session.
 	 */
-	ret = ltt_event_create(channel, &metadata_params, NULL, NULL, &event);
+	ret = ltt_event_create(channel, &metadata_params, &event);
 	if (ret < 0) {
 		goto create_error;
 	}
@@ -753,7 +753,7 @@ int lttng_abi_create_event(int channel_objd,
 	 * We tolerate no failure path after event creation. It will stay
 	 * invariant for the rest of the session.
 	 */
-	ret = ltt_event_create(channel, event_param, NULL, NULL, &event);
+	ret = ltt_event_create(channel, event_param, &event);
 	if (ret < 0) {
 		goto event_error;
 	}
@@ -1035,6 +1035,8 @@ static const struct lttng_ust_objd_ops lib_ring_buffer_objd_ops = {
  *		Enable recording for this event (weak enable)
  *	LTTNG_UST_DISABLE
  *		Disable recording for this event (strong disable)
+ *	LTTNG_UST_FILTER
+ *		Attach a filter to an event.
  */
 static
 long lttng_event_cmd(int objd, unsigned int cmd, unsigned long arg,
@@ -1051,6 +1053,17 @@ long lttng_event_cmd(int objd, unsigned int cmd, unsigned long arg,
 		return ltt_event_enable(event);
 	case LTTNG_UST_DISABLE:
 		return ltt_event_disable(event);
+	case LTTNG_UST_FILTER:
+	{
+		int ret;
+		ret = lttng_filter_event_attach_bytecode(event,
+				(struct lttng_ust_filter_bytecode *) arg);
+		if (ret)
+			return ret;
+		lttng_filter_event_link_bytecode(event,
+				event->filter_bytecode);
+		return 0;
+	}
 	default:
 		return -EINVAL;
 	}
@@ -1088,6 +1101,8 @@ static const struct lttng_ust_objd_ops lttng_event_ops = {
  *		Enable recording for these wildcard events (weak enable)
  *	LTTNG_UST_DISABLE
  *		Disable recording for these wildcard events (strong disable)
+ *	LTTNG_UST_FILTER
+ *		Attach a filter to a wildcard.
  */
 static
 long lttng_wildcard_cmd(int objd, unsigned int cmd, unsigned long arg,
@@ -1107,6 +1122,17 @@ long lttng_wildcard_cmd(int objd, unsigned int cmd, unsigned long arg,
 		return ltt_wildcard_enable(wildcard);
 	case LTTNG_UST_DISABLE:
 		return ltt_wildcard_disable(wildcard);
+	case LTTNG_UST_FILTER:
+	{
+		int ret;
+
+		ret = lttng_filter_wildcard_attach_bytecode(wildcard,
+				(struct lttng_ust_filter_bytecode *) arg);
+		if (ret)
+			return ret;
+		lttng_filter_wildcard_link_bytecode(wildcard);
+		return 0;
+	}
 	default:
 		return -EINVAL;
 	}
