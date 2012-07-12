@@ -328,9 +328,6 @@ int handle_message(struct sock_info *sock_info,
 		}
 		bytecode->len = lum->u.filter.data_size;
 		bytecode->reloc_offset = lum->u.filter.reloc_offset;
-		fprintf(stderr, "RECV len %d rel %d\n",
-			lum->u.filter.data_size,
-			lum->u.filter.reloc_offset);
 		if (ops->cmd) {
 			ret = ops->cmd(lum->handle, lum->cmd,
 					(unsigned long) bytecode,

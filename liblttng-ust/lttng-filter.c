@@ -649,7 +649,7 @@ int apply_field_reloc(struct ltt_event *event,
 	struct field_ref *field_ref;
 	uint32_t field_offset = 0;
 
-	fprintf(stderr, "Apply reloc: %u %s\n", reloc_offset, field_name);
+	dbg_printf("Apply reloc: %u %s\n", reloc_offset, field_name);
 
 	/* Ensure that the reloc is within the code */
 	if (runtime_len - reloc_offset < sizeof(uint16_t))
@@ -741,7 +741,7 @@ int _lttng_filter_event_link_bytecode(struct ltt_event *event,
 	if (event->filter || event->filter_data)
 		return 0;
 
-	fprintf(stderr, "Linking\n");
+	dbg_printf("Linking\n");
 
 	/* We don't need the reloc table in the runtime */
 	runtime_alloc_len = sizeof(*runtime) + filter_bytecode->reloc_offset;
@@ -757,7 +757,6 @@ int _lttng_filter_event_link_bytecode(struct ltt_event *event,
 	 * apply relocs. Those are a uint16_t (offset in bytecode)
 	 * followed by a string (field name).
 	 */
-	fprintf(stderr, "iter for %d %d\n", filter_bytecode->reloc_offset, filter_bytecode->len);
 	for (offset = filter_bytecode->reloc_offset;
 			offset < filter_bytecode->len;
 			offset = next_offset) {
