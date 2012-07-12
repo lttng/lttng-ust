@@ -43,6 +43,7 @@
 #include <lttng/ust.h>
 #include <ust-comm.h>
 #include <usterr-signal-safe.h>
+#include <helper.h>
 #include "tracepoint-internal.h"
 #include "ltt-tracer-core.h"
 #include "compat.h"
@@ -284,29 +285,32 @@ int handle_message(struct sock_info *sock_info,
 	case LTTNG_UST_FILTER:
 	{
 		/* Receive filter data */
-		struct {
-			uint16_t len;
-			uint16_t reloc_offset;
-			char data[FILTER_BYTECODE_MAX_LEN];
-		} filter_data;
+		struct lttng_ust_filter_bytecode *bytecode;
 
-		if (lum->u.filter.data_size > 65536) {
+		if (lum->u.filter.data_size > FILTER_BYTECODE_MAX_LEN) {
 			ERR("Filter data size is too large: %u bytes\n",
 				lum->u.filter.data_size);
 			ret = -EINVAL;
 			goto error;
 		}
-		len = ustcomm_recv_unix_sock(sock, filter_data.data,
+		bytecode = zmalloc(sizeof(*bytecode) + lum->u.filter.data_size);
+		if (!bytecode) {
+			ret = -ENOMEM;
+			goto error;
+		}
+		len = ustcomm_recv_unix_sock(sock, bytecode->data,
 				lum->u.filter.data_size);
 		switch (len) {
 		case 0:	/* orderly shutdown */
 			ret = 0;
+			free(bytecode);
 			goto error;
 		case -1:
 			DBG("Receive failed from lttng-sessiond with errno %d", errno);
 			if (errno == ECONNRESET) {
 				ERR("%s remote end closed connection\n", sock_info->name);
 				ret = -EINVAL;
+				free(bytecode);
 				goto error;
 			}
 			ret = -EINVAL;
@@ -318,17 +322,27 @@ int handle_message(struct sock_info *sock_info,
 			} else {
 				ERR("incorrect filter data message size: %zd\n", len);
 				ret = -EINVAL;
+				free(bytecode);
 				goto end;
 			}
 		}
-		filter_data.len = lum->u.filter.data_size;
-		filter_data.reloc_offset = lum->u.filter.reloc_offset;
-		if (ops->cmd)
+		bytecode->len = lum->u.filter.data_size;
+		bytecode->reloc_offset = lum->u.filter.reloc_offset;
+		fprintf(stderr, "RECV len %d rel %d\n",
+			lum->u.filter.data_size,
+			lum->u.filter.reloc_offset);
+		if (ops->cmd) {
 			ret = ops->cmd(lum->handle, lum->cmd,
-					(unsigned long) &filter_data,
+					(unsigned long) bytecode,
 					&args);
-		else
+			if (ret) {
+				free(bytecode);
+			}
+			/* don't free bytecode if everything went fine. */
+		} else {
 			ret = -ENOSYS;
+			free(bytecode);
+		}
 		break;
 	}
 	default:

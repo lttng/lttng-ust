@@ -330,8 +330,6 @@ static inline size_t __event_get_size__##_provider##___##_name(size_t *__dynamic
 
 #undef ctf_string
 #define ctf_string(_item, _src)						       \
-	*(unsigned long *) __stack_data = (unsigned long) (strlen(_src) + 1);  \
-	__stack_data += sizeof(unsigned long);				       \
 	*(const void **) __stack_data = (_src);				       \
 	__stack_data += sizeof(void *);
 

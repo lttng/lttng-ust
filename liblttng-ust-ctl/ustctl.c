@@ -390,6 +390,40 @@ int ustctl_add_context(int sock, struct lttng_ust_context *ctx,
 	return ret;
 }
 
+int ustctl_set_filter(int sock, struct lttng_ust_filter_bytecode *bytecode,
+		struct lttng_ust_object_data *obj_data)
+{
+	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_reply lur;
+	int ret;
+
+	if (!obj_data)
+		return -EINVAL;
+
+	memset(&lum, 0, sizeof(lum));
+	lum.handle = obj_data->handle;
+	lum.cmd = LTTNG_UST_FILTER;
+	lum.u.filter.data_size = bytecode->len;
+	lum.u.filter.reloc_offset = bytecode->reloc_offset;
+
+	ret = ustcomm_send_app_msg(sock, &lum);
+	if (ret)
+		return ret;
+	if (ret) {
+		return ret;
+	}
+	/* send var len bytecode */
+	ret = ustcomm_send_unix_sock(sock, bytecode->data,
+				bytecode->len);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	if (ret)
+		return ret;
+	return ret;
+}
+
 /* Enable event, channel and session ioctl */
 int ustctl_enable(int sock, struct lttng_ust_object_data *object)
 {

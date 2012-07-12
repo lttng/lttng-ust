@@ -296,6 +296,8 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 		event->id = chan->free_event_id++;
 		ret |= _ltt_event_metadata_statedump(chan->session, chan,
 				event);
+		lttng_filter_event_link_bytecode(event,
+			event->filter_bytecode);
 	}
 	return ret;
 }

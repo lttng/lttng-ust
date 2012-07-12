@@ -29,6 +29,7 @@ liblttng_ust_runtime_la_SOURCES = \
 	ltt-context.c \
 	ltt-events.c \
 	lttng-filter.c \
+	filter-bytecode.h \
 	tracepoint-internal.h \
 	clock.h \
 	compat.h \
