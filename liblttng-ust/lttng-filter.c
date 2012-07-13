@@ -152,6 +152,10 @@ static const char *opnames[] = {
 	/* logical */
 	[ FILTER_OP_AND ] = "AND",
 	[ FILTER_OP_OR ] = "OR",
+	[ FILTER_OP_AND_S64 ] = "AND_S64",
+	[ FILTER_OP_OR_S64 ] = "OR_S64",
+	[ FILTER_OP_AND_DOUBLE ] = "AND_DOUBLE",
+	[ FILTER_OP_OR_DOUBLE ] = "OR_DOUBLE",
 
 	/* load */
 	[ FILTER_OP_LOAD_FIELD_REF ] = "LOAD_FIELD_REF",
@@ -383,6 +387,10 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		/* logical */
 		[ FILTER_OP_AND ] = &&LABEL_FILTER_OP_AND,
 		[ FILTER_OP_OR ] = &&LABEL_FILTER_OP_OR,
+		[ FILTER_OP_AND_S64 ] = &&LABEL_FILTER_OP_AND_S64,
+		[ FILTER_OP_OR_S64 ] = &&LABEL_FILTER_OP_OR_S64,
+		[ FILTER_OP_AND_DOUBLE ] = &&LABEL_FILTER_OP_AND_DOUBLE,
+		[ FILTER_OP_OR_DOUBLE ] = &&LABEL_FILTER_OP_OR_DOUBLE,
 
 		/* load */
 		[ FILTER_OP_LOAD_FIELD_REF ] = &&LABEL_FILTER_OP_LOAD_FIELD_REF,
@@ -645,12 +653,18 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 
 		/* logical */
 		OP(FILTER_OP_AND):
+		OP(FILTER_OP_OR):
+			ERR("unsupported non-specialized bytecode op %u\n",
+				(unsigned int) *(filter_opcode_t *) pc);
+			ret = -EINVAL;
+			goto end;
+
+		OP(FILTER_OP_AND_S64):
 		{
 			struct logical_op *insn = (struct logical_op *) pc;
 
 			/* If REG_R0 is 0, skip and evaluate to 0 */
-			if ((reg[REG_R0].type == REG_S64 && reg[REG_R0].v == 0)
-					|| unlikely(reg[REG_R0].type == REG_DOUBLE && reg[REG_R0].d == 0.0)) {
+			if (unlikely(reg[REG_R0].v == 0)) {
 				dbg_printf("Jumping to bytecode offset %u\n",
 					(unsigned int) insn->skip_offset);
 				next_pc = start_pc + insn->skip_offset;
@@ -659,15 +673,46 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			}
 			PO;
 		}
-		OP(FILTER_OP_OR):
+		OP(FILTER_OP_OR_S64):
 		{
 			struct logical_op *insn = (struct logical_op *) pc;
 
 			/* If REG_R0 is nonzero, skip and evaluate to 1 */
 
-			if ((reg[REG_R0].type == REG_S64 && reg[REG_R0].v != 0)
-					|| unlikely(reg[REG_R0].type == REG_DOUBLE && reg[REG_R0].d != 0.0)) {
+			if (unlikely(reg[REG_R0].v != 0)) {
 				reg[REG_R0].v = 1;
+				dbg_printf("Jumping to bytecode offset %u\n",
+					(unsigned int) insn->skip_offset);
+				next_pc = start_pc + insn->skip_offset;
+			} else {
+				next_pc += sizeof(struct logical_op);
+			}
+			PO;
+		}
+
+		OP(FILTER_OP_AND_DOUBLE):
+		{
+			struct logical_op *insn = (struct logical_op *) pc;
+
+			/* If REG_R0 is 0, skip and evaluate to 0 */
+			if ((reg[REG_R0].type == REG_DOUBLE && unlikely(reg[REG_R0].d == 0.0))
+					|| (reg[REG_R0].type == REG_S64 && unlikely(reg[REG_R0].v == 0))) {
+				dbg_printf("Jumping to bytecode offset %u\n",
+					(unsigned int) insn->skip_offset);
+				next_pc = start_pc + insn->skip_offset;
+			} else {
+				next_pc += sizeof(struct logical_op);
+			}
+			PO;
+		}
+		OP(FILTER_OP_OR_DOUBLE):
+		{
+			struct logical_op *insn = (struct logical_op *) pc;
+
+			/* If REG_R0 is nonzero, skip and evaluate to 1 (in double) */
+			if ((reg[REG_R0].type == REG_DOUBLE && unlikely(reg[REG_R0].d != 0.0))
+					|| (reg[REG_R0].type == REG_S64 && unlikely(reg[REG_R0].v != 0))) {
+				reg[REG_R0].d = 1.0;
 				dbg_printf("Jumping to bytecode offset %u\n",
 					(unsigned int) insn->skip_offset);
 				next_pc = start_pc + insn->skip_offset;
@@ -999,6 +1044,11 @@ int lttng_filter_validate_bytecode(struct bytecode_runtime *bytecode)
 				ret = -EINVAL;
 				goto end;
 			}
+			if (reg[REG_R0].type != REG_DOUBLE && reg[REG_R1].type != REG_DOUBLE) {
+				ERR("Double operator should have at least one double register\n");
+				ret = -EINVAL;
+				goto end;
+			}
 			reg[REG_R0].type = REG_DOUBLE;
 			next_pc += sizeof(struct binary_op);
 			break;
@@ -1081,6 +1131,10 @@ int lttng_filter_validate_bytecode(struct bytecode_runtime *bytecode)
 		/* logical */
 		case FILTER_OP_AND:
 		case FILTER_OP_OR:
+		case FILTER_OP_AND_S64:
+		case FILTER_OP_OR_S64:
+		case FILTER_OP_AND_DOUBLE:
+		case FILTER_OP_OR_DOUBLE:
 		{
 			struct logical_op *insn = (struct logical_op *) pc;
 
@@ -1099,6 +1153,41 @@ int lttng_filter_validate_bytecode(struct bytecode_runtime *bytecode)
 				ERR("Loops are not allowed in bytecode\n");
 				ret = -EINVAL;
 				goto end;
+			}
+			if (insn->op == FILTER_OP_AND_S64
+					|| insn->op == FILTER_OP_OR_S64) {
+				if (reg[REG_R0].type != REG_S64
+						|| reg[REG_R1].type != REG_S64) {
+					ret = -EINVAL;
+					goto end;
+				}
+			}
+			if (insn->op == FILTER_OP_AND_DOUBLE
+					|| insn->op == FILTER_OP_OR_DOUBLE) {
+				if (reg[REG_R0].type != REG_DOUBLE
+						&& reg[REG_R1].type != REG_DOUBLE) {
+					ERR("Double operator should have at least one double register\n");
+					ret = -EINVAL;
+					goto end;
+				}
+			}
+			switch(reg[REG_R0].type) {
+			default:
+			case REG_STRING:
+				ERR("unknown register type\n");
+				ret = -EINVAL;
+				goto end;
+
+			case REG_S64:
+				if (reg[REG_R1].type == REG_S64) {
+					reg[REG_R0].type = REG_S64;
+				} else {
+					reg[REG_R0].type = REG_DOUBLE;
+				}
+				break;
+			case REG_DOUBLE:
+				reg[REG_R0].type = REG_DOUBLE;
+				break;
 			}
 			next_pc += sizeof(struct logical_op);
 			break;
@@ -1475,6 +1564,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				insn->op = FILTER_OP_UNARY_PLUS_DOUBLE;
 				break;
 			}
+			next_pc += sizeof(struct unary_op);
 			break;
 		}
 
@@ -1495,6 +1585,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				insn->op = FILTER_OP_UNARY_MINUS_DOUBLE;
 				break;
 			}
+			next_pc += sizeof(struct unary_op);
 			break;
 		}
 
@@ -1515,6 +1606,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				insn->op = FILTER_OP_UNARY_NOT_DOUBLE;
 				break;
 			}
+			next_pc += sizeof(struct unary_op);
 			break;
 		}
 
@@ -1531,7 +1623,66 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 
 		/* logical */
 		case FILTER_OP_AND:
+		{
+			struct logical_op *insn = (struct logical_op *) pc;
+
+			switch(reg[REG_R0].type) {
+			default:
+			case REG_STRING:
+				ERR("unknown register type\n");
+				ret = -EINVAL;
+				goto end;
+
+			case REG_S64:
+				if (reg[REG_R1].type == REG_S64) {
+					insn->op = FILTER_OP_AND_S64;
+					reg[REG_R0].type = REG_S64;
+				} else {
+					insn->op = FILTER_OP_AND_DOUBLE;
+					reg[REG_R0].type = REG_DOUBLE;
+				}
+				break;
+			case REG_DOUBLE:
+				insn->op = FILTER_OP_AND_DOUBLE;
+				reg[REG_R0].type = REG_DOUBLE;
+				break;
+			}
+			next_pc += sizeof(struct logical_op);
+			break;
+		}
 		case FILTER_OP_OR:
+		{
+			struct logical_op *insn = (struct logical_op *) pc;
+
+			switch(reg[REG_R0].type) {
+			default:
+			case REG_STRING:
+				ERR("unknown register type\n");
+				ret = -EINVAL;
+				goto end;
+
+			case REG_S64:
+				if (reg[REG_R1].type == REG_S64) {
+					insn->op = FILTER_OP_OR_S64;
+					reg[REG_R0].type = REG_S64;
+				} else {
+					insn->op = FILTER_OP_OR_DOUBLE;
+					reg[REG_R0].type = REG_DOUBLE;
+				}
+				break;
+			case REG_DOUBLE:
+				insn->op = FILTER_OP_OR_DOUBLE;
+				reg[REG_R0].type = REG_DOUBLE;
+				break;
+			}
+			next_pc += sizeof(struct logical_op);
+			break;
+		}
+
+		case FILTER_OP_AND_S64:
+		case FILTER_OP_OR_S64:
+		case FILTER_OP_AND_DOUBLE:
+		case FILTER_OP_OR_DOUBLE:
 		{
 			next_pc += sizeof(struct logical_op);
 			break;
