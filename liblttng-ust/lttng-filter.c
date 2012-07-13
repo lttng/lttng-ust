@@ -104,6 +104,8 @@ static const char *opnames[] = {
 	[ FILTER_OP_BIN_AND ] = "BIN_AND",
 	[ FILTER_OP_BIN_OR ] = "BIN_OR",
 	[ FILTER_OP_BIN_XOR ] = "BIN_XOR",
+
+	/* binary comparators */
 	[ FILTER_OP_EQ ] = "EQ",
 	[ FILTER_OP_NE ] = "NE",
 	[ FILTER_OP_GT ] = "GT",
@@ -111,10 +113,41 @@ static const char *opnames[] = {
 	[ FILTER_OP_GE ] = "GE",
 	[ FILTER_OP_LE ] = "LE",
 
+	/* string binary comparators */
+	[ FILTER_OP_EQ_STRING ] = "EQ_STRING",
+	[ FILTER_OP_NE_STRING ] = "NE_STRING",
+	[ FILTER_OP_GT_STRING ] = "GT_STRING",
+	[ FILTER_OP_LT_STRING ] = "LT_STRING",
+	[ FILTER_OP_GE_STRING ] = "GE_STRING",
+	[ FILTER_OP_LE_STRING ] = "LE_STRING",
+
+	/* s64 binary comparators */
+	[ FILTER_OP_EQ_S64 ] = "EQ_S64",
+	[ FILTER_OP_NE_S64 ] = "NE_S64",
+	[ FILTER_OP_GT_S64 ] = "GT_S64",
+	[ FILTER_OP_LT_S64 ] = "LT_S64",
+	[ FILTER_OP_GE_S64 ] = "GE_S64",
+	[ FILTER_OP_LE_S64 ] = "LE_S64",
+
+	/* double binary comparators */
+	[ FILTER_OP_EQ_DOUBLE ] = "EQ_DOUBLE",
+	[ FILTER_OP_NE_DOUBLE ] = "NE_DOUBLE",
+	[ FILTER_OP_GT_DOUBLE ] = "GT_DOUBLE",
+	[ FILTER_OP_LT_DOUBLE ] = "LT_DOUBLE",
+	[ FILTER_OP_GE_DOUBLE ] = "GE_DOUBLE",
+	[ FILTER_OP_LE_DOUBLE ] = "LE_DOUBLE",
+
+
 	/* unary */
 	[ FILTER_OP_UNARY_PLUS ] = "UNARY_PLUS",
 	[ FILTER_OP_UNARY_MINUS ] = "UNARY_MINUS",
 	[ FILTER_OP_UNARY_NOT ] = "UNARY_NOT",
+	[ FILTER_OP_UNARY_PLUS_S64 ] = "UNARY_PLUS_S64",
+	[ FILTER_OP_UNARY_MINUS_S64 ] = "UNARY_MINUS_S64",
+	[ FILTER_OP_UNARY_NOT_S64 ] = "UNARY_NOT_S64",
+	[ FILTER_OP_UNARY_PLUS_DOUBLE ] = "UNARY_PLUS_DOUBLE",
+	[ FILTER_OP_UNARY_MINUS_DOUBLE ] = "UNARY_MINUS_DOUBLE",
+	[ FILTER_OP_UNARY_NOT_DOUBLE ] = "UNARY_NOT_DOUBLE",
 
 	/* logical */
 	[ FILTER_OP_AND ] = "AND",
@@ -278,277 +311,164 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			goto end;
 
 		case FILTER_OP_EQ:
-		{
-			switch (reg[REG_R0].type) {
-			default:
-				ERR("unknown register type\n");
-				ret = -EINVAL;
-				goto end;
-
-			case REG_STRING:
-				reg[REG_R0].v = (reg_strcmp(reg, "==") == 0);
-				break;
-			case REG_S64:
-				switch (reg[REG_R1].type) {
-				default:
-					ERR("unknown register type\n");
-					ret = -EINVAL;
-					goto end;
-
-				case REG_S64:
-					reg[REG_R0].v = (reg[REG_R0].v == reg[REG_R1].v);
-					break;
-				case REG_DOUBLE:
-					reg[REG_R0].v = (reg[REG_R0].v == reg[REG_R1].d);
-					break;
-				}
-				break;
-			case REG_DOUBLE:
-				switch (reg[REG_R1].type) {
-				default:
-					ERR("unknown register type\n");
-					ret = -EINVAL;
-					goto end;
-
-				case REG_S64:
-					reg[REG_R0].v = (reg[REG_R0].d == reg[REG_R1].v);
-					break;
-				case REG_DOUBLE:
-					reg[REG_R0].v = (reg[REG_R0].d == reg[REG_R1].d);
-					break;
-				}
-				break;
-			}
-			reg[REG_R0].type = REG_S64;
-			next_pc += sizeof(struct binary_op);
-			break;
-		}
 		case FILTER_OP_NE:
-		{
-			switch (reg[REG_R0].type) {
-			default:
-				ERR("unknown register type\n");
-				ret = -EINVAL;
-				goto end;
-
-			case REG_STRING:
-				reg[REG_R0].v = (reg_strcmp(reg, "!=") != 0);
-				break;
-			case REG_S64:
-				switch (reg[REG_R1].type) {
-				default:
-					ERR("unknown register type\n");
-					ret = -EINVAL;
-					goto end;
-
-				case REG_S64:
-					reg[REG_R0].v = (reg[REG_R0].v != reg[REG_R1].v);
-					break;
-				case REG_DOUBLE:
-					reg[REG_R0].v = (reg[REG_R0].v != reg[REG_R1].d);
-					break;
-				}
-				break;
-			case REG_DOUBLE:
-				switch (reg[REG_R1].type) {
-				default:
-					ERR("unknown register type\n");
-					ret = -EINVAL;
-					goto end;
-
-				case REG_S64:
-					reg[REG_R0].v = (reg[REG_R0].d != reg[REG_R1].v);
-					break;
-				case REG_DOUBLE:
-					reg[REG_R0].v = (reg[REG_R0].d != reg[REG_R1].d);
-					break;
-				}
-				break;
-			}
-			reg[REG_R0].type = REG_S64;
-			next_pc += sizeof(struct binary_op);
-			break;
-		}
 		case FILTER_OP_GT:
-		{
-			switch (reg[REG_R0].type) {
-			default:
-				ERR("unknown register type\n");
-				ret = -EINVAL;
-				goto end;
-
-			case REG_STRING:
-				reg[REG_R0].v = (reg_strcmp(reg, ">") > 0);
-				break;
-			case REG_S64:
-				switch (reg[REG_R1].type) {
-				default:
-					ERR("unknown register type\n");
-					ret = -EINVAL;
-					goto end;
-
-				case REG_S64:
-					reg[REG_R0].v = (reg[REG_R0].v > reg[REG_R1].v);
-					break;
-				case REG_DOUBLE:
-					reg[REG_R0].v = (reg[REG_R0].v > reg[REG_R1].d);
-					break;
-				}
-				break;
-			case REG_DOUBLE:
-				switch (reg[REG_R1].type) {
-				default:
-					ERR("unknown register type\n");
-					ret = -EINVAL;
-					goto end;
-
-				case REG_S64:
-					reg[REG_R0].v = (reg[REG_R0].d > reg[REG_R1].v);
-					break;
-				case REG_DOUBLE:
-					reg[REG_R0].v = (reg[REG_R0].d > reg[REG_R1].d);
-					break;
-				}
-				break;
-			}
-			reg[REG_R0].type = REG_S64;
-			next_pc += sizeof(struct binary_op);
-			break;
-		}
 		case FILTER_OP_LT:
-		{
-			switch (reg[REG_R0].type) {
-			default:
-				ERR("unknown register type\n");
-				ret = -EINVAL;
-				goto end;
-
-			case REG_STRING:
-				reg[REG_R0].v = (reg_strcmp(reg, "<") < 0);
-				break;
-			case REG_S64:
-				switch (reg[REG_R1].type) {
-				default:
-					ERR("unknown register type\n");
-					ret = -EINVAL;
-					goto end;
-
-				case REG_S64:
-					reg[REG_R0].v = (reg[REG_R0].v < reg[REG_R1].v);
-					break;
-				case REG_DOUBLE:
-					reg[REG_R0].v = (reg[REG_R0].v < reg[REG_R1].d);
-					break;
-				}
-				break;
-			case REG_DOUBLE:
-				switch (reg[REG_R1].type) {
-				default:
-					ERR("unknown register type\n");
-					ret = -EINVAL;
-					goto end;
-
-				case REG_S64:
-					reg[REG_R0].v = (reg[REG_R0].d < reg[REG_R1].v);
-					break;
-				case REG_DOUBLE:
-					reg[REG_R0].v = (reg[REG_R0].d < reg[REG_R1].d);
-					break;
-				}
-				break;
-			}
-			reg[REG_R0].type = REG_S64;
-			next_pc += sizeof(struct binary_op);
-			break;
-		}
 		case FILTER_OP_GE:
+		case FILTER_OP_LE:
+			ERR("unsupported non-specialized bytecode op %u\n",
+				(unsigned int) *(filter_opcode_t *) pc);
+			ret = -EINVAL;
+			goto end;
+
+		case FILTER_OP_EQ_STRING:
 		{
-			switch (reg[REG_R0].type) {
-			default:
-				ERR("unknown register type\n");
-				ret = -EINVAL;
-				goto end;
-
-			case REG_STRING:
-				reg[REG_R0].v = (reg_strcmp(reg, ">=") >= 0);
-				break;
-			case REG_S64:
-				switch (reg[REG_R1].type) {
-				default:
-					ERR("unknown register type\n");
-					ret = -EINVAL;
-					goto end;
-
-				case REG_S64:
-					reg[REG_R0].v = (reg[REG_R0].v >= reg[REG_R1].v);
-					break;
-				case REG_DOUBLE:
-					reg[REG_R0].v = (reg[REG_R0].v >= reg[REG_R1].d);
-					break;
-				}
-				break;
-			case REG_DOUBLE:
-				switch (reg[REG_R1].type) {
-				default:
-					ERR("unknown register type\n");
-					ret = -EINVAL;
-					goto end;
-
-				case REG_S64:
-					reg[REG_R0].v = (reg[REG_R0].d >= reg[REG_R1].v);
-					break;
-				case REG_DOUBLE:
-					reg[REG_R0].v = (reg[REG_R0].d >= reg[REG_R1].d);
-					break;
-				}
-				break;
-			}
+			reg[REG_R0].v = (reg_strcmp(reg, "==") == 0);
 			reg[REG_R0].type = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			break;
 		}
-		case FILTER_OP_LE:
+		case FILTER_OP_NE_STRING:
 		{
-			switch (reg[REG_R0].type) {
-			default:
-				ERR("unknown register type\n");
-				ret = -EINVAL;
-				goto end;
+			reg[REG_R0].v = (reg_strcmp(reg, "!=") != 0);
+			reg[REG_R0].type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			break;
+		}
+		case FILTER_OP_GT_STRING:
+		{
+			reg[REG_R0].v = (reg_strcmp(reg, ">") > 0);
+			reg[REG_R0].type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			break;
+		}
+		case FILTER_OP_LT_STRING:
+		{
+			reg[REG_R0].v = (reg_strcmp(reg, "<") < 0);
+			reg[REG_R0].type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			break;
+		}
+		case FILTER_OP_GE_STRING:
+		{
+			reg[REG_R0].v = (reg_strcmp(reg, ">=") >= 0);
+			reg[REG_R0].type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			break;
+		}
+		case FILTER_OP_LE_STRING:
+		{
+			reg[REG_R0].v = (reg_strcmp(reg, "<=") <= 0);
+			reg[REG_R0].type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			break;
+		}
 
-			case REG_STRING:
-				reg[REG_R0].v = (reg_strcmp(reg, "<=") <= 0);
-				break;
-			case REG_S64:
-				switch (reg[REG_R1].type) {
-				default:
-					ERR("unknown register type\n");
-					ret = -EINVAL;
-					goto end;
+		case FILTER_OP_EQ_S64:
+		{
+			reg[REG_R0].v = (reg[REG_R0].v == reg[REG_R1].v);
+			reg[REG_R0].type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			break;
+		}
+		case FILTER_OP_NE_S64:
+		{
+			reg[REG_R0].v = (reg[REG_R0].v != reg[REG_R1].v);
+			reg[REG_R0].type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			break;
+		}
+		case FILTER_OP_GT_S64:
+		{
+			reg[REG_R0].v = (reg[REG_R0].v > reg[REG_R1].v);
+			reg[REG_R0].type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			break;
+		}
+		case FILTER_OP_LT_S64:
+		{
+			reg[REG_R0].v = (reg[REG_R0].v < reg[REG_R1].v);
+			reg[REG_R0].type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			break;
+		}
+		case FILTER_OP_GE_S64:
+		{
+			reg[REG_R0].v = (reg[REG_R0].v >= reg[REG_R1].v);
+			reg[REG_R0].type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			break;
+		}
+		case FILTER_OP_LE_S64:
+		{
+			reg[REG_R0].v = (reg[REG_R0].v <= reg[REG_R1].v);
+			reg[REG_R0].type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			break;
+		}
 
-				case REG_S64:
-					reg[REG_R0].v = (reg[REG_R0].v <= reg[REG_R1].v);
-					break;
-				case REG_DOUBLE:
-					reg[REG_R0].v = (reg[REG_R0].v <= reg[REG_R1].d);
-					break;
-				}
-				break;
-			case REG_DOUBLE:
-				switch (reg[REG_R1].type) {
-				default:
-					ERR("unknown register type\n");
-					ret = -EINVAL;
-					goto end;
-
-				case REG_S64:
-					reg[REG_R0].v = (reg[REG_R0].d <= reg[REG_R1].v);
-					break;
-				case REG_DOUBLE:
-					reg[REG_R0].v = (reg[REG_R0].d <= reg[REG_R1].d);
-					break;
-				}
-				break;
-			}
+		case FILTER_OP_EQ_DOUBLE:
+		{
+			if (unlikely(reg[REG_R0].type == REG_S64))
+				reg[REG_R0].d = (double) reg[REG_R0].v;
+			else if (unlikely(reg[REG_R1].type == REG_S64))
+				reg[REG_R1].d = (double) reg[REG_R1].v;
+			reg[REG_R0].v = (reg[REG_R0].d == reg[REG_R1].d);
+			reg[REG_R0].type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			break;
+		}
+		case FILTER_OP_NE_DOUBLE:
+		{
+			if (unlikely(reg[REG_R0].type == REG_S64))
+				reg[REG_R0].d = (double) reg[REG_R0].v;
+			else if (unlikely(reg[REG_R1].type == REG_S64))
+				reg[REG_R1].d = (double) reg[REG_R1].v;
+			reg[REG_R0].v = (reg[REG_R0].d != reg[REG_R1].d);
+			reg[REG_R0].type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			break;
+		}
+		case FILTER_OP_GT_DOUBLE:
+		{
+			if (unlikely(reg[REG_R0].type == REG_S64))
+				reg[REG_R0].d = (double) reg[REG_R0].v;
+			else if (unlikely(reg[REG_R1].type == REG_S64))
+				reg[REG_R1].d = (double) reg[REG_R1].v;
+			reg[REG_R0].v = (reg[REG_R0].d > reg[REG_R1].d);
+			reg[REG_R0].type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			break;
+		}
+		case FILTER_OP_LT_DOUBLE:
+		{
+			if (unlikely(reg[REG_R0].type == REG_S64))
+				reg[REG_R0].d = (double) reg[REG_R0].v;
+			else if (unlikely(reg[REG_R1].type == REG_S64))
+				reg[REG_R1].d = (double) reg[REG_R1].v;
+			reg[REG_R0].v = (reg[REG_R0].d < reg[REG_R1].d);
+			reg[REG_R0].type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			break;
+		}
+		case FILTER_OP_GE_DOUBLE:
+		{
+			if (unlikely(reg[REG_R0].type == REG_S64))
+				reg[REG_R0].d = (double) reg[REG_R0].v;
+			else if (unlikely(reg[REG_R1].type == REG_S64))
+				reg[REG_R1].d = (double) reg[REG_R1].v;
+			reg[REG_R0].v = (reg[REG_R0].d >= reg[REG_R1].d);
+			reg[REG_R0].type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			break;
+		}
+		case FILTER_OP_LE_DOUBLE:
+		{
+			if (unlikely(reg[REG_R0].type == REG_S64))
+				reg[REG_R0].d = (double) reg[REG_R0].v;
+			else if (unlikely(reg[REG_R1].type == REG_S64))
+				reg[REG_R1].d = (double) reg[REG_R1].v;
+			reg[REG_R0].v = (reg[REG_R0].d <= reg[REG_R1].d);
 			reg[REG_R0].type = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			break;
@@ -911,6 +831,60 @@ int lttng_filter_validate_bytecode(struct bytecode_runtime *bytecode)
 			break;
 		}
 
+		case FILTER_OP_EQ_STRING:
+		case FILTER_OP_NE_STRING:
+		case FILTER_OP_GT_STRING:
+		case FILTER_OP_LT_STRING:
+		case FILTER_OP_GE_STRING:
+		case FILTER_OP_LE_STRING:
+		{
+			if (reg[REG_R0].type != REG_STRING
+					|| reg[REG_R1].type != REG_STRING) {
+				ERR("Unexpected register type for string comparator\n");
+				ret = -EINVAL;
+				goto end;
+			}
+			reg[REG_R0].type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			break;
+		}
+
+		case FILTER_OP_EQ_S64:
+		case FILTER_OP_NE_S64:
+		case FILTER_OP_GT_S64:
+		case FILTER_OP_LT_S64:
+		case FILTER_OP_GE_S64:
+		case FILTER_OP_LE_S64:
+		{
+			if (reg[REG_R0].type != REG_S64
+					|| reg[REG_R1].type != REG_S64) {
+				ERR("Unexpected register type for s64 comparator\n");
+				ret = -EINVAL;
+				goto end;
+			}
+			reg[REG_R0].type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			break;
+		}
+
+		case FILTER_OP_EQ_DOUBLE:
+		case FILTER_OP_NE_DOUBLE:
+		case FILTER_OP_GT_DOUBLE:
+		case FILTER_OP_LT_DOUBLE:
+		case FILTER_OP_GE_DOUBLE:
+		case FILTER_OP_LE_DOUBLE:
+		{
+			if ((reg[REG_R0].type != REG_DOUBLE && reg[REG_R0].type != REG_S64)
+					|| (reg[REG_R1].type != REG_DOUBLE && reg[REG_R1].type != REG_S64)) {
+				ERR("Unexpected register type for double comparator\n");
+				ret = -EINVAL;
+				goto end;
+			}
+			reg[REG_R0].type = REG_DOUBLE;
+			next_pc += sizeof(struct binary_op);
+			break;
+		}
+
 		/* unary */
 		case FILTER_OP_UNARY_PLUS:
 		case FILTER_OP_UNARY_MINUS:
@@ -1174,16 +1148,196 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 			goto end;
 
 		case FILTER_OP_EQ:
+		{
+			struct binary_op *insn = (struct binary_op *) pc;
+
+			switch(reg[REG_R0].type) {
+			default:
+				ERR("unknown register type\n");
+				ret = -EINVAL;
+				goto end;
+
+			case REG_STRING:
+				insn->op = FILTER_OP_EQ_STRING;
+				break;
+			case REG_S64:
+				if (reg[REG_R1].type == REG_S64)
+					insn->op = FILTER_OP_EQ_S64;
+				else
+					insn->op = FILTER_OP_EQ_DOUBLE;
+				break;
+			case REG_DOUBLE:
+				insn->op = FILTER_OP_EQ_DOUBLE;
+				break;
+			}
+			reg[REG_R0].type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			break;
+		}
+
 		case FILTER_OP_NE:
+		{
+			struct binary_op *insn = (struct binary_op *) pc;
+
+			switch(reg[REG_R0].type) {
+			default:
+				ERR("unknown register type\n");
+				ret = -EINVAL;
+				goto end;
+
+			case REG_STRING:
+				insn->op = FILTER_OP_NE_STRING;
+				break;
+			case REG_S64:
+				if (reg[REG_R1].type == REG_S64)
+					insn->op = FILTER_OP_NE_S64;
+				else
+					insn->op = FILTER_OP_NE_DOUBLE;
+				break;
+			case REG_DOUBLE:
+				insn->op = FILTER_OP_NE_DOUBLE;
+				break;
+			}
+			reg[REG_R0].type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			break;
+		}
+
 		case FILTER_OP_GT:
+		{
+			struct binary_op *insn = (struct binary_op *) pc;
+
+			switch(reg[REG_R0].type) {
+			default:
+				ERR("unknown register type\n");
+				ret = -EINVAL;
+				goto end;
+
+			case REG_STRING:
+				insn->op = FILTER_OP_GT_STRING;
+				break;
+			case REG_S64:
+				if (reg[REG_R1].type == REG_S64)
+					insn->op = FILTER_OP_GT_S64;
+				else
+					insn->op = FILTER_OP_GT_DOUBLE;
+				break;
+			case REG_DOUBLE:
+				insn->op = FILTER_OP_GT_DOUBLE;
+				break;
+			}
+			reg[REG_R0].type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			break;
+		}
+
 		case FILTER_OP_LT:
+		{
+			struct binary_op *insn = (struct binary_op *) pc;
+
+			switch(reg[REG_R0].type) {
+			default:
+				ERR("unknown register type\n");
+				ret = -EINVAL;
+				goto end;
+
+			case REG_STRING:
+				insn->op = FILTER_OP_LT_STRING;
+				break;
+			case REG_S64:
+				if (reg[REG_R1].type == REG_S64)
+					insn->op = FILTER_OP_LT_S64;
+				else
+					insn->op = FILTER_OP_LT_DOUBLE;
+				break;
+			case REG_DOUBLE:
+				insn->op = FILTER_OP_LT_DOUBLE;
+				break;
+			}
+			reg[REG_R0].type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			break;
+		}
+
 		case FILTER_OP_GE:
+		{
+			struct binary_op *insn = (struct binary_op *) pc;
+
+			switch(reg[REG_R0].type) {
+			default:
+				ERR("unknown register type\n");
+				ret = -EINVAL;
+				goto end;
+
+			case REG_STRING:
+				insn->op = FILTER_OP_GE_STRING;
+				break;
+			case REG_S64:
+				if (reg[REG_R1].type == REG_S64)
+					insn->op = FILTER_OP_GE_S64;
+				else
+					insn->op = FILTER_OP_GE_DOUBLE;
+				break;
+			case REG_DOUBLE:
+				insn->op = FILTER_OP_GE_DOUBLE;
+				break;
+			}
+			reg[REG_R0].type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			break;
+		}
 		case FILTER_OP_LE:
+		{
+			struct binary_op *insn = (struct binary_op *) pc;
+
+			switch(reg[REG_R0].type) {
+			default:
+				ERR("unknown register type\n");
+				ret = -EINVAL;
+				goto end;
+
+			case REG_STRING:
+				insn->op = FILTER_OP_LE_STRING;
+				break;
+			case REG_S64:
+				if (reg[REG_R1].type == REG_S64)
+					insn->op = FILTER_OP_LE_S64;
+				else
+					insn->op = FILTER_OP_LE_DOUBLE;
+				break;
+			case REG_DOUBLE:
+				insn->op = FILTER_OP_LE_DOUBLE;
+				break;
+			}
+			reg[REG_R0].type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			break;
+		}
+
+		case FILTER_OP_EQ_STRING:
+		case FILTER_OP_NE_STRING:
+		case FILTER_OP_GT_STRING:
+		case FILTER_OP_LT_STRING:
+		case FILTER_OP_GE_STRING:
+		case FILTER_OP_LE_STRING:
+		case FILTER_OP_EQ_S64:
+		case FILTER_OP_NE_S64:
+		case FILTER_OP_GT_S64:
+		case FILTER_OP_LT_S64:
+		case FILTER_OP_GE_S64:
+		case FILTER_OP_LE_S64:
+		case FILTER_OP_EQ_DOUBLE:
+		case FILTER_OP_NE_DOUBLE:
+		case FILTER_OP_GT_DOUBLE:
+		case FILTER_OP_LT_DOUBLE:
+		case FILTER_OP_GE_DOUBLE:
+		case FILTER_OP_LE_DOUBLE:
 		{
 			reg[REG_R0].type = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			break;
 		}
+
 
 		/* unary */
 		case FILTER_OP_UNARY_PLUS:
