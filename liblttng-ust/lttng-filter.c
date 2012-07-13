@@ -732,6 +732,7 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 				sizeof(struct literal_numeric));
 			dbg_printf("load s64 %" PRIi64 "\n", reg[insn->reg].v);
 			reg[insn->reg].type = REG_S64;
+			reg[insn->reg].literal = 1;
 			next_pc += sizeof(struct load_op)
 					+ sizeof(struct literal_numeric);
 			break;
@@ -745,6 +746,7 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 				sizeof(struct literal_double));
 			dbg_printf("load s64 %g\n", reg[insn->reg].d);
 			reg[insn->reg].type = REG_DOUBLE;
+			reg[insn->reg].literal = 1;
 			next_pc += sizeof(struct load_op)
 					+ sizeof(struct literal_double);
 			break;
@@ -940,6 +942,49 @@ int lttng_filter_validate_bytecode(struct bytecode_runtime *bytecode)
 			next_pc += sizeof(struct unary_op);
 			break;
 		}
+
+		case FILTER_OP_UNARY_PLUS_S64:
+		case FILTER_OP_UNARY_MINUS_S64:
+		case FILTER_OP_UNARY_NOT_S64:
+		{
+			struct unary_op *insn = (struct unary_op *) pc;
+
+			if (unlikely(insn->reg >= REG_ERROR)) {
+				ERR("invalid register %u\n",
+					(unsigned int) insn->reg);
+				ret = -EINVAL;
+				goto end;
+			}
+			if (reg[insn->reg].type != REG_S64) {
+				ERR("Invalid register type\n");
+				ret = -EINVAL;
+				goto end;
+			}
+			next_pc += sizeof(struct unary_op);
+			break;
+		}
+
+		case FILTER_OP_UNARY_PLUS_DOUBLE:
+		case FILTER_OP_UNARY_MINUS_DOUBLE:
+		case FILTER_OP_UNARY_NOT_DOUBLE:
+		{
+			struct unary_op *insn = (struct unary_op *) pc;
+
+			if (unlikely(insn->reg >= REG_ERROR)) {
+				ERR("invalid register %u\n",
+					(unsigned int) insn->reg);
+				ret = -EINVAL;
+				goto end;
+			}
+			if (reg[insn->reg].type != REG_DOUBLE) {
+				ERR("Invalid register type\n");
+				ret = -EINVAL;
+				goto end;
+			}
+			next_pc += sizeof(struct unary_op);
+			break;
+		}
+
 		/* logical */
 		case FILTER_OP_AND:
 		case FILTER_OP_OR:
@@ -1056,6 +1101,7 @@ int lttng_filter_validate_bytecode(struct bytecode_runtime *bytecode)
 				goto end;
 			}
 			reg[insn->reg].type = REG_S64;
+			reg[insn->reg].literal = 1;
 			next_pc += sizeof(struct load_op)
 					+ sizeof(struct literal_numeric);
 			break;
@@ -1072,6 +1118,7 @@ int lttng_filter_validate_bytecode(struct bytecode_runtime *bytecode)
 				goto end;
 			}
 			reg[insn->reg].type = REG_DOUBLE;
+			reg[insn->reg].literal = 1;
 			next_pc += sizeof(struct load_op)
 					+ sizeof(struct literal_double);
 			break;
@@ -1081,6 +1128,217 @@ int lttng_filter_validate_bytecode(struct bytecode_runtime *bytecode)
 end:
 	return ret;
 }
+
+static
+int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
+{
+	void *pc, *next_pc, *start_pc;
+	int ret = -EINVAL;
+	struct vreg reg[NR_REG];
+	int i;
+
+	for (i = 0; i < NR_REG; i++) {
+		reg[i].type = REG_TYPE_UNKNOWN;
+		reg[i].literal = 0;
+	}
+
+	start_pc = &bytecode->data[0];
+	for (pc = next_pc = start_pc; pc - start_pc < bytecode->len;
+			pc = next_pc) {
+		switch (*(filter_opcode_t *) pc) {
+		case FILTER_OP_UNKNOWN:
+		default:
+			ERR("unknown bytecode op %u\n",
+				(unsigned int) *(filter_opcode_t *) pc);
+			ret = -EINVAL;
+			goto end;
+
+		case FILTER_OP_RETURN:
+			ret = 0;
+			goto end;
+
+		/* binary */
+		case FILTER_OP_MUL:
+		case FILTER_OP_DIV:
+		case FILTER_OP_MOD:
+		case FILTER_OP_PLUS:
+		case FILTER_OP_MINUS:
+		case FILTER_OP_RSHIFT:
+		case FILTER_OP_LSHIFT:
+		case FILTER_OP_BIN_AND:
+		case FILTER_OP_BIN_OR:
+		case FILTER_OP_BIN_XOR:
+			ERR("unsupported bytecode op %u\n",
+				(unsigned int) *(filter_opcode_t *) pc);
+			ret = -EINVAL;
+			goto end;
+
+		case FILTER_OP_EQ:
+		case FILTER_OP_NE:
+		case FILTER_OP_GT:
+		case FILTER_OP_LT:
+		case FILTER_OP_GE:
+		case FILTER_OP_LE:
+		{
+			reg[REG_R0].type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			break;
+		}
+
+		/* unary */
+		case FILTER_OP_UNARY_PLUS:
+		{
+			struct unary_op *insn = (struct unary_op *) pc;
+
+			switch(reg[insn->reg].type) {
+			default:
+				ERR("unknown register type\n");
+				ret = -EINVAL;
+				goto end;
+
+			case REG_S64:
+				insn->op = FILTER_OP_UNARY_PLUS_S64;
+				break;
+			case REG_DOUBLE:
+				insn->op = FILTER_OP_UNARY_PLUS_DOUBLE;
+				break;
+			}
+			break;
+		}
+
+		case FILTER_OP_UNARY_MINUS:
+		{
+			struct unary_op *insn = (struct unary_op *) pc;
+
+			switch(reg[insn->reg].type) {
+			default:
+				ERR("unknown register type\n");
+				ret = -EINVAL;
+				goto end;
+
+			case REG_S64:
+				insn->op = FILTER_OP_UNARY_MINUS_S64;
+				break;
+			case REG_DOUBLE:
+				insn->op = FILTER_OP_UNARY_MINUS_DOUBLE;
+				break;
+			}
+			break;
+		}
+
+		case FILTER_OP_UNARY_NOT:
+		{
+			struct unary_op *insn = (struct unary_op *) pc;
+
+			switch(reg[insn->reg].type) {
+			default:
+				ERR("unknown register type\n");
+				ret = -EINVAL;
+				goto end;
+
+			case REG_S64:
+				insn->op = FILTER_OP_UNARY_NOT_S64;
+				break;
+			case REG_DOUBLE:
+				insn->op = FILTER_OP_UNARY_NOT_DOUBLE;
+				break;
+			}
+			break;
+		}
+
+		case FILTER_OP_UNARY_PLUS_S64:
+		case FILTER_OP_UNARY_MINUS_S64:
+		case FILTER_OP_UNARY_NOT_S64:
+		case FILTER_OP_UNARY_PLUS_DOUBLE:
+		case FILTER_OP_UNARY_MINUS_DOUBLE:
+		case FILTER_OP_UNARY_NOT_DOUBLE:
+		{
+			next_pc += sizeof(struct unary_op);
+			break;
+		}
+
+		/* logical */
+		case FILTER_OP_AND:
+		case FILTER_OP_OR:
+		{
+			next_pc += sizeof(struct logical_op);
+			break;
+		}
+
+		/* load */
+		case FILTER_OP_LOAD_FIELD_REF:
+		{
+			ERR("Unknown field ref type\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		case FILTER_OP_LOAD_FIELD_REF_STRING:
+		case FILTER_OP_LOAD_FIELD_REF_SEQUENCE:
+		{
+			struct load_op *insn = (struct load_op *) pc;
+
+			reg[insn->reg].type = REG_STRING;
+			reg[insn->reg].literal = 0;
+			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
+			break;
+		}
+		case FILTER_OP_LOAD_FIELD_REF_S64:
+		{
+			struct load_op *insn = (struct load_op *) pc;
+
+			reg[insn->reg].type = REG_S64;
+			reg[insn->reg].literal = 0;
+			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
+			break;
+		}
+		case FILTER_OP_LOAD_FIELD_REF_DOUBLE:
+		{
+			struct load_op *insn = (struct load_op *) pc;
+
+			reg[insn->reg].type = REG_DOUBLE;
+			reg[insn->reg].literal = 0;
+			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
+			break;
+		}
+
+		case FILTER_OP_LOAD_STRING:
+		{
+			struct load_op *insn = (struct load_op *) pc;
+
+			reg[insn->reg].type = REG_STRING;
+			reg[insn->reg].literal = 1;
+			next_pc += sizeof(struct load_op) + strlen(insn->data) + 1;
+			break;
+		}
+
+		case FILTER_OP_LOAD_S64:
+		{
+			struct load_op *insn = (struct load_op *) pc;
+
+			reg[insn->reg].type = REG_S64;
+			reg[insn->reg].literal = 1;
+			next_pc += sizeof(struct load_op)
+					+ sizeof(struct literal_numeric);
+			break;
+		}
+
+		case FILTER_OP_LOAD_DOUBLE:
+		{
+			struct load_op *insn = (struct load_op *) pc;
+
+			reg[insn->reg].type = REG_DOUBLE;
+			reg[insn->reg].literal = 1;
+			next_pc += sizeof(struct load_op)
+					+ sizeof(struct literal_double);
+			break;
+		}
+		}
+	}
+end:
+	return ret;
+}
+
+
 
 static
 int apply_field_reloc(struct ltt_event *event,
@@ -1222,6 +1480,11 @@ int _lttng_filter_event_link_bytecode(struct ltt_event *event,
 	}
 	/* Validate bytecode */
 	ret = lttng_filter_validate_bytecode(runtime);
+	if (ret) {
+		goto link_error;
+	}
+	/* Specialize bytecode */
+	ret = lttng_filter_specialize_bytecode(runtime);
 	if (ret) {
 		goto link_error;
 	}
