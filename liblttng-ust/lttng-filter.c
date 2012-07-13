@@ -31,6 +31,8 @@
 #include <limits.h>
 #include "filter-bytecode.h"
 
+#define DEBUG //TEST
+
 #define NR_REG		2
 
 #ifndef min_t
@@ -66,10 +68,11 @@ struct bytecode_runtime {
 struct reg {
 	enum {
 		REG_S64,
-		REG_STRING,	/* NULL-terminated string */
-		REG_SEQUENCE,	/* non-null terminated */
+		REG_DOUBLE,
+		REG_STRING,
 	} type;
 	int64_t v;
+	double d;
 
 	const char *str;
 	size_t seq_len;
@@ -112,6 +115,7 @@ static const char *opnames[] = {
 	[ FILTER_OP_LOAD_FIELD_REF ] = "LOAD_FIELD_REF",
 	[ FILTER_OP_LOAD_STRING ] = "LOAD_STRING",
 	[ FILTER_OP_LOAD_S64 ] = "LOAD_S64",
+	[ FILTER_OP_LOAD_DOUBLE ] = "LOAD_DOUBLE",
 };
 
 static
@@ -227,6 +231,7 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 	for (i = 0; i < NR_REG; i++) {
 		reg[i].type = REG_S64;
 		reg[i].v = 0;
+		reg[i].d = 0.0;
 		reg[i].str = NULL;
 		reg[i].seq_len = 0;
 		reg[i].literal = 0;
@@ -274,8 +279,8 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 
 		case FILTER_OP_EQ:
 		{
-			if (unlikely((reg[REG_R0].type == REG_S64 && reg[REG_R1].type != REG_S64)
-					|| (reg[REG_R0].type != REG_S64 && reg[REG_R1].type == REG_S64))) {
+			if (unlikely((reg[REG_R0].type == REG_STRING && reg[REG_R1].type != REG_STRING)
+					|| (reg[REG_R0].type != REG_STRING && reg[REG_R1].type == REG_STRING))) {
 				fprintf(stderr, "[error] type mismatch for '==' binary operator\n");
 				ret = -EINVAL;
 				goto end;
@@ -287,11 +292,37 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 				goto end;
 
 			case REG_STRING:
-			case REG_SEQUENCE:
 				reg[REG_R0].v = (reg_strcmp(reg, "==") == 0);
 				break;
 			case REG_S64:
-				reg[REG_R0].v = (reg[REG_R0].v == reg[REG_R1].v);
+				switch (reg[REG_R1].type) {
+				default:
+					fprintf(stderr, "[error] unknown register type\n");
+					ret = -EINVAL;
+					goto end;
+
+				case REG_S64:
+					reg[REG_R0].v = (reg[REG_R0].v == reg[REG_R1].v);
+					break;
+				case REG_DOUBLE:
+					reg[REG_R0].v = (reg[REG_R0].v == reg[REG_R1].d);
+					break;
+				}
+				break;
+			case REG_DOUBLE:
+				switch (reg[REG_R1].type) {
+				default:
+					fprintf(stderr, "[error] unknown register type\n");
+					ret = -EINVAL;
+					goto end;
+
+				case REG_S64:
+					reg[REG_R0].v = (reg[REG_R0].d == reg[REG_R1].v);
+					break;
+				case REG_DOUBLE:
+					reg[REG_R0].v = (reg[REG_R0].d == reg[REG_R1].d);
+					break;
+				}
 				break;
 			}
 			reg[REG_R0].type = REG_S64;
@@ -300,8 +331,8 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		}
 		case FILTER_OP_NE:
 		{
-			if (unlikely((reg[REG_R0].type == REG_S64 && reg[REG_R1].type != REG_S64)
-					|| (reg[REG_R0].type != REG_S64 && reg[REG_R1].type == REG_S64))) {
+			if (unlikely((reg[REG_R0].type == REG_STRING && reg[REG_R1].type != REG_STRING)
+					|| (reg[REG_R0].type != REG_STRING && reg[REG_R1].type == REG_STRING))) {
 				fprintf(stderr, "[error] type mismatch for '!=' binary operator\n");
 				ret = -EINVAL;
 				goto end;
@@ -313,11 +344,37 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 				goto end;
 
 			case REG_STRING:
-			case REG_SEQUENCE:
 				reg[REG_R0].v = (reg_strcmp(reg, "!=") != 0);
 				break;
 			case REG_S64:
-				reg[REG_R0].v = (reg[REG_R0].v != reg[REG_R1].v);
+				switch (reg[REG_R1].type) {
+				default:
+					fprintf(stderr, "[error] unknown register type\n");
+					ret = -EINVAL;
+					goto end;
+
+				case REG_S64:
+					reg[REG_R0].v = (reg[REG_R0].v != reg[REG_R1].v);
+					break;
+				case REG_DOUBLE:
+					reg[REG_R0].v = (reg[REG_R0].v != reg[REG_R1].d);
+					break;
+				}
+				break;
+			case REG_DOUBLE:
+				switch (reg[REG_R1].type) {
+				default:
+					fprintf(stderr, "[error] unknown register type\n");
+					ret = -EINVAL;
+					goto end;
+
+				case REG_S64:
+					reg[REG_R0].v = (reg[REG_R0].d != reg[REG_R1].v);
+					break;
+				case REG_DOUBLE:
+					reg[REG_R0].v = (reg[REG_R0].d != reg[REG_R1].d);
+					break;
+				}
 				break;
 			}
 			reg[REG_R0].type = REG_S64;
@@ -326,8 +383,8 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		}
 		case FILTER_OP_GT:
 		{
-			if (unlikely((reg[REG_R0].type == REG_S64 && reg[REG_R1].type != REG_S64)
-					|| (reg[REG_R0].type != REG_S64 && reg[REG_R1].type == REG_S64))) {
+			if (unlikely((reg[REG_R0].type == REG_STRING && reg[REG_R1].type != REG_STRING)
+					|| (reg[REG_R0].type != REG_STRING && reg[REG_R1].type == REG_STRING))) {
 				fprintf(stderr, "[error] type mismatch for '>' binary operator\n");
 				ret = -EINVAL;
 				goto end;
@@ -339,11 +396,37 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 				goto end;
 
 			case REG_STRING:
-			case REG_SEQUENCE:
 				reg[REG_R0].v = (reg_strcmp(reg, ">") > 0);
 				break;
 			case REG_S64:
-				reg[REG_R0].v = (reg[REG_R0].v > reg[REG_R1].v);
+				switch (reg[REG_R1].type) {
+				default:
+					fprintf(stderr, "[error] unknown register type\n");
+					ret = -EINVAL;
+					goto end;
+
+				case REG_S64:
+					reg[REG_R0].v = (reg[REG_R0].v > reg[REG_R1].v);
+					break;
+				case REG_DOUBLE:
+					reg[REG_R0].v = (reg[REG_R0].v > reg[REG_R1].d);
+					break;
+				}
+				break;
+			case REG_DOUBLE:
+				switch (reg[REG_R1].type) {
+				default:
+					fprintf(stderr, "[error] unknown register type\n");
+					ret = -EINVAL;
+					goto end;
+
+				case REG_S64:
+					reg[REG_R0].v = (reg[REG_R0].d > reg[REG_R1].v);
+					break;
+				case REG_DOUBLE:
+					reg[REG_R0].v = (reg[REG_R0].d > reg[REG_R1].d);
+					break;
+				}
 				break;
 			}
 			reg[REG_R0].type = REG_S64;
@@ -352,8 +435,8 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		}
 		case FILTER_OP_LT:
 		{
-			if (unlikely((reg[REG_R0].type == REG_S64 && reg[REG_R1].type != REG_S64)
-					|| (reg[REG_R0].type != REG_S64 && reg[REG_R1].type == REG_S64))) {
+			if (unlikely((reg[REG_R0].type == REG_STRING && reg[REG_R1].type != REG_STRING)
+					|| (reg[REG_R0].type != REG_STRING && reg[REG_R1].type == REG_STRING))) {
 				fprintf(stderr, "[error] type mismatch for '<' binary operator\n");
 				ret = -EINVAL;
 				goto end;
@@ -365,11 +448,37 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 				goto end;
 
 			case REG_STRING:
-			case REG_SEQUENCE:
 				reg[REG_R0].v = (reg_strcmp(reg, "<") < 0);
 				break;
 			case REG_S64:
-				reg[REG_R0].v = (reg[REG_R0].v < reg[REG_R1].v);
+				switch (reg[REG_R1].type) {
+				default:
+					fprintf(stderr, "[error] unknown register type\n");
+					ret = -EINVAL;
+					goto end;
+
+				case REG_S64:
+					reg[REG_R0].v = (reg[REG_R0].v < reg[REG_R1].v);
+					break;
+				case REG_DOUBLE:
+					reg[REG_R0].v = (reg[REG_R0].v < reg[REG_R1].d);
+					break;
+				}
+				break;
+			case REG_DOUBLE:
+				switch (reg[REG_R1].type) {
+				default:
+					fprintf(stderr, "[error] unknown register type\n");
+					ret = -EINVAL;
+					goto end;
+
+				case REG_S64:
+					reg[REG_R0].v = (reg[REG_R0].d < reg[REG_R1].v);
+					break;
+				case REG_DOUBLE:
+					reg[REG_R0].v = (reg[REG_R0].d < reg[REG_R1].d);
+					break;
+				}
 				break;
 			}
 			reg[REG_R0].type = REG_S64;
@@ -378,8 +487,8 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		}
 		case FILTER_OP_GE:
 		{
-			if (unlikely((reg[REG_R0].type == REG_S64 && reg[REG_R1].type != REG_S64)
-					|| (reg[REG_R0].type != REG_S64 && reg[REG_R1].type == REG_S64))) {
+			if (unlikely((reg[REG_R0].type == REG_STRING && reg[REG_R1].type != REG_STRING)
+					|| (reg[REG_R0].type != REG_STRING && reg[REG_R1].type == REG_STRING))) {
 				fprintf(stderr, "[error] type mismatch for '>=' binary operator\n");
 				ret = -EINVAL;
 				goto end;
@@ -391,11 +500,37 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 				goto end;
 
 			case REG_STRING:
-			case REG_SEQUENCE:
 				reg[REG_R0].v = (reg_strcmp(reg, ">=") >= 0);
 				break;
 			case REG_S64:
-				reg[REG_R0].v = (reg[REG_R0].v >= reg[REG_R1].v);
+				switch (reg[REG_R1].type) {
+				default:
+					fprintf(stderr, "[error] unknown register type\n");
+					ret = -EINVAL;
+					goto end;
+
+				case REG_S64:
+					reg[REG_R0].v = (reg[REG_R0].v >= reg[REG_R1].v);
+					break;
+				case REG_DOUBLE:
+					reg[REG_R0].v = (reg[REG_R0].v >= reg[REG_R1].d);
+					break;
+				}
+				break;
+			case REG_DOUBLE:
+				switch (reg[REG_R1].type) {
+				default:
+					fprintf(stderr, "[error] unknown register type\n");
+					ret = -EINVAL;
+					goto end;
+
+				case REG_S64:
+					reg[REG_R0].v = (reg[REG_R0].d >= reg[REG_R1].v);
+					break;
+				case REG_DOUBLE:
+					reg[REG_R0].v = (reg[REG_R0].d >= reg[REG_R1].d);
+					break;
+				}
 				break;
 			}
 			reg[REG_R0].type = REG_S64;
@@ -404,8 +539,8 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		}
 		case FILTER_OP_LE:
 		{
-			if (unlikely((reg[REG_R0].type == REG_S64 && reg[REG_R1].type != REG_S64)
-					|| (reg[REG_R0].type != REG_S64 && reg[REG_R1].type == REG_S64))) {
+			if (unlikely((reg[REG_R0].type == REG_STRING && reg[REG_R1].type != REG_STRING)
+					|| (reg[REG_R0].type != REG_STRING && reg[REG_R1].type == REG_STRING))) {
 				fprintf(stderr, "[error] type mismatch for '<=' binary operator\n");
 				ret = -EINVAL;
 				goto end;
@@ -417,11 +552,37 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 				goto end;
 
 			case REG_STRING:
-			case REG_SEQUENCE:
 				reg[REG_R0].v = (reg_strcmp(reg, "<=") <= 0);
 				break;
 			case REG_S64:
-				reg[REG_R0].v = (reg[REG_R0].v <= reg[REG_R1].v);
+				switch (reg[REG_R1].type) {
+				default:
+					fprintf(stderr, "[error] unknown register type\n");
+					ret = -EINVAL;
+					goto end;
+
+				case REG_S64:
+					reg[REG_R0].v = (reg[REG_R0].v <= reg[REG_R1].v);
+					break;
+				case REG_DOUBLE:
+					reg[REG_R0].v = (reg[REG_R0].v <= reg[REG_R1].d);
+					break;
+				}
+				break;
+			case REG_DOUBLE:
+				switch (reg[REG_R1].type) {
+				default:
+					fprintf(stderr, "[error] unknown register type\n");
+					ret = -EINVAL;
+					goto end;
+
+				case REG_S64:
+					reg[REG_R0].v = (reg[REG_R0].d <= reg[REG_R1].v);
+					break;
+				case REG_DOUBLE:
+					reg[REG_R0].v = (reg[REG_R0].d <= reg[REG_R1].d);
+					break;
+				}
 				break;
 			}
 			reg[REG_R0].type = REG_S64;
@@ -440,10 +601,20 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 				ret = -EINVAL;
 				goto end;
 			}
-			if (unlikely(reg[insn->reg].type != REG_S64)) {
-				fprintf(stderr, "[error] Unary plus can only be applied to numeric register\n");
+			switch (reg[insn->reg].type) {
+			default:
+				fprintf(stderr, "[error] unknown register type\n");
 				ret = -EINVAL;
 				goto end;
+
+			case REG_STRING:
+				fprintf(stderr, "[error] Unary plus can only be applied to numeric or floating point registers\n");
+				ret = -EINVAL;
+				goto end;
+			case REG_S64:
+				break;
+			case REG_DOUBLE:
+				break;
 			}
 			next_pc += sizeof(struct unary_op);
 			break;
@@ -458,12 +629,23 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 				ret = -EINVAL;
 				goto end;
 			}
-			if (unlikely(reg[insn->reg].type != REG_S64)) {
-				fprintf(stderr, "[error] Unary minus can only be applied to numeric register\n");
+			switch (reg[insn->reg].type) {
+			default:
+				fprintf(stderr, "[error] unknown register type\n");
 				ret = -EINVAL;
 				goto end;
+
+			case REG_STRING:
+				fprintf(stderr, "[error] Unary minus can only be applied to numeric or floating point registers\n");
+				ret = -EINVAL;
+				goto end;
+			case REG_S64:
+				reg[insn->reg].v = -reg[insn->reg].v;
+				break;
+			case REG_DOUBLE:
+				reg[insn->reg].d = -reg[insn->reg].d;
+				break;
 			}
-			reg[insn->reg].v = -reg[insn->reg].v;
 			next_pc += sizeof(struct unary_op);
 			break;
 		}
@@ -476,6 +658,23 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 					(unsigned int) insn->reg);
 				ret = -EINVAL;
 				goto end;
+			}
+			switch (reg[insn->reg].type) {
+			default:
+				fprintf(stderr, "[error] unknown register type\n");
+				ret = -EINVAL;
+				goto end;
+
+			case REG_STRING:
+				fprintf(stderr, "[error] Unary not can only be applied to numeric or floating point registers\n");
+				ret = -EINVAL;
+				goto end;
+			case REG_S64:
+				reg[insn->reg].v = !reg[insn->reg].v;
+				break;
+			case REG_DOUBLE:
+				reg[insn->reg].d = !reg[insn->reg].d;
+				break;
 			}
 			if (unlikely(reg[insn->reg].type != REG_S64)) {
 				fprintf(stderr, "[error] Unary not can only be applied to numeric register\n");
@@ -491,14 +690,15 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			struct logical_op *insn = (struct logical_op *) pc;
 
-			if (unlikely(reg[REG_R0].type != REG_S64)) {
-				fprintf(stderr, "[error] Logical operator 'and' can only be applied to numeric register\n");
+			if (unlikely(reg[REG_R0].type == REG_STRING)) {
+				fprintf(stderr, "[error] Logical operator 'and' can only be applied to numeric and floating point registers\n");
 				ret = -EINVAL;
 				goto end;
 			}
 
 			/* If REG_R0 is 0, skip and evaluate to 0 */
-			if (reg[REG_R0].v == 0) {
+			if ((reg[REG_R0].type == REG_S64 && reg[REG_R0].v == 0)
+					|| (reg[REG_R0].type == REG_DOUBLE && reg[REG_R0].d == 0.0)) {
 				dbg_printf("Jumping to bytecode offset %u\n",
 					(unsigned int) insn->skip_offset);
 				next_pc = start_pc + insn->skip_offset;
@@ -516,14 +716,16 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			struct logical_op *insn = (struct logical_op *) pc;
 
-			if (unlikely(reg[REG_R0].type != REG_S64)) {
-				fprintf(stderr, "[error] Logical operator 'and' can only be applied to numeric register\n");
+			if (unlikely(reg[REG_R0].type == REG_STRING)) {
+				fprintf(stderr, "[error] Logical operator 'or' can only be applied to numeric and floating point registers\n");
 				ret = -EINVAL;
 				goto end;
 			}
 
 			/* If REG_R0 is nonzero, skip and evaluate to 1 */
-			if (reg[REG_R0].v != 0) {
+
+			if ((reg[REG_R0].type == REG_S64 && reg[REG_R0].v != 0)
+					|| (reg[REG_R0].type == REG_DOUBLE && reg[REG_R0].d != 0.0)) {
 				reg[REG_R0].v = 1;
 				dbg_printf("Jumping to bytecode offset %u\n",
 					(unsigned int) insn->skip_offset);
@@ -574,7 +776,7 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 				reg[insn->reg].str =
 					*(const char **) (&filter_stack_data[ref->offset
 									+ sizeof(unsigned long)]);
-				reg[insn->reg].type = REG_SEQUENCE;
+				reg[insn->reg].type = REG_STRING;
 				reg[insn->reg].literal = 0;
 				break;
 			case FIELD_REF_S64:
@@ -583,6 +785,13 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 				reg[insn->reg].type = REG_S64;
 				reg[insn->reg].literal = 0;
 				dbg_printf("ref load s64 %" PRIi64 "\n", reg[insn->reg].v);
+				break;
+			case FIELD_REF_DOUBLE:
+				memcpy(&reg[insn->reg].d, &filter_stack_data[ref->offset],
+					sizeof(struct literal_double));
+				reg[insn->reg].type = REG_DOUBLE;
+				reg[insn->reg].literal = 0;
+				dbg_printf("ref load double %g\n", reg[insn->reg].d);
 				break;
 			}
 
@@ -625,6 +834,25 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			reg[insn->reg].type = REG_S64;
 			next_pc += sizeof(struct load_op)
 					+ sizeof(struct literal_numeric);
+			break;
+		}
+
+		case FILTER_OP_LOAD_DOUBLE:
+		{
+			struct load_op *insn = (struct load_op *) pc;
+
+			if (unlikely(insn->reg >= REG_ERROR)) {
+				fprintf(stderr, "[error] invalid register %u\n",
+					(unsigned int) insn->reg);
+				ret = -EINVAL;
+				goto end;
+			}
+			memcpy(&reg[insn->reg].d, insn->data,
+				sizeof(struct literal_double));
+			dbg_printf("load s64 %g\n", reg[insn->reg].d);
+			reg[insn->reg].type = REG_DOUBLE;
+			next_pc += sizeof(struct load_op)
+					+ sizeof(struct literal_double);
 			break;
 		}
 		}
@@ -684,6 +912,7 @@ int apply_field_reloc(struct ltt_event *event,
 			break;
 		case atype_float:
 			field_offset += sizeof(double);
+			break;
 		default:
 			return -EINVAL;
 		}
@@ -711,7 +940,8 @@ int apply_field_reloc(struct ltt_event *event,
 		field_ref->type = FIELD_REF_STRING;
 		break;
 	case atype_float:
-		return -EINVAL;
+		field_ref->type = FIELD_REF_DOUBLE;
+		break;
 	default:
 		return -EINVAL;
 	}
