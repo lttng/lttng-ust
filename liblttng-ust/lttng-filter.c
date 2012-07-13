@@ -248,11 +248,6 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 	start_pc = &bytecode->data[0];
 	for (pc = next_pc = start_pc; pc - start_pc < bytecode->len;
 			pc = next_pc) {
-		if (unlikely(pc >= start_pc + bytecode->len)) {
-			ERR("filter bytecode overflow\n");
-			ret = -EINVAL;
-			goto end;
-		}
 		dbg_printf("Executing op %s (%u)\n",
 			print_op((unsigned int) *(filter_opcode_t *) pc),
 			(unsigned int) *(filter_opcode_t *) pc);
@@ -287,12 +282,6 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 
 		case FILTER_OP_EQ:
 		{
-			if (unlikely((reg[REG_R0].type == REG_STRING && reg[REG_R1].type != REG_STRING)
-					|| (reg[REG_R0].type != REG_STRING && reg[REG_R1].type == REG_STRING))) {
-				ERR("type mismatch for '==' binary operator\n");
-				ret = -EINVAL;
-				goto end;
-			}
 			switch (reg[REG_R0].type) {
 			default:
 				ERR("unknown register type\n");
@@ -339,12 +328,6 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		}
 		case FILTER_OP_NE:
 		{
-			if (unlikely((reg[REG_R0].type == REG_STRING && reg[REG_R1].type != REG_STRING)
-					|| (reg[REG_R0].type != REG_STRING && reg[REG_R1].type == REG_STRING))) {
-				ERR("type mismatch for '!=' binary operator\n");
-				ret = -EINVAL;
-				goto end;
-			}
 			switch (reg[REG_R0].type) {
 			default:
 				ERR("unknown register type\n");
@@ -391,12 +374,6 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		}
 		case FILTER_OP_GT:
 		{
-			if (unlikely((reg[REG_R0].type == REG_STRING && reg[REG_R1].type != REG_STRING)
-					|| (reg[REG_R0].type != REG_STRING && reg[REG_R1].type == REG_STRING))) {
-				ERR("type mismatch for '>' binary operator\n");
-				ret = -EINVAL;
-				goto end;
-			}
 			switch (reg[REG_R0].type) {
 			default:
 				ERR("unknown register type\n");
@@ -443,12 +420,6 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		}
 		case FILTER_OP_LT:
 		{
-			if (unlikely((reg[REG_R0].type == REG_STRING && reg[REG_R1].type != REG_STRING)
-					|| (reg[REG_R0].type != REG_STRING && reg[REG_R1].type == REG_STRING))) {
-				ERR("type mismatch for '<' binary operator\n");
-				ret = -EINVAL;
-				goto end;
-			}
 			switch (reg[REG_R0].type) {
 			default:
 				ERR("unknown register type\n");
@@ -495,12 +466,6 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		}
 		case FILTER_OP_GE:
 		{
-			if (unlikely((reg[REG_R0].type == REG_STRING && reg[REG_R1].type != REG_STRING)
-					|| (reg[REG_R0].type != REG_STRING && reg[REG_R1].type == REG_STRING))) {
-				ERR("type mismatch for '>=' binary operator\n");
-				ret = -EINVAL;
-				goto end;
-			}
 			switch (reg[REG_R0].type) {
 			default:
 				ERR("unknown register type\n");
@@ -547,12 +512,6 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		}
 		case FILTER_OP_LE:
 		{
-			if (unlikely((reg[REG_R0].type == REG_STRING && reg[REG_R1].type != REG_STRING)
-					|| (reg[REG_R0].type != REG_STRING && reg[REG_R1].type == REG_STRING))) {
-				ERR("type mismatch for '<=' binary operator\n");
-				ret = -EINVAL;
-				goto end;
-			}
 			switch (reg[REG_R0].type) {
 			default:
 				ERR("unknown register type\n");
@@ -601,29 +560,6 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		/* unary */
 		case FILTER_OP_UNARY_PLUS:
 		{
-			struct unary_op *insn = (struct unary_op *) pc;
-
-			if (unlikely(insn->reg >= REG_ERROR)) {
-				ERR("invalid register %u\n",
-					(unsigned int) insn->reg);
-				ret = -EINVAL;
-				goto end;
-			}
-			switch (reg[insn->reg].type) {
-			default:
-				ERR("unknown register type\n");
-				ret = -EINVAL;
-				goto end;
-
-			case REG_STRING:
-				ERR("Unary plus can only be applied to numeric or floating point registers\n");
-				ret = -EINVAL;
-				goto end;
-			case REG_S64:
-				break;
-			case REG_DOUBLE:
-				break;
-			}
 			next_pc += sizeof(struct unary_op);
 			break;
 		}
@@ -631,12 +567,6 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			struct unary_op *insn = (struct unary_op *) pc;
 
-			if (unlikely(insn->reg >= REG_ERROR)) {
-				ERR("invalid register %u\n",
-					(unsigned int) insn->reg);
-				ret = -EINVAL;
-				goto end;
-			}
 			switch (reg[insn->reg].type) {
 			default:
 				ERR("unknown register type\n");
@@ -661,12 +591,6 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			struct unary_op *insn = (struct unary_op *) pc;
 
-			if (unlikely(insn->reg >= REG_ERROR)) {
-				ERR("invalid register %u\n",
-					(unsigned int) insn->reg);
-				ret = -EINVAL;
-				goto end;
-			}
 			switch (reg[insn->reg].type) {
 			default:
 				ERR("unknown register type\n");
@@ -684,11 +608,6 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 				reg[insn->reg].d = !reg[insn->reg].d;
 				break;
 			}
-			if (unlikely(reg[insn->reg].type != REG_S64)) {
-				ERR("Unary not can only be applied to numeric register\n");
-				ret = -EINVAL;
-				goto end;
-			}
 			reg[insn->reg].v = !reg[insn->reg].v;
 			next_pc += sizeof(struct unary_op);
 			break;
@@ -698,23 +617,12 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			struct logical_op *insn = (struct logical_op *) pc;
 
-			if (unlikely(reg[REG_R0].type == REG_STRING)) {
-				ERR("Logical operator 'and' can only be applied to numeric and floating point registers\n");
-				ret = -EINVAL;
-				goto end;
-			}
-
 			/* If REG_R0 is 0, skip and evaluate to 0 */
 			if ((reg[REG_R0].type == REG_S64 && reg[REG_R0].v == 0)
 					|| (reg[REG_R0].type == REG_DOUBLE && reg[REG_R0].d == 0.0)) {
 				dbg_printf("Jumping to bytecode offset %u\n",
 					(unsigned int) insn->skip_offset);
 				next_pc = start_pc + insn->skip_offset;
-				if (unlikely(next_pc <= pc)) {
-					ERR("Loops are not allowed in bytecode\n");
-					ret = -EINVAL;
-					goto end;
-				}
 			} else {
 				next_pc += sizeof(struct logical_op);
 			}
@@ -724,12 +632,6 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			struct logical_op *insn = (struct logical_op *) pc;
 
-			if (unlikely(reg[REG_R0].type == REG_STRING)) {
-				ERR("Logical operator 'or' can only be applied to numeric and floating point registers\n");
-				ret = -EINVAL;
-				goto end;
-			}
-
 			/* If REG_R0 is nonzero, skip and evaluate to 1 */
 
 			if ((reg[REG_R0].type == REG_S64 && reg[REG_R0].v != 0)
@@ -738,11 +640,6 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 				dbg_printf("Jumping to bytecode offset %u\n",
 					(unsigned int) insn->skip_offset);
 				next_pc = start_pc + insn->skip_offset;
-				if (unlikely(next_pc <= pc)) {
-					ERR("Loops are not allowed in bytecode\n");
-					ret = -EINVAL;
-					goto end;
-				}
 			} else {
 				next_pc += sizeof(struct logical_op);
 			}
@@ -755,12 +652,6 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			struct load_op *insn = (struct load_op *) pc;
 			struct field_ref *ref = (struct field_ref *) insn->data;
 
-			if (unlikely(insn->reg >= REG_ERROR)) {
-				ERR("invalid register %u\n",
-					(unsigned int) insn->reg);
-				ret = -EINVAL;
-				goto end;
-			}
 			dbg_printf("load field ref offset %u type %u\n",
 				ref->offset, ref->type);
 			switch (ref->type) {
@@ -811,12 +702,6 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			struct load_op *insn = (struct load_op *) pc;
 
-			if (unlikely(insn->reg >= REG_ERROR)) {
-				ERR("invalid register %u\n",
-					(unsigned int) insn->reg);
-				ret = -EINVAL;
-				goto end;
-			}
 			dbg_printf("load string %s\n", insn->data);
 			reg[insn->reg].str = insn->data;
 			reg[insn->reg].type = REG_STRING;
@@ -830,12 +715,6 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			struct load_op *insn = (struct load_op *) pc;
 
-			if (unlikely(insn->reg >= REG_ERROR)) {
-				ERR("invalid register %u\n",
-					(unsigned int) insn->reg);
-				ret = -EINVAL;
-				goto end;
-			}
 			memcpy(&reg[insn->reg].v, insn->data,
 				sizeof(struct literal_numeric));
 			dbg_printf("load s64 %" PRIi64 "\n", reg[insn->reg].v);
@@ -849,12 +728,6 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			struct load_op *insn = (struct load_op *) pc;
 
-			if (unlikely(insn->reg >= REG_ERROR)) {
-				ERR("invalid register %u\n",
-					(unsigned int) insn->reg);
-				ret = -EINVAL;
-				goto end;
-			}
 			memcpy(&reg[insn->reg].d, insn->data,
 				sizeof(struct literal_double));
 			dbg_printf("load s64 %g\n", reg[insn->reg].d);
