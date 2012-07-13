@@ -264,9 +264,11 @@ int lttng_filter_false(void *filter_data,
 	return 0;
 }
 
-#define INTERPRETER_USE_SWITCH
-
 #ifdef INTERPRETER_USE_SWITCH
+
+/*
+ * Fallback for compilers that do not support taking address of labels.
+ */
 
 #define START_OP	\
 	start_pc = &bytecode->data[0]; \
@@ -286,7 +288,25 @@ int lttng_filter_false(void *filter_data,
 
 #else
 
-#define OP(name)	
+/*
+ * Dispatch-table based interpreter.
+ */
+
+#define START_OP					\
+	start_pc = &bytecode->data[0];			\
+	pc = next_pc = start_pc;			\
+	if (unlikely(pc - start_pc >= bytecode->len))	\
+		goto end;				\
+	goto *dispatch[*(filter_opcode_t *) pc];
+
+#define OP(name)					\
+LABEL_##name
+
+#define PO						\
+		pc = next_pc;				\
+		goto *dispatch[*(filter_opcode_t *) pc];
+
+#define END_OP
 
 #endif
 
@@ -301,7 +321,7 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 	struct reg reg[NR_REG];
 #ifndef INTERPRETER_USE_SWITCH
 	static void *dispatch[NR_FILTER_OPS] = {
-		[ FILTER_OP_UNKNOWN ] = &&LABEL_FILTER_OP_UNKNOWN = 0,
+		[ FILTER_OP_UNKNOWN ] = &&LABEL_FILTER_OP_UNKNOWN,
 
 		[ FILTER_OP_RETURN ] = &&LABEL_FILTER_OP_RETURN,
 
@@ -773,6 +793,11 @@ end:
 		return 0;
 	return retval;
 }
+
+#undef START_OP
+#undef OP
+#undef PO
+#undef END_OP
 
 static
 int bin_op_compare_check(struct vreg reg[NR_REG], const char *str)
