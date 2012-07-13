@@ -31,8 +31,6 @@
 #include <limits.h>
 #include "filter-bytecode.h"
 
-#define DEBUG //TEST
-
 #define NR_REG		2
 
 #ifndef min_t
