@@ -576,59 +576,53 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 
 		/* unary */
 		OP(FILTER_OP_UNARY_PLUS):
-		{
-			next_pc += sizeof(struct unary_op);
-			PO;
-		}
 		OP(FILTER_OP_UNARY_MINUS):
+		OP(FILTER_OP_UNARY_NOT):
+			ERR("unsupported non-specialized bytecode op %u\n",
+				(unsigned int) *(filter_opcode_t *) pc);
+			ret = -EINVAL;
+			goto end;
+
+
+		OP(FILTER_OP_UNARY_PLUS_S64):
+		OP(FILTER_OP_UNARY_PLUS_DOUBLE):
 		{
-			struct unary_op *insn = (struct unary_op *) pc;
-
-			switch (reg[insn->reg].type) {
-			default:
-				ERR("unknown register type\n");
-				ret = -EINVAL;
-				goto end;
-
-			case REG_STRING:
-				ERR("Unary minus can only be applied to numeric or floating point registers\n");
-				ret = -EINVAL;
-				goto end;
-			case REG_S64:
-				reg[insn->reg].v = -reg[insn->reg].v;
-				break;
-			case REG_DOUBLE:
-				reg[insn->reg].d = -reg[insn->reg].d;
-				break;
-			}
 			next_pc += sizeof(struct unary_op);
 			PO;
 		}
-		OP(FILTER_OP_UNARY_NOT):
+		OP(FILTER_OP_UNARY_MINUS_S64):
 		{
 			struct unary_op *insn = (struct unary_op *) pc;
 
-			switch (reg[insn->reg].type) {
-			default:
-				ERR("unknown register type\n");
-				ret = -EINVAL;
-				goto end;
+			reg[insn->reg].v = -reg[insn->reg].v;
+			next_pc += sizeof(struct unary_op);
+			PO;
+		}
+		OP(FILTER_OP_UNARY_MINUS_DOUBLE):
+		{
+			struct unary_op *insn = (struct unary_op *) pc;
 
-			case REG_STRING:
-				ERR("Unary not can only be applied to numeric or floating point registers\n");
-				ret = -EINVAL;
-				goto end;
-			case REG_S64:
-				reg[insn->reg].v = !reg[insn->reg].v;
-				break;
-			case REG_DOUBLE:
-				reg[insn->reg].d = !reg[insn->reg].d;
-				break;
-			}
+			reg[insn->reg].d = -reg[insn->reg].d;
+			next_pc += sizeof(struct unary_op);
+			PO;
+		}
+		OP(FILTER_OP_UNARY_NOT_S64):
+		{
+			struct unary_op *insn = (struct unary_op *) pc;
+
 			reg[insn->reg].v = !reg[insn->reg].v;
 			next_pc += sizeof(struct unary_op);
 			PO;
 		}
+		OP(FILTER_OP_UNARY_NOT_DOUBLE):
+		{
+			struct unary_op *insn = (struct unary_op *) pc;
+
+			reg[insn->reg].d = !reg[insn->reg].d;
+			next_pc += sizeof(struct unary_op);
+			PO;
+		}
+
 		/* logical */
 		OP(FILTER_OP_AND):
 		{
@@ -1437,7 +1431,6 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 			next_pc += sizeof(struct binary_op);
 			break;
 		}
-
 
 		/* unary */
 		case FILTER_OP_UNARY_PLUS:
