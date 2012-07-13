@@ -536,7 +536,7 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 
 			/* If REG_R0 is 0, skip and evaluate to 0 */
 			if ((reg[REG_R0].type == REG_S64 && reg[REG_R0].v == 0)
-					|| (reg[REG_R0].type == REG_DOUBLE && reg[REG_R0].d == 0.0)) {
+					|| unlikely(reg[REG_R0].type == REG_DOUBLE && reg[REG_R0].d == 0.0)) {
 				dbg_printf("Jumping to bytecode offset %u\n",
 					(unsigned int) insn->skip_offset);
 				next_pc = start_pc + insn->skip_offset;
@@ -552,7 +552,7 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			/* If REG_R0 is nonzero, skip and evaluate to 1 */
 
 			if ((reg[REG_R0].type == REG_S64 && reg[REG_R0].v != 0)
-					|| (reg[REG_R0].type == REG_DOUBLE && reg[REG_R0].d != 0.0)) {
+					|| unlikely(reg[REG_R0].type == REG_DOUBLE && reg[REG_R0].d != 0.0)) {
 				reg[REG_R0].v = 1;
 				dbg_printf("Jumping to bytecode offset %u\n",
 					(unsigned int) insn->skip_offset);
