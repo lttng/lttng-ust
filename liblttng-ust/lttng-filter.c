@@ -768,7 +768,6 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			memcpy(&reg[insn->reg].v, &filter_stack_data[ref->offset],
 				sizeof(struct literal_numeric));
 			reg[insn->reg].type = REG_S64;
-			reg[insn->reg].literal = 0;
 			dbg_printf("ref load s64 %" PRIi64 "\n", reg[insn->reg].v);
 			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
 			PO;
@@ -784,7 +783,6 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			memcpy(&reg[insn->reg].d, &filter_stack_data[ref->offset],
 				sizeof(struct literal_double));
 			reg[insn->reg].type = REG_DOUBLE;
-			reg[insn->reg].literal = 0;
 			dbg_printf("ref load double %g\n", reg[insn->reg].d);
 			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
 			PO;
@@ -811,7 +809,6 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 				sizeof(struct literal_numeric));
 			dbg_printf("load s64 %" PRIi64 "\n", reg[insn->reg].v);
 			reg[insn->reg].type = REG_S64;
-			reg[insn->reg].literal = 1;
 			next_pc += sizeof(struct load_op)
 					+ sizeof(struct literal_numeric);
 			PO;
@@ -825,7 +822,6 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 				sizeof(struct literal_double));
 			dbg_printf("load s64 %g\n", reg[insn->reg].d);
 			reg[insn->reg].type = REG_DOUBLE;
-			reg[insn->reg].literal = 1;
 			next_pc += sizeof(struct load_op)
 					+ sizeof(struct literal_double);
 			PO;
