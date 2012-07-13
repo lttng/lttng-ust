@@ -264,6 +264,32 @@ int lttng_filter_false(void *filter_data,
 	return 0;
 }
 
+#define INTERPRETER_USE_SWITCH
+
+#ifdef INTERPRETER_USE_SWITCH
+
+#define START_OP	\
+	start_pc = &bytecode->data[0]; \
+	for (pc = next_pc = start_pc; pc - start_pc < bytecode->len; \
+			pc = next_pc) { \
+		dbg_printf("Executing op %s (%u)\n", \
+			print_op((unsigned int) *(filter_opcode_t *) pc), \
+			(unsigned int) *(filter_opcode_t *) pc); \
+		switch (*(filter_opcode_t *) pc) {
+
+#define OP(name)	case name
+
+#define PO		break
+
+#define END_OP		} \
+	}
+
+#else
+
+#define OP(name)	
+
+#endif
+
 static
 int lttng_filter_interpret_bytecode(void *filter_data,
 		const char *filter_stack_data)
@@ -273,141 +299,215 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 	int ret = -EINVAL;
 	int retval = 0;
 	struct reg reg[NR_REG];
+#ifndef INTERPRETER_USE_SWITCH
+	static void *dispatch[NR_FILTER_OPS] = {
+		[ FILTER_OP_UNKNOWN ] = &&LABEL_FILTER_OP_UNKNOWN = 0,
 
-	start_pc = &bytecode->data[0];
-	for (pc = next_pc = start_pc; pc - start_pc < bytecode->len;
-			pc = next_pc) {
-		dbg_printf("Executing op %s (%u)\n",
-			print_op((unsigned int) *(filter_opcode_t *) pc),
-			(unsigned int) *(filter_opcode_t *) pc);
-		switch (*(filter_opcode_t *) pc) {
-		case FILTER_OP_UNKNOWN:
-		case FILTER_OP_LOAD_FIELD_REF:
+		[ FILTER_OP_RETURN ] = &&LABEL_FILTER_OP_RETURN,
+
+		/* binary */
+		[ FILTER_OP_MUL ] = &&LABEL_FILTER_OP_MUL,
+		[ FILTER_OP_DIV ] = &&LABEL_FILTER_OP_DIV,
+		[ FILTER_OP_MOD ] = &&LABEL_FILTER_OP_MOD,
+		[ FILTER_OP_PLUS ] = &&LABEL_FILTER_OP_PLUS,
+		[ FILTER_OP_MINUS ] = &&LABEL_FILTER_OP_MINUS,
+		[ FILTER_OP_RSHIFT ] = &&LABEL_FILTER_OP_RSHIFT,
+		[ FILTER_OP_LSHIFT ] = &&LABEL_FILTER_OP_LSHIFT,
+		[ FILTER_OP_BIN_AND ] = &&LABEL_FILTER_OP_BIN_AND,
+		[ FILTER_OP_BIN_OR ] = &&LABEL_FILTER_OP_BIN_OR,
+		[ FILTER_OP_BIN_XOR ] = &&LABEL_FILTER_OP_BIN_XOR,
+
+		/* binary comparators */
+		[ FILTER_OP_EQ ] = &&LABEL_FILTER_OP_EQ,
+		[ FILTER_OP_NE ] = &&LABEL_FILTER_OP_NE,
+		[ FILTER_OP_GT ] = &&LABEL_FILTER_OP_GT,
+		[ FILTER_OP_LT ] = &&LABEL_FILTER_OP_LT,
+		[ FILTER_OP_GE ] = &&LABEL_FILTER_OP_GE,
+		[ FILTER_OP_LE ] = &&LABEL_FILTER_OP_LE,
+
+		/* string binary comparator */
+		[ FILTER_OP_EQ_STRING ] = &&LABEL_FILTER_OP_EQ_STRING,
+		[ FILTER_OP_NE_STRING ] = &&LABEL_FILTER_OP_NE_STRING,
+		[ FILTER_OP_GT_STRING ] = &&LABEL_FILTER_OP_GT_STRING,
+		[ FILTER_OP_LT_STRING ] = &&LABEL_FILTER_OP_LT_STRING,
+		[ FILTER_OP_GE_STRING ] = &&LABEL_FILTER_OP_GE_STRING,
+		[ FILTER_OP_LE_STRING ] = &&LABEL_FILTER_OP_LE_STRING,
+
+		/* s64 binary comparator */
+		[ FILTER_OP_EQ_S64 ] = &&LABEL_FILTER_OP_EQ_S64,
+		[ FILTER_OP_NE_S64 ] = &&LABEL_FILTER_OP_NE_S64,
+		[ FILTER_OP_GT_S64 ] = &&LABEL_FILTER_OP_GT_S64,
+		[ FILTER_OP_LT_S64 ] = &&LABEL_FILTER_OP_LT_S64,
+		[ FILTER_OP_GE_S64 ] = &&LABEL_FILTER_OP_GE_S64,
+		[ FILTER_OP_LE_S64 ] = &&LABEL_FILTER_OP_LE_S64,
+
+		/* double binary comparator */
+		[ FILTER_OP_EQ_DOUBLE ] = &&LABEL_FILTER_OP_EQ_DOUBLE,
+		[ FILTER_OP_NE_DOUBLE ] = &&LABEL_FILTER_OP_NE_DOUBLE,
+		[ FILTER_OP_GT_DOUBLE ] = &&LABEL_FILTER_OP_GT_DOUBLE,
+		[ FILTER_OP_LT_DOUBLE ] = &&LABEL_FILTER_OP_LT_DOUBLE,
+		[ FILTER_OP_GE_DOUBLE ] = &&LABEL_FILTER_OP_GE_DOUBLE,
+		[ FILTER_OP_LE_DOUBLE ] = &&LABEL_FILTER_OP_LE_DOUBLE,
+
+		/* unary */
+		[ FILTER_OP_UNARY_PLUS ] = &&LABEL_FILTER_OP_UNARY_PLUS,
+		[ FILTER_OP_UNARY_MINUS ] = &&LABEL_FILTER_OP_UNARY_MINUS,
+		[ FILTER_OP_UNARY_NOT ] = &&LABEL_FILTER_OP_UNARY_NOT,
+		[ FILTER_OP_UNARY_PLUS_S64 ] = &&LABEL_FILTER_OP_UNARY_PLUS_S64,
+		[ FILTER_OP_UNARY_MINUS_S64 ] = &&LABEL_FILTER_OP_UNARY_MINUS_S64,
+		[ FILTER_OP_UNARY_NOT_S64 ] = &&LABEL_FILTER_OP_UNARY_NOT_S64,
+		[ FILTER_OP_UNARY_PLUS_DOUBLE ] = &&LABEL_FILTER_OP_UNARY_PLUS_DOUBLE,
+		[ FILTER_OP_UNARY_MINUS_DOUBLE ] = &&LABEL_FILTER_OP_UNARY_MINUS_DOUBLE,
+		[ FILTER_OP_UNARY_NOT_DOUBLE ] = &&LABEL_FILTER_OP_UNARY_NOT_DOUBLE,
+
+		/* logical */
+		[ FILTER_OP_AND ] = &&LABEL_FILTER_OP_AND,
+		[ FILTER_OP_OR ] = &&LABEL_FILTER_OP_OR,
+
+		/* load */
+		[ FILTER_OP_LOAD_FIELD_REF ] = &&LABEL_FILTER_OP_LOAD_FIELD_REF,
+		[ FILTER_OP_LOAD_FIELD_REF_STRING ] = &&LABEL_FILTER_OP_LOAD_FIELD_REF_STRING,
+		[ FILTER_OP_LOAD_FIELD_REF_SEQUENCE ] = &&LABEL_FILTER_OP_LOAD_FIELD_REF_SEQUENCE,
+		[ FILTER_OP_LOAD_FIELD_REF_S64 ] = &&LABEL_FILTER_OP_LOAD_FIELD_REF_S64,
+		[ FILTER_OP_LOAD_FIELD_REF_DOUBLE ] = &&LABEL_FILTER_OP_LOAD_FIELD_REF_DOUBLE,
+
+		[ FILTER_OP_LOAD_STRING ] = &&LABEL_FILTER_OP_LOAD_STRING,
+		[ FILTER_OP_LOAD_S64 ] = &&LABEL_FILTER_OP_LOAD_S64,
+		[ FILTER_OP_LOAD_DOUBLE ] = &&LABEL_FILTER_OP_LOAD_DOUBLE,
+	};
+#endif /* #ifndef INTERPRETER_USE_SWITCH */
+
+	START_OP
+
+		OP(FILTER_OP_UNKNOWN):
+		OP(FILTER_OP_LOAD_FIELD_REF):
+#ifdef INTERPRETER_USE_SWITCH
 		default:
+#endif /* INTERPRETER_USE_SWITCH */
 			ERR("unknown bytecode op %u\n",
 				(unsigned int) *(filter_opcode_t *) pc);
 			ret = -EINVAL;
 			goto end;
 
-		case FILTER_OP_RETURN:
+		OP(FILTER_OP_RETURN):
 			retval = !!reg[0].v;
 			ret = 0;
 			goto end;
 
 		/* binary */
-		case FILTER_OP_MUL:
-		case FILTER_OP_DIV:
-		case FILTER_OP_MOD:
-		case FILTER_OP_PLUS:
-		case FILTER_OP_MINUS:
-		case FILTER_OP_RSHIFT:
-		case FILTER_OP_LSHIFT:
-		case FILTER_OP_BIN_AND:
-		case FILTER_OP_BIN_OR:
-		case FILTER_OP_BIN_XOR:
+		OP(FILTER_OP_MUL):
+		OP(FILTER_OP_DIV):
+		OP(FILTER_OP_MOD):
+		OP(FILTER_OP_PLUS):
+		OP(FILTER_OP_MINUS):
+		OP(FILTER_OP_RSHIFT):
+		OP(FILTER_OP_LSHIFT):
+		OP(FILTER_OP_BIN_AND):
+		OP(FILTER_OP_BIN_OR):
+		OP(FILTER_OP_BIN_XOR):
 			ERR("unsupported bytecode op %u\n",
 				(unsigned int) *(filter_opcode_t *) pc);
 			ret = -EINVAL;
 			goto end;
 
-		case FILTER_OP_EQ:
-		case FILTER_OP_NE:
-		case FILTER_OP_GT:
-		case FILTER_OP_LT:
-		case FILTER_OP_GE:
-		case FILTER_OP_LE:
+		OP(FILTER_OP_EQ):
+		OP(FILTER_OP_NE):
+		OP(FILTER_OP_GT):
+		OP(FILTER_OP_LT):
+		OP(FILTER_OP_GE):
+		OP(FILTER_OP_LE):
 			ERR("unsupported non-specialized bytecode op %u\n",
 				(unsigned int) *(filter_opcode_t *) pc);
 			ret = -EINVAL;
 			goto end;
 
-		case FILTER_OP_EQ_STRING:
+		OP(FILTER_OP_EQ_STRING):
 		{
 			reg[REG_R0].v = (reg_strcmp(reg, "==") == 0);
 			reg[REG_R0].type = REG_S64;
 			next_pc += sizeof(struct binary_op);
-			break;
+			PO;
 		}
-		case FILTER_OP_NE_STRING:
+		OP(FILTER_OP_NE_STRING):
 		{
 			reg[REG_R0].v = (reg_strcmp(reg, "!=") != 0);
 			reg[REG_R0].type = REG_S64;
 			next_pc += sizeof(struct binary_op);
-			break;
+			PO;
 		}
-		case FILTER_OP_GT_STRING:
+		OP(FILTER_OP_GT_STRING):
 		{
 			reg[REG_R0].v = (reg_strcmp(reg, ">") > 0);
 			reg[REG_R0].type = REG_S64;
 			next_pc += sizeof(struct binary_op);
-			break;
+			PO;
 		}
-		case FILTER_OP_LT_STRING:
+		OP(FILTER_OP_LT_STRING):
 		{
 			reg[REG_R0].v = (reg_strcmp(reg, "<") < 0);
 			reg[REG_R0].type = REG_S64;
 			next_pc += sizeof(struct binary_op);
-			break;
+			PO;
 		}
-		case FILTER_OP_GE_STRING:
+		OP(FILTER_OP_GE_STRING):
 		{
 			reg[REG_R0].v = (reg_strcmp(reg, ">=") >= 0);
 			reg[REG_R0].type = REG_S64;
 			next_pc += sizeof(struct binary_op);
-			break;
+			PO;
 		}
-		case FILTER_OP_LE_STRING:
+		OP(FILTER_OP_LE_STRING):
 		{
 			reg[REG_R0].v = (reg_strcmp(reg, "<=") <= 0);
 			reg[REG_R0].type = REG_S64;
 			next_pc += sizeof(struct binary_op);
-			break;
+			PO;
 		}
 
-		case FILTER_OP_EQ_S64:
+		OP(FILTER_OP_EQ_S64):
 		{
 			reg[REG_R0].v = (reg[REG_R0].v == reg[REG_R1].v);
 			reg[REG_R0].type = REG_S64;
 			next_pc += sizeof(struct binary_op);
-			break;
+			PO;
 		}
-		case FILTER_OP_NE_S64:
+		OP(FILTER_OP_NE_S64):
 		{
 			reg[REG_R0].v = (reg[REG_R0].v != reg[REG_R1].v);
 			reg[REG_R0].type = REG_S64;
 			next_pc += sizeof(struct binary_op);
-			break;
+			PO;
 		}
-		case FILTER_OP_GT_S64:
+		OP(FILTER_OP_GT_S64):
 		{
 			reg[REG_R0].v = (reg[REG_R0].v > reg[REG_R1].v);
 			reg[REG_R0].type = REG_S64;
 			next_pc += sizeof(struct binary_op);
-			break;
+			PO;
 		}
-		case FILTER_OP_LT_S64:
+		OP(FILTER_OP_LT_S64):
 		{
 			reg[REG_R0].v = (reg[REG_R0].v < reg[REG_R1].v);
 			reg[REG_R0].type = REG_S64;
 			next_pc += sizeof(struct binary_op);
-			break;
+			PO;
 		}
-		case FILTER_OP_GE_S64:
+		OP(FILTER_OP_GE_S64):
 		{
 			reg[REG_R0].v = (reg[REG_R0].v >= reg[REG_R1].v);
 			reg[REG_R0].type = REG_S64;
 			next_pc += sizeof(struct binary_op);
-			break;
+			PO;
 		}
-		case FILTER_OP_LE_S64:
+		OP(FILTER_OP_LE_S64):
 		{
 			reg[REG_R0].v = (reg[REG_R0].v <= reg[REG_R1].v);
 			reg[REG_R0].type = REG_S64;
 			next_pc += sizeof(struct binary_op);
-			break;
+			PO;
 		}
 
-		case FILTER_OP_EQ_DOUBLE:
+		OP(FILTER_OP_EQ_DOUBLE):
 		{
 			if (unlikely(reg[REG_R0].type == REG_S64))
 				reg[REG_R0].d = (double) reg[REG_R0].v;
@@ -416,9 +516,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			reg[REG_R0].v = (reg[REG_R0].d == reg[REG_R1].d);
 			reg[REG_R0].type = REG_S64;
 			next_pc += sizeof(struct binary_op);
-			break;
+			PO;
 		}
-		case FILTER_OP_NE_DOUBLE:
+		OP(FILTER_OP_NE_DOUBLE):
 		{
 			if (unlikely(reg[REG_R0].type == REG_S64))
 				reg[REG_R0].d = (double) reg[REG_R0].v;
@@ -427,9 +527,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			reg[REG_R0].v = (reg[REG_R0].d != reg[REG_R1].d);
 			reg[REG_R0].type = REG_S64;
 			next_pc += sizeof(struct binary_op);
-			break;
+			PO;
 		}
-		case FILTER_OP_GT_DOUBLE:
+		OP(FILTER_OP_GT_DOUBLE):
 		{
 			if (unlikely(reg[REG_R0].type == REG_S64))
 				reg[REG_R0].d = (double) reg[REG_R0].v;
@@ -438,9 +538,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			reg[REG_R0].v = (reg[REG_R0].d > reg[REG_R1].d);
 			reg[REG_R0].type = REG_S64;
 			next_pc += sizeof(struct binary_op);
-			break;
+			PO;
 		}
-		case FILTER_OP_LT_DOUBLE:
+		OP(FILTER_OP_LT_DOUBLE):
 		{
 			if (unlikely(reg[REG_R0].type == REG_S64))
 				reg[REG_R0].d = (double) reg[REG_R0].v;
@@ -449,9 +549,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			reg[REG_R0].v = (reg[REG_R0].d < reg[REG_R1].d);
 			reg[REG_R0].type = REG_S64;
 			next_pc += sizeof(struct binary_op);
-			break;
+			PO;
 		}
-		case FILTER_OP_GE_DOUBLE:
+		OP(FILTER_OP_GE_DOUBLE):
 		{
 			if (unlikely(reg[REG_R0].type == REG_S64))
 				reg[REG_R0].d = (double) reg[REG_R0].v;
@@ -460,9 +560,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			reg[REG_R0].v = (reg[REG_R0].d >= reg[REG_R1].d);
 			reg[REG_R0].type = REG_S64;
 			next_pc += sizeof(struct binary_op);
-			break;
+			PO;
 		}
-		case FILTER_OP_LE_DOUBLE:
+		OP(FILTER_OP_LE_DOUBLE):
 		{
 			if (unlikely(reg[REG_R0].type == REG_S64))
 				reg[REG_R0].d = (double) reg[REG_R0].v;
@@ -471,16 +571,16 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			reg[REG_R0].v = (reg[REG_R0].d <= reg[REG_R1].d);
 			reg[REG_R0].type = REG_S64;
 			next_pc += sizeof(struct binary_op);
-			break;
+			PO;
 		}
 
 		/* unary */
-		case FILTER_OP_UNARY_PLUS:
+		OP(FILTER_OP_UNARY_PLUS):
 		{
 			next_pc += sizeof(struct unary_op);
-			break;
+			PO;
 		}
-		case FILTER_OP_UNARY_MINUS:
+		OP(FILTER_OP_UNARY_MINUS):
 		{
 			struct unary_op *insn = (struct unary_op *) pc;
 
@@ -502,9 +602,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 				break;
 			}
 			next_pc += sizeof(struct unary_op);
-			break;
+			PO;
 		}
-		case FILTER_OP_UNARY_NOT:
+		OP(FILTER_OP_UNARY_NOT):
 		{
 			struct unary_op *insn = (struct unary_op *) pc;
 
@@ -527,10 +627,10 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			}
 			reg[insn->reg].v = !reg[insn->reg].v;
 			next_pc += sizeof(struct unary_op);
-			break;
+			PO;
 		}
 		/* logical */
-		case FILTER_OP_AND:
+		OP(FILTER_OP_AND):
 		{
 			struct logical_op *insn = (struct logical_op *) pc;
 
@@ -543,9 +643,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			} else {
 				next_pc += sizeof(struct logical_op);
 			}
-			break;
+			PO;
 		}
-		case FILTER_OP_OR:
+		OP(FILTER_OP_OR):
 		{
 			struct logical_op *insn = (struct logical_op *) pc;
 
@@ -560,11 +660,11 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			} else {
 				next_pc += sizeof(struct logical_op);
 			}
-			break;
+			PO;
 		}
 
 		/* load */
-		case FILTER_OP_LOAD_FIELD_REF_STRING:
+		OP(FILTER_OP_LOAD_FIELD_REF_STRING):
 		{
 			struct load_op *insn = (struct load_op *) pc;
 			struct field_ref *ref = (struct field_ref *) insn->data;
@@ -578,10 +678,10 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			reg[insn->reg].literal = 0;
 			dbg_printf("ref load string %s\n", reg[insn->reg].str);
 			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
-			break;
+			PO;
 		}
 
-		case FILTER_OP_LOAD_FIELD_REF_SEQUENCE:
+		OP(FILTER_OP_LOAD_FIELD_REF_SEQUENCE):
 		{
 			struct load_op *insn = (struct load_op *) pc;
 			struct field_ref *ref = (struct field_ref *) insn->data;
@@ -596,10 +696,10 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			reg[insn->reg].type = REG_STRING;
 			reg[insn->reg].literal = 0;
 			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
-			break;
+			PO;
 		}
 
-		case FILTER_OP_LOAD_FIELD_REF_S64:
+		OP(FILTER_OP_LOAD_FIELD_REF_S64):
 		{
 			struct load_op *insn = (struct load_op *) pc;
 			struct field_ref *ref = (struct field_ref *) insn->data;
@@ -612,10 +712,10 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			reg[insn->reg].literal = 0;
 			dbg_printf("ref load s64 %" PRIi64 "\n", reg[insn->reg].v);
 			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
-			break;
+			PO;
 		}
 
-		case FILTER_OP_LOAD_FIELD_REF_DOUBLE:
+		OP(FILTER_OP_LOAD_FIELD_REF_DOUBLE):
 		{
 			struct load_op *insn = (struct load_op *) pc;
 			struct field_ref *ref = (struct field_ref *) insn->data;
@@ -628,10 +728,10 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			reg[insn->reg].literal = 0;
 			dbg_printf("ref load double %g\n", reg[insn->reg].d);
 			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
-			break;
+			PO;
 		}
 
-		case FILTER_OP_LOAD_STRING:
+		OP(FILTER_OP_LOAD_STRING):
 		{
 			struct load_op *insn = (struct load_op *) pc;
 
@@ -641,10 +741,10 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			reg[insn->reg].seq_len = UINT_MAX;
 			reg[insn->reg].literal = 1;
 			next_pc += sizeof(struct load_op) + strlen(insn->data) + 1;
-			break;
+			PO;
 		}
 
-		case FILTER_OP_LOAD_S64:
+		OP(FILTER_OP_LOAD_S64):
 		{
 			struct load_op *insn = (struct load_op *) pc;
 
@@ -655,10 +755,10 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			reg[insn->reg].literal = 1;
 			next_pc += sizeof(struct load_op)
 					+ sizeof(struct literal_numeric);
-			break;
+			PO;
 		}
 
-		case FILTER_OP_LOAD_DOUBLE:
+		OP(FILTER_OP_LOAD_DOUBLE):
 		{
 			struct load_op *insn = (struct load_op *) pc;
 
@@ -669,10 +769,10 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			reg[insn->reg].literal = 1;
 			next_pc += sizeof(struct load_op)
 					+ sizeof(struct literal_double);
-			break;
+			PO;
 		}
-		}
-	}
+
+	END_OP
 end:
 	/* return 0 (discard) on error */
 	if (ret)
