@@ -68,6 +68,7 @@ enum reg_type {
 	REG_S64,
 	REG_DOUBLE,
 	REG_STRING,
+	REG_TYPE_UNKNOWN,
 };
 
 /* Validation registers */
@@ -239,16 +240,6 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 	int ret = -EINVAL;
 	int retval = 0;
 	struct reg reg[NR_REG];
-	int i;
-
-	for (i = 0; i < NR_REG; i++) {
-		reg[i].type = REG_S64;
-		reg[i].v = 0;
-		reg[i].d = 0.0;
-		reg[i].str = NULL;
-		reg[i].seq_len = 0;
-		reg[i].literal = 0;
-	}
 
 	start_pc = &bytecode->data[0];
 	for (pc = next_pc = start_pc; pc - start_pc < bytecode->len;
@@ -820,7 +811,7 @@ int lttng_filter_validate_bytecode(struct bytecode_runtime *bytecode)
 	int i;
 
 	for (i = 0; i < NR_REG; i++) {
-		reg[i].type = REG_S64;
+		reg[i].type = REG_TYPE_UNKNOWN;
 		reg[i].literal = 0;
 	}
 
@@ -955,8 +946,11 @@ int lttng_filter_validate_bytecode(struct bytecode_runtime *bytecode)
 		{
 			struct logical_op *insn = (struct logical_op *) pc;
 
-			if (unlikely(reg[REG_R0].type == REG_STRING)) {
-				ERR("Logical operator 'and' can only be applied to numeric and floating point registers\n");
+			if (unlikely(reg[REG_R0].type == REG_TYPE_UNKNOWN
+					|| reg[REG_R0].type == REG_TYPE_UNKNOWN
+					|| reg[REG_R0].type == REG_STRING
+					|| reg[REG_R1].type == REG_STRING)) {
+				ERR("Logical comparator can only be applied to numeric and floating point registers\n");
 				ret = -EINVAL;
 				goto end;
 			}
