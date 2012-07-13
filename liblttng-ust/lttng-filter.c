@@ -966,7 +966,7 @@ int lttng_filter_validate_bytecode(struct bytecode_runtime *bytecode)
 			struct logical_op *insn = (struct logical_op *) pc;
 
 			if (unlikely(reg[REG_R0].type == REG_TYPE_UNKNOWN
-					|| reg[REG_R0].type == REG_TYPE_UNKNOWN
+					|| reg[REG_R1].type == REG_TYPE_UNKNOWN
 					|| reg[REG_R0].type == REG_STRING
 					|| reg[REG_R1].type == REG_STRING)) {
 				ERR("Logical comparator can only be applied to numeric and floating point registers\n");
