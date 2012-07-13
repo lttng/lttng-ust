@@ -121,6 +121,11 @@ static const char *opnames[] = {
 
 	/* load */
 	[ FILTER_OP_LOAD_FIELD_REF ] = "LOAD_FIELD_REF",
+	[ FILTER_OP_LOAD_FIELD_REF_STRING ] = "LOAD_FIELD_REF_STRING",
+	[ FILTER_OP_LOAD_FIELD_REF_SEQUENCE ] = "LOAD_FIELD_REF_SEQUENCE",
+	[ FILTER_OP_LOAD_FIELD_REF_S64 ] = "LOAD_FIELD_REF_S64",
+	[ FILTER_OP_LOAD_FIELD_REF_DOUBLE ] = "LOAD_FIELD_REF_DOUBLE",
+
 	[ FILTER_OP_LOAD_STRING ] = "LOAD_STRING",
 	[ FILTER_OP_LOAD_S64 ] = "LOAD_S64",
 	[ FILTER_OP_LOAD_DOUBLE ] = "LOAD_DOUBLE",
@@ -253,6 +258,7 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			(unsigned int) *(filter_opcode_t *) pc);
 		switch (*(filter_opcode_t *) pc) {
 		case FILTER_OP_UNKNOWN:
+		case FILTER_OP_LOAD_FIELD_REF:
 		default:
 			ERR("unknown bytecode op %u\n",
 				(unsigned int) *(filter_opcode_t *) pc);
@@ -647,53 +653,69 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		}
 
 		/* load */
-		case FILTER_OP_LOAD_FIELD_REF:
+		case FILTER_OP_LOAD_FIELD_REF_STRING:
 		{
 			struct load_op *insn = (struct load_op *) pc;
 			struct field_ref *ref = (struct field_ref *) insn->data;
 
-			dbg_printf("load field ref offset %u type %u\n",
-				ref->offset, ref->type);
-			switch (ref->type) {
-			case FIELD_REF_UNKNOWN:
-			default:
-				ERR("unknown field ref type\n");
-				ret = -EINVAL;
-				goto end;
+			dbg_printf("load field ref offset %u type string\n",
+				ref->offset);
+			reg[insn->reg].str =
+				*(const char * const *) &filter_stack_data[ref->offset];
+			reg[insn->reg].type = REG_STRING;
+			reg[insn->reg].seq_len = UINT_MAX;
+			reg[insn->reg].literal = 0;
+			dbg_printf("ref load string %s\n", reg[insn->reg].str);
+			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
+			break;
+		}
 
-			case FIELD_REF_STRING:
-				reg[insn->reg].str =
-					*(const char * const *) &filter_stack_data[ref->offset];
-				reg[insn->reg].type = REG_STRING;
-				reg[insn->reg].seq_len = UINT_MAX;
-				reg[insn->reg].literal = 0;
-				dbg_printf("ref load string %s\n", reg[insn->reg].str);
-				break;
-			case FIELD_REF_SEQUENCE:
-				reg[insn->reg].seq_len =
-					*(unsigned long *) &filter_stack_data[ref->offset];
-				reg[insn->reg].str =
-					*(const char **) (&filter_stack_data[ref->offset
-									+ sizeof(unsigned long)]);
-				reg[insn->reg].type = REG_STRING;
-				reg[insn->reg].literal = 0;
-				break;
-			case FIELD_REF_S64:
-				memcpy(&reg[insn->reg].v, &filter_stack_data[ref->offset],
-					sizeof(struct literal_numeric));
-				reg[insn->reg].type = REG_S64;
-				reg[insn->reg].literal = 0;
-				dbg_printf("ref load s64 %" PRIi64 "\n", reg[insn->reg].v);
-				break;
-			case FIELD_REF_DOUBLE:
-				memcpy(&reg[insn->reg].d, &filter_stack_data[ref->offset],
-					sizeof(struct literal_double));
-				reg[insn->reg].type = REG_DOUBLE;
-				reg[insn->reg].literal = 0;
-				dbg_printf("ref load double %g\n", reg[insn->reg].d);
-				break;
-			}
+		case FILTER_OP_LOAD_FIELD_REF_SEQUENCE:
+		{
+			struct load_op *insn = (struct load_op *) pc;
+			struct field_ref *ref = (struct field_ref *) insn->data;
 
+			dbg_printf("load field ref offset %u type sequence\n",
+				ref->offset);
+			reg[insn->reg].seq_len =
+				*(unsigned long *) &filter_stack_data[ref->offset];
+			reg[insn->reg].str =
+				*(const char **) (&filter_stack_data[ref->offset
+								+ sizeof(unsigned long)]);
+			reg[insn->reg].type = REG_STRING;
+			reg[insn->reg].literal = 0;
+			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
+			break;
+		}
+
+		case FILTER_OP_LOAD_FIELD_REF_S64:
+		{
+			struct load_op *insn = (struct load_op *) pc;
+			struct field_ref *ref = (struct field_ref *) insn->data;
+
+			dbg_printf("load field ref offset %u type s64\n",
+				ref->offset);
+			memcpy(&reg[insn->reg].v, &filter_stack_data[ref->offset],
+				sizeof(struct literal_numeric));
+			reg[insn->reg].type = REG_S64;
+			reg[insn->reg].literal = 0;
+			dbg_printf("ref load s64 %" PRIi64 "\n", reg[insn->reg].v);
+			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
+			break;
+		}
+
+		case FILTER_OP_LOAD_FIELD_REF_DOUBLE:
+		{
+			struct load_op *insn = (struct load_op *) pc;
+			struct field_ref *ref = (struct field_ref *) insn->data;
+
+			dbg_printf("load field ref offset %u type double\n",
+				ref->offset);
+			memcpy(&reg[insn->reg].d, &filter_stack_data[ref->offset],
+				sizeof(struct literal_double));
+			reg[insn->reg].type = REG_DOUBLE;
+			reg[insn->reg].literal = 0;
+			dbg_printf("ref load double %g\n", reg[insn->reg].d);
 			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
 			break;
 		}
@@ -953,6 +975,13 @@ int lttng_filter_validate_bytecode(struct bytecode_runtime *bytecode)
 		/* load */
 		case FILTER_OP_LOAD_FIELD_REF:
 		{
+			ERR("Unknown field ref type\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		case FILTER_OP_LOAD_FIELD_REF_STRING:
+		case FILTER_OP_LOAD_FIELD_REF_SEQUENCE:
+		{
 			struct load_op *insn = (struct load_op *) pc;
 			struct field_ref *ref = (struct field_ref *) insn->data;
 
@@ -962,33 +991,46 @@ int lttng_filter_validate_bytecode(struct bytecode_runtime *bytecode)
 				ret = -EINVAL;
 				goto end;
 			}
-			dbg_printf("Validate load field ref offset %u type %u\n",
-				ref->offset, ref->type);
-			switch (ref->type) {
-			case FIELD_REF_UNKNOWN:
-			default:
-				ERR("unknown field ref type\n");
+			dbg_printf("Validate load field ref offset %u type string\n",
+				ref->offset);
+			reg[insn->reg].type = REG_STRING;
+			reg[insn->reg].literal = 0;
+			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
+			break;
+		}
+		case FILTER_OP_LOAD_FIELD_REF_S64:
+		{
+			struct load_op *insn = (struct load_op *) pc;
+			struct field_ref *ref = (struct field_ref *) insn->data;
+
+			if (unlikely(insn->reg >= REG_ERROR)) {
+				ERR("invalid register %u\n",
+					(unsigned int) insn->reg);
 				ret = -EINVAL;
 				goto end;
-
-			case FIELD_REF_STRING:
-				reg[insn->reg].type = REG_STRING;
-				reg[insn->reg].literal = 0;
-				break;
-			case FIELD_REF_SEQUENCE:
-				reg[insn->reg].type = REG_STRING;
-				reg[insn->reg].literal = 0;
-				break;
-			case FIELD_REF_S64:
-				reg[insn->reg].type = REG_S64;
-				reg[insn->reg].literal = 0;
-				break;
-			case FIELD_REF_DOUBLE:
-				reg[insn->reg].type = REG_DOUBLE;
-				reg[insn->reg].literal = 0;
-				break;
 			}
+			dbg_printf("Validate load field ref offset %u type s64\n",
+				ref->offset);
+			reg[insn->reg].type = REG_S64;
+			reg[insn->reg].literal = 0;
+			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
+			break;
+		}
+		case FILTER_OP_LOAD_FIELD_REF_DOUBLE:
+		{
+			struct load_op *insn = (struct load_op *) pc;
+			struct field_ref *ref = (struct field_ref *) insn->data;
 
+			if (unlikely(insn->reg >= REG_ERROR)) {
+				ERR("invalid register %u\n",
+					(unsigned int) insn->reg);
+				ret = -EINVAL;
+				goto end;
+			}
+			dbg_printf("Validate load field ref offset %u type double\n",
+				ref->offset);
+			reg[insn->reg].type = REG_DOUBLE;
+			reg[insn->reg].literal = 0;
 			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
 			break;
 		}
@@ -1057,6 +1099,7 @@ int apply_field_reloc(struct ltt_event *event,
 	const struct lttng_event_field *fields, *field = NULL;
 	unsigned int nr_fields, i;
 	struct field_ref *field_ref;
+	struct load_op *op;
 	uint32_t field_offset = 0;
 
 	dbg_printf("Apply reloc: %u %s\n", reloc_offset, field_name);
@@ -1107,22 +1150,22 @@ int apply_field_reloc(struct ltt_event *event,
 		return -EINVAL;
 
 	/* set type */
-	field_ref = (struct field_ref *) &runtime->data[reloc_offset];
+	op = (struct load_op *) &runtime->data[reloc_offset];
+	field_ref = (struct field_ref *) op->data;
 	switch (field->type.atype) {
 	case atype_integer:
 	case atype_enum:
-		field_ref->type = FIELD_REF_S64;
-		field_ref->type = FIELD_REF_S64;
+		op->op = FILTER_OP_LOAD_FIELD_REF_S64;
 		break;
 	case atype_array:
 	case atype_sequence:
-		field_ref->type = FIELD_REF_SEQUENCE;
+		op->op = FILTER_OP_LOAD_FIELD_REF_SEQUENCE;
 		break;
 	case atype_string:
-		field_ref->type = FIELD_REF_STRING;
+		op->op = FILTER_OP_LOAD_FIELD_REF_STRING;
 		break;
 	case atype_float:
-		field_ref->type = FIELD_REF_DOUBLE;
+		op->op = FILTER_OP_LOAD_FIELD_REF_DOUBLE;
 		break;
 	default:
 		return -EINVAL;
