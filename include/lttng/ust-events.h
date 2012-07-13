@@ -181,10 +181,11 @@ struct lttng_enum {
 
 /* Event field description */
 
-#define LTTNG_UST_EVENT_FIELD_PADDING	32
+#define LTTNG_UST_EVENT_FIELD_PADDING	28
 struct lttng_event_field {
 	const char *name;
 	struct lttng_type type;
+	unsigned int written;	/* written into trace */
 	char padding[LTTNG_UST_EVENT_FIELD_PADDING];
 };
 

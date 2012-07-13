@@ -46,6 +46,7 @@ TRACEPOINT_EVENT(ust_tests_hello, tptest,
 		ctf_float(float, floatfield, floatarg)
 		ctf_float(double, doublefield, doublearg)
 		ctf_integer(bool, boolfield, boolarg)
+		ctf_integer_nowrite(int, filterfield, anint)
 	)
 )
 

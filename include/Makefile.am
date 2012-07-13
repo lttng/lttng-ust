@@ -5,6 +5,8 @@ nobase_include_HEADERS = \
 	lttng/tracepoint-event.h \
 	lttng/ust-tracepoint-event.h \
 	lttng/ust-tracepoint-event-reset.h \
+	lttng/ust-tracepoint-event-write.h \
+	lttng/ust-tracepoint-event-nowrite.h \
 	lttng/ust-events.h \
 	lttng/ust-ctl.h \
 	lttng/ust-version.h \

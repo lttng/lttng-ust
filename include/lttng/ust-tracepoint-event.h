@@ -19,48 +19,6 @@
 #include <string.h>
 
 /*
- * Macro declarations used for all stages.
- */
-
-#undef ctf_integer
-#define ctf_integer(_type, _item, _src)				\
-	ctf_integer_ext(_type, _item, _src, BYTE_ORDER, 10)
-
-#undef ctf_integer_hex
-#define ctf_integer_hex(_type, _item, _src)			\
-	ctf_integer_ext(_type, _item, _src, BYTE_ORDER, 16)
-
-#undef ctf_integer_network
-#define ctf_integer_network(_type, _item, _src)			\
-	ctf_integer_ext(_type, _item, _src, BIG_ENDIAN, 10)
-
-#undef ctf_integer_network_hex
-#define ctf_integer_network_hex(_type, _item, _src)		\
-	ctf_integer_ext(_type, _item, _src, BIG_ENDIAN, 16)
-
-/* ctf_float is redefined at each step */
-
-#undef ctf_array
-#define ctf_array(_type, _item, _src, _length)			\
-	ctf_array_encoded(_type, _item, _src, _length, none)
-
-#undef ctf_array_text
-#define ctf_array_text(_type, _item, _src, _length)		\
-	ctf_array_encoded(_type, _item, _src, _length, UTF8)
-
-#undef ctf_sequence
-#define ctf_sequence(_type, _item, _src, _length_type, _src_length)	\
-	ctf_sequence_encoded(_type, _item, _src,			\
-			_length_type, _src_length, none)
-
-#undef ctf_sequence_text
-#define ctf_sequence_text(_type, _item, _src, _length_type, _src_length) \
-	ctf_sequence_encoded(_type, _item, _src,			 \
-			_length_type, _src_length, UTF8)
-
-/* ctf_string is redefined at each step */
-
-/*
  * TRACEPOINT_EVENT_CLASS declares a class of tracepoints receiving the
  * same arguments and having the same field layout.
  *
@@ -146,23 +104,27 @@ static const char							\
 
 /* Reset all macros within TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
+#include <lttng/ust-tracepoint-event-write.h>
+#include <lttng/ust-tracepoint-event-nowrite.h>
 
-#undef ctf_integer_ext
-#define ctf_integer_ext(_type, _item, _src, _byte_order, _base)	\
+#undef _ctf_integer_ext
+#define _ctf_integer_ext(_type, _item, _src, _byte_order, _base, _written)	\
 	{							\
 	  .name = #_item,					\
 	  .type = __type_integer(_type, _byte_order, _base, none),\
+	  .written = _written,					\
 	},
 
-#undef ctf_float
-#define ctf_float(_type, _item, _src)				\
+#undef _ctf_float
+#define _ctf_float(_type, _item, _src, _written)		\
 	{							\
 	  .name = #_item,					\
 	  .type = __type_float(_type),				\
+	  .written = _written,					\
 	},
 
-#undef ctf_array_encoded
-#define ctf_array_encoded(_type, _item, _src, _length, _encoding) \
+#undef _ctf_array_encoded
+#define _ctf_array_encoded(_type, _item, _src, _length, _encoding, _written) \
 	{							\
 	  .name = #_item,					\
 	  .type =						\
@@ -174,11 +136,12 @@ static const char							\
 			    .elem_type = __type_integer(_type, BYTE_ORDER, 10, _encoding), \
 			},					\
 		},						\
+	  .written = _written,					\
 	},
 
-#undef ctf_sequence_encoded
-#define ctf_sequence_encoded(_type, _item, _src,	\
-			_length_type, _src_length, _encoding)	\
+#undef _ctf_sequence_encoded
+#define _ctf_sequence_encoded(_type, _item, _src,	\
+			_length_type, _src_length, _encoding, _written)	\
 	{							\
 	  .name = #_item,					\
 	  .type =						\
@@ -190,10 +153,11 @@ static const char							\
 			    .elem_type = __type_integer(_type, BYTE_ORDER, 10, _encoding), \
 			},					\
 		},						\
+	  .written = _written,					\
 	},
 
-#undef ctf_string
-#define ctf_string(_item, _src)					\
+#undef _ctf_string
+#define _ctf_string(_item, _src, _written)			\
 	{							\
 	  .name = #_item,					\
 	  .type =						\
@@ -201,6 +165,7 @@ static const char							\
 		  .atype = atype_string,			\
 		  .u.basic.string.encoding = lttng_encode_UTF8,	\
 		},						\
+	  .written = _written,					\
 	},
 
 #undef TP_FIELDS
@@ -240,25 +205,26 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));
 
 /* Reset all macros within TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
+#include <lttng/ust-tracepoint-event-write.h>
 
-#undef ctf_integer_ext
-#define ctf_integer_ext(_type, _item, _src, _byte_order, _base)		       \
+#undef _ctf_integer_ext
+#define _ctf_integer_ext(_type, _item, _src, _byte_order, _base, _written)       \
 	__event_len += lib_ring_buffer_align(__event_len, lttng_alignof(_type)); \
 	__event_len += sizeof(_type);
 
-#undef ctf_float
-#define ctf_float(_type, _item, _src)		      			       \
+#undef _ctf_float
+#define _ctf_float(_type, _item, _src, _written)				 \
 	__event_len += lib_ring_buffer_align(__event_len, lttng_alignof(_type)); \
 	__event_len += sizeof(_type);
 
-#undef ctf_array_encoded
-#define ctf_array_encoded(_type, _item, _src, _length, _encoding)	       \
+#undef _ctf_array_encoded
+#define _ctf_array_encoded(_type, _item, _src, _length, _encoding, _written)     \
 	__event_len += lib_ring_buffer_align(__event_len, lttng_alignof(_type)); \
 	__event_len += sizeof(_type) * (_length);
 
-#undef ctf_sequence_encoded
-#define ctf_sequence_encoded(_type, _item, _src, _length_type,	\
-			_src_length, _encoding)			\
+#undef _ctf_sequence_encoded
+#define _ctf_sequence_encoded(_type, _item, _src, _length_type,	\
+			_src_length, _encoding, _written)	\
 	__event_len += lib_ring_buffer_align(__event_len, lttng_alignof(_length_type));   \
 	__event_len += sizeof(_length_type);				       \
 	__event_len += lib_ring_buffer_align(__event_len, lttng_alignof(_type)); \
@@ -266,8 +232,8 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));
 	__event_len += sizeof(_type) * __dynamic_len[__dynamic_len_idx];       \
 	__dynamic_len_idx++;
 
-#undef ctf_string
-#define ctf_string(_item, _src)						       \
+#undef _ctf_string
+#define _ctf_string(_item, _src, _written)				       \
 	__event_len += __dynamic_len[__dynamic_len_idx++] = strlen(_src) + 1;
 
 #undef TP_ARGS
@@ -295,41 +261,44 @@ static inline size_t __event_get_size__##_provider##___##_name(size_t *__dynamic
  * Stage 3.1 of tracepoint event generation.
  *
  * Create static inline function that layout the filter stack data.
+ * We make both write and nowrite data available to the filter.
  */
 
 /* Reset all macros within TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
+#include <lttng/ust-tracepoint-event-write.h>
+#include <lttng/ust-tracepoint-event-nowrite.h>
 
-#undef ctf_integer_ext
-#define ctf_integer_ext(_type, _item, _src, _byte_order, _base)		       \
+#undef _ctf_integer_ext
+#define _ctf_integer_ext(_type, _item, _src, _byte_order, _base, _written)     \
 	if (lttng_is_signed_type(_type))				       \
 		*(int64_t *) __stack_data = (int64_t) (_type) (_src);	       \
 	else								       \
 		*(uint64_t *) __stack_data = (uint64_t) (_type) (_src);	       \
 	__stack_data += sizeof(int64_t);
 
-#undef ctf_float
-#define ctf_float(_type, _item, _src)					       \
+#undef _ctf_float
+#define _ctf_float(_type, _item, _src, _written)			       \
 	*(double *) __stack_data = (double) (_type) (_src);		       \
 	__stack_data += sizeof(double);
 
-#undef ctf_array_encoded
-#define ctf_array_encoded(_type, _item, _src, _length, _encoding)	       \
+#undef _ctf_array_encoded
+#define _ctf_array_encoded(_type, _item, _src, _length, _encoding, _written)   \
 	*(unsigned long *) __stack_data = (unsigned long) (_length);	       \
 	__stack_data += sizeof(unsigned long);				       \
 	*(const void **) __stack_data = (_src);				       \
 	__stack_data += sizeof(void *);
 
-#undef ctf_sequence_encoded
-#define ctf_sequence_encoded(_type, _item, _src, _length_type,		       \
-			_src_length, _encoding)				       \
+#undef _ctf_sequence_encoded
+#define _ctf_sequence_encoded(_type, _item, _src, _length_type,		       \
+			_src_length, _encoding, _written)		       \
 	*(unsigned long *) __stack_data = (unsigned long) (_src_length);       \
 	__stack_data += sizeof(unsigned long);				       \
 	*(const void **) __stack_data = (_src);				       \
 	__stack_data += sizeof(void *);
 
-#undef ctf_string
-#define ctf_string(_item, _src)						       \
+#undef _ctf_string
+#define _ctf_string(_item, _src, _written)				       \
 	*(const void **) __stack_data = (_src);				       \
 	__stack_data += sizeof(void *);
 
@@ -360,27 +329,28 @@ void __event_prepare_filter_stack__##_provider##___##_name(char *__stack_data,\
 
 /* Reset all macros within TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
+#include <lttng/ust-tracepoint-event-write.h>
 
-#undef ctf_integer_ext
-#define ctf_integer_ext(_type, _item, _src, _byte_order, _base)		       \
+#undef _ctf_integer_ext
+#define _ctf_integer_ext(_type, _item, _src, _byte_order, _base, _written)     \
 	__event_align = _tp_max_t(size_t, __event_align, lttng_alignof(_type));
 
-#undef ctf_float
-#define ctf_float(_type, _item, _src)					       \
+#undef _ctf_float
+#define _ctf_float(_type, _item, _src, _written)			       \
 	__event_align = _tp_max_t(size_t, __event_align, lttng_alignof(_type));
 
-#undef ctf_array_encoded
-#define ctf_array_encoded(_type, _item, _src, _length, _encoding)	       \
+#undef _ctf_array_encoded
+#define _ctf_array_encoded(_type, _item, _src, _length, _encoding, _written)   \
 	__event_align = _tp_max_t(size_t, __event_align, lttng_alignof(_type));
 
-#undef ctf_sequence_encoded
-#define ctf_sequence_encoded(_type, _item, _src, _length_type,	\
-			_src_length, _encoding)			\
+#undef _ctf_sequence_encoded
+#define _ctf_sequence_encoded(_type, _item, _src, _length_type,	\
+			_src_length, _encoding, _written)	\
 	__event_align = _tp_max_t(size_t, __event_align, lttng_alignof(_length_type));	  \
 	__event_align = _tp_max_t(size_t, __event_align, lttng_alignof(_type));
 
-#undef ctf_string
-#define ctf_string(_item, _src)
+#undef _ctf_string
+#define _ctf_string(_item, _src, _written)
 
 #undef TP_ARGS
 #define TP_ARGS(...) __VA_ARGS__
@@ -410,31 +380,32 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 
 /* Reset all macros within TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
+#include <lttng/ust-tracepoint-event-write.h>
 
-#undef ctf_integer_ext
-#define ctf_integer_ext(_type, _item, _src, _byte_order, _base)	        \
+#undef _ctf_integer_ext
+#define _ctf_integer_ext(_type, _item, _src, _byte_order, _base, _written) \
 	{								\
 		_type __tmp = (_src);					\
 		lib_ring_buffer_align_ctx(&__ctx, lttng_alignof(__tmp));\
 		__chan->ops->event_write(&__ctx, &__tmp, sizeof(__tmp));\
 	}
 
-#undef ctf_float
-#define ctf_float(_type, _item, _src)				        \
+#undef _ctf_float
+#define _ctf_float(_type, _item, _src, _written)		        \
 	{								\
 		_type __tmp = (_src);					\
 		lib_ring_buffer_align_ctx(&__ctx, lttng_alignof(__tmp));\
 		__chan->ops->event_write(&__ctx, &__tmp, sizeof(__tmp));\
 	}
 
-#undef ctf_array_encoded
-#define ctf_array_encoded(_type, _item, _src, _length, _encoding)       \
+#undef _ctf_array_encoded
+#define _ctf_array_encoded(_type, _item, _src, _length, _encoding, _written) \
 	lib_ring_buffer_align_ctx(&__ctx, lttng_alignof(_type));	\
 	__chan->ops->event_write(&__ctx, _src, sizeof(_type) * (_length));
 
-#undef ctf_sequence_encoded
-#define ctf_sequence_encoded(_type, _item, _src, _length_type,		\
-			_src_length, _encoding)			\
+#undef _ctf_sequence_encoded
+#define _ctf_sequence_encoded(_type, _item, _src, _length_type,		\
+			_src_length, _encoding, _written)		\
 	{								\
 		_length_type __tmpl = __stackvar.__dynamic_len[__dynamic_len_idx]; \
 		lib_ring_buffer_align_ctx(&__ctx, lttng_alignof(_length_type));\
@@ -444,8 +415,8 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 	__chan->ops->event_write(&__ctx, _src,				\
 		sizeof(_type) * __get_dynamic_len(dest));
 
-#undef ctf_string
-#define ctf_string(_item, _src)					        \
+#undef _ctf_string
+#define _ctf_string(_item, _src, _written)			        \
 	lib_ring_buffer_align_ctx(&__ctx, lttng_alignof(*(_src)));	\
 	__chan->ops->event_write(&__ctx, _src, __get_dynamic_len(dest));
 

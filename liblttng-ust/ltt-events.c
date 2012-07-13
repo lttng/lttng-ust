@@ -726,6 +726,9 @@ int _ltt_field_statedump(struct ltt_session *session,
 {
 	int ret = 0;
 
+	if (!field->written)
+		return 0;
+
 	switch (field->type.atype) {
 	case atype_integer:
 		ret = lttng_metadata_printf(session,
