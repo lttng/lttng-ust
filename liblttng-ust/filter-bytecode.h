@@ -28,12 +28,6 @@
  * offsets are absolute from start of bytecode.
  */
 
-enum filter_register {
-	REG_R0 = 0,
-	REG_R1 = 1,
-	REG_ERROR,
-};
-
 struct field_ref {
 	/* Initially, symbol offset. After link, field offset. */
 	uint16_t offset;
@@ -138,7 +132,6 @@ typedef uint8_t filter_opcode_t;
 
 struct load_op {
 	filter_opcode_t op;
-	uint8_t reg;		/* enum filter_register */
 	char data[0];
 	/* data to load. Size known by enum filter_opcode and null-term char. */
 } __attribute__((packed));
@@ -149,7 +142,6 @@ struct binary_op {
 
 struct unary_op {
 	filter_opcode_t op;
-	uint8_t reg;		/* enum filter_register */
 } __attribute__((packed));
 
 /* skip_offset is absolute from start of bytecode */
@@ -160,7 +152,6 @@ struct logical_op {
 
 struct cast_op {
 	filter_opcode_t op;
-	uint8_t reg;		/* enum filter_register */
 } __attribute__((packed));
 
 struct return_op {

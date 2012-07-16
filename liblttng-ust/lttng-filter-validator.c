@@ -28,12 +28,22 @@
 #include <urcu/rculfhash.h>
 #include "lttng-hash-helper.h"
 
+/*
+ * Number of merge points for hash table size. Hash table initialized to
+ * that size, and we do not resize, because we do not want to trigger
+ * RCU worker thread execution: fall-back on linear traversal if number
+ * of merge points exceeds this value.
+ */
+#define DEFAULT_NR_MERGE_POINTS		128
+#define MIN_NR_BUCKETS			128
+#define MAX_NR_BUCKETS			128
+
 /* merge point table node */
 struct lfht_mp_node {
 	struct cds_lfht_node node;
 
 	/* Context at merge point */
-	struct vreg reg[NR_REG];
+	struct vstack stack;
 	unsigned long target_pc;
 };
 
@@ -55,7 +65,7 @@ int lttng_hash_match(struct cds_lfht_node *node, const void *key)
 
 static
 int merge_point_add(struct cds_lfht *ht, unsigned long target_pc,
-		const struct vreg reg[NR_REG])
+		const struct vstack *stack)
 {
 	struct lfht_mp_node *node;
 	unsigned long hash = lttng_hash_mix((const void *) target_pc,
@@ -68,30 +78,26 @@ int merge_point_add(struct cds_lfht *ht, unsigned long target_pc,
 	if (!node)
 		return -ENOMEM;
 	node->target_pc = target_pc;
-	memcpy(node->reg, reg, sizeof(node->reg));
+	memcpy(&node->stack, stack, sizeof(node->stack));
 	cds_lfht_add(ht, hash, &node->node);
 	return 0;
 }
 
 /*
- * Number of merge points for hash table size. Hash table initialized to
- * that size, and we do not resize, because we do not want to trigger
- * RCU worker thread execution: fall-back on linear traversal if number
- * of merge points exceeds this value.
+ * Binary comparators use top of stack and top of stack -1.
  */
-#define DEFAULT_NR_MERGE_POINTS		128
-#define MIN_NR_BUCKETS			128
-#define MAX_NR_BUCKETS			128
-
 static
-int bin_op_compare_check(const struct vreg reg[NR_REG], const char *str)
+int bin_op_compare_check(struct vstack *stack, const char *str)
 {
-	switch (reg[REG_R0].type) {
+	if (unlikely(!vstack_ax(stack) || !vstack_bx(stack)))
+		goto error_unknown;
+
+	switch (vstack_ax(stack)->type) {
 	default:
 		goto error_unknown;
 
 	case REG_STRING:
-		switch (reg[REG_R1].type) {
+		switch (vstack_bx(stack)->type) {
 		default:
 			goto error_unknown;
 
@@ -104,7 +110,7 @@ int bin_op_compare_check(const struct vreg reg[NR_REG], const char *str)
 		break;
 	case REG_S64:
 	case REG_DOUBLE:
-		switch (reg[REG_R1].type) {
+		switch (vstack_bx(stack)->type) {
 		default:
 			goto error_unknown;
 
@@ -120,8 +126,8 @@ int bin_op_compare_check(const struct vreg reg[NR_REG], const char *str)
 	return 0;
 
 error_unknown:
-
 	return -EINVAL;
+
 error_mismatch:
 	ERR("type mismatch for '%s' binary operator\n", str);
 	return -EINVAL;
@@ -333,7 +339,7 @@ unsigned long delete_all_nodes(struct cds_lfht *ht)
  */
 static
 int validate_instruction_context(struct bytecode_runtime *bytecode,
-		const struct vreg reg[NR_REG],
+		struct vstack *stack,
 		void *start_pc,
 		void *pc)
 {
@@ -374,42 +380,42 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 
 	case FILTER_OP_EQ:
 	{
-		ret = bin_op_compare_check(reg, "==");
+		ret = bin_op_compare_check(stack, "==");
 		if (ret)
 			goto end;
 		break;
 	}
 	case FILTER_OP_NE:
 	{
-		ret = bin_op_compare_check(reg, "!=");
+		ret = bin_op_compare_check(stack, "!=");
 		if (ret)
 			goto end;
 		break;
 	}
 	case FILTER_OP_GT:
 	{
-		ret = bin_op_compare_check(reg, ">");
+		ret = bin_op_compare_check(stack, ">");
 		if (ret)
 			goto end;
 		break;
 	}
 	case FILTER_OP_LT:
 	{
-		ret = bin_op_compare_check(reg, "<");
+		ret = bin_op_compare_check(stack, "<");
 		if (ret)
 			goto end;
 		break;
 	}
 	case FILTER_OP_GE:
 	{
-		ret = bin_op_compare_check(reg, ">=");
+		ret = bin_op_compare_check(stack, ">=");
 		if (ret)
 			goto end;
 		break;
 	}
 	case FILTER_OP_LE:
 	{
-		ret = bin_op_compare_check(reg, "<=");
+		ret = bin_op_compare_check(stack, "<=");
 		if (ret)
 			goto end;
 		break;
@@ -422,8 +428,13 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 	case FILTER_OP_GE_STRING:
 	case FILTER_OP_LE_STRING:
 	{
-		if (reg[REG_R0].type != REG_STRING
-				|| reg[REG_R1].type != REG_STRING) {
+		if (!vstack_ax(stack) || !vstack_bx(stack)) {
+			ERR("Empty stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		if (vstack_ax(stack)->type != REG_STRING
+				|| vstack_bx(stack)->type != REG_STRING) {
 			ERR("Unexpected register type for string comparator\n");
 			ret = -EINVAL;
 			goto end;
@@ -438,8 +449,13 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 	case FILTER_OP_GE_S64:
 	case FILTER_OP_LE_S64:
 	{
-		if (reg[REG_R0].type != REG_S64
-				|| reg[REG_R1].type != REG_S64) {
+		if (!vstack_ax(stack) || !vstack_bx(stack)) {
+			ERR("Empty stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		if (vstack_ax(stack)->type != REG_S64
+				|| vstack_bx(stack)->type != REG_S64) {
 			ERR("Unexpected register type for s64 comparator\n");
 			ret = -EINVAL;
 			goto end;
@@ -454,13 +470,18 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 	case FILTER_OP_GE_DOUBLE:
 	case FILTER_OP_LE_DOUBLE:
 	{
-		if ((reg[REG_R0].type != REG_DOUBLE && reg[REG_R0].type != REG_S64)
-				|| (reg[REG_R1].type != REG_DOUBLE && reg[REG_R1].type != REG_S64)) {
+		if (!vstack_ax(stack) || !vstack_bx(stack)) {
+			ERR("Empty stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		if ((vstack_ax(stack)->type != REG_DOUBLE && vstack_ax(stack)->type != REG_S64)
+				|| (vstack_bx(stack)-> type != REG_DOUBLE && vstack_bx(stack)->type != REG_S64)) {
 			ERR("Unexpected register type for double comparator\n");
 			ret = -EINVAL;
 			goto end;
 		}
-		if (reg[REG_R0].type != REG_DOUBLE && reg[REG_R1].type != REG_DOUBLE) {
+		if (vstack_ax(stack)->type != REG_DOUBLE && vstack_bx(stack)->type != REG_DOUBLE) {
 			ERR("Double operator should have at least one double register\n");
 			ret = -EINVAL;
 			goto end;
@@ -473,15 +494,12 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 	case FILTER_OP_UNARY_MINUS:
 	case FILTER_OP_UNARY_NOT:
 	{
-		struct unary_op *insn = (struct unary_op *) pc;
-
-		if (unlikely(insn->reg >= REG_ERROR)) {
-			ERR("invalid register %u\n",
-				(unsigned int) insn->reg);
+		if (!vstack_ax(stack)) {
+			ERR("Empty stack\n");
 			ret = -EINVAL;
 			goto end;
 		}
-		switch (reg[insn->reg].type) {
+		switch (vstack_ax(stack)->type) {
 		default:
 			ERR("unknown register type\n");
 			ret = -EINVAL;
@@ -503,15 +521,12 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 	case FILTER_OP_UNARY_MINUS_S64:
 	case FILTER_OP_UNARY_NOT_S64:
 	{
-		struct unary_op *insn = (struct unary_op *) pc;
-
-		if (unlikely(insn->reg >= REG_ERROR)) {
-			ERR("invalid register %u\n",
-				(unsigned int) insn->reg);
+		if (!vstack_ax(stack)) {
+			ERR("Empty stack\n");
 			ret = -EINVAL;
 			goto end;
 		}
-		if (reg[insn->reg].type != REG_S64) {
+		if (vstack_ax(stack)->type != REG_S64) {
 			ERR("Invalid register type\n");
 			ret = -EINVAL;
 			goto end;
@@ -523,15 +538,12 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 	case FILTER_OP_UNARY_MINUS_DOUBLE:
 	case FILTER_OP_UNARY_NOT_DOUBLE:
 	{
-		struct unary_op *insn = (struct unary_op *) pc;
-
-		if (unlikely(insn->reg >= REG_ERROR)) {
-			ERR("invalid register %u\n",
-				(unsigned int) insn->reg);
+		if (!vstack_ax(stack)) {
+			ERR("Empty stack\n");
 			ret = -EINVAL;
 			goto end;
 		}
-		if (reg[insn->reg].type != REG_DOUBLE) {
+		if (vstack_ax(stack)->type != REG_DOUBLE) {
 			ERR("Invalid register type\n");
 			ret = -EINVAL;
 			goto end;
@@ -545,7 +557,12 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 	{
 		struct logical_op *insn = (struct logical_op *) pc;
 
-		if (reg[REG_R0].type != REG_S64) {
+		if (!vstack_ax(stack)) {
+			ERR("Empty stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		if (vstack_ax(stack)->type != REG_S64) {
 			ERR("Logical comparator expects S64 register\n");
 			ret = -EINVAL;
 			goto end;
@@ -574,12 +591,6 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 		struct load_op *insn = (struct load_op *) pc;
 		struct field_ref *ref = (struct field_ref *) insn->data;
 
-		if (unlikely(insn->reg >= REG_ERROR)) {
-			ERR("invalid register %u\n",
-				(unsigned int) insn->reg);
-			ret = -EINVAL;
-			goto end;
-		}
 		dbg_printf("Validate load field ref offset %u type string\n",
 			ref->offset);
 		break;
@@ -589,12 +600,6 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 		struct load_op *insn = (struct load_op *) pc;
 		struct field_ref *ref = (struct field_ref *) insn->data;
 
-		if (unlikely(insn->reg >= REG_ERROR)) {
-			ERR("invalid register %u\n",
-				(unsigned int) insn->reg);
-			ret = -EINVAL;
-			goto end;
-		}
 		dbg_printf("Validate load field ref offset %u type s64\n",
 			ref->offset);
 		break;
@@ -604,12 +609,6 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 		struct load_op *insn = (struct load_op *) pc;
 		struct field_ref *ref = (struct field_ref *) insn->data;
 
-		if (unlikely(insn->reg >= REG_ERROR)) {
-			ERR("invalid register %u\n",
-				(unsigned int) insn->reg);
-			ret = -EINVAL;
-			goto end;
-		}
 		dbg_printf("Validate load field ref offset %u type double\n",
 			ref->offset);
 		break;
@@ -617,40 +616,16 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 
 	case FILTER_OP_LOAD_STRING:
 	{
-		struct load_op *insn = (struct load_op *) pc;
-
-		if (unlikely(insn->reg >= REG_ERROR)) {
-			ERR("invalid register %u\n",
-				(unsigned int) insn->reg);
-			ret = -EINVAL;
-			goto end;
-		}
 		break;
 	}
 
 	case FILTER_OP_LOAD_S64:
 	{
-		struct load_op *insn = (struct load_op *) pc;
-
-		if (unlikely(insn->reg >= REG_ERROR)) {
-			ERR("invalid register %u\n",
-				(unsigned int) insn->reg);
-			ret = -EINVAL;
-			goto end;
-		}
 		break;
 	}
 
 	case FILTER_OP_LOAD_DOUBLE:
 	{
-		struct load_op *insn = (struct load_op *) pc;
-
-		if (unlikely(insn->reg >= REG_ERROR)) {
-			ERR("invalid register %u\n",
-				(unsigned int) insn->reg);
-			ret = -EINVAL;
-			goto end;
-		}
 		break;
 	}
 
@@ -659,13 +634,12 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 	{
 		struct cast_op *insn = (struct cast_op *) pc;
 
-		if (unlikely(insn->reg >= REG_ERROR)) {
-			ERR("invalid register %u\n",
-				(unsigned int) insn->reg);
+		if (!vstack_ax(stack)) {
+			ERR("Empty stack\n");
 			ret = -EINVAL;
 			goto end;
 		}
-		switch (reg[insn->reg].type) {
+		switch (vstack_ax(stack)->type) {
 		default:
 			ERR("unknown register type\n");
 			ret = -EINVAL;
@@ -681,7 +655,7 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 			break;
 		}
 		if (insn->op == FILTER_OP_CAST_DOUBLE_TO_S64) {
-			if (reg[insn->reg].type != REG_DOUBLE) {
+			if (vstack_ax(stack)->type != REG_DOUBLE) {
 				ERR("Cast expects double\n");
 				ret = -EINVAL;
 				goto end;
@@ -707,7 +681,7 @@ end:
 static
 int validate_instruction_all_contexts(struct bytecode_runtime *bytecode,
 		struct cds_lfht *merge_points,
-		const struct vreg reg[NR_REG],
+		struct vstack *stack,
 		void *start_pc,
 		void *pc)
 {
@@ -718,7 +692,7 @@ int validate_instruction_all_contexts(struct bytecode_runtime *bytecode,
 	unsigned long hash;
 
 	/* Validate the context resulting from the previous instruction */
-	ret = validate_instruction_context(bytecode, reg, start_pc, pc);
+	ret = validate_instruction_context(bytecode, stack, start_pc, pc);
 	if (ret)
 		return ret;
 
@@ -732,7 +706,7 @@ int validate_instruction_all_contexts(struct bytecode_runtime *bytecode,
 		
 		dbg_printf("Filter: validate merge point at offset %lu\n",
 				target_pc);
-		ret = validate_instruction_context(bytecode, mp_node->reg,
+		ret = validate_instruction_context(bytecode, &mp_node->stack,
 				start_pc, pc);
 		if (ret)
 			return ret;
@@ -754,7 +728,7 @@ int validate_instruction_all_contexts(struct bytecode_runtime *bytecode,
 static
 int exec_insn(struct bytecode_runtime *bytecode,
 		struct cds_lfht *merge_points,
-		struct vreg reg[NR_REG],
+		struct vstack *stack,
 		void **_next_pc,
 		void *pc)
 {
@@ -820,7 +794,17 @@ int exec_insn(struct bytecode_runtime *bytecode,
 	case FILTER_OP_GE_DOUBLE:
 	case FILTER_OP_LE_DOUBLE:
 	{
-		reg[REG_R0].type = REG_S64;
+		/* Pop 2, push 1 */
+		if (vstack_pop(stack)) {
+			ret = -EINVAL;
+			goto end;
+		}
+		if (!vstack_ax(stack)) {
+			ERR("Empty stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		vstack_ax(stack)->type = REG_S64;
 		next_pc += sizeof(struct binary_op);
 		break;
 	}
@@ -833,7 +817,13 @@ int exec_insn(struct bytecode_runtime *bytecode,
 	case FILTER_OP_UNARY_MINUS_S64:
 	case FILTER_OP_UNARY_NOT_S64:
 	{
-		reg[REG_R0].type = REG_S64;
+		/* Pop 1, push 1 */
+		if (!vstack_ax(stack)) {
+			ERR("Empty stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		vstack_ax(stack)->type = REG_S64;
 		next_pc += sizeof(struct unary_op);
 		break;
 	}
@@ -842,7 +832,13 @@ int exec_insn(struct bytecode_runtime *bytecode,
 	case FILTER_OP_UNARY_MINUS_DOUBLE:
 	case FILTER_OP_UNARY_NOT_DOUBLE:
 	{
-		reg[REG_R0].type = REG_DOUBLE;
+		/* Pop 1, push 1 */
+		if (!vstack_ax(stack)) {
+			ERR("Empty stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		vstack_ax(stack)->type = REG_DOUBLE;
 		next_pc += sizeof(struct unary_op);
 		break;
 	}
@@ -855,7 +851,8 @@ int exec_insn(struct bytecode_runtime *bytecode,
 		int merge_ret;
 
 		/* Add merge point to table */
-		merge_ret = merge_point_add(merge_points, insn->skip_offset, reg);
+		merge_ret = merge_point_add(merge_points, insn->skip_offset,
+					stack);
 		if (merge_ret) {
 			ret = merge_ret;
 			goto end;
@@ -875,28 +872,31 @@ int exec_insn(struct bytecode_runtime *bytecode,
 	case FILTER_OP_LOAD_FIELD_REF_STRING:
 	case FILTER_OP_LOAD_FIELD_REF_SEQUENCE:
 	{
-		struct load_op *insn = (struct load_op *) pc;
-
-		reg[insn->reg].type = REG_STRING;
-		reg[insn->reg].literal = 0;
+		if (vstack_push(stack)) {
+			ret = -EINVAL;
+			goto end;
+		}
+		vstack_ax(stack)->type = REG_STRING;
 		next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
 		break;
 	}
 	case FILTER_OP_LOAD_FIELD_REF_S64:
 	{
-		struct load_op *insn = (struct load_op *) pc;
-
-		reg[insn->reg].type = REG_S64;
-		reg[insn->reg].literal = 0;
+		if (vstack_push(stack)) {
+			ret = -EINVAL;
+			goto end;
+		}
+		vstack_ax(stack)->type = REG_S64;
 		next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
 		break;
 	}
 	case FILTER_OP_LOAD_FIELD_REF_DOUBLE:
 	{
-		struct load_op *insn = (struct load_op *) pc;
-
-		reg[insn->reg].type = REG_DOUBLE;
-		reg[insn->reg].literal = 0;
+		if (vstack_push(stack)) {
+			ret = -EINVAL;
+			goto end;
+		}
+		vstack_ax(stack)->type = REG_DOUBLE;
 		next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
 		break;
 	}
@@ -905,18 +905,22 @@ int exec_insn(struct bytecode_runtime *bytecode,
 	{
 		struct load_op *insn = (struct load_op *) pc;
 
-		reg[insn->reg].type = REG_STRING;
-		reg[insn->reg].literal = 1;
+		if (vstack_push(stack)) {
+			ret = -EINVAL;
+			goto end;
+		}
+		vstack_ax(stack)->type = REG_STRING;
 		next_pc += sizeof(struct load_op) + strlen(insn->data) + 1;
 		break;
 	}
 
 	case FILTER_OP_LOAD_S64:
 	{
-		struct load_op *insn = (struct load_op *) pc;
-
-		reg[insn->reg].type = REG_S64;
-		reg[insn->reg].literal = 1;
+		if (vstack_push(stack)) {
+			ret = -EINVAL;
+			goto end;
+		}
+		vstack_ax(stack)->type = REG_S64;
 		next_pc += sizeof(struct load_op)
 				+ sizeof(struct literal_numeric);
 		break;
@@ -924,10 +928,11 @@ int exec_insn(struct bytecode_runtime *bytecode,
 
 	case FILTER_OP_LOAD_DOUBLE:
 	{
-		struct load_op *insn = (struct load_op *) pc;
-
-		reg[insn->reg].type = REG_DOUBLE;
-		reg[insn->reg].literal = 1;
+		if (vstack_push(stack)) {
+			ret = -EINVAL;
+			goto end;
+		}
+		vstack_ax(stack)->type = REG_DOUBLE;
 		next_pc += sizeof(struct load_op)
 				+ sizeof(struct literal_double);
 		break;
@@ -936,9 +941,13 @@ int exec_insn(struct bytecode_runtime *bytecode,
 	case FILTER_OP_CAST_TO_S64:
 	case FILTER_OP_CAST_DOUBLE_TO_S64:
 	{
-		struct cast_op *insn = (struct cast_op *) pc;
-
-		reg[insn->reg].type = REG_S64;
+		/* Pop 1, push 1 */
+		if (!vstack_ax(stack)) {
+			ERR("Empty stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		vstack_ax(stack)->type = REG_S64;
 		next_pc += sizeof(struct cast_op);
 		break;
 	}
@@ -962,13 +971,9 @@ int lttng_filter_validate_bytecode(struct bytecode_runtime *bytecode)
 	struct cds_lfht *merge_points;
 	void *pc, *next_pc, *start_pc;
 	int ret = -EINVAL;
-	struct vreg reg[NR_REG];
-	int i;
+	struct vstack stack;
 
-	for (i = 0; i < NR_REG; i++) {
-		reg[i].type = REG_TYPE_UNKNOWN;
-		reg[i].literal = 0;
-	}
+	vstack_init(&stack);
 
 	if (!lttng_hash_seed_ready) {
 		lttng_hash_seed = time(NULL);
@@ -1005,10 +1010,10 @@ int lttng_filter_validate_bytecode(struct bytecode_runtime *bytecode)
 		 * all 	merge points targeting this instruction.
 		 */
 		ret = validate_instruction_all_contexts(bytecode, merge_points,
-					reg, start_pc, pc);
+					&stack, start_pc, pc);
 		if (ret)
 			goto end;
-		ret = exec_insn(bytecode, merge_points, reg, &next_pc, pc);
+		ret = exec_insn(bytecode, merge_points, &stack, &next_pc, pc);
 		if (ret <= 0)
 			goto end;
 	}

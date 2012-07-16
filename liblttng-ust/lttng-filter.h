@@ -28,6 +28,7 @@
 #include <helper.h>
 #include <lttng/ust-events.h>
 #include <stdint.h>
+#include <assert.h>
 #include <errno.h>
 #include <string.h>
 #include <inttypes.h>
@@ -35,7 +36,8 @@
 #include <usterr-signal-safe.h>
 #include "filter-bytecode.h"
 
-#define NR_REG		2
+/* Filter stack length, in number of entries */
+#define FILTER_STACK_LEN	8
 
 #ifndef min_t
 #define min_t(type, a, b)	\
@@ -67,29 +69,121 @@ struct bytecode_runtime {
 	char data[0];
 };
 
-enum reg_type {
+enum entry_type {
 	REG_S64,
 	REG_DOUBLE,
 	REG_STRING,
 	REG_TYPE_UNKNOWN,
 };
 
-/* Validation registers */
-struct vreg {
-	enum reg_type type;
-	int literal;		/* is string literal ? */
+/* Validation stack */
+struct vstack_entry {
+	enum entry_type type;
 };
 
-/* Execution registers */
-struct reg {
-	enum reg_type type;
-	int64_t v;
-	double d;
-
-	const char *str;
-	size_t seq_len;
-	int literal;		/* is string literal ? */
+struct vstack {
+	int top;	/* top of stack */
+	struct vstack_entry e[FILTER_STACK_LEN];
 };
+
+static inline
+void vstack_init(struct vstack *stack)
+{
+	stack->top = -1;
+}
+
+static inline
+struct vstack_entry *vstack_ax(struct vstack *stack)
+{
+	if (unlikely(stack->top < 0))
+		return NULL;
+	return &stack->e[stack->top];
+}
+
+static inline
+struct vstack_entry *vstack_bx(struct vstack *stack)
+{
+	if (unlikely(stack->top < 1))
+		return NULL;
+	return &stack->e[stack->top - 1];
+}
+
+static inline
+int vstack_push(struct vstack *stack)
+{
+	if (stack->top >= FILTER_STACK_LEN - 1) {
+		ERR("Stack full\n");
+		return -EINVAL;
+	}
+	++stack->top;
+	return 0;
+}
+
+static inline
+int vstack_pop(struct vstack *stack)
+{
+	if (unlikely(stack->top < 0)) {
+		ERR("Stack empty\n");
+		return -EINVAL;
+	}
+	stack->top--;
+	return 0;
+}
+
+/* Execution stack */
+struct estack_entry {
+	enum entry_type type;
+
+	union {
+		int64_t v;
+		double d;
+
+		struct {
+			const char *str;
+		size_t seq_len;
+		int literal;		/* is string literal ? */
+		} s;
+	} u;
+};
+
+struct estack {
+	int top;	/* top of stack */
+	struct estack_entry e[FILTER_STACK_LEN];
+};
+
+static inline
+void estack_init(struct estack *stack)
+{
+	stack->top = -1;
+}
+
+static inline
+struct estack_entry *estack_ax(struct estack *stack)
+{
+	assert(stack->top >= 0);
+	return &stack->e[stack->top];
+}
+
+static inline
+struct estack_entry *estack_bx(struct estack *stack)
+{
+	assert(stack->top >= 1);
+	return &stack->e[stack->top - 1];
+}
+
+static inline
+void estack_push(struct estack *stack)
+{
+	assert(stack->top < FILTER_STACK_LEN - 1);
+	++stack->top;
+}
+
+static inline
+void estack_pop(struct estack *stack)
+{
+	assert(stack->top >= 0);
+	stack->top--;
+}
 
 const char *print_op(enum filter_op op);
 

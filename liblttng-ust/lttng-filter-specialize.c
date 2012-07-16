@@ -26,13 +26,10 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 {
 	void *pc, *next_pc, *start_pc;
 	int ret = -EINVAL;
-	struct vreg reg[NR_REG];
-	int i;
+	struct vstack _stack;
+	struct vstack *stack = &_stack;
 
-	for (i = 0; i < NR_REG; i++) {
-		reg[i].type = REG_TYPE_UNKNOWN;
-		reg[i].literal = 0;
-	}
+	vstack_init(stack);
 
 	start_pc = &bytecode->data[0];
 	for (pc = next_pc = start_pc; pc - start_pc < bytecode->len;
@@ -69,7 +66,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 		{
 			struct binary_op *insn = (struct binary_op *) pc;
 
-			switch(reg[REG_R0].type) {
+			switch(vstack_ax(stack)->type) {
 			default:
 				ERR("unknown register type\n");
 				ret = -EINVAL;
@@ -79,7 +76,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				insn->op = FILTER_OP_EQ_STRING;
 				break;
 			case REG_S64:
-				if (reg[REG_R1].type == REG_S64)
+				if (vstack_bx(stack)->type == REG_S64)
 					insn->op = FILTER_OP_EQ_S64;
 				else
 					insn->op = FILTER_OP_EQ_DOUBLE;
@@ -88,7 +85,12 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				insn->op = FILTER_OP_EQ_DOUBLE;
 				break;
 			}
-			reg[REG_R0].type = REG_S64;
+			/* Pop 2, push 1 */
+			if (vstack_pop(stack)) {
+				ret = -EINVAL;
+				goto end;
+			}
+			vstack_ax(stack)->type = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			break;
 		}
@@ -97,7 +99,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 		{
 			struct binary_op *insn = (struct binary_op *) pc;
 
-			switch(reg[REG_R0].type) {
+			switch(vstack_ax(stack)->type) {
 			default:
 				ERR("unknown register type\n");
 				ret = -EINVAL;
@@ -107,7 +109,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				insn->op = FILTER_OP_NE_STRING;
 				break;
 			case REG_S64:
-				if (reg[REG_R1].type == REG_S64)
+				if (vstack_bx(stack)->type == REG_S64)
 					insn->op = FILTER_OP_NE_S64;
 				else
 					insn->op = FILTER_OP_NE_DOUBLE;
@@ -116,7 +118,12 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				insn->op = FILTER_OP_NE_DOUBLE;
 				break;
 			}
-			reg[REG_R0].type = REG_S64;
+			/* Pop 2, push 1 */
+			if (vstack_pop(stack)) {
+				ret = -EINVAL;
+				goto end;
+			}
+			vstack_ax(stack)->type = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			break;
 		}
@@ -125,7 +132,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 		{
 			struct binary_op *insn = (struct binary_op *) pc;
 
-			switch(reg[REG_R0].type) {
+			switch(vstack_ax(stack)->type) {
 			default:
 				ERR("unknown register type\n");
 				ret = -EINVAL;
@@ -135,7 +142,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				insn->op = FILTER_OP_GT_STRING;
 				break;
 			case REG_S64:
-				if (reg[REG_R1].type == REG_S64)
+				if (vstack_bx(stack)->type == REG_S64)
 					insn->op = FILTER_OP_GT_S64;
 				else
 					insn->op = FILTER_OP_GT_DOUBLE;
@@ -144,7 +151,12 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				insn->op = FILTER_OP_GT_DOUBLE;
 				break;
 			}
-			reg[REG_R0].type = REG_S64;
+			/* Pop 2, push 1 */
+			if (vstack_pop(stack)) {
+				ret = -EINVAL;
+				goto end;
+			}
+			vstack_ax(stack)->type = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			break;
 		}
@@ -153,7 +165,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 		{
 			struct binary_op *insn = (struct binary_op *) pc;
 
-			switch(reg[REG_R0].type) {
+			switch(vstack_ax(stack)->type) {
 			default:
 				ERR("unknown register type\n");
 				ret = -EINVAL;
@@ -163,7 +175,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				insn->op = FILTER_OP_LT_STRING;
 				break;
 			case REG_S64:
-				if (reg[REG_R1].type == REG_S64)
+				if (vstack_bx(stack)->type == REG_S64)
 					insn->op = FILTER_OP_LT_S64;
 				else
 					insn->op = FILTER_OP_LT_DOUBLE;
@@ -172,7 +184,12 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				insn->op = FILTER_OP_LT_DOUBLE;
 				break;
 			}
-			reg[REG_R0].type = REG_S64;
+			/* Pop 2, push 1 */
+			if (vstack_pop(stack)) {
+				ret = -EINVAL;
+				goto end;
+			}
+			vstack_ax(stack)->type = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			break;
 		}
@@ -181,7 +198,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 		{
 			struct binary_op *insn = (struct binary_op *) pc;
 
-			switch(reg[REG_R0].type) {
+			switch(vstack_ax(stack)->type) {
 			default:
 				ERR("unknown register type\n");
 				ret = -EINVAL;
@@ -191,7 +208,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				insn->op = FILTER_OP_GE_STRING;
 				break;
 			case REG_S64:
-				if (reg[REG_R1].type == REG_S64)
+				if (vstack_bx(stack)->type == REG_S64)
 					insn->op = FILTER_OP_GE_S64;
 				else
 					insn->op = FILTER_OP_GE_DOUBLE;
@@ -200,7 +217,12 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				insn->op = FILTER_OP_GE_DOUBLE;
 				break;
 			}
-			reg[REG_R0].type = REG_S64;
+			/* Pop 2, push 1 */
+			if (vstack_pop(stack)) {
+				ret = -EINVAL;
+				goto end;
+			}
+			vstack_ax(stack)->type = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			break;
 		}
@@ -208,7 +230,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 		{
 			struct binary_op *insn = (struct binary_op *) pc;
 
-			switch(reg[REG_R0].type) {
+			switch(vstack_ax(stack)->type) {
 			default:
 				ERR("unknown register type\n");
 				ret = -EINVAL;
@@ -218,7 +240,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				insn->op = FILTER_OP_LE_STRING;
 				break;
 			case REG_S64:
-				if (reg[REG_R1].type == REG_S64)
+				if (vstack_bx(stack)->type == REG_S64)
 					insn->op = FILTER_OP_LE_S64;
 				else
 					insn->op = FILTER_OP_LE_DOUBLE;
@@ -227,7 +249,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				insn->op = FILTER_OP_LE_DOUBLE;
 				break;
 			}
-			reg[REG_R0].type = REG_S64;
+			vstack_ax(stack)->type = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			break;
 		}
@@ -251,7 +273,12 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 		case FILTER_OP_GE_DOUBLE:
 		case FILTER_OP_LE_DOUBLE:
 		{
-			reg[REG_R0].type = REG_S64;
+			/* Pop 2, push 1 */
+			if (vstack_pop(stack)) {
+				ret = -EINVAL;
+				goto end;
+			}
+			vstack_ax(stack)->type = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			break;
 		}
@@ -261,7 +288,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 		{
 			struct unary_op *insn = (struct unary_op *) pc;
 
-			switch(reg[insn->reg].type) {
+			switch(vstack_ax(stack)->type) {
 			default:
 				ERR("unknown register type\n");
 				ret = -EINVAL;
@@ -274,6 +301,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				insn->op = FILTER_OP_UNARY_PLUS_DOUBLE;
 				break;
 			}
+			/* Pop 1, push 1 */
 			next_pc += sizeof(struct unary_op);
 			break;
 		}
@@ -282,7 +310,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 		{
 			struct unary_op *insn = (struct unary_op *) pc;
 
-			switch(reg[insn->reg].type) {
+			switch(vstack_ax(stack)->type) {
 			default:
 				ERR("unknown register type\n");
 				ret = -EINVAL;
@@ -295,6 +323,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				insn->op = FILTER_OP_UNARY_MINUS_DOUBLE;
 				break;
 			}
+			/* Pop 1, push 1 */
 			next_pc += sizeof(struct unary_op);
 			break;
 		}
@@ -303,7 +332,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 		{
 			struct unary_op *insn = (struct unary_op *) pc;
 
-			switch(reg[insn->reg].type) {
+			switch(vstack_ax(stack)->type) {
 			default:
 				ERR("unknown register type\n");
 				ret = -EINVAL;
@@ -316,6 +345,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				insn->op = FILTER_OP_UNARY_NOT_DOUBLE;
 				break;
 			}
+			/* Pop 1, push 1 */
 			next_pc += sizeof(struct unary_op);
 			break;
 		}
@@ -327,6 +357,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 		case FILTER_OP_UNARY_MINUS_DOUBLE:
 		case FILTER_OP_UNARY_NOT_DOUBLE:
 		{
+			/* Pop 1, push 1 */
 			next_pc += sizeof(struct unary_op);
 			break;
 		}
@@ -349,28 +380,31 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 		case FILTER_OP_LOAD_FIELD_REF_STRING:
 		case FILTER_OP_LOAD_FIELD_REF_SEQUENCE:
 		{
-			struct load_op *insn = (struct load_op *) pc;
-
-			reg[insn->reg].type = REG_STRING;
-			reg[insn->reg].literal = 0;
+			if (vstack_push(stack)) {
+				ret = -EINVAL;
+				goto end;
+			}
+			vstack_ax(stack)->type = REG_STRING;
 			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
 			break;
 		}
 		case FILTER_OP_LOAD_FIELD_REF_S64:
 		{
-			struct load_op *insn = (struct load_op *) pc;
-
-			reg[insn->reg].type = REG_S64;
-			reg[insn->reg].literal = 0;
+			if (vstack_push(stack)) {
+				ret = -EINVAL;
+				goto end;
+			}
+			vstack_ax(stack)->type = REG_S64;
 			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
 			break;
 		}
 		case FILTER_OP_LOAD_FIELD_REF_DOUBLE:
 		{
-			struct load_op *insn = (struct load_op *) pc;
-
-			reg[insn->reg].type = REG_DOUBLE;
-			reg[insn->reg].literal = 0;
+			if (vstack_push(stack)) {
+				ret = -EINVAL;
+				goto end;
+			}
+			vstack_ax(stack)->type = REG_DOUBLE;
 			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
 			break;
 		}
@@ -379,18 +413,22 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 		{
 			struct load_op *insn = (struct load_op *) pc;
 
-			reg[insn->reg].type = REG_STRING;
-			reg[insn->reg].literal = 1;
+			if (vstack_push(stack)) {
+				ret = -EINVAL;
+				goto end;
+			}
+			vstack_ax(stack)->type = REG_STRING;
 			next_pc += sizeof(struct load_op) + strlen(insn->data) + 1;
 			break;
 		}
 
 		case FILTER_OP_LOAD_S64:
 		{
-			struct load_op *insn = (struct load_op *) pc;
-
-			reg[insn->reg].type = REG_S64;
-			reg[insn->reg].literal = 1;
+			if (vstack_push(stack)) {
+				ret = -EINVAL;
+				goto end;
+			}
+			vstack_ax(stack)->type = REG_S64;
 			next_pc += sizeof(struct load_op)
 					+ sizeof(struct literal_numeric);
 			break;
@@ -398,10 +436,11 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 
 		case FILTER_OP_LOAD_DOUBLE:
 		{
-			struct load_op *insn = (struct load_op *) pc;
-
-			reg[insn->reg].type = REG_DOUBLE;
-			reg[insn->reg].literal = 1;
+			if (vstack_push(stack)) {
+				ret = -EINVAL;
+				goto end;
+			}
+			vstack_ax(stack)->type = REG_DOUBLE;
 			next_pc += sizeof(struct load_op)
 					+ sizeof(struct literal_double);
 			break;
@@ -412,7 +451,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 		{
 			struct cast_op *insn = (struct cast_op *) pc;
 
-			switch (reg[insn->reg].type) {
+			switch (vstack_ax(stack)->type) {
 			default:
 				ERR("unknown register type\n");
 				ret = -EINVAL;
@@ -429,15 +468,15 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				insn->op = FILTER_OP_CAST_DOUBLE_TO_S64;
 				break;
 			}
-			reg[insn->reg].type = REG_S64;
+			/* Pop 1, push 1 */
+			vstack_ax(stack)->type = REG_S64;
 			next_pc += sizeof(struct cast_op);
 			break;
 		}
 		case FILTER_OP_CAST_DOUBLE_TO_S64:
 		{
-			struct cast_op *insn = (struct cast_op *) pc;
-
-			reg[insn->reg].type = REG_S64;
+			/* Pop 1, push 1 */
+			vstack_ax(stack)->type = REG_S64;
 			next_pc += sizeof(struct cast_op);
 			break;
 		}
