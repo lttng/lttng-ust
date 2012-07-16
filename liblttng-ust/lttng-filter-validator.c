@@ -813,12 +813,6 @@ int exec_insn(struct bytecode_runtime *bytecode,
 	case FILTER_OP_LT_S64:
 	case FILTER_OP_GE_S64:
 	case FILTER_OP_LE_S64:
-	{
-		reg[REG_R0].type = REG_S64;
-		next_pc += sizeof(struct binary_op);
-		break;
-	}
-
 	case FILTER_OP_EQ_DOUBLE:
 	case FILTER_OP_NE_DOUBLE:
 	case FILTER_OP_GT_DOUBLE:
@@ -826,7 +820,7 @@ int exec_insn(struct bytecode_runtime *bytecode,
 	case FILTER_OP_GE_DOUBLE:
 	case FILTER_OP_LE_DOUBLE:
 	{
-		reg[REG_R0].type = REG_DOUBLE;
+		reg[REG_R0].type = REG_S64;
 		next_pc += sizeof(struct binary_op);
 		break;
 	}
