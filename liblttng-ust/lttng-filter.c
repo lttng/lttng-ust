@@ -696,6 +696,11 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 				ref->offset);
 			reg[insn->reg].str =
 				*(const char * const *) &filter_stack_data[ref->offset];
+			if (unlikely(!reg[insn->reg].str)) {
+				dbg_printf("Filter warning: loading a NULL string.\n");
+				ret = -EINVAL;
+				goto end;
+			}
 			reg[insn->reg].type = REG_STRING;
 			reg[insn->reg].seq_len = UINT_MAX;
 			reg[insn->reg].literal = 0;
@@ -716,6 +721,11 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			reg[insn->reg].str =
 				*(const char **) (&filter_stack_data[ref->offset
 								+ sizeof(unsigned long)]);
+			if (unlikely(!reg[insn->reg].str)) {
+				dbg_printf("Filter warning: loading a NULL sequence.\n");
+				ret = -EINVAL;
+				goto end;
+			}
 			reg[insn->reg].type = REG_STRING;
 			reg[insn->reg].literal = 0;
 			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
