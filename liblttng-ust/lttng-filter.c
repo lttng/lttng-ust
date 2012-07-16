@@ -275,20 +275,20 @@ int lttng_filter_false(void *filter_data,
  * Fallback for compilers that do not support taking address of labels.
  */
 
-#define START_OP	\
-	start_pc = &bytecode->data[0]; \
-	for (pc = next_pc = start_pc; pc - start_pc < bytecode->len; \
-			pc = next_pc) { \
-		dbg_printf("Executing op %s (%u)\n", \
+#define START_OP							\
+	start_pc = &bytecode->data[0];					\
+	for (pc = next_pc = start_pc; pc - start_pc < bytecode->len;	\
+			pc = next_pc) {					\
+		dbg_printf("Executing op %s (%u)\n",			\
 			print_op((unsigned int) *(filter_opcode_t *) pc), \
-			(unsigned int) *(filter_opcode_t *) pc); \
-		switch (*(filter_opcode_t *) pc) {
+			(unsigned int) *(filter_opcode_t *) pc); 	\
+		switch (*(filter_opcode_t *) pc)	{
 
 #define OP(name)	case name
 
 #define PO		break
 
-#define END_OP		} \
+#define END_OP		}						\
 	}
 
 #else
@@ -297,18 +297,18 @@ int lttng_filter_false(void *filter_data,
  * Dispatch-table based interpreter.
  */
 
-#define START_OP					\
-	start_pc = &bytecode->data[0];			\
-	pc = next_pc = start_pc;			\
-	if (unlikely(pc - start_pc >= bytecode->len))	\
-		goto end;				\
+#define START_OP							\
+	start_pc = &bytecode->data[0];					\
+	pc = next_pc = start_pc;					\
+	if (unlikely(pc - start_pc >= bytecode->len))			\
+		goto end;						\
 	goto *dispatch[*(filter_opcode_t *) pc];
 
-#define OP(name)					\
+#define OP(name)							\
 LABEL_##name
 
-#define PO						\
-		pc = next_pc;				\
+#define PO								\
+		pc = next_pc;						\
 		goto *dispatch[*(filter_opcode_t *) pc];
 
 #define END_OP
