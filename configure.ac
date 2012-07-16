@@ -116,6 +116,11 @@ CFLAGS="-Wall $CFLAGS"
 AC_CHECK_HEADERS([urcu-bp.h], [], [AC_MSG_ERROR([Cannot find [URCU] headers (urcu-bp.h). Use [CPPFLAGS]=-Idir to specify their location.
 This error can also occur when the liburcu package's configure script has not been run.])])
 
+# urcu-cds - check that URCU Concurrent Data Structure lib is available to compilation
+# Part of Userspace RCU library 0.7.2 or better.
+AC_CHECK_LIB([urcu-cds], [_cds_lfht_new], [], [AC_MSG_ERROR([Cannot find
+liburcu-cds lib, part of Userspace RCU 0.7 or better. Use [LDFLAGS]=-Ldir to specify its location.])])
+
 AC_MSG_CHECKING([caa_likely()])
 AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 #include <urcu/compiler.h>

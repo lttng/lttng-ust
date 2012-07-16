@@ -33,6 +33,7 @@ liblttng_ust_runtime_la_SOURCES = \
 	lttng-filter-specialize.c \
 	lttng-filter-interpreter.c \
 	filter-bytecode.h \
+	lttng-hash-helper.h \
 	tracepoint-internal.h \
 	clock.h \
 	compat.h \
@@ -61,6 +62,7 @@ liblttng_ust_support_la_LIBADD = \
 liblttng_ust_la_LIBADD = \
 	-lpthread \
 	-lrt \
+	-lurcu-cds \
 	-llttng-ust-tracepoint \
 	$(top_builddir)/snprintf/libustsnprintf.la \
 	$(top_builddir)/liblttng-ust-comm/liblttng-ust-comm.la \
