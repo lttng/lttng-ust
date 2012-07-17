@@ -132,8 +132,6 @@ int vstack_pop(struct vstack *stack)
 
 /* Execution stack */
 struct estack_entry {
-	enum entry_type type;
-
 	union {
 		int64_t v;
 		double d;
