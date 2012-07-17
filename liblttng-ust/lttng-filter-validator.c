@@ -237,6 +237,18 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 	case FILTER_OP_LT_DOUBLE:
 	case FILTER_OP_GE_DOUBLE:
 	case FILTER_OP_LE_DOUBLE:
+	case FILTER_OP_EQ_DOUBLE_S64:
+	case FILTER_OP_NE_DOUBLE_S64:
+	case FILTER_OP_GT_DOUBLE_S64:
+	case FILTER_OP_LT_DOUBLE_S64:
+	case FILTER_OP_GE_DOUBLE_S64:
+	case FILTER_OP_LE_DOUBLE_S64:
+	case FILTER_OP_EQ_S64_DOUBLE:
+	case FILTER_OP_NE_S64_DOUBLE:
+	case FILTER_OP_GT_S64_DOUBLE:
+	case FILTER_OP_LT_S64_DOUBLE:
+	case FILTER_OP_GE_S64_DOUBLE:
+	case FILTER_OP_LE_S64_DOUBLE:
 	{
 		if (unlikely(pc + sizeof(struct binary_op)
 				> start_pc + bytecode->len)) {
@@ -508,14 +520,48 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 			ret = -EINVAL;
 			goto end;
 		}
-		if ((vstack_ax(stack)->type != REG_DOUBLE && vstack_ax(stack)->type != REG_S64)
-				|| (vstack_bx(stack)-> type != REG_DOUBLE && vstack_bx(stack)->type != REG_S64)) {
-			ERR("Unexpected register type for double comparator\n");
+		if (vstack_ax(stack)->type != REG_DOUBLE && vstack_bx(stack)->type != REG_DOUBLE) {
+			ERR("Double operator should have two double registers\n");
 			ret = -EINVAL;
 			goto end;
 		}
-		if (vstack_ax(stack)->type != REG_DOUBLE && vstack_bx(stack)->type != REG_DOUBLE) {
-			ERR("Double operator should have at least one double register\n");
+		break;
+	}
+
+	case FILTER_OP_EQ_DOUBLE_S64:
+	case FILTER_OP_NE_DOUBLE_S64:
+	case FILTER_OP_GT_DOUBLE_S64:
+	case FILTER_OP_LT_DOUBLE_S64:
+	case FILTER_OP_GE_DOUBLE_S64:
+	case FILTER_OP_LE_DOUBLE_S64:
+	{
+		if (!vstack_ax(stack) || !vstack_bx(stack)) {
+			ERR("Empty stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		if (vstack_ax(stack)->type != REG_S64 && vstack_bx(stack)->type != REG_DOUBLE) {
+			ERR("Double-S64 operator has unexpected register types\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		break;
+	}
+
+	case FILTER_OP_EQ_S64_DOUBLE:
+	case FILTER_OP_NE_S64_DOUBLE:
+	case FILTER_OP_GT_S64_DOUBLE:
+	case FILTER_OP_LT_S64_DOUBLE:
+	case FILTER_OP_GE_S64_DOUBLE:
+	case FILTER_OP_LE_S64_DOUBLE:
+	{
+		if (!vstack_ax(stack) || !vstack_bx(stack)) {
+			ERR("Empty stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		if (vstack_ax(stack)->type != REG_DOUBLE && vstack_bx(stack)->type != REG_S64) {
+			ERR("S64-Double operator has unexpected register types\n");
 			ret = -EINVAL;
 			goto end;
 		}
@@ -834,6 +880,18 @@ int exec_insn(struct bytecode_runtime *bytecode,
 	case FILTER_OP_LT_DOUBLE:
 	case FILTER_OP_GE_DOUBLE:
 	case FILTER_OP_LE_DOUBLE:
+	case FILTER_OP_EQ_DOUBLE_S64:
+	case FILTER_OP_NE_DOUBLE_S64:
+	case FILTER_OP_GT_DOUBLE_S64:
+	case FILTER_OP_LT_DOUBLE_S64:
+	case FILTER_OP_GE_DOUBLE_S64:
+	case FILTER_OP_LE_DOUBLE_S64:
+	case FILTER_OP_EQ_S64_DOUBLE:
+	case FILTER_OP_NE_S64_DOUBLE:
+	case FILTER_OP_GT_S64_DOUBLE:
+	case FILTER_OP_LT_S64_DOUBLE:
+	case FILTER_OP_GE_S64_DOUBLE:
+	case FILTER_OP_LE_S64_DOUBLE:
 	{
 		/* Pop 2, push 1 */
 		if (vstack_pop(stack)) {

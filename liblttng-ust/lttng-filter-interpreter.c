@@ -216,6 +216,21 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		[ FILTER_OP_GE_DOUBLE ] = &&LABEL_FILTER_OP_GE_DOUBLE,
 		[ FILTER_OP_LE_DOUBLE ] = &&LABEL_FILTER_OP_LE_DOUBLE,
 
+		/* Mixed S64-double binary comparators */
+		[ FILTER_OP_EQ_DOUBLE_S64 ] = &&LABEL_FILTER_OP_EQ_DOUBLE_S64,
+		[ FILTER_OP_NE_DOUBLE_S64 ] = &&LABEL_FILTER_OP_NE_DOUBLE_S64,
+		[ FILTER_OP_GT_DOUBLE_S64 ] = &&LABEL_FILTER_OP_GT_DOUBLE_S64,
+		[ FILTER_OP_LT_DOUBLE_S64 ] = &&LABEL_FILTER_OP_LT_DOUBLE_S64,
+		[ FILTER_OP_GE_DOUBLE_S64 ] = &&LABEL_FILTER_OP_GE_DOUBLE_S64,
+		[ FILTER_OP_LE_DOUBLE_S64 ] = &&LABEL_FILTER_OP_LE_DOUBLE_S64,
+
+		[ FILTER_OP_EQ_S64_DOUBLE ] = &&LABEL_FILTER_OP_EQ_S64_DOUBLE,
+		[ FILTER_OP_NE_S64_DOUBLE ] = &&LABEL_FILTER_OP_NE_S64_DOUBLE,
+		[ FILTER_OP_GT_S64_DOUBLE ] = &&LABEL_FILTER_OP_GT_S64_DOUBLE,
+		[ FILTER_OP_LT_S64_DOUBLE ] = &&LABEL_FILTER_OP_LT_S64_DOUBLE,
+		[ FILTER_OP_GE_S64_DOUBLE ] = &&LABEL_FILTER_OP_GE_S64_DOUBLE,
+		[ FILTER_OP_LE_S64_DOUBLE ] = &&LABEL_FILTER_OP_LE_S64_DOUBLE,
+
 		/* unary */
 		[ FILTER_OP_UNARY_PLUS ] = &&LABEL_FILTER_OP_UNARY_PLUS,
 		[ FILTER_OP_UNARY_MINUS ] = &&LABEL_FILTER_OP_UNARY_MINUS,
@@ -433,11 +448,7 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			if (unlikely(estack_ax(stack)->type == REG_S64))
-				estack_ax(stack)->u.d = (double) estack_ax(stack)->u.v;
-			else if (unlikely(estack_bx(stack)->type == REG_S64))
-				estack_bx(stack)->u.d = (double) estack_bx(stack)->u.v;
-			res = (estack_bx(stack)->u.v == estack_ax(stack)->u.v);
+			res = (estack_bx(stack)->u.d == estack_ax(stack)->u.d);
 			estack_pop(stack);
 			estack_ax(stack)->u.v = res;
 			estack_ax(stack)->type = REG_S64;
@@ -448,11 +459,7 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			if (unlikely(estack_ax(stack)->type == REG_S64))
-				estack_ax(stack)->u.d = (double) estack_ax(stack)->u.v;
-			else if (unlikely(estack_bx(stack)->type == REG_S64))
-				estack_bx(stack)->u.d = (double) estack_bx(stack)->u.v;
-			res = (estack_bx(stack)->u.v != estack_ax(stack)->u.v);
+			res = (estack_bx(stack)->u.d != estack_ax(stack)->u.d);
 			estack_pop(stack);
 			estack_ax(stack)->u.v = res;
 			estack_ax(stack)->type = REG_S64;
@@ -463,11 +470,7 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			if (unlikely(estack_ax(stack)->type == REG_S64))
-				estack_ax(stack)->u.d = (double) estack_ax(stack)->u.v;
-			else if (unlikely(estack_bx(stack)->type == REG_S64))
-				estack_bx(stack)->u.d = (double) estack_bx(stack)->u.v;
-			res = (estack_bx(stack)->u.v > estack_ax(stack)->u.v);
+			res = (estack_bx(stack)->u.d > estack_ax(stack)->u.d);
 			estack_pop(stack);
 			estack_ax(stack)->u.v = res;
 			estack_ax(stack)->type = REG_S64;
@@ -478,11 +481,7 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			if (unlikely(estack_ax(stack)->type == REG_S64))
-				estack_ax(stack)->u.d = (double) estack_ax(stack)->u.v;
-			else if (unlikely(estack_bx(stack)->type == REG_S64))
-				estack_bx(stack)->u.d = (double) estack_bx(stack)->u.v;
-			res = (estack_bx(stack)->u.v < estack_ax(stack)->u.v);
+			res = (estack_bx(stack)->u.d < estack_ax(stack)->u.d);
 			estack_pop(stack);
 			estack_ax(stack)->u.v = res;
 			estack_ax(stack)->type = REG_S64;
@@ -493,11 +492,7 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			if (unlikely(estack_ax(stack)->type == REG_S64))
-				estack_ax(stack)->u.d = (double) estack_ax(stack)->u.v;
-			else if (unlikely(estack_bx(stack)->type == REG_S64))
-				estack_bx(stack)->u.d = (double) estack_bx(stack)->u.v;
-			res = (estack_bx(stack)->u.v >= estack_ax(stack)->u.v);
+			res = (estack_bx(stack)->u.d >= estack_ax(stack)->u.d);
 			estack_pop(stack);
 			estack_ax(stack)->u.v = res;
 			estack_ax(stack)->type = REG_S64;
@@ -508,11 +503,142 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			if (unlikely(estack_ax(stack)->type == REG_S64))
-				estack_ax(stack)->u.d = (double) estack_ax(stack)->u.v;
-			else if (unlikely(estack_bx(stack)->type == REG_S64))
-				estack_bx(stack)->u.d = (double) estack_bx(stack)->u.v;
-			res = (estack_bx(stack)->u.v <= estack_ax(stack)->u.v);
+			res = (estack_bx(stack)->u.d <= estack_ax(stack)->u.d);
+			estack_pop(stack);
+			estack_ax(stack)->u.v = res;
+			estack_ax(stack)->type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			PO;
+		}
+
+		/* Mixed S64-double binary comparators */
+		OP(FILTER_OP_EQ_DOUBLE_S64):
+		{
+			int res;
+
+			res = (estack_bx(stack)->u.d == estack_ax(stack)->u.v);
+			estack_pop(stack);
+			estack_ax(stack)->u.v = res;
+			estack_ax(stack)->type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			PO;
+		}
+		OP(FILTER_OP_NE_DOUBLE_S64):
+		{
+			int res;
+
+			res = (estack_bx(stack)->u.d != estack_ax(stack)->u.v);
+			estack_pop(stack);
+			estack_ax(stack)->u.v = res;
+			estack_ax(stack)->type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			PO;
+		}
+		OP(FILTER_OP_GT_DOUBLE_S64):
+		{
+			int res;
+
+			res = (estack_bx(stack)->u.d > estack_ax(stack)->u.v);
+			estack_pop(stack);
+			estack_ax(stack)->u.v = res;
+			estack_ax(stack)->type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			PO;
+		}
+		OP(FILTER_OP_LT_DOUBLE_S64):
+		{
+			int res;
+
+			res = (estack_bx(stack)->u.d < estack_ax(stack)->u.v);
+			estack_pop(stack);
+			estack_ax(stack)->u.v = res;
+			estack_ax(stack)->type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			PO;
+		}
+		OP(FILTER_OP_GE_DOUBLE_S64):
+		{
+			int res;
+
+			res = (estack_bx(stack)->u.d >= estack_ax(stack)->u.v);
+			estack_pop(stack);
+			estack_ax(stack)->u.v = res;
+			estack_ax(stack)->type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			PO;
+		}
+		OP(FILTER_OP_LE_DOUBLE_S64):
+		{
+			int res;
+
+			res = (estack_bx(stack)->u.d <= estack_ax(stack)->u.v);
+			estack_pop(stack);
+			estack_ax(stack)->u.v = res;
+			estack_ax(stack)->type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			PO;
+		}
+
+		OP(FILTER_OP_EQ_S64_DOUBLE):
+		{
+			int res;
+
+			res = (estack_bx(stack)->u.v == estack_ax(stack)->u.d);
+			estack_pop(stack);
+			estack_ax(stack)->u.v = res;
+			estack_ax(stack)->type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			PO;
+		}
+		OP(FILTER_OP_NE_S64_DOUBLE):
+		{
+			int res;
+
+			res = (estack_bx(stack)->u.v != estack_ax(stack)->u.d);
+			estack_pop(stack);
+			estack_ax(stack)->u.v = res;
+			estack_ax(stack)->type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			PO;
+		}
+		OP(FILTER_OP_GT_S64_DOUBLE):
+		{
+			int res;
+
+			res = (estack_bx(stack)->u.v > estack_ax(stack)->u.d);
+			estack_pop(stack);
+			estack_ax(stack)->u.v = res;
+			estack_ax(stack)->type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			PO;
+		}
+		OP(FILTER_OP_LT_S64_DOUBLE):
+		{
+			int res;
+
+			res = (estack_bx(stack)->u.v < estack_ax(stack)->u.d);
+			estack_pop(stack);
+			estack_ax(stack)->u.v = res;
+			estack_ax(stack)->type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			PO;
+		}
+		OP(FILTER_OP_GE_S64_DOUBLE):
+		{
+			int res;
+
+			res = (estack_bx(stack)->u.v >= estack_ax(stack)->u.d);
+			estack_pop(stack);
+			estack_ax(stack)->u.v = res;
+			estack_ax(stack)->type = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			PO;
+		}
+		OP(FILTER_OP_LE_S64_DOUBLE):
+		{
+			int res;
+
+			res = (estack_bx(stack)->u.v <= estack_ax(stack)->u.d);
 			estack_pop(stack);
 			estack_ax(stack)->u.v = res;
 			estack_ax(stack)->type = REG_S64;
