@@ -49,30 +49,30 @@ int parse_char(const char **p)
 }
 
 static
-int stack_strcmp(struct estack *stack, const char *cmp_type)
+int stack_strcmp(struct estack *stack, int top, const char *cmp_type)
 {
-	const char *p = estack_bx(stack)->u.s.str, *q = estack_ax(stack)->u.s.str;
+	const char *p = estack_bx(stack, top)->u.s.str, *q = estack_ax(stack, top)->u.s.str;
 	int ret;
 	int diff;
 
 	for (;;) {
 		int escaped_r0 = 0;
 
-		if (unlikely(p - estack_bx(stack)->u.s.str > estack_bx(stack)->u.s.seq_len || *p == '\0')) {
-			if (q - estack_ax(stack)->u.s.str > estack_ax(stack)->u.s.seq_len || *q == '\0')
+		if (unlikely(p - estack_bx(stack, top)->u.s.str > estack_bx(stack, top)->u.s.seq_len || *p == '\0')) {
+			if (q - estack_ax(stack, top)->u.s.str > estack_ax(stack, top)->u.s.seq_len || *q == '\0')
 				diff = 0;
 			else
 				diff = -1;
 			break;
 		}
-		if (unlikely(q - estack_ax(stack)->u.s.str > estack_ax(stack)->u.s.seq_len || *q == '\0')) {
-			if (p - estack_bx(stack)->u.s.str > estack_bx(stack)->u.s.seq_len || *p == '\0')
+		if (unlikely(q - estack_ax(stack, top)->u.s.str > estack_ax(stack, top)->u.s.seq_len || *q == '\0')) {
+			if (p - estack_bx(stack, top)->u.s.str > estack_bx(stack, top)->u.s.seq_len || *p == '\0')
 				diff = 0;
 			else
 				diff = 1;
 			break;
 		}
-		if (estack_bx(stack)->u.s.literal) {
+		if (estack_bx(stack, top)->u.s.literal) {
 			ret = parse_char(&p);
 			if (ret == -1) {
 				return 0;
@@ -81,7 +81,7 @@ int stack_strcmp(struct estack *stack, const char *cmp_type)
 			}
 			/* else compare both char */
 		}
-		if (estack_ax(stack)->u.s.literal) {
+		if (estack_ax(stack, top)->u.s.literal) {
 			ret = parse_char(&q);
 			if (ret == -1) {
 				return 0;
@@ -166,6 +166,8 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 	int retval = 0;
 	struct estack _stack;
 	struct estack *stack = &_stack;
+	register int64_t ax = 0, bx = 0;
+	register int top = FILTER_STACK_EMPTY;
 #ifndef INTERPRETER_USE_SWITCH
 	static void *dispatch[NR_FILTER_OPS] = {
 		[ FILTER_OP_UNKNOWN ] = &&LABEL_FILTER_OP_UNKNOWN,
@@ -264,8 +266,6 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 	};
 #endif /* #ifndef INTERPRETER_USE_SWITCH */
 
-	estack_init(stack);
-
 	START_OP
 
 		OP(FILTER_OP_UNKNOWN):
@@ -279,7 +279,7 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			goto end;
 
 		OP(FILTER_OP_RETURN):
-			retval = !!estack_ax(stack)->u.v;
+			retval = !!estack_ax_v;
 			ret = 0;
 			goto end;
 
@@ -314,9 +314,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (stack_strcmp(stack, "==") == 0);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (stack_strcmp(stack, top, "==") == 0);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -324,9 +324,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (stack_strcmp(stack, "!=") != 0);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (stack_strcmp(stack, top, "!=") != 0);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -334,9 +334,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (stack_strcmp(stack, ">") > 0);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (stack_strcmp(stack, top, ">") > 0);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -344,9 +344,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (stack_strcmp(stack, "<") < 0);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (stack_strcmp(stack, top, "<") < 0);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -354,9 +354,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (stack_strcmp(stack, ">=") >= 0);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (stack_strcmp(stack, top, ">=") >= 0);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -364,9 +364,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (stack_strcmp(stack, "<=") <= 0);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (stack_strcmp(stack, top, "<=") <= 0);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -375,9 +375,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (estack_bx(stack)->u.v == estack_ax(stack)->u.v);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (estack_bx_v == estack_ax_v);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -385,9 +385,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (estack_bx(stack)->u.v != estack_ax(stack)->u.v);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (estack_bx_v != estack_ax_v);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -395,9 +395,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (estack_bx(stack)->u.v > estack_ax(stack)->u.v);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (estack_bx_v > estack_ax_v);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -405,9 +405,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (estack_bx(stack)->u.v < estack_ax(stack)->u.v);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (estack_bx_v < estack_ax_v);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -415,9 +415,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (estack_bx(stack)->u.v >= estack_ax(stack)->u.v);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (estack_bx_v >= estack_ax_v);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -425,9 +425,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (estack_bx(stack)->u.v <= estack_ax(stack)->u.v);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (estack_bx_v <= estack_ax_v);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -436,9 +436,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (estack_bx(stack)->u.d == estack_ax(stack)->u.d);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (estack_bx(stack, top)->u.d == estack_ax(stack, top)->u.d);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -446,9 +446,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (estack_bx(stack)->u.d != estack_ax(stack)->u.d);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (estack_bx(stack, top)->u.d != estack_ax(stack, top)->u.d);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -456,9 +456,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (estack_bx(stack)->u.d > estack_ax(stack)->u.d);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (estack_bx(stack, top)->u.d > estack_ax(stack, top)->u.d);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -466,9 +466,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (estack_bx(stack)->u.d < estack_ax(stack)->u.d);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (estack_bx(stack, top)->u.d < estack_ax(stack, top)->u.d);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -476,9 +476,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (estack_bx(stack)->u.d >= estack_ax(stack)->u.d);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (estack_bx(stack, top)->u.d >= estack_ax(stack, top)->u.d);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -486,9 +486,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (estack_bx(stack)->u.d <= estack_ax(stack)->u.d);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (estack_bx(stack, top)->u.d <= estack_ax(stack, top)->u.d);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -498,9 +498,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (estack_bx(stack)->u.d == estack_ax(stack)->u.v);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (estack_bx(stack, top)->u.d == estack_ax_v);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -508,9 +508,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (estack_bx(stack)->u.d != estack_ax(stack)->u.v);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (estack_bx(stack, top)->u.d != estack_ax_v);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -518,9 +518,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (estack_bx(stack)->u.d > estack_ax(stack)->u.v);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (estack_bx(stack, top)->u.d > estack_ax_v);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -528,9 +528,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (estack_bx(stack)->u.d < estack_ax(stack)->u.v);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (estack_bx(stack, top)->u.d < estack_ax_v);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -538,9 +538,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (estack_bx(stack)->u.d >= estack_ax(stack)->u.v);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (estack_bx(stack, top)->u.d >= estack_ax_v);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -548,9 +548,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (estack_bx(stack)->u.d <= estack_ax(stack)->u.v);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (estack_bx(stack, top)->u.d <= estack_ax_v);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -559,9 +559,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (estack_bx(stack)->u.v == estack_ax(stack)->u.d);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (estack_bx_v == estack_ax(stack, top)->u.d);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -569,9 +569,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (estack_bx(stack)->u.v != estack_ax(stack)->u.d);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (estack_bx_v != estack_ax(stack, top)->u.d);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -579,9 +579,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (estack_bx(stack)->u.v > estack_ax(stack)->u.d);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (estack_bx_v > estack_ax(stack, top)->u.d);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -589,9 +589,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (estack_bx(stack)->u.v < estack_ax(stack)->u.d);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (estack_bx_v < estack_ax(stack, top)->u.d);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -599,9 +599,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (estack_bx(stack)->u.v >= estack_ax(stack)->u.d);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (estack_bx_v >= estack_ax(stack, top)->u.d);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -609,9 +609,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			int res;
 
-			res = (estack_bx(stack)->u.v <= estack_ax(stack)->u.d);
-			estack_pop(stack);
-			estack_ax(stack)->u.v = res;
+			res = (estack_bx_v <= estack_ax(stack, top)->u.d);
+			estack_pop(stack, top, ax, bx);
+			estack_ax_v = res;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -634,25 +634,25 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		}
 		OP(FILTER_OP_UNARY_MINUS_S64):
 		{
-			estack_ax(stack)->u.v = -estack_ax(stack)->u.v;
+			estack_ax_v = -estack_ax_v;
 			next_pc += sizeof(struct unary_op);
 			PO;
 		}
 		OP(FILTER_OP_UNARY_MINUS_DOUBLE):
 		{
-			estack_ax(stack)->u.d = -estack_ax(stack)->u.d;
+			estack_ax(stack, top)->u.d = -estack_ax(stack, top)->u.d;
 			next_pc += sizeof(struct unary_op);
 			PO;
 		}
 		OP(FILTER_OP_UNARY_NOT_S64):
 		{
-			estack_ax(stack)->u.v = !estack_ax(stack)->u.v;
+			estack_ax_v = !estack_ax_v;
 			next_pc += sizeof(struct unary_op);
 			PO;
 		}
 		OP(FILTER_OP_UNARY_NOT_DOUBLE):
 		{
-			estack_ax(stack)->u.d = !estack_ax(stack)->u.d;
+			estack_ax(stack, top)->u.d = !estack_ax(stack, top)->u.d;
 			next_pc += sizeof(struct unary_op);
 			PO;
 		}
@@ -663,13 +663,13 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			struct logical_op *insn = (struct logical_op *) pc;
 
 			/* If AX is 0, skip and evaluate to 0 */
-			if (unlikely(estack_ax(stack)->u.v == 0)) {
+			if (unlikely(estack_ax_v == 0)) {
 				dbg_printf("Jumping to bytecode offset %u\n",
 					(unsigned int) insn->skip_offset);
 				next_pc = start_pc + insn->skip_offset;
 			} else {
 				/* Pop 1 when jump not taken */
-				estack_pop(stack);
+				estack_pop(stack, top, ax, bx);
 				next_pc += sizeof(struct logical_op);
 			}
 			PO;
@@ -680,14 +680,14 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 
 			/* If AX is nonzero, skip and evaluate to 1 */
 
-			if (unlikely(estack_ax(stack)->u.v != 0)) {
-				estack_ax(stack)->u.v = 1;
+			if (unlikely(estack_ax_v != 0)) {
+				estack_ax_v = 1;
 				dbg_printf("Jumping to bytecode offset %u\n",
 					(unsigned int) insn->skip_offset);
 				next_pc = start_pc + insn->skip_offset;
 			} else {
 				/* Pop 1 when jump not taken */
-				estack_pop(stack);
+				estack_pop(stack, top, ax, bx);
 				next_pc += sizeof(struct logical_op);
 			}
 			PO;
@@ -702,17 +702,17 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 
 			dbg_printf("load field ref offset %u type string\n",
 				ref->offset);
-			estack_push(stack);
-			estack_ax(stack)->u.s.str =
+			estack_push(stack, top, ax, bx);
+			estack_ax(stack, top)->u.s.str =
 				*(const char * const *) &filter_stack_data[ref->offset];
-			if (unlikely(!estack_ax(stack)->u.s.str)) {
+			if (unlikely(!estack_ax(stack, top)->u.s.str)) {
 				dbg_printf("Filter warning: loading a NULL string.\n");
 				ret = -EINVAL;
 				goto end;
 			}
-			estack_ax(stack)->u.s.seq_len = UINT_MAX;
-			estack_ax(stack)->u.s.literal = 0;
-			dbg_printf("ref load string %s\n", estack_ax(stack)->u.s.str);
+			estack_ax(stack, top)->u.s.seq_len = UINT_MAX;
+			estack_ax(stack, top)->u.s.literal = 0;
+			dbg_printf("ref load string %s\n", estack_ax(stack, top)->u.s.str);
 			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
 			PO;
 		}
@@ -724,18 +724,18 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 
 			dbg_printf("load field ref offset %u type sequence\n",
 				ref->offset);
-			estack_push(stack);
-			estack_ax(stack)->u.s.seq_len =
+			estack_push(stack, top, ax, bx);
+			estack_ax(stack, top)->u.s.seq_len =
 				*(unsigned long *) &filter_stack_data[ref->offset];
-			estack_ax(stack)->u.s.str =
+			estack_ax(stack, top)->u.s.str =
 				*(const char **) (&filter_stack_data[ref->offset
 								+ sizeof(unsigned long)]);
-			if (unlikely(!estack_ax(stack)->u.s.str)) {
+			if (unlikely(!estack_ax(stack, top)->u.s.str)) {
 				dbg_printf("Filter warning: loading a NULL sequence.\n");
 				ret = -EINVAL;
 				goto end;
 			}
-			estack_ax(stack)->u.s.literal = 0;
+			estack_ax(stack, top)->u.s.literal = 0;
 			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
 			PO;
 		}
@@ -747,10 +747,10 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 
 			dbg_printf("load field ref offset %u type s64\n",
 				ref->offset);
-			estack_push(stack);
-			memcpy(&estack_ax(stack)->u.v, &filter_stack_data[ref->offset],
-				sizeof(struct literal_numeric));
-			dbg_printf("ref load s64 %" PRIi64 "\n", estack_ax(stack)->u.v);
+			estack_push(stack, top, ax, bx);
+			estack_ax_v =
+				((struct literal_numeric *) &filter_stack_data[ref->offset])->v;
+			dbg_printf("ref load s64 %" PRIi64 "\n", estack_ax_v);
 			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
 			PO;
 		}
@@ -762,10 +762,10 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 
 			dbg_printf("load field ref offset %u type double\n",
 				ref->offset);
-			estack_push(stack);
-			memcpy(&estack_ax(stack)->u.d, &filter_stack_data[ref->offset],
+			estack_push(stack, top, ax, bx);
+			memcpy(&estack_ax(stack, top)->u.d, &filter_stack_data[ref->offset],
 				sizeof(struct literal_double));
-			dbg_printf("ref load double %g\n", estack_ax(stack)->u.d);
+			dbg_printf("ref load double %g\n", estack_ax(stack, top)->u.d);
 			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
 			PO;
 		}
@@ -775,10 +775,10 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 			struct load_op *insn = (struct load_op *) pc;
 
 			dbg_printf("load string %s\n", insn->data);
-			estack_push(stack);
-			estack_ax(stack)->u.s.str = insn->data;
-			estack_ax(stack)->u.s.seq_len = UINT_MAX;
-			estack_ax(stack)->u.s.literal = 1;
+			estack_push(stack, top, ax, bx);
+			estack_ax(stack, top)->u.s.str = insn->data;
+			estack_ax(stack, top)->u.s.seq_len = UINT_MAX;
+			estack_ax(stack, top)->u.s.literal = 1;
 			next_pc += sizeof(struct load_op) + strlen(insn->data) + 1;
 			PO;
 		}
@@ -787,10 +787,9 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			struct load_op *insn = (struct load_op *) pc;
 
-			estack_push(stack);
-			memcpy(&estack_ax(stack)->u.v, insn->data,
-				sizeof(struct literal_numeric));
-			dbg_printf("load s64 %" PRIi64 "\n", estack_ax(stack)->u.v);
+			estack_push(stack, top, ax, bx);
+			estack_ax_v = ((struct literal_numeric *) insn->data)->v;
+			dbg_printf("load s64 %" PRIi64 "\n", estack_ax_v);
 			next_pc += sizeof(struct load_op)
 					+ sizeof(struct literal_numeric);
 			PO;
@@ -800,10 +799,10 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			struct load_op *insn = (struct load_op *) pc;
 
-			estack_push(stack);
-			memcpy(&estack_ax(stack)->u.d, insn->data,
+			estack_push(stack, top, ax, bx);
+			memcpy(&estack_ax(stack, top)->u.d, insn->data,
 				sizeof(struct literal_double));
-			dbg_printf("load s64 %g\n", estack_ax(stack)->u.d);
+			dbg_printf("load s64 %g\n", estack_ax(stack, top)->u.d);
 			next_pc += sizeof(struct load_op)
 					+ sizeof(struct literal_double);
 			PO;
@@ -818,7 +817,7 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 
 		OP(FILTER_OP_CAST_DOUBLE_TO_S64):
 		{
-			estack_ax(stack)->u.v = (int64_t) estack_ax(stack)->u.d;
+			estack_ax_v = (int64_t) estack_ax(stack, top)->u.d;
 			next_pc += sizeof(struct cast_op);
 			PO;
 		}

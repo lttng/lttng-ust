@@ -37,7 +37,8 @@
 #include "filter-bytecode.h"
 
 /* Filter stack length, in number of entries */
-#define FILTER_STACK_LEN	8
+#define FILTER_STACK_LEN	10	/* includes 2 dummy */
+#define FILTER_STACK_EMPTY	1
 
 #ifndef min_t
 #define min_t(type, a, b)	\
@@ -138,8 +139,8 @@ struct estack_entry {
 
 		struct {
 			const char *str;
-		size_t seq_len;
-		int literal;		/* is string literal ? */
+			size_t seq_len;
+			int literal;		/* is string literal ? */
 		} s;
 	} u;
 };
@@ -149,39 +150,36 @@ struct estack {
 	struct estack_entry e[FILTER_STACK_LEN];
 };
 
-static inline
-void estack_init(struct estack *stack)
-{
-	stack->top = -1;
-}
+#define estack_ax_v	ax
+#define estack_bx_v	bx
 
-static inline
-struct estack_entry *estack_ax(struct estack *stack)
-{
-	assert(stack->top >= 0);
-	return &stack->e[stack->top];
-}
+#define estack_ax(stack, top)					\
+	({							\
+		assert((top) > FILTER_STACK_EMPTY);		\
+		&(stack)->e[top];				\
+	})
 
-static inline
-struct estack_entry *estack_bx(struct estack *stack)
-{
-	assert(stack->top >= 1);
-	return &stack->e[stack->top - 1];
-}
+#define estack_bx(stack, top)					\
+	({							\
+		assert((top) > FILTER_STACK_EMPTY + 1);		\
+		&(stack)->e[(top) - 1];				\
+	})
 
-static inline
-void estack_push(struct estack *stack)
-{
-	assert(stack->top < FILTER_STACK_LEN - 1);
-	++stack->top;
-}
+#define estack_push(stack, top, ax, bx)				\
+	do {							\
+		assert((top) < FILTER_STACK_LEN - 1);		\
+		(stack)->e[(top) - 1].u.v = (bx);		\
+		(bx) = (ax);					\
+		++(top);					\
+	} while (0)
 
-static inline
-void estack_pop(struct estack *stack)
-{
-	assert(stack->top >= 0);
-	stack->top--;
-}
+#define estack_pop(stack, top, ax, bx)				\
+	do {							\
+		assert((top) > FILTER_STACK_EMPTY);		\
+		(ax) = (bx);					\
+		(bx) = (stack)->e[(top) - 2].u.v;		\
+		(top)--;					\
+	} while (0)
 
 const char *print_op(enum filter_op op);
 
