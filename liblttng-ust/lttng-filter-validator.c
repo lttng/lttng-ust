@@ -64,13 +64,31 @@ int lttng_hash_match(struct cds_lfht_node *node, const void *key)
 }
 
 static
-int merge_point_add(struct cds_lfht *ht, unsigned long target_pc,
+int merge_points_compare(const struct vstack *stacka,
+			const struct vstack *stackb)
+{
+	int i, len;
+
+	if (stacka->top != stackb->top)
+		return 1;
+	len = stacka->top + 1;
+	assert(len >= 0);
+	for (i = 0; i < len; i++) {
+		if (stacka->e[i].type != stackb->e[i].type)
+			return 1;
+	}
+	return 0;
+}
+
+static
+int merge_point_add_check(struct cds_lfht *ht, unsigned long target_pc,
 		const struct vstack *stack)
 {
 	struct lfht_mp_node *node;
 	unsigned long hash = lttng_hash_mix((const void *) target_pc,
 				sizeof(target_pc),
 				lttng_hash_seed);
+	struct cds_lfht_node *ret;
 
 	dbg_printf("Filter: adding merge point at offset %lu, hash %lu\n",
 			target_pc, hash);
@@ -79,7 +97,22 @@ int merge_point_add(struct cds_lfht *ht, unsigned long target_pc,
 		return -ENOMEM;
 	node->target_pc = target_pc;
 	memcpy(&node->stack, stack, sizeof(node->stack));
-	cds_lfht_add(ht, hash, &node->node);
+	ret = cds_lfht_add_unique(ht, hash, lttng_hash_match,
+		(const void *) target_pc, &node->node);
+	if (ret != &node->node) {
+		struct lfht_mp_node *ret_mp =
+			caa_container_of(ret, struct lfht_mp_node, node);
+
+		/* Key already present */
+		dbg_printf("Filter: compare merge points for offset %lu, hash %lu\n",
+				target_pc, hash);
+		free(node);
+		if (merge_points_compare(stack, &ret_mp->stack)) {
+			ERR("Merge points differ for offset %lu\n",
+				target_pc);
+			return -EINVAL;
+		}
+	}
 	return 0;
 }
 
@@ -689,6 +722,7 @@ int validate_instruction_all_contexts(struct bytecode_runtime *bytecode,
 	unsigned long target_pc = pc - start_pc;
 	struct cds_lfht_iter iter;
 	struct cds_lfht_node *node;
+	struct lfht_mp_node *mp_node;
 	unsigned long hash;
 
 	/* Validate the context resulting from the previous instruction */
@@ -699,19 +733,21 @@ int validate_instruction_all_contexts(struct bytecode_runtime *bytecode,
 	/* Validate merge points */
 	hash = lttng_hash_mix((const void *) target_pc, sizeof(target_pc),
 			lttng_hash_seed);
-	cds_lfht_for_each_duplicate(merge_points, hash, lttng_hash_match,
-			(const void *) target_pc, &iter, node) {
-		struct lfht_mp_node *mp_node =
-			caa_container_of(node, struct lfht_mp_node, node);
+	cds_lfht_lookup(merge_points, hash, lttng_hash_match,
+			(const void *) target_pc, &iter);
+	node = cds_lfht_iter_get_node(&iter);
+	if (node) {
+		mp_node = caa_container_of(node, struct lfht_mp_node, node);
 		
 		dbg_printf("Filter: validate merge point at offset %lu\n",
 				target_pc);
-		ret = validate_instruction_context(bytecode, &mp_node->stack,
-				start_pc, pc);
-		if (ret)
-			return ret;
+		if (merge_points_compare(stack, &mp_node->stack)) {
+			ERR("Merge points differ for offset %lu\n",
+				target_pc);
+			return -EINVAL;
+		}
 		/* Once validated, we can remove the merge point */
-		dbg_printf("Filter: remove one merge point at offset %lu\n",
+		dbg_printf("Filter: remove merge point at offset %lu\n",
 				target_pc);
 		ret = cds_lfht_del(merge_points, node);
 		assert(!ret);
@@ -747,6 +783,11 @@ int exec_insn(struct bytecode_runtime *bytecode,
 
 	case FILTER_OP_RETURN:
 	{
+		if (!vstack_ax(stack)) {
+			ERR("Empty stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
 		ret = 0;
 		goto end;
 	}
@@ -851,13 +892,18 @@ int exec_insn(struct bytecode_runtime *bytecode,
 		int merge_ret;
 
 		/* Add merge point to table */
-		merge_ret = merge_point_add(merge_points, insn->skip_offset,
-					stack);
+		merge_ret = merge_point_add_check(merge_points,
+					insn->skip_offset, stack);
 		if (merge_ret) {
 			ret = merge_ret;
 			goto end;
 		}
 		/* Continue to next instruction */
+		/* Pop 1 when jump not taken */
+		if (vstack_pop(stack)) {
+			ret = -EINVAL;
+			goto end;
+		}
 		next_pc += sizeof(struct logical_op);
 		break;
 	}

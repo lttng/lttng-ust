@@ -572,6 +572,8 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 					(unsigned int) insn->skip_offset);
 				next_pc = start_pc + insn->skip_offset;
 			} else {
+				/* Pop 1 when jump not taken */
+				estack_pop(stack);
 				next_pc += sizeof(struct logical_op);
 			}
 			PO;
@@ -588,6 +590,8 @@ int lttng_filter_interpret_bytecode(void *filter_data,
 					(unsigned int) insn->skip_offset);
 				next_pc = start_pc + insn->skip_offset;
 			} else {
+				/* Pop 1 when jump not taken */
+				estack_pop(stack);
 				next_pc += sizeof(struct logical_op);
 			}
 			PO;
