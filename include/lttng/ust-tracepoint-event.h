@@ -16,6 +16,7 @@
 #include <urcu/compiler.h>
 #include <lttng/ust-events.h>
 #include <lttng/ringbuffer-config.h>
+#include <lttng/ust-compiler.h>
 #include <string.h>
 
 /*
@@ -243,8 +244,11 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));
 #define TP_FIELDS(...) __VA_ARGS__
 
 #undef TRACEPOINT_EVENT_CLASS
-#define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)      \
-static inline size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, _TP_ARGS_DATA_PROTO(_args)) \
+#define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
+static inline lttng_ust_notrace						      \
+size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, _TP_ARGS_DATA_PROTO(_args)); \
+static inline								      \
+size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, _TP_ARGS_DATA_PROTO(_args)) \
 {									      \
 	size_t __event_len = 0;						      \
 	unsigned int __dynamic_len_idx = 0;				      \
@@ -360,6 +364,8 @@ void __event_prepare_filter_stack__##_provider##___##_name(char *__stack_data,\
 
 #undef TRACEPOINT_EVENT_CLASS
 #define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
+static inline lttng_ust_notrace						      \
+size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args));     \
 static inline								      \
 size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 {									      \
@@ -438,7 +444,10 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
  */
 #undef TRACEPOINT_EVENT_CLASS
 #define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
-static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))\
+static lttng_ust_notrace						      \
+void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));      \
+static									      \
+void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 {									      \
 	struct ltt_event *__event = __tp_data;				      \
 	struct ltt_channel *__chan = __event->chan;			      \
@@ -593,7 +602,9 @@ static struct lttng_probe_desc _TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PR
 
 /* Reset all macros within TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
-static void __attribute__((constructor))
+static void lttng_ust_notrace __attribute__((constructor))
+_TP_COMBINE_TOKENS(__lttng_events_init__, TRACEPOINT_PROVIDER)(void);
+static void
 _TP_COMBINE_TOKENS(__lttng_events_init__, TRACEPOINT_PROVIDER)(void)
 {
 	int ret;
@@ -602,7 +613,9 @@ _TP_COMBINE_TOKENS(__lttng_events_init__, TRACEPOINT_PROVIDER)(void)
 	assert(!ret);
 }
 
-static void __attribute__((destructor))
+static void lttng_ust_notrace __attribute__((destructor))
+_TP_COMBINE_TOKENS(__lttng_events_exit__, TRACEPOINT_PROVIDER)(void);
+static void
 _TP_COMBINE_TOKENS(__lttng_events_exit__, TRACEPOINT_PROVIDER)(void)
 {
 	ltt_probe_unregister(&_TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PROVIDER));

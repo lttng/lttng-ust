@@ -27,6 +27,7 @@
 #include <urcu/arch.h>
 #include <string.h>
 #include "lttng/align.h"
+#include <lttng/ust-compiler.h>
 
 struct lttng_ust_lib_ring_buffer;
 struct channel;
@@ -228,6 +229,11 @@ struct lttng_ust_lib_ring_buffer_ctx {
  * @largest_align: largest alignment within data payload types
  * @cpu: processor id
  */
+static inline lttng_ust_notrace
+void lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
+			      struct channel *chan, void *priv,
+			      size_t data_size, int largest_align,
+			      int cpu, struct lttng_ust_shm_handle *handle);
 static inline
 void lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			      struct channel *chan, void *priv,
@@ -275,6 +281,8 @@ void lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
  * Calculate the offset needed to align the type.
  * size_of_type must be non-zero.
  */
+static inline lttng_ust_notrace
+unsigned int lib_ring_buffer_align(size_t align_drift, size_t size_of_type);
 static inline
 unsigned int lib_ring_buffer_align(size_t align_drift, size_t size_of_type)
 {
@@ -289,6 +297,8 @@ unsigned int lib_ring_buffer_align(size_t align_drift, size_t size_of_type)
  * Calculate the offset needed to align the type.
  * size_of_type must be non-zero.
  */
+static inline lttng_ust_notrace
+unsigned int lib_ring_buffer_align(size_t align_drift, size_t size_of_type);
 static inline
 unsigned int lib_ring_buffer_align(size_t align_drift, size_t size_of_type)
 {
@@ -301,6 +311,9 @@ unsigned int lib_ring_buffer_align(size_t align_drift, size_t size_of_type)
  * lib_ring_buffer_align_ctx - Align context offset on "alignment"
  * @ctx: ring buffer context.
  */
+static inline lttng_ust_notrace
+void lib_ring_buffer_align_ctx(struct lttng_ust_lib_ring_buffer_ctx *ctx,
+			   size_t alignment);
 static inline
 void lib_ring_buffer_align_ctx(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			   size_t alignment)
@@ -313,6 +326,10 @@ void lib_ring_buffer_align_ctx(struct lttng_ust_lib_ring_buffer_ctx *ctx,
  * lib_ring_buffer_check_config() returns 0 on success.
  * Used internally to check for valid configurations at channel creation.
  */
+static inline lttng_ust_notrace
+int lib_ring_buffer_check_config(const struct lttng_ust_lib_ring_buffer_config *config,
+			     unsigned int switch_timer_interval,
+			     unsigned int read_timer_interval);
 static inline
 int lib_ring_buffer_check_config(const struct lttng_ust_lib_ring_buffer_config *config,
 			     unsigned int switch_timer_interval,

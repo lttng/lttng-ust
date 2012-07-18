@@ -22,6 +22,7 @@
 #include <string.h>	/* for memset */
 #include <assert.h>
 #include <lttng/ust-config.h>	/* for sdt */
+#include <lttng/ust-compiler.h>
 
 #ifdef LTTNG_UST_HAVE_SDT_INTEGRATION
 #define SDT_USE_VARIADIC
@@ -137,7 +138,10 @@ extern "C" {
 
 #define _DECLARE_TRACEPOINT(_provider, _name, ...)			 		\
 extern struct tracepoint __tracepoint_##_provider##___##_name;				\
-static inline void __tracepoint_cb_##_provider##___##_name(_TP_ARGS_PROTO(__VA_ARGS__))	\
+static inline lttng_ust_notrace								\
+void __tracepoint_cb_##_provider##___##_name(_TP_ARGS_PROTO(__VA_ARGS__));		\
+static inline										\
+void __tracepoint_cb_##_provider##___##_name(_TP_ARGS_PROTO(__VA_ARGS__))		\
 {											\
 	struct tracepoint_probe *__tp_probe;						\
 											\
@@ -157,14 +161,22 @@ static inline void __tracepoint_cb_##_provider##___##_name(_TP_ARGS_PROTO(__VA_A
 end:											\
 	tp_rcu_read_unlock_bp();							\
 }											\
-static inline void __tracepoint_register_##_provider##___##_name(char *name,		\
-		void (*func)(void), void *data)							\
+static inline lttng_ust_notrace								\
+void __tracepoint_register_##_provider##___##_name(char *name,				\
+		void (*func)(void), void *data);					\
+static inline										\
+void __tracepoint_register_##_provider##___##_name(char *name,				\
+		void (*func)(void), void *data)						\
 {											\
 	__tracepoint_probe_register(name, func, data,					\
 		__tracepoint_##_provider##___##_name.signature);			\
 }											\
-static inline void __tracepoint_unregister_##_provider##___##_name(char *name,		\
-		void (*func)(void), void *data)							\
+static inline lttng_ust_notrace								\
+void __tracepoint_unregister_##_provider##___##_name(char *name,			\
+		void (*func)(void), void *data);					\
+static inline										\
+void __tracepoint_unregister_##_provider##___##_name(char *name,			\
+		void (*func)(void), void *data)						\
 {											\
 	__tracepoint_probe_unregister(name, func, data);				\
 }
@@ -249,7 +261,10 @@ int __tracepoint_registered
 struct tracepoint_dlopen tracepoint_dlopen
 	__attribute__((weak, visibility("hidden")));
 
-static void __attribute__((constructor)) __tracepoints__init(void)
+static void lttng_ust_notrace __attribute__((constructor))
+__tracepoints__init(void);
+static void
+__tracepoints__init(void)
 {
 	if (__tracepoint_registered++)
 		return;
@@ -285,7 +300,10 @@ static void __attribute__((constructor)) __tracepoints__init(void)
 				__start___tracepoints_ptrs);
 }
 
-static void __attribute__((destructor)) __tracepoints__destroy(void)
+static void lttng_ust_notrace __attribute__((destructor))
+__tracepoints__destroy(void);
+static void
+__tracepoints__destroy(void)
 {
 	int ret;
 
