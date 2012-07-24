@@ -291,7 +291,7 @@ void lttng_filter_event_link_bytecode(struct ltt_event *event,
 
 	ret = _lttng_filter_event_link_bytecode(event, filter_bytecode);
 	if (ret) {
-		fprintf(stderr, "[lttng filter] error linking event bytecode\n");
+		dbg_printf("[lttng filter] warning: cannot link event bytecode\n");
 	}
 }
 
