@@ -32,6 +32,8 @@
  */
 
 #include <urcu/compiler.h>
+#include <signal.h>
+#include <pthread.h>
 
 #include <lttng/ringbuffer-config.h>
 #include "backend_types.h"
@@ -397,7 +399,9 @@ void lib_ring_buffer_check_deliver(const struct lttng_ust_lib_ring_buffer_config
 				int wakeup_fd = shm_get_wakeup_fd(handle, &buf->self._ref);
 
 				if (wakeup_fd >= 0) {
-					int ret;
+					sigset_t sigpipe_set, pending_set, old_set;
+					int ret, sigpipe_was_pending = 0;
+
 					/*
 					 * Wake-up the other end by
 					 * writing a null byte in the
@@ -416,13 +420,55 @@ void lib_ring_buffer_check_deliver(const struct lttng_ust_lib_ring_buffer_config
 					 * 2) check if there is data in
 					 *    the buffer.
 					 * 3) wait on the pipe (poll).
+					 *
+					 * Discard the SIGPIPE from write(), not
+					 * disturbing any SIGPIPE that might be
+					 * already pending. If a bogus SIGPIPE
+					 * is sent to the entire process
+					 * concurrently by a malicious user, it
+					 * may be simply discarded.
 					 */
+					ret = sigemptyset(&pending_set);
+					assert(!ret);
+					/*
+					 * sigpending returns the mask
+					 * of signals that are _both_
+					 * blocked for the thread _and_
+					 * pending for either the thread
+					 * or the entire process.
+					 */
+					ret = sigpending(&pending_set);
+					assert(!ret);
+					sigpipe_was_pending = sigismember(&pending_set, SIGPIPE);
+					/*
+					 * If sigpipe was pending, it
+					 * means it was already blocked,
+					 * so no need to block it.
+					 */
+					if (!sigpipe_was_pending) {
+						ret = sigemptyset(&sigpipe_set);
+						assert(!ret);
+						ret = sigaddset(&sigpipe_set, SIGPIPE);
+						assert(!ret);
+						ret = pthread_sigmask(SIG_BLOCK, &sigpipe_set, &old_set);
+						assert(!ret);
+					}
 					do {
 						ret = write(wakeup_fd, "", 1);
 					} while (ret == -1L && errno == EINTR);
+					if (ret == -1L && errno == EPIPE && !sigpipe_was_pending) {
+						struct timespec timeout = { 0, 0 };
+						do {
+							ret = sigtimedwait(&sigpipe_set, NULL,
+								&timeout);
+						} while (ret == -1L && errno == EINTR);
+					}
+					if (!sigpipe_was_pending) {
+						ret = pthread_sigmask(SIG_SETMASK, &old_set, NULL);
+						assert(!ret);
+					}
 				}
 			}
-
 		}
 	}
 }
