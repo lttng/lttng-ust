@@ -275,36 +275,50 @@ size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, _TP_ARGS
 
 #undef _ctf_integer_ext
 #define _ctf_integer_ext(_type, _item, _src, _byte_order, _base, _written)     \
-	if (lttng_is_signed_type(_type))				       \
-		*(int64_t *) __stack_data = (int64_t) (_type) (_src);	       \
-	else								       \
-		*(uint64_t *) __stack_data = (uint64_t) (_type) (_src);	       \
+	if (lttng_is_signed_type(_type)) {				       \
+		int64_t __ctf_tmp_int64 = (int64_t) (_type) (_src);	       \
+		memcpy(__stack_data, &__ctf_tmp_int64, sizeof(int64_t));       \
+	} else {							       \
+		uint64_t __ctf_tmp_uint64 = (uint64_t) (_type) (_src);	       \
+		memcpy(__stack_data, &__ctf_tmp_uint64, sizeof(uint64_t));     \
+	}								       \
 	__stack_data += sizeof(int64_t);
 
 #undef _ctf_float
 #define _ctf_float(_type, _item, _src, _written)			       \
-	*(double *) __stack_data = (double) (_type) (_src);		       \
-	__stack_data += sizeof(double);
+	{								       \
+		double __ctf_tmp_double = (double) (_type) (_src);	       \
+		memcpy(__stack_data, &__ctf_tmp_double, sizeof(double));       \
+		__stack_data += sizeof(double);				       \
+	}
 
 #undef _ctf_array_encoded
 #define _ctf_array_encoded(_type, _item, _src, _length, _encoding, _written)   \
-	*(unsigned long *) __stack_data = (unsigned long) (_length);	       \
-	__stack_data += sizeof(unsigned long);				       \
-	*(const void **) __stack_data = (_src);				       \
-	__stack_data += sizeof(void *);
+	{								       \
+		unsigned long __ctf_tmp_ulong = (unsigned long) (_length);     \
+		memcpy(__stack_data, &__ctf_tmp_ulong, sizeof(unsigned long)); \
+		__stack_data += sizeof(unsigned long);			       \
+		memcpy(__stack_data, (_src), sizeof(void **));		       \
+		__stack_data += sizeof(void **);			       \
+	}
 
 #undef _ctf_sequence_encoded
 #define _ctf_sequence_encoded(_type, _item, _src, _length_type,		       \
 			_src_length, _encoding, _written)		       \
-	*(unsigned long *) __stack_data = (unsigned long) (_src_length);       \
-	__stack_data += sizeof(unsigned long);				       \
-	*(const void **) __stack_data = (_src);				       \
-	__stack_data += sizeof(void *);
+	{								       \
+		unsigned long __ctf_tmp_ulong = (unsigned long) (_src_length); \
+		memcpy(__stack_data, &__ctf_tmp_ulong, sizeof(unsigned long)); \
+		__stack_data += sizeof(unsigned long);			       \
+		memcpy(__stack_data, (_src), sizeof(void **));		       \
+		__stack_data += sizeof(void **);			       \
+	}
 
 #undef _ctf_string
 #define _ctf_string(_item, _src, _written)				       \
-	*(const void **) __stack_data = (_src);				       \
-	__stack_data += sizeof(void *);
+	{								       \
+		memcpy(__stack_data, (_src), sizeof(void **));		       \
+		__stack_data += sizeof(void *);				       \
+	}
 
 #undef TP_ARGS
 #define TP_ARGS(...) __VA_ARGS__
