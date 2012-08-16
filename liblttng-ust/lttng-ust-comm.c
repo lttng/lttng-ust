@@ -855,6 +855,7 @@ void __attribute__((constructor)) lttng_ust_init(void)
 {
 	struct timespec constructor_timeout;
 	sigset_t sig_all_blocked, orig_parent_mask;
+	pthread_attr_t thread_attr;
 	int timeout_mode;
 	int ret;
 
@@ -904,19 +905,32 @@ void __attribute__((constructor)) lttng_ust_init(void)
 		ERR("pthread_sigmask: %s", strerror(ret));
 	}
 
-	ret = pthread_create(&global_apps.ust_listener, NULL,
+	ret = pthread_attr_init(&thread_attr);
+	if (ret) {
+		ERR("pthread_attr_init: %s", strerror(ret));
+	}
+	ret = pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);
+	if (ret) {
+		ERR("pthread_attr_setdetachstate: %s", strerror(ret));
+	}
+
+	ret = pthread_create(&global_apps.ust_listener, &thread_attr,
 			ust_listener_thread, &global_apps);
 	if (ret) {
 		ERR("pthread_create global: %s", strerror(ret));
 	}
 	if (local_apps.allowed) {
-		ret = pthread_create(&local_apps.ust_listener, NULL,
+		ret = pthread_create(&local_apps.ust_listener, &thread_attr,
 				ust_listener_thread, &local_apps);
 		if (ret) {
 			ERR("pthread_create local: %s", strerror(ret));
 		}
 	} else {
 		handle_register_done(&local_apps);
+	}
+	ret = pthread_attr_destroy(&thread_attr);
+	if (ret) {
+		ERR("pthread_attr_destroy: %s", strerror(ret));
 	}
 
 	/* Restore original signal mask in parent */
