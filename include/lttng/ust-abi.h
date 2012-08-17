@@ -23,8 +23,14 @@
 
 #define LTTNG_UST_SYM_NAME_LEN	256
 
+/* Version for comm protocol between sessiond and ust */
 #define LTTNG_UST_COMM_VERSION_MAJOR		2
 #define LTTNG_UST_COMM_VERSION_MINOR		0
+
+/* Version for ABI between liblttng-ust, sessiond, consumerd */
+#define LTTNG_UST_INTERNAL_MAJOR_VERSION	3
+#define LTTNG_UST_INTERNAL_MINOR_VERSION	0
+#define LTTNG_UST_INTERNAL_PATCHLEVEL_VERSION	0
 
 enum lttng_ust_instrumentation {
 	LTTNG_UST_TRACEPOINT		= 0,
