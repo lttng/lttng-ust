@@ -184,7 +184,7 @@ int apply_field_reloc(struct ltt_event *event,
 		return -EINVAL;
 
 	/* Check if field offset is too large for 16-bit offset */
-	if (field_offset > FILTER_BYTECODE_MAX_LEN)
+	if (field_offset > FILTER_BYTECODE_MAX_LEN - 1)
 		return -EINVAL;
 
 	/* set type */
