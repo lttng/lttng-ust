@@ -1,3 +1,12 @@
+2012-08-27 lttng-ust 2.0.5
+	* Fix: threads should be created in DETACHED state
+	* Fix UST SIGPIPE handling
+	* Fix: Libtool fails to find dependent libraries when cross-compiling lttng-ust
+	* Fix: remove unused texinfo dep from configure.ac
+	* Fix C99 strict compatibility: don't use void * for function pointers
+	* Fix c99 compatibility: tp_rcu_dereference_bp() should not use braced-groups within expressions
+	* Fix c99 compatibility: use __typeof__ instead of typeof in public headers
+
 2012-06-14 lttng-ust 2.0.4
 	* Fix: perform TLS fixup of nest count outside of UST mutex
 	* Fix: liblttng-ust-fork deadlock
