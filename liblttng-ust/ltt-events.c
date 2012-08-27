@@ -1115,6 +1115,7 @@ int _ltt_session_metadata_statedump(struct ltt_session *session)
 	struct ltt_event *event;
 	int ret = 0;
 	char procname[LTTNG_UST_PROCNAME_LEN] = "";
+	char hostname[HOST_NAME_MAX];
 
 	if (!CMM_ACCESS_ONCE(session->active))
 		return 0;
@@ -1171,10 +1172,15 @@ int _ltt_session_metadata_statedump(struct ltt_session *session)
 		goto end;
 
 	/* ignore error, just use empty string if error. */
+	hostname[0] = '\0';
+	ret = gethostname(hostname, sizeof(hostname));
+	if (ret && errno == ENAMETOOLONG)
+		hostname[HOST_NAME_MAX - 1] = '\0';
 	lttng_ust_getprocname(procname);
 	procname[LTTNG_UST_PROCNAME_LEN - 1] = '\0';
 	ret = lttng_metadata_printf(session,
 		"env {\n"
+		"	hostname = \"%s\";\n"
 		"	vpid = %d;\n"
 		"	procname = \"%s\";\n"
 		"	domain = \"ust\";\n"
@@ -1183,6 +1189,7 @@ int _ltt_session_metadata_statedump(struct ltt_session *session)
 		"	tracer_minor = %u;\n"
 		"	tracer_patchlevel = %u;\n"
 		"};\n\n",
+		hostname,
 		(int) getpid(),
 		procname,
 		LTTNG_UST_MAJOR_VERSION,
