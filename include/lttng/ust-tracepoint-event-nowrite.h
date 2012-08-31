@@ -18,7 +18,7 @@
 
 #undef ctf_float_nowrite
 #define ctf_float_nowrite(_type, _item, _src)			\
-	_ctf_float_nowrite(_type, _item, _src, 0)
+	_ctf_float(_type, _item, _src, 0)
 
 #undef ctf_array_nowrite
 #define ctf_array_nowrite(_type, _item, _src, _length)		\
