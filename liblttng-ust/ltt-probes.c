@@ -296,6 +296,7 @@ int ltt_probes_get_field_list(struct lttng_ust_field_list *list)
 				} else {
 					list_entry->field.loglevel = *(*event_desc->loglevel);
 				}
+				list_entry->field.written = event_field->written;
 			}
 		}
 	}

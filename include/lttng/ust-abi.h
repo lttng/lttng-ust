@@ -99,12 +99,13 @@ enum lttng_ust_field_type {
 	LTTNG_UST_FIELD_STRING			= 4,
 };
 
-#define LTTNG_UST_FIELD_ITER_PADDING		LTTNG_UST_SYM_NAME_LEN + 32
+#define LTTNG_UST_FIELD_ITER_PADDING		LTTNG_UST_SYM_NAME_LEN + 28
 struct lttng_ust_field_iter {
 	char event_name[LTTNG_UST_SYM_NAME_LEN];
 	char field_name[LTTNG_UST_SYM_NAME_LEN];
 	enum lttng_ust_field_type type;
 	int loglevel;				/* event loglevel */
+	int written;
 	char padding[LTTNG_UST_FIELD_ITER_PADDING];
 };
 
