@@ -293,6 +293,14 @@ int handle_message(struct sock_info *sock_info,
 			ret = -EINVAL;
 			goto error;
 		}
+
+		if (lum->u.filter.reloc_offset > lum->u.filter.data_size - 1) {
+			ERR("Filter reloc offset %u is not within data\n",
+				lum->u.filter.reloc_offset);
+			ret = -EINVAL;
+			goto error;
+		}
+
 		bytecode = zmalloc(sizeof(*bytecode) + lum->u.filter.data_size);
 		if (!bytecode) {
 			ret = -ENOMEM;
