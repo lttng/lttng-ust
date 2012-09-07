@@ -34,21 +34,21 @@
 
 #undef _ctf_integer_ext
 #define _ctf_integer_ext(_type, _item, _src, _byte_order, _base, \
-			_written)
+			_nowrite)
 
 #undef _ctf_float
-#define _ctf_float(_type, _item, _src, _written)
+#define _ctf_float(_type, _item, _src, _nowrite)
 
 #undef _ctf_array_encoded
 #define _ctf_array_encoded(_type, _item, _src, _length, _encoding, \
-			_written)
+			_nowrite)
 
 #undef _ctf_sequence_encoded
 #define _ctf_sequence_encoded(_type, _item, _src, _length_type, \
-			_src_length, _encoding, _written)
+			_src_length, _encoding, _nowrite)
 
 #undef _ctf_string
-#define _ctf_string(_item, _src, _written)
+#define _ctf_string(_item, _src, _nowrite)
 
 /* "write" */
 #undef ctf_integer

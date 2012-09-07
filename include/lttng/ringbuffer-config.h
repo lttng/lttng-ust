@@ -188,6 +188,10 @@ struct lttng_ust_lib_ring_buffer_config {
  * Context passed to lib_ring_buffer_reserve(), lib_ring_buffer_commit(),
  * lib_ring_buffer_try_discard_reserve(), lib_ring_buffer_align_ctx() and
  * lib_ring_buffer_write().
+ *
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
  */
 #define LTTNG_UST_RING_BUFFER_CTX_PADDING	24
 struct lttng_ust_lib_ring_buffer_ctx {

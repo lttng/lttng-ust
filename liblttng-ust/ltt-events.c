@@ -726,7 +726,7 @@ int _ltt_field_statedump(struct ltt_session *session,
 {
 	int ret = 0;
 
-	if (!field->written)
+	if (field->nowrite)
 		return 0;
 
 	switch (field->type.atype) {

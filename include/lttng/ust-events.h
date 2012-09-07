@@ -179,13 +179,19 @@ struct lttng_enum {
 	char padding[LTTNG_UST_ENUM_TYPE_PADDING];
 };
 
-/* Event field description */
+/*
+ * Event field description
+ *
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
+ */
 
 #define LTTNG_UST_EVENT_FIELD_PADDING	28
 struct lttng_event_field {
 	const char *name;
 	struct lttng_type type;
-	unsigned int written;	/* written into trace */
+	unsigned int nowrite;	/* do not write into trace */
 	char padding[LTTNG_UST_EVENT_FIELD_PADDING];
 };
 
@@ -291,14 +297,18 @@ struct lttng_ust_filter_bytecode;
 /*
  * ltt_event structure is referred to by the tracing fast path. It must be
  * kept small.
+ *
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
  */
 struct ltt_event {
+	/* LTTng-UST 2.0 starts here */
 	unsigned int id;
 	struct ltt_channel *chan;
 	int enabled;
 	const struct lttng_event_desc *desc;
 	int (*filter)(void *filter_data, const char *filter_stack_data);
-	void *filter_data;
 	struct lttng_ctx *ctx;
 	enum lttng_ust_instrumentation instrumentation;
 	union {
@@ -306,13 +316,20 @@ struct ltt_event {
 	struct cds_list_head list;		/* Event list */
 	struct cds_list_head wildcard_list;	/* Event list for wildcard */
 	struct ust_pending_probe *pending_probe;
-	struct lttng_ust_filter_bytecode *filter_bytecode;
 	unsigned int metadata_dumped:1;
+	/* LTTng-UST 2.1 starts here */
+	struct lttng_ust_filter_bytecode *filter_bytecode;
+	void *filter_data;
 };
 
 struct channel;
 struct lttng_ust_shm_handle;
 
+/*
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
+ */
 struct ltt_channel_ops {
 	struct ltt_channel *(*channel_create)(const char *name,
 				void *buf_addr,
@@ -348,6 +365,11 @@ struct ltt_channel_ops {
 	int (*flush_buffer)(struct channel *chan, struct lttng_ust_shm_handle *handle);
 };
 
+/*
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
+ */
 struct ltt_channel {
 	/*
 	 * The pointers located in this private data are NOT safe to be
@@ -375,6 +397,11 @@ struct ltt_channel {
 	unsigned char uuid[LTTNG_UST_UUID_LEN]; /* Trace session unique ID */
 };
 
+/*
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
+ */
 struct ltt_session {
 	int active;			/* Is trace session active ? */
 	int been_active;		/* Has trace session been active ? */
