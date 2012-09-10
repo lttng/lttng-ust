@@ -29,6 +29,7 @@ liblttng_ust_runtime_la_SOURCES = \
 	ltt-context.c \
 	ltt-events.c \
 	lttng-filter.c \
+	lttng-filter.h \
 	lttng-filter-validator.c \
 	lttng-filter-specialize.c \
 	lttng-filter-interpreter.c \
