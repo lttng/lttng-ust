@@ -3,7 +3,8 @@ if BUILD_JNI_INTERFACE
 AM_CPPFLAGS = -I$(top_srcdir)/include
 
 lib_LTLIBRARIES = liblttng-ust-java.la
-liblttng_ust_java_la_SOURCES = LTTngUst.c org_lttng_ust_LTTngUst.h lttng_ust_java.h
+liblttng_ust_java_la_SOURCES = LTTngUst.c lttng_ust_java.h
+nodist_liblttng_ust_java_la_SOURCES = org_lttng_ust_LTTngUst.h
 dist_noinst_DATA = LTTngUst.java
 liblttng_ust_java_la_LIBADD = -lc -L$(top_builddir)/liblttng-ust/.libs -llttng-ust
 
@@ -13,6 +14,8 @@ clean-local:
 	rm org_lttng_ust_LTTngUst.h
 	rm liblttng-ust-java.jar
 	rm -rf org/
+
+LTTngUst.c: org_lttng_ust_LTTngUst.h
 
 LTTngUst.class: LTTngUst.java
 	javac -d "$(builddir)" "$(srcdir)/LTTngUst.java"
