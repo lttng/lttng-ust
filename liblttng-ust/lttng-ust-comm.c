@@ -535,9 +535,9 @@ int get_wait_shm(struct sock_info *sock_info, size_t mmap_size)
 			ret = ftruncate(wait_shm_fd, mmap_size);
 			if (ret) {
 				PERROR("ftruncate");
-				exit(EXIT_FAILURE);
+				_exit(EXIT_FAILURE);
 			}
-			exit(EXIT_SUCCESS);
+			_exit(EXIT_SUCCESS);
 		}
 		/*
 		 * For local shm, we need to have rw access to accept
