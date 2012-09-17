@@ -244,6 +244,28 @@ int ltt_probes_get_field_list(struct lttng_ust_field_list *list)
 				probe_desc->event_desc[i];
 			int j;
 
+			if (event_desc->nr_fields == 0) {
+				/* Events without fields. */
+				struct tp_field_list_entry *list_entry;
+
+				list_entry = zmalloc(sizeof(*list_entry));
+				if (!list_entry)
+					goto err_nomem;
+				cds_list_add(&list_entry->head, &list->head);
+				strncpy(list_entry->field.event_name,
+					event_desc->name,
+					LTTNG_UST_SYM_NAME_LEN);
+				list_entry->field.event_name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+				list_entry->field.field_name[0] = '\0';
+				list_entry->field.type = LTTNG_UST_FIELD_OTHER;
+				if (!event_desc->loglevel) {
+					list_entry->field.loglevel = TRACE_DEFAULT;
+				} else {
+					list_entry->field.loglevel = *(*event_desc->loglevel);
+				}
+				list_entry->field.nowrite = 1;
+			}
+
 			for (j = 0; j < event_desc->nr_fields; j++) {
 				const struct lttng_event_field *event_field =
 					&event_desc->fields[j];
