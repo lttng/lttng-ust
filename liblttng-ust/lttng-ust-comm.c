@@ -630,13 +630,13 @@ int get_wait_shm(struct sock_info *sock_info, size_t mmap_size)
 		 */
 		if (!sock_info->global && errno != EACCES) {
 			ERR("Error opening shm %s", sock_info->wait_shm_path);
-			exit(EXIT_FAILURE);
+			_exit(EXIT_FAILURE);
 		}
 		/*
 		 * The shm exists, but we cannot open it RW. Report
 		 * success.
 		 */
-		exit(EXIT_SUCCESS);
+		_exit(EXIT_SUCCESS);
 	} else {
 		return -1;
 	}
