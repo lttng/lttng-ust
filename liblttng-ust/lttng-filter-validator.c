@@ -190,7 +190,7 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 	{
 		if (unlikely(pc + sizeof(struct return_op)
 				> start_pc + bytecode->len)) {
-			ret = -EINVAL;
+			ret = -ERANGE;
 		}
 		break;
 	}
@@ -252,7 +252,7 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 	{
 		if (unlikely(pc + sizeof(struct binary_op)
 				> start_pc + bytecode->len)) {
-			ret = -EINVAL;
+			ret = -ERANGE;
 		}
 		break;
 	}
@@ -270,7 +270,7 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 	{
 		if (unlikely(pc + sizeof(struct unary_op)
 				> start_pc + bytecode->len)) {
-			ret = -EINVAL;
+			ret = -ERANGE;
 		}
 		break;
 	}
@@ -281,7 +281,7 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 	{
 		if (unlikely(pc + sizeof(struct logical_op)
 				> start_pc + bytecode->len)) {
-			ret = -EINVAL;
+			ret = -ERANGE;
 		}
 		break;
 	}
@@ -300,7 +300,7 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 	{
 		if (unlikely(pc + sizeof(struct load_op) + sizeof(struct field_ref)
 				> start_pc + bytecode->len)) {
-			ret = -EINVAL;
+			ret = -ERANGE;
 		}
 		break;
 	}
@@ -312,7 +312,7 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 
 		if (unlikely(pc + sizeof(struct load_op)
 				> start_pc + bytecode->len)) {
-			ret = -EINVAL;
+			ret = -ERANGE;
 			break;
 		}
 
@@ -320,7 +320,7 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 		str_len = strnlen(insn->data, maxlen);
 		if (unlikely(str_len >= maxlen)) {
 			/* Final '\0' not found within range */
-			ret = -EINVAL;
+			ret = -ERANGE;
 		}
 		break;
 	}
@@ -329,7 +329,7 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 	{
 		if (unlikely(pc + sizeof(struct load_op) + sizeof(struct literal_numeric)
 				> start_pc + bytecode->len)) {
-			ret = -EINVAL;
+			ret = -ERANGE;
 		}
 		break;
 	}
@@ -338,7 +338,7 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 	{
 		if (unlikely(pc + sizeof(struct load_op) + sizeof(struct literal_double)
 				> start_pc + bytecode->len)) {
-			ret = -EINVAL;
+			ret = -ERANGE;
 		}
 		break;
 	}
@@ -349,7 +349,7 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 	{
 		if (unlikely(pc + sizeof(struct cast_op)
 				> start_pc + bytecode->len)) {
-			ret = -EINVAL;
+			ret = -ERANGE;
 		}
 		break;
 	}
@@ -1099,9 +1099,10 @@ int lttng_filter_validate_bytecode(struct bytecode_runtime *bytecode)
 	start_pc = &bytecode->data[0];
 	for (pc = next_pc = start_pc; pc - start_pc < bytecode->len;
 			pc = next_pc) {
-		if (bytecode_validate_overflow(bytecode, start_pc, pc) != 0) {
-			ERR("filter bytecode overflow\n");
-			ret = -EINVAL;
+		ret = bytecode_validate_overflow(bytecode, start_pc, pc);
+		if (ret != 0) {
+			if (ret == -ERANGE)
+				ERR("filter bytecode overflow\n");
 			goto end;
 		}
 		dbg_printf("Validating op %s (%u)\n",
