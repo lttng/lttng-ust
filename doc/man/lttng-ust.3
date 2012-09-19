@@ -293,6 +293,17 @@ carefully:
 
 .fi
 
+.SH "USING LTTNG UST WITH DAEMONS"
+
+.nf
+Some extra care is needed when using liblttng-ust with daemon
+applications that call fork(), clone(), or BSD rfork() without a
+following exec() family system call. The library "liblttng-ust-fork.so"
+needs to be preloaded for the application (launch with e.g.
+LD_PRELOAD=liblttng-ust-fork.so appname).
+
+.fi
+
 .SH "ENVIRONMENT VARIABLES"
 
 .PP
