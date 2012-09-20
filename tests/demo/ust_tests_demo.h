@@ -32,6 +32,13 @@ TRACEPOINT_EVENT(ust_tests_demo, starting,
 )
 TRACEPOINT_LOGLEVEL(ust_tests_demo, starting, TRACE_CRIT)
 
+/*
+ * Dummy model information, just for example. TODO: we should check if
+ * EMF model URI have some standard format we should follow.
+ */
+TRACEPOINT_MODEL_EMF_URI(ust_tests_demo, starting,
+	"http://example.com/path_to_model?q=ust_tests_demo:starting")
+
 TRACEPOINT_EVENT(ust_tests_demo, done,
 	TP_ARGS(int, value),
 	TP_FIELDS(
@@ -39,6 +46,9 @@ TRACEPOINT_EVENT(ust_tests_demo, done,
 	)
 )
 TRACEPOINT_LOGLEVEL(ust_tests_demo, done, TRACE_CRIT)
+
+TRACEPOINT_MODEL_EMF_URI(ust_tests_demo, done,
+	"http://example.com/path_to_model?q=ust_tests_demo:done")
 
 #endif /* _TRACEPOINT_UST_TESTS_DEMO_H */
 

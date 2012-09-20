@@ -518,3 +518,9 @@ enum {
 #define TRACEPOINT_LOGLEVEL(provider, name, loglevel)
 
 #endif /* #ifndef TRACEPOINT_LOGLEVEL */
+
+#ifndef TRACEPOINT_MODEL_EMF_URI
+
+#define TRACEPOINT_MODEL_EMF_URI(provider, name, uri)
+
+#endif /* #ifndef TRACEPOINT_MODEL_EMF_URI */

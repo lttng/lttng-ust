@@ -225,7 +225,12 @@ struct lttng_event_desc {
 	unsigned int nr_fields;
 	const int **loglevel;
 	const char *signature;	/* Argument types/names received */
-	char padding[LTTNG_UST_EVENT_DESC_PADDING];
+	union {
+		struct {
+			const char **model_emf_uri;
+		} ext;
+		char padding[LTTNG_UST_EVENT_DESC_PADDING];
+	} u;
 };
 
 #define LTTNG_UST_PROBE_DESC_PADDING	40

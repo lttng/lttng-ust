@@ -548,6 +548,21 @@ static const int *_loglevel___##__provider##___##__name =		   \
 #include TRACEPOINT_INCLUDE
 
 /*
+ * Stage 6.1 of tracepoint event generation.
+ *
+ * Tracepoint UML URI info.
+ */
+
+/* Reset all macros within TRACEPOINT_EVENT */
+#include <lttng/ust-tracepoint-event-reset.h>
+
+#undef TRACEPOINT_MODEL_EMF_URI
+#define TRACEPOINT_MODEL_EMF_URI(__provider, __name, __uri)		   \
+static const char *_model_emf_uri___##__provider##___##__name = __uri;
+
+#include TRACEPOINT_INCLUDE
+
+/*
  * Stage 7.1 of tracepoint event generation.
  *
  * Create events description structures. We use a weakref because
@@ -563,6 +578,9 @@ static const int *_loglevel___##__provider##___##__name =		   \
 static const int *							       \
 	__ref_loglevel___##_provider##___##_name			       \
 	__attribute__((weakref ("_loglevel___" #_provider "___" #_name)));     \
+static const char *							       \
+	__ref_model_emf_uri___##_provider##___##_name			       \
+	__attribute__((weakref ("_model_emf_uri___" #_provider "___" #_name)));\
 const struct lttng_event_desc __event_desc___##_provider##_##_name = {	       \
 	.fields = __event_fields___##_provider##___##_template,		       \
 	.name = #_provider ":" #_name,					       \
@@ -570,6 +588,7 @@ const struct lttng_event_desc __event_desc___##_provider##_##_name = {	       \
 	.nr_fields = _TP_ARRAY_SIZE(__event_fields___##_provider##___##_template), \
 	.loglevel = &__ref_loglevel___##_provider##___##_name,		       \
 	.signature = __tp_event_signature___##_provider##___##_template,       \
+	.u.ext.model_emf_uri = &__ref_model_emf_uri___##_provider##___##_name, \
 };
 
 #include TRACEPOINT_INCLUDE

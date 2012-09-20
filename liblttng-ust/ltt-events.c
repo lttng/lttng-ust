@@ -930,6 +930,14 @@ int _ltt_event_metadata_statedump(struct ltt_session *session,
 	if (ret)
 		goto end;
 
+	if (event->desc->u.ext.model_emf_uri) {
+		ret = lttng_metadata_printf(session,
+			"	model.emf.uri = \"%s\";\n",
+			*(event->desc->u.ext.model_emf_uri));
+		if (ret)
+			goto end;
+	}
+
 	if (event->ctx) {
 		ret = lttng_metadata_printf(session,
 			"	context := struct {\n");
