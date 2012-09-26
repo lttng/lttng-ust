@@ -55,7 +55,8 @@ void lttng_ust_getprocname(char *name)
 	bsd_name = getprogname();
 	if (!bsd_name)
 		name[0] = '\0';
-	memcpy(name, bsd_name, LTTNG_UST_PROCNAME_LEN - 1);
+	else
+		memcpy(name, bsd_name, LTTNG_UST_PROCNAME_LEN - 1);
 }
 
 #endif
