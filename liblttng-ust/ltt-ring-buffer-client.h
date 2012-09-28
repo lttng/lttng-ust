@@ -365,8 +365,10 @@ static void client_buffer_end(struct lttng_ust_lib_ring_buffer *buf, uint64_t ts
 	unsigned long records_lost = 0;
 
 	header->ctx.timestamp_end = tsc;
-	header->ctx.content_size = data_size * CHAR_BIT; 	/* in bits */
-	header->ctx.packet_size = PAGE_ALIGN(data_size) * CHAR_BIT; /* in bits */
+	header->ctx.content_size =
+		(uint64_t) data_size * CHAR_BIT;		/* in bits */
+	header->ctx.packet_size =
+		(uint64_t) PAGE_ALIGN(data_size) * CHAR_BIT;	/* in bits */
 
 	records_lost += lib_ring_buffer_get_records_lost_full(&client_config, buf);
 	records_lost += lib_ring_buffer_get_records_lost_wrap(&client_config, buf);
