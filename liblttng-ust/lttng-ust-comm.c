@@ -294,7 +294,7 @@ int handle_message(struct sock_info *sock_info,
 			goto error;
 		}
 
-		if (lum->u.filter.reloc_offset > lum->u.filter.data_size - 1) {
+		if (lum->u.filter.reloc_offset > lum->u.filter.data_size) {
 			ERR("Filter reloc offset %u is not within data\n",
 				lum->u.filter.reloc_offset);
 			ret = -EINVAL;
