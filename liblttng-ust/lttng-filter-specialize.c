@@ -396,6 +396,12 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 		case FILTER_OP_AND:
 		case FILTER_OP_OR:
 		{
+			/* Continue to next instruction */
+			/* Pop 1 when jump not taken */
+			if (vstack_pop(stack)) {
+				ret = -EINVAL;
+				goto end;
+			}
 			next_pc += sizeof(struct logical_op);
 			break;
 		}
