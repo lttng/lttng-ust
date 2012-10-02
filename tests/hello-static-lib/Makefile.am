@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_srcdir)/include -Wsystem-headers
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include -Wsystem-headers
 
 noinst_LTLIBRARIES = liblttng-ust-provider-ust-test-hello.la
 liblttng_ust_provider_ust_test_hello_la_SOURCES = \

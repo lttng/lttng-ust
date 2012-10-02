@@ -1,6 +1,6 @@
 # -Wsystem-headers is needed to print warnings in the tracepoint
 # description file.
-AM_CPPFLAGS = -I$(top_srcdir)/include -Wsystem-headers
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include -Wsystem-headers
 
 # Set LIBS to nothing so the application does not link on useless
 # libraries.
