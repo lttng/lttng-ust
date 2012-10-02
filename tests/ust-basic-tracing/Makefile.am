@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/libust
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/libust 
 
 noinst_PROGRAMS = ust-basic-tracing
 ust_basic_tracing_SOURCES = ust-basic-tracing.c
