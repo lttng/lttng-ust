@@ -315,7 +315,7 @@ void lttng_filter_wildcard_link_bytecode(struct session_wildcard *wildcard)
 		ret = _lttng_filter_event_link_bytecode(event,
 				wildcard->filter_bytecode);
 		if (ret) {
-			fprintf(stderr, "[lttng filter] error linking wildcard bytecode\n");
+			dbg_printf("[lttng filter] error linking wildcard bytecode");
 		}
 
 	}
