@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2009  Pierre-Marc Fournier
- * Copyright (C) 2011  Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+ * Copyright (C) 2011-2012  Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,6 +38,7 @@ pid_t fork(void)
 		plibc_func = dlsym(RTLD_NEXT, "fork");
 		if (plibc_func == NULL) {
 			fprintf(stderr, "libustfork: unable to find \"fork\" symbol\n");
+			errno = ENOSYS;
 			return -1;
 		}
 	}
@@ -96,6 +97,7 @@ int clone(int (*fn)(void *), void *child_stack, int flags, void *arg, ...)
 		plibc_func = dlsym(RTLD_NEXT, "clone");
 		if (plibc_func == NULL) {
 			fprintf(stderr, "libustfork: unable to find \"clone\" symbol.\n");
+			errno = ENOSYS;
 			return -1;
 		}
 	}
@@ -132,6 +134,7 @@ pid_t rfork(int flags)
 		plibc_func = dlsym(RTLD_NEXT, "rfork");
 		if (plibc_func == NULL) {
 			fprintf(stderr, "libustfork: unable to find \"rfork\" symbol\n");
+			errno = ENOSYS;
 			return -1;
 		}
 	}
