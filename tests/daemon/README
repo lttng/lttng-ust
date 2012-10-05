@@ -1,0 +1,2 @@
+This test checks if tracing works correctly in a child process created by
+a daemon() call.

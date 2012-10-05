@@ -330,6 +330,7 @@ AC_CONFIG_FILES([
 	tests/hello/Makefile
 	tests/hello-static-lib/Makefile
 	tests/hello.cxx/Makefile
+	tests/daemon/Makefile
 	tests/demo/Makefile
 	tests/fork/Makefile
 	tests/ust-basic-tracing/Makefile

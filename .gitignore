@@ -33,6 +33,7 @@ ust-consumerd/ust-consumerd
 
 tests/basic/basic
 tests/basic_long/basic_long
+tests/daemon/daemon
 tests/demo/demo
 tests/dlopen/dlopen
 tests/exit-fast/exit-fast
