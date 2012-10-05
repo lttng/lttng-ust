@@ -55,6 +55,34 @@ pid_t fork(void)
 	return retval;
 }
 
+int daemon(int nochdir, int noclose)
+{
+	static int (*plibc_func)(int nochdir, int noclose) = NULL;
+	sigset_t sigset;
+	int retval;
+
+	if (plibc_func == NULL) {
+		plibc_func = dlsym(RTLD_NEXT, "daemon");
+		if (plibc_func == NULL) {
+			fprintf(stderr, "libustfork: unable to find \"daemon\" symbol\n");
+			errno = ENOSYS;
+			return -1;
+		}
+	}
+
+	ust_before_fork(&sigset);
+	/* Do the real daemon call */
+	retval = plibc_func(nochdir, noclose);
+	if (retval == 0) {
+		/* child, parent called _exit() directly */
+		ust_after_fork_child(&sigset);
+	} else {
+		/* on error in the parent */
+		ust_after_fork_parent(&sigset);
+	}
+	return retval;
+}
+
 #ifdef __linux__
 
 struct user_desc;
