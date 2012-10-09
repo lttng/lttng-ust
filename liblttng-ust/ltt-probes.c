@@ -390,9 +390,10 @@ void ltt_probes_create_wildcard_events(struct wildcard_entry *entry,
 
 				memcpy(&event_param, &wildcard->event_param,
 						sizeof(event_param));
-				memcpy(event_param.name,
+				strncpy(event_param.name,
 					event_desc->name,
 					sizeof(event_param.name));
+				event_param.name[sizeof(event_param.name) - 1] = '\0';
 				/* create event */
 				ret = ltt_event_create(wildcard->chan,
 					&event_param, &ev);
