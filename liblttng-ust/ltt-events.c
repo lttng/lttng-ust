@@ -248,9 +248,10 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 
 				memcpy(&event_param, &sw->event_param,
 						sizeof(event_param));
-				memcpy(event_param.name,
+				strncpy(event_param.name,
 					desc->name,
 					sizeof(event_param.name));
+				event_param.name[sizeof(event_param.name) - 1] = '\0';
 				/* create event */
 				ret = ltt_event_create(sw->chan,
 					&event_param, NULL,
