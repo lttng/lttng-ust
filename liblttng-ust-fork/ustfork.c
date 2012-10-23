@@ -139,7 +139,7 @@ int clone(int (*fn)(void *), void *child_stack, int flags, void *arg, ...)
 				tls, ctid);
 	} else {
 		/* Creating a real process, we need to intervene. */
-		struct ustfork_clone_info info = { fn = fn, arg = arg };
+		struct ustfork_clone_info info = { .fn = fn, .arg = arg };
 
 		ust_before_fork(&info.sigset);
 		retval = plibc_func(clone_fn, child_stack, flags, &info,
