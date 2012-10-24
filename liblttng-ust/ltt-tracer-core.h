@@ -39,5 +39,6 @@ void ust_unlock(void);
 
 void lttng_fixup_event_tls(void);
 void lttng_fixup_vtid_tls(void);
+void lttng_fixup_procname_tls(void);
 
 #endif /* _LTT_TRACER_CORE_H */

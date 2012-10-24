@@ -3,7 +3,7 @@
  *
  * LTTng UST procname context.
  *
- * Copyright (C) 2009-2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+ * Copyright (C) 2009-2012 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -31,8 +31,11 @@
  * each event.
  * Upon exec, procname changes, but exec takes care of throwing away
  * this cached version.
+ * The procname can also change by calling prctl(). The procname should
+ * be set for a thread before the first event is logged within this
+ * thread.
  */
-static char cached_procname[17];
+static __thread char cached_procname[17];
 
 static inline
 char *wrapper_getprocname(void)
@@ -93,4 +96,12 @@ int lttng_add_procname_to_ctx(struct lttng_ctx **ctx)
 	field->get_size = procname_get_size;
 	field->record = procname_record;
 	return 0;
+}
+
+/*
+ * Force a read (imply TLS fixup for dlopen) of TLS variables.
+ */
+void lttng_fixup_procname_tls(void)
+{
+	asm volatile ("" : : "m" (cached_procname[0]));
 }
