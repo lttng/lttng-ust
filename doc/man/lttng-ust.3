@@ -304,6 +304,38 @@ LD_PRELOAD=liblttng-ust-fork.so appname).
 
 .fi
 
+.SH "CONTEXT"
+
+.PP
+Context information can be prepended by the tracer before each, or some,
+events. The following context information is supported by LTTng-UST:
+.PP
+
+.PP
+.IP "vtid"
+Virtual thread ID: thread ID as seen from the point of view of the
+process namespace.
+.PP
+
+.PP
+.IP "vpid"
+Virtual process ID: process ID as seen from the point of view of the
+process namespace.
+.PP
+
+.PP
+.IP "procname"
+Thread name, as set by exec() or prctl(). It is recommended that
+programs set their thread name with prctl() before hitting the first
+tracepoint for that thread.
+.PP
+
+.PP
+.IP "pthread_id"
+Pthread identifier. Can be used on architectures where pthread_t maps
+nicely to an unsigned long type.
+.PP
+
 .SH "ENVIRONMENT VARIABLES"
 
 .PP
