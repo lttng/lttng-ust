@@ -157,14 +157,16 @@ int setup_local_apps(void)
 	 * Disallow per-user tracing for setuid binaries.
 	 */
 	if (uid != geteuid()) {
-		local_apps.allowed = 0;
+		assert(local_apps.allowed == 0);
 		return 0;
-	} else {
-		local_apps.allowed = 1;
 	}
 	home_dir = (const char *) getenv("HOME");
-	if (!home_dir)
+	if (!home_dir) {
+		WARN("HOME environment variable not set. Disabling LTTng-UST per-user tracing.");
+		assert(local_apps.allowed == 0);
 		return -ENOENT;
+	}
+	local_apps.allowed = 1;
 	snprintf(local_apps.sock_path, PATH_MAX,
 		 DEFAULT_HOME_APPS_UNIX_SOCK, home_dir);
 	snprintf(local_apps.wait_shm_path, PATH_MAX,
@@ -973,7 +975,7 @@ void __attribute__((constructor)) lttng_ust_init(void)
 
 	ret = setup_local_apps();
 	if (ret) {
-		ERR("Error setting up to local apps");
+		DBG("local apps setup returned %d", ret);
 	}
 
 	/* A new thread created by pthread_create inherits the signal mask
