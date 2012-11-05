@@ -6,6 +6,10 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include -Wsystem-headers
 # libraries.
 LIBS =
 
+if NO_SHARED
+# Do not build this test if shared libraries support was
+# explicitly disabled.
+else
 # Force the shared flag on the noinst libraries since they are
 # only built static by default
 FORCE_SHARED_LIB_OPTIONS = -module -shared -avoid-version \
@@ -41,3 +45,4 @@ if LTTNG_UST_BUILD_WITH_LIBC_DL
 demo_LDADD = -lc
 endif
 
+endif

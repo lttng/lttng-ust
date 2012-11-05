@@ -64,6 +64,8 @@ AS_IF([test "x$libtool_fixup" = "xyes"],
 		  ])
 	    ])
 
+AM_CONDITIONAL([NO_SHARED], [test "x$enable_shared" = "xno"])
+
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_CXX
