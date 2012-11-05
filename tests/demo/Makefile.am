@@ -6,6 +6,10 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include -Wsystem-headers
 # libraries.
 LIBS =
 
+if NO_SHARED
+# Do not build this test if shared libraries support was
+# explicitly disabled.
+else
 # Force the shared flag on the noinst libraries since they are
 # only built static by default
 FORCE_SHARED_LIB_OPTIONS = -module -shared -avoid-version \
@@ -35,3 +39,4 @@ noinst_PROGRAMS = demo
 demo_SOURCES = demo.c ust_tests_demo.h
 # The demo program only depends on libdl.
 demo_LDFLAGS = -ldl
+endif
