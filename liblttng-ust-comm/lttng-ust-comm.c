@@ -32,77 +32,37 @@
 #include <fcntl.h>
 
 #include <ust-comm.h>
+#include <lttng/ust-error.h>
+
+#define USTCOMM_CODE_OFFSET(code)	\
+	(code == LTTNG_UST_OK ? 0 : (code - LTTNG_UST_ERR + 1))
 
 /*
  * Human readable error message.
  */
 static const char *ustcomm_readable_code[] = {
-	[ USTCOMM_ERR_INDEX(USTCOMM_ERR) ] = "Unknown error",
-	[ USTCOMM_ERR_INDEX(USTCOMM_UND) ] = "Undefined command",
-	[ USTCOMM_ERR_INDEX(USTCOMM_NOT_IMPLEMENTED) ] = "Not implemented",
-	[ USTCOMM_ERR_INDEX(USTCOMM_UNKNOWN_DOMAIN) ] = "Unknown tracing domain",
-	[ USTCOMM_ERR_INDEX(USTCOMM_NO_SESSION) ] = "No session found",
-	[ USTCOMM_ERR_INDEX(USTCOMM_LIST_FAIL) ] = "Unable to list traceable apps",
-	[ USTCOMM_ERR_INDEX(USTCOMM_NO_APPS) ] = "No traceable apps found",
-	[ USTCOMM_ERR_INDEX(USTCOMM_SESS_NOT_FOUND) ] = "Session name not found",
-	[ USTCOMM_ERR_INDEX(USTCOMM_NO_TRACE) ] = "No trace found",
-	[ USTCOMM_ERR_INDEX(USTCOMM_FATAL) ] = "Fatal error of the session daemon",
-	[ USTCOMM_ERR_INDEX(USTCOMM_CREATE_FAIL) ] = "Create trace failed",
-	[ USTCOMM_ERR_INDEX(USTCOMM_START_FAIL) ] = "Start trace failed",
-	[ USTCOMM_ERR_INDEX(USTCOMM_STOP_FAIL) ] = "Stop trace failed",
-	[ USTCOMM_ERR_INDEX(USTCOMM_NO_TRACEABLE) ] = "App is not traceable",
-	[ USTCOMM_ERR_INDEX(USTCOMM_SELECT_SESS) ] = "A session MUST be selected",
-	[ USTCOMM_ERR_INDEX(USTCOMM_EXIST_SESS) ] = "Session name already exist",
-	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_NA) ] = "UST tracer not available",
-	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_EVENT_EXIST) ] = "UST event already exists",
-	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_SESS_FAIL) ] = "UST create session failed",
-	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_CHAN_FAIL) ] = "UST create channel failed",
-	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_CHAN_NOT_FOUND) ] = "UST channel not found",
-	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_CHAN_DISABLE_FAIL) ] = "Disable UST channel failed",
-	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_CHAN_ENABLE_FAIL) ] = "Enable UST channel failed",
-	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_CONTEXT_FAIL) ] = "Add UST context failed",
-	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_ENABLE_FAIL) ] = "Enable UST event failed",
-	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_DISABLE_FAIL) ] = "Disable UST event failed",
-	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_META_FAIL) ] = "Opening metadata failed",
-	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_START_FAIL) ] = "Starting UST trace failed",
-	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_STOP_FAIL) ] = "Stoping UST trace failed",
-	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_CONSUMER_FAIL) ] = "UST consumer start failed",
-	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_STREAM_FAIL) ] = "UST create stream failed",
-	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_DIR_FAIL) ] = "UST trace directory creation failed",
-	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_DIR_EXIST) ] = "UST trace directory already exist",
-	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_NO_SESSION) ] = "No UST session found",
-	[ USTCOMM_ERR_INDEX(USTCOMM_KERN_LIST_FAIL) ] = "Listing UST events failed",
-	[ USTCOMM_ERR_INDEX(USTCONSUMER_COMMAND_SOCK_READY) ] = "UST consumer command socket ready",
-	[ USTCOMM_ERR_INDEX(USTCONSUMER_SUCCESS_RECV_FD) ] = "UST consumer success on receiving fds",
-	[ USTCOMM_ERR_INDEX(USTCONSUMER_ERROR_RECV_FD) ] = "UST consumer error on receiving fds",
-	[ USTCOMM_ERR_INDEX(USTCONSUMER_POLL_ERROR) ] = "UST consumer error in polling thread",
-	[ USTCOMM_ERR_INDEX(USTCONSUMER_POLL_NVAL) ] = "UST consumer polling on closed fd",
-	[ USTCOMM_ERR_INDEX(USTCONSUMER_POLL_HUP) ] = "UST consumer all fd hung up",
-	[ USTCOMM_ERR_INDEX(USTCONSUMER_EXIT_SUCCESS) ] = "UST consumer exiting normally",
-	[ USTCOMM_ERR_INDEX(USTCONSUMER_EXIT_FAILURE) ] = "UST consumer exiting on error",
-	[ USTCOMM_ERR_INDEX(USTCONSUMER_OUTFD_ERROR) ] = "UST consumer error opening the tracefile",
-	[ USTCOMM_ERR_INDEX(USTCONSUMER_SPLICE_EBADF) ] = "UST consumer splice EBADF",
-	[ USTCOMM_ERR_INDEX(USTCONSUMER_SPLICE_EINVAL) ] = "UST consumer splice EINVAL",
-	[ USTCOMM_ERR_INDEX(USTCONSUMER_SPLICE_ENOMEM) ] = "UST consumer splice ENOMEM",
-	[ USTCOMM_ERR_INDEX(USTCONSUMER_SPLICE_ESPIPE) ] = "UST consumer splice ESPIPE",
-	[ USTCOMM_ERR_INDEX(USTCOMM_NO_EVENT) ] = "Event not found",
+	[ USTCOMM_CODE_OFFSET(LTTNG_UST_OK) ] = "Success",
+	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR) ] = "Unknown error",
+	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_NOENT) ] = "No entry",
 };
 
 /*
- *  lttcom_get_readable_code
+ * lttng_ust_strerror
  *
- *  Return ptr to string representing a human readable
- *  error code from the ustcomm_return_code enum.
+ * Receives positive error value.
+ * Return ptr to string representing a human readable
+ * error code from the ustcomm_return_code enum.
  */
-const char *ustcomm_get_readable_code(int code)
+const char *lttng_ust_strerror(int code)
 {
-	if (code == USTCOMM_OK) {
-		return "Success";
-	}
-	if (code >= USTCOMM_ERR && code < USTCOMM_NR) {
-		return ustcomm_readable_code[USTCOMM_ERR_INDEX(code)];
-	}
-	return strerror(code);
+	if (code == LTTNG_UST_OK)
+		return ustcomm_readable_code[USTCOMM_CODE_OFFSET(code)];
+	if (code < LTTNG_UST_ERR)
+		return strerror(code);
+	if (code >= LTTNG_UST_ERR_NR)
+		code = LTTNG_UST_ERR;
+	return ustcomm_readable_code[USTCOMM_CODE_OFFSET(code)];
+
 }
 
 /*
@@ -113,8 +73,7 @@ const char *ustcomm_get_readable_code(int code)
 int ustcomm_connect_unix_sock(const char *pathname)
 {
 	struct sockaddr_un sun;
-	int fd;
-	int ret;
+	int fd, ret;
 
 	/*
 	 * libust threads require the close-on-exec flag for all
@@ -123,12 +82,13 @@ int ustcomm_connect_unix_sock(const char *pathname)
 	fd = socket(PF_UNIX, SOCK_STREAM, 0);
 	if (fd < 0) {
 		perror("socket");
-		ret = fd;
+		ret = -errno;
 		goto error;
 	}
 	ret = fcntl(fd, F_SETFD, FD_CLOEXEC);
 	if (ret < 0) {
 		perror("fcntl");
+		ret = -errno;
 		goto error_fcntl;
 	}
 
@@ -144,6 +104,7 @@ int ustcomm_connect_unix_sock(const char *pathname)
 		 * is used in normal execution to detect if sessiond is
 		 * alive.
 		 */
+		ret = -errno;
 		goto error_connect;
 	}
 
@@ -151,7 +112,13 @@ int ustcomm_connect_unix_sock(const char *pathname)
 
 error_connect:
 error_fcntl:
-	close(fd);
+	{
+		int closeret;
+
+		closeret = close(fd);
+		if (closeret)
+			perror("close");
+	}
 error:
 	return ret;
 }
@@ -172,7 +139,7 @@ int ustcomm_accept_unix_sock(int sock)
 	new_fd = accept(sock, (struct sockaddr *) &sun, &len);
 	if (new_fd < 0) {
 		perror("accept");
-		return -1;
+		return -errno;
 	}
 	return new_fd;
 }
@@ -186,12 +153,12 @@ int ustcomm_accept_unix_sock(int sock)
 int ustcomm_create_unix_sock(const char *pathname)
 {
 	struct sockaddr_un sun;
-	int fd;
-	int ret = -1;
+	int fd, ret;
 
 	/* Create server socket */
 	if ((fd = socket(PF_UNIX, SOCK_STREAM, 0)) < 0) {
 		perror("socket");
+		ret = -errno;
 		goto error;
 	}
 
@@ -205,11 +172,21 @@ int ustcomm_create_unix_sock(const char *pathname)
 	ret = bind(fd, (struct sockaddr *) &sun, sizeof(sun));
 	if (ret < 0) {
 		perror("bind");
-		goto error;
+		ret = -errno;
+		goto error_close;
 	}
 
 	return fd;
 
+error_close:
+	{
+		int closeret;
+
+		closeret = close(fd);
+		if (closeret) {
+			perror("close");
+		}
+	}
 error:
 	return ret;
 }
@@ -225,6 +202,7 @@ int ustcomm_listen_unix_sock(int sock)
 
 	ret = listen(sock, LTTNG_UST_COMM_MAX_LISTEN);
 	if (ret < 0) {
+		ret = -errno;
 		perror("listen");
 	}
 
@@ -242,7 +220,7 @@ ssize_t ustcomm_recv_unix_sock(int sock, void *buf, size_t len)
 {
 	struct msghdr msg;
 	struct iovec iov[1];
-	ssize_t ret = -1;
+	ssize_t ret;
 
 	memset(&msg, 0, sizeof(msg));
 
@@ -254,8 +232,17 @@ ssize_t ustcomm_recv_unix_sock(int sock, void *buf, size_t len)
 	do {
 		ret = recvmsg(sock, &msg, 0);
 	} while (ret < 0 && errno == EINTR);
-	if (ret < 0 && errno != EPIPE) {
-		perror("recvmsg");
+
+	if (ret < 0) {
+		int shutret;
+
+		if (errno != EPIPE)
+			perror("recvmsg");
+		ret = -errno;
+
+		shutret = shutdown(sock, SHUT_RDWR);
+		if (shutret)
+			fprintf(stderr, "Socket shutdown error");
 	}
 
 	return ret;
@@ -271,7 +258,7 @@ ssize_t ustcomm_send_unix_sock(int sock, void *buf, size_t len)
 {
 	struct msghdr msg;
 	struct iovec iov[1];
-	ssize_t ret = -1;
+	ssize_t ret;
 
 	memset(&msg, 0, sizeof(msg));
 
@@ -290,8 +277,17 @@ ssize_t ustcomm_send_unix_sock(int sock, void *buf, size_t len)
 	do {
 		ret = sendmsg(sock, &msg, MSG_NOSIGNAL);
 	} while (ret < 0 && errno == EINTR);
-	if (ret < 0 && errno != EPIPE) {
-		perror("sendmsg");
+
+	if (ret < 0) {
+		int shutret;
+
+		if (errno != EPIPE)
+			perror("recvmsg");
+		ret = -errno;
+
+		shutret = shutdown(sock, SHUT_RDWR);
+		if (shutret)
+			fprintf(stderr, "Socket shutdown error");
 	}
 
 	return ret;
@@ -309,6 +305,7 @@ int ustcomm_close_unix_sock(int sock)
 	ret = close(sock);
 	if (ret < 0) {
 		perror("close");
+		ret = -errno;
 	}
 
 	return ret;
@@ -331,7 +328,7 @@ ssize_t ustcomm_send_fds_unix_sock(int sock, void *buf, int *fds, size_t nb_fd, 
 	memset(&msg, 0, sizeof(msg));
 
 	/*
-	 * Note: the consumerd receiver only supports receiving one FD per
+	 * Note: we currently only support sending a single FD per
 	 * message.
 	 */
 	assert(nb_fd == 1);
@@ -355,8 +352,17 @@ ssize_t ustcomm_send_fds_unix_sock(int sock, void *buf, int *fds, size_t nb_fd, 
 	do {
 		ret = sendmsg(sock, &msg, MSG_NOSIGNAL);
 	} while (ret < 0 && errno == EINTR);
-	if (ret < 0 && errno != EPIPE) {
-		perror("sendmsg");
+
+	if (ret < 0) {
+		int shutret;
+
+		if (errno != EPIPE)
+			perror("recvmsg");
+		ret = -errno;
+
+		shutret = shutdown(sock, SHUT_RDWR);
+		if (shutret)
+			fprintf(stderr, "Socket shutdown error");
 	}
 
 	return ret;
@@ -370,15 +376,15 @@ int ustcomm_send_app_msg(int sock, struct ustcomm_ust_msg *lum)
 	switch (len) {
 	case sizeof(*lum):
 		break;
-	case -1:
-		if (errno == ECONNRESET) {
-			fprintf(stderr, "remote end closed connection\n");
-			return 0;
-		}
-		return -1;
 	default:
-		fprintf(stderr, "incorrect message size: %zd\n", len);
-		return -1;
+		if (len < 0) {
+			if (len == -ECONNRESET)
+				fprintf(stderr, "remote end closed connection\n");
+			return len;
+		} else {
+			fprintf(stderr, "incorrect message size: %zd\n", len);
+			return -EINVAL;
+		}
 	}
 	return 0;
 }
@@ -398,30 +404,21 @@ int ustcomm_recv_app_reply(int sock, struct ustcomm_ust_reply *lur,
 			fprintf(stderr, "Unexpected result message handle\n");
 			return -EINVAL;
 		}
-
 		if (lur->cmd != expected_cmd) {
 			fprintf(stderr, "Unexpected result message command\n");
 			return -EINVAL;
 		}
-		if (lur->ret_code != USTCOMM_OK) {
-			/*
-			 * Some errors are normal.. we should put this
-			 * in a debug level message...
-			 * fprintf(stderr, "remote operation failed with code %d.\n",
-			 *	lur->ret_code);
-			 */
-			return lur->ret_code;
-		}
-		return 0;
-	case -1:
-		if (errno == ECONNRESET) {
-			fprintf(stderr, "remote end closed connection\n");
-			return -EINVAL;
-		}
-		return -1;
+		return lur->ret_code;
 	default:
-		fprintf(stderr, "incorrect message size: %zd\n", len);
-		return len > 0 ? -1 : len;
+		if (len < 0) {
+			/* Transport level error */
+			if (len == -ECONNRESET)
+				fprintf(stderr, "remote end closed connection\n");
+			return len;
+		} else {
+			fprintf(stderr, "incorrect message size: %zd\n", len);
+			return len;
+		}
 	}
 }
 
@@ -434,17 +431,14 @@ int ustcomm_send_app_cmd(int sock,
 	ret = ustcomm_send_app_msg(sock, lum);
 	if (ret)
 		return ret;
-	ret = ustcomm_recv_app_reply(sock, lur, lum->handle, lum->cmd);
-	if (ret)
-		return ret;
-	return 0;
+	return ustcomm_recv_app_reply(sock, lur, lum->handle, lum->cmd);
 }
-
 
 /*
  * Receives a single fd from socket.
  *
- * Returns the size of received data
+ * Returns negative error value on error, or file descriptor number on
+ * success.
  */
 int ustcomm_recv_fd(int sock)
 {
@@ -477,21 +471,23 @@ int ustcomm_recv_fd(int sock)
 		if (errno != EPIPE) {
 			perror("recvmsg");
 		}
+		ret = -errno;
 		goto end;
 	}
 	if (ret != sizeof(data_fd)) {
 		fprintf(stderr, "Received %d bytes, expected %zd", ret, sizeof(data_fd));
+		ret = -EINVAL;
 		goto end;
 	}
 	cmsg = CMSG_FIRSTHDR(&msg);
 	if (!cmsg) {
 		fprintf(stderr, "Invalid control message header\n");
-		ret = -1;
+		ret = -EINVAL;
 		goto end;
 	}
 	if (cmsg->cmsg_level != SOL_SOCKET || cmsg->cmsg_type != SCM_RIGHTS) {
 		fprintf(stderr, "Didn't received any fd\n");
-		ret = -1;
+		ret = -EINVAL;
 		goto end;
 	}
 	/* this is our fd */
@@ -503,5 +499,12 @@ int ustcomm_recv_fd(int sock)
 	 * fprintf(stderr, "received fd %d\n", ret);
 	 */
 end:
+	if (ret < 0) {
+		int shutret;
+
+		shutret = shutdown(sock, SHUT_RDWR);
+		if (shutret)
+			fprintf(stderr, "Socket shutdown error");
+	}
 	return ret;
 }

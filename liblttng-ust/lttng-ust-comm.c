@@ -41,6 +41,7 @@
 #include <lttng/ust-events.h>
 #include <lttng/ust-abi.h>
 #include <lttng/ust.h>
+#include <lttng/ust-error.h>
 #include <ust-comm.h>
 #include <usterr-signal-safe.h>
 #include <helper.h>
@@ -214,15 +215,15 @@ int send_reply(int sock, struct ustcomm_ust_reply *lur)
 	case sizeof(*lur):
 		DBG("message successfully sent");
 		return 0;
-	case -1:
-		if (errno == ECONNRESET) {
-			printf("remote end closed connection\n");
+	default:
+		if (len == -ECONNRESET) {
+			DBG("remote end closed connection");
 			return 0;
 		}
-		return -1;
-	default:
-		printf("incorrect message size: %zd\n", len);
-		return -1;
+		if (len < 0)
+			return len;
+		DBG("incorrect message size: %zd", len);
+		return -EINVAL;
 	}
 }
 
@@ -290,14 +291,14 @@ int handle_message(struct sock_info *sock_info,
 		struct lttng_ust_filter_bytecode *bytecode;
 
 		if (lum->u.filter.data_size > FILTER_BYTECODE_MAX_LEN) {
-			ERR("Filter data size is too large: %u bytes\n",
+			ERR("Filter data size is too large: %u bytes",
 				lum->u.filter.data_size);
 			ret = -EINVAL;
 			goto error;
 		}
 
 		if (lum->u.filter.reloc_offset > lum->u.filter.data_size) {
-			ERR("Filter reloc offset %u is not within data\n",
+			ERR("Filter reloc offset %u is not within data",
 				lum->u.filter.reloc_offset);
 			ret = -EINVAL;
 			goto error;
@@ -315,22 +316,22 @@ int handle_message(struct sock_info *sock_info,
 			ret = 0;
 			free(bytecode);
 			goto error;
-		case -1:
-			DBG("Receive failed from lttng-sessiond with errno %d", errno);
-			if (errno == ECONNRESET) {
-				ERR("%s remote end closed connection\n", sock_info->name);
-				ret = -EINVAL;
-				free(bytecode);
-				goto error;
-			}
-			ret = -EINVAL;
-			goto end;
 		default:
 			if (len == lum->u.filter.data_size) {
-				DBG("filter data received\n");
+				DBG("filter data received");
 				break;
+			} else if (len < 0) {
+				DBG("Receive failed from lttng-sessiond with errno %d", (int) -len);
+				if (len == -ECONNRESET) {
+					ERR("%s remote end closed connection", sock_info->name);
+					ret = len;
+					free(bytecode);
+					goto error;
+				}
+				ret = len;
+				goto end;
 			} else {
-				ERR("incorrect filter data message size: %zd\n", len);
+				DBG("incorrect filter data message size: %zd", len);
 				ret = -EINVAL;
 				free(bytecode);
 				goto end;
@@ -367,10 +368,18 @@ end:
 	lur.cmd = lum->cmd;
 	lur.ret_val = ret;
 	if (ret >= 0) {
-		lur.ret_code = USTCOMM_OK;
+		lur.ret_code = LTTNG_UST_OK;
 	} else {
-		//lur.ret_code = USTCOMM_SESSION_FAIL;
-		lur.ret_code = ret;
+		/*
+		 * Use -LTTNG_UST_ERR as wildcard for UST internal
+		 * error that are not caused by the transport, except if
+		 * we already have a more precise error message to
+		 * report.
+		 */
+		if (ret > -LTTNG_UST_ERR)
+			lur.ret_code = -LTTNG_UST_ERR;
+		else
+			lur.ret_code = ret;
 	}
 	if (ret >= 0) {
 		switch (lum->cmd) {
@@ -399,14 +408,14 @@ end:
 	}
 	ret = send_reply(sock, &lur);
 	if (ret < 0) {
-		perror("error sending reply");
+		DBG("error sending reply");
 		goto error;
 	}
 
 	if ((lum->cmd == LTTNG_UST_STREAM
 	     || lum->cmd == LTTNG_UST_CHANNEL
 	     || lum->cmd == LTTNG_UST_METADATA)
-			&& lur.ret_code == USTCOMM_OK) {
+			&& lur.ret_code == LTTNG_UST_OK) {
 		int sendret = 0;
 
 		/* we also need to send the file descriptors. */
@@ -414,7 +423,7 @@ end:
 			&shm_fd, &shm_fd,
 			1, sizeof(int));
 		if (ret < 0) {
-			perror("send shm_fd");
+			ERR("send shm_fd");
 			sendret = ret;
 		}
 		/*
@@ -437,14 +446,18 @@ end:
 	 * LTTNG_UST_TRACEPOINT_FIELD_LIST_GET needs to send the field
 	 * after the reply.
 	 */
-	if (lur.ret_code == USTCOMM_OK) {
+	if (lur.ret_code == LTTNG_UST_OK) {
 		switch (lum->cmd) {
 		case LTTNG_UST_TRACEPOINT_FIELD_LIST_GET:
 			len = ustcomm_send_unix_sock(sock,
 				&args.field_list.entry,
 				sizeof(args.field_list.entry));
+			if (len < 0) {
+				ret = len;
+				goto error;
+			}
 			if (len != sizeof(args.field_list.entry)) {
-				ret = -1;
+				ret = -EINVAL;
 				goto error;
 			}
 		}
@@ -455,7 +468,7 @@ end:
 	 * that we keep the write side of the wait_fd open, but close
 	 * the read side.
 	 */
-	if (lur.ret_code == USTCOMM_OK) {
+	if (lur.ret_code == LTTNG_UST_OK) {
 		switch (lum->cmd) {
 		case LTTNG_UST_STREAM:
 			if (shm_fd >= 0) {
@@ -846,7 +859,7 @@ restart:
 		len = ustcomm_recv_unix_sock(sock, &lum, sizeof(lum));
 		switch (len) {
 		case 0:	/* orderly shutdown */
-			DBG("%s ltt-sessiond has performed an orderly shutdown\n", sock_info->name);
+			DBG("%s ltt-sessiond has performed an orderly shutdown", sock_info->name);
 			ust_lock();
 			/*
 			 * Either sessiond has shutdown or refused us by closing the socket.
@@ -863,22 +876,23 @@ restart:
 			ust_unlock();
 			goto end;
 		case sizeof(lum):
-			DBG("message received\n");
+			DBG("message received");
 			ret = handle_message(sock_info, sock, &lum);
-			if (ret < 0) {
+			if (ret) {
 				ERR("Error handling message for %s socket", sock_info->name);
 			}
 			continue;
-		case -1:
-			DBG("Receive failed from lttng-sessiond with errno %d", errno);
-			if (errno == ECONNRESET) {
-				ERR("%s remote end closed connection\n", sock_info->name);
+		default:
+			if (len < 0) {
+				DBG("Receive failed from lttng-sessiond with errno %d", (int) -len);
+			} else {
+				DBG("incorrect message size (%s socket): %zd", sock_info->name, len);
+			}
+			if (len == -ECONNRESET) {
+				DBG("%s remote end closed connection", sock_info->name);
 				goto end;
 			}
 			goto end;
-		default:
-			ERR("incorrect message size (%s socket): %zd\n", sock_info->name, len);
-			continue;
 		}
 
 	}
@@ -932,8 +946,6 @@ int get_timeout(struct timespec *constructor_timeout)
  * sessiond monitoring thread: monitor presence of global and per-user
  * sessiond by polling the application common named pipe.
  */
-/* TODO */
-
 void __attribute__((constructor)) lttng_ust_init(void)
 {
 	struct timespec constructor_timeout;

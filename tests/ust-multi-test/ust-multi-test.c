@@ -92,7 +92,7 @@ int open_streams(int sock, int channel_handle, struct lttng_ust_object_data *str
 			stream_datas[k].handle = lur.ret_val;
 			printf("received stream handle %u\n",
 				stream_datas[k].handle);
-			if (lur.ret_code == USTCOMM_OK) {
+			if (lur.ret_code == LTTNG_UST_OK) {
 				ssize_t len;
 
 				stream_datas[k].memory_map_size = lur.u.stream.memory_map_size;
@@ -367,7 +367,7 @@ int send_app_msgs(int sock)
 			return ret;
 		metadata_data[i].handle = lur.ret_val;
 		printf("received metadata handle %u\n", metadata_data[i].handle);
-		if (lur.ret_code == USTCOMM_OK) {
+		if (lur.ret_code == LTTNG_UST_OK) {
 			ssize_t len;
 
 			metadata_data[i].memory_map_size = lur.u.channel.memory_map_size;
@@ -409,7 +409,7 @@ int send_app_msgs(int sock)
 				return ret;
 			channel_data[i][j].handle = lur.ret_val;
 			printf("received channel handle %u\n", channel_data[i][j].handle);
-			if (lur.ret_code == USTCOMM_OK) {
+			if (lur.ret_code == LTTNG_UST_OK) {
 				ssize_t len;
 
 				channel_data[i][j].memory_map_size = lur.u.channel.memory_map_size;

@@ -38,6 +38,7 @@
  */
 
 #include <lttng/ust-abi.h>
+#include <lttng/ust-error.h>
 #include <urcu/compiler.h>
 #include <urcu/list.h>
 #include <lttng/ust-events.h>
@@ -541,7 +542,7 @@ long lttng_tracepoint_list_cmd(int objd, unsigned int cmd, unsigned long arg,
 	retry:
 		iter = lttng_ust_tracepoint_list_get_iter_next(list);
 		if (!iter)
-			return -ENOENT;
+			return -LTTNG_UST_ERR_NOENT;
 		if (!strcmp(iter->name, "lttng_ust:metadata"))
 			goto retry;
 		memcpy(tp, iter, sizeof(*tp));
@@ -623,7 +624,7 @@ long lttng_tracepoint_field_list_cmd(int objd, unsigned int cmd,
 	retry:
 		iter = lttng_ust_field_list_get_iter_next(list);
 		if (!iter)
-			return -ENOENT;
+			return -LTTNG_UST_ERR_NOENT;
 		if (!strcmp(iter->event_name, "lttng_ust:metadata"))
 			goto retry;
 		memcpy(tp, iter, sizeof(*tp));

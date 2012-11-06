@@ -51,9 +51,8 @@ int ustctl_release_handle(int sock, int handle)
 		lum.handle = handle;
 		lum.cmd = LTTNG_UST_RELEASE;
 		ret = ustcomm_send_app_cmd(sock, &lum, &lur);
-		if (ret < 0) {
+		if (ret)
 			return ret;
-		}
 	}
 	return 0;
 }
@@ -71,12 +70,14 @@ int ustctl_release_object(int sock, struct lttng_ust_object_data *data)
 	if (data->shm_fd >= 0) {
 		ret = close(data->shm_fd);
 		if (ret < 0) {
+			ret = -errno;
 			return ret;
 		}
 	}
 	if (data->wait_fd >= 0) {
 		ret = close(data->wait_fd);
 		if (ret < 0) {
+			ret = -errno;
 			return ret;
 		}
 	}
@@ -99,14 +100,7 @@ int ustctl_register_done(int sock)
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
-	if (lur.ret_code != USTCOMM_OK) {
-		DBG("Return code: %s", ustcomm_get_readable_code(lur.ret_code));
-		goto error;
-	}
 	return 0;
-
-error:
-	return -1;
 }
 
 /*
@@ -162,17 +156,13 @@ int ustctl_open_metadata(int sock, int session_handle,
 		free(metadata_data);
 		return ret;
 	}
-	if (lur.ret_code != USTCOMM_OK) {
-		free(metadata_data);
-		return lur.ret_code;
-	}
 	metadata_data->handle = lur.ret_val;
 	DBG("received metadata handle %u", metadata_data->handle);
 	metadata_data->memory_map_size = lur.u.channel.memory_map_size;
 	/* get shm fd */
 	ret = ustcomm_recv_fd(sock);
 	if (ret < 0)
-		err = 1;
+		err = ret;
 	else
 		metadata_data->shm_fd = ret;
 	/*
@@ -182,7 +172,7 @@ int ustctl_open_metadata(int sock, int session_handle,
 	/* get wait fd */
 	ret = ustcomm_recv_fd(sock);
 	if (ret < 0)
-		err = 1;
+		err = ret;
 	else
 		metadata_data->wait_fd = ret;
 	if (err)
@@ -193,7 +183,7 @@ int ustctl_open_metadata(int sock, int session_handle,
 error:
 	(void) ustctl_release_object(sock, metadata_data);
 	free(metadata_data);
-	return -EINVAL;
+	return err;
 }
 
 int ustctl_create_channel(int sock, int session_handle,
@@ -227,17 +217,13 @@ int ustctl_create_channel(int sock, int session_handle,
 		free(channel_data);
 		return ret;
 	}
-	if (lur.ret_code != USTCOMM_OK) {
-		free(channel_data);
-		return lur.ret_code;
-	}
 	channel_data->handle = lur.ret_val;
 	DBG("received channel handle %u", channel_data->handle);
 	channel_data->memory_map_size = lur.u.channel.memory_map_size;
 	/* get shm fd */
 	ret = ustcomm_recv_fd(sock);
 	if (ret < 0)
-		err = 1;
+		err = ret;
 	else
 		channel_data->shm_fd = ret;
 	/*
@@ -247,7 +233,7 @@ int ustctl_create_channel(int sock, int session_handle,
 	/* get wait fd */
 	ret = ustcomm_recv_fd(sock);
 	if (ret < 0)
-		err = 1;
+		err = ret;
 	else
 		channel_data->wait_fd = ret;
 	if (err)
@@ -258,13 +244,14 @@ int ustctl_create_channel(int sock, int session_handle,
 error:
 	(void) ustctl_release_object(sock, channel_data);
 	free(channel_data);
-	return -EINVAL;
+	return err;
 }
 
 /*
  * Return -ENOENT if no more stream is available for creation.
  * Return 0 on success.
- * Return negative error value on error.
+ * Return negative error value on system error.
+ * Return positive error value on UST error.
  */
 int ustctl_create_stream(int sock, struct lttng_ust_object_data *channel_data,
 		struct lttng_ust_object_data **_stream_data)
@@ -289,18 +276,13 @@ int ustctl_create_stream(int sock, struct lttng_ust_object_data *channel_data,
 		free(stream_data);
 		return ret;
 	}
-	if (lur.ret_code != USTCOMM_OK) {
-		free(stream_data);
-		return lur.ret_code;
-	}
-
 	stream_data->handle = lur.ret_val;
 	DBG("received stream handle %u", stream_data->handle);
 	stream_data->memory_map_size = lur.u.stream.memory_map_size;
 	/* get shm fd */
 	fd = ustcomm_recv_fd(sock);
 	if (fd < 0)
-		err = 1;
+		err = fd;
 	else
 		stream_data->shm_fd = fd;
 	/*
@@ -310,7 +292,7 @@ int ustctl_create_stream(int sock, struct lttng_ust_object_data *channel_data,
 	/* get wait fd */
 	fd = ustcomm_recv_fd(sock);
 	if (fd < 0)
-		err = 1;
+		err = fd;
 	else
 		stream_data->wait_fd = fd;
 	if (err)
@@ -321,7 +303,7 @@ int ustctl_create_stream(int sock, struct lttng_ust_object_data *channel_data,
 error:
 	(void) ustctl_release_object(sock, stream_data);
 	free(stream_data);
-	return -EINVAL;
+	return err;
 }
 
 int ustctl_create_event(int sock, struct lttng_ust_event *ev,
@@ -409,19 +391,17 @@ int ustctl_set_filter(int sock, struct lttng_ust_filter_bytecode *bytecode,
 	ret = ustcomm_send_app_msg(sock, &lum);
 	if (ret)
 		return ret;
-	if (ret) {
-		return ret;
-	}
 	/* send var len bytecode */
 	ret = ustcomm_send_unix_sock(sock, bytecode->data,
 				bytecode->len);
 	if (ret < 0) {
+		if (ret == -ECONNRESET)
+			fprintf(stderr, "remote end closed connection\n");
 		return ret;
 	}
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
-	if (ret)
-		return ret;
-	return ret;
+	if (ret != bytecode->len)
+		return -EINVAL;
+	return ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
 }
 
 /* Enable event, channel and session ioctl */
@@ -554,10 +534,6 @@ int ustctl_tracepoint_field_list_get(int sock, int tp_field_list_handle,
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
-	if (lur.ret_code != USTCOMM_OK) {
-		DBG("Return code: %s", ustcomm_get_readable_code(lur.ret_code));
-		return -EINVAL;
-	}
 	len = ustcomm_recv_unix_sock(sock, iter, sizeof(*iter));
 	if (len != sizeof(*iter)) {
 		return -EINVAL;

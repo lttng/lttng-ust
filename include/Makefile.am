@@ -19,7 +19,8 @@ nobase_include_HEADERS = \
 	lttng/ust-endian.h \
 	lttng/ringbuffer-config.h \
 	lttng/align.h \
-	lttng/bug.h
+	lttng/bug.h \
+	lttng/ust-error.h
 
 # note: usterr-signal-safe.h, core.h and share.h need namespace cleanup.
 

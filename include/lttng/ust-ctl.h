@@ -21,6 +21,11 @@
 
 #include <lttng/ust-abi.h>
 
+/*
+ * Error values: all the following functions return:
+ * >= 0: Sucess (LTTNG_UST_OK)
+ * < 0: error code.
+ */
 int ustctl_register_done(int sock);
 int ustctl_create_session(int sock);
 int ustctl_open_metadata(int sock, int session_handle,
@@ -52,7 +57,8 @@ int ustctl_stop_session(int sock, int handle);
 int ustctl_tracepoint_list(int sock);
 /*
  * ustctl_tracepoint_list_get is used to iterate on the tp list
- * handle. End is iteration is reached when -ENOENT is returned.
+ * handle. End is iteration is reached when -LTTNG_UST_ERR_NOENT is
+ * returned.
  */
 int ustctl_tracepoint_list_get(int sock, int tp_list_handle,
 		struct lttng_ust_tracepoint_iter *iter);
@@ -65,7 +71,8 @@ int ustctl_tracepoint_field_list(int sock);
 
 /*
  * ustctl_tracepoint_field_list_get is used to iterate on the tp field
- * list handle. End is iteration is reached when -ENOENT is returned.
+ * list handle. End is iteration is reached when -LTTNG_UST_ERR_NOENT is
+ * returned.
  */
 int ustctl_tracepoint_field_list_get(int sock, int tp_field_list_handle,
 		struct lttng_ust_field_iter *iter);
