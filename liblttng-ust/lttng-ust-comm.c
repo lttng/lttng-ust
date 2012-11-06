@@ -342,7 +342,7 @@ int handle_message(struct sock_info *sock_info,
 		if (ops->cmd) {
 			ret = ops->cmd(lum->handle, lum->cmd,
 					(unsigned long) bytecode,
-					&args);
+					&args, sock_info);
 			if (ret) {
 				free(bytecode);
 			}
@@ -357,7 +357,7 @@ int handle_message(struct sock_info *sock_info,
 		if (ops->cmd)
 			ret = ops->cmd(lum->handle, lum->cmd,
 					(unsigned long) &lum->u,
-					&args);
+					&args, sock_info);
 		else
 			ret = -ENOSYS;
 		break;
@@ -825,7 +825,8 @@ restart:
 
 	/*
 	 * Create only one root handle per listener thread for the whole
-	 * process lifetime.
+	 * process lifetime, so we ensure we get ID which is statically
+	 * assigned to the root handle.
 	 */
 	if (sock_info->root_handle == -1) {
 		ret = lttng_abi_create_root_handle();
@@ -897,6 +898,10 @@ restart:
 
 	}
 end:
+	ust_lock();
+	/* Cleanup socket handles before trying to reconnect */
+	lttng_ust_objd_table_owner_cleanup(sock_info);
+	ust_unlock();
 	goto restart;	/* try to reconnect */
 quit:
 	return NULL;
