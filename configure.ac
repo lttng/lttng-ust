@@ -171,11 +171,11 @@ AC_CHECK_LIB([urcu-bp], [synchronize_rcu_bp], [], [AC_MSG_ERROR([Cannot find lib
 AC_CHECK_LIB([urcu-bp], [call_rcu_bp], [], [AC_MSG_ERROR([liburcu 0.6 or newer is needed, please update your version or use [LDFLAGS]=-Ldir to specify the right location.])])
 
 
-# Check for various supplementary target information (beyond the
+# Check for various supplementary host information (beyond the
 # triplet) which might affect the library format choices.  E.g., we
 # can be building with `i686-unknown-linux-gnu-gcc -m64'
 
-case "${target}" in
+case "${host}" in
 changequote(,)dnl
   i[34567]86-*-linux*)
 changequote([,])dnl
@@ -192,8 +192,8 @@ got it
     ;;
 esac
 
-AC_MSG_CHECKING([library format for the target system])
-case $target_cpu in
+AC_MSG_CHECKING([library format for the host system])
+case $host_cpu in
 changequote(,)dnl
 	i[3456]86)
 changequote([,])dnl
@@ -213,12 +213,12 @@ changequote([,])dnl
         armv5) LIBFORMAT="elf32-littlearm"; NO_UNALIGNED_ACCESS=1 ;;
 	arm) LIBFORMAT="elf32-littlearm"; NO_UNALIGNED_ACCESS=1 ;;
 	mips*) LIBFORMAT=""; NO_UNALIGNED_ACCESS=1;;
-	*) AC_MSG_ERROR([unable to detect library format (unsupported architecture ($target_cpu)?)]) ;;
+	*) AC_MSG_ERROR([unable to detect library format (unsupported architecture ($host_cpu)?)]) ;;
 esac
 AC_SUBST(LIBFORMAT)
 AC_MSG_RESULT($LIBFORMAT)
 
-if test "x$target_cpu" = "xarm" ; then
+if test "x$host_cpu" = "xarm" ; then
 AC_MSG_CHECKING([checking for armv5])
 AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 #ifndef __ARM_ARCH_5TEJ__
