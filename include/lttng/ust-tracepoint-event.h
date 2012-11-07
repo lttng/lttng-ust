@@ -296,7 +296,7 @@ size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, _TP_ARGS
 #define _ctf_array_encoded(_type, _item, _src, _length, _encoding, _nowrite)   \
 	{								       \
 		unsigned long __ctf_tmp_ulong = (unsigned long) (_length);     \
-		void *__ctf_tmp_ptr = (_src);				       \
+		const void *__ctf_tmp_ptr = (_src);			       \
 		memcpy(__stack_data, &__ctf_tmp_ulong, sizeof(unsigned long)); \
 		__stack_data += sizeof(unsigned long);			       \
 		memcpy(__stack_data, &__ctf_tmp_ptr, sizeof(void **));	       \
@@ -308,7 +308,7 @@ size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, _TP_ARGS
 			_src_length, _encoding, _nowrite)		       \
 	{								       \
 		unsigned long __ctf_tmp_ulong = (unsigned long) (_src_length); \
-		void *__ctf_tmp_ptr = (_src);				       \
+		const void *__ctf_tmp_ptr = (_src);			       \
 		memcpy(__stack_data, &__ctf_tmp_ulong, sizeof(unsigned long)); \
 		__stack_data += sizeof(unsigned long);			       \
 		memcpy(__stack_data, &__ctf_tmp_ptr, sizeof(void **));	       \
@@ -318,7 +318,7 @@ size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, _TP_ARGS
 #undef _ctf_string
 #define _ctf_string(_item, _src, _nowrite)				       \
 	{								       \
-		void *__ctf_tmp_ptr = (_src);				       \
+		const void *__ctf_tmp_ptr = (_src);			       \
 		memcpy(__stack_data, &__ctf_tmp_ptr, sizeof(void **));	       \
 		__stack_data += sizeof(void **);			       \
 	}
