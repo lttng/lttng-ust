@@ -376,10 +376,31 @@ end:
 		 * we already have a more precise error message to
 		 * report.
 		 */
-		if (ret > -LTTNG_UST_ERR)
-			lur.ret_code = -LTTNG_UST_ERR;
-		else
+		if (ret > -LTTNG_UST_ERR) {
+			/* Translate code to UST error. */
+			switch (ret) {
+			case -EEXIST:
+				lur.ret_code = -LTTNG_UST_ERR_EXIST;
+				break;
+			case -EINVAL:
+				lur.ret_code = -LTTNG_UST_ERR_INVAL;
+				break;
+			case -ENOENT:
+				lur.ret_code = -LTTNG_UST_ERR_NOENT;
+				break;
+			case -EPERM:
+				lur.ret_code = -LTTNG_UST_ERR_PERM;
+				break;
+			case -ENOSYS:
+				lur.ret_code = -LTTNG_UST_ERR_NOSYS;
+				break;
+			default:
+				lur.ret_code = -LTTNG_UST_ERR;
+				break;
+			}
+		} else {
 			lur.ret_code = ret;
+		}
 	}
 	if (ret >= 0) {
 		switch (lum->cmd) {

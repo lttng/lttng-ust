@@ -44,6 +44,10 @@ static const char *ustcomm_readable_code[] = {
 	[ USTCOMM_CODE_OFFSET(LTTNG_UST_OK) ] = "Success",
 	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR) ] = "Unknown error",
 	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_NOENT) ] = "No entry",
+	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_EXIST) ] = "Object already exists",
+	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_INVAL) ] = "Invalid argument",
+	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_PERM) ] = "Permission denied",
+	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_NOSYS) ] = "Not implemented",
 };
 
 /*
