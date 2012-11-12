@@ -1,5 +1,5 @@
-#ifndef _LTTNG_TRACER_H
-#define _LTTNG_TRACER_H
+#ifndef _LTTNG_UST_TRACER_H
+#define _LTTNG_UST_TRACER_H
 
 /*
  * Copyright (C) 2005-2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
@@ -39,4 +39,4 @@
 
 #define lttng_is_signed_type(type)           (((type)(-1)) < 0)
 
-#endif /* _LTTNG_TRACER_CORE_H */
+#endif /* _LTTNG_UST_TRACER_H */

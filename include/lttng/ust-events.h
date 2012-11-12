@@ -29,8 +29,8 @@
 
 #define LTTNG_UST_UUID_LEN		16
 
-struct ltt_channel;
-struct ltt_session;
+struct lttng_channel;
+struct lttng_session;
 struct lttng_ust_lib_ring_buffer_ctx;
 
 /*
@@ -52,7 +52,7 @@ enum lttng_client_types {
 /* Type description */
 
 /* Update the astract_types name table in lttng-types.c along with this enum */
-enum abstract_types {
+enum lttng_abstract_types {
 	atype_integer,
 	atype_enum,
 	atype_array,
@@ -147,7 +147,7 @@ union _lttng_basic_type {
 };
 
 struct lttng_basic_type {
-	enum abstract_types atype;
+	enum lttng_abstract_types atype;
 	union {
 		union _lttng_basic_type basic;
 	} u;
@@ -155,7 +155,7 @@ struct lttng_basic_type {
 
 #define LTTNG_UST_TYPE_PADDING	128
 struct lttng_type {
-	enum abstract_types atype;
+	enum lttng_abstract_types atype;
 	union {
 		union _lttng_basic_type basic;
 		struct {
@@ -201,7 +201,7 @@ struct lttng_ctx_field {
 	size_t (*get_size)(size_t offset);
 	void (*record)(struct lttng_ctx_field *field,
 		       struct lttng_ust_lib_ring_buffer_ctx *ctx,
-		       struct ltt_channel *chan);
+		       struct lttng_channel *chan);
 	union {
 		char padding[LTTNG_UST_CTX_FIELD_PADDING];
 	} u;
@@ -250,7 +250,7 @@ struct lttng_probe_desc {
  * be enabled.
  */
 struct session_wildcard {
-	struct ltt_channel *chan;
+	struct lttng_channel *chan;
 	struct lttng_ctx *ctx;	/* TODO */
 	struct lttng_ust_event event_param;
 	struct cds_list_head events;	/* list of events enabled */
@@ -298,7 +298,7 @@ struct lttng_ust_field_list {
 };
 
 struct ust_pending_probe;
-struct ltt_event;
+struct lttng_event;
 
 struct lttng_ust_filter_bytecode_node {
 	struct cds_list_head node;
@@ -313,17 +313,17 @@ struct lttng_bytecode_runtime {
 };
 
 /*
- * ltt_event structure is referred to by the tracing fast path. It must be
- * kept small.
+ * lttng_event structure is referred to by the tracing fast path. It
+ * must be kept small.
  *
  * IMPORTANT: this structure is part of the ABI between the probe and
  * UST. Fields need to be only added at the end, never reordered, never
  * removed.
  */
-struct ltt_event {
+struct lttng_event {
 	/* LTTng-UST 2.0 starts here */
 	unsigned int id;
-	struct ltt_channel *chan;
+	struct lttng_channel *chan;
 	int enabled;
 	const struct lttng_event_desc *desc;
 	void *filter_unused;
@@ -350,16 +350,16 @@ struct lttng_ust_shm_handle;
  * UST. Fields need to be only added at the end, never reordered, never
  * removed.
  */
-struct ltt_channel_ops {
-	struct ltt_channel *(*channel_create)(const char *name,
+struct lttng_channel_ops {
+	struct lttng_channel *(*channel_create)(const char *name,
 				void *buf_addr,
 				size_t subbuf_size, size_t num_subbuf,
 				unsigned int switch_timer_interval,
 				unsigned int read_timer_interval,
 				int **shm_fd, int **wait_fd,
 				uint64_t **memory_map_size,
-				struct ltt_channel *chan_priv_init);
-	void (*channel_destroy)(struct ltt_channel *ltt_chan);
+				struct lttng_channel *chan_priv_init);
+	void (*channel_destroy)(struct lttng_channel *lttng_chan);
 	struct lttng_ust_lib_ring_buffer *(*buffer_read_open)(struct channel *chan,
 				struct lttng_ust_shm_handle *handle,
 				int **shm_fd, int **wait_fd,
@@ -390,7 +390,7 @@ struct ltt_channel_ops {
  * UST. Fields need to be only added at the end, never reordered, never
  * removed.
  */
-struct ltt_channel {
+struct lttng_channel {
 	/*
 	 * The pointers located in this private data are NOT safe to be
 	 * dereferenced by the consumer. The only operations the
@@ -401,12 +401,12 @@ struct ltt_channel {
 	int enabled;
 	struct lttng_ctx *ctx;
 	/* Event ID management */
-	struct ltt_session *session;
+	struct lttng_session *session;
 	int objd;			/* Object associated to channel */
 	unsigned int free_event_id;	/* Next event ID to allocate */
 	unsigned int used_event_id;	/* Max allocated event IDs */
 	struct cds_list_head list;	/* Channel list */
-	struct ltt_channel_ops *ops;
+	struct lttng_channel_ops *ops;
 	int header_type;		/* 0: unset, 1: compact, 2: large */
 	struct lttng_ust_shm_handle *handle;	/* shared-memory handle */
 	unsigned int metadata_dumped:1;
@@ -422,11 +422,11 @@ struct ltt_channel {
  * UST. Fields need to be only added at the end, never reordered, never
  * removed.
  */
-struct ltt_session {
+struct lttng_session {
 	int active;			/* Is trace session active ? */
 	int been_active;		/* Has trace session been active ? */
 	int objd;			/* Object associated to session */
-	struct ltt_channel *metadata;	/* Metadata channel */
+	struct lttng_channel *metadata;	/* Metadata channel */
 	struct cds_list_head chan;	/* Channel list head */
 	struct cds_list_head events;	/* Event list head */
 	struct cds_list_head wildcards;	/* Wildcard list head */
@@ -436,18 +436,18 @@ struct ltt_session {
 	unsigned int metadata_dumped:1;
 };
 
-struct ltt_transport {
+struct lttng_transport {
 	char *name;
 	struct cds_list_head node;
-	struct ltt_channel_ops ops;
+	struct lttng_channel_ops ops;
 };
 
-struct ltt_session *ltt_session_create(void);
-int ltt_session_enable(struct ltt_session *session);
-int ltt_session_disable(struct ltt_session *session);
-void ltt_session_destroy(struct ltt_session *session);
+struct lttng_session *lttng_session_create(void);
+int lttng_session_enable(struct lttng_session *session);
+int lttng_session_disable(struct lttng_session *session);
+void lttng_session_destroy(struct lttng_session *session);
 
-struct ltt_channel *ltt_channel_create(struct ltt_session *session,
+struct lttng_channel *lttng_channel_create(struct lttng_session *session,
 				       const char *transport_name,
 				       void *buf_addr,
 				       size_t subbuf_size, size_t num_subbuf,
@@ -455,8 +455,8 @@ struct ltt_channel *ltt_channel_create(struct ltt_session *session,
 				       unsigned int read_timer_interval,
 				       int **shm_fd, int **wait_fd,
 				       uint64_t **memory_map_size,
-				       struct ltt_channel *chan_priv_init);
-struct ltt_channel *ltt_global_channel_create(struct ltt_session *session,
+				       struct lttng_channel *chan_priv_init);
+struct lttng_channel *lttng_global_channel_create(struct lttng_session *session,
 				       int overwrite, void *buf_addr,
 				       size_t subbuf_size, size_t num_subbuf,
 				       unsigned int switch_timer_interval,
@@ -464,27 +464,27 @@ struct ltt_channel *ltt_global_channel_create(struct ltt_session *session,
 				       int **shm_fd, int **wait_fd,
 				       uint64_t **memory_map_size);
 
-int ltt_event_create(struct ltt_channel *chan,
+int lttng_event_create(struct lttng_channel *chan,
 		struct lttng_ust_event *event_param,
-		struct ltt_event **event);
+		struct lttng_event **event);
 
-int ltt_channel_enable(struct ltt_channel *channel);
-int ltt_channel_disable(struct ltt_channel *channel);
-int ltt_event_enable(struct ltt_event *event);
-int ltt_event_disable(struct ltt_event *event);
+int lttng_channel_enable(struct lttng_channel *channel);
+int lttng_channel_disable(struct lttng_channel *channel);
+int lttng_event_enable(struct lttng_event *event);
+int lttng_event_disable(struct lttng_event *event);
 
-void ltt_transport_register(struct ltt_transport *transport);
-void ltt_transport_unregister(struct ltt_transport *transport);
+void lttng_transport_register(struct lttng_transport *transport);
+void lttng_transport_unregister(struct lttng_transport *transport);
 
 void synchronize_trace(void);
 
-int ltt_probe_register(struct lttng_probe_desc *desc);
-void ltt_probe_unregister(struct lttng_probe_desc *desc);
+int lttng_probe_register(struct lttng_probe_desc *desc);
+void lttng_probe_unregister(struct lttng_probe_desc *desc);
 int pending_probe_fix_events(const struct lttng_event_desc *desc);
-const struct lttng_event_desc *ltt_event_get(const char *name);
-void ltt_event_put(const struct lttng_event_desc *desc);
-int ltt_probes_init(void);
-void ltt_probes_exit(void);
+const struct lttng_event_desc *lttng_event_get(const char *name);
+void lttng_event_put(const struct lttng_event_desc *desc);
+int lttng_probes_init(void);
+void lttng_probes_exit(void);
 int lttng_find_context(struct lttng_ctx *ctx, const char *name);
 struct lttng_ctx_field *lttng_append_context(struct lttng_ctx **ctx_p);
 void lttng_remove_context_field(struct lttng_ctx **ctx_p,
@@ -501,37 +501,37 @@ extern const struct lttng_ust_lib_ring_buffer_client_cb *lttng_client_callbacks_
 extern const struct lttng_ust_lib_ring_buffer_client_cb *lttng_client_callbacks_discard;
 extern const struct lttng_ust_lib_ring_buffer_client_cb *lttng_client_callbacks_overwrite;
 
-struct ltt_transport *ltt_transport_find(const char *name);
+struct lttng_transport *lttng_transport_find(const char *name);
 
-int ltt_probes_get_event_list(struct lttng_ust_tracepoint_list *list);
-void ltt_probes_prune_event_list(struct lttng_ust_tracepoint_list *list);
+int lttng_probes_get_event_list(struct lttng_ust_tracepoint_list *list);
+void lttng_probes_prune_event_list(struct lttng_ust_tracepoint_list *list);
 struct lttng_ust_tracepoint_iter *
 	lttng_ust_tracepoint_list_get_iter_next(struct lttng_ust_tracepoint_list *list);
-int ltt_probes_get_field_list(struct lttng_ust_field_list *list);
-void ltt_probes_prune_field_list(struct lttng_ust_field_list *list);
+int lttng_probes_get_field_list(struct lttng_ust_field_list *list);
+void lttng_probes_prune_field_list(struct lttng_ust_field_list *list);
 struct lttng_ust_field_iter *
 	lttng_ust_field_list_get_iter_next(struct lttng_ust_field_list *list);
 
-int ltt_wildcard_enable(struct session_wildcard *wildcard);
-int ltt_wildcard_disable(struct session_wildcard *wildcard);
-int ltt_wildcard_create(struct ltt_channel *chan,
+int lttng_wildcard_enable(struct session_wildcard *wildcard);
+int lttng_wildcard_disable(struct session_wildcard *wildcard);
+int lttng_wildcard_create(struct lttng_channel *chan,
 	struct lttng_ust_event *event_param,
 	struct session_wildcard **sl);
-int ltt_loglevel_match(const struct lttng_event_desc *desc,
+int lttng_loglevel_match(const struct lttng_event_desc *desc,
 		enum lttng_ust_loglevel_type req_type,
 		int req_loglevel);
-void ltt_probes_create_wildcard_events(struct wildcard_entry *entry,
+void lttng_probes_create_wildcard_events(struct wildcard_entry *entry,
 				struct session_wildcard *wildcard);
-int lttng_filter_event_attach_bytecode(struct ltt_event *event,
+int lttng_filter_event_attach_bytecode(struct lttng_event *event,
                 struct lttng_ust_filter_bytecode_node *filter);
 int lttng_filter_wildcard_attach_bytecode(struct session_wildcard *wildcard,
                 struct lttng_ust_filter_bytecode_node *filter);
-void lttng_filter_event_link_bytecode(struct ltt_event *event);
-void lttng_filter_event_link_wildcard_bytecode(struct ltt_event *event,
+void lttng_filter_event_link_bytecode(struct lttng_event *event);
+void lttng_filter_event_link_wildcard_bytecode(struct lttng_event *event,
 		struct session_wildcard *wildcard);
 void lttng_filter_wildcard_link_bytecode(struct session_wildcard *wildcard);
-void lttng_free_event_filter_bytecode(struct ltt_event *event);
+void lttng_free_event_filter_bytecode(struct lttng_event *event);
 void lttng_free_wildcard_filter_bytecode(struct session_wildcard *wildcard);
-void lttng_free_event_filter_runtime(struct ltt_event *event);
+void lttng_free_event_filter_runtime(struct lttng_event *event);
 
 #endif /* _LTTNG_UST_EVENTS_H */

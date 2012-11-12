@@ -8,7 +8,7 @@ lib_LTLIBRARIES = liblttng-ust-tracepoint.la liblttng-ust.la
 liblttng_ust_tracepoint_la_SOURCES = \
 	tracepoint.c \
 	tracepoint-internal.h \
-	ltt-tracer-core.h \
+	lttng-tracer-core.h \
 	jhash.h \
 	error.h
 liblttng_ust_tracepoint_la_LIBADD = \
@@ -19,15 +19,15 @@ liblttng_ust_tracepoint_la_CFLAGS = -DUST_COMPONENT="liblttng_ust_tracepoint" -f
 liblttng_ust_runtime_la_SOURCES = \
 	lttng-ust-comm.c \
 	lttng-ust-abi.c \
-	ltt-probes.c \
+	lttng-probes.c \
 	probes/lttng-probe-ust.c \
 	probes/lttng-probe-ust.h \
 	lttng-context-vtid.c \
 	lttng-context-vpid.c \
 	lttng-context-pthread-id.c \
 	lttng-context-procname.c \
-	ltt-context.c \
-	ltt-events.c \
+	lttng-context.c \
+	lttng-events.c \
 	lttng-filter.c \
 	lttng-filter.h \
 	lttng-filter-validator.c \
@@ -44,14 +44,14 @@ liblttng_ust_runtime_la_SOURCES = \
 	lttng-ust-uuid.h
 
 liblttng_ust_support_la_SOURCES = \
-	ltt-tracer.h \
-	ltt-tracer-core.h \
+	lttng-tracer.h \
+	lttng-tracer-core.h \
 	ust-core.c \
-	ltt-ring-buffer-client.h \
-	ltt-ring-buffer-client-discard.c \
-	ltt-ring-buffer-client-overwrite.c \
-	ltt-ring-buffer-metadata-client.h \
-	ltt-ring-buffer-metadata-client.c
+	lttng-ring-buffer-client.h \
+	lttng-ring-buffer-client-discard.c \
+	lttng-ring-buffer-client-overwrite.c \
+	lttng-ring-buffer-metadata-client.h \
+	lttng-ring-buffer-metadata-client.c
 
 liblttng_ust_la_SOURCES =
 

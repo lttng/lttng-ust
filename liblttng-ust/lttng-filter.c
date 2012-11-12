@@ -128,7 +128,7 @@ const char *print_op(enum filter_op op)
 }
 
 static
-int apply_field_reloc(struct ltt_event *event,
+int apply_field_reloc(struct lttng_event *event,
 		struct bytecode_runtime *runtime,
 		uint32_t runtime_len,
 		uint32_t reloc_offset,
@@ -216,7 +216,7 @@ int apply_field_reloc(struct ltt_event *event,
 
 static
 int bytecode_is_linked(struct lttng_ust_filter_bytecode_node *filter_bytecode,
-		struct ltt_event *event)
+		struct lttng_event *event)
 {
 	struct lttng_bytecode_runtime *bc_runtime;
 
@@ -232,7 +232,7 @@ int bytecode_is_linked(struct lttng_ust_filter_bytecode_node *filter_bytecode,
  * bytecode runtime.
  */
 static
-int _lttng_filter_event_link_bytecode(struct ltt_event *event,
+int _lttng_filter_event_link_bytecode(struct lttng_event *event,
 		struct lttng_ust_filter_bytecode_node *filter_bytecode)
 {
 	int ret, offset, next_offset;
@@ -303,7 +303,7 @@ link_error:
 	return ret;
 }
 
-void lttng_filter_event_link_bytecode(struct ltt_event *event)
+void lttng_filter_event_link_bytecode(struct lttng_event *event)
 {
 	struct lttng_ust_filter_bytecode_node *filter_bytecode;
 	int ret;
@@ -317,7 +317,7 @@ void lttng_filter_event_link_bytecode(struct ltt_event *event)
 	}
 }
 
-void lttng_filter_event_link_wildcard_bytecode(struct ltt_event *event,
+void lttng_filter_event_link_wildcard_bytecode(struct lttng_event *event,
 		struct session_wildcard *wildcard)
 {
 	struct lttng_ust_filter_bytecode_node *filter_bytecode;
@@ -339,7 +339,7 @@ void lttng_filter_event_link_wildcard_bytecode(struct ltt_event *event,
  */
 void lttng_filter_wildcard_link_bytecode(struct session_wildcard *wildcard)
 {
-	struct ltt_event *event;
+	struct lttng_event *event;
 
 	if (cds_list_empty(&wildcard->filter_bytecode))
 		return;
@@ -354,7 +354,7 @@ void lttng_filter_wildcard_link_bytecode(struct session_wildcard *wildcard)
  * Need to attach filter to an event before starting tracing for the
  * session. We own the filter_bytecode if we return success.
  */
-int lttng_filter_event_attach_bytecode(struct ltt_event *event,
+int lttng_filter_event_attach_bytecode(struct lttng_event *event,
 		struct lttng_ust_filter_bytecode_node *filter_bytecode)
 {
 	cds_list_add(&filter_bytecode->node, &event->filter_bytecode);
@@ -372,7 +372,7 @@ int lttng_filter_wildcard_attach_bytecode(struct session_wildcard *wildcard,
 	return 0;
 }
 
-void lttng_free_event_filter_bytecode(struct ltt_event *event)
+void lttng_free_event_filter_bytecode(struct lttng_event *event)
 {
 	struct lttng_ust_filter_bytecode_node *filter_bytecode, *tmp;
 
@@ -392,7 +392,7 @@ void lttng_free_wildcard_filter_bytecode(struct session_wildcard *wildcard)
 	}
 }
 
-void lttng_free_event_filter_runtime(struct ltt_event *event)
+void lttng_free_event_filter_runtime(struct lttng_event *event)
 {
 	struct bytecode_runtime *runtime, *tmp;
 

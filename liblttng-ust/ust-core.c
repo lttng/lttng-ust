@@ -22,7 +22,7 @@
 #include <lttng/ust-events.h>
 #include <usterr-signal-safe.h>
 
-static CDS_LIST_HEAD(ltt_transport_list);
+static CDS_LIST_HEAD(lttng_transport_list);
 
 void init_usterr(void)
 {
@@ -37,11 +37,11 @@ void init_usterr(void)
 	}
 }
 
-struct ltt_transport *ltt_transport_find(const char *name)
+struct lttng_transport *lttng_transport_find(const char *name)
 {
-	struct ltt_transport *transport;
+	struct lttng_transport *transport;
 
-	cds_list_for_each_entry(transport, &ltt_transport_list, node) {
+	cds_list_for_each_entry(transport, &lttng_transport_list, node) {
 		if (!strcmp(transport->name, name))
 			return transport;
 	}
@@ -49,23 +49,23 @@ struct ltt_transport *ltt_transport_find(const char *name)
 }
 
 /**
- * ltt_transport_register - LTT transport registration
+ * lttng_transport_register - LTT transport registration
  * @transport: transport structure
  *
  * Registers a transport which can be used as output to extract the data out of
  * LTTng. Called with ust_lock held.
  */
-void ltt_transport_register(struct ltt_transport *transport)
+void lttng_transport_register(struct lttng_transport *transport)
 {
-	cds_list_add_tail(&transport->node, &ltt_transport_list);
+	cds_list_add_tail(&transport->node, &lttng_transport_list);
 }
 
 /**
- * ltt_transport_unregister - LTT transport unregistration
+ * lttng_transport_unregister - LTT transport unregistration
  * @transport: transport structure
  * Called with ust_lock held.
  */
-void ltt_transport_unregister(struct ltt_transport *transport)
+void lttng_transport_unregister(struct lttng_transport *transport)
 {
 	cds_list_del(&transport->node);
 }

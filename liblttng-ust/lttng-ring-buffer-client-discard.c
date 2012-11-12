@@ -1,5 +1,5 @@
 /*
- * ltt-ring-buffer-client-discard.c
+ * lttng-ring-buffer-client-discard.c
  *
  * LTTng lib ring buffer client (discard mode).
  *
@@ -21,14 +21,14 @@
  */
 
 #define _GNU_SOURCE
-#include "ltt-tracer.h"
+#include "lttng-tracer.h"
 
 #define RING_BUFFER_MODE_TEMPLATE		RING_BUFFER_DISCARD
 #define RING_BUFFER_MODE_TEMPLATE_STRING	"discard"
 #define RING_BUFFER_MODE_TEMPLATE_INIT	\
-	ltt_ring_buffer_client_discard_init
+	lttng_ring_buffer_client_discard_init
 #define RING_BUFFER_MODE_TEMPLATE_EXIT	\
-	ltt_ring_buffer_client_discard_exit
+	lttng_ring_buffer_client_discard_exit
 #define LTTNG_CLIENT_TYPE			LTTNG_CLIENT_DISCARD
 #define LTTNG_CLIENT_CALLBACKS			lttng_client_callbacks_discard
-#include "ltt-ring-buffer-client.h"
+#include "lttng-ring-buffer-client.h"

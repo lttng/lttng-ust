@@ -38,7 +38,7 @@
 #include <helper.h>
 
 #include "tracepoint-internal.h"
-#include "ltt-tracer-core.h"
+#include "lttng-tracer-core.h"
 #include "jhash.h"
 #include "error.h"
 

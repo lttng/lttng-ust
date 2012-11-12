@@ -1,5 +1,5 @@
-#ifndef _LTT_TRACER_CORE_H
-#define _LTT_TRACER_CORE_H
+#ifndef _LTTNG_TRACER_CORE_H
+#define _LTTNG_TRACER_CORE_H
 
 /*
  * Copyright (C) 2005-2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
@@ -30,9 +30,9 @@
 #include <lttng/ringbuffer-config.h>
 #include <usterr-signal-safe.h>
 
-struct ltt_session;
-struct ltt_channel;
-struct ltt_event;
+struct lttng_session;
+struct lttng_channel;
+struct lttng_event;
 
 void ust_lock(void);
 void ust_unlock(void);
@@ -41,4 +41,4 @@ void lttng_fixup_event_tls(void);
 void lttng_fixup_vtid_tls(void);
 void lttng_fixup_procname_tls(void);
 
-#endif /* _LTT_TRACER_CORE_H */
+#endif /* _LTTNG_TRACER_CORE_H */

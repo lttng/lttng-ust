@@ -1,5 +1,5 @@
 /*
- * ltt-probes.c
+ * lttng-probes.c
  *
  * Holds LTTng probes registry.
  *
@@ -31,7 +31,7 @@
 #include <helper.h>
 #include <ctype.h>
 
-#include "ltt-tracer-core.h"
+#include "lttng-tracer-core.h"
 #include "jhash.h"
 #include "error.h"
 
@@ -68,7 +68,7 @@ const struct lttng_event_desc *find_event(const char *name)
 	return NULL;
 }
 
-int ltt_probe_register(struct lttng_probe_desc *desc)
+int lttng_probe_register(struct lttng_probe_desc *desc)
 {
 	struct lttng_probe_desc *iter;
 	int ret = 0;
@@ -124,7 +124,13 @@ end:
 	return ret;
 }
 
-void ltt_probe_unregister(struct lttng_probe_desc *desc)
+/* Backward compatibility with UST 2.0 */
+int ltt_probe_register(struct lttng_probe_desc *desc)
+{
+	return lttng_probe_register(desc);
+}
+
+void lttng_probe_unregister(struct lttng_probe_desc *desc)
 {
 	ust_lock();
 	cds_list_del(&desc->head);
@@ -132,10 +138,16 @@ void ltt_probe_unregister(struct lttng_probe_desc *desc)
 	ust_unlock();
 }
 
+/* Backward compatibility with UST 2.0 */
+void ltt_probe_unregister(struct lttng_probe_desc *desc)
+{
+	lttng_probe_unregister(desc);
+}
+
 /*
  * called with UST lock held.
  */
-const struct lttng_event_desc *ltt_event_get(const char *name)
+const struct lttng_event_desc *lttng_event_get(const char *name)
 {
 	const struct lttng_event_desc *event;
 
@@ -145,11 +157,11 @@ const struct lttng_event_desc *ltt_event_get(const char *name)
 	return event;
 }
 
-void ltt_event_put(const struct lttng_event_desc *event)
+void lttng_event_put(const struct lttng_event_desc *event)
 {
 }
 
-void ltt_probes_prune_event_list(struct lttng_ust_tracepoint_list *list)
+void lttng_probes_prune_event_list(struct lttng_ust_tracepoint_list *list)
 {
 	struct tp_list_entry *list_entry, *tmp;
 
@@ -162,7 +174,7 @@ void ltt_probes_prune_event_list(struct lttng_ust_tracepoint_list *list)
 /*
  * called with UST lock held.
  */
-int ltt_probes_get_event_list(struct lttng_ust_tracepoint_list *list)
+int lttng_probes_get_event_list(struct lttng_ust_tracepoint_list *list)
 {
 	struct lttng_probe_desc *probe_desc;
 	int i;
@@ -195,7 +207,7 @@ int ltt_probes_get_event_list(struct lttng_ust_tracepoint_list *list)
 	return 0;
 
 err_nomem:
-	ltt_probes_prune_event_list(list);
+	lttng_probes_prune_event_list(list);
 	return -ENOMEM;
 }
 
@@ -219,7 +231,7 @@ struct lttng_ust_tracepoint_iter *
 	return &entry->tp;
 }
 
-void ltt_probes_prune_field_list(struct lttng_ust_field_list *list)
+void lttng_probes_prune_field_list(struct lttng_ust_field_list *list)
 {
 	struct tp_field_list_entry *list_entry, *tmp;
 
@@ -232,7 +244,7 @@ void ltt_probes_prune_field_list(struct lttng_ust_field_list *list)
 /*
  * called with UST lock held.
  */
-int ltt_probes_get_field_list(struct lttng_ust_field_list *list)
+int lttng_probes_get_field_list(struct lttng_ust_field_list *list)
 {
 	struct lttng_probe_desc *probe_desc;
 	int i;
@@ -331,7 +343,7 @@ int ltt_probes_get_field_list(struct lttng_ust_field_list *list)
 	return 0;
 
 err_nomem:
-	ltt_probes_prune_field_list(list);
+	lttng_probes_prune_field_list(list);
 	return -ENOMEM;
 }
 
@@ -359,7 +371,7 @@ struct lttng_ust_field_iter *
  * marshall all probes/all events and create those that fit the
  * wildcard. Add them to the events list as created.
  */
-void ltt_probes_create_wildcard_events(struct wildcard_entry *entry,
+void lttng_probes_create_wildcard_events(struct wildcard_entry *entry,
 				struct session_wildcard *wildcard)
 {
 	struct lttng_probe_desc *probe_desc;
@@ -378,14 +390,14 @@ void ltt_probes_create_wildcard_events(struct wildcard_entry *entry,
 					&& (strlen(entry->name) == 1
 						|| !strncmp(event_desc->name, entry->name,
 							strlen(entry->name) - 1))) {
-				if (ltt_loglevel_match(event_desc,
+				if (lttng_loglevel_match(event_desc,
 					entry->loglevel_type,
 						entry->loglevel)) {
 					match = 1;
 				}
 			}
 			if (match) {
-				struct ltt_event *ev;
+				struct lttng_event *ev;
 				int ret;
 
 				memcpy(&event_param, &wildcard->event_param,
@@ -395,7 +407,7 @@ void ltt_probes_create_wildcard_events(struct wildcard_entry *entry,
 					sizeof(event_param.name));
 				event_param.name[sizeof(event_param.name) - 1] = '\0';
 				/* create event */
-				ret = ltt_event_create(wildcard->chan,
+				ret = lttng_event_create(wildcard->chan,
 					&event_param, &ev);
 				if (ret) {
 					DBG("Error creating event");

@@ -1,5 +1,5 @@
 /*
- * ltt-ring-buffer-client-overwrite.c
+ * lttng-ring-buffer-client-overwrite.c
  *
  * LTTng lib ring buffer client (overwrite mode).
  *
@@ -21,14 +21,14 @@
  */
 
 #define _GNU_SOURCE
-#include "ltt-tracer.h"
+#include "lttng-tracer.h"
 
 #define RING_BUFFER_MODE_TEMPLATE		RING_BUFFER_OVERWRITE
 #define RING_BUFFER_MODE_TEMPLATE_STRING	"overwrite"
 #define RING_BUFFER_MODE_TEMPLATE_INIT	\
-	ltt_ring_buffer_client_overwrite_init
+	lttng_ring_buffer_client_overwrite_init
 #define RING_BUFFER_MODE_TEMPLATE_EXIT	\
-	ltt_ring_buffer_client_overwrite_exit
+	lttng_ring_buffer_client_overwrite_exit
 #define LTTNG_CLIENT_TYPE			LTTNG_CLIENT_OVERWRITE
 #define LTTNG_CLIENT_CALLBACKS			lttng_client_callbacks_overwrite
-#include "ltt-ring-buffer-client.h"
+#include "lttng-ring-buffer-client.h"

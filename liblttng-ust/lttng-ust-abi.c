@@ -47,7 +47,7 @@
 #include "tracepoint-internal.h"
 #include <usterr-signal-safe.h>
 #include <helper.h>
-#include "ltt-tracer.h"
+#include "lttng-tracer.h"
 
 static int lttng_ust_abi_close_in_progress;
 
@@ -262,10 +262,10 @@ int lttng_abi_create_root_handle(void)
 static
 int lttng_abi_create_session(void *owner)
 {
-	struct ltt_session *session;
+	struct lttng_session *session;
 	int session_objd, ret;
 
-	session = ltt_session_create();
+	session = lttng_session_create();
 	if (!session)
 		return -ENOMEM;
 	session_objd = objd_alloc(session, &lttng_session_ops, owner);
@@ -277,7 +277,7 @@ int lttng_abi_create_session(void *owner)
 	return session_objd;
 
 objd_error:
-	ltt_session_destroy(session);
+	lttng_session_destroy(session);
 	return ret;
 }
 
@@ -294,7 +294,7 @@ long lttng_abi_tracer_version(int objd,
 static
 long lttng_abi_add_context(int objd,
 	struct lttng_ust_context *context_param,
-	struct lttng_ctx **ctx, struct ltt_session *session)
+	struct lttng_ctx **ctx, struct lttng_session *session)
 {
 	if (session->been_active)
 		return -EPERM;
@@ -370,21 +370,21 @@ static const struct lttng_ust_objd_ops lttng_ops = {
 static
 void lttng_metadata_create_events(int channel_objd)
 {
-	struct ltt_channel *channel = objd_private(channel_objd);
+	struct lttng_channel *channel = objd_private(channel_objd);
 	static struct lttng_ust_event metadata_params = {
 		.instrumentation = LTTNG_UST_TRACEPOINT,
 		.name = "lttng_ust:metadata",
 		.loglevel_type = LTTNG_UST_LOGLEVEL_ALL,
 		.loglevel = TRACE_DEFAULT,
 	};
-	struct ltt_event *event;
+	struct lttng_event *event;
 	int ret;
 
 	/*
 	 * We tolerate no failure path after event creation. It will stay
 	 * invariant for the rest of the session.
 	 */
-	ret = ltt_event_create(channel, &metadata_params, &event);
+	ret = lttng_event_create(channel, &metadata_params, &event);
 	if (ret < 0) {
 		goto create_error;
 	}
@@ -401,13 +401,13 @@ int lttng_abi_create_channel(int session_objd,
 			     union ust_args *uargs,
 			     void *owner)
 {
-	struct ltt_session *session = objd_private(session_objd);
+	struct lttng_session *session = objd_private(session_objd);
 	const struct lttng_ust_objd_ops *ops;
 	const char *transport_name;
-	struct ltt_channel *chan;
+	struct lttng_channel *chan;
 	int chan_objd;
 	int ret = 0;
-	struct ltt_channel chan_priv_init;
+	struct lttng_channel chan_priv_init;
 
 	switch (channel_type) {
 	case PER_CPU_CHANNEL:
@@ -443,7 +443,7 @@ int lttng_abi_create_channel(int session_objd,
 	 * We tolerate no failure path after channel creation. It will stay
 	 * invariant for the rest of the session.
 	 */
-	chan = ltt_channel_create(session, transport_name, NULL,
+	chan = lttng_channel_create(session, transport_name, NULL,
 				  chan_param->subbuf_size,
 				  chan_param->num_subbuf,
 				  chan_param->switch_timer_interval,
@@ -503,7 +503,7 @@ static
 long lttng_session_cmd(int objd, unsigned int cmd, unsigned long arg,
 	union ust_args *uargs, void *owner)
 {
-	struct ltt_session *session = objd_private(objd);
+	struct lttng_session *session = objd_private(objd);
 
 	switch (cmd) {
 	case LTTNG_UST_CHANNEL:
@@ -512,10 +512,10 @@ long lttng_session_cmd(int objd, unsigned int cmd, unsigned long arg,
 				PER_CPU_CHANNEL, uargs, owner);
 	case LTTNG_UST_SESSION_START:
 	case LTTNG_UST_ENABLE:
-		return ltt_session_enable(session);
+		return lttng_session_enable(session);
 	case LTTNG_UST_SESSION_STOP:
 	case LTTNG_UST_DISABLE:
-		return ltt_session_disable(session);
+		return lttng_session_disable(session);
 	case LTTNG_UST_METADATA:
 		return lttng_abi_create_channel(objd,
 				(struct lttng_ust_channel *) arg,
@@ -536,10 +536,10 @@ long lttng_session_cmd(int objd, unsigned int cmd, unsigned long arg,
 static
 int lttng_release_session(int objd)
 {
-	struct ltt_session *session = objd_private(objd);
+	struct lttng_session *session = objd_private(objd);
 
 	if (session) {
-		ltt_session_destroy(session);
+		lttng_session_destroy(session);
 		return 0;
 	} else {
 		return -EINVAL;
@@ -596,7 +596,7 @@ int lttng_abi_tracepoint_list(void *owner)
 	objd_set_private(list_objd, list);
 
 	/* populate list by walking on all registered probes. */
-	ret = ltt_probes_get_event_list(list);
+	ret = lttng_probes_get_event_list(list);
 	if (ret) {
 		goto list_error;
 	}
@@ -621,7 +621,7 @@ int lttng_release_tracepoint_list(int objd)
 	struct lttng_ust_tracepoint_list *list = objd_private(objd);
 
 	if (list) {
-		ltt_probes_prune_event_list(list);
+		lttng_probes_prune_event_list(list);
 		free(list);
 		return 0;
 	} else {
@@ -678,7 +678,7 @@ int lttng_abi_tracepoint_field_list(void *owner)
 	objd_set_private(list_objd, list);
 
 	/* populate list by walking on all registered probes. */
-	ret = ltt_probes_get_field_list(list);
+	ret = lttng_probes_get_field_list(list);
 	if (ret) {
 		goto list_error;
 	}
@@ -703,7 +703,7 @@ int lttng_release_tracepoint_field_list(int objd)
 	struct lttng_ust_field_list *list = objd_private(objd);
 
 	if (list) {
-		ltt_probes_prune_field_list(list);
+		lttng_probes_prune_field_list(list);
 		free(list);
 		return 0;
 	} else {
@@ -718,14 +718,14 @@ static const struct lttng_ust_objd_ops lttng_tracepoint_field_list_ops = {
 
 struct stream_priv_data {
 	struct lttng_ust_lib_ring_buffer *buf;
-	struct ltt_channel *ltt_chan;
+	struct lttng_channel *lttng_chan;
 };
 
 static
 int lttng_abi_open_stream(int channel_objd, struct lttng_ust_stream *info,
 		union ust_args *uargs, void *owner)
 {
-	struct ltt_channel *channel = objd_private(channel_objd);
+	struct lttng_channel *channel = objd_private(channel_objd);
 	struct lttng_ust_lib_ring_buffer *buf;
 	struct stream_priv_data *priv;
 	int stream_objd, ret;
@@ -743,7 +743,7 @@ int lttng_abi_open_stream(int channel_objd, struct lttng_ust_stream *info,
 		goto alloc_error;
 	}
 	priv->buf = buf;
-	priv->ltt_chan = channel;
+	priv->lttng_chan = channel;
 	stream_objd = objd_alloc(priv, &lib_ring_buffer_objd_ops, owner);
 	if (stream_objd < 0) {
 		ret = stream_objd;
@@ -765,8 +765,8 @@ int lttng_abi_create_event(int channel_objd,
 			   struct lttng_ust_event *event_param,
 			   void *owner)
 {
-	struct ltt_channel *channel = objd_private(channel_objd);
-	struct ltt_event *event;
+	struct lttng_channel *channel = objd_private(channel_objd);
+	struct lttng_event *event;
 	int event_objd, ret;
 
 	event_param->name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
@@ -779,7 +779,7 @@ int lttng_abi_create_event(int channel_objd,
 	 * We tolerate no failure path after event creation. It will stay
 	 * invariant for the rest of the session.
 	 */
-	ret = ltt_event_create(channel, event_param, &event);
+	ret = lttng_event_create(channel, event_param, &event);
 	if (ret < 0) {
 		goto event_error;
 	}
@@ -804,7 +804,7 @@ int lttng_abi_create_wildcard(int channel_objd,
 			      struct lttng_ust_event *event_param,
 			      void *owner)
 {
-	struct ltt_channel *channel = objd_private(channel_objd);
+	struct lttng_channel *channel = objd_private(channel_objd);
 	struct session_wildcard *wildcard;
 	int wildcard_objd, ret;
 
@@ -818,7 +818,7 @@ int lttng_abi_create_wildcard(int channel_objd,
 	 * We tolerate no failure path after wildcard creation. It will
 	 * stay invariant for the rest of the session.
 	 */
-	ret = ltt_wildcard_create(channel, event_param, &wildcard);
+	ret = lttng_wildcard_create(channel, event_param, &wildcard);
 	if (ret < 0) {
 		goto wildcard_error;
 	}
@@ -866,7 +866,7 @@ static
 long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg,
 	union ust_args *uargs, void *owner)
 {
-	struct ltt_channel *channel = objd_private(objd);
+	struct lttng_channel *channel = objd_private(objd);
 
 	switch (cmd) {
 	case LTTNG_UST_STREAM:
@@ -895,9 +895,9 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg,
 				(struct lttng_ust_context *) arg,
 				&channel->ctx, channel->session);
 	case LTTNG_UST_ENABLE:
-		return ltt_channel_enable(channel);
+		return lttng_channel_enable(channel);
 	case LTTNG_UST_DISABLE:
-		return ltt_channel_disable(channel);
+		return lttng_channel_disable(channel);
 	case LTTNG_UST_FLUSH_BUFFER:
 		return channel->ops->flush_buffer(channel->chan, channel->handle);
 	default:
@@ -924,7 +924,7 @@ static
 long lttng_metadata_cmd(int objd, unsigned int cmd, unsigned long arg,
 	union ust_args *uargs, void *owner)
 {
-	struct ltt_channel *channel = objd_private(objd);
+	struct lttng_channel *channel = objd_private(objd);
 
 	switch (cmd) {
 	case LTTNG_UST_STREAM:
@@ -951,7 +951,7 @@ long lttng_metadata_cmd(int objd, unsigned int cmd, unsigned long arg,
  */
 unsigned int lttng_channel_poll(struct file *file, poll_table *wait)
 {
-	struct ltt_channel *channel = file->private_data;
+	struct lttng_channel *channel = file->private_data;
 	unsigned int mask = 0;
 
 	if (file->f_mode & FMODE_READ) {
@@ -975,7 +975,7 @@ unsigned int lttng_channel_poll(struct file *file, poll_table *wait)
 static
 int lttng_channel_release(int objd)
 {
-	struct ltt_channel *channel = objd_private(objd);
+	struct lttng_channel *channel = objd_private(objd);
 
 	if (channel)
 		return lttng_ust_objd_unref(channel->session->objd);
@@ -1020,11 +1020,11 @@ int lttng_rb_release(int objd)
 {
 	struct stream_priv_data *priv = objd_private(objd);
 	struct lttng_ust_lib_ring_buffer *buf;
-	struct ltt_channel *channel;
+	struct lttng_channel *channel;
 
 	if (priv) {
 		buf = priv->buf;
-		channel = priv->ltt_chan;
+		channel = priv->lttng_chan;
 		free(priv);
 		/*
 		 * If we are at ABI exit, we don't want to close the
@@ -1075,7 +1075,7 @@ static
 long lttng_event_cmd(int objd, unsigned int cmd, unsigned long arg,
 	union ust_args *uargs, void *owner)
 {
-	struct ltt_event *event = objd_private(objd);
+	struct lttng_event *event = objd_private(objd);
 
 	switch (cmd) {
 	case LTTNG_UST_CONTEXT:
@@ -1083,9 +1083,9 @@ long lttng_event_cmd(int objd, unsigned int cmd, unsigned long arg,
 				(struct lttng_ust_context *) arg,
 				&event->ctx, event->chan->session);
 	case LTTNG_UST_ENABLE:
-		return ltt_event_enable(event);
+		return lttng_event_enable(event);
 	case LTTNG_UST_DISABLE:
-		return ltt_event_disable(event);
+		return lttng_event_disable(event);
 	case LTTNG_UST_FILTER:
 	{
 		int ret;
@@ -1104,7 +1104,7 @@ long lttng_event_cmd(int objd, unsigned int cmd, unsigned long arg,
 static
 int lttng_event_release(int objd)
 {
-	struct ltt_event *event = objd_private(objd);
+	struct lttng_event *event = objd_private(objd);
 
 	if (event)
 		return lttng_ust_objd_unref(event->chan->objd);
@@ -1152,9 +1152,9 @@ long lttng_wildcard_cmd(int objd, unsigned int cmd, unsigned long arg,
 				&wildcard->ctx, wildcard->chan->session);
 #endif
 	case LTTNG_UST_ENABLE:
-		return ltt_wildcard_enable(wildcard);
+		return lttng_wildcard_enable(wildcard);
 	case LTTNG_UST_DISABLE:
-		return ltt_wildcard_disable(wildcard);
+		return lttng_wildcard_disable(wildcard);
 	case LTTNG_UST_FILTER:
 	{
 		int ret;

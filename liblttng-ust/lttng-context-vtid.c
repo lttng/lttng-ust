@@ -26,7 +26,7 @@
 #include <lttng/ust-tracer.h>
 #include <lttng/ringbuffer-config.h>
 #include <lttng/ust-tid.h>
-#include "ltt-tracer-core.h"
+#include "lttng-tracer-core.h"
 
 /*
  * We cache the result to ensure we don't trigger a system call for
@@ -57,7 +57,7 @@ size_t vtid_get_size(size_t offset)
 static
 void vtid_record(struct lttng_ctx_field *field,
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
-		 struct ltt_channel *chan)
+		 struct lttng_channel *chan)
 {
 	if (caa_unlikely(!cached_vtid))
 		cached_vtid = gettid();

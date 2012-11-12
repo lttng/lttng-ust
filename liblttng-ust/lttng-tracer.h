@@ -1,5 +1,5 @@
-#ifndef _LTT_TRACER_H
-#define _LTT_TRACER_H
+#ifndef _LTTNG_TRACER_H
+#define _LTTNG_TRACER_H
 
 /*
  * Copyright (C) 2005-2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
@@ -26,12 +26,8 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <lttng/ust-events.h>
-#include "ltt-tracer-core.h"
+#include "lttng-tracer-core.h"
 #include "compat.h"
-
-/* Number of bytes to log with a read/write event */
-#define LTT_LOG_RW_SIZE			32L
-#define LTT_MAX_SMALL_SIZE		0xFFFFU
 
 /* Tracer properties */
 #define CTF_MAGIC_NUMBER		0xC1FC1FC1
@@ -47,7 +43,7 @@
  */
 #define LTTNG_METADATA_TIMEOUT_MSEC	10000
 
-#define LTT_RFLAG_EXTENDED		RING_BUFFER_RFLAG_END
-#define LTT_RFLAG_END			(LTT_RFLAG_EXTENDED << 1)
+#define LTTNG_RFLAG_EXTENDED		RING_BUFFER_RFLAG_END
+#define LTTNG_RFLAG_END			(LTTNG_RFLAG_EXTENDED << 1)
 
-#endif /* _LTT_TRACER_H */
+#endif /* _LTTNG_TRACER_H */

@@ -1,5 +1,5 @@
 /*
- * ltt-events.c
+ * lttng-events.c
  *
  * Holds LTTng per-session event registry.
  *
@@ -50,8 +50,8 @@
 #include "lttng-ust-uuid.h"
 
 #include "tracepoint-internal.h"
-#include "ltt-tracer.h"
-#include "ltt-tracer-core.h"
+#include "lttng-tracer.h"
+#include "lttng-tracer-core.h"
 #include "wait.h"
 #include "../libringbuffer/shm.h"
 #include "jhash.h"
@@ -91,25 +91,25 @@ static CDS_LIST_HEAD(wildcard_list);
 static struct cds_hlist_head pending_probe_table[PENDING_PROBE_HASH_SIZE];
 
 struct ust_pending_probe {
-	struct ltt_event *event;
+	struct lttng_event *event;
 	struct cds_hlist_node node;
 	enum lttng_ust_loglevel_type loglevel_type;
 	int loglevel;
 	char name[];
 };
 
-static void _ltt_event_destroy(struct ltt_event *event);
-static void _ltt_wildcard_destroy(struct session_wildcard *sw);
-static void _ltt_channel_destroy(struct ltt_channel *chan);
-static int _ltt_event_unregister(struct ltt_event *event);
+static void _lttng_event_destroy(struct lttng_event *event);
+static void _lttng_wildcard_destroy(struct session_wildcard *sw);
+static void _lttng_channel_destroy(struct lttng_channel *chan);
+static int _lttng_event_unregister(struct lttng_event *event);
 static
-int _ltt_event_metadata_statedump(struct ltt_session *session,
-				  struct ltt_channel *chan,
-				  struct ltt_event *event);
+int _lttng_event_metadata_statedump(struct lttng_session *session,
+				  struct lttng_channel *chan,
+				  struct lttng_event *event);
 static
-int _ltt_session_metadata_statedump(struct ltt_session *session);
+int _lttng_session_metadata_statedump(struct lttng_session *session);
 
-int ltt_loglevel_match(const struct lttng_event_desc *desc,
+int lttng_loglevel_match(const struct lttng_event_desc *desc,
 		enum lttng_ust_loglevel_type req_type,
 		int req_loglevel)
 {
@@ -158,7 +158,7 @@ struct wildcard_entry *match_wildcard(const struct lttng_event_desc *desc)
 			goto possible_match;
 		continue;	/* goto next, no match */
 	possible_match:
-		if (ltt_loglevel_match(desc,
+		if (lttng_loglevel_match(desc,
 				e->loglevel_type,
 				e->loglevel)) {
 			return e;
@@ -173,7 +173,7 @@ struct wildcard_entry *match_wildcard(const struct lttng_event_desc *desc)
  * called with session mutex held.
  */
 static
-int add_pending_probe(struct ltt_event *event, const char *name,
+int add_pending_probe(struct lttng_event *event, const char *name,
 		enum lttng_ust_loglevel_type loglevel_type,
 		int loglevel)
 {
@@ -244,7 +244,7 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 
 			cds_list_for_each_entry(sw, &wildcard->session_list,
 					session_list) {
-				struct ltt_event *ev;
+				struct lttng_event *ev;
 				int ret;
 
 				memcpy(&event_param, &sw->event_param,
@@ -254,7 +254,7 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 					sizeof(event_param.name));
 				event_param.name[sizeof(event_param.name) - 1] = '\0';
 				/* create event */
-				ret = ltt_event_create(sw->chan,
+				ret = lttng_event_create(sw->chan,
 					&event_param, &ev);
 				if (ret) {
 					DBG("Error creating event");
@@ -275,10 +275,10 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 	hash = jhash(name, name_len - 1, 0);
 	head = &pending_probe_table[hash & (PENDING_PROBE_HASH_SIZE - 1)];
 	cds_hlist_for_each_entry_safe(e, node, p, head, node) {
-		struct ltt_event *event;
-		struct ltt_channel *chan;
+		struct lttng_event *event;
+		struct lttng_channel *chan;
 
-		if (!ltt_loglevel_match(desc,
+		if (!lttng_loglevel_match(desc,
 				e->loglevel_type,
 				e->loglevel)) {
 			continue;
@@ -300,7 +300,7 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 		if (ret)
 			continue;
 		event->id = chan->free_event_id++;
-		ret |= _ltt_event_metadata_statedump(chan->session, chan,
+		ret |= _lttng_event_metadata_statedump(chan->session, chan,
 				event);
 		lttng_filter_event_link_bytecode(event);
 	}
@@ -312,12 +312,12 @@ void synchronize_trace(void)
 	synchronize_rcu();
 }
 
-struct ltt_session *ltt_session_create(void)
+struct lttng_session *lttng_session_create(void)
 {
-	struct ltt_session *session;
+	struct lttng_session *session;
 	int ret;
 
-	session = zmalloc(sizeof(struct ltt_session));
+	session = zmalloc(sizeof(struct lttng_session));
 	if (!session)
 		return NULL;
 	CDS_INIT_LIST_HEAD(&session->chan);
@@ -331,33 +331,33 @@ struct ltt_session *ltt_session_create(void)
 	return session;
 }
 
-void ltt_session_destroy(struct ltt_session *session)
+void lttng_session_destroy(struct lttng_session *session)
 {
-	struct ltt_channel *chan, *tmpchan;
-	struct ltt_event *event, *tmpevent;
+	struct lttng_channel *chan, *tmpchan;
+	struct lttng_event *event, *tmpevent;
 	struct session_wildcard *wildcard, *tmpwildcard;
 	int ret;
 
 	CMM_ACCESS_ONCE(session->active) = 0;
 	cds_list_for_each_entry(event, &session->events, list) {
-		ret = _ltt_event_unregister(event);
+		ret = _lttng_event_unregister(event);
 		WARN_ON(ret);
 	}
 	synchronize_trace();	/* Wait for in-flight events to complete */
 	cds_list_for_each_entry_safe(wildcard, tmpwildcard, &session->wildcards, list)
-		_ltt_wildcard_destroy(wildcard);
+		_lttng_wildcard_destroy(wildcard);
 	cds_list_for_each_entry_safe(event, tmpevent, &session->events, list)
-		_ltt_event_destroy(event);
+		_lttng_event_destroy(event);
 	cds_list_for_each_entry_safe(chan, tmpchan, &session->chan, list)
-		_ltt_channel_destroy(chan);
+		_lttng_channel_destroy(chan);
 	cds_list_del(&session->list);
 	free(session);
 }
 
-int ltt_session_enable(struct ltt_session *session)
+int lttng_session_enable(struct lttng_session *session)
 {
 	int ret = 0;
-	struct ltt_channel *chan;
+	struct lttng_channel *chan;
 
 	if (session->active) {
 		ret = -EBUSY;
@@ -379,14 +379,14 @@ int ltt_session_enable(struct ltt_session *session)
 
 	CMM_ACCESS_ONCE(session->active) = 1;
 	CMM_ACCESS_ONCE(session->been_active) = 1;
-	ret = _ltt_session_metadata_statedump(session);
+	ret = _lttng_session_metadata_statedump(session);
 	if (ret)
 		CMM_ACCESS_ONCE(session->active) = 0;
 end:
 	return ret;
 }
 
-int ltt_session_disable(struct ltt_session *session)
+int lttng_session_disable(struct lttng_session *session)
 {
 	int ret = 0;
 
@@ -399,7 +399,7 @@ end:
 	return ret;
 }
 
-int ltt_channel_enable(struct ltt_channel *channel)
+int lttng_channel_enable(struct lttng_channel *channel)
 {
 	int old;
 
@@ -411,7 +411,7 @@ int ltt_channel_enable(struct ltt_channel *channel)
 	return 0;
 }
 
-int ltt_channel_disable(struct ltt_channel *channel)
+int lttng_channel_disable(struct lttng_channel *channel)
 {
 	int old;
 
@@ -423,7 +423,7 @@ int ltt_channel_disable(struct ltt_channel *channel)
 	return 0;
 }
 
-int ltt_event_enable(struct ltt_event *event)
+int lttng_event_enable(struct lttng_event *event)
 {
 	int old;
 
@@ -435,7 +435,7 @@ int ltt_event_enable(struct ltt_event *event)
 	return 0;
 }
 
-int ltt_event_disable(struct ltt_event *event)
+int lttng_event_disable(struct lttng_event *event)
 {
 	int old;
 
@@ -447,7 +447,7 @@ int ltt_event_disable(struct ltt_event *event)
 	return 0;
 }
 
-struct ltt_channel *ltt_channel_create(struct ltt_session *session,
+struct lttng_channel *lttng_channel_create(struct lttng_session *session,
 				       const char *transport_name,
 				       void *buf_addr,
 				       size_t subbuf_size, size_t num_subbuf,
@@ -455,14 +455,14 @@ struct ltt_channel *ltt_channel_create(struct ltt_session *session,
 				       unsigned int read_timer_interval,
 				       int **shm_fd, int **wait_fd,
 				       uint64_t **memory_map_size,
-				       struct ltt_channel *chan_priv_init)
+				       struct lttng_channel *chan_priv_init)
 {
-	struct ltt_channel *chan = NULL;
-	struct ltt_transport *transport;
+	struct lttng_channel *chan = NULL;
+	struct lttng_transport *transport;
 
 	if (session->been_active)
 		goto active;	/* Refuse to add channel to active session */
-	transport = ltt_transport_find(transport_name);
+	transport = lttng_transport_find(transport_name);
 	if (!transport) {
 		DBG("LTTng transport %s not found\n",
 		       transport_name);
@@ -496,7 +496,7 @@ active:
  * Only used internally at session destruction.
  */
 static
-void _ltt_channel_destroy(struct ltt_channel *chan)
+void _lttng_channel_destroy(struct lttng_channel *chan)
 {
 	cds_list_del(&chan->list);
 	lttng_destroy_context(chan->ctx);
@@ -506,12 +506,12 @@ void _ltt_channel_destroy(struct ltt_channel *chan)
 /*
  * Supports event creation while tracing session is active.
  */
-int ltt_event_create(struct ltt_channel *chan,
+int lttng_event_create(struct lttng_channel *chan,
 		struct lttng_ust_event *event_param,
-		struct ltt_event **_event)
+		struct lttng_event **_event)
 {
 	const struct lttng_event_desc *desc = NULL;	/* silence gcc */
-	struct ltt_event *event;
+	struct lttng_event *event;
 	int ret = 0;
 
 	if (chan->used_event_id == -1U) {
@@ -537,9 +537,9 @@ int ltt_event_create(struct ltt_channel *chan,
 	 * Check if loglevel match. Refuse to connect event if not.
 	 */
 	if (event_param->instrumentation == LTTNG_UST_TRACEPOINT) {
-		desc = ltt_event_get(event_param->name);
+		desc = lttng_event_get(event_param->name);
 		if (desc) {
-			if (!ltt_loglevel_match(desc,
+			if (!lttng_loglevel_match(desc,
 					event_param->loglevel_type,
 					event_param->loglevel)) {
 				ret = -EPERM;
@@ -551,7 +551,7 @@ int ltt_event_create(struct ltt_channel *chan,
 		 * pending probes.
 		 */
 	}
-	event = zmalloc(sizeof(struct ltt_event));
+	event = zmalloc(sizeof(struct lttng_event));
 	if (!event) {
 		ret = -ENOMEM;
 		goto cache_error;
@@ -566,7 +566,7 @@ int ltt_event_create(struct ltt_channel *chan,
 	CDS_INIT_LIST_HEAD(&event->filter_bytecode);
 	CDS_INIT_LIST_HEAD(&event->bytecode_runtime);
 	event->instrumentation = event_param->instrumentation;
-	/* Populate ltt_event structure before tracepoint registration. */
+	/* Populate lttng_event structure before tracepoint registration. */
 	cmm_smp_wmb();
 	switch (event_param->instrumentation) {
 	case LTTNG_UST_TRACEPOINT:
@@ -595,7 +595,7 @@ int ltt_event_create(struct ltt_channel *chan,
 		WARN_ON_ONCE(1);
 	}
 	if (event->desc) {
-		ret = _ltt_event_metadata_statedump(chan->session, chan, event);
+		ret = _lttng_event_metadata_statedump(chan->session, chan, event);
 		if (ret)
 			goto statedump_error;
 	}
@@ -608,7 +608,7 @@ statedump_error:
 		WARN_ON_ONCE(__tracepoint_probe_unregister(event_param->name,
 					event->desc->probe_callback,
 					event));
-		ltt_event_put(event->desc);
+		lttng_event_put(event->desc);
 	}
 add_pending_error:
 register_error:
@@ -623,7 +623,7 @@ full:
 /*
  * Only used internally at session destruction.
  */
-int _ltt_event_unregister(struct ltt_event *event)
+int _lttng_event_unregister(struct lttng_event *event)
 {
 	int ret = -EINVAL;
 
@@ -650,12 +650,12 @@ int _ltt_event_unregister(struct ltt_event *event)
  * Only used internally at session destruction.
  */
 static
-void _ltt_event_destroy(struct ltt_event *event)
+void _lttng_event_destroy(struct lttng_event *event)
 {
 	switch (event->instrumentation) {
 	case LTTNG_UST_TRACEPOINT:
 		if (event->desc) {
-			ltt_event_put(event->desc);
+			lttng_event_put(event->desc);
 		}
 		break;
 	default:
@@ -674,11 +674,11 @@ void _ltt_event_destroy(struct ltt_event *event)
  * remaining space left in packet and write, since mutual exclusion
  * protects us from concurrent writes.
  */
-int lttng_metadata_printf(struct ltt_session *session,
+int lttng_metadata_printf(struct lttng_session *session,
 			  const char *fmt, ...)
 {
 	struct lttng_ust_lib_ring_buffer_ctx ctx;
-	struct ltt_channel *chan = session->metadata;
+	struct lttng_channel *chan = session->metadata;
 	char *str = NULL;
 	int ret = 0, waitret;
 	size_t len, reserve_len, pos;
@@ -730,7 +730,7 @@ end:
 }
 
 static
-int _ltt_field_statedump(struct ltt_session *session,
+int _lttng_field_statedump(struct lttng_session *session,
 			 const struct lttng_event_field *field)
 {
 	int ret = 0;
@@ -865,7 +865,7 @@ int _ltt_field_statedump(struct ltt_session *session,
 }
 
 static
-int _ltt_context_metadata_statedump(struct ltt_session *session,
+int _lttng_context_metadata_statedump(struct lttng_session *session,
 				    struct lttng_ctx *ctx)
 {
 	int ret = 0;
@@ -876,7 +876,7 @@ int _ltt_context_metadata_statedump(struct ltt_session *session,
 	for (i = 0; i < ctx->nr_fields; i++) {
 		const struct lttng_ctx_field *field = &ctx->fields[i];
 
-		ret = _ltt_field_statedump(session, &field->event_field);
+		ret = _lttng_field_statedump(session, &field->event_field);
 		if (ret)
 			return ret;
 	}
@@ -884,8 +884,8 @@ int _ltt_context_metadata_statedump(struct ltt_session *session,
 }
 
 static
-int _ltt_fields_metadata_statedump(struct ltt_session *session,
-				   struct ltt_event *event)
+int _lttng_fields_metadata_statedump(struct lttng_session *session,
+				   struct lttng_event *event)
 {
 	const struct lttng_event_desc *desc = event->desc;
 	int ret = 0;
@@ -894,7 +894,7 @@ int _ltt_fields_metadata_statedump(struct ltt_session *session,
 	for (i = 0; i < desc->nr_fields; i++) {
 		const struct lttng_event_field *field = &desc->fields[i];
 
-		ret = _ltt_field_statedump(session, field);
+		ret = _lttng_field_statedump(session, field);
 		if (ret)
 			return ret;
 	}
@@ -902,9 +902,9 @@ int _ltt_fields_metadata_statedump(struct ltt_session *session,
 }
 
 static
-int _ltt_event_metadata_statedump(struct ltt_session *session,
-				  struct ltt_channel *chan,
-				  struct ltt_event *event)
+int _lttng_event_metadata_statedump(struct lttng_session *session,
+				  struct lttng_channel *chan,
+				  struct lttng_event *event)
 {
 	int ret = 0;
 	int loglevel = TRACE_DEFAULT;
@@ -953,7 +953,7 @@ int _ltt_event_metadata_statedump(struct ltt_session *session,
 		if (ret)
 			goto end;
 	}
-	ret = _ltt_context_metadata_statedump(session, event->ctx);
+	ret = _lttng_context_metadata_statedump(session, event->ctx);
 	if (ret)
 		goto end;
 	if (event->ctx) {
@@ -969,7 +969,7 @@ int _ltt_event_metadata_statedump(struct ltt_session *session,
 	if (ret)
 		goto end;
 
-	ret = _ltt_fields_metadata_statedump(session, event);
+	ret = _lttng_fields_metadata_statedump(session, event);
 	if (ret)
 		goto end;
 
@@ -990,8 +990,8 @@ end:
 }
 
 static
-int _ltt_channel_metadata_statedump(struct ltt_session *session,
-				    struct ltt_channel *chan)
+int _lttng_channel_metadata_statedump(struct lttng_session *session,
+				    struct lttng_channel *chan)
 {
 	int ret = 0;
 
@@ -1018,7 +1018,7 @@ int _ltt_channel_metadata_statedump(struct ltt_session *session,
 		if (ret)
 			goto end;
 	}
-	ret = _ltt_context_metadata_statedump(session, chan->ctx);
+	ret = _lttng_context_metadata_statedump(session, chan->ctx);
 	if (ret)
 		goto end;
 	if (chan->ctx) {
@@ -1037,7 +1037,7 @@ end:
 }
 
 static
-int _ltt_stream_packet_context_declare(struct ltt_session *session)
+int _lttng_stream_packet_context_declare(struct lttng_session *session)
 {
 	return lttng_metadata_printf(session,
 		"struct packet_context {\n"
@@ -1061,7 +1061,7 @@ int _ltt_stream_packet_context_declare(struct ltt_session *session)
  * id 65535 is reserved to indicate an extended header.
  */
 static
-int _ltt_event_header_declare(struct ltt_session *session)
+int _lttng_event_header_declare(struct lttng_session *session)
 {
 	return lttng_metadata_printf(session,
 	"struct event_header_compact {\n"
@@ -1123,13 +1123,13 @@ uint64_t measure_clock_offset(void)
  * Output metadata into this session's metadata buffers.
  */
 static
-int _ltt_session_metadata_statedump(struct ltt_session *session)
+int _lttng_session_metadata_statedump(struct lttng_session *session)
 {
 	unsigned char *uuid_c = session->uuid;
 	char uuid_s[LTTNG_UST_UUID_STR_LEN],
 		clock_uuid_s[LTTNG_UST_UUID_STR_LEN];
-	struct ltt_channel *chan;
-	struct ltt_event *event;
+	struct lttng_channel *chan;
+	struct lttng_event *event;
 	int ret = 0;
 	char procname[LTTNG_UST_PROCNAME_LEN] = "";
 	char hostname[HOST_NAME_MAX];
@@ -1266,23 +1266,23 @@ int _ltt_session_metadata_statedump(struct ltt_session *session)
 	if (ret)
 		goto end;
 
-	ret = _ltt_stream_packet_context_declare(session);
+	ret = _lttng_stream_packet_context_declare(session);
 	if (ret)
 		goto end;
 
-	ret = _ltt_event_header_declare(session);
+	ret = _lttng_event_header_declare(session);
 	if (ret)
 		goto end;
 
 skip_session:
 	cds_list_for_each_entry(chan, &session->chan, list) {
-		ret = _ltt_channel_metadata_statedump(session, chan);
+		ret = _lttng_channel_metadata_statedump(session, chan);
 		if (ret)
 			goto end;
 	}
 
 	cds_list_for_each_entry(event, &session->events, list) {
-		ret = _ltt_event_metadata_statedump(session, event->chan, event);
+		ret = _lttng_event_metadata_statedump(session, event->chan, event);
 		if (ret)
 			goto end;
 	}
@@ -1293,10 +1293,10 @@ end:
 
 void lttng_ust_events_exit(void)
 {
-	struct ltt_session *session, *tmpsession;
+	struct lttng_session *session, *tmpsession;
 
 	cds_list_for_each_entry_safe(session, tmpsession, &sessions, list)
-		ltt_session_destroy(session);
+		lttng_session_destroy(session);
 }
 
 /* WILDCARDS */
@@ -1357,7 +1357,7 @@ int wildcard_is_within(struct wildcard_entry *e,
  * ust lock held.
  */
 static
-struct session_wildcard *add_wildcard(struct ltt_channel *chan,
+struct session_wildcard *add_wildcard(struct lttng_channel *chan,
 	struct lttng_ust_event *event_param)
 {
 	struct wildcard_entry *e;
@@ -1424,7 +1424,7 @@ struct session_wildcard *add_wildcard(struct ltt_channel *chan,
 	cds_list_add(&sw->list, &chan->session->wildcards);
 	cds_list_add(&sw->session_list, &e->session_list);
 	sw->entry = e;
-	ltt_probes_create_wildcard_events(e, sw);
+	lttng_probes_create_wildcard_events(e, sw);
 	return sw;
 }
 
@@ -1435,7 +1435,7 @@ struct session_wildcard *add_wildcard(struct ltt_channel *chan,
 static
 void _remove_wildcard(struct session_wildcard *wildcard)
 {
-	struct ltt_event *ev, *tmp;
+	struct lttng_event *ev, *tmp;
 
 	/*
 	 * Just remove the events owned (for enable/disable) by this
@@ -1456,7 +1456,7 @@ void _remove_wildcard(struct session_wildcard *wildcard)
 	free(wildcard);
 }
 
-int ltt_wildcard_create(struct ltt_channel *chan,
+int lttng_wildcard_create(struct lttng_channel *chan,
 	struct lttng_ust_event *event_param,
 	struct session_wildcard **_sw)
 {
@@ -1471,20 +1471,20 @@ int ltt_wildcard_create(struct ltt_channel *chan,
 }
 
 static
-void _ltt_wildcard_destroy(struct session_wildcard *sw)
+void _lttng_wildcard_destroy(struct session_wildcard *sw)
 {
 	_remove_wildcard(sw);
 }
 
-int ltt_wildcard_enable(struct session_wildcard *wildcard)
+int lttng_wildcard_enable(struct session_wildcard *wildcard)
 {
-	struct ltt_event *ev;
+	struct lttng_event *ev;
 	int ret;
 
 	if (wildcard->enabled)
 		return -EEXIST;
 	cds_list_for_each_entry(ev, &wildcard->events, wildcard_list) {
-		ret = ltt_event_enable(ev);
+		ret = lttng_event_enable(ev);
 		if (ret) {
 			DBG("Error: enable error.\n");
 			return ret;
@@ -1494,15 +1494,15 @@ int ltt_wildcard_enable(struct session_wildcard *wildcard)
 	return 0;
 }
 
-int ltt_wildcard_disable(struct session_wildcard *wildcard)
+int lttng_wildcard_disable(struct session_wildcard *wildcard)
 {
-	struct ltt_event *ev;
+	struct lttng_event *ev;
 	int ret;
 
 	if (!wildcard->enabled)
 		return -EEXIST;
 	cds_list_for_each_entry(ev, &wildcard->events, wildcard_list) {
-		ret = ltt_event_disable(ev);
+		ret = lttng_event_disable(ev);
 		if (ret) {
 			DBG("Error: disable error.\n");
 			return ret;

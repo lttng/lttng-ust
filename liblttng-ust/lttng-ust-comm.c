@@ -46,7 +46,7 @@
 #include <usterr-signal-safe.h>
 #include <helper.h>
 #include "tracepoint-internal.h"
-#include "ltt-tracer-core.h"
+#include "lttng-tracer-core.h"
 #include "compat.h"
 #include "../libringbuffer/tlsfixup.h"
 
@@ -131,12 +131,12 @@ struct sock_info local_apps = {
 
 static int wait_poll_fallback;
 
-extern void ltt_ring_buffer_client_overwrite_init(void);
-extern void ltt_ring_buffer_client_discard_init(void);
-extern void ltt_ring_buffer_metadata_client_init(void);
-extern void ltt_ring_buffer_client_overwrite_exit(void);
-extern void ltt_ring_buffer_client_discard_exit(void);
-extern void ltt_ring_buffer_metadata_client_exit(void);
+extern void lttng_ring_buffer_client_overwrite_init(void);
+extern void lttng_ring_buffer_client_discard_init(void);
+extern void lttng_ring_buffer_metadata_client_init(void);
+extern void lttng_ring_buffer_client_overwrite_exit(void);
+extern void lttng_ring_buffer_client_discard_exit(void);
+extern void lttng_ring_buffer_metadata_client_exit(void);
 
 /*
  * Force a read (imply TLS fixup for dlopen) of TLS variables.
@@ -882,7 +882,7 @@ restart:
 		len = ustcomm_recv_unix_sock(sock, &lum, sizeof(lum));
 		switch (len) {
 		case 0:	/* orderly shutdown */
-			DBG("%s ltt-sessiond has performed an orderly shutdown", sock_info->name);
+			DBG("%s lttng-sessiond has performed an orderly shutdown", sock_info->name);
 			ust_lock();
 			/*
 			 * Either sessiond has shutdown or refused us by closing the socket.
@@ -1003,9 +1003,9 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	 */
 	init_usterr();
 	init_tracepoint();
-	ltt_ring_buffer_metadata_client_init();
-	ltt_ring_buffer_client_overwrite_init();
-	ltt_ring_buffer_client_discard_init();
+	lttng_ring_buffer_metadata_client_init();
+	lttng_ring_buffer_client_overwrite_init();
+	lttng_ring_buffer_client_discard_init();
 
 	timeout_mode = get_timeout(&constructor_timeout);
 
@@ -1069,7 +1069,7 @@ void __attribute__((constructor)) lttng_ust_init(void)
 					&constructor_timeout);
 		} while (ret < 0 && errno == EINTR);
 		if (ret < 0 && errno == ETIMEDOUT) {
-			ERR("Timed out waiting for ltt-sessiond");
+			ERR("Timed out waiting for lttng-sessiond");
 		} else {
 			assert(!ret);
 		}
@@ -1101,9 +1101,9 @@ void lttng_ust_cleanup(int exiting)
 	 */
 	lttng_ust_abi_exit();
 	lttng_ust_events_exit();
-	ltt_ring_buffer_client_discard_exit();
-	ltt_ring_buffer_client_overwrite_exit();
-	ltt_ring_buffer_metadata_client_exit();
+	lttng_ring_buffer_client_discard_exit();
+	lttng_ring_buffer_client_overwrite_exit();
+	lttng_ring_buffer_metadata_client_exit();
 	exit_tracepoint();
 	if (!exiting) {
 		/* Reinitialize values for fork */
