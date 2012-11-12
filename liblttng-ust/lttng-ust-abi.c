@@ -1090,11 +1090,10 @@ long lttng_event_cmd(int objd, unsigned int cmd, unsigned long arg,
 	{
 		int ret;
 		ret = lttng_filter_event_attach_bytecode(event,
-				(struct lttng_ust_filter_bytecode *) arg);
+				(struct lttng_ust_filter_bytecode_node *) arg);
 		if (ret)
 			return ret;
-		lttng_filter_event_link_bytecode(event,
-				event->filter_bytecode);
+		lttng_filter_event_link_bytecode(event);
 		return 0;
 	}
 	default:
@@ -1161,7 +1160,7 @@ long lttng_wildcard_cmd(int objd, unsigned int cmd, unsigned long arg,
 		int ret;
 
 		ret = lttng_filter_wildcard_attach_bytecode(wildcard,
-				(struct lttng_ust_filter_bytecode *) arg);
+				(struct lttng_ust_filter_bytecode_node *) arg);
 		if (ret)
 			return ret;
 		lttng_filter_wildcard_link_bytecode(wildcard);

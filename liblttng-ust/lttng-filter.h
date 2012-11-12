@@ -54,18 +54,22 @@
 #endif
 
 #ifdef DEBUG
-#define dbg_printf(fmt, args...)     printf("[debug bytecode] " fmt, ## args)
+#define dbg_printf(fmt, args...)				\
+	printf("[debug bytecode in %s:%s@%u] " fmt,		\
+		__FILE__, __func__, __LINE__, ## args)
 #else
 #define dbg_printf(fmt, args...)				\
 do {								\
 	/* do nothing but check printf format */		\
 	if (0)							\
-		printf("[debug bytecode] " fmt, ## args);	\
+		printf("[debug bytecode in %s:%s@%u] " fmt,	\
+			__FILE__, __func__, __LINE__, ## args);	\
 } while (0)
 #endif
 
-/* Linked bytecode */
+/* Linked bytecode. Child of struct lttng_bytecode_runtime. */
 struct bytecode_runtime {
+	struct lttng_bytecode_runtime p;
 	uint16_t len;
 	char data[0];
 };

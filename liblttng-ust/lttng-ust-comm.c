@@ -288,7 +288,7 @@ int handle_message(struct sock_info *sock_info,
 	case LTTNG_UST_FILTER:
 	{
 		/* Receive filter data */
-		struct lttng_ust_filter_bytecode *bytecode;
+		struct lttng_ust_filter_bytecode_node *bytecode;
 
 		if (lum->u.filter.data_size > FILTER_BYTECODE_MAX_LEN) {
 			ERR("Filter data size is too large: %u bytes",
@@ -309,7 +309,7 @@ int handle_message(struct sock_info *sock_info,
 			ret = -ENOMEM;
 			goto error;
 		}
-		len = ustcomm_recv_unix_sock(sock, bytecode->data,
+		len = ustcomm_recv_unix_sock(sock, bytecode->bc.data,
 				lum->u.filter.data_size);
 		switch (len) {
 		case 0:	/* orderly shutdown */
@@ -337,8 +337,8 @@ int handle_message(struct sock_info *sock_info,
 				goto end;
 			}
 		}
-		bytecode->len = lum->u.filter.data_size;
-		bytecode->reloc_offset = lum->u.filter.reloc_offset;
+		bytecode->bc.len = lum->u.filter.data_size;
+		bytecode->bc.reloc_offset = lum->u.filter.reloc_offset;
 		if (ops->cmd) {
 			ret = ops->cmd(lum->handle, lum->cmd,
 					(unsigned long) bytecode,

@@ -257,7 +257,8 @@ struct session_wildcard {
 	struct cds_list_head list;	/* per-session list of wildcards */
 	struct cds_list_head session_list; /* node of session wildcard list */
 	struct wildcard_entry *entry;
-	struct lttng_ust_filter_bytecode *filter_bytecode;
+	/* list of struct lttng_ust_filter_bytecode_node */
+	struct cds_list_head filter_bytecode;
 	unsigned int enabled:1;
 };
 
@@ -270,7 +271,8 @@ struct wildcard_entry {
 	/* head of session list to which this wildcard apply */
 	struct cds_list_head session_list;
 	enum lttng_ust_loglevel_type loglevel_type;
-	struct lttng_ust_filter_bytecode *filter_bytecode;
+	/* list of struct lttng_ust_filter_bytecode_node */
+	struct cds_list_head filter_bytecode;
 	int loglevel;
 	char name[0];
 };
@@ -297,7 +299,18 @@ struct lttng_ust_field_list {
 
 struct ust_pending_probe;
 struct ltt_event;
-struct lttng_ust_filter_bytecode;
+
+struct lttng_ust_filter_bytecode_node {
+	struct cds_list_head node;
+	struct lttng_ust_filter_bytecode bc;
+};
+
+struct lttng_bytecode_runtime {
+	/* Associated bytecode */
+	struct lttng_ust_filter_bytecode_node *bc;
+	int (*filter)(void *filter_data, const char *filter_stack_data);
+	struct cds_list_head node;
+};
 
 /*
  * ltt_event structure is referred to by the tracing fast path. It must be
@@ -313,7 +326,7 @@ struct ltt_event {
 	struct ltt_channel *chan;
 	int enabled;
 	const struct lttng_event_desc *desc;
-	int (*filter)(void *filter_data, const char *filter_stack_data);
+	void *filter_unused;
 	struct lttng_ctx *ctx;
 	enum lttng_ust_instrumentation instrumentation;
 	union {
@@ -323,8 +336,10 @@ struct ltt_event {
 	struct ust_pending_probe *pending_probe;
 	unsigned int metadata_dumped:1;
 	/* LTTng-UST 2.1 starts here */
-	struct lttng_ust_filter_bytecode *filter_bytecode;
-	void *filter_data;
+	/* list of struct lttng_ust_filter_bytecode_node */
+	struct cds_list_head filter_bytecode;
+	/* list of struct lttng_bytecode_runtime */
+	struct cds_list_head bytecode_runtime;
 };
 
 struct channel;
@@ -508,11 +523,15 @@ int ltt_loglevel_match(const struct lttng_event_desc *desc,
 void ltt_probes_create_wildcard_events(struct wildcard_entry *entry,
 				struct session_wildcard *wildcard);
 int lttng_filter_event_attach_bytecode(struct ltt_event *event,
-                struct lttng_ust_filter_bytecode *filter);
+                struct lttng_ust_filter_bytecode_node *filter);
 int lttng_filter_wildcard_attach_bytecode(struct session_wildcard *wildcard,
-                struct lttng_ust_filter_bytecode *filter);
-void lttng_filter_event_link_bytecode(struct ltt_event *event,
-		struct lttng_ust_filter_bytecode *filter_bytecode);
+                struct lttng_ust_filter_bytecode_node *filter);
+void lttng_filter_event_link_bytecode(struct ltt_event *event);
+void lttng_filter_event_link_wildcard_bytecode(struct ltt_event *event,
+		struct session_wildcard *wildcard);
 void lttng_filter_wildcard_link_bytecode(struct session_wildcard *wildcard);
+void lttng_free_event_filter_bytecode(struct ltt_event *event);
+void lttng_free_wildcard_filter_bytecode(struct session_wildcard *wildcard);
+void lttng_free_event_filter_runtime(struct ltt_event *event);
 
 #endif /* _LTTNG_UST_EVENTS_H */

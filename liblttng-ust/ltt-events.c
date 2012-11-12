@@ -235,6 +235,9 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 	{
 		struct wildcard_entry *wildcard;
 
+		//FIXME: should iterate on all match for filter.
+		//FIXME: should re-use pending event if present rather
+		//than create duplicate.
 		wildcard = match_wildcard(desc);
 		if (strcmp(desc->name, "lttng_ust:metadata") && wildcard) {
 			struct session_wildcard *sw;
@@ -259,8 +262,8 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 				}
 				cds_list_add(&ev->wildcard_list,
 					&sw->events);
-				lttng_filter_event_link_bytecode(ev,
-					sw->filter_bytecode);
+				lttng_filter_event_link_wildcard_bytecode(ev,
+					sw);
 			}
 		}
 	}
@@ -283,6 +286,8 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 		if (strncmp(name, e->name, LTTNG_UST_SYM_NAME_LEN - 1)) {
 			continue;
 		}
+		/* TODO: wildcard same as pending event: duplicate */
+		/* TODO: Should apply filter though */
 		event = e->event;
 		chan = event->chan;
 		assert(!event->desc);
@@ -297,8 +302,7 @@ int pending_probe_fix_events(const struct lttng_event_desc *desc)
 		event->id = chan->free_event_id++;
 		ret |= _ltt_event_metadata_statedump(chan->session, chan,
 				event);
-		lttng_filter_event_link_bytecode(event,
-			event->filter_bytecode);
+		lttng_filter_event_link_bytecode(event);
 	}
 	return ret;
 }
@@ -514,6 +518,8 @@ int ltt_event_create(struct ltt_channel *chan,
 		ret = -ENOMEM;
 		goto full;
 	}
+	//FIXME: re-use event if already registered by wildcard or
+	//if we have a pending probe.... (CHECK)
 	/*
 	 * This is O(n^2) (for each event, the loop is called at event
 	 * creation). Might require a hash if we have lots of events.
@@ -557,6 +563,8 @@ int ltt_event_create(struct ltt_channel *chan,
 	 */
 	chan->used_event_id++;
 	event->enabled = 1;
+	CDS_INIT_LIST_HEAD(&event->filter_bytecode);
+	CDS_INIT_LIST_HEAD(&event->bytecode_runtime);
 	event->instrumentation = event_param->instrumentation;
 	/* Populate ltt_event structure before tracepoint registration. */
 	cmm_smp_wmb();
@@ -655,8 +663,8 @@ void _ltt_event_destroy(struct ltt_event *event)
 	}
 	cds_list_del(&event->list);
 	lttng_destroy_context(event->ctx);
-	free(event->filter_bytecode);
-	free(event->filter_data);
+	lttng_free_event_filter_runtime(event);
+	lttng_free_event_filter_bytecode(event);
 	free(event);
 }
 
@@ -1357,6 +1365,9 @@ struct session_wildcard *add_wildcard(struct ltt_channel *chan,
 	size_t name_len = strlen(event_param->name) + 1;
 	int found = 0;
 
+	//FIXME: ensure that wildcard re-use pending events, or
+	//re-use actual events, applying its filter on top.
+
 	/*
 	 * Try to find global wildcard entry. Given that this is shared
 	 * across all sessions, we need to check for exact loglevel
@@ -1386,6 +1397,7 @@ struct session_wildcard *add_wildcard(struct ltt_channel *chan,
 		memcpy(&e->name[0], event_param->name, name_len);
 		e->loglevel_type = event_param->loglevel_type;
 		e->loglevel = event_param->loglevel;
+		CDS_INIT_LIST_HEAD(&e->filter_bytecode);
 		cds_list_add(&e->list, &wildcard_list);
 		CDS_INIT_LIST_HEAD(&e->session_list);
 	}
@@ -1407,6 +1419,7 @@ struct session_wildcard *add_wildcard(struct ltt_channel *chan,
 	sw->event_param.instrumentation = LTTNG_UST_TRACEPOINT;
 	sw->event_param.loglevel_type = event_param->loglevel_type;
 	sw->event_param.loglevel = event_param->loglevel;
+	CDS_INIT_LIST_HEAD(&sw->filter_bytecode);
 	CDS_INIT_LIST_HEAD(&sw->events);
 	cds_list_add(&sw->list, &chan->session->wildcards);
 	cds_list_add(&sw->session_list, &e->session_list);
@@ -1439,7 +1452,7 @@ void _remove_wildcard(struct session_wildcard *wildcard)
 		cds_list_del(&wildcard->entry->list);
 		free(wildcard->entry);
 	}
-	free(wildcard->filter_bytecode);
+	lttng_free_wildcard_filter_bytecode(wildcard);
 	free(wildcard);
 }
 

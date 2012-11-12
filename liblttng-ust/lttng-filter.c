@@ -20,6 +20,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include <urcu/rculist.h>
 #include "lttng-filter.h"
 
 static const char *opnames[] = {
@@ -213,13 +214,26 @@ int apply_field_reloc(struct ltt_event *event,
 	return 0;
 }
 
+static
+int bytecode_is_linked(struct lttng_ust_filter_bytecode_node *filter_bytecode,
+		struct ltt_event *event)
+{
+	struct lttng_bytecode_runtime *bc_runtime;
+
+	cds_list_for_each_entry(bc_runtime, &event->bytecode_runtime, node) {
+		if (bc_runtime->bc == filter_bytecode)
+			return 1;
+	}
+	return 0;
+}
+
 /*
  * Take a bytecode with reloc table and link it to an event to create a
  * bytecode runtime.
  */
 static
 int _lttng_filter_event_link_bytecode(struct ltt_event *event,
-		struct lttng_ust_filter_bytecode *filter_bytecode)
+		struct lttng_ust_filter_bytecode_node *filter_bytecode)
 {
 	int ret, offset, next_offset;
 	struct bytecode_runtime *runtime = NULL;
@@ -227,36 +241,37 @@ int _lttng_filter_event_link_bytecode(struct ltt_event *event,
 
 	if (!filter_bytecode)
 		return 0;
-	/* Even is not connected to any description */
+	/* Event is not connected to any description */
 	if (!event->desc)
 		return 0;
 	/* Bytecode already linked */
-	if (event->filter || event->filter_data)
+	if (bytecode_is_linked(filter_bytecode, event))
 		return 0;
 
-	dbg_printf("Linking\n");
+	dbg_printf("Linking...\n");
 
 	/* We don't need the reloc table in the runtime */
-	runtime_alloc_len = sizeof(*runtime) + filter_bytecode->reloc_offset;
+	runtime_alloc_len = sizeof(*runtime) + filter_bytecode->bc.reloc_offset;
 	runtime = zmalloc(runtime_alloc_len);
 	if (!runtime) {
 		ret = -ENOMEM;
 		goto link_error;
 	}
-	runtime->len = filter_bytecode->reloc_offset;
+	runtime->p.bc = filter_bytecode;
+	runtime->len = filter_bytecode->bc.reloc_offset;
 	/* copy original bytecode */
-	memcpy(runtime->data, filter_bytecode->data, runtime->len);
+	memcpy(runtime->data, filter_bytecode->bc.data, runtime->len);
 	/*
 	 * apply relocs. Those are a uint16_t (offset in bytecode)
 	 * followed by a string (field name).
 	 */
-	for (offset = filter_bytecode->reloc_offset;
-			offset < filter_bytecode->len;
+	for (offset = filter_bytecode->bc.reloc_offset;
+			offset < filter_bytecode->bc.len;
 			offset = next_offset) {
 		uint16_t reloc_offset =
-			*(uint16_t *) &filter_bytecode->data[offset];
+			*(uint16_t *) &filter_bytecode->bc.data[offset];
 		const char *field_name =
-			(const char *) &filter_bytecode->data[offset + sizeof(uint16_t)];
+			(const char *) &filter_bytecode->bc.data[offset + sizeof(uint16_t)];
 
 		ret = apply_field_reloc(event, runtime, runtime->len, reloc_offset, field_name);
 		if (ret) {
@@ -274,50 +289,63 @@ int _lttng_filter_event_link_bytecode(struct ltt_event *event,
 	if (ret) {
 		goto link_error;
 	}
-	event->filter_data = runtime;
-	event->filter = lttng_filter_interpret_bytecode;
+	runtime->p.filter = lttng_filter_interpret_bytecode;
+	/* TODO: add with prio */
+	cds_list_add_rcu(&runtime->p.node, &event->bytecode_runtime);
+	dbg_printf("Linking successful.\n");
 	return 0;
 
 link_error:
-	event->filter = lttng_filter_false;
-	free(runtime);
+	runtime->p.filter = lttng_filter_false;
+	/* TODO: add with prio */
+	cds_list_add_rcu(&runtime->p.node, &event->bytecode_runtime);
+	dbg_printf("Linking failed.\n");
 	return ret;
 }
 
-void lttng_filter_event_link_bytecode(struct ltt_event *event,
-		struct lttng_ust_filter_bytecode *filter_bytecode)
+void lttng_filter_event_link_bytecode(struct ltt_event *event)
 {
+	struct lttng_ust_filter_bytecode_node *filter_bytecode;
 	int ret;
 
-	ret = _lttng_filter_event_link_bytecode(event, filter_bytecode);
-	if (ret) {
-		dbg_printf("[lttng filter] warning: cannot link event bytecode\n");
+	cds_list_for_each_entry(filter_bytecode, &event->filter_bytecode, node) {
+		dbg_printf("linking bytecode\n");
+		ret = _lttng_filter_event_link_bytecode(event, filter_bytecode);
+		if (ret) {
+			dbg_printf("[lttng filter] warning: cannot link event bytecode\n");
+		}
+	}
+}
+
+void lttng_filter_event_link_wildcard_bytecode(struct ltt_event *event,
+		struct session_wildcard *wildcard)
+{
+	struct lttng_ust_filter_bytecode_node *filter_bytecode;
+	int ret;
+
+	cds_list_for_each_entry(filter_bytecode, &wildcard->filter_bytecode, node) {
+		dbg_printf("linking bytecode\n");
+		ret = _lttng_filter_event_link_bytecode(event, filter_bytecode);
+		if (ret) {
+			dbg_printf("[lttng filter] error linking wildcard bytecode\n");
+		}
 	}
 }
 
 /*
- * Link bytecode to all events for a wildcard. Skips events that already
- * have a bytecode linked.
- * We do not set each event's filter_bytecode field, because they do not
- * own the filter_bytecode: the wildcard owns it.
+ * Link bytecode to all events for a wildcard.
+ * The "is_linked" check in _lttng_filter_event_link_bytecode() ensures
+ * that we don't link the same bytecode to an event more than once.
  */
 void lttng_filter_wildcard_link_bytecode(struct session_wildcard *wildcard)
 {
 	struct ltt_event *event;
-	int ret;
 
-	if (!wildcard->filter_bytecode)
+	if (cds_list_empty(&wildcard->filter_bytecode))
 		return;
-
 	cds_list_for_each_entry(event, &wildcard->events, wildcard_list) {
-		if (event->filter)
-			continue;
-		ret = _lttng_filter_event_link_bytecode(event,
-				wildcard->filter_bytecode);
-		if (ret) {
-			dbg_printf("[lttng filter] error linking wildcard bytecode");
-		}
-
+		dbg_printf("linking bytecode\n");
+		lttng_filter_event_link_wildcard_bytecode(event, wildcard);
 	}
 	return;
 }
@@ -327,13 +355,9 @@ void lttng_filter_wildcard_link_bytecode(struct session_wildcard *wildcard)
  * session. We own the filter_bytecode if we return success.
  */
 int lttng_filter_event_attach_bytecode(struct ltt_event *event,
-		struct lttng_ust_filter_bytecode *filter_bytecode)
+		struct lttng_ust_filter_bytecode_node *filter_bytecode)
 {
-	if (event->chan->session->been_active)
-		return -EPERM;
-	if (event->filter_bytecode)
-		return -EEXIST;
-	event->filter_bytecode = filter_bytecode;
+	cds_list_add(&filter_bytecode->node, &event->filter_bytecode);
 	return 0;
 }
 
@@ -342,12 +366,38 @@ int lttng_filter_event_attach_bytecode(struct ltt_event *event,
  * session. We own the filter_bytecode if we return success.
  */
 int lttng_filter_wildcard_attach_bytecode(struct session_wildcard *wildcard,
-		struct lttng_ust_filter_bytecode *filter_bytecode)
+		struct lttng_ust_filter_bytecode_node *filter_bytecode)
 {
-	if (wildcard->chan->session->been_active)
-		return -EPERM;
-	if (wildcard->filter_bytecode)
-		return -EEXIST;
-	wildcard->filter_bytecode = filter_bytecode;
+	cds_list_add(&filter_bytecode->node, &wildcard->filter_bytecode);
 	return 0;
+}
+
+void lttng_free_event_filter_bytecode(struct ltt_event *event)
+{
+	struct lttng_ust_filter_bytecode_node *filter_bytecode, *tmp;
+
+	cds_list_for_each_entry_safe(filter_bytecode, tmp,
+			&event->filter_bytecode, node) {
+		free(filter_bytecode);
+	}
+}
+
+void lttng_free_wildcard_filter_bytecode(struct session_wildcard *wildcard)
+{
+	struct lttng_ust_filter_bytecode_node *filter_bytecode, *tmp;
+
+	cds_list_for_each_entry_safe(filter_bytecode, tmp,
+			&wildcard->filter_bytecode, node) {
+		free(filter_bytecode);
+	}
+}
+
+void lttng_free_event_filter_runtime(struct ltt_event *event)
+{
+	struct bytecode_runtime *runtime, *tmp;
+
+	cds_list_for_each_entry_safe(runtime, tmp,
+			&event->bytecode_runtime, p.node) {
+		free(runtime);
+	}
 }
