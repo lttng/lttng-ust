@@ -170,69 +170,24 @@ AC_CHECK_LIB([urcu-bp], [synchronize_rcu_bp], [], [AC_MSG_ERROR([Cannot find lib
 # urcu - check that URCU lib is at least version 0.6
 AC_CHECK_LIB([urcu-bp], [call_rcu_bp], [], [AC_MSG_ERROR([liburcu 0.6 or newer is needed, please update your version or use [LDFLAGS]=-Ldir to specify the right location.])])
 
-
-# Check for various supplementary host information (beyond the
-# triplet) which might affect the library format choices.  E.g., we
-# can be building with `i686-unknown-linux-gnu-gcc -m64'
-
-case "${host}" in
-changequote(,)dnl
-  i[34567]86-*-linux*)
-changequote([,])dnl
-    AC_CACHE_CHECK([if building for x86-64], [ust_cv_i386_is_x86_64],
-                    [save_CPPFLAGS="$CPPFLAGS"
-                    CPPFLAGS="$CPPFLAGS $CFLAGS"
-                    AC_EGREP_CPP([got it], [
-#if __x86_64__
-got it
-#endif
-                 ], [ust_cv_i386_is_x86_64=yes],
-                    [ust_cv_i386_is_x86_64=no])
-                    CPPFLAGS="$save_CPPFLAGS"])
-    ;;
-esac
-
-AC_MSG_CHECKING([library format for the host system])
+AC_MSG_CHECKING([host system alignment requirements])
 case $host_cpu in
 changequote(,)dnl
 	i[3456]86)
 changequote([,])dnl
-	  if test "$ust_cv_i386_is_x86_64" = yes ; then
-	     LIBFORMAT="elf64-x86-64"
-	  else
-	     LIBFORMAT="elf32-i386"
-	  fi
 	  ;;
-	x86_64) LIBFORMAT="elf64-x86-64" ;;
-	amd64) LIBFORMAT="elf64-x86-64" ;;
-	powerpc) LIBFORMAT="elf32-powerpc" ;;
-	ppc64) LIBFORMAT="elf64-powerpc" ;;
-	powerpc64) LIBFORMAT="elf64-powerpc" ;;
-	s390) LIBFORMAT="elf32-s390"; NO_UNALIGNED_ACCESS=1 ;;
-	s390x) LIBFORMAT="elf64-s390"; NO_UNALIGNED_ACCESS=1 ;;
-        armv5) LIBFORMAT="elf32-littlearm"; NO_UNALIGNED_ACCESS=1 ;;
-	arm) LIBFORMAT="elf32-littlearm"; NO_UNALIGNED_ACCESS=1 ;;
-	mips*) LIBFORMAT=""; NO_UNALIGNED_ACCESS=1;;
-	*) AC_MSG_ERROR([unable to detect library format (unsupported architecture ($host_cpu)?)]) ;;
+	x86_64) ;;
+	amd64) ;;
+	powerpc) ;;
+	ppc64) ;;
+	powerpc64) ;;
+	s390) NO_UNALIGNED_ACCESS=1 ;;
+	s390x) NO_UNALIGNED_ACCESS=1 ;;
+        arm*) NO_UNALIGNED_ACCESS=1 ;;
+	mips*) NO_UNALIGNED_ACCESS=1;;
+	*) AC_MSG_ERROR([unable to detect alignment requirements (unsupported architecture ($host_cpu)?)]) ;;
 esac
-AC_SUBST(LIBFORMAT)
-AC_MSG_RESULT($LIBFORMAT)
 
-if test "x$host_cpu" = "xarm" ; then
-AC_MSG_CHECKING([checking for armv5])
-AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
-#ifndef __ARM_ARCH_5TEJ__
-#error "no arm5 here"
-#endif
-]])],[
-	AC_MSG_RESULT([yes])
-	NO_UNALIGNED_ACCESS=1
-
-],[
-	AC_MSG_RESULT([no])
-
-])
-fi
 if test x$NO_UNALIGNED_ACCESS = x ; then
 AC_DEFINE([LTTNG_UST_HAVE_EFFICIENT_UNALIGNED_ACCESS], [1])
 fi
