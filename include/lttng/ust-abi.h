@@ -176,6 +176,7 @@ struct lttng_ust_calibrate {
 struct lttng_ust_filter_bytecode {
 	uint32_t len;
 	uint32_t reloc_offset;
+	uint64_t seqnum;
 	char data[0];
 };
 

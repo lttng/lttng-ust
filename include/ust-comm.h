@@ -70,6 +70,7 @@ struct ustcomm_ust_msg {
 		struct {
 			uint32_t data_size;	/* following filter data */
 			uint32_t reloc_offset;
+			uint64_t seqnum;
 		} filter;
 	} u;
 };

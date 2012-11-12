@@ -339,6 +339,7 @@ int handle_message(struct sock_info *sock_info,
 		}
 		bytecode->bc.len = lum->u.filter.data_size;
 		bytecode->bc.reloc_offset = lum->u.filter.reloc_offset;
+		bytecode->bc.seqnum = lum->u.filter.seqnum;
 		if (ops->cmd) {
 			ret = ops->cmd(lum->handle, lum->cmd,
 					(unsigned long) bytecode,
