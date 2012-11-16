@@ -387,6 +387,7 @@ int ustctl_set_filter(int sock, struct lttng_ust_filter_bytecode *bytecode,
 	lum.cmd = LTTNG_UST_FILTER;
 	lum.u.filter.data_size = bytecode->len;
 	lum.u.filter.reloc_offset = bytecode->reloc_offset;
+	lum.u.filter.seqnum = bytecode->seqnum;
 
 	ret = ustcomm_send_app_msg(sock, &lum);
 	if (ret)
