@@ -291,8 +291,12 @@ struct lttng_event;
 
 struct lttng_ust_filter_bytecode_node {
 	struct cds_list_head node;
-	struct lttng_ust_filter_bytecode bc;
 	struct lttng_enabler *enabler;
+	/*
+	 * struct lttng_ust_filter_bytecode has var. sized array, must
+	 * be last field.
+	 */
+	struct lttng_ust_filter_bytecode bc;
 };
 
 struct lttng_bytecode_runtime {
