@@ -459,6 +459,7 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
  * each field (worse case). For integers, max size required is 64-bit.
  * Same for double-precision floats. Those fit within
  * 2*sizeof(unsigned long) for all supported architectures.
+ * Perform UNION (||) of filter runtime list.
  */
 #undef TRACEPOINT_EVENT_CLASS
 #define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
@@ -488,14 +489,17 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 		return;							      \
 	if (caa_unlikely(!cds_list_empty(&__event->bytecode_runtime_head))) { \
 		struct lttng_bytecode_runtime *bc_runtime;		      \
+		int __filter_result = 0;				      \
 									      \
 		__event_prepare_filter_stack__##_provider##___##_name(__stackvar.__filter_stack_data, \
 			_TP_ARGS_DATA_VAR(_args));			      \
 		cds_list_for_each_entry_rcu(bc_runtime, &__event->bytecode_runtime_head, node) { \
-			if (caa_likely(!bc_runtime->filter(bc_runtime,	      \
+			if (caa_unlikely(bc_runtime->filter(bc_runtime,	      \
 					__stackvar.__filter_stack_data)))     \
-				return;					      \
+				__filter_result = 1;			      \
 		}							      \
+		if (caa_likely(!__filter_result))			      \
+			return;						      \
 	}								      \
 	__event_len = __event_get_size__##_provider##___##_name(__stackvar.__dynamic_len, \
 		 _TP_ARGS_DATA_VAR(_args));				      \
