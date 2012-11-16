@@ -244,37 +244,26 @@ struct lttng_probe_desc {
 
 /* Data structures used by the tracer. */
 
-/*
- * Entry describing a per-session active wildcard, along with the event
- * attribute and channel information configuring the events that need to
- * be enabled.
- */
-struct session_wildcard {
-	struct lttng_channel *chan;
-	struct lttng_ctx *ctx;	/* TODO */
-	struct lttng_ust_event event_param;
-	struct cds_list_head events;	/* list of events enabled */
-	struct cds_list_head list;	/* per-session list of wildcards */
-	struct cds_list_head session_list; /* node of session wildcard list */
-	struct wildcard_entry *entry;
-	/* list of struct lttng_ust_filter_bytecode_node */
-	struct cds_list_head filter_bytecode;
-	unsigned int enabled:1;
+enum lttng_enabler_type {
+	LTTNG_ENABLER_WILDCARD,
+	LTTNG_ENABLER_EVENT,
 };
 
 /*
- * Entry describing an active wildcard (per name) for all sessions.
+ * Enabler field, within whatever object is enabling an event. Target of
+ * backward reference.
  */
-struct wildcard_entry {
-	/* node of global wildcards list */
-	struct cds_list_head list;
-	/* head of session list to which this wildcard apply */
-	struct cds_list_head session_list;
-	enum lttng_ust_loglevel_type loglevel_type;
-	/* list of struct lttng_ust_filter_bytecode_node */
-	struct cds_list_head filter_bytecode;
-	int loglevel;
-	char name[0];
+struct lttng_enabler {
+	enum lttng_enabler_type type;
+
+	/* head list of struct lttng_ust_filter_bytecode_node */
+	struct cds_list_head filter_bytecode_head;
+	struct cds_list_head node;	/* per-session list of enablers */
+
+	struct lttng_ust_event event_param;
+	struct lttng_channel *chan;
+	struct lttng_ctx *ctx;
+	unsigned int enabled:1;
 };
 
 struct tp_list_entry {
@@ -303,13 +292,22 @@ struct lttng_event;
 struct lttng_ust_filter_bytecode_node {
 	struct cds_list_head node;
 	struct lttng_ust_filter_bytecode bc;
+	struct lttng_enabler *enabler;
 };
 
 struct lttng_bytecode_runtime {
 	/* Associated bytecode */
 	struct lttng_ust_filter_bytecode_node *bc;
 	int (*filter)(void *filter_data, const char *filter_stack_data);
-	struct cds_list_head node;
+	struct cds_list_head node;	/* list of bytecode runtime in event */
+};
+
+/*
+ * Objects in a linked-list of enablers, owned by an event.
+ */
+struct lttng_enabler_ref {
+	struct cds_list_head node;		/* enabler ref list */
+	struct lttng_enabler *ref;		/* backward ref */
 };
 
 /*
@@ -326,20 +324,22 @@ struct lttng_event {
 	struct lttng_channel *chan;
 	int enabled;
 	const struct lttng_event_desc *desc;
-	void *filter_unused;
+	void *_deprecated1;
 	struct lttng_ctx *ctx;
 	enum lttng_ust_instrumentation instrumentation;
 	union {
 	} u;
-	struct cds_list_head list;		/* Event list */
-	struct cds_list_head wildcard_list;	/* Event list for wildcard */
-	struct ust_pending_probe *pending_probe;
+	struct cds_list_head node;		/* Event list in session */
+	struct cds_list_head _deprecated2;
+	void *_deprecated3;
 	unsigned int metadata_dumped:1;
+
 	/* LTTng-UST 2.1 starts here */
-	/* list of struct lttng_ust_filter_bytecode_node */
-	struct cds_list_head filter_bytecode;
-	/* list of struct lttng_bytecode_runtime */
-	struct cds_list_head bytecode_runtime;
+	/* list of struct lttng_bytecode_runtime, sorted by seqnum */
+	struct cds_list_head bytecode_runtime_head;
+
+	/* Backward references: list of lttng_enabler_ref (ref to enablers) */
+	struct cds_list_head enablers_ref_head;
 };
 
 struct channel;
@@ -405,7 +405,7 @@ struct lttng_channel {
 	int objd;			/* Object associated to channel */
 	unsigned int free_event_id;	/* Next event ID to allocate */
 	unsigned int used_event_id;	/* Max allocated event IDs */
-	struct cds_list_head list;	/* Channel list */
+	struct cds_list_head node;	/* Channel list in session */
 	struct lttng_channel_ops *ops;
 	int header_type;		/* 0: unset, 1: compact, 2: large */
 	struct lttng_ust_shm_handle *handle;	/* shared-memory handle */
@@ -417,23 +417,34 @@ struct lttng_channel {
 	unsigned char uuid[LTTNG_UST_UUID_LEN]; /* Trace session unique ID */
 };
 
+#define LTTNG_UST_EVENT_HT_BITS		6
+#define LTTNG_UST_EVENT_HT_SIZE		(1U << LTTNG_UST_EVENT_HT_BITS)
+
+struct lttng_ust_event_ht {
+	struct cds_hlist_head table[LTTNG_UST_EVENT_HT_SIZE];
+};
+
 /*
  * IMPORTANT: this structure is part of the ABI between the probe and
  * UST. Fields need to be only added at the end, never reordered, never
  * removed.
  */
 struct lttng_session {
-	int active;			/* Is trace session active ? */
-	int been_active;		/* Has trace session been active ? */
-	int objd;			/* Object associated to session */
-	struct lttng_channel *metadata;	/* Metadata channel */
-	struct cds_list_head chan;	/* Channel list head */
-	struct cds_list_head events;	/* Event list head */
-	struct cds_list_head wildcards;	/* Wildcard list head */
-	struct cds_list_head list;	/* Session list */
-	unsigned int free_chan_id;	/* Next chan ID to allocate */
+	int active;				/* Is trace session active ? */
+	int been_active;			/* Been active ? */
+	int objd;				/* Object associated */
+	struct lttng_channel *metadata;		/* Metadata channel */
+	struct cds_list_head chan_head;		/* Channel list head */
+	struct cds_list_head events_head;	/* list of events */
+	struct cds_list_head _deprecated1;
+	struct cds_list_head node;		/* Session list */
+	unsigned int free_chan_id;		/* Next chan ID to allocate */
 	unsigned char uuid[LTTNG_UST_UUID_LEN]; /* Trace session unique ID */
 	unsigned int metadata_dumped:1;
+
+	/* New UST 2.1 */
+	/* List of enablers */
+	struct cds_list_head enablers_head;
 };
 
 struct lttng_transport {
@@ -464,14 +475,21 @@ struct lttng_channel *lttng_global_channel_create(struct lttng_session *session,
 				       int **shm_fd, int **wait_fd,
 				       uint64_t **memory_map_size);
 
-int lttng_event_create(struct lttng_channel *chan,
-		struct lttng_ust_event *event_param,
-		struct lttng_event **event);
-
 int lttng_channel_enable(struct lttng_channel *channel);
 int lttng_channel_disable(struct lttng_channel *channel);
-int lttng_event_enable(struct lttng_event *event);
-int lttng_event_disable(struct lttng_event *event);
+
+struct lttng_enabler *lttng_enabler_create(enum lttng_enabler_type type,
+		struct lttng_ust_event *event_param,
+		struct lttng_channel *chan);
+int lttng_enabler_enable(struct lttng_enabler *enabler);
+int lttng_enabler_disable(struct lttng_enabler *enabler);
+int lttng_enabler_attach_bytecode(struct lttng_enabler *enabler,
+		struct lttng_ust_filter_bytecode_node *bytecode);
+int lttng_enabler_attach_context(struct lttng_enabler *enabler,
+		struct lttng_ust_context *ctx);
+
+int lttng_attach_context(struct lttng_ust_context *context_param,
+		struct lttng_ctx **ctx, struct lttng_session *session);
 
 void lttng_transport_register(struct lttng_transport *transport);
 void lttng_transport_unregister(struct lttng_transport *transport);
@@ -480,7 +498,7 @@ void synchronize_trace(void);
 
 int lttng_probe_register(struct lttng_probe_desc *desc);
 void lttng_probe_unregister(struct lttng_probe_desc *desc);
-int pending_probe_fix_events(const struct lttng_event_desc *desc);
+int lttng_fix_pending_event_desc(const struct lttng_event_desc *desc);
 const struct lttng_event_desc *lttng_event_get(const char *name);
 void lttng_event_put(const struct lttng_event_desc *desc);
 int lttng_probes_init(void);
@@ -512,26 +530,12 @@ void lttng_probes_prune_field_list(struct lttng_ust_field_list *list);
 struct lttng_ust_field_iter *
 	lttng_ust_field_list_get_iter_next(struct lttng_ust_field_list *list);
 
-int lttng_wildcard_enable(struct session_wildcard *wildcard);
-int lttng_wildcard_disable(struct session_wildcard *wildcard);
-int lttng_wildcard_create(struct lttng_channel *chan,
-	struct lttng_ust_event *event_param,
-	struct session_wildcard **sl);
-int lttng_loglevel_match(const struct lttng_event_desc *desc,
-		enum lttng_ust_loglevel_type req_type,
-		int req_loglevel);
-void lttng_probes_create_wildcard_events(struct wildcard_entry *entry,
-				struct session_wildcard *wildcard);
-int lttng_filter_event_attach_bytecode(struct lttng_event *event,
-                struct lttng_ust_filter_bytecode_node *filter);
-int lttng_filter_wildcard_attach_bytecode(struct session_wildcard *wildcard,
-                struct lttng_ust_filter_bytecode_node *filter);
 void lttng_filter_event_link_bytecode(struct lttng_event *event);
-void lttng_filter_event_link_wildcard_bytecode(struct lttng_event *event,
-		struct session_wildcard *wildcard);
-void lttng_filter_wildcard_link_bytecode(struct session_wildcard *wildcard);
-void lttng_free_event_filter_bytecode(struct lttng_event *event);
-void lttng_free_wildcard_filter_bytecode(struct session_wildcard *wildcard);
+void lttng_enabler_event_link_bytecode(struct lttng_event *event,
+		struct lttng_enabler *enabler);
 void lttng_free_event_filter_runtime(struct lttng_event *event);
+void lttng_filter_sync_state(struct lttng_bytecode_runtime *runtime);
+
+struct cds_list_head *lttng_get_probe_list_head(void);
 
 #endif /* _LTTNG_UST_EVENTS_H */

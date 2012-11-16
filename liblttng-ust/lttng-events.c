@@ -75,31 +75,7 @@ void ust_unlock(void)
 
 static CDS_LIST_HEAD(sessions);
 
-/*
- * Wildcard list, containing the active wildcards.
- * Protected by ust lock.
- */
-static CDS_LIST_HEAD(wildcard_list);
-
-/*
- * Pending probes hash table, containing the registered ltt events for
- * which tracepoint probes are still missing. Protected by the sessions
- * mutex.
- */
-#define PENDING_PROBE_HASH_BITS		6
-#define PENDING_PROBE_HASH_SIZE		(1 << PENDING_PROBE_HASH_BITS)
-static struct cds_hlist_head pending_probe_table[PENDING_PROBE_HASH_SIZE];
-
-struct ust_pending_probe {
-	struct lttng_event *event;
-	struct cds_hlist_node node;
-	enum lttng_ust_loglevel_type loglevel_type;
-	int loglevel;
-	char name[];
-};
-
 static void _lttng_event_destroy(struct lttng_event *event);
-static void _lttng_wildcard_destroy(struct session_wildcard *sw);
 static void _lttng_channel_destroy(struct lttng_channel *chan);
 static int _lttng_event_unregister(struct lttng_event *event);
 static
@@ -109,26 +85,31 @@ int _lttng_event_metadata_statedump(struct lttng_session *session,
 static
 int _lttng_session_metadata_statedump(struct lttng_session *session);
 
-int lttng_loglevel_match(const struct lttng_event_desc *desc,
+static
+void lttng_session_lazy_sync_enablers(struct lttng_session *session);
+static
+void lttng_session_sync_enablers(struct lttng_session *session);
+static
+void lttng_enabler_destroy(struct lttng_enabler *enabler);
+
+static
+int lttng_loglevel_match(int loglevel,
+		unsigned int has_loglevel,
 		enum lttng_ust_loglevel_type req_type,
 		int req_loglevel)
 {
-	int ev_loglevel;
-
 	if (req_type == LTTNG_UST_LOGLEVEL_ALL)
 		return 1;
-	if (!desc->loglevel)
-		ev_loglevel = TRACE_DEFAULT;
-	else
-		ev_loglevel = *(*desc->loglevel);
+	if (!has_loglevel)
+		loglevel = TRACE_DEFAULT;
 	switch (req_type) {
 	case LTTNG_UST_LOGLEVEL_RANGE:
-		if (ev_loglevel <= req_loglevel || req_loglevel == -1)
+		if (loglevel <= req_loglevel || req_loglevel == -1)
 			return 1;
 		else
 			return 0;
 	case LTTNG_UST_LOGLEVEL_SINGLE:
-		if (ev_loglevel == req_loglevel || req_loglevel == -1)
+		if (loglevel == req_loglevel || req_loglevel == -1)
 			return 1;
 		else
 			return 0;
@@ -136,175 +117,6 @@ int lttng_loglevel_match(const struct lttng_event_desc *desc,
 	default:
 		return 1;
 	}
-}
-
-/*
- * Return wildcard for a given event name if the event name match the
- * one of the wildcards.
- * Must be called with ust lock held.
- * Returns NULL if not present.
- */
-static
-struct wildcard_entry *match_wildcard(const struct lttng_event_desc *desc)
-{
-	struct wildcard_entry *e;
-
-	cds_list_for_each_entry(e, &wildcard_list, list) {
-		/* If only contain '*' */
-		if (strlen(e->name) == 1)
-			goto possible_match;
-		/* Compare excluding final '*' */
-		if (!strncmp(desc->name, e->name, strlen(e->name) - 1))
-			goto possible_match;
-		continue;	/* goto next, no match */
-	possible_match:
-		if (lttng_loglevel_match(desc,
-				e->loglevel_type,
-				e->loglevel)) {
-			return e;
-		}
-		/* no match, loop to next */
-	}
-	return NULL;
-}
-
-/*
- * called at event creation if probe is missing.
- * called with session mutex held.
- */
-static
-int add_pending_probe(struct lttng_event *event, const char *name,
-		enum lttng_ust_loglevel_type loglevel_type,
-		int loglevel)
-{
-	struct cds_hlist_head *head;
-	struct ust_pending_probe *e;
-	size_t name_len = strlen(name) + 1;
-	uint32_t hash;
-
-	if (name_len > LTTNG_UST_SYM_NAME_LEN) {
-		WARN("Truncating tracepoint name %s which exceeds size limits of %u chars", name, LTTNG_UST_SYM_NAME_LEN);
-		name_len = LTTNG_UST_SYM_NAME_LEN;
-	}
-	hash = jhash(name, name_len - 1, 0);
-	head = &pending_probe_table[hash & (PENDING_PROBE_HASH_SIZE - 1)];
-	e = zmalloc(sizeof(struct ust_pending_probe) + name_len);
-	if (!e)
-		return -ENOMEM;
-	memcpy(&e->name[0], name, name_len);
-	e->name[name_len - 1] = '\0';
-	e->loglevel_type = loglevel_type;
-	e->loglevel = loglevel;
-	cds_hlist_add_head(&e->node, head);
-	e->event = event;
-	event->pending_probe = e;
-	return 0;
-}
-
-/*
- * remove a pending probe. called when at event teardown and when an
- * event is fixed (probe is loaded).
- * called with session mutex held.
- */
-static
-void remove_pending_probe(struct ust_pending_probe *e)
-{
-	if (!e)
-		return;
-	cds_hlist_del(&e->node);
-	free(e);
-}
-
-/*
- * Called at library load: connect the probe on the events pending on
- * probe load.
- * called with session mutex held.
- */
-int pending_probe_fix_events(const struct lttng_event_desc *desc)
-{
-	struct cds_hlist_head *head;
-	struct cds_hlist_node *node, *p;
-	struct ust_pending_probe *e;
-	const char *name = desc->name;
-	int ret = 0;
-	struct lttng_ust_event event_param;
-	size_t name_len = strlen(name) + 1;
-	uint32_t hash;
-
-	/* Wildcard */
-	{
-		struct wildcard_entry *wildcard;
-
-		//FIXME: should iterate on all match for filter.
-		//FIXME: should re-use pending event if present rather
-		//than create duplicate.
-		wildcard = match_wildcard(desc);
-		if (strcmp(desc->name, "lttng_ust:metadata") && wildcard) {
-			struct session_wildcard *sw;
-
-			cds_list_for_each_entry(sw, &wildcard->session_list,
-					session_list) {
-				struct lttng_event *ev;
-				int ret;
-
-				memcpy(&event_param, &sw->event_param,
-						sizeof(event_param));
-				strncpy(event_param.name,
-					desc->name,
-					sizeof(event_param.name));
-				event_param.name[sizeof(event_param.name) - 1] = '\0';
-				/* create event */
-				ret = lttng_event_create(sw->chan,
-					&event_param, &ev);
-				if (ret) {
-					DBG("Error creating event");
-					continue;
-				}
-				cds_list_add(&ev->wildcard_list,
-					&sw->events);
-				lttng_filter_event_link_wildcard_bytecode(ev,
-					sw);
-			}
-		}
-	}
-
-	if (name_len > LTTNG_UST_SYM_NAME_LEN) {
-		WARN("Truncating tracepoint name %s which exceeds size limits of %u chars", name, LTTNG_UST_SYM_NAME_LEN);
-		name_len = LTTNG_UST_SYM_NAME_LEN;
-	}
-	hash = jhash(name, name_len - 1, 0);
-	head = &pending_probe_table[hash & (PENDING_PROBE_HASH_SIZE - 1)];
-	cds_hlist_for_each_entry_safe(e, node, p, head, node) {
-		struct lttng_event *event;
-		struct lttng_channel *chan;
-
-		if (!lttng_loglevel_match(desc,
-				e->loglevel_type,
-				e->loglevel)) {
-			continue;
-		}
-		if (strncmp(name, e->name, LTTNG_UST_SYM_NAME_LEN - 1)) {
-			continue;
-		}
-		/* TODO: wildcard same as pending event: duplicate */
-		/* TODO: Should apply filter though */
-		event = e->event;
-		chan = event->chan;
-		assert(!event->desc);
-		event->desc = desc;
-		event->pending_probe = NULL;
-		remove_pending_probe(e);
-		ret |= __tracepoint_probe_register(name,
-				event->desc->probe_callback,
-				event, event->desc->signature);
-		if (ret)
-			continue;
-		event->id = chan->free_event_id++;
-		ret |= _lttng_event_metadata_statedump(chan->session, chan,
-				event);
-		lttng_filter_event_link_bytecode(event);
-	}
-	return ret;
 }
 
 void synchronize_trace(void)
@@ -320,14 +132,14 @@ struct lttng_session *lttng_session_create(void)
 	session = zmalloc(sizeof(struct lttng_session));
 	if (!session)
 		return NULL;
-	CDS_INIT_LIST_HEAD(&session->chan);
-	CDS_INIT_LIST_HEAD(&session->events);
-	CDS_INIT_LIST_HEAD(&session->wildcards);
+	CDS_INIT_LIST_HEAD(&session->chan_head);
+	CDS_INIT_LIST_HEAD(&session->events_head);
+	CDS_INIT_LIST_HEAD(&session->enablers_head);
 	ret = lttng_ust_uuid_generate(session->uuid);
 	if (ret != 0) {
 		session->uuid[0] = '\0';
 	}
-	cds_list_add(&session->list, &sessions);
+	cds_list_add(&session->node, &sessions);
 	return session;
 }
 
@@ -335,22 +147,24 @@ void lttng_session_destroy(struct lttng_session *session)
 {
 	struct lttng_channel *chan, *tmpchan;
 	struct lttng_event *event, *tmpevent;
-	struct session_wildcard *wildcard, *tmpwildcard;
+	struct lttng_enabler *enabler, *tmpenabler;
 	int ret;
 
 	CMM_ACCESS_ONCE(session->active) = 0;
-	cds_list_for_each_entry(event, &session->events, list) {
+	cds_list_for_each_entry(event, &session->events_head, node) {
 		ret = _lttng_event_unregister(event);
 		WARN_ON(ret);
 	}
 	synchronize_trace();	/* Wait for in-flight events to complete */
-	cds_list_for_each_entry_safe(wildcard, tmpwildcard, &session->wildcards, list)
-		_lttng_wildcard_destroy(wildcard);
-	cds_list_for_each_entry_safe(event, tmpevent, &session->events, list)
+	cds_list_for_each_entry_safe(enabler, tmpenabler,
+			&session->enablers_head, node)
+		lttng_enabler_destroy(enabler);
+	cds_list_for_each_entry_safe(event, tmpevent,
+			&session->events_head, node)
 		_lttng_event_destroy(event);
-	cds_list_for_each_entry_safe(chan, tmpchan, &session->chan, list)
+	cds_list_for_each_entry_safe(chan, tmpchan, &session->chan_head, node)
 		_lttng_channel_destroy(chan);
-	cds_list_del(&session->list);
+	cds_list_del(&session->node);
 	free(session);
 }
 
@@ -364,11 +178,14 @@ int lttng_session_enable(struct lttng_session *session)
 		goto end;
 	}
 
+	/* We need to sync enablers with session before activation. */
+	lttng_session_sync_enablers(session);
+
 	/*
 	 * Snapshot the number of events per channel to know the type of header
 	 * we need to use.
 	 */
-	cds_list_for_each_entry(chan, &session->chan, list) {
+	cds_list_for_each_entry(chan, &session->chan_head, node) {
 		if (chan->header_type)
 			continue;		/* don't change it if session stop/restart */
 		if (chan->free_event_id < 31)
@@ -483,7 +300,7 @@ struct lttng_channel *lttng_channel_create(struct lttng_session *session,
 		goto create_error;
 	chan->enabled = 1;
 	chan->ops = &transport->ops;
-	cds_list_add(&chan->list, &session->chan);
+	cds_list_add(&chan->node, &session->chan_head);
 	return chan;
 
 create_error:
@@ -498,7 +315,7 @@ active:
 static
 void _lttng_channel_destroy(struct lttng_channel *chan)
 {
-	cds_list_del(&chan->list);
+	cds_list_del(&chan->node);
 	lttng_destroy_context(chan->ctx);
 	chan->ops->channel_destroy(chan);
 }
@@ -506,11 +323,11 @@ void _lttng_channel_destroy(struct lttng_channel *chan)
 /*
  * Supports event creation while tracing session is active.
  */
-int lttng_event_create(struct lttng_channel *chan,
-		struct lttng_ust_event *event_param,
-		struct lttng_event **_event)
+static
+int lttng_event_create(const struct lttng_event_desc *desc,
+		struct lttng_channel *chan)
 {
-	const struct lttng_event_desc *desc = NULL;	/* silence gcc */
+	const char *event_name = desc->name;
 	struct lttng_event *event;
 	int ret = 0;
 
@@ -518,15 +335,14 @@ int lttng_event_create(struct lttng_channel *chan,
 		ret = -ENOMEM;
 		goto full;
 	}
-	//FIXME: re-use event if already registered by wildcard or
-	//if we have a pending probe.... (CHECK)
 	/*
 	 * This is O(n^2) (for each event, the loop is called at event
 	 * creation). Might require a hash if we have lots of events.
 	 */
-	cds_list_for_each_entry(event, &chan->session->events, list) {
-		if (event->desc && !strncmp(event->desc->name,
-				event_param->name,
+	cds_list_for_each_entry(event, &chan->session->events_head, node) {
+		assert(event->desc);
+		if (!strncmp(event->desc->name,
+				desc->name,
 				LTTNG_UST_SYM_NAME_LEN - 1)) {
 			ret = -EEXIST;
 			goto exist;
@@ -536,88 +352,244 @@ int lttng_event_create(struct lttng_channel *chan,
 	/*
 	 * Check if loglevel match. Refuse to connect event if not.
 	 */
-	if (event_param->instrumentation == LTTNG_UST_TRACEPOINT) {
-		desc = lttng_event_get(event_param->name);
-		if (desc) {
-			if (!lttng_loglevel_match(desc,
-					event_param->loglevel_type,
-					event_param->loglevel)) {
-				ret = -EPERM;
-				goto no_loglevel_match;
-			}
-		}
-		/*
-		 * If descriptor is not there, it will be added to
-		 * pending probes.
-		 */
-	}
 	event = zmalloc(sizeof(struct lttng_event));
 	if (!event) {
 		ret = -ENOMEM;
 		goto cache_error;
 	}
 	event->chan = chan;
+
 	/*
 	 * used_event_id counts the maximum number of event IDs that can
 	 * register if all probes register.
 	 */
 	chan->used_event_id++;
 	event->enabled = 1;
-	CDS_INIT_LIST_HEAD(&event->filter_bytecode);
-	CDS_INIT_LIST_HEAD(&event->bytecode_runtime);
-	event->instrumentation = event_param->instrumentation;
+	CDS_INIT_LIST_HEAD(&event->bytecode_runtime_head);
+	CDS_INIT_LIST_HEAD(&event->enablers_ref_head);
+	event->desc = desc;
 	/* Populate lttng_event structure before tracepoint registration. */
 	cmm_smp_wmb();
-	switch (event_param->instrumentation) {
-	case LTTNG_UST_TRACEPOINT:
-		event->desc = desc;
-		if (event->desc) {
-			ret = __tracepoint_probe_register(event_param->name,
-					event->desc->probe_callback,
-					event, event->desc->signature);
-			if (ret)
-				goto register_error;
-			event->id = chan->free_event_id++;
-		} else {
-			/*
-			 * If the probe is not present, event->desc stays NULL,
-			 * waiting for the probe to register, and the event->id
-			 * stays unallocated.
-			 */
-			ret = add_pending_probe(event, event_param->name,
-					event_param->loglevel_type,
-					event_param->loglevel);
-			if (ret)
-				goto add_pending_error;
-		}
-		break;
-	default:
-		WARN_ON_ONCE(1);
-	}
-	if (event->desc) {
-		ret = _lttng_event_metadata_statedump(chan->session, chan, event);
-		if (ret)
-			goto statedump_error;
-	}
-	cds_list_add(&event->list, &chan->session->events);
-	*_event = event;
+	ret = __tracepoint_probe_register(event_name,
+			desc->probe_callback,
+			event, desc->signature);
+	if (ret)
+		goto register_error;
+	event->id = chan->free_event_id++;
+	ret = _lttng_event_metadata_statedump(chan->session, chan, event);
+	if (ret)
+		goto statedump_error;
+	cds_list_add(&event->node, &chan->session->events_head);
 	return 0;
 
 statedump_error:
-	if (event->desc) {
-		WARN_ON_ONCE(__tracepoint_probe_unregister(event_param->name,
-					event->desc->probe_callback,
-					event));
-		lttng_event_put(event->desc);
-	}
-add_pending_error:
+	WARN_ON_ONCE(__tracepoint_probe_unregister(event_name,
+				desc->probe_callback,
+				event));
+	lttng_event_put(event->desc);
 register_error:
 	free(event);
 cache_error:
-no_loglevel_match:
 exist:
 full:
 	return ret;
+}
+
+static
+int lttng_desc_match_wildcard_enabler(const struct lttng_event_desc *desc,
+		struct lttng_enabler *enabler)
+{
+	int loglevel = 0;
+	unsigned int has_loglevel;
+
+	assert(enabler->type == LTTNG_ENABLER_WILDCARD);
+	/* Compare excluding final '*' */
+	if (strncmp(desc->name, enabler->event_param.name,
+			strlen(enabler->event_param.name) - 1))
+		return 0;
+	if (desc->loglevel) {
+		loglevel = *(*desc->loglevel);
+		has_loglevel = 1;
+	}
+	if (!lttng_loglevel_match(loglevel,
+			has_loglevel,
+			enabler->event_param.loglevel_type,
+			enabler->event_param.loglevel))
+		return 0;
+	return 1;
+}
+
+static
+int lttng_desc_match_event_enabler(const struct lttng_event_desc *desc,
+		struct lttng_enabler *enabler)
+{
+	int loglevel = 0;
+	unsigned int has_loglevel = 0;
+
+	assert(enabler->type == LTTNG_ENABLER_EVENT);
+	if (strcmp(desc->name, enabler->event_param.name))
+		return 0;
+	if (desc->loglevel) {
+		loglevel = *(*desc->loglevel);
+		has_loglevel = 1;
+	}
+	if (!lttng_loglevel_match(loglevel,
+			has_loglevel,
+			enabler->event_param.loglevel_type,
+			enabler->event_param.loglevel))
+		return 0;
+	return 1;
+}
+
+static
+int lttng_desc_match_enabler(const struct lttng_event_desc *desc,
+		struct lttng_enabler *enabler)
+{
+	switch (enabler->type) {
+	case LTTNG_ENABLER_WILDCARD:
+		return lttng_desc_match_wildcard_enabler(desc, enabler);
+	case LTTNG_ENABLER_EVENT:
+		return lttng_desc_match_event_enabler(desc, enabler);
+	default:
+		return -EINVAL;
+	}
+}
+
+static
+int lttng_event_match_enabler(struct lttng_event *event,
+		struct lttng_enabler *enabler)
+{
+	return lttng_desc_match_enabler(event->desc, enabler);
+}
+
+static
+struct lttng_enabler_ref * lttng_event_enabler_ref(struct lttng_event *event,
+		struct lttng_enabler *enabler)
+{
+	struct lttng_enabler_ref *enabler_ref;
+
+	cds_list_for_each_entry(enabler_ref,
+			&event->enablers_ref_head, node) {
+		if (enabler_ref->ref == enabler)
+			return enabler_ref;
+	}
+	return NULL;
+}
+
+/*
+ * Create struct lttng_event if it is missing and present in the list of
+ * tracepoint probes.
+ */
+static
+void lttng_create_event_if_missing(struct lttng_enabler *enabler)
+{
+	struct lttng_session *session = enabler->chan->session;
+	struct lttng_probe_desc *probe_desc;
+	const struct lttng_event_desc *desc;
+	struct lttng_event *event;
+	int i;
+	struct cds_list_head *probe_list;
+
+	probe_list = lttng_get_probe_list_head();
+	/*
+	 * For each probe event, if we find that a probe event matches
+	 * our enabler, create an associated lttng_event if not
+	 * already present.
+	 */
+	cds_list_for_each_entry(probe_desc, probe_list, head) {
+		for (i = 0; i < probe_desc->nr_events; i++) {
+			int found = 0, ret;
+
+			desc = probe_desc->event_desc[i];
+			if (!lttng_desc_match_enabler(desc, enabler))
+				continue;
+
+			/*
+			 * For each event in session event list,
+			 * check if already created.
+			 */
+			cds_list_for_each_entry(event,
+					&session->events_head, node) {
+				if (event->desc == desc)
+					found = 1;
+			}
+			if (found)
+				continue;
+
+			/*
+			 * We need to create an event for this
+			 * event probe.
+			 */
+			ret = lttng_event_create(probe_desc->event_desc[i],
+					enabler->chan);
+			if (ret) {
+				DBG("Unable to create event %s\n",
+					probe_desc->event_desc[i]->name);
+			}
+		}
+	}
+}
+
+/*
+ * Create events associated with an enabler (if not already present),
+ * and add backward reference from the event to the enabler.
+ */
+static
+int lttng_enabler_ref_events(struct lttng_enabler *enabler)
+{
+	struct lttng_session *session = enabler->chan->session;
+	struct lttng_event *event;
+
+	/* First ensure that probe events are created for this enabler. */
+	lttng_create_event_if_missing(enabler);
+
+	/* For each event matching enabler in session event list. */
+	cds_list_for_each_entry(event, &session->events_head, node) {
+		struct lttng_enabler_ref *enabler_ref;
+
+		if (!lttng_event_match_enabler(event, enabler))
+			continue;
+
+		enabler_ref = lttng_event_enabler_ref(event, enabler);
+		if (!enabler_ref) {
+			/*
+			 * If no backward ref, create it.
+			 * Add backward ref from event to enabler.
+			 */
+			enabler_ref = zmalloc(sizeof(*enabler_ref));
+			if (!enabler_ref)
+				return -ENOMEM;
+			enabler_ref->ref = enabler;
+			cds_list_add(&enabler_ref->node,
+				&event->enablers_ref_head);
+		}
+
+		/*
+		 * Link filter bytecodes if not linked yet.
+		 */
+		lttng_enabler_event_link_bytecode(event, enabler);
+
+		/* TODO: merge event context. */
+	}
+	return 0;
+}
+
+/*
+ * Called at library load: connect the probe on all enablers matching
+ * this event.
+ * called with session mutex held.
+ * TODO: currently, for each desc added, we iterate on all event desc
+ * (inefficient). We should create specific code that only target the
+ * added desc.
+ */
+int lttng_fix_pending_event_desc(const struct lttng_event_desc *desc)
+{
+	struct lttng_session *session;
+
+	cds_list_for_each_entry(session, &sessions, node) {
+		lttng_session_lazy_sync_enablers(session);
+	}
+	return 0;
 }
 
 /*
@@ -625,25 +597,9 @@ full:
  */
 int _lttng_event_unregister(struct lttng_event *event)
 {
-	int ret = -EINVAL;
-
-	switch (event->instrumentation) {
-	case LTTNG_UST_TRACEPOINT:
-		if (event->desc) {
-			ret = __tracepoint_probe_unregister(event->desc->name,
-							  event->desc->probe_callback,
-							  event);
-			if (ret)
-				return ret;
-		} else {
-			remove_pending_probe(event->pending_probe);
-			ret = 0;
-		}
-		break;
-	default:
-		WARN_ON_ONCE(1);
-	}
-	return ret;
+	return __tracepoint_probe_unregister(event->desc->name,
+					  event->desc->probe_callback,
+					  event);
 }
 
 /*
@@ -652,19 +608,16 @@ int _lttng_event_unregister(struct lttng_event *event)
 static
 void _lttng_event_destroy(struct lttng_event *event)
 {
-	switch (event->instrumentation) {
-	case LTTNG_UST_TRACEPOINT:
-		if (event->desc) {
-			lttng_event_put(event->desc);
-		}
-		break;
-	default:
-		WARN_ON_ONCE(1);
-	}
-	cds_list_del(&event->list);
+	struct lttng_enabler_ref *enabler_ref, *tmp_enabler_ref;
+
+	lttng_event_put(event->desc);
+	cds_list_del(&event->node);
 	lttng_destroy_context(event->ctx);
 	lttng_free_event_filter_runtime(event);
-	lttng_free_event_filter_bytecode(event);
+	/* Free event enabler refs */
+	cds_list_for_each_entry_safe(enabler_ref, tmp_enabler_ref,
+			&event->enablers_ref_head, node)
+		free(enabler_ref);
 	free(event);
 }
 
@@ -1275,13 +1228,13 @@ int _lttng_session_metadata_statedump(struct lttng_session *session)
 		goto end;
 
 skip_session:
-	cds_list_for_each_entry(chan, &session->chan, list) {
+	cds_list_for_each_entry(chan, &session->chan_head, node) {
 		ret = _lttng_channel_metadata_statedump(session, chan);
 		if (ret)
 			goto end;
 	}
 
-	cds_list_for_each_entry(event, &session->events, list) {
+	cds_list_for_each_entry(event, &session->events_head, node) {
 		ret = _lttng_event_metadata_statedump(session, event->chan, event);
 		if (ret)
 			goto end;
@@ -1295,221 +1248,171 @@ void lttng_ust_events_exit(void)
 {
 	struct lttng_session *session, *tmpsession;
 
-	cds_list_for_each_entry_safe(session, tmpsession, &sessions, list)
+	cds_list_for_each_entry_safe(session, tmpsession, &sessions, node)
 		lttng_session_destroy(session);
 }
 
-/* WILDCARDS */
-
-static
-int wildcard_same_loglevel(struct wildcard_entry *e,
-	enum lttng_ust_loglevel_type loglevel_type,
-	int loglevel)
+/*
+ * Enabler management.
+ */
+struct lttng_enabler *lttng_enabler_create(enum lttng_enabler_type type,
+		struct lttng_ust_event *event_param,
+		struct lttng_channel *chan)
 {
-	if (e->loglevel_type == loglevel_type && e->loglevel == loglevel)
-		return 1;
-	else
-		return 0;
+	struct lttng_enabler *enabler;
+
+	enabler = zmalloc(sizeof(*enabler));
+	if (!enabler)
+		return NULL;
+	enabler->type = type;
+	CDS_INIT_LIST_HEAD(&enabler->filter_bytecode_head);
+	memcpy(&enabler->event_param, event_param,
+		sizeof(enabler->event_param));
+	enabler->chan = chan;
+	/* ctx left NULL */
+	enabler->enabled = 1;
+	cds_list_add(&enabler->node, &enabler->chan->session->enablers_head);
+	lttng_session_lazy_sync_enablers(enabler->chan->session);
+	return enabler;
 }
 
-#if 0
-static
-int wildcard_is_within(struct wildcard_entry *e,
-	enum lttng_ust_loglevel_type loglevel_type,
-	int loglevel)
+int lttng_enabler_enable(struct lttng_enabler *enabler)
 {
-	if (e->loglevel_type == LTTNG_UST_LOGLEVEL_ALL
-			|| e->loglevel == -1)
-		return 1;
-	switch (e->loglevel_type) {
-	case LTTNG_UST_LOGLEVEL_RANGE:
-		switch (loglevel_type) {
-		case LTTNG_UST_LOGLEVEL_RANGE:
-			if (e->loglevel >= loglevel)
-				return 1;
-			else
-				return 0;
-		case LTTNG_UST_LOGLEVEL_SINGLE:
-			if (e->loglevel <= 0 && loglevel == 0)
-				return 1;
-			else
-				return 0;
-		}
-	case LTTNG_UST_LOGLEVEL_SINGLE:
-		switch (loglevel_type) {
-		case LTTNG_UST_LOGLEVEL_RANGE:
-			if (loglevel <= 0)
-				return 1;
-			else
-				return 0;
-		case LTTNG_UST_LOGLEVEL_SINGLE:
-			if (e->loglevel == loglevel)
-				return 1;
-			else
-				return 0;
-		}
+	enabler->enabled = 1;
+	lttng_session_lazy_sync_enablers(enabler->chan->session);
+	return 0;
+}
+
+int lttng_enabler_disable(struct lttng_enabler *enabler)
+{
+	if (enabler->chan == enabler->chan->session->metadata)
+		return -EPERM;
+	enabler->enabled = 0;
+	lttng_session_lazy_sync_enablers(enabler->chan->session);
+	return 0;
+}
+
+int lttng_enabler_attach_bytecode(struct lttng_enabler *enabler,
+		struct lttng_ust_filter_bytecode_node *bytecode)
+{
+	bytecode->enabler = enabler;
+	cds_list_add_tail(&bytecode->node, &enabler->filter_bytecode_head);
+	lttng_session_lazy_sync_enablers(enabler->chan->session);
+	return 0;
+}
+
+int lttng_attach_context(struct lttng_ust_context *context_param,
+		struct lttng_ctx **ctx, struct lttng_session *session)
+{
+	/*
+	 * We cannot attach a context after trace has been started for a
+	 * session because the metadata does not allow expressing this
+	 * information outside of the original channel scope.
+	 */
+	if (session->been_active)
+		return -EPERM;
+
+	switch (context_param->ctx) {
+	case LTTNG_UST_CONTEXT_PTHREAD_ID:
+		return lttng_add_pthread_id_to_ctx(ctx);
+	case LTTNG_UST_CONTEXT_VTID:
+		return lttng_add_vtid_to_ctx(ctx);
+	case LTTNG_UST_CONTEXT_VPID:
+		return lttng_add_vpid_to_ctx(ctx);
+	case LTTNG_UST_CONTEXT_PROCNAME:
+		return lttng_add_procname_to_ctx(ctx);
+	default:
+		return -EINVAL;
 	}
 }
+
+int lttng_enabler_attach_context(struct lttng_enabler *enabler,
+		struct lttng_ust_context *context_param)
+{
+#if 0	// disabled for now.
+	struct lttng_session *session = enabler->chan->session;
+	int ret;
+
+	ret = lttng_attach_context(context_param, &enabler->ctx,
+			session);
+	if (ret)
+		return ret;
+	lttng_session_lazy_sync_enablers(enabler->chan->session);
 #endif
+	return -ENOSYS;
+}
+
+static
+void lttng_enabler_destroy(struct lttng_enabler *enabler)
+{
+	struct lttng_ust_filter_bytecode_node *filter_node, *tmp_filter_node;
+
+	/* Destroy filter bytecode */
+	cds_list_for_each_entry_safe(filter_node, tmp_filter_node,
+			&enabler->filter_bytecode_head, node) {
+		free(filter_node);
+	}
+
+	/* Destroy contexts */
+	lttng_destroy_context(enabler->ctx);
+
+	cds_list_del(&enabler->node);
+	free(enabler);
+}
 
 /*
- * Add the wildcard to the wildcard list. Must be called with
- * ust lock held.
+ * lttng_session_sync_enablers should be called just before starting a
+ * session.
  */
 static
-struct session_wildcard *add_wildcard(struct lttng_channel *chan,
-	struct lttng_ust_event *event_param)
+void lttng_session_sync_enablers(struct lttng_session *session)
 {
-	struct wildcard_entry *e;
-	struct session_wildcard *sw;
-	size_t name_len = strlen(event_param->name) + 1;
-	int found = 0;
+	struct lttng_enabler *enabler;
+	struct lttng_event *event;
 
-	//FIXME: ensure that wildcard re-use pending events, or
-	//re-use actual events, applying its filter on top.
-
+	cds_list_for_each_entry(enabler, &session->enablers_head, node)
+		lttng_enabler_ref_events(enabler);
 	/*
-	 * Try to find global wildcard entry. Given that this is shared
-	 * across all sessions, we need to check for exact loglevel
-	 * match, not just whether contained within the existing ones.
+	 * For each event, if at least one of its enablers is enabled,
+	 * we enable the event, else we disable it.
 	 */
-	cds_list_for_each_entry(e, &wildcard_list, list) {
-		if (!strncmp(event_param->name, e->name,
-				LTTNG_UST_SYM_NAME_LEN - 1)) {
-			if (wildcard_same_loglevel(e,
-					event_param->loglevel_type,
-					event_param->loglevel)) {
-				found = 1;
+	cds_list_for_each_entry(event, &session->events_head, node) {
+		struct lttng_enabler_ref *enabler_ref;
+		struct lttng_bytecode_runtime *runtime;
+		int enabled = 0;
+
+		/* Enable events */
+		cds_list_for_each_entry(enabler_ref,
+				&event->enablers_ref_head, node) {
+			if (enabler_ref->ref->enabled) {
+				enabled = 1;
 				break;
 			}
 		}
-	}
+		event->enabled = enabled;
 
-	if (!found) {
-		/*
-		 * Create global wildcard entry if not found. Using
-		 * zmalloc here to allocate a variable length element.
-		 * Could cause some memory fragmentation if overused.
-		 */
-		e = zmalloc(sizeof(struct wildcard_entry) + name_len);
-		if (!e)
-			return ERR_PTR(-ENOMEM);
-		memcpy(&e->name[0], event_param->name, name_len);
-		e->loglevel_type = event_param->loglevel_type;
-		e->loglevel = event_param->loglevel;
-		CDS_INIT_LIST_HEAD(&e->filter_bytecode);
-		cds_list_add(&e->list, &wildcard_list);
-		CDS_INIT_LIST_HEAD(&e->session_list);
-	}
-
-	/* session wildcard */
-	cds_list_for_each_entry(sw, &e->session_list, session_list) {
-		if (chan == sw->chan) {
-			DBG("wildcard %s busy for this channel",
-				event_param->name);
-			return ERR_PTR(-EEXIST);	/* Already there */
+		/* Enable filters */
+		cds_list_for_each_entry(runtime,
+				&event->bytecode_runtime_head, node) {
+			lttng_filter_sync_state(runtime);
 		}
+
 	}
-	sw = zmalloc(sizeof(struct session_wildcard));
-	if (!sw)
-		return ERR_PTR(-ENOMEM);
-	sw->chan = chan;
-	sw->enabled = 1;
-	memcpy(&sw->event_param, event_param, sizeof(sw->event_param));
-	sw->event_param.instrumentation = LTTNG_UST_TRACEPOINT;
-	sw->event_param.loglevel_type = event_param->loglevel_type;
-	sw->event_param.loglevel = event_param->loglevel;
-	CDS_INIT_LIST_HEAD(&sw->filter_bytecode);
-	CDS_INIT_LIST_HEAD(&sw->events);
-	cds_list_add(&sw->list, &chan->session->wildcards);
-	cds_list_add(&sw->session_list, &e->session_list);
-	sw->entry = e;
-	lttng_probes_create_wildcard_events(e, sw);
-	return sw;
 }
 
 /*
- * Remove the wildcard from the wildcard list. Must be called with
- * ust_lock held. Only called at session teardown.
+ * Apply enablers to session events, adding events to session if need
+ * be. It is required after each modification applied to an active
+ * session, and right before session "start".
+ * "lazy" sync means we only sync if required.
  */
 static
-void _remove_wildcard(struct session_wildcard *wildcard)
+void lttng_session_lazy_sync_enablers(struct lttng_session *session)
 {
-	struct lttng_event *ev, *tmp;
-
-	/*
-	 * Just remove the events owned (for enable/disable) by this
-	 * wildcard from the list. The session teardown will take care
-	 * of freeing the event memory.
-	 */
-	cds_list_for_each_entry_safe(ev, tmp, &wildcard->events,
-			wildcard_list) {
-		cds_list_del(&ev->wildcard_list);
-	}
-	cds_list_del(&wildcard->session_list);
-	cds_list_del(&wildcard->list);
-	if (cds_list_empty(&wildcard->entry->session_list)) {
-		cds_list_del(&wildcard->entry->list);
-		free(wildcard->entry);
-	}
-	lttng_free_wildcard_filter_bytecode(wildcard);
-	free(wildcard);
-}
-
-int lttng_wildcard_create(struct lttng_channel *chan,
-	struct lttng_ust_event *event_param,
-	struct session_wildcard **_sw)
-{
-	struct session_wildcard *sw;
-
-	sw = add_wildcard(chan, event_param);
-	if (!sw || IS_ERR(sw)) {
-		return PTR_ERR(sw);
-	}
-	*_sw = sw;
-	return 0;
-}
-
-static
-void _lttng_wildcard_destroy(struct session_wildcard *sw)
-{
-	_remove_wildcard(sw);
-}
-
-int lttng_wildcard_enable(struct session_wildcard *wildcard)
-{
-	struct lttng_event *ev;
-	int ret;
-
-	if (wildcard->enabled)
-		return -EEXIST;
-	cds_list_for_each_entry(ev, &wildcard->events, wildcard_list) {
-		ret = lttng_event_enable(ev);
-		if (ret) {
-			DBG("Error: enable error.\n");
-			return ret;
-		}
-	}
-	wildcard->enabled = 1;
-	return 0;
-}
-
-int lttng_wildcard_disable(struct session_wildcard *wildcard)
-{
-	struct lttng_event *ev;
-	int ret;
-
-	if (!wildcard->enabled)
-		return -EEXIST;
-	cds_list_for_each_entry(ev, &wildcard->events, wildcard_list) {
-		ret = lttng_event_disable(ev);
-		if (ret) {
-			DBG("Error: disable error.\n");
-			return ret;
-		}
-	}
-	wildcard->enabled = 0;
-	return 0;
+	/* We can skip if session is not active */
+	if (!session->active)
+		return;
+	lttng_session_sync_enablers(session);
 }
 
 /*

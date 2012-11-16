@@ -486,12 +486,12 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 		return;							      \
 	if (caa_unlikely(!CMM_ACCESS_ONCE(__event->enabled)))		      \
 		return;							      \
-	if (caa_unlikely(!cds_list_empty(&__event->bytecode_runtime))) {      \
+	if (caa_unlikely(!cds_list_empty(&__event->bytecode_runtime_head))) { \
 		struct lttng_bytecode_runtime *bc_runtime;		      \
 									      \
 		__event_prepare_filter_stack__##_provider##___##_name(__stackvar.__filter_stack_data, \
 			_TP_ARGS_DATA_VAR(_args));			      \
-		cds_list_for_each_entry_rcu(bc_runtime, &__event->bytecode_runtime, node) { \
+		cds_list_for_each_entry_rcu(bc_runtime, &__event->bytecode_runtime_head, node) { \
 			if (caa_likely(!bc_runtime->filter(bc_runtime,	      \
 					__stackvar.__filter_stack_data)))     \
 				return;					      \
