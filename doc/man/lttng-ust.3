@@ -238,6 +238,10 @@ For instance, add within a function:
 As a call to the tracepoint. It will only be activated when requested by
 lttng(1) through lttng-sessiond(8).
 
+Even though LTTng-UST supports tracepoint() call site duplicates having
+the same provider and event name, it is recommended to use a
+provider event name pair only once within the source code to help
+mapping events back to their call sites when analyzing the trace.
 .fi
 
 .SH "BUILDING/LINKING THE TRACEPOINT PROVIDER"
