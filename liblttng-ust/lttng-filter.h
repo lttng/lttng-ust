@@ -190,9 +190,9 @@ const char *print_op(enum filter_op op);
 int lttng_filter_validate_bytecode(struct bytecode_runtime *bytecode);
 int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode);
 
-int lttng_filter_false(void *filter_data,
+uint64_t lttng_filter_false(void *filter_data,
 		const char *filter_stack_data);
-int lttng_filter_interpret_bytecode(void *filter_data,
+uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		const char *filter_stack_data);
 
 #endif /* _LTTNG_FILTER_H */

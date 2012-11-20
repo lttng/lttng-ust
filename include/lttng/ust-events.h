@@ -299,10 +299,19 @@ struct lttng_ust_filter_bytecode_node {
 	struct lttng_ust_filter_bytecode bc;
 };
 
+/*
+ * Filter return value masks.
+ */
+enum lttng_filter_ret {
+	LTTNG_FILTER_DISCARD = 0,
+	LTTNG_FILTER_RECORD_FLAG = (1ULL << 0),
+	/* Other bits are kept for future use. */
+};
+
 struct lttng_bytecode_runtime {
 	/* Associated bytecode */
 	struct lttng_ust_filter_bytecode_node *bc;
-	int (*filter)(void *filter_data, const char *filter_stack_data);
+	uint64_t (*filter)(void *filter_data, const char *filter_stack_data);
 	int link_failed;
 	struct cds_list_head node;	/* list of bytecode runtime in event */
 };

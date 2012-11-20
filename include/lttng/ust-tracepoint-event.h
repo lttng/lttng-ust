@@ -489,16 +489,16 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 		return;							      \
 	if (caa_unlikely(!cds_list_empty(&__event->bytecode_runtime_head))) { \
 		struct lttng_bytecode_runtime *bc_runtime;		      \
-		int __filter_result = 0;				      \
+		int __filter_record = 0;				      \
 									      \
 		__event_prepare_filter_stack__##_provider##___##_name(__stackvar.__filter_stack_data, \
 			_TP_ARGS_DATA_VAR(_args));			      \
 		cds_list_for_each_entry_rcu(bc_runtime, &__event->bytecode_runtime_head, node) { \
 			if (caa_unlikely(bc_runtime->filter(bc_runtime,	      \
-					__stackvar.__filter_stack_data)))     \
-				__filter_result = 1;			      \
+					__stackvar.__filter_stack_data) & LTTNG_FILTER_RECORD_FLAG)) \
+				__filter_record = 1;			      \
 		}							      \
-		if (caa_likely(!__filter_result))			      \
+		if (caa_likely(!__filter_record))			      \
 			return;						      \
 	}								      \
 	__event_len = __event_get_size__##_provider##___##_name(__stackvar.__dynamic_len, \
