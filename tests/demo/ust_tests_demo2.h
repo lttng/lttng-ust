@@ -55,6 +55,6 @@ TRACEPOINT_LOGLEVEL(ust_tests_demo2, loop, TRACE_WARNING)
 /* This part must be outside ifdef protection */
 #include <lttng/tracepoint-event.h>
 
-#ifdef __cplusplus 
+#ifdef __cplusplus
 }
 #endif
