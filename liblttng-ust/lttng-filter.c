@@ -254,7 +254,7 @@ int _lttng_filter_event_link_bytecode(struct lttng_event *event,
 	runtime = zmalloc(runtime_alloc_len);
 	if (!runtime) {
 		ret = -ENOMEM;
-		goto link_error;
+		goto alloc_error;
 	}
 	runtime->p.bc = filter_bytecode;
 	runtime->len = filter_bytecode->bc.reloc_offset;
@@ -298,6 +298,7 @@ link_error:
 	runtime->p.filter = lttng_filter_false;
 	runtime->p.link_failed = 1;
 	cds_list_add_rcu(&runtime->p.node, insert_loc);
+alloc_error:
 	dbg_printf("Linking failed.\n");
 	return ret;
 }
