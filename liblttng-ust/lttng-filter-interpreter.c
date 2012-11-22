@@ -168,7 +168,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 	struct bytecode_runtime *bytecode = filter_data;
 	void *pc, *next_pc, *start_pc;
 	int ret = -EINVAL;
-	int retval = 0;
+	uint64_t retval = 0;
 	struct estack _stack;
 	struct estack *stack = &_stack;
 	register int64_t ax = 0, bx = 0;
