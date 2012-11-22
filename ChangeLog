@@ -1,3 +1,47 @@
+2012-11-22 lttng-ust 2.1.0-rc2
+	* filter interpreter cleanup: use uint64_t for retval
+	* Fix: filter linking can dereference NULL pointer on alloc failure
+	* Cleanup: remove whitespaces and EOL in tests
+	* Filter: use only single lower bit of filter return value
+	* Fix: filter: var len array at end of external structure
+	* Fix: filter link fail handling
+	* Fix: add missing seqnum field to filter
+	* filters: perform union rather than intersection
+	* Implement support for overlapping wildcard/events
+	* Cleanup: add lttng_/lttng-/LTTNG_ prefixes
+	* filter: add seqnum field to filter command
+	* Filter iteration: iterate on list of filters
+	* document that tracepoint names should ideally not be re-used
+	* Remove LIBFORMAT config declaration, unused
+	* Add libc errno translation layer to UST error code
+	* Fix: add const qualifier for filter local void *
+	* Fix: re-allow non-lvalue string, sequence, array parameters
+	* Tear down handles associated with a closed sessiond socket
+	* Distinguish UST return codes from transport return codes
+	* Fix: Conditionally disable tests requiring shared libs support
+	* Cleanup: don't spawn per-user thread if HOME is not set
+	* Manpage: document supported UST contexts
+	* Fix: procname context semantic
+	* Fix: Fix self-assign warning on struct ustfork_clone_info init
+	* Fix: memcpy of string is larger than source
+	* Implement liblttng-ust-fork daemon() override test
+	* liblttng-ust-fork: override daemon() call
+	* ustfork: set errno to ENOSYS if symbol lookup fails
+	* Fix: be quiet on filter linker error
+	* Build out of src tree
+	* Fix: filter bytecode specializer stack leak
+	* Fix: reloc offset validation error out on filters with no reloc table
+	* Perform calculation on bit size in 64-bit
+	* Use uint64_t for packet header content size and packet size
+	* Fix: manpage typo "-lllttng-ust" -> "-llttng-ust"
+	* Fix: BSD getprogname null pointer dereference
+	* Add support for model.emf.uri event info
+	* Filter error message cleanup
+	* Manpage update: document use in daemons
+	* Fix: get_wait_shm() ust mutex deadlock (add 2 missing exit calls)
+	* Fix: get_wait_shm() ust mutex deadlock
+	* Fix: add events with 0 field to field list
+
 2012-09-10 lttng-ust 2.1.0-rc1
 	* Fix make dist: fix liblttng-ust-java dependencies
 	* Fix make dist: add missing filter header
