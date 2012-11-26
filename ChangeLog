@@ -1,3 +1,16 @@
+2012-11-26 lttng-ust 2.0.6
+	* Print probe provider mismatch error even without -Wsystem-headers
+	* Fix: Conditionally disable tests requiring shared libs support
+	* Cleanup: don't spawn per-user thread if HOME is not set
+	* Fix: Fix self-assign warning on struct ustfork_clone_info init
+	* Fix: memcpy of string is larger than source
+	* liblttng-ust-fork: override daemon() call
+	* Build out of src tree
+	* Fix: manpage typo "-lllttng-ust" -> "-llttng-ust"
+	* Manpage update: document use in daemons
+	* Fix: get_wait_shm() ust mutex deadlock (add 2 missing exit calls)
+	* Fix: get_wait_shm() ust mutex deadlock
+
 2012-08-27 lttng-ust 2.0.5
 	* Fix: threads should be created in DETACHED state
 	* Fix UST SIGPIPE handling
