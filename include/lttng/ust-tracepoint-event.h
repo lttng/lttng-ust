@@ -72,7 +72,7 @@ void _TP_COMBINE_TOKENS(__tracepoint_provider_mismatch_, TRACEPOINT_PROVIDER)(vo
 #define TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	\
 	__tracepoint_provider_mismatch_##_provider();
 
-static __attribute__((unused))
+static inline
 void _TP_COMBINE_TOKENS(__tracepoint_provider_check_, TRACEPOINT_PROVIDER)(void)
 {
 #include TRACEPOINT_INCLUDE
@@ -655,6 +655,15 @@ _TP_COMBINE_TOKENS(__lttng_events_init__, TRACEPOINT_PROVIDER)(void)
 {
 	int ret;
 
+	/*
+	 * __tracepoint_provider_check_ ## TRACEPOINT_PROVIDER() is a
+	 * static inline function that ensures every probe PROVIDER
+	 * argument match the provider within which they appear. It
+	 * calls empty static inline functions, and therefore has no
+	 * runtime effect. However, if it detects an error, a linker
+	 * error will appear.
+	 */
+	_TP_COMBINE_TOKENS(__tracepoint_provider_check_, TRACEPOINT_PROVIDER)();
 	ret = lttng_probe_register(&_TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PROVIDER));
 	assert(!ret);
 }
