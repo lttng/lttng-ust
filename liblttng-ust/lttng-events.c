@@ -1379,7 +1379,7 @@ void lttng_session_sync_enablers(struct lttng_session *session)
 	cds_list_for_each_entry(event, &session->events_head, node) {
 		struct lttng_enabler_ref *enabler_ref;
 		struct lttng_bytecode_runtime *runtime;
-		int enabled = 0;
+		int enabled = 0, has_enablers_without_bytecode = 0;
 
 		/* Enable events */
 		cds_list_for_each_entry(enabler_ref,
@@ -1390,6 +1390,17 @@ void lttng_session_sync_enablers(struct lttng_session *session)
 			}
 		}
 		event->enabled = enabled;
+
+		/* Check if has enablers without bytecode */
+		cds_list_for_each_entry(enabler_ref,
+				&event->enablers_ref_head, node) {
+			if (cds_list_empty(&enabler_ref->ref->filter_bytecode_head)) {
+				has_enablers_without_bytecode = 1;
+				break;
+			}
+		}
+		event->has_enablers_without_bytecode =
+			has_enablers_without_bytecode;
 
 		/* Enable filters */
 		cds_list_for_each_entry(runtime,
