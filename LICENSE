@@ -1,0 +1,19 @@
+LTTng UST (User-Space Tracer) Licensing
+Mathieu Desnoyers
+December 5, 2012
+
+
+* LGPLv2.1
+
+This library is distributed under the LGPLv2.1 license. It is intended
+to allow use of the tracer API from both free and proprietary software.
+
+* MIT license :
+
+Public header files are distributed under the MIT license. See
+mit-license.txt for details.
+
+* GPLv2
+
+Library test code is distributed under the GPLv2 license, as specified in the
+per-file license. See gpl-2.0.txt for details.
