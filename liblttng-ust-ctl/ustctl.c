@@ -685,6 +685,7 @@ struct lttng_ust_shm_handle *ustctl_map_channel(struct lttng_ust_object_data *ch
 	default:
 		ERR("Unknown client type %d", config->client_type);
 		channel_destroy(chan, handle, 1);
+		free(handle->shadow_chan);
 		return NULL;
 	}
 	/* Replace the object table pointer. */
@@ -735,6 +736,7 @@ void ustctl_unmap_channel(struct lttng_ust_shm_handle *handle)
 	assert(handle);
 	chan = shmp(handle, handle->chan);
 	channel_destroy(chan, handle, 1);
+	free(handle->shadow_chan);
 }
 
 /*
