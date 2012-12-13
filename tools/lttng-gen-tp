@@ -61,7 +61,7 @@ extern "C"{{
 
     def write(self):
         outputFile = open(self.outputFilename,"w")
-        includeGuard = "_"+self.outputFilename.upper().replace(".","_")
+        includeGuard = self.outputFilename.upper().replace(".","_")
 
         outputFile.write(HeaderFile.HEADER_TPL.format(providerName=self.template.domain,
                                            includeGuard = includeGuard,
