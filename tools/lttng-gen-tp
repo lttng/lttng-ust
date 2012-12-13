@@ -207,8 +207,6 @@ def main(argv=None):
             opts, args = getopt.gnu_getopt(argv[1:], "ho:a", ["help"])
         except getopt.error, msg:
              raise Usage(msg)
-        if len(args) == 0:
-            raise Usage("No template file given")
 
     except Usage, err:
         print >>sys.stderr, err.msg
@@ -224,6 +222,14 @@ def main(argv=None):
             outputNames.append(a)
         if o in ("-a",""):
             all = True
+    try:
+        if len(args) == 0:
+            raise Usage("No template file given")
+
+    except Usage, err:
+        print >>sys.stderr, err.msg
+        print >>sys.stderr, "for help use --help"
+        return 2
 
     doCFile = None
     doHeader = None
