@@ -28,6 +28,7 @@
  */
 
 #include <stdint.h>
+#include <lttng/ust-compiler.h>
 
 #define LTTNG_UST_SYM_NAME_LEN	256
 
@@ -60,18 +61,18 @@ struct lttng_ust_tracer_version {
 	uint32_t major;
 	uint32_t minor;
 	uint32_t patchlevel;
-};
+} LTTNG_PACKED;
 
 #define LTTNG_UST_CHANNEL_PADDING	LTTNG_UST_SYM_NAME_LEN + 32
 struct lttng_ust_channel {
-	int overwrite;				/* 1: overwrite, 0: discard */
 	uint64_t subbuf_size;			/* in bytes */
 	uint64_t num_subbuf;
+	int overwrite;				/* 1: overwrite, 0: discard */
 	unsigned int switch_timer_interval;	/* usecs */
 	unsigned int read_timer_interval;	/* usecs */
 	enum lttng_ust_output output;		/* output mode */
 	char padding[LTTNG_UST_CHANNEL_PADDING];
-};
+} LTTNG_PACKED;
 
 #define LTTNG_UST_STREAM_PADDING1	16
 #define LTTNG_UST_STREAM_PADDING2	LTTNG_UST_SYM_NAME_LEN + 32
@@ -81,7 +82,7 @@ struct lttng_ust_stream {
 	union {
 		char padding[LTTNG_UST_STREAM_PADDING2];
 	} u;
-};
+} LTTNG_PACKED;
 
 #define LTTNG_UST_EVENT_PADDING1	16
 #define LTTNG_UST_EVENT_PADDING2	LTTNG_UST_SYM_NAME_LEN + 32
@@ -97,7 +98,7 @@ struct lttng_ust_event {
 	union {
 		char padding[LTTNG_UST_EVENT_PADDING2];
 	} u;
-};
+} LTTNG_PACKED;
 
 enum lttng_ust_field_type {
 	LTTNG_UST_FIELD_OTHER			= 0,
@@ -115,7 +116,7 @@ struct lttng_ust_field_iter {
 	int loglevel;				/* event loglevel */
 	int nowrite;
 	char padding[LTTNG_UST_FIELD_ITER_PADDING];
-};
+} LTTNG_PACKED;
 
 enum lttng_ust_context_type {
 	LTTNG_UST_CONTEXT_VTID			= 0,
@@ -133,37 +134,37 @@ struct lttng_ust_context {
 	union {
 		char padding[LTTNG_UST_CONTEXT_PADDING2];
 	} u;
-};
+} LTTNG_PACKED;
 
 /*
  * Tracer channel attributes.
  */
 #define LTTNG_UST_CHANNEL_ATTR_PADDING	LTTNG_UST_SYM_NAME_LEN + 32
 struct lttng_ust_channel_attr {
-	int overwrite;				/* 1: overwrite, 0: discard */
 	uint64_t subbuf_size;			/* bytes */
 	uint64_t num_subbuf;			/* power of 2 */
+	int overwrite;				/* 1: overwrite, 0: discard */
 	unsigned int switch_timer_interval;	/* usec */
 	unsigned int read_timer_interval;	/* usec */
 	enum lttng_ust_output output;		/* splice, mmap */
 	char padding[LTTNG_UST_CHANNEL_ATTR_PADDING];
-};
+} LTTNG_PACKED;
 
 #define LTTNG_UST_TRACEPOINT_ITER_PADDING	16
 struct lttng_ust_tracepoint_iter {
 	char name[LTTNG_UST_SYM_NAME_LEN];	/* provider:name */
 	int loglevel;
 	char padding[LTTNG_UST_TRACEPOINT_ITER_PADDING];
-};
+} LTTNG_PACKED;
 
 #define LTTNG_UST_OBJECT_DATA_PADDING		LTTNG_UST_SYM_NAME_LEN + 32
 struct lttng_ust_object_data {
+	uint64_t memory_map_size;
 	int handle;
 	int shm_fd;
 	int wait_fd;
-	uint64_t memory_map_size;
 	char padding[LTTNG_UST_OBJECT_DATA_PADDING];
-};
+} LTTNG_PACKED;
 
 enum lttng_ust_calibrate_type {
 	LTTNG_UST_CALIBRATE_TRACEPOINT,
@@ -178,7 +179,7 @@ struct lttng_ust_calibrate {
 	union {
 		char padding[LTTNG_UST_CALIBRATE_PADDING2];
 	} u;
-};
+} LTTNG_PACKED;
 
 #define FILTER_BYTECODE_MAX_LEN		65536
 #define LTTNG_UST_FILTER_PADDING	32
@@ -188,7 +189,7 @@ struct lttng_ust_filter_bytecode {
 	uint64_t seqnum;
 	char padding[LTTNG_UST_FILTER_PADDING];
 	char data[0];
-};
+} LTTNG_PACKED;
 
 #define _UST_CMD(minor)				(minor)
 #define _UST_CMDR(minor, type)			(minor)

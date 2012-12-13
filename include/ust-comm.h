@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include <lttng/ust-abi.h>
 #include <lttng/ust-error.h>
+#include <lttng/ust-compiler.h>
 
 /*
  * Default timeout the application waits for the sessiond to send its
@@ -71,9 +72,9 @@ struct ustcomm_ust_msg {
 			uint32_t data_size;	/* following filter data */
 			uint32_t reloc_offset;
 			uint64_t seqnum;
-		} filter;
+		} LTTNG_PACKED filter;
 	} u;
-};
+} LTTNG_PACKED;
 
 /*
  * Data structure for the response from UST to the session daemon.
@@ -87,14 +88,14 @@ struct ustcomm_ust_reply {
 	union {
 		struct {
 			uint64_t memory_map_size;
-		} channel;
+		} LTTNG_PACKED channel;
 		struct {
 			uint64_t memory_map_size;
-		} stream;
+		} LTTNG_PACKED stream;
 		struct lttng_ust_tracer_version version;
 		struct lttng_ust_tracepoint_iter tracepoint;
 	} u;
-};
+} LTTNG_PACKED;
 
 /*
  * LTTNG_UST_TRACEPOINT_FIELD_LIST reply is followed by a

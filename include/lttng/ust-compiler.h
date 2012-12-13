@@ -25,5 +25,6 @@
  */
 
 #define lttng_ust_notrace __attribute__((no_instrument_function))
+#define LTTNG_PACKED	__attribute__((__packed__))
 
 #endif /* _LTTNG_UST_COMPILER_H */
