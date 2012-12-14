@@ -263,6 +263,9 @@ def main(argv=None):
 
     # process arguments
     for arg in args:
+        if arg[-3:] != ".tp":
+                print arg + " does not end in .tp. Skipping."
+                continue
 
         tpl = None
         try:
