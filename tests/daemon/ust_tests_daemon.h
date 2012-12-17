@@ -48,8 +48,8 @@ TRACEPOINT_EVENT(ust_tests_daemon, after_daemon_parent,
 
 #endif /* _TRACEPOINT_UST_TESTS_DAEMON_H */
 
-#undef TRACEPOINT_INCLUDE_FILE
-#define TRACEPOINT_INCLUDE_FILE ./ust_tests_daemon.h
+#undef TRACEPOINT_INCLUDE
+#define TRACEPOINT_INCLUDE "./ust_tests_daemon.h"
 
 /* This part must be outside ifdef protection */
 #include <lttng/tracepoint-event.h>
