@@ -49,8 +49,8 @@ TRACEPOINT_EVENT(ust_libc, free,
 
 #endif /* _TRACEPOINT_UST_LIBC_H */
 
-#undef TRACEPOINT_INCLUDE_FILE
-#define TRACEPOINT_INCLUDE_FILE ./ust_libc.h
+#undef TRACEPOINT_INCLUDE
+#define TRACEPOINT_INCLUDE "./ust_libc.h"
 
 /* This part must be outside ifdef protection */
 #include <lttng/tracepoint-event.h>

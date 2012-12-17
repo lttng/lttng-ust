@@ -38,8 +38,8 @@ TRACEPOINT_EVENT(lttng_ust, metadata,
 	)
 )
 
-#undef TRACEPOINT_INCLUDE_FILE
-#define TRACEPOINT_INCLUDE_FILE ./probes/lttng-probe-ust.h
+#undef TRACEPOINT_INCLUDE
+#define TRACEPOINT_INCLUDE "./probes/lttng-probe-ust.h"
 
 #endif /* _TRACEPOINT_LTTNG_UST_H */
 

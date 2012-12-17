@@ -31,8 +31,8 @@ class HeaderFile:
 #undef TRACEPOINT_PROVIDER
 #define TRACEPOINT_PROVIDER {providerName}
 
-#undef TRACEPOINT_INCLUDE_FILE
-#define TRACEPOINT_INCLUDE_FILE ./{headerFilename}
+#undef TRACEPOINT_INCLUDE
+#define TRACEPOINT_INCLUDE "./{headerFilename}"
 
 #ifdef __cplusplus
 extern "C"{{

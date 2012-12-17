@@ -47,8 +47,8 @@
 /*
  * include file (this files's name)
  */
-#undef TRACEPOINT_INCLUDE_FILE
-#define TRACEPOINT_INCLUDE_FILE ./sample_component_provider.h
+#undef TRACEPOINT_INCLUDE
+#define TRACEPOINT_INCLUDE "./sample_component_provider.h"
 
 /*
  * Add this macro and its matching element to make sure the program
