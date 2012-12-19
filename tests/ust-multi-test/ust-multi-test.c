@@ -40,6 +40,7 @@
 #include <sys/socket.h>
 
 #include <ust-comm.h>
+#include <lttng/ust-error.h>
 #include <../../libringbuffer/backend.h>
 #include <../../libringbuffer/frontend.h>
 #include "../../liblttng-ust/compat.h"	/* For ENODATA */
@@ -109,7 +110,7 @@ int open_streams(int sock, int channel_handle, struct lttng_ust_object_data *str
 			}
 			k++;
 		}
-		if (ret == -ENOENT)
+		if (ret == -LTTNG_UST_ERR_NOENT)
 			break;
 		if (ret)
 			return ret;
@@ -813,6 +814,7 @@ int main(int argc, char **argv)
 			pid_t ppid;
 			uid_t uid;
 			gid_t gid;
+			uint32_t bits_per_long;
 			char name[16];	/* Process name */
 		} reg_msg;
 		char bufname[17];
