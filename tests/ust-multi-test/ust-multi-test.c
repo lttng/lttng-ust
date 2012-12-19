@@ -872,6 +872,7 @@ end:
 		ret = system(cmd);
 		if (ret < 0) {
 			printf("Unable to clean %s\n", home_rundir);
+			return -1;
 		}
 	}
 
