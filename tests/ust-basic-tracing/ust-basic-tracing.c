@@ -702,6 +702,8 @@ static void set_ulimit(void)
 int main(int argc, const char **argv)
 {
 	const char *home_dir;
+	char home_rundir[PATH_MAX];
+	char *cmd = NULL;
 	int ret, wait_shm_fd;
 	struct sigaction act;
 	mode_t old_umask = 0;
@@ -765,6 +767,21 @@ int main(int argc, const char **argv)
 		strcpy(apps_sock_path, DEFAULT_GLOBAL_APPS_UNIX_SOCK);
 		old_umask = umask(0);
 	} else {
+		home_dir = (const char *) getenv("HOME");
+		if (!home_dir) {
+			perror("getenv error");
+			return -ENOENT;
+		}
+
+		snprintf(home_rundir, PATH_MAX,
+			 LTTNG_HOME_RUNDIR, home_dir);
+
+		ret = mkdir(home_rundir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+		if (ret && errno != EEXIST) {
+			perror("mkdir");
+			return -1;
+		}
+
 		snprintf(local_apps_wait_shm_path, PATH_MAX,
 			 DEFAULT_HOME_APPS_WAIT_SHM_PATH, getuid());
 		wait_shm_fd = get_wait_shm(local_apps_wait_shm_path,
@@ -772,11 +789,6 @@ int main(int argc, const char **argv)
 		if (wait_shm_fd < 0) {
 			perror("local wait shm error");
 			return -1;
-		}
-		home_dir = (const char *) getenv("HOME");
-		if (!home_dir) {
-			perror("getenv error");
-			return -ENOENT;
 		}
 		snprintf(apps_sock_path, PATH_MAX,
 			 DEFAULT_HOME_APPS_UNIX_SOCK, home_dir);
@@ -868,6 +880,23 @@ end:
 		fprintf(stderr, "Error wakeup futex\n");
 		return -1;
 	}
+
+	if (geteuid()) {
+		printf("Removing %s directory\n", home_rundir);
+		ret = asprintf(&cmd, "rm -rf %s", home_rundir);
+		if (ret < 0) {
+			printf("asprintf failed. Something is really wrong!\n");
+			return -1;
+		}
+
+		/* Remove lttng run directory */
+		ret = system(cmd);
+		if (ret < 0) {
+			printf("Unable to clean %s\n", home_rundir);
+			return -1;
+		}
+	}
+
 
 	return 0;
 }
