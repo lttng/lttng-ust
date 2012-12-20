@@ -49,6 +49,8 @@
 #include <helper.h>
 #include "lttng-tracer.h"
 
+#define OBJ_NAME_LEN	16
+
 static int lttng_ust_abi_close_in_progress;
 
 static
@@ -68,6 +70,7 @@ struct lttng_ust_obj {
 			const struct lttng_ust_objd_ops *ops;
 			int f_count;
 			void *owner;
+			char name[OBJ_NAME_LEN];
 		} s;
 		int freelist_next;	/* offset freelist. end is -1. */
 	} u;
@@ -85,7 +88,7 @@ static struct lttng_ust_objd_table objd_table = {
 
 static
 int objd_alloc(void *private_data, const struct lttng_ust_objd_ops *ops,
-		void *owner)
+		void *owner, const char *name)
 {
 	struct lttng_ust_obj *obj;
 
@@ -122,6 +125,8 @@ end:
 	obj->u.s.f_count = 2;	/* count == 1 : object is allocated */
 				/* count == 2 : allocated + hold ref */
 	obj->u.s.owner = owner;
+	strncpy(obj->u.s.name, name, OBJ_NAME_LEN);
+	obj->u.s.name[OBJ_NAME_LEN - 1] = '\0';
 	return obj - objd_table.array;
 }
 
@@ -254,7 +259,7 @@ int lttng_abi_create_root_handle(void)
 	int root_handle;
 
 	/* root handles have NULL owners */
-	root_handle = objd_alloc(NULL, &lttng_ops, NULL);
+	root_handle = objd_alloc(NULL, &lttng_ops, NULL, "root");
 	return root_handle;
 }
 
@@ -267,7 +272,7 @@ int lttng_abi_create_session(void *owner)
 	session = lttng_session_create();
 	if (!session)
 		return -ENOMEM;
-	session_objd = objd_alloc(session, &lttng_session_ops, owner);
+	session_objd = objd_alloc(session, &lttng_session_ops, owner, "session");
 	if (session_objd < 0) {
 		ret = session_objd;
 		goto objd_error;
@@ -415,7 +420,7 @@ int lttng_abi_create_channel(int session_objd,
 		transport_name = "<unknown>";
 		return -EINVAL;
 	}
-	chan_objd = objd_alloc(NULL, ops, owner);
+	chan_objd = objd_alloc(NULL, ops, owner, "channel");
 	if (chan_objd < 0) {
 		ret = chan_objd;
 		goto objd_error;
@@ -568,7 +573,7 @@ int lttng_abi_tracepoint_list(void *owner)
 	int list_objd, ret;
 	struct lttng_ust_tracepoint_list *list;
 
-	list_objd = objd_alloc(NULL, &lttng_tracepoint_list_ops, owner);
+	list_objd = objd_alloc(NULL, &lttng_tracepoint_list_ops, owner, "tp_list");
 	if (list_objd < 0) {
 		ret = list_objd;
 		goto objd_error;
@@ -650,7 +655,8 @@ int lttng_abi_tracepoint_field_list(void *owner)
 	int list_objd, ret;
 	struct lttng_ust_field_list *list;
 
-	list_objd = objd_alloc(NULL, &lttng_tracepoint_field_list_ops, owner);
+	list_objd = objd_alloc(NULL, &lttng_tracepoint_field_list_ops, owner,
+			"tp_field_list");
 	if (list_objd < 0) {
 		ret = list_objd;
 		goto objd_error;
@@ -729,7 +735,7 @@ int lttng_abi_open_stream(int channel_objd, struct lttng_ust_stream *info,
 	}
 	priv->buf = buf;
 	priv->lttng_chan = channel;
-	stream_objd = objd_alloc(priv, &lib_ring_buffer_objd_ops, owner);
+	stream_objd = objd_alloc(priv, &lib_ring_buffer_objd_ops, owner, "open_stream");
 	if (stream_objd < 0) {
 		ret = stream_objd;
 		goto objd_error;
@@ -756,7 +762,7 @@ int lttng_abi_create_enabler(int channel_objd,
 	int event_objd, ret;
 
 	event_param->name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
-	event_objd = objd_alloc(NULL, &lttng_enabler_ops, owner);
+	event_objd = objd_alloc(NULL, &lttng_enabler_ops, owner, "enabler");
 	if (event_objd < 0) {
 		ret = event_objd;
 		goto objd_error;
