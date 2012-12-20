@@ -34,7 +34,7 @@
 
 /* Version for comm protocol between sessiond and ust */
 #define LTTNG_UST_COMM_VERSION_MAJOR		2
-#define LTTNG_UST_COMM_VERSION_MINOR		0
+#define LTTNG_UST_COMM_VERSION_MINOR		1
 
 /* Version for ABI between liblttng-ust, sessiond, consumerd */
 #define LTTNG_UST_INTERNAL_MAJOR_VERSION	3
