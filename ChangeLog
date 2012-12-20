@@ -1,3 +1,26 @@
+2012-12-20 (13th Baktun) lttng-ust 2.1.0
+	* Bump liblttng-ust-ctl lib version major number
+	* Bump UST proto version minor number
+	* Helper to debug: add object name
+	* Tests: Fix rundir not created in ust-basic-tracing
+	* ust test: add missing return -1
+	* Test: update ust tracing unit tests to 2.1 internal ABI
+	* Tests: Fix rundir not created in ust-multi-test
+	* Adapt internal files and examples to TRACEPOINT_INCLUDE
+	* Adapt tests to TRACEPOINT_INCLUDE
+	* Cleanup: tests remove hello.cxx/ust_tests_demo.h
+	* Fix: don't do macro expansion in tracepoint file name
+	* Fix lttng-gen-tp: Template file must end in .tp
+	* Pack structures in comm protocol between UST and sessiond
+	* Cleanup lttng-gen-tp: Help not showing when using -h,--help
+	* Cleanup lttng-gen-tp: remove leading underscore before include guard
+	* fix memleak: ustctl free shadow chan on ustctl_unmap_channel()
+	* Update license text
+	* Fix: check if event enabled for bytecode-less events
+	* Fix: handle enablers without bytecode
+	* Print probe provider mismatch error even without -Wsystem-headers
+	* filter: Add missing padding
+
 2012-11-22 lttng-ust 2.1.0-rc2
 	* filter interpreter cleanup: use uint64_t for retval
 	* Fix: filter linking can dereference NULL pointer on alloc failure
