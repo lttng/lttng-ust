@@ -309,7 +309,6 @@ AS_ECHO("$version_description")
 # Report on the configuration options
 AS_ECHO()
 AS_ECHO("LTTng-UST will be built with the following options:")
-AS_ECHO("Library format: $LIBFORMAT")
 
 AS_ECHO()
 AS_ECHO_N("Java support (JNI): ")
