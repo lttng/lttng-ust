@@ -77,6 +77,18 @@ AC_PROG_CXX
 AC_PROG_MAKE_SET
 LT_INIT
 
+# rw_PROG_CXX_WORKS
+# Check whether the C++ compiler works.
+AC_CACHE_CHECK([whether the C++ compiler works],
+		[rw_cv_prog_cxx_works],
+		[AC_LANG_PUSH([C++])
+		AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])],
+				[rw_cv_prog_cxx_works=yes],
+				[rw_cv_prog_cxx_works=no])
+		AC_LANG_POP([C++])])
+
+AM_CONDITIONAL([CXX_WORKS], [test "x$rw_cv_prog_cxx_works" = "xyes"])
+
 ## Checks for libraries.
 AC_CHECK_LIB([dl], [dlopen],
 [
