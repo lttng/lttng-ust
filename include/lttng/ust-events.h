@@ -362,6 +362,7 @@ struct lttng_event {
 	int has_enablers_without_bytecode;
 	/* Backward references: list of lttng_enabler_ref (ref to enablers) */
 	struct cds_list_head enablers_ref_head;
+	struct cds_hlist_node hlist;	/* session ht of events */
 };
 
 struct channel;
@@ -467,6 +468,7 @@ struct lttng_session {
 	/* New UST 2.1 */
 	/* List of enablers */
 	struct cds_list_head enablers_head;
+	struct lttng_ust_event_ht events_ht;	/* ht of events */
 };
 
 struct lttng_transport {

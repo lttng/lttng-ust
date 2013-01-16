@@ -127,7 +127,7 @@ void synchronize_trace(void)
 struct lttng_session *lttng_session_create(void)
 {
 	struct lttng_session *session;
-	int ret;
+	int ret, i;
 
 	session = zmalloc(sizeof(struct lttng_session));
 	if (!session)
@@ -135,6 +135,8 @@ struct lttng_session *lttng_session_create(void)
 	CDS_INIT_LIST_HEAD(&session->chan_head);
 	CDS_INIT_LIST_HEAD(&session->events_head);
 	CDS_INIT_LIST_HEAD(&session->enablers_head);
+	for (i = 0; i < LTTNG_UST_EVENT_HT_SIZE; i++)
+		CDS_INIT_HLIST_HEAD(&session->events_ht.table[i]);
 	ret = lttng_ust_uuid_generate(session->uuid);
 	if (ret != 0) {
 		session->uuid[0] = '\0';
@@ -329,17 +331,19 @@ int lttng_event_create(const struct lttng_event_desc *desc,
 {
 	const char *event_name = desc->name;
 	struct lttng_event *event;
+	struct cds_hlist_head *head;
+	struct cds_hlist_node *node;
 	int ret = 0;
+	size_t name_len = strlen(event_name);
+	uint32_t hash;
 
 	if (chan->used_event_id == -1U) {
 		ret = -ENOMEM;
 		goto full;
 	}
-	/*
-	 * This is O(n^2) (for each event, the loop is called at event
-	 * creation). Might require a hash if we have lots of events.
-	 */
-	cds_list_for_each_entry(event, &chan->session->events_head, node) {
+	hash = jhash(event_name, name_len, 0);
+	head = &chan->session->events_ht.table[hash & (LTTNG_UST_EVENT_HT_SIZE - 1)];
+	cds_hlist_for_each_entry(event, node, head, hlist) {
 		assert(event->desc);
 		if (!strncmp(event->desc->name,
 				desc->name,
@@ -380,6 +384,7 @@ int lttng_event_create(const struct lttng_event_desc *desc,
 	if (ret)
 		goto statedump_error;
 	cds_list_add(&event->node, &chan->session->events_head);
+	cds_hlist_add_head(&event->hlist, head);
 	return 0;
 
 statedump_error:
@@ -499,17 +504,24 @@ void lttng_create_event_if_missing(struct lttng_enabler *enabler)
 	cds_list_for_each_entry(probe_desc, probe_list, head) {
 		for (i = 0; i < probe_desc->nr_events; i++) {
 			int found = 0, ret;
+			struct cds_hlist_head *head;
+			struct cds_hlist_node *node;
+			const char *event_name;
+			size_t name_len;
+			uint32_t hash;
 
 			desc = probe_desc->event_desc[i];
 			if (!lttng_desc_match_enabler(desc, enabler))
 				continue;
+			event_name = desc->name;
+			name_len = strlen(event_name);
 
 			/*
-			 * For each event in session event list,
-			 * check if already created.
+			 * Check if already created.
 			 */
-			cds_list_for_each_entry(event,
-					&session->events_head, node) {
+			hash = jhash(event_name, name_len, 0);
+			head = &session->events_ht.table[hash & (LTTNG_UST_EVENT_HT_SIZE - 1)];
+			cds_hlist_for_each_entry(event, node, head, hlist) {
 				if (event->desc == desc)
 					found = 1;
 			}
