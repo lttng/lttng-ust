@@ -1,3 +1,7 @@
+2013-01-18 lttng-ust 2.1.1
+	* Introduce hash table for lttng_create_event_if_missing()
+	* Fix: don't build C++ example if a C++ compiler isn't available
+
 2012-12-20 (13th Baktun) lttng-ust 2.1.0
 	* Bump liblttng-ust-ctl lib version major number
 	* Bump UST proto version minor number
