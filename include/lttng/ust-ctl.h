@@ -23,7 +23,7 @@
 
 /*
  * Error values: all the following functions return:
- * >= 0: Sucess (LTTNG_UST_OK)
+ * >= 0: Success (LTTNG_UST_OK)
  * < 0: error code.
  */
 int ustctl_register_done(int sock);
@@ -34,8 +34,6 @@ int ustctl_open_metadata(int sock, int session_handle,
 int ustctl_create_channel(int sock, int session_handle,
 		struct lttng_ust_channel_attr *chops,
 		struct lttng_ust_object_data **channel_data);
-int ustctl_create_stream(int sock, struct lttng_ust_object_data *channel_data,
-		struct lttng_ust_object_data **stream_data);
 int ustctl_create_event(int sock, struct lttng_ust_event *ev,
 		struct lttng_ust_object_data *channel_data,
 		struct lttng_ust_object_data **event_data);
@@ -49,6 +47,15 @@ int ustctl_enable(int sock, struct lttng_ust_object_data *object);
 int ustctl_disable(int sock, struct lttng_ust_object_data *object);
 int ustctl_start_session(int sock, int handle);
 int ustctl_stop_session(int sock, int handle);
+
+/*
+ * Return -ENOENT if no more stream is available for creation.
+ * Return 0 on success.
+ * Return negative error value on system error.
+ * Return positive error value on UST error.
+ */
+int ustctl_create_stream(int sock, struct lttng_ust_object_data *channel_data,
+		struct lttng_ust_object_data **stream_data);
 
 /*
  * ustctl_tracepoint_list returns a tracepoint list handle, or negative
