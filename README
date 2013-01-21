@@ -25,6 +25,7 @@ PREREQUISITES:
       * Git:      git://lttng.org/userspace-rcu.git
 
   - libuuid (for Linux)
+      * Debian/Ubuntu package: libuuid1, uuid-dev
 
 For developers using the git tree:
 
