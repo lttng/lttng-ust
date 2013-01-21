@@ -49,7 +49,7 @@ int ustctl_start_session(int sock, int handle);
 int ustctl_stop_session(int sock, int handle);
 
 /*
- * Return -ENOENT if no more stream is available for creation.
+ * Return -LTTNG_UST_ERR_NOENT if no more stream is available for creation.
  * Return 0 on success.
  * Return negative error value on system error.
  * Return positive error value on UST error.
