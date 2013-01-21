@@ -435,7 +435,10 @@ int ustcomm_send_app_cmd(int sock,
 	ret = ustcomm_send_app_msg(sock, lum);
 	if (ret)
 		return ret;
-	return ustcomm_recv_app_reply(sock, lur, lum->handle, lum->cmd);
+	ret = ustcomm_recv_app_reply(sock, lur, lum->handle, lum->cmd);
+	if (ret > 0)
+		return -EIO;
+	return ret;
 }
 
 /*
