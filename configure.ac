@@ -201,7 +201,8 @@ changequote([,])dnl
 	s390) NO_UNALIGNED_ACCESS=1 ;;
 	s390x) NO_UNALIGNED_ACCESS=1 ;;
         arm*) NO_UNALIGNED_ACCESS=1 ;;
-	mips*) NO_UNALIGNED_ACCESS=1;;
+	mips*) NO_UNALIGNED_ACCESS=1 ;;
+	tile*) NO_UNALIGNED_ACCESS=1 ;;
 	*) AC_MSG_ERROR([unable to detect alignment requirements (unsupported architecture ($host_cpu)?)]) ;;
 esac
 
