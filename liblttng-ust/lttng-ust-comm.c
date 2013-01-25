@@ -884,6 +884,10 @@ restart:
 		case 0:	/* orderly shutdown */
 			DBG("%s lttng-sessiond has performed an orderly shutdown", sock_info->name);
 			ust_lock();
+			if (lttng_ust_comm_should_quit) {
+				ust_unlock();
+				goto quit;
+			}
 			/*
 			 * Either sessiond has shutdown or refused us by closing the socket.
 			 * In either case, we don't want to delay construction execution,
@@ -921,6 +925,10 @@ restart:
 	}
 end:
 	ust_lock();
+	if (lttng_ust_comm_should_quit) {
+		ust_unlock();
+		goto quit;
+	}
 	/* Cleanup socket handles before trying to reconnect */
 	lttng_ust_objd_table_owner_cleanup(sock_info);
 	ust_unlock();
