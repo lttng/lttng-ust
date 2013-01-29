@@ -23,41 +23,11 @@
  * SOFTWARE.
  */
 
-#include <config.h>
 #include <lttng/ust-events.h> /* For LTTNG_UST_UUID_LEN */
+
 /*
  * Includes final \0.
  */
-#define LTTNG_UST_UUID_STR_LEN		37
-
-#ifdef LTTNG_UST_HAVE_LIBUUID
-#include <uuid/uuid.h>
-
-static inline
-int lttng_ust_uuid_generate(unsigned char *uuid_out)
-{
-	uuid_generate(uuid_out);
-	return 0;
-}
-
-#elif defined(LTTNG_UST_HAVE_LIBC_UUID)
-#include <uuid.h>
-#include <stdint.h>
-
-static inline
-int lttng_ust_uuid_generate(unsigned char *uuid_out)
-{
-	uint32_t status;
-
-	uuid_create((uuid_t *) uuid_out, &status);
-	if (status == uuid_s_ok)
-		return 0;
-	else
-		return -1;
-}
-
-#else
-#error "LTTng-UST needs to have a UUID generator configured."
-#endif
+#define LTTNG_UST_UUID_STR_LEN         37
 
 #endif /* _LTTNG_UST_UUID_H */

@@ -280,7 +280,8 @@ int channel_backend_init(struct channel_backend *chanb,
 		for_each_possible_cpu(i) {
 			struct shm_object *shmobj;
 
-			shmobj = shm_object_table_append(handle->table, shmsize);
+			shmobj = shm_object_table_alloc(handle->table, shmsize,
+					SHM_OBJECT_SHM);
 			if (!shmobj)
 				goto end;
 			align_shm(shmobj, __alignof__(struct lttng_ust_lib_ring_buffer));
@@ -298,7 +299,8 @@ int channel_backend_init(struct channel_backend *chanb,
 		struct shm_object *shmobj;
 		struct lttng_ust_lib_ring_buffer *buf;
 
-		shmobj = shm_object_table_append(handle->table, shmsize);
+		shmobj = shm_object_table_alloc(handle->table, shmsize,
+					SHM_OBJECT_SHM);
 		if (!shmobj)
 			goto end;
 		align_shm(shmobj, __alignof__(struct lttng_ust_lib_ring_buffer));

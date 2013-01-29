@@ -57,35 +57,45 @@ enum lttng_ust_output {
 	LTTNG_UST_MMAP		= 0,
 };
 
+enum lttng_ust_chan_type {
+	LTTNG_UST_CHAN_PER_CPU = 0,
+	LTTNG_UST_CHAN_METADATA = 1,
+};
+
 struct lttng_ust_tracer_version {
 	uint32_t major;
 	uint32_t minor;
 	uint32_t patchlevel;
 } LTTNG_PACKED;
 
-#define LTTNG_UST_CHANNEL_PADDING	LTTNG_UST_SYM_NAME_LEN + 32
+#define LTTNG_UST_CHANNEL_PADDING	(LTTNG_UST_SYM_NAME_LEN + 32)
+/*
+ * Given that the consumerd is limited to 64k file descriptors, we
+ * cannot expect much more than 1MB channel structure size. This size is
+ * depends on the number of streams within a channel, which depends on
+ * the number of possible CPUs on the system.
+ */
+#define LTTNG_UST_CHANNEL_DATA_MAX_LEN	1048576U
 struct lttng_ust_channel {
-	uint64_t subbuf_size;			/* in bytes */
-	uint64_t num_subbuf;
-	int overwrite;				/* 1: overwrite, 0: discard */
-	unsigned int switch_timer_interval;	/* usecs */
-	unsigned int read_timer_interval;	/* usecs */
-	enum lttng_ust_output output;		/* output mode */
+	uint64_t len;
+	enum lttng_ust_chan_type type;
 	char padding[LTTNG_UST_CHANNEL_PADDING];
+	char data[];	/* variable sized data */
 } LTTNG_PACKED;
 
-#define LTTNG_UST_STREAM_PADDING1	16
-#define LTTNG_UST_STREAM_PADDING2	LTTNG_UST_SYM_NAME_LEN + 32
+#define LTTNG_UST_STREAM_PADDING1	(LTTNG_UST_SYM_NAME_LEN + 32)
 struct lttng_ust_stream {
+	uint64_t len;		/* shm len */
+	uint32_t stream_nr;	/* stream number */
 	char padding[LTTNG_UST_STREAM_PADDING1];
-
-	union {
-		char padding[LTTNG_UST_STREAM_PADDING2];
-	} u;
+	/*
+	 * shm_fd and wakeup_fd are send over unix socket as file
+	 * descriptors after this structure.
+	 */
 } LTTNG_PACKED;
 
 #define LTTNG_UST_EVENT_PADDING1	16
-#define LTTNG_UST_EVENT_PADDING2	LTTNG_UST_SYM_NAME_LEN + 32
+#define LTTNG_UST_EVENT_PADDING2	(LTTNG_UST_SYM_NAME_LEN + 32)
 struct lttng_ust_event {
 	enum lttng_ust_instrumentation instrumentation;
 	char name[LTTNG_UST_SYM_NAME_LEN];	/* event name */
@@ -108,7 +118,7 @@ enum lttng_ust_field_type {
 	LTTNG_UST_FIELD_STRING			= 4,
 };
 
-#define LTTNG_UST_FIELD_ITER_PADDING		LTTNG_UST_SYM_NAME_LEN + 28
+#define LTTNG_UST_FIELD_ITER_PADDING	(LTTNG_UST_SYM_NAME_LEN + 28)
 struct lttng_ust_field_iter {
 	char event_name[LTTNG_UST_SYM_NAME_LEN];
 	char field_name[LTTNG_UST_SYM_NAME_LEN];
@@ -126,7 +136,7 @@ enum lttng_ust_context_type {
 };
 
 #define LTTNG_UST_CONTEXT_PADDING1	16
-#define LTTNG_UST_CONTEXT_PADDING2	LTTNG_UST_SYM_NAME_LEN + 32
+#define LTTNG_UST_CONTEXT_PADDING2	(LTTNG_UST_SYM_NAME_LEN + 32)
 struct lttng_ust_context {
 	enum lttng_ust_context_type ctx;
 	char padding[LTTNG_UST_CONTEXT_PADDING1];
@@ -139,7 +149,7 @@ struct lttng_ust_context {
 /*
  * Tracer channel attributes.
  */
-#define LTTNG_UST_CHANNEL_ATTR_PADDING	LTTNG_UST_SYM_NAME_LEN + 32
+#define LTTNG_UST_CHANNEL_ATTR_PADDING	(LTTNG_UST_SYM_NAME_LEN + 32)
 struct lttng_ust_channel_attr {
 	uint64_t subbuf_size;			/* bytes */
 	uint64_t num_subbuf;			/* power of 2 */
@@ -157,13 +167,32 @@ struct lttng_ust_tracepoint_iter {
 	char padding[LTTNG_UST_TRACEPOINT_ITER_PADDING];
 } LTTNG_PACKED;
 
-#define LTTNG_UST_OBJECT_DATA_PADDING		LTTNG_UST_SYM_NAME_LEN + 32
+enum lttng_ust_object_type {
+	LTTNG_UST_OBJECT_TYPE_UNKNOWN = -1,
+	LTTNG_UST_OBJECT_TYPE_CHANNEL = 0,
+	LTTNG_UST_OBJECT_TYPE_STREAM = 1,
+};
+
+#define LTTNG_UST_OBJECT_DATA_PADDING1	32
+#define LTTNG_UST_OBJECT_DATA_PADDING2	(LTTNG_UST_SYM_NAME_LEN + 32)
+
 struct lttng_ust_object_data {
-	uint64_t memory_map_size;
+	enum lttng_ust_object_type type;
 	int handle;
-	int shm_fd;
-	int wait_fd;
-	char padding[LTTNG_UST_OBJECT_DATA_PADDING];
+	uint64_t size;
+	char padding1[LTTNG_UST_OBJECT_DATA_PADDING1];
+	union {
+		struct {
+			void *data;
+			enum lttng_ust_chan_type type;
+		} channel;
+		struct {
+			int shm_fd;
+			int wakeup_fd;
+			uint32_t stream_nr;
+		} stream;
+		char padding2[LTTNG_UST_OBJECT_DATA_PADDING2];
+	} u;
 } LTTNG_PACKED;
 
 enum lttng_ust_calibrate_type {
@@ -171,7 +200,7 @@ enum lttng_ust_calibrate_type {
 };
 
 #define LTTNG_UST_CALIBRATE_PADDING1	16
-#define LTTNG_UST_CALIBRATE_PADDING2	LTTNG_UST_SYM_NAME_LEN + 32
+#define LTTNG_UST_CALIBRATE_PADDING2	(LTTNG_UST_SYM_NAME_LEN + 32)
 struct lttng_ust_calibrate {
 	enum lttng_ust_calibrate_type type;	/* type (input) */
 	char padding[LTTNG_UST_CALIBRATE_PADDING1];
@@ -210,8 +239,6 @@ struct lttng_ust_filter_bytecode {
 #define LTTNG_UST_TRACEPOINT_FIELD_LIST		_UST_CMD(0x45)
 
 /* Session FD commands */
-#define LTTNG_UST_METADATA			\
-	_UST_CMDW(0x50, struct lttng_ust_channel)
 #define LTTNG_UST_CHANNEL			\
 	_UST_CMDW(0x51, struct lttng_ust_channel)
 #define LTTNG_UST_SESSION_START			_UST_CMD(0x52)
@@ -245,14 +272,11 @@ struct lttng_ust_obj;
 
 union ust_args {
 	struct {
-		int *shm_fd;
-		int *wait_fd;
-		uint64_t *memory_map_size;
+		void *chan_data;
 	} channel;
 	struct {
-		int *shm_fd;
-		int *wait_fd;
-		uint64_t *memory_map_size;
+		int shm_fd;
+		int wakeup_fd;
 	} stream;
 	struct {
 		struct lttng_ust_field_iter entry;

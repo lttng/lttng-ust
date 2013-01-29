@@ -64,19 +64,7 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 				void *buf_addr,
 				size_t subbuf_size, size_t num_subbuf,
 				unsigned int switch_timer_interval,
-				unsigned int read_timer_interval,
-				int **shm_fd, int **wait_fd,
-				uint64_t **memory_map_size);
-
-/* channel_handle_create - for consumer. */
-extern
-struct lttng_ust_shm_handle *channel_handle_create(int shm_fd, int wait_fd,
-					uint64_t memory_map_size);
-
-/* channel_handle_add_stream - for consumer. */
-extern
-int channel_handle_add_stream(struct lttng_ust_shm_handle *handle,
-		int shm_fd, int wait_fd, uint64_t memory_map_size);
+				unsigned int read_timer_interval);
 
 /*
  * channel_destroy finalizes all channel's buffers, waits for readers to
@@ -84,7 +72,7 @@ int channel_handle_add_stream(struct lttng_ust_shm_handle *handle,
  */
 extern
 void channel_destroy(struct channel *chan, struct lttng_ust_shm_handle *handle,
-		int shadow);
+		int consumer);
 
 
 /* Buffer read operations */
@@ -102,14 +90,24 @@ extern struct lttng_ust_lib_ring_buffer *channel_get_ring_buffer(
 				const struct lttng_ust_lib_ring_buffer_config *config,
 				struct channel *chan, int cpu,
 				struct lttng_ust_shm_handle *handle,
-				int **shm_fd, int **wait_fd,
-				uint64_t **memory_map_size);
+				int *shm_fd, int *wait_fd,
+				int *wakeup_fd,
+				uint64_t *memory_map_size);
+extern
+int ring_buffer_close_wait_fd(const struct lttng_ust_lib_ring_buffer_config *config,
+		struct channel *chan,
+		struct lttng_ust_shm_handle *handle,
+		int cpu);
+extern
+int ring_buffer_close_wakeup_fd(const struct lttng_ust_lib_ring_buffer_config *config,
+		struct channel *chan,
+		struct lttng_ust_shm_handle *handle,
+		int cpu);
+
 extern int lib_ring_buffer_open_read(struct lttng_ust_lib_ring_buffer *buf,
-				     struct lttng_ust_shm_handle *handle,
-				     int shadow);
+				     struct lttng_ust_shm_handle *handle);
 extern void lib_ring_buffer_release_read(struct lttng_ust_lib_ring_buffer *buf,
-					 struct lttng_ust_shm_handle *handle,
-					 int shadow);
+					 struct lttng_ust_shm_handle *handle);
 
 /*
  * Read sequence: snapshot, many get_subbuf/put_subbuf, move_consumer.

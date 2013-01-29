@@ -26,12 +26,17 @@
 
 struct channel;
 
+enum shm_object_type {
+	SHM_OBJECT_SHM,
+	SHM_OBJECT_MEM,
+};
+
 struct shm_object {
+	enum shm_object_type type;
 	size_t index;	/* within the object table */
 	int shm_fd;	/* shm fd */
 	int wait_fd[2];	/* fd for wait/wakeup */
 	char *memory_map;
-	int is_shadow;
 	size_t memory_map_size;
 	uint64_t allocated_len;
 };
@@ -45,12 +50,6 @@ struct shm_object_table {
 struct lttng_ust_shm_handle {
 	struct shm_object_table *table;
 	DECLARE_SHMP(struct channel, chan);
-	/*
-	 * In the consumer, chan points to a shadow copy, validated upon
-	 * reception. The chan object is overridden in the consumer to
-	 * point to this shadow copy.
-	 */
-	struct channel *shadow_chan;
 };
 
 #endif /* _LIBRINGBUFFER_SHM_TYPES_H */

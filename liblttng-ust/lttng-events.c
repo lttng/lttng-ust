@@ -76,7 +76,6 @@ void ust_unlock(void)
 static CDS_LIST_HEAD(sessions);
 
 static void _lttng_event_destroy(struct lttng_event *event);
-static void _lttng_channel_destroy(struct lttng_channel *chan);
 static int _lttng_event_unregister(struct lttng_event *event);
 static
 int _lttng_event_metadata_statedump(struct lttng_session *session,
@@ -127,7 +126,7 @@ void synchronize_trace(void)
 struct lttng_session *lttng_session_create(void)
 {
 	struct lttng_session *session;
-	int ret, i;
+	int i;
 
 	session = zmalloc(sizeof(struct lttng_session));
 	if (!session)
@@ -137,12 +136,28 @@ struct lttng_session *lttng_session_create(void)
 	CDS_INIT_LIST_HEAD(&session->enablers_head);
 	for (i = 0; i < LTTNG_UST_EVENT_HT_SIZE; i++)
 		CDS_INIT_HLIST_HEAD(&session->events_ht.table[i]);
-	ret = lttng_ust_uuid_generate(session->uuid);
-	if (ret != 0) {
-		session->uuid[0] = '\0';
-	}
 	cds_list_add(&session->node, &sessions);
 	return session;
+}
+
+/*
+ * Only used internally at session destruction.
+ */
+static
+void _lttng_channel_unmap(struct lttng_channel *lttng_chan)
+{
+	struct channel *chan;
+	struct lttng_ust_shm_handle *handle;
+
+	cds_list_del(&lttng_chan->node);
+	lttng_destroy_context(lttng_chan->ctx);
+	chan = lttng_chan->chan;
+	handle = lttng_chan->handle;
+	/*
+	 * note: lttng_chan is private data contained within handle. It
+	 * will be freed along with the handle.
+	 */
+	channel_destroy(chan, handle, 0);
 }
 
 void lttng_session_destroy(struct lttng_session *session)
@@ -165,7 +180,7 @@ void lttng_session_destroy(struct lttng_session *session)
 			&session->events_head, node)
 		_lttng_event_destroy(event);
 	cds_list_for_each_entry_safe(chan, tmpchan, &session->chan_head, node)
-		_lttng_channel_destroy(chan);
+		_lttng_channel_unmap(chan);
 	cds_list_del(&session->node);
 	free(session);
 }
@@ -264,62 +279,6 @@ int lttng_event_disable(struct lttng_event *event)
 	if (!old)
 		return -EEXIST;
 	return 0;
-}
-
-struct lttng_channel *lttng_channel_create(struct lttng_session *session,
-				       const char *transport_name,
-				       void *buf_addr,
-				       size_t subbuf_size, size_t num_subbuf,
-				       unsigned int switch_timer_interval,
-				       unsigned int read_timer_interval,
-				       int **shm_fd, int **wait_fd,
-				       uint64_t **memory_map_size,
-				       struct lttng_channel *chan_priv_init)
-{
-	struct lttng_channel *chan = NULL;
-	struct lttng_transport *transport;
-
-	if (session->been_active)
-		goto active;	/* Refuse to add channel to active session */
-	transport = lttng_transport_find(transport_name);
-	if (!transport) {
-		DBG("LTTng transport %s not found\n",
-		       transport_name);
-		goto notransport;
-	}
-	chan_priv_init->id = session->free_chan_id++;
-	chan_priv_init->session = session;
-	/*
-	 * Note: the channel creation op already writes into the packet
-	 * headers. Therefore the "chan" information used as input
-	 * should be already accessible.
-	 */
-	chan = transport->ops.channel_create(transport_name, buf_addr,
-			subbuf_size, num_subbuf, switch_timer_interval,
-			read_timer_interval, shm_fd, wait_fd,
-			memory_map_size, chan_priv_init);
-	if (!chan)
-		goto create_error;
-	chan->enabled = 1;
-	chan->ops = &transport->ops;
-	cds_list_add(&chan->node, &session->chan_head);
-	return chan;
-
-create_error:
-notransport:
-active:
-	return NULL;
-}
-
-/*
- * Only used internally at session destruction.
- */
-static
-void _lttng_channel_destroy(struct lttng_channel *chan)
-{
-	cds_list_del(&chan->node);
-	lttng_destroy_context(chan->ctx);
-	chan->ops->channel_destroy(chan);
 }
 
 /*
@@ -1088,7 +1047,7 @@ uint64_t measure_clock_offset(void)
 static
 int _lttng_session_metadata_statedump(struct lttng_session *session)
 {
-	unsigned char *uuid_c = session->uuid;
+	unsigned char *uuid_c;
 	char uuid_s[LTTNG_UST_UUID_STR_LEN],
 		clock_uuid_s[LTTNG_UST_UUID_STR_LEN];
 	struct lttng_channel *chan;
@@ -1105,6 +1064,7 @@ int _lttng_session_metadata_statedump(struct lttng_session *session)
 		DBG("LTTng: attempt to start tracing, but metadata channel is not found. Operation abort.\n");
 		return -EPERM;
 	}
+	uuid_c = session->metadata->uuid;
 
 	snprintf(uuid_s, sizeof(uuid_s),
 		"%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
@@ -1434,17 +1394,4 @@ void lttng_session_lazy_sync_enablers(struct lttng_session *session)
 	if (!session->active)
 		return;
 	lttng_session_sync_enablers(session);
-}
-
-/*
- * Take the TLS "fault" in libuuid if dlopen'd, which can take the
- * dynamic linker mutex, outside of the UST lock, since the UST lock is
- * taken in constructors, which are called with dynamic linker mutex
- * held.
- */
-void lttng_fixup_event_tls(void)
-{
-	unsigned char uuid[LTTNG_UST_UUID_STR_LEN];
-
-	(void) lttng_ust_uuid_generate(uuid);
 }

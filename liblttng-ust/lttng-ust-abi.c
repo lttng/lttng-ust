@@ -48,6 +48,8 @@
 #include <usterr-signal-safe.h>
 #include <helper.h>
 #include "lttng-tracer.h"
+#include "../libringbuffer/shm.h"
+#include "../libringbuffer/frontend_types.h"
 
 #define OBJ_NAME_LEN	16
 
@@ -218,6 +220,15 @@ void objd_table_destroy(void)
 	objd_table.freelist_head = -1;
 }
 
+const char *lttng_ust_obj_get_name(int id)
+{
+	struct lttng_ust_obj *obj = _objd_get(id);
+
+	if (!obj)
+		return NULL;
+	return obj->u.s.name;
+}
+
 void lttng_ust_objd_table_owner_cleanup(void *owner)
 {
 	int i;
@@ -243,16 +254,9 @@ void lttng_ust_objd_table_owner_cleanup(void *owner)
 static const struct lttng_ust_objd_ops lttng_ops;
 static const struct lttng_ust_objd_ops lttng_session_ops;
 static const struct lttng_ust_objd_ops lttng_channel_ops;
-static const struct lttng_ust_objd_ops lttng_metadata_ops;
 static const struct lttng_ust_objd_ops lttng_enabler_ops;
-static const struct lttng_ust_objd_ops lib_ring_buffer_objd_ops;
 static const struct lttng_ust_objd_ops lttng_tracepoint_list_ops;
 static const struct lttng_ust_objd_ops lttng_tracepoint_field_list_ops;
-
-enum channel_type {
-	PER_CPU_CHANNEL,
-	METADATA_CHANNEL,
-};
 
 int lttng_abi_create_root_handle(void)
 {
@@ -261,6 +265,18 @@ int lttng_abi_create_root_handle(void)
 	/* root handles have NULL owners */
 	root_handle = objd_alloc(NULL, &lttng_ops, NULL, "root");
 	return root_handle;
+}
+
+static
+int lttng_is_channel_ready(struct lttng_channel *lttng_chan)
+{
+	struct channel *chan;
+	unsigned int nr_streams, exp_streams;
+
+	chan = lttng_chan->chan;
+	nr_streams = channel_handle_get_nr_streams(lttng_chan->handle);
+	exp_streams = chan->nr_streams;
+	return nr_streams == exp_streams;
 }
 
 static
@@ -385,86 +401,133 @@ create_error:
 	return;		/* not allowed to return error */
 }
 
-int lttng_abi_create_channel(int session_objd,
-			     struct lttng_ust_channel *chan_param,
-			     enum channel_type channel_type,
-			     union ust_args *uargs,
-			     void *owner)
+int lttng_abi_map_channel(int session_objd,
+		struct lttng_ust_channel *ust_chan,
+		union ust_args *uargs,
+		void *owner)
 {
 	struct lttng_session *session = objd_private(session_objd);
-	const struct lttng_ust_objd_ops *ops;
 	const char *transport_name;
-	struct lttng_channel *chan;
+	const struct lttng_transport *transport;
+	const char *chan_name;
 	int chan_objd;
-	int ret = 0;
-	struct lttng_channel chan_priv_init;
+	struct lttng_ust_shm_handle *channel_handle;
+	struct lttng_channel *lttng_chan;
+	struct channel *chan;
+	struct lttng_ust_lib_ring_buffer_config *config;
+	void *chan_data;
+	uint64_t len;
+	int ret;
+	enum lttng_ust_chan_type type;
 
-	switch (channel_type) {
-	case PER_CPU_CHANNEL:
-		if (chan_param->output == LTTNG_UST_MMAP) {
-			transport_name = chan_param->overwrite ?
+	chan_data = uargs->channel.chan_data;
+	len = ust_chan->len;
+	type = ust_chan->type;
+
+	switch (type) {
+	case LTTNG_UST_CHAN_PER_CPU:
+	case LTTNG_UST_CHAN_METADATA:
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	if (session->been_active) {
+		ret = -EBUSY;
+		goto active;	/* Refuse to add channel to active session */
+	}
+
+	channel_handle = channel_handle_create(chan_data, len);
+	if (!channel_handle) {
+		ret = -EINVAL;
+		goto handle_error;
+	}
+
+	chan = shmp(channel_handle, channel_handle->chan);
+	assert(chan);
+	config = &chan->backend.config;
+	lttng_chan = channel_get_private(chan);
+	if (!lttng_chan) {
+		ret = -EINVAL;
+		goto alloc_error;
+	}
+
+	/* Lookup transport name */
+	switch (type) {
+	case LTTNG_UST_CHAN_PER_CPU:
+		if (config->output == RING_BUFFER_MMAP) {
+			transport_name = config->mode == RING_BUFFER_OVERWRITE ?
 				"relay-overwrite-mmap" : "relay-discard-mmap";
 		} else {
-			return -EINVAL;
+			ret = -EINVAL;
+			goto notransport;
 		}
-		ops = &lttng_channel_ops;
+		chan_name = "channel";
 		break;
-	case METADATA_CHANNEL:
-		if (chan_param->output == LTTNG_UST_MMAP)
+	case LTTNG_UST_CHAN_METADATA:
+		if (config->output == RING_BUFFER_MMAP) {
 			transport_name = "relay-metadata-mmap";
-		else
-			return -EINVAL;
-		ops = &lttng_metadata_ops;
+		} else {
+			ret = -EINVAL;
+			goto notransport;
+		}
+		chan_name = "metadata";
 		break;
 	default:
 		transport_name = "<unknown>";
-		return -EINVAL;
+		chan_name = "<unknown>";
+		ret = -EINVAL;
+		goto notransport;
 	}
-	chan_objd = objd_alloc(NULL, ops, owner, "channel");
+	transport = lttng_transport_find(transport_name);
+	if (!transport) {
+		DBG("LTTng transport %s not found\n",
+		       transport_name);
+		ret = -EINVAL;
+		goto notransport;
+	}
+
+	chan_objd = objd_alloc(NULL, &lttng_channel_ops, owner, chan_name);
 	if (chan_objd < 0) {
 		ret = chan_objd;
 		goto objd_error;
 	}
-	memset(&chan_priv_init, 0, sizeof(chan_priv_init));
-	/* Copy of session UUID for consumer (availability through shm) */
-	memcpy(chan_priv_init.uuid, session->uuid, sizeof(session->uuid));
-	
+
+	/* Initialize our lttng chan */
+	lttng_chan->chan = chan;
+	lttng_chan->enabled = 1;
+	lttng_chan->ctx = NULL;
+	lttng_chan->session = session;
+	lttng_chan->free_event_id = 0;
+	lttng_chan->used_event_id = 0;
+	lttng_chan->ops = &transport->ops;
+	memcpy(&lttng_chan->chan->backend.config,
+		transport->client_config,
+		sizeof(lttng_chan->chan->backend.config));
+	cds_list_add(&lttng_chan->node, &session->chan_head);
+	lttng_chan->header_type = 0;
+	lttng_chan->handle = channel_handle;
+	lttng_chan->metadata_dumped = 0;
+	lttng_chan->id = session->free_chan_id++;
+	lttng_chan->type = type;
+
 	/*
 	 * We tolerate no failure path after channel creation. It will stay
 	 * invariant for the rest of the session.
 	 */
-	chan = lttng_channel_create(session, transport_name, NULL,
-				  chan_param->subbuf_size,
-				  chan_param->num_subbuf,
-				  chan_param->switch_timer_interval,
-				  chan_param->read_timer_interval,
-				  &uargs->channel.shm_fd,
-				  &uargs->channel.wait_fd,
-				  &uargs->channel.memory_map_size,
-				  &chan_priv_init);
-	if (!chan) {
-		ret = -EINVAL;
-		goto chan_error;
-	}
-	objd_set_private(chan_objd, chan);
-	chan->objd = chan_objd;
-	if (channel_type == METADATA_CHANNEL) {
-		session->metadata = chan;
-		lttng_metadata_create_events(chan_objd);
-	}
+	objd_set_private(chan_objd, lttng_chan);
+	lttng_chan->objd = chan_objd;
 	/* The channel created holds a reference on the session */
 	objd_ref(session_objd);
-
 	return chan_objd;
 
-chan_error:
-	{
-		int err;
-
-		err = lttng_ust_objd_unref(chan_objd);
-		assert(!err);
-	}
 objd_error:
+notransport:
+	free(lttng_chan);
+alloc_error:
+	channel_destroy(chan, channel_handle, 0);
+handle_error:
+active:
 	return ret;
 }
 
@@ -497,19 +560,15 @@ long lttng_session_cmd(int objd, unsigned int cmd, unsigned long arg,
 
 	switch (cmd) {
 	case LTTNG_UST_CHANNEL:
-		return lttng_abi_create_channel(objd,
+		return lttng_abi_map_channel(objd,
 				(struct lttng_ust_channel *) arg,
-				PER_CPU_CHANNEL, uargs, owner);
+				uargs, owner);
 	case LTTNG_UST_SESSION_START:
 	case LTTNG_UST_ENABLE:
 		return lttng_session_enable(session);
 	case LTTNG_UST_SESSION_STOP:
 	case LTTNG_UST_DISABLE:
 		return lttng_session_disable(session);
-	case LTTNG_UST_METADATA:
-		return lttng_abi_create_channel(objd,
-				(struct lttng_ust_channel *) arg,
-				METADATA_CHANNEL, uargs, owner);
 	default:
 		return -EINVAL;
 	}
@@ -707,47 +766,22 @@ static const struct lttng_ust_objd_ops lttng_tracepoint_field_list_ops = {
 	.cmd = lttng_tracepoint_field_list_cmd,
 };
 
-struct stream_priv_data {
-	struct lttng_ust_lib_ring_buffer *buf;
-	struct lttng_channel *lttng_chan;
-};
-
 static
-int lttng_abi_open_stream(int channel_objd, struct lttng_ust_stream *info,
+int lttng_abi_map_stream(int channel_objd, struct lttng_ust_stream *info,
 		union ust_args *uargs, void *owner)
 {
 	struct lttng_channel *channel = objd_private(channel_objd);
-	struct lttng_ust_lib_ring_buffer *buf;
-	struct stream_priv_data *priv;
-	int stream_objd, ret;
+	int ret;
 
-	buf = channel->ops->buffer_read_open(channel->chan, channel->handle,
-			&uargs->stream.shm_fd,
-			&uargs->stream.wait_fd,
-			&uargs->stream.memory_map_size);
-	if (!buf)
-		return -ENOENT;
+	ret = channel_handle_add_stream(channel->handle,
+		uargs->stream.shm_fd, uargs->stream.wakeup_fd,
+		info->stream_nr, info->len);
+	if (ret)
+		goto error_add_stream;
 
-	priv = zmalloc(sizeof(*priv));
-	if (!priv) {
-		ret = -ENOMEM;
-		goto alloc_error;
-	}
-	priv->buf = buf;
-	priv->lttng_chan = channel;
-	stream_objd = objd_alloc(priv, &lib_ring_buffer_objd_ops, owner, "open_stream");
-	if (stream_objd < 0) {
-		ret = stream_objd;
-		goto objd_error;
-	}
-	/* Hold a reference on the channel object descriptor */
-	objd_ref(channel_objd);
-	return stream_objd;
+	return 0;
 
-objd_error:
-	free(priv);
-alloc_error:
-	channel->ops->buffer_read_close(buf, channel->handle);
+error_add_stream:
 	return ret;
 }
 
@@ -792,6 +826,40 @@ objd_error:
 	return ret;
 }
 
+static
+long lttng_metadata_cmd(int objd, unsigned int cmd, unsigned long arg,
+	union ust_args *uargs, void *owner)
+{
+	struct lttng_channel *channel = objd_private(objd);
+	struct lttng_session *session = channel->session;
+
+	switch (cmd) {
+	case LTTNG_UST_STREAM:
+	{
+		struct lttng_ust_stream *stream;
+		int ret;
+
+		stream = (struct lttng_ust_stream *) arg;
+		/* stream used as output */
+		ret = lttng_abi_map_stream(objd, stream, uargs, owner);
+		if (ret == 0) {
+			session->metadata = channel;
+			lttng_metadata_create_events(objd);
+		}
+		return ret;
+	}
+	case LTTNG_UST_FLUSH_BUFFER:
+	{
+		if (!session->metadata) {
+			return -ENOENT;
+		}
+		return channel->ops->flush_buffer(channel->chan, channel->handle);
+	}
+	default:
+		return -EINVAL;
+	}
+}
+
 /**
  *	lttng_channel_cmd - lttng control through object descriptors
  *
@@ -822,6 +890,18 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg,
 {
 	struct lttng_channel *channel = objd_private(objd);
 
+	if (cmd != LTTNG_UST_STREAM) {
+		/*
+		 * Check if channel received all streams.
+		 */
+		if (!lttng_is_channel_ready(channel))
+			return -EPERM;
+	}
+
+	if (channel->type == LTTNG_UST_CHAN_METADATA) {
+		return lttng_metadata_cmd(objd, cmd, arg, uargs, owner);
+	}
+
 	switch (cmd) {
 	case LTTNG_UST_STREAM:
 	{
@@ -829,7 +909,7 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg,
 
 		stream = (struct lttng_ust_stream *) arg;
 		/* stream used as output */
-		return lttng_abi_open_stream(objd, stream, uargs, owner);
+		return lttng_abi_map_stream(objd, stream, uargs, owner);
 	}
 	case LTTNG_UST_EVENT:
 	{
@@ -859,43 +939,6 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg,
 	}
 }
 
-/**
- *	lttng_metadata_cmd - lttng control through object descriptors
- *
- *	@objd: the object descriptor
- *	@cmd: the command
- *	@arg: command arg
- *	@uargs: UST arguments (internal)
- *	@owner: objd owner
- *
- *	This object descriptor implements lttng commands:
- *      LTTNG_UST_STREAM
- *              Returns an event stream file descriptor or failure.
- *
- * Channel and event file descriptors also hold a reference on the session.
- */
-static
-long lttng_metadata_cmd(int objd, unsigned int cmd, unsigned long arg,
-	union ust_args *uargs, void *owner)
-{
-	struct lttng_channel *channel = objd_private(objd);
-
-	switch (cmd) {
-	case LTTNG_UST_STREAM:
-	{
-		struct lttng_ust_stream *stream;
-
-		stream = (struct lttng_ust_stream *) arg;
-		/* stream used as output */
-		return lttng_abi_open_stream(objd, stream, uargs, owner);
-	}
-	case LTTNG_UST_FLUSH_BUFFER:
-		return channel->ops->flush_buffer(channel->chan, channel->handle);
-	default:
-		return -EINVAL;
-	}
-}
-
 static
 int lttng_channel_release(int objd)
 {
@@ -909,70 +952,6 @@ int lttng_channel_release(int objd)
 static const struct lttng_ust_objd_ops lttng_channel_ops = {
 	.release = lttng_channel_release,
 	.cmd = lttng_channel_cmd,
-};
-
-static const struct lttng_ust_objd_ops lttng_metadata_ops = {
-	.release = lttng_channel_release,
-	.cmd = lttng_metadata_cmd,
-};
-
-/**
- *	lttng_rb_cmd - lttng ring buffer control through object descriptors
- *
- *	@objd: the object descriptor
- *	@cmd: the command
- *	@arg: command arg
- *	@uargs: UST arguments (internal)
- *	@owner: objd owner
- *
- *	This object descriptor implements lttng commands:
- *		(None for now. Access is done directly though shm.)
- */
-static
-long lttng_rb_cmd(int objd, unsigned int cmd, unsigned long arg,
-	union ust_args *uargs, void *owner)
-{
-	switch (cmd) {
-	default:
-		return -EINVAL;
-	}
-}
-
-static
-int lttng_rb_release(int objd)
-{
-	struct stream_priv_data *priv = objd_private(objd);
-	struct lttng_ust_lib_ring_buffer *buf;
-	struct lttng_channel *channel;
-
-	if (priv) {
-		buf = priv->buf;
-		channel = priv->lttng_chan;
-		free(priv);
-		/*
-		 * If we are at ABI exit, we don't want to close the
-		 * buffer opened for read: it is being shared between
-		 * the parent and child (right after fork), and we don't
-		 * want the child to close it for the parent. For a real
-		 * exit, we don't care about marking it as closed, as
-		 * the consumer daemon (if there is one) will do fine
-		 * even if we don't mark it as "closed" for reading on
-		 * our side.
-		 * We only mark it as closed if it is being explicitely
-		 * released by the session daemon with an explicit
-		 * release command.
-		 */
-		if (!lttng_ust_abi_close_in_progress)
-			channel->ops->buffer_read_close(buf, channel->handle);
-
-		return lttng_ust_objd_unref(channel->objd);
-	}
-	return 0;
-}
-
-static const struct lttng_ust_objd_ops lib_ring_buffer_objd_ops = {
-	.release = lttng_rb_release,
-	.cmd = lttng_rb_cmd,
 };
 
 /**

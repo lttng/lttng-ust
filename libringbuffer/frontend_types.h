@@ -46,6 +46,7 @@
 enum switch_mode { SWITCH_ACTIVE, SWITCH_FLUSH };
 
 /* channel: collection of per-cpu ring buffers. */
+#define RB_CHANNEL_PADDING		32
 struct channel {
 	int record_disabled;
 	unsigned long commit_count_mask;	/*
@@ -60,7 +61,8 @@ struct channel {
 	//wait_queue_head_t read_wait;		/* reader wait queue */
 	int finalized;				/* Has channel been finalized */
 	size_t priv_data_offset;
-	/* Note: padding field is missing */
+	unsigned int nr_streams;		/* Number of streams */
+	char padding[RB_CHANNEL_PADDING];
 	/*
 	 * Associated backend contains a variable-length array. Needs to
 	 * be last member.
@@ -108,7 +110,6 @@ struct lttng_ust_lib_ring_buffer {
 					 * Active readers count
 					 * standard atomic access (shared)
 					 */
-	long active_shadow_readers;
 					/* Dropped records */
 	union v_atomic records_lost_full;	/* Buffer full */
 	union v_atomic records_lost_wrap;	/* Nested wrap-around */

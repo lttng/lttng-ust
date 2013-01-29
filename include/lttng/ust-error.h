@@ -41,6 +41,7 @@ enum lttng_ust_error_code {
 	LTTNG_UST_ERR_INVAL = 1027,		/* Invalid argument */
 	LTTNG_UST_ERR_PERM  = 1028,		/* Permission denied */
 	LTTNG_UST_ERR_NOSYS = 1029,		/* Not implemented */
+	LTTNG_UST_ERR_EXITING = 1030,		/* Process is exiting */
 
 	/* MUST be last element */
 	LTTNG_UST_ERR_NR,			/* Last element */

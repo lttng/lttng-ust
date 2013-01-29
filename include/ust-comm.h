@@ -107,11 +107,12 @@ extern int ustcomm_connect_unix_sock(const char *pathname);
 extern int ustcomm_accept_unix_sock(int sock);
 extern int ustcomm_listen_unix_sock(int sock);
 extern int ustcomm_close_unix_sock(int sock);
-/* Send fd(s) over a unix socket. */
-extern ssize_t ustcomm_send_fds_unix_sock(int sock, void *buf, int *fds,
-		size_t nb_fd, size_t len);
+
 extern ssize_t ustcomm_recv_unix_sock(int sock, void *buf, size_t len);
 extern ssize_t ustcomm_send_unix_sock(int sock, void *buf, size_t len);
+extern ssize_t ustcomm_send_fds_unix_sock(int sock, int *fds, size_t nb_fd);
+extern ssize_t ustcomm_recv_fds_unix_sock(int sock, int *fds, size_t nb_fd);
+
 extern const char *ustcomm_get_readable_code(int code);
 extern int ustcomm_send_app_msg(int sock, struct ustcomm_ust_msg *lum);
 extern int ustcomm_recv_app_reply(int sock, struct ustcomm_ust_reply *lur,
@@ -120,5 +121,11 @@ extern int ustcomm_send_app_cmd(int sock,
 		struct ustcomm_ust_msg *lum,
 		struct ustcomm_ust_reply *lur);
 int ustcomm_recv_fd(int sock);
+
+ssize_t ustcomm_recv_channel_from_sessiond(int sock,
+		void **chan_data, uint64_t len);
+int ustcomm_recv_stream_from_sessiond(int sock,
+		uint64_t *memory_map_size,
+		int *shm_fd, int *wakeup_fd);
 
 #endif	/* _LTTNG_UST_COMM_H */

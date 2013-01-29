@@ -110,7 +110,6 @@ static void client_buffer_begin(struct lttng_ust_lib_ring_buffer *buf, uint64_t 
 	header->checksum_scheme = 0;	/* 0 if unused */
 	header->major = CTF_SPEC_MAJOR;
 	header->minor = CTF_SPEC_MINOR;
-
 }
 
 /*
@@ -183,54 +182,32 @@ struct lttng_channel *_channel_create(const char *name,
 				size_t subbuf_size, size_t num_subbuf,
 				unsigned int switch_timer_interval,
 				unsigned int read_timer_interval,
-				int **shm_fd, int **wait_fd,
-				uint64_t **memory_map_size,
-				struct lttng_channel *chan_priv_init)
+				unsigned char *uuid)
 {
-	void *priv;
-	struct lttng_channel *lttng_chan = NULL;
+	struct lttng_channel chan_priv_init;
 	struct lttng_ust_shm_handle *handle;
+	struct lttng_channel *lttng_chan;
+	void *priv;
 
+	memset(&chan_priv_init, 0, sizeof(chan_priv_init));
+	memcpy(chan_priv_init.uuid, uuid, LTTNG_UST_UUID_LEN);
 	handle = channel_create(&client_config, name,
 			&priv, __alignof__(*lttng_chan), sizeof(*lttng_chan),
-			chan_priv_init,
+			&chan_priv_init,
 			buf_addr, subbuf_size, num_subbuf,
-			switch_timer_interval, read_timer_interval,
-			shm_fd, wait_fd, memory_map_size);
+			switch_timer_interval, read_timer_interval);
 	if (!handle)
 		return NULL;
 	lttng_chan = priv;
 	lttng_chan->handle = handle;
-	lttng_chan->chan = shmp(lttng_chan->handle, lttng_chan->handle->chan);
+	lttng_chan->chan = shmp(handle, handle->chan);
 	return lttng_chan;
 }
 
 static
-void lttng_channel_destroy(struct lttng_channel *lttng_chan)
+void lttng_channel_destroy(struct lttng_channel *chan)
 {
-	channel_destroy(lttng_chan->chan, lttng_chan->handle, 0);
-}
-
-static
-struct lttng_ust_lib_ring_buffer *lttng_buffer_read_open(struct channel *chan,
-					     struct lttng_ust_shm_handle *handle,
-					     int **shm_fd, int **wait_fd,
-					     uint64_t **memory_map_size)
-{
-	struct lttng_ust_lib_ring_buffer *buf;
-
-	buf = channel_get_ring_buffer(&client_config, chan,
-			0, handle, shm_fd, wait_fd, memory_map_size);
-	if (!lib_ring_buffer_open_read(buf, handle, 0))
-		return buf;
-	return NULL;
-}
-
-static
-void lttng_buffer_read_close(struct lttng_ust_lib_ring_buffer *buf,
-			   struct lttng_ust_shm_handle *handle)
-{
-	lib_ring_buffer_release_read(buf, handle, 0);
+	channel_destroy(chan->chan, chan->handle, 1);
 }
 
 static
@@ -299,11 +276,11 @@ static
 int lttng_flush_buffer(struct channel *chan, struct lttng_ust_shm_handle *handle)
 {
 	struct lttng_ust_lib_ring_buffer *buf;
-	int *shm_fd, *wait_fd;
-	uint64_t *memory_map_size;
+	int shm_fd, wait_fd, wakeup_fd;
+	uint64_t memory_map_size;
 
 	buf = channel_get_ring_buffer(&client_config, chan,
-			0, handle, &shm_fd, &wait_fd,
+			0, handle, &shm_fd, &wait_fd, &wakeup_fd,
 			&memory_map_size);
 	lib_ring_buffer_switch(&client_config, buf,
 			SWITCH_ACTIVE, handle);
@@ -315,8 +292,6 @@ static struct lttng_transport lttng_relay_transport = {
 	.ops = {
 		.channel_create = _channel_create,
 		.channel_destroy = lttng_channel_destroy,
-		.buffer_read_open = lttng_buffer_read_open,
-		.buffer_read_close = lttng_buffer_read_close,
 		.event_reserve = lttng_event_reserve,
 		.event_commit = lttng_event_commit,
 		.event_write = lttng_event_write,
@@ -327,6 +302,7 @@ static struct lttng_transport lttng_relay_transport = {
 		.is_disabled = lttng_is_disabled,
 		.flush_buffer = lttng_flush_buffer,
 	},
+	.client_config = &client_config,
 };
 
 void RING_BUFFER_MODE_TEMPLATE_INIT(void)

@@ -255,7 +255,7 @@ static void switch_buffer_timer(unsigned long data)
 	/*
 	 * Only flush buffers periodically if readers are active.
 	 */
-	if (uatomic_read(&buf->active_readers) || uatomic_read(&buf->active_shadow_readers))
+	if (uatomic_read(&buf->active_readers))
 		lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE, handle);
 
 	//TODO timers
@@ -313,7 +313,7 @@ static void read_buffer_timer(unsigned long data)
 
 	CHAN_WARN_ON(chan, !buf->backend.allocated);
 
-	if (uatomic_read(&buf->active_readers) || uatomic_read(&buf->active_shadow_readers))
+	if (uatomic_read(&buf->active_readers))
 	    && lib_ring_buffer_poll_deliver(config, buf, chan)) {
 		//TODO
 		//wake_up_interruptible(&buf->read_wait);
@@ -401,11 +401,9 @@ static void channel_unregister_notifiers(struct channel *chan,
 	//channel_backend_unregister_notifiers(&chan->backend);
 }
 
-static void channel_free(struct channel *chan, struct lttng_ust_shm_handle *handle,
-		int shadow)
+static void channel_free(struct channel *chan, struct lttng_ust_shm_handle *handle)
 {
-	if (!shadow)
-		channel_backend_free(&chan->backend, handle);
+	channel_backend_free(&chan->backend, handle);
 	/* chan is freed by shm teardown */
 	shm_object_table_destroy(handle->table);
 	free(handle);
@@ -439,15 +437,19 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 		   void *priv_data_init,
 		   void *buf_addr, size_t subbuf_size,
 		   size_t num_subbuf, unsigned int switch_timer_interval,
-		   unsigned int read_timer_interval,
-		   int **shm_fd, int **wait_fd, uint64_t **memory_map_size)
+		   unsigned int read_timer_interval)
 {
 	int ret, cpu;
 	size_t shmsize, chansize;
 	struct channel *chan;
 	struct lttng_ust_shm_handle *handle;
 	struct shm_object *shmobj;
-	struct shm_ref *ref;
+	unsigned int nr_streams;
+
+	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU)
+		nr_streams = num_possible_cpus();
+	else
+		nr_streams = 1;
 
 	if (lib_ring_buffer_check_config(config, switch_timer_interval,
 					 read_timer_interval))
@@ -465,15 +467,14 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 	/* Calculate the shm allocation layout */
 	shmsize = sizeof(struct channel);
 	shmsize += offset_align(shmsize, __alignof__(struct lttng_ust_lib_ring_buffer_shmp));
-	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU)
-		shmsize += sizeof(struct lttng_ust_lib_ring_buffer_shmp) * num_possible_cpus();
-	else
-		shmsize += sizeof(struct lttng_ust_lib_ring_buffer_shmp);
+	shmsize += sizeof(struct lttng_ust_lib_ring_buffer_shmp) * nr_streams;
 	chansize = shmsize;
-	shmsize += offset_align(shmsize, priv_data_align);
+	if (priv_data_align)
+		shmsize += offset_align(shmsize, priv_data_align);
 	shmsize += priv_data_size;
 
-	shmobj = shm_object_table_append(handle->table, shmsize);
+	/* Allocate normal memory for channel (not shared) */
+	shmobj = shm_object_table_alloc(handle->table, shmsize, SHM_OBJECT_MEM);
 	if (!shmobj)
 		goto error_append;
 	/* struct channel is at object 0, offset 0 (hardcoded) */
@@ -483,6 +484,7 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 	chan = shmp(handle, handle->chan);
 	if (!chan)
 		goto error_append;
+	chan->nr_streams = nr_streams;
 
 	/* space for private data */
 	if (priv_data_size) {
@@ -497,7 +499,8 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 		memcpy(*priv_data, priv_data_init, priv_data_size);
 	} else {
 		chan->priv_data_offset = -1;
-		*priv_data = NULL;
+		if (priv_data)
+			*priv_data = NULL;
 	}
 
 	ret = channel_backend_init(&chan->backend, name, config,
@@ -530,8 +533,6 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 		lib_ring_buffer_start_switch_timer(buf, handle);
 		lib_ring_buffer_start_read_timer(buf, handle);
 	}
-	ref = &handle->chan._ref;
-	shm_get_object_data(handle, ref, shm_fd, wait_fd, memory_map_size);
 	return handle;
 
 error_backend_init:
@@ -542,7 +543,7 @@ error_table_alloc:
 	return NULL;
 }
 
-struct lttng_ust_shm_handle *channel_handle_create(int shm_fd, int wait_fd,
+struct lttng_ust_shm_handle *channel_handle_create(void *data,
 					uint64_t memory_map_size)
 {
 	struct lttng_ust_shm_handle *handle;
@@ -557,8 +558,8 @@ struct lttng_ust_shm_handle *channel_handle_create(int shm_fd, int wait_fd,
 	if (!handle->table)
 		goto error_table_alloc;
 	/* Add channel object */
-	object = shm_object_table_append_shadow(handle->table,
-			shm_fd, wait_fd, memory_map_size);
+	object = shm_object_table_append_mem(handle->table, data,
+			memory_map_size);
 	if (!object)
 		goto error_table_object;
 	/* struct channel is at object 0, offset 0 (hardcoded) */
@@ -574,23 +575,30 @@ error_table_alloc:
 }
 
 int channel_handle_add_stream(struct lttng_ust_shm_handle *handle,
-		int shm_fd, int wait_fd, uint64_t memory_map_size)
+		int shm_fd, int wakeup_fd, uint32_t stream_nr,
+		uint64_t memory_map_size)
 {
 	struct shm_object *object;
 
 	/* Add stream object */
-	object = shm_object_table_append_shadow(handle->table,
-			shm_fd, wait_fd, memory_map_size);
+	object = shm_object_table_append_shm(handle->table,
+			shm_fd, wakeup_fd, stream_nr,
+			memory_map_size);
 	if (!object)
-		return -1;
+		return -EINVAL;
 	return 0;
 }
 
-static
-void channel_release(struct channel *chan, struct lttng_ust_shm_handle *handle,
-		int shadow)
+unsigned int channel_handle_get_nr_streams(struct lttng_ust_shm_handle *handle)
 {
-	channel_free(chan, handle, shadow);
+	assert(handle->table);
+	return handle->table->allocated_len - 1;
+}
+
+static
+void channel_release(struct channel *chan, struct lttng_ust_shm_handle *handle)
+{
+	channel_free(chan, handle);
 }
 
 /**
@@ -604,25 +612,21 @@ void channel_release(struct channel *chan, struct lttng_ust_shm_handle *handle,
  * They should release their handle at that point. 
  */
 void channel_destroy(struct channel *chan, struct lttng_ust_shm_handle *handle,
-		int shadow)
+		int consumer)
 {
-	if (shadow) {
-		channel_release(chan, handle, shadow);
-		return;
+	if (consumer) {
+		/*
+		 * Note: the consumer takes care of finalizing and
+		 * switching the buffers.
+		 */
+		channel_unregister_notifiers(chan, handle);
 	}
-
-	channel_unregister_notifiers(chan, handle);
-
-	/*
-	 * Note: the consumer takes care of finalizing and switching the
-	 * buffers.
-	 */
 
 	/*
 	 * sessiond/consumer are keeping a reference on the shm file
 	 * descriptor directly. No need to refcount.
 	 */
-	channel_release(chan, handle, shadow);
+	channel_release(chan, handle);
 	return;
 }
 
@@ -630,36 +634,64 @@ struct lttng_ust_lib_ring_buffer *channel_get_ring_buffer(
 					const struct lttng_ust_lib_ring_buffer_config *config,
 					struct channel *chan, int cpu,
 					struct lttng_ust_shm_handle *handle,
-					int **shm_fd, int **wait_fd,
-					uint64_t **memory_map_size)
+					int *shm_fd, int *wait_fd,
+					int *wakeup_fd,
+					uint64_t *memory_map_size)
 {
 	struct shm_ref *ref;
 
 	if (config->alloc == RING_BUFFER_ALLOC_GLOBAL) {
-		ref = &chan->backend.buf[0].shmp._ref;
-		shm_get_object_data(handle, ref, shm_fd, wait_fd,
-			memory_map_size);
-		return shmp(handle, chan->backend.buf[0].shmp);
+		cpu = 0;
 	} else {
 		if (cpu >= num_possible_cpus())
 			return NULL;
-		ref = &chan->backend.buf[cpu].shmp._ref;
-		shm_get_object_data(handle, ref, shm_fd, wait_fd,
-			memory_map_size);
-		return shmp(handle, chan->backend.buf[cpu].shmp);
 	}
+	ref = &chan->backend.buf[cpu].shmp._ref;
+	*shm_fd = shm_get_shm_fd(handle, ref);
+	*wait_fd = shm_get_wait_fd(handle, ref);
+	*wakeup_fd = shm_get_wakeup_fd(handle, ref);
+	if (shm_get_shm_size(handle, ref, memory_map_size))
+		return NULL;
+	return shmp(handle, chan->backend.buf[cpu].shmp);
+}
+
+int ring_buffer_close_wait_fd(const struct lttng_ust_lib_ring_buffer_config *config,
+			struct channel *chan,
+			struct lttng_ust_shm_handle *handle,
+			int cpu)
+{
+	struct shm_ref *ref;
+
+	if (config->alloc == RING_BUFFER_ALLOC_GLOBAL) {
+		cpu = 0;
+	} else {
+		if (cpu >= num_possible_cpus())
+			return -EINVAL;
+	}
+	ref = &chan->backend.buf[cpu].shmp._ref;
+	return shm_close_wait_fd(handle, ref);
+}
+
+int ring_buffer_close_wakeup_fd(const struct lttng_ust_lib_ring_buffer_config *config,
+			struct channel *chan,
+			struct lttng_ust_shm_handle *handle,
+			int cpu)
+{
+	struct shm_ref *ref;
+
+	if (config->alloc == RING_BUFFER_ALLOC_GLOBAL) {
+		cpu = 0;
+	} else {
+		if (cpu >= num_possible_cpus())
+			return -EINVAL;
+	}
+	ref = &chan->backend.buf[cpu].shmp._ref;
+	return shm_close_wakeup_fd(handle, ref);
 }
 
 int lib_ring_buffer_open_read(struct lttng_ust_lib_ring_buffer *buf,
-			      struct lttng_ust_shm_handle *handle,
-			      int shadow)
+			      struct lttng_ust_shm_handle *handle)
 {
-	if (shadow) {
-		if (uatomic_cmpxchg(&buf->active_shadow_readers, 0, 1) != 0)
-			return -EBUSY;
-		cmm_smp_mb();
-		return 0;
-	}
 	if (uatomic_cmpxchg(&buf->active_readers, 0, 1) != 0)
 		return -EBUSY;
 	cmm_smp_mb();
@@ -667,17 +699,10 @@ int lib_ring_buffer_open_read(struct lttng_ust_lib_ring_buffer *buf,
 }
 
 void lib_ring_buffer_release_read(struct lttng_ust_lib_ring_buffer *buf,
-				  struct lttng_ust_shm_handle *handle,
-				  int shadow)
+				  struct lttng_ust_shm_handle *handle)
 {
 	struct channel *chan = shmp(handle, buf->backend.chan);
 
-	if (shadow) {
-		CHAN_WARN_ON(chan, uatomic_read(&buf->active_shadow_readers) != 1);
-		cmm_smp_mb();
-		uatomic_dec(&buf->active_shadow_readers);
-		return;
-	}
 	CHAN_WARN_ON(chan, uatomic_read(&buf->active_readers) != 1);
 	cmm_smp_mb();
 	uatomic_dec(&buf->active_readers);
@@ -755,8 +780,7 @@ void lib_ring_buffer_move_consumer(struct lttng_ust_lib_ring_buffer *buf,
 	struct channel *chan = shmp(handle, bufb->chan);
 	unsigned long consumed;
 
-	CHAN_WARN_ON(chan, uatomic_read(&buf->active_readers) != 1
-			&& uatomic_read(&buf->active_shadow_readers) != 1);
+	CHAN_WARN_ON(chan, uatomic_read(&buf->active_readers) != 1);
 
 	/*
 	 * Only push the consumed value forward.
@@ -879,8 +903,7 @@ void lib_ring_buffer_put_subbuf(struct lttng_ust_lib_ring_buffer *buf,
 	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
 	unsigned long read_sb_bindex, consumed_idx, consumed;
 
-	CHAN_WARN_ON(chan, uatomic_read(&buf->active_readers) != 1
-			&& uatomic_read(&buf->active_shadow_readers) != 1);
+	CHAN_WARN_ON(chan, uatomic_read(&buf->active_readers) != 1);
 
 	if (!buf->get_subbuf) {
 		/*

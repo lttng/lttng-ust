@@ -393,8 +393,7 @@ void lib_ring_buffer_check_deliver(const struct lttng_ust_lib_ring_buffer_config
 			 * RING_BUFFER_WAKEUP_BY_WRITER wakeup is not lock-free.
 			 */
 			if (config->wakeup == RING_BUFFER_WAKEUP_BY_WRITER
-			    && (uatomic_read(&buf->active_readers)
-				|| uatomic_read(&buf->active_shadow_readers))
+			    && uatomic_read(&buf->active_readers)
 			    && lib_ring_buffer_poll_deliver(config, buf, chan, handle)) {
 				int wakeup_fd = shm_get_wakeup_fd(handle, &buf->self._ref);
 

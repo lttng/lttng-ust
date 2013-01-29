@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2011 - Julien Desfossez <julien.desfossez@polymtl.ca>
- *                      Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+ * Copyright (C) 2011-2013 - Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,37 +25,55 @@
 
 #include <usterr-signal-safe.h>
 #include <ust-comm.h>
+#include <helper.h>
 
 #include "../libringbuffer/backend.h"
 #include "../libringbuffer/frontend.h"
 
-volatile enum ust_loglevel ust_loglevel;
+/*
+ * Channel representation within consumer.
+ */
+struct ustctl_consumer_channel {
+	struct lttng_channel *chan;		/* lttng channel buffers */
 
-static
-void init_object(struct lttng_ust_object_data *data)
-{
-	data->handle = -1;
-	data->shm_fd = -1;
-	data->wait_fd = -1;
-	data->memory_map_size = 0;
-}
+	/* initial attributes */
+	struct ustctl_consumer_channel_attr attr;
+};
+
+/*
+ * Stream representation within consumer.
+ */
+struct ustctl_consumer_stream {
+	struct lttng_ust_shm_handle *handle;	/* shared-memory handle */
+	struct lttng_ust_lib_ring_buffer *buf;
+	struct ustctl_consumer_channel *chan;
+	int shm_fd, wait_fd, wakeup_fd;
+	int cpu;
+	uint64_t memory_map_size;
+};
+
+extern void lttng_ring_buffer_client_overwrite_init(void);
+extern void lttng_ring_buffer_client_discard_init(void);
+extern void lttng_ring_buffer_metadata_client_init(void);
+extern void lttng_ring_buffer_client_overwrite_exit(void);
+extern void lttng_ring_buffer_client_discard_exit(void);
+extern void lttng_ring_buffer_metadata_client_exit(void);
+
+volatile enum ust_loglevel ust_loglevel;
 
 int ustctl_release_handle(int sock, int handle)
 {
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
-	int ret;
 
-	if (sock >= 0) {
-		memset(&lum, 0, sizeof(lum));
-		lum.handle = handle;
-		lum.cmd = LTTNG_UST_RELEASE;
-		ret = ustcomm_send_app_cmd(sock, &lum, &lur);
-		if (ret)
-			return ret;
-	}
-	return 0;
+	if (sock < 0 || handle < 0)
+		return 0;
+	memset(&lum, 0, sizeof(lum));
+	lum.handle = handle;
+	lum.cmd = LTTNG_UST_RELEASE;
+	return ustcomm_send_app_cmd(sock, &lum, &lur);
 }
+
 /*
  * If sock is negative, it means we don't have to notify the other side
  * (e.g. application has already vanished).
@@ -67,19 +85,28 @@ int ustctl_release_object(int sock, struct lttng_ust_object_data *data)
 	if (!data)
 		return -EINVAL;
 
-	if (data->shm_fd >= 0) {
-		ret = close(data->shm_fd);
-		if (ret < 0) {
-			ret = -errno;
-			return ret;
+	switch (data->type) {
+	case LTTNG_UST_OBJECT_TYPE_CHANNEL:
+		free(data->u.channel.data);
+		break;
+	case LTTNG_UST_OBJECT_TYPE_STREAM:
+		if (data->u.stream.shm_fd >= 0) {
+			ret = close(data->u.stream.shm_fd);
+			if (ret < 0) {
+				ret = -errno;
+				return ret;
+			}
 		}
-	}
-	if (data->wait_fd >= 0) {
-		ret = close(data->wait_fd);
-		if (ret < 0) {
-			ret = -errno;
-			return ret;
+		if (data->u.stream.wakeup_fd >= 0) {
+			ret = close(data->u.stream.wakeup_fd);
+			if (ret < 0) {
+				ret = -errno;
+				return ret;
+			}
 		}
+		break;
+	default:
+		assert(0);
 	}
 	return ustctl_release_handle(sock, data->handle);
 }
@@ -124,188 +151,6 @@ int ustctl_create_session(int sock)
 	return session_handle;
 }
 
-/* open the metadata global channel */
-int ustctl_open_metadata(int sock, int session_handle,
-		struct lttng_ust_channel_attr *chops,
-		struct lttng_ust_object_data **_metadata_data)
-{
-	struct ustcomm_ust_msg lum;
-	struct ustcomm_ust_reply lur;
-	struct lttng_ust_object_data *metadata_data;
-	int ret, err = 0;
-
-	if (!chops || !_metadata_data)
-		return -EINVAL;
-
-	metadata_data = malloc(sizeof(*metadata_data));
-	if (!metadata_data)
-		return -ENOMEM;
-	init_object(metadata_data);
-	/* Create metadata channel */
-	memset(&lum, 0, sizeof(lum));
-	lum.handle = session_handle;
-	lum.cmd = LTTNG_UST_METADATA;
-	lum.u.channel.overwrite = chops->overwrite;
-	lum.u.channel.subbuf_size = chops->subbuf_size;
-	lum.u.channel.num_subbuf = chops->num_subbuf;
-	lum.u.channel.switch_timer_interval = chops->switch_timer_interval;
-	lum.u.channel.read_timer_interval = chops->read_timer_interval;
-	lum.u.channel.output = chops->output;
-	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
-	if (ret) {
-		free(metadata_data);
-		return ret;
-	}
-	metadata_data->handle = lur.ret_val;
-	DBG("received metadata handle %u", metadata_data->handle);
-	metadata_data->memory_map_size = lur.u.channel.memory_map_size;
-	/* get shm fd */
-	ret = ustcomm_recv_fd(sock);
-	if (ret < 0)
-		err = ret;
-	else
-		metadata_data->shm_fd = ret;
-	/*
-	 * We need to get the second FD even if the first fails, because
-	 * libust expects us to read the two FDs.
-	 */
-	/* get wait fd */
-	ret = ustcomm_recv_fd(sock);
-	if (ret < 0)
-		err = ret;
-	else
-		metadata_data->wait_fd = ret;
-	if (err)
-		goto error;
-	*_metadata_data = metadata_data;
-	return 0;
-
-error:
-	(void) ustctl_release_object(sock, metadata_data);
-	free(metadata_data);
-	return err;
-}
-
-int ustctl_create_channel(int sock, int session_handle,
-		struct lttng_ust_channel_attr *chops,
-		struct lttng_ust_object_data **_channel_data)
-{
-	struct ustcomm_ust_msg lum;
-	struct ustcomm_ust_reply lur;
-	struct lttng_ust_object_data *channel_data;
-	int ret, err = 0;
-
-	if (!chops || !_channel_data)
-		return -EINVAL;
-
-	channel_data = malloc(sizeof(*channel_data));
-	if (!channel_data)
-		return -ENOMEM;
-	init_object(channel_data);
-	/* Create metadata channel */
-	memset(&lum, 0, sizeof(lum));
-	lum.handle = session_handle;
-	lum.cmd = LTTNG_UST_CHANNEL;
-	lum.u.channel.overwrite = chops->overwrite;
-	lum.u.channel.subbuf_size = chops->subbuf_size;
-	lum.u.channel.num_subbuf = chops->num_subbuf;
-	lum.u.channel.switch_timer_interval = chops->switch_timer_interval;
-	lum.u.channel.read_timer_interval = chops->read_timer_interval;
-	lum.u.channel.output = chops->output;
-	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
-	if (ret) {
-		free(channel_data);
-		return ret;
-	}
-	channel_data->handle = lur.ret_val;
-	DBG("received channel handle %u", channel_data->handle);
-	channel_data->memory_map_size = lur.u.channel.memory_map_size;
-	/* get shm fd */
-	ret = ustcomm_recv_fd(sock);
-	if (ret < 0)
-		err = ret;
-	else
-		channel_data->shm_fd = ret;
-	/*
-	 * We need to get the second FD even if the first fails, because
-	 * libust expects us to read the two FDs.
-	 */
-	/* get wait fd */
-	ret = ustcomm_recv_fd(sock);
-	if (ret < 0)
-		err = ret;
-	else
-		channel_data->wait_fd = ret;
-	if (err)
-		goto error;
-	*_channel_data = channel_data;
-	return 0;
-
-error:
-	(void) ustctl_release_object(sock, channel_data);
-	free(channel_data);
-	return err;
-}
-
-/*
- * Return -LTTNG_UST_ERR_NOENT if no more stream is available for creation.
- * Return 0 on success.
- * Return negative error value on system error.
- * Return positive error value on UST error.
- */
-int ustctl_create_stream(int sock, struct lttng_ust_object_data *channel_data,
-		struct lttng_ust_object_data **_stream_data)
-{
-	struct ustcomm_ust_msg lum;
-	struct ustcomm_ust_reply lur;
-	struct lttng_ust_object_data *stream_data;
-	int ret, fd, err = 0;
-
-	if (!channel_data || !_stream_data)
-		return -EINVAL;
-
-	stream_data = malloc(sizeof(*stream_data));
-	if (!stream_data)
-		return -ENOMEM;
-	init_object(stream_data);
-	memset(&lum, 0, sizeof(lum));
-	lum.handle = channel_data->handle;
-	lum.cmd = LTTNG_UST_STREAM;
-	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
-	if (ret) {
-		free(stream_data);
-		return ret;
-	}
-	stream_data->handle = lur.ret_val;
-	DBG("received stream handle %u", stream_data->handle);
-	stream_data->memory_map_size = lur.u.stream.memory_map_size;
-	/* get shm fd */
-	fd = ustcomm_recv_fd(sock);
-	if (fd < 0)
-		err = fd;
-	else
-		stream_data->shm_fd = fd;
-	/*
-	 * We need to get the second FD even if the first fails, because
-	 * libust expects us to read the two FDs.
-	 */
-	/* get wait fd */
-	fd = ustcomm_recv_fd(sock);
-	if (fd < 0)
-		err = fd;
-	else
-		stream_data->wait_fd = fd;
-	if (err)
-		goto error;
-	*_stream_data = stream_data;
-	return ret;
-
-error:
-	(void) ustctl_release_object(sock, stream_data);
-	free(stream_data);
-	return err;
-}
-
 int ustctl_create_event(int sock, struct lttng_ust_event *ev,
 		struct lttng_ust_object_data *channel_data,
 		struct lttng_ust_object_data **_event_data)
@@ -318,10 +163,9 @@ int ustctl_create_event(int sock, struct lttng_ust_event *ev,
 	if (!channel_data || !_event_data)
 		return -EINVAL;
 
-	event_data = malloc(sizeof(*event_data));
+	event_data = zmalloc(sizeof(*event_data));
 	if (!event_data)
 		return -ENOMEM;
-	init_object(event_data);
 	memset(&lum, 0, sizeof(lum));
 	lum.handle = channel_data->handle;
 	lum.cmd = LTTNG_UST_EVENT;
@@ -353,10 +197,9 @@ int ustctl_add_context(int sock, struct lttng_ust_context *ctx,
 	if (!obj_data || !_context_data)
 		return -EINVAL;
 
-	context_data = malloc(sizeof(*context_data));
+	context_data = zmalloc(sizeof(*context_data));
 	if (!context_data)
 		return -ENOMEM;
-	init_object(context_data);
 	memset(&lum, 0, sizeof(lum));
 	lum.handle = obj_data->handle;
 	lum.cmd = LTTNG_UST_CONTEXT;
@@ -610,200 +453,516 @@ int ustctl_sock_flush_buffer(int sock, struct lttng_ust_object_data *object)
 	return 0;
 }
 
-/* Buffer operations */
-
-/* Map channel shm into process memory */
-struct lttng_ust_shm_handle *ustctl_map_channel(struct lttng_ust_object_data *chan_data)
+static
+int ustctl_send_channel(int sock,
+		enum lttng_ust_chan_type type,
+		void *data,
+		uint64_t size,
+		int send_fd_only)
 {
-	struct lttng_ust_shm_handle *handle;
-	struct channel *chan;
-	size_t chan_size;
-	struct lttng_ust_lib_ring_buffer_config *config;
-	int ret;
+	ssize_t len;
 
-	if (!chan_data)
-		return NULL;
-
-	handle = channel_handle_create(chan_data->shm_fd,
-		chan_data->wait_fd,
-		chan_data->memory_map_size);
-	if (!handle) {
-		ERR("create handle error");
-		return NULL;
-	}
-	/*
-	 * Set to -1, and then close the shm fd, and set the handle shm
-	 * fd to -1 too. We don't need the shm fds after they have been
-	 * mapped.
-	 * The wait_fd is set to -1 in chan_data because it is now owned
-	 * by the handle.
-	 */
-	chan_data->shm_fd = -1;
-	chan_data->wait_fd = -1;
-
-	/* chan is object 0. This is hardcoded. */
-	if (handle->table->objects[0].shm_fd >= 0) {
-		ret = close(handle->table->objects[0].shm_fd);
-		if (ret) {
-			perror("Error closing shm_fd");
+	if (!send_fd_only) {
+		/* Send mmap size */
+		len = ustcomm_send_unix_sock(sock, &size, sizeof(size));
+		if (len != sizeof(size)) {
+			if (len < 0)
+				return len;
+			else
+				return -EIO;
 		}
-		handle->table->objects[0].shm_fd = -1;
+
+		/* Send channel type */
+		len = ustcomm_send_unix_sock(sock, &type, sizeof(type));
+		if (len != sizeof(type)) {
+			if (len < 0)
+				return len;
+			else
+				return -EIO;
+		}
 	}
 
-	/*
-	 * TODO: add consistency checks to be resilient if the
-	 * application try to feed us with incoherent channel structure
-	 * values.
-	 */
-	chan = shmp(handle, handle->chan);
-	/* chan is object 0. This is hardcoded. */
-	chan_size = handle->table->objects[0].allocated_len;
-	handle->shadow_chan = malloc(chan_size);
-	if (!handle->shadow_chan) {
-		channel_destroy(chan, handle, 1);
-		return NULL;
+	/* Send channel data */
+	len = ustcomm_send_unix_sock(sock, data, size);
+	if (len != size) {
+		if (len < 0)
+			return len;
+		else
+			return -EIO;
 	}
-	memcpy(handle->shadow_chan, chan, chan_size);
-	/*
-	 * The callback pointers in the producer are invalid in the
-	 * consumer. We need to look them up here.
-	 */
-	config = &handle->shadow_chan->backend.config;
-	switch (config->client_type) {
-	case LTTNG_CLIENT_METADATA:
-		memcpy(&config->cb, lttng_client_callbacks_metadata,
-			sizeof(config->cb));
-		break;
-	case LTTNG_CLIENT_DISCARD:
-		memcpy(&config->cb, lttng_client_callbacks_discard,
-			sizeof(config->cb));
-		break;
-	case LTTNG_CLIENT_OVERWRITE:
-		memcpy(&config->cb, lttng_client_callbacks_overwrite,
-			sizeof(config->cb));
-		break;
-	default:
-		ERR("Unknown client type %d", config->client_type);
-		channel_destroy(chan, handle, 1);
-		free(handle->shadow_chan);
-		return NULL;
-	}
-	/* Replace the object table pointer. */
-	ret = munmap(handle->table->objects[0].memory_map,
-		handle->table->objects[0].memory_map_size);
-	if (ret) {
-		perror("munmap");
-		assert(0);
-	}
-	handle->table->objects[0].memory_map = (char *) handle->shadow_chan;
-	handle->table->objects[0].is_shadow = 1;
-	return handle;
-}
 
-/* Add stream to channel shm and map its shm into process memory */
-int ustctl_add_stream(struct lttng_ust_shm_handle *handle,
-		struct lttng_ust_object_data *stream_data)
-{
-	int ret;
-
-	if (!handle || !stream_data)
-		return -EINVAL;
-
-	if (!stream_data->handle)
-		return -ENOENT;
-	/* map stream */
-	ret = channel_handle_add_stream(handle,
-		stream_data->shm_fd,
-		stream_data->wait_fd,
-		stream_data->memory_map_size);
-	if (ret) {
-		ERR("add stream error\n");
-		return ret;
-	}
-	/*
-	 * Set to -1 because the lttng_ust_shm_handle destruction will take care
-	 * of closing shm_fd and wait_fd.
-	 */
-	stream_data->shm_fd = -1;
-	stream_data->wait_fd = -1;
 	return 0;
 }
 
-void ustctl_unmap_channel(struct lttng_ust_shm_handle *handle)
+static
+int ustctl_send_stream(int sock,
+		uint32_t stream_nr,
+		uint64_t memory_map_size,
+		int shm_fd, int wakeup_fd,
+		int send_fd_only)
 {
-	struct channel *chan;
+	ssize_t len;
+	int fds[2];
 
-	assert(handle);
-	chan = shmp(handle, handle->chan);
-	channel_destroy(chan, handle, 1);
-	free(handle->shadow_chan);
+	if (!send_fd_only) {
+		if (shm_fd < 0) {
+			/* finish iteration */
+			uint64_t v = -1;
+
+			len = ustcomm_send_unix_sock(sock, &v, sizeof(v));
+			if (len != sizeof(v)) {
+				if (len < 0)
+					return len;
+				else
+					return -EIO;
+			}
+			return 0;
+		}
+
+		/* Send mmap size */
+		len = ustcomm_send_unix_sock(sock, &memory_map_size,
+			sizeof(memory_map_size));
+		if (len != sizeof(memory_map_size)) {
+			if (len < 0)
+				return len;
+			else
+				return -EIO;
+		}
+
+		/* Send stream nr */
+		len = ustcomm_send_unix_sock(sock, &stream_nr,
+			sizeof(stream_nr));
+		if (len != sizeof(stream_nr)) {
+			if (len < 0)
+				return len;
+			else
+				return -EIO;
+		}
+	}
+
+	/* Send shm fd and wakeup fd */
+	fds[0] = shm_fd;
+	fds[1] = wakeup_fd;
+	len = ustcomm_send_fds_unix_sock(sock, fds, 2);
+	if (len <= 0) {
+		if (len < 0)
+			return len;
+		else
+			return -EIO;
+	}
+	return 0;
 }
 
-/*
- * ustctl closes the shm_fd fds after mapping it.
- */
-struct lttng_ust_lib_ring_buffer *ustctl_open_stream_read(struct lttng_ust_shm_handle *handle,
-	int cpu)
+int ustctl_recv_channel_from_consumer(int sock,
+		struct lttng_ust_object_data **_channel_data)
+{
+	struct lttng_ust_object_data *channel_data;
+	ssize_t len;
+	int ret;
+
+	channel_data = zmalloc(sizeof(*channel_data));
+	if (!channel_data) {
+		ret = -ENOMEM;
+		goto error_alloc;
+	}
+	channel_data->type = LTTNG_UST_OBJECT_TYPE_CHANNEL;
+
+	/* recv mmap size */
+	len = ustcomm_recv_unix_sock(sock, &channel_data->size,
+			sizeof(channel_data->size));
+	if (len != sizeof(channel_data->size)) {
+		if (len < 0)
+			ret = len;
+		else
+			ret = -EINVAL;
+		goto error;
+	}
+
+	/* recv channel type */
+	len = ustcomm_recv_unix_sock(sock, &channel_data->u.channel.type,
+			sizeof(channel_data->u.channel.type));
+	if (len != sizeof(channel_data->u.channel.type)) {
+		if (len < 0)
+			ret = len;
+		else
+			ret = -EINVAL;
+		goto error;
+	}
+
+	/* recv channel data */
+	channel_data->u.channel.data = zmalloc(channel_data->size);
+	if (!channel_data->u.channel.data) {
+		ret = -ENOMEM;
+		goto error;
+	}
+	len = ustcomm_recv_unix_sock(sock, channel_data->u.channel.data,
+			channel_data->size);
+	if (len != channel_data->size) {
+		if (len < 0)
+			ret = len;
+		else
+			ret = -EINVAL;
+		goto error_recv_data;
+	}
+
+	*_channel_data = channel_data;
+	return 0;
+
+error_recv_data:
+	free(channel_data->u.channel.data);
+error:
+	free(channel_data);
+error_alloc:
+	return ret;
+}
+
+int ustctl_recv_stream_from_consumer(int sock,
+		struct lttng_ust_object_data **_stream_data)
+{
+	struct lttng_ust_object_data *stream_data;
+	ssize_t len;
+	int ret;
+	int fds[2];
+
+	stream_data = zmalloc(sizeof(*stream_data));
+	if (!stream_data) {
+		ret = -ENOMEM;
+		goto error_alloc;
+	}
+
+	stream_data->type = LTTNG_UST_OBJECT_TYPE_STREAM;
+	stream_data->handle = -1;
+
+	/* recv mmap size */
+	len = ustcomm_recv_unix_sock(sock, &stream_data->size,
+			sizeof(stream_data->size));
+	if (len != sizeof(stream_data->size)) {
+		if (len < 0)
+			ret = len;
+		else
+			ret = -EINVAL;
+		goto error;
+	}
+	if (stream_data->size == -1) {
+		ret = -LTTNG_UST_ERR_NOENT;
+		goto error;
+	}
+
+	/* recv stream nr */
+	len = ustcomm_recv_unix_sock(sock, &stream_data->u.stream.stream_nr,
+			sizeof(stream_data->u.stream.stream_nr));
+	if (len != sizeof(stream_data->u.stream.stream_nr)) {
+		if (len < 0)
+			ret = len;
+		else
+			ret = -EINVAL;
+		goto error;
+	}
+
+	/* recv shm fd and wakeup fd */
+	len = ustcomm_recv_fds_unix_sock(sock, fds, 2);
+	if (len <= 0) {
+		if (len < 0) {
+			ret = len;
+			goto error;
+		} else {
+			ret = -EIO;
+			goto error;
+		}
+	}
+	stream_data->u.stream.shm_fd = fds[0];
+	stream_data->u.stream.wakeup_fd = fds[1];
+	*_stream_data = stream_data;
+	return 0;
+
+error:
+	free(stream_data);
+error_alloc:
+	return ret;
+}
+
+int ustctl_send_channel_to_ust(int sock, int session_handle,
+		struct lttng_ust_object_data *channel_data)
+{
+	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_reply lur;
+	int ret;
+
+	if (!channel_data)
+		return -EINVAL;
+
+	memset(&lum, 0, sizeof(lum));
+	lum.handle = session_handle;
+	lum.cmd = LTTNG_UST_CHANNEL;
+	lum.u.channel.len = channel_data->size;
+	lum.u.channel.type = channel_data->u.channel.type;
+	ret = ustcomm_send_app_msg(sock, &lum);
+	if (ret)
+		return ret;
+
+	ret = ustctl_send_channel(sock,
+			channel_data->u.channel.type,
+			channel_data->u.channel.data,
+			channel_data->size,
+			1);
+	if (ret)
+		return ret;
+	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	if (!ret) {
+		if (lur.ret_val >= 0) {
+			channel_data->handle = lur.ret_val;
+		}
+	}
+	return ret;
+}
+
+int ustctl_send_stream_to_ust(int sock,
+		struct lttng_ust_object_data *channel_data,
+		struct lttng_ust_object_data *stream_data)
+{
+	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_reply lur;
+	int ret;
+
+	memset(&lum, 0, sizeof(lum));
+	lum.handle = channel_data->handle;
+	lum.cmd = LTTNG_UST_STREAM;
+	lum.u.stream.len = stream_data->size;
+	lum.u.stream.stream_nr = stream_data->u.stream.stream_nr;
+	ret = ustcomm_send_app_msg(sock, &lum);
+	if (ret)
+		return ret;
+
+	assert(stream_data);
+	assert(stream_data->type == LTTNG_UST_OBJECT_TYPE_STREAM);
+
+	ret = ustctl_send_stream(sock,
+			stream_data->u.stream.stream_nr,
+			stream_data->size,
+			stream_data->u.stream.shm_fd,
+			stream_data->u.stream.wakeup_fd, 1);
+	if (ret)
+		return ret;
+	return ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+}
+
+
+/* Buffer operations */
+
+struct ustctl_consumer_channel *
+	ustctl_create_channel(struct ustctl_consumer_channel_attr *attr)
+{
+	struct ustctl_consumer_channel *chan;
+	const char *transport_name;
+	struct lttng_transport *transport;
+
+	switch (attr->type) {
+	case LTTNG_UST_CHAN_PER_CPU:
+		if (attr->output == LTTNG_UST_MMAP) {
+			transport_name = attr->overwrite ?
+				"relay-overwrite-mmap" : "relay-discard-mmap";
+		} else {
+			return NULL;
+		}
+		break;
+	case LTTNG_UST_CHAN_METADATA:
+		if (attr->output == LTTNG_UST_MMAP)
+			transport_name = "relay-metadata-mmap";
+		else
+			return NULL;
+		break;
+	default:
+		transport_name = "<unknown>";
+		return NULL;
+	}
+
+	transport = lttng_transport_find(transport_name);
+	if (!transport) {
+		DBG("LTTng transport %s not found\n",
+		       transport_name);
+		return NULL;
+	}
+
+	chan = zmalloc(sizeof(*chan));
+	if (!chan)
+		return NULL;
+
+	chan->chan = transport->ops.channel_create(transport_name, NULL,
+                        attr->subbuf_size, attr->num_subbuf,
+			attr->switch_timer_interval,
+                        attr->read_timer_interval,
+			attr->uuid);
+	if (!chan->chan) {
+		goto chan_error;
+	}
+	chan->chan->ops = &transport->ops;
+	memcpy(&chan->attr, attr, sizeof(chan->attr));
+	return chan;
+
+chan_error:
+	free(chan);
+	return NULL;
+}
+
+void ustctl_destroy_channel(struct ustctl_consumer_channel *chan)
+{
+	chan->chan->ops->channel_destroy(chan->chan);
+	free(chan);
+}
+
+int ustctl_send_channel_to_sessiond(int sock,
+		struct ustctl_consumer_channel *channel)
+{
+	struct shm_object_table *table;
+
+	table = channel->chan->handle->table;
+	if (table->size <= 0)
+		return -EINVAL;
+	return ustctl_send_channel(sock,
+			channel->attr.type,
+			table->objects[0].memory_map,
+			table->objects[0].memory_map_size,
+			0);
+}
+
+int ustctl_send_stream_to_sessiond(int sock,
+		struct ustctl_consumer_stream *stream)
+{
+	if (!stream)
+		return ustctl_send_stream(sock, -1U, -1U, -1, -1, 0);
+
+	return ustctl_send_stream(sock,
+			stream->cpu,
+			stream->memory_map_size,
+			stream->shm_fd, stream->wakeup_fd,
+			0);
+}
+
+int ustctl_stream_close_wait_fd(struct ustctl_consumer_stream *stream)
 {
 	struct channel *chan;
-	int *shm_fd, *wait_fd;
-	uint64_t *memory_map_size;
+
+	chan = stream->chan->chan->chan;
+	return ring_buffer_close_wait_fd(&chan->backend.config,
+			chan, stream->handle, stream->cpu);
+}
+
+int ustctl_stream_close_wakeup_fd(struct ustctl_consumer_stream *stream)
+{
+	struct channel *chan;
+
+	chan = stream->chan->chan->chan;
+	return ring_buffer_close_wakeup_fd(&chan->backend.config,
+			chan, stream->handle, stream->cpu);
+}
+
+struct ustctl_consumer_stream *
+	ustctl_create_stream(struct ustctl_consumer_channel *channel,
+			int cpu)
+{
+	struct ustctl_consumer_stream *stream;
+	struct lttng_ust_shm_handle *handle;
+	struct channel *chan;
+	int shm_fd, wait_fd, wakeup_fd;
+	uint64_t memory_map_size;
 	struct lttng_ust_lib_ring_buffer *buf;
 	int ret;
 
+	if (!channel)
+		return NULL;
+	handle = channel->chan->handle;
 	if (!handle)
 		return NULL;
 
-	chan = handle->shadow_chan;
+	chan = channel->chan->chan;
 	buf = channel_get_ring_buffer(&chan->backend.config,
-		chan, cpu, handle, &shm_fd, &wait_fd, &memory_map_size);
+		chan, cpu, handle, &shm_fd, &wait_fd,
+		&wakeup_fd, &memory_map_size);
 	if (!buf)
 		return NULL;
-	ret = lib_ring_buffer_open_read(buf, handle, 1);
+	ret = lib_ring_buffer_open_read(buf, handle);
 	if (ret)
 		return NULL;
-	/*
-	 * We can close shm_fd early, right after is has been mapped.
-	 */
-	if (*shm_fd >= 0) {
-		ret = close(*shm_fd);
-		if (ret) {
-			perror("Error closing shm_fd");
-		}
-		*shm_fd = -1;
-	}
-	return buf;
+
+	stream = zmalloc(sizeof(*stream));
+	if (!stream)
+		goto alloc_error;
+	stream->handle = handle;
+	stream->buf = buf;
+	stream->chan = channel;
+	stream->shm_fd = shm_fd;
+	stream->wait_fd = wait_fd;
+	stream->wakeup_fd = wakeup_fd;
+	stream->memory_map_size = memory_map_size;
+	stream->cpu = cpu;
+	return stream;
+
+alloc_error:
+	return NULL;
 }
 
-void ustctl_close_stream_read(struct lttng_ust_shm_handle *handle,
-		struct lttng_ust_lib_ring_buffer *buf)
+void ustctl_destroy_stream(struct ustctl_consumer_stream *stream)
 {
-	assert(handle && buf);
-	lib_ring_buffer_release_read(buf, handle, 1);
+	struct lttng_ust_lib_ring_buffer *buf;
+	struct ustctl_consumer_channel *consumer_chan;
+
+	assert(stream);
+	buf = stream->buf;
+	consumer_chan = stream->chan;
+	lib_ring_buffer_release_read(buf, consumer_chan->chan->handle);
+	free(stream);
+}
+
+int ustctl_get_wait_fd(struct ustctl_consumer_stream *stream)
+{
+	struct lttng_ust_lib_ring_buffer *buf;
+	struct ustctl_consumer_channel *consumer_chan;
+
+	if (!stream)
+		return -EINVAL;
+	buf = stream->buf;
+	consumer_chan = stream->chan;
+	return shm_get_wait_fd(consumer_chan->chan->handle, &buf->self._ref);
+}
+
+int ustctl_get_wakeup_fd(struct ustctl_consumer_stream *stream)
+{
+	struct lttng_ust_lib_ring_buffer *buf;
+	struct ustctl_consumer_channel *consumer_chan;
+
+	if (!stream)
+		return -EINVAL;
+	buf = stream->buf;
+	consumer_chan = stream->chan;
+	return shm_get_wakeup_fd(consumer_chan->chan->handle, &buf->self._ref);
 }
 
 /* For mmap mode, readable without "get" operation */
 
-void *ustctl_get_mmap_base(struct lttng_ust_shm_handle *handle,
-		struct lttng_ust_lib_ring_buffer *buf)
+void *ustctl_get_mmap_base(struct ustctl_consumer_stream *stream)
 {
-	if (!handle || !buf)
+	struct lttng_ust_lib_ring_buffer *buf;
+	struct ustctl_consumer_channel *consumer_chan;
+
+	if (!stream)
 		return NULL;
-	return shmp(handle, buf->backend.memory_map);
+	buf = stream->buf;
+	consumer_chan = stream->chan;
+	return shmp(consumer_chan->chan->handle, buf->backend.memory_map);
 }
 
 /* returns the length to mmap. */
-int ustctl_get_mmap_len(struct lttng_ust_shm_handle *handle,
-		struct lttng_ust_lib_ring_buffer *buf,
+int ustctl_get_mmap_len(struct ustctl_consumer_stream *stream,
 		unsigned long *len)
 {
+	struct ustctl_consumer_channel *consumer_chan;
 	unsigned long mmap_buf_len;
 	struct channel *chan;
 
-	if (!handle || !buf || !len)
+	if (!stream)
 		return -EINVAL;
-
-	chan = handle->shadow_chan;
+	consumer_chan = stream->chan;
+	chan = consumer_chan->chan->chan;
 	if (chan->backend.config.output != RING_BUFFER_MMAP)
 		return -EINVAL;
 	mmap_buf_len = chan->backend.buf_size;
@@ -816,16 +975,16 @@ int ustctl_get_mmap_len(struct lttng_ust_shm_handle *handle,
 }
 
 /* returns the maximum size for sub-buffers. */
-int ustctl_get_max_subbuf_size(struct lttng_ust_shm_handle *handle,
-		struct lttng_ust_lib_ring_buffer *buf,
+int ustctl_get_max_subbuf_size(struct ustctl_consumer_stream *stream,
 		unsigned long *len)
 {
+	struct ustctl_consumer_channel *consumer_chan;
 	struct channel *chan;
 
-	if (!handle || !buf || !len)
+	if (!stream)
 		return -EINVAL;
-
-	chan = handle->shadow_chan;
+	consumer_chan = stream->chan;
+	chan = consumer_chan->chan->chan;
 	*len = chan->backend.subbuf_size;
 	return 0;
 }
@@ -836,139 +995,193 @@ int ustctl_get_max_subbuf_size(struct lttng_ust_shm_handle *handle,
  */
 
 /* returns the offset of the subbuffer belonging to the mmap reader. */
-int ustctl_get_mmap_read_offset(struct lttng_ust_shm_handle *handle,
-		struct lttng_ust_lib_ring_buffer *buf, unsigned long *off)
+int ustctl_get_mmap_read_offset(struct ustctl_consumer_stream *stream,
+		unsigned long *off)
 {
 	struct channel *chan;
 	unsigned long sb_bindex;
+	struct lttng_ust_lib_ring_buffer *buf;
+	struct ustctl_consumer_channel *consumer_chan;
 
-	if (!handle || !buf || !off)
+	if (!stream)
 		return -EINVAL;
-
-	chan = handle->shadow_chan;
+	buf = stream->buf;
+	consumer_chan = stream->chan;
+	chan = consumer_chan->chan->chan;
 	if (chan->backend.config.output != RING_BUFFER_MMAP)
 		return -EINVAL;
 	sb_bindex = subbuffer_id_get_index(&chan->backend.config,
 					   buf->backend.buf_rsb.id);
-	*off = shmp(handle, shmp_index(handle, buf->backend.array, sb_bindex)->shmp)->mmap_offset;
+	*off = shmp(consumer_chan->chan->handle,
+		shmp_index(consumer_chan->chan->handle, buf->backend.array, sb_bindex)->shmp)->mmap_offset;
 	return 0;
 }
 
 /* returns the size of the current sub-buffer, without padding (for mmap). */
-int ustctl_get_subbuf_size(struct lttng_ust_shm_handle *handle,
-		struct lttng_ust_lib_ring_buffer *buf, unsigned long *len)
+int ustctl_get_subbuf_size(struct ustctl_consumer_stream *stream,
+		unsigned long *len)
 {
+	struct ustctl_consumer_channel *consumer_chan;
 	struct channel *chan;
+	struct lttng_ust_lib_ring_buffer *buf;
 
-	if (!handle || !buf || !len)
+	if (!stream)
 		return -EINVAL;
 
-	chan = handle->shadow_chan;
+	buf = stream->buf;
+	consumer_chan = stream->chan;
+	chan = consumer_chan->chan->chan;
 	*len = lib_ring_buffer_get_read_data_size(&chan->backend.config, buf,
-		handle);
+		consumer_chan->chan->handle);
 	return 0;
 }
 
 /* returns the size of the current sub-buffer, without padding (for mmap). */
-int ustctl_get_padded_subbuf_size(struct lttng_ust_shm_handle *handle,
-		struct lttng_ust_lib_ring_buffer *buf, unsigned long *len)
+int ustctl_get_padded_subbuf_size(struct ustctl_consumer_stream *stream,
+		unsigned long *len)
 {
+	struct ustctl_consumer_channel *consumer_chan;
 	struct channel *chan;
+	struct lttng_ust_lib_ring_buffer *buf;
 
-	if (!handle || !buf || !len)
+	if (!stream)
 		return -EINVAL;
-
-	chan = handle->shadow_chan;
+	buf = stream->buf;
+	consumer_chan = stream->chan;
+	chan = consumer_chan->chan->chan;
 	*len = lib_ring_buffer_get_read_data_size(&chan->backend.config, buf,
-		handle);
+		consumer_chan->chan->handle);
 	*len = PAGE_ALIGN(*len);
 	return 0;
 }
 
 /* Get exclusive read access to the next sub-buffer that can be read. */
-int ustctl_get_next_subbuf(struct lttng_ust_shm_handle *handle,
-		struct lttng_ust_lib_ring_buffer *buf)
+int ustctl_get_next_subbuf(struct ustctl_consumer_stream *stream)
 {
-	if (!handle || !buf)
-		return -EINVAL;
+	struct lttng_ust_lib_ring_buffer *buf;
+	struct ustctl_consumer_channel *consumer_chan;
 
-	return lib_ring_buffer_get_next_subbuf(buf, handle);
+	if (!stream)
+		return -EINVAL;
+	buf = stream->buf;
+	consumer_chan = stream->chan;
+	return lib_ring_buffer_get_next_subbuf(buf,
+			consumer_chan->chan->handle);
 }
 
 
 /* Release exclusive sub-buffer access, move consumer forward. */
-int ustctl_put_next_subbuf(struct lttng_ust_shm_handle *handle,
-		struct lttng_ust_lib_ring_buffer *buf)
+int ustctl_put_next_subbuf(struct ustctl_consumer_stream *stream)
 {
-	if (!handle || !buf)
-		return -EINVAL;
+	struct lttng_ust_lib_ring_buffer *buf;
+	struct ustctl_consumer_channel *consumer_chan;
 
-	lib_ring_buffer_put_next_subbuf(buf, handle);
+	if (!stream)
+		return -EINVAL;
+	buf = stream->buf;
+	consumer_chan = stream->chan;
+	lib_ring_buffer_put_next_subbuf(buf, consumer_chan->chan->handle);
 	return 0;
 }
 
 /* snapshot */
 
 /* Get a snapshot of the current ring buffer producer and consumer positions */
-int ustctl_snapshot(struct lttng_ust_shm_handle *handle,
-		struct lttng_ust_lib_ring_buffer *buf)
+int ustctl_snapshot(struct ustctl_consumer_stream *stream)
 {
-	if (!handle || !buf)
-		return -EINVAL;
+	struct lttng_ust_lib_ring_buffer *buf;
+	struct ustctl_consumer_channel *consumer_chan;
 
+	if (!stream)
+		return -EINVAL;
+	buf = stream->buf;
+	consumer_chan = stream->chan;
 	return lib_ring_buffer_snapshot(buf, &buf->cons_snapshot,
-			&buf->prod_snapshot, handle);
+			&buf->prod_snapshot, consumer_chan->chan->handle);
 }
 
 /* Get the consumer position (iteration start) */
-int ustctl_snapshot_get_consumed(struct lttng_ust_shm_handle *handle,
-		struct lttng_ust_lib_ring_buffer *buf, unsigned long *pos)
+int ustctl_snapshot_get_consumed(struct ustctl_consumer_stream *stream,
+		unsigned long *pos)
 {
-	if (!handle || !buf || !pos)
-		return -EINVAL;
+	struct lttng_ust_lib_ring_buffer *buf;
 
+	if (!stream)
+		return -EINVAL;
+	buf = stream->buf;
 	*pos = buf->cons_snapshot;
 	return 0;
 }
 
 /* Get the producer position (iteration end) */
-int ustctl_snapshot_get_produced(struct lttng_ust_shm_handle *handle,
-		struct lttng_ust_lib_ring_buffer *buf, unsigned long *pos)
+int ustctl_snapshot_get_produced(struct ustctl_consumer_stream *stream,
+		unsigned long *pos)
 {
-	if (!handle || !buf || !pos)
-		return -EINVAL;
+	struct lttng_ust_lib_ring_buffer *buf;
 
+	if (!stream)
+		return -EINVAL;
+	buf = stream->buf;
 	*pos = buf->prod_snapshot;
 	return 0;
 }
 
 /* Get exclusive read access to the specified sub-buffer position */
-int ustctl_get_subbuf(struct lttng_ust_shm_handle *handle,
-		struct lttng_ust_lib_ring_buffer *buf, unsigned long *pos)
+int ustctl_get_subbuf(struct ustctl_consumer_stream *stream,
+		unsigned long *pos)
 {
-	if (!handle || !buf || !pos)
-		return -EINVAL;
+	struct lttng_ust_lib_ring_buffer *buf;
+	struct ustctl_consumer_channel *consumer_chan;
 
-	return lib_ring_buffer_get_subbuf(buf, *pos, handle);
+	if (!stream)
+		return -EINVAL;
+	buf = stream->buf;
+	consumer_chan = stream->chan;
+	return lib_ring_buffer_get_subbuf(buf, *pos,
+			consumer_chan->chan->handle);
 }
 
 /* Release exclusive sub-buffer access */
-int ustctl_put_subbuf(struct lttng_ust_shm_handle *handle,
-		struct lttng_ust_lib_ring_buffer *buf)
+int ustctl_put_subbuf(struct ustctl_consumer_stream *stream)
 {
-	if (!handle || !buf)
-		return -EINVAL;
+	struct lttng_ust_lib_ring_buffer *buf;
+	struct ustctl_consumer_channel *consumer_chan;
 
-	lib_ring_buffer_put_subbuf(buf, handle);
+	if (!stream)
+		return -EINVAL;
+	buf = stream->buf;
+	consumer_chan = stream->chan;
+	lib_ring_buffer_put_subbuf(buf, consumer_chan->chan->handle);
 	return 0;
 }
 
-void ustctl_flush_buffer(struct lttng_ust_shm_handle *handle,
-		struct lttng_ust_lib_ring_buffer *buf,
+void ustctl_flush_buffer(struct ustctl_consumer_stream *stream,
 		int producer_active)
 {
-	assert(handle && buf);
+	struct lttng_ust_lib_ring_buffer *buf;
+	struct ustctl_consumer_channel *consumer_chan;
+
+	assert(stream);
+	buf = stream->buf;
+	consumer_chan = stream->chan;
 	lib_ring_buffer_switch_slow(buf,
 		producer_active ? SWITCH_ACTIVE : SWITCH_FLUSH,
-		handle);
+		consumer_chan->chan->handle);
+}
+
+static __attribute__((constructor))
+void ustctl_init(void)
+{
+	init_usterr();
+	lttng_ring_buffer_metadata_client_init();
+	lttng_ring_buffer_client_overwrite_init();
+	lttng_ring_buffer_client_discard_init();
+}
+
+static __attribute__((destructor))
+void ustctl_exit(void)
+{
+	lttng_ring_buffer_client_discard_exit();
+	lttng_ring_buffer_client_overwrite_exit();
+	lttng_ring_buffer_metadata_client_exit();
 }

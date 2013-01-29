@@ -81,7 +81,8 @@ struct shm_object_table *shm_object_table_create(size_t max_nb_obj)
 	return table;
 }
 
-struct shm_object *shm_object_table_append(struct shm_object_table *table,
+static
+struct shm_object *_shm_object_table_alloc_shm(struct shm_object_table *table,
 					   size_t memory_map_size)
 {
 	int shmfd, waitfd[2], ret, i, sigblocked = 0;
@@ -186,6 +187,7 @@ struct shm_object *shm_object_table_append(struct shm_object_table *table,
 		PERROR("mmap");
 		goto error_mmap;
 	}
+	obj->type = SHM_OBJECT_SHM;
 	obj->memory_map = memory_map;
 	obj->memory_map_size = memory_map_size;
 	obj->allocated_len = 0;
@@ -221,23 +223,86 @@ error_fcntl:
 	}
 error_pipe:
 	return NULL;
-	
 }
 
-struct shm_object *shm_object_table_append_shadow(struct shm_object_table *table,
-			int shm_fd, int wait_fd, size_t memory_map_size)
+static
+struct shm_object *_shm_object_table_alloc_mem(struct shm_object_table *table,
+					   size_t memory_map_size)
 {
 	struct shm_object *obj;
-	char *memory_map;
+	void *memory_map;
 
 	if (table->allocated_len >= table->size)
 		return NULL;
 	obj = &table->objects[table->allocated_len];
 
-	/* wait_fd: set read end of the pipe. */
-	obj->wait_fd[0] = wait_fd;
-	obj->wait_fd[1] = -1;	/* write end is unset. */
+	memory_map = zmalloc(memory_map_size);
+	if (!memory_map)
+		goto alloc_error;
+
+	obj->wait_fd[0] = -1;
+	obj->wait_fd[1] = -1;
+	obj->shm_fd = -1;
+
+	obj->type = SHM_OBJECT_MEM;
+	obj->memory_map = memory_map;
+	obj->memory_map_size = memory_map_size;
+	obj->allocated_len = 0;
+	obj->index = table->allocated_len++;
+
+	return obj;
+
+alloc_error:
+	return NULL;
+}
+
+struct shm_object *shm_object_table_alloc(struct shm_object_table *table,
+			size_t memory_map_size,
+			enum shm_object_type type)
+{
+	switch (type) {
+	case SHM_OBJECT_SHM:
+		return _shm_object_table_alloc_shm(table, memory_map_size);
+	case SHM_OBJECT_MEM:
+		return _shm_object_table_alloc_mem(table, memory_map_size);
+	default:
+		assert(0);
+	}
+	return NULL;
+}
+
+struct shm_object *shm_object_table_append_shm(struct shm_object_table *table,
+			int shm_fd, int wakeup_fd, uint32_t stream_nr,
+			size_t memory_map_size)
+{
+	struct shm_object *obj;
+	char *memory_map;
+	int ret;
+
+	if (table->allocated_len >= table->size)
+		return NULL;
+	/* streams _must_ be received in sequential order, else fail. */
+	if (stream_nr + 1 != table->allocated_len)
+		return NULL;
+
+	obj = &table->objects[table->allocated_len];
+
+	/* wait_fd: set write end of the pipe. */
+	obj->wait_fd[0] = -1;	/* read end is unset */
+	obj->wait_fd[1] = wakeup_fd;
 	obj->shm_fd = shm_fd;
+
+	ret = fcntl(obj->wait_fd[1], F_SETFD, FD_CLOEXEC);
+	if (ret < 0) {
+		PERROR("fcntl");
+		goto error_fcntl;
+	}
+	/* The write end of the pipe needs to be non-blocking */
+	ret = fcntl(obj->wait_fd[1], F_SETFL, O_NONBLOCK);
+	if (ret < 0) {
+		PERROR("fcntl");
+		goto error_fcntl;
+	}
 
 	/* memory_map: mmap */
 	memory_map = mmap(NULL, memory_map_size, PROT_READ | PROT_WRITE,
@@ -246,6 +311,7 @@ struct shm_object *shm_object_table_append_shadow(struct shm_object_table *table
 		PERROR("mmap");
 		goto error_mmap;
 	}
+	obj->type = SHM_OBJECT_SHM;
 	obj->memory_map = memory_map;
 	obj->memory_map_size = memory_map_size;
 	obj->allocated_len = memory_map_size;
@@ -253,37 +319,70 @@ struct shm_object *shm_object_table_append_shadow(struct shm_object_table *table
 
 	return obj;
 
+error_fcntl:
 error_mmap:
 	return NULL;
+}
+
+/*
+ * Passing ownership of mem to object.
+ */
+struct shm_object *shm_object_table_append_mem(struct shm_object_table *table,
+			void *mem, size_t memory_map_size)
+{
+	struct shm_object *obj;
+
+	if (table->allocated_len >= table->size)
+		return NULL;
+	obj = &table->objects[table->allocated_len];
+
+	obj->wait_fd[0] = -1;
+	obj->wait_fd[1] = -1;
+	obj->shm_fd = -1;
+
+	obj->type = SHM_OBJECT_MEM;
+	obj->memory_map = mem;
+	obj->memory_map_size = memory_map_size;
+	obj->allocated_len = memory_map_size;
+	obj->index = table->allocated_len++;
+
+	return obj;
 }
 
 static
 void shmp_object_destroy(struct shm_object *obj)
 {
-	int ret, i;
+	switch (obj->type) {
+	case SHM_OBJECT_SHM:
+	{
+		int ret, i;
 
-	if (!obj->is_shadow) {
 		ret = munmap(obj->memory_map, obj->memory_map_size);
 		if (ret) {
 			PERROR("umnmap");
 			assert(0);
 		}
-	}
-	if (obj->shm_fd >= 0) {
 		ret = close(obj->shm_fd);
 		if (ret) {
 			PERROR("close");
 			assert(0);
 		}
-	}
-	for (i = 0; i < 2; i++) {
-		if (obj->wait_fd[i] < 0)
-			continue;
-		ret = close(obj->wait_fd[i]);
-		if (ret) {
-			PERROR("close");
-			assert(0);
+		for (i = 0; i < 2; i++) {
+			if (obj->wait_fd[i] < 0)
+				continue;
+			ret = close(obj->wait_fd[i]);
+			if (ret) {
+				PERROR("close");
+				assert(0);
+			}
 		}
+		break;
+	}
+	case SHM_OBJECT_MEM:
+		free(obj->memory_map);
+		break;
+	default:
+		assert(0);
 	}
 }
 

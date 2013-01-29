@@ -375,25 +375,17 @@ struct lttng_ust_shm_handle;
  */
 struct lttng_channel_ops {
 	struct lttng_channel *(*channel_create)(const char *name,
-				void *buf_addr,
-				size_t subbuf_size, size_t num_subbuf,
-				unsigned int switch_timer_interval,
-				unsigned int read_timer_interval,
-				int **shm_fd, int **wait_fd,
-				uint64_t **memory_map_size,
-				struct lttng_channel *chan_priv_init);
-	void (*channel_destroy)(struct lttng_channel *lttng_chan);
-	struct lttng_ust_lib_ring_buffer *(*buffer_read_open)(struct channel *chan,
-				struct lttng_ust_shm_handle *handle,
-				int **shm_fd, int **wait_fd,
-				uint64_t **memory_map_size);
-	void (*buffer_read_close)(struct lttng_ust_lib_ring_buffer *buf,
-				struct lttng_ust_shm_handle *handle);
+			void *buf_addr,
+			size_t subbuf_size, size_t num_subbuf,
+			unsigned int switch_timer_interval,
+			unsigned int read_timer_interval,
+			unsigned char *uuid);
+	void (*channel_destroy)(struct lttng_channel *chan);
 	int (*event_reserve)(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			     uint32_t event_id);
 	void (*event_commit)(struct lttng_ust_lib_ring_buffer_ctx *ctx);
-	void (*event_write)(struct lttng_ust_lib_ring_buffer_ctx *ctx, const void *src,
-			    size_t len);
+	void (*event_write)(struct lttng_ust_lib_ring_buffer_ctx *ctx,
+			const void *src, size_t len);
 	/*
 	 * packet_avail_size returns the available size in the current
 	 * packet. Note that the size returned is only a hint, since it
@@ -429,14 +421,14 @@ struct lttng_channel {
 	unsigned int free_event_id;	/* Next event ID to allocate */
 	unsigned int used_event_id;	/* Max allocated event IDs */
 	struct cds_list_head node;	/* Channel list in session */
-	struct lttng_channel_ops *ops;
+	const struct lttng_channel_ops *ops;
 	int header_type;		/* 0: unset, 1: compact, 2: large */
 	struct lttng_ust_shm_handle *handle;	/* shared-memory handle */
 	unsigned int metadata_dumped:1;
 
-	/* Channel ID, available for consumer too */
+	/* Channel ID */
 	unsigned int id;
-	/* Copy of session UUID for consumer (availability through shm) */
+	enum lttng_ust_chan_type type;
 	unsigned char uuid[LTTNG_UST_UUID_LEN]; /* Trace session unique ID */
 };
 
@@ -462,7 +454,6 @@ struct lttng_session {
 	struct cds_list_head _deprecated1;
 	struct cds_list_head node;		/* Session list */
 	unsigned int free_chan_id;		/* Next chan ID to allocate */
-	unsigned char uuid[LTTNG_UST_UUID_LEN]; /* Trace session unique ID */
 	unsigned int metadata_dumped:1;
 
 	/* New UST 2.1 */
@@ -475,6 +466,7 @@ struct lttng_transport {
 	char *name;
 	struct cds_list_head node;
 	struct lttng_channel_ops ops;
+	const struct lttng_ust_lib_ring_buffer_config *client_config;
 };
 
 struct lttng_session *lttng_session_create(void);
@@ -491,13 +483,6 @@ struct lttng_channel *lttng_channel_create(struct lttng_session *session,
 				       int **shm_fd, int **wait_fd,
 				       uint64_t **memory_map_size,
 				       struct lttng_channel *chan_priv_init);
-struct lttng_channel *lttng_global_channel_create(struct lttng_session *session,
-				       int overwrite, void *buf_addr,
-				       size_t subbuf_size, size_t num_subbuf,
-				       unsigned int switch_timer_interval,
-				       unsigned int read_timer_interval,
-				       int **shm_fd, int **wait_fd,
-				       uint64_t **memory_map_size);
 
 int lttng_channel_enable(struct lttng_channel *channel);
 int lttng_channel_disable(struct lttng_channel *channel);

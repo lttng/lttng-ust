@@ -42,6 +42,7 @@
 #include <lttng/ust-abi.h>
 #include <lttng/ust.h>
 #include <lttng/ust-error.h>
+#include <lttng/ust-ctl.h>
 #include <ust-comm.h>
 #include <usterr-signal-safe.h>
 #include <helper.h>
@@ -134,6 +135,41 @@ struct sock_info local_apps = {
 
 static int wait_poll_fallback;
 
+static const char *cmd_name_mapping[] = {
+	[ LTTNG_UST_RELEASE ] = "Release",
+	[ LTTNG_UST_SESSION ] = "Create Session",
+	[ LTTNG_UST_TRACER_VERSION ] = "Get Tracer Version",
+
+	[ LTTNG_UST_TRACEPOINT_LIST ] = "Create Tracepoint List",
+	[ LTTNG_UST_WAIT_QUIESCENT ] = "Wait for Quiescent State",
+	[ LTTNG_UST_REGISTER_DONE ] = "Registration Done",
+	[ LTTNG_UST_TRACEPOINT_FIELD_LIST ] = "Create Tracepoint Field List",
+
+	/* Session FD commands */
+	[ LTTNG_UST_CHANNEL ] = "Create Channel",
+	[ LTTNG_UST_SESSION_START ] = "Start Session",
+	[ LTTNG_UST_SESSION_STOP ] = "Stop Session",
+
+	/* Channel FD commands */
+	[ LTTNG_UST_STREAM ] = "Create Stream",
+	[ LTTNG_UST_EVENT ] = "Create Event",
+
+	/* Event and Channel FD commands */
+	[ LTTNG_UST_CONTEXT ] = "Create Context",
+	[ LTTNG_UST_FLUSH_BUFFER ] = "Flush Buffer",
+
+	/* Event, Channel and Session commands */
+	[ LTTNG_UST_ENABLE ] = "Enable",
+	[ LTTNG_UST_DISABLE ] = "Disable",
+
+	/* Tracepoint list commands */
+	[ LTTNG_UST_TRACEPOINT_LIST_GET ] = "List Next Tracepoint",
+	[ LTTNG_UST_TRACEPOINT_FIELD_LIST_GET ] = "List Next Tracepoint Field",
+
+	/* Event FD commands */
+	[ LTTNG_UST_FILTER ] = "Create Filter",
+};
+
 extern void lttng_ring_buffer_client_overwrite_init(void);
 extern void lttng_ring_buffer_client_discard_init(void);
 extern void lttng_ring_buffer_metadata_client_init(void);
@@ -148,6 +184,18 @@ static
 void lttng_fixup_nest_count_tls(void)
 {
 	asm volatile ("" : : "m" (lttng_ust_nest_count));
+}
+
+static
+void print_cmd(int cmd, int handle)
+{
+	const char *cmd_name = "Unknown";
+
+	if (cmd_name_mapping[cmd]) {
+		cmd_name = cmd_name_mapping[cmd];
+	}
+	DBG("Message Received \"%s\", Handle \"%s\" (%d)", cmd_name,
+		lttng_ust_obj_get_name(handle), handle);
 }
 
 static
@@ -256,7 +304,6 @@ int handle_message(struct sock_info *sock_info,
 	int ret = 0;
 	const struct lttng_ust_objd_ops *ops;
 	struct ustcomm_ust_reply lur;
-	int shm_fd, wait_fd;
 	union ust_args args;
 	ssize_t len;
 
@@ -265,7 +312,7 @@ int handle_message(struct sock_info *sock_info,
 	memset(&lur, 0, sizeof(lur));
 
 	if (lttng_ust_comm_should_quit) {
-		ret = -EPERM;
+		ret = -LTTNG_UST_ERR_EXITING;
 		goto end;
 	}
 
@@ -357,6 +404,62 @@ int handle_message(struct sock_info *sock_info,
 		}
 		break;
 	}
+	case LTTNG_UST_CHANNEL:
+	{
+		void *chan_data;
+
+		len = ustcomm_recv_channel_from_sessiond(sock,
+				&chan_data, lum->u.channel.len);
+		switch (len) {
+		case 0:	/* orderly shutdown */
+			ret = 0;
+			goto error;
+		default:
+			if (len == lum->u.channel.len) {
+				DBG("channel data received");
+				break;
+			} else if (len < 0) {
+				DBG("Receive failed from lttng-sessiond with errno %d", (int) -len);
+				if (len == -ECONNRESET) {
+					ERR("%s remote end closed connection", sock_info->name);
+					ret = len;
+					goto error;
+				}
+				ret = len;
+				goto end;
+			} else {
+				DBG("incorrect channel data message size: %zd", len);
+				ret = -EINVAL;
+				goto end;
+			}
+		}
+		args.channel.chan_data = chan_data;
+		if (ops->cmd)
+			ret = ops->cmd(lum->handle, lum->cmd,
+					(unsigned long) &lum->u,
+					&args, sock_info);
+		else
+			ret = -ENOSYS;
+		break;
+	}
+	case LTTNG_UST_STREAM:
+	{
+		/* Receive shm_fd, wakeup_fd */
+		ret = ustcomm_recv_stream_from_sessiond(sock,
+			&lum->u.stream.len,
+			&args.stream.shm_fd,
+			&args.stream.wakeup_fd);
+		if (ret) {
+			goto end;
+		}
+		if (ops->cmd)
+			ret = ops->cmd(lum->handle, lum->cmd,
+					(unsigned long) &lum->u,
+					&args, sock_info);
+		else
+			ret = -ENOSYS;
+		break;
+	}
 	default:
 		if (ops->cmd)
 			ret = ops->cmd(lum->handle, lum->cmd,
@@ -408,21 +511,6 @@ end:
 	}
 	if (ret >= 0) {
 		switch (lum->cmd) {
-		case LTTNG_UST_STREAM:
-			/*
-			 * Special-case reply to send stream info.
-			 * Use lum.u output.
-			 */
-			lur.u.stream.memory_map_size = *args.stream.memory_map_size;
-			shm_fd = *args.stream.shm_fd;
-			wait_fd = *args.stream.wait_fd;
-			break;
-		case LTTNG_UST_METADATA:
-		case LTTNG_UST_CHANNEL:
-			lur.u.channel.memory_map_size = *args.channel.memory_map_size;
-			shm_fd = *args.channel.shm_fd;
-			wait_fd = *args.channel.wait_fd;
-			break;
 		case LTTNG_UST_TRACER_VERSION:
 			lur.u.version = lum->u.version;
 			break;
@@ -431,42 +519,13 @@ end:
 			break;
 		}
 	}
+	DBG("Return value: %d", lur.ret_val);
 	ret = send_reply(sock, &lur);
 	if (ret < 0) {
 		DBG("error sending reply");
 		goto error;
 	}
 
-	if ((lum->cmd == LTTNG_UST_STREAM
-	     || lum->cmd == LTTNG_UST_CHANNEL
-	     || lum->cmd == LTTNG_UST_METADATA)
-			&& lur.ret_code == LTTNG_UST_OK) {
-		int sendret = 0;
-
-		/* we also need to send the file descriptors. */
-		ret = ustcomm_send_fds_unix_sock(sock,
-			&shm_fd, &shm_fd,
-			1, sizeof(int));
-		if (ret < 0) {
-			ERR("send shm_fd");
-			sendret = ret;
-		}
-		/*
-		 * The sessiond expects 2 file descriptors, even upon
-		 * error.
-		 */
-		ret = ustcomm_send_fds_unix_sock(sock,
-			&wait_fd, &wait_fd,
-			1, sizeof(int));
-		if (ret < 0) {
-			perror("send wait_fd");
-			goto error;
-		}
-		if (sendret) {
-			ret = sendret;
-			goto error;
-		}
-	}
 	/*
 	 * LTTNG_UST_TRACEPOINT_FIELD_LIST_GET needs to send the field
 	 * after the reply.
@@ -485,49 +544,6 @@ end:
 				ret = -EINVAL;
 				goto error;
 			}
-		}
-	}
-	/*
-	 * We still have the memory map reference, and the fds have been
-	 * sent to the sessiond. We can therefore close those fds. Note
-	 * that we keep the write side of the wait_fd open, but close
-	 * the read side.
-	 */
-	if (lur.ret_code == LTTNG_UST_OK) {
-		switch (lum->cmd) {
-		case LTTNG_UST_STREAM:
-			if (shm_fd >= 0) {
-				ret = close(shm_fd);
-				if (ret) {
-					PERROR("Error closing stream shm_fd");
-				}
-				*args.stream.shm_fd = -1;
-			}
-			if (wait_fd >= 0) {
-				ret = close(wait_fd);
-				if (ret) {
-					PERROR("Error closing stream wait_fd");
-				}
-				*args.stream.wait_fd = -1;
-			}
-			break;
-		case LTTNG_UST_METADATA:
-		case LTTNG_UST_CHANNEL:
-			if (shm_fd >= 0) {
-				ret = close(shm_fd);
-				if (ret) {
-					PERROR("Error closing channel shm_fd");
-				}
-				*args.channel.shm_fd = -1;
-			}
-			if (wait_fd >= 0) {
-				ret = close(wait_fd);
-				if (ret) {
-					PERROR("Error closing channel wait_fd");
-				}
-				*args.channel.wait_fd = -1;
-			}
-			break;
 		}
 	}
 
@@ -903,7 +919,7 @@ restart:
 			ust_unlock();
 			goto end;
 		case sizeof(lum):
-			DBG("message received");
+			print_cmd(lum.cmd, lum.handle);
 			ret = handle_message(sock_info, sock, &lum);
 			if (ret) {
 				ERR("Error handling message for %s socket", sock_info->name);
@@ -999,7 +1015,6 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	 * to be the dynamic linker mutex) and ust_lock, taken within
 	 * the ust lock.
 	 */
-	lttng_fixup_event_tls();
 	lttng_fixup_ringbuffer_tls();
 	lttng_fixup_vtid_tls();
 	lttng_fixup_nest_count_tls();

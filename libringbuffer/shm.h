@@ -26,6 +26,20 @@
 #include <urcu/compiler.h>
 #include "shm_types.h"
 
+/* channel_handle_create - for UST. */
+extern
+struct lttng_ust_shm_handle *channel_handle_create(void *data,
+				uint64_t memory_map_size);
+/* channel_handle_add_stream - for UST. */
+extern
+int channel_handle_add_stream(struct lttng_ust_shm_handle *handle,
+		int shm_fd, int wakeup_fd, uint32_t stream_nr,
+		uint64_t memory_map_size);
+unsigned int channel_handle_get_nr_streams(struct lttng_ust_shm_handle *handle);
+extern
+void channel_destroy(struct channel *chan, struct lttng_ust_shm_handle *handle,
+		int consumer);
+
 /*
  * Pointer dereferencing. We don't trust the shm_ref, so we validate
  * both the index and offset with known boundaries.
@@ -72,11 +86,16 @@ void _set_shmp(struct shm_ref *ref, struct shm_ref src)
 #define set_shmp(ref, src)	_set_shmp(&(ref)._ref, src)
 
 struct shm_object_table *shm_object_table_create(size_t max_nb_obj);
-struct shm_object *shm_object_table_append_shadow(struct shm_object_table *table,
-			int shm_fd, int wait_fd, size_t memory_map_size);
+struct shm_object *shm_object_table_alloc(struct shm_object_table *table,
+			size_t memory_map_size,
+			enum shm_object_type type);
+struct shm_object *shm_object_table_append_shm(struct shm_object_table *table,
+			int shm_fd, int wakeup_fd, uint32_t stream_nr,
+			size_t memory_map_size);
+/* mem ownership is passed to shm_object_table_append_mem(). */
+struct shm_object *shm_object_table_append_mem(struct shm_object_table *table,
+			void *mem, size_t memory_map_size);
 void shm_object_table_destroy(struct shm_object_table *table);
-struct shm_object *shm_object_table_append(struct shm_object_table *table,
-					   size_t memory_map_size);
 
 /*
  * zalloc_shm - allocate memory within a shm object.
@@ -87,21 +106,6 @@ struct shm_object *shm_object_table_append(struct shm_object_table *table,
  */
 struct shm_ref zalloc_shm(struct shm_object *obj, size_t len);
 void align_shm(struct shm_object *obj, size_t align);
-
-static inline
-int shm_get_wakeup_fd(struct lttng_ust_shm_handle *handle, struct shm_ref *ref)
-{
-	struct shm_object_table *table = handle->table;
-	struct shm_object *obj;
-	size_t index;
-
-	index = (size_t) ref->index;
-	if (caa_unlikely(index >= table->allocated_len))
-		return -EPERM;
-	obj = &table->objects[index];
-	return obj->wait_fd[1];
-
-}
 
 static inline
 int shm_get_wait_fd(struct lttng_ust_shm_handle *handle, struct shm_ref *ref)
@@ -118,8 +122,7 @@ int shm_get_wait_fd(struct lttng_ust_shm_handle *handle, struct shm_ref *ref)
 }
 
 static inline
-int shm_get_object_data(struct lttng_ust_shm_handle *handle, struct shm_ref *ref,
-		int **shm_fd, int **wait_fd, uint64_t **memory_map_size)
+int shm_get_wakeup_fd(struct lttng_ust_shm_handle *handle, struct shm_ref *ref)
 {
 	struct shm_object_table *table = handle->table;
 	struct shm_object *obj;
@@ -129,9 +132,85 @@ int shm_get_object_data(struct lttng_ust_shm_handle *handle, struct shm_ref *ref
 	if (caa_unlikely(index >= table->allocated_len))
 		return -EPERM;
 	obj = &table->objects[index];
-	*shm_fd = &obj->shm_fd;
-	*wait_fd = &obj->wait_fd[0];
-	*memory_map_size = &obj->allocated_len;
+	return obj->wait_fd[1];
+}
+
+static inline
+int shm_close_wait_fd(struct lttng_ust_shm_handle *handle,
+		struct shm_ref *ref)
+{
+	struct shm_object_table *table = handle->table;
+	struct shm_object *obj;
+	size_t index;
+	int ret;
+
+	index = (size_t) ref->index;
+	if (caa_unlikely(index >= table->allocated_len))
+		return -EPERM;
+	obj = &table->objects[index];
+	if (obj->wait_fd[0] < 0)
+		return -ENOENT;
+	ret = close(obj->wait_fd[0]);
+	if (ret) {
+		ret = -errno;
+		return ret;
+	}
+	obj->wait_fd[0] = -1;
+	return 0;
+}
+
+static inline
+int shm_close_wakeup_fd(struct lttng_ust_shm_handle *handle,
+		struct shm_ref *ref)
+{
+	struct shm_object_table *table = handle->table;
+	struct shm_object *obj;
+	size_t index;
+	int ret;
+
+	index = (size_t) ref->index;
+	if (caa_unlikely(index >= table->allocated_len))
+		return -EPERM;
+	obj = &table->objects[index];
+	if (obj->wait_fd[1] < 0)
+		return -ENOENT;
+	ret = close(obj->wait_fd[1]);
+	if (ret) {
+		ret = -errno;
+		return ret;
+	}
+	obj->wait_fd[1] = -1;
+	return 0;
+}
+
+static inline
+int shm_get_shm_fd(struct lttng_ust_shm_handle *handle, struct shm_ref *ref)
+{
+	struct shm_object_table *table = handle->table;
+	struct shm_object *obj;
+	size_t index;
+
+	index = (size_t) ref->index;
+	if (caa_unlikely(index >= table->allocated_len))
+		return -EPERM;
+	obj = &table->objects[index];
+	return obj->shm_fd;
+}
+
+
+static inline
+int shm_get_shm_size(struct lttng_ust_shm_handle *handle, struct shm_ref *ref,
+		uint64_t *size)
+{
+	struct shm_object_table *table = handle->table;
+	struct shm_object *obj;
+	size_t index;
+
+	index = (size_t) ref->index;
+	if (caa_unlikely(index >= table->allocated_len))
+		return -EPERM;
+	obj = &table->objects[index];
+	*size = obj->memory_map_size;
 	return 0;
 }
 
