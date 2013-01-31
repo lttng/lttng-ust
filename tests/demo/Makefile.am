@@ -35,6 +35,8 @@ liblttng_ust_provider_ust_tests_demo3_la_LIBADD = \
 liblttng_ust_provider_ust_tests_demo3_la_LDFLAGS = \
 	$(FORCE_SHARED_LIB_OPTIONS)
 
+EXTRA_DIST = demo-trace
+
 noinst_PROGRAMS = demo
 demo_SOURCES = demo.c ust_tests_demo.h
 # The demo program only depends on libdl/libc for dlopen().
