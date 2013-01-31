@@ -26,6 +26,7 @@ PREREQUISITES:
 
   - libuuid (for Linux)
       * Debian/Ubuntu package: libuuid1, uuid-dev
+      * Fedora package: libuuid-devel
 
 For developers using the git tree:
 
