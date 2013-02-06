@@ -58,19 +58,20 @@ const struct lttng_probe_desc *find_provider(const char *provider)
 }
 
 static
-const struct lttng_event_desc *find_event(const char *name)
+int check_event_provider(struct lttng_probe_desc *desc)
 {
-	struct lttng_probe_desc *probe_desc;
 	int i;
+	size_t provider_name_len;
 
-	cds_list_for_each_entry(probe_desc, &probe_list, head) {
-		for (i = 0; i < probe_desc->nr_events; i++) {
-			if (!strncmp(probe_desc->event_desc[i]->name, name,
-					LTTNG_UST_SYM_NAME_LEN - 1))
-				return probe_desc->event_desc[i];
-		}
+	provider_name_len = strnlen(desc->provider,
+				LTTNG_UST_SYM_NAME_LEN - 1);
+	for (i = 0; i < desc->nr_events; i++) {
+		if (strncmp(desc->event_desc[i]->name,
+				desc->provider,
+				provider_name_len))
+			return 0;	/* provider mismatch */
 	}
-	return NULL;
+	return 1;
 }
 
 int lttng_probe_register(struct lttng_probe_desc *desc)
@@ -80,20 +81,28 @@ int lttng_probe_register(struct lttng_probe_desc *desc)
 	int i;
 
 	ust_lock();
+
+	/*
+	 * Check if the provider has already been registered.
+	 */
 	if (find_provider(desc->provider)) {
 		ret = -EEXIST;
 		goto end;
 	}
+
 	/*
-	 * TODO: This is O(N^2). Turn into a hash table when probe registration
-	 * overhead becomes an issue.
+	 * Each provider enforce that every event name begins with the
+	 * provider name. Check this in an assertion for extra
+	 * carefulness. This ensures we cannot have duplicate event
+	 * names across providers.
 	 */
-	for (i = 0; i < desc->nr_events; i++) {
-		if (find_event(desc->event_desc[i]->name)) {
-			ret = -EEXIST;
-			goto end;
-		}
-	}
+	assert(check_event_provider(desc));
+
+	/*
+	 * The provider ensures there are no duplicate event names.
+	 * Duplicated TRACEPOINT_EVENT event names would generate a
+	 * compile-time error due to duplicated symbol names.
+	 */
 
 	/*
 	 * We sort the providers by struct lttng_probe_desc pointer
@@ -147,23 +156,6 @@ void lttng_probe_unregister(struct lttng_probe_desc *desc)
 void ltt_probe_unregister(struct lttng_probe_desc *desc)
 {
 	lttng_probe_unregister(desc);
-}
-
-/*
- * called with UST lock held.
- */
-const struct lttng_event_desc *lttng_event_get(const char *name)
-{
-	const struct lttng_event_desc *event;
-
-	event = find_event(name);
-	if (!event)
-		return NULL;
-	return event;
-}
-
-void lttng_event_put(const struct lttng_event_desc *event)
-{
 }
 
 void lttng_probes_prune_event_list(struct lttng_ust_tracepoint_list *list)
