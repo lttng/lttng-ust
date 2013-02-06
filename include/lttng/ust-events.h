@@ -523,8 +523,6 @@ void synchronize_trace(void);
 int lttng_probe_register(struct lttng_probe_desc *desc);
 void lttng_probe_unregister(struct lttng_probe_desc *desc);
 int lttng_fix_pending_event_desc(const struct lttng_event_desc *desc);
-const struct lttng_event_desc *lttng_event_get(const char *name);
-void lttng_event_put(const struct lttng_event_desc *desc);
 int lttng_probes_init(void);
 void lttng_probes_exit(void);
 int lttng_find_context(struct lttng_ctx *ctx, const char *name);

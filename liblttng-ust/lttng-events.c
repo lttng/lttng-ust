@@ -391,7 +391,6 @@ statedump_error:
 	WARN_ON_ONCE(__tracepoint_probe_unregister(event_name,
 				desc->probe_callback,
 				event));
-	lttng_event_put(event->desc);
 register_error:
 	free(event);
 cache_error:
@@ -622,7 +621,6 @@ void _lttng_event_destroy(struct lttng_event *event)
 {
 	struct lttng_enabler_ref *enabler_ref, *tmp_enabler_ref;
 
-	lttng_event_put(event->desc);
 	cds_list_del(&event->node);
 	lttng_destroy_context(event->ctx);
 	lttng_free_event_filter_runtime(event);
