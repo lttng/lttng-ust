@@ -45,6 +45,8 @@
 
 #include <usterr-signal-safe.h>
 #include <helper.h>
+#include <ust-ctl.h>
+#include <ust-comm.h>
 #include "error.h"
 #include "compat.h"
 #include "lttng-ust-uuid.h"
@@ -203,11 +205,16 @@ int lttng_session_enable(struct lttng_session *session)
 {
 	int ret = 0;
 	struct lttng_channel *chan;
+	int notify_socket;
 
 	if (session->active) {
 		ret = -EBUSY;
 		goto end;
 	}
+
+	notify_socket = lttng_get_notify_socket(session->owner);
+	if (notify_socket < 0)
+		return notify_socket;
 
 	/* We need to sync enablers with session before activation. */
 	lttng_session_sync_enablers(session);
@@ -217,12 +224,27 @@ int lttng_session_enable(struct lttng_session *session)
 	 * we need to use.
 	 */
 	cds_list_for_each_entry(chan, &session->chan_head, node) {
+		const struct lttng_ctx *ctx;
+		const struct lttng_event_field *fields = NULL;
+		size_t nr_fields = 0;
+
+		/* don't change it if session stop/restart */
 		if (chan->header_type)
-			continue;		/* don't change it if session stop/restart */
-		if (chan->free_event_id < 31)
-			chan->header_type = 1;	/* compact */
-		else
-			chan->header_type = 2;	/* large */
+			continue;
+		ctx = chan->ctx;
+		if (ctx) {
+			nr_fields = ctx->nr_fields;
+			fields = &ctx->fields->event_field;
+		}
+		ret = ustcomm_register_channel(notify_socket,
+			session->objd,
+			chan->objd,
+			nr_fields,
+			fields,
+			&chan->id,
+			&chan->header_type);
+		if (ret)
+			return ret;
 	}
 
 	CMM_ACCESS_ONCE(session->active) = 1;
@@ -304,16 +326,15 @@ int lttng_event_create(const struct lttng_event_desc *desc,
 {
 	const char *event_name = desc->name;
 	struct lttng_event *event;
+	struct lttng_session *session = chan->session;
 	struct cds_hlist_head *head;
 	struct cds_hlist_node *node;
 	int ret = 0;
 	size_t name_len = strlen(event_name);
 	uint32_t hash;
+	int notify_socket, loglevel;
+	const char *uri;
 
-	if (chan->used_event_id == -1U) {
-		ret = -ENOMEM;
-		goto full;
-	}
 	hash = jhash(event_name, name_len, 0);
 	head = &chan->session->events_ht.table[hash & (LTTNG_UST_EVENT_HT_SIZE - 1)];
 	cds_hlist_for_each_entry(event, node, head, hlist) {
@@ -326,6 +347,12 @@ int lttng_event_create(const struct lttng_event_desc *desc,
 		}
 	}
 
+	notify_socket = lttng_get_notify_socket(session->owner);
+	if (notify_socket < 0) {
+		ret = notify_socket;
+		goto socket_error;
+	}
+
 	/*
 	 * Check if loglevel match. Refuse to connect event if not.
 	 */
@@ -336,23 +363,42 @@ int lttng_event_create(const struct lttng_event_desc *desc,
 	}
 	event->chan = chan;
 
-	/*
-	 * used_event_id counts the maximum number of event IDs that can
-	 * register if all probes register.
-	 */
-	chan->used_event_id++;
 	event->enabled = 1;
 	CDS_INIT_LIST_HEAD(&event->bytecode_runtime_head);
 	CDS_INIT_LIST_HEAD(&event->enablers_ref_head);
 	event->desc = desc;
+
+	if (desc->loglevel)
+		loglevel = *(*event->desc->loglevel);
+	else
+		loglevel = TRACE_DEFAULT;
+	if (desc->u.ext.model_emf_uri)
+		uri = *(desc->u.ext.model_emf_uri);
+	else
+		uri = NULL;
+
+	/* Fetch event ID from sessiond */
+	ret = ustcomm_register_event(notify_socket,
+		session->objd,
+		chan->objd,
+		event_name,
+		loglevel,
+		desc->signature,
+		desc->nr_fields,
+		desc->fields,
+		uri,
+		&event->id);
+	if (ret < 0) {
+		goto sessiond_register_error;
+	}
 	/* Populate lttng_event structure before tracepoint registration. */
 	cmm_smp_wmb();
 	ret = __tracepoint_probe_register(event_name,
 			desc->probe_callback,
 			event, desc->signature);
 	if (ret)
-		goto register_error;
-	event->id = chan->free_event_id++;
+		goto tracepoint_register_error;
+
 	ret = _lttng_event_metadata_statedump(chan->session, chan, event);
 	if (ret)
 		goto statedump_error;
@@ -364,11 +410,12 @@ statedump_error:
 	WARN_ON_ONCE(__tracepoint_probe_unregister(event_name,
 				desc->probe_callback,
 				event));
-register_error:
+tracepoint_register_error:
+sessiond_register_error:
 	free(event);
 cache_error:
+socket_error:
 exist:
-full:
 	return ret;
 }
 
@@ -507,8 +554,8 @@ void lttng_create_event_if_missing(struct lttng_enabler *enabler)
 			ret = lttng_event_create(probe_desc->event_desc[i],
 					enabler->chan);
 			if (ret) {
-				DBG("Unable to create event %s\n",
-					probe_desc->event_desc[i]->name);
+				DBG("Unable to create event %s, error %d\n",
+					probe_desc->event_desc[i]->name, ret);
 			}
 		}
 	}

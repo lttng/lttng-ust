@@ -30,16 +30,20 @@
 #include <stdint.h>
 #include <lttng/ust-compiler.h>
 
-#define LTTNG_UST_SYM_NAME_LEN	256
+#ifndef __ust_stringify
+#define __ust_stringify1(x)	#x
+#define __ust_stringify(x)	__ust_stringify1(x)
+#endif /* __ust_stringify */
 
-/* Version for comm protocol between sessiond and ust */
-#define LTTNG_UST_COMM_VERSION_MAJOR		2
-#define LTTNG_UST_COMM_VERSION_MINOR		1
+#define LTTNG_UST_SYM_NAME_LEN			256
+#define LTTNG_UST_ABI_PROCNAME_LEN		16
+
+/* UST comm magic number, used to validate protocol and endianness. */
+#define LTTNG_UST_COMM_MAGIC			0xC57C57C5
 
 /* Version for ABI between liblttng-ust, sessiond, consumerd */
-#define LTTNG_UST_INTERNAL_MAJOR_VERSION	3
-#define LTTNG_UST_INTERNAL_MINOR_VERSION	0
-#define LTTNG_UST_INTERNAL_PATCHLEVEL_VERSION	0
+#define LTTNG_UST_ABI_MAJOR_VERSION		4
+#define LTTNG_UST_ABI_MINOR_VERSION		0
 
 enum lttng_ust_instrumentation {
 	LTTNG_UST_TRACEPOINT		= 0,
@@ -171,6 +175,8 @@ enum lttng_ust_object_type {
 	LTTNG_UST_OBJECT_TYPE_UNKNOWN = -1,
 	LTTNG_UST_OBJECT_TYPE_CHANNEL = 0,
 	LTTNG_UST_OBJECT_TYPE_STREAM = 1,
+	LTTNG_UST_OBJECT_TYPE_EVENT = 2,
+	LTTNG_UST_OBJECT_TYPE_CONTEXT = 3,
 };
 
 #define LTTNG_UST_OBJECT_DATA_PADDING1	32

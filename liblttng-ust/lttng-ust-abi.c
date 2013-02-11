@@ -294,6 +294,7 @@ int lttng_abi_create_session(void *owner)
 		goto objd_error;
 	}
 	session->objd = session_objd;
+	session->owner = owner;
 	return session_objd;
 
 objd_error:
@@ -305,9 +306,9 @@ static
 long lttng_abi_tracer_version(int objd,
 	struct lttng_ust_tracer_version *v)
 {
-	v->major = LTTNG_UST_INTERNAL_MAJOR_VERSION;
-	v->minor = LTTNG_UST_INTERNAL_MINOR_VERSION;
-	v->patchlevel = LTTNG_UST_INTERNAL_PATCHLEVEL_VERSION;
+	v->major = LTTNG_UST_MAJOR_VERSION;
+	v->minor = LTTNG_UST_MINOR_VERSION;
+	v->patchlevel = LTTNG_UST_PATCHLEVEL_VERSION;
 	return 0;
 }
 
@@ -498,8 +499,6 @@ int lttng_abi_map_channel(int session_objd,
 	lttng_chan->enabled = 1;
 	lttng_chan->ctx = NULL;
 	lttng_chan->session = session;
-	lttng_chan->free_event_id = 0;
-	lttng_chan->used_event_id = 0;
 	lttng_chan->ops = &transport->ops;
 	memcpy(&lttng_chan->chan->backend.config,
 		transport->client_config,
@@ -508,7 +507,6 @@ int lttng_abi_map_channel(int session_objd,
 	lttng_chan->header_type = 0;
 	lttng_chan->handle = channel_handle;
 	lttng_chan->metadata_dumped = 0;
-	lttng_chan->id = session->free_chan_id++;
 	lttng_chan->type = type;
 
 	/*

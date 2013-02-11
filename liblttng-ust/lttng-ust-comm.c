@@ -102,6 +102,7 @@ struct sock_info {
 
 	char sock_path[PATH_MAX];
 	int socket;
+	int notify_socket;
 
 	char wait_shm_path[PATH_MAX];
 	char *wait_shm_mmap;
@@ -116,10 +117,11 @@ struct sock_info global_apps = {
 	.allowed = 1,
 	.thread_active = 0,
 
-	.sock_path = DEFAULT_GLOBAL_APPS_UNIX_SOCK,
+	.sock_path = LTTNG_DEFAULT_RUNDIR "/" LTTNG_UST_SOCK_FILENAME,
 	.socket = -1,
+	.notify_socket = -1,
 
-	.wait_shm_path = DEFAULT_GLOBAL_APPS_WAIT_SHM_PATH,
+	.wait_shm_path = "/" LTTNG_UST_WAIT_FILENAME,
 };
 
 /* TODO: allow global_apps_sock_path override */
@@ -132,6 +134,7 @@ struct sock_info local_apps = {
 	.thread_active = 0,
 
 	.socket = -1,
+	.notify_socket = -1,
 };
 
 static int wait_poll_fallback;
@@ -187,6 +190,13 @@ void lttng_fixup_nest_count_tls(void)
 	asm volatile ("" : : "m" (URCU_TLS(lttng_ust_nest_count)));
 }
 
+int lttng_get_notify_socket(void *owner)
+{
+	struct sock_info *info = owner;
+
+	return info->notify_socket;
+}
+
 static
 void print_cmd(int cmd, int handle)
 {
@@ -220,41 +230,27 @@ int setup_local_apps(void)
 		return -ENOENT;
 	}
 	local_apps.allowed = 1;
-	snprintf(local_apps.sock_path, PATH_MAX,
-		 DEFAULT_HOME_APPS_UNIX_SOCK, home_dir);
-	snprintf(local_apps.wait_shm_path, PATH_MAX,
-		 DEFAULT_HOME_APPS_WAIT_SHM_PATH, uid);
+	snprintf(local_apps.sock_path, PATH_MAX, "%s/%s/%s",
+		home_dir,
+		LTTNG_DEFAULT_HOME_RUNDIR,
+		LTTNG_UST_SOCK_FILENAME);
+	snprintf(local_apps.wait_shm_path, PATH_MAX, "/%s-%u",
+		LTTNG_UST_WAIT_FILENAME,
+		uid);
 	return 0;
 }
 
 static
-int register_app_to_sessiond(int socket)
+int register_to_sessiond(int socket, enum ustctl_socket_type type)
 {
-	ssize_t ret;
-	struct {
-		uint32_t major;
-		uint32_t minor;
-		pid_t pid;
-		pid_t ppid;
-		uid_t uid;
-		gid_t gid;
-		uint32_t bits_per_long;
-		char name[16];	/* process name */
-	} reg_msg;
-
-	reg_msg.major = LTTNG_UST_COMM_VERSION_MAJOR;
-	reg_msg.minor = LTTNG_UST_COMM_VERSION_MINOR;
-	reg_msg.pid = getpid();
-	reg_msg.ppid = getppid();
-	reg_msg.uid = getuid();
-	reg_msg.gid = getgid();
-	reg_msg.bits_per_long = CAA_BITS_PER_LONG;
-	lttng_ust_getprocname(reg_msg.name);
-
-	ret = ustcomm_send_unix_sock(socket, &reg_msg, sizeof(reg_msg));
-	if (ret >= 0 && ret != sizeof(reg_msg))
-		return -EIO;
-	return ret;
+	return ustcomm_send_reg_msg(socket,
+		type,
+		CAA_BITS_PER_LONG,
+		lttng_alignof(uint8_t) * CHAR_BIT,
+		lttng_alignof(uint16_t) * CHAR_BIT,
+		lttng_alignof(uint32_t) * CHAR_BIT,
+		lttng_alignof(uint64_t) * CHAR_BIT,
+		lttng_alignof(unsigned long) * CHAR_BIT);
 }
 
 static
@@ -561,9 +557,16 @@ void cleanup_sock_info(struct sock_info *sock_info, int exiting)
 	if (sock_info->socket != -1) {
 		ret = ustcomm_close_unix_sock(sock_info->socket);
 		if (ret) {
-			ERR("Error closing apps socket");
+			ERR("Error closing ust cmd socket");
 		}
 		sock_info->socket = -1;
+	}
+	if (sock_info->notify_socket != -1) {
+		ret = ustcomm_close_unix_sock(sock_info->notify_socket);
+		if (ret) {
+			ERR("Error closing ust notify socket");
+		}
+		sock_info->notify_socket = -1;
 	}
 	if (sock_info->root_handle != -1) {
 		ret = lttng_ust_objd_unref(sock_info->root_handle);
@@ -815,6 +818,8 @@ void *ust_listener_thread(void *arg)
 {
 	struct sock_info *sock_info = arg;
 	int sock, ret, prev_connect_failed = 0, has_waited = 0;
+	int open_sock[2];
+	int i;
 
 	/* Restart trying to connect to the session daemon */
 restart:
@@ -842,27 +847,40 @@ restart:
 	if (sock_info->socket != -1) {
 		ret = ustcomm_close_unix_sock(sock_info->socket);
 		if (ret) {
-			ERR("Error closing %s apps socket", sock_info->name);
+			ERR("Error closing %s ust cmd socket",
+				sock_info->name);
 		}
 		sock_info->socket = -1;
 	}
-
-	/* Register */
-	ret = ustcomm_connect_unix_sock(sock_info->sock_path);
-	if (ret < 0) {
-		DBG("Info: sessiond not accepting connections to %s apps socket", sock_info->name);
-		prev_connect_failed = 1;
-		/*
-		 * If we cannot find the sessiond daemon, don't delay
-		 * constructor execution.
-		 */
-		ret = handle_register_done(sock_info);
-		assert(!ret);
-		ust_unlock();
-		goto restart;
+	if (sock_info->notify_socket != -1) {
+		ret = ustcomm_close_unix_sock(sock_info->notify_socket);
+		if (ret) {
+			ERR("Error closing %s ust notify socket",
+				sock_info->name);
+		}
+		sock_info->notify_socket = -1;
 	}
 
-	sock_info->socket = sock = ret;
+	/* Register */
+	for (i = 0; i < 2; i++) {
+		ret = ustcomm_connect_unix_sock(sock_info->sock_path);
+		if (ret < 0) {
+			DBG("Info: sessiond not accepting connections to %s apps socket", sock_info->name);
+			prev_connect_failed = 1;
+			/*
+			 * If we cannot find the sessiond daemon, don't delay
+			 * constructor execution.
+			 */
+			ret = handle_register_done(sock_info);
+			assert(!ret);
+			ust_unlock();
+			goto restart;
+		}
+		open_sock[i] = ret;
+	}
+
+	sock_info->socket = open_sock[0];
+	sock_info->notify_socket = open_sock[1];
 
 	/*
 	 * Create only one root handle per listener thread for the whole
@@ -878,9 +896,10 @@ restart:
 		sock_info->root_handle = ret;
 	}
 
-	ret = register_app_to_sessiond(sock);
+	ret = register_to_sessiond(sock_info->socket, USTCTL_SOCKET_CMD);
 	if (ret < 0) {
-		ERR("Error registering to %s apps socket", sock_info->name);
+		ERR("Error registering to %s ust cmd socket",
+			sock_info->name);
 		prev_connect_failed = 1;
 		/*
 		 * If we cannot register to the sessiond daemon, don't
@@ -891,6 +910,23 @@ restart:
 		ust_unlock();
 		goto restart;
 	}
+	ret = register_to_sessiond(sock_info->notify_socket,
+			USTCTL_SOCKET_NOTIFY);
+	if (ret < 0) {
+		ERR("Error registering to %s ust notify socket",
+			sock_info->name);
+		prev_connect_failed = 1;
+		/*
+		 * If we cannot register to the sessiond daemon, don't
+		 * delay constructor execution.
+		 */
+		ret = handle_register_done(sock_info);
+		assert(!ret);
+		ust_unlock();
+		goto restart;
+	}
+	sock = sock_info->socket;
+
 	ust_unlock();
 
 	for (;;) {

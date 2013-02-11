@@ -31,9 +31,14 @@
 #include <errno.h>
 #include <fcntl.h>
 
+#include <lttng/ust-ctl.h>
 #include <ust-comm.h>
 #include <helper.h>
 #include <lttng/ust-error.h>
+#include <lttng/ust-events.h>
+#include <usterr-signal-safe.h>
+
+#include "../liblttng-ust/compat.h"
 
 #define USTCOMM_CODE_OFFSET(code)	\
 	(code == LTTNG_UST_OK ? 0 : (code - LTTNG_UST_ERR + 1))
@@ -52,6 +57,10 @@ static const char *ustcomm_readable_code[] = {
 	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_PERM) ] = "Permission denied",
 	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_NOSYS) ] = "Not implemented",
 	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_EXITING) ] = "Process is exiting",
+
+	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_INVAL_MAGIC) ] = "Invalid magic number",
+	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_INVAL_SOCKET_TYPE) ] = "Invalid socket type",
+	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_UNSUP_MAJOR) ] = "Unsupported major version",
 };
 
 /*
@@ -89,13 +98,13 @@ int ustcomm_connect_unix_sock(const char *pathname)
 	 */
 	fd = socket(PF_UNIX, SOCK_STREAM, 0);
 	if (fd < 0) {
-		perror("socket");
+		PERROR("socket");
 		ret = -errno;
 		goto error;
 	}
 	ret = fcntl(fd, F_SETFD, FD_CLOEXEC);
 	if (ret < 0) {
-		perror("fcntl");
+		PERROR("fcntl");
 		ret = -errno;
 		goto error_fcntl;
 	}
@@ -125,7 +134,7 @@ error_fcntl:
 
 		closeret = close(fd);
 		if (closeret)
-			perror("close");
+			PERROR("close");
 	}
 error:
 	return ret;
@@ -146,7 +155,7 @@ int ustcomm_accept_unix_sock(int sock)
 	/* Blocking call */
 	new_fd = accept(sock, (struct sockaddr *) &sun, &len);
 	if (new_fd < 0) {
-		perror("accept");
+		PERROR("accept");
 		return -errno;
 	}
 	return new_fd;
@@ -165,7 +174,7 @@ int ustcomm_create_unix_sock(const char *pathname)
 
 	/* Create server socket */
 	if ((fd = socket(PF_UNIX, SOCK_STREAM, 0)) < 0) {
-		perror("socket");
+		PERROR("socket");
 		ret = -errno;
 		goto error;
 	}
@@ -179,7 +188,7 @@ int ustcomm_create_unix_sock(const char *pathname)
 	(void) unlink(pathname);
 	ret = bind(fd, (struct sockaddr *) &sun, sizeof(sun));
 	if (ret < 0) {
-		perror("bind");
+		PERROR("bind");
 		ret = -errno;
 		goto error_close;
 	}
@@ -192,7 +201,7 @@ error_close:
 
 		closeret = close(fd);
 		if (closeret) {
-			perror("close");
+			PERROR("close");
 		}
 	}
 error:
@@ -211,7 +220,7 @@ int ustcomm_listen_unix_sock(int sock)
 	ret = listen(sock, LTTNG_UST_COMM_MAX_LISTEN);
 	if (ret < 0) {
 		ret = -errno;
-		perror("listen");
+		PERROR("listen");
 	}
 
 	return ret;
@@ -228,7 +237,7 @@ int ustcomm_close_unix_sock(int sock)
 
 	ret = close(sock);
 	if (ret < 0) {
-		perror("close");
+		PERROR("close");
 		ret = -errno;
 	}
 
@@ -264,12 +273,12 @@ ssize_t ustcomm_recv_unix_sock(int sock, void *buf, size_t len)
 		int shutret;
 
 		if (errno != EPIPE && errno != ECONNRESET)
-			perror("recvmsg");
+			PERROR("recvmsg");
 		ret = -errno;
 
 		shutret = shutdown(sock, SHUT_RDWR);
 		if (shutret)
-			fprintf(stderr, "Socket shutdown error");
+			ERR("Socket shutdown error");
 	}
 
 	return ret;
@@ -281,7 +290,7 @@ ssize_t ustcomm_recv_unix_sock(int sock, void *buf, size_t len)
  * Send buf data of size len. Using sendmsg API.
  * Return the size of sent data.
  */
-ssize_t ustcomm_send_unix_sock(int sock, void *buf, size_t len)
+ssize_t ustcomm_send_unix_sock(int sock, const void *buf, size_t len)
 {
 	struct msghdr msg;
 	struct iovec iov[1];
@@ -289,7 +298,7 @@ ssize_t ustcomm_send_unix_sock(int sock, void *buf, size_t len)
 
 	memset(&msg, 0, sizeof(msg));
 
-	iov[0].iov_base = buf;
+	iov[0].iov_base = (void *) buf;
 	iov[0].iov_len = len;
 	msg.msg_iov = iov;
 	msg.msg_iovlen = 1;
@@ -309,12 +318,12 @@ ssize_t ustcomm_send_unix_sock(int sock, void *buf, size_t len)
 		int shutret;
 
 		if (errno != EPIPE && errno != ECONNRESET)
-			perror("sendmsg");
+			PERROR("sendmsg");
 		ret = -errno;
 
 		shutret = shutdown(sock, SHUT_RDWR);
 		if (shutret)
-			fprintf(stderr, "Socket shutdown error");
+			ERR("Socket shutdown error");
 	}
 
 	return ret;
@@ -365,7 +374,7 @@ ssize_t ustcomm_send_fds_unix_sock(int sock, int *fds, size_t nb_fd)
 		 * We consider EPIPE and ECONNRESET as expected.
 		 */
 		if (errno != EPIPE && errno != ECONNRESET) {
-			perror("sendmsg");
+			PERROR("sendmsg");
 		}
 	}
 	return ret;
@@ -405,7 +414,7 @@ ssize_t ustcomm_recv_fds_unix_sock(int sock, int *fds, size_t nb_fd)
 	} while (ret < 0 && errno == EINTR);
 	if (ret < 0) {
 		if (errno != EPIPE && errno != ECONNRESET) {
-			perror("recvmsg fds");
+			PERROR("recvmsg fds");
 		}
 		if (errno == EPIPE || errno == ECONNRESET)
 			ret = -errno;
@@ -417,28 +426,28 @@ ssize_t ustcomm_recv_fds_unix_sock(int sock, int *fds, size_t nb_fd)
 		goto end;
 	}
 	if (ret != 1) {
-		fprintf(stderr, "Error: Received %zd bytes, expected %d\n",
+		ERR("Error: Received %zd bytes, expected %d\n",
 				ret, 1);
 		goto end;
 	}
 	if (msg.msg_flags & MSG_CTRUNC) {
-		fprintf(stderr, "Error: Control message truncated.\n");
+		ERR("Error: Control message truncated.\n");
 		ret = -1;
 		goto end;
 	}
 	cmsg = CMSG_FIRSTHDR(&msg);
 	if (!cmsg) {
-		fprintf(stderr, "Error: Invalid control message header\n");
+		ERR("Error: Invalid control message header\n");
 		ret = -1;
 		goto end;
 	}
 	if (cmsg->cmsg_level != SOL_SOCKET || cmsg->cmsg_type != SCM_RIGHTS) {
-		fprintf(stderr, "Didn't received any fd\n");
+		ERR("Didn't received any fd\n");
 		ret = -1;
 		goto end;
 	}
 	if (cmsg->cmsg_len != CMSG_LEN(sizeof_fds)) {
-		fprintf(stderr, "Error: Received %zu bytes of ancillary data, expected %zu\n",
+		ERR("Error: Received %zu bytes of ancillary data, expected %zu\n",
 				(size_t) cmsg->cmsg_len, (size_t) CMSG_LEN(sizeof_fds));
 		ret = -1;
 		goto end;
@@ -461,7 +470,7 @@ int ustcomm_send_app_msg(int sock, struct ustcomm_ust_msg *lum)
 		if (len < 0) {
 			return len;
 		} else {
-			fprintf(stderr, "incorrect message size: %zd\n", len);
+			ERR("incorrect message size: %zd\n", len);
 			return -EINVAL;
 		}
 	}
@@ -480,13 +489,13 @@ int ustcomm_recv_app_reply(int sock, struct ustcomm_ust_reply *lur,
 		return -EPIPE;
 	case sizeof(*lur):
 		if (lur->handle != expected_handle) {
-			fprintf(stderr, "Unexpected result message handle: "
+			ERR("Unexpected result message handle: "
 				"expected: %u vs received: %u\n",
 				expected_handle, lur->handle);
 			return -EINVAL;
 		}
 		if (lur->cmd != expected_cmd) {
-			fprintf(stderr, "Unexpected result message command "
+			ERR("Unexpected result message command "
 				"expected: %u vs received: %u\n",
 				expected_cmd, lur->cmd);
 			return -EINVAL;
@@ -499,7 +508,7 @@ int ustcomm_recv_app_reply(int sock, struct ustcomm_ust_reply *lur,
 				len = -errno;
 			return len;
 		} else {
-			fprintf(stderr, "incorrect message size: %zd\n", len);
+			ERR("incorrect message size: %zd\n", len);
 			return len;
 		}
 	}
@@ -579,4 +588,425 @@ int ustcomm_recv_stream_from_sessiond(int sock,
 
 error:
 	return ret;
+}
+
+/*
+ * Returns 0 on success, negative error value on error.
+ */
+int ustcomm_send_reg_msg(int sock,
+		enum ustctl_socket_type type,
+		uint32_t bits_per_long,
+		uint32_t uint8_t_alignment,
+		uint32_t uint16_t_alignment,
+		uint32_t uint32_t_alignment,
+		uint32_t uint64_t_alignment,
+		uint32_t long_alignment)
+{
+	ssize_t len;
+	struct ustctl_reg_msg reg_msg;
+
+	reg_msg.magic = LTTNG_UST_COMM_MAGIC;
+	reg_msg.major = LTTNG_UST_ABI_MAJOR_VERSION;
+	reg_msg.minor = LTTNG_UST_ABI_MINOR_VERSION;
+	reg_msg.pid = getpid();
+	reg_msg.ppid = getppid();
+	reg_msg.uid = getuid();
+	reg_msg.gid = getgid();
+	reg_msg.bits_per_long = bits_per_long;
+	reg_msg.uint8_t_alignment = uint8_t_alignment;
+	reg_msg.uint16_t_alignment = uint16_t_alignment;
+	reg_msg.uint32_t_alignment = uint32_t_alignment;
+	reg_msg.uint64_t_alignment = uint64_t_alignment;
+	reg_msg.long_alignment = long_alignment;
+	reg_msg.socket_type = type;
+	lttng_ust_getprocname(reg_msg.name);
+	memset(reg_msg.padding, 0, sizeof(reg_msg.padding));
+
+	len = ustcomm_send_unix_sock(sock, &reg_msg, sizeof(reg_msg));
+	if (len > 0 && len != sizeof(reg_msg))
+		return -EIO;
+	if (len < 0)
+		return len;
+	return 0;
+}
+
+static
+int serialize_basic_type(enum lttng_abstract_types atype,
+		union _ustctl_basic_type *ubt,
+		const union _lttng_basic_type *lbt)
+{
+	switch (atype) {
+	case atype_integer:
+	{
+		struct ustctl_integer_type *uit;
+		const struct lttng_integer_type *lit;
+
+		uit = &ubt->integer;
+		lit = &lbt->integer;
+		uit->size = lit->size;
+		uit->signedness = lit->signedness;
+		uit->reverse_byte_order = lit->reverse_byte_order;
+		uit->base = lit->base;
+		uit->encoding = lit->encoding;
+		uit->alignment = lit->alignment;
+		break;
+	}
+	case atype_string:
+	{
+		ubt->string.encoding = lbt->string.encoding;
+		break;
+	}
+	case atype_float:
+	{
+		struct ustctl_float_type *uft;
+		const struct lttng_float_type *lft;
+
+		uft = &ubt->_float;
+		lft = &lbt->_float;
+		uft->exp_dig = lft->exp_dig;
+		uft->mant_dig = lft->mant_dig;
+		uft->alignment = lft->alignment;
+		uft->reverse_byte_order = lft->reverse_byte_order;
+		break;
+	}
+	case atype_enum:
+	case atype_array:
+	case atype_sequence:
+	default:
+		return -EINVAL;
+	}
+	return 0;
+
+}
+
+static
+int serialize_one_type(struct ustctl_type *ut, const struct lttng_type *lt)
+{
+	int ret;
+
+	switch (lt->atype) {
+	case atype_integer:
+	case atype_float:
+	case atype_string:
+		ret = serialize_basic_type(lt->atype,
+			&ut->u.basic, &lt->u.basic);
+		if (ret)
+			return ret;
+		break;
+	case atype_array:
+	{
+		struct ustctl_basic_type *ubt;
+		const struct lttng_basic_type *lbt;
+		int ret;
+
+		ubt = &ut->u.array.elem_type;
+		lbt = &lt->u.array.elem_type;
+		ut->u.array.length = lt->u.array.length;
+		ret = serialize_basic_type(lbt->atype,
+			&ubt->u.basic, &lbt->u.basic);
+		if (ret)
+			return -EINVAL;
+		break;
+	}
+	case atype_sequence:
+	{
+		struct ustctl_basic_type *ubt;
+		const struct lttng_basic_type *lbt;
+		int ret;
+
+		ubt = &ut->u.sequence.length_type;
+		lbt = &lt->u.sequence.length_type;
+		ret = serialize_basic_type(lbt->atype,
+			&ubt->u.basic, &lbt->u.basic);
+		if (ret)
+			return -EINVAL;
+		ubt = &ut->u.sequence.elem_type;
+		lbt = &lt->u.sequence.elem_type;
+		ret = serialize_basic_type(lbt->atype,
+			&ubt->u.basic, &lbt->u.basic);
+		if (ret)
+			return -EINVAL;
+		break;
+	}
+	case atype_enum:
+	default:
+		return -EINVAL;
+	}
+	return 0;
+}
+
+static
+int serialize_fields(size_t *_nr_write_fields,
+		struct ustctl_field **ustctl_fields,
+		size_t nr_fields,
+		const struct lttng_event_field *lttng_fields)
+{
+	struct ustctl_field *fields;
+	int i, ret;
+	size_t nr_write_fields = 0;
+
+	fields = zmalloc(nr_fields * sizeof(*fields));
+	if (!fields)
+		return -ENOMEM;
+
+	for (i = 0; i < nr_fields; i++) {
+		struct ustctl_field *f;
+		const struct lttng_event_field *lf;
+
+		f = &fields[nr_write_fields];
+		lf = &lttng_fields[i];
+
+		/* skip 'nowrite' fields */
+		if (lf->nowrite)
+			continue;
+		strncpy(f->name, lf->name, LTTNG_UST_SYM_NAME_LEN);
+		f->name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+		ret = serialize_one_type(&f->type, &lf->type);
+		if (ret)
+			goto error_type;
+		nr_write_fields++;
+	}
+
+	*_nr_write_fields = nr_write_fields;
+	*ustctl_fields = fields;
+	return 0;
+
+error_type:
+	free(fields);
+	return ret;
+}
+
+/*
+ * Returns 0 on success, negative error value on error.
+ */
+int ustcomm_register_event(int sock,
+	int session_objd,		/* session descriptor */
+	int channel_objd,		/* channel descriptor */
+	const char *event_name,		/* event name (input) */
+	int loglevel,
+	const char *signature,		/* event signature (input) */
+	size_t nr_fields,		/* fields */
+	const struct lttng_event_field *lttng_fields,
+	const char *model_emf_uri,
+	uint32_t *id)			/* event id (output) */
+{
+	ssize_t len;
+	struct {
+		struct ustcomm_notify_hdr header;
+		struct ustcomm_notify_event_msg m;
+	} msg;
+	struct {
+		struct ustcomm_notify_hdr header;
+		struct ustcomm_notify_event_reply r;
+	} reply;
+	size_t signature_len, fields_len, model_emf_uri_len;
+	struct ustctl_field *fields;
+	size_t nr_write_fields = 0;
+	int ret;
+
+	memset(&msg, 0, sizeof(msg));
+	msg.header.notify_cmd = USTCTL_NOTIFY_CMD_EVENT;
+	msg.m.session_objd = session_objd;
+	msg.m.channel_objd = channel_objd;
+	strncpy(msg.m.event_name, event_name, LTTNG_UST_SYM_NAME_LEN);
+	msg.m.event_name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+	msg.m.loglevel = loglevel;
+	signature_len = strlen(signature) + 1;
+	msg.m.signature_len = signature_len;
+
+	/* Calculate fields len, serialize fields. */
+	if (nr_fields > 0) {
+		ret = serialize_fields(&nr_write_fields, &fields,
+				nr_fields, lttng_fields);
+		if (ret)
+			return ret;
+	}
+
+	fields_len = sizeof(*fields) * nr_write_fields;
+	msg.m.fields_len = fields_len;
+	if (model_emf_uri) {
+		model_emf_uri_len = strlen(model_emf_uri) + 1;
+	} else {
+		model_emf_uri_len = 0;
+	}
+	msg.m.model_emf_uri_len = model_emf_uri_len;
+	len = ustcomm_send_unix_sock(sock, &msg, sizeof(msg));
+	if (len > 0 && len != sizeof(msg)) {
+		free(fields);
+		return -EIO;
+	}
+	if (len < 0) {
+		free(fields);
+		return len;
+	}
+
+	/* send signature */
+	len = ustcomm_send_unix_sock(sock, signature, signature_len);
+	if (len > 0 && len != signature_len) {
+		free(fields);
+		return -EIO;
+	}
+	if (len < 0) {
+		free(fields);
+		return len;
+	}
+
+	/* send fields */
+	if (fields_len > 0) {
+		len = ustcomm_send_unix_sock(sock, fields, fields_len);
+		free(fields);
+		if (len > 0 && len != fields_len) {
+			return -EIO;
+		}
+		if (len < 0) {
+			return len;
+		}
+	}
+
+	if (model_emf_uri_len) {
+		/* send model_emf_uri */
+		len = ustcomm_send_unix_sock(sock, model_emf_uri,
+				model_emf_uri_len);
+		if (len > 0 && len != model_emf_uri_len)
+			return -EIO;
+		if (len < 0)
+			return len;
+	}
+
+	/* receive reply */
+	len = ustcomm_recv_unix_sock(sock, &reply, sizeof(reply));
+	switch (len) {
+	case 0:	/* orderly shutdown */
+		return -EPIPE;
+	case sizeof(reply):
+		if (reply.header.notify_cmd != msg.header.notify_cmd) {
+			ERR("Unexpected result message command "
+				"expected: %u vs received: %u\n",
+				msg.header.notify_cmd, reply.header.notify_cmd);
+			return -EINVAL;
+		}
+		if (reply.r.ret_code > 0)
+			return -EINVAL;
+		if (reply.r.ret_code < 0)
+			return reply.r.ret_code;
+		*id = reply.r.event_id;
+		DBG("Sent register event notification for name \"%s\": ret_code %d, event_id %u\n",
+			event_name, reply.r.ret_code, reply.r.event_id);
+		return 0;
+	default:
+		if (len < 0) {
+			/* Transport level error */
+			if (errno == EPIPE || errno == ECONNRESET)
+				len = -errno;
+			return len;
+		} else {
+			ERR("incorrect message size: %zd\n", len);
+			return len;
+		}
+	}
+}
+
+/*
+ * Returns 0 on success, negative error value on error.
+ * Returns -EPIPE or -ECONNRESET if other end has hung up.
+ */
+int ustcomm_register_channel(int sock,
+	int session_objd,		/* session descriptor */
+	int channel_objd,		/* channel descriptor */
+	size_t nr_ctx_fields,
+	const struct lttng_event_field *ctx_fields,
+	uint32_t *chan_id,		/* channel id (output) */
+	int *header_type) 		/* header type (output) */
+{
+	ssize_t len;
+	struct {
+		struct ustcomm_notify_hdr header;
+		struct ustcomm_notify_channel_msg m;
+	} msg;
+	struct {
+		struct ustcomm_notify_hdr header;
+		struct ustcomm_notify_channel_reply r;
+	} reply;
+	size_t fields_len;
+	struct ustctl_field *fields;
+	int ret;
+	size_t nr_write_fields = 0;
+
+	memset(&msg, 0, sizeof(msg));
+	msg.header.notify_cmd = USTCTL_NOTIFY_CMD_CHANNEL;
+	msg.m.session_objd = session_objd;
+	msg.m.channel_objd = channel_objd;
+
+	/* Calculate fields len, serialize fields. */
+	if (nr_ctx_fields > 0) {
+		ret = serialize_fields(&nr_write_fields, &fields,
+				nr_ctx_fields, ctx_fields);
+		if (ret)
+			return ret;
+	}
+
+	fields_len = sizeof(*fields) * nr_write_fields;
+	msg.m.ctx_fields_len = fields_len;
+	len = ustcomm_send_unix_sock(sock, &msg, sizeof(msg));
+	if (len > 0 && len != sizeof(msg)) {
+		free(fields);
+		return -EIO;
+	}
+	if (len < 0) {
+		free(fields);
+		return len;
+	}
+
+	/* send fields */
+	if (fields_len > 0) {
+		len = ustcomm_send_unix_sock(sock, fields, fields_len);
+		free(fields);
+		if (len > 0 && len != fields_len) {
+			return -EIO;
+		}
+		if (len < 0) {
+			return len;
+		}
+	}
+
+	len = ustcomm_recv_unix_sock(sock, &reply, sizeof(reply));
+	switch (len) {
+	case 0:	/* orderly shutdown */
+		return -EPIPE;
+	case sizeof(reply):
+		if (reply.header.notify_cmd != msg.header.notify_cmd) {
+			ERR("Unexpected result message command "
+				"expected: %u vs received: %u\n",
+				msg.header.notify_cmd, reply.header.notify_cmd);
+			return -EINVAL;
+		}
+		if (reply.r.ret_code > 0)
+			return -EINVAL;
+		if (reply.r.ret_code < 0)
+			return reply.r.ret_code;
+		*chan_id = reply.r.chan_id;
+		switch (reply.r.header_type) {
+		case 1:
+		case 2:
+			*header_type = reply.r.header_type;
+			break;
+		default:
+			ERR("Unexpected channel header type %u\n",
+				reply.r.header_type);
+			return -EINVAL;
+		}
+		DBG("Sent register channel notification: chan_id %d, header_type %d\n",
+			reply.r.chan_id, reply.r.header_type);
+		return 0;
+	default:
+		if (len < 0) {
+			/* Transport level error */
+			if (errno == EPIPE || errno == ECONNRESET)
+				len = -errno;
+			return len;
+		} else {
+			ERR("incorrect message size: %zd\n", len);
+			return len;
+		}
+	}
 }

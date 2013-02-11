@@ -420,8 +420,8 @@ struct lttng_channel {
 	/* Event ID management */
 	struct lttng_session *session;
 	int objd;			/* Object associated to channel */
-	unsigned int free_event_id;	/* Next event ID to allocate */
-	unsigned int used_event_id;	/* Max allocated event IDs */
+	unsigned int _deprecated1;
+	unsigned int _deprecated2;
 	struct cds_list_head node;	/* Channel list in session */
 	const struct lttng_channel_ops *ops;
 	int header_type;		/* 0: unset, 1: compact, 2: large */
@@ -455,13 +455,14 @@ struct lttng_session {
 	struct cds_list_head events_head;	/* list of events */
 	struct cds_list_head _deprecated1;
 	struct cds_list_head node;		/* Session list */
-	unsigned int free_chan_id;		/* Next chan ID to allocate */
+	int _deprecated2;
 	unsigned int metadata_dumped:1;
 
 	/* New UST 2.1 */
 	/* List of enablers */
 	struct cds_list_head enablers_head;
 	struct lttng_ust_event_ht events_ht;	/* ht of events */
+	void *owner;				/* object owner */
 };
 
 struct lttng_transport {

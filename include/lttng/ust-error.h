@@ -43,6 +43,10 @@ enum lttng_ust_error_code {
 	LTTNG_UST_ERR_NOSYS = 1029,		/* Not implemented */
 	LTTNG_UST_ERR_EXITING = 1030,		/* Process is exiting */
 
+	LTTNG_UST_ERR_INVAL_MAGIC = 1031,	/* Invalid magic number */
+	LTTNG_UST_ERR_INVAL_SOCKET_TYPE = 1032,	/* Invalid socket type */
+	LTTNG_UST_ERR_UNSUP_MAJOR = 1033,	/* Unsupported major version */
+
 	/* MUST be last element */
 	LTTNG_UST_ERR_NR,			/* Last element */
 };

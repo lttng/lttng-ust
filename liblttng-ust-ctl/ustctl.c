@@ -22,6 +22,7 @@
 #include <lttng/ust-abi.h>
 #include <lttng/ust-events.h>
 #include <sys/mman.h>
+#include <byteswap.h>
 
 #include <usterr-signal-safe.h>
 #include <ust-comm.h>
@@ -105,6 +106,9 @@ int ustctl_release_object(int sock, struct lttng_ust_object_data *data)
 			}
 		}
 		break;
+	case LTTNG_UST_OBJECT_TYPE_EVENT:
+	case LTTNG_UST_OBJECT_TYPE_CONTEXT:
+		break;
 	default:
 		assert(0);
 	}
@@ -166,6 +170,7 @@ int ustctl_create_event(int sock, struct lttng_ust_event *ev,
 	event_data = zmalloc(sizeof(*event_data));
 	if (!event_data)
 		return -ENOMEM;
+	event_data->type = LTTNG_UST_OBJECT_TYPE_EVENT;
 	memset(&lum, 0, sizeof(lum));
 	lum.handle = channel_data->handle;
 	lum.cmd = LTTNG_UST_EVENT;
@@ -200,6 +205,7 @@ int ustctl_add_context(int sock, struct lttng_ust_context *ctx,
 	context_data = zmalloc(sizeof(*context_data));
 	if (!context_data)
 		return -ENOMEM;
+	context_data->type = LTTNG_UST_OBJECT_TYPE_CONTEXT;
 	memset(&lum, 0, sizeof(lum));
 	lum.handle = obj_data->handle;
 	lum.cmd = LTTNG_UST_CONTEXT;
@@ -209,8 +215,8 @@ int ustctl_add_context(int sock, struct lttng_ust_context *ctx,
 		free(context_data);
 		return ret;
 	}
-	context_data->handle = lur.ret_val;
-	DBG("received context handle %u", context_data->handle);
+	context_data->handle = -1;
+	DBG("Context created successfully");
 	*_context_data = context_data;
 	return ret;
 }
@@ -779,7 +785,7 @@ struct ustctl_consumer_channel *
 	transport = lttng_transport_find(transport_name);
 	if (!transport) {
 		DBG("LTTng transport %s not found\n",
-		       transport_name);
+			transport_name);
 		return NULL;
 	}
 
@@ -788,9 +794,9 @@ struct ustctl_consumer_channel *
 		return NULL;
 
 	chan->chan = transport->ops.channel_create(transport_name, NULL,
-                        attr->subbuf_size, attr->num_subbuf,
+			attr->subbuf_size, attr->num_subbuf,
 			attr->switch_timer_interval,
-                        attr->read_timer_interval,
+			attr->read_timer_interval,
 			attr->uuid);
 	if (!chan->chan) {
 		goto chan_error;
@@ -1011,7 +1017,7 @@ int ustctl_get_mmap_read_offset(struct ustctl_consumer_stream *stream,
 	if (chan->backend.config.output != RING_BUFFER_MMAP)
 		return -EINVAL;
 	sb_bindex = subbuffer_id_get_index(&chan->backend.config,
-					   buf->backend.buf_rsb.id);
+					buf->backend.buf_rsb.id);
 	*off = shmp(consumer_chan->chan->handle,
 		shmp_index(consumer_chan->chan->handle, buf->backend.array, sb_bindex)->shmp)->mmap_offset;
 	return 0;
@@ -1167,6 +1173,344 @@ void ustctl_flush_buffer(struct ustctl_consumer_stream *stream,
 	lib_ring_buffer_switch_slow(buf,
 		producer_active ? SWITCH_ACTIVE : SWITCH_FLUSH,
 		consumer_chan->chan->handle);
+}
+
+/*
+ * Returns 0 on success, negative error value on error.
+ */
+int ustctl_recv_reg_msg(int sock,
+	enum ustctl_socket_type *type,
+	uint32_t *major,
+	uint32_t *minor,
+	uint32_t *pid,
+	uint32_t *ppid,
+	uint32_t *uid,
+	uint32_t *gid,
+	uint32_t *bits_per_long,
+	uint32_t *uint8_t_alignment,
+	uint32_t *uint16_t_alignment,
+	uint32_t *uint32_t_alignment,
+	uint32_t *uint64_t_alignment,
+	uint32_t *long_alignment,
+	int *byte_order,
+	char *name)
+{
+	ssize_t len;
+	struct ustctl_reg_msg reg_msg;
+
+	len = ustcomm_recv_unix_sock(sock, &reg_msg, sizeof(reg_msg));
+	if (len > 0 && len != sizeof(reg_msg))
+		return -EIO;
+	if (len == 0)
+		return -EPIPE;
+	if (len < 0)
+		return len;
+
+	if (reg_msg.magic == LTTNG_UST_COMM_MAGIC) {
+		*byte_order = BYTE_ORDER == BIG_ENDIAN ?
+				BIG_ENDIAN : LITTLE_ENDIAN;
+	} else if (reg_msg.magic == bswap_32(LTTNG_UST_COMM_MAGIC)) {
+		*byte_order = BYTE_ORDER == BIG_ENDIAN ?
+				LITTLE_ENDIAN : BIG_ENDIAN;
+	} else {
+		return -LTTNG_UST_ERR_INVAL_MAGIC;
+	}
+	switch (reg_msg.socket_type) {
+	case 0:	*type = USTCTL_SOCKET_CMD;
+		break;
+	case 1:	*type = USTCTL_SOCKET_NOTIFY;
+		break;
+	default:
+		return -LTTNG_UST_ERR_INVAL_SOCKET_TYPE;
+	}
+	*major = reg_msg.major;
+	*minor = reg_msg.minor;
+	*pid = reg_msg.pid;
+	*ppid = reg_msg.ppid;
+	*uid = reg_msg.uid;
+	*gid = reg_msg.gid;
+	*bits_per_long = reg_msg.bits_per_long;
+	*uint8_t_alignment = reg_msg.uint8_t_alignment;
+	*uint16_t_alignment = reg_msg.uint16_t_alignment;
+	*uint32_t_alignment = reg_msg.uint32_t_alignment;
+	*uint64_t_alignment = reg_msg.uint64_t_alignment;
+	*long_alignment = reg_msg.long_alignment;
+	memcpy(name, reg_msg.name, LTTNG_UST_ABI_PROCNAME_LEN);
+	if (reg_msg.major != LTTNG_UST_ABI_MAJOR_VERSION) {
+		return -LTTNG_UST_ERR_UNSUP_MAJOR;
+	}
+
+	return 0;
+}
+
+int ustctl_recv_notify(int sock, enum ustctl_notify_cmd *notify_cmd)
+{
+	struct ustcomm_notify_hdr header;
+	ssize_t len;
+
+	len = ustcomm_recv_unix_sock(sock, &header, sizeof(header));
+	if (len > 0 && len != sizeof(header))
+		return -EIO;
+	if (len == 0)
+		return -EPIPE;
+	if (len < 0)
+		return len;
+	switch (header.notify_cmd) {
+	case 0:
+		*notify_cmd = USTCTL_NOTIFY_CMD_EVENT;
+		break;
+	case 1:
+		*notify_cmd = USTCTL_NOTIFY_CMD_CHANNEL;
+		break;
+	default:
+		return -EINVAL;
+	}
+	return 0;
+}
+
+/*
+ * Returns 0 on success, negative error value on error.
+ */
+int ustctl_recv_register_event(int sock,
+	int *session_objd,
+	int *channel_objd,
+	char *event_name,
+	int *loglevel,
+	char **signature,
+	size_t *nr_fields,
+	struct ustctl_field **fields,
+	char **model_emf_uri)
+{
+	ssize_t len;
+	struct ustcomm_notify_event_msg msg;
+	size_t signature_len, fields_len, model_emf_uri_len;
+	char *a_sign = NULL, *a_model_emf_uri = NULL;
+	struct ustctl_field *a_fields = NULL;
+
+	len = ustcomm_recv_unix_sock(sock, &msg, sizeof(msg));
+	if (len > 0 && len != sizeof(msg))
+		return -EIO;
+	if (len == 0)
+		return -EPIPE;
+	if (len < 0)
+		return len;
+
+	*session_objd = msg.session_objd;
+	*channel_objd = msg.channel_objd;
+	strncpy(event_name, msg.event_name, LTTNG_UST_SYM_NAME_LEN);
+	event_name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+	*loglevel = msg.loglevel;
+	signature_len = msg.signature_len;
+	fields_len = msg.fields_len;
+
+	if (fields_len % sizeof(*a_fields) != 0) {
+		return -EINVAL;
+	}
+
+	model_emf_uri_len = msg.model_emf_uri_len;
+
+	/* recv signature. contains at least \0. */
+	a_sign = zmalloc(signature_len);
+	if (!a_sign)
+		return -ENOMEM;
+	len = ustcomm_recv_unix_sock(sock, a_sign, signature_len);
+	if (len > 0 && len != signature_len) {
+		len = -EIO;
+		goto signature_error;
+	}
+	if (len == 0) {
+		len = -EPIPE;
+		goto signature_error;
+	}
+	if (len < 0) {
+		goto signature_error;
+	}
+	/* Enforce end of string */
+	signature[signature_len - 1] = '\0';
+
+	/* recv fields */
+	if (fields_len) {
+		a_fields = zmalloc(fields_len);
+		if (!a_fields) {
+			len = -ENOMEM;
+			goto signature_error;
+		}
+		len = ustcomm_recv_unix_sock(sock, a_fields, fields_len);
+		if (len > 0 && len != fields_len) {
+			len = -EIO;
+			goto fields_error;
+		}
+		if (len == 0) {
+			len = -EPIPE;
+			goto fields_error;
+		}
+		if (len < 0) {
+			goto fields_error;
+		}
+	}
+
+	if (model_emf_uri_len) {
+		/* recv model_emf_uri_len */
+		a_model_emf_uri = zmalloc(model_emf_uri_len);
+		if (!a_model_emf_uri) {
+			len = -ENOMEM;
+			goto fields_error;
+		}
+		len = ustcomm_recv_unix_sock(sock, a_model_emf_uri,
+				model_emf_uri_len);
+		if (len > 0 && len != model_emf_uri_len) {
+			len = -EIO;
+			goto model_error;
+		}
+		if (len == 0) {
+			len = -EPIPE;
+			goto model_error;
+		}
+		if (len < 0) {
+			goto model_error;
+		}
+		/* Enforce end of string */
+		a_model_emf_uri[model_emf_uri_len - 1] = '\0';
+	}
+
+	*signature = a_sign;
+	*nr_fields = fields_len / sizeof(*a_fields);
+	*fields = a_fields;
+	*model_emf_uri = a_model_emf_uri;
+
+	return 0;
+
+model_error:
+	free(a_model_emf_uri);
+fields_error:
+	free(a_fields);
+signature_error:
+	free(a_sign);
+	return len;
+}
+
+/*
+ * Returns 0 on success, negative error value on error.
+ */
+int ustctl_reply_register_event(int sock,
+	uint32_t id,
+	int ret_code)
+{
+	ssize_t len;
+	struct {
+		struct ustcomm_notify_hdr header;
+		struct ustcomm_notify_event_reply r;
+	} reply;
+
+	memset(&reply, 0, sizeof(reply));
+	reply.header.notify_cmd = USTCTL_NOTIFY_CMD_EVENT;
+	reply.r.ret_code = ret_code;
+	reply.r.event_id = id;
+	len = ustcomm_send_unix_sock(sock, &reply, sizeof(reply));
+	if (len > 0 && len != sizeof(reply))
+		return -EIO;
+	if (len < 0)
+		return len;
+	return 0;
+}
+
+/*
+ * Returns 0 on success, negative UST or system error value on error.
+ */
+int ustctl_recv_register_channel(int sock,
+	int *session_objd,		/* session descriptor (output) */
+	int *channel_objd,		/* channel descriptor (output) */
+	size_t *nr_fields,
+	struct ustctl_field **fields)
+{
+	ssize_t len;
+	struct ustcomm_notify_channel_msg msg;
+	size_t fields_len;
+	struct ustctl_field *a_fields;
+
+	len = ustcomm_recv_unix_sock(sock, &msg, sizeof(msg));
+	if (len > 0 && len != sizeof(msg))
+		return -EIO;
+	if (len == 0)
+		return -EPIPE;
+	if (len < 0)
+		return len;
+
+	*session_objd = msg.session_objd;
+	*channel_objd = msg.channel_objd;
+	fields_len = msg.ctx_fields_len;
+
+	if (fields_len % sizeof(*a_fields) != 0) {
+		return -EINVAL;
+	}
+
+	/* recv fields */
+	if (fields_len) {
+		a_fields = zmalloc(fields_len);
+		if (!a_fields) {
+			len = -ENOMEM;
+			goto alloc_error;
+		}
+		len = ustcomm_recv_unix_sock(sock, a_fields, fields_len);
+		if (len > 0 && len != fields_len) {
+			len = -EIO;
+			goto fields_error;
+		}
+		if (len == 0) {
+			len = -EPIPE;
+			goto fields_error;
+		}
+		if (len < 0) {
+			goto fields_error;
+		}
+		*fields = a_fields;
+	} else {
+		*fields = NULL;
+	}
+	*nr_fields = fields_len / sizeof(*a_fields);
+	return 0;
+
+fields_error:
+	free(a_fields);
+alloc_error:
+	return len;
+}
+
+/*
+ * Returns 0 on success, negative error value on error.
+ */
+int ustctl_reply_register_channel(int sock,
+	uint32_t chan_id,
+	enum ustctl_channel_header header_type,
+	int ret_code)
+{
+	ssize_t len;
+	struct {
+		struct ustcomm_notify_hdr header;
+		struct ustcomm_notify_channel_reply r;
+	} reply;
+
+	memset(&reply, 0, sizeof(reply));
+	reply.header.notify_cmd = USTCTL_NOTIFY_CMD_CHANNEL;
+	reply.r.ret_code = ret_code;
+	reply.r.chan_id = chan_id;
+	switch (header_type) {
+	case USTCTL_CHANNEL_HEADER_COMPACT:
+		reply.r.header_type = 1;
+		break;
+	case USTCTL_CHANNEL_HEADER_LARGE:
+		reply.r.header_type = 2;
+		break;
+	default:
+		reply.r.header_type = 0;
+		break;
+	}
+	len = ustcomm_send_unix_sock(sock, &reply, sizeof(reply));
+	if (len > 0 && len != sizeof(reply))
+		return -EIO;
+	if (len < 0)
+		return len;
+	return 0;
 }
 
 static __attribute__((constructor))
