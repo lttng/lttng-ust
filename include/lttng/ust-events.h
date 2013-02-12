@@ -440,7 +440,7 @@ struct lttng_channel {
 	unsigned char uuid[LTTNG_UST_UUID_LEN]; /* Trace session unique ID */
 };
 
-#define LTTNG_UST_EVENT_HT_BITS		6
+#define LTTNG_UST_EVENT_HT_BITS		12
 #define LTTNG_UST_EVENT_HT_SIZE		(1U << LTTNG_UST_EVENT_HT_BITS)
 
 struct lttng_ust_event_ht {
