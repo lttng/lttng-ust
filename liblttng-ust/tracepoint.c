@@ -78,7 +78,7 @@ static CDS_LIST_HEAD(libs);
  * Tracepoint hash table, containing the active tracepoints.
  * Protected by tracepoint mutex.
  */
-#define TRACEPOINT_HASH_BITS 6
+#define TRACEPOINT_HASH_BITS 12
 #define TRACEPOINT_TABLE_SIZE (1 << TRACEPOINT_HASH_BITS)
 static struct cds_hlist_head tracepoint_table[TRACEPOINT_TABLE_SIZE];
 
