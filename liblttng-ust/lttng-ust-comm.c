@@ -96,6 +96,7 @@ struct sock_info {
 	int constructor_sem_posted;
 	int allowed;
 	int global;
+	int thread_active;
 
 	char sock_path[PATH_MAX];
 	int socket;
@@ -111,6 +112,7 @@ struct sock_info global_apps = {
 
 	.root_handle = -1,
 	.allowed = 1,
+	.thread_active = 0,
 
 	.sock_path = DEFAULT_GLOBAL_APPS_UNIX_SOCK,
 	.socket = -1,
@@ -125,6 +127,7 @@ struct sock_info local_apps = {
 	.global = 0,
 	.root_handle = -1,
 	.allowed = 0,	/* Check setuid bit first */
+	.thread_active = 0,
 
 	.socket = -1,
 };
@@ -816,7 +819,6 @@ restart:
 	ust_lock();
 
 	if (lttng_ust_comm_should_quit) {
-		ust_unlock();
 		goto quit;
 	}
 
@@ -854,7 +856,6 @@ restart:
 		ret = lttng_abi_create_root_handle();
 		if (ret < 0) {
 			ERR("Error creating root handle");
-			ust_unlock();
 			goto quit;
 		}
 		sock_info->root_handle = ret;
@@ -885,7 +886,6 @@ restart:
 			DBG("%s lttng-sessiond has performed an orderly shutdown", sock_info->name);
 			ust_lock();
 			if (lttng_ust_comm_should_quit) {
-				ust_unlock();
 				goto quit;
 			}
 			/*
@@ -926,14 +926,16 @@ restart:
 end:
 	ust_lock();
 	if (lttng_ust_comm_should_quit) {
-		ust_unlock();
 		goto quit;
 	}
 	/* Cleanup socket handles before trying to reconnect */
 	lttng_ust_objd_table_owner_cleanup(sock_info);
 	ust_unlock();
 	goto restart;	/* try to reconnect */
+
 quit:
+	sock_info->thread_active = 0;
+	ust_unlock();
 	return NULL;
 }
 
@@ -1045,17 +1047,24 @@ void __attribute__((constructor)) lttng_ust_init(void)
 		ERR("pthread_attr_setdetachstate: %s", strerror(ret));
 	}
 
+	ust_lock();
 	ret = pthread_create(&global_apps.ust_listener, &thread_attr,
 			ust_listener_thread, &global_apps);
 	if (ret) {
 		ERR("pthread_create global: %s", strerror(ret));
 	}
+	global_apps.thread_active = 1;
+	ust_unlock();
+
 	if (local_apps.allowed) {
+		ust_lock();
 		ret = pthread_create(&local_apps.ust_listener, &thread_attr,
 				ust_listener_thread, &local_apps);
 		if (ret) {
 			ERR("pthread_create local: %s", strerror(ret));
 		}
+		local_apps.thread_active = 1;
+		ust_unlock();
 	} else {
 		handle_register_done(&local_apps);
 	}
@@ -1138,21 +1147,28 @@ void __attribute__((destructor)) lttng_ust_exit(void)
 	 */
 	ust_lock();
 	lttng_ust_comm_should_quit = 1;
-	ust_unlock();
 
 	/* cancel threads */
-	ret = pthread_cancel(global_apps.ust_listener);
-	if (ret) {
-		ERR("Error cancelling global ust listener thread: %s",
-			strerror(ret));
+	if (global_apps.thread_active) {
+		ret = pthread_cancel(global_apps.ust_listener);
+		if (ret) {
+			ERR("Error cancelling global ust listener thread: %s",
+				strerror(ret));
+		} else {
+			global_apps.thread_active = 0;
+		}
 	}
-	if (local_apps.allowed) {
+	if (local_apps.thread_active) {
 		ret = pthread_cancel(local_apps.ust_listener);
 		if (ret) {
 			ERR("Error cancelling local ust listener thread: %s",
 				strerror(ret));
+		} else {
+			local_apps.thread_active = 0;
 		}
 	}
+	ust_unlock();
+
 	/*
 	 * Do NOT join threads: use of sys_futex makes it impossible to
 	 * join the threads without using async-cancel, but async-cancel
