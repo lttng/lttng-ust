@@ -91,6 +91,20 @@ void lttng_session_sync_enablers(struct lttng_session *session);
 static
 void lttng_enabler_destroy(struct lttng_enabler *enabler);
 
+/*
+ * Called with ust lock held.
+ */
+int lttng_session_active(void)
+{
+	struct lttng_session *iter;
+
+	cds_list_for_each_entry(iter, &sessions, node) {
+		if (iter->active)
+			return 1;
+	}
+	return 0;
+}
+
 static
 int lttng_loglevel_match(int loglevel,
 		unsigned int has_loglevel,

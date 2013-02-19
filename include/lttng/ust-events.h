@@ -241,12 +241,14 @@ struct lttng_event_desc {
 	} u;
 };
 
-#define LTTNG_UST_PROBE_DESC_PADDING	40
+#define LTTNG_UST_PROBE_DESC_PADDING	20
 struct lttng_probe_desc {
 	const char *provider;
 	const struct lttng_event_desc **event_desc;
 	unsigned int nr_events;
 	struct cds_list_head head;		/* chain registered probes */
+	struct cds_list_head lazy_init_head;
+	int lazy;				/* lazy registration */
 	char padding[LTTNG_UST_PROBE_DESC_PADDING];
 };
 
@@ -544,5 +546,6 @@ void lttng_free_event_filter_runtime(struct lttng_event *event);
 void lttng_filter_sync_state(struct lttng_bytecode_runtime *runtime);
 
 struct cds_list_head *lttng_get_probe_list_head(void);
+int lttng_session_active(void);
 
 #endif /* _LTTNG_UST_EVENTS_H */

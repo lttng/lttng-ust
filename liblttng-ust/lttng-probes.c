@@ -40,25 +40,21 @@
  */
 static CDS_LIST_HEAD(_probe_list);
 
-struct cds_list_head *lttng_get_probe_list_head(void)
-{
-	return &_probe_list;
-}
+/*
+ * List of probes registered by not yet processed.
+ */
+static CDS_LIST_HEAD(lazy_probe_init);
 
-static
-const struct lttng_probe_desc *find_provider(const char *provider)
-{
-	struct lttng_probe_desc *iter;
-	struct cds_list_head *probe_list;
+/*
+ * lazy_nesting counter ensures we don't trigger lazy probe registration
+ * fixup while we are performing the fixup. It is protected by the ust
+ * mutex.
+ */
+static int lazy_nesting;
 
-	probe_list = lttng_get_probe_list_head();
-	cds_list_for_each_entry(iter, probe_list, head) {
-		if (!strcmp(iter->provider, provider))
-			return iter;
-	}
-	return NULL;
-}
-
+/*
+ * Called under ust lock.
+ */
 static
 int check_event_provider(struct lttng_probe_desc *desc)
 {
@@ -76,22 +72,15 @@ int check_event_provider(struct lttng_probe_desc *desc)
 	return 1;
 }
 
-int lttng_probe_register(struct lttng_probe_desc *desc)
+/*
+ * Called under ust lock.
+ */
+static
+void lttng_lazy_probe_register(struct lttng_probe_desc *desc)
 {
 	struct lttng_probe_desc *iter;
-	int ret = 0;
-	int i;
 	struct cds_list_head *probe_list;
-
-	ust_lock();
-
-	/*
-	 * Check if the provider has already been registered.
-	 */
-	if (find_provider(desc->provider)) {
-		ret = -EEXIST;
-		goto end;
-	}
+	int i;
 
 	/*
 	 * Each provider enforce that every event name begins with the
@@ -111,7 +100,7 @@ int lttng_probe_register(struct lttng_probe_desc *desc)
 	 * We sort the providers by struct lttng_probe_desc pointer
 	 * address.
 	 */
-	probe_list = lttng_get_probe_list_head();
+	probe_list = &_probe_list;
 	cds_list_for_each_entry_reverse(iter, probe_list, head) {
 		BUG_ON(iter == desc); /* Should never be in the list twice */
 		if (iter < desc) {
@@ -130,6 +119,7 @@ desc_added:
 	 */
 	for (i = 0; i < desc->nr_events; i++) {
 		const struct lttng_event_desc *ed;
+		int ret;
 
 		ed = desc->event_desc[i];
 		DBG("Registered event probe \"%s\" with signature \"%s\"",
@@ -137,6 +127,74 @@ desc_added:
 		ret = lttng_fix_pending_event_desc(ed);
 		assert(!ret);
 	}
+}
+
+/*
+ * Called under ust lock.
+ */
+static
+void fixup_lazy_probes(void)
+{
+	struct lttng_probe_desc *iter, *tmp;
+
+	lazy_nesting++;
+	cds_list_for_each_entry_safe(iter, tmp,
+			&lazy_probe_init, lazy_init_head) {
+		lttng_lazy_probe_register(iter);
+		iter->lazy = 0;
+		cds_list_del(&iter->lazy_init_head);
+	}
+	lazy_nesting--;
+}
+
+/*
+ * Called under ust lock.
+ */
+struct cds_list_head *lttng_get_probe_list_head(void)
+{
+	if (!lazy_nesting && !cds_list_empty(&lazy_probe_init))
+		fixup_lazy_probes();
+	return &_probe_list;
+}
+
+static
+const struct lttng_probe_desc *find_provider(const char *provider)
+{
+	struct lttng_probe_desc *iter;
+	struct cds_list_head *probe_list;
+
+	probe_list = lttng_get_probe_list_head();
+	cds_list_for_each_entry(iter, probe_list, head) {
+		if (!strcmp(iter->provider, provider))
+			return iter;
+	}
+	return NULL;
+}
+
+int lttng_probe_register(struct lttng_probe_desc *desc)
+{
+	int ret = 0;
+
+	ust_lock();
+
+	/*
+	 * Check if the provider has already been registered.
+	 */
+	if (find_provider(desc->provider)) {
+		ret = -EEXIST;
+		goto end;
+	}
+	cds_list_add(&desc->lazy_init_head, &lazy_probe_init);
+	desc->lazy = 1;
+	DBG("adding probe %s containing %u events to lazy registration list",
+		desc->provider, desc->nr_events);
+	/*
+	 * If there is at least one active session, we need to register
+	 * the probe immediately, since we cannot delay event
+	 * registration because they are needed ASAP.
+	 */
+	if (lttng_session_active())
+		fixup_lazy_probes();
 end:
 	ust_unlock();
 	return ret;
@@ -151,7 +209,10 @@ int ltt_probe_register(struct lttng_probe_desc *desc)
 void lttng_probe_unregister(struct lttng_probe_desc *desc)
 {
 	ust_lock();
-	cds_list_del(&desc->head);
+	if (!desc->lazy)
+		cds_list_del(&desc->head);
+	else
+		cds_list_del(&desc->lazy_init_head);
 	DBG("just unregistered probe %s", desc->provider);
 	ust_unlock();
 }
