@@ -38,19 +38,21 @@
 /*
  * probe list is protected by ust_lock()/ust_unlock().
  */
-CDS_LIST_HEAD(probe_list);
+static CDS_LIST_HEAD(_probe_list);
 
 struct cds_list_head *lttng_get_probe_list_head(void)
 {
-	return &probe_list;
+	return &_probe_list;
 }
 
 static
 const struct lttng_probe_desc *find_provider(const char *provider)
 {
 	struct lttng_probe_desc *iter;
+	struct cds_list_head *probe_list;
 
-	cds_list_for_each_entry(iter, &probe_list, head) {
+	probe_list = lttng_get_probe_list_head();
+	cds_list_for_each_entry(iter, probe_list, head) {
 		if (!strcmp(iter->provider, provider))
 			return iter;
 	}
@@ -79,6 +81,7 @@ int lttng_probe_register(struct lttng_probe_desc *desc)
 	struct lttng_probe_desc *iter;
 	int ret = 0;
 	int i;
+	struct cds_list_head *probe_list;
 
 	ust_lock();
 
@@ -108,7 +111,8 @@ int lttng_probe_register(struct lttng_probe_desc *desc)
 	 * We sort the providers by struct lttng_probe_desc pointer
 	 * address.
 	 */
-	cds_list_for_each_entry_reverse(iter, &probe_list, head) {
+	probe_list = lttng_get_probe_list_head();
+	cds_list_for_each_entry_reverse(iter, probe_list, head) {
 		BUG_ON(iter == desc); /* Should never be in the list twice */
 		if (iter < desc) {
 			/* We belong to the location right after iter. */
@@ -117,7 +121,7 @@ int lttng_probe_register(struct lttng_probe_desc *desc)
 		}
 	}
 	/* We should be added at the head of the list */
-	cds_list_add(&desc->head, &probe_list);
+	cds_list_add(&desc->head, probe_list);
 desc_added:
 	DBG("just registered probe %s containing %u events",
 		desc->provider, desc->nr_events);
@@ -175,9 +179,11 @@ int lttng_probes_get_event_list(struct lttng_ust_tracepoint_list *list)
 {
 	struct lttng_probe_desc *probe_desc;
 	int i;
+	struct cds_list_head *probe_list;
 
+	probe_list = lttng_get_probe_list_head();
 	CDS_INIT_LIST_HEAD(&list->head);
-	cds_list_for_each_entry(probe_desc, &probe_list, head) {
+	cds_list_for_each_entry(probe_desc, probe_list, head) {
 		for (i = 0; i < probe_desc->nr_events; i++) {
 			struct tp_list_entry *list_entry;
 
@@ -245,9 +251,11 @@ int lttng_probes_get_field_list(struct lttng_ust_field_list *list)
 {
 	struct lttng_probe_desc *probe_desc;
 	int i;
+	struct cds_list_head *probe_list;
 
+	probe_list = lttng_get_probe_list_head();
 	CDS_INIT_LIST_HEAD(&list->head);
-	cds_list_for_each_entry(probe_desc, &probe_list, head) {
+	cds_list_for_each_entry(probe_desc, probe_list, head) {
 		for (i = 0; i < probe_desc->nr_events; i++) {
 			const struct lttng_event_desc *event_desc =
 				probe_desc->event_desc[i];
