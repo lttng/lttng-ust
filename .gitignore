@@ -33,7 +33,6 @@ ust-consumerd/ust-consumerd
 
 tests/daemon/daemon
 tests/demo/demo
-tests/dlopen/dlopen
 tests/exit-fast/exit-fast
 tests/fork/fork
 tests/fork/fork2
