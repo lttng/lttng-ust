@@ -38,7 +38,6 @@ tests/fork/fork
 tests/fork/fork2
 tests/hello/hello
 tests/hello.cxx/hello
-tests/hello2/hello2
 tests/libustctl_function_tests/libustctl_function_tests
 tests/register_test/register_test
 tests/same_line_marker/same_line_marker
