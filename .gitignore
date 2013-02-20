@@ -31,7 +31,6 @@ lttng-ust.pc
 ustctl/ustctl
 ust-consumerd/ust-consumerd
 
-tests/basic_long/basic_long
 tests/daemon/daemon
 tests/demo/demo
 tests/dlopen/dlopen
