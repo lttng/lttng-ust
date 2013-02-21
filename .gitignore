@@ -32,7 +32,6 @@ ustctl/ustctl
 ust-consumerd/ust-consumerd
 
 tests/daemon/daemon
-tests/demo/demo
 tests/exit-fast/exit-fast
 tests/fork/fork
 tests/fork/fork2
