@@ -55,12 +55,12 @@ int lib_ring_buffer_get_cpu(const struct lttng_ust_lib_ring_buffer_config *confi
 
 	rcu_read_lock();
 	cpu = lttng_ust_get_cpu();
-	nesting = ++lib_ring_buffer_nesting;	/* TLS */
+	nesting = ++URCU_TLS(lib_ring_buffer_nesting);
 	cmm_barrier();
 
 	if (caa_unlikely(nesting > 4)) {
 		WARN_ON_ONCE(1);
-		lib_ring_buffer_nesting--;	/* TLS */
+		URCU_TLS(lib_ring_buffer_nesting)--;
 		rcu_read_unlock();
 		return -EPERM;
 	} else
@@ -74,7 +74,7 @@ static inline
 void lib_ring_buffer_put_cpu(const struct lttng_ust_lib_ring_buffer_config *config)
 {
 	cmm_barrier();
-	lib_ring_buffer_nesting--;		/* TLS */
+	URCU_TLS(lib_ring_buffer_nesting)--;		/* TLS */
 	rcu_read_unlock();
 }
 

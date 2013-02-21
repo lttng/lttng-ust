@@ -23,6 +23,7 @@
 #include <lttng/ust-events.h>
 #include <lttng/ust-tracer.h>
 #include <lttng/ringbuffer-config.h>
+#include <urcu/tls-compat.h>
 #include <assert.h>
 #include "compat.h"
 
@@ -35,21 +36,22 @@
  * be set for a thread before the first event is logged within this
  * thread.
  */
-static __thread char cached_procname[17];
+typedef char procname_array[17];
+static DEFINE_URCU_TLS(procname_array, cached_procname);
 
 static inline
 char *wrapper_getprocname(void)
 {
-	if (caa_unlikely(!cached_procname[0])) {
-		lttng_ust_getprocname(cached_procname);
-		cached_procname[LTTNG_UST_PROCNAME_LEN - 1] = '\0';
+	if (caa_unlikely(!URCU_TLS(cached_procname)[0])) {
+		lttng_ust_getprocname(URCU_TLS(cached_procname));
+		URCU_TLS(cached_procname)[LTTNG_UST_PROCNAME_LEN - 1] = '\0';
 	}
-	return cached_procname;
+	return URCU_TLS(cached_procname);
 }
 
 void lttng_context_procname_reset(void)
 {
-	cached_procname[0] = '\0';
+	URCU_TLS(cached_procname)[0] = '\0';
 }
 
 static
@@ -103,5 +105,5 @@ int lttng_add_procname_to_ctx(struct lttng_ctx **ctx)
  */
 void lttng_fixup_procname_tls(void)
 {
-	asm volatile ("" : : "m" (cached_procname[0]));
+	asm volatile ("" : : "m" (URCU_TLS(cached_procname)[0]));
 }

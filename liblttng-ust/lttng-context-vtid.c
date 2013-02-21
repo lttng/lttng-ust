@@ -26,13 +26,14 @@
 #include <lttng/ust-tracer.h>
 #include <lttng/ringbuffer-config.h>
 #include <lttng/ust-tid.h>
+#include <urcu/tls-compat.h>
 #include "lttng-tracer-core.h"
 
 /*
  * We cache the result to ensure we don't trigger a system call for
  * each event.
  */
-static __thread pid_t cached_vtid;
+static DEFINE_URCU_TLS(pid_t, cached_vtid);
 
 /*
  * Upon fork or clone, the TID assigned to our thread is not the same as
@@ -41,7 +42,7 @@ static __thread pid_t cached_vtid;
  */
 void lttng_context_vtid_reset(void)
 {
-	cached_vtid = 0;
+	URCU_TLS(cached_vtid) = 0;
 }
 
 static
@@ -59,10 +60,11 @@ void vtid_record(struct lttng_ctx_field *field,
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		 struct lttng_channel *chan)
 {
-	if (caa_unlikely(!cached_vtid))
-		cached_vtid = gettid();
-	lib_ring_buffer_align_ctx(ctx, lttng_alignof(cached_vtid));
-	chan->ops->event_write(ctx, &cached_vtid, sizeof(cached_vtid));
+	if (caa_unlikely(!URCU_TLS(cached_vtid)))
+		URCU_TLS(cached_vtid) = gettid();
+	lib_ring_buffer_align_ctx(ctx, lttng_alignof(URCU_TLS(cached_vtid)));
+	chan->ops->event_write(ctx, &URCU_TLS(cached_vtid),
+		sizeof(URCU_TLS(cached_vtid)));
 }
 
 int lttng_add_vtid_to_ctx(struct lttng_ctx **ctx)
@@ -94,5 +96,5 @@ int lttng_add_vtid_to_ctx(struct lttng_ctx **ctx)
  */
 void lttng_fixup_vtid_tls(void)
 {
-	asm volatile ("" : : "m" (cached_vtid));
+	asm volatile ("" : : "m" (URCU_TLS(cached_vtid)));
 }

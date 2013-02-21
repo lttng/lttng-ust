@@ -32,6 +32,7 @@
  */
 
 #include <urcu/compiler.h>
+#include <urcu/tls-compat.h>
 #include <signal.h>
 #include <pthread.h>
 
@@ -520,6 +521,6 @@ extern void lib_ring_buffer_free(struct lttng_ust_lib_ring_buffer *buf,
 				 struct lttng_ust_shm_handle *handle);
 
 /* Keep track of trap nesting inside ring buffer code */
-extern __thread unsigned int lib_ring_buffer_nesting;
+extern DECLARE_URCU_TLS(unsigned int, lib_ring_buffer_nesting);
 
 #endif /* _LTTNG_RING_BUFFER_FRONTEND_INTERNAL_H */

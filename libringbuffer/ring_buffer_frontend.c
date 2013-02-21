@@ -58,6 +58,7 @@
 #include <fcntl.h>
 #include <urcu/compiler.h>
 #include <urcu/ref.h>
+#include <urcu/tls-compat.h>
 #include <helper.h>
 
 #include "smp.h"
@@ -102,7 +103,7 @@ struct switch_offsets {
 		     switch_old_end:1;
 };
 
-__thread unsigned int lib_ring_buffer_nesting;
+DEFINE_URCU_TLS(unsigned int, lib_ring_buffer_nesting);
 
 /*
  * TODO: this is unused. Errors are saved within the ring buffer.
@@ -1558,5 +1559,5 @@ int lib_ring_buffer_reserve_slow(struct lttng_ust_lib_ring_buffer_ctx *ctx)
  */
 void lttng_fixup_ringbuffer_tls(void)
 {
-	asm volatile ("" : : "m" (lib_ring_buffer_nesting));
+	asm volatile ("" : : "m" (URCU_TLS(lib_ring_buffer_nesting)));
 }
