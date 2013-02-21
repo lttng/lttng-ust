@@ -28,6 +28,7 @@ function simple_harness_run() {
     fi
 }
 
+./${TEST_DIR}/snprintf/run
 
 simple_harness_run ./manual_mode_tracing.sh
 

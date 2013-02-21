@@ -1,7 +1,9 @@
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/tests/
 
-check_PROGRAMS = prog
+noinst_PROGRAMS = prog
 prog_SOURCES = prog.c
-prog_LDADD = $(top_builddir)/snprintf/libustsnprintf.la
+prog_LDADD = $(top_builddir)/snprintf/libustsnprintf.la \
+	$(top_builddir)/tests/libtap.a
 
-TESTS = prog
+noinst_SCRIPT = run
+EXTRA_DIST = run
