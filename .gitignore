@@ -33,7 +33,7 @@ ust-consumerd/ust-consumerd
 
 tests/hello/hello
 tests/hello.cxx/hello
-tests/same_line_marker/same_line_marker
+tests/same_line_tracepoint/same_line_tracepoint
 tests/ust-basic-tracing/ust-basic-tracing
 tests/ust-multi-test/ust-multi-test
 tests/trace_event/trace_event_test

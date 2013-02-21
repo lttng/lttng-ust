@@ -1,4 +1,4 @@
-/* Copyright (C) 2010 Oussama El Mfadli, Alexis HallÃƒÂ©
+/* Copyright (C) 2013 Jérémie Galarneau
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,10 +15,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include <ust/marker.h>
+#define TRACEPOINT_DEFINE
+#define TRACEPOINT_CREATE_PROBES
+#include "ust_tests_sameline.h"
 
 int main()
 {
-	ust_marker(same_line_event, "%s","An event occured in the same line"); ust_marker(same_line_event, "%s","An event occured in the same line");
+	tracepoint(ust_tests_sameline, event1);	tracepoint(ust_tests_sameline, event2);
 	return 0;
 }

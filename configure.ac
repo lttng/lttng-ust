@@ -285,6 +285,7 @@ AC_CONFIG_FILES([
 	tests/hello/Makefile
 	tests/hello-static-lib/Makefile
 	tests/hello.cxx/Makefile
+	tests/same_line_tracepoint/Makefile
 	tests/ust-basic-tracing/Makefile
 	tests/ust-multi-test/Makefile
 	lttng-ust.pc

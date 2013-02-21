@@ -33,8 +33,6 @@ simple_harness_run ./manual_mode_tracing.sh
 
 simple_harness_run ./valgrind_ust-consumerd.sh
 
-simple_harness_run same_line_marker/same_line_marker.sh
-
 # This testcase is currently broken, do not run.
 # simple_harness_run tracepoint/run
 
