@@ -32,8 +32,6 @@ ustctl/ustctl
 ust-consumerd/ust-consumerd
 
 tests/exit-fast/exit-fast
-tests/fork/fork
-tests/fork/fork2
 tests/hello/hello
 tests/hello.cxx/hello
 tests/same_line_marker/same_line_marker

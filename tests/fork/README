@@ -1,2 +1,0 @@
-This test checks if tracing works correctly in a child process created by
-a fork() call, as well as after an exec() call.
