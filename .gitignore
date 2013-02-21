@@ -36,7 +36,6 @@ tests/hello.cxx/hello
 tests/same_line_marker/same_line_marker
 tests/ust-basic-tracing/ust-basic-tracing
 tests/ust-multi-test/ust-multi-test
-tests/test-libustinstr-malloc/prog
 tests/trace_event/trace_event_test
 tests/tracepoint/benchmark/tracepoint_benchmark
 tests/tracepoint/tracepoint_test
