@@ -29,8 +29,6 @@ function simple_harness_run() {
 }
 
 
-simple_harness_run test-nevents/test-nevents.sh
-
 simple_harness_run fork/fork.sh
 
 simple_harness_run test-libustinstr-malloc/test-libustinstr-malloc.sh
