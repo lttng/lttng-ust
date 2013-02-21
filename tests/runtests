@@ -40,13 +40,6 @@ simple_harness_run same_line_marker/same_line_marker.sh
 # This testcase is currently broken, do not run.
 # simple_harness_run tracepoint/run
 
-# FIXME We disable the exit-fast test for the release. This is a known
-# problem with the current UST design that we will be working on fixing
-# in the upcoming rework for integration with the lttng-tools. We don't
-# want to flood testers with known issues, hence the choice to disable
-# the test.
-#simple_harness_run exit-fast/exit-fast.sh
-
 echo "************************************"
 if [[ $tests_failed -eq 0 ]]; then
     echo "$0: All passed"
