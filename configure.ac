@@ -248,23 +248,6 @@ AS_IF([test "x$with_sdt" = "xyes"],[
 	])
 ])
 
-#currently disabled.
-	#tests/hello2/Makefile
-	#tests/basic/Makefile
-	#tests/simple_include/Makefile
-	#tests/snprintf/Makefile
-	#tests/test-nevents/Makefile
-	#tests/test-libustinstr-malloc/Makefile
-	#tests/dlopen/Makefile
-	#tests/same_line_marker/Makefile
-	#tests/trace_event/Makefile
-	#tests/tracepoint/Makefile
-	#tests/tracepoint/benchmark/Makefile
-	#tests/register_test/Makefile
-	#tests/libustctl_function_#tests/Makefile
-	#tests/exit-fast/Makefile
-	#tests/basic_long/Makefile
-
 AC_CONFIG_FILES([
 	Makefile
 	doc/Makefile
@@ -287,8 +270,6 @@ AC_CONFIG_FILES([
 	tests/hello.cxx/Makefile
 	tests/same_line_tracepoint/Makefile
 	tests/snprintf/Makefile
-	tests/ust-basic-tracing/Makefile
-	tests/ust-multi-test/Makefile
 	lttng-ust.pc
 ])
 
