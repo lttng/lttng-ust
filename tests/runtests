@@ -30,18 +30,7 @@ function simple_harness_run() {
 
 ./${TEST_DIR}/snprintf/run
 
-simple_harness_run ./manual_mode_tracing.sh
-
-simple_harness_run ./valgrind_ust-consumerd.sh
-
 # This testcase is currently broken, do not run.
 # simple_harness_run tracepoint/run
 
-echo "************************************"
-if [[ $tests_failed -eq 0 ]]; then
-    echo "$0: All passed"
-else
-    echo "$0: $tests_failed tests failed"
-fi
-echo "************************************"
 exit 0
