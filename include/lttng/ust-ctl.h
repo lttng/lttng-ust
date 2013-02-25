@@ -146,6 +146,12 @@ void ustctl_destroy_channel(struct ustctl_consumer_channel *chan);
 
 int ustctl_send_channel_to_sessiond(int sock,
 		struct ustctl_consumer_channel *channel);
+
+int ustctl_write_metadata_to_channel(
+		struct ustctl_consumer_channel *channel,
+		const char *metadata_str,	/* NOT null-terminated */
+		size_t len);			/* metadata length */
+
 /*
  * Send a NULL stream to finish iteration over all streams of a given
  * channel.

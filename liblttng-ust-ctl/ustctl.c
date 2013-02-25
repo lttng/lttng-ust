@@ -30,6 +30,13 @@
 
 #include "../libringbuffer/backend.h"
 #include "../libringbuffer/frontend.h"
+#include "../liblttng-ust/wait.h"
+
+/*
+ * Number of milliseconds to retry before failing metadata writes on
+ * buffer full condition. (10 seconds)
+ */
+#define LTTNG_METADATA_TIMEOUT_MSEC	10000
 
 /*
  * Channel representation within consumer.
@@ -842,6 +849,50 @@ int ustctl_send_stream_to_sessiond(int sock,
 			stream->memory_map_size,
 			stream->shm_fd, stream->wakeup_fd,
 			0);
+}
+
+int ustctl_write_metadata_to_channel(
+		struct ustctl_consumer_channel *channel,
+		const char *metadata_str,	/* NOT null-terminated */
+		size_t len)			/* metadata length */
+{
+	struct lttng_ust_lib_ring_buffer_ctx ctx;
+	struct lttng_channel *chan = channel->chan;
+	const char *str = metadata_str;
+	int ret = 0, waitret;
+	size_t reserve_len, pos;
+
+	for (pos = 0; pos < len; pos += reserve_len) {
+		reserve_len = min_t(size_t,
+				chan->ops->packet_avail_size(chan->chan, chan->handle),
+				len - pos);
+		lib_ring_buffer_ctx_init(&ctx, chan->chan, NULL, reserve_len,
+					 sizeof(char), -1, chan->handle);
+		/*
+		 * We don't care about metadata buffer's records lost
+		 * count, because we always retry here. Report error if
+		 * we need to bail out after timeout or being
+		 * interrupted.
+		 */
+		waitret = wait_cond_interruptible_timeout(
+			({
+				ret = chan->ops->event_reserve(&ctx, 0);
+				ret != -ENOBUFS || !ret;
+			}),
+			LTTNG_METADATA_TIMEOUT_MSEC);
+		if (waitret == -ETIMEDOUT || waitret == -EINTR || ret) {
+			DBG("LTTng: Failure to write metadata to buffers (%s)\n",
+				waitret == -EINTR ? "interrupted" :
+					(ret == -ENOBUFS ? "timeout" : "I/O error"));
+			if (waitret == -EINTR)
+				ret = waitret;
+			goto end;
+		}
+		chan->ops->event_write(&ctx, &str[pos], reserve_len);
+		chan->ops->event_commit(&ctx);
+	}
+end:
+	return ret;
 }
 
 int ustctl_stream_close_wait_fd(struct ustctl_consumer_stream *stream)
