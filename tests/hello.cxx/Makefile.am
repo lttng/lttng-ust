@@ -10,6 +10,3 @@ endif
 if LTTNG_UST_BUILD_WITH_LIBC_DL
 hello_LDADD += -lc
 endif
-
-noinst_SCRIPTS = run
-EXTRA_DIST = run
