@@ -26,7 +26,14 @@
 #include <lttng/ust-events.h>
 #include <lttng/ringbuffer-config.h>
 #include <lttng/ust-compiler.h>
+#include <lttng/tracepoint.h>
 #include <string.h>
+
+#undef tp_list_for_each_entry_rcu
+#define tp_list_for_each_entry_rcu(pos, head, member)	\
+	for (pos = cds_list_entry(tp_rcu_dereference_bp((head)->next), __typeof__(*pos), member);	\
+	     &pos->member != (head);					\
+	     pos = cds_list_entry(tp_rcu_dereference_bp(pos->member.next), __typeof__(*pos), member))
 
 /*
  * TRACEPOINT_EVENT_CLASS declares a class of tracepoints receiving the
@@ -501,7 +508,7 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 									      \
 		__event_prepare_filter_stack__##_provider##___##_name(__stackvar.__filter_stack_data, \
 			_TP_ARGS_DATA_VAR(_args));			      \
-		cds_list_for_each_entry_rcu(bc_runtime, &__event->bytecode_runtime_head, node) { \
+		tp_list_for_each_entry_rcu(bc_runtime, &__event->bytecode_runtime_head, node) { \
 			if (caa_unlikely(bc_runtime->filter(bc_runtime,	      \
 					__stackvar.__filter_stack_data) & LTTNG_FILTER_RECORD_FLAG)) \
 				__filter_record = 1;			      \
