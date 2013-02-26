@@ -502,6 +502,8 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 		return;							      \
 	if (caa_unlikely(!CMM_ACCESS_ONCE(__event->enabled)))		      \
 		return;							      \
+	if (caa_unlikely(!TP_RCU_LINK_TEST()))				      \
+		return;							      \
 	if (caa_unlikely(!cds_list_empty(&__event->bytecode_runtime_head))) { \
 		struct lttng_bytecode_runtime *bc_runtime;		      \
 		int __filter_record = __event->has_enablers_without_bytecode; \
