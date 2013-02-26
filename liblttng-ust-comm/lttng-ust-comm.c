@@ -631,7 +631,8 @@ int ustcomm_send_reg_msg(int sock,
 }
 
 static
-int serialize_basic_type(enum lttng_abstract_types atype,
+int serialize_basic_type(enum ustctl_abstract_types *uatype,
+		enum lttng_abstract_types atype,
 		union _ustctl_basic_type *ubt,
 		const union _lttng_basic_type *lbt)
 {
@@ -649,11 +650,13 @@ int serialize_basic_type(enum lttng_abstract_types atype,
 		uit->base = lit->base;
 		uit->encoding = lit->encoding;
 		uit->alignment = lit->alignment;
+		*uatype = ustctl_atype_integer;
 		break;
 	}
 	case atype_string:
 	{
 		ubt->string.encoding = lbt->string.encoding;
+		*uatype = ustctl_atype_string;
 		break;
 	}
 	case atype_float:
@@ -667,6 +670,7 @@ int serialize_basic_type(enum lttng_abstract_types atype,
 		uft->mant_dig = lft->mant_dig;
 		uft->alignment = lft->alignment;
 		uft->reverse_byte_order = lft->reverse_byte_order;
+		*uatype = ustctl_atype_float;
 		break;
 	}
 	case atype_enum:
@@ -676,7 +680,6 @@ int serialize_basic_type(enum lttng_abstract_types atype,
 		return -EINVAL;
 	}
 	return 0;
-
 }
 
 static
@@ -688,7 +691,7 @@ int serialize_one_type(struct ustctl_type *ut, const struct lttng_type *lt)
 	case atype_integer:
 	case atype_float:
 	case atype_string:
-		ret = serialize_basic_type(lt->atype,
+		ret = serialize_basic_type(&ut->atype, lt->atype,
 			&ut->u.basic, &lt->u.basic);
 		if (ret)
 			return ret;
@@ -702,10 +705,11 @@ int serialize_one_type(struct ustctl_type *ut, const struct lttng_type *lt)
 		ubt = &ut->u.array.elem_type;
 		lbt = &lt->u.array.elem_type;
 		ut->u.array.length = lt->u.array.length;
-		ret = serialize_basic_type(lbt->atype,
+		ret = serialize_basic_type(&ubt->atype, lbt->atype,
 			&ubt->u.basic, &lbt->u.basic);
 		if (ret)
 			return -EINVAL;
+		ut->atype = ustctl_atype_array;
 		break;
 	}
 	case atype_sequence:
@@ -716,16 +720,17 @@ int serialize_one_type(struct ustctl_type *ut, const struct lttng_type *lt)
 
 		ubt = &ut->u.sequence.length_type;
 		lbt = &lt->u.sequence.length_type;
-		ret = serialize_basic_type(lbt->atype,
+		ret = serialize_basic_type(&ubt->atype, lbt->atype,
 			&ubt->u.basic, &lbt->u.basic);
 		if (ret)
 			return -EINVAL;
 		ubt = &ut->u.sequence.elem_type;
 		lbt = &lt->u.sequence.elem_type;
-		ret = serialize_basic_type(lbt->atype,
+		ret = serialize_basic_type(&ubt->atype, lbt->atype,
 			&ubt->u.basic, &lbt->u.basic);
 		if (ret)
 			return -EINVAL;
+		ut->atype = ustctl_atype_sequence;
 		break;
 	}
 	case atype_enum:

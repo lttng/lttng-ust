@@ -249,9 +249,6 @@ int lttng_session_enable(struct lttng_session *session)
 
 	CMM_ACCESS_ONCE(session->active) = 1;
 	CMM_ACCESS_ONCE(session->been_active) = 1;
-	ret = _lttng_session_metadata_statedump(session);
-	if (ret)
-		CMM_ACCESS_ONCE(session->active) = 0;
 end:
 	return ret;
 }
@@ -377,20 +374,26 @@ int lttng_event_create(const struct lttng_event_desc *desc,
 	else
 		uri = NULL;
 
-	/* Fetch event ID from sessiond */
-	ret = ustcomm_register_event(notify_socket,
-		session->objd,
-		chan->objd,
-		event_name,
-		loglevel,
-		desc->signature,
-		desc->nr_fields,
-		desc->fields,
-		uri,
-		&event->id);
-	if (ret < 0) {
-		goto sessiond_register_error;
+	/* Don't register metadata events */
+	if (session->metadata == chan) {
+		event->id = -1U;
+	} else {
+		/* Fetch event ID from sessiond */
+		ret = ustcomm_register_event(notify_socket,
+			session->objd,
+			chan->objd,
+			event_name,
+			loglevel,
+			desc->signature,
+			desc->nr_fields,
+			desc->fields,
+			uri,
+			&event->id);
+		if (ret < 0) {
+			goto sessiond_register_error;
+		}
 	}
+
 	/* Populate lttng_event structure before tracepoint registration. */
 	cmm_smp_wmb();
 	ret = __tracepoint_probe_register(event_name,
@@ -399,17 +402,10 @@ int lttng_event_create(const struct lttng_event_desc *desc,
 	if (ret)
 		goto tracepoint_register_error;
 
-	ret = _lttng_event_metadata_statedump(chan->session, chan, event);
-	if (ret)
-		goto statedump_error;
 	cds_list_add(&event->node, &chan->session->events_head);
 	cds_hlist_add_head(&event->hlist, head);
 	return 0;
 
-statedump_error:
-	WARN_ON_ONCE(__tracepoint_probe_unregister(event_name,
-				desc->probe_callback,
-				event));
 tracepoint_register_error:
 sessiond_register_error:
 	free(event);
