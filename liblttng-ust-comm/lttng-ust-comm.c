@@ -1015,3 +1015,43 @@ int ustcomm_register_channel(int sock,
 		}
 	}
 }
+
+/*
+ * Set socket reciving timeout.
+ */
+int ustcomm_setsockopt_rcv_timeout(int sock, unsigned int msec)
+{
+	int ret;
+	struct timeval tv;
+
+	tv.tv_sec = msec / 1000;
+	tv.tv_usec = (msec * 1000 % 1000000);
+
+	ret = setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+	if (ret < 0) {
+		PERROR("setsockopt SO_RCVTIMEO");
+		ret = -errno;
+	}
+
+	return ret;
+}
+
+/*
+ * Set socket sending timeout.
+ */
+int ustcomm_setsockopt_snd_timeout(int sock, unsigned int msec)
+{
+	int ret;
+	struct timeval tv;
+
+	tv.tv_sec = msec / 1000;
+	tv.tv_usec = (msec * 1000) % 1000000;
+
+	ret = setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+	if (ret < 0) {
+		PERROR("setsockopt SO_SNDTIMEO");
+		ret = -errno;
+	}
+
+	return ret;
+}

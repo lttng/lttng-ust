@@ -174,6 +174,9 @@ static const char *cmd_name_mapping[] = {
 	[ LTTNG_UST_FILTER ] = "Create Filter",
 };
 
+static const char *str_timeout;
+static int got_timeout_env;
+
 extern void lttng_ring_buffer_client_overwrite_init(void);
 extern void lttng_ring_buffer_client_discard_init(void);
 extern void lttng_ring_buffer_metadata_client_init(void);
@@ -238,6 +241,66 @@ int setup_local_apps(void)
 		LTTNG_UST_WAIT_FILENAME,
 		uid);
 	return 0;
+}
+
+/*
+ * Get notify_sock timeout, in ms.
+ * -1: don't wait. 0: wait forever. >0: timeout, in ms.
+ */
+static
+long get_timeout(void)
+{
+	long constructor_delay_ms = LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_MS;
+
+	if (!got_timeout_env) {
+		str_timeout = getenv("LTTNG_UST_REGISTER_TIMEOUT");
+		got_timeout_env = 1;
+	}
+	if (str_timeout)
+		constructor_delay_ms = strtol(str_timeout, NULL, 10);
+	return constructor_delay_ms;
+}
+
+static
+long get_notify_sock_timeout(void)
+{
+	return get_timeout();
+}
+
+/*
+ * Return values: -1: don't wait. 0: wait forever. 1: timeout wait.
+ */
+static
+int get_constructor_timeout(struct timespec *constructor_timeout)
+{
+	long constructor_delay_ms;
+	int ret;
+
+	constructor_delay_ms = get_timeout();
+
+	switch (constructor_delay_ms) {
+	case -1:/* fall-through */
+	case 0:
+		return constructor_delay_ms;
+	default:
+		break;
+	}
+
+	/*
+	 * If we are unable to find the current time, don't wait.
+	 */
+	ret = clock_gettime(CLOCK_REALTIME, constructor_timeout);
+	if (ret) {
+		return -1;
+	}
+	constructor_timeout->tv_sec += constructor_delay_ms / 1000UL;
+	constructor_timeout->tv_nsec +=
+		(constructor_delay_ms % 1000UL) * 1000000UL;
+	if (constructor_timeout->tv_nsec >= 1000000000UL) {
+		constructor_timeout->tv_sec++;
+		constructor_timeout->tv_nsec -= 1000000000UL;
+	}
+	return 1;
 }
 
 static
@@ -820,6 +883,7 @@ void *ust_listener_thread(void *arg)
 	int sock, ret, prev_connect_failed = 0, has_waited = 0;
 	int open_sock[2];
 	int i;
+	long timeout;
 
 	/* Restart trying to connect to the session daemon */
 restart:
@@ -862,6 +926,7 @@ restart:
 	}
 
 	/* Register */
+	timeout = get_notify_sock_timeout();
 	for (i = 0; i < 2; i++) {
 		ret = ustcomm_connect_unix_sock(sock_info->sock_path);
 		if (ret < 0) {
@@ -877,6 +942,28 @@ restart:
 			goto restart;
 		}
 		open_sock[i] = ret;
+		if (timeout > 0) {
+			ret = ustcomm_setsockopt_rcv_timeout(open_sock[i],
+					timeout);
+			if (ret < 0) {
+				WARN("Error setting socket receive timeout");
+			}
+			ret = ustcomm_setsockopt_snd_timeout(open_sock[i],
+					timeout);
+			if (ret < 0) {
+				WARN("Error setting socket send timeout");
+			}
+		} else if (timeout == -1) {
+			ret = fcntl(open_sock[i], F_SETFL, O_NONBLOCK);
+			if (ret < 0) {
+				WARN("Error setting socket to non-blocking");
+			}
+		} else {
+			if (timeout != 0) {
+				WARN("Unsuppoorted timeout value %ld",
+					timeout);
+			}
+		}
 	}
 
 	sock_info->socket = open_sock[0];
@@ -993,46 +1080,6 @@ quit:
 }
 
 /*
- * Return values: -1: don't wait. 0: wait forever. 1: timeout wait.
- */
-static
-int get_timeout(struct timespec *constructor_timeout)
-{
-	long constructor_delay_ms = LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_MS;
-	char *str_delay;
-	int ret;
-
-	str_delay = getenv("LTTNG_UST_REGISTER_TIMEOUT");
-	if (str_delay) {
-		constructor_delay_ms = strtol(str_delay, NULL, 10);
-	}
-
-	switch (constructor_delay_ms) {
-	case -1:/* fall-through */
-	case 0:
-		return constructor_delay_ms;
-	default:
-		break;
-	}
-
-	/*
-	 * If we are unable to find the current time, don't wait.
-	 */
-	ret = clock_gettime(CLOCK_REALTIME, constructor_timeout);
-	if (ret) {
-		return -1;
-	}
-	constructor_timeout->tv_sec += constructor_delay_ms / 1000UL;
-	constructor_timeout->tv_nsec +=
-		(constructor_delay_ms % 1000UL) * 1000000UL;
-	if (constructor_timeout->tv_nsec >= 1000000000UL) {
-		constructor_timeout->tv_sec++;
-		constructor_timeout->tv_nsec -= 1000000000UL;
-	}
-	return 1;
-}
-
-/*
  * sessiond monitoring thread: monitor presence of global and per-user
  * sessiond by polling the application common named pipe.
  */
@@ -1069,7 +1116,7 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	lttng_ring_buffer_client_overwrite_init();
 	lttng_ring_buffer_client_discard_init();
 
-	timeout_mode = get_timeout(&constructor_timeout);
+	timeout_mode = get_constructor_timeout(&constructor_timeout);
 
 	ret = sem_init(&constructor_wait, 0, 0);
 	assert(!ret);
