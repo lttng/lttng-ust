@@ -237,8 +237,10 @@ int lttng_session_enable(struct lttng_session *session)
 			fields,
 			&chan->id,
 			&chan->header_type);
-		if (ret)
+		if (ret) {
+			DBG("Error (%d) registering channel to sessiond", ret);
 			return ret;
+		}
 	}
 
 	CMM_ACCESS_ONCE(session->active) = 1;
@@ -384,6 +386,7 @@ int lttng_event_create(const struct lttng_event_desc *desc,
 			uri,
 			&event->id);
 		if (ret < 0) {
+			DBG("Error (%d) registering event to sessiond", ret);
 			goto sessiond_register_error;
 		}
 	}

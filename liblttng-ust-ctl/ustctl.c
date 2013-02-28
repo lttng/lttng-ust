@@ -252,8 +252,6 @@ int ustctl_set_filter(int sock, struct lttng_ust_filter_bytecode *bytecode,
 	ret = ustcomm_send_unix_sock(sock, bytecode->data,
 				bytecode->len);
 	if (ret < 0) {
-		if (ret == -ECONNRESET)
-			fprintf(stderr, "remote end closed connection\n");
 		return ret;
 	}
 	if (ret != bytecode->len)

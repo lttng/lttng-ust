@@ -155,8 +155,11 @@ int ustcomm_accept_unix_sock(int sock)
 	/* Blocking call */
 	new_fd = accept(sock, (struct sockaddr *) &sun, &len);
 	if (new_fd < 0) {
-		PERROR("accept");
-		return -errno;
+		if (errno != ECONNABORTED)
+			PERROR("accept");
+		new_fd = -errno;
+		if (new_fd == -ECONNABORTED)
+			new_fd = -EPIPE;
 	}
 	return new_fd;
 }
@@ -275,6 +278,8 @@ ssize_t ustcomm_recv_unix_sock(int sock, void *buf, size_t len)
 		if (errno != EPIPE && errno != ECONNRESET)
 			PERROR("recvmsg");
 		ret = -errno;
+		if (ret == -ECONNRESET)
+			ret = -EPIPE;
 
 		shutret = shutdown(sock, SHUT_RDWR);
 		if (shutret)
@@ -320,6 +325,8 @@ ssize_t ustcomm_send_unix_sock(int sock, const void *buf, size_t len)
 		if (errno != EPIPE && errno != ECONNRESET)
 			PERROR("sendmsg");
 		ret = -errno;
+		if (ret == -ECONNRESET)
+			ret = -EPIPE;
 
 		shutret = shutdown(sock, SHUT_RDWR);
 		if (shutret)
@@ -376,6 +383,9 @@ ssize_t ustcomm_send_fds_unix_sock(int sock, int *fds, size_t nb_fd)
 		if (errno != EPIPE && errno != ECONNRESET) {
 			PERROR("sendmsg");
 		}
+		ret = -errno;
+		if (ret == -ECONNRESET)
+			ret = -EPIPE;
 	}
 	return ret;
 }
@@ -418,6 +428,8 @@ ssize_t ustcomm_recv_fds_unix_sock(int sock, int *fds, size_t nb_fd)
 		}
 		if (errno == EPIPE || errno == ECONNRESET)
 			ret = -errno;
+		if (ret == -ECONNRESET)
+			ret = -EPIPE;
 		goto end;
 	}
 	if (ret == 0) {
