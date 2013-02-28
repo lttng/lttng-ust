@@ -926,7 +926,6 @@ restart:
 	}
 
 	/* Register */
-	timeout = get_notify_sock_timeout();
 	for (i = 0; i < 2; i++) {
 		ret = ustcomm_connect_unix_sock(sock_info->sock_path);
 		if (ret < 0) {
@@ -942,32 +941,33 @@ restart:
 			goto restart;
 		}
 		open_sock[i] = ret;
-		if (timeout > 0) {
-			ret = ustcomm_setsockopt_rcv_timeout(open_sock[i],
-					timeout);
-			if (ret < 0) {
-				WARN("Error setting socket receive timeout");
-			}
-			ret = ustcomm_setsockopt_snd_timeout(open_sock[i],
-					timeout);
-			if (ret < 0) {
-				WARN("Error setting socket send timeout");
-			}
-		} else if (timeout == -1) {
-			ret = fcntl(open_sock[i], F_SETFL, O_NONBLOCK);
-			if (ret < 0) {
-				WARN("Error setting socket to non-blocking");
-			}
-		} else {
-			if (timeout != 0) {
-				WARN("Unsuppoorted timeout value %ld",
-					timeout);
-			}
-		}
 	}
 
 	sock_info->socket = open_sock[0];
 	sock_info->notify_socket = open_sock[1];
+
+	timeout = get_notify_sock_timeout();
+	if (timeout > 0) {
+		ret = ustcomm_setsockopt_rcv_timeout(sock_info->notify_socket,
+				timeout);
+		if (ret < 0) {
+			WARN("Error setting socket receive timeout");
+		}
+		ret = ustcomm_setsockopt_snd_timeout(sock_info->notify_socket,
+				timeout);
+		if (ret < 0) {
+			WARN("Error setting socket send timeout");
+		}
+	} else if (timeout == -1) {
+		ret = fcntl(sock_info->notify_socket, F_SETFL, O_NONBLOCK);
+		if (ret < 0) {
+			WARN("Error setting socket to non-blocking");
+		}
+	} else {
+		if (timeout != 0) {
+			WARN("Unsuppoorted timeout value %ld", timeout);
+		}
+	}
 
 	/*
 	 * Create only one root handle per listener thread for the whole
