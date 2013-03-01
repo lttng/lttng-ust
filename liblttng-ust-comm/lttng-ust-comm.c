@@ -79,7 +79,6 @@ const char *lttng_ust_strerror(int code)
 	if (code >= LTTNG_UST_ERR_NR)
 		code = LTTNG_UST_ERR;
 	return ustcomm_readable_code[USTCOMM_CODE_OFFSET(code)];
-
 }
 
 /*
@@ -121,7 +120,11 @@ int ustcomm_connect_unix_sock(const char *pathname)
 		 * is used in normal execution to detect if sessiond is
 		 * alive.
 		 */
+		if (errno != ECONNREFUSED && errno != ECONNRESET)
+			PERROR("connect");
 		ret = -errno;
+		if (ret == -ECONNREFUSED || ret == -ECONNRESET)
+			ret = -EPIPE;
 		goto error_connect;
 	}
 
@@ -275,10 +278,10 @@ ssize_t ustcomm_recv_unix_sock(int sock, void *buf, size_t len)
 	if (ret < 0) {
 		int shutret;
 
-		if (errno != EPIPE && errno != ECONNRESET)
+		if (errno != EPIPE && errno != ECONNRESET && errno != ECONNREFUSED)
 			PERROR("recvmsg");
 		ret = -errno;
-		if (ret == -ECONNRESET)
+		if (ret == -ECONNRESET || ret == -ECONNREFUSED)
 			ret = -EPIPE;
 
 		shutret = shutdown(sock, SHUT_RDWR);
@@ -426,8 +429,7 @@ ssize_t ustcomm_recv_fds_unix_sock(int sock, int *fds, size_t nb_fd)
 		if (errno != EPIPE && errno != ECONNRESET) {
 			PERROR("recvmsg fds");
 		}
-		if (errno == EPIPE || errno == ECONNRESET)
-			ret = -errno;
+		ret = -errno;
 		if (ret == -ECONNRESET)
 			ret = -EPIPE;
 		goto end;
@@ -514,15 +516,10 @@ int ustcomm_recv_app_reply(int sock, struct ustcomm_ust_reply *lur,
 		}
 		return lur->ret_code;
 	default:
-		if (len < 0) {
-			/* Transport level error */
-			if (errno == EPIPE || errno == ECONNRESET)
-				len = -errno;
-			return len;
-		} else {
+		if (len >= 0) {
 			ERR("incorrect message size: %zd\n", len);
-			return len;
 		}
+		return len;
 	}
 }
 
