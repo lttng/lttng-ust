@@ -947,7 +947,13 @@ restart:
 	sock_info->notify_socket = open_sock[1];
 
 	timeout = get_notify_sock_timeout();
-	if (timeout > 0) {
+	if (timeout >= 0) {
+		/*
+		 * Give at least 10ms to sessiond to reply to
+		 * notifications.
+		 */
+		if (timeout < 10)
+			timeout = 10;
 		ret = ustcomm_setsockopt_rcv_timeout(sock_info->notify_socket,
 				timeout);
 		if (ret < 0) {
@@ -958,15 +964,8 @@ restart:
 		if (ret < 0) {
 			WARN("Error setting socket send timeout");
 		}
-	} else if (timeout == -1) {
-		ret = fcntl(sock_info->notify_socket, F_SETFL, O_NONBLOCK);
-		if (ret < 0) {
-			WARN("Error setting socket to non-blocking");
-		}
-	} else {
-		if (timeout != 0) {
-			WARN("Unsuppoorted timeout value %ld", timeout);
-		}
+	} else if (timeout < -1) {
+		WARN("Unsuppoorted timeout value %ld", timeout);
 	}
 
 	/*
