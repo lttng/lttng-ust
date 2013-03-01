@@ -116,11 +116,14 @@ int ustcomm_connect_unix_sock(const char *pathname)
 	ret = connect(fd, (struct sockaddr *) &sun, sizeof(sun));
 	if (ret < 0) {
 		/*
-		 * Don't print message on connect error, because connect
-		 * is used in normal execution to detect if sessiond is
-		 * alive.
+		 * Don't print message on connect ENOENT error, because
+		 * connect is used in normal execution to detect if
+		 * sessiond is alive. ENOENT is when the unix socket
+		 * file does not exist, and ECONNREFUSED is when the
+		 * file exists but no sessiond is listening.
 		 */
-		if (errno != ECONNREFUSED && errno != ECONNRESET)
+		if (errno != ECONNREFUSED && errno != ECONNRESET
+				&& errno != ENOENT)
 			PERROR("connect");
 		ret = -errno;
 		if (ret == -ECONNREFUSED || ret == -ECONNRESET)
