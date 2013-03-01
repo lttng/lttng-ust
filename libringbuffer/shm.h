@@ -141,6 +141,7 @@ int shm_close_wait_fd(struct lttng_ust_shm_handle *handle,
 {
 	struct shm_object_table *table = handle->table;
 	struct shm_object *obj;
+	int wait_fd;
 	size_t index;
 	int ret;
 
@@ -148,14 +149,15 @@ int shm_close_wait_fd(struct lttng_ust_shm_handle *handle,
 	if (caa_unlikely(index >= table->allocated_len))
 		return -EPERM;
 	obj = &table->objects[index];
-	if (obj->wait_fd[0] < 0)
+	wait_fd = obj->wait_fd[0];
+	if (wait_fd < 0)
 		return -ENOENT;
-	ret = close(obj->wait_fd[0]);
+	obj->wait_fd[0] = -1;
+	ret = close(wait_fd);
 	if (ret) {
 		ret = -errno;
 		return ret;
 	}
-	obj->wait_fd[0] = -1;
 	return 0;
 }
 
@@ -165,6 +167,7 @@ int shm_close_wakeup_fd(struct lttng_ust_shm_handle *handle,
 {
 	struct shm_object_table *table = handle->table;
 	struct shm_object *obj;
+	int wakeup_fd;
 	size_t index;
 	int ret;
 
@@ -172,14 +175,15 @@ int shm_close_wakeup_fd(struct lttng_ust_shm_handle *handle,
 	if (caa_unlikely(index >= table->allocated_len))
 		return -EPERM;
 	obj = &table->objects[index];
-	if (obj->wait_fd[1] < 0)
+	wakeup_fd = obj->wait_fd[1];
+	if (wakeup_fd < 0)
 		return -ENOENT;
-	ret = close(obj->wait_fd[1]);
+	obj->wait_fd[1] = -1;
+	ret = close(wakeup_fd);
 	if (ret) {
 		ret = -errno;
 		return ret;
 	}
-	obj->wait_fd[1] = -1;
 	return 0;
 }
 
