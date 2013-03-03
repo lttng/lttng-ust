@@ -20,8 +20,6 @@ liblttng_ust_runtime_la_SOURCES = \
 	lttng-ust-comm.c \
 	lttng-ust-abi.c \
 	lttng-probes.c \
-	probes/lttng-probe-ust.c \
-	probes/lttng-probe-ust.h \
 	lttng-context-vtid.c \
 	lttng-context-vpid.c \
 	lttng-context-pthread-id.c \

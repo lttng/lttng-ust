@@ -369,39 +369,6 @@ static const struct lttng_ust_objd_ops lttng_ops = {
 	.cmd = lttng_cmd,
 };
 
-/*
- * We tolerate no failure in this function (if one happens, we print a dmesg
- * error, but cannot return any error, because the channel information is
- * invariant.
- */
-static
-void lttng_metadata_create_events(int channel_objd)
-{
-	struct lttng_channel *chan = objd_private(channel_objd);
-	struct lttng_enabler *enabler;
-	static struct lttng_ust_event metadata_params = {
-		.instrumentation = LTTNG_UST_TRACEPOINT,
-		.name = "lttng_ust:metadata",
-		.loglevel_type = LTTNG_UST_LOGLEVEL_ALL,
-		.loglevel = TRACE_DEFAULT,
-	};
-
-	/*
-	 * We tolerate no failure path after event creation. It will stay
-	 * invariant for the rest of the session.
-	 */
-	enabler = lttng_enabler_create(LTTNG_ENABLER_EVENT,
-				&metadata_params, chan);
-	if (!enabler) {
-		goto create_error;
-	}
-	return;
-
-create_error:
-	WARN_ON(1);
-	return;		/* not allowed to return error */
-}
-
 int lttng_abi_map_channel(int session_objd,
 		struct lttng_ust_channel *ust_chan,
 		union ust_args *uargs,
@@ -427,7 +394,6 @@ int lttng_abi_map_channel(int session_objd,
 
 	switch (type) {
 	case LTTNG_UST_CHAN_PER_CPU:
-	case LTTNG_UST_CHAN_METADATA:
 		break;
 	default:
 		return -EINVAL;
@@ -465,15 +431,6 @@ int lttng_abi_map_channel(int session_objd,
 		}
 		chan_name = "channel";
 		break;
-	case LTTNG_UST_CHAN_METADATA:
-		if (config->output == RING_BUFFER_MMAP) {
-			transport_name = "relay-metadata-mmap";
-		} else {
-			ret = -EINVAL;
-			goto notransport;
-		}
-		chan_name = "metadata";
-		break;
 	default:
 		transport_name = "<unknown>";
 		chan_name = "<unknown>";
@@ -506,7 +463,6 @@ int lttng_abi_map_channel(int session_objd,
 	cds_list_add(&lttng_chan->node, &session->chan_head);
 	lttng_chan->header_type = 0;
 	lttng_chan->handle = channel_handle;
-	lttng_chan->metadata_dumped = 0;
 	lttng_chan->type = type;
 
 	/*
@@ -545,8 +501,6 @@ active:
  *		Enables tracing for a session (weak enable)
  *	LTTNG_UST_DISABLE
  *		Disables tracing for a session (strong disable)
- *	LTTNG_UST_METADATA
- *		Returns a LTTng metadata object descriptor
  *
  * The returned channel will be deleted when its file descriptor is closed.
  */
@@ -610,12 +564,9 @@ long lttng_tracepoint_list_cmd(int objd, unsigned int cmd, unsigned long arg,
 	switch (cmd) {
 	case LTTNG_UST_TRACEPOINT_LIST_GET:
 	{
-	retry:
 		iter = lttng_ust_tracepoint_list_get_iter_next(list);
 		if (!iter)
 			return -LTTNG_UST_ERR_NOENT;
-		if (!strcmp(iter->name, "lttng_ust:metadata"))
-			goto retry;
 		memcpy(tp, iter, sizeof(*tp));
 		return 0;
 	}
@@ -692,12 +643,9 @@ long lttng_tracepoint_field_list_cmd(int objd, unsigned int cmd,
 	switch (cmd) {
 	case LTTNG_UST_TRACEPOINT_FIELD_LIST_GET:
 	{
-	retry:
 		iter = lttng_ust_field_list_get_iter_next(list);
 		if (!iter)
 			return -LTTNG_UST_ERR_NOENT;
-		if (!strcmp(iter->event_name, "lttng_ust:metadata"))
-			goto retry;
 		memcpy(tp, iter, sizeof(*tp));
 		return 0;
 	}
@@ -824,40 +772,6 @@ objd_error:
 	return ret;
 }
 
-static
-long lttng_metadata_cmd(int objd, unsigned int cmd, unsigned long arg,
-	union ust_args *uargs, void *owner)
-{
-	struct lttng_channel *channel = objd_private(objd);
-	struct lttng_session *session = channel->session;
-
-	switch (cmd) {
-	case LTTNG_UST_STREAM:
-	{
-		struct lttng_ust_stream *stream;
-		int ret;
-
-		stream = (struct lttng_ust_stream *) arg;
-		/* stream used as output */
-		ret = lttng_abi_map_stream(objd, stream, uargs, owner);
-		if (ret == 0) {
-			session->metadata = channel;
-			lttng_metadata_create_events(objd);
-		}
-		return ret;
-	}
-	case LTTNG_UST_FLUSH_BUFFER:
-	{
-		if (!session->metadata) {
-			return -ENOENT;
-		}
-		return channel->ops->flush_buffer(channel->chan, channel->handle);
-	}
-	default:
-		return -EINVAL;
-	}
-}
-
 /**
  *	lttng_channel_cmd - lttng control through object descriptors
  *
@@ -894,10 +808,6 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg,
 		 */
 		if (!lttng_is_channel_ready(channel))
 			return -EPERM;
-	}
-
-	if (channel->type == LTTNG_UST_CHAN_METADATA) {
-		return lttng_metadata_cmd(objd, cmd, arg, uargs, owner);
 	}
 
 	switch (cmd) {

@@ -266,8 +266,6 @@ int lttng_channel_enable(struct lttng_channel *channel)
 {
 	int old;
 
-	if (channel == channel->session->metadata)
-		return -EPERM;
 	old = uatomic_xchg(&channel->enabled, 1);
 	if (old)
 		return -EEXIST;
@@ -278,33 +276,7 @@ int lttng_channel_disable(struct lttng_channel *channel)
 {
 	int old;
 
-	if (channel == channel->session->metadata)
-		return -EPERM;
 	old = uatomic_xchg(&channel->enabled, 0);
-	if (!old)
-		return -EEXIST;
-	return 0;
-}
-
-int lttng_event_enable(struct lttng_event *event)
-{
-	int old;
-
-	if (event->chan == event->chan->session->metadata)
-		return -EPERM;
-	old = uatomic_xchg(&event->enabled, 1);
-	if (old)
-		return -EEXIST;
-	return 0;
-}
-
-int lttng_event_disable(struct lttng_event *event)
-{
-	int old;
-
-	if (event->chan == event->chan->session->metadata)
-		return -EPERM;
-	old = uatomic_xchg(&event->enabled, 0);
 	if (!old)
 		return -EEXIST;
 	return 0;
@@ -370,25 +342,20 @@ int lttng_event_create(const struct lttng_event_desc *desc,
 	else
 		uri = NULL;
 
-	/* Don't register metadata events */
-	if (session->metadata == chan) {
-		event->id = -1U;
-	} else {
-		/* Fetch event ID from sessiond */
-		ret = ustcomm_register_event(notify_socket,
-			session->objd,
-			chan->objd,
-			event_name,
-			loglevel,
-			desc->signature,
-			desc->nr_fields,
-			desc->fields,
-			uri,
-			&event->id);
-		if (ret < 0) {
-			DBG("Error (%d) registering event to sessiond", ret);
-			goto sessiond_register_error;
-		}
+	/* Fetch event ID from sessiond */
+	ret = ustcomm_register_event(notify_socket,
+		session->objd,
+		chan->objd,
+		event_name,
+		loglevel,
+		desc->signature,
+		desc->nr_fields,
+		desc->fields,
+		uri,
+		&event->id);
+	if (ret < 0) {
+		DBG("Error (%d) registering event to sessiond", ret);
+		goto sessiond_register_error;
 	}
 
 	/* Populate lttng_event structure before tracepoint registration. */
@@ -685,8 +652,6 @@ int lttng_enabler_enable(struct lttng_enabler *enabler)
 
 int lttng_enabler_disable(struct lttng_enabler *enabler)
 {
-	if (enabler->chan == enabler->chan->session->metadata)
-		return -EPERM;
 	enabler->enabled = 0;
 	lttng_session_lazy_sync_enablers(enabler->chan->session);
 	return 0;

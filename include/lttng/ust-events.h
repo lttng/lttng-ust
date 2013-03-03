@@ -356,7 +356,7 @@ struct lttng_event {
 	struct cds_list_head node;		/* Event list in session */
 	struct cds_list_head _deprecated2;
 	void *_deprecated3;
-	unsigned int metadata_dumped:1;
+	unsigned int _deprecated4:1;
 
 	/* LTTng-UST 2.1 starts here */
 	/* list of struct lttng_bytecode_runtime, sorted by seqnum */
@@ -426,7 +426,7 @@ struct lttng_channel {
 	const struct lttng_channel_ops *ops;
 	int header_type;		/* 0: unset, 1: compact, 2: large */
 	struct lttng_ust_shm_handle *handle;	/* shared-memory handle */
-	unsigned int metadata_dumped:1;
+	unsigned int _deprecated3:1;
 
 	/* Channel ID */
 	unsigned int id;
@@ -450,13 +450,13 @@ struct lttng_session {
 	int active;				/* Is trace session active ? */
 	int been_active;			/* Been active ? */
 	int objd;				/* Object associated */
-	struct lttng_channel *metadata;		/* Metadata channel */
+	void *_deprecated1;
 	struct cds_list_head chan_head;		/* Channel list head */
 	struct cds_list_head events_head;	/* list of events */
-	struct cds_list_head _deprecated1;
+	struct cds_list_head _deprecated2;
 	struct cds_list_head node;		/* Session list */
-	int _deprecated2;
-	unsigned int metadata_dumped:1;
+	int _deprecated3;
+	unsigned int _deprecated4:1;
 
 	/* New UST 2.1 */
 	/* List of enablers */
