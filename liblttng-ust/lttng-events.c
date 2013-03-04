@@ -78,7 +78,6 @@ void ust_unlock(void)
 static CDS_LIST_HEAD(sessions);
 
 static void _lttng_event_destroy(struct lttng_event *event);
-static int _lttng_event_unregister(struct lttng_event *event);
 
 static
 void lttng_session_lazy_sync_enablers(struct lttng_session *session);
@@ -170,17 +169,57 @@ void _lttng_channel_unmap(struct lttng_channel *lttng_chan)
 	channel_destroy(chan, handle, 0);
 }
 
+static
+void register_event(struct lttng_event *event)
+{
+	int ret;
+	const struct lttng_event_desc *desc;
+
+	assert(event->registered == 0);
+	desc = event->desc;
+	ret = __tracepoint_probe_register(desc->name,
+			desc->probe_callback,
+			event, desc->signature);
+	WARN_ON_ONCE(ret);
+	if (!ret)
+		event->registered = 1;
+}
+
+static
+void unregister_event(struct lttng_event *event)
+{
+	int ret;
+	const struct lttng_event_desc *desc;
+
+	assert(event->registered == 1);
+	desc = event->desc;
+	ret = __tracepoint_probe_unregister(desc->name,
+			desc->probe_callback,
+			event);
+	WARN_ON_ONCE(ret);
+	if (!ret)
+		event->registered = 0;
+}
+
+/*
+ * Only used internally at session destruction.
+ */
+static
+void _lttng_event_unregister(struct lttng_event *event)
+{
+	if (event->registered)
+		unregister_event(event);
+}
+
 void lttng_session_destroy(struct lttng_session *session)
 {
 	struct lttng_channel *chan, *tmpchan;
 	struct lttng_event *event, *tmpevent;
 	struct lttng_enabler *enabler, *tmpenabler;
-	int ret;
 
 	CMM_ACCESS_ONCE(session->active) = 0;
 	cds_list_for_each_entry(event, &session->events_head, node) {
-		ret = _lttng_event_unregister(event);
-		WARN_ON(ret);
+		_lttng_event_unregister(event);
 	}
 	synchronize_trace();	/* Wait for in-flight events to complete */
 	cds_list_for_each_entry_safe(enabler, tmpenabler,
@@ -210,6 +249,8 @@ int lttng_session_enable(struct lttng_session *session)
 	if (notify_socket < 0)
 		return notify_socket;
 
+	/* Set transient enabler state to "enabled" */
+	session->tstate = 1;
 	/* We need to sync enablers with session before activation. */
 	lttng_session_sync_enablers(session);
 
@@ -243,6 +284,7 @@ int lttng_session_enable(struct lttng_session *session)
 		}
 	}
 
+	/* Set atomically the state to "active" */
 	CMM_ACCESS_ONCE(session->active) = 1;
 	CMM_ACCESS_ONCE(session->been_active) = 1;
 end:
@@ -257,29 +299,48 @@ int lttng_session_disable(struct lttng_session *session)
 		ret = -EBUSY;
 		goto end;
 	}
+	/* Set atomically the state to "inactive" */
 	CMM_ACCESS_ONCE(session->active) = 0;
+
+	/* Set transient enabler state to "disabled" */
+	session->tstate = 0;
+	lttng_session_sync_enablers(session);
 end:
 	return ret;
 }
 
 int lttng_channel_enable(struct lttng_channel *channel)
 {
-	int old;
+	int ret = 0;
 
-	old = uatomic_xchg(&channel->enabled, 1);
-	if (old)
-		return -EEXIST;
-	return 0;
+	if (channel->enabled) {
+		ret = -EBUSY;
+		goto end;
+	}
+	/* Set transient enabler state to "enabled" */
+	channel->tstate = 1;
+	lttng_session_sync_enablers(channel->session);
+	/* Set atomically the state to "enabled" */
+	CMM_ACCESS_ONCE(channel->enabled) = 1;
+end:
+	return ret;
 }
 
 int lttng_channel_disable(struct lttng_channel *channel)
 {
-	int old;
+	int ret = 0;
 
-	old = uatomic_xchg(&channel->enabled, 0);
-	if (!old)
-		return -EEXIST;
-	return 0;
+	if (!channel->enabled) {
+		ret = -EBUSY;
+		goto end;
+	}
+	/* Set atomically the state to "disabled" */
+	CMM_ACCESS_ONCE(channel->enabled) = 0;
+	/* Set transient enabler state to "enabled" */
+	channel->tstate = 0;
+	lttng_session_sync_enablers(channel->session);
+end:
+	return ret;
 }
 
 /*
@@ -328,7 +389,9 @@ int lttng_event_create(const struct lttng_event_desc *desc,
 	}
 	event->chan = chan;
 
-	event->enabled = 1;
+	/* Event will be enabled by enabler sync. */
+	event->enabled = 0;
+	event->registered = 0;
 	CDS_INIT_LIST_HEAD(&event->bytecode_runtime_head);
 	CDS_INIT_LIST_HEAD(&event->enablers_ref_head);
 	event->desc = desc;
@@ -360,17 +423,10 @@ int lttng_event_create(const struct lttng_event_desc *desc,
 
 	/* Populate lttng_event structure before tracepoint registration. */
 	cmm_smp_wmb();
-	ret = __tracepoint_probe_register(event_name,
-			desc->probe_callback,
-			event, desc->signature);
-	if (ret)
-		goto tracepoint_register_error;
-
 	cds_list_add(&event->node, &chan->session->events_head);
 	cds_hlist_add_head(&event->hlist, head);
 	return 0;
 
-tracepoint_register_error:
 sessiond_register_error:
 	free(event);
 cache_error:
@@ -586,16 +642,6 @@ int lttng_fix_pending_event_desc(const struct lttng_event_desc *desc)
 /*
  * Only used internally at session destruction.
  */
-int _lttng_event_unregister(struct lttng_event *event)
-{
-	return __tracepoint_probe_unregister(event->desc->name,
-					  event->desc->probe_callback,
-					  event);
-}
-
-/*
- * Only used internally at session destruction.
- */
 static
 void _lttng_event_destroy(struct lttng_event *event)
 {
@@ -739,7 +785,8 @@ void lttng_session_sync_enablers(struct lttng_session *session)
 		lttng_enabler_ref_events(enabler);
 	/*
 	 * For each event, if at least one of its enablers is enabled,
-	 * we enable the event, else we disable it.
+	 * and its channel and session transient states are enabled, we
+	 * enable the event, else we disable it.
 	 */
 	cds_list_for_each_entry(event, &session->events_head, node) {
 		struct lttng_enabler_ref *enabler_ref;
@@ -754,7 +801,25 @@ void lttng_session_sync_enablers(struct lttng_session *session)
 				break;
 			}
 		}
-		event->enabled = enabled;
+		/*
+		 * Enabled state is based on union of enablers, with
+		 * intesection of session and channel transient enable
+		 * states.
+		 */
+		enabled = enabled && session->tstate && event->chan->tstate;
+
+		CMM_STORE_SHARED(event->enabled, enabled);
+		/*
+		 * Sync tracepoint registration with event enabled
+		 * state.
+		 */
+		if (enabled) {
+			if (!event->registered)
+				register_event(event);
+		} else {
+			if (event->registered)
+				unregister_event(event);
+		}
 
 		/* Check if has enablers without bytecode enabled */
 		cds_list_for_each_entry(enabler_ref,

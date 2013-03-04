@@ -365,6 +365,7 @@ struct lttng_event {
 	/* Backward references: list of lttng_enabler_ref (ref to enablers) */
 	struct cds_list_head enablers_ref_head;
 	struct cds_hlist_node hlist;	/* session ht of events */
+	int registered;			/* has reg'd tracepoint probe */
 };
 
 struct channel;
@@ -432,6 +433,7 @@ struct lttng_channel {
 	unsigned int id;
 	enum lttng_ust_chan_type type;
 	unsigned char uuid[LTTNG_UST_UUID_LEN]; /* Trace session unique ID */
+	int tstate:1;			/* Transient enable state */
 };
 
 #define LTTNG_UST_EVENT_HT_BITS		12
@@ -463,6 +465,7 @@ struct lttng_session {
 	struct cds_list_head enablers_head;
 	struct lttng_ust_event_ht events_ht;	/* ht of events */
 	void *owner;				/* object owner */
+	int tstate:1;				/* Transient enable state */
 };
 
 struct lttng_transport {

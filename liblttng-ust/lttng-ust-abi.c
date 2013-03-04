@@ -453,6 +453,7 @@ int lttng_abi_map_channel(int session_objd,
 
 	/* Initialize our lttng chan */
 	lttng_chan->chan = chan;
+	lttng_chan->tstate = 1;
 	lttng_chan->enabled = 1;
 	lttng_chan->ctx = NULL;
 	lttng_chan->session = session;
