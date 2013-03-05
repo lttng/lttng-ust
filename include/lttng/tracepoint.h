@@ -216,6 +216,16 @@ extern struct tracepoint_dlopen tracepoint_dlopen;
 #ifdef TRACEPOINT_DEFINE
 
 /*
+ * These weak symbols, the constructor, and destructor take care of
+ * registering only _one_ instance of the tracepoints per shared-ojbect
+ * (or for the whole main program).
+ */
+extern struct tracepoint * const __start___tracepoints_ptrs[]
+	__attribute__((weak, visibility("hidden")));
+extern struct tracepoint * const __stop___tracepoints_ptrs[]
+	__attribute__((weak, visibility("hidden")));
+
+/*
  * When TRACEPOINT_PROBE_DYNAMIC_LINKAGE is defined, we do not emit a
  * unresolved symbol that requires the provider to be linked in. When
  * TRACEPOINT_PROBE_DYNAMIC_LINKAGE is not defined, we emit an
@@ -255,15 +265,41 @@ extern struct tracepoint_dlopen tracepoint_dlopen;
 		__attribute__((used, section("__tracepoints_ptrs"))) =		\
 			&__tracepoint_##_provider##___##_name;
 
+static inline void __tracepoints__init_define(void)
+{
+	tracepoint_dlopen.tracepoint_register_lib(__start___tracepoints_ptrs,
+				__stop___tracepoints_ptrs -
+				__start___tracepoints_ptrs);
+}
+
+static inline void __tracepoints__destroy_define(void)
+{
+	if (tracepoint_dlopen.tracepoint_unregister_lib)
+		tracepoint_dlopen.tracepoint_unregister_lib(__start___tracepoints_ptrs);
+}
+
+
+#else /* TRACEPOINT_DEFINE */
+
+#define _DEFINE_TRACEPOINT(_provider, _name, _args)
+
+static inline void __tracepoints__init_define(void)
+{
+}
+
+static inline void __tracepoints__destroy_define(void)
+{
+}
+
+#endif /* #else TRACEPOINT_DEFINE */
+
+#if defined(TRACEPOINT_DEFINE) || defined(TRACEPOINT_CREATE_PROBES)
+
 /*
  * These weak symbols, the constructor, and destructor take care of
  * registering only _one_ instance of the tracepoints per shared-ojbect
  * (or for the whole main program).
  */
-extern struct tracepoint * const __start___tracepoints_ptrs[]
-	__attribute__((weak, visibility("hidden")));
-extern struct tracepoint * const __stop___tracepoints_ptrs[]
-	__attribute__((weak, visibility("hidden")));
 int __tracepoint_registered
 	__attribute__((weak, visibility("hidden")));
 struct tracepoint_dlopen tracepoint_dlopen
@@ -303,9 +339,7 @@ __tracepoints__init(void)
 				dlsym(tracepoint_dlopen.liblttngust_handle,
 					"tp_rcu_dereference_sym_bp"));
 #endif
-	tracepoint_dlopen.tracepoint_register_lib(__start___tracepoints_ptrs,
-				__stop___tracepoints_ptrs -
-				__start___tracepoints_ptrs);
+	__tracepoints__init_define();
 }
 
 static void lttng_ust_notrace __attribute__((destructor))
@@ -317,8 +351,7 @@ __tracepoints__destroy(void)
 
 	if (--__tracepoint_registered)
 		return;
-	if (tracepoint_dlopen.tracepoint_unregister_lib)
-		tracepoint_dlopen.tracepoint_unregister_lib(__start___tracepoints_ptrs);
+	__tracepoints__destroy_define();
 	if (tracepoint_dlopen.liblttngust_handle) {
 		ret = dlclose(tracepoint_dlopen.liblttngust_handle);
 		assert(!ret);
@@ -326,11 +359,7 @@ __tracepoints__destroy(void)
 	}
 }
 
-#else /* TRACEPOINT_DEFINE */
-
-#define _DEFINE_TRACEPOINT(_provider, _name, _args)
-
-#endif /* #else TRACEPOINT_DEFINE */
+#endif
 
 #ifdef __cplusplus
 }
