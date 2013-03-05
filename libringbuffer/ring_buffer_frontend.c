@@ -105,15 +105,10 @@ struct switch_offsets {
 
 DEFINE_URCU_TLS(unsigned int, lib_ring_buffer_nesting);
 
-/*
- * TODO: this is unused. Errors are saved within the ring buffer.
- * Eventually, allow consumerd to print these errors.
- */
 static
 void lib_ring_buffer_print_errors(struct channel *chan,
-				  struct lttng_ust_lib_ring_buffer *buf, int cpu,
-				  struct lttng_ust_shm_handle *handle)
-	__attribute__((unused));
+				struct lttng_ust_lib_ring_buffer *buf, int cpu,
+				struct lttng_ust_shm_handle *handle);
 
 /**
  * lib_ring_buffer_reset - Reset ring buffer to initial values.
@@ -402,8 +397,31 @@ static void channel_unregister_notifiers(struct channel *chan,
 	//channel_backend_unregister_notifiers(&chan->backend);
 }
 
-static void channel_free(struct channel *chan, struct lttng_ust_shm_handle *handle)
+static void channel_print_errors(struct channel *chan,
+		struct lttng_ust_shm_handle *handle)
 {
+	const struct lttng_ust_lib_ring_buffer_config *config =
+			&chan->backend.config;
+	int cpu;
+
+	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU) {
+		for_each_possible_cpu(cpu) {
+			struct lttng_ust_lib_ring_buffer *buf =
+				shmp(handle, chan->backend.buf[cpu].shmp);
+			lib_ring_buffer_print_errors(chan, buf, cpu, handle);
+		}
+	} else {
+		struct lttng_ust_lib_ring_buffer *buf =
+			shmp(handle, chan->backend.buf[0].shmp);
+
+		lib_ring_buffer_print_errors(chan, buf, -1, handle);
+	}
+}
+
+static void channel_free(struct channel *chan,
+		struct lttng_ust_shm_handle *handle)
+{
+	channel_print_errors(chan, handle);
 	channel_backend_free(&chan->backend, handle);
 	/* chan is freed by shm teardown */
 	shm_object_table_destroy(handle->table);
@@ -1014,8 +1032,8 @@ void lib_ring_buffer_print_buffer_errors(struct lttng_ust_lib_ring_buffer *buf,
 
 static
 void lib_ring_buffer_print_errors(struct channel *chan,
-				  struct lttng_ust_lib_ring_buffer *buf, int cpu,
-				  struct lttng_ust_shm_handle *handle)
+				struct lttng_ust_lib_ring_buffer *buf, int cpu,
+				struct lttng_ust_shm_handle *handle)
 {
 	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
 	void *priv = channel_get_private(chan);
