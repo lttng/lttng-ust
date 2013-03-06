@@ -412,6 +412,7 @@ int lttng_abi_map_channel(int session_objd,
 
 	chan = shmp(channel_handle, channel_handle->chan);
 	assert(chan);
+	chan->handle = channel_handle;
 	config = &chan->backend.config;
 	lttng_chan = channel_get_private(chan);
 	if (!lttng_chan) {

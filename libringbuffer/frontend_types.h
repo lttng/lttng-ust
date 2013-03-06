@@ -29,6 +29,7 @@
  */
 
 #include <string.h>
+#include <time.h>	/* for timer_t */
 
 #include <urcu/list.h>
 #include <urcu/uatomic.h>
@@ -37,6 +38,7 @@
 #include <usterr-signal-safe.h>
 #include "backend_types.h"
 #include "shm_internal.h"
+#include "shm_types.h"
 #include "vatomic.h"
 
 /*
@@ -56,12 +58,17 @@ struct channel {
 						 * subbuffer index.
 						 */
 
-	unsigned long switch_timer_interval;	/* Buffer flush (jiffies) */
-	unsigned long read_timer_interval;	/* Reader wakeup (jiffies) */
+	unsigned long switch_timer_interval;	/* Buffer flush (us) */
+	timer_t switch_timer;
+	int switch_timer_enabled;
+
+	unsigned long read_timer_interval;	/* Reader wakeup (us) */
+	//timer_t read_timer;
 	//wait_queue_head_t read_wait;		/* reader wait queue */
 	int finalized;				/* Has channel been finalized */
 	size_t priv_data_offset;
 	unsigned int nr_streams;		/* Number of streams */
+	struct lttng_ust_shm_handle *handle;
 	char padding[RB_CHANNEL_PADDING];
 	/*
 	 * Associated backend contains a variable-length array. Needs to
@@ -118,8 +125,6 @@ struct lttng_ust_lib_ring_buffer {
 	union v_atomic records_overrun;	/* Number of overwritten records */
 	//wait_queue_head_t read_wait;	/* reader buffer-level wait queue */
 	int finalized;			/* buffer has been finalized */
-	//struct timer_list switch_timer;	/* timer for periodical switch */
-	//struct timer_list read_timer;	/* timer for read poll */
 	unsigned long get_subbuf_consumed;	/* Read-side consumed */
 	unsigned long prod_snapshot;	/* Producer count snapshot */
 	unsigned long cons_snapshot;	/* Consumer count snapshot */

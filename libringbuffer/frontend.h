@@ -110,6 +110,12 @@ extern void lib_ring_buffer_release_read(struct lttng_ust_lib_ring_buffer *buf,
 					 struct lttng_ust_shm_handle *handle);
 
 /*
+ * Initialize signals for ring buffer. Should be called early e.g. by
+ * main() in the program to affect all threads.
+ */
+void lib_ringbuffer_signal_init(void);
+
+/*
  * Read sequence: snapshot, many get_subbuf/put_subbuf, move_consumer.
  */
 extern int lib_ring_buffer_snapshot(struct lttng_ust_lib_ring_buffer *buf,

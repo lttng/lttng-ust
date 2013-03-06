@@ -55,7 +55,10 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include <fcntl.h>
+#include <signal.h>
+#include <time.h>
 #include <urcu/compiler.h>
 #include <urcu/ref.h>
 #include <urcu/tls-compat.h>
@@ -76,6 +79,10 @@
 
 /* Print DBG() messages about events lost only every 1048576 hits */
 #define DBG_PRINT_NR_LOST	(1UL << 20)
+
+#define LTTNG_UST_RB_SIG		SIGRTMIN
+#define LTTNG_UST_RB_SIG_TEARDOWN	SIGRTMIN + 1
+#define CLOCKID		CLOCK_MONOTONIC
 
 /*
  * Use POSIX SHM: shm_open(3) and shm_unlink(3).
@@ -109,6 +116,20 @@ static
 void lib_ring_buffer_print_errors(struct channel *chan,
 				struct lttng_ust_lib_ring_buffer *buf, int cpu,
 				struct lttng_ust_shm_handle *handle);
+
+/*
+ * Handle timer teardown race wrt memory free of private data by
+ * ring buffer signals are handled by a single thread, which permits
+ * a synchronization point between handling of each signal.
+ * Protected by the ust mutex.
+ */
+struct timer_signal_data {
+	pthread_t tid;	/* thread id managing signals */
+	int setup_done;
+	int qs_done;
+};
+
+static struct timer_signal_data timer_signal;
 
 /**
  * lib_ring_buffer_reset - Reset ring buffer to initial values.
@@ -264,37 +285,208 @@ static void switch_buffer_timer(unsigned long data)
 }
 #endif //0
 
-static void lib_ring_buffer_start_switch_timer(struct lttng_ust_lib_ring_buffer *buf,
-			   struct lttng_ust_shm_handle *handle)
+static
+void lib_ring_buffer_channel_switch_timer(int sig, siginfo_t *si, void *uc)
 {
-	struct channel *chan = shmp(handle, buf->backend.chan);
-	//const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
+	const struct lttng_ust_lib_ring_buffer_config *config;
+	struct lttng_ust_shm_handle *handle;
+	struct channel *chan;
+	int cpu;
 
-	if (!chan->switch_timer_interval || buf->switch_timer_enabled)
-		return;
-	//TODO
-	//init_timer(&buf->switch_timer);
-	//buf->switch_timer.function = switch_buffer_timer;
-	//buf->switch_timer.expires = jiffies + chan->switch_timer_interval;
-	//buf->switch_timer.data = (unsigned long)buf;
-	//if (config->alloc == RING_BUFFER_ALLOC_PER_CPU)
-	//	add_timer_on(&buf->switch_timer, buf->backend.cpu);
-	//else
-	//	add_timer(&buf->switch_timer);
-	buf->switch_timer_enabled = 1;
+	assert(CMM_LOAD_SHARED(timer_signal.tid) == pthread_self());
+
+	chan = si->si_value.sival_ptr;
+	handle = chan->handle;
+	config = &chan->backend.config;
+
+	DBG("Timer for channel %p\n", chan);
+
+	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU) {
+		for_each_possible_cpu(cpu) {
+			struct lttng_ust_lib_ring_buffer *buf =
+				shmp(handle, chan->backend.buf[cpu].shmp);
+
+			lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE,
+				chan->handle);
+		}
+	} else {
+		struct lttng_ust_lib_ring_buffer *buf =
+			shmp(handle, chan->backend.buf[0].shmp);
+
+			lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE,
+				chan->handle);
+	}
+	return;
 }
 
-static void lib_ring_buffer_stop_switch_timer(struct lttng_ust_lib_ring_buffer *buf,
-			   struct lttng_ust_shm_handle *handle)
+static
+void rb_setmask(sigset_t *mask)
 {
-	struct channel *chan = shmp(handle, buf->backend.chan);
+	int ret;
 
-	if (!chan->switch_timer_interval || !buf->switch_timer_enabled)
+	ret = sigemptyset(mask);
+	if (ret) {
+		PERROR("sigemptyset");
+	}
+	ret = sigaddset(mask, LTTNG_UST_RB_SIG);
+	if (ret) {
+		PERROR("sigaddset");
+	}
+	ret = sigaddset(mask, LTTNG_UST_RB_SIG_TEARDOWN);
+	if (ret) {
+		PERROR("sigaddset");
+	}
+}
+
+static
+void *sig_thread(void *arg)
+{
+	sigset_t mask;
+	siginfo_t info;
+	int signr;
+
+	/* Only self thread will receive signal mask. */
+	rb_setmask(&mask);
+	CMM_STORE_SHARED(timer_signal.tid, pthread_self());
+
+	for (;;) {
+		signr = sigwaitinfo(&mask, &info);
+		if (signr == -1) {
+			PERROR("sigwaitinfo");
+			continue;
+		}
+		if (signr == LTTNG_UST_RB_SIG) {
+			lib_ring_buffer_channel_switch_timer(info.si_signo,
+					&info, NULL);
+		} else if (signr == LTTNG_UST_RB_SIG_TEARDOWN) {
+			cmm_smp_mb();
+			CMM_STORE_SHARED(timer_signal.qs_done, 1);
+			cmm_smp_mb();
+		} else {
+			ERR("Unexptected signal %d\n", info.si_signo);
+		}
+	}
+	return NULL;
+}
+
+/*
+ * Called with ust_lock() held.
+ * Ensure only a single thread listens on the timer signal.
+ */
+static
+void lib_ring_buffer_setup_timer_thread(void)
+{
+	pthread_t thread;
+	int ret;
+
+	if (timer_signal.setup_done)
 		return;
 
-	//TODO
-	//del_timer_sync(&buf->switch_timer);
-	buf->switch_timer_enabled = 0;
+	ret = pthread_create(&thread, NULL, &sig_thread, NULL);
+	if (ret) {
+		errno = ret;
+		PERROR("pthread_create");
+	}
+	ret = pthread_detach(thread);
+	if (ret) {
+		errno = ret;
+		PERROR("pthread_detach");
+	}
+	timer_signal.setup_done = 1;
+}
+
+/*
+ * Called with ust_lock() held.
+ */
+static
+void lib_ring_buffer_channel_switch_timer_start(struct channel *chan)
+{
+	struct sigevent sev;
+	struct itimerspec its;
+	int ret;
+
+	if (!chan->switch_timer_interval || chan->switch_timer_enabled)
+		return;
+
+	chan->switch_timer_enabled = 1;
+
+	lib_ring_buffer_setup_timer_thread();
+
+	sev.sigev_notify = SIGEV_SIGNAL;
+	sev.sigev_signo = LTTNG_UST_RB_SIG;
+	sev.sigev_value.sival_ptr = chan;
+	ret = timer_create(CLOCKID, &sev, &chan->switch_timer);
+	if (ret == -1) {
+		PERROR("timer_create");
+	}
+
+	its.it_value.tv_sec = chan->switch_timer_interval / 1000000;
+	its.it_value.tv_nsec = chan->switch_timer_interval % 1000000;
+	its.it_interval.tv_sec = its.it_value.tv_sec;
+	its.it_interval.tv_nsec = its.it_value.tv_nsec;
+
+	ret = timer_settime(chan->switch_timer, 0, &its, NULL);
+	if (ret == -1) {
+		PERROR("timer_settime");
+	}
+}
+
+/*
+ * Called with ust_lock() held.
+ */
+static
+void lib_ring_buffer_channel_switch_timer_stop(struct channel *chan)
+{
+	sigset_t pending_set;
+	int sig_is_pending, ret;
+
+	if (!chan->switch_timer_interval || !chan->switch_timer_enabled)
+		return;
+
+	ret = timer_delete(chan->switch_timer);
+	if (ret == -1) {
+		PERROR("timer_delete");
+	}
+
+	/*
+	 * Ensure we don't have any signal queued for this channel.
+	 */
+	for (;;) {
+		ret = sigemptyset(&pending_set);
+		if (ret == -1) {
+			PERROR("sigemptyset");
+		}
+		ret = sigpending(&pending_set);
+		if (ret == -1) {
+			PERROR("sigpending");
+		}
+		sig_is_pending = sigismember(&pending_set, LTTNG_UST_RB_SIG);
+		if (!sig_is_pending)
+			break;
+		caa_cpu_relax();
+	}
+
+	/*
+	 * From this point, no new signal handler will be fired that
+	 * would try to access "chan". However, we still need to wait
+	 * for any currently executing handler to complete.
+	 */
+	cmm_smp_mb();
+	CMM_STORE_SHARED(timer_signal.qs_done, 0);
+	cmm_smp_mb();
+
+	/*
+	 * Kill with LTTNG_UST_RB_SIG_TEARDOWN, so signal management
+	 * thread wakes up.
+	 */
+	kill(getpid(), LTTNG_UST_RB_SIG_TEARDOWN);
+
+	while (!CMM_LOAD_SHARED(timer_signal.qs_done))
+		caa_cpu_relax();
+	cmm_smp_mb();
+
+	chan->switch_timer = 0;
+	chan->switch_timer_enabled = 0;
 }
 
 #if 0
@@ -381,17 +573,16 @@ static void channel_unregister_notifiers(struct channel *chan,
 	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
 	int cpu;
 
+	lib_ring_buffer_channel_switch_timer_stop(chan);
 	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU) {
 		for_each_possible_cpu(cpu) {
 			struct lttng_ust_lib_ring_buffer *buf = shmp(handle, chan->backend.buf[cpu].shmp);
 
-			lib_ring_buffer_stop_switch_timer(buf, handle);
 			lib_ring_buffer_stop_read_timer(buf, handle);
 		}
 	} else {
 		struct lttng_ust_lib_ring_buffer *buf = shmp(handle, chan->backend.buf[0].shmp);
 
-		lib_ring_buffer_stop_switch_timer(buf, handle);
 		lib_ring_buffer_stop_read_timer(buf, handle);
 	}
 	//channel_backend_unregister_notifiers(&chan->backend);
@@ -527,14 +718,16 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 	if (ret)
 		goto error_backend_init;
 
+	chan->handle = handle;
 	chan->commit_count_mask = (~0UL >> chan->backend.num_subbuf_order);
+	chan->switch_timer_interval = switch_timer_interval;
+
 	//TODO
-	//chan->switch_timer_interval = usecs_to_jiffies(switch_timer_interval);
-	//chan->read_timer_interval = usecs_to_jiffies(read_timer_interval);
-	//TODO
+	//chan->read_timer_interval = read_timer_interval;
 	//init_waitqueue_head(&chan->read_wait);
 	//init_waitqueue_head(&chan->hp_wait);
 
+	lib_ring_buffer_channel_switch_timer_start(chan);
 	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU) {
 		/*
 		 * In case of non-hotplug cpu, if the ring-buffer is allocated
@@ -543,13 +736,11 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 		 */
 		for_each_possible_cpu(cpu) {
 			struct lttng_ust_lib_ring_buffer *buf = shmp(handle, chan->backend.buf[cpu].shmp);
-			lib_ring_buffer_start_switch_timer(buf, handle);
 			lib_ring_buffer_start_read_timer(buf, handle);
 		}
 	} else {
 		struct lttng_ust_lib_ring_buffer *buf = shmp(handle, chan->backend.buf[0].shmp);
 
-		lib_ring_buffer_start_switch_timer(buf, handle);
 		lib_ring_buffer_start_read_timer(buf, handle);
 	}
 	return handle;
@@ -1591,4 +1782,21 @@ int lib_ring_buffer_reserve_slow(struct lttng_ust_lib_ring_buffer_ctx *ctx)
 void lttng_fixup_ringbuffer_tls(void)
 {
 	asm volatile ("" : : "m" (URCU_TLS(lib_ring_buffer_nesting)));
+}
+
+void lib_ringbuffer_signal_init(void)
+{
+	sigset_t mask;
+	int ret;
+
+	/*
+	 * Block signal for entire process, so only our thread processes
+	 * it.
+	 */
+	rb_setmask(&mask);
+	ret = pthread_sigmask(SIG_BLOCK, &mask, NULL);
+	if (ret) {
+		errno = ret;
+		PERROR("pthread_sigmask");
+	}
 }

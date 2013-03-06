@@ -1569,6 +1569,7 @@ void ustctl_init(void)
 	lttng_ring_buffer_metadata_client_init();
 	lttng_ring_buffer_client_overwrite_init();
 	lttng_ring_buffer_client_discard_init();
+	lib_ringbuffer_signal_init();
 }
 
 static __attribute__((destructor))
