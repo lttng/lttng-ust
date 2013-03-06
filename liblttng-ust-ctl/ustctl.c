@@ -46,6 +46,8 @@ struct ustctl_consumer_channel {
 
 	/* initial attributes */
 	struct ustctl_consumer_channel_attr attr;
+	int wait_fd;				/* monitor close() */
+	int wakeup_fd;				/* monitor close() */
 };
 
 /*
@@ -95,6 +97,13 @@ int ustctl_release_object(int sock, struct lttng_ust_object_data *data)
 
 	switch (data->type) {
 	case LTTNG_UST_OBJECT_TYPE_CHANNEL:
+		if (data->u.channel.wakeup_fd >= 0) {
+			ret = close(data->u.channel.wakeup_fd);
+			if (ret < 0) {
+				ret = -errno;
+				return ret;
+			}
+		}
 		free(data->u.channel.data);
 		break;
 	case LTTNG_UST_OBJECT_TYPE_STREAM:
@@ -469,6 +478,7 @@ int ustctl_send_channel(int sock,
 		enum lttng_ust_chan_type type,
 		void *data,
 		uint64_t size,
+		int wakeup_fd,
 		int send_fd_only)
 {
 	ssize_t len;
@@ -502,6 +512,14 @@ int ustctl_send_channel(int sock,
 			return -EIO;
 	}
 
+	/* Send wakeup fd */
+	len = ustcomm_send_fds_unix_sock(sock, &wakeup_fd, 1);
+	if (len <= 0) {
+		if (len < 0)
+			return len;
+		else
+			return -EIO;
+	}
 	return 0;
 }
 
@@ -569,6 +587,7 @@ int ustctl_recv_channel_from_consumer(int sock,
 {
 	struct lttng_ust_object_data *channel_data;
 	ssize_t len;
+	int wakeup_fd;
 	int ret;
 
 	channel_data = zmalloc(sizeof(*channel_data));
@@ -615,7 +634,18 @@ int ustctl_recv_channel_from_consumer(int sock,
 			ret = -EINVAL;
 		goto error_recv_data;
 	}
-
+	/* recv wakeup fd */
+	len = ustcomm_recv_fds_unix_sock(sock, &wakeup_fd, 1);
+	if (len <= 0) {
+		if (len < 0) {
+			ret = len;
+			goto error_recv_data;
+		} else {
+			ret = -EIO;
+			goto error_recv_data;
+		}
+	}
+	channel_data->u.channel.wakeup_fd = wakeup_fd;
 	*_channel_data = channel_data;
 	return 0;
 
@@ -715,6 +745,7 @@ int ustctl_send_channel_to_ust(int sock, int session_handle,
 			channel_data->u.channel.type,
 			channel_data->u.channel.data,
 			channel_data->size,
+			channel_data->u.channel.wakeup_fd,
 			1);
 	if (ret)
 		return ret;
@@ -833,6 +864,7 @@ int ustctl_send_channel_to_sessiond(int sock,
 			channel->attr.type,
 			table->objects[0].memory_map,
 			table->objects[0].memory_map_size,
+			channel->wakeup_fd,
 			0);
 }
 
@@ -893,12 +925,30 @@ end:
 	return ret;
 }
 
+int ustctl_channel_close_wait_fd(struct ustctl_consumer_channel *consumer_chan)
+{
+	struct channel *chan;
+
+	chan = consumer_chan->chan->chan;
+	return ring_buffer_channel_close_wait_fd(&chan->backend.config,
+			chan, chan->handle);
+}
+
+int ustctl_channel_close_wakeup_fd(struct ustctl_consumer_channel *consumer_chan)
+{
+	struct channel *chan;
+
+	chan = consumer_chan->chan->chan;
+	return ring_buffer_channel_close_wakeup_fd(&chan->backend.config,
+			chan, chan->handle);
+}
+
 int ustctl_stream_close_wait_fd(struct ustctl_consumer_stream *stream)
 {
 	struct channel *chan;
 
 	chan = stream->chan->chan->chan;
-	return ring_buffer_close_wait_fd(&chan->backend.config,
+	return ring_buffer_stream_close_wait_fd(&chan->backend.config,
 			chan, stream->handle, stream->cpu);
 }
 
@@ -907,7 +957,7 @@ int ustctl_stream_close_wakeup_fd(struct ustctl_consumer_stream *stream)
 	struct channel *chan;
 
 	chan = stream->chan->chan->chan;
-	return ring_buffer_close_wakeup_fd(&chan->backend.config,
+	return ring_buffer_stream_close_wakeup_fd(&chan->backend.config,
 			chan, stream->handle, stream->cpu);
 }
 
@@ -968,7 +1018,23 @@ void ustctl_destroy_stream(struct ustctl_consumer_stream *stream)
 	free(stream);
 }
 
-int ustctl_get_wait_fd(struct ustctl_consumer_stream *stream)
+int ustctl_channel_get_wait_fd(struct ustctl_consumer_channel *chan)
+{
+	if (!chan)
+		return -EINVAL;
+	return shm_get_wait_fd(chan->chan->handle,
+		&chan->chan->handle->chan._ref);
+}
+
+int ustctl_channel_get_wakeup_fd(struct ustctl_consumer_channel *chan)
+{
+	if (!chan)
+		return -EINVAL;
+	return shm_get_wakeup_fd(chan->chan->handle,
+		&chan->chan->handle->chan._ref);
+}
+
+int ustctl_stream_get_wait_fd(struct ustctl_consumer_stream *stream)
 {
 	struct lttng_ust_lib_ring_buffer *buf;
 	struct ustctl_consumer_channel *consumer_chan;
@@ -980,7 +1046,7 @@ int ustctl_get_wait_fd(struct ustctl_consumer_stream *stream)
 	return shm_get_wait_fd(consumer_chan->chan->handle, &buf->self._ref);
 }
 
-int ustctl_get_wakeup_fd(struct ustctl_consumer_stream *stream)
+int ustctl_stream_get_wakeup_fd(struct ustctl_consumer_stream *stream)
 {
 	struct lttng_ust_lib_ring_buffer *buf;
 	struct ustctl_consumer_channel *consumer_chan;

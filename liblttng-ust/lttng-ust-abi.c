@@ -403,11 +403,13 @@ int lttng_abi_map_channel(int session_objd,
 	struct channel *chan;
 	struct lttng_ust_lib_ring_buffer_config *config;
 	void *chan_data;
+	int wakeup_fd;
 	uint64_t len;
 	int ret;
 	enum lttng_ust_chan_type type;
 
 	chan_data = uargs->channel.chan_data;
+	wakeup_fd = uargs->channel.wakeup_fd;
 	len = ust_chan->len;
 	type = ust_chan->type;
 
@@ -415,7 +417,8 @@ int lttng_abi_map_channel(int session_objd,
 	case LTTNG_UST_CHAN_PER_CPU:
 		break;
 	default:
-		return -EINVAL;
+		ret = -EINVAL;
+		goto invalid;
 	}
 
 	if (session->been_active) {
@@ -423,7 +426,7 @@ int lttng_abi_map_channel(int session_objd,
 		goto active;	/* Refuse to add channel to active session */
 	}
 
-	channel_handle = channel_handle_create(chan_data, len);
+	channel_handle = channel_handle_create(chan_data, len, wakeup_fd);
 	if (!channel_handle) {
 		ret = -EINVAL;
 		goto handle_error;
@@ -496,13 +499,30 @@ int lttng_abi_map_channel(int session_objd,
 	objd_ref(session_objd);
 	return chan_objd;
 
+	/* error path after channel was created */
 objd_error:
 notransport:
 	free(lttng_chan);
 alloc_error:
 	channel_destroy(chan, channel_handle, 0);
+	return ret;
+
+	/*
+	 * error path before channel creation (owning chan_data and
+	 * wakeup_fd).
+	 */
 handle_error:
 active:
+invalid:
+	{
+		int close_ret;
+
+		close_ret = close(wakeup_fd);
+		if (close_ret) {
+			PERROR("close");
+		}
+	}
+	free(chan_data);
 	return ret;
 }
 

@@ -185,7 +185,7 @@ extern int ustcomm_send_app_cmd(int sock,
 int ustcomm_recv_fd(int sock);
 
 ssize_t ustcomm_recv_channel_from_sessiond(int sock,
-		void **chan_data, uint64_t len);
+		void **chan_data, uint64_t len, int *wakeup_fd);
 int ustcomm_recv_stream_from_sessiond(int sock,
 		uint64_t *memory_map_size,
 		int *shm_fd, int *wakeup_fd);

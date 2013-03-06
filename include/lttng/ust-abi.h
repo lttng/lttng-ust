@@ -191,6 +191,7 @@ struct lttng_ust_object_data {
 		struct {
 			void *data;
 			enum lttng_ust_chan_type type;
+			int wakeup_fd;
 		} channel;
 		struct {
 			int shm_fd;
@@ -279,6 +280,7 @@ struct lttng_ust_obj;
 union ust_args {
 	struct {
 		void *chan_data;
+		int wakeup_fd;
 	} channel;
 	struct {
 		int shm_fd;

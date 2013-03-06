@@ -29,7 +29,7 @@
 /* channel_handle_create - for UST. */
 extern
 struct lttng_ust_shm_handle *channel_handle_create(void *data,
-				uint64_t memory_map_size);
+				uint64_t memory_map_size, int wakeup_fd);
 /* channel_handle_add_stream - for UST. */
 extern
 int channel_handle_add_stream(struct lttng_ust_shm_handle *handle,
@@ -94,7 +94,7 @@ struct shm_object *shm_object_table_append_shm(struct shm_object_table *table,
 			size_t memory_map_size);
 /* mem ownership is passed to shm_object_table_append_mem(). */
 struct shm_object *shm_object_table_append_mem(struct shm_object_table *table,
-			void *mem, size_t memory_map_size);
+			void *mem, size_t memory_map_size, int wakeup_fd);
 void shm_object_table_destroy(struct shm_object_table *table);
 
 /*

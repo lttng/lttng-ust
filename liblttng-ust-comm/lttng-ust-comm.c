@@ -546,10 +546,12 @@ int ustcomm_send_app_cmd(int sock,
  * expected var_len.
  */
 ssize_t ustcomm_recv_channel_from_sessiond(int sock,
-		void **_chan_data, uint64_t var_len)
+		void **_chan_data, uint64_t var_len,
+		int *_wakeup_fd)
 {
 	void *chan_data;
-	ssize_t len;
+	ssize_t len, nr_fd;
+	int wakeup_fd;
 
 	if (var_len > LTTNG_UST_CHANNEL_DATA_MAX_LEN) {
 		len = -EINVAL;
@@ -565,6 +567,18 @@ ssize_t ustcomm_recv_channel_from_sessiond(int sock,
 	if (len != var_len) {
 		goto error_recv;
 	}
+	/* recv wakeup fd */
+	nr_fd = ustcomm_recv_fds_unix_sock(sock, &wakeup_fd, 1);
+	if (nr_fd <= 0) {
+		if (nr_fd < 0) {
+			len = nr_fd;
+			goto error_recv;
+		} else {
+			len = -EIO;
+			goto error_recv;
+		}
+	}
+	*_wakeup_fd = wakeup_fd;
 	*_chan_data = chan_data;
 	return len;
 

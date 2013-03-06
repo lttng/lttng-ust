@@ -94,12 +94,20 @@ extern struct lttng_ust_lib_ring_buffer *channel_get_ring_buffer(
 				int *wakeup_fd,
 				uint64_t *memory_map_size);
 extern
-int ring_buffer_close_wait_fd(const struct lttng_ust_lib_ring_buffer_config *config,
+int ring_buffer_channel_close_wait_fd(const struct lttng_ust_lib_ring_buffer_config *config,
+			struct channel *chan,
+			struct lttng_ust_shm_handle *handle);
+extern
+int ring_buffer_channel_close_wakeup_fd(const struct lttng_ust_lib_ring_buffer_config *config,
+			struct channel *chan,
+			struct lttng_ust_shm_handle *handle);
+extern
+int ring_buffer_stream_close_wait_fd(const struct lttng_ust_lib_ring_buffer_config *config,
 		struct channel *chan,
 		struct lttng_ust_shm_handle *handle,
 		int cpu);
 extern
-int ring_buffer_close_wakeup_fd(const struct lttng_ust_lib_ring_buffer_config *config,
+int ring_buffer_stream_close_wakeup_fd(const struct lttng_ust_lib_ring_buffer_config *config,
 		struct channel *chan,
 		struct lttng_ust_shm_handle *handle,
 		int cpu);

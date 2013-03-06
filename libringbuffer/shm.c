@@ -231,6 +231,7 @@ struct shm_object *_shm_object_table_alloc_mem(struct shm_object_table *table,
 {
 	struct shm_object *obj;
 	void *memory_map;
+	int waitfd[2], i, ret;
 
 	if (table->allocated_len >= table->size)
 		return NULL;
@@ -240,8 +241,28 @@ struct shm_object *_shm_object_table_alloc_mem(struct shm_object_table *table,
 	if (!memory_map)
 		goto alloc_error;
 
-	obj->wait_fd[0] = -1;
-	obj->wait_fd[1] = -1;
+	/* wait_fd: create pipe */
+	ret = pipe(waitfd);
+	if (ret < 0) {
+		PERROR("pipe");
+		goto error_pipe;
+	}
+	for (i = 0; i < 2; i++) {
+		ret = fcntl(waitfd[i], F_SETFD, FD_CLOEXEC);
+		if (ret < 0) {
+			PERROR("fcntl");
+			goto error_fcntl;
+		}
+	}
+	/* The write end of the pipe needs to be non-blocking */
+	ret = fcntl(waitfd[1], F_SETFL, O_NONBLOCK);
+	if (ret < 0) {
+		PERROR("fcntl");
+		goto error_fcntl;
+	}
+	memcpy(obj->wait_fd, waitfd, sizeof(waitfd));
+
+	/* no shm_fd */
 	obj->shm_fd = -1;
 
 	obj->type = SHM_OBJECT_MEM;
@@ -252,6 +273,16 @@ struct shm_object *_shm_object_table_alloc_mem(struct shm_object_table *table,
 
 	return obj;
 
+error_fcntl:
+	for (i = 0; i < 2; i++) {
+		ret = close(waitfd[i]);
+		if (ret) {
+			PERROR("close");
+			assert(0);
+		}
+	}
+error_pipe:
+	free(memory_map);
 alloc_error:
 	return NULL;
 }
@@ -328,17 +359,30 @@ error_mmap:
  * Passing ownership of mem to object.
  */
 struct shm_object *shm_object_table_append_mem(struct shm_object_table *table,
-			void *mem, size_t memory_map_size)
+			void *mem, size_t memory_map_size, int wakeup_fd)
 {
 	struct shm_object *obj;
+	int ret;
 
 	if (table->allocated_len >= table->size)
 		return NULL;
 	obj = &table->objects[table->allocated_len];
 
-	obj->wait_fd[0] = -1;
-	obj->wait_fd[1] = -1;
+	obj->wait_fd[0] = -1;	/* read end is unset */
+	obj->wait_fd[1] = wakeup_fd;
 	obj->shm_fd = -1;
+
+	ret = fcntl(obj->wait_fd[1], F_SETFD, FD_CLOEXEC);
+	if (ret < 0) {
+		PERROR("fcntl");
+		goto error_fcntl;
+	}
+	/* The write end of the pipe needs to be non-blocking */
+	ret = fcntl(obj->wait_fd[1], F_SETFL, O_NONBLOCK);
+	if (ret < 0) {
+		PERROR("fcntl");
+		goto error_fcntl;
+	}
 
 	obj->type = SHM_OBJECT_MEM;
 	obj->memory_map = mem;
@@ -347,6 +391,9 @@ struct shm_object *shm_object_table_append_mem(struct shm_object_table *table,
 	obj->index = table->allocated_len++;
 
 	return obj;
+
+error_fcntl:
+	return NULL;
 }
 
 static
@@ -379,8 +426,21 @@ void shmp_object_destroy(struct shm_object *obj)
 		break;
 	}
 	case SHM_OBJECT_MEM:
+	{
+		int ret, i;
+
+		for (i = 0; i < 2; i++) {
+			if (obj->wait_fd[i] < 0)
+				continue;
+			ret = close(obj->wait_fd[i]);
+			if (ret) {
+				PERROR("close");
+				assert(0);
+			}
+		}
 		free(obj->memory_map);
 		break;
+	}
 	default:
 		assert(0);
 	}

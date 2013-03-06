@@ -753,7 +753,8 @@ error_table_alloc:
 }
 
 struct lttng_ust_shm_handle *channel_handle_create(void *data,
-					uint64_t memory_map_size)
+					uint64_t memory_map_size,
+					int wakeup_fd)
 {
 	struct lttng_ust_shm_handle *handle;
 	struct shm_object *object;
@@ -768,7 +769,7 @@ struct lttng_ust_shm_handle *channel_handle_create(void *data,
 		goto error_table_alloc;
 	/* Add channel object */
 	object = shm_object_table_append_mem(handle->table, data,
-			memory_map_size);
+			memory_map_size, wakeup_fd);
 	if (!object)
 		goto error_table_object;
 	/* struct channel is at object 0, offset 0 (hardcoded) */
@@ -868,7 +869,27 @@ struct lttng_ust_lib_ring_buffer *channel_get_ring_buffer(
 	return shmp(handle, chan->backend.buf[cpu].shmp);
 }
 
-int ring_buffer_close_wait_fd(const struct lttng_ust_lib_ring_buffer_config *config,
+int ring_buffer_channel_close_wait_fd(const struct lttng_ust_lib_ring_buffer_config *config,
+			struct channel *chan,
+			struct lttng_ust_shm_handle *handle)
+{
+	struct shm_ref *ref;
+
+	ref = &handle->chan._ref;
+	return shm_close_wait_fd(handle, ref);
+}
+
+int ring_buffer_channel_close_wakeup_fd(const struct lttng_ust_lib_ring_buffer_config *config,
+			struct channel *chan,
+			struct lttng_ust_shm_handle *handle)
+{
+	struct shm_ref *ref;
+
+	ref = &handle->chan._ref;
+	return shm_close_wakeup_fd(handle, ref);
+}
+
+int ring_buffer_stream_close_wait_fd(const struct lttng_ust_lib_ring_buffer_config *config,
 			struct channel *chan,
 			struct lttng_ust_shm_handle *handle,
 			int cpu)
@@ -885,7 +906,7 @@ int ring_buffer_close_wait_fd(const struct lttng_ust_lib_ring_buffer_config *con
 	return shm_close_wait_fd(handle, ref);
 }
 
-int ring_buffer_close_wakeup_fd(const struct lttng_ust_lib_ring_buffer_config *config,
+int ring_buffer_stream_close_wakeup_fd(const struct lttng_ust_lib_ring_buffer_config *config,
 			struct channel *chan,
 			struct lttng_ust_shm_handle *handle,
 			int cpu)

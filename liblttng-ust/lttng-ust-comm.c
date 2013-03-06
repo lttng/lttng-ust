@@ -467,9 +467,11 @@ int handle_message(struct sock_info *sock_info,
 	case LTTNG_UST_CHANNEL:
 	{
 		void *chan_data;
+		int wakeup_fd;
 
 		len = ustcomm_recv_channel_from_sessiond(sock,
-				&chan_data, lum->u.channel.len);
+				&chan_data, lum->u.channel.len,
+				&wakeup_fd);
 		switch (len) {
 		case 0:	/* orderly shutdown */
 			ret = 0;
@@ -494,6 +496,7 @@ int handle_message(struct sock_info *sock_info,
 			}
 		}
 		args.channel.chan_data = chan_data;
+		args.channel.wakeup_fd = wakeup_fd;
 		if (ops->cmd)
 			ret = ops->cmd(lum->handle, lum->cmd,
 					(unsigned long) &lum->u,
