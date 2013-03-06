@@ -612,7 +612,6 @@ static void channel_print_errors(struct channel *chan,
 static void channel_free(struct channel *chan,
 		struct lttng_ust_shm_handle *handle)
 {
-	channel_print_errors(chan, handle);
 	channel_backend_free(&chan->backend, handle);
 	/* chan is freed by shm teardown */
 	shm_object_table_destroy(handle->table);
@@ -830,6 +829,10 @@ void channel_destroy(struct channel *chan, struct lttng_ust_shm_handle *handle,
 		 * switching the buffers.
 		 */
 		channel_unregister_notifiers(chan, handle);
+		/*
+		 * The consumer prints errors.
+		 */
+		channel_print_errors(chan, handle);
 	}
 
 	/*
