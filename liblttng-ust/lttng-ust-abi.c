@@ -71,6 +71,7 @@ struct lttng_ust_obj {
 			void *private_data;
 			const struct lttng_ust_objd_ops *ops;
 			int f_count;
+			int owner_ref;	/* has ref from owner */
 			void *owner;
 			char name[OBJ_NAME_LEN];
 		} s;
@@ -126,6 +127,7 @@ end:
 	obj->u.s.ops = ops;
 	obj->u.s.f_count = 2;	/* count == 1 : object is allocated */
 				/* count == 2 : allocated + hold ref */
+	obj->u.s.owner_ref = 1;	/* One owner reference */
 	obj->u.s.owner = owner;
 	strncpy(obj->u.s.name, name, OBJ_NAME_LEN);
 	obj->u.s.name[OBJ_NAME_LEN - 1] = '\0';
@@ -186,7 +188,7 @@ void objd_ref(int id)
 	obj->u.s.f_count++;
 }
 
-int lttng_ust_objd_unref(int id)
+int lttng_ust_objd_unref(int id, int is_owner)
 {
 	struct lttng_ust_obj *obj = _objd_get(id);
 
@@ -195,6 +197,13 @@ int lttng_ust_objd_unref(int id)
 	if (obj->u.s.f_count == 1) {
 		ERR("Reference counting error\n");
 		return -EINVAL;
+	}
+	if (is_owner) {
+		if (!obj->u.s.owner_ref) {
+			ERR("Error decrementing owner reference");
+			return -EINVAL;
+		}
+		obj->u.s.owner_ref--;
 	}
 	if ((--obj->u.s.f_count) == 1) {
 		const struct lttng_ust_objd_ops *ops = objd_ops(id);
@@ -211,8 +220,16 @@ void objd_table_destroy(void)
 {
 	int i;
 
-	for (i = 0; i < objd_table.allocated_len; i++)
-		(void) lttng_ust_objd_unref(i);
+	for (i = 0; i < objd_table.allocated_len; i++) {
+		struct lttng_ust_obj *obj;
+
+		obj = _objd_get(i);
+		if (!obj)
+			continue;
+		if (!obj->u.s.owner_ref)
+			continue;	/* only unref owner ref. */
+		(void) lttng_ust_objd_unref(i, 1);
+	}
 	free(objd_table.array);
 	objd_table.array = NULL;
 	objd_table.len = 0;
@@ -241,8 +258,10 @@ void lttng_ust_objd_table_owner_cleanup(void *owner)
 			continue;
 		if (!obj->u.s.owner)
 			continue;	/* skip root handles */
+		if (!obj->u.s.owner_ref)
+			continue;	/* only unref owner ref. */
 		if (obj->u.s.owner == owner)
-			(void) lttng_ust_objd_unref(i);
+			(void) lttng_ust_objd_unref(i, 1);
 	}
 }
 
@@ -608,7 +627,7 @@ alloc_error:
 	{
 		int err;
 
-		err = lttng_ust_objd_unref(list_objd);
+		err = lttng_ust_objd_unref(list_objd, 1);
 		assert(!err);
 	}
 objd_error:
@@ -688,7 +707,7 @@ alloc_error:
 	{
 		int err;
 
-		err = lttng_ust_objd_unref(list_objd);
+		err = lttng_ust_objd_unref(list_objd, 1);
 		assert(!err);
 	}
 objd_error:
@@ -767,7 +786,7 @@ event_error:
 	{
 		int err;
 
-		err = lttng_ust_objd_unref(event_objd);
+		err = lttng_ust_objd_unref(event_objd, 1);
 		assert(!err);
 	}
 objd_error:
@@ -855,7 +874,7 @@ int lttng_channel_release(int objd)
 	struct lttng_channel *channel = objd_private(objd);
 
 	if (channel)
-		return lttng_ust_objd_unref(channel->session->objd);
+		return lttng_ust_objd_unref(channel->session->objd, 0);
 	return 0;
 }
 
@@ -919,7 +938,7 @@ int lttng_enabler_release(int objd)
 	struct lttng_enabler *enabler = objd_private(objd);
 
 	if (enabler)
-		return lttng_ust_objd_unref(enabler->chan->objd);
+		return lttng_ust_objd_unref(enabler->chan->objd, 0);
 	return 0;
 }
 

@@ -299,7 +299,7 @@ struct lttng_ust_objd_ops {
 int lttng_abi_create_root_handle(void);
 
 const struct lttng_ust_objd_ops *objd_ops(int id);
-int lttng_ust_objd_unref(int id);
+int lttng_ust_objd_unref(int id, int is_owner);
 
 void lttng_ust_abi_exit(void);
 void lttng_ust_events_exit(void);

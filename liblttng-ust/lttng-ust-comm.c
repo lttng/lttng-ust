@@ -393,7 +393,7 @@ int handle_message(struct sock_info *sock_info,
 		if (lum->handle == LTTNG_UST_ROOT_HANDLE)
 			ret = -EPERM;
 		else
-			ret = lttng_ust_objd_unref(lum->handle);
+			ret = lttng_ust_objd_unref(lum->handle, 1);
 		break;
 	case LTTNG_UST_FILTER:
 	{
@@ -632,7 +632,7 @@ void cleanup_sock_info(struct sock_info *sock_info, int exiting)
 		sock_info->notify_socket = -1;
 	}
 	if (sock_info->root_handle != -1) {
-		ret = lttng_ust_objd_unref(sock_info->root_handle);
+		ret = lttng_ust_objd_unref(sock_info->root_handle, 1);
 		if (ret) {
 			ERR("Error unref root handle");
 		}
