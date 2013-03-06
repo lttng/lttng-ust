@@ -129,6 +129,14 @@ int ustctl_send_stream_to_ust(int sock,
 		struct lttng_ust_object_data *stream_data);
 
 /*
+ * ustctl_duplicate_ust_object_data allocated a new object in "dest" if
+ * it succeeds (returns 0). It must be released using
+ * ustctl_release_object() and then freed with free().
+ */
+int ustctl_duplicate_ust_object_data(struct lttng_ust_object_data **dest,
+		struct lttng_ust_object_data *src);
+
+/*
  * API used by consumer.
  */
 

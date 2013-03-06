@@ -596,6 +596,7 @@ int ustctl_recv_channel_from_consumer(int sock,
 		goto error_alloc;
 	}
 	channel_data->type = LTTNG_UST_OBJECT_TYPE_CHANNEL;
+	channel_data->handle = -1;
 
 	/* recv mmap size */
 	len = ustcomm_recv_unix_sock(sock, &channel_data->size,
@@ -786,6 +787,119 @@ int ustctl_send_stream_to_ust(int sock,
 	if (ret)
 		return ret;
 	return ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+}
+
+int ustctl_duplicate_ust_object_data(struct lttng_ust_object_data **dest,
+                struct lttng_ust_object_data *src)
+{
+	struct lttng_ust_object_data *obj;
+	int ret;
+
+	if (src->handle != -1) {
+		ret = -EINVAL;
+		goto error;
+	}
+
+	obj = zmalloc(sizeof(*obj));
+	if (!obj) {
+		ret = -ENOMEM;
+		goto error;
+	}
+
+	obj->type = src->type;
+	obj->handle = src->handle;
+	obj->size = src->size;
+
+	switch (obj->type) {
+	case LTTNG_UST_OBJECT_TYPE_CHANNEL:
+	{
+		obj->u.channel.type = src->u.channel.type;
+		if (src->u.channel.wakeup_fd >= 0) {
+			obj->u.channel.wakeup_fd =
+				dup(src->u.channel.wakeup_fd);
+			if (obj->u.channel.wakeup_fd < 0) {
+				ret = errno;
+				goto chan_error_wakeup_fd;
+			}
+		} else {
+			obj->u.channel.wakeup_fd =
+				src->u.channel.wakeup_fd;
+		}
+		obj->u.channel.data = zmalloc(obj->size);
+		if (!obj->u.channel.data) {
+			ret = -ENOMEM;
+			goto chan_error_alloc;
+		}
+		memcpy(obj->u.channel.data, src->u.channel.data, obj->size);
+		break;
+
+	chan_error_alloc:
+		if (src->u.channel.wakeup_fd >= 0) {
+			int closeret;
+
+			closeret = close(obj->u.channel.wakeup_fd);
+			if (closeret) {
+				PERROR("close");
+			}
+		}
+	chan_error_wakeup_fd:
+		goto error_type;
+
+	}
+
+	case LTTNG_UST_OBJECT_TYPE_STREAM:
+	{
+		obj->u.stream.stream_nr = src->u.stream.stream_nr;
+		if (src->u.stream.wakeup_fd >= 0) {
+			obj->u.stream.wakeup_fd =
+				dup(src->u.stream.wakeup_fd);
+			if (obj->u.stream.wakeup_fd < 0) {
+				ret = errno;
+				goto stream_error_wakeup_fd;
+			}
+		} else {
+			obj->u.stream.wakeup_fd =
+				src->u.stream.wakeup_fd;
+		}
+
+		if (src->u.stream.shm_fd >= 0) {
+			obj->u.stream.shm_fd =
+				dup(src->u.stream.shm_fd);
+			if (obj->u.stream.shm_fd < 0) {
+				ret = errno;
+				goto stream_error_shm_fd;
+			}
+		} else {
+			obj->u.stream.shm_fd =
+				src->u.stream.shm_fd;
+		}
+		break;
+
+	stream_error_shm_fd:
+		if (src->u.stream.wakeup_fd >= 0) {
+			int closeret;
+
+			closeret = close(obj->u.stream.wakeup_fd);
+			if (closeret) {
+				PERROR("close");
+			}
+		}
+	stream_error_wakeup_fd:
+		goto error_type;
+	}
+
+	default:
+		ret = -EINVAL;
+		goto error_type;
+	}
+
+	*dest = obj;
+	return 0;
+
+error_type:
+	free(obj);
+error:
+	return ret;
 }
 
 
