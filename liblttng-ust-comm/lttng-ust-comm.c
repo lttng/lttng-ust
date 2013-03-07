@@ -831,7 +831,7 @@ int ustcomm_register_event(int sock,
 		struct ustcomm_notify_event_reply r;
 	} reply;
 	size_t signature_len, fields_len, model_emf_uri_len;
-	struct ustctl_field *fields;
+	struct ustctl_field *fields = NULL;
 	size_t nr_write_fields = 0;
 	int ret;
 
