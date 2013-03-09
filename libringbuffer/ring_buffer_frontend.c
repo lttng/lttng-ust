@@ -268,29 +268,6 @@ free_chanbuf:
 	return ret;
 }
 
-#if 0
-static void switch_buffer_timer(unsigned long data)
-{
-	struct lttng_ust_lib_ring_buffer *buf = (struct lttng_ust_lib_ring_buffer *)data;
-	struct channel *chan = shmp(handle, buf->backend.chan);
-	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
-
-	/*
-	 * Only flush buffers periodically if readers are active.
-	 */
-	if (uatomic_read(&buf->active_readers))
-		lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE, handle);
-
-	//TODO timers
-	//if (config->alloc == RING_BUFFER_ALLOC_PER_CPU)
-	//	mod_timer_pinned(&buf->switch_timer,
-	//			 jiffies + chan->switch_timer_interval);
-	//else
-	//	mod_timer(&buf->switch_timer,
-	//		  jiffies + chan->switch_timer_interval);
-}
-#endif //0
-
 static
 void lib_ring_buffer_channel_switch_timer(int sig, siginfo_t *si, void *uc)
 {
@@ -307,21 +284,25 @@ void lib_ring_buffer_channel_switch_timer(int sig, siginfo_t *si, void *uc)
 
 	DBG("Timer for channel %p\n", chan);
 
+	/*
+	 * Only flush buffers periodically if readers are active.
+	 */
 	pthread_mutex_lock(&wakeup_fd_mutex);
 	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU) {
 		for_each_possible_cpu(cpu) {
 			struct lttng_ust_lib_ring_buffer *buf =
 				shmp(handle, chan->backend.buf[cpu].shmp);
-
-			lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE,
-				chan->handle);
+			if (uatomic_read(&buf->active_readers))
+				lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE,
+					chan->handle);
 		}
 	} else {
 		struct lttng_ust_lib_ring_buffer *buf =
 			shmp(handle, chan->backend.buf[0].shmp);
 
-			lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE,
-				chan->handle);
+			if (uatomic_read(&buf->active_readers))
+				lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE,
+					chan->handle);
 	}
 	pthread_mutex_unlock(&wakeup_fd_mutex);
 	return;
