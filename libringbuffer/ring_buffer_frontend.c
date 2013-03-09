@@ -112,6 +112,12 @@ struct switch_offsets {
 
 DEFINE_URCU_TLS(unsigned int, lib_ring_buffer_nesting);
 
+/*
+ * wakeup_fd_mutex protects wakeup fd use by timer from concurrent
+ * close.
+ */
+static pthread_mutex_t wakeup_fd_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 static
 void lib_ring_buffer_print_errors(struct channel *chan,
 				struct lttng_ust_lib_ring_buffer *buf, int cpu,
@@ -301,6 +307,7 @@ void lib_ring_buffer_channel_switch_timer(int sig, siginfo_t *si, void *uc)
 
 	DBG("Timer for channel %p\n", chan);
 
+	pthread_mutex_lock(&wakeup_fd_mutex);
 	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU) {
 		for_each_possible_cpu(cpu) {
 			struct lttng_ust_lib_ring_buffer *buf =
@@ -316,6 +323,7 @@ void lib_ring_buffer_channel_switch_timer(int sig, siginfo_t *si, void *uc)
 			lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE,
 				chan->handle);
 	}
+	pthread_mutex_unlock(&wakeup_fd_mutex);
 	return;
 }
 
@@ -912,6 +920,7 @@ int ring_buffer_stream_close_wakeup_fd(const struct lttng_ust_lib_ring_buffer_co
 			int cpu)
 {
 	struct shm_ref *ref;
+	int ret;
 
 	if (config->alloc == RING_BUFFER_ALLOC_GLOBAL) {
 		cpu = 0;
@@ -920,7 +929,10 @@ int ring_buffer_stream_close_wakeup_fd(const struct lttng_ust_lib_ring_buffer_co
 			return -EINVAL;
 	}
 	ref = &chan->backend.buf[cpu].shmp._ref;
-	return shm_close_wakeup_fd(handle, ref);
+	pthread_mutex_lock(&wakeup_fd_mutex);
+	ret = shm_close_wakeup_fd(handle, ref);
+	pthread_mutex_unlock(&wakeup_fd_mutex);
+	return ret;
 }
 
 int lib_ring_buffer_open_read(struct lttng_ust_lib_ring_buffer *buf,

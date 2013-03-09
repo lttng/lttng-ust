@@ -953,6 +953,8 @@ struct ustctl_consumer_channel *
 	}
 	chan->chan->ops = &transport->ops;
 	memcpy(&chan->attr, attr, sizeof(chan->attr));
+	chan->wait_fd = ustctl_channel_get_wait_fd(chan);
+	chan->wakeup_fd = ustctl_channel_get_wakeup_fd(chan);
 	return chan;
 
 chan_error:
@@ -1042,19 +1044,27 @@ end:
 int ustctl_channel_close_wait_fd(struct ustctl_consumer_channel *consumer_chan)
 {
 	struct channel *chan;
+	int ret;
 
 	chan = consumer_chan->chan->chan;
-	return ring_buffer_channel_close_wait_fd(&chan->backend.config,
+	ret = ring_buffer_channel_close_wait_fd(&chan->backend.config,
 			chan, chan->handle);
+	if (!ret)
+		consumer_chan->wait_fd = -1;
+	return ret;
 }
 
 int ustctl_channel_close_wakeup_fd(struct ustctl_consumer_channel *consumer_chan)
 {
 	struct channel *chan;
+	int ret;
 
 	chan = consumer_chan->chan->chan;
-	return ring_buffer_channel_close_wakeup_fd(&chan->backend.config,
+	ret = ring_buffer_channel_close_wakeup_fd(&chan->backend.config,
 			chan, chan->handle);
+	if (!ret)
+		consumer_chan->wakeup_fd = -1;
+	return ret;
 }
 
 int ustctl_stream_close_wait_fd(struct ustctl_consumer_stream *stream)
