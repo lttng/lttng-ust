@@ -178,10 +178,14 @@ static const char *str_timeout;
 static int got_timeout_env;
 
 extern void lttng_ring_buffer_client_overwrite_init(void);
+extern void lttng_ring_buffer_client_overwrite_rt_init(void);
 extern void lttng_ring_buffer_client_discard_init(void);
+extern void lttng_ring_buffer_client_discard_rt_init(void);
 extern void lttng_ring_buffer_metadata_client_init(void);
 extern void lttng_ring_buffer_client_overwrite_exit(void);
+extern void lttng_ring_buffer_client_overwrite_rt_exit(void);
 extern void lttng_ring_buffer_client_discard_exit(void);
+extern void lttng_ring_buffer_client_discard_rt_exit(void);
 extern void lttng_ring_buffer_metadata_client_exit(void);
 
 /*
@@ -1116,7 +1120,9 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	init_tracepoint();
 	lttng_ring_buffer_metadata_client_init();
 	lttng_ring_buffer_client_overwrite_init();
+	lttng_ring_buffer_client_overwrite_rt_init();
 	lttng_ring_buffer_client_discard_init();
+	lttng_ring_buffer_client_discard_rt_init();
 
 	timeout_mode = get_constructor_timeout(&constructor_timeout);
 
@@ -1219,7 +1225,9 @@ void lttng_ust_cleanup(int exiting)
 	 */
 	lttng_ust_abi_exit();
 	lttng_ust_events_exit();
+	lttng_ring_buffer_client_discard_rt_exit();
 	lttng_ring_buffer_client_discard_exit();
+	lttng_ring_buffer_client_overwrite_rt_exit();
 	lttng_ring_buffer_client_overwrite_exit();
 	lttng_ring_buffer_metadata_client_exit();
 	exit_tracepoint();

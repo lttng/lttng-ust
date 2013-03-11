@@ -915,8 +915,19 @@ struct ustctl_consumer_channel *
 	switch (attr->type) {
 	case LTTNG_UST_CHAN_PER_CPU:
 		if (attr->output == LTTNG_UST_MMAP) {
-			transport_name = attr->overwrite ?
-				"relay-overwrite-mmap" : "relay-discard-mmap";
+			if (attr->overwrite) {
+				if (attr->read_timer_interval == 0) {
+					transport_name = "relay-overwrite-mmap";
+				} else {
+					transport_name = "relay-overwrite-rt-mmap";
+				}
+			} else {
+				if (attr->read_timer_interval == 0) {
+					transport_name = "relay-discard-mmap";
+				} else {
+					transport_name = "relay-discard-rt-mmap";
+				}
+			}
 		} else {
 			return NULL;
 		}
@@ -1758,14 +1769,18 @@ void ustctl_init(void)
 	init_usterr();
 	lttng_ring_buffer_metadata_client_init();
 	lttng_ring_buffer_client_overwrite_init();
+	lttng_ring_buffer_client_overwrite_rt_init();
 	lttng_ring_buffer_client_discard_init();
+	lttng_ring_buffer_client_discard_rt_init();
 	lib_ringbuffer_signal_init();
 }
 
 static __attribute__((destructor))
 void ustctl_exit(void)
 {
+	lttng_ring_buffer_client_discard_rt_exit();
 	lttng_ring_buffer_client_discard_exit();
+	lttng_ring_buffer_client_overwrite_rt_exit();
 	lttng_ring_buffer_client_overwrite_exit();
 	lttng_ring_buffer_metadata_client_exit();
 }

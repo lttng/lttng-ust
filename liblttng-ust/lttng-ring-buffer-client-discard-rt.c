@@ -1,7 +1,7 @@
 /*
- * lttng-ring-buffer-client-discard.c
+ * lttng-ring-buffer-client-discard-rt.c
  *
- * LTTng lib ring buffer client (discard mode).
+ * LTTng lib ring buffer client (discard mode) for RT.
  *
  * Copyright (C) 2010-2012 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
@@ -24,12 +24,12 @@
 #include "lttng-tracer.h"
 
 #define RING_BUFFER_MODE_TEMPLATE		RING_BUFFER_DISCARD
-#define RING_BUFFER_MODE_TEMPLATE_STRING	"discard"
+#define RING_BUFFER_MODE_TEMPLATE_STRING	"discard-rt"
 #define RING_BUFFER_MODE_TEMPLATE_INIT	\
-	lttng_ring_buffer_client_discard_init
+	lttng_ring_buffer_client_discard_rt_init
 #define RING_BUFFER_MODE_TEMPLATE_EXIT	\
-	lttng_ring_buffer_client_discard_exit
-#define LTTNG_CLIENT_TYPE			LTTNG_CLIENT_DISCARD
-#define LTTNG_CLIENT_CALLBACKS			lttng_client_callbacks_discard
-#define LTTNG_CLIENT_WAKEUP			RING_BUFFER_WAKEUP_BY_WRITER
+	lttng_ring_buffer_client_discard_rt_exit
+#define LTTNG_CLIENT_TYPE			LTTNG_CLIENT_DISCARD_RT
+#define LTTNG_CLIENT_CALLBACKS			lttng_client_callbacks_discard_rt
+#define LTTNG_CLIENT_WAKEUP			RING_BUFFER_WAKEUP_BY_TIMER
 #include "lttng-ring-buffer-client.h"

@@ -307,12 +307,14 @@ static struct lttng_transport lttng_relay_transport = {
 
 void RING_BUFFER_MODE_TEMPLATE_INIT(void)
 {
-	DBG("LTT : ltt ring buffer client init\n");
+	DBG("LTT : ltt ring buffer client \"%s\" init\n",
+		"relay-" RING_BUFFER_MODE_TEMPLATE_STRING "-mmap");
 	lttng_transport_register(&lttng_relay_transport);
 }
 
 void RING_BUFFER_MODE_TEMPLATE_EXIT(void)
 {
-	DBG("LTT : ltt ring buffer client exit\n");
+	DBG("LTT : ltt ring buffer client \"%s\" exit\n",
+		"relay-" RING_BUFFER_MODE_TEMPLATE_STRING "-mmap");
 	lttng_transport_unregister(&lttng_relay_transport);
 }

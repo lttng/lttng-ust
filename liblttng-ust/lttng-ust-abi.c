@@ -446,8 +446,19 @@ int lttng_abi_map_channel(int session_objd,
 	switch (type) {
 	case LTTNG_UST_CHAN_PER_CPU:
 		if (config->output == RING_BUFFER_MMAP) {
-			transport_name = config->mode == RING_BUFFER_OVERWRITE ?
-				"relay-overwrite-mmap" : "relay-discard-mmap";
+			if (config->mode == RING_BUFFER_OVERWRITE) {
+				if (config->wakeup == RING_BUFFER_WAKEUP_BY_WRITER) {
+					transport_name = "relay-overwrite-mmap";
+				} else {
+					transport_name = "relay-overwrite-rt-mmap";
+				}
+			} else {
+				if (config->wakeup == RING_BUFFER_WAKEUP_BY_WRITER) {
+					transport_name = "relay-discard-mmap";
+				} else {
+					transport_name = "relay-discard-rt-mmap";
+				}
+			}
 		} else {
 			ret = -EINVAL;
 			goto notransport;

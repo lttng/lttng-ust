@@ -301,6 +301,71 @@ int lib_ring_buffer_reserve_committed(const struct lttng_ust_lib_ring_buffer_con
 }
 
 static inline
+void lib_ring_buffer_wakeup(struct lttng_ust_lib_ring_buffer *buf,
+		struct lttng_ust_shm_handle *handle)
+{
+	int wakeup_fd = shm_get_wakeup_fd(handle, &buf->self._ref);
+	sigset_t sigpipe_set, pending_set, old_set;
+	int ret, sigpipe_was_pending = 0;
+
+	if (wakeup_fd < 0)
+		return;
+
+	/*
+	 * Wake-up the other end by writing a null byte in the pipe
+	 * (non-blocking).  Important note: Because writing into the
+	 * pipe is non-blocking (and therefore we allow dropping wakeup
+	 * data, as long as there is wakeup data present in the pipe
+	 * buffer to wake up the consumer), the consumer should perform
+	 * the following sequence for waiting:
+	 * 1) empty the pipe (reads).
+	 * 2) check if there is data in the buffer.
+	 * 3) wait on the pipe (poll).
+	 *
+	 * Discard the SIGPIPE from write(), not disturbing any SIGPIPE
+	 * that might be already pending. If a bogus SIGPIPE is sent to
+	 * the entire process concurrently by a malicious user, it may
+	 * be simply discarded.
+	 */
+	ret = sigemptyset(&pending_set);
+	assert(!ret);
+	/*
+	 * sigpending returns the mask of signals that are _both_
+	 * blocked for the thread _and_ pending for either the thread or
+	 * the entire process.
+	 */
+	ret = sigpending(&pending_set);
+	assert(!ret);
+	sigpipe_was_pending = sigismember(&pending_set, SIGPIPE);
+	/*
+	 * If sigpipe was pending, it means it was already blocked, so
+	 * no need to block it.
+	 */
+	if (!sigpipe_was_pending) {
+		ret = sigemptyset(&sigpipe_set);
+		assert(!ret);
+		ret = sigaddset(&sigpipe_set, SIGPIPE);
+		assert(!ret);
+		ret = pthread_sigmask(SIG_BLOCK, &sigpipe_set, &old_set);
+		assert(!ret);
+	}
+	do {
+		ret = write(wakeup_fd, "", 1);
+	} while (ret == -1L && errno == EINTR);
+	if (ret == -1L && errno == EPIPE && !sigpipe_was_pending) {
+		struct timespec timeout = { 0, 0 };
+		do {
+			ret = sigtimedwait(&sigpipe_set, NULL,
+				&timeout);
+		} while (ret == -1L && errno == EINTR);
+	}
+	if (!sigpipe_was_pending) {
+		ret = pthread_sigmask(SIG_SETMASK, &old_set, NULL);
+		assert(!ret);
+	}
+}
+
+static inline
 void lib_ring_buffer_check_deliver(const struct lttng_ust_lib_ring_buffer_config *config,
 				   struct lttng_ust_lib_ring_buffer *buf,
 			           struct channel *chan,
@@ -396,78 +461,7 @@ void lib_ring_buffer_check_deliver(const struct lttng_ust_lib_ring_buffer_config
 			if (config->wakeup == RING_BUFFER_WAKEUP_BY_WRITER
 			    && uatomic_read(&buf->active_readers)
 			    && lib_ring_buffer_poll_deliver(config, buf, chan, handle)) {
-				int wakeup_fd = shm_get_wakeup_fd(handle, &buf->self._ref);
-
-				if (wakeup_fd >= 0) {
-					sigset_t sigpipe_set, pending_set, old_set;
-					int ret, sigpipe_was_pending = 0;
-
-					/*
-					 * Wake-up the other end by
-					 * writing a null byte in the
-					 * pipe (non-blocking).
-					 * Important note: Because
-					 * writing into the pipe is
-					 * non-blocking (and therefore
-					 * we allow dropping wakeup
-					 * data, as long as there is
-					 * wakeup data present in the
-					 * pipe buffer to wake up the
-					 * consumer), the consumer
-					 * should perform the following
-					 * sequence for waiting:
-					 * 1) empty the pipe (reads).
-					 * 2) check if there is data in
-					 *    the buffer.
-					 * 3) wait on the pipe (poll).
-					 *
-					 * Discard the SIGPIPE from write(), not
-					 * disturbing any SIGPIPE that might be
-					 * already pending. If a bogus SIGPIPE
-					 * is sent to the entire process
-					 * concurrently by a malicious user, it
-					 * may be simply discarded.
-					 */
-					ret = sigemptyset(&pending_set);
-					assert(!ret);
-					/*
-					 * sigpending returns the mask
-					 * of signals that are _both_
-					 * blocked for the thread _and_
-					 * pending for either the thread
-					 * or the entire process.
-					 */
-					ret = sigpending(&pending_set);
-					assert(!ret);
-					sigpipe_was_pending = sigismember(&pending_set, SIGPIPE);
-					/*
-					 * If sigpipe was pending, it
-					 * means it was already blocked,
-					 * so no need to block it.
-					 */
-					if (!sigpipe_was_pending) {
-						ret = sigemptyset(&sigpipe_set);
-						assert(!ret);
-						ret = sigaddset(&sigpipe_set, SIGPIPE);
-						assert(!ret);
-						ret = pthread_sigmask(SIG_BLOCK, &sigpipe_set, &old_set);
-						assert(!ret);
-					}
-					do {
-						ret = write(wakeup_fd, "", 1);
-					} while (ret == -1L && errno == EINTR);
-					if (ret == -1L && errno == EPIPE && !sigpipe_was_pending) {
-						struct timespec timeout = { 0, 0 };
-						do {
-							ret = sigtimedwait(&sigpipe_set, NULL,
-								&timeout);
-						} while (ret == -1L && errno == EINTR);
-					}
-					if (!sigpipe_was_pending) {
-						ret = pthread_sigmask(SIG_SETMASK, &old_set, NULL);
-						assert(!ret);
-					}
-				}
+				lib_ring_buffer_wakeup(buf, handle);
 			}
 		}
 	}

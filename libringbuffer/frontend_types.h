@@ -63,8 +63,9 @@ struct channel {
 	int switch_timer_enabled;
 
 	unsigned long read_timer_interval;	/* Reader wakeup (us) */
-	//timer_t read_timer;
-	//wait_queue_head_t read_wait;		/* reader wait queue */
+	timer_t read_timer;
+	int read_timer_enabled;
+
 	int finalized;				/* Has channel been finalized */
 	size_t priv_data_offset;
 	unsigned int nr_streams;		/* Number of streams */
@@ -128,9 +129,7 @@ struct lttng_ust_lib_ring_buffer {
 	unsigned long get_subbuf_consumed;	/* Read-side consumed */
 	unsigned long prod_snapshot;	/* Producer count snapshot */
 	unsigned long cons_snapshot;	/* Consumer count snapshot */
-	unsigned int get_subbuf:1,	/* Sub-buffer being held by reader */
-		switch_timer_enabled:1,	/* Protected by ring_buffer_nohz_lock */
-		read_timer_enabled:1;	/* Protected by ring_buffer_nohz_lock */
+	unsigned int get_subbuf:1;	/* Sub-buffer being held by reader */
 	/* shmp pointer to self */
 	DECLARE_SHMP(struct lttng_ust_lib_ring_buffer, self);
 	char padding[RB_RING_BUFFER_PADDING];

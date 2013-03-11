@@ -47,7 +47,9 @@ liblttng_ust_support_la_SOURCES = \
 	ust-core.c \
 	lttng-ring-buffer-client.h \
 	lttng-ring-buffer-client-discard.c \
+	lttng-ring-buffer-client-discard-rt.c \
 	lttng-ring-buffer-client-overwrite.c \
+	lttng-ring-buffer-client-overwrite-rt.c \
 	lttng-ring-buffer-metadata-client.h \
 	lttng-ring-buffer-metadata-client.c
 

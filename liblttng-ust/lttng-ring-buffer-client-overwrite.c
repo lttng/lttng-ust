@@ -31,4 +31,5 @@
 	lttng_ring_buffer_client_overwrite_exit
 #define LTTNG_CLIENT_TYPE			LTTNG_CLIENT_OVERWRITE
 #define LTTNG_CLIENT_CALLBACKS			lttng_client_callbacks_overwrite
+#define LTTNG_CLIENT_WAKEUP			RING_BUFFER_WAKEUP_BY_WRITER
 #include "lttng-ring-buffer-client.h"

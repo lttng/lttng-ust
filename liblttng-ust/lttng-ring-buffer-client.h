@@ -402,7 +402,7 @@ static const struct lttng_ust_lib_ring_buffer_config client_config = {
 	.output = RING_BUFFER_MMAP,
 	.oops = RING_BUFFER_OOPS_CONSISTENCY,
 	.ipi = RING_BUFFER_NO_IPI_BARRIER,
-	.wakeup = RING_BUFFER_WAKEUP_BY_WRITER,
+	.wakeup = LTTNG_CLIENT_WAKEUP,
 	.client_type = LTTNG_CLIENT_TYPE,
 };
 
@@ -556,12 +556,14 @@ static struct lttng_transport lttng_relay_transport = {
 
 void RING_BUFFER_MODE_TEMPLATE_INIT(void)
 {
-	DBG("LTT : ltt ring buffer client init\n");
+	DBG("LTT : ltt ring buffer client \"%s\" init\n",
+		"relay-" RING_BUFFER_MODE_TEMPLATE_STRING "-mmap");
 	lttng_transport_register(&lttng_relay_transport);
 }
 
 void RING_BUFFER_MODE_TEMPLATE_EXIT(void)
 {
-	DBG("LTT : ltt ring buffer client exit\n");
+	DBG("LTT : ltt ring buffer client \"%s\" exit\n",
+		"relay-" RING_BUFFER_MODE_TEMPLATE_STRING "-mmap");
 	lttng_transport_unregister(&lttng_relay_transport);
 }
