@@ -75,7 +75,7 @@ USAGE:
     - Include the tracepoint provider header into all C files using
       the provider.
     - Example:
-        tests/hello/  hello.c tp.c ust_tests_hello.h Makefile.example.*
+      - tests/hello/  hello.c tp.c ust_tests_hello.h Makefile.example.*
 
   2) Compile the Tracepoint Provider separately from the application,
      using dynamic linking:
@@ -97,6 +97,10 @@ USAGE:
 
   - Enable instrumentation and control tracing with the "lttng" command
     from lttng-tools. See lttng-tools doc/quickstart.txt.
+  - Note about dlclose() usage: it is not safe to use dlclose on a
+    provider shared object that is being actively used for tracing due
+    to a lack of reference counting from lttng-ust to the used shared
+    object.
 
 ENVIRONMENT VARIABLES:
 
