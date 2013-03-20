@@ -440,7 +440,7 @@ int lttng_desc_match_wildcard_enabler(const struct lttng_event_desc *desc,
 		struct lttng_enabler *enabler)
 {
 	int loglevel = 0;
-	unsigned int has_loglevel;
+	unsigned int has_loglevel = 0;
 
 	assert(enabler->type == LTTNG_ENABLER_WILDCARD);
 	/* Compare excluding final '*' */
