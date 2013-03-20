@@ -166,7 +166,7 @@ void *channel_get_private(struct channel *chan)
 			uatomic_inc(&__chan->record_disabled);		\
 			WARN_ON(1);					\
 		}							\
-		_____ret;						\
+		_____ret = _____ret; /* For clang "unused result". */	\
 	})
 
 #endif /* _LTTNG_RING_BUFFER_FRONTEND_TYPES_H */
