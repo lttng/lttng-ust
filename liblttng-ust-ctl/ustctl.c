@@ -63,10 +63,14 @@ struct ustctl_consumer_stream {
 };
 
 extern void lttng_ring_buffer_client_overwrite_init(void);
+extern void lttng_ring_buffer_client_overwrite_rt_init(void);
 extern void lttng_ring_buffer_client_discard_init(void);
+extern void lttng_ring_buffer_client_discard_rt_init(void);
 extern void lttng_ring_buffer_metadata_client_init(void);
 extern void lttng_ring_buffer_client_overwrite_exit(void);
+extern void lttng_ring_buffer_client_overwrite_rt_exit(void);
 extern void lttng_ring_buffer_client_discard_exit(void);
+extern void lttng_ring_buffer_client_discard_rt_exit(void);
 extern void lttng_ring_buffer_metadata_client_exit(void);
 
 volatile enum ust_loglevel ust_loglevel;
