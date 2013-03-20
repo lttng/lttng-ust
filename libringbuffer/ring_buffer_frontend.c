@@ -643,9 +643,6 @@ void lib_ring_buffer_channel_read_timer_stop(struct channel *chan)
 static void channel_unregister_notifiers(struct channel *chan,
 			   struct lttng_ust_shm_handle *handle)
 {
-	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
-	int cpu;
-
 	lib_ring_buffer_channel_switch_timer_stop(chan);
 	lib_ring_buffer_channel_read_timer_stop(chan);
 }
@@ -710,7 +707,7 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 		   size_t num_subbuf, unsigned int switch_timer_interval,
 		   unsigned int read_timer_interval)
 {
-	int ret, cpu;
+	int ret;
 	size_t shmsize, chansize;
 	struct channel *chan;
 	struct lttng_ust_shm_handle *handle;
