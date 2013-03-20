@@ -756,9 +756,7 @@ int ustctl_send_channel_to_ust(int sock, int session_handle,
 		return ret;
 	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
 	if (!ret) {
-		if (lur.ret_val >= 0) {
-			channel_data->handle = lur.ret_val;
-		}
+		channel_data->handle = lur.ret_val;
 	}
 	return ret;
 }

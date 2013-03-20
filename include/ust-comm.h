@@ -102,7 +102,7 @@ struct ustcomm_ust_msg {
 struct ustcomm_ust_reply {
 	uint32_t handle;
 	uint32_t cmd;
-	uint32_t ret_code;	/* enum ustcomm_return_code */
+	int32_t ret_code;	/* enum ustcomm_return_code */
 	uint32_t ret_val;	/* return value */
 	char padding[USTCOMM_REPLY_PADDING1];
 	union {

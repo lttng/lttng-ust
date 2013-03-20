@@ -657,6 +657,26 @@ int ustcomm_send_reg_msg(int sock,
 }
 
 static
+int serialize_string_encoding(enum ustctl_string_encodings *ue,
+		enum lttng_string_encodings le)
+{
+	switch (le) {
+	case lttng_encode_none:
+		*ue = ustctl_encode_none;
+		break;
+	case lttng_encode_UTF8:
+		*ue = ustctl_encode_UTF8;
+		break;
+	case lttng_encode_ASCII:
+		*ue = ustctl_encode_ASCII;
+		break;
+	default:
+		return -EINVAL;
+	}
+	return 0;
+}
+
+static
 int serialize_basic_type(enum ustctl_abstract_types *uatype,
 		enum lttng_abstract_types atype,
 		union _ustctl_basic_type *ubt,
@@ -674,14 +694,17 @@ int serialize_basic_type(enum ustctl_abstract_types *uatype,
 		uit->signedness = lit->signedness;
 		uit->reverse_byte_order = lit->reverse_byte_order;
 		uit->base = lit->base;
-		uit->encoding = lit->encoding;
+		if (serialize_string_encoding(&uit->encoding, lit->encoding))
+			return -EINVAL;
 		uit->alignment = lit->alignment;
 		*uatype = ustctl_atype_integer;
 		break;
 	}
 	case atype_string:
 	{
-		ubt->string.encoding = lbt->string.encoding;
+		if (serialize_string_encoding(&ubt->string.encoding,
+				lbt->string.encoding))
+			return -EINVAL;
 		*uatype = ustctl_atype_string;
 		break;
 	}
