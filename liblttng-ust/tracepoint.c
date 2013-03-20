@@ -143,8 +143,10 @@ tracepoint_entry_add_probe(struct tracepoint_entry *entry,
 	int nr_probes = 0;
 	struct tracepoint_probe *old, *new;
 
-	WARN_ON(!probe);
-
+	if (!probe) {
+		WARN_ON(1);
+		return ERR_PTR(-EINVAL);
+	}
 	debug_print_probes(entry);
 	old = entry->probes;
 	if (old) {
