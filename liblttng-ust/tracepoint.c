@@ -185,11 +185,14 @@ tracepoint_entry_remove_probe(struct tracepoint_entry *entry,
 
 	debug_print_probes(entry);
 	/* (N -> M), (N > 1, M >= 0) probes */
-	for (nr_probes = 0; old[nr_probes].func; nr_probes++) {
-		if (!probe ||
-		     (old[nr_probes].func == probe &&
-		     old[nr_probes].data == data))
-			nr_del++;
+	if (probe) {
+		for (nr_probes = 0; old[nr_probes].func; nr_probes++) {
+			if (old[nr_probes].func == probe &&
+			     old[nr_probes].data == data)
+				nr_del++;
+		}
+	} else {
+		nr_del = nr_probes;
 	}
 
 	if (nr_probes - nr_del == 0) {
@@ -206,8 +209,7 @@ tracepoint_entry_remove_probe(struct tracepoint_entry *entry,
 		if (new == NULL)
 			return ERR_PTR(-ENOMEM);
 		for (i = 0; old[i].func; i++)
-			if (probe &&
-			    (old[i].func != probe || old[i].data != data))
+			if (old[i].func != probe || old[i].data != data)
 				new[j++] = old[i];
 		new[nr_probes - nr_del].func = NULL;
 		entry->refcount = nr_probes - nr_del;
