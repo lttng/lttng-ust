@@ -371,9 +371,9 @@ int lttng_event_create(const struct lttng_event_desc *desc,
 	head = &chan->session->events_ht.table[hash & (LTTNG_UST_EVENT_HT_SIZE - 1)];
 	cds_hlist_for_each_entry(event, node, head, hlist) {
 		assert(event->desc);
-		if (!strncmp(event->desc->name,
-				desc->name,
-				LTTNG_UST_SYM_NAME_LEN - 1)) {
+		if (!strncmp(event->desc->name, desc->name,
+					LTTNG_UST_SYM_NAME_LEN - 1)
+				&& chan == event->chan) {
 			ret = -EEXIST;
 			goto exist;
 		}
@@ -505,7 +505,11 @@ static
 int lttng_event_match_enabler(struct lttng_event *event,
 		struct lttng_enabler *enabler)
 {
-	return lttng_desc_match_enabler(event->desc, enabler);
+	if (lttng_desc_match_enabler(event->desc, enabler)
+			&& event->chan == enabler->chan)
+		return 1;
+	else
+		return 0;
 }
 
 static
@@ -563,7 +567,8 @@ void lttng_create_event_if_missing(struct lttng_enabler *enabler)
 			hash = jhash(event_name, name_len, 0);
 			head = &session->events_ht.table[hash & (LTTNG_UST_EVENT_HT_SIZE - 1)];
 			cds_hlist_for_each_entry(event, node, head, hlist) {
-				if (event->desc == desc)
+				if (event->desc == desc
+						&& event->chan == enabler->chan)
 					found = 1;
 			}
 			if (found)
