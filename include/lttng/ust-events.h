@@ -384,7 +384,8 @@ struct lttng_channel_ops {
 			size_t subbuf_size, size_t num_subbuf,
 			unsigned int switch_timer_interval,
 			unsigned int read_timer_interval,
-			unsigned char *uuid);
+			unsigned char *uuid,
+			uint32_t chan_id);
 	void (*channel_destroy)(struct lttng_channel *chan);
 	int (*event_reserve)(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			     uint32_t event_id);

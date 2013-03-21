@@ -182,7 +182,8 @@ struct lttng_channel *_channel_create(const char *name,
 				size_t subbuf_size, size_t num_subbuf,
 				unsigned int switch_timer_interval,
 				unsigned int read_timer_interval,
-				unsigned char *uuid)
+				unsigned char *uuid,
+				uint32_t chan_id)
 {
 	struct lttng_channel chan_priv_init;
 	struct lttng_ust_shm_handle *handle;
@@ -191,6 +192,7 @@ struct lttng_channel *_channel_create(const char *name,
 
 	memset(&chan_priv_init, 0, sizeof(chan_priv_init));
 	memcpy(chan_priv_init.uuid, uuid, LTTNG_UST_UUID_LEN);
+	chan_priv_init.id = chan_id;
 	handle = channel_create(&client_config, name,
 			&priv, __alignof__(*lttng_chan), sizeof(*lttng_chan),
 			&chan_priv_init,

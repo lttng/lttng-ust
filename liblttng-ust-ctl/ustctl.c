@@ -960,7 +960,7 @@ struct ustctl_consumer_channel *
 			attr->subbuf_size, attr->num_subbuf,
 			attr->switch_timer_interval,
 			attr->read_timer_interval,
-			attr->uuid);
+			attr->uuid, attr->chan_id);
 	if (!chan->chan) {
 		goto chan_error;
 	}

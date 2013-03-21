@@ -262,6 +262,7 @@ int lttng_session_enable(struct lttng_session *session)
 		const struct lttng_ctx *ctx;
 		const struct lttng_event_field *fields = NULL;
 		size_t nr_fields = 0;
+		uint32_t chan_id;
 
 		/* don't change it if session stop/restart */
 		if (chan->header_type)
@@ -276,11 +277,16 @@ int lttng_session_enable(struct lttng_session *session)
 			chan->objd,
 			nr_fields,
 			fields,
-			&chan->id,
+			&chan_id,
 			&chan->header_type);
 		if (ret) {
 			DBG("Error (%d) registering channel to sessiond", ret);
 			return ret;
+		}
+		if (chan_id != chan->id) {
+			DBG("Error: channel registration id (%u) does not match id assigned at creation (%u)",
+				chan_id, chan->id);
+			return -EINVAL;
 		}
 	}
 
