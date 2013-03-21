@@ -191,8 +191,6 @@ tracepoint_entry_remove_probe(struct tracepoint_entry *entry,
 			     old[nr_probes].data == data)
 				nr_del++;
 		}
-	} else {
-		nr_del = nr_probes;
 	}
 
 	if (nr_probes - nr_del == 0) {
