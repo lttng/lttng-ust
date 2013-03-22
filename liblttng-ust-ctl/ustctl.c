@@ -1578,7 +1578,7 @@ int ustctl_recv_register_event(int sock,
 		goto signature_error;
 	}
 	/* Enforce end of string */
-	signature[signature_len - 1] = '\0';
+	a_sign[signature_len - 1] = '\0';
 
 	/* recv fields */
 	if (fields_len) {
