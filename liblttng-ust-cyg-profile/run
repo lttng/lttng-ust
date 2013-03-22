@@ -1,0 +1,3 @@
+#!/bin/sh
+
+LD_VERBOSE=1 LD_PRELOAD=.libs/liblttng-ust-cyg-profile.so ${*}
