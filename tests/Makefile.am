@@ -8,6 +8,7 @@ dist_noinst_SCRIPTS = test_loop runtests trace_matches
 
 noinst_LIBRARIES = libtap.a
 
-libtap_a_SOURCES = \
-	tap.c \
-	tap.h
+libtap_a_SOURCES = tap.c tap.h
+
+check-am:
+	./run.sh unit_tests
