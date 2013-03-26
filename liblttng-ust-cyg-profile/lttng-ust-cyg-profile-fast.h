@@ -1,8 +1,8 @@
 #undef TRACEPOINT_PROVIDER
-#define TRACEPOINT_PROVIDER lttng_ust_cyg_profile
+#define TRACEPOINT_PROVIDER lttng_ust_cyg_profile_fast
 
-#if !defined(_TRACEPOINT_LTTNG_UST_CYG_PROFILE_H) || defined(TRACEPOINT_HEADER_MULTI_READ)
-#define _TRACEPOINT_LTTNG_UST_CYG_PROFILE_H
+#if !defined(_TRACEPOINT_LTTNG_UST_CYG_PROFILE_FAST_H) || defined(TRACEPOINT_HEADER_MULTI_READ)
+#define _TRACEPOINT_LTTNG_UST_CYG_PROFILE_FAST_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,32 +32,28 @@ extern "C" {
 
 #include <lttng/tracepoint.h>
 
-TRACEPOINT_EVENT(lttng_ust_cyg_profile, func_entry,
-	TP_ARGS(void *, func_addr, void *, call_site),
+TRACEPOINT_EVENT(lttng_ust_cyg_profile_fast, func_entry,
+	TP_ARGS(void *, func_addr),
 	TP_FIELDS(
 		ctf_integer_hex(void *, addr, func_addr)
-		ctf_integer_hex(void *, call_site, func_addr)
 	)
 )
 
-TRACEPOINT_LOGLEVEL(lttng_ust_cyg_profile, func_entry,
+TRACEPOINT_LOGLEVEL(lttng_ust_cyg_profile_fast, func_entry,
 	TRACE_DEBUG_FUNCTION)
 
-TRACEPOINT_EVENT(lttng_ust_cyg_profile, func_exit,
-	TP_ARGS(void *, func_addr, void *, call_site),
-	TP_FIELDS(
-		ctf_integer_hex(void *, addr, func_addr)
-		ctf_integer_hex(void *, call_site, func_addr)
-	)
+TRACEPOINT_EVENT(lttng_ust_cyg_profile_fast, func_exit,
+	TP_ARGS(void),
+	TP_FIELDS()
 )
 
-TRACEPOINT_LOGLEVEL(lttng_ust_cyg_profile, func_exit,
+TRACEPOINT_LOGLEVEL(lttng_ust_cyg_profile_fast, func_exit,
 	TRACE_DEBUG_FUNCTION)
 
-#endif /* _TRACEPOINT_LTTNG_UST_CYG_PROFILE_H */
+#endif /* _TRACEPOINT_LTTNG_UST_CYG_PROFILE_FAST_H */
 
 #undef TRACEPOINT_INCLUDE
-#define TRACEPOINT_INCLUDE "./lttng-ust-cyg-profile.h"
+#define TRACEPOINT_INCLUDE "./lttng-ust-cyg-profile-fast.h"
 
 /* This part must be outside ifdef protection */
 #include <lttng/tracepoint-event.h>

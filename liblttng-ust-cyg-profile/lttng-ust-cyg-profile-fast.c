@@ -16,15 +16,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#define _LGPL_SOURCE
 #define _GNU_SOURCE
+#define _LGPL_SOURCE
 #include <dlfcn.h>
 #include <sys/types.h>
 #include <stdio.h>
 
 #define TRACEPOINT_DEFINE
 #define TRACEPOINT_CREATE_PROBES
-#include "lttng-ust-cyg-profile.h"
+#include "lttng-ust-cyg-profile-fast.h"
 
 void __cyg_profile_func_enter(void *this_fn, void *call_site)
 	__attribute__((no_instrument_function));
@@ -34,10 +34,10 @@ void __cyg_profile_func_exit(void *this_fn, void *call_site)
 
 void __cyg_profile_func_enter(void *this_fn, void *call_site)
 {
-	tracepoint(lttng_ust_cyg_profile, func_entry, this_fn, call_site);
+	tracepoint(lttng_ust_cyg_profile_fast, func_entry, this_fn);
 }
 
 void __cyg_profile_func_exit(void *this_fn, void *call_site)
 {
-	tracepoint(lttng_ust_cyg_profile, func_exit, this_fn, call_site);
+	tracepoint(lttng_ust_cyg_profile_fast, func_exit);
 }
