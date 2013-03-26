@@ -232,7 +232,7 @@ int apply_context_reloc(struct lttng_event *event,
 	dbg_printf("Apply context reloc: %u %s\n", reloc_offset, context_name);
 
 	/* Get context index */
-	idx = lttng_get_context_index(event->chan->ctx, context_name);
+	idx = lttng_get_context_index(lttng_static_ctx, context_name);
 	if (idx < 0)
 		return -ENOENT;
 
@@ -241,7 +241,7 @@ int apply_context_reloc(struct lttng_event *event,
 		return -EINVAL;
 
 	/* Get context return type */
-	ctx_field = &event->chan->ctx->fields[idx];
+	ctx_field = &lttng_static_ctx->fields[idx];
 	op = (struct load_op *) &runtime->data[reloc_offset];
 	field_ref = (struct field_ref *) op->data;
 	switch (ctx_field->event_field.type.atype) {

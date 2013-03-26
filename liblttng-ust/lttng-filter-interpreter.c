@@ -176,7 +176,6 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		const char *filter_stack_data)
 {
 	struct bytecode_runtime *bytecode = filter_data;
-	struct lttng_ctx *ctx = bytecode->p.bc->enabler->chan->ctx;
 	void *pc, *next_pc, *start_pc;
 	int ret = -EINVAL;
 	uint64_t retval = 0;
@@ -864,7 +863,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 
 			dbg_printf("get context ref offset %u type string\n",
 				ref->offset);
-			ctx_field = &ctx->fields[ref->offset];
+			ctx_field = &lttng_static_ctx->fields[ref->offset];
 			ctx_field->get_value(ctx_field, &v);
 			estack_push(stack, top, ax, bx);
 			estack_ax(stack, top)->u.s.str = v.str;
@@ -889,7 +888,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 
 			dbg_printf("get context ref offset %u type s64\n",
 				ref->offset);
-			ctx_field = &ctx->fields[ref->offset];
+			ctx_field = &lttng_static_ctx->fields[ref->offset];
 			ctx_field->get_value(ctx_field, &v);
 			estack_push(stack, top, ax, bx);
 			estack_ax_v = v.s64;
@@ -907,7 +906,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 
 			dbg_printf("get context ref offset %u type double\n",
 				ref->offset);
-			ctx_field = &ctx->fields[ref->offset];
+			ctx_field = &lttng_static_ctx->fields[ref->offset];
 			ctx_field->get_value(ctx_field, &v);
 			estack_push(stack, top, ax, bx);
 			memcpy(&estack_ax(stack, top)->u.d, &v.d, sizeof(struct literal_double));
