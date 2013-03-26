@@ -74,6 +74,16 @@ void procname_record(struct lttng_ctx_field *field,
 	chan->ops->event_write(ctx, procname, LTTNG_UST_PROCNAME_LEN);
 }
 
+static
+void procname_get_value(struct lttng_ctx_field *field,
+		union lttng_ctx_value *value)
+{
+	char *procname;
+
+	procname = wrapper_getprocname();
+	value->str = procname;
+}
+
 int lttng_add_procname_to_ctx(struct lttng_ctx **ctx)
 {
 	struct lttng_ctx_field *field;
@@ -97,6 +107,7 @@ int lttng_add_procname_to_ctx(struct lttng_ctx **ctx)
 	field->event_field.type.u.array.length = LTTNG_UST_PROCNAME_LEN;
 	field->get_size = procname_get_size;
 	field->record = procname_record;
+	field->get_value = procname_get_value;
 	return 0;
 }
 

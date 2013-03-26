@@ -83,6 +83,16 @@ void vpid_record(struct lttng_ctx_field *field,
 	chan->ops->event_write(ctx, &pid, sizeof(pid));
 }
 
+static
+void vpid_get_value(struct lttng_ctx_field *field,
+		union lttng_ctx_value *value)
+{
+	pid_t pid;
+
+	pid = wrapper_getpid();
+	value->s64 = pid;
+}
+
 int lttng_add_vpid_to_ctx(struct lttng_ctx **ctx)
 {
 	struct lttng_ctx_field *field;
@@ -104,5 +114,6 @@ int lttng_add_vpid_to_ctx(struct lttng_ctx **ctx)
 	field->event_field.type.u.basic.integer.encoding = lttng_encode_none;
 	field->get_size = vpid_get_size;
 	field->record = vpid_record;
+	field->get_value = vpid_get_value;
 	return 0;
 }

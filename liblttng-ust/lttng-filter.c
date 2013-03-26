@@ -102,13 +102,14 @@ static const char *opnames[] = {
 	[ FILTER_OP_AND ] = "AND",
 	[ FILTER_OP_OR ] = "OR",
 
-	/* load */
+	/* load field ref */
 	[ FILTER_OP_LOAD_FIELD_REF ] = "LOAD_FIELD_REF",
 	[ FILTER_OP_LOAD_FIELD_REF_STRING ] = "LOAD_FIELD_REF_STRING",
 	[ FILTER_OP_LOAD_FIELD_REF_SEQUENCE ] = "LOAD_FIELD_REF_SEQUENCE",
 	[ FILTER_OP_LOAD_FIELD_REF_S64 ] = "LOAD_FIELD_REF_S64",
 	[ FILTER_OP_LOAD_FIELD_REF_DOUBLE ] = "LOAD_FIELD_REF_DOUBLE",
 
+	/* load from immediate operand */
 	[ FILTER_OP_LOAD_STRING ] = "LOAD_STRING",
 	[ FILTER_OP_LOAD_S64 ] = "LOAD_S64",
 	[ FILTER_OP_LOAD_DOUBLE ] = "LOAD_DOUBLE",
@@ -117,6 +118,12 @@ static const char *opnames[] = {
 	[ FILTER_OP_CAST_TO_S64 ] = "CAST_TO_S64",
 	[ FILTER_OP_CAST_DOUBLE_TO_S64 ] = "CAST_DOUBLE_TO_S64",
 	[ FILTER_OP_CAST_NOP ] = "CAST_NOP",
+
+	/* get context ref */
+	[ FILTER_OP_GET_CONTEXT_REF ] = "GET_CONTEXT_REF",
+	[ FILTER_OP_GET_CONTEXT_REF_STRING ] = "GET_CONTEXT_REF_STRING",
+	[ FILTER_OP_GET_CONTEXT_REF_S64 ] = "GET_CONTEXT_REF_S64",
+	[ FILTER_OP_GET_CONTEXT_REF_DOUBLE ] = "GET_CONTEXT_REF_DOUBLE",
 };
 
 const char *print_op(enum filter_op op)
@@ -141,11 +148,7 @@ int apply_field_reloc(struct lttng_event *event,
 	struct load_op *op;
 	uint32_t field_offset = 0;
 
-	dbg_printf("Apply reloc: %u %s\n", reloc_offset, field_name);
-
-	/* Ensure that the reloc is within the code */
-	if (runtime_len - reloc_offset < sizeof(uint16_t))
-		return -EINVAL;
+	dbg_printf("Apply field reloc: %u %s\n", reloc_offset, field_name);
 
 	/* Lookup event by name */
 	desc = event->desc;
@@ -215,6 +218,85 @@ int apply_field_reloc(struct lttng_event *event,
 }
 
 static
+int apply_context_reloc(struct lttng_event *event,
+		struct bytecode_runtime *runtime,
+		uint32_t runtime_len,
+		uint32_t reloc_offset,
+		const char *context_name)
+{
+	struct field_ref *field_ref;
+	struct load_op *op;
+	struct lttng_ctx_field *ctx_field;
+	int idx;
+
+	dbg_printf("Apply context reloc: %u %s\n", reloc_offset, context_name);
+
+	/* Get context index */
+	idx = lttng_get_context_index(event->chan->ctx, context_name);
+	if (idx < 0)
+		return -ENOENT;
+
+	/* Check if idx is too large for 16-bit offset */
+	if (idx > FILTER_BYTECODE_MAX_LEN - 1)
+		return -EINVAL;
+
+	/* Get context return type */
+	ctx_field = &event->chan->ctx->fields[idx];
+	op = (struct load_op *) &runtime->data[reloc_offset];
+	field_ref = (struct field_ref *) op->data;
+	switch (ctx_field->event_field.type.atype) {
+	case atype_integer:
+	case atype_enum:
+		op->op = FILTER_OP_GET_CONTEXT_REF_S64;
+		break;
+		/* Sequence and array supported as string */
+	case atype_string:
+	case atype_array:
+	case atype_sequence:
+		op->op = FILTER_OP_GET_CONTEXT_REF_STRING;
+		break;
+	case atype_float:
+		op->op = FILTER_OP_GET_CONTEXT_REF_DOUBLE;
+		break;
+	default:
+		return -EINVAL;
+	}
+	/* set offset to context index within channel contexts */
+	field_ref->offset = (uint16_t) idx;
+	return 0;
+}
+
+static
+int apply_reloc(struct lttng_event *event,
+		struct bytecode_runtime *runtime,
+		uint32_t runtime_len,
+		uint32_t reloc_offset,
+		const char *name)
+{
+	struct load_op *op;
+
+	dbg_printf("Apply reloc: %u %s\n", reloc_offset, name);
+
+	/* Ensure that the reloc is within the code */
+	if (runtime_len - reloc_offset < sizeof(uint16_t))
+		return -EINVAL;
+
+	op = (struct load_op *) &runtime->data[reloc_offset];
+	switch (op->op) {
+	case FILTER_OP_LOAD_FIELD_REF:
+		return apply_field_reloc(event, runtime, runtime_len,
+			reloc_offset, name);
+	case FILTER_OP_GET_CONTEXT_REF:
+		return apply_context_reloc(event, runtime, runtime_len,
+			reloc_offset, name);
+	default:
+		ERR("Unknown reloc op type %u\n", op->op);
+		return -EINVAL;
+	}
+	return 0;
+}
+
+static
 int bytecode_is_linked(struct lttng_ust_filter_bytecode_node *filter_bytecode,
 		struct lttng_event *event)
 {
@@ -269,14 +351,14 @@ int _lttng_filter_event_link_bytecode(struct lttng_event *event,
 			offset = next_offset) {
 		uint16_t reloc_offset =
 			*(uint16_t *) &filter_bytecode->bc.data[offset];
-		const char *field_name =
+		const char *name =
 			(const char *) &filter_bytecode->bc.data[offset + sizeof(uint16_t)];
 
-		ret = apply_field_reloc(event, runtime, runtime->len, reloc_offset, field_name);
+		ret = apply_reloc(event, runtime, runtime->len, reloc_offset, name);
 		if (ret) {
 			goto link_error;
 		}
-		next_offset = offset + sizeof(uint16_t) + strlen(field_name) + 1;
+		next_offset = offset + sizeof(uint16_t) + strlen(name) + 1;
 	}
 	/* Validate bytecode */
 	ret = lttng_filter_validate_bytecode(runtime);

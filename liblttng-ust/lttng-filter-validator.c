@@ -286,8 +286,15 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 		break;
 	}
 
-	/* load */
+	/* load field ref */
 	case FILTER_OP_LOAD_FIELD_REF:
+	{
+		ERR("Unknown field ref type\n");
+		ret = -EINVAL;
+		break;
+	}
+	/* get context ref */
+	case FILTER_OP_GET_CONTEXT_REF:
 	{
 		ERR("Unknown field ref type\n");
 		ret = -EINVAL;
@@ -297,6 +304,9 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 	case FILTER_OP_LOAD_FIELD_REF_SEQUENCE:
 	case FILTER_OP_LOAD_FIELD_REF_S64:
 	case FILTER_OP_LOAD_FIELD_REF_DOUBLE:
+	case FILTER_OP_GET_CONTEXT_REF_STRING:
+	case FILTER_OP_GET_CONTEXT_REF_S64:
+	case FILTER_OP_GET_CONTEXT_REF_DOUBLE:
 	{
 		if (unlikely(pc + sizeof(struct load_op) + sizeof(struct field_ref)
 				> start_pc + bytecode->len)) {
@@ -305,6 +315,7 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 		break;
 	}
 
+	/* load from immediate operand */
 	case FILTER_OP_LOAD_STRING:
 	{
 		struct load_op *insn = (struct load_op *) pc;
@@ -353,6 +364,7 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 		}
 		break;
 	}
+
 	}
 
 	return ret;
@@ -657,7 +669,7 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 		break;
 	}
 
-	/* load */
+	/* load field ref */
 	case FILTER_OP_LOAD_FIELD_REF:
 	{
 		ERR("Unknown field ref type\n");
@@ -693,6 +705,7 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 		break;
 	}
 
+	/* load from immediate operand */
 	case FILTER_OP_LOAD_STRING:
 	{
 		break;
@@ -744,6 +757,41 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 	}
 	case FILTER_OP_CAST_NOP:
 	{
+		break;
+	}
+
+	/* get context ref */
+	case FILTER_OP_GET_CONTEXT_REF:
+	{
+		ERR("Unknown get context ref type\n");
+		ret = -EINVAL;
+		goto end;
+	}
+	case FILTER_OP_GET_CONTEXT_REF_STRING:
+	{
+		struct load_op *insn = (struct load_op *) pc;
+		struct field_ref *ref = (struct field_ref *) insn->data;
+
+		dbg_printf("Validate get context ref offset %u type string\n",
+			ref->offset);
+		break;
+	}
+	case FILTER_OP_GET_CONTEXT_REF_S64:
+	{
+		struct load_op *insn = (struct load_op *) pc;
+		struct field_ref *ref = (struct field_ref *) insn->data;
+
+		dbg_printf("Validate get context ref offset %u type s64\n",
+			ref->offset);
+		break;
+	}
+	case FILTER_OP_GET_CONTEXT_REF_DOUBLE:
+	{
+		struct load_op *insn = (struct load_op *) pc;
+		struct field_ref *ref = (struct field_ref *) insn->data;
+
+		dbg_printf("Validate get context ref offset %u type double\n",
+			ref->offset);
 		break;
 	}
 
@@ -966,15 +1014,23 @@ int exec_insn(struct bytecode_runtime *bytecode,
 		break;
 	}
 
-	/* load */
+	/* load field ref */
 	case FILTER_OP_LOAD_FIELD_REF:
 	{
 		ERR("Unknown field ref type\n");
 		ret = -EINVAL;
 		goto end;
 	}
+	/* get context ref */
+	case FILTER_OP_GET_CONTEXT_REF:
+	{
+		ERR("Unknown get context ref type\n");
+		ret = -EINVAL;
+		goto end;
+	}
 	case FILTER_OP_LOAD_FIELD_REF_STRING:
 	case FILTER_OP_LOAD_FIELD_REF_SEQUENCE:
+	case FILTER_OP_GET_CONTEXT_REF_STRING:
 	{
 		if (vstack_push(stack)) {
 			ret = -EINVAL;
@@ -985,6 +1041,7 @@ int exec_insn(struct bytecode_runtime *bytecode,
 		break;
 	}
 	case FILTER_OP_LOAD_FIELD_REF_S64:
+	case FILTER_OP_GET_CONTEXT_REF_S64:
 	{
 		if (vstack_push(stack)) {
 			ret = -EINVAL;
@@ -995,6 +1052,7 @@ int exec_insn(struct bytecode_runtime *bytecode,
 		break;
 	}
 	case FILTER_OP_LOAD_FIELD_REF_DOUBLE:
+	case FILTER_OP_GET_CONTEXT_REF_DOUBLE:
 	{
 		if (vstack_push(stack)) {
 			ret = -EINVAL;
@@ -1005,6 +1063,7 @@ int exec_insn(struct bytecode_runtime *bytecode,
 		break;
 	}
 
+	/* load from immediate operand */
 	case FILTER_OP_LOAD_STRING:
 	{
 		struct load_op *insn = (struct load_op *) pc;

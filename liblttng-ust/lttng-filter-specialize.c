@@ -406,15 +406,23 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 			break;
 		}
 
-		/* load */
+		/* load field ref */
 		case FILTER_OP_LOAD_FIELD_REF:
 		{
 			ERR("Unknown field ref type\n");
 			ret = -EINVAL;
 			goto end;
 		}
+		/* get context ref */
+		case FILTER_OP_GET_CONTEXT_REF:
+		{
+			ERR("Unknown get context ref type\n");
+			ret = -EINVAL;
+			goto end;
+		}
 		case FILTER_OP_LOAD_FIELD_REF_STRING:
 		case FILTER_OP_LOAD_FIELD_REF_SEQUENCE:
+		case FILTER_OP_GET_CONTEXT_REF_STRING:
 		{
 			if (vstack_push(stack)) {
 				ret = -EINVAL;
@@ -425,6 +433,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 			break;
 		}
 		case FILTER_OP_LOAD_FIELD_REF_S64:
+		case FILTER_OP_GET_CONTEXT_REF_S64:
 		{
 			if (vstack_push(stack)) {
 				ret = -EINVAL;
@@ -435,6 +444,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 			break;
 		}
 		case FILTER_OP_LOAD_FIELD_REF_DOUBLE:
+		case FILTER_OP_GET_CONTEXT_REF_DOUBLE:
 		{
 			if (vstack_push(stack)) {
 				ret = -EINVAL;
@@ -445,6 +455,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 			break;
 		}
 
+		/* load from immediate operand */
 		case FILTER_OP_LOAD_STRING:
 		{
 			struct load_op *insn = (struct load_op *) pc;
@@ -521,7 +532,6 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 			next_pc += sizeof(struct cast_op);
 			break;
 		}
-
 
 		}
 	}

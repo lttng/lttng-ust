@@ -176,6 +176,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		const char *filter_stack_data)
 {
 	struct bytecode_runtime *bytecode = filter_data;
+	struct lttng_ctx *ctx = bytecode->p.bc->enabler->chan->ctx;
 	void *pc, *next_pc, *start_pc;
 	int ret = -EINVAL;
 	uint64_t retval = 0;
@@ -263,13 +264,14 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		[ FILTER_OP_AND ] = &&LABEL_FILTER_OP_AND,
 		[ FILTER_OP_OR ] = &&LABEL_FILTER_OP_OR,
 
-		/* load */
+		/* load field ref */
 		[ FILTER_OP_LOAD_FIELD_REF ] = &&LABEL_FILTER_OP_LOAD_FIELD_REF,
 		[ FILTER_OP_LOAD_FIELD_REF_STRING ] = &&LABEL_FILTER_OP_LOAD_FIELD_REF_STRING,
 		[ FILTER_OP_LOAD_FIELD_REF_SEQUENCE ] = &&LABEL_FILTER_OP_LOAD_FIELD_REF_SEQUENCE,
 		[ FILTER_OP_LOAD_FIELD_REF_S64 ] = &&LABEL_FILTER_OP_LOAD_FIELD_REF_S64,
 		[ FILTER_OP_LOAD_FIELD_REF_DOUBLE ] = &&LABEL_FILTER_OP_LOAD_FIELD_REF_DOUBLE,
 
+		/* load from immediate operand */
 		[ FILTER_OP_LOAD_STRING ] = &&LABEL_FILTER_OP_LOAD_STRING,
 		[ FILTER_OP_LOAD_S64 ] = &&LABEL_FILTER_OP_LOAD_S64,
 		[ FILTER_OP_LOAD_DOUBLE ] = &&LABEL_FILTER_OP_LOAD_DOUBLE,
@@ -278,6 +280,12 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		[ FILTER_OP_CAST_TO_S64 ] = &&LABEL_FILTER_OP_CAST_TO_S64,
 		[ FILTER_OP_CAST_DOUBLE_TO_S64 ] = &&LABEL_FILTER_OP_CAST_DOUBLE_TO_S64,
 		[ FILTER_OP_CAST_NOP ] = &&LABEL_FILTER_OP_CAST_NOP,
+
+		/* get context ref */
+		[ FILTER_OP_GET_CONTEXT_REF ] = &&LABEL_FILTER_OP_GET_CONTEXT_REF,
+		[ FILTER_OP_GET_CONTEXT_REF_STRING ] = &&LABEL_FILTER_OP_GET_CONTEXT_REF_STRING,
+		[ FILTER_OP_GET_CONTEXT_REF_S64 ] = &&LABEL_FILTER_OP_GET_CONTEXT_REF_S64,
+		[ FILTER_OP_GET_CONTEXT_REF_DOUBLE ] = &&LABEL_FILTER_OP_GET_CONTEXT_REF_DOUBLE,
 	};
 #endif /* #ifndef INTERPRETER_USE_SWITCH */
 
@@ -285,6 +293,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 
 		OP(FILTER_OP_UNKNOWN):
 		OP(FILTER_OP_LOAD_FIELD_REF):
+		OP(FILTER_OP_GET_CONTEXT_REF):
 #ifdef INTERPRETER_USE_SWITCH
 		default:
 #endif /* INTERPRETER_USE_SWITCH */
@@ -710,7 +719,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		}
 
 
-		/* load */
+		/* load field ref */
 		OP(FILTER_OP_LOAD_FIELD_REF_STRING):
 		{
 			struct load_op *insn = (struct load_op *) pc;
@@ -786,6 +795,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			PO;
 		}
 
+		/* load from immediate operand */
 		OP(FILTER_OP_LOAD_STRING):
 		{
 			struct load_op *insn = (struct load_op *) pc;
@@ -841,6 +851,68 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		OP(FILTER_OP_CAST_NOP):
 		{
 			next_pc += sizeof(struct cast_op);
+			PO;
+		}
+
+		/* get context ref */
+		OP(FILTER_OP_GET_CONTEXT_REF_STRING):
+		{
+			struct load_op *insn = (struct load_op *) pc;
+			struct field_ref *ref = (struct field_ref *) insn->data;
+			struct lttng_ctx_field *ctx_field;
+			union lttng_ctx_value v;
+
+			dbg_printf("get context ref offset %u type string\n",
+				ref->offset);
+			ctx_field = &ctx->fields[ref->offset];
+			ctx_field->get_value(ctx_field, &v);
+			estack_push(stack, top, ax, bx);
+			estack_ax(stack, top)->u.s.str = v.str;
+			if (unlikely(!estack_ax(stack, top)->u.s.str)) {
+				dbg_printf("Filter warning: loading a NULL string.\n");
+				ret = -EINVAL;
+				goto end;
+			}
+			estack_ax(stack, top)->u.s.seq_len = UINT_MAX;
+			estack_ax(stack, top)->u.s.literal = 0;
+			dbg_printf("ref get context string %s\n", estack_ax(stack, top)->u.s.str);
+			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
+			PO;
+		}
+
+		OP(FILTER_OP_GET_CONTEXT_REF_S64):
+		{
+			struct load_op *insn = (struct load_op *) pc;
+			struct field_ref *ref = (struct field_ref *) insn->data;
+			struct lttng_ctx_field *ctx_field;
+			union lttng_ctx_value v;
+
+			dbg_printf("get context ref offset %u type s64\n",
+				ref->offset);
+			ctx_field = &ctx->fields[ref->offset];
+			ctx_field->get_value(ctx_field, &v);
+			estack_push(stack, top, ax, bx);
+			estack_ax_v = v.s64;
+			dbg_printf("ref get context s64 %" PRIi64 "\n", estack_ax_v);
+			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
+			PO;
+		}
+
+		OP(FILTER_OP_GET_CONTEXT_REF_DOUBLE):
+		{
+			struct load_op *insn = (struct load_op *) pc;
+			struct field_ref *ref = (struct field_ref *) insn->data;
+			struct lttng_ctx_field *ctx_field;
+			union lttng_ctx_value v;
+
+			dbg_printf("get context ref offset %u type double\n",
+				ref->offset);
+			ctx_field = &ctx->fields[ref->offset];
+			ctx_field->get_value(ctx_field, &v);
+			estack_push(stack, top, ax, bx);
+			memcpy(&estack_ax(stack, top)->u.d, &v.d, sizeof(struct literal_double));
+			dbg_printf("ref get context double %g\n", estack_ax(stack, top)->u.d);
+			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
 			PO;
 		}
 

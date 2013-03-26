@@ -67,6 +67,15 @@ void vtid_record(struct lttng_ctx_field *field,
 		sizeof(URCU_TLS(cached_vtid)));
 }
 
+static
+void vtid_get_value(struct lttng_ctx_field *field,
+		union lttng_ctx_value *value)
+{
+	if (caa_unlikely(!URCU_TLS(cached_vtid)))
+		URCU_TLS(cached_vtid) = gettid();
+	value->s64 = URCU_TLS(cached_vtid);
+}
+
 int lttng_add_vtid_to_ctx(struct lttng_ctx **ctx)
 {
 	struct lttng_ctx_field *field;
@@ -88,6 +97,7 @@ int lttng_add_vtid_to_ctx(struct lttng_ctx **ctx)
 	field->event_field.type.u.basic.integer.encoding = lttng_encode_none;
 	field->get_size = vtid_get_size;
 	field->record = vtid_record;
+	field->get_value = vtid_get_value;
 	return 0;
 }
 

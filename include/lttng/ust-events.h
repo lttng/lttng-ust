@@ -205,6 +205,12 @@ struct lttng_event_field {
 	char padding[LTTNG_UST_EVENT_FIELD_PADDING];
 };
 
+union lttng_ctx_value {
+	int64_t s64;
+	const char *str;
+	double d;
+};
+
 #define LTTNG_UST_CTX_FIELD_PADDING	40
 struct lttng_ctx_field {
 	struct lttng_event_field event_field;
@@ -212,6 +218,8 @@ struct lttng_ctx_field {
 	void (*record)(struct lttng_ctx_field *field,
 		       struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		       struct lttng_channel *chan);
+	void (*get_value)(struct lttng_ctx_field *field,
+			 union lttng_ctx_value *value);
 	union {
 		char padding[LTTNG_UST_CTX_FIELD_PADDING];
 	} u;
@@ -520,6 +528,7 @@ int lttng_fix_pending_event_desc(const struct lttng_event_desc *desc);
 int lttng_probes_init(void);
 void lttng_probes_exit(void);
 int lttng_find_context(struct lttng_ctx *ctx, const char *name);
+int lttng_get_context_index(struct lttng_ctx *ctx, const char *name);
 struct lttng_ctx_field *lttng_append_context(struct lttng_ctx **ctx_p);
 void lttng_remove_context_field(struct lttng_ctx **ctx_p,
 				struct lttng_ctx_field *field);

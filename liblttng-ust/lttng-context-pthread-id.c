@@ -47,6 +47,16 @@ void pthread_id_record(struct lttng_ctx_field *field,
 	chan->ops->event_write(ctx, &pthread_id, sizeof(pthread_id));
 }
 
+static
+void pthread_id_get_value(struct lttng_ctx_field *field,
+		union lttng_ctx_value *value)
+{
+	unsigned long pthread_id;
+
+	pthread_id = (unsigned long) pthread_self();
+	value->s64 = pthread_id;
+}
+
 int lttng_add_pthread_id_to_ctx(struct lttng_ctx **ctx)
 {
 	struct lttng_ctx_field *field;
@@ -68,5 +78,6 @@ int lttng_add_pthread_id_to_ctx(struct lttng_ctx **ctx)
 	field->event_field.type.u.basic.integer.encoding = lttng_encode_none;
 	field->get_size = pthread_id_get_size;
 	field->record = pthread_id_record;
+	field->get_value = pthread_id_get_value;
 	return 0;
 }

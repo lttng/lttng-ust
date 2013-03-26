@@ -27,6 +27,11 @@
 #include <string.h>
 #include <assert.h>
 
+/*
+ * The filter implementation requires that two consecutive "get" for the
+ * same context performed by the same thread return the same result.
+ */
+
 int lttng_find_context(struct lttng_ctx *ctx, const char *name)
 {
 	unsigned int i;
@@ -39,6 +44,22 @@ int lttng_find_context(struct lttng_ctx *ctx, const char *name)
 			return 1;
 	}
 	return 0;
+}
+
+int lttng_get_context_index(struct lttng_ctx *ctx, const char *name)
+{
+	unsigned int i;
+
+	if (!ctx)
+		return -1;
+	for (i = 0; i < ctx->nr_fields; i++) {
+		/* Skip allocated (but non-initialized) contexts */
+		if (!ctx->fields[i].event_field.name)
+			continue;
+		if (!strcmp(ctx->fields[i].event_field.name, name))
+			return i;
+	}
+	return -1;
 }
 
 /*
