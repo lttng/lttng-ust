@@ -153,7 +153,7 @@ void __tracepoint_cb_##_provider##___##_name(_TP_ARGS_PROTO(__VA_ARGS__))		\
 {											\
 	struct tracepoint_probe *__tp_probe;						\
 											\
-	if (!TP_RCU_LINK_TEST())							\
+	if (caa_unlikely(!TP_RCU_LINK_TEST()))						\
 		return;									\
 	tp_rcu_read_lock_bp();								\
 	__tp_probe = tp_rcu_dereference_bp(__tracepoint_##_provider##___##_name.probes); \
