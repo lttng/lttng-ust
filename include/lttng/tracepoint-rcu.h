@@ -31,7 +31,7 @@
 
 #define tp_rcu_read_lock_bp	rcu_read_lock_bp
 #define tp_rcu_read_unlock_bp	rcu_read_unlock_bp
-#define tp_rcu_dereference_bp	rcu_dereference_bp
+#define tp_rcu_dereference_bp	rcu_dereference
 #define TP_RCU_LINK_TEST()	1
 
 #else	/* _LGPL_SOURCE */
