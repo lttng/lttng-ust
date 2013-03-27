@@ -4,7 +4,7 @@ if CXX_WORKS
 SUBDIRS += hello.cxx
 endif
 
-dist_noinst_SCRIPTS = test_loop runtests trace_matches
+dist_noinst_SCRIPTS = test_loop run.sh trace_matches unit_tests
 
 noinst_LIBRARIES = libtap.a
 

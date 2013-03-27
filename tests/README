@@ -1,8 +1,8 @@
 Using the ust test suite.
 
 Running
-	./runtests
-runs all the tests once. The output is in TAP format.
+	./run.sh unit_tests
+runs all the tests once.
 
 Running
 	./test_loop
