@@ -59,17 +59,27 @@ int stack_strcmp(struct estack *stack, int top, const char *cmp_type)
 		int escaped_r0 = 0;
 
 		if (unlikely(p - estack_bx(stack, top)->u.s.str > estack_bx(stack, top)->u.s.seq_len || *p == '\0')) {
-			if (q - estack_ax(stack, top)->u.s.str > estack_ax(stack, top)->u.s.seq_len || *q == '\0')
+			if (q - estack_ax(stack, top)->u.s.str > estack_ax(stack, top)->u.s.seq_len || *q == '\0') {
 				diff = 0;
-			else
-				diff = -1;
+			} else {
+				ret = parse_char(&q);
+				if (ret == -1)
+					diff = 0;
+				else
+					diff = -1;
+			}
 			break;
 		}
 		if (unlikely(q - estack_ax(stack, top)->u.s.str > estack_ax(stack, top)->u.s.seq_len || *q == '\0')) {
-			if (p - estack_bx(stack, top)->u.s.str > estack_bx(stack, top)->u.s.seq_len || *p == '\0')
+			if (p - estack_bx(stack, top)->u.s.str > estack_bx(stack, top)->u.s.seq_len || *p == '\0') {
 				diff = 0;
-			else
-				diff = 1;
+			} else {
+				ret = parse_char(&p);
+				if (ret == -1)
+					diff = 0;
+				else
+					diff = 1;
+			}
 			break;
 		}
 		if (estack_bx(stack, top)->u.s.literal) {
