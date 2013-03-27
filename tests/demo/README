@@ -1,1 +1,5 @@
-"demo" and "demo-trace" are moved to lttng-tools.
+"demo" and "demo-trace" are moved to lttng-tools, under:
+
+	tests/regression/ust/linking/
+
+The "demo-trace" script was renamed to "demo_preload".
