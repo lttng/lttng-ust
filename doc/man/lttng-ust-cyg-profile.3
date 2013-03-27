@@ -1,0 +1,79 @@
+.TH "LTTNG-UST-CYG-PROFILE" "3" "March 26, 2013" "" ""
+.SH "NAME"
+lttng-ust-cyg-profile \(em LTTng UST Function Tracing
+.SH "SYNOPSIS"
+Compile the application source code with option \fB-finstrument-functions\fP
+and launch your application either with:
+.TP
+\fBLD_PRELOAD=liblttng-ust-cyg-profile-fast.so\fP appname
+.PP
+or (to use verbose function tracing)
+.TP
+\fBLD_PRELOAD=liblttng-ust-cyg-profile.so\fP appname
+.PP
+All events emitted for function tracing are provided on loglevel
+TRACE_DEBUG_FUNCTION. The following command can be used to add
+function tracing events in your trace session:
+.TP
+.B lttng enable-event -u -a --loglevel-only TRACE_DEBUG_FUNCTION
+.SH "DESCRIPTION"
+For compilers that provide code generation option
+\fB-finstrument-functions\fP (e.g. GCC and LLVM/Clang) LTTng-UST provides
+shared libraries that allow users to trace the function flow of their
+applications.
+
+Function tracing comes in two flavors (each providing different trade-offs):
+.IP liblttng-ust-cyg-profile-fast.so
+This is a lightweight variant that should only be used where it can be
+guaranteed that the complete event stream is recorded without any missing
+events. Any kind of duplicate information is left out.
+
+At each function entry the address of the called function is recored as
+lttng_ust_cyg_profile_fast:func_entry. Function exit is recorded as
+lttng_ust_cyg_profile_fast:func_exit (without any field data).
+
+.IP liblttng-ust-cyg-profile.so
+This is a more robust variant which also works for use-cases where events
+might get discarded or not recorded from application startup. In these cases
+the trace analyzer needs extra information to be able to reconstruct the
+program flow.
+
+For each function entry and exit the address of the called function and the
+call site address are recorded as lttng_ust_cyg_profile:func_entry and
+lttng_ust_cyg_profile:func_exit.
+.SH "USAGE"
+To use function tracing you need to make sure the sources of your application
+are compiled with -finstrument-functions. It might be necessary to limit
+the number of source files where this option is used to prevent excessive
+amount of trace data to be generated during run time. Usually there are
+additional compiler flags that allow you to specify more fine grained selection
+of function instrumentation.
+
+For each instrumented function the executable will contain calls to profiling
+function hooks (after function entry and just before function exit).
+
+By preloading (LD_PRELOAD) one of the provided shared libraries, these
+profiling hooks get defined to emit LTTng events (as described above).
+
+Using this feature can result in massive amount trace data to be generated
+by the instrumented application. Application runtime is also considerably
+affected. Be careful on systems with limited resources.
+.SH "SEE ALSO"
+lttng-ust(3), lttng(1), gcc(1), ld.so(8)
+.SH "BUGS"
+If you encounter any issues or usability problem, please report it on
+our mailing list <lttng-dev@lists.lttng.org> to help improve this
+project.
+.SH "CREDITS"
+liblttng-ust is distributed under the GNU Lesser General Public License
+version 2.1. The headers are distributed under the MIT license.
+
+See http://lttng.org for more information on the LTTng project.
+
+Mailing list for support and development: <lttng-dev@lists.lttng.org>.
+
+You can find us on IRC server irc.oftc.net (OFTC) in #lttng.
+.SH "AUTHORS"
+liblttng-ust was originally written by Mathieu Desnoyers, with additional
+contributions from various other people. It is currently maintained by
+Mathieu Desnoyers <mathieu.desnoyers@efficios.com>.
