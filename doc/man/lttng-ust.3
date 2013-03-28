@@ -283,7 +283,7 @@ carefully:
       needed. Another way is to dlopen the tracepoint probe when needed
       by the application.
     - Example:
-      - tests/demo/   demo.c  tp*.c ust_tests_demo*.h demo-trace
+      - doc/examples/demo   demo.c  tp*.c ust_tests_demo*.h demo-trace
 
   - Note about dlclose() usage: it is not safe to use dlclose on a
     provider shared object that is being actively used for tracing due
@@ -366,7 +366,7 @@ lttng-sessiond(8)
 .SH "BUGS"
 
 .PP
-No knows bugs at this point.
+No known bugs at this point.
 
 If you encounter any issues or usability problem, please report it on
 our mailing list <lttng-dev@lists.lttng.org> to help improve this

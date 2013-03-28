@@ -1,0 +1,6 @@
+#!/bin/sh
+
+DIR=$(dirname $0)
+DIR=$(readlink -f $DIR)
+
+LD_PRELOAD=$DIR/lttng-ust-provider-ust-tests-demo.so:$DIR/lttng-ust-provider-ust-tests-demo3.so $DIR/demo ${*}
