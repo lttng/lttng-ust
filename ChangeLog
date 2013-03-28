@@ -1,3 +1,103 @@
+2013-03-28 lttng-ust 2.2.0-rc1
+	* Fix: tracepoint instrumentation constructor order issue
+	* Documentation: update 2.0 to 2.x
+	* Add demo test back as an example
+	* Don't rely on explicit context for filtering
+	* Implement per-context filtering
+	* Fix: filter string comparison should check for literal
+	* update tests/demo readme file
+	* Add man page for lttng-ust-cyg-profile
+	* Fix: filter string wildcard comparison
+	* Fix: Remove test runner script
+	* Fix: forwarding of call_site argument to field
+	* Add demo README
+	* Tests: Use Perl prove as the testsuite runner
+	* Remove tests depending on consumerd
+	* Convert hello.cxx test to a build test
+	* Clean-up of configure.ac and tests/Makefile.am
+	* Fix snprintf test and output result to TAP format
+	* Replace same_line_marker test with same_line_tracepoint
+	* Remove tests-libustinstr-malloc
+	* Remove exit-fast test
+	* Remove fork test
+	* Remove daemon test
+	* Remove demo test
+	* Remove outdated test-nevents test
+	* Remove outdated simple_include test
+	* Remove outdated register_test test
+	* Convert hello-static-lib test to a build test
+	* Convert hello test to a build test only
+	* Remove outdated libustctl_function_tests test
+	* Remove outdated test hello2
+	* Remove outdated dlopen test
+	* Remove outdated test basic long
+	* Remove outdated test basic
+	* cyg_profile: implement fast and verbose .so
+	* Performance: add unlikely to tracepoint dynamic linking test
+	* Fix: _LGPL_SOURCE rcu dereference fix
+	* Implement liblttng-ust-cyg-profile function entry/exit instrumentation
+	* Minor fix: libc wrapper internal run script
+	* Fix: ustctl_recv_register_event pointer mixup
+	* Fix: allow enabling same events for two channels
+	* Add channel ID field to attr
+	* Remove useless else clause
+	* tracepoint: move "probe" test outside of loop
+	* Fix uninitialized has_loglevel variable
+	* Fix clang warnings
+	* Cleanup: work-around clang unused result warning
+	* Cleanup compile warning
+	* Cleanup: remove unused variables
+	* tracepoint: Don't add NULL probes
+	* Remove mention of locking issues associated with dlopen usage
+	* Implement read timer (for RT)
+	* Only flush when there are readers active
+	* Add mutex for channel wakeup fd update
+	* Fix: fields should be initialized to NULL
+	* Implement ustctl_duplicate_ust_object_data
+	* Add channel wakeup fd to monitor close
+	* Fix: refcount issue in lttng-ust-abi.c
+	* Fix: only consumerd should print errors
+	* Implement ring buffer periodic buffer switch timer
+	* Fix: ensure all probe providers have their symbols
+	* Reactivate error printing
+	* Unregister tracepoint probes when not needed
+	* Cleanup: remove now unused metadata code from UST
+	* Fix: notification timeout logic
+	* Fix: don't print error in comm proto connect on ENOENT
+	* Fix: return expected error return values for sessiond
+	* Fix: set wait/wake fd to -1 before close
+	* Fix: Only notify socket should have timeout/nonblock
+	* Fix: ustctl: return -EPIPE to sessiond if connection is closed
+	* Fix: Add timeout on notification socket
+	* Remove now unused metadata printf code
+	* Move metadata creation into lttng-sessiond and lttng-consumed
+	* Add write metadata API to ust-ctl.h
+	* Move UST registry into sessiond and implement notifiers
+	* Fix: don't flush-final for offset 0 if reader is on sub-buffer
+	* Use tp rcu link test in provider
+	* Remove direct dependency of probes on urcu-bp
+	* Use urcu tls-compat.h
+	* Lazy provider registration
+	* Always use lttng_get_probe_list_head to get probe list
+	* Fix static build
+	* Move LTTng-UST buffer ownership from application to consumer
+	* Fix package: don't distribute generated headers
+	* Fix: don't cancel already exited threads
+	* Scalability fix: tracepoint.c hash table size increase
+	* Scalability fix for many events: event hash table size
+	* Speed up probe registration for large amount of events
+	* Add missing demo-trace shell script to dist tarball
+	* Documentation: add uuid package name for Fedora in README
+	* Fix: missing test for lttng_ust_comm_should_quit in lttng-ust-comm.c
+	* Add compilation support for Tile architectures
+	* Documentation: clarify debian package name for uuid in README
+	* Fix: comment in ust-ctl.h
+	* Fix I/O-related error values in ustctl
+	* Introduce hash table for lttng_create_event_if_missing()
+	* Fix: don't build C++ example if a C++ compiler isn't available
+	* Remove LIBFORMAT output in configure.
+	* Document dependency on libuuid
+
 2012-12-20 (13th Baktun) lttng-ust 2.1.0
 	* Bump liblttng-ust-ctl lib version major number
 	* Bump UST proto version minor number
