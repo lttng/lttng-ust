@@ -12,7 +12,7 @@ AC_SUBST([LTTNG_UST_LIBRARY_VERSION], [0:0:0])
 
 # This is the library version of liblttng-ust-ctl, used internally by
 # liblttng-ust, lttng-sessiond, and lttng-consumerd.
-AC_SUBST([LTTNG_UST_CTL_LIBRARY_VERSION], [1:0:0])
+AC_SUBST([LTTNG_UST_CTL_LIBRARY_VERSION], [2:0:0])
 
 AC_CONFIG_AUX_DIR([config])
 AC_CANONICAL_TARGET
