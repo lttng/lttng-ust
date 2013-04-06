@@ -373,14 +373,10 @@ void tracepoint_update_probe_range(struct tracepoint * const *begin,
 	}
 }
 
-static void lib_update_tracepoints(void)
+static void lib_update_tracepoints(struct tracepoint_lib *lib)
 {
-	struct tracepoint_lib *lib;
-
-	cds_list_for_each_entry(lib, &libs, list) {
-		tracepoint_update_probe_range(lib->tracepoints_start,
-				lib->tracepoints_start + lib->tracepoints_count);
-	}
+	tracepoint_update_probe_range(lib->tracepoints_start,
+			lib->tracepoints_start + lib->tracepoints_count);
 }
 
 /*
@@ -388,8 +384,11 @@ static void lib_update_tracepoints(void)
  */
 static void tracepoint_update_probes(void)
 {
+	struct tracepoint_lib *lib;
+
 	/* tracepoints registered from libraries and executable. */
-	lib_update_tracepoints();
+	cds_list_for_each_entry(lib, &libs, list)
+		lib_update_tracepoints(lib);
 }
 
 static struct tracepoint_probe *
@@ -635,8 +634,7 @@ int tracepoint_register_lib(struct tracepoint * const *tracepoints_start,
 lib_added:
 	new_tracepoints(tracepoints_start, tracepoints_start + tracepoints_count);
 
-	/* TODO: update just the loaded lib */
-	lib_update_tracepoints();
+	lib_update_tracepoints(pl);
 	pthread_mutex_unlock(&tracepoint_mutex);
 
 	DBG("just registered a tracepoints section from %p and having %d tracepoints",
