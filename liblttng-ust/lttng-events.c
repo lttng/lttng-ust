@@ -635,12 +635,9 @@ int lttng_enabler_ref_events(struct lttng_enabler *enabler)
 /*
  * Called at library load: connect the probe on all enablers matching
  * this event.
- * called with session mutex held.
- * TODO: currently, for each desc added, we iterate on all event desc
- * (inefficient). We should create specific code that only target the
- * added desc.
+ * Called with session mutex held.
  */
-int lttng_fix_pending_event_desc(const struct lttng_event_desc *desc)
+int lttng_fix_pending_events(void)
 {
 	struct lttng_session *session;
 

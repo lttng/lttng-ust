@@ -80,7 +80,6 @@ void lttng_lazy_probe_register(struct lttng_probe_desc *desc)
 {
 	struct lttng_probe_desc *iter;
 	struct cds_list_head *probe_list;
-	int i;
 
 	/*
 	 * Each provider enforce that every event name begins with the
@@ -114,19 +113,6 @@ void lttng_lazy_probe_register(struct lttng_probe_desc *desc)
 desc_added:
 	DBG("just registered probe %s containing %u events",
 		desc->provider, desc->nr_events);
-	/*
-	 * fix the events awaiting probe load.
-	 */
-	for (i = 0; i < desc->nr_events; i++) {
-		const struct lttng_event_desc *ed;
-		int ret;
-
-		ed = desc->event_desc[i];
-		DBG("Registered event probe \"%s\" with signature \"%s\"",
-			ed->name, ed->signature);
-		ret = lttng_fix_pending_event_desc(ed);
-		assert(!ret);
-	}
 }
 
 /*
@@ -136,6 +122,7 @@ static
 void fixup_lazy_probes(void)
 {
 	struct lttng_probe_desc *iter, *tmp;
+	int ret;
 
 	lazy_nesting++;
 	cds_list_for_each_entry_safe(iter, tmp,
@@ -144,6 +131,8 @@ void fixup_lazy_probes(void)
 		iter->lazy = 0;
 		cds_list_del(&iter->lazy_init_head);
 	}
+	ret = lttng_fix_pending_events();
+	assert(!ret);
 	lazy_nesting--;
 }
 
