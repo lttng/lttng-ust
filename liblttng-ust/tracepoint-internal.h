@@ -26,9 +26,10 @@
 #define TRACE_DEFAULT	TRACE_DEBUG_LINE
 
 struct tracepoint_lib {
-	struct cds_list_head list;
+	struct cds_list_head list;	/* list of registered libs */
 	struct tracepoint * const *tracepoints_start;
 	int tracepoints_count;
+	struct cds_list_head callsites;
 };
 
 extern int tracepoint_probe_register_noupdate(const char *name,

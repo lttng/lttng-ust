@@ -108,6 +108,20 @@ struct tp_probes {
 	struct tracepoint_probe probes[0];
 };
 
+/*
+ * Callsite hash table, containing the tracepoint call sites.
+ * Protected by tracepoint mutex.
+ */
+#define CALLSITE_HASH_BITS 12
+#define CALLSITE_TABLE_SIZE (1 << CALLSITE_HASH_BITS)
+static struct cds_hlist_head callsite_table[CALLSITE_TABLE_SIZE];
+
+struct callsite_entry {
+	struct cds_hlist_node hlist;	/* hash table node */
+	struct cds_list_head node;	/* lib list of callsites node */
+	struct tracepoint *tp;
+};
+
 static void *allocate_probes(int count)
 {
 	struct tp_probes *p  = zmalloc(count * sizeof(struct tracepoint_probe)
@@ -295,6 +309,41 @@ static void remove_tracepoint(struct tracepoint_entry *e)
 }
 
 /*
+ * Add the callsite to the callsite hash table. Must be called with
+ * tracepoint mutex held.
+ */
+static void add_callsite(struct tracepoint *tp)
+{
+	struct cds_hlist_head *head;
+	struct callsite_entry *e;
+	const char *name = tp->name;
+	size_t name_len = strlen(name);
+	uint32_t hash;
+
+	if (name_len > LTTNG_UST_SYM_NAME_LEN - 1) {
+		WARN("Truncating tracepoint name %s which exceeds size limits of %u chars", name, LTTNG_UST_SYM_NAME_LEN - 1);
+		name_len = LTTNG_UST_SYM_NAME_LEN - 1;
+	}
+	hash = jhash(name, name_len, 0);
+	head = &callsite_table[hash & (CALLSITE_TABLE_SIZE - 1)];
+	e = zmalloc(sizeof(struct callsite_entry));
+	assert(e);
+	cds_hlist_add_head(&e->hlist, head);
+	e->tp = tp;
+}
+
+/*
+ * Remove the callsite from the callsite hash table and from lib
+ * callsite list. Must be called with tracepoint mutex held.
+ */
+static void remove_callsite(struct callsite_entry *e)
+{
+	cds_hlist_del(&e->hlist);
+	cds_list_del(&e->node);
+	free(e);
+}
+
+/*
  * Sets the probe callback corresponding to one tracepoint.
  */
 static void set_tracepoint(struct tracepoint_entry **entry,
@@ -342,6 +391,41 @@ static void disable_tracepoint(struct tracepoint *elem)
 	rcu_assign_pointer(elem->probes, NULL);
 }
 
+/*
+ * Enable/disable all callsites based on the state of a specific
+ * tracepoint entry.
+ * Must be called with tracepoint mutex held.
+ */
+static void tracepoint_sync_callsites(const char *name)
+{
+	struct cds_hlist_head *head;
+	struct cds_hlist_node *node;
+	struct callsite_entry *e;
+	size_t name_len = strlen(name);
+	uint32_t hash;
+	struct tracepoint_entry *tp_entry;
+
+	tp_entry = get_tracepoint(name);
+	if (name_len > LTTNG_UST_SYM_NAME_LEN - 1) {
+		WARN("Truncating tracepoint name %s which exceeds size limits of %u chars", name, LTTNG_UST_SYM_NAME_LEN - 1);
+		name_len = LTTNG_UST_SYM_NAME_LEN - 1;
+	}
+	hash = jhash(name, name_len, 0);
+	head = &callsite_table[hash & (CALLSITE_TABLE_SIZE - 1)];
+	cds_hlist_for_each_entry(e, node, head, hlist) {
+		struct tracepoint *tp = e->tp;
+
+		if (strncmp(name, tp->name, LTTNG_UST_SYM_NAME_LEN - 1))
+			continue;
+		if (tp_entry) {
+			set_tracepoint(&tp_entry, tp,
+					!!tp_entry->refcount);
+		} else {
+			disable_tracepoint(tp);
+		}
+	}
+}
+
 /**
  * tracepoint_update_probe_range - Update a probe range
  * @begin: beginning of the range
@@ -377,6 +461,33 @@ static void lib_update_tracepoints(struct tracepoint_lib *lib)
 {
 	tracepoint_update_probe_range(lib->tracepoints_start,
 			lib->tracepoints_start + lib->tracepoints_count);
+}
+
+static void lib_register_callsites(struct tracepoint_lib *lib)
+{
+	struct tracepoint * const *begin;
+	struct tracepoint * const *end;
+	struct tracepoint * const *iter;
+
+	begin = lib->tracepoints_start;
+	end = lib->tracepoints_start + lib->tracepoints_count;
+
+	for (iter = begin; iter < end; iter++) {
+		if (!*iter)
+			continue;	/* skip dummy */
+		if (!(*iter)->name) {
+			continue;
+		}
+		add_callsite(*iter);
+	}
+}
+
+static void lib_unregister_callsites(struct tracepoint_lib *lib)
+{
+	struct callsite_entry *callsite, *tmp;
+
+	cds_list_for_each_entry_safe(callsite, tmp, &lib->callsites, node)
+		remove_callsite(callsite);
 }
 
 /*
@@ -434,7 +545,7 @@ int __tracepoint_probe_register(const char *name, void (*probe)(void),
 		goto end;
 	}
 
-	tracepoint_update_probes();		/* may update entry */
+	tracepoint_sync_callsites(name);
 	release_probes(old);
 end:
 	pthread_mutex_unlock(&tracepoint_mutex);
@@ -478,7 +589,7 @@ int __tracepoint_probe_unregister(const char *name, void (*probe)(void),
 		ret = PTR_ERR(old);
 		goto end;
 	}
-	tracepoint_update_probes();		/* may update entry */
+	tracepoint_sync_callsites(name);
 	release_probes(old);
 end:
 	pthread_mutex_unlock(&tracepoint_mutex);
@@ -592,10 +703,14 @@ static void new_tracepoints(struct tracepoint * const *start, struct tracepoint 
 }
 
 static
-void lib_disable_tracepoints(struct tracepoint * const *begin,
-			struct tracepoint * const *end)
+void lib_disable_tracepoints(struct tracepoint_lib *lib)
 {
+	struct tracepoint * const *begin;
+	struct tracepoint * const *end;
 	struct tracepoint * const *iter;
+
+	begin = lib->tracepoints_start;
+	end = lib->tracepoints_start + lib->tracepoints_count;
 
 	for (iter = begin; iter < end; iter++) {
 		if (!*iter)
@@ -616,6 +731,7 @@ int tracepoint_register_lib(struct tracepoint * const *tracepoints_start,
 
 	pl->tracepoints_start = tracepoints_start;
 	pl->tracepoints_count = tracepoints_count;
+	CDS_INIT_LIST_HEAD(&pl->callsites);
 
 	pthread_mutex_lock(&tracepoint_mutex);
 	/*
@@ -633,7 +749,7 @@ int tracepoint_register_lib(struct tracepoint * const *tracepoints_start,
 	cds_list_add(&pl->list, &libs);
 lib_added:
 	new_tracepoints(tracepoints_start, tracepoints_start + tracepoints_count);
-
+	lib_register_callsites(pl);
 	lib_update_tracepoints(pl);
 	pthread_mutex_unlock(&tracepoint_mutex);
 
@@ -653,33 +769,27 @@ lib_added:
 int tracepoint_unregister_lib(struct tracepoint * const *tracepoints_start)
 {
 	struct tracepoint_lib *lib;
-	int tracepoints_count;
 
 	pthread_mutex_lock(&tracepoint_mutex);
 	cds_list_for_each_entry(lib, &libs, list) {
-		if (lib->tracepoints_start == tracepoints_start) {
-			struct tracepoint_lib *lib2free = lib;
+		if (lib->tracepoints_start != tracepoints_start)
+			continue;
 
-			cds_list_del(&lib->list);
-			tracepoints_count = lib->tracepoints_count;
-			free(lib2free);
-			goto found;
-		}
+		cds_list_del(&lib->list);
+		/*
+		 * Force tracepoint disarm for all tracepoints of this lib.
+		 * This takes care of destructor of library that would leave a
+		 * LD_PRELOAD wrapper override function enabled for tracing, but
+		 * the session teardown would not be able to reach the
+		 * tracepoint anymore to disable it.
+		 */
+		lib_disable_tracepoints(lib);
+		lib_unregister_callsites(lib);
+		DBG("just unregistered a tracepoints section from %p",
+			lib->tracepoints_start);
+		free(lib);
+		break;
 	}
-	goto end;
-found:
-	/*
-	 * Force tracepoint disarm for all tracepoints of this lib.
-	 * This takes care of destructor of library that would leave a
-	 * LD_PRELOAD wrapper override function enabled for tracing, but
-	 * the session teardown would not be able to reach the
-	 * tracepoint anymore to disable it.
-	 */
-	lib_disable_tracepoints(tracepoints_start,
-			tracepoints_start + tracepoints_count);
-	DBG("just unregistered a tracepoints section from %p",
-		tracepoints_start);
-end:
 	pthread_mutex_unlock(&tracepoint_mutex);
 	return 0;
 }
