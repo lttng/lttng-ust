@@ -123,7 +123,7 @@ int ustcomm_connect_unix_sock(const char *pathname)
 		 * file exists but no sessiond is listening.
 		 */
 		if (errno != ECONNREFUSED && errno != ECONNRESET
-				&& errno != ENOENT && errno != EPERM)
+				&& errno != ENOENT && errno != EACCES)
 			PERROR("connect");
 		ret = -errno;
 		if (ret == -ECONNREFUSED || ret == -ECONNRESET)
