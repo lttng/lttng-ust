@@ -395,6 +395,8 @@ struct lttng_channel_ops {
 			unsigned char *uuid,
 			uint32_t chan_id);
 	void (*channel_destroy)(struct lttng_channel *chan);
+	void *_deprecated1;
+	void *_deprecated2;
 	int (*event_reserve)(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			     uint32_t event_id);
 	void (*event_commit)(struct lttng_ust_lib_ring_buffer_ctx *ctx);
