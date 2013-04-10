@@ -123,6 +123,10 @@ TRACEPOINT_EVENT(
 		 * ctf_sequence: a dynamically-sized array.
 		 * args: (type, field name, argument expression,
 		 *	type of length expression, length expression)
+		 * The "type of length expression" needs to be an
+		 * unsigned type. As a reminder, "unsigned char" should
+		 * be preferred to "char", since the signedness of
+		 * "char" is implementation-defined.
 		 */ 
 		ctf_sequence(char, seqfield1, text,
 			     size_t, textlen)
