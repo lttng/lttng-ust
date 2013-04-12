@@ -1048,7 +1048,7 @@ nodata:
 }
 
 /**
- * lib_ring_buffer_put_snapshot - move consumed counter forward
+ * lib_ring_buffer_move_consumer - move consumed counter forward
  * @buf: ring buffer
  * @consumed_new: new consumed count value
  */
