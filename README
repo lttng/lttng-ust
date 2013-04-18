@@ -74,7 +74,7 @@ USAGE:
     - If building the provider directly into the application,
       link the application with "-llttng-ust".
     - If building a static library for the provider, link the static
-      library with "-lllttng-ust".
+      library with "-llttng-ust".
     - Include the tracepoint provider header into all C files using
       the provider.
     - Example:
