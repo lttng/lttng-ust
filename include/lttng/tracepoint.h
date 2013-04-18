@@ -227,6 +227,41 @@ int __tracepoint_ptrs_registered
 struct tracepoint_dlopen tracepoint_dlopen
 	__attribute__((weak, visibility("hidden")));
 
+#ifndef _LGPL_SOURCE
+static inline void lttng_ust_notrace
+__tracepoint__init_urcu_sym(void);
+static inline void
+__tracepoint__init_urcu_sym(void)
+{
+	/*
+	 * Symbols below are needed by tracepoint call sites and probe
+	 * providers.
+	 */
+	if (!tracepoint_dlopen.rcu_read_lock_sym_bp)
+		tracepoint_dlopen.rcu_read_lock_sym_bp =
+			URCU_FORCE_CAST(void (*)(void),
+				dlsym(tracepoint_dlopen.liblttngust_handle,
+					"tp_rcu_read_lock_bp"));
+	if (!tracepoint_dlopen.rcu_read_unlock_sym_bp)
+		tracepoint_dlopen.rcu_read_unlock_sym_bp =
+			URCU_FORCE_CAST(void (*)(void),
+				dlsym(tracepoint_dlopen.liblttngust_handle,
+					"tp_rcu_read_unlock_bp"));
+	if (!tracepoint_dlopen.rcu_dereference_sym_bp)
+		tracepoint_dlopen.rcu_dereference_sym_bp =
+			URCU_FORCE_CAST(void *(*)(void *p),
+				dlsym(tracepoint_dlopen.liblttngust_handle,
+					"tp_rcu_dereference_sym_bp"));
+}
+#else
+static inline void lttng_ust_notrace
+__tracepoint__init_urcu_sym(void);
+static inline void
+__tracepoint__init_urcu_sym(void)
+{
+}
+#endif
+
 static void lttng_ust_notrace __attribute__((constructor))
 __tracepoints__init(void);
 static void
@@ -240,28 +275,7 @@ __tracepoints__init(void)
 			dlopen("liblttng-ust-tracepoint.so.0", RTLD_NOW | RTLD_GLOBAL);
 	if (!tracepoint_dlopen.liblttngust_handle)
 		return;
-	tracepoint_dlopen.tracepoint_register_lib =
-		URCU_FORCE_CAST(int (*)(struct tracepoint * const *, int),
-				dlsym(tracepoint_dlopen.liblttngust_handle,
-					"tracepoint_register_lib"));
-	tracepoint_dlopen.tracepoint_unregister_lib =
-		URCU_FORCE_CAST(int (*)(struct tracepoint * const *),
-				dlsym(tracepoint_dlopen.liblttngust_handle,
-					"tracepoint_unregister_lib"));
-#ifndef _LGPL_SOURCE
-	tracepoint_dlopen.rcu_read_lock_sym_bp =
-		URCU_FORCE_CAST(void (*)(void),
-				dlsym(tracepoint_dlopen.liblttngust_handle,
-					"tp_rcu_read_lock_bp"));
-	tracepoint_dlopen.rcu_read_unlock_sym_bp =
-		URCU_FORCE_CAST(void (*)(void),
-				dlsym(tracepoint_dlopen.liblttngust_handle,
-					"tp_rcu_read_unlock_bp"));
-	tracepoint_dlopen.rcu_dereference_sym_bp =
-		URCU_FORCE_CAST(void *(*)(void *p),
-				dlsym(tracepoint_dlopen.liblttngust_handle,
-					"tp_rcu_dereference_sym_bp"));
-#endif
+	__tracepoint__init_urcu_sym();
 }
 
 static void lttng_ust_notrace __attribute__((destructor))
@@ -346,9 +360,20 @@ __tracepoints__ptrs_init(void)
 			dlopen("liblttng-ust-tracepoint.so.0", RTLD_NOW | RTLD_GLOBAL);
 	if (!tracepoint_dlopen.liblttngust_handle)
 		return;
-	tracepoint_dlopen.tracepoint_register_lib(__start___tracepoints_ptrs,
+	tracepoint_dlopen.tracepoint_register_lib =
+		URCU_FORCE_CAST(int (*)(struct tracepoint * const *, int),
+				dlsym(tracepoint_dlopen.liblttngust_handle,
+					"tracepoint_register_lib"));
+	tracepoint_dlopen.tracepoint_unregister_lib =
+		URCU_FORCE_CAST(int (*)(struct tracepoint * const *),
+				dlsym(tracepoint_dlopen.liblttngust_handle,
+					"tracepoint_unregister_lib"));
+	__tracepoint__init_urcu_sym();
+	if (tracepoint_dlopen.tracepoint_register_lib) {
+		tracepoint_dlopen.tracepoint_register_lib(__start___tracepoints_ptrs,
 				__stop___tracepoints_ptrs -
 				__start___tracepoints_ptrs);
+	}
 }
 
 static void lttng_ust_notrace __attribute__((destructor))
