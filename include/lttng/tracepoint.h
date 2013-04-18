@@ -303,9 +303,11 @@ __tracepoints__init(void)
 				dlsym(tracepoint_dlopen.liblttngust_handle,
 					"tp_rcu_dereference_sym_bp"));
 #endif
-	tracepoint_dlopen.tracepoint_register_lib(__start___tracepoints_ptrs,
-				__stop___tracepoints_ptrs -
-				__start___tracepoints_ptrs);
+	if (tracepoint_dlopen.tracepoint_register_lib) {
+		tracepoint_dlopen.tracepoint_register_lib(__start___tracepoints_ptrs,
+					__stop___tracepoints_ptrs -
+					__start___tracepoints_ptrs);
+	}
 }
 
 static void lttng_ust_notrace __attribute__((destructor))
