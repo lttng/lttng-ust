@@ -35,7 +35,8 @@ extern "C" {
 TRACEPOINT_EVENT(lttng_ust_cyg_profile_fast, func_entry,
 	TP_ARGS(void *, func_addr),
 	TP_FIELDS(
-		ctf_integer_hex(void *, addr, func_addr)
+		ctf_integer_hex(unsigned long, addr,
+			(unsigned long) func_addr)
 	)
 )
 
