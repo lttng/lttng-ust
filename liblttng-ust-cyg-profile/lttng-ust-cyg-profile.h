@@ -35,8 +35,10 @@ extern "C" {
 TRACEPOINT_EVENT(lttng_ust_cyg_profile, func_entry,
 	TP_ARGS(void *, func_addr, void *, call_site),
 	TP_FIELDS(
-		ctf_integer_hex(void *, addr, func_addr)
-		ctf_integer_hex(void *, call_site, call_site)
+		ctf_integer_hex(unsigned long, addr,
+			(unsigned long) func_addr)
+		ctf_integer_hex(unsigned long, call_site,
+			(unsigned long) call_site)
 	)
 )
 
@@ -46,8 +48,10 @@ TRACEPOINT_LOGLEVEL(lttng_ust_cyg_profile, func_entry,
 TRACEPOINT_EVENT(lttng_ust_cyg_profile, func_exit,
 	TP_ARGS(void *, func_addr, void *, call_site),
 	TP_FIELDS(
-		ctf_integer_hex(void *, addr, func_addr)
-		ctf_integer_hex(void *, call_site, call_site)
+		ctf_integer_hex(unsigned long, addr,
+			(unsigned long) func_addr)
+		ctf_integer_hex(unsigned long, call_site,
+			(unsigned long) call_site)
 	)
 )
 
