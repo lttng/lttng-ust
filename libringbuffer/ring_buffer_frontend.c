@@ -128,15 +128,21 @@ void lib_ring_buffer_print_errors(struct channel *chan,
  * Handle timer teardown race wrt memory free of private data by
  * ring buffer signals are handled by a single thread, which permits
  * a synchronization point between handling of each signal.
- * Protected by the ust mutex.
+ * Protected by the lock within the structure.
  */
 struct timer_signal_data {
 	pthread_t tid;	/* thread id managing signals */
 	int setup_done;
 	int qs_done;
+	pthread_mutex_t lock;
 };
 
-static struct timer_signal_data timer_signal;
+static struct timer_signal_data timer_signal = {
+	.tid = 0,
+	.setup_done = 0,
+	.qs_done = 0,
+	.lock = PTHREAD_MUTEX_INITIALIZER,
+};
 
 /**
  * lib_ring_buffer_reset - Reset ring buffer to initial values.
@@ -418,7 +424,6 @@ void *sig_thread(void *arg)
 }
 
 /*
- * Called with ust_lock() held.
  * Ensure only a single thread listens on the timer signal.
  */
 static
@@ -427,8 +432,9 @@ void lib_ring_buffer_setup_timer_thread(void)
 	pthread_t thread;
 	int ret;
 
+	pthread_mutex_lock(&timer_signal.lock);
 	if (timer_signal.setup_done)
-		return;
+		goto end;
 
 	ret = pthread_create(&thread, NULL, &sig_thread, NULL);
 	if (ret) {
@@ -441,11 +447,64 @@ void lib_ring_buffer_setup_timer_thread(void)
 		PERROR("pthread_detach");
 	}
 	timer_signal.setup_done = 1;
+end:
+	pthread_mutex_unlock(&timer_signal.lock);
 }
 
 /*
- * Called with ust_lock() held.
+ * Wait for signal-handling thread quiescent state.
  */
+static
+void lib_ring_buffer_wait_signal_thread_qs(unsigned int signr)
+{
+	sigset_t pending_set;
+	int ret;
+
+	/*
+	 * We need to be the only thread interacting with the thread
+	 * that manages signals for teardown synchronization.
+	 */
+	pthread_mutex_lock(&timer_signal.lock);
+
+	/*
+	 * Ensure we don't have any signal queued for this channel.
+	 */
+	for (;;) {
+		ret = sigemptyset(&pending_set);
+		if (ret == -1) {
+			PERROR("sigemptyset");
+		}
+		ret = sigpending(&pending_set);
+		if (ret == -1) {
+			PERROR("sigpending");
+		}
+		if (!sigismember(&pending_set, signr))
+			break;
+		caa_cpu_relax();
+	}
+
+	/*
+	 * From this point, no new signal handler will be fired that
+	 * would try to access "chan". However, we still need to wait
+	 * for any currently executing handler to complete.
+	 */
+	cmm_smp_mb();
+	CMM_STORE_SHARED(timer_signal.qs_done, 0);
+	cmm_smp_mb();
+
+	/*
+	 * Kill with LTTNG_UST_RB_SIG_TEARDOWN, so signal management
+	 * thread wakes up.
+	 */
+	kill(getpid(), LTTNG_UST_RB_SIG_TEARDOWN);
+
+	while (!CMM_LOAD_SHARED(timer_signal.qs_done))
+		caa_cpu_relax();
+	cmm_smp_mb();
+
+	pthread_mutex_unlock(&timer_signal.lock);
+}
+
 static
 void lib_ring_buffer_channel_switch_timer_start(struct channel *chan)
 {
@@ -479,13 +538,9 @@ void lib_ring_buffer_channel_switch_timer_start(struct channel *chan)
 	}
 }
 
-/*
- * Called with ust_lock() held.
- */
 static
 void lib_ring_buffer_channel_switch_timer_stop(struct channel *chan)
 {
-	sigset_t pending_set;
 	int ret;
 
 	if (!chan->switch_timer_interval || !chan->switch_timer_enabled)
@@ -496,49 +551,12 @@ void lib_ring_buffer_channel_switch_timer_stop(struct channel *chan)
 		PERROR("timer_delete");
 	}
 
-	/*
-	 * Ensure we don't have any signal queued for this channel.
-	 */
-	for (;;) {
-		ret = sigemptyset(&pending_set);
-		if (ret == -1) {
-			PERROR("sigemptyset");
-		}
-		ret = sigpending(&pending_set);
-		if (ret == -1) {
-			PERROR("sigpending");
-		}
-		if (!sigismember(&pending_set, LTTNG_UST_RB_SIG_FLUSH))
-			break;
-		caa_cpu_relax();
-	}
-
-	/*
-	 * From this point, no new signal handler will be fired that
-	 * would try to access "chan". However, we still need to wait
-	 * for any currently executing handler to complete.
-	 */
-	cmm_smp_mb();
-	CMM_STORE_SHARED(timer_signal.qs_done, 0);
-	cmm_smp_mb();
-
-	/*
-	 * Kill with LTTNG_UST_RB_SIG_TEARDOWN, so signal management
-	 * thread wakes up.
-	 */
-	kill(getpid(), LTTNG_UST_RB_SIG_TEARDOWN);
-
-	while (!CMM_LOAD_SHARED(timer_signal.qs_done))
-		caa_cpu_relax();
-	cmm_smp_mb();
+	lib_ring_buffer_wait_signal_thread_qs(LTTNG_UST_RB_SIG_FLUSH);
 
 	chan->switch_timer = 0;
 	chan->switch_timer_enabled = 0;
 }
 
-/*
- * Called with ust_lock() held.
- */
 static
 void lib_ring_buffer_channel_read_timer_start(struct channel *chan)
 {
@@ -574,14 +592,10 @@ void lib_ring_buffer_channel_read_timer_start(struct channel *chan)
 	}
 }
 
-/*
- * Called with ust_lock() held.
- */
 static
 void lib_ring_buffer_channel_read_timer_stop(struct channel *chan)
 {
 	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
-	sigset_t pending_set;
 	int ret;
 
 	if (config->wakeup != RING_BUFFER_WAKEUP_BY_TIMER
@@ -599,42 +613,7 @@ void lib_ring_buffer_channel_read_timer_stop(struct channel *chan)
 	 */
 	lib_ring_buffer_channel_do_read(chan);
 
-
-	/*
-	 * Ensure we don't have any signal queued for this channel.
-	 */
-	for (;;) {
-		ret = sigemptyset(&pending_set);
-		if (ret == -1) {
-			PERROR("sigemptyset");
-		}
-		ret = sigpending(&pending_set);
-		if (ret == -1) {
-			PERROR("sigpending");
-		}
-		if (!sigismember(&pending_set, LTTNG_UST_RB_SIG_READ))
-			break;
-		caa_cpu_relax();
-	}
-
-	/*
-	 * From this point, no new signal handler will be fired that
-	 * would try to access "chan". However, we still need to wait
-	 * for any currently executing handler to complete.
-	 */
-	cmm_smp_mb();
-	CMM_STORE_SHARED(timer_signal.qs_done, 0);
-	cmm_smp_mb();
-
-	/*
-	 * Kill with LTTNG_UST_RB_SIG_TEARDOWN, so signal management
-	 * thread wakes up.
-	 */
-	kill(getpid(), LTTNG_UST_RB_SIG_TEARDOWN);
-
-	while (!CMM_LOAD_SHARED(timer_signal.qs_done))
-		caa_cpu_relax();
-	cmm_smp_mb();
+	lib_ring_buffer_wait_signal_thread_qs(LTTNG_UST_RB_SIG_READ);
 
 	chan->read_timer = 0;
 	chan->read_timer_enabled = 0;
