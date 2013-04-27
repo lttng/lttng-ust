@@ -116,7 +116,7 @@ TRACEPOINT_EVENT(
 		 * ctf_array_text: a statically-sized array, printed as
 		 * a string. No need to be terminated by a null
 		 * character.
-		 * Behavior is undefined if "text" field is NULL.
+		 * Behavior is undefined if "text" argument is NULL.
 		 */ 
 		ctf_array_text(char, arrfield2, text, 10)
 
@@ -128,7 +128,7 @@ TRACEPOINT_EVENT(
 		 * unsigned type. As a reminder, "unsigned char" should
 		 * be preferred to "char", since the signedness of
 		 * "char" is implementation-defined.
-		 * Behavior is undefined if "text" field is NULL.
+		 * Behavior is undefined if "text" argument is NULL.
 		 */ 
 		ctf_sequence(char, seqfield1, text,
 			     size_t, textlen)
@@ -136,7 +136,7 @@ TRACEPOINT_EVENT(
 		/*
 		 * ctf_sequence_text: a dynamically-sized array, printed
 		 * as string. No need to be null-terminated.
-		 * Behavior is undefined if "text" field is NULL.
+		 * Behavior is undefined if "text" argument is NULL.
 		 */
 		ctf_sequence_text(char, seqfield2, text,
 			     size_t, textlen)
@@ -144,7 +144,7 @@ TRACEPOINT_EVENT(
 		/*
 		 * ctf_string: null-terminated string.
 		 * args: (field name, argument expression)
-		 * Behavior is undefined if "text" field is NULL.
+		 * Behavior is undefined if "text" argument is NULL.
 		 */
 		ctf_string(stringfield, text)
 
