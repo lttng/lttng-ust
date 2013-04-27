@@ -194,7 +194,8 @@ struct lttng_channel *_channel_create(const char *name,
 	memcpy(chan_priv_init.uuid, uuid, LTTNG_UST_UUID_LEN);
 	chan_priv_init.id = chan_id;
 	handle = channel_create(&client_config, name,
-			&priv, __alignof__(*lttng_chan), sizeof(*lttng_chan),
+			&priv, __alignof__(struct lttng_channel),
+			sizeof(struct lttng_channel),
 			&chan_priv_init,
 			buf_addr, subbuf_size, num_subbuf,
 			switch_timer_interval, read_timer_interval);
