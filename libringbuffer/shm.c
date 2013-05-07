@@ -145,7 +145,7 @@ struct shm_object *_shm_object_table_alloc_shm(struct shm_object_table *table,
 		 * Using mktemp filename with O_CREAT | O_EXCL open
 		 * flags.
 		 */
-		mktemp(tmp_name);
+		(void) mktemp(tmp_name);
 		if (tmp_name[0] == '\0') {
 			PERROR("mktemp");
 			goto error_shm_open;
