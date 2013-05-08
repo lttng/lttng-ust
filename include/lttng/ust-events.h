@@ -37,6 +37,15 @@
 
 #define LTTNG_UST_UUID_LEN		16
 
+/*
+ * Tracepoint provider version. Compatibility based on the major number.
+ * Older tracepoint providers can always register to newer lttng-ust
+ * library, but the opposite is rejected: a newer tracepoint provider is
+ * rejected by an older lttng-ust library.
+ */
+#define LTTNG_UST_PROVIDER_MAJOR	1
+#define LTTNG_UST_PROVIDER_MINOR	0
+
 struct lttng_channel;
 struct lttng_session;
 struct lttng_ust_lib_ring_buffer_ctx;
@@ -251,7 +260,7 @@ struct lttng_event_desc {
 	} u;
 };
 
-#define LTTNG_UST_PROBE_DESC_PADDING	20
+#define LTTNG_UST_PROBE_DESC_PADDING	12
 struct lttng_probe_desc {
 	const char *provider;
 	const struct lttng_event_desc **event_desc;
@@ -259,6 +268,8 @@ struct lttng_probe_desc {
 	struct cds_list_head head;		/* chain registered probes */
 	struct cds_list_head lazy_init_head;
 	int lazy;				/* lazy registration */
+	uint32_t major;
+	uint32_t minor;
 	char padding[LTTNG_UST_PROBE_DESC_PADDING];
 };
 

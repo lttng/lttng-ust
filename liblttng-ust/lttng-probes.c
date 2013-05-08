@@ -160,9 +160,46 @@ const struct lttng_probe_desc *find_provider(const char *provider)
 	return NULL;
 }
 
+static
+int check_provider_version(struct lttng_probe_desc *desc)
+{
+	/*
+	 * Check tracepoint provider version compatibility.
+	 */
+	if (desc->major <= LTTNG_UST_PROVIDER_MAJOR) {
+		DBG("Provider \"%s\" accepted, version %u.%u is compatible "
+			"with LTTng UST provider version %u.%u.",
+			desc->provider, desc->major, desc->minor,
+			LTTNG_UST_PROVIDER_MAJOR,
+			LTTNG_UST_PROVIDER_MINOR);
+		if (desc->major < LTTNG_UST_PROVIDER_MAJOR) {
+			DBG("However, some LTTng UST features might not be "
+				"available for this provider unless it is "
+				"recompiled against a more recent LTTng UST.");
+		}
+		return 1;		/* accept */
+	} else {
+		ERR("Provider \"%s\" rejected, version %u.%u is incompatible "
+			"with LTTng UST provider version %u.%u. Please upgrade "
+			"LTTng UST.",
+			desc->provider, desc->major, desc->minor,
+			LTTNG_UST_PROVIDER_MAJOR,
+			LTTNG_UST_PROVIDER_MINOR);
+		return 0;		/* reject */
+	}
+}
+
+
 int lttng_probe_register(struct lttng_probe_desc *desc)
 {
 	int ret = 0;
+
+	/*
+	 * If version mismatch, don't register, but don't trigger assert
+	 * on caller. The version check just prints an error.
+	 */
+	if (!check_provider_version(desc))
+		return 0;
 
 	ust_lock();
 
@@ -197,6 +234,9 @@ int ltt_probe_register(struct lttng_probe_desc *desc)
 
 void lttng_probe_unregister(struct lttng_probe_desc *desc)
 {
+	if (!check_provider_version(desc))
+		return;
+
 	ust_lock();
 	if (!desc->lazy)
 		cds_list_del(&desc->head);
