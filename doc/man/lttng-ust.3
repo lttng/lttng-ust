@@ -362,10 +362,23 @@ startup time.
 .PP
 lttng-gen-tp(1), lttng(1), babeltrace(1), lttng-sessiond(8)
 .PP
+
+.SH "COMPATIBILITY"
+
+.PP
+Older lttng-ust libraries reject more recent, and incompatible, probe
+providers. Newer lttng-ust librairies accept older probe providers, even
+though some newer features might not be available with those providers.
+.PP
+
 .SH "BUGS"
 
 .PP
-No knows bugs at this point.
+LTTng-UST 2.0 and 2.1 lttng-ust libraries do not check for probe
+provider version compatibility. This can lead to out-of-bound accesses
+when using a more recent probe provider with an older lttng-ust library.
+These error only trigger when tracing is active. This issue has been
+fixed in LTTng-UST 2.2.
 
 If you encounter any issues or usability problem, please report it on
 our mailing list <lttng-dev@lists.lttng.org> to help improve this
