@@ -1,3 +1,25 @@
+2013-05-09 lttng-ust 2.2.0-rc2
+	* manpage: Document probe provider compatibility
+	* Fix: add provider ABI compatibility check
+	* Cleanup: ignore mktemp return value
+	* Cleanup: documentation: argument vs field
+	* Documentation: document undefined behavior for NULL pointers
+	* Cleanup: silence cppcheck error
+	* Fix: add internal mutex for timer
+	* 32-bit warning fix for cyg profile fast
+	* Fix warnings for 32-bit in lttng-ust-cyg-profile
+	* Typo fix in README
+	* Fix: tracepoint.h incorrect assumption about constructor order
+	* Cleanup: comment mismatch with code
+	* Fix: ABI breakage between 2.1 and 2.2-rc1
+	* Documentation: document that sequence len field is unsigned
+	* connect: don't report EACCES
+	* connect: don't print error on EPERM
+	* Bump liblttng-ust-ctl lib version major number
+	* Optimisation: implement callsite hash table in tracepoint.c
+	* Optimisation: only update added library in tracepoint.c
+	* Optimisation: only fix pending events once per lazy update
+
 2013-03-28 lttng-ust 2.2.0-rc1
 	* Fix: tracepoint instrumentation constructor order issue
 	* Documentation: update 2.0 to 2.x
