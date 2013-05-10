@@ -40,7 +40,7 @@ lttng-ust-provider-hello.o: tp.c ust_tests_hello.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 lttng-ust-provider-hello.a: lttng-ust-provider-hello.o
-	ar -rc $@ $<
+	ar -rc $@ $^
 
 hello.o: hello.c
 	$(CC) $(CFLAGS) -c -o $@ $<
