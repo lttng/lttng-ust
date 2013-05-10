@@ -75,8 +75,11 @@ USAGE:
       library with "-llttng-ust".
     - Include the tracepoint provider header into all C files using
       the provider.
-    - Example:
-      - tests/hello/  hello.c tp.c ust_tests_hello.h Makefile.example.*
+    - Examples:
+      - doc/examples/easy-ust/   sample.c sample_component_provider.h
+        tp.c Makefile
+      - doc/examples/hello-static-lib/   hello.c tp.c ust_test_hello.h
+        Makefile
 
   2) Compile the Tracepoint Provider separately from the application,
      using dynamic linking:
@@ -94,14 +97,18 @@ USAGE:
       needed. Another way is to dlopen the tracepoint probe when needed
       by the application.
     - Example:
-      - tests/demo/   demo.c  tp*.c ust_tests_demo*.h demo-trace
+      - doc/examples/demo   demo.c  tp*.c ust_tests_demo*.h demo-trace Makefile
 
-  - Enable instrumentation and control tracing with the "lttng" command
-    from lttng-tools. See lttng-tools doc/quickstart.txt.
   - Note about dlclose() usage: it is not safe to use dlclose on a
     provider shared object that is being actively used for tracing due
     to a lack of reference counting from lttng-ust to the used shared
     object.
+  - Enable instrumentation and control tracing with the "lttng" command
+    from lttng-tools. See lttng-tools doc/quickstart.txt.
+  - Note for C++ support: although an application instrumented with
+    tracepoints can be compiled with g++, tracepoint probes should be
+    compiled with gcc (only tested with gcc so far).
+
 
 ENVIRONMENT VARIABLES:
 

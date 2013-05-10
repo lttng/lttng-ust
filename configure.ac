@@ -266,7 +266,6 @@ AC_CONFIG_FILES([
 	tools/Makefile
 	tests/Makefile
 	tests/hello/Makefile
-	tests/hello-static-lib/Makefile
 	tests/hello.cxx/Makefile
 	tests/same_line_tracepoint/Makefile
 	tests/snprintf/Makefile

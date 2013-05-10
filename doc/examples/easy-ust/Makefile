@@ -10,20 +10,36 @@
 # granted, provided the above notices are retained, and a notice that
 # the code was modified is included with the above copyright notice.
 
-# This makefile is not using automake so that people can see how to make
-# simply. It builds a program with a statically embedded tracepoint
-# provider probe.
+# This makefile is not using automake so that users can see how to build
+# a program with a statically embedded tracepoint provider probe.
 # the "html" target helps for documentation (req. code2html)
 
 CC = gcc
 LIBS = -ldl -llttng-ust		# On Linux
 #LIBS = -lc -llttng-ust		# On BSD
-CFLAGS = -I.
+CFLAGS += -I.
+
+# Only necessary when building from the source tree and lttng-ust is not
+# installed
+ifdef BUILD_EXAMPLES_FROM_TREE
+CFLAGS += -I../../../include/
+LIBLTTNG_UST_PATH = ../../../liblttng-ust/.libs/
+LDFLAGS += -L$(LIBLTTNG_UST_PATH) -Wl,-rpath='$$ORIGIN/$(LIBLTTNG_UST_PATH)'
+
+# Third-party Makefiles have to define these targets to integrate with an
+# automake project
+EMPTY_AUTOMAKE_TARGETS = distdir install install-data install-exec uninstall \
+	install-dvi install-html install-info install-ps install-pdf \
+	installdirs check installcheck mostlyclean distclean maintainer-clean \
+	dvi pdf ps info tags ctags
+.PHONY: $(EMPTY_AUTOMAKE_TARGETS)
+$(EMPTY_AUTOMAKE_TARGETS):
+endif
 
 all: sample
 
 sample: sample.o tp.o
-	$(CC) -o $@ $^ $(LIBS)
+	$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
 
 sample.o: sample.c sample_component_provider.h
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -33,7 +49,7 @@ tp.o: tp.c sample_component_provider.h
 
 html: sample_component_provider.html sample.html tp.html
 
-%.html: %.c 
+%.html: %.c
 	code2html -lc $< $@
 
 %.html : %.h
@@ -41,5 +57,5 @@ html: sample_component_provider.html sample.html tp.html
 
 .PHONY: clean
 clean:
-	rm -f *.html  
+	rm -f *.html
 	rm -f *.o sample

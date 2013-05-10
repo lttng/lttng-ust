@@ -31,6 +31,10 @@ lttng-ust.pc
 ustctl/ustctl
 ust-consumerd/ust-consumerd
 
+doc/examples/demo/demo
+doc/examples/easy-ust/sample
+doc/examples/hello-static-lib/hello
+
 tests/hello/hello
 tests/hello.cxx/hello
 tests/same_line_tracepoint/same_line_tracepoint
@@ -39,5 +43,4 @@ tests/ust-multi-test/ust-multi-test
 tests/trace_event/trace_event_test
 tests/tracepoint/benchmark/tracepoint_benchmark
 tests/tracepoint/tracepoint_test
-tests/hello-static-lib/hello
 tests/snprintf/prog

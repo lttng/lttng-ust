@@ -88,7 +88,6 @@ int main(int argc, char **argv)
 		netint = htonl(i);
 		tracepoint(ust_tests_hello, tptest, i, netint, values,
 			   text, strlen(text), dbl, flt);
-		//usleep(100000);
 	}
 	fprintf(stderr, " done.\n");
 	return 0;

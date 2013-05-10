@@ -10,12 +10,12 @@
 # the code was modified is included with the above copyright notice.
 
 # This Makefile is not using automake so that users may see how to build
-# a program with tracepoint provider probes as stand-alone shared objects.
+# a program with tracepoint provider probes compiled as static libraries.
 
 CC = gcc
-LIBS = -ldl	# On Linux
-#LIBS = -lc	# On BSD
 CFLAGS += -I.
+LIBS = -ldl -llttng-ust	# On Linux
+#LIBS = -lc -llttng-ust	# On BSD
 
 # Only necessary when building from the source tree and lttng-ust is not
 # installed
@@ -34,26 +34,20 @@ EMPTY_AUTOMAKE_TARGETS = distdir install install-data install-exec uninstall \
 $(EMPTY_AUTOMAKE_TARGETS):
 endif
 
-all: demo lttng-ust-provider-ust-tests-demo.so lttng-ust-provider-ust-tests-demo3.so
+all: hello
 
-lttng-ust-provider-ust-tests-demo.o: tp.c tp2.c ust_tests_demo.h ust_tests_demo2.h
-	$(CC) $(CFLAGS) -fpic -c -o $@ $<
-
-lttng-ust-provider-ust-tests-demo.so: lttng-ust-provider-ust-tests-demo.o
-	$(CC) -shared -o $@ $(LDFLAGS) -llttng-ust $<
-
-lttng-ust-provider-ust-tests-demo3.o: tp3.c ust_tests_demo3.h
-	$(CC) $(CFLAGS) -fpic -c -o $@ $<
-
-lttng-ust-provider-ust-tests-demo3.so: lttng-ust-provider-ust-tests-demo3.o
-	$(CC) -shared -o $@ $(LDFLAGS) -llttng-ust $<
-
-demo.o: demo.c
+lttng-ust-provider-hello.o: tp.c ust_tests_hello.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-demo: demo.o
-	$(CC) demo.o -o $@ $(LIBS)
+lttng-ust-provider-hello.a: lttng-ust-provider-hello.o
+	ar -rc $@ $<
+
+hello.o: hello.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+hello: hello.o lttng-ust-provider-hello.a
+	$(CC) -o $@ $(LDFLAGS) $(LIBS) $^
 
 .PHONY: clean
 clean:
-	rm -f *.o *.so demo
+	rm -f *.o *.a hello
