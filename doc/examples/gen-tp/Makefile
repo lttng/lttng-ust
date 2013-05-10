@@ -26,7 +26,7 @@ sample: sample.o sample_tracepoint.o
 	$(CC) -o $@ $^ $(LIBS)
 
 sample.o: sample.c sample_tracepoint.h
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 # Use this command to compile the .c manually
 #sample_tracepoint.o: sample_tracepoint.c sample_tracepoint.h

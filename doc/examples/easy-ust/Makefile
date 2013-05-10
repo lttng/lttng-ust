@@ -42,10 +42,10 @@ sample: sample.o tp.o
 	$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
 
 sample.o: sample.c sample_component_provider.h
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 tp.o: tp.c sample_component_provider.h
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 html: sample_component_provider.html sample.html tp.html
 

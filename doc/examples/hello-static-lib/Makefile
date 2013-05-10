@@ -37,13 +37,13 @@ endif
 all: hello
 
 lttng-ust-provider-hello.o: tp.c ust_tests_hello.h
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 lttng-ust-provider-hello.a: lttng-ust-provider-hello.o
 	ar -rc $@ $^
 
 hello.o: hello.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 hello: hello.o lttng-ust-provider-hello.a
 	$(CC) -o $@ $(LDFLAGS) $(LIBS) $^
