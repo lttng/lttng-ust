@@ -36,23 +36,26 @@ endif
 
 all: demo lttng-ust-provider-ust-tests-demo.so lttng-ust-provider-ust-tests-demo3.so
 
-lttng-ust-provider-ust-tests-demo.o: tp.c tp2.c ust_tests_demo.h ust_tests_demo2.h
+tp.o: tp.c ust_tests_demo.h
 	$(CC) $(CFLAGS) -fpic -c -o $@ $<
 
-lttng-ust-provider-ust-tests-demo.so: lttng-ust-provider-ust-tests-demo.o
-	$(CC) -shared -o $@ $(LDFLAGS) -llttng-ust $<
-
-lttng-ust-provider-ust-tests-demo3.o: tp3.c ust_tests_demo3.h
+tp2.o: tp2.c ust_tests_demo2.h
 	$(CC) $(CFLAGS) -fpic -c -o $@ $<
 
-lttng-ust-provider-ust-tests-demo3.so: lttng-ust-provider-ust-tests-demo3.o
-	$(CC) -shared -o $@ $(LDFLAGS) -llttng-ust $<
+lttng-ust-provider-ust-tests-demo.so: tp.o tp2.o
+	$(CC) -shared -o $@ $(LDFLAGS) -llttng-ust $+
+
+tp3.o: tp3.c ust_tests_demo3.h
+	$(CC) $(CFLAGS) -fpic -c -o $@ $<
+
+lttng-ust-provider-ust-tests-demo3.so: tp3.o
+	$(CC) -shared -o $@ $(LDFLAGS) -llttng-ust $+
 
 demo.o: demo.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 demo: demo.o
-	$(CC) demo.o -o $@ $(LIBS)
+	$(CC) -o $@ $(LIBS) $+
 
 .PHONY: clean
 clean:
