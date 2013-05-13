@@ -830,6 +830,47 @@ error_type:
 	return ret;
 }
 
+static
+int serialize_ctx_fields(size_t *_nr_write_fields,
+		struct ustctl_field **ustctl_fields,
+		size_t nr_fields,
+		const struct lttng_ctx_field *lttng_fields)
+{
+	struct ustctl_field *fields;
+	int i, ret;
+	size_t nr_write_fields = 0;
+
+	fields = zmalloc(nr_fields * sizeof(*fields));
+	if (!fields)
+		return -ENOMEM;
+
+	for (i = 0; i < nr_fields; i++) {
+		struct ustctl_field *f;
+		const struct lttng_event_field *lf;
+
+		f = &fields[nr_write_fields];
+		lf = &lttng_fields[i].event_field;
+
+		/* skip 'nowrite' fields */
+		if (lf->nowrite)
+			continue;
+		strncpy(f->name, lf->name, LTTNG_UST_SYM_NAME_LEN);
+		f->name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+		ret = serialize_one_type(&f->type, &lf->type);
+		if (ret)
+			goto error_type;
+		nr_write_fields++;
+	}
+
+	*_nr_write_fields = nr_write_fields;
+	*ustctl_fields = fields;
+	return 0;
+
+error_type:
+	free(fields);
+	return ret;
+}
+
 /*
  * Returns 0 on success, negative error value on error.
  */
@@ -968,7 +1009,7 @@ int ustcomm_register_channel(int sock,
 	int session_objd,		/* session descriptor */
 	int channel_objd,		/* channel descriptor */
 	size_t nr_ctx_fields,
-	const struct lttng_event_field *ctx_fields,
+	const struct lttng_ctx_field *ctx_fields,
 	uint32_t *chan_id,		/* channel id (output) */
 	int *header_type) 		/* header type (output) */
 {
@@ -982,7 +1023,7 @@ int ustcomm_register_channel(int sock,
 		struct ustcomm_notify_channel_reply r;
 	} reply;
 	size_t fields_len;
-	struct ustctl_field *fields;
+	struct ustctl_field *fields = NULL;
 	int ret;
 	size_t nr_write_fields = 0;
 
@@ -993,7 +1034,7 @@ int ustcomm_register_channel(int sock,
 
 	/* Calculate fields len, serialize fields. */
 	if (nr_ctx_fields > 0) {
-		ret = serialize_fields(&nr_write_fields, &fields,
+		ret = serialize_ctx_fields(&nr_write_fields, &fields,
 				nr_ctx_fields, ctx_fields);
 		if (ret)
 			return ret;

@@ -260,7 +260,7 @@ int lttng_session_enable(struct lttng_session *session)
 	 */
 	cds_list_for_each_entry(chan, &session->chan_head, node) {
 		const struct lttng_ctx *ctx;
-		const struct lttng_event_field *fields = NULL;
+		const struct lttng_ctx_field *fields = NULL;
 		size_t nr_fields = 0;
 		uint32_t chan_id;
 
@@ -270,7 +270,7 @@ int lttng_session_enable(struct lttng_session *session)
 		ctx = chan->ctx;
 		if (ctx) {
 			nr_fields = ctx->nr_fields;
-			fields = &ctx->fields->event_field;
+			fields = ctx->fields;
 		}
 		ret = ustcomm_register_channel(notify_socket,
 			session->objd,
