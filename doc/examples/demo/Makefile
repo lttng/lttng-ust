@@ -55,7 +55,7 @@ demo.o: demo.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 demo: demo.o
-	$(CC) -o $@ $^ $(LIBS)
+	$(CC) -o $@ $(LIBS) $^
 
 .PHONY: clean
 clean:
