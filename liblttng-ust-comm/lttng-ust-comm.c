@@ -956,6 +956,8 @@ int ustcomm_register_event(int sock,
 		if (len < 0) {
 			return len;
 		}
+	} else {
+		free(fields);
 	}
 
 	if (model_emf_uri_len) {
