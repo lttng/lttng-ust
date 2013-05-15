@@ -46,7 +46,7 @@ hello.o: hello.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 hello: hello.o lttng-ust-provider-hello.a
-	$(CC) -o $@ $(LDFLAGS) $(LIBS) $^
+	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
 
 .PHONY: clean
 clean:
