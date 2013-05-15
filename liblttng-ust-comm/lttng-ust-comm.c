@@ -1062,6 +1062,8 @@ int ustcomm_register_channel(int sock,
 		if (len < 0) {
 			return len;
 		}
+	} else {
+		free(fields);
 	}
 
 	len = ustcomm_recv_unix_sock(sock, &reply, sizeof(reply));
