@@ -52,6 +52,11 @@ INSTALLATION INSTRUCTIONS:
   If compiling from the git repository, run ./bootstrap before running
   the configure script, to generate it.
 
+  Note that configure sets '/usr/local' as the default prefix for files it
+  installs. However, this path is not part of most distributions' default
+  library path which will cause builds depending on liblttng-ust to fail unless
+  '-L/usr/local/lib' is added to LDFLAGS. You may provide a custom prefix to
+  configure by using the --prefix switch.
 
 USAGE:
 
