@@ -38,10 +38,12 @@
 #include "local.h"
 #include "ust_snprintf.h"
 
+#define DUMMY_LEN	1
+
 int ust_safe_vsnprintf(char *str, size_t n, const char *fmt, va_list ap)
 {
 	int ret;
-	char dummy;
+	char dummy[DUMMY_LEN];
 	LTTNG_UST_LFILE f;
 	struct __lttng_ust_sfileext fext;
 
@@ -50,8 +52,8 @@ int ust_safe_vsnprintf(char *str, size_t n, const char *fmt, va_list ap)
 		n = INT_MAX;
 	/* Stdio internals do not deal correctly with zero length buffer */
 	if (n == 0) {
-		str = &dummy;
-		n = 1;
+		str = dummy;
+		n = DUMMY_LEN;
 	}
 	_FILEEXT_SETUP(&f, &fext);
 	f._file = -1;
