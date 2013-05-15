@@ -122,6 +122,7 @@ struct callsite_entry {
 	struct tracepoint *tp;
 };
 
+/* coverity[+alloc] */
 static void *allocate_probes(int count)
 {
 	struct tp_probes *p  = zmalloc(count * sizeof(struct tracepoint_probe)
@@ -129,6 +130,7 @@ static void *allocate_probes(int count)
 	return p == NULL ? NULL : p->probes;
 }
 
+/* coverity[+free : arg-0] */
 static void release_probes(void *old)
 {
 	if (old) {
