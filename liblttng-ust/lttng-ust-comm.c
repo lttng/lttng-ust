@@ -443,6 +443,7 @@ int handle_message(struct sock_info *sock_info,
 					goto error;
 				}
 				ret = len;
+				free(bytecode);
 				goto end;
 			} else {
 				DBG("incorrect filter data message size: %zd", len);
