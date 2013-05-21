@@ -12,7 +12,8 @@ liblttng_ust_tracepoint_la_SOURCES = \
 	jhash.h \
 	error.h
 liblttng_ust_tracepoint_la_LIBADD = \
-	-lurcu-bp
+	-lurcu-bp \
+	$(top_builddir)/snprintf/libustsnprintf.la
 liblttng_ust_tracepoint_la_LDFLAGS = -no-undefined -version-info $(LTTNG_UST_LIBRARY_VERSION)
 liblttng_ust_tracepoint_la_CFLAGS = -DUST_COMPONENT="liblttng_ust_tracepoint" -fno-strict-aliasing
 
