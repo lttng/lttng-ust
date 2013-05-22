@@ -11,8 +11,8 @@ liblttng_ust_java_la_LIBADD = -lc -L$(top_builddir)/liblttng-ust/.libs -llttng-u
 all: LTTngUst.class org_lttng_ust_LTTngUst.h liblttng-ust-java.jar
 
 clean-local:
-	rm org_lttng_ust_LTTngUst.h
-	rm liblttng-ust-java.jar
+	rm -f org_lttng_ust_LTTngUst.h
+	rm -f liblttng-ust-java.jar
 	rm -rf org/
 
 LTTngUst.c: org_lttng_ust_LTTngUst.h
