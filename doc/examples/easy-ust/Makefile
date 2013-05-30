@@ -17,14 +17,14 @@
 CC = gcc
 LIBS = -ldl -llttng-ust		# On Linux
 #LIBS = -lc -llttng-ust		# On BSD
-CFLAGS += -I.
+LOCAL_CPPFLAGS += -I.
 
 # Only necessary when building from the source tree and lttng-ust is not
 # installed
 ifdef BUILD_EXAMPLES_FROM_TREE
-CFLAGS += -I../../../include/
+LOCAL_CPPFLAGS += -I../../../include/
 LIBLTTNG_UST_PATH = ../../../liblttng-ust/.libs/
-LDFLAGS += -L$(LIBLTTNG_UST_PATH) -Wl,-rpath='$$ORIGIN/$(LIBLTTNG_UST_PATH)'
+override LDFLAGS += -L$(LIBLTTNG_UST_PATH) -Wl,-rpath='$$ORIGIN/$(LIBLTTNG_UST_PATH)'
 
 # Third-party Makefiles have to define these targets to integrate with an
 # automake project
@@ -42,10 +42,10 @@ sample: sample.o tp.o
 	$(CC) -o $@ $^ $(LDFLAGS) $(LIBS)
 
 sample.o: sample.c sample_component_provider.h
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 tp.o: tp.c sample_component_provider.h
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 html: sample_component_provider.html sample.html tp.html
 

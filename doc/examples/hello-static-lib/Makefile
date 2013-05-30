@@ -13,16 +13,16 @@
 # a program with tracepoint provider probes compiled as static libraries.
 
 CC = gcc
-CFLAGS += -I.
+LOCAL_CPPFLAGS += -I.
 LIBS = -ldl -llttng-ust	# On Linux
 #LIBS = -lc -llttng-ust	# On BSD
 
 # Only necessary when building from the source tree and lttng-ust is not
 # installed
 ifdef BUILD_EXAMPLES_FROM_TREE
-CFLAGS += -I../../../include/
+LOCAL_CPPFLAGS += -I../../../include/
 LIBLTTNG_UST_PATH = ../../../liblttng-ust/.libs/
-LDFLAGS += -L$(LIBLTTNG_UST_PATH) -Wl,-rpath='$$ORIGIN/$(LIBLTTNG_UST_PATH)'
+override LDFLAGS += -L$(LIBLTTNG_UST_PATH) -Wl,-rpath='$$ORIGIN/$(LIBLTTNG_UST_PATH)'
 
 # Third-party Makefiles have to define these targets to integrate with an
 # automake project
@@ -37,13 +37,13 @@ endif
 all: hello
 
 lttng-ust-provider-hello.o: tp.c ust_tests_hello.h
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 lttng-ust-provider-hello.a: lttng-ust-provider-hello.o
 	ar -rc $@ $^
 
 hello.o: hello.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 hello: hello.o lttng-ust-provider-hello.a
 	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
