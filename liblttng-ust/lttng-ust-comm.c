@@ -625,6 +625,25 @@ void cleanup_sock_info(struct sock_info *sock_info, int exiting)
 {
 	int ret;
 
+	if (sock_info->root_handle != -1) {
+		ret = lttng_ust_objd_unref(sock_info->root_handle, 1);
+		if (ret) {
+			ERR("Error unref root handle");
+		}
+		sock_info->root_handle = -1;
+	}
+	sock_info->constructor_sem_posted = 0;
+
+	/*
+	 * wait_shm_mmap, socket and notify socket are used by listener
+	 * threads outside of the ust lock, so we cannot tear them down
+	 * ourselves, because we cannot join on these threads. Leave
+	 * responsibility of cleaning up these resources to the OS
+	 * process exit.
+	 */
+	if (exiting)
+		return;
+
 	if (sock_info->socket != -1) {
 		ret = ustcomm_close_unix_sock(sock_info->socket);
 		if (ret) {
@@ -639,21 +658,7 @@ void cleanup_sock_info(struct sock_info *sock_info, int exiting)
 		}
 		sock_info->notify_socket = -1;
 	}
-	if (sock_info->root_handle != -1) {
-		ret = lttng_ust_objd_unref(sock_info->root_handle, 1);
-		if (ret) {
-			ERR("Error unref root handle");
-		}
-		sock_info->root_handle = -1;
-	}
-	sock_info->constructor_sem_posted = 0;
-	/*
-	 * wait_shm_mmap is used by listener threads outside of the
-	 * ust lock, so we cannot tear it down ourselves, because we
-	 * cannot join on these threads. Leave this task to the OS
-	 * process exit.
-	 */
-	if (!exiting && sock_info->wait_shm_mmap) {
+	if (sock_info->wait_shm_mmap) {
 		ret = munmap(sock_info->wait_shm_mmap, sysconf(_SC_PAGE_SIZE));
 		if (ret) {
 			ERR("Error unmapping wait shm");
@@ -910,11 +915,6 @@ restart:
 		has_waited = 1;
 		prev_connect_failed = 0;
 	}
-	ust_lock();
-
-	if (lttng_ust_comm_should_quit) {
-		goto quit;
-	}
 
 	if (sock_info->socket != -1) {
 		ret = ustcomm_close_unix_sock(sock_info->socket);
@@ -939,6 +939,13 @@ restart:
 		if (ret < 0) {
 			DBG("Info: sessiond not accepting connections to %s apps socket", sock_info->name);
 			prev_connect_failed = 1;
+
+			ust_lock();
+
+			if (lttng_ust_comm_should_quit) {
+				goto quit;
+			}
+
 			/*
 			 * If we cannot find the sessiond daemon, don't delay
 			 * constructor execution.
@@ -974,6 +981,12 @@ restart:
 		}
 	} else if (timeout < -1) {
 		WARN("Unsuppoorted timeout value %ld", timeout);
+	}
+
+	ust_lock();
+
+	if (lttng_ust_comm_should_quit) {
+		goto quit;
 	}
 
 	/*
