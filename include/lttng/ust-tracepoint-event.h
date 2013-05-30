@@ -147,11 +147,14 @@ static const char							\
 	  .type =						\
 		{						\
 		  .atype = atype_array,				\
-		  .u.array =					\
+		  .u =						\
 			{					\
-			    .length = _length,			\
-			    .elem_type = __type_integer(_type, BYTE_ORDER, 10, _encoding), \
-			},					\
+			  .array =				\
+				{				\
+				  .elem_type = __type_integer(_type, BYTE_ORDER, 10, _encoding), \
+				  .length = _length,		\
+				}				\
+			}					\
 		},						\
 	  .nowrite = _nowrite,					\
 	},
@@ -164,10 +167,13 @@ static const char							\
 	  .type =						\
 		{						\
 		  .atype = atype_sequence,			\
-		  .u.sequence =					\
+		  .u =						\
 			{					\
-			    .length_type = __type_integer(_length_type, BYTE_ORDER, 10, none), \
-			    .elem_type = __type_integer(_type, BYTE_ORDER, 10, _encoding), \
+			  .sequence =				\
+				{				\
+				  .length_type = __type_integer(_length_type, BYTE_ORDER, 10, none), \
+				  .elem_type = __type_integer(_type, BYTE_ORDER, 10, _encoding), \
+				},				\
 			},					\
 		},						\
 	  .nowrite = _nowrite,					\
@@ -180,7 +186,10 @@ static const char							\
 	  .type =						\
 		{						\
 		  .atype = atype_string,			\
-		  .u.basic.string.encoding = lttng_encode_UTF8,	\
+		  .u =						\
+			{					\
+			  .basic = { .string = { .encoding = lttng_encode_UTF8 } } \
+			},					\
 		},						\
 	  .nowrite = _nowrite,					\
 	},
@@ -483,7 +492,7 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));      \
 static									      \
 void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 {									      \
-	struct lttng_event *__event = __tp_data;			      \
+	struct lttng_event *__event = (struct lttng_event *) __tp_data;			      \
 	struct lttng_channel *__chan = __event->chan;			      \
 	struct lttng_ust_lib_ring_buffer_ctx __ctx;			      \
 	size_t __event_len, __event_align;				      \
@@ -612,13 +621,14 @@ static const char *							       \
 	__ref_model_emf_uri___##_provider##___##_name			       \
 	__attribute__((weakref ("_model_emf_uri___" #_provider "___" #_name)));\
 const struct lttng_event_desc __event_desc___##_provider##_##_name = {	       \
-	.fields = __event_fields___##_provider##___##_template,		       \
 	.name = #_provider ":" #_name,					       \
 	.probe_callback = (void (*)(void)) &__event_probe__##_provider##___##_template,\
+	.ctx = NULL,							       \
+	.fields = __event_fields___##_provider##___##_template,		       \
 	.nr_fields = _TP_ARRAY_SIZE(__event_fields___##_provider##___##_template), \
 	.loglevel = &__ref_loglevel___##_provider##___##_name,		       \
 	.signature = __tp_event_signature___##_provider##___##_template,       \
-	.u.ext.model_emf_uri = &__ref_model_emf_uri___##_provider##___##_name, \
+	.u = { .ext = { .model_emf_uri = &__ref_model_emf_uri___##_provider##___##_name } }, \
 };
 
 #include TRACEPOINT_INCLUDE
@@ -652,6 +662,9 @@ static struct lttng_probe_desc _TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PR
 	.provider = __tp_stringify(TRACEPOINT_PROVIDER),
 	.event_desc = _TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER),
 	.nr_events = _TP_ARRAY_SIZE(_TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER)),
+	.head = { NULL, NULL },
+	.lazy_init_head = { NULL, NULL },
+	.lazy = 0,
 	.major = LTTNG_UST_PROVIDER_MAJOR,
 	.minor = LTTNG_UST_PROVIDER_MINOR,
 };

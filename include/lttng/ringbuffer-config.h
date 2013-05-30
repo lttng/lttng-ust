@@ -134,47 +134,64 @@ struct lttng_ust_lib_ring_buffer_client_cb {
  * has the responsibility to perform wakeups.
  */
 #define LTTNG_UST_RING_BUFFER_CONFIG_PADDING	32
+
+enum lttng_ust_lib_ring_buffer_alloc_types {
+	RING_BUFFER_ALLOC_PER_CPU,
+	RING_BUFFER_ALLOC_GLOBAL,
+};
+
+enum lttng_ust_lib_ring_buffer_sync_types {
+	RING_BUFFER_SYNC_PER_CPU,	/* Wait-free */
+	RING_BUFFER_SYNC_GLOBAL,	/* Lock-free */
+};
+
+enum lttng_ust_lib_ring_buffer_mode_types {
+	RING_BUFFER_OVERWRITE,		/* Overwrite when buffer full */
+	RING_BUFFER_DISCARD,		/* Discard when buffer full */
+};
+
+enum lttng_ust_lib_ring_buffer_output_types {
+	RING_BUFFER_SPLICE,
+	RING_BUFFER_MMAP,
+	RING_BUFFER_READ,		/* TODO */
+	RING_BUFFER_ITERATOR,
+	RING_BUFFER_NONE,
+};
+
+enum lttng_ust_lib_ring_buffer_backend_types {
+	RING_BUFFER_PAGE,
+	RING_BUFFER_VMAP,		/* TODO */
+	RING_BUFFER_STATIC,		/* TODO */
+};
+
+enum lttng_ust_lib_ring_buffer_oops_types {
+	RING_BUFFER_NO_OOPS_CONSISTENCY,
+	RING_BUFFER_OOPS_CONSISTENCY,
+};
+
+enum lttng_ust_lib_ring_buffer_ipi_types {
+	RING_BUFFER_IPI_BARRIER,
+	RING_BUFFER_NO_IPI_BARRIER,
+};
+
+enum lttng_ust_lib_ring_buffer_wakeup_types {
+	RING_BUFFER_WAKEUP_BY_TIMER,	/* wake up performed by timer */
+	RING_BUFFER_WAKEUP_BY_WRITER,	/*
+					 * writer wakes up reader,
+					 * not lock-free
+					 * (takes spinlock).
+					 */
+};
+
 struct lttng_ust_lib_ring_buffer_config {
-	enum {
-		RING_BUFFER_ALLOC_PER_CPU,
-		RING_BUFFER_ALLOC_GLOBAL,
-	} alloc;
-	enum {
-		RING_BUFFER_SYNC_PER_CPU,	/* Wait-free */
-		RING_BUFFER_SYNC_GLOBAL,	/* Lock-free */
-	} sync;
-	enum {
-		RING_BUFFER_OVERWRITE,		/* Overwrite when buffer full */
-		RING_BUFFER_DISCARD,		/* Discard when buffer full */
-	} mode;
-	enum {
-		RING_BUFFER_SPLICE,
-		RING_BUFFER_MMAP,
-		RING_BUFFER_READ,		/* TODO */
-		RING_BUFFER_ITERATOR,
-		RING_BUFFER_NONE,
-	} output;
-	enum {
-		RING_BUFFER_PAGE,
-		RING_BUFFER_VMAP,		/* TODO */
-		RING_BUFFER_STATIC,		/* TODO */
-	} backend;
-	enum {
-		RING_BUFFER_NO_OOPS_CONSISTENCY,
-		RING_BUFFER_OOPS_CONSISTENCY,
-	} oops;
-	enum {
-		RING_BUFFER_IPI_BARRIER,
-		RING_BUFFER_NO_IPI_BARRIER,
-	} ipi;
-	enum {
-		RING_BUFFER_WAKEUP_BY_TIMER,	/* wake up performed by timer */
-		RING_BUFFER_WAKEUP_BY_WRITER,	/*
-						 * writer wakes up reader,
-						 * not lock-free
-						 * (takes spinlock).
-						 */
-	} wakeup;
+	enum lttng_ust_lib_ring_buffer_alloc_types alloc;
+	enum lttng_ust_lib_ring_buffer_sync_types sync;
+	enum lttng_ust_lib_ring_buffer_mode_types mode;
+	enum lttng_ust_lib_ring_buffer_output_types output;
+	enum lttng_ust_lib_ring_buffer_backend_types backend;
+	enum lttng_ust_lib_ring_buffer_oops_types oops;
+	enum lttng_ust_lib_ring_buffer_ipi_types ipi;
+	enum lttng_ust_lib_ring_buffer_wakeup_types wakeup;
 	/*
 	 * tsc_bits: timestamp bits saved at each record.
 	 *   0 and 64 disable the timestamp compression scheme.

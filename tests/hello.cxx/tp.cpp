@@ -1,5 +1,5 @@
 /*
- * tp.c
+ * tp.cpp
  *
  * Copyright (c) 2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *

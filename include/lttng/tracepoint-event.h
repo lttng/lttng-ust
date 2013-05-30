@@ -20,11 +20,11 @@
  * SOFTWARE.
  */
 
+#ifdef TRACEPOINT_CREATE_PROBES
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#ifdef TRACEPOINT_CREATE_PROBES
 
 #define __tp_stringify1(x)	#x
 #define __tp_stringify(x)	__tp_stringify1(x)
@@ -65,10 +65,10 @@ extern "C" {
 #undef TRACEPOINT_INCLUDE_FILE
 #undef TRACEPOINT_INCLUDE
 
-#define TRACEPOINT_CREATE_PROBES
-
-#endif /* TRACEPOINT_CREATE_PROBES */
-
 #ifdef __cplusplus
 }
 #endif
+
+#define TRACEPOINT_CREATE_PROBES
+
+#endif /* TRACEPOINT_CREATE_PROBES */
