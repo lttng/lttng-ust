@@ -21,7 +21,7 @@
 
 #include <stdlib.h>
 
-static inline
+static inline __attribute__((always_inline))
 void *zmalloc(size_t len)
 {
 	return calloc(len, 1);
