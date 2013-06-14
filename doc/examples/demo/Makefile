@@ -43,13 +43,13 @@ tp2.o: tp2.c ust_tests_demo2.h
 	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(CFLAGS) -fpic -c -o $@ $<
 
 lttng-ust-provider-ust-tests-demo.so: tp.o tp2.o
-	$(CC) -shared -o $@ $(LDFLAGS) -llttng-ust $^
+	$(CC) -shared -Wl,--no-as-needed -o $@ $(LDFLAGS) -llttng-ust $^
 
 tp3.o: tp3.c ust_tests_demo3.h
 	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(CFLAGS) -fpic -c -o $@ $<
 
 lttng-ust-provider-ust-tests-demo3.so: tp3.o
-	$(CC) -shared -o $@ $(LDFLAGS) -llttng-ust $^
+	$(CC) -shared -Wl,--no-as-needed -o $@ $(LDFLAGS) -llttng-ust $^
 
 demo.o: demo.c
 	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(CFLAGS) -c -o $@ $<
