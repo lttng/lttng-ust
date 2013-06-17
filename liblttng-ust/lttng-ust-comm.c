@@ -209,10 +209,12 @@ void print_cmd(int cmd, int handle)
 {
 	const char *cmd_name = "Unknown";
 
-	if (cmd_name_mapping[cmd]) {
+	if (cmd >= 0 && cmd < LTTNG_ARRAY_SIZE(cmd_name_mapping)
+			&& cmd_name_mapping[cmd]) {
 		cmd_name = cmd_name_mapping[cmd];
 	}
-	DBG("Message Received \"%s\", Handle \"%s\" (%d)", cmd_name,
+	DBG("Message Received \"%s\" (%d), Handle \"%s\" (%d)",
+		cmd_name, cmd,
 		lttng_ust_obj_get_name(handle), handle);
 }
 
