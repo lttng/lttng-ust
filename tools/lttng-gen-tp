@@ -61,7 +61,9 @@ extern "C"{{
 
     def write(self):
         outputFile = open(self.outputFilename,"w")
-        includeGuard = self.outputFilename.upper().replace(".","_")
+        # Include guard macro will be created by uppercasing the filename and
+        # replacing all non alphanumeric characters with '_'
+        includeGuard = re.sub('[^0-9a-zA-Z]', '_', self.outputFilename.upper())
 
         outputFile.write(HeaderFile.HEADER_TPL.format(providerName=self.template.domain,
                                            includeGuard = includeGuard,
