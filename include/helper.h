@@ -41,4 +41,6 @@ void *zmalloc(size_t len)
 		__min1 <= __min2 ? __min1: __min2;	\
 	})
 
+#define LTTNG_ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+
 #endif /* _LTTNG_UST_HELPER_H */
