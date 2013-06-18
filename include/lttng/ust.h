@@ -15,6 +15,8 @@
  * all copies or substantial portions of the Software.
  */
 
+#include <signal.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
