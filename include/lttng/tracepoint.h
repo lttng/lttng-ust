@@ -23,12 +23,13 @@
  * SOFTWARE.
  */
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <lttng/tracepoint-types.h>
 #include <lttng/tracepoint-rcu.h>
 #include <urcu/compiler.h>
 #include <dlfcn.h>	/* for dlopen */
 #include <string.h>	/* for memset */
-#include <assert.h>
 #include <lttng/ust-config.h>	/* for sdt */
 #include <lttng/ust-compiler.h>
 
@@ -289,7 +290,10 @@ __tracepoints__destroy(void)
 		return;
 	if (tracepoint_dlopen.liblttngust_handle && !__tracepoint_ptrs_registered) {
 		ret = dlclose(tracepoint_dlopen.liblttngust_handle);
-		assert(!ret);
+		if (ret) {
+			fprintf(stderr, "Error (%d) in dlclose\n", ret);
+			abort();
+		}
 		memset(&tracepoint_dlopen, 0, sizeof(tracepoint_dlopen));
 	}
 }
@@ -389,7 +393,10 @@ __tracepoints__ptrs_destroy(void)
 		tracepoint_dlopen.tracepoint_unregister_lib(__start___tracepoints_ptrs);
 	if (tracepoint_dlopen.liblttngust_handle && !__tracepoint_registered) {
 		ret = dlclose(tracepoint_dlopen.liblttngust_handle);
-		assert(!ret);
+		if (ret) {
+			fprintf(stderr, "Error (%d) in dlclose\n", ret);
+			abort();
+		}
 		memset(&tracepoint_dlopen, 0, sizeof(tracepoint_dlopen));
 	}
 }
