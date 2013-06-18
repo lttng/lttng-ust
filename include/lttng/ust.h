@@ -23,6 +23,8 @@
  * SOFTWARE.
  */
 
+#include <signal.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
