@@ -111,7 +111,8 @@ USAGE:
   - Enable instrumentation and control tracing with the "lttng" command
     from lttng-tools. See lttng-tools doc/quickstart.txt.
   - Note for C++ support: since LTTng-UST 2.3, both tracepoints and
-    tracepoint probes can be compiled with g++.
+    tracepoint probes can be compiled in C++. To compile tracepoint probes
+    in C++, you need g++ >= 4.7 or Clang.
 
 
 ENVIRONMENT VARIABLES:

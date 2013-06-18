@@ -83,8 +83,21 @@ AC_CACHE_CHECK([whether the C++ compiler works],
 		[rw_cv_prog_cxx_works],
 		[AC_LANG_PUSH([C++])
 		AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])],
-				[rw_cv_prog_cxx_works=yes],
+				[check_cxx_designated_initializers=yes],
 				[rw_cv_prog_cxx_works=no])
+		if test "$check_cxx_designated_initializers" = "yes"; then
+			AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+				struct foo { int a; int b; };
+				void fct(void)
+				{
+					struct foo f = { .a = 0, .b = 1 };
+				}
+			]])],[
+				rw_cv_prog_cxx_works=yes
+			],[
+				rw_cv_prog_cxx_works=no
+			])
+		fi
 		AC_LANG_POP([C++])])
 
 AM_CONDITIONAL([CXX_WORKS], [test "x$rw_cv_prog_cxx_works" = "xyes"])
