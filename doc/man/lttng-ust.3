@@ -156,6 +156,11 @@ TRACEPOINT_EVENT(
 		ctf_float(double, doublefield, doublearg)
 	)
 )
+
+There can be an arbitrary number of tracepoint providers within an
+application, but they must each have their own provider name. Duplicate
+provider names are not allowed.
+
 .fi
 
 .SH "ASSIGNING LOGLEVEL TO EVENTS"

@@ -21,6 +21,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <urcu/compiler.h>
 #include <urcu/rculist.h>
 #include <lttng/ust-events.h>
@@ -697,7 +698,10 @@ _TP_COMBINE_TOKENS(__lttng_events_init__, TRACEPOINT_PROVIDER)(void)
 	 */
 	_TP_COMBINE_TOKENS(__tracepoint_provider_check_, TRACEPOINT_PROVIDER)();
 	ret = lttng_probe_register(&_TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PROVIDER));
-	assert(!ret);
+	if (ret) {
+		fprintf(stderr, "LTTng-UST: Error (%d) while registering tracepoint probe. Duplicate registration of tracepoint probes having the same name is not allowed.\n", ret);
+		abort();
+	}
 }
 
 static void lttng_ust_notrace __attribute__((destructor))
