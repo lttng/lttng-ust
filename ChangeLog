@@ -1,3 +1,12 @@
+2013-06-18 lttng-ust 2.0.7
+	* Fix bug introduced by backport of "Clarify probe registration documentation/errors"
+	* Clarify probe registration documentation/errors
+	* Add mising include in ust.h
+	* lttng-gen-tp: Fix include guard name with file using non valid characters
+	* Cleanup lttng-gen-tp: remove leading underscore before include guard
+	* manpage: Document probe provider compatibility
+	* Fix: don't build C++ example if a C++ compiler isn't available
+
 2012-11-26 lttng-ust 2.0.6
 	* Print probe provider mismatch error even without -Wsystem-headers
 	* Fix: Conditionally disable tests requiring shared libs support
