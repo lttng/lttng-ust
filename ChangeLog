@@ -1,3 +1,36 @@
+2013-05-09 lttng-ust 2.2.0-rc3
+	* Tracepoint.h: replace assertion by fprintf and abort()
+	* Remove unused assert.h from bitfield.h
+	* Clarify probe registration documentation/errors
+	* Add mising include in ust.h
+	* lttng-gen-tp: Fix include guard name with file using non valid characters
+	* Fix: segfault when print invalid command
+	* Fix: Add --no-as-needed to the demo example's Makefile
+	* zmalloc: attribute always_inline
+	* Fix: liblttng-ust process startup hang when sessiond is stopped
+	* Move include directive from CFLAGS to LOCAL_CPPFLAGS in examples' Makefiles
+	* Add parameter -f to rm in Makefile clean target
+	* Fix: missing dependency for liblttng-ust-tracepoint.so
+	* Remove 0.x TODO
+	* Add warning about default prefix and library paths to README
+	* Revert "Revert "Fix (another) linker library order""
+	* Revert "Revert "Fix linker library order""
+	* snprintf: play nice with static checker
+	* tracepoint.c: Add coverity alloc/free annotations
+	* Fix: "fields" leak on register
+	* Fix: memory leak for events without fields
+	* Fix: memory leak on connection reset
+	* Revert "Fix linker library order"
+	* Revert "Fix (another) linker library order"
+	* Fix: incorrect support for multi-context
+	* Fix (another) linker library order
+	* Fix typo in run script
+	* Fix linker library order
+	* Fix examples: add missing CPPFLAGS
+	* example Makefiles: standardize on $^ for linking
+	* Fix demo example Makefile
+	* Move "hello-static-lib" to doc/examples and add non-automake Makefiles
+
 2013-05-09 lttng-ust 2.2.0-rc2
 	* manpage: Document probe provider compatibility
 	* Fix: add provider ABI compatibility check
