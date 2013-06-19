@@ -1,3 +1,20 @@
+2013-06-18 lttng-ust 2.1.3
+	* Tracepoint.h: replace assertion by fprintf and abort()
+	* Fix: tracepoint.h incorrect assumption about constructor order
+	* Fix: tracepoint instrumentation constructor order issue
+	* Performance: add unlikely to tracepoint dynamic linking test
+	* Fix: ensure all probe providers have their symbols
+	* Clarify probe registration documentation/errors
+	* Add mising include in ust.h
+	* lttng-gen-tp: Fix include guard name with file using non valid characters
+	* Fix: missing dependency for liblttng-ust-tracepoint.so
+	* manpage: Document probe provider compatibility
+	* Typo fix in README
+	* Safety-check: only call register_lib if found in liblttng-ust-tracepoint.so.0
+	* Fix: filter string comparison should check for literal
+	* Fix: filter string wildcard comparison
+	* Fix: _LGPL_SOURCE rcu dereference fix
+
 2013-03-25 lttng-ust 2.1.2
 	* Fix uninitialized has_loglevel variable
 	* tracepoint: Don't add NULL probes
