@@ -10,10 +10,12 @@
 # Permission to modify the code and to distribute modified code is
 # granted, provided the above notices are retained, and a notice that
 # the code was modified is included with the above copyright notice.
-
+#
 # This makefile is not using automake so that people can see how to make
 # simply. It builds a program with a statically embedded tracepoint
 # provider probe.
+#
+# This makefile is purposefully kept simple to support GNU and BSD make.
 
 CC = gcc
 
@@ -23,7 +25,7 @@ LIBS = -ldl -llttng-ust		#On Linux
 all: sample
 
 sample: sample.o sample_tracepoint.o
-	$(CC) -o $@ $^ $(LIBS)
+	$(CC) -o $@ $(LIBS) sample.o sample_tracepoint.o
 
 sample.o: sample.c sample_tracepoint.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
