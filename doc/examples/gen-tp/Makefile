@@ -25,19 +25,22 @@ LIBS = -ldl -llttng-ust		#On Linux
 all: sample
 
 sample: sample.o sample_tracepoint.o
-	$(CC) -o $@ $(LIBS) sample.o sample_tracepoint.o
+	$(CC) $(LDFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(AM_CFLAGS) \
+		-o $@ $(LIBS) sample.o sample_tracepoint.o
 
 sample.o: sample.c sample_tracepoint.h
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(AM_CPPFLAGS) $(AM_CFLAGS) \
+		-c -o $@ $<
 
 # Use this command to compile the .c manually
 #sample_tracepoint.o: sample_tracepoint.c sample_tracepoint.h
-#	$(CC) $(CFLAGS) -I. -c -o $@ $<
+#	$(CC) $(CPPFLAGS) $(CFLAGS) $(AM_CPPFLAGS) $(AM_CFLAGS) \
+#		-I. -c -o $@ $<
 
 # This rule generate .o only and depends on rules for generating
 # the .h and .c
 %.o: %.tp %.c %.h
-	lttng-gen-tp -o $@ $<
+	$(LTTNG_GEN_TP_PATH)lttng-gen-tp -o $@ $<
 
 # The following rule can be used to generate all files instead of having one
 # for each file type. Note that the sample.o has a dependency on the
@@ -46,10 +49,10 @@ sample.o: sample.c sample_tracepoint.h
 #	lttng-gen-tp $<
 
 %.h: %.tp
-	lttng-gen-tp -o $@ $<
+	$(LTTNG_GEN_TP_PATH)lttng-gen-tp -o $@ $<
 
 %.c: %.tp
-	lttng-gen-tp -o $@ $<
+	$(LTTNG_GEN_TP_PATH)lttng-gen-tp -o $@ $<
 
 .PHONY: clean
 clean:

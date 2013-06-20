@@ -34,11 +34,11 @@ if NO_SHARED
 # Don't build examples if shared libraries support was explicitly
 # disabled.
 else
-SUBDIRS_PROXY = easy-ust demo hello-static-lib
+SUBDIRS_PROXY = easy-ust demo gen-tp hello-static-lib
 
 all-local:
 	for subdir in $(SUBDIRS_PROXY); do \
-		cd $$subdir && $(MAKE) AM_CPPFLAGS="-I../../../include/" AM_LDFLAGS='-L../../../liblttng-ust/.libs/ -Wl,-rpath="$(PWD)/../../liblttng-ust/.libs/"' $(AM_MAKEFLAGS) all; cd ..; \
+		cd $$subdir && $(MAKE) AM_CPPFLAGS="-I../../../include/" AM_LDFLAGS='-L../../../liblttng-ust/.libs/ -Wl,-rpath="$(PWD)/../../liblttng-ust/.libs/"' LTTNG_GEN_TP_PATH="../../tools/" $(AM_MAKEFLAGS) all; cd ..; \
 	done
 
 clean-local:
