@@ -1,5 +1,3 @@
-SUBDIRS = easy-ust demo hello-static-lib
-
 doc_examplesdir = ${docdir}/examples
 doc_examples_easy_ustdir = ${docdir}/examples/easy-ust
 doc_examples_gen_tpdir = ${docdir}/examples/gen-tp
@@ -32,5 +30,19 @@ dist_doc_examples_hello_static_lib_DATA = hello-static-lib/Makefile \
 	hello-static-lib/ust_tests_hello.h \
 	hello-static-lib/tp.c
 
-BUILD_EXAMPLES_FROM_TREE = 1
-export
+if NO_SHARED
+# Don't build examples if shared libraries support was explicitly
+# disabled.
+else
+SUBDIRS_PROXY = easy-ust demo hello-static-lib
+
+all-local:
+	for subdir in $(SUBDIRS_PROXY); do \
+		cd $$subdir && $(MAKE) AM_CPPFLAGS="-I../../../include/" AM_LDFLAGS='-L../../../liblttng-ust/.libs/ -Wl,-rpath="$(PWD)/../../liblttng-ust/.libs/"' $(AM_MAKEFLAGS) all; cd ..; \
+	done
+
+clean-local:
+	for subdir in $(SUBDIRS_PROXY); do \
+		cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) clean; cd ..; \
+	done
+endif
