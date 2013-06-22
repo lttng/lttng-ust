@@ -145,6 +145,8 @@ class ObjFile:
             cflags = ""
 
         command = cc + " -c " + cflags + " -I. -llttng-ust" + " -o " + self.outputFilename + " " + cFilename
+        if verbose:
+            print("Compile command: " + command)
         subprocess.call(command.split())
 
 class TemplateFile:
@@ -159,12 +161,16 @@ class TemplateFile:
 
         self.text = f.read()
 
-        #Remove # comments (from input and output file
-        removeComments = re.compile("#.*$",flags=re.MULTILINE)
+        #Remove # comments (from input and output file) but keep 
+        # #include in the output file
+        removeComments = re.compile("#[^include].*$",flags=re.MULTILINE)
         self.text = removeComments.sub("",self.text)
+        # Remove #include directive from the parsed text
+        removePreprocess = re.compile("#.*$",flags=re.MULTILINE)
+        noPreprocess = removePreprocess.sub("", self.text)
         #Remove // comments
         removeLineComment = re.compile("\/\/.*$",flags=re.MULTILINE)
-        nolinecomment = removeLineComment.sub("",self.text)
+        nolinecomment = removeLineComment.sub("", noPreprocess)
         #Remove all spaces and lines
         cleantext = re.sub("\s*","",nolinecomment)
         #Remove multine C style comments
@@ -183,6 +189,8 @@ class TemplateFile:
                 else:
                     if self.domain != domain:
                         print "Warning: different domain provided (%s,%s)" % (self.domain, domain)
+
+verbose=False
 
 usage="""
  lttng-gen-tp - Generate the LTTng-UST header and source based on a simple template
@@ -206,7 +214,7 @@ def main(argv=None):
 
     try:
         try:
-            opts, args = getopt.gnu_getopt(argv[1:], "ho:a", ["help"])
+            opts, args = getopt.gnu_getopt(argv[1:], "ho:av", ["help","verbose"])
         except getopt.error, msg:
              raise Usage(msg)
 
@@ -224,6 +232,9 @@ def main(argv=None):
             outputNames.append(a)
         if o in ("-a",""):
             all = True
+        if o in ("-v", "--verbose"):
+            global verbose
+            verbose = True
     try:
         if len(args) == 0:
             raise Usage("No template file given")
