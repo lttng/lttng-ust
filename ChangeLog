@@ -1,3 +1,9 @@
+2013-05-09 lttng-ust 2.2.0
+	* Disable doc/examples build
+	* Fix: lttng-events VPATH build
+	* doc/examples: build gen-tp example by default
+	* doc/examples: support BSD make
+
 2013-05-09 lttng-ust 2.2.0-rc3
 	* Tracepoint.h: replace assertion by fprintf and abort()
 	* Remove unused assert.h from bitfield.h
