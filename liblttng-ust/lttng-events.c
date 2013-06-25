@@ -45,7 +45,7 @@
 
 #include <usterr-signal-safe.h>
 #include <helper.h>
-#include <ust-ctl.h>
+#include <lttng/ust-ctl.h>
 #include <ust-comm.h>
 #include "error.h"
 #include "compat.h"
