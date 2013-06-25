@@ -30,19 +30,19 @@ dist_doc_examples_hello_static_lib_DATA = hello-static-lib/Makefile \
 	hello-static-lib/ust_tests_hello.h \
 	hello-static-lib/tp.c
 
-if NO_SHARED
-# Don't build examples if shared libraries support was explicitly
-# disabled.
-else
-SUBDIRS_PROXY = easy-ust demo gen-tp hello-static-lib
-
-all-local:
-	for subdir in $(SUBDIRS_PROXY); do \
-		cd $$subdir && $(MAKE) AM_CPPFLAGS="-I../../../include/" AM_LDFLAGS='-L../../../liblttng-ust/.libs/ -Wl,-rpath="$(PWD)/../../liblttng-ust/.libs/"' LTTNG_GEN_TP_PATH="../../../tools/" $(AM_MAKEFLAGS) all; cd ..; \
-	done
-
-clean-local:
-	for subdir in $(SUBDIRS_PROXY); do \
-		cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) clean; cd ..; \
-	done
-endif
+#if NO_SHARED
+## Don't build examples if shared libraries support was explicitly
+## disabled.
+#else
+#SUBDIRS_PROXY = easy-ust demo gen-tp hello-static-lib
+#
+#all-local:
+#	for subdir in $(SUBDIRS_PROXY); do \
+#		cd $$subdir && $(MAKE) AM_CPPFLAGS="-I../../../include/" AM_LDFLAGS='-L../../../liblttng-ust/.libs/ -Wl,-rpath="$(PWD)/../../liblttng-ust/.libs/"' LTTNG_GEN_TP_PATH="../../../tools/" $(AM_MAKEFLAGS) all; cd ..; \
+#	done
+#
+#clean-local:
+#	for subdir in $(SUBDIRS_PROXY); do \
+#		cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) clean; cd ..; \
+#	done
+#endif
