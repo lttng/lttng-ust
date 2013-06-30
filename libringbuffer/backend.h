@@ -84,6 +84,8 @@ void lib_ring_buffer_write(const struct lttng_ust_lib_ring_buffer_config *config
 	struct lttng_ust_lib_ring_buffer_backend_pages_shmp *rpages;
 	unsigned long sb_bindex, id;
 
+	if (caa_unlikely(!len))
+		return;
 	offset &= chanb->buf_size - 1;
 	sbidx = offset >> chanb->subbuf_size_order;
 	id = shmp_index(handle, bufb->buf_wsb, sbidx)->id;
