@@ -381,8 +381,9 @@ size_t lib_ring_buffer_read(struct lttng_ust_lib_ring_buffer_backend *bufb, size
  * @dest : destination address
  * @len : destination's length
  *
- * return string's length
+ * Return string's length, or -EINVAL on error.
  * Should be protected by get_subbuf/put_subbuf.
+ * Destination length should be at least 1 to hold '\0'.
  */
 int lib_ring_buffer_read_cstr(struct lttng_ust_lib_ring_buffer_backend *bufb, size_t offset,
 			      void *dest, size_t len, struct lttng_ust_shm_handle *handle)
@@ -394,6 +395,8 @@ int lib_ring_buffer_read_cstr(struct lttng_ust_lib_ring_buffer_backend *bufb, si
 	struct lttng_ust_lib_ring_buffer_backend_pages_shmp *rpages;
 	unsigned long sb_bindex, id;
 
+	if (caa_unlikely(!len))
+		return -EINVAL;
 	offset &= chanb->buf_size - 1;
 	orig_offset = offset;
 	id = bufb->buf_rsb.id;
