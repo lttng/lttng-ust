@@ -126,6 +126,14 @@ int lib_ring_buffer_try_reserve(const struct lttng_ust_lib_ring_buffer_config *c
 	 * boundary. It's safe to write.
 	 */
 	*o_end = *o_begin + ctx->slot_size;
+
+	if (caa_unlikely((subbuf_offset(*o_end, chan)) == 0))
+		/*
+		 * The offset_end will fall at the very beginning of the next
+		 * subbuffer.
+		 */
+		return 1;
+
 	return 0;
 }
 

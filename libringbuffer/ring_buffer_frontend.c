@@ -107,7 +107,8 @@
 struct switch_offsets {
 	unsigned long begin, end, old;
 	size_t pre_header_padding, size;
-	unsigned int switch_new_start:1, switch_old_start:1, switch_old_end:1;
+	unsigned int switch_new_start:1, switch_new_end:1, switch_old_start:1,
+		     switch_old_end:1;
 };
 
 DEFINE_URCU_TLS(unsigned int, lib_ring_buffer_nesting);
@@ -1415,6 +1416,42 @@ void lib_ring_buffer_switch_new_start(struct lttng_ust_lib_ring_buffer *buf,
 }
 
 /*
+ * lib_ring_buffer_switch_new_end: finish switching current subbuffer
+ *
+ * The only remaining threads could be the ones with pending commits. They will
+ * have to do the deliver themselves.
+ */
+static
+void lib_ring_buffer_switch_new_end(struct lttng_ust_lib_ring_buffer *buf,
+				    struct channel *chan,
+				    struct switch_offsets *offsets,
+				    uint64_t tsc,
+				    struct lttng_ust_shm_handle *handle)
+{
+	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
+	unsigned long endidx = subbuf_index(offsets->end - 1, chan);
+	unsigned long commit_count, padding_size, data_size;
+
+	data_size = subbuf_offset(offsets->end - 1, chan) + 1;
+	padding_size = chan->backend.subbuf_size - data_size;
+	subbuffer_set_data_size(config, &buf->backend, endidx, data_size,
+				handle);
+
+	/*
+	 * Order all writes to buffer before the commit count update that will
+	 * determine that the subbuffer is full.
+	 */
+	cmm_smp_wmb();
+	v_add(config, padding_size, &shmp_index(handle, buf->commit_hot, endidx)->cc);
+	commit_count = v_read(config, &shmp_index(handle, buf->commit_hot, endidx)->cc);
+	lib_ring_buffer_check_deliver(config, buf, chan, offsets->end - 1,
+				  commit_count, endidx, handle);
+	lib_ring_buffer_write_commit_counter(config, buf, chan, endidx,
+					     offsets->end, commit_count,
+					     padding_size, handle);
+}
+
+/*
  * Returns :
  * 0 if ok
  * !0 if execution must be aborted.
@@ -1566,6 +1603,7 @@ int lib_ring_buffer_try_reserve_slow(struct lttng_ust_lib_ring_buffer *buf,
 	offsets->begin = v_read(config, &buf->offset);
 	offsets->old = offsets->begin;
 	offsets->switch_new_start = 0;
+	offsets->switch_new_end = 0;
 	offsets->switch_old_end = 0;
 	offsets->pre_header_padding = 0;
 
@@ -1697,6 +1735,14 @@ int lib_ring_buffer_try_reserve_slow(struct lttng_ust_lib_ring_buffer *buf,
 		 */
 	}
 	offsets->end = offsets->begin + offsets->size;
+
+	if (caa_unlikely(subbuf_offset(offsets->end, chan) == 0)) {
+		/*
+		 * The offset_end will fall at the very beginning of the next
+		 * subbuffer.
+		 */
+		offsets->switch_new_end = 1;	/* For offsets->begin */
+	}
 	return 0;
 }
 
@@ -1769,6 +1815,9 @@ int lib_ring_buffer_reserve_slow(struct lttng_ust_lib_ring_buffer_ctx *ctx)
 	 */
 	if (caa_unlikely(offsets.switch_new_start))
 		lib_ring_buffer_switch_new_start(buf, chan, &offsets, ctx->tsc, handle);
+
+	if (caa_unlikely(offsets.switch_new_end))
+		lib_ring_buffer_switch_new_end(buf, chan, &offsets, ctx->tsc, handle);
 
 	ctx->slot_size = offsets.size;
 	ctx->pre_offset = offsets.begin;
