@@ -1586,9 +1586,10 @@ int lib_ring_buffer_try_reserve_slow(struct lttng_ust_lib_ring_buffer *buf,
 {
 	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
 	struct lttng_ust_shm_handle *handle = ctx->handle;
-	unsigned long reserve_commit_diff;
+	unsigned long reserve_commit_diff, offset_cmp;
 
-	offsets->begin = v_read(config, &buf->offset);
+retry:
+	offsets->begin = offset_cmp = v_read(config, &buf->offset);
 	offsets->old = offsets->begin;
 	offsets->switch_new_start = 0;
 	offsets->switch_new_end = 0;
@@ -1620,7 +1621,7 @@ int lib_ring_buffer_try_reserve_slow(struct lttng_ust_lib_ring_buffer *buf,
 		}
 	}
 	if (caa_unlikely(offsets->switch_new_start)) {
-		unsigned long sb_index;
+		unsigned long sb_index, commit_count;
 
 		/*
 		 * We are typically not filling the previous buffer completely.
@@ -1631,12 +1632,32 @@ int lib_ring_buffer_try_reserve_slow(struct lttng_ust_lib_ring_buffer *buf,
 				 + config->cb.subbuffer_header_size();
 		/* Test new buffer integrity */
 		sb_index = subbuf_index(offsets->begin, chan);
+		/*
+		 * Read buf->offset before buf->commit_cold[sb_index].cc_sb.
+		 * lib_ring_buffer_check_deliver() has the matching
+		 * memory barriers required around commit_cold cc_sb
+		 * updates to ensure reserve and commit counter updates
+		 * are not seen reordered when updated by another CPU.
+		 */
+		cmm_smp_rmb();
+		commit_count = v_read(config,
+				&shmp_index(handle, buf->commit_cold,
+					sb_index)->cc_sb);
+		/* Read buf->commit_cold[sb_index].cc_sb before buf->offset. */
+		cmm_smp_rmb();
+		if (caa_unlikely(offset_cmp != v_read(config, &buf->offset))) {
+			/*
+			 * The reserve counter have been concurrently updated
+			 * while we read the commit counter. This means the
+			 * commit counter we read might not match buf->offset
+			 * due to concurrent update. We therefore need to retry.
+			 */
+			goto retry;
+		}
 		reserve_commit_diff =
 		  (buf_trunc(offsets->begin, chan)
 		   >> chan->backend.num_subbuf_order)
-		  - ((unsigned long) v_read(config,
-					    &shmp_index(handle, buf->commit_cold, sb_index)->cc_sb)
-		     & chan->commit_count_mask);
+		  - (commit_count & chan->commit_count_mask);
 		if (caa_likely(reserve_commit_diff == 0)) {
 			/* Next subbuffer not being written to. */
 			if (caa_unlikely(config->mode != RING_BUFFER_OVERWRITE &&
@@ -1671,7 +1692,8 @@ int lib_ring_buffer_try_reserve_slow(struct lttng_ust_lib_ring_buffer *buf,
 
 			/*
 			 * Next subbuffer reserve offset does not match the
-			 * commit offset. Drop record in producer-consumer and
+			 * commit offset, and this did not involve update to the
+			 * reserve counter. Drop record in producer-consumer and
 			 * overwrite mode. Caused by either a writer OOPS or too
 			 * many nested writes over a reserve/commit pair.
 			 */
