@@ -407,6 +407,12 @@ void lib_ring_buffer_check_deliver(const struct lttng_ust_lib_ring_buffer_config
 		 * The subbuffer size is least 2 bytes (minimum size: 1 page).
 		 * This guarantees that old_commit_count + 1 != commit_count.
 		 */
+
+		/*
+		 * Order prior updates to reserve count prior to the
+		 * commit_cold cc_sb update.
+		 */
+		cmm_smp_wmb();
 		if (caa_likely(v_cmpxchg(config, &shmp_index(handle, buf->commit_cold, idx)->cc_sb,
 					 old_commit_count, old_commit_count + 1)
 			   == old_commit_count)) {
@@ -452,6 +458,11 @@ void lib_ring_buffer_check_deliver(const struct lttng_ust_lib_ring_buffer_config
 			/* End of exclusive subbuffer access */
 			v_set(config, &shmp_index(handle, buf->commit_cold, idx)->cc_sb,
 			      commit_count);
+			/*
+			 * Order later updates to reserve count after
+			 * the commit cold cc_sb update.
+			 */
+			cmm_smp_wmb();
 			lib_ring_buffer_vmcore_check_deliver(config, buf,
 						 commit_count, idx, handle);
 
