@@ -1054,6 +1054,40 @@ end:
 	return ret;
 }
 
+/*
+ * Write at most one packet in the channel.
+ * Returns the number of bytes written on success, < 0 on error.
+ */
+ssize_t ustctl_write_one_packet_to_channel(
+		struct ustctl_consumer_channel *channel,
+		const char *metadata_str,	/* NOT null-terminated */
+		size_t len)			/* metadata length */
+{
+	struct lttng_ust_lib_ring_buffer_ctx ctx;
+	struct lttng_channel *chan = channel->chan;
+	const char *str = metadata_str;
+	ssize_t reserve_len;
+	int ret;
+
+	reserve_len = min_t(ssize_t,
+			chan->ops->packet_avail_size(chan->chan, chan->handle),
+			len);
+	lib_ring_buffer_ctx_init(&ctx, chan->chan, NULL, reserve_len,
+			sizeof(char), -1, chan->handle);
+	ret = chan->ops->event_reserve(&ctx, 0);
+	if (ret != 0) {
+		DBG("LTTng: event reservation failed");
+		assert(ret < 0);
+		reserve_len = ret;
+		goto end;
+	}
+	chan->ops->event_write(&ctx, str, reserve_len);
+	chan->ops->event_commit(&ctx);
+
+end:
+	return reserve_len;
+}
+
 int ustctl_channel_close_wait_fd(struct ustctl_consumer_channel *consumer_chan)
 {
 	struct channel *chan;

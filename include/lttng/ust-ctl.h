@@ -164,6 +164,10 @@ int ustctl_write_metadata_to_channel(
 		struct ustctl_consumer_channel *channel,
 		const char *metadata_str,	/* NOT null-terminated */
 		size_t len);			/* metadata length */
+ssize_t ustctl_write_one_packet_to_channel(
+		struct ustctl_consumer_channel *channel,
+		const char *metadata_str,	/* NOT null-terminated */
+		size_t len);			/* metadata length */
 
 /*
  * Send a NULL stream to finish iteration over all streams of a given
