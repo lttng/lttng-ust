@@ -823,7 +823,7 @@ retry:
 	 */
 	if (((commit_count - chan->backend.subbuf_size)
 	     & chan->commit_count_mask)
-	    - (buf_trunc(consumed_cur, chan)
+	    - (buf_trunc(consumed, chan)
 	       >> chan->backend.num_subbuf_order)
 	    != 0)
 		goto nodata;
@@ -832,7 +832,7 @@ retry:
 	 * Check that we are not about to read the same subbuffer in
 	 * which the writer head is.
 	 */
-	if (subbuf_trunc(write_offset, chan) - subbuf_trunc(consumed_cur, chan)
+	if (subbuf_trunc(write_offset, chan) - subbuf_trunc(consumed, chan)
 	    == 0)
 		goto nodata;
 
