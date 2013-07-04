@@ -34,7 +34,7 @@ hello.o: hello.c
 
 hello: hello.o lttng-ust-provider-hello.a
 	$(CC) -o $@ $(LDFLAGS) $(CPPFLAGS) $(AM_LDFLAGS) $(AM_CFLAGS) \
-		$(LIBS) hello.o lttng-ust-provider-hello.a
+		hello.o lttng-ust-provider-hello.a $(LIBS)
 
 .PHONY: clean
 clean:

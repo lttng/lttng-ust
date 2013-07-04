@@ -26,7 +26,7 @@ all: sample
 
 sample: sample.o sample_tracepoint.o
 	$(CC) $(LDFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(AM_CFLAGS) \
-		-o $@ $(LIBS) sample.o sample_tracepoint.o
+		-o $@ sample.o sample_tracepoint.o $(LIBS)
 
 sample.o: sample.c sample_tracepoint.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(AM_CPPFLAGS) $(AM_CFLAGS) \

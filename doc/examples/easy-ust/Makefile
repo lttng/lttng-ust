@@ -25,7 +25,7 @@ all: sample
 
 sample: sample.o tp.o
 	$(CC) -o $@ $(LDFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(AM_CFLAGS) \
-		$(LIBS) sample.o tp.o
+		sample.o tp.o $(LIBS)
 
 sample.o: sample.c sample_component_provider.h
 	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(CFLAGS) $(AM_CPPFLAGS) \
