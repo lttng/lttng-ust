@@ -189,6 +189,22 @@ extern void lttng_ring_buffer_client_discard_rt_exit(void);
 extern void lttng_ring_buffer_metadata_client_exit(void);
 
 /*
+ * Returns the HOME directory path. Caller MUST NOT free(3) the returned
+ * pointer.
+ */
+static
+const char *get_lttng_home_dir(void)
+{
+       const char *val;
+
+       val = (const char *) getenv("LTTNG_HOME");
+       if (val != NULL) {
+               return val;
+       }
+       return (const char *) getenv("HOME");
+}
+
+/*
  * Force a read (imply TLS fixup for dlopen) of TLS variables.
  */
 static
@@ -232,7 +248,7 @@ int setup_local_apps(void)
 		assert(local_apps.allowed == 0);
 		return 0;
 	}
-	home_dir = (const char *) getenv("HOME");
+	home_dir = get_lttng_home_dir();
 	if (!home_dir) {
 		WARN("HOME environment variable not set. Disabling LTTng-UST per-user tracing.");
 		assert(local_apps.allowed == 0);
