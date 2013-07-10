@@ -565,6 +565,7 @@ int lttng_add_vtid_to_ctx(struct lttng_ctx **ctx);
 int lttng_add_vpid_to_ctx(struct lttng_ctx **ctx);
 int lttng_add_pthread_id_to_ctx(struct lttng_ctx **ctx);
 int lttng_add_procname_to_ctx(struct lttng_ctx **ctx);
+int lttng_add_ip_to_ctx(struct lttng_ctx **ctx);
 void lttng_context_vtid_reset(void);
 void lttng_context_vpid_reset(void);
 

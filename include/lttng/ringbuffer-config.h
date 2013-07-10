@@ -218,7 +218,8 @@ struct lttng_ust_lib_ring_buffer_config {
  * UST. Fields need to be only added at the end, never reordered, never
  * removed.
  */
-#define LTTNG_UST_RING_BUFFER_CTX_PADDING	24
+#define LTTNG_UST_RING_BUFFER_CTX_PADDING	\
+		(24 - sizeof(int) - sizeof(void *))
 struct lttng_ust_lib_ring_buffer_ctx {
 	/* input received by lib_ring_buffer_reserve(), saved here. */
 	struct channel *chan;		/* channel */
@@ -246,7 +247,9 @@ struct lttng_ust_lib_ring_buffer_ctx {
 					 */
 	uint64_t tsc;			/* time-stamp counter value */
 	unsigned int rflags;		/* reservation flags */
-	char padding[LTTNG_UST_RING_BUFFER_CTX_PADDING];
+	unsigned int padding1;		/* padding to realign on pointer */
+	void *ip;			/* caller ip address */
+	char padding2[LTTNG_UST_RING_BUFFER_CTX_PADDING];
 };
 
 /**
@@ -276,7 +279,9 @@ void lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 	ctx->cpu = cpu;
 	ctx->rflags = 0;
 	ctx->handle = handle;
-	memset(ctx->padding, 0, LTTNG_UST_RING_BUFFER_CTX_PADDING);
+	ctx->padding1 = 0;
+	ctx->ip = 0;
+	memset(ctx->padding2, 0, LTTNG_UST_RING_BUFFER_CTX_PADDING);
 }
 
 /*

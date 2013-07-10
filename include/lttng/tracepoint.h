@@ -145,11 +145,16 @@ extern "C" {
 #define _TP_ARGS_DATA_VAR(...)		_TP_DATA_VAR_N(_TP_NARGS(0, ##__VA_ARGS__), ##__VA_ARGS__)
 #define _TP_PARAMS(...)			__VA_ARGS__
 
+/*
+ * The tracepoint cb is marked always inline so we can distinguish
+ * between caller's ip addresses within the probe using the return
+ * address.
+ */
 #define _DECLARE_TRACEPOINT(_provider, _name, ...)			 		\
 extern struct tracepoint __tracepoint_##_provider##___##_name;				\
-static inline lttng_ust_notrace								\
+static inline __attribute__((always_inline)) lttng_ust_notrace				\
 void __tracepoint_cb_##_provider##___##_name(_TP_ARGS_PROTO(__VA_ARGS__));		\
-static inline										\
+static											\
 void __tracepoint_cb_##_provider##___##_name(_TP_ARGS_PROTO(__VA_ARGS__))		\
 {											\
 	struct tracepoint_probe *__tp_probe;						\

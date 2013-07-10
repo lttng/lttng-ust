@@ -740,6 +740,8 @@ int lttng_attach_context(struct lttng_ust_context *context_param,
 		return lttng_add_vpid_to_ctx(ctx);
 	case LTTNG_UST_CONTEXT_PROCNAME:
 		return lttng_add_procname_to_ctx(ctx);
+	case LTTNG_UST_CONTEXT_IP:
+		return lttng_add_ip_to_ctx(ctx);
 	default:
 		return -EINVAL;
 	}
