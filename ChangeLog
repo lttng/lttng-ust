@@ -1,3 +1,9 @@
+2013-07-11 lttng-ust 2.0.8
+	* Fix: ring buffer: get_subbuf() checks should be performed on "consumed" 
+	* Fix: SWITCH_FLUSH new sub-buffer checks
+	* Fix: ring buffer: handle concurrent update in nested buffer wrap around 
+	* Fix: handle writes of length 0
+
 2013-06-18 lttng-ust 2.0.7
 	* Fix bug introduced by backport of "Clarify probe registration documentation/errors"
 	* Clarify probe registration documentation/errors
