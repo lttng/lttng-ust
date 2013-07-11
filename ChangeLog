@@ -1,3 +1,12 @@
+2013-07-11 lttng-ust 2.2.1
+	* Fix: libs order in Makefile
+	* Fix: ring buffer: get_subbuf() checks should be performed on "consumed" 
+	* build: Fix out-of-tree build
+	* Fix: SWITCH_FLUSH new sub-buffer checks
+	* Fix: ring buffer: handle concurrent update in nested buffer wrap around 
+	* Fix: handle writes of length 0
+	* Fix: incorrect release dates in Changelog
+
 2013-06-25 lttng-ust 2.2.0
 	* Disable doc/examples build
 	* Fix: lttng-events VPATH build
