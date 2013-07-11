@@ -1,3 +1,9 @@
+2013-07-11 lttng-ust 2.1.4
+	* Fix: ring buffer: get_subbuf() checks should be performed on "consumed" parameter
+	* Fix: SWITCH_FLUSH new sub-buffer checks
+	* Fix: ring buffer: handle concurrent update in nested buffer wrap around check
+	* Fix: handle writes of length 0
+
 2013-06-18 lttng-ust 2.1.3
 	* Tracepoint.h: replace assertion by fprintf and abort()
 	* Fix: tracepoint.h incorrect assumption about constructor order
