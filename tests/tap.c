@@ -294,7 +294,7 @@ int
 skip(unsigned int n, char *fmt, ...)
 {
 	va_list ap;
-	char *skip_msg;
+	char *skip_msg = NULL;
 
 	LOCK;
 
