@@ -16,6 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+from __future__ import print_function
 import sys
 import getopt
 import re
@@ -100,14 +101,14 @@ class ObjFile:
         self.template = template
     def _detectCC(self):
         cc = ""
-        if os.environ.has_key('CC'):
+        if 'CC' in os.environ:
             cc = os.environ['CC']
             try:
                 subprocess.call(cc,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
-            except OSError, msg:
-                print "Invalid CC environment variable"
+            except OSError as msg:
+                print("Invalid CC environment variable")
                 cc = ""
 
         else:
@@ -117,7 +118,7 @@ class ObjFile:
                 subprocess.call("cc",
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
-            except OSError, msg:
+            except OSError as msg:
                 useCC = False
             if useCC:
                 cc = "cc"
@@ -128,7 +129,7 @@ class ObjFile:
                     subprocess.call("gcc",
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
-                except OSError, msg:
+                except OSError as msg:
                     useGCC = False
                 if useGCC:
                     cc = "gcc"
@@ -139,7 +140,7 @@ class ObjFile:
         cc = self._detectCC()
         if cc == "":
             raise RuntimeError("No C Compiler detected")
-        if os.environ.has_key('CFLAGS'):
+        if 'CFLAGS' in os.environ:
             cflags = os.environ['CFLAGS']
         else:
             cflags = ""
@@ -188,7 +189,7 @@ class TemplateFile:
                     self.domain = domain
                 else:
                     if self.domain != domain:
-                        print "Warning: different domain provided (%s,%s)" % (self.domain, domain)
+                        print("Warning: different domain provided (%s,%s)" % (self.domain, domain))
 
 verbose=False
 
@@ -215,18 +216,18 @@ def main(argv=None):
     try:
         try:
             opts, args = getopt.gnu_getopt(argv[1:], "ho:av", ["help","verbose"])
-        except getopt.error, msg:
+        except getopt.error as msg:
              raise Usage(msg)
 
-    except Usage, err:
-        print >>sys.stderr, err.msg
-        print >>sys.stderr, "for help use --help"
+    except Usage as err:
+        print(err.msg, file=sys.stderr)
+        print("for help use --help", file=sys.stderr)
         return 2
 
     outputNames = []
     for o, a in opts:
         if o in ("-h", "--help"):
-            print usage
+            print(usage)
             return(0)
         if o in ("-o",""):
             outputNames.append(a)
@@ -239,9 +240,9 @@ def main(argv=None):
         if len(args) == 0:
             raise Usage("No template file given")
 
-    except Usage, err:
-        print >>sys.stderr, err.msg
-        print >>sys.stderr, "for help use --help"
+    except Usage as err:
+        print(err.msg, file=sys.stderr)
+        print("for help use --help", file=sys.stderr)
         return 2
 
     doCFile = None
@@ -253,7 +254,7 @@ def main(argv=None):
 
     if len(outputNames) > 0:
         if len(args) > 1:
-            print "Cannot process more than one input if you specify an output"
+            print("Cannot process more than one input if you specify an output")
             return(3)
 
         for outputName in outputNames:
@@ -267,7 +268,7 @@ def main(argv=None):
                 doObj = True
                 objFilename = outputName
             else:
-                print "output file type unsupported"
+                print("output file type unsupported")
                 return(4)
     else:
         doHeader = True
@@ -277,14 +278,14 @@ def main(argv=None):
     # process arguments
     for arg in args:
         if arg[-3:] != ".tp":
-                print arg + " does not end in .tp. Skipping."
+                print(arg + " does not end in .tp. Skipping.")
                 continue
 
         tpl = None
         try:
             tpl = TemplateFile(arg)
         except IOError as args:
-            print "Cannot read input file " + args.filename + " " + args.strerror
+            print("Cannot read input file " + args.filename + " " + args.strerror)
             return -1
         try:
             if doHeader:
@@ -309,8 +310,8 @@ def main(argv=None):
                 dotobj = ObjFile(curFilename, tpl)
                 dotobj.write()
         except IOError as args:
-            print "Cannot write output file " + args.filename + " " + args.strerror 
+            print("Cannot write output file " + args.filename + " " + args.strerror)
             return -1
-        
+
 if __name__ == "__main__":
     sys.exit(main())
