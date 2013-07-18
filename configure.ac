@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT([lttng-ust],[2.2.0-rc2],[mathieu dot desnoyers at efficios dot com])
+AC_INIT([lttng-ust],[2.3.0-rc1],[mathieu dot desnoyers at efficios dot com])
 
 # Following the numbering scheme proposed by libtool for the library version
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
@@ -39,8 +39,9 @@ AC_DEFINE_UNQUOTED([VERSION_MAJOR], $major_version, [UST major version number])
 AC_DEFINE_UNQUOTED([VERSION_MINOR], $minor_version, [UST minor version number])
 AC_DEFINE_UNQUOTED([VERSION_PATCHLEVEL], $patchlevel_version, [UST patchlevel version number])
 
-version_name="Cuda"
-version_description="Brewed at the Benelux microbrewery, this IPA has huge floral, citric and resinous hop aroma, simply an amazing nose. The flavor is very fresh with a light caramel malting touch completing a strong body. Huge amounts of hops, lots of grapefruit, lemon and oranges. This is an outstanding IPA!"
+version_name="Dominus Vobiscum"
+version_description="A very succulent line-up of beers brewed at Microbrasserie Charlevoix. Elaborated starting from special malts and fermented with a Belgian yeast. These beers are refermented in bottle and will make you discover the richness of wheat, amber and triple styles."
+
 AC_DEFINE_UNQUOTED([VERSION_NAME], ["$version_name"], [UST version name])
 AC_DEFINE_UNQUOTED([VERSION_DESCRIPTION], ["$version_description"], [UST version description])
 

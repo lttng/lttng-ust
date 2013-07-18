@@ -1,3 +1,61 @@
+2013-07-17 lttng-ust 2.3.0-rc1
+	* Fix: Unchecked asprintf/vasprintf return values
+	* Missing NULL pointer init in tap.c
+	* Disable doc/examples build
+	* Add python3 support to lttng-gen-tp
+	* Bump ABI major to 5
+	* callsite: add "ip" context
+	* Allow environment variable LTTNG_HOME to override HOME
+	* Fix: libs order in Makefile
+	* Fix: ring buffer: get_subbuf() checks should be performed on "consumed" parameter
+	* Introduce ustctl_write_one_packet_to_channel
+	* build: Fix out-of-tree build
+	* Fix: SWITCH_FLUSH new sub-buffer checks
+	* Fix: ring buffer: handle concurrent update in nested buffer wrap around check
+	* Cleanup: lib_ring_buffer_switch_new_end() only calls subbuffer_set_data_size()
+	* Fix: doc/examples: gen-tp path
+	* Revert "Cleanup: ring buffer: remove lib_ring_buffer_switch_new_end()"
+	* Fix: handle writes of length 0
+	* Cleanup: ring buffer: remove lib_ring_buffer_switch_new_end()
+	* Fix: lttng-events VPATH build
+	* Allow #include in template (.tp) file
+	* tests/hello.cxx: rename tp.cpp into tp-cpp.cpp
+	* doc/examples: build gen-tp example by default
+	* doc/examples: support BSD make
+	* Tracepoint.h: replace assertion by fprintf and abort()
+	* Remove unused assert.h from bitfield.h
+	* Clarify probe registration documentation/errors
+	* Fix: Check C++ designated initializers support before compiling 'hello.cxx' test
+	* Add mising include in ust.h
+	* lttng-gen-tp: Fix include guard name with file using non valid characters
+	* Fix: segfault when print invalid command
+	* Fix: Add --no-as-needed to the demo example's Makefile
+	* zmalloc: attribute always_inline
+	* Fix: liblttng-ust process startup hang when sessiond is stopped
+	* Move include directive from CFLAGS to LOCAL_CPPFLAGS in examples' Makefiles
+	* Allow tracepoint providers to be compiled with g++
+	* Add parameter -f to rm in Makefile clean target
+	* Fix: missing dependency for liblttng-ust-tracepoint.so
+	* Remove 0.x TODO
+	* Add warning about default prefix and library paths to README
+	* Revert "Revert "Fix (another) linker library order""
+	* Revert "Revert "Fix linker library order""
+	* snprintf: play nice with static checker
+	* tracepoint.c: Add coverity alloc/free annotations
+	* Fix: "fields" leak on register
+	* Fix: memory leak for events without fields
+	* Fix: memory leak on connection reset
+	* Revert "Fix linker library order"
+	* Revert "Fix (another) linker library order"
+	* Fix: incorrect support for multi-context
+	* Fix (another) linker library order
+	* Fix typo in run script
+	* Fix linker library order
+	* Fix examples: add missing CPPFLAGS
+	* example Makefiles: standardize on $^ for linking
+	* Fix demo example Makefile
+	* Move "hello-static-lib" to doc/examples and add non-automake Makefiles
+
 2013-05-09 lttng-ust 2.2.0-rc2
 	* manpage: Document probe provider compatibility
 	* Fix: add provider ABI compatibility check
