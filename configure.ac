@@ -283,6 +283,7 @@ AC_CONFIG_FILES([
 	tests/hello.cxx/Makefile
 	tests/same_line_tracepoint/Makefile
 	tests/snprintf/Makefile
+	tests/utils/Makefile
 	lttng-ust.pc
 ])
 
