@@ -26,8 +26,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sched.h>
-#include <ust/marker.h>
 #include <time.h>
+
+#ifdef TRACING
+#define TRACEPOINT_DEFINE
+#include "ust_tests_benchmark.h"
+#endif
 
 static int nr_cpus;
 static unsigned long nr_events;
@@ -44,8 +48,8 @@ void do_stuff(void)
 	fclose(file);
 	time(NULL);
 
-#ifdef MARKER
-	ust_marker(event, "event %d", v);
+#ifdef TRACING
+	tracepoint(ust_tests_benchmark, tpbench, v);
 #endif
 
 }

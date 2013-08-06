@@ -1,9 +1,8 @@
-UST Benchmark
+To run the benchmark:
 
-INSTALLATION INSTRUCTIONS:
+    ./test_benchmark
 
-  - run ./install  to install and compile UST/benchmark
-  - run ./run  to perform the benchmark
+You can specify the number of iterations, events and threads by setting
+environment variables ITERS, NR_EVENTS, NR_CPUS respectively:
 
-
-The trace files will be automatically saved at $HOME/.usttraces
+    ITERS=10 NR_EVENTS=10000 NR_CPUS=4 ./test_benchmark

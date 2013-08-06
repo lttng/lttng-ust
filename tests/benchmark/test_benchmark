@@ -1,0 +1,42 @@
+#!/bin/bash
+
+CURDIR=$(dirname $0)/
+TESTDIR=$CURDIR/..
+source $TESTDIR/utils/tap.sh
+
+plan_tests 1
+
+: ${ITERS:=20}
+: ${NR_EVENTS:=7000000}
+: ${NR_CPUS:=1}
+
+: ${TIME:="./$CURDIR/ptime"}
+
+: ${PROG_NOTRACING:="./$CURDIR/bench1 $NR_CPUS $NR_EVENTS"}
+: ${PROG_TRACING:="./$CURDIR/bench2 $NR_CPUS $NR_EVENTS"}
+
+CMD_NOTRACING="$TIME '$PROG_NOTRACING >/dev/null 2>&1'"
+CMD_TRACING="$TIME '$PROG_TRACING >/dev/null 2>&1'"
+
+time_notrace=0
+for i in $(seq $ITERS); do
+	echo 3 >/proc/sys/vm/drop_caches
+	time_notrace="$time_notrace+$(sh -c "$CMD_NOTRACING")"
+done
+
+lttng-sessiond -d --no-kernel
+lttng -q create
+lttng -q enable-event -u -a
+lttng -q start
+
+time_trace=0
+for i in $(seq $ITERS); do
+	echo 3 >/proc/sys/vm/drop_caches
+	time_trace="$time_trace+$(sh -c "$CMD_TRACING")"
+done
+
+lttng -q stop
+lttng -q destroy
+
+pass "Trace benchmark"
+diag "Average tracing overhead per event is $(echo "scale=6;( ($time_trace) - ($time_notrace) ) / $ITERS / $NR_EVENTS" | bc -l)s"
