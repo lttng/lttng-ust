@@ -34,6 +34,8 @@ ust-consumerd/ust-consumerd
 doc/examples/demo/demo
 doc/examples/easy-ust/sample
 doc/examples/hello-static-lib/hello
+doc/examples/gen-tp/sample
+doc/examples/gen-tp/sample_tracepoint.h
 
 tests/hello/hello
 tests/hello.cxx/hello
@@ -44,3 +46,5 @@ tests/trace_event/trace_event_test
 tests/tracepoint/benchmark/tracepoint_benchmark
 tests/tracepoint/tracepoint_test
 tests/snprintf/prog
+tests/benchmark/bench1
+tests/benchmark/bench2
