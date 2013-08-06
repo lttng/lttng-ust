@@ -5,4 +5,20 @@ prog_SOURCES = prog.c
 prog_LDADD = $(top_builddir)/snprintf/libustsnprintf.la \
 	$(top_builddir)/tests/utils/libtap.a
 
-dist_noinst_SCRIPTS = test_snprintf
+SCRIPT_LIST = test_snprintf
+
+dist_noinst_SCRIPTS = $(SCRIPT_LIST)
+
+all-local:
+	@if [ x"$(srcdir)" != x"$(builddir)" ]; then \
+		for script in $(SCRIPT_LIST); do \
+			cp -f $(srcdir)/$$script $(builddir); \
+		done; \
+	fi
+
+clean-local:
+	@if [ x"$(srcdir)" != x"$(builddir)" ]; then \
+		for script in $(SCRIPT_LIST); do \
+			rm -f $(builddir)/$$script; \
+		done; \
+	fi
