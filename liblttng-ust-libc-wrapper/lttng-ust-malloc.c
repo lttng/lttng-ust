@@ -21,7 +21,8 @@
 #include <dlfcn.h>
 #include <sys/types.h>
 #include <stdio.h>
-#include <pthread.h>
+#include <urcu/system.h>
+#include <urcu/uatomic.h>
 
 #define TRACEPOINT_DEFINE
 #define TRACEPOINT_CREATE_PROBES
@@ -29,21 +30,27 @@
 
 #define STATIC_CALLOC_LEN 4096
 static char static_calloc_buf[STATIC_CALLOC_LEN];
-static size_t static_calloc_buf_offset;
-static pthread_mutex_t static_calloc_mutex = PTHREAD_MUTEX_INITIALIZER;
+static unsigned long static_calloc_buf_offset;
 
 static void *static_calloc(size_t nmemb, size_t size)
 {
-	size_t prev_offset;
+	unsigned long prev_offset, new_offset, res_offset;
 
-	pthread_mutex_lock(&static_calloc_mutex);
-	if (nmemb * size > sizeof(static_calloc_buf) - static_calloc_buf_offset) {
-		pthread_mutex_unlock(&static_calloc_mutex);
-		return NULL;
-	}
-	prev_offset = static_calloc_buf_offset;
-	static_calloc_buf_offset += nmemb * size;
-	pthread_mutex_unlock(&static_calloc_mutex);
+	/*
+	 * Protect static_calloc_buf_offset from concurrent updates
+	 * using a cmpxchg loop rather than a mutex to remove a
+	 * dependency on pthread. This will minimize the risk of bad
+	 * interaction between mutex and malloc instrumentation.
+	 */
+	res_offset = CMM_LOAD_SHARED(static_calloc_buf_offset);
+	do {
+		prev_offset = res_offset;
+		if (nmemb * size > sizeof(static_calloc_buf) - prev_offset) {
+			return NULL;
+		}
+		new_offset = prev_offset + nmemb * size;
+	} while ((res_offset = uatomic_cmpxchg(&static_calloc_buf_offset,
+			prev_offset, new_offset)) != prev_offset);
 	return &static_calloc_buf[prev_offset];
 }
 
