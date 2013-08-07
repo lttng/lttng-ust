@@ -36,14 +36,32 @@ TRACEPOINT_EVENT(ust_libc, malloc,
 	TP_ARGS(size_t, size, void *, ptr),
 	TP_FIELDS(
 		ctf_integer(size_t, size, size)
-		ctf_integer_hex(unsigned long, ptr, (unsigned long) ptr)
+		ctf_integer_hex(void *, ptr, ptr)
 	)
 )
 
 TRACEPOINT_EVENT(ust_libc, free,
 	TP_ARGS(void *, ptr),
 	TP_FIELDS(
-		ctf_integer_hex(unsigned long, ptr, (unsigned long) ptr)
+		ctf_integer_hex(void *, ptr, ptr)
+	)
+)
+
+TRACEPOINT_EVENT(ust_libc, calloc,
+	TP_ARGS(size_t, nmemb, size_t, size, void *, ptr),
+	TP_FIELDS(
+		ctf_integer(size_t, nmemb, nmemb)
+		ctf_integer(size_t, size, size)
+		ctf_integer_hex(void *, ptr, ptr)
+	)
+)
+
+TRACEPOINT_EVENT(ust_libc, realloc,
+	TP_ARGS(void *, in_ptr, size_t, size, void *, ptr),
+	TP_FIELDS(
+		ctf_integer_hex(void *, in_ptr, in_ptr)
+		ctf_integer(size_t, size, size)
+		ctf_integer_hex(void *, ptr, ptr)
 	)
 )
 
