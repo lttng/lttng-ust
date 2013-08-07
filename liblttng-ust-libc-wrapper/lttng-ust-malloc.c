@@ -133,3 +133,37 @@ void *realloc(void *ptr, size_t size)
 	tracepoint(ust_libc, realloc, ptr, size, retval);
 	return retval;
 }
+
+void *memalign(size_t alignment, size_t size)
+{
+	static void *(*plibc_memalign)(size_t alignment, size_t size);
+	void *retval;
+
+	if (plibc_memalign == NULL) {
+		plibc_memalign = dlsym(RTLD_NEXT, "memalign");
+		if (plibc_memalign == NULL) {
+			fprintf(stderr, "memalignwrap: unable to find memalign\n");
+			return NULL;
+		}
+	}
+	retval = plibc_memalign(alignment, size);
+	tracepoint(ust_libc, memalign, alignment, size, retval);
+	return retval;
+}
+
+int posix_memalign(void **memptr, size_t alignment, size_t size)
+{
+	static int(*plibc_posix_memalign)(void **memptr, size_t alignment, size_t size);
+	int retval;
+
+	if (plibc_posix_memalign == NULL) {
+		plibc_posix_memalign = dlsym(RTLD_NEXT, "posix_memalign");
+		if (plibc_posix_memalign == NULL) {
+			fprintf(stderr, "posix_memalignwrap: unable to find posix_memalign\n");
+			return ENOMEM;
+		}
+	}
+	retval = plibc_posix_memalign(memptr, alignment, size);
+	tracepoint(ust_libc, posix_memalign, *memptr, alignment, size, retval);
+	return retval;
+}

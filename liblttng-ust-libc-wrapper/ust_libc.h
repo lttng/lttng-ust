@@ -65,6 +65,25 @@ TRACEPOINT_EVENT(ust_libc, realloc,
 	)
 )
 
+TRACEPOINT_EVENT(ust_libc, memalign,
+	TP_ARGS(size_t, alignment, size_t, size, void *, ptr),
+	TP_FIELDS(
+		ctf_integer(size_t, alignment, alignment)
+		ctf_integer(size_t, size, size)
+		ctf_integer_hex(void *, ptr, ptr)
+	)
+)
+
+TRACEPOINT_EVENT(ust_libc, posix_memalign,
+	TP_ARGS(void *, out_ptr, size_t, alignment, size_t, size, int, result),
+	TP_FIELDS(
+		ctf_integer_hex(void *, out_ptr, out_ptr)
+		ctf_integer(size_t, alignment, alignment)
+		ctf_integer(size_t, size, size)
+		ctf_integer(int, result, result)
+	)
+)
+
 #endif /* _TRACEPOINT_UST_LIBC_H */
 
 #undef TRACEPOINT_INCLUDE
