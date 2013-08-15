@@ -34,11 +34,6 @@ class HeaderFile:
 #undef TRACEPOINT_INCLUDE
 #define TRACEPOINT_INCLUDE "./{headerFilename}"
 
-#ifdef __cplusplus
-extern "C"{{
-#endif /* __cplusplus */
-
-
 #if !defined({includeGuard}) || defined(TRACEPOINT_HEADER_MULTI_READ)
 #define {includeGuard}
 
@@ -49,11 +44,6 @@ extern "C"{{
 #endif /* {includeGuard} */
 
 #include <lttng/tracepoint-event.h>
-
-#ifdef __cplusplus
-}}
-#endif /* __cplusplus */
-
 """
     def __init__(self, filename, template):
         self.outputFilename = filename
