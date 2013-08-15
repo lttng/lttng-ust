@@ -51,14 +51,6 @@
 #define TRACEPOINT_INCLUDE "./sample_component_provider.h"
 
 /*
- * Add this macro and its matching element to make sure the program
- * works in c++. 
- */
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
-/*
  * Add this precompiler conditionals to ensure the tracepoint event generation
  * can include this file more than once.
  */
@@ -141,11 +133,3 @@ TRACEPOINT_LOGLEVEL(
  * Add this after defining the tracepoint events to expand the macros. 
  */ 
 #include <lttng/tracepoint-event.h>
-
-/*
- * Add this macro and its matching element to make sure the program
- * works in c++. 
- */
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
