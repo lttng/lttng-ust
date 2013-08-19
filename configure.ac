@@ -262,6 +262,14 @@ AS_IF([test "x$with_sdt" = "xyes"],[
 	])
 ])
 
+AC_ARG_WITH([lttng-system-rundir],
+	AS_HELP_STRING([--with-lttng-system-rundir],
+	[Location of the system directory where LTTng-UST expects the system-wide lttng-sessiond runtime files. The default is "/var/run/lttng".]),
+	[lttng_system_rundir="$withval"],
+	[lttng_system_rundir="/var/run/lttng"])
+AC_DEFINE_UNQUOTED([LTTNG_SYSTEM_RUNDIR], ["$lttng_system_rundir"],
+	[LTTng system runtime directory])
+
 AC_CONFIG_FILES([
 	Makefile
 	doc/Makefile

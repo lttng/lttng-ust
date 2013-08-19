@@ -31,6 +31,7 @@
 #include <lttng/ust-abi.h>
 #include <lttng/ust-error.h>
 #include <lttng/ust-compiler.h>
+#include <config.h>
 
 /*
  * Default timeout the application waits for the sessiond to send its
@@ -40,7 +41,7 @@
  */
 #define LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_MS	3000
 
-#define LTTNG_DEFAULT_RUNDIR				"/var/run/lttng"
+#define LTTNG_DEFAULT_RUNDIR				LTTNG_SYSTEM_RUNDIR
 #define LTTNG_DEFAULT_HOME_RUNDIR			".lttng"
 
 /* Queue size of listen(2) */
