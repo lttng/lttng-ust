@@ -66,9 +66,9 @@ liblttng_ust_la_LIBADD = \
 	-lpthread \
 	-lrt \
 	-lurcu-cds \
-	-llttng-ust-tracepoint \
 	$(top_builddir)/snprintf/libustsnprintf.la \
 	$(top_builddir)/liblttng-ust-comm/liblttng-ust-comm.la \
+	liblttng-ust-tracepoint.la \
 	liblttng-ust-runtime.la liblttng-ust-support.la
 
 liblttng_ust_la_CFLAGS = -DUST_COMPONENT="liblttng_ust" -fno-strict-aliasing
