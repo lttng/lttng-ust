@@ -40,6 +40,9 @@ sample.o: sample.c sample_tracepoint.h
 # This rule generate .o only and depends on rules for generating
 # the .h and .c
 %.o: %.tp %.c %.h
+	CPPFLAGS="$(CPPFLAGS) $(AM_CPPFLAGS)" \
+	CFLAGS="$(CFLAGS) $(AM_CFLAGS)" \
+	LDFLAGS="$(LDFLAGS) $(AM_LDFLAGS)" \
 	$(LTTNG_GEN_TP_PATH)lttng-gen-tp -o $@ $<
 
 # The following rule can be used to generate all files instead of having one
