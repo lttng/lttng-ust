@@ -1,3 +1,6 @@
+2013-09-03 lttng-ust 2.3.0
+	* No change
+
 2013-08-30 lttng-ust 2.3.0-rc2
 	* doc/examples/gen-tp: pass automake CPPFLAGS/CFLAGS/LDFLAGS
 	* tools/lttng-gen-tp: honor CPPFLAGS and LDFLAGS
