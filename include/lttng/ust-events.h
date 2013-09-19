@@ -569,9 +569,9 @@ int lttng_add_ip_to_ctx(struct lttng_ctx **ctx);
 void lttng_context_vtid_reset(void);
 void lttng_context_vpid_reset(void);
 
-extern const struct lttng_ust_lib_ring_buffer_client_cb *lttng_client_callbacks_metadata;
-extern const struct lttng_ust_lib_ring_buffer_client_cb *lttng_client_callbacks_discard;
-extern const struct lttng_ust_lib_ring_buffer_client_cb *lttng_client_callbacks_overwrite;
+extern const struct lttng_ust_client_lib_ring_buffer_client_cb *lttng_client_callbacks_metadata;
+extern const struct lttng_ust_client_lib_ring_buffer_client_cb *lttng_client_callbacks_discard;
+extern const struct lttng_ust_client_lib_ring_buffer_client_cb *lttng_client_callbacks_overwrite;
 
 struct lttng_transport *lttng_transport_find(const char *name);
 

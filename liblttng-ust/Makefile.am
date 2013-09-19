@@ -47,6 +47,7 @@ liblttng_ust_support_la_SOURCES = \
 	lttng-tracer.h \
 	lttng-tracer-core.h \
 	ust-core.c \
+	lttng-rb-clients.h \
 	lttng-ring-buffer-client.h \
 	lttng-ring-buffer-client-discard.c \
 	lttng-ring-buffer-client-discard-rt.c \

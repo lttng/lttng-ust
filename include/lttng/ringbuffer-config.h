@@ -133,7 +133,7 @@ struct lttng_ust_lib_ring_buffer_client_cb {
  * RING_BUFFER_WAKEUP_NONE does not perform any wakeup whatsoever. The client
  * has the responsibility to perform wakeups.
  */
-#define LTTNG_UST_RING_BUFFER_CONFIG_PADDING	32
+#define LTTNG_UST_RING_BUFFER_CONFIG_PADDING	20
 
 enum lttng_ust_lib_ring_buffer_alloc_types {
 	RING_BUFFER_ALLOC_PER_CPU,
@@ -204,6 +204,8 @@ struct lttng_ust_lib_ring_buffer_config {
 	 * callbacks and update the cb pointers.
 	 */
 	int client_type;
+	int _unused1;
+	const struct lttng_ust_lib_ring_buffer_client_cb *cb_ptr;
 	char padding[LTTNG_UST_RING_BUFFER_CONFIG_PADDING];
 };
 

@@ -161,6 +161,7 @@ unsigned char record_header_size(const struct lttng_ust_lib_ring_buffer_config *
 }
 
 #include "../libringbuffer/api.h"
+#include "lttng-rb-clients.h"
 
 static
 void lttng_write_event_header_slow(const struct lttng_ust_lib_ring_buffer_config *config,
@@ -385,6 +386,19 @@ static void client_buffer_finalize(struct lttng_ust_lib_ring_buffer *buf, void *
 {
 }
 
+static const
+struct lttng_ust_client_lib_ring_buffer_client_cb client_cb = {
+	.parent = {
+		.ring_buffer_clock_read = client_ring_buffer_clock_read,
+		.record_header_size = client_record_header_size,
+		.subbuffer_header_size = client_packet_header_size,
+		.buffer_begin = client_buffer_begin,
+		.buffer_end = client_buffer_end,
+		.buffer_create = client_buffer_create,
+		.buffer_finalize = client_buffer_finalize,
+	},
+};
+
 static const struct lttng_ust_lib_ring_buffer_config client_config = {
 	.cb.ring_buffer_clock_read = client_ring_buffer_clock_read,
 	.cb.record_header_size = client_record_header_size,
@@ -404,9 +418,11 @@ static const struct lttng_ust_lib_ring_buffer_config client_config = {
 	.ipi = RING_BUFFER_NO_IPI_BARRIER,
 	.wakeup = LTTNG_CLIENT_WAKEUP,
 	.client_type = LTTNG_CLIENT_TYPE,
+
+	.cb_ptr = &client_cb.parent,
 };
 
-const struct lttng_ust_lib_ring_buffer_client_cb *LTTNG_CLIENT_CALLBACKS = &client_config.cb;
+const struct lttng_ust_client_lib_ring_buffer_client_cb *LTTNG_CLIENT_CALLBACKS = &client_cb;
 
 static
 struct lttng_channel *_channel_create(const char *name,
