@@ -386,6 +386,90 @@ static void client_buffer_finalize(struct lttng_ust_lib_ring_buffer *buf, void *
 {
 }
 
+static struct packet_header *client_packet_header(struct lttng_ust_lib_ring_buffer *buf,
+		struct lttng_ust_shm_handle *handle)
+{
+	struct channel *chan = shmp(handle, buf->backend.chan);
+	struct lttng_channel *lttng_chan = channel_get_private(chan);
+	unsigned long sb_index;
+	struct lttng_ust_lib_ring_buffer_backend *bufb;
+	struct packet_header *header;
+
+	bufb = &buf->backend;
+	sb_index = subbuffer_id_get_index(&lttng_chan->chan->backend.config,
+			bufb->buf_rsb.id);
+	header = lib_ring_buffer_offset_address(bufb,
+			sb_index * lttng_chan->chan->backend.subbuf_size,
+			handle);
+	return header;
+}
+
+static int client_timestamp_begin(struct lttng_ust_lib_ring_buffer *buf,
+		struct lttng_ust_shm_handle *handle,
+		uint64_t *timestamp_begin)
+{
+	struct packet_header *header;
+
+	header = client_packet_header(buf, handle);
+	*timestamp_begin = header->ctx.timestamp_begin;
+	return 0;
+}
+
+static int client_timestamp_end(struct lttng_ust_lib_ring_buffer *buf,
+		struct lttng_ust_shm_handle *handle,
+		uint64_t *timestamp_end)
+{
+	struct packet_header *header;
+
+	header = client_packet_header(buf, handle);
+	*timestamp_end = header->ctx.timestamp_end;
+	return 0;
+}
+
+static int client_events_discarded(struct lttng_ust_lib_ring_buffer *buf,
+		struct lttng_ust_shm_handle *handle,
+		uint64_t *events_discarded)
+{
+	struct packet_header *header;
+
+	header = client_packet_header(buf, handle);
+	*events_discarded = header->ctx.events_discarded;
+	return 0;
+}
+
+static int client_content_size(struct lttng_ust_lib_ring_buffer *buf,
+		struct lttng_ust_shm_handle *handle,
+		uint64_t *content_size)
+{
+	struct packet_header *header;
+
+	header = client_packet_header(buf, handle);
+	*content_size = header->ctx.content_size;
+	return 0;
+}
+
+static int client_packet_size(struct lttng_ust_lib_ring_buffer *buf,
+		struct lttng_ust_shm_handle *handle,
+		uint64_t *packet_size)
+{
+	struct packet_header *header;
+
+	header = client_packet_header(buf, handle);
+	*packet_size = header->ctx.packet_size;
+	return 0;
+}
+
+static int client_stream_id(struct lttng_ust_lib_ring_buffer *buf,
+		struct lttng_ust_shm_handle *handle,
+		uint64_t *stream_id)
+{
+	struct packet_header *header;
+
+	header = client_packet_header(buf, handle);
+	*stream_id = header->stream_id;
+	return 0;
+}
+
 static const
 struct lttng_ust_client_lib_ring_buffer_client_cb client_cb = {
 	.parent = {
@@ -397,6 +481,12 @@ struct lttng_ust_client_lib_ring_buffer_client_cb client_cb = {
 		.buffer_create = client_buffer_create,
 		.buffer_finalize = client_buffer_finalize,
 	},
+	.timestamp_begin = client_timestamp_begin,
+	.timestamp_end = client_timestamp_end,
+	.events_discarded = client_events_discarded,
+	.content_size = client_content_size,
+	.packet_size = client_packet_size,
+	.stream_id = client_stream_id,
 };
 
 static const struct lttng_ust_lib_ring_buffer_config client_config = {

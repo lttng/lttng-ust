@@ -220,6 +220,20 @@ int ustctl_put_subbuf(struct ustctl_consumer_stream *stream);
 void ustctl_flush_buffer(struct ustctl_consumer_stream *stream,
 		int producer_active);
 
+/* index */
+int ustctl_get_timestamp_begin(struct ustctl_consumer_stream *stream,
+		uint64_t *timestamp_begin);
+int ustctl_get_timestamp_end(struct ustctl_consumer_stream *stream,
+	uint64_t *timestamp_end);
+int ustctl_get_events_discarded(struct ustctl_consumer_stream *stream,
+	uint64_t *events_discarded);
+int ustctl_get_content_size(struct ustctl_consumer_stream *stream,
+	uint64_t *content_size);
+int ustctl_get_packet_size(struct ustctl_consumer_stream *stream,
+	uint64_t *packet_size);
+int ustctl_get_stream_id(struct ustctl_consumer_stream *stream,
+		uint64_t *stream_id);
+
 /* event registry management */
 
 enum ustctl_socket_type {
