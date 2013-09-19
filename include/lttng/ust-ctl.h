@@ -233,6 +233,8 @@ int ustctl_get_packet_size(struct ustctl_consumer_stream *stream,
 	uint64_t *packet_size);
 int ustctl_get_stream_id(struct ustctl_consumer_stream *stream,
 		uint64_t *stream_id);
+int ustctl_get_current_timestamp(struct ustctl_consumer_stream *stream,
+		uint64_t *ts);
 
 /* event registry management */
 

@@ -1571,6 +1571,21 @@ int ustctl_get_stream_id(struct ustctl_consumer_stream *stream,
 	return client_cb->stream_id(buf, handle, stream_id);
 }
 
+int ustctl_get_current_timestamp(struct ustctl_consumer_stream *stream,
+		uint64_t *ts)
+{
+	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
+	struct lttng_ust_lib_ring_buffer *buf = stream->buf;
+	struct lttng_ust_shm_handle *handle = stream->chan->chan->handle;
+
+	if (!stream || !ts)
+		return -EINVAL;
+	client_cb = get_client_cb(buf, handle);
+	if (!client_cb || !client_cb->current_timestamp)
+		return -ENOSYS;
+	return client_cb->current_timestamp(buf, handle, ts);
+}
+
 /*
  * Returns 0 on success, negative error value on error.
  */
