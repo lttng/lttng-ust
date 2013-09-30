@@ -531,7 +531,7 @@ int lttng_attach_context(struct lttng_ust_context *context_param,
 		struct lttng_ctx **ctx, struct lttng_session *session);
 void lttng_context_init(void);
 void lttng_context_exit(void);
-struct lttng_ctx *lttng_static_ctx;	/* Used by filtering */
+extern struct lttng_ctx *lttng_static_ctx;	/* Used by filtering */
 
 void lttng_transport_register(struct lttng_transport *transport);
 void lttng_transport_unregister(struct lttng_transport *transport);
