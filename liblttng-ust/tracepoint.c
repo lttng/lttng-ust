@@ -314,7 +314,7 @@ static void remove_tracepoint(struct tracepoint_entry *e)
  * Add the callsite to the callsite hash table. Must be called with
  * tracepoint mutex held.
  */
-static void add_callsite(struct tracepoint *tp)
+static void add_callsite(struct tracepoint_lib * lib, struct tracepoint *tp)
 {
 	struct cds_hlist_head *head;
 	struct callsite_entry *e;
@@ -332,6 +332,7 @@ static void add_callsite(struct tracepoint *tp)
 	assert(e);
 	cds_hlist_add_head(&e->hlist, head);
 	e->tp = tp;
+	cds_list_add(&e->node, &lib->callsites);
 }
 
 /*
@@ -480,7 +481,7 @@ static void lib_register_callsites(struct tracepoint_lib *lib)
 		if (!(*iter)->name) {
 			continue;
 		}
-		add_callsite(*iter);
+		add_callsite(lib, *iter);
 	}
 }
 
