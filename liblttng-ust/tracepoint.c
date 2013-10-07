@@ -311,42 +311,6 @@ static void remove_tracepoint(struct tracepoint_entry *e)
 }
 
 /*
- * Add the callsite to the callsite hash table. Must be called with
- * tracepoint mutex held.
- */
-static void add_callsite(struct tracepoint_lib * lib, struct tracepoint *tp)
-{
-	struct cds_hlist_head *head;
-	struct callsite_entry *e;
-	const char *name = tp->name;
-	size_t name_len = strlen(name);
-	uint32_t hash;
-
-	if (name_len > LTTNG_UST_SYM_NAME_LEN - 1) {
-		WARN("Truncating tracepoint name %s which exceeds size limits of %u chars", name, LTTNG_UST_SYM_NAME_LEN - 1);
-		name_len = LTTNG_UST_SYM_NAME_LEN - 1;
-	}
-	hash = jhash(name, name_len, 0);
-	head = &callsite_table[hash & (CALLSITE_TABLE_SIZE - 1)];
-	e = zmalloc(sizeof(struct callsite_entry));
-	assert(e);
-	cds_hlist_add_head(&e->hlist, head);
-	e->tp = tp;
-	cds_list_add(&e->node, &lib->callsites);
-}
-
-/*
- * Remove the callsite from the callsite hash table and from lib
- * callsite list. Must be called with tracepoint mutex held.
- */
-static void remove_callsite(struct callsite_entry *e)
-{
-	cds_hlist_del(&e->hlist);
-	cds_list_del(&e->node);
-	free(e);
-}
-
-/*
  * Sets the probe callback corresponding to one tracepoint.
  */
 static void set_tracepoint(struct tracepoint_entry **entry,
@@ -392,6 +356,42 @@ static void disable_tracepoint(struct tracepoint *elem)
 {
 	elem->state = 0;
 	rcu_assign_pointer(elem->probes, NULL);
+}
+
+/*
+ * Add the callsite to the callsite hash table. Must be called with
+ * tracepoint mutex held.
+ */
+static void add_callsite(struct tracepoint_lib * lib, struct tracepoint *tp)
+{
+	struct cds_hlist_head *head;
+	struct callsite_entry *e;
+	const char *name = tp->name;
+	size_t name_len = strlen(name);
+	uint32_t hash;
+
+	if (name_len > LTTNG_UST_SYM_NAME_LEN - 1) {
+		WARN("Truncating tracepoint name %s which exceeds size limits of %u chars", name, LTTNG_UST_SYM_NAME_LEN - 1);
+		name_len = LTTNG_UST_SYM_NAME_LEN - 1;
+	}
+	hash = jhash(name, name_len, 0);
+	head = &callsite_table[hash & (CALLSITE_TABLE_SIZE - 1)];
+	e = zmalloc(sizeof(struct callsite_entry));
+	assert(e);
+	cds_hlist_add_head(&e->hlist, head);
+	e->tp = tp;
+	cds_list_add(&e->node, &lib->callsites);
+}
+
+/*
+ * Remove the callsite from the callsite hash table and from lib
+ * callsite list. Must be called with tracepoint mutex held.
+ */
+static void remove_callsite(struct callsite_entry *e)
+{
+	cds_hlist_del(&e->hlist);
+	cds_list_del(&e->node);
+	free(e);
 }
 
 /*
