@@ -95,6 +95,7 @@ struct tracepoint_entry {
 	struct cds_hlist_node hlist;
 	struct tracepoint_probe *probes;
 	int refcount;	/* Number of times armed. 0 if disarmed. */
+	int callsite_refcount;	/* how many libs use this tracepoint */
 	const char *signature;
 	char name[0];
 };
@@ -295,6 +296,7 @@ static struct tracepoint_entry *add_tracepoint(const char *name,
 	e->name[name_len] = '\0';
 	e->probes = NULL;
 	e->refcount = 0;
+	e->callsite_refcount = 0;
 	e->signature = signature;
 	cds_hlist_add_head(&e->hlist, head);
 	return e;
@@ -369,6 +371,7 @@ static void add_callsite(struct tracepoint_lib * lib, struct tracepoint *tp)
 	const char *name = tp->name;
 	size_t name_len = strlen(name);
 	uint32_t hash;
+	struct tracepoint_entry *tp_entry;
 
 	if (name_len > LTTNG_UST_SYM_NAME_LEN - 1) {
 		WARN("Truncating tracepoint name %s which exceeds size limits of %u chars", name, LTTNG_UST_SYM_NAME_LEN - 1);
@@ -381,6 +384,11 @@ static void add_callsite(struct tracepoint_lib * lib, struct tracepoint *tp)
 	cds_hlist_add_head(&e->hlist, head);
 	e->tp = tp;
 	cds_list_add(&e->node, &lib->callsites);
+
+	tp_entry = get_tracepoint(name);
+	if (!tp_entry)
+		return;
+	tp_entry->callsite_refcount++;
 }
 
 /*
@@ -389,6 +397,14 @@ static void add_callsite(struct tracepoint_lib * lib, struct tracepoint *tp)
  */
 static void remove_callsite(struct callsite_entry *e)
 {
+	struct tracepoint_entry *tp_entry;
+
+	tp_entry = get_tracepoint(e->tp->name);
+	if (tp_entry) {
+		tp_entry->callsite_refcount--;
+		if (tp_entry->callsite_refcount == 0)
+			disable_tracepoint(e->tp);
+	}
 	cds_hlist_del(&e->hlist);
 	cds_list_del(&e->node);
 	free(e);
@@ -705,24 +721,6 @@ static void new_tracepoints(struct tracepoint * const *start, struct tracepoint 
 	}
 }
 
-static
-void lib_disable_tracepoints(struct tracepoint_lib *lib)
-{
-	struct tracepoint * const *begin;
-	struct tracepoint * const *end;
-	struct tracepoint * const *iter;
-
-	begin = lib->tracepoints_start;
-	end = lib->tracepoints_start + lib->tracepoints_count;
-
-	for (iter = begin; iter < end; iter++) {
-		if (!*iter)
-			continue;	/* skip dummy */
-		disable_tracepoint(*iter);
-	}
-
-}
-
 int tracepoint_register_lib(struct tracepoint * const *tracepoints_start,
 			    int tracepoints_count)
 {
@@ -780,13 +778,11 @@ int tracepoint_unregister_lib(struct tracepoint * const *tracepoints_start)
 
 		cds_list_del(&lib->list);
 		/*
-		 * Force tracepoint disarm for all tracepoints of this lib.
-		 * This takes care of destructor of library that would leave a
-		 * LD_PRELOAD wrapper override function enabled for tracing, but
-		 * the session teardown would not be able to reach the
-		 * tracepoint anymore to disable it.
+		 * Unregistering a callsite also decreases the
+		 * callsite reference count of the corresponding
+		 * tracepoint, and disables the tracepoint if
+		 * the reference count drops to zero.
 		 */
-		lib_disable_tracepoints(lib);
 		lib_unregister_callsites(lib);
 		DBG("just unregistered a tracepoints section from %p",
 			lib->tracepoints_start);
