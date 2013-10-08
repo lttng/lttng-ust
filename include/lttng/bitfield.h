@@ -56,7 +56,7 @@
 	___v <<= final;							\
 })
 
-#define _bt_is_signed_type(type)	(((type)(-1)) < 0)
+#define _bt_is_signed_type(type)	((type) -1 < (type) 0)
 
 #define _bt_unsigned_cast(type, v)					\
 ({									\
