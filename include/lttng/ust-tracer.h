@@ -45,6 +45,6 @@
 #define lttng_alignof(type)	1
 #endif
 
-#define lttng_is_signed_type(type)           (((type)(-1)) < 0)
+#define lttng_is_signed_type(type)           ((type) -1 < (type) 0)
 
 #endif /* _LTTNG_UST_TRACER_H */
