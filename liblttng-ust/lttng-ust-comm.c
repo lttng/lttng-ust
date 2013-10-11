@@ -982,7 +982,7 @@ restart:
 			WARN("Error setting socket send timeout");
 		}
 	} else if (timeout < -1) {
-		WARN("Unsuppoorted timeout value %ld", timeout);
+		WARN("Unsupported timeout value %ld", timeout);
 	}
 
 	ust_lock();
