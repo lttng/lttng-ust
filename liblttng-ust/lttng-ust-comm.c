@@ -912,8 +912,6 @@ void *ust_listener_thread(void *arg)
 {
 	struct sock_info *sock_info = arg;
 	int sock, ret, prev_connect_failed = 0, has_waited = 0;
-	int open_sock[2];
-	int i;
 	long timeout;
 
 	/* Restart trying to connect to the session daemon */
@@ -951,55 +949,35 @@ restart:
 		sock_info->notify_socket = -1;
 	}
 
-	/* Register */
-	for (i = 0; i < 2; i++) {
-		ret = ustcomm_connect_unix_sock(sock_info->sock_path);
-		if (ret < 0) {
-			DBG("Info: sessiond not accepting connections to %s apps socket", sock_info->name);
-			prev_connect_failed = 1;
+	/*
+	 * Register. We need to perform both connect and sending
+	 * registration message before doing the next connect otherwise
+	 * we may reach unix socket connect queue max limits and block
+	 * on the 2nd connect while the session daemon is awaiting the
+	 * first connect registration message.
+	 */
+	/* Connect cmd socket */
+	ret = ustcomm_connect_unix_sock(sock_info->sock_path);
+	if (ret < 0) {
+		DBG("Info: sessiond not accepting connections to %s apps socket", sock_info->name);
+		prev_connect_failed = 1;
 
-			ust_lock();
+		ust_lock();
 
-			if (lttng_ust_comm_should_quit) {
-				goto quit;
-			}
-
-			/*
-			 * If we cannot find the sessiond daemon, don't delay
-			 * constructor execution.
-			 */
-			ret = handle_register_done(sock_info);
-			assert(!ret);
-			ust_unlock();
-			goto restart;
+		if (lttng_ust_comm_should_quit) {
+			goto quit;
 		}
-		open_sock[i] = ret;
-	}
 
-	sock_info->socket = open_sock[0];
-	sock_info->notify_socket = open_sock[1];
-
-	timeout = get_notify_sock_timeout();
-	if (timeout >= 0) {
 		/*
-		 * Give at least 10ms to sessiond to reply to
-		 * notifications.
+		 * If we cannot find the sessiond daemon, don't delay
+		 * constructor execution.
 		 */
-		if (timeout < 10)
-			timeout = 10;
-		ret = ustcomm_setsockopt_rcv_timeout(sock_info->notify_socket,
-				timeout);
-		if (ret < 0) {
-			WARN("Error setting socket receive timeout");
-		}
-		ret = ustcomm_setsockopt_snd_timeout(sock_info->notify_socket,
-				timeout);
-		if (ret < 0) {
-			WARN("Error setting socket send timeout");
-		}
-	} else if (timeout < -1) {
-		WARN("Unsupported timeout value %ld", timeout);
+		ret = handle_register_done(sock_info);
+		assert(!ret);
+		ust_unlock();
+		goto restart;
 	}
+	sock_info->socket = ret;
 
 	ust_lock();
 
@@ -1035,6 +1013,60 @@ restart:
 		ust_unlock();
 		goto restart;
 	}
+
+	ust_unlock();
+
+	/* Connect notify socket */
+	ret = ustcomm_connect_unix_sock(sock_info->sock_path);
+	if (ret < 0) {
+		DBG("Info: sessiond not accepting connections to %s apps socket", sock_info->name);
+		prev_connect_failed = 1;
+
+		ust_lock();
+
+		if (lttng_ust_comm_should_quit) {
+			goto quit;
+		}
+
+		/*
+		 * If we cannot find the sessiond daemon, don't delay
+		 * constructor execution.
+		 */
+		ret = handle_register_done(sock_info);
+		assert(!ret);
+		ust_unlock();
+		goto restart;
+	}
+	sock_info->notify_socket = ret;
+
+	timeout = get_notify_sock_timeout();
+	if (timeout >= 0) {
+		/*
+		 * Give at least 10ms to sessiond to reply to
+		 * notifications.
+		 */
+		if (timeout < 10)
+			timeout = 10;
+		ret = ustcomm_setsockopt_rcv_timeout(sock_info->notify_socket,
+				timeout);
+		if (ret < 0) {
+			WARN("Error setting socket receive timeout");
+		}
+		ret = ustcomm_setsockopt_snd_timeout(sock_info->notify_socket,
+				timeout);
+		if (ret < 0) {
+			WARN("Error setting socket send timeout");
+		}
+	} else if (timeout < -1) {
+		WARN("Unsupported timeout value %ld", timeout);
+	}
+
+	ust_lock();
+
+	if (lttng_ust_comm_should_quit) {
+		goto quit;
+	}
+
 	ret = register_to_sessiond(sock_info->notify_socket,
 			USTCTL_SOCKET_NOTIFY);
 	if (ret < 0) {
