@@ -265,7 +265,8 @@ ssize_t ustcomm_recv_unix_sock(int sock, void *buf, size_t len)
 {
 	struct msghdr msg;
 	struct iovec iov[1];
-	ssize_t ret;
+	ssize_t ret = -1;
+	size_t len_last;
 
 	memset(&msg, 0, sizeof(msg));
 
@@ -275,8 +276,14 @@ ssize_t ustcomm_recv_unix_sock(int sock, void *buf, size_t len)
 	msg.msg_iovlen = 1;
 
 	do {
+		len_last = iov[0].iov_len;
 		ret = recvmsg(sock, &msg, 0);
-	} while (ret < 0 && errno == EINTR);
+		if (ret > 0) {
+			iov[0].iov_base += ret;
+			iov[0].iov_len -= ret;
+			assert(ret <= len_last);
+		}
+	} while ((ret > 0 && ret < len_last) || (ret < 0 && errno == EINTR));
 
 	if (ret < 0) {
 		int shutret;
@@ -290,7 +297,10 @@ ssize_t ustcomm_recv_unix_sock(int sock, void *buf, size_t len)
 		shutret = shutdown(sock, SHUT_RDWR);
 		if (shutret)
 			ERR("Socket shutdown error");
+	} else if (ret > 0) {
+		ret = len;
 	}
+	/* ret = 0 means an orderly shutdown. */
 
 	return ret;
 }
