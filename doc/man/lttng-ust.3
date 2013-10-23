@@ -12,7 +12,7 @@ Link liblttng-ust.so with applications, following this manpage.
 .SH "DESCRIPTION"
 
 .PP
-LTTng-UST, the Linux Trace Toolkit Next Generation Userspace Tracer, is
+LTTng-UST, the Linux Trace Toolkit Next Generation Userspace Tracer, is a
 port of the low-overhead tracing capabilities of the LTTng kernel tracer
 to user-space. The library "liblttng-ust" enables tracing of
 applications and libraries.
@@ -173,7 +173,7 @@ following construct:
 	TRACEPOINT_LOGLEVEL(< [com_company_]project[_component] >,
 		< event >, < loglevel_name >)
 
- The first field is the provider name, the second field is the name of
+The first field is the provider name, the second field is the name of
 the tracepoint, and the third field is the loglevel name.  A
 TRACEPOINT_EVENT should be declared prior to the the TRACEPOINT_LOGLEVEL
 for a given tracepoint name. The TRACEPOINT_PROVIDER must be already
@@ -254,7 +254,7 @@ lttng(1) through lttng-sessiond(8).
 Even though LTTng-UST supports tracepoint() call site duplicates having
 the same provider and event name, it is recommended to use a
 provider event name pair only once within the source code to help
-mapping events back to their call sites when analyzing the trace.
+map events back to their call sites when analyzing the trace.
 .fi
 
 .SH "BUILDING/LINKING THE TRACEPOINT PROVIDER"
