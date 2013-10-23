@@ -13,15 +13,15 @@ lttng\-gen\-tp [OPTIONS] TEMPLATE_FILE
 
 .PP
 The LTTng project aims at providing highly efficient tracing tools for Linux.
-It's tracers help tracking down performance issues and debugging problems
+Its tracers help in tracking down performance issues and debugging problems
 involving multiple concurrent processes and threads. Tracing across multiple
 systems is also possible.
 
-The \fBlttng\-gen\-tp\fP tool simplify the generation of the UST tracepoint
-files. It takes a simple template file and generate the necessary code to use the defined tracepoints in your application.
-The section TEMPLATE FILE FORMAT describe the content of the template file.
+The \fBlttng\-gen\-tp\fP tool simplifies the generation of the UST tracepoint
+files. It takes a simple template file and generates the necessary code to use the defined tracepoints in your application.
+The section TEMPLATE FILE FORMAT describes the content of the template file.
 
-Currently, the tool can generate the .h, .c and .o associated to your
+Currently, the tool can generate the .h, .c and .o associated with your
 tracepoint. The generated .h can be directly included in your application.
 You can let the tool generate the .o or compile the .c yourself.
 You can compile the .c into a .o, .a or .so at your choice and
@@ -30,14 +30,11 @@ Refer to the UST documentation for the
 advantages and disadvantage of each form.
 To compile the resulting .c file, you need to add the options
 "\-llttng-ust \-I.".
-Note for C++ support: although an application instrumented with
-tracepoints can be compiled with g++, tracepoint probes should be
-compiled with gcc (only tested with gcc so far).
 
 .SH "OPTIONS"
 
 .PP
-This program follow the usual GNU command line syntax with long options starting with
+This program follows the usual GNU command line syntax with long options starting with
 two dashes. Below is a summary of the available options.
 .PP
 
@@ -51,10 +48,10 @@ Increase verbosity.
 .BR "\-o, \-\-output"
 Specify the generated file. The type of the generated file depend on the file
 extension (.h, .c, .o).
-This option can be specfied multiple times to generate different file type.
+This option can be specified multiple times to generate different file type.
 
 .PP
-When no output is specified de default files are generated with the same base filename as the template file. The default files are: .h, .c, .o.
+When no output is specified the default files are generated with the same base filename as the template file. The default files are: .h, .c, .o.
 
 .SH "TEMPLATE FILE FORMAT"
 
@@ -85,12 +82,12 @@ TRACEPOINT_EVENT(
 .SH "ENVIRONMENT VARIABLES"
 
 .PP
-When the tool generate an .o file, it will look for the following environment variables
+When the tool generates a .o file, it will look for the following environment variables
 .PP
 
 .PP
 .IP "CC"
-Specifer which C compiler to use. If the variable is not specified, the
+Specify which C compiler to use. If the variable is not specified, the
 tool will try "cc" and "gcc"
 
 .IP "CFLAGS"
