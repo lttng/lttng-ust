@@ -352,6 +352,7 @@ extern struct tracepoint * const __stop___tracepoints_ptrs[]
 			NULL,							\
 			_TRACEPOINT_UNDEFINED_REF(_provider), 			\
 			_TP_EXTRACT_STRING(_args),				\
+			{ },							\
 		};								\
 	static struct tracepoint * __tracepoint_ptr_##_provider##___##_name	\
 		__attribute__((used, section("__tracepoints_ptrs"))) =		\
