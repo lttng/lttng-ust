@@ -689,6 +689,30 @@ int get_wait_shm(struct sock_info *sock_info, size_t mmap_size)
 	 */
 	wait_shm_fd = shm_open(sock_info->wait_shm_path, O_RDONLY, 0);
 	if (wait_shm_fd >= 0) {
+		int32_t tmp_read;
+		ssize_t len;
+		size_t bytes_read = 0;
+
+		/*
+		 * Try to read the fd. If unable to do so, try opening
+		 * it in write mode.
+		 */
+		do {
+			len = read(wait_shm_fd,
+				&((char *) &tmp_read)[bytes_read],
+				sizeof(tmp_read) - bytes_read);
+			if (len > 0) {
+				bytes_read += len;
+			}
+		} while ((len < 0 && errno == EINTR)
+			|| (len > 0 && bytes_read < sizeof(tmp_read)));
+		if (bytes_read != sizeof(tmp_read)) {
+			ret = close(wait_shm_fd);
+			if (ret) {
+				ERR("close wait_shm_fd");
+			}
+			goto open_write;
+		}
 		goto end;
 	} else if (wait_shm_fd < 0 && errno != ENOENT) {
 		/*
@@ -699,9 +723,11 @@ int get_wait_shm(struct sock_info *sock_info, size_t mmap_size)
 		ERR("Error opening shm %s", sock_info->wait_shm_path);
 		goto end;
 	}
+
+open_write:
 	/*
-	 * If the open failed because the file did not exist, try
-	 * creating it ourself.
+	 * If the open failed because the file did not exist, or because
+	 * the file was not truncated yet, try creating it ourself.
 	 */
 	URCU_TLS(lttng_ust_nest_count)++;
 	pid = fork();
