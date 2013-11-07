@@ -488,6 +488,68 @@ int handle_message(struct sock_info *sock_info,
 		}
 		break;
 	}
+	case LTTNG_UST_EXCLUSION:
+	{
+		/* Receive exclusion names */
+		struct lttng_ust_excluder_node *node;
+		unsigned int count;
+
+		count = lum->u.exclusion.count;
+		if (count == 0) {
+			/* There are no names to read */
+			ret = 0;
+			goto error;
+		}
+		node = zmalloc(sizeof(*node) +
+				count * LTTNG_UST_SYM_NAME_LEN);
+		if (!node) {
+			ret = -ENOMEM;
+			goto error;
+		}
+		node->excluder.count = count;
+		len = ustcomm_recv_unix_sock(sock, node->excluder.names,
+				count * LTTNG_UST_SYM_NAME_LEN);
+		switch (len) {
+		case 0:	/* orderly shutdown */
+			ret = 0;
+			free(node);
+			goto error;
+		default:
+			if (len == count * LTTNG_UST_SYM_NAME_LEN) {
+				DBG("Exclusion data received");
+				break;
+			} else if (len < 0) {
+				DBG("Receive failed from lttng-sessiond with errno %d", (int) -len);
+				if (len == -ECONNRESET) {
+					ERR("%s remote end closed connection", sock_info->name);
+					ret = len;
+					free(node);
+					goto error;
+				}
+				ret = len;
+				free(node);
+				goto end;
+			} else {
+				DBG("Incorrect exclusion data message size: %zd", len);
+				ret = -EINVAL;
+				free(node);
+				goto end;
+			}
+		}
+		if (ops->cmd) {
+			ret = ops->cmd(lum->handle, lum->cmd,
+					(unsigned long) node,
+					&args, sock_info);
+			if (ret) {
+				free(node);
+			}
+			/* Don't free exclusion data if everything went fine. */
+		} else {
+			ret = -ENOSYS;
+			free(node);
+		}
+		break;
+	}
 	case LTTNG_UST_CHANNEL:
 	{
 		void *chan_data;
