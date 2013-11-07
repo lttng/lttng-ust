@@ -491,6 +491,31 @@ static
 int lttng_desc_match_enabler(const struct lttng_event_desc *desc,
 		struct lttng_enabler *enabler)
 {
+	struct lttng_ust_excluder_node *excluder;
+
+	/* If event matches with an excluder, return 'does not match' */
+	cds_list_for_each_entry(excluder, &enabler->excluder_head, node) {
+		int count;
+
+		for (count = 0; count < excluder->excluder.count; count++) {
+			int found, len;
+			char *excluder_name;
+
+			excluder_name = (char *) (excluder->excluder.names)
+					+ count * LTTNG_UST_SYM_NAME_LEN;
+			len = strnlen(excluder_name, LTTNG_UST_SYM_NAME_LEN);
+			if (len > 0 && excluder_name[len - 1] == '*') {
+				found = !strncmp(desc->name, excluder_name,
+						len - 1);
+			} else {
+				found = !strncmp(desc->name, excluder_name,
+						LTTNG_UST_SYM_NAME_LEN - 1);
+			}
+			if (found) {
+				return 0;
+			}
+		}
+	}
 	switch (enabler->type) {
 	case LTTNG_ENABLER_WILDCARD:
 		return lttng_desc_match_wildcard_enabler(desc, enabler);
