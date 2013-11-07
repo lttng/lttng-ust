@@ -687,6 +687,7 @@ struct lttng_enabler *lttng_enabler_create(enum lttng_enabler_type type,
 		return NULL;
 	enabler->type = type;
 	CDS_INIT_LIST_HEAD(&enabler->filter_bytecode_head);
+	CDS_INIT_LIST_HEAD(&enabler->excluder_head);
 	memcpy(&enabler->event_param, event_param,
 		sizeof(enabler->event_param));
 	enabler->chan = chan;
@@ -767,11 +768,18 @@ static
 void lttng_enabler_destroy(struct lttng_enabler *enabler)
 {
 	struct lttng_ust_filter_bytecode_node *filter_node, *tmp_filter_node;
+	struct lttng_ust_excluder_node *excluder_node, *tmp_excluder_node;
 
 	/* Destroy filter bytecode */
 	cds_list_for_each_entry_safe(filter_node, tmp_filter_node,
 			&enabler->filter_bytecode_head, node) {
 		free(filter_node);
+	}
+
+	/* Destroy excluders */
+	cds_list_for_each_entry_safe(excluder_node, tmp_excluder_node,
+			&enabler->excluder_head, node) {
+		free(excluder_node);
 	}
 
 	/* Destroy contexts */
