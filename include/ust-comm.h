@@ -91,6 +91,9 @@ struct ustcomm_ust_msg {
 			uint32_t reloc_offset;
 			uint64_t seqnum;
 		} LTTNG_PACKED filter;
+		struct {
+			uint32_t count;	/* how many names follow */
+		} LTTNG_PACKED exclusion;
 		char padding[USTCOMM_MSG_PADDING2];
 	} u;
 } LTTNG_PACKED;
