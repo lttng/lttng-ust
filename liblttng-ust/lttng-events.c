@@ -721,6 +721,15 @@ int lttng_enabler_attach_bytecode(struct lttng_enabler *enabler,
 	return 0;
 }
 
+int lttng_enabler_attach_exclusion(struct lttng_enabler *enabler,
+		struct lttng_ust_excluder_node *excluder)
+{
+	excluder->enabler = enabler;
+	cds_list_add_tail(&excluder->node, &enabler->excluder_head);
+	lttng_session_lazy_sync_enablers(enabler->chan->session);
+	return 0;
+}
+
 int lttng_attach_context(struct lttng_ust_context *context_param,
 		struct lttng_ctx **ctx, struct lttng_session *session)
 {
