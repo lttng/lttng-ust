@@ -273,6 +273,40 @@ int ustctl_set_filter(int sock, struct lttng_ust_filter_bytecode *bytecode,
 	return ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
 }
 
+int ustctl_set_exclusion(int sock, struct lttng_ust_event_exclusion *exclusion,
+		struct lttng_ust_object_data *obj_data)
+{
+	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_reply lur;
+	int ret;
+
+	if (!obj_data) {
+		return -EINVAL;
+	}
+
+	memset(&lum, 0, sizeof(lum));
+	lum.handle = obj_data->handle;
+	lum.cmd = LTTNG_UST_EXCLUSION;
+	lum.u.exclusion.count = exclusion->count;
+
+	ret = ustcomm_send_app_msg(sock, &lum);
+	if (ret) {
+		return ret;
+	}
+
+	/* send var len bytecode */
+	ret = ustcomm_send_unix_sock(sock,
+			exclusion->names,
+			exclusion->count * LTTNG_UST_SYM_NAME_LEN);
+	if (ret < 0) {
+		return ret;
+	}
+	if (ret != exclusion->count * LTTNG_UST_SYM_NAME_LEN) {
+		return -EINVAL;
+	}
+	return ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+}
+
 /* Enable event, channel and session ioctl */
 int ustctl_enable(int sock, struct lttng_ust_object_data *object)
 {
