@@ -209,6 +209,9 @@ AC_ARG_WITH([java-jdk],
 	[JAVA_JDK=$withval],
 	[JAVA_JDK=""]
 )
+AM_CONDITIONAL([HAVE_JAVA_JDK], [test $JAVA_JDK], [Java JDK path])
+AC_SUBST([JAVA_JDK])
+
 AS_IF([test $JAVA_JDK],[
 	AS_IF([test -d $JAVA_JDK],[
                 AC_MSG_RESULT([using Java includes in $JAVA_SDK])
@@ -283,6 +286,7 @@ AC_CONFIG_FILES([
 	liblttng-ust-ctl/Makefile
 	liblttng-ust-fork/Makefile
 	liblttng-ust-java/Makefile
+	liblttng-ust-jul/Makefile
 	liblttng-ust-libc-wrapper/Makefile
 	liblttng-ust-cyg-profile/Makefile
 	tools/Makefile
@@ -293,6 +297,7 @@ AC_CONFIG_FILES([
 	tests/snprintf/Makefile
 	tests/benchmark/Makefile
 	tests/utils/Makefile
+	tests/java-jul/Makefile
 	lttng-ust.pc
 ])
 

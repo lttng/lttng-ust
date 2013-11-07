@@ -1,0 +1,12 @@
+#!/bin/bash
+
+CURDIR=$(dirname $0)/
+TESTDIR=$CURDIR/..
+TESTCLASS="JULTest"
+
+if [ ! -f  "$CURDIR/$TESTCLASS.class" ]; then
+	echo "1..0 # Skipped: Java support not build"
+	exit 0
+fi
+
+java -ea -cp "$CURDIR:$TESTDIR/../liblttng-ust-jul/liblttng-ust-jul.jar" -Djava.library.path="$TESTDIR/../liblttng-ust-jul/.libs" $TESTCLASS

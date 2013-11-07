@@ -1,0 +1,38 @@
+This directory contains the LTTng Java Agent for JUL support.
+
+Configuration examples to build this library:
+
+dependency: openjdk-7-jdk
+    ./configure --with-java-jdk=/usr/lib/jvm/java-7-openjdk --with-jni-interface
+
+On Debian system for instance you can simply use the "default-java" path:
+
+    ./configure --with-java-jdk=/usr/lib/jvm/default-java --with-jni-interface
+
+Note that the OpenJDK 7 is used for development and continuous integration thus
+we directly support that version for this library. However, it has been tested
+with OpenJDK 6 also. Please let us know if other Java version (commercial or
+not) work with this library.
+
+After building, you can use the "liblttng-ust-jul.jar" file in a Java project.
+It requires "liblttng-ust-jul.so" which is installed by the build system when
+doing "make install". Make sure that your Java application can find this shared
+object with the "java.library.path".
+
+In order to enable the agent in your Java application, you simply have to add
+this as early as you can in the runtime process.
+
+import org.lttng.ust.jul.LTTngAgent;
+[...]
+	private static LTTngAgent lttngAgent;
+	[...]
+	lttngAgent = LTTngAgent.getLTTngAgent();
+
+This will initialize automatically the singleton LTTngAgent, it will stall
+your application until the session daemon registration is done. If no session
+daemon is available, the execution will continue and the agent will retry at
+each 3 seconds.
+
+Once registered, it is adds a thread inside your Java application and will be
+able to automatically use every Logger object and map them to the jul_event
+tracepoint of the JNI interface (see LTTngUst.c/.java).

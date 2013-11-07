@@ -48,3 +48,8 @@ tests/tracepoint/tracepoint_test
 tests/snprintf/prog
 tests/benchmark/bench1
 tests/benchmark/bench2
+
+# Java JUL library
+*.class
+liblttng-ust-jul.jar
+org_lttng_ust_jul_LTTngUst.h
