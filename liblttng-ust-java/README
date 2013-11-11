@@ -2,15 +2,13 @@ This directory contains a simple API for instrumenting java applications.
 
 Configuration examples to build this library:
 
-dependency: sun-java6-jdk
-./configure --with-java-jdk=/usr/lib/jvm/java-6-sun --with-jni-interface
+dependency: openjdk-7-jdk
+./configure --with-java-jdk=/usr/lib/jvm/java-7-openjdk --with-jni-interface
 
-dependency: openjdk-6-jdk
-./configure --with-java-jdk=/usr/lib/jvm/java-6-openjdk --with-jni-interface
-
-dependency: gcj-4.4-jdk
-./configure --with-java-jdk=/usr/lib/jvm/java-gcj --with-jni-interface
-
+Note that the OpenJDK 7 is used for development and continuous integration thus
+we directly support that version for this library. However, it has been tested
+with OpenJDK 6 also. Please let us know if other Java version (commercial or
+not) work with this library.
 
 After building, you can use the liblttng-ust-java.jar file in a Java project.
 It requires the liblttng-ust-java.so* files (which get installed when doing
