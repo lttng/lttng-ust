@@ -1,3 +1,17 @@
+2013-11-12 lttng-ust 2.3.1
+	* Fix: application SIGBUS when starting in parallel with sessiond
+	* Fix: Minor corrections to the lttng-ust man page
+	* Documentation cleanup: Overhaul of the lttng-gen-tp man page
+	* Warning cleanup: add missing padding initializer
+	* Fix: socket connect hang on heavy loads
+	* Cleanup: fix typo
+	* Fix: ust-comm recvmsg should handle partial receive
+	* gcc warning fix: -Wextra
+	* Add usage reference count for tracepoints
+	* tracepoint.c: Move add_callsite/remove_callsite further down in file
+	* Store the callsites into the library callsite list
+	* Fix linking warning
+
 2013-09-03 lttng-ust 2.3.0
 	* No change
 
