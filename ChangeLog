@@ -1,3 +1,27 @@
+2013-11-12 lttng-ust 2.2.2
+	* Fix: application SIGBUS when starting in parallel with sessiond
+	* Fix: Minor corrections to the lttng-ust man page
+	* Documentation cleanup: Overhaul of the lttng-gen-tp man page
+	* Warning cleanup: add missing padding initializer
+	* Fix: socket connect hang on heavy loads
+	* Cleanup: fix typo
+	* Fix: ust-comm recvmsg should handle partial receive
+	* gcc warning fix: -Wextra
+	* Add usage reference count for tracepoints
+	* tracepoint.c: Move add_callsite/remove_callsite further down in file
+	* Store the callsites into the library callsite list
+	* Fix linking warning
+	* Fix: doc/examples cross-build
+	* Fix: liblttng_ust.la should depend on liblttng-ust-tracepoint.la
+	* examples: tracepoint probes don't need extern C
+	* Tracepoint probes don't need extern C
+	* Fix: doc/examples VPATH build
+	* Disable doc/examples build
+	* Fix: doc/examples: gen-tp path
+	* Revert "Disable doc/examples build"
+	* Fix: Unchecked asprintf/vasprintf return values
+	* Missing NULL pointer init in tap.c
+
 2013-07-11 lttng-ust 2.2.1
 	* Fix: libs order in Makefile
 	* Fix: ring buffer: get_subbuf() checks should be performed on "consumed" 
