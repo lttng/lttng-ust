@@ -293,6 +293,8 @@ int lttng_session_enable(struct lttng_session *session)
 	/* Set atomically the state to "active" */
 	CMM_ACCESS_ONCE(session->active) = 1;
 	CMM_ACCESS_ONCE(session->been_active) = 1;
+
+	lttng_ust_sockinfo_session_enabled(session->owner, session);
 end:
 	return ret;
 }

@@ -34,6 +34,7 @@
 #include <time.h>
 #include <assert.h>
 #include <signal.h>
+#include <dlfcn.h>
 #include <urcu/uatomic.h>
 #include <urcu/futex.h>
 #include <urcu/compiler.h>
@@ -106,6 +107,7 @@ struct sock_info {
 
 	char wait_shm_path[PATH_MAX];
 	char *wait_shm_mmap;
+	struct lttng_session *session_enabled;
 };
 
 /* Socket from app (connect) to session daemon (listen) for communication */
@@ -122,6 +124,8 @@ struct sock_info global_apps = {
 	.notify_socket = -1,
 
 	.wait_shm_path = "/" LTTNG_UST_WAIT_FILENAME,
+
+	.session_enabled = NULL,
 };
 
 /* TODO: allow global_apps_sock_path override */
@@ -135,6 +139,8 @@ struct sock_info local_apps = {
 
 	.socket = -1,
 	.notify_socket = -1,
+
+	.session_enabled = NULL,
 };
 
 static int wait_poll_fallback;
@@ -177,6 +183,7 @@ static const char *cmd_name_mapping[] = {
 
 static const char *str_timeout;
 static int got_timeout_env;
+static void *ust_baddr_handle;
 
 extern void lttng_ring_buffer_client_overwrite_init(void);
 extern void lttng_ring_buffer_client_overwrite_rt_init(void);
@@ -233,6 +240,39 @@ void print_cmd(int cmd, int handle)
 	DBG("Message Received \"%s\" (%d), Handle \"%s\" (%d)",
 		cmd_name, cmd,
 		lttng_ust_obj_get_name(handle), handle);
+}
+
+static
+void *lttng_ust_baddr_handle(void)
+{
+	if (!ust_baddr_handle) {
+		ust_baddr_handle = dlopen(
+			"liblttng-ust-baddr.so.0", RTLD_NOW | RTLD_GLOBAL);
+		if (ust_baddr_handle == NULL)
+			ERR("%s", dlerror());
+	}
+	return ust_baddr_handle;
+}
+
+static
+int lttng_ust_baddr_statedump(struct lttng_session *session)
+{
+	static
+	int (*lttng_ust_baddr_init_fn)(struct lttng_session *);
+
+	if (!lttng_ust_baddr_init_fn) {
+		void *baddr_handle = lttng_ust_baddr_handle();
+		if (baddr_handle) {
+			lttng_ust_baddr_init_fn = dlsym(baddr_handle,
+				"lttng_ust_baddr_statedump");
+			if (lttng_ust_baddr_init_fn == NULL)
+				ERR("%s", dlerror());
+		}
+		if (!lttng_ust_baddr_init_fn)
+			return -1;
+	}
+
+	return lttng_ust_baddr_init_fn(session);
 }
 
 static
@@ -1206,6 +1246,13 @@ restart:
 			ret = handle_message(sock_info, sock, &lum);
 			if (ret) {
 				ERR("Error handling message for %s socket", sock_info->name);
+			} else {
+				struct lttng_session *session =
+					sock_info->session_enabled;
+				if (session) {
+					sock_info->session_enabled = NULL;
+					lttng_ust_baddr_statedump(session);
+				}
 			}
 			continue;
 		default:
@@ -1442,6 +1489,12 @@ void __attribute__((destructor)) lttng_ust_exit(void)
 	 * cleanup the threads if there are stalled in a syscall.
 	 */
 	lttng_ust_cleanup(1);
+
+	if (ust_baddr_handle) {
+		int ret = dlclose(ust_baddr_handle);
+		if (ret)
+			ERR("%s", dlerror());
+	}
 }
 
 /*
@@ -1518,4 +1571,11 @@ void ust_after_fork_child(sigset_t *restore_sigset)
 	/* Release mutexes and reenable signals */
 	ust_after_fork_common(restore_sigset);
 	lttng_ust_init();
+}
+
+void lttng_ust_sockinfo_session_enabled(void *owner,
+		struct lttng_session *session_enabled)
+{
+	struct sock_info *sock_info = owner;
+	sock_info->session_enabled = session_enabled;
 }

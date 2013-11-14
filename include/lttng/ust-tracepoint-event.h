@@ -480,6 +480,18 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 #define TP_FIELDS(...) __VA_ARGS__
 
 /*
+ * For state dump, check that "session" argument (mandatory) matches the
+ * session this event belongs to. Ensures that we write state dump data only
+ * into the started session, not into all sessions.
+ */
+#undef _TP_SESSION_CHECK
+#ifdef TP_SESSION_CHECK
+#define _TP_SESSION_CHECK(session, csession)   (session == csession)
+#else /* TP_SESSION_CHECK */
+#define _TP_SESSION_CHECK(session, csession)   1
+#endif /* TP_SESSION_CHECK */
+
+/*
  * Using twice size for filter stack data to hold size and pointer for
  * each field (worse case). For integers, max size required is 64-bit.
  * Same for double-precision floats. Those fit within
@@ -506,6 +518,8 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 									      \
 	if (0)								      \
 		(void) __dynamic_len_idx;	/* don't warn if unused */    \
+	if (!_TP_SESSION_CHECK(session, __chan->session))		      \
+		return;							      \
 	if (caa_unlikely(!CMM_ACCESS_ONCE(__chan->session->active)))	      \
 		return;							      \
 	if (caa_unlikely(!CMM_ACCESS_ONCE(__chan->enabled)))		      \

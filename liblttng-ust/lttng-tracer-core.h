@@ -45,4 +45,7 @@ const char *lttng_ust_obj_get_name(int id);
 
 int lttng_get_notify_socket(void *owner);
 
+void lttng_ust_sockinfo_session_enabled(void *owner,
+		struct lttng_session *session_enabled);
+
 #endif /* _LTTNG_TRACER_CORE_H */

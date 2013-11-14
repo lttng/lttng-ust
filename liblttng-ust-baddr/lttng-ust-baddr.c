@@ -34,6 +34,7 @@
 
 #define TRACEPOINT_DEFINE
 #include "ust_baddr.h"
+#include "ust_baddr_statedump.h"
 
 int
 lttng_ust_push_baddr(void *so_base, const char *so_name)
@@ -60,5 +61,76 @@ int
 lttng_ust_pop_baddr(void *so_base)
 {
 	tracepoint(ust_baddr, pop, so_base);
+	return 0;
+}
+
+static int
+extract_soinfo_events(struct dl_phdr_info *info, size_t size, void *data)
+{
+	int j;
+	int num_loadable_segment = 0;
+
+	for (j = 0; j < info->dlpi_phnum; j++) {
+		char resolved_path[PATH_MAX];
+		struct stat sostat;
+		void *base_addr_ptr;
+
+		if (info->dlpi_phdr[j].p_type != PT_LOAD)
+			continue;
+
+		/* Calculate virtual memory address of the loadable segment */
+		base_addr_ptr = (void *) info->dlpi_addr
+			+ info->dlpi_phdr[j].p_vaddr;
+
+		num_loadable_segment += 1;
+		if ((info->dlpi_name == NULL || info->dlpi_name[0] == 0)
+				&& num_loadable_segment == 1) {
+			/*
+			 * If the iterated element is the executable itself we
+			 * have to use Dl_info to determine its full path
+			 */
+			Dl_info dl_info = { 0 };
+			if (!dladdr(base_addr_ptr, &dl_info))
+				return 0;
+			if (!realpath(dl_info.dli_fname, resolved_path))
+				return 0;
+		} else {
+			/*
+			 * For regular dl_phdr_info entries we have to check if
+			 * the path to the shared object really exists
+			 */
+			if (!realpath(info->dlpi_name, resolved_path)) {
+				/* Found vDSO, put the 'path' into brackets */
+				snprintf(resolved_path, PATH_MAX - 1, "[%s]",
+						info->dlpi_name);
+			}
+		}
+
+		if (stat(resolved_path, &sostat)) {
+			sostat.st_size = 0;
+			sostat.st_mtime = -1;
+		}
+
+		tracepoint(ust_baddr_statedump, soinfo,
+				(struct lttng_session *) data, base_addr_ptr,
+				resolved_path, sostat.st_size, sostat.st_mtime);
+
+		/*
+		 * We are only interested in the base address (lowest virtual
+		 * address associated with the memory image), skip the rest
+		 */
+		break;
+	}
+	return 0;
+}
+
+int
+lttng_ust_baddr_statedump(struct lttng_session *session)
+{
+	/*
+	 * Iterate through the list of currently loaded shared objects and
+	 * generate events for loadable segments using extract_soinfo_events
+	 */
+	dl_iterate_phdr(extract_soinfo_events, session);
 	return 0;
 }
