@@ -1,3 +1,6 @@
+LTTNG_JUL_SRCDIR = $(srcdir)/org/lttng/ust/jul
+LTTNG_JUL_DESTDIR = $(builddir)/org/lttng/ust/jul
+
 if BUILD_JNI_INTERFACE
 
 AM_CPPFLAGS = -I$(top_srcdir)/include
@@ -5,13 +8,15 @@ AM_CPPFLAGS = -I$(top_srcdir)/include
 lib_LTLIBRARIES = liblttng-ust-jul-jni.la
 liblttng_ust_jul_jni_la_SOURCES = LTTngUst.c lttng_ust_jul.h
 nodist_liblttng_ust_jul_jni_la_SOURCES = org_lttng_ust_jul_LTTngUst.h
-dist_noinst_DATA = $(LTTNG_JUL_SRCDIR)/LTTngUst.java
+dist_noinst_DATA = $(LTTNG_JUL_SRCDIR)/LTTngUst.java \
+	$(LTTNG_JUL_SRCDIR)/LTTngAgent.java \
+	$(LTTNG_JUL_SRCDIR)/LTTngLogHandler.java \
+	$(LTTNG_JUL_SRCDIR)/LTTngSessiondCmd2_4.java \
+	$(LTTNG_JUL_SRCDIR)/LTTngTCPSessiondClient.java \
+	$(LTTNG_JUL_SRCDIR)/LTTngThread.java
 liblttng_ust_jul_jni_la_LIBADD = -lc -L$(top_builddir)/liblttng-ust/.libs -llttng-ust
 
 lttnglibjava_DATA = liblttng-ust-jul.jar
-
-LTTNG_JUL_SRCDIR = $(srcdir)/org/lttng/ust/jul
-LTTNG_JUL_DESTDIR = $(builddir)/org/lttng/ust/jul
 
 if HAVE_JAVA_JDK
 JCC=$(JAVA_JDK)/bin

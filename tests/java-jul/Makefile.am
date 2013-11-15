@@ -1,3 +1,5 @@
+EXTRA_DIST = test_jul JULTest.java
+
 if BUILD_JNI_INTERFACE
 
 if HAVE_JAVA_JDK
@@ -7,8 +9,6 @@ JCC=javac
 endif
 
 AM_CPPFLAGS = -I$(top_srcdir)/include
-
-EXTRA_DIST = test_jul
 
 JUL_jar_file = "$(srcdir)/../../liblttng-ust-jul/liblttng-ust-jul.jar"
 
