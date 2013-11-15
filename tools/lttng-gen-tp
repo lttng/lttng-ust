@@ -131,15 +131,15 @@ class ObjFile:
         if cc == "":
             raise RuntimeError("No C Compiler detected")
         if 'CPPFLAGS' in os.environ:
-            cppflags = os.environ['CPPFLAGS']
+            cppflags = os.environ['CPPFLAGS'] + " "
         else:
             cppflags = ""
         if 'CFLAGS' in os.environ:
-            cflags = os.environ['CFLAGS']
+            cflags = os.environ['CFLAGS'] + " "
         else:
             cflags = ""
         if 'LDFLAGS' in os.environ:
-            ldflags = os.environ['LDFLAGS']
+            ldflags = os.environ['LDFLAGS'] + " "
         else:
             ldflags = ""
 
