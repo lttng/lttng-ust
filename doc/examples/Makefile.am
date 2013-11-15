@@ -45,12 +45,12 @@ all-local:
 		done; \
 	fi
 	for subdir in $(SUBDIRS_PROXY); do \
-		cd $$subdir && $(MAKE) AM_CPPFLAGS="$(CPPFLAGS) -I../../../include/" AM_CFLAGS='$(CFLAGS)' AM_LDFLAGS='$(LDFLAGS) -L../../../liblttng-ust/.libs/ -Wl,-rpath="$(PWD)/../../liblttng-ust/.libs/"' LTTNG_GEN_TP_PATH="../../../tools/" $(AM_MAKEFLAGS) all; cd ..; \
+		(cd $$subdir && $(MAKE) AM_CPPFLAGS="$(CPPFLAGS) -I../../../include/" AM_CFLAGS='$(CFLAGS)' AM_LDFLAGS='$(LDFLAGS) -L../../../liblttng-ust/.libs/ -Wl,-rpath="$(PWD)/../../liblttng-ust/.libs/"' LTTNG_GEN_TP_PATH="../../../tools/" $(AM_MAKEFLAGS) all && cd ..) || exit 1; \
 	done
 
 clean-local:
 	for subdir in $(SUBDIRS_PROXY); do \
-		cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) clean; cd ..; \
+		(cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) clean && cd ..) || exit 1; \
 	done
 	@if [ x"$(srcdir)" != x"$(builddir)" ]; then \
 		for subdir in $(SUBDIRS_PROXY); do \
