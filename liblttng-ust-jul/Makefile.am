@@ -8,6 +8,8 @@ nodist_liblttng_ust_jul_jni_la_SOURCES = org_lttng_ust_jul_LTTngUst.h
 dist_noinst_DATA = $(LTTNG_JUL_SRCDIR)/LTTngUst.java
 liblttng_ust_jul_jni_la_LIBADD = -lc -L$(top_builddir)/liblttng-ust/.libs -llttng-ust
 
+lttnglibjava_DATA = liblttng-ust-jul.jar
+
 LTTNG_JUL_SRCDIR = $(srcdir)/org/lttng/ust/jul
 LTTNG_JUL_DESTDIR = $(builddir)/org/lttng/ust/jul
 

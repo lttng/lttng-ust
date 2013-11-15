@@ -273,6 +273,9 @@ AC_ARG_WITH([lttng-system-rundir],
 AC_DEFINE_UNQUOTED([LTTNG_SYSTEM_RUNDIR], ["$lttng_system_rundir"],
 	[LTTng system runtime directory])
 
+lttnglibjavadir="${libdir}/lttng/java"
+AC_SUBST(lttnglibjavadir)
+
 AC_CONFIG_FILES([
 	Makefile
 	doc/Makefile
