@@ -1,3 +1,42 @@
+2013-11-15 lttng-ust 2.4.0-rc1
+	* doc/examples: error out when a subdir make fails
+	* JUL: fix out of tree build
+	* Java/jul: fix make dist
+	* JUL: install documentation and jar file
+	* Add missing copyrights to test scripts
+	* Escape minus signs in lttng-ust-cyg-profile manpage
+	* Fix spelling mistake in lttng-ust manpage
+	* Fix tests/benchmark
+	* Implement base-address-state tracing
+	* Base-address tracing for dlopen and dlclose
+	* Add a check against excluders
+	* Add handler for LTTNG_UST_EXCLUSION in UST ABI
+	* Store exclusions to enablers
+	* Add excluders to enabler structure
+	* Send exclusion data through ustcomm
+	* Define exclusion structure for UST ABI
+	* Define a new command LTTNG_UST_EXCLUSION
+	* Fix: package of LTTngUst.h was renamed without renaming target in makefile
+	* Fix: check for java .class in package subfolders
+	* Fix: java library to use user define JDK at compile time
+	* Add liblttng-ust-jul for JUL support
+	* Fix: application SIGBUS when starting in parallel with sessiond
+	* Fix: Minor corrections to the lttng-ust man page
+	* Documentation cleanup: Overhaul of the lttng-gen-tp man page
+	* Warning cleanup: add missing padding initializer
+	* Fix: socket connect hang on heavy loads
+	* Cleanup: fix typo
+	* Fix: ust-comm recvmsg should handle partial receive
+	* gcc warning fix: -Wextra
+	* Add usage reference count for tracepoints
+	* tracepoint.c: Move add_callsite/remove_callsite further down in file
+	* Store the callsites into the library callsite list
+	* Fix linking warning
+	* Per-stream ioctl to get the current timestamp
+	* LTTng ringbuffer ABI calls for index generation
+	* Specialize lttng_ust_lib_ring_buffer_client_cb
+	* Add tracing instrumentation for pthread mutex lock functions
+
 2013-09-03 lttng-ust 2.3.0
 	* No change
 
