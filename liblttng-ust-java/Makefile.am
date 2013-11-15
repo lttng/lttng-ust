@@ -26,8 +26,8 @@ clean-local:
 
 LTTngUst.c: org_lttng_ust_LTTngUst.h
 
-$(LTTNG_JUST_DESTDIR)/LTTngUst.class: $(LTTNG_JUST_DESTDIR)/LTTngUst.java
-	$(JCC)/javac -d "$(builddir)" "$(LTTNG_JUST_DESTDIR)/LTTngUst.java"
+$(LTTNG_JUST_DESTDIR)/LTTngUst.class: $(LTTNG_JUST_SRCDIR)/LTTngUst.java
+	$(JCC)/javac -d "$(builddir)" "$(LTTNG_JUST_SRCDIR)/LTTngUst.java"
 
 org_lttng_ust_LTTngUst.h: $(LTTNG_JUST_DESTDIR)/LTTngUst.class
 	$(JCC)/javah org.lttng.ust.LTTngUst

@@ -10,7 +10,7 @@ endif
 
 AM_CPPFLAGS = -I$(top_srcdir)/include
 
-JUL_jar_file = "$(srcdir)/../../liblttng-ust-jul/liblttng-ust-jul.jar"
+JUL_jar_file = "$(builddir)/../../liblttng-ust-jul/liblttng-ust-jul.jar"
 
 default: all
 

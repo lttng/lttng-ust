@@ -24,8 +24,10 @@ else
 JCC=javac
 endif
 
-all-local: $(LTTNG_JUL_DESTDIR)/LTTngAgent.class $(LTTNG_JUL_DESTDIR)/LTTngUst.class \
-		org_lttng_ust_jul_LTTngUst.h liblttng-ust-jul.jar
+all-local: $(LTTNG_JUL_DESTDIR)/LTTngAgent.class \
+		$(LTTNG_JUL_DESTDIR)/LTTngUst.class \
+		org_lttng_ust_jul_LTTngUst.h \
+		liblttng-ust-jul.jar
 
 clean-local:
 	rm -f org_lttng_ust_jul_LTTngUst.h
@@ -34,16 +36,23 @@ clean-local:
 
 LTTngUst.c: org_lttng_ust_jul_LTTngUst.h
 
-$(LTTNG_JUL_DESTDIR)/LTTngUst.class: $(LTTNG_JUL_SRCDIR)/LTTngUst.java
-	$(JCC)/javac -d "$(builddir)" "$(LTTNG_JUL_SRCDIR)/LTTngUst.java"
+%.class: %.java
+	$(JCC)/javac -d "$(builddir)" $<
 
-$(LTTNG_JUL_DESTDIR)/LTTngAgent.class: $(LTTNG_JUL_SRCDIR)/LTTngAgent.java
-	$(JCC)/javac -d "$(builddir)" "$(LTTNG_JUL_SRCDIR)/LTTngAgent.java"
+LTTNG_AGENT_FILES = $(LTTNG_JUL_SRCDIR)/LTTngAgent.java \
+		$(LTTNG_JUL_SRCDIR)/LTTngLogHandler.java \
+		$(LTTNG_JUL_SRCDIR)/LTTngSessiondCmd2_4.java \
+		$(LTTNG_JUL_SRCDIR)/LTTngTCPSessiondClient.java \
+		$(LTTNG_JUL_SRCDIR)/LTTngThread.java
+
+$(LTTNG_JUL_DESTDIR)/LTTngAgent.class: $(LTTNG_AGENT_FILES) \
+		$(LTTNG_JUL_DESTDIR)/LTTngUst.class
+	$(JCC)/javac -d "$(builddir)" $(LTTNG_AGENT_FILES)
 
 org_lttng_ust_jul_LTTngUst.h: $(LTTNG_JUL_DESTDIR)/LTTngUst.class
 	$(JCC)/javah org.lttng.ust.jul.LTTngUst
 
-liblttng-ust-jul.jar: $(LTTNG_JUL_DESTDIR)/LTTngUst.class $(LTTNG_JUL_DESTDIR)/LTTngAgent.class
+liblttng-ust-jul.jar: $(LTTNG_JUL_DESTDIR)/LTTngAgent.class
 	$(JCC)/jar cf liblttng-ust-jul.jar \
 		$(LTTNG_JUL_DESTDIR)/*.class
 
