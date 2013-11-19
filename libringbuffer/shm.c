@@ -77,6 +77,8 @@ struct shm_object_table *shm_object_table_create(size_t max_nb_obj)
 
 	table = zmalloc(sizeof(struct shm_object_table) +
 			max_nb_obj * sizeof(table->objects[0]));
+	if (!table)
+		return NULL;
 	table->size = max_nb_obj;
 	return table;
 }
