@@ -934,7 +934,6 @@ number:			if ((dprec = prec) >= 0)
 done:
 	FLUSH();
 error:
-	va_end(orgap);
 	if (__sferror(fp))
 		ret = -1;
 	goto finish;
@@ -944,6 +943,7 @@ overflow:
 	ret = -1;
 
 finish:
+	va_end(orgap);
 #ifdef FLOATING_POINT
 	if (dtoaresult)
 		__freedtoa(dtoaresult);
