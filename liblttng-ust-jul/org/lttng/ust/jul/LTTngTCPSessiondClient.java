@@ -29,9 +29,11 @@ import java.io.DataInputStream;
 import java.net.*;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.logging.Logger;
 
 class USTRegisterMsg {
 	public static int pid;
@@ -56,6 +58,10 @@ public class LTTngTCPSessiondClient {
 
 	private Timer eventTimer;
 	private List<String> enabledEventList = new ArrayList<String>();
+	/*
+	 * Map of Logger objects that have been enabled. They are indexed by name.
+	 */
+	private HashMap<String, Logger> enabledLoggers = new HashMap<String, Logger>();
 	/* Timer delay at each 5 seconds. */
 	private final static long timerDelay = 5 * 1000;
 	private static boolean timerInitialized;
@@ -85,8 +91,22 @@ public class LTTngTCPSessiondClient {
 				LTTngSessiondCmd2_4.sessiond_enable_handler enableCmd = new
 					LTTngSessiondCmd2_4.sessiond_enable_handler();
 				for (String strEventName: tmpList) {
+					/*
+					 * Check if this Logger name has been enabled already. Note
+					 * that in the case of "*", it's never added in that hash
+					 * table thus the enable command does a lookup for each
+					 * logger name in that hash table for the * case in order
+					 * to make sure we don't enable twice the same logger
+					 * because JUL apparently accepts that the *same*
+					 * LogHandler can be added twice on a Logger object...
+					 * don't ask...
+					 */
+					if (enabledLoggers.get(strEventName) != null) {
+						continue;
+					}
+
 					enableCmd.name = strEventName;
-					if (enableCmd.execute(handler) == null) {
+					if (enableCmd.execute(handler, enabledLoggers) == null) {
 						enabledEventList.remove(strEventName);
 					}
 				}
@@ -220,13 +240,15 @@ public class LTTngTCPSessiondClient {
 						break;
 					}
 					enableCmd.populate(data);
-					event_name = enableCmd.execute(this.handler);
+					event_name = enableCmd.execute(this.handler, this.enabledLoggers);
 					if (event_name != null) {
 						/*
 						 * Add the event to the list so it can be enabled if
 						 * the logger appears at some point in time.
 						 */
-						enabledEventList.add(event_name);
+						if (enabledEventList.contains(event_name) == false) {
+							enabledEventList.add(event_name);
+						}
 					}
 					data = enableCmd.getBytes();
 					break;

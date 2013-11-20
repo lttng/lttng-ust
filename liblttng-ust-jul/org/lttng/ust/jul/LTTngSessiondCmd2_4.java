@@ -22,6 +22,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.logging.Logger;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Enumeration;
 
@@ -133,7 +134,7 @@ public interface LTTngSessiondCmd2_4 {
 		 * @return Event name as a string if the event is NOT found thus was
 		 * not enabled.
 		 */
-		public String execute(LTTngLogHandler handler) {
+		public String execute(LTTngLogHandler handler, HashMap enabledLoggers) {
 			Logger logger;
 
 			if (name == null) {
@@ -152,17 +153,28 @@ public interface LTTngSessiondCmd2_4 {
 						continue;
 					}
 
+					if (enabledLoggers.get(loggerName) != null) {
+						continue;
+					}
+
 					logger = handler.logManager.getLogger(loggerName);
 					logger.addHandler(handler);
+					enabledLoggers.put(loggerName, logger);
 				}
 				this.code = lttng_jul_ret_code.CODE_SUCCESS_CMD;
-				return null;
+				/*
+				 * Return the name as a new string so we can add the * event
+				 * name to the event list that we need to enable for new
+				 * Logger.
+				 */
+				return new String(name);
 			}
 
 			this.code = lttng_jul_ret_code.CODE_SUCCESS_CMD;
 			logger = handler.logManager.getLogger(name.trim());
 			if (logger != null) {
 				logger.addHandler(handler);
+				enabledLoggers.put(name.trim(), logger);
 				return null;
 			} else {
 				return new String(name);
