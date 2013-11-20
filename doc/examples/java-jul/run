@@ -1,0 +1,24 @@
+#!/bin/bash
+
+#
+# The -cp path should be changed to the lttng ust JUL jar file on your system
+# or locally to the project. Same goes for the Java library path in order to
+# find the JNI JUL library.
+#
+
+DIR=`dirname $0`
+JARFILE="liblttng-ust-jul.jar"
+
+cd $DIR
+
+if [ -f "$DIR/.intree" ]; then
+	CLASSPATH="../../../liblttng-ust-jul/$JARFILE"
+	LIBPATH="../../../liblttng-ust-jul/.libs"
+else
+	CLASSPATH="/usr/local/lib/lttng/java/$JARFILE:/usr/lib/lttng/java/$JARFILE"
+	LIBPATH="/usr/local/lib:/usr/lib"
+fi
+
+java -cp "$CLASSPATH:." -Djava.library.path="$LIBPATH" Hello
+
+cd -

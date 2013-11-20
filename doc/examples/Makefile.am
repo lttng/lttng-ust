@@ -4,6 +4,15 @@ doc_examples_gen_tpdir = ${docdir}/examples/gen-tp
 doc_examples_demodir = ${docdir}/examples/demo
 doc_examples_hello_static_libdir = ${docdir}/examples/hello-static-lib
 
+if BUILD_JNI_INTERFACE
+doc_examples_java_juldir = ${docdir}/examples/java-jul
+dist_doc_examples_java_jul_DATA = java-jul/Makefile \
+								  java-jul/Hello.java \
+								  java-jul/run
+SUBDIRS_JUL = java-jul
+bin_SCRIPTS = java-jul/Makefile
+endif
+
 dist_doc_examples_DATA = README
 
 dist_doc_examples_easy_ust_DATA = easy-ust/Makefile \
@@ -40,20 +49,30 @@ SUBDIRS_PROXY = easy-ust demo gen-tp hello-static-lib
 all-local:
 	@if [ x"$(srcdir)" != x"$(builddir)" ]; then \
 		cp -f $(srcdir)/Makefile.examples.template $(builddir); \
-		for subdir in $(SUBDIRS_PROXY); do \
+		for subdir in $(SUBDIRS_PROXY) $(SUBDIRS_JUL); do \
 			cp -fR $(srcdir)/$$subdir $(builddir); \
 		done; \
 	fi
 	for subdir in $(SUBDIRS_PROXY); do \
 		(cd $$subdir && $(MAKE) AM_CPPFLAGS="$(CPPFLAGS) -I../../../include/" AM_CFLAGS='$(CFLAGS)' AM_LDFLAGS='$(LDFLAGS) -L../../../liblttng-ust/.libs/ -Wl,-rpath="$(PWD)/../../liblttng-ust/.libs/"' LTTNG_GEN_TP_PATH="../../../tools/" $(AM_MAKEFLAGS) all && cd ..) || exit 1; \
 	done
+	@if [ x"$(SUBDIRS_JUL)" != x"" ]; then \
+		for subdir in $(SUBDIRS_JUL); do \
+			(cd $(SUBDIRS_JUL) && $(MAKE) JAVA_CLASSPATH_OVERRIDE="../../../liblttng-ust-jul" JAVA_JARFILE_OVERRIDE="liblttng-ust-jul.jar" $(AM_MAKEFLAGS) all && cd ..) || exit 1; \
+		done; \
+	fi
 
 clean-local:
 	for subdir in $(SUBDIRS_PROXY); do \
 		(cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) clean && cd ..) || exit 1; \
 	done
+	@if [ x"$(SUBDIRS_JUL)" != x"" ]; then \
+		for subdir in $(SUBDIRS_JUL); do \
+			(cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) clean && cd ..) || exit 1; \
+		done; \
+	fi
 	@if [ x"$(srcdir)" != x"$(builddir)" ]; then \
-		for subdir in $(SUBDIRS_PROXY); do \
+		for subdir in $(SUBDIRS_PROXY) $(SUBDIRS_JUL); do \
 			rm -rf $(builddir)/$$subdir; \
 		done; \
 		rm -f $(builddir)/Makefile.examples.template; \

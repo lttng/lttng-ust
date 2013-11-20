@@ -1,0 +1,7 @@
+Type "make" to compile and use "./run" to start the example.
+
+The Hello.java file contains a lot of useful information in order to instrument
+your application.
+
+The "run" file shows you how to link your Java application with the LTTng UST
+JUL library.
