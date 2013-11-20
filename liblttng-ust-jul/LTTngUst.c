@@ -22,7 +22,7 @@
 #define TRACEPOINT_CREATE_PROBES
 #include "lttng_ust_jul.h"
 
-JNIEXPORT void JNICALL Java_org_lttng_ust_LTTngUst_tracepoint(JNIEnv *env,
+JNIEXPORT void JNICALL Java_org_lttng_ust_jul_LTTngUst_tracepoint(JNIEnv *env,
 						jobject jobj,
 						jstring msg,
 						jstring logger_name,
