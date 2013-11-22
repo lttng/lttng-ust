@@ -8,14 +8,13 @@ SUBDIRS = . include snprintf libringbuffer liblttng-ust-comm \
 		liblttng-ust-dl \
 		liblttng-ust-libc-wrapper \
 		liblttng-ust-cyg-profile \
-		tools \
-		doc
+		tools
 
 if BUILD_JNI_INTERFACE
 SUBDIRS += liblttng-ust-java liblttng-ust-jul
 endif
 
-SUBDIRS += tests
+SUBDIRS += tests doc
 
 #temporarily disabled
 # liblttng-ust-malloc
