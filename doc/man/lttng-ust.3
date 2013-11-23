@@ -33,9 +33,13 @@ script, through an example:
 .nf
 
 To create a tracepoint provider, within a build tree similar to
-examples/easy-ust installed with lttng-ust documentation, a
-sample_component_provider.h for the general layout. This manpage will
-focus on the various types that can be recorded into a trace event:
+examples/easy-ust installed with lttng-ust documentation, see
+sample_component_provider.h for the general layout. You will need to
+define TRACEPOINT_CREATE_PROBES before including your tracepoint
+provider probe in one source file of your application. See tp.c from
+easy-ust for an example of a tracepoint probe source file. This manpage
+will focus on the various types that can be recorded into a trace
+event:
 
 TRACEPOINT_EVENT(
 	/*
