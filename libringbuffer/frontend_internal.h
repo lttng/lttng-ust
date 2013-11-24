@@ -365,6 +365,13 @@ void lib_ring_buffer_wakeup(struct lttng_ust_lib_ring_buffer *buf,
 	}
 }
 
+/*
+ * Receive end of subbuffer TSC as parameter. It has been read in the
+ * space reservation loop of either reserve or switch, which ensures it
+ * progresses monotonically with event records in the buffer. Therefore,
+ * it ensures that the end timestamp of a subbuffer is <= begin
+ * timestamp of the following subbuffers.
+ */
 static inline
 void lib_ring_buffer_check_deliver(const struct lttng_ust_lib_ring_buffer_config *config,
 				   struct lttng_ust_lib_ring_buffer *buf,
@@ -372,11 +379,11 @@ void lib_ring_buffer_check_deliver(const struct lttng_ust_lib_ring_buffer_config
 			           unsigned long offset,
 				   unsigned long commit_count,
 			           unsigned long idx,
-				   struct lttng_ust_shm_handle *handle)
+				   struct lttng_ust_shm_handle *handle,
+				   uint64_t tsc)
 {
 	unsigned long old_commit_count = commit_count
 					 - chan->backend.subbuf_size;
-	uint64_t tsc;
 
 	/* Check if all commits have been done */
 	if (caa_unlikely((buf_trunc(offset, chan) >> chan->backend.num_subbuf_order)
@@ -422,7 +429,6 @@ void lib_ring_buffer_check_deliver(const struct lttng_ust_lib_ring_buffer_config
 			 * and any other writer trying to access this subbuffer
 			 * in this state is required to drop records.
 			 */
-			tsc = config->cb.ring_buffer_clock_read(chan);
 			v_add(config,
 			      subbuffer_get_records_count(config,
 							  &buf->backend,
