@@ -22,7 +22,6 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/stat.h>
 #include <unistd.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -32,37 +31,10 @@
 #include <stdio.h>
 #include "usterr.h"
 
+#include "lttng-ust-baddr.h"
+
 #define TRACEPOINT_DEFINE
-#include "ust_baddr.h"
 #include "ust_baddr_statedump.h"
-
-int
-lttng_ust_push_baddr(void *so_base, const char *so_name)
-{
-	char resolved_path[PATH_MAX];
-	struct stat sostat;
-
-	if (!realpath(so_name, resolved_path)) {
-		ERR("could not resolve path '%s'", so_name);
-		return 0;
-	}
-
-	if (stat(resolved_path, &sostat)) {
-		ERR("could not access file status for %s", resolved_path);
-		return 0;
-	}
-
-	tracepoint(ust_baddr, push,
-		so_base, resolved_path, sostat.st_size, sostat.st_mtime);
-	return 0;
-}
-
-int
-lttng_ust_pop_baddr(void *so_base)
-{
-	tracepoint(ust_baddr, pop, so_base);
-	return 0;
-}
 
 static int
 extract_soinfo_events(struct dl_phdr_info *info, size_t size, void *data)

@@ -52,6 +52,7 @@
 #include "lttng-tracer-core.h"
 #include "compat.h"
 #include "../libringbuffer/tlsfixup.h"
+#include "../liblttng-ust-baddr/lttng-ust-baddr.h"
 
 /*
  * Has lttng ust comm constructor been called ?
@@ -183,7 +184,6 @@ static const char *cmd_name_mapping[] = {
 
 static const char *str_timeout;
 static int got_timeout_env;
-static void *ust_baddr_handle;
 
 extern void lttng_ring_buffer_client_overwrite_init(void);
 extern void lttng_ring_buffer_client_overwrite_rt_init(void);
@@ -240,39 +240,6 @@ void print_cmd(int cmd, int handle)
 	DBG("Message Received \"%s\" (%d), Handle \"%s\" (%d)",
 		cmd_name, cmd,
 		lttng_ust_obj_get_name(handle), handle);
-}
-
-static
-void *lttng_ust_baddr_handle(void)
-{
-	if (!ust_baddr_handle) {
-		ust_baddr_handle = dlopen(
-			"liblttng-ust-baddr.so.0", RTLD_NOW | RTLD_GLOBAL);
-		if (ust_baddr_handle == NULL)
-			ERR("%s", dlerror());
-	}
-	return ust_baddr_handle;
-}
-
-static
-int lttng_ust_baddr_statedump(struct lttng_session *session)
-{
-	static
-	int (*lttng_ust_baddr_init_fn)(struct lttng_session *);
-
-	if (!lttng_ust_baddr_init_fn) {
-		void *baddr_handle = lttng_ust_baddr_handle();
-		if (baddr_handle) {
-			lttng_ust_baddr_init_fn = dlsym(baddr_handle,
-				"lttng_ust_baddr_statedump");
-			if (lttng_ust_baddr_init_fn == NULL)
-				ERR("%s", dlerror());
-		}
-		if (!lttng_ust_baddr_init_fn)
-			return -1;
-	}
-
-	return lttng_ust_baddr_init_fn(session);
 }
 
 static
@@ -1247,8 +1214,9 @@ restart:
 			if (ret) {
 				ERR("Error handling message for %s socket", sock_info->name);
 			} else {
-				struct lttng_session *session =
-					sock_info->session_enabled;
+				struct lttng_session *session;
+
+				session = sock_info->session_enabled;
 				if (session) {
 					sock_info->session_enabled = NULL;
 					lttng_ust_baddr_statedump(session);
@@ -1489,12 +1457,6 @@ void __attribute__((destructor)) lttng_ust_exit(void)
 	 * cleanup the threads if there are stalled in a syscall.
 	 */
 	lttng_ust_cleanup(1);
-
-	if (ust_baddr_handle) {
-		int ret = dlclose(ust_baddr_handle);
-		if (ret)
-			ERR("%s", dlerror());
-	}
 }
 
 /*

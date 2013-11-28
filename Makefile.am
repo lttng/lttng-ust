@@ -1,10 +1,9 @@
 ACLOCAL_AMFLAGS = -I config
 
-SUBDIRS = . include snprintf libringbuffer liblttng-ust-comm \
+SUBDIRS = . include snprintf libringbuffer liblttng-ust-comm liblttng-ust-baddr \
 		liblttng-ust \
 		liblttng-ust-ctl \
 		liblttng-ust-fork \
-		liblttng-ust-baddr \
 		liblttng-ust-dl \
 		liblttng-ust-libc-wrapper \
 		liblttng-ust-cyg-profile \

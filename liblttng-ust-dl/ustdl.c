@@ -22,6 +22,9 @@
 #include <link.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <limits.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <signal.h>
 #include <sched.h>
 #include <stdarg.h>
@@ -30,9 +33,11 @@
 #include <lttng/ust-compiler.h>
 #include <lttng/ust.h>
 
+#define TRACEPOINT_DEFINE
+#include "ust_baddr.h"
+
 static void *(*__lttng_ust_plibc_dlopen)(const char *filename, int flag);
 static int (*__lttng_ust_plibc_dlclose)(void *handle);
-static void *__lttng_ust_baddr_handle;
 
 static
 void *_lttng_ust_dl_libc_dlopen(const char *filename, int flag)
@@ -61,53 +66,24 @@ int _lttng_ust_dl_libc_dlclose(void *handle)
 }
 
 static
-void *lttng_ust_baddr_handle(void)
+void lttng_ust_baddr_push(void *so_base, const char *so_name)
 {
-	if (!__lttng_ust_baddr_handle) {
-		__lttng_ust_baddr_handle = _lttng_ust_dl_libc_dlopen(
-			"liblttng-ust-baddr.so.0", RTLD_NOW | RTLD_GLOBAL);
-		if (__lttng_ust_baddr_handle == NULL)
-			fprintf(stderr, "%s\n", dlerror());
-	}
-	return __lttng_ust_baddr_handle;
-}
+	char resolved_path[PATH_MAX];
+	struct stat sostat;
 
-static
-int lttng_ust_baddr_push(void *so_base, const char *so_name)
-{
-	static int
-	(*lttng_ust_baddr_push_fn)(void *so_base, const char *so_name);
-	if (!lttng_ust_baddr_push_fn) {
-		void *baddr_handle = lttng_ust_baddr_handle();
-		if (baddr_handle) {
-			lttng_ust_baddr_push_fn = dlsym(baddr_handle,
-				"lttng_ust_push_baddr");
-			if (lttng_ust_baddr_push_fn == NULL)
-				fprintf(stderr, "%s\n", dlerror());
-		}
-		if (!lttng_ust_baddr_push_fn)
-			return -1;
+	if (!realpath(so_name, resolved_path)) {
+		ERR("could not resolve path '%s'", so_name);
+		return;
 	}
-	return lttng_ust_baddr_push_fn(so_base, so_name);
-}
 
-static
-int lttng_ust_baddr_pop(void *so_base)
-{
-	static int
-	(*lttng_ust_baddr_pop_fn)(void *so_base);
-	if (!lttng_ust_baddr_pop_fn) {
-		void *baddr_handle = lttng_ust_baddr_handle();
-		if (baddr_handle) {
-			lttng_ust_baddr_pop_fn = dlsym(baddr_handle,
-				"lttng_ust_pop_baddr");
-			if (lttng_ust_baddr_pop_fn == NULL)
-				fprintf(stderr, "%s\n", dlerror());
-		}
-		if (!lttng_ust_baddr_pop_fn)
-			return -1;
+	if (stat(resolved_path, &sostat)) {
+		ERR("could not access file status for %s", resolved_path);
+		return;
 	}
-	return lttng_ust_baddr_pop_fn(so_base);
+
+	tracepoint(ust_baddr, push,
+		so_base, resolved_path, sostat.st_size, sostat.st_mtime);
+	return;
 }
 
 void *dlopen(const char *filename, int flag)
@@ -128,19 +104,7 @@ int dlclose(void *handle)
 		struct link_map *p = NULL;
 		if (dlinfo(handle, RTLD_DI_LINKMAP, &p) != -1 && p != NULL
 				&& p->l_addr != 0)
-			lttng_ust_baddr_pop((void *) p->l_addr);
+			tracepoint(ust_baddr, pop, (void *) p->l_addr);
 	}
 	return _lttng_ust_dl_libc_dlclose(handle);
-}
-
-static void __attribute__((destructor))
-lttng_ust_baddr_handle_fini(void);
-static void
-lttng_ust_baddr_handle_fini(void)
-{
-	if (__lttng_ust_baddr_handle) {
-		int ret = _lttng_ust_dl_libc_dlclose(__lttng_ust_baddr_handle);
-		if (ret)
-			fprintf(stderr, "%s\n", dlerror());
-	}
 }

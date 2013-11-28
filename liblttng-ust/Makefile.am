@@ -69,6 +69,7 @@ liblttng_ust_la_LIBADD = \
 	-lurcu-cds \
 	$(top_builddir)/snprintf/libustsnprintf.la \
 	$(top_builddir)/liblttng-ust-comm/liblttng-ust-comm.la \
+	$(top_builddir)/liblttng-ust-baddr/liblttng-ust-baddr.la \
 	liblttng-ust-tracepoint.la \
 	liblttng-ust-runtime.la liblttng-ust-support.la
 
