@@ -35,6 +35,10 @@ liblttng_ust_runtime_la_SOURCES = \
 	lttng-filter-interpreter.c \
 	filter-bytecode.h \
 	lttng-hash-helper.h \
+	lttng-ust-baddr.c \
+	lttng-ust-baddr.h \
+	ust_baddr_statedump.c \
+	ust_baddr_statedump.h \
 	tracepoint-internal.h \
 	clock.h \
 	compat.h \
@@ -69,7 +73,6 @@ liblttng_ust_la_LIBADD = \
 	-lurcu-cds \
 	$(top_builddir)/snprintf/libustsnprintf.la \
 	$(top_builddir)/liblttng-ust-comm/liblttng-ust-comm.la \
-	$(top_builddir)/liblttng-ust-baddr/liblttng-ust-baddr.la \
 	liblttng-ust-tracepoint.la \
 	liblttng-ust-runtime.la liblttng-ust-support.la
 

@@ -52,7 +52,7 @@
 #include "lttng-tracer-core.h"
 #include "compat.h"
 #include "../libringbuffer/tlsfixup.h"
-#include "../liblttng-ust-baddr/lttng-ust-baddr.h"
+#include "lttng-ust-baddr.h"
 
 /*
  * Has lttng ust comm constructor been called ?
