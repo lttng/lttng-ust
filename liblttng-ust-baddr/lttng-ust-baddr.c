@@ -99,6 +99,8 @@ extract_soinfo_events(struct dl_phdr_info *info, size_t size, void *data)
 int
 lttng_ust_baddr_statedump(struct lttng_session *session)
 {
+	if (getenv("LTTNG_UST_WITHOUT_BADDR_STATEDUMP"))
+		return 0;
 	/*
 	 * Iterate through the list of currently loaded shared objects and
 	 * generate events for loadable segments using extract_soinfo_events
