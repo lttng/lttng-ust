@@ -513,6 +513,9 @@ struct lttng_session {
 	struct lttng_ust_event_ht events_ht;	/* ht of events */
 	void *owner;				/* object owner */
 	int tstate:1;				/* Transient enable state */
+
+	/* New UST 2.4 */
+	int statedump_pending:1;
 };
 
 struct lttng_transport {
@@ -605,5 +608,8 @@ void lttng_filter_sync_state(struct lttng_bytecode_runtime *runtime);
 
 struct cds_list_head *lttng_get_probe_list_head(void);
 int lttng_session_active(void);
+
+typedef int (*t_statedump_func_ptr)(struct lttng_session *session);
+int lttng_handle_pending_statedumps(t_statedump_func_ptr statedump_func_ptr);
 
 #endif /* _LTTNG_UST_EVENTS_H */

@@ -294,7 +294,8 @@ int lttng_session_enable(struct lttng_session *session)
 	CMM_ACCESS_ONCE(session->active) = 1;
 	CMM_ACCESS_ONCE(session->been_active) = 1;
 
-	lttng_ust_sockinfo_session_enabled(session->owner, session);
+	session->statedump_pending = 1;
+	lttng_ust_sockinfo_session_enabled(session->owner);
 end:
 	return ret;
 }
@@ -670,6 +671,22 @@ int lttng_fix_pending_events(void)
 
 	cds_list_for_each_entry(session, &sessions, node) {
 		lttng_session_lazy_sync_enablers(session);
+	}
+	return 0;
+}
+
+/*
+ * Called after session enable: For each session, execute pending statedumps.
+ */
+int lttng_handle_pending_statedumps(t_statedump_func_ptr statedump_func_ptr)
+{
+	struct lttng_session *session;
+
+	cds_list_for_each_entry(session, &sessions, node) {
+		if (session->statedump_pending) {
+			session->statedump_pending = 0;
+			statedump_func_ptr(session);
+		}
 	}
 	return 0;
 }

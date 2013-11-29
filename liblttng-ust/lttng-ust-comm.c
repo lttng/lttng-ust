@@ -108,7 +108,7 @@ struct sock_info {
 
 	char wait_shm_path[PATH_MAX];
 	char *wait_shm_mmap;
-	struct lttng_session *session_enabled;
+	int session_enabled;
 };
 
 /* Socket from app (connect) to session daemon (listen) for communication */
@@ -126,7 +126,7 @@ struct sock_info global_apps = {
 
 	.wait_shm_path = "/" LTTNG_UST_WAIT_FILENAME,
 
-	.session_enabled = NULL,
+	.session_enabled = 0,
 };
 
 /* TODO: allow global_apps_sock_path override */
@@ -141,7 +141,7 @@ struct sock_info local_apps = {
 	.socket = -1,
 	.notify_socket = -1,
 
-	.session_enabled = NULL,
+	.session_enabled = 0,
 };
 
 static int wait_poll_fallback;
@@ -709,6 +709,17 @@ error:
 }
 
 static
+void handle_pending_statedumps(struct sock_info *sock_info)
+{
+	int ctor_passed = sock_info->constructor_sem_posted;
+
+	if (ctor_passed && sock_info->session_enabled) {
+		sock_info->session_enabled = 0;
+		lttng_handle_pending_statedumps(&lttng_ust_baddr_statedump);
+	}
+}
+
+static
 void cleanup_sock_info(struct sock_info *sock_info, int exiting)
 {
 	int ret;
@@ -1214,13 +1225,7 @@ restart:
 			if (ret) {
 				ERR("Error handling message for %s socket", sock_info->name);
 			} else {
-				struct lttng_session *session;
-
-				session = sock_info->session_enabled;
-				if (session) {
-					sock_info->session_enabled = NULL;
-					lttng_ust_baddr_statedump(session);
-				}
+				handle_pending_statedumps(sock_info);
 			}
 			continue;
 		default:
@@ -1535,9 +1540,8 @@ void ust_after_fork_child(sigset_t *restore_sigset)
 	lttng_ust_init();
 }
 
-void lttng_ust_sockinfo_session_enabled(void *owner,
-		struct lttng_session *session_enabled)
+void lttng_ust_sockinfo_session_enabled(void *owner)
 {
 	struct sock_info *sock_info = owner;
-	sock_info->session_enabled = session_enabled;
+	sock_info->session_enabled = 1;
 }
