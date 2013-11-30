@@ -610,6 +610,7 @@ struct cds_list_head *lttng_get_probe_list_head(void);
 int lttng_session_active(void);
 
 typedef int (*t_statedump_func_ptr)(struct lttng_session *session);
-int lttng_handle_pending_statedumps(t_statedump_func_ptr statedump_func_ptr);
+int lttng_handle_pending_statedump(void *owner);
+struct cds_list_head *_lttng_get_sessions(void);
 
 #endif /* _LTTNG_UST_EVENTS_H */

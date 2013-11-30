@@ -36,16 +36,21 @@
 #define TRACEPOINT_DEFINE
 #include "ust_baddr_statedump.h"
 
-static int
-extract_soinfo_events(struct dl_phdr_info *info, size_t size, void *data)
+static
+int extract_soinfo_events(struct dl_phdr_info *info, size_t size, void *data)
 {
 	int j;
 	int num_loadable_segment = 0;
+	void *owner = data;
+	struct cds_list_head *sessionsp;
+
+	sessionsp = _lttng_get_sessions();
 
 	for (j = 0; j < info->dlpi_phnum; j++) {
 		char resolved_path[PATH_MAX];
 		struct stat sostat;
 		void *base_addr_ptr;
+		struct lttng_session *session;
 
 		if (info->dlpi_phdr[j].p_type != PT_LOAD)
 			continue;
@@ -83,9 +88,22 @@ extract_soinfo_events(struct dl_phdr_info *info, size_t size, void *data)
 			sostat.st_mtime = -1;
 		}
 
-		tracepoint(ust_baddr_statedump, soinfo,
-				(struct lttng_session *) data, base_addr_ptr,
-				resolved_path, sostat.st_size, sostat.st_mtime);
+		/*
+		 * UST lock needs to be nested within dynamic loader
+		 * lock.
+		 */
+		ust_lock();
+		cds_list_for_each_entry(session, sessionsp, node) {
+			if (session->owner != owner)
+				continue;
+			if (!session->statedump_pending)
+				continue;
+			tracepoint(ust_baddr_statedump, soinfo,
+					session, base_addr_ptr,
+					resolved_path, sostat.st_size,
+					sostat.st_mtime);
+		}
+		ust_unlock();
 
 		/*
 		 * We are only interested in the base address (lowest virtual
@@ -96,15 +114,15 @@ extract_soinfo_events(struct dl_phdr_info *info, size_t size, void *data)
 	return 0;
 }
 
-int
-lttng_ust_baddr_statedump(struct lttng_session *session)
+int lttng_ust_baddr_statedump(void *owner)
 {
 	if (getenv("LTTNG_UST_WITHOUT_BADDR_STATEDUMP"))
 		return 0;
 	/*
 	 * Iterate through the list of currently loaded shared objects and
-	 * generate events for loadable segments using extract_soinfo_events
+	 * generate events for loadable segments using
+	 * extract_soinfo_events.
 	 */
-	dl_iterate_phdr(extract_soinfo_events, session);
+	dl_iterate_phdr(extract_soinfo_events, owner);
 	return 0;
 }

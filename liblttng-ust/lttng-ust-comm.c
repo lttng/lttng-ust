@@ -108,7 +108,8 @@ struct sock_info {
 
 	char wait_shm_path[PATH_MAX];
 	char *wait_shm_mmap;
-	int session_enabled;
+	/* Keep track of lazy state dump not performed yet. */
+	int statedump_pending;
 };
 
 /* Socket from app (connect) to session daemon (listen) for communication */
@@ -126,7 +127,7 @@ struct sock_info global_apps = {
 
 	.wait_shm_path = "/" LTTNG_UST_WAIT_FILENAME,
 
-	.session_enabled = 0,
+	.statedump_pending = 0,
 };
 
 /* TODO: allow global_apps_sock_path override */
@@ -141,7 +142,7 @@ struct sock_info local_apps = {
 	.socket = -1,
 	.notify_socket = -1,
 
-	.session_enabled = 0,
+	.statedump_pending = 0,
 };
 
 static int wait_poll_fallback;
@@ -385,6 +386,28 @@ int handle_register_done(struct sock_info *sock_info)
 		assert(!ret);
 	}
 	return 0;
+}
+
+/*
+ * Only execute pending statedump after the constructor semaphore has
+ * been posted by each listener thread. This means statedump will only
+ * be performed after the "registration done" command is received from
+ * each session daemon the application is connected to.
+ *
+ * This ensures we don't run into deadlock issues with the dynamic
+ * loader mutex, which is held while the constructor is called and
+ * waiting on the constructor semaphore. All operations requiring this
+ * dynamic loader lock need to be postponed using this mechanism.
+ */
+static
+void handle_pending_statedump(struct sock_info *sock_info)
+{
+	int ctor_passed = sock_info->constructor_sem_posted;
+
+	if (ctor_passed && sock_info->statedump_pending) {
+		sock_info->statedump_pending = 0;
+		lttng_handle_pending_statedump(sock_info);
+	}
 }
 
 static
@@ -705,18 +728,15 @@ end:
 
 error:
 	ust_unlock();
+
+	/*
+	 * Performed delayed statedump operations outside of the UST
+	 * lock. We need to take the dynamic loader lock before we take
+	 * the UST lock internally within handle_pending_statedump().
+	  */
+	handle_pending_statedump(sock_info);
+
 	return ret;
-}
-
-static
-void handle_pending_statedumps(struct sock_info *sock_info)
-{
-	int ctor_passed = sock_info->constructor_sem_posted;
-
-	if (ctor_passed && sock_info->session_enabled) {
-		sock_info->session_enabled = 0;
-		lttng_handle_pending_statedumps(&lttng_ust_baddr_statedump);
-	}
 }
 
 static
@@ -1224,8 +1244,6 @@ restart:
 			ret = handle_message(sock_info, sock, &lum);
 			if (ret) {
 				ERR("Error handling message for %s socket", sock_info->name);
-			} else {
-				handle_pending_statedumps(sock_info);
 			}
 			continue;
 		default:
@@ -1543,5 +1561,5 @@ void ust_after_fork_child(sigset_t *restore_sigset)
 void lttng_ust_sockinfo_session_enabled(void *owner)
 {
 	struct sock_info *sock_info = owner;
-	sock_info->session_enabled = 1;
+	sock_info->statedump_pending = 1;
 }

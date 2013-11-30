@@ -54,6 +54,7 @@
 #include "tracepoint-internal.h"
 #include "lttng-tracer.h"
 #include "lttng-tracer-core.h"
+#include "lttng-ust-baddr.h"
 #include "wait.h"
 #include "../libringbuffer/shm.h"
 #include "jhash.h"
@@ -76,6 +77,11 @@ void ust_unlock(void)
 }
 
 static CDS_LIST_HEAD(sessions);
+
+struct cds_list_head *_lttng_get_sessions(void)
+{
+	return &sessions;
+}
 
 static void _lttng_event_destroy(struct lttng_event *event);
 
@@ -676,18 +682,27 @@ int lttng_fix_pending_events(void)
 }
 
 /*
- * Called after session enable: For each session, execute pending statedumps.
+ * For each session of the owner thread, execute pending statedump.
+ * Only dump state for the sessions owned by the caller thread, because
+ * we don't keep ust_lock across the entire iteration.
  */
-int lttng_handle_pending_statedumps(t_statedump_func_ptr statedump_func_ptr)
+int lttng_handle_pending_statedump(void *owner)
 {
 	struct lttng_session *session;
 
+	/* Execute state dump */
+	lttng_ust_baddr_statedump(owner);
+
+	/* Clear pending state dump */
+	ust_lock();
 	cds_list_for_each_entry(session, &sessions, node) {
-		if (session->statedump_pending) {
-			session->statedump_pending = 0;
-			statedump_func_ptr(session);
-		}
+		if (session->owner != owner)
+			continue;
+		if (!session->statedump_pending)
+			continue;
+		session->statedump_pending = 0;
 	}
+	ust_unlock();
 	return 0;
 }
 

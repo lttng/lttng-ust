@@ -21,6 +21,6 @@
 
 #include <lttng/ust-events.h>
 
-int lttng_ust_baddr_statedump(struct lttng_session *session);
+int lttng_ust_baddr_statedump(void *owner);
 
 #endif /* LTTNG_UST_BADDR_H */
