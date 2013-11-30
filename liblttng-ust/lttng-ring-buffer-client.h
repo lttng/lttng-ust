@@ -389,19 +389,7 @@ static void client_buffer_finalize(struct lttng_ust_lib_ring_buffer *buf, void *
 static struct packet_header *client_packet_header(struct lttng_ust_lib_ring_buffer *buf,
 		struct lttng_ust_shm_handle *handle)
 {
-	struct channel *chan = shmp(handle, buf->backend.chan);
-	struct lttng_channel *lttng_chan = channel_get_private(chan);
-	unsigned long sb_index;
-	struct lttng_ust_lib_ring_buffer_backend *bufb;
-	struct packet_header *header;
-
-	bufb = &buf->backend;
-	sb_index = subbuffer_id_get_index(&lttng_chan->chan->backend.config,
-			bufb->buf_rsb.id);
-	header = lib_ring_buffer_offset_address(bufb,
-			sb_index * lttng_chan->chan->backend.subbuf_size,
-			handle);
-	return header;
+	return lib_ring_buffer_read_offset_address(&buf->backend, 0, handle);
 }
 
 static int client_timestamp_begin(struct lttng_ust_lib_ring_buffer *buf,
