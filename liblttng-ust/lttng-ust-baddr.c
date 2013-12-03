@@ -44,8 +44,6 @@ int extract_soinfo_events(struct dl_phdr_info *info, size_t size, void *data)
 	void *owner = data;
 	struct cds_list_head *sessionsp;
 
-	sessionsp = _lttng_get_sessions();
-
 	for (j = 0; j < info->dlpi_phnum; j++) {
 		char resolved_path[PATH_MAX];
 		struct stat sostat;
@@ -93,6 +91,7 @@ int extract_soinfo_events(struct dl_phdr_info *info, size_t size, void *data)
 		 * lock.
 		 */
 		ust_lock();
+		sessionsp = _lttng_get_sessions();
 		cds_list_for_each_entry(session, sessionsp, node) {
 			if (session->owner != owner)
 				continue;
