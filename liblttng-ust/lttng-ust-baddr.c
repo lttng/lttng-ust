@@ -29,8 +29,9 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdio.h>
-#include "usterr.h"
 
+#include <usterr-signal-safe.h>
+#include "lttng-tracer-core.h"
 #include "lttng-ust-baddr.h"
 
 #define TRACEPOINT_DEFINE
