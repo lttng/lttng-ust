@@ -60,21 +60,9 @@
 #include "jhash.h"
 
 /*
- * The sessions mutex is the centralized mutex across UST tracing
- * control and probe registration. All operations within this file are
- * called by the communication thread, under ust_lock protection.
+ * All operations within this file are called by the communication
+ * thread, under ust_lock protection.
  */
-static pthread_mutex_t sessions_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-void ust_lock(void)
-{
-	pthread_mutex_lock(&sessions_mutex);
-}
-
-void ust_unlock(void)
-{
-	pthread_mutex_unlock(&sessions_mutex);
-}
 
 static CDS_LIST_HEAD(sessions);
 
@@ -686,7 +674,7 @@ int lttng_fix_pending_events(void)
  * Only dump state for the sessions owned by the caller thread, because
  * we don't keep ust_lock across the entire iteration.
  */
-int lttng_handle_pending_statedump(void *owner)
+void lttng_handle_pending_statedump(void *owner)
 {
 	struct lttng_session *session;
 
@@ -694,7 +682,9 @@ int lttng_handle_pending_statedump(void *owner)
 	lttng_ust_baddr_statedump(owner);
 
 	/* Clear pending state dump */
-	ust_lock();
+	if (ust_lock()) {
+		goto end;
+	}
 	cds_list_for_each_entry(session, &sessions, node) {
 		if (session->owner != owner)
 			continue;
@@ -702,8 +692,9 @@ int lttng_handle_pending_statedump(void *owner)
 			continue;
 		session->statedump_pending = 0;
 	}
+end:
 	ust_unlock();
-	return 0;
+	return;
 }
 
 /*

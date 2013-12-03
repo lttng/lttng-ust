@@ -63,10 +63,54 @@ static int initialized;
  * The ust_lock/ust_unlock lock is used as a communication thread mutex.
  * Held when handling a command, also held by fork() to deal with
  * removal of threads, and by exit path.
+ *
+ * The UST lock is the centralized mutex across UST tracing control and
+ * probe registration.
+ *
+ * ust_exit_mutex must never nest in ust_mutex.
  */
+static pthread_mutex_t ust_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+/*
+ * ust_exit_mutex protects thread_active variable wrt thread exit. It
+ * cannot be done by ust_mutex because pthread_cancel(), which takes an
+ * internal libc lock, cannot nest within ust_mutex.
+ *
+ * It never nests within a ust_mutex.
+ */
+static pthread_mutex_t ust_exit_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Should the ust comm thread quit ? */
 static int lttng_ust_comm_should_quit;
+
+/*
+ * Return 0 on success, -1 if should quilt.
+ * The lock is taken in both cases.
+ */
+int ust_lock(void)
+{
+	pthread_mutex_lock(&ust_mutex);
+	if (lttng_ust_comm_should_quit) {
+		return -1;
+	} else {
+		return 0;
+	}
+}
+
+/*
+ * ust_lock_nocheck() can be used in constructors/destructors, because
+ * they are already nested within the dynamic loader lock, and therefore
+ * have exclusive access against execution of liblttng-ust destructor.
+ */
+void ust_lock_nocheck(void)
+{
+	pthread_mutex_lock(&ust_mutex);
+}
+
+void ust_unlock(void)
+{
+	pthread_mutex_unlock(&ust_mutex);
+}
 
 /*
  * Wait for either of these before continuing to the main
@@ -420,11 +464,9 @@ int handle_message(struct sock_info *sock_info,
 	union ust_args args;
 	ssize_t len;
 
-	ust_lock();
-
 	memset(&lur, 0, sizeof(lur));
 
-	if (lttng_ust_comm_should_quit) {
+	if (ust_lock()) {
 		ret = -LTTNG_UST_ERR_EXITING;
 		goto end;
 	}
@@ -983,8 +1025,7 @@ void wait_for_sessiond(struct sock_info *sock_info)
 {
 	int ret;
 
-	ust_lock();
-	if (lttng_ust_comm_should_quit) {
+	if (ust_lock()) {
 		goto quit;
 	}
 	if (wait_poll_fallback) {
@@ -1089,9 +1130,7 @@ restart:
 		DBG("Info: sessiond not accepting connections to %s apps socket", sock_info->name);
 		prev_connect_failed = 1;
 
-		ust_lock();
-
-		if (lttng_ust_comm_should_quit) {
+		if (ust_lock()) {
 			goto quit;
 		}
 
@@ -1106,9 +1145,7 @@ restart:
 	}
 	sock_info->socket = ret;
 
-	ust_lock();
-
-	if (lttng_ust_comm_should_quit) {
+	if (ust_lock()) {
 		goto quit;
 	}
 
@@ -1149,9 +1186,7 @@ restart:
 		DBG("Info: sessiond not accepting connections to %s apps socket", sock_info->name);
 		prev_connect_failed = 1;
 
-		ust_lock();
-
-		if (lttng_ust_comm_should_quit) {
+		if (ust_lock()) {
 			goto quit;
 		}
 
@@ -1188,9 +1223,7 @@ restart:
 		WARN("Unsupported timeout value %ld", timeout);
 	}
 
-	ust_lock();
-
-	if (lttng_ust_comm_should_quit) {
+	if (ust_lock()) {
 		goto quit;
 	}
 
@@ -1221,8 +1254,7 @@ restart:
 		switch (len) {
 		case 0:	/* orderly shutdown */
 			DBG("%s lttng-sessiond has performed an orderly shutdown", sock_info->name);
-			ust_lock();
-			if (lttng_ust_comm_should_quit) {
+			if (ust_lock()) {
 				goto quit;
 			}
 			/*
@@ -1261,8 +1293,7 @@ restart:
 
 	}
 end:
-	ust_lock();
-	if (lttng_ust_comm_should_quit) {
+	if (ust_lock()) {
 		goto quit;
 	}
 	/* Cleanup socket handles before trying to reconnect */
@@ -1271,8 +1302,11 @@ end:
 	goto restart;	/* try to reconnect */
 
 quit:
-	sock_info->thread_active = 0;
 	ust_unlock();
+
+	pthread_mutex_lock(&ust_exit_mutex);
+	sock_info->thread_active = 0;
+	pthread_mutex_unlock(&ust_exit_mutex);
 	return NULL;
 }
 
@@ -1346,7 +1380,7 @@ void __attribute__((constructor)) lttng_ust_init(void)
 		ERR("pthread_attr_setdetachstate: %s", strerror(ret));
 	}
 
-	ust_lock();
+	ust_lock_nocheck();
 	ret = pthread_create(&global_apps.ust_listener, &thread_attr,
 			ust_listener_thread, &global_apps);
 	if (ret) {
@@ -1356,7 +1390,7 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	ust_unlock();
 
 	if (local_apps.allowed) {
-		ust_lock();
+		ust_lock_nocheck();
 		ret = pthread_create(&local_apps.ust_listener, &thread_attr,
 				ust_listener_thread, &local_apps);
 		if (ret) {
@@ -1447,9 +1481,11 @@ void __attribute__((destructor)) lttng_ust_exit(void)
 	 * mutexes to ensure it is not in a mutex critical section when
 	 * pthread_cancel is later called.
 	 */
-	ust_lock();
+	ust_lock_nocheck();
 	lttng_ust_comm_should_quit = 1;
+	ust_unlock();
 
+	pthread_mutex_lock(&ust_exit_mutex);
 	/* cancel threads */
 	if (global_apps.thread_active) {
 		ret = pthread_cancel(global_apps.ust_listener);
@@ -1469,7 +1505,7 @@ void __attribute__((destructor)) lttng_ust_exit(void)
 			local_apps.thread_active = 0;
 		}
 	}
-	ust_unlock();
+	pthread_mutex_unlock(&ust_exit_mutex);
 
 	/*
 	 * Do NOT join threads: use of sys_futex makes it impossible to
@@ -1508,7 +1544,7 @@ void ust_before_fork(sigset_t *save_sigset)
 	if (ret == -1) {
 		PERROR("sigprocmask");
 	}
-	ust_lock();
+	ust_lock_nocheck();
 	rcu_bp_before_fork();
 }
 

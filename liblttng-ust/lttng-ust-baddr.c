@@ -91,7 +91,14 @@ int extract_soinfo_events(struct dl_phdr_info *info, size_t size, void *data)
 		 * UST lock needs to be nested within dynamic loader
 		 * lock.
 		 */
-		ust_lock();
+		if (ust_lock()) {
+			/*
+			 * Stop iteration on headers if need to exit.
+			 */
+			ust_unlock();
+			return 1;
+		}
+
 		sessionsp = _lttng_get_sessions();
 		cds_list_for_each_entry(session, sessionsp, node) {
 			if (session->owner != owner)
@@ -104,7 +111,6 @@ int extract_soinfo_events(struct dl_phdr_info *info, size_t size, void *data)
 					sostat.st_mtime);
 		}
 		ust_unlock();
-
 		/*
 		 * We are only interested in the base address (lowest virtual
 		 * address associated with the memory image), skip the rest

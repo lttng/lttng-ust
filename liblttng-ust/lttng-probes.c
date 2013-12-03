@@ -201,7 +201,7 @@ int lttng_probe_register(struct lttng_probe_desc *desc)
 	if (!check_provider_version(desc))
 		return 0;
 
-	ust_lock();
+	ust_lock_nocheck();
 
 	/*
 	 * Check if the provider has already been registered.
@@ -237,7 +237,7 @@ void lttng_probe_unregister(struct lttng_probe_desc *desc)
 	if (!check_provider_version(desc))
 		return;
 
-	ust_lock();
+	ust_lock_nocheck();
 	if (!desc->lazy)
 		cds_list_del(&desc->head);
 	else
