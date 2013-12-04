@@ -1380,24 +1380,24 @@ void __attribute__((constructor)) lttng_ust_init(void)
 		ERR("pthread_attr_setdetachstate: %s", strerror(ret));
 	}
 
-	ust_lock_nocheck();
+	pthread_mutex_lock(&ust_exit_mutex);
 	ret = pthread_create(&global_apps.ust_listener, &thread_attr,
 			ust_listener_thread, &global_apps);
 	if (ret) {
 		ERR("pthread_create global: %s", strerror(ret));
 	}
 	global_apps.thread_active = 1;
-	ust_unlock();
+	pthread_mutex_unlock(&ust_exit_mutex);
 
 	if (local_apps.allowed) {
-		ust_lock_nocheck();
+		pthread_mutex_lock(&ust_exit_mutex);
 		ret = pthread_create(&local_apps.ust_listener, &thread_attr,
 				ust_listener_thread, &local_apps);
 		if (ret) {
 			ERR("pthread_create local: %s", strerror(ret));
 		}
 		local_apps.thread_active = 1;
-		ust_unlock();
+		pthread_mutex_unlock(&ust_exit_mutex);
 	} else {
 		handle_register_done(&local_apps);
 	}
