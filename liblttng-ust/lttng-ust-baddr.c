@@ -16,6 +16,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
+#define _LGPL_SOURCE
 #define _GNU_SOURCE
 #include <dlfcn.h>
 #include <link.h>
@@ -37,19 +38,66 @@
 #define TRACEPOINT_DEFINE
 #include "ust_baddr_statedump.h"
 
+struct extract_data {
+	void *owner;
+	void *exec_baddr;	/* executable base address */
+};
+
+/*
+ * Trace baddr into all sessions for which statedump is pending owned by
+ * the caller thread.
+ */
 static
-int extract_soinfo_events(struct dl_phdr_info *info, size_t size, void *data)
+int trace_baddr(void *base_addr_ptr,
+	const char *resolved_path,
+	int vdso,
+	void *owner)
+{
+	struct cds_list_head *sessionsp;
+	struct lttng_session *session;
+	struct stat sostat;
+
+	if (vdso || stat(resolved_path, &sostat)) {
+		sostat.st_size = 0;
+		sostat.st_mtime = -1;
+	}
+	/*
+	 * UST lock nests within dynamic loader lock.
+	 */
+	if (ust_lock()) {
+		/*
+		 * Stop iteration on headers if need to exit.
+		 */
+		ust_unlock();
+		return 1;
+	}
+
+	sessionsp = _lttng_get_sessions();
+	cds_list_for_each_entry(session, sessionsp, node) {
+		if (session->owner != owner)
+			continue;
+		if (!session->statedump_pending)
+			continue;
+		tracepoint(ust_baddr_statedump, soinfo,
+				session, base_addr_ptr,
+				resolved_path, sostat.st_size,
+				sostat.st_mtime);
+	}
+	ust_unlock();
+	return 0;
+}
+
+static
+int extract_soinfo_events(struct dl_phdr_info *info, size_t size, void *_data)
 {
 	int j;
-	int num_loadable_segment = 0;
-	void *owner = data;
-	struct cds_list_head *sessionsp;
+	struct extract_data *data = _data;
+	void *owner = data->owner;
 
 	for (j = 0; j < info->dlpi_phnum; j++) {
 		char resolved_path[PATH_MAX];
-		struct stat sostat;
 		void *base_addr_ptr;
-		struct lttng_session *session;
+		int vdso = 0;
 
 		if (info->dlpi_phdr[j].p_type != PT_LOAD)
 			continue;
@@ -58,59 +106,40 @@ int extract_soinfo_events(struct dl_phdr_info *info, size_t size, void *data)
 		base_addr_ptr = (void *) info->dlpi_addr
 			+ info->dlpi_phdr[j].p_vaddr;
 
-		num_loadable_segment += 1;
 		if ((info->dlpi_name == NULL || info->dlpi_name[0] == 0)
-				&& num_loadable_segment == 1) {
+				&& !data->exec_baddr) {
 			/*
-			 * If the iterated element is the executable itself we
-			 * have to use Dl_info to determine its full path
+			 * Only the first phdr encountered is considered
+			 * as the program executable. The following
+			 * could be e.g. vdso. Don't mistakenly dump
+			 * them as being the program executable.
 			 */
-			Dl_info dl_info = { 0 };
-			if (!dladdr(base_addr_ptr, &dl_info))
-				return 0;
-			if (!realpath(dl_info.dli_fname, resolved_path))
-				return 0;
+			data->exec_baddr = base_addr_ptr;
+			/*
+			 * Deal with program executable outside of phdr
+			 * iteration.
+			 */
+			break;
+		}
+		if (info->dlpi_name == NULL || info->dlpi_name[0] == 0) {
+			/* Found vDSO. */
+			snprintf(resolved_path, PATH_MAX - 1, "[vdso]");
+			vdso = 1;
 		} else {
 			/*
 			 * For regular dl_phdr_info entries we have to check if
-			 * the path to the shared object really exists
+			 * the path to the shared object really exists.
 			 */
 			if (!realpath(info->dlpi_name, resolved_path)) {
-				/* Found vDSO, put the 'path' into brackets */
+				/* Path unknown, put the 'path' into brackets */
 				snprintf(resolved_path, PATH_MAX - 1, "[%s]",
-						info->dlpi_name);
+					info->dlpi_name);
+				vdso = 1;
 			}
 		}
-
-		if (stat(resolved_path, &sostat)) {
-			sostat.st_size = 0;
-			sostat.st_mtime = -1;
-		}
-
-		/*
-		 * UST lock needs to be nested within dynamic loader
-		 * lock.
-		 */
-		if (ust_lock()) {
-			/*
-			 * Stop iteration on headers if need to exit.
-			 */
-			ust_unlock();
+		if (trace_baddr(base_addr_ptr, resolved_path, vdso, owner)) {
 			return 1;
 		}
-
-		sessionsp = _lttng_get_sessions();
-		cds_list_for_each_entry(session, sessionsp, node) {
-			if (session->owner != owner)
-				continue;
-			if (!session->statedump_pending)
-				continue;
-			tracepoint(ust_baddr_statedump, soinfo,
-					session, base_addr_ptr,
-					resolved_path, sostat.st_size,
-					sostat.st_mtime);
-		}
-		ust_unlock();
 		/*
 		 * We are only interested in the base address (lowest virtual
 		 * address associated with the memory image), skip the rest
@@ -120,15 +149,48 @@ int extract_soinfo_events(struct dl_phdr_info *info, size_t size, void *data)
 	return 0;
 }
 
+static
+void dump_exec_baddr(struct extract_data *data)
+{
+	void *owner = data->owner;
+	Dl_info dl_info = { 0 };
+	void *base_addr_ptr;
+	char resolved_path[PATH_MAX];
+
+	base_addr_ptr = data->exec_baddr;
+	if (!base_addr_ptr)
+		return;
+	/*
+	 * We have to use Dl_info to determine the executable full path.
+	 */
+	if (!dladdr(base_addr_ptr, &dl_info))
+		return;
+	if (!realpath(dl_info.dli_fname, resolved_path))
+		return;
+	trace_baddr(base_addr_ptr, resolved_path, 0, owner);
+}
+
 int lttng_ust_baddr_statedump(void *owner)
 {
+	struct extract_data data;
+
 	if (getenv("LTTNG_UST_WITHOUT_BADDR_STATEDUMP"))
 		return 0;
+
+	data.owner = owner;
+	data.exec_baddr = NULL;
 	/*
 	 * Iterate through the list of currently loaded shared objects and
 	 * generate events for loadable segments using
 	 * extract_soinfo_events.
 	 */
-	dl_iterate_phdr(extract_soinfo_events, owner);
+	dl_iterate_phdr(extract_soinfo_events, &data);
+	/*
+	 * We cannot call dladdr() from within phdr iteration, without
+	 * causing constructor vs dynamic loader vs multithread internal
+	 * deadlocks, so dump the executable outside of the phdr
+	 * iteration.
+	 */
+	dump_exec_baddr(&data);
 	return 0;
 }
