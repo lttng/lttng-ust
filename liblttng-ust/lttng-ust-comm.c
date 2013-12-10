@@ -1343,6 +1343,7 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	 */
 	init_usterr();
 	init_tracepoint();
+	lttng_ust_baddr_statedump_init();
 	lttng_ring_buffer_metadata_client_init();
 	lttng_ring_buffer_client_overwrite_init();
 	lttng_ring_buffer_client_overwrite_rt_init();
@@ -1457,6 +1458,7 @@ void lttng_ust_cleanup(int exiting)
 	lttng_ring_buffer_client_overwrite_rt_exit();
 	lttng_ring_buffer_client_overwrite_exit();
 	lttng_ring_buffer_metadata_client_exit();
+	lttng_ust_baddr_statedump_destroy();
 	exit_tracepoint();
 	if (!exiting) {
 		/* Reinitialize values for fork */

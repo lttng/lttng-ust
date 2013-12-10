@@ -194,3 +194,15 @@ int lttng_ust_baddr_statedump(void *owner)
 	dump_exec_baddr(&data);
 	return 0;
 }
+
+void lttng_ust_baddr_statedump_init(void)
+{
+	__tracepoints__init();
+	__tracepoints__ptrs_init();
+}
+
+void lttng_ust_baddr_statedump_destroy(void)
+{
+	__tracepoints__ptrs_destroy();
+	__tracepoints__destroy();
+}

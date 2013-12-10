@@ -90,7 +90,7 @@ void lttng_ust_baddr_push(void *so_base, const char *so_name)
 void *dlopen(const char *filename, int flag)
 {
 	void *handle = _lttng_ust_dl_libc_dlopen(filename, flag);
-	if (handle) {
+	if (__tracepoint_ptrs_registered && handle) {
 		struct link_map *p = NULL;
 		if (dlinfo(handle, RTLD_DI_LINKMAP, &p) != -1 && p != NULL
 				&& p->l_addr != 0)
@@ -101,7 +101,7 @@ void *dlopen(const char *filename, int flag)
 
 int dlclose(void *handle)
 {
-	if (handle) {
+	if (__tracepoint_ptrs_registered && handle) {
 		struct link_map *p = NULL;
 		if (dlinfo(handle, RTLD_DI_LINKMAP, &p) != -1 && p != NULL
 				&& p->l_addr != 0)

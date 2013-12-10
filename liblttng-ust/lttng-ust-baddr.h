@@ -21,6 +21,9 @@
 
 #include <lttng/ust-events.h>
 
+void lttng_ust_baddr_statedump_init(void);
+void lttng_ust_baddr_statedump_destroy(void);
+
 int lttng_ust_baddr_statedump(void *owner);
 
 #endif /* LTTNG_UST_BADDR_H */
