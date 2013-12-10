@@ -1,3 +1,29 @@
+2013-12-10 lttng-ust 2.4.0-rc2
+	* Fix: baddr_statedump tracepoint registration
+	* Fix: baddr deadlocks and RCU races
+	* Fix: lock exit mutex when creating threads
+	* Fix: baddr deadlock with lttng-ust destructor
+	* baddr: include missing header
+	* baddr: get session under lock
+	* Fix: take the ust lock around session iteration in statedump
+	* Fix: baddr_statedump deadlock with JUL tracing
+	* Fix: client_packet_header() uses wrong packet
+	* Cleanup: fix typo in ring buffer backend comment
+	* Compile liblttng-ust-baddr c files into liblttng-ust
+	* Allow suppressing of base-address-state tracing
+	* Integrate base-address statedump into lttng-ust
+	* Fix: eliminate timestamp overlap between packets
+	* Fix: lttng-gen-tp to build out of tree
+	* Fix: compile doc/ after JUL/Java
+	* JUL: add Hello.java in doc/examples
+	* Fix lttng-ust(3) manpage
+	* JUL: fix enable all event for delayed Logger
+	* Fix: typo in JNICALL for the JUL tracepoint
+	* Fix: move va_end to outermost label
+	* Fix: add missing NULL check after allocation
+	* Fix cleanup: all spaces before flags
+	* fix: lttng-gen-tp: add missing spaces around flags
+
 2013-11-15 lttng-ust 2.4.0-rc1
 	* doc/examples: error out when a subdir make fails
 	* JUL: fix out of tree build
