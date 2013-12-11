@@ -1445,7 +1445,7 @@ void lib_ring_buffer_switch_new_end(struct lttng_ust_lib_ring_buffer *buf,
 	v_add(config, padding_size, &shmp_index(handle, buf->commit_hot, endidx)->cc);
 	commit_count = v_read(config, &shmp_index(handle, buf->commit_hot, endidx)->cc);
 	lib_ring_buffer_check_deliver(config, buf, chan, offsets->end - 1,
-				  commit_count, endidx, handle);
+				  commit_count, endidx, handle, tsc);
 	lib_ring_buffer_write_commit_counter(config, buf, chan, endidx,
 					     offsets->end, commit_count,
 					     padding_size, handle);
