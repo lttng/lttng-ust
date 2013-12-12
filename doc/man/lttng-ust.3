@@ -17,7 +17,35 @@ port of the low-overhead tracing capabilities of the LTTng kernel tracer
 to user-space. The library "liblttng-ust" enables tracing of
 applications and libraries.
 
-.SH "USAGE"
+.SH "USAGE WITH TRACEF"
+.PP
+The simplest way to add instrumentation to your code is by far the
+tracef() API. To you it, in a nutshell:
+
+1) #include <lttng/tracef.h>
+
+2) /* in your code, use like a printf */
+   tracef("my message, this integer %d", 1234);
+
+3) Link your program against liblttng-ust.so.
+
+4) Enable the UST event "lttng_ust_tracef:event" when tracing with the
+   following sequence of commands from lttng-tools:
+
+   lttng create; lttng enable-event -u "lttng_ust_tracef:event"; lttng start
+   [... run your program ...]
+   lttng stop; lttng view
+
+That's it!
+
+If you want to have more flexibility and control on the event names,
+payload typing, etc, you can continue reading on and use the tracepoints
+below. "tracef()" is there for quick and dirty ad hoc instrumentation,
+whereas tracepoint.h is meant for thorough instrumentation of a code
+base to be integrated with an upstream project.
+.PP
+
+.SH "USAGE WITH TRACEPOINT"
 .PP
 The simple way to generate the lttng-ust tracepoint probes is to use the
 lttng-gen-tp(1) tool. See the lttng-gen-tp(1) manpage for explanation.

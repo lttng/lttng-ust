@@ -44,7 +44,9 @@ liblttng_ust_runtime_la_SOURCES = \
 	wait.h \
 	jhash.h \
 	lttng-ust-uuid.h \
-	error.h
+	error.h \
+	tracef.c \
+	lttng-ust-tracef-provider.h
 
 liblttng_ust_support_la_SOURCES = \
 	lttng-tracer.h \

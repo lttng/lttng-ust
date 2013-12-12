@@ -36,6 +36,7 @@ doc/examples/easy-ust/sample
 doc/examples/hello-static-lib/hello
 doc/examples/gen-tp/sample
 doc/examples/gen-tp/sample_tracepoint.h
+doc/examples/demo-tracef/demo-tracef
 
 tests/hello/hello
 tests/hello.cxx/hello
