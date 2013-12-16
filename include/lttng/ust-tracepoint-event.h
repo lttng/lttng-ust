@@ -685,6 +685,8 @@ static struct lttng_probe_desc _TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PR
 	.minor = LTTNG_UST_PROVIDER_MINOR,
 };
 
+static int _TP_COMBINE_TOKENS(__probe_register_refcount___, TRACEPOINT_PROVIDER);
+
 /*
  * Stage 9 of tracepoint event generation.
  *
@@ -692,6 +694,8 @@ static struct lttng_probe_desc _TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PR
  *
  * Generate the constructor as an externally visible symbol for use when
  * linking the probe statically.
+ *
+ * Register refcount is protected by libc dynamic loader mutex.
  */
 
 /* Reset all macros within TRACEPOINT_EVENT */
@@ -703,6 +707,10 @@ _TP_COMBINE_TOKENS(__lttng_events_init__, TRACEPOINT_PROVIDER)(void)
 {
 	int ret;
 
+	if (_TP_COMBINE_TOKENS(__probe_register_refcount___,
+			TRACEPOINT_PROVIDER)++) {
+		return;
+	}
 	/*
 	 * __tracepoint_provider_check_ ## TRACEPOINT_PROVIDER() is a
 	 * static inline function that ensures every probe PROVIDER
@@ -724,6 +732,10 @@ _TP_COMBINE_TOKENS(__lttng_events_exit__, TRACEPOINT_PROVIDER)(void);
 static void
 _TP_COMBINE_TOKENS(__lttng_events_exit__, TRACEPOINT_PROVIDER)(void)
 {
+	if (--_TP_COMBINE_TOKENS(__probe_register_refcount___,
+			TRACEPOINT_PROVIDER)) {
+		return;
+	}
 	lttng_probe_unregister(&_TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PROVIDER));
 }
 

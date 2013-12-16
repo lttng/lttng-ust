@@ -37,7 +37,6 @@ liblttng_ust_runtime_la_SOURCES = \
 	lttng-hash-helper.h \
 	lttng-ust-baddr.c \
 	lttng-ust-baddr.h \
-	ust_baddr_statedump.c \
 	ust_baddr_statedump.h \
 	tracepoint-internal.h \
 	clock.h \

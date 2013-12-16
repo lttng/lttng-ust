@@ -36,6 +36,8 @@
 #include "lttng-ust-baddr.h"
 
 #define TRACEPOINT_DEFINE
+#define TRACEPOINT_CREATE_PROBES
+#define TP_SESSION_CHECK
 #include "ust_baddr_statedump.h"
 
 struct extract_data {
@@ -199,10 +201,12 @@ void lttng_ust_baddr_statedump_init(void)
 {
 	__tracepoints__init();
 	__tracepoints__ptrs_init();
+	__lttng_events_init__ust_baddr_statedump();
 }
 
 void lttng_ust_baddr_statedump_destroy(void)
 {
+	__lttng_events_exit__ust_baddr_statedump();
 	__tracepoints__ptrs_destroy();
 	__tracepoints__destroy();
 }
