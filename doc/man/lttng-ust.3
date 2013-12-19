@@ -347,6 +347,13 @@ process namespace.
 .PP
 
 .PP
+.IP "ip"
+Instruction pointer: Enables recording of the exact location where a tracepoint
+was emitted. Can be used to reverse-lookup the source location that caused the
+event to be emitted.
+.PP
+
+.PP
 .IP "procname"
 Thread name, as set by exec() or prctl(). It is recommended that
 programs set their thread name with prctl() before hitting the first
@@ -359,6 +366,28 @@ Pthread identifier. Can be used on architectures where pthread_t maps
 nicely to an unsigned long type.
 .PP
 
+.SH "BASE ADDRESS STATEDUMP"
+
+.PP
+If an application that uses liblttng-ust.so becomes part of a session,
+information about its currently loaded shared objects will be traced to the
+session at session-enable time. To record this information, the following event
+needs to be enabled:
+.PP
+.IP "ust_baddr_statedump:soinfo"
+This event is used to trace a currently loaded shared object. The base address
+(where the dynamic linker has placed the shared object) is recorded in the
+baddr-field. The path to the shared object gets recorded in the sopath-field
+(as string). The file size of the loaded object (in bytes) is recorded to the
+size-field and its time of last modification (in seconds since Epoch) is
+recorded in the mtime-field.
+.PP
+If the event above is enabled, a series of ust_baddr_statedump:soinfo events is
+recorded at session-enable time, that represents the state of currently loaded
+shared objects (of the traced application). If this information gets combined
+with the lttng-ust-dl(3) instrumentation, all aspects of dynamic loading that
+are relevant for symbol and linenumber-lookup are traced by LTTng.
+.PP
 .SH "ENVIRONMENT VARIABLES"
 
 .PP
@@ -375,12 +404,15 @@ specified in milliseconds. The value 0 means "don't wait". The value
 recommended for applications with time constraints on the process
 startup time.
 .PP
+.IP "LTTNG_UST_WITHOUT_BADDR_STATEDUMP"
+Prevent liblttng-ust to perform a base-address statedump on session-enable.
+.PP
 
 .SH "SEE ALSO"
 
 .PP
 lttng-gen-tp(1), lttng(1), babeltrace(1), lttng-ust-cyg-profile(3),
-lttng-sessiond(8)
+lttng-ust-dl(3), lttng-sessiond(8)
 .PP
 
 .SH "COMPATIBILITY"

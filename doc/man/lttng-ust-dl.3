@@ -1,0 +1,47 @@
+.TH "LTTNG-UST-DL" "3" "December 19, 2013" "" ""
+
+.SH "NAME"
+lttng-ust-dl \(em LTTng UST 2.x Dynamic Linker Tracing
+
+.SH "SYNOPSIS"
+Launch your application with:
+.TP
+\fBLD_PRELOAD=liblttng-ust-dl.so\fP appname
+.PP
+This LD_PRELOAD library causes all calls to dlopen and dlclose in the
+application to be traced with LTTng. The following two events need to be
+enabled: ust_baddr:push and ust_baddr:pop.
+
+.SH "DESCRIPTION"
+The events have the following detailed definitions:
+.PP
+.IP "ust_baddr:push"
+This event is used to trace dlopen calls. The base address (where the dynamic
+linker has placed the shared object) is recorded in the baddr-field. The path
+to the shared object gets recorded in the sopath-field (as string). The file
+size of the loaded object (in bytes) is recorded to the size-field and its time
+of last modification (in seconds since Epoch) is recorded in the mtime-field.
+.IP "ust_baddr:pop"
+This event is used to trace dlclose calls. The base address of the shared
+object that got closed is recorded in the baddr-field.
+.PP
+
+.SH "SEE ALSO"
+lttng-ust(3), dlopen(3), lttng(1)
+.SH "BUGS"
+If you encounter any issues or usability problem, please report it on
+our mailing list <lttng-dev@lists.lttng.org> to help improve this
+project.
+.SH "CREDITS"
+liblttng-ust is distributed under the GNU Lesser General Public License
+version 2.1. The headers are distributed under the MIT license.
+
+See http://lttng.org for more information on the LTTng project.
+
+Mailing list for support and development: <lttng-dev@lists.lttng.org>.
+
+You can find us on IRC server irc.oftc.net (OFTC) in #lttng.
+.SH "AUTHORS"
+liblttng-ust was originally written by Mathieu Desnoyers, with additional
+contributions from various other people. It is currently maintained by
+Mathieu Desnoyers <mathieu.desnoyers@efficios.com>.
