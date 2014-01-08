@@ -377,16 +377,17 @@ needs to be enabled:
 .IP "ust_baddr_statedump:soinfo"
 This event is used to trace a currently loaded shared object. The base address
 (where the dynamic linker has placed the shared object) is recorded in the
-baddr-field. The path to the shared object gets recorded in the sopath-field
-(as string). The file size of the loaded object (in bytes) is recorded to the
-size-field and its time of last modification (in seconds since Epoch) is
-recorded in the mtime-field.
+"baddr" field. The path to the shared object gets recorded in the
+"sopath" field (as string). The file size of the loaded object (in
+bytes) is recorded to the "size" field and its time of last modification
+(in seconds since Epoch) is recorded in the "mtime" field.
 .PP
-If the event above is enabled, a series of ust_baddr_statedump:soinfo events is
-recorded at session-enable time, that represents the state of currently loaded
-shared objects (of the traced application). If this information gets combined
-with the lttng-ust-dl(3) instrumentation, all aspects of dynamic loading that
-are relevant for symbol and linenumber-lookup are traced by LTTng.
+If the event above is enabled, a series of "ust_baddr_statedump:soinfo"
+events is recorded at session-enable time. It represents the state of
+currently loaded shared objects for the traced process. If this
+information gets combined with the lttng-ust-dl(3) instrumentation, all
+aspects of dynamic loading that are relevant for symbol and
+line number lookup are traced by LTTng.
 .PP
 .SH "ENVIRONMENT VARIABLES"
 
