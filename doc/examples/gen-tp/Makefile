@@ -17,7 +17,9 @@
 #
 # This makefile is purposefully kept simple to support GNU and BSD make.
 
-CC = gcc
+ifdef AM_CC
+	CC = $(AM_CC)
+endif
 
 LIBS = -ldl -llttng-ust		#On Linux
 #LIBS = -lc -llttng-ust		#On BSD
@@ -43,6 +45,7 @@ sample.o: sample.c sample_tracepoint.h
 	CPPFLAGS="$(CPPFLAGS) $(AM_CPPFLAGS)" \
 	CFLAGS="$(CFLAGS) $(AM_CFLAGS)" \
 	LDFLAGS="$(LDFLAGS) $(AM_LDFLAGS)" \
+	CC=$(CC) \
 	$(LTTNG_GEN_TP_PATH)lttng-gen-tp -o $@ $<
 
 # The following rule can be used to generate all files instead of having one
