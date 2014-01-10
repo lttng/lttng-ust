@@ -16,7 +16,10 @@
 #
 # This makefile is purposefully kept simple to support GNU and BSD make.
 
-CC = gcc
+ifdef AM_CC
+	CC = $(AM_CC)
+endif
+
 LIBS = -ldl -llttng-ust		# On Linux
 #LIBS = -lc -llttng-ust		# On BSD
 LOCAL_CPPFLAGS += -I.
