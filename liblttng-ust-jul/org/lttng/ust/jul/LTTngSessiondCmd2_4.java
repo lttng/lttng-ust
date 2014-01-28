@@ -20,6 +20,7 @@ package org.lttng.ust.jul;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.lang.Object;
 import java.util.logging.Logger;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,6 +32,12 @@ public interface LTTngSessiondCmd2_4 {
 	 * Maximum name length for a logger name to be send to sessiond.
 	 */
 	final static int NAME_MAX = 255;
+
+	/*
+	 * Size of a primitive type int in byte. Because you know, Java can't
+	 * provide that since it does not makes sense...
+	 */
+	final static int INT_SIZE = 4;
 
 	public interface SessiondResponse {
 		/**
@@ -107,15 +114,21 @@ public interface LTTngSessiondCmd2_4 {
 	public class sessiond_enable_handler implements SessiondResponse, SessiondCommand {
 		private final static int SIZE = 4;
 		public String name;
+		public int lttngLogLevel;
+		public int lttngLogLevelType;
 
 		/** Return status code to the session daemon. */
 		public lttng_jul_ret_code code;
 
 		@Override
 		public void populate(byte[] data) {
+			int data_offset = INT_SIZE * 2;
+
 			ByteBuffer buf = ByteBuffer.wrap(data);
 			buf.order(ByteOrder.LITTLE_ENDIAN);
-			name = new String(data, 0, data.length);
+			lttngLogLevel = buf.getInt();
+			lttngLogLevelType = buf.getInt();
+			name = new String(data, data_offset, data.length - data_offset);
 		}
 
 		@Override
@@ -158,6 +171,8 @@ public interface LTTngSessiondCmd2_4 {
 					}
 
 					logger = handler.logManager.getLogger(loggerName);
+					handler.setLogLevel(loggerName, lttngLogLevel,
+							lttngLogLevelType);
 					logger.addHandler(handler);
 					enabledLoggers.put(loggerName, logger);
 				}
@@ -173,6 +188,8 @@ public interface LTTngSessiondCmd2_4 {
 			this.code = lttng_jul_ret_code.CODE_SUCCESS_CMD;
 			logger = handler.logManager.getLogger(name.trim());
 			if (logger != null) {
+				handler.setLogLevel(name.trim(), lttngLogLevel,
+						lttngLogLevelType);
 				logger.addHandler(handler);
 				enabledLoggers.put(name.trim(), logger);
 				return null;
