@@ -1,3 +1,12 @@
+2014-01-29 lttng-ust 2.4.0-rc3
+	* Fix: add missing JUL loglevel handling
+	* Cleanup gen-tp: add quotes around AM_CC
+	* Pass the CC variable to the example Makefiles
+	* cleanup ust_baddr and ust_baddr_statedump doc
+	* baddr: add ust_baddr and ust_baddr_statedump doc
+	* Fix: baddr_statedump tracepoint registration
+	* Fix: baddr out of tree build
+
 2013-12-10 lttng-ust 2.4.0-rc2
 	* Fix: baddr_statedump tracepoint registration
 	* Fix: baddr deadlocks and RCU races
