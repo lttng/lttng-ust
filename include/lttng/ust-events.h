@@ -35,6 +35,10 @@
 #include <lttng/ust-endian.h>
 #include <float.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define LTTNG_UST_UUID_LEN		16
 
 /*
@@ -612,5 +616,9 @@ int lttng_session_active(void);
 typedef int (*t_statedump_func_ptr)(struct lttng_session *session);
 void lttng_handle_pending_statedump(void *owner);
 struct cds_list_head *_lttng_get_sessions(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _LTTNG_UST_EVENTS_H */
