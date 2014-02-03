@@ -22,10 +22,6 @@
 
 #ifdef TRACEPOINT_CREATE_PROBES
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define __tp_stringify1(x)	#x
 #define __tp_stringify(x)	__tp_stringify1(x)
 
@@ -64,10 +60,6 @@ extern "C" {
 #undef TRACEPOINT_HEADER_MULTI_READ
 #undef TRACEPOINT_INCLUDE_FILE
 #undef TRACEPOINT_INCLUDE
-
-#ifdef __cplusplus
-}
-#endif
 
 #define TRACEPOINT_CREATE_PROBES
 

@@ -35,6 +35,10 @@
 #include <lttng/ust-endian.h>
 #include <float.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define LTTNG_UST_UUID_LEN		16
 
 /*
@@ -592,5 +596,9 @@ void lttng_filter_sync_state(struct lttng_bytecode_runtime *runtime);
 
 struct cds_list_head *lttng_get_probe_list_head(void);
 int lttng_session_active(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _LTTNG_UST_EVENTS_H */
