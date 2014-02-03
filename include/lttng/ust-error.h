@@ -30,6 +30,10 @@
 #include <unistd.h>
 #include <lttng/ust-abi.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * ustcomm error code.
  */
@@ -56,5 +60,9 @@ enum lttng_ust_error_code {
  * code must be a positive value (or 0).
  */
 extern const char *lttng_ust_strerror(int code);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif	/* _LTTNG_UST_ERROR_H */
