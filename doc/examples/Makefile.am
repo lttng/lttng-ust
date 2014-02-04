@@ -39,23 +39,37 @@ SUBDIRS_PROXY = easy-ust demo gen-tp hello-static-lib
 
 all-local:
 	@if [ x"$(srcdir)" != x"$(builddir)" ]; then \
-		cp -f $(srcdir)/Makefile.examples.template $(builddir); \
 		for subdir in $(SUBDIRS_PROXY); do \
 			cp -fR $(srcdir)/$$subdir $(builddir); \
 		done; \
-	fi
+	fi; \
+	if [ x"$(shell echo "$(top_srcdir)" | grep "^/" | wc -l)" = x"1" ]; then \
+		echo "Examples: absolute top_srcdir path $(top_srcdir)"; \
+		rel_src_subdir=""; \
+	else \
+		echo "Examples: relative top_srcdir path $(top_srcdir)"; \
+		rel_src_subdir="../"; \
+	fi; \
+	if [ x"$(shell echo "$(top_builddir)" | grep "^/" | wc -l)" = x"1" ]; then \
+		echo "Examples: absolute top_builddir path $(top_builddir)"; \
+		rel_build_subdir=""; \
+	else \
+		echo "Examples: relative top_builddir path $(top_builddir)"; \
+		rel_build_subdir="../"; \
+	fi; \
 	for subdir in $(SUBDIRS_PROXY); do \
-		(cd $$subdir && $(MAKE) AM_CC="$(CC)" AM_CPPFLAGS="$(CPPFLAGS) -I../../../include/" AM_CFLAGS='$(CFLAGS)' AM_LDFLAGS='$(LDFLAGS) -L../../../liblttng-ust/.libs/ -Wl,-rpath="$(PWD)/../../liblttng-ust/.libs/"' LTTNG_GEN_TP_PATH="../../../tools/" $(AM_MAKEFLAGS) all && cd ..) || exit 1; \
+		(cd $$subdir && $(MAKE) AM_CC="$(CC)" AM_CPPFLAGS="$(CPPFLAGS) -I$$rel_src_subdir$(top_srcdir)/include/ -I$$rel_build_subdir$(top_builddir)/include/" AM_CFLAGS='$(CFLAGS)' AM_LDFLAGS='$(LDFLAGS) -L../../../liblttng-ust/.libs/ -Wl,-rpath="$(PWD)/../../liblttng-ust/.libs/"' LTTNG_GEN_TP_PATH="../../../tools/" $(AM_MAKEFLAGS) all && cd ..) || exit 1; \
 	done
 
 clean-local:
-	for subdir in $(SUBDIRS_PROXY); do \
-		(cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) clean && cd ..) || exit 1; \
-	done
-	@if [ x"$(srcdir)" != x"$(builddir)" ]; then \
+	@for subdir in $(SUBDIRS_PROXY); do \
+		if [ -d $$subdir ]; then \
+			(cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) clean && cd ..) || exit 1; \
+		fi; \
+	done; \
+	if [ x"$(srcdir)" != x"$(builddir)" ]; then \
 		for subdir in $(SUBDIRS_PROXY); do \
 			rm -rf $(builddir)/$$subdir; \
 		done; \
-		rm -f $(builddir)/Makefile.examples.template; \
-	fi
+	fi;
 endif
