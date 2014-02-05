@@ -13,4 +13,4 @@ if LTTNG_UST_BUILD_WITH_LIBC_DL
 liblttng_ust_fork_la_LIBADD += -lc
 endif
 
-libustfork_CFLAGS = -DUST_COMPONENT=liblttng-ust-fork -fno-strict-aliasing
+liblttng_ust_fork_la_CFLAGS = -DUST_COMPONENT=liblttng-ust-fork -fno-strict-aliasing
