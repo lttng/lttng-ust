@@ -16,4 +16,4 @@ if LTTNG_UST_BUILD_WITH_LIBC_DL
 liblttng_ust_dl_la_LIBADD += -lc
 endif
 
-libustdl_CFLAGS = -DUST_COMPONENT=liblttng-ust-dl -fno-strict-aliasing
+liblttng_ust_dl_la_CFLAGS = -DUST_COMPONENT=liblttng-ust-dl -fno-strict-aliasing
