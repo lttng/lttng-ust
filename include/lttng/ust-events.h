@@ -30,10 +30,14 @@
 #include <urcu/list.h>
 #include <urcu/hlist.h>
 #include <stdint.h>
+#include <lttng/ust-config.h>
 #include <lttng/ust-abi.h>
 #include <lttng/ust-tracer.h>
 #include <lttng/ust-endian.h>
 #include <float.h>
+#include <errno.h>
+#include <urcu/ref.h>
+#include <pthread.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -236,6 +240,8 @@ union lttng_ctx_value {
 	double d;
 };
 
+struct lttng_perf_counter_field;
+
 #define LTTNG_UST_CTX_FIELD_PADDING	40
 struct lttng_ctx_field {
 	struct lttng_event_field event_field;
@@ -246,6 +252,7 @@ struct lttng_ctx_field {
 	void (*get_value)(struct lttng_ctx_field *field,
 			 union lttng_ctx_value *value);
 	union {
+		struct lttng_perf_counter_field *perf_counter;
 		char padding[LTTNG_UST_CTX_FIELD_PADDING];
 	} u;
 	void (*destroy)(struct lttng_ctx_field *field);
@@ -593,6 +600,33 @@ int lttng_add_procname_to_ctx(struct lttng_ctx **ctx);
 int lttng_add_ip_to_ctx(struct lttng_ctx **ctx);
 void lttng_context_vtid_reset(void);
 void lttng_context_vpid_reset(void);
+
+#ifdef LTTNG_UST_HAVE_PERF_EVENT
+int lttng_add_perf_counter_to_ctx(uint32_t type,
+				  uint64_t config,
+				  const char *name,
+				  struct lttng_ctx **ctx);
+int lttng_perf_counter_init(void);
+void lttng_perf_counter_exit(void);
+#else /* #ifdef LTTNG_UST_HAVE_PERF_EVENT */
+static inline
+int lttng_add_perf_counter_to_ctx(uint32_t type,
+				  uint64_t config,
+				  const char *name,
+				  struct lttng_ctx **ctx)
+{
+	return -ENOSYS;
+}
+static inline
+int lttng_perf_counter_init(void)
+{
+	return 0;
+}
+static inline
+void lttng_perf_counter_exit(void)
+{
+}
+#endif /* #else #ifdef LTTNG_UST_HAVE_PERF_EVENT */
 
 extern const struct lttng_ust_client_lib_ring_buffer_client_cb *lttng_client_callbacks_metadata;
 extern const struct lttng_ust_client_lib_ring_buffer_client_cb *lttng_client_callbacks_discard;

@@ -67,8 +67,15 @@ static int initialized;
  * probe registration.
  *
  * ust_exit_mutex must never nest in ust_mutex.
+ *
+ * ust_mutex_nest is a per-thread nesting counter, allowing the perf
+ * counter lazy initialization called by events within the statedump,
+ * which traces while the ust_mutex is held.
  */
 static pthread_mutex_t ust_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+/* Allow nesting the ust_mutex within the same thread. */
+static DEFINE_URCU_TLS(int, ust_mutex_nest);
 
 /*
  * ust_exit_mutex protects thread_active variable wrt thread exit. It
@@ -83,12 +90,26 @@ static pthread_mutex_t ust_exit_mutex = PTHREAD_MUTEX_INITIALIZER;
 static int lttng_ust_comm_should_quit;
 
 /*
- * Return 0 on success, -1 if should quilt.
+ * Return 0 on success, -1 if should quit.
  * The lock is taken in both cases.
+ * Signal-safe.
  */
 int ust_lock(void)
 {
-	pthread_mutex_lock(&ust_mutex);
+	sigset_t sig_all_blocked, orig_mask;
+	int ret;
+
+	sigfillset(&sig_all_blocked);
+	ret = pthread_sigmask(SIG_SETMASK, &sig_all_blocked, &orig_mask);
+	if (ret) {
+		ERR("pthread_sigmask: %s", strerror(ret));
+	}
+	if (!URCU_TLS(ust_mutex_nest)++)
+		pthread_mutex_lock(&ust_mutex);
+	ret = pthread_sigmask(SIG_SETMASK, &orig_mask, NULL);
+	if (ret) {
+		ERR("pthread_sigmask: %s", strerror(ret));
+	}
 	if (lttng_ust_comm_should_quit) {
 		return -1;
 	} else {
@@ -100,15 +121,45 @@ int ust_lock(void)
  * ust_lock_nocheck() can be used in constructors/destructors, because
  * they are already nested within the dynamic loader lock, and therefore
  * have exclusive access against execution of liblttng-ust destructor.
+ * Signal-safe.
  */
 void ust_lock_nocheck(void)
 {
-	pthread_mutex_lock(&ust_mutex);
+	sigset_t sig_all_blocked, orig_mask;
+	int ret;
+
+	sigfillset(&sig_all_blocked);
+	ret = pthread_sigmask(SIG_SETMASK, &sig_all_blocked, &orig_mask);
+	if (ret) {
+		ERR("pthread_sigmask: %s", strerror(ret));
+	}
+	if (!URCU_TLS(ust_mutex_nest)++)
+		pthread_mutex_lock(&ust_mutex);
+	ret = pthread_sigmask(SIG_SETMASK, &orig_mask, NULL);
+	if (ret) {
+		ERR("pthread_sigmask: %s", strerror(ret));
+	}
 }
 
+/*
+ * Signal-safe.
+ */
 void ust_unlock(void)
 {
-	pthread_mutex_unlock(&ust_mutex);
+	sigset_t sig_all_blocked, orig_mask;
+	int ret;
+
+	sigfillset(&sig_all_blocked);
+	ret = pthread_sigmask(SIG_SETMASK, &sig_all_blocked, &orig_mask);
+	if (ret) {
+		ERR("pthread_sigmask: %s", strerror(ret));
+	}
+	if (!--URCU_TLS(ust_mutex_nest))
+		pthread_mutex_unlock(&ust_mutex);
+	ret = pthread_sigmask(SIG_SETMASK, &orig_mask, NULL);
+	if (ret) {
+		ERR("pthread_sigmask: %s", strerror(ret));
+	}
 }
 
 /*
@@ -263,6 +314,12 @@ static
 void lttng_fixup_nest_count_tls(void)
 {
 	asm volatile ("" : : "m" (URCU_TLS(lttng_ust_nest_count)));
+}
+
+static
+void lttng_fixup_ust_mutex_nest_tls(void)
+{
+	asm volatile ("" : : "m" (URCU_TLS(ust_mutex_nest)));
 }
 
 int lttng_get_notify_socket(void *owner)
@@ -1351,6 +1408,7 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	lttng_fixup_vtid_tls();
 	lttng_fixup_nest_count_tls();
 	lttng_fixup_procname_tls();
+	lttng_fixup_ust_mutex_nest_tls();
 
 	/*
 	 * We want precise control over the order in which we construct
@@ -1366,6 +1424,7 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	lttng_ring_buffer_client_overwrite_rt_init();
 	lttng_ring_buffer_client_discard_init();
 	lttng_ring_buffer_client_discard_rt_init();
+	lttng_perf_counter_init();
 	lttng_context_init();
 	/*
 	 * Invoke ust malloc wrapper init before starting other threads.
@@ -1474,6 +1533,7 @@ void lttng_ust_cleanup(int exiting)
 	lttng_ust_abi_exit();
 	lttng_ust_events_exit();
 	lttng_context_exit();
+	lttng_perf_counter_exit();
 	lttng_ring_buffer_client_discard_rt_exit();
 	lttng_ring_buffer_client_discard_exit();
 	lttng_ring_buffer_client_overwrite_rt_exit();

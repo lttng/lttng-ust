@@ -230,7 +230,7 @@ int ustctl_add_context(int sock, struct lttng_ust_context *ctx,
 	memset(&lum, 0, sizeof(lum));
 	lum.handle = obj_data->handle;
 	lum.cmd = LTTNG_UST_CONTEXT;
-	lum.u.context.ctx = ctx->ctx;
+	lum.u.context = *ctx;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret) {
 		free(context_data);

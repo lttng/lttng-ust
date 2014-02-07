@@ -48,6 +48,11 @@ liblttng_ust_runtime_la_SOURCES = \
 	tracef.c \
 	lttng-ust-tracef-provider.h
 
+if HAVE_PERF_EVENT
+liblttng_ust_runtime_la_SOURCES += \
+	lttng-context-perf-counters.c
+endif
+
 liblttng_ust_support_la_SOURCES = \
 	lttng-tracer.h \
 	lttng-tracer-core.h \

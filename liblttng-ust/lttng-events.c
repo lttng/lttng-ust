@@ -797,6 +797,17 @@ int lttng_attach_context(struct lttng_ust_context *context_param,
 	switch (context_param->ctx) {
 	case LTTNG_UST_CONTEXT_PTHREAD_ID:
 		return lttng_add_pthread_id_to_ctx(ctx);
+	case LTTNG_UST_CONTEXT_PERF_THREAD_COUNTER:
+	{
+		struct lttng_ust_perf_counter_ctx *perf_ctx_param;
+
+		perf_ctx_param = &context_param->u.perf_counter;
+		return lttng_add_perf_counter_to_ctx(
+			perf_ctx_param->type,
+			perf_ctx_param->config,
+			perf_ctx_param->name,
+			ctx);
+	}
 	case LTTNG_UST_CONTEXT_VTID:
 		return lttng_add_vtid_to_ctx(ctx);
 	case LTTNG_UST_CONTEXT_VPID:

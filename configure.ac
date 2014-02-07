@@ -27,6 +27,7 @@ AC_CONFIG_SRCDIR([include/lttng/tracepoint.h])
 AC_CONFIG_HEADERS([config.h include/lttng/ust-config.h])
 AH_TEMPLATE([LTTNG_UST_HAVE_EFFICIENT_UNALIGNED_ACCESS], [Use efficient unaligned access.])
 AH_TEMPLATE([LTTNG_UST_HAVE_SDT_INTEGRATION], [SystemTap integration via sdt.h])
+AH_TEMPLATE([LTTNG_UST_HAVE_PERF_EVENT], [Perf event integration via perf_event.h])
 
 # Compute minor/major/patchlevel version numbers
 AC_PROG_SED
@@ -190,6 +191,14 @@ AC_CHECK_LIB([urcu-bp], [synchronize_rcu_bp], [], [AC_MSG_ERROR([Cannot find lib
 
 # urcu - check that URCU lib is at least version 0.6
 AC_CHECK_LIB([urcu-bp], [call_rcu_bp], [], [AC_MSG_ERROR([liburcu 0.6 or newer is needed, please update your version or use [LDFLAGS]=-Ldir to specify the right location.])])
+
+# optional linux/perf_event.h
+AC_CHECK_HEADERS([linux/perf_event.h], [have_perf_event=yes], [])
+AM_CONDITIONAL([HAVE_PERF_EVENT], [test "x$have_perf_event" = "xyes"])
+
+if test "x$have_perf_event" = "xyes"; then
+AC_DEFINE([LTTNG_UST_HAVE_PERF_EVENT], [1])
+fi
 
 AC_MSG_CHECKING([host system alignment requirements])
 case $host_cpu in
