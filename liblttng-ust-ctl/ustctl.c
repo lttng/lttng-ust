@@ -977,6 +977,8 @@ chan_error:
 
 void ustctl_destroy_channel(struct ustctl_consumer_channel *chan)
 {
+	(void) ustctl_channel_close_wait_fd(chan);
+	(void) ustctl_channel_close_wakeup_fd(chan);
 	chan->chan->ops->channel_destroy(chan->chan);
 	free(chan);
 }
@@ -1185,6 +1187,8 @@ void ustctl_destroy_stream(struct ustctl_consumer_stream *stream)
 	assert(stream);
 	buf = stream->buf;
 	consumer_chan = stream->chan;
+	(void) ustctl_stream_close_wait_fd(stream);
+	(void) ustctl_stream_close_wakeup_fd(stream);
 	lib_ring_buffer_release_read(buf, consumer_chan->chan->handle);
 	free(stream);
 }
