@@ -34,37 +34,20 @@ class LTTngLogLevelABI {
 	public static final int LOGLEVEL_TYPE_SINGLE = 2;
 }
 
-class LTTngLogLevel {
-	/* Event name on which this loglevel is applied on. */
-	private String event_name;
-	/* This level is a JUL int level value. */
-	private int level;
-	private int type;
-
-	public LTTngLogLevel(String event_name, int level, int type) {
-		this.event_name = event_name;
-		this.type = type;
-		this.level = level;
-	}
-
-	public String getName() {
-		return this.event_name;
-	}
-
-	public int getLevel() {
-		return this.level;
-	}
-
-	public int getType() {
-		return this.type;
-	}
-}
-
 public class LTTngLogHandler extends Handler {
+	/*
+	 * Indicate if the enable all event has been seen and if yes logger that we
+	 * enabled should use the loglevel/type below.
+	 */
+	public int logLevelUseAll = 0;
+	public int logLevelAll = 0;
+	public int logLevelTypeAll;
+
 	public LogManager logManager;
 
-	private HashMap<String, LTTngLogLevel> logLevels =
-		new HashMap<String, LTTngLogLevel>();
+	/* Indexed by name and corresponding LTTngEvent. */
+	private HashMap<String, LTTngEvent> eventMap =
+		new HashMap<String, LTTngEvent>();
 
 	public LTTngLogHandler(LogManager logManager) {
 		super();
@@ -75,10 +58,8 @@ public class LTTngLogHandler extends Handler {
 		LTTngUst.init();
 	}
 
-	public void setLogLevel(String event_name, int level, int type) {
-		LTTngLogLevel lttngLogLevel = new LTTngLogLevel(event_name, level,
-				type);
-		logLevels.put(event_name, lttngLogLevel);
+	public void setEvent(LTTngEvent event) {
+		eventMap.put(event.name, event);
 	}
 
 	@Override
@@ -90,14 +71,16 @@ public class LTTngLogHandler extends Handler {
 	@Override
 	public void publish(LogRecord record) {
 		int fire_tp = 0, rec_log_level, ev_type, ev_log_level;
+		LTTngEvent event;
 		LTTngLogLevel lttngLogLevel;
-		String event_name = record.getLoggerName();
+		String logger_name = record.getLoggerName();
 
-		lttngLogLevel = logLevels.get(event_name);
-		if (lttngLogLevel != null) {
+		/* Get back the event if any and check for loglevel. */
+		event = eventMap.get(logger_name);
+		if (event != null) {
 			rec_log_level = record.getLevel().intValue();
-			ev_log_level = lttngLogLevel.getLevel();
-			ev_type = lttngLogLevel.getType();
+			ev_log_level = event.logLevel.level;
+			ev_type = event.logLevel.type;
 
 			switch (ev_type) {
 			case LTTngLogLevelABI.LOGLEVEL_TYPE_RANGE:

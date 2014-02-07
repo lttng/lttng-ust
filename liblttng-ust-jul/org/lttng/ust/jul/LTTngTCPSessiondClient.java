@@ -57,7 +57,7 @@ public class LTTngTCPSessiondClient {
 	private Semaphore registerSem;
 
 	private Timer eventTimer;
-	private List<String> enabledEventList = new ArrayList<String>();
+	private List<LTTngEvent> enabledEventList = new ArrayList<LTTngEvent>();
 	/*
 	 * Map of Logger objects that have been enabled. They are indexed by name.
 	 */
@@ -86,11 +86,14 @@ public class LTTngTCPSessiondClient {
 				 * We have to make a copy here since it is possible that the
 				 * enabled event list is changed during an iteration on it.
 				 */
-				List<String> tmpList = new ArrayList<String>(enabledEventList);
+				List<LTTngEvent> tmpList = new ArrayList<LTTngEvent>(enabledEventList);
 
 				LTTngSessiondCmd2_4.sessiond_enable_handler enableCmd = new
 					LTTngSessiondCmd2_4.sessiond_enable_handler();
-				for (String strEventName: tmpList) {
+				for (LTTngEvent event: tmpList) {
+					int ret;
+					Logger logger;
+
 					/*
 					 * Check if this Logger name has been enabled already. Note
 					 * that in the case of "*", it's never added in that hash
@@ -101,13 +104,41 @@ public class LTTngTCPSessiondClient {
 					 * LogHandler can be added twice on a Logger object...
 					 * don't ask...
 					 */
-					if (enabledLoggers.get(strEventName) != null) {
+					logger = enabledLoggers.get(event.name);
+					if (logger != null) {
 						continue;
 					}
 
-					enableCmd.name = strEventName;
-					if (enableCmd.execute(handler, enabledLoggers) == null) {
-						enabledEventList.remove(strEventName);
+					/*
+					 * Set to one means that the enable all event has been seen
+					 * thus event from that point on must use loglevel for all
+					 * events. Else the object has its own loglevel.
+					 */
+					if (handler.logLevelUseAll == 1) {
+						event.logLevel.level = handler.logLevelAll;
+						event.logLevel.type = handler.logLevelTypeAll;
+					}
+
+					/*
+					 * The all event is a special case since we have to iterate
+					 * over every Logger to see which one was not enabled.
+					 */
+					if (event.name.equals("*")) {
+						enableCmd.name = event.name;
+						enableCmd.lttngLogLevel = event.logLevel.level;
+						enableCmd.lttngLogLevelType = event.logLevel.type;
+						/*
+						 * The return value is irrelevant since the * event is
+						 * always kept in the list.
+						 */
+						enableCmd.execute(handler, enabledLoggers);
+						continue;
+					}
+
+					ret = enableCmd.enableLogger(handler, event, enabledLoggers);
+					if (ret == 1) {
+						/* Enabled so remove the event from the list. */
+						enabledEventList.remove(event);
 					}
 				}
 			}
@@ -232,7 +263,7 @@ public class LTTngTCPSessiondClient {
 				}
 				case CMD_ENABLE:
 				{
-					String event_name;
+					LTTngEvent event;
 					LTTngSessiondCmd2_4.sessiond_enable_handler enableCmd =
 						new LTTngSessiondCmd2_4.sessiond_enable_handler();
 					if (data == null) {
@@ -240,14 +271,14 @@ public class LTTngTCPSessiondClient {
 						break;
 					}
 					enableCmd.populate(data);
-					event_name = enableCmd.execute(this.handler, this.enabledLoggers);
-					if (event_name != null) {
+					event = enableCmd.execute(this.handler, this.enabledLoggers);
+					if (event != null) {
 						/*
 						 * Add the event to the list so it can be enabled if
 						 * the logger appears at some point in time.
 						 */
-						if (enabledEventList.contains(event_name) == false) {
-							enabledEventList.add(event_name);
+						if (enabledEventList.contains(event) == false) {
+							enabledEventList.add(event);
 						}
 					}
 					data = enableCmd.getBytes();

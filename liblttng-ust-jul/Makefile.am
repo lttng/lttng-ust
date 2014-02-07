@@ -10,6 +10,7 @@ liblttng_ust_jul_jni_la_SOURCES = LTTngUst.c lttng_ust_jul.h
 nodist_liblttng_ust_jul_jni_la_SOURCES = org_lttng_ust_jul_LTTngUst.h
 dist_noinst_DATA = $(LTTNG_JUL_SRCDIR)/LTTngUst.java \
 	$(LTTNG_JUL_SRCDIR)/LTTngAgent.java \
+	$(LTTNG_JUL_SRCDIR)/LTTngEvent.java \
 	$(LTTNG_JUL_SRCDIR)/LTTngLogHandler.java \
 	$(LTTNG_JUL_SRCDIR)/LTTngSessiondCmd2_4.java \
 	$(LTTNG_JUL_SRCDIR)/LTTngTCPSessiondClient.java \
@@ -41,6 +42,7 @@ LTTngUst.c: org_lttng_ust_jul_LTTngUst.h
 
 LTTNG_AGENT_FILES = $(LTTNG_JUL_SRCDIR)/LTTngAgent.java \
 		$(LTTNG_JUL_SRCDIR)/LTTngLogHandler.java \
+		$(LTTNG_JUL_SRCDIR)/LTTngEvent.java \
 		$(LTTNG_JUL_SRCDIR)/LTTngSessiondCmd2_4.java \
 		$(LTTNG_JUL_SRCDIR)/LTTngTCPSessiondClient.java \
 		$(LTTNG_JUL_SRCDIR)/LTTngThread.java
