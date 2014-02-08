@@ -21,8 +21,11 @@
 #include <dlfcn.h>
 #include <sys/types.h>
 #include <stdio.h>
+#include <assert.h>
 #include <urcu/system.h>
 #include <urcu/uatomic.h>
+#include <urcu/compiler.h>
+#include <lttng/align.h>
 
 #define TRACEPOINT_DEFINE
 #define TRACEPOINT_CREATE_PROBES
@@ -32,9 +35,30 @@
 static char static_calloc_buf[STATIC_CALLOC_LEN];
 static unsigned long static_calloc_buf_offset;
 
-static void *static_calloc(size_t nmemb, size_t size)
+struct alloc_functions {
+	void *(*calloc)(size_t nmemb, size_t size);
+	void *(*malloc)(size_t size);
+	void (*free)(void *ptr);
+	void *(*realloc)(void *ptr, size_t size);
+	void *(*memalign)(size_t alignment, size_t size);
+	int (*posix_memalign)(void **memptr, size_t alignment, size_t size);
+};
+
+static
+struct alloc_functions cur_alloc;
+
+/*
+ * Static allocator to use when initially executing dlsym(). It keeps a
+ * size_t value of each object size prior to the object.
+ */
+static
+void *static_calloc_aligned(size_t nmemb, size_t size, size_t alignment)
 {
-	unsigned long prev_offset, new_offset, res_offset;
+	size_t prev_offset, new_offset, res_offset, aligned_offset;
+
+	if (nmemb * size == 0) {
+		return NULL;
+	}
 
 	/*
 	 * Protect static_calloc_buf_offset from concurrent updates
@@ -45,125 +69,284 @@ static void *static_calloc(size_t nmemb, size_t size)
 	res_offset = CMM_LOAD_SHARED(static_calloc_buf_offset);
 	do {
 		prev_offset = res_offset;
-		if (nmemb * size > sizeof(static_calloc_buf) - prev_offset) {
-			return NULL;
+		aligned_offset = ALIGN(prev_offset + sizeof(size_t), alignment);
+		new_offset = aligned_offset + nmemb * size;
+		if (new_offset > sizeof(static_calloc_buf)) {
+			abort();
 		}
-		new_offset = prev_offset + nmemb * size;
 	} while ((res_offset = uatomic_cmpxchg(&static_calloc_buf_offset,
 			prev_offset, new_offset)) != prev_offset);
-	return &static_calloc_buf[prev_offset];
+	*(size_t *) &static_calloc_buf[aligned_offset - sizeof(size_t)] = size;
+	return &static_calloc_buf[aligned_offset];
+}
+
+static
+void *static_calloc(size_t nmemb, size_t size)
+{
+	void *retval;
+
+	retval = static_calloc_aligned(nmemb, size, 1);
+	tracepoint(ust_libc, calloc, nmemb, size, retval);
+	return retval;
+}
+
+static
+void *static_malloc(size_t size)
+{
+	void *retval;
+
+	retval = static_calloc_aligned(1, size, 1);
+	tracepoint(ust_libc, malloc, size, retval);
+	return retval;
+}
+
+static
+void static_free(void *ptr)
+{
+	/* no-op. */
+	tracepoint(ust_libc, free, ptr);
+}
+
+static
+void *static_realloc(void *ptr, size_t size)
+{
+	size_t *old_size = NULL;
+	void *retval;
+
+	if (size == 0) {
+		retval = NULL;
+		goto end;
+	}
+
+	if (ptr) {
+		old_size = (size_t *) ptr - 1;
+		if (size <= *old_size) {
+			/* We can re-use the old entry. */
+			*old_size = size;
+			retval = ptr;
+			goto end;
+		}
+	}
+	/* We need to expand. Don't free previous memory location. */
+	retval = static_calloc_aligned(1, size, 1);
+	assert(retval);
+	if (ptr)
+		memcpy(retval, ptr, *old_size);
+end:
+	tracepoint(ust_libc, realloc, ptr, size, retval);
+	return retval;
+}
+
+static
+void *static_memalign(size_t alignment, size_t size)
+{
+	void *retval;
+
+	retval = static_calloc_aligned(1, size, alignment);
+	tracepoint(ust_libc, memalign, alignment, size, retval);
+	return retval;
+}
+
+static
+int static_posix_memalign(void **memptr, size_t alignment, size_t size)
+{
+	int retval = 0;
+	void *ptr;
+
+	/* Check for power of 2, larger than void *. */
+	if (alignment & (alignment - 1)
+			|| alignment < sizeof(void *)
+			|| alignment == 0) {
+		retval = EINVAL;
+		goto end;
+	}
+	ptr = static_calloc_aligned(1, size, alignment);
+	*memptr = ptr;
+	if (size && !ptr)
+		retval = ENOMEM;
+end:
+	tracepoint(ust_libc, posix_memalign, *memptr, alignment, size, retval);
+	return 0;
+}
+
+static
+void setup_static_allocator(void)
+{
+	assert(cur_alloc.calloc == NULL);
+	cur_alloc.calloc = static_calloc;
+	assert(cur_alloc.malloc == NULL);
+	cur_alloc.malloc = static_malloc;
+	assert(cur_alloc.free == NULL);
+	cur_alloc.free = static_free;
+	assert(cur_alloc.realloc == NULL);
+	cur_alloc.realloc = static_realloc;
+	assert(cur_alloc.memalign == NULL);
+	cur_alloc.memalign = static_memalign;
+	assert(cur_alloc.posix_memalign == NULL);
+	cur_alloc.posix_memalign = static_posix_memalign;
+}
+
+static
+void lookup_all_symbols(void)
+{
+	struct alloc_functions af;
+
+	/*
+	 * Temporarily redirect allocation functions to
+	 * static_calloc_aligned, and free function to static_free
+	 * (no-op), until the dlsym lookup has completed.
+	 */
+	setup_static_allocator();
+
+	/* Perform the actual lookups */
+	af.calloc = dlsym(RTLD_NEXT, "calloc");
+	af.malloc = dlsym(RTLD_NEXT, "malloc");
+	af.free = dlsym(RTLD_NEXT, "free");
+	af.realloc = dlsym(RTLD_NEXT, "realloc");
+	af.memalign = dlsym(RTLD_NEXT, "memalign");
+	af.posix_memalign = dlsym(RTLD_NEXT, "posix_memalign");
+
+	/* Populate the new allocator functions */
+	memcpy(&cur_alloc, &af, sizeof(cur_alloc));
 }
 
 void *malloc(size_t size)
 {
-	static void *(*plibc_malloc)(size_t size);
 	void *retval;
 
-	if (plibc_malloc == NULL) {
-		plibc_malloc = dlsym(RTLD_NEXT, "malloc");
-		if (plibc_malloc == NULL) {
+	if (cur_alloc.malloc == NULL) {
+		lookup_all_symbols();
+		if (cur_alloc.malloc == NULL) {
 			fprintf(stderr, "mallocwrap: unable to find malloc\n");
-			return NULL;
+			abort();
 		}
 	}
-	retval = plibc_malloc(size);
+	retval = cur_alloc.malloc(size);
 	tracepoint(ust_libc, malloc, size, retval);
 	return retval;
 }
 
 void free(void *ptr)
 {
-	static void (*plibc_free)(void *ptr);
+	tracepoint(ust_libc, free, ptr);
 
-	/* Check whether the memory was allocated with
-	 * static_calloc, in which case there is nothing
-	 * to free.
+	/*
+	 * Check whether the memory was allocated with
+	 * static_calloc_align, in which case there is nothing to free.
 	 */
-	if ((char *)ptr >= static_calloc_buf &&
-	    (char *)ptr < static_calloc_buf + STATIC_CALLOC_LEN) {
+	if (caa_unlikely((char *)ptr >= static_calloc_buf &&
+			(char *)ptr < static_calloc_buf + STATIC_CALLOC_LEN)) {
 		return;
 	}
 
-	if (plibc_free == NULL) {
-		plibc_free = dlsym(RTLD_NEXT, "free");
-		if (plibc_free == NULL) {
+	if (cur_alloc.free == NULL) {
+		lookup_all_symbols();
+		if (cur_alloc.free == NULL) {
 			fprintf(stderr, "mallocwrap: unable to find free\n");
-			return;
+			abort();
 		}
 	}
-	tracepoint(ust_libc, free, ptr);
-	plibc_free(ptr);
+	cur_alloc.free(ptr);
 }
 
 void *calloc(size_t nmemb, size_t size)
 {
-	static void *(*volatile plibc_calloc)(size_t nmemb, size_t size);
 	void *retval;
 
-	if (plibc_calloc == NULL) {
-		/*
-		 * Temporarily redirect to static_calloc,
-		 * until the dlsym lookup has completed.
-		 */
-		plibc_calloc = static_calloc;
-		plibc_calloc = dlsym(RTLD_NEXT, "calloc");
-		if (plibc_calloc == NULL) {
+	if (cur_alloc.calloc == NULL) {
+		lookup_all_symbols();
+		if (cur_alloc.calloc == NULL) {
 			fprintf(stderr, "callocwrap: unable to find calloc\n");
-			return NULL;
+			abort();
 		}
 	}
-	retval = plibc_calloc(nmemb, size);
+	retval = cur_alloc.calloc(nmemb, size);
 	tracepoint(ust_libc, calloc, nmemb, size, retval);
 	return retval;
 }
 
 void *realloc(void *ptr, size_t size)
 {
-	static void *(*plibc_realloc)(void *ptr, size_t size);
 	void *retval;
 
-	if (plibc_realloc == NULL) {
-		plibc_realloc = dlsym(RTLD_NEXT, "realloc");
-		if (plibc_realloc == NULL) {
+	/* Check whether the memory was allocated with
+	 * static_calloc_align, in which case there is nothing
+	 * to free, and we need to copy the old data.
+	 */
+	if (caa_unlikely((char *)ptr >= static_calloc_buf &&
+			(char *)ptr < static_calloc_buf + STATIC_CALLOC_LEN)) {
+		size_t *old_size;
+
+		old_size = (size_t *) ptr - 1;
+		if (cur_alloc.calloc == NULL) {
+			lookup_all_symbols();
+			if (cur_alloc.calloc == NULL) {
+				fprintf(stderr, "reallocwrap: unable to find calloc\n");
+				abort();
+			}
+		}
+		retval = cur_alloc.calloc(1, size);
+		if (retval) {
+			memcpy(retval, ptr, *old_size);
+		}
+		goto end;
+	}
+
+	if (cur_alloc.realloc == NULL) {
+		lookup_all_symbols();
+		if (cur_alloc.realloc == NULL) {
 			fprintf(stderr, "reallocwrap: unable to find realloc\n");
-			return NULL;
+			abort();
 		}
 	}
-	retval = plibc_realloc(ptr, size);
+	retval = cur_alloc.realloc(ptr, size);
+end:
 	tracepoint(ust_libc, realloc, ptr, size, retval);
 	return retval;
 }
 
 void *memalign(size_t alignment, size_t size)
 {
-	static void *(*plibc_memalign)(size_t alignment, size_t size);
 	void *retval;
 
-	if (plibc_memalign == NULL) {
-		plibc_memalign = dlsym(RTLD_NEXT, "memalign");
-		if (plibc_memalign == NULL) {
+	if (cur_alloc.memalign == NULL) {
+		lookup_all_symbols();
+		if (cur_alloc.memalign == NULL) {
 			fprintf(stderr, "memalignwrap: unable to find memalign\n");
-			return NULL;
+			abort();
 		}
 	}
-	retval = plibc_memalign(alignment, size);
+	retval = cur_alloc.memalign(alignment, size);
 	tracepoint(ust_libc, memalign, alignment, size, retval);
 	return retval;
 }
 
 int posix_memalign(void **memptr, size_t alignment, size_t size)
 {
-	static int(*plibc_posix_memalign)(void **memptr, size_t alignment, size_t size);
 	int retval;
 
-	if (plibc_posix_memalign == NULL) {
-		plibc_posix_memalign = dlsym(RTLD_NEXT, "posix_memalign");
-		if (plibc_posix_memalign == NULL) {
+	if (cur_alloc.posix_memalign == NULL) {
+		lookup_all_symbols();
+		if (cur_alloc.posix_memalign == NULL) {
 			fprintf(stderr, "posix_memalignwrap: unable to find posix_memalign\n");
-			return ENOMEM;
+			abort();
 		}
 	}
-	retval = plibc_posix_memalign(memptr, alignment, size);
+	retval = cur_alloc.posix_memalign(memptr, alignment, size);
 	tracepoint(ust_libc, posix_memalign, *memptr, alignment, size, retval);
 	return retval;
+}
+
+__attribute__((constructor))
+void lttng_ust_malloc_wrapper_init(void)
+{
+	/* Initialization already done */
+	if (cur_alloc.calloc) {
+		return;
+	}
+	/*
+	 * Ensure the allocator is in place before the process becomes
+	 * multithreaded.
+	 */
+	lookup_all_symbols();
 }

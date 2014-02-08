@@ -1311,6 +1311,14 @@ quit:
 }
 
 /*
+ * Weak symbol to call when the ust malloc wrapper is not loaded.
+ */
+__attribute__((weak))
+void lttng_ust_malloc_wrapper_init(void)
+{
+}
+
+/*
  * sessiond monitoring thread: monitor presence of global and per-user
  * sessiond by polling the application common named pipe.
  */
@@ -1350,6 +1358,10 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	lttng_ring_buffer_client_discard_init();
 	lttng_ring_buffer_client_discard_rt_init();
 	lttng_context_init();
+	/*
+	 * Invoke ust malloc wrapper init before starting other threads.
+	 */
+	lttng_ust_malloc_wrapper_init();
 
 	timeout_mode = get_constructor_timeout(&constructor_timeout);
 
