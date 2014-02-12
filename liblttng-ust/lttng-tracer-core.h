@@ -48,4 +48,6 @@ int lttng_get_notify_socket(void *owner);
 
 void lttng_ust_sockinfo_session_enabled(void *owner);
 
+void lttng_ust_malloc_wrapper_init(void);
+
 #endif /* _LTTNG_TRACER_CORE_H */
