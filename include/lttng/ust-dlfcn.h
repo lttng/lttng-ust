@@ -56,6 +56,6 @@ extern void *dlopen(__const char *__file, int __mode);
 extern int dlclose(void *__handle) __nonnull ((1));
 extern void *dlsym(void *__restrict __handle,
 		__const char *__restrict __name) __nonnull ((2));
-extern char *dlerror (void);
+extern char *dlerror(void);
 
 #endif /* _LTTNG_UST_DLFCN_H */
