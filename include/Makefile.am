@@ -29,6 +29,7 @@ noinst_HEADERS = \
 	ust-comm.h \
 	lttng/ust-tid.h \
 	lttng/bitfield.h \
+	lttng/ust-dlfcn.h \
 	helper.h \
 	share.h
 

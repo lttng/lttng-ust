@@ -18,7 +18,7 @@
  */
 
 #define _GNU_SOURCE
-#include <dlfcn.h>
+#include <lttng/ust-dlfcn.h>
 #include <sys/types.h>
 #include <stdio.h>
 #include <assert.h>

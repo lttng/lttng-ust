@@ -18,7 +18,6 @@
 
 #define _LGPL_SOURCE
 #define _GNU_SOURCE
-#include <dlfcn.h>
 #include <link.h>
 
 #include <sys/types.h>

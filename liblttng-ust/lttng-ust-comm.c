@@ -34,7 +34,6 @@
 #include <time.h>
 #include <assert.h>
 #include <signal.h>
-#include <dlfcn.h>
 #include <urcu/uatomic.h>
 #include <urcu/futex.h>
 #include <urcu/compiler.h>

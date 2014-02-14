@@ -17,7 +17,7 @@
  */
 
 #define _GNU_SOURCE
-#include <dlfcn.h>
+#include <lttng/ust-dlfcn.h>
 #include <pthread.h>
 
 #define TRACEPOINT_DEFINE

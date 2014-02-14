@@ -18,7 +18,7 @@
  */
 
 #define _GNU_SOURCE
-#include <dlfcn.h>
+#include <lttng/ust-dlfcn.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <signal.h>

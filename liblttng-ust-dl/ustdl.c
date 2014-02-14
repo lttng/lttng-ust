@@ -18,8 +18,8 @@
 
 #define _LGPL_SOURCE
 #define _GNU_SOURCE
+#include <lttng/ust-dlfcn.h>
 #include <inttypes.h>
-#include <dlfcn.h>
 #include <link.h>
 #include <unistd.h>
 #include <stdio.h>
