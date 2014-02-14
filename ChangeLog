@@ -1,3 +1,15 @@
+2014-02-14 lttng-ust 2.4.0-rc4
+	* Cleanup: remove extra space in dlerror wrapper
+	* Fix: work-around glibc lying about dlsym()/dlerror() leafness
+	* Cleanup: add lttng_ust_malloc_wrapper_init prototype to header
+	* Fix: malloc libc instrumentation wrapper
+	* Fix: add LTTngEvent class to fix delayed logger
+	* Fix: FD leak in liblttng-ust-ctl
+	* Fix: liblttng-ust-dl Makefile flags mismatch
+	* Fix: liblttng-ust-fork Makefile flags mismatch
+	* Fix: out of tree examples build
+	* Fix: C++: incomplete extern C guard transition
+
 2014-01-29 lttng-ust 2.4.0-rc3
 	* Fix: add missing JUL loglevel handling
 	* Cleanup gen-tp: add quotes around AM_CC
