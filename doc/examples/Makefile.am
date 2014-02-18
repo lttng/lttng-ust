@@ -10,7 +10,6 @@ dist_doc_examples_java_jul_DATA = java-jul/Makefile \
 								  java-jul/Hello.java \
 								  java-jul/run
 SUBDIRS_JUL = java-jul
-bin_SCRIPTS = java-jul/Makefile
 endif
 
 dist_doc_examples_DATA = README
