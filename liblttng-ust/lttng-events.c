@@ -106,8 +106,6 @@ int lttng_loglevel_match(int loglevel,
 		enum lttng_ust_loglevel_type req_type,
 		int req_loglevel)
 {
-	if (req_type == LTTNG_UST_LOGLEVEL_ALL)
-		return 1;
 	if (!has_loglevel)
 		loglevel = TRACE_DEFAULT;
 	switch (req_type) {
