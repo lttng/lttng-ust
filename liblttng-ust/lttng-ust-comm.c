@@ -819,9 +819,14 @@ void cleanup_sock_info(struct sock_info *sock_info, int exiting)
 		sock_info->notify_socket = -1;
 	}
 	if (sock_info->wait_shm_mmap) {
-		ret = munmap(sock_info->wait_shm_mmap, sysconf(_SC_PAGE_SIZE));
-		if (ret) {
-			ERR("Error unmapping wait shm");
+		long page_size;
+
+		page_size = sysconf(_SC_PAGE_SIZE);
+		if (page_size > 0) {
+			ret = munmap(sock_info->wait_shm_mmap, page_size);
+			if (ret) {
+				ERR("Error unmapping wait shm");
+			}
 		}
 		sock_info->wait_shm_mmap = NULL;
 	}
@@ -994,15 +999,20 @@ error_close:
 static
 char *get_map_shm(struct sock_info *sock_info)
 {
-	size_t mmap_size = sysconf(_SC_PAGE_SIZE);
+	long page_size;
 	int wait_shm_fd, ret;
 	char *wait_shm_mmap;
 
-	wait_shm_fd = get_wait_shm(sock_info, mmap_size);
+	page_size = sysconf(_SC_PAGE_SIZE);
+	if (page_size < 0) {
+		goto error;
+	}
+
+	wait_shm_fd = get_wait_shm(sock_info, page_size);
 	if (wait_shm_fd < 0) {
 		goto error;
 	}
-	wait_shm_mmap = mmap(NULL, mmap_size, PROT_READ,
+	wait_shm_mmap = mmap(NULL, page_size, PROT_READ,
 		  MAP_SHARED, wait_shm_fd, 0);
 	/* close shm fd immediately after taking the mmap reference */
 	ret = close(wait_shm_fd);
