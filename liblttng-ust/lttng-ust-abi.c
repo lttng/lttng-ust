@@ -185,6 +185,7 @@ static
 void objd_ref(int id)
 {
 	struct lttng_ust_obj *obj = _objd_get(id);
+	assert(obj != NULL);
 	obj->u.s.f_count++;
 }
 
