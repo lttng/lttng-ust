@@ -380,7 +380,10 @@ static void add_callsite(struct tracepoint_lib * lib, struct tracepoint *tp)
 	hash = jhash(name, name_len, 0);
 	head = &callsite_table[hash & (CALLSITE_TABLE_SIZE - 1)];
 	e = zmalloc(sizeof(struct callsite_entry));
-	assert(e);
+	if (!e) {
+		PERROR("Unable to add callsite for tracepoint \"%s\"", name);
+		return;
+	}
 	cds_hlist_add_head(&e->hlist, head);
 	e->tp = tp;
 	cds_list_add(&e->node, &lib->callsites);
@@ -729,7 +732,10 @@ int tracepoint_register_lib(struct tracepoint * const *tracepoints_start,
 	init_tracepoint();
 
 	pl = (struct tracepoint_lib *) zmalloc(sizeof(struct tracepoint_lib));
-
+	if (!pl) {
+		PERROR("Unable to register tracepoint lib");
+		return -1;
+	}
 	pl->tracepoints_start = tracepoints_start;
 	pl->tracepoints_count = tracepoints_count;
 	CDS_INIT_LIST_HEAD(&pl->callsites);
