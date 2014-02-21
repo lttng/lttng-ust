@@ -638,11 +638,15 @@ error:
 
 int update_futex(int fd, int active)
 {
-	size_t mmap_size = sysconf(_SC_PAGE_SIZE);
+	long page_size;
 	char *wait_shm_mmap;
 	int ret;
 
-	wait_shm_mmap = mmap(NULL, mmap_size, PROT_READ | PROT_WRITE,
+	page_size = sysconf(_SC_PAGE_SIZE);
+	if (page_size < 0) {
+		goto error;
+	}
+	wait_shm_mmap = mmap(NULL, page_size, PROT_READ | PROT_WRITE,
 		  MAP_SHARED, fd, 0);
 	if (wait_shm_mmap == MAP_FAILED) {
 		perror("mmap");
@@ -656,7 +660,7 @@ int update_futex(int fd, int active)
 	} else {
 		uatomic_set((int32_t *) wait_shm_mmap, 0);
 	}
-	ret = munmap(wait_shm_mmap, mmap_size);
+	ret = munmap(wait_shm_mmap, page_size);
 	if (ret) {
 		perror("Error unmapping wait shm");
 		goto error;
