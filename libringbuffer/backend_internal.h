@@ -240,9 +240,10 @@ unsigned long subbuffer_get_records_count(
 
 /*
  * Must be executed at subbuffer delivery when the writer has _exclusive_
- * subbuffer access. See ring_buffer_check_deliver() for details.
- * ring_buffer_get_records_count() must be called to get the records count
- * before this function, because it resets the records_commit count.
+ * subbuffer access. See lib_ring_buffer_check_deliver() for details.
+ * lib_ring_buffer_get_records_count() must be called to get the records
+ * count before this function, because it resets the records_commit
+ * count.
  */
 static inline
 unsigned long subbuffer_count_records_overrun(
