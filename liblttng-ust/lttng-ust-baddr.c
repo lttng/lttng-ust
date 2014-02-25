@@ -154,21 +154,22 @@ static
 void dump_exec_baddr(struct extract_data *data)
 {
 	void *owner = data->owner;
-	Dl_info dl_info = { 0 };
 	void *base_addr_ptr;
-	char resolved_path[PATH_MAX];
+	char exe_path[PATH_MAX];
+	ssize_t exe_len;
 
 	base_addr_ptr = data->exec_baddr;
 	if (!base_addr_ptr)
 		return;
 	/*
-	 * We have to use Dl_info to determine the executable full path.
+	 * We have to use /proc/self/exe to determine the executable full
+	 * path.
 	 */
-	if (!dladdr(base_addr_ptr, &dl_info))
+	exe_len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
+	if (exe_len <= 0)
 		return;
-	if (!realpath(dl_info.dli_fname, resolved_path))
-		return;
-	trace_baddr(base_addr_ptr, resolved_path, 0, owner);
+	exe_path[exe_len] = '\0';
+	trace_baddr(base_addr_ptr, exe_path, 0, owner);
 }
 
 int lttng_ust_baddr_statedump(void *owner)
