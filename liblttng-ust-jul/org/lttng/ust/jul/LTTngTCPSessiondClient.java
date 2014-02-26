@@ -188,7 +188,6 @@ public class LTTngTCPSessiondClient {
 				 * UST application.
 				 */
 				registerToSessiond();
-				this.registerSem.release();
 
 				setupEventTimer();
 
@@ -274,6 +273,15 @@ public class LTTngTCPSessiondClient {
 			}
 
 			switch (headerCmd.cmd) {
+				case CMD_REG_DONE:
+				{
+					/*
+					 * Release semaphore so meaning registration is done and we
+					 * can proceed to continue tracing.
+					 */
+					this.registerSem.release();
+					break;
+				}
 				case CMD_LIST:
 				{
 					LTTngSessiondCmd2_4.sessiond_list_logger listLoggerCmd =

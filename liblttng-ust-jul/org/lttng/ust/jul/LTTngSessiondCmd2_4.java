@@ -64,7 +64,10 @@ public interface LTTngSessiondCmd2_4 {
 		/** Enable logger by name. */
 		CMD_ENABLE(2),
 		/** Disable logger by name. */
-		CMD_DISABLE(3);
+		CMD_DISABLE(3),
+		/** Registration done */
+		CMD_REG_DONE(4);
+
 		private int code;
 
 		private lttng_jul_command(int c) {
