@@ -31,10 +31,15 @@ import java.util.logging.LogManager;
 import java.util.Enumeration;
 
 public class LTTngAgent {
-	private static LTTngLogHandler lttngHandler;
 	private static LogManager logManager;
-	private static LTTngThread lttngThread;
-	private static Thread sessiondTh;
+
+	/* Possible that we have to threads handling two sessiond. */
+	private static LTTngLogHandler lttngHandlerRoot;
+	private static LTTngLogHandler lttngHandlerUser;
+	private static LTTngThread lttngThreadRoot;
+	private static LTTngThread lttngThreadUser;
+	private static Thread sessiondThRoot;
+	private static Thread sessiondThUser;
 
 	/* Singleton agent object. */
 	private static LTTngAgent curAgent = null;
@@ -56,7 +61,9 @@ public class LTTngAgent {
 	 */
 	private LTTngAgent() throws IOException {
 		this.logManager = LogManager.getLogManager();
-		this.lttngHandler = new LTTngLogHandler(this.logManager);
+		this.lttngHandlerUser = new LTTngLogHandler(this.logManager);
+		this.lttngHandlerRoot = new LTTngLogHandler(this.logManager);
+		this.lttngHandlerRoot.is_root = 1;
 		this.registerSem = new Semaphore(0, true);
 	}
 
@@ -73,7 +80,8 @@ public class LTTngAgent {
 			}
 
 			logger = this.logManager.getLogger(loggerName);
-			logger.removeHandler(this.lttngHandler);
+			logger.removeHandler(this.lttngHandlerUser);
+			logger.removeHandler(this.lttngHandlerRoot);
 		}
 	}
 
@@ -96,18 +104,9 @@ public class LTTngAgent {
 		return System.getProperty("user.home");
 	}
 
-	private int getPortFromFile() throws IOException {
+	private int getPortFromFile(String path) throws IOException {
 		int port;
-		int uid = getUID();
-		String path;
 		BufferedReader br;
-
-		/* Check if root or not, it tells where to get the port file. */
-		if (uid == 0) {
-			path = rootPortFile;
-		} else {
-			path = new String(getHomePath() + userPortFile);
-		}
 
 		try {
 			br = new BufferedReader(new FileReader(path));
@@ -141,33 +140,63 @@ public class LTTngAgent {
 	 * returned by the logManager.
 	 */
 	private synchronized void init() throws SecurityException, IOException {
+		int user_port, root_port;
+		int nr_acquires = 0;
+
 		if (this.initialized) {
 			return;
 		}
 
-		this.lttngThread = new LTTngThread(this.sessiondAddr,
-				getPortFromFile(), this.lttngHandler, this.registerSem);
-		this.sessiondTh = new Thread(lttngThread);
-		this.sessiondTh.start();
+		root_port = getPortFromFile(rootPortFile);
+		if (getUID() == 0) {
+			user_port = root_port;
+		} else {
+			user_port = getPortFromFile(getHomePath() + userPortFile);
+		}
 
-		this.initialized = true;
+		/* Handle user session daemon if any. */
+		this.lttngThreadUser = new LTTngThread(this.sessiondAddr, user_port,
+				this.lttngHandlerUser, this.registerSem);
+		this.sessiondThUser = new Thread(lttngThreadUser);
+		this.sessiondThUser.start();
+		/* Wait for registration done of per-user sessiond */
+		nr_acquires++;
 
-		/* Wait for the registration to end. */
+		/* Having two different ports, we have to try both. */
+		if (root_port != user_port) {
+			/* Handle root session daemon. */
+			this.lttngThreadRoot = new LTTngThread(this.sessiondAddr,
+					root_port, this.lttngHandlerRoot, this.registerSem);
+			this.sessiondThRoot = new Thread(lttngThreadRoot);
+			this.sessiondThRoot.start();
+			/* Wait for registration done of system-wide sessiond */
+			nr_acquires++;
+		}
+
+		/* Wait for each registration to end. */
 		try {
-			this.registerSem.acquire();
+			this.registerSem.acquire(nr_acquires);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+
+		this.initialized = true;
 	}
 
 	public void dispose() throws IOException {
-		this.lttngThread.dispose();
+		this.lttngThreadUser.dispose();
+		if (this.lttngThreadRoot != null) {
+			this.lttngThreadRoot.dispose();
+		}
 
 		/* Make sure there is no more LTTng handler attach to logger(s). */
 		this.removeHandlers();
 
 		try {
-			this.sessiondTh.join();
+			this.sessiondThUser.join();
+			if (this.sessiondThRoot != null) {
+				this.sessiondThRoot.join();
+			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}

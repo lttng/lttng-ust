@@ -43,6 +43,9 @@ public class LTTngLogHandler extends Handler {
 	public int logLevelAll = 0;
 	public int logLevelTypeAll;
 
+	/* Am I a root Log Handler. */
+	public int is_root = 0;
+
 	public LogManager logManager;
 
 	/* Indexed by name and corresponding LTTngEvent. */
@@ -111,9 +114,16 @@ public class LTTngLogHandler extends Handler {
 		 * caller is used for the event name, the raw message is taken, the
 		 * loglevel of the record and the thread ID.
 		 */
-		LTTngUst.tracepoint(record.getMessage(), record.getLoggerName(),
-				record.getSourceClassName(), record.getSourceMethodName(),
-				record.getMillis(), record.getLevel().intValue(),
-				record.getThreadID());
+		if (this.is_root == 1) {
+			LTTngUst.tracepointS(record.getMessage(),
+					record.getLoggerName(), record.getSourceClassName(),
+					record.getSourceMethodName(), record.getMillis(),
+					record.getLevel().intValue(), record.getThreadID());
+		} else {
+			LTTngUst.tracepointU(record.getMessage(),
+					record.getLoggerName(), record.getSourceClassName(),
+					record.getSourceMethodName(), record.getMillis(),
+					record.getLevel().intValue(), record.getThreadID());
+		}
 	}
 }

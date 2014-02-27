@@ -63,6 +63,12 @@ public abstract class LTTngUst {
 	 * @param thread_id
 	 *            Identifier for the thread where the message originated.
 	 */
-    public static native void tracepoint(String msg, String logger_name, String class_name,
+
+	/* Use for a user session daemon. */
+	public static native void tracepointU(String msg, String logger_name, String class_name,
+			String method_name, long millis, int log_level, int thread_id);
+
+	/* Use for a root session daemon. */
+	public static native void tracepointS(String msg, String logger_name, String class_name,
 			String method_name, long millis, int log_level, int thread_id);
 }

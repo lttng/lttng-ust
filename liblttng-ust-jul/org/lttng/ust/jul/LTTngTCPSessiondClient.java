@@ -280,7 +280,11 @@ public class LTTngTCPSessiondClient {
 					 * can proceed to continue tracing.
 					 */
 					this.registerSem.release();
-					break;
+					/*
+					 * We don't send any reply to the registration done command.
+					 * This just marks the end of the initial session setup.
+					 */
+					continue;
 				}
 				case CMD_LIST:
 				{

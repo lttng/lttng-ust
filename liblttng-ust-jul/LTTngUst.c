@@ -22,7 +22,10 @@
 #define TRACEPOINT_CREATE_PROBES
 #include "lttng_ust_jul.h"
 
-JNIEXPORT void JNICALL Java_org_lttng_ust_jul_LTTngUst_tracepoint(JNIEnv *env,
+/*
+ * System tracepoint meaning only root agent will fire this.
+ */
+JNIEXPORT void JNICALL Java_org_lttng_ust_jul_LTTngUst_tracepointS(JNIEnv *env,
 						jobject jobj,
 						jstring msg,
 						jstring logger_name,
@@ -38,7 +41,35 @@ JNIEXPORT void JNICALL Java_org_lttng_ust_jul_LTTngUst_tracepoint(JNIEnv *env,
 	const char *class_name_cstr = (*env)->GetStringUTFChars(env, class_name, &iscopy);
 	const char *method_name_cstr = (*env)->GetStringUTFChars(env, method_name, &iscopy);
 
-	tracepoint(lttng_jul, jul_event, msg_cstr, logger_name_cstr,
+	tracepoint(lttng_jul, sys_event, msg_cstr, logger_name_cstr,
+			class_name_cstr, method_name_cstr, millis, log_level, thread_id);
+
+	(*env)->ReleaseStringUTFChars(env, msg, msg_cstr);
+	(*env)->ReleaseStringUTFChars(env, logger_name, logger_name_cstr);
+	(*env)->ReleaseStringUTFChars(env, class_name, class_name_cstr);
+	(*env)->ReleaseStringUTFChars(env, method_name, method_name_cstr);
+}
+
+/*
+ * User tracepoint meaning only a non root agent will fire this.
+ */
+JNIEXPORT void JNICALL Java_org_lttng_ust_jul_LTTngUst_tracepointU(JNIEnv *env,
+		jobject jobj,
+		jstring msg,
+		jstring logger_name,
+		jstring class_name,
+		jstring method_name,
+		jlong millis,
+		jint log_level,
+		jint thread_id)
+{
+	jboolean iscopy;
+	const char *msg_cstr = (*env)->GetStringUTFChars(env, msg, &iscopy);
+	const char *logger_name_cstr = (*env)->GetStringUTFChars(env, logger_name, &iscopy);
+	const char *class_name_cstr = (*env)->GetStringUTFChars(env, class_name, &iscopy);
+	const char *method_name_cstr = (*env)->GetStringUTFChars(env, method_name, &iscopy);
+
+	tracepoint(lttng_jul, user_event, msg_cstr, logger_name_cstr,
 			class_name_cstr, method_name_cstr, millis, log_level, thread_id);
 
 	(*env)->ReleaseStringUTFChars(env, msg, msg_cstr);
