@@ -43,7 +43,11 @@ if NO_SHARED
 # disabled.
 else
 # Copies are for VPATH build support
-SUBDIRS_PROXY = easy-ust demo gen-tp hello-static-lib
+SUBDIRS_PROXY = easy-ust demo hello-static-lib
+
+if BUILD_GEN_TP_EXAMPLES
+SUBDIRS_PROXY += gen-tp
+endif
 
 all-local:
 	@if [ x"$(srcdir)" != x"$(builddir)" ]; then \

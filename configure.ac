@@ -276,6 +276,9 @@ AC_DEFINE_UNQUOTED([LTTNG_SYSTEM_RUNDIR], ["$lttng_system_rundir"],
 lttnglibjavadir="${libdir}/lttng/java"
 AC_SUBST(lttnglibjavadir)
 
+AM_PATH_PYTHON([2.7],BUILD_GEN_TP_EXAMPLES=1)
+AM_CONDITIONAL([BUILD_GEN_TP_EXAMPLES], [test $BUILD_GEN_TP_EXAMPLES], [Build examples requiring lttng-gen-tp])
+
 AC_CONFIG_FILES([
 	Makefile
 	doc/Makefile
