@@ -23,11 +23,10 @@ public class LTTngThread implements Runnable {
 	private LTTngLogHandler handler;
 	private LTTngTCPSessiondClient sessiondClient;
 
-	public LTTngThread(String host, int port, LTTngLogHandler handler,
+	public LTTngThread(String host, LTTngLogHandler handler,
 			Semaphore registerSem) {
 		this.handler = handler;
-		this.sessiondClient = new LTTngTCPSessiondClient(host, port,
-				registerSem);
+		this.sessiondClient = new LTTngTCPSessiondClient(host, registerSem);
 	}
 
 	@Override

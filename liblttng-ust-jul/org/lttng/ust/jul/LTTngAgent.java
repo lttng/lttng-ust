@@ -18,11 +18,11 @@
 package org.lttng.ust.jul;
 
 import java.io.IOException;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -48,12 +48,13 @@ public class LTTngAgent {
 	private static boolean initialized = false;
 
 	private static Semaphore registerSem;
+	private final static int semTimeout = 3; /* Seconds */
 
+	/*
+	 * Default value to connect to session daemon. Port number is dynamically
+	 * fetched from the port file that is created by a running session daemon.
+	 */
 	private static final String sessiondAddr = "127.0.0.1";
-	private static final int sessiondPort = 5345;
-
-	private static final String rootPortFile = "/var/run/lttng/jul.port";
-	private static final String userPortFile = "/.lttng/jul.port";
 
 	/*
 	 * Constructor is private. This is a singleton and a reference should be
@@ -100,29 +101,6 @@ public class LTTngAgent {
 		return uid;
 	}
 
-	private String getHomePath() {
-		return System.getProperty("user.home");
-	}
-
-	private int getPortFromFile(String path) throws IOException {
-		int port;
-		BufferedReader br;
-
-		try {
-			br = new BufferedReader(new FileReader(path));
-			String line = br.readLine();
-			port = Integer.parseInt(line, 10);
-			if (port < 0 || port > 65535) {
-				port = sessiondPort;
-			}
-			br.close();
-		} catch (FileNotFoundException e) {
-			port = sessiondPort;
-		}
-
-		return port;
-	}
-
 	/*
 	 * Public getter to acquire a reference to this singleton object.
 	 */
@@ -140,42 +118,32 @@ public class LTTngAgent {
 	 * returned by the logManager.
 	 */
 	private synchronized void init() throws SecurityException, IOException {
-		int user_port, root_port;
 		int nr_acquires = 0;
 
 		if (this.initialized) {
 			return;
 		}
 
-		root_port = getPortFromFile(rootPortFile);
-		if (getUID() == 0) {
-			user_port = root_port;
-		} else {
-			user_port = getPortFromFile(getHomePath() + userPortFile);
-		}
-
 		/* Handle user session daemon if any. */
-		this.lttngThreadUser = new LTTngThread(this.sessiondAddr, user_port,
+		this.lttngThreadUser = new LTTngThread(this.sessiondAddr,
 				this.lttngHandlerUser, this.registerSem);
 		this.sessiondThUser = new Thread(lttngThreadUser);
 		this.sessiondThUser.start();
 		/* Wait for registration done of per-user sessiond */
 		nr_acquires++;
 
-		/* Having two different ports, we have to try both. */
-		if (root_port != user_port) {
-			/* Handle root session daemon. */
-			this.lttngThreadRoot = new LTTngThread(this.sessiondAddr,
-					root_port, this.lttngHandlerRoot, this.registerSem);
-			this.sessiondThRoot = new Thread(lttngThreadRoot);
-			this.sessiondThRoot.start();
-			/* Wait for registration done of system-wide sessiond */
-			nr_acquires++;
-		}
+		/* Handle root session daemon. */
+		this.lttngThreadRoot = new LTTngThread(this.sessiondAddr,
+				this.lttngHandlerRoot, this.registerSem);
+		this.sessiondThRoot = new Thread(lttngThreadRoot);
+		this.sessiondThRoot.start();
+		/* Wait for registration done of system-wide sessiond */
+		nr_acquires++;
 
 		/* Wait for each registration to end. */
 		try {
-			this.registerSem.acquire(nr_acquires);
+			this.registerSem.tryAcquire(nr_acquires, semTimeout,
+					TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}

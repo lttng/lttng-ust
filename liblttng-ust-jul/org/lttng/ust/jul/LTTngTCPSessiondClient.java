@@ -23,9 +23,12 @@ import java.nio.ByteOrder;
 import java.lang.Integer;
 import java.io.IOException;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.DataInputStream;
+import java.io.FileReader;
+import java.io.FileNotFoundException;
 import java.net.*;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
@@ -49,7 +52,6 @@ public class LTTngTCPSessiondClient {
 		new LTTngSessiondCmd2_4.sessiond_hdr();
 
 	private final String sessiondHost;
-	private final int sessiondPort;
 	private Socket sessiondSock;
 	private boolean quit = false;
 
@@ -71,9 +73,14 @@ public class LTTngTCPSessiondClient {
 	private final static long timerDelay = 5 * 1000;
 	private static boolean timerInitialized;
 
-	public LTTngTCPSessiondClient(String host, int port, Semaphore sem) {
+	private static final String rootPortFile = "/var/run/lttng/jul.port";
+	private static final String userPortFile = "/.lttng/jul.port";
+
+	/* Indicate if we've already release the semaphore. */
+	private boolean sem_posted = false;
+
+	public LTTngTCPSessiondClient(String host, Semaphore sem) {
 		this.sessiondHost = host;
-		this.sessiondPort = port;
 		this.registerSem = sem;
 		this.eventTimer = new Timer();
 		this.timerInitialized = false;
@@ -168,6 +175,18 @@ public class LTTngTCPSessiondClient {
 		this.timerInitialized = true;
 	}
 
+	/*
+	 * Try to release the registerSem if it's not already done.
+	 */
+	private void tryReleaseSem()
+	{
+		/* Release semaphore so we unblock the agent. */
+		if (!this.sem_posted) {
+			this.registerSem.release();
+			this.sem_posted = true;
+		}
+	}
+
 	public void init(LTTngLogHandler handler) throws InterruptedException {
 		this.handler = handler;
 
@@ -198,13 +217,13 @@ public class LTTngTCPSessiondClient {
 				 */
 				handleSessiondCmd();
 			} catch (UnknownHostException uhe) {
-				this.registerSem.release();
+				tryReleaseSem();
 				System.out.println(uhe);
 			} catch (IOException ioe) {
-				this.registerSem.release();
+				tryReleaseSem();
 				Thread.sleep(3000);
 			} catch (Exception e) {
-				this.registerSem.release();
+				tryReleaseSem();
 				e.printStackTrace();
 			}
 		}
@@ -279,7 +298,7 @@ public class LTTngTCPSessiondClient {
 					 * Release semaphore so meaning registration is done and we
 					 * can proceed to continue tracing.
 					 */
-					this.registerSem.release();
+					tryReleaseSem();
 					/*
 					 * We don't send any reply to the registration done command.
 					 * This just marks the end of the initial session setup.
@@ -346,8 +365,54 @@ public class LTTngTCPSessiondClient {
 		}
 	}
 
+	private String getHomePath() {
+		return System.getProperty("user.home");
+	}
+
+	/**
+	 * Read port number from file created by the session daemon.
+	 *
+	 * @return port value if found else 0.
+	 */
+	private int getPortFromFile(String path) throws IOException {
+		int port;
+		BufferedReader br;
+
+		try {
+			br = new BufferedReader(new FileReader(path));
+			String line = br.readLine();
+			port = Integer.parseInt(line, 10);
+			if (port < 0 || port > 65535) {
+				/* Invalid value. Ignore. */
+				port = 0;
+			}
+			br.close();
+		} catch (FileNotFoundException e) {
+			/* No port available. */
+			port = 0;
+		}
+
+		return port;
+	}
+
 	private void connectToSessiond() throws Exception {
-		this.sessiondSock = new Socket(this.sessiondHost, this.sessiondPort);
+		int port;
+
+		if (this.handler.is_root == 1) {
+			port = getPortFromFile(rootPortFile);
+			if (port == 0) {
+				/* No session daemon available. Stop and retry later. */
+				throw new IOException();
+			}
+		} else {
+			port = getPortFromFile(getHomePath() + userPortFile);
+			if (port == 0) {
+				/* No session daemon available. Stop and retry later. */
+				throw new IOException();
+			}
+		}
+
+		this.sessiondSock = new Socket(this.sessiondHost, port);
 		this.inFromSessiond = new DataInputStream(
 				sessiondSock.getInputStream());
 		this.outToSessiond = new DataOutputStream(
