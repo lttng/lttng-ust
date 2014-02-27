@@ -152,6 +152,7 @@ public interface LTTngSessiondCmd2_4 {
 		 */
 		public int enableLogger(LTTngLogHandler handler, LTTngEvent event,
 				HashMap enabledLoggers) {
+			int ret;
 			Logger logger;
 
 			logger = handler.logManager.getLogger(event.name);
@@ -159,9 +160,12 @@ public interface LTTngSessiondCmd2_4 {
 				return 0;
 			}
 
-			handler.setEvent(event);
-			logger.addHandler(handler);
-			enabledLoggers.put(event.name, logger);
+			ret = handler.setEvent(event);
+			if (ret == 0) {
+				/* Newly created event, add the handler. */
+				logger.addHandler(handler);
+				enabledLoggers.put(event.name, logger);
+			}
 
 			return 1;
 		}
@@ -176,7 +180,7 @@ public interface LTTngSessiondCmd2_4 {
 		public LTTngEvent execute(LTTngLogHandler handler, HashMap enabledLoggers) {
 			int ret;
 			Logger logger;
-			LTTngEvent event;
+			LTTngEvent event = null;
 
 			if (name == null) {
 				this.code = lttng_jul_ret_code.CODE_INVALID_CMD;
@@ -192,9 +196,11 @@ public interface LTTngSessiondCmd2_4 {
 				 * Keep the loglevel value for all events in case an event
 				 * appears later on.
 				 */
-				handler.logLevelUseAll = 1;
-				handler.logLevelAll = lttngLogLevel;
-				handler.logLevelTypeAll = lttngLogLevelType;
+				if (lttngLogLevel != -1) {
+					handler.logLevelUseAll = 1;
+					handler.logLevelsAll.add(new LTTngLogLevel(lttngLogLevel,
+								lttngLogLevelType));
+				}
 
 				while (loggers.hasMoreElements()) {
 					loggerName = loggers.nextElement().toString();
@@ -203,22 +209,26 @@ public interface LTTngSessiondCmd2_4 {
 						continue;
 					}
 
-					if (enabledLoggers.get(loggerName) != null) {
-						continue;
-					}
-
 					/*
 					 * Create new event object and set it in the log handler so
 					 * we can process the record entry with the right
 					 * attributes like the loglevels.
 					 */
-					event = new LTTngEvent(loggerName, lttngLogLevel,
-							lttngLogLevelType);
+					event = new LTTngEvent(loggerName, 0, 0);
+					/* Clean up loglevel and merge the the ones from all events. */
+					event.logLevels.clear();
+					event.logLevels.addAll(handler.logLevelsAll);
 					enableLogger(handler, event, enabledLoggers);
 				}
 				this.code = lttng_jul_ret_code.CODE_SUCCESS_CMD;
 
-				event = new LTTngEvent("*", lttngLogLevel, lttngLogLevelType);
+				/*
+				 * Only return an event if this is a newly created event
+				 * meaning the loglevel is valid.
+				 */
+				if (lttngLogLevel != -1) {
+					event = new LTTngEvent("*", lttngLogLevel, lttngLogLevelType);
+				}
 				return event;
 			}
 

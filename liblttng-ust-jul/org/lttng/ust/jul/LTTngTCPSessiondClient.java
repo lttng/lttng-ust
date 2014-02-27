@@ -133,8 +133,7 @@ public class LTTngTCPSessiondClient {
 						 */
 						if (handler.logLevelUseAll == 1) {
 							it.remove();
-							event.logLevel.level = handler.logLevelAll;
-							event.logLevel.type = handler.logLevelTypeAll;
+							event.logLevels.addAll(handler.logLevelsAll);
 							modifiedEvents.add(event);
 						}
 
@@ -144,8 +143,8 @@ public class LTTngTCPSessiondClient {
 						 */
 						if (event.name.equals("*")) {
 							enableCmd.name = event.name;
-							enableCmd.lttngLogLevel = event.logLevel.level;
-							enableCmd.lttngLogLevelType = event.logLevel.type;
+							/* Tell the command NOT to add the loglevel. */
+							enableCmd.lttngLogLevel = -1;
 							/*
 							 * The return value is irrelevant since the * event is
 							 * always kept in the set.

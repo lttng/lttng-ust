@@ -22,6 +22,7 @@ import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.LogManager;
 import java.util.logging.Level;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.lttng.ust.jul.LTTngUst;
@@ -40,8 +41,8 @@ public class LTTngLogHandler extends Handler {
 	 * enabled should use the loglevel/type below.
 	 */
 	public int logLevelUseAll = 0;
-	public int logLevelAll = 0;
-	public int logLevelTypeAll;
+	public ArrayList<LTTngLogLevel> logLevelsAll =
+		new ArrayList<LTTngLogLevel>();
 
 	/* Am I a root Log Handler. */
 	public int is_root = 0;
@@ -61,8 +62,25 @@ public class LTTngLogHandler extends Handler {
 		LTTngUst.init();
 	}
 
-	public void setEvent(LTTngEvent event) {
-		eventMap.put(event.name, event);
+	/**
+	 * Add event to handler hash map if new.
+	 *
+	 * @return 0 if it did not exist else 1.
+	 */
+	public int setEvent(LTTngEvent new_event) {
+		LTTngEvent event;
+
+		event = eventMap.get(new_event.name);
+		if (event == null) {
+			eventMap.put(new_event.name, new_event);
+			/* Did not exists. */
+			return 0;
+		} else {
+			/* Add new event loglevel to existing event. */
+			event.logLevels.addAll(new_event.logLevels);
+			/* Already exists. */
+			return 1;
+		}
 	}
 
 	@Override
@@ -81,24 +99,34 @@ public class LTTngLogHandler extends Handler {
 		/* Get back the event if any and check for loglevel. */
 		event = eventMap.get(logger_name);
 		if (event != null) {
-			rec_log_level = record.getLevel().intValue();
-			ev_log_level = event.logLevel.level;
-			ev_type = event.logLevel.type;
+			for (LTTngLogLevel ev_log : event.logLevels) {
+				/* Get record and event log level. */
+				rec_log_level = record.getLevel().intValue();
+				ev_log_level = ev_log.level;
 
-			switch (ev_type) {
-			case LTTngLogLevelABI.LOGLEVEL_TYPE_RANGE:
-				if (ev_log_level <= rec_log_level) {
+				switch (ev_log.type) {
+				case LTTngLogLevelABI.LOGLEVEL_TYPE_RANGE:
+					if (ev_log_level <= rec_log_level) {
+						fire_tp = 1;
+					}
+					break;
+				case LTTngLogLevelABI.LOGLEVEL_TYPE_SINGLE:
+					if (ev_log_level == rec_log_level) {
+						fire_tp = 1;
+					}
+					break;
+				case LTTngLogLevelABI.LOGLEVEL_TYPE_ALL:
 					fire_tp = 1;
+					break;
 				}
-				break;
-			case LTTngLogLevelABI.LOGLEVEL_TYPE_SINGLE:
-				if (ev_log_level == rec_log_level) {
-					fire_tp = 1;
+
+				/*
+				 * If we match, stop right now else continue to the next
+				 * loglevel contained in the event.
+				 */
+				if (fire_tp == 1) {
+					break;
 				}
-				break;
-			case LTTngLogLevelABI.LOGLEVEL_TYPE_ALL:
-				fire_tp = 1;
-				break;
 			}
 		} else {
 			/* No loglevel attached thus fire tracepoint. */
