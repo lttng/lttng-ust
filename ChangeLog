@@ -1,3 +1,20 @@
+2014-02-28 lttng-ust 2.2.3
+	* Fix: FD leak in liblttng-ust-ctl
+	* Fix: liblttng-ust-fork Makefile flags mismatch
+	* Fix: C++: incomplete extern C guard transition
+	* Cleanup gen-tp: add quotes around AM_CC
+	* Pass the CC variable to the example Makefiles
+	* doc/examples/gen-tp: pass automake CPPFLAGS/CFLAGS/LDFLAGS
+	* doc/examples: error out when a subdir make fails
+	* Fix: check deliver now takes tsc argument
+	* Fix: eliminate timestamp overlap between packets
+	* Fix lttng-ust(3) manpage
+	* Fix: move va_end to outermost label
+	* Fix: add missing NULL check after allocation
+	* Add missing copyrights to test scripts
+	* Escape minus signs in lttng-ust-cyg-profile manpage
+	* Fix spelling mistake in lttng-ust manpage
+
 2013-11-12 lttng-ust 2.2.2
 	* Fix: application SIGBUS when starting in parallel with sessiond
 	* Fix: Minor corrections to the lttng-ust man page
