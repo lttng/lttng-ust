@@ -1,3 +1,22 @@
+2014-02-28 (Public Sleeping Day) lttng-ust 2.4.0
+	* Fix: JUL test: update to API change
+	* Fix: Cast from pointer to different integer size warning
+	* Turn base address dump into experimental feature
+	* Fix: JUL support multiple loglevels
+	* Fix: Skip lttng-gen-tp example build if Python is missing
+	* Fix: dynamically fetch the session daemon port
+	* Fix: JUL agent connect to user and root sessiond
+	* Fix: handle registration done command
+	* Fix: Unsynchronized access in LTTngTCPSessiondClient
+	* Cleanup: fix comment
+	* Fix: Dump executable base-address with readlink
+	* Fix: add assert for NULL dereference
+	* Fix: tracepoint out of memory handling
+	* Fix: dereference before null check
+	* Cleanup: remove logically dead code
+	* Fix: handle sysconf errors
+	* Fix: java-jul/Makefile should not be marked as a binary
+
 2014-02-14 lttng-ust 2.4.0-rc4
 	* Cleanup: remove extra space in dlerror wrapper
 	* Fix: work-around glibc lying about dlsym()/dlerror() leafness
