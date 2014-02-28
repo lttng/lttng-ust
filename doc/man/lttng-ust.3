@@ -366,9 +366,13 @@ Pthread identifier. Can be used on architectures where pthread_t maps
 nicely to an unsigned long type.
 .PP
 
-.SH "BASE ADDRESS STATEDUMP"
+.SH "BASE ADDRESS STATEDUMP (Experimental feature)"
 
 .PP
+Warning: This is an experimental feature known to cause deadlocks when the
+traced application uses fork, clone or daemon. Only use it for debugging and
+testing.  Do NOT use it in production.
+
 If an application that uses liblttng-ust.so becomes part of a session,
 information about its currently loaded shared objects will be traced to the
 session at session-enable time. To record this information, the following event
@@ -405,8 +409,8 @@ specified in milliseconds. The value 0 means "don't wait". The value
 recommended for applications with time constraints on the process
 startup time.
 .PP
-.IP "LTTNG_UST_WITHOUT_BADDR_STATEDUMP"
-Prevent liblttng-ust to perform a base-address statedump on session-enable.
+.IP "LTTNG_UST_WITH_EXPERIMENTAL_BADDR_STATEDUMP"
+Experimentally allow liblttng-ust to perform a base-address statedump on session-enable.
 .PP
 
 .SH "SEE ALSO"
