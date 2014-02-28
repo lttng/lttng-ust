@@ -302,10 +302,66 @@ size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, _TP_ARGS
 #undef _ctf_integer_ext
 #define _ctf_integer_ext(_type, _item, _src, _byte_order, _base, _nowrite)     \
 	if (lttng_is_signed_type(_type)) {				       \
-		int64_t __ctf_tmp_int64 = (int64_t) (_type) (_src);	       \
+		int64_t __ctf_tmp_int64;				       \
+		switch (sizeof(_type)) {				       \
+		case 1:							       \
+		{							       \
+			union { _type t; int8_t v; } __tmp = { (_type) (_src) }; \
+			__ctf_tmp_int64 = (int64_t) __tmp.v;		       \
+			break;						       \
+		}							       \
+		case 2:							       \
+		{							       \
+			union { _type t; int16_t v; } __tmp = { (_type) (_src) }; \
+			__ctf_tmp_int64 = (int64_t) __tmp.v;		       \
+			break;						       \
+		}							       \
+		case 4:							       \
+		{							       \
+			union { _type t; int32_t v; } __tmp = { (_type) (_src) }; \
+			__ctf_tmp_int64 = (int64_t) __tmp.v;		       \
+			break;						       \
+		}							       \
+		case 8:							       \
+		{							       \
+			union { _type t; int64_t v; } __tmp = { (_type) (_src) }; \
+			__ctf_tmp_int64 = (int64_t) __tmp.v;		       \
+			break;						       \
+		}							       \
+		default:						       \
+			abort();					       \
+		};							       \
 		memcpy(__stack_data, &__ctf_tmp_int64, sizeof(int64_t));       \
 	} else {							       \
-		uint64_t __ctf_tmp_uint64 = (uint64_t) (_type) (_src);	       \
+		uint64_t __ctf_tmp_uint64;				       \
+		switch (sizeof(_type)) {				       \
+		case 1:							       \
+		{							       \
+			union { _type t; uint8_t v; } __tmp = { (_type) (_src) }; \
+			__ctf_tmp_uint64 = (uint64_t) __tmp.v;		       \
+			break;						       \
+		}							       \
+		case 2:							       \
+		{							       \
+			union { _type t; uint16_t v; } __tmp = { (_type) (_src) }; \
+			__ctf_tmp_uint64 = (uint64_t) __tmp.v;		       \
+			break;						       \
+		}							       \
+		case 4:							       \
+		{							       \
+			union { _type t; uint32_t v; } __tmp = { (_type) (_src) }; \
+			__ctf_tmp_uint64 = (uint64_t) __tmp.v;		       \
+			break;						       \
+		}							       \
+		case 8:							       \
+		{							       \
+			union { _type t; uint64_t v; } __tmp = { (_type) (_src) }; \
+			__ctf_tmp_uint64 = (uint64_t) __tmp.v;		       \
+			break;						       \
+		}							       \
+		default:						       \
+			abort();					       \
+		};							       \
 		memcpy(__stack_data, &__ctf_tmp_uint64, sizeof(uint64_t));     \
 	}								       \
 	__stack_data += sizeof(int64_t);
