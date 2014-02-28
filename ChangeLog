@@ -1,3 +1,28 @@
+2014-02-28 lttng-ust 2.3.2
+	* Fix: Cast from pointer to different integer size warning
+	* Cleanup: fix comment
+	* Fix: add assert for NULL dereference
+	* Fix: tracepoint out of memory handling
+	* Cleanup: remove logically dead code
+	* Fix: handle sysconf errors
+	* Fix: FD leak in liblttng-ust-ctl
+	* Fix: liblttng-ust-fork Makefile flags mismatch
+	* Fix: out of tree examples build
+	* Fix: lttng-gen-tp to build out of tree
+	* Fix: C++: incomplete extern C guard transition
+	* Cleanup gen-tp: add quotes around AM_CC
+	* Pass the CC variable to the example Makefiles
+	* Fix: eliminate timestamp overlap between packets
+	* Fix lttng-ust(3) manpage
+	* Fix: move va_end to outermost label
+	* Fix: add missing NULL check after allocation
+	* fix: lttng-gen-tp: add missing spaces around flags
+	* doc/examples: error out when a subdir make fails
+	* Add missing copyrights to test scripts
+	* Escape minus signs in lttng-ust-cyg-profile manpage
+	* Fix spelling mistake in lttng-ust manpage
+	* Fix tests/benchmark
+
 2013-11-12 lttng-ust 2.3.1
 	* Fix: application SIGBUS when starting in parallel with sessiond
 	* Fix: Minor corrections to the lttng-ust man page
