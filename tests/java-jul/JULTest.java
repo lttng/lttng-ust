@@ -42,7 +42,7 @@ public class JULTest {
 		assert handler.logManager == LogManager.getLogManager();
 		ok("Log handler logManager is valid");
 
-		client = new LTTngTCPSessiondClient("127.0.0.1", 5345, sem);
+		client = new LTTngTCPSessiondClient("127.0.0.1", sem);
 		assert client != null;
 		ok("TCP client is valid");
 		client.destroy();
