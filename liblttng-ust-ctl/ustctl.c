@@ -294,7 +294,7 @@ int ustctl_set_exclusion(int sock, struct lttng_ust_event_exclusion *exclusion,
 		return ret;
 	}
 
-	/* send var len bytecode */
+	/* send var len exclusion names */
 	ret = ustcomm_send_unix_sock(sock,
 			exclusion->names,
 			exclusion->count * LTTNG_UST_SYM_NAME_LEN);
