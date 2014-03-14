@@ -3,6 +3,7 @@ doc_examples_easy_ustdir = ${docdir}/examples/easy-ust
 doc_examples_gen_tpdir = ${docdir}/examples/gen-tp
 doc_examples_demodir = ${docdir}/examples/demo
 doc_examples_hello_static_libdir = ${docdir}/examples/hello-static-lib
+doc_examples_demo_tracefdir = ${docdir}/examples/demo-tracef
 
 if BUILD_JNI_INTERFACE
 doc_examples_java_juldir = ${docdir}/examples/java-jul
@@ -37,6 +38,10 @@ dist_doc_examples_hello_static_lib_DATA = hello-static-lib/Makefile \
 	hello-static-lib/README \
 	hello-static-lib/ust_tests_hello.h \
 	hello-static-lib/tp.c
+
+dist_doc_examples_demo_tracef_DATA = demo-tracef/Makefile \
+	demo-tracef/demo-tracef.c \
+	demo-tracef/README
 
 if NO_SHARED
 # Don't build examples if shared libraries support was explicitly
