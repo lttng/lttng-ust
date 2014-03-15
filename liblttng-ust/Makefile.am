@@ -72,6 +72,7 @@ liblttng_ust_la_LIBADD = \
 	-lpthread \
 	-lrt \
 	-lurcu-cds \
+	-ldl \
 	$(top_builddir)/snprintf/libustsnprintf.la \
 	$(top_builddir)/liblttng-ust-comm/liblttng-ust-comm.la \
 	liblttng-ust-tracepoint.la \
