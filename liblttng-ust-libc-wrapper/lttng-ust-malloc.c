@@ -26,6 +26,7 @@
 #include <urcu/uatomic.h>
 #include <urcu/compiler.h>
 #include <urcu/tls-compat.h>
+#include <urcu/arch.h>
 #include <lttng/align.h>
 
 #define TRACEPOINT_DEFINE
@@ -56,8 +57,40 @@ struct alloc_functions cur_alloc;
 static
 void *static_calloc(size_t nmemb, size_t size);
 
+/*
+ * pthread mutex replacement for URCU tls compat layer.
+ */
+static int ust_malloc_lock;
+
+static __attribute__((unused))
+void ust_malloc_spin_lock(pthread_mutex_t *lock)
+{
+	/*
+	 * The memory barrier within cmpxchg takes care of ordering
+	 * memory accesses with respect to the start of the critical
+	 * section.
+	 */
+	while (uatomic_cmpxchg(&ust_malloc_lock, 0, 1) != 0)
+		caa_cpu_relax();
+}
+
+static __attribute__((unused))
+void ust_malloc_spin_unlock(pthread_mutex_t *lock)
+{
+	/*
+	 * Ensure memory accesses within the critical section do not
+	 * leak outside.
+	 */
+	cmm_smp_mb();
+	uatomic_set(&ust_malloc_lock, 0);
+}
+
 #define calloc static_calloc
+#define pthread_mutex_lock ust_malloc_spin_lock
+#define pthread_mutex_unlock ust_malloc_spin_unlock
 static DEFINE_URCU_TLS(int, malloc_nesting);
+#undef ust_malloc_spin_unlock
+#undef ust_malloc_spin_lock
 #undef calloc
 
 /*
