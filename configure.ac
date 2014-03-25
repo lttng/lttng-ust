@@ -267,6 +267,16 @@ AS_IF([test "x$with_sdt" = "xyes"],[
 	])
 ])
 
+AC_MSG_CHECKING([whether shared libraries are enabled])
+AS_IF([test "x$enable_shared" = "xyes"],
+	[
+		AC_MSG_RESULT([yes])
+	],
+	[
+		AC_MSG_RESULT([no])
+		AC_MSG_ERROR([LTTng-UST requires shared libraries to be enabled])
+	])
+
 AC_ARG_WITH([lttng-system-rundir],
 	AS_HELP_STRING([--with-lttng-system-rundir],
 	[Location of the system directory where LTTng-UST expects the system-wide lttng-sessiond runtime files. The default is "/var/run/lttng".]),
