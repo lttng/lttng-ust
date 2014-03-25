@@ -199,6 +199,7 @@ changequote([,])dnl
 	tile*) NO_UNALIGNED_ACCESS=1 ;;
 	*) AC_MSG_ERROR([unable to detect alignment requirements (unsupported architecture ($host_cpu)?)]) ;;
 esac
+AC_MSG_RESULT([$host_cpu])
 
 if test x$NO_UNALIGNED_ACCESS = x ; then
 AC_DEFINE([LTTNG_UST_HAVE_EFFICIENT_UNALIGNED_ACCESS], [1])
