@@ -56,7 +56,9 @@ INSTALLATION INSTRUCTIONS:
   installs. However, this path is not part of most distributions' default
   library path which will cause builds depending on liblttng-ust to fail unless
   '-L/usr/local/lib' is added to LDFLAGS. You may provide a custom prefix to
-  configure by using the --prefix switch.
+  configure by using the --prefix switch. Note that LTTng-UST needs to
+  be a shared library, even if the tracepoint probe provider is statically
+  linked into the application.
 
 USAGE:
 
