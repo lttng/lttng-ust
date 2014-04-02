@@ -104,18 +104,23 @@ int lttng_loglevel_match(int loglevel,
 		loglevel = TRACE_DEFAULT;
 	switch (req_type) {
 	case LTTNG_UST_LOGLEVEL_RANGE:
-		if (loglevel <= req_loglevel || req_loglevel == -1)
+		if (loglevel <= req_loglevel
+				|| (req_loglevel == -1 && loglevel <= TRACE_DEFAULT))
 			return 1;
 		else
 			return 0;
 	case LTTNG_UST_LOGLEVEL_SINGLE:
-		if (loglevel == req_loglevel || req_loglevel == -1)
+		if (loglevel == req_loglevel
+				|| (req_loglevel == -1 && loglevel <= TRACE_DEFAULT))
 			return 1;
 		else
 			return 0;
 	case LTTNG_UST_LOGLEVEL_ALL:
 	default:
-		return 1;
+		if (loglevel <= TRACE_DEFAULT)
+			return 1;
+		else
+			return 0;
 	}
 }
 

@@ -29,12 +29,15 @@ tracef() API. To do it, in a nutshell:
 
 3) Link your program against liblttng-ust.so.
 
-4) Enable the UST event "lttng_ust_tracef:event" when tracing with the
-   following sequence of commands from lttng-tools:
+4) Enable the UST debug loglevel when tracing with the following
+   sequence of commands from lttng-tools:
 
-   lttng create; lttng enable-event -u "lttng_ust_tracef:event"; lttng start
+   lttng create
+   lttng enable-event -u -a --loglevel=TRACE_DEBUG
+   lttng start
    [... run your program ...]
-   lttng stop; lttng view
+   lttng stop
+   lttng view
 
 That's it!
 
