@@ -146,6 +146,9 @@ AC_C_INLINE
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([gettimeofday munmap socket strerror strtol sched_getcpu sysconf])
 
+AC_CHECK_FUNCS([dlinfo])
+AM_CONDITIONAL([HAVE_DLINFO], [test "${ac_cv_func_dlinfo}" = "yes"])
+
 CFLAGS="-Wall $CFLAGS"
 
 # URCU
