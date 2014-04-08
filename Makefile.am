@@ -4,13 +4,10 @@ SUBDIRS = . include snprintf libringbuffer liblttng-ust-comm \
 		liblttng-ust \
 		liblttng-ust-ctl \
 		liblttng-ust-fork \
+		liblttng-ust-dl \
 		liblttng-ust-libc-wrapper \
 		liblttng-ust-cyg-profile \
 		tools
-
-if HAVE_DLINFO
-SUBDIRS += liblttng-ust-dl
-endif
 
 if BUILD_JNI_INTERFACE
 SUBDIRS += liblttng-ust-java liblttng-ust-jul
