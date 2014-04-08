@@ -1,3 +1,16 @@
+2014-04-08 lttng-ust 2.4.1
+	* Revert "Fix: disable liblttng-ust-dl if dlinfo is not available in C library"
+	* Fix: .split() the CC environment variable in lttng-gen-tp
+	* Fix: disable liblttng-ust-dl if dlinfo is not available in C library
+	* Fix: python invocation through env
+	* Fix: Override AM_PATH_PYTHON's default action-if-not-found
+	* Fix: don't accept configure --disable-shared
+	* Fix: configure.ac: add missing result to alignment req. check
+	* Fix: malloc wrapper: infinite recursion with compat TLS
+	* Fix: liblttng-ust-libc-wrapper recursive use of calloc
+	* Fix: mismatch between code and comments
+	* Fix: incorrect urcu git URL in README
+
 2014-02-28 (Public Sleeping Day) lttng-ust 2.4.0
 	* Fix: JUL test: update to API change
 	* Fix: Cast from pointer to different integer size warning
