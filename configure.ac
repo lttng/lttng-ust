@@ -124,6 +124,16 @@ AM_CONDITIONAL([LTTNG_UST_BUILD_WITH_LIBC_DL], [test "x$have_libc_dl" = "xyes"])
 
 AC_CHECK_LIB([pthread], [pthread_create])
 
+# Check for dlfcn.h
+AC_CHECK_HEADER([dlfcn.h])
+AS_IF([test "x${ac_cv_header_dlfcn_h}" = "xyes"],
+	[AC_CHECK_DECLS([RTLD_DI_LINKMAP],,,
+		[#define _GNU_SOURCE /* Required on Linux to get GNU extensions */
+		#include <dlfcn.h>])
+	],
+	[ac_cv_have_decl_RTLD_DI_LINKMAP="no"])
+AM_CONDITIONAL([HAVE_DLINFO], [test "x${ac_cv_have_decl_RTLD_DI_LINKMAP}" = "xyes"])
+
 # Checks for header files.
 #AC_CHECK_HEADERS([fcntl.h stdint.h stdlib.h string.h sys/socket.h sys/time.h unistd.h])
 
