@@ -447,6 +447,18 @@ do {								\
 		inline_memcpy(dest, src, __len);		\
 } while (0)
 
+/*
+ * write len bytes to dest with c
+ */
+static inline
+void lib_ring_buffer_do_memset(char *dest, int c, unsigned long len)
+{
+	unsigned long i;
+
+	for (i = 0; i < len; i++)
+		dest[i] = c;
+}
+
 /* arch-agnostic implementation */
 
 static inline int lttng_ust_fls(unsigned int x)
