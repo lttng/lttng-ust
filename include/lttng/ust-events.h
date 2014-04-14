@@ -433,7 +433,10 @@ struct lttng_channel_ops {
 			unsigned char *uuid,
 			uint32_t chan_id);
 	void (*channel_destroy)(struct lttng_channel *chan);
-	void *_deprecated1;
+	union {
+		void *_deprecated1;
+		unsigned long has_strcpy:1;		/* ABI has strcpy */
+	} u;
 	void *_deprecated2;
 	int (*event_reserve)(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			     uint32_t event_id);
@@ -452,6 +455,8 @@ struct lttng_channel_ops {
 	int (*is_finalized)(struct channel *chan);
 	int (*is_disabled)(struct channel *chan);
 	int (*flush_buffer)(struct channel *chan, struct lttng_ust_shm_handle *handle);
+	void (*event_strcpy)(struct lttng_ust_lib_ring_buffer_ctx *ctx,
+			const char *src, size_t len);
 };
 
 /*

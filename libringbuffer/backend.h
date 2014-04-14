@@ -106,6 +106,96 @@ void lib_ring_buffer_write(const struct lttng_ust_lib_ring_buffer_config *config
 }
 
 /*
+ * Copy up to @len string bytes from @src to @dest. Stop whenever a NULL
+ * terminating character is found in @src. Returns the number of bytes
+ * copied. Does *not* terminate @dest with NULL terminating character.
+ */
+static inline
+size_t lib_ring_buffer_do_strcpy(const struct lttng_ust_lib_ring_buffer_config *config,
+		char *dest, const char *src, size_t len)
+{
+	size_t count;
+
+	for (count = 0; count < len; count++) {
+		char c;
+
+		/*
+		 * Only read source character once, in case it is
+		 * modified concurrently.
+		 */
+		c = CMM_LOAD_SHARED(src[count]);
+		if (!c)
+			break;
+		lib_ring_buffer_do_copy(config, &dest[count], &c, 1);
+	}
+	return count;
+}
+
+/**
+ * lib_ring_buffer_strcpy - write string data to a buffer backend
+ * @config : ring buffer instance configuration
+ * @ctx: ring buffer context. (input arguments only)
+ * @src : source pointer to copy from
+ * @len : length of data to copy
+ * @pad : character to use for padding
+ *
+ * This function copies @len - 1 bytes of string data from a source
+ * pointer to a buffer backend, followed by a terminating '\0'
+ * character, at the current context offset. This is more or less a
+ * buffer backend-specific strncpy() operation. If a terminating '\0'
+ * character is found in @src before @len - 1 characters are copied, pad
+ * the buffer with @pad characters (e.g. '#').
+ */
+static inline
+void lib_ring_buffer_strcpy(const struct lttng_ust_lib_ring_buffer_config *config,
+			   struct lttng_ust_lib_ring_buffer_ctx *ctx,
+			   const char *src, size_t len, int pad)
+{
+	struct lttng_ust_lib_ring_buffer_backend *bufb = &ctx->buf->backend;
+	struct channel_backend *chanb = &ctx->chan->backend;
+	struct lttng_ust_shm_handle *handle = ctx->handle;
+	size_t sbidx, count;
+	size_t offset = ctx->buf_offset;
+	struct lttng_ust_lib_ring_buffer_backend_pages_shmp *rpages;
+	unsigned long sb_bindex, id;
+
+	if (caa_unlikely(!len))
+		return;
+	offset &= chanb->buf_size - 1;
+	sbidx = offset >> chanb->subbuf_size_order;
+	id = shmp_index(handle, bufb->buf_wsb, sbidx)->id;
+	sb_bindex = subbuffer_id_get_index(config, id);
+	rpages = shmp_index(handle, bufb->array, sb_bindex);
+	CHAN_WARN_ON(ctx->chan,
+		     config->mode == RING_BUFFER_OVERWRITE
+		     && subbuffer_id_is_noref(config, id));
+	/*
+	 * Underlying layer should never ask for writes across
+	 * subbuffers.
+	 */
+	CHAN_WARN_ON(chanb, offset >= chanb->buf_size);
+	count = lib_ring_buffer_do_strcpy(config,
+			shmp_index(handle, shmp(handle, rpages->shmp)->p,
+				offset & (chanb->subbuf_size - 1)),
+			src, len - 1);
+	offset += count;
+	/* Padding */
+	if (caa_unlikely(count < len - 1)) {
+		size_t pad_len = len - 1 - count;
+
+		lib_ring_buffer_do_memset(shmp_index(handle, shmp(handle, rpages->shmp)->p,
+				offset & (chanb->subbuf_size - 1)),
+			pad, pad_len);
+		offset += pad_len;
+	}
+	/* Final '\0' */
+	lib_ring_buffer_do_memset(shmp_index(handle, shmp(handle, rpages->shmp)->p,
+				offset & (chanb->subbuf_size - 1)),
+			'\0', 1);
+	ctx->buf_offset += len;
+}
+
+/*
  * This accessor counts the number of unread records in a buffer.
  * It only provides a consistent value if no reads not writes are performed
  * concurrently.

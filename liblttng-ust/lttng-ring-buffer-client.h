@@ -601,6 +601,13 @@ void lttng_event_write(struct lttng_ust_lib_ring_buffer_ctx *ctx, const void *sr
 	lib_ring_buffer_write(&client_config, ctx, src, len);
 }
 
+static
+void lttng_event_strcpy(struct lttng_ust_lib_ring_buffer_ctx *ctx, const char *src,
+		     size_t len)
+{
+	lib_ring_buffer_strcpy(&client_config, ctx, src, len, '#');
+}
+
 #if 0
 static
 wait_queue_head_t *lttng_get_reader_wait_queue(struct channel *chan)
@@ -651,6 +658,7 @@ static struct lttng_transport lttng_relay_transport = {
 	.ops = {
 		.channel_create = _channel_create,
 		.channel_destroy = lttng_channel_destroy,
+		.u.has_strcpy = 1,
 		.event_reserve = lttng_event_reserve,
 		.event_commit = lttng_event_commit,
 		.event_write = lttng_event_write,
@@ -660,6 +668,7 @@ static struct lttng_transport lttng_relay_transport = {
 		.is_finalized = lttng_is_finalized,
 		.is_disabled = lttng_is_disabled,
 		.flush_buffer = lttng_flush_buffer,
+		.event_strcpy = lttng_event_strcpy,
 	},
 	.client_config = &client_config,
 };
