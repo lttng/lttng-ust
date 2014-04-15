@@ -499,15 +499,12 @@ void lib_ring_buffer_write_commit_counter(const struct lttng_ust_lib_ring_buffer
 				          unsigned long idx,
 				          unsigned long buf_offset,
 				          unsigned long commit_count,
-				          size_t slot_size,
 					  struct lttng_ust_shm_handle *handle)
 {
-	unsigned long offset, commit_seq_old;
+	unsigned long commit_seq_old;
 
 	if (config->oops != RING_BUFFER_OOPS_CONSISTENCY)
 		return;
-
-	offset = buf_offset + slot_size;
 
 	/*
 	 * subbuf_offset includes commit_count_mask. We can simply
@@ -515,7 +512,7 @@ void lib_ring_buffer_write_commit_counter(const struct lttng_ust_lib_ring_buffer
 	 * buffer full/empty mismatch because offset is never zero here
 	 * (subbuffer header and record headers have non-zero length).
 	 */
-	if (caa_unlikely(subbuf_offset(offset - commit_count, chan)))
+	if (caa_unlikely(subbuf_offset(buf_offset - commit_count, chan)))
 		return;
 
 	commit_seq_old = v_read(config, &shmp_index(handle, buf->commit_hot, idx)->seq);
