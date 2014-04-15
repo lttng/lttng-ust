@@ -294,8 +294,7 @@ void lib_ring_buffer_commit(const struct lttng_ust_lib_ring_buffer_config *confi
 	 * ring_buffer buffers from vmcore, after crash.
 	 */
 	lib_ring_buffer_write_commit_counter(config, buf, chan, endidx,
-					     ctx->buf_offset, commit_count,
-					     ctx->slot_size, handle);
+			offset_end, commit_count, handle);
 }
 
 /**
