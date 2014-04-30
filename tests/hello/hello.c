@@ -26,6 +26,11 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <string.h>
+/*
+ * Work-around inet.h missing struct mmsghdr forward declaration, with
+ * triggers a warning when system files warnings are enabled.
+ */
+struct mmsghdr;
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <stdbool.h>
