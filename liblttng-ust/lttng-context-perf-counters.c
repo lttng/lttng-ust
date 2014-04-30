@@ -134,7 +134,7 @@ static
 struct perf_event_mmap_page *setup_perf(struct perf_event_attr *attr)
 {
 	void *perf_addr;
-	int fd;
+	int fd, ret;
 
 	fd = sys_perf_event_open(attr, 0, -1, -1, 0);
 	if (fd < 0)
@@ -144,7 +144,10 @@ struct perf_event_mmap_page *setup_perf(struct perf_event_attr *attr)
 			PROT_READ, MAP_SHARED, fd, 0);
 	if (perf_addr == MAP_FAILED)
 		return NULL;
-	close(fd);
+	ret = close(fd);
+	if (ret) {
+		perror("Error closing LTTng-UST perf memory mapping FD");
+	}
 	return perf_addr;
 }
 
