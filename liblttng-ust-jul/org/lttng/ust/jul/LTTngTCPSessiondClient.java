@@ -186,6 +186,17 @@ public class LTTngTCPSessiondClient {
 		}
 	}
 
+	/*
+	 * Cleanup Agent state.
+	 */
+	private void cleanupState() {
+		enabledEventSet.clear();
+		enabledLoggers.clear();
+		if (this.handler != null) {
+			this.handler.clear();
+		}
+	}
+
 	public void init(LTTngLogHandler handler) throws InterruptedException {
 		this.handler = handler;
 
@@ -193,6 +204,9 @@ public class LTTngTCPSessiondClient {
 			if (this.quit) {
 				break;
 			}
+
+			/* Cleanup Agent state before trying to connect or reconnect. */
+			cleanupState();
 
 			try {
 

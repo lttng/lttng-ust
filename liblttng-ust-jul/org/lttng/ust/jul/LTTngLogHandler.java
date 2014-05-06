@@ -83,6 +83,14 @@ public class LTTngLogHandler extends Handler {
 		}
 	}
 
+	/*
+	 * Cleanup this handler state meaning put it back to a vanilla state.
+	 */
+	public void clear() {
+		this.eventMap.clear();
+		this.logLevelsAll.clear();
+	}
+
 	@Override
 	public void close() throws SecurityException {}
 
