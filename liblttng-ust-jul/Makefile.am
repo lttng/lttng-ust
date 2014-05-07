@@ -3,8 +3,9 @@ LTTNG_JUL_DESTDIR = $(builddir)/org/lttng/ust/jul
 
 if BUILD_JNI_INTERFACE
 
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(builddir)
 
+BUILT_SOURCES = org_lttng_ust_jul_LTTngUst.h
 lib_LTLIBRARIES = liblttng-ust-jul-jni.la
 liblttng_ust_jul_jni_la_SOURCES = LTTngUst.c lttng_ust_jul.h
 nodist_liblttng_ust_jul_jni_la_SOURCES = org_lttng_ust_jul_LTTngUst.h
@@ -34,8 +35,6 @@ clean-local:
 	rm -f org_lttng_ust_jul_LTTngUst.h
 	rm -f liblttng-ust-jul.jar
 	rm -f org/lttng/ust/jul/*.class
-
-LTTngUst.c: org_lttng_ust_jul_LTTngUst.h
 
 %.class: %.java
 	$(JCC)/javac -d "$(builddir)" $<

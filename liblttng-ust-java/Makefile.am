@@ -3,8 +3,9 @@ LTTNG_JUST_DESTDIR = $(builddir)/org/lttng/ust
 
 if BUILD_JNI_INTERFACE
 
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(builddir)
 
+BUILT_SOURCES = org_lttng_ust_LTTngUst.h
 lib_LTLIBRARIES = liblttng-ust-java.la
 liblttng_ust_java_la_SOURCES = LTTngUst.c lttng_ust_java.h
 nodist_liblttng_ust_java_la_SOURCES = org_lttng_ust_LTTngUst.h
@@ -23,8 +24,6 @@ clean-local:
 	rm -f org_lttng_ust_LTTngUst.h
 	rm -f liblttng-ust-java.jar
 	rm -rf org/lttng/ust/*.class
-
-LTTngUst.c: org_lttng_ust_LTTngUst.h
 
 $(LTTNG_JUST_DESTDIR)/LTTngUst.class: $(LTTNG_JUST_SRCDIR)/LTTngUst.java
 	$(JCC)/javac -d "$(builddir)" "$(LTTNG_JUST_SRCDIR)/LTTngUst.java"
