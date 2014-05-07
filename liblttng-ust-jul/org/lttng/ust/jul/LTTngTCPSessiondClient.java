@@ -34,8 +34,10 @@ import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Enumeration;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -63,12 +65,18 @@ public class LTTngTCPSessiondClient {
 	private Semaphore registerSem;
 
 	private Timer eventTimer;
-	private Set<LTTngEvent> enabledEventSet =
-		Collections.synchronizedSet(new HashSet<LTTngEvent>());
+
 	/*
-	 * Map of Logger objects that have been enabled. They are indexed by name.
+	 * Indexed by event name but can contains duplicates since multiple
+	 * sessions can enable the same event with or without different loglevels.
 	 */
-	private HashMap<String, Logger> enabledLoggers = new HashMap<String, Logger>();
+	private Map<String, ArrayList<LTTngEvent>> eventMap =
+		Collections.synchronizedMap(
+				new HashMap<String, ArrayList<LTTngEvent>>());
+
+	private Set<LTTngEvent> wildCardSet =
+		Collections.synchronizedSet(new HashSet<LTTngEvent>());
+
 	/* Timer delay at each 5 seconds. */
 	private final static long timerDelay = 5 * 1000;
 	private static boolean timerInitialized;
@@ -94,80 +102,67 @@ public class LTTngTCPSessiondClient {
 		this.eventTimer.scheduleAtFixedRate(new TimerTask() {
 			@Override
 			public void run() {
-				synchronized (enabledEventSet) {
-					LTTngSessiondCmd2_4.sessiond_enable_handler enableCmd = new
-						LTTngSessiondCmd2_4.sessiond_enable_handler();
+				LTTngSessiondCmd2_4.sessiond_enable_handler enableCmd = new
+					LTTngSessiondCmd2_4.sessiond_enable_handler();
+
+				synchronized (eventMap) {
+					String loggerName;
+					Enumeration loggers = handler.logManager.getLoggerNames();
+
 					/*
-					 * Modifying events in a Set will raise a
-					 * ConcurrentModificationException. Thus, we remove an event
-					 * and add its modified version to modifiedEvents when a
-					 * modification is necessary.
+					 * Create an event for each logger found and attach it to the
+					 * handler.
 					 */
-					Set<LTTngEvent> modifiedEvents = new HashSet<LTTngEvent>();
-					Iterator<LTTngEvent> it = enabledEventSet.iterator();
+					while (loggers.hasMoreElements()) {
+						ArrayList<LTTngEvent> bucket;
 
-					while (it.hasNext()) {
-						int ret;
-						Logger logger;
-						LTTngEvent event = it.next();
+						loggerName = loggers.nextElement().toString();
 
-						/*
-						 * Check if this Logger name has been enabled already. Note
-						 * that in the case of "*", it's never added in that hash
-						 * table thus the enable command does a lookup for each
-						 * logger name in that hash table for the * case in order
-						 * to make sure we don't enable twice the same logger
-						 * because JUL apparently accepts that the *same*
-						 * LogHandler can be added twice on a Logger object...
-						 * don't ask...
-						 */
-						logger = enabledLoggers.get(event.name);
-						if (logger != null) {
+						/* Logger is already enabled or end of list, skip it. */
+						if (handler.exists(loggerName) == true ||
+								loggerName.equals("")) {
 							continue;
 						}
 
-						/*
-						 * Set to one means that the enable all event has been seen
-						 * thus event from that point on must use loglevel for all
-						 * events. Else the object has its own loglevel.
-						 */
-						if (handler.logLevelUseAll == 1) {
-							it.remove();
-							event.logLevels.addAll(handler.logLevelsAll);
-							modifiedEvents.add(event);
+						bucket = eventMap.get(loggerName);
+						if (bucket == null) {
+							/* No event(s) exist for this logger. */
+							continue;
 						}
 
-						/*
-						 * The all event is a special case since we have to iterate
-						 * over every Logger to see which one was not enabled.
-						 */
-						if (event.name.equals("*")) {
+						for (LTTngEvent event : bucket) {
 							enableCmd.name = event.name;
-							/* Tell the command NOT to add the loglevel. */
-							enableCmd.lttngLogLevel = -1;
-							/*
-							 * The return value is irrelevant since the * event is
-							 * always kept in the set.
-							 */
-							enableCmd.execute(handler, enabledLoggers);
-							continue;
-						}
+							enableCmd.lttngLogLevel = event.logLevel.level;
+							enableCmd.lttngLogLevelType = event.logLevel.type;
 
-						ret = enableCmd.enableLogger(handler, event, enabledLoggers);
-						if (ret == 1) {
-							/* Enabled so remove the event from the set. */
-							if (!modifiedEvents.remove(event)) {
-								/*
-								 * event can only be present in one of
-								 * the sets.
-								 */
-								it.remove();
-							}
+							/* Event exist so pass null here. */
+							enableCmd.execute(handler, null, wildCardSet);
 						}
 					}
-					enabledEventSet.addAll(modifiedEvents);
 				}
 
+				/* Handle wild cards. */
+				synchronized (wildCardSet) {
+					Map<String, ArrayList<LTTngEvent>> modifiedEvents =
+						new HashMap<String, ArrayList<LTTngEvent>>();
+					Set<LTTngEvent> tmpSet = new HashSet<LTTngEvent>();
+					Iterator<LTTngEvent> it = wildCardSet.iterator();
+
+					while (it.hasNext()) {
+						LTTngEvent event = it.next();
+
+						/* Only support * for now. */
+						if (event.name.equals("*")) {
+							enableCmd.name = event.name;
+							enableCmd.lttngLogLevel = event.logLevel.level;
+							enableCmd.lttngLogLevelType = event.logLevel.type;
+
+							/* That might create a new event so pass the map. */
+							enableCmd.execute(handler, modifiedEvents, tmpSet);
+						}
+					}
+					eventMap.putAll(modifiedEvents);
+				}
 			}
 		}, this.timerDelay, this.timerDelay);
 
@@ -190,8 +185,8 @@ public class LTTngTCPSessiondClient {
 	 * Cleanup Agent state.
 	 */
 	private void cleanupState() {
-		enabledEventSet.clear();
-		enabledLoggers.clear();
+		eventMap.clear();
+		wildCardSet.clear();
 		if (this.handler != null) {
 			this.handler.clear();
 		}
@@ -336,14 +331,7 @@ public class LTTngTCPSessiondClient {
 						break;
 					}
 					enableCmd.populate(data);
-					event = enableCmd.execute(this.handler, this.enabledLoggers);
-					if (event != null) {
-						/*
-						 * Add the event to the set so it can be enabled if
-						 * the logger appears at some point in time.
-						 */
-						enabledEventSet.add(event);
-					}
+					enableCmd.execute(this.handler, this.eventMap, this.wildCardSet);
 					data = enableCmd.getBytes();
 					break;
 				}
@@ -356,7 +344,7 @@ public class LTTngTCPSessiondClient {
 						break;
 					}
 					disableCmd.populate(data);
-					disableCmd.execute(this.handler);
+					disableCmd.execute(this.handler, this.eventMap, this.wildCardSet);
 					data = disableCmd.getBytes();
 					break;
 				}
