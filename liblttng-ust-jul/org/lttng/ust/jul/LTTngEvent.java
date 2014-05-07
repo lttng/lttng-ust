@@ -17,7 +17,6 @@
 
 package org.lttng.ust.jul;
 
-import java.util.ArrayList;
 import java.lang.String;
 
 import org.lttng.ust.jul.LTTngUst;
@@ -36,14 +35,10 @@ class LTTngLogLevel {
 public class LTTngEvent {
 	/* Name of the event. */
 	public String name;
-	public ArrayList<LTTngLogLevel> logLevels = new ArrayList<LTTngLogLevel>();
-
-	public void addLogLevel(int loglevel, int loglevel_type) {
-		this.logLevels.add(new LTTngLogLevel(loglevel, loglevel_type));
-	}
+	public LTTngLogLevel logLevel;
 
 	public LTTngEvent(String name, int loglevel, int loglevel_type) {
 		this.name = name;
-		this.addLogLevel(loglevel, loglevel_type);
+		this.logLevel = new LTTngLogLevel(loglevel, loglevel_type);
 	}
 }

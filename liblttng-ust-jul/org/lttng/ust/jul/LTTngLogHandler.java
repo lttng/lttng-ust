@@ -22,37 +22,49 @@ import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.LogManager;
 import java.util.logging.Level;
-import java.util.ArrayList;
+import java.util.logging.Logger;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.lttng.ust.jul.LTTngUst;
 
-/* Note: This is taken from the LTTng tools ABI. */
-class LTTngLogLevelABI {
-	/* Loglevel type. */
-	public static final int LOGLEVEL_TYPE_ALL = 0;
-	public static final int LOGLEVEL_TYPE_RANGE = 1;
-	public static final int LOGLEVEL_TYPE_SINGLE = 2;
+class LTTngLogger {
+	/*
+	 * The log handler is attached to the logger when the reference count is
+	 * nonzero. Each event referring to a logger holds a reference to that
+	 * logger. If down to 0, this object is removed from the handler.
+	 */
+	public int refcount;
+	public String name;
+	Logger logger;
+
+	public LTTngLogger(String name, Logger logger) {
+		this.name = name;
+		this.refcount = 0;
+		this.logger = logger;
+	}
+
+	public void attach(LTTngLogHandler handler) {
+		this.logger.addHandler(handler);
+	}
+
+	public void detach(LTTngLogHandler handler) {
+		this.logger.removeHandler(handler);
+	}
 }
 
 public class LTTngLogHandler extends Handler {
-	/*
-	 * Indicate if the enable all event has been seen and if yes logger that we
-	 * enabled should use the loglevel/type below.
-	 */
-	public int logLevelUseAll = 0;
-	public ArrayList<LTTngLogLevel> logLevelsAll =
-		new ArrayList<LTTngLogLevel>();
-
 	/* Am I a root Log Handler. */
 	public int is_root = 0;
 
 	public LogManager logManager;
 
-	/* Indexed by name and corresponding LTTngEvent. */
-	private HashMap<String, LTTngEvent> eventMap =
-		new HashMap<String, LTTngEvent>();
+	/* Logger object attached to this handler that can trigger a tracepoint. */
+	private Map<String, LTTngLogger> loggerMap =
+		Collections.synchronizedMap(new HashMap<String, LTTngLogger>());
 
+	/* Constructor */
 	public LTTngLogHandler(LogManager logManager) {
 		super();
 
@@ -62,24 +74,61 @@ public class LTTngLogHandler extends Handler {
 		LTTngUst.init();
 	}
 
-	/**
-	 * Add event to handler hash map if new.
-	 *
-	 * @return 0 if it did not exist else 1.
+	/*
+	 * Return true if the logger is enabled and attached. Else, if not found,
+	 * return false.
 	 */
-	public int setEvent(LTTngEvent new_event) {
-		LTTngEvent event;
-
-		event = eventMap.get(new_event.name);
-		if (event == null) {
-			eventMap.put(new_event.name, new_event);
-			/* Did not exists. */
-			return 0;
+	public boolean exists(String name) {
+		if (loggerMap.get(name) != null) {
+			return true;
 		} else {
-			/* Add new event loglevel to existing event. */
-			event.logLevels.addAll(new_event.logLevels);
-			/* Already exists. */
-			return 1;
+			return false;
+		}
+	}
+
+	/*
+	 * Attach an event to this handler. If no logger object exists, one is
+	 * created else the refcount is incremented.
+	 */
+	public void attachEvent(LTTngEvent event) {
+		Logger logger;
+		LTTngLogger lttngLogger;
+
+		/* Does the logger actually exist. */
+		logger = this.logManager.getLogger(event.name);
+		if (logger == null) {
+			/* Stop attach right now. */
+			return;
+		}
+
+		lttngLogger = loggerMap.get(event.name);
+		if (lttngLogger == null) {
+			lttngLogger = new LTTngLogger(event.name, logger);
+
+			/* Attach the handler to the logger and add is to the map. */
+			lttngLogger.attach(this);
+			lttngLogger.refcount = 1;
+			loggerMap.put(lttngLogger.name, lttngLogger);
+		} else {
+			lttngLogger.refcount += 1;
+		}
+	}
+
+	/*
+	 * Dettach an event from this handler. If the refcount goes down to 0, the
+	 * logger object is removed thus not attached anymore.
+	 */
+	public void detachEvent(LTTngEvent event) {
+		LTTngLogger logger;
+
+		logger = loggerMap.get(event.name);
+		if (logger != null) {
+			logger.refcount -= 1;
+			if (logger.refcount == 0) {
+				/* Dettach from handler since no more event is associated. */
+				logger.detach(this);
+				loggerMap.remove(logger);
+			}
 		}
 	}
 
@@ -87,8 +136,7 @@ public class LTTngLogHandler extends Handler {
 	 * Cleanup this handler state meaning put it back to a vanilla state.
 	 */
 	public void clear() {
-		this.eventMap.clear();
-		this.logLevelsAll.clear();
+		this.loggerMap.clear();
 	}
 
 	@Override
@@ -99,49 +147,11 @@ public class LTTngLogHandler extends Handler {
 
 	@Override
 	public void publish(LogRecord record) {
-		int fire_tp = 0, rec_log_level, ev_type, ev_log_level;
-		LTTngEvent event;
-		LTTngLogLevel lttngLogLevel;
-		String logger_name = record.getLoggerName();
+		LTTngLogger logger;
 
-		/* Get back the event if any and check for loglevel. */
-		event = eventMap.get(logger_name);
-		if (event != null) {
-			for (LTTngLogLevel ev_log : event.logLevels) {
-				/* Get record and event log level. */
-				rec_log_level = record.getLevel().intValue();
-				ev_log_level = ev_log.level;
-
-				switch (ev_log.type) {
-				case LTTngLogLevelABI.LOGLEVEL_TYPE_RANGE:
-					if (ev_log_level <= rec_log_level) {
-						fire_tp = 1;
-					}
-					break;
-				case LTTngLogLevelABI.LOGLEVEL_TYPE_SINGLE:
-					if (ev_log_level == rec_log_level) {
-						fire_tp = 1;
-					}
-					break;
-				case LTTngLogLevelABI.LOGLEVEL_TYPE_ALL:
-					fire_tp = 1;
-					break;
-				}
-
-				/*
-				 * If we match, stop right now else continue to the next
-				 * loglevel contained in the event.
-				 */
-				if (fire_tp == 1) {
-					break;
-				}
-			}
-		} else {
-			/* No loglevel attached thus fire tracepoint. */
-			fire_tp = 1;
-		}
-
-		if (fire_tp == 0) {
+		logger = loggerMap.get(record.getLoggerName());
+		if (logger == null) {
+			/* Ignore and don't fire TP. */
 			return;
 		}
 
