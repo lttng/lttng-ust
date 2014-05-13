@@ -25,6 +25,10 @@
 
 #include <lttng/lttng-ust-tracef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern
 void _lttng_ust_tracef(const char *fmt, ...);
 
@@ -34,5 +38,9 @@ void _lttng_ust_tracef(const char *fmt, ...);
 		if (caa_unlikely(__tracepoint_lttng_ust_tracef___event.state)) \
 			_lttng_ust_tracef(fmt, ## __VA_ARGS__);		\
 	} while (0)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _LTTNG_UST_TRACEF_H */
