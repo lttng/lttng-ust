@@ -234,6 +234,12 @@ int channel_backend_init(struct channel_backend *chanb,
 		return -EINVAL;
 	if (!num_subbuf || (num_subbuf & (num_subbuf - 1)))
 		return -EINVAL;
+	/*
+	 * Overwrite mode buffers require at least 2 subbuffers per
+	 * buffer.
+	 */
+	if (config->mode == RING_BUFFER_OVERWRITE && num_subbuf < 2)
+		return -EINVAL;
 
 	ret = subbuffer_id_check_index(config, num_subbuf);
 	if (ret)
