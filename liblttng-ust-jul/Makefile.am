@@ -3,7 +3,7 @@ LTTNG_JUL_DESTDIR = $(builddir)/org/lttng/ust/jul
 
 if BUILD_JNI_INTERFACE
 
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(builddir)
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(builddir) -I$(top_builddir)/include
 
 BUILT_SOURCES = org_lttng_ust_jul_LTTngUst.h
 lib_LTLIBRARIES = liblttng-ust-jul-jni.la
