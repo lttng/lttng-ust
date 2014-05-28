@@ -1,4 +1,4 @@
-2014-05-27 (International Hamburger Day) lttng-ust 2.5.0-rc1
+2014-05-28 (International Hamburger Day) lttng-ust 2.5.0-rc1
 	* Fix: out of tree build for lib Java and JUL
 	* Fix: default loglevel is DEBUG
 	* Fix: refuse overwrite mode buffers with less than two subbuffers
