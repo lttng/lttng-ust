@@ -1,3 +1,39 @@
+2014-05-27 (International Hamburger Day) lttng-ust 2.5.0-rc1
+	* Fix: out of tree build for lib Java and JUL
+	* Fix: default loglevel is DEBUG
+	* Fix: refuse overwrite mode buffers with less than two subbuffers
+	* Fix: tracef.h: add missing c++ guard
+	* Fix: remove JUL loglevel filtering from the agent
+	* Fix: cleanup JUL agent state on sessiond disconnect
+	* Fix: Move generated headers to the BUILT_SOURCES target
+	* Fix: perf ust: check close return value
+	* Cleanup: work-around missing inet.h struct mmsghdr fwd declaration
+	* Implement LTTng-UST perf counters support on x86
+	* Fix linking failure when cross-compiling
+	* Fix: disable liblttng-ust-dl if dlinfo is not available in C library
+	* Fix: pass proper args when writing commit counter
+	* Fix: pad strings that are modified concurrently with tracing
+	* Fix: Use $AM_CC when it is defined instead of gcc in demo-tracef
+	* Revert "Fix: disable liblttng-ust-dl if dlinfo is not available in C library"
+	* Fix: .split() the CC environment variable in lttng-gen-tp
+	* Fix: disable liblttng-ust-dl if dlinfo is not available in C library
+	* Fix: python invocation through env
+	* Change default loglevel to TRACE_DEBUG_LINE
+	* Fix: Override AM_PATH_PYTHON's default action-if-not-found
+	* Fix: don't accept configure --disable-shared
+	* Fix: configure.ac: add missing result to alignment req. check
+	* Fix: malloc wrapper: infinite recursion with compat TLS
+	* Fix: lttng-ust needs -ldl for tracef()
+	* Fix: typo in lttng-ust.3
+	* Fix: liblttng-ust-libc-wrapper recursive use of calloc
+	* Fix: add demo-tracef to dist tarball
+	* Fix: add missing header files for tracef
+	* Implement tracef() instrumentation API
+	* Add 'unused' attribute to tracepoint callback
+	* Use autoconf AM_MAINTAINER_MODE
+	* Fix: mismatch between code and comments
+	* Fix: incorrect urcu git URL in README
+
 2014-02-28 (Public Sleeping Day) lttng-ust 2.4.0
 	* Fix: JUL test: update to API change
 	* Fix: Cast from pointer to different integer size warning
