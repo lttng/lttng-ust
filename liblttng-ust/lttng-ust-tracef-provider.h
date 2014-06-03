@@ -2,7 +2,7 @@
 #define TRACEPOINT_PROVIDER lttng_ust_tracef
 
 #if !defined(_TRACEPOINT_LTTNG_UST_TRACEF_PROVIDER_H) || defined(TRACEPOINT_HEADER_MULTI_READ)
-#define _TRACEPOINT_LTTNG_UST_TRACEF_PROVIER_H
+#define _TRACEPOINT_LTTNG_UST_TRACEF_PROVIDER_H
 
 /*
  * Copyright (C) 2011-2014  Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
