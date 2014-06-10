@@ -63,4 +63,30 @@
 
 #define TRACEPOINT_CREATE_PROBES
 
+/*
+ * Put back definitions to the state they were when defined by
+ * tracepoint.h.
+ */
+#undef TP_ARGS
+#define TP_ARGS(...)       __VA_ARGS__
+
+#undef TRACEPOINT_EVENT
+#define TRACEPOINT_EVENT(provider, name, args, fields)			\
+	_DECLARE_TRACEPOINT(provider, name, _TP_PARAMS(args))		\
+	_DEFINE_TRACEPOINT(provider, name, _TP_PARAMS(args))
+
+#undef TRACEPOINT_EVENT_CLASS
+#define TRACEPOINT_EVENT_CLASS(provider, name, args, fields)
+
+#undef TRACEPOINT_EVENT_INSTANCE
+#define TRACEPOINT_EVENT_INSTANCE(provider, _template, name, args)	\
+	_DECLARE_TRACEPOINT(provider, name, _TP_PARAMS(args))		\
+	_DEFINE_TRACEPOINT(provider, name, _TP_PARAMS(args))
+
+#undef TRACEPOINT_LOGLEVEL
+#define TRACEPOINT_LOGLEVEL(provider, name, loglevel)
+
+#undef TRACEPOINT_MODEL_EMF_URI
+#define TRACEPOINT_MODEL_EMF_URI(provider, name, uri)
+
 #endif /* TRACEPOINT_CREATE_PROBES */
