@@ -31,18 +31,7 @@ import java.io.FileReader;
 import java.io.FileNotFoundException;
 import java.net.*;
 import java.lang.management.ManagementFactory;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Enumeration;
-import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.logging.Logger;
-import java.util.Collections;
 
 class USTRegisterMsg {
 	public static int pid;
@@ -64,23 +53,6 @@ public class LTTngTCPSessiondClient {
 
 	private Semaphore registerSem;
 
-	private Timer eventTimer;
-
-	/*
-	 * Indexed by event name but can contains duplicates since multiple
-	 * sessions can enable the same event with or without different loglevels.
-	 */
-	private Map<String, ArrayList<LTTngEvent>> eventMap =
-		Collections.synchronizedMap(
-				new HashMap<String, ArrayList<LTTngEvent>>());
-
-	private Set<LTTngEvent> wildCardSet =
-		Collections.synchronizedSet(new HashSet<LTTngEvent>());
-
-	/* Timer delay at each 5 seconds. */
-	private final static long timerDelay = 5 * 1000;
-	private static boolean timerInitialized;
-
 	private static final String rootPortFile = "/var/run/lttng/jul.port";
 	private static final String userPortFile = "/.lttng/jul.port";
 
@@ -90,83 +62,6 @@ public class LTTngTCPSessiondClient {
 	public LTTngTCPSessiondClient(String host, Semaphore sem) {
 		this.sessiondHost = host;
 		this.registerSem = sem;
-		this.eventTimer = new Timer();
-		this.timerInitialized = false;
-	}
-
-	private void setupEventTimer() {
-		if (this.timerInitialized) {
-			return;
-		}
-
-		this.eventTimer.scheduleAtFixedRate(new TimerTask() {
-			@Override
-			public void run() {
-				LTTngSessiondCmd2_4.sessiond_enable_handler enableCmd = new
-					LTTngSessiondCmd2_4.sessiond_enable_handler();
-
-				synchronized (eventMap) {
-					String loggerName;
-					Enumeration loggers = handler.logManager.getLoggerNames();
-
-					/*
-					 * Create an event for each logger found and attach it to the
-					 * handler.
-					 */
-					while (loggers.hasMoreElements()) {
-						ArrayList<LTTngEvent> bucket;
-
-						loggerName = loggers.nextElement().toString();
-
-						/* Logger is already enabled or end of list, skip it. */
-						if (handler.exists(loggerName) == true ||
-								loggerName.equals("")) {
-							continue;
-						}
-
-						bucket = eventMap.get(loggerName);
-						if (bucket == null) {
-							/* No event(s) exist for this logger. */
-							continue;
-						}
-
-						for (LTTngEvent event : bucket) {
-							enableCmd.name = event.name;
-							enableCmd.lttngLogLevel = event.logLevel.level;
-							enableCmd.lttngLogLevelType = event.logLevel.type;
-
-							/* Event exist so pass null here. */
-							enableCmd.execute(handler, null, wildCardSet);
-						}
-					}
-				}
-
-				/* Handle wild cards. */
-				synchronized (wildCardSet) {
-					Map<String, ArrayList<LTTngEvent>> modifiedEvents =
-						new HashMap<String, ArrayList<LTTngEvent>>();
-					Set<LTTngEvent> tmpSet = new HashSet<LTTngEvent>();
-					Iterator<LTTngEvent> it = wildCardSet.iterator();
-
-					while (it.hasNext()) {
-						LTTngEvent event = it.next();
-
-						/* Only support * for now. */
-						if (event.name.equals("*")) {
-							enableCmd.name = event.name;
-							enableCmd.lttngLogLevel = event.logLevel.level;
-							enableCmd.lttngLogLevelType = event.logLevel.type;
-
-							/* That might create a new event so pass the map. */
-							enableCmd.execute(handler, modifiedEvents, tmpSet);
-						}
-					}
-					eventMap.putAll(modifiedEvents);
-				}
-			}
-		}, this.timerDelay, this.timerDelay);
-
-		this.timerInitialized = true;
 	}
 
 	/*
@@ -185,8 +80,6 @@ public class LTTngTCPSessiondClient {
 	 * Cleanup Agent state.
 	 */
 	private void cleanupState() {
-		eventMap.clear();
-		wildCardSet.clear();
 		if (this.handler != null) {
 			this.handler.clear();
 		}
@@ -216,8 +109,6 @@ public class LTTngTCPSessiondClient {
 				 */
 				registerToSessiond();
 
-				setupEventTimer();
-
 				/*
 				 * Block on socket receive and wait for command from the
 				 * session daemon. This will return if and only if there is a
@@ -239,7 +130,6 @@ public class LTTngTCPSessiondClient {
 
 	public void destroy() {
 		this.quit = true;
-		this.eventTimer.cancel();
 
 		try {
 			if (this.sessiondSock != null) {
@@ -331,7 +221,7 @@ public class LTTngTCPSessiondClient {
 						break;
 					}
 					enableCmd.populate(data);
-					enableCmd.execute(this.handler, this.eventMap, this.wildCardSet);
+					enableCmd.execute(this.handler);
 					data = enableCmd.getBytes();
 					break;
 				}
@@ -344,7 +234,7 @@ public class LTTngTCPSessiondClient {
 						break;
 					}
 					disableCmd.populate(data);
-					disableCmd.execute(this.handler, this.eventMap, this.wildCardSet);
+					disableCmd.execute(this.handler);
 					data = disableCmd.getBytes();
 					break;
 				}
