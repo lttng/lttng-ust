@@ -23,10 +23,7 @@ import java.nio.ByteOrder;
 import java.lang.Object;
 import java.util.logging.Logger;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
-import java.util.Set;
 import java.util.Enumeration;
 
 public interface LTTngSessiondCmd2_4 {
@@ -133,7 +130,7 @@ public interface LTTngSessiondCmd2_4 {
 			buf.order(ByteOrder.LITTLE_ENDIAN);
 			lttngLogLevel = buf.getInt();
 			lttngLogLevelType = buf.getInt();
-			name = new String(data, data_offset, data.length - data_offset);
+			name = new String(data, data_offset, data.length - data_offset).trim();
 		}
 
 		@Override
@@ -152,74 +149,33 @@ public interface LTTngSessiondCmd2_4 {
 		 * @return Event name as a string if the event is NOT found thus was
 		 * not enabled.
 		 */
-		public void execute(LTTngLogHandler handler,
-				Map<String, ArrayList<LTTngEvent>> eventMap, Set wildCardSet) {
-			ArrayList<LTTngEvent> bucket;
+		public void execute(LTTngLogHandler handler) {
 			LTTngEvent event;
 
-			if (name == null) {
+			if (this.name == null) {
 				this.code = lttng_jul_ret_code.CODE_INVALID_CMD;
 				return;
 			}
 
-			/* Wild card to enable ALL logger. */
-			if (name.trim().equals("*")) {
-				String loggerName;
-				Enumeration loggers = handler.logManager.getLoggerNames();
+			/* Add event to the enabled events hash map. */
+			event = handler.enabledEvents.put(this.name,
+					new LTTngEvent(this.name, 0, 0));
+			if (event != null) {
+				/* The event exists so skip updating the refcount. */
+				this.code = lttng_jul_ret_code.CODE_SUCCESS_CMD;
+				return;
+			}
 
-				/* Add event to the wildcard set. */
-				wildCardSet.add(new LTTngEvent(name.trim(), lttngLogLevel,
-							lttngLogLevelType));
+			/*
+			 * Get the root logger and attach to it if it's the first enable
+			 * seen by the handler.
+			 */
+			Logger rootLogger = handler.logManager.getLogger("");
 
-				/*
-				 * Create an event for each logger found and attach it to the
-				 * handler.
-				 */
-				while (loggers.hasMoreElements()) {
-					loggerName = loggers.nextElement().toString();
-					/* Somehow there is always an empty string at the end. */
-					if (loggerName == "") {
-						continue;
-					}
-
-					event = new LTTngEvent(loggerName, lttngLogLevel,
-							lttngLogLevelType);
-					/* Attach event to Log handler to it can be traced. */
-					handler.attachEvent(event);
-
-					/*
-					 * The agent timer call this function with eventMap set to
-					 * null because it already has a reference to an existing
-					 * event so is should not try to add a new one here.
-					 */
-					if (eventMap != null) {
-						bucket = eventMap.get(loggerName);
-						if (bucket == null) {
-							bucket = new ArrayList<LTTngEvent>();
-							eventMap.put(loggerName, bucket);
-						}
-						bucket.add(event);
-					}
-				}
-			} else {
-				event = new LTTngEvent(name.trim(), lttngLogLevel,
-						lttngLogLevelType);
-				/* Attach event to Log handler to it can be traced. */
-				handler.attachEvent(event);
-
-				/*
-				 * The agent timer call this function with eventMap set to
-				 * null because it already has a reference to an existing
-				 * event so is should not try to add a new one here.
-				 */
-				if (eventMap != null) {
-					bucket = eventMap.get(name.trim());
-					if (bucket == null) {
-						bucket = new ArrayList<LTTngEvent>();
-						eventMap.put(name.trim(), bucket);
-					}
-					bucket.add(event);
-				}
+			handler.refcount++;
+			if (handler.refcount == 1) {
+				/* Add handler only if it's the first enable. */
+				rootLogger.addHandler(handler);
 			}
 
 			this.code = lttng_jul_ret_code.CODE_SUCCESS_CMD;
@@ -238,13 +194,9 @@ public interface LTTngSessiondCmd2_4 {
 
 		@Override
 		public void populate(byte[] data) {
-			int data_offset = INT_SIZE * 2;
-
 			ByteBuffer buf = ByteBuffer.wrap(data);
 			buf.order(ByteOrder.LITTLE_ENDIAN);
-			lttngLogLevel = buf.getInt();
-			lttngLogLevelType = buf.getInt();
-			name = new String(data, data_offset, data.length - data_offset);
+			name = new String(data).trim();
 		}
 
 		@Override
@@ -260,62 +212,34 @@ public interface LTTngSessiondCmd2_4 {
 		 * Execute disable handler action which is to disable the given handler
 		 * to the received name.
 		 */
-		public void execute(LTTngLogHandler handler,
-				Map<String, ArrayList<LTTngEvent>> eventMap, Set wildCardSet) {
-			ArrayList<LTTngEvent> bucket;
+		public void execute(LTTngLogHandler handler) {
 			LTTngEvent event;
 
-			if (name == null) {
+			if (this.name == null) {
 				this.code = lttng_jul_ret_code.CODE_INVALID_CMD;
 				return;
 			}
 
-			/* Wild card to disable ALL logger. */
-			if (name.trim().equals("*")) {
-				String loggerName;
-				Enumeration loggers = handler.logManager.getLoggerNames();
-
-				/* Remove event from the wildcard set. */
-				wildCardSet.remove(new LTTngEvent(name.trim(), lttngLogLevel,
-							lttngLogLevelType));
-
-				while (loggers.hasMoreElements()) {
-					loggerName = loggers.nextElement().toString();
-					/* Somehow there is always an empty string at the end. */
-					if (loggerName == "") {
-						continue;
-					}
-
-					event = new LTTngEvent(loggerName, lttngLogLevel,
-							lttngLogLevelType);
-
-					bucket = eventMap.get(loggerName);
-					if (bucket != null) {
-						handler.detachEvent(event);
-						bucket.remove(event);
-						if (bucket.isEmpty() == true) {
-							eventMap.remove(bucket);
-						}
-					}
-				}
-				this.code = lttng_jul_ret_code.CODE_SUCCESS_CMD;
-			} else {
-				event = new LTTngEvent(this.name, lttngLogLevel,
-						lttngLogLevelType);
-
-				bucket = eventMap.get(this.name);
-				if (bucket != null) {
-					handler.detachEvent(event);
-					bucket.remove(event);
-					if (bucket.isEmpty() == true) {
-						eventMap.remove(bucket);
-					}
-					this.code = lttng_jul_ret_code.CODE_SUCCESS_CMD;
-				} else {
-					this.code = lttng_jul_ret_code.CODE_UNK_LOGGER_NAME;
-				}
+			/*
+			 * Try to remove the logger name from the events map and if we
+			 * can't, just skip the refcount update since the event was never
+			 * enabled.
+			 */
+			event = handler.enabledEvents.remove(this.name);
+			if (event == null) {
+				/* The event didn't exists so skip updating the refcount. */
+				this.code = lttng_jul_ret_code.CODE_INVALID_CMD;
+				return;
 			}
 
+			Logger rootLogger = handler.logManager.getLogger("");
+
+			handler.refcount--;
+			if (handler.refcount == 0) {
+				rootLogger.removeHandler(handler);
+			}
+
+			this.code = lttng_jul_ret_code.CODE_SUCCESS_CMD;
 			return;
 		}
 	}
