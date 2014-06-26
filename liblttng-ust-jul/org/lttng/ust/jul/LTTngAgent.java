@@ -128,6 +128,7 @@ public class LTTngAgent {
 		this.lttngThreadUser = new LTTngThread(this.sessiondAddr,
 				this.lttngHandlerUser, this.registerSem);
 		this.sessiondThUser = new Thread(lttngThreadUser);
+		this.sessiondThUser.setDaemon(true);
 		this.sessiondThUser.start();
 		/* Wait for registration done of per-user sessiond */
 		nr_acquires++;
@@ -136,6 +137,7 @@ public class LTTngAgent {
 		this.lttngThreadRoot = new LTTngThread(this.sessiondAddr,
 				this.lttngHandlerRoot, this.registerSem);
 		this.sessiondThRoot = new Thread(lttngThreadRoot);
+		this.sessiondThRoot.setDaemon(true);
 		this.sessiondThRoot.start();
 		/* Wait for registration done of system-wide sessiond */
 		nr_acquires++;
