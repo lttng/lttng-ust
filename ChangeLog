@@ -1,3 +1,11 @@
+2014-06-27 lttng-ust 2.5.0-rc2
+	* Fix: lttng-ust-jul: set thread in daemon mode
+	* JUL: use root logger to capture events
+	* Fix: Wrong configure check for UST perf event counters context support
+	* Fix: multiple providers in same C file failure
+	* Fix: header inclusion guard typo in lttng-ust-tracef-provider.h
+	* Fix: 2.5.0-rc1 changelog has off-by-one date
+
 2014-05-28 (International Hamburger Day) lttng-ust 2.5.0-rc1
 	* Fix: out of tree build for lib Java and JUL
 	* Fix: default loglevel is DEBUG
