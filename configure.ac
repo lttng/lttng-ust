@@ -224,7 +224,9 @@ changequote([,])dnl
 	amd64) ;;
 	powerpc) ;;
 	ppc64) ;;
+	ppc64le) ;;
 	powerpc64) ;;
+	powerpc64le) ;;
 	s390) NO_UNALIGNED_ACCESS=1 ;;
 	s390x) NO_UNALIGNED_ACCESS=1 ;;
         arm*) NO_UNALIGNED_ACCESS=1 ;;
