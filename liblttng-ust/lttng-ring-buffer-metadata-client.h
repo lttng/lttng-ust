@@ -199,7 +199,8 @@ struct lttng_channel *_channel_create(const char *name,
 				unsigned int switch_timer_interval,
 				unsigned int read_timer_interval,
 				unsigned char *uuid,
-				uint32_t chan_id)
+				uint32_t chan_id,
+				const char *shm_path)
 {
 	struct lttng_channel chan_priv_init;
 	struct lttng_ust_shm_handle *handle;
@@ -214,7 +215,8 @@ struct lttng_channel *_channel_create(const char *name,
 			sizeof(struct lttng_channel),
 			&chan_priv_init,
 			buf_addr, subbuf_size, num_subbuf,
-			switch_timer_interval, read_timer_interval);
+			switch_timer_interval, read_timer_interval,
+			shm_path);
 	if (!handle)
 		return NULL;
 	lttng_chan = priv;

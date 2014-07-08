@@ -29,6 +29,8 @@
 #include "smp.h"
 #include "shm.h"
 
+#define UINT_MAX_STR_LEN 11	/* includes \0 */
+
 /**
  * lib_ring_buffer_backend_allocate - allocate a channel buffer
  * @config: ring buffer instance configuration
@@ -115,7 +117,6 @@ int lib_ring_buffer_backend_allocate(const struct lttng_ust_lib_ring_buffer_conf
 			mmap_offset += subbuf_size;
 		}
 	}
-
 	return 0;
 
 free_array:
@@ -199,6 +200,7 @@ void channel_backend_reset(struct channel_backend *chanb)
  * @subbuf_size: size of sub-buffers (> PAGE_SIZE, power of 2)
  * @num_subbuf: number of sub-buffers (power of 2)
  * @lttng_ust_shm_handle: shared memory handle
+ * @shm_path: shared memory files path
  *
  * Returns channel pointer if successful, %NULL otherwise.
  *
@@ -212,7 +214,8 @@ int channel_backend_init(struct channel_backend *chanb,
 			 const char *name,
 			 const struct lttng_ust_lib_ring_buffer_config *config,
 			 size_t subbuf_size, size_t num_subbuf,
-			 struct lttng_ust_shm_handle *handle)
+			 struct lttng_ust_shm_handle *handle,
+			 const char *shm_path)
 {
 	struct channel *chan = caa_container_of(chanb, struct channel, backend);
 	unsigned int i;
@@ -285,9 +288,21 @@ int channel_backend_init(struct channel_backend *chanb,
 		 */
 		for_each_possible_cpu(i) {
 			struct shm_object *shmobj;
+			char shm_buf_path[PATH_MAX];
 
+			if (shm_path) {
+				char cpu_nr[UINT_MAX_STR_LEN];	/* unsigned int max len */
+
+				strncpy(shm_buf_path, shm_path, PATH_MAX);
+				shm_buf_path[PATH_MAX - 1] = '\0';
+				ret = snprintf(cpu_nr, UINT_MAX_STR_LEN, "%u", i);
+				if (ret != 1)
+					goto end;
+				strncat(shm_buf_path, cpu_nr,
+					PATH_MAX - strlen(shm_buf_path) - 1);
+			}
 			shmobj = shm_object_table_alloc(handle->table, shmsize,
-					SHM_OBJECT_SHM);
+					SHM_OBJECT_SHM, shm_path ? shm_buf_path : NULL);
 			if (!shmobj)
 				goto end;
 			align_shm(shmobj, __alignof__(struct lttng_ust_lib_ring_buffer));
@@ -306,7 +321,7 @@ int channel_backend_init(struct channel_backend *chanb,
 		struct lttng_ust_lib_ring_buffer *buf;
 
 		shmobj = shm_object_table_alloc(handle->table, shmsize,
-					SHM_OBJECT_SHM);
+					SHM_OBJECT_SHM, shm_path);
 		if (!shmobj)
 			goto end;
 		align_shm(shmobj, __alignof__(struct lttng_ust_lib_ring_buffer));

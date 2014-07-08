@@ -388,6 +388,20 @@ static void client_buffer_finalize(struct lttng_ust_lib_ring_buffer *buf, void *
 {
 }
 
+static void client_content_size_field(const struct lttng_ust_lib_ring_buffer_config *config,
+				      size_t *offset, size_t *length)
+{
+	*offset = offsetof(struct packet_header, ctx.content_size);
+	*length = sizeof(((struct packet_header *) NULL)->ctx.content_size);
+}
+
+static void client_packet_size_field(const struct lttng_ust_lib_ring_buffer_config *config,
+				      size_t *offset, size_t *length)
+{
+	*offset = offsetof(struct packet_header, ctx.packet_size);
+	*length = sizeof(((struct packet_header *) NULL)->ctx.packet_size);
+}
+
 static struct packet_header *client_packet_header(struct lttng_ust_lib_ring_buffer *buf,
 		struct lttng_ust_shm_handle *handle)
 {
@@ -482,6 +496,8 @@ struct lttng_ust_client_lib_ring_buffer_client_cb client_cb = {
 		.buffer_end = client_buffer_end,
 		.buffer_create = client_buffer_create,
 		.buffer_finalize = client_buffer_finalize,
+		.content_size_field = client_content_size_field,
+		.packet_size_field = client_packet_size_field,
 	},
 	.timestamp_begin = client_timestamp_begin,
 	.timestamp_end = client_timestamp_end,
@@ -500,6 +516,8 @@ static const struct lttng_ust_lib_ring_buffer_config client_config = {
 	.cb.buffer_end = client_buffer_end,
 	.cb.buffer_create = client_buffer_create,
 	.cb.buffer_finalize = client_buffer_finalize,
+	.cb.content_size_field = client_content_size_field,
+	.cb.packet_size_field = client_packet_size_field,
 
 	.tsc_bits = LTTNG_COMPACT_TSC_BITS,
 	.alloc = RING_BUFFER_ALLOC_PER_CPU,
@@ -524,7 +542,8 @@ struct lttng_channel *_channel_create(const char *name,
 				unsigned int switch_timer_interval,
 				unsigned int read_timer_interval,
 				unsigned char *uuid,
-				uint32_t chan_id)
+				uint32_t chan_id,
+				const char *shm_path)
 {
 	struct lttng_channel chan_priv_init;
 	struct lttng_ust_shm_handle *handle;
@@ -539,7 +558,8 @@ struct lttng_channel *_channel_create(const char *name,
 			sizeof(struct lttng_channel),
 			&chan_priv_init,
 			buf_addr, subbuf_size, num_subbuf,
-			switch_timer_interval, read_timer_interval);
+			switch_timer_interval, read_timer_interval,
+			shm_path);
 	if (!handle)
 		return NULL;
 	lttng_chan = priv;

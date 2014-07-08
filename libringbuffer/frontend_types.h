@@ -94,10 +94,90 @@ struct commit_counters_cold {
 } __attribute__((aligned(CAA_CACHE_LINE_SIZE)));
 
 /* ring buffer state */
-#define RB_RING_BUFFER_PADDING		64
+#define RB_CRASH_DUMP_ABI_LEN		256
+#define RB_RING_BUFFER_PADDING		60
+
+#define RB_CRASH_DUMP_ABI_MAGIC_LEN	16
+
+/*
+ * The 128-bit magic number is xor'd in the process data so it does not
+ * cause a false positive when searching for buffers by scanning memory.
+ * The actual magic number is:
+ *   0x17, 0x7B, 0xF1, 0x77, 0xBF, 0x17, 0x7B, 0xF1,
+ *   0x77, 0xBF, 0x17, 0x7B, 0xF1, 0x77, 0xBF, 0x17,
+ */
+#define RB_CRASH_DUMP_ABI_MAGIC_XOR					\
+	{								\
+		0x17 ^ 0xFF, 0x7B ^ 0xFF, 0xF1 ^ 0xFF, 0x77 ^ 0xFF,	\
+		0xBF ^ 0xFF, 0x17 ^ 0xFF, 0x7B ^ 0xFF, 0xF1 ^ 0xFF,	\
+		0x77 ^ 0xFF, 0xBF ^ 0xFF, 0x17 ^ 0xFF, 0x7B ^ 0xFF,	\
+		0xF1 ^ 0xFF, 0x77 ^ 0xFF, 0xBF ^ 0xFF, 0x17 ^ 0xFF,	\
+	}
+
+#define RB_CRASH_ENDIAN			0x1234
+
+#define RB_CRASH_DUMP_ABI_MAJOR		0
+#define RB_CRASH_DUMP_ABI_MINOR		0
+
+enum lttng_crash_type {
+	LTTNG_CRASH_TYPE_UST = 0,
+	LTTNG_CRASH_TYPE_KERNEL = 1,
+};
+
+struct lttng_crash_abi {
+	uint8_t magic[RB_CRASH_DUMP_ABI_MAGIC_LEN];
+	uint64_t mmap_length;	/* Overall lenght of crash record */
+	uint16_t endian;	/*
+				 * { 0x12, 0x34 }: big endian
+				 * { 0x34, 0x12 }: little endian
+				 */
+	uint16_t major;		/* Major number. */
+	uint16_t minor;		/* Minor number. */
+	uint8_t word_size;	/* Word size (bytes). */
+	uint8_t layout_type;	/* enum lttng_crash_type */
+
+	struct {
+		uint32_t prod_offset;
+		uint32_t consumed_offset;
+		uint32_t commit_hot_array;
+		uint32_t commit_hot_seq;
+		uint32_t buf_wsb_array;
+		uint32_t buf_wsb_id;
+		uint32_t sb_array;
+		uint32_t sb_array_shmp_offset;
+		uint32_t sb_backend_p_offset;
+		uint32_t content_size;
+		uint32_t packet_size;
+	} __attribute__((packed)) offset;
+	struct {
+		uint8_t prod_offset;
+		uint8_t consumed_offset;
+		uint8_t commit_hot_seq;
+		uint8_t buf_wsb_id;
+		uint8_t sb_array_shmp_offset;
+		uint8_t sb_backend_p_offset;
+		uint8_t content_size;
+		uint8_t packet_size;
+	} __attribute__((packed)) length;
+	struct {
+		uint32_t commit_hot_array;
+		uint32_t buf_wsb_array;
+		uint32_t sb_array;
+	} __attribute__((packed)) stride;
+
+	uint64_t buf_size;	/* Size of the buffer */
+	uint64_t subbuf_size;	/* Sub-buffer size */
+	uint64_t num_subbuf;	/* Number of sub-buffers for writer */
+	uint32_t mode;		/* Buffer mode: 0: overwrite, 1: discard */
+} __attribute__((packed));
+
 struct lttng_ust_lib_ring_buffer {
-	/* First 32 bytes cache-hot cacheline */
-	union v_atomic offset;		/* Current offset in the buffer */
+	/* First 32 bytes are for the buffer crash dump ABI */
+	struct lttng_crash_abi crash_abi;
+
+	/* 32 bytes cache-hot cacheline */
+	union v_atomic __attribute__((aligned(32))) offset;
+					/* Current offset in the buffer */
 	DECLARE_SHMP(struct commit_counters_hot, commit_hot);
 					/* Commit count per sub-buffer */
 	long consumed;			/*
@@ -105,12 +185,14 @@ struct lttng_ust_lib_ring_buffer {
 					 * standard atomic access (shared)
 					 */
 	int record_disabled;
-	/* End of first 32 bytes cacheline */
+	/* End of cache-hot 32 bytes cacheline */
+
 	union v_atomic last_tsc;	/*
 					 * Last timestamp written in the buffer.
 					 */
 
-	struct lttng_ust_lib_ring_buffer_backend backend;	/* Associated backend */
+	struct lttng_ust_lib_ring_buffer_backend backend;
+					/* Associated backend */
 
 	DECLARE_SHMP(struct commit_counters_cold, commit_cold);
 					/* Commit count per sub-buffer */

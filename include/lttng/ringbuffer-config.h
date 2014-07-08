@@ -92,6 +92,13 @@ struct lttng_ust_lib_ring_buffer_client_cb {
 			    size_t offset, size_t *header_len,
 			    size_t *payload_len, uint64_t *timestamp,
 			    struct lttng_ust_shm_handle *handle);
+	/*
+	 * Offset and size of content size field in client.
+	 */
+	void (*content_size_field) (const struct lttng_ust_lib_ring_buffer_config *config,
+				size_t *offset, size_t *length);
+	void (*packet_size_field) (const struct lttng_ust_lib_ring_buffer_config *config,
+				size_t *offset, size_t *length);
 };
 
 /*
@@ -146,8 +153,8 @@ enum lttng_ust_lib_ring_buffer_sync_types {
 };
 
 enum lttng_ust_lib_ring_buffer_mode_types {
-	RING_BUFFER_OVERWRITE,		/* Overwrite when buffer full */
-	RING_BUFFER_DISCARD,		/* Discard when buffer full */
+	RING_BUFFER_OVERWRITE = 0,	/* Overwrite when buffer full */
+	RING_BUFFER_DISCARD = 1,	/* Discard when buffer full */
 };
 
 enum lttng_ust_lib_ring_buffer_output_types {

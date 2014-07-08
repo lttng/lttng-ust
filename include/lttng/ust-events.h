@@ -439,7 +439,8 @@ struct lttng_channel_ops {
 			unsigned int switch_timer_interval,
 			unsigned int read_timer_interval,
 			unsigned char *uuid,
-			uint32_t chan_id);
+			uint32_t chan_id,
+			const char *shm_path);
 	void (*channel_destroy)(struct lttng_channel *chan);
 	union {
 		void *_deprecated1;

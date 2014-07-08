@@ -89,6 +89,11 @@
 #define LTTNG_UST_RING_BUFFER_RETRY_DELAY_MS	10
 
 /*
+ * Non-static to ensure the compiler does not optimize away the xor.
+ */
+uint8_t lttng_crash_magic_xor[] = RB_CRASH_DUMP_ABI_MAGIC_XOR;
+
+/*
  * Use POSIX SHM: shm_open(3) and shm_unlink(3).
  * close(2) to close the fd returned by shm_open.
  * shm_unlink releases the shared memory object name.
@@ -208,6 +213,95 @@ void channel_reset(struct channel *chan)
 	/* Don't reset reader reference count */
 }
 
+static
+void init_crash_abi(const struct lttng_ust_lib_ring_buffer_config *config,
+		struct lttng_crash_abi *crash_abi,
+		struct lttng_ust_lib_ring_buffer *buf,
+		struct channel_backend *chanb,
+		struct shm_object *shmobj,
+		struct lttng_ust_shm_handle *handle)
+{
+	int i;
+
+	for (i = 0; i < RB_CRASH_DUMP_ABI_MAGIC_LEN; i++)
+		crash_abi->magic[i] = lttng_crash_magic_xor[i] ^ 0xFF;
+	crash_abi->mmap_length = shmobj->memory_map_size;
+	crash_abi->endian = RB_CRASH_ENDIAN;
+	crash_abi->major = RB_CRASH_DUMP_ABI_MAJOR;
+	crash_abi->minor = RB_CRASH_DUMP_ABI_MINOR;
+	crash_abi->word_size = sizeof(unsigned long);
+	crash_abi->layout_type = LTTNG_CRASH_TYPE_UST;
+
+	/* Offset of fields */
+	crash_abi->offset.prod_offset =
+		(uint32_t) ((char *) &buf->offset - (char *) buf);
+	crash_abi->offset.consumed_offset =
+		(uint32_t) ((char *) &buf->consumed - (char *) buf);
+	crash_abi->offset.commit_hot_array =
+		(uint32_t) ((char *) shmp(handle, buf->commit_hot) - (char *) buf);
+	crash_abi->offset.commit_hot_seq =
+		offsetof(struct commit_counters_hot, seq);
+	crash_abi->offset.buf_wsb_array =
+		(uint32_t) ((char *) shmp(handle, buf->backend.buf_wsb) - (char *) buf);
+	crash_abi->offset.buf_wsb_id =
+		offsetof(struct lttng_ust_lib_ring_buffer_backend_subbuffer, id);
+	crash_abi->offset.sb_array =
+		(uint32_t) ((char *) shmp(handle, buf->backend.array) - (char *) buf);
+	crash_abi->offset.sb_array_shmp_offset =
+		offsetof(struct lttng_ust_lib_ring_buffer_backend_pages_shmp,
+			shmp._ref.offset);
+	crash_abi->offset.sb_backend_p_offset =
+		offsetof(struct lttng_ust_lib_ring_buffer_backend_pages,
+			p._ref.offset);
+
+	/* Field length */
+	crash_abi->length.prod_offset = sizeof(buf->offset);
+	crash_abi->length.consumed_offset = sizeof(buf->consumed);
+	crash_abi->length.commit_hot_seq =
+		sizeof(((struct commit_counters_hot *) NULL)->seq);
+	crash_abi->length.buf_wsb_id =
+		sizeof(((struct lttng_ust_lib_ring_buffer_backend_subbuffer *) NULL)->id);
+	crash_abi->length.sb_array_shmp_offset =
+		sizeof(((struct lttng_ust_lib_ring_buffer_backend_pages_shmp *) NULL)->shmp._ref.offset);
+	crash_abi->length.sb_backend_p_offset =
+		sizeof(((struct lttng_ust_lib_ring_buffer_backend_pages *) NULL)->p._ref.offset);
+
+	/* Array stride */
+	crash_abi->stride.commit_hot_array =
+		sizeof(struct commit_counters_hot);
+	crash_abi->stride.buf_wsb_array =
+		sizeof(struct lttng_ust_lib_ring_buffer_backend_subbuffer);
+	crash_abi->stride.sb_array =
+		sizeof(struct lttng_ust_lib_ring_buffer_backend_pages_shmp);
+
+	/* Buffer constants */
+	crash_abi->buf_size = chanb->buf_size;
+	crash_abi->subbuf_size = chanb->subbuf_size;
+	crash_abi->num_subbuf = chanb->num_subbuf;
+	crash_abi->mode = (uint32_t) chanb->config.mode;
+
+	if (config->cb.content_size_field) {
+		size_t offset, length;
+
+		config->cb.content_size_field(config, &offset, &length);
+		crash_abi->offset.content_size = offset;
+		crash_abi->length.content_size = length;
+	} else {
+		crash_abi->offset.content_size = 0;
+		crash_abi->length.content_size = 0;
+	}
+	if (config->cb.packet_size_field) {
+		size_t offset, length;
+
+		config->cb.packet_size_field(config, &offset, &length);
+		crash_abi->offset.packet_size = offset;
+		crash_abi->length.packet_size = length;
+	} else {
+		crash_abi->offset.packet_size = 0;
+		crash_abi->length.packet_size = 0;
+	}
+}
+
 /*
  * Must be called under cpu hotplug protection.
  */
@@ -227,18 +321,12 @@ int lib_ring_buffer_create(struct lttng_ust_lib_ring_buffer *buf,
 	if (buf->backend.allocated)
 		return 0;
 
-	ret = lib_ring_buffer_backend_create(&buf->backend, &chan->backend,
-			cpu, handle, shmobj);
-	if (ret)
-		return ret;
-
 	align_shm(shmobj, __alignof__(struct commit_counters_hot));
 	set_shmp(buf->commit_hot,
 		 zalloc_shm(shmobj,
 			sizeof(struct commit_counters_hot) * chan->backend.num_subbuf));
 	if (!shmp(handle, buf->commit_hot)) {
-		ret = -ENOMEM;
-		goto free_chanbuf;
+		return -ENOMEM;
 	}
 
 	align_shm(shmobj, __alignof__(struct commit_counters_cold));
@@ -248,6 +336,12 @@ int lib_ring_buffer_create(struct lttng_ust_lib_ring_buffer *buf,
 	if (!shmp(handle, buf->commit_cold)) {
 		ret = -ENOMEM;
 		goto free_commit;
+	}
+
+	ret = lib_ring_buffer_backend_create(&buf->backend, &chan->backend,
+			cpu, handle, shmobj);
+	if (ret) {
+		goto free_init;
 	}
 
 	/*
@@ -260,12 +354,16 @@ int lib_ring_buffer_create(struct lttng_ust_lib_ring_buffer *buf,
 	tsc = config->cb.ring_buffer_clock_read(shmp(handle, buf->backend.chan));
 	config->cb.buffer_begin(buf, tsc, 0, handle);
 	v_add(config, subbuf_header_size, &shmp_index(handle, buf->commit_hot, 0)->cc);
+	v_add(config, subbuf_header_size, &shmp_index(handle, buf->commit_hot, 0)->seq);
 
 	if (config->cb.buffer_create) {
 		ret = config->cb.buffer_create(buf, priv, cpu, chanb->name, handle);
 		if (ret)
-			goto free_init;
+			goto free_chanbuf;
 	}
+
+	init_crash_abi(config, &buf->crash_abi, buf, chanb, shmobj, handle);
+
 	buf->backend.allocated = 1;
 	return 0;
 
@@ -675,6 +773,7 @@ static void channel_free(struct channel *chan,
  *                         padding to let readers get those sub-buffers.
  *                         Used for live streaming.
  * @read_timer_interval: Time interval (in us) to wake up pending readers.
+ * @shm_path: Shared memory files path.
  *
  * Holds cpu hotplug.
  * Returns NULL on failure.
@@ -687,7 +786,8 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 		   void *priv_data_init,
 		   void *buf_addr, size_t subbuf_size,
 		   size_t num_subbuf, unsigned int switch_timer_interval,
-		   unsigned int read_timer_interval)
+		   unsigned int read_timer_interval,
+		   const char *shm_path)
 {
 	int ret;
 	size_t shmsize, chansize;
@@ -724,7 +824,8 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 	shmsize += priv_data_size;
 
 	/* Allocate normal memory for channel (not shared) */
-	shmobj = shm_object_table_alloc(handle->table, shmsize, SHM_OBJECT_MEM);
+	shmobj = shm_object_table_alloc(handle->table, shmsize, SHM_OBJECT_MEM,
+			NULL);
 	if (!shmobj)
 		goto error_append;
 	/* struct channel is at object 0, offset 0 (hardcoded) */
@@ -754,7 +855,8 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 	}
 
 	ret = channel_backend_init(&chan->backend, name, config,
-				   subbuf_size, num_subbuf, handle);
+				   subbuf_size, num_subbuf, handle,
+				   shm_path);
 	if (ret)
 		goto error_backend_init;
 

@@ -22,6 +22,7 @@
  */
 
 #include <stdint.h>
+#include <limits.h>
 #include "shm_internal.h"
 
 struct channel;
@@ -39,6 +40,7 @@ struct shm_object {
 	char *memory_map;
 	size_t memory_map_size;
 	uint64_t allocated_len;
+	char shm_path[PATH_MAX];
 };
 
 struct shm_object_table {

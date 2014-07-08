@@ -995,7 +995,8 @@ struct ustctl_consumer_channel *
 			attr->subbuf_size, attr->num_subbuf,
 			attr->switch_timer_interval,
 			attr->read_timer_interval,
-			attr->uuid, attr->chan_id);
+			attr->uuid, attr->chan_id,
+			attr->shm_path[0] == '\0' ? NULL : attr->shm_path);
 	if (!chan->chan) {
 		goto chan_error;
 	}
