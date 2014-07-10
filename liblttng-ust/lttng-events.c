@@ -248,8 +248,6 @@ int lttng_session_enable(struct lttng_session *session)
 
 	/* Set transient enabler state to "enabled" */
 	session->tstate = 1;
-	/* We need to sync enablers with session before activation. */
-	lttng_session_sync_enablers(session);
 
 	/*
 	 * Snapshot the number of events per channel to know the type of header
@@ -286,6 +284,9 @@ int lttng_session_enable(struct lttng_session *session)
 			return -EINVAL;
 		}
 	}
+
+	/* We need to sync enablers with session before activation. */
+	lttng_session_sync_enablers(session);
 
 	/* Set atomically the state to "active" */
 	CMM_ACCESS_ONCE(session->active) = 1;
