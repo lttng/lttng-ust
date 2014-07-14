@@ -86,6 +86,14 @@ static DEFINE_URCU_TLS(int, ust_mutex_nest);
  */
 static pthread_mutex_t ust_exit_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+/*
+ * ust_fork_mutex protects base address statedump tracing against forks. It
+ * prevents the dynamic loader lock to be taken (by base address statedump
+ * tracing) while a fork is happening, thus preventing deadlock issues with
+ * the dynamic loader lock.
+ */
+static pthread_mutex_t ust_fork_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 /* Should the ust comm thread quit ? */
 static int lttng_ust_comm_should_quit;
 
@@ -505,8 +513,10 @@ void handle_pending_statedump(struct sock_info *sock_info)
 	int ctor_passed = sock_info->constructor_sem_posted;
 
 	if (ctor_passed && sock_info->statedump_pending) {
+		pthread_mutex_lock(&ust_fork_mutex);
 		sock_info->statedump_pending = 0;
 		lttng_handle_pending_statedump(sock_info);
+		pthread_mutex_unlock(&ust_fork_mutex);
 	}
 }
 
@@ -1627,6 +1637,9 @@ void ust_before_fork(sigset_t *save_sigset)
 	if (ret == -1) {
 		PERROR("sigprocmask");
 	}
+
+	pthread_mutex_lock(&ust_fork_mutex);
+
 	ust_lock_nocheck();
 	rcu_bp_before_fork();
 }
@@ -1637,6 +1650,9 @@ static void ust_after_fork_common(sigset_t *restore_sigset)
 
 	DBG("process %d", getpid());
 	ust_unlock();
+
+	pthread_mutex_unlock(&ust_fork_mutex);
+
 	/* Restore signals */
 	ret = sigprocmask(SIG_SETMASK, restore_sigset, NULL);
 	if (ret == -1) {
