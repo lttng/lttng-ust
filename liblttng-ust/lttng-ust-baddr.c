@@ -176,7 +176,7 @@ int lttng_ust_baddr_statedump(void *owner)
 {
 	struct extract_data data;
 
-	if (!getenv("LTTNG_UST_WITH_EXPERIMENTAL_BADDR_STATEDUMP"))
+	if (getenv("LTTNG_UST_WITHOUT_BADDR_STATEDUMP"))
 		return 0;
 
 	data.owner = owner;
