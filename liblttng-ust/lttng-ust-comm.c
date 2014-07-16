@@ -518,8 +518,8 @@ void handle_pending_statedump(struct sock_info *sock_info)
 	int ctor_passed = sock_info->constructor_sem_posted;
 
 	if (ctor_passed && sock_info->statedump_pending) {
-		pthread_mutex_lock(&ust_fork_mutex);
 		sock_info->statedump_pending = 0;
+		pthread_mutex_lock(&ust_fork_mutex);
 		lttng_handle_pending_statedump(sock_info);
 		pthread_mutex_unlock(&ust_fork_mutex);
 	}
