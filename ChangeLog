@@ -1,3 +1,19 @@
+2014-07-16 lttng-ust 2.4.2
+	* Move enablers syncing after the channel registration
+	* Add lttng_ust_notrace to static inline functions
+	* Fix: lttng-ust-jul: set thread in daemon mode
+	* JUL: use root logger to capture events
+	* Fix: multiple providers in same C file failure
+	* Fix: out of tree build for lib Java and JUL
+	* Fix: refuse overwrite mode buffers with less than two subbuffers
+	* Fix: remove JUL loglevel filtering from the agent
+	* Fix: cleanup JUL agent state on sessiond disconnect
+	* Fix: Move generated headers to the BUILT_SOURCES target
+	* Fix linking failure when cross-compiling
+	* Fix: disable liblttng-ust-dl if dlinfo is not available in C library
+	* Fix: pass proper args when writing commit counter
+	* Fix: pad strings that are modified concurrently with tracing
+
 2014-04-08 lttng-ust 2.4.1
 	* Revert "Fix: disable liblttng-ust-dl if dlinfo is not available in C library"
 	* Fix: .split() the CC environment variable in lttng-gen-tp
