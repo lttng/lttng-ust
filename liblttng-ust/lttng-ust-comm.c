@@ -68,9 +68,14 @@ static int initialized;
  *
  * ust_exit_mutex must never nest in ust_mutex.
  *
+ * ust_fork_mutex must never nest in ust_mutex.
+ *
  * ust_mutex_nest is a per-thread nesting counter, allowing the perf
  * counter lazy initialization called by events within the statedump,
  * which traces while the ust_mutex is held.
+ *
+ * ust_lock nests within the dynamic loader lock (within glibc) because
+ * it is taken within the library constructor.
  */
 static pthread_mutex_t ust_mutex = PTHREAD_MUTEX_INITIALIZER;
 
