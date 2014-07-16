@@ -1,3 +1,12 @@
+2014-07-16 (Take Your Poet to Work Day) lttng-ust 2.5.0
+	* Mutex while updating statedump_pending is not needed
+	* Revert "Turn base address dump into experimental feature"
+	* Fix: document ust_fork_mutex nesting
+	* Bugfix for #745 deadlock with baddr statedump+fork
+	* Move enablers syncing after the channel registration
+	* Add lttng_ust_notrace to static inline functions
+	* lttng ust: support ppc64le within configure
+
 2014-06-27 lttng-ust 2.5.0-rc2
 	* Fix: lttng-ust-jul: set thread in daemon mode
 	* JUL: use root logger to capture events
