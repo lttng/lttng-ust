@@ -53,8 +53,13 @@ public class LTTngTCPSessiondClient {
 
 	private Semaphore registerSem;
 
-	private static final String rootPortFile = "/var/run/lttng/jul.port";
-	private static final String userPortFile = "/.lttng/jul.port";
+	private static final String rootPortFile = "/var/run/lttng/agent.port";
+	private static final String userPortFile = "/.lttng/agent.port";
+	/*
+	 * This is taken from the lttng/domain.h file which is mapped to
+	 * LTTNG_DOMAIN_JUL value for this agent.
+	 */
+	private static final int agent_domain = 3;
 
 	/* Indicate if we've already release the semaphore. */
 	private boolean sem_posted = false;
@@ -311,10 +316,11 @@ public class LTTngTCPSessiondClient {
 	}
 
 	private void registerToSessiond() throws Exception {
-		byte data[] = new byte[4];
+		byte data[] = new byte[8];
 		ByteBuffer buf = ByteBuffer.wrap(data);
 		String pid = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
 
+		buf.putInt(this.agent_domain);
 		buf.putInt(Integer.parseInt(pid));
 		this.outToSessiond.write(data, 0, data.length);
 		this.outToSessiond.flush();
