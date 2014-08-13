@@ -151,13 +151,13 @@ extern "C" {
  * address.
  */
 #define _DECLARE_TRACEPOINT(_provider, _name, ...)			 		\
-extern struct tracepoint __tracepoint_##_provider##___##_name;				\
+extern struct lttng_ust_tracepoint __tracepoint_##_provider##___##_name;		\
 static inline __attribute__((always_inline, unused)) lttng_ust_notrace			\
 void __tracepoint_cb_##_provider##___##_name(_TP_ARGS_PROTO(__VA_ARGS__));		\
 static											\
 void __tracepoint_cb_##_provider##___##_name(_TP_ARGS_PROTO(__VA_ARGS__))		\
 {											\
-	struct tracepoint_probe *__tp_probe;						\
+	struct lttng_ust_tracepoint_probe *__tp_probe;						\
 											\
 	if (caa_unlikely(!TP_RCU_LINK_TEST()))						\
 		return;									\
@@ -166,7 +166,7 @@ void __tracepoint_cb_##_provider##___##_name(_TP_ARGS_PROTO(__VA_ARGS__))		\
 	if (caa_unlikely(!__tp_probe))							\
 		goto end;								\
 	do {										\
-		void (*__tp_cb)(void) = __tp_probe->func;					\
+		void (*__tp_cb)(void) = __tp_probe->func;				\
 		void *__tp_data = __tp_probe->data;					\
 											\
 		URCU_FORCE_CAST(void (*)(_TP_ARGS_DATA_PROTO(__VA_ARGS__)), __tp_cb)	\
@@ -204,12 +204,12 @@ extern int __tracepoint_probe_unregister(const char *name, void (*func)(void),
  * tracepoint dynamic linkage handling (callbacks). Hidden visibility:
  * shared across objects in a module/main executable.
  */
-struct tracepoint_dlopen {
+struct lttng_ust_tracepoint_dlopen {
 	void *liblttngust_handle;
 
-	int (*tracepoint_register_lib)(struct tracepoint * const *tracepoints_start,
+	int (*tracepoint_register_lib)(struct lttng_ust_tracepoint * const *tracepoints_start,
 		int tracepoints_count);
-	int (*tracepoint_unregister_lib)(struct tracepoint * const *tracepoints_start);
+	int (*tracepoint_unregister_lib)(struct lttng_ust_tracepoint * const *tracepoints_start);
 #ifndef _LGPL_SOURCE
 	void (*rcu_read_lock_sym_bp)(void);
 	void (*rcu_read_unlock_sym_bp)(void);
@@ -217,7 +217,7 @@ struct tracepoint_dlopen {
 #endif
 };
 
-extern struct tracepoint_dlopen tracepoint_dlopen;
+extern struct lttng_ust_tracepoint_dlopen tracepoint_dlopen;
 
 #if defined(TRACEPOINT_DEFINE) || defined(TRACEPOINT_CREATE_PROBES)
 
@@ -230,7 +230,7 @@ int __tracepoint_registered
 	__attribute__((weak, visibility("hidden")));
 int __tracepoint_ptrs_registered
 	__attribute__((weak, visibility("hidden")));
-struct tracepoint_dlopen tracepoint_dlopen
+struct lttng_ust_tracepoint_dlopen tracepoint_dlopen
 	__attribute__((weak, visibility("hidden")));
 
 #ifndef _LGPL_SOURCE
@@ -312,9 +312,9 @@ __tracepoints__destroy(void)
  * registering only _one_ instance of the tracepoints per shared-ojbect
  * (or for the whole main program).
  */
-extern struct tracepoint * const __start___tracepoints_ptrs[]
+extern struct lttng_ust_tracepoint * const __start___tracepoints_ptrs[]
 	__attribute__((weak, visibility("hidden")));
-extern struct tracepoint * const __stop___tracepoints_ptrs[]
+extern struct lttng_ust_tracepoint * const __stop___tracepoints_ptrs[]
 	__attribute__((weak, visibility("hidden")));
 
 /*
@@ -344,7 +344,7 @@ extern struct tracepoint * const __stop___tracepoints_ptrs[]
 	static const char __tp_strtab_##_provider##___##_name[]			\
 		__attribute__((section("__tracepoints_strings"))) =		\
 			#_provider ":" #_name;					\
-	struct tracepoint __tracepoint_##_provider##___##_name			\
+	struct lttng_ust_tracepoint __tracepoint_##_provider##___##_name	\
 		__attribute__((section("__tracepoints"))) =			\
 		{								\
 			__tp_strtab_##_provider##___##_name,			\
@@ -354,7 +354,8 @@ extern struct tracepoint * const __stop___tracepoints_ptrs[]
 			_TP_EXTRACT_STRING(_args),				\
 			{ },							\
 		};								\
-	static struct tracepoint * __tracepoint_ptr_##_provider##___##_name	\
+	static struct lttng_ust_tracepoint *					\
+		__tracepoint_ptr_##_provider##___##_name			\
 		__attribute__((used, section("__tracepoints_ptrs"))) =		\
 			&__tracepoint_##_provider##___##_name;
 
@@ -371,11 +372,11 @@ __tracepoints__ptrs_init(void)
 	if (!tracepoint_dlopen.liblttngust_handle)
 		return;
 	tracepoint_dlopen.tracepoint_register_lib =
-		URCU_FORCE_CAST(int (*)(struct tracepoint * const *, int),
+		URCU_FORCE_CAST(int (*)(struct lttng_ust_tracepoint * const *, int),
 				dlsym(tracepoint_dlopen.liblttngust_handle,
 					"tracepoint_register_lib"));
 	tracepoint_dlopen.tracepoint_unregister_lib =
-		URCU_FORCE_CAST(int (*)(struct tracepoint * const *),
+		URCU_FORCE_CAST(int (*)(struct lttng_ust_tracepoint * const *),
 				dlsym(tracepoint_dlopen.liblttngust_handle,
 					"tracepoint_unregister_lib"));
 	__tracepoint__init_urcu_sym();

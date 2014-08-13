@@ -45,7 +45,7 @@
 /* Set to 1 to enable tracepoint debug output */
 static const int tracepoint_debug;
 static int initialized;
-static void (*new_tracepoint_cb)(struct tracepoint *);
+static void (*new_tracepoint_cb)(struct lttng_ust_tracepoint *);
 
 /*
  * tracepoint_mutex nests inside UST mutex.
@@ -93,7 +93,7 @@ static int need_update;
  */
 struct tracepoint_entry {
 	struct cds_hlist_node hlist;
-	struct tracepoint_probe *probes;
+	struct lttng_ust_tracepoint_probe *probes;
 	int refcount;	/* Number of times armed. 0 if disarmed. */
 	int callsite_refcount;	/* how many libs use this tracepoint */
 	const char *signature;
@@ -106,7 +106,7 @@ struct tp_probes {
 		/* Field below only used for call_rcu scheme */
 		/* struct rcu_head head; */
 	} u;
-	struct tracepoint_probe probes[0];
+	struct lttng_ust_tracepoint_probe probes[0];
 };
 
 /*
@@ -120,14 +120,15 @@ static struct cds_hlist_head callsite_table[CALLSITE_TABLE_SIZE];
 struct callsite_entry {
 	struct cds_hlist_node hlist;	/* hash table node */
 	struct cds_list_head node;	/* lib list of callsites node */
-	struct tracepoint *tp;
+	struct lttng_ust_tracepoint *tp;
 };
 
 /* coverity[+alloc] */
 static void *allocate_probes(int count)
 {
-	struct tp_probes *p  = zmalloc(count * sizeof(struct tracepoint_probe)
-			+ sizeof(struct tp_probes));
+	struct tp_probes *p =
+		zmalloc(count * sizeof(struct lttng_ust_tracepoint_probe)
+		+ sizeof(struct tp_probes));
 	return p == NULL ? NULL : p->probes;
 }
 
@@ -158,7 +159,7 @@ tracepoint_entry_add_probe(struct tracepoint_entry *entry,
 			   void (*probe)(void), void *data)
 {
 	int nr_probes = 0;
-	struct tracepoint_probe *old, *new;
+	struct lttng_ust_tracepoint_probe *old, *new;
 
 	if (!probe) {
 		WARN_ON(1);
@@ -178,7 +179,8 @@ tracepoint_entry_add_probe(struct tracepoint_entry *entry,
 	if (new == NULL)
 		return ERR_PTR(-ENOMEM);
 	if (old)
-		memcpy(new, old, nr_probes * sizeof(struct tracepoint_probe));
+		memcpy(new, old,
+		       nr_probes * sizeof(struct lttng_ust_tracepoint_probe));
 	new[nr_probes].func = probe;
 	new[nr_probes].data = data;
 	new[nr_probes + 1].func = NULL;
@@ -193,7 +195,7 @@ tracepoint_entry_remove_probe(struct tracepoint_entry *entry,
 			      void (*probe)(void), void *data)
 {
 	int nr_probes = 0, nr_del = 0, i;
-	struct tracepoint_probe *old, *new;
+	struct lttng_ust_tracepoint_probe *old, *new;
 
 	old = entry->probes;
 
@@ -316,7 +318,7 @@ static void remove_tracepoint(struct tracepoint_entry *e)
  * Sets the probe callback corresponding to one tracepoint.
  */
 static void set_tracepoint(struct tracepoint_entry **entry,
-	struct tracepoint *elem, int active)
+	struct lttng_ust_tracepoint *elem, int active)
 {
 	WARN_ON(strncmp((*entry)->name, elem->name, LTTNG_UST_SYM_NAME_LEN - 1) != 0);
 	/*
@@ -354,7 +356,7 @@ static void set_tracepoint(struct tracepoint_entry **entry,
  * function insures that the original callback is not used anymore. This insured
  * by preempt_disable around the call site.
  */
-static void disable_tracepoint(struct tracepoint *elem)
+static void disable_tracepoint(struct lttng_ust_tracepoint *elem)
 {
 	elem->state = 0;
 	rcu_assign_pointer(elem->probes, NULL);
@@ -364,7 +366,7 @@ static void disable_tracepoint(struct tracepoint *elem)
  * Add the callsite to the callsite hash table. Must be called with
  * tracepoint mutex held.
  */
-static void add_callsite(struct tracepoint_lib * lib, struct tracepoint *tp)
+static void add_callsite(struct tracepoint_lib * lib, struct lttng_ust_tracepoint *tp)
 {
 	struct cds_hlist_head *head;
 	struct callsite_entry *e;
@@ -435,7 +437,7 @@ static void tracepoint_sync_callsites(const char *name)
 	hash = jhash(name, name_len, 0);
 	head = &callsite_table[hash & (CALLSITE_TABLE_SIZE - 1)];
 	cds_hlist_for_each_entry(e, node, head, hlist) {
-		struct tracepoint *tp = e->tp;
+		struct lttng_ust_tracepoint *tp = e->tp;
 
 		if (strncmp(name, tp->name, LTTNG_UST_SYM_NAME_LEN - 1))
 			continue;
@@ -456,10 +458,10 @@ static void tracepoint_sync_callsites(const char *name)
  * Updates the probe callback corresponding to a range of tracepoints.
  */
 static
-void tracepoint_update_probe_range(struct tracepoint * const *begin,
-				   struct tracepoint * const *end)
+void tracepoint_update_probe_range(struct lttng_ust_tracepoint * const *begin,
+				   struct lttng_ust_tracepoint * const *end)
 {
-	struct tracepoint * const *iter;
+	struct lttng_ust_tracepoint * const *iter;
 	struct tracepoint_entry *mark_entry;
 
 	for (iter = begin; iter < end; iter++) {
@@ -487,9 +489,9 @@ static void lib_update_tracepoints(struct tracepoint_lib *lib)
 
 static void lib_register_callsites(struct tracepoint_lib *lib)
 {
-	struct tracepoint * const *begin;
-	struct tracepoint * const *end;
-	struct tracepoint * const *iter;
+	struct lttng_ust_tracepoint * const *begin;
+	struct lttng_ust_tracepoint * const *end;
+	struct lttng_ust_tracepoint * const *iter;
 
 	begin = lib->tracepoints_start;
 	end = lib->tracepoints_start + lib->tracepoints_count;
@@ -524,18 +526,18 @@ static void tracepoint_update_probes(void)
 		lib_update_tracepoints(lib);
 }
 
-static struct tracepoint_probe *
+static struct lttng_ust_tracepoint_probe *
 tracepoint_add_probe(const char *name, void (*probe)(void), void *data,
 		const char *signature)
 {
 	struct tracepoint_entry *entry;
-	struct tracepoint_probe *old;
+	struct lttng_ust_tracepoint_probe *old;
 
 	entry = get_tracepoint(name);
 	if (!entry) {
 		entry = add_tracepoint(name, signature);
 		if (IS_ERR(entry))
-			return (struct tracepoint_probe *)entry;
+			return (struct lttng_ust_tracepoint_probe *)entry;
 	}
 	old = tracepoint_entry_add_probe(entry, probe, data);
 	if (IS_ERR(old) && !entry->refcount)
@@ -707,15 +709,16 @@ end:
 	pthread_mutex_unlock(&tracepoint_mutex);
 }
 
-void tracepoint_set_new_tracepoint_cb(void (*cb)(struct tracepoint *))
+void tracepoint_set_new_tracepoint_cb(void (*cb)(struct lttng_ust_tracepoint *))
 {
 	new_tracepoint_cb = cb;
 }
 
-static void new_tracepoints(struct tracepoint * const *start, struct tracepoint * const *end)
+static void new_tracepoints(struct lttng_ust_tracepoint * const *start,
+			    struct lttng_ust_tracepoint * const *end)
 {
 	if (new_tracepoint_cb) {
-		struct tracepoint * const *t;
+		struct lttng_ust_tracepoint * const *t;
 
 		for (t = start; t < end; t++) {
 			if (*t)
@@ -724,7 +727,7 @@ static void new_tracepoints(struct tracepoint * const *start, struct tracepoint 
 	}
 }
 
-int tracepoint_register_lib(struct tracepoint * const *tracepoints_start,
+int tracepoint_register_lib(struct lttng_ust_tracepoint * const *tracepoints_start,
 			    int tracepoints_count)
 {
 	struct tracepoint_lib *pl, *iter;
@@ -773,7 +776,7 @@ lib_added:
 	return 0;
 }
 
-int tracepoint_unregister_lib(struct tracepoint * const *tracepoints_start)
+int tracepoint_unregister_lib(struct lttng_ust_tracepoint * const *tracepoints_start)
 {
 	struct tracepoint_lib *lib;
 

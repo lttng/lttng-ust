@@ -27,7 +27,7 @@
 
 struct tracepoint_lib {
 	struct cds_list_head list;	/* list of registered libs */
-	struct tracepoint * const *tracepoints_start;
+	struct lttng_ust_tracepoint * const *tracepoints_start;
 	int tracepoints_count;
 	struct cds_list_head callsites;
 };
