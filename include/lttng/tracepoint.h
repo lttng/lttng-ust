@@ -571,7 +571,7 @@ __tracepoints__ptrs_destroy(void)
  * debug information with line-level scope (TRACEPOINT_EVENT default)
  *
  * TRACE_DEBUG           14
- * debug-level message (trace_printf default)
+ * debug-level message
  *
  * Declare tracepoint loglevels for tracepoints. A TRACEPOINT_EVENT
  * should be declared prior to the the TRACEPOINT_LOGLEVEL for a given
