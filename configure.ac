@@ -272,7 +272,7 @@ AS_IF([test "x$jni_interface" = "xyes"],[
         AC_CHECK_HEADERS([jni.h],[],[
         AC_MSG_ERROR([missing jni.h
 Make sure Sun Java, OpenJDK or GCJ is installed and that this header file exists in the system path.
-Use the --with-java-jdk=DIR flag to point to your Java include files, or disable the JNI interface.])
+Use the --with-java-jdk=DIR option to point to your JDK directory, or disable the JNI interface.])
 	])
 ])
 AM_CONDITIONAL([BUILD_JNI_INTERFACE], [test "x$jni_interface" = "xyes"])
