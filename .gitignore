@@ -12,6 +12,7 @@ Makefile
 Makefile.in
 *.loT
 *.info
+cscope.*
 configure
 aclocal.m4
 autom4te.cache/
