@@ -92,11 +92,11 @@ TRACEPOINT_EVENT(
 	sample_component,
 
 	/*
-	 * tracepoint name, same format as sample provider. Does not
-	 * need to be declared before. in this case the name is
-	 * "message"
+	 * tracepoint name, characters permitted follow the same
+	 * constraints as the provider name. The name of this example
+	 * event is "sample_event".
 	 */
-	message,
+	sample_event,
 
 	/*
 	 * TP_ARGS macro contains the arguments passed for the tracepoint
