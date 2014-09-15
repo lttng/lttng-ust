@@ -38,10 +38,6 @@ public class JULTest {
 	}
 
 	public static void go() throws IOException {
-		handler = new LTTngLogHandler(LogManager.getLogManager());
-		assert handler.logManager == LogManager.getLogManager();
-		ok("Log handler logManager is valid");
-
 		client = new LTTngTCPSessiondClient("127.0.0.1", sem);
 		assert client != null;
 		ok("TCP client is valid");

@@ -16,7 +16,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "org_lttng_ust_jul_LTTngUst.h"
+#include "org_lttng_ust_agent_jul_LTTngLogHandler.h"
 
 #define TRACEPOINT_DEFINE
 #define TRACEPOINT_CREATE_PROBES
@@ -25,7 +25,7 @@
 /*
  * System tracepoint meaning only root agent will fire this.
  */
-JNIEXPORT void JNICALL Java_org_lttng_ust_jul_LTTngUst_tracepointS(JNIEnv *env,
+JNIEXPORT void JNICALL Java_org_lttng_ust_agent_jul_LTTngLogHandler_tracepointS(JNIEnv *env,
 						jobject jobj,
 						jstring msg,
 						jstring logger_name,
@@ -53,7 +53,7 @@ JNIEXPORT void JNICALL Java_org_lttng_ust_jul_LTTngUst_tracepointS(JNIEnv *env,
 /*
  * User tracepoint meaning only a non root agent will fire this.
  */
-JNIEXPORT void JNICALL Java_org_lttng_ust_jul_LTTngUst_tracepointU(JNIEnv *env,
+JNIEXPORT void JNICALL Java_org_lttng_ust_agent_jul_LTTngLogHandler_tracepointU(JNIEnv *env,
 		jobject jobj,
 		jstring msg,
 		jstring logger_name,

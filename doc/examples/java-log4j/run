@@ -1,0 +1,25 @@
+#!/bin/bash
+
+#
+# The -cp path should be changed to the lttng ust agent jar file on your system
+# or locally to the project. Same goes for the Java library path in order to
+# find the JNI Log4j library.
+#
+
+DIR=`dirname $0`
+JARFILE="liblttng-ust-agent.jar"
+LOG4J="/usr/local/share/java/log4j.jar:/usr/share/java/log4j.jar"
+
+cd $DIR
+
+if [ -f "$DIR/.intree" ]; then
+	CLASSPATH="../../../liblttng-ust-java-agent/java/$JARFILE:$LOG4J"
+	LIBPATH="../../../liblttng-ust-java-agent/jni/log4j/.libs"
+else
+	CLASSPATH="/usr/local/share/java/$JARFILE:/usr/share/java/$JARFILE:$LOG4J"
+	LIBPATH="/usr/local/lib:/usr/lib"
+fi
+
+java -cp "$CLASSPATH:." Hello
+
+cd -

@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2014 - David Goulet <dgoulet@efficios.com>
+ * Copyright (C) 2014 - Christian Babeux <christian.babeux@efficios.com>
+ *
  *
  * This library is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License, version 2.1 only,
@@ -15,30 +16,14 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-package org.lttng.ust.jul;
+package org.lttng.ust.agent;
 
-import java.lang.String;
+import java.util.Iterator;
 
-import org.lttng.ust.jul.LTTngUst;
-
-class LTTngLogLevel {
-	/* This level is a JUL int level value. */
-	public int level;
-	public int type;
-
-	public LTTngLogLevel(int level, int type) {
-		this.type = type;
-		this.level = level;
-	}
-}
-
-public class LTTngEvent {
-	/* Name of the event. */
-	public String name;
-	public LTTngLogLevel logLevel;
-
-	public LTTngEvent(String name, int loglevel, int loglevel_type) {
-		this.name = name;
-		this.logLevel = new LTTngLogLevel(loglevel, loglevel_type);
-	}
+interface LogFramework {
+	Boolean enableLogger(String name);
+	Boolean disableLogger(String name);
+	Iterator<String> listLoggers();
+	Boolean isRoot();
+	void reset();
 }

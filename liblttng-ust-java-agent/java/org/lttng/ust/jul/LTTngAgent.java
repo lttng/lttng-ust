@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 - David Goulet <dgoulet@efficios.com>
+ * Copyright (C) 2014 - Christian Babeux <christian.babeux@efficios.com>
  *
  * This library is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License, version 2.1 only,
@@ -17,28 +17,33 @@
 
 package org.lttng.ust.jul;
 
-import java.util.concurrent.Semaphore;
+import java.io.IOException;
 
-public class LTTngThread implements Runnable {
-	private LTTngLogHandler handler;
-	private LTTngTCPSessiondClient sessiondClient;
+public class LTTngAgent {
 
-	public LTTngThread(String host, LTTngLogHandler handler,
-			Semaphore registerSem) {
-		this.handler = handler;
-		this.sessiondClient = new LTTngTCPSessiondClient(host, registerSem);
+	/*
+	 * !!! WARNING !!!
+	 * Please use the LTTngAgent found in the org.lttng.ust.agent package.
+	 * This class is DEPRECATED.
+	 */
+
+	private static LTTngAgent curAgent = null;
+	private static org.lttng.ust.agent.LTTngAgent realAgent = null;
+
+
+	private LTTngAgent() throws IOException {
+		realAgent = org.lttng.ust.agent.LTTngAgent.getLTTngAgent();
 	}
 
-	@Override
-	public void run() {
-		try {
-			this.sessiondClient.init(this.handler);
-		} catch (Exception e) {
-			e.printStackTrace();
+	public static synchronized LTTngAgent getLTTngAgent() throws IOException {
+		if (curAgent == null) {
+			curAgent = new LTTngAgent();
 		}
+
+		return curAgent;
 	}
 
-	public void dispose() {
-		this.sessiondClient.destroy();
+	public void dispose() throws IOException {
+		realAgent.dispose();
 	}
 }

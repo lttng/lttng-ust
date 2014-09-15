@@ -15,7 +15,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-package org.lttng.ust.jul;
+package org.lttng.ust.agent;
 
 import java.util.concurrent.Semaphore;
 import java.nio.ByteBuffer;
@@ -31,41 +31,38 @@ import java.io.FileReader;
 import java.io.FileNotFoundException;
 import java.net.*;
 import java.lang.management.ManagementFactory;
-import java.util.logging.Logger;
 
-class USTRegisterMsg {
-	public static int pid;
-}
+class LTTngTCPSessiondClient implements Runnable {
 
-public class LTTngTCPSessiondClient {
 	/* Command header from the session deamon. */
-	private LTTngSessiondCmd2_4.sessiond_hdr headerCmd =
-		new LTTngSessiondCmd2_4.sessiond_hdr();
+	private LTTngSessiondCmd2_6.sessiond_hdr headerCmd =
+		new LTTngSessiondCmd2_6.sessiond_hdr();
 
-	private final String sessiondHost;
 	private Socket sessiondSock;
-	private boolean quit = false;
+	private volatile boolean quit = false;
 
 	private DataInputStream inFromSessiond;
 	private DataOutputStream outToSessiond;
 
-	private LTTngLogHandler handler;
+	private LogFramework log;
 
 	private Semaphore registerSem;
 
+	private static final String sessiondHost = "127.0.0.1";
 	private static final String rootPortFile = "/var/run/lttng/agent.port";
 	private static final String userPortFile = "/.lttng/agent.port";
-	/*
-	 * This is taken from the lttng/domain.h file which is mapped to
-	 * LTTNG_DOMAIN_JUL value for this agent.
-	 */
-	private static final int agent_domain = 3;
+
+	private static Integer protocolMajorVersion = 1;
+	private static Integer protocolMinorVersion = 0;
+
+	private LTTngAgent.Domain agentDomain;
 
 	/* Indicate if we've already release the semaphore. */
 	private boolean sem_posted = false;
 
-	public LTTngTCPSessiondClient(String host, Semaphore sem) {
-		this.sessiondHost = host;
+	public LTTngTCPSessiondClient(LTTngAgent.Domain domain, LogFramework log, Semaphore sem) {
+		this.agentDomain = domain;
+		this.log = log;
 		this.registerSem = sem;
 	}
 
@@ -81,25 +78,15 @@ public class LTTngTCPSessiondClient {
 		}
 	}
 
-	/*
-	 * Cleanup Agent state.
-	 */
-	private void cleanupState() {
-		if (this.handler != null) {
-			this.handler.clear();
-		}
-	}
-
-	public void init(LTTngLogHandler handler) throws InterruptedException {
-		this.handler = handler;
-
+	@Override
+	public void run() {
 		for (;;) {
 			if (this.quit) {
 				break;
 			}
 
 			/* Cleanup Agent state before trying to connect or reconnect. */
-			cleanupState();
+			this.log.reset();
 
 			try {
 
@@ -125,7 +112,11 @@ public class LTTngTCPSessiondClient {
 				System.out.println(uhe);
 			} catch (IOException ioe) {
 				tryReleaseSem();
-				Thread.sleep(3000);
+				try {
+					Thread.sleep(3000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 			} catch (Exception e) {
 				tryReleaseSem();
 				e.printStackTrace();
@@ -210,36 +201,35 @@ public class LTTngTCPSessiondClient {
 				}
 				case CMD_LIST:
 				{
-					LTTngSessiondCmd2_4.sessiond_list_logger listLoggerCmd =
-						new LTTngSessiondCmd2_4.sessiond_list_logger();
-					listLoggerCmd.execute(this.handler);
+					LTTngSessiondCmd2_6.sessiond_list_logger listLoggerCmd =
+						new LTTngSessiondCmd2_6.sessiond_list_logger();
+					listLoggerCmd.execute(this.log);
 					data = listLoggerCmd.getBytes();
 					break;
 				}
 				case CMD_ENABLE:
 				{
-					LTTngEvent event;
-					LTTngSessiondCmd2_4.sessiond_enable_handler enableCmd =
-						new LTTngSessiondCmd2_4.sessiond_enable_handler();
+					LTTngSessiondCmd2_6.sessiond_enable_handler enableCmd =
+						new LTTngSessiondCmd2_6.sessiond_enable_handler();
 					if (data == null) {
-						enableCmd.code = LTTngSessiondCmd2_4.lttng_jul_ret_code.CODE_INVALID_CMD;
+						enableCmd.code = LTTngSessiondCmd2_6.lttng_agent_ret_code.CODE_INVALID_CMD;
 						break;
 					}
 					enableCmd.populate(data);
-					enableCmd.execute(this.handler);
+					enableCmd.execute(this.log);
 					data = enableCmd.getBytes();
 					break;
 				}
 				case CMD_DISABLE:
 				{
-					LTTngSessiondCmd2_4.sessiond_disable_handler disableCmd =
-						new LTTngSessiondCmd2_4.sessiond_disable_handler();
+					LTTngSessiondCmd2_6.sessiond_disable_handler disableCmd =
+						new LTTngSessiondCmd2_6.sessiond_disable_handler();
 					if (data == null) {
-						disableCmd.code = LTTngSessiondCmd2_4.lttng_jul_ret_code.CODE_INVALID_CMD;
+						disableCmd.code = LTTngSessiondCmd2_6.lttng_agent_ret_code.CODE_INVALID_CMD;
 						break;
 					}
 					disableCmd.populate(data);
-					disableCmd.execute(this.handler);
+					disableCmd.execute(this.log);
 					data = disableCmd.getBytes();
 					break;
 				}
@@ -248,9 +238,8 @@ public class LTTngTCPSessiondClient {
 					data = new byte[4];
 					ByteBuffer buf = ByteBuffer.wrap(data);
 					buf.order(ByteOrder.BIG_ENDIAN);
-					LTTngSessiondCmd2_4.lttng_jul_ret_code code =
-						LTTngSessiondCmd2_4.lttng_jul_ret_code.CODE_INVALID_CMD;
-					buf.putInt(code.getCode());
+					LTTngSessiondCmd2_6.lttng_agent_ret_code code =
+						LTTngSessiondCmd2_6.lttng_agent_ret_code.CODE_INVALID_CMD;
 					break;
 				}
 			}
@@ -294,7 +283,7 @@ public class LTTngTCPSessiondClient {
 	private void connectToSessiond() throws Exception {
 		int port;
 
-		if (this.handler.is_root == 1) {
+		if (this.log.isRoot()) {
 			port = getPortFromFile(rootPortFile);
 			if (port == 0) {
 				/* No session daemon available. Stop and retry later. */
@@ -316,12 +305,14 @@ public class LTTngTCPSessiondClient {
 	}
 
 	private void registerToSessiond() throws Exception {
-		byte data[] = new byte[8];
+		byte data[] = new byte[16];
 		ByteBuffer buf = ByteBuffer.wrap(data);
 		String pid = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
 
-		buf.putInt(this.agent_domain);
+		buf.putInt(this.agentDomain.value());
 		buf.putInt(Integer.parseInt(pid));
+		buf.putInt(this.protocolMajorVersion);
+		buf.putInt(this.protocolMinorVersion);
 		this.outToSessiond.write(data, 0, data.length);
 		this.outToSessiond.flush();
 	}

@@ -51,7 +51,12 @@ tests/snprintf/prog
 tests/benchmark/bench1
 tests/benchmark/bench2
 
-# Java JUL library
+# Java agent library
 *.class
-liblttng-ust-jul.jar
-org_lttng_ust_jul_LTTngUst.h
+liblttng-ust-agent.jar
+classnoinst.stamp
+jni-header.stamp
+jul-jni-header.stamp
+log4j-jni-header.stamp
+org_lttng_ust_agent_jul_LTTngLogHandler.h
+org_lttng_ust_agent_log4j_LTTngLogAppender.h

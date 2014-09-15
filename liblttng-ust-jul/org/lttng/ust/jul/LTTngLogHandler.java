@@ -34,18 +34,13 @@ public class LTTngLogHandler extends Handler {
 	public int is_root = 0;
 	public int refcount = 0;
 
-	public LogManager logManager;
-
 	/* Logger object attached to this handler that can trigger a tracepoint. */
 	public Map<String, LTTngEvent> enabledEvents =
 		Collections.synchronizedMap(new HashMap<String, LTTngEvent>());
 
 	/* Constructor */
-	public LTTngLogHandler(LogManager logManager) {
+	public LTTngLogHandler() {
 		super();
-
-		this.logManager = logManager;
-
 		/* Initialize LTTng UST tracer. */
 		LTTngUst.init();
 	}

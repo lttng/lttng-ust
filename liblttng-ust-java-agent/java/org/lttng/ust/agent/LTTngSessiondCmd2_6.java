@@ -16,17 +16,17 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-package org.lttng.ust.jul;
+package org.lttng.ust.agent;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.lang.Object;
-import java.util.logging.Logger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Enumeration;
+import java.util.Iterator;
 
-public interface LTTngSessiondCmd2_4 {
+interface LTTngSessiondCmd2_6 {
 	/**
 	 * Maximum name length for a logger name to be send to sessiond.
 	 */
@@ -57,7 +57,7 @@ public interface LTTngSessiondCmd2_4 {
 		public void populate(byte[] data);
 	}
 
-	public enum lttng_jul_command {
+	public enum lttng_agent_command {
 		/** List logger(s). */
 		CMD_LIST(1),
 		/** Enable logger by name. */
@@ -69,7 +69,7 @@ public interface LTTngSessiondCmd2_4 {
 
 		private int code;
 
-		private lttng_jul_command(int c) {
+		private lttng_agent_command(int c) {
 			code = c;
 		}
 
@@ -78,13 +78,13 @@ public interface LTTngSessiondCmd2_4 {
 		}
 	}
 
-	enum lttng_jul_ret_code {
+	enum lttng_agent_ret_code {
 		CODE_SUCCESS_CMD(1),
 		CODE_INVALID_CMD(2),
 		CODE_UNK_LOGGER_NAME(3);
 		private int code;
 
-		private lttng_jul_ret_code(int c) {
+		private lttng_agent_ret_code(int c) {
 			code = c;
 		}
 
@@ -99,7 +99,7 @@ public interface LTTngSessiondCmd2_4 {
 		/** Payload size in bytes following this header.  */
 		public long data_size;
 		/** Command type. */
-		public lttng_jul_command cmd;
+		public lttng_agent_command cmd;
 		/** Command version. */
 		public int cmd_version;
 
@@ -108,7 +108,7 @@ public interface LTTngSessiondCmd2_4 {
 			buf.order(ByteOrder.BIG_ENDIAN);
 
 			data_size = buf.getLong();
-			cmd = lttng_jul_command.values()[buf.getInt() - 1];
+			cmd = lttng_agent_command.values()[buf.getInt() - 1];
 			cmd_version = buf.getInt();
 		}
 	}
@@ -120,7 +120,7 @@ public interface LTTngSessiondCmd2_4 {
 		public int lttngLogLevelType;
 
 		/** Return status code to the session daemon. */
-		public lttng_jul_ret_code code;
+		public lttng_agent_ret_code code;
 
 		@Override
 		public void populate(byte[] data) {
@@ -145,52 +145,23 @@ public interface LTTngSessiondCmd2_4 {
 		/**
 		 * Execute enable handler action which is to enable the given handler
 		 * to the received name.
-		 *
-		 * @return Event name as a string if the event is NOT found thus was
-		 * not enabled.
 		 */
-		public void execute(LTTngLogHandler handler) {
-			LTTngEvent event;
-
-			if (this.name == null) {
-				this.code = lttng_jul_ret_code.CODE_INVALID_CMD;
-				return;
+		public void execute(LogFramework log) {
+			if (log.enableLogger(this.name)) {
+				this.code = lttng_agent_ret_code.CODE_SUCCESS_CMD;
+			} else {
+				this.code = lttng_agent_ret_code.CODE_INVALID_CMD;
 			}
-
-			/* Add event to the enabled events hash map. */
-			event = handler.enabledEvents.put(this.name,
-					new LTTngEvent(this.name, 0, 0));
-			if (event != null) {
-				/* The event exists so skip updating the refcount. */
-				this.code = lttng_jul_ret_code.CODE_SUCCESS_CMD;
-				return;
-			}
-
-			/*
-			 * Get the root logger and attach to it if it's the first enable
-			 * seen by the handler.
-			 */
-			Logger rootLogger = handler.logManager.getLogger("");
-
-			handler.refcount++;
-			if (handler.refcount == 1) {
-				/* Add handler only if it's the first enable. */
-				rootLogger.addHandler(handler);
-			}
-
-			this.code = lttng_jul_ret_code.CODE_SUCCESS_CMD;
-			return;
 		}
 	}
 
 	public class sessiond_disable_handler implements SessiondResponse, SessiondCommand {
 		private final static int SIZE = 4;
 		public String name;
-		public int lttngLogLevel;
-		public int lttngLogLevelType;
+
 
 		/** Return status code to the session daemon. */
-		public lttng_jul_ret_code code;
+		public lttng_agent_ret_code code;
 
 		@Override
 		public void populate(byte[] data) {
@@ -212,35 +183,12 @@ public interface LTTngSessiondCmd2_4 {
 		 * Execute disable handler action which is to disable the given handler
 		 * to the received name.
 		 */
-		public void execute(LTTngLogHandler handler) {
-			LTTngEvent event;
-
-			if (this.name == null) {
-				this.code = lttng_jul_ret_code.CODE_INVALID_CMD;
-				return;
+		public void execute(LogFramework log) {
+			if (log.disableLogger(this.name)) {
+				this.code = lttng_agent_ret_code.CODE_SUCCESS_CMD;
+			} else {
+				this.code = lttng_agent_ret_code.CODE_INVALID_CMD;
 			}
-
-			/*
-			 * Try to remove the logger name from the events map and if we
-			 * can't, just skip the refcount update since the event was never
-			 * enabled.
-			 */
-			event = handler.enabledEvents.remove(this.name);
-			if (event == null) {
-				/* The event didn't exists so skip updating the refcount. */
-				this.code = lttng_jul_ret_code.CODE_INVALID_CMD;
-				return;
-			}
-
-			Logger rootLogger = handler.logManager.getLogger("");
-
-			handler.refcount--;
-			if (handler.refcount == 0) {
-				rootLogger.removeHandler(handler);
-			}
-
-			this.code = lttng_jul_ret_code.CODE_SUCCESS_CMD;
-			return;
 		}
 	}
 
@@ -253,7 +201,7 @@ public interface LTTngSessiondCmd2_4 {
 		List<String> logger_list = new ArrayList<String>();
 
 		/** Return status code to the session daemon. */
-		public lttng_jul_ret_code code;
+		public lttng_agent_ret_code code;
 
 		@Override
 		public byte[] getBytes() {
@@ -274,27 +222,18 @@ public interface LTTngSessiondCmd2_4 {
 			return data;
 		}
 
-		/**
-		 * Execute enable handler action which is to enable the given handler
-		 * to the received name.
-		 */
-		public void execute(LTTngLogHandler handler) {
+		public void execute(LogFramework log) {
 			String loggerName;
 
-			Enumeration loggers = handler.logManager.getLoggerNames();
-			while (loggers.hasMoreElements()) {
-				loggerName = loggers.nextElement().toString();
-				/* Somehow there is always an empty string at the end. */
-				if (loggerName == "") {
-					continue;
-				}
-
+			Iterator<String> loggers = log.listLoggers();
+			while (loggers.hasNext()) {
+				loggerName = loggers.next();
 				this.logger_list.add(loggerName);
 				this.nb_logger++;
 				this.data_size += loggerName.length() + 1;
 			}
 
-			this.code = lttng_jul_ret_code.CODE_SUCCESS_CMD;
+			this.code = lttng_agent_ret_code.CODE_SUCCESS_CMD;
 		}
 	}
 }

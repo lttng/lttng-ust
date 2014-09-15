@@ -31,7 +31,6 @@ import java.util.logging.LogManager;
 import java.util.Enumeration;
 
 public class LTTngAgent {
-	private static LogManager logManager;
 
 	/* Possible that we have to threads handling two sessiond. */
 	private static LTTngLogHandler lttngHandlerRoot;
@@ -62,43 +61,10 @@ public class LTTngAgent {
 	 */
 	private LTTngAgent() throws IOException {
 		this.logManager = LogManager.getLogManager();
-		this.lttngHandlerUser = new LTTngLogHandler(this.logManager);
-		this.lttngHandlerRoot = new LTTngLogHandler(this.logManager);
+		this.lttngHandlerUser = new LTTngLogHandler();
+		this.lttngHandlerRoot = new LTTngLogHandler();
 		this.lttngHandlerRoot.is_root = 1;
 		this.registerSem = new Semaphore(0, true);
-	}
-
-	private void removeHandlers() throws SecurityException, IOException {
-		String loggerName;
-		Logger logger;
-
-		Enumeration list = this.logManager.getLoggerNames();
-		while (list.hasMoreElements()) {
-			loggerName = list.nextElement().toString();
-			/* Somehow there is always an empty string at the end. */
-			if (loggerName == "") {
-				continue;
-			}
-
-			logger = this.logManager.getLogger(loggerName);
-			logger.removeHandler(this.lttngHandlerUser);
-			logger.removeHandler(this.lttngHandlerRoot);
-		}
-	}
-
-	private int getUID() throws IOException {
-		int uid;
-		byte b[] = new byte[4];
-		String userName = System.getProperty("user.name");
-		String command = "id -u " + userName;
-		Process child = Runtime.getRuntime().exec(command);
-		InputStream in = child.getInputStream();
-
-		in.read(b);
-		uid = Integer.parseInt(new String(b).trim(), 10);
-		in.close();
-
-		return uid;
 	}
 
 	/*
@@ -154,19 +120,17 @@ public class LTTngAgent {
 	}
 
 	public void dispose() throws IOException {
-		this.lttngThreadUser.dispose();
-		if (this.lttngThreadRoot != null) {
-			this.lttngThreadRoot.dispose();
-		}
+		this.lttngJULThreadUser.dispose();
+		this.lttngJULThreadRoot.dispose();
 
-		/* Make sure there is no more LTTng handler attach to logger(s). */
-		this.removeHandlers();
+		/* Remove handlers from the root logger */
+		Logger rootLogger = LogManager.getLogManager().getLogger("");
+		rootLogger.removeHandler(this.lttngHandlerUser);
+		rootLogger.removeHandler(this.lttngHandlerRoot);
 
 		try {
 			this.sessiondThUser.join();
-			if (this.sessiondThRoot != null) {
-				this.sessiondThRoot.join();
-			}
+			this.sessiondThRoot.join();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}

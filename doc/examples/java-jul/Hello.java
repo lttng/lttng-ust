@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 /*
  * That's the import you need being the path in the liblttng-ust-jul Jar file.
  */
-import org.lttng.ust.jul.LTTngAgent;
+import org.lttng.ust.agent.LTTngAgent;
 
 public class Hello
 {

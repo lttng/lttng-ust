@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2013 - David Goulet <dgoulet@efficios.com>
+#
+# Copyright (C) 2014 - Christian Babeux <christian.babeux@efficios.com>
 #
 # THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED OR
 # IMPLIED. ANY USE IS AT YOUR OWN RISK.
@@ -16,8 +16,11 @@
 # This makefile is purposefully kept simple to support GNU and BSD make.
 #
 
+JFLAGS = -g
+
 # Default JUL jar name.
 JARFILE=liblttng-ust-agent.jar
+LOG4J=/usr/share/java/log4j.jar
 
 # Check if the top level makefile overrides the JUL Jar file name.
 ifneq "$(JAVA_JARFILE_OVERRIDE)" ""
@@ -26,12 +29,11 @@ endif
 
 # Check if the top level makefile overrides the JUL classpath.
 ifeq "$(JAVA_CLASSPATH_OVERRIDE)" ""
-	CLASSPATH=/usr/local/share/java/$(JARFILE):/usr/share/java/$(JARFILE)
+	CLASSPATH=/usr/local/share/java/$(JARFILE):/usr/share/java/$(JARFILE):$(LOG4J)
 else
-	CLASSPATH=$(JAVA_CLASSPATH_OVERRIDE)/$(JARFILE)
+	CLASSPATH=$(JAVA_CLASSPATH_OVERRIDE)/$(JARFILE):$(LOG4J)
 endif
 
-JFLAGS = -g
 JC = javac -cp "$(CLASSPATH):."
 .SUFFIXES: .java .class
 .java.class:

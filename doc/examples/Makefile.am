@@ -5,11 +5,11 @@ doc_examples_demodir = ${docdir}/examples/demo
 doc_examples_hello_static_libdir = ${docdir}/examples/hello-static-lib
 doc_examples_demo_tracefdir = ${docdir}/examples/demo-tracef
 
-if BUILD_JNI_INTERFACE
+if BUILD_JAVA_AGENT
 doc_examples_java_juldir = ${docdir}/examples/java-jul
 dist_doc_examples_java_jul_DATA = java-jul/Makefile \
-								  java-jul/Hello.java \
-								  java-jul/run
+				  java-jul/Hello.java \
+				  java-jul/run
 SUBDIRS_JUL = java-jul
 endif
 
@@ -79,7 +79,7 @@ all-local:
 	done; \
 	if [ x"$(SUBDIRS_JUL)" != x"" ]; then \
 		for subdir in $(SUBDIRS_JUL); do \
-			(cd $(SUBDIRS_JUL) && $(MAKE) JAVA_CLASSPATH_OVERRIDE="../../../liblttng-ust-jul" JAVA_JARFILE_OVERRIDE="liblttng-ust-jul.jar" $(AM_MAKEFLAGS) all && cd ..) || exit 1; \
+			(cd $(SUBDIRS_JUL) && $(MAKE) JAVA_CLASSPATH_OVERRIDE="../../../liblttng-ust-java-agent/java" JAVA_JARFILE_OVERRIDE="liblttng-ust-agent.jar" $(AM_MAKEFLAGS) all && cd ..) || exit 1; \
 		done; \
 	fi;
 
