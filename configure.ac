@@ -262,19 +262,12 @@ AS_IF([test $JAVA_JDK],[
 ])
 
 # Check for JNI header files if requested
-AC_ARG_WITH([jni-interface],
-	[AS_HELP_STRING([--with-jni-interface],[build JNI interface between C and Java. Needs Java include files [default=no]])],
+AC_ARG_ENABLE([jni-interface],
+	[AS_HELP_STRING([--enable-jni-interface],[build JNI interface between C and Java. Needs Java include files [default=no]])],
 	[jni_interface=$withval],
 	[jni_interface=no]
 )
 
-AS_IF([test "x$jni_interface" = "xyes"],[
-        AC_CHECK_HEADERS([jni.h],[],[
-        AC_MSG_ERROR([missing jni.h
-Make sure Sun Java, OpenJDK or GCJ is installed and that this header file exists in the system path.
-Use the --with-java-jdk=DIR option to point to your JDK directory, or disable the JNI interface.])
-	])
-])
 AM_CONDITIONAL([BUILD_JNI_INTERFACE], [test "x$jni_interface" = "xyes"])
 
 # sdt.h integration
