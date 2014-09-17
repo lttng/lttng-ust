@@ -24,6 +24,6 @@ SUBDIRS += tests doc
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lttng-ust.pc
 
-dist_doc_DATA = README ChangeLog
+dist_doc_DATA = README.md ChangeLog
 
 dist_noinst_DATA = CodingStyle
