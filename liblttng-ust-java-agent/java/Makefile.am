@@ -43,11 +43,11 @@ $(jarfile_old): classnoinst.stamp
 	$(pkgpath)/jul/*.class $(pkgpath_old)/*.class
 
 jul-jni-header.stamp: $(dist_noinst_JAVA)
-	$(JAVAH) -cp $(CLASSPATH):. -d $(juljniout) $(JAVAHFLAGS) org.lttng.ust.agent.jul.LTTngLogHandler && \
+	$(JAVAH) -cp $(CLASSPATH):$(srcdir) -d $(juljniout) $(JAVAHFLAGS) org.lttng.ust.agent.jul.LTTngLogHandler && \
 	echo "JUL JNI header generated" > jul-jni-header.stamp
 
 log4j-jni-header.stamp: $(dist_noinst_JAVA)
-	$(JAVAH) -cp $(CLASSPATH):. -d $(log4jjniout) $(JAVAHFLAGS) org.lttng.ust.agent.log4j.LTTngLogAppender && \
+	$(JAVAH) -cp $(CLASSPATH):$(srcdir) -d $(log4jjniout) $(JAVAHFLAGS) org.lttng.ust.agent.log4j.LTTngLogAppender && \
 	echo "Log4j JNI header generated" > log4j-jni-header.stamp
 
 all-local: $(stamp)
