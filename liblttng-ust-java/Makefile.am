@@ -20,7 +20,7 @@ $(jarfile): classnoinst.stamp
 org_lttng_ust_LTTngUst.h: jni-header.stamp
 
 jni-header.stamp: $(dist_noinst_JAVA)
-	$(JAVAH) -cp . $(JAVAHFLAGS) org.lttng.ust.LTTngUst && \
+	$(JAVAH) -cp $(srcdir) $(JAVAHFLAGS) org.lttng.ust.LTTngUst && \
 	echo "JNI header generated" > jni-header.stamp
 
 all-local: org_lttng_ust_LTTngUst.h
