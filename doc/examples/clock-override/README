@@ -1,0 +1,4 @@
+This clock override example shows how to implement and load a clock
+override plugin for LTTng-UST. This can be useful in cases where direct
+hardware access is available for architecture-specific clocks, and where
+it should be used rather than the Linux kernel Monotonic clock.

@@ -20,7 +20,8 @@ nobase_include_HEADERS = \
 	lttng/bug.h \
 	lttng/ust-error.h \
 	lttng/tracef.h \
-	lttng/lttng-ust-tracef.h
+	lttng/lttng-ust-tracef.h \
+	lttng/ust-clock.h
 
 # note: usterr-signal-safe.h, core.h and share.h need namespace cleanup.
 

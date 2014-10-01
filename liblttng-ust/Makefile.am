@@ -64,7 +64,8 @@ liblttng_ust_support_la_SOURCES = \
 	lttng-ring-buffer-client-overwrite.c \
 	lttng-ring-buffer-client-overwrite-rt.c \
 	lttng-ring-buffer-metadata-client.h \
-	lttng-ring-buffer-metadata-client.c
+	lttng-ring-buffer-metadata-client.c \
+	lttng-clock.c
 
 liblttng_ust_la_SOURCES =
 

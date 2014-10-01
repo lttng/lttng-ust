@@ -24,10 +24,6 @@
  */
 
 #include <lttng/ust-events.h> /* For LTTNG_UST_UUID_LEN */
-
-/*
- * Includes final \0.
- */
-#define LTTNG_UST_UUID_STR_LEN         37
+#include <lttng/ust-clock.h>
 
 #endif /* _LTTNG_UST_UUID_H */
