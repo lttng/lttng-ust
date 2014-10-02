@@ -20,6 +20,7 @@
  */
 
 #define _LGPL_SOURCE
+#define _GNU_SOURCE
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/mman.h>
@@ -53,6 +54,7 @@
 #include "../libringbuffer/tlsfixup.h"
 #include "lttng-ust-baddr.h"
 #include "clock.h"
+#include "../libringbuffer/getcpu.h"
 
 /*
  * Has lttng ust comm constructor been called ?
@@ -1446,6 +1448,7 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	init_usterr();
 	init_tracepoint();
 	lttng_ust_clock_init();
+	lttng_ust_getcpu_init();
 	lttng_ust_baddr_statedump_init();
 	lttng_ring_buffer_metadata_client_init();
 	lttng_ring_buffer_client_overwrite_init();

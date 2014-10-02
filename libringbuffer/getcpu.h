@@ -20,6 +20,12 @@
  */
 
 #include <urcu/compiler.h>
+#include <urcu/system.h>
+#include <urcu/arch.h>
+
+void lttng_ust_getcpu_init(void);
+
+extern int (*lttng_get_cpu)(void);
 
 #ifdef LTTNG_UST_DEBUG_VALGRIND
 
@@ -29,7 +35,7 @@
  * migration, so it is only statistically accurate.
  */
 static inline
-int lttng_ust_get_cpu(void)
+int lttng_ust_get_cpu_internal(void)
 {
 	return 0;
 }
@@ -51,7 +57,7 @@ int lttng_ust_get_cpu(void)
  * If getcpu is not implemented in the kernel, use cpu 0 as fallback.
  */
 static inline
-int lttng_ust_get_cpu(void)
+int lttng_ust_get_cpu_internal(void)
 {
 	int cpu, ret;
 
@@ -67,7 +73,7 @@ int lttng_ust_get_cpu(void)
  * If getcpu is not implemented in the kernel, use cpu 0 as fallback.
  */
 static inline
-int lttng_ust_get_cpu(void)
+int lttng_ust_get_cpu_internal(void)
 {
 	int cpu;
 
@@ -85,7 +91,7 @@ int lttng_ust_get_cpu(void)
  * number 0, with the assocated performance degradation on SMP.
  */
 static inline
-int lttng_ust_get_cpu(void)
+int lttng_ust_get_cpu_internal(void)
 {
 	return 0;
 }
@@ -95,5 +101,17 @@ int lttng_ust_get_cpu(void)
 #endif
 
 #endif
+
+static inline
+int lttng_ust_get_cpu(void)
+{
+	int (*getcpu)(void) = CMM_LOAD_SHARED(lttng_get_cpu);
+
+	if (caa_likely(!getcpu)) {
+		return lttng_ust_get_cpu_internal();
+	} else {
+		return getcpu();
+	}
+}
 
 #endif /* _LTTNG_GETCPU_H */

@@ -5,6 +5,7 @@ doc_examples_demodir = ${docdir}/examples/demo
 doc_examples_hello_static_libdir = ${docdir}/examples/hello-static-lib
 doc_examples_demo_tracefdir = ${docdir}/examples/demo-tracef
 doc_examples_clock_overridedir = ${docdir}/examples/clock-override
+doc_examples_getcpu_overridedir = ${docdir}/examples/getcpu-override
 
 if BUILD_JAVA_AGENT
 doc_examples_java_juldir = ${docdir}/examples/java-jul
@@ -49,12 +50,18 @@ dist_doc_examples_clock_override_DATA = clock-override/Makefile \
 	clock-override/run-clock-override \
 	clock-override/README
 
+dist_doc_examples_getcpu_override_DATA = getcpu-override/Makefile \
+	getcpu-override/lttng-ust-getcpu-override-example.c \
+	getcpu-override/run-getcpu-override \
+	getcpu-override/README
+
 if NO_SHARED
 # Don't build examples if shared libraries support was explicitly
 # disabled.
 else
 # Copies are for VPATH build support
-SUBDIRS_PROXY = easy-ust demo hello-static-lib demo-tracef clock-override
+SUBDIRS_PROXY = easy-ust demo hello-static-lib demo-tracef clock-override \
+		getcpu-override
 
 if BUILD_GEN_TP_EXAMPLES
 SUBDIRS_PROXY += gen-tp
