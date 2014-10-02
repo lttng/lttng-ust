@@ -29,7 +29,6 @@ import java.util.Enumeration;
 import java.lang.reflect.InvocationTargetException;
 
 import java.util.logging.Logger;
-import java.util.logging.FileHandler;;
 import java.util.logging.SimpleFormatter;
 
 public class LTTngAgent {
@@ -92,17 +91,44 @@ public class LTTngAgent {
 	}
 
 	private Boolean loadLog4jClasses() {
-		Boolean loaded = false;
+		Class<?> logging;
+
 		try {
 			ClassLoader loader = ClassLoader.getSystemClassLoader();
-			loader.loadClass("org.apache.log4j.Logger");
-			loaded = true;
+			logging = loader.loadClass("org.apache.log4j.spi.LoggingEvent");
 		} catch (ClassNotFoundException e) {
 			/* Log4j classes not found, no need to create the relevant objects */
-			loaded = false;
+			return false;
 		}
 
-		return loaded;
+		/*
+		 * Detect capabilities of the log4j library. We only
+		 * support log4j >= 1.2.15.  The getTimeStamp() method
+		 * was introduced in log4j 1.2.15, so verify that it
+		 * is available.
+		 *
+		 * We can't rely on the getPackage().getImplementationVersion()
+		 * call that would retrieves information from the manifest file
+		 * found in the JAR since the manifest file shipped
+		 * from upstream is known to be broken in several
+		 * versions of the library.
+		 *
+		 * More info:
+		 * https://issues.apache.org/bugzilla/show_bug.cgi?id=44370
+		 */
+
+		try {
+			logging.getDeclaredMethod("getTimeStamp");
+		} catch (NoSuchMethodException e) {
+			return false;
+		} catch (NullPointerException e) {
+			/* Should never happen */
+			return false;
+		} catch (SecurityException e) {
+			return false;
+		}
+
+		return true;
 	}
 
 	private void initAgentJULClasses() {
