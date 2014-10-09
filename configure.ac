@@ -299,6 +299,14 @@ if test "x$java_agent_log4j" = "xyes"; then
   fi
 fi
 
+# Option to build the python agent
+AC_ARG_ENABLE([python-agent],
+	[AS_HELP_STRING([--enable-python-agent],[build the LTTng UST Python agent [default=no]])],
+    [python_agent=$enableval],
+	[:]
+)
+AM_CONDITIONAL([BUILD_PYTHON_AGENT], [test "x$python_agent" = "xyes"])
+
 # sdt.h integration
 AC_ARG_WITH([sdt],
 	[AS_HELP_STRING([--with-sdt],[provide SystemTap integration via sdt.h [default=no]])],
@@ -366,6 +374,7 @@ AC_CONFIG_FILES([
 	liblttng-ust-java-agent/jni/log4j/Makefile
 	liblttng-ust-libc-wrapper/Makefile
 	liblttng-ust-cyg-profile/Makefile
+	liblttng-ust-python-agent/Makefile
 	tools/Makefile
 	tests/Makefile
 	tests/hello/Makefile
@@ -397,6 +406,9 @@ AS_IF([test "x$java_agent_log4j" = "xyes"], [AS_ECHO("Enabled")], [AS_ECHO("Disa
 
 AS_ECHO_N("JNI interface (JNI): ")
 AS_IF([test "x$jni_interface" = "xyes"], [AS_ECHO("Enabled")], [AS_ECHO("Disabled")])
+
+AS_ECHO_N("Python agent: ")
+AS_IF([test "x$python_agent" = "xyes"], [AS_ECHO("Enabled")], [AS_ECHO("Disabled")])
 
 AS_ECHO_N("sdt.h integration:  ")
 AS_IF([test "x$with_sdt" = "xyes"], [AS_ECHO("Enabled")], [AS_ECHO("Disabled")])

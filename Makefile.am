@@ -20,6 +20,10 @@ if BUILD_JAVA_AGENT
 SUBDIRS += liblttng-ust-java-agent
 endif
 
+if BUILD_PYTHON_AGENT
+SUBDIRS += liblttng-ust-python-agent
+endif
+
 SUBDIRS += tests doc
 
 #temporarily disabled
