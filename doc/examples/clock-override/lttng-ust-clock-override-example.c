@@ -28,6 +28,27 @@
 #include <stdio.h>
 #include <lttng/ust-clock.h>
 
+/*
+ * For sake of example, transform time into a coarse clock (freq: 1KHz).
+ * Note that division can be slow on some architectures. Should be
+ * avoided. Use shift and multiplication instead. e.g.:
+ *
+ * Operation: / 1000000ULL
+ * 1/1000000ULL = .000001
+ * 2^19 < 1000000 < 2^20
+ * Add a 10 bits shift to increase accuracy:
+ * 2^(19+10) = 536870912
+ * x * 1 / 2^(19+10) ~= .000001
+ * 537 * 1 / 2^29 = .00000100024044513702
+ * 537 (multiplication factor) is between 2^9 and 2^10.
+ *
+ * In order not to overflow, first right shift by 10, multiply, and right
+ * shift by 19.
+ */
+#define DIV_CLOCK_SHIFT1	10
+#define DIV_CLOCK_MUL		537
+#define DIV_CLOCK_SHIFT2	19
+
 static
 uint64_t plugin_read64(void)
 {
@@ -39,7 +60,9 @@ uint64_t plugin_read64(void)
 	 * mechanism: we take the monotonic clock, and transform it into
 	 * a very coarse clock, which increment only at 1KHz frequency.
 	 */
-	return ((uint64_t) ts.tv_sec * 1000ULL) + (ts.tv_nsec / 1000000ULL);
+	return ((uint64_t) ts.tv_sec * 1000ULL)
+		+ ((DIV_CLOCK_MUL * ((uint64_t) ts.tv_nsec >> DIV_CLOCK_SHIFT1))
+			>> DIV_CLOCK_SHIFT2);
 }
 
 static
