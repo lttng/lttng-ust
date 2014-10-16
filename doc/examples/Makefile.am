@@ -57,7 +57,7 @@ endif
 all-local:
 	@if [ x"$(srcdir)" != x"$(builddir)" ]; then \
 		for subdir in $(SUBDIRS_PROXY) $(SUBDIRS_JUL); do \
-			cp -fR $(srcdir)/$$subdir $(builddir); \
+			cp -pfR $(srcdir)/$$subdir $(builddir); \
 		done; \
 	fi; \
 	if [ x"$(shell echo "$(top_srcdir)" | grep "^/" | wc -l)" = x"1" ]; then \
