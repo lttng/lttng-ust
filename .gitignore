@@ -60,3 +60,4 @@ jul-jni-header.stamp
 log4j-jni-header.stamp
 org_lttng_ust_agent_jul_LTTngLogHandler.h
 org_lttng_ust_agent_log4j_LTTngLogAppender.h
+liblttng-ust-java-agent/java/liblttng-ust-jul.jar
