@@ -1,3 +1,21 @@
+2014-10-20 lttng-ust 2.6.0-rc1
+	* Add missing file to gitignore
+	* Fix: preserve example files' timestamps when copying
+	* Fix: Abort loading log4j agent classes when detected log4j version is too old
+	* Cleanup: Remove the no longer needed liblttng-ust-jul folder
+	* Fix: Wrong CLASSPATH when building liblttng-ust-java oot
+	* Fix: Wrong CLASSPATH when building liblttng-ust-java-agent oot
+	* Rename public structure to avoid collisions
+	* Refactor liblttng-ust-jul in liblttng-ust-agent
+	* Build the liblttng-ust-java library using the new M4 macros
+	* Add M4 macros helpers to build Java programs
+	* Modernize README using Markdown
+	* Documentation: clarify event name in lttng-ust.3
+	* Add cscope to gitignore
+	* configure.ac: fix "missing jni.h" error message
+	* Fix: remove references to trace_printf()
+	* Change JUL agent to use the new ABI
+
 2014-07-16 (Take Your Poet to Work Day) lttng-ust 2.5.0
 	* Mutex while updating statedump_pending is not needed
 	* Revert "Turn base address dump into experimental feature"
