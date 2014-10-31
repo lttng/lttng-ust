@@ -1,0 +1,51 @@
+The agent can now be built in three different configurations:
+
+1) Java agent with JUL support:
+
+$ ./configure --enable-java-agent-jul
+
+2) Java agent with Log4j support:
+
+$ export CLASSPATH=$CLASSPATH:/path/to/log4j.jar
+$ ./configure --enable-java-agent-log4j
+
+3) Java agent with JUL + Log4j support
+
+$ export CLASSPATH=$CLASSPATH:/path/to/log4j.jar
+$ ./configure --enable-java-agent-all
+
+To build the agent with log4j support, make sure that the log4j jar
+is in your Java classpath.
+
+The configure script will automatically detect the appropriate Java
+binaries to use in order to build the Java agent.
+
+The name of the agent jar file is now "liblttng-ust-agent.jar".
+It will be installed in the arch-agnostic "$prefix/share/java" path
+e.g: "/usr/share/java".
+
+In order to support older applications using the "org.lttng.ust.jul"
+package, a transitional package is built with the same name.
+
+All applications should move to use the "org.lttng.ust.agent" package.
+
+After building, you can use the "liblttng-ust-agent.jar" file in a
+Java project.  Depending on your configuration, the agent will
+requires shared objects (e.g: "liblttng-ust-jul.so") which is installed
+by the build system when doing "make install". Make sure that your
+Java application can find this shared object with the
+"java.library.path".
+
+In order to enable the agent in your Java application, you simply have to add
+this as early as you can in the runtime process.
+
+import org.lttng.ust.agent.LTTngAgent;
+[...]
+	private static LTTngAgent lttngAgent;
+	[...]
+	lttngAgent = LTTngAgent.getLTTngAgent();
+
+This will initialize automatically the singleton LTTngAgent, and will
+return when the session daemon registration is done. If no session daemon is
+available, the execution will continue and the agent will retry every
+3 seconds.
