@@ -119,6 +119,7 @@ public class LTTngAgent {
 		try {
 			logging.getDeclaredMethod("getTimeStamp");
 		} catch (NoSuchMethodException e) {
+			System.err.println("Warning: The loaded log4j library is too old. Log4j tracing with LTTng will be disabled.");
 			return false;
 		} catch (NullPointerException e) {
 			/* Should never happen */
