@@ -94,8 +94,7 @@ public class LTTngAgent {
 		Class<?> logging;
 
 		try {
-			ClassLoader loader = ClassLoader.getSystemClassLoader();
-			logging = loader.loadClass("org.apache.log4j.spi.LoggingEvent");
+			logging = loadClass("org.apache.log4j.spi.LoggingEvent");
 		} catch (ClassNotFoundException e) {
 			/* Log4j classes not found, no need to create the relevant objects */
 			return false;
@@ -131,10 +130,26 @@ public class LTTngAgent {
 		return true;
 	}
 
+	private Class<?> loadClass(String className) throws ClassNotFoundException {
+		ClassLoader loader;
+		Class<?> loadedClass;
+
+		try {
+			/* Try to load class using the current thread's context class loader */
+			loader = Thread.currentThread().getContextClassLoader();
+			loadedClass = loader.loadClass(className);
+		} catch (ClassNotFoundException e) {
+			/* Loading failed, try using the system class loader */
+			loader = ClassLoader.getSystemClassLoader();
+			loadedClass = loader.loadClass(className);
+		}
+
+		return loadedClass;
+	}
+
 	private void initAgentJULClasses() {
 		try {
-			ClassLoader loader = ClassLoader.getSystemClassLoader();
-			Class<?> lttngJUL = loader.loadClass("org.lttng.ust.agent.jul.LTTngJUL");
+			Class<?> lttngJUL = loadClass("org.lttng.ust.agent.jul.LTTngJUL");
 			this.julUser = (LogFramework)lttngJUL.getDeclaredConstructor(new Class[] {Boolean.class}).newInstance(false);
 			this.julRoot = (LogFramework)lttngJUL.getDeclaredConstructor(new Class[] {Boolean.class}).newInstance(true);
 			this.useJUL = true;
@@ -154,8 +169,7 @@ public class LTTngAgent {
 
 	private void initAgentLog4jClasses() {
 		try {
-			ClassLoader loader = ClassLoader.getSystemClassLoader();
-			Class<?> lttngLog4j = loader.loadClass("org.lttng.ust.agent.log4j.LTTngLog4j");
+			Class<?> lttngLog4j = loadClass("org.lttng.ust.agent.log4j.LTTngLog4j");
 			this.log4jUser = (LogFramework)lttngLog4j.getDeclaredConstructor(new Class[] {Boolean.class}).newInstance(false);
 			this.log4jRoot = (LogFramework)lttngLog4j.getDeclaredConstructor(new Class[] {Boolean.class}).newInstance(true);
 			this.useLog4j = true;
