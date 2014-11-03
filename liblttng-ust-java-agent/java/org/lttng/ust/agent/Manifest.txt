@@ -1,0 +1,7 @@
+Name: org/lttng/ust/agent/
+Specification-Title: LTTng UST Java Agent
+Specification-Version: 1.0.0
+Specification-Vendor: LTTng Project
+Implementation-Title: org.lttng.ust.agent
+Implementation-Version: 1.0.0
+Implementation-Vendor: LTTng Project
