@@ -1,12 +1,20 @@
 JAVAROOT = .
 
-jarfile = liblttng-ust-agent.jar
-jarfile_old = liblttng-ust-jul.jar
-jardir = $(datadir)/java
-juljniout = ../jni/jul
-log4jjniout = ../jni/log4j
 pkgpath = org/lttng/ust/agent
 pkgpath_old = org/lttng/ust/jul
+
+jarfile_version = 1.0.0
+jarfile_manifest = $(pkgpath)/Manifest.txt
+jarfile_symlink = liblttng-ust-agent.jar
+jarfile = liblttng-ust-agent-$(jarfile_version).jar
+
+jarfile_old = liblttng-ust-jul.jar
+
+jardir = $(datadir)/java
+
+juljniout = ../jni/jul
+log4jjniout = ../jni/log4j
+
 dist_noinst_JAVA = $(pkgpath)/LTTngAgent.java \
 		   $(pkgpath)/LTTngSessiondCmd2_6.java \
 		   $(pkgpath)/LTTngTCPSessiondClient.java \
@@ -15,6 +23,8 @@ dist_noinst_JAVA = $(pkgpath)/LTTngAgent.java \
 		   $(pkgpath)/jul/LTTngJUL.java \
 		   $(pkgpath)/jul/LTTngLogHandler.java \
 		   $(pkgpath_old)/LTTngAgent.java
+
+dist_noinst_DATA = $(jarfile_manifest)
 
 jar_DATA = $(jarfile) $(jarfile_old)
 
@@ -36,7 +46,7 @@ classes += $(pkgpath)/log4j/*.class
 endif
 
 $(jarfile): classnoinst.stamp
-	$(JAR) cf $(JARFLAGS) $@ $(classes)
+	$(JAR) cfm $(JARFLAGS) $@ $(jarfile_manifest) $(classes) && $(LN_S) $@ $(jarfile_symlink)
 
 $(jarfile_old): classnoinst.stamp
 	$(JAR) cf $(JARFLAGS) $@ $(pkgpath)/*.class \
@@ -51,6 +61,12 @@ log4j-jni-header.stamp: $(dist_noinst_JAVA)
 	echo "Log4j JNI header generated" > log4j-jni-header.stamp
 
 all-local: $(stamp)
+
+install-data-local:
+	cd $(DESTDIR)/$(jardir); rm -f $(jarfile_symlink); $(LN_S) $(jarfile) $(jarfile_symlink)
+
+uninstall-local:
+	cd $(DESTDIR)/$(jardir); rm -f $(jarfile_symlink)
 
 CLEANFILES = $(jarfile) $(jarfile_old) $(pkgpath)/*.class $(pkgpath_old)/*.class $(pkgpath)/jul/*.class \
 	$(pkgpath)/log4j/*.class jul-jni-header.stamp log4j-jni-header.stamp \
