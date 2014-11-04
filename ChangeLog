@@ -1,3 +1,10 @@
+2014-11-04 lttng-ust 2.6.0-rc2
+	* Fix: Add versioning to liblttng-ust-agent JAR
+	* Fix: Warn when log4j version is too old
+	* Update Java agent documentation
+	* Fix: Try loading classes using the thread context class loader
+	* Update version name
+
 2014-10-20 lttng-ust 2.6.0-rc1
 	* Add missing file to gitignore
 	* Fix: preserve example files' timestamps when copying
