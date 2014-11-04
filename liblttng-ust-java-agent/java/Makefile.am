@@ -46,7 +46,7 @@ classes += $(pkgpath)/log4j/*.class
 endif
 
 $(jarfile): classnoinst.stamp
-	$(JAR) cfm $(JARFLAGS) $@ $(jarfile_manifest) $(classes) && $(LN_S) $@ $(jarfile_symlink)
+	$(JAR) cfm $(JARFLAGS) $@ $(jarfile_manifest) $(classes) && rm -f $(jarfile_symlink) && $(LN_S) $@ $(jarfile_symlink)
 
 $(jarfile_old): classnoinst.stamp
 	$(JAR) cf $(JARFLAGS) $@ $(pkgpath)/*.class \
@@ -62,11 +62,11 @@ log4j-jni-header.stamp: $(dist_noinst_JAVA)
 
 all-local: $(stamp)
 
-install-data-local:
-	cd $(DESTDIR)/$(jardir); rm -f $(jarfile_symlink); $(LN_S) $(jarfile) $(jarfile_symlink)
+install-data-hook:
+	cd $(DESTDIR)/$(jardir) && rm -f $(jarfile_symlink) && $(LN_S) $(jarfile) $(jarfile_symlink)
 
-uninstall-local:
-	cd $(DESTDIR)/$(jardir); rm -f $(jarfile_symlink)
+uninstall-hook:
+	cd $(DESTDIR)/$(jardir) && rm -f $(jarfile_symlink)
 
 CLEANFILES = $(jarfile) $(jarfile_old) $(pkgpath)/*.class $(pkgpath_old)/*.class $(pkgpath)/jul/*.class \
 	$(pkgpath)/log4j/*.class jul-jni-header.stamp log4j-jni-header.stamp \
