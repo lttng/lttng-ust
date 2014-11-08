@@ -58,8 +58,8 @@ int stack_strcmp(struct estack *stack, int top, const char *cmp_type)
 	for (;;) {
 		int escaped_r0 = 0;
 
-		if (unlikely(p - estack_bx(stack, top)->u.s.str > estack_bx(stack, top)->u.s.seq_len || *p == '\0')) {
-			if (q - estack_ax(stack, top)->u.s.str > estack_ax(stack, top)->u.s.seq_len || *q == '\0') {
+		if (unlikely(p - estack_bx(stack, top)->u.s.str >= estack_bx(stack, top)->u.s.seq_len || *p == '\0')) {
+			if (q - estack_ax(stack, top)->u.s.str >= estack_ax(stack, top)->u.s.seq_len || *q == '\0') {
 				return 0;
 			} else {
 				if (estack_ax(stack, top)->u.s.literal) {
@@ -70,8 +70,8 @@ int stack_strcmp(struct estack *stack, int top, const char *cmp_type)
 				return -1;
 			}
 		}
-		if (unlikely(q - estack_ax(stack, top)->u.s.str > estack_ax(stack, top)->u.s.seq_len || *q == '\0')) {
-			if (p - estack_bx(stack, top)->u.s.str > estack_bx(stack, top)->u.s.seq_len || *p == '\0') {
+		if (unlikely(q - estack_ax(stack, top)->u.s.str >= estack_ax(stack, top)->u.s.seq_len || *q == '\0')) {
+			if (p - estack_bx(stack, top)->u.s.str >= estack_bx(stack, top)->u.s.seq_len || *p == '\0') {
 				return 0;
 			} else {
 				if (estack_bx(stack, top)->u.s.literal) {
