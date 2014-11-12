@@ -98,7 +98,7 @@ struct lttng_ust_stream {
 	 */
 } LTTNG_PACKED;
 
-#define LTTNG_UST_EVENT_PADDING1	15
+#define LTTNG_UST_EVENT_PADDING1	16
 #define LTTNG_UST_EVENT_PADDING2	(LTTNG_UST_SYM_NAME_LEN + 32)
 struct lttng_ust_event {
 	enum lttng_ust_instrumentation instrumentation;
@@ -106,7 +106,6 @@ struct lttng_ust_event {
 
 	enum lttng_ust_loglevel_type loglevel_type;
 	int loglevel;	/* value, -1: all */
-	char disabled;
 	char padding[LTTNG_UST_EVENT_PADDING1];
 
 	/* Per instrumentation type configuration */
