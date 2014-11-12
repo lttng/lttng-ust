@@ -385,8 +385,8 @@ size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, _TP_ARGS
 		const void *__ctf_tmp_ptr = (_src);			       \
 		memcpy(__stack_data, &__ctf_tmp_ulong, sizeof(unsigned long)); \
 		__stack_data += sizeof(unsigned long);			       \
-		memcpy(__stack_data, &__ctf_tmp_ptr, sizeof(void **));	       \
-		__stack_data += sizeof(void **);			       \
+		memcpy(__stack_data, &__ctf_tmp_ptr, sizeof(void *));	       \
+		__stack_data += sizeof(void *);				       \
 	}
 
 #undef _ctf_sequence_encoded
@@ -397,16 +397,16 @@ size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, _TP_ARGS
 		const void *__ctf_tmp_ptr = (_src);			       \
 		memcpy(__stack_data, &__ctf_tmp_ulong, sizeof(unsigned long)); \
 		__stack_data += sizeof(unsigned long);			       \
-		memcpy(__stack_data, &__ctf_tmp_ptr, sizeof(void **));	       \
-		__stack_data += sizeof(void **);			       \
+		memcpy(__stack_data, &__ctf_tmp_ptr, sizeof(void *));	       \
+		__stack_data += sizeof(void *);				       \
 	}
 
 #undef _ctf_string
 #define _ctf_string(_item, _src, _nowrite)				       \
 	{								       \
 		const void *__ctf_tmp_ptr = (_src);			       \
-		memcpy(__stack_data, &__ctf_tmp_ptr, sizeof(void **));	       \
-		__stack_data += sizeof(void **);			       \
+		memcpy(__stack_data, &__ctf_tmp_ptr, sizeof(void *));	       \
+		__stack_data += sizeof(void *);				       \
 	}
 
 #undef TP_ARGS
