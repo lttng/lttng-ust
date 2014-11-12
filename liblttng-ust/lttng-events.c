@@ -741,7 +741,16 @@ struct lttng_enabler *lttng_enabler_create(enum lttng_enabler_type type,
 		sizeof(enabler->event_param));
 	enabler->chan = chan;
 	/* ctx left NULL */
-	enabler->enabled = 1;
+	/*
+	 * The "disable" event create comm field has been added to fix a
+	 * race between event creation (of a started trace) and enabling
+	 * filtering. New session daemon always set the "disable" field
+	 * to 1, and are aware that they need to explicitly enable the
+	 * event. Older session daemon (within same ABI) leave it at 0,
+	 * and therefore we need to enable it here, keeping the original
+	 * racy behavior.
+	 */
+	enabler->enabled = !event_param->disabled;
 	cds_list_add(&enabler->node, &enabler->chan->session->enablers_head);
 	lttng_session_lazy_sync_enablers(enabler->chan->session);
 	return enabler;
