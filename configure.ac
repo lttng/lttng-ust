@@ -105,6 +105,13 @@ AC_CACHE_CHECK([whether the C++ compiler works],
 
 AM_CONDITIONAL([CXX_WORKS], [test "x$rw_cv_prog_cxx_works" = "xyes"])
 
+# Check if the compiler support weak symbols
+AX_SYS_WEAK_ALIAS
+
+if test "x${ax_cv_sys_weak_alias}" = "xno"; then
+   AC_MSG_ERROR([Your platform doesn't support weak symbols.])
+fi
+
 ## Checks for libraries.
 AC_CHECK_LIB([dl], [dlopen],
 [
