@@ -268,17 +268,13 @@ There are 2 ways to compile the Tracepoint Provider with the
 application: either statically or dynamically. Please follow
 carefully:
 
-  1.1) Compile the Tracepoint provider with the application, either
-       directly or through a static library (.a):
-    - Into exactly one object of your application: define
+  1) Compile the Tracepoint Provider with the application, either
+     directly or through a static library (.a):
+    - Into exactly one object of your application, define
       "TRACEPOINT_DEFINE" and include the tracepoint provider.
     - Use "\-I." for the compilation unit containing the tracepoint
-      provider include (e.g. tp.c).
-    - Link application with "\-ldl".
-    - If building the provider directly into the application,
-      link the application with "\-llttng-ust".
-    - If building a static library for the provider, link the static
-      library with "\-llttng-ust".
+      provider include (e.g., tp.c).
+    - Link the application with "\-llttng-ust" and "\-ldl".
     - Include the tracepoint provider header into all C files using
       the provider.
     - Examples:
