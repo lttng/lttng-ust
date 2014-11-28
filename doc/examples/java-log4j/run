@@ -20,6 +20,6 @@ else
 	LIBPATH="/usr/local/lib:/usr/lib"
 fi
 
-java -cp "$CLASSPATH:." Hello
+java -classpath "$CLASSPATH:." Hello
 
 cd -
