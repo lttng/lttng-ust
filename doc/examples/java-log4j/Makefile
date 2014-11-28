@@ -34,7 +34,7 @@ else
 	CLASSPATH=$(JAVA_CLASSPATH_OVERRIDE)/$(JARFILE):$(LOG4J)
 endif
 
-JC = javac -cp "$(CLASSPATH):."
+JC = javac -classpath "$(CLASSPATH):."
 .SUFFIXES: .java .class
 .java.class:
 	$(JC) $(JFLAGS) $*.java

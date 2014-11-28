@@ -32,7 +32,7 @@ else
 endif
 
 JFLAGS = -g
-JC = javac -cp "$(CLASSPATH):."
+JC = javac -classpath "$(CLASSPATH):."
 .SUFFIXES: .java .class
 .java.class:
 	$(JC) $(JFLAGS) $*.java
