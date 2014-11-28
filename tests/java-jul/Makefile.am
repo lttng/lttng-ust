@@ -20,6 +20,6 @@ clean-local:
 	rm -f *.class
 
 JULTest.class: JULTest.java
-	$(JCC) -cp $(JUL_jar_file) -d "$(builddir)" "$(srcdir)/JULTest.java"
+	$(JCC) -classpath $(JUL_jar_file) -d "$(builddir)" "$(srcdir)/JULTest.java"
 
 endif
