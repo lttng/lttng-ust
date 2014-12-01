@@ -69,5 +69,6 @@ int lttng_add_ip_to_ctx(struct lttng_ctx **ctx)
 	field->event_field.type.u.basic.integer.encoding = lttng_encode_none;
 	field->get_size = ip_get_size;
 	field->record = ip_record;
+	lttng_context_update(*ctx);
 	return 0;
 }

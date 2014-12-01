@@ -258,11 +258,12 @@ struct lttng_ctx_field {
 	void (*destroy)(struct lttng_ctx_field *field);
 };
 
-#define LTTNG_UST_CTX_PADDING	24
+#define LTTNG_UST_CTX_PADDING	20
 struct lttng_ctx {
 	struct lttng_ctx_field *fields;
 	unsigned int nr_fields;
 	unsigned int allocated_fields;
+	unsigned int largest_align;
 	char padding[LTTNG_UST_CTX_PADDING];
 };
 
@@ -590,6 +591,7 @@ void lttng_probes_exit(void);
 int lttng_find_context(struct lttng_ctx *ctx, const char *name);
 int lttng_get_context_index(struct lttng_ctx *ctx, const char *name);
 struct lttng_ctx_field *lttng_append_context(struct lttng_ctx **ctx_p);
+void lttng_context_update(struct lttng_ctx *ctx);
 void lttng_remove_context_field(struct lttng_ctx **ctx_p,
 				struct lttng_ctx_field *field);
 void lttng_destroy_context(struct lttng_ctx *ctx);
