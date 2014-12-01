@@ -108,6 +108,7 @@ int lttng_add_procname_to_ctx(struct lttng_ctx **ctx)
 	field->get_size = procname_get_size;
 	field->record = procname_record;
 	field->get_value = procname_get_value;
+	lttng_context_update(*ctx);
 	return 0;
 }
 
