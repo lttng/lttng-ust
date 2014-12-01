@@ -402,6 +402,7 @@ int lttng_add_perf_counter_to_ctx(uint32_t type,
 	 * the field here.
 	 */
 
+	lttng_context_update(*ctx);
 	return 0;
 
 setup_error:
