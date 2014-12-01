@@ -98,6 +98,7 @@ int lttng_add_vtid_to_ctx(struct lttng_ctx **ctx)
 	field->get_size = vtid_get_size;
 	field->record = vtid_record;
 	field->get_value = vtid_get_value;
+	lttng_context_update(*ctx);
 	return 0;
 }
 

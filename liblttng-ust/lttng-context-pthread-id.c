@@ -79,5 +79,6 @@ int lttng_add_pthread_id_to_ctx(struct lttng_ctx **ctx)
 	field->get_size = pthread_id_get_size;
 	field->record = pthread_id_record;
 	field->get_value = pthread_id_get_value;
+	lttng_context_update(*ctx);
 	return 0;
 }
