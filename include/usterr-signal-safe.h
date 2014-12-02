@@ -26,6 +26,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <share.h>
+#include <urcu/compiler.h>
 #include "lttng/ust-tid.h"
 
 enum ust_loglevel {

@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <urcu/compiler.h>
 
 #include "lttng/ust-tid.h"
 #include "share.h"
