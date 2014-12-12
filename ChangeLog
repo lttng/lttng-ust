@@ -1,3 +1,13 @@
+2014-12-12 lttng-ust 2.5.2
+	* Fix: man: you can't link a lib with a static lib
+	* Fix: context alignment not properly handled
+	* Fix: Shorthand option -cp not supported in all version of Java
+	* Fix: allow tracepoints to build with --std=c99
+	* Fix: filter attach vs event enable race
+	* Fix: add a configure check for weak symbols support
+	* Fix coverity warning about sizeof(void **) != sizeof(void *)
+	* Fix: off-by-one in sequence filter comparator
+
 2014-10-20 lttng-ust 2.5.1
 	* Fix: preserve example files' timestamps when copying
 	* configure.ac: fix "missing jni.h" error message
