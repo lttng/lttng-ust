@@ -1,3 +1,15 @@
+2014-12-12 lttng-ust 2.4.3
+	* Fix: man: you can't link a lib with a static lib
+	* Fix: add missing includes to usterr
+	* Fix: context alignment not properly handled
+	* Fix: allow tracepoints to build with --std=c99
+	* Fix: add a configure check for weak symbols support
+	* Fix coverity warning about sizeof(void **) != sizeof(void *)
+	* Fix: off-by-one in sequence filter comparator
+	* Fix: filter attach vs event enable race
+	* Fix: preserve example files' timestamps when copying
+	* configure.ac: fix "missing jni.h" error message
+
 2014-07-16 lttng-ust 2.4.2
 	* Move enablers syncing after the channel registration
 	* Add lttng_ust_notrace to static inline functions
