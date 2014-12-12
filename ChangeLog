@@ -1,3 +1,14 @@
+2014-12-12 lttng-ust 2.6.0-rc3
+	* Fix: man: you can't link a lib with a static lib
+	* Fix: context alignment not properly handled
+	* Fix: Shorthand option -cp not supported in all version of Java
+	* Fix: allow tracepoints to build with --std=c99
+	* Fix: filter attach vs event enable race
+	* Fix: add a configure check for weak symbols support
+	* Fix coverity warning about sizeof(void **) != sizeof(void *)
+	* Fix: off-by-one in sequence filter comparator
+	* Fix: Java Agent JAR file symlink should be created after objects install
+
 2014-11-04 lttng-ust 2.6.0-rc2
 	* Fix: Add versioning to liblttng-ust-agent JAR
 	* Fix: Warn when log4j version is too old
