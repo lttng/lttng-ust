@@ -53,7 +53,6 @@ struct ustctl_consumer_channel_attr {
 	enum lttng_ust_output output;		/* splice, mmap */
 	uint32_t chan_id;			/* channel ID */
 	unsigned char uuid[LTTNG_UST_UUID_LEN]; /* Trace session unique ID */
-	char shm_path[PATH_MAX];		/* Shared memory path */
 } LTTNG_PACKED;
 
 /*
@@ -149,8 +148,11 @@ struct ustctl_consumer_channel;
 struct ustctl_consumer_stream;
 struct ustctl_consumer_channel_attr;
 
+int ustctl_get_nr_stream_per_channel(void);
+
 struct ustctl_consumer_channel *
-	ustctl_create_channel(struct ustctl_consumer_channel_attr *attr);
+	ustctl_create_channel(struct ustctl_consumer_channel_attr *attr,
+		const int *stream_fds, int nr_stream_fds);
 /*
  * Each stream created needs to be destroyed before calling
  * ustctl_destroy_channel().

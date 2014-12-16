@@ -40,7 +40,7 @@ struct shm_object {
 	char *memory_map;
 	size_t memory_map_size;
 	uint64_t allocated_len;
-	char shm_path[PATH_MAX];
+	int shm_fd_ownership;
 };
 
 struct shm_object_table {

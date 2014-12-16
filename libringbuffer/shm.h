@@ -89,7 +89,7 @@ struct shm_object_table *shm_object_table_create(size_t max_nb_obj);
 struct shm_object *shm_object_table_alloc(struct shm_object_table *table,
 			size_t memory_map_size,
 			enum shm_object_type type,
-			const char *shm_path);
+			const int stream_fd);
 struct shm_object *shm_object_table_append_shm(struct shm_object_table *table,
 			int shm_fd, int wakeup_fd, uint32_t stream_nr,
 			size_t memory_map_size);

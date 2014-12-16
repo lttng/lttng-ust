@@ -942,8 +942,14 @@ error:
 
 /* Buffer operations */
 
+int ustctl_get_nr_stream_per_channel(void)
+{
+	return num_possible_cpus();
+}
+
 struct ustctl_consumer_channel *
-	ustctl_create_channel(struct ustctl_consumer_channel_attr *attr)
+	ustctl_create_channel(struct ustctl_consumer_channel_attr *attr,
+		const int *stream_fds, int nr_stream_fds)
 {
 	struct ustctl_consumer_channel *chan;
 	const char *transport_name;
@@ -996,7 +1002,7 @@ struct ustctl_consumer_channel *
 			attr->switch_timer_interval,
 			attr->read_timer_interval,
 			attr->uuid, attr->chan_id,
-			attr->shm_path[0] == '\0' ? NULL : attr->shm_path);
+			stream_fds, nr_stream_fds);
 	if (!chan->chan) {
 		goto chan_error;
 	}

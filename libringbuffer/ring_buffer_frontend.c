@@ -773,7 +773,8 @@ static void channel_free(struct channel *chan,
  *                         padding to let readers get those sub-buffers.
  *                         Used for live streaming.
  * @read_timer_interval: Time interval (in us) to wake up pending readers.
- * @shm_path: Shared memory files path.
+ * @stream_fds: array of stream file descriptors.
+ * @nr_stream_fds: number of file descriptors in array.
  *
  * Holds cpu hotplug.
  * Returns NULL on failure.
@@ -787,7 +788,7 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 		   void *buf_addr, size_t subbuf_size,
 		   size_t num_subbuf, unsigned int switch_timer_interval,
 		   unsigned int read_timer_interval,
-		   const char *shm_path)
+		   const int *stream_fds, int nr_stream_fds)
 {
 	int ret;
 	size_t shmsize, chansize;
@@ -800,6 +801,9 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 		nr_streams = num_possible_cpus();
 	else
 		nr_streams = 1;
+
+	if (nr_stream_fds != nr_streams)
+		return NULL;
 
 	if (lib_ring_buffer_check_config(config, switch_timer_interval,
 					 read_timer_interval))
@@ -825,7 +829,7 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 
 	/* Allocate normal memory for channel (not shared) */
 	shmobj = shm_object_table_alloc(handle->table, shmsize, SHM_OBJECT_MEM,
-			NULL);
+			-1);
 	if (!shmobj)
 		goto error_append;
 	/* struct channel is at object 0, offset 0 (hardcoded) */
@@ -856,7 +860,7 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 
 	ret = channel_backend_init(&chan->backend, name, config,
 				   subbuf_size, num_subbuf, handle,
-				   shm_path);
+				   stream_fds);
 	if (ret)
 		goto error_backend_init;
 

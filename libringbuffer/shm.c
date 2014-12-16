@@ -84,70 +84,16 @@ struct shm_object_table *shm_object_table_create(size_t max_nb_obj)
 }
 
 static
-int create_posix_shm(void)
-{
-	char tmp_name[NAME_MAX] = "/ust-shm-tmp-XXXXXX";
-	int shmfd, ret;
-
-	/*
-	 * Allocate shm, and immediately unlink its shm oject, keeping
-	 * only the file descriptor as a reference to the object. If it
-	 * already exists (caused by short race window during which the
-	 * global object exists in a concurrent shm_open), simply retry.
-	 * We specifically do _not_ use the / at the beginning of the
-	 * pathname so that some OS implementations can keep it local to
-	 * the process (POSIX leaves this implementation-defined).
-	 */
-	do {
-		/*
-		 * Using mktemp filename with O_CREAT | O_EXCL open
-		 * flags.
-		 */
-		(void) mktemp(tmp_name);
-		if (tmp_name[0] == '\0') {
-			PERROR("mktemp");
-			goto error_shm_open;
-		}
-		shmfd = shm_open(tmp_name,
-				 O_CREAT | O_EXCL | O_RDWR, 0700);
-	} while (shmfd < 0 && (errno == EEXIST || errno == EACCES));
-	if (shmfd < 0) {
-		PERROR("shm_open");
-		goto error_shm_open;
-	}
-	ret = shm_unlink(tmp_name);
-	if (ret < 0 && errno != ENOENT) {
-		PERROR("shm_unlink");
-		goto error_shm_release;
-	}
-	return shmfd;
-
-error_shm_release:
-	ret = close(shmfd);
-	if (ret) {
-		PERROR("close");
-		assert(0);
-	}
-error_shm_open:
-	return -1;
-}
-
-static
-int create_shared_file(const char *shm_path)
-{
-	return open(shm_path, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
-}
-
-static
 struct shm_object *_shm_object_table_alloc_shm(struct shm_object_table *table,
 					   size_t memory_map_size,
-					   const char *shm_path)
+					   int stream_fd)
 {
-	int shmfd, waitfd[2], ret, i, sigblocked = 0;
+	int shmfd, waitfd[2], ret, i;
 	struct shm_object *obj;
 	char *memory_map;
-	sigset_t all_sigs, orig_sigs;
 
+	if (stream_fd < 0)
+		return NULL;
 	if (table->allocated_len >= table->size)
 		return NULL;
 	obj = &table->objects[table->allocated_len];
@@ -173,42 +119,9 @@ struct shm_object *_shm_object_table_alloc_shm(struct shm_object_table *table,
 	}
 	memcpy(obj->wait_fd, waitfd, sizeof(waitfd));
 
-	/* shm_fd: create shm */
+	/* create shm */
 
-	/*
-	 * Theoretically, we could leak a shm if the application crashes
-	 * between open and unlink. Disable signals on this thread for
-	 * increased safety against this scenario.
-	 */
-	sigfillset(&all_sigs);
-	ret = pthread_sigmask(SIG_BLOCK, &all_sigs, &orig_sigs);
-	if (ret == -1) {
-		PERROR("pthread_sigmask");
-		goto error_pthread_sigmask;
-	}
-	sigblocked = 1;
-
-
-	if (!shm_path) {
-		obj->shm_path[0] = '\0';
-		shmfd = create_posix_shm();
-	} else {
-		strncpy(obj->shm_path, shm_path,
-			sizeof(obj->shm_path));
-		obj->shm_path[sizeof(obj->shm_path) - 1] = '\0';
-
-		/* Path should already exist, but could fail. */
-		shmfd = create_shared_file(shm_path);
-	}
-	if (shmfd < 0)
-		goto error_shm_open;
-
-	sigblocked = 0;
-	ret = pthread_sigmask(SIG_SETMASK, &orig_sigs, NULL);
-	if (ret == -1) {
-		PERROR("pthread_sigmask");
-		goto error_sigmask_release;
-	}
+	shmfd = stream_fd;
 	ret = zero_file(shmfd, memory_map_size);
 	if (ret) {
 		PERROR("zero_file");
@@ -219,6 +132,7 @@ struct shm_object *_shm_object_table_alloc_shm(struct shm_object_table *table,
 		PERROR("ftruncate");
 		goto error_ftruncate;
 	}
+	obj->shm_fd_ownership = 0;
 	obj->shm_fd = shmfd;
 
 	/* memory_map: mmap */
@@ -239,26 +153,6 @@ struct shm_object *_shm_object_table_alloc_shm(struct shm_object_table *table,
 error_mmap:
 error_ftruncate:
 error_zero_file:
-error_sigmask_release:
-	ret = close(shmfd);
-	if (ret) {
-		PERROR("close");
-		assert(0);
-	}
-	if (shm_path) {
-		ret = unlink(shm_path);
-		if (ret) {
-			PERROR("ret");
-		}
-	}
-error_shm_open:
-	if (sigblocked) {
-		ret = pthread_sigmask(SIG_SETMASK, &orig_sigs, NULL);
-		if (ret == -1) {
-			PERROR("pthread_sigmask");
-		}
-	}
-error_pthread_sigmask:
 error_fcntl:
 	for (i = 0; i < 2; i++) {
 		ret = close(waitfd[i]);
@@ -310,6 +204,7 @@ struct shm_object *_shm_object_table_alloc_mem(struct shm_object_table *table,
 
 	/* no shm_fd */
 	obj->shm_fd = -1;
+	obj->shm_fd_ownership = 0;
 
 	obj->type = SHM_OBJECT_MEM;
 	obj->memory_map = memory_map;
@@ -336,12 +231,12 @@ alloc_error:
 struct shm_object *shm_object_table_alloc(struct shm_object_table *table,
 			size_t memory_map_size,
 			enum shm_object_type type,
-			const char *shm_path)
+			int stream_fd)
 {
 	switch (type) {
 	case SHM_OBJECT_SHM:
 		return _shm_object_table_alloc_shm(table, memory_map_size,
-				shm_path);
+				stream_fd);
 	case SHM_OBJECT_MEM:
 		return _shm_object_table_alloc_mem(table, memory_map_size);
 	default:
@@ -370,6 +265,7 @@ struct shm_object *shm_object_table_append_shm(struct shm_object_table *table,
 	obj->wait_fd[0] = -1;	/* read end is unset */
 	obj->wait_fd[1] = wakeup_fd;
 	obj->shm_fd = shm_fd;
+	obj->shm_fd_ownership = 1;
 
 	ret = fcntl(obj->wait_fd[1], F_SETFD, FD_CLOEXEC);
 	if (ret < 0) {
@@ -419,6 +315,7 @@ struct shm_object *shm_object_table_append_mem(struct shm_object_table *table,
 	obj->wait_fd[0] = -1;	/* read end is unset */
 	obj->wait_fd[1] = wakeup_fd;
 	obj->shm_fd = -1;
+	obj->shm_fd_ownership = 0;
 
 	ret = fcntl(obj->wait_fd[1], F_SETFD, FD_CLOEXEC);
 	if (ret < 0) {
@@ -457,15 +354,11 @@ void shmp_object_destroy(struct shm_object *obj)
 			PERROR("umnmap");
 			assert(0);
 		}
-		ret = close(obj->shm_fd);
-		if (ret) {
-			PERROR("close");
-			assert(0);
-		}
-		if (obj->shm_path[0]) {
-			ret = unlink(obj->shm_path);
+		if (obj->shm_fd_ownership) {
+			ret = close(obj->shm_fd);
 			if (ret) {
-				PERROR("ret");
+				PERROR("close");
+				assert(0);
 			}
 		}
 		for (i = 0; i < 2; i++) {

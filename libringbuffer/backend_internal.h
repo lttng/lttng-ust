@@ -46,7 +46,7 @@ int channel_backend_init(struct channel_backend *chanb,
 			 const struct lttng_ust_lib_ring_buffer_config *config,
 			 size_t subbuf_size,
 			 size_t num_subbuf, struct lttng_ust_shm_handle *handle,
-			 const char *shm_path);
+			 const int *stream_fds);
 void channel_backend_free(struct channel_backend *chanb,
 			  struct lttng_ust_shm_handle *handle);
 
