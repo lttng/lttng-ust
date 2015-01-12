@@ -238,6 +238,9 @@ int ustctl_get_stream_id(struct ustctl_consumer_stream *stream,
 int ustctl_get_current_timestamp(struct ustctl_consumer_stream *stream,
 		uint64_t *ts);
 
+/* returns whether UST has perf counters support. */
+int ustctl_has_perf_counters(void);
+
 /* event registry management */
 
 enum ustctl_socket_type {

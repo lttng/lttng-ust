@@ -1639,6 +1639,22 @@ int ustctl_get_current_timestamp(struct ustctl_consumer_stream *stream,
 	return client_cb->current_timestamp(buf, handle, ts);
 }
 
+#if defined(__x86_64__) || defined(__i386__)
+
+int ustctl_has_perf_counters(void)
+{
+	return 1;
+}
+
+#else
+
+int ustctl_has_perf_counters(void)
+{
+	return 0;
+}
+
+#endif
+
 /*
  * Returns 0 on success, negative error value on error.
  */
