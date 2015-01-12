@@ -62,6 +62,7 @@
 #include <urcu/compiler.h>
 #include <urcu/ref.h>
 #include <urcu/tls-compat.h>
+#include <poll.h>
 #include <helper.h>
 
 #include "smp.h"
