@@ -335,6 +335,16 @@ void lttng_fixup_ust_mutex_nest_tls(void)
 	asm volatile ("" : : "m" (URCU_TLS(ust_mutex_nest)));
 }
 
+/*
+ * Fixup urcu bp TLS.
+ */
+static
+void lttng_fixup_urcu_bp_tls(void)
+{
+	rcu_read_lock();
+	rcu_read_unlock();
+}
+
 int lttng_get_notify_socket(void *owner)
 {
 	struct sock_info *info = owner;
@@ -1419,6 +1429,7 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	 * to be the dynamic linker mutex) and ust_lock, taken within
 	 * the ust lock.
 	 */
+	lttng_fixup_urcu_bp_tls();
 	lttng_fixup_ringbuffer_tls();
 	lttng_fixup_vtid_tls();
 	lttng_fixup_nest_count_tls();
