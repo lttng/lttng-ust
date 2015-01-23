@@ -4,7 +4,7 @@ pkgpath = org/lttng/ust/agent
 pkgpath_old = org/lttng/ust/jul
 
 jarfile_version = 1.0.0
-jarfile_manifest = $(pkgpath)/Manifest.txt
+jarfile_manifest = $(srcdir)/$(pkgpath)/Manifest.txt
 jarfile_symlink = liblttng-ust-agent.jar
 jarfile = liblttng-ust-agent-$(jarfile_version).jar
 
