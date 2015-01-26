@@ -2,9 +2,9 @@
 AM_CPPFLAGS = $(PYTHON_INCLUDE) -I$(top_srcdir)/include/
 AM_CFLAGS = -fno-strict-aliasing
 
-EXTRA_DIST = lttng-agent.py.in
+EXTRA_DIST = lttng_agent.py.in
 
-lttng_agent_PYTHON = lttng_agent.py
+nodist_lttng_agent_PYTHON = lttng_agent.py
 lttng_agentdir = $(pythondir)
 
 lib_LTLIBRARIES = liblttng-ust-python-agent.la
