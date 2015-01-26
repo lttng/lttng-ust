@@ -15,6 +15,6 @@ liblttng_ust_python_agent_la_LIBADD = -lc -llttng-ust \
 		-L$(top_builddir)/liblttng-ust/.libs
 
 all:
-	$(SED) 's|LIBDIR_STR|$(libdir)|g' < lttng_agent.py.in > lttng_agent.py
+	$(SED) 's|LIBDIR_STR|$(libdir)|g' < $(srcdir)/lttng_agent.py.in > lttng_agent.py
 
 CLEANFILES = lttng_agent.py
