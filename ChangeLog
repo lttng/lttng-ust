@@ -1,3 +1,9 @@
+2015-01-26 lttng-ust 2.5.3
+	* Fix: missing parenthesis in offset_align_floor
+	* Fix: add urcu-bp TLS fixup
+	* Fix: add missing poll.h include
+	* Fix: get_subbuf: bound number of consumerd retry
+
 2014-12-12 lttng-ust 2.5.2
 	* Fix: man: you can't link a lib with a static lib
 	* Fix: context alignment not properly handled
