@@ -37,10 +37,17 @@ enum ust_loglevel {
 extern volatile enum ust_loglevel ust_loglevel;
 void init_usterr(void);
 
+#ifdef LTTNG_UST_DEBUG
+static inline int ust_debug(void)
+{
+	return 1;
+}
+#else /* #ifdef LTTNG_UST_DEBUG */
 static inline int ust_debug(void)
 {
 	return ust_loglevel == UST_LOGLEVEL_DEBUG;
 }
+#endif /* #else #ifdef LTTNG_UST_DEBUG */
 
 #ifndef UST_COMPONENT
 //#error UST_COMPONENT is undefined
@@ -69,72 +76,61 @@ static inline void __attribute__ ((format (printf, 1, 2)))
 /* Add end of string in case of buffer overflow. */
 #define sigsafe_print_err(fmt, args...)					\
 do {									\
-	char ____buf[USTERR_MAX_LEN];					\
-	int ____saved_errno;						\
-	____saved_errno = errno;	/* signal-safety */		\
-	ust_safe_snprintf(____buf, sizeof(____buf), fmt, ## args);	\
-	____buf[sizeof(____buf) - 1] = 0;				\
-	patient_write(STDERR_FILENO, ____buf, strlen(____buf));		\
-	errno = ____saved_errno;	/* signal-safety */		\
+	if (ust_debug()) {						\
+		char ____buf[USTERR_MAX_LEN];				\
+		int ____saved_errno;					\
+									\
+		____saved_errno = errno;	/* signal-safety */	\
+		ust_safe_snprintf(____buf, sizeof(____buf), fmt, ## args); \
+		____buf[sizeof(____buf) - 1] = 0;			\
+		patient_write(STDERR_FILENO, ____buf, strlen(____buf));	\
+		errno = ____saved_errno;	/* signal-safety */	\
+		fflush(stderr);						\
+	}								\
 } while (0)
 
 #define UST_STR_COMPONENT UST_XSTR(UST_COMPONENT)
 
 #define ERRMSG(fmt, args...)			\
 	do {					\
-		sigsafe_print_err(UST_STR_COMPONENT "[%ld/%ld]: " fmt " (in %s() at " __FILE__ ":" UST_XSTR(__LINE__) ")\n",	\
+		sigsafe_print_err(UST_STR_COMPONENT "[%ld/%ld]: " fmt " (in %s() at " __FILE__ ":" UST_XSTR(__LINE__) ")\n", \
 		(long) getpid(),		\
 		(long) gettid(),		\
 		## args, __func__);		\
-		fflush(stderr);			\
 	} while(0)
 
-#ifdef LTTNG_UST_DEBUG
-# define DBG(fmt, args...)			ERRMSG(fmt, ## args)
-# define DBG_raw(fmt, args...)					\
-	do {							\
-		sigsafe_print_err(fmt, ## args);		\
-		fflush(stderr);					\
-	} while(0)
-#else
-# define DBG(fmt, args...)					\
-	do {							\
-		if (ust_debug())				\
-			ERRMSG(fmt, ## args);			\
-	} while (0)
-# define DBG_raw(fmt, args...)					\
-	do {							\
-		if (ust_debug()) {				\
-			sigsafe_print_err(fmt, ## args);	\
-			fflush(stderr);				\
-		}						\
-	} while(0)
-#endif
-#define WARN(fmt, args...) ERRMSG("Warning: " fmt, ## args)
-#define ERR(fmt, args...) ERRMSG("Error: " fmt, ## args)
-#define BUG(fmt, args...) ERRMSG("BUG: " fmt, ## args)
+
+#define DBG(fmt, args...)	ERRMSG(fmt, ## args)
+#define DBG_raw(fmt, args...)	sigsafe_print_err(fmt, ## args)
+#define WARN(fmt, args...)	ERRMSG("Warning: " fmt, ## args)
+#define ERR(fmt, args...)	ERRMSG("Error: " fmt, ## args)
+#define BUG(fmt, args...)	ERRMSG("BUG: " fmt, ## args)
 
 #if !defined(__linux__) || ((_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !defined(_GNU_SOURCE))
 /*
  * Version using XSI strerror_r.
  */
-#define PERROR(call, args...)\
-	do { \
-		char buf[200] = "Error in strerror_r()"; \
-		strerror_r(errno, buf, sizeof(buf)); \
-		ERRMSG("Error: " call ": %s", ## args, buf); \
-	} while(0);
+#define PERROR(call, args...)						\
+	do {								\
+		if (ust_debug()) {					\
+			char buf[200] = "Error in strerror_r()";	\
+			strerror_r(errno, buf, sizeof(buf));		\
+			ERRMSG("Error: " call ": %s", ## args, buf);	\
+		}							\
+	} while(0)
 #else
 /*
  * Version using GNU strerror_r, for linux with appropriate defines.
  */
-#define PERROR(call, args...)\
-	do { \
-		char *buf; \
-		char tmp[200]; \
-		buf = strerror_r(errno, tmp, sizeof(tmp)); \
-		ERRMSG("Error: " call ": %s", ## args, buf); \
-	} while(0);
+#define PERROR(call, args...)						\
+	do {								\
+		if (ust_debug()) {					\
+			char *buf;					\
+			char tmp[200];					\
+			buf = strerror_r(errno, tmp, sizeof(tmp));	\
+			ERRMSG("Error: " call ": %s", ## args, buf);	\
+		}							\
+	} while(0)
 #endif
 
 #define BUG_ON(condition)					\
