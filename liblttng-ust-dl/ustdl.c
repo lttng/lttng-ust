@@ -29,7 +29,7 @@
 #include <signal.h>
 #include <sched.h>
 #include <stdarg.h>
-#include "usterr.h"
+#include "usterr-signal-safe.h"
 
 #include <lttng/ust-compiler.h>
 #include <lttng/ust.h>

@@ -24,7 +24,7 @@
 #include <signal.h>
 #include <sched.h>
 #include <stdarg.h>
-#include "usterr.h"
+#include <errno.h>
 
 #include <lttng/ust.h>
 

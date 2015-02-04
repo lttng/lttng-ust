@@ -20,7 +20,6 @@
 
 #define _GNU_SOURCE
 #include <unistd.h>
-#include "usterr.h"
 #include <pthread.h>
 #include "smp.h"
 
