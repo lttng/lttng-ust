@@ -48,7 +48,7 @@ public class Hello
 		/* Trigger a tracing event using the JUL Logger created before. */
 		helloLog.info("Hello World, the answer is " + answer);
 
-		System.out.println("Firing hello delay in 10 seconds...");
+		System.out.println("Firing hello delay in 5 seconds...");
 		Thread.sleep(5000);
 		helloLog.info("Hello World delayed...");
 	}
