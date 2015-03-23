@@ -1,5 +1,5 @@
 
-AM_CPPFLAGS = $(PYTHON_INCLUDE) -I$(top_srcdir)/include/
+AM_CPPFLAGS = $(PYTHON_INCLUDE) -I$(top_srcdir)/include/ -I$(top_builddir)/include/
 AM_CFLAGS = -fno-strict-aliasing
 
 EXTRA_DIST = lttng_agent.py.in
