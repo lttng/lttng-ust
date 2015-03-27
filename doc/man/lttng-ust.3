@@ -290,6 +290,33 @@ Even though LTTng-UST supports tracepoint() call site duplicates having
 the same provider and event name, it is recommended to use a
 provider event name pair only once within the source code to help
 map events back to their call sites when analyzing the trace.
+
+Sometimes arguments to the probe are expensive to compute (e.g.
+take call stack). To avoid the computation when the tracepoint is
+disabled one can use more 'low level' tracepoint_enabled() and
+do_tracepoint() macros as following:
+
+	if (tracepoint_enabled(ust_tests_hello, tptest)) {
+		/* prepare arguments */
+		do_tracepoint(ust_tests_hello, tptest, i, netint, values,
+			text, strlen(text), dbl, flt);
+	}
+
+Here do_tracepoint() doesn't contain check if the tracepoint is enabled.
+Using tracepoint() in such scenario is dangerous since it also contains
+enabled check and thus race condition is possible in the following code
+if the tracepoint has been enabled after check in tracepoint_enabled()
+but before tracepoint():
+
+	if (tracepoint_enabled(provider, name)) { /* tracepoint is disabled */
+		prepare(args);
+	}
+	/* tracepoint is enabled by 'lttng' tool */
+	tracepoint(provider, name, args); /* args wasn't prepared properly */
+
+Note also that neither tracepoint_enabled() nor do_tracepoint() have
+STAP_PROBEV() call so if you need it you should emit this call yourself.
+
 .fi
 
 .SH "BUILDING/LINKING THE TRACEPOINT PROVIDER"
