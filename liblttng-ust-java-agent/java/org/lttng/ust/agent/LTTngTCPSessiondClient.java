@@ -186,6 +186,22 @@ class LTTngTCPSessiondClient implements Runnable {
 				case CMD_REG_DONE:
 				{
 					/*
+					 * Check command version:
+					 *
+					 *   * 0:  Connected to a non-fixed session daemon,
+					 *         which could send multiple disable
+					 *         event commands: do not decrement
+					 *         reference count on disable event command
+					 *         (original behaviour).
+					 *   * >0: Connected to a fixed session daemon:
+					 *         do decrement reference count on disable
+					 *         event command.
+					 */
+					if (headerCmd.cmd_version > 0) {
+						this.log.setEnableRefCountDecrement(true);
+					}
+
+					/*
 					 * Release semaphore so meaning registration is done and we
 					 * can proceed to continue tracing.
 					 */

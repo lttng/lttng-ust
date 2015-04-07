@@ -27,6 +27,19 @@ public abstract class LogFrameworkSkeleton implements LogFramework {
 	/* A map of event name and reference count */
 	private Map<String, Integer> enabledLoggers;
 
+	/*
+	 * If the following attribute is false, the internal ref count is
+	 * never decremented when disabling a logger. This was the original
+	 * behaviour of this agent, and this bug worked in concert with a
+	 * bug in the session daemon which would send multiple disable
+	 * commands for the same event name (manual disable + another
+	 * disable on session destroy). The following attribute is needed
+	 * because this version of the agent could be connected to a
+	 * fixed session daemon, or a non-fixed session daemon, and it needs
+	 * to work in both situations.
+	 */
+	private boolean enableRefCountDecrement = false;
+
 	public LogFrameworkSkeleton() {
 		this.enabledLoggers = new HashMap<String, Integer>();
 	}
@@ -68,6 +81,11 @@ public abstract class LogFrameworkSkeleton implements LogFramework {
 		refcount--;
 		assert (refcount >= 0);
 
+		if (enableRefCountDecrement) {
+			/* Effectively decrement reference count. */
+			enabledLoggers.put(name, refcount);
+		}
+
 		if (refcount == 0) {
 			/* Event is not used anymore, remove it from the map */
 			Integer oldval = enabledLoggers.remove(name);
@@ -90,5 +108,9 @@ public abstract class LogFrameworkSkeleton implements LogFramework {
 
 	protected Integer getEventCount() {
 		return enabledLoggers.size();
+	}
+
+	public void setEnableRefCountDecrement(boolean enableRefCountDecrement) {
+		this.enableRefCountDecrement = enableRefCountDecrement;
 	}
 }
