@@ -26,6 +26,7 @@
 #include <urcu/arch.h>
 
 #include "clock.h"
+#include "getenv.h"
 
 struct lttng_trace_clock *lttng_trace_clock;
 
@@ -97,7 +98,7 @@ void lttng_ust_clock_init(void)
 	void (*libinit)(void);
 
 
-	libname = secure_getenv("LTTNG_UST_CLOCK_PLUGIN");
+	libname = lttng_secure_getenv("LTTNG_UST_CLOCK_PLUGIN");
 	if (!libname)
 		return;
 	handle = dlopen(libname, RTLD_NOW);

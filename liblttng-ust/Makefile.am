@@ -46,7 +46,8 @@ liblttng_ust_runtime_la_SOURCES = \
 	lttng-ust-uuid.h \
 	error.h \
 	tracef.c \
-	lttng-ust-tracef-provider.h
+	lttng-ust-tracef-provider.h \
+	getenv.h
 
 if HAVE_PERF_EVENT
 liblttng_ust_runtime_la_SOURCES += \

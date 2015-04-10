@@ -25,6 +25,7 @@
 #include <urcu/system.h>
 #include <urcu/arch.h>
 
+#include "getenv.h"
 #include "../libringbuffer/getcpu.h"
 
 int (*lttng_get_cpu)(void);
@@ -41,7 +42,7 @@ void lttng_ust_getcpu_init(void)
 	void *handle;
 	void (*libinit)(void);
 
-	libname = secure_getenv("LTTNG_UST_GETCPU_PLUGIN");
+	libname = lttng_secure_getenv("LTTNG_UST_GETCPU_PLUGIN");
 	if (!libname)
 		return;
 	handle = dlopen(libname, RTLD_NOW);
