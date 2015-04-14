@@ -30,6 +30,9 @@
 
 int (*lttng_get_cpu)(void);
 
+static
+void *getcpu_handle;
+
 int lttng_ust_getcpu_override(int (*getcpu)(void))
 {
 	CMM_STORE_SHARED(lttng_get_cpu, getcpu);
@@ -39,20 +42,21 @@ int lttng_ust_getcpu_override(int (*getcpu)(void))
 void lttng_ust_getcpu_init(void)
 {
 	const char *libname;
-	void *handle;
 	void (*libinit)(void);
 
+	if (getcpu_handle)
+		return;
 	libname = lttng_secure_getenv("LTTNG_UST_GETCPU_PLUGIN");
 	if (!libname)
 		return;
-	handle = dlopen(libname, RTLD_NOW);
-	if (!handle) {
+	getcpu_handle = dlopen(libname, RTLD_NOW);
+	if (!getcpu_handle) {
 		PERROR("Cannot load LTTng UST getcpu override library %s",
 			libname);
 		return;
 	}
 	dlerror();
-	libinit = (void (*)(void)) dlsym(handle,
+	libinit = (void (*)(void)) dlsym(getcpu_handle,
 		"lttng_ust_getcpu_plugin_init");
 	if (!libinit) {
 		PERROR("Cannot find LTTng UST getcpu override library %s initialization function lttng_ust_getcpu_plugin_init()",

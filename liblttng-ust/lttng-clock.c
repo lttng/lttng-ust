@@ -33,6 +33,9 @@ struct lttng_trace_clock *lttng_trace_clock;
 static
 struct lttng_trace_clock user_tc;
 
+static
+void *clock_handle;
+
 int lttng_ust_trace_clock_set_read64_cb(uint64_t (*read64)(void))
 {
 	if (CMM_LOAD_SHARED(lttng_trace_clock))
@@ -94,21 +97,21 @@ int lttng_ust_enable_trace_clock_override(void)
 void lttng_ust_clock_init(void)
 {
 	const char *libname;
-	void *handle;
 	void (*libinit)(void);
 
-
+	if (clock_handle)
+		return;
 	libname = lttng_secure_getenv("LTTNG_UST_CLOCK_PLUGIN");
 	if (!libname)
 		return;
-	handle = dlopen(libname, RTLD_NOW);
-	if (!handle) {
+	clock_handle = dlopen(libname, RTLD_NOW);
+	if (!clock_handle) {
 		PERROR("Cannot load LTTng UST clock override library %s",
 			libname);
 		return;
 	}
 	dlerror();
-	libinit = (void (*)(void)) dlsym(handle,
+	libinit = (void (*)(void)) dlsym(clock_handle,
 		"lttng_ust_clock_plugin_init");
 	if (!libinit) {
 		PERROR("Cannot find LTTng UST clock override library %s initialization function lttng_ust_clock_plugin_init()",
