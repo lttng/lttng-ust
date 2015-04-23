@@ -52,6 +52,7 @@
 #include "compat.h"
 #include "../libringbuffer/tlsfixup.h"
 #include "lttng-ust-baddr.h"
+#include "getenv.h"
 
 /*
  * Has lttng ust comm constructor been called ?
@@ -313,11 +314,11 @@ const char *get_lttng_home_dir(void)
 {
        const char *val;
 
-       val = (const char *) getenv("LTTNG_HOME");
+       val = (const char *) lttng_secure_getenv("LTTNG_HOME");
        if (val != NULL) {
                return val;
        }
-       return (const char *) getenv("HOME");
+       return (const char *) lttng_secure_getenv("HOME");
 }
 
 /*
