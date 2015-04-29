@@ -1,3 +1,9 @@
+2015-04-29 lttng-ust 2.6.1
+	* Fix: use lttng_secure_getenv to handle env. vars. involving paths
+	* Fix: add missing getenv wrapper
+	* Fix: Don't wait during registration if clock_gettime() fails
+	* Fix: Mismatching code and console output in log4j example
+
 2015-01-26 lttng-ust 2.6.0
 	* Fix: java-agent: out-of-tree path to java manifest
 	* Fix: missing parenthesis in offset_align_floor
