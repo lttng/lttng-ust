@@ -407,8 +407,6 @@ struct lttng_event {
 	void *_deprecated1;
 	struct lttng_ctx *ctx;
 	enum lttng_ust_instrumentation instrumentation;
-	union {
-	} u;
 	struct cds_list_head node;		/* Event list in session */
 	struct cds_list_head _deprecated2;
 	void *_deprecated3;
