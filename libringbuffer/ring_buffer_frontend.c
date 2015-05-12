@@ -544,7 +544,7 @@ void lib_ring_buffer_channel_switch_timer_start(struct channel *chan)
 	}
 
 	its.it_value.tv_sec = chan->switch_timer_interval / 1000000;
-	its.it_value.tv_nsec = chan->switch_timer_interval % 1000000;
+	its.it_value.tv_nsec = (chan->switch_timer_interval % 1000000) * 1000;
 	its.it_interval.tv_sec = its.it_value.tv_sec;
 	its.it_interval.tv_nsec = its.it_value.tv_nsec;
 
@@ -598,7 +598,7 @@ void lib_ring_buffer_channel_read_timer_start(struct channel *chan)
 	}
 
 	its.it_value.tv_sec = chan->read_timer_interval / 1000000;
-	its.it_value.tv_nsec = chan->read_timer_interval % 1000000;
+	its.it_value.tv_nsec = (chan->read_timer_interval % 1000000) * 1000;
 	its.it_interval.tv_sec = its.it_value.tv_sec;
 	its.it_interval.tv_nsec = its.it_value.tv_nsec;
 
