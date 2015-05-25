@@ -9,7 +9,7 @@
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
@@ -260,7 +260,8 @@ void *malloc(size_t size)
 	}
 	retval = cur_alloc.malloc(size);
 	if (URCU_TLS(malloc_nesting) == 1) {
-		tracepoint(ust_libc, malloc, size, retval, __builtin_return_address(0));
+		tracepoint(lttng_ust_libc, malloc,
+			size, retval, __builtin_return_address(0));
 	}
 	URCU_TLS(malloc_nesting)--;
 	return retval;
@@ -279,7 +280,8 @@ void free(void *ptr)
 	}
 
 	if (URCU_TLS(malloc_nesting) == 1) {
-		tracepoint(ust_libc, free, ptr, __builtin_return_address(0));
+		tracepoint(lttng_ust_libc, free,
+			ptr, __builtin_return_address(0));
 	}
 
 	if (cur_alloc.free == NULL) {
@@ -308,7 +310,8 @@ void *calloc(size_t nmemb, size_t size)
 	}
 	retval = cur_alloc.calloc(nmemb, size);
 	if (URCU_TLS(malloc_nesting) == 1) {
-		tracepoint(ust_libc, calloc, nmemb, size, retval, __builtin_return_address(0));
+		tracepoint(lttng_ust_libc, calloc,
+			nmemb, size, retval, __builtin_return_address(0));
 	}
 	URCU_TLS(malloc_nesting)--;
 	return retval;
@@ -360,7 +363,8 @@ void *realloc(void *ptr, size_t size)
 	retval = cur_alloc.realloc(ptr, size);
 end:
 	if (URCU_TLS(malloc_nesting) == 1) {
-		tracepoint(ust_libc, realloc, ptr, size, retval, __builtin_return_address(0));
+		tracepoint(lttng_ust_libc, realloc,
+			ptr, size, retval, __builtin_return_address(0));
 	}
 	URCU_TLS(malloc_nesting)--;
 	return retval;
@@ -380,7 +384,9 @@ void *memalign(size_t alignment, size_t size)
 	}
 	retval = cur_alloc.memalign(alignment, size);
 	if (URCU_TLS(malloc_nesting) == 1) {
-		tracepoint(ust_libc, memalign, alignment, size, retval, __builtin_return_address(0));
+		tracepoint(lttng_ust_libc, memalign,
+			alignment, size, retval,
+			__builtin_return_address(0));
 	}
 	URCU_TLS(malloc_nesting)--;
 	return retval;
@@ -400,7 +406,8 @@ int posix_memalign(void **memptr, size_t alignment, size_t size)
 	}
 	retval = cur_alloc.posix_memalign(memptr, alignment, size);
 	if (URCU_TLS(malloc_nesting) == 1) {
-		tracepoint(ust_libc, posix_memalign, *memptr, alignment, size,
+		tracepoint(lttng_ust_libc, posix_memalign,
+			*memptr, alignment, size,
 			retval, __builtin_return_address(0));
 	}
 	URCU_TLS(malloc_nesting)--;

@@ -1,5 +1,5 @@
 #undef TRACEPOINT_PROVIDER
-#define TRACEPOINT_PROVIDER ust_libc
+#define TRACEPOINT_PROVIDER lttng_ust_libc
 
 #if !defined(_TRACEPOINT_UST_LIBC_H) || defined(TRACEPOINT_HEADER_MULTI_READ)
 #define _TRACEPOINT_UST_LIBC_H
@@ -32,7 +32,7 @@ extern "C" {
 
 #include <lttng/tracepoint.h>
 
-TRACEPOINT_EVENT(ust_libc, malloc,
+TRACEPOINT_EVENT(lttng_ust_libc, malloc,
 	TP_ARGS(size_t, size, void *, ptr, void *, caller),
 	TP_FIELDS(
 		ctf_integer(size_t, size, size)
@@ -41,7 +41,7 @@ TRACEPOINT_EVENT(ust_libc, malloc,
 	)
 )
 
-TRACEPOINT_EVENT(ust_libc, free,
+TRACEPOINT_EVENT(lttng_ust_libc, free,
 	TP_ARGS(void *, ptr, void *, caller),
 	TP_FIELDS(
 		ctf_integer_hex(void *, ptr, ptr)
@@ -49,7 +49,7 @@ TRACEPOINT_EVENT(ust_libc, free,
 	)
 )
 
-TRACEPOINT_EVENT(ust_libc, calloc,
+TRACEPOINT_EVENT(lttng_ust_libc, calloc,
 	TP_ARGS(size_t, nmemb, size_t, size, void *, ptr, void *, caller),
 	TP_FIELDS(
 		ctf_integer(size_t, nmemb, nmemb)
@@ -59,7 +59,7 @@ TRACEPOINT_EVENT(ust_libc, calloc,
 	)
 )
 
-TRACEPOINT_EVENT(ust_libc, realloc,
+TRACEPOINT_EVENT(lttng_ust_libc, realloc,
 	TP_ARGS(void *, in_ptr, size_t, size, void *, ptr, void *, caller),
 	TP_FIELDS(
 		ctf_integer_hex(void *, in_ptr, in_ptr)
@@ -69,7 +69,7 @@ TRACEPOINT_EVENT(ust_libc, realloc,
 	)
 )
 
-TRACEPOINT_EVENT(ust_libc, memalign,
+TRACEPOINT_EVENT(lttng_ust_libc, memalign,
 	TP_ARGS(size_t, alignment, size_t, size, void *, ptr, void *, caller),
 	TP_FIELDS(
 		ctf_integer(size_t, alignment, alignment)
@@ -79,7 +79,7 @@ TRACEPOINT_EVENT(ust_libc, memalign,
 	)
 )
 
-TRACEPOINT_EVENT(ust_libc, posix_memalign,
+TRACEPOINT_EVENT(lttng_ust_libc, posix_memalign,
 	TP_ARGS(void *, out_ptr, size_t, alignment, size_t, size, int, result, void *, caller),
 	TP_FIELDS(
 		ctf_integer_hex(void *, out_ptr, out_ptr)

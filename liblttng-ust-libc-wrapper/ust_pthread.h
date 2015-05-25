@@ -1,5 +1,5 @@
 #undef TRACEPOINT_PROVIDER
-#define TRACEPOINT_PROVIDER ust_pthread
+#define TRACEPOINT_PROVIDER lttng_ust_pthread
 
 #if !defined(_TRACEPOINT_UST_PTHREAD_H) || defined(TRACEPOINT_HEADER_MULTI_READ)
 #define _TRACEPOINT_UST_PTHREAD_H
@@ -32,14 +32,14 @@ extern "C" {
 
 #include <lttng/tracepoint.h>
 
-TRACEPOINT_EVENT(ust_pthread, pthread_mutex_lock_req,
+TRACEPOINT_EVENT(lttng_ust_pthread, pthread_mutex_lock_req,
 	TP_ARGS(pthread_mutex_t *, mutex),
 	TP_FIELDS(
 		ctf_integer_hex(void *, mutex, mutex)
 	)
 )
 
-TRACEPOINT_EVENT(ust_pthread, pthread_mutex_lock_acq,
+TRACEPOINT_EVENT(lttng_ust_pthread, pthread_mutex_lock_acq,
 	TP_ARGS(pthread_mutex_t *, mutex, int, status),
 	TP_FIELDS(
 		ctf_integer_hex(void *, mutex, mutex)
@@ -47,7 +47,7 @@ TRACEPOINT_EVENT(ust_pthread, pthread_mutex_lock_acq,
 	)
 )
 
-TRACEPOINT_EVENT(ust_pthread, pthread_mutex_trylock,
+TRACEPOINT_EVENT(lttng_ust_pthread, pthread_mutex_trylock,
 	TP_ARGS(pthread_mutex_t *, mutex, int, status),
 	TP_FIELDS(
 		ctf_integer_hex(void *, mutex, mutex)
@@ -55,7 +55,7 @@ TRACEPOINT_EVENT(ust_pthread, pthread_mutex_trylock,
 	)
 )
 
-TRACEPOINT_EVENT(ust_pthread, pthread_mutex_unlock,
+TRACEPOINT_EVENT(lttng_ust_pthread, pthread_mutex_unlock,
 	TP_ARGS(pthread_mutex_t *, mutex, int, status),
 	TP_FIELDS(
 		ctf_integer_hex(void *, mutex, mutex)

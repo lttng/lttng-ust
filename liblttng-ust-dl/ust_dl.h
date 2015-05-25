@@ -1,8 +1,8 @@
 #undef TRACEPOINT_PROVIDER
-#define TRACEPOINT_PROVIDER ust_baddr
+#define TRACEPOINT_PROVIDER lttng_ust_dl
 
-#if !defined(_TRACEPOINT_UST_BADDR_H) || defined(TRACEPOINT_HEADER_MULTI_READ)
-#define _TRACEPOINT_UST_BADDR_H
+#if !defined(_TRACEPOINT_UST_DL_H) || defined(TRACEPOINT_HEADER_MULTI_READ)
+#define _TRACEPOINT_UST_DL_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,10 +33,10 @@ extern "C" {
 #include <stdint.h>
 #include <unistd.h>
 
-#define LTTNG_UST_BADDR_PROVIDER
+#define LTTNG_UST_DL_PROVIDER
 #include <lttng/tracepoint.h>
 
-TRACEPOINT_EVENT(ust_baddr, push,
+TRACEPOINT_EVENT(lttng_ust_dl, dlopen,
 	TP_ARGS(void *, baddr, const char*, sopath, int64_t, size, int64_t, mtime),
 	TP_FIELDS(
 		ctf_integer_hex(void *, baddr, baddr)
@@ -46,17 +46,17 @@ TRACEPOINT_EVENT(ust_baddr, push,
 	)
 )
 
-TRACEPOINT_EVENT(ust_baddr, pop,
+TRACEPOINT_EVENT(lttng_ust_dl, dlclose,
 	TP_ARGS(void *, baddr),
 	TP_FIELDS(
 		ctf_integer_hex(void *, baddr, baddr)
 	)
 )
 
-#endif /* _TRACEPOINT_UST_BADDR_H */
+#endif /* _TRACEPOINT_UST_DL_H */
 
 #undef TRACEPOINT_INCLUDE
-#define TRACEPOINT_INCLUDE "./ust_baddr.h"
+#define TRACEPOINT_INCLUDE "./ust_dl.h"
 
 /* This part must be outside ifdef protection */
 #include <lttng/tracepoint-event.h>

@@ -35,7 +35,7 @@
 #include <lttng/ust.h>
 
 #define TRACEPOINT_DEFINE
-#include "ust_baddr.h"
+#include "ust_dl.h"
 
 static void *(*__lttng_ust_plibc_dlopen)(const char *filename, int flag);
 static int (*__lttng_ust_plibc_dlclose)(void *handle);
@@ -67,7 +67,7 @@ int _lttng_ust_dl_libc_dlclose(void *handle)
 }
 
 static
-void lttng_ust_baddr_push(void *so_base, const char *so_name)
+void lttng_ust_dl_dlopen(void *so_base, const char *so_name)
 {
 	char resolved_path[PATH_MAX];
 	struct stat sostat;
@@ -82,7 +82,7 @@ void lttng_ust_baddr_push(void *so_base, const char *so_name)
 		return;
 	}
 
-	tracepoint(ust_baddr, push,
+	tracepoint(lttng_ust_dl, dlopen,
 		so_base, resolved_path, sostat.st_size, sostat.st_mtime);
 	return;
 }
@@ -94,7 +94,7 @@ void *dlopen(const char *filename, int flag)
 		struct link_map *p = NULL;
 		if (dlinfo(handle, RTLD_DI_LINKMAP, &p) != -1 && p != NULL
 				&& p->l_addr != 0)
-			lttng_ust_baddr_push((void *) p->l_addr, p->l_name);
+			lttng_ust_dl_dlopen((void *) p->l_addr, p->l_name);
 	}
 	return handle;
 }
@@ -105,7 +105,7 @@ int dlclose(void *handle)
 		struct link_map *p = NULL;
 		if (dlinfo(handle, RTLD_DI_LINKMAP, &p) != -1 && p != NULL
 				&& p->l_addr != 0)
-			tracepoint(ust_baddr, pop, (void *) p->l_addr);
+			tracepoint(lttng_ust_dl, dlclose, (void *) p->l_addr);
 	}
 	return _lttng_ust_dl_libc_dlclose(handle);
 }
