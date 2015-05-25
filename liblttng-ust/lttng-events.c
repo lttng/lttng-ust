@@ -54,7 +54,7 @@
 #include "tracepoint-internal.h"
 #include "lttng-tracer.h"
 #include "lttng-tracer-core.h"
-#include "lttng-ust-baddr.h"
+#include "lttng-ust-statedump.h"
 #include "wait.h"
 #include "../libringbuffer/shm.h"
 #include "jhash.h"
@@ -683,7 +683,7 @@ void lttng_handle_pending_statedump(void *owner)
 	struct lttng_session *session;
 
 	/* Execute state dump */
-	lttng_ust_baddr_statedump(owner);
+	do_lttng_ust_statedump(owner);
 
 	/* Clear pending state dump */
 	if (ust_lock()) {

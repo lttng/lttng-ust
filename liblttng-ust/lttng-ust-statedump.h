@@ -1,5 +1,5 @@
-#ifndef LTTNG_UST_BADDR_H
-#define LTTNG_UST_BADDR_H
+#ifndef LTTNG_UST_STATEDUMP_H
+#define LTTNG_UST_STATEDUMP_H
 
 /*
  * Copyright (C) 2013  Paul Woegerer <paul_woegerer@mentor.com>
@@ -21,9 +21,9 @@
 
 #include <lttng/ust-events.h>
 
-void lttng_ust_baddr_statedump_init(void);
-void lttng_ust_baddr_statedump_destroy(void);
+void lttng_ust_statedump_init(void);
+void lttng_ust_statedump_destroy(void);
 
-int lttng_ust_baddr_statedump(void *owner);
+int do_lttng_ust_statedump(void *owner);
 
-#endif /* LTTNG_UST_BADDR_H */
+#endif /* LTTNG_UST_STATEDUMP_H */

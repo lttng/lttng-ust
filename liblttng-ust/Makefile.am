@@ -35,9 +35,9 @@ liblttng_ust_runtime_la_SOURCES = \
 	lttng-filter-interpreter.c \
 	filter-bytecode.h \
 	lttng-hash-helper.h \
-	lttng-ust-baddr.c \
-	lttng-ust-baddr.h \
-	ust_baddr_statedump.h \
+	lttng-ust-statedump.c \
+	lttng-ust-statedump.h \
+	lttng-ust-statedump-provider.h \
 	tracepoint-internal.h \
 	clock.h \
 	compat.h \
