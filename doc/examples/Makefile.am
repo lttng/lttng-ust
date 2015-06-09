@@ -4,6 +4,7 @@ doc_examples_gen_tpdir = ${docdir}/examples/gen-tp
 doc_examples_demodir = ${docdir}/examples/demo
 doc_examples_hello_static_libdir = ${docdir}/examples/hello-static-lib
 doc_examples_demo_tracefdir = ${docdir}/examples/demo-tracef
+doc_examples_demo_tracelogdir = ${docdir}/examples/demo-tracelog
 doc_examples_clock_overridedir = ${docdir}/examples/clock-override
 doc_examples_getcpu_overridedir = ${docdir}/examples/getcpu-override
 
@@ -45,6 +46,10 @@ dist_doc_examples_demo_tracef_DATA = demo-tracef/Makefile \
 	demo-tracef/demo-tracef.c \
 	demo-tracef/README
 
+dist_doc_examples_demo_tracelog_DATA = demo-tracelog/Makefile \
+	demo-tracelog/demo-tracelog.c \
+	demo-tracelog/README
+
 dist_doc_examples_clock_override_DATA = clock-override/Makefile \
 	clock-override/lttng-ust-clock-override-example.c \
 	clock-override/run-clock-override \
@@ -61,7 +66,7 @@ if NO_SHARED
 else
 # Copies are for VPATH build support
 SUBDIRS_PROXY = easy-ust demo hello-static-lib demo-tracef clock-override \
-		getcpu-override
+		getcpu-override demo-tracelog
 
 if BUILD_GEN_TP_EXAMPLES
 SUBDIRS_PROXY += gen-tp
