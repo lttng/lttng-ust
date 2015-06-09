@@ -39,7 +39,8 @@ void _lttng_ust_tracef(const char *fmt, ...)
 	/* len does not include the final \0 */
 	if (len < 0)
 		goto end;
-	__tracepoint_cb_lttng_ust_tracef___event(msg, len);
+	__tracepoint_cb_lttng_ust_tracef___event(msg, len,
+		__builtin_return_address(0));
 	free(msg);
 end:
 	va_end(ap);

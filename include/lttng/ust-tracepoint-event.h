@@ -565,6 +565,13 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 #define _TP_SESSION_CHECK(session, csession)   1
 #endif /* TP_SESSION_CHECK */
 
+#undef _TP_IP_PARAM
+#ifdef TP_IP_PARAM
+#define _TP_IP_PARAM()		ip
+#else /* TP_IP_PARAM */
+#define _TP_IP_PARAM()		__builtin_return_address(0)
+#endif /* TP_IP_PARAM */
+
 /*
  * Using twice size for filter stack data to hold size and pointer for
  * each field (worse case). For integers, max size required is 64-bit.
@@ -621,7 +628,7 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 	__event_align = __event_get_align__##_provider##___##_name(_TP_ARGS_VAR(_args)); \
 	lib_ring_buffer_ctx_init(&__ctx, __chan->chan, __event, __event_len,  \
 				 __event_align, -1, __chan->handle);	      \
-	__ctx.ip = __builtin_return_address(0);				      \
+	__ctx.ip = _TP_IP_PARAM();					      \
 	__ret = __chan->ops->event_reserve(&__ctx, __event->id);	      \
 	if (__ret < 0)							      \
 		return;							      \
