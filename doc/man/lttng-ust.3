@@ -48,6 +48,40 @@ whereas tracepoint.h is meant for thorough instrumentation of a code
 base to be integrated with an upstream project.
 .PP
 
+.SH "USAGE WITH TRACELOG"
+.PP
+If you want to migrate existing logging (info, errors, ...)
+to LTTng UST, you can use the tracelog() interface.
+To do it, in a nutshell:
+
+1) #include <lttng/tracelog.h>
+
+2) /* in your code, use like a printf, with extra loglevel info. */
+   tracelog(info, "Message with integer %d", 1234);
+
+3) Link your program against liblttng-ust.so.
+
+4) Enable UST events when tracing with the following sequence of commands
+   from lttng-tools:
+
+   lttng create
+   lttng enable-event -u "lttng_ust_tracelog:*"
+   lttng start
+   [... run your program ...]
+   lttng stop
+   lttng view
+
+That's it!
+
+You can replace the enable-event line above with a selection of
+loglevels, e.g.:
+
+   lttng enable-event -u -a --loglevel INFO
+
+Which will gather all events from INFO and more important loglevels.
+
+.PP
+
 .SH "USAGE WITH TRACEPOINT"
 .PP
 The simple way to generate the lttng-ust tracepoint probes is to use the
