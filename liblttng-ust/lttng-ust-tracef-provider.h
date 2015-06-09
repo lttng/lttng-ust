@@ -30,6 +30,7 @@
 
 #endif /* _TRACEPOINT_LTTNG_UST_TRACEF_PROVIDER_H */
 
+#define TP_IP_PARAM	/* IP context received as parameter */
 #undef TRACEPOINT_INCLUDE
 #define TRACEPOINT_INCLUDE "./lttng-ust-tracef.h"
 

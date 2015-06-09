@@ -24,7 +24,7 @@
 #include <stdarg.h>
 
 TRACEPOINT_EVENT(lttng_ust_tracef, event,
-	TP_ARGS(const char *, msg, unsigned int, len),
+	TP_ARGS(const char *, msg, unsigned int, len, void *, ip),
 	TP_FIELDS(
 		ctf_sequence_text(char, msg, msg, unsigned int, len)
 	)
