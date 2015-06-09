@@ -33,28 +33,28 @@ extern "C" {
 	extern void _lttng_ust_tracelog_##level(const char *file, \
 		int line, const char *func, const char *fmt, ...)
 
-TP_TRACELOG_CB_TEMPLATE(emerg);
-TP_TRACELOG_CB_TEMPLATE(alert);
-TP_TRACELOG_CB_TEMPLATE(crit);
-TP_TRACELOG_CB_TEMPLATE(err);
-TP_TRACELOG_CB_TEMPLATE(warning);
-TP_TRACELOG_CB_TEMPLATE(notice);
-TP_TRACELOG_CB_TEMPLATE(info);
-TP_TRACELOG_CB_TEMPLATE(debug_system);
-TP_TRACELOG_CB_TEMPLATE(debug_program);
-TP_TRACELOG_CB_TEMPLATE(debug_process);
-TP_TRACELOG_CB_TEMPLATE(debug_module);
-TP_TRACELOG_CB_TEMPLATE(debug_unit);
-TP_TRACELOG_CB_TEMPLATE(debug_function);
-TP_TRACELOG_CB_TEMPLATE(debug_line);
-TP_TRACELOG_CB_TEMPLATE(debug);
+TP_TRACELOG_CB_TEMPLATE(TRACE_EMERG);
+TP_TRACELOG_CB_TEMPLATE(TRACE_ALERT);
+TP_TRACELOG_CB_TEMPLATE(TRACE_CRIT);
+TP_TRACELOG_CB_TEMPLATE(TRACE_ERR);
+TP_TRACELOG_CB_TEMPLATE(TRACE_WARNING);
+TP_TRACELOG_CB_TEMPLATE(TRACE_NOTICE);
+TP_TRACELOG_CB_TEMPLATE(TRACE_INFO);
+TP_TRACELOG_CB_TEMPLATE(TRACE_DEBUG_SYSTEM);
+TP_TRACELOG_CB_TEMPLATE(TRACE_DEBUG_PROGRAM);
+TP_TRACELOG_CB_TEMPLATE(TRACE_DEBUG_PROCESS);
+TP_TRACELOG_CB_TEMPLATE(TRACE_DEBUG_MODULE);
+TP_TRACELOG_CB_TEMPLATE(TRACE_DEBUG_UNIT);
+TP_TRACELOG_CB_TEMPLATE(TRACE_DEBUG_FUNCTION);
+TP_TRACELOG_CB_TEMPLATE(TRACE_DEBUG_LINE);
+TP_TRACELOG_CB_TEMPLATE(TRACE_DEBUG);
 
 #undef TP_TRACELOG_CB_TEMPLATE
 
 #define tracelog(level, fmt, ...)					\
 	do {								\
 		STAP_PROBEV(tracepoint_lttng_ust_tracelog, level, ## __VA_ARGS__); \
-		if (caa_unlikely(__tracepoint_lttng_ust_tracelog___## level.state)) \
+		if (caa_unlikely(__tracepoint_lttng_ust_tracelog___##level.state)) \
 			_lttng_ust_tracelog_##level(__FILE__, __LINE__, __func__, \
 				fmt, ## __VA_ARGS__); \
 	} while (0)

@@ -37,7 +37,7 @@ int main(int argc, char **argv)
 
 	fprintf(stderr, "Tracing... ");
 	for (i = 0; i < 5; i++) {
-		tracelog(err, "Error condition %d", i);
+		tracelog(TRACE_ERR, "Error condition %d", i);
 	}
 	fprintf(stderr, " done.\n");
 	return 0;

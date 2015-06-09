@@ -57,7 +57,7 @@ To do it, in a nutshell:
 1) #include <lttng/tracelog.h>
 
 2) /* in your code, use like a printf, with extra loglevel info. */
-   tracelog(info, "Message with integer %d", 1234);
+   tracelog(TRACE_INFO, "Message with integer %d", 1234);
 
 3) Link your program against liblttng-ust.so.
 
@@ -76,9 +76,10 @@ That's it!
 You can replace the enable-event line above with a selection of
 loglevels, e.g.:
 
-   lttng enable-event -u -a --loglevel INFO
+   lttng enable-event -u -a --loglevel TRACE_INFO
 
-Which will gather all events from INFO and more important loglevels.
+Which will gather all events from TRACE_INFO and more important
+loglevels.
 
 .PP
 
