@@ -24,6 +24,7 @@
 
 #define TRACEPOINT_DEFINE
 #define TRACEPOINT_CREATE_PROBES
+#define TP_IP_PARAM func_addr
 #include "lttng-ust-cyg-profile.h"
 
 void __cyg_profile_func_enter(void *this_fn, void *call_site)

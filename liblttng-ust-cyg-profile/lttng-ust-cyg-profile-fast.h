@@ -44,7 +44,7 @@ TRACEPOINT_LOGLEVEL(lttng_ust_cyg_profile_fast, func_entry,
 	TRACE_DEBUG_FUNCTION)
 
 TRACEPOINT_EVENT(lttng_ust_cyg_profile_fast, func_exit,
-	TP_ARGS(void),
+	TP_ARGS(void *, func_addr),
 	TP_FIELDS()
 )
 
