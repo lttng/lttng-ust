@@ -33,7 +33,7 @@ extern "C" {
 #include <lttng/tracepoint.h>
 
 TRACEPOINT_EVENT(ust_libc, malloc,
-	TP_ARGS(size_t, size, void *, ptr),
+	TP_ARGS(size_t, size, void *, ptr, void *, ip),
 	TP_FIELDS(
 		ctf_integer(size_t, size, size)
 		ctf_integer_hex(void *, ptr, ptr)
@@ -41,14 +41,14 @@ TRACEPOINT_EVENT(ust_libc, malloc,
 )
 
 TRACEPOINT_EVENT(ust_libc, free,
-	TP_ARGS(void *, ptr),
+	TP_ARGS(void *, ptr, void *, ip),
 	TP_FIELDS(
 		ctf_integer_hex(void *, ptr, ptr)
 	)
 )
 
 TRACEPOINT_EVENT(ust_libc, calloc,
-	TP_ARGS(size_t, nmemb, size_t, size, void *, ptr),
+	TP_ARGS(size_t, nmemb, size_t, size, void *, ptr, void *, ip),
 	TP_FIELDS(
 		ctf_integer(size_t, nmemb, nmemb)
 		ctf_integer(size_t, size, size)
@@ -57,7 +57,7 @@ TRACEPOINT_EVENT(ust_libc, calloc,
 )
 
 TRACEPOINT_EVENT(ust_libc, realloc,
-	TP_ARGS(void *, in_ptr, size_t, size, void *, ptr),
+	TP_ARGS(void *, in_ptr, size_t, size, void *, ptr, void *, ip),
 	TP_FIELDS(
 		ctf_integer_hex(void *, in_ptr, in_ptr)
 		ctf_integer(size_t, size, size)
@@ -66,7 +66,7 @@ TRACEPOINT_EVENT(ust_libc, realloc,
 )
 
 TRACEPOINT_EVENT(ust_libc, memalign,
-	TP_ARGS(size_t, alignment, size_t, size, void *, ptr),
+	TP_ARGS(size_t, alignment, size_t, size, void *, ptr, void *, ip),
 	TP_FIELDS(
 		ctf_integer(size_t, alignment, alignment)
 		ctf_integer(size_t, size, size)
@@ -75,7 +75,8 @@ TRACEPOINT_EVENT(ust_libc, memalign,
 )
 
 TRACEPOINT_EVENT(ust_libc, posix_memalign,
-	TP_ARGS(void *, out_ptr, size_t, alignment, size_t, size, int, result),
+	TP_ARGS(void *, out_ptr, size_t, alignment, size_t, size, int, result,
+		void *, ip),
 	TP_FIELDS(
 		ctf_integer_hex(void *, out_ptr, out_ptr)
 		ctf_integer(size_t, alignment, alignment)

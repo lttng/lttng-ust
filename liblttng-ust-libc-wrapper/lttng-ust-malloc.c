@@ -31,6 +31,7 @@
 
 #define TRACEPOINT_DEFINE
 #define TRACEPOINT_CREATE_PROBES
+#define TP_IP_PARAM ip
 #include "ust_libc.h"
 
 #define STATIC_CALLOC_LEN 4096
@@ -260,7 +261,8 @@ void *malloc(size_t size)
 	}
 	retval = cur_alloc.malloc(size);
 	if (URCU_TLS(malloc_nesting) == 1) {
-		tracepoint(ust_libc, malloc, size, retval);
+		tracepoint(ust_libc, malloc, size, retval,
+			__builtin_return_address(0));
 	}
 	URCU_TLS(malloc_nesting)--;
 	return retval;
@@ -279,7 +281,8 @@ void free(void *ptr)
 	}
 
 	if (URCU_TLS(malloc_nesting) == 1) {
-		tracepoint(ust_libc, free, ptr);
+		tracepoint(ust_libc, free, ptr,
+			__builtin_return_address(0));
 	}
 
 	if (cur_alloc.free == NULL) {
@@ -308,7 +311,8 @@ void *calloc(size_t nmemb, size_t size)
 	}
 	retval = cur_alloc.calloc(nmemb, size);
 	if (URCU_TLS(malloc_nesting) == 1) {
-		tracepoint(ust_libc, calloc, nmemb, size, retval);
+		tracepoint(ust_libc, calloc, nmemb, size, retval,
+			__builtin_return_address(0));
 	}
 	URCU_TLS(malloc_nesting)--;
 	return retval;
@@ -360,7 +364,8 @@ void *realloc(void *ptr, size_t size)
 	retval = cur_alloc.realloc(ptr, size);
 end:
 	if (URCU_TLS(malloc_nesting) == 1) {
-		tracepoint(ust_libc, realloc, ptr, size, retval);
+		tracepoint(ust_libc, realloc, ptr, size, retval,
+			__builtin_return_address(0));
 	}
 	URCU_TLS(malloc_nesting)--;
 	return retval;
@@ -380,7 +385,8 @@ void *memalign(size_t alignment, size_t size)
 	}
 	retval = cur_alloc.memalign(alignment, size);
 	if (URCU_TLS(malloc_nesting) == 1) {
-		tracepoint(ust_libc, memalign, alignment, size, retval);
+		tracepoint(ust_libc, memalign, alignment, size, retval,
+			__builtin_return_address(0));
 	}
 	URCU_TLS(malloc_nesting)--;
 	return retval;
@@ -401,7 +407,7 @@ int posix_memalign(void **memptr, size_t alignment, size_t size)
 	retval = cur_alloc.posix_memalign(memptr, alignment, size);
 	if (URCU_TLS(malloc_nesting) == 1) {
 		tracepoint(ust_libc, posix_memalign, *memptr, alignment, size,
-			retval);
+			retval, __builtin_return_address(0));
 	}
 	URCU_TLS(malloc_nesting)--;
 	return retval;
