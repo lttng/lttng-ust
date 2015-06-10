@@ -33,14 +33,14 @@ extern "C" {
 #include <lttng/tracepoint.h>
 
 TRACEPOINT_EVENT(ust_pthread, pthread_mutex_lock_req,
-	TP_ARGS(pthread_mutex_t *, mutex),
+	TP_ARGS(pthread_mutex_t *, mutex, void *, ip),
 	TP_FIELDS(
 		ctf_integer_hex(void *, mutex, mutex)
 	)
 )
 
 TRACEPOINT_EVENT(ust_pthread, pthread_mutex_lock_acq,
-	TP_ARGS(pthread_mutex_t *, mutex, int, status),
+	TP_ARGS(pthread_mutex_t *, mutex, int, status, void *, ip),
 	TP_FIELDS(
 		ctf_integer_hex(void *, mutex, mutex)
 		ctf_integer(int, status, status)
@@ -48,7 +48,7 @@ TRACEPOINT_EVENT(ust_pthread, pthread_mutex_lock_acq,
 )
 
 TRACEPOINT_EVENT(ust_pthread, pthread_mutex_trylock,
-	TP_ARGS(pthread_mutex_t *, mutex, int, status),
+	TP_ARGS(pthread_mutex_t *, mutex, int, status, void *, ip),
 	TP_FIELDS(
 		ctf_integer_hex(void *, mutex, mutex)
 		ctf_integer(int, status, status)
@@ -56,7 +56,7 @@ TRACEPOINT_EVENT(ust_pthread, pthread_mutex_trylock,
 )
 
 TRACEPOINT_EVENT(ust_pthread, pthread_mutex_unlock,
-	TP_ARGS(pthread_mutex_t *, mutex, int, status),
+	TP_ARGS(pthread_mutex_t *, mutex, int, status, void *, ip),
 	TP_FIELDS(
 		ctf_integer_hex(void *, mutex, mutex)
 		ctf_integer(int, status, status)
