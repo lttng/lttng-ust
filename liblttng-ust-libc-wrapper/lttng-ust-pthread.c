@@ -22,6 +22,7 @@
 
 #define TRACEPOINT_DEFINE
 #define TRACEPOINT_CREATE_PROBES
+#define TP_IP_PARAM ip
 #include "ust_pthread.h"
 
 static __thread int thread_in_trace;
@@ -46,9 +47,11 @@ int pthread_mutex_lock(pthread_mutex_t *mutex)
 	}
 
 	thread_in_trace = 1;
-	tracepoint(ust_pthread, pthread_mutex_lock_req, mutex);
+	tracepoint(ust_pthread, pthread_mutex_lock_req, mutex,
+		__builtin_return_address(0));
 	retval = mutex_lock(mutex);
-	tracepoint(ust_pthread, pthread_mutex_lock_acq, mutex, retval);
+	tracepoint(ust_pthread, pthread_mutex_lock_acq, mutex, retval,
+		__builtin_return_address(0));
 	thread_in_trace = 0;
 	return retval;
 }
@@ -74,7 +77,8 @@ int pthread_mutex_trylock(pthread_mutex_t *mutex)
 
 	thread_in_trace = 1;
 	retval = mutex_trylock(mutex);
-	tracepoint(ust_pthread, pthread_mutex_trylock, mutex, retval);
+	tracepoint(ust_pthread, pthread_mutex_trylock, mutex, retval,
+		__builtin_return_address(0));
 	thread_in_trace = 0;
 	return retval;
 }
@@ -100,7 +104,8 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex)
 
 	thread_in_trace = 1;
 	retval = mutex_unlock(mutex);
-	tracepoint(ust_pthread, pthread_mutex_unlock, mutex, retval);
+	tracepoint(ust_pthread, pthread_mutex_unlock, mutex, retval,
+		__builtin_return_address(0));
 	thread_in_trace = 0;
 	return retval;
 }
