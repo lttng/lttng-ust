@@ -37,7 +37,8 @@ extern "C" {
 #include <lttng/tracepoint.h>
 
 TRACEPOINT_EVENT(lttng_ust_dl, dlopen,
-	TP_ARGS(void *, baddr, const char*, sopath, int64_t, size, int64_t, mtime),
+	TP_ARGS(void *, baddr, const char*, sopath, int64_t, size,
+		int64_t, mtime, void *, ip),
 	TP_FIELDS(
 		ctf_integer_hex(void *, baddr, baddr)
 		ctf_string(sopath, sopath)
@@ -47,7 +48,7 @@ TRACEPOINT_EVENT(lttng_ust_dl, dlopen,
 )
 
 TRACEPOINT_EVENT(lttng_ust_dl, dlclose,
-	TP_ARGS(void *, baddr),
+	TP_ARGS(void *, baddr, void *, ip),
 	TP_FIELDS(
 		ctf_integer_hex(void *, baddr, baddr)
 	)

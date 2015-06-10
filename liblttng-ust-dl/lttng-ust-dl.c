@@ -67,7 +67,7 @@ int _lttng_ust_dl_libc_dlclose(void *handle)
 }
 
 static
-void lttng_ust_dl_dlopen(void *so_base, const char *so_name)
+void lttng_ust_dl_dlopen(void *so_base, const char *so_name, void *ip)
 {
 	char resolved_path[PATH_MAX];
 	struct stat sostat;
@@ -83,7 +83,7 @@ void lttng_ust_dl_dlopen(void *so_base, const char *so_name)
 	}
 
 	tracepoint(lttng_ust_dl, dlopen,
-		so_base, resolved_path, sostat.st_size, sostat.st_mtime);
+		so_base, resolved_path, sostat.st_size, sostat.st_mtime, ip);
 	return;
 }
 
@@ -94,7 +94,8 @@ void *dlopen(const char *filename, int flag)
 		struct link_map *p = NULL;
 		if (dlinfo(handle, RTLD_DI_LINKMAP, &p) != -1 && p != NULL
 				&& p->l_addr != 0)
-			lttng_ust_dl_dlopen((void *) p->l_addr, p->l_name);
+			lttng_ust_dl_dlopen((void *) p->l_addr, p->l_name,
+				__builtin_return_address(0));
 	}
 	return handle;
 }
@@ -105,7 +106,8 @@ int dlclose(void *handle)
 		struct link_map *p = NULL;
 		if (dlinfo(handle, RTLD_DI_LINKMAP, &p) != -1 && p != NULL
 				&& p->l_addr != 0)
-			tracepoint(lttng_ust_dl, dlclose, (void *) p->l_addr);
+			tracepoint(lttng_ust_dl, dlclose, (void *) p->l_addr,
+				__builtin_return_address(0));
 	}
 	return _lttng_ust_dl_libc_dlclose(handle);
 }

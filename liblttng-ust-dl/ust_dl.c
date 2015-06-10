@@ -18,4 +18,5 @@
 
 #define _LGPL_SOURCE
 #define TRACEPOINT_CREATE_PROBES
+#define TP_IP_PARAM ip
 #include "ust_dl.h"
