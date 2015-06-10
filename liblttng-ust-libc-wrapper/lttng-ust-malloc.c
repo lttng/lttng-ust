@@ -31,7 +31,7 @@
 
 #define TRACEPOINT_DEFINE
 #define TRACEPOINT_CREATE_PROBES
-#define TP_IP_PARAM caller
+#define TP_IP_PARAM ip
 #include "ust_libc.h"
 
 #define STATIC_CALLOC_LEN 4096
