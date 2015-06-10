@@ -23,16 +23,21 @@
 #include <lttng/tracepoint.h>
 #include <stdarg.h>
 
+TRACEPOINT_EVENT_CLASS(lttng_ust_tracelog, tlclass,
+	TP_ARGS(const char *, file, int, line, const char *, func,
+		const char *, msg, unsigned int, len, void *, ip),
+	TP_FIELDS(
+		ctf_integer(int, line, line)
+		ctf_string(file, file)
+		ctf_string(func, func)
+		ctf_sequence_text(char, msg, msg, unsigned int, len)
+	)
+)
+
 #define TP_TRACELOG_TEMPLATE(_level_enum) \
-	TRACEPOINT_EVENT(lttng_ust_tracelog, _level_enum, \
+	TRACEPOINT_EVENT_INSTANCE(lttng_ust_tracelog, tlclass, _level_enum, \
 		TP_ARGS(const char *, file, int, line, const char *, func, \
-			const char *, msg, unsigned int, len, void *, ip), \
-		TP_FIELDS( \
-			ctf_integer(int, line, line) \
-			ctf_string(file, file) \
-			ctf_string(func, func) \
-			ctf_sequence_text(char, msg, msg, unsigned int, len) \
-		) \
+			const char *, msg, unsigned int, len, void *, ip) \
 	) \
 	TRACEPOINT_LOGLEVEL(lttng_ust_tracelog, _level_enum, _level_enum)
 
