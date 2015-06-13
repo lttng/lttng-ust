@@ -817,6 +817,8 @@ int lttng_attach_context(struct lttng_ust_context *context_param,
 		return lttng_add_procname_to_ctx(ctx);
 	case LTTNG_UST_CONTEXT_IP:
 		return lttng_add_ip_to_ctx(ctx);
+	case LTTNG_UST_CONTEXT_CPU_ID:
+		return lttng_add_cpu_id_to_ctx(ctx);
 	default:
 		return -EINVAL;
 	}

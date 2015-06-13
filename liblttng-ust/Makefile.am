@@ -26,6 +26,7 @@ liblttng_ust_runtime_la_SOURCES = \
 	lttng-context-pthread-id.c \
 	lttng-context-procname.c \
 	lttng-context-ip.c \
+	lttng-context-cpu-id.c \
 	lttng-context.c \
 	lttng-events.c \
 	lttng-filter.c \

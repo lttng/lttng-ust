@@ -236,6 +236,10 @@ void lttng_context_init(void)
 	if (ret) {
 		WARN("Cannot add context lttng_add_procname_to_ctx");
 	}
+	ret = lttng_add_cpu_id_to_ctx(&lttng_static_ctx);
+	if (ret) {
+		WARN("Cannot add context lttng_add_cpu_id_to_ctx");
+	}
 }
 
 void lttng_context_exit(void)
