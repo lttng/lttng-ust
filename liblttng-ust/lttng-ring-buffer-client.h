@@ -45,6 +45,7 @@ struct packet_header {
 					 */
 	uint8_t uuid[LTTNG_UST_UUID_LEN];
 	uint32_t stream_id;
+	uint64_t stream_instance_id;
 
 	struct {
 		/* Stream packet context */
@@ -345,6 +346,7 @@ static void client_buffer_begin(struct lttng_ust_lib_ring_buffer *buf, uint64_t 
 	header->magic = CTF_MAGIC_NUMBER;
 	memcpy(header->uuid, lttng_chan->uuid, sizeof(lttng_chan->uuid));
 	header->stream_id = lttng_chan->id;
+	header->stream_instance_id = buf->backend.cpu;
 	header->ctx.timestamp_begin = tsc;
 	header->ctx.timestamp_end = 0;
 	header->ctx.content_size = ~0ULL; /* for debugging */
