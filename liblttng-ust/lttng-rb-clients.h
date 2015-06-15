@@ -43,6 +43,8 @@ struct lttng_ust_client_lib_ring_buffer_client_cb {
 	int (*current_timestamp) (struct lttng_ust_lib_ring_buffer *buf,
 			struct lttng_ust_shm_handle *handle,
 			uint64_t *ts);
+	int (*sequence_number) (struct lttng_ust_lib_ring_buffer *buf,
+		struct lttng_ust_shm_handle *handle, uint64_t *seq);
 };
 
 #endif /* _LTTNG_RB_CLIENT_H */

@@ -1708,6 +1708,23 @@ int ustctl_get_current_timestamp(struct ustctl_consumer_stream *stream,
 	return client_cb->current_timestamp(buf, handle, ts);
 }
 
+int ustctl_get_sequence_number(struct ustctl_consumer_stream *stream,
+		uint64_t *seq)
+{
+	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
+	struct lttng_ust_lib_ring_buffer *buf;
+	struct lttng_ust_shm_handle *handle;
+
+	if (!stream || !seq)
+		return -EINVAL;
+	buf = stream->buf;
+	handle = stream->chan->chan->handle;
+	client_cb = get_client_cb(buf, handle);
+	if (!client_cb || !client_cb->sequence_number)
+		return -ENOSYS;
+	return client_cb->sequence_number(buf, handle, seq);
+}
+
 #if defined(__x86_64__) || defined(__i386__)
 
 int ustctl_has_perf_counters(void)

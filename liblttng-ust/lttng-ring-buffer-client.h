@@ -53,6 +53,7 @@ struct packet_header {
 		uint64_t timestamp_end;		/* Cycle count at subbuffer end */
 		uint64_t content_size;		/* Size of data in subbuffer */
 		uint64_t packet_size;		/* Subbuffer size (include padding) */
+		uint64_t packet_seq_num;	/* Packet sequence number */
 		unsigned long events_discarded;	/*
 						 * Events lost in this subbuffer since
 						 * the beginning of the trace.
@@ -339,6 +340,7 @@ static void client_buffer_begin(struct lttng_ust_lib_ring_buffer *buf, uint64_t 
 				subbuf_idx * chan->backend.subbuf_size,
 				handle);
 	struct lttng_channel *lttng_chan = channel_get_private(chan);
+	uint64_t cnt = shmp_index(handle, buf->backend.buf_cnt, subbuf_idx)->seq_cnt;
 
 	assert(header);
 	if (!header)
@@ -351,6 +353,7 @@ static void client_buffer_begin(struct lttng_ust_lib_ring_buffer *buf, uint64_t 
 	header->ctx.timestamp_end = 0;
 	header->ctx.content_size = ~0ULL; /* for debugging */
 	header->ctx.packet_size = ~0ULL;
+	header->ctx.packet_seq_num = chan->backend.num_subbuf * cnt + subbuf_idx;
 	header->ctx.events_discarded = 0;
 	header->ctx.cpu_id = buf->backend.cpu;
 }
@@ -506,6 +509,17 @@ static int client_current_timestamp(struct lttng_ust_lib_ring_buffer *buf,
 	return 0;
 }
 
+static int client_sequence_number(struct lttng_ust_lib_ring_buffer *buf,
+		struct lttng_ust_shm_handle *handle,
+		uint64_t *seq)
+{
+	struct packet_header *header;
+
+	header = client_packet_header(buf, handle);
+	*seq = header->ctx.packet_seq_num;
+	return 0;
+}
+
 static const
 struct lttng_ust_client_lib_ring_buffer_client_cb client_cb = {
 	.parent = {
@@ -526,6 +540,7 @@ struct lttng_ust_client_lib_ring_buffer_client_cb client_cb = {
 	.packet_size = client_packet_size,
 	.stream_id = client_stream_id,
 	.current_timestamp = client_current_timestamp,
+	.sequence_number = client_sequence_number,
 };
 
 static const struct lttng_ust_lib_ring_buffer_config client_config = {

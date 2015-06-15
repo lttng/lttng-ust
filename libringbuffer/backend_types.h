@@ -42,6 +42,16 @@ struct lttng_ust_lib_ring_buffer_backend_subbuffer {
 	unsigned long id;		/* backend subbuffer identifier */
 };
 
+struct lttng_ust_lib_ring_buffer_backend_counts {
+	/*
+	 * Counter specific to the sub-buffer location within the ring buffer.
+	 * The actual sequence number of the packet within the entire ring
+	 * buffer can be derived from the formula nr_subbuffers * seq_cnt +
+	 * subbuf_idx.
+	 */
+	uint64_t seq_cnt;               /* packet sequence number */
+};
+
 /*
  * Forward declaration of frontend-specific channel and ring_buffer.
  */
@@ -58,6 +68,8 @@ struct lttng_ust_lib_ring_buffer_backend {
 	DECLARE_SHMP(struct lttng_ust_lib_ring_buffer_backend_subbuffer, buf_wsb);
 	/* ring_buffer_backend_subbuffer for reader */
 	struct lttng_ust_lib_ring_buffer_backend_subbuffer buf_rsb;
+	/* Array of lib_ring_buffer_backend_counts for the packet counter */
+	DECLARE_SHMP(struct lttng_ust_lib_ring_buffer_backend_counts, buf_cnt);
 	/*
 	 * Pointer array of backend pages, for whole buffer.
 	 * Indexed by ring_buffer_backend_subbuffer identifier (id) index.

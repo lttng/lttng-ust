@@ -117,6 +117,14 @@ int lib_ring_buffer_backend_allocate(const struct lttng_ust_lib_ring_buffer_conf
 	else
 		bufb->buf_rsb.id = subbuffer_id(config, 0, 1, 0);
 
+	/* Allocate subbuffer packet counter table */
+	align_shm(shmobj, __alignof__(struct lttng_ust_lib_ring_buffer_backend_subbuffer));
+	set_shmp(bufb->buf_cnt, zalloc_shm(shmobj,
+				sizeof(struct lttng_ust_lib_ring_buffer_backend_counts)
+				* num_subbuf));
+	if (caa_unlikely(!shmp(handle, bufb->buf_cnt)))
+		goto free_wsb;
+
 	/* Assign pages to page index */
 	for (i = 0; i < num_subbuf_alloc; i++) {
 		struct lttng_ust_lib_ring_buffer_backend_pages_shmp *sbp;
@@ -141,6 +149,8 @@ int lib_ring_buffer_backend_allocate(const struct lttng_ust_lib_ring_buffer_conf
 	}
 	return 0;
 
+free_wsb:
+	/* bufb->buf_wsb will be freed by shm teardown */
 free_array:
 	/* bufb->array[i] will be freed by shm teardown */
 memory_map_error:
