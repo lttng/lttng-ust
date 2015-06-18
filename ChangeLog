@@ -1,3 +1,13 @@
+2015-06-18 lttng-ust 2.6.2
+	* Add aarch64 support to configure
+	* Fix: function instrumentation ip context
+	* Fix: liblttng-ust-dl ip context
+	* Fix: pthread wrapper ip context
+	* Fix: lttng-ust-malloc ip context
+	* Allow TP_IP_PARAM arg name to be configured
+	* Fix: fetch caller address from tracef()
+	* Fix: building probe providers with C++ compiler
+
 2015-04-29 lttng-ust 2.6.1
 	* Fix: use lttng_secure_getenv to handle env. vars. involving paths
 	* Fix: add missing getenv wrapper
