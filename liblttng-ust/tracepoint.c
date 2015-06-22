@@ -30,6 +30,7 @@
 #include <urcu/hlist.h>
 #include <urcu/uatomic.h>
 #include <urcu/compiler.h>
+#include <urcu/system.h>
 
 #include <lttng/tracepoint.h>
 #include <lttng/ust-abi.h>	/* for LTTNG_UST_SYM_NAME_LEN */
@@ -345,7 +346,7 @@ static void set_tracepoint(struct tracepoint_entry **entry,
 	 * is used.
 	 */
 	rcu_assign_pointer(elem->probes, (*entry)->probes);
-	elem->state = active;
+	CMM_STORE_SHARED(elem->state, active);
 }
 
 /*
@@ -356,7 +357,7 @@ static void set_tracepoint(struct tracepoint_entry **entry,
  */
 static void disable_tracepoint(struct tracepoint *elem)
 {
-	elem->state = 0;
+	CMM_STORE_SHARED(elem->state, 0);
 	rcu_assign_pointer(elem->probes, NULL);
 }
 
