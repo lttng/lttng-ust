@@ -28,6 +28,7 @@
 #include <lttng/tracepoint-types.h>
 #include <lttng/tracepoint-rcu.h>
 #include <urcu/compiler.h>
+#include <urcu/system.h>
 #include <dlfcn.h>	/* for dlopen */
 #include <string.h>	/* for memset */
 #include <lttng/ust-config.h>	/* for sdt */
@@ -47,7 +48,7 @@ extern "C" {
 #define tracepoint(provider, name, ...)					    \
 	do {								    \
 		STAP_PROBEV(provider, name, ## __VA_ARGS__);		    \
-		if (caa_unlikely(__tracepoint_##provider##___##name.state)) \
+		if (caa_unlikely(CMM_LOAD_SHARED(__tracepoint_##provider##___##name.state))) \
 			__tracepoint_cb_##provider##___##name(__VA_ARGS__); \
 	} while (0)
 
