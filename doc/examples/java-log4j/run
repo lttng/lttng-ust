@@ -8,15 +8,19 @@
 
 DIR=`dirname $0`
 JARFILE="liblttng-ust-agent.jar"
-LOG4J="/usr/local/share/java/log4j.jar:/usr/share/java/log4j.jar"
+
+# If system classpath is empty, try to guess log4j location
+if [ "x$CLASSPATH" = "x" ]; then
+	CLASSPATH="/usr/local/share/java/log4j.jar:/usr/share/java/log4j.jar"
+fi
 
 cd $DIR
 
 if [ -f "$DIR/.intree" ]; then
-	CLASSPATH="../../../liblttng-ust-java-agent/java/$JARFILE:$LOG4J"
+	CLASSPATH="../../../liblttng-ust-java-agent/java/$JARFILE:$CLASSPATH"
 	LIBPATH="../../../liblttng-ust-java-agent/jni/log4j/.libs"
 else
-	CLASSPATH="/usr/local/share/java/$JARFILE:/usr/share/java/$JARFILE:$LOG4J"
+	CLASSPATH="/usr/local/share/java/$JARFILE:/usr/share/java/$JARFILE:$CLASSPATH"
 	# Use system defined java.library.path
 	#LIBPATH="/usr/local/lib:/usr/lib"
 fi
