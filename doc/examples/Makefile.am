@@ -5,12 +5,20 @@ doc_examples_demodir = ${docdir}/examples/demo
 doc_examples_hello_static_libdir = ${docdir}/examples/hello-static-lib
 doc_examples_demo_tracefdir = ${docdir}/examples/demo-tracef
 
-if BUILD_JAVA_AGENT
+if BUILD_JAVA_AGENT_WITH_JUL
 doc_examples_java_juldir = ${docdir}/examples/java-jul
 dist_doc_examples_java_jul_DATA = java-jul/Makefile \
 				  java-jul/Hello.java \
 				  java-jul/run
 SUBDIRS_JUL = java-jul
+endif
+
+if BUILD_JAVA_AGENT_WITH_LOG4J
+doc_examples_java_log4jdir = ${docdir}/examples/java-log4j
+dist_doc_examples_java_log4j_DATA = java-log4j/Makefile \
+				  java-log4j/Hello.java \
+				  java-log4j/run
+SUBDIRS_LOG4J = java-log4j
 endif
 
 dist_doc_examples_DATA = README
@@ -56,7 +64,7 @@ endif
 
 all-local:
 	@if [ x"$(srcdir)" != x"$(builddir)" ]; then \
-		for subdir in $(SUBDIRS_PROXY) $(SUBDIRS_JUL); do \
+		for subdir in $(SUBDIRS_PROXY) $(SUBDIRS_JUL) $(SUBDIRS_LOG4J); do \
 			cp -pfR $(srcdir)/$$subdir $(builddir); \
 		done; \
 	fi; \
@@ -81,6 +89,11 @@ all-local:
 		for subdir in $(SUBDIRS_JUL); do \
 			(cd $(SUBDIRS_JUL) && $(MAKE) JAVA_CLASSPATH_OVERRIDE="../../../liblttng-ust-java-agent/java" JAVA_JARFILE_OVERRIDE="liblttng-ust-agent.jar" $(AM_MAKEFLAGS) all && cd ..) || exit 1; \
 		done; \
+	fi; \
+	if [ x"$(SUBDIRS_LOG4J)" != x"" ]; then \
+		for subdir in $(SUBDIRS_LOG4J); do \
+			(cd $(SUBDIRS_LOG4J) && $(MAKE) JAVA_CLASSPATH_OVERRIDE="../../../liblttng-ust-java-agent/java" JAVA_JARFILE_OVERRIDE="liblttng-ust-agent.jar" $(AM_MAKEFLAGS) all && cd ..) || exit 1; \
+		done; \
 	fi;
 
 clean-local:
@@ -96,8 +109,15 @@ clean-local:
 			fi; \
 		done; \
 	fi; \
+	if [ x"$(SUBDIRS_LOG4J)" != x"" ]; then \
+		for subdir in $(SUBDIRS_LOG4J); do \
+			if [ -d $$subdir ]; then \
+				(cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) clean && cd ..) || exit 1; \
+			fi; \
+		done; \
+	fi; \
 	if [ x"$(srcdir)" != x"$(builddir)" ]; then \
-		for subdir in $(SUBDIRS_PROXY) $(SUBDIRS_JUL); do \
+		for subdir in $(SUBDIRS_PROXY) $(SUBDIRS_JUL) $(SUBDIRS_LOG4J); do \
 			rm -rf $(builddir)/$$subdir; \
 		done; \
 	fi;

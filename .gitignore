@@ -53,7 +53,7 @@ tests/benchmark/bench2
 
 # Java agent library
 *.class
-liblttng-ust-agent.jar
+liblttng-ust-agent*.jar
 classnoinst.stamp
 jni-header.stamp
 jul-jni-header.stamp

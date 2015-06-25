@@ -17,9 +17,10 @@ if [ -f "$DIR/.intree" ]; then
 	LIBPATH="../../../liblttng-ust-java-agent/jni/log4j/.libs"
 else
 	CLASSPATH="/usr/local/share/java/$JARFILE:/usr/share/java/$JARFILE:$LOG4J"
-	LIBPATH="/usr/local/lib:/usr/lib"
+	# Use system defined java.library.path
+	#LIBPATH="/usr/local/lib:/usr/lib"
 fi
 
-java -classpath "$CLASSPATH:." Hello
+java -classpath "$CLASSPATH:." -Djava.library.path="$LIBPATH" Hello
 
 cd -
