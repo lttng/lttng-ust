@@ -69,7 +69,7 @@ public class LTTngLog4j extends LogFrameworkSkeleton {
 	@Override
 	public Iterator<String> listLoggers() {
 		Vector<String> logs = new Vector<String>();
-		for (Enumeration loggers = LogManager.getCurrentLoggers(); loggers.hasMoreElements(); ) {
+		for (Enumeration<?> loggers = LogManager.getCurrentLoggers(); loggers.hasMoreElements(); ) {
 			Logger logger = (Logger) loggers.nextElement();
 			String name = logger.getName();
 			logs.add(name);

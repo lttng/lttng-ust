@@ -17,20 +17,18 @@
 
 package org.lttng.ust.agent;
 
-import java.util.concurrent.Semaphore;
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.lang.Integer;
-import java.io.IOException;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.DataInputStream;
-import java.io.FileReader;
-import java.io.FileNotFoundException;
-import java.net.*;
-import java.lang.management.ManagementFactory;
+import java.util.concurrent.Semaphore;
 
 class LTTngTCPSessiondClient implements Runnable {
 
@@ -142,7 +140,7 @@ class LTTngTCPSessiondClient implements Runnable {
 	 */
 	private void recvHeader() throws Exception {
 		int read_len;
-		byte data[] = new byte[this.headerCmd.SIZE];
+		byte data[] = new byte[LTTngSessiondCmd2_6.sessiond_hdr.SIZE];
 
 		read_len = this.inFromSessiond.read(data, 0, data.length);
 		if (read_len != data.length) {
@@ -174,7 +172,6 @@ class LTTngTCPSessiondClient implements Runnable {
 	 * Handle session command from the session daemon.
 	 */
 	private void handleSessiondCmd() throws Exception {
-		int ret_code;
 		byte data[] = null;
 
 		while (true) {
@@ -238,8 +235,6 @@ class LTTngTCPSessiondClient implements Runnable {
 					data = new byte[4];
 					ByteBuffer buf = ByteBuffer.wrap(data);
 					buf.order(ByteOrder.BIG_ENDIAN);
-					LTTngSessiondCmd2_6.lttng_agent_ret_code code =
-						LTTngSessiondCmd2_6.lttng_agent_ret_code.CODE_INVALID_CMD;
 					break;
 				}
 			}
@@ -250,7 +245,7 @@ class LTTngTCPSessiondClient implements Runnable {
 		}
 	}
 
-	private String getHomePath() {
+	private static String getHomePath() {
 		return System.getProperty("user.home");
 	}
 
@@ -259,7 +254,7 @@ class LTTngTCPSessiondClient implements Runnable {
 	 *
 	 * @return port value if found else 0.
 	 */
-	private int getPortFromFile(String path) throws IOException {
+	private static int getPortFromFile(String path) throws IOException {
 		int port;
 		BufferedReader br;
 
@@ -297,7 +292,7 @@ class LTTngTCPSessiondClient implements Runnable {
 			}
 		}
 
-		this.sessiondSock = new Socket(this.sessiondHost, port);
+		this.sessiondSock = new Socket(sessiondHost, port);
 		this.inFromSessiond = new DataInputStream(
 				sessiondSock.getInputStream());
 		this.outToSessiond = new DataOutputStream(
@@ -311,8 +306,8 @@ class LTTngTCPSessiondClient implements Runnable {
 
 		buf.putInt(this.agentDomain.value());
 		buf.putInt(Integer.parseInt(pid));
-		buf.putInt(this.protocolMajorVersion);
-		buf.putInt(this.protocolMinorVersion);
+		buf.putInt(protocolMajorVersion);
+		buf.putInt(protocolMinorVersion);
 		this.outToSessiond.write(data, 0, data.length);
 		this.outToSessiond.flush();
 	}
