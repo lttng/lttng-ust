@@ -20,11 +20,9 @@ package org.lttng.ust.agent;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.lang.Object;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
 
 interface LTTngSessiondCmd2_6 {
 	/**

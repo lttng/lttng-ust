@@ -17,19 +17,10 @@
 
 package org.lttng.ust.agent;
 
-import org.lttng.ust.agent.jul.LTTngJUL;
-
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.BufferedReader;
-import java.io.FileReader;
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.Enumeration;
-import java.lang.reflect.InvocationTargetException;
-
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 
 public class LTTngAgent {
 	/* Domains */
@@ -78,7 +69,7 @@ public class LTTngAgent {
 	 * Constructor is private. This is a singleton and a reference should be
 	 * acquired using getLTTngAgent().
 	 */
-	private LTTngAgent() throws IOException {
+	private LTTngAgent() {
 		initAgentJULClasses();
 
 		/* Since Log4j is a 3rd party JAR, we need to check if we can load any of its classes */
@@ -87,10 +78,10 @@ public class LTTngAgent {
 			initAgentLog4jClasses();
 		}
 
-		this.registerSem = new Semaphore(0, true);
+		registerSem = new Semaphore(0, true);
 	}
 
-	private Boolean loadLog4jClasses() {
+	private static Boolean loadLog4jClasses() {
 		Class<?> logging;
 
 		try {
@@ -131,7 +122,7 @@ public class LTTngAgent {
 		return true;
 	}
 
-	private Class<?> loadClass(String className) throws ClassNotFoundException {
+	private static Class<?> loadClass(String className) throws ClassNotFoundException {
 		ClassLoader loader;
 		Class<?> loadedClass;
 
@@ -151,8 +142,8 @@ public class LTTngAgent {
 	private void initAgentJULClasses() {
 		try {
 			Class<?> lttngJUL = loadClass("org.lttng.ust.agent.jul.LTTngJUL");
-			this.julUser = (LogFramework)lttngJUL.getDeclaredConstructor(new Class[] {Boolean.class}).newInstance(false);
-			this.julRoot = (LogFramework)lttngJUL.getDeclaredConstructor(new Class[] {Boolean.class}).newInstance(true);
+			julUser = (LogFramework)lttngJUL.getDeclaredConstructor(new Class[] {Boolean.class}).newInstance(false);
+			julRoot = (LogFramework)lttngJUL.getDeclaredConstructor(new Class[] {Boolean.class}).newInstance(true);
 			this.useJUL = true;
 		} catch (ClassNotFoundException e) {
 			/* LTTng JUL classes not found, no need to create the relevant objects */
@@ -171,8 +162,8 @@ public class LTTngAgent {
 	private void initAgentLog4jClasses() {
 		try {
 			Class<?> lttngLog4j = loadClass("org.lttng.ust.agent.log4j.LTTngLog4j");
-			this.log4jUser = (LogFramework)lttngLog4j.getDeclaredConstructor(new Class[] {Boolean.class}).newInstance(false);
-			this.log4jRoot = (LogFramework)lttngLog4j.getDeclaredConstructor(new Class[] {Boolean.class}).newInstance(true);
+			log4jUser = (LogFramework)lttngLog4j.getDeclaredConstructor(new Class[] {Boolean.class}).newInstance(false);
+			log4jRoot = (LogFramework)lttngLog4j.getDeclaredConstructor(new Class[] {Boolean.class}).newInstance(true);
 			this.useLog4j = true;
 		} catch (ClassNotFoundException e) {
 			/* LTTng Log4j classes not found, no need to create the relevant objects */
@@ -200,8 +191,8 @@ public class LTTngAgent {
 		return curAgent;
 	}
 
-	private synchronized void init() throws SecurityException, IOException {
-		if (this.initialized) {
+	private synchronized void init() throws SecurityException {
+		if (initialized) {
 			return;
 		}
 
@@ -220,62 +211,62 @@ public class LTTngAgent {
 
 		/* Wait for each registration to end. */
 		try {
-			this.registerSem.tryAcquire(numThreads,
+			registerSem.tryAcquire(numThreads,
 						    semTimeout,
 						    TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 
-		this.initialized = true;
+		initialized = true;
 	}
 
-	private synchronized Integer initJULClientThreads() {
+	private synchronized static Integer initJULClientThreads() {
 		Integer numThreads = 2;
 
 		/* Handle user session daemon if any. */
-		this.julUserClient = new LTTngTCPSessiondClient(Domain.JUL,
-								this.julUser,
-								this.registerSem);
+		julUserClient = new LTTngTCPSessiondClient(Domain.JUL,
+								julUser,
+								registerSem);
 
 		String userThreadName = "LTTng UST agent JUL user thread";
-		this.sessiondThreadJULUser = new Thread(julUserClient, userThreadName);
-		this.sessiondThreadJULUser.setDaemon(true);
-		this.sessiondThreadJULUser.start();
+		sessiondThreadJULUser = new Thread(julUserClient, userThreadName);
+		sessiondThreadJULUser.setDaemon(true);
+		sessiondThreadJULUser.start();
 
 		/* Handle root session daemon. */
-		this.julRootClient = new LTTngTCPSessiondClient(Domain.JUL,
-								this.julRoot,
-								this.registerSem);
+		julRootClient = new LTTngTCPSessiondClient(Domain.JUL,
+								julRoot,
+								registerSem);
 
 		String rootThreadName = "LTTng UST agent JUL root thread";
-		this.sessiondThreadJULRoot = new Thread(julRootClient, rootThreadName);
-		this.sessiondThreadJULRoot.setDaemon(true);
-		this.sessiondThreadJULRoot.start();
+		sessiondThreadJULRoot = new Thread(julRootClient, rootThreadName);
+		sessiondThreadJULRoot.setDaemon(true);
+		sessiondThreadJULRoot.start();
 
 		return numThreads;
 	}
 
-	private synchronized Integer initLog4jClientThreads() {
+	private synchronized static Integer initLog4jClientThreads() {
 		Integer numThreads = 2;
 
-		this.log4jUserClient = new LTTngTCPSessiondClient(Domain.LOG4J,
-								  this.log4jUser,
-								  this.registerSem);
+		log4jUserClient = new LTTngTCPSessiondClient(Domain.LOG4J,
+								  log4jUser,
+								  registerSem);
 
 		String userThreadName = "LTTng UST agent Log4j user thread";
-		this.sessiondThreadLog4jUser = new Thread(log4jUserClient, userThreadName);
-		this.sessiondThreadLog4jUser.setDaemon(true);
-		this.sessiondThreadLog4jUser.start();
+		sessiondThreadLog4jUser = new Thread(log4jUserClient, userThreadName);
+		sessiondThreadLog4jUser.setDaemon(true);
+		sessiondThreadLog4jUser.start();
 
-		this.log4jRootClient = new LTTngTCPSessiondClient(Domain.LOG4J,
-								  this.log4jRoot,
-								  this.registerSem);
+		log4jRootClient = new LTTngTCPSessiondClient(Domain.LOG4J,
+								  log4jRoot,
+								  registerSem);
 
 		String rootThreadName = "LTTng UST agent Log4j root thread";
-		this.sessiondThreadLog4jRoot = new Thread(log4jRootClient,rootThreadName);
-		this.sessiondThreadLog4jRoot.setDaemon(true);
-		this.sessiondThreadLog4jRoot.start();
+		sessiondThreadLog4jRoot = new Thread(log4jRootClient,rootThreadName);
+		sessiondThreadLog4jRoot.setDaemon(true);
+		sessiondThreadLog4jRoot.start();
 
 		return numThreads;
 	}
@@ -283,28 +274,28 @@ public class LTTngAgent {
 
 	public void dispose() throws IOException {
 		if (this.useJUL) {
-			this.julUserClient.destroy();
-			this.julRootClient.destroy();
-			this.julUser.reset();
-			this.julRoot.reset();
+			julUserClient.destroy();
+			julRootClient.destroy();
+			julUser.reset();
+			julRoot.reset();
 		}
 
 		if (this.useLog4j) {
-			this.log4jUserClient.destroy();
-			this.log4jRootClient.destroy();
-			this.log4jUser.reset();
-			this.log4jRoot.reset();
+			log4jUserClient.destroy();
+			log4jRootClient.destroy();
+			log4jUser.reset();
+			log4jRoot.reset();
 		}
 
 		try {
 			if (this.useJUL) {
-				this.sessiondThreadJULUser.join();
-				this.sessiondThreadJULRoot.join();
+				sessiondThreadJULUser.join();
+				sessiondThreadJULRoot.join();
 			}
 
 			if (this.useLog4j) {
-				this.sessiondThreadLog4jUser.join();
-				this.sessiondThreadLog4jRoot.join();
+				sessiondThreadLog4jUser.join();
+				sessiondThreadLog4jRoot.join();
 			}
 
 		} catch (InterruptedException e) {
