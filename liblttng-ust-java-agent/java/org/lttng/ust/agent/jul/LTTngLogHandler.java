@@ -23,11 +23,12 @@ import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 
 class LTTngLogHandler extends Handler {
-	private Boolean is_root;
+
+	private final Boolean isRoot;
 
 	public LTTngLogHandler(Boolean isRoot) {
 		super();
-		this.is_root = isRoot;
+		this.isRoot = isRoot;
 		/* Initialize LTTng UST tracer. */
 		try {
 			System.loadLibrary("lttng-ust-jul-jni"); //$NON-NLS-1$
@@ -42,7 +43,7 @@ class LTTngLogHandler extends Handler {
 	}
 
 	public Boolean isRoot() {
-		return this.is_root;
+		return this.isRoot;
 	}
 
 	@Override
@@ -54,11 +55,11 @@ class LTTngLogHandler extends Handler {
 	@Override
 	public void publish(LogRecord record) {
 		/*
-		 * Specific tracepoing designed for JUL events. The source class of the
+		 * Specific tracepoint designed for JUL events. The source class of the
 		 * caller is used for the event name, the raw message is taken, the
 		 * loglevel of the record and the thread ID.
 		 */
-		if (this.is_root) {
+		if (this.isRoot) {
 			tracepointS(record.getMessage(),
 				    record.getLoggerName(), record.getSourceClassName(),
 				    record.getSourceMethodName(), record.getMillis(),
@@ -72,10 +73,20 @@ class LTTngLogHandler extends Handler {
 	}
 
 	/* Use for a user session daemon. */
-	private native void tracepointU(String msg, String logger_name, String class_name,
-			String method_name, long millis, int log_level, int thread_id);
+	private native void tracepointU(String msg,
+			String logger_name,
+			String class_name,
+			String method_name,
+			long millis,
+			int log_level,
+			int thread_id);
 
 	/* Use for a root session daemon. */
-	private native void tracepointS(String msg, String logger_name, String class_name,
-			String method_name, long millis, int log_level, int thread_id);
+	private native void tracepointS(String msg,
+			String logger_name,
+			String class_name,
+			String method_name,
+			long millis,
+			int log_level,
+			int thread_id);
 }

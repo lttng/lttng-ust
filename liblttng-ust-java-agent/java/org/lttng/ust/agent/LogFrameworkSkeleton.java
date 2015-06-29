@@ -25,7 +25,7 @@ import java.util.Iterator;
 public abstract class LogFrameworkSkeleton implements LogFramework {
 
 	/* A map of event name and reference count */
-	private Map<String, Integer> enabledLoggers;
+	private final Map<String, Integer> enabledLoggers;
 
 	public LogFrameworkSkeleton() {
 		this.enabledLoggers = new HashMap<String, Integer>();

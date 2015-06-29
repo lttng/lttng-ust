@@ -23,6 +23,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 public class LTTngAgent {
+
 	/* Domains */
 	static enum Domain {
 		JUL(3), LOG4J(4);
@@ -36,6 +37,8 @@ public class LTTngAgent {
 			return value;
 		}
 	}
+
+	private static final int SEM_TIMEOUT = 3; /* Seconds */
 
 	private static LogFramework julUser;
 	private static LogFramework julRoot;
@@ -63,7 +66,6 @@ public class LTTngAgent {
 	private static boolean initialized = false;
 
 	private static Semaphore registerSem;
-	private final static int semTimeout = 3; /* Seconds */
 
 	/*
 	 * Constructor is private. This is a singleton and a reference should be
@@ -142,8 +144,8 @@ public class LTTngAgent {
 	private void initAgentJULClasses() {
 		try {
 			Class<?> lttngJUL = loadClass("org.lttng.ust.agent.jul.LTTngJUL");
-			julUser = (LogFramework)lttngJUL.getDeclaredConstructor(new Class[] {Boolean.class}).newInstance(false);
-			julRoot = (LogFramework)lttngJUL.getDeclaredConstructor(new Class[] {Boolean.class}).newInstance(true);
+			julUser = (LogFramework) lttngJUL.getDeclaredConstructor(new Class[] { Boolean.class }).newInstance(false);
+			julRoot = (LogFramework) lttngJUL.getDeclaredConstructor(new Class[] { Boolean.class }).newInstance(true);
 			this.useJUL = true;
 		} catch (ClassNotFoundException e) {
 			/* LTTng JUL classes not found, no need to create the relevant objects */
@@ -212,7 +214,7 @@ public class LTTngAgent {
 		/* Wait for each registration to end. */
 		try {
 			registerSem.tryAcquire(numThreads,
-						    semTimeout,
+						    SEM_TIMEOUT,
 						    TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			e.printStackTrace();

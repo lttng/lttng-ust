@@ -32,6 +32,13 @@ import java.util.concurrent.Semaphore;
 
 class LTTngTCPSessiondClient implements Runnable {
 
+	private static final String SESSION_HOST = "127.0.0.1";
+	private static final String ROOT_PORT_FILE = "/var/run/lttng/agent.port";
+	private static final String USER_PORT_FILE = "/.lttng/agent.port";
+
+	private static Integer protocolMajorVersion = 1;
+	private static Integer protocolMinorVersion = 0;
+
 	/* Command header from the session deamon. */
 	private LTTngSessiondCmd2_6.sessiond_hdr headerCmd =
 		new LTTngSessiondCmd2_6.sessiond_hdr();
@@ -46,17 +53,11 @@ class LTTngTCPSessiondClient implements Runnable {
 
 	private Semaphore registerSem;
 
-	private static final String sessiondHost = "127.0.0.1";
-	private static final String rootPortFile = "/var/run/lttng/agent.port";
-	private static final String userPortFile = "/.lttng/agent.port";
-
-	private static Integer protocolMajorVersion = 1;
-	private static Integer protocolMinorVersion = 0;
 
 	private LTTngAgent.Domain agentDomain;
 
-	/* Indicate if we've already release the semaphore. */
-	private boolean sem_posted = false;
+	/* Indicate if we've already released the semaphore. */
+	private boolean semPosted = false;
 
 	public LTTngTCPSessiondClient(LTTngAgent.Domain domain, LogFramework log, Semaphore sem) {
 		this.agentDomain = domain;
@@ -67,12 +68,11 @@ class LTTngTCPSessiondClient implements Runnable {
 	/*
 	 * Try to release the registerSem if it's not already done.
 	 */
-	private void tryReleaseSem()
-	{
+	private void tryReleaseSem() {
 		/* Release semaphore so we unblock the agent. */
-		if (!this.sem_posted) {
+		if (!this.semPosted) {
 			this.registerSem.release();
-			this.sem_posted = true;
+			this.semPosted = true;
 		}
 	}
 
@@ -139,11 +139,10 @@ class LTTngTCPSessiondClient implements Runnable {
 	 * static buffer of the right size.
 	 */
 	private void recvHeader() throws Exception {
-		int read_len;
 		byte data[] = new byte[LTTngSessiondCmd2_6.sessiond_hdr.SIZE];
 
-		read_len = this.inFromSessiond.read(data, 0, data.length);
-		if (read_len != data.length) {
+		int readLen = this.inFromSessiond.read(data, 0, data.length);
+		if (readLen != data.length) {
 			throw new IOException();
 		}
 		this.headerCmd.populate(data);
@@ -157,7 +156,7 @@ class LTTngTCPSessiondClient implements Runnable {
 	 * is expected after the header.
 	 */
 	private byte[] recvPayload() throws Exception {
-		byte payload[] = new byte[(int) this.headerCmd.data_size];
+		byte payload[] = new byte[(int) this.headerCmd.dataSize];
 
 		/* Failsafe check so we don't waste our time reading 0 bytes. */
 		if (payload.length == 0) {
@@ -178,7 +177,7 @@ class LTTngTCPSessiondClient implements Runnable {
 			/* Get header from session daemon. */
 			recvHeader();
 
-			if (headerCmd.data_size > 0) {
+			if (headerCmd.dataSize > 0) {
 				data = recvPayload();
 			}
 
@@ -279,24 +278,22 @@ class LTTngTCPSessiondClient implements Runnable {
 		int port;
 
 		if (this.log.isRoot()) {
-			port = getPortFromFile(rootPortFile);
+			port = getPortFromFile(ROOT_PORT_FILE);
 			if (port == 0) {
 				/* No session daemon available. Stop and retry later. */
 				throw new IOException();
 			}
 		} else {
-			port = getPortFromFile(getHomePath() + userPortFile);
+			port = getPortFromFile(getHomePath() + USER_PORT_FILE);
 			if (port == 0) {
 				/* No session daemon available. Stop and retry later. */
 				throw new IOException();
 			}
 		}
 
-		this.sessiondSock = new Socket(sessiondHost, port);
-		this.inFromSessiond = new DataInputStream(
-				sessiondSock.getInputStream());
-		this.outToSessiond = new DataOutputStream(
-				sessiondSock.getOutputStream());
+		this.sessiondSock = new Socket(SESSION_HOST, port);
+		this.inFromSessiond = new DataInputStream(sessiondSock.getInputStream());
+		this.outToSessiond = new DataOutputStream(sessiondSock.getOutputStream());
 	}
 
 	private void registerToSessiond() throws Exception {

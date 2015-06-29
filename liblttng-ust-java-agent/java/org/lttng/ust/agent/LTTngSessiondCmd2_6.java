@@ -25,18 +25,21 @@ import java.util.Iterator;
 import java.util.List;
 
 interface LTTngSessiondCmd2_6 {
+
 	/**
 	 * Maximum name length for a logger name to be send to sessiond.
 	 */
-	final static int NAME_MAX = 255;
+	int NAME_MAX = 255;
 
 	/*
 	 * Size of a primitive type int in byte. Because you know, Java can't
 	 * provide that since it does not makes sense...
+	 *
+	 *
 	 */
-	final static int INT_SIZE = 4;
+	int INT_SIZE = 4;
 
-	public interface SessiondResponse {
+	interface SessiondResponse {
 		/**
 		 * Gets a byte array of the command so that it may be streamed
 		 *
@@ -45,7 +48,7 @@ interface LTTngSessiondCmd2_6 {
 		public byte[] getBytes();
 	}
 
-	public interface SessiondCommand {
+	interface SessiondCommand {
 		/**
 		 * Populate the class from a byte array
 		 *
@@ -55,7 +58,7 @@ interface LTTngSessiondCmd2_6 {
 		public void populate(byte[] data);
 	}
 
-	public enum lttng_agent_command {
+	enum lttng_agent_command {
 		/** List logger(s). */
 		CMD_LIST(1),
 		/** Enable logger by name. */
@@ -91,28 +94,31 @@ interface LTTngSessiondCmd2_6 {
 		}
 	}
 
-	public class sessiond_hdr implements SessiondCommand {
+	class sessiond_hdr implements SessiondCommand {
+
 		/** ABI size of command header. */
 		public final static int SIZE = 16;
 		/** Payload size in bytes following this header.  */
-		public long data_size;
+		public long dataSize;
 		/** Command type. */
 		public lttng_agent_command cmd;
 		/** Command version. */
-		public int cmd_version;
+		public int cmdVersion;
 
+		@Override
 		public void populate(byte[] data) {
 			ByteBuffer buf = ByteBuffer.wrap(data);
 			buf.order(ByteOrder.BIG_ENDIAN);
 
-			data_size = buf.getLong();
+			dataSize = buf.getLong();
 			cmd = lttng_agent_command.values()[buf.getInt() - 1];
-			cmd_version = buf.getInt();
+			cmdVersion = buf.getInt();
 		}
 	}
 
-	public class sessiond_enable_handler implements SessiondResponse, SessiondCommand {
-		private final static int SIZE = 4;
+	class sessiond_enable_handler implements SessiondResponse, SessiondCommand {
+
+		private static final int SIZE = 4;
 		public String name;
 		public int lttngLogLevel;
 		public int lttngLogLevelType;
@@ -122,13 +128,13 @@ interface LTTngSessiondCmd2_6 {
 
 		@Override
 		public void populate(byte[] data) {
-			int data_offset = INT_SIZE * 2;
+			int dataOffset = INT_SIZE * 2;
 
 			ByteBuffer buf = ByteBuffer.wrap(data);
 			buf.order(ByteOrder.LITTLE_ENDIAN);
 			lttngLogLevel = buf.getInt();
 			lttngLogLevelType = buf.getInt();
-			name = new String(data, data_offset, data.length - data_offset).trim();
+			name = new String(data, dataOffset, data.length - dataOffset).trim();
 		}
 
 		@Override
@@ -153,7 +159,8 @@ interface LTTngSessiondCmd2_6 {
 		}
 	}
 
-	public class sessiond_disable_handler implements SessiondResponse, SessiondCommand {
+	class sessiond_disable_handler implements SessiondResponse, SessiondCommand {
+
 		private final static int SIZE = 4;
 		public String name;
 
@@ -190,29 +197,30 @@ interface LTTngSessiondCmd2_6 {
 		}
 	}
 
-	public class sessiond_list_logger implements SessiondResponse {
+	class sessiond_list_logger implements SessiondResponse {
+
 		private final static int SIZE = 12;
 
-		private int data_size = 0;
-		private int nb_logger = 0;
+		private int dataSize = 0;
+		private int nbLogger = 0;
 
-		List<String> logger_list = new ArrayList<String>();
+		List<String> loggerList = new ArrayList<String>();
 
 		/** Return status code to the session daemon. */
 		public lttng_agent_ret_code code;
 
 		@Override
 		public byte[] getBytes() {
-			byte data[] = new byte[SIZE + data_size];
+			byte data[] = new byte[SIZE + dataSize];
 			ByteBuffer buf = ByteBuffer.wrap(data);
 			buf.order(ByteOrder.BIG_ENDIAN);
 
 			/* Returned code */
 			buf.putInt(code.getCode());
-			buf.putInt(data_size);
-			buf.putInt(nb_logger);
+			buf.putInt(dataSize);
+			buf.putInt(nbLogger);
 
-			for (String logger: logger_list) {
+			for (String logger: loggerList) {
 				buf.put(logger.getBytes());
 				/* NULL terminated byte after the logger name. */
 				buf.put((byte) 0x0);
@@ -226,9 +234,9 @@ interface LTTngSessiondCmd2_6 {
 			Iterator<String> loggers = log.listLoggers();
 			while (loggers.hasNext()) {
 				loggerName = loggers.next();
-				this.logger_list.add(loggerName);
-				this.nb_logger++;
-				this.data_size += loggerName.length() + 1;
+				this.loggerList.add(loggerName);
+				this.nbLogger++;
+				this.dataSize += loggerName.length() + 1;
 			}
 
 			this.code = lttng_agent_ret_code.CODE_SUCCESS_CMD;

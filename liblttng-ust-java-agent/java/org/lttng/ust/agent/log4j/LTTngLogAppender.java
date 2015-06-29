@@ -23,11 +23,12 @@ import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.spi.LoggingEvent;
 
 class LTTngLogAppender extends AppenderSkeleton {
-	private Boolean is_root;
+
+	private Boolean isRoot;
 
 	public LTTngLogAppender(Boolean isRoot) {
 		super();
-		this.is_root = isRoot;
+		this.isRoot = isRoot;
 		try {
 			System.loadLibrary("lttng-ust-log4j-jni"); //$NON-NLS-1$
 		} catch (SecurityException e) {
@@ -41,7 +42,7 @@ class LTTngLogAppender extends AppenderSkeleton {
 	}
 
 	public Boolean isRoot() {
-		return this.is_root;
+		return this.isRoot;
 	}
 
 	@Override
@@ -59,26 +60,26 @@ class LTTngLogAppender extends AppenderSkeleton {
 			line = -1;
 		}
 
-		if (this.is_root) {
+		if (this.isRoot) {
 			tracepointS(event.getRenderedMessage(),
-				    event.getLoggerName(),
-				    event.getLocationInformation().getClassName(),
-				    event.getLocationInformation().getMethodName(),
-				    event.getLocationInformation().getFileName(),
-				    line,
-				    event.getTimeStamp(),
-				    event.getLevel().toInt(),
-				    event.getThreadName());
+					event.getLoggerName(),
+					event.getLocationInformation().getClassName(),
+					event.getLocationInformation().getMethodName(),
+					event.getLocationInformation().getFileName(),
+					line,
+					event.getTimeStamp(),
+					event.getLevel().toInt(),
+					event.getThreadName());
 		} else {
 			tracepointU(event.getRenderedMessage(),
-				    event.getLoggerName(),
-				    event.getLocationInformation().getClassName(),
-				    event.getLocationInformation().getMethodName(),
-				    event.getLocationInformation().getFileName(),
-				    line,
-				    event.getTimeStamp(),
-				    event.getLevel().toInt(),
-				    event.getThreadName());
+					event.getLoggerName(),
+					event.getLocationInformation().getClassName(),
+					event.getLocationInformation().getMethodName(),
+					event.getLocationInformation().getFileName(),
+					line,
+					event.getTimeStamp(),
+					event.getLevel().toInt(),
+					event.getThreadName());
 		}
 	}
 
