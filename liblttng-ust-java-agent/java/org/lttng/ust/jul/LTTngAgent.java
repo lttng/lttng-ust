@@ -19,6 +19,7 @@ package org.lttng.ust.jul;
 
 import java.io.IOException;
 
+@Deprecated
 public class LTTngAgent {
 
 	/*
