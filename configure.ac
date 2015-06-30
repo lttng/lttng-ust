@@ -382,6 +382,9 @@ AC_CONFIG_FILES([
 	liblttng-ust-java/Makefile
 	liblttng-ust-java-agent/Makefile
 	liblttng-ust-java-agent/java/Makefile
+	liblttng-ust-java-agent/java/lttng-ust-agent-common/Makefile
+	liblttng-ust-java-agent/java/lttng-ust-agent-jul/Makefile
+	liblttng-ust-java-agent/java/lttng-ust-agent-log4j/Makefile
 	liblttng-ust-java-agent/jni/Makefile
 	liblttng-ust-java-agent/jni/jul/Makefile
 	liblttng-ust-java-agent/jni/log4j/Makefile

@@ -16,28 +16,30 @@
 # This makefile is purposefully kept simple to support GNU and BSD make.
 #
 
-JFLAGS = -g
-
-# Default JUL jar name.
-JARFILE=liblttng-ust-agent.jar
+# Required JAR files for Log4j
+JARFILE_LOG4J=lttng-ust-agent-log4j.jar
+JARFILE_COMMON=lttng-ust-agent-common.jar
 
 # If system classpath is empty, try to guess log4j location
 ifeq "$(CLASSPATH)" ""
 	CLASSPATH="/usr/local/share/java/log4j.jar:/usr/share/java/log4j.jar"
 endif
 
-# Check if the top level makefile overrides the JUL Jar file name.
-ifneq "$(JAVA_JARFILE_OVERRIDE)" ""
-	JARFILE=$(JAVA_JARFILE_OVERRIDE)
-endif
-
-# Check if the top level makefile overrides the JUL classpath.
-ifeq "$(JAVA_CLASSPATH_OVERRIDE)" ""
-	CLASSPATH:=/usr/local/share/java/$(JARFILE):/usr/share/java/$(JARFILE):$(CLASSPATH)
+# Check if the top level makefile overrides the Log4j Jar file's path.
+ifeq "$(JAVA_CLASSPATH_OVERRIDE_LOG4J)" ""
+	CLASSPATH:=$(CLASSPATH):/usr/local/share/java/$(JARFILE_LOG4J):/usr/share/java/$(JARFILE_LOG4J)
 else
-	CLASSPATH:=$(JAVA_CLASSPATH_OVERRIDE)/$(JARFILE):$(CLASSPATH)
+	CLASSPATH:=$(CLASSPATH):$(JAVA_CLASSPATH_OVERRIDE_LOG4J)/$(JARFILE_LOG4J)
 endif
 
+# Check if the top level makefile overrides the Common Jar file's path.
+ifeq "$(JAVA_CLASSPATH_OVERRIDE_COMMON)" ""
+	CLASSPATH:=$(CLASSPATH):/usr/local/share/java/$(JARFILE_COMMON):/usr/share/java/$(JARFILE_COMMON)
+else
+	CLASSPATH:=$(CLASSPATH):$(JAVA_CLASSPATH_OVERRIDE_COMMON)/$(JARFILE_COMMON)
+endif
+
+JFLAGS = -g
 JC = javac -classpath "$(CLASSPATH):."
 .SUFFIXES: .java .class
 .java.class:

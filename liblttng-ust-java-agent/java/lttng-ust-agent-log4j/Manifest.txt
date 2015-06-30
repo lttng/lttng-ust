@@ -1,0 +1,8 @@
+Name: org/lttng/ust/agent/log4j/
+Specification-Title: LTTng UST Java Agent Log4J 1.x Integration
+Specification-Version: 1.0.0
+Specification-Vendor: LTTng Project
+Implementation-Title: org.lttng.ust.agent.log4j
+Implementation-Version: 1.0.0
+Implementation-Vendor: LTTng Project
+Class-Path: lttng-ust-agent-common.jar

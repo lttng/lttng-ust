@@ -7,22 +7,25 @@
 #
 
 DIR=`dirname $0`
-JARFILE="liblttng-ust-agent.jar"
+JARFILE_COMMON="lttng-ust-agent-common.jar"
+JARFILE_JUL="lttng-ust-agent-jul.jar"
 JAVA_OPTIONS=""
 
 cd $DIR
 
 if [ -f "$DIR/.intree" ]; then
-	CLASSPATH="../../../liblttng-ust-java-agent/java/$JARFILE"
+	CLASSPATH="../../../liblttng-ust-java-agent/java/lttng-ust-agent-common/$JARFILE_COMMON"
+	CLASSPATH="$CLASSPATH:../../../liblttng-ust-java-agent/java/lttng-ust-agent-jul/$JARFILE_JUL"
 	LIBPATH="../../../liblttng-ust-java-agent/jni/jul/.libs"
 else
-	CLASSPATH="/usr/local/share/java/$JARFILE:/usr/share/java/$JARFILE"
+	CLASSPATH="/usr/local/share/java/$JARFILE_COMMON:/usr/share/java/$JARFILE_COMMON"
+	CLASSPATH="$CLASSPATH:/usr/local/share/java/$JARFILE_JUL:/usr/share/java/$JARFILE_JUL"
 	# Use system defined java.library.path
 	#LIBPATH="/usr/local/lib:/usr/lib"
 fi
 
 if [ "x$LIBPATH" != "x" ]; then
-	JAVA_OPTIONS="$JAVA_OPTIONS -Djava.library.path=\"$LIBPATH\""
+	JAVA_OPTIONS="$JAVA_OPTIONS -Djava.library.path=$LIBPATH"
 fi
 
 java -classpath "$CLASSPATH:." $JAVA_OPTIONS Hello

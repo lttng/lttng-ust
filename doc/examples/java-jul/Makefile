@@ -16,19 +16,22 @@
 # This makefile is purposefully kept simple to support GNU and BSD make.
 #
 
-# Default JUL jar name.
-JARFILE=liblttng-ust-agent.jar
+# Required JAR files for JUL
+JARFILE_JUL=lttng-ust-agent-jul.jar
+JARFILE_COMMON=lttng-ust-agent-common.jar
 
-# Check if the top level makefile overrides the JUL Jar file name.
-ifneq "$(JAVA_JARFILE_OVERRIDE)" ""
-	JARFILE=$(JAVA_JARFILE_OVERRIDE)
+# Check if the top level makefile overrides the JUL Jar file's path.
+ifeq "$(JAVA_CLASSPATH_OVERRIDE_JUL)" ""
+	CLASSPATH=/usr/local/share/java/$(JARFILE_JUL):/usr/share/java/$(JARFILE_JUL)
+else
+	CLASSPATH=$(JAVA_CLASSPATH_OVERRIDE_JUL)/$(JARFILE_JUL)
 endif
 
-# Check if the top level makefile overrides the JUL classpath.
-ifeq "$(JAVA_CLASSPATH_OVERRIDE)" ""
-	CLASSPATH=/usr/local/share/java/$(JARFILE):/usr/share/java/$(JARFILE)
+# Check if the top level makefile overrides the Common Jar file's path.
+ifeq "$(JAVA_CLASSPATH_OVERRIDE_COMMON)" ""
+	CLASSPATH:=$(CLASSPATH):/usr/local/share/java/$(JARFILE_COMMON):/usr/share/java/$(JARFILE_COMMON)
 else
-	CLASSPATH=$(JAVA_CLASSPATH_OVERRIDE)/$(JARFILE)
+	CLASSPATH:=$(CLASSPATH):$(JAVA_CLASSPATH_OVERRIDE_COMMON)/$(JARFILE_COMMON)
 endif
 
 JFLAGS = -g
