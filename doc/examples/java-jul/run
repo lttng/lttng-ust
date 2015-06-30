@@ -8,6 +8,7 @@
 
 DIR=`dirname $0`
 JARFILE="liblttng-ust-agent.jar"
+JAVA_OPTIONS=""
 
 cd $DIR
 
@@ -20,6 +21,10 @@ else
 	#LIBPATH="/usr/local/lib:/usr/lib"
 fi
 
-java -classpath "$CLASSPATH:." -Djava.library.path="$LIBPATH" Hello
+if [ "x$LIBPATH" != "x" ]; then
+	JAVA_OPTIONS="$JAVA_OPTIONS -Djava.library.path=\"$LIBPATH\""
+fi
+
+java -classpath "$CLASSPATH:." $JAVA_OPTIONS Hello
 
 cd -
