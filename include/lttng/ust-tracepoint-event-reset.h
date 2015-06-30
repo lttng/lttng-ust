@@ -56,7 +56,7 @@
 
 #undef _ctf_sequence_encoded
 #define _ctf_sequence_encoded(_type, _item, _src, _length_type, \
-			_src_length, _encoding, _nowrite)
+			_src_length, _encoding, _nowrite, _elem_type_base)
 
 #undef _ctf_string
 #define _ctf_string(_item, _src, _nowrite)
