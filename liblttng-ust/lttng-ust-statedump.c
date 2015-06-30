@@ -191,6 +191,8 @@ int extract_soinfo_events(struct dl_phdr_info *info, size_t size, void *_data)
 				snprintf(resolved_path, PATH_MAX - 1, "[%s]",
 					info->dlpi_name);
 				so_data.vdso = 1;
+			} else {
+				so_data.vdso = 0;
 			}
 		}
 
