@@ -241,7 +241,10 @@ changequote([,])dnl
 	aarch64) NO_UNALIGNED_ACCESS=1 ;;
 	mips*) NO_UNALIGNED_ACCESS=1 ;;
 	tile*) NO_UNALIGNED_ACCESS=1 ;;
-	*) AC_MSG_ERROR([unable to detect alignment requirements (unsupported architecture ($host_cpu)?)]) ;;
+	*)
+		UNSUPPORTED_ARCH=1
+		NO_UNALIGNED_ACCESS=1
+		;;
 esac
 AC_MSG_RESULT([$host_cpu])
 
@@ -422,6 +425,11 @@ AS_IF([test "x$python_agent" = "xyes"], [AS_ECHO("Enabled")], [AS_ECHO("Disabled
 AS_ECHO_N("sdt.h integration:  ")
 AS_IF([test "x$with_sdt" = "xyes"], [AS_ECHO("Enabled")], [AS_ECHO("Disabled")])
 
+AS_ECHO("Architecture: $host_cpu")
+AS_ECHO_N("Efficient unaligned memory access: ")
+AS_IF([test "x$NO_UNALIGNED_ACCESS" != "x1"], [AS_ECHO("yes")], [AS_IF([test "x$UNSUPPORTED_ARCH" != "x1"], [AS_ECHO("no")], [AS_ECHO("unknown")])])
+AS_IF([test "x$UNSUPPORTED_ARCH" = "x1"], [AC_MSG_WARN([Your architecture ($host_cpu) is unsupported, using safe default of no unaligned access])])
 AS_ECHO()
+
 AS_ECHO("Type 'make' to compile.")
 
