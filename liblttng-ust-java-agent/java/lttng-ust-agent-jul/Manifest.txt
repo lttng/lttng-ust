@@ -1,0 +1,8 @@
+Name: org/lttng/ust/agent/jul/
+Specification-Title: LTTng UST Java Agent JUL Integration
+Specification-Version: 1.0.0
+Specification-Vendor: LTTng Project
+Implementation-Title: org.lttng.ust.agent.jul
+Implementation-Version: 1.0.0
+Implementation-Vendor: LTTng Project
+Class-Path: lttng-ust-agent-common.jar
