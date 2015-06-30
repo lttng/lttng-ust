@@ -422,7 +422,7 @@ AS_IF([test "x$jni_interface" = "xyes"], [AS_ECHO("Enabled")], [AS_ECHO("Disable
 AS_ECHO_N("Python agent: ")
 AS_IF([test "x$python_agent" = "xyes"], [AS_ECHO("Enabled")], [AS_ECHO("Disabled")])
 
-AS_ECHO_N("sdt.h integration:  ")
+AS_ECHO_N("sdt.h integration: ")
 AS_IF([test "x$with_sdt" = "xyes"], [AS_ECHO("Enabled")], [AS_ECHO("Disabled")])
 
 AS_ECHO("Architecture: $host_cpu")
