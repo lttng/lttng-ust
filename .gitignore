@@ -64,4 +64,5 @@ org_lttng_ust_agent_log4j_LTTngLogAppender.h
 liblttng-ust-java-agent/java/liblttng-ust-jul.jar
 
 # Python agent
-lttng_agent.py
+liblttng-ust-python-agent/__init__.py
+liblttng-ust-python-agent/**/*.pyc
