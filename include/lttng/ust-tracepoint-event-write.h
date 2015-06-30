@@ -51,12 +51,17 @@
 #undef ctf_sequence
 #define ctf_sequence(_type, _item, _src, _length_type, _src_length) \
 	_ctf_sequence_encoded(_type, _item, _src,		\
-			_length_type, _src_length, none, 0)
+			_length_type, _src_length, none, 0, 10)
+
+#undef ctf_sequence_hex
+#define ctf_sequence_hex(_type, _item, _src, _length_type, _src_length) \
+	_ctf_sequence_encoded(_type, _item, _src,		\
+			_length_type, _src_length, none, 0, 16)
 
 #undef ctf_sequence_text
 #define ctf_sequence_text(_type, _item, _src, _length_type, _src_length) \
 	_ctf_sequence_encoded(_type, _item, _src,		\
-			_length_type, _src_length, UTF8, 0)
+			_length_type, _src_length, UTF8, 0, 10)
 
 #undef ctf_string
 #define ctf_string(_item, _src)					\

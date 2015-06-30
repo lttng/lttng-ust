@@ -39,12 +39,17 @@
 #undef ctf_sequence_nowrite
 #define ctf_sequence_nowrite(_type, _item, _src, _length_type, _src_length) \
 	_ctf_sequence_encoded(_type, _item, _src,		\
-			_length_type, _src_length, none, 1)
+			_length_type, _src_length, none, 1, 10)
+
+#undef ctf_sequence_nowrite_hex
+#define ctf_sequence_nowrite_hex(_type, _item, _src, _length_type, _src_length) \
+	_ctf_sequence_encoded(_type, _item, _src,		\
+			_length_type, _src_length, none, 1, 16)
 
 #undef ctf_sequence_text_nowrite
 #define ctf_sequence_text_nowrite(_type, _item, _src, _length_type, _src_length) \
 	_ctf_sequence_encoded(_type, _item, _src,		\
-			_length_type, _src_length, UTF8, 1)
+			_length_type, _src_length, UTF8, 1, 10)
 
 #undef ctf_string_nowrite
 #define ctf_string_nowrite(_item, _src)				\
