@@ -10,6 +10,7 @@ extern "C" {
 
 /*
  * Copyright (C) 2013  Paul Woegerer <paul_woegerer@mentor.com>
+ * Copyright (C) 2015  Antoine Busque <abusque@efficios.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -37,18 +38,45 @@ extern "C" {
 #include <lttng/tracepoint.h>
 
 TRACEPOINT_EVENT(lttng_ust_dl, dlopen,
-	TP_ARGS(void *, baddr, const char*, sopath, int64_t, size,
-		int64_t, mtime, void *, ip),
+	TP_ARGS(void *, ip, void *, baddr, const char*, sopath,
+		uint64_t, memsz),
 	TP_FIELDS(
 		ctf_integer_hex(void *, baddr, baddr)
+		ctf_integer(uint64_t, memsz, memsz)
 		ctf_string(sopath, sopath)
-		ctf_integer(int64_t, size, size)
-		ctf_integer(int64_t, mtime, mtime)
+	)
+)
+
+TRACEPOINT_EVENT(lttng_ust_dl, build_id,
+	TP_ARGS(
+		void *, ip,
+		void *, baddr,
+		uint8_t *, build_id,
+		size_t, build_id_len
+	),
+	TP_FIELDS(
+		ctf_integer_hex(void *, baddr, baddr)
+		ctf_sequence_hex(uint8_t, build_id, build_id,
+			size_t, build_id_len)
+	)
+)
+
+TRACEPOINT_EVENT(lttng_ust_dl, debug_link,
+	TP_ARGS(
+		void *, ip,
+		void *, baddr,
+		char *, filename,
+		uint32_t, crc
+	),
+	TP_FIELDS(
+		ctf_integer_hex(void *, baddr, baddr)
+		ctf_integer(uint32_t, crc, crc)
+		ctf_string(filename, filename)
 	)
 )
 
 TRACEPOINT_EVENT(lttng_ust_dl, dlclose,
-	TP_ARGS(void *, baddr, void *, ip),
+	TP_ARGS(void *, ip, void *, baddr),
 	TP_FIELDS(
 		ctf_integer_hex(void *, baddr, baddr)
 	)

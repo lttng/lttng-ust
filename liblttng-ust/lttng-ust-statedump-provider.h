@@ -48,14 +48,40 @@ TRACEPOINT_EVENT(lttng_ust_statedump, soinfo,
 		struct lttng_session *, session,
 		void *, baddr,
 		const char*, sopath,
-		int64_t, size,
-		int64_t, mtime
-		),
+		uint64_t, memsz
+	),
 	TP_FIELDS(
 		ctf_integer_hex(void *, baddr, baddr)
+		ctf_integer(uint64_t, memsz, memsz)
 		ctf_string(sopath, sopath)
-		ctf_integer(int64_t, size, size)
-		ctf_integer(int64_t, mtime, mtime)
+	)
+)
+
+TRACEPOINT_EVENT(lttng_ust_statedump, build_id,
+	TP_ARGS(
+		struct lttng_session *, session,
+		void *, baddr,
+		uint8_t *, build_id,
+		size_t, build_id_len
+	),
+	TP_FIELDS(
+		ctf_integer_hex(void *, baddr, baddr)
+		ctf_sequence_hex(uint8_t, build_id, build_id,
+			size_t, build_id_len)
+	)
+)
+
+TRACEPOINT_EVENT(lttng_ust_statedump, debug_link,
+	TP_ARGS(
+		struct lttng_session *, session,
+		void *, baddr,
+		char *, filename,
+		uint32_t, crc
+	),
+	TP_FIELDS(
+		ctf_integer_hex(void *, baddr, baddr)
+		ctf_integer(uint32_t, crc, crc)
+		ctf_string(filename, filename)
 	)
 )
 

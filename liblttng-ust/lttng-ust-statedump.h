@@ -3,6 +3,7 @@
 
 /*
  * Copyright (C) 2013  Paul Woegerer <paul_woegerer@mentor.com>
+ * Copyright (C) 2015  Antoine Busque <abusque@efficios.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
