@@ -36,6 +36,8 @@ liblttng_ust_runtime_la_SOURCES = \
 	lttng-filter-interpreter.c \
 	filter-bytecode.h \
 	lttng-hash-helper.h \
+	lttng-ust-elf.c \
+	lttng-ust-elf.h \
 	lttng-ust-statedump.c \
 	lttng-ust-statedump.h \
 	lttng-ust-statedump-provider.h \

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013  Paul Woegerer <paul.woegerer@mentor.com>
+ * Copyright (C) 2015  Antoine Busque <abusque@efficios.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,21 +19,18 @@
 
 #define _LGPL_SOURCE
 #define _GNU_SOURCE
-#include <lttng/ust-dlfcn.h>
-#include <inttypes.h>
-#include <link.h>
-#include <unistd.h>
-#include <stdio.h>
+
 #include <limits.h>
+#include <stdio.h>
 #include <sys/types.h>
-#include <sys/stat.h>
-#include <signal.h>
-#include <sched.h>
-#include <stdarg.h>
+#include <unistd.h>
+
+#include <lttng/ust-dlfcn.h>
+#include <lttng/ust-elf.h>
 #include "usterr-signal-safe.h"
 
-#include <lttng/ust-compiler.h>
-#include <lttng/ust.h>
+/* Include link.h last else it conflicts with ust-dlfcn. */
+#include <link.h>
 
 #define TRACEPOINT_DEFINE
 #include "ust_dl.h"
@@ -45,7 +43,7 @@ void *_lttng_ust_dl_libc_dlopen(const char *filename, int flag)
 {
 	if (!__lttng_ust_plibc_dlopen) {
 		__lttng_ust_plibc_dlopen = dlsym(RTLD_NEXT, "dlopen");
-		if (__lttng_ust_plibc_dlopen == NULL) {
+		if (!__lttng_ust_plibc_dlopen) {
 			fprintf(stderr, "%s\n", dlerror());
 			return NULL;
 		}
@@ -58,7 +56,7 @@ int _lttng_ust_dl_libc_dlclose(void *handle)
 {
 	if (!__lttng_ust_plibc_dlclose) {
 		__lttng_ust_plibc_dlclose = dlsym(RTLD_NEXT, "dlclose");
-		if (__lttng_ust_plibc_dlclose == NULL) {
+		if (!__lttng_ust_plibc_dlclose) {
 			fprintf(stderr, "%s\n", dlerror());
 			return -1;
 		}
@@ -70,33 +68,77 @@ static
 void lttng_ust_dl_dlopen(void *so_base, const char *so_name, void *ip)
 {
 	char resolved_path[PATH_MAX];
-	struct stat sostat;
+	struct lttng_ust_elf *elf;
+	uint64_t memsz;
+	uint8_t *build_id;
+	size_t build_id_len;
+	char *dbg_file;
+	uint32_t crc;
+	int has_build_id = 0, has_debug_link = 0;
+	int ret;
 
 	if (!realpath(so_name, resolved_path)) {
 		ERR("could not resolve path '%s'", so_name);
 		return;
 	}
 
-	if (stat(resolved_path, &sostat)) {
-		ERR("could not access file status for %s", resolved_path);
+	elf = lttng_ust_elf_create(resolved_path);
+	if (!elf) {
+		ERR("could not acces file %s", resolved_path);
 		return;
 	}
 
+	ret = lttng_ust_elf_get_memsz(elf, &memsz);
+	if (ret) {
+		goto end;
+	}
+	ret = lttng_ust_elf_get_build_id(
+		elf, &build_id, &build_id_len, &has_build_id);
+	if (ret) {
+		goto end;
+	}
+	ret = lttng_ust_elf_get_debug_link(
+		elf, &dbg_file, &crc, &has_debug_link);
+	if (ret) {
+		goto end;
+	}
+
 	tracepoint(lttng_ust_dl, dlopen,
-		so_base, resolved_path, sostat.st_size, sostat.st_mtime, ip);
+		ip, so_base, resolved_path, memsz);
+
+	if (has_build_id) {
+		tracepoint(lttng_ust_dl, build_id,
+			ip, so_base, build_id, build_id_len);
+		free(build_id);
+	}
+
+	if (has_debug_link) {
+		tracepoint(lttng_ust_dl, debug_link,
+			ip, so_base, dbg_file, crc);
+		free(dbg_file);
+	}
+
+end:
+	lttng_ust_elf_destroy(elf);
 	return;
 }
 
 void *dlopen(const char *filename, int flag)
 {
-	void *handle = _lttng_ust_dl_libc_dlopen(filename, flag);
+	void *handle;
+
+	handle = _lttng_ust_dl_libc_dlopen(filename, flag);
 	if (__tracepoint_ptrs_registered && handle) {
 		struct link_map *p = NULL;
-		if (dlinfo(handle, RTLD_DI_LINKMAP, &p) != -1 && p != NULL
-				&& p->l_addr != 0)
+		int ret;
+
+		ret = dlinfo(handle, RTLD_DI_LINKMAP, &p);
+		if (ret != -1 && p != NULL && p->l_addr != 0) {
 			lttng_ust_dl_dlopen((void *) p->l_addr, p->l_name,
 				__builtin_return_address(0));
+		}
 	}
+
 	return handle;
 }
 
@@ -104,10 +146,15 @@ int dlclose(void *handle)
 {
 	if (__tracepoint_ptrs_registered && handle) {
 		struct link_map *p = NULL;
-		if (dlinfo(handle, RTLD_DI_LINKMAP, &p) != -1 && p != NULL
-				&& p->l_addr != 0)
-			tracepoint(lttng_ust_dl, dlclose, (void *) p->l_addr,
-				__builtin_return_address(0));
+		int ret;
+
+		ret = dlinfo(handle, RTLD_DI_LINKMAP, &p);
+		if (ret != -1 && p != NULL && p->l_addr != 0) {
+			tracepoint(lttng_ust_dl, dlclose,
+				__builtin_return_address(0),
+				(void *) p->l_addr);
+		}
 	}
+
 	return _lttng_ust_dl_libc_dlclose(handle);
 }
