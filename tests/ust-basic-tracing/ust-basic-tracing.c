@@ -659,8 +659,11 @@ int update_futex(int fd, int active)
 
 	if (active) {
 		uatomic_set((int32_t *) wait_shm_mmap, 1);
-		futex_async((int32_t *) wait_shm_mmap, FUTEX_WAKE,
-				INT_MAX, NULL, NULL, 0);
+		if (futex_async((int32_t *) wait_shm_mmap, FUTEX_WAKE,
+				INT_MAX, NULL, NULL, 0) < 0) {
+			perror("futex_async");
+			goto error;
+		}
 	} else {
 		uatomic_set((int32_t *) wait_shm_mmap, 0);
 	}
