@@ -1117,8 +1117,6 @@ error:
 static
 void wait_for_sessiond(struct sock_info *sock_info)
 {
-	int ret;
-
 	if (ust_lock()) {
 		goto quit;
 	}
@@ -1134,23 +1132,32 @@ void wait_for_sessiond(struct sock_info *sock_info)
 
 	DBG("Waiting for %s apps sessiond", sock_info->name);
 	/* Wait for futex wakeup */
-	if (uatomic_read((int32_t *) sock_info->wait_shm_mmap) == 0) {
-		ret = futex_async((int32_t *) sock_info->wait_shm_mmap,
-			FUTEX_WAIT, 0, NULL, NULL, 0);
-		if (ret < 0) {
-			if (errno == EFAULT) {
-				wait_poll_fallback = 1;
-				DBG(
+	if (uatomic_read((int32_t *) sock_info->wait_shm_mmap))
+		goto end_wait;
+
+	while (futex_async((int32_t *) sock_info->wait_shm_mmap,
+			FUTEX_WAIT, 0, NULL, NULL, 0)) {
+		switch (errno) {
+		case EWOULDBLOCK:
+			/* Value already changed. */
+			goto end_wait;
+		case EINTR:
+			/* Retry if interrupted by signal. */
+			break;	/* Get out of switch. */
+		case EFAULT:
+			wait_poll_fallback = 1;
+			DBG(
 "Linux kernels 2.6.33 to 3.0 (with the exception of stable versions) "
 "do not support FUTEX_WAKE on read-only memory mappings correctly. "
 "Please upgrade your kernel "
 "(fix is commit 9ea71503a8ed9184d2d0b8ccc4d269d05f7940ae in Linux kernel "
 "mainline). LTTng-UST will use polling mode fallback.");
-				if (ust_debug())
-					PERROR("futex");
-			}
+			if (ust_debug())
+				PERROR("futex");
+			goto end_wait;
 		}
 	}
+end_wait:
 	return;
 
 quit:
