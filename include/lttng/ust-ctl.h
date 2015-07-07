@@ -254,6 +254,8 @@ int ustctl_get_current_timestamp(struct ustctl_consumer_stream *stream,
 		uint64_t *ts);
 int ustctl_get_sequence_number(struct ustctl_consumer_stream *stream,
 		uint64_t *seq);
+int ustctl_get_instance_id(struct ustctl_consumer_stream *stream,
+		uint64_t *id);
 
 /* returns whether UST has perf counters support. */
 int ustctl_has_perf_counters(void);

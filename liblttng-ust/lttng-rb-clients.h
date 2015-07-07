@@ -45,6 +45,8 @@ struct lttng_ust_client_lib_ring_buffer_client_cb {
 			uint64_t *ts);
 	int (*sequence_number) (struct lttng_ust_lib_ring_buffer *buf,
 		struct lttng_ust_shm_handle *handle, uint64_t *seq);
+	int (*instance_id) (struct lttng_ust_lib_ring_buffer *buf,
+			struct lttng_ust_shm_handle *handle, uint64_t *id);
 };
 
 #endif /* _LTTNG_RB_CLIENT_H */

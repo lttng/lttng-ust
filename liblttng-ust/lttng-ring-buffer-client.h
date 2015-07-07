@@ -520,6 +520,17 @@ static int client_sequence_number(struct lttng_ust_lib_ring_buffer *buf,
 	return 0;
 }
 
+static int client_instance_id(struct lttng_ust_lib_ring_buffer *buf,
+		struct lttng_ust_shm_handle *handle,
+		uint64_t *id)
+{
+	struct packet_header *header;
+
+	header = client_packet_header(buf, handle);
+	*id = header->stream_instance_id;
+	return 0;
+}
+
 static const
 struct lttng_ust_client_lib_ring_buffer_client_cb client_cb = {
 	.parent = {
@@ -541,6 +552,7 @@ struct lttng_ust_client_lib_ring_buffer_client_cb client_cb = {
 	.stream_id = client_stream_id,
 	.current_timestamp = client_current_timestamp,
 	.sequence_number = client_sequence_number,
+	.instance_id = client_instance_id,
 };
 
 static const struct lttng_ust_lib_ring_buffer_config client_config = {
