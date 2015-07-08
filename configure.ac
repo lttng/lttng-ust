@@ -255,7 +255,7 @@ fi
 # Check for JNI header files if requested
 AC_ARG_ENABLE([jni-interface],
 	[AS_HELP_STRING([--enable-jni-interface],[build JNI interface between C and Java. Needs Java include files [default=no]])],
-	[jni_interface=$withval],
+	[jni_interface=$enableval],
 	[jni_interface=no]
 )
 
