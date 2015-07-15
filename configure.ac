@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT([lttng-ust],[2.7.0-pre],[mathieu dot desnoyers at efficios dot com])
+AC_INIT([lttng-ust],[2.7.0-rc1],[mathieu dot desnoyers at efficios dot com])
 
 # Following the numbering scheme proposed by libtool for the library version
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
@@ -41,11 +41,12 @@ AC_DEFINE_UNQUOTED([VERSION_MAJOR], $major_version, [UST major version number])
 AC_DEFINE_UNQUOTED([VERSION_MINOR], $minor_version, [UST minor version number])
 AC_DEFINE_UNQUOTED([VERSION_PATCHLEVEL], $patchlevel_version, [UST patchlevel version number])
 
-version_name="Gaia"
-version_description="From Benelux brewery in Montreal, the Gaia is a witbier with a cloudy light amber ale color. Aroma of coriander with floral hay notes is enchanting. Taste is also dominated by the very floral coriander note and some medium sweet malt notes."
+version_name="Herbe à Détourne"
+version_description='Brewed with unrestrained amounts of Citra hop, the Herbe à Détourne is a fantastic New World Tripel brewed by "Dieu du Ciel!". Aromas of mango, cantaloupe melon and passion fruit, combined with a controlled bitter finish, unite in making this smooth golden-orange beer stand apart.'
+version_description_c=$(echo $version_description | sed 's/"/\\"/g')
 
 AC_DEFINE_UNQUOTED([VERSION_NAME], ["$version_name"], [UST version name])
-AC_DEFINE_UNQUOTED([VERSION_DESCRIPTION], ["$version_description"], [UST version description])
+AC_DEFINE_UNQUOTED([VERSION_DESCRIPTION], ["$version_description_c"], [UST version description])
 
 AC_PROG_GREP
 AC_PROG_LN_S

@@ -1,3 +1,88 @@
+2015-07-15 (Pet Fire Safety Day) lttng-ust 2.7.0-rc1
+	* Fix: Use $enableval with AC_ARG_ENABLE
+	* Fix: Cleanup local_apps sock_info in lttng_ust_cleanup
+	* Fix: handle sys_futex EINTR and EWOULDBLOCK
+	* Fix: update liburcu URL
+	* .gitignore: ignore Python agent generated files
+	* Add ctf_sequence_hex() macro
+	* Fix: set soinfo_data's vdso flag correctly in base address statedump
+	* Fix: running java examples out of tree
+	* Fix: java class check when uudecode is not present
+	* Cleanup: remove extra whitespace in configure output
+	* Default to no unaligned access on unsupported archs
+	* cleanup: Coding style fixes to the Java agent
+	* cleanup: Mark obsolete JUL agent as @Deprecated
+	* Fix compilation warnings in the Java agent
+	* Fix: out of tree build of java agents
+	* Fix: Use env CLASSPATH when building log4j example
+	* Fix: build log4j example when enabled
+	* Bump tracer version to 2.7.0-pre
+	* Fix: perform volatile load of tracepoint state
+	* Add demo-tracelog to gitignore file
+	* Add aarch64 support to configure
+	* Implement cpu_id context for filtering
+	* ust cyg-profile: use same class for entry and exit
+	* Fix: function instrumentation ip context
+	* Fix: liblttng-ust-dl ip context
+	* Remove caller field from malloc events
+	* Fix: pthread wrapper ip context
+	* Fix: lttng-ust-malloc ip context
+	* Allow TP_IP_PARAM arg name to be configured
+	* tracelog: use same class for all loglevels
+	* fix tracelog namespacing of loglevels
+	* Add tracelog documentation to lttng-ust(3)
+	* Implement demo-tracelog example
+	* Implement tracelog API
+	* Fix: fetch caller address from tracef()
+	* Rename helper providers and events for consistency
+	* Refactor state dump system
+	* Refactor Python agent
+	* Fix: building probe providers with C++ compiler
+	* Fix: use lttng_secure_getenv to handle env. vars. involving paths
+	* Fix: Don't wait during registration if clock_gettime() fails
+	* Fix: getcpu/clock plugin handle leak
+	* Fix: add missing new ldl dependency for liblttng-ust-ctl
+	* Fix: add missing getenv wrapper
+	* Fix: add missing lttng-clock.c
+	* Fix: add missing ust-clock.h
+	* clock plugin example: use shift and mul
+	* Implement getcpu override
+	* Implement clock override plugin support
+	* Add tracepoint_enabled() macro
+	* Move file creation/unlink from liblttng-ust-ctl to consumerd
+	* Implement file-backed ring buffer
+	* Fix: oot build: missing top_builddir include
+	* Fix: Mismatching code and console output in log4j example
+	* Update manpage about LTTNG_UST_DEBUG effect
+	* Don't output to stderr from lib unless DEBUG is activated
+	* Remove usterr.h, use usterr-signal-safe.h everywhere instead
+	* Fix: out-of-tree build: wrong file path for sed input
+	* Fix: make dist: python agent file handling
+	* Fix: java-agent: out-of-tree path to java manifest
+	* Add return address to liblttng-ust-libc-wrapper
+	* Fix: missing parenthesis in offset_align_floor
+	* Fix: add ustctl_has_perf_counters
+	* Fix: add urcu-bp TLS fixup
+	* Fix: add missing poll.h include
+	* Fix: get_subbuf: bound number of consumerd retry
+	* Fix: man: you can't link a lib with a static lib
+	* Fix: context alignment not properly handled
+	* Fix: Shorthand option -cp not supported in all version of Java
+	* Fix: allow tracepoints to build with --std=c99
+	* Bump UST ABI for new release cycle
+	* Cleanup: remove "disabled" flag for new release cycle
+	* Fix: filter attach vs event enable race
+	* Fix: add a configure check for weak symbols support
+	* Fix coverity warning about sizeof(void **) != sizeof(void *)
+	* Fix: off-by-one in sequence filter comparator
+	* Fix: Java Agent JAR file symlink should be created after objects install
+	* Fix: Add versioning to liblttng-ust-agent JAR
+	* Fix: Warn when log4j version is too old
+	* Update Java agent documentation
+	* Fix: Try loading classes using the thread context class loader
+	* Add Python agent support
+	* Update version name
+
 2014-10-20 lttng-ust 2.6.0-rc1
 	* Add missing file to gitignore
 	* Fix: preserve example files' timestamps when copying
