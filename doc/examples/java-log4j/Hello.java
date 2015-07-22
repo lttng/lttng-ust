@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2015 - EfficiOS Inc., Alexandre Montplaisir <alexmonthy@efficios.com>
  * Copyright (C) 2014 - Christian Babeux <christian.babeux@efficios.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,47 +21,60 @@
  * IN THE SOFTWARE.
  */
 
+import java.io.IOException;
+
+import org.apache.log4j.Appender;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
-import org.lttng.ust.agent.LTTngAgent;
+import org.lttng.ust.agent.log4j.LttngLogAppender;
 
 /**
  * Example application using the LTTng-UST Java JUL agent.
  *
+ * @author Alexandre Montplaisir
  * @author Christian Babeux
  */
 public class Hello {
 
-	/* Of course :) */
-	private static final int answer = 42;
-
-	static Logger helloLog = Logger.getLogger(Hello.class);
-
-	private static LTTngAgent lttngAgent;
+	private static final Logger HELLO_LOG = Logger.getLogger(Hello.class);
 
 	/**
 	 * Application start
 	 *
 	 * @param args
 	 *            Command-line arguments
-	 * @throws Exception
+	 * @throws IOException
+	 * @throws InterruptedException
 	 */
-	public static void main(String args[]) throws Exception {
+	public static void main(String args[]) throws IOException, InterruptedException {
+		/* Start with the default Log4j configuration, which logs to console */
 		BasicConfigurator.configure();
-		lttngAgent = LTTngAgent.getLTTngAgent();
+
+		/*
+		 * Add a LTTng log appender to the logger, which will also send the
+		 * logged events to UST.
+		 */
+		Appender lttngAppender = new LttngLogAppender();
+		HELLO_LOG.addAppender(lttngAppender);
+
+		/*
+		 * Here we've set up the appender programmatically, but it could also be
+		 * defined at runtime, by reading a configuration file for example:
+		 */
+		// PropertyConfigurator.configure(fileName);
 
 		/*
 		 * Gives you time to do some lttng commands before any event is hit.
 		 */
 		Thread.sleep(5000);
 
-		/* Trigger a tracing event using the JUL Logger created before. */
-		helloLog.info("Hello World, the answer is " + answer);
+		/* Trigger a tracing event using the Log4j Logger created before. */
+		HELLO_LOG.info("Hello World, the answer is " + 42);
 
-		System.out.println("Firing hello delay in 5 seconds...");
+		System.out.println("Firing second event in 5 seconds...");
 		Thread.sleep(5000);
-		helloLog.info("Hello World delayed...");
+		HELLO_LOG.info("Hello World delayed...");
 
-		lttngAgent.dispose();
+		lttngAppender.close();
 	}
 }

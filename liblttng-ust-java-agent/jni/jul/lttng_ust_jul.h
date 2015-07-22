@@ -25,34 +25,10 @@
 #include <lttng/tracepoint.h>
 
 /*
- * Privileged tracepoint meaning that this is only enable and fired by the root
- * session daemon.
+ * Tracepoint used by Java applications using the JUL handler.
  */
+// FIXME Change "sys_event" to "event" once lttng-tools is updated
 TRACEPOINT_EVENT(lttng_jul, sys_event,
-	TP_ARGS(
-		const char *, msg,
-		const char *, logger_name,
-		const char *, class_name,
-		const char *, method_name,
-		long, millis,
-		int, log_level,
-		int, thread_id),
-	TP_FIELDS(
-		ctf_string(msg, msg)
-		ctf_string(logger_name, logger_name)
-		ctf_string(class_name, class_name)
-		ctf_string(method_name, method_name)
-		ctf_integer(long, long_millis, millis)
-		ctf_integer(int, int_loglevel, log_level)
-		ctf_integer(int, int_threadid, thread_id)
-	)
-)
-
-/*
- * User tracepoint meaning that this is only enable and fired by a non root
- * session daemon.
- */
-TRACEPOINT_EVENT(lttng_jul, user_event,
 	TP_ARGS(
 		const char *, msg,
 		const char *, logger_name,
