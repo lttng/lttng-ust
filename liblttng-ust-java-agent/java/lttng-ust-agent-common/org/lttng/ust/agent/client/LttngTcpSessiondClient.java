@@ -15,7 +15,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-package org.lttng.ust.agent;
+package org.lttng.ust.agent.client;
 
 import java.io.BufferedReader;
 import java.io.DataInputStream;
@@ -28,20 +28,28 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
-class LTTngTCPSessiondClient implements Runnable {
+import org.lttng.ust.agent.AbstractLttngAgent;
+
+/**
+ * Client for agents to connect to a local session daemon, using a TCP socket.
+ *
+ * @author David Goulet
+ */
+public class LttngTcpSessiondClient implements Runnable {
 
 	private static final String SESSION_HOST = "127.0.0.1";
 	private static final String ROOT_PORT_FILE = "/var/run/lttng/agent.port";
 	private static final String USER_PORT_FILE = "/.lttng/agent.port";
 
-	private static Integer protocolMajorVersion = 1;
-	private static Integer protocolMinorVersion = 0;
+	private static int protocolMajorVersion = 1;
+	private static int protocolMinorVersion = 0;
 
-	/* Command header from the session deamon. */
-	private LTTngSessiondCmd2_6.sessiond_hdr headerCmd =
-		new LTTngSessiondCmd2_6.sessiond_hdr();
+	/** Command header from the session deamon. */
+	private final SessiondHeaderCommand headerCmd = new SessiondHeaderCommand();
+	private final CountDownLatch registrationLatch = new CountDownLatch(1);
 
 	private Socket sessiondSock;
 	private volatile boolean quit = false;
@@ -49,30 +57,40 @@ class LTTngTCPSessiondClient implements Runnable {
 	private DataInputStream inFromSessiond;
 	private DataOutputStream outToSessiond;
 
-	private LogFramework log;
+	private final AbstractLttngAgent<?> logAgent;
+	private final boolean isRoot;
 
-	private Semaphore registerSem;
 
-
-	private LTTngAgent.Domain agentDomain;
-
-	/* Indicate if we've already released the semaphore. */
-	private boolean semPosted = false;
-
-	public LTTngTCPSessiondClient(LTTngAgent.Domain domain, LogFramework log, Semaphore sem) {
-		this.agentDomain = domain;
-		this.log = log;
-		this.registerSem = sem;
+	/**
+	 * Constructor
+	 *
+	 * @param logAgent
+	 *            The logging agent this client will operate on.
+	 * @param isRoot
+	 *            True if this client should connect to the root session daemon,
+	 *            false if it should connect to the user one.
+	 */
+	public LttngTcpSessiondClient(AbstractLttngAgent<?> logAgent, boolean isRoot) {
+		this.logAgent = logAgent;
+		this.isRoot = isRoot;
 	}
 
-	/*
-	 * Try to release the registerSem if it's not already done.
+	/**
+	 * Wait until this client has successfully established a connection to its
+	 * target session daemon.
+	 *
+	 * @param seconds
+	 *            A timeout in seconds after which this method will return
+	 *            anyway.
+	 * @return True if the the client actually established the connection, false
+	 *         if we returned because the timeout has elapsed or the thread was
+	 *         interrupted.
 	 */
-	private void tryReleaseSem() {
-		/* Release semaphore so we unblock the agent. */
-		if (!this.semPosted) {
-			this.registerSem.release();
-			this.semPosted = true;
+	public boolean waitForConnection(int seconds) {
+		try {
+			return registrationLatch.await(seconds, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			return false;
 		}
 	}
 
@@ -82,9 +100,6 @@ class LTTngTCPSessiondClient implements Runnable {
 			if (this.quit) {
 				break;
 			}
-
-			/* Cleanup Agent state before trying to connect or reconnect. */
-			this.log.reset();
 
 			try {
 
@@ -106,40 +121,38 @@ class LTTngTCPSessiondClient implements Runnable {
 				 */
 				handleSessiondCmd();
 			} catch (UnknownHostException uhe) {
-				tryReleaseSem();
-				System.out.println(uhe);
+				uhe.printStackTrace();
 			} catch (IOException ioe) {
-				tryReleaseSem();
 				try {
 					Thread.sleep(3000);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-			} catch (Exception e) {
-				tryReleaseSem();
-				e.printStackTrace();
 			}
 		}
 	}
 
-	public void destroy() {
+	/**
+	 * Dispose this client and close any socket connection it may hold.
+	 */
+	public void close() {
 		this.quit = true;
 
 		try {
 			if (this.sessiondSock != null) {
 				this.sessiondSock.close();
 			}
-		} catch (Exception e) {
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
-	/*
+	/**
 	 * Receive header data from the session daemon using the LTTng command
 	 * static buffer of the right size.
 	 */
-	private void recvHeader() throws Exception {
-		byte data[] = new byte[LTTngSessiondCmd2_6.sessiond_hdr.SIZE];
+	private void recvHeader() throws IOException {
+		byte data[] = new byte[SessiondHeaderCommand.HEADER_SIZE];
 
 		int readLen = this.inFromSessiond.read(data, 0, data.length);
 		if (readLen != data.length) {
@@ -148,15 +161,15 @@ class LTTngTCPSessiondClient implements Runnable {
 		this.headerCmd.populate(data);
 	}
 
-	/*
+	/**
 	 * Receive payload from the session daemon. This MUST be done after a
 	 * recvHeader() so the header value of a command are known.
 	 *
 	 * The caller SHOULD use isPayload() before which returns true if a payload
 	 * is expected after the header.
 	 */
-	private byte[] recvPayload() throws Exception {
-		byte payload[] = new byte[(int) this.headerCmd.dataSize];
+	private byte[] recvPayload() throws IOException {
+		byte payload[] = new byte[(int) this.headerCmd.getDataSize()];
 
 		/* Failsafe check so we don't waste our time reading 0 bytes. */
 		if (payload.length == 0) {
@@ -167,77 +180,84 @@ class LTTngTCPSessiondClient implements Runnable {
 		return payload;
 	}
 
-	/*
+	/**
 	 * Handle session command from the session daemon.
 	 */
-	private void handleSessiondCmd() throws Exception {
+	private void handleSessiondCmd() throws IOException {
 		byte data[] = null;
 
 		while (true) {
 			/* Get header from session daemon. */
 			recvHeader();
 
-			if (headerCmd.dataSize > 0) {
+			if (headerCmd.getDataSize() > 0) {
 				data = recvPayload();
 			}
 
-			switch (headerCmd.cmd) {
-				case CMD_REG_DONE:
-				{
-					/*
-					 * Release semaphore so meaning registration is done and we
-					 * can proceed to continue tracing.
-					 */
-					tryReleaseSem();
-					/*
-					 * We don't send any reply to the registration done command.
-					 * This just marks the end of the initial session setup.
-					 */
-					continue;
-				}
-				case CMD_LIST:
-				{
-					LTTngSessiondCmd2_6.sessiond_list_logger listLoggerCmd =
-						new LTTngSessiondCmd2_6.sessiond_list_logger();
-					listLoggerCmd.execute(this.log);
-					data = listLoggerCmd.getBytes();
+			switch (headerCmd.getCommandType()) {
+			case CMD_REG_DONE:
+			{
+				/*
+				 * Countdown the registration latch, meaning registration is
+				 * done and we can proceed to continue tracing.
+				 */
+				registrationLatch.countDown();
+				/*
+				 * We don't send any reply to the registration done command.
+				 * This just marks the end of the initial session setup.
+				 */
+				continue;
+			}
+			case CMD_LIST:
+			{
+				SessiondListLoggersResponse listLoggerCmd = new SessiondListLoggersResponse();
+				listLoggerCmd.execute(logAgent);
+				data = listLoggerCmd.getBytes();
+				break;
+			}
+			case CMD_ENABLE:
+			{
+				SessiondEnableHandler enableCmd = new SessiondEnableHandler();
+				if (data == null) {
+					enableCmd.code = ISessiondResponse.LttngAgentRetCode.CODE_INVALID_CMD;
 					break;
 				}
-				case CMD_ENABLE:
-				{
-					LTTngSessiondCmd2_6.sessiond_enable_handler enableCmd =
-						new LTTngSessiondCmd2_6.sessiond_enable_handler();
-					if (data == null) {
-						enableCmd.code = LTTngSessiondCmd2_6.lttng_agent_ret_code.CODE_INVALID_CMD;
-						break;
-					}
-					enableCmd.populate(data);
-					enableCmd.execute(this.log);
-					data = enableCmd.getBytes();
+				enableCmd.populate(data);
+				enableCmd.execute(logAgent);
+				data = enableCmd.getBytes();
+				break;
+			}
+			case CMD_DISABLE:
+			{
+				SessiondDisableHandler disableCmd = new SessiondDisableHandler();
+				if (data == null) {
+					disableCmd.setRetCode(ISessiondResponse.LttngAgentRetCode.CODE_INVALID_CMD);
 					break;
 				}
-				case CMD_DISABLE:
-				{
-					LTTngSessiondCmd2_6.sessiond_disable_handler disableCmd =
-						new LTTngSessiondCmd2_6.sessiond_disable_handler();
-					if (data == null) {
-						disableCmd.code = LTTngSessiondCmd2_6.lttng_agent_ret_code.CODE_INVALID_CMD;
-						break;
-					}
-					disableCmd.populate(data);
-					disableCmd.execute(this.log);
-					data = disableCmd.getBytes();
-					break;
-				}
-				default:
-				{
-					data = new byte[4];
-					ByteBuffer buf = ByteBuffer.wrap(data);
-					buf.order(ByteOrder.BIG_ENDIAN);
-					break;
-				}
+				disableCmd.populate(data);
+				disableCmd.execute(logAgent);
+				data = disableCmd.getBytes();
+				break;
+			}
+			default:
+			{
+				data = new byte[4];
+				ByteBuffer buf = ByteBuffer.wrap(data);
+				buf.order(ByteOrder.BIG_ENDIAN);
+				break;
+			}
 			}
 
+			if (data == null) {
+				/*
+				 * Simply used to silence a potential null access warning below.
+				 *
+				 * The flow analysis gets confused here and thinks "data" may be
+				 * null at this point. It should not happen according to program
+				 * logic, if it does we've done something wrong.
+				 */
+				throw new IllegalStateException();
+			}
 			/* Send payload to session daemon. */
 			this.outToSessiond.write(data, 0, data.length);
 			this.outToSessiond.flush();
@@ -255,7 +275,7 @@ class LTTngTCPSessiondClient implements Runnable {
 	 */
 	private static int getPortFromFile(String path) throws IOException {
 		int port;
-		BufferedReader br;
+		BufferedReader br = null;
 
 		try {
 			br = new BufferedReader(new FileReader(path));
@@ -265,19 +285,22 @@ class LTTngTCPSessiondClient implements Runnable {
 				/* Invalid value. Ignore. */
 				port = 0;
 			}
-			br.close();
 		} catch (FileNotFoundException e) {
 			/* No port available. */
 			port = 0;
+		} finally {
+			if (br != null) {
+				br.close();
+			}
 		}
 
 		return port;
 	}
 
-	private void connectToSessiond() throws Exception {
+	private void connectToSessiond() throws IOException {
 		int port;
 
-		if (this.log.isRoot()) {
+		if (this.isRoot) {
 			port = getPortFromFile(ROOT_PORT_FILE);
 			if (port == 0) {
 				/* No session daemon available. Stop and retry later. */
@@ -296,12 +319,12 @@ class LTTngTCPSessiondClient implements Runnable {
 		this.outToSessiond = new DataOutputStream(sessiondSock.getOutputStream());
 	}
 
-	private void registerToSessiond() throws Exception {
+	private void registerToSessiond() throws IOException {
 		byte data[] = new byte[16];
 		ByteBuffer buf = ByteBuffer.wrap(data);
 		String pid = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
 
-		buf.putInt(this.agentDomain.value());
+		buf.putInt(logAgent.getDomain().value());
 		buf.putInt(Integer.parseInt(pid));
 		buf.putInt(protocolMajorVersion);
 		buf.putInt(protocolMinorVersion);

@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2015 - EfficiOS Inc., Alexandre Montplaisir <alexmonthy@efficios.com>
  * Copyright (C) 2013 - David Goulet <dgoulet@efficios.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,54 +21,49 @@
  * IN THE SOFTWARE.
  */
 
+import java.io.IOException;
+import java.util.logging.Handler;
 import java.util.logging.Logger;
 
-/*
- * That's the import you need being the path in the liblttng-ust-jul Jar file.
- */
-import org.lttng.ust.agent.LTTngAgent;
+import org.lttng.ust.agent.jul.LttngLogHandler;
 
 /**
  * Example application using the LTTng-UST Java JUL agent.
  *
+ * <p>
+ * Basically all that is required is to instantiate a {@link LttngLogHandler}
+ * and to attach it to a JUL {@link Logger}. Then use the Logger normally to log
+ * messages, which will be sent to UST as trace events.
+ * <p>
+ * </p>
+ * {@link Logger} names are used as event names on the UST side. This means that
+ * by enabling/disabling certain events in the tracing session, you are
+ * effectively enabling and disabling Loggers on the Java side. Note that this
+ * applies only to {@link LttngLogHandler}'s. If other handlers are attached to
+ * the Logger, those will continue logging events normally.
+ * </p>
+ *
+ * @author Alexandre Montplaisir
  * @author David Goulet
  */
 public class Hello {
 
-	/* Of course :) */
-	private static final int answer = 42;
-
-	/*
-	 * Static reference to the LTTngAgent. Used to dispose of it at the end
-	 * which is recommended but not mandatory to do.
-	 */
-	private static LTTngAgent lttngAgent;
+	/** Class-wide JUL logger object */
+	private static final Logger LOGGER = Logger.getLogger(Hello.class.getName());
 
 	/**
 	 * Application start
 	 *
 	 * @param args
 	 *            Command-line arguments
-	 * @throws Exception
+	 * @throws IOException
+	 * @throws InterruptedException
 	 */
-	public static void main(String args[]) throws Exception {
-		/*
-		 * For this example, a custom "hello" logger is created. Note that JUL
-		 * has a default "global" that can also be used.
-		 */
-		Logger helloLog = Logger.getLogger("hello");
+	public static void main(String args[]) throws IOException, InterruptedException {
 
-		/*
-		 * Get the LTTngAgent singleton reference. This will also initialize
-		 * the Agent and make it register to the session daemon if available.
-		 * When this returns, the Agent is registered and fully ready. If no
-		 * session daemon is found, it will return and retry every 3 seconds in
-		 * the background. TCP is used for communication.
-		 *
-		 * Note that the LTTngAgent once registered is a separate thread in
-		 * your Java application.
-		 */
-		lttngAgent = LTTngAgent.getLTTngAgent();
+		/* Instantiate a LTTngLogHandler object, and attach it to our logger */
+		Handler lttngHandler = new LttngLogHandler();
+		LOGGER.addHandler(lttngHandler);
 
 		/*
 		 * Gives you time to do some lttng commands before any event is hit.
@@ -75,26 +71,39 @@ public class Hello {
 		Thread.sleep(5000);
 
 		/* Trigger a tracing event using the JUL Logger created before. */
-		helloLog.info("Hello World, the answer is " + answer);
+		LOGGER.info("Hello World, the answer is " + 42);
 
 		/*
 		 * From this point on, the above message will be collected in the trace
-		 * if the event "hello" is enabled for the JUL domain using the lttng
+		 * if the event "Hello" is enabled for the JUL domain using the lttng
 		 * command line or the lttng-ctl API. For instance:
 		 *
-		 *   $ lttng enable-event -j hello
+		 *   $ lttng enable-event -j Hello
+		 */
+
+		/*
+		 * A new logger is created here and fired after. Typically with JUL, you
+		 * use one static Logger per class. This example here can represent a
+		 * class being lazy-loaded later in the execution of the application.
 		 *
-		 * A new logger is created here and fired after. The Agent has an
-		 * internal timer that is fired every 5 seconds in order to enable
-		 * events that were not found at first but might need to be enabled
-		 * when new Logger appears. Unfortunately, there is no way right now to
-		 * get notify of that so we have to actively poll.
+		 * The agent has an internal timer that is fired every 5 seconds in
+		 * order to enable events that were not found at first but might need to
+		 * be enabled when a new Logger appears. Unfortunately, there is no way
+		 * right now to get notified of that so we have to actively poll.
 		 *
 		 * Using the --all command for instance, it will make this Logger
-		 * available in a LTTng trace after the internal Agent's timer is
-		 * fired. (lttng enable-event -a -j).
+		 * available in a LTTng trace after the internal agent's timer is fired.
+		 * (lttng enable-event -j -a).
 		 */
 		Logger helloLogDelayed = Logger.getLogger("hello_delay");
+
+		/*
+		 * Attach a handler to this new logger.
+		 *
+		 * Using the same handler as before would also work.
+		 */
+		Handler lttngHandler2 = new LttngLogHandler();
+		helloLogDelayed.addHandler(lttngHandler2);
 
 		System.out.println("Firing hello delay in 10 seconds...");
 		Thread.sleep(10000);
@@ -103,9 +112,10 @@ public class Hello {
 		System.out.println("Cleaning Hello");
 
 		/*
-		 * Again, this is highly recommended so the session daemon socket gets
-		 * cleaned up explicitly but it is not mandatory to do this step.
+		 * Do not forget to close() all handlers so that the agent can shutdown
+		 * and the session daemon socket gets cleaned up explicitly.
 		 */
-		lttngAgent.dispose();
+		lttngHandler.close();
+		lttngHandler2.close();
 	}
 }

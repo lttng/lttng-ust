@@ -25,38 +25,10 @@
 #include <lttng/tracepoint.h>
 
 /*
- * Privileged tracepoint meaning that this is only enable and fired by the root
- * session daemon.
+ * Tracepoint used by Java applications using the log4j log appender.
  */
+// FIXME Change "sys_event" to "event" once lttng-tools is updated
 TRACEPOINT_EVENT(lttng_log4j, sys_event,
-	TP_ARGS(
-		const char *, msg,
-		const char *, logger_name,
-		const char *, class_name,
-		const char *, method_name,
-		const char *, file_name,
-		int, line_number,
-		long, timestamp,
-		int, log_level,
-		const char *, thread_name),
-	TP_FIELDS(
-		ctf_string(msg, msg)
-		ctf_string(logger_name, logger_name)
-		ctf_string(class_name, class_name)
-		ctf_string(method_name, method_name)
-		ctf_string(filename, file_name)
-		ctf_integer(int, line_number, line_number)
-		ctf_integer(long, timestamp, timestamp)
-		ctf_integer(int, int_loglevel, log_level)
-		ctf_string(thread_name, thread_name)
-	)
-)
-
-/*
- * User tracepoint meaning that this is only enable and fired by a non root
- * session daemon.
- */
-TRACEPOINT_EVENT(lttng_log4j, user_event,
 	TP_ARGS(
 		const char *, msg,
 		const char *, logger_name,

@@ -12,8 +12,8 @@ jardir = $(datadir)/java
 
 juljniout = ../../jni/jul
 
-dist_noinst_JAVA = $(pkgpath)/LTTngJUL.java \
-			$(pkgpath)/LTTngLogHandler.java
+dist_noinst_JAVA = $(pkgpath)/LttngJulAgent.java \
+				   $(pkgpath)/LttngLogHandler.java
 
 dist_noinst_DATA = $(jarfile_manifest)
 
@@ -26,7 +26,7 @@ $(jarfile): classnoinst.stamp
 	$(JAR) cfm $(JARFLAGS) $@ $(jarfile_manifest) $(classes) && rm -f $(jarfile_symlink) && $(LN_S) $@ $(jarfile_symlink)
 
 jul-jni-header.stamp: $(dist_noinst_JAVA)
-	$(JAVAH) -classpath $(CLASSPATH):$(srcdir) -d $(juljniout) $(JAVAHFLAGS) org.lttng.ust.agent.jul.LTTngLogHandler && \
+	$(JAVAH) -classpath $(CLASSPATH):$(srcdir) -d $(juljniout) $(JAVAHFLAGS) org.lttng.ust.agent.jul.LttngLogHandler && \
 	echo "JUL JNI header generated" > jul-jni-header.stamp
 
 all-local: $(stamp)
@@ -38,4 +38,4 @@ uninstall-hook:
 	cd $(DESTDIR)/$(jardir) && rm -f $(jarfile_symlink)
 
 CLEANFILES = $(jarfile) $(pkgpath)/*.class jul-jni-header.stamp \
-	$(juljniout)/org_lttng_ust_agent_jul_LTTngLogHandler.h
+	$(juljniout)/org_lttng_ust_agent_jul_LttngLogHandler.h

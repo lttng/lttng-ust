@@ -17,110 +17,173 @@
 
 package org.lttng.ust.agent;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.util.logging.Handler;
+import java.util.logging.Logger;
 
 /**
  * The central agent managing the JUL and Log4j handlers.
  *
  * @author David Goulet
+ * @deprecated Applications are now expected to manage their Logger and Handler
+ *             objects.
  */
+@Deprecated
 public class LTTngAgent {
 
-	/* Domains */
-	static enum Domain {
-		JUL(3), LOG4J(4);
-		private int value;
+	private static LTTngAgent instance = null;
 
-		private Domain(int value) {
-			this.value = value;
+	/**
+	 * Public getter to acquire a reference to this singleton object.
+	 *
+	 * @return The agent instance
+	 */
+	public static synchronized LTTngAgent getLTTngAgent() {
+		if (instance == null) {
+			instance = new LTTngAgent();
 		}
-
-		public int value() {
-			return value;
-		}
+		return instance;
 	}
 
-	private static final int SEM_TIMEOUT = 3; /* Seconds */
+	/**
+	 * Dispose the agent. Applications should call this once they are done
+	 * logging.
+	 */
+	public static synchronized void dispose() {
+		if (instance != null) {
+			instance.disposeInstance();
+			instance = null;
+		}
+		return;
+	}
 
-	private static LogFramework julUser;
-	private static LogFramework julRoot;
-	private static LogFramework log4jUser;
-	private static LogFramework log4jRoot;
+	private ILttngHandler julHandler = null;
+	private ILttngHandler log4jAppender = null;
 
-	/* Sessiond clients */
-	private static LTTngTCPSessiondClient julUserClient;
-	private static LTTngTCPSessiondClient julRootClient;
-	private static LTTngTCPSessiondClient log4jUserClient;
-	private static LTTngTCPSessiondClient log4jRootClient;
-
-	private static Thread sessiondThreadJULUser;
-	private static Thread sessiondThreadJULRoot;
-	private static Thread sessiondThreadLog4jUser;
-	private static Thread sessiondThreadLog4jRoot;
-
-	private boolean useJUL = false;
-	private boolean useLog4j = false;
-
-	/* Singleton agent object */
-	private static LTTngAgent curAgent = null;
-
-	/* Indicate if this object has been initialized. */
-	private static boolean initialized = false;
-
-	private static Semaphore registerSem;
-
-	/*
-	 * Constructor is private. This is a singleton and a reference should be
-	 * acquired using getLTTngAgent().
+	/**
+	 * Private constructor. This is a singleton and a reference should be
+	 * acquired using {@link #getLTTngAgent()}.
 	 */
 	private LTTngAgent() {
-		initAgentJULClasses();
-
-		/* Since Log4j is a 3rd party JAR, we need to check if we can load any of its classes */
-		Boolean log4jLoaded = loadLog4jClasses();
-		if (log4jLoaded) {
-			initAgentLog4jClasses();
-		}
-
-		registerSem = new Semaphore(0, true);
+		initJulHandler();
+		initLog4jAppender();
 	}
 
-	private static Boolean loadLog4jClasses() {
-		Class<?> logging;
+	/**
+	 * "Destructor" method.
+	 */
+	private void disposeInstance() {
+		disposeJulHandler();
+		disposeLog4jAppender();
+	}
+
+	/**
+	 * Create a LTTng-JUL handler, and attach it to the JUL root logger.
+	 */
+	private void initJulHandler() {
+		try {
+			Class<?> julHandlerClass = Class.forName("org.lttng.ust.agent.jul.LttngLogHandler");
+			/*
+			 * It is safer to use Constructor.newInstance() rather than
+			 * Class.newInstance(), because it will catch the exceptions thrown
+			 * by the constructor below (which happens if the Java library is
+			 * present, but the matching JNI one is not).
+			 */
+			Constructor<?> julHandlerCtor = julHandlerClass.getConstructor();
+			julHandler = (ILttngHandler) julHandlerCtor.newInstance();
+
+			/* Attach the handler to the root JUL logger */
+			Logger.getLogger("").addHandler((Handler) julHandler);
+		} catch (ReflectiveOperationException e) {
+			/*
+			 * LTTng JUL classes not found, no need to create the relevant
+			 * objects
+			 */
+		}
+	}
+
+	/**
+	 * Create a LTTng-logj4 appender, and attach it to the log4j root logger.
+	 */
+	private void initLog4jAppender() {
+		/*
+		 * Since Log4j is a 3rd party library, we first need to check if we can
+		 * load any of its classes.
+		 */
+		if (!testLog4jClasses()) {
+			return;
+		}
 
 		try {
-			logging = loadClass("org.apache.log4j.spi.LoggingEvent");
+			Class<?> log4jAppenderClass = Class.forName("org.lttng.ust.agent.log4j.LttngLogAppender");
+			Constructor<?> log4jAppendCtor = log4jAppenderClass.getConstructor();
+			log4jAppender = (ILttngHandler) log4jAppendCtor.newInstance();
+		} catch (ReflectiveOperationException e) {
+			/*
+			 * LTTng Log4j classes not found, no need to create the relevant
+			 * objects.
+			 */
+			return;
+		}
+
+		/*
+		 * Attach the appender to the root Log4j logger. Slightly more tricky
+		 * here, as log4j.Logger is not in the base Java library, and we do not
+		 * want the "common" package to depend on log4j. So we have to obtain it
+		 * through reflection too.
+		 */
+		try {
+			Class<?> loggerClass = Class.forName("org.apache.log4j.Logger");
+			Class<?> appenderClass = Class.forName("org.apache.log4j.Appender");
+
+			Method getRootLoggerMethod = loggerClass.getMethod("getRootLogger", (Class<?>[]) null);
+			Method addAppenderMethod = loggerClass.getMethod("addAppender", appenderClass);
+
+			Object rootLogger = getRootLoggerMethod.invoke(null, (Object[]) null);
+			addAppenderMethod.invoke(rootLogger, log4jAppender);
+
+		} catch (ReflectiveOperationException e) {
+			/*
+			 * We have checked for the log4j library version previously, these
+			 * classes should exist.
+			 */
+			throw new IllegalStateException();
+		}
+	}
+
+	/**
+	 * Check if log4j >= 1.2.15 library is present.
+	 */
+	private static boolean testLog4jClasses() {
+		Class<?> loggingEventClass;
+
+		try {
+			loggingEventClass = Class.forName("org.apache.log4j.spi.LoggingEvent");
 		} catch (ClassNotFoundException e) {
-			/* Log4j classes not found, no need to create the relevant objects */
+			/*
+			 * Log4j classes not found, no need to create the relevant objects
+			 */
 			return false;
 		}
 
 		/*
-		 * Detect capabilities of the log4j library. We only
-		 * support log4j >= 1.2.15.  The getTimeStamp() method
-		 * was introduced in log4j 1.2.15, so verify that it
-		 * is available.
+		 * Detect capabilities of the log4j library. We only support log4j >=
+		 * 1.2.15. The getTimeStamp() method was introduced in log4j 1.2.15, so
+		 * verify that it is available.
 		 *
-		 * We can't rely on the getPackage().getImplementationVersion()
-		 * call that would retrieves information from the manifest file
-		 * found in the JAR since the manifest file shipped
-		 * from upstream is known to be broken in several
-		 * versions of the library.
+		 * We can't rely on the getPackage().getImplementationVersion() call
+		 * that would retrieves information from the manifest file found in the
+		 * JAR since the manifest file shipped from upstream is known to be
+		 * broken in several versions of the library.
 		 *
-		 * More info:
-		 * https://issues.apache.org/bugzilla/show_bug.cgi?id=44370
+		 * More info: https://issues.apache.org/bugzilla/show_bug.cgi?id=44370
 		 */
-
 		try {
-			logging.getDeclaredMethod("getTimeStamp");
+			loggingEventClass.getDeclaredMethod("getTimeStamp");
 		} catch (NoSuchMethodException e) {
-			System.err.println("Warning: The loaded log4j library is too old. Log4j tracing with LTTng will be disabled.");
-			return false;
-		} catch (NullPointerException e) {
-			/* Should never happen */
+			System.err.println(
+					"Warning: The loaded log4j library is too old. Log4j tracing with LTTng will be disabled.");
 			return false;
 		} catch (SecurityException e) {
 			return false;
@@ -129,190 +192,53 @@ public class LTTngAgent {
 		return true;
 	}
 
-	private static Class<?> loadClass(String className) throws ClassNotFoundException {
-		ClassLoader loader;
-		Class<?> loadedClass;
-
-		try {
-			/* Try to load class using the current thread's context class loader */
-			loader = Thread.currentThread().getContextClassLoader();
-			loadedClass = loader.loadClass(className);
-		} catch (ClassNotFoundException e) {
-			/* Loading failed, try using the system class loader */
-			loader = ClassLoader.getSystemClassLoader();
-			loadedClass = loader.loadClass(className);
+	/**
+	 * Detach the JUL handler from its logger and close it.
+	 */
+	private void disposeJulHandler() {
+		if (julHandler == null) {
+			/* The JUL handler was not activated, we have nothing to do */
+			return;
 		}
-
-		return loadedClass;
-	}
-
-	private void initAgentJULClasses() {
-		try {
-			Class<?> lttngJUL = loadClass("org.lttng.ust.agent.jul.LTTngJUL");
-			julUser = (LogFramework) lttngJUL.getDeclaredConstructor(new Class[] { Boolean.class }).newInstance(false);
-			julRoot = (LogFramework) lttngJUL.getDeclaredConstructor(new Class[] { Boolean.class }).newInstance(true);
-			this.useJUL = true;
-		} catch (ClassNotFoundException e) {
-			/* LTTng JUL classes not found, no need to create the relevant objects */
-			this.useJUL = false;
-		} catch (InstantiationException e) {
-			this.useJUL = false;
-		} catch (NoSuchMethodException e) {
-			this.useJUL = false;
-		} catch (IllegalAccessException e) {
-			this.useJUL = false;
-		} catch (InvocationTargetException e) {
-			this.useJUL = false;
-		}
-	}
-
-	private void initAgentLog4jClasses() {
-		try {
-			Class<?> lttngLog4j = loadClass("org.lttng.ust.agent.log4j.LTTngLog4j");
-			log4jUser = (LogFramework)lttngLog4j.getDeclaredConstructor(new Class[] {Boolean.class}).newInstance(false);
-			log4jRoot = (LogFramework)lttngLog4j.getDeclaredConstructor(new Class[] {Boolean.class}).newInstance(true);
-			this.useLog4j = true;
-		} catch (ClassNotFoundException e) {
-			/* LTTng Log4j classes not found, no need to create the relevant objects */
-			this.useLog4j = false;
-		} catch (InstantiationException e) {
-			this.useLog4j = false;
-		} catch (NoSuchMethodException e) {
-			this.useLog4j = false;
-		} catch (IllegalAccessException e) {
-			this.useLog4j = false;
-		} catch (InvocationTargetException e) {
-			this.useLog4j = false;
-		}
+		Logger.getLogger("").removeHandler((Handler) julHandler);
+		julHandler.close();
+		julHandler = null;
 	}
 
 	/**
-	 * Public getter to acquire a reference to this singleton object.
-	 *
-	 * @return The agent instance
-	 * @throws IOException
+	 * Detach the log4j appender from its logger and close it.
 	 */
-	public static synchronized LTTngAgent getLTTngAgent() throws IOException {
-		if (curAgent == null) {
-			curAgent = new LTTngAgent();
-			curAgent.init();
-		}
-
-		return curAgent;
-	}
-
-	private synchronized void init() throws SecurityException {
-		if (initialized) {
+	private void disposeLog4jAppender() {
+		if (log4jAppender == null) {
+			/* The log4j appender was not active, we have nothing to do */
 			return;
 		}
 
-		Integer numJULThreads = 0;
-		Integer numLog4jThreads = 0;
-
-		if (this.useJUL) {
-			numJULThreads = initJULClientThreads();
-		}
-
-		if (this.useLog4j) {
-			numLog4jThreads = initLog4jClientThreads();
-		}
-
-		Integer numThreads = numJULThreads + numLog4jThreads;
-
-		/* Wait for each registration to end. */
+		/*
+		 * Detach the appender from the log4j root logger. Again, we have to do
+		 * this via reflection.
+		 */
 		try {
-			registerSem.tryAcquire(numThreads,
-						    SEM_TIMEOUT,
-						    TimeUnit.SECONDS);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+			Class<?> loggerClass = Class.forName("org.apache.log4j.Logger");
+			Class<?> appenderClass = Class.forName("org.apache.log4j.Appender");
+
+			Method getRootLoggerMethod = loggerClass.getMethod("getRootLogger", (Class<?>[]) null);
+			Method removeAppenderMethod = loggerClass.getMethod("removeAppender", appenderClass);
+
+			Object rootLogger = getRootLoggerMethod.invoke(null, (Object[]) null);
+			removeAppenderMethod.invoke(rootLogger, log4jAppender);
+
+		} catch (ReflectiveOperationException e) {
+			/*
+			 * We were able to attach the appender, we should not have problems
+			 * here either!
+			 */
+			throw new IllegalStateException();
 		}
 
-		initialized = true;
+		/* Close the appender */
+		log4jAppender.close();
+		log4jAppender = null;
 	}
 
-	private synchronized static Integer initJULClientThreads() {
-		Integer numThreads = 2;
-
-		/* Handle user session daemon if any. */
-		julUserClient = new LTTngTCPSessiondClient(Domain.JUL,
-								julUser,
-								registerSem);
-
-		String userThreadName = "LTTng UST agent JUL user thread";
-		sessiondThreadJULUser = new Thread(julUserClient, userThreadName);
-		sessiondThreadJULUser.setDaemon(true);
-		sessiondThreadJULUser.start();
-
-		/* Handle root session daemon. */
-		julRootClient = new LTTngTCPSessiondClient(Domain.JUL,
-								julRoot,
-								registerSem);
-
-		String rootThreadName = "LTTng UST agent JUL root thread";
-		sessiondThreadJULRoot = new Thread(julRootClient, rootThreadName);
-		sessiondThreadJULRoot.setDaemon(true);
-		sessiondThreadJULRoot.start();
-
-		return numThreads;
-	}
-
-	private synchronized static Integer initLog4jClientThreads() {
-		Integer numThreads = 2;
-
-		log4jUserClient = new LTTngTCPSessiondClient(Domain.LOG4J,
-								  log4jUser,
-								  registerSem);
-
-		String userThreadName = "LTTng UST agent Log4j user thread";
-		sessiondThreadLog4jUser = new Thread(log4jUserClient, userThreadName);
-		sessiondThreadLog4jUser.setDaemon(true);
-		sessiondThreadLog4jUser.start();
-
-		log4jRootClient = new LTTngTCPSessiondClient(Domain.LOG4J,
-								  log4jRoot,
-								  registerSem);
-
-		String rootThreadName = "LTTng UST agent Log4j root thread";
-		sessiondThreadLog4jRoot = new Thread(log4jRootClient,rootThreadName);
-		sessiondThreadLog4jRoot.setDaemon(true);
-		sessiondThreadLog4jRoot.start();
-
-		return numThreads;
-	}
-
-	/**
-	 * Dispose the agent. Applications should call this once they are done
-	 * logging.
-	 */
-	public void dispose() {
-		if (this.useJUL) {
-			julUserClient.destroy();
-			julRootClient.destroy();
-			julUser.reset();
-			julRoot.reset();
-		}
-
-		if (this.useLog4j) {
-			log4jUserClient.destroy();
-			log4jRootClient.destroy();
-			log4jUser.reset();
-			log4jRoot.reset();
-		}
-
-		try {
-			if (this.useJUL) {
-				sessiondThreadJULUser.join();
-				sessiondThreadJULRoot.join();
-			}
-
-			if (this.useLog4j) {
-				sessiondThreadLog4jUser.join();
-				sessiondThreadLog4jRoot.join();
-			}
-
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-	}
 }

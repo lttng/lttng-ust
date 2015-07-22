@@ -16,16 +16,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "org_lttng_ust_agent_jul_LTTngLogHandler.h"
+#include "org_lttng_ust_agent_jul_LttngLogHandler.h"
 
 #define TRACEPOINT_DEFINE
 #define TRACEPOINT_CREATE_PROBES
 #include "lttng_ust_jul.h"
 
 /*
- * System tracepoint meaning only root agent will fire this.
+ * Tracepoint used by Java applications using the JUL handler.
  */
-JNIEXPORT void JNICALL Java_org_lttng_ust_agent_jul_LTTngLogHandler_tracepointS(JNIEnv *env,
+JNIEXPORT void JNICALL Java_org_lttng_ust_agent_jul_LttngLogHandler_tracepoint(JNIEnv *env,
 						jobject jobj,
 						jstring msg,
 						jstring logger_name,
@@ -41,35 +41,8 @@ JNIEXPORT void JNICALL Java_org_lttng_ust_agent_jul_LTTngLogHandler_tracepointS(
 	const char *class_name_cstr = (*env)->GetStringUTFChars(env, class_name, &iscopy);
 	const char *method_name_cstr = (*env)->GetStringUTFChars(env, method_name, &iscopy);
 
+	// FIXME Change "sys_event" to "event" once lttng-tools is updated
 	tracepoint(lttng_jul, sys_event, msg_cstr, logger_name_cstr,
-			class_name_cstr, method_name_cstr, millis, log_level, thread_id);
-
-	(*env)->ReleaseStringUTFChars(env, msg, msg_cstr);
-	(*env)->ReleaseStringUTFChars(env, logger_name, logger_name_cstr);
-	(*env)->ReleaseStringUTFChars(env, class_name, class_name_cstr);
-	(*env)->ReleaseStringUTFChars(env, method_name, method_name_cstr);
-}
-
-/*
- * User tracepoint meaning only a non root agent will fire this.
- */
-JNIEXPORT void JNICALL Java_org_lttng_ust_agent_jul_LTTngLogHandler_tracepointU(JNIEnv *env,
-		jobject jobj,
-		jstring msg,
-		jstring logger_name,
-		jstring class_name,
-		jstring method_name,
-		jlong millis,
-		jint log_level,
-		jint thread_id)
-{
-	jboolean iscopy;
-	const char *msg_cstr = (*env)->GetStringUTFChars(env, msg, &iscopy);
-	const char *logger_name_cstr = (*env)->GetStringUTFChars(env, logger_name, &iscopy);
-	const char *class_name_cstr = (*env)->GetStringUTFChars(env, class_name, &iscopy);
-	const char *method_name_cstr = (*env)->GetStringUTFChars(env, method_name, &iscopy);
-
-	tracepoint(lttng_jul, user_event, msg_cstr, logger_name_cstr,
 			class_name_cstr, method_name_cstr, millis, log_level, thread_id);
 
 	(*env)->ReleaseStringUTFChars(env, msg, msg_cstr);
