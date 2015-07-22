@@ -27,8 +27,13 @@ import java.util.logging.Logger;
  */
 import org.lttng.ust.agent.LTTngAgent;
 
-public class Hello
-{
+/**
+ * Example application using the LTTng-UST Java JUL agent.
+ *
+ * @author David Goulet
+ */
+public class Hello {
+
 	/* Of course :) */
 	private static final int answer = 42;
 
@@ -38,8 +43,14 @@ public class Hello
 	 */
 	private static LTTngAgent lttngAgent;
 
-	public static void main(String args[]) throws Exception
-	{
+	/**
+	 * Application start
+	 *
+	 * @param args
+	 *            Command-line arguments
+	 * @throws Exception
+	 */
+	public static void main(String args[]) throws Exception {
 		/*
 		 * For this example, a custom "hello" logger is created. Note that JUL
 		 * has a default "global" that can also be used.

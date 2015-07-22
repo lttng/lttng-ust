@@ -22,6 +22,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * The central agent managing the JUL and Log4j handlers.
+ *
+ * @author David Goulet
+ */
 public class LTTngAgent {
 
 	/* Domains */
@@ -181,8 +186,11 @@ public class LTTngAgent {
 		}
 	}
 
-	/*
+	/**
 	 * Public getter to acquire a reference to this singleton object.
+	 *
+	 * @return The agent instance
+	 * @throws IOException
 	 */
 	public static synchronized LTTngAgent getLTTngAgent() throws IOException {
 		if (curAgent == null) {
@@ -273,8 +281,11 @@ public class LTTngAgent {
 		return numThreads;
 	}
 
-
-	public void dispose() throws IOException {
+	/**
+	 * Dispose the agent. Applications should call this once they are done
+	 * logging.
+	 */
+	public void dispose() {
 		if (this.useJUL) {
 			julUserClient.destroy();
 			julRootClient.destroy();
