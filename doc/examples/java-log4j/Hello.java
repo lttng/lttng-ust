@@ -24,8 +24,13 @@ import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.lttng.ust.agent.LTTngAgent;
 
-public class Hello
-{
+/**
+ * Example application using the LTTng-UST Java JUL agent.
+ *
+ * @author Christian Babeux
+ */
+public class Hello {
+
 	/* Of course :) */
 	private static final int answer = 42;
 
@@ -33,8 +38,14 @@ public class Hello
 
 	private static LTTngAgent lttngAgent;
 
-	public static void main(String args[]) throws Exception
-	{
+	/**
+	 * Application start
+	 *
+	 * @param args
+	 *            Command-line arguments
+	 * @throws Exception
+	 */
+	public static void main(String args[]) throws Exception {
 		BasicConfigurator.configure();
 		lttngAgent = LTTngAgent.getLTTngAgent();
 
