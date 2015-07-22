@@ -20,8 +20,6 @@
  * IN THE SOFTWARE.
  */
 
-import java.io.IOException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /*
@@ -49,13 +47,13 @@ public class Hello
 		Logger helloLog = Logger.getLogger("hello");
 
 		/*
-		 * Get the LTTngAgent singelton reference. This will also initialize
+		 * Get the LTTngAgent singleton reference. This will also initialize
 		 * the Agent and make it register to the session daemon if available.
 		 * When this returns, the Agent is registered and fully ready. If no
 		 * session daemon is found, it will return and retry every 3 seconds in
 		 * the background. TCP is used for communication.
 		 *
-		 * Note that the LTTngAgent once registered is a seperate thread in
+		 * Note that the LTTngAgent once registered is a separate thread in
 		 * your Java application.
 		 */
 		lttngAgent = LTTngAgent.getLTTngAgent();
@@ -95,7 +93,7 @@ public class Hello
 
 		/*
 		 * Again, this is highly recommended so the session daemon socket gets
-		 * cleaned up explicitely but it is not mandatory to do this step.
+		 * cleaned up explicitly but it is not mandatory to do this step.
 		 */
 		lttngAgent.dispose();
 	}

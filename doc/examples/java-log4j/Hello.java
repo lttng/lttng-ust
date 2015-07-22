@@ -19,11 +19,9 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-import java.io.IOException;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.BasicConfigurator;
-
+import org.apache.log4j.Logger;
 import org.lttng.ust.agent.LTTngAgent;
 
 public class Hello
@@ -51,5 +49,7 @@ public class Hello
 		System.out.println("Firing hello delay in 5 seconds...");
 		Thread.sleep(5000);
 		helloLog.info("Hello World delayed...");
+
+		lttngAgent.dispose();
 	}
 }
