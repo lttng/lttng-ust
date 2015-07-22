@@ -24,14 +24,24 @@ import java.util.Vector;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-
 import org.lttng.ust.agent.LogFrameworkSkeleton;
 
+/**
+ * log4j logging framework
+ *
+ * @author Christian Babeux
+ */
 public class LTTngLog4j extends LogFrameworkSkeleton {
 
 	private LTTngLogAppender appender;
 	private Boolean attached;
 
+	/**
+	 * Constructor
+	 *
+	 * @param isRoot
+	 *            If this logger is a root logger or not.
+	 */
 	public LTTngLog4j(Boolean isRoot) {
 		super();
 		this.appender = new LTTngLogAppender(isRoot);

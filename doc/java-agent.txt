@@ -1,4 +1,4 @@
-The agent can now be built in three different configurations:
+The agent can be built in three different configurations:
 
 1) Java agent with JUL support:
 
@@ -20,21 +20,19 @@ is in your Java classpath.
 The configure script will automatically detect the appropriate Java
 binaries to use in order to build the Java agent.
 
-The name of the agent jar file is now "liblttng-ust-agent.jar".
-It will be installed in the arch-agnostic "$prefix/share/java" path
-e.g: "/usr/share/java".
+Enabling the JUL support will build a "lttng-ust-agent-jul.jar" file. Enabling
+the log4j support will build a "lttng-ust-agent-log4j.jar". Both of these jars
+depend on a third "lttng-ust-agent-common.jar", which will always be built.
 
-In order to support older applications using the "org.lttng.ust.jul"
-package, a transitional package is built with the same name.
+All these archives will be installed in the arch-agnostic "$prefix/share/java"
+path, e.g: "/usr/share/java". You need to make sure the .jar for the logging
+API you want to use (either lttng-ust-agent-jul.jar or -log4j.jar) is on your
+application's classpath.
 
-All applications should move to use the "org.lttng.ust.agent" package.
-
-After building, you can use the "liblttng-ust-agent.jar" file in a
-Java project.  Depending on your configuration, the agent will
-requires shared objects (e.g: "liblttng-ust-jul.so") which is installed
-by the build system when doing "make install". Make sure that your
-Java application can find this shared object with the
-"java.library.path".
+Both logging libraries also require an architecture-specific shared object
+(e.g: "liblttng-ust-jul-jni.so"), which is installed by the build system when
+doing "make install". Make sure that your Java application can find this shared
+object with the "java.library.path" property.
 
 In order to enable the agent in your Java application, you simply have to add
 this as early as you can in the runtime process.

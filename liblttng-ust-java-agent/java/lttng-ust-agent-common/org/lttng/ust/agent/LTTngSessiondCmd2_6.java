@@ -149,6 +149,8 @@ interface LTTngSessiondCmd2_6 {
 		/**
 		 * Execute enable handler action which is to enable the given handler
 		 * to the received name.
+		 *
+		 * @param log
 		 */
 		public void execute(LogFramework log) {
 			if (log.enableLogger(this.name)) {
@@ -187,6 +189,8 @@ interface LTTngSessiondCmd2_6 {
 		/**
 		 * Execute disable handler action which is to disable the given handler
 		 * to the received name.
+		 *
+		 * @param log
 		 */
 		public void execute(LogFramework log) {
 			if (log.disableLogger(this.name)) {

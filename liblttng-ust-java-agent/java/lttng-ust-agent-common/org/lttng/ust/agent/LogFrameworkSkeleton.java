@@ -18,15 +18,23 @@
 
 package org.lttng.ust.agent;
 
-import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
+/**
+ * Basic implementation of LogFramework.
+ *
+ * @author Christian Babeux
+ */
 public abstract class LogFrameworkSkeleton implements LogFramework {
 
 	/* A map of event name and reference count */
 	private final Map<String, Integer> enabledLoggers;
 
+	/**
+	 * Constructor
+	 */
 	public LogFrameworkSkeleton() {
 		this.enabledLoggers = new HashMap<String, Integer>();
 	}
@@ -88,6 +96,11 @@ public abstract class LogFrameworkSkeleton implements LogFramework {
 		enabledLoggers.clear();
 	}
 
+	/**
+	 * Get the number of enabled events.
+	 *
+	 * @return The number of enabled events
+	 */
 	protected Integer getEventCount() {
 		return enabledLoggers.size();
 	}

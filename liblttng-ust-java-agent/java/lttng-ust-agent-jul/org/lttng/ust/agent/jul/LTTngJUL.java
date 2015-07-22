@@ -21,17 +21,27 @@ package org.lttng.ust.agent.jul;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Vector;
-
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import org.lttng.ust.agent.LogFrameworkSkeleton;
 
+/**
+ * JUL logging framework
+ *
+ * @author Christian Babeux
+ */
 public class LTTngJUL extends LogFrameworkSkeleton {
 
 	private LTTngLogHandler handler;
 	private Boolean attached;
 
+	/**
+	 * Constructor
+	 *
+	 * @param isRoot
+	 *            If this logger is a root logger or not.
+	 */
 	public LTTngJUL(Boolean isRoot) {
 		super();
 		this.handler = new LTTngLogHandler(isRoot);
