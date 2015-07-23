@@ -497,6 +497,12 @@ startup time.
 .IP "LTTNG_UST_WITHOUT_BADDR_STATEDUMP"
 Prevent liblttng-ust to perform a base-address statedump on session-enable.
 .PP
+.IP "LTTNG_UST_GETCPU_PLUGIN"
+Used by the getcpu override plugin system. The environment variable
+provides the path to the shared object which will act as the getcpu override
+plugin. An example can be found in the lttng-ust documentation under
+examples/getcpu-override .
+.PP
 
 .SH "SEE ALSO"
 
