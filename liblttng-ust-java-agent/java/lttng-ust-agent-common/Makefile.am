@@ -28,7 +28,7 @@ jar_DATA = $(jarfile)
 
 classes = $(pkgpath)/*.class $(pkgpath)/client/*.class
 
-$(jarfile):
+$(jarfile): classnoinst.stamp
 	$(JAR) cfm $(JARFLAGS) $@ $(jarfile_manifest) $(classes) && rm -f $(jarfile_symlink) && $(LN_S) $@ $(jarfile_symlink)
 
 all-local:
