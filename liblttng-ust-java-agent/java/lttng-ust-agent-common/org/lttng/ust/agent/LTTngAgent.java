@@ -18,6 +18,7 @@
 package org.lttng.ust.agent;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
@@ -95,11 +96,19 @@ public class LTTngAgent {
 
 			/* Attach the handler to the root JUL logger */
 			Logger.getLogger("").addHandler((Handler) julHandler);
-		} catch (ReflectiveOperationException e) {
+
 			/*
-			 * LTTng JUL classes not found, no need to create the relevant
-			 * objects
+			 * If any of the following exceptions happen, it means we could not
+			 * find or initialize LTTng JUL classes. We will not setup LTTng JUL
+			 * tracing in this case.
 			 */
+		} catch (SecurityException e) {
+		} catch (IllegalAccessException e) {
+		} catch (IllegalArgumentException e) {
+		} catch (ClassNotFoundException e) {
+		} catch (NoSuchMethodException e) {
+		} catch (InstantiationException e) {
+		} catch (InvocationTargetException e) {
 		}
 	}
 
@@ -119,11 +128,25 @@ public class LTTngAgent {
 			Class<?> log4jAppenderClass = Class.forName("org.lttng.ust.agent.log4j.LttngLogAppender");
 			Constructor<?> log4jAppendCtor = log4jAppenderClass.getConstructor();
 			log4jAppender = (ILttngHandler) log4jAppendCtor.newInstance();
-		} catch (ReflectiveOperationException e) {
+
 			/*
-			 * LTTng Log4j classes not found, no need to create the relevant
-			 * objects.
+			 * If any of the following exceptions happen, it means we could not
+			 * find or initialize LTTng log4j classes. We will not setup LTTng
+			 * log4j tracing in this case.
 			 */
+		} catch (SecurityException e) {
+			return;
+		} catch (ClassNotFoundException e) {
+			return;
+		} catch (NoSuchMethodException e) {
+			return;
+		} catch (IllegalArgumentException e) {
+			return;
+		} catch (InstantiationException e) {
+			return;
+		} catch (IllegalAccessException e) {
+			return;
+		} catch (InvocationTargetException e) {
 			return;
 		}
 
@@ -143,12 +166,22 @@ public class LTTngAgent {
 			Object rootLogger = getRootLoggerMethod.invoke(null, (Object[]) null);
 			addAppenderMethod.invoke(rootLogger, log4jAppender);
 
-		} catch (ReflectiveOperationException e) {
 			/*
-			 * We have checked for the log4j library version previously, these
-			 * classes should exist.
+			 * We have checked for the log4j library version previously, none of
+			 * the following exceptions should happen.
 			 */
-			throw new IllegalStateException();
+		} catch (SecurityException e) {
+			throw new IllegalStateException(e);
+		} catch (ClassNotFoundException e) {
+			throw new IllegalStateException(e);
+		} catch (NoSuchMethodException e) {
+			throw new IllegalStateException(e);
+		} catch (IllegalArgumentException e) {
+			throw new IllegalStateException(e);
+		} catch (IllegalAccessException e) {
+			throw new IllegalStateException(e);
+		} catch (InvocationTargetException e) {
+			throw new IllegalStateException(e);
 		}
 	}
 
@@ -228,12 +261,22 @@ public class LTTngAgent {
 			Object rootLogger = getRootLoggerMethod.invoke(null, (Object[]) null);
 			removeAppenderMethod.invoke(rootLogger, log4jAppender);
 
-		} catch (ReflectiveOperationException e) {
 			/*
-			 * We were able to attach the appender, we should not have problems
-			 * here either!
+			 * We were able to attach the appender previously, we should not
+			 * have problems here either!
 			 */
-			throw new IllegalStateException();
+		} catch (SecurityException e) {
+			throw new IllegalStateException(e);
+		} catch (ClassNotFoundException e) {
+			throw new IllegalStateException(e);
+		} catch (NoSuchMethodException e) {
+			throw new IllegalStateException(e);
+		} catch (IllegalArgumentException e) {
+			throw new IllegalStateException(e);
+		} catch (IllegalAccessException e) {
+			throw new IllegalStateException(e);
+		} catch (InvocationTargetException e) {
+			throw new IllegalStateException(e);
 		}
 
 		/* Close the appender */
