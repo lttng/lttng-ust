@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2015 - EfficiOS Inc., Alexandre Montplaisir <alexmonthy@efficios.com>
  * Copyright (C) 2013 - David Goulet <dgoulet@efficios.com>
  *
  * This library is free software; you can redistribute it and/or modify it
@@ -22,52 +23,30 @@ import java.nio.ByteOrder;
 
 import org.lttng.ust.agent.AbstractLttngAgent;
 
-class SessiondDisableHandler implements ISessiondResponse, ISessiondCommand {
-
-	private static final int INT_SIZE = 4;
+/**
+ * Session daemon command indicating to the Java agent that some events were
+ * disabled in the tracing session.
+ *
+ * @author Alexandre Montplaisir
+ * @author David Goulet
+ */
+class SessiondDisableEventCommand implements ISessiondCommand {
 
 	/** Event name to disable from the tracing session */
-	private String eventName;
+	private final String eventName;
 
-	/** Return status code to the session daemon. */
-	private LttngAgentRetCode code;
-
-	@Override
-	public void populate(byte[] data) {
+	public SessiondDisableEventCommand(byte[] data) {
+		if (data == null) {
+			throw new IllegalArgumentException();
+		}
 		ByteBuffer buf = ByteBuffer.wrap(data);
 		buf.order(ByteOrder.LITTLE_ENDIAN);
 		eventName = new String(data).trim();
 	}
 
 	@Override
-	public byte[] getBytes() {
-		byte data[] = new byte[INT_SIZE];
-		ByteBuffer buf = ByteBuffer.wrap(data);
-		buf.order(ByteOrder.BIG_ENDIAN);
-		buf.putInt(code.getCode());
-		return data;
-	}
-
-	public String getEventName() {
-		return eventName;
-	}
-
-	public void setRetCode(LttngAgentRetCode code) {
-		this.code = code;
-	}
-
-	/**
-	 * Execute disable handler action which is to disable the given handler to
-	 * the received name.
-	 *
-	 * @param agent
-	 *            The agent on which to execute the command
-	 */
-	public void execute(AbstractLttngAgent<?> agent) {
-		if (agent.eventDisabled(this.eventName)) {
-			this.code = LttngAgentRetCode.CODE_SUCCESS_CMD;
-		} else {
-			this.code = LttngAgentRetCode.CODE_INVALID_CMD;
-		}
+	public ILttngAgentResponse execute(AbstractLttngAgent<?> agent) {
+		boolean success = agent.eventDisabled(this.eventName);
+		return (success ? ILttngAgentResponse.SUCESS_RESPONSE : ILttngAgentResponse.FAILURE_RESPONSE);
 	}
 }

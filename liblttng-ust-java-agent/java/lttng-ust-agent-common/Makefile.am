@@ -14,13 +14,14 @@ dist_noinst_JAVA = $(pkgpath)/AbstractLttngAgent.java \
 				   $(pkgpath)/ILttngAgent.java \
 				   $(pkgpath)/ILttngHandler.java \
 				   $(pkgpath)/LTTngAgent.java \
+				   $(pkgpath)/client/ILttngAgentResponse.java \
 				   $(pkgpath)/client/ISessiondCommand.java \
-				   $(pkgpath)/client/ISessiondResponse.java \
 				   $(pkgpath)/client/LttngTcpSessiondClient.java \
-				   $(pkgpath)/client/SessiondDisableHandler.java \
-				   $(pkgpath)/client/SessiondEnableHandler.java \
-				   $(pkgpath)/client/SessiondHeaderCommand.java \
-				   $(pkgpath)/client/SessiondListLoggersResponse.java
+				   $(pkgpath)/client/SessiondCommandHeader.java \
+				   $(pkgpath)/client/SessiondDisableEventCommand.java \
+				   $(pkgpath)/client/SessiondEnableEventCommand.java \
+				   $(pkgpath)/client/SessiondListLoggersCommand.java
+
 
 dist_noinst_DATA = $(jarfile_manifest)
 

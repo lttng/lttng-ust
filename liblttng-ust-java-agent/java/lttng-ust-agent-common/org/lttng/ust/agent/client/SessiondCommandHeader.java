@@ -18,27 +18,42 @@
 
 package org.lttng.ust.agent.client;
 
-interface ISessiondResponse {
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
-	enum LttngAgentRetCode {
-		CODE_SUCCESS_CMD(1),
-		CODE_INVALID_CMD(2),
-		CODE_UNK_LOGGER_NAME(3);
-		private int code;
+import org.lttng.ust.agent.client.ISessiondCommand.CommandType;
 
-		private LttngAgentRetCode(int c) {
-			code = c;
-		}
+/**
+ * Header of session daemon commands.
+ *
+ * @author Alexandre Montplaisir
+ * @author David Goulet
+ */
+class SessiondCommandHeader {
 
-		public int getCode() {
-			return code;
-		}
+	/** ABI size of command header. */
+	public static final int HEADER_SIZE = 16;
+
+	/** Payload size in bytes following this header. */
+	private final long dataSize;
+
+	/** Command type. */
+	private final CommandType cmd;
+
+	public SessiondCommandHeader(byte[] data) {
+		ByteBuffer buf = ByteBuffer.wrap(data);
+		buf.order(ByteOrder.BIG_ENDIAN);
+
+		dataSize = buf.getLong();
+		cmd = CommandType.values()[buf.getInt() - 1];
+		buf.getInt(); // command version, currently unused
 	}
 
-	/**
-	 * Gets a byte array of the command so that it may be streamed
-	 *
-	 * @return the byte array of the command
-	 */
-	byte[] getBytes();
+	public long getDataSize() {
+		return dataSize;
+	}
+
+	public CommandType getCommandType() {
+		return cmd;
+	}
 }
