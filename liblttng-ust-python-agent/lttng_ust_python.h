@@ -24,7 +24,7 @@
 #include <lttng/tracepoint.h>
 #include <stdbool.h>
 
-TRACEPOINT_EVENT(lttng_python, user_event,
+TRACEPOINT_EVENT(lttng_python, event,
 	TP_ARGS(
 		const char *, asctime,
 		const char *, msg,
