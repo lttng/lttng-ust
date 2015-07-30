@@ -27,8 +27,7 @@
 /*
  * Tracepoint used by Java applications using the log4j log appender.
  */
-// FIXME Change "sys_event" to "event" once lttng-tools is updated
-TRACEPOINT_EVENT(lttng_log4j, sys_event,
+TRACEPOINT_EVENT(lttng_log4j, event,
 	TP_ARGS(
 		const char *, msg,
 		const char *, logger_name,

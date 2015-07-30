@@ -45,8 +45,7 @@ JNIEXPORT void JNICALL Java_org_lttng_ust_agent_log4j_LttngLogAppender_tracepoin
 	const char *file_name_cstr = (*env)->GetStringUTFChars(env, file_name, &iscopy);
 	const char *thread_name_cstr = (*env)->GetStringUTFChars(env, thread_name, &iscopy);
 
-	// FIXME Change "sys_event" to "event" once lttng-tools is updated
-	tracepoint(lttng_log4j, sys_event, msg_cstr, logger_name_cstr,
+	tracepoint(lttng_log4j, event, msg_cstr, logger_name_cstr,
 		   class_name_cstr, method_name_cstr, file_name_cstr,
 		   line_number, timestamp, loglevel, thread_name_cstr);
 

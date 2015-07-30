@@ -27,8 +27,7 @@
 /*
  * Tracepoint used by Java applications using the JUL handler.
  */
-// FIXME Change "sys_event" to "event" once lttng-tools is updated
-TRACEPOINT_EVENT(lttng_jul, sys_event,
+TRACEPOINT_EVENT(lttng_jul, event,
 	TP_ARGS(
 		const char *, msg,
 		const char *, logger_name,
