@@ -18,9 +18,18 @@
 
 package org.lttng.ust.agent.client;
 
+import org.lttng.ust.agent.AbstractLttngAgent;
+
+/**
+ * Interface to represent all commands sent from the session daemon to the Java
+ * agent. The agent is then expected to execute the command and provide a
+ * response.
+ *
+ * @author Alexandre Montplaisir
+ */
 interface ISessiondCommand {
 
-	enum LttngAgentCommand {
+	enum CommandType {
 
 		/** List logger(s). */
 		CMD_LIST(1),
@@ -33,20 +42,21 @@ interface ISessiondCommand {
 
 		private int code;
 
-		private LttngAgentCommand(int c) {
+		private CommandType(int c) {
 			code = c;
 		}
 
-		public int getCommand() {
+		public int getCommandType() {
 			return code;
 		}
 	}
 
 	/**
-	 * Populate the class from a byte array
+	 * Execute the command handler's action on the specified tracing agent.
 	 *
-	 * @param data
-	 * 		the byte array containing the streamed command
+	 * @param agent
+	 *            The agent on which to execute the command
+	 * @return If the command completed successfully or not
 	 */
-	void populate(byte[] data);
+	public ILttngAgentResponse execute(AbstractLttngAgent<?> agent);
 }

@@ -48,7 +48,6 @@ public class LttngTcpSessiondClient implements Runnable {
 	private static int protocolMinorVersion = 0;
 
 	/** Command header from the session deamon. */
-	private final SessiondHeaderCommand headerCmd = new SessiondHeaderCommand();
 	private final CountDownLatch registrationLatch = new CountDownLatch(1);
 
 	private Socket sessiondSock;
@@ -147,121 +146,26 @@ public class LttngTcpSessiondClient implements Runnable {
 		}
 	}
 
-	/**
-	 * Receive header data from the session daemon using the LTTng command
-	 * static buffer of the right size.
-	 */
-	private void recvHeader() throws IOException {
-		byte data[] = new byte[SessiondHeaderCommand.HEADER_SIZE];
+	private void connectToSessiond() throws IOException {
+		int port;
 
-		int readLen = this.inFromSessiond.read(data, 0, data.length);
-		if (readLen != data.length) {
-			throw new IOException();
-		}
-		this.headerCmd.populate(data);
-	}
-
-	/**
-	 * Receive payload from the session daemon. This MUST be done after a
-	 * recvHeader() so the header value of a command are known.
-	 *
-	 * The caller SHOULD use isPayload() before which returns true if a payload
-	 * is expected after the header.
-	 */
-	private byte[] recvPayload() throws IOException {
-		byte payload[] = new byte[(int) this.headerCmd.getDataSize()];
-
-		/* Failsafe check so we don't waste our time reading 0 bytes. */
-		if (payload.length == 0) {
-			return null;
+		if (this.isRoot) {
+			port = getPortFromFile(ROOT_PORT_FILE);
+			if (port == 0) {
+				/* No session daemon available. Stop and retry later. */
+				throw new IOException();
+			}
+		} else {
+			port = getPortFromFile(getHomePath() + USER_PORT_FILE);
+			if (port == 0) {
+				/* No session daemon available. Stop and retry later. */
+				throw new IOException();
+			}
 		}
 
-		this.inFromSessiond.read(payload, 0, payload.length);
-		return payload;
-	}
-
-	/**
-	 * Handle session command from the session daemon.
-	 */
-	private void handleSessiondCmd() throws IOException {
-		byte data[] = null;
-
-		while (true) {
-			/* Get header from session daemon. */
-			recvHeader();
-
-			if (headerCmd.getDataSize() > 0) {
-				data = recvPayload();
-			}
-
-			switch (headerCmd.getCommandType()) {
-			case CMD_REG_DONE:
-			{
-				/*
-				 * Countdown the registration latch, meaning registration is
-				 * done and we can proceed to continue tracing.
-				 */
-				registrationLatch.countDown();
-				/*
-				 * We don't send any reply to the registration done command.
-				 * This just marks the end of the initial session setup.
-				 */
-				continue;
-			}
-			case CMD_LIST:
-			{
-				SessiondListLoggersResponse listLoggerCmd = new SessiondListLoggersResponse();
-				listLoggerCmd.execute(logAgent);
-				data = listLoggerCmd.getBytes();
-				break;
-			}
-			case CMD_ENABLE:
-			{
-				SessiondEnableHandler enableCmd = new SessiondEnableHandler();
-				if (data == null) {
-					enableCmd.code = ISessiondResponse.LttngAgentRetCode.CODE_INVALID_CMD;
-					break;
-				}
-				enableCmd.populate(data);
-				enableCmd.execute(logAgent);
-				data = enableCmd.getBytes();
-				break;
-			}
-			case CMD_DISABLE:
-			{
-				SessiondDisableHandler disableCmd = new SessiondDisableHandler();
-				if (data == null) {
-					disableCmd.setRetCode(ISessiondResponse.LttngAgentRetCode.CODE_INVALID_CMD);
-					break;
-				}
-				disableCmd.populate(data);
-				disableCmd.execute(logAgent);
-				data = disableCmd.getBytes();
-				break;
-			}
-			default:
-			{
-				data = new byte[4];
-				ByteBuffer buf = ByteBuffer.wrap(data);
-				buf.order(ByteOrder.BIG_ENDIAN);
-				break;
-			}
-			}
-
-			if (data == null) {
-				/*
-				 * Simply used to silence a potential null access warning below.
-				 *
-				 * The flow analysis gets confused here and thinks "data" may be
-				 * null at this point. It should not happen according to program
-				 * logic, if it does we've done something wrong.
-				 */
-				throw new IllegalStateException();
-			}
-			/* Send payload to session daemon. */
-			this.outToSessiond.write(data, 0, data.length);
-			this.outToSessiond.flush();
-		}
+		this.sessiondSock = new Socket(SESSION_HOST, port);
+		this.inFromSessiond = new DataInputStream(sessiondSock.getInputStream());
+		this.outToSessiond = new DataOutputStream(sessiondSock.getOutputStream());
 	}
 
 	private static String getHomePath() {
@@ -297,28 +201,6 @@ public class LttngTcpSessiondClient implements Runnable {
 		return port;
 	}
 
-	private void connectToSessiond() throws IOException {
-		int port;
-
-		if (this.isRoot) {
-			port = getPortFromFile(ROOT_PORT_FILE);
-			if (port == 0) {
-				/* No session daemon available. Stop and retry later. */
-				throw new IOException();
-			}
-		} else {
-			port = getPortFromFile(getHomePath() + USER_PORT_FILE);
-			if (port == 0) {
-				/* No session daemon available. Stop and retry later. */
-				throw new IOException();
-			}
-		}
-
-		this.sessiondSock = new Socket(SESSION_HOST, port);
-		this.inFromSessiond = new DataInputStream(sessiondSock.getInputStream());
-		this.outToSessiond = new DataOutputStream(sessiondSock.getOutputStream());
-	}
-
 	private void registerToSessiond() throws IOException {
 		byte data[] = new byte[16];
 		ByteBuffer buf = ByteBuffer.wrap(data);
@@ -331,4 +213,116 @@ public class LttngTcpSessiondClient implements Runnable {
 		this.outToSessiond.write(data, 0, data.length);
 		this.outToSessiond.flush();
 	}
+
+	/**
+	 * Handle session command from the session daemon.
+	 */
+	private void handleSessiondCmd() throws IOException {
+		/* Data read from the socket */
+		byte inputData[] = null;
+		/* Reply data written to the socket, sent to the sessiond */
+		byte responseData[] = null;
+
+		while (true) {
+			/* Get header from session daemon. */
+			SessiondCommandHeader cmdHeader = recvHeader();
+
+			if (cmdHeader.getDataSize() > 0) {
+				inputData = recvPayload(cmdHeader);
+			}
+
+			switch (cmdHeader.getCommandType()) {
+			case CMD_REG_DONE:
+			{
+				/*
+				 * Countdown the registration latch, meaning registration is
+				 * done and we can proceed to continue tracing.
+				 */
+				registrationLatch.countDown();
+				/*
+				 * We don't send any reply to the registration done command.
+				 * This just marks the end of the initial session setup.
+				 */
+				continue;
+			}
+			case CMD_LIST:
+			{
+				ISessiondCommand listLoggerCmd = new SessiondListLoggersCommand();
+				ILttngAgentResponse response = listLoggerCmd.execute(logAgent);
+				responseData = response.getBytes();
+				break;
+			}
+			case CMD_ENABLE:
+			{
+				if (inputData == null) {
+					/* Invalid command */
+					responseData = ILttngAgentResponse.FAILURE_RESPONSE.getBytes();
+					break;
+				}
+				ISessiondCommand enableCmd = new SessiondEnableEventCommand(inputData);
+				ILttngAgentResponse response = enableCmd.execute(logAgent);
+				responseData = response.getBytes();
+				break;
+			}
+			case CMD_DISABLE:
+			{
+				if (inputData == null) {
+					/* Invalid command */
+					responseData = ILttngAgentResponse.FAILURE_RESPONSE.getBytes();
+					break;
+				}
+				ISessiondCommand disableCmd = new SessiondDisableEventCommand(inputData);
+				ILttngAgentResponse response = disableCmd.execute(logAgent);
+				responseData = response.getBytes();
+				break;
+			}
+			default:
+			{
+				/* Unknown command, send empty reply */
+				responseData = new byte[4];
+				ByteBuffer buf = ByteBuffer.wrap(responseData);
+				buf.order(ByteOrder.BIG_ENDIAN);
+				break;
+			}
+			}
+
+			/* Send response to the session daemon. */
+			this.outToSessiond.write(responseData, 0, responseData.length);
+			this.outToSessiond.flush();
+		}
+	}
+
+	/**
+	 * Receive header data from the session daemon using the LTTng command
+	 * static buffer of the right size.
+	 */
+	private SessiondCommandHeader recvHeader() throws IOException {
+		byte data[] = new byte[SessiondCommandHeader.HEADER_SIZE];
+
+		int readLen = this.inFromSessiond.read(data, 0, data.length);
+		if (readLen != data.length) {
+			throw new IOException();
+		}
+		return new SessiondCommandHeader(data);
+	}
+
+	/**
+	 * Receive payload from the session daemon. This MUST be done after a
+	 * recvHeader() so the header value of a command are known.
+	 *
+	 * The caller SHOULD use isPayload() before which returns true if a payload
+	 * is expected after the header.
+	 */
+	private byte[] recvPayload(SessiondCommandHeader headerCmd) throws IOException {
+		byte payload[] = new byte[(int) headerCmd.getDataSize()];
+
+		/* Failsafe check so we don't waste our time reading 0 bytes. */
+		if (payload.length == 0) {
+			return null;
+		}
+
+		this.inFromSessiond.read(payload, 0, payload.length);
+		return payload;
+	}
+
 }

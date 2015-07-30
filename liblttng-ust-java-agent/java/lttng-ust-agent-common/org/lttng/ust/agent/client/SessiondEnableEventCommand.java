@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2015 - EfficiOS Inc., Alexandre Montplaisir <alexmonthy@efficios.com>
  * Copyright (C) 2013 - David Goulet <dgoulet@efficios.com>
  *
  * This library is free software; you can redistribute it and/or modify it
@@ -22,52 +23,36 @@ import java.nio.ByteOrder;
 
 import org.lttng.ust.agent.AbstractLttngAgent;
 
-class SessiondEnableHandler implements ISessiondResponse, ISessiondCommand {
+/**
+ * Session daemon command indicating to the Java agent that some events were
+ * enabled in the tracing session.
+ *
+ * @author Alexandre Montplaisir
+ * @author David Goulet
+ */
+class SessiondEnableEventCommand implements ISessiondCommand {
 
 	private static final int INT_SIZE = 4;
 
 	/** Event name to enable in the tracing session */
-	private String eventName;
+	private final String eventName;
 
-	/** Return status code to the session daemon. */
-	public LttngAgentRetCode code;
-
-	@Override
-	public void populate(byte[] data) {
+	public SessiondEnableEventCommand(byte[] data) {
+		if (data == null) {
+			throw new IllegalArgumentException();
+		}
 		int dataOffset = INT_SIZE * 2;
 
 		ByteBuffer buf = ByteBuffer.wrap(data);
 		buf.order(ByteOrder.LITTLE_ENDIAN);
-		buf.getInt(); //logLevel, currently unused
-		buf.getInt(); //logLevelType, currently unused
+		buf.getInt(); // logLevel, currently unused
+		buf.getInt(); // logLevelType, currently unused
 		eventName = new String(data, dataOffset, data.length - dataOffset).trim();
 	}
 
 	@Override
-	public byte[] getBytes() {
-		byte data[] = new byte[INT_SIZE];
-		ByteBuffer buf = ByteBuffer.wrap(data);
-		buf.order(ByteOrder.BIG_ENDIAN);
-		buf.putInt(code.getCode());
-		return data;
-	}
-
-	public String getEventName() {
-		return eventName;
-	}
-
-	/**
-	 * Execute enable handler action which is to enable the given handler to the
-	 * received name.
-	 *
-	 * @param agent
-	 *            The agent on which to execute the command
-	 */
-	public void execute(AbstractLttngAgent<?> agent) {
-		if (agent.eventEnabled(this.eventName)) {
-			this.code = LttngAgentRetCode.CODE_SUCCESS_CMD;
-		} else {
-			this.code = LttngAgentRetCode.CODE_INVALID_CMD;
-		}
+	public ILttngAgentResponse execute(AbstractLttngAgent<?> agent) {
+		boolean success = agent.eventEnabled(this.eventName);
+		return (success ? ILttngAgentResponse.SUCESS_RESPONSE : ILttngAgentResponse.FAILURE_RESPONSE);
 	}
 }
