@@ -227,6 +227,7 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler> implements ILt
 				enabledWildcards.incrementAndGet();
 				return false;
 			}
+			return true;
 		}
 
 		if (eventName.endsWith(WILDCARD)) {
