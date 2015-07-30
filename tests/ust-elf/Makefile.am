@@ -1,10 +1,11 @@
-SUBDIRS = utils hello same_line_tracepoint snprintf benchmark ust-elf
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/tests/utils
 
-if CXX_WORKS
-SUBDIRS += hello.cxx
-endif
+noinst_PROGRAMS = prog
+prog_SOURCES = prog.c
+prog_LDADD = $(top_builddir)/liblttng-ust/liblttng-ust.la \
+	$(top_builddir)/tests/utils/libtap.a
 
-SCRIPT_LIST = test_loop run.sh unit_tests
+SCRIPT_LIST = test_ust_elf
 
 dist_noinst_SCRIPTS = $(SCRIPT_LIST)
 
@@ -21,6 +22,3 @@ clean-local:
 			rm -f $(builddir)/$$script; \
 		done; \
 	fi
-
-check-am:
-	./run.sh unit_tests
