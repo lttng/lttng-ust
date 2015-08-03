@@ -67,6 +67,7 @@ public abstract class LogFrameworkSkeleton implements LogFramework {
 		Integer refcount = enabledLoggers.get(name);
 		refcount--;
 		assert (refcount >= 0);
+		enabledLoggers.put(name, refcount);
 
 		if (refcount == 0) {
 			/* Event is not used anymore, remove it from the map */
