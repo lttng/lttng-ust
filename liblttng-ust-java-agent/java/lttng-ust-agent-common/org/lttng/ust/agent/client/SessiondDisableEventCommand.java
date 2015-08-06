@@ -47,6 +47,27 @@ class SessiondDisableEventCommand implements ISessiondCommand {
 	@Override
 	public ILttngAgentResponse execute(AbstractLttngAgent<?> agent) {
 		boolean success = agent.eventDisabled(this.eventName);
-		return (success ? ILttngAgentResponse.SUCESS_RESPONSE : ILttngAgentResponse.FAILURE_RESPONSE);
+		return (success ? ILttngAgentResponse.SUCESS_RESPONSE : DISABLE_EVENT_FAILURE_RESPONSE);
 	}
+
+	/**
+	 * Response sent when the disable-event command asks to disable an
+	 * unknown event.
+	 */
+	private static final ILttngAgentResponse DISABLE_EVENT_FAILURE_RESPONSE = new ILttngAgentResponse() {
+
+		@Override
+		public ReturnCode getReturnCode() {
+			return ReturnCode.CODE_UNK_LOGGER_NAME;
+		}
+
+		@Override
+		public byte[] getBytes() {
+			byte data[] = new byte[INT_SIZE];
+			ByteBuffer buf = ByteBuffer.wrap(data);
+			buf.order(ByteOrder.BIG_ENDIAN);
+			buf.putInt(getReturnCode().getCode());
+			return data;
+		}
+	};
 }
