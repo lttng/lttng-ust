@@ -423,7 +423,7 @@ AS_IF([test "x$java_agent_log4j" = "xyes"], [AS_ECHO("Enabled")], [AS_ECHO("Disa
 AS_ECHO_N("JNI interface (JNI): ")
 AS_IF([test "x$jni_interface" = "xyes"], [AS_ECHO("Enabled")], [AS_ECHO("Disabled")])
 
-AS_ECHO_N("Python agent: ")
+AS_ECHO_N("Python($PYTHON) agent: ")
 AS_IF([test "x$python_agent" = "xyes"], [AS_ECHO("Enabled")], [AS_ECHO("Disabled")])
 
 AS_ECHO_N("sdt.h integration: ")
