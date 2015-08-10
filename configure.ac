@@ -319,6 +319,9 @@ AC_ARG_ENABLE([python-agent],
 	[:]
 )
 AM_CONDITIONAL([BUILD_PYTHON_AGENT], [test "x$python_agent" = "xyes"])
+if test "x$python_agent" = "xyes"; then
+	AM_PATH_PYTHON([2.7])
+fi
 
 # sdt.h integration
 AC_ARG_WITH([sdt],
