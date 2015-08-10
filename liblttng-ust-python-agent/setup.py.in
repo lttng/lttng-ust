@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015 - Philippe Proulx <pproulx@efficios.com>
+# Copyright (C) 2015 - Jonathan Rajotte <jonathan.rajotte-julien@efficios.com>
 #
 # This library is free software; you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the Free
@@ -15,10 +15,11 @@
 # along with this library; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 
-from __future__ import unicode_literals
+from distutils.core import setup, Extension
 
-# this creates the daemon threads and registers the application
-import lttngust.agent
-
-
-__version__ = '@LTTNG_UST_VERSION@'
+setup(name='lttngust',
+      version='@PACKAGE_VERSION@',
+      description='Lttng ust agent',
+      packages=['lttngust'],
+      package_dir={'lttngust': 'lttngust'},
+      options={'build': {'build_base': 'build'}})
