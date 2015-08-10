@@ -394,6 +394,8 @@ AC_CONFIG_FILES([
 	liblttng-ust-libc-wrapper/Makefile
 	liblttng-ust-cyg-profile/Makefile
 	liblttng-ust-python-agent/Makefile
+	liblttng-ust-python-agent/setup.py
+	liblttng-ust-python-agent/lttngust/__init__.py
 	tools/Makefile
 	tests/Makefile
 	tests/hello/Makefile
@@ -403,6 +405,14 @@ AC_CONFIG_FILES([
 	tests/benchmark/Makefile
 	tests/utils/Makefile
 	lttng-ust.pc
+])
+
+# Create link for python agent for the VPATH guru.
+AC_CONFIG_LINKS([
+	liblttng-ust-python-agent/lttngust/agent.py:liblttng-ust-python-agent/lttngust/agent.py
+	liblttng-ust-python-agent/lttngust/cmd.py:liblttng-ust-python-agent/lttngust/cmd.py
+	liblttng-ust-python-agent/lttngust/debug.py:liblttng-ust-python-agent/lttngust/debug.py
+	liblttng-ust-python-agent/lttngust/loghandler.py:liblttng-ust-python-agent/lttngust/loghandler.py
 ])
 
 AC_OUTPUT
