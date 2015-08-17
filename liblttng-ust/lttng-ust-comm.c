@@ -114,8 +114,15 @@ static int lttng_ust_comm_should_quit;
 int ust_lock(void)
 {
 	sigset_t sig_all_blocked, orig_mask;
-	int ret;
+	int ret, oldstate;
 
+	ret = pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldstate);
+	if (ret) {
+		ERR("pthread_setcancelstate: %s", strerror(ret));
+	}
+	if (oldstate != PTHREAD_CANCEL_ENABLE) {
+		ERR("pthread_setcancelstate: unexpected oldstate");
+	}
 	sigfillset(&sig_all_blocked);
 	ret = pthread_sigmask(SIG_SETMASK, &sig_all_blocked, &orig_mask);
 	if (ret) {
@@ -143,8 +150,15 @@ int ust_lock(void)
 void ust_lock_nocheck(void)
 {
 	sigset_t sig_all_blocked, orig_mask;
-	int ret;
+	int ret, oldstate;
 
+	ret = pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldstate);
+	if (ret) {
+		ERR("pthread_setcancelstate: %s", strerror(ret));
+	}
+	if (oldstate != PTHREAD_CANCEL_ENABLE) {
+		ERR("pthread_setcancelstate: unexpected oldstate");
+	}
 	sigfillset(&sig_all_blocked);
 	ret = pthread_sigmask(SIG_SETMASK, &sig_all_blocked, &orig_mask);
 	if (ret) {
@@ -164,7 +178,7 @@ void ust_lock_nocheck(void)
 void ust_unlock(void)
 {
 	sigset_t sig_all_blocked, orig_mask;
-	int ret;
+	int ret, oldstate;
 
 	sigfillset(&sig_all_blocked);
 	ret = pthread_sigmask(SIG_SETMASK, &sig_all_blocked, &orig_mask);
@@ -176,6 +190,13 @@ void ust_unlock(void)
 	ret = pthread_sigmask(SIG_SETMASK, &orig_mask, NULL);
 	if (ret) {
 		ERR("pthread_sigmask: %s", strerror(ret));
+	}
+	ret = pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &oldstate);
+	if (ret) {
+		ERR("pthread_setcancelstate: %s", strerror(ret));
+	}
+	if (oldstate != PTHREAD_CANCEL_DISABLE) {
+		ERR("pthread_setcancelstate: unexpected oldstate");
 	}
 }
 
