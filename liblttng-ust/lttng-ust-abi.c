@@ -989,6 +989,8 @@ static const struct lttng_ust_objd_ops lttng_enabler_ops = {
 void lttng_ust_abi_exit(void)
 {
 	lttng_ust_abi_close_in_progress = 1;
+	ust_lock_nocheck();
 	objd_table_destroy();
+	ust_unlock();
 	lttng_ust_abi_close_in_progress = 0;
 }
