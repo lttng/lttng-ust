@@ -35,7 +35,7 @@ import org.lttng.ust.agent.AbstractLttngAgent;
 class SessiondListLoggersCommand implements ISessiondCommand {
 
 	@Override
-	public ILttngAgentResponse execute(AbstractLttngAgent<?> agent) {
+	public LttngAgentResponse execute(AbstractLttngAgent<?> agent) {
 		final List<String> loggerList = new ArrayList<String>();
 		int dataSize = 0;
 
@@ -47,7 +47,7 @@ class SessiondListLoggersCommand implements ISessiondCommand {
 		return new SessiondListLoggersResponse(loggerList, dataSize);
 	}
 
-	private static class SessiondListLoggersResponse implements ILttngAgentResponse {
+	private static class SessiondListLoggersResponse extends LttngAgentResponse {
 
 		private final static int SIZE = 12;
 
@@ -62,7 +62,7 @@ class SessiondListLoggersCommand implements ISessiondCommand {
 		@Override
 		public ReturnCode getReturnCode() {
 			/* This command can't really fail */
-			return ILttngAgentResponse.SUCESS_RESPONSE.getReturnCode();
+			return ReturnCode.CODE_SUCCESS_CMD;
 		}
 
 		@Override
