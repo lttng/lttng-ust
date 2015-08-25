@@ -28,15 +28,15 @@ import java.nio.ByteOrder;
  *
  * @author Alexandre Montplaisir
  */
-interface ILttngAgentResponse {
+abstract class LttngAgentResponse {
 
-	int INT_SIZE = 4;
+	private static final int INT_SIZE = 4;
 
 	/**
 	 * Return codes used in agent responses, to indicate success or different
 	 * types of failures of the commands.
 	 */
-	enum ReturnCode {
+	protected enum ReturnCode {
 
 		CODE_SUCCESS_CMD(1),
 		CODE_INVALID_CMD(2),
@@ -60,46 +60,32 @@ interface ILttngAgentResponse {
 	 *
 	 * @return The return code
 	 */
-	ReturnCode getReturnCode();
+	public abstract ReturnCode getReturnCode();
 
 	/**
 	 * Gets a byte array of the response so that it may be streamed.
 	 *
 	 * @return The byte array of the response
 	 */
-	byte[] getBytes();
+	public byte[] getBytes() {
+		byte data[] = new byte[INT_SIZE];
+		ByteBuffer buf = ByteBuffer.wrap(data);
+		buf.order(ByteOrder.BIG_ENDIAN);
+		buf.putInt(getReturnCode().getCode());
+		return data;
+	}
 
-	ILttngAgentResponse SUCESS_RESPONSE = new ILttngAgentResponse() {
-
+	public static final LttngAgentResponse SUCESS_RESPONSE = new LttngAgentResponse() {
 		@Override
 		public ReturnCode getReturnCode() {
 			return ReturnCode.CODE_SUCCESS_CMD;
 		}
-
-		@Override
-		public byte[] getBytes() {
-			byte data[] = new byte[INT_SIZE];
-			ByteBuffer buf = ByteBuffer.wrap(data);
-			buf.order(ByteOrder.BIG_ENDIAN);
-			buf.putInt(getReturnCode().getCode());
-			return data;
-		}
 	};
 
-	ILttngAgentResponse FAILURE_RESPONSE = new ILttngAgentResponse() {
-
+	public static final LttngAgentResponse FAILURE_RESPONSE = new LttngAgentResponse() {
 		@Override
 		public ReturnCode getReturnCode() {
 			return ReturnCode.CODE_INVALID_CMD;
-		}
-
-		@Override
-		public byte[] getBytes() {
-			byte data[] = new byte[INT_SIZE];
-			ByteBuffer buf = ByteBuffer.wrap(data);
-			buf.order(ByteOrder.BIG_ENDIAN);
-			buf.putInt(getReturnCode().getCode());
-			return data;
 		}
 	};
 }

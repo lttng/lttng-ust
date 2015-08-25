@@ -51,8 +51,8 @@ class SessiondEnableEventCommand implements ISessiondCommand {
 	}
 
 	@Override
-	public ILttngAgentResponse execute(AbstractLttngAgent<?> agent) {
+	public LttngAgentResponse execute(AbstractLttngAgent<?> agent) {
 		boolean success = agent.eventEnabled(this.eventName);
-		return (success ? ILttngAgentResponse.SUCESS_RESPONSE : ILttngAgentResponse.FAILURE_RESPONSE);
+		return (success ? LttngAgentResponse.SUCESS_RESPONSE : LttngAgentResponse.FAILURE_RESPONSE);
 	}
 }

@@ -58,5 +58,5 @@ interface ISessiondCommand {
 	 *            The agent on which to execute the command
 	 * @return If the command completed successfully or not
 	 */
-	public ILttngAgentResponse execute(AbstractLttngAgent<?> agent);
+	public LttngAgentResponse execute(AbstractLttngAgent<?> agent);
 }
