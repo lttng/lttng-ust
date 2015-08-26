@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <urcu/list.h>
 #include <urcu/hlist.h>
+#include <urcu/rculist.h>
 #include <pthread.h>
 #include <errno.h>
 #include <sys/shm.h>
@@ -69,6 +70,7 @@
  * thread, under ust_lock protection.
  */
 
+/* RCU protected list of sessions. */
 static CDS_LIST_HEAD(sessions);
 
 struct cds_list_head *_lttng_get_sessions(void)
@@ -142,7 +144,10 @@ struct lttng_session *lttng_session_create(void)
 
 	session = zmalloc(sizeof(struct lttng_session));
 	if (!session)
-		return NULL;
+		goto error_session;
+	session->statedump_table = lttng_statedump_table_create();
+	if (!session->statedump_table)
+		goto error_st;
 	if (lttng_session_context_init(&session->ctx)) {
 		free(session);
 		return NULL;
@@ -155,8 +160,13 @@ struct lttng_session *lttng_session_create(void)
 		CDS_INIT_HLIST_HEAD(&session->events_ht.table[i]);
 	for (i = 0; i < LTTNG_UST_ENUM_HT_SIZE; i++)
 		CDS_INIT_HLIST_HEAD(&session->enums_ht.table[i]);
-	cds_list_add(&session->node, &sessions);
+	cds_list_add_rcu(&session->node, &sessions);
 	return session;
+
+error_st:
+	free(session);
+error_session:
+	return NULL;
 }
 
 /*
@@ -234,6 +244,8 @@ void lttng_session_destroy(struct lttng_session *session)
 	}
 	synchronize_trace();	/* Wait for in-flight events to complete */
 	__tracepoint_probe_prune_release_queue();
+	cds_list_del_rcu(&session->node);
+	synchronize_trace();	/* Session list is RCU synchronized. */
 	cds_list_for_each_entry_safe(enabler, tmpenabler,
 			&session->enablers_head, node)
 		lttng_enabler_destroy(enabler);
@@ -245,7 +257,7 @@ void lttng_session_destroy(struct lttng_session *session)
 		_lttng_enum_destroy(_enum);
 	cds_list_for_each_entry_safe(chan, tmpchan, &session->chan_head, node)
 		_lttng_channel_unmap(chan);
-	cds_list_del(&session->node);
+	lttng_statedump_table_destroy(session->statedump_table);
 	lttng_destroy_context(session->ctx);
 	free(session);
 }
@@ -975,7 +987,21 @@ void lttng_handle_pending_statedump(void *owner)
 	}
 end:
 	ust_unlock();
+
 	return;
+}
+
+/*
+ * Run newly registered notifier for each session.
+ */
+void lttng_ust_run_statedump_notifier_for_each_session(struct lttng_ust_notifier *notifier)
+{
+	struct lttng_session *session;
+
+	rcu_read_lock();
+	cds_list_for_each_entry_rcu(session, &sessions, node)
+		notifier->callback(session, notifier->priv);
+	rcu_read_unlock();
 }
 
 /*

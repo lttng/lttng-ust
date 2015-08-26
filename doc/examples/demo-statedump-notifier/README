@@ -1,0 +1,4 @@
+This small program shows how to create an application specific statedump
+notifier handler to populate application statedump at trace start (or
+when an application connects to a session daemon that has active
+sessions).

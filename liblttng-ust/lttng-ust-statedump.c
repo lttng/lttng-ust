@@ -28,6 +28,9 @@
 #include <stdbool.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <urcu/hlist.h>
+#include <lttng/statedump-notifier.h>
+#include <helper.h>
 
 #include <lttng/ust-elf.h>
 #include <helper.h>
@@ -192,6 +195,91 @@ static
 void remove_dl_node(struct lttng_ust_dl_node *e)
 {
 	cds_hlist_del(&e->node);
+}
+
+#define STATEDUMP_TABLE_BITS	4
+#define STATEDUMP_TABLE_SIZE	(1 << STATEDUMP_TABLE_BITS)
+
+struct lttng_statedump_table {
+	struct cds_hlist_head statedump_table[STATEDUMP_TABLE_SIZE];
+};
+
+struct lttng_statedump_node {
+	struct lttng_ust_notifier *notifier;
+	struct cds_hlist_node node;
+};
+
+struct lttng_statedump_table *lttng_statedump_table_create(void)
+{
+	struct lttng_statedump_table *st;
+	int i;
+
+	st = zmalloc(sizeof(*st));
+	if (!st)
+		return NULL;
+	for (i = 0; i < STATEDUMP_TABLE_SIZE; i++)
+		CDS_INIT_HLIST_HEAD(&st->statedump_table[i]);
+	return st;
+}
+
+void lttng_statedump_table_destroy(struct lttng_statedump_table *st)
+{
+	struct lttng_statedump_node *sn, *t;
+	int i;
+
+	for (i = 0; i < STATEDUMP_TABLE_SIZE; i++) {
+		cds_hlist_for_each_entry_safe_2(sn, t, &st->statedump_table[i], node) {
+			cds_hlist_del(&sn->node);
+			free(sn);
+		}
+	}
+	free(st);
+}
+
+int lttng_statedump_table_add(struct lttng_statedump_table *st,
+		struct lttng_ust_notifier *notifier)
+{
+	struct cds_hlist_head *head;
+	struct cds_hlist_node *node;
+	struct lttng_statedump_node *sn;
+	uint32_t hash;
+
+	hash = jhash(&notifier, sizeof(struct lttng_ust_notifier *), 0);
+	head = &st->statedump_table[hash & (STATEDUMP_TABLE_SIZE - 1)];
+	cds_hlist_for_each_entry(sn, node, head, node) {
+		if (sn->notifier == notifier)
+			return -EEXIST;
+	}
+	sn = zmalloc(sizeof(*sn));
+	if (!sn)
+		return -ENOMEM;
+	sn->notifier = notifier;
+	cds_hlist_add_head(&sn->node, head);
+	return 0;
+}
+
+int lttng_statedump_table_del(struct lttng_statedump_table *st,
+		struct lttng_ust_notifier *notifier)
+{
+	struct cds_hlist_head *head;
+	struct cds_hlist_node *node;
+	struct lttng_statedump_node *sn;
+	uint32_t hash;
+	int found = 0;
+
+	hash = jhash(&notifier, sizeof(struct lttng_ust_notifier *), 0);
+	head = &st->statedump_table[hash & (STATEDUMP_TABLE_SIZE - 1)];
+	cds_hlist_for_each_entry(sn, node, head, node) {
+		if (sn->notifier == notifier) {
+			found = 1;
+			break;
+		}
+	}
+	if (!found)
+		return -ENOENT;
+	cds_hlist_del(&sn->node);
+	free(sn);
+	return 0;
 }
 
 /*
@@ -609,7 +697,7 @@ int do_lttng_ust_statedump(void *owner)
 	ust_unlock();
 
 	do_baddr_statedump(owner);
-
+	lttng_ust_run_statedump_notifiers(owner);
 	ust_lock_nocheck();
 	trace_statedump_end(owner);
 	ust_unlock();

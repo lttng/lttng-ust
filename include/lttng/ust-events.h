@@ -604,6 +604,9 @@ struct lttng_session {
 	struct lttng_ust_enum_ht enums_ht;	/* ht of enumerations */
 	struct cds_list_head enums_head;
 	struct lttng_ctx *ctx;			/* contexts for filters. */
+
+	/* New UST 2.<placeholder for later> */
+	struct lttng_statedump_table *statedump_table;
 };
 
 struct lttng_transport {

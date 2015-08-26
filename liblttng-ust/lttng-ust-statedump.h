@@ -20,11 +20,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
+#include <lttng/statedump-notifier.h>
 #include <lttng/ust-events.h>
 
 void lttng_ust_statedump_init(void);
 void lttng_ust_statedump_destroy(void);
 
 int do_lttng_ust_statedump(void *owner);
+void lttng_ust_run_statedump_notifiers(void *owner);
+void lttng_ust_run_statedump_notifier_for_each_session(struct lttng_ust_notifier *notifier);
+
+struct lttng_statedump_table *lttng_statedump_table_create(void);
+void lttng_statedump_table_destroy(struct lttng_statedump_table *st);
+
+int lttng_statedump_table_add(struct lttng_statedump_table *st,
+		struct lttng_ust_notifier *notifier);
+int lttng_statedump_table_del(struct lttng_statedump_table *st,
+		struct lttng_ust_notifier *notifier);
 
 #endif /* LTTNG_UST_STATEDUMP_H */
