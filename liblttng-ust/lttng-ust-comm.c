@@ -573,13 +573,13 @@ int handle_message(struct sock_info *sock_info,
 
 	if (ust_lock()) {
 		ret = -LTTNG_UST_ERR_EXITING;
-		goto end;
+		goto error;
 	}
 
 	ops = objd_ops(lum->handle);
 	if (!ops) {
 		ret = -ENOENT;
-		goto end;
+		goto error;
 	}
 
 	switch (lum->cmd) {
@@ -640,12 +640,12 @@ int handle_message(struct sock_info *sock_info,
 				}
 				ret = len;
 				free(bytecode);
-				goto end;
+				goto error;
 			} else {
 				DBG("incorrect filter data message size: %zd", len);
 				ret = -EINVAL;
 				free(bytecode);
-				goto end;
+				goto error;
 			}
 		}
 		bytecode->bc.len = lum->u.filter.data_size;
@@ -705,12 +705,12 @@ int handle_message(struct sock_info *sock_info,
 				}
 				ret = len;
 				free(node);
-				goto end;
+				goto error;
 			} else {
 				DBG("Incorrect exclusion data message size: %zd", len);
 				ret = -EINVAL;
 				free(node);
-				goto end;
+				goto error;
 			}
 		}
 		if (ops->cmd) {
@@ -751,11 +751,11 @@ int handle_message(struct sock_info *sock_info,
 					goto error;
 				}
 				ret = len;
-				goto end;
+				goto error;
 			} else {
 				DBG("incorrect channel data message size: %zd", len);
 				ret = -EINVAL;
-				goto end;
+				goto error;
 			}
 		}
 		args.channel.chan_data = chan_data;
@@ -776,7 +776,7 @@ int handle_message(struct sock_info *sock_info,
 			&args.stream.shm_fd,
 			&args.stream.wakeup_fd);
 		if (ret) {
-			goto end;
+			goto error;
 		}
 		if (ops->cmd)
 			ret = ops->cmd(lum->handle, lum->cmd,
@@ -796,7 +796,6 @@ int handle_message(struct sock_info *sock_info,
 		break;
 	}
 
-end:
 	lur.handle = lum->handle;
 	lur.cmd = lum->cmd;
 	lur.ret_val = ret;
@@ -1397,7 +1396,13 @@ restart:
 			print_cmd(lum.cmd, lum.handle);
 			ret = handle_message(sock_info, sock, &lum);
 			if (ret) {
-				ERR("Error handling message for %s socket", sock_info->name);
+				ERR("Error handling message for %s socket",
+					sock_info->name);
+				/*
+				 * Close socket if protocol error is
+				 * detected.
+				 */
+				goto end;
 			}
 			continue;
 		default:
