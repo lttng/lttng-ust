@@ -390,7 +390,7 @@ ssize_t ustcomm_send_fds_unix_sock(int sock, int *fds, size_t nb_fd)
 	msg.msg_iovlen = 1;
 
 	do {
-		ret = sendmsg(sock, &msg, 0);
+		ret = sendmsg(sock, &msg, MSG_NOSIGNAL);
 	} while (ret < 0 && errno == EINTR);
 	if (ret < 0) {
 		/*
