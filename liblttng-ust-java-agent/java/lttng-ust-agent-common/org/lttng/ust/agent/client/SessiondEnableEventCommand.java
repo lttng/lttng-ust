@@ -21,6 +21,9 @@ package org.lttng.ust.agent.client;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import org.lttng.ust.agent.session.EventRule;
+import org.lttng.ust.agent.session.LogLevelSelector;
+
 /**
  * Session daemon command indicating to the Java agent that some events were
  * enabled in the tracing session.
@@ -32,8 +35,10 @@ class SessiondEnableEventCommand implements ISessiondCommand {
 
 	private static final int INT_SIZE = 4;
 
-	/** Event name to enable in the tracing session */
+	/* Parameters of the event rule being enabled */
 	private final String eventName;
+	private final LogLevelSelector logLevelFilter;
+	private final String filterString;
 
 	public SessiondEnableEventCommand(byte[] data) {
 		if (data == null) {
@@ -43,14 +48,18 @@ class SessiondEnableEventCommand implements ISessiondCommand {
 
 		ByteBuffer buf = ByteBuffer.wrap(data);
 		buf.order(ByteOrder.LITTLE_ENDIAN);
-		buf.getInt(); // logLevel, currently unused
-		buf.getInt(); // logLevelType, currently unused
+		int logLevel = buf.getInt();
+		int logLevelType = buf.getInt();
+		logLevelFilter = new LogLevelSelector(logLevel, logLevelType);
+
 		eventName = new String(data, dataOffset, data.length - dataOffset).trim();
+		filterString = null; /* Not yet sent by the sessiond */
 	}
 
 	@Override
 	public LttngAgentResponse execute(ILttngTcpClientListener agent) {
-		boolean success = agent.eventEnabled(this.eventName);
+		EventRule rule = new EventRule(eventName, logLevelFilter, filterString);
+		boolean success = agent.eventEnabled(rule);
 		return (success ? LttngAgentResponse.SUCESS_RESPONSE : LttngAgentResponse.FAILURE_RESPONSE);
 	}
 }

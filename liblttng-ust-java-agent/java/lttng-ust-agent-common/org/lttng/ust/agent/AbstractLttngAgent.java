@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.lttng.ust.agent.client.ILttngTcpClientListener;
 import org.lttng.ust.agent.client.LttngTcpSessiondClient;
+import org.lttng.ust.agent.session.EventRule;
 
 /**
  * Base implementation of a {@link ILttngAgent}.
@@ -55,7 +56,7 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 	 * falls to 0, this means we can avoid sending log events through JNI
 	 * because nobody wants them.
 	 *
-	 * It uses a concurrent hash set", so that the {@link #isEventEnabled} and
+	 * It uses a concurrent hash map, so that the {@link #isEventEnabled} and
 	 * read methods do not need to take a synchronization lock.
 	 */
 	private final Map<String, Integer> enabledEvents = new ConcurrentHashMap<String, Integer>();
@@ -189,12 +190,13 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 	}
 
 	@Override
-	public boolean eventEnabled(String eventName) {
+	public boolean eventEnabled(EventRule eventRule) {
+		String eventName = eventRule.getEventName();
+
 		if (eventName.equals(WILDCARD)) {
 			enabledWildcards.incrementAndGet();
 			return true;
 		}
-
 		if (eventName.endsWith(WILDCARD)) {
 			/* Strip the "*" from the name. */
 			String prefix = eventName.substring(0, eventName.length() - 1);

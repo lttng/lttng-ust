@@ -17,6 +17,8 @@
 
 package org.lttng.ust.agent.client;
 
+import org.lttng.ust.agent.session.EventRule;
+
 /**
  * TCP client listener interface.
  *
@@ -30,14 +32,14 @@ public interface ILttngTcpClientListener {
 
 	/**
 	 * Callback for the TCP client to notify the listener agent that a request
-	 * for enabling an event was sent from the session daemon.
+	 * for enabling an event rule was sent from the session daemon.
 	 *
-	 * @param eventName
-	 *            The name of the event that was requested to be enabled.
+	 * @param eventRule
+	 *            The event rule that was requested to be enabled
 	 * @return Since we do not track individual sessions, right now this command
 	 *         cannot fail. It will always return true.
 	 */
-	boolean eventEnabled(String eventName);
+	boolean eventEnabled(EventRule eventRule);
 
 	/**
 	 * Callback for the TCP client to notify the listener agent that a request
