@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.lttng.ust.agent.client.ILttngTcpClientListener;
 import org.lttng.ust.agent.client.LttngTcpSessiondClient;
+import org.lttng.ust.agent.filter.FilterChangeNotifier;
 import org.lttng.ust.agent.session.EventRule;
 
 /**
@@ -191,6 +192,9 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 
 	@Override
 	public boolean eventEnabled(EventRule eventRule) {
+		/* Notify the filter change manager of the command */
+		FilterChangeNotifier.getInstance().addEventRule(eventRule);
+
 		String eventName = eventRule.getEventName();
 
 		if (eventName.equals(WILDCARD)) {
@@ -208,6 +212,9 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 
 	@Override
 	public boolean eventDisabled(String eventName) {
+		/* Notify the filter change manager of the command */
+		FilterChangeNotifier.getInstance().removeEventRules(eventName);
+
 		if (eventName.equals(WILDCARD)) {
 			int newCount = enabledWildcards.decrementAndGet();
 			if (newCount < 0) {

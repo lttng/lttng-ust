@@ -22,6 +22,8 @@ dist_noinst_JAVA = $(pkgpath)/AbstractLttngAgent.java \
 				   $(pkgpath)/client/SessiondDisableEventCommand.java \
 				   $(pkgpath)/client/SessiondEnableEventCommand.java \
 				   $(pkgpath)/client/SessiondListLoggersCommand.java \
+				   $(pkgpath)/filter/FilterChangeNotifier.java \
+				   $(pkgpath)/filter/IFilterChangeListener.java \
 				   $(pkgpath)/session/EventRule.java \
 				   $(pkgpath)/session/LogLevelSelector.java
 
@@ -30,7 +32,7 @@ dist_noinst_DATA = $(jarfile_manifest)
 
 jar_DATA = $(jarfile)
 
-classes = $(pkgpath)/*.class $(pkgpath)/client/*.class $(pkgpath)/session/*.class
+classes = $(pkgpath)/*.class $(pkgpath)/client/*.class $(pkgpath)/filter/*.class $(pkgpath)/session/*.class
 
 $(jarfile): classnoinst.stamp
 	$(JAR) cfm $(JARFLAGS) $@ $(jarfile_manifest) $(classes) && rm -f $(jarfile_symlink) && $(LN_S) $@ $(jarfile_symlink)
@@ -43,4 +45,4 @@ install-data-hook:
 uninstall-hook:
 	cd $(DESTDIR)/$(jardir) && rm -f $(jarfile_symlink)
 
-CLEANFILES = $(jarfile) $(pkgpath)/*.class $(pkgpath)/client/*.class $(pkgpath)/session/*.class
+CLEANFILES = $(jarfile) $(pkgpath)/*.class $(pkgpath)/client/*.class $(pkgpath)/filter/*.class $(pkgpath)/session/*.class
