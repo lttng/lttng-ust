@@ -21,8 +21,6 @@ package org.lttng.ust.agent.client;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import org.lttng.ust.agent.AbstractLttngAgent;
-
 /**
  * Session daemon command indicating to the Java agent that some events were
  * disabled in the tracing session.
@@ -45,7 +43,7 @@ class SessiondDisableEventCommand implements ISessiondCommand {
 	}
 
 	@Override
-	public LttngAgentResponse execute(AbstractLttngAgent<?> agent) {
+	public LttngAgentResponse execute(ILttngTcpClientListener agent) {
 		boolean success = agent.eventDisabled(this.eventName);
 		return (success ? LttngAgentResponse.SUCESS_RESPONSE : DISABLE_EVENT_FAILURE_RESPONSE);
 	}

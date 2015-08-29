@@ -31,8 +31,6 @@ import java.nio.ByteOrder;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.lttng.ust.agent.AbstractLttngAgent;
-
 /**
  * Client for agents to connect to a local session daemon, using a TCP socket.
  *
@@ -56,21 +54,26 @@ public class LttngTcpSessiondClient implements Runnable {
 	private DataInputStream inFromSessiond;
 	private DataOutputStream outToSessiond;
 
-	private final AbstractLttngAgent<?> logAgent;
+	private final ILttngTcpClientListener logAgent;
+	private final int domainValue;
 	private final boolean isRoot;
-
 
 	/**
 	 * Constructor
 	 *
 	 * @param logAgent
-	 *            The logging agent this client will operate on.
+	 *            The listener this client will operate on, typically an LTTng
+	 *            agent.
+	 * @param domainValue
+	 *            The integer to send to the session daemon representing the
+	 *            tracing domain to handle.
 	 * @param isRoot
 	 *            True if this client should connect to the root session daemon,
 	 *            false if it should connect to the user one.
 	 */
-	public LttngTcpSessiondClient(AbstractLttngAgent<?> logAgent, boolean isRoot) {
+	public LttngTcpSessiondClient(ILttngTcpClientListener logAgent, int domainValue, boolean isRoot) {
 		this.logAgent = logAgent;
+		this.domainValue = domainValue;
 		this.isRoot = isRoot;
 	}
 
@@ -206,7 +209,7 @@ public class LttngTcpSessiondClient implements Runnable {
 		ByteBuffer buf = ByteBuffer.wrap(data);
 		String pid = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
 
-		buf.putInt(logAgent.getDomain().value());
+		buf.putInt(domainValue);
 		buf.putInt(Integer.parseInt(pid));
 		buf.putInt(protocolMajorVersion);
 		buf.putInt(protocolMinorVersion);

@@ -21,8 +21,6 @@ package org.lttng.ust.agent.client;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import org.lttng.ust.agent.AbstractLttngAgent;
-
 /**
  * Session daemon command indicating to the Java agent that some events were
  * enabled in the tracing session.
@@ -51,7 +49,7 @@ class SessiondEnableEventCommand implements ISessiondCommand {
 	}
 
 	@Override
-	public LttngAgentResponse execute(AbstractLttngAgent<?> agent) {
+	public LttngAgentResponse execute(ILttngTcpClientListener agent) {
 		boolean success = agent.eventEnabled(this.eventName);
 		return (success ? LttngAgentResponse.SUCESS_RESPONSE : LttngAgentResponse.FAILURE_RESPONSE);
 	}

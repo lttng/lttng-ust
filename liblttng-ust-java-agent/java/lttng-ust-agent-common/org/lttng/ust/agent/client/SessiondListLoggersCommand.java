@@ -23,8 +23,6 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.lttng.ust.agent.AbstractLttngAgent;
-
 /**
  * Session daemon command asking the Java agent to list its registered loggers,
  * which corresponds to event names in the tracing session.
@@ -35,7 +33,7 @@ import org.lttng.ust.agent.AbstractLttngAgent;
 class SessiondListLoggersCommand implements ISessiondCommand {
 
 	@Override
-	public LttngAgentResponse execute(AbstractLttngAgent<?> agent) {
+	public LttngAgentResponse execute(ILttngTcpClientListener agent) {
 		final List<String> loggerList = new ArrayList<String>();
 		int dataSize = 0;
 
