@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.lttng.ust.agent.client.ILttngTcpClientListener;
 import org.lttng.ust.agent.client.LttngTcpSessiondClient;
 
 /**
@@ -37,7 +38,8 @@ import org.lttng.ust.agent.client.LttngTcpSessiondClient;
  * @param <T>
  *            The type of logging handler that should register to this agent
  */
-public abstract class AbstractLttngAgent<T extends ILttngHandler> implements ILttngAgent<T> {
+public abstract class AbstractLttngAgent<T extends ILttngHandler>
+		implements ILttngAgent<T>, ILttngTcpClientListener {
 
 	private static final String WILDCARD = "*";
 	private static final int INIT_TIMEOUT = 3; /* Seconds */
@@ -134,14 +136,14 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler> implements ILt
 		}
 		String rootClientThreadName = "Root sessiond client started by agent: " + this.getClass().getSimpleName();
 
-		rootSessiondClient = new LttngTcpSessiondClient(this, true);
+		rootSessiondClient = new LttngTcpSessiondClient(this, getDomain().value(), true);
 		rootSessiondClientThread = new Thread(rootSessiondClient, rootClientThreadName);
 		rootSessiondClientThread.setDaemon(true);
 		rootSessiondClientThread.start();
 
 		String userClientThreadName = "User sessiond client started by agent: " + this.getClass().getSimpleName();
 
-		userSessiondClient = new LttngTcpSessiondClient(this, false);
+		userSessiondClient = new LttngTcpSessiondClient(this, getDomain().value(), false);
 		userSessiondClientThread = new Thread(userSessiondClient, userClientThreadName);
 		userSessiondClientThread.setDaemon(true);
 		userSessiondClientThread.start();
@@ -186,15 +188,7 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler> implements ILt
 
 	}
 
-	/**
-	 * Callback for the TCP clients to notify the agent that a request for
-	 * enabling an event was sent from the session daemon.
-	 *
-	 * @param eventName
-	 *            The name of the event that was requested to be enabled.
-	 * @return Since we do not track individual sessions, right now this command
-	 *         cannot fail. It will always return true.
-	 */
+	@Override
 	public boolean eventEnabled(String eventName) {
 		if (eventName.equals(WILDCARD)) {
 			enabledWildcards.incrementAndGet();
@@ -210,15 +204,7 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler> implements ILt
 		return incrementEventCount(eventName, enabledEvents);
 	}
 
-	/**
-	 * Callback for the TCP clients to notify the agent that a request for
-	 * disabling an event was sent from the session daemon.
-	 *
-	 * @param eventName
-	 *            The name of the event that was requested to be disabled.
-	 * @return True if the command completed successfully, false if we should
-	 *         report an error (event was not enabled, etc.)
-	 */
+	@Override
 	public boolean eventDisabled(String eventName) {
 		if (eventName.equals(WILDCARD)) {
 			int newCount = enabledWildcards.decrementAndGet();
@@ -240,6 +226,20 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler> implements ILt
 	}
 
 	@Override
+	public Iterable<String> listEnabledEvents() {
+		List<String> events = new LinkedList<String>();
+
+		if (enabledWildcards.get() > 0) {
+			events.add(WILDCARD);
+		}
+		for (String prefix : enabledEventPrefixes.keySet()) {
+			events.add(new String(prefix + WILDCARD));
+		}
+		events.addAll(enabledEvents.keySet());
+		return events;
+	}
+
+	@Override
 	public boolean isEventEnabled(String eventName) {
 		/* If at least one session enabled the "*" wildcard, send the event */
 		if (enabledWildcards.get() > 0) {
@@ -258,20 +258,6 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler> implements ILt
 		}
 
 		return false;
-	}
-
-	@Override
-	public Iterable<String> listEnabledEvents() {
-		List<String> events = new LinkedList<String>();
-
-		if (enabledWildcards.get() > 0) {
-			events.add(WILDCARD);
-		}
-		for (String prefix : enabledEventPrefixes.keySet()) {
-			events.add(new String(prefix + WILDCARD));
-		}
-		events.addAll(enabledEvents.keySet());
-		return events;
 	}
 
 	private static boolean incrementEventCount(String eventName, Map<String, Integer> eventMap) {

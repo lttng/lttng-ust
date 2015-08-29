@@ -86,19 +86,11 @@ public interface ILttngAgent<T extends ILttngHandler> {
 
 	/**
 	 * Query if a given event is currently enabled in a current tracing session,
-	 * meaning it should be sent to UST. May be quicker than listing all events
-	 * via {@link #listEnabledEvents()}.
+	 * meaning it should be sent to UST.
 	 *
 	 * @param eventName
 	 *            The name of the event to check.
 	 * @return True if the event is currently enabled, false if it is not.
 	 */
 	boolean isEventEnabled(String eventName);
-
-	/**
-	 * List the all events currently enabled in the current tracing sessions.
-	 *
-	 * @return The list of enabled events
-	 */
-	Iterable<String> listEnabledEvents();
 }

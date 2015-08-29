@@ -18,8 +18,6 @@
 
 package org.lttng.ust.agent.client;
 
-import org.lttng.ust.agent.AbstractLttngAgent;
-
 /**
  * Interface to represent all commands sent from the session daemon to the Java
  * agent. The agent is then expected to execute the command and provide a
@@ -58,5 +56,5 @@ interface ISessiondCommand {
 	 *            The agent on which to execute the command
 	 * @return If the command completed successfully or not
 	 */
-	public LttngAgentResponse execute(AbstractLttngAgent<?> agent);
+	public LttngAgentResponse execute(ILttngTcpClientListener agent);
 }

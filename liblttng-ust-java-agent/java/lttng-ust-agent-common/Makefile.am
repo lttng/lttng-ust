@@ -14,8 +14,9 @@ dist_noinst_JAVA = $(pkgpath)/AbstractLttngAgent.java \
 				   $(pkgpath)/ILttngAgent.java \
 				   $(pkgpath)/ILttngHandler.java \
 				   $(pkgpath)/LTTngAgent.java \
-				   $(pkgpath)/client/LttngAgentResponse.java \
+				   $(pkgpath)/client/ILttngTcpClientListener.java \
 				   $(pkgpath)/client/ISessiondCommand.java \
+				   $(pkgpath)/client/LttngAgentResponse.java \
 				   $(pkgpath)/client/LttngTcpSessiondClient.java \
 				   $(pkgpath)/client/SessiondCommandHeader.java \
 				   $(pkgpath)/client/SessiondDisableEventCommand.java \
