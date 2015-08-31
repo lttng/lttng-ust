@@ -103,7 +103,7 @@ void test_elf(const char *test_dir, const char *arch, uint64_t exp_memsz,
 					&has_debug_link);
 	ok(ret == 0, "lttng_ust_elf_get_debug_link returned successfully");
 	ok(has_debug_link == 1, "debug link marked as found");
-	ok(strcmp(dbg_file, DBG_FILE) == 0,
+	ok(dbg_file && strcmp(dbg_file, DBG_FILE) == 0,
 		"debug link filename - expected: %s, got: %s",
 		DBG_FILE, dbg_file);
 	ok(crc == exp_crc,
