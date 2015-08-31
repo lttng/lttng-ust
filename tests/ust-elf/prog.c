@@ -26,7 +26,7 @@
 
 #define NUM_ARCH 4
 #define NUM_TESTS_PER_ARCH 11
-#define NUM_TESTS (NUM_ARCH * NUM_TESTS_PER_ARCH)
+#define NUM_TESTS (NUM_ARCH * NUM_TESTS_PER_ARCH) + 1
 
 /*
  * Expected memsz were computed using libelf, build ID and debug link
@@ -116,15 +116,22 @@ int main(int argc, char **argv)
 		0xb9, 0x0a, 0xa0, 0xed, 0xd1, 0x41, 0x42, 0xc3, 0x34, 0x85,
 		0xfa, 0x27, 0x2e, 0xa9, 0x2f, 0xd2, 0xe4, 0xf7, 0xb6, 0x60
 	};
-	const char *TEST_DIR = argv[1];
+	const char *test_dir;
 
 	plan_tests(NUM_TESTS);
 
-	test_elf(TEST_DIR, "x86", X86_MEMSZ, X86_BUILD_ID, X86_CRC);
-	test_elf(TEST_DIR, "x86_64", X86_64_MEMSZ, X86_64_BUILD_ID, X86_64_CRC);
-	test_elf(TEST_DIR, "armeb", ARMEB_MEMSZ, ARMEB_BUILD_ID, ARMEB_CRC);
-	test_elf(TEST_DIR, "aarch64_be", AARCH64_BE_MEMSZ, AARCH64_BE_BUILD_ID,
+	ok(argc == 2, "Invoke as: %s <path>", argv[0]);
+	if (argc != 2) {
+		return EXIT_FAILURE;
+	} else {
+		test_dir = argv[1];
+	}
+
+	test_elf(test_dir, "x86", X86_MEMSZ, X86_BUILD_ID, X86_CRC);
+	test_elf(test_dir, "x86_64", X86_64_MEMSZ, X86_64_BUILD_ID, X86_64_CRC);
+	test_elf(test_dir, "armeb", ARMEB_MEMSZ, ARMEB_BUILD_ID, ARMEB_CRC);
+	test_elf(test_dir, "aarch64_be", AARCH64_BE_MEMSZ, AARCH64_BE_BUILD_ID,
 		AARCH64_BE_CRC);
 
-	return 0;
+	return EXIT_SUCCESS;
 }
