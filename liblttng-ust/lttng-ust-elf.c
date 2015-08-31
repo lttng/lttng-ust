@@ -507,7 +507,7 @@ int lttng_ust_elf_get_build_id(struct lttng_ust_elf *elf, uint8_t **build_id,
 	for (i = 0; i < elf->ehdr->e_phnum; ++i) {
 		uint64_t offset, segment_end;
 		struct lttng_ust_elf_phdr *phdr;
-		int ret;
+		int ret = 0;
 
 		phdr = lttng_ust_elf_get_phdr(elf, i);
 		if (!phdr) {
