@@ -66,14 +66,6 @@ int trace_statedump_event(tracepoint_cb tp_cb, void *owner, void *priv)
 	struct cds_list_head *sessionsp;
 	struct lttng_session *session;
 
-	/*
-	 * UST lock nests within dynamic loader lock.
-	 */
-	if (ust_lock()) {
-		ust_unlock();
-		return 1;
-	}
-
 	sessionsp = _lttng_get_sessions();
 	cds_list_for_each_entry(session, sessionsp, node) {
 		if (session->owner != owner)
@@ -82,7 +74,6 @@ int trace_statedump_event(tracepoint_cb tp_cb, void *owner, void *priv)
 			continue;
 		tp_cb(session, priv);
 	}
-	ust_unlock();
 	return 0;
 }
 
@@ -217,8 +208,19 @@ int trace_statedump_end(void *owner)
 static
 int extract_soinfo_events(struct dl_phdr_info *info, size_t size, void *_data)
 {
-	int j;
+	int j, ret = 0;
 	struct dl_iterate_data *data = _data;
+
+	/*
+	 * UST lock nests within dynamic loader lock.
+	 *
+	 * Hold this lock across handling of the entire module to
+	 * protect memory allocation at early process start, due to
+	 * interactions with libc-wrapper lttng malloc instrumentation.
+	 */
+	if (ust_lock()) {
+		goto end;
+	}
 
 	for (j = 0; j < info->dlpi_phnum; j++) {
 		struct soinfo_data so_data;
@@ -276,10 +278,12 @@ int extract_soinfo_events(struct dl_phdr_info *info, size_t size, void *_data)
 		so_data.owner = data->owner;
 		so_data.base_addr_ptr = base_addr_ptr;
 		so_data.resolved_path = resolved_path;
-		return trace_baddr(&so_data);
+		ret = trace_baddr(&so_data);
+		break;
 	}
-
-	return 0;
+end:
+	ust_unlock();
+	return ret;
 }
 
 /*
