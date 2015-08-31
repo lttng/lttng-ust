@@ -199,7 +199,7 @@ struct lttng_ust_elf {
 	/* Size in bytes of section names string table. */
 	uint64_t section_names_size;
 	char *path;
-	FILE *file;
+	int fd;
 	struct lttng_ust_elf_ehdr *ehdr;
 	uint8_t bitness;
 	uint8_t endianness;

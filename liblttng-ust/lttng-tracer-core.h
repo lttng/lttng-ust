@@ -50,4 +50,6 @@ void lttng_ust_sockinfo_session_enabled(void *owner);
 
 void lttng_ust_malloc_wrapper_init(void);
 
+ssize_t lttng_ust_read(int fd, void *buf, size_t len);
+
 #endif /* _LTTNG_TRACER_CORE_H */

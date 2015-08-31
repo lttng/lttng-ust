@@ -20,6 +20,13 @@
 #include <string.h>
 #include <lttng/align.h>
 #include <lttng/ust-elf.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include "lttng-tracer-core.h"
+
+#define BUF_LEN	4096
 
 /*
  * Retrieve the nth (where n is the `index` argument) phdr (program
@@ -48,14 +55,15 @@ struct lttng_ust_elf_phdr *lttng_ust_elf_get_phdr(struct lttng_ust_elf *elf,
 	}
 
 	offset = elf->ehdr->e_phoff + index * elf->ehdr->e_phentsize;
-	if (fseek(elf->file, offset, SEEK_SET)) {
+	if (lseek(elf->fd, offset, SEEK_SET) < 0) {
 		goto error;
 	}
 
 	if (is_elf_32_bit(elf)) {
 		Elf32_Phdr elf_phdr;
 
-		if (!fread(&elf_phdr, sizeof(elf_phdr), 1, elf->file)) {
+		if (lttng_ust_read(elf->fd, &elf_phdr, sizeof(elf_phdr))
+				< sizeof(elf_phdr)) {
 			goto error;
 		}
 		if (!is_elf_native_endian(elf)) {
@@ -65,7 +73,8 @@ struct lttng_ust_elf_phdr *lttng_ust_elf_get_phdr(struct lttng_ust_elf *elf,
 	} else {
 		Elf64_Phdr elf_phdr;
 
-		if (!fread(&elf_phdr, sizeof(elf_phdr), 1, elf->file)) {
+		if (lttng_ust_read(elf->fd, &elf_phdr, sizeof(elf_phdr))
+				< sizeof(elf_phdr)) {
 			goto error;
 		}
 		if (!is_elf_native_endian(elf)) {
@@ -108,14 +117,15 @@ struct lttng_ust_elf_shdr *lttng_ust_elf_get_shdr(struct lttng_ust_elf *elf,
 	}
 
 	offset = elf->ehdr->e_shoff + index * elf->ehdr->e_shentsize;
-	if (fseek(elf->file, offset, SEEK_SET)) {
+	if (lseek(elf->fd, offset, SEEK_SET) < 0) {
 		goto error;
 	}
 
 	if (is_elf_32_bit(elf)) {
 		Elf32_Shdr elf_shdr;
 
-		if (!fread(&elf_shdr, sizeof(elf_shdr), 1, elf->file)) {
+		if (lttng_ust_read(elf->fd, &elf_shdr, sizeof(elf_shdr))
+				< sizeof(elf_shdr)) {
 			goto error;
 		}
 		if (!is_elf_native_endian(elf)) {
@@ -125,7 +135,8 @@ struct lttng_ust_elf_shdr *lttng_ust_elf_get_shdr(struct lttng_ust_elf *elf,
 	} else {
 		Elf64_Shdr elf_shdr;
 
-		if (!fread(&elf_shdr, sizeof(elf_shdr), 1, elf->file)) {
+		if (lttng_ust_read(elf->fd, &elf_shdr, sizeof(elf_shdr))
+				< sizeof(elf_shdr)) {
 			goto error;
 		}
 		if (!is_elf_native_endian(elf)) {
@@ -152,7 +163,7 @@ static
 char *lttng_ust_elf_get_section_name(struct lttng_ust_elf *elf, uint32_t offset)
 {
 	char *name = NULL;
-	size_t len;
+	size_t len = 0, to_read;	/* len does not include \0 */
 
 	if (!elf) {
 		goto error;
@@ -162,34 +173,45 @@ char *lttng_ust_elf_get_section_name(struct lttng_ust_elf *elf, uint32_t offset)
 		goto error;
 	}
 
-	if (fseek(elf->file, elf->section_names_offset + offset, SEEK_SET)) {
+	if (lseek(elf->fd, elf->section_names_offset + offset, SEEK_SET) < 0) {
 		goto error;
 	}
-	/* Note that len starts at 1, it is not an index. */
-	for (len = 1; offset + len <= elf->section_names_size; ++len) {
-		switch (fgetc(elf->file)) {
-		case EOF:
+
+	to_read = elf->section_names_size - offset;
+
+	/* Find first \0 after or at current location, remember len. */
+	for (;;) {
+		char buf[BUF_LEN];
+		ssize_t read_len;
+		size_t i;
+
+		if (!to_read) {
 			goto error;
-		case '\0':
-			goto end;
-		default:
-			break;
 		}
+		read_len = lttng_ust_read(elf->fd, buf,
+			min_t(size_t, BUF_LEN, to_read));
+		if (read_len <= 0) {
+			goto error;
+		}
+		for (i = 0; i < read_len; i++) {
+			if (buf[i] == '\0') {
+				len += i;
+				goto end;
+			}
+		}
+		len += read_len;
+		to_read -= read_len;
 	}
-
-	/* No name was found before the end of the table. */
-	goto error;
-
 end:
-	name = zmalloc(sizeof(char) * len);
+	name = zmalloc(sizeof(char) * (len + 1));	/* + 1 for \0 */
 	if (!name) {
 		goto error;
 	}
-	if (fseek(elf->file, elf->section_names_offset + offset,
-		SEEK_SET)) {
+	if (lseek(elf->fd, elf->section_names_offset + offset,
+		SEEK_SET) < 0) {
 		goto error;
 	}
-	if (!fgets(name, len, elf->file)) {
+	if (lttng_ust_read(elf->fd, name, len + 1) < len + 1) {
 		goto error;
 	}
 
@@ -210,7 +232,7 @@ struct lttng_ust_elf *lttng_ust_elf_create(const char *path)
 {
 	uint8_t e_ident[EI_NIDENT];
 	struct lttng_ust_elf_shdr *section_names_shdr;
-	struct lttng_ust_elf *elf;
+	struct lttng_ust_elf *elf = NULL;
 
 	elf = zmalloc(sizeof(struct lttng_ust_elf));
 	if (!elf) {
@@ -222,17 +244,20 @@ struct lttng_ust_elf *lttng_ust_elf_create(const char *path)
 		goto error;
 	}
 
-	elf->file = fopen(elf->path, "rb");
-	if (!elf->file) {
+	elf->fd = open(elf->path, O_RDONLY | O_CLOEXEC);
+	if (elf->fd < 0) {
 		goto error;
 	}
 
-	if (!fread(e_ident, 1, EI_NIDENT, elf->file)) {
+	if (lttng_ust_read(elf->fd, e_ident, EI_NIDENT) < EI_NIDENT) {
 		goto error;
 	}
 	elf->bitness = e_ident[EI_CLASS];
 	elf->endianness = e_ident[EI_DATA];
-	rewind(elf->file);
+
+	if (lseek(elf->fd, 0, SEEK_SET) < 0) {
+		goto error;
+	}
 
 	elf->ehdr = zmalloc(sizeof(struct lttng_ust_elf_ehdr));
 	if (!elf->ehdr) {
@@ -242,7 +267,8 @@ struct lttng_ust_elf *lttng_ust_elf_create(const char *path)
 	if (is_elf_32_bit(elf)) {
 		Elf32_Ehdr elf_ehdr;
 
-		if (!fread(&elf_ehdr, sizeof(elf_ehdr), 1, elf->file)) {
+		if (lttng_ust_read(elf->fd, &elf_ehdr, sizeof(elf_ehdr))
+				< sizeof(elf_ehdr)) {
 			goto error;
 		}
 		if (!is_elf_native_endian(elf)) {
@@ -252,7 +278,8 @@ struct lttng_ust_elf *lttng_ust_elf_create(const char *path)
 	} else {
 		Elf64_Ehdr elf_ehdr;
 
-		if (!fread(&elf_ehdr, sizeof(elf_ehdr), 1, elf->file)) {
+		if (lttng_ust_read(elf->fd, &elf_ehdr, sizeof(elf_ehdr))
+				< sizeof(elf_ehdr)) {
 			goto error;
 		}
 		if (!is_elf_native_endian(elf)) {
@@ -270,16 +297,19 @@ struct lttng_ust_elf *lttng_ust_elf_create(const char *path)
 	elf->section_names_size = section_names_shdr->sh_size;
 
 	free(section_names_shdr);
-
 	return elf;
 
 error:
 	if (elf) {
 		free(elf->ehdr);
-		fclose(elf->file);
+		if (elf->fd >= 0) {
+			if (close(elf->fd)) {
+				abort();
+			}
+		}
 		free(elf->path);
+		free(elf);
 	}
-	free(elf);
 	return NULL;
 }
 
@@ -293,7 +323,9 @@ void lttng_ust_elf_destroy(struct lttng_ust_elf *elf)
 	}
 
 	free(elf->ehdr);
-	fclose(elf->file);
+	if (close(elf->fd)) {
+		abort();
+	}
 	free(elf->path);
 	free(elf);
 }
@@ -379,6 +411,7 @@ int lttng_ust_elf_get_build_id_from_segment(
 
 	while (offset < segment_end) {
 		struct lttng_ust_elf_nhdr nhdr;
+		size_t read_len;
 
 		/* Align start of note entry */
 		offset += offset_align(offset, ELF_NOTE_ENTRY_ALIGN);
@@ -390,10 +423,11 @@ int lttng_ust_elf_get_build_id_from_segment(
 		 * build id the data following the header will not
 		 * have been read.
 		 */
-		if (fseek(elf->file, offset, SEEK_SET)) {
+		if (lseek(elf->fd, offset, SEEK_SET) < 0) {
 			goto error;
 		}
-		if (!fread(&nhdr, sizeof(nhdr), 1, elf->file)) {
+		if (lttng_ust_read(elf->fd, &nhdr, sizeof(nhdr))
+				< sizeof(nhdr)) {
 			goto error;
 		}
 
@@ -422,10 +456,11 @@ int lttng_ust_elf_get_build_id_from_segment(
 			goto error;
 		}
 
-		if (fseek(elf->file, offset, SEEK_SET)) {
+		if (lseek(elf->fd, offset, SEEK_SET) < 0) {
 			goto error;
 		}
-		if (!fread(_build_id, sizeof(*_build_id), _length, elf->file)) {
+		read_len = sizeof(*_build_id) * _length;
+		if (lttng_ust_read(elf->fd, _build_id, read_len) < read_len) {
 			goto error;
 		}
 
@@ -520,7 +555,6 @@ error:
  *
  * Returns 0 on success, -1 if an error occurred.
  */
-static
 int lttng_ust_elf_get_debug_link_from_section(struct lttng_ust_elf *elf,
 					char **filename, uint32_t *crc,
 					int *found,
@@ -528,6 +562,7 @@ int lttng_ust_elf_get_debug_link_from_section(struct lttng_ust_elf *elf,
 {
 	int _found = 0;
 	char *_filename;
+	size_t filename_len;
 	char *section_name = NULL;
 	uint32_t _crc;
 
@@ -560,14 +595,14 @@ int lttng_ust_elf_get_debug_link_from_section(struct lttng_ust_elf *elf,
 	if (!_filename) {
 		goto error;
 	}
-	if (fseek(elf->file, shdr->sh_offset, SEEK_SET)) {
+	if (lseek(elf->fd, shdr->sh_offset, SEEK_SET) < 0) {
 		goto error;
 	}
-	if (!fread(_filename, sizeof(*_filename), shdr->sh_size - ELF_CRC_SIZE,
-		elf->file)) {
+	filename_len = sizeof(*_filename) * (shdr->sh_size - ELF_CRC_SIZE);
+	if (lttng_ust_read(elf->fd, _filename, filename_len) < filename_len) {
 		goto error;
 	}
-	if (!fread(&_crc, sizeof(_crc), 1, elf->file)) {
+	if (lttng_ust_read(elf->fd, &_crc, sizeof(_crc)) < sizeof(_crc)) {
 		goto error;
 	}
 	if (!is_elf_native_endian(elf)) {
