@@ -405,8 +405,8 @@ int lttng_ust_elf_get_build_id_from_segment(
 	struct lttng_ust_elf *elf, uint8_t **build_id, size_t *length,
 	uint64_t offset, uint64_t segment_end, int *found)
 {
-	uint8_t *_build_id;
-	size_t _length;
+	uint8_t *_build_id = NULL;	/* Silence old gcc warning. */
+	size_t _length = 0;		/* Silence old gcc warning. */
 	int _found = 0;
 
 	while (offset < segment_end) {
