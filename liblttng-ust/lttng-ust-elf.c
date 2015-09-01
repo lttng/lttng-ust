@@ -496,8 +496,8 @@ int lttng_ust_elf_get_build_id(struct lttng_ust_elf *elf, uint8_t **build_id,
 			size_t *length, int *found)
 {
 	uint16_t i;
-	uint8_t *_build_id;
-	size_t _length;
+	uint8_t *_build_id = NULL;	/* Silence old gcc warning. */
+	size_t _length = 0;		/* Silence old gcc warning. */
 	int _found = 0;
 
 	if (!elf || !build_id || !length || !found) {
@@ -561,10 +561,10 @@ int lttng_ust_elf_get_debug_link_from_section(struct lttng_ust_elf *elf,
 					struct lttng_ust_elf_shdr *shdr)
 {
 	int _found = 0;
-	char *_filename;
+	char *_filename = NULL;		/* Silence old gcc warning. */
 	size_t filename_len;
 	char *section_name = NULL;
-	uint32_t _crc;
+	uint32_t _crc = 0;		/* Silence old gcc warning. */
 
 	if (!elf || !filename || !crc || !found || !shdr) {
 		goto error;
@@ -645,8 +645,8 @@ int lttng_ust_elf_get_debug_link(struct lttng_ust_elf *elf, char **filename,
 	int ret;
 	uint16_t i;
 	int _found = 0;
-	char *_filename;
-	uint32_t _crc;
+	char *_filename = NULL;		/* Silence old gcc warning. */
+	uint32_t _crc = 0;		/* Silence old gcc warning. */
 
 	if (!elf || !filename || !crc || !found) {
 		goto error;
