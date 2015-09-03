@@ -1,4 +1,0 @@
-#!/bin/bash
-
-TEST_DIR=$(dirname $0)
-./${TEST_DIR}/prog $TEST_DIR

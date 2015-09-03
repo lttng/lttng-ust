@@ -5,20 +5,10 @@ prog_SOURCES = prog.c
 prog_LDADD = $(top_builddir)/liblttng-ust/liblttng-ust.la \
 	$(top_builddir)/tests/utils/libtap.a
 
-SCRIPT_LIST = test_ust_elf
+noinst_SCRIPTS = test_ust_elf
+CLEANFILES = $(noinst_SCRIPTS)
+EXTRA_DIST = test_ust_elf.in $(srcdir)/data/**
 
-dist_noinst_SCRIPTS = $(SCRIPT_LIST)
-
-all-local:
-	@if [ x"$(srcdir)" != x"$(builddir)" ]; then \
-		for script in $(SCRIPT_LIST); do \
-			cp -f $(srcdir)/$$script $(builddir); \
-		done; \
-	fi
-
-clean-local:
-	@if [ x"$(srcdir)" != x"$(builddir)" ]; then \
-		for script in $(SCRIPT_LIST); do \
-			rm -f $(builddir)/$$script; \
-		done; \
-	fi
+$(noinst_SCRIPTS): %: %.in
+	sed "s#@TOPSRCDIR@#$(top_srcdir)#g" < $< > $@
+	chmod +x $@

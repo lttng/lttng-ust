@@ -50,6 +50,7 @@ tests/tracepoint/benchmark/tracepoint_benchmark
 tests/tracepoint/tracepoint_test
 tests/snprintf/prog
 tests/ust-elf/prog
+tests/ust-elf/test_ust_elf
 tests/benchmark/bench1
 tests/benchmark/bench2
 
