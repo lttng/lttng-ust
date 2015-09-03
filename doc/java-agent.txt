@@ -89,3 +89,32 @@ ILttngAgent#isEventEnabled() for example.
 Events that are logged call the native tracepoint through JNI, which generates
 a UST event. There is one type of tracepoint per domain (Jul or Logj4).
 
+-----------------------
+Filtering notifications
+-----------------------
+FilterChangeNotifier is the singleton notifier class.
+Applications implement an IFilterChangeListener, and register it to the notifier.
+
+Whenever new event rules are enabled or disabled, the relevant agent informs the
+notifier, which then sends notifications to all registered listeners by invoking
+their callbacks.
+
+Upon registration, a new listener will receive notifications for all currently
+active rules.
+
+The notifier keeps track of its own event rule refcounting, to handle the case
+of multiple sessions or multiple agents enabling identical event rules.
+
+The FilterChangeNotifier does not have threads of its own. The listeners's
+callbacks will be invoked by these threads:
+* In the case of a notification being received while a listener is already
+  registered, the callback is executed by the TCP client's thread. This
+  effectively blocks the "lttng" command line until all callbacks are processed
+  (assuming no timeouts).
+* In the case of a listener registering and receiving the currently-active
+  rules, the callbacks will be executed by the application's thread doing the
+  registerListener() call.
+
+The notifier is entirely synchronized. This ensure that if a rule is enabled
+at the same time a listener is registered, that listener does not miss or
+receive duplicate notifications.
