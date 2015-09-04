@@ -195,9 +195,9 @@ struct lttng_ust_elf_nhdr {
 
 struct lttng_ust_elf {
 	/* Offset in bytes to start of section names string table. */
-	uint64_t section_names_offset;
+	off_t section_names_offset;
 	/* Size in bytes of section names string table. */
-	uint64_t section_names_size;
+	size_t section_names_size;
 	char *path;
 	int fd;
 	struct lttng_ust_elf_ehdr *ehdr;

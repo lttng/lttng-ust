@@ -39,7 +39,7 @@ struct lttng_ust_elf_phdr *lttng_ust_elf_get_phdr(struct lttng_ust_elf *elf,
 						uint16_t index)
 {
 	struct lttng_ust_elf_phdr *phdr = NULL;
-	long offset;
+	off_t offset;
 
 	if (!elf) {
 		goto error;
@@ -54,7 +54,8 @@ struct lttng_ust_elf_phdr *lttng_ust_elf_get_phdr(struct lttng_ust_elf *elf,
 		goto error;
 	}
 
-	offset = elf->ehdr->e_phoff + index * elf->ehdr->e_phentsize;
+	offset = (off_t) elf->ehdr->e_phoff
+			+ (off_t) index * elf->ehdr->e_phentsize;
 	if (lseek(elf->fd, offset, SEEK_SET) < 0) {
 		goto error;
 	}
@@ -161,7 +162,7 @@ error:
  * If no name is found, NULL is returned.
  */
 static
-char *lttng_ust_elf_get_section_name(struct lttng_ust_elf *elf, uint32_t offset)
+char *lttng_ust_elf_get_section_name(struct lttng_ust_elf *elf, off_t offset)
 {
 	char *name = NULL;
 	size_t len = 0, to_read;	/* len does not include \0 */
@@ -404,7 +405,7 @@ error:
 static
 int lttng_ust_elf_get_build_id_from_segment(
 	struct lttng_ust_elf *elf, uint8_t **build_id, size_t *length,
-	uint64_t offset, uint64_t segment_end, int *found)
+	off_t offset, off_t segment_end, int *found)
 {
 	uint8_t *_build_id = NULL;	/* Silence old gcc warning. */
 	size_t _length = 0;		/* Silence old gcc warning. */
@@ -506,7 +507,7 @@ int lttng_ust_elf_get_build_id(struct lttng_ust_elf *elf, uint8_t **build_id,
 	}
 
 	for (i = 0; i < elf->ehdr->e_phnum; ++i) {
-		uint64_t offset, segment_end;
+		off_t offset, segment_end;
 		struct lttng_ust_elf_phdr *phdr;
 		int ret = 0;
 
