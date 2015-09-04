@@ -118,7 +118,7 @@ struct lttng_ust_elf_shdr *lttng_ust_elf_get_shdr(struct lttng_ust_elf *elf,
 	}
 
 	offset = (off_t) elf->ehdr->e_shoff
-		+ (off_t) index * elf->ehdr->e_shentsize;
+			+ (off_t) index * elf->ehdr->e_shentsize;
 	if (lseek(elf->fd, offset, SEEK_SET) < 0) {
 		goto error;
 	}
