@@ -452,7 +452,7 @@ int lttng_ust_elf_get_build_id_from_segment(
 
 		_length = nhdr.n_descsz;
 		_build_id = zmalloc(sizeof(uint8_t) * _length);
-		if (!build_id) {
+		if (!_build_id) {
 			goto error;
 		}
 
