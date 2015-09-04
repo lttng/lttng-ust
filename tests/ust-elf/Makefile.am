@@ -10,5 +10,5 @@ CLEANFILES = $(noinst_SCRIPTS)
 EXTRA_DIST = test_ust_elf.in $(srcdir)/data/**
 
 $(noinst_SCRIPTS): %: %.in
-	sed "s#@TOPSRCDIR@#$(top_srcdir)#g" < $< > $@
+	sed "s#@ABSTOPSRCDIR@#$(abs_top_srcdir)#g" < $< > $@
 	chmod +x $@
