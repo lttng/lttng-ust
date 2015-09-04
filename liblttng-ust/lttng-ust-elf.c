@@ -478,6 +478,7 @@ int lttng_ust_elf_get_build_id_from_segment(
 	*found = _found;
 	return 0;
 error:
+	free(_build_id);
 	return -1;
 }
 
@@ -624,10 +625,8 @@ end:
 	return 0;
 
 error:
-	if (section_name) {
-		free(section_name);
-	}
-
+	free(_filename);
+	free(section_name);
 	return -1;
 }
 

@@ -70,9 +70,9 @@ void lttng_ust_dl_dlopen(void *so_base, const char *so_name, void *ip)
 	char resolved_path[PATH_MAX];
 	struct lttng_ust_elf *elf;
 	uint64_t memsz;
-	uint8_t *build_id;
+	uint8_t *build_id = NULL;
 	size_t build_id_len;
-	char *dbg_file;
+	char *dbg_file = NULL;
 	uint32_t crc;
 	int has_build_id = 0, has_debug_link = 0;
 	int ret;
@@ -119,6 +119,8 @@ void lttng_ust_dl_dlopen(void *so_base, const char *so_name, void *ip)
 	}
 
 end:
+	free(dbg_file);
+	free(build_id);
 	lttng_ust_elf_destroy(elf);
 	return;
 }
