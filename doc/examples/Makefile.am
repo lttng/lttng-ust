@@ -24,6 +24,11 @@ dist_doc_examples_java_log4j_DATA = java-log4j/Makefile \
 SUBDIRS_LOG4J = java-log4j
 endif
 
+if BUILD_PYTHON_AGENT
+doc_examples_pythondir = ${docdir}/examples/python
+dist_doc_examples_python_DATA = python/hello.py
+endif
+
 dist_doc_examples_DATA = README
 
 dist_doc_examples_easy_ust_DATA = easy-ust/Makefile \
