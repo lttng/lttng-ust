@@ -317,6 +317,12 @@ def _init_threads():
     dbg._pdebug('system session daemon port: {}'.format(sys_port))
     dbg._pdebug('user session daemon port: {}'.format(user_port))
 
+    if sys_port == user_port and sys_port is not None:
+        # The two session daemon ports are the same. This is not normal.
+        # Connect to only one.
+        dbg._pdebug('both user and system session daemon have the same port')
+        sys_port = None
+
     try:
         if sys_port is not None:
             dbg._pdebug('creating system client thread')
