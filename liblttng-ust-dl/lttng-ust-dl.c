@@ -109,13 +109,11 @@ void lttng_ust_dl_dlopen(void *so_base, const char *so_name, void *ip)
 	if (has_build_id) {
 		tracepoint(lttng_ust_dl, build_id,
 			ip, so_base, build_id, build_id_len);
-		free(build_id);
 	}
 
 	if (has_debug_link) {
 		tracepoint(lttng_ust_dl, debug_link,
 			ip, so_base, dbg_file, crc);
-		free(dbg_file);
 	}
 
 end:
