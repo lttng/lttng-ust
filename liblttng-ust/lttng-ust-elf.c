@@ -545,6 +545,7 @@ int lttng_ust_elf_get_build_id(struct lttng_ust_elf *elf, uint8_t **build_id,
 	*found = _found;
 	return 0;
 error:
+	free(_build_id);
 	return -1;
 }
 
@@ -681,5 +682,6 @@ int lttng_ust_elf_get_debug_link(struct lttng_ust_elf *elf, char **filename,
 	*found = _found;
 	return 0;
 error:
+	free(_filename);
 	return -1;
 }
