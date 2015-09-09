@@ -1,3 +1,11 @@
+2015-09-09 lttng-ust 2.5.6
+	* Fix: close socket on protocol error, sendmsg MSG_NOSIGNAL
+	* Fix: add missing ust lock around objd_table_destroy()
+	* Fix: application exit race with pthread cancel
+	* Fix: Cleanup local_apps sock_info in lttng_ust_cleanup
+	* Fix: handle sys_futex EINTR and EWOULDBLOCK
+	* Fix: perform volatile load of tracepoint state
+
 2015-06-18 lttng-ust 2.5.5
 	* Fix: function instrumentation ip context
 	* Fix: liblttng-ust-dl ip context
