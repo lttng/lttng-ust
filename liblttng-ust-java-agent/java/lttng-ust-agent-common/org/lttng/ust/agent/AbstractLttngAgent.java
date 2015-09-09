@@ -18,9 +18,8 @@
 
 package org.lttng.ust.agent;
 
+import java.util.Collection;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Set;
@@ -234,19 +233,11 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 		return decrementEventCount(eventName, enabledEvents);
 	}
 
+	/*
+	 * Implementation of this method is domain-specific.
+	 */
 	@Override
-	public Iterable<String> listEnabledEvents() {
-		List<String> events = new LinkedList<String>();
-
-		if (enabledWildcards.get() > 0) {
-			events.add(WILDCARD);
-		}
-		for (String prefix : enabledEventPrefixes.keySet()) {
-			events.add(new String(prefix + WILDCARD));
-		}
-		events.addAll(enabledEvents.keySet());
-		return events;
-	}
+	public abstract Collection<String> listAvailableEvents();
 
 	@Override
 	public boolean isEventEnabled(String eventName) {

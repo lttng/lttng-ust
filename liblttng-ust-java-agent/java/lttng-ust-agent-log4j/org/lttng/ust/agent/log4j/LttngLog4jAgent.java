@@ -17,6 +17,14 @@
 
 package org.lttng.ust.agent.log4j;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
+import org.apache.log4j.Appender;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.lttng.ust.agent.AbstractLttngAgent;
 
 /**
@@ -40,4 +48,33 @@ class LttngLog4jAgent extends AbstractLttngAgent<LttngLogAppender> {
 		return instance;
 	}
 
+	@Override
+	public Collection<String> listAvailableEvents() {
+		List<String> ret = new ArrayList<String>();
+
+		@SuppressWarnings("unchecked")
+		List<Logger> loggers = Collections.list(LogManager.getCurrentLoggers());
+		for (Logger logger : loggers) {
+			/*
+			 * Check if that logger has at least one LTTng log4j appender
+			 * attached.
+			 */
+			if (hasLttngAppenderAttached(logger)) {
+				ret.add(logger.getName());
+			}
+		}
+
+		return ret;
+	}
+
+	private static boolean hasLttngAppenderAttached(Logger logger) {
+		@SuppressWarnings("unchecked")
+		List<Appender> appenders = Collections.list(logger.getAllAppenders());
+		for (Appender appender : appenders) {
+			if (appender instanceof LttngLogAppender) {
+				return true;
+			}
+		}
+		return false;
+	}
 }
