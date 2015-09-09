@@ -42,8 +42,8 @@ public class LttngTcpSessiondClient implements Runnable {
 	private static final String ROOT_PORT_FILE = "/var/run/lttng/agent.port";
 	private static final String USER_PORT_FILE = "/.lttng/agent.port";
 
-	private static int protocolMajorVersion = 1;
-	private static int protocolMinorVersion = 0;
+	private static final int PROTOCOL_MAJOR_VERSION = 2;
+	private static final int PROTOCOL_MINOR_VERSION = 0;
 
 	/** Command header from the session deamon. */
 	private final CountDownLatch registrationLatch = new CountDownLatch(1);
@@ -211,8 +211,8 @@ public class LttngTcpSessiondClient implements Runnable {
 
 		buf.putInt(domainValue);
 		buf.putInt(Integer.parseInt(pid));
-		buf.putInt(protocolMajorVersion);
-		buf.putInt(protocolMinorVersion);
+		buf.putInt(PROTOCOL_MAJOR_VERSION);
+		buf.putInt(PROTOCOL_MINOR_VERSION);
 		this.outToSessiond.write(data, 0, data.length);
 		this.outToSessiond.flush();
 	}

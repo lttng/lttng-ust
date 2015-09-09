@@ -33,7 +33,10 @@ import org.lttng.ust.agent.session.LogLevelSelector;
  */
 class SessiondEnableEventCommand implements ISessiondCommand {
 
-	private static final int INT_SIZE = 4;
+	/** Fixed event name length. Value defined by the lttng agent protocol. */
+	private static final int EVENT_NAME_LENGTH = 256;
+
+	private final boolean commandIsValid;
 
 	/* Parameters of the event rule being enabled */
 	private final String eventName;
@@ -44,20 +47,54 @@ class SessiondEnableEventCommand implements ISessiondCommand {
 		if (data == null) {
 			throw new IllegalArgumentException();
 		}
-		int dataOffset = INT_SIZE * 2;
-
 		ByteBuffer buf = ByteBuffer.wrap(data);
 		buf.order(ByteOrder.LITTLE_ENDIAN);
 		int logLevel = buf.getInt();
 		int logLevelType = buf.getInt();
 		logLevelFilter = new LogLevelSelector(logLevel, logLevelType);
 
-		eventName = new String(data, dataOffset, data.length - dataOffset).trim();
-		filterString = null; /* Not yet sent by the sessiond */
+		/* Read the event name */
+		byte[] eventNameBytes = new byte[EVENT_NAME_LENGTH];
+		buf.get(eventNameBytes);
+		eventName = new String(eventNameBytes).trim();
+
+		/*
+		 * Read the filter string. The buffer contains the length (number of
+		 * bytes), then the bytes themselves.
+		 *
+		 * The length is represented as an unsigned int, but it should never
+		 * be greater than Integer.MAX_VALUE.
+		 */
+		int filterStringLength = buf.getInt();
+		if (filterStringLength < 0) {
+			/*
+			 * The (unsigned) length is above what the sessiond should send. The
+			 * command cannot be processed.
+			 */
+			filterString = null;
+			commandIsValid = false;
+			return;
+		}
+		if (filterStringLength == 0) {
+			/* There is explicitly no filter string */
+			filterString = "";
+			commandIsValid = true;
+			return;
+		}
+
+		byte[] filterStringBytes = new byte[filterStringLength];
+		buf.get(filterStringBytes);
+		filterString = new String(filterStringBytes).trim();
+
+		commandIsValid = true;
 	}
 
 	@Override
 	public LttngAgentResponse execute(ILttngTcpClientListener agent) {
+		if (!commandIsValid) {
+			return LttngAgentResponse.FAILURE_RESPONSE;
+		}
+
 		EventRule rule = new EventRule(eventName, logLevelFilter, filterString);
 		boolean success = agent.eventEnabled(rule);
 		return (success ? LttngAgentResponse.SUCESS_RESPONSE : LttngAgentResponse.FAILURE_RESPONSE);
