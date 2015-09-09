@@ -1,3 +1,20 @@
+2015-09-09 lttng-ust 2.7.0-rc2
+	* Fix: close socket on protocol error, sendmsg MSG_NOSIGNAL
+	* Cleanup: more descriptive error message
+	* Fix: add missing ust lock around objd_table_destroy()
+	* Fix: application exit race with pthread cancel
+	* Cleanup: configure layout for python agent detection
+	* Build: python agent: use setup.py over autoconf
+	* Build: add python interpreter used by python agent if built
+	* Doc: basic lttng ust python agent documentation
+	* Build: use AM_PATH_PYTHON to resolve python when building agent
+	* Build: only check if python exists in path
+	* Doc: add LTTNG_UST_CLOCK_PLUGIN to man page
+	* Doc: add LTTNG_UST_GETCPU_PLUGIN to man page
+	* Fix: Java agent: update ref count in enabledLoggers
+	* Rename Python agent tracepoint to "event"
+	* Fix: remove generated file from git tree
+
 2015-07-15 (Pet Fire Safety Day) lttng-ust 2.7.0-rc1
 	* Fix: Use $enableval with AC_ARG_ENABLE
 	* Fix: Cleanup local_apps sock_info in lttng_ust_cleanup
