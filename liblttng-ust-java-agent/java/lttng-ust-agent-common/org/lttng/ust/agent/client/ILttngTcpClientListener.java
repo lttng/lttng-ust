@@ -17,6 +17,8 @@
 
 package org.lttng.ust.agent.client;
 
+import java.util.Collection;
+
 import org.lttng.ust.agent.session.EventRule;
 
 /**
@@ -53,9 +55,12 @@ public interface ILttngTcpClientListener {
 	boolean eventDisabled(String eventName);
 
 	/**
-	 * List the all events currently enabled in the current tracing sessions.
+	 * List the events that are available in the agent's tracing domain.
 	 *
-	 * @return The list of enabled events
+	 * In Java terms, this means loggers that have at least one LTTng log
+	 * handler of their corresponding domain attached.
+	 *
+	 * @return The list of available events
 	 */
-	Iterable<String> listEnabledEvents();
+	Collection<String> listAvailableEvents();
 }

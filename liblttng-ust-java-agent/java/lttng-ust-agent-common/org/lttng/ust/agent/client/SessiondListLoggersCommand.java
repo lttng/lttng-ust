@@ -20,8 +20,7 @@ package org.lttng.ust.agent.client;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 
 /**
  * Session daemon command asking the Java agent to list its registered loggers,
@@ -34,11 +33,10 @@ class SessiondListLoggersCommand implements ISessiondCommand {
 
 	@Override
 	public LttngAgentResponse execute(ILttngTcpClientListener agent) {
-		final List<String> loggerList = new ArrayList<String>();
+		final Collection<String> loggerList = agent.listAvailableEvents();
 		int dataSize = 0;
 
-		for (String event : agent.listEnabledEvents()) {
-			loggerList.add(event);
+		for (String event : agent.listAvailableEvents()) {
 			dataSize += event.length() + 1;
 		}
 
@@ -49,10 +47,10 @@ class SessiondListLoggersCommand implements ISessiondCommand {
 
 		private final static int SIZE = 12;
 
-		private final List<String> loggers;
+		private final Collection<String> loggers;
 		private final int dataSize;
 
-		public SessiondListLoggersResponse(List<String> loggers, int dataSize) {
+		public SessiondListLoggersResponse(Collection<String> loggers, int dataSize) {
 			this.loggers = loggers;
 			this.dataSize = dataSize;
 		}

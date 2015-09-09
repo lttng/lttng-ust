@@ -17,6 +17,14 @@
 
 package org.lttng.ust.agent.jul;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.logging.Handler;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
+
 import org.lttng.ust.agent.AbstractLttngAgent;
 
 /**
@@ -37,6 +45,41 @@ class LttngJulAgent extends AbstractLttngAgent<LttngLogHandler> {
 			instance = new LttngJulAgent();
 		}
 		return instance;
+	}
+
+	@Override
+	public Collection<String> listAvailableEvents() {
+		List<String> ret = new ArrayList<String>();
+
+		List<String> loggersNames = Collections.list(LogManager.getLogManager().getLoggerNames());
+		for (String name : loggersNames) {
+			/*
+			 * Skip the root logger. An empty string is not a valid event name
+			 * in LTTng.
+			 */
+			if (name.equals("")) {
+				continue;
+			}
+
+			/*
+			 * Check if that logger has at least one LTTng JUL handler attached.
+			 */
+			Logger logger = Logger.getLogger(name);
+			if (hasLttngHandlerAttached(logger)) {
+				ret.add(name);
+			}
+		}
+
+		return ret;
+	}
+
+	private static boolean hasLttngHandlerAttached(Logger logger) {
+		for (Handler handler : logger.getHandlers()) {
+			if (handler instanceof LttngLogHandler) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 }
