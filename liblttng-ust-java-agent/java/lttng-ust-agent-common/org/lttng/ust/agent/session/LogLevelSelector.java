@@ -188,4 +188,12 @@ public class LogLevelSelector {
 		}
 		return true;
 	}
+
+	@Override
+	public String toString() {
+		if (getLogLevelType() == LogLevelType.LTTNG_EVENT_LOGLEVEL_ALL) {
+			return LogLevelType.LTTNG_EVENT_LOGLEVEL_ALL.toString();
+		}
+		return String.valueOf(getLogLevel()) + ", " + getLogLevelType().toString();
+	}
 }

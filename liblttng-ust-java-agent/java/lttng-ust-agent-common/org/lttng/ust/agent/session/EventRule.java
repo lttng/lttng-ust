@@ -131,4 +131,10 @@ public class EventRule {
 		return true;
 	}
 
+	@Override
+	public String toString() {
+		return "Event name = " + getEventName() +
+		", Log level selector = (" + getLogLevelSelector().toString() + ")" +
+		", Filter string = " + getFilterString();
+	}
 }
