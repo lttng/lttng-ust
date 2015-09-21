@@ -339,6 +339,9 @@ static void client_buffer_begin(struct lttng_ust_lib_ring_buffer *buf, uint64_t 
 				handle);
 	struct lttng_channel *lttng_chan = channel_get_private(chan);
 
+	assert(header);
+	if (!header)
+		return;
 	header->magic = CTF_MAGIC_NUMBER;
 	memcpy(header->uuid, lttng_chan->uuid, sizeof(lttng_chan->uuid));
 	header->stream_id = lttng_chan->id;
@@ -366,6 +369,9 @@ static void client_buffer_end(struct lttng_ust_lib_ring_buffer *buf, uint64_t ts
 				handle);
 	unsigned long records_lost = 0;
 
+	assert(header);
+	if (!header)
+		return;
 	header->ctx.timestamp_end = tsc;
 	header->ctx.content_size =
 		(uint64_t) data_size * CHAR_BIT;		/* in bits */
@@ -415,6 +421,8 @@ static int client_timestamp_begin(struct lttng_ust_lib_ring_buffer *buf,
 	struct packet_header *header;
 
 	header = client_packet_header(buf, handle);
+	if (!header)
+		return -1;
 	*timestamp_begin = header->ctx.timestamp_begin;
 	return 0;
 }
@@ -426,6 +434,8 @@ static int client_timestamp_end(struct lttng_ust_lib_ring_buffer *buf,
 	struct packet_header *header;
 
 	header = client_packet_header(buf, handle);
+	if (!header)
+		return -1;
 	*timestamp_end = header->ctx.timestamp_end;
 	return 0;
 }
@@ -437,6 +447,8 @@ static int client_events_discarded(struct lttng_ust_lib_ring_buffer *buf,
 	struct packet_header *header;
 
 	header = client_packet_header(buf, handle);
+	if (!header)
+		return -1;
 	*events_discarded = header->ctx.events_discarded;
 	return 0;
 }
@@ -448,6 +460,8 @@ static int client_content_size(struct lttng_ust_lib_ring_buffer *buf,
 	struct packet_header *header;
 
 	header = client_packet_header(buf, handle);
+	if (!header)
+		return -1;
 	*content_size = header->ctx.content_size;
 	return 0;
 }
@@ -459,6 +473,8 @@ static int client_packet_size(struct lttng_ust_lib_ring_buffer *buf,
 	struct packet_header *header;
 
 	header = client_packet_header(buf, handle);
+	if (!header)
+		return -1;
 	*packet_size = header->ctx.packet_size;
 	return 0;
 }
@@ -470,6 +486,8 @@ static int client_stream_id(struct lttng_ust_lib_ring_buffer *buf,
 	struct packet_header *header;
 
 	header = client_packet_header(buf, handle);
+	if (!header)
+		return -1;
 	*stream_id = header->stream_id;
 	return 0;
 }
