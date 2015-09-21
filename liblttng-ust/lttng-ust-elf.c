@@ -405,11 +405,10 @@ error:
 static
 int lttng_ust_elf_get_build_id_from_segment(
 	struct lttng_ust_elf *elf, uint8_t **build_id, size_t *length,
-	off_t offset, off_t segment_end, int *found)
+	off_t offset, off_t segment_end)
 {
 	uint8_t *_build_id = NULL;	/* Silence old gcc warning. */
 	size_t _length = 0;		/* Silence old gcc warning. */
-	int _found = 0;
 
 	while (offset < segment_end) {
 		struct lttng_ust_elf_nhdr nhdr;
@@ -466,16 +465,14 @@ int lttng_ust_elf_get_build_id_from_segment(
 			goto error;
 		}
 
-		_found = 1;
 		break;
 	}
 
-	if (_found) {
+	if (_build_id) {
 		*build_id = _build_id;
 		*length = _length;
 	}
 
-	*found = _found;
 	return 0;
 error:
 	free(_build_id);
@@ -501,7 +498,6 @@ int lttng_ust_elf_get_build_id(struct lttng_ust_elf *elf, uint8_t **build_id,
 	uint16_t i;
 	uint8_t *_build_id = NULL;	/* Silence old gcc warning. */
 	size_t _length = 0;		/* Silence old gcc warning. */
-	int _found = 0;
 
 	if (!elf || !build_id || !length || !found) {
 		goto error;
@@ -525,24 +521,25 @@ int lttng_ust_elf_get_build_id(struct lttng_ust_elf *elf, uint8_t **build_id,
 		offset = phdr->p_offset;
 		segment_end = offset + phdr->p_filesz;
 		ret = lttng_ust_elf_get_build_id_from_segment(
-			elf, &_build_id, &_length, offset, segment_end,
-			&_found);
+			elf, &_build_id, &_length, offset, segment_end);
 	next_loop:
 		free(phdr);
 		if (ret) {
 			goto error;
 		}
-		if (_found) {
+		if (_build_id) {
 			break;
 		}
 	}
 
-	if (_found) {
+	if (_build_id) {
 		*build_id = _build_id;
 		*length = _length;
+		*found = 1;
+	} else {
+		*found = 0;
 	}
 
-	*found = _found;
 	return 0;
 error:
 	free(_build_id);
@@ -561,16 +558,14 @@ error:
  */
 int lttng_ust_elf_get_debug_link_from_section(struct lttng_ust_elf *elf,
 					char **filename, uint32_t *crc,
-					int *found,
 					struct lttng_ust_elf_shdr *shdr)
 {
-	int _found = 0;
 	char *_filename = NULL;		/* Silence old gcc warning. */
 	size_t filename_len;
 	char *section_name = NULL;
 	uint32_t _crc = 0;		/* Silence old gcc warning. */
 
-	if (!elf || !filename || !crc || !found || !shdr) {
+	if (!elf || !filename || !crc || !shdr) {
 		goto error;
 	}
 
@@ -613,15 +608,12 @@ int lttng_ust_elf_get_debug_link_from_section(struct lttng_ust_elf *elf,
 		_crc = bswap_32(_crc);
 	}
 
-	_found = 1;
-
 end:
 	free(section_name);
-	if (_found) {
+	if (_filename) {
 		*filename = _filename;
 		*crc = _crc;
 	}
-	*found = _found;
 
 	return 0;
 
@@ -646,7 +638,6 @@ int lttng_ust_elf_get_debug_link(struct lttng_ust_elf *elf, char **filename,
 {
 	int ret;
 	uint16_t i;
-	int _found = 0;
 	char *_filename = NULL;		/* Silence old gcc warning. */
 	uint32_t _crc = 0;		/* Silence old gcc warning. */
 
@@ -663,24 +654,27 @@ int lttng_ust_elf_get_debug_link(struct lttng_ust_elf *elf, char **filename,
 		}
 
 		ret = lttng_ust_elf_get_debug_link_from_section(
-			elf, &_filename, &_crc, &_found, shdr);
+			elf, &_filename, &_crc, shdr);
 		free(shdr);
 
 		if (ret) {
 			goto error;
 		}
-		if (_found) {
+		if (_filename) {
 			break;
 		}
 	}
 
-	if (_found) {
+	if (_filename) {
 		*filename = _filename;
 		*crc = _crc;
+		*found = 1;
+	} else {
+		*found = 0;
 	}
 
-	*found = _found;
 	return 0;
+
 error:
 	free(_filename);
 	return -1;
