@@ -1246,8 +1246,9 @@ restart:
 			 * deals with a killed or broken session daemon.
 			 */
 			sleep(5);
+		} else {
+			has_waited = 1;
 		}
-		has_waited = 1;
 		prev_connect_failed = 0;
 	}
 
