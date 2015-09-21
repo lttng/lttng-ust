@@ -373,6 +373,7 @@ size_t lib_ring_buffer_read(struct lttng_ust_lib_ring_buffer_backend *bufb, size
 	ssize_t orig_len;
 	struct lttng_ust_lib_ring_buffer_backend_pages_shmp *rpages;
 	unsigned long sb_bindex, id;
+	void *src;
 
 	orig_len = len;
 	offset &= chanb->buf_size - 1;
@@ -389,7 +390,11 @@ size_t lib_ring_buffer_read(struct lttng_ust_lib_ring_buffer_backend *bufb, size
 	CHAN_WARN_ON(chanb, offset >= chanb->buf_size);
 	CHAN_WARN_ON(chanb, config->mode == RING_BUFFER_OVERWRITE
 		     && subbuffer_id_is_noref(config, id));
-	memcpy(dest, shmp_index(handle, shmp(handle, rpages->shmp)->p, offset & (chanb->subbuf_size - 1)), len);
+	src = shmp_index(handle, shmp(handle, rpages->shmp)->p,
+			offset & (chanb->subbuf_size - 1));
+	if (caa_unlikely(!src))
+		return 0;
+	memcpy(dest, src, len);
 	return orig_len;
 }
 
@@ -429,6 +434,8 @@ int lib_ring_buffer_read_cstr(struct lttng_ust_lib_ring_buffer_backend *bufb, si
 	CHAN_WARN_ON(chanb, config->mode == RING_BUFFER_OVERWRITE
 		     && subbuffer_id_is_noref(config, id));
 	str = shmp_index(handle, shmp(handle, rpages->shmp)->p, offset & (chanb->subbuf_size - 1));
+	if (caa_unlikely(!str))
+		return -EINVAL;
 	string_len = strnlen(str, len);
 	if (dest && len) {
 		memcpy(dest, str, string_len);
