@@ -485,7 +485,7 @@ static inline int lttng_ust_fls(unsigned int x)
 		r -= 2;
 	}
 	if (!(x & 0x80000000U)) {
-		x <<= 1;
+		/* No need to bit shift on last operation */
 		r -= 1;
 	}
 	return r;
