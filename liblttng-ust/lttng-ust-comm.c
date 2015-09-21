@@ -927,7 +927,12 @@ void cleanup_sock_info(struct sock_info *sock_info, int exiting)
 		long page_size;
 
 		page_size = sysconf(_SC_PAGE_SIZE);
-		if (page_size > 0) {
+		if (page_size <= 0) {
+			if (!page_size) {
+				errno = EINVAL;
+			}
+			PERROR("Error in sysconf(_SC_PAGE_SIZE)");
+		} else {
 			ret = munmap(sock_info->wait_shm_mmap, page_size);
 			if (ret) {
 				ERR("Error unmapping wait shm");
@@ -1109,7 +1114,11 @@ char *get_map_shm(struct sock_info *sock_info)
 	char *wait_shm_mmap;
 
 	page_size = sysconf(_SC_PAGE_SIZE);
-	if (page_size < 0) {
+	if (page_size <= 0) {
+		if (!page_size) {
+			errno = EINVAL;
+		}
+		PERROR("Error in sysconf(_SC_PAGE_SIZE)");
 		goto error;
 	}
 

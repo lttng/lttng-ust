@@ -19,6 +19,7 @@
  */
 
 #define _GNU_SOURCE
+#include <unistd.h>
 #include <urcu/arch.h>
 #include <limits.h>
 
@@ -49,12 +50,18 @@ int lib_ring_buffer_backend_allocate(const struct lttng_ust_lib_ring_buffer_conf
 	unsigned long subbuf_size, mmap_offset = 0;
 	unsigned long num_subbuf_alloc;
 	unsigned long i;
+	long page_size;
 
 	subbuf_size = chanb->subbuf_size;
 	num_subbuf_alloc = num_subbuf;
 
 	if (extra_reader_sb)
 		num_subbuf_alloc++;
+
+	page_size = sysconf(_SC_PAGE_SIZE);
+	if (page_size <= 0) {
+		goto page_size_error;
+	}
 
 	align_shm(shmobj, __alignof__(struct lttng_ust_lib_ring_buffer_backend_pages_shmp));
 	set_shmp(bufb->array, zalloc_shm(shmobj,
@@ -64,9 +71,9 @@ int lib_ring_buffer_backend_allocate(const struct lttng_ust_lib_ring_buffer_conf
 
 	/*
 	 * This is the largest element (the buffer pages) which needs to
-	 * be aligned on PAGE_SIZE.
+	 * be aligned on page size.
 	 */
-	align_shm(shmobj, PAGE_SIZE);
+	align_shm(shmobj, page_size);
 	set_shmp(bufb->memory_map, zalloc_shm(shmobj,
 			subbuf_size * num_subbuf_alloc));
 	if (caa_unlikely(!shmp(handle, bufb->memory_map)))
@@ -123,6 +130,7 @@ free_array:
 memory_map_error:
 	/* bufb->array will be freed by shm teardown */
 array_error:
+page_size_error:
 	return -ENOMEM;
 }
 
@@ -196,7 +204,7 @@ void channel_backend_reset(struct channel_backend *chanb)
  * @name: channel name
  * @config: client ring buffer configuration
  * @parent: dentry of parent directory, %NULL for root directory
- * @subbuf_size: size of sub-buffers (> PAGE_SIZE, power of 2)
+ * @subbuf_size: size of sub-buffers (> page size, power of 2)
  * @num_subbuf: number of sub-buffers (power of 2)
  * @lttng_ust_shm_handle: shared memory handle
  *
@@ -218,12 +226,17 @@ int channel_backend_init(struct channel_backend *chanb,
 	unsigned int i;
 	int ret;
 	size_t shmsize = 0, num_subbuf_alloc;
+	long page_size;
 
 	if (!name)
 		return -EPERM;
 
+	page_size = sysconf(_SC_PAGE_SIZE);
+	if (page_size <= 0) {
+		return -ENOMEM;
+	}
 	/* Check that the subbuffer size is larger than a page. */
-	if (subbuf_size < PAGE_SIZE)
+	if (subbuf_size < page_size)
 		return -EINVAL;
 
 	/*
@@ -266,7 +279,7 @@ int channel_backend_init(struct channel_backend *chanb,
 	num_subbuf_alloc = num_subbuf + 1;
 	shmsize += offset_align(shmsize, __alignof__(struct lttng_ust_lib_ring_buffer_backend_pages_shmp));
 	shmsize += sizeof(struct lttng_ust_lib_ring_buffer_backend_pages_shmp) * num_subbuf_alloc;
-	shmsize += offset_align(shmsize, PAGE_SIZE);
+	shmsize += offset_align(shmsize, page_size);
 	shmsize += subbuf_size * num_subbuf_alloc;
 	shmsize += offset_align(shmsize, __alignof__(struct lttng_ust_lib_ring_buffer_backend_pages));
 	shmsize += sizeof(struct lttng_ust_lib_ring_buffer_backend_pages) * num_subbuf_alloc;
