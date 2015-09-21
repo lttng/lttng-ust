@@ -467,8 +467,6 @@ int lttng_abi_map_channel(int session_objd,
 		chan_name = "channel";
 		break;
 	default:
-		transport_name = "<unknown>";
-		chan_name = "<unknown>";
 		ret = -EINVAL;
 		goto notransport;
 	}
