@@ -101,6 +101,9 @@ static void client_buffer_begin(struct lttng_ust_lib_ring_buffer *buf, uint64_t 
 				handle);
 	struct lttng_channel *lttng_chan = channel_get_private(chan);
 
+	assert(header);
+	if (!header)
+		return;
 	header->magic = TSDL_MAGIC_NUMBER;
 	memcpy(header->uuid, lttng_chan->uuid, sizeof(lttng_chan->uuid));
 	header->checksum = 0;		/* 0 if unused */
@@ -129,6 +132,9 @@ static void client_buffer_end(struct lttng_ust_lib_ring_buffer *buf, uint64_t ts
 				handle);
 	unsigned long records_lost = 0;
 
+	assert(header);
+	if (!header)
+		return;
 	header->content_size = data_size * CHAR_BIT;		/* in bits */
 	header->packet_size = PAGE_ALIGN(data_size) * CHAR_BIT; /* in bits */
 	/*

@@ -159,10 +159,14 @@ static struct timer_signal_data timer_signal = {
 void lib_ring_buffer_reset(struct lttng_ust_lib_ring_buffer *buf,
 			   struct lttng_ust_shm_handle *handle)
 {
-	struct channel *chan = shmp(handle, buf->backend.chan);
-	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
+	struct channel *chan;
+	const struct lttng_ust_lib_ring_buffer_config *config;
 	unsigned int i;
 
+	chan = shmp(handle, buf->backend.chan);
+	if (!chan)
+		abort();
+	config = &chan->backend.config;
 	/*
 	 * Reset iterator first. It will put the subbuffer if it currently holds
 	 * it.
@@ -302,6 +306,9 @@ void lib_ring_buffer_channel_switch_timer(int sig, siginfo_t *si, void *uc)
 		for_each_possible_cpu(cpu) {
 			struct lttng_ust_lib_ring_buffer *buf =
 				shmp(handle, chan->backend.buf[cpu].shmp);
+
+			if (!buf)
+				abort();
 			if (uatomic_read(&buf->active_readers))
 				lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE,
 					chan->handle);
@@ -310,6 +317,8 @@ void lib_ring_buffer_channel_switch_timer(int sig, siginfo_t *si, void *uc)
 		struct lttng_ust_lib_ring_buffer *buf =
 			shmp(handle, chan->backend.buf[0].shmp);
 
+		if (!buf)
+			abort();
 		if (uatomic_read(&buf->active_readers))
 			lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE,
 				chan->handle);
@@ -337,6 +346,8 @@ void lib_ring_buffer_channel_do_read(struct channel *chan)
 			struct lttng_ust_lib_ring_buffer *buf =
 				shmp(handle, chan->backend.buf[cpu].shmp);
 
+			if (!buf)
+				abort();
 			if (uatomic_read(&buf->active_readers)
 			    && lib_ring_buffer_poll_deliver(config, buf,
 					chan, handle)) {
@@ -347,6 +358,8 @@ void lib_ring_buffer_channel_do_read(struct channel *chan)
 		struct lttng_ust_lib_ring_buffer *buf =
 			shmp(handle, chan->backend.buf[0].shmp);
 
+		if (!buf)
+			abort();
 		if (uatomic_read(&buf->active_readers)
 		    && lib_ring_buffer_poll_deliver(config, buf,
 				chan, handle)) {
