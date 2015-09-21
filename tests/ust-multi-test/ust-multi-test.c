@@ -643,7 +643,11 @@ int update_futex(int fd, int active)
 	int ret;
 
 	page_size = sysconf(_SC_PAGE_SIZE);
-	if (page_size < 0) {
+	if (page_size <= 0) {
+		if (!page_size) {
+			errno = EINVAL;
+		}
+		perror("Error in sysconf(_SC_PAGE_SIZE)");
 		goto error;
 	}
 	wait_shm_mmap = mmap(NULL, page_size, PROT_READ | PROT_WRITE,
@@ -706,6 +710,7 @@ int main(int argc, char **argv)
 	int ret, wait_shm_fd;
 	struct sigaction act;
 	mode_t old_umask = 0;
+	long page_size;
 
 	set_ulimit();
 
@@ -738,6 +743,15 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
+	page_size = sysconf(_SC_PAGE_SIZE);
+	if (page_size <= 0) {
+		if (!page_size) {
+			errno = EINVAL;
+		}
+		perror("Error in sysconf(_SC_PAGE_SIZE)");
+		return -1;
+	}
+
 	if (geteuid() == 0) {
 		ret = mkdir(LTTNG_RUNDIR, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 		if (ret && errno != EEXIST) {
@@ -745,7 +759,7 @@ int main(int argc, char **argv)
 			return -1;
 		}
 		wait_shm_fd = get_wait_shm(DEFAULT_GLOBAL_APPS_WAIT_SHM_PATH,
-					sysconf(_SC_PAGE_SIZE), 1);
+					page_size, 1);
 		if (wait_shm_fd < 0) {
 			perror("global wait shm error");
 			return -1;
@@ -771,7 +785,7 @@ int main(int argc, char **argv)
 		snprintf(local_apps_wait_shm_path, PATH_MAX,
 			 DEFAULT_HOME_APPS_WAIT_SHM_PATH, getuid());
 		wait_shm_fd = get_wait_shm(local_apps_wait_shm_path,
-					sysconf(_SC_PAGE_SIZE), 0);
+					page_size, 0);
 		if (wait_shm_fd < 0) {
 			perror("local wait shm error");
 			return -1;
