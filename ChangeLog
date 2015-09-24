@@ -1,3 +1,13 @@
+2015-09-24 lttng-ust 2.7.0
+	* Fix: don't dereference NULL pointers
+	* Cleanup: Remove unused values
+	* Fix: Value stored to 'has_waited' is never read
+	* Fix: Argument with 'nonnull' attribute passed null
+	* Cleanup: Unnecessary bit shift
+	* Fix: sysconf() unchecked return value
+	* doc: add Python example
+	* Fix: Python agent: do not register twice to same port
+
 2015-09-09 lttng-ust 2.7.0-rc2
 	* Fix: close socket on protocol error, sendmsg MSG_NOSIGNAL
 	* Cleanup: more descriptive error message
