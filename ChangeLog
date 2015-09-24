@@ -1,3 +1,10 @@
+2015-09-24 lttng-ust 2.6.4
+	* Fix: don't dereference NULL pointers
+	* Cleanup: Remove unused values
+	* Fix: Value stored to 'has_waited' is never read
+	* Fix: Argument with 'nonnull' attribute passed null
+	* Fix: sysconf() unchecked return value
+
 2015-09-09 lttng-ust 2.6.3
 	* Fix: close socket on protocol error, sendmsg MSG_NOSIGNAL
 	* Fix: add missing ust lock around objd_table_destroy()
