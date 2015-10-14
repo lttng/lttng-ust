@@ -34,7 +34,7 @@ void _lttng_ust_tracef(const char *fmt, ...);
 
 #define tracef(fmt, ...)						\
 	do {								\
-		STAP_PROBEV(tracepoint_lttng_ust_tracef, event, ## __VA_ARGS__); \
+		LTTNG_STAP_PROBEV(tracepoint_lttng_ust_tracef, event, ## __VA_ARGS__); \
 		if (caa_unlikely(__tracepoint_lttng_ust_tracef___event.state)) \
 			_lttng_ust_tracef(fmt, ## __VA_ARGS__);		\
 	} while (0)
