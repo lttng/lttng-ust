@@ -37,8 +37,9 @@
 #ifdef LTTNG_UST_HAVE_SDT_INTEGRATION
 #define SDT_USE_VARIADIC
 #include <sys/sdt.h>
+#define LTTNG_STAP_PROBEV STAP_PROBEV
 #else
-#define STAP_PROBEV(...)
+#define LTTNG_STAP_PROBEV(...)
 #endif
 
 #ifdef __cplusplus
@@ -53,7 +54,7 @@ extern "C" {
 
 #define tracepoint(provider, name, ...)					    \
 	do {								    \
-		STAP_PROBEV(provider, name, ## __VA_ARGS__);		    \
+		LTTNG_STAP_PROBEV(provider, name, ## __VA_ARGS__);	    \
 		if (tracepoint_enabled(provider, name)) 		    \
 			do_tracepoint(provider, name, __VA_ARGS__);	    \
 	} while (0)

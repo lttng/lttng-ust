@@ -53,7 +53,7 @@ TP_TRACELOG_CB_TEMPLATE(TRACE_DEBUG);
 
 #define tracelog(level, fmt, ...)					\
 	do {								\
-		STAP_PROBEV(tracepoint_lttng_ust_tracelog, level, ## __VA_ARGS__); \
+		LTTNG_STAP_PROBEV(tracepoint_lttng_ust_tracelog, level, ## __VA_ARGS__); \
 		if (caa_unlikely(__tracepoint_lttng_ust_tracelog___##level.state)) \
 			_lttng_ust_tracelog_##level(__FILE__, __LINE__, __func__, \
 				fmt, ## __VA_ARGS__); \
