@@ -15,16 +15,16 @@ all-local:
 	$(PYTHON) setup.py build --verbose
 
 install-exec-local:
-	if [ "$(DESTDIR)" = "" ]; then \
-		$(PYTHON) setup.py install --prefix=$(prefix) --record install_files.txt  --verbose --no-compile $(DISTSETUPOPTS);  \
-	else \
-		$(PYTHON) setup.py install --root=$(DESTDIR) --verbose install_files.txt  --prefix=$(prefix) --no-compile $(DISTSETUPOPTS); \
-	fi
+	@opts="--prefix=$(prefix) --verbose --no-compile $(DISTSETUPOPTS)"; \
+	if [ "$(DESTDIR)" != "" ]; then \
+		opts="$$opts --root=$(DESTDIR)"; \
+	fi; \
+	$(PYTHON) setup.py install $$opts;
+
 clean-local:
 	rm -rf build
 
 uninstall-local:
-	cat install_files.txt | xargs rm -rf
 	rm -rf $(DESTDIR)$(pkgpythondir)
 
 EXTRA_DIST=$(agent_path)
