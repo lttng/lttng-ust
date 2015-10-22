@@ -39,7 +39,7 @@ import org.lttng.ust.agent.session.LogLevelSelector;
  *
  * @author Alexandre Montplaisir
  */
-public class FilerChangeListenerExample {
+public class FilterChangeListenerExample {
 
 	private static class ExampleFilterChangeListener implements IFilterChangeListener {
 
