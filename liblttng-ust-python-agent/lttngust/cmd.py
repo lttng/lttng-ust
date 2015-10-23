@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2015 - Philippe Proulx <pproulx@efficios.com>
 # Copyright (C) 2014 - David Goulet <dgoulet@efficios.com>
+# Copyright (C) 2015 - Jérémie Galarneau <jeremie.galarneau@efficios.com>
 #
 # This library is free software; you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the Free
@@ -27,6 +28,10 @@ _server_cmd_header_struct = struct.Struct('>QII')
 
 # server command header size
 _SERVER_CMD_HEADER_SIZE = _server_cmd_header_struct.size
+
+
+# agent protocol symbol size
+_LTTNG_SYMBOL_NAME_LEN = 256
 
 
 class _ServerCmdHeader(object):
@@ -64,21 +69,36 @@ class _ServerCmdList(_ServerCmd):
 class _ServerCmdEnable(_ServerCmd):
     _NAME_OFFSET = 8
     _loglevel_struct = struct.Struct('>II')
+    # filter expression size
+    _filter_exp_len_struct = struct.Struct('>I')
 
-    def __init__(self, header, loglevel, loglevel_type, name):
+    def __init__(self, header, loglevel, loglevel_type, name, filter_exp):
         super(self.__class__, self).__init__(header)
         self.loglevel = loglevel
         self.loglevel_type = loglevel_type
         self.name = name
+        self.filter_expression = filter_exp
+        dbg._pdebug('server enable command {}'.format(self.__dict__))
 
     @classmethod
     def from_data(cls, header, data):
         try:
             loglevel, loglevel_type = cls._loglevel_struct.unpack_from(data)
-            data_name = data[cls._loglevel_struct.size:]
+            name_start = cls._loglevel_struct.size
+            name_end = name_start + _LTTNG_SYMBOL_NAME_LEN
+            data_name = data[name_start:name_end]
             name = data_name.rstrip(b'\0').decode()
 
-            return cls(header, loglevel, loglevel_type, name)
+            filter_exp_start = name_end + cls._filter_exp_len_struct.size
+            filter_exp_len, = cls._filter_exp_len_struct.unpack_from(
+                data[name_end:filter_exp_start])
+            print(filter_exp_len)
+            filter_exp_end = filter_exp_start + filter_exp_len
+
+            filter_exp = data[filter_exp_start:filter_exp_end].rstrip(
+                b'\0').decode()
+
+            return cls(header, loglevel, loglevel_type, name, filter_exp)
         except (Exception) as e:
             dbg._pdebug('cannot decode enable command: {}'.format(e))
             return None

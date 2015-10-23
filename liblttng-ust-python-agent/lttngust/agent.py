@@ -40,7 +40,7 @@ except ImportError:
 
 
 _PROTO_DOMAIN = 5
-_PROTO_MAJOR = 1
+_PROTO_MAJOR = 2
 _PROTO_MINOR = 0
 
 
