@@ -38,7 +38,7 @@ class SessiondDisableEventCommand implements ISessiondCommand {
 			throw new IllegalArgumentException();
 		}
 		ByteBuffer buf = ByteBuffer.wrap(data);
-		buf.order(ByteOrder.LITTLE_ENDIAN);
+		buf.order(ByteOrder.BIG_ENDIAN);
 		eventName = new String(data).trim();
 	}
 

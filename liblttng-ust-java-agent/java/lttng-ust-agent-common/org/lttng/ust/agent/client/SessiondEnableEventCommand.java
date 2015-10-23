@@ -48,7 +48,7 @@ class SessiondEnableEventCommand implements ISessiondCommand {
 			throw new IllegalArgumentException();
 		}
 		ByteBuffer buf = ByteBuffer.wrap(data);
-		buf.order(ByteOrder.LITTLE_ENDIAN);
+		buf.order(ByteOrder.BIG_ENDIAN);
 		int logLevel = buf.getInt();
 		int logLevelType = buf.getInt();
 		logLevelFilter = new LogLevelSelector(logLevel, logLevelType);
