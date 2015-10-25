@@ -52,7 +52,7 @@ static inline uint64_t lib_ring_buffer_clock_read(struct channel *chan)
 }
 
 static inline
-unsigned char record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
+size_t record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
 				 struct channel *chan, size_t offset,
 				 size_t *pre_header_padding,
 				 struct lttng_ust_lib_ring_buffer_ctx *ctx)

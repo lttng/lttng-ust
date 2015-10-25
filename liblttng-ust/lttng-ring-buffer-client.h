@@ -110,7 +110,7 @@ void ctx_record(struct lttng_ust_lib_ring_buffer_ctx *bufctx,
  * contains.
  */
 static __inline__
-unsigned char record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
+size_t record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
 				 struct channel *chan, size_t offset,
 				 size_t *pre_header_padding,
 				 struct lttng_ust_lib_ring_buffer_ctx *ctx)
