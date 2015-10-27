@@ -92,7 +92,6 @@ class _ServerCmdEnable(_ServerCmd):
             filter_exp_start = name_end + cls._filter_exp_len_struct.size
             filter_exp_len, = cls._filter_exp_len_struct.unpack_from(
                 data[name_end:filter_exp_start])
-            print(filter_exp_len)
             filter_exp_end = filter_exp_start + filter_exp_len
 
             filter_exp = data[filter_exp_start:filter_exp_end].rstrip(
