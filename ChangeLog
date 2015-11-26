@@ -1,3 +1,9 @@
+2015-11-26 lttng-ust 2.6.5
+	* Fix: header size larger than 256 bytes
+	* Remove stale tests/java-jul test
+	* Fix: live timer calculation error
+	* Fix: Don't (re)define STAP_PROBEV
+
 2015-09-24 lttng-ust 2.6.4
 	* Fix: don't dereference NULL pointers
 	* Cleanup: Remove unused values
