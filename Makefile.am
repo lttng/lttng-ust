@@ -6,6 +6,7 @@ SUBDIRS = . include snprintf libringbuffer liblttng-ust-comm \
 		liblttng-ust-fork \
 		liblttng-ust-libc-wrapper \
 		liblttng-ust-cyg-profile \
+		liblttng-ust-python-agent \
 		tools
 
 if HAVE_DLINFO
@@ -21,7 +22,7 @@ SUBDIRS += liblttng-ust-java-agent
 endif
 
 if BUILD_PYTHON_AGENT
-SUBDIRS += liblttng-ust-python-agent
+SUBDIRS += python-lttngust
 endif
 
 SUBDIRS += tests doc

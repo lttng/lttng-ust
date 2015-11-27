@@ -1,34 +1,8 @@
-# tracepoint provider
-AM_CPPFLAGS = $(PYTHON_INCLUDE) -I$(top_srcdir)/include/ \
+# tracepoint provider: always built/installed (does not depend on Python per se)
+AM_CPPFLAGS = -I$(top_srcdir)/include/ \
 	-I$(top_builddir)/include/
 AM_CFLAGS = -fno-strict-aliasing
 lib_LTLIBRARIES = liblttng-ust-python-agent.la
 liblttng_ust_python_agent_la_SOURCES = lttng_ust_python.c lttng_ust_python.h
 liblttng_ust_python_agent_la_LIBADD = -lc -llttng-ust \
 	-L$(top_builddir)/liblttng-ust/.libs
-
-# Use setup.py for the installation instead of Autoconf.
-# This ease the installation process and assure a *pythonic*
-# installation.
-agent_path=lttngust
-all-local:
-	$(PYTHON) setup.py build --verbose
-
-install-exec-local:
-	@opts="--prefix=$(prefix) --verbose --no-compile $(DISTSETUPOPTS)"; \
-	if [ "$(DESTDIR)" != "" ]; then \
-		opts="$$opts --root=$(DESTDIR)"; \
-	fi; \
-	$(PYTHON) setup.py install $$opts;
-
-clean-local:
-	rm -rf build
-
-uninstall-local:
-	rm -rf $(DESTDIR)$(pkgpythondir)
-
-EXTRA_DIST=$(agent_path)
-
-# Remove automake generated file before dist
-dist-hook:
-	rm -rf $(distdir)/$(agent_path)/__init__.py
