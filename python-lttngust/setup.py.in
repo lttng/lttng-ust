@@ -17,9 +17,20 @@
 
 from distutils.core import setup, Extension
 
+
 setup(name='lttngust',
       version='@PACKAGE_VERSION@',
-      description='Lttng ust agent',
+      description='LTTng-UST Python agent',
       packages=['lttngust'],
       package_dir={'lttngust': 'lttngust'},
-      options={'build': {'build_base': 'build'}})
+      options={'build': {'build_base': 'build'}},
+      url='http://lttng.org',
+      license='LGPL-2.1',
+      classifiers=[
+          'Development Status :: 5 - Production/Stable',
+          'Intended Audience :: Developers',
+          'License :: OSI Approved :: GNU Lesser General Public License v2 (LGPLv2)',
+          'Programming Language :: Python :: 2.7',
+          'Programming Language :: Python :: 3'
+          'Topic :: System :: Logging',
+      ])
