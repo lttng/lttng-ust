@@ -117,7 +117,8 @@ public class LttngLogAppender extends AppenderSkeleton implements ILttngHandler 
 		}
 
 		eventCount.incrementAndGet();
-		tracepoint(event.getRenderedMessage(),
+
+		LttngLog4jApi.tracepoint(event.getRenderedMessage(),
 				event.getLoggerName(),
 				event.getLocationInformation().getClassName(),
 				event.getLocationInformation().getMethodName(),
@@ -128,15 +129,4 @@ public class LttngLogAppender extends AppenderSkeleton implements ILttngHandler 
 				event.getThreadName());
 	}
 
-
-	/* Use for a user session daemon. */
-	private native void tracepoint(String msg,
-			String logger_name,
-			String class_name,
-			String method_name,
-			String file_name,
-			int line_number,
-			long timestamp,
-			int loglevel,
-			String thread_name);
 }

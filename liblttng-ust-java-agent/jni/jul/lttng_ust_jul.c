@@ -16,7 +16,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "org_lttng_ust_agent_jul_LttngLogHandler.h"
+#include "org_lttng_ust_agent_jul_LttngJulApi.h"
 
 #define TRACEPOINT_DEFINE
 #define TRACEPOINT_CREATE_PROBES
@@ -25,7 +25,7 @@
 /*
  * Tracepoint used by Java applications using the JUL handler.
  */
-JNIEXPORT void JNICALL Java_org_lttng_ust_agent_jul_LttngLogHandler_tracepoint(JNIEnv *env,
+JNIEXPORT void JNICALL Java_org_lttng_ust_agent_jul_LttngJulApi_tracepoint(JNIEnv *env,
 						jobject jobj,
 						jstring msg,
 						jstring logger_name,

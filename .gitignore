@@ -61,8 +61,8 @@ classnoinst.stamp
 jni-header.stamp
 jul-jni-header.stamp
 log4j-jni-header.stamp
-org_lttng_ust_agent_jul_LttngLogHandler.h
-org_lttng_ust_agent_log4j_LttngLogAppender.h
+org_lttng_ust_agent_jul_LttngJulApi.h
+org_lttng_ust_agent_log4j_LttngLog4jApi.h
 
 # Python agent
 python-lttngust/lttngust/__init__.py

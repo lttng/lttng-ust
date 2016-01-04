@@ -16,7 +16,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "org_lttng_ust_agent_log4j_LttngLogAppender.h"
+#include "org_lttng_ust_agent_log4j_LttngLog4jApi.h"
 
 #define TRACEPOINT_DEFINE
 #define TRACEPOINT_CREATE_PROBES
@@ -25,7 +25,7 @@
 /*
  * System tracepoint meaning only root agent will fire this.
  */
-JNIEXPORT void JNICALL Java_org_lttng_ust_agent_log4j_LttngLogAppender_tracepoint(JNIEnv *env,
+JNIEXPORT void JNICALL Java_org_lttng_ust_agent_log4j_LttngLog4jApi_tracepoint(JNIEnv *env,
 						jobject jobj,
 						jstring msg,
 						jstring logger_name,

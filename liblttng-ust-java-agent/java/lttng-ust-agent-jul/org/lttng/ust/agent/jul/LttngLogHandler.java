@@ -123,7 +123,7 @@ public class LttngLogHandler extends Handler implements ILttngHandler {
 		 * caller is used for the event name, the raw message is taken, the
 		 * loglevel of the record and the thread ID.
 		 */
-		tracepoint(formattedMessage,
+		LttngJulApi.tracepoint(formattedMessage,
 				record.getLoggerName(),
 				record.getSourceClassName(),
 				record.getSourceMethodName(),
@@ -132,12 +132,4 @@ public class LttngLogHandler extends Handler implements ILttngHandler {
 				record.getThreadID());
 	}
 
-	/* Send tracepoint information to the JNI library */
-	private native void tracepoint(String msg,
-			String logger_name,
-			String class_name,
-			String method_name,
-			long millis,
-			int log_level,
-			int thread_id);
 }
