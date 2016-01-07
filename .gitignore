@@ -59,8 +59,10 @@ tests/benchmark/bench2
 lttng-ust-agent*.jar
 classnoinst.stamp
 jni-header.stamp
+context-jni-header.stamp
 jul-jni-header.stamp
 log4j-jni-header.stamp
+org_lttng_ust_agent_context_LttngContextApi.h
 org_lttng_ust_agent_jul_LttngJulApi.h
 org_lttng_ust_agent_log4j_LttngLog4jApi.h
 

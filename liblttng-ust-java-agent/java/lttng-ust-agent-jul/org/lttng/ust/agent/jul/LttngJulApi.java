@@ -33,4 +33,13 @@ final class LttngJulApi {
 			long millis,
 			int log_level,
 			int thread_id);
+
+	static native void tracepointWithContext(String msg,
+			String logger_name,
+			String class_name,
+			String method_name,
+			long millis,
+			int log_level,
+			int thread_id,
+			byte[] contextInformation);
 }

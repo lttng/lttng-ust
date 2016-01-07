@@ -19,12 +19,16 @@
 package org.lttng.ust.agent.log4j;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.spi.LoggingEvent;
 import org.lttng.ust.agent.ILttngAgent;
 import org.lttng.ust.agent.ILttngHandler;
+import org.lttng.ust.agent.context.ContextInfoSerializer;
 
 /**
  * LTTng-UST Log4j 1.x log handler.
@@ -116,9 +120,13 @@ public class LttngLogAppender extends AppenderSkeleton implements ILttngHandler 
 			line = -1;
 		}
 
+		/* Retrieve all the requested context information we can find */
+		Collection<Entry<String, Map<String, Integer>>> enabledContexts = agent.getEnabledAppContexts();
+		byte[] contextInfo = ContextInfoSerializer.queryAndSerializeRequestedContexts(enabledContexts);
+
 		eventCount.incrementAndGet();
 
-		LttngLog4jApi.tracepoint(event.getRenderedMessage(),
+		LttngLog4jApi.tracepointWithContext(event.getRenderedMessage(),
 				event.getLoggerName(),
 				event.getLocationInformation().getClassName(),
 				event.getLocationInformation().getMethodName(),
@@ -126,7 +134,8 @@ public class LttngLogAppender extends AppenderSkeleton implements ILttngHandler 
 				line,
 				event.getTimeStamp(),
 				event.getLevel().toInt(),
-				event.getThreadName());
+				event.getThreadName(),
+				contextInfo);
 	}
 
 }

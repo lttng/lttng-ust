@@ -19,6 +19,9 @@
 package org.lttng.ust.agent.jul;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
@@ -26,6 +29,7 @@ import java.util.logging.LogRecord;
 
 import org.lttng.ust.agent.ILttngAgent;
 import org.lttng.ust.agent.ILttngHandler;
+import org.lttng.ust.agent.context.ContextInfoSerializer;
 
 /**
  * LTTng-UST JUL log handler.
@@ -117,19 +121,25 @@ public class LttngLogHandler extends Handler implements ILttngHandler {
 
 		String formattedMessage = FORMATTER.formatMessage(record);
 
+		/* Retrieve all the requested context information we can find */
+		Collection<Entry<String, Map<String, Integer>>> enabledContexts = agent.getEnabledAppContexts();
+		byte[] contextInfo = ContextInfoSerializer.queryAndSerializeRequestedContexts(enabledContexts);
+
 		eventCount.incrementAndGet();
+
 		/*
 		 * Specific tracepoint designed for JUL events. The source class of the
 		 * caller is used for the event name, the raw message is taken, the
 		 * loglevel of the record and the thread ID.
 		 */
-		LttngJulApi.tracepoint(formattedMessage,
+		LttngJulApi.tracepointWithContext(formattedMessage,
 				record.getLoggerName(),
 				record.getSourceClassName(),
 				record.getSourceMethodName(),
 				record.getMillis(),
 				record.getLevel().intValue(),
-				record.getThreadID());
+				record.getThreadID(),
+				contextInfo);
 	}
 
 }

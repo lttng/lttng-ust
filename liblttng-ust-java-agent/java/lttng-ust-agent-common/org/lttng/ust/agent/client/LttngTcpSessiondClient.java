@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2015-2016 EfficiOS Inc., Alexandre Montplaisir <alexmonthy@efficios.com>
  * Copyright (C) 2013 - David Goulet <dgoulet@efficios.com>
  *
  * This library is free software; you can redistribute it and/or modify it
@@ -255,27 +256,51 @@ public class LttngTcpSessiondClient implements Runnable {
 				responseData = response.getBytes();
 				break;
 			}
-			case CMD_ENABLE:
+			case CMD_EVENT_ENABLE:
 			{
 				if (inputData == null) {
 					/* Invalid command */
 					responseData = LttngAgentResponse.FAILURE_RESPONSE.getBytes();
 					break;
 				}
-				SessiondCommand enableCmd = new SessiondEnableEventCommand(inputData);
-				LttngAgentResponse response = enableCmd.execute(logAgent);
+				SessiondCommand enableEventCmd = new SessiondEnableEventCommand(inputData);
+				LttngAgentResponse response = enableEventCmd.execute(logAgent);
 				responseData = response.getBytes();
 				break;
 			}
-			case CMD_DISABLE:
+			case CMD_EVENT_DISABLE:
 			{
 				if (inputData == null) {
 					/* Invalid command */
 					responseData = LttngAgentResponse.FAILURE_RESPONSE.getBytes();
 					break;
 				}
-				SessiondCommand disableCmd = new SessiondDisableEventCommand(inputData);
-				LttngAgentResponse response = disableCmd.execute(logAgent);
+				SessiondCommand disableEventCmd = new SessiondDisableEventCommand(inputData);
+				LttngAgentResponse response = disableEventCmd.execute(logAgent);
+				responseData = response.getBytes();
+				break;
+			}
+			case CMD_APP_CTX_ENABLE:
+			{
+				if (inputData == null) {
+					/* This commands expects a payload, invalid command */
+					responseData = LttngAgentResponse.FAILURE_RESPONSE.getBytes();
+					break;
+				}
+				SessiondCommand enableAppCtxCmd = new SessiondEnableAppContextCommand(inputData);
+				LttngAgentResponse response = enableAppCtxCmd.execute(logAgent);
+				responseData = response.getBytes();
+				break;
+			}
+			case CMD_APP_CTX_DISABLE:
+			{
+				if (inputData == null) {
+					/* This commands expects a payload, invalid command */
+					responseData = LttngAgentResponse.FAILURE_RESPONSE.getBytes();
+					break;
+				}
+				SessiondCommand disableAppCtxCmd = new SessiondDisableAppContextCommand(inputData);
+				LttngAgentResponse response = disableAppCtxCmd.execute(logAgent);
 				responseData = response.getBytes();
 				break;
 			}

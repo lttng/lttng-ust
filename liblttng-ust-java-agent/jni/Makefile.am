@@ -1,4 +1,5 @@
-SUBDIRS=
+SUBDIRS = common
+
 if BUILD_JAVA_AGENT_WITH_JUL
 SUBDIRS += jul
 endif

@@ -55,6 +55,36 @@ public interface ILttngTcpClientListener {
 	boolean eventDisabled(String eventName);
 
 	/**
+	 * Callback for the TCP client to notify the listener agent that a request
+	 * for enabling an application-specific context was sent from the session
+	 * daemon.
+	 *
+	 * @param contextRetrieverName
+	 *            The name of the retriever in which the context is present.
+	 *            This is used to namespace the contexts.
+	 * @param contextName
+	 *            The name of the context that was requested to be enabled
+	 * @return Since we do not track individual sessions, right now this command
+	 *         cannot fail. It will always return true.
+	 */
+	boolean appContextEnabled(String contextRetrieverName, String contextName);
+
+	/**
+	 * Callback for the TCP client to notify the listener agent that a request
+	 * for disabling an application-specific context was sent from the session
+	 * daemon.
+	 *
+	 * @param contextRetrieverName
+	 *            The name of the retriever in which the context is present.
+	 *            This is used to namespace the contexts.
+	 * @param contextName
+	 *            The name of the context that was requested to be disabled.
+	 * @return True if the command completed successfully, false if we should
+	 *         report an error (context was not previously enabled for example)
+	 */
+	boolean appContextDisabled(String contextRetrieverName, String contextName);
+
+	/**
 	 * List the events that are available in the agent's tracing domain.
 	 *
 	 * In Java terms, this means loggers that have at least one LTTng log

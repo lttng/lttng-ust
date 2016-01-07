@@ -17,8 +17,10 @@
 
 package org.lttng.ust.agent.context;
 
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The singleton manager of {@link IContextInfoRetriever} objects.
@@ -27,9 +29,14 @@ import java.util.concurrent.CopyOnWriteArraySet;
  */
 public final class ContextInfoManager {
 
-	private static final ContextInfoManager INSTANCE = new ContextInfoManager();
+	private static final String SHARED_LIBRARY_NAME = "lttng-ust-context-jni";
 
-	private final Set<IContextInfoRetriever> cirs = new CopyOnWriteArraySet<IContextInfoRetriever>();
+	private static ContextInfoManager instance;
+
+	private final Map<String, IContextInfoRetriever> contextInfoRetrievers = new ConcurrentHashMap<String, IContextInfoRetriever>();
+	private final Map<String, Long> contextInforRetrieverRefs = new HashMap<String, Long>();
+
+	private final Object retrieverLock = new Object();
 
 	/** Singleton class, constructor should not be accessed directly */
 	private ContextInfoManager() {
@@ -38,25 +45,77 @@ public final class ContextInfoManager {
 	/**
 	 * Get the singleton instance.
 	 *
+	 * <p>
+	 * Usage of this class requires the "liblttng-ust-context-jni.so" native
+	 * library to be present on the system and available (passing
+	 * -Djava.library.path=path to the JVM may be needed).
+	 * </p>
+	 *
 	 * @return The singleton instance
-	 * @deprecated The context-retrieving facilities are not yet implemented.
+	 * @throws IOException
+	 *             If the shared library cannot be found.
+	 * @throws SecurityException
+	 *             We will forward any SecurityExcepion that may be thrown when
+	 *             trying to load the JNI library.
 	 */
-	@Deprecated
-	public static ContextInfoManager getInstance() {
-		return INSTANCE;
+	public static synchronized ContextInfoManager getInstance() throws IOException, SecurityException {
+		if (instance == null) {
+			try {
+				System.loadLibrary(SHARED_LIBRARY_NAME);
+			} catch (UnsatisfiedLinkError e) {
+				throw new IOException(e);
+			}
+			instance = new ContextInfoManager();
+		}
+		return instance;
 	}
 
 	/**
 	 * Register a new context info retriever.
 	 *
-	 * This method has no effect if the exact same retriever is already
-	 * registered.
+	 * <p>
+	 * Each context info retriever is registered with a given "retriever name",
+	 * which specifies the namespace of the context elements. This name is
+	 * specified separately from the retriever objects, which would allow
+	 * register the same retriever under different namespaces for example.
+	 * </p>
 	 *
-	 * @param cir
+	 * <p>
+	 * If the method returns false (indicating registration failure), then the
+	 * retriever object will *not* be used for context information.
+	 * </p>
+	 *
+	 * @param retrieverName
+	 *            The name to register to the context retriever object with.
+	 * @param contextInfoRetriever
 	 *            The context info retriever to register
+	 * @return True if the retriever was successfully registered, false if there
+	 *         was an error, for example if a retriever is already registered
+	 *         with that name.
 	 */
-	public void addContextInfoRetriever(IContextInfoRetriever cir) {
-		cirs.add(cir);
+	public boolean registerContextInfoRetriever(String retrieverName, IContextInfoRetriever contextInfoRetriever) {
+		synchronized (retrieverLock) {
+			if (contextInfoRetrievers.containsKey(retrieverName)) {
+				/*
+				 * There is already a retriever registered with that name,
+				 * refuse the new registration.
+				 */
+				return false;
+			}
+			/*
+			 * Inform LTTng-UST of the new retriever. The names have to start
+			 * with "$app." on the UST side!
+			 */
+			long ref = LttngContextApi.registerProvider("$app." + retrieverName);
+			if (ref == 0) {
+				return false;
+			}
+
+			contextInfoRetrievers.put(retrieverName, contextInfoRetriever);
+			contextInforRetrieverRefs.put(retrieverName, Long.valueOf(ref));
+
+			return true;
+		}
 	}
 
 	/**
@@ -64,21 +123,38 @@ public final class ContextInfoManager {
 	 *
 	 * This method has no effect if the retriever was not already registered.
 	 *
-	 * @param cir
+	 * @param retrieverName
 	 *            The context info retriever to unregister
+	 * @return True if unregistration was successful, false if there was an
+	 *         error
 	 */
-	public void removeContextInfoRetriever(IContextInfoRetriever cir) {
-		cirs.remove(cir);
+	public boolean unregisterContextInfoRetriever(String retrieverName) {
+		synchronized (retrieverLock) {
+			if (!contextInfoRetrievers.containsKey(retrieverName)) {
+				/*
+				 * There was no retriever registered with that name.
+				 */
+				return false;
+			}
+			contextInfoRetrievers.remove(retrieverName);
+			long ref = contextInforRetrieverRefs.remove(retrieverName).longValue();
+
+			/* Unregister the retriever on the UST side too */
+			LttngContextApi.unregisterProvider(ref);
+
+			return true;
+		}
 	}
 
 	/**
-	 * Return a read-only view (does not support
-	 * {@link java.util.Iterator#remove}) of the currently registered context
-	 * info retrievers.
+	 * Return the context info retriever object registered with the given name.
 	 *
-	 * @return The current context info retrievers
+	 * @param retrieverName
+	 *            The retriever name to look for
+	 * @return The corresponding retriever object, or <code>null</code> if there
+	 *         was none
 	 */
-	public Iterable<IContextInfoRetriever> getContextInfoRetrievers() {
-		return cirs;
+	public IContextInfoRetriever getContextInfoRetriever(String retrieverName) {
+		return contextInfoRetrievers.get(retrieverName);
 	}
 }

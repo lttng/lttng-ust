@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2015 - EfficiOS Inc., Alexandre Montplaisir <alexmonthy@efficios.com>
- * Copyright (C) 2013 - David Goulet <dgoulet@efficios.com>
+ * Copyright (C) 2016 - EfficiOS Inc., Alexandre Montplaisir <alexmonthy@efficios.com>
  *
  * This library is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License, version 2.1 only,
@@ -22,40 +21,43 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
- * Session daemon command indicating to the Java agent that some events were
- * disabled in the tracing session.
+ * Session daemon command indicating to the Java agent that an
+ * application-specific context was enabled in the tracing session.
  *
  * @author Alexandre Montplaisir
- * @author David Goulet
  */
-class SessiondDisableEventCommand extends SessiondCommand {
+class SessiondEnableAppContextCommand extends SessiondCommand {
 
-	/** Event name to disable from the tracing session */
-	private final String eventName;
+	private final String retrieverName;
+	private final String contextName;
 
-	public SessiondDisableEventCommand(byte[] data) {
+	private final boolean commandIsValid;
+
+	public SessiondEnableAppContextCommand(byte[] data) {
 		if (data == null) {
 			throw new IllegalArgumentException();
 		}
 		ByteBuffer buf = ByteBuffer.wrap(data);
 		buf.order(ByteOrder.BIG_ENDIAN);
-		eventName = new String(data).trim();
+
+		/*
+		 * The buffer contains the retriever name first, followed by the
+		 * context's name.
+		 */
+		retrieverName = readNextString(buf);
+		contextName = readNextString(buf);
+
+		/* If any of these strings were null then the command was invalid */
+		commandIsValid = ((retrieverName != null) && (contextName != null));
 	}
 
 	@Override
 	public LttngAgentResponse execute(ILttngTcpClientListener agent) {
-		boolean success = agent.eventDisabled(this.eventName);
-		return (success ? LttngAgentResponse.SUCESS_RESPONSE : DISABLE_EVENT_FAILURE_RESPONSE);
-	}
-
-	/**
-	 * Response sent when the disable-event command asks to disable an
-	 * unknown event.
-	 */
-	private static final LttngAgentResponse DISABLE_EVENT_FAILURE_RESPONSE = new LttngAgentResponse() {
-		@Override
-		public ReturnCode getReturnCode() {
-			return ReturnCode.CODE_UNKNOWN_LOGGER_NAME;
+		if (!commandIsValid) {
+			return LttngAgentResponse.FAILURE_RESPONSE;
 		}
-	};
+
+		boolean success = agent.appContextEnabled(retrieverName, contextName);
+		return (success ? LttngAgentResponse.SUCESS_RESPONSE : LttngAgentResponse.FAILURE_RESPONSE);
+	}
 }

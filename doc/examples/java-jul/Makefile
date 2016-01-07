@@ -40,7 +40,7 @@ JC = javac -classpath "$(CLASSPATH):."
 .java.class:
 	$(JC) $(JFLAGS) $*.java
 
-CLASSES = Hello.java FilterChangeListenerExample.java
+CLASSES = Hello.java FilterChangeListenerExample.java ApplicationContextExample.java
 
 all: classes
 

@@ -35,4 +35,15 @@ final class LttngLog4jApi {
 			long timestamp,
 			int loglevel,
 			String thread_name);
+
+	static native void tracepointWithContext(String msg,
+			String logger_name,
+			String class_name,
+			String method_name,
+			String file_name,
+			int line_number,
+			long timestamp,
+			int loglevel,
+			String thread_name,
+			byte[] contextInformation);
 }

@@ -17,6 +17,9 @@
 
 package org.lttng.ust.agent;
 
+import java.util.Collection;
+import java.util.Map;
+
 /**
  * Interface to define LTTng Java agents.
  *
@@ -93,4 +96,12 @@ public interface ILttngAgent<T extends ILttngHandler> {
 	 * @return True if the event is currently enabled, false if it is not.
 	 */
 	boolean isEventEnabled(String eventName);
+
+	/**
+	 * Return the list of application contexts enabled in the tracing sessions.
+	 *
+	 * @return The application contexts, first indexed by retriever name, then
+	 *         by context name
+	 */
+	Collection<Map.Entry<String, Map<String, Integer>>> getEnabledAppContexts();
 }

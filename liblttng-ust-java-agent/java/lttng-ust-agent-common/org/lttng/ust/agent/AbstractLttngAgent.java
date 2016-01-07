@@ -75,6 +75,19 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 	/** Number of sessions currently enabling the wildcard "*" event */
 	private final AtomicInteger enabledWildcards = new AtomicInteger(0);
 
+	/**
+	 * The application contexts currently enabled in the tracing sessions.
+	 *
+	 * It is first indexed by context retriever, then by context name. This
+	 * allows to efficiently query all the contexts for a given retriever.
+	 *
+	 * Works similarly as {@link #enabledEvents}, but for app contexts (and with
+	 * an extra degree of indexing).
+	 *
+	 * TODO Could be changed to a Guava Table once/if we start using it.
+	 */
+	private final Map<String, Map<String, Integer>> enabledAppContexts = new ConcurrentHashMap<String, Map<String, Integer>>();
+
 	/** Tracing domain. Defined by the sub-classes via the constructor. */
 	private final Domain domain;
 
@@ -186,7 +199,6 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 		enabledWildcards.set(0);
 
 		initialized = false;
-
 	}
 
 	@Override
@@ -203,10 +215,10 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 		if (eventName.endsWith(WILDCARD)) {
 			/* Strip the "*" from the name. */
 			String prefix = eventName.substring(0, eventName.length() - 1);
-			return incrementEventCount(prefix, enabledEventPrefixes);
+			return incrementRefCount(prefix, enabledEventPrefixes);
 		}
 
-		return incrementEventCount(eventName, enabledEvents);
+		return incrementRefCount(eventName, enabledEvents);
 	}
 
 	@Override
@@ -227,10 +239,44 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 		if (eventName.endsWith(WILDCARD)) {
 			/* Strip the "*" from the name. */
 			String prefix = eventName.substring(0, eventName.length() - 1);
-			return decrementEventCount(prefix, enabledEventPrefixes);
+			return decrementRefCount(prefix, enabledEventPrefixes);
 		}
 
-		return decrementEventCount(eventName, enabledEvents);
+		return decrementRefCount(eventName, enabledEvents);
+	}
+
+	@Override
+	public boolean appContextEnabled(String contextRetrieverName, String contextName) {
+		synchronized (enabledAppContexts) {
+			Map<String, Integer> retrieverMap = enabledAppContexts.get(contextRetrieverName);
+			if (retrieverMap == null) {
+				/* There is no submap for this retriever, let's create one. */
+				retrieverMap = new ConcurrentHashMap<String, Integer>();
+				enabledAppContexts.put(contextRetrieverName, retrieverMap);
+			}
+
+			return incrementRefCount(contextName, retrieverMap);
+		}
+	}
+
+	@Override
+	public boolean appContextDisabled(String contextRetrieverName, String contextName) {
+		synchronized (enabledAppContexts) {
+			Map<String, Integer> retrieverMap = enabledAppContexts.get(contextRetrieverName);
+			if (retrieverMap == null) {
+				/* There was no submap for this retriever, invalid command? */
+				return false;
+			}
+
+			boolean ret = decrementRefCount(contextName, retrieverMap);
+
+			/* If the submap is now empty we can remove it from the main map. */
+			if (retrieverMap.isEmpty()) {
+				enabledAppContexts.remove(contextRetrieverName);
+			}
+
+			return ret;
+		}
 	}
 
 	/*
@@ -260,12 +306,17 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 		return false;
 	}
 
-	private static boolean incrementEventCount(String eventName, Map<String, Integer> eventMap) {
-		synchronized (eventMap) {
-			Integer count = eventMap.get(eventName);
+	@Override
+	public Collection<Map.Entry<String, Map<String, Integer>>> getEnabledAppContexts() {
+		return enabledAppContexts.entrySet();
+	}
+
+	private static boolean incrementRefCount(String key, Map<String, Integer> refCountMap) {
+		synchronized (refCountMap) {
+			Integer count = refCountMap.get(key);
 			if (count == null) {
 				/* This is the first instance of this event being enabled */
-				eventMap.put(eventName, Integer.valueOf(1));
+				refCountMap.put(key, Integer.valueOf(1));
 				return true;
 			}
 			if (count.intValue() <= 0) {
@@ -273,14 +324,14 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 				throw new IllegalStateException();
 			}
 			/* The event was already enabled, increment its refcount */
-			eventMap.put(eventName, Integer.valueOf(count.intValue() + 1));
+			refCountMap.put(key, Integer.valueOf(count.intValue() + 1));
 			return true;
 		}
 	}
 
-	private static boolean decrementEventCount(String eventName, Map<String, Integer> eventMap) {
-		synchronized (eventMap) {
-			Integer count = eventMap.get(eventName);
+	private static boolean decrementRefCount(String key, Map<String, Integer> refCountMap) {
+		synchronized (refCountMap) {
+			Integer count = refCountMap.get(key);
 			if (count == null || count.intValue() <= 0) {
 				/*
 				 * The sessiond asked us to disable an event that was not
@@ -293,14 +344,14 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 				 * This is the last instance of this event being disabled,
 				 * remove it from the map so that we stop sending it.
 				 */
-				eventMap.remove(eventName);
+				refCountMap.remove(key);
 				return true;
 			}
 			/*
 			 * Other sessions are still looking for this event, simply decrement
 			 * its refcount.
 			 */
-			eventMap.put(eventName, Integer.valueOf(count.intValue() - 1));
+			refCountMap.put(key, Integer.valueOf(count.intValue() - 1));
 			return true;
 		}
 	}

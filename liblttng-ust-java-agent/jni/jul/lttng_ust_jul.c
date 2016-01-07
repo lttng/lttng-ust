@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2016 - EfficiOS Inc., Alexandre Montplaisir <alexmonthy@efficios.com>
  * Copyright (C) 2011-2012 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
  * This library is free software; you can redistribute it and/or
@@ -21,9 +22,10 @@
 #define TRACEPOINT_DEFINE
 #define TRACEPOINT_CREATE_PROBES
 #include "lttng_ust_jul.h"
+#include "../common/lttng_ust_context.h"
 
 /*
- * Tracepoint used by Java applications using the JUL handler.
+ * Deprecated function from before the context information was passed.
  */
 JNIEXPORT void JNICALL Java_org_lttng_ust_agent_jul_LttngJulApi_tracepoint(JNIEnv *env,
 						jobject jobj,
@@ -48,4 +50,45 @@ JNIEXPORT void JNICALL Java_org_lttng_ust_agent_jul_LttngJulApi_tracepoint(JNIEn
 	(*env)->ReleaseStringUTFChars(env, logger_name, logger_name_cstr);
 	(*env)->ReleaseStringUTFChars(env, class_name, class_name_cstr);
 	(*env)->ReleaseStringUTFChars(env, method_name, method_name_cstr);
+}
+
+/*
+ * Tracepoint used by Java applications using the JUL handler.
+ */
+JNIEXPORT void JNICALL Java_org_lttng_ust_agent_jul_LttngJulApi_tracepointWithContext(JNIEnv *env,
+						jobject jobj,
+						jstring msg,
+						jstring logger_name,
+						jstring class_name,
+						jstring method_name,
+						jlong millis,
+						jint log_level,
+						jint thread_id,
+						jbyteArray context_info)
+{
+	jboolean iscopy;
+	const char *msg_cstr = (*env)->GetStringUTFChars(env, msg, &iscopy);
+	const char *logger_name_cstr = (*env)->GetStringUTFChars(env, logger_name, &iscopy);
+	const char *class_name_cstr = (*env)->GetStringUTFChars(env, class_name, &iscopy);
+	const char *method_name_cstr = (*env)->GetStringUTFChars(env, method_name, &iscopy);
+	signed char *context_info_array;
+
+	/*
+	 * Write these to the TLS variables, so that the UST callbacks in
+	 * lttng_ust_context.c can access them.
+	 */
+	context_info_array = (*env)->GetByteArrayElements(env, context_info, &iscopy);
+	lttng_ust_context_info_tls.ctx = (struct lttng_ust_jni_ctx *) context_info_array;
+	lttng_ust_context_info_tls.len = (*env)->GetArrayLength(env, context_info);
+
+	tracepoint(lttng_jul, event, msg_cstr, logger_name_cstr,
+			class_name_cstr, method_name_cstr, millis, log_level, thread_id);
+
+	lttng_ust_context_info_tls.ctx = NULL;
+	lttng_ust_context_info_tls.len = 0;
+	(*env)->ReleaseStringUTFChars(env, msg, msg_cstr);
+	(*env)->ReleaseStringUTFChars(env, logger_name, logger_name_cstr);
+	(*env)->ReleaseStringUTFChars(env, class_name, class_name_cstr);
+	(*env)->ReleaseStringUTFChars(env, method_name, method_name_cstr);
+	(*env)->ReleaseByteArrayElements(env, context_info, context_info_array, 0);
 }

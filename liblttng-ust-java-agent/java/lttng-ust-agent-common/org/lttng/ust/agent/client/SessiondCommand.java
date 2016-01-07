@@ -30,15 +30,18 @@ import java.nio.ByteBuffer;
 abstract class SessiondCommand {
 
 	enum CommandType {
-
 		/** List logger(s). */
 		CMD_LIST(1),
 		/** Enable logger by name. */
-		CMD_ENABLE(2),
+		CMD_EVENT_ENABLE(2),
 		/** Disable logger by name. */
-		CMD_DISABLE(3),
+		CMD_EVENT_DISABLE(3),
 		/** Registration done */
-		CMD_REG_DONE(4);
+		CMD_REG_DONE(4),
+		/** Enable application context */
+		CMD_APP_CTX_ENABLE(5),
+		/** Disable application context */
+		CMD_APP_CTX_DISABLE(6);
 
 		private int code;
 

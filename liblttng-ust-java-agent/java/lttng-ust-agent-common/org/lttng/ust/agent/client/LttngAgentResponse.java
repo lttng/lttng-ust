@@ -40,7 +40,7 @@ abstract class LttngAgentResponse {
 
 		CODE_SUCCESS_CMD(1),
 		CODE_INVALID_CMD(2),
-		CODE_UNK_LOGGER_NAME(3);
+		CODE_UNKNOWN_LOGGER_NAME(3);
 
 		private int code;
 
