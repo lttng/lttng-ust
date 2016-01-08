@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 - EfficiOS Inc., Alexandre Montplaisir <alexmonthy@efficios.com>
+ * Copyright (C) 2015-2016 - EfficiOS Inc., Alexandre Montplaisir <alexmonthy@efficios.com>
  * Copyright (C) 2013 - David Goulet <dgoulet@efficios.com>
  *
  * This library is free software; you can redistribute it and/or modify it
@@ -18,14 +18,16 @@
 
 package org.lttng.ust.agent.client;
 
+import java.nio.ByteBuffer;
+
 /**
- * Interface to represent all commands sent from the session daemon to the Java
+ * Base class to represent all commands sent from the session daemon to the Java
  * agent. The agent is then expected to execute the command and provide a
  * response.
  *
  * @author Alexandre Montplaisir
  */
-interface ISessiondCommand {
+abstract class SessiondCommand {
 
 	enum CommandType {
 
@@ -56,5 +58,32 @@ interface ISessiondCommand {
 	 *            The agent on which to execute the command
 	 * @return If the command completed successfully or not
 	 */
-	public LttngAgentResponse execute(ILttngTcpClientListener agent);
+	public abstract LttngAgentResponse execute(ILttngTcpClientListener agent);
+
+	/**
+	 * Utility method to read agent-protocol strings passed on the socket. The
+	 * buffer will contain a 32-bit integer representing the length, immediately
+	 * followed by the string itself.
+	 *
+	 * @param buffer
+	 *            The ByteBuffer from which to read. It should already be setup
+	 *            and positioned where the read should begin.
+	 * @return The string that was read, or <code>null</code> if it was badly
+	 *         formatted.
+	 */
+	protected static String readNextString(ByteBuffer buffer) {
+		int length = buffer.getInt();
+		if (length < 0) {
+			/* The string length should be positive */
+			return null;
+		}
+		if (length == 0) {
+			/* The string is explicitly an empty string */
+			return "";
+		}
+
+		byte[] stringBytes = new byte[length];
+		buffer.get(stringBytes);
+		return new String(stringBytes).trim();
+	}
 }

@@ -29,7 +29,7 @@ import java.util.Collection;
  * @author Alexandre Montplaisir
  * @author David Goulet
  */
-class SessiondListLoggersCommand implements ISessiondCommand {
+class SessiondListLoggersCommand extends SessiondCommand {
 
 	@Override
 	public LttngAgentResponse execute(ILttngTcpClientListener agent) {

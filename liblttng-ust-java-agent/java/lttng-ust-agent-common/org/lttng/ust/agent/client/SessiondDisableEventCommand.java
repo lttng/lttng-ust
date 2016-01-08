@@ -28,7 +28,7 @@ import java.nio.ByteOrder;
  * @author Alexandre Montplaisir
  * @author David Goulet
  */
-class SessiondDisableEventCommand implements ISessiondCommand {
+class SessiondDisableEventCommand extends SessiondCommand {
 
 	/** Event name to disable from the tracing session */
 	private final String eventName;

@@ -31,7 +31,7 @@ import org.lttng.ust.agent.session.LogLevelSelector;
  * @author Alexandre Montplaisir
  * @author David Goulet
  */
-class SessiondEnableEventCommand implements ISessiondCommand {
+class SessiondEnableEventCommand extends SessiondCommand {
 
 	/** Fixed event name length. Value defined by the lttng agent protocol. */
 	private static final int EVENT_NAME_LENGTH = 256;
@@ -58,35 +58,11 @@ class SessiondEnableEventCommand implements ISessiondCommand {
 		buf.get(eventNameBytes);
 		eventName = new String(eventNameBytes).trim();
 
-		/*
-		 * Read the filter string. The buffer contains the length (number of
-		 * bytes), then the bytes themselves.
-		 *
-		 * The length is represented as an unsigned int, but it should never
-		 * be greater than Integer.MAX_VALUE.
-		 */
-		int filterStringLength = buf.getInt();
-		if (filterStringLength < 0) {
-			/*
-			 * The (unsigned) length is above what the sessiond should send. The
-			 * command cannot be processed.
-			 */
-			filterString = null;
-			commandIsValid = false;
-			return;
-		}
-		if (filterStringLength == 0) {
-			/* There is explicitly no filter string */
-			filterString = "";
-			commandIsValid = true;
-			return;
-		}
+		/* Read the filter string */
+		filterString = readNextString(buf);
 
-		byte[] filterStringBytes = new byte[filterStringLength];
-		buf.get(filterStringBytes);
-		filterString = new String(filterStringBytes).trim();
-
-		commandIsValid = true;
+		/* The command was invalid if the string could not be read correctly */
+		commandIsValid = (filterString != null);
 	}
 
 	@Override

@@ -250,7 +250,7 @@ public class LttngTcpSessiondClient implements Runnable {
 			}
 			case CMD_LIST:
 			{
-				ISessiondCommand listLoggerCmd = new SessiondListLoggersCommand();
+				SessiondCommand listLoggerCmd = new SessiondListLoggersCommand();
 				LttngAgentResponse response = listLoggerCmd.execute(logAgent);
 				responseData = response.getBytes();
 				break;
@@ -262,7 +262,7 @@ public class LttngTcpSessiondClient implements Runnable {
 					responseData = LttngAgentResponse.FAILURE_RESPONSE.getBytes();
 					break;
 				}
-				ISessiondCommand enableCmd = new SessiondEnableEventCommand(inputData);
+				SessiondCommand enableCmd = new SessiondEnableEventCommand(inputData);
 				LttngAgentResponse response = enableCmd.execute(logAgent);
 				responseData = response.getBytes();
 				break;
@@ -274,7 +274,7 @@ public class LttngTcpSessiondClient implements Runnable {
 					responseData = LttngAgentResponse.FAILURE_RESPONSE.getBytes();
 					break;
 				}
-				ISessiondCommand disableCmd = new SessiondDisableEventCommand(inputData);
+				SessiondCommand disableCmd = new SessiondDisableEventCommand(inputData);
 				LttngAgentResponse response = disableCmd.execute(logAgent);
 				responseData = response.getBytes();
 				break;

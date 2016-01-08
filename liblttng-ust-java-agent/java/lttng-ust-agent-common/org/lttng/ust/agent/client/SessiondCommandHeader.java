@@ -21,7 +21,7 @@ package org.lttng.ust.agent.client;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import org.lttng.ust.agent.client.ISessiondCommand.CommandType;
+import org.lttng.ust.agent.client.SessiondCommand.CommandType;
 
 /**
  * Header of session daemon commands.
