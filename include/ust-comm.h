@@ -31,6 +31,7 @@
 #include <lttng/ust-abi.h>
 #include <lttng/ust-error.h>
 #include <lttng/ust-compiler.h>
+#include <lttng/ust-ctl.h>
 #include <config.h>
 
 /*
@@ -50,6 +51,9 @@
 
 struct lttng_event_field;
 struct lttng_ctx_field;
+struct lttng_enum_entry;
+struct lttng_integer_type;
+struct lttng_session;
 
 struct ustctl_reg_msg {
 	uint32_t magic;
@@ -147,6 +151,22 @@ struct ustcomm_notify_event_reply {
 	char padding[USTCOMM_NOTIFY_EVENT_REPLY_PADDING];
 } LTTNG_PACKED;
 
+#define USTCOMM_NOTIFY_ENUM_MSG_PADDING		32
+struct ustcomm_notify_enum_msg {
+	uint32_t session_objd;
+	char enum_name[LTTNG_UST_SYM_NAME_LEN];
+	uint32_t entries_len;
+	char padding[USTCOMM_NOTIFY_ENUM_MSG_PADDING];
+	/* followed by enum entries */
+} LTTNG_PACKED;
+
+#define USTCOMM_NOTIFY_EVENT_REPLY_PADDING	32
+struct ustcomm_notify_enum_reply {
+	int32_t ret_code;	/* 0: ok, negative: error code */
+	uint64_t enum_id;
+	char padding[USTCOMM_NOTIFY_EVENT_REPLY_PADDING];
+} LTTNG_PACKED;
+
 #define USTCOMM_NOTIFY_CHANNEL_MSG_PADDING	32
 struct ustcomm_notify_channel_msg {
 	uint32_t session_objd;
@@ -213,6 +233,7 @@ int ustcomm_send_reg_msg(int sock,
  * Returns -EPIPE or -ECONNRESET if other end has hung up.
  */
 int ustcomm_register_event(int sock,
+	struct lttng_session *session,
 	int session_objd,		/* session descriptor */
 	int channel_objd,		/* channel descriptor */
 	const char *event_name,		/* event name (input) */
@@ -222,6 +243,17 @@ int ustcomm_register_event(int sock,
 	const struct lttng_event_field *fields,
 	const char *model_emf_uri,
 	uint32_t *id);			/* event id (output) */
+
+/*
+ * Returns 0 on success, negative error value on error.
+ * Returns -EPIPE or -ECONNRESET if other end has hung up.
+ */
+int ustcomm_register_enum(int sock,
+	int session_objd,		/* session descriptor */
+	const char *enum_name,		/* enum name (input) */
+	size_t nr_entries,		/* entries */
+	const struct lttng_enum_entry *entries,
+	uint64_t *id);			/* enum id (output) */
 
 /*
  * Returns 0 on success, negative error value on error.

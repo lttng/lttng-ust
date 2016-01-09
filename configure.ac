@@ -399,6 +399,7 @@ AC_CONFIG_FILES([
 	python-lttngust/lttngust/__init__.py
 	tools/Makefile
 	tests/Makefile
+	tests/ctf-types/Makefile
 	tests/hello/Makefile
 	tests/hello.cxx/Makefile
 	tests/same_line_tracepoint/Makefile

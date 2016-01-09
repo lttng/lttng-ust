@@ -1759,6 +1759,9 @@ int ustctl_recv_notify(int sock, enum ustctl_notify_cmd *notify_cmd)
 	case 1:
 		*notify_cmd = USTCTL_NOTIFY_CMD_CHANNEL;
 		break;
+	case 2:
+		*notify_cmd = USTCTL_NOTIFY_CMD_ENUM;
+		break;
 	default:
 		return -EINVAL;
 	}
@@ -1903,6 +1906,90 @@ int ustctl_reply_register_event(int sock,
 	reply.header.notify_cmd = USTCTL_NOTIFY_CMD_EVENT;
 	reply.r.ret_code = ret_code;
 	reply.r.event_id = id;
+	len = ustcomm_send_unix_sock(sock, &reply, sizeof(reply));
+	if (len > 0 && len != sizeof(reply))
+		return -EIO;
+	if (len < 0)
+		return len;
+	return 0;
+}
+
+/*
+ * Returns 0 on success, negative UST or system error value on error.
+ */
+int ustctl_recv_register_enum(int sock,
+	int *session_objd,
+	char *enum_name,
+	struct ustctl_enum_entry **entries,
+	size_t *nr_entries)
+{
+	ssize_t len;
+	struct ustcomm_notify_enum_msg msg;
+	size_t entries_len;
+	struct ustctl_enum_entry *a_entries = NULL;
+
+	len = ustcomm_recv_unix_sock(sock, &msg, sizeof(msg));
+	if (len > 0 && len != sizeof(msg))
+		return -EIO;
+	if (len == 0)
+		return -EPIPE;
+	if (len < 0)
+		return len;
+
+	*session_objd = msg.session_objd;
+	strncpy(enum_name, msg.enum_name, LTTNG_UST_SYM_NAME_LEN);
+	enum_name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+	entries_len = msg.entries_len;
+
+	if (entries_len % sizeof(*a_entries) != 0) {
+		return -EINVAL;
+	}
+
+	/* recv entries */
+	if (entries_len) {
+		a_entries = zmalloc(entries_len);
+		if (!a_entries)
+			return -ENOMEM;
+		len = ustcomm_recv_unix_sock(sock, a_entries, entries_len);
+		if (len > 0 && len != entries_len) {
+			len = -EIO;
+			goto entries_error;
+		}
+		if (len == 0) {
+			len = -EPIPE;
+			goto entries_error;
+		}
+		if (len < 0) {
+			goto entries_error;
+		}
+	}
+	*nr_entries = entries_len / sizeof(*a_entries);
+	*entries = a_entries;
+
+	return 0;
+
+entries_error:
+	free(a_entries);
+	return len;
+}
+
+/*
+ * Returns 0 on success, negative error value on error.
+ */
+int ustctl_reply_register_enum(int sock,
+	uint64_t id,
+	int ret_code)
+{
+	ssize_t len;
+	struct {
+		struct ustcomm_notify_hdr header;
+		struct ustcomm_notify_enum_reply r;
+	} reply;
+
+	memset(&reply, 0, sizeof(reply));
+	reply.header.notify_cmd = USTCTL_NOTIFY_CMD_ENUM;
+	reply.r.ret_code = ret_code;
+	reply.r.enum_id = id;
 	len = ustcomm_send_unix_sock(sock, &reply, sizeof(reply));
 	if (len > 0 && len != sizeof(reply))
 		return -EIO;

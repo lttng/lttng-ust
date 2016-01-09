@@ -28,6 +28,9 @@
 #undef TRACEPOINT_EVENT_INSTANCE
 #define TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)
 
+#undef TRACEPOINT_ENUM
+#define TRACEPOINT_ENUM(_provider, _name, _values)
+
 #undef TP_ARGS
 #define TP_ARGS(...)
 
@@ -61,6 +64,9 @@
 #undef _ctf_string
 #define _ctf_string(_item, _src, _nowrite)
 
+#undef _ctf_enum
+#define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite)
+
 /* "write" */
 #undef ctf_integer
 #define ctf_integer(_type, _item, _src)
@@ -92,6 +98,9 @@
 #undef ctf_string
 #define ctf_string(_item, _src)
 
+#undef ctf_enum
+#define ctf_enum(_provider, _name, _type, _item, _src)
+
 /* "nowrite" */
 #undef ctf_integer_nowrite
 #define ctf_integer_nowrite(_type, _item, _src)
@@ -113,3 +122,6 @@
 
 #undef ctf_string_nowrite
 #define ctf_string_nowrite(_item, _src)
+
+#undef ctf_enum_nowrite
+#define ctf_enum_nowrite(_provider, _name, _type, _item, _src)

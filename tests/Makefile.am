@@ -1,4 +1,5 @@
-SUBDIRS = utils hello same_line_tracepoint snprintf benchmark ust-elf
+SUBDIRS = utils hello same_line_tracepoint snprintf benchmark ust-elf \
+		ctf-types
 
 if CXX_WORKS
 SUBDIRS += hello.cxx

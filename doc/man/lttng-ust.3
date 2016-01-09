@@ -224,12 +224,66 @@ TRACEPOINT_EVENT(
 		 */
 		ctf_float(float, floatfield, floatarg)
 		ctf_float(double, doublefield, doublearg)
+
+		/*
+		 * ctf_enum: a field using a previously declared
+		 * enumeration args: (provider, enum name, container
+		 * type, field name, argument expression). The
+		 * enumeration itself and its values must have been
+		 * defined previously with the TRACEPOINT_ENUM macro,
+		 * described below.
+		 */
+		ctf_enum(sample_component, enumeration_name, int,
+			      enumfield, enumarg)
 	)
 )
 
 There can be an arbitrary number of tracepoint providers within an
 application, but they must each have their own provider name. Duplicate
 provider names are not allowed.
+
+The CTF specification also supports enumerations that can be declared
+inside a tracepoint provider and used as fields in the tracepoint. This
+shows how to specify enumerations and what they can be used for:
+
+The enumeration is a mapping between an integer, or a range of integers, and a
+string. It can be used to have a more compact trace in cases where the possible
+values for a field are limited:
+
+TRACEPOINT_ENUM(
+	/*
+	 * The provider name, as described in the TRACEPOINT_EVENT macro.
+	 */
+	sample_component,
+
+	/*
+	 * The name of this enumeration, that will be used when using this
+	 * global type in tracepoint fields.
+	 */
+	enumeration_name,
+
+	/*
+	 * TP_ENUM_VALUES describe the values of this enumeration and what they
+	 * map to.
+	 */
+	TP_ENUM_VALUES(
+		/*
+		 * Maps an integer with this string value. By default, enumerations
+		 * start at 0 and increment 1 for each entry.
+		 */
+		ctf_enum_value(string_value)
+
+		/*
+		 * Maps the string value to integers in the range 'start' to 'end'
+		 * inclusively. If 'start' == 'end', then the string is mapped to
+		 * a specific value.
+		 * Enumeration ranges may overlap, but the behavior is
+		 * implementation-defined, each trace reader will handle overlapping
+		 * as it wishes.
+		 */
+		ctf_enum_range(start, end, string_value)
+	)
+)
 
 .fi
 

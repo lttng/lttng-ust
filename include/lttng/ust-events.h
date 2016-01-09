@@ -176,7 +176,8 @@ struct lttng_float_type {
 union _lttng_basic_type {
 	struct lttng_integer_type integer;
 	struct {
-		const char *name;
+		const struct lttng_enum_desc *desc;	/* Enumeration mapping */
+		struct lttng_integer_type container_type;
 	} enumeration;
 	struct {
 		enum lttng_string_encodings encoding;
@@ -210,11 +211,10 @@ struct lttng_type {
 };
 
 #define LTTNG_UST_ENUM_TYPE_PADDING	24
-struct lttng_enum {
+struct lttng_enum_desc {
 	const char *name;
-	struct lttng_type container_type;
 	const struct lttng_enum_entry *entries;
-	unsigned int len;
+	unsigned int nr_entries;
 	char padding[LTTNG_UST_ENUM_TYPE_PADDING];
 };
 
@@ -422,6 +422,14 @@ struct lttng_event {
 	int registered;			/* has reg'd tracepoint probe */
 };
 
+struct lttng_enum {
+	const struct lttng_enum_desc *desc;
+	struct lttng_session *session;
+	struct cds_list_head node;	/* Enum list in session */
+	struct cds_hlist_node hlist;	/* Session ht of enums */
+	uint64_t id;			/* Enumeration ID in sessiond */
+};
+
 struct channel;
 struct lttng_ust_shm_handle;
 
@@ -506,6 +514,13 @@ struct lttng_ust_event_ht {
 	struct cds_hlist_head table[LTTNG_UST_EVENT_HT_SIZE];
 };
 
+#define LTTNG_UST_ENUM_HT_BITS		12
+#define LTTNG_UST_ENUM_HT_SIZE		(1U << LTTNG_UST_ENUM_HT_BITS)
+
+struct lttng_ust_enum_ht {
+	struct cds_hlist_head table[LTTNG_UST_ENUM_HT_SIZE];
+};
+
 /*
  * IMPORTANT: this structure is part of the ABI between the probe and
  * UST. Fields need to be only added at the end, never reordered, never
@@ -532,6 +547,10 @@ struct lttng_session {
 
 	/* New UST 2.4 */
 	int statedump_pending:1;
+
+	/* New UST 2.8 */
+	struct lttng_ust_enum_ht enums_ht;	/* ht of enumerations */
+	struct cds_list_head enums_head;
 };
 
 struct lttng_transport {
@@ -657,6 +676,8 @@ int lttng_session_active(void);
 typedef int (*t_statedump_func_ptr)(struct lttng_session *session);
 void lttng_handle_pending_statedump(void *owner);
 struct cds_list_head *_lttng_get_sessions(void);
+struct lttng_enum *lttng_ust_enum_get(struct lttng_session *session,
+		const char *enum_name);
 
 #ifdef __cplusplus
 }

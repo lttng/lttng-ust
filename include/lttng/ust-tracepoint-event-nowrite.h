@@ -54,3 +54,7 @@
 #undef ctf_string_nowrite
 #define ctf_string_nowrite(_item, _src)				\
 	_ctf_string(_item, _src, 1)
+
+#undef ctf_enum_nowrite
+#define ctf_enum_nowrite(_provider, _name, _type, _item, _src)		\
+	_ctf_enum(_provider, _name, _type, _item, _src, 1)

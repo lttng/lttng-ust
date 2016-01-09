@@ -72,6 +72,7 @@ struct cds_list_head *_lttng_get_sessions(void)
 }
 
 static void _lttng_event_destroy(struct lttng_event *event);
+static void _lttng_enum_destroy(struct lttng_enum *_enum);
 
 static
 void lttng_session_lazy_sync_enablers(struct lttng_session *session);
@@ -139,9 +140,12 @@ struct lttng_session *lttng_session_create(void)
 		return NULL;
 	CDS_INIT_LIST_HEAD(&session->chan_head);
 	CDS_INIT_LIST_HEAD(&session->events_head);
+	CDS_INIT_LIST_HEAD(&session->enums_head);
 	CDS_INIT_LIST_HEAD(&session->enablers_head);
 	for (i = 0; i < LTTNG_UST_EVENT_HT_SIZE; i++)
 		CDS_INIT_HLIST_HEAD(&session->events_ht.table[i]);
+	for (i = 0; i < LTTNG_UST_ENUM_HT_SIZE; i++)
+		CDS_INIT_HLIST_HEAD(&session->enums_ht.table[i]);
 	cds_list_add(&session->node, &sessions);
 	return session;
 }
@@ -212,6 +216,7 @@ void lttng_session_destroy(struct lttng_session *session)
 {
 	struct lttng_channel *chan, *tmpchan;
 	struct lttng_event *event, *tmpevent;
+	struct lttng_enum *_enum, *tmp_enum;
 	struct lttng_enabler *enabler, *tmpenabler;
 
 	CMM_ACCESS_ONCE(session->active) = 0;
@@ -225,6 +230,9 @@ void lttng_session_destroy(struct lttng_session *session)
 	cds_list_for_each_entry_safe(event, tmpevent,
 			&session->events_head, node)
 		_lttng_event_destroy(event);
+	cds_list_for_each_entry_safe(_enum, tmp_enum,
+			&session->enums_head, node)
+		_lttng_enum_destroy(_enum);
 	cds_list_for_each_entry_safe(chan, tmpchan, &session->chan_head, node)
 		_lttng_channel_unmap(chan);
 	cds_list_del(&session->node);
@@ -350,6 +358,101 @@ end:
 	return ret;
 }
 
+static
+int lttng_enum_create(const struct lttng_enum_desc *desc,
+		struct lttng_session *session)
+{
+	const char *enum_name = desc->name;
+	struct lttng_enum *_enum;
+	struct cds_hlist_head *head;
+	struct cds_hlist_node *node;
+	int ret = 0;
+	size_t name_len = strlen(enum_name);
+	uint32_t hash;
+	int notify_socket;
+
+	hash = jhash(enum_name, name_len, 0);
+	head = &session->enums_ht.table[hash & (LTTNG_UST_ENUM_HT_SIZE - 1)];
+	cds_hlist_for_each_entry(_enum, node, head, hlist) {
+		assert(_enum->desc);
+		if (!strncmp(_enum->desc->name, desc->name,
+				LTTNG_UST_SYM_NAME_LEN - 1)) {
+			ret = -EEXIST;
+			goto exist;
+		}
+	}
+
+	notify_socket = lttng_get_notify_socket(session->owner);
+	if (notify_socket < 0) {
+		ret = notify_socket;
+		goto socket_error;
+	}
+
+	_enum = zmalloc(sizeof(*_enum));
+	if (!_enum) {
+		ret = -ENOMEM;
+		goto cache_error;
+	}
+	_enum->session = session;
+	_enum->desc = desc;
+
+	ret = ustcomm_register_enum(notify_socket,
+		session->objd,
+		enum_name,
+		desc->nr_entries,
+		desc->entries,
+		&_enum->id);
+	if (ret < 0) {
+		DBG("Error (%d) registering enumeration to sessiond", ret);
+		goto sessiond_register_error;
+	}
+	cds_list_add(&_enum->node, &session->enums_head);
+	cds_hlist_add_head(&_enum->hlist, head);
+	return 0;
+
+sessiond_register_error:
+	free(_enum);
+cache_error:
+socket_error:
+exist:
+	return ret;
+}
+
+static
+int lttng_event_create_all_enums(const struct lttng_event_desc *desc,
+		struct lttng_session *session)
+{
+	unsigned int nr_fields, i;
+	const struct lttng_event_field *fields;
+
+	/* For each field, ensure enum is part of the session. */
+	nr_fields = desc->nr_fields;
+	fields = desc->fields;
+	for (i = 0; i < nr_fields; i++) {
+		const struct lttng_type *type = &fields[i].type;
+
+		switch (type->atype) {
+		case atype_enum:
+		{
+			const struct lttng_enum_desc *enum_desc;
+			int ret;
+
+			enum_desc = type->u.basic.enumeration.desc;
+			ret = lttng_enum_create(enum_desc, session);
+			if (ret && ret != -EEXIST) {
+				DBG("Unable to create enum error: (%d)", ret);
+				return ret;
+			}
+			break;
+		}
+		default:
+			/* TODO: nested types when they become supported. */
+			continue;
+		}
+	}
+	return 0;
+}
+
 /*
  * Supports event creation while tracing session is active.
  */
@@ -386,6 +489,12 @@ int lttng_event_create(const struct lttng_event_desc *desc,
 		goto socket_error;
 	}
 
+	ret = lttng_event_create_all_enums(desc, session);
+	if (ret < 0) {
+		DBG("Error (%d) adding enum to session", ret);
+		goto create_enum_error;
+	}
+
 	/*
 	 * Check if loglevel match. Refuse to connect event if not.
 	 */
@@ -414,6 +523,7 @@ int lttng_event_create(const struct lttng_event_desc *desc,
 
 	/* Fetch event ID from sessiond */
 	ret = ustcomm_register_event(notify_socket,
+		session,
 		session->objd,
 		chan->objd,
 		event_name,
@@ -437,6 +547,7 @@ int lttng_event_create(const struct lttng_event_desc *desc,
 sessiond_register_error:
 	free(event);
 cache_error:
+create_enum_error:
 socket_error:
 exist:
 	return ret;
@@ -717,6 +828,13 @@ void _lttng_event_destroy(struct lttng_event *event)
 			&event->enablers_ref_head, node)
 		free(enabler_ref);
 	free(event);
+}
+
+static
+void _lttng_enum_destroy(struct lttng_enum *_enum)
+{
+	cds_list_del(&_enum->node);
+	free(_enum);
 }
 
 void lttng_ust_events_exit(void)
