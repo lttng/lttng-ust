@@ -407,6 +407,7 @@ AC_CONFIG_FILES([
 	tests/ust-elf/Makefile
 	tests/benchmark/Makefile
 	tests/utils/Makefile
+	tests/test-app-ctx/Makefile
 	lttng-ust.pc
 ])
 

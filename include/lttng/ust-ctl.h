@@ -273,6 +273,8 @@ enum ustctl_abstract_types {
 	ustctl_atype_sequence,
 	ustctl_atype_string,
 	ustctl_atype_float,
+	ustctl_atype_variant,
+	ustctl_atype_struct,
 	NR_USTCTL_ABSTRACT_TYPES,
 };
 
@@ -345,6 +347,15 @@ struct ustctl_type {
 			struct ustctl_basic_type length_type;
 			struct ustctl_basic_type elem_type;
 		} sequence;
+		struct {
+			uint32_t nr_choices;
+			char tag_name[LTTNG_UST_SYM_NAME_LEN];
+			/* Followed by nr_choices struct ustctl_field. */
+		} variant;
+		struct {
+			uint32_t nr_fields;
+			/* Followed by nr_fields struct ustctl_field. */
+		} _struct;
 		char padding[USTCTL_UST_TYPE_PADDING];
 	} u;
 } LTTNG_PACKED;

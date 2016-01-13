@@ -46,7 +46,7 @@ void lttng_context_vtid_reset(void)
 }
 
 static
-size_t vtid_get_size(size_t offset)
+size_t vtid_get_size(struct lttng_ctx_field *field, size_t offset)
 {
 	size_t size = 0;
 
@@ -69,11 +69,11 @@ void vtid_record(struct lttng_ctx_field *field,
 
 static
 void vtid_get_value(struct lttng_ctx_field *field,
-		union lttng_ctx_value *value)
+		struct lttng_ctx_value *value)
 {
 	if (caa_unlikely(!URCU_TLS(cached_vtid)))
 		URCU_TLS(cached_vtid) = gettid();
-	value->s64 = URCU_TLS(cached_vtid);
+	value->u.s64 = URCU_TLS(cached_vtid);
 }
 
 int lttng_add_vtid_to_ctx(struct lttng_ctx **ctx)

@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <helper.h>
 #include <lttng/ust-events.h>
+#include <lttng/ust-context-provider.h>
 #include <stdint.h>
 #include <assert.h>
 #include <errno.h>
@@ -78,7 +79,7 @@ enum entry_type {
 	REG_S64,
 	REG_DOUBLE,
 	REG_STRING,
-	REG_TYPE_UNKNOWN,
+	REG_UNKNOWN,
 };
 
 /* Validation stack */
@@ -137,6 +138,7 @@ int vstack_pop(struct vstack *stack)
 
 /* Execution stack */
 struct estack_entry {
+	enum entry_type type;	/* For dynamic typing. */
 	union {
 		int64_t v;
 		double d;
@@ -154,9 +156,18 @@ struct estack {
 	struct estack_entry e[FILTER_STACK_LEN];
 };
 
+/*
+ * Always use aliased type for ax/bx (top of stack).
+ * When ax/bx are S64, use aliased value.
+ */
 #define estack_ax_v	ax
 #define estack_bx_v	bx
+#define estack_ax_t	ax_t
+#define estack_bx_t	bx_t
 
+/*
+ * ax and bx registers can hold either integer, double or string.
+ */
 #define estack_ax(stack, top)					\
 	({							\
 		assert((top) > FILTER_STACK_EMPTY);		\
@@ -169,19 +180,26 @@ struct estack {
 		&(stack)->e[(top) - 1];				\
 	})
 
-#define estack_push(stack, top, ax, bx)				\
+/*
+ * Currently, only integers (REG_S64) can be pushed into the stack.
+ */
+#define estack_push(stack, top, ax, bx, ax_t, bx_t)		\
 	do {							\
 		assert((top) < FILTER_STACK_LEN - 1);		\
 		(stack)->e[(top) - 1].u.v = (bx);		\
+		(stack)->e[(top) - 1].type = (bx_t);		\
 		(bx) = (ax);					\
+		(bx_t) = (ax_t);				\
 		++(top);					\
 	} while (0)
 
-#define estack_pop(stack, top, ax, bx)				\
+#define estack_pop(stack, top, ax, bx, ax_t, bx_t)		\
 	do {							\
 		assert((top) > FILTER_STACK_EMPTY);		\
 		(ax) = (bx);					\
+		(ax_t) = (bx_t);				\
 		(bx) = (stack)->e[(top) - 2].u.v;		\
+		(bx_t) = (stack)->e[(top) - 2].type;		\
 		(top)--;					\
 	} while (0)
 

@@ -69,7 +69,7 @@ struct lttng_perf_counter_field {
 static pthread_key_t perf_counter_key;
 
 static
-size_t perf_counter_get_size(size_t offset)
+size_t perf_counter_get_size(struct lttng_ctx_field *field, size_t offset)
 {
 	size_t size = 0;
 
@@ -280,12 +280,12 @@ void perf_counter_record(struct lttng_ctx_field *field,
 
 static
 void perf_counter_get_value(struct lttng_ctx_field *field,
-		union lttng_ctx_value *value)
+		struct lttng_ctx_value *value)
 {
 	uint64_t v;
 
 	v = wrapper_perf_counter_read(field);
-	value->s64 = v;
+	value->u.s64 = v;
 }
 
 /* Called with UST lock held */

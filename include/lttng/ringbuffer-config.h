@@ -228,7 +228,7 @@ struct lttng_ust_lib_ring_buffer_config {
  * removed.
  */
 #define LTTNG_UST_RING_BUFFER_CTX_PADDING	\
-		(24 - sizeof(int) - sizeof(void *))
+		(24 - sizeof(int) - sizeof(void *) - sizeof(void *))
 struct lttng_ust_lib_ring_buffer_ctx {
 	/* input received by lib_ring_buffer_reserve(), saved here. */
 	struct channel *chan;		/* channel */
@@ -258,6 +258,7 @@ struct lttng_ust_lib_ring_buffer_ctx {
 	unsigned int rflags;		/* reservation flags */
 	unsigned int padding1;		/* padding to realign on pointer */
 	void *ip;			/* caller ip address */
+	void *priv2;			/* 2nd priv data */
 	char padding2[LTTNG_UST_RING_BUFFER_CTX_PADDING];
 };
 
@@ -274,12 +275,14 @@ static inline lttng_ust_notrace
 void lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			      struct channel *chan, void *priv,
 			      size_t data_size, int largest_align,
-			      int cpu, struct lttng_ust_shm_handle *handle);
+			      int cpu, struct lttng_ust_shm_handle *handle,
+			      void *priv2);
 static inline
 void lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			      struct channel *chan, void *priv,
 			      size_t data_size, int largest_align,
-			      int cpu, struct lttng_ust_shm_handle *handle)
+			      int cpu, struct lttng_ust_shm_handle *handle,
+			      void *priv2)
 {
 	ctx->chan = chan;
 	ctx->priv = priv;
@@ -290,6 +293,7 @@ void lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 	ctx->handle = handle;
 	ctx->padding1 = 0;
 	ctx->ip = 0;
+	ctx->priv2 = priv2;
 	memset(ctx->padding2, 0, LTTNG_UST_RING_BUFFER_CTX_PADDING);
 }
 

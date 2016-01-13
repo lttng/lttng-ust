@@ -1523,7 +1523,6 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	lttng_ring_buffer_client_discard_init();
 	lttng_ring_buffer_client_discard_rt_init();
 	lttng_perf_counter_init();
-	lttng_context_init();
 	/*
 	 * Invoke ust malloc wrapper init before starting other threads.
 	 */
@@ -1628,7 +1627,6 @@ void lttng_ust_cleanup(int exiting)
 	 */
 	lttng_ust_abi_exit();
 	lttng_ust_events_exit();
-	lttng_context_exit();
 	lttng_perf_counter_exit();
 	lttng_ring_buffer_client_discard_rt_exit();
 	lttng_ring_buffer_client_discard_exit();

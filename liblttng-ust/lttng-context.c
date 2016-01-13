@@ -23,6 +23,8 @@
 
 #include <lttng/ust-events.h>
 #include <lttng/ust-tracer.h>
+#include <lttng/ust-context-provider.h>
+#include <urcu-pointer.h>
 #include <usterr-signal-safe.h>
 #include <helper.h>
 #include <string.h>
@@ -33,39 +35,69 @@
  * same context performed by the same thread return the same result.
  */
 
-/*
- * Static array of contexts, for $ctx filters.
- */
-struct lttng_ctx *lttng_static_ctx;
-
 int lttng_find_context(struct lttng_ctx *ctx, const char *name)
 {
 	unsigned int i;
+	const char *subname;
 
+	if (strncmp(name, "$ctx.", strlen("$ctx.")) == 0) {
+		subname = name + strlen("$ctx.");
+	} else {
+		subname = name;
+	}
 	for (i = 0; i < ctx->nr_fields; i++) {
 		/* Skip allocated (but non-initialized) contexts */
 		if (!ctx->fields[i].event_field.name)
 			continue;
-		if (!strcmp(ctx->fields[i].event_field.name, name))
+		if (!strcmp(ctx->fields[i].event_field.name, subname))
 			return 1;
 	}
 	return 0;
 }
 
+int lttng_context_is_app(const char *name)
+{
+	if (strncmp(name, "$app.", strlen("$app.")) != 0) {
+		return 0;
+	}
+	return 1;
+}
+
 int lttng_get_context_index(struct lttng_ctx *ctx, const char *name)
 {
 	unsigned int i;
+	const char *subname;
 
 	if (!ctx)
 		return -1;
+	if (strncmp(name, "$ctx.", strlen("$ctx.")) == 0) {
+		subname = name + strlen("$ctx.");
+	} else {
+		subname = name;
+	}
 	for (i = 0; i < ctx->nr_fields; i++) {
 		/* Skip allocated (but non-initialized) contexts */
 		if (!ctx->fields[i].event_field.name)
 			continue;
-		if (!strcmp(ctx->fields[i].event_field.name, name))
+		if (!strcmp(ctx->fields[i].event_field.name, subname))
 			return i;
 	}
 	return -1;
+}
+
+static int lttng_find_context_provider(struct lttng_ctx *ctx, const char *name)
+{
+	unsigned int i;
+
+	for (i = 0; i < ctx->nr_fields; i++) {
+		/* Skip allocated (but non-initialized) contexts */
+		if (!ctx->fields[i].event_field.name)
+			continue;
+		if (!strncmp(ctx->fields[i].event_field.name, name,
+				strlen(name)))
+			return 1;
+	}
+	return 0;
 }
 
 /*
@@ -98,6 +130,45 @@ struct lttng_ctx_field *lttng_append_context(struct lttng_ctx **ctx_p)
 	field = &ctx->fields[ctx->nr_fields];
 	ctx->nr_fields++;
 	return field;
+}
+
+int lttng_context_add_rcu(struct lttng_ctx **ctx_p,
+		const struct lttng_ctx_field *f)
+{
+	struct lttng_ctx *old_ctx = *ctx_p, *new_ctx = NULL;
+	struct lttng_ctx_field *new_fields = NULL;
+	struct lttng_ctx_field *nf;
+
+	if (old_ctx) {
+		new_ctx = zmalloc(sizeof(struct lttng_ctx));
+		if (!new_ctx)
+			return -ENOMEM;
+		*new_ctx = *old_ctx;
+		new_fields = zmalloc(new_ctx->allocated_fields
+				* sizeof(struct lttng_ctx_field));
+		if (!new_fields) {
+			free(new_ctx);
+			return -ENOMEM;
+		}
+		memcpy(new_fields, old_ctx->fields,
+				sizeof(*old_ctx->fields) * old_ctx->nr_fields);
+		new_ctx->fields = new_fields;
+	}
+	nf = lttng_append_context(&new_ctx);
+	if (!nf) {
+		free(new_fields);
+		free(new_ctx);
+		return -ENOMEM;
+	}
+	*nf = *f;
+	lttng_context_update(new_ctx);
+	rcu_assign_pointer(*ctx_p, new_ctx);
+	synchronize_trace();
+	if (old_ctx) {
+		free(old_ctx->fields);
+		free(old_ctx);
+	}
+	return 0;
 }
 
 /*
@@ -177,7 +248,8 @@ void lttng_context_update(struct lttng_ctx *ctx)
 		}
 		case atype_string:
 			break;
-
+		case atype_dynamic:
+			break;
 		case atype_enum:
 		default:
 			WARN_ON_ONCE(1);
@@ -199,6 +271,7 @@ void lttng_remove_context_field(struct lttng_ctx **ctx_p,
 	ctx = *ctx_p;
 	ctx->nr_fields--;
 	assert(&ctx->fields[ctx->nr_fields] == field);
+	assert(field->field_name == NULL);
 	memset(&ctx->fields[ctx->nr_fields], 0, sizeof(struct lttng_ctx_field));
 }
 
@@ -211,39 +284,106 @@ void lttng_destroy_context(struct lttng_ctx *ctx)
 	for (i = 0; i < ctx->nr_fields; i++) {
 		if (ctx->fields[i].destroy)
 			ctx->fields[i].destroy(&ctx->fields[i]);
+		free(ctx->fields[i].field_name);
 	}
 	free(ctx->fields);
 	free(ctx);
 }
 
-void lttng_context_init(void)
+/*
+ * Can be safely performed concurrently with tracing using the struct
+ * lttng_ctx. Using RCU update. Needs to match RCU read-side handling of
+ * contexts.
+ *
+ * This does not allow adding, removing, or changing typing of the
+ * contexts, since this needs to stay invariant for metadata. However,
+ * it allows updating the handlers associated with all contexts matching
+ * a provider (by name) while tracing is using it, in a way that ensures
+ * a single RCU read-side critical section see either all old, or all
+ * new handlers.
+ */
+int lttng_ust_context_set_provider_rcu(struct lttng_ctx **_ctx,
+		const char *name,
+		size_t (*get_size)(struct lttng_ctx_field *field, size_t offset),
+		void (*record)(struct lttng_ctx_field *field,
+			struct lttng_ust_lib_ring_buffer_ctx *ctx,
+			struct lttng_channel *chan),
+		void (*get_value)(struct lttng_ctx_field *field,
+			struct lttng_ctx_value *value))
+{
+	int i, ret;
+	struct lttng_ctx *ctx = *_ctx, *new_ctx;
+	struct lttng_ctx_field *new_fields;
+
+	if (!ctx || !lttng_find_context_provider(ctx, name))
+		return 0;
+	/*
+	 * We have at least one instance of context for the provider.
+	 */
+	new_ctx = zmalloc(sizeof(*new_ctx));
+	if (!new_ctx)
+		return -ENOMEM;
+	*new_ctx = *ctx;
+	new_fields = zmalloc(sizeof(*new_fields) * ctx->allocated_fields);
+	if (!new_fields) {
+		ret = -ENOMEM;
+		goto field_error;
+	}
+	memcpy(new_fields, ctx->fields,
+		sizeof(*new_fields) * ctx->allocated_fields);
+	for (i = 0; i < ctx->nr_fields; i++) {
+		if (strncmp(new_fields[i].event_field.name,
+				name, strlen(name)) != 0)
+			continue;
+		new_fields[i].get_size = get_size;
+		new_fields[i].record = record;
+		new_fields[i].get_value = get_value;
+	}
+	new_ctx->fields = new_fields;
+	rcu_assign_pointer(*_ctx, new_ctx);
+	synchronize_trace();
+	free(ctx->fields);
+	free(ctx);
+	return 0;
+
+field_error:
+	free(new_ctx);
+	return ret;
+}
+
+int lttng_session_context_init(struct lttng_ctx **ctx)
 {
 	int ret;
 
-	ret = lttng_add_pthread_id_to_ctx(&lttng_static_ctx);
+	ret = lttng_add_pthread_id_to_ctx(ctx);
 	if (ret) {
 		WARN("Cannot add context lttng_add_pthread_id_to_ctx");
+		goto error;
 	}
-	ret = lttng_add_vtid_to_ctx(&lttng_static_ctx);
+	ret = lttng_add_vtid_to_ctx(ctx);
 	if (ret) {
 		WARN("Cannot add context lttng_add_vtid_to_ctx");
+		goto error;
 	}
-	ret = lttng_add_vpid_to_ctx(&lttng_static_ctx);
+	ret = lttng_add_vpid_to_ctx(ctx);
 	if (ret) {
 		WARN("Cannot add context lttng_add_vpid_to_ctx");
+		goto error;
 	}
-	ret = lttng_add_procname_to_ctx(&lttng_static_ctx);
+	ret = lttng_add_procname_to_ctx(ctx);
 	if (ret) {
 		WARN("Cannot add context lttng_add_procname_to_ctx");
+		goto error;
 	}
-	ret = lttng_add_cpu_id_to_ctx(&lttng_static_ctx);
+	ret = lttng_add_cpu_id_to_ctx(ctx);
 	if (ret) {
 		WARN("Cannot add context lttng_add_cpu_id_to_ctx");
+		goto error;
 	}
-}
+	lttng_context_update(*ctx);
+	return 0;
 
-void lttng_context_exit(void)
-{
-	lttng_destroy_context(lttng_static_ctx);
-	lttng_static_ctx = NULL;
+error:
+	lttng_destroy_context(*ctx);
+	return ret;
 }

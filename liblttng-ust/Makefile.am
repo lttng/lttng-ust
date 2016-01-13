@@ -21,6 +21,7 @@ liblttng_ust_runtime_la_SOURCES = \
 	lttng-ust-comm.c \
 	lttng-ust-abi.c \
 	lttng-probes.c \
+	lttng-context-provider.c \
 	lttng-context-vtid.c \
 	lttng-context-vpid.c \
 	lttng-context-pthread-id.c \
@@ -62,6 +63,7 @@ liblttng_ust_support_la_SOURCES = \
 	lttng-tracer.h \
 	lttng-tracer-core.h \
 	ust-core.c \
+	lttng-ust-dynamic-type.c \
 	lttng-rb-clients.h \
 	lttng-ring-buffer-client.h \
 	lttng-ring-buffer-client-discard.c \

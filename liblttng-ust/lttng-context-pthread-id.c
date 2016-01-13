@@ -26,7 +26,7 @@
 #include <lttng/ringbuffer-config.h>
 
 static
-size_t pthread_id_get_size(size_t offset)
+size_t pthread_id_get_size(struct lttng_ctx_field *field, size_t offset)
 {
 	size_t size = 0;
 
@@ -49,12 +49,12 @@ void pthread_id_record(struct lttng_ctx_field *field,
 
 static
 void pthread_id_get_value(struct lttng_ctx_field *field,
-		union lttng_ctx_value *value)
+		struct lttng_ctx_value *value)
 {
 	unsigned long pthread_id;
 
 	pthread_id = (unsigned long) pthread_self();
-	value->s64 = pthread_id;
+	value->u.s64 = pthread_id;
 }
 
 int lttng_add_pthread_id_to_ctx(struct lttng_ctx **ctx)

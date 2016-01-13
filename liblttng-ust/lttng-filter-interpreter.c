@@ -20,6 +20,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include <urcu-pointer.h>
 #include "lttng-filter.h"
 
 /*
@@ -136,12 +137,16 @@ uint64_t lttng_filter_false(void *filter_data,
 			(unsigned int) *(filter_opcode_t *) pc); 	\
 		switch (*(filter_opcode_t *) pc)	{
 
-#define OP(name)	case name
+#define OP(name)	jump_target_##name: __attribute__((unused));	\
+			case name
 
 #define PO		break
 
 #define END_OP		}						\
 	}
+
+#define JUMP_TO(name)							\
+			goto jump_target_##name
 
 #else
 
@@ -165,6 +170,9 @@ LABEL_##name
 
 #define END_OP
 
+#define JUMP_TO(name)							\
+		goto LABEL_##name
+
 #endif
 
 /*
@@ -176,12 +184,14 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		const char *filter_stack_data)
 {
 	struct bytecode_runtime *bytecode = filter_data;
+	struct lttng_session *session = bytecode->p.session;
 	void *pc, *next_pc, *start_pc;
 	int ret = -EINVAL;
 	uint64_t retval = 0;
 	struct estack _stack;
 	struct estack *stack = &_stack;
 	register int64_t ax = 0, bx = 0;
+	register enum entry_type ax_t = REG_UNKNOWN, bx_t = REG_UNKNOWN;
 	register int top = FILTER_STACK_EMPTY;
 #ifndef INTERPRETER_USE_SWITCH
 	static void *dispatch[NR_FILTER_OPS] = {
@@ -292,7 +302,6 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 
 		OP(FILTER_OP_UNKNOWN):
 		OP(FILTER_OP_LOAD_FIELD_REF):
-		OP(FILTER_OP_GET_CONTEXT_REF):
 #ifdef INTERPRETER_USE_SWITCH
 		default:
 #endif /* INTERPRETER_USE_SWITCH */
@@ -324,23 +333,362 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			goto end;
 
 		OP(FILTER_OP_EQ):
+		{
+			/* Dynamic typing. */
+			switch (estack_ax_t) {
+			case REG_S64:
+				switch (estack_bx_t) {
+				case REG_S64:
+					JUMP_TO(FILTER_OP_EQ_S64);
+				case REG_DOUBLE:
+					JUMP_TO(FILTER_OP_EQ_DOUBLE_S64);
+				case REG_STRING:
+					ret = -EINVAL;
+					goto end;
+				default:
+					ERR("Unknown filter register type (%d)",
+						(int) estack_bx_t);
+					ret = -EINVAL;
+					goto end;
+				}
+				break;
+			case REG_DOUBLE:
+				switch (estack_bx_t) {
+				case REG_S64:
+					JUMP_TO(FILTER_OP_EQ_S64_DOUBLE);
+				case REG_DOUBLE:
+					JUMP_TO(FILTER_OP_EQ_DOUBLE);
+				case REG_STRING:
+					ret = -EINVAL;
+					goto end;
+				default:
+					ERR("Unknown filter register type (%d)",
+						(int) estack_bx_t);
+					ret = -EINVAL;
+					goto end;
+				}
+				break;
+			case REG_STRING:
+				switch (estack_bx_t) {
+				case REG_S64:	/* Fall-through */
+				case REG_DOUBLE:
+					ret = -EINVAL;
+					goto end;
+				case REG_STRING:
+					JUMP_TO(FILTER_OP_EQ_STRING);
+				default:
+					ERR("Unknown filter register type (%d)",
+						(int) estack_bx_t);
+					ret = -EINVAL;
+					goto end;
+				}
+				break;
+			default:
+				ERR("Unknown filter register type (%d)",
+					(int) estack_ax_t);
+				ret = -EINVAL;
+				goto end;
+			}
+		}
 		OP(FILTER_OP_NE):
+		{
+			/* Dynamic typing. */
+			switch (estack_ax_t) {
+			case REG_S64:
+				switch (estack_bx_t) {
+				case REG_S64:
+					JUMP_TO(FILTER_OP_NE_S64);
+				case REG_DOUBLE:
+					JUMP_TO(FILTER_OP_NE_DOUBLE_S64);
+				case REG_STRING:
+					ret = -EINVAL;
+					goto end;
+				default:
+					ERR("Unknown filter register type (%d)",
+						(int) estack_bx_t);
+					ret = -EINVAL;
+					goto end;
+				}
+				break;
+			case REG_DOUBLE:
+				switch (estack_bx_t) {
+				case REG_S64:
+					JUMP_TO(FILTER_OP_NE_S64_DOUBLE);
+				case REG_DOUBLE:
+					JUMP_TO(FILTER_OP_NE_DOUBLE);
+				case REG_STRING:
+					ret = -EINVAL;
+					goto end;
+				default:
+					ERR("Unknown filter register type (%d)",
+						(int) estack_bx_t);
+					ret = -EINVAL;
+					goto end;
+				}
+				break;
+			case REG_STRING:
+				switch (estack_bx_t) {
+				case REG_S64:	/* Fall-through */
+				case REG_DOUBLE:
+					ret = -EINVAL;
+					goto end;
+				case REG_STRING:
+					JUMP_TO(FILTER_OP_NE_STRING);
+				default:
+					ERR("Unknown filter register type (%d)",
+						(int) estack_bx_t);
+					ret = -EINVAL;
+					goto end;
+				}
+				break;
+			default:
+				ERR("Unknown filter register type (%d)",
+					(int) estack_ax_t);
+				ret = -EINVAL;
+				goto end;
+			}
+		}
 		OP(FILTER_OP_GT):
+		{
+			/* Dynamic typing. */
+			switch (estack_ax_t) {
+			case REG_S64:
+				switch (estack_bx_t) {
+				case REG_S64:
+					JUMP_TO(FILTER_OP_GT_S64);
+				case REG_DOUBLE:
+					JUMP_TO(FILTER_OP_GT_DOUBLE_S64);
+				case REG_STRING:
+					ret = -EINVAL;
+					goto end;
+				default:
+					ERR("Unknown filter register type (%d)",
+						(int) estack_bx_t);
+					ret = -EINVAL;
+					goto end;
+				}
+				break;
+			case REG_DOUBLE:
+				switch (estack_bx_t) {
+				case REG_S64:
+					JUMP_TO(FILTER_OP_GT_S64_DOUBLE);
+				case REG_DOUBLE:
+					JUMP_TO(FILTER_OP_GT_DOUBLE);
+				case REG_STRING:
+					ret = -EINVAL;
+					goto end;
+				default:
+					ERR("Unknown filter register type (%d)",
+						(int) estack_bx_t);
+					ret = -EINVAL;
+					goto end;
+				}
+				break;
+			case REG_STRING:
+				switch (estack_bx_t) {
+				case REG_S64:	/* Fall-through */
+				case REG_DOUBLE:
+					ret = -EINVAL;
+					goto end;
+				case REG_STRING:
+					JUMP_TO(FILTER_OP_GT_STRING);
+				default:
+					ERR("Unknown filter register type (%d)",
+						(int) estack_bx_t);
+					ret = -EINVAL;
+					goto end;
+				}
+				break;
+			default:
+				ERR("Unknown filter register type (%d)",
+					(int) estack_ax_t);
+				ret = -EINVAL;
+				goto end;
+			}
+		}
 		OP(FILTER_OP_LT):
+		{
+			/* Dynamic typing. */
+			switch (estack_ax_t) {
+			case REG_S64:
+				switch (estack_bx_t) {
+				case REG_S64:
+					JUMP_TO(FILTER_OP_LT_S64);
+				case REG_DOUBLE:
+					JUMP_TO(FILTER_OP_LT_DOUBLE_S64);
+				case REG_STRING:
+					ret = -EINVAL;
+					goto end;
+				default:
+					ERR("Unknown filter register type (%d)",
+						(int) estack_bx_t);
+					ret = -EINVAL;
+					goto end;
+				}
+				break;
+			case REG_DOUBLE:
+				switch (estack_bx_t) {
+				case REG_S64:
+					JUMP_TO(FILTER_OP_LT_S64_DOUBLE);
+				case REG_DOUBLE:
+					JUMP_TO(FILTER_OP_LT_DOUBLE);
+				case REG_STRING:
+					ret = -EINVAL;
+					goto end;
+				default:
+					ERR("Unknown filter register type (%d)",
+						(int) estack_bx_t);
+					ret = -EINVAL;
+					goto end;
+				}
+				break;
+			case REG_STRING:
+				switch (estack_bx_t) {
+				case REG_S64:	/* Fall-through */
+				case REG_DOUBLE:
+					ret = -EINVAL;
+					goto end;
+				case REG_STRING:
+					JUMP_TO(FILTER_OP_LT_STRING);
+				default:
+					ERR("Unknown filter register type (%d)",
+						(int) estack_bx_t);
+					ret = -EINVAL;
+					goto end;
+				}
+				break;
+			default:
+				ERR("Unknown filter register type (%d)",
+					(int) estack_ax_t);
+				ret = -EINVAL;
+				goto end;
+			}
+		}
 		OP(FILTER_OP_GE):
+		{
+			/* Dynamic typing. */
+			switch (estack_ax_t) {
+			case REG_S64:
+				switch (estack_bx_t) {
+				case REG_S64:
+					JUMP_TO(FILTER_OP_GE_S64);
+				case REG_DOUBLE:
+					JUMP_TO(FILTER_OP_GE_DOUBLE_S64);
+				case REG_STRING:
+					ret = -EINVAL;
+					goto end;
+				default:
+					ERR("Unknown filter register type (%d)",
+						(int) estack_bx_t);
+					ret = -EINVAL;
+					goto end;
+				}
+				break;
+			case REG_DOUBLE:
+				switch (estack_bx_t) {
+				case REG_S64:
+					JUMP_TO(FILTER_OP_GE_S64_DOUBLE);
+				case REG_DOUBLE:
+					JUMP_TO(FILTER_OP_GE_DOUBLE);
+				case REG_STRING:
+					ret = -EINVAL;
+					goto end;
+				default:
+					ERR("Unknown filter register type (%d)",
+						(int) estack_bx_t);
+					ret = -EINVAL;
+					goto end;
+				}
+				break;
+			case REG_STRING:
+				switch (estack_bx_t) {
+				case REG_S64:	/* Fall-through */
+				case REG_DOUBLE:
+					ret = -EINVAL;
+					goto end;
+				case REG_STRING:
+					JUMP_TO(FILTER_OP_GE_STRING);
+				default:
+					ERR("Unknown filter register type (%d)",
+						(int) estack_bx_t);
+					ret = -EINVAL;
+					goto end;
+				}
+				break;
+			default:
+				ERR("Unknown filter register type (%d)",
+					(int) estack_ax_t);
+				ret = -EINVAL;
+				goto end;
+			}
+		}
 		OP(FILTER_OP_LE):
-			ERR("unsupported non-specialized bytecode op %u\n",
-				(unsigned int) *(filter_opcode_t *) pc);
-			ret = -EINVAL;
-			goto end;
+		{
+			/* Dynamic typing. */
+			switch (estack_ax_t) {
+			case REG_S64:
+				switch (estack_bx_t) {
+				case REG_S64:
+					JUMP_TO(FILTER_OP_LE_S64);
+				case REG_DOUBLE:
+					JUMP_TO(FILTER_OP_LE_DOUBLE_S64);
+				case REG_STRING:
+					ret = -EINVAL;
+					goto end;
+				default:
+					ERR("Unknown filter register type (%d)",
+						(int) estack_bx_t);
+					ret = -EINVAL;
+					goto end;
+				}
+				break;
+			case REG_DOUBLE:
+				switch (estack_bx_t) {
+				case REG_S64:
+					JUMP_TO(FILTER_OP_LE_S64_DOUBLE);
+				case REG_DOUBLE:
+					JUMP_TO(FILTER_OP_LE_DOUBLE);
+				case REG_STRING:
+					ret = -EINVAL;
+					goto end;
+				default:
+					ERR("Unknown filter register type (%d)",
+						(int) estack_bx_t);
+					ret = -EINVAL;
+					goto end;
+				}
+				break;
+			case REG_STRING:
+				switch (estack_bx_t) {
+				case REG_S64:	/* Fall-through */
+				case REG_DOUBLE:
+					ret = -EINVAL;
+					goto end;
+				case REG_STRING:
+					JUMP_TO(FILTER_OP_LE_STRING);
+				default:
+					ERR("Unknown filter register type (%d)",
+						(int) estack_bx_t);
+					ret = -EINVAL;
+					goto end;
+				}
+				break;
+			default:
+				ERR("Unknown filter register type (%d)",
+					(int) estack_ax_t);
+				ret = -EINVAL;
+				goto end;
+			}
+		}
 
 		OP(FILTER_OP_EQ_STRING):
 		{
 			int res;
 
 			res = (stack_strcmp(stack, top, "==") == 0);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -349,8 +697,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (stack_strcmp(stack, top, "!=") != 0);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -359,8 +708,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (stack_strcmp(stack, top, ">") > 0);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -369,8 +719,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (stack_strcmp(stack, top, "<") < 0);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -379,8 +730,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (stack_strcmp(stack, top, ">=") >= 0);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -389,8 +741,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (stack_strcmp(stack, top, "<=") <= 0);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -400,8 +753,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (estack_bx_v == estack_ax_v);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -410,8 +764,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (estack_bx_v != estack_ax_v);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -420,8 +775,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (estack_bx_v > estack_ax_v);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -430,8 +786,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (estack_bx_v < estack_ax_v);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -440,8 +797,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (estack_bx_v >= estack_ax_v);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -450,8 +808,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (estack_bx_v <= estack_ax_v);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -461,8 +820,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (estack_bx(stack, top)->u.d == estack_ax(stack, top)->u.d);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -471,8 +831,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (estack_bx(stack, top)->u.d != estack_ax(stack, top)->u.d);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -481,8 +842,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (estack_bx(stack, top)->u.d > estack_ax(stack, top)->u.d);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -491,8 +853,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (estack_bx(stack, top)->u.d < estack_ax(stack, top)->u.d);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -501,8 +864,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (estack_bx(stack, top)->u.d >= estack_ax(stack, top)->u.d);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -511,8 +875,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (estack_bx(stack, top)->u.d <= estack_ax(stack, top)->u.d);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -523,8 +888,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (estack_bx(stack, top)->u.d == estack_ax_v);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -533,8 +899,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (estack_bx(stack, top)->u.d != estack_ax_v);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -543,8 +910,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (estack_bx(stack, top)->u.d > estack_ax_v);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -553,8 +921,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (estack_bx(stack, top)->u.d < estack_ax_v);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -563,8 +932,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (estack_bx(stack, top)->u.d >= estack_ax_v);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -573,8 +943,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (estack_bx(stack, top)->u.d <= estack_ax_v);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -584,8 +955,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (estack_bx_v == estack_ax(stack, top)->u.d);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -594,8 +966,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (estack_bx_v != estack_ax(stack, top)->u.d);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -604,8 +977,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (estack_bx_v > estack_ax(stack, top)->u.d);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -614,8 +988,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (estack_bx_v < estack_ax(stack, top)->u.d);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -624,8 +999,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (estack_bx_v >= estack_ax(stack, top)->u.d);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
@@ -634,21 +1010,70 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			int res;
 
 			res = (estack_bx_v <= estack_ax(stack, top)->u.d);
-			estack_pop(stack, top, ax, bx);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
 
 		/* unary */
 		OP(FILTER_OP_UNARY_PLUS):
+		{
+			/* Dynamic typing. */
+			switch (estack_ax_t) {
+			case REG_S64:	/* Fall-through. */
+				JUMP_TO(FILTER_OP_UNARY_PLUS_S64);
+			case REG_DOUBLE:
+				JUMP_TO(FILTER_OP_UNARY_PLUS_DOUBLE);
+			case REG_STRING:
+				ret = -EINVAL;
+				goto end;
+			default:
+				ERR("Unknown filter register type (%d)",
+					(int) estack_ax_t);
+				ret = -EINVAL;
+				goto end;
+			}
+		}
 		OP(FILTER_OP_UNARY_MINUS):
+		{
+			/* Dynamic typing. */
+			switch (estack_ax_t) {
+			case REG_S64:
+				JUMP_TO(FILTER_OP_UNARY_MINUS_S64);
+			case REG_DOUBLE:
+				JUMP_TO(FILTER_OP_UNARY_MINUS_DOUBLE);
+			case REG_STRING:
+				ret = -EINVAL;
+				goto end;
+			default:
+				ERR("Unknown filter register type (%d)",
+					(int) estack_ax_t);
+				ret = -EINVAL;
+				goto end;
+			}
+		}
 		OP(FILTER_OP_UNARY_NOT):
-			ERR("unsupported non-specialized bytecode op %u\n",
-				(unsigned int) *(filter_opcode_t *) pc);
-			ret = -EINVAL;
-			goto end;
-
+		{
+			/* Dynamic typing. */
+			switch (estack_ax_t) {
+			case REG_S64:
+				JUMP_TO(FILTER_OP_UNARY_NOT_S64);
+			case REG_DOUBLE:
+				JUMP_TO(FILTER_OP_UNARY_NOT_DOUBLE);
+			case REG_STRING:
+				ret = -EINVAL;
+				goto end;
+			default:
+				ERR("Unknown filter register type (%d)",
+					(int) estack_ax_t);
+				ret = -EINVAL;
+				goto end;
+			}
+			next_pc += sizeof(struct unary_op);
+			PO;
+		}
 
 		OP(FILTER_OP_UNARY_PLUS_S64):
 		OP(FILTER_OP_UNARY_PLUS_DOUBLE):
@@ -676,7 +1101,8 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		}
 		OP(FILTER_OP_UNARY_NOT_DOUBLE):
 		{
-			estack_ax(stack, top)->u.d = !estack_ax(stack, top)->u.d;
+			estack_ax_v = !estack_ax(stack, top)->u.d;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct unary_op);
 			PO;
 		}
@@ -686,6 +1112,10 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			struct logical_op *insn = (struct logical_op *) pc;
 
+			if (estack_ax_t != REG_S64) {
+				ret = -EINVAL;
+				goto end;
+			}
 			/* If AX is 0, skip and evaluate to 0 */
 			if (unlikely(estack_ax_v == 0)) {
 				dbg_printf("Jumping to bytecode offset %u\n",
@@ -693,7 +1123,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 				next_pc = start_pc + insn->skip_offset;
 			} else {
 				/* Pop 1 when jump not taken */
-				estack_pop(stack, top, ax, bx);
+				estack_pop(stack, top, ax, bx, ax_t, bx_t);
 				next_pc += sizeof(struct logical_op);
 			}
 			PO;
@@ -702,8 +1132,11 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			struct logical_op *insn = (struct logical_op *) pc;
 
+			if (estack_ax_t != REG_S64) {
+				ret = -EINVAL;
+				goto end;
+			}
 			/* If AX is nonzero, skip and evaluate to 1 */
-
 			if (unlikely(estack_ax_v != 0)) {
 				estack_ax_v = 1;
 				dbg_printf("Jumping to bytecode offset %u\n",
@@ -711,7 +1144,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 				next_pc = start_pc + insn->skip_offset;
 			} else {
 				/* Pop 1 when jump not taken */
-				estack_pop(stack, top, ax, bx);
+				estack_pop(stack, top, ax, bx, ax_t, bx_t);
 				next_pc += sizeof(struct logical_op);
 			}
 			PO;
@@ -726,7 +1159,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 
 			dbg_printf("load field ref offset %u type string\n",
 				ref->offset);
-			estack_push(stack, top, ax, bx);
+			estack_push(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax(stack, top)->u.s.str =
 				*(const char * const *) &filter_stack_data[ref->offset];
 			if (unlikely(!estack_ax(stack, top)->u.s.str)) {
@@ -736,6 +1169,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			}
 			estack_ax(stack, top)->u.s.seq_len = UINT_MAX;
 			estack_ax(stack, top)->u.s.literal = 0;
+			estack_ax_t = REG_STRING;
 			dbg_printf("ref load string %s\n", estack_ax(stack, top)->u.s.str);
 			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
 			PO;
@@ -748,12 +1182,13 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 
 			dbg_printf("load field ref offset %u type sequence\n",
 				ref->offset);
-			estack_push(stack, top, ax, bx);
+			estack_push(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax(stack, top)->u.s.seq_len =
 				*(unsigned long *) &filter_stack_data[ref->offset];
 			estack_ax(stack, top)->u.s.str =
 				*(const char **) (&filter_stack_data[ref->offset
 								+ sizeof(unsigned long)]);
+			estack_ax_t = REG_STRING;
 			if (unlikely(!estack_ax(stack, top)->u.s.str)) {
 				dbg_printf("Filter warning: loading a NULL sequence.\n");
 				ret = -EINVAL;
@@ -771,9 +1206,10 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 
 			dbg_printf("load field ref offset %u type s64\n",
 				ref->offset);
-			estack_push(stack, top, ax, bx);
+			estack_push(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v =
 				((struct literal_numeric *) &filter_stack_data[ref->offset])->v;
+			estack_ax_t = REG_S64;
 			dbg_printf("ref load s64 %" PRIi64 "\n", estack_ax_v);
 			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
 			PO;
@@ -786,9 +1222,10 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 
 			dbg_printf("load field ref offset %u type double\n",
 				ref->offset);
-			estack_push(stack, top, ax, bx);
+			estack_push(stack, top, ax, bx, ax_t, bx_t);
 			memcpy(&estack_ax(stack, top)->u.d, &filter_stack_data[ref->offset],
 				sizeof(struct literal_double));
+			estack_ax_t = REG_DOUBLE;
 			dbg_printf("ref load double %g\n", estack_ax(stack, top)->u.d);
 			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
 			PO;
@@ -800,10 +1237,11 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			struct load_op *insn = (struct load_op *) pc;
 
 			dbg_printf("load string %s\n", insn->data);
-			estack_push(stack, top, ax, bx);
+			estack_push(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax(stack, top)->u.s.str = insn->data;
 			estack_ax(stack, top)->u.s.seq_len = UINT_MAX;
 			estack_ax(stack, top)->u.s.literal = 1;
+			estack_ax_t = REG_STRING;
 			next_pc += sizeof(struct load_op) + strlen(insn->data) + 1;
 			PO;
 		}
@@ -812,8 +1250,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			struct load_op *insn = (struct load_op *) pc;
 
-			estack_push(stack, top, ax, bx);
+			estack_push(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = ((struct literal_numeric *) insn->data)->v;
+			estack_ax_t = REG_S64;
 			dbg_printf("load s64 %" PRIi64 "\n", estack_ax_v);
 			next_pc += sizeof(struct load_op)
 					+ sizeof(struct literal_numeric);
@@ -824,10 +1263,11 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			struct load_op *insn = (struct load_op *) pc;
 
-			estack_push(stack, top, ax, bx);
+			estack_push(stack, top, ax, bx, ax_t, bx_t);
 			memcpy(&estack_ax(stack, top)->u.d, insn->data,
 				sizeof(struct literal_double));
-			dbg_printf("load s64 %g\n", estack_ax(stack, top)->u.d);
+			estack_ax_t = REG_DOUBLE;
+			dbg_printf("load double %g\n", estack_ax(stack, top)->u.d);
 			next_pc += sizeof(struct load_op)
 					+ sizeof(struct literal_double);
 			PO;
@@ -835,14 +1275,28 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 
 		/* cast */
 		OP(FILTER_OP_CAST_TO_S64):
-			ERR("unsupported non-specialized bytecode op %u\n",
-				(unsigned int) *(filter_opcode_t *) pc);
-			ret = -EINVAL;
-			goto end;
+		{
+			/* Dynamic typing. */
+			switch (estack_ax_t) {
+			case REG_S64:
+				JUMP_TO(FILTER_OP_CAST_NOP);
+			case REG_DOUBLE:
+				JUMP_TO(FILTER_OP_CAST_DOUBLE_TO_S64);
+			case REG_STRING:
+				ret = -EINVAL;
+				goto end;
+			default:
+				ERR("Unknown filter register type (%d)",
+					(int) estack_ax_t);
+				ret = -EINVAL;
+				goto end;
+			}
+		}
 
 		OP(FILTER_OP_CAST_DOUBLE_TO_S64):
 		{
 			estack_ax_v = (int64_t) estack_ax(stack, top)->u.d;
+			estack_ax_t = REG_S64;
 			next_pc += sizeof(struct cast_op);
 			PO;
 		}
@@ -854,19 +1308,70 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		}
 
 		/* get context ref */
+		OP(FILTER_OP_GET_CONTEXT_REF):
+		{
+			struct load_op *insn = (struct load_op *) pc;
+			struct field_ref *ref = (struct field_ref *) insn->data;
+			struct lttng_ctx *ctx;
+			struct lttng_ctx_field *ctx_field;
+			struct lttng_ctx_value v;
+
+			dbg_printf("get context ref offset %u type dynamic\n",
+				ref->offset);
+			ctx = rcu_dereference(session->ctx);
+			ctx_field = &ctx->fields[ref->offset];
+			ctx_field->get_value(ctx_field, &v);
+			estack_push(stack, top, ax, bx, ax_t, bx_t);
+			switch (v.sel) {
+			case LTTNG_UST_DYNAMIC_TYPE_NONE:
+				ret = -EINVAL;
+				goto end;
+			case LTTNG_UST_DYNAMIC_TYPE_S64:
+				estack_ax_v = v.u.s64;
+				estack_ax_t = REG_S64;
+				dbg_printf("ref get context dynamic s64 %" PRIi64 "\n", estack_ax_v);
+				break;
+			case LTTNG_UST_DYNAMIC_TYPE_DOUBLE:
+				estack_ax(stack, top)->u.d = v.u.d;
+				estack_ax_t = REG_DOUBLE;
+				dbg_printf("ref get context dynamic double %g\n", estack_ax(stack, top)->u.d);
+				break;
+			case LTTNG_UST_DYNAMIC_TYPE_STRING:
+				estack_ax(stack, top)->u.s.str = v.u.str;
+				if (unlikely(!estack_ax(stack, top)->u.s.str)) {
+					dbg_printf("Filter warning: loading a NULL string.\n");
+					ret = -EINVAL;
+					goto end;
+				}
+				estack_ax(stack, top)->u.s.seq_len = UINT_MAX;
+				estack_ax(stack, top)->u.s.literal = 0;
+				dbg_printf("ref get context dynamic string %s\n", estack_ax(stack, top)->u.s.str);
+				estack_ax_t = REG_STRING;
+				break;
+			default:
+				dbg_printf("Filter warning: unknown dynamic type (%d).\n", (int) v.sel);
+				ret = -EINVAL;
+				goto end;
+			}
+			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
+			PO;
+		}
+
 		OP(FILTER_OP_GET_CONTEXT_REF_STRING):
 		{
 			struct load_op *insn = (struct load_op *) pc;
 			struct field_ref *ref = (struct field_ref *) insn->data;
+			struct lttng_ctx *ctx;
 			struct lttng_ctx_field *ctx_field;
-			union lttng_ctx_value v;
+			struct lttng_ctx_value v;
 
 			dbg_printf("get context ref offset %u type string\n",
 				ref->offset);
-			ctx_field = &lttng_static_ctx->fields[ref->offset];
+			ctx = rcu_dereference(session->ctx);
+			ctx_field = &ctx->fields[ref->offset];
 			ctx_field->get_value(ctx_field, &v);
-			estack_push(stack, top, ax, bx);
-			estack_ax(stack, top)->u.s.str = v.str;
+			estack_push(stack, top, ax, bx, ax_t, bx_t);
+			estack_ax(stack, top)->u.s.str = v.u.str;
 			if (unlikely(!estack_ax(stack, top)->u.s.str)) {
 				dbg_printf("Filter warning: loading a NULL string.\n");
 				ret = -EINVAL;
@@ -874,6 +1379,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			}
 			estack_ax(stack, top)->u.s.seq_len = UINT_MAX;
 			estack_ax(stack, top)->u.s.literal = 0;
+			estack_ax_t = REG_STRING;
 			dbg_printf("ref get context string %s\n", estack_ax(stack, top)->u.s.str);
 			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
 			PO;
@@ -883,15 +1389,18 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			struct load_op *insn = (struct load_op *) pc;
 			struct field_ref *ref = (struct field_ref *) insn->data;
+			struct lttng_ctx *ctx;
 			struct lttng_ctx_field *ctx_field;
-			union lttng_ctx_value v;
+			struct lttng_ctx_value v;
 
 			dbg_printf("get context ref offset %u type s64\n",
 				ref->offset);
-			ctx_field = &lttng_static_ctx->fields[ref->offset];
+			ctx = rcu_dereference(session->ctx);
+			ctx_field = &ctx->fields[ref->offset];
 			ctx_field->get_value(ctx_field, &v);
-			estack_push(stack, top, ax, bx);
-			estack_ax_v = v.s64;
+			estack_push(stack, top, ax, bx, ax_t, bx_t);
+			estack_ax_v = v.u.s64;
+			estack_ax_t = REG_S64;
 			dbg_printf("ref get context s64 %" PRIi64 "\n", estack_ax_v);
 			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
 			PO;
@@ -901,15 +1410,18 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			struct load_op *insn = (struct load_op *) pc;
 			struct field_ref *ref = (struct field_ref *) insn->data;
+			struct lttng_ctx *ctx;
 			struct lttng_ctx_field *ctx_field;
-			union lttng_ctx_value v;
+			struct lttng_ctx_value v;
 
 			dbg_printf("get context ref offset %u type double\n",
 				ref->offset);
-			ctx_field = &lttng_static_ctx->fields[ref->offset];
+			ctx = rcu_dereference(session->ctx);
+			ctx_field = &ctx->fields[ref->offset];
 			ctx_field->get_value(ctx_field, &v);
-			estack_push(stack, top, ax, bx);
-			memcpy(&estack_ax(stack, top)->u.d, &v.d, sizeof(struct literal_double));
+			estack_push(stack, top, ax, bx, ax_t, bx_t);
+			memcpy(&estack_ax(stack, top)->u.d, &v.u.d, sizeof(struct literal_double));
+			estack_ax_t = REG_DOUBLE;
 			dbg_printf("ref get context double %g\n", estack_ax(stack, top)->u.d);
 			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
 			PO;

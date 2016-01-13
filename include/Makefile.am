@@ -36,6 +36,8 @@ noinst_HEADERS = \
 	lttng/ust-tid.h \
 	lttng/bitfield.h \
 	lttng/ust-dlfcn.h \
+	lttng/ust-dynamic-type.h \
+	lttng/ust-context-provider.h \
 	helper.h \
 	share.h
 

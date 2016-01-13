@@ -78,7 +78,7 @@ size_t ctx_get_size(size_t offset, struct lttng_ctx *ctx)
 		return 0;
 	offset += lib_ring_buffer_align(offset, ctx->largest_align);
 	for (i = 0; i < ctx->nr_fields; i++)
-		offset += ctx->fields[i].get_size(offset);
+		offset += ctx->fields[i].get_size(&ctx->fields[i], offset);
 	return offset - orig_offset;
 }
 
@@ -185,7 +185,7 @@ void lttng_write_event_header(const struct lttng_ust_lib_ring_buffer_config *con
 			    uint32_t event_id)
 {
 	struct lttng_channel *lttng_chan = channel_get_private(ctx->chan);
-	struct lttng_event *event = ctx->priv;
+	struct lttng_stack_ctx *lttng_ctx = ctx->priv2;
 
 	if (caa_unlikely(ctx->rflags))
 		goto slow_path;
@@ -220,8 +220,8 @@ void lttng_write_event_header(const struct lttng_ust_lib_ring_buffer_config *con
 		WARN_ON_ONCE(1);
 	}
 
-	ctx_record(ctx, lttng_chan, lttng_chan->ctx);
-	ctx_record(ctx, lttng_chan, event->ctx);
+	ctx_record(ctx, lttng_chan, lttng_ctx->chan_ctx);
+	ctx_record(ctx, lttng_chan, lttng_ctx->event_ctx);
 	lib_ring_buffer_align_ctx(ctx, ctx->largest_align);
 
 	return;
@@ -236,7 +236,7 @@ void lttng_write_event_header_slow(const struct lttng_ust_lib_ring_buffer_config
 				 uint32_t event_id)
 {
 	struct lttng_channel *lttng_chan = channel_get_private(ctx->chan);
-	struct lttng_event *event = ctx->priv;
+	struct lttng_stack_ctx *lttng_ctx = ctx->priv2;
 
 	switch (lttng_chan->header_type) {
 	case 1:	/* compact */
@@ -293,8 +293,8 @@ void lttng_write_event_header_slow(const struct lttng_ust_lib_ring_buffer_config
 	default:
 		WARN_ON_ONCE(1);
 	}
-	ctx_record(ctx, lttng_chan, lttng_chan->ctx);
-	ctx_record(ctx, lttng_chan, event->ctx);
+	ctx_record(ctx, lttng_chan, lttng_ctx->chan_ctx);
+	ctx_record(ctx, lttng_chan, lttng_ctx->event_ctx);
 	lib_ring_buffer_align_ctx(ctx, ctx->largest_align);
 }
 

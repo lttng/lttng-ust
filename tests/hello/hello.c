@@ -71,6 +71,8 @@ int init_int_handler(void)
 	return 0;
 }
 
+void test_inc_count(void);
+
 int main(int argc, char **argv)
 {
 	int i, netint;

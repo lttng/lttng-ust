@@ -74,7 +74,9 @@ int merge_points_compare(const struct vstack *stacka,
 	len = stacka->top + 1;
 	assert(len >= 0);
 	for (i = 0; i < len; i++) {
-		if (stacka->e[i].type != stackb->e[i].type)
+		if (stacka->e[i].type != REG_UNKNOWN
+				&& stackb->e[i].type != REG_UNKNOWN
+				&& stacka->e[i].type != stackb->e[i].type)
 			return 1;
 	}
 	return 0;
@@ -118,22 +120,28 @@ int merge_point_add_check(struct cds_lfht *ht, unsigned long target_pc,
 
 /*
  * Binary comparators use top of stack and top of stack -1.
+ * Return 0 if typing is known to match, 1 if typing is dynamic
+ * (unknown), negative error value on error.
  */
 static
 int bin_op_compare_check(struct vstack *stack, const char *str)
 {
 	if (unlikely(!vstack_ax(stack) || !vstack_bx(stack)))
-		goto error_unknown;
+		goto error_empty;
 
 	switch (vstack_ax(stack)->type) {
 	default:
-		goto error_unknown;
+		goto error_type;
 
+	case REG_UNKNOWN:
+		goto unknown;
 	case REG_STRING:
 		switch (vstack_bx(stack)->type) {
 		default:
-			goto error_unknown;
+			goto error_type;
 
+		case REG_UNKNOWN:
+			goto unknown;
 		case REG_STRING:
 			break;
 		case REG_S64:
@@ -145,11 +153,12 @@ int bin_op_compare_check(struct vstack *stack, const char *str)
 	case REG_DOUBLE:
 		switch (vstack_bx(stack)->type) {
 		default:
-			goto error_unknown;
+			goto error_type;
 
+		case REG_UNKNOWN:
+			goto unknown;
 		case REG_STRING:
 			goto error_mismatch;
-
 		case REG_S64:
 		case REG_DOUBLE:
 			break;
@@ -158,11 +167,19 @@ int bin_op_compare_check(struct vstack *stack, const char *str)
 	}
 	return 0;
 
-error_unknown:
-	return -EINVAL;
+unknown:
+	return 1;
 
 error_mismatch:
 	ERR("type mismatch for '%s' binary operator\n", str);
+	return -EINVAL;
+
+error_empty:
+	ERR("empty stack for '%s' binary operator\n", str);
+	return -EINVAL;
+
+error_type:
+	ERR("unknown type for '%s' binary operator\n", str);
 	return -EINVAL;
 }
 
@@ -295,11 +312,6 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 	}
 	/* get context ref */
 	case FILTER_OP_GET_CONTEXT_REF:
-	{
-		ERR("Unknown field ref type\n");
-		ret = -EINVAL;
-		break;
-	}
 	case FILTER_OP_LOAD_FIELD_REF_STRING:
 	case FILTER_OP_LOAD_FIELD_REF_SEQUENCE:
 	case FILTER_OP_LOAD_FIELD_REF_S64:
@@ -391,7 +403,7 @@ unsigned long delete_all_nodes(struct cds_lfht *ht)
 
 /*
  * Return value:
- * 0: success
+ * >=0: success
  * <0: error
  */
 static
@@ -438,42 +450,42 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 	case FILTER_OP_EQ:
 	{
 		ret = bin_op_compare_check(stack, "==");
-		if (ret)
+		if (ret < 0)
 			goto end;
 		break;
 	}
 	case FILTER_OP_NE:
 	{
 		ret = bin_op_compare_check(stack, "!=");
-		if (ret)
+		if (ret < 0)
 			goto end;
 		break;
 	}
 	case FILTER_OP_GT:
 	{
 		ret = bin_op_compare_check(stack, ">");
-		if (ret)
+		if (ret < 0)
 			goto end;
 		break;
 	}
 	case FILTER_OP_LT:
 	{
 		ret = bin_op_compare_check(stack, "<");
-		if (ret)
+		if (ret < 0)
 			goto end;
 		break;
 	}
 	case FILTER_OP_GE:
 	{
 		ret = bin_op_compare_check(stack, ">=");
-		if (ret)
+		if (ret < 0)
 			goto end;
 		break;
 	}
 	case FILTER_OP_LE:
 	{
 		ret = bin_op_compare_check(stack, "<=");
-		if (ret)
+		if (ret < 0)
 			goto end;
 		break;
 	}
@@ -604,6 +616,8 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 			break;
 		case REG_DOUBLE:
 			break;
+		case REG_UNKNOWN:
+			break;
 		}
 		break;
 	}
@@ -653,8 +667,9 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 			ret = -EINVAL;
 			goto end;
 		}
-		if (vstack_ax(stack)->type != REG_S64) {
-			ERR("Logical comparator expects S64 register\n");
+		if (vstack_ax(stack)->type != REG_S64
+				&& vstack_ax(stack)->type != REG_UNKNOWN) {
+			ERR("Logical comparator expects S64 or dynamic register\n");
 			ret = -EINVAL;
 			goto end;
 		}
@@ -745,6 +760,8 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 			break;
 		case REG_DOUBLE:
 			break;
+		case REG_UNKNOWN:
+			break;
 		}
 		if (insn->op == FILTER_OP_CAST_DOUBLE_TO_S64) {
 			if (vstack_ax(stack)->type != REG_DOUBLE) {
@@ -763,9 +780,12 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 	/* get context ref */
 	case FILTER_OP_GET_CONTEXT_REF:
 	{
-		ERR("Unknown get context ref type\n");
-		ret = -EINVAL;
-		goto end;
+		struct load_op *insn = (struct load_op *) pc;
+		struct field_ref *ref = (struct field_ref *) insn->data;
+
+		dbg_printf("Validate get context ref offset %u type dynamic\n",
+			ref->offset);
+		break;
 	}
 	case FILTER_OP_GET_CONTEXT_REF_STRING:
 	{
@@ -821,7 +841,7 @@ int validate_instruction_all_contexts(struct bytecode_runtime *bytecode,
 
 	/* Validate the context resulting from the previous instruction */
 	ret = validate_instruction_context(bytecode, stack, start_pc, pc);
-	if (ret)
+	if (ret < 0)
 		return ret;
 
 	/* Validate merge points */
@@ -959,10 +979,23 @@ int exec_insn(struct bytecode_runtime *bytecode,
 	/* unary */
 	case FILTER_OP_UNARY_PLUS:
 	case FILTER_OP_UNARY_MINUS:
-	case FILTER_OP_UNARY_NOT:
+	{
+		/* Pop 1, push 1 */
+		if (!vstack_ax(stack)) {
+			ERR("Empty stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		vstack_ax(stack)->type = REG_UNKNOWN;
+		next_pc += sizeof(struct unary_op);
+		break;
+	}
+
 	case FILTER_OP_UNARY_PLUS_S64:
 	case FILTER_OP_UNARY_MINUS_S64:
+	case FILTER_OP_UNARY_NOT:
 	case FILTER_OP_UNARY_NOT_S64:
+	case FILTER_OP_UNARY_NOT_DOUBLE:
 	{
 		/* Pop 1, push 1 */
 		if (!vstack_ax(stack)) {
@@ -977,7 +1010,6 @@ int exec_insn(struct bytecode_runtime *bytecode,
 
 	case FILTER_OP_UNARY_PLUS_DOUBLE:
 	case FILTER_OP_UNARY_MINUS_DOUBLE:
-	case FILTER_OP_UNARY_NOT_DOUBLE:
 	{
 		/* Pop 1, push 1 */
 		if (!vstack_ax(stack)) {
@@ -1024,9 +1056,13 @@ int exec_insn(struct bytecode_runtime *bytecode,
 	/* get context ref */
 	case FILTER_OP_GET_CONTEXT_REF:
 	{
-		ERR("Unknown get context ref type\n");
-		ret = -EINVAL;
-		goto end;
+		if (vstack_push(stack)) {
+			ret = -EINVAL;
+			goto end;
+		}
+		vstack_ax(stack)->type = REG_UNKNOWN;
+		next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
+		break;
 	}
 	case FILTER_OP_LOAD_FIELD_REF_STRING:
 	case FILTER_OP_LOAD_FIELD_REF_SEQUENCE:
@@ -1171,7 +1207,7 @@ int lttng_filter_validate_bytecode(struct bytecode_runtime *bytecode)
 		/*
 		 * For each instruction, validate the current context
 		 * (traversal of entire execution flow), and validate
-		 * all 	merge points targeting this instruction.
+		 * all merge points targeting this instruction.
 		 */
 		ret = validate_instruction_all_contexts(bytecode, merge_points,
 					&stack, start_pc, pc);

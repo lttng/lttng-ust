@@ -62,7 +62,7 @@ void lttng_context_vpid_reset(void)
 #endif
 
 static
-size_t vpid_get_size(size_t offset)
+size_t vpid_get_size(struct lttng_ctx_field *field, size_t offset)
 {
 	size_t size = 0;
 
@@ -85,12 +85,12 @@ void vpid_record(struct lttng_ctx_field *field,
 
 static
 void vpid_get_value(struct lttng_ctx_field *field,
-		union lttng_ctx_value *value)
+		struct lttng_ctx_value *value)
 {
 	pid_t pid;
 
 	pid = wrapper_getpid();
-	value->s64 = pid;
+	value->u.s64 = pid;
 }
 
 int lttng_add_vpid_to_ctx(struct lttng_ctx **ctx)

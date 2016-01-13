@@ -57,6 +57,8 @@ extern "C" {
 struct lttng_channel;
 struct lttng_session;
 struct lttng_ust_lib_ring_buffer_ctx;
+struct lttng_ust_context_app;
+struct lttng_event_field;
 
 /*
  * Data structures used by tracepoint event declarations, and by the
@@ -86,6 +88,8 @@ enum lttng_abstract_types {
 	atype_sequence,
 	atype_string,
 	atype_float,
+	atype_dynamic,
+	atype_struct,
 	NR_ABSTRACT_TYPES,
 };
 
@@ -206,6 +210,10 @@ struct lttng_type {
 			struct lttng_basic_type length_type;
 			struct lttng_basic_type elem_type;
 		} sequence;
+		struct {
+			uint32_t nr_fields;
+			struct lttng_event_field *fields;	/* Array of fields. */
+		} _struct;
 		char padding[LTTNG_UST_TYPE_PADDING];
 	} u;
 };
@@ -234,10 +242,29 @@ struct lttng_event_field {
 	char padding[LTTNG_UST_EVENT_FIELD_PADDING];
 };
 
-union lttng_ctx_value {
-	int64_t s64;
-	const char *str;
-	double d;
+enum lttng_ust_dynamic_type {
+	LTTNG_UST_DYNAMIC_TYPE_NONE,
+	LTTNG_UST_DYNAMIC_TYPE_S8,
+	LTTNG_UST_DYNAMIC_TYPE_S16,
+	LTTNG_UST_DYNAMIC_TYPE_S32,
+	LTTNG_UST_DYNAMIC_TYPE_S64,
+	LTTNG_UST_DYNAMIC_TYPE_U8,
+	LTTNG_UST_DYNAMIC_TYPE_U16,
+	LTTNG_UST_DYNAMIC_TYPE_U32,
+	LTTNG_UST_DYNAMIC_TYPE_U64,
+	LTTNG_UST_DYNAMIC_TYPE_FLOAT,
+	LTTNG_UST_DYNAMIC_TYPE_DOUBLE,
+	LTTNG_UST_DYNAMIC_TYPE_STRING,
+	_NR_LTTNG_UST_DYNAMIC_TYPES,
+};
+
+struct lttng_ctx_value {
+	enum lttng_ust_dynamic_type sel;
+	union {
+		int64_t s64;
+		const char *str;
+		double d;
+	} u;
 };
 
 struct lttng_perf_counter_field;
@@ -245,17 +272,18 @@ struct lttng_perf_counter_field;
 #define LTTNG_UST_CTX_FIELD_PADDING	40
 struct lttng_ctx_field {
 	struct lttng_event_field event_field;
-	size_t (*get_size)(size_t offset);
+	size_t (*get_size)(struct lttng_ctx_field *field, size_t offset);
 	void (*record)(struct lttng_ctx_field *field,
 		       struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		       struct lttng_channel *chan);
 	void (*get_value)(struct lttng_ctx_field *field,
-			 union lttng_ctx_value *value);
+			 struct lttng_ctx_value *value);
 	union {
 		struct lttng_perf_counter_field *perf_counter;
 		char padding[LTTNG_UST_CTX_FIELD_PADDING];
 	} u;
 	void (*destroy)(struct lttng_ctx_field *field);
+	char *field_name;	/* Has ownership, dynamically allocated. */
 };
 
 #define LTTNG_UST_CTX_PADDING	20
@@ -380,6 +408,7 @@ struct lttng_bytecode_runtime {
 	uint64_t (*filter)(void *filter_data, const char *filter_stack_data);
 	int link_failed;
 	struct cds_list_head node;	/* list of bytecode runtime in event */
+	struct lttng_session *session;
 };
 
 /*
@@ -507,6 +536,14 @@ struct lttng_channel {
 	int tstate:1;			/* Transient enable state */
 };
 
+#define LTTNG_UST_STACK_CTX_PADDING	32
+struct lttng_stack_ctx {
+	struct lttng_event *event;
+	struct lttng_ctx *chan_ctx;	/* RCU dereferenced. */
+	struct lttng_ctx *event_ctx;	/* RCU dereferenced. */
+	char padding[LTTNG_UST_STACK_CTX_PADDING];
+};
+
 #define LTTNG_UST_EVENT_HT_BITS		12
 #define LTTNG_UST_EVENT_HT_SIZE		(1U << LTTNG_UST_EVENT_HT_BITS)
 
@@ -551,6 +588,7 @@ struct lttng_session {
 	/* New UST 2.8 */
 	struct lttng_ust_enum_ht enums_ht;	/* ht of enumerations */
 	struct cds_list_head enums_head;
+	struct lttng_ctx *ctx;			/* contexts for filters. */
 };
 
 struct lttng_transport {
@@ -592,9 +630,7 @@ int lttng_enabler_attach_exclusion(struct lttng_enabler *enabler,
 
 int lttng_attach_context(struct lttng_ust_context *context_param,
 		struct lttng_ctx **ctx, struct lttng_session *session);
-void lttng_context_init(void);
-void lttng_context_exit(void);
-extern struct lttng_ctx *lttng_static_ctx;	/* Used by filtering */
+int lttng_session_context_init(struct lttng_ctx **ctx);
 
 void lttng_transport_register(struct lttng_transport *transport);
 void lttng_transport_unregister(struct lttng_transport *transport);
@@ -619,6 +655,7 @@ int lttng_add_pthread_id_to_ctx(struct lttng_ctx **ctx);
 int lttng_add_procname_to_ctx(struct lttng_ctx **ctx);
 int lttng_add_ip_to_ctx(struct lttng_ctx **ctx);
 int lttng_add_cpu_id_to_ctx(struct lttng_ctx **ctx);
+int lttng_add_dyntest_to_ctx(struct lttng_ctx **ctx);
 void lttng_context_vtid_reset(void);
 void lttng_context_vpid_reset(void);
 

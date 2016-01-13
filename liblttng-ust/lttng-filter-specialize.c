@@ -73,20 +73,28 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				goto end;
 
 			case REG_STRING:
+				if (vstack_bx(stack)->type == REG_UNKNOWN)
+					break;
 				insn->op = FILTER_OP_EQ_STRING;
 				break;
 			case REG_S64:
+				if (vstack_bx(stack)->type == REG_UNKNOWN)
+					break;
 				if (vstack_bx(stack)->type == REG_S64)
 					insn->op = FILTER_OP_EQ_S64;
 				else
 					insn->op = FILTER_OP_EQ_DOUBLE_S64;
 				break;
 			case REG_DOUBLE:
+				if (vstack_bx(stack)->type == REG_UNKNOWN)
+					break;
 				if (vstack_bx(stack)->type == REG_S64)
 					insn->op = FILTER_OP_EQ_S64_DOUBLE;
 				else
 					insn->op = FILTER_OP_EQ_DOUBLE;
 				break;
+			case REG_UNKNOWN:
+				break;	/* Dynamic typing. */
 			}
 			/* Pop 2, push 1 */
 			if (vstack_pop(stack)) {
@@ -109,20 +117,28 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				goto end;
 
 			case REG_STRING:
+				if (vstack_bx(stack)->type == REG_UNKNOWN)
+					break;
 				insn->op = FILTER_OP_NE_STRING;
 				break;
 			case REG_S64:
+				if (vstack_bx(stack)->type == REG_UNKNOWN)
+					break;
 				if (vstack_bx(stack)->type == REG_S64)
 					insn->op = FILTER_OP_NE_S64;
 				else
 					insn->op = FILTER_OP_NE_DOUBLE_S64;
 				break;
 			case REG_DOUBLE:
+				if (vstack_bx(stack)->type == REG_UNKNOWN)
+					break;
 				if (vstack_bx(stack)->type == REG_S64)
 					insn->op = FILTER_OP_NE_S64_DOUBLE;
 				else
 					insn->op = FILTER_OP_NE_DOUBLE;
 				break;
+			case REG_UNKNOWN:
+				break;	/* Dynamic typing. */
 			}
 			/* Pop 2, push 1 */
 			if (vstack_pop(stack)) {
@@ -145,20 +161,28 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				goto end;
 
 			case REG_STRING:
+				if (vstack_bx(stack)->type == REG_UNKNOWN)
+					break;
 				insn->op = FILTER_OP_GT_STRING;
 				break;
 			case REG_S64:
+				if (vstack_bx(stack)->type == REG_UNKNOWN)
+					break;
 				if (vstack_bx(stack)->type == REG_S64)
 					insn->op = FILTER_OP_GT_S64;
 				else
 					insn->op = FILTER_OP_GT_DOUBLE_S64;
 				break;
 			case REG_DOUBLE:
+				if (vstack_bx(stack)->type == REG_UNKNOWN)
+					break;
 				if (vstack_bx(stack)->type == REG_S64)
 					insn->op = FILTER_OP_GT_S64_DOUBLE;
 				else
 					insn->op = FILTER_OP_GT_DOUBLE;
 				break;
+			case REG_UNKNOWN:
+				break;	/* Dynamic typing. */
 			}
 			/* Pop 2, push 1 */
 			if (vstack_pop(stack)) {
@@ -181,20 +205,28 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				goto end;
 
 			case REG_STRING:
+				if (vstack_bx(stack)->type == REG_UNKNOWN)
+					break;
 				insn->op = FILTER_OP_LT_STRING;
 				break;
 			case REG_S64:
+				if (vstack_bx(stack)->type == REG_UNKNOWN)
+					break;
 				if (vstack_bx(stack)->type == REG_S64)
 					insn->op = FILTER_OP_LT_S64;
 				else
 					insn->op = FILTER_OP_LT_DOUBLE_S64;
 				break;
 			case REG_DOUBLE:
+				if (vstack_bx(stack)->type == REG_UNKNOWN)
+					break;
 				if (vstack_bx(stack)->type == REG_S64)
 					insn->op = FILTER_OP_LT_S64_DOUBLE;
 				else
 					insn->op = FILTER_OP_LT_DOUBLE;
 				break;
+			case REG_UNKNOWN:
+				break;	/* Dynamic typing. */
 			}
 			/* Pop 2, push 1 */
 			if (vstack_pop(stack)) {
@@ -217,20 +249,28 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				goto end;
 
 			case REG_STRING:
+				if (vstack_bx(stack)->type == REG_UNKNOWN)
+					break;
 				insn->op = FILTER_OP_GE_STRING;
 				break;
 			case REG_S64:
+				if (vstack_bx(stack)->type == REG_UNKNOWN)
+					break;
 				if (vstack_bx(stack)->type == REG_S64)
 					insn->op = FILTER_OP_GE_S64;
 				else
 					insn->op = FILTER_OP_GE_DOUBLE_S64;
 				break;
 			case REG_DOUBLE:
+				if (vstack_bx(stack)->type == REG_UNKNOWN)
+					break;
 				if (vstack_bx(stack)->type == REG_S64)
 					insn->op = FILTER_OP_GE_S64_DOUBLE;
 				else
 					insn->op = FILTER_OP_GE_DOUBLE;
 				break;
+			case REG_UNKNOWN:
+				break;	/* Dynamic typing. */
 			}
 			/* Pop 2, push 1 */
 			if (vstack_pop(stack)) {
@@ -252,20 +292,28 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				goto end;
 
 			case REG_STRING:
+				if (vstack_bx(stack)->type == REG_UNKNOWN)
+					break;
 				insn->op = FILTER_OP_LE_STRING;
 				break;
 			case REG_S64:
+				if (vstack_bx(stack)->type == REG_UNKNOWN)
+					break;
 				if (vstack_bx(stack)->type == REG_S64)
 					insn->op = FILTER_OP_LE_S64;
 				else
 					insn->op = FILTER_OP_LE_DOUBLE_S64;
 				break;
 			case REG_DOUBLE:
+				if (vstack_bx(stack)->type == REG_UNKNOWN)
+					break;
 				if (vstack_bx(stack)->type == REG_S64)
 					insn->op = FILTER_OP_LE_S64_DOUBLE;
 				else
 					insn->op = FILTER_OP_LE_DOUBLE;
 				break;
+			case REG_UNKNOWN:
+				break;	/* Dynamic typing. */
 			}
 			vstack_ax(stack)->type = REG_S64;
 			next_pc += sizeof(struct binary_op);
@@ -330,6 +378,8 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 			case REG_DOUBLE:
 				insn->op = FILTER_OP_UNARY_PLUS_DOUBLE;
 				break;
+			case REG_UNKNOWN:	/* Dynamic typing. */
+				break;
 			}
 			/* Pop 1, push 1 */
 			next_pc += sizeof(struct unary_op);
@@ -352,6 +402,8 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 			case REG_DOUBLE:
 				insn->op = FILTER_OP_UNARY_MINUS_DOUBLE;
 				break;
+			case REG_UNKNOWN:	/* Dynamic typing. */
+				break;
 			}
 			/* Pop 1, push 1 */
 			next_pc += sizeof(struct unary_op);
@@ -373,6 +425,8 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				break;
 			case REG_DOUBLE:
 				insn->op = FILTER_OP_UNARY_NOT_DOUBLE;
+				break;
+			case REG_UNKNOWN:	/* Dynamic typing. */
 				break;
 			}
 			/* Pop 1, push 1 */
@@ -416,9 +470,13 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 		/* get context ref */
 		case FILTER_OP_GET_CONTEXT_REF:
 		{
-			ERR("Unknown get context ref type\n");
-			ret = -EINVAL;
-			goto end;
+			if (vstack_push(stack)) {
+				ret = -EINVAL;
+				goto end;
+			}
+			vstack_ax(stack)->type = REG_UNKNOWN;
+			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
+			break;
 		}
 		case FILTER_OP_LOAD_FIELD_REF_STRING:
 		case FILTER_OP_LOAD_FIELD_REF_SEQUENCE:
@@ -513,6 +571,8 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				break;
 			case REG_DOUBLE:
 				insn->op = FILTER_OP_CAST_DOUBLE_TO_S64;
+				break;
+			case REG_UNKNOWN:
 				break;
 			}
 			/* Pop 1, push 1 */

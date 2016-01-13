@@ -228,20 +228,34 @@ int apply_context_reloc(struct lttng_event *event,
 	struct load_op *op;
 	struct lttng_ctx_field *ctx_field;
 	int idx;
+	struct lttng_session *session = runtime->p.session;
 
 	dbg_printf("Apply context reloc: %u %s\n", reloc_offset, context_name);
 
 	/* Get context index */
-	idx = lttng_get_context_index(lttng_static_ctx, context_name);
-	if (idx < 0)
-		return -ENOENT;
+	idx = lttng_get_context_index(session->ctx, context_name);
+	if (idx < 0) {
+		if (lttng_context_is_app(context_name)) {
+			int ret;
 
+			ret = lttng_ust_add_app_context_to_ctx_rcu(context_name,
+					&session->ctx);
+			if (ret)
+				return ret;
+			idx = lttng_get_context_index(session->ctx,
+				context_name);
+			if (idx < 0)
+				return -ENOENT;
+		} else {
+			return -ENOENT;
+		}
+	}
 	/* Check if idx is too large for 16-bit offset */
 	if (idx > FILTER_BYTECODE_MAX_LEN - 1)
 		return -EINVAL;
 
 	/* Get context return type */
-	ctx_field = &lttng_static_ctx->fields[idx];
+	ctx_field = &session->ctx->fields[idx];
 	op = (struct load_op *) &runtime->data[reloc_offset];
 	field_ref = (struct field_ref *) op->data;
 	switch (ctx_field->event_field.type.atype) {
@@ -257,6 +271,9 @@ int apply_context_reloc(struct lttng_event *event,
 		break;
 	case atype_float:
 		op->op = FILTER_OP_GET_CONTEXT_REF_DOUBLE;
+		break;
+	case atype_dynamic:
+		op->op = FILTER_OP_GET_CONTEXT_REF;
 		break;
 	default:
 		return -EINVAL;
@@ -339,6 +356,7 @@ int _lttng_filter_event_link_bytecode(struct lttng_event *event,
 		goto alloc_error;
 	}
 	runtime->p.bc = filter_bytecode;
+	runtime->p.session = event->chan->session;
 	runtime->len = filter_bytecode->bc.reloc_offset;
 	/* copy original bytecode */
 	memcpy(runtime->data, filter_bytecode->bc.data, runtime->len);

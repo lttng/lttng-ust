@@ -260,6 +260,7 @@ int ustcomm_register_enum(int sock,
  * Returns -EPIPE or -ECONNRESET if other end has hung up.
  */
 int ustcomm_register_channel(int sock,
+	struct lttng_session *session,
 	int session_objd,		/* session descriptor */
 	int channel_objd,		/* channel descriptor */
 	size_t nr_ctx_fields,

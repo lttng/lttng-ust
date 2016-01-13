@@ -27,7 +27,7 @@
 #include <lttng/ringbuffer-config.h>
 
 static
-size_t ip_get_size(size_t offset)
+size_t ip_get_size(struct lttng_ctx_field *field, size_t offset)
 {
 	size_t size = 0;
 

@@ -35,7 +35,7 @@
 #include "../libringbuffer/getcpu.h"
 
 static
-size_t cpu_id_get_size(size_t offset)
+size_t cpu_id_get_size(struct lttng_ctx_field *field, size_t offset)
 {
 	size_t size = 0;
 
@@ -58,12 +58,12 @@ void cpu_id_record(struct lttng_ctx_field *field,
 
 static
 void cpu_id_get_value(struct lttng_ctx_field *field,
-		union lttng_ctx_value *value)
+		struct lttng_ctx_value *value)
 {
 	int cpu;
 
 	cpu = lttng_ust_get_cpu();
-	value->s64 = cpu;
+	value->u.s64 = cpu;
 }
 
 int lttng_add_cpu_id_to_ctx(struct lttng_ctx **ctx)
