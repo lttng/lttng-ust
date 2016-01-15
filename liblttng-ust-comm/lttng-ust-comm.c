@@ -1016,18 +1016,17 @@ int ustcomm_register_event(int sock,
 	/* send signature */
 	len = ustcomm_send_unix_sock(sock, signature, signature_len);
 	if (len > 0 && len != signature_len) {
-		free(fields);
-		return -EIO;
+		ret = -EIO;
+		goto error_fields;
 	}
 	if (len < 0) {
-		free(fields);
-		return len;
+		ret = len;
+		goto error_fields;
 	}
 
 	/* send fields */
 	if (fields_len > 0) {
 		len = ustcomm_send_unix_sock(sock, fields, fields_len);
-		free(fields);
 		if (len > 0 && len != fields_len) {
 			ret = -EIO;
 			goto error_fields;
@@ -1036,21 +1035,18 @@ int ustcomm_register_event(int sock,
 			ret = len;
 			goto error_fields;
 		}
-	} else {
-		free(fields);
 	}
+	free(fields);
 
 	if (model_emf_uri_len) {
 		/* send model_emf_uri */
 		len = ustcomm_send_unix_sock(sock, model_emf_uri,
 				model_emf_uri_len);
 		if (len > 0 && len != model_emf_uri_len) {
-			ret = -EIO;
-			goto error_fields;
+			return -EIO;
 		}
 		if (len < 0) {
-			ret = len;
-			goto error_fields;
+			return len;
 		}
 	}
 
@@ -1085,7 +1081,9 @@ int ustcomm_register_event(int sock,
 			return len;
 		}
 	}
+	/* Unreached. */
 
+	/* Error path only. */
 error_fields:
 	free(fields);
 	return ret;
