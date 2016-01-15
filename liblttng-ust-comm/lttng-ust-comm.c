@@ -947,47 +947,49 @@ int ustcomm_register_event(int sock,
 	msg.m.model_emf_uri_len = model_emf_uri_len;
 	len = ustcomm_send_unix_sock(sock, &msg, sizeof(msg));
 	if (len > 0 && len != sizeof(msg)) {
-		free(fields);
-		return -EIO;
+		ret = -EIO;
+		goto error_fields;
 	}
 	if (len < 0) {
-		free(fields);
-		return len;
+		ret = len;
+		goto error_fields;
 	}
 
 	/* send signature */
 	len = ustcomm_send_unix_sock(sock, signature, signature_len);
 	if (len > 0 && len != signature_len) {
-		free(fields);
-		return -EIO;
+		ret = -EIO;
+		goto error_fields;
 	}
 	if (len < 0) {
-		free(fields);
-		return len;
+		ret = len;
+		goto error_fields;
 	}
 
 	/* send fields */
 	if (fields_len > 0) {
 		len = ustcomm_send_unix_sock(sock, fields, fields_len);
-		free(fields);
 		if (len > 0 && len != fields_len) {
-			return -EIO;
+			ret = -EIO;
+			goto error_fields;
 		}
 		if (len < 0) {
-			return len;
+			ret = len;
+			goto error_fields;
 		}
-	} else {
-		free(fields);
 	}
+	free(fields);
 
 	if (model_emf_uri_len) {
 		/* send model_emf_uri */
 		len = ustcomm_send_unix_sock(sock, model_emf_uri,
 				model_emf_uri_len);
-		if (len > 0 && len != model_emf_uri_len)
+		if (len > 0 && len != model_emf_uri_len) {
 			return -EIO;
-		if (len < 0)
+		}
+		if (len < 0) {
 			return len;
+		}
 	}
 
 	/* receive reply */
@@ -1021,6 +1023,12 @@ int ustcomm_register_event(int sock,
 			return len;
 		}
 	}
+	/* Unreached. */
+
+	/* Error path only. */
+error_fields:
+	free(fields);
+	return ret;
 }
 
 /*
