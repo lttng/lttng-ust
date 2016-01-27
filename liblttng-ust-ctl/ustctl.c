@@ -212,34 +212,86 @@ int ustctl_create_event(int sock, struct lttng_ust_event *ev,
 	return 0;
 }
 
-int ustctl_add_context(int sock, struct lttng_ust_context *ctx,
+int ustctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
 		struct lttng_ust_object_data *obj_data,
 		struct lttng_ust_object_data **_context_data)
 {
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
-	struct lttng_ust_object_data *context_data;
+	struct lttng_ust_object_data *context_data = NULL;
+	char *buf = NULL;
+	size_t len;
 	int ret;
 
-	if (!obj_data || !_context_data)
-		return -EINVAL;
+	if (!obj_data || !_context_data) {
+		ret = -EINVAL;
+		goto end;
+	}
 
 	context_data = zmalloc(sizeof(*context_data));
-	if (!context_data)
-		return -ENOMEM;
+	if (!context_data) {
+		ret = -ENOMEM;
+		goto end;
+	}
 	context_data->type = LTTNG_UST_OBJECT_TYPE_CONTEXT;
 	memset(&lum, 0, sizeof(lum));
 	lum.handle = obj_data->handle;
 	lum.cmd = LTTNG_UST_CONTEXT;
-	lum.u.context = *ctx;
-	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
-	if (ret) {
-		free(context_data);
-		return ret;
+
+	lum.u.context.ctx = ctx->ctx;
+	switch (ctx->ctx) {
+	case LTTNG_UST_CONTEXT_PERF_THREAD_COUNTER:
+		lum.u.context.u.perf_counter = ctx->u.perf_counter;
+		break;
+	case LTTNG_UST_CONTEXT_APP_CONTEXT:
+	{
+		size_t provider_name_len = strlen(
+				ctx->u.app_ctx.provider_name) + 1;
+		size_t ctx_name_len = strlen(ctx->u.app_ctx.ctx_name) + 1;
+
+		lum.u.context.u.app_ctx.provider_name_len = provider_name_len;
+		lum.u.context.u.app_ctx.ctx_name_len = ctx_name_len;
+
+		len = provider_name_len + ctx_name_len;
+		buf = zmalloc(len);
+		if (!buf) {
+			ret = -ENOMEM;
+			goto end;
+		}
+		memcpy(buf, ctx->u.app_ctx.provider_name,
+				provider_name_len);
+		memcpy(buf + provider_name_len, ctx->u.app_ctx.ctx_name,
+				ctx_name_len);
+		break;
+	}
+	default:
+		break;
+	}
+	ret = ustcomm_send_app_msg(sock, &lum);
+	if (ret)
+		goto end;
+	if (buf) {
+		/* send var len ctx_name */
+		ret = ustcomm_send_unix_sock(sock, buf, len);
+		if (ret < 0) {
+			goto end;
+		}
+		if (ret != len) {
+			ret = -EINVAL;
+			goto end;
+		}
+	}
+	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	if (ret < 0) {
+		goto end;
 	}
 	context_data->handle = -1;
 	DBG("Context created successfully");
 	*_context_data = context_data;
+	context_data = NULL;
+end:
+	free(context_data);
+	free(buf);
 	return ret;
 }
 
