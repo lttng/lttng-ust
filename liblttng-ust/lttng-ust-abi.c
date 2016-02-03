@@ -335,9 +335,10 @@ long lttng_abi_tracer_version(int objd,
 static
 long lttng_abi_add_context(int objd,
 	struct lttng_ust_context *context_param,
+	union ust_args *uargs,
 	struct lttng_ctx **ctx, struct lttng_session *session)
 {
-	return lttng_attach_context(context_param, ctx, session);
+	return lttng_attach_context(context_param, uargs, ctx, session);
 }
 
 /**
@@ -885,7 +886,7 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg,
 	}
 	case LTTNG_UST_CONTEXT:
 		return lttng_abi_add_context(objd,
-				(struct lttng_ust_context *) arg,
+				(struct lttng_ust_context *) arg, uargs,
 				&channel->ctx, channel->session);
 	case LTTNG_UST_ENABLE:
 		return lttng_channel_enable(channel);

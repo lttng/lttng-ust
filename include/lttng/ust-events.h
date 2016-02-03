@@ -629,6 +629,7 @@ int lttng_enabler_attach_exclusion(struct lttng_enabler *enabler,
 		struct lttng_ust_excluder_node *excluder);
 
 int lttng_attach_context(struct lttng_ust_context *context_param,
+		union ust_args *uargs,
 		struct lttng_ctx **ctx, struct lttng_session *session);
 int lttng_session_context_init(struct lttng_ctx **ctx);
 

@@ -307,6 +307,9 @@ union ust_args {
 	struct {
 		struct lttng_ust_field_iter entry;
 	} field_list;
+	struct {
+		char *ctxname;
+	} app_context;
 };
 
 struct lttng_ust_objd_ops {

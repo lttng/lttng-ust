@@ -962,6 +962,7 @@ int lttng_enabler_attach_exclusion(struct lttng_enabler *enabler,
 }
 
 int lttng_attach_context(struct lttng_ust_context *context_param,
+		union ust_args *uargs,
 		struct lttng_ctx **ctx, struct lttng_session *session)
 {
 	/*
@@ -996,6 +997,9 @@ int lttng_attach_context(struct lttng_ust_context *context_param,
 		return lttng_add_ip_to_ctx(ctx);
 	case LTTNG_UST_CONTEXT_CPU_ID:
 		return lttng_add_cpu_id_to_ctx(ctx);
+	case LTTNG_UST_CONTEXT_APP_CONTEXT:
+		return lttng_ust_add_app_context_to_ctx_rcu(uargs->app_context.ctxname,
+			ctx);
 	default:
 		return -EINVAL;
 	}

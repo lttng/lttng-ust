@@ -591,6 +591,7 @@ int handle_message(struct sock_info *sock_info,
 	const struct lttng_ust_objd_ops *ops;
 	struct ustcomm_ust_reply lur;
 	union ust_args args;
+	char ctxstr[LTTNG_UST_SYM_NAME_LEN];	/* App context string. */
 	ssize_t len;
 
 	memset(&lur, 0, sizeof(lur));
@@ -810,6 +811,64 @@ int handle_message(struct sock_info *sock_info,
 			ret = -ENOSYS;
 		break;
 	}
+	case LTTNG_UST_CONTEXT:
+		switch (lum->u.context.ctx) {
+		case LTTNG_UST_CONTEXT_APP_CONTEXT:
+		{
+			char *p;
+			size_t ctxlen, recvlen;
+
+			ctxlen = strlen("$app.") + lum->u.context.u.app_ctx.provider_name_len - 1
+					+ strlen(":") + lum->u.context.u.app_ctx.ctx_name_len;
+			if (ctxlen >= LTTNG_UST_SYM_NAME_LEN) {
+				ERR("Application context string length size is too large: %zu bytes",
+					ctxlen);
+				ret = -EINVAL;
+				goto error;
+			}
+			strcpy(ctxstr, "$app.");
+			p = &ctxstr[strlen("$app.")];
+			recvlen = ctxlen - strlen("$app.");
+			len = ustcomm_recv_unix_sock(sock, p, recvlen);
+			switch (len) {
+			case 0:	/* orderly shutdown */
+				ret = 0;
+				goto error;
+			default:
+				if (len == recvlen) {
+					DBG("app context data received");
+					break;
+				} else if (len < 0) {
+					DBG("Receive failed from lttng-sessiond with errno %d", (int) -len);
+					if (len == -ECONNRESET) {
+						ERR("%s remote end closed connection", sock_info->name);
+						ret = len;
+						goto error;
+					}
+					ret = len;
+					goto error;
+				} else {
+					DBG("incorrect app context data message size: %zd", len);
+					ret = -EINVAL;
+					goto error;
+				}
+			}
+			/* Put : between provider and ctxname. */
+			p[lum->u.context.u.app_ctx.provider_name_len - 1] = ':';
+			args.app_context.ctxname = ctxstr;
+			break;
+		}
+		default:
+			break;
+		}
+		if (ops->cmd) {
+			ret = ops->cmd(lum->handle, lum->cmd,
+					(unsigned long) &lum->u,
+					&args, sock_info);
+		} else {
+			ret = -ENOSYS;
+		}
+		break;
 	default:
 		if (ops->cmd)
 			ret = ops->cmd(lum->handle, lum->cmd,
