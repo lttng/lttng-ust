@@ -30,7 +30,8 @@ dist_noinst_JAVA = $(pkgpath)/AbstractLttngAgent.java \
 				   $(pkgpath)/filter/FilterChangeNotifier.java \
 				   $(pkgpath)/filter/IFilterChangeListener.java \
 				   $(pkgpath)/session/EventRule.java \
-				   $(pkgpath)/session/LogLevelSelector.java
+				   $(pkgpath)/session/LogLevelSelector.java \
+				   $(pkgpath)/utils/LttngUstAgentLogger.java
 
 
 dist_noinst_DATA = $(jarfile_manifest)
@@ -41,7 +42,8 @@ classes = $(pkgpath)/*.class \
 		  $(pkgpath)/client/*.class \
 		  $(pkgpath)/context/*.class \
 		  $(pkgpath)/filter/*.class \
-		  $(pkgpath)/session/*.class
+		  $(pkgpath)/session/*.class \
+		  $(pkgpath)/utils/*.class
 
 $(jarfile): classnoinst.stamp
 	$(JAR) cfm $(JARFLAGS) $@ $(jarfile_manifest) $(classes) && rm -f $(jarfile_symlink) && $(LN_S) $@ $(jarfile_symlink)
@@ -63,4 +65,5 @@ CLEANFILES = $(jarfile) $(pkgpath)/*.class \
 			 $(pkgpath)/context/*.class \
 			 $(pkgpath)/filter/*.class \
 			 $(pkgpath)/session/*.class \
+			 $(pkgpath)/utils/*.class \
 			 $(juljniout)/org_lttng_ust_agent_context_LttngContextApi.h

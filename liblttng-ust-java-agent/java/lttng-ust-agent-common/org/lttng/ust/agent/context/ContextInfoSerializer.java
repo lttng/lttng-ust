@@ -24,6 +24,8 @@ import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Map;
 
+import org.lttng.ust.agent.utils.LttngUstAgentLogger;
+
 /**
  * This class is used to serialize the list of "context info" objects to pass
  * through JNI.
@@ -141,6 +143,10 @@ public class ContextInfoSerializer {
 				// FIXME Handle case where name is too long...
 				buffer.put(strArray);
 				buffer.position(buffer.position() + remainingBytes);
+
+				LttngUstAgentLogger.log(ContextInfoSerializer.class,
+						"ContextInfoSerializer: Context to be sent through JNI: " + fullContextName + '=' +
+						(contextInfo == null ? "null" : contextInfo.toString()));
 
 				serializeContextInfo(buffer, contextInfo);
 			}
