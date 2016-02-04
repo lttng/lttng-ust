@@ -19,10 +19,22 @@ package org.lttng.ust.agent.jul;
 
 import java.lang.String;
 
+import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 
 class LTTngLogHandler extends Handler {
+
+	/**
+	 * Dummy Formatter object, so we can use its
+	 * {@link Formatter#formatMessage(LogRecord)} method.
+	 */
+	private static final Formatter FORMATTER = new Formatter() {
+		@Override
+		public String format(LogRecord record) {
+			throw new UnsupportedOperationException();
+		}
+	};
 
 	private final Boolean isRoot;
 
@@ -54,18 +66,20 @@ class LTTngLogHandler extends Handler {
 
 	@Override
 	public void publish(LogRecord record) {
+		String formattedMessage = FORMATTER.formatMessage(record);
+
 		/*
 		 * Specific tracepoint designed for JUL events. The source class of the
 		 * caller is used for the event name, the raw message is taken, the
 		 * loglevel of the record and the thread ID.
 		 */
 		if (this.isRoot) {
-			tracepointS(record.getMessage(),
+			tracepointS(formattedMessage,
 				    record.getLoggerName(), record.getSourceClassName(),
 				    record.getSourceMethodName(), record.getMillis(),
 				    record.getLevel().intValue(), record.getThreadID());
 		} else {
-			tracepointU(record.getMessage(),
+			tracepointU(formattedMessage,
 				    record.getLoggerName(), record.getSourceClassName(),
 				    record.getSourceMethodName(), record.getMillis(),
 				    record.getLevel().intValue(), record.getThreadID());
