@@ -20,6 +20,7 @@ package org.lttng.ust.agent.jul;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 
@@ -42,6 +43,17 @@ import org.lttng.ust.agent.ILttngHandler;
 public class LttngLogHandler extends Handler implements ILttngHandler {
 
 	private static final String SHARED_OBJECT_NAME = "lttng-ust-jul-jni";
+
+	/**
+	 * Dummy Formatter object, so we can use its
+	 * {@link Formatter#formatMessage(LogRecord)} method.
+	 */
+	private static final Formatter FORMATTER = new Formatter() {
+		@Override
+		public String format(LogRecord record) {
+			throw new UnsupportedOperationException();
+		}
+	};
 
 	private final ILttngAgent<LttngLogHandler> agent;
 
@@ -103,13 +115,15 @@ public class LttngLogHandler extends Handler implements ILttngHandler {
 			return;
 		}
 
+		String formattedMessage = FORMATTER.formatMessage(record);
+
 		eventCount.incrementAndGet();
 		/*
 		 * Specific tracepoint designed for JUL events. The source class of the
 		 * caller is used for the event name, the raw message is taken, the
 		 * loglevel of the record and the thread ID.
 		 */
-		tracepoint(record.getMessage(),
+		tracepoint(formattedMessage,
 				record.getLoggerName(),
 				record.getSourceClassName(),
 				record.getSourceMethodName(),
