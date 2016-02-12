@@ -19,11 +19,13 @@
 #ifndef LIBLTTNG_UST_JAVA_AGENT_JNI_COMMON_LTTNG_UST_CONTEXT_H_
 #define LIBLTTNG_UST_JAVA_AGENT_JNI_COMMON_LTTNG_UST_CONTEXT_H_
 
-struct lttng_ust_jni_ctx;
+struct lttng_ust_jni_ctx_entry;
 
 struct lttng_ust_jni_tls {
-	struct lttng_ust_jni_ctx *ctx;
-	int32_t len;
+	struct lttng_ust_jni_ctx_entry *ctx_entries;
+	int32_t ctx_entries_len;
+	signed char *ctx_strings;
+	int32_t ctx_strings_len;
 };
 
 extern __thread struct lttng_ust_jni_tls lttng_ust_context_info_tls;

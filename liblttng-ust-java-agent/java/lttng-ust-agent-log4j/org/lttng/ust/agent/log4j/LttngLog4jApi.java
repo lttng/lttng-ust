@@ -45,5 +45,6 @@ final class LttngLog4jApi {
 			long timestamp,
 			int loglevel,
 			String thread_name,
-			byte[] contextInformation);
+			byte[] contextEntries,
+			byte[] contextStrings);
 }

@@ -41,5 +41,6 @@ final class LttngJulApi {
 			long millis,
 			int log_level,
 			int thread_id,
-			byte[] contextInformation);
+			byte[] contextEntries,
+			byte[] contextStrings);
 }

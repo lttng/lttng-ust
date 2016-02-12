@@ -28,10 +28,6 @@
 #include "helper.h"
 #include "lttng_ust_context.h"
 
-#define LTTNG_UST_JNI_CONTEXT_NAME_LEN		256
-/* TODO: the value should be variable length. */
-#define LTTNG_UST_JNI_VALUE_LEN			256
-
 enum lttng_ust_jni_type {
 	JNI_TYPE_NULL = 0,
 	JNI_TYPE_INTEGER = 1,
@@ -44,8 +40,8 @@ enum lttng_ust_jni_type {
 	JNI_TYPE_STRING = 8,
 };
 
-struct lttng_ust_jni_ctx {
-	char context_name[LTTNG_UST_JNI_CONTEXT_NAME_LEN];
+struct lttng_ust_jni_ctx_entry {
+	int32_t context_name_offset;
 	char type;	/* enum lttng_ust_jni_type */
 	union {
 		int32_t _integer;
@@ -55,32 +51,46 @@ struct lttng_ust_jni_ctx {
 		signed char _byte;
 		int16_t _short;
 		signed char _boolean;
-		char _string[LTTNG_UST_JNI_VALUE_LEN];
+		int32_t _string_offset;
 	} value;
 } __attribute__((packed));
 
 /* TLS passing context info from JNI to callbacks. */
 __thread struct lttng_ust_jni_tls lttng_ust_context_info_tls;
 
-static struct lttng_ust_jni_ctx *lookup_ctx_by_name(const char *ctx_name)
+static const char *get_ctx_string_at_offset(int32_t offset)
 {
-	struct lttng_ust_jni_ctx *ctx_array = lttng_ust_context_info_tls.ctx;
-	int i, len = lttng_ust_context_info_tls.len / sizeof(struct lttng_ust_jni_ctx);
+	signed char *ctx_strings_array = lttng_ust_context_info_tls.ctx_strings;
+
+	if (offset < 0 || offset >= lttng_ust_context_info_tls.ctx_strings_len) {
+		return NULL;
+	}
+	return (const char *) (ctx_strings_array + offset);
+}
+
+static struct lttng_ust_jni_ctx_entry *lookup_ctx_by_name(const char *ctx_name)
+{
+	struct lttng_ust_jni_ctx_entry *ctx_entries_array = lttng_ust_context_info_tls.ctx_entries;
+	int i, len = lttng_ust_context_info_tls.ctx_entries_len / sizeof(struct lttng_ust_jni_ctx_entry);
 
 	for (i = 0; i < len; i++) {
-		if (strcmp(ctx_array[i].context_name, ctx_name) == 0)
-			return &ctx_array[i];
+		int32_t offset = ctx_entries_array[i].context_name_offset;
+		const char *string = get_ctx_string_at_offset(offset);
+
+		if (string && strcmp(string, ctx_name) == 0) {
+			return &ctx_entries_array[i];
+		}
 	}
 	return NULL;
-
 }
 
 static size_t get_size_cb(struct lttng_ctx_field *field, size_t offset)
 {
-	struct lttng_ust_jni_ctx *jctx;
+	struct lttng_ust_jni_ctx_entry *jctx;
 	size_t size = 0;
 	const char *ctx_name = field->event_field.name;
 	enum lttng_ust_jni_type jni_type;
+
 
 	size += lib_ring_buffer_align(offset, lttng_alignof(char));
 	size += sizeof(char);		/* tag */
@@ -119,8 +129,16 @@ static size_t get_size_cb(struct lttng_ctx_field *field, size_t offset)
 		size += sizeof(char);		/* variant */
 		break;
 	case JNI_TYPE_STRING:
-		size += strlen(jctx->value._string) + 1;
+	{
+		/* The value is an offset, the string is in the "strings" array */
+		int32_t string_offset = jctx->value._string_offset;
+		const char *string = get_ctx_string_at_offset(string_offset);
+
+		if (string) {
+			size += strlen(string) + 1;
+		}
 		break;
+	}
 	default:
 		abort();
 	}
@@ -132,7 +150,7 @@ static void record_cb(struct lttng_ctx_field *field,
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		 struct lttng_channel *chan)
 {
-	struct lttng_ust_jni_ctx *jctx;
+	struct lttng_ust_jni_ctx_entry *jctx;
 	const char *ctx_name = field->event_field.name;
 	enum lttng_ust_jni_type jni_type;
 	char sel_char;
@@ -229,12 +247,19 @@ static void record_cb(struct lttng_ctx_field *field,
 	}
 	case JNI_TYPE_STRING:
 	{
-			const char *str = jctx->value._string;
+			int32_t offset = jctx->value._string_offset;
+			const char *str = get_ctx_string_at_offset(offset);
 
-			sel_char = LTTNG_UST_DYNAMIC_TYPE_STRING;
+			if (str) {
+				sel_char = LTTNG_UST_DYNAMIC_TYPE_STRING;
+			} else {
+				sel_char = LTTNG_UST_DYNAMIC_TYPE_NONE;
+			}
 			lib_ring_buffer_align_ctx(ctx, lttng_alignof(char));
 			chan->ops->event_write(ctx, &sel_char, sizeof(sel_char));
-			chan->ops->event_write(ctx, str, strlen(str) + 1);
+			if (str) {
+				chan->ops->event_write(ctx, str, strlen(str) + 1);
+			}
 			break;
 	}
 	default:
@@ -245,7 +270,7 @@ static void record_cb(struct lttng_ctx_field *field,
 static void get_value_cb(struct lttng_ctx_field *field,
 		struct lttng_ctx_value *value)
 {
-	struct lttng_ust_jni_ctx *jctx;
+	struct lttng_ust_jni_ctx_entry *jctx;
 	const char *ctx_name = field->event_field.name;
 	enum lttng_ust_jni_type jni_type;
 
@@ -289,9 +314,18 @@ static void get_value_cb(struct lttng_ctx_field *field,
 		value->u.s64 = (int64_t) jctx->value._boolean;
 		break;
 	case JNI_TYPE_STRING:
-		value->sel = LTTNG_UST_DYNAMIC_TYPE_STRING;
-		value->u.str = jctx->value._string;
+	{
+		int32_t offset = jctx->value._string_offset;
+		const char *str = get_ctx_string_at_offset(offset);
+
+		if (str) {
+			value->sel = LTTNG_UST_DYNAMIC_TYPE_STRING;
+			value->u.str = str;
+		} else {
+			value->sel = LTTNG_UST_DYNAMIC_TYPE_NONE;
+		}
 		break;
+	}
 	default:
 		abort();
 	}

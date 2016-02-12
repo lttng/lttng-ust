@@ -17,6 +17,8 @@
 
 package org.lttng.ust.agent.context;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -30,18 +32,34 @@ import org.lttng.ust.agent.utils.LttngUstAgentLogger;
  * This class is used to serialize the list of "context info" objects to pass
  * through JNI.
  *
- * The protocol expects a single byte array parameter. This byte array consists
- * of a series of fixed-size entries, where each entry contains the following
- * elements (with their size in bytes in parenthesis):
+ * The protocol expects two byte array parameters, which are contained here in
+ * the {@link SerializedContexts} inner class.
+ *
+ * The first byte array is called the "entries array", and contains fixed-size
+ * entries, one per context element.
+ *
+ * The second one is the "strings array", it is of variable length and used to
+ * hold the variable-length strings. Each one of these strings is formatted as a
+ * UTF-8 C-string, meaning in will end with a "\0" byte to indicate its end.
+ * Entries in the first array may refer to offsets in the second array to point
+ * to relevant strings.
+ *
+ * The fixed-size entries in the entries array contain the following elements
+ * (size in bytes in parentheses):
  *
  * <ul>
- * <li>The full context name, like "$app.myprovider:mycontext" (256)</li>
+ * <li>The offset in the strings array pointing to the full context name, like
+ * "$app.myprovider:mycontext" (4)</li>
  * <li>The context value type (1)</li>
- * <li>The context value itself(256)</li>
+ * <li>The context value itself (8)</li>
  * </ul>
  *
- * So the total size of each entry is 513 bytes. All unused bytes will be
- * zero'ed.
+ * The context value type will indicate how many bytes are used for the value.
+ * If the it is of String type, then we use 4 bytes to represent the offset in
+ * the strings array.
+ *
+ * So the total size of each entry is 13 bytes. All unused bytes (for context
+ * values shorter than 8 bytes for example) will be zero'ed.
  *
  * @author Alexandre Montplaisir
  */
@@ -69,12 +87,48 @@ public class ContextInfoSerializer {
 		}
 	}
 
+	/**
+	 * Class used to wrap the two byte arrays returned by
+	 * {@link #queryAndSerializeRequestedContexts}.
+	 */
+	public static class SerializedContexts {
+
+		private final byte[] contextEntries;
+		private final byte[] contextStrings;
+
+		/**
+		 * Constructor
+		 *
+		 * @param entries
+		 *            Arrays for the fixed-size context entries.
+		 * @param strings
+		 *            Arrays for variable-length strings
+		 */
+		public SerializedContexts(byte[] entries, byte[] strings) {
+			contextEntries = entries;
+			contextStrings = strings;
+		}
+
+		/**
+		 * @return The entries array
+		 */
+		public byte[] getEntriesArray() {
+			return contextEntries;
+		}
+
+		/**
+		 * @return The strings array
+		 */
+		public byte[] getStringsArray() {
+			return contextStrings;
+		}
+	}
+
 	private static final String UST_APP_CTX_PREFIX = "$app.";
-	private static final int ELEMENT_LENGTH = 256;
-	private static final int ENTRY_LENGTH = 513;
+	private static final int ENTRY_LENGTH = 13;
 	private static final ByteOrder NATIVE_ORDER = ByteOrder.nativeOrder();
 	private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
-	private static final byte[] EMPTY_ARRAY = new byte[0];
+	private static final SerializedContexts EMPTY_CONTEXTS = new SerializedContexts(new byte[0], new byte[0]);
 
 	/**
 	 * From the list of requested contexts in the tracing session, look them up
@@ -88,16 +142,10 @@ public class ContextInfoSerializer {
 	 * @return The byte array representing the intersection of the requested and
 	 *         available contexts.
 	 */
-	public static byte[] queryAndSerializeRequestedContexts(Collection<Map.Entry<String, Map<String, Integer>>> enabledContexts) {
+	public static SerializedContexts queryAndSerializeRequestedContexts(Collection<Map.Entry<String, Map<String, Integer>>> enabledContexts) {
 		if (enabledContexts.isEmpty()) {
 			/* Early return if there is no requested context information */
-			return EMPTY_ARRAY;
-		}
-
-		/* Compute the total number of contexts (flatten the map) */
-		int totalArraySize = 0;
-		for (Map.Entry<String, Map<String, Integer>> contexts : enabledContexts) {
-			totalArraySize += contexts.getValue().size() * ENTRY_LENGTH;
+			return EMPTY_CONTEXTS;
 		}
 
 		ContextInfoManager contextManager;
@@ -108,110 +156,140 @@ public class ContextInfoSerializer {
 			 * The JNI library is not available, do not send any context
 			 * information. No retriever could have been defined anyways.
 			 */
-			return EMPTY_ARRAY;
+			return EMPTY_CONTEXTS;
 		}
 
-		ByteBuffer buffer = ByteBuffer.allocate(totalArraySize);
-		buffer.order(NATIVE_ORDER);
-		buffer.clear();
+		/* Compute the total number of contexts (flatten the map) */
+		int totalArraySize = 0;
+		for (Map.Entry<String, Map<String, Integer>> contexts : enabledContexts) {
+			totalArraySize += contexts.getValue().size() * ENTRY_LENGTH;
+		}
 
-		for (Map.Entry<String, Map<String, Integer>> entry : enabledContexts) {
-			String requestedRetrieverName = entry.getKey();
-			Map<String, Integer> requestedContexts = entry.getValue();
+		/* Prepare the ByteBuffer that will generate the "entries" array */
+		ByteBuffer entriesBuffer = ByteBuffer.allocate(totalArraySize);
+		entriesBuffer.order(NATIVE_ORDER);
+		entriesBuffer.clear();
 
-			IContextInfoRetriever retriever = contextManager.getContextInfoRetriever(requestedRetrieverName);
+		/* Prepare the streams that will generate the "strings" array */
+		ByteArrayOutputStream stringsBaos = new ByteArrayOutputStream();
+		DataOutputStream stringsDos = new DataOutputStream(stringsBaos);
 
-			for (String requestedContext : requestedContexts.keySet()) {
-				Object contextInfo;
-				if (retriever == null) {
-					contextInfo = null;
-				} else {
-					contextInfo = retriever.retrieveContextInfo(requestedContext);
-					/*
-					 * 'contextInfo' can still be null here, which would
-					 * indicate the retriever does not supply this context. We
-					 * will still write this information so that the tracer can
-					 * know about it.
-					 */
+		try {
+			for (Map.Entry<String, Map<String, Integer>> entry : enabledContexts) {
+				String requestedRetrieverName = entry.getKey();
+				Map<String, Integer> requestedContexts = entry.getValue();
+
+				IContextInfoRetriever retriever = contextManager.getContextInfoRetriever(requestedRetrieverName);
+
+				for (String requestedContext : requestedContexts.keySet()) {
+					Object contextInfo;
+					if (retriever == null) {
+						contextInfo = null;
+					} else {
+						contextInfo = retriever.retrieveContextInfo(requestedContext);
+						/*
+						 * 'contextInfo' can still be null here, which would
+						 * indicate the retriever does not supply this context.
+						 * We will still write this information so that the
+						 * tracer can know about it.
+						 */
+					}
+
+					/* Serialize the result to the buffers */
+					// FIXME Eventually pass the retriever name only once?
+					String fullContextName = (UST_APP_CTX_PREFIX + requestedRetrieverName + ':' + requestedContext);
+					byte[] strArray = fullContextName.getBytes(UTF8_CHARSET);
+
+					entriesBuffer.putInt(stringsDos.size());
+					stringsDos.write(strArray);
+					stringsDos.writeChar('\0');
+
+					LttngUstAgentLogger.log(ContextInfoSerializer.class,
+							"ContextInfoSerializer: Context to be sent through JNI: " + fullContextName + '=' +
+									(contextInfo == null ? "null" : contextInfo.toString()));
+
+					serializeContextInfo(entriesBuffer, stringsDos, contextInfo);
 				}
-
-				/* Serialize the result to the buffer */
-				// FIXME Eventually pass the retriever name only once?
-				String fullContextName = (UST_APP_CTX_PREFIX + requestedRetrieverName + ':' + requestedContext);
-				byte[] strArray = fullContextName.getBytes(UTF8_CHARSET);
-				int remainingBytes = ELEMENT_LENGTH - strArray.length;
-				// FIXME Handle case where name is too long...
-				buffer.put(strArray);
-				buffer.position(buffer.position() + remainingBytes);
-
-				LttngUstAgentLogger.log(ContextInfoSerializer.class,
-						"ContextInfoSerializer: Context to be sent through JNI: " + fullContextName + '=' +
-						(contextInfo == null ? "null" : contextInfo.toString()));
-
-				serializeContextInfo(buffer, contextInfo);
 			}
+
+			stringsDos.flush();
+			stringsBaos.flush();
+
+		} catch (IOException e) {
+			/*
+			 * Should not happen because we are wrapping a
+			 * ByteArrayOutputStream, which writes to memory
+			 */
+			e.printStackTrace();
 		}
-		return buffer.array();
+
+		byte[] entriesArray = entriesBuffer.array();
+		byte[] stringsArray = stringsBaos.toByteArray();
+		return new SerializedContexts(entriesArray, stringsArray);
 	}
 
-	private static void serializeContextInfo(ByteBuffer buffer, Object contextInfo) {
+	private static final int CONTEXT_VALUE_LENGTH = 8;
+
+	private static void serializeContextInfo(ByteBuffer entriesBuffer, DataOutputStream stringsDos, Object contextInfo) throws IOException {
 		int remainingBytes;
 		if (contextInfo == null) {
-			buffer.put(DataType.NULL.getValue());
-			remainingBytes = ELEMENT_LENGTH;
+			entriesBuffer.put(DataType.NULL.getValue());
+			remainingBytes = CONTEXT_VALUE_LENGTH;
 
 		} else if (contextInfo instanceof Integer) {
-			buffer.put(DataType.INTEGER.getValue());
-			buffer.putInt(((Integer) contextInfo).intValue());
-			remainingBytes = ELEMENT_LENGTH - 4;
+			entriesBuffer.put(DataType.INTEGER.getValue());
+			entriesBuffer.putInt(((Integer) contextInfo).intValue());
+			remainingBytes = CONTEXT_VALUE_LENGTH - 4;
 
 		} else if (contextInfo instanceof Long) {
-			buffer.put(DataType.LONG.getValue());
-			buffer.putLong(((Long) contextInfo).longValue());
-			remainingBytes = ELEMENT_LENGTH - 8;
+			entriesBuffer.put(DataType.LONG.getValue());
+			entriesBuffer.putLong(((Long) contextInfo).longValue());
+			remainingBytes = CONTEXT_VALUE_LENGTH - 8;
 
 		} else if (contextInfo instanceof Double) {
-			buffer.put(DataType.DOUBLE.getValue());
-			buffer.putDouble(((Double) contextInfo).doubleValue());
-			remainingBytes = ELEMENT_LENGTH - 8;
+			entriesBuffer.put(DataType.DOUBLE.getValue());
+			entriesBuffer.putDouble(((Double) contextInfo).doubleValue());
+			remainingBytes = CONTEXT_VALUE_LENGTH - 8;
 
 		} else if (contextInfo instanceof Float) {
-			buffer.put(DataType.FLOAT.getValue());
-			buffer.putFloat(((Float) contextInfo).floatValue());
-			remainingBytes = ELEMENT_LENGTH - 4;
+			entriesBuffer.put(DataType.FLOAT.getValue());
+			entriesBuffer.putFloat(((Float) contextInfo).floatValue());
+			remainingBytes = CONTEXT_VALUE_LENGTH - 4;
 
 		} else if (contextInfo instanceof Byte) {
-			buffer.put(DataType.BYTE.getValue());
-			buffer.put(((Byte) contextInfo).byteValue());
-			remainingBytes = ELEMENT_LENGTH - 1;
+			entriesBuffer.put(DataType.BYTE.getValue());
+			entriesBuffer.put(((Byte) contextInfo).byteValue());
+			remainingBytes = CONTEXT_VALUE_LENGTH - 1;
 
 		} else if (contextInfo instanceof Short) {
-			buffer.put(DataType.SHORT.getValue());
-			buffer.putShort(((Short) contextInfo).shortValue());
-			remainingBytes = ELEMENT_LENGTH - 2;
+			entriesBuffer.put(DataType.SHORT.getValue());
+			entriesBuffer.putShort(((Short) contextInfo).shortValue());
+			remainingBytes = CONTEXT_VALUE_LENGTH - 2;
 
 		} else if (contextInfo instanceof Boolean) {
-			buffer.put(DataType.BOOLEAN.getValue());
+			entriesBuffer.put(DataType.BOOLEAN.getValue());
 			boolean b = ((Boolean) contextInfo).booleanValue();
 			/* Converted to one byte, write 1 for true, 0 for false */
-			buffer.put((byte) (b ? 1 : 0));
-			remainingBytes = ELEMENT_LENGTH - 1;
+			entriesBuffer.put((byte) (b ? 1 : 0));
+			remainingBytes = CONTEXT_VALUE_LENGTH - 1;
 
 		} else {
-			/* We'll write the object as a string. Also includes the case of Character. */
+			/* Also includes the case of Character. */
+			/*
+			 * We'll write the object as a string, into the strings array. We
+			 * will write the corresponding offset to the entries array.
+			 */
 			String str = contextInfo.toString();
 			byte[] strArray = str.getBytes(UTF8_CHARSET);
 
-			buffer.put(DataType.STRING.getValue());
-			if (strArray.length >= ELEMENT_LENGTH) {
-				/* Trim the string to the max allowed length */
-				buffer.put(strArray, 0, ELEMENT_LENGTH);
-				remainingBytes = 0;
-			} else {
-				buffer.put(strArray);
-				remainingBytes = ELEMENT_LENGTH - strArray.length;
-			}
+			entriesBuffer.put(DataType.STRING.getValue());
+
+			entriesBuffer.putInt(stringsDos.size());
+			stringsDos.write(strArray);
+			stringsDos.writeChar('\0');
+
+			remainingBytes = CONTEXT_VALUE_LENGTH - 4;
 		}
-		buffer.position(buffer.position() + remainingBytes);
+		entriesBuffer.position(entriesBuffer.position() + remainingBytes);
 	}
 }

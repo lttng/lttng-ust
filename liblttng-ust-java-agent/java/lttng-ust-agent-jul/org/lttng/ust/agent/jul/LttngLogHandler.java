@@ -123,7 +123,7 @@ public class LttngLogHandler extends Handler implements ILttngHandler {
 
 		/* Retrieve all the requested context information we can find */
 		Collection<Entry<String, Map<String, Integer>>> enabledContexts = agent.getEnabledAppContexts();
-		byte[] contextInfo = ContextInfoSerializer.queryAndSerializeRequestedContexts(enabledContexts);
+		ContextInfoSerializer.SerializedContexts contextInfo = ContextInfoSerializer.queryAndSerializeRequestedContexts(enabledContexts);
 
 		eventCount.incrementAndGet();
 
@@ -139,7 +139,8 @@ public class LttngLogHandler extends Handler implements ILttngHandler {
 				record.getMillis(),
 				record.getLevel().intValue(),
 				record.getThreadID(),
-				contextInfo);
+				contextInfo.getEntriesArray(),
+				contextInfo.getStringsArray());
 	}
 
 }

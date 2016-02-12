@@ -122,7 +122,7 @@ public class LttngLogAppender extends AppenderSkeleton implements ILttngHandler 
 
 		/* Retrieve all the requested context information we can find */
 		Collection<Entry<String, Map<String, Integer>>> enabledContexts = agent.getEnabledAppContexts();
-		byte[] contextInfo = ContextInfoSerializer.queryAndSerializeRequestedContexts(enabledContexts);
+		ContextInfoSerializer.SerializedContexts contextInfo = ContextInfoSerializer.queryAndSerializeRequestedContexts(enabledContexts);
 
 		eventCount.incrementAndGet();
 
@@ -135,7 +135,8 @@ public class LttngLogAppender extends AppenderSkeleton implements ILttngHandler 
 				event.getTimeStamp(),
 				event.getLevel().toInt(),
 				event.getThreadName(),
-				contextInfo);
+				contextInfo.getEntriesArray(),
+				contextInfo.getStringsArray());
 	}
 
 }
