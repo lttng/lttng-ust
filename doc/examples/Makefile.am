@@ -13,6 +13,7 @@ doc_examples_java_juldir = ${docdir}/examples/java-jul
 dist_doc_examples_java_jul_DATA = java-jul/Makefile \
 				  java-jul/Hello.java \
 				  java-jul/run \
+				  java-jul/ApplicationContextExample.java \
 				  java-jul/FilterChangeListenerExample.java \
 				  java-jul/README
 SUBDIRS_JUL = java-jul
