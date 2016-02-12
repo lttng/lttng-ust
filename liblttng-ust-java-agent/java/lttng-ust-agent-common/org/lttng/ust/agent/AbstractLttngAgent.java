@@ -31,6 +31,7 @@ import org.lttng.ust.agent.client.ILttngTcpClientListener;
 import org.lttng.ust.agent.client.LttngTcpSessiondClient;
 import org.lttng.ust.agent.filter.FilterChangeNotifier;
 import org.lttng.ust.agent.session.EventRule;
+import org.lttng.ust.agent.utils.LttngUstAgentLogger;
 
 /**
  * Base implementation of a {@link ILttngAgent}.
@@ -148,6 +149,9 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 		if (initialized) {
 			return;
 		}
+
+		LttngUstAgentLogger.log(AbstractLttngAgent.class, "Initializing Agent for domain: " + domain.name());
+
 		String rootClientThreadName = "Root sessiond client started by agent: " + this.getClass().getSimpleName();
 
 		rootSessiondClient = new LttngTcpSessiondClient(this, getDomain().value(), true);
@@ -174,6 +178,8 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 	 * Dispose the agent
 	 */
 	private void dispose() {
+		LttngUstAgentLogger.log(AbstractLttngAgent.class, "Disposing Agent for domain: " + domain.name());
+
 		/*
 		 * Only called from a synchronized (registeredHandlers) block, should
 		 * not need additional synchronization.
