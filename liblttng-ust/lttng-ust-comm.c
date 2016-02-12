@@ -437,6 +437,9 @@ long get_timeout(void)
 	}
 	if (str_timeout)
 		constructor_delay_ms = strtol(str_timeout, NULL, 10);
+	/* All negative values are considered as "-1". */
+	if (constructor_delay_ms < -1)
+		constructor_delay_ms = -1;
 	return constructor_delay_ms;
 }
 
