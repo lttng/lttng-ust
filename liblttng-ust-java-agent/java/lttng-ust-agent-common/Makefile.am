@@ -24,6 +24,7 @@ dist_noinst_JAVA = $(pkgpath)/AbstractLttngAgent.java \
 				   $(pkgpath)/client/SessiondEnableAppContextCommand.java \
 				   $(pkgpath)/client/SessiondEnableEventCommand.java \
 				   $(pkgpath)/client/SessiondListLoggersCommand.java \
+				   $(pkgpath)/context/LttngContextApi.java \
 				   $(pkgpath)/context/ContextInfoManager.java \
 				   $(pkgpath)/context/ContextInfoSerializer.java \
 				   $(pkgpath)/context/IContextInfoRetriever.java \
