@@ -199,11 +199,40 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 		userSessiondClient = null;
 		userSessiondClientThread = null;
 
-		/* Reset all enabled event counts to 0 */
-		enabledEvents.clear();
-		enabledEventPrefixes.clear();
-		enabledWildcards.set(0);
+		/*
+		 * Send filter change notifications for all event rules currently
+		 * active, then clear them.
+		 */
+		FilterChangeNotifier fcn = FilterChangeNotifier.getInstance();
 
+		for (Map.Entry<String, Integer> entry : enabledEvents.entrySet()) {
+			String eventName = entry.getKey();
+			Integer nb = entry.getValue();
+			for (int i = 0; i < nb.intValue(); i++) {
+				fcn.removeEventRules(eventName);
+			}
+		}
+		enabledEvents.clear();
+
+		for (Map.Entry<String, Integer> entry : enabledEventPrefixes.entrySet()) {
+			/* Re-add the * at the end, the FCN tracks the rules that way */
+			String eventName = (entry.getKey() + "*");
+			Integer nb = entry.getValue();
+			for (int i = 0; i < nb.intValue(); i++) {
+				fcn.removeEventRules(eventName);
+			}
+		}
+		enabledEventPrefixes.clear();
+
+		int wildcardRules = enabledWildcards.getAndSet(0);
+		for (int i = 0; i < wildcardRules; i++) {
+			fcn.removeEventRules(WILDCARD);
+		}
+
+		/*
+		 * Also clear tracked app contexts (no filter notifications sent for
+		 * those currently).
+		 */
 		enabledAppContexts.clear();
 
 		initialized = false;
