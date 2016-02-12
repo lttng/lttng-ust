@@ -198,6 +198,8 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 		enabledEventPrefixes.clear();
 		enabledWildcards.set(0);
 
+		enabledAppContexts.clear();
+
 		initialized = false;
 	}
 
