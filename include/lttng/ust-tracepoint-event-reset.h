@@ -98,6 +98,9 @@
 #undef ctf_string
 #define ctf_string(_item, _src)
 
+#undef ctf_string_maybe_null
+#define ctf_string_maybe_null(_item, _src)
+
 #undef ctf_enum
 #define ctf_enum(_provider, _name, _type, _item, _src)
 
@@ -122,6 +125,9 @@
 
 #undef ctf_string_nowrite
 #define ctf_string_nowrite(_item, _src)
+
+#undef ctf_string_maybe_null_nowrite
+#define ctf_string_maybe_null_nowrite(_item, _src)
 
 #undef ctf_enum_nowrite
 #define ctf_enum_nowrite(_provider, _name, _type, _item, _src)
