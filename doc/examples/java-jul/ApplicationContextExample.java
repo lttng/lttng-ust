@@ -67,12 +67,11 @@ public class ApplicationContextExample {
 
 		@Override
 		public Object retrieveContextInfo(String key) {
-			switch (key) {
-			case CONTEXT_NAME_SHORT:
+			if (CONTEXT_NAME_SHORT.equals(key)) {
 				return (short) 42;
-			case CONTEXT_NAME_STRING:
+			} else if (CONTEXT_NAME_STRING.equals(key)) {
 				return "context-value!";
-			default:
+			} else {
 				return null;
 			}
 		}
