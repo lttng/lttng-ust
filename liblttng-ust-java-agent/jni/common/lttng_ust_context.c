@@ -374,7 +374,7 @@ JNIEXPORT jlong JNICALL Java_org_lttng_ust_agent_context_LttngContextApi_registe
 		goto error_register;
 	}
 
-	provider_ref = (jlong) provider;
+	provider_ref = (jlong) (long) provider;
 	return provider_ref;
 
 	/* Error handling. */
