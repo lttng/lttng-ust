@@ -566,11 +566,23 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 #define _TP_SESSION_CHECK(session, csession)   1
 #endif /* TP_SESSION_CHECK */
 
+/*
+ * Use of __builtin_return_address(0) sometimes seems to cause stack
+ * corruption on 32-bit PowerPC. Disable this feature on that
+ * architecture for now by always using the NULL value for the ip
+ * context.
+ */
 #undef _TP_IP_PARAM
 #ifdef TP_IP_PARAM
 #define _TP_IP_PARAM(x)		(x)
 #else /* TP_IP_PARAM */
+
+#if defined(__PPC__) && !defined(__PPC64__)
+#define _TP_IP_PARAM(x)		NULL
+#else /* #if defined(__PPC__) && !defined(__PPC64__) */
 #define _TP_IP_PARAM(x)		__builtin_return_address(0)
+#endif /* #else #if defined(__PPC__) && !defined(__PPC64__) */
+
 #endif /* TP_IP_PARAM */
 
 /*
