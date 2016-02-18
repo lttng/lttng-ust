@@ -30,6 +30,8 @@
 #include <lttng/tracepoint.h>
 #include <string.h>
 
+#define __LTTNG_UST_NULL_STRING	"(null)"
+
 #undef tp_list_for_each_entry_rcu
 #define tp_list_for_each_entry_rcu(pos, head, member)	\
 	for (pos = cds_list_entry(tp_rcu_dereference_bp((head)->next), __typeof__(*pos), member);	\
@@ -328,7 +330,8 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));
 
 #undef _ctf_string
 #define _ctf_string(_item, _src, _nowrite)				       \
-	__event_len += __dynamic_len[__dynamic_len_idx++] = strlen(_src) + 1;
+	__event_len += __dynamic_len[__dynamic_len_idx++] =		       \
+		strlen((_src) ? (_src) : __LTTNG_UST_NULL_STRING) + 1;
 
 #undef _ctf_enum
 #define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite)		\
@@ -471,7 +474,8 @@ size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, _TP_ARGS
 #undef _ctf_string
 #define _ctf_string(_item, _src, _nowrite)				       \
 	{								       \
-		const void *__ctf_tmp_ptr = (_src);			       \
+		const void *__ctf_tmp_ptr =				       \
+			((_src) ? (_src) : __LTTNG_UST_NULL_STRING);	       \
 		memcpy(__stack_data, &__ctf_tmp_ptr, sizeof(void *));	       \
 		__stack_data += sizeof(void *);				       \
 	}
@@ -608,13 +612,19 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 
 #undef _ctf_string
 #define _ctf_string(_item, _src, _nowrite)			        \
-	lib_ring_buffer_align_ctx(&__ctx, lttng_alignof(*(_src)));	\
-	if (__chan->ops->u.has_strcpy)					\
-		__chan->ops->event_strcpy(&__ctx, _src,			\
-			__get_dynamic_len(dest));			\
-	else								\
-		__chan->ops->event_write(&__ctx, _src,			\
-			__get_dynamic_len(dest));
+	{									\
+		const char *__ctf_tmp_string =					\
+			((_src) ? (_src) : __LTTNG_UST_NULL_STRING);		\
+		lib_ring_buffer_align_ctx(&__ctx,				\
+			lttng_alignof(*__ctf_tmp_string));			\
+		if (__chan->ops->u.has_strcpy)					\
+			__chan->ops->event_strcpy(&__ctx, __ctf_tmp_string,	\
+				__get_dynamic_len(dest));			\
+		else								\
+			__chan->ops->event_write(&__ctx, __ctf_tmp_string,	\
+				__get_dynamic_len(dest));			\
+ 	}
+
 
 #undef _ctf_enum
 #define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite)	\
