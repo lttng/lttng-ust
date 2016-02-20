@@ -15,23 +15,8 @@ control. The upstream Git repository URL is:
 
 ## Coding standard
 
-LTTng-UST uses the
-[Linux kernel coding style](http://www.kernel.org/doc/Documentation/CodingStyle)
-with one addition: single-line `if`/`for`/`while` statements must be
-wrapped in braces.
-
-Example:
-
-~~~ c
-/* not good */
-if (this == that)
-    goto fail;
-
-/* good */
-if (this == that) {
-    goto fail;
-}
-~~~
+LTTng-UST follows the
+[Linux kernel coding style](http://www.kernel.org/doc/Documentation/CodingStyle).
 
 Although the LTTng-UST code base is primarily written in C, it does
 contain shell, Perl, and Python code as well. There is no official coding
