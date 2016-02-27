@@ -48,11 +48,11 @@ AC_SUBST([PATCHLEVEL_VERSION], [V_PATCH])
 AC_PROG_GREP
 AC_PROG_LN_S
 # libtool link_all_deplibs fixup. See http://bugs.lttng.org/issues/321.
-AC_ARG_ENABLE(libtool-linkdep-fixup,
+AC_ARG_ENABLE([libtool-linkdep-fixup],
 	AS_HELP_STRING([--disable-libtool-linkdep-fixup],
 			[disable the libtool fixup for linking all dependent libraries (link_all_deplibs)]),
-	libtool_fixup=$enableval,
-	libtool_fixup=yes)
+	[libtool_fixup=$enableval],
+	[libtool_fixup=yes])
 
 AS_IF([test "x$libtool_fixup" = "xyes"],
 	    [
@@ -302,7 +302,7 @@ fi
 if test "x$java_agent_log4j" = "xyes"; then
   AX_CHECK_CLASSPATH
 
-  AX_CHECK_CLASS(org.apache.log4j.Logger)
+  AX_CHECK_CLASS([org.apache.log4j.Logger])
 
   if test "x$ac_cv_class_org_apache_log4j_Logger" = "xno"; then
      AC_MSG_ERROR([The UST Java agent support for log4j was requested but the Log4j classes were not found. Please specify the location of the Log4j jar via the Java CLASSPATH e.g: export CLASSPATH="/path/to/log4j.jar"])
@@ -425,30 +425,30 @@ AS_ECHO(["m4_bpatsubst(V_DESC, ["], [\\"])"])
 
 # Report on the configuration options
 AS_ECHO()
-AS_ECHO("LTTng-UST will be built with the following options:")
+AS_ECHO(["LTTng-UST will be built with the following options:"])
 
 AS_ECHO()
 
-AS_ECHO_N("Java agent (JUL support): ")
-AS_IF([test "x$java_agent_jul" = "xyes"], [AS_ECHO("Enabled")], [AS_ECHO("Disabled")])
+AS_ECHO_N(["Java agent (JUL support): "])
+AS_IF([test "x$java_agent_jul" = "xyes"], [AS_ECHO(["Enabled"])], [AS_ECHO(["Disabled"])])
 
-AS_ECHO_N("Java agent (Log4j support): ")
-AS_IF([test "x$java_agent_log4j" = "xyes"], [AS_ECHO("Enabled")], [AS_ECHO("Disabled")])
+AS_ECHO_N(["Java agent (Log4j support): "])
+AS_IF([test "x$java_agent_log4j" = "xyes"], [AS_ECHO(["Enabled"])], [AS_ECHO(["Disabled"])])
 
-AS_ECHO_N("JNI interface (JNI): ")
-AS_IF([test "x$jni_interface" = "xyes"], [AS_ECHO("Enabled")], [AS_ECHO("Disabled")])
+AS_ECHO_N(["JNI interface (JNI): "])
+AS_IF([test "x$jni_interface" = "xyes"], [AS_ECHO(["Enabled"])], [AS_ECHO(["Disabled"])])
 
-AS_ECHO_N("Python ($PYTHON) agent: ")
-AS_IF([test "x$python_agent" = "xyes"], [AS_ECHO("Enabled")], [AS_ECHO("Disabled")])
+AS_ECHO_N(["Python ($PYTHON) agent: "])
+AS_IF([test "x$python_agent" = "xyes"], [AS_ECHO(["Enabled"])], [AS_ECHO(["Disabled"])])
 
-AS_ECHO_N("sdt.h integration: ")
-AS_IF([test "x$with_sdt" = "xyes"], [AS_ECHO("Enabled")], [AS_ECHO("Disabled")])
+AS_ECHO_N(["sdt.h integration: "])
+AS_IF([test "x$with_sdt" = "xyes"], [AS_ECHO(["Enabled"])], [AS_ECHO(["Disabled"])])
 
-AS_ECHO("Architecture: $host_cpu")
-AS_ECHO_N("Efficient unaligned memory access: ")
-AS_IF([test "x$NO_UNALIGNED_ACCESS" != "x1"], [AS_ECHO("yes")], [AS_IF([test "x$UNSUPPORTED_ARCH" != "x1"], [AS_ECHO("no")], [AS_ECHO("unknown")])])
+AS_ECHO(["Architecture: $host_cpu"])
+AS_ECHO_N(["Efficient unaligned memory access: "])
+AS_IF([test "x$NO_UNALIGNED_ACCESS" != "x1"], [AS_ECHO(["yes"])], [AS_IF([test "x$UNSUPPORTED_ARCH" != "x1"], [AS_ECHO(["no"])], [AS_ECHO(["unknown"])])])
 AS_IF([test "x$UNSUPPORTED_ARCH" = "x1"], [AC_MSG_WARN([Your architecture ($host_cpu) is unsupported, using safe default of no unaligned access])])
 AS_ECHO()
 
-AS_ECHO("Type 'make' to compile.")
+AS_ECHO(["Type 'make' to compile."])
 
