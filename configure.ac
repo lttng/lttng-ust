@@ -210,9 +210,9 @@ AS_CASE([$host_cpu],
 	[UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS=no])
 AC_MSG_RESULT([$UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS])
 
-AM_CONDITIONAL([HAVE_PERF_EVENT], [test "x$have_perf_event" = "xyes" -a "x$UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS" = "xyes"])
+AM_CONDITIONAL([HAVE_PERF_EVENT], [test "x$have_perf_event" = "xyes" && test "x$UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS" = "xyes"])
 
-AS_IF([test "x$have_perf_event" = "xyes" -a "x$UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS" = "xyes"], [
+AS_IF([test "x$have_perf_event" = "xyes" && test "x$UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS" = "xyes"], [
 	AC_DEFINE([LTTNG_UST_HAVE_PERF_EVENT], [1])
 ])
 
