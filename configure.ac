@@ -1,7 +1,14 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT([lttng-ust],[2.8.0-pre],[mathieu dot desnoyers at efficios dot com])
+m4_define([V_MAJOR], [2])
+m4_define([V_MINOR], [8])
+m4_define([V_PATCH], [0])
+m4_define([V_EXTRA], [pre])
+m4_define([V_STRING], [V_MAJOR.V_MINOR.V_PATCH])
+m4_ifdef([V_EXTRA], [m4_append([V_STRING], [-V_EXTRA])])
+
+AC_INIT([lttng-ust],V_STRING,[mathieu dot desnoyers at efficios dot com])
 
 # Following the numbering scheme proposed by libtool for the library version
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
@@ -29,17 +36,11 @@ AH_TEMPLATE([LTTNG_UST_HAVE_EFFICIENT_UNALIGNED_ACCESS], [Use efficient unaligne
 AH_TEMPLATE([LTTNG_UST_HAVE_SDT_INTEGRATION], [SystemTap integration via sdt.h])
 AH_TEMPLATE([LTTNG_UST_HAVE_PERF_EVENT], [Perf event integration via perf_event.h])
 
-# Compute minor/major/patchlevel version numbers
+# Substitute minor/major/patchlevel version numbers
 AC_PROG_SED
-major_version=$(echo AC_PACKAGE_VERSION | sed 's/^\([[0-9]]\)*\.[[0-9]]*\.[[0-9]]*.*$/\1/')
-minor_version=$(echo AC_PACKAGE_VERSION | sed 's/^[[0-9]]*\.\([[0-9]]*\)\.[[0-9]]*.*$/\1/')
-patchlevel_version=$(echo AC_PACKAGE_VERSION | sed 's/^[[0-9]]*\.[[0-9]]*\.\([[0-9]]*\).*$/\1/')
-AC_SUBST([MAJOR_VERSION], [$major_version])
-AC_SUBST([MINOR_VERSION], [$minor_version])
-AC_SUBST([PATCHLEVEL_VERSION], [$patchlevel_version])
-AC_DEFINE_UNQUOTED([VERSION_MAJOR], $major_version, [UST major version number])
-AC_DEFINE_UNQUOTED([VERSION_MINOR], $minor_version, [UST minor version number])
-AC_DEFINE_UNQUOTED([VERSION_PATCHLEVEL], $patchlevel_version, [UST patchlevel version number])
+AC_SUBST([MAJOR_VERSION], [V_MAJOR])
+AC_SUBST([MINOR_VERSION], [V_MINOR])
+AC_SUBST([PATCHLEVEL_VERSION], [V_PATCH])
 
 version_name="Herbe à Détourne"
 version_description='Brewed with unrestrained amounts of Citra hop, the Herbe à Détourne is a fantastic New World Tripel brewed by "Dieu du Ciel!". Aromas of mango, cantaloupe melon and passion fruit, combined with a controlled bitter finish, unite in making this smooth golden-orange beer stand apart.'
