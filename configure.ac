@@ -40,13 +40,14 @@ AH_TEMPLATE([LTTNG_UST_HAVE_SDT_INTEGRATION], [SystemTap integration via sdt.h])
 AH_TEMPLATE([LTTNG_UST_HAVE_PERF_EVENT], [Perf event integration via perf_event.h])
 
 dnl Substitute minor/major/patchlevel version numbers
-AC_PROG_SED
 AC_SUBST([MAJOR_VERSION], [V_MAJOR])
 AC_SUBST([MINOR_VERSION], [V_MINOR])
 AC_SUBST([PATCHLEVEL_VERSION], [V_PATCH])
 
+AC_PROG_SED
 AC_PROG_GREP
 AC_PROG_LN_S
+
 # libtool link_all_deplibs fixup. See http://bugs.lttng.org/issues/321.
 AC_ARG_ENABLE([libtool-linkdep-fixup],
 	AS_HELP_STRING([--disable-libtool-linkdep-fixup],
