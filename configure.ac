@@ -1,12 +1,15 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
+dnl Version infos
 m4_define([V_MAJOR], [2])
 m4_define([V_MINOR], [8])
 m4_define([V_PATCH], [0])
 m4_define([V_EXTRA], [pre])
 m4_define([V_STRING], [V_MAJOR.V_MINOR.V_PATCH])
 m4_ifdef([V_EXTRA], [m4_append([V_STRING], [-V_EXTRA])])
+m4_define([V_NAME], [[Herbe à Détourne]])
+m4_define([V_DESC], [[Brewed with unrestrained amounts of Citra hop, the Herbe à Détourne is a fantastic New World Tripel brewed by "Dieu du Ciel!". Aromas of mango, cantaloupe melon and passion fruit, combined with a controlled bitter finish, unite in making this smooth golden-orange beer stand apart.]])
 
 AC_INIT([lttng-ust],V_STRING,[mathieu dot desnoyers at efficios dot com])
 
@@ -41,13 +44,6 @@ AC_PROG_SED
 AC_SUBST([MAJOR_VERSION], [V_MAJOR])
 AC_SUBST([MINOR_VERSION], [V_MINOR])
 AC_SUBST([PATCHLEVEL_VERSION], [V_PATCH])
-
-version_name="Herbe à Détourne"
-version_description='Brewed with unrestrained amounts of Citra hop, the Herbe à Détourne is a fantastic New World Tripel brewed by "Dieu du Ciel!". Aromas of mango, cantaloupe melon and passion fruit, combined with a controlled bitter finish, unite in making this smooth golden-orange beer stand apart.'
-version_description_c=$(echo $version_description | sed 's/"/\\"/g')
-
-AC_DEFINE_UNQUOTED([VERSION_NAME], ["$version_name"], [UST version name])
-AC_DEFINE_UNQUOTED([VERSION_DESCRIPTION], ["$version_description_c"], [UST version description])
 
 AC_PROG_GREP
 AC_PROG_LN_S
@@ -423,9 +419,9 @@ AC_CONFIG_LINKS([
 
 AC_OUTPUT
 
+AS_ECHO(["m4_bpatsubst(V_NAME, ["], [\\"])"])
 AS_ECHO()
-AS_ECHO("Version name: $version_name")
-AS_ECHO("$version_description")
+AS_ECHO(["m4_bpatsubst(V_DESC, ["], [\\"])"])
 
 # Report on the configuration options
 AS_ECHO()
