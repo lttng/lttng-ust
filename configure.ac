@@ -203,15 +203,11 @@ AC_CHECK_HEADERS([linux/perf_event.h], [have_perf_event=yes], [])
 
 # Perf event counters are only supported on x86 so far.
 AC_MSG_CHECKING([UST support for architecture perf event counters])
-case $host_cpu in
-changequote(,)dnl
-	i[3456]86)
-changequote([,])dnl
-	UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS=yes;;
-	x86_64) UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS=yes;;
-	amd64) UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS=yes;;
-	*) UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS=no;;
-esac
+AS_CASE([$host_cpu],
+	[i[[3456]]86], [UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS=yes],
+	[x86_64], [UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS=yes],
+	[amd64], [UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS=yes],
+	[UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS=no])
 AC_MSG_RESULT([$UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS])
 
 AM_CONDITIONAL([HAVE_PERF_EVENT], [test "x$have_perf_event" = "xyes" -a "x$UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS" = "xyes"])
@@ -221,29 +217,25 @@ AC_DEFINE([LTTNG_UST_HAVE_PERF_EVENT], [1])
 fi
 
 AC_MSG_CHECKING([host system alignment requirements])
-case $host_cpu in
-changequote(,)dnl
-	i[3456]86)
-changequote([,])dnl
-	  ;;
-	x86_64) ;;
-	amd64) ;;
-	powerpc) ;;
-	ppc64) ;;
-	ppc64le) ;;
-	powerpc64) ;;
-	powerpc64le) ;;
-	s390) NO_UNALIGNED_ACCESS=1 ;;
-	s390x) NO_UNALIGNED_ACCESS=1 ;;
-        arm*) NO_UNALIGNED_ACCESS=1 ;;
-	aarch64) NO_UNALIGNED_ACCESS=1 ;;
-	mips*) NO_UNALIGNED_ACCESS=1 ;;
-	tile*) NO_UNALIGNED_ACCESS=1 ;;
-	*)
+AS_CASE([$host_cpu],
+	[i[[3456]]86], [],
+	[x86_64], [],
+	[amd64], [],
+	[powerpc], [],
+	[ppc64], [],
+	[ppc64le], [],
+	[powerpc64], [],
+	[powerpc64le], [],
+	[s390], [NO_UNALIGNED_ACCESS=1],
+	[s390x], [NO_UNALIGNED_ACCESS=1],
+	[arm*], [NO_UNALIGNED_ACCESS=1],
+	[aarch64], [NO_UNALIGNED_ACCESS=1],
+	[mips*], [NO_UNALIGNED_ACCESS=1],
+	[tile*], [NO_UNALIGNED_ACCESS=1],
+	[
 		UNSUPPORTED_ARCH=1
 		NO_UNALIGNED_ACCESS=1
-		;;
-esac
+	])
 AC_MSG_RESULT([$host_cpu])
 
 if test x$NO_UNALIGNED_ACCESS = x ; then
