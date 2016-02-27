@@ -356,7 +356,7 @@ AC_DEFINE_UNQUOTED([LTTNG_SYSTEM_RUNDIR], ["$lttng_system_rundir"],
 	[LTTng system runtime directory])
 
 AC_CHECK_PROG([BUILD_GEN_TP_EXAMPLES],[python],["yes"])
-AM_CONDITIONAL([BUILD_GEN_TP_EXAMPLES], [test $BUILD_GEN_TP_EXAMPLES], [Build examples requiring lttng-gen-tp])
+AM_CONDITIONAL([BUILD_GEN_TP_EXAMPLES], [test $BUILD_GEN_TP_EXAMPLES])
 
 AC_CONFIG_FILES([
 	Makefile
