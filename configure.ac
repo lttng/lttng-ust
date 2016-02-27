@@ -87,7 +87,7 @@ AC_CACHE_CHECK([whether the C++ compiler works],
 		AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])],
 				[check_cxx_designated_initializers=yes],
 				[rw_cv_prog_cxx_works=no])
-		if test "$check_cxx_designated_initializers" = "yes"; then
+		AS_IF([test "x$check_cxx_designated_initializers" = "xyes"], [
 			AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 				struct foo { int a; int b; };
 				void fct(void)
@@ -99,7 +99,7 @@ AC_CACHE_CHECK([whether the C++ compiler works],
 			],[
 				rw_cv_prog_cxx_works=no
 			])
-		fi
+		])
 		AC_LANG_POP([C++])])
 
 AM_CONDITIONAL([CXX_WORKS], [test "x$rw_cv_prog_cxx_works" = "xyes"])
@@ -107,9 +107,9 @@ AM_CONDITIONAL([CXX_WORKS], [test "x$rw_cv_prog_cxx_works" = "xyes"])
 # Check if the compiler support weak symbols
 AX_SYS_WEAK_ALIAS
 
-if test "x${ax_cv_sys_weak_alias}" = "xno"; then
-   AC_MSG_ERROR([Your platform doesn't support weak symbols.])
-fi
+AS_IF([test "x${ax_cv_sys_weak_alias}" = "xno"], [
+	AC_MSG_ERROR([Your platform doesn't support weak symbols.])
+])
 
 ## Checks for libraries.
 AC_CHECK_LIB([dl], [dlopen],
@@ -212,9 +212,9 @@ AC_MSG_RESULT([$UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS])
 
 AM_CONDITIONAL([HAVE_PERF_EVENT], [test "x$have_perf_event" = "xyes" -a "x$UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS" = "xyes"])
 
-if test "x$have_perf_event" = "xyes" -a "x$UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS" = "xyes"; then
-AC_DEFINE([LTTNG_UST_HAVE_PERF_EVENT], [1])
-fi
+AS_IF([test "x$have_perf_event" = "xyes" -a "x$UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS" = "xyes"], [
+	AC_DEFINE([LTTNG_UST_HAVE_PERF_EVENT], [1])
+])
 
 AC_MSG_CHECKING([host system alignment requirements])
 AS_CASE([$host_cpu],
@@ -238,9 +238,9 @@ AS_CASE([$host_cpu],
 	])
 AC_MSG_RESULT([$host_cpu])
 
-if test x$NO_UNALIGNED_ACCESS = x ; then
-AC_DEFINE([LTTNG_UST_HAVE_EFFICIENT_UNALIGNED_ACCESS], [1])
-fi
+AS_IF([test "x$NO_UNALIGNED_ACCESS" = "x"], [
+	AC_DEFINE([LTTNG_UST_HAVE_EFFICIENT_UNALIGNED_ACCESS], [1])
+])
 
 # Check for JNI header files if requested
 AC_ARG_ENABLE([jni-interface],
@@ -276,30 +276,30 @@ AM_CONDITIONAL([BUILD_JAVA_AGENT], [test "x$java_agent_jul" = "xyes" || test "x$
 AM_CONDITIONAL([BUILD_JAVA_AGENT_WITH_JUL], [test "x$java_agent_jul" = "xyes"])
 AM_CONDITIONAL([BUILD_JAVA_AGENT_WITH_LOG4J], [test "x$java_agent_log4j" = "xyes"])
 
-if test "x$jni_interface" = "xyes" || test "x$java_agent_jul" = "xyes" || test "x$java_agent_log4j" = "xyes"; then
-  AX_JAVA_OPTIONS
-  AX_PROG_JAVAC
-  AX_PROG_JAVA
-  AX_PROG_JAR
+AS_IF([test "x$jni_interface" = "xyes" || test "x$java_agent_jul" = "xyes" || test "x$java_agent_log4j" = "xyes"], [
+	AX_JAVA_OPTIONS
+	AX_PROG_JAVAC
+	AX_PROG_JAVA
+	AX_PROG_JAR
 
-  AX_JNI_INCLUDE_DIR
-  for JNI_INCLUDE_DIR in $JNI_INCLUDE_DIRS
-  do
-	CPPFLAGS="$CPPFLAGS -I$JNI_INCLUDE_DIR"
-  done
+	AX_JNI_INCLUDE_DIR
+	for JNI_INCLUDE_DIR in $JNI_INCLUDE_DIRS
+	do
+		CPPFLAGS="$CPPFLAGS -I$JNI_INCLUDE_DIR"
+	done
 
-  AX_PROG_JAVAH
-fi
+	AX_PROG_JAVAH
+])
 
-if test "x$java_agent_log4j" = "xyes"; then
-  AX_CHECK_CLASSPATH
+AS_IF([test "x$java_agent_log4j" = "xyes"], [
+	AX_CHECK_CLASSPATH
 
-  AX_CHECK_CLASS([org.apache.log4j.Logger])
+	AX_CHECK_CLASS([org.apache.log4j.Logger])
 
-  if test "x$ac_cv_class_org_apache_log4j_Logger" = "xno"; then
-     AC_MSG_ERROR([The UST Java agent support for log4j was requested but the Log4j classes were not found. Please specify the location of the Log4j jar via the Java CLASSPATH e.g: export CLASSPATH="/path/to/log4j.jar"])
-  fi
-fi
+	AS_IF([test "x$ac_cv_class_org_apache_log4j_Logger" = "xno"], [
+		AC_MSG_ERROR([The UST Java agent support for log4j was requested but the Log4j classes were not found. Please specify the location of the Log4j jar via the Java CLASSPATH e.g: export CLASSPATH="/path/to/log4j.jar"])
+	])
+])
 
 # Option to build the python agent
 AC_ARG_ENABLE([python-agent],
@@ -308,9 +308,9 @@ AC_ARG_ENABLE([python-agent],
 	[:]
 )
 AM_CONDITIONAL([BUILD_PYTHON_AGENT], [test "x$python_agent" = "xyes"])
-if test "x$python_agent" = "xyes"; then
+AS_IF([test "x$python_agent" = "xyes"], [
 	AM_PATH_PYTHON([2.7])
-fi
+])
 
 # sdt.h integration
 AC_ARG_WITH([sdt],
