@@ -1,5 +1,5 @@
-#                                               -*- Autoconf -*-
-# Process this file with autoconf to produce a configure script.
+dnl                                               -*- Autoconf -*-
+dnl Process this file with autoconf to produce a configure script.
 
 dnl Version infos
 m4_define([V_MAJOR], [2])
@@ -39,7 +39,7 @@ AH_TEMPLATE([LTTNG_UST_HAVE_EFFICIENT_UNALIGNED_ACCESS], [Use efficient unaligne
 AH_TEMPLATE([LTTNG_UST_HAVE_SDT_INTEGRATION], [SystemTap integration via sdt.h])
 AH_TEMPLATE([LTTNG_UST_HAVE_PERF_EVENT], [Perf event integration via perf_event.h])
 
-# Substitute minor/major/patchlevel version numbers
+dnl Substitute minor/major/patchlevel version numbers
 AC_PROG_SED
 AC_SUBST([MAJOR_VERSION], [V_MAJOR])
 AC_SUBST([MINOR_VERSION], [V_MINOR])
@@ -111,7 +111,7 @@ AS_IF([test "x${ax_cv_sys_weak_alias}" = "xno"], [
 	AC_MSG_ERROR([Your platform doesn't support weak symbols.])
 ])
 
-## Checks for libraries.
+# Checks for libraries.
 AC_CHECK_LIB([dl], [dlopen],
 [
 	have_libdl=yes
@@ -142,22 +142,22 @@ AS_IF([test "x${ac_cv_header_dlfcn_h}" = "xyes"],
 AM_CONDITIONAL([HAVE_DLINFO], [test "x${ac_cv_have_decl_RTLD_DI_LINKMAP}" = "xyes"])
 
 # Checks for header files.
-#AC_CHECK_HEADERS([fcntl.h stdint.h stdlib.h string.h sys/socket.h sys/time.h unistd.h])
+dnl AC_CHECK_HEADERS([fcntl.h stdint.h stdlib.h string.h sys/socket.h sys/time.h unistd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
-#AC_TYPE_INT16_T
-#AC_TYPE_INT32_T
-#AC_TYPE_INT64_T
-#AC_TYPE_INT8_T
-#AC_TYPE_PID_T
-#AC_TYPE_SIZE_T
-#AC_TYPE_SSIZE_T
-#AC_TYPE_UINT16_T
-#AC_TYPE_UINT32_T
-#AC_TYPE_UINT64_T
-#AC_TYPE_UINT8_T
-#AC_CHECK_TYPES([ptrdiff_t])
+dnl AC_TYPE_INT16_T
+dnl AC_TYPE_INT32_T
+dnl AC_TYPE_INT64_T
+dnl AC_TYPE_INT8_T
+dnl AC_TYPE_PID_T
+dnl AC_TYPE_SIZE_T
+dnl AC_TYPE_SSIZE_T
+dnl AC_TYPE_UINT16_T
+dnl AC_TYPE_UINT32_T
+dnl AC_TYPE_UINT64_T
+dnl AC_TYPE_UINT8_T
+dnl AC_CHECK_TYPES([ptrdiff_t])
 
 # Checks for library functions.
 AC_FUNC_MALLOC
