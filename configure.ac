@@ -421,6 +421,7 @@ AC_CONFIG_LINKS([
 
 AC_OUTPUT
 
+AS_ECHO
 AS_ECHO(["m4_bpatsubst(V_NAME, ["], [\\"])"])
 AS_ECHO
 AS_ECHO(["m4_bpatsubst(V_DESC, ["], [\\"])"])
