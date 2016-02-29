@@ -61,7 +61,7 @@ AS_IF([test "x$libtool_fixup" = "xyes"], [
 	libtool_m4="$srcdir/config/libtool.m4"
 	libtool_flag_pattern=".*link_all_deplibs\s*,\s*\$1\s*)"
 	AC_MSG_CHECKING([for occurence(s) of link_all_deplibs = no in $libtool_m4])
-	libtool_flag_pattern_count=$(grep -c "$libtool_flag_pattern\s*=\s*no" $libtool_m4)
+	libtool_flag_pattern_count=`grep -c "$libtool_flag_pattern\s*=\s*no" $libtool_m4`
 
 	AS_IF([test $libtool_flag_pattern_count -ne 0], [
 	AC_MSG_RESULT([$libtool_flag_pattern_count])
