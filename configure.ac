@@ -422,14 +422,14 @@ AC_CONFIG_LINKS([
 AC_OUTPUT
 
 AS_ECHO(["m4_bpatsubst(V_NAME, ["], [\\"])"])
-AS_ECHO()
+AS_ECHO
 AS_ECHO(["m4_bpatsubst(V_DESC, ["], [\\"])"])
 
 # Report on the configuration options
-AS_ECHO()
+AS_ECHO
 AS_ECHO(["LTTng-UST will be built with the following options:"])
 
-AS_ECHO()
+AS_ECHO
 
 AS_ECHO_N(["Java agent (JUL support): "])
 AS_IF([test "x$java_agent_jul" = "xyes"], [AS_ECHO(["Enabled"])], [AS_ECHO(["Disabled"])])
@@ -450,7 +450,7 @@ AS_ECHO(["Architecture: $host_cpu"])
 AS_ECHO_N(["Efficient unaligned memory access: "])
 AS_IF([test "x$NO_UNALIGNED_ACCESS" != "x1"], [AS_ECHO(["yes"])], [AS_IF([test "x$UNSUPPORTED_ARCH" != "x1"], [AS_ECHO(["no"])], [AS_ECHO(["unknown"])])])
 AS_IF([test "x$UNSUPPORTED_ARCH" = "x1"], [AC_MSG_WARN([Your architecture ($host_cpu) is unsupported, using safe default of no unaligned access])])
-AS_ECHO()
+AS_ECHO
 
 AS_ECHO(["Type 'make' to compile."])
 
