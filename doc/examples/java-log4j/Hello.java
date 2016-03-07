@@ -29,7 +29,22 @@ import org.apache.log4j.Logger;
 import org.lttng.ust.agent.log4j.LttngLogAppender;
 
 /**
- * Example application using the LTTng-UST Java JUL agent.
+ * Example application using the LTTng-UST Java log4j agent.
+ *
+ * <p>
+ * To obtain LTTng trace events, you should run the following sequence of
+ * commands:
+ * </p>
+ *
+ * <ul>
+ * <li>$ lttng create</li>
+ * <li>$ lttng enable-event -l -a</li>
+ * <li>$ lttng start</li>
+ * <li>(run this program)</li>
+ * <li>$ lttng stop</li>
+ * <li>$ lttng view</li>
+ * <li>$ lttng destroy</li>
+ * </ul>
  *
  * @author Alexandre Montplaisir
  * @author Christian Babeux
@@ -44,15 +59,17 @@ public class Hello {
 	 * @param args
 	 *            Command-line arguments
 	 * @throws IOException
-	 * @throws InterruptedException
+	 *             If the required native libraries cannot be found. You may
+	 *             have to specify "-Djava.library.path=..." on the "java"
+	 *             command line.
 	 */
-	public static void main(String args[]) throws IOException, InterruptedException {
+	public static void main(String args[]) throws IOException {
 		/* Start with the default Log4j configuration, which logs to console */
 		BasicConfigurator.configure();
 
 		/*
-		 * Add a LTTng log appender to the logger, which will also send the
-		 * logged events to UST.
+		 * Instantiate a LTTng log appender and attach it to the logger, which
+		 * will now send the logged events to UST.
 		 */
 		Appender lttngAppender = new LttngLogAppender();
 		HELLO_LOG.addAppender(lttngAppender);
@@ -63,18 +80,13 @@ public class Hello {
 		 */
 		// PropertyConfigurator.configure(fileName);
 
-		/*
-		 * Gives you time to do some lttng commands before any event is hit.
-		 */
-		Thread.sleep(5000);
-
-		/* Trigger a tracing event using the Log4j Logger created before. */
+		/* Trigger some tracing events using the Log4j Logger created before. */
 		HELLO_LOG.info("Hello World, the answer is " + 42);
+		HELLO_LOG.info("Another info event");
+		HELLO_LOG.error("An error event");
 
-		System.out.println("Firing second event in 5 seconds...");
-		Thread.sleep(5000);
-		HELLO_LOG.info("Hello World delayed...");
-
+		/* Cleanup */
+		HELLO_LOG.removeAppender(lttngAppender);
 		lttngAppender.close();
 	}
 }
