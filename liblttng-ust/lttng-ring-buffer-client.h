@@ -118,7 +118,7 @@ size_t record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
 				 struct lttng_ust_lib_ring_buffer_ctx *ctx)
 {
 	struct lttng_channel *lttng_chan = channel_get_private(chan);
-	struct lttng_event *event = ctx->priv;
+	struct lttng_stack_ctx *lttng_ctx = ctx->priv2;
 	size_t orig_offset = offset;
 	size_t padding;
 
@@ -157,8 +157,8 @@ size_t record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
 		padding = 0;
 		WARN_ON_ONCE(1);
 	}
-	offset += ctx_get_size(offset, lttng_chan->ctx);
-	offset += ctx_get_size(offset, event->ctx);
+	offset += ctx_get_size(offset, lttng_ctx->chan_ctx);
+	offset += ctx_get_size(offset, lttng_ctx->event_ctx);
 
 	*pre_header_padding = padding;
 	return offset - orig_offset;
