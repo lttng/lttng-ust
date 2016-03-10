@@ -1,3 +1,9 @@
+2016-03-09 lttng-ust 2.7.2
+	* Fix: disable use of __builtin_return_address(0) on 32-bit PowerPC
+	* Fix: handle negative range for LTTNG_UST_REGISTER_TIMEOUT
+	* Fix: Ensure the Java JUL messages are correctly formatted
+	* Fix: double-free on error sending fields
+
 2015-11-26 lttng-ust 2.7.1
 	* Fix: header size larger than 256 bytes
 	* Remove stale tests/java-jul test
