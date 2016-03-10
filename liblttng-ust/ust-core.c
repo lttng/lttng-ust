@@ -106,3 +106,11 @@ void lttng_ust_dummy_get_value(struct lttng_ctx_field *field,
 {
 	value->sel = LTTNG_UST_DYNAMIC_TYPE_NONE;
 }
+
+int lttng_context_is_app(const char *name)
+{
+	if (strncmp(name, "$app.", strlen("$app.")) != 0) {
+		return 0;
+	}
+	return 1;
+}

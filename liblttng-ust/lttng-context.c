@@ -55,14 +55,6 @@ int lttng_find_context(struct lttng_ctx *ctx, const char *name)
 	return 0;
 }
 
-int lttng_context_is_app(const char *name)
-{
-	if (strncmp(name, "$app.", strlen("$app.")) != 0) {
-		return 0;
-	}
-	return 1;
-}
-
 int lttng_get_context_index(struct lttng_ctx *ctx, const char *name)
 {
 	unsigned int i;
