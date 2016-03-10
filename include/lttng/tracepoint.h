@@ -227,6 +227,21 @@ struct lttng_ust_tracepoint_dlopen {
 
 extern struct lttng_ust_tracepoint_dlopen tracepoint_dlopen;
 
+/* Disable tracepoint destructors. */
+int __tracepoints__disable_destructors __attribute__((weak));
+
+/*
+ * Programs that have threads that survive after they exit, and
+ * therefore call library destructors, should disable the tracepoint
+ * destructors by calling tracepoint_disable_destructors(). This will
+ * leak the tracepoint instrumentation library shared object, leaving
+ * its teardown to the operating system process teardown.
+ */
+static inline void tracepoint_disable_destructors(void)
+{
+	__tracepoints__disable_destructors = 1;
+}
+
 #if defined(TRACEPOINT_DEFINE) || defined(TRACEPOINT_CREATE_PROBES)
 
 /*
@@ -301,7 +316,9 @@ __tracepoints__destroy(void)
 
 	if (--__tracepoint_registered)
 		return;
-	if (tracepoint_dlopen.liblttngust_handle && !__tracepoint_ptrs_registered) {
+	if (!__tracepoints__disable_destructors
+			&& tracepoint_dlopen.liblttngust_handle
+			&& !__tracepoint_ptrs_registered) {
 		ret = dlclose(tracepoint_dlopen.liblttngust_handle);
 		if (ret) {
 			fprintf(stderr, "Error (%d) in dlclose\n", ret);
@@ -406,7 +423,9 @@ __tracepoints__ptrs_destroy(void)
 		return;
 	if (tracepoint_dlopen.tracepoint_unregister_lib)
 		tracepoint_dlopen.tracepoint_unregister_lib(__start___tracepoints_ptrs);
-	if (tracepoint_dlopen.liblttngust_handle && !__tracepoint_registered) {
+	if (!__tracepoints__disable_destructors
+			&& tracepoint_dlopen.liblttngust_handle
+			&& !__tracepoint_ptrs_registered) {
 		ret = dlclose(tracepoint_dlopen.liblttngust_handle);
 		if (ret) {
 			fprintf(stderr, "Error (%d) in dlclose\n", ret);
