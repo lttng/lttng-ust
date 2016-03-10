@@ -33,6 +33,9 @@
 struct lttng_session;
 struct lttng_channel;
 struct lttng_event;
+struct lttng_ctx_field;
+struct lttng_ust_lib_ring_buffer_ctx;
+struct lttng_ctx_value;
 
 int ust_lock(void) __attribute__ ((warn_unused_result));
 void ust_lock_nocheck(void);
@@ -51,5 +54,13 @@ void lttng_ust_sockinfo_session_enabled(void *owner);
 void lttng_ust_malloc_wrapper_init(void);
 
 ssize_t lttng_ust_read(int fd, void *buf, size_t len);
+
+size_t lttng_ust_dummy_get_size(struct lttng_ctx_field *field, size_t offset);
+void lttng_ust_dummy_record(struct lttng_ctx_field *field,
+		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
+		 struct lttng_channel *chan);
+void lttng_ust_dummy_get_value(struct lttng_ctx_field *field,
+		struct lttng_ctx_value *value);
+int lttng_context_is_app(const char *name);
 
 #endif /* _LTTNG_TRACER_CORE_H */

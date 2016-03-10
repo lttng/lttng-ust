@@ -92,8 +92,7 @@ end:
 	return ret;
 }
 
-static
-size_t dummy_get_size(struct lttng_ctx_field *field, size_t offset)
+size_t lttng_ust_dummy_get_size(struct lttng_ctx_field *field, size_t offset)
 {
 	size_t size = 0;
 
@@ -102,8 +101,7 @@ size_t dummy_get_size(struct lttng_ctx_field *field, size_t offset)
 	return size;
 }
 
-static
-void dummy_record(struct lttng_ctx_field *field,
+void lttng_ust_dummy_record(struct lttng_ctx_field *field,
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		 struct lttng_channel *chan)
 {
@@ -113,8 +111,7 @@ void dummy_record(struct lttng_ctx_field *field,
 	chan->ops->event_write(ctx, &sel_char, sizeof(sel_char));
 }
 
-static
-void dummy_get_value(struct lttng_ctx_field *field,
+void lttng_ust_dummy_get_value(struct lttng_ctx_field *field,
 		struct lttng_ctx_value *value)
 {
 	value->sel = LTTNG_UST_DYNAMIC_TYPE_NONE;
@@ -125,7 +122,8 @@ void lttng_ust_context_provider_unregister(struct lttng_ust_context_provider *pr
 	if (ust_lock())
 		goto end;
 	lttng_ust_context_set_session_provider(provider->name,
-		dummy_get_size, dummy_record, dummy_get_value);
+		lttng_ust_dummy_get_size, lttng_ust_dummy_record,
+		lttng_ust_dummy_get_value);
 	cds_hlist_del(&provider->node);
 end:
 	ust_unlock();
@@ -168,9 +166,9 @@ int lttng_ust_add_app_context_to_ctx_rcu(const char *name,
 		new_field.record = provider->record;
 		new_field.get_value = provider->get_value;
 	} else {
-		new_field.get_size = dummy_get_size;
-		new_field.record = dummy_record;
-		new_field.get_value = dummy_get_value;
+		new_field.get_size = lttng_ust_dummy_get_size;
+		new_field.record = lttng_ust_dummy_record;
+		new_field.get_value = lttng_ust_dummy_get_value;
 	}
 	ret = lttng_context_add_rcu(ctx, &new_field);
 	if (ret) {

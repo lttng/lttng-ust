@@ -30,6 +30,11 @@
 #define LTTNG_COMPACT_EVENT_BITS       5
 #define LTTNG_COMPACT_TSC_BITS         27
 
+enum app_ctx_mode {
+	APP_CTX_DISABLED,
+	APP_CTX_ENABLED,
+};
+
 /*
  * Keep the natural field alignment for _each field_ within this structure if
  * you ever add/remove a field from this header. Packed attribute is not used
@@ -71,7 +76,8 @@ static inline uint64_t lib_ring_buffer_clock_read(struct channel *chan)
 }
 
 static inline
-size_t ctx_get_size(size_t offset, struct lttng_ctx *ctx)
+size_t ctx_get_size(size_t offset, struct lttng_ctx *ctx,
+		enum app_ctx_mode mode)
 {
 	int i;
 	size_t orig_offset = offset;
@@ -79,23 +85,62 @@ size_t ctx_get_size(size_t offset, struct lttng_ctx *ctx)
 	if (caa_likely(!ctx))
 		return 0;
 	offset += lib_ring_buffer_align(offset, ctx->largest_align);
-	for (i = 0; i < ctx->nr_fields; i++)
-		offset += ctx->fields[i].get_size(&ctx->fields[i], offset);
+	for (i = 0; i < ctx->nr_fields; i++) {
+		if (mode == APP_CTX_ENABLED) {
+			offset += ctx->fields[i].get_size(&ctx->fields[i], offset);
+		} else {
+			if (lttng_context_is_app(ctx->fields[i].event_field.name)) {
+				/*
+				 * Before UST 2.8, we cannot use the
+				 * application context, because we
+				 * cannot trust that the handler used
+				 * for get_size is the same used for
+				 * ctx_record, which would result in
+				 * corrupted traces when tracing
+				 * concurrently with application context
+				 * register/unregister.
+				 */
+				offset += lttng_ust_dummy_get_size(&ctx->fields[i], offset);
+			} else {
+				offset += ctx->fields[i].get_size(&ctx->fields[i], offset);
+			}
+		}
+	}
 	return offset - orig_offset;
 }
 
 static inline
 void ctx_record(struct lttng_ust_lib_ring_buffer_ctx *bufctx,
 		struct lttng_channel *chan,
-		struct lttng_ctx *ctx)
+		struct lttng_ctx *ctx,
+		enum app_ctx_mode mode)
 {
 	int i;
 
 	if (caa_likely(!ctx))
 		return;
 	lib_ring_buffer_align_ctx(bufctx, ctx->largest_align);
-	for (i = 0; i < ctx->nr_fields; i++)
-		ctx->fields[i].record(&ctx->fields[i], bufctx, chan);
+	for (i = 0; i < ctx->nr_fields; i++) {
+		if (mode == APP_CTX_ENABLED) {
+			ctx->fields[i].record(&ctx->fields[i], bufctx, chan);
+		} else {
+			if (lttng_context_is_app(ctx->fields[i].event_field.name)) {
+				/*
+				 * Before UST 2.8, we cannot use the
+				 * application context, because we
+				 * cannot trust that the handler used
+				 * for get_size is the same used for
+				 * ctx_record, which would result in
+				 * corrupted traces when tracing
+				 * concurrently with application context
+				 * register/unregister.
+				 */
+				lttng_ust_dummy_record(&ctx->fields[i], bufctx, chan);
+			} else {
+				ctx->fields[i].record(&ctx->fields[i], bufctx, chan);
+			}
+		}
+	}
 }
 
 /*
@@ -118,6 +163,7 @@ size_t record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
 				 struct lttng_ust_lib_ring_buffer_ctx *ctx)
 {
 	struct lttng_channel *lttng_chan = channel_get_private(chan);
+	struct lttng_event *event = ctx->priv;
 	struct lttng_stack_ctx *lttng_ctx = ctx->priv2;
 	size_t orig_offset = offset;
 	size_t padding;
@@ -157,9 +203,15 @@ size_t record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
 		padding = 0;
 		WARN_ON_ONCE(1);
 	}
-	offset += ctx_get_size(offset, lttng_ctx->chan_ctx);
-	offset += ctx_get_size(offset, lttng_ctx->event_ctx);
-
+	if (lttng_ctx) {
+		/* 2.8+ probe ABI. */
+		offset += ctx_get_size(offset, lttng_ctx->chan_ctx, APP_CTX_ENABLED);
+		offset += ctx_get_size(offset, lttng_ctx->event_ctx, APP_CTX_ENABLED);
+	} else {
+		/* Pre 2.8 probe ABI. */
+		offset += ctx_get_size(offset, lttng_chan->ctx, APP_CTX_DISABLED);
+		offset += ctx_get_size(offset, event->ctx, APP_CTX_DISABLED);
+	}
 	*pre_header_padding = padding;
 	return offset - orig_offset;
 }
@@ -187,6 +239,7 @@ void lttng_write_event_header(const struct lttng_ust_lib_ring_buffer_config *con
 			    uint32_t event_id)
 {
 	struct lttng_channel *lttng_chan = channel_get_private(ctx->chan);
+	struct lttng_event *event = ctx->priv;
 	struct lttng_stack_ctx *lttng_ctx = ctx->priv2;
 
 	if (caa_unlikely(ctx->rflags))
@@ -222,8 +275,15 @@ void lttng_write_event_header(const struct lttng_ust_lib_ring_buffer_config *con
 		WARN_ON_ONCE(1);
 	}
 
-	ctx_record(ctx, lttng_chan, lttng_ctx->chan_ctx);
-	ctx_record(ctx, lttng_chan, lttng_ctx->event_ctx);
+	if (lttng_ctx) {
+		/* 2.8+ probe ABI. */
+		ctx_record(ctx, lttng_chan, lttng_ctx->chan_ctx, APP_CTX_ENABLED);
+		ctx_record(ctx, lttng_chan, lttng_ctx->event_ctx, APP_CTX_ENABLED);
+	} else {
+		/* Pre 2.8 probe ABI. */
+		ctx_record(ctx, lttng_chan, lttng_chan->ctx, APP_CTX_DISABLED);
+		ctx_record(ctx, lttng_chan, event->ctx, APP_CTX_DISABLED);
+	}
 	lib_ring_buffer_align_ctx(ctx, ctx->largest_align);
 
 	return;
@@ -238,6 +298,7 @@ void lttng_write_event_header_slow(const struct lttng_ust_lib_ring_buffer_config
 				 uint32_t event_id)
 {
 	struct lttng_channel *lttng_chan = channel_get_private(ctx->chan);
+	struct lttng_event *event = ctx->priv;
 	struct lttng_stack_ctx *lttng_ctx = ctx->priv2;
 
 	switch (lttng_chan->header_type) {
@@ -295,8 +356,15 @@ void lttng_write_event_header_slow(const struct lttng_ust_lib_ring_buffer_config
 	default:
 		WARN_ON_ONCE(1);
 	}
-	ctx_record(ctx, lttng_chan, lttng_ctx->chan_ctx);
-	ctx_record(ctx, lttng_chan, lttng_ctx->event_ctx);
+	if (lttng_ctx) {
+		/* 2.8+ probe ABI. */
+		ctx_record(ctx, lttng_chan, lttng_ctx->chan_ctx, APP_CTX_ENABLED);
+		ctx_record(ctx, lttng_chan, lttng_ctx->event_ctx, APP_CTX_ENABLED);
+	} else {
+		/* Pre 2.8 probe ABI. */
+		ctx_record(ctx, lttng_chan, lttng_chan->ctx, APP_CTX_DISABLED);
+		ctx_record(ctx, lttng_chan, event->ctx, APP_CTX_DISABLED);
+	}
 	lib_ring_buffer_align_ctx(ctx, ctx->largest_align);
 }
 
