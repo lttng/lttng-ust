@@ -157,8 +157,8 @@ size_t record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
 		padding = 0;
 		WARN_ON_ONCE(1);
 	}
-	offset += ctx_get_size(offset, event->ctx);
 	offset += ctx_get_size(offset, lttng_chan->ctx);
+	offset += ctx_get_size(offset, event->ctx);
 
 	*pre_header_padding = padding;
 	return offset - orig_offset;
