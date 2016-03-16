@@ -1590,7 +1590,9 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	timeout_mode = get_constructor_timeout(&constructor_timeout);
 
 	ret = sem_init(&constructor_wait, 0, 0);
-	assert(!ret);
+	if (ret) {
+		PERROR("sem_init");
+	}
 
 	ret = setup_local_apps();
 	if (ret) {
@@ -1655,17 +1657,34 @@ void __attribute__((constructor)) lttng_ust_init(void)
 			ret = sem_timedwait(&constructor_wait,
 					&constructor_timeout);
 		} while (ret < 0 && errno == EINTR);
-		if (ret < 0 && errno == ETIMEDOUT) {
-			ERR("Timed out waiting for lttng-sessiond");
-		} else {
-			assert(!ret);
+		if (ret < 0) {
+			switch (errno) {
+			case ETIMEDOUT:
+				ERR("Timed out waiting for lttng-sessiond");
+				break;
+			case EINVAL:
+				PERROR("sem_timedwait");
+				break;
+			default:
+				ERR("Unexpected error \"%s\" returned by sem_timedwait",
+					strerror(errno));
+			}
 		}
 		break;
 	case -1:/* wait forever */
 		do {
 			ret = sem_wait(&constructor_wait);
 		} while (ret < 0 && errno == EINTR);
-		assert(!ret);
+		if (ret < 0) {
+			switch (errno) {
+			case EINVAL:
+				PERROR("sem_wait");
+				break;
+			default:
+				ERR("Unexpected error \"%s\" returned by sem_wait",
+					strerror(errno));
+			}
+		}
 		break;
 	case 0:	/* no timeout */
 		break;
