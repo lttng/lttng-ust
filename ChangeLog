@@ -1,3 +1,133 @@
+2016-03-18 (Awkward Moments Day) lttng-ust 2.8.0-rc1
+	* Fix: remove assertions in lttng-ust-comm init
+	* Add tracepoint_disable_destructors()
+	* Documentation: fix manpage typo
+	* Fix: move lttng_context_is_app to core file
+	* Fix: move dummy functions to common file
+	* Fix: handle backward probe compatibility for application contexts
+	* Fix: application context header size
+	* Fix: event ctx get size should be after chan ctx
+	* Clarify and simplify the Java agent "Hello" examples
+	* Export the stream instance ID
+	* Generate and export the sequence number
+	* Add stream instance id to the packet header
+	* configure.ac: print empty line after AC_OUTPUT
+	* configure.ac: macros with no arguments do not need ()
+	* configure.ac: standardize indentation to tabs
+	* configure.ac: move AC_PROG_SED() close to other AC_PROG_*()
+	* configure.ac: test -a -> shell's && (more portable)
+	* configure.ac: use test "x$var" = "xyes"
+	* configure.ac: AM_CONDITIONAL() accepts two arguments
+	* configure.ac: use dnl at appropriate places
+	* configure.ac: if -> AS_IF()
+	* configure.ac: case -> AS_CASE()
+	* configure.ac: add missing quotes in macro calls
+	* configure.ac: use macros for version name and description
+	* configure.ac: do not use shell eval for known values
+	* Add CONTRIBUTING.md
+	* Output "(null)" when ctf_string()'s arg is NULL
+	* Fix: disable use of __builtin_return_address(0) on 32-bit PowerPC
+	* Fix: java agent 32-bit pointer to jlong warning
+	* Fix: Use Java 6 syntax in JUL examples
+	* Fix: add missing example file to dist tarball
+	* Fix: add missing header to dist tarball
+	* Fix: add missing LttngContextApi.java to dist tarball
+	* Pass the Java app context information using two separate arrays
+	* Fix: Correctly report filter notifications on Java agent teardown
+	* Add some logging to the AbstractLttngAgent
+	* Fix: Clear tracked application contexts upon closing a Java agent
+	* Introduce a verbose mode for the Java agent
+	* Implement Java agent application context retrieval
+	* Turn ISessiondCommand into an abstract class
+	* Split the JNI APIs in separate classes
+	* Add app context support to ust-ctl protocol
+	* Handle application context cmd
+	* Implement dynamic types, and application context provider support
+	* Fix: handle negative range for LTTNG_UST_REGISTER_TIMEOUT
+	* Fix: Ensure the Java JUL messages are correctly formatted
+	* Fix: double-free on error sending fields
+	* Add CTF enum type support to tracepoint event
+	* Fix: missing _GNU_SOURCE define
+	* python-lttngust/setup.py.in: update setup() fields
+	* Refactor Python agent build and install
+	* Fix: remove debugging print() call from Python agent
+	* Fix: header size larger than 256 bytes
+	* Python agent: Support Agent protocol v2.0
+	* Fix: Java agent protocol network endianness consistency
+	* Fix: examples jul: add missing files to make dist
+	* Fix: Filer -> Filter typo in example
+	* Fix: Return the correct list of available Java events
+	* Add a toString() to Java agent's EventRule
+	* Add API stubs for the Java context info retrievers
+	* Receive the event filter string in the Java agent
+	* Document the Java filter notification model
+	* Add filter change notification mechanism to the Java agent
+	* Manage complete "event rules" in the Java agent
+	* Introduce a new client listener interface for the Java agent
+	* Turn ILttngAgentResponse into an abstract class
+	* Remove stale tests/java-jul test
+	* Fix: live timer calculation error
+	* Fix python agent build/install/uninstall with DESTDIR specified
+	* Fix: Don't (re)define STAP_PROBEV
+	* Fix: don't dereference NULL pointers
+	* Cleanup: Remove unused values
+	* Fix: Value stored to 'has_waited' is never read
+	* Fix: Argument with 'nonnull' attribute passed null
+	* Cleanup: Unnecessary bit shift
+	* Clean-up: remove extraneous "found" parameters in ust-elf
+	* Fix: sysconf() unchecked return value
+	* doc: add Python example
+	* Fix: Python agent: do not register twice to same port
+	* Fix: potential leaks in error paths
+	* Fix: double free in liblttng-ust-dl
+	* Fix: make check in OOT build with absolute path
+	* Fix: elf: leaks on error paths
+	* Cleanup: coding style
+	* Cleanup: elf: use off_t for offsets, size_t for len
+	* Cleanup: eliminate implicit sign-extension
+	* Fix: elf: NULL pointer dereference
+	* Fix: add missing ust-elf.h header to dist
+	* Fix: make check in out of tree build
+	* Fix: old gcc warnings
+	* Fix: old gcc warning
+	* Fix: remove stale lttng-ust-elf.h from makefile
+	* Fix: elf: uninitialized ret
+	* Fix: test elf: handle NULL debug file
+	* test: elf move constants to top of implementation
+	* Fix: elf test prog arg checking
+	* baddr statedump: remove dependency on file streams
+	* baddr statedump: hold ust lock around allocations
+	* Add unit tests for lttng_ust_elf
+	* Add memory size, build id, and debug link info to statedump and dl
+	* Fix: close socket on protocol error, sendmsg MSG_NOSIGNAL
+	* Cleanup: more descriptive error message
+	* Fix: add missing ust lock around objd_table_destroy()
+	* Fix: application exit race with pthread cancel
+	* Cleanup: configure layout for python agent detection
+	* Build: python agent: use setup.py over autoconf
+	* Build: add python interpreter used by python agent if built
+	* Doc: basic lttng ust python agent documentation
+	* Build: use AM_PATH_PYTHON to resolve python when building agent
+	* Build: only check if python exists in path
+	* Update version to 2.8.0-pre
+	* Fix: Send the correct Java agent return code when disabling events
+	* Fix: Correctly handle the command to disable all events
+	* Small refactor of the Java agent's TCP client
+	* Rename Java Agent event names to "event"
+	* Rename Python agent tracepoint to "event"
+	* Allow compiling the Java agent with Java 1.6
+	* Restore concurrent build when Java agent is enabled
+	* Refactor Java agent to let applications manage the log handlers
+	* Doc: add LTTNG_UST_CLOCK_PLUGIN to man page
+	* Doc: add LTTNG_UST_GETCPU_PLUGIN to man page
+	* Cleanup: Add Javadoc to all public methods and members
+	* Fix: Small fixes to the Java agent example files
+	* Update doc/java-agent.txt to reflect the new packaging
+	* Split Java agent library in 3 separate jars
+	* Remove deprecated org.lttng.ust.jul.LTTngAgent class
+	* Use tar-ustar format for the dist archive
+	* Fix: remove generated file from git tree
+
 2015-07-15 (Pet Fire Safety Day) lttng-ust 2.7.0-rc1
 	* Fix: Use $enableval with AC_ARG_ENABLE
 	* Fix: Cleanup local_apps sock_info in lttng_ust_cleanup

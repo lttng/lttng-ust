@@ -5,11 +5,11 @@ dnl Version infos
 m4_define([V_MAJOR], [2])
 m4_define([V_MINOR], [8])
 m4_define([V_PATCH], [0])
-m4_define([V_EXTRA], [pre])
+m4_define([V_EXTRA], [rc1])
 m4_define([V_STRING], [V_MAJOR.V_MINOR.V_PATCH])
 m4_ifdef([V_EXTRA], [m4_append([V_STRING], [-V_EXTRA])])
-m4_define([V_NAME], [[Herbe à Détourne]])
-m4_define([V_DESC], [[Brewed with unrestrained amounts of Citra hop, the Herbe à Détourne is a fantastic New World Tripel brewed by "Dieu du Ciel!". Aromas of mango, cantaloupe melon and passion fruit, combined with a controlled bitter finish, unite in making this smooth golden-orange beer stand apart.]])
+m4_define([V_NAME], [[Isseki Nicho]])
+m4_define([V_DESC], [[The result of a collaboration between "Dieu du Ciel!" and Nagano-based "Shiga Kogen", Isseki Nicho is a strong Imperial Dark Saison offering a rich roasted malt flavor combined with a complex fruity finish typical of Saison yeasts.]])
 
 AC_INIT([lttng-ust], V_STRING, [mathieu dot desnoyers at efficios dot com])
 
