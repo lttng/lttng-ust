@@ -1088,8 +1088,10 @@ int serialize_entries(struct ustctl_enum_entry **_entries,
 		uentry = &entries[i];
 		lentry = &lttng_entries[i];
 
-		uentry->start = lentry->start;
-		uentry->end = lentry->end;
+		uentry->start.value = lentry->start.value;
+		uentry->start.signedness = lentry->start.signedness;
+		uentry->end.value = lentry->end.value;
+		uentry->end.signedness = lentry->end.signedness;
 		strncpy(uentry->string, lentry->string, LTTNG_UST_SYM_NAME_LEN);
 		uentry->string[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
 	}

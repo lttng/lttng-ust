@@ -129,12 +129,36 @@ static const char							\
 /* Enumeration entry (single value) */
 #undef ctf_enum_value
 #define ctf_enum_value(_string, _value)					\
-	{ _value, _value, _string },
+	{								\
+		.start = {						\
+			.signedness = lttng_is_signed_type(__typeof__(_value)), \
+			.value = lttng_is_signed_type(__typeof__(_value)) ? \
+				(long long) (_value) : (_value),	\
+		},							\
+		.end = {						\
+			.signedness = lttng_is_signed_type(__typeof__(_value)), \
+			.value = lttng_is_signed_type(__typeof__(_value)) ? \
+				(long long) (_value) : (_value),	\
+		},							\
+		.string = (_string),					\
+	},
 
 /* Enumeration entry (range) */
 #undef ctf_enum_range
 #define ctf_enum_range(_string, _range_start, _range_end)		\
-	{ _range_start, _range_end, _string },
+	{								\
+		.start = {						\
+			.signedness = lttng_is_signed_type(__typeof__(_range_start)), \
+			.value = lttng_is_signed_type(__typeof__(_range_start)) ? \
+				(long long) (_range_start) : (_range_start), \
+		},							\
+		.end = {						\
+			.signedness = lttng_is_signed_type(__typeof__(_range_end)), \
+			.value = lttng_is_signed_type(__typeof__(_range_end)) ? \
+				(long long) (_range_end) : (_range_end), \
+		},							\
+		.string = (_string),					\
+	},
 
 #undef TP_ENUM_VALUES
 #define TP_ENUM_VALUES(...)						\

@@ -101,9 +101,14 @@ enum lttng_string_encodings {
 	NR_STRING_ENCODINGS,
 };
 
+struct lttng_enum_value {
+	unsigned long long value;
+	unsigned int signedness:1;
+};
+
 #define LTTNG_UST_ENUM_ENTRY_PADDING	16
 struct lttng_enum_entry {
-	unsigned long long start, end;	/* start and end are inclusive */
+	struct lttng_enum_value start, end; /* start and end are inclusive */
 	const char *string;
 	char padding[LTTNG_UST_ENUM_ENTRY_PADDING];
 };
