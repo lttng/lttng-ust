@@ -1,0 +1,8 @@
+include::common-footer.txt[]
+
+
+AUTHORS
+-------
+LTTng-UST was originally written by Mathieu Desnoyers, with additional
+contributions from various other people. It is currently maintained by
+mailto:mathieu.desnoyers@efficios.com[Mathieu Desnoyers].

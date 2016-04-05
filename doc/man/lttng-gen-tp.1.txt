@@ -1,0 +1,134 @@
+lttng-gen-tp(1)
+===============
+:object-type: program
+
+
+NAME
+----
+lttng-gen-tp - Generate LTTng-UST tracepoint provider code
+
+
+SYNOPSIS
+--------
+[verse]
+*lttng-gen-tp* [option:--verbose] [option:--output='FILE'.c]
+             [option:--output='FILE'.h] [option:--output='FILE'.o] 'TEMPLATE'
+
+
+DESCRIPTION
+-----------
+The `lttng-gen-tp` tool simplifies the generation of LTTng-UST
+tracepoint provider files. It takes a simple template file, 'TEMPLATE',
+and generates the necessary C code to use the defined tracepoints in
+your application. See the <<template-file-format,Template file format>>
+section below for more information about the format of 'TEMPLATE'.
+
+Currently, `lttng-gen-tp` can generate the `.h`, `.c`, and `.o` files
+associated with your tracepoint provider. The generated `.h` file can be
+included directly in your application. You can let `lttng-gen-tp`
+generate the `.o` file or compile the `.c` file yourself. See
+man:lttng-ust(3) for more information about compiling LTTng-UST
+tracepoint providers.
+
+By default, `lttng-gen-tp` generates the `.h`, `.c`, and `.o` files,
+their basename being the basename of 'TEMPLATE'. You can generate one or
+more specific file types with the option:--output option, repeated if
+needed.
+
+
+[[template-file-format]]
+Template file format
+~~~~~~~~~~~~~~~~~~~~
+The template file, which usually has the `.tp` extension, contains a
+list of `TRACEPOINT_EVENT()` definitions and other optional definition
+entries, like `TRACEPOINT_LOGLEVEL()`. See man:lttng-ust(3) for
+the complete list of available definitions.
+
+The `TRACEPOINT_EVENT()` definitions are written as you would write them
+in an LTTng-UST template provider header file. C comments are supported
+(`/* */` and `//`), as well as lines starting with `#`.
+
+NOTE: The provider name (the first argument of `TRACEPOINT_EVENT()`)
+must be the same in all the `TRACEPOINT_EVENT()` macros of 'TEMPLATE'.
+
+Here's an example:
+
+---------------------------------------
+TRACEPOINT_EVENT(
+    // Tracepoint provider name
+    my_provider,
+
+    // Tracepoint/event name
+    my_event,
+
+    // Tracepoint arguments (input)
+    TP_ARGS(char *, text),
+
+    // Tracepoint/event fields (output)
+    TP_FIELDS(
+        ctf_string(message, text)
+    )
+)
+---------------------------------------
+
+
+OPTIONS
+-------
+option:-o, option:--output='FILE'::
+    Do not generate default files: generate 'FILE'.
++
+The extension of 'FILE' determines what is generated, amongst `.h`,
+`.c`, and `.o`. This option can be used more than one time to generate
+different file types.
+
+option:-v, option:--verbose::
+    Increase verbosity.
+
+option:-h, option:--help::
+    Show command help.
+
+
+ENVIRONMENT VARIABLES
+---------------------
+`CC`::
+    C compiler to use. Default: `cc`, then `gcc` if `cc` is not found.
+    This option is only relevant when generating the `.o` file.
+
+`CFLAGS`::
+    Flags and options passed directly to the compiler (`$CC`).
+    This option is only relevant when generating the `.o` file.
+
+
+EXIT STATUS
+-----------
+*0*::
+    Success
+
+*Non-zero*::
+    Error
+
+
+include::common-footer.txt[]
+
+
+COPYRIGHTS
+----------
+`lttng-gen-tp` is part of the LTTng-UST project.
+
+`lttng-gen-tp` is distributed under the
+http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html[GNU General
+Public License, version 2]. See the
+https://github.com/lttng/lttng-ust/blob/master/COPYING[`COPYING`] file
+for more details.
+
+
+AUTHOR
+------
+`lttng-gen-tp` was originally written by
+mailto:yannick.brosseau@gmail.com[Yannick Brosseau]. It is currently
+maintained by mailto:mathieu.desnoyers@efficios.com[Mathieu Desnoyers].
+
+
+SEE ALSO
+--------
+man:lttng-ust(3)

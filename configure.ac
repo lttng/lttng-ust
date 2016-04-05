@@ -368,10 +368,67 @@ AC_DEFINE_UNQUOTED([LTTNG_SYSTEM_RUNDIR], ["$lttng_system_rundir"],
 AC_CHECK_PROG([BUILD_GEN_TP_EXAMPLES], [python], ["yes"])
 AM_CONDITIONAL([BUILD_GEN_TP_EXAMPLES], [test "x$BUILD_GEN_TP_EXAMPLES" = "xyes"])
 
+# Set $IN_GIT_REPO if we're in the Git repository; the `bootstrap` file
+# is not distributed in tarballs.
+AS_IF([test -f "$srcdir/bootstrap"], [in_git_repo=yes], [in_git_repo=no])
+AM_CONDITIONAL([IN_GIT_REPO], [test "x$in_git_repo" = "xyes"])
+
+# Enable building man pages (user's intention).
+AC_ARG_ENABLE(
+	man-pages,
+	AS_HELP_STRING(
+		[--disable-man-pages],
+		[Do not build and install man pages (already built in a distributed tarball)]
+	),
+	[man_pages_opt=$enableval],
+	[man_pages_opt=yes]
+)
+
+# Check for asciidoc and xmlto if we enabled building the man pages.
+have_asciidoc_xmlto=no
+
+AS_IF([test "x$man_pages_opt" = "xyes"], [
+	AC_PATH_PROG([ASCIIDOC], [asciidoc], [no])
+	AC_PATH_PROG([XMLTO], [xmlto], [no])
+
+	AS_IF([test "x$ASCIIDOC" = "xno" || test "x$XMLTO" = "xno"], [
+		AS_IF([test "x$in_git_repo" = "xyes"], [
+			# This is an error because we're in the Git repo, which
+			# means the man pages are not already generated for us,
+			# thus asciidoc/xmlto are required because we were asked
+			# to build the man pages.
+			AC_MSG_ERROR([
+Both asciidoc and xmlto are needed to build the LTTng-UST man pages. Use
+--disable-man-pages to disable building the man pages, in which case
+they will not be installed.
+			])
+		], [
+			# Only warn here: since we're in the tarball, the man
+			# pages should already be generated at this point, thus
+			# asciidoc/xmlto are not strictly required.
+			AC_MSG_WARN([
+Both asciidoc and xmlto are needed to build the LTTng-UST man pages.
+Note that the man pages are already built in this distribution tarball,
+so asciidoc and xmlto are only needed if you intend to modify their
+sources. Use --disable-man-pages to completely disable building
+and installing the man pages.
+			])
+		])
+	], [
+		have_asciidoc_xmlto=yes
+	])
+])
+
+# Export man page build condition: build the man pages if the user
+# asked for it, and if the tools are available.
+AM_CONDITIONAL([MAN_PAGES_OPT], [test "x$man_pages_opt" != "xno"])
+AM_CONDITIONAL([HAVE_ASCIIDOC_XMLTO], [test "x$have_asciidoc_xmlto" = "xyes"])
+
 AC_CONFIG_FILES([
 	Makefile
 	doc/Makefile
 	doc/examples/Makefile
+	doc/man/Makefile
 	include/Makefile
 	include/lttng/ust-version.h
 	snprintf/Makefile

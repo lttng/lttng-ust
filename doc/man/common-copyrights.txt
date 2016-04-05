@@ -1,0 +1,9 @@
+COPYRIGHTS
+----------
+This {object-type} is part of the LTTng-UST project.
+
+This {object-type} is distributed under the
+http://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html[GNU Lesser
+General Public License, version 2.1]. See the
+https://github.com/lttng/lttng-ust/blob/master/COPYING[`COPYING`] file
+for more details.
