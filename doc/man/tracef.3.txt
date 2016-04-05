@@ -1,0 +1,122 @@
+tracef(3)
+=========
+:object-type: macro
+
+
+NAME
+----
+tracef - LTTng-UST man:printf(3)-like interface
+
+
+SYNOPSIS
+--------
+[verse]
+*#include <lttng/tracef.h>*
+
+[verse]
+#define *tracef*('fmt', ...)
+
+Link with `-llttng-ust`.
+
+
+DESCRIPTION
+-----------
+The LTTng-UST `tracef()` API allows you to trace your application with
+the help of a simple man:printf(3)-like macro. The 'fmt' argument is
+passed directly to the 'fmt' parameter of man:vasprintf(3), as well as
+the optional parameters following 'fmt'.
+
+To use `tracef()`, include `<lttng/tracef.h>` where you need it, and
+link your application with `liblttng-ust`. See the <<example,EXAMPLE>>
+section below for a complete usage example.
+
+Once your application is instrumented with `tracef()` calls and
+ready to run, use man:lttng-enable-event(1) to enable the
+`lttng_ust_tracef:*` event.
+
+The `tracef()` events contain a single field, named `msg`, which is the
+formatted string output.
+
+If you need to attach a specific log level to a `tracef()` call, use
+man:tracelog(3) instead.
+
+See also the <<limitations,LIMITATIONS>> section below for important
+limitations to consider when using `tracef()`.
+
+
+[[example]]
+EXAMPLE
+-------
+Here's a usage example of `tracef()`:
+
+-------------------------------------------------------------------
+#include <stdlib.h>
+#include <lttng/tracef.h>
+
+int main(void)
+{
+    int i;
+
+    for (i = 0; i < 25; i++) {
+        tracef("my message: %s, this integer: %d", "a message", i);
+    }
+
+    return EXIT_SUCCESS;
+}
+-------------------------------------------------------------------
+
+This C source file, saved as `app.c`, can be compiled into a program
+like this:
+
+[role="term"]
+---------------------------
+cc -o app app.c -llttng-ust
+---------------------------
+
+You can create an LTTng tracing session, enable the `tracef()` events,
+and start the created tracing session like this:
+
+[role="term"]
+---------------------------------------------------
+lttng create my-session
+lttng enable-event --userspace 'lttng_ust_tracef:*'
+lttng start
+---------------------------------------------------
+
+Next, start the program to be traced:
+
+[role="term"]
+-----
+./app
+-----
+
+Finally, stop the tracing session, and inspect the recorded events:
+
+[role="term"]
+----------
+lttng stop
+lttng view
+----------
+
+
+[[limitations]]
+LIMITATIONS
+-----------
+:macro-name: tracef
+
+include::tracef-tracelog-limitations.txt[]
+
+
+include::common-footer.txt[]
+
+include::common-copyrights.txt[]
+
+include::common-authors.txt[]
+
+
+SEE ALSO
+--------
+man:tracelog(3),
+man:lttng-ust(3),
+man:lttng(1),
+man:printf(3)
