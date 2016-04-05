@@ -1,0 +1,99 @@
+lttng-ust-dl(3)
+===============
+:object-type: library
+
+
+NAME
+----
+lttng-ust-dl - Dynamic linker tracing (LTTng-UST helper)
+
+
+SYNOPSIS
+--------
+Launch your application by preloading `liblttng-ust-dl.so`:
+
+[role="term"]
+[verse]
+*LD_PRELOAD=liblttng-ust-dl.so* my-app
+
+
+DESCRIPTION
+-----------
+When the `liblttng-ust-dl.so` library is preloaded before a given
+application starts, it causes all calls to man:dlopen(3) and
+man:dlclose(3) in said application to be traced with LTTng-UST (see
+man:lttng-ust(3)).
+
+See man:lttng(1) to learn more about how to control LTTng tracing
+sessions.
+
+The following LTTng-UST events are available when using this library:
+
+`lttng_ust_dl:dlopen`::
+    Emitted when man:dlopen(3) is called.
++
+Fields:
++
+[options="header"]
+|==============================================================
+| Field name                 | Description
+| `baddr`                    | Base address of loaded library
+| `memsz`                    | Size of loaded library in memory
+| `sopath`                   | Path to loaded library file
+|==============================================================
+
+`lttng_ust_dl:dlclose`::
+    Emitted when man:dlclose(3) is called.
++
+Fields:
++
+[options="header"]
+|==============================================================
+| Field name                 | Description
+| `baddr`                    | Base address of loaded library
+|==============================================================
+
+`lttng_ust_dl:debug_link`::
+    Emitted when debug link information is found when loading a library
+    with man:dlopen(3). See
+    https://sourceware.org/gdb/onlinedocs/gdb/Separate-Debug-Files.html[Debugging Information in Separate Files]
+    for more information about debug links.
++
+Fields:
++
+[options="header"]
+|==============================================================
+| Field name                 | Description
+| `baddr`                    | Base address of loaded library
+| `filename`                 | Debug link file name
+| `crc`                      | Debug link file's CRC
+|==============================================================
+
+`lttng_ust_dl:build_id`::
+    Emitted when a build ID is found when loading a library
+    with man:dlopen(3). See
+    https://sourceware.org/gdb/onlinedocs/gdb/Separate-Debug-Files.html[Debugging Information in Separate Files]
+    for more information about build IDs.
++
+Fields:
++
+[options="header"]
+|==============================================================
+| Field name                 | Description
+| `baddr`                    | Base address of loaded library
+| `build_id`                 | Build ID
+|==============================================================
+
+
+include::common-footer.txt[]
+
+include::common-copyrights.txt[]
+
+include::common-authors.txt[]
+
+
+SEE ALSO
+--------
+man:lttng-ust(3),
+man:dlopen(3),
+man:lttng(1)

@@ -1,0 +1,158 @@
+tracelog(3)
+===========
+:object-type: macro
+
+
+NAME
+----
+tracelog - LTTng-UST man:printf(3)-like interface with a log level
+
+
+SYNOPSIS
+--------
+[verse]
+*#include <lttng/tracelog.h>*
+
+[verse]
+#define *tracelog*('level', 'fmt', ...)
+
+Link with `-llttng-ust`.
+
+
+DESCRIPTION
+-----------
+The LTTng-UST `tracelog()` API allows you to trace your application with
+the help of a simple man:printf(3)-like macro, with an additional
+parameter for the desired log level. The 'fmt' argument is passed
+directly to the 'fmt' parameter of man:vasprintf(3), as well as
+the optional parameters following 'fmt'.
+
+The purpose of `tracelog()` is to ease the migration from logging to
+tracing.
+
+The available values for the 'level' parameter are:
+
+include::log-levels.txt[]
+
+To use `tracelog()`, include `<lttng/tracelog.h>` where you need it, and
+link your application with `liblttng-ust`. See the <<example,EXAMPLE>>
+section below for a complete usage example.
+
+Once your application is instrumented with `tracelog()` calls and
+ready to run, use man:lttng-enable-event(1) to enable the
+`lttng_ust_tracelog:*` event. You can isolate specific log levels with
+the nloption:--loglevel and nloption:--loglevel-only options of this
+command.
+
+The `tracelog()` events contain the following fields:
+
+[options="header"]
+|===============================================================
+| Field name | Description
+| `line`     | Line in source file where `tracelog()` was called
+| `file`     | Source file from which `tracelog()` was called
+| `func`     | Function name from which `tracelog()` was called
+| `msg`      | Formatted string output
+|===============================================================
+
+If you do not need to attach a specific log level to a `tracelog()`
+call, use man:tracef(3) instead.
+
+See also the <<limitations,LIMITATIONS>> section below for important
+limitations to consider when using `tracelog()`.
+
+
+[[example]]
+EXAMPLE
+-------
+Here's a usage example of `tracelog()`:
+
+-------------------------------------------------------------------
+#include <stdlib.h>
+#include <lttng/tracelog.h>
+
+int main(int argc, char *argv[])
+{
+    int i;
+
+    if (argc < 2) {
+        tracelog(TRACE_CRIT, "Not enough arguments: %d", argc);
+        return EXIT_FAILURE;
+    }
+
+    tracelog(TRACE_INFO, "Starting app with %d arguments", argc);
+
+    for (i = 0; i < argc; i++) {
+        tracelog(TRACE_DEBUG, "Argument %d: %s", i, argv[i]);
+    }
+
+    tracelog(TRACE_INFO, "Exiting app");
+
+    return EXIT_SUCCESS;
+}
+-------------------------------------------------------------------
+
+This C source file, saved as `app.c`, can be compiled into a program
+like this:
+
+[role="term"]
+---------------------------
+cc -o app app.c -llttng-ust
+---------------------------
+
+You can create an LTTng tracing session, enable all the `tracelog()`
+events, and start the created tracing session like this:
+
+[role="term"]
+---------------------------------------------------
+lttng create my-session
+lttng enable-event --userspace 'lttng_ust_tracelog:*'
+lttng start
+---------------------------------------------------
+
+Or you can enable `tracelog()` events matching a log level at least
+as severe as a given log level:
+
+[role="term"]
+-------------------------------------------------------
+lttng enable-event --userspace 'lttng_ust_tracelog:*' \
+                   --loglevel=TRACE_INFO
+-------------------------------------------------------
+
+Next, start the program to be traced:
+
+[role="term"]
+------------------------------------------------
+./app a few arguments passed to this application
+------------------------------------------------
+
+Finally, stop the tracing session, and inspect the recorded events:
+
+[role="term"]
+----------
+lttng stop
+lttng view
+----------
+
+
+[[limitations]]
+LIMITATIONS
+-----------
+:macro-name: tracelog
+
+include::tracef-tracelog-limitations.txt[]
+
+
+include::common-footer.txt[]
+
+include::common-copyrights.txt[]
+
+include::common-authors.txt[]
+
+
+SEE ALSO
+--------
+man:tracef(3),
+man:lttng-ust(3),
+man:lttng(1),
+man:printf(3)

@@ -29,6 +29,17 @@ compile the Git repository tree:
   - [GNU Libtool](http://www.gnu.org/software/autoconf/) >= 2.2
   - Perl (optional: needed for `make check` and tests)
 
+Optional packages to build LTTng-tools man pages:
+
+  - **[AsciiDoc](http://www.methods.co.nz/asciidoc/) >= 8.4.5**
+    (previous versions may work, but were not tested)
+  - **[xmlto](https://fedorahosted.org/xmlto/) >= 0.0.21** (previous
+    versions may work, but were not tested)
+
+Note that the man pages are already built in a distribution tarball.
+In this case, you only need AsciiDoc and xmlto if you indend to modify
+the AsciiDoc man page sources.
+
 If you get the tree from the Git repository, you will need to run
 
     ./bootstrap
