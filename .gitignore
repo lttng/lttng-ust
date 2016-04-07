@@ -40,6 +40,14 @@ doc/examples/gen-tp/sample_tracepoint.h
 doc/examples/demo-tracef/demo-tracef
 doc/examples/demo-tracelog/demo-tracelog
 
+doc/man/*.xml
+doc/man/lttng-gen-tp.1
+doc/man/lttng-ust-cyg-profile.3
+doc/man/lttng-ust-dl.3
+doc/man/lttng-ust.3
+doc/man/tracef.3
+doc/man/tracelog.3
+
 tests/hello/hello
 tests/hello.cxx/hello
 tests/same_line_tracepoint/same_line_tracepoint

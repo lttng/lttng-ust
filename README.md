@@ -24,10 +24,32 @@ This source tree is based on the Autotools suite from GNU to simplify
 portability. Here are some things you should have on your system in order to
 compile the Git repository tree:
 
-  - GNU Autotools (Automake >= 1.10, Autoconf >= 2.50, Autoheader >= 2.50;
+  - [GNU Autotools](http://www.gnu.org/software/autoconf/)
+    (**Automake >= 1.10**, **Autoconf >= 2.50**,
+    **Autoheader >= 2.50**;
     make sure your system-wide `automake` points to a recent version!)
-  - [GNU Libtool](http://www.gnu.org/software/autoconf/) >= 2.2
-  - Perl (optional: needed for `make check` and tests)
+  - **[GNU Libtool](https://www.gnu.org/software/libtool/) >= 2.2**
+
+
+### Optional dependencies
+
+Optional packages to build LTTng-tools man pages:
+
+  - **[AsciiDoc](http://www.methods.co.nz/asciidoc/) >= 8.4.5**
+    (previous versions may work, but were not tested)
+  - **[xmlto](https://fedorahosted.org/xmlto/) >= 0.0.21** (previous
+    versions may work, but were not tested)
+
+Note that the man pages are already built in a distribution tarball.
+In this case, you only need AsciiDoc and xmlto if you indend to modify
+the AsciiDoc man page sources.
+
+Needed for `make check` and tests:
+
+  - **[Perl](https://www.perl.org/)**
+
+
+### Building steps
 
 If you get the tree from the Git repository, you will need to run
 

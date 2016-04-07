@@ -1,0 +1,44 @@
+`TRACE_EMERG`::
+    System is unusable.
+
+`TRACE_ALERT`::
+    Action must be taken immediately.
+
+`TRACE_CRIT`::
+    Critical conditions.
+
+`TRACE_ERR`::
+    Error conditions.
+
+`TRACE_WARNING`::
+    Warning conditions.
+
+`TRACE_NOTICE`::
+    Normal, but significant, condition.
+
+`TRACE_INFO`::
+    Informational message.
+
+`TRACE_DEBUG_SYSTEM`::
+    Debug information with system-level scope (set of programs).
+
+`TRACE_DEBUG_PROGRAM`::
+    Debug information with program-level scope (set of processes).
+
+`TRACE_DEBUG_PROCESS`::
+    Debug information with process-level scope (set of modules).
+
+`TRACE_DEBUG_MODULE`::
+    Debug information with module (executable/library) scope (set of units).
+
+`TRACE_DEBUG_UNIT`::
+    Debug information with compilation unit scope (set of functions).
+
+`TRACE_DEBUG_FUNCTION`::
+    Debug information with function-level scope.
+
+`TRACE_DEBUG_LINE`::
+    Debug information with line-level scope (default log level).
+
+`TRACE_DEBUG`::
+    Debug-level message.
