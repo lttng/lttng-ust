@@ -14,14 +14,3 @@ RESOURCES
 * http://lists.lttng.org[Mailing list] for support and
   development: `lttng-dev@lists.lttng.org`
 * irc://irc.oftc.net/lttng[IRC channel]: `#lttng` on `irc.oftc.net`
-
-
-COPYRIGHTS
-----------
-This {object-type} is part of the LTTng-UST project.
-
-LTTng-UST is distributed under the
-http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html[GNU General
-Public License version 2]. See the
-https://github.com/lttng/lttng-ust/blob/master/COPYING[`COPYING`] file
-for details.
