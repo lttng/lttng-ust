@@ -843,6 +843,39 @@ cc -c app.c
 cc -o app tp.o app.o -llttng-ust -ldl
 -------------------------------------
 
+Using the man:lttng(1) tool, create an LTTng tracing session, enable
+all the events of this tracepoint provider, and start tracing:
+
+[role="term"]
+----------------------------------------------
+lttng create my-session
+lttng enable-event --userspace 'my_provider:*'
+lttng start
+----------------------------------------------
+
+You may also enable specific events:
+
+[role="term"]
+----------------------------------------------------------
+lttng enable-event --userspace my_provider:big_event
+lttng enable-event --userspace my_provider:event_instance2
+----------------------------------------------------------
+
+Run the application:
+
+[role="term"]
+--------------------
+./app some arguments
+--------------------
+
+Stop the current tracing session and inspect the recorded events:
+
+[role="term"]
+----------
+lttng stop
+lttng view
+----------
+
 
 Tracepoint provider header file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
