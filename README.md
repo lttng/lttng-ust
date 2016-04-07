@@ -27,7 +27,9 @@ compile the Git repository tree:
   - GNU Autotools (Automake >= 1.10, Autoconf >= 2.50, Autoheader >= 2.50;
     make sure your system-wide `automake` points to a recent version!)
   - [GNU Libtool](http://www.gnu.org/software/autoconf/) >= 2.2
-  - Perl (optional: needed for `make check` and tests)
+
+
+### Optional dependencies
 
 Optional packages to build LTTng-tools man pages:
 
@@ -39,6 +41,13 @@ Optional packages to build LTTng-tools man pages:
 Note that the man pages are already built in a distribution tarball.
 In this case, you only need AsciiDoc and xmlto if you indend to modify
 the AsciiDoc man page sources.
+
+Needed for `make check` and tests:
+
+  - **[Perl](https://www.perl.org/)**
+
+
+### Building steps
 
 If you get the tree from the Git repository, you will need to run
 
