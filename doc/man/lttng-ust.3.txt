@@ -753,6 +753,7 @@ Only available on IA-32 and x86-64 architectures.
     the process namespace.
 
 
+[[state-dump]]
 LTTng-UST state dump
 ~~~~~~~~~~~~~~~~~~~~
 If an application that uses `liblttng-ust` becomes part of a tracing
@@ -1036,6 +1037,39 @@ cc -c -I. tp.c
 cc -c app.c
 cc -o app tp.o app.o -llttng-ust -ldl
 -------------------------------------
+
+
+ENVIRONMENT VARIABLES
+---------------------
+`LTTNG_UST_DEBUG`::
+    Activate `liblttng-ust` debug and error output.
+
+`LTTNG_UST_REGISTER_TIMEOUT`::
+    Specify how long the applications should wait for the
+    _registration done_ session daemon command before proceeding to
+    execute the main program (milliseconds).
++
+The value 0 means _do not wait_. The value -1 means _wait forever_.
+Setting this environment variable to 0 is recommended for applications
+with time constraints on the process startup time.
++
+Default: 3000.
+
+`LTTNG_UST_WITHOUT_BADDR_STATEDUMP`::
+    Prevent `liblttng-ust` from performing a base address state dump
+    (see the <<state-dump,LTTng-UST state dump>> section above).
+
+`LTTNG_UST_GETCPU_PLUGIN`::
+    Path to the shared object which acts as the `getcpu()` override
+    plugin. An example of such a plugin can be found in the LTTng-UST
+    documentation under
+    https://github.com/lttng/lttng-ust/tree/master/doc/examples/getcpu-override[`examples/getcpu-override`].
+
+`LTTNG_UST_CLOCK_PLUGIN`::
+    Path to the shared object which acts as the clock override plugin.
+    An example of such a plugin can be found in the LTTng-UST
+    documentation under
+    https://github.com/lttng/lttng-ust/tree/master/doc/examples/clock-override[`examples/clock-override`].
 
 
 include::common-footer.txt[]
