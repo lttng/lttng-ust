@@ -5,7 +5,7 @@ tracef(3)
 
 NAME
 ----
-tracef - LTTng-UST man:printf(3)-like interface
+tracef - LTTng-UST printf(3)-like interface
 
 
 SYNOPSIS
