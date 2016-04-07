@@ -833,7 +833,20 @@ This example shows all the features documented in the previous
 sections. The <<build-static,static linking>> method is chosen here
 to link the application with the tracepoint provider.
 
-Let's start with the tracepoint provider header file (`tp.h`):
+You can compile the source files and link them together statically
+like this:
+
+[role="term"]
+-------------------------------------
+cc -c -I. tp.c
+cc -c app.c
+cc -o app tp.o app.o -llttng-ust -ldl
+-------------------------------------
+
+
+Tracepoint provider header file
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+`tp.h`:
 
 ------------------------------------------------------------------------
 #undef TRACEPOINT_PROVIDER
@@ -954,7 +967,10 @@ TRACEPOINT_EVENT_INSTANCE(
 #include <lttng/tracepoint-event.h>
 ------------------------------------------------------------------------
 
-The tracepoint provider source file looks like this (`tp.c`):
+
+Tracepoint provider source file
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+`tp.c`:
 
 ------------------------------------------------------------------------
 #define TRACEPOINT_CREATE_PROBES
@@ -963,7 +979,10 @@ The tracepoint provider source file looks like this (`tp.c`):
 #include "tp.h"
 ------------------------------------------------------------------------
 
-The included `app.h`, where the application structure resides, is:
+
+Application header file
+~~~~~~~~~~~~~~~~~~~~~~~
+`app.h`:
 
 ------------------------------------------------------------------------
 #ifndef _APP_H
@@ -978,7 +997,10 @@ struct app_struct {
 #endif /* _APP_H */
 ------------------------------------------------------------------------
 
-Finally, the application itself, `app.c`, using the defined tracepoints:
+
+Application source file
+~~~~~~~~~~~~~~~~~~~~~~~
+`app.c`:
 
 ------------------------------------------------------------------------
 #include <stdlib.h>
@@ -1027,16 +1049,6 @@ int main(int argc, char* argv[])
     return EXIT_SUCCESS;
 }
 ------------------------------------------------------------------------
-
-Here are the steps to compile the source files and link them together
-statically:
-
-[role="term"]
--------------------------------------
-cc -c -I. tp.c
-cc -c app.c
-cc -o app tp.o app.o -llttng-ust -ldl
--------------------------------------
 
 
 ENVIRONMENT VARIABLES
