@@ -5,7 +5,7 @@ tracelog(3)
 
 NAME
 ----
-tracelog - LTTng-UST man:printf(3)-like interface with a log level
+tracelog - LTTng-UST printf(3)-like interface with a log level
 
 
 SYNOPSIS
