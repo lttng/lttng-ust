@@ -49,9 +49,10 @@ public class LTTngAgent {
 
 	/**
 	 * Dispose the agent. Applications should call this once they are done
-	 * logging.
+	 * logging. This dispose function is non-static for backwards
+	 * compatibility purposes.
 	 */
-	public static synchronized void dispose() {
+	public synchronized void dispose() {
 		if (instance != null) {
 			instance.disposeInstance();
 			instance = null;
