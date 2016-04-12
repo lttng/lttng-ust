@@ -2,7 +2,7 @@ Name: org/lttng/ust/agent/all/
 Specification-Title: LTTng UST All Java Agents
 Specification-Version: 1.0.0
 Specification-Vendor: LTTng Project
-Implementation-Title: org.lttng.ust.agent
+Implementation-Title: org.lttng.ust.agent.all
 Implementation-Version: 1.0.0
 Implementation-Vendor: LTTng Project
 Class-Path: lttng-ust-agent-jul.jar lttng-ust-agent-log4j.jar
