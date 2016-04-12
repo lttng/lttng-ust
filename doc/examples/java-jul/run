@@ -22,7 +22,7 @@ else
 fi
 
 if [ "x$LIBPATH" != "x" ]; then
-	JAVA_OPTIONS="$JAVA_OPTIONS -Djava.library.path=\"$LIBPATH\""
+	JAVA_OPTIONS="$JAVA_OPTIONS -Djava.library.path=$LIBPATH"
 fi
 
 java -classpath "$CLASSPATH:." $JAVA_OPTIONS Hello
