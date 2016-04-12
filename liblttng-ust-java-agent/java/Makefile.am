@@ -1,4 +1,4 @@
-SUBDIRS = lttng-ust-agent-common liblttng-ust-agent
+SUBDIRS = lttng-ust-agent-common lttng-ust-agent-all
 
 if BUILD_JAVA_AGENT_WITH_JUL
 SUBDIRS += lttng-ust-agent-jul
