@@ -219,6 +219,7 @@ int is_elf_native_endian(struct lttng_ust_elf *elf)
 
 struct lttng_ust_elf *lttng_ust_elf_create(const char *path);
 void lttng_ust_elf_destroy(struct lttng_ust_elf *elf);
+uint8_t lttng_ust_elf_is_pic(struct lttng_ust_elf *elf);
 int lttng_ust_elf_get_memsz(struct lttng_ust_elf *elf, uint64_t *memsz);
 int lttng_ust_elf_get_build_id(struct lttng_ust_elf *elf, uint8_t **build_id,
 			size_t *length, int *found);
