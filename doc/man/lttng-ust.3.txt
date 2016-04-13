@@ -777,18 +777,20 @@ This event has no fields.
 This event has no fields.
 
 `lttng_ust_statedump:soinfo`::
-    Emitted when information about a currently loaded shared object is
-    found.
+    Emitted when information about a currently loaded executable or
+    shared object is found.
 +
 Fields:
 +
 [options="header"]
-|==============================================================
+|==================================================================
 | Field name                 | Description
-| `baddr`                    | Base address of loaded library
-| `memsz`                    | Size of loaded library in memory
-| `sopath`                   | Path to loaded library file
-|==============================================================
+| `baddr`                    | Base address of loaded executable
+| `memsz`                    | Size of loaded executable in memory
+| `sopath`                   | Path to loaded executable file
+| `is_pic`                   | Whether the executable is
+                               position-independent code
+|==================================================================
 
 `lttng_ust_statedump:build_id`::
     Emitted when a build ID is found in a currently loaded shared

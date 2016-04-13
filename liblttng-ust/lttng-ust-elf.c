@@ -317,6 +317,18 @@ error:
 }
 
 /*
+ * Test whether the ELF file is position independent code (PIC)
+ */
+uint8_t lttng_ust_elf_is_pic(struct lttng_ust_elf *elf)
+{
+	/*
+	 * PIC has and e_type value of ET_DYN, see ELF specification
+	 * version 1.1 p. 1-3.
+	 */
+	return elf->ehdr->e_type == ET_DYN;
+}
+
+/*
  * Destroy the given lttng_ust_elf instance.
  */
 void lttng_ust_elf_destroy(struct lttng_ust_elf *elf)

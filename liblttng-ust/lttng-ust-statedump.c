@@ -52,6 +52,7 @@ struct soinfo_data {
 	size_t build_id_len;
 	int vdso;
 	uint32_t crc;
+	uint8_t is_pic;
 };
 
 typedef void (*tracepoint_cb)(struct lttng_session *session, void *priv);
@@ -84,7 +85,7 @@ void trace_soinfo_cb(struct lttng_session *session, void *priv)
 
 	tracepoint(lttng_ust_statedump, soinfo,
 		session, so_data->base_addr_ptr,
-		so_data->resolved_path, so_data->memsz);
+		so_data->resolved_path, so_data->memsz, so_data->is_pic);
 }
 
 static
@@ -146,6 +147,8 @@ int get_elf_info(struct soinfo_data *so_data, int *has_build_id,
 	if (ret) {
 		goto end;
 	}
+
+	so_data->is_pic = lttng_ust_elf_is_pic(elf);
 
 end:
 	lttng_ust_elf_destroy(elf);
