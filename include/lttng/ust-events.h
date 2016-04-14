@@ -606,6 +606,7 @@ struct lttng_transport {
 struct lttng_session *lttng_session_create(void);
 int lttng_session_enable(struct lttng_session *session);
 int lttng_session_disable(struct lttng_session *session);
+int lttng_session_statedump(struct lttng_session *session);
 void lttng_session_destroy(struct lttng_session *session);
 
 struct lttng_channel *lttng_channel_create(struct lttng_session *session,

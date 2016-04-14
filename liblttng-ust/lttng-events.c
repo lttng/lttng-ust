@@ -384,6 +384,16 @@ int lttng_create_all_ctx_enums(size_t nr_fields,
 	return 0;
 }
 
+/*
+ * Ensure that a state-dump will be performed for this session at the end
+ * of the current handle_message().
+ */
+int lttng_session_statedump(struct lttng_session *session)
+{
+	session->statedump_pending = 1;
+	lttng_ust_sockinfo_session_enabled(session->owner);
+	return 0;
+}
 
 int lttng_session_enable(struct lttng_session *session)
 {
@@ -453,8 +463,9 @@ int lttng_session_enable(struct lttng_session *session)
 	CMM_ACCESS_ONCE(session->active) = 1;
 	CMM_ACCESS_ONCE(session->been_active) = 1;
 
-	session->statedump_pending = 1;
-	lttng_ust_sockinfo_session_enabled(session->owner);
+	ret = lttng_session_statedump(session);
+	if (ret)
+		return ret;
 end:
 	return ret;
 }
