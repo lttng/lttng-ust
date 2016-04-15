@@ -40,3 +40,13 @@ is added to the executable. The commands used are as follow:
     $ objcopy --only-keep-debug main.elf main.elf.debug
     $ strip -g main.elf
     $ objcopy --add-gnu-debuglink=main.elf.debug main.elf
+
+There is also a series of tests used to check detection of
+position-independent code (PIC). These tests use three pre-compiled
+ELF files found under `data/pic/`, namely `hello.exec`, `hello.pie`,
+and `hello.pic`. These can be re-generated using the files `hello.c`
+and `libhello.c`, with the following commands:
+
+    $ gcc hello.c -o hello.exec
+    $ gcc hello.c -fPIC -pie -o hello.pie
+    $ gcc -shared -o hello.pic -fPIC libhello.c
