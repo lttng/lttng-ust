@@ -26,7 +26,8 @@
 
 #define NUM_ARCH 4
 #define NUM_TESTS_PER_ARCH 11
-#define NUM_TESTS (NUM_ARCH * NUM_TESTS_PER_ARCH) + 1
+#define NUM_TESTS_PIC 3
+#define NUM_TESTS (NUM_ARCH * NUM_TESTS_PER_ARCH) + NUM_TESTS_PIC + 1
 
 /*
  * Expected memsz were computed using libelf, build ID and debug link
@@ -115,6 +116,35 @@ void test_elf(const char *test_dir, const char *arch, uint64_t exp_memsz,
 	lttng_ust_elf_destroy(elf);
 }
 
+static
+void test_pic(const char *test_dir)
+{
+	char exec_path[PATH_MAX];
+	char pie_path[PATH_MAX];
+	char pic_path[PATH_MAX];
+	struct lttng_ust_elf *elf = NULL;
+	uint8_t is_pic;
+
+	snprintf(exec_path, PATH_MAX, "%s/data/pic/hello.exec", test_dir);
+	snprintf(pie_path, PATH_MAX, "%s/data/pic/hello.pie", test_dir);
+	snprintf(pic_path, PATH_MAX, "%s/data/pic/hello.pic", test_dir);
+
+	elf = lttng_ust_elf_create(exec_path);
+	is_pic = lttng_ust_elf_is_pic(elf);
+	ok(is_pic == 0, "hello.exec is not PIC");
+	lttng_ust_elf_destroy(elf);
+
+	elf = lttng_ust_elf_create(pie_path);
+	is_pic = lttng_ust_elf_is_pic(elf);
+	ok(is_pic == 1, "hello.pie is PIC");
+	lttng_ust_elf_destroy(elf);
+
+	elf = lttng_ust_elf_create(pic_path);
+	is_pic = lttng_ust_elf_is_pic(elf);
+	ok(is_pic == 1, "hello.pic is PIC");
+	lttng_ust_elf_destroy(elf);
+}
+
 int main(int argc, char **argv)
 {
 	const char *test_dir;
@@ -133,6 +163,7 @@ int main(int argc, char **argv)
 	test_elf(test_dir, "armeb", ARMEB_MEMSZ, armeb_build_id, ARMEB_CRC);
 	test_elf(test_dir, "aarch64_be", AARCH64_BE_MEMSZ, aarch64_be_build_id,
 		AARCH64_BE_CRC);
+	test_pic(test_dir);
 
 	return EXIT_SUCCESS;
 }
