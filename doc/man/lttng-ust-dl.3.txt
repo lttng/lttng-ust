@@ -39,7 +39,7 @@ Fields:
 | Field name                 | Description
 | `baddr`                    | Base address of loaded library
 | `memsz`                    | Size of loaded library in memory
-| `sopath`                   | Path to loaded library file
+| `path`                     | Path to loaded library file
 |==============================================================
 
 `lttng_ust_dl:dlclose`::
