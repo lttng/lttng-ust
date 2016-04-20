@@ -43,18 +43,18 @@ TRACEPOINT_EVENT(lttng_ust_statedump, start,
 	TP_FIELDS()
 )
 
-TRACEPOINT_EVENT(lttng_ust_statedump, soinfo,
+TRACEPOINT_EVENT(lttng_ust_statedump, bin_info,
 	TP_ARGS(
 		struct lttng_session *, session,
 		void *, baddr,
-		const char*, sopath,
+		const char*, path,
 		uint64_t, memsz,
 		uint8_t, is_pic
 	),
 	TP_FIELDS(
 		ctf_integer_hex(void *, baddr, baddr)
 		ctf_integer(uint64_t, memsz, memsz)
-		ctf_string(sopath, sopath)
+		ctf_string(path, path)
 		ctf_integer(uint8_t, is_pic, is_pic)
 	)
 )

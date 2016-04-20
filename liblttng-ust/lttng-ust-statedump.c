@@ -42,7 +42,7 @@ struct dl_iterate_data {
 	int exec_found;
 };
 
-struct soinfo_data {
+struct bin_info_data {
 	void *owner;
 	void *base_addr_ptr;
 	const char *resolved_path;
@@ -79,33 +79,33 @@ int trace_statedump_event(tracepoint_cb tp_cb, void *owner, void *priv)
 }
 
 static
-void trace_soinfo_cb(struct lttng_session *session, void *priv)
+void trace_bin_info_cb(struct lttng_session *session, void *priv)
 {
-	struct soinfo_data *so_data = (struct soinfo_data *) priv;
+	struct bin_info_data *bin_data = (struct bin_info_data *) priv;
 
-	tracepoint(lttng_ust_statedump, soinfo,
-		session, so_data->base_addr_ptr,
-		so_data->resolved_path, so_data->memsz, so_data->is_pic);
+	tracepoint(lttng_ust_statedump, bin_info,
+		session, bin_data->base_addr_ptr,
+		bin_data->resolved_path, bin_data->memsz, bin_data->is_pic);
 }
 
 static
 void trace_build_id_cb(struct lttng_session *session, void *priv)
 {
-	struct soinfo_data *so_data = (struct soinfo_data *) priv;
+	struct bin_info_data *bin_data = (struct bin_info_data *) priv;
 
 	tracepoint(lttng_ust_statedump, build_id,
-		session, so_data->base_addr_ptr,
-		so_data->build_id, so_data->build_id_len);
+		session, bin_data->base_addr_ptr,
+		bin_data->build_id, bin_data->build_id_len);
 }
 
 static
 void trace_debug_link_cb(struct lttng_session *session, void *priv)
 {
-	struct soinfo_data *so_data = (struct soinfo_data *) priv;
+	struct bin_info_data *bin_data = (struct bin_info_data *) priv;
 
 	tracepoint(lttng_ust_statedump, debug_link,
-		session, so_data->base_addr_ptr,
-		so_data->dbg_file, so_data->crc);
+		session, bin_data->base_addr_ptr,
+		bin_data->dbg_file, bin_data->crc);
 }
 
 static
@@ -121,34 +121,34 @@ void trace_end_cb(struct lttng_session *session, void *priv)
 }
 
 static
-int get_elf_info(struct soinfo_data *so_data, int *has_build_id,
+int get_elf_info(struct bin_info_data *bin_data, int *has_build_id,
 		int *has_debug_link) {
 	struct lttng_ust_elf *elf;
 	int ret = 0;
 
-	elf = lttng_ust_elf_create(so_data->resolved_path);
+	elf = lttng_ust_elf_create(bin_data->resolved_path);
 	if (!elf) {
 		ret = -1;
 		goto end;
 	}
 
-	ret = lttng_ust_elf_get_memsz(elf, &so_data->memsz);
+	ret = lttng_ust_elf_get_memsz(elf, &bin_data->memsz);
 	if (ret) {
 		goto end;
 	}
 
-	ret = lttng_ust_elf_get_build_id(elf, &so_data->build_id,
-					&so_data->build_id_len, has_build_id);
+	ret = lttng_ust_elf_get_build_id(elf, &bin_data->build_id,
+					&bin_data->build_id_len, has_build_id);
 	if (ret) {
 		goto end;
 	}
-	ret = lttng_ust_elf_get_debug_link(elf, &so_data->dbg_file,
-					&so_data->crc, has_debug_link);
+	ret = lttng_ust_elf_get_debug_link(elf, &bin_data->dbg_file,
+					&bin_data->crc, has_debug_link);
 	if (ret) {
 		goto end;
 	}
 
-	so_data->is_pic = lttng_ust_elf_is_pic(elf);
+	bin_data->is_pic = lttng_ust_elf_is_pic(elf);
 
 end:
 	lttng_ust_elf_destroy(elf);
@@ -156,28 +156,29 @@ end:
 }
 
 static
-int trace_baddr(struct soinfo_data *so_data)
+int trace_baddr(struct bin_info_data *bin_data)
 {
 	int ret = 0, has_build_id = 0, has_debug_link = 0;
 
-	if (!so_data->vdso) {
-		ret = get_elf_info(so_data, &has_build_id, &has_debug_link);
+	if (!bin_data->vdso) {
+		ret = get_elf_info(bin_data, &has_build_id, &has_debug_link);
 		if (ret) {
 			goto end;
 		}
 	} else {
-		so_data->memsz = 0;
+		bin_data->memsz = 0;
 	}
 
-	ret = trace_statedump_event(trace_soinfo_cb, so_data->owner, so_data);
+	ret = trace_statedump_event(trace_bin_info_cb, bin_data->owner,
+			bin_data);
 	if (ret) {
 		goto end;
 	}
 
 	if (has_build_id) {
 		ret = trace_statedump_event(
-			trace_build_id_cb, so_data->owner, so_data);
-		free(so_data->build_id);
+			trace_build_id_cb, bin_data->owner, bin_data);
+		free(bin_data->build_id);
 		if (ret) {
 			goto end;
 		}
@@ -185,8 +186,8 @@ int trace_baddr(struct soinfo_data *so_data)
 
 	if (has_debug_link) {
 		ret = trace_statedump_event(
-			trace_debug_link_cb, so_data->owner, so_data);
-		free(so_data->dbg_file);
+			trace_debug_link_cb, bin_data->owner, bin_data);
+		free(bin_data->dbg_file);
 		if (ret) {
 			goto end;
 		}
@@ -209,7 +210,7 @@ int trace_statedump_end(void *owner)
 }
 
 static
-int extract_soinfo_events(struct dl_phdr_info *info, size_t size, void *_data)
+int extract_bin_info_events(struct dl_phdr_info *info, size_t size, void *_data)
 {
 	int j, ret = 0;
 	struct dl_iterate_data *data = _data;
@@ -226,7 +227,7 @@ int extract_soinfo_events(struct dl_phdr_info *info, size_t size, void *_data)
 	}
 
 	for (j = 0; j < info->dlpi_phnum; j++) {
-		struct soinfo_data so_data;
+		struct bin_info_data bin_data;
 		char resolved_path[PATH_MAX];
 		void *base_addr_ptr;
 
@@ -258,30 +259,30 @@ int extract_soinfo_events(struct dl_phdr_info *info, size_t size, void *_data)
 					break;
 
 				resolved_path[path_len] = '\0';
-				so_data.vdso = 0;
+				bin_data.vdso = 0;
 			} else {
 				snprintf(resolved_path, PATH_MAX - 1, "[vdso]");
-				so_data.vdso = 1;
+				bin_data.vdso = 1;
 			}
 		} else {
 			/*
 			 * For regular dl_phdr_info entries check if
-			 * the path to the SO really exists. If not,
+			 * the path to the binary really exists. If not,
 			 * treat as vdso and use dlpi_name as 'path'.
 			 */
 			if (!realpath(info->dlpi_name, resolved_path)) {
 				snprintf(resolved_path, PATH_MAX - 1, "[%s]",
 					info->dlpi_name);
-				so_data.vdso = 1;
+				bin_data.vdso = 1;
 			} else {
-				so_data.vdso = 0;
+				bin_data.vdso = 0;
 			}
 		}
 
-		so_data.owner = data->owner;
-		so_data.base_addr_ptr = base_addr_ptr;
-		so_data.resolved_path = resolved_path;
-		ret = trace_baddr(&so_data);
+		bin_data.owner = data->owner;
+		bin_data.base_addr_ptr = base_addr_ptr;
+		bin_data.resolved_path = resolved_path;
+		ret = trace_baddr(&bin_data);
 		break;
 	}
 end:
@@ -307,9 +308,9 @@ int do_baddr_statedump(void *owner)
 	/*
 	 * Iterate through the list of currently loaded shared objects and
 	 * generate events for loadable segments using
-	 * extract_soinfo_events.
+	 * extract_bin_info_events.
 	 */
-	dl_iterate_phdr(extract_soinfo_events, &data);
+	dl_iterate_phdr(extract_bin_info_events, &data);
 
 	return 0;
 }
