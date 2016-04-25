@@ -379,3 +379,14 @@ error:
 	lttng_destroy_context(*ctx);
 	return ret;
 }
+
+/* For backward compatibility. Leave those exported symbols in place. */
+struct lttng_ctx *lttng_static_ctx;
+
+void lttng_context_init(void)
+{
+}
+
+void lttng_context_exit(void)
+{
+}

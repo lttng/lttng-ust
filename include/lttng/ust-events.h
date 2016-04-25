@@ -722,6 +722,11 @@ struct cds_list_head *_lttng_get_sessions(void);
 struct lttng_enum *lttng_ust_enum_get(struct lttng_session *session,
 		const char *enum_name);
 
+/* For backward compatibility. Leave those exported symbols in place. */
+extern struct lttng_ctx *lttng_static_ctx;
+void lttng_context_init(void);
+void lttng_context_exit(void);
+
 #ifdef __cplusplus
 }
 #endif
