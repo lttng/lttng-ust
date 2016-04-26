@@ -28,6 +28,7 @@
 #include <lttng/ringbuffer-config.h>
 #include <lttng/ust-compiler.h>
 #include <lttng/tracepoint.h>
+#include <byteswap.h>
 #include <string.h>
 
 #undef tp_list_for_each_entry_rcu
@@ -317,18 +318,24 @@ size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, _TP_ARGS
 		case 2:							       \
 		{							       \
 			union { _type t; int16_t v; } __tmp = { (_type) (_src) }; \
+			if (_byte_order != BYTE_ORDER)			       \
+				__tmp.v = bswap_16(__tmp.v);		       \
 			__ctf_tmp_int64 = (int64_t) __tmp.v;		       \
 			break;						       \
 		}							       \
 		case 4:							       \
 		{							       \
 			union { _type t; int32_t v; } __tmp = { (_type) (_src) }; \
+			if (_byte_order != BYTE_ORDER)			       \
+				__tmp.v = bswap_32(__tmp.v);		       \
 			__ctf_tmp_int64 = (int64_t) __tmp.v;		       \
 			break;						       \
 		}							       \
 		case 8:							       \
 		{							       \
 			union { _type t; int64_t v; } __tmp = { (_type) (_src) }; \
+			if (_byte_order != BYTE_ORDER)			       \
+				__tmp.v = bswap_64(__tmp.v);		       \
 			__ctf_tmp_int64 = (int64_t) __tmp.v;		       \
 			break;						       \
 		}							       \
@@ -348,18 +355,24 @@ size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, _TP_ARGS
 		case 2:							       \
 		{							       \
 			union { _type t; uint16_t v; } __tmp = { (_type) (_src) }; \
+			if (_byte_order != BYTE_ORDER)			       \
+				__tmp.v = bswap_16(__tmp.v);		       \
 			__ctf_tmp_uint64 = (uint64_t) __tmp.v;		       \
 			break;						       \
 		}							       \
 		case 4:							       \
 		{							       \
 			union { _type t; uint32_t v; } __tmp = { (_type) (_src) }; \
+			if (_byte_order != BYTE_ORDER)			       \
+				__tmp.v = bswap_32(__tmp.v);		       \
 			__ctf_tmp_uint64 = (uint64_t) __tmp.v;		       \
 			break;						       \
 		}							       \
 		case 8:							       \
 		{							       \
 			union { _type t; uint64_t v; } __tmp = { (_type) (_src) }; \
+			if (_byte_order != BYTE_ORDER)			       \
+				__tmp.v = bswap_64(__tmp.v);		       \
 			__ctf_tmp_uint64 = (uint64_t) __tmp.v;		       \
 			break;						       \
 		}							       \
