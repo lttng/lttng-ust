@@ -1,3 +1,6 @@
+2016-04-26 lttng-ust 2.6.6
+	* Fix: disable use of __builtin_return_address(0) on 32-bit PowerPC
+
 2015-11-26 lttng-ust 2.6.5
 	* Fix: header size larger than 256 bytes
 	* Remove stale tests/java-jul test
