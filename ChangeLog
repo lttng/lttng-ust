@@ -1,3 +1,10 @@
+2016-04-26 lttng-ust 2.7.3
+	* Doc: Update README.d
+	* Fix: doc/examples: remove unexpected quotes from run files
+	* Fix: remove dead code from filter interpreter
+	* Fix: remove assertions in lttng-ust-comm init
+	* Documentation: fix manpage typo
+
 2016-03-09 lttng-ust 2.7.2
 	* Fix: disable use of __builtin_return_address(0) on 32-bit PowerPC
 	* Fix: handle negative range for LTTNG_UST_REGISTER_TIMEOUT
