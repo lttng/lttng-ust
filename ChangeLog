@@ -1,3 +1,29 @@
+2016-04-26 lttng-ust 2.8.0-rc2
+	* Doc: Update README.md
+	* Fix: jul and log4j agents makefile missing line and indentation
+	* Fix: re-introduce exported symbols
+	* Doc: update manpages for soinfo/sopath name change
+	* Rename statedump and dl events and fields
+	* Tests: list ust-elf test data explicitly in EXTRA_DIST
+	* Tests: add tests for lttng_ust_elf_is_pic
+	* Add is_pic field to statedump soinfo event
+	* Fix: add common jar to lttng-ust-agent-all dependencies
+	* Fix: add version to lttng-ust-agent-all jar file
+	* Fix: rename liblttng-ust-agent to lttng-ust-agent-all
+	* Fix: re-add liblttng-ust-agent.jar
+	* Fix: lttng java agent: dispose is non-static
+	* doc/man: lttng-ust(3): add tracing control to example
+	* doc/man: lttng-ust(3): split example files in subsections
+	* doc/man/common-copyrights: add missing THANKS section
+	* doc/man: lttng-ust(3): add missing ENVIRONMENT VARIABLES section
+	* doc/man: do not use macros in the NAME section
+	* doc/man: remove duplicate copyrights section
+	* README.md: bolden dependencies and update links
+	* README.md: split required and optional dependencies
+	* Convert man pages to AsciiDoc
+	* Fix: remove dead code from filter interpreter
+	* Fix: convey enum value signedness into metadata
+
 2016-03-18 (Awkward Moments Day) lttng-ust 2.8.0-rc1
 	* Fix: remove assertions in lttng-ust-comm init
 	* Add tracepoint_disable_destructors()
