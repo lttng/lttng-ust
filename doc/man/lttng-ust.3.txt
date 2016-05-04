@@ -1100,7 +1100,7 @@ The value 0 means _do not wait_. The value -1 means _wait forever_.
 Setting this environment variable to 0 is recommended for applications
 with time constraints on the process startup time.
 +
-Default: 3000.
+Default: {lttng_ust_register_timeout}.
 
 `LTTNG_UST_WITHOUT_BADDR_STATEDUMP`::
     Prevent `liblttng-ust` from performing a base address state dump
