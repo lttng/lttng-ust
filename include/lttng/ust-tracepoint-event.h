@@ -202,7 +202,9 @@ static const char							\
 	},
 
 #undef _ctf_array_encoded
-#define _ctf_array_encoded(_type, _item, _src, _length, _encoding, _nowrite) \
+#define _ctf_array_encoded(_type, _item, _src, _byte_order,	\
+			_length, _encoding, _nowrite,		\
+			_elem_type_base)			\
 	{							\
 	  .name = #_item,					\
 	  .type =						\
@@ -212,7 +214,7 @@ static const char							\
 			{					\
 			  .array =				\
 				{				\
-				  .elem_type = __type_integer(_type, BYTE_ORDER, 10, _encoding), \
+				  .elem_type = __type_integer(_type, _byte_order, _elem_type_base, _encoding), \
 				  .length = _length,		\
 				}				\
 			}					\
@@ -339,7 +341,8 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));
 	__event_len += sizeof(_type);
 
 #undef _ctf_array_encoded
-#define _ctf_array_encoded(_type, _item, _src, _length, _encoding, _nowrite)     \
+#define _ctf_array_encoded(_type, _item, _src, _byte_order, _length, _encoding,	 \
+			_nowrite, _elem_type_base)				 \
 	__event_len += lib_ring_buffer_align(__event_len, lttng_alignof(_type)); \
 	__event_len += sizeof(_type) * (_length);
 
@@ -486,7 +489,8 @@ size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, _TP_ARGS
 	}
 
 #undef _ctf_array_encoded
-#define _ctf_array_encoded(_type, _item, _src, _length, _encoding, _nowrite)   \
+#define _ctf_array_encoded(_type, _item, _src, _byte_order, _length,	       \
+			_encoding, _nowrite, _elem_type_base)		       \
 	{								       \
 		unsigned long __ctf_tmp_ulong = (unsigned long) (_length);     \
 		const void *__ctf_tmp_ptr = (_src);			       \
@@ -557,7 +561,8 @@ void __event_prepare_filter_stack__##_provider##___##_name(char *__stack_data,\
 	__event_align = _tp_max_t(size_t, __event_align, lttng_alignof(_type));
 
 #undef _ctf_array_encoded
-#define _ctf_array_encoded(_type, _item, _src, _length, _encoding, _nowrite)   \
+#define _ctf_array_encoded(_type, _item, _src, _byte_order, _length,	       \
+			_encoding, _nowrite, _elem_type_base)		       \
 	__event_align = _tp_max_t(size_t, __event_align, lttng_alignof(_type));
 
 #undef _ctf_sequence_encoded
@@ -622,7 +627,8 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 	}
 
 #undef _ctf_array_encoded
-#define _ctf_array_encoded(_type, _item, _src, _length, _encoding, _nowrite) \
+#define _ctf_array_encoded(_type, _item, _src, _byte_order, _length,	\
+			_encoding, _nowrite, _elem_type_base)		\
 	lib_ring_buffer_align_ctx(&__ctx, lttng_alignof(_type));	\
 	__chan->ops->event_write(&__ctx, _src, sizeof(_type) * (_length));
 

@@ -30,11 +30,11 @@
 
 #undef ctf_array_nowrite
 #define ctf_array_nowrite(_type, _item, _src, _length)		\
-	_ctf_array_encoded(_type, _item, _src, _length, none, 1)
+	_ctf_array_encoded(_type, _item, _src, BYTE_ORDER, _length, none, 1, 10)
 
 #undef ctf_array_text_nowrite
 #define ctf_array_text_nowrite(_type, _item, _src, _length)	\
-	_ctf_array_encoded(_type, _item, _src, _length, UTF8, 1)
+	_ctf_array_encoded(_type, _item, _src, BYTE_ORDER, _length, UTF8, 1, 10)
 
 #undef ctf_sequence_nowrite
 #define ctf_sequence_nowrite(_type, _item, _src, _length_type, _src_length) \

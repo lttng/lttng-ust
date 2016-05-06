@@ -54,8 +54,8 @@
 #define _ctf_float(_type, _item, _src, _nowrite)
 
 #undef _ctf_array_encoded
-#define _ctf_array_encoded(_type, _item, _src, _length, _encoding, \
-			_nowrite)
+#define _ctf_array_encoded(_type, _item, _src, _byte_order, _length, _encoding, \
+			_nowrite, _elem_type_base)
 
 #undef _ctf_sequence_encoded
 #define _ctf_sequence_encoded(_type, _item, _src, _byte_order, _length_type, \
