@@ -354,7 +354,7 @@ void lttng_ust_elf_destroy(struct lttng_ust_elf *elf)
 int lttng_ust_elf_get_memsz(struct lttng_ust_elf *elf, uint64_t *memsz)
 {
 	uint16_t i;
-	uint64_t _memsz = 0;
+	uint64_t low_addr = UINT64_MAX, high_addr = 0;
 
 	if (!elf || !memsz) {
 		goto error;
@@ -362,7 +362,6 @@ int lttng_ust_elf_get_memsz(struct lttng_ust_elf *elf, uint64_t *memsz)
 
 	for (i = 0; i < elf->ehdr->e_phnum; ++i) {
 		struct lttng_ust_elf_phdr *phdr;
-		uint64_t align;
 
 		phdr = lttng_ust_elf_get_phdr(elf, i);
 		if (!phdr) {
@@ -377,27 +376,19 @@ int lttng_ust_elf_get_memsz(struct lttng_ust_elf *elf, uint64_t *memsz)
 			goto next_loop;
 		}
 
-		/*
-		 * A p_align of 0 means no alignment, i.e. aligned to
-		 * 1 byte.
-		 */
-		align = phdr->p_align == 0 ? 1 : phdr->p_align;
-		/* Align the start of the segment. */
-		_memsz += offset_align(_memsz, align);
-		_memsz += phdr->p_memsz;
-		/*
-		 * Add padding at the end of the segment, so it ends
-		 * on a multiple of the align value (which usually
-		 * means a page boundary). This makes the computation
-		 * valid even in cases where p_align would change from
-		 * one segment to the next.
-		 */
-		_memsz += offset_align(_memsz, align);
+		low_addr = phdr->p_vaddr < low_addr ? phdr->p_vaddr : low_addr;
+		high_addr = phdr->p_vaddr + phdr->p_memsz > high_addr ?
+				phdr->p_vaddr + phdr->p_memsz : high_addr;
 	next_loop:
 		free(phdr);
 	}
 
-	*memsz = _memsz;
+	if (high_addr < low_addr) {
+		/* No PT_LOAD segments or corrupted data. */
+		goto error;
+	}
+
+	*memsz = high_addr - low_addr;
 	return 0;
 error:
 	return -1;
