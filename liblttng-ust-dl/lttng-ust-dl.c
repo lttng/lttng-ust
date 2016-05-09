@@ -144,7 +144,7 @@ void *dlopen(const char *filename, int flag)
 
 int dlclose(void *handle)
 {
-	if (__tracepoint_ptrs_registered && handle) {
+	if (__tracepoint_ptrs_registered) {
 		struct link_map *p = NULL;
 		int ret;
 
