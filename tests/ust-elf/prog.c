@@ -33,10 +33,10 @@
  * Expected memsz were computed using libelf, build ID and debug link
  * were determined through readelf.
  */
-#define X86_MEMSZ 8192
-#define X86_64_MEMSZ 4194304
-#define ARMEB_MEMSZ 65536
-#define AARCH64_BE_MEMSZ 131072
+#define X86_MEMSZ 5732
+#define X86_64_MEMSZ 2099376
+#define ARMEB_MEMSZ 34196
+#define AARCH64_BE_MEMSZ 67632
 
 #define X86_CRC 0x1531f73c
 #define X86_64_CRC 0xa048a98f
