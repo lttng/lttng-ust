@@ -89,6 +89,7 @@ all-local:
 	@if [ x"$(srcdir)" != x"$(builddir)" ]; then \
 		for subdir in $(SUBDIRS_PROXY) $(SUBDIRS_JUL) $(SUBDIRS_LOG4J); do \
 			cp -pfR $(srcdir)/$$subdir $(builddir); \
+			chmod -R u+w $(builddir)/$$subdir; \
 		done; \
 	fi; \
 	if [ x"$(shell echo "$(top_srcdir)" | grep "^/" | wc -l)" = x"1" ]; then \
