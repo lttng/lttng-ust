@@ -74,10 +74,6 @@
 #include "tlsfixup.h"
 #include "../liblttng-ust/compat.h"	/* For ENODATA */
 
-#ifndef max
-#define max(a, b)	((a) > (b) ? (a) : (b))
-#endif
-
 /* Print DBG() messages about events lost only every 1048576 hits */
 #define DBG_PRINT_NR_LOST	(1UL << 20)
 
