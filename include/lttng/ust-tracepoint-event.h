@@ -797,7 +797,7 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 
 #undef TRACEPOINT_EVENT_CLASS
 #define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	\
-const char __tp_event_signature___##_provider##___##_name[] = 		\
+static const char __tp_event_signature___##_provider##___##_name[] = 	\
 		_TP_EXTRACT_STRING2(_args);
 
 #include TRACEPOINT_INCLUDE
@@ -858,7 +858,7 @@ static const int *							       \
 static const char *							       \
 	__ref_model_emf_uri___##_provider##___##_name			       \
 	__attribute__((weakref ("_model_emf_uri___" #_provider "___" #_name)));\
-const struct lttng_event_desc __event_desc___##_provider##_##_name = {	       \
+static const struct lttng_event_desc __event_desc___##_provider##_##_name = {	       \
 	.name = #_provider ":" #_name,					       \
 	.probe_callback = (void (*)(void)) &__event_probe__##_provider##___##_template,\
 	.ctx = NULL,							       \
