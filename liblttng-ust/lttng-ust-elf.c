@@ -376,9 +376,9 @@ int lttng_ust_elf_get_memsz(struct lttng_ust_elf *elf, uint64_t *memsz)
 			goto next_loop;
 		}
 
-		low_addr = phdr->p_vaddr < low_addr ? phdr->p_vaddr : low_addr;
-		high_addr = phdr->p_vaddr + phdr->p_memsz > high_addr ?
-				phdr->p_vaddr + phdr->p_memsz : high_addr;
+		low_addr = min_t(uint64_t, low_addr, phdr->p_vaddr);
+		high_addr = max_t(uint64_t, high_addr,
+				phdr->p_vaddr + phdr->p_memsz);
 	next_loop:
 		free(phdr);
 	}
