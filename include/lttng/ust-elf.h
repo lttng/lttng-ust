@@ -77,6 +77,7 @@
 		bswap((phdr).p_filesz); \
 		bswap((phdr).p_memsz);	\
 		bswap((phdr).p_align);	\
+		bswap((phdr).p_vaddr);	\
 	} while (0)
 
 #define bswap_shdr(shdr)		    \
@@ -117,6 +118,7 @@
 		(dst_phdr).p_filesz = (src_phdr).p_filesz;	\
 		(dst_phdr).p_memsz = (src_phdr).p_memsz;	\
 		(dst_phdr).p_align = (src_phdr).p_align;	\
+		(dst_phdr).p_vaddr = (src_phdr).p_vaddr;	\
 	} while (0)
 
 #define copy_shdr(src_shdr, dst_shdr)					\
@@ -172,6 +174,7 @@ struct lttng_ust_elf_phdr {
 	uint64_t p_filesz;
 	uint64_t p_memsz;
 	uint64_t p_align;
+	uint64_t p_vaddr;
 };
 
 struct lttng_ust_elf_shdr {
