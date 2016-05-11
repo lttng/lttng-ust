@@ -179,7 +179,16 @@ public class LttngTcpSessiondClient implements Runnable {
 	}
 
 	private static String getHomePath() {
-		return System.getProperty("user.home");
+		/*
+		 * The environment variable LTTNG_HOME overrides HOME if
+		 * defined.
+		 */
+		String homePath = System.getenv("LTTNG_HOME");
+
+		if (homePath == null) {
+			homePath = System.getProperty("user.home");
+		}
+		return homePath;
 	}
 
 	/**
