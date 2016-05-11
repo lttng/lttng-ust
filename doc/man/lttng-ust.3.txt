@@ -1089,8 +1089,8 @@ int main(int argc, char* argv[])
 ENVIRONMENT VARIABLES
 ---------------------
 `LTTNG_HOME`::
-    Overrides the `$HOME` environment variable. Useful when the user
-    running the instrumented application has a non-writable home
+    Alternative user's home directory. This variable is useful when the
+    user running the instrumented application has a non-writable home
     directory.
 +
 Unix sockets used for the communication between `liblttng-ust` and the
@@ -1099,22 +1099,22 @@ are located in a specific directory under `$LTTNG_HOME` (or `$HOME` if
 `$LTTNG_HOME` is not set).
 
 `LTTNG_UST_DEBUG`::
-    Activate `liblttng-ust` debug and error output.
+    Activates `liblttng-ust`'s debug and error output if set to `1`.
 
 `LTTNG_UST_REGISTER_TIMEOUT`::
-    Specify how long the applications should wait for the
-    _registration done_ session daemon command before proceeding to
-    execute the main program (milliseconds).
+    Waiting time for the _registration done_ session daemon command
+    before proceeding to execute the main program (milliseconds).
 +
-The value 0 means _do not wait_. The value -1 means _wait forever_.
-Setting this environment variable to 0 is recommended for applications
+The value `0` means _do not wait_. The value `-1` means _wait forever_.
+Setting this environment variable to `0` is recommended for applications
 with time constraints on the process startup time.
 +
 Default: {lttng_ust_register_timeout}.
 
 `LTTNG_UST_WITHOUT_BADDR_STATEDUMP`::
-    Prevent `liblttng-ust` from performing a base address state dump
-    (see the <<state-dump,LTTng-UST state dump>> section above).
+    Prevents `liblttng-ust` from performing a base address state dump
+    (see the <<state-dump,LTTng-UST state dump>> section above) if
+    set to `1`.
 
 `LTTNG_UST_GETCPU_PLUGIN`::
     Path to the shared object which acts as the `getcpu()` override
