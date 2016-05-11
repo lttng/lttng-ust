@@ -1098,8 +1098,20 @@ LTTng session and consumer daemons (part of the LTTng-tools project)
 are located in a specific directory under `$LTTNG_HOME` (or `$HOME` if
 `$LTTNG_HOME` is not set).
 
+`LTTNG_UST_CLOCK_PLUGIN`::
+    Path to the shared object which acts as the clock override plugin.
+    An example of such a plugin can be found in the LTTng-UST
+    documentation under
+    https://github.com/lttng/lttng-ust/tree/master/doc/examples/clock-override[`examples/clock-override`].
+
 `LTTNG_UST_DEBUG`::
     Activates `liblttng-ust`'s debug and error output if set to `1`.
+
+`LTTNG_UST_GETCPU_PLUGIN`::
+    Path to the shared object which acts as the `getcpu()` override
+    plugin. An example of such a plugin can be found in the LTTng-UST
+    documentation under
+    https://github.com/lttng/lttng-ust/tree/master/doc/examples/getcpu-override[`examples/getcpu-override`].
 
 `LTTNG_UST_REGISTER_TIMEOUT`::
     Waiting time for the _registration done_ session daemon command
@@ -1115,18 +1127,6 @@ Default: {lttng_ust_register_timeout}.
     Prevents `liblttng-ust` from performing a base address state dump
     (see the <<state-dump,LTTng-UST state dump>> section above) if
     set to `1`.
-
-`LTTNG_UST_GETCPU_PLUGIN`::
-    Path to the shared object which acts as the `getcpu()` override
-    plugin. An example of such a plugin can be found in the LTTng-UST
-    documentation under
-    https://github.com/lttng/lttng-ust/tree/master/doc/examples/getcpu-override[`examples/getcpu-override`].
-
-`LTTNG_UST_CLOCK_PLUGIN`::
-    Path to the shared object which acts as the clock override plugin.
-    An example of such a plugin can be found in the LTTng-UST
-    documentation under
-    https://github.com/lttng/lttng-ust/tree/master/doc/examples/clock-override[`examples/clock-override`].
 
 
 include::common-footer.txt[]
