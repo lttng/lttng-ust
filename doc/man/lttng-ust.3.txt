@@ -1088,6 +1088,16 @@ int main(int argc, char* argv[])
 
 ENVIRONMENT VARIABLES
 ---------------------
+`LTTNG_HOME`::
+    Overrides the `$HOME` environment variable. Useful when the user
+    running the instrumented application has a non-writable home
+    directory.
++
+Unix sockets used for the communication between `liblttng-ust` and the
+LTTng session and consumer daemons (part of the LTTng-tools project)
+are located in a specific directory under `$LTTNG_HOME` (or `$HOME` if
+`$LTTNG_HOME` is not set).
+
 `LTTNG_UST_DEBUG`::
     Activate `liblttng-ust` debug and error output.
 
