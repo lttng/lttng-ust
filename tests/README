@@ -1,10 +1,10 @@
 Using the ust test suite.
 
 Running
-	./run.sh unit_tests
+	make check
 runs all the tests once.
 
 Running
-	./test_loop
+	make check-loop
 runs the test in a loop. This is useful to check for errors that would not
 always happen.

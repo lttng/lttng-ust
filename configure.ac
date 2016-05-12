@@ -33,6 +33,8 @@ AM_MAINTAINER_MODE([enable])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_SRCDIR([include/lttng/tracepoint.h])
 
+AC_REQUIRE_AUX_FILE([tap-driver.sh])
+
 # Configuration options, which will be installed in the config.h
 AC_CONFIG_HEADERS([config.h include/lttng/ust-config.h])
 AH_TEMPLATE([LTTNG_UST_HAVE_EFFICIENT_UNALIGNED_ACCESS], [Use efficient unaligned access.])
