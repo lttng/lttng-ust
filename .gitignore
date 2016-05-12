@@ -2,6 +2,8 @@
 *.swp
 *.o
 *.swo
+*.trs
+*.log
 Makefile
 .libs/
 .deps/
@@ -61,6 +63,8 @@ tests/ust-elf/prog
 tests/ust-elf/test_ust_elf
 tests/benchmark/bench1
 tests/benchmark/bench2
+tests/ctf-types/ctf-types
+tests/test-app-ctx/hello
 
 # Java agent library
 *.class

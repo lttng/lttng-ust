@@ -36,3 +36,7 @@ pkgconfig_DATA = lttng-ust.pc
 dist_doc_DATA = README.md ChangeLog
 
 dist_noinst_DATA = CodingStyle
+
+check-loop:
+	cd tests && $(MAKE) $(AM_MAKEFLAGS) check-loop
+.PHONY: check-loop
