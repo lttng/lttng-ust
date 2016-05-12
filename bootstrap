@@ -5,4 +5,4 @@ if [ ! -e config ]; then
 	mkdir config
 fi
 
-autoreconf -i
+autoreconf -vif
