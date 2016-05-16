@@ -167,6 +167,8 @@ int trace_baddr(struct bin_info_data *bin_data)
 		}
 	} else {
 		bin_data->memsz = 0;
+		bin_data->has_build_id = 0;
+		bin_data->has_debug_link = 0;
 	}
 
 	ret = trace_statedump_event(trace_bin_info_cb, bin_data->owner,
