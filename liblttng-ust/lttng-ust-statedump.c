@@ -53,6 +53,8 @@ struct bin_info_data {
 	int vdso;
 	uint32_t crc;
 	uint8_t is_pic;
+	uint8_t has_build_id;
+	uint8_t has_debug_link;
 };
 
 typedef void (*tracepoint_cb)(struct lttng_session *session, void *priv);
@@ -85,7 +87,9 @@ void trace_bin_info_cb(struct lttng_session *session, void *priv)
 
 	tracepoint(lttng_ust_statedump, bin_info,
 		session, bin_data->base_addr_ptr,
-		bin_data->resolved_path, bin_data->memsz, bin_data->is_pic);
+		bin_data->resolved_path, bin_data->memsz,
+		bin_data->is_pic, bin_data->has_build_id,
+		bin_data->has_debug_link);
 }
 
 static
@@ -121,10 +125,10 @@ void trace_end_cb(struct lttng_session *session, void *priv)
 }
 
 static
-int get_elf_info(struct bin_info_data *bin_data, int *has_build_id,
-		int *has_debug_link) {
+int get_elf_info(struct bin_info_data *bin_data)
+{
 	struct lttng_ust_elf *elf;
-	int ret = 0;
+	int ret = 0, found;
 
 	elf = lttng_ust_elf_create(bin_data->resolved_path);
 	if (!elf) {
@@ -137,16 +141,22 @@ int get_elf_info(struct bin_info_data *bin_data, int *has_build_id,
 		goto end;
 	}
 
+	found = 0;
 	ret = lttng_ust_elf_get_build_id(elf, &bin_data->build_id,
-					&bin_data->build_id_len, has_build_id);
+					&bin_data->build_id_len,
+					&found);
 	if (ret) {
 		goto end;
 	}
+	bin_data->has_build_id = !!found;
+	found = 0;
 	ret = lttng_ust_elf_get_debug_link(elf, &bin_data->dbg_file,
-					&bin_data->crc, has_debug_link);
+					&bin_data->crc,
+					&found);
 	if (ret) {
 		goto end;
 	}
+	bin_data->has_debug_link = !!found;
 
 	bin_data->is_pic = lttng_ust_elf_is_pic(elf);
 
@@ -158,10 +168,10 @@ end:
 static
 int trace_baddr(struct bin_info_data *bin_data)
 {
-	int ret = 0, has_build_id = 0, has_debug_link = 0;
+	int ret = 0;
 
 	if (!bin_data->vdso) {
-		ret = get_elf_info(bin_data, &has_build_id, &has_debug_link);
+		ret = get_elf_info(bin_data);
 		if (ret) {
 			goto end;
 		}
@@ -175,7 +185,7 @@ int trace_baddr(struct bin_info_data *bin_data)
 		goto end;
 	}
 
-	if (has_build_id) {
+	if (bin_data->has_build_id) {
 		ret = trace_statedump_event(
 			trace_build_id_cb, bin_data->owner, bin_data);
 		free(bin_data->build_id);
@@ -184,7 +194,7 @@ int trace_baddr(struct bin_info_data *bin_data)
 		}
 	}
 
-	if (has_debug_link) {
+	if (bin_data->has_debug_link) {
 		ret = trace_statedump_event(
 			trace_debug_link_cb, bin_data->owner, bin_data);
 		free(bin_data->dbg_file);
