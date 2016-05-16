@@ -49,13 +49,17 @@ TRACEPOINT_EVENT(lttng_ust_statedump, bin_info,
 		void *, baddr,
 		const char*, path,
 		uint64_t, memsz,
-		uint8_t, is_pic
+		uint8_t, is_pic,
+		uint8_t, has_build_id,
+		uint8_t, has_debug_link
 	),
 	TP_FIELDS(
 		ctf_integer_hex(void *, baddr, baddr)
 		ctf_integer(uint64_t, memsz, memsz)
 		ctf_string(path, path)
 		ctf_integer(uint8_t, is_pic, is_pic)
+		ctf_integer(uint8_t, has_build_id, has_build_id)
+		ctf_integer(uint8_t, has_debug_link, has_debug_link)
 	)
 )
 

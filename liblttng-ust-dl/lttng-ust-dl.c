@@ -104,7 +104,8 @@ void lttng_ust_dl_dlopen(void *so_base, const char *so_name, void *ip)
 	}
 
 	tracepoint(lttng_ust_dl, dlopen,
-		ip, so_base, resolved_path, memsz);
+		ip, so_base, resolved_path, memsz,
+		has_build_id, has_debug_link);
 
 	if (has_build_id) {
 		tracepoint(lttng_ust_dl, build_id,
