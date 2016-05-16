@@ -87,7 +87,7 @@ int merge_point_add_check(struct cds_lfht *ht, unsigned long target_pc,
 		const struct vstack *stack)
 {
 	struct lfht_mp_node *node;
-	unsigned long hash = lttng_hash_mix((const void *) target_pc,
+	unsigned long hash = lttng_hash_mix((const char *) target_pc,
 				sizeof(target_pc),
 				lttng_hash_seed);
 	struct cds_lfht_node *ret;
@@ -100,7 +100,7 @@ int merge_point_add_check(struct cds_lfht *ht, unsigned long target_pc,
 	node->target_pc = target_pc;
 	memcpy(&node->stack, stack, sizeof(node->stack));
 	ret = cds_lfht_add_unique(ht, hash, lttng_hash_match,
-		(const void *) target_pc, &node->node);
+		(const char *) target_pc, &node->node);
 	if (ret != &node->node) {
 		struct lfht_mp_node *ret_mp =
 			caa_container_of(ret, struct lfht_mp_node, node);
@@ -189,7 +189,7 @@ error_type:
  */
 static
 int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
-		void *start_pc, void *pc)
+		char *start_pc, char *pc)
 {
 	int ret = 0;
 
@@ -409,8 +409,8 @@ unsigned long delete_all_nodes(struct cds_lfht *ht)
 static
 int validate_instruction_context(struct bytecode_runtime *bytecode,
 		struct vstack *stack,
-		void *start_pc,
-		void *pc)
+		char *start_pc,
+		char *pc)
 {
 	int ret = 0;
 
@@ -829,8 +829,8 @@ static
 int validate_instruction_all_contexts(struct bytecode_runtime *bytecode,
 		struct cds_lfht *merge_points,
 		struct vstack *stack,
-		void *start_pc,
-		void *pc)
+		char *start_pc,
+		char *pc)
 {
 	int ret;
 	unsigned long target_pc = pc - start_pc;
@@ -845,10 +845,10 @@ int validate_instruction_all_contexts(struct bytecode_runtime *bytecode,
 		return ret;
 
 	/* Validate merge points */
-	hash = lttng_hash_mix((const void *) target_pc, sizeof(target_pc),
+	hash = lttng_hash_mix((const char *) target_pc, sizeof(target_pc),
 			lttng_hash_seed);
 	cds_lfht_lookup(merge_points, hash, lttng_hash_match,
-			(const void *) target_pc, &iter);
+			(const char *) target_pc, &iter);
 	node = cds_lfht_iter_get_node(&iter);
 	if (node) {
 		mp_node = caa_container_of(node, struct lfht_mp_node, node);
@@ -879,11 +879,11 @@ static
 int exec_insn(struct bytecode_runtime *bytecode,
 		struct cds_lfht *merge_points,
 		struct vstack *stack,
-		void **_next_pc,
-		void *pc)
+		char **_next_pc,
+		char *pc)
 {
 	int ret = 1;
-	void *next_pc = *_next_pc;
+	char *next_pc = *_next_pc;
 
 	switch (*(filter_opcode_t *) pc) {
 	case FILTER_OP_UNKNOWN:
@@ -1168,7 +1168,7 @@ end:
 int lttng_filter_validate_bytecode(struct bytecode_runtime *bytecode)
 {
 	struct cds_lfht *merge_points;
-	void *pc, *next_pc, *start_pc;
+	char *pc, *next_pc, *start_pc;
 	int ret = -EINVAL;
 	struct vstack stack;
 
