@@ -5,6 +5,7 @@ if CXX_WORKS
 SUBDIRS += hello.cxx
 endif
 
+LOG_DRIVER_FLAGS='--merge'
 LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 	$(top_srcdir)/config/tap-driver.sh
 
