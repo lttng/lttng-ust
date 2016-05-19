@@ -236,7 +236,7 @@ AS_CASE([$host_cpu],
 	[s390], [NO_UNALIGNED_ACCESS=1],
 	[s390x], [NO_UNALIGNED_ACCESS=1],
 	[arm*], [NO_UNALIGNED_ACCESS=1],
-	[aarch64], [NO_UNALIGNED_ACCESS=1],
+	[aarch64*], [NO_UNALIGNED_ACCESS=1],
 	[mips*], [NO_UNALIGNED_ACCESS=1],
 	[tile*], [NO_UNALIGNED_ACCESS=1],
 	[
