@@ -55,6 +55,10 @@ class LttngLog4jAgent extends AbstractLttngAgent<LttngLogAppender> {
 		@SuppressWarnings("unchecked")
 		List<Logger> loggers = Collections.list(LogManager.getCurrentLoggers());
 		for (Logger logger : loggers) {
+			if (logger == null) {
+				continue;
+			}
+
 			/*
 			 * Check if that logger has at least one LTTng log4j appender
 			 * attached.
