@@ -73,7 +73,7 @@ class SessiondListLoggersCommand extends SessiondCommand {
 			buf.putInt(loggers.size());
 
 			for (String logger : loggers) {
-				buf.put(logger.getBytes());
+				buf.put(logger.getBytes(SESSIOND_PROTOCOL_CHARSET));
 				/* NULL terminated byte after the logger name. */
 				buf.put((byte) 0x0);
 			}
