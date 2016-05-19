@@ -19,6 +19,7 @@
 package org.lttng.ust.agent.client;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 
 /**
  * Base class to represent all commands sent from the session daemon to the Java
@@ -28,6 +29,12 @@ import java.nio.ByteBuffer;
  * @author Alexandre Montplaisir
  */
 abstract class SessiondCommand {
+
+	/**
+	 * Encoding that should be used for the strings in the sessiond agent
+	 * protocol on the socket.
+	 */
+	protected static final Charset SESSIOND_PROTOCOL_CHARSET = Charset.forName("UTF-8");
 
 	enum CommandType {
 		/** List logger(s). */
@@ -87,6 +94,6 @@ abstract class SessiondCommand {
 
 		byte[] stringBytes = new byte[length];
 		buffer.get(stringBytes);
-		return new String(stringBytes).trim();
+		return new String(stringBytes, SESSIOND_PROTOCOL_CHARSET).trim();
 	}
 }

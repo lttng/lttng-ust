@@ -21,6 +21,7 @@ package org.lttng.ust.agent.client;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -199,9 +200,10 @@ public class LttngTcpSessiondClient implements Runnable {
 	private static int getPortFromFile(String path) throws IOException {
 		int port;
 		BufferedReader br = null;
+		File file = new File(path);
 
 		try {
-			br = new BufferedReader(new FileReader(path));
+			br = new BufferedReader(new FileReader(file));
 			String line = br.readLine();
 			port = Integer.parseInt(line, 10);
 			if (port < 0 || port > 65535) {

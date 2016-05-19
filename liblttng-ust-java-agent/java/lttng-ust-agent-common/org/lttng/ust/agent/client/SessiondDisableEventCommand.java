@@ -39,7 +39,7 @@ class SessiondDisableEventCommand extends SessiondCommand {
 		}
 		ByteBuffer buf = ByteBuffer.wrap(data);
 		buf.order(ByteOrder.BIG_ENDIAN);
-		eventName = new String(data).trim();
+		eventName = new String(data, SESSIOND_PROTOCOL_CHARSET).trim();
 	}
 
 	@Override
