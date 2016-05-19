@@ -82,17 +82,17 @@ abstract class SessiondCommand {
 	 *         formatted.
 	 */
 	protected static String readNextString(ByteBuffer buffer) {
-		int length = buffer.getInt();
-		if (length < 0) {
+		int nbBytes = buffer.getInt();
+		if (nbBytes < 0) {
 			/* The string length should be positive */
 			return null;
 		}
-		if (length == 0) {
+		if (nbBytes == 0) {
 			/* The string is explicitly an empty string */
 			return "";
 		}
 
-		byte[] stringBytes = new byte[length];
+		byte[] stringBytes = new byte[nbBytes];
 		buffer.get(stringBytes);
 		return new String(stringBytes, SESSIOND_PROTOCOL_CHARSET).trim();
 	}
