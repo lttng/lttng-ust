@@ -56,7 +56,7 @@ class SessiondEnableEventCommand extends SessiondCommand {
 		/* Read the event name */
 		byte[] eventNameBytes = new byte[EVENT_NAME_LENGTH];
 		buf.get(eventNameBytes);
-		eventName = new String(eventNameBytes).trim();
+		eventName = new String(eventNameBytes, SESSIOND_PROTOCOL_CHARSET).trim();
 
 		/* Read the filter string */
 		filterString = readNextString(buf);
