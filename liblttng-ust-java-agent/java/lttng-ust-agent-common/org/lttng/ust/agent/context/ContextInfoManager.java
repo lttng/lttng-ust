@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * The singleton manager of {@link IContextInfoRetriever} objects.
@@ -30,6 +32,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class ContextInfoManager {
 
 	private static final String SHARED_LIBRARY_NAME = "lttng-ust-context-jni";
+
+	private static final Pattern VALID_CONTEXT_NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_\\.]+$");
 
 	private static ContextInfoManager instance;
 
@@ -95,6 +99,10 @@ public final class ContextInfoManager {
 	 */
 	public boolean registerContextInfoRetriever(String retrieverName, IContextInfoRetriever contextInfoRetriever) {
 		synchronized (retrieverLock) {
+			if (!validateRetrieverName(retrieverName)) {
+				return false;
+			}
+
 			if (contextInfoRetrievers.containsKey(retrieverName)) {
 				/*
 				 * There is already a retriever registered with that name,
@@ -156,5 +164,25 @@ public final class ContextInfoManager {
 	 */
 	public IContextInfoRetriever getContextInfoRetriever(String retrieverName) {
 		return contextInfoRetrievers.get(retrieverName);
+	}
+
+	/**
+	 * Validate that the given retriever name contains only the allowed
+	 * characters, which are alphanumerical characters, period "." and
+	 * underscore "_". The name must also not start with a number.
+	 */
+	private static boolean validateRetrieverName(String contextName) {
+		if (contextName.isEmpty()) {
+			return false;
+		}
+
+		/* First character must not be a number */
+		if (Character.isDigit(contextName.charAt(0))) {
+			return false;
+		}
+
+		/* Validate the other characters of the string */
+		Matcher matcher = VALID_CONTEXT_NAME_PATTERN.matcher(contextName);
+		return matcher.matches();
 	}
 }
