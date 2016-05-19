@@ -374,7 +374,10 @@ public class LttngTcpSessiondClient implements Runnable {
 			return null;
 		}
 
-		this.inFromSessiond.read(payload, 0, payload.length);
+		int read = inFromSessiond.read(payload, 0, payload.length);
+		if (read != payload.length) {
+			throw new IOException("Unexpected number of bytes read in sessiond command payload");
+		}
 		return payload;
 	}
 
