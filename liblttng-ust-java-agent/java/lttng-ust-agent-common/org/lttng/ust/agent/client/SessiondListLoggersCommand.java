@@ -34,13 +34,7 @@ class SessiondListLoggersCommand extends SessiondCommand {
 	@Override
 	public LttngAgentResponse execute(ILttngTcpClientListener agent) {
 		final Collection<String> loggerList = agent.listAvailableEvents();
-		int dataSize = 0;
-
-		for (String event : agent.listAvailableEvents()) {
-			dataSize += event.length() + 1;
-		}
-
-		return new SessiondListLoggersResponse(loggerList, dataSize);
+		return new SessiondListLoggersResponse(loggerList);
 	}
 
 	private static class SessiondListLoggersResponse extends LttngAgentResponse {
@@ -48,11 +42,9 @@ class SessiondListLoggersCommand extends SessiondCommand {
 		private final static int SIZE = 12;
 
 		private final Collection<String> loggers;
-		private final int dataSize;
 
-		public SessiondListLoggersResponse(Collection<String> loggers, int dataSize) {
+		public SessiondListLoggersResponse(Collection<String> loggers) {
 			this.loggers = loggers;
-			this.dataSize = dataSize;
 		}
 
 		@Override
@@ -63,15 +55,26 @@ class SessiondListLoggersCommand extends SessiondCommand {
 
 		@Override
 		public byte[] getBytes() {
+			/*
+			 * Compute the data size, which is the number of bytes of each
+			 * encoded string, +1 per string for the \0
+			 */
+			int dataSize = 0;
+			for (String logger : loggers) {
+				dataSize += logger.getBytes(SESSIOND_PROTOCOL_CHARSET).length + 1;
+			}
+
+			/* Prepare the buffer */
 			byte data[] = new byte[SIZE + dataSize];
 			ByteBuffer buf = ByteBuffer.wrap(data);
 			buf.order(ByteOrder.BIG_ENDIAN);
 
-			/* Returned code */
+			/* Write the header section of the response */
 			buf.putInt(getReturnCode().getCode());
 			buf.putInt(dataSize);
 			buf.putInt(loggers.size());
 
+			/* Write the payload */
 			for (String logger : loggers) {
 				buf.put(logger.getBytes(SESSIOND_PROTOCOL_CHARSET));
 				/* NULL terminated byte after the logger name. */
