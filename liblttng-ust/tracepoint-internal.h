@@ -51,4 +51,6 @@ static inline void tracepoint_synchronize_unregister(void)
 extern void init_tracepoint(void);
 extern void exit_tracepoint(void);
 
+void *lttng_ust_tp_check_weak_hidden(void);
+
 #endif /* _LTTNG_TRACEPOINT_INTERNAL_H */

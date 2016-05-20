@@ -43,6 +43,9 @@
 #include "jhash.h"
 #include "error.h"
 
+/* Test compiler support for weak symbols with hidden visibility. */
+char __tracepoint_test_symbol[9] __attribute__((weak, visibility("hidden")));
+
 /* Set to 1 to enable tracepoint debug output */
 static const int tracepoint_debug;
 static int initialized;
@@ -803,11 +806,26 @@ int tracepoint_unregister_lib(struct lttng_ust_tracepoint * const *tracepoints_s
 	return 0;
 }
 
+/*
+ * Report in debug message whether the compiler correctly supports weak
+ * hidden symbols. This test checks that the address associated with two
+ * weak symbols with hidden visibility is the same when declared within
+ * two compile units part of the same module.
+ */
+static void check_weak_hidden(void)
+{
+	DBG("Your compiler support for weak symbols with hidden visibility is %s",
+		__tracepoint_test_symbol == lttng_ust_tp_check_weak_hidden() ?
+			"OK" :
+			"BROKEN. Please upgrade or fix your compiler to use LTTng-UST tracepoints.");
+}
+
 void init_tracepoint(void)
 {
 	if (uatomic_xchg(&initialized, 1) == 1)
 		return;
 	init_usterr();
+	check_weak_hidden();
 }
 
 void exit_tracepoint(void)
