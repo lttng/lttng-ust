@@ -1,3 +1,11 @@
+2016-05-20 (Bike-to-Work Day) lttng-ust 2.7.4
+	* Print DBG() message about compiler weak hidden symbol behavior
+	* Documentation: ring buffer: SWITCH_FLUSH can be used when active
+	* Fix: unchecked return value in trace_clock_read64_monotonic
+	* Fix: Java agent should use LTTNG_HOME
+	* Fix: examples make distcheck failure
+	* Fix: endianness of integers received by filter
+
 2016-04-26 lttng-ust 2.7.3
 	* Doc: Update README.d
 	* Fix: doc/examples: remove unexpected quotes from run files
