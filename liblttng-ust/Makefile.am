@@ -7,6 +7,7 @@ lib_LTLIBRARIES = liblttng-ust-tracepoint.la liblttng-ust.la
 
 liblttng_ust_tracepoint_la_SOURCES = \
 	tracepoint.c \
+	tracepoint-weak-test.c \
 	tracepoint-internal.h \
 	lttng-tracer-core.h \
 	jhash.h \
