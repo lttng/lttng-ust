@@ -65,6 +65,8 @@ tests/benchmark/bench1
 tests/benchmark/bench2
 tests/ctf-types/ctf-types
 tests/test-app-ctx/hello
+tests/gcc-weak-hidden/test-gcc-wh
+tests/gcc-weak-hidden/test_gcc_weak_hidden
 
 # Java agent library
 *.class

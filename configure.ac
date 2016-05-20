@@ -477,6 +477,7 @@ AC_CONFIG_FILES([
 	tests/benchmark/Makefile
 	tests/utils/Makefile
 	tests/test-app-ctx/Makefile
+	tests/gcc-weak-hidden/Makefile
 	lttng-ust.pc
 ])
 
