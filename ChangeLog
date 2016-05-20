@@ -1,3 +1,37 @@
+2016-05-20 (Bike-to-Work Day) lttng-ust 2.8.0
+	* Print DBG() message about compiler weak hidden symbol behavior
+	* test: add test for gcc issue with weak hidden symbol on powerpc
+	* Restrict Java context retriever names to a set of valid characters
+	* Fix: Correctly compute Java agent list loggers response size
+	* Add support for aarch64_be
+	* Fix: Fix synchronization of LTTngAgent#dispose
+	* Fix: Verify number of bytes contained in sessiond agent commands
+	* Fix: Avoid potential null dereference with log4j loggers
+	* Specify UTF-8 encoding for all Java agent commands
+	* Fix: merge tap tests stdout and stderr
+	* Documentation: ring buffer: SWITCH_FLUSH can be used when active
+	* Fix: unchecked return value in trace_clock_read64_monotonic
+	* Fix: portability: no arith on void pointer
+	* Fix: add "has_build_id" and "has_debug_link" fields to debuginfo events
+	* Fix: initialize build id and debug link flags to 0
+	* Tests: Add tap-driver.sh for automake < 1.12
+	* Tests: Replace prove by autotools tap runner
+	* bootstrap: Standardize on autoreconf -vi
+	* Harmonize bootstrap script across projects
+	* lttng-ust(3): order environment variables
+	* lttng-ust(3): fix syntax of env. variables section
+	* lttng-ust(3): document $LTTNG_HOME
+	* Fix: Java agent should use LTTNG_HOME
+	* Fix: examples make distcheck failure
+	* Cleanup: add static for internal symbols
+	* Cleanup: Remove unused max() macros from ring_buffer_frontend.c
+	* Use min_t/max_t macros in lttng-ust-elf.c
+	* Tests: update ust-elf tests to reflect correct memsz computation
+	* Fix: erroneous computation of ELF in-memory size
+	* Make code and man pages share the same default values
+	* Fix: remove NULL check of nonnull parameter in dlclose
+	* Fix: endianness of integers received by filter
+
 2016-04-26 lttng-ust 2.8.0-rc2
 	* Doc: Update README.md
 	* Fix: jul and log4j agents makefile missing line and indentation
