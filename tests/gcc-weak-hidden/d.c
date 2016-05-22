@@ -1,6 +1,20 @@
-char testsym[9] __attribute__((weak, visibility("hidden")));
+int testint __attribute__((weak, visibility("hidden")));
+void *testptr __attribute__((weak, visibility("hidden")));
+struct {
+	char a[24];
+} testsym_24_bytes __attribute__((weak, visibility("hidden")));
 
-void *fctlib2(void)
+void *testlibfct2_int(void)
 {
-	return testsym;
+	return &testint;
+}
+
+void *testlibfct2_ptr(void)
+{
+	return &testptr;
+}
+
+void *testlibfct2_24_bytes(void)
+{
+	return &testsym_24_bytes;
 }
