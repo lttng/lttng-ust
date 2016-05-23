@@ -226,6 +226,7 @@ struct lttng_ust_tracepoint_dlopen {
 };
 
 extern struct lttng_ust_tracepoint_dlopen tracepoint_dlopen;
+extern struct lttng_ust_tracepoint_dlopen *tracepoint_dlopen_ptr;
 
 /* Disable tracepoint destructors. */
 int __tracepoints__disable_destructors __attribute__((weak));
