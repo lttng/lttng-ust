@@ -78,11 +78,9 @@ int main()
 	diag("Address of weak symbol with hidden visibility %s between compile units within same module for shared library (24 bytes structure object)",
 		match_matrix[MATCH_LIB_24_BYTES] ? "match" : "MISMATCH");
 
-	ok(match_matrix[MATCH_PROGRAM_INT] == match_matrix[MATCH_PROGRAM_PTR]
-			&& match_matrix[MATCH_PROGRAM_INT] == match_matrix[MATCH_PROGRAM_24_BYTES],
-		"Weak-hidden behavior is the same for 4 bytes integer, pointer, and 24 bytes structure objects for within main program");
-	ok(match_matrix[MATCH_LIB_INT] == match_matrix[MATCH_LIB_PTR]
-			&& match_matrix[MATCH_LIB_INT] == match_matrix[MATCH_LIB_24_BYTES],
-		"Weak-hidden behavior is the same for 4 bytes integer, pointer, and 24 bytes structure objects for within shared library");
+	ok(match_matrix[MATCH_PROGRAM_INT] == match_matrix[MATCH_PROGRAM_PTR],
+		"Weak-hidden behavior is the same for 4 bytes integer and pointer objects within main program");
+	ok(match_matrix[MATCH_LIB_INT] == match_matrix[MATCH_LIB_PTR],
+		"Weak-hidden behavior is the same for 4 bytes integer and pointer objects within shared library");
 	return 0;
 }
