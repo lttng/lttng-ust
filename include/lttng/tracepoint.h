@@ -226,6 +226,7 @@ struct lttng_ust_tracepoint_dlopen {
 };
 
 extern struct lttng_ust_tracepoint_dlopen tracepoint_dlopen;
+extern struct lttng_ust_tracepoint_dlopen *tracepoint_dlopen_ptr;
 
 #if defined(TRACEPOINT_DEFINE) || defined(TRACEPOINT_CREATE_PROBES)
 
