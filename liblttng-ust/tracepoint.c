@@ -44,7 +44,11 @@
 #include "error.h"
 
 /* Test compiler support for weak symbols with hidden visibility. */
-char __tracepoint_test_symbol[9] __attribute__((weak, visibility("hidden")));
+int __tracepoint_test_symbol1 __attribute__((weak, visibility("hidden")));
+void *__tracepoint_test_symbol2 __attribute__((weak, visibility("hidden")));
+struct {
+	char a[24];
+} __tracepoint_test_symbol3 __attribute__((weak, visibility("hidden")));
 
 /* Set to 1 to enable tracepoint debug output */
 static const int tracepoint_debug;
@@ -814,10 +818,18 @@ int tracepoint_unregister_lib(struct lttng_ust_tracepoint * const *tracepoints_s
  */
 static void check_weak_hidden(void)
 {
-	DBG("Your compiler support for weak symbols with hidden visibility is %s",
-		__tracepoint_test_symbol == lttng_ust_tp_check_weak_hidden() ?
-			"OK" :
-			"BROKEN. Please upgrade or fix your compiler to use LTTng-UST tracepoints.");
+	DBG("Your compiler treats weak symbols with hidden visibility for integer objects as %s between compile units part of the same module.",
+		&__tracepoint_test_symbol1 == lttng_ust_tp_check_weak_hidden1() ?
+			"SAME address" :
+			"DIFFERENT addresses");
+	DBG("Your compiler treats weak symbols with hidden visibility for pointer objects as %s between compile units part of the same module.",
+		&__tracepoint_test_symbol2 == lttng_ust_tp_check_weak_hidden2() ?
+			"SAME address" :
+			"DIFFERENT addresses");
+	DBG("Your compiler treats weak symbols with hidden visibility for 24-byte structure objects as %s between compile units part of the same module.",
+		&__tracepoint_test_symbol3 == lttng_ust_tp_check_weak_hidden3() ?
+			"SAME address" :
+			"DIFFERENT addresses");
 }
 
 void init_tracepoint(void)
