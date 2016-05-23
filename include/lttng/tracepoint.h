@@ -255,6 +255,18 @@ int __tracepoint_ptrs_registered
 	__attribute__((weak, visibility("hidden")));
 struct lttng_ust_tracepoint_dlopen tracepoint_dlopen
 	__attribute__((weak, visibility("hidden")));
+/*
+ * Deal with gcc O1 optimisation issues with weak hidden symbols. gcc
+ * 4.8 and prior does not have the same behavior for symbol scoping on
+ * 32-bit powerpc depending on the object size: symbols for objects of 8
+ * bytes or less have the same address throughout a module, whereas they
+ * have different addresses between compile units for objects larger
+ * than 8 bytes. Add this pointer indirection to ensure that the symbol
+ * scoping match that of the other weak hidden symbols found in this
+ * header.
+ */
+struct lttng_ust_tracepoint_dlopen *tracepoint_dlopen_ptr
+	__attribute__((weak, visibility("hidden")));
 
 #ifndef _LGPL_SOURCE
 static inline void lttng_ust_notrace
@@ -262,24 +274,26 @@ __tracepoint__init_urcu_sym(void);
 static inline void
 __tracepoint__init_urcu_sym(void)
 {
+	if (!tracepoint_dlopen_ptr)
+		tracepoint_dlopen_ptr = &tracepoint_dlopen;
 	/*
 	 * Symbols below are needed by tracepoint call sites and probe
 	 * providers.
 	 */
-	if (!tracepoint_dlopen.rcu_read_lock_sym_bp)
-		tracepoint_dlopen.rcu_read_lock_sym_bp =
+	if (!tracepoint_dlopen_ptr->rcu_read_lock_sym_bp)
+		tracepoint_dlopen_ptr->rcu_read_lock_sym_bp =
 			URCU_FORCE_CAST(void (*)(void),
-				dlsym(tracepoint_dlopen.liblttngust_handle,
+				dlsym(tracepoint_dlopen_ptr->liblttngust_handle,
 					"tp_rcu_read_lock_bp"));
-	if (!tracepoint_dlopen.rcu_read_unlock_sym_bp)
-		tracepoint_dlopen.rcu_read_unlock_sym_bp =
+	if (!tracepoint_dlopen_ptr->rcu_read_unlock_sym_bp)
+		tracepoint_dlopen_ptr->rcu_read_unlock_sym_bp =
 			URCU_FORCE_CAST(void (*)(void),
-				dlsym(tracepoint_dlopen.liblttngust_handle,
+				dlsym(tracepoint_dlopen_ptr->liblttngust_handle,
 					"tp_rcu_read_unlock_bp"));
-	if (!tracepoint_dlopen.rcu_dereference_sym_bp)
-		tracepoint_dlopen.rcu_dereference_sym_bp =
+	if (!tracepoint_dlopen_ptr->rcu_dereference_sym_bp)
+		tracepoint_dlopen_ptr->rcu_dereference_sym_bp =
 			URCU_FORCE_CAST(void *(*)(void *p),
-				dlsym(tracepoint_dlopen.liblttngust_handle,
+				dlsym(tracepoint_dlopen_ptr->liblttngust_handle,
 					"tp_rcu_dereference_sym_bp"));
 }
 #else
@@ -299,10 +313,12 @@ __tracepoints__init(void)
 	if (__tracepoint_registered++)
 		return;
 
-	if (!tracepoint_dlopen.liblttngust_handle)
-		tracepoint_dlopen.liblttngust_handle =
+	if (!tracepoint_dlopen_ptr)
+		tracepoint_dlopen_ptr = &tracepoint_dlopen;
+	if (!tracepoint_dlopen_ptr->liblttngust_handle)
+		tracepoint_dlopen_ptr->liblttngust_handle =
 			dlopen("liblttng-ust-tracepoint.so.0", RTLD_NOW | RTLD_GLOBAL);
-	if (!tracepoint_dlopen.liblttngust_handle)
+	if (!tracepoint_dlopen_ptr->liblttngust_handle)
 		return;
 	__tracepoint__init_urcu_sym();
 }
@@ -316,15 +332,17 @@ __tracepoints__destroy(void)
 
 	if (--__tracepoint_registered)
 		return;
+	if (!tracepoint_dlopen_ptr)
+		tracepoint_dlopen_ptr = &tracepoint_dlopen;
 	if (!__tracepoints__disable_destructors
-			&& tracepoint_dlopen.liblttngust_handle
+			&& tracepoint_dlopen_ptr->liblttngust_handle
 			&& !__tracepoint_ptrs_registered) {
-		ret = dlclose(tracepoint_dlopen.liblttngust_handle);
+		ret = dlclose(tracepoint_dlopen_ptr->liblttngust_handle);
 		if (ret) {
 			fprintf(stderr, "Error (%d) in dlclose\n", ret);
 			abort();
 		}
-		memset(&tracepoint_dlopen, 0, sizeof(tracepoint_dlopen));
+		memset(tracepoint_dlopen_ptr, 0, sizeof(*tracepoint_dlopen_ptr));
 	}
 }
 
@@ -391,22 +409,24 @@ __tracepoints__ptrs_init(void)
 {
 	if (__tracepoint_ptrs_registered++)
 		return;
-	if (!tracepoint_dlopen.liblttngust_handle)
-		tracepoint_dlopen.liblttngust_handle =
+	if (!tracepoint_dlopen_ptr)
+		tracepoint_dlopen_ptr = &tracepoint_dlopen;
+	if (!tracepoint_dlopen_ptr->liblttngust_handle)
+		tracepoint_dlopen_ptr->liblttngust_handle =
 			dlopen("liblttng-ust-tracepoint.so.0", RTLD_NOW | RTLD_GLOBAL);
-	if (!tracepoint_dlopen.liblttngust_handle)
+	if (!tracepoint_dlopen_ptr->liblttngust_handle)
 		return;
-	tracepoint_dlopen.tracepoint_register_lib =
+	tracepoint_dlopen_ptr->tracepoint_register_lib =
 		URCU_FORCE_CAST(int (*)(struct lttng_ust_tracepoint * const *, int),
-				dlsym(tracepoint_dlopen.liblttngust_handle,
+				dlsym(tracepoint_dlopen_ptr->liblttngust_handle,
 					"tracepoint_register_lib"));
-	tracepoint_dlopen.tracepoint_unregister_lib =
+	tracepoint_dlopen_ptr->tracepoint_unregister_lib =
 		URCU_FORCE_CAST(int (*)(struct lttng_ust_tracepoint * const *),
-				dlsym(tracepoint_dlopen.liblttngust_handle,
+				dlsym(tracepoint_dlopen_ptr->liblttngust_handle,
 					"tracepoint_unregister_lib"));
 	__tracepoint__init_urcu_sym();
-	if (tracepoint_dlopen.tracepoint_register_lib) {
-		tracepoint_dlopen.tracepoint_register_lib(__start___tracepoints_ptrs,
+	if (tracepoint_dlopen_ptr->tracepoint_register_lib) {
+		tracepoint_dlopen_ptr->tracepoint_register_lib(__start___tracepoints_ptrs,
 				__stop___tracepoints_ptrs -
 				__start___tracepoints_ptrs);
 	}
@@ -421,17 +441,19 @@ __tracepoints__ptrs_destroy(void)
 
 	if (--__tracepoint_ptrs_registered)
 		return;
-	if (tracepoint_dlopen.tracepoint_unregister_lib)
-		tracepoint_dlopen.tracepoint_unregister_lib(__start___tracepoints_ptrs);
+	if (!tracepoint_dlopen_ptr)
+		tracepoint_dlopen_ptr = &tracepoint_dlopen;
+	if (tracepoint_dlopen_ptr->tracepoint_unregister_lib)
+		tracepoint_dlopen_ptr->tracepoint_unregister_lib(__start___tracepoints_ptrs);
 	if (!__tracepoints__disable_destructors
-			&& tracepoint_dlopen.liblttngust_handle
+			&& tracepoint_dlopen_ptr->liblttngust_handle
 			&& !__tracepoint_ptrs_registered) {
-		ret = dlclose(tracepoint_dlopen.liblttngust_handle);
+		ret = dlclose(tracepoint_dlopen_ptr->liblttngust_handle);
 		if (ret) {
 			fprintf(stderr, "Error (%d) in dlclose\n", ret);
 			abort();
 		}
-		memset(&tracepoint_dlopen, 0, sizeof(tracepoint_dlopen));
+		memset(tracepoint_dlopen_ptr, 0, sizeof(*tracepoint_dlopen_ptr));
 	}
 }
 
