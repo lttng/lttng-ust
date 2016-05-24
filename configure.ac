@@ -8,8 +8,8 @@ m4_define([V_PATCH], [0])
 m4_define([V_EXTRA], [pre])
 m4_define([V_STRING], [V_MAJOR.V_MINOR.V_PATCH])
 m4_ifdef([V_EXTRA], [m4_append([V_STRING], [-V_EXTRA])])
-m4_define([V_NAME], [[Isseki Nicho]])
-m4_define([V_DESC], [[The result of a collaboration between "Dieu du Ciel!" and Nagano-based "Shiga Kogen", Isseki Nicho is a strong Imperial Dark Saison offering a rich roasted malt flavor combined with a complex fruity finish typical of Saison yeasts.]])
+m4_define([V_NAME], [[J-TBD]])
+m4_define([V_DESC], [[]])
 
 AC_INIT([lttng-ust], V_STRING, [mathieu dot desnoyers at efficios dot com])
 
