@@ -29,6 +29,7 @@
 #include <signal.h>
 #include <sched.h>
 #include <stdarg.h>
+#include <helper.h>
 #include "usterr-signal-safe.h"
 
 #include <lttng/ust-compiler.h>
@@ -95,7 +96,7 @@ void *dlopen(const char *filename, int flag)
 		if (dlinfo(handle, RTLD_DI_LINKMAP, &p) != -1 && p != NULL
 				&& p->l_addr != 0)
 			lttng_ust_dl_dlopen((void *) p->l_addr, p->l_name,
-				__builtin_return_address(0));
+				LTTNG_UST_CALLER_IP());
 	}
 	return handle;
 }
@@ -107,7 +108,7 @@ int dlclose(void *handle)
 		if (dlinfo(handle, RTLD_DI_LINKMAP, &p) != -1 && p != NULL
 				&& p->l_addr != 0)
 			tracepoint(lttng_ust_dl, dlclose, (void *) p->l_addr,
-				__builtin_return_address(0));
+				LTTNG_UST_CALLER_IP());
 	}
 	return _lttng_ust_dl_libc_dlclose(handle);
 }
