@@ -27,6 +27,7 @@
 
 #include <lttng/ust-dlfcn.h>
 #include <lttng/ust-elf.h>
+#include <helper.h>
 #include "usterr-signal-safe.h"
 
 /* Include link.h last else it conflicts with ust-dlfcn. */
@@ -136,7 +137,7 @@ void *dlopen(const char *filename, int flag)
 		ret = dlinfo(handle, RTLD_DI_LINKMAP, &p);
 		if (ret != -1 && p != NULL && p->l_addr != 0) {
 			lttng_ust_dl_dlopen((void *) p->l_addr, p->l_name,
-				__builtin_return_address(0));
+				LTTNG_UST_CALLER_IP());
 		}
 	}
 
@@ -152,7 +153,7 @@ int dlclose(void *handle)
 		ret = dlinfo(handle, RTLD_DI_LINKMAP, &p);
 		if (ret != -1 && p != NULL && p->l_addr != 0) {
 			tracepoint(lttng_ust_dl, dlclose,
-				__builtin_return_address(0),
+				LTTNG_UST_CALLER_IP(),
 				(void *) p->l_addr);
 		}
 	}

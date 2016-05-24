@@ -23,6 +23,7 @@
 #define _GNU_SOURCE
 #define _LGPL_SOURCE
 #include <stdio.h>
+#include <helper.h>
 
 #define TRACEPOINT_CREATE_PROBES
 #define TRACEPOINT_DEFINE
@@ -40,7 +41,7 @@ void _lttng_ust_tracef(const char *fmt, ...)
 	if (len < 0)
 		goto end;
 	__tracepoint_cb_lttng_ust_tracef___event(msg, len,
-		__builtin_return_address(0));
+		LTTNG_UST_CALLER_IP());
 	free(msg);
 end:
 	va_end(ap);

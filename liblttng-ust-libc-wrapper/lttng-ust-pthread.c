@@ -18,6 +18,7 @@
 
 #define _GNU_SOURCE
 #include <lttng/ust-dlfcn.h>
+#include <helper.h>
 #include <pthread.h>
 
 #define TRACEPOINT_DEFINE
@@ -48,10 +49,10 @@ int pthread_mutex_lock(pthread_mutex_t *mutex)
 
 	thread_in_trace = 1;
 	tracepoint(lttng_ust_pthread, pthread_mutex_lock_req, mutex,
-		__builtin_return_address(0));
+		LTTNG_UST_CALLER_IP());
 	retval = mutex_lock(mutex);
 	tracepoint(lttng_ust_pthread, pthread_mutex_lock_acq, mutex,
-		retval, __builtin_return_address(0));
+		retval, LTTNG_UST_CALLER_IP());
 	thread_in_trace = 0;
 	return retval;
 }
@@ -78,7 +79,7 @@ int pthread_mutex_trylock(pthread_mutex_t *mutex)
 	thread_in_trace = 1;
 	retval = mutex_trylock(mutex);
 	tracepoint(lttng_ust_pthread, pthread_mutex_trylock, mutex,
-		retval, __builtin_return_address(0));
+		retval, LTTNG_UST_CALLER_IP());
 	thread_in_trace = 0;
 	return retval;
 }
@@ -105,7 +106,7 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex)
 	thread_in_trace = 1;
 	retval = mutex_unlock(mutex);
 	tracepoint(lttng_ust_pthread, pthread_mutex_unlock, mutex,
-		retval, __builtin_return_address(0));
+		retval, LTTNG_UST_CALLER_IP());
 	thread_in_trace = 0;
 	return retval;
 }
