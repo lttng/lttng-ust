@@ -18,7 +18,11 @@
  */
 
 #define _GNU_SOURCE
-#define _LGPL_SOURCE
+/*
+ * Do _not_ define _LGPL_SOURCE because we don't want to create a
+ * circular dependency loop between this malloc wrapper, liburcu and
+ * libc.
+ */
 #include <lttng/ust-dlfcn.h>
 #include <sys/types.h>
 #include <stdio.h>
