@@ -18,6 +18,7 @@
  */
 
 #define _GNU_SOURCE
+#define _LGPL_SOURCE
 #include <lttng/ust-dlfcn.h>
 #include <sys/types.h>
 #include <stdio.h>

@@ -17,6 +17,7 @@
  */
 
 #define _GNU_SOURCE
+#define _LGPL_SOURCE
 #include <lttng/ust-dlfcn.h>
 #include <helper.h>
 #include <pthread.h>

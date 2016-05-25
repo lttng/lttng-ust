@@ -16,6 +16,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#define _LGPL_SOURCE
 #include "org_lttng_ust_LTTngUst.h"
 
 #define TRACEPOINT_DEFINE
