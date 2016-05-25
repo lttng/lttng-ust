@@ -309,8 +309,12 @@ __tracepoints__init(void);
 static void
 __tracepoints__init(void)
 {
-	if (__tracepoint_registered++)
+	if (__tracepoint_registered++) {
+		if (!tracepoint_dlopen_ptr->liblttngust_handle)
+			return;
+		__tracepoint__init_urcu_sym();
 		return;
+	}
 
 	if (!tracepoint_dlopen_ptr)
 		tracepoint_dlopen_ptr = &tracepoint_dlopen;
