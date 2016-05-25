@@ -218,11 +218,9 @@ struct lttng_ust_tracepoint_dlopen {
 	int (*tracepoint_register_lib)(struct lttng_ust_tracepoint * const *tracepoints_start,
 		int tracepoints_count);
 	int (*tracepoint_unregister_lib)(struct lttng_ust_tracepoint * const *tracepoints_start);
-#ifndef _LGPL_SOURCE
 	void (*rcu_read_lock_sym_bp)(void);
 	void (*rcu_read_unlock_sym_bp)(void);
 	void *(*rcu_dereference_sym_bp)(void *p);
-#endif
 };
 
 extern struct lttng_ust_tracepoint_dlopen tracepoint_dlopen;
