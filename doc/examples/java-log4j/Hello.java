@@ -23,6 +23,7 @@ import java.io.IOException;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Level;
 
 import org.lttng.ust.agent.LTTngAgent;
 
@@ -37,6 +38,16 @@ public class Hello
 
 	public static void main(String args[]) throws Exception
 	{
+		/*
+		 * Set lowest level to make sure all event levels are logged.
+		 * Any jar can override the default log4j rootLogger level
+		 * and a logger with no explicit level defaults to the non-null
+		 * parent level. Events could be ignored if the inherited value
+		 * is to low.
+		 * e.g BSF  -> https://issues.apache.org/jira/browse/BSF-24
+		 */
+		helloLog.setLevel(Level.ALL);
+
 		BasicConfigurator.configure();
 		lttngAgent = LTTngAgent.getLTTngAgent();
 
