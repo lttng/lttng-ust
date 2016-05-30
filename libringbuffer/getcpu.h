@@ -22,6 +22,7 @@
 #include <urcu/compiler.h>
 #include <urcu/system.h>
 #include <urcu/arch.h>
+#include <config.h>
 
 void lttng_ust_getcpu_init(void);
 
@@ -47,10 +48,7 @@ int lttng_ust_get_cpu_internal(void)
  */
 #ifdef __linux__
 
-/* old uClibc versions didn't have sched_getcpu */
-#if defined(__UCLIBC__) && __UCLIBC_MAJOR__ == 0 && \
-	(__UCLIBC_MINOR__ < 9 || \
-	 (__UCLIBC_MINOR__ == 9 && __UCLIBC_SUBLEVEL__ <= 32))
+#if !HAVE_SCHED_GETCPU
 #include <sys/syscall.h>
 #define __getcpu(cpu, node, cache)	syscall(__NR_getcpu, cpu, node, cache)
 /*
@@ -64,9 +62,9 @@ int lttng_ust_get_cpu_internal(void)
 	ret = __getcpu(&cpu, NULL, NULL);
 	if (caa_unlikely(ret < 0))
 		return 0;
-	return c;
+	return cpu;
 }
-#else /* __UCLIBC__ */
+#else /* HAVE_SCHED_GETCPU */
 #include <sched.h>
 
 /*
@@ -82,7 +80,7 @@ int lttng_ust_get_cpu_internal(void)
 		return 0;
 	return cpu;
 }
-#endif	/* __UCLIBC__ */
+#endif	/* HAVE_SCHED_GETCPU */
 
 #elif (defined(__FreeBSD__) || defined(__CYGWIN__))
 
