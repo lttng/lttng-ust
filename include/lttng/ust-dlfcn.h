@@ -31,6 +31,7 @@
 #error "Please include lttng/ust-dlfcn.h before dlfcn.h."
 #endif /* _DLFCN_H */
 
+#ifdef __GLIBC__
 /*
  * glibc declares dlsym() and dlerror() with __attribute__((leaf)) (see
  * THROW annotation). Unfortunately, this is not in sync with reality,
@@ -57,5 +58,8 @@ extern int dlclose(void *__handle) __nonnull ((1));
 extern void *dlsym(void *__restrict __handle,
 		__const char *__restrict __name) __nonnull ((2));
 extern char *dlerror(void);
+#else
+#include <dlfcn.h>
+#endif /* __GLIBC__ */
 
 #endif /* _LTTNG_UST_DLFCN_H */
