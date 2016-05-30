@@ -106,7 +106,7 @@ do {									\
 #define ERR(fmt, args...)	ERRMSG("Error: " fmt, ## args)
 #define BUG(fmt, args...)	ERRMSG("BUG: " fmt, ## args)
 
-#if !defined(__linux__) || ((_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !defined(_GNU_SOURCE))
+#if !defined(__GLIBC__) || ((_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !defined(_GNU_SOURCE))
 /*
  * Version using XSI strerror_r.
  */
