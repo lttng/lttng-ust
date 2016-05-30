@@ -169,6 +169,7 @@ static const char							\
 #define TRACEPOINT_ENUM(_provider, _name, _values)			\
 	const struct lttng_enum_entry __enum_values__##_provider##_##_name[] = { \
 		_values							\
+		ctf_enum_value("", 0)	/* Dummy, 0-len array forbidden by C99. */ \
 	};
 
 #include TRACEPOINT_INCLUDE
@@ -290,6 +291,7 @@ static const char							\
 #define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)		   	     \
 	static const struct lttng_event_field __event_fields___##_provider##___##_name[] = { \
 		_fields									     \
+		ctf_integer(int, dummy, 0)	/* Dummy, C99 forbids 0-len array. */	     \
 	};
 
 #undef TRACEPOINT_ENUM
@@ -297,7 +299,7 @@ static const char							\
 	static const struct lttng_enum_desc __enum_##_provider##_##_name = {		\
 		.name = #_provider "_" #_name,						\
 		.entries = __enum_values__##_provider##_##_name,			\
-		.nr_entries = _TP_ARRAY_SIZE(__enum_values__##_provider##_##_name),	\
+		.nr_entries = _TP_ARRAY_SIZE(__enum_values__##_provider##_##_name) - 1,	\
 	};
 
 #include TRACEPOINT_INCLUDE
@@ -735,8 +737,8 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 	size_t __event_len, __event_align;				      \
 	size_t __dynamic_len_idx = 0;					      \
 	union {								      \
-		size_t __dynamic_len[_TP_ARRAY_SIZE(__event_fields___##_provider##___##_name)]; \
-		char __filter_stack_data[2 * sizeof(unsigned long) * _TP_ARRAY_SIZE(__event_fields___##_provider##___##_name)]; \
+		size_t __dynamic_len[_TP_ARRAY_SIZE(__event_fields___##_provider##___##_name) - 1]; \
+		char __filter_stack_data[2 * sizeof(unsigned long) * (_TP_ARRAY_SIZE(__event_fields___##_provider##___##_name) - 1)]; \
 	} __stackvar;							      \
 	int __ret;							      \
 									      \
@@ -869,7 +871,7 @@ static const struct lttng_event_desc __event_desc___##_provider##_##_name = {	  
 	.probe_callback = (void (*)(void)) &__event_probe__##_provider##___##_template,\
 	.ctx = NULL,							       \
 	.fields = __event_fields___##_provider##___##_template,		       \
-	.nr_fields = _TP_ARRAY_SIZE(__event_fields___##_provider##___##_template), \
+	.nr_fields = _TP_ARRAY_SIZE(__event_fields___##_provider##___##_template) - 1, \
 	.loglevel = &__ref_loglevel___##_provider##___##_name,		       \
 	.signature = __tp_event_signature___##_provider##___##_template,       \
 	.u = {								       \
@@ -896,6 +898,7 @@ static const struct lttng_event_desc __event_desc___##_provider##_##_name = {	  
 
 static const struct lttng_event_desc *_TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER)[] = {
 #include TRACEPOINT_INCLUDE
+	NULL,	/* Dummy, C99 forbids 0-len array. */
 };
 
 
@@ -909,7 +912,7 @@ static const struct lttng_event_desc *_TP_COMBINE_TOKENS(__event_desc___, TRACEP
 static struct lttng_probe_desc _TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PROVIDER) = {
 	.provider = __tp_stringify(TRACEPOINT_PROVIDER),
 	.event_desc = _TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER),
-	.nr_events = _TP_ARRAY_SIZE(_TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER)),
+	.nr_events = _TP_ARRAY_SIZE(_TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER)) - 1,
 	.head = { NULL, NULL },
 	.lazy_init_head = { NULL, NULL },
 	.lazy = 0,
