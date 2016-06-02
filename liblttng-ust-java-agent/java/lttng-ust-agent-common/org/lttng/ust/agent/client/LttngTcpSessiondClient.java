@@ -21,15 +21,16 @@ package org.lttng.ust.agent.client;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.Charset;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -45,6 +46,7 @@ public class LttngTcpSessiondClient implements Runnable {
 	private static final String SESSION_HOST = "127.0.0.1";
 	private static final String ROOT_PORT_FILE = "/var/run/lttng/agent.port";
 	private static final String USER_PORT_FILE = "/.lttng/agent.port";
+	private static final Charset PORT_FILE_ENCODING = Charset.forName("UTF-8");
 
 	private static final int PROTOCOL_MAJOR_VERSION = 2;
 	private static final int PROTOCOL_MINOR_VERSION = 0;
@@ -204,10 +206,9 @@ public class LttngTcpSessiondClient implements Runnable {
 	private static int getPortFromFile(String path) throws IOException {
 		int port;
 		BufferedReader br = null;
-		File file = new File(path);
 
 		try {
-			br = new BufferedReader(new FileReader(file));
+			br = new BufferedReader(new InputStreamReader(new FileInputStream(path), PORT_FILE_ENCODING));
 			String line = br.readLine();
 			port = Integer.parseInt(line, 10);
 			if (port < 0 || port > 65535) {
