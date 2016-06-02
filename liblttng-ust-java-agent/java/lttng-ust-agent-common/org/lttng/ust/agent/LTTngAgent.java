@@ -52,6 +52,7 @@ public class LTTngAgent {
 	 * logging. This dispose function is non-static for backwards
 	 * compatibility purposes.
 	 */
+	@SuppressWarnings("static-method")
 	public void dispose() {
 		synchronized (LTTngAgent.class) {
 			if (instance != null) {
