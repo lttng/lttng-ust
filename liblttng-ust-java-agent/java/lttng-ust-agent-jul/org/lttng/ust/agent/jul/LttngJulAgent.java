@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Handler;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -49,7 +51,7 @@ class LttngJulAgent extends AbstractLttngAgent<LttngLogHandler> {
 
 	@Override
 	public Collection<String> listAvailableEvents() {
-		List<String> ret = new ArrayList<String>();
+		Set<String> ret = new TreeSet<String>();
 
 		List<String> loggersNames = Collections.list(LogManager.getLogManager().getLoggerNames());
 		for (String name : loggersNames) {
@@ -57,7 +59,7 @@ class LttngJulAgent extends AbstractLttngAgent<LttngLogHandler> {
 			 * Skip the root logger. An empty string is not a valid event name
 			 * in LTTng.
 			 */
-			if (name.equals("")) {
+			if (name.equals("") || name.equals("global")) {
 				continue;
 			}
 
@@ -79,6 +81,21 @@ class LttngJulAgent extends AbstractLttngAgent<LttngLogHandler> {
 				return true;
 			}
 		}
+
+		/*
+		 * A parent logger, if any, may be connected to an LTTng handler. In
+		 * this case, we will want to include this child logger in the output,
+		 * since it will be accessible by LTTng.
+		 */
+		Logger parent = logger.getParent();
+		if (parent != null) {
+			return hasLttngHandlerAttached(parent);
+		}
+
+		/*
+		 * We have reached the root logger and have not found any LTTng handler,
+		 * this event will not be accessible.
+		 */
 		return false;
 	}
 
