@@ -158,23 +158,27 @@ public class LttngTcpSessiondClient implements Runnable {
 	}
 
 	private void connectToSessiond() throws IOException {
-		int port;
+		int rootPort = getPortFromFile(ROOT_PORT_FILE);
+		int userPort = getPortFromFile(getHomePath() + USER_PORT_FILE);
 
-		if (this.isRoot) {
-			port = getPortFromFile(ROOT_PORT_FILE);
-			if (port == 0) {
-				/* No session daemon available. Stop and retry later. */
-				throw new IOException();
-			}
-		} else {
-			port = getPortFromFile(getHomePath() + USER_PORT_FILE);
-			if (port == 0) {
-				/* No session daemon available. Stop and retry later. */
-				throw new IOException();
-			}
+		/*
+		 * Check for the edge case of both files existing but pointing to the
+		 * same port. In this case, let the root client handle it.
+		 */
+		if ((rootPort != 0) && (rootPort == userPort) && (!isRoot)) {
+			log("User and root config files both point to port " + rootPort +
+					". Letting the root client handle it.");
+			throw new IOException();
 		}
 
-		this.sessiondSock = new Socket(SESSION_HOST, port);
+		int portToUse = (isRoot ? rootPort : userPort);
+
+		if (portToUse == 0) {
+			/* No session daemon available. Stop and retry later. */
+			throw new IOException();
+		}
+
+		this.sessiondSock = new Socket(SESSION_HOST, portToUse);
 		this.inFromSessiond = new DataInputStream(sessiondSock.getInputStream());
 		this.outToSessiond = new DataOutputStream(sessiondSock.getOutputStream());
 	}
