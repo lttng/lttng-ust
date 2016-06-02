@@ -40,6 +40,10 @@ public final class ContextInfoManager {
 	private final Map<String, IContextInfoRetriever> contextInfoRetrievers = new ConcurrentHashMap<String, IContextInfoRetriever>();
 	private final Map<String, Long> contextInforRetrieverRefs = new HashMap<String, Long>();
 
+	/**
+	 * Lock used to keep the two maps above in sync when retrievers are
+	 * registered or unregistered.
+	 */
 	private final Object retrieverLock = new Object();
 
 	/** Singleton class, constructor should not be accessed directly */
@@ -163,6 +167,13 @@ public final class ContextInfoManager {
 	 *         was none
 	 */
 	public IContextInfoRetriever getContextInfoRetriever(String retrieverName) {
+		/*
+		 * Note that this method does not take the retrieverLock, it lets
+		 * concurrent threads access the ConcurrentHashMap directly.
+		 *
+		 * It's fine for a get() to happen during a registration or
+		 * unregistration, it's first-come-first-serve.
+		 */
 		return contextInfoRetrievers.get(retrieverName);
 	}
 
