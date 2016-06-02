@@ -71,6 +71,7 @@ tests/gcc-weak-hidden/test_gcc_weak_hidden
 # Java agent library
 *.class
 lttng-ust-agent*.jar
+liblttng-ust-agent.jar
 classnoinst.stamp
 jni-header.stamp
 context-jni-header.stamp
