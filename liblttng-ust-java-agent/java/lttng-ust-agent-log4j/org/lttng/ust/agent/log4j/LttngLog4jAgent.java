@@ -19,6 +19,7 @@ package org.lttng.ust.agent.log4j;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -75,10 +76,12 @@ class LttngLog4jAgent extends AbstractLttngAgent<LttngLogAppender> {
 
 	private static boolean hasLttngAppenderAttached(Category logger) {
 		@SuppressWarnings("unchecked")
-		List<Appender> appenders = Collections.list(logger.getAllAppenders());
-		for (Appender appender : appenders) {
-			if (appender instanceof LttngLogAppender) {
-				return true;
+		Enumeration<Appender> appenders = logger.getAllAppenders();
+		if (appenders != null) {
+			for (Appender appender : Collections.list(appenders)) {
+				if (appender instanceof LttngLogAppender) {
+					return true;
+				}
 			}
 		}
 
