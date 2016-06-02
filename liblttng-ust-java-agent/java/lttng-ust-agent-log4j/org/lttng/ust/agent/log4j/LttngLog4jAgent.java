@@ -17,12 +17,14 @@
 
 package org.lttng.ust.agent.log4j;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.apache.log4j.Appender;
+import org.apache.log4j.Category;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.lttng.ust.agent.AbstractLttngAgent;
@@ -50,7 +52,7 @@ class LttngLog4jAgent extends AbstractLttngAgent<LttngLogAppender> {
 
 	@Override
 	public Collection<String> listAvailableEvents() {
-		List<String> ret = new ArrayList<String>();
+		Set<String> ret = new TreeSet<String>();
 
 		@SuppressWarnings("unchecked")
 		List<Logger> loggers = Collections.list(LogManager.getCurrentLoggers());
@@ -71,7 +73,7 @@ class LttngLog4jAgent extends AbstractLttngAgent<LttngLogAppender> {
 		return ret;
 	}
 
-	private static boolean hasLttngAppenderAttached(Logger logger) {
+	private static boolean hasLttngAppenderAttached(Category logger) {
 		@SuppressWarnings("unchecked")
 		List<Appender> appenders = Collections.list(logger.getAllAppenders());
 		for (Appender appender : appenders) {
@@ -79,6 +81,22 @@ class LttngLog4jAgent extends AbstractLttngAgent<LttngLogAppender> {
 				return true;
 			}
 		}
+
+		/*
+		 * A parent logger, if any, may be connected to an LTTng handler. In
+		 * this case, we will want to include this child logger in the output,
+		 * since it will be accessible by LTTng.
+		 */
+		Category parent = logger.getParent();
+		if (parent != null) {
+			return hasLttngAppenderAttached(parent);
+		}
+
+		/*
+		 * We have reached the root logger and have not found any LTTng handler,
+		 * this event will not be accessible.
+		 */
 		return false;
 	}
+
 }
