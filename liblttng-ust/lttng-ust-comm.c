@@ -1295,6 +1295,15 @@ void *ust_listener_thread(void *arg)
 	int sock, ret, prev_connect_failed = 0, has_waited = 0;
 	long timeout;
 
+	/*
+	 * If available, add '-ust' to the end of this thread's
+	 * process name
+	 */
+	ret = lttng_ust_setustprocname();
+	if (ret) {
+		ERR("Unable to set UST process name");
+	}
+
 	/* Restart trying to connect to the session daemon */
 restart:
 	if (prev_connect_failed) {

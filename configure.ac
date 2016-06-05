@@ -135,6 +135,11 @@ AM_CONDITIONAL([LTTNG_UST_BUILD_WITH_LIBDL], [test "x$have_libdl" = "xyes"])
 AM_CONDITIONAL([LTTNG_UST_BUILD_WITH_LIBC_DL], [test "x$have_libc_dl" = "xyes"])
 
 AC_CHECK_LIB([pthread], [pthread_create])
+AC_CHECK_LIB([pthread], [pthread_setname_np],
+	AC_DEFINE([HAVE_PTHREAD_SETNAME_NP], [1], [Define to 1 if pthread_setname_np is available.]),
+	AC_CHECK_LIB([pthread], [pthread_set_name_np],
+		AC_DEFINE([HAVE_PTHREAD_SET_NAME_NP], [1], [Define to 1 if pthread_set_name_np is available.]),
+		AC_MSG_RESULT([pthread setname/set_name not found.])))
 
 # Check for dlfcn.h
 AC_CHECK_HEADER([dlfcn.h])
