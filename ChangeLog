@@ -1,3 +1,28 @@
+2016-06-15 lttng-ust 2.8.1
+	* Comment the locking mechanisms in ContextInfoManager
+	* Fix: Null-check return value of log4j.Category.getAllAppenders()
+	* Add liblttng-ust-agent.jar to the .gitignore
+	* Fix: Specify encoding when reading agent port file
+	* Fix: Include child loggers in the output of "lttng list"
+	* Fix: Handle both agent config files pointing to same port
+	* Suppress static method warning
+	* Add more logging to the LttngTcpSessiondClient
+	* Use config.h to detect sched_getcpu support
+	* Fix: use limits.h in ust-elf test
+	* Fix: strerror_r behavior is glibc specific
+	* Add support for musl libc to ust-dlfcn.h
+	* Fix: don't generate 0-len array in tracepoint probes
+	* Fix: log4j example: set logger level to prevent unexpected level inheritance
+	* Fix: initialize RCU callbacks with mixed LGPL/non-LGPL objects
+	* Fix: incorrect structure layout with mixed LGPL/non-LGPL objects
+	* Fix: don't call __builtin_return_address(0) on 32-bit powerpc
+	* Fix: tracepoint header: declare tracepoint_dlopen_ptr
+	* Fix: update debug message about weak-hidden symbols
+	* Fix: tracepoint-rcu header: use tracepoint_dlopen_ptr
+	* Fix: test: relax requirement on weak-hidden symbol address
+	* Fix: work-around gcc optimisation oddness on 32-bit powerpc
+	* Fix: test weak-hidden symbols
+
 2016-05-20 (Bike-to-Work Day) lttng-ust 2.8.0
 	* Print DBG() message about compiler weak hidden symbol behavior
 	* test: add test for gcc issue with weak hidden symbol on powerpc

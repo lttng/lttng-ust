@@ -4,7 +4,7 @@ dnl Process this file with autoconf to produce a configure script.
 dnl Version infos
 m4_define([V_MAJOR], [2])
 m4_define([V_MINOR], [8])
-m4_define([V_PATCH], [0])
+m4_define([V_PATCH], [1])
 dnl m4_define([V_EXTRA], [])
 m4_define([V_STRING], [V_MAJOR.V_MINOR.V_PATCH])
 m4_ifdef([V_EXTRA], [m4_append([V_STRING], [-V_EXTRA])])
