@@ -241,8 +241,6 @@ static inline void tracepoint_disable_destructors(void)
 	__tracepoints__disable_destructors = 1;
 }
 
-#if defined(TRACEPOINT_DEFINE) || defined(TRACEPOINT_CREATE_PROBES)
-
 /*
  * These weak symbols, the constructor, and destructor take care of
  * registering only _one_ instance of the tracepoints per shared-ojbect
@@ -348,8 +346,6 @@ __tracepoints__destroy(void)
 		memset(tracepoint_dlopen_ptr, 0, sizeof(*tracepoint_dlopen_ptr));
 	}
 }
-
-#endif
 
 #ifdef TRACEPOINT_DEFINE
 
