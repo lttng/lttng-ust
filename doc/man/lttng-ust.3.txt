@@ -758,7 +758,7 @@ LTTng-UST state dump
 ~~~~~~~~~~~~~~~~~~~~
 If an application that uses `liblttng-ust` becomes part of a tracing
 session, information about its currently loaded shared objects, their
-build IDs, and their debug link informations are emitted as events
+build IDs, and their debug link information are emitted as events
 by the tracer.
 
 The following LTTng-UST state dump events exist and must be enabled
