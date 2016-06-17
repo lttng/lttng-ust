@@ -7,6 +7,7 @@ doc_examples_demo_tracefdir = ${docdir}/examples/demo-tracef
 doc_examples_demo_tracelogdir = ${docdir}/examples/demo-tracelog
 doc_examples_clock_overridedir = ${docdir}/examples/clock-override
 doc_examples_getcpu_overridedir = ${docdir}/examples/getcpu-override
+doc_examples_cmakedir = ${docdir}/examples/cmake-multiple-shared-libraries
 
 if BUILD_JAVA_AGENT_WITH_JUL
 doc_examples_java_juldir = ${docdir}/examples/java-jul
@@ -32,11 +33,31 @@ doc_examples_pythondir = ${docdir}/examples/python
 dist_doc_examples_python_DATA = python/hello.py
 endif
 
+if HAVE_CMAKE
+if HAVE_CXX
+SUBDIRS_CMAKE = cmake-multiple-shared-libraries
+endif
+endif
+
 dist_doc_examples_DATA = README
 
 dist_doc_examples_easy_ust_DATA = easy-ust/Makefile \
 	easy-ust/sample.c \
 	easy-ust/sample_component_provider.h easy-ust/tp.c
+
+dist_doc_examples_cmake_DATA = \
+  cmake-multiple-shared-libraries/CMakeLists.txt \
+  cmake-multiple-shared-libraries/cmake/FindLTTngUST.cmake \
+  cmake-multiple-shared-libraries/aligner.cpp \
+  cmake-multiple-shared-libraries/aligner-lib.cpp \
+  cmake-multiple-shared-libraries/aligner-lib.h \
+  cmake-multiple-shared-libraries/README.md \
+  cmake-multiple-shared-libraries/tester.cpp \
+  cmake-multiple-shared-libraries/tester-lib.cpp \
+  cmake-multiple-shared-libraries/tester-lib.h \
+  cmake-multiple-shared-libraries/tracepoint-provider.cpp \
+  cmake-multiple-shared-libraries/tracepoint-provider.h \
+  cmake-multiple-shared-libraries/trace.sh
 
 dist_doc_examples_gen_tp_DATA = gen-tp/Makefile \
 	gen-tp/sample.c  gen-tp/sample_tracepoint.tp
@@ -90,7 +111,7 @@ endif
 
 all-local:
 	@if [ x"$(srcdir)" != x"$(builddir)" ]; then \
-		for subdir in $(SUBDIRS_PROXY) $(SUBDIRS_JUL) $(SUBDIRS_LOG4J); do \
+		for subdir in $(SUBDIRS_PROXY) $(SUBDIRS_JUL) $(SUBDIRS_LOG4J) $(SUBDIRS_CMAKE); do \
 			cp -pfR $(srcdir)/$$subdir $(builddir); \
 			chmod -R u+w $(builddir)/$$subdir; \
 		done; \
@@ -122,6 +143,12 @@ all-local:
 			(cd $(SUBDIRS_LOG4J) && $(MAKE) JAVA_CLASSPATH_OVERRIDE_LOG4J="../../../liblttng-ust-java-agent/java/lttng-ust-agent-log4j" JAVA_CLASSPATH_OVERRIDE_COMMON="../../../liblttng-ust-java-agent/java/lttng-ust-agent-common" $(AM_MAKEFLAGS) all && cd ..) || exit 1; \
 		done; \
 	fi;
+	if [ x"$(SUBDIRS_CMAKE)" != x"" ]; then \
+		for subdir in $(SUBDIRS_CMAKE); do \
+			(cd $(SUBDIRS_CMAKE) && mkdir -p build && cd build && cmake .. && $(MAKE) && cd ..) || exit 1; \
+		done; \
+	fi;
+
 
 clean-local:
 	@for subdir in $(SUBDIRS_PROXY); do \
@@ -143,8 +170,15 @@ clean-local:
 			fi; \
 		done; \
 	fi; \
+	if [ x"$(SUBDIRS_CMAKE)" != x"" ]; then \
+		for subdir in $(SUBDIRS_CMAKE); do \
+			if [ -d $$subdir ]; then \
+				(cd $$subdir && rm -rf build && cd ..) || exit 1; \
+			fi; \
+		done; \
+	fi; \
 	if [ x"$(srcdir)" != x"$(builddir)" ]; then \
-		for subdir in $(SUBDIRS_PROXY) $(SUBDIRS_JUL) $(SUBDIRS_LOG4J); do \
+		for subdir in $(SUBDIRS_PROXY) $(SUBDIRS_JUL) $(SUBDIRS_LOG4J) $(SUBDIRS_CMAKE); do \
 			rm -rf $(builddir)/$$subdir; \
 		done; \
 	fi;
