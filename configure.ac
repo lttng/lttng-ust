@@ -79,6 +79,9 @@ AM_CONDITIONAL([NO_SHARED], [test "x$enable_shared" = "xno"])
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_CXX
+AM_CONDITIONAL([HAVE_CXX], [test "x$CXX" != "x"])
+AC_CHECK_PROG([HAVE_CMAKE], [cmake], ["yes"])
+AM_CONDITIONAL([HAVE_CMAKE], [test "x$HAVE_CMAKE" = "xyes"])
 AC_PROG_MAKE_SET
 LT_INIT
 
