@@ -96,17 +96,13 @@ static bool arch_perf_use_read(void)
 	return false;
 }
 
-#else /* defined(__x86_64__) || defined(__i386__) */
-
-#error "Perf event counters are only supported on x86 so far."
-
-#endif /* #else defined(__x86_64__) || defined(__i386__) */
-
 static
-uint64_t read_perf_counter(struct perf_event_mmap_page *pc)
+uint64_t read_perf_counter(
+		struct lttng_perf_counter_thread_field *thread_field)
 {
 	uint32_t seq, idx;
 	uint64_t count;
+	struct perf_event_mmap_page *pc = thread_field->pc;
 
 	if (caa_unlikely(!pc))
 		return 0;
@@ -126,6 +122,35 @@ uint64_t read_perf_counter(struct perf_event_mmap_page *pc)
 
 	return count;
 }
+
+#elif defined (__ARM_ARCH_7A__)
+
+static bool arch_perf_use_read(void)
+{
+	return true;
+}
+
+static
+uint64_t read_perf_counter(
+		struct lttng_perf_counter_thread_field *thread_field)
+{
+	uint64_t count;
+
+	if (caa_unlikely(thread_field->fd < 0))
+		return 0;
+
+	if (caa_unlikely(read(thread_field->fd, &count, sizeof(count))
+				< sizeof(count)))
+		return 0;
+
+	return count;
+}
+
+#else /* defined(__x86_64__) || defined(__i386__) || defined(__ARM_ARCH_7A__) */
+
+#error "Perf event counters are only supported on x86 and ARMv7 so far."
+
+#endif /* #else defined(__x86_64__) || defined(__i386__) || defined(__ARM_ARCH_7A__) */
 
 static
 int sys_perf_event_open(struct perf_event_attr *attr,
@@ -149,6 +174,20 @@ int open_perf_fd(struct perf_event_attr *attr)
 }
 
 static
+void close_perf_fd(int fd)
+{
+	int ret;
+
+	if (fd < 0)
+		return;
+
+	ret = close(fd);
+	if (ret) {
+		perror("Error closing LTTng-UST perf memory mapping FD");
+	}
+}
+
+static
 struct perf_event_mmap_page *setup_perf(
 		struct lttng_perf_counter_thread_field *thread_field)
 {
@@ -164,21 +203,7 @@ struct perf_event_mmap_page *setup_perf(
 		thread_field->fd = -1;
 	}
 
-end:
 	return perf_addr;
-}
-
-static
-void close_perf_fd(int fd)
-{
-	int ret;
-
-	if (fd < 0)
-		return;
-
-	ret = close(fd);
-	if (ret)
-		perror("Error closing LTTng-UST perf memory mapping FD");
 }
 
 static
@@ -298,7 +323,7 @@ uint64_t wrapper_perf_counter_read(struct lttng_ctx_field *field)
 
 	perf_field = field->u.perf_counter;
 	perf_thread_field = get_thread_field(perf_field);
-	return read_perf_counter(perf_thread_field->pc);
+	return read_perf_counter(perf_thread_field);
 }
 
 static
@@ -369,6 +394,24 @@ void lttng_destroy_perf_counter_field(struct lttng_ctx_field *field)
 	free(perf_field);
 }
 
+#ifdef __ARM_ARCH_7A__
+
+static
+int perf_get_exclude_kernel(void)
+{
+	return 0;
+}
+
+#else /* __ARM_ARCH_7A__ */
+
+static
+int perf_get_exclude_kernel(void)
+{
+	return 1;
+}
+
+#endif /* __ARM_ARCH_7A__ */
+
 /* Called with UST lock held */
 int lttng_add_perf_counter_to_ctx(uint32_t type,
 				uint64_t config,
@@ -419,7 +462,7 @@ int lttng_add_perf_counter_to_ctx(uint32_t type,
 
 	perf_field->attr.type = type;
 	perf_field->attr.config = config;
-	perf_field->attr.exclude_kernel = 1;
+	perf_field->attr.exclude_kernel = perf_get_exclude_kernel();
 	CDS_INIT_LIST_HEAD(&perf_field->thread_field_list);
 	field->u.perf_counter = perf_field;
 

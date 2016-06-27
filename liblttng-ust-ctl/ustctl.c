@@ -1742,7 +1742,7 @@ int ustctl_get_instance_id(struct ustctl_consumer_stream *stream,
 	return client_cb->instance_id(buf, handle, id);
 }
 
-#if defined(__x86_64__) || defined(__i386__)
+#if defined(__x86_64__) || defined(__i386__) || defined(__ARM_ARCH_7A__)
 
 int ustctl_has_perf_counters(void)
 {
