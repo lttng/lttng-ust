@@ -33,27 +33,25 @@
 
 TRACEPOINT_EVENT(
 	TRACEPOINT_PROVIDER,
-	alignQuery,
+	align_query,
 	TP_ARGS(
-		const char*, queryName
+		const char *, query_name
 	),
 	TP_FIELDS(
-		ctf_string(queryName, queryName)
+		ctf_string(query_name, query_name)
 	)
 )
 
 TRACEPOINT_EVENT(
 	TRACEPOINT_PROVIDER,
-	testAlignment,
+	test_alignment,
 	TP_ARGS(
-		const char*, alignment
+		const char *, alignment
 	),
 	TP_FIELDS(
 		ctf_string(alignment, alignment)
 	)
 )
-
-
 
 #endif /* MY_TRACEPOINT_PROVIDER_H */
 

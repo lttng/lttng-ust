@@ -25,6 +25,6 @@
 
 #include <string>
 
-void testAlignment(const std::string & alignment);
+void test_alignment(const std::string &alignment);
 
 #endif

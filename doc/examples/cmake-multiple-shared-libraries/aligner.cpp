@@ -24,7 +24,7 @@
 
 int main(int argc, char **argv)
 {
-	alignQuery("molecule-foo");
+	align_query("molecule-foo");
 
 	return 0;
 }

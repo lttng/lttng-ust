@@ -26,10 +26,10 @@
 int main(int argc, char **argv)
 {
 	/* Generate alignment */
-	alignQuery("moleculeX");
+	align_query("moleculeX");
 
 	/* Test alignment */
-	testAlignment("my-alignment");
+	test_alignment("my-alignment");
 
 	return 0;
 }

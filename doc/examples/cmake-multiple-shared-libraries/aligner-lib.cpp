@@ -25,9 +25,9 @@
 #include "aligner-lib.h"
 #include "tracepoint-provider.h"
 
-void alignQuery(const std::string & queryName)
+void align_query(const std::string &query_name)
 {
-	tracepoint(gydle_om, alignQuery, queryName.c_str());
+	tracepoint(gydle_om, align_query, query_name.c_str());
 
 	/* Do the actual alignment */
 	/* ... */

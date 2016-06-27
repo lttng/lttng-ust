@@ -25,6 +25,6 @@
 
 #include <string>
 
-void alignQuery(const std::string & queryName);
+void align_query(const std::string &queryName);
 
 #endif

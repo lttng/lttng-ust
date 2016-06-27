@@ -47,6 +47,6 @@ cat trace.txt
 The content of trace.txt should be:
 
 ```
-[21:45:34.940246019] (+?.?????????) osiris gydle_om:alignQuery: { cpu_id = 2 }, { queryName = "moleculeX" }
-[21:45:34.940263188] (+0.000017169) osiris gydle_om:testAlignment: { cpu_id = 2 }, { alignment = "my-alignment" }
+[21:45:34.940246019] (+?.?????????) osiris gydle_om:align_query: { cpu_id = 2 }, { query_name = "moleculeX" }
+[21:45:34.940263188] (+0.000017169) osiris gydle_om:test_alignment: { cpu_id = 2 }, { alignment = "my-alignment" }
 ```

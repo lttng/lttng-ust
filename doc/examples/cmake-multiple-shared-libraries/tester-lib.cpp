@@ -25,7 +25,7 @@
 #include "tester-lib.h"
 #include "tracepoint-provider.h"
 
-void testAlignment(const std::string & alignment)
+void test_alignment(const std::string &alignment)
 {
-	tracepoint(gydle_om, testAlignment, alignment.c_str());
+	tracepoint(gydle_om, test_alignment, alignment.c_str());
 }
