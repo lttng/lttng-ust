@@ -16,4 +16,6 @@ mit-license.txt for details.
 * GPLv2
 
 Library test code is distributed under the GPLv2 license, as specified in the
-per-file license. See gpl-2.0.txt for details.
+per-file license. See gpl-2.0.txt for details. A copy of the
+perf_event.h Linux kernel installed header file is also licensed under
+GPLv2.
