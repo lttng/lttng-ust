@@ -132,14 +132,14 @@ static const char							\
 #define ctf_enum_value(_string, _value)					\
 	{								\
 		.start = {						\
-			.signedness = lttng_is_signed_type(__typeof__(_value)), \
 			.value = lttng_is_signed_type(__typeof__(_value)) ? \
 				(long long) (_value) : (_value),	\
+			.signedness = lttng_is_signed_type(__typeof__(_value)), \
 		},							\
 		.end = {						\
-			.signedness = lttng_is_signed_type(__typeof__(_value)), \
 			.value = lttng_is_signed_type(__typeof__(_value)) ? \
 				(long long) (_value) : (_value),	\
+			.signedness = lttng_is_signed_type(__typeof__(_value)), \
 		},							\
 		.string = (_string),					\
 	},
@@ -149,14 +149,14 @@ static const char							\
 #define ctf_enum_range(_string, _range_start, _range_end)		\
 	{								\
 		.start = {						\
-			.signedness = lttng_is_signed_type(__typeof__(_range_start)), \
 			.value = lttng_is_signed_type(__typeof__(_range_start)) ? \
 				(long long) (_range_start) : (_range_start), \
+			.signedness = lttng_is_signed_type(__typeof__(_range_start)), \
 		},							\
 		.end = {						\
-			.signedness = lttng_is_signed_type(__typeof__(_range_end)), \
 			.value = lttng_is_signed_type(__typeof__(_range_end)) ? \
 				(long long) (_range_end) : (_range_end), \
+			.signedness = lttng_is_signed_type(__typeof__(_range_end)), \
 		},							\
 		.string = (_string),					\
 	},
