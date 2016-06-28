@@ -25,6 +25,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <sys/mman.h>
 #include <sys/syscall.h>
 #include <linux/perf_event.h>
