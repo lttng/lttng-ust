@@ -87,7 +87,7 @@ int main(int argc, char **argv)
 	for (i = 0; i < 1000000; i++) {
 		netint = htonl(i);
 		tracepoint(ust_tests_hello, tptest, i, netint, values,
-			   text, strlen(text), dbl, flt);
+			   text, strlen(text), dbl, flt, 15);
 		//usleep(100000);
 	}
 	fprintf(stderr, " done.\n");
