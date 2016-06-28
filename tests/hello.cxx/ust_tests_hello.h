@@ -28,10 +28,21 @@
 
 #include <lttng/tracepoint.h>
 
+TRACEPOINT_ENUM(ust_tests_hello, my_enum,
+	TP_ENUM_VALUES(
+		ctf_enum_value("zero", 0)
+		ctf_enum_value("one", 1)
+		ctf_enum_value("two", 2)
+		ctf_enum_value("three", 3)
+		ctf_enum_range("ten to twenty", 10, 20)
+	)
+)
+
 TRACEPOINT_EVENT(ust_tests_hello, tptest,
 	TP_ARGS(int, anint, int, netint, long *, values,
 		 char *, text, size_t, textlen,
-		 double, doublearg, float, floatarg),
+		 double, doublearg, float, floatarg,
+		 int, enumarg),
 	TP_FIELDS(
 		ctf_integer(int, intfield, anint)
 		ctf_integer_hex(int, intfield2, anint)
@@ -47,6 +58,7 @@ TRACEPOINT_EVENT(ust_tests_hello, tptest,
 		ctf_string(stringfield, text)
 		ctf_float(float, floatfield, floatarg)
 		ctf_float(double, doublefield, doublearg)
+		ctf_enum(ust_tests_hello, my_enum, int, enumfield, enumarg)
 	)
 )
 
