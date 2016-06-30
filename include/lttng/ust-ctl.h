@@ -260,6 +260,9 @@ int ustctl_get_instance_id(struct ustctl_consumer_stream *stream,
 /* returns whether UST has perf counters support. */
 int ustctl_has_perf_counters(void);
 
+/* Regenerate the statedump. */
+int ustctl_regenerate_statedump(int sock, int handle);
+
 /* event registry management */
 
 enum ustctl_socket_type {

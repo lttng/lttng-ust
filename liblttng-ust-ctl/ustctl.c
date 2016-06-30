@@ -2183,6 +2183,23 @@ int ustctl_reply_register_channel(int sock,
 	return 0;
 }
 
+/* Regenerate the statedump. */
+int ustctl_regenerate_statedump(int sock, int handle)
+{
+	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_reply lur;
+	int ret;
+
+	memset(&lum, 0, sizeof(lum));
+	lum.handle = handle;
+	lum.cmd = LTTNG_UST_SESSION_STATEDUMP;
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+	if (ret)
+		return ret;
+	DBG("Regenerated statedump for handle %u", handle);
+	return 0;
+}
+
 static __attribute__((constructor))
 void ustctl_init(void)
 {
