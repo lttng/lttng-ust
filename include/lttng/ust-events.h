@@ -106,14 +106,18 @@ struct lttng_enum_value {
 	unsigned int signedness:1;
 };
 
+enum lttng_enum_entry_options {
+	LTTNG_ENUM_ENTRY_OPTION_IS_AUTO = 1UL << 0,
+};
+
 #define LTTNG_UST_ENUM_ENTRY_PADDING	16
 struct lttng_enum_entry {
 	struct lttng_enum_value start, end; /* start and end are inclusive */
 	const char *string;
 	union {
 		struct {
-			unsigned int is_auto:1;
-		} LTTNG_PACKED options;
+			unsigned int options;
+		} LTTNG_PACKED extra;
 		char padding[LTTNG_UST_ENUM_ENTRY_PADDING];
 	} u;
 };

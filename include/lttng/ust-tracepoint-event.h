@@ -175,8 +175,8 @@ static const char							\
 		},							\
 		.string = (_string),					\
 		.u = {							\
-			.options = {					\
-				.is_auto = 1,				\
+			.extra = {					\
+				.options = LTTNG_ENUM_ENTRY_OPTION_IS_AUTO, \
 			},						\
 		},							\
 	},
