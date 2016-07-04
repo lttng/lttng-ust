@@ -32,9 +32,10 @@ TRACEPOINT_ENUM(ust_tests_hello, my_enum,
 	TP_ENUM_VALUES(
 		ctf_enum_value("zero", 0)
 		ctf_enum_value("one", 1)
-		ctf_enum_value("two", 2)
+		ctf_enum_auto("two")
 		ctf_enum_value("three", 3)
 		ctf_enum_range("ten to twenty", 10, 20)
+		ctf_enum_auto("21!")
 	)
 )
 
