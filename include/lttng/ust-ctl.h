@@ -330,11 +330,20 @@ struct ustctl_enum_value {
 	char padding[USTCTL_UST_ENUM_VALUE_PADDING];
 } LTTNG_PACKED;
 
+enum ustctl_ust_enum_entry_options {
+	USTCTL_UST_ENUM_ENTRY_OPTION_IS_AUTO = 1U << 0,
+};
+
 #define USTCTL_UST_ENUM_ENTRY_PADDING	32
 struct ustctl_enum_entry {
 	struct ustctl_enum_value start, end; /* start and end are inclusive */
 	char string[LTTNG_UST_SYM_NAME_LEN];
-	char padding[USTCTL_UST_ENUM_ENTRY_PADDING];
+	union {
+		struct {
+			uint32_t options;
+		} LTTNG_PACKED extra;
+		char padding[USTCTL_UST_ENUM_ENTRY_PADDING];
+	} u;
 } LTTNG_PACKED;
 
 #define USTCTL_UST_BASIC_TYPE_PADDING	296
