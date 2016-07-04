@@ -723,6 +723,8 @@ struct cds_list_head *_lttng_get_sessions(void);
 struct lttng_enum *lttng_ust_enum_get(struct lttng_session *session,
 		const char *enum_name);
 
+void lttng_ust_dl_update(void *ip);
+
 /* For backward compatibility. Leave those exported symbols in place. */
 extern struct lttng_ctx *lttng_static_ctx;
 void lttng_context_init(void);

@@ -25,6 +25,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include "lttng-tracer-core.h"
 
 #define BUF_LEN	4096

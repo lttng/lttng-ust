@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2013  Paul Woegerer <paul.woegerer@mentor.com>
  * Copyright (C) 2015  Antoine Busque <abusque@efficios.com>
+ * Copyright (C) 2016  Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,6 +27,7 @@
 
 #include <lttng/ust-dlfcn.h>
 #include <lttng/ust-elf.h>
+#include <lttng/ust-events.h>
 #include <helper.h>
 #include "usterr-signal-safe.h"
 
@@ -135,19 +137,21 @@ void *dlopen(const char *filename, int flag)
 
 		ret = dlinfo(handle, RTLD_DI_LINKMAP, &p);
 		if (ret != -1 && p != NULL && p->l_addr != 0) {
-			lttng_ust_dl_dlopen((void *) p->l_addr, p->l_name,
+			lttng_ust_dl_dlopen((void *) p->l_addr,
+				p->l_name,
 				LTTNG_UST_CALLER_IP());
 		}
 	}
-
+	lttng_ust_dl_update(LTTNG_UST_CALLER_IP());
 	return handle;
 }
 
 int dlclose(void *handle)
 {
+	int ret;
+
 	if (__tracepoint_ptrs_registered) {
 		struct link_map *p = NULL;
-		int ret;
 
 		ret = dlinfo(handle, RTLD_DI_LINKMAP, &p);
 		if (ret != -1 && p != NULL && p->l_addr != 0) {
@@ -156,6 +160,7 @@ int dlclose(void *handle)
 				(void *) p->l_addr);
 		}
 	}
-
-	return _lttng_ust_dl_libc_dlclose(handle);
+	ret = _lttng_ust_dl_libc_dlclose(handle);
+	lttng_ust_dl_update(LTTNG_UST_CALLER_IP());
+	return ret;
 }
