@@ -161,6 +161,26 @@ static const char							\
 		.string = (_string),					\
 	},
 
+/* Enumeration entry (automatic value; follows the rules of CTF) */
+#undef ctf_enum_auto
+#define ctf_enum_auto(_string)					\
+	{								\
+		.start = {						\
+			.value = -1ULL, 				\
+			.signedness = 0, 				\
+		},							\
+		.end = {						\
+			.value = -1ULL,					\
+			.signedness = 0, 				\
+		},							\
+		.string = (_string),					\
+		.u = {							\
+			.options = {					\
+				.is_auto = 1,				\
+			},						\
+		},							\
+	},
+
 #undef TP_ENUM_VALUES
 #define TP_ENUM_VALUES(...)						\
 	__VA_ARGS__

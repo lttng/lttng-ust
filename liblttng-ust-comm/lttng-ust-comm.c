@@ -1094,6 +1094,7 @@ int serialize_entries(struct ustctl_enum_entry **_entries,
 		uentry->end.signedness = lentry->end.signedness;
 		strncpy(uentry->string, lentry->string, LTTNG_UST_SYM_NAME_LEN);
 		uentry->string[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+		uentry->u.options.is_auto = lentry->u.options.is_auto;
 	}
 	*_entries = entries;
 	return 0;

@@ -110,7 +110,12 @@ struct lttng_enum_value {
 struct lttng_enum_entry {
 	struct lttng_enum_value start, end; /* start and end are inclusive */
 	const char *string;
-	char padding[LTTNG_UST_ENUM_ENTRY_PADDING];
+	union {
+		struct {
+			unsigned int is_auto:1;
+		} LTTNG_PACKED options;
+		char padding[LTTNG_UST_ENUM_ENTRY_PADDING];
+	} u;
 };
 
 #define __type_integer(_type, _byte_order, _base, _encoding)	\
