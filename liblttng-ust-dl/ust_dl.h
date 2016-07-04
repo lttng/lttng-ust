@@ -38,12 +38,29 @@ extern "C" {
 #include <lttng/tracepoint.h>
 
 TRACEPOINT_EVENT(lttng_ust_dl, dlopen,
-	TP_ARGS(void *, ip, void *, baddr, const char*, path,
+	TP_ARGS(void *, ip, void *, baddr, const char *, path,
+		int, flags, uint64_t, memsz, uint8_t, has_build_id,
+		uint8_t, has_debug_link),
+	TP_FIELDS(
+		ctf_integer_hex(void *, baddr, baddr)
+		ctf_integer(uint64_t, memsz, memsz)
+		ctf_integer_hex(int, flags, flags)
+		ctf_string(path, path)
+		ctf_integer(uint8_t, has_build_id, has_build_id)
+		ctf_integer(uint8_t, has_debug_link, has_debug_link)
+	)
+)
+
+TRACEPOINT_EVENT(lttng_ust_dl, dlmopen,
+	TP_ARGS(void *, ip, void *, baddr, Lmid_t, nsid,
+		const char *, path, int, flags,
 		uint64_t, memsz, uint8_t, has_build_id,
 		uint8_t, has_debug_link),
 	TP_FIELDS(
 		ctf_integer_hex(void *, baddr, baddr)
 		ctf_integer(uint64_t, memsz, memsz)
+		ctf_integer(Lmid_t, nsid, nsid)
+		ctf_integer_hex(int, flags, flags)
 		ctf_string(path, path)
 		ctf_integer(uint8_t, has_build_id, has_build_id)
 		ctf_integer(uint8_t, has_debug_link, has_debug_link)

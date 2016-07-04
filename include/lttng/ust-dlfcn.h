@@ -47,7 +47,11 @@
 #define dlclose glibc_dlclose_proto_lies_about_leafness
 #define dlsym glibc_dlsym_proto_lies_about_leafness
 #define dlerror glibc_dlerror_proto_lies_about_leafness
+#define dlmopen glibc_dlmopen_proto_lies_about_leafness
+#define dlvsym glibc_dlvsym_proto_lies_about_leafness
 #include <dlfcn.h>
+#undef dlvsym
+#undef dlmopen
 #undef dlerror
 #undef dlsym
 #undef dlclose
@@ -58,6 +62,12 @@ extern int dlclose(void *__handle) __nonnull ((1));
 extern void *dlsym(void *__restrict __handle,
 		__const char *__restrict __name) __nonnull ((2));
 extern char *dlerror(void);
+#ifdef __USE_GNU
+extern void *dlmopen(Lmid_t __nsid, const char *__file, int __mode);
+extern void *dlvsym(void *__restrict __handle,
+		__const char *__restrict __name,
+		__const char *__restrict __version);
+#endif
 #else
 #include <dlfcn.h>
 #endif /* __GLIBC__ */

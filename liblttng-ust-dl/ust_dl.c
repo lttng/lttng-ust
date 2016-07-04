@@ -16,6 +16,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
+#define _GNU_SOURCE
 #define _LGPL_SOURCE
 #define TRACEPOINT_CREATE_PROBES
 #define TP_IP_PARAM ip
