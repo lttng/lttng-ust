@@ -309,7 +309,7 @@ struct ustctl_integer_type {
 	uint32_t signedness;
 	uint32_t reverse_byte_order;
 	uint32_t base;		/* 2, 8, 10, 16, for pretty print */
-	enum ustctl_string_encodings encoding;
+	int32_t encoding;	/* enum ustctl_string_encodings */
 	uint16_t alignment;	/* in bits */
 	char padding[USTCTL_UST_INTEGER_TYPE_PADDING];
 } LTTNG_PACKED;
@@ -346,7 +346,7 @@ union _ustctl_basic_type {
 		uint64_t id;	/* enum ID in sessiond. */
 	} enumeration;
 	struct {
-		enum ustctl_string_encodings encoding;
+		int32_t encoding;	/* enum ustctl_string_encodings */
 	} string;
 	struct ustctl_float_type _float;
 	char padding[USTCTL_UST_BASIC_TYPE_PADDING];

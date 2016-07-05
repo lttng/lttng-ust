@@ -766,7 +766,7 @@ ssize_t count_ctx_fields_recursive(size_t nr_fields,
 }
 
 static
-int serialize_string_encoding(enum ustctl_string_encodings *ue,
+int serialize_string_encoding(int32_t *ue,
 		enum lttng_string_encodings le)
 {
 	switch (le) {
