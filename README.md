@@ -225,16 +225,18 @@ This package contains the following elements:
     It _has_ to be preloaded in order to hijack calls. In contrast,
     `liblttng-ust` may be linked at build time.
   - `liblttng-ust-java`: a simple library that uses JNI to allow tracing
-    in Java programs.
+    in Java programs. (Configure with `--enable-jni-interface`).
   - `liblttng-ust-java-agent`: a package that includes a JNI library and a
     JAR library to provide an LTTng-UST logging back-end for Java
-    applications using Java Util Logging or Log4j.
+    applications using Java Util Logging or Log4j. (Configure with
+    `--enable-java-agent-jul` or `--enable-java-agent-log4j` or
+    `--enable-java-agent-all`).
   - `liblttng-ust-libc-wrapper`: an example library that can be
     preloaded to instrument some calls to libc (currently `malloc()` and
     `free()`) and to POSIX threads (mutexes currently instrumented) in
     any program without need to recompile it.
   - `liblttng-ust-python-agent`: a library used by python-lttngust to allow
-    tracing in Python applications.
+    tracing in Python applications. (Configure with `--enable-python-agent`)
   - `libringbuffer`: the ring buffer implementation used within LTTng-UST.
   - `python-lttngust`: a package to provide an LTTng-UST logging back-end
     for Python applications using the standard logging framework.

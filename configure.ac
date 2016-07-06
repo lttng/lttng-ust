@@ -512,16 +512,16 @@ AS_ECHO(["LTTng-UST will be built with the following options:"])
 AS_ECHO
 
 AS_ECHO_N(["Java agent (JUL support): "])
-AS_IF([test "x$java_agent_jul" = "xyes"], [AS_ECHO(["Enabled"])], [AS_ECHO(["Disabled"])])
+AS_IF([test "x$java_agent_jul" = "xyes"], [AS_ECHO(["Enabled"])], [AS_ECHO(["Disabled (Use --enable-java-agent-jul)"])])
 
 AS_ECHO_N(["Java agent (Log4j support): "])
-AS_IF([test "x$java_agent_log4j" = "xyes"], [AS_ECHO(["Enabled"])], [AS_ECHO(["Disabled"])])
+AS_IF([test "x$java_agent_log4j" = "xyes"], [AS_ECHO(["Enabled"])], [AS_ECHO(["Disabled (Use --enable-java-agent-log4j)"])])
 
 AS_ECHO_N(["JNI interface (JNI): "])
-AS_IF([test "x$jni_interface" = "xyes"], [AS_ECHO(["Enabled"])], [AS_ECHO(["Disabled"])])
+AS_IF([test "x$jni_interface" = "xyes"], [AS_ECHO(["Enabled"])], [AS_ECHO(["Disabled (Use --enable-jni-interface)"])])
 
 AS_ECHO_N(["Python ($PYTHON) agent: "])
-AS_IF([test "x$python_agent" = "xyes"], [AS_ECHO(["Enabled"])], [AS_ECHO(["Disabled"])])
+AS_IF([test "x$python_agent" = "xyes"], [AS_ECHO(["Enabled"])], [AS_ECHO(["Disabled (Use --enable-python-agent)"])])
 
 AS_ECHO_N(["sdt.h integration: "])
 AS_IF([test "x$with_sdt" = "xyes"], [AS_ECHO(["Enabled"])], [AS_ECHO(["Disabled"])])
