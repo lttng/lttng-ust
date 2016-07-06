@@ -216,19 +216,11 @@ AC_CHECK_LIB([urcu-bp], [call_rcu_bp], [], [AC_MSG_ERROR([liburcu 0.6 or newer i
 # optional linux/perf_event.h
 AC_CHECK_HEADERS([linux/perf_event.h], [have_perf_event=yes], [])
 
-# Perf event counters are only supported on x86 so far.
-AC_MSG_CHECKING([UST support for architecture perf event counters])
-AS_CASE([$host_cpu],
-	[i[[3456]]86], [UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS=yes],
-	[x86_64], [UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS=yes],
-	[amd64], [UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS=yes],
-	[armv7l], [UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS=yes],
-	[UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS=no])
-AC_MSG_RESULT([$UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS])
+# Perf event counters are supported on all architectures supported by
+# perf, using the read system call as fallback.
+AM_CONDITIONAL([HAVE_PERF_EVENT], [test "x$have_perf_event" = "xyes"])
 
-AM_CONDITIONAL([HAVE_PERF_EVENT], [test "x$have_perf_event" = "xyes" && test "x$UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS" = "xyes"])
-
-AS_IF([test "x$have_perf_event" = "xyes" && test "x$UST_SUPPORT_FOR_ARCH_PERF_EVENT_COUNTERS" = "xyes"], [
+AS_IF([test "x$have_perf_event" = "xyes"], [
 	AC_DEFINE([LTTNG_UST_HAVE_PERF_EVENT], [1])
 ])
 
