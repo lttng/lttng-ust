@@ -431,13 +431,13 @@ void iter_end(struct dl_iterate_data *data, void *ip)
 					trace_lib_load(&e->bin_data, ip);
 					e->traced = true;
 				}
+				e->marked = false;
 			} else {
 				if (e->traced)
 					trace_lib_unload(&e->bin_data, ip);
 				remove_dl_node(e);
 				free_dl_node(e);
 			}
-			e->marked = false;
 		}
 	}
 	ust_unlock();
