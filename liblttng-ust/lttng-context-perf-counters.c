@@ -110,11 +110,17 @@ uint64_t read_perf_counter(struct perf_event_mmap_page *pc)
 		cmm_barrier();
 
 		idx = pc->index;
-		if (idx)
-			count = pc->offset + rdpmc(idx - 1);
-		else
-			count = 0;
+		if (idx) {
+			int64_t pmcval;
 
+			pmcval = rdpmc(idx - 1);
+			/* Sign-extend the pmc register result. */
+			pmcval <<= 64 - pc->pmc_width;
+			pmcval >>= 64 - pc->pmc_width;
+			count = pc->offset + pmcval;
+		} else {
+			count = 0;
+		}
 		cmm_barrier();
 	} while (CMM_LOAD_SHARED(pc->lock) != seq);
 
