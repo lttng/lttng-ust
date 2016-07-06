@@ -80,65 +80,8 @@ size_t perf_counter_get_size(struct lttng_ctx_field *field, size_t offset)
 	return size;
 }
 
-#if defined(__x86_64__) || defined(__i386__)
-
 static
-uint64_t rdpmc(unsigned int counter)
-{
-	unsigned int low, high;
-
-	asm volatile("rdpmc" : "=a" (low), "=d" (high) : "c" (counter));
-
-	return low | ((uint64_t) high) << 32;
-}
-
-static bool arch_perf_use_read(void)
-{
-	return false;
-}
-
-static
-uint64_t read_perf_counter(
-		struct lttng_perf_counter_thread_field *thread_field)
-{
-	uint32_t seq, idx;
-	uint64_t count;
-	struct perf_event_mmap_page *pc = thread_field->pc;
-
-	if (caa_unlikely(!pc))
-		return 0;
-
-	do {
-		seq = CMM_LOAD_SHARED(pc->lock);
-		cmm_barrier();
-
-		idx = pc->index;
-		if (idx) {
-			int64_t pmcval;
-
-			pmcval = rdpmc(idx - 1);
-			/* Sign-extend the pmc register result. */
-			pmcval <<= 64 - pc->pmc_width;
-			pmcval >>= 64 - pc->pmc_width;
-			count = pc->offset + pmcval;
-		} else {
-			count = 0;
-		}
-		cmm_barrier();
-	} while (CMM_LOAD_SHARED(pc->lock) != seq);
-
-	return count;
-}
-
-#elif defined (__ARM_ARCH_7A__)
-
-static bool arch_perf_use_read(void)
-{
-	return true;
-}
-
-static
-uint64_t read_perf_counter(
+uint64_t read_perf_counter_syscall(
 		struct lttng_perf_counter_thread_field *thread_field)
 {
 	uint64_t count;
@@ -153,11 +96,79 @@ uint64_t read_perf_counter(
 	return count;
 }
 
-#else /* defined(__x86_64__) || defined(__i386__) || defined(__ARM_ARCH_7A__) */
+#if defined(__x86_64__) || defined(__i386__)
 
-#error "Perf event counters are only supported on x86 and ARMv7 so far."
+static
+uint64_t rdpmc(unsigned int counter)
+{
+	unsigned int low, high;
 
-#endif /* #else defined(__x86_64__) || defined(__i386__) || defined(__ARM_ARCH_7A__) */
+	asm volatile("rdpmc" : "=a" (low), "=d" (high) : "c" (counter));
+
+	return low | ((uint64_t) high) << 32;
+}
+
+static
+uint64_t arch_read_perf_counter(
+		struct lttng_perf_counter_thread_field *thread_field)
+{
+	uint32_t seq, idx;
+	uint64_t count;
+	struct perf_event_mmap_page *pc = thread_field->pc;
+
+	if (caa_unlikely(!pc))
+		return 0;
+
+	do {
+		seq = CMM_LOAD_SHARED(pc->lock);
+		cmm_barrier();
+
+		idx = pc->index;
+		if (caa_likely(pc->cap_user_rdpmc && idx)) {
+			int64_t pmcval;
+
+			pmcval = rdpmc(idx - 1);
+			/* Sign-extend the pmc register result. */
+			pmcval <<= 64 - pc->pmc_width;
+			pmcval >>= 64 - pc->pmc_width;
+			count = pc->offset + pmcval;
+		} else {
+			/* Fall-back on system call if rdpmc cannot be used. */
+			return read_perf_counter_syscall(thread_field);
+		}
+		cmm_barrier();
+	} while (CMM_LOAD_SHARED(pc->lock) != seq);
+
+	return count;
+}
+
+static
+int arch_perf_keep_fd(struct lttng_perf_counter_thread_field *thread_field)
+{
+	struct perf_event_mmap_page *pc = thread_field->pc;
+
+	if (!pc)
+		return 0;
+	return !pc->cap_user_rdpmc;
+}
+
+#else
+
+/* Generic (slow) implementation using a read system call. */
+static
+uint64_t arch_read_perf_counter(
+		struct lttng_perf_counter_thread_field *thread_field)
+{
+	return read_perf_counter_syscall(thread_field);
+}
+
+static
+int arch_perf_keep_fd(struct lttng_perf_counter_thread_field *thread_field)
+{
+	return 1;
+}
+
+#endif
 
 static
 int sys_perf_event_open(struct perf_event_attr *attr,
@@ -205,7 +216,7 @@ struct perf_event_mmap_page *setup_perf(
 	if (perf_addr == MAP_FAILED)
 		perf_addr = NULL;
 
-	if (!arch_perf_use_read()) {
+	if (!arch_perf_keep_fd(thread_field)) {
 		close_perf_fd(thread_field->fd);
 		thread_field->fd = -1;
 	}
@@ -330,7 +341,7 @@ uint64_t wrapper_perf_counter_read(struct lttng_ctx_field *field)
 
 	perf_field = field->u.perf_counter;
 	perf_thread_field = get_thread_field(perf_field);
-	return read_perf_counter(perf_thread_field);
+	return arch_read_perf_counter(perf_thread_field);
 }
 
 static
