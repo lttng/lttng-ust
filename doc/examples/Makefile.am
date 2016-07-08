@@ -145,7 +145,14 @@ all-local:
 	fi;
 	if [ x"$(SUBDIRS_CMAKE)" != x"" ]; then \
 		for subdir in $(SUBDIRS_CMAKE); do \
-			(cd $(SUBDIRS_CMAKE) && mkdir -p build && cd build && cmake -DCMAKE_INCLUDE_PATH="$(abs_top_srcdir)/include;$(abs_top_builddir)/include" -DCMAKE_LIBRARY_PATH="$(abs_top_builddir)/liblttng-ust/.libs" .. && $(MAKE) && cd ..) || exit 1; \
+			( \
+				cd $(SUBDIRS_CMAKE) && \
+				mkdir -p build && \
+				cd build && \
+				cmake -DCMAKE_INCLUDE_PATH="$(abs_top_srcdir)/include;$(abs_top_builddir)/include" -DCMAKE_LIBRARY_PATH="$(abs_top_builddir)/liblttng-ust/.libs" .. && \
+				$(MAKE) && \
+				cd .. \
+			) || exit 1; \
 		done; \
 	fi;
 
