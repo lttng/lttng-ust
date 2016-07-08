@@ -147,7 +147,7 @@ all-local:
 		for subdir in $(SUBDIRS_CMAKE); do \
 			( \
 				cd $(SUBDIRS_CMAKE) && \
-				mkdir -p build && \
+				$(MKDIR_P) build && \
 				cd build && \
 				cmake -DCMAKE_INCLUDE_PATH="$(abs_top_srcdir)/include;$(abs_top_builddir)/include" -DCMAKE_LIBRARY_PATH="$(abs_top_builddir)/liblttng-ust/.libs" .. && \
 				$(MAKE) && \

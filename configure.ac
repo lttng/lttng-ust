@@ -49,6 +49,7 @@ AC_SUBST([PATCHLEVEL_VERSION], [V_PATCH])
 AC_PROG_SED
 AC_PROG_GREP
 AC_PROG_LN_S
+AC_PROG_MKDIR_P
 
 # libtool link_all_deplibs fixup. See http://bugs.lttng.org/issues/321.
 AC_ARG_ENABLE([libtool-linkdep-fixup], [
