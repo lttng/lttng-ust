@@ -1113,6 +1113,15 @@ are located in a specific directory under `$LTTNG_HOME` (or `$HOME` if
     documentation under
     https://github.com/lttng/lttng-ust/tree/master/doc/examples/getcpu-override[`examples/getcpu-override`].
 
+`LTTNG_UST_LOADED`::
+    Set internally by `liblttng-ust`'s constructor. Can be used by
+    applications to detect if lttng-ust is loaded, even if liblttng-ust
+    is not directly linked by the application. This environment
+    variable stays set across fork and exec, so an application could
+    observe this environment variable being set if a parent process had
+    lttng-ust loaded when issuing fork, even if this application does
+    not have lttng-ust in its address space.
+
 `LTTNG_UST_REGISTER_TIMEOUT`::
     Waiting time for the _registration done_ session daemon command
     before proceeding to execute the main program (milliseconds).

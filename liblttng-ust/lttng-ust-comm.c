@@ -1547,6 +1547,13 @@ void lttng_ust_malloc_wrapper_init(void)
 {
 }
 
+static
+void init_ust_env(void)
+{
+	if (putenv("LTTNG_UST_LOADED=1"))
+		DBG("Error setting LTTNG_UST_LOADED environment variable");
+}
+
 /*
  * sessiond monitoring thread: monitor presence of global and per-user
  * sessiond by polling the application common named pipe.
@@ -1573,6 +1580,8 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	lttng_fixup_nest_count_tls();
 	lttng_fixup_procname_tls();
 	lttng_fixup_ust_mutex_nest_tls();
+
+	init_ust_env();
 
 	/*
 	 * We want precise control over the order in which we construct
