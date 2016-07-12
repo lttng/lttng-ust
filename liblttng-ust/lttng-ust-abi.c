@@ -512,7 +512,6 @@ int lttng_abi_map_channel(int session_objd,
 	/* error path after channel was created */
 objd_error:
 notransport:
-	free(lttng_chan);
 alloc_error:
 	channel_destroy(chan, channel_handle, 0);
 	return ret;
