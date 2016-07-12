@@ -107,6 +107,14 @@ static pthread_mutex_t ust_fork_mutex = PTHREAD_MUTEX_INITIALIZER;
 static int lttng_ust_comm_should_quit;
 
 /*
+ * This variable can be tested by applications to check whether
+ * lttng-ust is loaded. They simply have to define their own
+ * "lttng_ust_loaded" weak symbol, and test it. It is set to 1 by the
+ * library constructor.
+ */
+int lttng_ust_loaded __attribute__((weak));
+
+/*
  * Return 0 on success, -1 if should quit.
  * The lock is taken in both cases.
  * Signal-safe.
@@ -1573,6 +1581,8 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	lttng_fixup_nest_count_tls();
 	lttng_fixup_procname_tls();
 	lttng_fixup_ust_mutex_nest_tls();
+
+	lttng_ust_loaded = 1;
 
 	/*
 	 * We want precise control over the order in which we construct
