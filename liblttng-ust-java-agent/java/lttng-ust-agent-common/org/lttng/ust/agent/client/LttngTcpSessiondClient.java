@@ -204,27 +204,34 @@ public class LttngTcpSessiondClient implements Runnable {
 	 * @return port value if found else 0.
 	 */
 	private static int getPortFromFile(String path) throws IOException {
-		int port;
 		BufferedReader br = null;
 
 		try {
 			br = new BufferedReader(new InputStreamReader(new FileInputStream(path), PORT_FILE_ENCODING));
 			String line = br.readLine();
-			port = Integer.parseInt(line, 10);
+			if (line == null) {
+				/* File exists but is empty. */
+				return 0;
+			}
+
+			int port = Integer.parseInt(line, 10);
 			if (port < 0 || port > 65535) {
 				/* Invalid value. Ignore. */
 				port = 0;
 			}
+			return port;
+
+		} catch (NumberFormatException e) {
+			/* File contained something that was not a number. */
+			return 0;
 		} catch (FileNotFoundException e) {
 			/* No port available. */
-			port = 0;
+			return 0;
 		} finally {
 			if (br != null) {
 				br.close();
 			}
 		}
-
-		return port;
 	}
 
 	private void registerToSessiond() throws IOException {
