@@ -100,7 +100,7 @@ int lttng_ust_setustprocname(void)
 {
 	int ret = 0, len;
 	char name[LTTNG_UST_PROCNAME_LEN];
-	int limit = LTTNG_UST_PROCNAME_LEN - strlen(LTTNG_UST_PROCNAME_SUFFIX);
+	int limit = LTTNG_UST_PROCNAME_LEN - strlen(LTTNG_UST_PROCNAME_SUFFIX) - 1;
 
 	lttng_ust_getprocname(name);
 
