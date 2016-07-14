@@ -1771,11 +1771,11 @@ void ust_after_fork_child(sigset_t *restore_sigset)
 {
 	if (URCU_TLS(lttng_ust_nest_count))
 		return;
+	lttng_context_vtid_reset();
 	DBG("process %d", getpid());
 	/* Release urcu mutexes */
 	rcu_bp_after_fork_child();
 	lttng_ust_cleanup(0);
-	lttng_context_vtid_reset();
 	/* Release mutexes and reenable signals */
 	ust_after_fork_common(restore_sigset);
 	lttng_ust_init();
