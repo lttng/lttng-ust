@@ -1620,6 +1620,7 @@ void lttng_ust_cleanup(int exiting)
 {
 	cleanup_sock_info(&global_apps, exiting);
 	cleanup_sock_info(&local_apps, exiting);
+	local_apps.allowed = 0;
 	/*
 	 * The teardown in this function all affect data structures
 	 * accessed under the UST lock by the listener thread. This
