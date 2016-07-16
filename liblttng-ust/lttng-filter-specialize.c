@@ -20,6 +20,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#define _LGPL_SOURCE
 #include "lttng-filter.h"
 
 int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)

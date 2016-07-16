@@ -21,6 +21,7 @@
  */
 
 #define _GNU_SOURCE
+#define _LGPL_SOURCE
 #include <stdio.h>
 #include <urcu/list.h>
 #include <urcu/hlist.h>

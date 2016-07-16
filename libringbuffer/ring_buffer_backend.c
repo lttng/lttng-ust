@@ -19,6 +19,7 @@
  */
 
 #define _GNU_SOURCE
+#define _LGPL_SOURCE
 #include <unistd.h>
 #include <urcu/arch.h>
 #include <limits.h>

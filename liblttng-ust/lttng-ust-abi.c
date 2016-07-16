@@ -37,6 +37,7 @@
  *     - Takes instrumentation source specific arguments.
  */
 
+#define _LGPL_SOURCE
 #include <lttng/ust-abi.h>
 #include <lttng/ust-error.h>
 #include <urcu/compiler.h>

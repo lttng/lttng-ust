@@ -52,6 +52,7 @@
  */
 
 #define _GNU_SOURCE
+#define _LGPL_SOURCE
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <sys/stat.h>

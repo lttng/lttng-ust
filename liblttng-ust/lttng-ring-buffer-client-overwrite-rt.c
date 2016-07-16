@@ -21,6 +21,7 @@
  */
 
 #define _GNU_SOURCE
+#define _LGPL_SOURCE
 #include "lttng-tracer.h"
 
 #define RING_BUFFER_MODE_TEMPLATE		RING_BUFFER_OVERWRITE
