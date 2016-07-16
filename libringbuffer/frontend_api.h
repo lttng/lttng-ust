@@ -37,10 +37,10 @@
 /**
  * lib_ring_buffer_get_cpu - Precedes ring buffer reserve/commit.
  *
- * Grabs RCU read-side lock and keeps a ring buffer nesting count as
- * supplementary safety net to ensure tracer client code will never
- * trigger an endless recursion. Returns the processor ID on success,
- * -EPERM on failure (nesting count too high).
+ * Keeps a ring buffer nesting count as supplementary safety net to
+ * ensure tracer client code will never trigger an endless recursion.
+ * Returns the processor ID on success, -EPERM on failure (nesting count
+ * too high).
  *
  * asm volatile and "memory" clobber prevent the compiler from moving
  * instructions out of the ring buffer nesting count. This is required to ensure
@@ -53,7 +53,6 @@ int lib_ring_buffer_get_cpu(const struct lttng_ust_lib_ring_buffer_config *confi
 {
 	int cpu, nesting;
 
-	rcu_read_lock();
 	cpu = lttng_ust_get_cpu();
 	nesting = ++URCU_TLS(lib_ring_buffer_nesting);
 	cmm_barrier();
@@ -75,7 +74,6 @@ void lib_ring_buffer_put_cpu(const struct lttng_ust_lib_ring_buffer_config *conf
 {
 	cmm_barrier();
 	URCU_TLS(lib_ring_buffer_nesting)--;		/* TLS */
-	rcu_read_unlock();
 }
 
 /*
