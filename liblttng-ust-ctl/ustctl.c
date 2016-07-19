@@ -18,6 +18,7 @@
 
 #define _GNU_SOURCE
 #include <string.h>
+#include <lttng/ust-config.h>
 #include <lttng/ust-ctl.h>
 #include <lttng/ust-abi.h>
 #include <lttng/ust-events.h>
@@ -1742,7 +1743,7 @@ int ustctl_get_instance_id(struct ustctl_consumer_stream *stream,
 	return client_cb->instance_id(buf, handle, id);
 }
 
-#if defined(__x86_64__) || defined(__i386__) || defined(__ARM_ARCH_7A__)
+#ifdef LTTNG_UST_HAVE_PERF_EVENT
 
 int ustctl_has_perf_counters(void)
 {
