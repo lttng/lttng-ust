@@ -86,6 +86,12 @@ AM_CONDITIONAL([HAVE_CMAKE], [test "x$HAVE_CMAKE" = "xyes"])
 AC_PROG_MAKE_SET
 LT_INIT
 
+# Check for functions.
+AX_CHECK_POSIX_REGCOMP
+AS_IF([test x$ax_cv_posix_regcomp != xyes], [
+	AC_MSG_ERROR([Missing POSIX regex support.])
+])
+
 # rw_PROG_CXX_WORKS
 # Check whether the C++ compiler works.
 AC_CACHE_CHECK([whether the C++ compiler works], [rw_cv_prog_cxx_works], [
