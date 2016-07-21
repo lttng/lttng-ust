@@ -32,6 +32,7 @@
 #include <stddef.h>
 #include <inttypes.h>
 #include <time.h>
+#include <regex.h>
 #include <lttng/ust-endian.h>
 #include "clock.h"
 
@@ -624,17 +625,156 @@ exist:
 }
 
 static
-int lttng_desc_match_wildcard_enabler(const struct lttng_event_desc *desc,
+int lttng_desc_match_glob_enabler(const struct lttng_event_desc *desc,
 		struct lttng_enabler *enabler)
 {
+	char *regex = NULL;
+	const char *ch_src;
+	char *ch_dst;
+	regex_t re;
+	int free_re = 0;
+	int matches;
 	int loglevel = 0;
 	unsigned int has_loglevel = 0;
 
 	assert(enabler->type == LTTNG_ENABLER_WILDCARD);
-	/* Compare excluding final '*' */
-	if (strncmp(desc->name, enabler->event_param.name,
-			strlen(enabler->event_param.name) - 1))
-		return 0;
+
+	/*
+	 * Create a buffer to hold the regular expression. The name must
+	 * be escaped because it could contain characters that are
+	 * considered special (metacharacters) for regcomp(). The worst
+	 * case is that each original character is a BRE metacharacter,
+	 * thus two times the maximum name length is enough.
+	 *
+	 * We add two characters for the initial "^" and the final "$"
+	 * so that the whole candidate is matched, not just a
+	 * part of it.
+	 */
+	regex = zmalloc(LTTNG_UST_SYM_NAME_LEN * 2 + 2);
+	if (!regex) {
+		matches = -ENOMEM;
+		goto end;
+	}
+
+	ch_src = enabler->event_param.name;
+	ch_dst = regex;
+
+	/* Begin the BRE with "^". */
+	*ch_dst++ = '^';
+
+	/*
+	 * Escape the metacharacters of POSIX BRE, which are:
+	 *
+	 *     . [ \ * ^ $
+	 *
+	 * However do not escape *, which is an LTTng globbing
+	 * character, but convert it to the BRE ".*", which matches any
+	 * character zero or more times. Also, convert "?" globbing
+	 * character to "." BRE to match any character exactly one time.
+	 *
+	 * Note that there's a first level of escaping to apply for
+	 * LTTng globbing characters and for "\" itself.
+	 *
+	 * Here are a few examples and corner cases (name -> BRE):
+	 *
+	 *     sched_switch     ->  ^sched_switch$
+	 *     sched_*          ->  ^sched_.*$
+	 *     *_switch         ->  ^.*_switch$
+	 *     user_?_read      ->  ^user_._read$
+	 *     sched_\*         ->  ^sched_\*$
+	 *     user_\?_read     ->  ^user_?_read$
+	 *     user_\\\?_\read  ->  ^user_\\?_read$
+	 *     some[logger]     ->  ^some\[logger]$
+	 *     some\[logger]    ->  ^some\\\[logger]$
+	 *     org.lttng.pkg    ->  ^org\.lttng\.pkg$
+	 */
+	while (*ch_src) {
+		switch (*ch_src) {
+		case '\\':
+			/*
+			 * This is an LTTng user escape character. It
+			 * means the following character, if it exists,
+			 * and if it's a globbing character, is needed
+			 * as is for the match.
+			 */
+			if (ch_src[1] == '*' || ch_src[1] == '\\') {
+				/*
+				 * "*" and "\" are BRE metacharacters,
+				 * thus they are escaped with "\".
+				 */
+				ch_dst[0] = '\\';
+				ch_dst[1] = ch_src[1];
+				ch_dst += 2;
+				ch_src++;
+			} else if (ch_src[1] == '?') {
+				/*
+				 * "?" is not a BRE metacharacter, thus
+				 * it is copied as is, without escaping.
+				 */
+				*ch_dst = ch_src[1];
+				ch_dst++;
+				ch_src++;
+			} else {
+				/*
+				 * Pass "\" as is to the BRE since the
+				 * following character is not a globbing
+				 * character, or it does not exist.
+				 */
+				ch_dst[0] = '\\';
+				ch_dst[1] = '\\';
+				ch_dst += 2;
+			}
+			break;
+		case '.':
+		case '[':
+		case '^':
+		case '$':
+			/* Escape BRE metacharacter. */
+			ch_dst[0] = '\\';
+			ch_dst[1] = *ch_src;
+			ch_dst += 2;
+			break;
+		case '*':
+			/*
+			 * Convert globbing character "*" to BRE ".*".
+			 */
+			ch_dst[0] = '.';
+			ch_dst[1] = '*';
+			ch_dst += 2;
+			break;
+		case '?':
+			/*
+			 * Convert globbing character "?" to BRE ".".
+			 */
+			*ch_dst = '.';
+			ch_dst++;
+			break;
+		default:
+			*ch_dst = *ch_src;
+			ch_dst++;
+			break;
+		}
+
+		ch_src++;
+	}
+
+	/* End the BRE with "$". */
+	*ch_dst++ = '$';
+
+	/* Compile the BRE. */
+	if (regcomp(&re, regex, REG_NOSUB)) {
+		matches = -EINVAL;
+		goto end;
+	}
+	free_re = 1;
+
+	/* Execute the compiled BRE. */
+	if (regexec(&re, desc->name, 0, NULL, 0)) {
+		matches = 0;
+		goto end;
+	}
+
+	/* Check log level. */
 	if (desc->loglevel) {
 		loglevel = *(*desc->loglevel);
 		has_loglevel = 1;
@@ -643,8 +783,16 @@ int lttng_desc_match_wildcard_enabler(const struct lttng_event_desc *desc,
 			has_loglevel,
 			enabler->event_param.loglevel_type,
 			enabler->event_param.loglevel))
-		return 0;
-	return 1;
+		matches = 0;
+
+	matches = 1;
+
+end:
+	free(regex);
+	if (free_re) {
+		regfree(&re);
+	}
+	return matches;
 }
 
 static
@@ -653,10 +801,35 @@ int lttng_desc_match_event_enabler(const struct lttng_event_desc *desc,
 {
 	int loglevel = 0;
 	unsigned int has_loglevel = 0;
+	const char *enabler_ch;
+	const char *desc_ch;
 
 	assert(enabler->type == LTTNG_ENABLER_EVENT);
-	if (strcmp(desc->name, enabler->event_param.name))
+
+	/*
+	 * We need to match each character because the enabler's
+	 * event name could contain escaped globbing characters. In
+	 * this case the "\" is skipped.
+	 */
+	desc_ch = desc->name;
+	enabler_ch = enabler->event_param.name;
+	while (*desc_ch && *enabler_ch) {
+		if (enabler_ch[0] == '\\' && (enabler_ch[1] == '\\' ||
+				enabler_ch[1] == '*' || enabler_ch[1] == '?'))
+			/* Escaped globbing character. */
+			enabler_ch++;
+		if (*desc_ch != *enabler_ch)
+			return 0;
+
+		desc_ch++;
+		enabler_ch++;
+	}
+
+	/* Confirm that we compared the whole strings. */
+	if (*desc_ch != '\0' || *enabler_ch != '\0')
 		return 0;
+
+	/* Check log level. */
 	if (desc->loglevel) {
 		loglevel = *(*desc->loglevel);
 		has_loglevel = 1;
@@ -700,7 +873,7 @@ int lttng_desc_match_enabler(const struct lttng_event_desc *desc,
 	}
 	switch (enabler->type) {
 	case LTTNG_ENABLER_WILDCARD:
-		return lttng_desc_match_wildcard_enabler(desc, enabler);
+		return lttng_desc_match_glob_enabler(desc, enabler);
 	case LTTNG_ENABLER_EVENT:
 		return lttng_desc_match_event_enabler(desc, enabler);
 	default:
