@@ -93,6 +93,9 @@ static struct cds_hlist_head tracepoint_table[TRACEPOINT_TABLE_SIZE];
 static CDS_LIST_HEAD(old_probes);
 static int need_update;
 
+static CDS_LIST_HEAD(release_queue);
+static int release_queue_need_update;
+
 /*
  * Note about RCU :
  * It is used to to delay the free of multiple probes array until a quiescent
@@ -553,6 +556,16 @@ tracepoint_add_probe(const char *name, void (*probe)(void), void *data,
 	return old;
 }
 
+static void tracepoint_release_queue_add_old_probes(void *old)
+{
+	release_queue_need_update = 1;
+	if (old) {
+		struct tp_probes *tp_probes = caa_container_of(old,
+			struct tp_probes, probes[0]);
+		cds_list_add(&tp_probes->u.list, &release_queue);
+	}
+}
+
 /**
  * __tracepoint_probe_register -  Connect a probe to a tracepoint
  * @name: tracepoint name
@@ -579,6 +592,33 @@ int __tracepoint_probe_register(const char *name, void (*probe)(void),
 
 	tracepoint_sync_callsites(name);
 	release_probes(old);
+end:
+	pthread_mutex_unlock(&tracepoint_mutex);
+	return ret;
+}
+
+/*
+ * Caller needs to invoke __tracepoint_probe_release_queue() after
+ * calling __tracepoint_probe_register_queue_release() one or multiple
+ * times to ensure it does not leak memory.
+ */
+int __tracepoint_probe_register_queue_release(const char *name,
+		void (*probe)(void), void *data, const char *signature)
+{
+	void *old;
+	int ret = 0;
+
+	DBG("Registering probe to tracepoint %s. Queuing release.", name);
+
+	pthread_mutex_lock(&tracepoint_mutex);
+	old = tracepoint_add_probe(name, probe, data, signature);
+	if (IS_ERR(old)) {
+		ret = PTR_ERR(old);
+		goto end;
+	}
+
+	tracepoint_sync_callsites(name);
+	tracepoint_release_queue_add_old_probes(old);
 end:
 	pthread_mutex_unlock(&tracepoint_mutex);
 	return ret;
@@ -626,6 +666,57 @@ int __tracepoint_probe_unregister(const char *name, void (*probe)(void),
 end:
 	pthread_mutex_unlock(&tracepoint_mutex);
 	return ret;
+}
+
+/*
+ * Caller needs to invoke __tracepoint_probe_release_queue() after
+ * calling __tracepoint_probe_unregister_queue_release() one or multiple
+ * times to ensure it does not leak memory.
+ */
+int __tracepoint_probe_unregister_queue_release(const char *name,
+		void (*probe)(void), void *data)
+{
+	void *old;
+	int ret = 0;
+
+	DBG("Un-registering probe from tracepoint %s. Queuing release.", name);
+
+	pthread_mutex_lock(&tracepoint_mutex);
+	old = tracepoint_remove_probe(name, probe, data);
+	if (IS_ERR(old)) {
+		ret = PTR_ERR(old);
+		goto end;
+	}
+	tracepoint_sync_callsites(name);
+	tracepoint_release_queue_add_old_probes(old);
+end:
+	pthread_mutex_unlock(&tracepoint_mutex);
+	return ret;
+}
+
+void __tracepoint_probe_prune_release_queue(void)
+{
+	CDS_LIST_HEAD(release_probes);
+	struct tp_probes *pos, *next;
+
+	DBG("Release queue of unregistered tracepoint probes.");
+
+	pthread_mutex_lock(&tracepoint_mutex);
+	if (!release_queue_need_update)
+		goto end;
+	if (!cds_list_empty(&release_queue))
+		cds_list_replace_init(&release_queue, &release_probes);
+	release_queue_need_update = 0;
+
+	/* Wait for grace period between all sync_callsites and free. */
+	synchronize_rcu();
+
+	cds_list_for_each_entry_safe(pos, next, &release_probes, u.list) {
+		cds_list_del(&pos->u.list);
+		free(pos);
+	}
+end:
+	pthread_mutex_unlock(&tracepoint_mutex);
 }
 
 static void tracepoint_add_old_probes(void *old)
@@ -708,9 +799,10 @@ void tracepoint_probe_update_all(void)
 	need_update = 0;
 
 	tracepoint_update_probes();
+	/* Wait for grace period between update_probes and free. */
+	synchronize_rcu();
 	cds_list_for_each_entry_safe(pos, next, &release_probes, u.list) {
 		cds_list_del(&pos->u.list);
-		synchronize_rcu();
 		free(pos);
 	}
 end:
