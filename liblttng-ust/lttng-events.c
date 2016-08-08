@@ -174,7 +174,7 @@ void register_event(struct lttng_event *event)
 
 	assert(event->registered == 0);
 	desc = event->desc;
-	ret = __tracepoint_probe_register(desc->name,
+	ret = __tracepoint_probe_register_queue_release(desc->name,
 			desc->probe_callback,
 			event, desc->signature);
 	WARN_ON_ONCE(ret);
@@ -190,7 +190,7 @@ void unregister_event(struct lttng_event *event)
 
 	assert(event->registered == 1);
 	desc = event->desc;
-	ret = __tracepoint_probe_unregister(desc->name,
+	ret = __tracepoint_probe_unregister_queue_release(desc->name,
 			desc->probe_callback,
 			event);
 	WARN_ON_ONCE(ret);
@@ -219,6 +219,7 @@ void lttng_session_destroy(struct lttng_session *session)
 		_lttng_event_unregister(event);
 	}
 	synchronize_trace();	/* Wait for in-flight events to complete */
+	__tracepoint_probe_prune_release_queue();
 	cds_list_for_each_entry_safe(enabler, tmpenabler,
 			&session->enablers_head, node)
 		lttng_enabler_destroy(enabler);
@@ -933,6 +934,7 @@ void lttng_session_sync_enablers(struct lttng_session *session)
 			lttng_filter_sync_state(runtime);
 		}
 	}
+	__tracepoint_probe_prune_release_queue();
 }
 
 /*

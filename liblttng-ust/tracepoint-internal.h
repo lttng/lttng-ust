@@ -38,6 +38,11 @@ extern int tracepoint_probe_register_noupdate(const char *name,
 extern int tracepoint_probe_unregister_noupdate(const char *name,
 		void (*callback)(void), void *priv);
 extern void tracepoint_probe_update_all(void);
+extern int __tracepoint_probe_register_queue_release(const char *name,
+		void (*func)(void), void *data, const char *signature);
+extern int __tracepoint_probe_unregister_queue_release(const char *name,
+		void (*func)(void), void *data);
+extern void __tracepoint_probe_prune_release_queue(void);
 
 /*
  * call after disconnection of last probe implemented within a
