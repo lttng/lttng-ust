@@ -28,7 +28,6 @@
 #include <stdbool.h>
 #include <sys/mman.h>
 #include <sys/syscall.h>
-#include <linux/perf_event.h>
 #include <lttng/ust-events.h>
 #include <lttng/ust-tracer.h>
 #include <lttng/ringbuffer-config.h>
@@ -39,6 +38,7 @@
 #include <urcu/ref.h>
 #include <usterr-signal-safe.h>
 #include <signal.h>
+#include "perf_event.h"
 #include "lttng-tracer-core.h"
 
 /*
@@ -109,6 +109,15 @@ uint64_t rdpmc(unsigned int counter)
 }
 
 static
+bool has_rdpmc(struct perf_event_mmap_page *pc)
+{
+	if (caa_unlikely(!pc->cap_bit0_is_deprecated))
+		return false;
+	/* Since Linux kernel 3.12. */
+	return pc->cap_user_rdpmc;
+}
+
+static
 uint64_t arch_read_perf_counter(
 		struct lttng_perf_counter_thread_field *thread_field)
 {
@@ -124,7 +133,7 @@ uint64_t arch_read_perf_counter(
 		cmm_barrier();
 
 		idx = pc->index;
-		if (caa_likely(pc->cap_user_rdpmc && idx)) {
+		if (caa_likely(has_rdpmc(pc) && idx)) {
 			int64_t pmcval;
 
 			pmcval = rdpmc(idx - 1);
@@ -149,7 +158,7 @@ int arch_perf_keep_fd(struct lttng_perf_counter_thread_field *thread_field)
 
 	if (!pc)
 		return 0;
-	return !pc->cap_user_rdpmc;
+	return !has_rdpmc(pc);
 }
 
 #else
@@ -205,9 +214,7 @@ void close_perf_fd(int fd)
 	}
 }
 
-static
-struct perf_event_mmap_page *setup_perf(
-		struct lttng_perf_counter_thread_field *thread_field)
+static void setup_perf(struct lttng_perf_counter_thread_field *thread_field)
 {
 	void *perf_addr;
 
@@ -215,13 +222,12 @@ struct perf_event_mmap_page *setup_perf(
 			PROT_READ, MAP_SHARED, thread_field->fd, 0);
 	if (perf_addr == MAP_FAILED)
 		perf_addr = NULL;
+	thread_field->pc = perf_addr;
 
 	if (!arch_perf_keep_fd(thread_field)) {
 		close_perf_fd(thread_field->fd);
 		thread_field->fd = -1;
 	}
-
-	return perf_addr;
 }
 
 static
@@ -296,7 +302,7 @@ struct lttng_perf_counter_thread_field *
 	thread_field->field = perf_field;
 	thread_field->fd = open_perf_fd(&perf_field->attr);
 	if (thread_field->fd >= 0)
-		thread_field->pc = setup_perf(thread_field);
+		setup_perf(thread_field);
 	/*
 	 * Note: thread_field->pc can be NULL if setup_perf() fails.
 	 * Also, thread_field->fd can be -1 if open_perf_fd() fails.

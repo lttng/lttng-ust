@@ -60,7 +60,8 @@ liblttng_ust_runtime_la_SOURCES = \
 
 if HAVE_PERF_EVENT
 liblttng_ust_runtime_la_SOURCES += \
-	lttng-context-perf-counters.c
+	lttng-context-perf-counters.c \
+	perf_event.h
 endif
 
 liblttng_ust_support_la_SOURCES = \
