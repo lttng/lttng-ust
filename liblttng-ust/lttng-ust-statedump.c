@@ -590,12 +590,22 @@ int do_baddr_statedump(void *owner)
  * session, statedumps from different processes may be
  * interleaved. The vpid context should be used to identify which
  * events belong to which process.
+ *
+ * Grab the ust_lock outside of the RCU read-side lock because we
+ * perform synchronize_rcu with the ust_lock held, which can trigger
+ * deadlocks otherwise.
  */
 int do_lttng_ust_statedump(void *owner)
 {
+	ust_lock_nocheck();
 	trace_statedump_start(owner);
+	ust_unlock();
+
 	do_baddr_statedump(owner);
+
+	ust_lock_nocheck();
 	trace_statedump_end(owner);
+	ust_unlock();
 
 	return 0;
 }
