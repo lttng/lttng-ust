@@ -61,7 +61,6 @@ int lib_ring_buffer_get_cpu(const struct lttng_ust_lib_ring_buffer_config *confi
 	if (caa_unlikely(nesting > 4)) {
 		WARN_ON_ONCE(1);
 		URCU_TLS(lib_ring_buffer_nesting)--;
-		rcu_read_unlock();
 		return -EPERM;
 	} else
 		return cpu;
