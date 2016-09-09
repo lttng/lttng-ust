@@ -2168,6 +2168,34 @@ void lib_ring_buffer_vmcore_check_deliver(const struct lttng_ust_lib_ring_buffer
 		v_set(config, &shmp_index(handle, buf->commit_hot, idx)->seq, commit_count);
 }
 
+/*
+ * The ring buffer can count events recorded and overwritten per buffer,
+ * but it is disabled by default due to its performance overhead.
+ */
+#ifdef LTTNG_RING_BUFFER_COUNT_EVENTS
+static
+void deliver_count_events(const struct lttng_ust_lib_ring_buffer_config *config,
+		struct lttng_ust_lib_ring_buffer *buf,
+		unsigned long idx,
+		struct lttng_ust_shm_handle *handle)
+{
+	v_add(config, subbuffer_get_records_count(config,
+			&buf->backend, idx, handle),
+		&buf->records_count);
+	v_add(config, subbuffer_count_records_overrun(config,
+			&buf->backend, idx, handle),
+		&buf->records_overrun);
+}
+#else /* LTTNG_RING_BUFFER_COUNT_EVENTS */
+static
+void deliver_count_events(const struct lttng_ust_lib_ring_buffer_config *config,
+		struct lttng_ust_lib_ring_buffer *buf,
+		unsigned long idx,
+		struct lttng_ust_shm_handle *handle)
+{
+}
+#endif /* #else LTTNG_RING_BUFFER_COUNT_EVENTS */
+
 void lib_ring_buffer_check_deliver_slow(const struct lttng_ust_lib_ring_buffer_config *config,
 				   struct lttng_ust_lib_ring_buffer *buf,
 			           struct channel *chan,
@@ -2221,16 +2249,7 @@ void lib_ring_buffer_check_deliver_slow(const struct lttng_ust_lib_ring_buffer_c
 		 * and any other writer trying to access this subbuffer
 		 * in this state is required to drop records.
 		 */
-		v_add(config,
-		      subbuffer_get_records_count(config,
-						  &buf->backend,
-						  idx, handle),
-		      &buf->records_count);
-		v_add(config,
-		      subbuffer_count_records_overrun(config,
-						      &buf->backend,
-						      idx, handle),
-		      &buf->records_overrun);
+		deliver_count_events(config, buf, idx, handle);
 		config->cb.buffer_end(buf, tsc, idx,
 				      lib_ring_buffer_get_data_size(config,
 								buf,

@@ -196,6 +196,11 @@ int subbuffer_id_check_index(const struct lttng_ust_lib_ring_buffer_config *conf
 		return 0;
 }
 
+/*
+ * The ring buffer can count events recorded and overwritten per buffer,
+ * but it is disabled by default due to its performance overhead.
+ */
+#ifdef LTTNG_RING_BUFFER_COUNT_EVENTS
 static inline
 void subbuffer_count_record(const struct lttng_ust_lib_ring_buffer_config *config,
 			    struct lttng_ust_lib_ring_buffer_backend *bufb,
@@ -206,6 +211,14 @@ void subbuffer_count_record(const struct lttng_ust_lib_ring_buffer_config *confi
 	sb_bindex = subbuffer_id_get_index(config, shmp_index(handle, bufb->buf_wsb, idx)->id);
 	v_inc(config, &shmp(handle, shmp_index(handle, bufb->array, sb_bindex)->shmp)->records_commit);
 }
+#else /* LTTNG_RING_BUFFER_COUNT_EVENTS */
+static inline
+void subbuffer_count_record(const struct lttng_ust_lib_ring_buffer_config *config,
+			    struct lttng_ust_lib_ring_buffer_backend *bufb,
+			    unsigned long idx, struct lttng_ust_shm_handle *handle)
+{
+}
+#endif /* #else LTTNG_RING_BUFFER_COUNT_EVENTS */
 
 /*
  * Reader has exclusive subbuffer access for record consumption. No need to
