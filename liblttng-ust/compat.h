@@ -110,7 +110,7 @@ int lttng_ust_setustprocname(void)
 	}
 
 	ret = sprintf(name + len, LTTNG_UST_PROCNAME_SUFFIX);
-	if (ret) {
+	if (ret != strlen(LTTNG_UST_PROCNAME_SUFFIX)) {
 		goto error;
 	}
 
