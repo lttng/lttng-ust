@@ -451,6 +451,7 @@ AC_CONFIG_FILES([
 	liblttng-ust-ctl/Makefile
 	liblttng-ust-fork/Makefile
 	liblttng-ust-dl/Makefile
+	liblttng-ust-fd/Makefile
 	liblttng-ust-java/Makefile
 	liblttng-ust-java-agent/Makefile
 	liblttng-ust-java-agent/java/Makefile
