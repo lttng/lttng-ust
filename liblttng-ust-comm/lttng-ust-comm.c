@@ -33,6 +33,7 @@
 
 #include <lttng/ust-ctl.h>
 #include <ust-comm.h>
+#include <ust-fd.h>
 #include <helper.h>
 #include <lttng/ust-error.h>
 #include <lttng/ust-events.h>
@@ -94,6 +95,8 @@ const char *lttng_ust_strerror(int code)
  * ustcomm_connect_unix_sock
  *
  * Connect to unix socket using the path name.
+ *
+ * Caller handles FD tracker.
  */
 int ustcomm_connect_unix_sock(const char *pathname, long timeout)
 {
@@ -257,16 +260,22 @@ int ustcomm_listen_unix_sock(int sock)
  * ustcomm_close_unix_sock
  *
  * Shutdown cleanly a unix socket.
+ *
+ * Handles fd tracker internally.
  */
 int ustcomm_close_unix_sock(int sock)
 {
 	int ret;
 
+	lttng_ust_lock_fd_tracker();
 	ret = close(sock);
-	if (ret < 0) {
+	if (!ret) {
+		lttng_ust_delete_fd_from_tracker(sock);
+	} else {
 		PERROR("close");
 		ret = -errno;
 	}
+	lttng_ust_unlock_fd_tracker();
 
 	return ret;
 }
@@ -606,8 +615,10 @@ ssize_t ustcomm_recv_channel_from_sessiond(int sock,
 		goto error_recv;
 	}
 	/* recv wakeup fd */
+	lttng_ust_lock_fd_tracker();
 	nr_fd = ustcomm_recv_fds_unix_sock(sock, &wakeup_fd, 1);
 	if (nr_fd <= 0) {
+		lttng_ust_unlock_fd_tracker();
 		if (nr_fd < 0) {
 			len = nr_fd;
 			goto error_recv;
@@ -617,6 +628,8 @@ ssize_t ustcomm_recv_channel_from_sessiond(int sock,
 		}
 	}
 	*_wakeup_fd = wakeup_fd;
+	lttng_ust_add_fd_to_tracker(wakeup_fd);
+	lttng_ust_unlock_fd_tracker();
 	*_chan_data = chan_data;
 	return len;
 
@@ -636,8 +649,10 @@ int ustcomm_recv_stream_from_sessiond(int sock,
 	int fds[2];
 
 	/* recv shm fd and wakeup fd */
+	lttng_ust_lock_fd_tracker();
 	len = ustcomm_recv_fds_unix_sock(sock, fds, 2);
 	if (len <= 0) {
+		lttng_ust_unlock_fd_tracker();
 		if (len < 0) {
 			ret = len;
 			goto error;
@@ -648,6 +663,9 @@ int ustcomm_recv_stream_from_sessiond(int sock,
 	}
 	*shm_fd = fds[0];
 	*wakeup_fd = fds[1];
+	lttng_ust_add_fd_to_tracker(fds[0]);
+	lttng_ust_add_fd_to_tracker(fds[1]);
+	lttng_ust_unlock_fd_tracker();
 	return 0;
 
 error:

@@ -33,6 +33,7 @@
 #include <lttng/align.h>
 #include <limits.h>
 #include <helper.h>
+#include <ust-fd.h>
 
 /*
  * Ensure we have the required amount of space available by writing 0
@@ -343,7 +344,7 @@ error_fcntl:
 }
 
 static
-void shmp_object_destroy(struct shm_object *obj)
+void shmp_object_destroy(struct shm_object *obj, int consumer)
 {
 	switch (obj->type) {
 	case SHM_OBJECT_SHM:
@@ -355,20 +356,46 @@ void shmp_object_destroy(struct shm_object *obj)
 			PERROR("umnmap");
 			assert(0);
 		}
+
 		if (obj->shm_fd_ownership) {
-			ret = close(obj->shm_fd);
-			if (ret) {
-				PERROR("close");
-				assert(0);
+			/* Delete FDs only if called from app (not consumer). */
+			if (!consumer) {
+				lttng_ust_lock_fd_tracker();
+				ret = close(obj->shm_fd);
+				if (!ret) {
+					lttng_ust_delete_fd_from_tracker(obj->shm_fd);
+				} else {
+					PERROR("close");
+					assert(0);
+				}
+				lttng_ust_unlock_fd_tracker();
+			} else {
+				ret = close(obj->shm_fd);
+				if (ret) {
+					PERROR("close");
+					assert(0);
+				}
 			}
 		}
 		for (i = 0; i < 2; i++) {
 			if (obj->wait_fd[i] < 0)
 				continue;
-			ret = close(obj->wait_fd[i]);
-			if (ret) {
-				PERROR("close");
-				assert(0);
+			if (!consumer) {
+				lttng_ust_lock_fd_tracker();
+				ret = close(obj->wait_fd[i]);
+				if (!ret) {
+					lttng_ust_delete_fd_from_tracker(obj->wait_fd[i]);
+				} else {
+					PERROR("close");
+					assert(0);
+				}
+				lttng_ust_unlock_fd_tracker();
+			} else {
+				ret = close(obj->wait_fd[i]);
+				if (ret) {
+					PERROR("close");
+					assert(0);
+				}
 			}
 		}
 		break;
@@ -380,10 +407,22 @@ void shmp_object_destroy(struct shm_object *obj)
 		for (i = 0; i < 2; i++) {
 			if (obj->wait_fd[i] < 0)
 				continue;
-			ret = close(obj->wait_fd[i]);
-			if (ret) {
-				PERROR("close");
-				assert(0);
+			if (!consumer) {
+				lttng_ust_lock_fd_tracker();
+				ret = close(obj->wait_fd[i]);
+				if (!ret) {
+					lttng_ust_delete_fd_from_tracker(obj->wait_fd[i]);
+				} else {
+					PERROR("close");
+					assert(0);
+				}
+				lttng_ust_unlock_fd_tracker();
+			} else {
+				ret = close(obj->wait_fd[i]);
+				if (ret) {
+					PERROR("close");
+					assert(0);
+				}
 			}
 		}
 		free(obj->memory_map);
@@ -394,12 +433,12 @@ void shmp_object_destroy(struct shm_object *obj)
 	}
 }
 
-void shm_object_table_destroy(struct shm_object_table *table)
+void shm_object_table_destroy(struct shm_object_table *table, int consumer)
 {
 	int i;
 
 	for (i = 0; i < table->allocated_len; i++)
-		shmp_object_destroy(&table->objects[i]);
+		shmp_object_destroy(&table->objects[i], consumer);
 	free(table);
 }
 

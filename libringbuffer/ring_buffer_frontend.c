@@ -901,11 +901,12 @@ static void channel_print_errors(struct channel *chan,
 }
 
 static void channel_free(struct channel *chan,
-		struct lttng_ust_shm_handle *handle)
+		struct lttng_ust_shm_handle *handle,
+		int consumer)
 {
 	channel_backend_free(&chan->backend, handle);
 	/* chan is freed by shm teardown */
-	shm_object_table_destroy(handle->table);
+	shm_object_table_destroy(handle->table, consumer);
 	free(handle);
 }
 
@@ -1028,7 +1029,7 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 
 error_backend_init:
 error_append:
-	shm_object_table_destroy(handle->table);
+	shm_object_table_destroy(handle->table, 1);
 error_table_alloc:
 	free(handle);
 	return NULL;
@@ -1060,7 +1061,7 @@ struct lttng_ust_shm_handle *channel_handle_create(void *data,
 	return handle;
 
 error_table_object:
-	shm_object_table_destroy(handle->table);
+	shm_object_table_destroy(handle->table, 0);
 error_table_alloc:
 	free(handle);
 	return NULL;
@@ -1088,9 +1089,10 @@ unsigned int channel_handle_get_nr_streams(struct lttng_ust_shm_handle *handle)
 }
 
 static
-void channel_release(struct channel *chan, struct lttng_ust_shm_handle *handle)
+void channel_release(struct channel *chan, struct lttng_ust_shm_handle *handle,
+		int consumer)
 {
-	channel_free(chan, handle);
+	channel_free(chan, handle, consumer);
 }
 
 /**
@@ -1122,7 +1124,7 @@ void channel_destroy(struct channel *chan, struct lttng_ust_shm_handle *handle,
 	 * sessiond/consumer are keeping a reference on the shm file
 	 * descriptor directly. No need to refcount.
 	 */
-	channel_release(chan, handle);
+	channel_release(chan, handle, consumer);
 	return;
 }
 

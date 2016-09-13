@@ -96,7 +96,7 @@ struct shm_object *shm_object_table_append_shm(struct shm_object_table *table,
 /* mem ownership is passed to shm_object_table_append_mem(). */
 struct shm_object *shm_object_table_append_mem(struct shm_object_table *table,
 			void *mem, size_t memory_map_size, int wakeup_fd);
-void shm_object_table_destroy(struct shm_object_table *table);
+void shm_object_table_destroy(struct shm_object_table *table, int consumer);
 
 /*
  * zalloc_shm - allocate memory within a shm object.

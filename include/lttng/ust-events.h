@@ -733,6 +733,7 @@ struct lttng_enum *lttng_ust_enum_get(struct lttng_session *session,
 		const char *enum_name);
 
 void lttng_ust_dl_update(void *ip);
+void lttng_ust_fixup_fd_tracker_tls(void);
 
 /* For backward compatibility. Leave those exported symbols in place. */
 extern struct lttng_ctx *lttng_static_ctx;

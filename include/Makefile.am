@@ -33,6 +33,7 @@ noinst_HEADERS = \
 	usterr-signal-safe.h \
 	ust_snprintf.h \
 	ust-comm.h \
+	ust-fd.h \
 	lttng/ust-tid.h \
 	lttng/bitfield.h \
 	lttng/ust-dlfcn.h \

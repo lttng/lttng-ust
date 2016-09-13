@@ -45,6 +45,7 @@
 #include <lttng/ust-events.h>
 #include <lttng/ust-version.h>
 #include <lttng/tracepoint.h>
+#include <ust-fd.h>
 #include "tracepoint-internal.h"
 #include <usterr-signal-safe.h>
 #include <helper.h>
@@ -528,7 +529,9 @@ invalid:
 	{
 		int close_ret;
 
+		lttng_ust_lock_fd_tracker();
 		close_ret = close(wakeup_fd);
+		lttng_ust_unlock_fd_tracker();
 		if (close_ret) {
 			PERROR("close");
 		}
