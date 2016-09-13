@@ -170,7 +170,8 @@ struct ustcomm_notify_channel_reply {
  */
 
 extern int ustcomm_create_unix_sock(const char *pathname);
-extern int ustcomm_connect_unix_sock(const char *pathname);
+extern int ustcomm_connect_unix_sock(const char *pathname,
+		long timeout);
 extern int ustcomm_accept_unix_sock(int sock);
 extern int ustcomm_listen_unix_sock(int sock);
 extern int ustcomm_close_unix_sock(int sock);
