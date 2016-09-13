@@ -459,7 +459,7 @@ int setup_local_apps(void)
 }
 
 /*
- * Get notify_sock timeout, in ms.
+ * Get socket timeout, in ms.
  * -1: wait forever. 0: don't wait. >0: timeout, in ms.
  */
 static
@@ -479,8 +479,16 @@ long get_timeout(void)
 	return constructor_delay_ms;
 }
 
+/* Timeout for notify socket send and recv. */
 static
 long get_notify_sock_timeout(void)
+{
+	return get_timeout();
+}
+
+/* Timeout for connecting to cmd and notify sockets. */
+static
+long get_connect_sock_timeout(void)
 {
 	return get_timeout();
 }
@@ -1367,7 +1375,8 @@ restart:
 	 * first connect registration message.
 	 */
 	/* Connect cmd socket */
-	ret = ustcomm_connect_unix_sock(sock_info->sock_path);
+	ret = ustcomm_connect_unix_sock(sock_info->sock_path,
+		get_connect_sock_timeout());
 	if (ret < 0) {
 		DBG("Info: sessiond not accepting connections to %s apps socket", sock_info->name);
 		prev_connect_failed = 1;
@@ -1423,7 +1432,8 @@ restart:
 	ust_unlock();
 
 	/* Connect notify socket */
-	ret = ustcomm_connect_unix_sock(sock_info->sock_path);
+	ret = ustcomm_connect_unix_sock(sock_info->sock_path,
+		get_connect_sock_timeout());
 	if (ret < 0) {
 		DBG("Info: sessiond not accepting connections to %s apps socket", sock_info->name);
 		prev_connect_failed = 1;
