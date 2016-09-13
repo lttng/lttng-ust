@@ -95,7 +95,7 @@ const char *lttng_ust_strerror(int code)
  *
  * Connect to unix socket using the path name.
  */
-int ustcomm_connect_unix_sock(const char *pathname)
+int ustcomm_connect_unix_sock(const char *pathname, long timeout)
 {
 	struct sockaddr_un sun;
 	int fd, ret;
@@ -109,6 +109,15 @@ int ustcomm_connect_unix_sock(const char *pathname)
 		PERROR("socket");
 		ret = -errno;
 		goto error;
+	}
+	if (timeout >= 0) {
+		/* Give at least 10ms. */
+		if (timeout < 10)
+			timeout = 10;
+		ret = ustcomm_setsockopt_snd_timeout(fd, timeout);
+		if (ret < 0) {
+			WARN("Error setting connect socket send timeout");
+		}
 	}
 	ret = fcntl(fd, F_SETFD, FD_CLOEXEC);
 	if (ret < 0) {
