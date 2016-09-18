@@ -314,9 +314,9 @@ void lib_ring_buffer_write_commit_counter(const struct lttng_ust_lib_ring_buffer
 		return;
 
 	commit_seq_old = v_read(config, &shmp_index(handle, buf->commit_hot, idx)->seq);
-	while ((long) (commit_seq_old - commit_count) < 0)
-		commit_seq_old = v_cmpxchg(config, &shmp_index(handle, buf->commit_hot, idx)->seq,
-					   commit_seq_old, commit_count);
+	if (caa_likely((long) (commit_seq_old - commit_count) < 0))
+		v_set(config, &shmp_index(handle, buf->commit_hot, idx)->seq,
+			commit_count);
 }
 
 extern int lib_ring_buffer_create(struct lttng_ust_lib_ring_buffer *buf,
