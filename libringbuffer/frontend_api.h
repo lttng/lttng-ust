@@ -250,6 +250,8 @@ void lib_ring_buffer_commit(const struct lttng_ust_lib_ring_buffer_config *confi
 	unsigned long offset_end = ctx->buf_offset;
 	unsigned long endidx = subbuf_index(offset_end - 1, chan);
 	unsigned long commit_count;
+	struct commit_counters_hot *cc_hot = shmp_index(handle,
+						buf->commit_hot, endidx);
 
 	/*
 	 * Must count record before incrementing the commit count.
@@ -262,7 +264,7 @@ void lib_ring_buffer_commit(const struct lttng_ust_lib_ring_buffer_config *confi
 	 */
 	cmm_smp_wmb();
 
-	v_add(config, ctx->slot_size, &shmp_index(handle, buf->commit_hot, endidx)->cc);
+	v_add(config, ctx->slot_size, &cc_hot->cc);
 
 	/*
 	 * commit count read can race with concurrent OOO commit count updates.
@@ -282,7 +284,7 @@ void lib_ring_buffer_commit(const struct lttng_ust_lib_ring_buffer_config *confi
 	 *   count reaches back the reserve offset for a specific sub-buffer,
 	 *   which is completely independent of the order.
 	 */
-	commit_count = v_read(config, &shmp_index(handle, buf->commit_hot, endidx)->cc);
+	commit_count = v_read(config, &cc_hot->cc);
 
 	lib_ring_buffer_check_deliver(config, buf, chan, offset_end - 1,
 				      commit_count, endidx, handle, ctx->tsc);
@@ -290,8 +292,8 @@ void lib_ring_buffer_commit(const struct lttng_ust_lib_ring_buffer_config *confi
 	 * Update used size at each commit. It's needed only for extracting
 	 * ring_buffer buffers from vmcore, after crash.
 	 */
-	lib_ring_buffer_write_commit_counter(config, buf, chan, endidx,
-			offset_end, commit_count, handle);
+	lib_ring_buffer_write_commit_counter(config, buf, chan,
+			offset_end, commit_count, handle, cc_hot);
 }
 
 /**

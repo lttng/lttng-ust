@@ -1623,9 +1623,10 @@ void lib_ring_buffer_switch_old_start(struct lttng_ust_lib_ring_buffer *buf,
 	/* Check if the written buffer has to be delivered */
 	lib_ring_buffer_check_deliver(config, buf, chan, offsets->old,
 				      commit_count, oldidx, handle, tsc);
-	lib_ring_buffer_write_commit_counter(config, buf, chan, oldidx,
+	lib_ring_buffer_write_commit_counter(config, buf, chan,
 			offsets->old + config->cb.subbuffer_header_size(),
-			commit_count, handle);
+			commit_count, handle,
+			shmp_index(handle, buf->commit_hot, oldidx));
 }
 
 /*
@@ -1661,8 +1662,9 @@ void lib_ring_buffer_switch_old_end(struct lttng_ust_lib_ring_buffer *buf,
 	commit_count = v_read(config, &shmp_index(handle, buf->commit_hot, oldidx)->cc);
 	lib_ring_buffer_check_deliver(config, buf, chan, offsets->old - 1,
 				      commit_count, oldidx, handle, tsc);
-	lib_ring_buffer_write_commit_counter(config, buf, chan, oldidx,
-			offsets->old + padding_size, commit_count, handle);
+	lib_ring_buffer_write_commit_counter(config, buf, chan,
+			offsets->old + padding_size, commit_count, handle,
+			shmp_index(handle, buf->commit_hot, oldidx));
 }
 
 /*
@@ -1696,9 +1698,10 @@ void lib_ring_buffer_switch_new_start(struct lttng_ust_lib_ring_buffer *buf,
 	/* Check if the written buffer has to be delivered */
 	lib_ring_buffer_check_deliver(config, buf, chan, offsets->begin,
 				      commit_count, beginidx, handle, tsc);
-	lib_ring_buffer_write_commit_counter(config, buf, chan, beginidx,
+	lib_ring_buffer_write_commit_counter(config, buf, chan,
 			offsets->begin + config->cb.subbuffer_header_size(),
-			commit_count, handle);
+			commit_count, handle,
+			shmp_index(handle, buf->commit_hot, beginidx));
 }
 
 /*

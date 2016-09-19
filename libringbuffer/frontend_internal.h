@@ -294,10 +294,10 @@ static inline
 void lib_ring_buffer_write_commit_counter(const struct lttng_ust_lib_ring_buffer_config *config,
 					  struct lttng_ust_lib_ring_buffer *buf,
 				          struct channel *chan,
-				          unsigned long idx,
 				          unsigned long buf_offset,
 				          unsigned long commit_count,
-					  struct lttng_ust_shm_handle *handle)
+					  struct lttng_ust_shm_handle *handle,
+					  struct commit_counters_hot *cc_hot)
 {
 	unsigned long commit_seq_old;
 
@@ -313,10 +313,9 @@ void lib_ring_buffer_write_commit_counter(const struct lttng_ust_lib_ring_buffer
 	if (caa_unlikely(subbuf_offset(buf_offset - commit_count, chan)))
 		return;
 
-	commit_seq_old = v_read(config, &shmp_index(handle, buf->commit_hot, idx)->seq);
+	commit_seq_old = v_read(config, &cc_hot->seq);
 	if (caa_likely((long) (commit_seq_old - commit_count) < 0))
-		v_set(config, &shmp_index(handle, buf->commit_hot, idx)->seq,
-			commit_count);
+		v_set(config, &cc_hot->seq, commit_count);
 }
 
 extern int lib_ring_buffer_create(struct lttng_ust_lib_ring_buffer *buf,
