@@ -196,6 +196,53 @@ int subbuffer_id_check_index(const struct lttng_ust_lib_ring_buffer_config *conf
 		return 0;
 }
 
+static inline
+int lib_ring_buffer_backend_get_pages(const struct lttng_ust_lib_ring_buffer_config *config,
+			struct lttng_ust_lib_ring_buffer_ctx *ctx,
+			struct lttng_ust_lib_ring_buffer_backend_pages **backend_pages)
+{
+	struct lttng_ust_lib_ring_buffer_backend *bufb = &ctx->buf->backend;
+	struct channel_backend *chanb = &ctx->chan->backend;
+	struct lttng_ust_shm_handle *handle = ctx->handle;
+	size_t sbidx;
+	size_t offset = ctx->buf_offset;
+	struct lttng_ust_lib_ring_buffer_backend_subbuffer *wsb;
+	struct lttng_ust_lib_ring_buffer_backend_pages_shmp *rpages;
+	unsigned long sb_bindex, id;
+	struct lttng_ust_lib_ring_buffer_backend_pages *_backend_pages;
+
+	offset &= chanb->buf_size - 1;
+	sbidx = offset >> chanb->subbuf_size_order;
+	wsb = shmp_index(handle, bufb->buf_wsb, sbidx);
+	if (caa_unlikely(!wsb))
+		return -1;
+	id = wsb->id;
+	sb_bindex = subbuffer_id_get_index(config, id);
+	rpages = shmp_index(handle, bufb->array, sb_bindex);
+	if (caa_unlikely(!rpages))
+		return -1;
+	CHAN_WARN_ON(ctx->chan,
+		     config->mode == RING_BUFFER_OVERWRITE
+		     && subbuffer_id_is_noref(config, id));
+	_backend_pages = shmp(handle, rpages->shmp);
+	if (caa_unlikely(!_backend_pages))
+		return -1;
+	*backend_pages = _backend_pages;
+	return 0;
+}
+
+/* Get backend pages from cache. */
+static inline
+struct lttng_ust_lib_ring_buffer_backend_pages *
+	lib_ring_buffer_get_backend_pages_from_ctx(const struct lttng_ust_lib_ring_buffer_config *config,
+		struct lttng_ust_lib_ring_buffer_ctx *ctx)
+{
+	if (caa_unlikely(ctx->ctx_len
+			< sizeof(struct lttng_ust_lib_ring_buffer_ctx)))
+		return NULL;
+	return ctx->backend_pages;
+}
+
 /*
  * The ring buffer can count events recorded and overwritten per buffer,
  * but it is disabled by default due to its performance overhead.

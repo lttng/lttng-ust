@@ -271,6 +271,7 @@ struct lttng_ust_lib_ring_buffer_ctx {
 	 * ctx_len is 0. Use the value of ctx_len to find out which of the
 	 * following fields may be used.
 	 */
+	struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
 };
 
 /**

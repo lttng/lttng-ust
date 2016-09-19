@@ -76,36 +76,24 @@ void lib_ring_buffer_write(const struct lttng_ust_lib_ring_buffer_config *config
 			   struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			   const void *src, size_t len)
 {
-	struct lttng_ust_lib_ring_buffer_backend *bufb = &ctx->buf->backend;
 	struct channel_backend *chanb = &ctx->chan->backend;
 	struct lttng_ust_shm_handle *handle = ctx->handle;
-	size_t sbidx;
 	size_t offset = ctx->buf_offset;
-	struct lttng_ust_lib_ring_buffer_backend_pages_shmp *rpages;
-	unsigned long sb_bindex, id;
 	struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
 	void *p;
 
 	if (caa_unlikely(!len))
 		return;
-	offset &= chanb->buf_size - 1;
-	sbidx = offset >> chanb->subbuf_size_order;
-	id = shmp_index(handle, bufb->buf_wsb, sbidx)->id;
-	sb_bindex = subbuffer_id_get_index(config, id);
-	rpages = shmp_index(handle, bufb->array, sb_bindex);
-	if (caa_unlikely(!rpages))
-		return;
-	CHAN_WARN_ON(ctx->chan,
-		     config->mode == RING_BUFFER_OVERWRITE
-		     && subbuffer_id_is_noref(config, id));
 	/*
 	 * Underlying layer should never ask for writes across
 	 * subbuffers.
 	 */
-	CHAN_WARN_ON(chanb, offset >= chanb->buf_size);
-	backend_pages = shmp(handle, rpages->shmp);
-	if (caa_unlikely(!backend_pages))
-		return;
+	CHAN_WARN_ON(chanb, (offset & (chanb->buf_size - 1)) + len > chanb->buf_size);
+	backend_pages = lib_ring_buffer_get_backend_pages_from_ctx(config, ctx);
+	if (caa_unlikely(!backend_pages)) {
+		if (lib_ring_buffer_backend_get_pages(config, ctx, &backend_pages))
+			return;
+	}
 	p = shmp_index(handle, backend_pages->p, offset & (chanb->subbuf_size - 1));
 	if (caa_unlikely(!p))
 		return;
@@ -159,47 +147,46 @@ void lib_ring_buffer_strcpy(const struct lttng_ust_lib_ring_buffer_config *confi
 			   struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			   const char *src, size_t len, int pad)
 {
-	struct lttng_ust_lib_ring_buffer_backend *bufb = &ctx->buf->backend;
 	struct channel_backend *chanb = &ctx->chan->backend;
 	struct lttng_ust_shm_handle *handle = ctx->handle;
-	size_t sbidx, count;
+	size_t count;
 	size_t offset = ctx->buf_offset;
-	struct lttng_ust_lib_ring_buffer_backend_pages_shmp *rpages;
-	unsigned long sb_bindex, id;
+	struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
+	void *p;
 
 	if (caa_unlikely(!len))
 		return;
-	offset &= chanb->buf_size - 1;
-	sbidx = offset >> chanb->subbuf_size_order;
-	id = shmp_index(handle, bufb->buf_wsb, sbidx)->id;
-	sb_bindex = subbuffer_id_get_index(config, id);
-	rpages = shmp_index(handle, bufb->array, sb_bindex);
-	CHAN_WARN_ON(ctx->chan,
-		     config->mode == RING_BUFFER_OVERWRITE
-		     && subbuffer_id_is_noref(config, id));
 	/*
 	 * Underlying layer should never ask for writes across
 	 * subbuffers.
 	 */
-	CHAN_WARN_ON(chanb, offset >= chanb->buf_size);
-	count = lib_ring_buffer_do_strcpy(config,
-			shmp_index(handle, shmp(handle, rpages->shmp)->p,
-				offset & (chanb->subbuf_size - 1)),
-			src, len - 1);
+	CHAN_WARN_ON(chanb, (offset & (chanb->buf_size - 1)) + len > chanb->buf_size);
+	backend_pages = lib_ring_buffer_get_backend_pages_from_ctx(config, ctx);
+	if (caa_unlikely(!backend_pages)) {
+		if (lib_ring_buffer_backend_get_pages(config, ctx, &backend_pages))
+			return;
+	}
+	p = shmp_index(handle, backend_pages->p, offset & (chanb->subbuf_size - 1));
+	if (caa_unlikely(!p))
+		return;
+
+	count = lib_ring_buffer_do_strcpy(config, p, src, len - 1);
 	offset += count;
 	/* Padding */
 	if (caa_unlikely(count < len - 1)) {
 		size_t pad_len = len - 1 - count;
 
-		lib_ring_buffer_do_memset(shmp_index(handle, shmp(handle, rpages->shmp)->p,
-				offset & (chanb->subbuf_size - 1)),
-			pad, pad_len);
+		p = shmp_index(handle, backend_pages->p, offset & (chanb->subbuf_size - 1));
+		if (caa_unlikely(!p))
+			return;
+		lib_ring_buffer_do_memset(p, pad, pad_len);
 		offset += pad_len;
 	}
 	/* Final '\0' */
-	lib_ring_buffer_do_memset(shmp_index(handle, shmp(handle, rpages->shmp)->p,
-				offset & (chanb->subbuf_size - 1)),
-			'\0', 1);
+	p = shmp_index(handle, backend_pages->p, offset & (chanb->subbuf_size - 1));
+	if (caa_unlikely(!p))
+		return;
+	lib_ring_buffer_do_memset(p, '\0', 1);
 	ctx->buf_offset += len;
 }
 

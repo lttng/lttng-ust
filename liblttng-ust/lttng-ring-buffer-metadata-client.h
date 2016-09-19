@@ -240,7 +240,18 @@ void lttng_channel_destroy(struct lttng_channel *chan)
 static
 int lttng_event_reserve(struct lttng_ust_lib_ring_buffer_ctx *ctx, uint32_t event_id)
 {
-	return lib_ring_buffer_reserve(&client_config, ctx);
+	int ret;
+
+	ret = lib_ring_buffer_reserve(&client_config, ctx);
+	if (ret)
+		return ret;
+	if (caa_likely(ctx->ctx_len
+			>= sizeof(struct lttng_ust_lib_ring_buffer_ctx))) {
+		if (lib_ring_buffer_backend_get_pages(&client_config, ctx,
+				&ctx->backend_pages))
+			return -EPERM;
+	}
+	return 0;
 }
 
 static
