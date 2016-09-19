@@ -83,6 +83,8 @@ void lib_ring_buffer_write(const struct lttng_ust_lib_ring_buffer_config *config
 	size_t offset = ctx->buf_offset;
 	struct lttng_ust_lib_ring_buffer_backend_pages_shmp *rpages;
 	unsigned long sb_bindex, id;
+	struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
+	void *p;
 
 	if (caa_unlikely(!len))
 		return;
@@ -91,6 +93,8 @@ void lib_ring_buffer_write(const struct lttng_ust_lib_ring_buffer_config *config
 	id = shmp_index(handle, bufb->buf_wsb, sbidx)->id;
 	sb_bindex = subbuffer_id_get_index(config, id);
 	rpages = shmp_index(handle, bufb->array, sb_bindex);
+	if (caa_unlikely(!rpages))
+		return;
 	CHAN_WARN_ON(ctx->chan,
 		     config->mode == RING_BUFFER_OVERWRITE
 		     && subbuffer_id_is_noref(config, id));
@@ -99,9 +103,13 @@ void lib_ring_buffer_write(const struct lttng_ust_lib_ring_buffer_config *config
 	 * subbuffers.
 	 */
 	CHAN_WARN_ON(chanb, offset >= chanb->buf_size);
-	lib_ring_buffer_do_copy(config,
-				shmp_index(handle, shmp(handle, rpages->shmp)->p, offset & (chanb->subbuf_size - 1)),
-				src, len);
+	backend_pages = shmp(handle, rpages->shmp);
+	if (caa_unlikely(!backend_pages))
+		return;
+	p = shmp_index(handle, backend_pages->p, offset & (chanb->subbuf_size - 1));
+	if (caa_unlikely(!p))
+		return;
+	lib_ring_buffer_do_copy(config, p, src, len);
 	ctx->buf_offset += len;
 }
 
@@ -207,21 +215,42 @@ unsigned long lib_ring_buffer_get_records_unread(
 				struct lttng_ust_shm_handle *handle)
 {
 	struct lttng_ust_lib_ring_buffer_backend *bufb = &buf->backend;
-	struct lttng_ust_lib_ring_buffer_backend_pages_shmp *pages;
-	unsigned long records_unread = 0, sb_bindex, id;
+	unsigned long records_unread = 0, sb_bindex;
 	unsigned int i;
+	struct channel *chan;
 
-	for (i = 0; i < shmp(handle, bufb->chan)->backend.num_subbuf; i++) {
-		id = shmp_index(handle, bufb->buf_wsb, i)->id;
-		sb_bindex = subbuffer_id_get_index(config, id);
-		pages = shmp_index(handle, bufb->array, sb_bindex);
-		records_unread += v_read(config, &shmp(handle, pages->shmp)->records_unread);
+	chan = shmp(handle, bufb->chan);
+	if (!chan)
+		return 0;
+	for (i = 0; i < chan->backend.num_subbuf; i++) {
+		struct lttng_ust_lib_ring_buffer_backend_subbuffer *wsb;
+		struct lttng_ust_lib_ring_buffer_backend_pages_shmp *rpages;
+		struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
+
+		wsb = shmp_index(handle, bufb->buf_wsb, i);
+		if (!wsb)
+			return 0;
+		sb_bindex = subbuffer_id_get_index(config, wsb->id);
+		rpages = shmp_index(handle, bufb->array, sb_bindex);
+		if (!rpages)
+			return 0;
+		backend_pages = shmp(handle, rpages->shmp);
+		if (!backend_pages)
+			return 0;
+		records_unread += v_read(config, &backend_pages->records_unread);
 	}
 	if (config->mode == RING_BUFFER_OVERWRITE) {
-		id = bufb->buf_rsb.id;
-		sb_bindex = subbuffer_id_get_index(config, id);
-		pages = shmp_index(handle, bufb->array, sb_bindex);
-		records_unread += v_read(config, &shmp(handle, pages->shmp)->records_unread);
+		struct lttng_ust_lib_ring_buffer_backend_pages_shmp *rpages;
+		struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
+
+		sb_bindex = subbuffer_id_get_index(config, bufb->buf_rsb.id);
+		rpages = shmp_index(handle, bufb->array, sb_bindex);
+		if (!rpages)
+			return 0;
+		backend_pages = shmp(handle, rpages->shmp);
+		if (!backend_pages)
+			return 0;
+		records_unread += v_read(config, &backend_pages->records_unread);
 	}
 	return records_unread;
 }

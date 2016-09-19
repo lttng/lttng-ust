@@ -162,9 +162,14 @@ static inline
 void lib_ring_buffer_put_next_subbuf(struct lttng_ust_lib_ring_buffer *buf,
 				     struct lttng_ust_shm_handle *handle)
 {
+	struct channel *chan;
+
+	chan = shmp(handle, buf->backend.chan);
+	if (!chan)
+		return;
 	lib_ring_buffer_put_subbuf(buf, handle);
-	lib_ring_buffer_move_consumer(buf, subbuf_align(buf->cons_snapshot,
-							shmp(handle, buf->backend.chan)), handle);
+	lib_ring_buffer_move_consumer(buf, subbuf_align(buf->cons_snapshot, chan),
+			handle);
 }
 
 extern void channel_reset(struct channel *chan);

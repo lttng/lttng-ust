@@ -167,7 +167,7 @@ void lib_ring_buffer_reset(struct lttng_ust_lib_ring_buffer *buf,
 
 	chan = shmp(handle, buf->backend.chan);
 	if (!chan)
-		abort();
+		return;
 	config = &chan->backend.config;
 	/*
 	 * Reset iterator first. It will put the subbuffer if it currently holds
@@ -175,9 +175,18 @@ void lib_ring_buffer_reset(struct lttng_ust_lib_ring_buffer *buf,
 	 */
 	v_set(config, &buf->offset, 0);
 	for (i = 0; i < chan->backend.num_subbuf; i++) {
-		v_set(config, &shmp_index(handle, buf->commit_hot, i)->cc, 0);
-		v_set(config, &shmp_index(handle, buf->commit_hot, i)->seq, 0);
-		v_set(config, &shmp_index(handle, buf->commit_cold, i)->cc_sb, 0);
+		struct commit_counters_hot *cc_hot;
+		struct commit_counters_cold *cc_cold;
+
+		cc_hot = shmp_index(handle, buf->commit_hot, i);
+		if (!cc_hot)
+			return;
+		cc_cold = shmp_index(handle, buf->commit_cold, i);
+		if (!cc_cold)
+			return;
+		v_set(config, &cc_hot->cc, 0);
+		v_set(config, &cc_hot->seq, 0);
+		v_set(config, &cc_cold->cc_sb, 0);
 	}
 	uatomic_set(&buf->consumed, 0);
 	uatomic_set(&buf->record_disabled, 0);
@@ -313,6 +322,9 @@ int lib_ring_buffer_create(struct lttng_ust_lib_ring_buffer *buf,
 {
 	const struct lttng_ust_lib_ring_buffer_config *config = &chanb->config;
 	struct channel *chan = caa_container_of(chanb, struct channel, backend);
+	struct lttng_ust_lib_ring_buffer_backend_subbuffer *wsb;
+	struct channel *shmp_chan;
+	struct commit_counters_hot *cc_hot;
 	void *priv = channel_get_private(chan);
 	size_t subbuf_header_size;
 	uint64_t tsc;
@@ -351,11 +363,26 @@ int lib_ring_buffer_create(struct lttng_ust_lib_ring_buffer *buf,
 	 */
 	subbuf_header_size = config->cb.subbuffer_header_size();
 	v_set(config, &buf->offset, subbuf_header_size);
-	subbuffer_id_clear_noref(config, &shmp_index(handle, buf->backend.buf_wsb, 0)->id);
-	tsc = config->cb.ring_buffer_clock_read(shmp(handle, buf->backend.chan));
+	wsb = shmp_index(handle, buf->backend.buf_wsb, 0);
+	if (!wsb) {
+		ret = -EPERM;
+		goto free_chanbuf;
+	}
+	subbuffer_id_clear_noref(config, &wsb->id);
+	shmp_chan = shmp(handle, buf->backend.chan);
+	if (!shmp_chan) {
+		ret = -EPERM;
+		goto free_chanbuf;
+	}
+	tsc = config->cb.ring_buffer_clock_read(shmp_chan);
 	config->cb.buffer_begin(buf, tsc, 0, handle);
-	v_add(config, subbuf_header_size, &shmp_index(handle, buf->commit_hot, 0)->cc);
-	v_add(config, subbuf_header_size, &shmp_index(handle, buf->commit_hot, 0)->seq);
+	cc_hot = shmp_index(handle, buf->commit_hot, 0);
+	if (!cc_hot) {
+		ret = -EPERM;
+		goto free_chanbuf;
+	}
+	v_add(config, subbuf_header_size, &cc_hot->cc);
+	v_add(config, subbuf_header_size, &cc_hot->seq);
 
 	if (config->cb.buffer_create) {
 		ret = config->cb.buffer_create(buf, priv, cpu, chanb->name, handle);
@@ -403,7 +430,7 @@ void lib_ring_buffer_channel_switch_timer(int sig, siginfo_t *si, void *uc)
 				shmp(handle, chan->backend.buf[cpu].shmp);
 
 			if (!buf)
-				abort();
+				goto end;
 			if (uatomic_read(&buf->active_readers))
 				lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE,
 					chan->handle);
@@ -413,11 +440,12 @@ void lib_ring_buffer_channel_switch_timer(int sig, siginfo_t *si, void *uc)
 			shmp(handle, chan->backend.buf[0].shmp);
 
 		if (!buf)
-			abort();
+			goto end;
 		if (uatomic_read(&buf->active_readers))
 			lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE,
 				chan->handle);
 	}
+end:
 	pthread_mutex_unlock(&wakeup_fd_mutex);
 	return;
 }
@@ -429,10 +457,14 @@ int lib_ring_buffer_poll_deliver(const struct lttng_ust_lib_ring_buffer_config *
 				 struct lttng_ust_shm_handle *handle)
 {
 	unsigned long consumed_old, consumed_idx, commit_count, write_offset;
+	struct commit_counters_cold *cc_cold;
 
 	consumed_old = uatomic_read(&buf->consumed);
 	consumed_idx = subbuf_index(consumed_old, chan);
-	commit_count = v_read(config, &shmp_index(handle, buf->commit_cold, consumed_idx)->cc_sb);
+	cc_cold = shmp_index(handle, buf->commit_cold, consumed_idx);
+	if (!cc_cold)
+		return 0;
+	commit_count = v_read(config, &cc_cold->cc_sb);
 	/*
 	 * No memory barrier here, since we are only interested
 	 * in a statistically correct polling result. The next poll will
@@ -549,7 +581,7 @@ void lib_ring_buffer_channel_do_read(struct channel *chan)
 				shmp(handle, chan->backend.buf[cpu].shmp);
 
 			if (!buf)
-				abort();
+				goto end;
 			if (uatomic_read(&buf->active_readers)
 			    && lib_ring_buffer_poll_deliver(config, buf,
 					chan, handle)) {
@@ -561,13 +593,14 @@ void lib_ring_buffer_channel_do_read(struct channel *chan)
 			shmp(handle, chan->backend.buf[0].shmp);
 
 		if (!buf)
-			abort();
+			goto end;
 		if (uatomic_read(&buf->active_readers)
 		    && lib_ring_buffer_poll_deliver(config, buf,
 				chan, handle)) {
 			lib_ring_buffer_wakeup(buf, handle);
 		}
 	}
+end:
 	pthread_mutex_unlock(&wakeup_fd_mutex);
 }
 
@@ -855,13 +888,15 @@ static void channel_print_errors(struct channel *chan,
 		for_each_possible_cpu(cpu) {
 			struct lttng_ust_lib_ring_buffer *buf =
 				shmp(handle, chan->backend.buf[cpu].shmp);
-			lib_ring_buffer_print_errors(chan, buf, cpu, handle);
+			if (buf)
+				lib_ring_buffer_print_errors(chan, buf, cpu, handle);
 		}
 	} else {
 		struct lttng_ust_lib_ring_buffer *buf =
 			shmp(handle, chan->backend.buf[0].shmp);
 
-		lib_ring_buffer_print_errors(chan, buf, -1, handle);
+		if (buf)
+			lib_ring_buffer_print_errors(chan, buf, -1, handle);
 	}
 }
 
@@ -1188,6 +1223,8 @@ void lib_ring_buffer_release_read(struct lttng_ust_lib_ring_buffer *buf,
 {
 	struct channel *chan = shmp(handle, buf->backend.chan);
 
+	if (!chan)
+		return;
 	CHAN_WARN_ON(chan, uatomic_read(&buf->active_readers) != 1);
 	cmm_smp_mb();
 	uatomic_dec(&buf->active_readers);
@@ -1207,11 +1244,15 @@ int lib_ring_buffer_snapshot(struct lttng_ust_lib_ring_buffer *buf,
 			     unsigned long *consumed, unsigned long *produced,
 			     struct lttng_ust_shm_handle *handle)
 {
-	struct channel *chan = shmp(handle, buf->backend.chan);
-	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
+	struct channel *chan;
+	const struct lttng_ust_lib_ring_buffer_config *config;
 	unsigned long consumed_cur, write_offset;
 	int finalized;
 
+	chan = shmp(handle, buf->backend.chan);
+	if (!chan)
+		return -EPERM;
+	config = &chan->backend.config;
 	finalized = CMM_ACCESS_ONCE(buf->finalized);
 	/*
 	 * Read finalized before counters.
@@ -1262,9 +1303,12 @@ void lib_ring_buffer_move_consumer(struct lttng_ust_lib_ring_buffer *buf,
 				   struct lttng_ust_shm_handle *handle)
 {
 	struct lttng_ust_lib_ring_buffer_backend *bufb = &buf->backend;
-	struct channel *chan = shmp(handle, bufb->chan);
+	struct channel *chan;
 	unsigned long consumed;
 
+	chan = shmp(handle, bufb->chan);
+	if (!chan)
+		return;
 	CHAN_WARN_ON(chan, uatomic_read(&buf->active_readers) != 1);
 
 	/*
@@ -1290,11 +1334,16 @@ int lib_ring_buffer_get_subbuf(struct lttng_ust_lib_ring_buffer *buf,
 			       unsigned long consumed,
 			       struct lttng_ust_shm_handle *handle)
 {
-	struct channel *chan = shmp(handle, buf->backend.chan);
-	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
+	struct channel *chan;
+	const struct lttng_ust_lib_ring_buffer_config *config;
 	unsigned long consumed_cur, consumed_idx, commit_count, write_offset;
 	int ret, finalized, nr_retry = LTTNG_UST_RING_BUFFER_GET_RETRY;
+	struct commit_counters_cold *cc_cold;
 
+	chan = shmp(handle, buf->backend.chan);
+	if (!chan)
+		return -EPERM;
+	config = &chan->backend.config;
 retry:
 	finalized = CMM_ACCESS_ONCE(buf->finalized);
 	/*
@@ -1303,7 +1352,10 @@ retry:
 	cmm_smp_rmb();
 	consumed_cur = uatomic_read(&buf->consumed);
 	consumed_idx = subbuf_index(consumed, chan);
-	commit_count = v_read(config, &shmp_index(handle, buf->commit_cold, consumed_idx)->cc_sb);
+	cc_cold = shmp_index(handle, buf->commit_cold, consumed_idx);
+	if (!cc_cold)
+		return -EPERM;
+	commit_count = v_read(config, &cc_cold->cc_sb);
 	/*
 	 * Make sure we read the commit count before reading the buffer
 	 * data and the write offset. Correct consumed offset ordering
@@ -1446,10 +1498,16 @@ void lib_ring_buffer_put_subbuf(struct lttng_ust_lib_ring_buffer *buf,
 				struct lttng_ust_shm_handle *handle)
 {
 	struct lttng_ust_lib_ring_buffer_backend *bufb = &buf->backend;
-	struct channel *chan = shmp(handle, bufb->chan);
-	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
-	unsigned long read_sb_bindex, consumed_idx, consumed;
+	struct channel *chan;
+	const struct lttng_ust_lib_ring_buffer_config *config;
+	unsigned long sb_bindex, consumed_idx, consumed;
+	struct lttng_ust_lib_ring_buffer_backend_pages_shmp *rpages;
+	struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
 
+	chan = shmp(handle, bufb->chan);
+	if (!chan)
+		return;
+	config = &chan->backend.config;
 	CHAN_WARN_ON(chan, uatomic_read(&buf->active_readers) != 1);
 
 	if (!buf->get_subbuf) {
@@ -1469,11 +1527,16 @@ void lib_ring_buffer_put_subbuf(struct lttng_ust_lib_ring_buffer *buf,
 	 * Can be below zero if an iterator is used on a snapshot more than
 	 * once.
 	 */
-	read_sb_bindex = subbuffer_id_get_index(config, bufb->buf_rsb.id);
-	v_add(config, v_read(config,
-			     &shmp(handle, shmp_index(handle, bufb->array, read_sb_bindex)->shmp)->records_unread),
-	      &bufb->records_read);
-	v_set(config, &shmp(handle, shmp_index(handle, bufb->array, read_sb_bindex)->shmp)->records_unread, 0);
+	sb_bindex = subbuffer_id_get_index(config, bufb->buf_rsb.id);
+	rpages = shmp_index(handle, bufb->array, sb_bindex);
+	if (!rpages)
+		return;
+	backend_pages = shmp(handle, rpages->shmp);
+	if (!backend_pages)
+		return;
+	v_add(config, v_read(config, &backend_pages->records_unread),
+			&bufb->records_read);
+	v_set(config, &backend_pages->records_unread, 0);
 	CHAN_WARN_ON(chan, config->mode == RING_BUFFER_OVERWRITE
 		     && subbuffer_id_is_noref(config, bufb->buf_rsb.id));
 	subbuffer_id_set_noref(config, &bufb->buf_rsb.id);
@@ -1509,10 +1572,18 @@ void lib_ring_buffer_print_subbuffer_errors(struct lttng_ust_lib_ring_buffer *bu
 {
 	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
 	unsigned long cons_idx, commit_count, commit_count_sb;
+	struct commit_counters_hot *cc_hot;
+	struct commit_counters_cold *cc_cold;
 
 	cons_idx = subbuf_index(cons_offset, chan);
-	commit_count = v_read(config, &shmp_index(handle, buf->commit_hot, cons_idx)->cc);
-	commit_count_sb = v_read(config, &shmp_index(handle, buf->commit_cold, cons_idx)->cc_sb);
+	cc_hot = shmp_index(handle, buf->commit_hot, cons_idx);
+	if (!cc_hot)
+		return;
+	cc_cold = shmp_index(handle, buf->commit_cold, cons_idx);
+	if (!cc_cold)
+		return;
+	commit_count = v_read(config, &cc_hot->cc);
+	commit_count_sb = v_read(config, &cc_cold->cc_sb);
 
 	if (subbuf_offset(commit_count, chan) != 0)
 		DBG("ring buffer %s, cpu %d: "
@@ -1619,6 +1690,8 @@ void lib_ring_buffer_switch_old_start(struct lttng_ust_lib_ring_buffer *buf,
 	 */
 	cmm_smp_wmb();
 	cc_hot = shmp_index(handle, buf->commit_hot, oldidx);
+	if (!cc_hot)
+		return;
 	v_add(config, config->cb.subbuffer_header_size(),
 	      &cc_hot->cc);
 	commit_count = v_read(config, &cc_hot->cc);
@@ -1661,6 +1734,8 @@ void lib_ring_buffer_switch_old_end(struct lttng_ust_lib_ring_buffer *buf,
 	 */
 	cmm_smp_wmb();
 	cc_hot = shmp_index(handle, buf->commit_hot, oldidx);
+	if (!cc_hot)
+		return;
 	v_add(config, padding_size, &cc_hot->cc);
 	commit_count = v_read(config, &cc_hot->cc);
 	lib_ring_buffer_check_deliver(config, buf, chan, offsets->old - 1,
@@ -1696,9 +1771,10 @@ void lib_ring_buffer_switch_new_start(struct lttng_ust_lib_ring_buffer *buf,
 	 * determine that the subbuffer is full.
 	 */
 	cmm_smp_wmb();
-	v_add(config, config->cb.subbuffer_header_size(),
-	      &shmp_index(handle, buf->commit_hot, beginidx)->cc);
 	cc_hot = shmp_index(handle, buf->commit_hot, beginidx);
+	if (!cc_hot)
+		return;
+	v_add(config, config->cb.subbuffer_header_size(), &cc_hot->cc);
 	commit_count = v_read(config, &cc_hot->cc);
 	/* Check if the written buffer has to be delivered */
 	lib_ring_buffer_check_deliver(config, buf, chan, offsets->begin,
@@ -1776,6 +1852,7 @@ int lib_ring_buffer_try_switch_slow(enum switch_mode mode,
 
 	if (caa_unlikely(off == 0)) {
 		unsigned long sb_index, commit_count;
+		struct commit_counters_cold *cc_cold;
 
 		/*
 		 * We are performing a SWITCH_FLUSH. There may be concurrent
@@ -1792,9 +1869,10 @@ int lib_ring_buffer_try_switch_slow(enum switch_mode mode,
 
 		/* Test new buffer integrity */
 		sb_index = subbuf_index(offsets->begin, chan);
-		commit_count = v_read(config,
-				&shmp_index(handle, buf->commit_cold,
-					sb_index)->cc_sb);
+		cc_cold = shmp_index(handle, buf->commit_cold, sb_index);
+		if (!cc_cold)
+			return -1;
+		commit_count = v_read(config, &cc_cold->cc_sb);
 		reserve_commit_diff =
 		  (buf_trunc(offsets->begin, chan)
 		   >> chan->backend.num_subbuf_order)
@@ -1852,11 +1930,16 @@ int lib_ring_buffer_try_switch_slow(enum switch_mode mode,
 void lib_ring_buffer_switch_slow(struct lttng_ust_lib_ring_buffer *buf, enum switch_mode mode,
 				 struct lttng_ust_shm_handle *handle)
 {
-	struct channel *chan = shmp(handle, buf->backend.chan);
-	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
+	struct channel *chan;
+	const struct lttng_ust_lib_ring_buffer_config *config;
 	struct switch_offsets offsets;
 	unsigned long oldidx;
 	uint64_t tsc;
+
+	chan = shmp(handle, buf->backend.chan);
+	if (!chan)
+		return;
+	config = &chan->backend.config;
 
 	offsets.size = 0;
 
@@ -1951,6 +2034,7 @@ retry:
 	}
 	if (caa_unlikely(offsets->switch_new_start)) {
 		unsigned long sb_index, commit_count;
+		struct commit_counters_cold *cc_cold;
 
 		/*
 		 * We are typically not filling the previous buffer completely.
@@ -1969,9 +2053,10 @@ retry:
 		 * are not seen reordered when updated by another CPU.
 		 */
 		cmm_smp_rmb();
-		commit_count = v_read(config,
-				&shmp_index(handle, buf->commit_cold,
-					sb_index)->cc_sb);
+		cc_cold = shmp_index(handle, buf->commit_cold, sb_index);
+		if (!cc_cold)
+			return -1;
+		commit_count = v_read(config, &cc_cold->cc_sb);
 		/* Read buf->commit_cold[sb_index].cc_sb before buf->offset. */
 		cmm_smp_rmb();
 		if (caa_unlikely(offset_cmp != v_read(config, &buf->offset))) {
@@ -2106,6 +2191,8 @@ int lib_ring_buffer_reserve_slow(struct lttng_ust_lib_ring_buffer_ctx *ctx)
 		buf = shmp(handle, chan->backend.buf[ctx->cpu].shmp);
 	else
 		buf = shmp(handle, chan->backend.buf[0].shmp);
+	if (!buf)
+		return -EIO;
 	ctx->buf = buf;
 
 	offsets.size = 0;
@@ -2171,8 +2258,14 @@ void lib_ring_buffer_vmcore_check_deliver(const struct lttng_ust_lib_ring_buffer
 				          unsigned long idx,
 					  struct lttng_ust_shm_handle *handle)
 {
-	if (config->oops == RING_BUFFER_OOPS_CONSISTENCY)
-		v_set(config, &shmp_index(handle, buf->commit_hot, idx)->seq, commit_count);
+	struct commit_counters_hot *cc_hot;
+
+	if (config->oops != RING_BUFFER_OOPS_CONSISTENCY)
+		return;
+	cc_hot = shmp_index(handle, buf->commit_hot, idx);
+	if (!cc_hot)
+		return;
+	v_set(config, &cc_hot->seq, commit_count);
 }
 
 /*
@@ -2214,6 +2307,7 @@ void lib_ring_buffer_check_deliver_slow(const struct lttng_ust_lib_ring_buffer_c
 {
 	unsigned long old_commit_count = commit_count
 					 - chan->backend.subbuf_size;
+	struct commit_counters_cold *cc_cold;
 
 	/*
 	 * If we succeeded at updating cc_sb below, we are the subbuffer
@@ -2247,7 +2341,10 @@ void lib_ring_buffer_check_deliver_slow(const struct lttng_ust_lib_ring_buffer_c
 	 * commit_cold cc_sb update.
 	 */
 	cmm_smp_wmb();
-	if (caa_likely(v_cmpxchg(config, &shmp_index(handle, buf->commit_cold, idx)->cc_sb,
+	cc_cold = shmp_index(handle, buf->commit_cold, idx);
+	if (!cc_cold)
+		return;
+	if (caa_likely(v_cmpxchg(config, &cc_cold->cc_sb,
 				 old_commit_count, old_commit_count + 1)
 		   == old_commit_count)) {
 		/*
@@ -2286,8 +2383,7 @@ void lib_ring_buffer_check_deliver_slow(const struct lttng_ust_lib_ring_buffer_c
 		 */
 		cmm_smp_mb();
 		/* End of exclusive subbuffer access */
-		v_set(config, &shmp_index(handle, buf->commit_cold, idx)->cc_sb,
-		      commit_count);
+		v_set(config, &cc_cold->cc_sb, commit_count);
 		/*
 		 * Order later updates to reserve count after
 		 * the commit cold cc_sb update.

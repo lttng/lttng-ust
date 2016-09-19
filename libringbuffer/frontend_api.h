@@ -167,6 +167,8 @@ int lib_ring_buffer_reserve(const struct lttng_ust_lib_ring_buffer_config *confi
 		buf = shmp(handle, chan->backend.buf[ctx->cpu].shmp);
 	else
 		buf = shmp(handle, chan->backend.buf[0].shmp);
+	if (caa_unlikely(!buf))
+		return -EIO;
 	if (caa_unlikely(uatomic_read(&buf->record_disabled)))
 		return -EAGAIN;
 	ctx->buf = buf;
@@ -253,10 +255,13 @@ void lib_ring_buffer_commit(const struct lttng_ust_lib_ring_buffer_config *confi
 	struct commit_counters_hot *cc_hot = shmp_index(handle,
 						buf->commit_hot, endidx);
 
+	if (caa_unlikely(!cc_hot))
+		return;
+
 	/*
 	 * Must count record before incrementing the commit count.
 	 */
-	subbuffer_count_record(config, &buf->backend, endidx, handle);
+	subbuffer_count_record(config, ctx, &buf->backend, endidx, handle);
 
 	/*
 	 * Order all writes to buffer before the commit count update that will

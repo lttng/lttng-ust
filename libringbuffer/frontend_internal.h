@@ -233,9 +233,13 @@ int lib_ring_buffer_reserve_committed(const struct lttng_ust_lib_ring_buffer_con
 				      struct lttng_ust_shm_handle *handle)
 {
 	unsigned long offset, idx, commit_count;
+	struct commit_counters_hot *cc_hot = shmp_index(handle, buf->commit_hot, idx);
 
 	CHAN_WARN_ON(chan, config->alloc != RING_BUFFER_ALLOC_PER_CPU);
 	CHAN_WARN_ON(chan, config->sync != RING_BUFFER_SYNC_PER_CPU);
+
+	if (caa_unlikely(!cc_hot))
+		return 0;
 
 	/*
 	 * Read offset and commit count in a loop so they are both read
@@ -248,7 +252,7 @@ int lib_ring_buffer_reserve_committed(const struct lttng_ust_lib_ring_buffer_con
 	do {
 		offset = v_read(config, &buf->offset);
 		idx = subbuf_index(offset, chan);
-		commit_count = v_read(config, &shmp_index(handle, buf->commit_hot, idx)->cc);
+		commit_count = v_read(config, &cc_hot->cc);
 	} while (offset != v_read(config, &buf->offset));
 
 	return ((buf_trunc(offset, chan) >> chan->backend.num_subbuf_order)
