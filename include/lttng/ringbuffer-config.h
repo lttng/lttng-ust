@@ -256,10 +256,21 @@ struct lttng_ust_lib_ring_buffer_ctx {
 					 */
 	uint64_t tsc;			/* time-stamp counter value */
 	unsigned int rflags;		/* reservation flags */
-	unsigned int padding1;		/* padding to realign on pointer */
+	/*
+	 * The field ctx_len is the length of struct
+	 * lttng_ust_lib_ring_buffer_ctx as known by the user of
+	 * lib_ring_buffer_ctx_init.
+	 */
+	unsigned int ctx_len;
 	void *ip;			/* caller ip address */
 	void *priv2;			/* 2nd priv data */
 	char padding2[LTTNG_UST_RING_BUFFER_CTX_PADDING];
+	/*
+	 * This is the end of the initial fields expected by the original ABI
+	 * between probes and UST. Only the fields above can be used if
+	 * ctx_len is 0. Use the value of ctx_len to find out which of the
+	 * following fields may be used.
+	 */
 };
 
 /**
@@ -291,7 +302,7 @@ void lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 	ctx->cpu = cpu;
 	ctx->rflags = 0;
 	ctx->handle = handle;
-	ctx->padding1 = 0;
+	ctx->ctx_len = sizeof(struct lttng_ust_lib_ring_buffer_ctx);
 	ctx->ip = 0;
 	ctx->priv2 = priv2;
 	memset(ctx->padding2, 0, LTTNG_UST_RING_BUFFER_CTX_PADDING);
