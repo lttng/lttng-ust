@@ -194,6 +194,8 @@ int lttng_probe_register(struct lttng_probe_desc *desc)
 {
 	int ret = 0;
 
+	lttng_ust_fixup_tls();
+
 	/*
 	 * If version mismatch, don't register, but don't trigger assert
 	 * on caller. The version check just prints an error.
@@ -234,6 +236,8 @@ int ltt_probe_register(struct lttng_probe_desc *desc)
 
 void lttng_probe_unregister(struct lttng_probe_desc *desc)
 {
+	lttng_ust_fixup_tls();
+
 	if (!check_provider_version(desc))
 		return;
 

@@ -62,5 +62,6 @@ void lttng_ust_dummy_record(struct lttng_ctx_field *field,
 void lttng_ust_dummy_get_value(struct lttng_ctx_field *field,
 		struct lttng_ctx_value *value);
 int lttng_context_is_app(const char *name);
+void lttng_ust_fixup_tls(void);
 
 #endif /* _LTTNG_TRACER_CORE_H */
