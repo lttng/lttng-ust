@@ -218,6 +218,12 @@ int do_baddr_statedump(void *owner)
 	if (getenv("LTTNG_UST_WITHOUT_BADDR_STATEDUMP"))
 		return 0;
 
+	/*
+	 * Fixup lttng-ust TLS when called from dlopen/dlclose
+	 * instrumentation.
+	 */
+	lttng_ust_fixup_tls();
+
 	data.owner = owner;
 	data.exec_found = 0;
 	/*

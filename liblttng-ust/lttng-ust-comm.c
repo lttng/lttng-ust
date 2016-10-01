@@ -370,6 +370,16 @@ void lttng_fixup_urcu_bp_tls(void)
 	rcu_read_unlock();
 }
 
+void lttng_ust_fixup_tls(void)
+{
+	lttng_fixup_urcu_bp_tls();
+	lttng_fixup_ringbuffer_tls();
+	lttng_fixup_vtid_tls();
+	lttng_fixup_nest_count_tls();
+	lttng_fixup_procname_tls();
+	lttng_fixup_ust_mutex_nest_tls();
+}
+
 int lttng_get_notify_socket(void *owner)
 {
 	struct sock_info *info = owner;
@@ -1218,6 +1228,8 @@ void *ust_listener_thread(void *arg)
 	int sock, ret, prev_connect_failed = 0, has_waited = 0;
 	long timeout;
 
+	lttng_ust_fixup_tls();
+
 	/* Restart trying to connect to the session daemon */
 restart:
 	if (prev_connect_failed) {
@@ -1481,12 +1493,7 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	 * to be the dynamic linker mutex) and ust_lock, taken within
 	 * the ust lock.
 	 */
-	lttng_fixup_urcu_bp_tls();
-	lttng_fixup_ringbuffer_tls();
-	lttng_fixup_vtid_tls();
-	lttng_fixup_nest_count_tls();
-	lttng_fixup_procname_tls();
-	lttng_fixup_ust_mutex_nest_tls();
+	lttng_ust_fixup_tls();
 
 	/*
 	 * We want precise control over the order in which we construct
@@ -1716,6 +1723,9 @@ void ust_before_fork(sigset_t *save_sigset)
          */
 	sigset_t all_sigs;
 	int ret;
+
+	/* Fixup lttng-ust TLS. */
+	lttng_ust_fixup_tls();
 
 	if (URCU_TLS(lttng_ust_nest_count))
 		return;
