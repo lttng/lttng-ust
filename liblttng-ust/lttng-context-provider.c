@@ -68,6 +68,8 @@ int lttng_ust_context_provider_register(struct lttng_ust_context_provider *provi
 	uint32_t hash;
 	int ret = 0;
 
+	lttng_ust_fixup_tls();
+
 	/* Provider name starts with "$app.". */
 	if (strncmp("$app.", provider->name, strlen("$app.") != 0))
 		return -EINVAL;
@@ -95,6 +97,8 @@ end:
 
 void lttng_ust_context_provider_unregister(struct lttng_ust_context_provider *provider)
 {
+	lttng_ust_fixup_tls();
+
 	if (ust_lock())
 		goto end;
 	lttng_ust_context_set_session_provider(provider->name,

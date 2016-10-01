@@ -551,6 +551,12 @@ void lttng_ust_dl_update(void *ip)
 	if (getenv("LTTNG_UST_WITHOUT_BADDR_STATEDUMP"))
 		return;
 
+	/*
+	 * Fixup lttng-ust TLS when called from dlopen/dlclose
+	 * instrumentation.
+	 */
+	lttng_ust_fixup_tls();
+
 	data.exec_found = 0;
 	data.first = true;
 	data.cancel = false;
