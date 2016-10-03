@@ -869,6 +869,21 @@ int handle_message(struct sock_info *sock_info,
 		}
 	}
 	DBG("Return value: %d", lur.ret_val);
+
+	ust_unlock();
+
+	/*
+	 * Performed delayed statedump operations outside of the UST
+	 * lock. We need to take the dynamic loader lock before we take
+	 * the UST lock internally within handle_pending_statedump().
+	  */
+	handle_pending_statedump(sock_info);
+
+	if (ust_lock()) {
+		ret = -LTTNG_UST_ERR_EXITING;
+		goto error;
+	}
+
 	ret = send_reply(sock, &lur);
 	if (ret < 0) {
 		DBG("error sending reply");
@@ -898,13 +913,6 @@ int handle_message(struct sock_info *sock_info,
 
 error:
 	ust_unlock();
-
-	/*
-	 * Performed delayed statedump operations outside of the UST
-	 * lock. We need to take the dynamic loader lock before we take
-	 * the UST lock internally within handle_pending_statedump().
-	  */
-	handle_pending_statedump(sock_info);
 
 	return ret;
 }
