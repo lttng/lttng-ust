@@ -34,7 +34,7 @@ dist_doc_examples_python_DATA = python/hello.py
 endif
 
 if HAVE_CMAKE
-if HAVE_CXX
+if CXX_WORKS
 SUBDIRS_CMAKE = cmake-multiple-shared-libraries
 endif
 endif
