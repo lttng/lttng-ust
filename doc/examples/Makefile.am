@@ -149,7 +149,13 @@ all-local:
 				cd $(SUBDIRS_CMAKE) && \
 				$(MKDIR_P) build && \
 				cd build && \
-				cmake -DCMAKE_INCLUDE_PATH="$(abs_top_srcdir)/include;$(abs_top_builddir)/include" -DCMAKE_LIBRARY_PATH="$(abs_top_builddir)/liblttng-ust/.libs" .. && \
+				cmake \
+				-DCMAKE_INCLUDE_PATH="$(abs_top_srcdir)/include;$(abs_top_builddir)/include" \
+				-DCMAKE_LIBRARY_PATH="$(abs_top_builddir)/liblttng-ust/.libs" \
+				-DCMAKE_C_FLAGS="$(CFLAGS) $(CPPFLAGS)" \
+				-DCMAKE_CXX_FLAGS="$(CXXFLAGS) $(CPPFLAGS)" \
+				-DCMAKE_EXE_LINKER_FLAGS="$(LDFLAGS)" \
+				.. && \
 				$(MAKE) && \
 				cd .. \
 			) || exit 1; \
