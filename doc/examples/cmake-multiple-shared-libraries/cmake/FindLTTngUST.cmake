@@ -45,9 +45,12 @@
 #  License text for the above reference.)
 
 find_path(LTTNGUST_INCLUDE_DIRS NAMES lttng/tracepoint.h)
+# Must also check for the path of generated header files since out-of-tree
+# build is a possibility (Yocto).
+find_path(LTTNGUST_INCLUDE_DIRS_GENERATED NAMES lttng/ust-config.h)
 find_library(LTTNGUST_LIBRARIES NAMES lttng-ust)
 
-if(LTTNGUST_INCLUDE_DIRS AND LTTNGUST_LIBRARIES)
+if(LTTNGUST_INCLUDE_DIRS AND LTTNGUST_INCLUDE_DIRS_GENERATED AND LTTNGUST_LIBRARIES)
   # find tracef() and tracelog() support
   set(LTTNGUST_HAS_TRACEF 0)
   set(LTTNGUST_HAS_TRACELOG 0)
@@ -61,7 +64,7 @@ if(LTTNGUST_INCLUDE_DIRS AND LTTNGUST_LIBRARIES)
   endif()
 
   # get version
-  set(lttngust_version_file "${LTTNGUST_INCLUDE_DIRS}/lttng/ust-version.h")
+  set(lttngust_version_file "${LTTNGUST_INCLUDE_DIRS_GENERATED}/lttng/ust-version.h")
 
   if(EXISTS "${lttngust_version_file}")
     file(STRINGS "${lttngust_version_file}" lttngust_version_major_string
@@ -84,6 +87,8 @@ if(LTTNGUST_INCLUDE_DIRS AND LTTNGUST_LIBRARIES)
     unset(lttngust_v_major)
     unset(lttngust_v_minor)
     unset(lttngust_v_patch)
+  else()
+    message(FATAL_ERROR "Missing version header")
   endif()
 
   unset(lttngust_version_file)
@@ -91,7 +96,7 @@ if(LTTNGUST_INCLUDE_DIRS AND LTTNGUST_LIBRARIES)
   if(NOT TARGET LTTng::UST)
     add_library(LTTng::UST UNKNOWN IMPORTED)
     set_target_properties(LTTng::UST PROPERTIES
-      INTERFACE_INCLUDE_DIRECTORIES "${LTTNGUST_INCLUDE_DIRS}"
+      INTERFACE_INCLUDE_DIRECTORIES "${LTTNGUST_INCLUDE_DIRS};${LTTNGUST_INCLUDE_DIRS_GENERATED}"
       INTERFACE_LINK_LIBRARIES ${CMAKE_DL_LIBS}
       IMPORTED_LINK_INTERFACE_LANGUAGES "C"
       IMPORTED_LOCATION "${LTTNGUST_LIBRARIES}")
