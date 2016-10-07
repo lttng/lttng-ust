@@ -5,11 +5,11 @@ dnl Version infos
 m4_define([V_MAJOR], [2])
 m4_define([V_MINOR], [9])
 m4_define([V_PATCH], [0])
-m4_define([V_EXTRA], [pre])
+m4_define([V_EXTRA], [rc1])
 m4_define([V_STRING], [V_MAJOR.V_MINOR.V_PATCH])
 m4_ifdef([V_EXTRA], [m4_append([V_STRING], [-V_EXTRA])])
-m4_define([V_NAME], [[J-TBD]])
-m4_define([V_DESC], [[]])
+m4_define([V_NAME], [[Joannès]])
+m4_define([V_DESC], [[Berliner Weisse style beer from the Trèfle Noir microbrewery in Rouyn-Noranda.]])
 
 AC_INIT([lttng-ust], V_STRING, [mathieu dot desnoyers at efficios dot com])
 
