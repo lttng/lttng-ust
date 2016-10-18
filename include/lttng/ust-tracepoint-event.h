@@ -839,9 +839,7 @@ LTTNG_TP_EXTERN_C const int *_loglevel___##__provider##___##__name	   \
 
 #include TRACEPOINT_INCLUDE
 
-#ifdef __cplusplus
 #undef LTTNG_TP_EXTERN_C
-#endif
 
 /*
  * Stage 6.1 of tracepoint event generation.
@@ -867,13 +865,11 @@ LTTNG_TP_EXTERN_C const int *_loglevel___##__provider##___##__name	   \
 #undef TRACEPOINT_MODEL_EMF_URI
 #define TRACEPOINT_MODEL_EMF_URI(__provider, __name, __uri)		   \
 LTTNG_TP_EXTERN_C const char *_model_emf_uri___##__provider##___##__name   \
-		__attribute__((visibility("hidden"))) = __uri		   \
+		__attribute__((visibility("hidden"))) = __uri;		   \
 
 #include TRACEPOINT_INCLUDE
 
-#ifdef __cplusplus
 #undef LTTNG_TP_EXTERN_C
-#endif
 
 /*
  * Stage 7.1 of tracepoint event generation.
