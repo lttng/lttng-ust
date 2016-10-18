@@ -818,13 +818,30 @@ static const char __tp_event_signature___##_provider##___##_name[] = 	\
 /* Reset all macros within TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 
+/*
+ * Declare _loglevel___##__provider##___##__name as non-static, with
+ * hidden visibility for c++ handling of weakref. We do a weakref to the
+ * symbol in a later stage, which requires that the symbol is not
+ * mangled.
+ */
+#ifdef __cplusplus
+#define LTTNG_TP_EXTERN_C extern "C"
+#else
+#define LTTNG_TP_EXTERN_C
+#endif
+
 #undef TRACEPOINT_LOGLEVEL
 #define TRACEPOINT_LOGLEVEL(__provider, __name, __loglevel)		   \
 static const int _loglevel_value___##__provider##___##__name = __loglevel; \
-static const int *_loglevel___##__provider##___##__name =		   \
+LTTNG_TP_EXTERN_C const int *_loglevel___##__provider##___##__name	   \
+		__attribute__((visibility("hidden"))) =			   \
 		&_loglevel_value___##__provider##___##__name;
 
 #include TRACEPOINT_INCLUDE
+
+#ifdef __cplusplus
+#undef LTTNG_TP_EXTERN_C
+#endif
 
 /*
  * Stage 6.1 of tracepoint event generation.
@@ -835,11 +852,28 @@ static const int *_loglevel___##__provider##___##__name =		   \
 /* Reset all macros within TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 
+/*
+ * Declare _model_emf_uri___##__provider##___##__name as non-static,
+ * with hidden visibility for c++ handling of weakref. We do a weakref
+ * to the symbol in a later stage, which requires that the symbol is not
+ * mangled.
+ */
+#ifdef __cplusplus
+#define LTTNG_TP_EXTERN_C extern "C"
+#else
+#define LTTNG_TP_EXTERN_C
+#endif
+
 #undef TRACEPOINT_MODEL_EMF_URI
 #define TRACEPOINT_MODEL_EMF_URI(__provider, __name, __uri)		   \
-static const char *_model_emf_uri___##__provider##___##__name = __uri;
+LTTNG_TP_EXTERN_C const char *_model_emf_uri___##__provider##___##__name   \
+		__attribute__((visibility("hidden"))) = __uri		   \
 
 #include TRACEPOINT_INCLUDE
+
+#ifdef __cplusplus
+#undef LTTNG_TP_EXTERN_C
+#endif
 
 /*
  * Stage 7.1 of tracepoint event generation.
