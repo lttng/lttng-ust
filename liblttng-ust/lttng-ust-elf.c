@@ -31,6 +31,10 @@
 
 #define BUF_LEN	4096
 
+#ifndef NT_GNU_BUILD_ID
+# define NT_GNU_BUILD_ID	3
+#endif
+
 /*
  * Retrieve the nth (where n is the `index` argument) phdr (program
  * header) from the given elf instance.
