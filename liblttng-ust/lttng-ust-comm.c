@@ -35,6 +35,7 @@
 #include <time.h>
 #include <assert.h>
 #include <signal.h>
+#include <limits.h>
 #include <urcu/uatomic.h>
 #include <urcu/futex.h>
 #include <urcu/compiler.h>
@@ -52,7 +53,7 @@
 #include "tracepoint-internal.h"
 #include "lttng-tracer-core.h"
 #include "compat.h"
-#include "../libringbuffer/tlsfixup.h"
+#include "../libringbuffer/rb-init.h"
 #include "lttng-ust-statedump.h"
 #include "clock.h"
 #include "../libringbuffer/getcpu.h"
@@ -531,6 +532,30 @@ int get_constructor_timeout(struct timespec *constructor_timeout)
 	}
 	/* Timeout wait (constructor_delay_ms). */
 	return 1;
+}
+
+static
+void get_blocking_retry_timeout(void)
+{
+	const char *str_blocking_retry_timeout =
+		lttng_secure_getenv("LTTNG_UST_BLOCKING_RETRY_TIMEOUT");
+
+	if (str_blocking_retry_timeout) {
+		long timeout = strtol(str_blocking_retry_timeout, NULL, 10);
+
+		if (timeout < 0)
+			timeout = -1;
+		if (timeout > INT_MAX) {
+			WARN("Saturating %s value from %ld to %d\n",
+				"LTTNG_UST_BLOCKING_RETRY_TIMEOUT",
+				timeout, INT_MAX);
+			timeout = INT_MAX;
+		}
+		DBG("%s environment variable value is %ld",
+			"LTTNG_UST_BLOCKING_RETRY_TIMEOUT",
+			timeout);
+		lttng_ust_ringbuffer_set_retry_timeout(timeout);
+	}
 }
 
 static
@@ -1671,6 +1696,8 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	lttng_ust_malloc_wrapper_init();
 
 	timeout_mode = get_constructor_timeout(&constructor_timeout);
+
+	get_blocking_retry_timeout();
 
 	ret = sem_init(&constructor_wait, 0, 0);
 	if (ret) {

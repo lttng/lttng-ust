@@ -72,7 +72,7 @@
 #include "backend.h"
 #include "frontend.h"
 #include "shm.h"
-#include "tlsfixup.h"
+#include "rb-init.h"
 #include "../liblttng-ust/compat.h"	/* For ENODATA */
 
 /* Print DBG() messages about events lost only every 1048576 hits */
@@ -84,6 +84,7 @@
 #define CLOCKID		CLOCK_MONOTONIC
 #define LTTNG_UST_RING_BUFFER_GET_RETRY		10
 #define LTTNG_UST_RING_BUFFER_RETRY_DELAY_MS	10
+#define RETRY_DELAY_MS				100	/* 100 ms. */
 
 /*
  * Non-static to ensure the compiler does not optimize away the xor.
@@ -148,6 +149,14 @@ static struct timer_signal_data timer_signal = {
 	.qs_done = 0,
 	.lock = PTHREAD_MUTEX_INITIALIZER,
 };
+
+int lttng_ust_blocking_retry_timeout =
+		CONFIG_LTTNG_UST_DEFAULT_BLOCKING_RETRY_TIMEOUT_MS;
+
+void lttng_ust_ringbuffer_set_retry_timeout(int timeout)
+{
+	lttng_ust_blocking_retry_timeout = timeout;
+}
 
 /**
  * lib_ring_buffer_reset - Reset ring buffer to initial values.
@@ -1985,6 +1994,23 @@ void lib_ring_buffer_switch_slow(struct lttng_ust_lib_ring_buffer *buf, enum swi
 	lib_ring_buffer_switch_old_end(buf, chan, &offsets, tsc, handle);
 }
 
+static
+bool handle_blocking_retry(int *timeout_left_ms)
+{
+	int timeout = *timeout_left_ms, delay;
+
+	if (caa_likely(!timeout))
+		return false;	/* Do not retry, discard event. */
+	if (timeout < 0)	/* Wait forever. */
+		delay = RETRY_DELAY_MS;
+	else
+		delay = min_t(int, timeout, RETRY_DELAY_MS);
+	(void) poll(NULL, 0, delay);
+	if (timeout > 0)
+		*timeout_left_ms -= delay;
+	return true;	/* Retry. */
+}
+
 /*
  * Returns :
  * 0 if ok
@@ -2001,6 +2027,7 @@ int lib_ring_buffer_try_reserve_slow(struct lttng_ust_lib_ring_buffer *buf,
 	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
 	struct lttng_ust_shm_handle *handle = ctx->handle;
 	unsigned long reserve_commit_diff, offset_cmp;
+	int timeout_left_ms = lttng_ust_blocking_retry_timeout;
 
 retry:
 	offsets->begin = offset_cmp = v_read(config, &buf->offset);
@@ -2082,6 +2109,9 @@ retry:
 				     uatomic_read(&buf->consumed), chan)
 				>= chan->backend.buf_size)) {
 				unsigned long nr_lost;
+
+				if (handle_blocking_retry(&timeout_left_ms))
+					goto retry;
 
 				/*
 				 * We do not overwrite non consumed buffers

@@ -1,10 +1,10 @@
-#ifndef _LTTNG_UST_LIB_RINGBUFFER_TLS_FIXUP_H
-#define _LTTNG_UST_LIB_RINGBUFFER_TLS_FIXUP_H
+#ifndef _LTTNG_UST_LIB_RINGBUFFER_RB_INIT_H
+#define _LTTNG_UST_LIB_RINGBUFFER_RB_INIT_H
 
 /*
- * libringbuffer/tlsfixup.h
+ * libringbuffer/rb-init.h
  *
- * Copyright (C) 2012 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+ * Copyright (C) 2012-2016 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,5 +22,6 @@
  */
 
 void lttng_fixup_ringbuffer_tls(void);
+void lttng_ust_ringbuffer_set_retry_timeout(int timeout);
 
-#endif /* _LTTNG_UST_LIB_RINGBUFFER_TLS_FIXUP_H */
+#endif /* _LTTNG_UST_LIB_RINGBUFFER_RB_INIT_H */
