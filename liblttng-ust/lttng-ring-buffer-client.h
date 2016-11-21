@@ -715,7 +715,7 @@ int lttng_event_reserve(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 	}
 
 	ret = lib_ring_buffer_reserve(&client_config, ctx);
-	if (ret)
+	if (caa_unlikely(ret))
 		goto put;
 	if (caa_likely(ctx->ctx_len
 			>= sizeof(struct lttng_ust_lib_ring_buffer_ctx))) {
