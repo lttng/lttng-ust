@@ -10,8 +10,8 @@ to allow use of the tracer API from both free and proprietary software.
 
 * MIT license :
 
-Public header files are distributed under the MIT license. See
-mit-license.txt for details.
+Public header files, and LTTng filter runtime code are distributed under
+the MIT license. See mit-license.txt for details.
 
 * GPLv2
 
