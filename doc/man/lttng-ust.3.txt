@@ -989,6 +989,33 @@ Fields:
 |===
 
 
+Detect if LTTng-UST is loaded
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To detect if `liblttng-ust` is loaded from an application:
+
+. Define the `lttng_ust_loaded` weak symbol globally:
++
+------------------------------------------------------------------------
+int lttng_ust_loaded __attribute__((weak));
+------------------------------------------------------------------------
++
+This weak symbol is set by the constructor of `liblttng-ust`.
+
+. Test `lttng_ust_loaded` where needed:
++
+------------------------------------------------------------------------
+/* ... */
+
+if (lttng_ust_loaded) {
+    /* LTTng-UST is loaded */
+} else {
+    /* LTTng-UST is NOT loaded */
+}
+
+/* ... */
+------------------------------------------------------------------------
+
+
 [[example]]
 EXAMPLE
 -------
