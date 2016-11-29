@@ -54,8 +54,57 @@ Fields:
 |`memsz`
 |Size of loaded library in memory.
 
+|`flags`
+|Flags passed to man:dlopen(3).
+
 |`path`
 |Path to loaded library file.
+
+|`has_build_id`
+|Whether or not the loaded library has a build ID. If this field is 1,
+you can expect that an `lttng_ust_dl:build_id` event record
+follows this one (not necessarily immediately after).
+
+|`has_debug_link`
+|Whether or not the loaded library has debug link information. If this
+field is 1, you can expect that an `lttng_ust_dl:debug_link` event
+record follows this one (not necessarily immediately after).
+|===
+
+`lttng_ust_dl:dlmopen`::
+    Emitted when man:dlmopen(3) is called.
++
+Fields:
++
+[options="header"]
+|===
+|Field name |Description
+
+|`baddr`
+|Base address of loaded library.
+
+|`memsz`
+|Size of loaded library in memory.
+
+|`nsid`
+|ID of the namespace in which the library is loaded (as passed
+to man:dlmopen(3)).
+
+|`flags`
+|Flags passed to man:dlmopen(3).
+
+|`path`
+|Path to loaded library file.
+
+|`has_build_id`
+|Whether or not the loaded library has a build ID. If this field is 1,
+you can expect that an `lttng_ust_dl:build_id` event record
+follows this one (not necessarily immediately after).
+
+|`has_debug_link`
+|Whether or not the loaded library has debug link information. If this
+field is 1, you can expect that an `lttng_ust_dl:debug_link` event
+record follows this one (not necessarily immediately after).
 |===
 
 `lttng_ust_dl:dlclose`::
