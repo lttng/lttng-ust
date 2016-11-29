@@ -821,16 +821,16 @@ Fields:
 |Field name |Description
 
 |`baddr`
-|Base address of loaded executable
+|Base address of loaded executable.
 
 |`memsz`
-|Size of loaded executable in memory
+|Size of loaded executable in memory.
 
 |`path`
-|Path to loaded executable file
+|Path to loaded executable file.
 
 |`is_pic`
-|Whether the executable is position-independent code
+|Whether the executable is position-independent code.
 |===
 
 `lttng_ust_statedump:build_id`::
@@ -846,10 +846,10 @@ Fields:
 |Field name |Description
 
 |`baddr`
-|Base address of loaded library
+|Base address of loaded library.
 
 |`build_id`
-|Build ID
+|Build ID.
 |===
 
 `lttng_ust_statedump:debug_link`::
@@ -865,13 +865,13 @@ Fields:
 |Field name |Description
 
 |`baddr`
-|Base address of loaded library
+|Base address of loaded library.
 
 |`crc`
-|Debug link file's CRC
+|Debug link file's CRC.
 
 |`filename`
-|Debug link file name
+|Debug link file name.
 |===
 
 

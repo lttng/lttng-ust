@@ -113,7 +113,7 @@ Fields:
 |Field name |Description
 
 |`func_addr`
-|Function address
+|Function address.
 |===
 
 `lttng_ust_cyg_profile_fast:func_exit`::
@@ -145,10 +145,10 @@ Fields:
 |Field name |Description
 
 |`func_addr`
-|Function address
+|Function address.
 
 |`call_site`
-|Address from which this function was called
+|Address from which this function was called.
 |===
 
 `lttng_ust_cyg_profile:func_exit`::
@@ -162,10 +162,10 @@ Fields:
 |Field name |Description
 
 |`func_addr`
-|Function address
+|Function address.
 
 |`call_site`
-|Address from which this function was called
+|Address from which this function was called.
 |===
 
 

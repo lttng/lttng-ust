@@ -39,13 +39,13 @@ Fields:
 |Field name |Description
 
 |`baddr`
-|Base address of loaded library
+|Base address of loaded library.
 
 |`memsz`
-|Size of loaded library in memory
+|Size of loaded library in memory.
 
 |`path`
-|Path to loaded library file
+|Path to loaded library file.
 |===
 
 `lttng_ust_dl:dlclose`::
@@ -58,7 +58,7 @@ Fields:
 |Field name |Description
 
 |`baddr`
-|Base address of loaded library
+|Base address of loaded library.
 |===
 
 `lttng_ust_dl:debug_link`::
@@ -74,13 +74,13 @@ Fields:
 |Field name |Description
 
 |`baddr`
-|Base address of loaded library
+|Base address of loaded library.
 
 |`filename`
-|Debug link file name
+|Debug link file name.
 
 |`crc`
-|Debug link file's CRC
+|Debug link file's CRC.
 |===
 
 `lttng_ust_dl:build_id`::
@@ -96,10 +96,10 @@ Fields:
 |Field name |Description
 
 |`baddr`
-|Base address of loaded library
+|Base address of loaded library.
 
 |`build_id`
-|Build ID
+|Build ID.
 |===
 
 
