@@ -738,6 +738,12 @@ without a following man:exec(3) family system call. The library
 application with the `LD_PRELOAD` environment variable (see
 man:ld.so(8)).
 
+To use `liblttng-ust` with a daemon application which closes file
+descriptors that were not opened by it, preload the `liblttng-ust-fd.so`
+library before you start the application. Typical use cases include
+daemons closing all file descriptors after man:fork(2), and buggy
+applications doing ``double-closes''.
+
 
 Context information
 ~~~~~~~~~~~~~~~~~~~
