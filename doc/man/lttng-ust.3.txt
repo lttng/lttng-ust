@@ -16,18 +16,22 @@ SYNOPSIS
 [verse]
 #define *TRACEPOINT_ENUM*('prov_name', 'enum_name', 'mappings')
 #define *TRACEPOINT_EVENT*('prov_name', 't_name', 'args', 'fields')
-#define *TRACEPOINT_EVENT_CLASS*('prov_name', 'class_name',
-                               'args', 'fields')
-#define *TRACEPOINT_EVENT_INSTANCE*('prov_name', 'class_name',
-                                  't_name', 'args')
+#define *TRACEPOINT_EVENT_CLASS*('prov_name', 'class_name', 'args', 'fields')
+#define *TRACEPOINT_EVENT_INSTANCE*('prov_name', 'class_name', 't_name', 'args')
 #define *TRACEPOINT_LOGLEVEL*('prov_name', 't_name', 'level')
 #define *ctf_array*('int_type', 'field_name', 'expr', 'count')
 #define *ctf_array_nowrite*('int_type', 'field_name', 'expr', 'count')
+#define *ctf_array_hex*('int_type', 'field_name', 'expr', 'count')
+#define *ctf_array_nowrite_hex*('int_type', 'field_name', 'expr', 'count')
+#define *ctf_array_network*('int_type', 'field_name', 'expr', 'count')
+#define *ctf_array_network_nowrite*('int_type', 'field_name', 'expr', 'count')
+#define *ctf_array_network_hex*('int_type', 'field_name', 'expr', 'count')
+#define *ctf_array_network_nowrite_hex*('int_type', 'field_name', 'expr', 'count')
 #define *ctf_array_text*(char, 'field_name', 'expr', 'count')
 #define *ctf_array_text_nowrite*(char, 'field_name', 'expr', 'count')
 #define *ctf_enum*('prov_name', 'enum_name', 'int_type', 'field_name', 'expr')
-#define *ctf_enum_nowrite*('prov_name', 'enum_name', 'int_type',
-                         'field_name', 'expr')
+#define *ctf_enum_nowrite*('prov_name', 'enum_name', 'int_type', 'field_name',
+                         'expr')
 #define *ctf_enum_value*('label', 'value')
 #define *ctf_enum_range*('label', 'start', 'end')
 #define *ctf_float*('float_type', 'field_name', 'expr')
@@ -38,11 +42,23 @@ SYNOPSIS
 #define *ctf_integer_network_hex*('int_type', 'field_name', 'expr')
 #define *ctf_integer_nowrite*('int_type', 'field_name', 'expr')
 #define *ctf_sequence*('int_type', 'field_name', 'expr', 'len_type', 'len_expr')
-#define *ctf_sequence_nowrite*('int_type', 'field_name', 'expr',
-                             'len_type', 'len_expr')
+#define *ctf_sequence_nowrite*('int_type', 'field_name', 'expr', 'len_type',
+                             'len_expr')
+#define *ctf_sequence_hex*('int_type', 'field_name', 'expr', 'len_type',
+                         'len_expr')
+#define *ctf_sequence_nowrite_hex*('int_type', 'field_name', 'expr', 'len_type',
+                                 'len_expr')
+#define *ctf_sequence_network*('int_type', 'field_name', 'expr', 'len_type',
+                             'len_expr')
+#define *ctf_sequence_network_nowrite*('int_type', 'field_name', 'expr',
+                                     'len_type', 'len_expr')
+#define *ctf_sequence_network_hex*('int_type', 'field_name', 'expr', 'len_type',
+                                 'len_expr')
+#define *ctf_sequence_network_nowrite_hex*('int_type', 'field_name', 'expr',
+                                         'len_type', 'len_expr')
 #define *ctf_sequence_text*(char, 'field_name', 'expr', 'len_type', 'len_expr')
-#define *ctf_sequence_text_nowrite*(char, 'field_name', 'expr',
-                                  'len_type', 'len_expr')
+#define *ctf_sequence_text_nowrite*(char, 'field_name', 'expr', 'len_type',
+                                  'len_expr')
 #define *ctf_string*('field_name', 'expr')
 #define *ctf_string_nowrite*('field_name', 'expr')
 #define *do_tracepoint*('prov_name', 't_name', ...)
@@ -250,11 +266,18 @@ Null-terminated string:
 *ctf_string*('field_name', 'expr')
 *ctf_string_nowrite*('field_name', 'expr')
 
-Statically-sized array of integers:
+Statically-sized array of integers (`_hex` versions displayed in
+hexadecimal, `_network` versions in network byte order):
 
 [verse]
 *ctf_array*('int_type', 'field_name', 'expr', 'count')
 *ctf_array_nowrite*('int_type', 'field_name', 'expr', 'count')
+*ctf_array_hex*('int_type', 'field_name', 'expr', 'count')
+*ctf_array_nowrite_hex*('int_type', 'field_name', 'expr', 'count')
+*ctf_array_network*('int_type', 'field_name', 'expr', 'count')
+*ctf_array_network_nowrite*('int_type', 'field_name', 'expr', 'count')
+*ctf_array_network_hex*('int_type', 'field_name', 'expr', 'count')
+*ctf_array_network_nowrite_hex*('int_type', 'field_name', 'expr', 'count')
 
 Statically-sized array, printed as text; no need to be null-terminated:
 
@@ -262,11 +285,22 @@ Statically-sized array, printed as text; no need to be null-terminated:
 *ctf_array_text*(char, 'field_name', 'expr', 'count')
 *ctf_array_text_nowrite*(char, 'field_name', 'expr', 'count')
 
-Dynamically-sized array of integers:
+Dynamically-sized array of integers (`_hex` versions displayed in
+hexadecimal, `_network` versions in network byte order):
 
 [verse]
 *ctf_sequence*('int_type', 'field_name', 'expr', 'len_type', 'len_expr')
 *ctf_sequence_nowrite*('int_type', 'field_name', 'expr', 'len_type', 'len_expr')
+*ctf_sequence_hex*('int_type', 'field_name', 'expr', 'len_type', 'len_expr')
+*ctf_sequence_nowrite_hex*('int_type', 'field_name', 'expr', 'len_type',
+                         'len_expr')
+*ctf_sequence_network*('int_type', 'field_name', 'expr', 'len_type', 'len_expr')
+*ctf_sequence_network_nowrite*('int_type', 'field_name', 'expr', 'len_type',
+                             'len_expr')
+*ctf_sequence_network_hex*('int_type', 'field_name', 'expr', 'len_type',
+                         'len_expr')
+*ctf_sequence_network_nowrite_hex*('int_type', 'field_name', 'expr',
+                                 'len_type', 'len_expr')
 
 Dynamically-sized array, displayed as text; no need to be null-terminated:
 
@@ -285,16 +319,15 @@ information.
 
 The parameters are:
 
-'int_type'::
-    Integer C type. The size of this type determines the size of the
-    integer/enumeration field.
+'count'::
+    Number of elements in array/sequence. This must be known at
+    compile time.
 
-'float_type'::
-    Float C type (`float` or `double`). The size of this type determines
-    the size of the floating point number field.
-
-'field_name'::
-    Event field name (C identifier syntax, :not: a literal string).
+'enum_name'::
+    Name of an enumeration field previously defined with the
+    `TRACEPOINT_ENUM()` macro. See the
+    <<tracepoint-enum,`TRACEPOINT_ENUM()` usage>> section for more
+    information.
 
 'expr'::
     C expression resulting in the field's value. This expression can
@@ -302,26 +335,27 @@ The parameters are:
     of a given tracepoint are defined in the `TP_ARGS()` macro (see
     the <<creating-tp,Creating a tracepoint provider>> section above).
 
-'count'::
-    Number of elements in array/sequence. This must be known at
-    compile time.
+'field_name'::
+    Event field name (C identifier syntax, :not: a literal string).
 
-'len_type'::
-    Unsigned integer C type of sequence's length.
+'float_type'::
+    Float C type (`float` or `double`). The size of this type determines
+    the size of the floating point number field.
+
+'int_type'::
+    Integer C type. The size of this type determines the size of the
+    integer/enumeration field.
 
 'len_expr'::
     C expression resulting in the sequence's length. This expression
     can use one or more arguments passed to the tracepoint.
 
+'len_type'::
+    Unsigned integer C type of sequence's length.
+
 'prov_name'::
     Tracepoint provider name. This must be the same as the tracepoint
     provider name used in a previous field definition.
-
-'enum_name'::
-    Name of an enumeration field previously defined with the
-    `TRACEPOINT_ENUM()` macro. See the
-    <<tracepoint-enum,`TRACEPOINT_ENUM()` usage>> section for more
-    information.
 
 The `_nowrite` versions omit themselves from the recorded trace, but are
 otherwise identical. Their primary purpose is to make some of the
@@ -704,6 +738,10 @@ without a following man:exec(3) family system call. The library
 application with the `LD_PRELOAD` environment variable (see
 man:ld.so(8)).
 
+To use `liblttng-ust` with a daemon application which closes a file
+descriptor that was not opened by it, preload the `liblttng-ust-fd.so`
+library before you start the application.
+
 
 Context information
 ~~~~~~~~~~~~~~~~~~~
@@ -729,11 +767,15 @@ information about event filtering.
     reverse-lookup the source location that caused the event
     to be emitted.
 
-+perf:thread:COUNTER+::
+`perf:thread:COUNTER`::
     perf counter named 'COUNTER'. Use `lttng add-context --list` to
     list the available perf counters.
 +
 Only available on IA-32 and x86-64 architectures.
+
+`perf:thread:raw:rN:NAME`::
+    perf counter with raw ID 'N' and custom name 'NAME'. See
+    man:lttng-add-context(1) for more details.
 
 `pthread_id`::
     POSIX thread identifier. Can be used on architectures where
@@ -762,7 +804,9 @@ build IDs, and their debug link information are emitted as events
 by the tracer.
 
 The following LTTng-UST state dump events exist and must be enabled
-to record application state dumps.
+to record application state dumps. Note that, during the state dump
+phase, LTTng-UST can also emit _shared library load/unload_ events
+(see <<ust-lib,Shared library load/unload tracking>> below).
 
 `lttng_ust_statedump:start`::
     Emitted when the state dump begins.
@@ -783,14 +827,31 @@ This event has no fields.
 Fields:
 +
 [options="header"]
-|==================================================================
-| Field name                 | Description
-| `baddr`                    | Base address of loaded executable
-| `memsz`                    | Size of loaded executable in memory
-| `path`                     | Path to loaded executable file
-| `is_pic`                   | Whether the executable is
-                               position-independent code
-|==================================================================
+|===
+|Field name |Description
+
+|`baddr`
+|Base address of loaded executable.
+
+|`memsz`
+|Size of loaded executable in memory.
+
+|`path`
+|Path to loaded executable file.
+
+|`is_pic`
+|Whether or not the executable is position-independent code.
+
+|`has_build_id`
+|Whether or not the executable has a build ID. If this field is 1, you
+can expect that an `lttng_ust_statedump:build_id` event record follows
+this one (not necessarily immediately after).
+
+|`has_debug_link`
+|Whether or not the executable has debug link information. If this field
+is 1, you can expect that an `lttng_ust_statedump:debug_link` event
+record follows this one (not necessarily immediately after).
+|===
 
 `lttng_ust_statedump:build_id`::
     Emitted when a build ID is found in a currently loaded shared
@@ -801,11 +862,15 @@ Fields:
 Fields:
 +
 [options="header"]
-|==============================================================
-| Field name                 | Description
-| `baddr`                    | Base address of loaded library
-| `build_id`                 | Build ID
-|==============================================================
+|===
+|Field name |Description
+
+|`baddr`
+|Base address of loaded library.
+
+|`build_id`
+|Build ID.
+|===
 
 `lttng_ust_statedump:debug_link`::
     Emitted when debug link information is found in a currently loaded
@@ -816,12 +881,139 @@ Fields:
 Fields:
 +
 [options="header"]
-|==============================================================
-| Field name                 | Description
-| `baddr`                    | Base address of loaded library
-| `crc`                      | Debug link file's CRC
-| `filename`                 | Debug link file name
-|==============================================================
+|===
+|Field name |Description
+
+|`baddr`
+|Base address of loaded library.
+
+|`crc`
+|Debug link file's CRC.
+
+|`filename`
+|Debug link file name.
+|===
+
+
+[[ust-lib]]
+Shared library load/unload tracking
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The <<state-dump,LTTng-UST state dump>> and the LTTng-UST helper library
+to instrument the dynamic linker (see man:liblttng-ust-dl(3)) can emit
+**shared library load/unload tracking** events.
+
+The following shared library load/unload tracking events exist and must
+be enabled to track the loading and unloading of shared libraries:
+
+`lttng_ust_lib:load`::
+    Emitted when a shared library (shared object) is loaded.
++
+Fields:
++
+[options="header"]
+|===
+|Field name |Description
+
+|`baddr`
+|Base address of loaded library.
+
+|`memsz`
+|Size of loaded library in memory.
+
+|`path`
+|Path to loaded library file.
+
+|`has_build_id`
+|Whether or not the library has a build ID. If this field is 1, you
+can expect that an `lttng_ust_lib:build_id` event record follows
+this one (not necessarily immediately after).
+
+|`has_debug_link`
+|Whether or not the library has debug link information. If this field
+is 1, you can expect that an `lttng_ust_lib:debug_link` event
+record follows this one (not necessarily immediately after).
+|===
+
+`lttng_ust_lib:unload`::
+    Emitted when a shared library (shared object) is unloaded.
++
+Fields:
++
+[options="header"]
+|===
+|Field name |Description
+
+|`baddr`
+|Base address of unloaded library.
+|===
+
+`lttng_ust_lib:build_id`::
+    Emitted when a build ID is found in a loaded shared library (shared
+    object). See
+    https://sourceware.org/gdb/onlinedocs/gdb/Separate-Debug-Files.html[Debugging Information in Separate Files]
+    for more information about build IDs.
++
+Fields:
++
+[options="header"]
+|===
+|Field name |Description
+
+|`baddr`
+|Base address of loaded library.
+
+|`build_id`
+|Build ID.
+|===
+
+`lttng_ust_lib:debug_link`::
+    Emitted when debug link information is found in a loaded
+    shared library (shared object). See
+    https://sourceware.org/gdb/onlinedocs/gdb/Separate-Debug-Files.html[Debugging Information in Separate Files]
+    for more information about debug links.
++
+Fields:
++
+[options="header"]
+|===
+|Field name |Description
+
+|`baddr`
+|Base address of loaded library.
+
+|`crc`
+|Debug link file's CRC.
+
+|`filename`
+|Debug link file name.
+|===
+
+
+Detect if LTTng-UST is loaded
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To detect if `liblttng-ust` is loaded from an application:
+
+. Define the `lttng_ust_loaded` weak symbol globally:
++
+------------------------------------------------------------------------
+int lttng_ust_loaded __attribute__((weak));
+------------------------------------------------------------------------
++
+This weak symbol is set by the constructor of `liblttng-ust`.
+
+. Test `lttng_ust_loaded` where needed:
++
+------------------------------------------------------------------------
+/* ... */
+
+if (lttng_ust_loaded) {
+    /* LTTng-UST is loaded */
+} else {
+    /* LTTng-UST is NOT loaded */
+}
+
+/* ... */
+------------------------------------------------------------------------
 
 
 [[example]]
