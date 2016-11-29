@@ -109,10 +109,12 @@ The following LTTng-UST events are available when using
 Fields:
 +
 [options="header"]
-|=========================================================================
-| Field name                 | Description
-| `func_addr`                | Function address
-|=========================================================================
+|===
+|Field name |Description
+
+|`func_addr`
+|Function address
+|===
 
 `lttng_ust_cyg_profile_fast:func_exit`::
     Emitted when an application function returns, or more
@@ -139,11 +141,15 @@ The following LTTng-UST events are available when using
 Fields:
 +
 [options="header"]
-|=========================================================================
-| Field name                 | Description
-| `func_addr`                | Function address
-| `call_site`                | Address from which this function was called
-|=========================================================================
+|===
+|Field name |Description
+
+|`func_addr`
+|Function address
+
+|`call_site`
+|Address from which this function was called
+|===
 
 `lttng_ust_cyg_profile:func_exit`::
     Emitted when an application function returns, or more
@@ -152,11 +158,15 @@ Fields:
 Fields:
 +
 [options="header"]
-|=========================================================================
-| Field name                 | Description
-| `func_addr`                | Function address
-| `call_site`                | Address from which this function was called
-|=========================================================================
+|===
+|Field name |Description
+
+|`func_addr`
+|Function address
+
+|`call_site`
+|Address from which this function was called
+|===
 
 
 include::common-footer.txt[]
