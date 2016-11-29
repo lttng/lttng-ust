@@ -769,11 +769,15 @@ information about event filtering.
     reverse-lookup the source location that caused the event
     to be emitted.
 
-+perf:thread:COUNTER+::
+`perf:thread:COUNTER`::
     perf counter named 'COUNTER'. Use `lttng add-context --list` to
     list the available perf counters.
 +
 Only available on IA-32 and x86-64 architectures.
+
+`perf:thread:raw:rN:NAME`::
+    perf counter with raw ID 'N' and custom name 'NAME'. See
+    man:lttng-add-context(1) for more details.
 
 `pthread_id`::
     POSIX thread identifier. Can be used on architectures where
