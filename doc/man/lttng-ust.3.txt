@@ -319,16 +319,15 @@ information.
 
 The parameters are:
 
-'int_type'::
-    Integer C type. The size of this type determines the size of the
-    integer/enumeration field.
+'count'::
+    Number of elements in array/sequence. This must be known at
+    compile time.
 
-'float_type'::
-    Float C type (`float` or `double`). The size of this type determines
-    the size of the floating point number field.
-
-'field_name'::
-    Event field name (C identifier syntax, :not: a literal string).
+'enum_name'::
+    Name of an enumeration field previously defined with the
+    `TRACEPOINT_ENUM()` macro. See the
+    <<tracepoint-enum,`TRACEPOINT_ENUM()` usage>> section for more
+    information.
 
 'expr'::
     C expression resulting in the field's value. This expression can
@@ -336,26 +335,27 @@ The parameters are:
     of a given tracepoint are defined in the `TP_ARGS()` macro (see
     the <<creating-tp,Creating a tracepoint provider>> section above).
 
-'count'::
-    Number of elements in array/sequence. This must be known at
-    compile time.
+'field_name'::
+    Event field name (C identifier syntax, :not: a literal string).
 
-'len_type'::
-    Unsigned integer C type of sequence's length.
+'float_type'::
+    Float C type (`float` or `double`). The size of this type determines
+    the size of the floating point number field.
+
+'int_type'::
+    Integer C type. The size of this type determines the size of the
+    integer/enumeration field.
 
 'len_expr'::
     C expression resulting in the sequence's length. This expression
     can use one or more arguments passed to the tracepoint.
 
+'len_type'::
+    Unsigned integer C type of sequence's length.
+
 'prov_name'::
     Tracepoint provider name. This must be the same as the tracepoint
     provider name used in a previous field definition.
-
-'enum_name'::
-    Name of an enumeration field previously defined with the
-    `TRACEPOINT_ENUM()` macro. See the
-    <<tracepoint-enum,`TRACEPOINT_ENUM()` usage>> section for more
-    information.
 
 The `_nowrite` versions omit themselves from the recorded trace, but are
 otherwise identical. Their primary purpose is to make some of the
