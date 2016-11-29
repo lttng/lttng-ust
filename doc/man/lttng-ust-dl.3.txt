@@ -35,12 +35,18 @@ The following LTTng-UST events are available when using this library:
 Fields:
 +
 [options="header"]
-|==============================================================
-| Field name                 | Description
-| `baddr`                    | Base address of loaded library
-| `memsz`                    | Size of loaded library in memory
-| `path`                     | Path to loaded library file
-|==============================================================
+|===
+|Field name |Description
+
+|`baddr`
+|Base address of loaded library
+
+|`memsz`
+|Size of loaded library in memory
+
+|`path`
+|Path to loaded library file
+|===
 
 `lttng_ust_dl:dlclose`::
     Emitted when man:dlclose(3) is called.
@@ -48,10 +54,12 @@ Fields:
 Fields:
 +
 [options="header"]
-|==============================================================
-| Field name                 | Description
-| `baddr`                    | Base address of loaded library
-|==============================================================
+|===
+|Field name |Description
+
+|`baddr`
+|Base address of loaded library
+|===
 
 `lttng_ust_dl:debug_link`::
     Emitted when debug link information is found when loading a library
@@ -62,12 +70,18 @@ Fields:
 Fields:
 +
 [options="header"]
-|==============================================================
-| Field name                 | Description
-| `baddr`                    | Base address of loaded library
-| `filename`                 | Debug link file name
-| `crc`                      | Debug link file's CRC
-|==============================================================
+|===
+|Field name |Description
+
+|`baddr`
+|Base address of loaded library
+
+|`filename`
+|Debug link file name
+
+|`crc`
+|Debug link file's CRC
+|===
 
 `lttng_ust_dl:build_id`::
     Emitted when a build ID is found when loading a library
@@ -78,11 +92,15 @@ Fields:
 Fields:
 +
 [options="header"]
-|==============================================================
-| Field name                 | Description
-| `baddr`                    | Base address of loaded library
-| `build_id`                 | Build ID
-|==============================================================
+|===
+|Field name |Description
+
+|`baddr`
+|Base address of loaded library
+
+|`build_id`
+|Build ID
+|===
 
 
 include::common-footer.txt[]

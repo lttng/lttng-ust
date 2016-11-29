@@ -47,13 +47,21 @@ command.
 The `tracelog()` events contain the following fields:
 
 [options="header"]
-|===============================================================
-| Field name | Description
-| `line`     | Line in source file where `tracelog()` was called
-| `file`     | Source file from which `tracelog()` was called
-| `func`     | Function name from which `tracelog()` was called
-| `msg`      | Formatted string output
-|===============================================================
+|===
+|Field name |Description
+
+|`line`
+|Line in source file where `tracelog()` was called
+
+|`file`
+|Source file from which `tracelog()` was called
+
+|`func`
+|Function name from which `tracelog()` was called
+
+|`msg`
+|Formatted string output
+|===
 
 If you do not need to attach a specific log level to a `tracelog()`
 call, use man:tracef(3) instead.
