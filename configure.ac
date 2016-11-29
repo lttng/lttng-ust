@@ -5,11 +5,11 @@ dnl Version infos
 m4_define([V_MAJOR], [2])
 m4_define([V_MINOR], [9])
 m4_define([V_PATCH], [0])
-m4_define([V_EXTRA], [rc1])
+dnl m4_define([V_EXTRA], [])
 m4_define([V_STRING], [V_MAJOR.V_MINOR.V_PATCH])
 m4_ifdef([V_EXTRA], [m4_append([V_STRING], [-V_EXTRA])])
 m4_define([V_NAME], [[Joannès]])
-m4_define([V_DESC], [[Berliner Weisse style beer from the Trèfle Noir microbrewery in Rouyn-Noranda.]])
+m4_define([V_DESC], [[Berliner Weisse style beer from the Trèfle Noir microbrewery in Rouyn-Noranda. It is a tangy beer with a distinct pink dress and intense fruit flavor, thanks to the presence of fresh blackcurrant grown in Témiscamingue.]])
 
 AC_INIT([lttng-ust], V_STRING, [mathieu dot desnoyers at efficios dot com])
 

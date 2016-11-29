@@ -1,3 +1,19 @@
+2016-11-29 (National Square Dance Day) lttng-ust 2.9.0
+	* lttng-ust(3): document `lttng_ust_loaded` symbol
+	* lttng-ust(3): document `perf:thread:raw:rN:NAME` context
+	* lttng-ust-dl(3): update documentation
+	* lttng-ust(3): document liblttng-ust-fd
+	* doc/man: document the lttng_ust_lib events
+	* doc/man: add full stop to descriptive table cells
+	* doc/man: reorganize source for tables
+	* lttng-ust(3): sort ctf_*() macro parameter definitions
+	* lttng-ust(3): fix alignment and indentation
+	* lttng-ust(3): document new ctf_*() array/sequence network/hex macros
+	* Performance: add missing "caa_unlikely" on fast-path
+	* Fix: loglevel and model_emf_uri build fix
+	* Fix: loglevel and model_emf_uri with g++ compiled probes
+	* Fix: Out of tree build of liblttng-ust-java
+
 2016-10-07 (National Frappé Day) lttng-ust 2.9.0-rc1
 	* Fix: cmake example with configure based oot build
 	* Fix: perform statedump before replying to sessiond
