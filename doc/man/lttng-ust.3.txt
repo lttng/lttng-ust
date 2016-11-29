@@ -23,6 +23,12 @@ SYNOPSIS
 #define *TRACEPOINT_LOGLEVEL*('prov_name', 't_name', 'level')
 #define *ctf_array*('int_type', 'field_name', 'expr', 'count')
 #define *ctf_array_nowrite*('int_type', 'field_name', 'expr', 'count')
+#define *ctf_array_hex*('int_type', 'field_name', 'expr', 'count')
+#define *ctf_array_nowrite_hex*('int_type', 'field_name', 'expr', 'count')
+#define *ctf_array_network*('int_type', 'field_name', 'expr', 'count')
+#define *ctf_array_network_nowrite*('int_type', 'field_name', 'expr', 'count')
+#define *ctf_array_network_hex*('int_type', 'field_name', 'expr', 'count')
+#define *ctf_array_network_nowrite_hex*('int_type', 'field_name', 'expr', 'count')
 #define *ctf_array_text*(char, 'field_name', 'expr', 'count')
 #define *ctf_array_text_nowrite*(char, 'field_name', 'expr', 'count')
 #define *ctf_enum*('prov_name', 'enum_name', 'int_type', 'field_name', 'expr')
@@ -38,8 +44,20 @@ SYNOPSIS
 #define *ctf_integer_network_hex*('int_type', 'field_name', 'expr')
 #define *ctf_integer_nowrite*('int_type', 'field_name', 'expr')
 #define *ctf_sequence*('int_type', 'field_name', 'expr', 'len_type', 'len_expr')
-#define *ctf_sequence_nowrite*('int_type', 'field_name', 'expr',
-                             'len_type', 'len_expr')
+#define *ctf_sequence_nowrite*('int_type', 'field_name', 'expr', 'len_type',
+                             'len_expr')
+#define *ctf_sequence_hex*('int_type', 'field_name', 'expr', 'len_type',
+                         'len_expr')
+#define *ctf_sequence_nowrite_hex*('int_type', 'field_name', 'expr', 'len_type',
+                                 'len_expr')
+#define *ctf_sequence_network*('int_type', 'field_name', 'expr', 'len_type',
+                             'len_expr')
+#define *ctf_sequence_network_nowrite*('int_type', 'field_name', 'expr',
+                                     'len_type', 'len_expr')
+#define *ctf_sequence_network_hex*('int_type', 'field_name', 'expr', 'len_type',
+                                 'len_expr')
+#define *ctf_sequence_network_nowrite_hex*('int_type', 'field_name', 'expr',
+                                         'len_type', 'len_expr')
 #define *ctf_sequence_text*(char, 'field_name', 'expr', 'len_type', 'len_expr')
 #define *ctf_sequence_text_nowrite*(char, 'field_name', 'expr',
                                   'len_type', 'len_expr')
@@ -250,11 +268,18 @@ Null-terminated string:
 *ctf_string*('field_name', 'expr')
 *ctf_string_nowrite*('field_name', 'expr')
 
-Statically-sized array of integers:
+Statically-sized array of integers (`_hex` versions displayed in
+hexadecimal, `_network` versions in network byte order):
 
 [verse]
 *ctf_array*('int_type', 'field_name', 'expr', 'count')
 *ctf_array_nowrite*('int_type', 'field_name', 'expr', 'count')
+*ctf_array_hex*('int_type', 'field_name', 'expr', 'count')
+*ctf_array_nowrite_hex*('int_type', 'field_name', 'expr', 'count')
+*ctf_array_network*('int_type', 'field_name', 'expr', 'count')
+*ctf_array_network_nowrite*('int_type', 'field_name', 'expr', 'count')
+*ctf_array_network_hex*('int_type', 'field_name', 'expr', 'count')
+*ctf_array_network_nowrite_hex*('int_type', 'field_name', 'expr', 'count')
 
 Statically-sized array, printed as text; no need to be null-terminated:
 
@@ -262,11 +287,22 @@ Statically-sized array, printed as text; no need to be null-terminated:
 *ctf_array_text*(char, 'field_name', 'expr', 'count')
 *ctf_array_text_nowrite*(char, 'field_name', 'expr', 'count')
 
-Dynamically-sized array of integers:
+Dynamically-sized array of integers (`_hex` versions displayed in
+hexadecimal, `_network` versions in network byte order):
 
 [verse]
 *ctf_sequence*('int_type', 'field_name', 'expr', 'len_type', 'len_expr')
 *ctf_sequence_nowrite*('int_type', 'field_name', 'expr', 'len_type', 'len_expr')
+*ctf_sequence_hex*('int_type', 'field_name', 'expr', 'len_type', 'len_expr')
+*ctf_sequence_nowrite_hex*('int_type', 'field_name', 'expr', 'len_type',
+                         'len_expr')
+*ctf_sequence_network*('int_type', 'field_name', 'expr', 'len_type', 'len_expr')
+*ctf_sequence_network_nowrite*('int_type', 'field_name', 'expr', 'len_type',
+                             'len_expr')
+*ctf_sequence_network_hex*('int_type', 'field_name', 'expr', 'len_type',
+                         'len_expr')
+*ctf_sequence_network_nowrite_hex*('int_type', 'field_name', 'expr', 'len_type',
+                                 'len_expr')
 
 Dynamically-sized array, displayed as text; no need to be null-terminated:
 
