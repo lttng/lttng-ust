@@ -796,7 +796,9 @@ build IDs, and their debug link information are emitted as events
 by the tracer.
 
 The following LTTng-UST state dump events exist and must be enabled
-to record application state dumps.
+to record application state dumps. Note that, during the state dump
+phase, LTTng-UST can also emit _shared library load/unload_ events
+(see <<ust-lib,Shared library load/unload tracking>> below).
 
 `lttng_ust_statedump:start`::
     Emitted when the state dump begins.
@@ -830,7 +832,17 @@ Fields:
 |Path to loaded executable file.
 
 |`is_pic`
-|Whether the executable is position-independent code.
+|Whether or not the executable is position-independent code.
+
+|`has_build_id`
+|Whether or not the executable has a build ID. If this field is 1, you
+can expect that an `lttng_ust_statedump:build_id` event record follows
+this one (not necessarily immediately after).
+
+|`has_debug_link`
+|Whether or not the executable has debug link information. If this field
+is 1, you can expect that an `lttng_ust_statedump:debug_link` event
+record follows this one (not necessarily immediately after).
 |===
 
 `lttng_ust_statedump:build_id`::
@@ -855,6 +867,100 @@ Fields:
 `lttng_ust_statedump:debug_link`::
     Emitted when debug link information is found in a currently loaded
     shared library. See
+    https://sourceware.org/gdb/onlinedocs/gdb/Separate-Debug-Files.html[Debugging Information in Separate Files]
+    for more information about debug links.
++
+Fields:
++
+[options="header"]
+|===
+|Field name |Description
+
+|`baddr`
+|Base address of loaded library.
+
+|`crc`
+|Debug link file's CRC.
+
+|`filename`
+|Debug link file name.
+|===
+
+
+[[ust-lib]]
+Shared library load/unload tracking
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The <<state-dump,LTTng-UST state dump>> and the LTTng-UST helper library
+to instrument the dynamic linker (see man:liblttng-ust-dl(3)) can emit
+**shared library load/unload tracking** events.
+
+The following shared library load/unload tracking events exist and must
+be enabled to track the loading and unloading of shared libraries:
+
+`lttng_ust_lib:load`::
+    Emitted when a shared library (shared object) is loaded.
++
+Fields:
++
+[options="header"]
+|===
+|Field name |Description
+
+|`baddr`
+|Base address of loaded library.
+
+|`memsz`
+|Size of loaded library in memory.
+
+|`path`
+|Path to loaded library file.
+
+|`has_build_id`
+|Whether or not the library has a build ID. If this field is 1, you
+can expect that an `lttng_ust_lib:build_id` event record follows
+this one (not necessarily immediately after).
+
+|`has_debug_link`
+|Whether or not the library has debug link information. If this field
+is 1, you can expect that an `lttng_ust_lib:debug_link` event
+record follows this one (not necessarily immediately after).
+|===
+
+`lttng_ust_lib:unload`::
+    Emitted when a shared library (shared object) is unloaded.
++
+Fields:
++
+[options="header"]
+|===
+|Field name |Description
+
+|`baddr`
+|Base address of unloaded library.
+|===
+
+`lttng_ust_lib:build_id`::
+    Emitted when a build ID is found in a loaded shared library (shared
+    object). See
+    https://sourceware.org/gdb/onlinedocs/gdb/Separate-Debug-Files.html[Debugging Information in Separate Files]
+    for more information about build IDs.
++
+Fields:
++
+[options="header"]
+|===
+|Field name |Description
+
+|`baddr`
+|Base address of loaded library.
+
+|`build_id`
+|Build ID.
+|===
+
+`lttng_ust_lib:debug_link`::
+    Emitted when debug link information is found in a loaded
+    shared library (shared object). See
     https://sourceware.org/gdb/onlinedocs/gdb/Separate-Debug-Files.html[Debugging Information in Separate Files]
     for more information about debug links.
 +
