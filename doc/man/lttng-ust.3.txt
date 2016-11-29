@@ -817,14 +817,21 @@ This event has no fields.
 Fields:
 +
 [options="header"]
-|==================================================================
-| Field name                 | Description
-| `baddr`                    | Base address of loaded executable
-| `memsz`                    | Size of loaded executable in memory
-| `path`                     | Path to loaded executable file
-| `is_pic`                   | Whether the executable is
-                               position-independent code
-|==================================================================
+|===
+|Field name |Description
+
+|`baddr`
+|Base address of loaded executable
+
+|`memsz`
+|Size of loaded executable in memory
+
+|`path`
+|Path to loaded executable file
+
+|`is_pic`
+|Whether the executable is position-independent code
+|===
 
 `lttng_ust_statedump:build_id`::
     Emitted when a build ID is found in a currently loaded shared
@@ -835,11 +842,15 @@ Fields:
 Fields:
 +
 [options="header"]
-|==============================================================
-| Field name                 | Description
-| `baddr`                    | Base address of loaded library
-| `build_id`                 | Build ID
-|==============================================================
+|===
+|Field name |Description
+
+|`baddr`
+|Base address of loaded library
+
+|`build_id`
+|Build ID
+|===
 
 `lttng_ust_statedump:debug_link`::
     Emitted when debug link information is found in a currently loaded
@@ -850,12 +861,18 @@ Fields:
 Fields:
 +
 [options="header"]
-|==============================================================
-| Field name                 | Description
-| `baddr`                    | Base address of loaded library
-| `crc`                      | Debug link file's CRC
-| `filename`                 | Debug link file name
-|==============================================================
+|===
+|Field name |Description
+
+|`baddr`
+|Base address of loaded library
+
+|`crc`
+|Debug link file's CRC
+
+|`filename`
+|Debug link file name
+|===
 
 
 [[example]]
