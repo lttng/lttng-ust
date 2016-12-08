@@ -1,3 +1,23 @@
+2016-12-07 (National Earmuff Day) lttng-ust 2.8.2
+	* Fix: loglevel and model_emf_uri build fix
+	* Fix: loglevel and model_emf_uri with g++ compiled probes
+	* Fix: Out of tree build of liblttng-ust-java
+	* Fix: perform statedump before replying to sessiond
+	* Fix: honor send timeout on unix socket connect
+	* Fix: perform TLS fixup in all UST entry points from each thread
+	* Fix: remove unlock in getcpu
+	* Fix: perf counters ABI rdpmc detection
+	* Fix: perf counter context deadlock
+	* Fix: many-events registration/unregistration speed
+	* Fix: pre-fault TLS in ust-malloc instrumentation
+	* Fix: reset vtid cache before releasing urcu locks
+	* Fix: cleanup local_apps.allowed flag on lib cleanup
+	* Fix: Correctly handle invalid agent port file
+	* Fix: remove invalid free
+	* Fix: perf counters: sign-extend pmc register
+	* Fix: ctf_enum_value() does not work with g++
+	* Fix: allow non-LGPL modules to use tracepoints
+
 2016-06-15 lttng-ust 2.8.1
 	* Comment the locking mechanisms in ContextInfoManager
 	* Fix: Null-check return value of log4j.Category.getAllAppenders()
