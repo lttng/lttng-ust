@@ -829,6 +829,38 @@ objd_error:
 	return ret;
 }
 
+/*
+ * Indicates whether or not a given event name contains at least one
+ * non-escaped globbing character.
+ *
+ * Returns 1 if it does.
+ */
+static int event_name_has_glob_char(const char *name)
+{
+	const char *ch = name;
+
+	while (*ch) {
+		switch (*ch) {
+		case '\\':
+			if (ch[1] == '*' || ch[1] == '?' || ch[1] == '\\') {
+				/* Escaped globbing characters: skip. */
+				ch++;
+			}
+			break;
+		case '*':
+		case '?':
+			/* Name has at least one globbing character. */
+			return 1;
+		default:
+			break;
+		}
+
+		ch++;
+	}
+
+	return 0;
+}
+
 /**
  *	lttng_channel_cmd - lttng control through object descriptors
  *
@@ -880,8 +912,11 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg,
 	{
 		struct lttng_ust_event *event_param =
 			(struct lttng_ust_event *) arg;
-		if (event_param->name[strlen(event_param->name) - 1] == '*') {
-			/* If ends with wildcard, create wildcard. */
+		if (event_name_has_glob_char(event_param->name)) {
+			/*
+			 * If it contains non-escaped globbing
+			 * characters, use a wildcard enabler.
+			 */
 			return lttng_abi_create_enabler(objd, event_param,
 					owner, LTTNG_ENABLER_WILDCARD);
 		} else {
