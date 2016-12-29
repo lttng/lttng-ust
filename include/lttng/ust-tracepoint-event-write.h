@@ -20,6 +20,8 @@
  * SOFTWARE.
  */
 
+#include <lttng/ust-string-utils.h>
+
 #undef ctf_integer
 #define ctf_integer(_type, _item, _src)				\
 	_ctf_integer_ext(_type, _item, _src, BYTE_ORDER, 10, 0)
@@ -93,6 +95,10 @@
 #undef ctf_string
 #define ctf_string(_item, _src)					\
 	_ctf_string(_item, _src, 0)
+
+#undef ctf_string_maybe_null
+#define ctf_string_maybe_null(_item, _src)				\
+	_ctf_string(_item, __LTTNG_UST_STRING_MAYBE_NULL(_src), 0)
 
 #undef ctf_enum
 #define ctf_enum(_provider, _name, _type, _item, _src)			\
