@@ -30,6 +30,17 @@ import java.nio.ByteOrder;
  */
 class SessiondDisableEventCommand extends SessiondCommand {
 
+	/**
+	 * Response sent when the disable-event command asks to disable an
+	 * unknown event.
+	 */
+	private static final LttngAgentResponse DISABLE_EVENT_FAILURE_RESPONSE = new LttngAgentResponse() {
+		@Override
+		public ReturnCode getReturnCode() {
+			return ReturnCode.CODE_UNKNOWN_LOGGER_NAME;
+		}
+	};
+
 	/** Event name to disable from the tracing session */
 	private final String eventName;
 
@@ -48,14 +59,10 @@ class SessiondDisableEventCommand extends SessiondCommand {
 		return (success ? LttngAgentResponse.SUCESS_RESPONSE : DISABLE_EVENT_FAILURE_RESPONSE);
 	}
 
-	/**
-	 * Response sent when the disable-event command asks to disable an
-	 * unknown event.
-	 */
-	private static final LttngAgentResponse DISABLE_EVENT_FAILURE_RESPONSE = new LttngAgentResponse() {
-		@Override
-		public ReturnCode getReturnCode() {
-			return ReturnCode.CODE_UNKNOWN_LOGGER_NAME;
-		}
-	};
+	@Override
+	public String toString() {
+		return "SessiondDisableEventCommand["
+				+ "eventName=" + eventName
+				+"]";
+	}
 }

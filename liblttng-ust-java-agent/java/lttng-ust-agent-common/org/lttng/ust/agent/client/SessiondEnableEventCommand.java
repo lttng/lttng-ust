@@ -75,4 +75,13 @@ class SessiondEnableEventCommand extends SessiondCommand {
 		boolean success = agent.eventEnabled(rule);
 		return (success ? LttngAgentResponse.SUCESS_RESPONSE : LttngAgentResponse.FAILURE_RESPONSE);
 	}
+
+	@Override
+	public String toString() {
+		return "SessiondEnableEventCommand["
+				+ "eventName=" + eventName
+				+ ", logLevel=" + logLevelFilter.toString()
+				+ ", filterString=" + filterString
+				+"]";
+	}
 }
