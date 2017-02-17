@@ -32,24 +32,49 @@ abstract class LttngAgentResponse {
 
 	private static final int INT_SIZE = 4;
 
+	public static final LttngAgentResponse SUCESS_RESPONSE = new LttngAgentResponse() {
+		@Override
+		public ReturnCode getReturnCode() {
+			return ReturnCode.CODE_SUCCESS_CMD;
+		}
+	};
+
+	public static final LttngAgentResponse FAILURE_RESPONSE = new LttngAgentResponse() {
+		@Override
+		public ReturnCode getReturnCode() {
+			return ReturnCode.CODE_INVALID_CMD;
+		}
+	};
+
 	/**
 	 * Return codes used in agent responses, to indicate success or different
 	 * types of failures of the commands.
 	 */
 	protected enum ReturnCode {
 
-		CODE_SUCCESS_CMD(1),
-		CODE_INVALID_CMD(2),
-		CODE_UNKNOWN_LOGGER_NAME(3);
+		CODE_SUCCESS_CMD(1, "sucess"),
+		CODE_INVALID_CMD(2, "invalid"),
+		CODE_UNKNOWN_LOGGER_NAME(3, "unknown logger name");
 
-		private int code;
+		private final int code;
+		private final String toString;
 
-		private ReturnCode(int c) {
+		private ReturnCode(int c, String str) {
 			code = c;
+			toString = str;
 		}
 
 		public int getCode() {
 			return code;
+		}
+
+		/**
+		 * Mainly used for debugging. The strings are not sent through the
+		 * socket.
+		 */
+		@Override
+		public String toString() {
+			return toString;
 		}
 	}
 
@@ -75,17 +100,11 @@ abstract class LttngAgentResponse {
 		return data;
 	}
 
-	public static final LttngAgentResponse SUCESS_RESPONSE = new LttngAgentResponse() {
-		@Override
-		public ReturnCode getReturnCode() {
-			return ReturnCode.CODE_SUCCESS_CMD;
-		}
-	};
-
-	public static final LttngAgentResponse FAILURE_RESPONSE = new LttngAgentResponse() {
-		@Override
-		public ReturnCode getReturnCode() {
-			return ReturnCode.CODE_INVALID_CMD;
-		}
-	};
+	@Override
+	public String toString() {
+		return "LttngAgentResponse["
+				+ "code=" + getReturnCode().getCode()
+				+ ", " + getReturnCode().toString()
+				+ "]";
+	}
 }

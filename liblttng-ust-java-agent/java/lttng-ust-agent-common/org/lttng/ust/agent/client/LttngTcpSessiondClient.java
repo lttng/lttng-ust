@@ -254,7 +254,7 @@ public class LttngTcpSessiondClient implements Runnable {
 		/* Data read from the socket */
 		byte inputData[] = null;
 		/* Reply data written to the socket, sent to the sessiond */
-		byte responseData[] = null;
+		LttngAgentResponse response;
 
 		while (true) {
 			/* Get header from session daemon. */
@@ -282,8 +282,7 @@ public class LttngTcpSessiondClient implements Runnable {
 			case CMD_LIST:
 			{
 				SessiondCommand listLoggerCmd = new SessiondListLoggersCommand();
-				LttngAgentResponse response = listLoggerCmd.execute(logAgent);
-				responseData = response.getBytes();
+				response = listLoggerCmd.execute(logAgent);
 				log("Received list loggers command");
 				break;
 			}
@@ -291,38 +290,35 @@ public class LttngTcpSessiondClient implements Runnable {
 			{
 				if (inputData == null) {
 					/* Invalid command */
-					responseData = LttngAgentResponse.FAILURE_RESPONSE.getBytes();
+					response = LttngAgentResponse.FAILURE_RESPONSE;
 					break;
 				}
 				SessiondCommand enableEventCmd = new SessiondEnableEventCommand(inputData);
-				LttngAgentResponse response = enableEventCmd.execute(logAgent);
-				responseData = response.getBytes();
-				log("Received enable event command");
+				response = enableEventCmd.execute(logAgent);
+				log("Received enable event command: " + enableEventCmd.toString());
 				break;
 			}
 			case CMD_EVENT_DISABLE:
 			{
 				if (inputData == null) {
 					/* Invalid command */
-					responseData = LttngAgentResponse.FAILURE_RESPONSE.getBytes();
+					response = LttngAgentResponse.FAILURE_RESPONSE;
 					break;
 				}
 				SessiondCommand disableEventCmd = new SessiondDisableEventCommand(inputData);
-				LttngAgentResponse response = disableEventCmd.execute(logAgent);
-				responseData = response.getBytes();
-				log("Received disable event command");
+				response = disableEventCmd.execute(logAgent);
+				log("Received disable event command: " + disableEventCmd.toString());
 				break;
 			}
 			case CMD_APP_CTX_ENABLE:
 			{
 				if (inputData == null) {
 					/* This commands expects a payload, invalid command */
-					responseData = LttngAgentResponse.FAILURE_RESPONSE.getBytes();
+					response = LttngAgentResponse.FAILURE_RESPONSE;
 					break;
 				}
 				SessiondCommand enableAppCtxCmd = new SessiondEnableAppContextCommand(inputData);
-				LttngAgentResponse response = enableAppCtxCmd.execute(logAgent);
-				responseData = response.getBytes();
+				response = enableAppCtxCmd.execute(logAgent);
 				log("Received enable app-context command");
 				break;
 			}
@@ -330,28 +326,33 @@ public class LttngTcpSessiondClient implements Runnable {
 			{
 				if (inputData == null) {
 					/* This commands expects a payload, invalid command */
-					responseData = LttngAgentResponse.FAILURE_RESPONSE.getBytes();
+					response = LttngAgentResponse.FAILURE_RESPONSE;
 					break;
 				}
 				SessiondCommand disableAppCtxCmd = new SessiondDisableAppContextCommand(inputData);
-				LttngAgentResponse response = disableAppCtxCmd.execute(logAgent);
-				responseData = response.getBytes();
+				response = disableAppCtxCmd.execute(logAgent);
 				log("Received disable app-context command");
 				break;
 			}
 			default:
 			{
 				/* Unknown command, send empty reply */
-				responseData = new byte[4];
-				ByteBuffer buf = ByteBuffer.wrap(responseData);
-				buf.order(ByteOrder.BIG_ENDIAN);
+				response = null;
 				log("Received unknown command, ignoring");
 				break;
 			}
 			}
 
 			/* Send response to the session daemon. */
-			log("Sending response");
+			byte[] responseData;
+			if (response == null) {
+				responseData = new byte[4];
+				ByteBuffer buf = ByteBuffer.wrap(responseData);
+				buf.order(ByteOrder.BIG_ENDIAN);
+			} else {
+				log("Sending response: " + response.toString());
+				responseData = response.getBytes();
+			}
 			this.outToSessiond.write(responseData, 0, responseData.length);
 			this.outToSessiond.flush();
 		}
