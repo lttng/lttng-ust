@@ -33,6 +33,7 @@
 #include <stddef.h>
 #include <inttypes.h>
 #include <time.h>
+#include <stdbool.h>
 #include <lttng/ust-endian.h>
 #include "clock.h"
 
@@ -55,6 +56,7 @@
 #include "lttng-ust-uuid.h"
 
 #include "tracepoint-internal.h"
+#include "string-utils.h"
 #include "lttng-tracer.h"
 #include "lttng-tracer-core.h"
 #include "lttng-ust-statedump.h"
@@ -626,16 +628,15 @@ exist:
 }
 
 static
-int lttng_desc_match_wildcard_enabler(const struct lttng_event_desc *desc,
+int lttng_desc_match_star_glob_enabler(const struct lttng_event_desc *desc,
 		struct lttng_enabler *enabler)
 {
 	int loglevel = 0;
 	unsigned int has_loglevel = 0;
 
-	assert(enabler->type == LTTNG_ENABLER_WILDCARD);
-	/* Compare excluding final '*' */
-	if (strncmp(desc->name, enabler->event_param.name,
-			strlen(enabler->event_param.name) - 1))
+	assert(enabler->type == LTTNG_ENABLER_STAR_GLOB);
+	if (!strutils_star_glob_match(enabler->event_param.name, -1ULL,
+			desc->name, -1ULL))
 		return 0;
 	if (desc->loglevel) {
 		loglevel = *(*desc->loglevel);
@@ -675,34 +676,35 @@ static
 int lttng_desc_match_enabler(const struct lttng_event_desc *desc,
 		struct lttng_enabler *enabler)
 {
-	struct lttng_ust_excluder_node *excluder;
+	switch (enabler->type) {
+	case LTTNG_ENABLER_STAR_GLOB:
+	{
+		struct lttng_ust_excluder_node *excluder;
 
-	/* If event matches with an excluder, return 'does not match' */
-	cds_list_for_each_entry(excluder, &enabler->excluder_head, node) {
-		int count;
+		if (!lttng_desc_match_star_glob_enabler(desc, enabler)) {
+			return 0;
+		}
 
-		for (count = 0; count < excluder->excluder.count; count++) {
-			int found, len;
-			char *excluder_name;
+		/*
+		 * If the matching event matches with an excluder,
+		 * return 'does not match'
+		 */
+		cds_list_for_each_entry(excluder, &enabler->excluder_head, node) {
+			int count;
 
-			excluder_name = (char *) (excluder->excluder.names)
-					+ count * LTTNG_UST_SYM_NAME_LEN;
-			len = strnlen(excluder_name, LTTNG_UST_SYM_NAME_LEN);
-			if (len > 0 && excluder_name[len - 1] == '*') {
-				found = !strncmp(desc->name, excluder_name,
-						len - 1);
-			} else {
-				found = !strncmp(desc->name, excluder_name,
-						LTTNG_UST_SYM_NAME_LEN - 1);
-			}
-			if (found) {
-				return 0;
+			for (count = 0; count < excluder->excluder.count; count++) {
+				int len;
+				char *excluder_name;
+
+				excluder_name = (char *) (excluder->excluder.names)
+						+ count * LTTNG_UST_SYM_NAME_LEN;
+				len = strnlen(excluder_name, LTTNG_UST_SYM_NAME_LEN);
+				if (len > 0 && strutils_star_glob_match(excluder_name, len, desc->name, -1ULL))
+					return 0;
 			}
 		}
+		return 1;
 	}
-	switch (enabler->type) {
-	case LTTNG_ENABLER_WILDCARD:
-		return lttng_desc_match_wildcard_enabler(desc, enabler);
 	case LTTNG_ENABLER_EVENT:
 		return lttng_desc_match_event_enabler(desc, enabler);
 	default:

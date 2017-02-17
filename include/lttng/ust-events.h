@@ -342,7 +342,7 @@ struct lttng_probe_desc {
 /* Data structures used by the tracer. */
 
 enum lttng_enabler_type {
-	LTTNG_ENABLER_WILDCARD,
+	LTTNG_ENABLER_STAR_GLOB,
 	LTTNG_ENABLER_EVENT,
 };
 

@@ -50,6 +50,7 @@
 #include <usterr-signal-safe.h>
 #include <helper.h>
 #include "lttng-tracer.h"
+#include "string-utils.h"
 #include "../libringbuffer/shm.h"
 #include "../libringbuffer/frontend_types.h"
 
@@ -210,7 +211,7 @@ int lttng_ust_objd_unref(int id, int is_owner)
 	}
 	if ((--obj->u.s.f_count) == 1) {
 		const struct lttng_ust_objd_ops *ops = objd_ops(id);
-		
+
 		if (ops->release)
 			ops->release(id);
 		objd_free(id);
@@ -880,10 +881,14 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg,
 	{
 		struct lttng_ust_event *event_param =
 			(struct lttng_ust_event *) arg;
-		if (event_param->name[strlen(event_param->name) - 1] == '*') {
-			/* If ends with wildcard, create wildcard. */
+
+		if (strutils_is_star_glob_pattern(event_param->name)) {
+			/*
+			 * If the event name is a star globbing pattern,
+			 * we create the special star globbing enabler.
+			 */
 			return lttng_abi_create_enabler(objd, event_param,
-					owner, LTTNG_ENABLER_WILDCARD);
+					owner, LTTNG_ENABLER_STAR_GLOB);
 		} else {
 			return lttng_abi_create_enabler(objd, event_param,
 					owner, LTTNG_ENABLER_EVENT);
