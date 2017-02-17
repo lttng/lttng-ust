@@ -31,6 +31,7 @@
 
 #include <urcu/rculfhash.h>
 #include "lttng-hash-helper.h"
+#include "string-utils.h"
 
 /*
  * Number of merge points for hash table size. Hash table initialized to
@@ -128,7 +129,8 @@ int merge_point_add_check(struct cds_lfht *ht, unsigned long target_pc,
  * (unknown), negative error value on error.
  */
 static
-int bin_op_compare_check(struct vstack *stack, const char *str)
+int bin_op_compare_check(struct vstack *stack, filter_opcode_t opcode,
+		const char *str)
 {
 	if (unlikely(!vstack_ax(stack) || !vstack_bx(stack)))
 		goto error_empty;
@@ -148,6 +150,29 @@ int bin_op_compare_check(struct vstack *stack, const char *str)
 			goto unknown;
 		case REG_STRING:
 			break;
+		case REG_STAR_GLOB_STRING:
+			if (opcode != FILTER_OP_EQ && opcode != FILTER_OP_NE) {
+				goto error_mismatch;
+			}
+			break;
+		case REG_S64:
+		case REG_DOUBLE:
+			goto error_mismatch;
+		}
+		break;
+	case REG_STAR_GLOB_STRING:
+		switch (vstack_bx(stack)->type) {
+		default:
+			goto error_type;
+
+		case REG_UNKNOWN:
+			goto unknown;
+		case REG_STRING:
+			if (opcode != FILTER_OP_EQ && opcode != FILTER_OP_NE) {
+				goto error_mismatch;
+			}
+			break;
+		case REG_STAR_GLOB_STRING:
 		case REG_S64:
 		case REG_DOUBLE:
 			goto error_mismatch;
@@ -162,6 +187,7 @@ int bin_op_compare_check(struct vstack *stack, const char *str)
 		case REG_UNKNOWN:
 			goto unknown;
 		case REG_STRING:
+		case REG_STAR_GLOB_STRING:
 			goto error_mismatch;
 		case REG_S64:
 		case REG_DOUBLE:
@@ -246,6 +272,8 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 	case FILTER_OP_LT_STRING:
 	case FILTER_OP_GE_STRING:
 	case FILTER_OP_LE_STRING:
+	case FILTER_OP_EQ_STAR_GLOB_STRING:
+	case FILTER_OP_NE_STAR_GLOB_STRING:
 	case FILTER_OP_EQ_S64:
 	case FILTER_OP_NE_S64:
 	case FILTER_OP_GT_S64:
@@ -333,6 +361,7 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 
 	/* load from immediate operand */
 	case FILTER_OP_LOAD_STRING:
+	case FILTER_OP_LOAD_STAR_GLOB_STRING:
 	{
 		struct load_op *insn = (struct load_op *) pc;
 		uint32_t str_len, maxlen;
@@ -417,8 +446,9 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 		char *pc)
 {
 	int ret = 0;
+	const filter_opcode_t opcode = *(filter_opcode_t *) pc;
 
-	switch (*(filter_opcode_t *) pc) {
+	switch (opcode) {
 	case FILTER_OP_UNKNOWN:
 	default:
 	{
@@ -446,49 +476,49 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 	case FILTER_OP_BIN_XOR:
 	{
 		ERR("unsupported bytecode op %u\n",
-			(unsigned int) *(filter_opcode_t *) pc);
+			(unsigned int) opcode);
 		ret = -EINVAL;
 		goto end;
 	}
 
 	case FILTER_OP_EQ:
 	{
-		ret = bin_op_compare_check(stack, "==");
+		ret = bin_op_compare_check(stack, opcode, "==");
 		if (ret < 0)
 			goto end;
 		break;
 	}
 	case FILTER_OP_NE:
 	{
-		ret = bin_op_compare_check(stack, "!=");
+		ret = bin_op_compare_check(stack, opcode, "!=");
 		if (ret < 0)
 			goto end;
 		break;
 	}
 	case FILTER_OP_GT:
 	{
-		ret = bin_op_compare_check(stack, ">");
+		ret = bin_op_compare_check(stack, opcode, ">");
 		if (ret < 0)
 			goto end;
 		break;
 	}
 	case FILTER_OP_LT:
 	{
-		ret = bin_op_compare_check(stack, "<");
+		ret = bin_op_compare_check(stack, opcode, "<");
 		if (ret < 0)
 			goto end;
 		break;
 	}
 	case FILTER_OP_GE:
 	{
-		ret = bin_op_compare_check(stack, ">=");
+		ret = bin_op_compare_check(stack, opcode, ">=");
 		if (ret < 0)
 			goto end;
 		break;
 	}
 	case FILTER_OP_LE:
 	{
-		ret = bin_op_compare_check(stack, "<=");
+		ret = bin_op_compare_check(stack, opcode, "<=");
 		if (ret < 0)
 			goto end;
 		break;
@@ -509,6 +539,23 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 		if (vstack_ax(stack)->type != REG_STRING
 				|| vstack_bx(stack)->type != REG_STRING) {
 			ERR("Unexpected register type for string comparator\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		break;
+	}
+
+	case FILTER_OP_EQ_STAR_GLOB_STRING:
+	case FILTER_OP_NE_STAR_GLOB_STRING:
+	{
+		if (!vstack_ax(stack) || !vstack_bx(stack)) {
+			ERR("Empty stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		if (vstack_ax(stack)->type != REG_STAR_GLOB_STRING
+				&& vstack_bx(stack)->type != REG_STAR_GLOB_STRING) {
+			ERR("Unexpected register type for globbing pattern comparator\n");
 			ret = -EINVAL;
 			goto end;
 		}
@@ -613,6 +660,7 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 			goto end;
 
 		case REG_STRING:
+		case REG_STAR_GLOB_STRING:
 			ERR("Unary op can only be applied to numeric or floating point registers\n");
 			ret = -EINVAL;
 			goto end;
@@ -726,6 +774,7 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 
 	/* load from immediate operand */
 	case FILTER_OP_LOAD_STRING:
+	case FILTER_OP_LOAD_STAR_GLOB_STRING:
 	{
 		break;
 	}
@@ -757,6 +806,7 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 			goto end;
 
 		case REG_STRING:
+		case REG_STAR_GLOB_STRING:
 			ERR("Cast op can only be applied to numeric or floating point registers\n");
 			ret = -EINVAL;
 			goto end;
@@ -856,7 +906,7 @@ int validate_instruction_all_contexts(struct bytecode_runtime *bytecode,
 	node = cds_lfht_iter_get_node(&iter);
 	if (node) {
 		mp_node = caa_container_of(node, struct lfht_mp_node, node);
-		
+
 		dbg_printf("Filter: validate merge point at offset %lu\n",
 				target_pc);
 		if (merge_points_compare(stack, &mp_node->stack)) {
@@ -940,6 +990,8 @@ int exec_insn(struct bytecode_runtime *bytecode,
 	case FILTER_OP_LT_STRING:
 	case FILTER_OP_GE_STRING:
 	case FILTER_OP_LE_STRING:
+	case FILTER_OP_EQ_STAR_GLOB_STRING:
+	case FILTER_OP_NE_STAR_GLOB_STRING:
 	case FILTER_OP_EQ_S64:
 	case FILTER_OP_NE_S64:
 	case FILTER_OP_GT_S64:
@@ -1113,6 +1165,19 @@ int exec_insn(struct bytecode_runtime *bytecode,
 			goto end;
 		}
 		vstack_ax(stack)->type = REG_STRING;
+		next_pc += sizeof(struct load_op) + strlen(insn->data) + 1;
+		break;
+	}
+
+	case FILTER_OP_LOAD_STAR_GLOB_STRING:
+	{
+		struct load_op *insn = (struct load_op *) pc;
+
+		if (vstack_push(stack)) {
+			ret = -EINVAL;
+			goto end;
+		}
+		vstack_ax(stack)->type = REG_STAR_GLOB_STRING;
 		next_pc += sizeof(struct load_op) + strlen(insn->data) + 1;
 		break;
 	}

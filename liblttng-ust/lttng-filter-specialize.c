@@ -80,7 +80,15 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 			case REG_STRING:
 				if (vstack_bx(stack)->type == REG_UNKNOWN)
 					break;
-				insn->op = FILTER_OP_EQ_STRING;
+				if (vstack_bx(stack)->type == REG_STAR_GLOB_STRING)
+					insn->op = FILTER_OP_EQ_STAR_GLOB_STRING;
+				else
+					insn->op = FILTER_OP_EQ_STRING;
+				break;
+			case REG_STAR_GLOB_STRING:
+				if (vstack_bx(stack)->type == REG_UNKNOWN)
+					break;
+				insn->op = FILTER_OP_EQ_STAR_GLOB_STRING;
 				break;
 			case REG_S64:
 				if (vstack_bx(stack)->type == REG_UNKNOWN)
@@ -124,7 +132,15 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 			case REG_STRING:
 				if (vstack_bx(stack)->type == REG_UNKNOWN)
 					break;
-				insn->op = FILTER_OP_NE_STRING;
+				if (vstack_bx(stack)->type == REG_STAR_GLOB_STRING)
+					insn->op = FILTER_OP_NE_STAR_GLOB_STRING;
+				else
+					insn->op = FILTER_OP_NE_STRING;
+				break;
+			case REG_STAR_GLOB_STRING:
+				if (vstack_bx(stack)->type == REG_UNKNOWN)
+					break;
+				insn->op = FILTER_OP_NE_STAR_GLOB_STRING;
 				break;
 			case REG_S64:
 				if (vstack_bx(stack)->type == REG_UNKNOWN)
@@ -165,6 +181,10 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				ret = -EINVAL;
 				goto end;
 
+			case REG_STAR_GLOB_STRING:
+				ERR("invalid register type for > binary operator\n");
+				ret = -EINVAL;
+				goto end;
 			case REG_STRING:
 				if (vstack_bx(stack)->type == REG_UNKNOWN)
 					break;
@@ -209,6 +229,10 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				ret = -EINVAL;
 				goto end;
 
+			case REG_STAR_GLOB_STRING:
+				ERR("invalid register type for < binary operator\n");
+				ret = -EINVAL;
+				goto end;
 			case REG_STRING:
 				if (vstack_bx(stack)->type == REG_UNKNOWN)
 					break;
@@ -253,6 +277,10 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				ret = -EINVAL;
 				goto end;
 
+			case REG_STAR_GLOB_STRING:
+				ERR("invalid register type for >= binary operator\n");
+				ret = -EINVAL;
+				goto end;
 			case REG_STRING:
 				if (vstack_bx(stack)->type == REG_UNKNOWN)
 					break;
@@ -296,6 +324,10 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				ret = -EINVAL;
 				goto end;
 
+			case REG_STAR_GLOB_STRING:
+				ERR("invalid register type for <= binary operator\n");
+				ret = -EINVAL;
+				goto end;
 			case REG_STRING:
 				if (vstack_bx(stack)->type == REG_UNKNOWN)
 					break;
@@ -331,6 +363,8 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 		case FILTER_OP_LT_STRING:
 		case FILTER_OP_GE_STRING:
 		case FILTER_OP_LE_STRING:
+		case FILTER_OP_EQ_STAR_GLOB_STRING:
+		case FILTER_OP_NE_STAR_GLOB_STRING:
 		case FILTER_OP_EQ_S64:
 		case FILTER_OP_NE_S64:
 		case FILTER_OP_GT_S64:
@@ -532,6 +566,19 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 			break;
 		}
 
+		case FILTER_OP_LOAD_STAR_GLOB_STRING:
+		{
+			struct load_op *insn = (struct load_op *) pc;
+
+			if (vstack_push(stack)) {
+				ret = -EINVAL;
+				goto end;
+			}
+			vstack_ax(stack)->type = REG_STAR_GLOB_STRING;
+			next_pc += sizeof(struct load_op) + strlen(insn->data) + 1;
+			break;
+		}
+
 		case FILTER_OP_LOAD_S64:
 		{
 			if (vstack_push(stack)) {
@@ -568,6 +615,7 @@ int lttng_filter_specialize_bytecode(struct bytecode_runtime *bytecode)
 				goto end;
 
 			case REG_STRING:
+			case REG_STAR_GLOB_STRING:
 				ERR("Cast op can only be applied to numeric or floating point registers\n");
 				ret = -EINVAL;
 				goto end;
