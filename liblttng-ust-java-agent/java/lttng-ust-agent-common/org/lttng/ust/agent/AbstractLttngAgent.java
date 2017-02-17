@@ -19,13 +19,14 @@
 package org.lttng.ust.agent;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.NavigableMap;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.regex.Matcher;
 
 import org.lttng.ust.agent.client.ILttngTcpClientListener;
 import org.lttng.ust.agent.client.LttngTcpSessiondClient;
@@ -43,7 +44,6 @@ import org.lttng.ust.agent.utils.LttngUstAgentLogger;
 public abstract class AbstractLttngAgent<T extends ILttngHandler>
 		implements ILttngAgent<T>, ILttngTcpClientListener {
 
-	private static final String WILDCARD = "*";
 	private static final int INIT_TIMEOUT = 3; /* Seconds */
 
 	/** The handlers registered to this agent */
@@ -52,29 +52,31 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 	/**
 	 * The trace events currently enabled in the sessions.
 	 *
-	 * The key represents the event name, the value is the ref count (how many
-	 * different sessions currently have this event enabled). Once the ref count
-	 * falls to 0, this means we can avoid sending log events through JNI
-	 * because nobody wants them.
+	 * The key is the {@link EventNamePattern} that comes from the event name.
+	 * The value is the ref count (how many different sessions currently have
+	 * this event enabled). Once the ref count falls to 0, this means we can
+	 * avoid sending log events through JNI because nobody wants them.
 	 *
-	 * It uses a concurrent hash map, so that the {@link #isEventEnabled} and
-	 * read methods do not need to take a synchronization lock.
+	 * Its accesses should be protected by the {@link #enabledEventNamesLock}
+	 * below.
 	 */
-	private final Map<String, Integer> enabledEvents = new ConcurrentHashMap<String, Integer>();
+	private final Map<EventNamePattern, Integer> enabledPatterns = new HashMap<EventNamePattern, Integer>();
 
 	/**
-	 * The trace events prefixes currently enabled in the sessions, which means
-	 * the event names finishing in *, like "abcd*". We track them separately
-	 * from the standard event names, so that we can use {@link String#equals}
-	 * and {@link String#startsWith} appropriately.
+	 * Cache of already-checked event names. As long as enabled/disabled events
+	 * don't change in the session, we can avoid re-checking events that were
+	 * previously checked against all known enabled patterns.
 	 *
-	 * We track the lone wildcard "*" separately, in {@link #enabledWildcards}.
+	 * Its accesses should be protected by the {@link #enabledEventNamesLock}
+	 * below, with the exception of concurrent get operations.
 	 */
-	private final NavigableMap<String, Integer> enabledEventPrefixes =
-			new ConcurrentSkipListMap<String, Integer>();
+	private final Map<String, Boolean> enabledEventNamesCache = new ConcurrentHashMap<String, Boolean>();
 
-	/** Number of sessions currently enabling the wildcard "*" event */
-	private final AtomicInteger enabledWildcards = new AtomicInteger(0);
+	/**
+	 * Lock protecting accesses to the {@link #enabledPatterns} and
+	 * {@link #enabledEventNamesCache} maps.
+	 */
+	private final Lock enabledEventNamesLock = new ReentrantLock();
 
 	/**
 	 * The application contexts currently enabled in the tracing sessions.
@@ -205,28 +207,19 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 		 */
 		FilterChangeNotifier fcn = FilterChangeNotifier.getInstance();
 
-		for (Map.Entry<String, Integer> entry : enabledEvents.entrySet()) {
-			String eventName = entry.getKey();
-			Integer nb = entry.getValue();
-			for (int i = 0; i < nb.intValue(); i++) {
-				fcn.removeEventRules(eventName);
+		enabledEventNamesLock.lock();
+		try {
+			for (Map.Entry<EventNamePattern, Integer> entry : enabledPatterns.entrySet()) {
+				String eventName = entry.getKey().getEventName();
+				Integer nb = entry.getValue();
+				for (int i = 0; i < nb.intValue(); i++) {
+					fcn.removeEventRules(eventName);
+				}
 			}
-		}
-		enabledEvents.clear();
-
-		for (Map.Entry<String, Integer> entry : enabledEventPrefixes.entrySet()) {
-			/* Re-add the * at the end, the FCN tracks the rules that way */
-			String eventName = (entry.getKey() + "*");
-			Integer nb = entry.getValue();
-			for (int i = 0; i < nb.intValue(); i++) {
-				fcn.removeEventRules(eventName);
-			}
-		}
-		enabledEventPrefixes.clear();
-
-		int wildcardRules = enabledWildcards.getAndSet(0);
-		for (int i = 0; i < wildcardRules; i++) {
-			fcn.removeEventRules(WILDCARD);
+			enabledPatterns.clear();
+			enabledEventNamesCache.clear();
+		} finally {
+			enabledEventNamesLock.unlock();
 		}
 
 		/*
@@ -244,18 +237,16 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 		FilterChangeNotifier.getInstance().addEventRule(eventRule);
 
 		String eventName = eventRule.getEventName();
+		EventNamePattern pattern = new EventNamePattern(eventName);
 
-		if (eventName.equals(WILDCARD)) {
-			enabledWildcards.incrementAndGet();
-			return true;
+		enabledEventNamesLock.lock();
+		try {
+			boolean ret = incrementRefCount(pattern, enabledPatterns);
+			enabledEventNamesCache.clear();
+			return ret;
+		} finally {
+			enabledEventNamesLock.unlock();
 		}
-		if (eventName.endsWith(WILDCARD)) {
-			/* Strip the "*" from the name. */
-			String prefix = eventName.substring(0, eventName.length() - 1);
-			return incrementRefCount(prefix, enabledEventPrefixes);
-		}
-
-		return incrementRefCount(eventName, enabledEvents);
 	}
 
 	@Override
@@ -263,23 +254,16 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 		/* Notify the filter change manager of the command */
 		FilterChangeNotifier.getInstance().removeEventRules(eventName);
 
-		if (eventName.equals(WILDCARD)) {
-			int newCount = enabledWildcards.decrementAndGet();
-			if (newCount < 0) {
-				/* Event was not enabled, bring the count back to 0 */
-				enabledWildcards.incrementAndGet();
-				return false;
-			}
-			return true;
-		}
+		EventNamePattern pattern = new EventNamePattern(eventName);
 
-		if (eventName.endsWith(WILDCARD)) {
-			/* Strip the "*" from the name. */
-			String prefix = eventName.substring(0, eventName.length() - 1);
-			return decrementRefCount(prefix, enabledEventPrefixes);
+		enabledEventNamesLock.lock();
+		try {
+			boolean ret = decrementRefCount(pattern, enabledPatterns);
+			enabledEventNamesCache.clear();
+			return ret;
+		} finally {
+			enabledEventNamesLock.unlock();
 		}
-
-		return decrementRefCount(eventName, enabledEvents);
 	}
 
 	@Override
@@ -324,23 +308,39 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 
 	@Override
 	public boolean isEventEnabled(String eventName) {
-		/* If at least one session enabled the "*" wildcard, send the event */
-		if (enabledWildcards.get() > 0) {
-			return true;
+		Boolean cachedEnabled = enabledEventNamesCache.get(eventName);
+		if (cachedEnabled != null) {
+			/* We have seen this event previously */
+			/*
+			 * Careful! enabled == null could also mean that the null value is
+			 * associated with the key. But we should have never inserted null
+			 * values in the map.
+			 */
+			return cachedEnabled.booleanValue();
 		}
 
-		/* Check if at least one session wants this exact event name */
-		if (enabledEvents.containsKey(eventName)) {
-			return true;
-		}
+		/*
+		 * We have not previously checked this event. Run it against all known
+		 * enabled event patterns to determine if it should pass or not.
+		 */
+		enabledEventNamesLock.lock();
+		try {
+			boolean enabled = false;
+			for (EventNamePattern enabledPattern : enabledPatterns.keySet()) {
+				Matcher matcher = enabledPattern.getPattern().matcher(eventName);
+				if (matcher.matches()) {
+					enabled = true;
+					break;
+				}
+			}
 
-		/* Look in the enabled prefixes if one of them matches the event */
-		String potentialMatch = enabledEventPrefixes.floorKey(eventName);
-		if (potentialMatch != null && eventName.startsWith(potentialMatch)) {
-			return true;
-		}
+			/* Add the result to the cache */
+			enabledEventNamesCache.put(eventName, Boolean.valueOf(enabled));
+			return enabled;
 
-		return false;
+		} finally {
+			enabledEventNamesLock.unlock();
+		}
 	}
 
 	@Override
@@ -348,7 +348,7 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 		return enabledAppContexts.entrySet();
 	}
 
-	private static boolean incrementRefCount(String key, Map<String, Integer> refCountMap) {
+	private static <T> boolean incrementRefCount(T key, Map<T, Integer> refCountMap) {
 		synchronized (refCountMap) {
 			Integer count = refCountMap.get(key);
 			if (count == null) {
@@ -366,7 +366,7 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 		}
 	}
 
-	private static boolean decrementRefCount(String key, Map<String, Integer> refCountMap) {
+	private static <T> boolean decrementRefCount(T key, Map<T, Integer> refCountMap) {
 		synchronized (refCountMap) {
 			Integer count = refCountMap.get(key);
 			if (count == null || count.intValue() <= 0) {
