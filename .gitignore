@@ -41,6 +41,7 @@ doc/examples/gen-tp/sample
 doc/examples/gen-tp/sample_tracepoint.h
 doc/examples/demo-tracef/demo-tracef
 doc/examples/demo-tracelog/demo-tracelog
+doc/examples/cmake-multiple-shared-libraries/build/
 
 doc/man/*.xml
 doc/man/lttng-gen-tp.1
