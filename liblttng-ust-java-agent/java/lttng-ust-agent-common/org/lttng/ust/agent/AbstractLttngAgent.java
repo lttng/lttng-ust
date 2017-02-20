@@ -24,6 +24,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 
 import org.lttng.ust.agent.client.ILttngTcpClientListener;
@@ -55,17 +57,26 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 	 * this event enabled). Once the ref count falls to 0, this means we can
 	 * avoid sending log events through JNI because nobody wants them.
 	 *
-	 * It uses a concurrent hash map, so that the {@link #isEventEnabled} and
-	 * read methods do not need to take a synchronization lock.
+	 * Its accesses should be protected by the {@link #enabledEventNamesLock}
+	 * below.
 	 */
-	private final Map<EventNamePattern, Integer> enabledPatterns = new ConcurrentHashMap<EventNamePattern, Integer>();
+	private final Map<EventNamePattern, Integer> enabledPatterns = new HashMap<EventNamePattern, Integer>();
 
 	/**
 	 * Cache of already-checked event names. As long as enabled/disabled events
 	 * don't change in the session, we can avoid re-checking events that were
 	 * previously checked against all known enabled patterns.
+	 *
+	 * Its accesses should be protected by the {@link #enabledEventNamesLock}
+	 * below, with the exception of concurrent get operations.
 	 */
-	private final Map<String, Boolean> enabledEventNamesCache = new HashMap<String, Boolean>();
+	private final Map<String, Boolean> enabledEventNamesCache = new ConcurrentHashMap<String, Boolean>();
+
+	/**
+	 * Lock protecting accesses to the {@link #enabledPatterns} and
+	 * {@link #enabledEventNamesCache} maps.
+	 */
+	private final Lock enabledEventNamesLock = new ReentrantLock();
 
 	/**
 	 * The application contexts currently enabled in the tracing sessions.
@@ -196,14 +207,20 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 		 */
 		FilterChangeNotifier fcn = FilterChangeNotifier.getInstance();
 
-		for (Map.Entry<EventNamePattern, Integer> entry : enabledPatterns.entrySet()) {
-			String eventName = entry.getKey().getEventName();
-			Integer nb = entry.getValue();
-			for (int i = 0; i < nb.intValue(); i++) {
-				fcn.removeEventRules(eventName);
+		enabledEventNamesLock.lock();
+		try {
+			for (Map.Entry<EventNamePattern, Integer> entry : enabledPatterns.entrySet()) {
+				String eventName = entry.getKey().getEventName();
+				Integer nb = entry.getValue();
+				for (int i = 0; i < nb.intValue(); i++) {
+					fcn.removeEventRules(eventName);
+				}
 			}
+			enabledPatterns.clear();
+			enabledEventNamesCache.clear();
+		} finally {
+			enabledEventNamesLock.unlock();
 		}
-		enabledPatterns.clear();
 
 		/*
 		 * Also clear tracked app contexts (no filter notifications sent for
@@ -220,11 +237,16 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 		FilterChangeNotifier.getInstance().addEventRule(eventRule);
 
 		String eventName = eventRule.getEventName();
-
 		EventNamePattern pattern = new EventNamePattern(eventName);
-		boolean ret = incrementRefCount(pattern, enabledPatterns);
-		enabledEventNamesCache.clear();
-		return ret;
+
+		enabledEventNamesLock.lock();
+		try {
+			boolean ret = incrementRefCount(pattern, enabledPatterns);
+			enabledEventNamesCache.clear();
+			return ret;
+		} finally {
+			enabledEventNamesLock.unlock();
+		}
 	}
 
 	@Override
@@ -233,9 +255,15 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 		FilterChangeNotifier.getInstance().removeEventRules(eventName);
 
 		EventNamePattern pattern = new EventNamePattern(eventName);
-		boolean ret = decrementRefCount(pattern, enabledPatterns);
-		enabledEventNamesCache.clear();
-		return ret;
+
+		enabledEventNamesLock.lock();
+		try {
+			boolean ret = decrementRefCount(pattern, enabledPatterns);
+			enabledEventNamesCache.clear();
+			return ret;
+		} finally {
+			enabledEventNamesLock.unlock();
+		}
 	}
 
 	@Override
@@ -295,7 +323,8 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 		 * We have not previously checked this event. Run it against all known
 		 * enabled event patterns to determine if it should pass or not.
 		 */
-		synchronized (enabledEventNamesCache) {
+		enabledEventNamesLock.lock();
+		try {
 			boolean enabled = false;
 			for (EventNamePattern enabledPattern : enabledPatterns.keySet()) {
 				Matcher matcher = enabledPattern.getPattern().matcher(eventName);
@@ -308,6 +337,9 @@ public abstract class AbstractLttngAgent<T extends ILttngHandler>
 			/* Add the result to the cache */
 			enabledEventNamesCache.put(eventName, Boolean.valueOf(enabled));
 			return enabled;
+
+		} finally {
+			enabledEventNamesLock.unlock();
 		}
 	}
 
