@@ -33,6 +33,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <unistd.h>
+#include <config.h>
 
 #define LTTNG_UST_DL_PROVIDER
 #include <lttng/tracepoint.h>
