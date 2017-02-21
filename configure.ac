@@ -125,14 +125,22 @@ AS_IF([test "x${ax_cv_sys_weak_alias}" = "xno"], [
 # Checks for libraries.
 AC_CHECK_LIB([dl], [dlopen], [
 	have_libdl=yes
+	libdl_name=dl
 ], [
 	#libdl not found, check for dlopen in libc.
 	AC_CHECK_LIB([c], [dlopen], [
 		have_libc_dl=yes
+		libdl_name=c
 	], [
 		AC_MSG_ERROR([Cannot find dlopen in libdl nor libc. Use [LDFLAGS]=-Ldir to specify their location.])
 	])
 ])
+
+# Check if libdl has dlmopen support.
+AH_TEMPLATE([HAVE_DLMOPEN], ["Define to 1 if dlmopen is available."])
+AC_CHECK_LIB([$libdl_name], [dlmopen],
+	[AC_DEFINE([HAVE_DLMOPEN], [1])]
+)
 
 AM_CONDITIONAL([LTTNG_UST_BUILD_WITH_LIBDL], [test "x$have_libdl" = "xyes"])
 AM_CONDITIONAL([LTTNG_UST_BUILD_WITH_LIBC_DL], [test "x$have_libc_dl" = "xyes"])

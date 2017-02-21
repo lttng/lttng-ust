@@ -51,6 +51,7 @@ TRACEPOINT_EVENT(lttng_ust_dl, dlopen,
 	)
 )
 
+#ifdef HAVE_DLMOPEN
 TRACEPOINT_EVENT(lttng_ust_dl, dlmopen,
 	TP_ARGS(void *, ip, void *, baddr, Lmid_t, nsid,
 		const char *, path, int, flags,
@@ -66,6 +67,7 @@ TRACEPOINT_EVENT(lttng_ust_dl, dlmopen,
 		ctf_integer(uint8_t, has_debug_link, has_debug_link)
 	)
 )
+#endif
 
 TRACEPOINT_EVENT(lttng_ust_dl, build_id,
 	TP_ARGS(
