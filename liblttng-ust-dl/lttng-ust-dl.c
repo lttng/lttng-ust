@@ -38,8 +38,10 @@
 #include "ust_dl.h"
 
 static void *(*__lttng_ust_plibc_dlopen)(const char *filename, int flags);
+#ifdef HAVE_DLMOPEN
 static void *(*__lttng_ust_plibc_dlmopen)(Lmid_t nsid, const char *filename,
 		int flags);
+#endif
 static int (*__lttng_ust_plibc_dlclose)(void *handle);
 
 static
@@ -55,6 +57,7 @@ void *_lttng_ust_dl_libc_dlopen(const char *filename, int flags)
 	return __lttng_ust_plibc_dlopen(filename, flags);
 }
 
+#ifdef HAVE_DLMOPEN
 static
 void *_lttng_ust_dl_libc_dlmopen(Lmid_t nsid, const char *filename,
 		int flags)
@@ -68,6 +71,7 @@ void *_lttng_ust_dl_libc_dlmopen(Lmid_t nsid, const char *filename,
 	}
 	return __lttng_ust_plibc_dlmopen(nsid, filename, flags);
 }
+#endif
 
 static
 int _lttng_ust_dl_libc_dlclose(void *handle)
@@ -143,6 +147,7 @@ end:
 	return;
 }
 
+#ifdef HAVE_DLMOPEN
 static
 void lttng_ust_dl_dlmopen(void *so_base, Lmid_t nsid, const char *so_name,
 		int flags, void *ip)
@@ -203,6 +208,7 @@ end:
 	lttng_ust_elf_destroy(elf);
 	return;
 }
+#endif
 
 void *dlopen(const char *filename, int flags)
 {
@@ -223,6 +229,7 @@ void *dlopen(const char *filename, int flags)
 	return handle;
 }
 
+#ifdef HAVE_DLMOPEN
 void *dlmopen(Lmid_t nsid, const char *filename, int flags)
 {
 	void *handle;
@@ -243,6 +250,7 @@ void *dlmopen(Lmid_t nsid, const char *filename, int flags)
 	return handle;
 
 }
+#endif
 
 int dlclose(void *handle)
 {
