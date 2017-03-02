@@ -15,22 +15,54 @@
 # along with this library; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 
+import os
+import sys
+
 from distutils.core import setup, Extension
 
+PY_PATH_WARN_MSG = """
+-------------------------------------WARNING------------------------------------
+The install directory used:\n ({0})\nis not included in your PYTHONPATH.
 
-setup(name='lttngust',
-      version='@PACKAGE_VERSION@',
-      description='LTTng-UST Python agent',
-      packages=['lttngust'],
-      package_dir={'lttngust': 'lttngust'},
-      options={'build': {'build_base': 'build'}},
-      url='http://lttng.org',
-      license='LGPL-2.1',
-      classifiers=[
-          'Development Status :: 5 - Production/Stable',
-          'Intended Audience :: Developers',
-          'License :: OSI Approved :: GNU Lesser General Public License v2 (LGPLv2)',
-          'Programming Language :: Python :: 2.7',
-          'Programming Language :: Python :: 3'
-          'Topic :: System :: Logging',
-      ])
+To add this directory to your Python search path permanently you can add the
+following command to your .bashrc/.zshrc:
+    export PYTHONPATH="${{PYTHONPATH}}:{0}"
+--------------------------------------------------------------------------------
+"""
+
+def main():
+    dist = setup(name='lttngust',
+            version='@PACKAGE_VERSION@',
+            description='LTTng-UST Python agent',
+            packages=['lttngust'],
+            package_dir={'lttngust': 'lttngust'},
+            options={'build': {'build_base': 'build'}},
+            url='http://lttng.org',
+            license='LGPL-2.1',
+            classifiers=[
+                'Development Status :: 5 - Production/Stable',
+                'Intended Audience :: Developers',
+                'License :: OSI Approved :: GNU Lesser General Public License v2 (LGPLv2)',
+                'Programming Language :: Python :: 2.7',
+                'Programming Language :: Python :: 3'
+                'Topic :: System :: Logging',
+                ])
+
+# After the installation, we check that the install directory is included in
+# the Python search path and we print a warning message when it's not. We need
+# to do this because Python search path differs depending on the distro and
+# some distros don't include any `/usr/local/` (the default install prefix) in
+# the search path. This is also useful for out-of-tree installs and tests. It's
+# only relevant to make this check on the `install` command.
+
+    if 'install' in dist.command_obj:
+        install_dir = dist.command_obj['install'].install_libbase
+        if install_dir not in sys.path:
+            # We can't consider this an error because if affects every
+            # distro differently. We only warn the user that some
+            # extra configuration is needed to use the agent
+            abs_install_dir = os.path.abspath(install_dir)
+            print(PY_PATH_WARN_MSG.format(abs_install_dir))
+
+if __name__ == '__main__':
+    main()
