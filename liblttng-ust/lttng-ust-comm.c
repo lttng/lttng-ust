@@ -366,11 +366,11 @@ const char *get_lttng_home_dir(void)
 {
        const char *val;
 
-       val = (const char *) lttng_secure_getenv("LTTNG_HOME");
+       val = (const char *) lttng_getenv("LTTNG_HOME");
        if (val != NULL) {
                return val;
        }
-       return (const char *) lttng_secure_getenv("HOME");
+       return (const char *) lttng_getenv("HOME");
 }
 
 /*
@@ -471,7 +471,7 @@ long get_timeout(void)
 	long constructor_delay_ms = LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_MS;
 
 	if (!got_timeout_env) {
-		str_timeout = getenv("LTTNG_UST_REGISTER_TIMEOUT");
+		str_timeout = lttng_getenv("LTTNG_UST_REGISTER_TIMEOUT");
 		got_timeout_env = 1;
 	}
 	if (str_timeout)
@@ -538,7 +538,7 @@ static
 void get_blocking_retry_timeout(void)
 {
 	const char *str_blocking_retry_timeout =
-		lttng_secure_getenv("LTTNG_UST_BLOCKING_RETRY_TIMEOUT");
+		lttng_getenv("LTTNG_UST_BLOCKING_RETRY_TIMEOUT");
 
 	if (str_blocking_retry_timeout) {
 		long timeout = strtol(str_blocking_retry_timeout, NULL, 10);
@@ -1679,6 +1679,7 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	 * sessiond before the init functions are completed).
 	 */
 	init_usterr();
+	lttng_ust_getenv_init();	/* Needs init_usterr() to be completed. */
 	init_tracepoint();
 	lttng_ust_init_fd_tracker();
 	lttng_ust_clock_init();

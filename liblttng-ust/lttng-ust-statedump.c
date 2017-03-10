@@ -34,6 +34,7 @@
 #include "lttng-tracer-core.h"
 #include "lttng-ust-statedump.h"
 #include "jhash.h"
+#include "getenv.h"
 
 #define TRACEPOINT_DEFINE
 #include "ust_lib.h"				/* Only define. */
@@ -548,7 +549,7 @@ void lttng_ust_dl_update(void *ip)
 {
 	struct dl_iterate_data data;
 
-	if (getenv("LTTNG_UST_WITHOUT_BADDR_STATEDUMP"))
+	if (lttng_getenv("LTTNG_UST_WITHOUT_BADDR_STATEDUMP"))
 		return;
 
 	/*
@@ -582,7 +583,7 @@ void lttng_ust_dl_update(void *ip)
 static
 int do_baddr_statedump(void *owner)
 {
-	if (getenv("LTTNG_UST_WITHOUT_BADDR_STATEDUMP"))
+	if (lttng_getenv("LTTNG_UST_WITHOUT_BADDR_STATEDUMP"))
 		return 0;
 	lttng_ust_dl_update(LTTNG_UST_CALLER_IP());
 	ust_dl_table_statedump(owner);

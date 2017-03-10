@@ -2205,6 +2205,7 @@ static __attribute__((constructor))
 void ustctl_init(void)
 {
 	init_usterr();
+	lttng_ust_getenv_init();	/* Needs init_usterr() to be completed. */
 	lttng_ust_clock_init();
 	lttng_ring_buffer_metadata_client_init();
 	lttng_ring_buffer_client_overwrite_init();
