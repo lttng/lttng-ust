@@ -11,6 +11,7 @@ jardir = $(datadir)/java
 jnioutdir = ../../jni/common
 
 dist_noinst_JAVA = $(pkgpath)/AbstractLttngAgent.java \
+				   $(pkgpath)/EventNamePattern.java \
 				   $(pkgpath)/ILttngAgent.java \
 				   $(pkgpath)/ILttngHandler.java \
 				   $(pkgpath)/LTTngAgent.java \
