@@ -27,6 +27,11 @@ void init_usterr(void)
 	char *ust_debug;
 
 	if (ust_loglevel == UST_LOGLEVEL_UNKNOWN) {
+		/*
+		 * This getenv is not part of lttng_getenv() because it
+		 * is required to print ERR() performed during getenv
+		 * initialization.
+		 */
 		ust_debug = getenv("LTTNG_UST_DEBUG");
 		if (ust_debug)
 			ust_loglevel = UST_LOGLEVEL_DEBUG;

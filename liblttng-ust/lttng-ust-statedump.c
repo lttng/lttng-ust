@@ -31,6 +31,7 @@
 #include <lttng/ust-elf.h>
 #include "lttng-tracer-core.h"
 #include "lttng-ust-statedump.h"
+#include "getenv.h"
 
 #define TRACEPOINT_DEFINE
 #define TRACEPOINT_CREATE_PROBES
@@ -312,7 +313,7 @@ int do_baddr_statedump(void *owner)
 {
 	struct dl_iterate_data data;
 
-	if (getenv("LTTNG_UST_WITHOUT_BADDR_STATEDUMP"))
+	if (lttng_getenv("LTTNG_UST_WITHOUT_BADDR_STATEDUMP"))
 		return 0;
 
 	/*
