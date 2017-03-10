@@ -27,3 +27,5 @@ install-data-hook:
 
 uninstall-hook:
 	cd $(DESTDIR)/$(jardir) && rm -f $(jarfile_symlink) && rm -f $(jarfile_compat_symlink)
+
+CLEANFILES = *.jar

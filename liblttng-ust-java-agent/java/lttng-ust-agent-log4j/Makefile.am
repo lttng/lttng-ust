@@ -38,5 +38,7 @@ install-data-hook:
 uninstall-hook:
 	cd $(DESTDIR)/$(jardir) && rm -f $(jarfile_symlink)
 
-CLEANFILES = $(jarfile) $(pkgpath)/*.class log4j-jni-header.stamp \
+CLEANFILES = *.jar \
+	$(pkgpath)/*.class \
+	log4j-jni-header.stamp \
 	$(log4jjniout)/org_lttng_ust_agent_log4j_LttngLog4jApi.h

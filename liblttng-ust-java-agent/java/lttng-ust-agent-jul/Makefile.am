@@ -38,5 +38,7 @@ install-data-hook:
 uninstall-hook:
 	cd $(DESTDIR)/$(jardir) && rm -f $(jarfile_symlink)
 
-CLEANFILES = $(jarfile) $(pkgpath)/*.class jul-jni-header.stamp \
+CLEANFILES = *.jar \
+	$(pkgpath)/*.class \
+	jul-jni-header.stamp \
 	$(juljniout)/org_lttng_ust_agent_jul_LttngJulApi.h
