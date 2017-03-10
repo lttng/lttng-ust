@@ -129,6 +129,20 @@ static const char *opnames[] = {
 	[ FILTER_OP_GET_CONTEXT_REF_STRING ] = "GET_CONTEXT_REF_STRING",
 	[ FILTER_OP_GET_CONTEXT_REF_S64 ] = "GET_CONTEXT_REF_S64",
 	[ FILTER_OP_GET_CONTEXT_REF_DOUBLE ] = "GET_CONTEXT_REF_DOUBLE",
+
+	/* load userspace field ref */
+	[ FILTER_OP_LOAD_FIELD_REF_USER_STRING ] = "LOAD_FIELD_REF_USER_STRING",
+	[ FILTER_OP_LOAD_FIELD_REF_USER_SEQUENCE ] = "LOAD_FIELD_REF_USER_SEQUENCE",
+
+	/*
+	 * load immediate star globbing pattern (literal string)
+	 * from immediate.
+	 */
+	[ FILTER_OP_LOAD_STAR_GLOB_STRING ] = "LOAD_STAR_GLOB_STRING",
+
+	/* globbing pattern binary operator: apply to */
+	[ FILTER_OP_EQ_STAR_GLOB_STRING ] = "EQ_STAR_GLOB_STRING",
+	[ FILTER_OP_NE_STAR_GLOB_STRING ] = "NE_STAR_GLOB_STRING",
 };
 
 const char *print_op(enum filter_op op)
