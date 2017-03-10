@@ -19,26 +19,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <usterr-signal-safe.h>
+/*
+ * Always add the lttng-ust environment variables to lttng_getenv()
+ * infrastructure rather than using getenv() directly from lttng-ust.
+ * This ensures that we don't trigger races between getenv() invoked by
+ * lttng-ust listener threads invoked concurrently with setenv() called
+ * by an otherwise single-threaded application thread. (the application
+ * is not aware that it runs with lttng-ust)
+ */
 
-static inline
-int lttng_is_setuid_setgid(void)
-{
-	return geteuid() != getuid() || getegid() != getgid();
-}
+char *lttng_getenv(const char *name);
 
-static inline
-char *lttng_secure_getenv(const char *name)
-{
-	if (lttng_is_setuid_setgid()) {
-		ERR("Getting environment variable '%s' from setuid/setgid binary refused for security reasons.",
-			name);
-		return NULL;
-	}
-	return getenv(name);
-}
+void lttng_ust_getenv_init(void);
 
 #endif /* _COMPAT_GETENV_H */
