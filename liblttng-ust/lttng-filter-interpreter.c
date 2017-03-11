@@ -26,6 +26,7 @@
 
 #define _LGPL_SOURCE
 #include <urcu-pointer.h>
+#include <stdint.h>
 #include "lttng-filter.h"
 #include "string-utils.h"
 
@@ -56,17 +57,13 @@ int parse_char(const char **p)
 }
 
 /*
- * Returns -1ULL if the string is null-terminated, or the number of
+ * Returns SIZE_MAX if the string is null-terminated, or the number of
  * characters if not.
  */
 static
 size_t get_str_or_seq_len(const struct estack_entry *entry)
 {
-	if (entry->u.s.seq_len == UINT_MAX) {
-		return -1ULL;
-	} else {
-		return entry->u.s.seq_len;
-	}
+	return entry->u.s.seq_len;
 }
 
 static
@@ -1300,7 +1297,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 				ret = -EINVAL;
 				goto end;
 			}
-			estack_ax(stack, top)->u.s.seq_len = UINT_MAX;
+			estack_ax(stack, top)->u.s.seq_len = SIZE_MAX;
 			estack_ax(stack, top)->u.s.literal_type =
 				ESTACK_STRING_LITERAL_TYPE_NONE;
 			estack_ax_t = REG_STRING;
@@ -1374,7 +1371,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			dbg_printf("load string %s\n", insn->data);
 			estack_push(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax(stack, top)->u.s.str = insn->data;
-			estack_ax(stack, top)->u.s.seq_len = UINT_MAX;
+			estack_ax(stack, top)->u.s.seq_len = SIZE_MAX;
 			estack_ax(stack, top)->u.s.literal_type =
 				ESTACK_STRING_LITERAL_TYPE_PLAIN;
 			estack_ax_t = REG_STRING;
@@ -1389,7 +1386,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			dbg_printf("load globbing pattern %s\n", insn->data);
 			estack_push(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax(stack, top)->u.s.str = insn->data;
-			estack_ax(stack, top)->u.s.seq_len = UINT_MAX;
+			estack_ax(stack, top)->u.s.seq_len = SIZE_MAX;
 			estack_ax(stack, top)->u.s.literal_type =
 				ESTACK_STRING_LITERAL_TYPE_STAR_GLOB;
 			estack_ax_t = REG_STAR_GLOB_STRING;
@@ -1495,7 +1492,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 					ret = -EINVAL;
 					goto end;
 				}
-				estack_ax(stack, top)->u.s.seq_len = UINT_MAX;
+				estack_ax(stack, top)->u.s.seq_len = SIZE_MAX;
 				estack_ax(stack, top)->u.s.literal_type =
 					ESTACK_STRING_LITERAL_TYPE_NONE;
 				dbg_printf("ref get context dynamic string %s\n", estack_ax(stack, top)->u.s.str);
@@ -1530,7 +1527,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 				ret = -EINVAL;
 				goto end;
 			}
-			estack_ax(stack, top)->u.s.seq_len = UINT_MAX;
+			estack_ax(stack, top)->u.s.seq_len = SIZE_MAX;
 			estack_ax(stack, top)->u.s.literal_type =
 				ESTACK_STRING_LITERAL_TYPE_NONE;
 			estack_ax_t = REG_STRING;
