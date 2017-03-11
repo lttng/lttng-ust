@@ -635,8 +635,8 @@ int lttng_desc_match_star_glob_enabler(const struct lttng_event_desc *desc,
 	unsigned int has_loglevel = 0;
 
 	assert(enabler->type == LTTNG_ENABLER_STAR_GLOB);
-	if (!strutils_star_glob_match(enabler->event_param.name, -1ULL,
-			desc->name, -1ULL))
+	if (!strutils_star_glob_match(enabler->event_param.name, SIZE_MAX,
+			desc->name, SIZE_MAX))
 		return 0;
 	if (desc->loglevel) {
 		loglevel = *(*desc->loglevel);
@@ -699,7 +699,7 @@ int lttng_desc_match_enabler(const struct lttng_event_desc *desc,
 				excluder_name = (char *) (excluder->excluder.names)
 						+ count * LTTNG_UST_SYM_NAME_LEN;
 				len = strnlen(excluder_name, LTTNG_UST_SYM_NAME_LEN);
-				if (len > 0 && strutils_star_glob_match(excluder_name, len, desc->name, -1ULL))
+				if (len > 0 && strutils_star_glob_match(excluder_name, len, desc->name, SIZE_MAX))
 					return 0;
 			}
 		}
