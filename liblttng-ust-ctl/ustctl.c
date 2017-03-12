@@ -33,6 +33,7 @@
 #include "../liblttng-ust/wait.h"
 #include "../liblttng-ust/lttng-rb-clients.h"
 #include "../liblttng-ust/clock.h"
+#include "../liblttng-ust/getenv.h"
 
 /*
  * Number of milliseconds to retry before failing metadata writes on
