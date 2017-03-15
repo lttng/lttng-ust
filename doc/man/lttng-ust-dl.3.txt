@@ -14,7 +14,7 @@ Launch your application by preloading `liblttng-ust-dl.so`:
 
 [role="term"]
 [verse]
-*LD_PRELOAD=liblttng-ust-dl.so* my-app
+$ *LD_PRELOAD=liblttng-ust-dl.so* my-app
 
 
 DESCRIPTION
