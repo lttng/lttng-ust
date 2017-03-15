@@ -18,7 +18,7 @@ Launch your application by preloading
 
 [role="term"]
 [verse]
-*LD_PRELOAD=liblttng-ust-cyg-profile-fast.so* my-app
+$ *LD_PRELOAD=liblttng-ust-cyg-profile-fast.so* my-app
 
 Launch your application by preloading
 `liblttng-ust-cyg-profile.so` for slower, more verbose function
@@ -26,7 +26,7 @@ tracing:
 
 [role="term"]
 [verse]
-*LD_PRELOAD=liblttng-ust-cyg-profile.so* my-app
+$ *LD_PRELOAD=liblttng-ust-cyg-profile.so* my-app
 
 
 DESCRIPTION

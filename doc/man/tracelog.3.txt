@@ -96,43 +96,43 @@ This C source file, saved as `app.c`, can be compiled into a program
 like this:
 
 [role="term"]
----------------------------
-cc -o app app.c -llttng-ust
----------------------------
+----
+$ cc -o app app.c -llttng-ust
+----
 
 You can create an LTTng tracing session, enable all the `tracelog()`
 events, and start the created tracing session like this:
 
 [role="term"]
----------------------------------------------------
-lttng create my-session
-lttng enable-event --userspace 'lttng_ust_tracelog:*'
-lttng start
----------------------------------------------------
+----
+$ lttng create my-session
+$ lttng enable-event --userspace 'lttng_ust_tracelog:*'
+$ lttng start
+----
 
 Or you can enable `tracelog()` events matching a log level at least
 as severe as a given log level:
 
 [role="term"]
--------------------------------------------------------
-lttng enable-event --userspace 'lttng_ust_tracelog:*' \
+----
+$ lttng enable-event --userspace 'lttng_ust_tracelog:*' \
                    --loglevel=TRACE_INFO
--------------------------------------------------------
+----
 
 Next, start the program to be traced:
 
 [role="term"]
-------------------------------------------------
-./app a few arguments passed to this application
-------------------------------------------------
+----
+$ ./app a few arguments passed to this application
+----
 
 Finally, stop the tracing session, and inspect the recorded events:
 
 [role="term"]
-----------
-lttng stop
-lttng view
-----------
+----
+$ lttng stop
+$ lttng view
+----
 
 
 [[limitations]]

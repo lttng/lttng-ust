@@ -571,9 +571,9 @@ source:
 Create the tracepoint provider object file:
 
 [role="term"]
---------------
-cc -c -I. tp.c
---------------
+----
+$ cc -c -I. tp.c
+----
 
 NOTE: Although an application instrumented with LTTng-UST tracepoints
 can be compiled with a C++ compiler, tracepoint probes should be
@@ -584,9 +584,9 @@ possibly with other object files of your application or with other
 tracepoint provider object files, as a static library:
 
 [role="term"]
----------------
-ar rc tp.a tp.o
----------------
+----
+$ ar rc tp.a tp.o
+----
 
 Using a static library does have the advantage of centralising the
 tracepoint providers objects so they can be shared between multiple
@@ -601,9 +601,9 @@ library containing it) and with `liblttng-ust` and `libdl`
 (`libc` on a BSD system):
 
 [role="term"]
--------------------------------------
-cc -o app tp.o app.o -llttng-ust -ldl
--------------------------------------
+----
+$ cc -o app tp.o app.o -llttng-ust -ldl
+----
 
 
 [[build-dynamic]]
@@ -644,16 +644,16 @@ built like it is using the static linking method, but with the
 nloption:-fpic option:
 
 [role="term"]
---------------------
-cc -c -fpic -I. tp.c
---------------------
+----
+$ cc -c -fpic -I. tp.c
+----
 
 It is then linked as a shared library like this:
 
 [role="term"]
--------------------------------------------------------
-cc -shared -Wl,--no-as-needed -o tp.so tp.o -llttng-ust
--------------------------------------------------------
+----
+$ cc -shared -Wl,--no-as-needed -o tp.so tp.o -llttng-ust
+----
 
 This tracepoint provider shared object isn't linked with the user
 application: it must be loaded manually. This is why the application is
@@ -661,9 +661,9 @@ built with no mention of this tracepoint provider, but still needs
 libdl:
 
 [role="term"]
---------------------------------
-cc -o app app.o tp-define.o -ldl
---------------------------------
+----
+$ cc -o app app.o tp-define.o -ldl
+----
 
 There are two ways to dynamically load the tracepoint provider shared
 object:
@@ -839,44 +839,44 @@ You can compile the source files and link them together statically
 like this:
 
 [role="term"]
--------------------------------------
-cc -c -I. tp.c
-cc -c app.c
-cc -o app tp.o app.o -llttng-ust -ldl
--------------------------------------
+----
+$ cc -c -I. tp.c
+$ cc -c app.c
+$ cc -o app tp.o app.o -llttng-ust -ldl
+----
 
 Using the man:lttng(1) tool, create an LTTng tracing session, enable
 all the events of this tracepoint provider, and start tracing:
 
 [role="term"]
-----------------------------------------------
-lttng create my-session
-lttng enable-event --userspace 'my_provider:*'
-lttng start
-----------------------------------------------
+----
+$ lttng create my-session
+$ lttng enable-event --userspace 'my_provider:*'
+$ lttng start
+----
 
 You may also enable specific events:
 
 [role="term"]
-----------------------------------------------------------
-lttng enable-event --userspace my_provider:big_event
-lttng enable-event --userspace my_provider:event_instance2
-----------------------------------------------------------
+----
+$ lttng enable-event --userspace my_provider:big_event
+$ lttng enable-event --userspace my_provider:event_instance2
+----
 
 Run the application:
 
 [role="term"]
---------------------
-./app some arguments
---------------------
+----
+$ ./app some arguments
+----
 
 Stop the current tracing session and inspect the recorded events:
 
 [role="term"]
-----------
-lttng stop
-lttng view
-----------
+----
+$ lttng stop
+$ lttng view
+----
 
 
 Tracepoint provider header file

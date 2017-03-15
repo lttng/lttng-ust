@@ -69,34 +69,34 @@ This C source file, saved as `app.c`, can be compiled into a program
 like this:
 
 [role="term"]
----------------------------
-cc -o app app.c -llttng-ust
----------------------------
+----
+$ cc -o app app.c -llttng-ust
+----
 
 You can create an LTTng tracing session, enable the `tracef()` events,
 and start the created tracing session like this:
 
 [role="term"]
----------------------------------------------------
-lttng create my-session
-lttng enable-event --userspace 'lttng_ust_tracef:*'
-lttng start
----------------------------------------------------
+----
+$ lttng create my-session
+$ lttng enable-event --userspace 'lttng_ust_tracef:*'
+$ lttng start
+----
 
 Next, start the program to be traced:
 
 [role="term"]
------
-./app
------
+----
+$ ./app
+----
 
 Finally, stop the tracing session, and inspect the recorded events:
 
 [role="term"]
-----------
-lttng stop
-lttng view
-----------
+----
+$ lttng stop
+$ lttng view
+----
 
 
 [[limitations]]
