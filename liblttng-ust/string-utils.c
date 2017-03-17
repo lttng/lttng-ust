@@ -124,139 +124,139 @@ retry:
 	 * Example:
 	 *
 	 *     candidate: hi ev every onyx one
-	 *		^
+	 *                ^
 	 *     pattern:   hi*every*one
-	 *		^
+	 *                ^
 	 *
 	 *     candidate: hi ev every onyx one
-	 *		 ^
+	 *                 ^
 	 *     pattern:   hi*every*one
-	 *		 ^
+	 *                 ^
 	 *
 	 *     candidate: hi ev every onyx one
-	 *		  ^
+	 *                  ^
 	 *     pattern:   hi*every*one
-	 *		  ^
+	 *                  ^
 	 *
 	 *     candidate: hi ev every onyx one
-	 *		  ^
+	 *                  ^
 	 *     pattern:   hi*every*one
-	 *		   ^ MISMATCH
+	 *                   ^ MISMATCH
 	 *
 	 *     candidate: hi ev every onyx one
-	 *		   ^
+	 *                   ^
 	 *     pattern:   hi*every*one
-	 *		   ^
+	 *                   ^
 	 *
 	 *     candidate: hi ev every onyx one
-	 *		   ^^
+	 *                   ^^
 	 *     pattern:   hi*every*one
-	 *		   ^^
+	 *                   ^^
 	 *
 	 *     candidate: hi ev every onyx one
-	 *		   ^ ^
+	 *                   ^ ^
 	 *     pattern:   hi*every*one
-	 *		   ^ ^ MISMATCH
+	 *                   ^ ^ MISMATCH
 	 *
 	 *     candidate: hi ev every onyx one
-	 *		    ^
+	 *                    ^
 	 *     pattern:   hi*every*one
-	 *		   ^ MISMATCH
+	 *                   ^ MISMATCH
 	 *
 	 *     candidate: hi ev every onyx one
-	 *		     ^
+	 *                     ^
 	 *     pattern:   hi*every*one
-	 *		   ^ MISMATCH
+	 *                   ^ MISMATCH
 	 *
 	 *     candidate: hi ev every onyx one
-	 *		      ^
+	 *                      ^
 	 *     pattern:   hi*every*one
-	 *		   ^
+	 *                   ^
 	 *
 	 *     candidate: hi ev every onyx one
-	 *		      ^^
+	 *                      ^^
 	 *     pattern:   hi*every*one
-	 *		   ^^
+	 *                   ^^
 	 *
 	 *     candidate: hi ev every onyx one
-	 *		      ^ ^
+	 *                      ^ ^
 	 *     pattern:   hi*every*one
-	 *		   ^ ^
+	 *                   ^ ^
 	 *
 	 *     candidate: hi ev every onyx one
-	 *		      ^  ^
+	 *                      ^  ^
 	 *     pattern:   hi*every*one
-	 *		   ^  ^
+	 *                   ^  ^
 	 *
 	 *     candidate: hi ev every onyx one
-	 *		      ^   ^
+	 *                      ^   ^
 	 *     pattern:   hi*every*one
-	 *		   ^   ^
+	 *                   ^   ^
 	 *
 	 *     candidate: hi ev every onyx one
-	 *			   ^
+	 *                           ^
 	 *     pattern:   hi*every*one
-	 *			^
+	 *                        ^
 	 *
 	 *     candidate: hi ev every onyx one
-	 *			   ^
+	 *                           ^
 	 *     pattern:   hi*every*one
-	 *			 ^ MISMATCH
+	 *                         ^ MISMATCH
 	 *
 	 *     candidate: hi ev every onyx one
-	 *			    ^
+	 *                            ^
 	 *     pattern:   hi*every*one
-	 *			 ^
+	 *                         ^
 	 *
 	 *     candidate: hi ev every onyx one
-	 *			    ^^
+	 *                            ^^
 	 *     pattern:   hi*every*one
-	 *			 ^^
+	 *                         ^^
 	 *
 	 *     candidate: hi ev every onyx one
-	 *			    ^ ^
+	 *                            ^ ^
 	 *     pattern:   hi*every*one
-	 *			 ^ ^ MISMATCH
+	 *                         ^ ^ MISMATCH
 	 *
 	 *     candidate: hi ev every onyx one
-	 *			     ^
+	 *                             ^
 	 *     pattern:   hi*every*one
-	 *			 ^ MISMATCH
+	 *                         ^ MISMATCH
 	 *
 	 *     candidate: hi ev every onyx one
-	 *			      ^
+	 *                              ^
 	 *     pattern:   hi*every*one
-	 *			 ^ MISMATCH
+	 *                         ^ MISMATCH
 	 *
 	 *     candidate: hi ev every onyx one
-	 *			       ^
+	 *                               ^
 	 *     pattern:   hi*every*one
-	 *			 ^ MISMATCH
+	 *                         ^ MISMATCH
 	 *
 	 *     candidate: hi ev every onyx one
-	 *				^
+	 *                                ^
 	 *     pattern:   hi*every*one
-	 *			 ^ MISMATCH
+	 *                         ^ MISMATCH
 	 *
 	 *     candidate: hi ev every onyx one
-	 *				 ^
+	 *                                 ^
 	 *     pattern:   hi*every*one
-	 *			 ^
+	 *                         ^
 	 *
 	 *     candidate: hi ev every onyx one
-	 *				 ^^
+	 *                                 ^^
 	 *     pattern:   hi*every*one
-	 *			 ^^
+	 *                         ^^
 	 *
 	 *     candidate: hi ev every onyx one
-	 *				 ^ ^
+	 *                                 ^ ^
 	 *     pattern:   hi*every*one
-	 *			 ^ ^
+	 *                         ^ ^
 	 *
 	 *     candidate: hi ev every onyx one
-	 *				 ^  ^
+	 *                                 ^  ^
 	 *     pattern:   hi*every*one
-	 *			 ^  ^ SUCCESS
+	 *                         ^  ^ SUCCESS
 	 */
 	while ((c - candidate) < candidate_len && *c != '\0') {
 		assert(*c);
