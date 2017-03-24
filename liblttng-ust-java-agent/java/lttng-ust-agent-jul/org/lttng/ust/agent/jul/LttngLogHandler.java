@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2017 - École Polytechnique de Montréal, Geneviève Bastien <gbastien@versatic.net>
  * Copyright (C) 2015 - EfficiOS Inc., Alexandre Montplaisir <alexmonthy@efficios.com>
  * Copyright (C) 2013 - David Goulet <dgoulet@efficios.com>
  *
@@ -25,6 +26,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
+import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 
 import org.lttng.ust.agent.ILttngAgent;
@@ -47,6 +49,7 @@ import org.lttng.ust.agent.context.ContextInfoSerializer;
 public class LttngLogHandler extends Handler implements ILttngHandler {
 
 	private static final String SHARED_OBJECT_NAME = "lttng-ust-jul-jni";
+	private static final String EMPTY = "";
 
 	/**
 	 * Dummy Formatter object, so we can use its
@@ -63,6 +66,8 @@ public class LttngLogHandler extends Handler implements ILttngHandler {
 
 	/** Number of events logged (really sent through JNI) by this handler */
 	private final AtomicLong eventCount = new AtomicLong(0);
+
+	private volatile boolean logSource;
 
 	/**
 	 * Constructor
@@ -84,9 +89,28 @@ public class LttngLogHandler extends Handler implements ILttngHandler {
 			throw new IOException(e);
 		}
 
+		/* Initialize handler specific properties */
+		LogManager manager = LogManager.getLogManager();
+		String cname = getClass().getName();
+		logSource = getBooleanProperty(manager.getProperty(cname + ".logSource"), true);
+		logSource = getBooleanProperty(System.getProperty(cname + ".logSource"), logSource);
+
 		/** Register to the relevant agent */
 		agent = LttngJulAgent.getInstance();
 		agent.registerHandler(this);
+	}
+
+	private static boolean getBooleanProperty(String val, boolean defaultValue) {
+		if (val == null) {
+			return defaultValue;
+		}
+		String value = val.toLowerCase();
+		if (value.equals("true") || value.equals("1")) {
+			return true;
+		} else if (value.equals("false") || value.equals("0")) {
+			return false;
+		}
+		return defaultValue;
 	}
 
 	@Override
@@ -134,13 +158,33 @@ public class LttngLogHandler extends Handler implements ILttngHandler {
 		 */
 		LttngJulApi.tracepointWithContext(formattedMessage,
 				record.getLoggerName(),
-				record.getSourceClassName(),
-				record.getSourceMethodName(),
+				logSource ? record.getSourceClassName() : EMPTY,
+				logSource ? record.getSourceMethodName() : EMPTY,
 				record.getMillis(),
 				record.getLevel().intValue(),
 				record.getThreadID(),
 				contextInfo.getEntriesArray(),
 				contextInfo.getStringsArray());
+	}
+
+	/**
+	 * Set whether the source method/class should be logged with the events.
+	 * Computing the source has a non-negligible overhead. By default, those
+	 * fields are logged and need to be explicily disabled.
+	 *
+	 * @param doLog
+	 *            <code>true</code> if the source method/class should be logged
+	 *            with the events, <code>false</code> otherwise.
+	 */
+	public void setLogSource(boolean doLog) {
+		logSource = doLog;
+	}
+	
+	/**
+	 * Get whether the source method/class should be logged with the events.
+	 */
+	public boolean getLogSource() {
+		return logSource;
 	}
 
 }
