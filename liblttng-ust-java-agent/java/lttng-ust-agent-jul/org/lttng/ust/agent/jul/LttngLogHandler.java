@@ -25,6 +25,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
+import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 
 import org.lttng.ust.agent.ILttngAgent;
@@ -47,6 +48,7 @@ import org.lttng.ust.agent.context.ContextInfoSerializer;
 public class LttngLogHandler extends Handler implements ILttngHandler {
 
 	private static final String SHARED_OBJECT_NAME = "lttng-ust-jul-jni";
+	private static final String EMPTY = "";
 
 	/**
 	 * Dummy Formatter object, so we can use its
@@ -60,6 +62,8 @@ public class LttngLogHandler extends Handler implements ILttngHandler {
 	};
 
 	private final ILttngAgent<LttngLogHandler> agent;
+	private final boolean logSourceMethod;
+	private final boolean logSourceClass;
 
 	/** Number of events logged (really sent through JNI) by this handler */
 	private final AtomicLong eventCount = new AtomicLong(0);
@@ -84,9 +88,28 @@ public class LttngLogHandler extends Handler implements ILttngHandler {
 			throw new IOException(e);
 		}
 
+		/* Initialize handler specific properties */
+		LogManager manager = LogManager.getLogManager();
+		String cname = getClass().getName();
+		logSourceMethod = (getBooleanProperty(manager.getProperty(cname + ".logSourceMethod"), true));
+		logSourceClass = (getBooleanProperty(manager.getProperty(cname + ".logSourceClass"), true));
+
 		/** Register to the relevant agent */
 		agent = LttngJulAgent.getInstance();
 		agent.registerHandler(this);
+	}
+
+	private boolean getBooleanProperty(String val, boolean defaultValue) {
+	        if (val == null) {
+	            return defaultValue;
+	        }
+	        val = val.toLowerCase();
+	        if (val.equals("true") || val.equals("1")) {
+	            return true;
+	        } else if (val.equals("false") || val.equals("0")) {
+	            return false;
+	        }
+	        return defaultValue;
 	}
 
 	@Override
@@ -134,13 +157,27 @@ public class LttngLogHandler extends Handler implements ILttngHandler {
 		 */
 		LttngJulApi.tracepointWithContext(formattedMessage,
 				record.getLoggerName(),
-				record.getSourceClassName(),
-				record.getSourceMethodName(),
+				getSourceClassName(record),
+				getSourceMethodName(record),
 				record.getMillis(),
 				record.getLevel().intValue(),
 				record.getThreadID(),
 				contextInfo.getEntriesArray(),
 				contextInfo.getStringsArray());
+	}
+
+	private String getSourceClassName(LogRecord record) {
+		if (!logSourceClass) {
+			return EMPTY;
+		}
+		return record.getSourceClassName();
+	}
+
+	private String getSourceMethodName(LogRecord record) {
+		if (!logSourceMethod) {
+			return EMPTY;
+		}
+		return record.getSourceMethodName();
 	}
 
 }
