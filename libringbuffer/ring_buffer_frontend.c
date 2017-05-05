@@ -1306,6 +1306,44 @@ nodata:
 }
 
 /**
+ * Performs the same function as lib_ring_buffer_snapshot(), but the positions
+ * are saved regardless of whether the consumed and produced positions are
+ * in the same subbuffer.
+ * @buf: ring buffer
+ * @consumed: consumed byte count indicating the last position read
+ * @produced: produced byte count indicating the last position written
+ *
+ * This function is meant to provide information on the exact producer and
+ * consumer positions without regard for the "snapshot" feature.
+ */
+int lib_ring_buffer_snapshot_sample_positions(
+			     struct lttng_ust_lib_ring_buffer *buf,
+			     unsigned long *consumed, unsigned long *produced,
+			     struct lttng_ust_shm_handle *handle)
+{
+	struct channel *chan;
+	const struct lttng_ust_lib_ring_buffer_config *config;
+	unsigned long consumed_cur, write_offset;
+
+	chan = shmp(handle, buf->backend.chan);
+	if (!chan)
+		return -EPERM;
+	config = &chan->backend.config;
+	cmm_smp_rmb();
+	*consumed = uatomic_read(&buf->consumed);
+	/*
+	 * No need to issue a memory barrier between consumed count read and
+	 * write offset read, because consumed count can only change
+	 * concurrently in overwrite mode, and we keep a sequence counter
+	 * identifier derived from the write offset to check we are getting
+	 * the same sub-buffer we are expecting (the sub-buffers are atomically
+	 * "tagged" upon writes, tags are checked upon read).
+	 */
+	*produced = v_read(config, &buf->offset);
+	return 0;
+}
+
+/**
  * lib_ring_buffer_move_consumer - move consumed counter forward
  * @buf: ring buffer
  * @consumed_new: new consumed count value

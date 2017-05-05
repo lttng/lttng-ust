@@ -1501,6 +1501,25 @@ int ustctl_snapshot(struct ustctl_consumer_stream *stream)
 			&buf->prod_snapshot, consumer_chan->chan->handle);
 }
 
+/*
+ * Get a snapshot of the current ring buffer producer and consumer positions
+ * even if the consumed and produced positions are contained within the same
+ * subbuffer.
+ */
+int ustctl_snapshot_sample_positions(struct ustctl_consumer_stream *stream)
+{
+	struct lttng_ust_lib_ring_buffer *buf;
+	struct ustctl_consumer_channel *consumer_chan;
+
+	if (!stream)
+		return -EINVAL;
+	buf = stream->buf;
+	consumer_chan = stream->chan;
+	return lib_ring_buffer_snapshot_sample_positions(buf,
+			&buf->cons_snapshot, &buf->prod_snapshot,
+			consumer_chan->chan->handle);
+}
+
 /* Get the consumer position (iteration start) */
 int ustctl_snapshot_get_consumed(struct ustctl_consumer_stream *stream,
 		unsigned long *pos)

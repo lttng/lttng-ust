@@ -131,6 +131,11 @@ extern int lib_ring_buffer_snapshot(struct lttng_ust_lib_ring_buffer *buf,
 				    unsigned long *consumed,
 				    unsigned long *produced,
 				    struct lttng_ust_shm_handle *handle);
+extern int lib_ring_buffer_snapshot_sample_positions(
+				    struct lttng_ust_lib_ring_buffer *buf,
+				    unsigned long *consumed,
+				    unsigned long *produced,
+				    struct lttng_ust_shm_handle *handle);
 extern void lib_ring_buffer_move_consumer(struct lttng_ust_lib_ring_buffer *buf,
 					  unsigned long consumed_new,
 					  struct lttng_ust_shm_handle *handle);
