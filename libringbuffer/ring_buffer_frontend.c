@@ -1323,7 +1323,6 @@ int lib_ring_buffer_snapshot_sample_positions(
 {
 	struct channel *chan;
 	const struct lttng_ust_lib_ring_buffer_config *config;
-	unsigned long consumed_cur, write_offset;
 
 	chan = shmp(handle, buf->backend.chan);
 	if (!chan)
