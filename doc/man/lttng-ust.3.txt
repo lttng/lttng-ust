@@ -1297,7 +1297,7 @@ are located in a specific directory under `$LTTNG_HOME` (or `$HOME` if
     there's no space left for the event record in the sub-buffer.
 +
 --
-`0` (default)::
+`0`::
     Never block the application.
 
 Positive value::
@@ -1308,6 +1308,8 @@ Positive value::
 Negative value::
     Block the application until there's space left for the event record.
 --
++
+Default: {lttng_ust_blocking_retry_timeout}.
 +
 This option can be useful in workloads generating very large trace data
 throughput, where blocking the application is an acceptable trade-off to
@@ -1340,24 +1342,6 @@ Setting this environment variable to `0` is recommended for applications
 with time constraints on the process startup time.
 +
 Default: {lttng_ust_register_timeout}.
-
-`LTTNG_UST_BLOCKING_RETRY_TIMEOUT`::
-    Maximum time during which event tracing retry is attempted on buffer
-    full condition (millliseconds). Setting this environment to non-zero
-    value effectively blocks the application on buffer full condition.
-    Setting this environment variable to non-zero values may
-    significantly affect application timings. Setting this to a negative
-    value may block the application indefinitely if there is no consumer
-    emptying the ring buffer. The delay between retry attempts is the
-    minimum between the specified timeout value and 100ms. This option
-    can be useful in workloads generating very large trace data
-    throughput, where blocking the application is an acceptable
-    trade-off to not discard events. _Use with caution_.
-+
-The value `0` means _do not retry_. The value `-1` means _retry forever_.
-Value > `0` means a maximum timeout of the given value.
-+
-Default: {lttng_ust_blocking_retry_timeout}.
 
 `LTTNG_UST_WITHOUT_BADDR_STATEDUMP`::
     Prevents `liblttng-ust` from performing a base address state dump
