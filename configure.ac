@@ -3,13 +3,13 @@ dnl Process this file with autoconf to produce a configure script.
 
 dnl Version infos
 m4_define([V_MAJOR], [2])
-m4_define([V_MINOR], [9])
+m4_define([V_MINOR], [10])
 m4_define([V_PATCH], [0])
 m4_define([V_EXTRA], [rc1])
 m4_define([V_STRING], [V_MAJOR.V_MINOR.V_PATCH])
 m4_ifdef([V_EXTRA], [m4_append([V_STRING], [-V_EXTRA])])
-m4_define([V_NAME], [[Joannès]])
-m4_define([V_DESC], [[Berliner Weisse style beer from the Trèfle Noir microbrewery in Rouyn-Noranda.]])
+m4_define([V_NAME], [[KeKriek]])
+m4_define([V_DESC], [[From Brasserie Dunham, a sour mashed golden wheat ale fermented with local sour cherries from Tougas orchards. Fresh sweet cherry notes with some tartness, lively carbonation with a dry finish.]])
 
 AC_INIT([lttng-ust], V_STRING, [mathieu dot desnoyers at efficios dot com])
 
