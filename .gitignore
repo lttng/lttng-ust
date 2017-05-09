@@ -16,7 +16,7 @@ Makefile.in
 *.info
 cscope.*
 configure
-aclocal.m4
+/aclocal.m4
 autom4te.cache/
 /config.h
 /include/lttng/config.h
@@ -24,11 +24,25 @@ autom4te.cache/
 /include/lttng/ust-version.h
 /include/lttng/ust-config.h
 /config.h.in
-config/
+/config/compile
+/config/config.guess
+/config/config.sub
+/config/config.sub
+/config/depcomp
+/config/depcomp
+/config/install-sh
+/config/ltmain.sh
+/config/missing
+/config/test-driver
+/m4/libtool.m4
+/m4/lt~obsolete.m4
+/m4/ltoptions.m4
+/m4/ltsugar.m4
+/m4/ltversion.m4
 config.log
 config.status
-stamp-h1
-libtool
+/stamp-h1
+/libtool
 lttng-ust.pc
 
 ustctl/ustctl
