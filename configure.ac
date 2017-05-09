@@ -188,8 +188,6 @@ dnl AC_CHECK_TYPES([ptrdiff_t])
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([gettimeofday munmap socket strerror strtol sched_getcpu sysconf])
 
-CFLAGS="-Wall $CFLAGS"
-
 # URCU
 
 # urcu - check if we just find the headers it out of the box.
@@ -307,10 +305,13 @@ AS_IF([test "x$jni_interface" = "xyes" || test "x$java_agent_jul" = "xyes" || te
 	AX_JNI_INCLUDE_DIR
 	for JNI_INCLUDE_DIR in $JNI_INCLUDE_DIRS
 	do
-		CPPFLAGS="$CPPFLAGS -I$JNI_INCLUDE_DIR"
+		JNI_CPPFLAGS="$JNI_CPPFLAGS -I$JNI_INCLUDE_DIR"
 	done
 
+	saved_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $JNI_CPPFLAGS"
 	AX_PROG_JAVAH
+	CPPFLAGS="$saved_CPPFLAGS"
 ])
 
 AS_IF([test "x$java_agent_log4j" = "xyes"], [
@@ -446,6 +447,10 @@ AC_DEFUN([_AC_DEFINE_AND_SUBST], [
 _AC_DEFINE_AND_SUBST([LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_MS], [3000])
 # By default, do not retry on buffer full condition.
 _AC_DEFINE_AND_SUBST([LTTNG_UST_DEFAULT_BLOCKING_RETRY_TIMEOUT_MS], [0])
+
+AM_CFLAGS="-Wall"
+AC_SUBST(AM_CFLAGS)
+AC_SUBST(JNI_CPPFLAGS)
 
 AC_CONFIG_FILES([
 	Makefile

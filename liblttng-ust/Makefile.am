@@ -1,5 +1,5 @@
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include
-AM_CFLAGS = -fno-strict-aliasing
+AM_CFLAGS += -fno-strict-aliasing
 
 noinst_LTLIBRARIES = liblttng-ust-runtime.la liblttng-ust-support.la
 
@@ -17,7 +17,7 @@ liblttng_ust_tracepoint_la_LIBADD = \
 	-lpthread \
 	$(top_builddir)/snprintf/libustsnprintf.la
 liblttng_ust_tracepoint_la_LDFLAGS = -no-undefined -version-info $(LTTNG_UST_LIBRARY_VERSION)
-liblttng_ust_tracepoint_la_CFLAGS = -DUST_COMPONENT="liblttng_ust_tracepoint" -fno-strict-aliasing
+liblttng_ust_tracepoint_la_CFLAGS = -DUST_COMPONENT="liblttng_ust_tracepoint" $(AM_CFLAGS)
 
 liblttng_ust_runtime_la_SOURCES = \
 	lttng-ust-comm.c \
@@ -100,4 +100,4 @@ liblttng_ust_la_LIBADD = \
 	liblttng-ust-tracepoint.la \
 	liblttng-ust-runtime.la liblttng-ust-support.la
 
-liblttng_ust_la_CFLAGS = -DUST_COMPONENT="liblttng_ust" -fno-strict-aliasing
+liblttng_ust_la_CFLAGS = -DUST_COMPONENT="liblttng_ust" $(AM_CFLAGS)

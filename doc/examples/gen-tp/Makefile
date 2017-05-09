@@ -17,34 +17,30 @@
 #
 # This makefile is purposefully kept simple to support GNU and BSD make.
 
-ifdef AM_CC
-	CC = $(AM_CC)
-endif
-
 LIBS = -ldl -llttng-ust		#On Linux
 #LIBS = -lc -llttng-ust		#On BSD
 
 all: sample
 
 sample: sample.o sample_tracepoint.o
-	$(CC) $(LDFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(AM_CFLAGS) \
+	$(CC) $(LDFLAGS) $(AM_CFLAGS) $(AM_LDFLAGS) $(CFLAGS) \
 		-o $@ sample.o sample_tracepoint.o $(LIBS)
 
 sample.o: sample.c sample_tracepoint.h
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(AM_CPPFLAGS) $(AM_CFLAGS) \
+	$(CC) $(CPPFLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) $(CFLAGS) \
 		-c -o $@ $<
 
 # Use this command to compile the .c manually
 #sample_tracepoint.o: sample_tracepoint.c sample_tracepoint.h
-#	$(CC) $(CPPFLAGS) $(CFLAGS) $(AM_CPPFLAGS) $(AM_CFLAGS) \
+#	$(CC) $(CPPFLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) $(CFLAGS) \
 #		-I. -c -o $@ $<
 
 # This rule generate .o only and depends on rules for generating
 # the .h and .c
 %.o: %.tp %.c %.h
-	CPPFLAGS="$(CPPFLAGS) $(AM_CPPFLAGS)" \
-	CFLAGS="$(CFLAGS) $(AM_CFLAGS)" \
-	LDFLAGS="$(LDFLAGS) $(AM_LDFLAGS)" \
+	CPPFLAGS="$(AM_CPPFLAGS) $(CPPFLAGS)" \
+	CFLAGS="$(AM_CFLAGS) $(CFLAGS)" \
+	LDFLAGS="$(AM_LDFLAGS) $(LDFLAGS)" \
 	CC="$(CC)" \
 	$(LTTNG_GEN_TP_PATH)lttng-gen-tp -o $@ $<
 

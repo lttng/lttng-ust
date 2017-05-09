@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include $(JNI_CPPFLAGS)
 
 lib_LTLIBRARIES = liblttng-ust-jul-jni.la
 liblttng_ust_jul_jni_la_SOURCES = lttng_ust_jul.c \
