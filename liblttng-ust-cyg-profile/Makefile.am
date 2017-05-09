@@ -1,5 +1,5 @@
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include
-AM_CFLAGS = -fno-strict-aliasing
+AM_CFLAGS += -fno-strict-aliasing
 
 lib_LTLIBRARIES = liblttng-ust-cyg-profile.la \
 	liblttng-ust-cyg-profile-fast.la

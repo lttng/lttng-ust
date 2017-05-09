@@ -14,10 +14,6 @@
 #
 # This makefile is purposefully kept simple to support GNU and BSD make.
 
-ifdef AM_CC
-	CC = $(AM_CC)
-endif
-
 LIBS = -ldl	# On Linux
 #LIBS = -lc	# On BSD
 LOCAL_CPPFLAGS += -I.
@@ -25,31 +21,31 @@ LOCAL_CPPFLAGS += -I.
 all: demo lttng-ust-provider-ust-tests-demo.so lttng-ust-provider-ust-tests-demo3.so
 
 tp.o: tp.c ust_tests_demo.h
-	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(CFLAGS) $(AM_CPPFLAGS) \
-		$(AM_CFLAGS) -fpic -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) \
+		$(CFLAGS) -fpic -c -o $@ $<
 
 tp2.o: tp2.c ust_tests_demo2.h
-	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(CFLAGS) $(AM_CPPFLAGS) \
-		$(AM_CFLAGS) -fpic -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) \
+		$(CFLAGS) -fpic -c -o $@ $<
 
 lttng-ust-provider-ust-tests-demo.so: tp.o tp2.o
-	$(CC) -shared -Wl,--no-as-needed -o $@ $(LDFLAGS) $(CFLAGS) \
-		$(AM_LDFLAGS) $(AM_CFLAGS) -llttng-ust tp.o tp2.o
+	$(CC) -shared -Wl,--no-as-needed -o $@ $(LDFLAGS) $(AM_CFLAGS) \
+		$(AM_LDFLAGS) $(CFLAGS) -llttng-ust tp.o tp2.o
 
 tp3.o: tp3.c ust_tests_demo3.h
-	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(CFLAGS) $(AM_CPPFLAGS) \
-		$(AM_CFLAGS) -fpic -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) \
+		$(CFLAGS) -fpic -c -o $@ $<
 
 lttng-ust-provider-ust-tests-demo3.so: tp3.o
-	$(CC) -shared -Wl,--no-as-needed -o $@ $(LDFLAGS) $(CFLAGS) \
-		$(AM_LDFLAGS) $(AM_CFLAGS) -llttng-ust tp3.o
+	$(CC) -shared -Wl,--no-as-needed -o $@ $(LDFLAGS) $(AM_CFLAGS) \
+		$(AM_LDFLAGS) $(CFLAGS) -llttng-ust tp3.o
 
 demo.o: demo.c
-	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(CFLAGS) $(AM_CPPFLAGS) \
-		$(AM_CFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) \
+		$(CFLAGS) -c -o $@ $<
 
 demo: demo.o
-	$(CC) $(LDFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(AM_CFLAGS) \
+	$(CC) $(LDFLAGS) $(AM_CFLAGS) $(AM_LDFLAGS) $(CFLAGS) \
 		-o $@ demo.o $(LIBS)
 
 .PHONY: clean
