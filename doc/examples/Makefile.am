@@ -149,8 +149,8 @@ all-local:
 				cd $$subdir && \
 				$(MKDIR_P) build && \
 				cd build && \
-				CC=$(CC) \
-				CXX=$(CXX) \
+				CC="$(CC)" \
+				CXX="$(CXX)" \
 				cmake \
 				-DCMAKE_INCLUDE_PATH="$(abs_top_srcdir)/include;$(abs_top_builddir)/include" \
 				-DCMAKE_LIBRARY_PATH="$(abs_top_builddir)/liblttng-ust/.libs" \
