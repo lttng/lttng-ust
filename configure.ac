@@ -1,18 +1,21 @@
-dnl -*- Autoconf -*-
-dnl Process this file with autoconf to produce a configure script.
-
 dnl Version infos
 m4_define([V_MAJOR], [2])
 m4_define([V_MINOR], [10])
 m4_define([V_PATCH], [0])
 m4_define([V_EXTRA], [rc1])
-m4_define([V_STRING], [V_MAJOR.V_MINOR.V_PATCH])
-m4_ifdef([V_EXTRA], [m4_append([V_STRING], [-V_EXTRA])])
 m4_define([V_NAME], [[KeKriek]])
 m4_define([V_DESC], [[From Brasserie Dunham, a sour mashed golden wheat ale fermented with local sour cherries from Tougas orchards. Fresh sweet cherry notes with some tartness, lively carbonation with a dry finish.]])
 
+m4_define([V_STRING], [V_MAJOR.V_MINOR.V_PATCH])
+m4_ifdef([V_EXTRA], [m4_append([V_STRING], [-V_EXTRA])])
+
 AC_PREREQ(2.59)
 AC_INIT([lttng-ust], V_STRING, [mathieu dot desnoyers at efficios dot com], [], [https://lttng.org])
+
+dnl Substitute minor/major/patchlevel version numbers
+AC_SUBST([MAJOR_VERSION], [V_MAJOR])
+AC_SUBST([MINOR_VERSION], [V_MINOR])
+AC_SUBST([PATCHLEVEL_VERSION], [V_PATCH])
 
 # Following the numbering scheme proposed by libtool for the library version
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
@@ -25,36 +28,50 @@ AC_SUBST([LTTNG_UST_LIBRARY_VERSION], [0:0:0])
 # liblttng-ust, lttng-sessiond, and lttng-consumerd.
 AC_SUBST([LTTNG_UST_CTL_LIBRARY_VERSION], [3:0:1])
 
+AC_CONFIG_HEADERS([config.h include/lttng/ust-config.h])
 AC_CONFIG_AUX_DIR([config])
+AC_CONFIG_MACRO_DIR([m4])
+AC_CONFIG_SRCDIR([include/lttng/tracepoint.h])
+
 AC_CANONICAL_TARGET
 AC_CANONICAL_HOST
-AC_CONFIG_MACRO_DIR([m4])
+
 AM_INIT_AUTOMAKE([1.9 foreign dist-bzip2 no-dist-gzip tar-ustar])
 AM_MAINTAINER_MODE([enable])
+
+# Enable silent rules if available (Introduced in AM 1.11)
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
-AC_CONFIG_SRCDIR([include/lttng/tracepoint.h])
 
 AC_REQUIRE_AUX_FILE([tap-driver.sh])
 
-# Configuration options, which will be installed in the config.h
-AC_CONFIG_HEADERS([config.h include/lttng/ust-config.h])
-AH_TEMPLATE([LTTNG_UST_HAVE_EFFICIENT_UNALIGNED_ACCESS], [Use efficient unaligned access.])
-AH_TEMPLATE([LTTNG_UST_HAVE_SDT_INTEGRATION], [SystemTap integration via sdt.h])
-AH_TEMPLATE([LTTNG_UST_HAVE_PERF_EVENT], [Perf event integration via perf_event.h])
+# Checks for C compiler
+AC_USE_SYSTEM_EXTENSIONS
+AC_SYS_LARGEFILE
+AC_PROG_CC
+AC_PROG_CC_STDC
+AC_PROG_CXX
+rw_PROG_CXX_WORKS
+AM_CONDITIONAL([CXX_WORKS], [test "x$rw_cv_prog_cxx_works" = "xyes"])
 
-dnl Substitute minor/major/patchlevel version numbers
-AC_SUBST([MAJOR_VERSION], [V_MAJOR])
-AC_SUBST([MINOR_VERSION], [V_MINOR])
-AC_SUBST([PATCHLEVEL_VERSION], [V_PATCH])
+# Check if the compiler support weak symbols
+AX_SYS_WEAK_ALIAS
 
+AS_IF([test "x${ax_cv_sys_weak_alias}" = "xno"], [
+	AC_MSG_ERROR([Your platform doesn't support weak symbols.])
+])
+
+# Checks for programs.
 AC_PROG_SED
 AC_PROG_GREP
 AC_PROG_LN_S
 AC_PROG_MKDIR_P
+AC_PROG_MAKE_SET
+AC_CHECK_PROG([HAVE_CMAKE], [cmake], ["yes"])
+AM_CONDITIONAL([HAVE_CMAKE], [test "x$HAVE_CMAKE" = "xyes"])
 
 # libtool link_all_deplibs fixup. See http://bugs.lttng.org/issues/321.
 AC_ARG_ENABLE([libtool-linkdep-fixup], [
-	AS_HELP_STRING([--disable-libtool-linkdep-fixup], [disable the libtool fixup for linking all dependent libraries (link_all_deplibs)])
+AS_HELP_STRING([--disable-libtool-linkdep-fixup], [disable the libtool fixup for linking all dependent libraries (link_all_deplibs)])
 ], [
 	libtool_fixup=$enableval
 ], [
@@ -70,58 +87,94 @@ AS_IF([test "x$libtool_fixup" = "xyes"], [
 	AS_IF([test $libtool_flag_pattern_count -ne 0], [
 	AC_MSG_RESULT([$libtool_flag_pattern_count])
 	AC_MSG_WARN([the detected libtool will not link all dependencies, forcing link_all_deplibs = unknown])
-		sed -i "s/\($libtool_flag_pattern\)\s*=\s*no/\1=unknown/g" $libtool_m4
+		$SED -i "s/\($libtool_flag_pattern\)\s*=\s*no/\1=unknown/g" $libtool_m4
 	], [
 		AC_MSG_RESULT([none])
 	])
 ])
+LT_INIT([disable-static])
 
-AM_CONDITIONAL([NO_SHARED], [test "x$enable_shared" = "xno"])
-
-# Checks for programs.
-AC_PROG_CC
-AC_PROG_CXX
-AC_CHECK_PROG([HAVE_CMAKE], [cmake], ["yes"])
-AM_CONDITIONAL([HAVE_CMAKE], [test "x$HAVE_CMAKE" = "xyes"])
-AC_PROG_MAKE_SET
-LT_INIT
-
-# rw_PROG_CXX_WORKS
-# Check whether the C++ compiler works.
-AC_CACHE_CHECK([whether the C++ compiler works], [rw_cv_prog_cxx_works], [
-	AC_LANG_PUSH([C++])
-
-	AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])], [
-		check_cxx_designated_initializers=yes
-	], [
-		rw_cv_prog_cxx_works=no
-	])
-
-	AS_IF([test "x$check_cxx_designated_initializers" = "xyes"], [
-		AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
-			struct foo { int a; int b; };
-			void fct(void)
-			{
-				struct foo f = { .a = 0, .b = 1 };
-			}
-		]])], [
-			rw_cv_prog_cxx_works=yes
-		], [
-			rw_cv_prog_cxx_works=no
-		])
-	])
-
-	AC_LANG_POP([C++])
+AC_MSG_CHECKING([whether shared libraries are enabled])
+AS_IF([test "x$enable_shared" = "xyes"], [
+	AC_MSG_RESULT([yes])
+], [
+	AC_MSG_RESULT([no])
+	AC_MSG_ERROR([LTTng-UST requires shared libraries to be enabled])
 ])
 
-AM_CONDITIONAL([CXX_WORKS], [test "x$rw_cv_prog_cxx_works" = "xyes"])
+# Checks for typedefs, structures, and compiler characteristics.
+AC_C_INLINE
+AC_TYPE_INT8_T
+AC_TYPE_INT16_T
+AC_TYPE_INT32_T
+AC_TYPE_INT64_T
+AC_TYPE_MODE_T
+AC_TYPE_OFF_T
+AC_TYPE_PID_T
+AC_TYPE_SIZE_T
+AC_TYPE_SSIZE_T
+AC_TYPE_UID_T
+AC_TYPE_UINT8_T
+AC_TYPE_UINT16_T
+AC_TYPE_UINT32_T
+AC_TYPE_UINT64_T
+AC_CHECK_TYPES([ptrdiff_t])
 
-# Check if the compiler support weak symbols
-AX_SYS_WEAK_ALIAS
+AX_C___ATTRIBUTE__
+AS_IF([test "x$ax_cv___attribute__" = "xyes"],
+	[:],
+	[AC_MSG_ERROR([The compiler does not support __attribute__ extensions])])
 
-AS_IF([test "x${ax_cv_sys_weak_alias}" = "xno"], [
-	AC_MSG_ERROR([Your platform doesn't support weak symbols.])
+# Checks for library functions.
+AC_FUNC_CHOWN
+AC_FUNC_FORK
+AC_FUNC_MMAP
+AC_FUNC_REALLOC
+AC_FUNC_STRERROR_R
+AC_FUNC_STRNLEN
+AC_CHECK_FUNCS([ \
+	atexit \
+	clock_gettime \
+	ftruncate \
+	getpagesize \
+	gettimeofday \
+	localeconv \
+	memchr \
+	memmove \
+	memset \
+	mkdir \
+	munmap \
+	realpath \
+	sched_getcpu \
+	socket \
+	strchr \
+	strdup \
+	strerror \
+	strtol \
+	sysconf \
 ])
+
+# AC_FUNC_MALLOC causes problems when cross-compiling.
+#AC_FUNC_MALLOC
+
+# Checks for header files.
+AC_HEADER_STDBOOL
+AC_CHECK_HEADERS([ \
+	arpa/inet.h \
+	fcntl.h \
+	float.h \
+	limits.h \
+	locale.h \
+	stddef.h \
+	sys/socket.h \
+	sys/time.h \
+	wchar.h \
+])
+
+# Configuration options, which will be installed in the config.h
+AH_TEMPLATE([LTTNG_UST_HAVE_EFFICIENT_UNALIGNED_ACCESS], [Use efficient unaligned access.])
+AH_TEMPLATE([LTTNG_UST_HAVE_SDT_INTEGRATION], [SystemTap integration via sdt.h])
+AH_TEMPLATE([LTTNG_UST_HAVE_PERF_EVENT], [Perf event integration via perf_event.h])
 
 # Checks for libraries.
 AC_CHECK_LIB([dl], [dlopen], [
@@ -165,28 +218,6 @@ AS_IF([test "x${ac_cv_header_dlfcn_h}" = "xyes"], [
 ])
 
 AM_CONDITIONAL([HAVE_DLINFO], [test "x${ac_cv_have_decl_RTLD_DI_LINKMAP}" = "xyes"])
-
-# Checks for header files.
-dnl AC_CHECK_HEADERS([fcntl.h stdint.h stdlib.h string.h sys/socket.h sys/time.h unistd.h])
-
-# Checks for typedefs, structures, and compiler characteristics.
-AC_C_INLINE
-dnl AC_TYPE_INT16_T
-dnl AC_TYPE_INT32_T
-dnl AC_TYPE_INT64_T
-dnl AC_TYPE_INT8_T
-dnl AC_TYPE_PID_T
-dnl AC_TYPE_SIZE_T
-dnl AC_TYPE_SSIZE_T
-dnl AC_TYPE_UINT16_T
-dnl AC_TYPE_UINT32_T
-dnl AC_TYPE_UINT64_T
-dnl AC_TYPE_UINT8_T
-dnl AC_CHECK_TYPES([ptrdiff_t])
-
-# Checks for library functions.
-AC_FUNC_MALLOC
-AC_CHECK_FUNCS([gettimeofday munmap socket strerror strtol sched_getcpu sysconf])
 
 # URCU
 
@@ -259,7 +290,7 @@ AS_IF([test "x$NO_UNALIGNED_ACCESS" = "x"], [
 
 # Check for JNI header files if requested
 AC_ARG_ENABLE([jni-interface], [
-	AS_HELP_STRING([--enable-jni-interface], [build JNI interface between C and Java. Needs Java include files [default=no]])
+AS_HELP_STRING([--enable-jni-interface], [build JNI interface between C and Java. Needs Java include files [default=no]])
 ], [
 	jni_interface=$enableval
 ], [
@@ -270,7 +301,7 @@ AM_CONDITIONAL([BUILD_JNI_INTERFACE], [test "x$jni_interface" = "xyes"])
 
 
 AC_ARG_ENABLE([java-agent-jul], [
-	AS_HELP_STRING([--enable-java-agent-jul], [build the LTTng UST Java agent with JUL support [default=no]])
+AS_HELP_STRING([--enable-java-agent-jul], [build the LTTng UST Java agent with JUL support [default=no]])
 ], [
 	java_agent_jul=$enableval
 ], [
@@ -278,7 +309,7 @@ AC_ARG_ENABLE([java-agent-jul], [
 ])
 
 AC_ARG_ENABLE([java-agent-log4j], [
-	AS_HELP_STRING([--enable-java-agent-log4j], [build the LTTng UST Java agent with Log4j support [default=no]])
+AS_HELP_STRING([--enable-java-agent-log4j], [build the LTTng UST Java agent with Log4j support [default=no]])
 ], [
 	java_agent_log4j=$enableval
 ], [
@@ -286,7 +317,7 @@ AC_ARG_ENABLE([java-agent-log4j], [
 ])
 
 AC_ARG_ENABLE([java-agent-all], [
-	AS_HELP_STRING([--enable-java-agent-all], [build the LTTng UST Java agent with all supported backends [default=no]])
+AS_HELP_STRING([--enable-java-agent-all], [build the LTTng UST Java agent with all supported backends [default=no]])
 ], [
 	java_agent_jul=$enableval
 	java_agent_log4j=$enableval
@@ -324,7 +355,7 @@ AS_IF([test "x$java_agent_log4j" = "xyes"], [
 
 # Option to build the python agent
 AC_ARG_ENABLE([python-agent], [
-	AS_HELP_STRING([--enable-python-agent], [build the LTTng UST Python agent [default=no]])
+AS_HELP_STRING([--enable-python-agent], [build the LTTng UST Python agent [default=no]])
 ], [
 	python_agent=$enableval
 ], [:])
@@ -335,7 +366,7 @@ AS_IF([test "x$python_agent" = "xyes"], [
 
 # sdt.h integration
 AC_ARG_WITH([sdt], [
-	AS_HELP_STRING([--with-sdt], [provide SystemTap integration via sdt.h [default=no]])
+AS_HELP_STRING([--with-sdt], [provide SystemTap integration via sdt.h [default=no]])
 ], [
 	with_sdt=$withval
 ], [
@@ -360,16 +391,8 @@ AS_IF([test "x$with_sdt" = "xyes"], [
 	])
 ])
 
-AC_MSG_CHECKING([whether shared libraries are enabled])
-AS_IF([test "x$enable_shared" = "xyes"], [
-	AC_MSG_RESULT([yes])
-], [
-	AC_MSG_RESULT([no])
-	AC_MSG_ERROR([LTTng-UST requires shared libraries to be enabled])
-])
-
 AC_ARG_WITH([lttng-system-rundir], [
-	AS_HELP_STRING([--with-lttng-system-rundir], [Location of the system directory where LTTng-UST expects the system-wide lttng-sessiond runtime files. The default is "/var/run/lttng".]),
+AS_HELP_STRING([--with-lttng-system-rundir], [Location of the system directory where LTTng-UST expects the system-wide lttng-sessiond runtime files. The default is "/var/run/lttng".]),
 ], [
 	lttng_system_rundir="$withval"
 ], [
@@ -399,6 +422,7 @@ AC_ARG_ENABLE(
 
 # Check for asciidoc and xmlto if we enabled building the man pages.
 have_asciidoc_xmlto=no
+warn_prebuilt_man_pages=no
 
 AS_IF([test "x$man_pages_opt" = "xyes"], [
 	AC_PATH_PROG([ASCIIDOC], [asciidoc], [no])
@@ -419,13 +443,7 @@ they will not be installed.
 			# Only warn here: since we're in the tarball, the man
 			# pages should already be generated at this point, thus
 			# asciidoc/xmlto are not strictly required.
-			AC_MSG_WARN([
-Both asciidoc and xmlto are needed to build the LTTng-UST man pages.
-Note that the man pages are already built in this distribution tarball,
-so asciidoc and xmlto are only needed if you intend to modify their
-sources. Use --disable-man-pages to completely disable building
-and installing the man pages.
-			])
+			warn_prebuilt_man_pages=yes
 		])
 	], [
 		have_asciidoc_xmlto=yes
@@ -509,37 +527,102 @@ AC_CONFIG_LINKS([
 
 AC_OUTPUT
 
+
+#
+# Mini-report on what will be built.
+#
+
+PPRINT_INIT
+PPRINT_SET_INDENT(1)
+PPRINT_SET_TS(38)
+
 AS_ECHO
-AS_ECHO(["m4_bpatsubst(V_NAME, ["], [\\"])"])
-AS_ECHO
-AS_ECHO(["m4_bpatsubst(V_DESC, ["], [\\"])"])
-
-# Report on the configuration options
-AS_ECHO
-AS_ECHO(["LTTng-UST will be built with the following options:"])
-
-AS_ECHO
-
-AS_ECHO_N(["Java agent (JUL support): "])
-AS_IF([test "x$java_agent_jul" = "xyes"], [AS_ECHO(["Enabled"])], [AS_ECHO(["Disabled (Use --enable-java-agent-jul)"])])
-
-AS_ECHO_N(["Java agent (Log4j support): "])
-AS_IF([test "x$java_agent_log4j" = "xyes"], [AS_ECHO(["Enabled"])], [AS_ECHO(["Disabled (Use --enable-java-agent-log4j)"])])
-
-AS_ECHO_N(["JNI interface (JNI): "])
-AS_IF([test "x$jni_interface" = "xyes"], [AS_ECHO(["Enabled"])], [AS_ECHO(["Disabled (Use --enable-jni-interface)"])])
-
-AS_ECHO_N(["Python ($PYTHON) agent: "])
-AS_IF([test "x$python_agent" = "xyes"], [AS_ECHO(["Enabled"])], [AS_ECHO(["Disabled (Use --enable-python-agent)"])])
-
-AS_ECHO_N(["sdt.h integration: "])
-AS_IF([test "x$with_sdt" = "xyes"], [AS_ECHO(["Enabled"])], [AS_ECHO(["Disabled"])])
-
-AS_ECHO(["Architecture: $host_cpu"])
-AS_ECHO_N(["Efficient unaligned memory access: "])
-AS_IF([test "x$NO_UNALIGNED_ACCESS" != "x1"], [AS_ECHO(["yes"])], [AS_IF([test "x$UNSUPPORTED_ARCH" != "x1"], [AS_ECHO(["no"])], [AS_ECHO(["unknown"])])])
-AS_IF([test "x$UNSUPPORTED_ARCH" = "x1"], [AC_MSG_WARN([Your architecture ($host_cpu) is unsupported, using safe default of no unaligned access])])
+AS_ECHO("${PPRINT_COLOR_BLDBLU}LTTng-ust $PACKAGE_VERSION \"V_NAME\"$PPRINT_COLOR_RST")
 AS_ECHO
 
-AS_ECHO(["Type 'make' to compile."])
+AS_ECHO("V_DESC")
 
+AS_ECHO
+PPRINT_SUBTITLE([System])
+
+PPRINT_PROP_STRING([Target architecture], $host_cpu)
+
+test "x$NO_UNALIGNED_ACCESS" != "x1" && value=1 || value=0
+PPRINT_PROP_BOOL([Efficient unaligned memory access], $value)
+
+AS_IF([test "x$UNSUPPORTED_ARCH" = "x1"],[
+       PPRINT_WARN([Your architecture ($host_cpu) is unsupported, using safe default of no unaligned access.])
+])
+
+AS_ECHO
+PPRINT_SUBTITLE([Features])
+PPRINT_SET_INDENT(1)
+
+test "x$with_sdt" = "xyes" && value=1 || value=0
+PPRINT_PROP_BOOL_CUSTOM([sdt.h integration], $value, [use --with-sdt])
+
+test "x$java_agent_jul" = xyes && value=1 || value=0
+PPRINT_PROP_BOOL_CUSTOM([Java agent (JUL support)], $value, [use --enable-java-agent-jul])
+
+test "x$java_agent_log4j" = xyes && value=1 || value=0
+PPRINT_PROP_BOOL_CUSTOM([Java agent (Log4j support)], $value, [use --enable-java-agent-log4j])
+
+test "x$jni_interface" = xyes && value=1 || value=0
+PPRINT_PROP_BOOL_CUSTOM([JNI interface (JNI)], $value, [use --enable-jni-interface])
+
+test "x$python_agent" = xyes && value=1 || value=0
+PPRINT_PROP_BOOL_CUSTOM([Python agent], $value, [use --enable-python-agent])
+
+AS_ECHO
+PPRINT_SET_INDENT(0)
+
+# man pages build enabled/disabled
+m4_pushdef([build_man_pages_msg], [Build and install man pages])
+
+AS_IF([test "x$man_pages_opt" != "xno"], [
+	AS_IF([test "x$in_git_repo" = "xyes"], [
+		PPRINT_PROP_BOOL([build_man_pages_msg], 1, $PPRINT_COLOR_SUBTITLE)
+	], [
+		AS_IF([test "x$have_asciidoc_xmlto" = "xyes"], [
+			PPRINT_PROP_BOOL([build_man_pages_msg], 1, $PPRINT_COLOR_SUBTITLE)
+		], [
+			PPRINT_PROP_STRING([build_man_pages_msg],
+				[${PPRINT_COLOR_BLDGRN}yes (already built)],
+				$PPRINT_COLOR_SUBTITLE)
+		])
+	])
+], [
+	PPRINT_PROP_BOOL([build_man_pages_msg], 0, $PPRINT_COLOR_SUBTITLE)
+])
+
+m4_popdef([build_man_pages_msg])
+
+PPRINT_SET_INDENT(1)
+
+report_bindir="`eval eval echo $bindir`"
+report_libdir="`eval eval echo $libdir`"
+
+# Print the bindir and libdir this `make install' will install into.
+AS_ECHO
+PPRINT_SUBTITLE([Install directories])
+PPRINT_PROP_STRING([Binaries], [$report_bindir])
+PPRINT_PROP_STRING([Libraries], [$report_libdir])
+
+AS_ECHO
+PPRINT_SUBTITLE([System directories])
+
+PPRINT_PROP_STRING([lttng-sessiond rundir], [$lttng_system_rundir])
+
+PPRINT_SET_INDENT(0)
+
+AS_IF([test "x$warn_prebuilt_man_pages" = "xyes" ], [
+	AS_ECHO
+	PPRINT_WARN([Both asciidoc and xmlto are needed to build the LTTng-UST man pages.
+
+Note that the man pages are already built in this distribution tarball,
+therefore asciidoc and xmlto are only needed if you intend to modify
+their sources.
+
+Use --disable-man-pages to completely disable building and installing
+the man pages.])
+])

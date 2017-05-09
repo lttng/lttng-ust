@@ -97,10 +97,6 @@ dist_doc_examples_getcpu_override_DATA = getcpu-override/Makefile \
 	getcpu-override/run-getcpu-override \
 	getcpu-override/README
 
-if NO_SHARED
-# Don't build examples if shared libraries support was explicitly
-# disabled.
-else
 # Copies are for VPATH build support
 SUBDIRS_PROXY = easy-ust demo hello-static-lib demo-tracef clock-override \
 		getcpu-override demo-tracelog
@@ -197,4 +193,3 @@ clean-local:
 			rm -rf $(builddir)/$$subdir; \
 		done; \
 	fi;
-endif
