@@ -13,5 +13,5 @@ CLEANFILES = $(noinst_SCRIPTS)
 EXTRA_DIST = test_gcc_weak_hidden.in
 
 $(noinst_SCRIPTS): %: %.in
-	sed "s#@ABSTOPSRCDIR@#$(abs_top_srcdir)#g" < $< > $@
+	$(SED) "s#@ABSTOPSRCDIR@#$(abs_top_srcdir)#g" < $< > $@
 	chmod +x $@

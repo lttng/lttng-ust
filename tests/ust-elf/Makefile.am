@@ -24,5 +24,5 @@ EXTRA_DIST = test_ust_elf.in \
 	$(srcdir)/data/pic/libhello.c
 
 $(noinst_SCRIPTS): %: %.in
-	sed "s#@ABSTOPSRCDIR@#$(abs_top_srcdir)#g" < $< > $@
+	$(SED) "s#@ABSTOPSRCDIR@#$(abs_top_srcdir)#g" < $< > $@
 	chmod +x $@
