@@ -15,10 +15,6 @@
 #
 # This makefile is purposefully kept simple to support GNU and BSD make.
 
-ifdef AM_CC
-	CC = $(AM_CC)
-endif
-
 LIBS = -ldl -llttng-ust	# On Linux
 #LIBS = -lc	# On BSD
 LOCAL_CPPFLAGS += -I.
@@ -26,11 +22,11 @@ LOCAL_CPPFLAGS += -I.
 all: demo-tracef
 
 demo-tracef.o: demo-tracef.c
-	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(CFLAGS) $(AM_CPPFLAGS) \
-		$(AM_CFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) \
+		$(CFLAGS) -c -o $@ $<
 
 demo-tracef: demo-tracef.o
-	$(CC) $(LDFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(AM_CFLAGS) \
+	$(CC) $(LDFLAGS) $(AM_CFLAGS) $(AM_LDFLAGS) $(CFLAGS) \
 		-o $@ $< $(LIBS)
 
 .PHONY: clean
