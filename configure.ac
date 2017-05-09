@@ -11,7 +11,8 @@ m4_ifdef([V_EXTRA], [m4_append([V_STRING], [-V_EXTRA])])
 m4_define([V_NAME], [[KeKriek]])
 m4_define([V_DESC], [[From Brasserie Dunham, a sour mashed golden wheat ale fermented with local sour cherries from Tougas orchards. Fresh sweet cherry notes with some tartness, lively carbonation with a dry finish.]])
 
-AC_INIT([lttng-ust], V_STRING, [mathieu dot desnoyers at efficios dot com])
+AC_PREREQ(2.59)
+AC_INIT([lttng-ust], V_STRING, [mathieu dot desnoyers at efficios dot com], [], [https://lttng.org])
 
 # Following the numbering scheme proposed by libtool for the library version
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
@@ -27,7 +28,7 @@ AC_SUBST([LTTNG_UST_CTL_LIBRARY_VERSION], [3:0:1])
 AC_CONFIG_AUX_DIR([config])
 AC_CANONICAL_TARGET
 AC_CANONICAL_HOST
-AC_CONFIG_MACRO_DIR([config])
+AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([1.9 foreign dist-bzip2 no-dist-gzip tar-ustar])
 AM_MAINTAINER_MODE([enable])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
@@ -61,7 +62,7 @@ AC_ARG_ENABLE([libtool-linkdep-fixup], [
 ])
 
 AS_IF([test "x$libtool_fixup" = "xyes"], [
-	libtool_m4="$srcdir/config/libtool.m4"
+	libtool_m4="$srcdir/m4/libtool.m4"
 	libtool_flag_pattern=".*link_all_deplibs\s*,\s*\$1\s*)"
 	AC_MSG_CHECKING([for occurence(s) of link_all_deplibs = no in $libtool_m4])
 	libtool_flag_pattern_count=$(grep -c "$libtool_flag_pattern\s*=\s*no" $libtool_m4)
