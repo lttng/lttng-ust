@@ -14,10 +14,6 @@
 #
 # This makefile is purposefully kept simple to support GNU and BSD make.
 
-ifdef AM_CC
-	CC = $(AM_CC)
-endif
-
 LOCAL_CPPFLAGS += -I.
 LIBS = -ldl -llttng-ust	# On Linux
 #LIBS = -lc -llttng-ust	# On BSD
@@ -25,19 +21,19 @@ LIBS = -ldl -llttng-ust	# On Linux
 all: hello
 
 lttng-ust-provider-hello.o: tp.c ust_tests_hello.h
-	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(CFLAGS) $(AM_CPPFLAGS) \
-		$(AM_CFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) \
+		$(CFLAGS) -c -o $@ $<
 
 lttng-ust-provider-hello.a: lttng-ust-provider-hello.o
 	ar -rc $@ lttng-ust-provider-hello.o
 
 hello.o: hello.c
-	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(CFLAGS) $(AM_CPPFLAGS) \
-		$(AM_CFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) \
+		$(CFLAGS) -c -o $@ $<
 
 hello: hello.o lttng-ust-provider-hello.a
 	$(CC) -o $@ $(LDFLAGS) $(CPPFLAGS) $(AM_LDFLAGS) $(AM_CFLAGS) \
-		hello.o lttng-ust-provider-hello.a $(LIBS)
+		$(CFLAGS) hello.o lttng-ust-provider-hello.a $(LIBS)
 
 .PHONY: clean
 clean:

@@ -7,7 +7,7 @@ dist_noinst_JAVA = $(pkgpath)/LTTngUst.java
 jar_DATA = $(jarfile)
 BUILT_SOURCES = org_lttng_ust_LTTngUst.h
 
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include $(JNI_CPPFLAGS)
 lib_LTLIBRARIES = liblttng-ust-java.la
 liblttng_ust_java_la_SOURCES = LTTngUst.c lttng_ust_java.h
 nodist_liblttng_ust_java_la_SOURCES = org_lttng_ust_LTTngUst.h

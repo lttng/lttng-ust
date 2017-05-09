@@ -16,10 +16,6 @@
 #
 # This makefile is purposefully kept simple to support GNU and BSD make.
 
-ifdef AM_CC
-	CC = $(AM_CC)
-endif
-
 LIBS = -ldl -llttng-ust		# On Linux
 #LIBS = -lc -llttng-ust		# On BSD
 LOCAL_CPPFLAGS += -I.
@@ -27,16 +23,16 @@ LOCAL_CPPFLAGS += -I.
 all: sample
 
 sample: sample.o tp.o
-	$(CC) -o $@ $(LDFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(AM_CFLAGS) \
+	$(CC) -o $@ $(LDFLAGS) $(AM_CFLAGS) $(AM_LDFLAGS) $(CFLAGS) \
 		sample.o tp.o $(LIBS)
 
 sample.o: sample.c sample_component_provider.h
-	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(CFLAGS) $(AM_CPPFLAGS) \
-		$(AM_CFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) \
+		$(CFLAGS) -c -o $@ $<
 
 tp.o: tp.c sample_component_provider.h
-	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(CFLAGS) $(AM_CPPFLAGS) \
-		$(AM_CFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) \
+		$(CFLAGS) -c -o $@ $<
 
 html: sample_component_provider.html sample.html tp.html
 

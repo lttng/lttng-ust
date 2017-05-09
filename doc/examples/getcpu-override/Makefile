@@ -15,10 +15,6 @@
 #
 # This makefile is purposefully kept simple to support GNU and BSD make.
 
-ifdef AM_CC
-	CC = $(AM_CC)
-endif
-
 LIBS = -ldl	# On Linux
 #LIBS = -lc	# On BSD
 LOCAL_CPPFLAGS += -I.
@@ -26,12 +22,12 @@ LOCAL_CPPFLAGS += -I.
 all: lttng-ust-getcpu-override-example.so
 
 lttng-ust-getcpu-override-example.o: lttng-ust-getcpu-override-example.c
-	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(CFLAGS) $(AM_CPPFLAGS) \
-		$(AM_CFLAGS) -fpic -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) \
+		$(CFLAGS) -fpic -c -o $@ $<
 
 lttng-ust-getcpu-override-example.so: lttng-ust-getcpu-override-example.o
-	$(CC) -shared -Wl,--no-as-needed -o $@ $(LDFLAGS) $(CFLAGS) \
-		$(AM_LDFLAGS) $(AM_CFLAGS) lttng-ust-getcpu-override-example.o
+	$(CC) -shared -Wl,--no-as-needed -o $@ $(LDFLAGS) $(AM_CFLAGS) \
+		$(AM_LDFLAGS) $(CFLAGS) lttng-ust-getcpu-override-example.o
 
 .PHONY: clean
 clean:
