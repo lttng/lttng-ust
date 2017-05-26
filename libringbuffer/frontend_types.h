@@ -70,7 +70,13 @@ struct channel {
 	size_t priv_data_offset;
 	unsigned int nr_streams;		/* Number of streams */
 	struct lttng_ust_shm_handle *handle;
-	char padding[RB_CHANNEL_PADDING];
+	/* Extended options. */
+	union {
+		struct {
+			int32_t blocking_timeout_ms;
+		} s;
+		char padding[RB_CHANNEL_PADDING];
+	} u;
 	/*
 	 * Associated backend contains a variable-length array. Needs to
 	 * be last member.

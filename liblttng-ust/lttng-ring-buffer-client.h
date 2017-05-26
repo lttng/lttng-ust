@@ -682,7 +682,8 @@ struct lttng_channel *_channel_create(const char *name,
 				unsigned int read_timer_interval,
 				unsigned char *uuid,
 				uint32_t chan_id,
-				const int *stream_fds, int nr_stream_fds)
+				const int *stream_fds, int nr_stream_fds,
+				int64_t blocking_timeout)
 {
 	struct lttng_channel chan_priv_init;
 	struct lttng_ust_shm_handle *handle;
@@ -698,7 +699,7 @@ struct lttng_channel *_channel_create(const char *name,
 			&chan_priv_init,
 			buf_addr, subbuf_size, num_subbuf,
 			switch_timer_interval, read_timer_interval,
-			stream_fds, nr_stream_fds);
+			stream_fds, nr_stream_fds, blocking_timeout);
 	if (!handle)
 		return NULL;
 	lttng_chan = priv;

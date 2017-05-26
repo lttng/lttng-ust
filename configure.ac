@@ -26,7 +26,7 @@ AC_SUBST([LTTNG_UST_LIBRARY_VERSION], [0:0:0])
 
 # This is the library version of liblttng-ust-ctl, used internally by
 # liblttng-ust, lttng-sessiond, and lttng-consumerd.
-AC_SUBST([LTTNG_UST_CTL_LIBRARY_VERSION], [3:0:1])
+AC_SUBST([LTTNG_UST_CTL_LIBRARY_VERSION], [4:0:0])
 
 AC_CONFIG_HEADERS([config.h include/lttng/ust-config.h])
 AC_CONFIG_AUX_DIR([config])
@@ -463,8 +463,6 @@ AC_DEFUN([_AC_DEFINE_AND_SUBST], [
 ])
 
 _AC_DEFINE_AND_SUBST([LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_MS], [3000])
-# By default, do not retry on buffer full condition.
-_AC_DEFINE_AND_SUBST([LTTNG_UST_DEFAULT_BLOCKING_RETRY_TIMEOUT_MS], [0])
 
 AM_CFLAGS="-Wall"
 AC_SUBST(AM_CFLAGS)

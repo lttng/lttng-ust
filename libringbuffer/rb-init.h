@@ -22,6 +22,6 @@
  */
 
 void lttng_fixup_ringbuffer_tls(void);
-void lttng_ust_ringbuffer_set_retry_timeout(int timeout);
+void lttng_ust_ringbuffer_set_allow_blocking(void);
 
 #endif /* _LTTNG_UST_LIB_RINGBUFFER_RB_INIT_H */
