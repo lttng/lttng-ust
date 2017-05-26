@@ -1292,31 +1292,19 @@ LTTng session and consumer daemons (part of the LTTng-tools project)
 are located in a specific directory under `$LTTNG_HOME` (or `$HOME` if
 `$LTTNG_HOME` is not set).
 
-`LTTNG_UST_BLOCKING_RETRY_TIMEOUT`::
-    Maximum duration (milliseconds) to retry event tracing when
-    there's no space left for the event record in the sub-buffer.
-+
---
-`0`::
-    Never block the application.
-
-Positive value::
-    Block the application for the specified number of milliseconds. If
-    there's no space left after this duration, discard the event
-    record.
-
-Negative value::
-    Block the application until there's space left for the event record.
---
-+
-Default: {lttng_ust_blocking_retry_timeout}.
+`LTTNG_UST_ALLOW_BLOCKING`::
+    If set, allow application to retry event tracing when there's
+    no space left for the event record in the sub-buffer, therefore
+    effectively blocking the application until space is made available
+    or timeout is reached. This only has effect on channels with
+    `blocking-timeout` set.
 +
 This option can be useful in workloads generating very large trace data
 throughput, where blocking the application is an acceptable trade-off to
 prevent discarding event records.
 +
-WARNING: Setting this environment variable to a non-zero value may
-significantly affect application timings.
+WARNING: Setting this environment variable may significantly
+affect application timings.
 
 `LTTNG_UST_CLOCK_PLUGIN`::
     Path to the shared object which acts as the clock override plugin.

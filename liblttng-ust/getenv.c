@@ -50,7 +50,7 @@ static struct lttng_env lttng_env[] = {
 	/* Env. var. which are not fetched in setuid/setgid executables. */
 	{ "LTTNG_UST_CLOCK_PLUGIN", LTTNG_ENV_SECURE, NULL, },
 	{ "LTTNG_UST_GETCPU_PLUGIN", LTTNG_ENV_SECURE, NULL, },
-	{ "LTTNG_UST_BLOCKING_RETRY_TIMEOUT", LTTNG_ENV_SECURE, NULL, },
+	{ "LTTNG_UST_ALLOW_BLOCKING", LTTNG_ENV_SECURE, NULL, },
 	{ "HOME", LTTNG_ENV_SECURE, NULL, },
 	{ "LTTNG_HOME", LTTNG_ENV_SECURE, NULL, },
 };

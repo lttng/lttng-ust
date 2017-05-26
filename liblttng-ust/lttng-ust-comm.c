@@ -535,26 +535,15 @@ int get_constructor_timeout(struct timespec *constructor_timeout)
 }
 
 static
-void get_blocking_retry_timeout(void)
+void get_allow_blocking(void)
 {
-	const char *str_blocking_retry_timeout =
-		lttng_getenv("LTTNG_UST_BLOCKING_RETRY_TIMEOUT");
+	const char *str_allow_blocking =
+		lttng_getenv("LTTNG_UST_ALLOW_BLOCKING");
 
-	if (str_blocking_retry_timeout) {
-		long timeout = strtol(str_blocking_retry_timeout, NULL, 10);
-
-		if (timeout < 0)
-			timeout = -1;
-		if (timeout > INT_MAX) {
-			WARN("Saturating %s value from %ld to %d\n",
-				"LTTNG_UST_BLOCKING_RETRY_TIMEOUT",
-				timeout, INT_MAX);
-			timeout = INT_MAX;
-		}
-		DBG("%s environment variable value is %ld",
-			"LTTNG_UST_BLOCKING_RETRY_TIMEOUT",
-			timeout);
-		lttng_ust_ringbuffer_set_retry_timeout(timeout);
+	if (str_allow_blocking) {
+		DBG("%s environment variable is set",
+			"LTTNG_UST_ALLOW_BLOCKING");
+		lttng_ust_ringbuffer_set_allow_blocking();
 	}
 }
 
@@ -1698,7 +1687,7 @@ void __attribute__((constructor)) lttng_ust_init(void)
 
 	timeout_mode = get_constructor_timeout(&constructor_timeout);
 
-	get_blocking_retry_timeout();
+	get_allow_blocking();
 
 	ret = sem_init(&constructor_wait, 0, 0);
 	if (ret) {

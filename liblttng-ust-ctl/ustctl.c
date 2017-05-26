@@ -1057,7 +1057,8 @@ struct ustctl_consumer_channel *
 			attr->switch_timer_interval,
 			attr->read_timer_interval,
 			attr->uuid, attr->chan_id,
-			stream_fds, nr_stream_fds);
+			stream_fds, nr_stream_fds,
+			attr->blocking_timeout);
 	if (!chan->chan) {
 		goto chan_error;
 	}
