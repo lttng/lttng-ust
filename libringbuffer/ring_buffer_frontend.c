@@ -2060,7 +2060,8 @@ static
 int lib_ring_buffer_try_reserve_slow(struct lttng_ust_lib_ring_buffer *buf,
 				     struct channel *chan,
 				     struct switch_offsets *offsets,
-				     struct lttng_ust_lib_ring_buffer_ctx *ctx)
+				     struct lttng_ust_lib_ring_buffer_ctx *ctx,
+				     void *client_ctx)
 {
 	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
 	struct lttng_ust_shm_handle *handle = ctx->handle;
@@ -2088,7 +2089,7 @@ retry:
 		offsets->size = config->cb.record_header_size(config, chan,
 						offsets->begin,
 						&offsets->pre_header_padding,
-						ctx);
+						ctx, client_ctx);
 		offsets->size +=
 			lib_ring_buffer_align(offsets->begin + offsets->size,
 					      ctx->largest_align)
@@ -2194,7 +2195,7 @@ retry:
 			config->cb.record_header_size(config, chan,
 						offsets->begin,
 						&offsets->pre_header_padding,
-						ctx);
+						ctx, client_ctx);
 		offsets->size +=
 			lib_ring_buffer_align(offsets->begin + offsets->size,
 					      ctx->largest_align)
@@ -2248,7 +2249,8 @@ retry:
  * -EIO for other errors, else returns 0.
  * It will take care of sub-buffer switching.
  */
-int lib_ring_buffer_reserve_slow(struct lttng_ust_lib_ring_buffer_ctx *ctx)
+int lib_ring_buffer_reserve_slow(struct lttng_ust_lib_ring_buffer_ctx *ctx,
+		void *client_ctx)
 {
 	struct channel *chan = ctx->chan;
 	struct lttng_ust_shm_handle *handle = ctx->handle;
@@ -2269,7 +2271,7 @@ int lib_ring_buffer_reserve_slow(struct lttng_ust_lib_ring_buffer_ctx *ctx)
 
 	do {
 		ret = lib_ring_buffer_try_reserve_slow(buf, chan, &offsets,
-						       ctx);
+						       ctx, client_ctx);
 		if (caa_unlikely(ret))
 			return ret;
 	} while (caa_unlikely(v_cmpxchg(config, &buf->offset, offsets.old,

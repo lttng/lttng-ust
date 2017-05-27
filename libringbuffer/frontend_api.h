@@ -84,6 +84,7 @@ void lib_ring_buffer_put_cpu(const struct lttng_ust_lib_ring_buffer_config *conf
 static inline
 int lib_ring_buffer_try_reserve(const struct lttng_ust_lib_ring_buffer_config *config,
 				struct lttng_ust_lib_ring_buffer_ctx *ctx,
+				void *client_ctx,
 				unsigned long *o_begin, unsigned long *o_end,
 				unsigned long *o_old, size_t *before_hdr_pad)
 {
@@ -110,7 +111,7 @@ int lib_ring_buffer_try_reserve(const struct lttng_ust_lib_ring_buffer_config *c
 		return 1;
 
 	ctx->slot_size = record_header_size(config, chan, *o_begin,
-					    before_hdr_pad, ctx);
+					    before_hdr_pad, ctx, client_ctx);
 	ctx->slot_size +=
 		lib_ring_buffer_align(*o_begin + ctx->slot_size,
 				      ctx->largest_align) + ctx->data_size;
@@ -152,7 +153,8 @@ int lib_ring_buffer_try_reserve(const struct lttng_ust_lib_ring_buffer_config *c
 
 static inline
 int lib_ring_buffer_reserve(const struct lttng_ust_lib_ring_buffer_config *config,
-			    struct lttng_ust_lib_ring_buffer_ctx *ctx)
+			    struct lttng_ust_lib_ring_buffer_ctx *ctx,
+			    void *client_ctx)
 {
 	struct channel *chan = ctx->chan;
 	struct lttng_ust_shm_handle *handle = ctx->handle;
@@ -176,7 +178,7 @@ int lib_ring_buffer_reserve(const struct lttng_ust_lib_ring_buffer_config *confi
 	/*
 	 * Perform retryable operations.
 	 */
-	if (caa_unlikely(lib_ring_buffer_try_reserve(config, ctx, &o_begin,
+	if (caa_unlikely(lib_ring_buffer_try_reserve(config, ctx, client_ctx, &o_begin,
 						 &o_end, &o_old, &before_hdr_pad)))
 		goto slow_path;
 
@@ -207,7 +209,7 @@ int lib_ring_buffer_reserve(const struct lttng_ust_lib_ring_buffer_config *confi
 	ctx->buf_offset = o_begin + before_hdr_pad;
 	return 0;
 slow_path:
-	return lib_ring_buffer_reserve_slow(ctx);
+	return lib_ring_buffer_reserve_slow(ctx, client_ctx);
 }
 
 /**
