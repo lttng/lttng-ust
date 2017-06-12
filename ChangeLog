@@ -1,3 +1,13 @@
+2017-06-12 (National Peanut Butter Cookie Day) lttng-ust 2.10.0-rc2
+	* Introduce LTTNG_UST_ALLOW_BLOCKING env. var.
+	* Fix: lttng-ust-elf.c: define NT_GNU_BUILD_ID if not defined
+	* Fix: Quote CMAKE variable assignment in Makefile
+	* Rework configure script
+	* Fix: Typo in doc/examples/Makefile.am
+	* Fix: Don't override user variables within the build system
+	* Move m4 scripts to m4 dir
+	* doc: remove duplicate LTTNG_UST_BLOCKING_RETRY_TIMEOUT man page entry
+
 2017-05-05 (International Tuba Day) lttng-ust 2.10.0-rc1
 	* Clean-up: remove unused variables to silence gcc warning
 	* Add ustctl_snapshot_sample_positions ustctl command
