@@ -1,3 +1,11 @@
+2017-06-12 (National Peanut Butter Cookie Day) lttng-ust 2.8.3
+	* Fix: lttng-ust-elf.c: define NT_GNU_BUILD_ID if not defined
+	* Fix: Don't override user variables within the build system
+	* Fix: add missing getenv.h include to ustctl.c
+	* Fix: race between lttng-ust getenv() and application setenv()
+	* doc/man: add typical `$` and `#` prompts to command lines
+	* Fix: (un)install targets of Python agent
+
 2016-12-07 (National Earmuff Day) lttng-ust 2.8.2
 	* Fix: loglevel and model_emf_uri build fix
 	* Fix: loglevel and model_emf_uri with g++ compiled probes
