@@ -1,3 +1,17 @@
+2017-06-12 (National Peanut Butter Cookie Day) lttng-ust 2.9.1
+	* Fix: lttng-ust-elf.c: define NT_GNU_BUILD_ID if not defined
+	* Fix: Quote CMAKE variable assignment in Makefile
+	* Fix: Typo in doc/examples/Makefile.am
+	* Fix: Don't override user variables within the build system
+	* Fix: add missing getenv.h include to ustctl.c
+	* Fix: race between lttng-ust getenv() and application setenv()
+	* doc/man: add typical `$` and `#` prompts to command lines
+	* Fix: (un)install targets of Python agent
+	* Fix: include config.h to resolve HAVE_DLMOPEN
+	* Validate the presence of dlmopen at configure time
+	* Fix: CMake examples integration
+	* doc/examples/Makefile.am: define C and C++ compilers for CMake
+
 2016-11-29 (National Square Dance Day) lttng-ust 2.9.0
 	* lttng-ust(3): document `lttng_ust_loaded` symbol
 	* lttng-ust(3): document `perf:thread:raw:rN:NAME` context
