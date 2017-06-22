@@ -423,6 +423,7 @@ struct lttng_bytecode_runtime {
 	int link_failed;
 	struct cds_list_head node;	/* list of bytecode runtime in event */
 	struct lttng_session *session;
+	struct lttng_event *event;
 };
 
 /*

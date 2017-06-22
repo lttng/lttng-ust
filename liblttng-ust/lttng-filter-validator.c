@@ -214,6 +214,68 @@ error_type:
 }
 
 /*
+ * Binary bitwise operators use top of stack and top of stack -1.
+ * Return 0 if typing is known to match, 1 if typing is dynamic
+ * (unknown), negative error value on error.
+ */
+static
+int bin_op_bitwise_check(struct vstack *stack, filter_opcode_t opcode,
+		const char *str)
+{
+	if (unlikely(!vstack_ax(stack) || !vstack_bx(stack)))
+		goto error_empty;
+
+	switch (vstack_ax(stack)->type) {
+	default:
+		goto error_type;
+
+	case REG_UNKNOWN:
+		goto unknown;
+	case REG_S64:
+		switch (vstack_bx(stack)->type) {
+		default:
+			goto error_type;
+
+		case REG_UNKNOWN:
+			goto unknown;
+		case REG_S64:
+			break;
+		}
+		break;
+	}
+	return 0;
+
+unknown:
+	return 1;
+
+error_empty:
+	ERR("empty stack for '%s' binary operator\n", str);
+	return -EINVAL;
+
+error_type:
+	ERR("unknown type for '%s' binary operator\n", str);
+	return -EINVAL;
+}
+
+static
+int validate_get_symbol(struct bytecode_runtime *bytecode,
+		const struct get_symbol *sym)
+{
+	const char *str, *str_limit;
+	size_t len_limit;
+
+	if (sym->offset >= bytecode->p.bc->bc.len - bytecode->p.bc->bc.reloc_offset)
+		return -EINVAL;
+
+	str = bytecode->p.bc->bc.data + bytecode->p.bc->bc.reloc_offset + sym->offset;
+	str_limit = bytecode->p.bc->bc.data + bytecode->p.bc->bc.len;
+	len_limit = str_limit - str;
+	if (strnlen(str, len_limit) == len_limit)
+		return -EINVAL;
+	return 0;
+}
+
+/*
  * Validate bytecode range overflow within the validation pass.
  * Called for each instruction encountered.
  */
@@ -250,9 +312,6 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 	case FILTER_OP_MINUS:
 	case FILTER_OP_RSHIFT:
 	case FILTER_OP_LSHIFT:
-	case FILTER_OP_BIN_AND:
-	case FILTER_OP_BIN_OR:
-	case FILTER_OP_BIN_XOR:
 	{
 		ERR("unsupported bytecode op %u\n",
 			(unsigned int) *(filter_opcode_t *) pc);
@@ -298,6 +357,9 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 	case FILTER_OP_LT_S64_DOUBLE:
 	case FILTER_OP_GE_S64_DOUBLE:
 	case FILTER_OP_LE_S64_DOUBLE:
+	case FILTER_OP_BIT_AND:
+	case FILTER_OP_BIT_OR:
+	case FILTER_OP_BIT_XOR:
 	{
 		if (unlikely(pc + sizeof(struct binary_op)
 				> start_pc + bytecode->len)) {
@@ -342,6 +404,7 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 		ret = -EINVAL;
 		break;
 	}
+
 	/* get context ref */
 	case FILTER_OP_GET_CONTEXT_REF:
 	case FILTER_OP_LOAD_FIELD_REF_STRING:
@@ -410,6 +473,61 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 		break;
 	}
 
+	/*
+	 * Instructions for recursive traversal through composed types.
+	 */
+	case FILTER_OP_GET_CONTEXT_ROOT:
+	case FILTER_OP_GET_APP_CONTEXT_ROOT:
+	case FILTER_OP_GET_PAYLOAD_ROOT:
+	case FILTER_OP_LOAD_FIELD:
+	case FILTER_OP_LOAD_FIELD_S8:
+	case FILTER_OP_LOAD_FIELD_S16:
+	case FILTER_OP_LOAD_FIELD_S32:
+	case FILTER_OP_LOAD_FIELD_S64:
+	case FILTER_OP_LOAD_FIELD_U8:
+	case FILTER_OP_LOAD_FIELD_U16:
+	case FILTER_OP_LOAD_FIELD_U32:
+	case FILTER_OP_LOAD_FIELD_U64:
+	case FILTER_OP_LOAD_FIELD_STRING:
+	case FILTER_OP_LOAD_FIELD_SEQUENCE:
+	case FILTER_OP_LOAD_FIELD_DOUBLE:
+		if (unlikely(pc + sizeof(struct load_op)
+				> start_pc + bytecode->len)) {
+			ret = -ERANGE;
+		}
+		break;
+
+	case FILTER_OP_GET_SYMBOL:
+	{
+		struct load_op *insn = (struct load_op *) pc;
+		struct get_symbol *sym = (struct get_symbol *) insn->data;
+
+		if (unlikely(pc + sizeof(struct load_op) + sizeof(struct get_symbol)
+				> start_pc + bytecode->len)) {
+			ret = -ERANGE;
+		}
+		ret = validate_get_symbol(bytecode, sym);
+		break;
+	}
+
+	case FILTER_OP_GET_SYMBOL_FIELD:
+		ERR("Unexpected get symbol field");
+		ret = -EINVAL;
+		break;
+
+	case FILTER_OP_GET_INDEX_U16:
+		if (unlikely(pc + sizeof(struct load_op) + sizeof(struct get_index_u16)
+				> start_pc + bytecode->len)) {
+			ret = -ERANGE;
+		}
+		break;
+
+	case FILTER_OP_GET_INDEX_U64:
+		if (unlikely(pc + sizeof(struct load_op) + sizeof(struct get_index_u64)
+				> start_pc + bytecode->len)) {
+			ret = -ERANGE;
+		}
+		break;
 	}
 
 	return ret;
@@ -471,9 +589,6 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 	case FILTER_OP_MINUS:
 	case FILTER_OP_RSHIFT:
 	case FILTER_OP_LSHIFT:
-	case FILTER_OP_BIN_AND:
-	case FILTER_OP_BIN_OR:
-	case FILTER_OP_BIN_XOR:
 	{
 		ERR("unsupported bytecode op %u\n",
 			(unsigned int) opcode);
@@ -642,6 +757,22 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 		}
 		break;
 	}
+
+	case FILTER_OP_BIT_AND:
+		ret = bin_op_bitwise_check(stack, opcode, "&");
+		if (ret < 0)
+			goto end;
+		break;
+	case FILTER_OP_BIT_OR:
+		ret = bin_op_bitwise_check(stack, opcode, "|");
+		if (ret < 0)
+			goto end;
+		break;
+	case FILTER_OP_BIT_XOR:
+		ret = bin_op_bitwise_check(stack, opcode, "^");
+		if (ret < 0)
+			goto end;
+		break;
 
 	/* unary */
 	case FILTER_OP_UNARY_PLUS:
@@ -869,6 +1000,125 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 		break;
 	}
 
+	/*
+	 * Instructions for recursive traversal through composed types.
+	 */
+	case FILTER_OP_GET_CONTEXT_ROOT:
+	{
+		dbg_printf("Validate get context root\n");
+		break;
+	}
+	case FILTER_OP_GET_APP_CONTEXT_ROOT:
+	{
+		dbg_printf("Validate get app context root\n");
+		break;
+	}
+	case FILTER_OP_GET_PAYLOAD_ROOT:
+	{
+		dbg_printf("Validate get payload root\n");
+		break;
+	}
+	case FILTER_OP_LOAD_FIELD:
+	{
+		/*
+		 * We tolerate that field type is unknown at validation,
+		 * because we are performing the load specialization in
+		 * a phase after validation.
+		 */
+		dbg_printf("Validate load field\n");
+		break;
+	}
+	case FILTER_OP_LOAD_FIELD_S8:
+	{
+		dbg_printf("Validate load field s8\n");
+		break;
+	}
+	case FILTER_OP_LOAD_FIELD_S16:
+	{
+		dbg_printf("Validate load field s16\n");
+		break;
+	}
+	case FILTER_OP_LOAD_FIELD_S32:
+	{
+		dbg_printf("Validate load field s32\n");
+		break;
+	}
+	case FILTER_OP_LOAD_FIELD_S64:
+	{
+		dbg_printf("Validate load field s64\n");
+		break;
+	}
+	case FILTER_OP_LOAD_FIELD_U8:
+	{
+		dbg_printf("Validate load field u8\n");
+		break;
+	}
+	case FILTER_OP_LOAD_FIELD_U16:
+	{
+		dbg_printf("Validate load field u16\n");
+		break;
+	}
+	case FILTER_OP_LOAD_FIELD_U32:
+	{
+		dbg_printf("Validate load field u32\n");
+		break;
+	}
+	case FILTER_OP_LOAD_FIELD_U64:
+	{
+		dbg_printf("Validate load field u64\n");
+		break;
+	}
+	case FILTER_OP_LOAD_FIELD_STRING:
+	{
+		dbg_printf("Validate load field string\n");
+		break;
+	}
+	case FILTER_OP_LOAD_FIELD_SEQUENCE:
+	{
+		dbg_printf("Validate load field sequence\n");
+		break;
+	}
+	case FILTER_OP_LOAD_FIELD_DOUBLE:
+	{
+		dbg_printf("Validate load field double\n");
+		break;
+	}
+
+	case FILTER_OP_GET_SYMBOL:
+	{
+		struct load_op *insn = (struct load_op *) pc;
+		struct get_symbol *sym = (struct get_symbol *) insn->data;
+
+		dbg_printf("Validate get symbol offset %u\n", sym->offset);
+		break;
+	}
+
+	case FILTER_OP_GET_SYMBOL_FIELD:
+	{
+		struct load_op *insn = (struct load_op *) pc;
+		struct get_symbol *sym = (struct get_symbol *) insn->data;
+
+		dbg_printf("Validate get symbol field offset %u\n", sym->offset);
+		break;
+	}
+
+	case FILTER_OP_GET_INDEX_U16:
+	{
+		struct load_op *insn = (struct load_op *) pc;
+		struct get_index_u16 *get_index = (struct get_index_u16 *) insn->data;
+
+		dbg_printf("Validate get index u16 index %u\n", get_index->index);
+		break;
+	}
+
+	case FILTER_OP_GET_INDEX_U64:
+	{
+		struct load_op *insn = (struct load_op *) pc;
+		struct get_index_u64 *get_index = (struct get_index_u64 *) insn->data;
+
+		dbg_printf("Validate get index u64 index %" PRIu64 "\n", get_index->index);
+		break;
+	}
 	}
 end:
 	return ret;
@@ -956,6 +1206,17 @@ int exec_insn(struct bytecode_runtime *bytecode,
 			ret = -EINVAL;
 			goto end;
 		}
+		switch (vstack_ax(stack)->type) {
+		case REG_S64:
+		case REG_UNKNOWN:
+			break;
+		default:
+			ERR("Unexpected register type %d at end of bytecode\n",
+				(int) vstack_ax(stack)->type);
+			ret = -EINVAL;
+			goto end;
+		}
+
 		ret = 0;
 		goto end;
 	}
@@ -968,9 +1229,6 @@ int exec_insn(struct bytecode_runtime *bytecode,
 	case FILTER_OP_MINUS:
 	case FILTER_OP_RSHIFT:
 	case FILTER_OP_LSHIFT:
-	case FILTER_OP_BIN_AND:
-	case FILTER_OP_BIN_OR:
-	case FILTER_OP_BIN_XOR:
 	{
 		ERR("unsupported bytecode op %u\n",
 			(unsigned int) *(filter_opcode_t *) pc);
@@ -1016,6 +1274,9 @@ int exec_insn(struct bytecode_runtime *bytecode,
 	case FILTER_OP_LT_S64_DOUBLE:
 	case FILTER_OP_GE_S64_DOUBLE:
 	case FILTER_OP_LE_S64_DOUBLE:
+	case FILTER_OP_BIT_AND:
+	case FILTER_OP_BIT_OR:
+	case FILTER_OP_BIT_XOR:
 	{
 		/* Pop 2, push 1 */
 		if (vstack_pop(stack)) {
@@ -1027,6 +1288,20 @@ int exec_insn(struct bytecode_runtime *bytecode,
 			ret = -EINVAL;
 			goto end;
 		}
+		switch (vstack_ax(stack)->type) {
+		case REG_S64:
+		case REG_DOUBLE:
+		case REG_STRING:
+		case REG_STAR_GLOB_STRING:
+		case REG_UNKNOWN:
+			break;
+		default:
+			ERR("Unexpected register type %d for operation\n",
+				(int) vstack_ax(stack)->type);
+			ret = -EINVAL;
+			goto end;
+		}
+
 		vstack_ax(stack)->type = REG_S64;
 		next_pc += sizeof(struct binary_op);
 		break;
@@ -1042,6 +1317,17 @@ int exec_insn(struct bytecode_runtime *bytecode,
 			ret = -EINVAL;
 			goto end;
 		}
+		switch (vstack_ax(stack)->type) {
+		case REG_UNKNOWN:
+		case REG_DOUBLE:
+		case REG_S64:
+			break;
+		default:
+			ERR("Unexpected register type %d for operation\n",
+				(int) vstack_ax(stack)->type);
+			ret = -EINVAL;
+			goto end;
+		}
 		vstack_ax(stack)->type = REG_UNKNOWN;
 		next_pc += sizeof(struct unary_op);
 		break;
@@ -1049,8 +1335,54 @@ int exec_insn(struct bytecode_runtime *bytecode,
 
 	case FILTER_OP_UNARY_PLUS_S64:
 	case FILTER_OP_UNARY_MINUS_S64:
-	case FILTER_OP_UNARY_NOT:
 	case FILTER_OP_UNARY_NOT_S64:
+	{
+		/* Pop 1, push 1 */
+		if (!vstack_ax(stack)) {
+			ERR("Empty stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		switch (vstack_ax(stack)->type) {
+		case REG_S64:
+			break;
+		default:
+			ERR("Unexpected register type %d for operation\n",
+				(int) vstack_ax(stack)->type);
+			ret = -EINVAL;
+			goto end;
+		}
+
+		vstack_ax(stack)->type = REG_S64;
+		next_pc += sizeof(struct unary_op);
+		break;
+	}
+
+	case FILTER_OP_UNARY_NOT:
+	{
+		/* Pop 1, push 1 */
+		if (!vstack_ax(stack)) {
+			ERR("Empty stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		switch (vstack_ax(stack)->type) {
+		case REG_UNKNOWN:
+		case REG_DOUBLE:
+		case REG_S64:
+			break;
+		default:
+			ERR("Unexpected register type %d for operation\n",
+				(int) vstack_ax(stack)->type);
+			ret = -EINVAL;
+			goto end;
+		}
+
+		vstack_ax(stack)->type = REG_S64;
+		next_pc += sizeof(struct unary_op);
+		break;
+	}
+
 	case FILTER_OP_UNARY_NOT_DOUBLE:
 	{
 		/* Pop 1, push 1 */
@@ -1059,6 +1391,16 @@ int exec_insn(struct bytecode_runtime *bytecode,
 			ret = -EINVAL;
 			goto end;
 		}
+		switch (vstack_ax(stack)->type) {
+		case REG_DOUBLE:
+			break;
+		default:
+			ERR("Incorrect register type %d for operation\n",
+				(int) vstack_ax(stack)->type);
+			ret = -EINVAL;
+			goto end;
+		}
+
 		vstack_ax(stack)->type = REG_S64;
 		next_pc += sizeof(struct unary_op);
 		break;
@@ -1073,6 +1415,16 @@ int exec_insn(struct bytecode_runtime *bytecode,
 			ret = -EINVAL;
 			goto end;
 		}
+		switch (vstack_ax(stack)->type) {
+		case REG_DOUBLE:
+			break;
+		default:
+			ERR("Incorrect register type %d for operation\n",
+				(int) vstack_ax(stack)->type);
+			ret = -EINVAL;
+			goto end;
+		}
+
 		vstack_ax(stack)->type = REG_DOUBLE;
 		next_pc += sizeof(struct unary_op);
 		break;
@@ -1092,6 +1444,23 @@ int exec_insn(struct bytecode_runtime *bytecode,
 			ret = merge_ret;
 			goto end;
 		}
+
+		if (!vstack_ax(stack)) {
+			ERR("Empty stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		/* There is always a cast-to-s64 operation before a or/and op. */
+		switch (vstack_ax(stack)->type) {
+		case REG_S64:
+			break;
+		default:
+			ERR("Incorrect register type %d for operation\n",
+				(int) vstack_ax(stack)->type);
+			ret = -EINVAL;
+			goto end;
+		}
+
 		/* Continue to next instruction */
 		/* Pop 1 when jump not taken */
 		if (vstack_pop(stack)) {
@@ -1215,6 +1584,17 @@ int exec_insn(struct bytecode_runtime *bytecode,
 			ret = -EINVAL;
 			goto end;
 		}
+		switch (vstack_ax(stack)->type) {
+		case REG_S64:
+		case REG_DOUBLE:
+		case REG_UNKNOWN:
+			break;
+		default:
+			ERR("Incorrect register type %d for cast\n",
+				(int) vstack_ax(stack)->type);
+			ret = -EINVAL;
+			goto end;
+		}
 		vstack_ax(stack)->type = REG_S64;
 		next_pc += sizeof(struct cast_op);
 		break;
@@ -1222,6 +1602,154 @@ int exec_insn(struct bytecode_runtime *bytecode,
 	case FILTER_OP_CAST_NOP:
 	{
 		next_pc += sizeof(struct cast_op);
+		break;
+	}
+
+	/*
+	 * Instructions for recursive traversal through composed types.
+	 */
+	case FILTER_OP_GET_CONTEXT_ROOT:
+	case FILTER_OP_GET_APP_CONTEXT_ROOT:
+	case FILTER_OP_GET_PAYLOAD_ROOT:
+	{
+		if (vstack_push(stack)) {
+			ret = -EINVAL;
+			goto end;
+		}
+		vstack_ax(stack)->type = REG_PTR;
+		next_pc += sizeof(struct load_op);
+		break;
+	}
+
+	case FILTER_OP_LOAD_FIELD:
+	{
+		/* Pop 1, push 1 */
+		if (!vstack_ax(stack)) {
+			ERR("Empty stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		if (vstack_ax(stack)->type != REG_PTR) {
+			ERR("Expecting pointer on top of stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		vstack_ax(stack)->type = REG_UNKNOWN;
+		next_pc += sizeof(struct load_op);
+		break;
+	}
+
+	case FILTER_OP_LOAD_FIELD_S8:
+	case FILTER_OP_LOAD_FIELD_S16:
+	case FILTER_OP_LOAD_FIELD_S32:
+	case FILTER_OP_LOAD_FIELD_S64:
+	case FILTER_OP_LOAD_FIELD_U8:
+	case FILTER_OP_LOAD_FIELD_U16:
+	case FILTER_OP_LOAD_FIELD_U32:
+	case FILTER_OP_LOAD_FIELD_U64:
+	{
+		/* Pop 1, push 1 */
+		if (!vstack_ax(stack)) {
+			ERR("Empty stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		if (vstack_ax(stack)->type != REG_PTR) {
+			ERR("Expecting pointer on top of stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		vstack_ax(stack)->type = REG_S64;
+		next_pc += sizeof(struct load_op);
+		break;
+	}
+
+	case FILTER_OP_LOAD_FIELD_STRING:
+	case FILTER_OP_LOAD_FIELD_SEQUENCE:
+	{
+		/* Pop 1, push 1 */
+		if (!vstack_ax(stack)) {
+			ERR("Empty stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		if (vstack_ax(stack)->type != REG_PTR) {
+			ERR("Expecting pointer on top of stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		vstack_ax(stack)->type = REG_STRING;
+		next_pc += sizeof(struct load_op);
+		break;
+	}
+
+	case FILTER_OP_LOAD_FIELD_DOUBLE:
+	{
+		/* Pop 1, push 1 */
+		if (!vstack_ax(stack)) {
+			ERR("Empty stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		if (vstack_ax(stack)->type != REG_PTR) {
+			ERR("Expecting pointer on top of stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		vstack_ax(stack)->type = REG_DOUBLE;
+		next_pc += sizeof(struct load_op);
+		break;
+	}
+
+	case FILTER_OP_GET_SYMBOL:
+	case FILTER_OP_GET_SYMBOL_FIELD:
+	{
+		/* Pop 1, push 1 */
+		if (!vstack_ax(stack)) {
+			ERR("Empty stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		if (vstack_ax(stack)->type != REG_PTR) {
+			ERR("Expecting pointer on top of stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		next_pc += sizeof(struct load_op) + sizeof(struct get_symbol);
+		break;
+	}
+
+	case FILTER_OP_GET_INDEX_U16:
+	{
+		/* Pop 1, push 1 */
+		if (!vstack_ax(stack)) {
+			ERR("Empty stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		if (vstack_ax(stack)->type != REG_PTR) {
+			ERR("Expecting pointer on top of stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		next_pc += sizeof(struct load_op) + sizeof(struct get_index_u16);
+		break;
+	}
+
+	case FILTER_OP_GET_INDEX_U64:
+	{
+		/* Pop 1, push 1 */
+		if (!vstack_ax(stack)) {
+			ERR("Empty stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		if (vstack_ax(stack)->type != REG_PTR) {
+			ERR("Expecting pointer on top of stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		next_pc += sizeof(struct load_op) + sizeof(struct get_index_u64);
 		break;
 	}
 
@@ -1260,7 +1788,7 @@ int lttng_filter_validate_bytecode(struct bytecode_runtime *bytecode)
 		ERR("Error allocating hash table for bytecode validation\n");
 		return -ENOMEM;
 	}
-	start_pc = &bytecode->data[0];
+	start_pc = &bytecode->code[0];
 	for (pc = next_pc = start_pc; pc - start_pc < bytecode->len;
 			pc = next_pc) {
 		ret = bytecode_validate_overflow(bytecode, start_pc, pc);

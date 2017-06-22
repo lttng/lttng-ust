@@ -41,9 +41,9 @@ static const char *opnames[] = {
 	[ FILTER_OP_MINUS ] = "MINUS",
 	[ FILTER_OP_RSHIFT ] = "RSHIFT",
 	[ FILTER_OP_LSHIFT ] = "LSHIFT",
-	[ FILTER_OP_BIN_AND ] = "BIN_AND",
-	[ FILTER_OP_BIN_OR ] = "BIN_OR",
-	[ FILTER_OP_BIN_XOR ] = "BIN_XOR",
+	[ FILTER_OP_BIT_AND ] = "BIT_AND",
+	[ FILTER_OP_BIT_OR ] = "BIT_OR",
+	[ FILTER_OP_BIT_XOR ] = "BIT_XOR",
 
 	/* binary comparators */
 	[ FILTER_OP_EQ ] = "EQ",
@@ -143,6 +143,31 @@ static const char *opnames[] = {
 	/* globbing pattern binary operator: apply to */
 	[ FILTER_OP_EQ_STAR_GLOB_STRING ] = "EQ_STAR_GLOB_STRING",
 	[ FILTER_OP_NE_STAR_GLOB_STRING ] = "NE_STAR_GLOB_STRING",
+
+	/*
+	 * Instructions for recursive traversal through composed types.
+	 */
+	[ FILTER_OP_GET_CONTEXT_ROOT ] = "GET_CONTEXT_ROOT",
+	[ FILTER_OP_GET_APP_CONTEXT_ROOT ] = "GET_APP_CONTEXT_ROOT",
+	[ FILTER_OP_GET_PAYLOAD_ROOT ] = "GET_PAYLOAD_ROOT",
+
+	[ FILTER_OP_GET_SYMBOL ] = "GET_SYMBOL",
+	[ FILTER_OP_GET_SYMBOL_FIELD ] = "GET_SYMBOL_FIELD",
+	[ FILTER_OP_GET_INDEX_U16 ] = "GET_INDEX_U16",
+	[ FILTER_OP_GET_INDEX_U64 ] = "GET_INDEX_U64",
+
+	[ FILTER_OP_LOAD_FIELD ] = "LOAD_FIELD",
+	[ FILTER_OP_LOAD_FIELD_S8 ] = "LOAD_FIELD_S8",
+	[ FILTER_OP_LOAD_FIELD_S16 ] = "LOAD_FIELD_S16",
+	[ FILTER_OP_LOAD_FIELD_S32 ] = "LOAD_FIELD_S32",
+	[ FILTER_OP_LOAD_FIELD_S64 ] = "LOAD_FIELD_S64",
+	[ FILTER_OP_LOAD_FIELD_U8 ] = "LOAD_FIELD_U8",
+	[ FILTER_OP_LOAD_FIELD_U16 ] = "LOAD_FIELD_U16",
+	[ FILTER_OP_LOAD_FIELD_U32 ] = "LOAD_FIELD_U32",
+	[ FILTER_OP_LOAD_FIELD_U64 ] = "LOAD_FIELD_U64",
+	[ FILTER_OP_LOAD_FIELD_STRING ] = "LOAD_FIELD_STRING",
+	[ FILTER_OP_LOAD_FIELD_SEQUENCE ] = "LOAD_FIELD_SEQUENCE",
+	[ FILTER_OP_LOAD_FIELD_DOUBLE ] = "LOAD_FIELD_DOUBLE",
 };
 
 const char *print_op(enum filter_op op)
@@ -158,12 +183,12 @@ int apply_field_reloc(struct lttng_event *event,
 		struct bytecode_runtime *runtime,
 		uint32_t runtime_len,
 		uint32_t reloc_offset,
-		const char *field_name)
+		const char *field_name,
+		enum filter_op filter_op)
 {
 	const struct lttng_event_desc *desc;
 	const struct lttng_event_field *fields, *field = NULL;
 	unsigned int nr_fields, i;
-	struct field_ref *field_ref;
 	struct load_op *op;
 	uint32_t field_offset = 0;
 
@@ -211,28 +236,39 @@ int apply_field_reloc(struct lttng_event *event,
 		return -EINVAL;
 
 	/* set type */
-	op = (struct load_op *) &runtime->data[reloc_offset];
-	field_ref = (struct field_ref *) op->data;
-	switch (field->type.atype) {
-	case atype_integer:
-	case atype_enum:
-		op->op = FILTER_OP_LOAD_FIELD_REF_S64;
+	op = (struct load_op *) &runtime->code[reloc_offset];
+
+	switch (filter_op) {
+	case FILTER_OP_LOAD_FIELD_REF:
+	{
+		struct field_ref *field_ref;
+
+		field_ref = (struct field_ref *) op->data;
+		switch (field->type.atype) {
+		case atype_integer:
+		case atype_enum:
+			op->op = FILTER_OP_LOAD_FIELD_REF_S64;
+			break;
+		case atype_array:
+		case atype_sequence:
+			op->op = FILTER_OP_LOAD_FIELD_REF_SEQUENCE;
+			break;
+		case atype_string:
+			op->op = FILTER_OP_LOAD_FIELD_REF_STRING;
+			break;
+		case atype_float:
+			op->op = FILTER_OP_LOAD_FIELD_REF_DOUBLE;
+			break;
+		default:
+			return -EINVAL;
+		}
+		/* set offset */
+		field_ref->offset = (uint16_t) field_offset;
 		break;
-	case atype_array:
-	case atype_sequence:
-		op->op = FILTER_OP_LOAD_FIELD_REF_SEQUENCE;
-		break;
-	case atype_string:
-		op->op = FILTER_OP_LOAD_FIELD_REF_STRING;
-		break;
-	case atype_float:
-		op->op = FILTER_OP_LOAD_FIELD_REF_DOUBLE;
-		break;
+	}
 	default:
 		return -EINVAL;
 	}
-	/* set offset */
-	field_ref->offset = (uint16_t) field_offset;
 	return 0;
 }
 
@@ -241,9 +277,9 @@ int apply_context_reloc(struct lttng_event *event,
 		struct bytecode_runtime *runtime,
 		uint32_t runtime_len,
 		uint32_t reloc_offset,
-		const char *context_name)
+		const char *context_name,
+		enum filter_op filter_op)
 {
-	struct field_ref *field_ref;
 	struct load_op *op;
 	struct lttng_ctx_field *ctx_field;
 	int idx;
@@ -275,30 +311,41 @@ int apply_context_reloc(struct lttng_event *event,
 
 	/* Get context return type */
 	ctx_field = &session->ctx->fields[idx];
-	op = (struct load_op *) &runtime->data[reloc_offset];
-	field_ref = (struct field_ref *) op->data;
-	switch (ctx_field->event_field.type.atype) {
-	case atype_integer:
-	case atype_enum:
-		op->op = FILTER_OP_GET_CONTEXT_REF_S64;
+	op = (struct load_op *) &runtime->code[reloc_offset];
+
+	switch (filter_op) {
+	case FILTER_OP_GET_CONTEXT_REF:
+	{
+		struct field_ref *field_ref;
+
+		field_ref = (struct field_ref *) op->data;
+		switch (ctx_field->event_field.type.atype) {
+		case atype_integer:
+		case atype_enum:
+			op->op = FILTER_OP_GET_CONTEXT_REF_S64;
+			break;
+			/* Sequence and array supported as string */
+		case atype_string:
+		case atype_array:
+		case atype_sequence:
+			op->op = FILTER_OP_GET_CONTEXT_REF_STRING;
+			break;
+		case atype_float:
+			op->op = FILTER_OP_GET_CONTEXT_REF_DOUBLE;
+			break;
+		case atype_dynamic:
+			op->op = FILTER_OP_GET_CONTEXT_REF;
+			break;
+		default:
+			return -EINVAL;
+		}
+		/* set offset to context index within channel contexts */
+		field_ref->offset = (uint16_t) idx;
 		break;
-		/* Sequence and array supported as string */
-	case atype_string:
-	case atype_array:
-	case atype_sequence:
-		op->op = FILTER_OP_GET_CONTEXT_REF_STRING;
-		break;
-	case atype_float:
-		op->op = FILTER_OP_GET_CONTEXT_REF_DOUBLE;
-		break;
-	case atype_dynamic:
-		op->op = FILTER_OP_GET_CONTEXT_REF;
-		break;
+	}
 	default:
 		return -EINVAL;
 	}
-	/* set offset to context index within channel contexts */
-	field_ref->offset = (uint16_t) idx;
 	return 0;
 }
 
@@ -317,14 +364,21 @@ int apply_reloc(struct lttng_event *event,
 	if (runtime_len - reloc_offset < sizeof(uint16_t))
 		return -EINVAL;
 
-	op = (struct load_op *) &runtime->data[reloc_offset];
+	op = (struct load_op *) &runtime->code[reloc_offset];
 	switch (op->op) {
 	case FILTER_OP_LOAD_FIELD_REF:
 		return apply_field_reloc(event, runtime, runtime_len,
-			reloc_offset, name);
+			reloc_offset, name, op->op);
 	case FILTER_OP_GET_CONTEXT_REF:
 		return apply_context_reloc(event, runtime, runtime_len,
-			reloc_offset, name);
+			reloc_offset, name, op->op);
+	case FILTER_OP_GET_SYMBOL:
+	case FILTER_OP_GET_SYMBOL_FIELD:
+		/*
+		 * Will be handled by load specialize phase or
+		 * dynamically by interpreter.
+		 */
+		return 0;
 	default:
 		ERR("Unknown reloc op type %u\n", op->op);
 		return -EINVAL;
@@ -376,9 +430,10 @@ int _lttng_filter_event_link_bytecode(struct lttng_event *event,
 	}
 	runtime->p.bc = filter_bytecode;
 	runtime->p.session = event->chan->session;
+	runtime->p.event = event;
 	runtime->len = filter_bytecode->bc.reloc_offset;
 	/* copy original bytecode */
-	memcpy(runtime->data, filter_bytecode->bc.data, runtime->len);
+	memcpy(runtime->code, filter_bytecode->bc.data, runtime->len);
 	/*
 	 * apply relocs. Those are a uint16_t (offset in bytecode)
 	 * followed by a string (field name).
@@ -403,7 +458,7 @@ int _lttng_filter_event_link_bytecode(struct lttng_event *event,
 		goto link_error;
 	}
 	/* Specialize bytecode */
-	ret = lttng_filter_specialize_bytecode(runtime);
+	ret = lttng_filter_specialize_bytecode(event, runtime);
 	if (ret) {
 		goto link_error;
 	}
@@ -510,6 +565,7 @@ void lttng_free_event_filter_runtime(struct lttng_event *event)
 
 	cds_list_for_each_entry_safe(runtime, tmp,
 			&event->bytecode_runtime_head, p.node) {
+		free(runtime->data);
 		free(runtime);
 	}
 }

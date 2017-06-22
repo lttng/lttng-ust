@@ -27,6 +27,7 @@
 #define _LGPL_SOURCE
 #include <urcu-pointer.h>
 #include <stdint.h>
+#include <byteswap.h>
 #include "lttng-filter.h"
 #include "string-utils.h"
 
@@ -198,7 +199,7 @@ uint64_t lttng_filter_false(void *filter_data,
  */
 
 #define START_OP							\
-	start_pc = &bytecode->data[0];					\
+	start_pc = &bytecode->code[0];					\
 	pc = next_pc = start_pc;					\
 	if (unlikely(pc - start_pc >= bytecode->len))			\
 		goto end;						\
@@ -217,6 +218,379 @@ LABEL_##name
 		goto LABEL_##name
 
 #endif
+
+static int context_get_index(struct lttng_ctx *ctx,
+		struct load_ptr *ptr,
+		uint32_t idx)
+{
+
+	struct lttng_ctx_field *ctx_field;
+	struct lttng_event_field *field;
+	struct lttng_ctx_value v;
+
+	ctx_field = &ctx->fields[idx];
+	field = &ctx_field->event_field;
+	ptr->type = LOAD_OBJECT;
+	/* field is only used for types nested within variants. */
+	ptr->field = NULL;
+
+	switch (field->type.atype) {
+	case atype_integer:
+		ctx_field->get_value(ctx_field, &v);
+		if (field->type.u.basic.integer.signedness) {
+			ptr->object_type = OBJECT_TYPE_S64;
+			ptr->u.s64 = v.u.s64;
+			ptr->ptr = &ptr->u.s64;
+		} else {
+			ptr->object_type = OBJECT_TYPE_U64;
+			ptr->u.u64 = v.u.s64;	/* Cast. */
+			ptr->ptr = &ptr->u.u64;
+		}
+		break;
+	case atype_enum:
+	{
+		const struct lttng_integer_type *itype =
+			&field->type.u.basic.enumeration.container_type;
+
+		ctx_field->get_value(ctx_field, &v);
+		if (itype->signedness) {
+			ptr->object_type = OBJECT_TYPE_S64;
+			ptr->u.s64 = v.u.s64;
+			ptr->ptr = &ptr->u.s64;
+		} else {
+			ptr->object_type = OBJECT_TYPE_U64;
+			ptr->u.u64 = v.u.s64;	/* Cast. */
+			ptr->ptr = &ptr->u.u64;
+		}
+		break;
+	}
+	case atype_array:
+		if (field->type.u.array.elem_type.atype != atype_integer) {
+			ERR("Array nesting only supports integer types.");
+			return -EINVAL;
+		}
+		if (field->type.u.array.elem_type.u.basic.integer.encoding == lttng_encode_none) {
+			ERR("Only string arrays are supported for contexts.");
+			return -EINVAL;
+		}
+		ptr->object_type = OBJECT_TYPE_STRING;
+		ctx_field->get_value(ctx_field, &v);
+		ptr->ptr = v.u.str;
+		break;
+	case atype_sequence:
+		if (field->type.u.sequence.elem_type.atype != atype_integer) {
+			ERR("Sequence nesting only supports integer types.");
+			return -EINVAL;
+		}
+		if (field->type.u.sequence.elem_type.u.basic.integer.encoding == lttng_encode_none) {
+			ERR("Only string sequences are supported for contexts.");
+			return -EINVAL;
+		}
+		ptr->object_type = OBJECT_TYPE_STRING;
+		ctx_field->get_value(ctx_field, &v);
+		ptr->ptr = v.u.str;
+		break;
+	case atype_string:
+		ptr->object_type = OBJECT_TYPE_STRING;
+		ctx_field->get_value(ctx_field, &v);
+		ptr->ptr = v.u.str;
+		break;
+	case atype_float:
+		ptr->object_type = OBJECT_TYPE_DOUBLE;
+		ptr->u.d = v.u.d;
+		ptr->ptr = &ptr->u.d;
+		break;
+	case atype_dynamic:
+		ctx_field->get_value(ctx_field, &v);
+		switch (v.sel) {
+		case LTTNG_UST_DYNAMIC_TYPE_NONE:
+			return -EINVAL;
+		case LTTNG_UST_DYNAMIC_TYPE_S64:
+			ptr->object_type = OBJECT_TYPE_S64;
+			ptr->u.s64 = v.u.s64;
+			ptr->ptr = &ptr->u.s64;
+			dbg_printf("context get index dynamic s64 %" PRIi64 "\n", ptr->u.s64);
+			break;
+		case LTTNG_UST_DYNAMIC_TYPE_DOUBLE:
+			ptr->object_type = OBJECT_TYPE_DOUBLE;
+			ptr->u.d = v.u.d;
+			ptr->ptr = &ptr->u.d;
+			dbg_printf("context get index dynamic double %g\n", ptr->u.d);
+			break;
+		case LTTNG_UST_DYNAMIC_TYPE_STRING:
+			ptr->object_type = OBJECT_TYPE_STRING;
+			ptr->ptr = v.u.str;
+			dbg_printf("context get index dynamic string %s\n", (const char *) ptr->ptr);
+			break;
+		default:
+			dbg_printf("Filter warning: unknown dynamic type (%d).\n", (int) v.sel);
+			return -EINVAL;
+		}
+		break;
+	case atype_struct:
+		ERR("Structure type cannot be loaded.");
+		return -EINVAL;
+	default:
+		ERR("Unknown type: %d", (int) field->type.atype);
+		return -EINVAL;
+	}
+	return 0;
+}
+
+static int dynamic_get_index(struct lttng_session *session,
+		struct bytecode_runtime *runtime,
+		uint64_t index, struct estack_entry *stack_top)
+{
+	int ret;
+	const struct filter_get_index_data *gid;
+
+	/*
+	 * Types nested within variants need to perform dynamic lookup
+	 * based on the field descriptions. LTTng-UST does not implement
+	 * variants for now.
+	 */
+	if (stack_top->u.ptr.field)
+		return -EINVAL;
+	gid = (const struct filter_get_index_data *) &runtime->data[index];
+	switch (stack_top->u.ptr.type) {
+	case LOAD_OBJECT:
+		switch (stack_top->u.ptr.object_type) {
+		case OBJECT_TYPE_ARRAY:
+		{
+			const char *ptr;
+
+			assert(gid->offset < gid->array_len);
+			/* Skip count (unsigned long) */
+			ptr = *(const char **) (stack_top->u.ptr.ptr + sizeof(unsigned long));
+			ptr = ptr + gid->offset;
+			stack_top->u.ptr.ptr = ptr;
+			stack_top->u.ptr.object_type = gid->elem.type;
+			stack_top->u.ptr.rev_bo = gid->elem.rev_bo;
+			/* field is only used for types nested within variants. */
+			stack_top->u.ptr.field = NULL;
+			break;
+		}
+		case OBJECT_TYPE_SEQUENCE:
+		{
+			const char *ptr;
+			size_t ptr_seq_len;
+
+			ptr = *(const char **) (stack_top->u.ptr.ptr + sizeof(unsigned long));
+			ptr_seq_len = *(unsigned long *) stack_top->u.ptr.ptr;
+			if (gid->offset >= gid->elem.len * ptr_seq_len) {
+				ret = -EINVAL;
+				goto end;
+			}
+			ptr = ptr + gid->offset;
+			stack_top->u.ptr.ptr = ptr;
+			stack_top->u.ptr.object_type = gid->elem.type;
+			stack_top->u.ptr.rev_bo = gid->elem.rev_bo;
+			/* field is only used for types nested within variants. */
+			stack_top->u.ptr.field = NULL;
+			break;
+		}
+		case OBJECT_TYPE_STRUCT:
+			ERR("Nested structures are not supported yet.");
+			ret = -EINVAL;
+			goto end;
+		case OBJECT_TYPE_VARIANT:
+		default:
+			ERR("Unexpected get index type %d",
+				(int) stack_top->u.ptr.object_type);
+			ret = -EINVAL;
+			goto end;
+		}
+		break;
+	case LOAD_ROOT_CONTEXT:
+	case LOAD_ROOT_APP_CONTEXT:	/* Fall-through */
+	{
+		struct lttng_ctx *ctx;
+
+		ctx = rcu_dereference(session->ctx);
+		ret = context_get_index(ctx,
+				&stack_top->u.ptr,
+				gid->ctx_index);
+		if (ret) {
+			goto end;
+		}
+		break;
+	}
+	case LOAD_ROOT_PAYLOAD:
+		stack_top->u.ptr.ptr += gid->offset;
+		if (gid->elem.type == OBJECT_TYPE_STRING)
+			stack_top->u.ptr.ptr = *(const char * const *) stack_top->u.ptr.ptr;
+		stack_top->u.ptr.object_type = gid->elem.type;
+		stack_top->u.ptr.type = LOAD_OBJECT;
+		/* field is only used for types nested within variants. */
+		stack_top->u.ptr.field = NULL;
+		break;
+	}
+	return 0;
+
+end:
+	return ret;
+}
+
+static int dynamic_load_field(struct estack_entry *stack_top)
+{
+	int ret;
+
+	switch (stack_top->u.ptr.type) {
+	case LOAD_OBJECT:
+		break;
+	case LOAD_ROOT_CONTEXT:
+	case LOAD_ROOT_APP_CONTEXT:
+	case LOAD_ROOT_PAYLOAD:
+	default:
+		dbg_printf("Filter warning: cannot load root, missing field name.\n");
+		ret = -EINVAL;
+		goto end;
+	}
+	switch (stack_top->u.ptr.object_type) {
+	case OBJECT_TYPE_S8:
+		dbg_printf("op load field s8\n");
+		stack_top->u.v = *(int8_t *) stack_top->u.ptr.ptr;
+		stack_top->type = REG_S64;
+		break;
+	case OBJECT_TYPE_S16:
+	{
+		int16_t tmp;
+
+		dbg_printf("op load field s16\n");
+		tmp = *(int16_t *) stack_top->u.ptr.ptr;
+		if (stack_top->u.ptr.rev_bo)
+			tmp = bswap_16(tmp);
+		stack_top->u.v = tmp;
+		stack_top->type = REG_S64;
+		break;
+	}
+	case OBJECT_TYPE_S32:
+	{
+		int32_t tmp;
+
+		dbg_printf("op load field s32\n");
+		tmp = *(int32_t *) stack_top->u.ptr.ptr;
+		if (stack_top->u.ptr.rev_bo)
+			tmp = bswap_32(tmp);
+		stack_top->u.v = tmp;
+		stack_top->type = REG_S64;
+		break;
+	}
+	case OBJECT_TYPE_S64:
+	{
+		int64_t tmp;
+
+		dbg_printf("op load field s64\n");
+		tmp = *(int64_t *) stack_top->u.ptr.ptr;
+		if (stack_top->u.ptr.rev_bo)
+			tmp = bswap_64(tmp);
+		stack_top->u.v = tmp;
+		stack_top->type = REG_S64;
+		break;
+	}
+	case OBJECT_TYPE_U8:
+		dbg_printf("op load field u8\n");
+		stack_top->u.v = *(uint8_t *) stack_top->u.ptr.ptr;
+		stack_top->type = REG_S64;
+		break;
+	case OBJECT_TYPE_U16:
+	{
+		uint16_t tmp;
+
+		dbg_printf("op load field s16\n");
+		tmp = *(uint16_t *) stack_top->u.ptr.ptr;
+		if (stack_top->u.ptr.rev_bo)
+			tmp = bswap_16(tmp);
+		stack_top->u.v = tmp;
+		stack_top->type = REG_S64;
+		break;
+	}
+	case OBJECT_TYPE_U32:
+	{
+		uint32_t tmp;
+
+		dbg_printf("op load field u32\n");
+		tmp = *(uint32_t *) stack_top->u.ptr.ptr;
+		if (stack_top->u.ptr.rev_bo)
+			tmp = bswap_32(tmp);
+		stack_top->u.v = tmp;
+		stack_top->type = REG_S64;
+		break;
+	}
+	case OBJECT_TYPE_U64:
+	{
+		uint64_t tmp;
+
+		dbg_printf("op load field u64\n");
+		tmp = *(uint64_t *) stack_top->u.ptr.ptr;
+		if (stack_top->u.ptr.rev_bo)
+			tmp = bswap_64(tmp);
+		stack_top->u.v = tmp;
+		stack_top->type = REG_S64;
+		break;
+	}
+	case OBJECT_TYPE_DOUBLE:
+		memcpy(&stack_top->u.d,
+			stack_top->u.ptr.ptr,
+			sizeof(struct literal_double));
+		stack_top->type = REG_DOUBLE;
+		break;
+	case OBJECT_TYPE_STRING:
+	{
+		const char *str;
+
+		dbg_printf("op load field string\n");
+		str = (const char *) stack_top->u.ptr.ptr;
+		stack_top->u.s.str = str;
+		if (unlikely(!stack_top->u.s.str)) {
+			dbg_printf("Filter warning: loading a NULL string.\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		stack_top->u.s.seq_len = SIZE_MAX;
+		stack_top->u.s.literal_type =
+			ESTACK_STRING_LITERAL_TYPE_NONE;
+		stack_top->type = REG_STRING;
+		break;
+	}
+	case OBJECT_TYPE_STRING_SEQUENCE:
+	{
+		const char *ptr;
+
+		dbg_printf("op load field string sequence\n");
+		ptr = stack_top->u.ptr.ptr;
+		stack_top->u.s.seq_len = *(unsigned long *) ptr;
+		stack_top->u.s.str = *(const char **) (ptr + sizeof(unsigned long));
+		stack_top->type = REG_STRING;
+		if (unlikely(!stack_top->u.s.str)) {
+			dbg_printf("Filter warning: loading a NULL sequence.\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		stack_top->u.s.literal_type =
+			ESTACK_STRING_LITERAL_TYPE_NONE;
+		break;
+	}
+	case OBJECT_TYPE_DYNAMIC:
+		/*
+		 * Dynamic types in context are looked up
+		 * by context get index.
+		 */
+		ret = -EINVAL;
+		goto end;
+	case OBJECT_TYPE_SEQUENCE:
+	case OBJECT_TYPE_ARRAY:
+	case OBJECT_TYPE_STRUCT:
+	case OBJECT_TYPE_VARIANT:
+		ERR("Sequences, arrays, struct and variant cannot be loaded (nested types).");
+		ret = -EINVAL;
+		goto end;
+	}
+	return 0;
+
+end:
+	return ret;
+}
 
 /*
  * Return 0 (discard), or raise the 0x1 flag (log event).
@@ -250,9 +624,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		[ FILTER_OP_MINUS ] = &&LABEL_FILTER_OP_MINUS,
 		[ FILTER_OP_RSHIFT ] = &&LABEL_FILTER_OP_RSHIFT,
 		[ FILTER_OP_LSHIFT ] = &&LABEL_FILTER_OP_LSHIFT,
-		[ FILTER_OP_BIN_AND ] = &&LABEL_FILTER_OP_BIN_AND,
-		[ FILTER_OP_BIN_OR ] = &&LABEL_FILTER_OP_BIN_OR,
-		[ FILTER_OP_BIN_XOR ] = &&LABEL_FILTER_OP_BIN_XOR,
+		[ FILTER_OP_BIT_AND ] = &&LABEL_FILTER_OP_BIT_AND,
+		[ FILTER_OP_BIT_OR ] = &&LABEL_FILTER_OP_BIT_OR,
+		[ FILTER_OP_BIT_XOR ] = &&LABEL_FILTER_OP_BIT_XOR,
 
 		/* binary comparators */
 		[ FILTER_OP_EQ ] = &&LABEL_FILTER_OP_EQ,
@@ -343,6 +717,29 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		[ FILTER_OP_GET_CONTEXT_REF_STRING ] = &&LABEL_FILTER_OP_GET_CONTEXT_REF_STRING,
 		[ FILTER_OP_GET_CONTEXT_REF_S64 ] = &&LABEL_FILTER_OP_GET_CONTEXT_REF_S64,
 		[ FILTER_OP_GET_CONTEXT_REF_DOUBLE ] = &&LABEL_FILTER_OP_GET_CONTEXT_REF_DOUBLE,
+
+		/* Instructions for recursive traversal through composed types. */
+		[ FILTER_OP_GET_CONTEXT_ROOT ] = &&LABEL_FILTER_OP_GET_CONTEXT_ROOT,
+		[ FILTER_OP_GET_APP_CONTEXT_ROOT ] = &&LABEL_FILTER_OP_GET_APP_CONTEXT_ROOT,
+		[ FILTER_OP_GET_PAYLOAD_ROOT ] = &&LABEL_FILTER_OP_GET_PAYLOAD_ROOT,
+
+		[ FILTER_OP_GET_SYMBOL ] = &&LABEL_FILTER_OP_GET_SYMBOL,
+		[ FILTER_OP_GET_SYMBOL_FIELD ] = &&LABEL_FILTER_OP_GET_SYMBOL_FIELD,
+		[ FILTER_OP_GET_INDEX_U16 ] = &&LABEL_FILTER_OP_GET_INDEX_U16,
+		[ FILTER_OP_GET_INDEX_U64 ] = &&LABEL_FILTER_OP_GET_INDEX_U64,
+
+		[ FILTER_OP_LOAD_FIELD ] = &&LABEL_FILTER_OP_LOAD_FIELD,
+		[ FILTER_OP_LOAD_FIELD_S8	 ] = &&LABEL_FILTER_OP_LOAD_FIELD_S8,
+		[ FILTER_OP_LOAD_FIELD_S16 ] = &&LABEL_FILTER_OP_LOAD_FIELD_S16,
+		[ FILTER_OP_LOAD_FIELD_S32 ] = &&LABEL_FILTER_OP_LOAD_FIELD_S32,
+		[ FILTER_OP_LOAD_FIELD_S64 ] = &&LABEL_FILTER_OP_LOAD_FIELD_S64,
+		[ FILTER_OP_LOAD_FIELD_U8 ] = &&LABEL_FILTER_OP_LOAD_FIELD_U8,
+		[ FILTER_OP_LOAD_FIELD_U16 ] = &&LABEL_FILTER_OP_LOAD_FIELD_U16,
+		[ FILTER_OP_LOAD_FIELD_U32 ] = &&LABEL_FILTER_OP_LOAD_FIELD_U32,
+		[ FILTER_OP_LOAD_FIELD_U64 ] = &&LABEL_FILTER_OP_LOAD_FIELD_U64,
+		[ FILTER_OP_LOAD_FIELD_STRING ] = &&LABEL_FILTER_OP_LOAD_FIELD_STRING,
+		[ FILTER_OP_LOAD_FIELD_SEQUENCE ] = &&LABEL_FILTER_OP_LOAD_FIELD_SEQUENCE,
+		[ FILTER_OP_LOAD_FIELD_DOUBLE ] = &&LABEL_FILTER_OP_LOAD_FIELD_DOUBLE,
 	};
 #endif /* #ifndef INTERPRETER_USE_SWITCH */
 
@@ -353,14 +750,25 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 #ifdef INTERPRETER_USE_SWITCH
 		default:
 #endif /* INTERPRETER_USE_SWITCH */
-			ERR("unknown bytecode op %u\n",
+			ERR("unknown bytecode op %u",
 				(unsigned int) *(filter_opcode_t *) pc);
 			ret = -EINVAL;
 			goto end;
 
 		OP(FILTER_OP_RETURN):
 			/* LTTNG_FILTER_DISCARD  or LTTNG_FILTER_RECORD_FLAG */
-			retval = !!estack_ax_v;
+			/* Handle dynamic typing. */
+			switch (estack_ax_t) {
+			case REG_S64:
+				retval = !!estack_ax_v;
+				break;
+			case REG_DOUBLE:
+			case REG_STRING:
+			case REG_STAR_GLOB_STRING:
+			default:
+				ret = -EINVAL;
+				goto end;
+			}
 			ret = 0;
 			goto end;
 
@@ -372,10 +780,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		OP(FILTER_OP_MINUS):
 		OP(FILTER_OP_RSHIFT):
 		OP(FILTER_OP_LSHIFT):
-		OP(FILTER_OP_BIN_AND):
-		OP(FILTER_OP_BIN_OR):
-		OP(FILTER_OP_BIN_XOR):
-			ERR("unsupported bytecode op %u\n",
+			ERR("unsupported bytecode op %u",
 				(unsigned int) *(filter_opcode_t *) pc);
 			ret = -EINVAL;
 			goto end;
@@ -1143,6 +1548,57 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
+		OP(FILTER_OP_BIT_AND):
+		{
+			int64_t res;
+
+			/* Dynamic typing. */
+			if (estack_ax_t != REG_S64 || estack_bx_t != REG_S64) {
+				ret = -EINVAL;
+				goto end;
+			}
+
+			res = (estack_bx_v & estack_ax_v);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
+			estack_ax_v = res;
+			estack_ax_t = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			PO;
+		}
+		OP(FILTER_OP_BIT_OR):
+		{
+			int64_t res;
+
+			/* Dynamic typing. */
+			if (estack_ax_t != REG_S64 || estack_bx_t != REG_S64) {
+				ret = -EINVAL;
+				goto end;
+			}
+
+			res = (estack_bx_v | estack_ax_v);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
+			estack_ax_v = res;
+			estack_ax_t = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			PO;
+		}
+		OP(FILTER_OP_BIT_XOR):
+		{
+			int64_t res;
+
+			/* Dynamic typing. */
+			if (estack_ax_t != REG_S64 || estack_bx_t != REG_S64) {
+				ret = -EINVAL;
+				goto end;
+			}
+
+			res = (estack_bx_v ^ estack_ax_v);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
+			estack_ax_v = res;
+			estack_ax_t = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			PO;
+		}
 
 		/* unary */
 		OP(FILTER_OP_UNARY_PLUS):
@@ -1575,6 +2031,241 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			estack_ax_t = REG_DOUBLE;
 			dbg_printf("ref get context double %g\n", estack_ax(stack, top)->u.d);
 			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
+			PO;
+		}
+
+		OP(FILTER_OP_GET_CONTEXT_ROOT):
+		{
+			dbg_printf("op get context root\n");
+			estack_push(stack, top, ax, bx, ax_t, bx_t);
+			estack_ax(stack, top)->u.ptr.type = LOAD_ROOT_CONTEXT;
+			/* "field" only needed for variants. */
+			estack_ax(stack, top)->u.ptr.field = NULL;
+			estack_ax_t = REG_PTR;
+			next_pc += sizeof(struct load_op);
+			PO;
+		}
+
+		OP(FILTER_OP_GET_APP_CONTEXT_ROOT):
+		{
+			dbg_printf("op get app context root\n");
+			estack_push(stack, top, ax, bx, ax_t, bx_t);
+			estack_ax(stack, top)->u.ptr.type = LOAD_ROOT_APP_CONTEXT;
+			/* "field" only needed for variants. */
+			estack_ax(stack, top)->u.ptr.field = NULL;
+			estack_ax_t = REG_PTR;
+			next_pc += sizeof(struct load_op);
+			PO;
+		}
+
+		OP(FILTER_OP_GET_PAYLOAD_ROOT):
+		{
+			dbg_printf("op get app payload root\n");
+			estack_push(stack, top, ax, bx, ax_t, bx_t);
+			estack_ax(stack, top)->u.ptr.type = LOAD_ROOT_PAYLOAD;
+			estack_ax(stack, top)->u.ptr.ptr = filter_stack_data;
+			/* "field" only needed for variants. */
+			estack_ax(stack, top)->u.ptr.field = NULL;
+			estack_ax_t = REG_PTR;
+			next_pc += sizeof(struct load_op);
+			PO;
+		}
+
+		OP(FILTER_OP_GET_SYMBOL):
+		{
+			dbg_printf("op get symbol\n");
+			switch (estack_ax(stack, top)->u.ptr.type) {
+			case LOAD_OBJECT:
+				ERR("Nested fields not implemented yet.");
+				ret = -EINVAL;
+				goto end;
+			case LOAD_ROOT_CONTEXT:
+			case LOAD_ROOT_APP_CONTEXT:
+			case LOAD_ROOT_PAYLOAD:
+				/*
+				 * symbol lookup is performed by
+				 * specialization.
+				 */
+				ret = -EINVAL;
+				goto end;
+			}
+			next_pc += sizeof(struct load_op) + sizeof(struct get_symbol);
+			PO;
+		}
+
+		OP(FILTER_OP_GET_SYMBOL_FIELD):
+		{
+			/*
+			 * Used for first variant encountered in a
+			 * traversal. Variants are not implemented yet.
+			 */
+			ret = -EINVAL;
+			goto end;
+		}
+
+		OP(FILTER_OP_GET_INDEX_U16):
+		{
+			struct load_op *insn = (struct load_op *) pc;
+			struct get_index_u16 *index = (struct get_index_u16 *) insn->data;
+
+			dbg_printf("op get index u16\n");
+			ret = dynamic_get_index(session, bytecode, index->index, estack_ax(stack, top));
+			if (ret)
+				goto end;
+			estack_ax_v = estack_ax(stack, top)->u.v;
+			estack_ax_t = estack_ax(stack, top)->type;
+			next_pc += sizeof(struct load_op) + sizeof(struct get_index_u16);
+			PO;
+		}
+
+		OP(FILTER_OP_GET_INDEX_U64):
+		{
+			struct load_op *insn = (struct load_op *) pc;
+			struct get_index_u64 *index = (struct get_index_u64 *) insn->data;
+
+			dbg_printf("op get index u64\n");
+			ret = dynamic_get_index(session, bytecode, index->index, estack_ax(stack, top));
+			if (ret)
+				goto end;
+			estack_ax_v = estack_ax(stack, top)->u.v;
+			estack_ax_t = estack_ax(stack, top)->type;
+			next_pc += sizeof(struct load_op) + sizeof(struct get_index_u64);
+			PO;
+		}
+
+		OP(FILTER_OP_LOAD_FIELD):
+		{
+			dbg_printf("op load field\n");
+			ret = dynamic_load_field(estack_ax(stack, top));
+			if (ret)
+				goto end;
+			estack_ax_v = estack_ax(stack, top)->u.v;
+			estack_ax_t = estack_ax(stack, top)->type;
+			next_pc += sizeof(struct load_op);
+			PO;
+		}
+
+		OP(FILTER_OP_LOAD_FIELD_S8):
+		{
+			dbg_printf("op load field s8\n");
+
+			estack_ax_v = *(int8_t *) estack_ax(stack, top)->u.ptr.ptr;
+			estack_ax_t = REG_S64;
+			next_pc += sizeof(struct load_op);
+			PO;
+		}
+		OP(FILTER_OP_LOAD_FIELD_S16):
+		{
+			dbg_printf("op load field s16\n");
+
+			estack_ax_v = *(int16_t *) estack_ax(stack, top)->u.ptr.ptr;
+			estack_ax_t = REG_S64;
+			next_pc += sizeof(struct load_op);
+			PO;
+		}
+		OP(FILTER_OP_LOAD_FIELD_S32):
+		{
+			dbg_printf("op load field s32\n");
+
+			estack_ax_v = *(int32_t *) estack_ax(stack, top)->u.ptr.ptr;
+			estack_ax_t = REG_S64;
+			next_pc += sizeof(struct load_op);
+			PO;
+		}
+		OP(FILTER_OP_LOAD_FIELD_S64):
+		{
+			dbg_printf("op load field s64\n");
+
+			estack_ax_v = *(int64_t *) estack_ax(stack, top)->u.ptr.ptr;
+			estack_ax_t = REG_S64;
+			next_pc += sizeof(struct load_op);
+			PO;
+		}
+		OP(FILTER_OP_LOAD_FIELD_U8):
+		{
+			dbg_printf("op load field u8\n");
+
+			estack_ax_v = *(uint8_t *) estack_ax(stack, top)->u.ptr.ptr;
+			estack_ax_t = REG_S64;
+			next_pc += sizeof(struct load_op);
+			PO;
+		}
+		OP(FILTER_OP_LOAD_FIELD_U16):
+		{
+			dbg_printf("op load field u16\n");
+
+			estack_ax_v = *(uint16_t *) estack_ax(stack, top)->u.ptr.ptr;
+			estack_ax_t = REG_S64;
+			next_pc += sizeof(struct load_op);
+			PO;
+		}
+		OP(FILTER_OP_LOAD_FIELD_U32):
+		{
+			dbg_printf("op load field u32\n");
+
+			estack_ax_v = *(uint32_t *) estack_ax(stack, top)->u.ptr.ptr;
+			estack_ax_t = REG_S64;
+			next_pc += sizeof(struct load_op);
+			PO;
+		}
+		OP(FILTER_OP_LOAD_FIELD_U64):
+		{
+			dbg_printf("op load field u64\n");
+
+			estack_ax_v = *(uint64_t *) estack_ax(stack, top)->u.ptr.ptr;
+			estack_ax_t = REG_S64;
+			next_pc += sizeof(struct load_op);
+			PO;
+		}
+		OP(FILTER_OP_LOAD_FIELD_DOUBLE):
+		{
+			dbg_printf("op load field double\n");
+
+			memcpy(&estack_ax(stack, top)->u.d,
+				estack_ax(stack, top)->u.ptr.ptr,
+				sizeof(struct literal_double));
+			estack_ax(stack, top)->type = REG_DOUBLE;
+			next_pc += sizeof(struct load_op);
+			PO;
+		}
+
+		OP(FILTER_OP_LOAD_FIELD_STRING):
+		{
+			const char *str;
+
+			dbg_printf("op load field string\n");
+			str = (const char *) estack_ax(stack, top)->u.ptr.ptr;
+			estack_ax(stack, top)->u.s.str = str;
+			if (unlikely(!estack_ax(stack, top)->u.s.str)) {
+				dbg_printf("Filter warning: loading a NULL string.\n");
+				ret = -EINVAL;
+				goto end;
+			}
+			estack_ax(stack, top)->u.s.seq_len = SIZE_MAX;
+			estack_ax(stack, top)->u.s.literal_type =
+				ESTACK_STRING_LITERAL_TYPE_NONE;
+			estack_ax(stack, top)->type = REG_STRING;
+			next_pc += sizeof(struct load_op);
+			PO;
+		}
+
+		OP(FILTER_OP_LOAD_FIELD_SEQUENCE):
+		{
+			const char *ptr;
+
+			dbg_printf("op load field string sequence\n");
+			ptr = estack_ax(stack, top)->u.ptr.ptr;
+			estack_ax(stack, top)->u.s.seq_len = *(unsigned long *) ptr;
+			estack_ax(stack, top)->u.s.str = *(const char **) (ptr + sizeof(unsigned long));
+			estack_ax(stack, top)->type = REG_STRING;
+			if (unlikely(!estack_ax(stack, top)->u.s.str)) {
+				dbg_printf("Filter warning: loading a NULL sequence.\n");
+				ret = -EINVAL;
+				goto end;
+			}
+			estack_ax(stack, top)->u.s.literal_type =
+				ESTACK_STRING_LITERAL_TYPE_NONE;
+			next_pc += sizeof(struct load_op);
 			PO;
 		}
 
