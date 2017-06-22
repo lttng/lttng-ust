@@ -118,7 +118,7 @@ int lib_ring_buffer_backend_allocate(const struct lttng_ust_lib_ring_buffer_conf
 		bufb->buf_rsb.id = subbuffer_id(config, 0, 1, 0);
 
 	/* Allocate subbuffer packet counter table */
-	align_shm(shmobj, __alignof__(struct lttng_ust_lib_ring_buffer_backend_subbuffer));
+	align_shm(shmobj, __alignof__(struct lttng_ust_lib_ring_buffer_backend_counts));
 	set_shmp(bufb->buf_cnt, zalloc_shm(shmobj,
 				sizeof(struct lttng_ust_lib_ring_buffer_backend_counts)
 				* num_subbuf));
@@ -333,6 +333,8 @@ int channel_backend_init(struct channel_backend *chanb,
 	shmsize += sizeof(struct lttng_ust_lib_ring_buffer_backend_pages) * num_subbuf_alloc;
 	shmsize += offset_align(shmsize, __alignof__(struct lttng_ust_lib_ring_buffer_backend_subbuffer));
 	shmsize += sizeof(struct lttng_ust_lib_ring_buffer_backend_subbuffer) * num_subbuf;
+	shmsize += offset_align(shmsize, __alignof__(struct lttng_ust_lib_ring_buffer_backend_counts));
+	shmsize += sizeof(struct lttng_ust_lib_ring_buffer_backend_counts) * num_subbuf;
 	/* Per-cpu buffer size: control (after backend) */
 	shmsize += offset_align(shmsize, __alignof__(struct commit_counters_hot));
 	shmsize += sizeof(struct commit_counters_hot) * num_subbuf;
