@@ -34,13 +34,7 @@ COMMON_TXT = \
 
 # AsciiDoc configuration and XSL files:
 ASCIIDOC_CONF = $(srcdir)/asciidoc.conf
-XSL_FILES = \
-	manpage.xsl \
-	manpage-callouts.xsl \
-	manpage-bold-literal.xsl \
-	manpage-links.xsl \
-	manpage-headings.xsl
-XSL_SRC_FILES = $(addprefix $(srcdir)/xsl/,$(XSL_FILES))
+XSL_FILE = $(srcdir)/manpage.xsl
 
 # Common dependencies:
 COMMON_DEPS = $(ASCIIDOC_CONF) $(COMMON_TXT)
@@ -59,19 +53,19 @@ ADOC = $(ASCIIDOC) -f $(ASCIIDOC_CONF) -d manpage \
 	-a lttng_ust_register_timeout="@LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_MS@"
 
 ADOC_DOCBOOK = $(ADOC) -b docbook
-XTO = $(XMLTO) -m $(firstword $(XSL_SRC_FILES)) man
+XTO = $(XMLTO) -m $(XSL_FILE) man
 
 # Recipes:
 %.1.xml: $(srcdir)/%.1.txt $(COMMON_DEPS)
 	$(ADOC_DOCBOOK) -o $@ $<
 
-%.1: %.1.xml $(XSL_SRC_FILES)
+%.1: %.1.xml $(XSL_FILE)
 	$(XTO) $<
 
 %.3.xml: $(srcdir)/%.3.txt $(COMMON_DEPS)
 	$(ADOC_DOCBOOK) -o $@ $<
 
-%.3: %.3.xml $(XSL_SRC_FILES)
+%.3: %.3.xml $(XSL_FILE)
 	$(XTO) $<
 
 # Only clean the generated files if we have the tools to generate them again.
@@ -114,4 +108,4 @@ dist-hook:
 endif # !MAN_PAGES_OPT
 
 # Always distribute the source files.
-EXTRA_DIST += $(MAN_TXT) $(COMMON_TXT) $(XSL_SRC_FILES) $(ASCIIDOC_CONF)
+EXTRA_DIST += $(MAN_TXT) $(COMMON_TXT) $(XSL_FILE) $(ASCIIDOC_CONF)
