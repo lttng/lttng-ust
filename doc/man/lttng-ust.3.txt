@@ -1293,11 +1293,15 @@ are located in a specific directory under `$LTTNG_HOME` (or `$HOME` if
 `$LTTNG_HOME` is not set).
 
 `LTTNG_UST_ALLOW_BLOCKING`::
-    If set, allow application to retry event tracing when there's
+    If set, allow the application to retry event tracing when there's
     no space left for the event record in the sub-buffer, therefore
     effectively blocking the application until space is made available
-    or timeout is reached. This only has effect on channels with
-    `blocking-timeout` set.
+    or the configured timeout is reached.
++
+To allow an application to block during tracing, you also need to
+specify a blocking timeout when you create a channel with the
+nloption:--blocking-timeout option of the man:lttng-enable-channel(1)
+command.
 +
 This option can be useful in workloads generating very large trace data
 throughput, where blocking the application is an acceptable trade-off to
