@@ -1105,7 +1105,7 @@ are located in a specific directory under `$LTTNG_HOME` (or `$HOME` if
     https://github.com/lttng/lttng-ust/tree/master/doc/examples/clock-override[`examples/clock-override`].
 
 `LTTNG_UST_DEBUG`::
-    Activates `liblttng-ust`'s debug and error output if set to `1`.
+    If set, enable `liblttng-ust`'s debug and error output.
 
 `LTTNG_UST_GETCPU_PLUGIN`::
     Path to the shared object which acts as the `getcpu()` override
@@ -1124,9 +1124,8 @@ with time constraints on the process startup time.
 Default: {lttng_ust_register_timeout}.
 
 `LTTNG_UST_WITHOUT_BADDR_STATEDUMP`::
-    Prevents `liblttng-ust` from performing a base address state dump
-    (see the <<state-dump,LTTng-UST state dump>> section above) if
-    set to `1`.
+    If set, prevents `liblttng-ust` from performing a base address state
+    dump (see the <<state-dump,LTTng-UST state dump>> section above).
 
 
 include::common-footer.txt[]
