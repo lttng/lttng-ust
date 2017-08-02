@@ -1,3 +1,7 @@
+2017-08-02 (National Coloring Book Day) lttng-ust 2.8.4
+	* lttng-ust(3): specify "If set" instead of "if set to 1" for some variables
+	* Fix: Expand the shmobj size for the sequence number
+
 2017-06-12 (National Peanut Butter Cookie Day) lttng-ust 2.8.3
 	* Fix: lttng-ust-elf.c: define NT_GNU_BUILD_ID if not defined
 	* Fix: Don't override user variables within the build system
