@@ -39,9 +39,6 @@
  * Ensure we have the required amount of space available by writing 0
  * into the entire buffer. Not doing so can trigger SIGBUS when going
  * beyond the available shm space.
- *
- * Also ensure the file metadata is synced with the storage by using
- * fsync(2).
  */
 static
 int zero_file(int fd, size_t len)
@@ -69,11 +66,6 @@ int zero_file(int fd, size_t len)
 			goto error;
 		}
 		written += retlen;
-	}
-	ret = fsync(fd);
-	if (ret) {
-		ret = (int) -errno;
-		goto error;
 	}
 	ret = 0;
 error:
@@ -142,6 +134,15 @@ struct shm_object *_shm_object_table_alloc_shm(struct shm_object_table *table,
 		PERROR("ftruncate");
 		goto error_ftruncate;
 	}
+	/*
+	 * Also ensure the file metadata is synced with the storage by using
+	 * fsync(2).
+	 */
+	ret = fsync(shmfd);
+	if (ret) {
+		PERROR("fsync");
+		goto error_fsync;
+	}
 	obj->shm_fd_ownership = 0;
 	obj->shm_fd = shmfd;
 
@@ -161,6 +162,7 @@ struct shm_object *_shm_object_table_alloc_shm(struct shm_object_table *table,
 	return obj;
 
 error_mmap:
+error_fsync:
 error_ftruncate:
 error_zero_file:
 error_fcntl:
