@@ -39,6 +39,9 @@
  * Ensure we have the required amount of space available by writing 0
  * into the entire buffer. Not doing so can trigger SIGBUS when going
  * beyond the available shm space.
+ *
+ * Also ensure the file metadata is synced with the storage by using
+ * fsync(2).
  */
 static
 int zero_file(int fd, size_t len)
@@ -66,6 +69,11 @@ int zero_file(int fd, size_t len)
 			goto error;
 		}
 		written += retlen;
+	}
+	ret = fsync(fd);
+	if (ret) {
+		ret = (int) -errno;
+		goto error;
 	}
 	ret = 0;
 error:
