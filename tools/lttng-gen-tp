@@ -79,7 +79,9 @@ class CFile:
     def write(self):
         outputFile = open(self.outputFilename,"w")
 
-        headerFilename = self.outputFilename.replace(".c",".h")
+        headerFilename = self.outputFilename
+        if headerFilename.endswith(".c"):
+            headerFilename = headerFilename[:-2] + ".h"
 
         outputFile.write(CFile.FILE_TPL.format(
                                            headerFilename = headerFilename))
@@ -126,7 +128,10 @@ class ObjFile:
         return cc
 
     def write(self):
-        cFilename = self.outputFilename.replace(".o",".c")
+        cFilename = self.outputFilename
+        if cFilename.endswith(".o"):
+            cFilename = cFilename[:-2] + ".c"
+
         cc = self._detectCC()
         if cc == "":
             raise RuntimeError("No C Compiler detected")
