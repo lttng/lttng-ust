@@ -23,12 +23,14 @@ import re
 import os
 import subprocess
 
+
 class Usage(Exception):
     def __init__(self, msg):
         self.msg = msg
 
+
 class HeaderFile:
-    HEADER_TPL="""
+    HEADER_TPL = """
 #undef TRACEPOINT_PROVIDER
 #define TRACEPOINT_PROVIDER {providerName}
 
@@ -41,30 +43,32 @@ class HeaderFile:
 #include <lttng/tracepoint.h>
 
 """
-    FOOTER_TPL="""
+    FOOTER_TPL = """
 #endif /* {includeGuard} */
 
 #include <lttng/tracepoint-event.h>
 """
+
     def __init__(self, filename, template):
         self.outputFilename = filename
         self.template = template
 
     def write(self):
-        outputFile = open(self.outputFilename,"w")
+        outputFile = open(self.outputFilename, "w")
         # Include guard macro will be created by uppercasing the filename and
         # replacing all non alphanumeric characters with '_'
         includeGuard = re.sub('[^0-9a-zA-Z]', '_', self.outputFilename.upper())
 
         outputFile.write(HeaderFile.HEADER_TPL.format(providerName=self.template.domain,
-                                           includeGuard = includeGuard,
-                                           headerFilename = self.outputFilename))
+                                           includeGuard=includeGuard,
+                                           headerFilename=self.outputFilename))
         outputFile.write(self.template.text)
-        outputFile.write(HeaderFile.FOOTER_TPL.format(includeGuard = includeGuard))
+        outputFile.write(HeaderFile.FOOTER_TPL.format(includeGuard=includeGuard))
         outputFile.close()
 
+
 class CFile:
-    FILE_TPL="""
+    FILE_TPL = """
 #define TRACEPOINT_CREATE_PROBES
 /*
  * The header containing our TRACEPOINT_EVENTs.
@@ -72,25 +76,28 @@ class CFile:
 #define TRACEPOINT_DEFINE
 #include "{headerFilename}"
 """
+
     def __init__(self, filename, template):
         self.outputFilename = filename
         self.template = template
 
     def write(self):
-        outputFile = open(self.outputFilename,"w")
+        outputFile = open(self.outputFilename, "w")
 
         headerFilename = self.outputFilename
         if headerFilename.endswith(".c"):
             headerFilename = headerFilename[:-2] + ".h"
 
         outputFile.write(CFile.FILE_TPL.format(
-                                           headerFilename = headerFilename))
+                                           headerFilename=headerFilename))
         outputFile.close()
+
 
 class ObjFile:
     def __init__(self, filename, template):
         self.outputFilename = filename
         self.template = template
+
     def _detectCC(self):
         cc = ""
         if 'CC' in os.environ:
@@ -153,33 +160,33 @@ class ObjFile:
             print("Compile command: " + command)
         subprocess.call(command.split())
 
+
 class TemplateFile:
     def __init__(self, filename):
         self.domain = ""
         self.inputFilename = filename
         self.parseTemplate()
 
-
     def parseTemplate(self):
-        f = open(self.inputFilename,"r")
+        f = open(self.inputFilename, "r")
 
         self.text = f.read()
 
-        #Remove # comments (from input and output file) but keep 
+        # Remove # comments (from input and output file) but keep
         # #include in the output file
-        removeComments = re.compile("#[^include].*$",flags=re.MULTILINE)
-        self.text = removeComments.sub("",self.text)
+        removeComments = re.compile("#[^include].*$", flags=re.MULTILINE)
+        self.text = removeComments.sub("", self.text)
         # Remove #include directive from the parsed text
-        removePreprocess = re.compile("#.*$",flags=re.MULTILINE)
+        removePreprocess = re.compile("#.*$", flags=re.MULTILINE)
         noPreprocess = removePreprocess.sub("", self.text)
-        #Remove // comments
-        removeLineComment = re.compile("\/\/.*$",flags=re.MULTILINE)
+        # Remove // comments
+        removeLineComment = re.compile("\/\/.*$", flags=re.MULTILINE)
         nolinecomment = removeLineComment.sub("", noPreprocess)
-        #Remove all spaces and lines
-        cleantext = re.sub("\s*","",nolinecomment)
-        #Remove multine C style comments
-        nocomment = re.sub("/\*.*?\*/","",cleantext)
-        entries = re.split("TRACEPOINT_.*?",nocomment)
+        # Remove all spaces and lines
+        cleantext = re.sub("\s*", "", nolinecomment)
+        # Remove multine C style comments
+        nocomment = re.sub("/\*.*?\*/", "", cleantext)
+        entries = re.split("TRACEPOINT_.*?", nocomment)
 
         for entry in entries:
             if entry != '':
@@ -194,9 +201,10 @@ class TemplateFile:
                     if self.domain != domain:
                         print("Warning: different domain provided (%s,%s)" % (self.domain, domain))
 
-verbose=False
 
-usage="""
+verbose = False
+
+usage = """
  lttng-gen-tp - Generate the LTTng-UST header and source based on a simple template
 
  usage: lttng-gen-tp TEMPLATE_FILE [-o OUTPUT_FILE][-o OUTPUT_FILE]
@@ -212,15 +220,17 @@ usage="""
  as per defined in the lttng/tracepoint.h file.
  See the lttng-ust(3) man page for more details on the format.
 """
+
+
 def main(argv=None):
     if argv is None:
         argv = sys.argv
 
     try:
         try:
-            opts, args = getopt.gnu_getopt(argv[1:], "ho:av", ["help","verbose"])
+            opts, args = getopt.gnu_getopt(argv[1:], "ho:av", ["help", "verbose"])
         except getopt.error as msg:
-             raise Usage(msg)
+            raise Usage(msg)
 
     except Usage as err:
         print(err.msg, file=sys.stderr)
@@ -232,9 +242,9 @@ def main(argv=None):
         if o in ("-h", "--help"):
             print(usage)
             return(0)
-        if o in ("-o",""):
+        if o in ("-o", ""):
             outputNames.append(a)
-        if o in ("-a",""):
+        if o in ("-a", ""):
             all = True
         if o in ("-v", "--verbose"):
             global verbose
@@ -295,26 +305,27 @@ def main(argv=None):
                 if headerFilename:
                     curFilename = headerFilename
                 else:
-                    curFilename = re.sub("\.tp$",".h",arg)
+                    curFilename = re.sub("\.tp$", ".h", arg)
                 doth = HeaderFile(curFilename, tpl)
                 doth.write()
             if doCFile:
                 if cFilename:
                     curFilename = cFilename
                 else:
-                    curFilename = re.sub("\.tp$",".c",arg)
+                    curFilename = re.sub("\.tp$", ".c", arg)
                 dotc = CFile(curFilename, tpl)
                 dotc.write()
             if doObj:
                 if objFilename:
                     curFilename = objFilename
                 else:
-                    curFilename = re.sub("\.tp$",".o",arg)
+                    curFilename = re.sub("\.tp$", ".o", arg)
                 dotobj = ObjFile(curFilename, tpl)
                 dotobj.write()
         except IOError as args:
             print("Cannot write output file " + args.filename + " " + args.strerror)
             return -1
+
 
 if __name__ == "__main__":
     sys.exit(main())
