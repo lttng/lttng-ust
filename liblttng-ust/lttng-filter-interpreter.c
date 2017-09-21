@@ -622,8 +622,8 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		[ FILTER_OP_MOD ] = &&LABEL_FILTER_OP_MOD,
 		[ FILTER_OP_PLUS ] = &&LABEL_FILTER_OP_PLUS,
 		[ FILTER_OP_MINUS ] = &&LABEL_FILTER_OP_MINUS,
-		[ FILTER_OP_RSHIFT ] = &&LABEL_FILTER_OP_RSHIFT,
-		[ FILTER_OP_LSHIFT ] = &&LABEL_FILTER_OP_LSHIFT,
+		[ FILTER_OP_BIT_RSHIFT ] = &&LABEL_FILTER_OP_BIT_RSHIFT,
+		[ FILTER_OP_BIT_LSHIFT ] = &&LABEL_FILTER_OP_BIT_LSHIFT,
 		[ FILTER_OP_BIT_AND ] = &&LABEL_FILTER_OP_BIT_AND,
 		[ FILTER_OP_BIT_OR ] = &&LABEL_FILTER_OP_BIT_OR,
 		[ FILTER_OP_BIT_XOR ] = &&LABEL_FILTER_OP_BIT_XOR,
@@ -740,6 +740,8 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		[ FILTER_OP_LOAD_FIELD_STRING ] = &&LABEL_FILTER_OP_LOAD_FIELD_STRING,
 		[ FILTER_OP_LOAD_FIELD_SEQUENCE ] = &&LABEL_FILTER_OP_LOAD_FIELD_SEQUENCE,
 		[ FILTER_OP_LOAD_FIELD_DOUBLE ] = &&LABEL_FILTER_OP_LOAD_FIELD_DOUBLE,
+
+		[ FILTER_OP_UNARY_BIT_NOT ] = &&LABEL_FILTER_OP_UNARY_BIT_NOT,
 	};
 #endif /* #ifndef INTERPRETER_USE_SWITCH */
 
@@ -778,8 +780,6 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		OP(FILTER_OP_MOD):
 		OP(FILTER_OP_PLUS):
 		OP(FILTER_OP_MINUS):
-		OP(FILTER_OP_RSHIFT):
-		OP(FILTER_OP_LSHIFT):
 			ERR("unsupported bytecode op %u",
 				(unsigned int) *(filter_opcode_t *) pc);
 			ret = -EINVAL;
@@ -1548,6 +1548,40 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			next_pc += sizeof(struct binary_op);
 			PO;
 		}
+		OP(FILTER_OP_BIT_RSHIFT):
+		{
+			int64_t res;
+
+			/* Dynamic typing. */
+			if (estack_ax_t != REG_S64 || estack_bx_t != REG_S64) {
+				ret = -EINVAL;
+				goto end;
+			}
+
+			res = (estack_bx_v >> estack_ax_v);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
+			estack_ax_v = res;
+			estack_ax_t = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			PO;
+		}
+		OP(FILTER_OP_BIT_LSHIFT):
+		{
+			int64_t res;
+
+			/* Dynamic typing. */
+			if (estack_ax_t != REG_S64 || estack_bx_t != REG_S64) {
+				ret = -EINVAL;
+				goto end;
+			}
+
+			res = (estack_bx_v << estack_ax_v);
+			estack_pop(stack, top, ax, bx, ax_t, bx_t);
+			estack_ax_v = res;
+			estack_ax_t = REG_S64;
+			next_pc += sizeof(struct binary_op);
+			PO;
+		}
 		OP(FILTER_OP_BIT_AND):
 		{
 			int64_t res;
@@ -1657,6 +1691,19 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 				ret = -EINVAL;
 				goto end;
 			}
+			next_pc += sizeof(struct unary_op);
+			PO;
+		}
+
+		OP(FILTER_OP_UNARY_BIT_NOT):
+		{
+			/* Dynamic typing. */
+			if (estack_ax_t != REG_S64) {
+				ret = -EINVAL;
+				goto end;
+			}
+
+			estack_ax_v = ~estack_ax_v;
 			next_pc += sizeof(struct unary_op);
 			PO;
 		}

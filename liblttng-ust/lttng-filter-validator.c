@@ -310,8 +310,6 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 	case FILTER_OP_MOD:
 	case FILTER_OP_PLUS:
 	case FILTER_OP_MINUS:
-	case FILTER_OP_RSHIFT:
-	case FILTER_OP_LSHIFT:
 	{
 		ERR("unsupported bytecode op %u\n",
 			(unsigned int) *(filter_opcode_t *) pc);
@@ -357,6 +355,8 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 	case FILTER_OP_LT_S64_DOUBLE:
 	case FILTER_OP_GE_S64_DOUBLE:
 	case FILTER_OP_LE_S64_DOUBLE:
+	case FILTER_OP_BIT_RSHIFT:
+	case FILTER_OP_BIT_LSHIFT:
 	case FILTER_OP_BIT_AND:
 	case FILTER_OP_BIT_OR:
 	case FILTER_OP_BIT_XOR:
@@ -378,6 +378,7 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 	case FILTER_OP_UNARY_PLUS_DOUBLE:
 	case FILTER_OP_UNARY_MINUS_DOUBLE:
 	case FILTER_OP_UNARY_NOT_DOUBLE:
+	case FILTER_OP_UNARY_BIT_NOT:
 	{
 		if (unlikely(pc + sizeof(struct unary_op)
 				> start_pc + bytecode->len)) {
@@ -587,8 +588,6 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 	case FILTER_OP_MOD:
 	case FILTER_OP_PLUS:
 	case FILTER_OP_MINUS:
-	case FILTER_OP_RSHIFT:
-	case FILTER_OP_LSHIFT:
 	{
 		ERR("unsupported bytecode op %u\n",
 			(unsigned int) opcode);
@@ -758,6 +757,16 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 		break;
 	}
 
+	case FILTER_OP_BIT_RSHIFT:
+		ret = bin_op_bitwise_check(stack, opcode, ">>");
+		if (ret < 0)
+			goto end;
+		break;
+	case FILTER_OP_BIT_LSHIFT:
+		ret = bin_op_bitwise_check(stack, opcode, "<<");
+		if (ret < 0)
+			goto end;
+		break;
 	case FILTER_OP_BIT_AND:
 		ret = bin_op_bitwise_check(stack, opcode, "&");
 		if (ret < 0)
@@ -798,6 +807,32 @@ int validate_instruction_context(struct bytecode_runtime *bytecode,
 		case REG_S64:
 			break;
 		case REG_DOUBLE:
+			break;
+		case REG_UNKNOWN:
+			break;
+		}
+		break;
+	}
+	case FILTER_OP_UNARY_BIT_NOT:
+	{
+		if (!vstack_ax(stack)) {
+			ERR("Empty stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		switch (vstack_ax(stack)->type) {
+		default:
+			ERR("unknown register type\n");
+			ret = -EINVAL;
+			goto end;
+
+		case REG_STRING:
+		case REG_STAR_GLOB_STRING:
+		case REG_DOUBLE:
+			ERR("Unary bitwise op can only be applied to numeric registers\n");
+			ret = -EINVAL;
+			goto end;
+		case REG_S64:
 			break;
 		case REG_UNKNOWN:
 			break;
@@ -1227,8 +1262,6 @@ int exec_insn(struct bytecode_runtime *bytecode,
 	case FILTER_OP_MOD:
 	case FILTER_OP_PLUS:
 	case FILTER_OP_MINUS:
-	case FILTER_OP_RSHIFT:
-	case FILTER_OP_LSHIFT:
 	{
 		ERR("unsupported bytecode op %u\n",
 			(unsigned int) *(filter_opcode_t *) pc);
@@ -1274,6 +1307,8 @@ int exec_insn(struct bytecode_runtime *bytecode,
 	case FILTER_OP_LT_S64_DOUBLE:
 	case FILTER_OP_GE_S64_DOUBLE:
 	case FILTER_OP_LE_S64_DOUBLE:
+	case FILTER_OP_BIT_RSHIFT:
+	case FILTER_OP_BIT_LSHIFT:
 	case FILTER_OP_BIT_AND:
 	case FILTER_OP_BIT_OR:
 	case FILTER_OP_BIT_XOR:
@@ -1371,6 +1406,31 @@ int exec_insn(struct bytecode_runtime *bytecode,
 		case REG_DOUBLE:
 		case REG_S64:
 			break;
+		default:
+			ERR("Unexpected register type %d for operation\n",
+				(int) vstack_ax(stack)->type);
+			ret = -EINVAL;
+			goto end;
+		}
+
+		vstack_ax(stack)->type = REG_S64;
+		next_pc += sizeof(struct unary_op);
+		break;
+	}
+
+	case FILTER_OP_UNARY_BIT_NOT:
+	{
+		/* Pop 1, push 1 */
+		if (!vstack_ax(stack)) {
+			ERR("Empty stack\n");
+			ret = -EINVAL;
+			goto end;
+		}
+		switch (vstack_ax(stack)->type) {
+		case REG_UNKNOWN:
+		case REG_S64:
+			break;
+		case REG_DOUBLE:
 		default:
 			ERR("Unexpected register type %d for operation\n",
 				(int) vstack_ax(stack)->type);

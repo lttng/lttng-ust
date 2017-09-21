@@ -630,8 +630,6 @@ int lttng_filter_specialize_bytecode(struct lttng_event *event,
 		case FILTER_OP_MOD:
 		case FILTER_OP_PLUS:
 		case FILTER_OP_MINUS:
-		case FILTER_OP_RSHIFT:
-		case FILTER_OP_LSHIFT:
 			ERR("unsupported bytecode op %u\n",
 				(unsigned int) *(filter_opcode_t *) pc);
 			ret = -EINVAL;
@@ -959,6 +957,8 @@ int lttng_filter_specialize_bytecode(struct lttng_event *event,
 		case FILTER_OP_LT_S64_DOUBLE:
 		case FILTER_OP_GE_S64_DOUBLE:
 		case FILTER_OP_LE_S64_DOUBLE:
+		case FILTER_OP_BIT_RSHIFT:
+		case FILTER_OP_BIT_LSHIFT:
 		case FILTER_OP_BIT_AND:
 		case FILTER_OP_BIT_OR:
 		case FILTER_OP_BIT_XOR:
@@ -1041,6 +1041,13 @@ int lttng_filter_specialize_bytecode(struct lttng_event *event,
 			case REG_UNKNOWN:	/* Dynamic typing. */
 				break;
 			}
+			/* Pop 1, push 1 */
+			next_pc += sizeof(struct unary_op);
+			break;
+		}
+
+		case FILTER_OP_UNARY_BIT_NOT:
+		{
 			/* Pop 1, push 1 */
 			next_pc += sizeof(struct unary_op);
 			break;

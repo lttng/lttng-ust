@@ -39,8 +39,8 @@ static const char *opnames[] = {
 	[ FILTER_OP_MOD ] = "MOD",
 	[ FILTER_OP_PLUS ] = "PLUS",
 	[ FILTER_OP_MINUS ] = "MINUS",
-	[ FILTER_OP_RSHIFT ] = "RSHIFT",
-	[ FILTER_OP_LSHIFT ] = "LSHIFT",
+	[ FILTER_OP_BIT_RSHIFT ] = "BIT_RSHIFT",
+	[ FILTER_OP_BIT_LSHIFT ] = "BIT_LSHIFT",
 	[ FILTER_OP_BIT_AND ] = "BIT_AND",
 	[ FILTER_OP_BIT_OR ] = "BIT_OR",
 	[ FILTER_OP_BIT_XOR ] = "BIT_XOR",
@@ -168,6 +168,8 @@ static const char *opnames[] = {
 	[ FILTER_OP_LOAD_FIELD_STRING ] = "LOAD_FIELD_STRING",
 	[ FILTER_OP_LOAD_FIELD_SEQUENCE ] = "LOAD_FIELD_SEQUENCE",
 	[ FILTER_OP_LOAD_FIELD_DOUBLE ] = "LOAD_FIELD_DOUBLE",
+
+	[ FILTER_OP_UNARY_BIT_NOT ] = "UNARY_BIT_NOT",
 };
 
 const char *print_op(enum filter_op op)
