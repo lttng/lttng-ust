@@ -112,6 +112,7 @@ it, amongst other things.
 To create a tracepoint provider, start with the following
 _tracepoint provider header_ template:
 
+[source,c]
 ------------------------------------------------------------------------
 #undef TRACEPOINT_PROVIDER
 #define TRACEPOINT_PROVIDER my_provider
@@ -152,6 +153,7 @@ LTTng-UST.
 The tracepoint provider header file needs to be included in a source
 file which looks like this:
 
+[source,c]
 ------------------------------------------------------------------------
 #define TRACEPOINT_CREATE_PROBES
 
@@ -180,6 +182,7 @@ section above) to define LTTng-UST tracepoints.
 
 The `TRACEPOINT_EVENT()` usage template is as follows:
 
+[source,c]
 ------------------------------------------------------------------------
 TRACEPOINT_EVENT(
     /* Tracepoint provider name */
@@ -207,6 +210,7 @@ fields defined in `TP_FIELDS()`.
 The format of the `TP_ARGS()` parameters is: C type, then argument name;
 repeat as needed, up to ten times. For example:
 
+[source,c]
 ------------------------------------------------------------------------
 TP_ARGS(
     int, my_int,
@@ -376,6 +380,7 @@ trace when the possible values for a field are limited.
 
 An enumeration field is defined with the `TRACEPOINT_ENUM()` macro:
 
+[source,c]
 ------------------------------------------------------------------------
 TRACEPOINT_ENUM(
     /* Tracepoint provider name */
@@ -435,6 +440,7 @@ The `TRACEPOINT_EVENT_CLASS()` macro accepts the same parameters as
 the `TRACEPOINT_EVENT()` macro, except that instead of an event name,
 its second parameter is the _tracepoint class name_:
 
+[source,c]
 ------------------------------------------------------------------------
 TRACEPOINT_EVENT_CLASS(
     /* Tracepoint provider name */
@@ -458,6 +464,7 @@ TRACEPOINT_EVENT_CLASS(
 Once the tracepoint class is defined, you can create as many tracepoint
 instances as needed:
 
+[source,c]
 -------------------------------------------------------------------------
 TRACEPOINT_EVENT_INSTANCE(
     /* Tracepoint provider name */
@@ -498,6 +505,7 @@ the `TRACEPOINT_LOGLEVEL()` macro. The latter must be used after having
 used `TRACEPOINT_EVENT()` or `TRACEPOINT_EVENT_INSTANCE()` for a given
 tracepoint. The `TRACEPOINT_LOGLEVEL()` macro is used as follows:
 
+[source,c]
 ------------------------------------------------------------------------
 TRACEPOINT_LOGLEVEL(
     /* Tracepoint provider name */
@@ -567,6 +575,7 @@ if the tracepoint is enabled.
 
 Here's how to use `tracepoint_enabled()` and `do_tracepoint()`:
 
+[source,c]
 ------------------------------------------------------------------------
 if (tracepoint_enabled(my_provider, my_tracepoint)) {
     payload = prepare_payload();
@@ -578,6 +587,7 @@ Using `tracepoint()` with `tracepoint_enabled()` is dangerous since
 `tracepoint()` also contains the `tracepoint_enabled()` check, thus a
 race condition is possible in this situation:
 
+[source,c]
 ------------------------------------------------------------------------
 /* Tracepoint is disabled here. */
 if (tracepoint_enabled(my_provider, my_tracepoint)) {
@@ -597,6 +607,7 @@ whole application could crash (segmentation fault, for example).
 If you use `tracepoint()` within the conditional block, then it's
 possible that `payload` is prepared for nothing:
 
+[source,c]
 ------------------------------------------------------------------------
 /* Tracepoint is enabled here. */
 if (tracepoint_enabled(my_provider, my_tracepoint)) {
@@ -624,6 +635,7 @@ Define `TRACEPOINT_DEFINE` definition below the
 `TRACEPOINT_CREATE_PROBES` definition in the tracepoint provider
 source:
 
+[source,c]
 ------------------------------------------------------------------------
 #define TRACEPOINT_CREATE_PROBES
 #define TRACEPOINT_DEFINE
@@ -695,6 +707,7 @@ the recommended practice is to use a separate C source file in your
 application to define them, then include the tracepoint provider header
 files afterwards. For example, as `tp-define.c`:
 
+[source,c]
 ------------------------------------------------------------------------
 #define TRACEPOINT_DEFINE
 #define TRACEPOINT_PROBE_DYNAMIC_LINKAGE
@@ -1026,6 +1039,7 @@ To detect if `liblttng-ust` is loaded from an application:
 
 . Define the `lttng_ust_loaded` weak symbol globally:
 +
+[source,c]
 ------------------------------------------------------------------------
 int lttng_ust_loaded __attribute__((weak));
 ------------------------------------------------------------------------
@@ -1034,6 +1048,7 @@ This weak symbol is set by the constructor of `liblttng-ust`.
 
 . Test `lttng_ust_loaded` where needed:
 +
+[source,c]
 ------------------------------------------------------------------------
 /* ... */
 
@@ -1106,6 +1121,7 @@ Tracepoint provider header file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 `tp.h`:
 
+[source,c]
 ------------------------------------------------------------------------
 #undef TRACEPOINT_PROVIDER
 #define TRACEPOINT_PROVIDER my_provider
@@ -1230,6 +1246,7 @@ Tracepoint provider source file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 `tp.c`:
 
+[source,c]
 ------------------------------------------------------------------------
 #define TRACEPOINT_CREATE_PROBES
 #define TRACEPOINT_DEFINE
@@ -1242,6 +1259,7 @@ Application header file
 ~~~~~~~~~~~~~~~~~~~~~~~
 `app.h`:
 
+[source,c]
 ------------------------------------------------------------------------
 #ifndef _APP_H
 #define _APP_H
@@ -1260,6 +1278,7 @@ Application source file
 ~~~~~~~~~~~~~~~~~~~~~~~
 `app.c`:
 
+[source,c]
 ------------------------------------------------------------------------
 #include <stdlib.h>
 #include <stdio.h>

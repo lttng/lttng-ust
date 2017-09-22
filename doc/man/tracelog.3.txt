@@ -75,6 +75,7 @@ EXAMPLE
 -------
 Here's a usage example of `tracelog()`:
 
+[source,c]
 -------------------------------------------------------------------
 #include <stdlib.h>
 #include <lttng/tracelog.h>

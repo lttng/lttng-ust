@@ -49,6 +49,7 @@ EXAMPLE
 -------
 Here's a usage example of `tracef()`:
 
+[source,c]
 -------------------------------------------------------------------
 #include <stdlib.h>
 #include <lttng/tracef.h>
