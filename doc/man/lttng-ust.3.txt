@@ -563,22 +563,51 @@ named 't_name' from the provider named 'prov_name' is enabled at
 run time.
 
 `do_tracepoint()` is like `tracepoint()`, except that it doesn't check
-if the tracepoint is enabled. Using `tracepoint()` with
-`tracepoint_enabled()` is dangerous since `tracepoint()` also contains
-the `tracepoint_enabled()` check, thus a race condition is possible
-in this situation:
+if the tracepoint is enabled.
+
+Here's how to use `tracepoint_enabled()` and `do_tracepoint()`:
 
 ------------------------------------------------------------------------
 if (tracepoint_enabled(my_provider, my_tracepoint)) {
-    stuff = prepare_stuff();
+    payload = prepare_payload();
+    do_tracepoint(my_provider, my_tracepoint, payload);
 }
-
-tracepoint(my_provider, my_tracepoint, stuff);
 ------------------------------------------------------------------------
 
-If the tracepoint is enabled after the condition, then `stuff` is not
+Using `tracepoint()` with `tracepoint_enabled()` is dangerous since
+`tracepoint()` also contains the `tracepoint_enabled()` check, thus a
+race condition is possible in this situation:
+
+------------------------------------------------------------------------
+/* Tracepoint is disabled here. */
+if (tracepoint_enabled(my_provider, my_tracepoint)) {
+    payload = prepare_payload();
+}
+
+/* Tracepoint is enabled here. */
+
+/* Do NOT do this! `payload` is not prepared here. */
+tracepoint(my_provider, my_tracepoint, payload);
+------------------------------------------------------------------------
+
+If the tracepoint is enabled after the condition, then `payload` is not
 prepared: the emitted event will either contain wrong data, or the
 whole application could crash (segmentation fault, for example).
+
+If you use `tracepoint()` within the conditional block, then it's
+possible that `payload` is prepared for nothing:
+
+------------------------------------------------------------------------
+/* Tracepoint is enabled here. */
+if (tracepoint_enabled(my_provider, my_tracepoint)) {
+    payload = prepare_payload();
+
+    /* Tracepoint is disabled here. */
+
+    /* Do NOT do this! `payload` is never used here. */
+    tracepoint(my_provider, my_tracepoint, payload);
+}
+------------------------------------------------------------------------
 
 NOTE: Neither `tracepoint_enabled()` nor `do_tracepoint()` have
 a `STAP_PROBEV()` call, so if you need it, you should emit this call
