@@ -1562,7 +1562,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 				ret = -EINVAL;
 				goto end;
 			}
-			res = (estack_bx_v >> estack_ax_v);
+			res = ((uint64_t) estack_bx_v >> (uint32_t) estack_ax_v);
 			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
 			estack_ax_t = REG_S64;
@@ -1583,7 +1583,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 				ret = -EINVAL;
 				goto end;
 			}
-			res = (estack_bx_v << estack_ax_v);
+			res = ((uint64_t) estack_bx_v << (uint32_t) estack_ax_v);
 			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
 			estack_ax_t = REG_S64;
@@ -1600,7 +1600,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 				goto end;
 			}
 
-			res = (estack_bx_v & estack_ax_v);
+			res = ((uint64_t) estack_bx_v & (uint64_t) estack_ax_v);
 			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
 			estack_ax_t = REG_S64;
@@ -1617,7 +1617,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 				goto end;
 			}
 
-			res = (estack_bx_v | estack_ax_v);
+			res = ((uint64_t) estack_bx_v | (uint64_t) estack_ax_v);
 			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
 			estack_ax_t = REG_S64;
@@ -1634,7 +1634,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 				goto end;
 			}
 
-			res = (estack_bx_v ^ estack_ax_v);
+			res = ((uint64_t) estack_bx_v ^ (uint64_t) estack_ax_v);
 			estack_pop(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = res;
 			estack_ax_t = REG_S64;
@@ -1711,7 +1711,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 				goto end;
 			}
 
-			estack_ax_v = ~estack_ax_v;
+			estack_ax_v = ~(uint64_t) estack_ax_v;
 			next_pc += sizeof(struct unary_op);
 			PO;
 		}
