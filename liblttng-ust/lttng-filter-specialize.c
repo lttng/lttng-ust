@@ -422,7 +422,7 @@ static int specialize_load_object(const struct lttng_event_field *field,
 		break;
 	case atype_dynamic:
 		load->object_type = OBJECT_TYPE_DYNAMIC;
-		return -EINVAL;
+		break;
 	case atype_struct:
 		ERR("Structure type cannot be loaded.");
 		return -EINVAL;
