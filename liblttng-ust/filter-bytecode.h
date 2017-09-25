@@ -206,6 +206,8 @@ enum filter_op {
 
 	FILTER_OP_UNARY_BIT_NOT			= 98,
 
+	FILTER_OP_RETURN_S64			= 99,
+
 	NR_FILTER_OPS,
 };
 

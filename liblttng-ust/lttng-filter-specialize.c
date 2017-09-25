@@ -621,6 +621,17 @@ int lttng_filter_specialize_bytecode(struct lttng_event *event,
 			goto end;
 
 		case FILTER_OP_RETURN:
+			if (vstack_ax(stack)->type == REG_S64)
+				*(filter_opcode_t *) pc = FILTER_OP_RETURN_S64;
+			ret = 0;
+			goto end;
+
+		case FILTER_OP_RETURN_S64:
+			if (vstack_ax(stack)->type != REG_S64) {
+				ERR("Unexpected register type\n");
+				ret = -EINVAL;
+				goto end;
+			}
 			ret = 0;
 			goto end;
 

@@ -170,6 +170,8 @@ static const char *opnames[] = {
 	[ FILTER_OP_LOAD_FIELD_DOUBLE ] = "LOAD_FIELD_DOUBLE",
 
 	[ FILTER_OP_UNARY_BIT_NOT ] = "UNARY_BIT_NOT",
+
+	[ FILTER_OP_RETURN_S64 ] = "RETURN_S64",
 };
 
 const char *print_op(enum filter_op op)
