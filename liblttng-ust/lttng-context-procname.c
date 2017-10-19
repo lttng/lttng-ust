@@ -38,7 +38,7 @@
  * thread.
  */
 typedef char procname_array[17];
-static DEFINE_URCU_TLS(procname_array, cached_procname);
+static DEFINE_URCU_TLS_IE(procname_array, cached_procname);
 
 static inline
 char *wrapper_getprocname(void)

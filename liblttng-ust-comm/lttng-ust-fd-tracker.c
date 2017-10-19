@@ -65,7 +65,7 @@ static pthread_mutex_t ust_safe_guard_fd_mutex = PTHREAD_MUTEX_INITIALIZER;
  * Track whether we are within lttng-ust or application, for close
  * system call override by LD_PRELOAD library.
  */
-static DEFINE_URCU_TLS(int, thread_fd_tracking);
+static DEFINE_URCU_TLS_IE(int, thread_fd_tracking);
 
 /* fd_set used to book keep fd being used by lttng-ust. */
 static fd_set *lttng_fd_set;

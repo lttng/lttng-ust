@@ -225,25 +225,21 @@ AM_CONDITIONAL([HAVE_DLINFO], [test "x${ac_cv_have_decl_RTLD_DI_LINKMAP}" = "xye
 AC_CHECK_HEADERS([urcu-bp.h], [], [AC_MSG_ERROR([Cannot find [URCU] headers (urcu-bp.h). Use [CPPFLAGS]=-Idir to specify their location.
 This error can also occur when the liburcu package's configure script has not been run.])])
 
+# URCU library version needed or newer
+m4_define([WRONG_LIBURCU_MSG], [Userspace RCU (liburcu) >= 0.11.0 is needed])
+
+#Macro added in urcu 0.6.6
+AC_CHECK_DECL([caa_likely], [],
+	[AC_MSG_ERROR([WRONG_LIBURCU_MSG])], [[#include <urcu.h>]])
+#Macro added in urcu 0.11.0
+AC_CHECK_DECL([DEFINE_URCU_TLS_IE], [],
+	[AC_MSG_ERROR([WRONG_LIBURCU_MSG])], [[#include <urcu/tls-compat.h>]]
+)
+
 # urcu-cds - check that URCU Concurrent Data Structure lib is available to compilation
 # Part of Userspace RCU library 0.7.2 or better.
 AC_CHECK_LIB([urcu-cds], [_cds_lfht_new], [], [AC_MSG_ERROR([Cannot find
 liburcu-cds lib, part of Userspace RCU 0.7 or better. Use [LDFLAGS]=-Ldir to specify its location.])])
-
-AC_MSG_CHECKING([caa_likely()])
-AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
-	#include <urcu/compiler.h>
-	void fct(void)
-	{
-		if (caa_likely(1)) {
-		}
-	}
-]])], [
-	AC_MSG_RESULT([yes])
-], [
-	AC_MSG_RESULT([no])
-	AC_MSG_ERROR([Please upgrade your version of liburcu to 0.6.6 or better])
-])
 
 # urcu - check that URCU lib is available to compilation
 AC_CHECK_LIB([urcu-bp], [synchronize_rcu_bp], [], [AC_MSG_ERROR([Cannot find liburcu-bp lib. Use [LDFLAGS]=-Ldir to specify its location.])])

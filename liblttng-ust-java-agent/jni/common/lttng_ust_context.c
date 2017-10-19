@@ -24,6 +24,7 @@
 #include <lttng/ust-events.h>
 #include <lttng/ringbuffer-config.h>
 #include <lttng/ust-context-provider.h>
+#include <urcu/tls-compat.h>
 
 #include "helper.h"
 #include "lttng_ust_context.h"
@@ -56,7 +57,7 @@ struct lttng_ust_jni_ctx_entry {
 } __attribute__((packed));
 
 /* TLS passing context info from JNI to callbacks. */
-__thread struct lttng_ust_jni_tls lttng_ust_context_info_tls;
+DECLARE_URCU_TLS_IE(struct lttng_ust_jni_tls, lttng_ust_context_info_tls);
 
 static const char *get_ctx_string_at_offset(int32_t offset)
 {

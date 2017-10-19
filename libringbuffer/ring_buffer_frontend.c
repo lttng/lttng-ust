@@ -118,7 +118,7 @@ struct switch_offsets {
 		     switch_old_end:1;
 };
 
-DEFINE_URCU_TLS(unsigned int, lib_ring_buffer_nesting);
+DEFINE_URCU_TLS_IE(unsigned int, lib_ring_buffer_nesting);
 
 /*
  * wakeup_fd_mutex protects wakeup fd use by timer from concurrent

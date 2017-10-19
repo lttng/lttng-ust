@@ -34,7 +34,7 @@
  * We cache the result to ensure we don't trigger a system call for
  * each event.
  */
-static DEFINE_URCU_TLS(pid_t, cached_vtid);
+static DEFINE_URCU_TLS_IE(pid_t, cached_vtid);
 
 /*
  * Upon fork or clone, the TID assigned to our thread is not the same as
