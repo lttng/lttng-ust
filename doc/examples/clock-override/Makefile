@@ -26,8 +26,8 @@ lttng-ust-clock-override-example.o: lttng-ust-clock-override-example.c
 		$(CFLAGS) -fpic -c -o $@ $<
 
 lttng-ust-clock-override-example.so: lttng-ust-clock-override-example.o
-	$(CC) -shared -Wl,--no-as-needed -o $@ $(LDFLAGS) $(AM_CFLAGS) \
-		$(AM_LDFLAGS) $(CFLAGS) lttng-ust-clock-override-example.o
+	$(CC) -Wl,--no-as-needed -o $@ $(LDFLAGS) $(AM_CFLAGS) \
+		$(AM_LDFLAGS) $(CFLAGS) -shared -fpic lttng-ust-clock-override-example.o
 
 .PHONY: clean
 clean:

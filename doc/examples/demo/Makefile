@@ -29,16 +29,16 @@ tp2.o: tp2.c ust_tests_demo2.h
 		$(CFLAGS) -fpic -c -o $@ $<
 
 lttng-ust-provider-ust-tests-demo.so: tp.o tp2.o
-	$(CC) -shared -Wl,--no-as-needed -o $@ $(LDFLAGS) $(AM_CFLAGS) \
-		$(AM_LDFLAGS) $(CFLAGS) -llttng-ust tp.o tp2.o
+	$(CC) -Wl,--no-as-needed -o $@ $(LDFLAGS) $(AM_CFLAGS) \
+		$(AM_LDFLAGS) $(CFLAGS) -shared -fpic tp.o tp2.o $(LIBS) -llttng-ust
 
 tp3.o: tp3.c ust_tests_demo3.h
 	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) \
 		$(CFLAGS) -fpic -c -o $@ $<
 
 lttng-ust-provider-ust-tests-demo3.so: tp3.o
-	$(CC) -shared -Wl,--no-as-needed -o $@ $(LDFLAGS) $(AM_CFLAGS) \
-		$(AM_LDFLAGS) $(CFLAGS) -llttng-ust tp3.o
+	$(CC) -Wl,--no-as-needed -o $@ $(LDFLAGS) $(AM_CFLAGS) \
+		$(AM_LDFLAGS) $(CFLAGS) -shared -fpic tp3.o $(LIBS) -llttng-ust
 
 demo.o: demo.c
 	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) \
