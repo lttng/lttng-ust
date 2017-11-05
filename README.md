@@ -12,7 +12,7 @@ Prerequisites
 -------------
 
 LTTng-UST depends on [liburcu](http://liburcu.org/) v0.7.2 at build and
-run times. It also depends on libnuma.
+run times. It also optionally depends on libnuma.
 
 
 Building
