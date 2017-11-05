@@ -258,7 +258,8 @@ AS_HELP_STRING([--disable-numa], [disable NUMA support])
 
 AS_IF([test "x$enable_numa" = "xyes"], [
 	# numa - check that numa lib is available
-	AC_CHECK_LIB([numa], [numa_available], [], [AC_MSG_ERROR([libnuma is required, please install it (e.g. libnuma-dev) or use [LDFLAGS]=-Ldir to specify the right location.])])
+	AC_CHECK_LIB([numa], [numa_available], [],
+[AC_MSG_ERROR([libnuma is not available. Please either install it (e.g. libnuma-dev) or use [LDFLAGS]=-Ldir to specify the right location, or use --disable-numa configure argument to disable NUMA support.])])
 	have_libnuma=yes
 ])
 AM_CONDITIONAL([HAVE_LIBNUMA], [test "x$have_libnuma" = "xyes"])
