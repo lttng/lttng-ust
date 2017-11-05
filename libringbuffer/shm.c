@@ -32,6 +32,7 @@
 #include <dirent.h>
 #include <lttng/align.h>
 #include <limits.h>
+#include <numa.h>
 #include <helper.h>
 #include <ust-fd.h>
 
@@ -243,18 +244,33 @@ alloc_error:
 struct shm_object *shm_object_table_alloc(struct shm_object_table *table,
 			size_t memory_map_size,
 			enum shm_object_type type,
-			int stream_fd)
+			int stream_fd,
+			int cpu)
 {
+	int oldnode, node;
+	struct shm_object *shm_object;
+
+	oldnode = numa_preferred();
+	if (cpu >= 0) {
+		node = numa_node_of_cpu(cpu);
+		if (node >= 0)
+			numa_set_preferred(node);
+	}
+	if (cpu < 0 || node < 0)
+		numa_set_localalloc();
 	switch (type) {
 	case SHM_OBJECT_SHM:
-		return _shm_object_table_alloc_shm(table, memory_map_size,
+		shm_object = _shm_object_table_alloc_shm(table, memory_map_size,
 				stream_fd);
+		break;
 	case SHM_OBJECT_MEM:
-		return _shm_object_table_alloc_mem(table, memory_map_size);
+		shm_object = _shm_object_table_alloc_mem(table, memory_map_size);
+		break;
 	default:
 		assert(0);
 	}
-	return NULL;
+	numa_set_preferred(oldnode);
+	return shm_object;
 }
 
 struct shm_object *shm_object_table_append_shm(struct shm_object_table *table,

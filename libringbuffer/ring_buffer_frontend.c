@@ -1014,7 +1014,7 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 
 	/* Allocate normal memory for channel (not shared) */
 	shmobj = shm_object_table_alloc(handle->table, shmsize, SHM_OBJECT_MEM,
-			-1);
+			-1, -1);
 	if (!shmobj)
 		goto error_append;
 	/* struct channel is at object 0, offset 0 (hardcoded) */

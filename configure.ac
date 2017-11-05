@@ -247,6 +247,9 @@ AC_CHECK_LIB([urcu-bp], [synchronize_rcu_bp], [], [AC_MSG_ERROR([Cannot find lib
 # urcu - check that URCU lib is at least version 0.6
 AC_CHECK_LIB([urcu-bp], [call_rcu_bp], [], [AC_MSG_ERROR([liburcu 0.6 or newer is needed, please update your version or use [LDFLAGS]=-Ldir to specify the right location.])])
 
+# numa - check that numa lib is available
+AC_CHECK_LIB([numa], [numa_available], [], [AC_MSG_ERROR([libnuma is required, please install it (e.g. libnuma-dev) or use [LDFLAGS]=-Ldir to specify the right location.])])
+
 # optional linux/perf_event.h
 AC_CHECK_HEADERS([linux/perf_event.h], [have_perf_event=yes], [])
 
