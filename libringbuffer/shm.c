@@ -19,6 +19,7 @@
  */
 
 #define _LGPL_SOURCE
+#include <config.h>
 #include "shm.h"
 #include <unistd.h>
 #include <fcntl.h>
@@ -32,7 +33,9 @@
 #include <dirent.h>
 #include <lttng/align.h>
 #include <limits.h>
+#ifdef HAVE_LIBNUMA
 #include <numa.h>
+#endif
 #include <helper.h>
 #include <ust-fd.h>
 
@@ -247,8 +250,9 @@ struct shm_object *shm_object_table_alloc(struct shm_object_table *table,
 			int stream_fd,
 			int cpu)
 {
-	int oldnode, node;
 	struct shm_object *shm_object;
+#ifdef HAVE_LIBNUMA
+	int oldnode, node;
 
 	oldnode = numa_preferred();
 	if (cpu >= 0) {
@@ -258,6 +262,7 @@ struct shm_object *shm_object_table_alloc(struct shm_object_table *table,
 	}
 	if (cpu < 0 || node < 0)
 		numa_set_localalloc();
+#endif /* HAVE_LIBNUMA */
 	switch (type) {
 	case SHM_OBJECT_SHM:
 		shm_object = _shm_object_table_alloc_shm(table, memory_map_size,
@@ -269,7 +274,9 @@ struct shm_object *shm_object_table_alloc(struct shm_object_table *table,
 	default:
 		assert(0);
 	}
+#ifdef HAVE_LIBNUMA
 	numa_set_preferred(oldnode);
+#endif /* HAVE_LIBNUMA */
 	return shm_object;
 }
 

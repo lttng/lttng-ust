@@ -15,7 +15,10 @@ libringbuffer_la_SOURCES = \
 
 libringbuffer_la_LIBADD = \
 	-lpthread \
-	-lrt \
-	-lnuma
+	-lrt
+
+if HAVE_LIBNUMA
+libringbuffer_la_LIBADD += -lnuma
+endif
 
 libringbuffer_la_CFLAGS = -DUST_COMPONENT="libringbuffer" $(AM_CFLAGS)
