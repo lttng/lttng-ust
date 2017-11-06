@@ -171,6 +171,30 @@ AC_CHECK_HEADERS([ \
 	wchar.h \
 ])
 
+# Set architecture specific options
+AS_CASE([$host_cpu],
+	[i[[3456]]86], [],
+	[x86_64], [],
+	[amd64], [],
+	[powerpc], [],
+	[ppc64], [],
+	[ppc64le], [],
+	[powerpc64], [],
+	[powerpc64le], [],
+	[s390], [NO_UNALIGNED_ACCESS=1],
+	[s390x], [NO_UNALIGNED_ACCESS=1],
+	[arm*], [
+		NO_UNALIGNED_ACCESS=1
+		NO_NUMA=1
+		],
+	[aarch64*], [NO_UNALIGNED_ACCESS=1],
+	[mips*], [NO_UNALIGNED_ACCESS=1],
+	[tile*], [NO_UNALIGNED_ACCESS=1],
+	[
+		UNSUPPORTED_ARCH=1
+		NO_UNALIGNED_ACCESS=1
+	])
+
 # Configuration options, which will be installed in the config.h
 AH_TEMPLATE([LTTNG_UST_HAVE_EFFICIENT_UNALIGNED_ACCESS], [Use efficient unaligned access.])
 AH_TEMPLATE([LTTNG_UST_HAVE_SDT_INTEGRATION], [SystemTap integration via sdt.h])
@@ -248,6 +272,10 @@ AC_CHECK_LIB([urcu-bp], [synchronize_rcu_bp], [], [AC_MSG_ERROR([Cannot find lib
 AC_CHECK_LIB([urcu-bp], [call_rcu_bp], [], [AC_MSG_ERROR([liburcu 0.6 or newer is needed, please update your version or use [LDFLAGS]=-Ldir to specify the right location.])])
 
 # numa.h integration
+AS_IF([test "x$NO_NUMA" = "x1"],[
+      AS_IF([test "x$enable_numa" = "x" ], [enable_numa=no])
+])
+
 AC_ARG_ENABLE([numa], [
 AS_HELP_STRING([--disable-numa], [disable NUMA support])
 ], [
@@ -274,28 +302,6 @@ AM_CONDITIONAL([HAVE_PERF_EVENT], [test "x$have_perf_event" = "xyes"])
 AS_IF([test "x$have_perf_event" = "xyes"], [
 	AC_DEFINE([LTTNG_UST_HAVE_PERF_EVENT], [1])
 ])
-
-AC_MSG_CHECKING([host system alignment requirements])
-AS_CASE([$host_cpu],
-	[i[[3456]]86], [],
-	[x86_64], [],
-	[amd64], [],
-	[powerpc], [],
-	[ppc64], [],
-	[ppc64le], [],
-	[powerpc64], [],
-	[powerpc64le], [],
-	[s390], [NO_UNALIGNED_ACCESS=1],
-	[s390x], [NO_UNALIGNED_ACCESS=1],
-	[arm*], [NO_UNALIGNED_ACCESS=1],
-	[aarch64*], [NO_UNALIGNED_ACCESS=1],
-	[mips*], [NO_UNALIGNED_ACCESS=1],
-	[tile*], [NO_UNALIGNED_ACCESS=1],
-	[
-		UNSUPPORTED_ARCH=1
-		NO_UNALIGNED_ACCESS=1
-	])
-AC_MSG_RESULT([$host_cpu])
 
 AS_IF([test "x$NO_UNALIGNED_ACCESS" = "x"], [
 	AC_DEFINE([LTTNG_UST_HAVE_EFFICIENT_UNALIGNED_ACCESS], [1])
