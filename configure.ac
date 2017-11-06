@@ -423,6 +423,19 @@ AC_DEFINE_UNQUOTED([LTTNG_SYSTEM_RUNDIR], ["$lttng_system_rundir"],
 AC_CHECK_PROG([BUILD_GEN_TP_EXAMPLES], [python], ["yes"])
 AM_CONDITIONAL([BUILD_GEN_TP_EXAMPLES], [test "x$BUILD_GEN_TP_EXAMPLES" = "xyes"])
 
+# Enable building examples
+AC_ARG_ENABLE(
+	examples,
+	AS_HELP_STRING(
+		[--disable-examples],
+		[Do not build and install examples]
+	),
+	[enable_examples=$enableval],
+	[enable_examples=yes]
+)
+
+AM_CONDITIONAL([ENABLE_EXAMPLES], [test "x$enable_examples" != "xno"])
+
 # Set $IN_GIT_REPO if we're in the Git repository; the `bootstrap` file
 # is not distributed in tarballs.
 AS_IF([test -f "$srcdir/bootstrap"], [in_git_repo=yes], [in_git_repo=no])
@@ -595,6 +608,9 @@ PPRINT_PROP_BOOL([NUMA], $value)
 
 AS_ECHO
 PPRINT_SET_INDENT(0)
+
+test "x$enable_examples" = xyes && value=1 || value=0
+PPRINT_PROP_BOOL([Build and install examples], $value, $PPRINT_COLOR_SUBTITLE)
 
 # man pages build enabled/disabled
 m4_pushdef([build_man_pages_msg], [Build and install man pages])
