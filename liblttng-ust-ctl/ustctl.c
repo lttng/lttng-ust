@@ -1737,6 +1737,17 @@ int ustctl_recv_reg_msg(int sock,
 		return -LTTNG_UST_ERR_UNSUP_MAJOR;
 	}
 
+	/*
+	 * Addition of enumeration inside _ustclt_basic_type should have been
+	 * marked as a breaking ABI change since it blows past the included
+	 * padding hence result in bigger than expected struct. Refuse
+	 * registration for non-matching minor version since only two minor
+	 * versions exist for ust-2.7(6.0) and 2.8(6.1).
+	 */
+	if (reg_msg.minor != LTTNG_UST_ABI_MINOR_VERSION) {
+		return -LTTNG_UST_ERR_UNSUP_MAJOR;
+	}
+
 	return 0;
 }
 
