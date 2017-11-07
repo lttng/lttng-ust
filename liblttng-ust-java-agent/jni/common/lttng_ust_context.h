@@ -19,8 +19,6 @@
 #ifndef LIBLTTNG_UST_JAVA_AGENT_JNI_COMMON_LTTNG_UST_CONTEXT_H_
 #define LIBLTTNG_UST_JAVA_AGENT_JNI_COMMON_LTTNG_UST_CONTEXT_H_
 
-#include <urcu/tls-compat.h>
-
 struct lttng_ust_jni_ctx_entry;
 
 struct lttng_ust_jni_tls {
@@ -30,6 +28,6 @@ struct lttng_ust_jni_tls {
 	int32_t ctx_strings_len;
 };
 
-extern DECLARE_URCU_TLS(struct lttng_ust_jni_tls, lttng_ust_context_info_tls);
+extern __thread struct lttng_ust_jni_tls lttng_ust_context_info_tls;
 
 #endif /* LIBLTTNG_UST_JAVA_AGENT_JNI_COMMON_LTTNG_UST_CONTEXT_H_ */

@@ -95,7 +95,7 @@ void ust_malloc_spin_unlock(pthread_mutex_t *lock)
 #define calloc static_calloc
 #define pthread_mutex_lock ust_malloc_spin_lock
 #define pthread_mutex_unlock ust_malloc_spin_unlock
-static DEFINE_URCU_TLS_IE(int, malloc_nesting);
+static DEFINE_URCU_TLS(int, malloc_nesting);
 #undef ust_malloc_spin_unlock
 #undef ust_malloc_spin_lock
 #undef calloc

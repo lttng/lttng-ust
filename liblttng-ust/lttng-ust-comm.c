@@ -86,7 +86,7 @@ static int initialized;
 static pthread_mutex_t ust_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Allow nesting the ust_mutex within the same thread. */
-static DEFINE_URCU_TLS_IE(int, ust_mutex_nest);
+static DEFINE_URCU_TLS(int, ust_mutex_nest);
 
 /*
  * ust_exit_mutex protects thread_active variable wrt thread exit. It

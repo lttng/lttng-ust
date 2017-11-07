@@ -26,7 +26,6 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <string.h>
-#include <urcu/tls-compat.h>
 /*
  * Work-around inet.h missing struct mmsghdr forward declaration, with
  * triggers a warning when system files warnings are enabled.
@@ -44,7 +43,7 @@ struct mmsghdr;
 #include <lttng/ringbuffer-config.h>
 #include <lttng/ust-context-provider.h>
 
-static DEFINE_URCU_TLS_IE(unsigned int, test_count);
+static __thread unsigned int test_count;
 
 void test_inc_count(void)
 {

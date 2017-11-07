@@ -23,7 +23,6 @@
  * libc.
  */
 #include <lttng/ust-dlfcn.h>
-#include <urcu/tls-compat.h>
 #include <helper.h>
 #include <pthread.h>
 
@@ -32,7 +31,7 @@
 #define TP_IP_PARAM ip
 #include "ust_pthread.h"
 
-static DEFINE_URCU_TLS_IE(int, thread_in_trace);
+static __thread int thread_in_trace;
 
 int pthread_mutex_lock(pthread_mutex_t *mutex)
 {
