@@ -24,6 +24,8 @@
  * These declarations should NOT be considered stable API.
  */
 
+#include <stdio.h>
+
 void lttng_ust_init_fd_tracker(void);
 void lttng_ust_add_fd_to_tracker(int fd);
 void lttng_ust_delete_fd_from_tracker(int fd);
@@ -31,6 +33,7 @@ void lttng_ust_lock_fd_tracker(void);
 void lttng_ust_unlock_fd_tracker(void);
 
 int lttng_ust_safe_close_fd(int fd, int (*close_cb)(int));
+int lttng_ust_safe_fclose_stream(FILE *stream, int (*fclose_cb)(FILE *stream));
 int lttng_ust_safe_closefrom_fd(int lowfd, int (*close_cb)(int));
 
 #endif	/* _LTTNG_UST_FD_H */

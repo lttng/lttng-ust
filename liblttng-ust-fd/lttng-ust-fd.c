@@ -31,6 +31,7 @@
 volatile enum ust_loglevel ust_loglevel;
 
 static int (*__lttng_ust_fd_plibc_close)(int fd);
+static int (*__lttng_ust_fd_plibc_fclose)(FILE *stream);
 
 static
 int _lttng_ust_fd_libc_close(int fd)
@@ -45,9 +46,33 @@ int _lttng_ust_fd_libc_close(int fd)
 	return lttng_ust_safe_close_fd(fd, __lttng_ust_fd_plibc_close);
 }
 
+static
+int _lttng_ust_fd_libc_fclose(FILE *stream)
+{
+	if (!__lttng_ust_fd_plibc_fclose) {
+		__lttng_ust_fd_plibc_fclose = dlsym(RTLD_NEXT, "fclose");
+		if (!__lttng_ust_fd_plibc_fclose) {
+			fprintf(stderr, "%s\n", dlerror());
+			return -1;
+		}
+	}
+	return lttng_ust_safe_fclose_stream(stream,
+			__lttng_ust_fd_plibc_fclose);
+}
+
 int close(int fd)
 {
 	return _lttng_ust_fd_libc_close(fd);
+}
+
+/*
+ * Note: fcloseall() is not an issue because it fcloses only the
+ * streams it knows about, which differs from the problems caused by
+ * gnulib close_stdout(), which does an explicit fclose(stdout).
+ */
+int fclose(FILE *stream)
+{
+	return _lttng_ust_fd_libc_fclose(stream);
 }
 
 #if defined(__sun__) || defined(__FreeBSD__)
