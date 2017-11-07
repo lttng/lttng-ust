@@ -197,6 +197,38 @@ int lttng_ust_safe_close_fd(int fd, int (*close_cb)(int fd))
 	return ret;
 }
 
+/*
+ * Interface allowing applications to close arbitrary streams.
+ * We check if it is owned by lttng-ust, and return -1, errno=EBADF
+ * instead of closing it if it is the case.
+ */
+int lttng_ust_safe_fclose_stream(FILE *stream, int (*fclose_cb)(FILE *stream))
+{
+	int ret = 0, fd;
+
+	lttng_ust_fixup_fd_tracker_tls();
+
+	/*
+	 * If called from lttng-ust, we directly call fclose without
+	 * validating whether the FD is part of the tracked set.
+	 */
+	if (URCU_TLS(thread_fd_tracking))
+		return fclose_cb(stream);
+
+	fd = fileno(stream);
+
+	lttng_ust_lock_fd_tracker();
+	if (IS_FD_VALID(fd) && IS_FD_SET(fd, lttng_fd_set)) {
+		ret = -1;
+		errno = EBADF;
+	} else {
+		ret = fclose_cb(stream);
+	}
+	lttng_ust_unlock_fd_tracker();
+
+	return ret;
+}
+
 #ifdef __OpenBSD__
 static void set_close_success(int *p)
 {
