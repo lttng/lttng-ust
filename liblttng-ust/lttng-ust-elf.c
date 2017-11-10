@@ -27,6 +27,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <ust-fd.h>
 #include "lttng-tracer-core.h"
 
 #define BUF_LEN	4096
@@ -248,15 +249,20 @@ struct lttng_ust_elf *lttng_ust_elf_create(const char *path)
 		goto error;
 	}
 
+
 	elf->path = strdup(path);
 	if (!elf->path) {
 		goto error;
 	}
 
+	lttng_ust_lock_fd_tracker();
 	elf->fd = open(elf->path, O_RDONLY | O_CLOEXEC);
 	if (elf->fd < 0) {
+		lttng_ust_unlock_fd_tracker();
 		goto error;
 	}
+	lttng_ust_add_fd_to_tracker(elf->fd);
+	lttng_ust_unlock_fd_tracker();
 
 	if (lttng_ust_read(elf->fd, e_ident, EI_NIDENT) < EI_NIDENT) {
 		goto error;
@@ -309,16 +315,7 @@ struct lttng_ust_elf *lttng_ust_elf_create(const char *path)
 	return elf;
 
 error:
-	if (elf) {
-		free(elf->ehdr);
-		if (elf->fd >= 0) {
-			if (close(elf->fd)) {
-				abort();
-			}
-		}
-		free(elf->path);
-		free(elf);
-	}
+	lttng_ust_elf_destroy(elf);
 	return NULL;
 }
 
@@ -339,14 +336,25 @@ uint8_t lttng_ust_elf_is_pic(struct lttng_ust_elf *elf)
  */
 void lttng_ust_elf_destroy(struct lttng_ust_elf *elf)
 {
+	int ret;
+
 	if (!elf) {
 		return;
 	}
 
-	free(elf->ehdr);
-	if (close(elf->fd)) {
-		abort();
+	if (elf->fd >= 0) {
+		lttng_ust_lock_fd_tracker();
+		ret = close(elf->fd);
+		if (!ret) {
+			lttng_ust_delete_fd_from_tracker(elf->fd);
+		} else {
+			PERROR("close");
+			abort();
+		}
+		lttng_ust_unlock_fd_tracker();
 	}
+
+	free(elf->ehdr);
 	free(elf->path);
 	free(elf);
 }
