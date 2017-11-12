@@ -34,6 +34,7 @@
 #include <pthread.h>
 #include <urcu/compiler.h>
 #include <urcu/tls-compat.h>
+#include <urcu/system.h>
 
 #include <ust-fd.h>
 #include <helper.h>
@@ -71,6 +72,7 @@ static DEFINE_URCU_TLS(int, thread_fd_tracking);
 static fd_set *lttng_fd_set;
 static int lttng_ust_max_fd;
 static int num_fd_sets;
+static int init_done;
 
 /*
  * Force a read (imply TLS fixup for dlopen) of TLS variables.
@@ -89,6 +91,9 @@ void lttng_ust_init_fd_tracker(void)
 {
 	struct rlimit rlim;
 	int i;
+
+	if (CMM_LOAD_SHARED(init_done))
+		return;
 
 	memset(&rlim, 0, sizeof(rlim));
 	/* Get the current possible max number of fd for this process. */
@@ -113,6 +118,7 @@ void lttng_ust_init_fd_tracker(void)
 		abort();
 	for (i = 0; i < num_fd_sets; i++)
 		FD_ZERO((&lttng_fd_set[i]));
+	CMM_STORE_SHARED(init_done, 1);
 }
 
 void lttng_ust_lock_fd_tracker(void)
@@ -143,6 +149,12 @@ void lttng_ust_unlock_fd_tracker(void)
  */
 void lttng_ust_add_fd_to_tracker(int fd)
 {
+	/*
+	 * Ensure the tracker is initialized when called from
+	 * constructors.
+	 */
+	lttng_ust_init_fd_tracker();
+
 	assert(URCU_TLS(thread_fd_tracking));
 	/* Trying to add an fd which we can not accommodate. */
 	assert(IS_FD_VALID(fd));
@@ -158,6 +170,12 @@ void lttng_ust_add_fd_to_tracker(int fd)
  */
 void lttng_ust_delete_fd_from_tracker(int fd)
 {
+	/*
+	 * Ensure the tracker is initialized when called from
+	 * constructors.
+	 */
+	lttng_ust_init_fd_tracker();
+
 	assert(URCU_TLS(thread_fd_tracking));
 	/* Not a valid fd. */
 	assert(IS_FD_VALID(fd));
@@ -177,6 +195,12 @@ int lttng_ust_safe_close_fd(int fd, int (*close_cb)(int fd))
 	int ret = 0;
 
 	lttng_ust_fixup_fd_tracker_tls();
+
+	/*
+	 * Ensure the tracker is initialized when called from
+	 * constructors.
+	 */
+	lttng_ust_init_fd_tracker();
 
 	/*
 	 * If called from lttng-ust, we directly call close without
@@ -207,6 +231,12 @@ int lttng_ust_safe_fclose_stream(FILE *stream, int (*fclose_cb)(FILE *stream))
 	int ret = 0, fd;
 
 	lttng_ust_fixup_fd_tracker_tls();
+
+	/*
+	 * Ensure the tracker is initialized when called from
+	 * constructors.
+	 */
+	lttng_ust_init_fd_tracker();
 
 	/*
 	 * If called from lttng-ust, we directly call fclose without
@@ -256,6 +286,12 @@ int lttng_ust_safe_closefrom_fd(int lowfd, int (*close_cb)(int fd))
 	int ret = 0, close_success = 0, i;
 
 	lttng_ust_fixup_fd_tracker_tls();
+
+	/*
+	 * Ensure the tracker is initialized when called from
+	 * constructors.
+	 */
+	lttng_ust_init_fd_tracker();
 
 	if (lowfd < 0) {
 		/*
