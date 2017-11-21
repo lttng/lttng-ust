@@ -22,7 +22,7 @@ import ctypes
 
 
 class _Handler(logging.Handler):
-    _LIB_NAME = 'liblttng-ust-python-agent.so'
+    _LIB_NAME = 'liblttng-ust-python-agent.so.0'
 
     def __init__(self):
         super(self.__class__, self).__init__(level=logging.NOTSET)
