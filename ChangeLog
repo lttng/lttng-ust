@@ -1,3 +1,12 @@
+2017-11-30 (National Mason Jar Day) lttng-ust 2.10.1
+	* Fix: specify SONAME in python-lttngust LoadLibrary
+	* Fix: ensure fd tracker is initialized when called from constructors
+	* Fix: fd of an elf object must be registered to the fd tracker
+	* Fix: liblttng-ust-fd.so: override fclose symbol
+	* Fix: lttng-gen-tp: only replace file extension
+	* Fix: move fsync after ftruncate
+	* Fix: sync buffer file metadata on buffer allocation
+
 2017-08-01 (World Wide Web Day) lttng-ust 2.10.0
 	* lttng-ust(3): reword and fix style of `LTTNG_UST_ALLOW_BLOCKING` variable
 	* lttng-ust(3): specify "If set" instead of "if set to 1" for some variables
