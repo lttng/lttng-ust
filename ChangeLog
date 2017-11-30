@@ -1,3 +1,14 @@
+2017-11-30 (National Mason Jar Day) lttng-ust 2.9.2
+	* Fix: specify SONAME in python-lttngust LoadLibrary
+	* Fix: ensure fd tracker is initialized when called from constructors
+	* Fix: fd of an elf object must be registered to the fd tracker
+	* Fix: liblttng-ust-fd.so: override fclose symbol
+	* Fix: lttng-gen-tp: only replace file extension
+	* Fix: move fsync after ftruncate
+	* Fix: sync buffer file metadata on buffer allocation
+	* lttng-ust(3): specify "If set" instead of "if set to 1" for some variables
+	* Fix: Expand the shmobj size for the sequence number
+
 2017-06-12 (National Peanut Butter Cookie Day) lttng-ust 2.9.1
 	* Fix: lttng-ust-elf.c: define NT_GNU_BUILD_ID if not defined
 	* Fix: Quote CMAKE variable assignment in Makefile
