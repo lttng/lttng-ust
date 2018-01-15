@@ -546,15 +546,6 @@ int lttng_event_create(const struct lttng_event_desc *desc,
 
 	hash = jhash(event_name, name_len, 0);
 	head = &chan->session->events_ht.table[hash & (LTTNG_UST_EVENT_HT_SIZE - 1)];
-	cds_hlist_for_each_entry(event, node, head, hlist) {
-		assert(event->desc);
-		if (!strncmp(event->desc->name, desc->name,
-					LTTNG_UST_SYM_NAME_LEN - 1)
-				&& chan == event->chan) {
-			ret = -EEXIST;
-			goto exist;
-		}
-	}
 
 	notify_socket = lttng_get_notify_socket(session->owner);
 	if (notify_socket < 0) {
