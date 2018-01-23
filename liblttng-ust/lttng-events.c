@@ -885,7 +885,11 @@ void _lttng_event_destroy(struct lttng_event *event)
 {
 	struct lttng_enabler_ref *enabler_ref, *tmp_enabler_ref;
 
+	/* Remove from event list. */
 	cds_list_del(&event->node);
+	/* Remove from event hash table. */
+	cds_hlist_del(&event->hlist);
+
 	lttng_destroy_context(event->ctx);
 	lttng_free_event_filter_runtime(event);
 	/* Free event enabler refs */
