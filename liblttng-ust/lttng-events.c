@@ -537,7 +537,6 @@ int lttng_event_create(const struct lttng_event_desc *desc,
 	struct lttng_event *event;
 	struct lttng_session *session = chan->session;
 	struct cds_hlist_head *head;
-	struct cds_hlist_node *node;
 	int ret = 0;
 	size_t name_len = strlen(event_name);
 	uint32_t hash;
@@ -614,7 +613,6 @@ sessiond_register_error:
 cache_error:
 create_enum_error:
 socket_error:
-exist:
 	return ret;
 }
 
