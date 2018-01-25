@@ -203,7 +203,7 @@ int lttng_probe_register(struct lttng_probe_desc *desc)
 	 */
 	if (lttng_session_active())
 		fixup_lazy_probes();
-end:
+
 	ust_unlock();
 	return ret;
 }
