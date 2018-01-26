@@ -789,6 +789,95 @@ void lttng_create_event_if_missing(struct lttng_enabler *enabler)
 }
 
 /*
+ * Iterate over all the UST sessions to unregister and destroy all probes from
+ * the probe provider descriptor passed in arguments. Must me called with the
+ * ust_lock held.
+ */
+void lttng_probe_provider_unregister_events(struct lttng_probe_desc *provider_desc)
+{
+	int i;
+	struct cds_list_head *sessionsp;
+	struct lttng_session *session;
+	struct cds_hlist_head *head;
+	struct cds_hlist_node *node;
+	struct lttng_event *event;
+
+	/* Get handle on list of sessions. */
+	sessionsp = _lttng_get_sessions();
+
+	/*
+	 * Iterate over all events in the probe provider descriptions and sessions
+	 * to queue the unregistration of the events.
+	 */
+	for (i = 0; i < provider_desc->nr_events; i++) {
+		const char *event_name;
+		uint32_t hash;
+		size_t name_len;
+		const struct lttng_event_desc *event_desc;
+
+		event_desc = provider_desc->event_desc[i];
+		event_name = event_desc->name;
+		name_len = strlen(event_name);
+		hash = jhash(event_name, name_len, 0);
+
+		/* Iterate over all session to find the current event description. */
+		cds_list_for_each_entry(session, sessionsp, node) {
+
+			/*
+			 * Get the list of events in the hashtable bucket and iterate to
+			 * find the event matching this descriptor.
+			 */
+			head = &session->events_ht.table[hash & (LTTNG_UST_EVENT_HT_SIZE - 1)];
+			cds_hlist_for_each_entry(event, node, head, hlist) {
+				if (event_desc == event->desc) {
+
+					/* Queue the unregistration of this event. */
+					_lttng_event_unregister(event);
+					break;
+				}
+			}
+		}
+	}
+
+	/* Wait for grace period. */
+	synchronize_trace();
+	/* Prune the unregistration queue. */
+	__tracepoint_probe_prune_release_queue();
+
+	/*
+	 * It is now safe to destroy the events and remove them from the event list
+	 * and hashtables.
+	 */
+	for (i = 0; i < provider_desc->nr_events; i++) {
+		const char *event_name;
+		uint32_t hash;
+		size_t name_len;
+		const struct lttng_event_desc *event_desc;
+
+		event_desc = provider_desc->event_desc[i];
+		event_name = event_desc->name;
+		name_len = strlen(event_name);
+		hash = jhash(event_name, name_len, 0);
+
+		/* Iterate over all sessions to find the current event description. */
+		cds_list_for_each_entry(session, sessionsp, node) {
+
+			/*
+			 * Get the list of events in the hashtable bucket and iterate to
+			 * find the event matching this descriptor.
+			 */
+			head = &session->events_ht.table[hash & (LTTNG_UST_EVENT_HT_SIZE - 1)];
+			cds_hlist_for_each_entry(event, node, head, hlist) {
+				if (event_desc == event->desc) {
+					_lttng_event_destroy(event);
+					break;
+				}
+			}
+		}
+	}
+}
+
+/*
  * Create events associated with an enabler (if not already present),
  * and add backward reference from the event to the enabler.
  */
