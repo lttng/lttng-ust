@@ -20,7 +20,11 @@ AC_SUBST([PATCHLEVEL_VERSION], [V_PATCH])
 # Following the numbering scheme proposed by libtool for the library version
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
 # This is the library version of liblttng-ust.
-AC_SUBST([LTTNG_UST_LIBRARY_VERSION], [0:0:0])
+m4_define([UST_LIB_V_MAJOR], [0])
+m4_define([UST_LIB_V_MINOR], [0])
+m4_define([UST_LIB_V_PATCH], [0])
+
+AC_SUBST([LTTNG_UST_LIBRARY_VERSION], [UST_LIB_V_MAJOR:UST_LIB_V_MINOR:UST_LIB_V_PATCH])
 # note: remember to update tracepoint.h dlopen() to match this version
 # number. TODO: eventually automate by exporting the major number.
 
