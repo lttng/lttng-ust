@@ -25,6 +25,7 @@ m4_define([UST_LIB_V_MINOR], [0])
 m4_define([UST_LIB_V_PATCH], [0])
 
 AC_SUBST([LTTNG_UST_LIBRARY_VERSION], [UST_LIB_V_MAJOR:UST_LIB_V_MINOR:UST_LIB_V_PATCH])
+AC_SUBST([LTTNG_UST_LIBRARY_VERSION_MAJOR], [UST_LIB_V_MAJOR])
 # note: remember to update tracepoint.h dlopen() to match this version
 # number. TODO: eventually automate by exporting the major number.
 
