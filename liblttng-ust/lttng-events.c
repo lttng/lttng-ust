@@ -257,21 +257,19 @@ int lttng_enum_create(const struct lttng_enum_desc *desc,
 	const char *enum_name = desc->name;
 	struct lttng_enum *_enum;
 	struct cds_hlist_head *head;
-	struct cds_hlist_node *node;
 	int ret = 0;
 	size_t name_len = strlen(enum_name);
 	uint32_t hash;
 	int notify_socket;
 
+	/* Check if this enum is already registered for this session. */
 	hash = jhash(enum_name, name_len, 0);
 	head = &session->enums_ht.table[hash & (LTTNG_UST_ENUM_HT_SIZE - 1)];
-	cds_hlist_for_each_entry(_enum, node, head, hlist) {
-		assert(_enum->desc);
-		if (!strncmp(_enum->desc->name, desc->name,
-				LTTNG_UST_SYM_NAME_LEN - 1)) {
-			ret = -EEXIST;
-			goto exist;
-		}
+
+	_enum = lttng_ust_enum_get_from_desc(session, desc);
+	if (_enum) {
+		ret = -EEXIST;
+		goto exist;
 	}
 
 	notify_socket = lttng_get_notify_socket(session->owner);
