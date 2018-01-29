@@ -990,6 +990,7 @@ static
 void _lttng_enum_destroy(struct lttng_enum *_enum)
 {
 	cds_list_del(&_enum->node);
+	cds_hlist_del(&_enum->hlist);
 	free(_enum);
 }
 
