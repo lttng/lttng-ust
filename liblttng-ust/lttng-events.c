@@ -793,7 +793,7 @@ void lttng_create_event_if_missing(struct lttng_enabler *enabler)
  */
 void lttng_probe_provider_unregister_events(struct lttng_probe_desc *provider_desc)
 {
-	int i;
+	unsigned int i, j;
 	struct cds_list_head *sessionsp;
 	struct lttng_session *session;
 	struct cds_hlist_head *head;
@@ -867,7 +867,26 @@ void lttng_probe_provider_unregister_events(struct lttng_probe_desc *provider_de
 			head = &session->events_ht.table[hash & (LTTNG_UST_EVENT_HT_SIZE - 1)];
 			cds_hlist_for_each_entry(event, node, head, hlist) {
 				if (event_desc == event->desc) {
+					/* Destroy event. */
 					_lttng_event_destroy(event);
+
+					/* Destroy enums. */
+					for (j = 0; j < event->desc->nr_fields; j++) {
+						const struct lttng_event_field *field;
+						const struct lttng_enum_desc *enum_desc;
+						struct lttng_enum *curr_enum;
+
+						field = &(event->desc->fields[j]);
+						if (field->type.atype != atype_enum) {
+							continue;
+						}
+
+						enum_desc = field->type.u.basic.enumeration.desc;
+						curr_enum = lttng_ust_enum_get_from_desc(session, enum_desc);
+						if (curr_enum) {
+							_lttng_enum_destroy(curr_enum);
+						}
+					}
 					break;
 				}
 			}
