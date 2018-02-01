@@ -148,20 +148,6 @@ struct cds_list_head *lttng_get_probe_list_head(void)
 }
 
 static
-const struct lttng_probe_desc *find_provider(const char *provider)
-{
-	struct lttng_probe_desc *iter;
-	struct cds_list_head *probe_list;
-
-	probe_list = lttng_get_probe_list_head();
-	cds_list_for_each_entry(iter, probe_list, head) {
-		if (!strcmp(iter->provider, provider))
-			return iter;
-	}
-	return NULL;
-}
-
-static
 int check_provider_version(struct lttng_probe_desc *desc)
 {
 	/*
@@ -206,13 +192,6 @@ int lttng_probe_register(struct lttng_probe_desc *desc)
 
 	ust_lock_nocheck();
 
-	/*
-	 * Check if the provider has already been registered.
-	 */
-	if (find_provider(desc->provider)) {
-		ret = -EEXIST;
-		goto end;
-	}
 	cds_list_add(&desc->lazy_init_head, &lazy_probe_init);
 	desc->lazy = 1;
 	DBG("adding probe %s containing %u events to lazy registration list",
@@ -224,7 +203,7 @@ int lttng_probe_register(struct lttng_probe_desc *desc)
 	 */
 	if (lttng_session_active())
 		fixup_lazy_probes();
-end:
+
 	ust_unlock();
 	return ret;
 }
@@ -247,7 +226,10 @@ void lttng_probe_unregister(struct lttng_probe_desc *desc)
 		cds_list_del(&desc->head);
 	else
 		cds_list_del(&desc->lazy_init_head);
-	DBG("just unregistered probe %s", desc->provider);
+
+	lttng_probe_provider_unregister_events(desc);
+	DBG("just unregistered probes of provider %s", desc->provider);
+
 	ust_unlock();
 }
 

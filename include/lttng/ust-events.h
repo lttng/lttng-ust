@@ -656,6 +656,7 @@ void synchronize_trace(void);
 
 int lttng_probe_register(struct lttng_probe_desc *desc);
 void lttng_probe_unregister(struct lttng_probe_desc *desc);
+void lttng_probe_provider_unregister_events(struct lttng_probe_desc *desc);
 int lttng_fix_pending_events(void);
 int lttng_probes_init(void);
 void lttng_probes_exit(void);
@@ -730,8 +731,9 @@ int lttng_session_active(void);
 typedef int (*t_statedump_func_ptr)(struct lttng_session *session);
 void lttng_handle_pending_statedump(void *owner);
 struct cds_list_head *_lttng_get_sessions(void);
-struct lttng_enum *lttng_ust_enum_get(struct lttng_session *session,
-		const char *enum_name);
+
+struct lttng_enum *lttng_ust_enum_get_from_desc(struct lttng_session *session,
+		const struct lttng_enum_desc *enum_desc);
 
 void lttng_ust_dl_update(void *ip);
 void lttng_ust_fixup_fd_tracker_tls(void);

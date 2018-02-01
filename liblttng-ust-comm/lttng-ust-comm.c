@@ -874,8 +874,7 @@ int serialize_basic_type(struct lttng_session *session,
 		if (session) {
 			const struct lttng_enum *_enum;
 
-			_enum = lttng_ust_enum_get(session,
-					lbt->enumeration.desc->name);
+			_enum = lttng_ust_enum_get_from_desc(session, lbt->enumeration.desc);
 			if (!_enum)
 				return -EINVAL;
 			ubt->enumeration.id = _enum->id;

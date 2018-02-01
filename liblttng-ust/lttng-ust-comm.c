@@ -27,6 +27,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <dlfcn.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
@@ -58,6 +59,9 @@
 #include "clock.h"
 #include "../libringbuffer/getcpu.h"
 #include "getenv.h"
+
+/* Concatenate lttng ust shared library name with its major version number. */
+#define LTTNG_UST_LIB_SO_NAME "liblttng-ust.so." LTTNG_UST_LIBRARY_VERSION_MAJOR
 
 /*
  * Has lttng ust comm constructor been called ?
@@ -1648,6 +1652,7 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	pthread_attr_t thread_attr;
 	int timeout_mode;
 	int ret;
+	void *handle;
 
 	if (uatomic_xchg(&initialized, 1) == 1)
 		return;
@@ -1660,6 +1665,23 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	lttng_ust_fixup_tls();
 
 	lttng_ust_loaded = 1;
+
+	/*
+	 * Manually load liblttng-ust.so to increment the dynamic loader's internal
+	 * refcount for this library so it never becomes zero, thus never gets
+	 * unloaded from the address space of the process. Since we are already
+	 * running in the constructor of the LTTNG_UST_LIB_SO_NAME library, calling
+	 * dlopen will simply increment the refcount and no additionnal work is
+	 * needed by the dynamic loader as the shared library is already loaded in
+	 * the address space. As a safe guard, we use the RTLD_NODELETE flag to
+	 * prevent unloading of the UST library if its refcount becomes zero
+	 * (which should never happen). Do the return value check but discard the
+	 * handle at the end of the function as it's not needed.
+	 */
+	handle = dlopen(LTTNG_UST_LIB_SO_NAME, RTLD_LAZY | RTLD_NODELETE);
+	if (!handle) {
+		ERR("dlopen of liblttng-ust shared library (%s).", LTTNG_UST_LIB_SO_NAME);
+	}
 
 	/*
 	 * We want precise control over the order in which we construct
