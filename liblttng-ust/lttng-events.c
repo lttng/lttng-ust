@@ -867,10 +867,7 @@ void lttng_probe_provider_unregister_events(struct lttng_probe_desc *provider_de
 			head = &session->events_ht.table[hash & (LTTNG_UST_EVENT_HT_SIZE - 1)];
 			cds_hlist_for_each_entry(event, node, head, hlist) {
 				if (event_desc == event->desc) {
-					/* Destroy event. */
-					_lttng_event_destroy(event);
-
-					/* Destroy enums. */
+					/* Destroy enums of the current event. */
 					for (j = 0; j < event->desc->nr_fields; j++) {
 						const struct lttng_event_field *field;
 						const struct lttng_enum_desc *enum_desc;
@@ -887,6 +884,10 @@ void lttng_probe_provider_unregister_events(struct lttng_probe_desc *provider_de
 							_lttng_enum_destroy(curr_enum);
 						}
 					}
+
+					/* Destroy event. */
+					_lttng_event_destroy(event);
+
 					break;
 				}
 			}
