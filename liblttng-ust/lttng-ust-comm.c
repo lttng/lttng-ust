@@ -1382,6 +1382,10 @@ restart:
 		prev_connect_failed = 0;
 	}
 
+	if (ust_lock()) {
+		goto quit;
+	}
+
 	if (sock_info->socket != -1) {
 		/* FD tracker is updated by ustcomm_close_unix_sock() */
 		ret = ustcomm_close_unix_sock(sock_info->socket);
@@ -1401,9 +1405,6 @@ restart:
 		sock_info->notify_socket = -1;
 	}
 
-	if (ust_lock()) {
-		goto quit;
-	}
 
 	/*
 	 * Register. We need to perform both connect and sending
