@@ -1247,7 +1247,18 @@ char *get_map_shm(struct sock_info *sock_info)
 		lttng_ust_unlock_fd_tracker();
 		goto error;
 	}
-	lttng_ust_add_fd_to_tracker(wait_shm_fd);
+
+	ret = lttng_ust_add_fd_to_tracker(wait_shm_fd);
+	if (ret < 0) {
+		ret = close(wait_shm_fd);
+		if (!ret) {
+			PERROR("Error closing fd");
+		}
+		lttng_ust_unlock_fd_tracker();
+		goto error;
+	}
+
+	wait_shm_fd = ret;
 	lttng_ust_unlock_fd_tracker();
 
 	wait_shm_mmap = mmap(NULL, page_size, PROT_READ,
@@ -1339,7 +1350,7 @@ static
 void *ust_listener_thread(void *arg)
 {
 	struct sock_info *sock_info = arg;
-	int sock, ret, prev_connect_failed = 0, has_waited = 0;
+	int sock, ret, prev_connect_failed = 0, has_waited = 0, fd;
 	long timeout;
 
 	lttng_ust_fixup_tls();
@@ -1419,9 +1430,21 @@ restart:
 		ust_unlock();
 		goto restart;
 	}
-	lttng_ust_add_fd_to_tracker(ret);
-	lttng_ust_unlock_fd_tracker();
+	fd = ret;
+	ret = lttng_ust_add_fd_to_tracker(fd);
+	if (ret < 0) {
+		ret = close(fd);
+		if (ret) {
+			PERROR("close on sock_info->socket");
+		}
+		ret = -1;
+		lttng_ust_unlock_fd_tracker();
+		ust_unlock();
+		goto quit;
+	}
+
 	sock_info->socket = ret;
+	lttng_ust_unlock_fd_tracker();
 
 	ust_unlock();
 	/*
@@ -1490,9 +1513,22 @@ restart:
 		ust_unlock();
 		goto restart;
 	}
-	lttng_ust_add_fd_to_tracker(ret);
-	lttng_ust_unlock_fd_tracker();
+
+	fd = ret;
+	ret = lttng_ust_add_fd_to_tracker(fd);
+	if (ret < 0) {
+		ret = close(fd);
+		if (ret) {
+			PERROR("close on sock_info->notify_socket");
+		}
+		ret = -1;
+		lttng_ust_unlock_fd_tracker();
+		ust_unlock();
+		goto quit;
+	}
+
 	sock_info->notify_socket = ret;
+	lttng_ust_unlock_fd_tracker();
 
 	ust_unlock();
 	/*

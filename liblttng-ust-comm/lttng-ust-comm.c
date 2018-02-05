@@ -598,7 +598,7 @@ ssize_t ustcomm_recv_channel_from_sessiond(int sock,
 {
 	void *chan_data;
 	ssize_t len, nr_fd;
-	int wakeup_fd;
+	int wakeup_fd, ret;
 
 	if (var_len > LTTNG_UST_CHANNEL_DATA_MAX_LEN) {
 		len = -EINVAL;
@@ -627,9 +627,21 @@ ssize_t ustcomm_recv_channel_from_sessiond(int sock,
 			goto error_recv;
 		}
 	}
-	*_wakeup_fd = wakeup_fd;
-	lttng_ust_add_fd_to_tracker(wakeup_fd);
+
+	ret = lttng_ust_add_fd_to_tracker(wakeup_fd);
+	if (ret < 0) {
+		lttng_ust_unlock_fd_tracker();
+		ret = close(wakeup_fd);
+		if (ret) {
+			PERROR("close on wakeup_fd");
+		}
+		len = -EIO;
+		goto error_recv;
+	}
+
+	*_wakeup_fd = ret;
 	lttng_ust_unlock_fd_tracker();
+
 	*_chan_data = chan_data;
 	return len;
 
@@ -661,10 +673,35 @@ int ustcomm_recv_stream_from_sessiond(int sock,
 			goto error;
 		}
 	}
-	*shm_fd = fds[0];
-	*wakeup_fd = fds[1];
-	lttng_ust_add_fd_to_tracker(fds[0]);
-	lttng_ust_add_fd_to_tracker(fds[1]);
+
+	ret = lttng_ust_add_fd_to_tracker(fds[0]);
+	if (ret < 0) {
+		lttng_ust_unlock_fd_tracker();
+		ret = close(fds[0]);
+		if (ret) {
+			PERROR("close on received shm_fd");
+		}
+		ret = -EIO;
+		goto error;
+	}
+	*shm_fd = ret;
+
+	ret = lttng_ust_add_fd_to_tracker(fds[1]);
+	if (ret < 0) {
+		lttng_ust_unlock_fd_tracker();
+		ret = close(*shm_fd);
+		if (ret) {
+			PERROR("close on shm_fd");
+		}
+		*shm_fd = -1;
+		ret = close(fds[1]);
+		if (ret) {
+			PERROR("close on received wakeup_fd");
+		}
+		ret = -EIO;
+		goto error;
+	}
+	*wakeup_fd = ret;
 	lttng_ust_unlock_fd_tracker();
 	return 0;
 

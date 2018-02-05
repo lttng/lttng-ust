@@ -47,6 +47,7 @@
 #define IS_FD_VALID(fd)			((fd) >= 0 && (fd) < lttng_ust_max_fd)
 #define GET_FD_SET_FOR_FD(fd, fd_sets)	(&((fd_sets)[(fd) / FD_SETSIZE]))
 #define CALC_INDEX_TO_SET(fd)		((fd) % FD_SETSIZE)
+#define IS_FD_STD(fd)			(IS_FD_VALID(fd) && (fd) <= STDERR_FILENO)
 
 /* Check fd validity before calling these. */
 #define ADD_FD_TO_SET(fd, fd_sets)	\
@@ -143,25 +144,112 @@ void lttng_ust_unlock_fd_tracker(void)
 	URCU_TLS(thread_fd_tracking) = 0;
 }
 
+static int dup_std_fd(int fd)
+{
+	int ret;
+	int fd_to_close[STDERR_FILENO + 1];
+	int fd_to_close_count = 0;
+	int dup_cmd = F_DUPFD; /* Default command */
+	int fd_valid = -1;
+
+	if (!(IS_FD_STD(fd))) {
+		/* Should not be here */
+		ret = -1;
+		goto error;
+	}
+
+	/* Check for FD_CLOEXEC flag */
+	ret = fcntl(fd, F_GETFD);
+	if (ret < 0) {
+		PERROR("fcntl on f_getfd");
+		ret = -1;
+		goto error;
+	}
+
+	if (ret & FD_CLOEXEC) {
+		dup_cmd = F_DUPFD_CLOEXEC;
+	}
+
+	/* Perform dup */
+	for (int i = 0; i < STDERR_FILENO + 1; i++) {
+		ret = fcntl(fd, dup_cmd, 0);
+		if (ret < 0) {
+			PERROR("fcntl dup fd");
+			goto error;
+		}
+
+		if (!(IS_FD_STD(ret))) {
+			/* fd is outside of STD range, use it. */
+			fd_valid = ret;
+			/* Close fd received as argument. */
+			fd_to_close[i] = fd;
+			fd_to_close_count++;
+			break;
+		}
+
+		fd_to_close[i] = ret;
+		fd_to_close_count++;
+	}
+
+	/* Close intermediary fds */
+	for (int i = 0; i < fd_to_close_count; i++) {
+		ret = close(fd_to_close[i]);
+		if (ret) {
+			PERROR("close on temporary fd: %d.", fd_to_close[i]);
+			/*
+			 * Not using an abort here would yield a complicated
+			 * error handling for the caller. If a failure occurs
+			 * here, the system is already in a bad state.
+			 */
+			abort();
+		}
+	}
+
+	ret = fd_valid;
+error:
+	return ret;
+}
+
 /*
  * Needs to be called with ust_safe_guard_fd_mutex held when opening the fd.
  * Has strict checking of fd validity.
+ *
+ * If fd <= 2, dup the fd until fd > 2. This enables us to bypass
+ * problems that can be encountered if UST uses stdin, stdout, stderr
+ * fds for internal use (daemon etc.). This can happen if the
+ * application closes either of those file descriptors. Intermediary fds
+ * are closed as needed.
+ *
+ * Return -1 on error.
+ *
  */
-void lttng_ust_add_fd_to_tracker(int fd)
+int lttng_ust_add_fd_to_tracker(int fd)
 {
+	int ret;
 	/*
 	 * Ensure the tracker is initialized when called from
 	 * constructors.
 	 */
 	lttng_ust_init_fd_tracker();
-
 	assert(URCU_TLS(thread_fd_tracking));
+
+	if (IS_FD_STD(fd)) {
+		ret = dup_std_fd(fd);
+		if (ret < 0) {
+			goto error;
+		}
+		fd = ret;
+	}
+
 	/* Trying to add an fd which we can not accommodate. */
 	assert(IS_FD_VALID(fd));
 	/* Setting an fd thats already set. */
 	assert(!IS_FD_SET(fd, lttng_fd_set));
 
 	ADD_FD_TO_SET(fd, lttng_fd_set);
+	return fd;
+error:
+	return ret;
 }
 
 /*
