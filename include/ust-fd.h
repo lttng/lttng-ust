@@ -27,7 +27,7 @@
 #include <stdio.h>
 
 void lttng_ust_init_fd_tracker(void);
-void lttng_ust_add_fd_to_tracker(int fd);
+int lttng_ust_add_fd_to_tracker(int fd);
 void lttng_ust_delete_fd_from_tracker(int fd);
 void lttng_ust_lock_fd_tracker(void);
 void lttng_ust_unlock_fd_tracker(void);
