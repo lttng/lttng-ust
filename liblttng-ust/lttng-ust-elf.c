@@ -243,6 +243,7 @@ struct lttng_ust_elf *lttng_ust_elf_create(const char *path)
 	uint8_t e_ident[EI_NIDENT];
 	struct lttng_ust_elf_shdr *section_names_shdr;
 	struct lttng_ust_elf *elf = NULL;
+	int ret, fd;
 
 	elf = zmalloc(sizeof(struct lttng_ust_elf));
 	if (!elf) {
@@ -256,12 +257,23 @@ struct lttng_ust_elf *lttng_ust_elf_create(const char *path)
 	}
 
 	lttng_ust_lock_fd_tracker();
-	elf->fd = open(elf->path, O_RDONLY | O_CLOEXEC);
-	if (elf->fd < 0) {
+	fd = open(elf->path, O_RDONLY | O_CLOEXEC);
+	if (fd < 0) {
 		lttng_ust_unlock_fd_tracker();
 		goto error;
 	}
-	lttng_ust_add_fd_to_tracker(elf->fd);
+
+	ret = lttng_ust_add_fd_to_tracker(fd);
+	if (ret < 0) {
+		ret = close(fd);
+		if (ret) {
+			PERROR("close on elf->fd");
+		}
+		ret = -1;
+		lttng_ust_unlock_fd_tracker();
+		goto error;
+	}
+	elf->fd = ret;
 	lttng_ust_unlock_fd_tracker();
 
 	if (lttng_ust_read(elf->fd, e_ident, EI_NIDENT) < EI_NIDENT) {
