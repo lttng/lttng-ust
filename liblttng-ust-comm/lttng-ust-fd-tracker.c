@@ -146,7 +146,7 @@ void lttng_ust_unlock_fd_tracker(void)
 
 static int dup_std_fd(int fd)
 {
-	int ret;
+	int ret, i;
 	int fd_to_close[STDERR_FILENO + 1];
 	int fd_to_close_count = 0;
 	int dup_cmd = F_DUPFD; /* Default command */
@@ -171,7 +171,7 @@ static int dup_std_fd(int fd)
 	}
 
 	/* Perform dup */
-	for (int i = 0; i < STDERR_FILENO + 1; i++) {
+	for (i = 0; i < STDERR_FILENO + 1; i++) {
 		ret = fcntl(fd, dup_cmd, 0);
 		if (ret < 0) {
 			PERROR("fcntl dup fd");
@@ -192,7 +192,7 @@ static int dup_std_fd(int fd)
 	}
 
 	/* Close intermediary fds */
-	for (int i = 0; i < fd_to_close_count; i++) {
+	for (i = 0; i < fd_to_close_count; i++) {
 		ret = close(fd_to_close[i]);
 		if (ret) {
 			PERROR("close on temporary fd: %d.", fd_to_close[i]);
