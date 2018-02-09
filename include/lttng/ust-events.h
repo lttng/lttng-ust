@@ -656,6 +656,7 @@ void synchronize_trace(void);
 
 int lttng_probe_register(struct lttng_probe_desc *desc);
 void lttng_probe_unregister(struct lttng_probe_desc *desc);
+void lttng_probe_provider_unregister_events(struct lttng_probe_desc *desc);
 int lttng_fix_pending_events(void);
 int lttng_probes_init(void);
 void lttng_probes_exit(void);
