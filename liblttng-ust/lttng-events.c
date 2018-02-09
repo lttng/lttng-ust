@@ -537,7 +537,6 @@ int lttng_event_create(const struct lttng_event_desc *desc,
 	struct lttng_event *event;
 	struct lttng_session *session = chan->session;
 	struct cds_hlist_head *head;
-	struct cds_hlist_node *node;
 	int ret = 0;
 	size_t name_len = strlen(event_name);
 	uint32_t hash;
@@ -546,15 +545,6 @@ int lttng_event_create(const struct lttng_event_desc *desc,
 
 	hash = jhash(event_name, name_len, 0);
 	head = &chan->session->events_ht.table[hash & (LTTNG_UST_EVENT_HT_SIZE - 1)];
-	cds_hlist_for_each_entry(event, node, head, hlist) {
-		assert(event->desc);
-		if (!strncmp(event->desc->name, desc->name,
-					LTTNG_UST_SYM_NAME_LEN - 1)
-				&& chan == event->chan) {
-			ret = -EEXIST;
-			goto exist;
-		}
-	}
 
 	notify_socket = lttng_get_notify_socket(session->owner);
 	if (notify_socket < 0) {
@@ -623,7 +613,6 @@ sessiond_register_error:
 cache_error:
 create_enum_error:
 socket_error:
-exist:
 	return ret;
 }
 
