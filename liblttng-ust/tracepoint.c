@@ -107,8 +107,8 @@ struct tracepoint_entry {
 	struct lttng_ust_tracepoint_probe *probes;
 	int refcount;	/* Number of times armed. 0 if disarmed. */
 	int callsite_refcount;	/* how many libs use this tracepoint */
-	const char *signature;
-	char name[0];
+	char *signature;
+	char *name;
 };
 
 struct tp_probes {
@@ -132,6 +132,7 @@ struct callsite_entry {
 	struct cds_hlist_node hlist;	/* hash table node */
 	struct cds_list_head node;	/* lib list of callsites node */
 	struct lttng_ust_tracepoint *tp;
+	bool tp_entry_callsite_ref; /* Has a tp_entry took a ref on this callsite */
 };
 
 /* coverity[+alloc] */
@@ -284,6 +285,8 @@ static struct tracepoint_entry *add_tracepoint(const char *name,
 	struct cds_hlist_node *node;
 	struct tracepoint_entry *e;
 	size_t name_len = strlen(name);
+	size_t sig_len = strlen(signature);
+	size_t sig_off, name_off;
 	uint32_t hash;
 
 	if (name_len > LTTNG_UST_SYM_NAME_LEN - 1) {
@@ -298,19 +301,29 @@ static struct tracepoint_entry *add_tracepoint(const char *name,
 			return ERR_PTR(-EEXIST);	/* Already there */
 		}
 	}
+
 	/*
-	 * Using zmalloc here to allocate a variable length element. Could
-	 * cause some memory fragmentation if overused.
+	 * Using zmalloc here to allocate a variable length elements: name and
+	 * signature. Could cause some memory fragmentation if overused.
 	 */
-	e = zmalloc(sizeof(struct tracepoint_entry) + name_len + 1);
+	name_off = sizeof(struct tracepoint_entry);
+	sig_off = name_off + name_len + 1;
+
+	e = zmalloc(sizeof(struct tracepoint_entry) + name_len + 1 + sig_len + 1);
 	if (!e)
 		return ERR_PTR(-ENOMEM);
-	memcpy(&e->name[0], name, name_len + 1);
+	e->name = (char *) e + name_off;
+	memcpy(e->name, name, name_len + 1);
 	e->name[name_len] = '\0';
+
+	e->signature = (char *) e + sig_off;
+	memcpy(e->signature, signature, sig_len + 1);
+	e->signature[sig_len] = '\0';
+
 	e->probes = NULL;
 	e->refcount = 0;
 	e->callsite_refcount = 0;
-	e->signature = signature;
+
 	cds_hlist_add_head(&e->hlist, head);
 	return e;
 }
@@ -405,6 +418,7 @@ static void add_callsite(struct tracepoint_lib * lib, struct lttng_ust_tracepoin
 	if (!tp_entry)
 		return;
 	tp_entry->callsite_refcount++;
+	e->tp_entry_callsite_ref = true;
 }
 
 /*
@@ -417,7 +431,8 @@ static void remove_callsite(struct callsite_entry *e)
 
 	tp_entry = get_tracepoint(e->tp->name);
 	if (tp_entry) {
-		tp_entry->callsite_refcount--;
+		if (e->tp_entry_callsite_ref)
+			tp_entry->callsite_refcount--;
 		if (tp_entry->callsite_refcount == 0)
 			disable_tracepoint(e->tp);
 	}
@@ -453,10 +468,15 @@ static void tracepoint_sync_callsites(const char *name)
 		if (strncmp(name, tp->name, LTTNG_UST_SYM_NAME_LEN - 1))
 			continue;
 		if (tp_entry) {
+			if (!e->tp_entry_callsite_ref) {
+				tp_entry->callsite_refcount++;
+				e->tp_entry_callsite_ref = true;
+			}
 			set_tracepoint(&tp_entry, tp,
 					!!tp_entry->refcount);
 		} else {
 			disable_tracepoint(tp);
+			e->tp_entry_callsite_ref = false;
 		}
 	}
 }
@@ -545,7 +565,12 @@ tracepoint_add_probe(const char *name, void (*probe)(void), void *data,
 	struct lttng_ust_tracepoint_probe *old;
 
 	entry = get_tracepoint(name);
-	if (!entry) {
+	if (entry) {
+		if (strcmp(entry->signature, signature) != 0) {
+			ERR("Tracepoint and probe signature do not match.");
+			return ERR_PTR(-EINVAL);
+		}
+	} else {
 		entry = add_tracepoint(name, signature);
 		if (IS_ERR(entry))
 			return (struct lttng_ust_tracepoint_probe *)entry;

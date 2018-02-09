@@ -226,7 +226,10 @@ void lttng_probe_unregister(struct lttng_probe_desc *desc)
 		cds_list_del(&desc->head);
 	else
 		cds_list_del(&desc->lazy_init_head);
-	DBG("just unregistered probe %s", desc->provider);
+
+	lttng_probe_provider_unregister_events(desc);
+	DBG("just unregistered probes of provider %s", desc->provider);
+
 	ust_unlock();
 }
 

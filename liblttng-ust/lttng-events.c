@@ -798,7 +798,7 @@ void lttng_probe_provider_unregister_events(struct lttng_probe_desc *provider_de
 	struct lttng_session *session;
 	struct cds_hlist_head *head;
 	struct lttng_event *event;
-	int i;
+	unsigned int i, j;
 
 	/* Get handle on list of sessions. */
 	sessionsp = _lttng_get_sessions();
