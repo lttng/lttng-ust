@@ -60,6 +60,8 @@ liblttng_ust_runtime_la_SOURCES = \
 	string-utils.c \
 	string-utils.h
 
+liblttng_ust_runtime_la_CFLAGS = -DLTTNG_UST_LIBRARY_VERSION_MAJOR=\"$(LTTNG_UST_LIBRARY_VERSION_MAJOR)\"
+
 if HAVE_PERF_EVENT
 liblttng_ust_runtime_la_SOURCES += \
 	lttng-context-perf-counters.c \
