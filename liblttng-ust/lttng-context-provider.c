@@ -71,7 +71,7 @@ int lttng_ust_context_provider_register(struct lttng_ust_context_provider *provi
 	lttng_ust_fixup_tls();
 
 	/* Provider name starts with "$app.". */
-	if (strncmp("$app.", provider->name, strlen("$app.") != 0))
+	if (strncmp("$app.", provider->name, strlen("$app.")) != 0)
 		return -EINVAL;
 	/* Provider name cannot contain a column character. */
 	if (strchr(provider->name, ':'))
