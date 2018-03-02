@@ -27,17 +27,6 @@
 #include <lttng/ust-tracer.h>
 #include <lttng/ringbuffer-config.h>
 
-#ifdef __linux__
-static inline
-pid_t wrapper_getpid(void)
-{
-	return getpid();
-}
-
-void lttng_context_vpid_reset(void)
-{
-}
-#else
 /*
  * We cache the result to ensure we don't trigger a system call for
  * each event.
@@ -60,7 +49,6 @@ void lttng_context_vpid_reset(void)
 {
 	cached_vpid = 0;
 }
-#endif
 
 static
 size_t vpid_get_size(struct lttng_ctx_field *field, size_t offset)
