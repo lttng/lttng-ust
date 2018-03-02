@@ -2011,6 +2011,7 @@ void ust_after_fork_child(sigset_t *restore_sigset)
 {
 	if (URCU_TLS(lttng_ust_nest_count))
 		return;
+	lttng_context_vpid_reset();
 	lttng_context_vtid_reset();
 	DBG("process %d", getpid());
 	/* Release urcu mutexes */
