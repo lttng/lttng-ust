@@ -33,6 +33,7 @@ pid_t fork(void)
 	static pid_t (*plibc_func)(void) = NULL;
 	sigset_t sigset;
 	pid_t retval;
+	int saved_errno;
 
 	if (plibc_func == NULL) {
 		plibc_func = dlsym(RTLD_NEXT, "fork");
@@ -46,12 +47,14 @@ pid_t fork(void)
 	ust_before_fork(&sigset);
 	/* Do the real fork */
 	retval = plibc_func();
+	saved_errno = errno;
 	if (retval == 0) {
 		/* child */
 		ust_after_fork_child(&sigset);
 	} else {
 		ust_after_fork_parent(&sigset);
 	}
+	errno = saved_errno;
 	return retval;
 }
 
@@ -60,6 +63,7 @@ int daemon(int nochdir, int noclose)
 	static int (*plibc_func)(int nochdir, int noclose) = NULL;
 	sigset_t sigset;
 	int retval;
+	int saved_errno;
 
 	if (plibc_func == NULL) {
 		plibc_func = dlsym(RTLD_NEXT, "daemon");
@@ -73,6 +77,7 @@ int daemon(int nochdir, int noclose)
 	ust_before_fork(&sigset);
 	/* Do the real daemon call */
 	retval = plibc_func(nochdir, noclose);
+	saved_errno = errno;
 	if (retval == 0) {
 		/* child, parent called _exit() directly */
 		ust_after_fork_child(&sigset);
@@ -80,6 +85,7 @@ int daemon(int nochdir, int noclose)
 		/* on error in the parent */
 		ust_after_fork_parent(&sigset);
 	}
+	errno = saved_errno;
 	return retval;
 }
 
@@ -114,6 +120,7 @@ int clone(int (*fn)(void *), void *child_stack, int flags, void *arg, ...)
 	/* end of var args */
 	va_list ap;
 	int retval;
+	int saved_errno;
 
 	va_start(ap, arg);
 	ptid = va_arg(ap, pid_t *);
@@ -137,6 +144,7 @@ int clone(int (*fn)(void *), void *child_stack, int flags, void *arg, ...)
 		 */
 		retval = plibc_func(fn, child_stack, flags, arg, ptid,
 				tls, ctid);
+		saved_errno = errno;
 	} else {
 		/* Creating a real process, we need to intervene. */
 		struct ustfork_clone_info info = { .fn = fn, .arg = arg };
@@ -144,9 +152,11 @@ int clone(int (*fn)(void *), void *child_stack, int flags, void *arg, ...)
 		ust_before_fork(&info.sigset);
 		retval = plibc_func(clone_fn, child_stack, flags, &info,
 				ptid, tls, ctid);
+		saved_errno = errno;
 		/* The child doesn't get here. */
 		ust_after_fork_parent(&info.sigset);
 	}
+	errno = saved_errno;
 	return retval;
 }
 
@@ -157,6 +167,7 @@ pid_t rfork(int flags)
 	static pid_t (*plibc_func)(void) = NULL;
 	sigset_t sigset;
 	pid_t retval;
+	int saved_errno;
 
 	if (plibc_func == NULL) {
 		plibc_func = dlsym(RTLD_NEXT, "rfork");
@@ -170,12 +181,14 @@ pid_t rfork(int flags)
 	ust_before_fork(&sigset);
 	/* Do the real rfork */
 	retval = plibc_func();
+	saved_errno = errno;
 	if (retval == 0) {
 		/* child */
 		ust_after_fork_child(&sigset);
 	} else {
 		ust_after_fork_parent(&sigset);
 	}
+	errno = saved_errno;
 	return retval;
 }
 
