@@ -29,9 +29,11 @@ void lttng_ust_statedump_destroy(void);
 int do_lttng_ust_statedump(void *owner);
 void lttng_ust_run_statedump_notifiers(void *owner);
 void lttng_ust_run_statedump_notifier_for_each_session(struct lttng_ust_notifier *notifier);
+void lttng_ust_clear_statedump_notifiers(void *owner);
 
 struct lttng_statedump_table *lttng_statedump_table_create(void);
 void lttng_statedump_table_destroy(struct lttng_statedump_table *st);
+void lttng_statedump_table_clear(struct lttng_statedump_table *st);
 
 int lttng_statedump_table_add(struct lttng_statedump_table *st,
 		struct lttng_ust_notifier *notifier);

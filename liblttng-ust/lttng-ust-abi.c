@@ -51,6 +51,7 @@
 #include <helper.h>
 #include "lttng-tracer.h"
 #include "string-utils.h"
+#include "lttng-ust-statedump.h"
 #include "../libringbuffer/shm.h"
 #include "../libringbuffer/frontend_types.h"
 
@@ -578,6 +579,7 @@ long lttng_session_cmd(int objd, unsigned int cmd, unsigned long arg,
 	case LTTNG_UST_DISABLE:
 		return lttng_session_disable(session);
 	case LTTNG_UST_SESSION_STATEDUMP:
+		lttng_ust_clear_statedump_notifiers(session);
 		return lttng_session_statedump(session);
 	default:
 		return -EINVAL;

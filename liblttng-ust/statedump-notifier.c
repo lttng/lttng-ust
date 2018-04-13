@@ -110,6 +110,15 @@ unlock:
 	return 0;
 }
 
+void lttng_ust_clear_statedump_notifiers(void *owner)
+{
+	struct lttng_session *session = owner;
+
+	ust_lock_nocheck();
+	lttng_statedump_table_clear(session->statedump_table);
+	ust_unlock();
+}
+
 void lttng_ust_run_statedump_notifiers(void *owner)
 {
 	struct cds_list_head *sessionsp;
