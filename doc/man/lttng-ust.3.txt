@@ -896,7 +896,6 @@ Fields:
 |Debug link file name.
 |===
 
-
 [[ust-lib]]
 Shared library load/unload tracking
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -990,6 +989,78 @@ Fields:
 |Debug link file name.
 |===
 
+[[application-state-dump]]
+LTTng-UST application state dump
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In addition to the previously described statedump, each application can define 
+their own statedump events, to give information about their current state.
+Those events will be recorded at the same time as the UST statedump for this 
+application, or when the application is registered to the session.
+
+The application statedump tracepoints are defined, just like any other 
+tracepoint, with the `TRACEPOINT_EVENT` macro, except that it requires the 
+session as one of its argument. For example:
+
+------------------------------------------------------------------------
+TRACEPOINT_EVENT(my_provider_statedump, mystatedumpevent,
+	TP_ARGS(struct lttng_session *, session,
+		...),
+	TP_FIELDS(
+		...
+	)
+)
+------------------------------------------------------------------------
+
+In the application file, one must define a statedump notifier callback and 
+add the proper includes and macros:
+
+------------------------------------------------------------------------
+#include <lttng/statedump-notifier.h>
+
+#define TRACEPOINT_DEFINE
+#define TRACEPOINT_CREATE_PROBES
+#define TP_SESSION_CHECK
+#include "lttng-ust-demo-statedump-provider.h"
+
+static struct lttng_ust_notifier notifier;
+
+static void notifier_cb(struct lttng_session *session, void *priv)
+{
+	tracepoint(my_provider_statedump, mystatedumpevent, session, ...);
+	tracepoint(my_provider_statedump, mystatedumpevent, session, ...);
+}
+------------------------------------------------------------------------
+
+The `void* priv` pointer can be used to pass any data from the main application
+to the notifier callback.
+
+The program should register the statedump notifier function at its beginning 
+and unregister it at the end as such:
+
+------------------------------------------------------------------------
+int main(int argc, char **argv)
+{
+	[...]
+
+	lttng_ust_init_statedump_notifier(&notifier, notifier_cb, NULL);
+	lttng_ust_register_statedump_notifier(&notifier);
+
+	[ ... program main loop]
+
+	lttng_ust_unregister_statedump_notifier(&notifier);
+
+	[...]
+
+}
+------------------------------------------------------------------------
+
+The third parameter of the `lttng_ust_init_statedump_notifier` call can be used
+to pass data to the statedump notifier callback and corresponds to the
+`void *priv` argument.
+
+See the 
+https://github.com/lttng/lttng-ust/tree/master/doc/examples/demo-statedump-notifier[`doc/examples/demo-statedump-notifier`]
+for a complete example of this feature.
 
 Detect if LTTng-UST is loaded
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
