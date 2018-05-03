@@ -26,11 +26,17 @@ classes = $(pkgpath)/*.class
 $(jarfile): classnoinst.stamp
 	$(JAR) cfm $(JARFLAGS) $@ $(jarfile_manifest) $(classes) && rm -f $(jarfile_symlink) && $(LN_S) $@ $(jarfile_symlink)
 
+if !HAVE_JAVAH
+# If we don't have javah, assume we are running openjdk >= 10 and use javac
+# to generate the jni header file.
+AM_JAVACFLAGS = -h $(log4jjniout)
+else
 log4j-jni-header.stamp: $(dist_noinst_JAVA)
 	$(JAVAH) -classpath $(CLASSPATH):$(srcdir) -d $(log4jjniout) $(JAVAHFLAGS) org.lttng.ust.agent.log4j.LttngLog4jApi && \
 	echo "Log4j JNI header generated" > log4j-jni-header.stamp
 
 all-local: $(stamp)
+endif
 
 install-data-hook:
 	cd $(DESTDIR)/$(jardir) && rm -f $(jarfile_symlink) && $(LN_S) $(jarfile) $(jarfile_symlink)
