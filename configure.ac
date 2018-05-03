@@ -343,9 +343,9 @@ AS_IF([test "x$jni_interface" = "xyes" || test "x$java_agent_jul" = "xyes" || te
 	CPPFLAGS="$CPPFLAGS $JNI_CPPFLAGS"
 	AX_PROG_JAVAH
 	CPPFLAGS="$saved_CPPFLAGS"
-
-	AM_CONDITIONAL([HAVE_JAVAH], [test "x$JAVAH" != "x"])
 ])
+
+AM_CONDITIONAL([HAVE_JAVAH], [test "x$JAVAH" != "x"])
 
 AS_IF([test "x$java_agent_log4j" = "xyes"], [
 	AX_CHECK_CLASSPATH
