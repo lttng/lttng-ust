@@ -50,11 +50,17 @@ classes = $(pkgpath)/*.class \
 $(jarfile): classnoinst.stamp
 	$(JAR) cfm $(JARFLAGS) $@ $(jarfile_manifest) $(classes) && rm -f $(jarfile_symlink) && $(LN_S) $@ $(jarfile_symlink)
 
+if !HAVE_JAVAH
+# If we don't have javah, assume we are running openjdk >= 10 and use javac
+# to generate the jni header file.
+AM_JAVACFLAGS = -h $(jnioutdir)
+else
 context-jni-header.stamp: $(dist_noinst_JAVA)
 	$(JAVAH) -classpath $(CLASSPATH):$(srcdir) -d $(jnioutdir) $(JAVAHFLAGS) org.lttng.ust.agent.context.LttngContextApi && \
 	echo "Context API JNI header generated" > context-jni-header.stamp
 
 all-local: context-jni-header.stamp
+endif
 
 install-data-hook:
 	cd $(DESTDIR)/$(jardir) && rm -f $(jarfile_symlink) && $(LN_S) $(jarfile) $(jarfile_symlink)

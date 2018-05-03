@@ -17,11 +17,19 @@ liblttng_ust_java_la_LIBADD = -lc -L$(top_builddir)/liblttng-ust/.libs -llttng-u
 $(jarfile): classnoinst.stamp
 	$(JAR) cf $(JARFLAGS) $@ $(pkgpath)/*.class
 
+if !HAVE_JAVAH
+# If we don't have javah, assume we are running openjdk >= 10 and use javac
+# to generate the jni header file.
+AM_JAVACFLAGS = -h .
+
+org_lttng_ust_LTTngUst.h: $(jarfile)
+else
 org_lttng_ust_LTTngUst.h: jni-header.stamp
 
 jni-header.stamp: $(dist_noinst_JAVA)
 	$(JAVAH) -classpath $(srcdir) $(JAVAHFLAGS) org.lttng.ust.LTTngUst && \
 	echo "JNI header generated" > jni-header.stamp
+endif
 
 all-local: org_lttng_ust_LTTngUst.h
 
