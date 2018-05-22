@@ -118,7 +118,7 @@ COPYRIGHTS
 `lttng-gen-tp` is distributed under the
 http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html[GNU General
 Public License, version 2]. See the
-https://github.com/lttng/lttng-ust/blob/master/COPYING[`COPYING`] file
+https://github.com/lttng/lttng-ust/blob/v{lttng_version}/COPYING[`COPYING`] file
 for more details.
 
 
