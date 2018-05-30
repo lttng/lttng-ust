@@ -1590,6 +1590,19 @@ void ustctl_flush_buffer(struct ustctl_consumer_stream *stream,
 		consumer_chan->chan->handle);
 }
 
+void ustctl_clear_buffer(struct ustctl_consumer_stream *stream)
+{
+	struct lttng_ust_lib_ring_buffer *buf;
+	struct ustctl_consumer_channel *consumer_chan;
+
+	assert(stream);
+	buf = stream->buf;
+	consumer_chan = stream->chan;
+	lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE,
+		consumer_chan->chan->handle);
+	lib_ring_buffer_clear_reader(buf, consumer_chan->chan->handle);
+}
+
 static
 struct lttng_ust_client_lib_ring_buffer_client_cb *get_client_cb(
 		struct lttng_ust_lib_ring_buffer *buf,
