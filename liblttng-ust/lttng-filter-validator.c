@@ -507,6 +507,7 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 		if (unlikely(pc + sizeof(struct load_op) + sizeof(struct get_symbol)
 				> start_pc + bytecode->len)) {
 			ret = -ERANGE;
+			break;
 		}
 		ret = validate_get_symbol(bytecode, sym);
 		break;
