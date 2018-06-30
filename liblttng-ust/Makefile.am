@@ -19,6 +19,13 @@ liblttng_ust_tracepoint_la_LIBADD = \
 liblttng_ust_tracepoint_la_LDFLAGS = -no-undefined -version-info $(LTTNG_UST_LIBRARY_VERSION)
 liblttng_ust_tracepoint_la_CFLAGS = -DUST_COMPONENT="liblttng_ust_tracepoint" $(AM_CFLAGS)
 
+if LTTNG_UST_BUILD_WITH_LIBDL
+liblttng_ust_tracepoint_la_LIBADD += -ldl
+endif
+if LTTNG_UST_BUILD_WITH_LIBC_DL
+liblttng_ust_tracepoint_la_LIBADD += -lc
+endif
+
 liblttng_ust_runtime_la_SOURCES = \
 	lttng-ust-comm.c \
 	lttng-ust-abi.c \
@@ -92,10 +99,16 @@ liblttng_ust_la_LIBADD = \
 	-lpthread \
 	-lrt \
 	-lurcu-cds \
-	-ldl \
 	$(top_builddir)/snprintf/libustsnprintf.la \
 	$(top_builddir)/liblttng-ust-comm/liblttng-ust-comm.la \
 	liblttng-ust-tracepoint.la \
 	liblttng-ust-runtime.la liblttng-ust-support.la
+
+if LTTNG_UST_BUILD_WITH_LIBDL
+liblttng_ust_la_LIBADD += -ldl
+endif
+if LTTNG_UST_BUILD_WITH_LIBC_DL
+liblttng_ust_la_LIBADD += -lc
+endif
 
 liblttng_ust_la_CFLAGS = -DUST_COMPONENT="liblttng_ust" $(AM_CFLAGS)
