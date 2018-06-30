@@ -5,6 +5,7 @@ lib_LTLIBRARIES = liblttng-ust-fd.la
 liblttng_ust_fd_la_SOURCES = \
 	lttng-ust-fd.c
 liblttng_ust_fd_la_LIBADD = \
+	$(top_builddir)/liblttng-ust/liblttng-ust.la
 	$(top_builddir)/liblttng-ust-comm/liblttng-ust-comm.la
 
 if LTTNG_UST_BUILD_WITH_LIBDL
