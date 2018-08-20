@@ -1,3 +1,16 @@
+2018-08-20 (World Mosquito Day) lttng-ust 2.10.2
+	* Fix: add liblttng-ust dependency to liblttng-ust-fd
+	* Fix: use LIBDL/LIBC_DL to select either libdl or libc
+	* Fix: AM_CONDITIONAL should be outside AS_IF block
+	* Fix: build jni libs with openjdk >= 10
+	* Fix: ustfork: save and restore errno in syscall wrappers
+	* Fix: cache the result of getpid() internally
+	* Fix: reset cached vpid context on fork
+	* Fix: string comparison on incorrect length in context provider
+	* Fix: remove for() loop initial declarations
+	* Use ust_lock during sock_info operations for atomicity against fork
+	* Force tracked fd to be bigger than STDERR_FILENO
+
 2017-11-30 (National Mason Jar Day) lttng-ust 2.10.1
 	* Fix: specify SONAME in python-lttngust LoadLibrary
 	* Fix: ensure fd tracker is initialized when called from constructors
