@@ -53,6 +53,22 @@ struct {
 /* Set to 1 to enable tracepoint debug output */
 static const int tracepoint_debug;
 static int initialized;
+
+/*
+ * If tracepoint_destructors_state = 1, tracepoint destructors are
+ * enabled. They are disabled otherwise.
+ */
+static int tracepoint_destructors_state = 1;
+
+/*
+ * Expose the now deprecated symbol __tracepoints__disable_destructors for
+ * backward compatibility of applications built against old versions of
+ * lttng-ust. We need to keep __tracepoints__disable_destructors up to date
+ * within the new destructor disabling API because old applications read this
+ * symbol directly.
+ */
+int __tracepoints__disable_destructors __attribute__((weak));
+
 static void (*new_tracepoint_cb)(struct lttng_ust_tracepoint *);
 
 /*
@@ -982,4 +998,29 @@ void tp_rcu_read_unlock_bp(void)
 void *tp_rcu_dereference_sym_bp(void *p)
 {
 	return rcu_dereference_bp(p);
+}
+
+/*
+ * Programs that have threads that survive after they exit, and therefore call
+ * library destructors, should disable the tracepoint destructors by calling
+ * tp_disable_destructors(). This will leak the tracepoint
+ * instrumentation library shared object, leaving its teardown to the operating
+ * system process teardown.
+ *
+ * To access and/or modify this value, users need to use a combination of
+ * dlopen(3) and dlsym(3) to get an handle on the
+ * tp_disable_destructors and tp_get_destructors_state symbols below.
+ */
+void tp_disable_destructors(void)
+{
+	uatomic_set(&tracepoint_destructors_state, 0);
+}
+
+/*
+ * Returns 1 if the destructors are enabled and should be executed.
+ * Returns 0 if the destructors are disabled.
+ */
+int tp_get_destructors_state(void)
+{
+	return uatomic_read(&tracepoint_destructors_state);
 }
