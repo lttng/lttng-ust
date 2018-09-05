@@ -29,6 +29,7 @@
 
 #include <errno.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <helper.h>
 #include <lttng/ust-events.h>
 #include <lttng/ust-context-provider.h>
