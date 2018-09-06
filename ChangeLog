@@ -1,3 +1,67 @@
+2018-09-06 (Fight Procrastination Day) lttng-ust 2.11.0-rc1
+	* Fix: add missing stdbool.h include
+	* Move symbol preventing unloading of probe providers
+	* Fix: Remove unused line from liblttng-ust-fd makefile
+	* Fix: add liblttng-ust dependency to liblttng-ust-fd
+	* Fix: use LIBDL/LIBC_DL to select either libdl or libc
+	* Fix: lttng filter validator ERANGE error handling
+	* Filter: implement dynamic typing for load object
+	* Filter: add FILTER_OP_RETURN_S64 instruction
+	* Perform bitwise ops on unsigned types
+	* Filter: catch shift undefined behavior
+	* Filter: implement bitwise lshift, rshift, not
+	* Filter: index array, sequences, implement bitwise binary operators
+	* Fix: AM_CONDITIONAL should be outside AS_IF block
+	* Fix: build jni libs with openjdk >= 10
+	* Fix: ustfork: save and restore errno in syscall wrappers
+	* Fix: cache the result of getpid() internally
+	* Fix: reset cached vpid context on fork
+	* Fix: build example SO when PIE is enabled
+	* Fix: string comparison on incorrect length in context provider
+	* Support unloading of probe providers
+	* Rename lttng_ust_enum_get to lttng_ust_enum_get_from_desc
+	* dlopen() liblttng-ust.so from constructor to prevent unloading
+	* Add probe provider unregister function
+	* Cleanup: Move version numbers in separate variables in configure script
+	* Remove duplicate provider name checks
+	* Fix: remove for() loop initial declarations
+	* Use ust_lock during sock_info operations for atomicity against fork
+	* Force tracked fd to be bigger than STDERR_FILENO
+	* Fix: numa: dynamically check that numa is available
+	* Fix: specify SONAME in python-lttngust LoadLibrary
+	* Fix: ensure fd tracker is initialized when called from constructors
+	* Fix: fd of an elf object must be registered to the fd tracker
+	* Cleanup: clock description for metadata was moved to lttng-sessiond
+	* Fix: liblttng-ust-fd.so: override fclose symbol
+	* Revert "Use initial-exec TLS model"
+	* Revert "Fix: typo: DECLARE_URCU_TLS_IE -> DEFINE_URCU_TLS_IE"
+	* configure.ac: add --disable-examples option to not build/install examples
+	* Disable NUMA by default on 32bit arm
+	* Update Makefile.am output about libnuma not found
+	* Update readme to document opt dep on numa
+	* numa support: allow disabling numa support
+	* Update README to document dependency on libnuma
+	* Take NUMA configuration into account for UST buffer allocation
+	* Fix: typo: DECLARE_URCU_TLS_IE -> DEFINE_URCU_TLS_IE
+	* Use initial-exec TLS model
+	* lttng-gen-tp: formatting
+	* Fix: lttng-gen-tp: only replace file extension
+	* Fix: move fsync after ftruncate
+	* Fix: sync buffer file metadata on buffer allocation
+	* lttng-ust(3): reword and fix style of `LTTNG_UST_ALLOW_BLOCKING` variable
+	* lttng-ust(3): specify "If set" instead of "if set to 1" for some variables
+	* Fix: doc/man: use a single XSL file and match local names
+	* Fix: Expand the shmobj size for the sequence number
+	* Introduce LTTNG_UST_ALLOW_BLOCKING env. var.
+	* Fix: lttng-ust-elf.c: define NT_GNU_BUILD_ID if not defined
+	* Calculate context length outside of retry loop
+	* Fix: Quote CMAKE variable assignment in Makefile
+	* Rework configure script
+	* Fix: Typo in doc/examples/Makefile.am
+	* Fix: Don't override user variables within the build system
+	* Move m4 scripts to m4 dir
+	* doc: remove duplicate LTTNG_UST_BLOCKING_RETRY_TIMEOUT man page entry
+
 2017-05-05 (International Tuba Day) lttng-ust 2.10.0-rc1
 	* Clean-up: remove unused variables to silence gcc warning
 	* Add ustctl_snapshot_sample_positions ustctl command
