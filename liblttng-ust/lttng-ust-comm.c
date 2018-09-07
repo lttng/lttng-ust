@@ -2013,6 +2013,7 @@ void ust_after_fork_child(sigset_t *restore_sigset)
 		return;
 	lttng_context_vpid_reset();
 	lttng_context_vtid_reset();
+	lttng_context_procname_reset();
 	DBG("process %d", getpid());
 	/* Release urcu mutexes */
 	rcu_bp_after_fork_child();
