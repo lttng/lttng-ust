@@ -414,6 +414,8 @@ void iter_end(struct dl_iterate_data *data, void *ip)
 {
 	unsigned int i;
 
+	if (data->cancel)
+		goto end;
 	/*
 	 * Iterate on hash table.
 	 * For each marked, traced, do nothing.
@@ -441,6 +443,7 @@ void iter_end(struct dl_iterate_data *data, void *ip)
 			}
 		}
 	}
+end:
 	ust_unlock();
 }
 
