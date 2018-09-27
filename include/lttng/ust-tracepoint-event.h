@@ -121,6 +121,30 @@ static const char							\
 #include TRACEPOINT_INCLUDE
 
 /*
+ * Stage 0.2 of tracepoint event generation.
+ *
+ * Create dummy trace prototypes for each event class, and for each used
+ * template. This will allow checking whether the prototypes from the
+ * class and the instance using the class actually match.
+ */
+
+/* Reset all macros within TRACEPOINT_EVENT */
+#include <lttng/ust-tracepoint-event-reset.h>
+
+#undef TP_ARGS
+#define TP_ARGS(...)	__VA_ARGS__
+
+#undef TRACEPOINT_EVENT_INSTANCE
+#define TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args) \
+void __event_template_proto___##_provider##___##_template(_TP_ARGS_DATA_PROTO(_args));
+
+#undef TRACEPOINT_EVENT_CLASS
+#define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields) \
+void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));
+
+#include TRACEPOINT_INCLUDE
+
+/*
  * Stage 0.9 of tracepoint event generation
  *
  * Unfolding the enums
