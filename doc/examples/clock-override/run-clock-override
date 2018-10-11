@@ -2,7 +2,7 @@
 
 # launch with: run-clock-override progname args
 
-DIR=$(dirname $0)
-DIR=$(readlink -f $DIR)
+DIR=$(dirname "$0")
+DIR=$(readlink -f "$DIR")
 
-LTTNG_UST_CLOCK_PLUGIN="$DIR/lttng-ust-clock-override-example.so" ${*}
+LTTNG_UST_CLOCK_PLUGIN="$DIR/lttng-ust-clock-override-example.so" "${@}"
