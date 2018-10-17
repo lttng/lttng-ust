@@ -547,6 +547,7 @@ AC_CONFIG_FILES([
 	tests/Makefile
 	tests/ctf-types/Makefile
 	tests/hello/Makefile
+	tests/hello-many/Makefile
 	tests/hello.cxx/Makefile
 	tests/same_line_tracepoint/Makefile
 	tests/snprintf/Makefile

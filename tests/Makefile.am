@@ -1,5 +1,5 @@
 SUBDIRS = utils hello same_line_tracepoint snprintf benchmark ust-elf \
-		ctf-types test-app-ctx gcc-weak-hidden
+		ctf-types test-app-ctx gcc-weak-hidden hello-many
 
 if CXX_WORKS
 SUBDIRS += hello.cxx
