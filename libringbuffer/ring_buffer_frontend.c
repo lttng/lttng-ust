@@ -1996,9 +1996,11 @@ int lib_ring_buffer_try_switch_slow(enum switch_mode mode,
  * Force a sub-buffer switch. This operation is completely reentrant : can be
  * called while tracing is active with absolutely no lock held.
  *
- * Note, however, that as a v_cmpxchg is used for some atomic
- * operations, this function must be called from the CPU which owns the buffer
- * for a ACTIVE flush.
+ * For RING_BUFFER_SYNC_PER_CPU ring buffers, as a v_cmpxchg is used for
+ * some atomic operations, this function must be called from the CPU
+ * which owns the buffer for a ACTIVE flush. However, for
+ * RING_BUFFER_SYNC_GLOBAL ring buffers, this function can be called
+ * from any CPU.
  */
 void lib_ring_buffer_switch_slow(struct lttng_ust_lib_ring_buffer *buf, enum switch_mode mode,
 				 struct lttng_ust_shm_handle *handle)
