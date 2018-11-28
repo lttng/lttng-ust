@@ -27,10 +27,10 @@
 
 #ifdef _LGPL_SOURCE
 
-#include <urcu-bp.h>
+#include <urcu/urcu-bp.h>
 
-#define tp_rcu_read_lock_bp	rcu_read_lock_bp
-#define tp_rcu_read_unlock_bp	rcu_read_unlock_bp
+#define tp_rcu_read_lock_bp	urcu_bp_read_lock
+#define tp_rcu_read_unlock_bp	urcu_bp_read_unlock
 #define tp_rcu_dereference_bp	rcu_dereference
 #define TP_RCU_LINK_TEST()	1
 

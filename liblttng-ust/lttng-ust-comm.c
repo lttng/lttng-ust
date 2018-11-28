@@ -1969,7 +1969,7 @@ void ust_before_fork(sigset_t *save_sigset)
 	pthread_mutex_lock(&ust_fork_mutex);
 
 	ust_lock_nocheck();
-	rcu_bp_before_fork();
+	urcu_bp_before_fork();
 }
 
 static void ust_after_fork_common(sigset_t *restore_sigset)
@@ -1993,7 +1993,7 @@ void ust_after_fork_parent(sigset_t *restore_sigset)
 	if (URCU_TLS(lttng_ust_nest_count))
 		return;
 	DBG("process %d", getpid());
-	rcu_bp_after_fork_parent();
+	urcu_bp_after_fork_parent();
 	/* Release mutexes and reenable signals */
 	ust_after_fork_common(restore_sigset);
 }
@@ -2016,7 +2016,7 @@ void ust_after_fork_child(sigset_t *restore_sigset)
 	lttng_context_procname_reset();
 	DBG("process %d", getpid());
 	/* Release urcu mutexes */
-	rcu_bp_after_fork_child();
+	urcu_bp_after_fork_child();
 	lttng_ust_cleanup(0);
 	/* Release mutexes and reenable signals */
 	ust_after_fork_common(restore_sigset);
