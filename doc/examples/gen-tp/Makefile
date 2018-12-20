@@ -19,15 +19,18 @@
 
 LIBS = -ldl -llttng-ust		#On Linux
 #LIBS = -lc -llttng-ust		#On BSD
+AM_V_P := :
 
 all: sample
 
 sample: sample.o sample_tracepoint.o
-	$(CC) $(LDFLAGS) $(AM_CFLAGS) $(AM_LDFLAGS) $(CFLAGS) \
+	@if $(AM_V_P); then set -x; else echo "  CCLD     $@"; fi; \
+		$(CC) $(LDFLAGS) $(AM_CFLAGS) $(AM_LDFLAGS) $(CFLAGS) \
 		-o $@ sample.o sample_tracepoint.o $(LIBS)
 
 sample.o: sample.c sample_tracepoint.h
-	$(CC) $(CPPFLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) $(CFLAGS) \
+	@if $(AM_V_P); then set -x; else echo "  CC       $@"; fi; \
+		$(CC) $(CPPFLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) $(CFLAGS) \
 		-c -o $@ $<
 
 # Use this command to compile the .c manually
@@ -38,11 +41,12 @@ sample.o: sample.c sample_tracepoint.h
 # This rule generate .o only and depends on rules for generating
 # the .h and .c
 %.o: %.tp %.c %.h
-	CPPFLAGS="$(AM_CPPFLAGS) $(CPPFLAGS)" \
-	CFLAGS="$(AM_CFLAGS) $(CFLAGS)" \
-	LDFLAGS="$(AM_LDFLAGS) $(LDFLAGS)" \
-	CC="$(CC)" \
-	$(LTTNG_GEN_TP_PATH)lttng-gen-tp -o $@ $<
+	@if $(AM_V_P); then set -x; else echo "  CC       $@"; fi; \
+		CPPFLAGS="$(AM_CPPFLAGS) $(CPPFLAGS)" \
+		CFLAGS="$(AM_CFLAGS) $(CFLAGS)" \
+		LDFLAGS="$(AM_LDFLAGS) $(LDFLAGS)" \
+		CC="$(CC)" \
+		$(LTTNG_GEN_TP_PATH)lttng-gen-tp -o $@ $<
 
 # The following rule can be used to generate all files instead of having one
 # for each file type. Note that the sample.o has a dependency on the
@@ -51,10 +55,12 @@ sample.o: sample.c sample_tracepoint.h
 #	lttng-gen-tp $<
 
 %.h: %.tp
-	$(LTTNG_GEN_TP_PATH)lttng-gen-tp -o $@ $<
+	@if $(AM_V_P); then set -x; else echo "  GEN      $@"; fi; \
+		$(LTTNG_GEN_TP_PATH)lttng-gen-tp -o $@ $<
 
 %.c: %.tp
-	$(LTTNG_GEN_TP_PATH)lttng-gen-tp -o $@ $<
+	@if $(AM_V_P); then set -x; else echo "  GEN      $@"; fi; \
+		$(LTTNG_GEN_TP_PATH)lttng-gen-tp -o $@ $<
 
 .PHONY: clean
 clean:

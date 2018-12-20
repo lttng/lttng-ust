@@ -106,28 +106,24 @@ SUBDIRS_PROXY += gen-tp
 endif
 
 all-local:
-	@if [ x"$(srcdir)" != x"$(builddir)" ]; then \
+	$(AM_V_at)if [ x"$(srcdir)" != x"$(builddir)" ]; then \
 		for subdir in $(SUBDIRS_PROXY) $(SUBDIRS_JUL) $(SUBDIRS_LOG4J) $(SUBDIRS_CMAKE); do \
 			cp -pfR $(srcdir)/$$subdir $(builddir); \
 			chmod -R u+w $(builddir)/$$subdir; \
 		done; \
 	fi; \
 	if [ x"$(shell echo "$(top_srcdir)" | grep "^/" | wc -l)" = x"1" ]; then \
-		echo "Examples: absolute top_srcdir path $(top_srcdir)"; \
 		rel_src_subdir=""; \
 	else \
-		echo "Examples: relative top_srcdir path $(top_srcdir)"; \
 		rel_src_subdir="../"; \
 	fi; \
 	if [ x"$(shell echo "$(top_builddir)" | grep "^/" | wc -l)" = x"1" ]; then \
-		echo "Examples: absolute top_builddir path $(top_builddir)"; \
 		rel_build_subdir=""; \
 	else \
-		echo "Examples: relative top_builddir path $(top_builddir)"; \
 		rel_build_subdir="../"; \
 	fi; \
 	for subdir in $(SUBDIRS_PROXY); do \
-		(cd $$subdir && $(MAKE) CC="$(CC)" CPPFLAGS="$(CPPFLAGS)" AM_CPPFLAGS="$(AM_CPPFLAGS) -I$$rel_src_subdir$(top_srcdir)/include/ -I$$rel_build_subdir$(top_builddir)/include/" CFLAGS='$(CFLAGS)' AM_CFLAGS='$(AM_CFLAGS)' LDFLAGS="$(LDFLAGS)" AM_LDFLAGS='$(AM_LDFLAGS) -L../../../liblttng-ust/.libs -Wl,-rpath="$(PWD)/../../liblttng-ust/.libs/" -Wl,-rpath-link="$(PWD)/../../liblttng-ust/.libs/"' LTTNG_GEN_TP_PATH="../../../tools/" $(AM_MAKEFLAGS) all && cd ..) || exit 1; \
+		(cd $$subdir && $(MAKE) CC="$(CC)" CPPFLAGS="$(CPPFLAGS)" AM_CPPFLAGS="$(AM_CPPFLAGS) -I$$rel_src_subdir$(top_srcdir)/include/ -I$$rel_build_subdir$(top_builddir)/include/" CFLAGS='$(CFLAGS)' AM_CFLAGS='$(AM_CFLAGS)' LDFLAGS="$(LDFLAGS)" AM_LDFLAGS='$(AM_LDFLAGS) -L../../../liblttng-ust/.libs -Wl,-rpath="$(PWD)/../../liblttng-ust/.libs/" -Wl,-rpath-link="$(PWD)/../../liblttng-ust/.libs/"' LTTNG_GEN_TP_PATH="../../../tools/" AM_V_P="$(AM_V_P)" AM_V_at="$(AM_V_at)" $(AM_MAKEFLAGS) all && cd ..) || exit 1; \
 	done; \
 	if [ x"$(SUBDIRS_JUL)" != x"" ]; then \
 		for subdir in $(SUBDIRS_JUL); do \
@@ -162,7 +158,7 @@ all-local:
 
 
 clean-local:
-	@for subdir in $(SUBDIRS_PROXY); do \
+	$(AM_V_at)for subdir in $(SUBDIRS_PROXY); do \
 		if [ -d $$subdir ]; then \
 			(cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) clean && cd ..) || exit 1; \
 		fi; \

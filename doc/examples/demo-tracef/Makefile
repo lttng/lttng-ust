@@ -18,15 +18,18 @@
 LIBS = -ldl -llttng-ust	# On Linux
 #LIBS = -lc	# On BSD
 LOCAL_CPPFLAGS += -I.
+AM_V_P := :
 
 all: demo-tracef
 
 demo-tracef.o: demo-tracef.c
-	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) \
+	@if $(AM_V_P); then set -x; else echo "  CC       $@"; fi; \
+		$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) \
 		$(CFLAGS) -c -o $@ $<
 
 demo-tracef: demo-tracef.o
-	$(CC) $(LDFLAGS) $(AM_CFLAGS) $(AM_LDFLAGS) $(CFLAGS) \
+	@if $(AM_V_P); then set -x; else echo "  CCLD     $@"; fi; \
+		$(CC) $(LDFLAGS) $(AM_CFLAGS) $(AM_LDFLAGS) $(CFLAGS) \
 		-o $@ $< $(LIBS)
 
 .PHONY: clean

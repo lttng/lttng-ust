@@ -18,15 +18,18 @@
 LIBS = -ldl	# On Linux
 #LIBS = -lc	# On BSD
 LOCAL_CPPFLAGS += -I.
+AM_V_P := :
 
 all: lttng-ust-getcpu-override-example.so
 
 lttng-ust-getcpu-override-example.o: lttng-ust-getcpu-override-example.c
-	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) \
+	@if $(AM_V_P); then set -x; else echo "  CC       $@"; fi; \
+		$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) \
 		$(CFLAGS) -fpic -c -o $@ $<
 
 lttng-ust-getcpu-override-example.so: lttng-ust-getcpu-override-example.o
-	$(CC) -Wl,--no-as-needed -o $@ $(LDFLAGS) $(AM_CFLAGS) \
+	@if $(AM_V_P); then set -x; else echo "  CCLD     $@"; fi; \
+		$(CC) -Wl,--no-as-needed -o $@ $(LDFLAGS) $(AM_CFLAGS) \
 		$(AM_LDFLAGS) $(CFLAGS) -shared -fpic lttng-ust-getcpu-override-example.o
 
 .PHONY: clean

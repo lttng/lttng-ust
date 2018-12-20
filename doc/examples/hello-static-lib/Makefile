@@ -17,22 +17,27 @@
 LOCAL_CPPFLAGS += -I.
 LIBS = -ldl -llttng-ust	# On Linux
 #LIBS = -lc -llttng-ust	# On BSD
+AM_V_P := :
 
 all: hello
 
 lttng-ust-provider-hello.o: tp.c ust_tests_hello.h
-	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) \
+	@if $(AM_V_P); then set -x; else echo "  CC       $@"; fi; \
+		$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) \
 		$(CFLAGS) -c -o $@ $<
 
 lttng-ust-provider-hello.a: lttng-ust-provider-hello.o
-	ar -rc $@ lttng-ust-provider-hello.o
+	@if $(AM_V_P); then set -x; else echo "  AR       $@"; fi; \
+		ar -rc $@ lttng-ust-provider-hello.o
 
 hello.o: hello.c
-	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) \
+	@if $(AM_V_P); then set -x; else echo "  CC       $@"; fi; \
+		$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) \
 		$(CFLAGS) -c -o $@ $<
 
 hello: hello.o lttng-ust-provider-hello.a
-	$(CC) -o $@ $(LDFLAGS) $(CPPFLAGS) $(AM_LDFLAGS) $(AM_CFLAGS) \
+	@if $(AM_V_P); then set -x; else echo "  CCLD     $@"; fi; \
+		$(CC) -o $@ $(LDFLAGS) $(CPPFLAGS) $(AM_LDFLAGS) $(AM_CFLAGS) \
 		$(CFLAGS) hello.o lttng-ust-provider-hello.a $(LIBS)
 
 .PHONY: clean
