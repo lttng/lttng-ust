@@ -61,7 +61,7 @@
 #include "getenv.h"
 
 /* Concatenate lttng ust shared library name with its major version number. */
-#define LTTNG_UST_LIB_SO_NAME "liblttng-ust.so." LTTNG_UST_LIBRARY_VERSION_MAJOR
+#define LTTNG_UST_LIB_SO_NAME "liblttng-ust.so." __ust_stringify(CONFIG_LTTNG_UST_LIBRARY_VERSION_MAJOR)
 
 /*
  * Has lttng ust comm constructor been called ?
