@@ -207,26 +207,24 @@ AH_TEMPLATE([LTTNG_UST_HAVE_PERF_EVENT], [Perf event integration via perf_event.
 
 # Checks for libraries.
 AC_CHECK_LIB([dl], [dlopen], [
-	have_libdl=yes
 	libdl_name=dl
+	DL_LIBS="-ldl"
 ], [
 	#libdl not found, check for dlopen in libc.
 	AC_CHECK_LIB([c], [dlopen], [
-		have_libc_dl=yes
 		libdl_name=c
+		DL_LIBS="-lc"
 	], [
 		AC_MSG_ERROR([Cannot find dlopen in libdl nor libc. Use [LDFLAGS]=-Ldir to specify their location.])
 	])
 ])
+AC_SUBST(DL_LIBS)
 
 # Check if libdl has dlmopen support.
 AH_TEMPLATE([HAVE_DLMOPEN], ["Define to 1 if dlmopen is available."])
 AC_CHECK_LIB([$libdl_name], [dlmopen],
 	[AC_DEFINE([HAVE_DLMOPEN], [1])]
 )
-
-AM_CONDITIONAL([LTTNG_UST_BUILD_WITH_LIBDL], [test "x$have_libdl" = "xyes"])
-AM_CONDITIONAL([LTTNG_UST_BUILD_WITH_LIBC_DL], [test "x$have_libc_dl" = "xyes"])
 
 AC_CHECK_LIB([pthread], [pthread_create])
 AC_CHECK_LIB([pthread], [pthread_setname_np],
