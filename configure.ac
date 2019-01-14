@@ -565,6 +565,8 @@ AC_CONFIG_LINKS([
 	python-lttngust/lttngust/loghandler.py:python-lttngust/lttngust/loghandler.py
 ])
 
+AC_CONFIG_FILES([tests/ust-elf/test_ust_elf],[chmod +x tests/ust-elf/test_ust_elf])
+
 AC_OUTPUT
 
 

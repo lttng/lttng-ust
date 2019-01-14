@@ -1,4 +1,4 @@
 #!/bin/bash
 
-TEST_DIR=$(dirname $0)
-./${TEST_DIR}/prog @ABSTOPSRCDIR@/tests/ust-elf
+TEST_DIR=$(dirname "$0")
+"${TEST_DIR}/ust-elf" "@abs_top_srcdir@/tests/ust-elf"

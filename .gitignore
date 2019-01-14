@@ -74,14 +74,13 @@ tests/ust-multi-test/ust-multi-test
 tests/trace_event/trace_event_test
 tests/tracepoint/benchmark/tracepoint_benchmark
 tests/tracepoint/tracepoint_test
-tests/snprintf/prog
-tests/ust-elf/prog
+tests/snprintf/test_snprintf
+tests/ust-elf/ust-elf
 tests/ust-elf/test_ust_elf
 tests/benchmark/bench1
 tests/benchmark/bench2
 tests/ctf-types/ctf-types
 tests/test-app-ctx/hello
-tests/gcc-weak-hidden/test-gcc-wh
 tests/gcc-weak-hidden/test_gcc_weak_hidden
 
 # Java agent library
