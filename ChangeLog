@@ -1,3 +1,12 @@
+2019-01-25 (National Opposite Day) lttng-ust 2.9.4
+	* Fix: Initialize fd field of struct lttng_ust_elf to -1 at allocation
+	* Clarify lib_ring_buffer_switch_slow() requirements
+	* Fix: address shellcheck warnings/errors in example scripts
+	* Fix: check for event class/instance prototype mismatch
+	* Fix: race between statedump and library destructor
+	* Fix: reset procname on fork in child process
+	* Fix: Remove unused line from liblttng-ust-fd makefile
+
 2018-08-20 (World Mosquito Day) lttng-ust 2.9.3
 	* Fix: add liblttng-ust dependency to liblttng-ust-fd
 	* Fix: use LIBDL/LIBC_DL to select either libdl or libc
