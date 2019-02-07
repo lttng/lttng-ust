@@ -107,7 +107,7 @@ void lttng_ust_dl_dlopen(void *so_base, const char *so_name,
 
 	elf = lttng_ust_elf_create(resolved_path);
 	if (!elf) {
-		ERR("could not acces file %s", resolved_path);
+		ERR("could not access file %s", resolved_path);
 		return;
 	}
 
@@ -169,7 +169,7 @@ void lttng_ust_dl_dlmopen(void *so_base, Lmid_t nsid, const char *so_name,
 
 	elf = lttng_ust_elf_create(resolved_path);
 	if (!elf) {
-		ERR("could not acces file %s", resolved_path);
+		ERR("could not access file %s", resolved_path);
 		return;
 	}
 
