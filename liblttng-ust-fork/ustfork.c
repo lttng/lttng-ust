@@ -89,6 +89,156 @@ int daemon(int nochdir, int noclose)
 	return retval;
 }
 
+int setuid(uid_t uid)
+{
+	static int (*plibc_func)(uid_t uid) = NULL;
+	int retval;
+	int saved_errno;
+
+	if (plibc_func == NULL) {
+		plibc_func = dlsym(RTLD_NEXT, "setuid");
+		if (plibc_func == NULL) {
+			fprintf(stderr, "libustfork: unable to find \"setuid\" symbol\n");
+			errno = ENOSYS;
+			return -1;
+		}
+	}
+
+	/* Do the real setuid */
+	retval = plibc_func(uid);
+	saved_errno = errno;
+
+	ust_after_setuid();
+
+	errno = saved_errno;
+	return retval;
+}
+
+int setgid(gid_t gid)
+{
+	static int (*plibc_func)(gid_t gid) = NULL;
+	int retval;
+	int saved_errno;
+
+	if (plibc_func == NULL) {
+		plibc_func = dlsym(RTLD_NEXT, "setgid");
+		if (plibc_func == NULL) {
+			fprintf(stderr, "libustfork: unable to find \"setgid\" symbol\n");
+			errno = ENOSYS;
+			return -1;
+		}
+	}
+
+	/* Do the real setgid */
+	retval = plibc_func(gid);
+	saved_errno = errno;
+
+	ust_after_setgid();
+
+	errno = saved_errno;
+	return retval;
+}
+
+int seteuid(uid_t euid)
+{
+	static int (*plibc_func)(uid_t euid) = NULL;
+	int retval;
+	int saved_errno;
+
+	if (plibc_func == NULL) {
+		plibc_func = dlsym(RTLD_NEXT, "seteuid");
+		if (plibc_func == NULL) {
+			fprintf(stderr, "libustfork: unable to find \"seteuid\" symbol\n");
+			errno = ENOSYS;
+			return -1;
+		}
+	}
+
+	/* Do the real seteuid */
+	retval = plibc_func(euid);
+	saved_errno = errno;
+
+	ust_after_seteuid();
+
+	errno = saved_errno;
+	return retval;
+}
+
+int setegid(gid_t egid)
+{
+	static int (*plibc_func)(gid_t egid) = NULL;
+	int retval;
+	int saved_errno;
+
+	if (plibc_func == NULL) {
+		plibc_func = dlsym(RTLD_NEXT, "setegid");
+		if (plibc_func == NULL) {
+			fprintf(stderr, "libustfork: unable to find \"setegid\" symbol\n");
+			errno = ENOSYS;
+			return -1;
+		}
+	}
+
+	/* Do the real setegid */
+	retval = plibc_func(egid);
+	saved_errno = errno;
+
+	ust_after_setegid();
+
+	errno = saved_errno;
+	return retval;
+}
+
+int setreuid(uid_t ruid, uid_t euid)
+{
+	static int (*plibc_func)(uid_t ruid, uid_t euid) = NULL;
+	int retval;
+	int saved_errno;
+
+	if (plibc_func == NULL) {
+		plibc_func = dlsym(RTLD_NEXT, "setreuid");
+		if (plibc_func == NULL) {
+			fprintf(stderr, "libustfork: unable to find \"setreuid\" symbol\n");
+			errno = ENOSYS;
+			return -1;
+		}
+	}
+
+	/* Do the real setreuid */
+	retval = plibc_func(ruid, euid);
+	saved_errno = errno;
+
+	ust_after_setreuid();
+
+	errno = saved_errno;
+	return retval;
+}
+
+int setregid(gid_t rgid, gid_t egid)
+{
+	static int (*plibc_func)(gid_t rgid, gid_t egid) = NULL;
+	int retval;
+	int saved_errno;
+
+	if (plibc_func == NULL) {
+		plibc_func = dlsym(RTLD_NEXT, "setregid");
+		if (plibc_func == NULL) {
+			fprintf(stderr, "libustfork: unable to find \"setregid\" symbol\n");
+			errno = ENOSYS;
+			return -1;
+		}
+	}
+
+	/* Do the real setregid */
+	retval = plibc_func(rgid, egid);
+	saved_errno = errno;
+
+	ust_after_setregid();
+
+	errno = saved_errno;
+	return retval;
+}
+
 #ifdef __linux__
 
 struct user_desc;
@@ -205,6 +355,56 @@ int unshare(int flags)
 	saved_errno = errno;
 
 	ust_after_unshare();
+
+	errno = saved_errno;
+	return retval;
+}
+
+int setresuid(uid_t ruid, uid_t euid, uid_t suid)
+{
+	static int (*plibc_func)(uid_t ruid, uid_t euid, uid_t suid) = NULL;
+	int retval;
+	int saved_errno;
+
+	if (plibc_func == NULL) {
+		plibc_func = dlsym(RTLD_NEXT, "setresuid");
+		if (plibc_func == NULL) {
+			fprintf(stderr, "libustfork: unable to find \"setresuid\" symbol\n");
+			errno = ENOSYS;
+			return -1;
+		}
+	}
+
+	/* Do the real setresuid */
+	retval = plibc_func(ruid, euid, suid);
+	saved_errno = errno;
+
+	ust_after_setresuid();
+
+	errno = saved_errno;
+	return retval;
+}
+
+int setresgid(gid_t rgid, gid_t egid, gid_t sgid)
+{
+	static int (*plibc_func)(gid_t rgid, gid_t egid, gid_t sgid) = NULL;
+	int retval;
+	int saved_errno;
+
+	if (plibc_func == NULL) {
+		plibc_func = dlsym(RTLD_NEXT, "setresgid");
+		if (plibc_func == NULL) {
+			fprintf(stderr, "libustfork: unable to find \"setresgid\" symbol\n");
+			errno = ENOSYS;
+			return -1;
+		}
+	}
+
+	/* Do the real setresgid */
+	retval = plibc_func(rgid, egid, sgid);
+	saved_errno = errno;
+
+	ust_after_setresgid();
 
 	errno = saved_errno;
 	return retval;

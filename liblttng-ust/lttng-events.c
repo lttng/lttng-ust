@@ -1126,6 +1126,18 @@ int lttng_attach_context(struct lttng_ust_context *context_param,
 		return lttng_add_user_ns_to_ctx(ctx);
 	case LTTNG_UST_CONTEXT_UTS_NS:
 		return lttng_add_uts_ns_to_ctx(ctx);
+	case LTTNG_UST_CONTEXT_VUID:
+		return lttng_add_vuid_to_ctx(ctx);
+	case LTTNG_UST_CONTEXT_VEUID:
+		return lttng_add_veuid_to_ctx(ctx);
+	case LTTNG_UST_CONTEXT_VSUID:
+		return lttng_add_vsuid_to_ctx(ctx);
+	case LTTNG_UST_CONTEXT_VGID:
+		return lttng_add_vgid_to_ctx(ctx);
+	case LTTNG_UST_CONTEXT_VEGID:
+		return lttng_add_vegid_to_ctx(ctx);
+	case LTTNG_UST_CONTEXT_VSGID:
+		return lttng_add_vsgid_to_ctx(ctx);
 	default:
 		return -EINVAL;
 	}

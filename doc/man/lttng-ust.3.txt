@@ -826,6 +826,32 @@ The following man:namespaces(7) context fields are supported by LTTng-UST:
     Hostname and NIS domain name namespace: inode number of the
     current UTS namespace in the proc filesystem.
 
+The following man:credentials(7) context fields are supported by LTTng-UST:
+
+`vuid`::
+    Virtual real user ID: real user ID as seen from the point of view of
+    the current man:user_namespaces(7).
+
+`vgid`::
+    Virtual real group ID: real group ID as seen from the point of view of
+    the current man:user_namespaces(7).
+
+`veuid`::
+    Virtual effective user ID: effective user ID as seen from the point of
+    view of the current man:user_namespaces(7).
+
+`vegid`::
+    Virtual effective group ID: effective group ID as seen from the point of
+    view of the current man:user_namespaces(7).
+
+`vsuid`::
+    Virtual saved set-user ID: saved set-user ID as seen from the point of
+    view of the current man:user_namespaces(7).
+
+`vsgid`::
+    Virtual saved set-group ID: saved set-group ID as seen from the point of
+    view of the current man:user_namespaces(7).
+
 
 [[state-dump]]
 LTTng-UST state dump

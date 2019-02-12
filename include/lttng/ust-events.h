@@ -686,6 +686,12 @@ int lttng_add_net_ns_to_ctx(struct lttng_ctx **ctx);
 int lttng_add_pid_ns_to_ctx(struct lttng_ctx **ctx);
 int lttng_add_user_ns_to_ctx(struct lttng_ctx **ctx);
 int lttng_add_uts_ns_to_ctx(struct lttng_ctx **ctx);
+int lttng_add_vuid_to_ctx(struct lttng_ctx **ctx);
+int lttng_add_veuid_to_ctx(struct lttng_ctx **ctx);
+int lttng_add_vsuid_to_ctx(struct lttng_ctx **ctx);
+int lttng_add_vgid_to_ctx(struct lttng_ctx **ctx);
+int lttng_add_vegid_to_ctx(struct lttng_ctx **ctx);
+int lttng_add_vsgid_to_ctx(struct lttng_ctx **ctx);
 void lttng_context_vtid_reset(void);
 void lttng_context_vpid_reset(void);
 void lttng_context_procname_reset(void);
@@ -696,6 +702,12 @@ void lttng_context_net_ns_reset(void);
 void lttng_context_pid_ns_reset(void);
 void lttng_context_user_ns_reset(void);
 void lttng_context_uts_ns_reset(void);
+void lttng_context_vuid_reset(void);
+void lttng_context_veuid_reset(void);
+void lttng_context_vsuid_reset(void);
+void lttng_context_vgid_reset(void);
+void lttng_context_vegid_reset(void);
+void lttng_context_vsgid_reset(void);
 
 #ifdef LTTNG_UST_HAVE_PERF_EVENT
 int lttng_add_perf_counter_to_ctx(uint32_t type,

@@ -407,6 +407,36 @@ int lttng_session_context_init(struct lttng_ctx **ctx)
 		WARN("Cannot add context lttng_add_uts_ns_to_ctx");
 		goto error;
 	}
+	ret = lttng_add_vuid_to_ctx(ctx);
+	if (ret) {
+		WARN("Cannot add context lttng_add_vuid_to_ctx");
+		goto error;
+	}
+	ret = lttng_add_veuid_to_ctx(ctx);
+	if (ret) {
+		WARN("Cannot add context lttng_add_veuid_to_ctx");
+		goto error;
+	}
+	ret = lttng_add_vsuid_to_ctx(ctx);
+	if (ret) {
+		WARN("Cannot add context lttng_add_vsuid_to_ctx");
+		goto error;
+	}
+	ret = lttng_add_vgid_to_ctx(ctx);
+	if (ret) {
+		WARN("Cannot add context lttng_add_vgid_to_ctx");
+		goto error;
+	}
+	ret = lttng_add_vegid_to_ctx(ctx);
+	if (ret) {
+		WARN("Cannot add context lttng_add_vegid_to_ctx");
+		goto error;
+	}
+	ret = lttng_add_vsgid_to_ctx(ctx);
+	if (ret) {
+		WARN("Cannot add context lttng_add_vsgid_to_ctx");
+		goto error;
+	}
 	lttng_context_update(*ctx);
 	return 0;
 
