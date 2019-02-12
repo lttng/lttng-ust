@@ -160,6 +160,56 @@ int clone(int (*fn)(void *), void *child_stack, int flags, void *arg, ...)
 	return retval;
 }
 
+int setns(int fd, int nstype)
+{
+	static int (*plibc_func)(int fd, int nstype) = NULL;
+	int retval;
+	int saved_errno;
+
+	if (plibc_func == NULL) {
+		plibc_func = dlsym(RTLD_NEXT, "setns");
+		if (plibc_func == NULL) {
+			fprintf(stderr, "libustfork: unable to find \"setns\" symbol\n");
+			errno = ENOSYS;
+			return -1;
+		}
+	}
+
+	/* Do the real setns */
+	retval = plibc_func(fd, nstype);
+	saved_errno = errno;
+
+	ust_after_setns();
+
+	errno = saved_errno;
+	return retval;
+}
+
+int unshare(int flags)
+{
+	static int (*plibc_func)(int flags) = NULL;
+	int retval;
+	int saved_errno;
+
+	if (plibc_func == NULL) {
+		plibc_func = dlsym(RTLD_NEXT, "unshare");
+		if (plibc_func == NULL) {
+			fprintf(stderr, "libustfork: unable to find \"unshare\" symbol\n");
+			errno = ENOSYS;
+			return -1;
+		}
+	}
+
+	/* Do the real setns */
+	retval = plibc_func(flags);
+	saved_errno = errno;
+
+	ust_after_unshare();
+
+	errno = saved_errno;
+	return retval;
+}
+
 #elif defined (__FreeBSD__)
 
 pid_t rfork(int flags)

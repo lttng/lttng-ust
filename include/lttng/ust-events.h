@@ -679,9 +679,23 @@ int lttng_add_procname_to_ctx(struct lttng_ctx **ctx);
 int lttng_add_ip_to_ctx(struct lttng_ctx **ctx);
 int lttng_add_cpu_id_to_ctx(struct lttng_ctx **ctx);
 int lttng_add_dyntest_to_ctx(struct lttng_ctx **ctx);
+int lttng_add_cgroup_ns_to_ctx(struct lttng_ctx **ctx);
+int lttng_add_ipc_ns_to_ctx(struct lttng_ctx **ctx);
+int lttng_add_mnt_ns_to_ctx(struct lttng_ctx **ctx);
+int lttng_add_net_ns_to_ctx(struct lttng_ctx **ctx);
+int lttng_add_pid_ns_to_ctx(struct lttng_ctx **ctx);
+int lttng_add_user_ns_to_ctx(struct lttng_ctx **ctx);
+int lttng_add_uts_ns_to_ctx(struct lttng_ctx **ctx);
 void lttng_context_vtid_reset(void);
 void lttng_context_vpid_reset(void);
 void lttng_context_procname_reset(void);
+void lttng_context_cgroup_ns_reset(void);
+void lttng_context_ipc_ns_reset(void);
+void lttng_context_mnt_ns_reset(void);
+void lttng_context_net_ns_reset(void);
+void lttng_context_pid_ns_reset(void);
+void lttng_context_user_ns_reset(void);
+void lttng_context_uts_ns_reset(void);
 
 #ifdef LTTNG_UST_HAVE_PERF_EVENT
 int lttng_add_perf_counter_to_ctx(uint32_t type,
