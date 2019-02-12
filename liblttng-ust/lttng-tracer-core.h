@@ -30,6 +30,14 @@
 #include <lttng/ringbuffer-config.h>
 #include <usterr-signal-safe.h>
 
+/*
+ * The longuest possible namespace proc path is with the cgroup ns
+ * and the maximum theoretical linux pid of 536870912 :
+ *
+ *  /proc/self/task/536870912/ns/cgroup
+ */
+#define LTTNG_PROC_NS_PATH_MAX 40
+
 struct lttng_session;
 struct lttng_channel;
 struct lttng_event;
@@ -44,6 +52,10 @@ void ust_unlock(void);
 void lttng_fixup_event_tls(void);
 void lttng_fixup_vtid_tls(void);
 void lttng_fixup_procname_tls(void);
+void lttng_fixup_cgroup_ns_tls(void);
+void lttng_fixup_ipc_ns_tls(void);
+void lttng_fixup_net_ns_tls(void);
+void lttng_fixup_uts_ns_tls(void);
 
 const char *lttng_ust_obj_get_name(int id);
 
