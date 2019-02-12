@@ -40,6 +40,12 @@ liblttng_ust_runtime_la_SOURCES = \
 	lttng-context-pid-ns.c \
 	lttng-context-user-ns.c \
 	lttng-context-uts-ns.c \
+	lttng-context-vuid.c \
+	lttng-context-veuid.c \
+	lttng-context-vsuid.c \
+	lttng-context-vgid.c \
+	lttng-context-vegid.c \
+	lttng-context-vsgid.c \
 	lttng-context.c \
 	lttng-events.c \
 	lttng-filter.c \
@@ -69,7 +75,8 @@ liblttng_ust_runtime_la_SOURCES = \
 	getenv.h \
 	string-utils.c \
 	string-utils.h \
-	ns.h
+	ns.h \
+	creds.h
 
 if HAVE_PERF_EVENT
 liblttng_ust_runtime_la_SOURCES += \

@@ -2050,6 +2050,22 @@ void ust_context_ns_reset(void)
 	lttng_context_uts_ns_reset();
 }
 
+static
+void ust_context_vuids_reset(void)
+{
+	lttng_context_vuid_reset();
+	lttng_context_veuid_reset();
+	lttng_context_vsuid_reset();
+}
+
+static
+void ust_context_vgids_reset(void)
+{
+	lttng_context_vgid_reset();
+	lttng_context_vegid_reset();
+	lttng_context_vsgid_reset();
+}
+
 /*
  * We exclude the worker threads across fork and clone (except
  * CLONE_VM), because these system calls only keep the forking thread
@@ -2133,6 +2149,8 @@ void ust_after_fork_child(sigset_t *restore_sigset)
 	lttng_context_vtid_reset();
 	lttng_context_procname_reset();
 	ust_context_ns_reset();
+	ust_context_vuids_reset();
+	ust_context_vgids_reset();
 	DBG("process %d", getpid());
 	/* Release urcu mutexes */
 	urcu_bp_after_fork_child();
@@ -2145,11 +2163,55 @@ void ust_after_fork_child(sigset_t *restore_sigset)
 void ust_after_setns(void)
 {
 	ust_context_ns_reset();
+	ust_context_vuids_reset();
+	ust_context_vgids_reset();
 }
 
 void ust_after_unshare(void)
 {
 	ust_context_ns_reset();
+	ust_context_vuids_reset();
+	ust_context_vgids_reset();
+}
+
+void ust_after_setuid(void)
+{
+	ust_context_vuids_reset();
+}
+
+void ust_after_seteuid(void)
+{
+	ust_context_vuids_reset();
+}
+
+void ust_after_setreuid(void)
+{
+	ust_context_vuids_reset();
+}
+
+void ust_after_setresuid(void)
+{
+	ust_context_vuids_reset();
+}
+
+void ust_after_setgid(void)
+{
+	ust_context_vgids_reset();
+}
+
+void ust_after_setegid(void)
+{
+	ust_context_vgids_reset();
+}
+
+void ust_after_setregid(void)
+{
+	ust_context_vgids_reset();
+}
+
+void ust_after_setresgid(void)
+{
+	ust_context_vgids_reset();
 }
 
 void lttng_ust_sockinfo_session_enabled(void *owner)
