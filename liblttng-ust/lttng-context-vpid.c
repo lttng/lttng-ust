@@ -34,11 +34,16 @@
 static pid_t cached_vpid;
 
 static inline
-pid_t wrapper_getpid(void)
+pid_t wrapper_getvpid(void)
 {
-	if (caa_unlikely(!cached_vpid))
-		cached_vpid = getpid();
-	return cached_vpid;
+	pid_t vpid;
+
+	vpid = CMM_LOAD_SHARED(cached_vpid);
+	if (caa_unlikely(!vpid)) {
+		vpid = getpid();
+		CMM_STORE_SHARED(cached_vpid, vpid);
+	}
+	return vpid;
 }
 
 /*
@@ -47,7 +52,7 @@ pid_t wrapper_getpid(void)
  */
 void lttng_context_vpid_reset(void)
 {
-	cached_vpid = 0;
+	CMM_STORE_SHARED(cached_vpid, 0);
 }
 
 static
@@ -65,21 +70,17 @@ void vpid_record(struct lttng_ctx_field *field,
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		 struct lttng_channel *chan)
 {
-	pid_t pid;
+	pid_t vpid = wrapper_getvpid();
 
-	pid = wrapper_getpid();
-	lib_ring_buffer_align_ctx(ctx, lttng_alignof(pid));
-	chan->ops->event_write(ctx, &pid, sizeof(pid));
+	lib_ring_buffer_align_ctx(ctx, lttng_alignof(vpid));
+	chan->ops->event_write(ctx, &vpid, sizeof(vpid));
 }
 
 static
 void vpid_get_value(struct lttng_ctx_field *field,
 		struct lttng_ctx_value *value)
 {
-	pid_t pid;
-
-	pid = wrapper_getpid();
-	value->u.s64 = pid;
+	value->u.s64 = wrapper_getvpid();
 }
 
 int lttng_add_vpid_to_ctx(struct lttng_ctx **ctx)

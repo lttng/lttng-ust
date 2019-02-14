@@ -43,7 +43,7 @@ static DEFINE_URCU_TLS(pid_t, cached_vtid);
  */
 void lttng_context_vtid_reset(void)
 {
-	URCU_TLS(cached_vtid) = 0;
+	CMM_STORE_SHARED(URCU_TLS(cached_vtid), 0);
 }
 
 static
@@ -56,25 +56,35 @@ size_t vtid_get_size(struct lttng_ctx_field *field, size_t offset)
 	return size;
 }
 
+static inline
+pid_t wrapper_getvtid(void)
+{
+	pid_t vtid;
+
+	vtid = CMM_LOAD_SHARED(URCU_TLS(cached_vtid));
+	if (caa_unlikely(!vtid)) {
+		vtid = getpid();
+		CMM_STORE_SHARED(URCU_TLS(cached_vtid), vtid);
+	}
+	return vtid;
+}
+
 static
 void vtid_record(struct lttng_ctx_field *field,
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		 struct lttng_channel *chan)
 {
-	if (caa_unlikely(!URCU_TLS(cached_vtid)))
-		URCU_TLS(cached_vtid) = gettid();
-	lib_ring_buffer_align_ctx(ctx, lttng_alignof(URCU_TLS(cached_vtid)));
-	chan->ops->event_write(ctx, &URCU_TLS(cached_vtid),
-		sizeof(URCU_TLS(cached_vtid)));
+	pid_t vtid = wrapper_getvtid();
+
+	lib_ring_buffer_align_ctx(ctx, lttng_alignof(vtid));
+	chan->ops->event_write(ctx, &vtid, sizeof(vtid));
 }
 
 static
 void vtid_get_value(struct lttng_ctx_field *field,
 		struct lttng_ctx_value *value)
 {
-	if (caa_unlikely(!URCU_TLS(cached_vtid)))
-		URCU_TLS(cached_vtid) = gettid();
-	value->u.s64 = URCU_TLS(cached_vtid);
+	value->u.s64 = wrapper_getvtid();
 }
 
 int lttng_add_vtid_to_ctx(struct lttng_ctx **ctx)
