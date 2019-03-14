@@ -78,10 +78,7 @@ void lttng_context_procname_reset(void)
 static
 size_t procname_get_size(struct lttng_ctx_field *field, size_t offset)
 {
-	size_t size = 0;
-
-	size += LTTNG_UST_PROCNAME_LEN;
-	return size;
+	return LTTNG_UST_PROCNAME_LEN;
 }
 
 static
@@ -99,10 +96,7 @@ static
 void procname_get_value(struct lttng_ctx_field *field,
 		struct lttng_ctx_value *value)
 {
-	char *procname;
-
-	procname = wrapper_getprocname();
-	value->u.str = procname;
+	value->u.str = wrapper_getprocname();
 }
 
 int lttng_add_procname_to_ctx(struct lttng_ctx **ctx)

@@ -52,10 +52,7 @@ static
 void pthread_id_get_value(struct lttng_ctx_field *field,
 		struct lttng_ctx_value *value)
 {
-	unsigned long pthread_id;
-
-	pthread_id = (unsigned long) pthread_self();
-	value->u.s64 = pthread_id;
+	value->u.s64 = (unsigned long) pthread_self();
 }
 
 int lttng_add_pthread_id_to_ctx(struct lttng_ctx **ctx)

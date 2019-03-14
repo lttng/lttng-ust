@@ -61,10 +61,7 @@ static
 void cpu_id_get_value(struct lttng_ctx_field *field,
 		struct lttng_ctx_value *value)
 {
-	int cpu;
-
-	cpu = lttng_ust_get_cpu();
-	value->u.s64 = cpu;
+	value->u.s64 = lttng_ust_get_cpu();
 }
 
 int lttng_add_cpu_id_to_ctx(struct lttng_ctx **ctx)
