@@ -615,6 +615,9 @@ PPRINT_PROP_BOOL_CUSTOM([JNI interface (JNI)], $value, [use --enable-jni-interfa
 test "x$python_agent" = xyes && value=1 || value=0
 PPRINT_PROP_BOOL_CUSTOM([Python agent], $value, [use --enable-python-agent])
 
+test "x$have_perf_event" = "xyes" && value=1 || value=0
+PPRINT_PROP_BOOL_CUSTOM([Perf event integration], $value)
+
 test "x$enable_numa" = xyes && value=1 || value=0
 PPRINT_PROP_BOOL([NUMA], $value)
 
