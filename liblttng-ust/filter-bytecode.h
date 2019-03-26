@@ -29,6 +29,10 @@
 
 #include <lttng/ust-abi.h>
 
+#ifndef LTTNG_PACKED
+#error "LTTNG_PACKED should be defined"
+#endif
+
 /*
  * offsets are absolute from start of bytecode.
  */

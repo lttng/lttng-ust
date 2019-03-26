@@ -30,6 +30,10 @@
 #include <stdint.h>
 #include <lttng/ust-compiler.h>
 
+#ifndef LTTNG_PACKED
+#error "LTTNG_PACKED should be defined"
+#endif
+
 #ifndef __ust_stringify
 #define __ust_stringify1(x)	#x
 #define __ust_stringify(x)	__ust_stringify1(x)

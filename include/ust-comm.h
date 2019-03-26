@@ -34,6 +34,10 @@
 #include <lttng/ust-ctl.h>
 #include <config.h>
 
+#ifndef LTTNG_PACKED
+#error "LTTNG_PACKED should be defined"
+#endif
+
 /*
  * Default timeout the application waits for the sessiond to send its
  * "register done" command. Can be overridden with the environment
