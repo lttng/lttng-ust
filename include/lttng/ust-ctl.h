@@ -240,6 +240,12 @@ void ustctl_flush_buffer(struct ustctl_consumer_stream *stream,
 		int producer_active);
 
 /* index */
+
+/*
+ * Getters which need to be used on the current packet (between get/put
+ * or get_next/put_next.
+ */
+
 int ustctl_get_timestamp_begin(struct ustctl_consumer_stream *stream,
 		uint64_t *timestamp_begin);
 int ustctl_get_timestamp_end(struct ustctl_consumer_stream *stream,
@@ -250,14 +256,25 @@ int ustctl_get_content_size(struct ustctl_consumer_stream *stream,
 	uint64_t *content_size);
 int ustctl_get_packet_size(struct ustctl_consumer_stream *stream,
 	uint64_t *packet_size);
-int ustctl_get_stream_id(struct ustctl_consumer_stream *stream,
-		uint64_t *stream_id);
-int ustctl_get_current_timestamp(struct ustctl_consumer_stream *stream,
-		uint64_t *ts);
 int ustctl_get_sequence_number(struct ustctl_consumer_stream *stream,
 		uint64_t *seq);
+
+/*
+ * Getter returning state invariant for the stream, which can be used
+ * without "get" operation.
+ */
+
+int ustctl_get_stream_id(struct ustctl_consumer_stream *stream,
+		uint64_t *stream_id);
 int ustctl_get_instance_id(struct ustctl_consumer_stream *stream,
 		uint64_t *id);
+
+/*
+ * Getter returning the current timestamp as perceived from the
+ * tracer.
+ */
+int ustctl_get_current_timestamp(struct ustctl_consumer_stream *stream,
+		uint64_t *ts);
 
 /* returns whether UST has perf counters support. */
 int ustctl_has_perf_counters(void);
