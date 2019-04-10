@@ -556,12 +556,11 @@ static int client_stream_id(struct lttng_ust_lib_ring_buffer *buf,
 		struct lttng_ust_shm_handle *handle,
 		uint64_t *stream_id)
 {
-	struct packet_header *header;
+	struct channel *chan = shmp(handle, buf->backend.chan);
+	struct lttng_channel *lttng_chan = channel_get_private(chan);
 
-	header = client_packet_header(buf, handle);
-	if (!header)
-		return -1;
-	*stream_id = header->stream_id;
+	*stream_id = lttng_chan->id;
+
 	return 0;
 }
 
@@ -592,10 +591,8 @@ static int client_instance_id(struct lttng_ust_lib_ring_buffer *buf,
 		struct lttng_ust_shm_handle *handle,
 		uint64_t *id)
 {
-	struct packet_header *header;
+	*id = buf->backend.cpu;
 
-	header = client_packet_header(buf, handle);
-	*id = header->stream_instance_id;
 	return 0;
 }
 
