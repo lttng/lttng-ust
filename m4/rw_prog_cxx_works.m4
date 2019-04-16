@@ -1,11 +1,25 @@
-# rw_PROG_CXX_WORKS
+# SYNOPSIS
 #
-# Check whether the C++ compiler works. There's a bit of oversight in
-# autoconf that will set the C++ compiler to g++ if no compiler is found,
-# even if g++ is not present! So we need an extra test to make sure that
-# the compiler works.
+#   RW_PROG_CXX_WORKS
 #
-AC_DEFUN([rw_PROG_CXX_WORKS], [
+# DESCRIPTION
+#
+#   RW_PROG_CXX_WORKS checks whether the C++ compiler works.
+#
+#   There's a bit of oversight in autoconf that will set the C++ compiler to
+#   g++ if no compiler is found, even if g++ is not present! So we need an
+#   extra test to make sure that the compiler works.
+#
+# LICENSE
+#
+#   Copying and distribution of this file, with or without modification, are
+#   permitted in any medium without royalty provided the copyright notice
+#   and this notice are preserved. This file is offered as-is, without any
+#   warranty.
+
+#serial 1
+
+AC_DEFUN([RW_PROG_CXX_WORKS], [
 AC_REQUIRE([AC_PROG_CXX])
 AC_CACHE_CHECK([whether the C++ compiler works],
 	[rw_cv_prog_cxx_works],

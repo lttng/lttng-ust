@@ -55,7 +55,7 @@ AC_SYS_LARGEFILE
 AC_PROG_CC
 AC_PROG_CC_STDC
 AC_PROG_CXX
-rw_PROG_CXX_WORKS
+RW_PROG_CXX_WORKS
 AM_CONDITIONAL([CXX_WORKS], [test "x$rw_cv_prog_cxx_works" = "xyes"])
 
 # Check if the compiler support weak symbols
