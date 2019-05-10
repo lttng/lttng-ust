@@ -341,6 +341,9 @@ int channel_backend_init(struct channel_backend *chanb,
 	shmsize += sizeof(struct commit_counters_hot) * num_subbuf;
 	shmsize += offset_align(shmsize, __alignof__(struct commit_counters_cold));
 	shmsize += sizeof(struct commit_counters_cold) * num_subbuf;
+	/* Sampled timestamp end */
+	shmsize += offset_align(shmsize, __alignof__(uint64_t));
+	shmsize += sizeof(uint64_t) * num_subbuf;
 
 	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU) {
 		struct lttng_ust_lib_ring_buffer *buf;
