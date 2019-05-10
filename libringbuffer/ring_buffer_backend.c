@@ -322,6 +322,13 @@ int channel_backend_init(struct channel_backend *chanb,
 	/* Per-cpu buffer size: control (prior to backend) */
 	shmsize = offset_align(shmsize, __alignof__(struct lttng_ust_lib_ring_buffer));
 	shmsize += sizeof(struct lttng_ust_lib_ring_buffer);
+	shmsize += offset_align(shmsize, __alignof__(struct commit_counters_hot));
+	shmsize += sizeof(struct commit_counters_hot) * num_subbuf;
+	shmsize += offset_align(shmsize, __alignof__(struct commit_counters_cold));
+	shmsize += sizeof(struct commit_counters_cold) * num_subbuf;
+	/* Sampled timestamp end */
+	shmsize += offset_align(shmsize, __alignof__(uint64_t));
+	shmsize += sizeof(uint64_t) * num_subbuf;
 
 	/* Per-cpu buffer size: backend */
 	/* num_subbuf + 1 is the worse case */
@@ -336,14 +343,6 @@ int channel_backend_init(struct channel_backend *chanb,
 	shmsize += sizeof(struct lttng_ust_lib_ring_buffer_backend_subbuffer) * num_subbuf;
 	shmsize += offset_align(shmsize, __alignof__(struct lttng_ust_lib_ring_buffer_backend_counts));
 	shmsize += sizeof(struct lttng_ust_lib_ring_buffer_backend_counts) * num_subbuf;
-	/* Per-cpu buffer size: control (after backend) */
-	shmsize += offset_align(shmsize, __alignof__(struct commit_counters_hot));
-	shmsize += sizeof(struct commit_counters_hot) * num_subbuf;
-	shmsize += offset_align(shmsize, __alignof__(struct commit_counters_cold));
-	shmsize += sizeof(struct commit_counters_cold) * num_subbuf;
-	/* Sampled timestamp end */
-	shmsize += offset_align(shmsize, __alignof__(uint64_t));
-	shmsize += sizeof(uint64_t) * num_subbuf;
 
 	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU) {
 		struct lttng_ust_lib_ring_buffer *buf;
