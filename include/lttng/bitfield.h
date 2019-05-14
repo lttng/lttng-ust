@@ -25,6 +25,7 @@
 
 #include <stdint.h>	/* C99 5.2.4.2 Numerical limits */
 #include <limits.h>	/* C99 5.2.4.2 Numerical limits */
+#include <stdbool.h>	/* C99 7.16 bool type */
 #include <lttng/ust-endian.h>	/* Non-standard BIG_ENDIAN, LITTLE_ENDIAN, BYTE_ORDER */
 
 /*
@@ -38,6 +39,26 @@
  */
 #if (-1 != ~0)
 #error "bitfield.h requires the compiler representation of signed integers to be two's complement."
+#endif
+
+/*
+ * _bt_is_signed_type() willingly generates comparison of unsigned
+ * expression < 0, which is always false. Silence compiler warnings.
+ */
+#ifdef __GNUC__
+# define _BT_DIAG_PUSH			_Pragma("GCC diagnostic push")
+# define _BT_DIAG_POP			_Pragma("GCC diagnostic pop")
+
+# define _BT_DIAG_STRINGIFY_1(x)	#x
+# define _BT_DIAG_STRINGIFY(x)		_BT_DIAG_STRINGIFY_1(x)
+
+# define _BT_DIAG_IGNORE(option)	\
+	_Pragma(_BT_DIAG_STRINGIFY(GCC diagnostic ignored option))
+# define _BT_DIAG_IGNORE_TYPE_LIMITS	_BT_DIAG_IGNORE("-Wtype-limits")
+#else
+# define _BT_DIAG_PUSH
+# define _BT_DIAG_POP
+# define _BT_DIAG_IGNORE
 #endif
 
 #define _bt_is_signed_type(type)	((type) -1 < (type) 0)
@@ -359,6 +380,7 @@ do {									\
 	unsigned long ts = sizeof(type) * CHAR_BIT; /* type size */	\
 	unsigned long start_unit, end_unit, this_unit;			\
 	unsigned long end, cshift; /* cshift is "complement shift" */	\
+	bool is_signed_type;						\
 									\
 	if (!__length) {						\
 		*__vptr = 0;						\
@@ -370,7 +392,11 @@ do {									\
 	end_unit = (end + (ts - 1)) / ts;				\
 									\
 	this_unit = end_unit - 1;					\
-	if (_bt_is_signed_type(__typeof__(__v))				\
+	_BT_DIAG_PUSH							\
+	_BT_DIAG_IGNORE_TYPE_LIMITS					\
+	is_signed_type = _bt_is_signed_type(__typeof__(__v));		\
+	_BT_DIAG_POP							\
+	if (is_signed_type						\
 	    && (__ptr[this_unit] & _bt_lshift((type) 1, (end % ts ? end % ts : ts) - 1))) \
 		__v = ~(__typeof__(__v)) 0;				\
 	else								\
@@ -426,6 +452,7 @@ do {									\
 	unsigned long ts = sizeof(type) * CHAR_BIT; /* type size */	\
 	unsigned long start_unit, end_unit, this_unit;			\
 	unsigned long end, cshift; /* cshift is "complement shift" */	\
+	bool is_signed_type;						\
 									\
 	if (!__length) {						\
 		*__vptr = 0;						\
@@ -437,7 +464,11 @@ do {									\
 	end_unit = (end + (ts - 1)) / ts;				\
 									\
 	this_unit = start_unit;						\
-	if (_bt_is_signed_type(__typeof__(__v))				\
+	_BT_DIAG_PUSH							\
+	_BT_DIAG_IGNORE_TYPE_LIMITS					\
+	is_signed_type = _bt_is_signed_type(__typeof__(__v));		\
+	_BT_DIAG_POP							\
+	if (is_signed_type						\
 	    && (__ptr[this_unit] & _bt_lshift((type) 1, ts - (__start % ts) - 1))) \
 		__v = ~(__typeof__(__v)) 0;				\
 	else								\
