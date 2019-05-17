@@ -17,6 +17,7 @@
 LOCAL_CPPFLAGS += -I.
 LIBS = -ldl -llttng-ust	# On Linux
 #LIBS = -lc -llttng-ust	# On BSD
+AR ?= ar
 
 all: hello
 
@@ -25,7 +26,7 @@ lttng-ust-provider-hello.o: tp.c ust_tests_hello.h
 		$(CFLAGS) -c -o $@ $<
 
 lttng-ust-provider-hello.a: lttng-ust-provider-hello.o
-	ar -rc $@ lttng-ust-provider-hello.o
+	$(AR) -rc $@ lttng-ust-provider-hello.o
 
 hello.o: hello.c
 	$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) \
