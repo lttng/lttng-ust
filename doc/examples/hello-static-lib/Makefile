@@ -18,6 +18,7 @@ LOCAL_CPPFLAGS += -I.
 LIBS = -ldl -llttng-ust	# On Linux
 #LIBS = -lc -llttng-ust	# On BSD
 AM_V_P := :
+AR ?= ar
 
 all: hello
 
@@ -28,7 +29,7 @@ lttng-ust-provider-hello.o: tp.c ust_tests_hello.h
 
 lttng-ust-provider-hello.a: lttng-ust-provider-hello.o
 	@if $(AM_V_P); then set -x; else echo "  AR       $@"; fi; \
-		ar -rc $@ lttng-ust-provider-hello.o
+		$(AR) -rc $@ lttng-ust-provider-hello.o
 
 hello.o: hello.c
 	@if $(AM_V_P); then set -x; else echo "  CC       $@"; fi; \
