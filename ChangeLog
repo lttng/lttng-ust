@@ -1,3 +1,16 @@
+2019-05-24 (Scavenger Hunt Day) lttng-ust 2.10.4
+	* Cleanup: bitfields: streamline use of underscores
+	* Silence compiler "always false comparison" warning
+	* Fix: bitfield: shift undefined/implementation defined behaviors
+	* Fix: Update coding style link
+	* Fix: alignment of ring buffer shm space reservation
+	* ust-ctl API: clarify getter usage requirements
+	* Fix: don't access packet header for stream_id and stream_instance_id getters
+	* compat: work around broken _SC_NPROCESSORS_CONF on MUSL libc
+	* doc: remove repeated word in coding style
+	* tap-driver.sh: flush stdout after each test result
+	* Move wait_shm_mmap initialization to library constructor
+
 2019-01-25 (National Opposite Day) lttng-ust 2.10.3
 	* Fix: Initialize fd field of struct lttng_ust_elf to -1 at allocation
 	* Clarify lib_ring_buffer_switch_slow() requirements
