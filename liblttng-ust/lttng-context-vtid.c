@@ -62,7 +62,7 @@ void vtid_record(struct lttng_ctx_field *field,
 		 struct lttng_channel *chan)
 {
 	if (caa_unlikely(!URCU_TLS(cached_vtid)))
-		URCU_TLS(cached_vtid) = gettid();
+		URCU_TLS(cached_vtid) = lttng_gettid();
 	lib_ring_buffer_align_ctx(ctx, lttng_alignof(URCU_TLS(cached_vtid)));
 	chan->ops->event_write(ctx, &URCU_TLS(cached_vtid),
 		sizeof(URCU_TLS(cached_vtid)));
@@ -73,7 +73,7 @@ void vtid_get_value(struct lttng_ctx_field *field,
 		struct lttng_ctx_value *value)
 {
 	if (caa_unlikely(!URCU_TLS(cached_vtid)))
-		URCU_TLS(cached_vtid) = gettid();
+		URCU_TLS(cached_vtid) = lttng_gettid();
 	value->u.s64 = URCU_TLS(cached_vtid);
 }
 

@@ -95,7 +95,7 @@ do {									\
 	do {					\
 		sigsafe_print_err(UST_STR_COMPONENT "[%ld/%ld]: " fmt " (in %s() at " __FILE__ ":" UST_XSTR(__LINE__) ")\n", \
 		(long) getpid(),		\
-		(long) gettid(),		\
+		(long) lttng_gettid(),		\
 		## args, __func__);		\
 	} while(0)
 
