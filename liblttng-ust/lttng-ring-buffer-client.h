@@ -583,6 +583,8 @@ static int client_sequence_number(struct lttng_ust_lib_ring_buffer *buf,
 	struct packet_header *header;
 
 	header = client_packet_header(buf, handle);
+	if (!header)
+		return -1;
 	*seq = header->ctx.packet_seq_num;
 	return 0;
 }
