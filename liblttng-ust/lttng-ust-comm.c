@@ -263,6 +263,8 @@ struct sock_info {
 	/* Keep track of lazy state dump not performed yet. */
 	int statedump_pending;
 	int initial_statedump_done;
+	/* Keep procname for statedump */
+	char procname[LTTNG_UST_PROCNAME_LEN];
 };
 
 /* Socket from app (connect) to session daemon (listen) for communication */
@@ -283,6 +285,7 @@ struct sock_info global_apps = {
 
 	.statedump_pending = 0,
 	.initial_statedump_done = 0,
+	.procname[0] = '\0'
 };
 
 /* TODO: allow global_apps_sock_path override */
@@ -300,6 +303,7 @@ struct sock_info local_apps = {
 
 	.statedump_pending = 0,
 	.initial_statedump_done = 0,
+	.procname[0] = '\0'
 };
 
 static int wait_poll_fallback;
@@ -438,6 +442,15 @@ int lttng_get_notify_socket(void *owner)
 	return info->notify_socket;
 }
 
+
+LTTNG_HIDDEN
+char* lttng_ust_sockinfo_get_procname(void *owner)
+{
+	struct sock_info *info = owner;
+
+	return info->procname;
+}
+
 static
 void print_cmd(int cmd, int handle)
 {
@@ -467,6 +480,7 @@ int setup_global_apps(void)
 	}
 
 	global_apps.allowed = 1;
+	lttng_ust_getprocname(global_apps.procname);
 error:
 	return ret;
 }
@@ -511,6 +525,8 @@ int setup_local_apps(void)
 		ret = -EIO;
 		goto end;
 	}
+
+	lttng_ust_getprocname(local_apps.procname);
 end:
 	return ret;
 }

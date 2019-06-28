@@ -29,6 +29,7 @@
 #include <lttng/bug.h>
 #include <lttng/ringbuffer-config.h>
 #include <usterr-signal-safe.h>
+#include <helper.h>
 
 /*
  * The longuest possible namespace proc path is with the cgroup ns
@@ -60,6 +61,9 @@ void lttng_fixup_uts_ns_tls(void);
 const char *lttng_ust_obj_get_name(int id);
 
 int lttng_get_notify_socket(void *owner);
+
+LTTNG_HIDDEN
+char* lttng_ust_sockinfo_get_procname(void *owner);
 
 void lttng_ust_sockinfo_session_enabled(void *owner);
 

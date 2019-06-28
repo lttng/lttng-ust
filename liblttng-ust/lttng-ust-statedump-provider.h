@@ -34,6 +34,7 @@ extern "C" {
 #include <stdint.h>
 #include <unistd.h>
 #include <lttng/ust-events.h>
+#include "compat.h"
 
 #define LTTNG_UST_STATEDUMP_PROVIDER
 #include <lttng/tracepoint.h>
@@ -88,6 +89,16 @@ TRACEPOINT_EVENT(lttng_ust_statedump, debug_link,
 		ctf_integer_hex(void *, baddr, baddr)
 		ctf_integer(uint32_t, crc, crc)
 		ctf_string(filename, filename)
+	)
+)
+
+TRACEPOINT_EVENT(lttng_ust_statedump, procname,
+	TP_ARGS(
+		struct lttng_session *, session,
+		char *, name
+	),
+	TP_FIELDS(
+		ctf_array_text(char, procname, name, LTTNG_UST_PROCNAME_LEN)
 	)
 )
 

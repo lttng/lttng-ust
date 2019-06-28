@@ -35,6 +35,7 @@
 #include "lttng-ust-statedump.h"
 #include "jhash.h"
 #include "getenv.h"
+#include "compat.h"
 
 #define TRACEPOINT_DEFINE
 #include "ust_lib.h"				/* Only define. */
@@ -244,6 +245,13 @@ void trace_debug_link_cb(struct lttng_session *session, void *priv)
 	tracepoint(lttng_ust_statedump, debug_link,
 		session, bin_data->base_addr_ptr,
 		bin_data->dbg_file, bin_data->crc);
+}
+
+static
+void procname_cb(struct lttng_session *session, void *priv)
+{
+	char *procname = (char *) priv;
+	tracepoint(lttng_ust_statedump, procname, session, procname);
 }
 
 static
@@ -593,6 +601,16 @@ int do_baddr_statedump(void *owner)
 	return 0;
 }
 
+static
+int do_procname_statedump(void *owner)
+{
+	if (lttng_getenv("LTTNG_UST_WITHOUT_PROCNAME_STATEDUMP"))
+		return 0;
+
+	trace_statedump_event(procname_cb, owner, lttng_ust_sockinfo_get_procname(owner));
+	return 0;
+}
+
 /*
  * Generate a statedump of a given traced application. A statedump is
  * delimited by start and end events. For a given (process, session)
@@ -611,6 +629,7 @@ int do_lttng_ust_statedump(void *owner)
 	trace_statedump_start(owner);
 	ust_unlock();
 
+	do_procname_statedump(owner);
 	do_baddr_statedump(owner);
 
 	ust_lock_nocheck();
