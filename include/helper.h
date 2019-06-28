@@ -55,4 +55,15 @@ void *zmalloc(size_t len)
 #define LTTNG_UST_CALLER_IP()		__builtin_return_address(0)
 #endif /* #else #if defined(__PPC__) && !defined(__PPC64__) */
 
+/*
+ * LTTNG_HIDDEN: set the hidden attribute for internal functions
+ * On Windows, symbols are local unless explicitly exported,
+ * see https://gcc.gnu.org/wiki/Visibility
+ */
+#if defined(_WIN32) || defined(__CYGWIN__)
+#define LTTNG_HIDDEN
+#else
+#define LTTNG_HIDDEN __attribute__((visibility("hidden")))
+#endif
+
 #endif /* _LTTNG_UST_HELPER_H */
