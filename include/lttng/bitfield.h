@@ -44,8 +44,10 @@
 /*
  * _bt_is_signed_type() willingly generates comparison of unsigned
  * expression < 0, which is always false. Silence compiler warnings.
+ * GCC versions lower than 4.6.0 do not accept diagnostic pragma inside
+ * functions.
  */
-#ifdef __GNUC__
+#if defined (__GNUC__) && (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__) >= 40600
 # define _BT_DIAG_PUSH			_Pragma("GCC diagnostic push")
 # define _BT_DIAG_POP			_Pragma("GCC diagnostic pop")
 
