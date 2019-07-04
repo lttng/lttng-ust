@@ -59,6 +59,7 @@
 # define _BT_DIAG_PUSH
 # define _BT_DIAG_POP
 # define _BT_DIAG_IGNORE
+# define _BT_DIAG_IGNORE_TYPE_LIMITS
 #endif
 
 #define _bt_is_signed_type(type)	((type) -1 < (type) 0)
