@@ -853,12 +853,15 @@ static
 int serialize_integer_type(struct ustctl_integer_type *uit,
 		const struct lttng_integer_type *lit)
 {
+	int32_t encoding;
+
 	uit->size = lit->size;
 	uit->signedness = lit->signedness;
 	uit->reverse_byte_order = lit->reverse_byte_order;
 	uit->base = lit->base;
-	if (serialize_string_encoding(&uit->encoding, lit->encoding))
+	if (serialize_string_encoding(&encoding, lit->encoding))
 		return -EINVAL;
+	uit->encoding = encoding;
 	uit->alignment = lit->alignment;
 	return 0;
 }
@@ -880,9 +883,11 @@ int serialize_basic_type(struct lttng_session *session,
 	}
 	case atype_string:
 	{
-		if (serialize_string_encoding(&ubt->string.encoding,
-				lbt->string.encoding))
+		int32_t encoding;
+
+		if (serialize_string_encoding(&encoding, lbt->string.encoding))
 			return -EINVAL;
+		ubt->string.encoding = encoding;
 		*uatype = ustctl_atype_string;
 		break;
 	}
@@ -1008,13 +1013,15 @@ int serialize_one_field(struct lttng_session *session,
 	{
 		struct ustctl_field *uf = &fields[*iter_output];
 		struct ustctl_type *ut = &uf->type;
+		enum ustctl_abstract_types atype;
 
 		strncpy(uf->name, lf->name, LTTNG_UST_SYM_NAME_LEN);
 		uf->name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
-		ret = serialize_basic_type(session, &ut->atype, lt->atype,
+		ret = serialize_basic_type(session, &atype, lt->atype,
 			&ut->u.basic, &lt->u.basic);
 		if (ret)
 			return ret;
+		ut->atype = atype;
 		(*iter_output)++;
 		break;
 	}
@@ -1024,6 +1031,7 @@ int serialize_one_field(struct lttng_session *session,
 		struct ustctl_type *ut = &uf->type;
 		struct ustctl_basic_type *ubt;
 		const struct lttng_basic_type *lbt;
+		enum ustctl_abstract_types atype;
 
 		strncpy(uf->name, lf->name, LTTNG_UST_SYM_NAME_LEN);
 		uf->name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
@@ -1031,10 +1039,11 @@ int serialize_one_field(struct lttng_session *session,
 		ubt = &ut->u.array.elem_type;
 		lbt = &lt->u.array.elem_type;
 		ut->u.array.length = lt->u.array.length;
-		ret = serialize_basic_type(session, &ubt->atype, lbt->atype,
+		ret = serialize_basic_type(session, &atype, lbt->atype,
 			&ubt->u.basic, &lbt->u.basic);
 		if (ret)
 			return -EINVAL;
+		ubt->atype = atype;
 		ut->atype = ustctl_atype_array;
 		(*iter_output)++;
 		break;
@@ -1045,6 +1054,7 @@ int serialize_one_field(struct lttng_session *session,
 		struct ustctl_type *ut = &uf->type;
 		struct ustctl_basic_type *ubt;
 		const struct lttng_basic_type *lbt;
+		enum ustctl_abstract_types atype;
 		int ret;
 
 		strncpy(uf->name, lf->name, LTTNG_UST_SYM_NAME_LEN);
@@ -1052,16 +1062,18 @@ int serialize_one_field(struct lttng_session *session,
 		uf->type.atype = ustctl_atype_sequence;
 		ubt = &ut->u.sequence.length_type;
 		lbt = &lt->u.sequence.length_type;
-		ret = serialize_basic_type(session, &ubt->atype, lbt->atype,
+		ret = serialize_basic_type(session, &atype, lbt->atype,
 			&ubt->u.basic, &lbt->u.basic);
 		if (ret)
 			return -EINVAL;
+		ubt->atype = atype;
 		ubt = &ut->u.sequence.elem_type;
 		lbt = &lt->u.sequence.elem_type;
-		ret = serialize_basic_type(session, &ubt->atype, lbt->atype,
+		ret = serialize_basic_type(session, &atype, lbt->atype,
 			&ubt->u.basic, &lbt->u.basic);
 		if (ret)
 			return -EINVAL;
+		ubt->atype = atype;
 		ut->atype = ustctl_atype_sequence;
 		(*iter_output)++;
 		break;
