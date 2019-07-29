@@ -857,17 +857,14 @@ int handle_message(struct sock_info *sock_info,
 	}
 	case LTTNG_UST_STREAM:
 	{
-		uint64_t memory_map_size;
-
 		/* Receive shm_fd, wakeup_fd */
 		ret = ustcomm_recv_stream_from_sessiond(sock,
-			&memory_map_size,
+			NULL,
 			&args.stream.shm_fd,
 			&args.stream.wakeup_fd);
 		if (ret) {
 			goto error;
 		}
-		lum->u.stream.len = memory_map_size;
 
 		if (ops->cmd)
 			ret = ops->cmd(lum->handle, lum->cmd,
