@@ -8,7 +8,7 @@ libringbuffer_la_SOURCES = \
 	shm.c shm.h shm_types.h shm_internal.h \
 	ring_buffer_backend.c \
 	ring_buffer_frontend.c \
-	api.h \
+	api.h mmap.h \
 	backend.h backend_internal.h backend_types.h \
 	frontend_api.h frontend.h frontend_internal.h frontend_types.h \
 	nohz.h vatomic.h rb-init.h

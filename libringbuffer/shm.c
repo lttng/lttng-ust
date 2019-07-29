@@ -40,6 +40,7 @@
 #endif
 #include <helper.h>
 #include <ust-fd.h>
+#include "mmap.h"
 
 /*
  * Ensure we have the required amount of space available by writing 0
@@ -154,7 +155,7 @@ struct shm_object *_shm_object_table_alloc_shm(struct shm_object_table *table,
 
 	/* memory_map: mmap */
 	memory_map = mmap(NULL, memory_map_size, PROT_READ | PROT_WRITE,
-			  MAP_SHARED, shmfd, 0);
+			  MAP_SHARED | LTTNG_MAP_POPULATE, shmfd, 0);
 	if (memory_map == MAP_FAILED) {
 		PERROR("mmap");
 		goto error_mmap;
@@ -341,7 +342,7 @@ struct shm_object *shm_object_table_append_shm(struct shm_object_table *table,
 
 	/* memory_map: mmap */
 	memory_map = mmap(NULL, memory_map_size, PROT_READ | PROT_WRITE,
-			  MAP_SHARED, shm_fd, 0);
+			  MAP_SHARED | LTTNG_MAP_POPULATE, shm_fd, 0);
 	if (memory_map == MAP_FAILED) {
 		PERROR("mmap");
 		goto error_mmap;
