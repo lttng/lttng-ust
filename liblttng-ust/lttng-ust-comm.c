@@ -637,6 +637,10 @@ int handle_register_done(struct sock_info *sock_info)
 	sock_info->registration_done = 1;
 
 	decrement_sem_count(1);
+	if (!sock_info->statedump_pending) {
+		sock_info->initial_statedump_done = 1;
+		decrement_sem_count(1);
+	}
 
 	return 0;
 }
