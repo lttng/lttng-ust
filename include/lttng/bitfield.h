@@ -70,8 +70,12 @@
  * Produce a build-time error if the condition `cond` is non-zero.
  * Evaluates as a size_t expression.
  */
+#ifdef __cplusplus
+#define _BT_BUILD_ASSERT(cond) ([]{static_assert((cond), "");}, 0)
+#else
 #define _BT_BUILD_ASSERT(cond)					\
 	sizeof(struct { int f:(2 * !!(cond) - 1); })
+#endif
 
 /*
  * Cast value `v` to an unsigned integer of the same size as `v`.
@@ -377,7 +381,7 @@ do {									\
 do {									\
 	__typeof__(*(vptr)) *_vptr = (vptr);				\
 	__typeof__(*_vptr) _v;						\
-	type *_ptr = (void *) (ptr);					\
+	type *_ptr = (type *) (ptr);					\
 	unsigned long _start = (start), _length = (length);		\
 	type _mask, _cmask;						\
 	unsigned long _ts = sizeof(type) * CHAR_BIT; /* type size */	\
