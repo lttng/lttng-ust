@@ -1,3 +1,13 @@
+2019-09-07 (Walter White's Anniversary) lttng-ust 2.9.6
+	* Fix: don't wait for initial statedump when 0 session active
+	* Fix: wait for initial statedump before proceeding to the main program
+	* Fix: remove uninitialised value
+	* Fix: GCC unaligned pointer warnings
+	* Fix: do not use diagnostic pragma when GCC version is lower than 4.6.0
+	* Fix: missing define when not building with gcc
+	* Fix: client_sequence_number may dereference NULL pointer
+	* Fix: namespace our gettid wrapper
+
 2019-05-24 (Scavenger Hunt Day) lttng-ust 2.9.5
 	* Cleanup: bitfields: streamline use of underscores
 	* Silence compiler "always false comparison" warning
