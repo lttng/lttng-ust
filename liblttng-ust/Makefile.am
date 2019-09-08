@@ -61,7 +61,8 @@ liblttng_ust_runtime_la_SOURCES = \
 	lttng-ust-tracelog-provider.h \
 	getenv.h \
 	string-utils.c \
-	string-utils.h
+	string-utils.h \
+	statedump-notifier.c
 
 if HAVE_PERF_EVENT
 liblttng_ust_runtime_la_SOURCES += \
