@@ -9,7 +9,7 @@ install-exec-local:
 	if [ "$(DESTDIR)" != "" ]; then \
 		opts="$$opts --root=$(DESTDIR)"; \
 	fi; \
-	$(PYTHON) setup.py install $$opts;
+	$(PYTHON) setup.py install $$opts --install-lib=$(pythondir);
 
 clean-local:
 	rm -rf $(builddir)/build
