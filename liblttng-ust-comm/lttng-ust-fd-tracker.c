@@ -66,6 +66,13 @@
  * is also held across fork.
  */
 static pthread_mutex_t ust_safe_guard_fd_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+/*
+ * Cancel state when grabbing the ust_safe_guard_fd_mutex. Saved when
+ * locking, restored on unlock. Protected by ust_safe_guard_fd_mutex.
+ */
+static int ust_safe_guard_saved_cancelstate;
+
 /*
  * Track whether we are within lttng-ust or application, for close
  * system call override by LD_PRELOAD library.
@@ -127,6 +134,12 @@ void lttng_ust_init_fd_tracker(void)
 
 void lttng_ust_lock_fd_tracker(void)
 {
+	int ret, oldstate;
+
+	ret = pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldstate);
+	if (ret) {
+		ERR("pthread_setcancelstate: %s", strerror(ret));
+	}
 	URCU_TLS(thread_fd_tracking) = 1;
 	/*
 	 * Ensure the compiler don't move the store after the close()
@@ -134,10 +147,14 @@ void lttng_ust_lock_fd_tracker(void)
 	 */
 	cmm_barrier();
 	pthread_mutex_lock(&ust_safe_guard_fd_mutex);
+	ust_safe_guard_saved_cancelstate = oldstate;
 }
 
 void lttng_ust_unlock_fd_tracker(void)
 {
+	int ret, newstate, oldstate;
+
+	newstate = ust_safe_guard_saved_cancelstate;
 	pthread_mutex_unlock(&ust_safe_guard_fd_mutex);
 	/*
 	 * Ensure the compiler don't move the store before the close()
@@ -145,6 +162,10 @@ void lttng_ust_unlock_fd_tracker(void)
 	 */
 	cmm_barrier();
 	URCU_TLS(thread_fd_tracking) = 0;
+	ret = pthread_setcancelstate(newstate, &oldstate);
+	if (ret) {
+		ERR("pthread_setcancelstate: %s", strerror(ret));
+	}
 }
 
 static int dup_std_fd(int fd)
