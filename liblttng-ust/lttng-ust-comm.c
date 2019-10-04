@@ -81,6 +81,8 @@ static int initialized;
  *
  * ust_lock nests within the dynamic loader lock (within glibc) because
  * it is taken within the library constructor.
+ *
+ * The ust fd tracker lock nests within the ust_mutex.
  */
 static pthread_mutex_t ust_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -2024,6 +2026,7 @@ void ust_before_fork(sigset_t *save_sigset)
 
 	ust_lock_nocheck();
 	rcu_bp_before_fork();
+	lttng_ust_lock_fd_tracker();
 }
 
 static void ust_after_fork_common(sigset_t *restore_sigset)
@@ -2031,6 +2034,7 @@ static void ust_after_fork_common(sigset_t *restore_sigset)
 	int ret;
 
 	DBG("process %d", getpid());
+	lttng_ust_unlock_fd_tracker();
 	ust_unlock();
 
 	pthread_mutex_unlock(&ust_fork_mutex);

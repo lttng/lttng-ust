@@ -61,6 +61,9 @@
  * Protect the lttng_fd_set. Nests within the ust_lock, and therefore
  * within the libc dl lock. Therefore, we need to fixup the TLS before
  * nesting into this lock.
+ *
+ * The ust_safe_guard_fd_mutex nests within the ust_mutex. This mutex
+ * is also held across fork.
  */
 static pthread_mutex_t ust_safe_guard_fd_mutex = PTHREAD_MUTEX_INITIALIZER;
 /*
