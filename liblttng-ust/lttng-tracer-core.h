@@ -64,4 +64,23 @@ void lttng_ust_dummy_get_value(struct lttng_ctx_field *field,
 int lttng_context_is_app(const char *name);
 void lttng_ust_fixup_tls(void);
 
+#ifdef LTTNG_UST_HAVE_PERF_EVENT
+void lttng_ust_fixup_perf_counter_tls(void);
+void lttng_perf_lock(void);
+void lttng_perf_unlock(void);
+#else /* #ifdef LTTNG_UST_HAVE_PERF_EVENT */
+static inline
+void lttng_ust_fixup_perf_counter_tls(void)
+{
+}
+static inline
+void lttng_perf_lock(void)
+{
+}
+static inline
+void lttng_perf_unlock(void)
+{
+}
+#endif /* #else #ifdef LTTNG_UST_HAVE_PERF_EVENT */
+
 #endif /* _LTTNG_TRACER_CORE_H */
