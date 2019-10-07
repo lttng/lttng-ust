@@ -39,6 +39,7 @@
 #include <urcu/ref.h>
 #include <usterr-signal-safe.h>
 #include <signal.h>
+#include <urcu/tls-compat.h>
 #include "perf_event.h"
 #include "lttng-tracer-core.h"
 
@@ -70,6 +71,98 @@ struct lttng_perf_counter_field {
 };
 
 static pthread_key_t perf_counter_key;
+
+/*
+ * lttng_perf_lock - Protect lttng-ust perf counter data structures
+ *
+ * Nests within the ust_lock, and therefore within the libc dl lock.
+ * Therefore, we need to fixup the TLS before nesting into this lock.
+ * Nests inside RCU bp read-side lock. Protects against concurrent
+ * fork.
+ */
+static pthread_mutex_t ust_perf_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+/*
+ * Cancel state when grabbing the ust_perf_mutex. Saved when locking,
+ * restored on unlock. Protected by ust_perf_mutex.
+ */
+static int ust_perf_saved_cancelstate;
+
+/*
+ * Track whether we are tracing from a signal handler nested on an
+ * application thread.
+ */
+static DEFINE_URCU_TLS(int, ust_perf_mutex_nest);
+
+/*
+ * Force a read (imply TLS fixup for dlopen) of TLS variables.
+ */
+void lttng_ust_fixup_perf_counter_tls(void)
+{
+	asm volatile ("" : : "m" (URCU_TLS(ust_perf_mutex_nest)));
+}
+
+void lttng_perf_lock(void)
+{
+	sigset_t sig_all_blocked, orig_mask;
+	int ret, oldstate;
+
+	ret = pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldstate);
+	if (ret) {
+		ERR("pthread_setcancelstate: %s", strerror(ret));
+	}
+	sigfillset(&sig_all_blocked);
+	ret = pthread_sigmask(SIG_SETMASK, &sig_all_blocked, &orig_mask);
+	if (ret) {
+		ERR("pthread_sigmask: %s", strerror(ret));
+	}
+	if (!URCU_TLS(ust_perf_mutex_nest)++) {
+		/*
+		 * Ensure the compiler don't move the store after the close()
+		 * call in case close() would be marked as leaf.
+		 */
+		cmm_barrier();
+		pthread_mutex_lock(&ust_perf_mutex);
+		ust_perf_saved_cancelstate = oldstate;
+	}
+	ret = pthread_sigmask(SIG_SETMASK, &orig_mask, NULL);
+	if (ret) {
+		ERR("pthread_sigmask: %s", strerror(ret));
+	}
+}
+
+void lttng_perf_unlock(void)
+{
+	sigset_t sig_all_blocked, orig_mask;
+	int ret, newstate, oldstate;
+	bool restore_cancel = false;
+
+	sigfillset(&sig_all_blocked);
+	ret = pthread_sigmask(SIG_SETMASK, &sig_all_blocked, &orig_mask);
+	if (ret) {
+		ERR("pthread_sigmask: %s", strerror(ret));
+	}
+	/*
+	 * Ensure the compiler don't move the store before the close()
+	 * call, in case close() would be marked as leaf.
+	 */
+	cmm_barrier();
+	if (!--URCU_TLS(ust_perf_mutex_nest)) {
+		newstate = ust_perf_saved_cancelstate;
+		restore_cancel = true;
+		pthread_mutex_unlock(&ust_perf_mutex);
+	}
+	ret = pthread_sigmask(SIG_SETMASK, &orig_mask, NULL);
+	if (ret) {
+		ERR("pthread_sigmask: %s", strerror(ret));
+	}
+	if (restore_cancel) {
+		ret = pthread_setcancelstate(newstate, &oldstate);
+		if (ret) {
+			ERR("pthread_setcancelstate: %s", strerror(ret));
+		}
+	}
+}
 
 static
 size_t perf_counter_get_size(struct lttng_ctx_field *field, size_t offset)
@@ -308,12 +401,12 @@ struct lttng_perf_counter_thread_field *
 	 * Note: thread_field->pc can be NULL if setup_perf() fails.
 	 * Also, thread_field->fd can be -1 if open_perf_fd() fails.
 	 */
-	ust_lock_nocheck();
+	lttng_perf_lock();
 	cds_list_add_rcu(&thread_field->rcu_field_node,
 			&perf_thread->rcu_field_list);
 	cds_list_add(&thread_field->thread_field_node,
 			&perf_field->thread_field_list);
-	ust_unlock();
+	lttng_perf_unlock();
 skip:
 	ret = pthread_sigmask(SIG_SETMASK, &oldmask, NULL);
 	if (ret)
@@ -373,7 +466,7 @@ void perf_counter_get_value(struct lttng_ctx_field *field,
 	value->u.s64 = v;
 }
 
-/* Called with UST lock held */
+/* Called with perf lock held */
 static
 void lttng_destroy_perf_thread_field(
 		struct lttng_perf_counter_thread_field *thread_field)
@@ -391,11 +484,11 @@ void lttng_destroy_perf_thread_key(void *_key)
 	struct lttng_perf_counter_thread *perf_thread = _key;
 	struct lttng_perf_counter_thread_field *pos, *p;
 
-	ust_lock_nocheck();
+	lttng_perf_lock();
 	cds_list_for_each_entry_safe(pos, p, &perf_thread->rcu_field_list,
 			rcu_field_node)
 		lttng_destroy_perf_thread_field(pos);
-	ust_unlock();
+	lttng_perf_unlock();
 	free(perf_thread);
 }
 
@@ -411,11 +504,15 @@ void lttng_destroy_perf_counter_field(struct lttng_ctx_field *field)
 	/*
 	 * This put is performed when no threads can concurrently
 	 * perform a "get" concurrently, thanks to urcu-bp grace
-	 * period.
+	 * period. Holding the lttng perf lock protects against
+	 * concurrent modification of the per-thread thread field
+	 * list.
 	 */
+	lttng_perf_lock();
 	cds_list_for_each_entry_safe(pos, p, &perf_field->thread_field_list,
 			thread_field_node)
 		lttng_destroy_perf_thread_field(pos);
+	lttng_perf_unlock();
 	free(perf_field);
 }
 
