@@ -1,3 +1,13 @@
+2019-10-11 (National Sausage Pizza Day) lttng-ust 2.11.0-rc5
+	* Fix: lttng perf counter deadlock
+	* Revert "Fix: fd tracker: do not allow signal handlers to close lttng-ust FDs"
+	* Fix: fd tracker: do not allow signal handlers to close lttng-ust FDs
+	* Fix: fd tracker: provide async-signal-safety for close wrapper
+	* Fix: Disable cancellation around fd tracker lock
+	* Fix: Lock FD tracker across fork
+	* doc/man: include build version in GitHub links
+	* Check if the AR environment variable exists for cross compilation
+
 2019-09-07 (Walter White's Anniversary) lttng-ust 2.11.0-rc4
 	* Fix: don't wait for initial statedump when 0 session active
 	* Fix: wait for initial statedump before proceeding to the main program
