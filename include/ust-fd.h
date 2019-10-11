@@ -31,7 +31,6 @@ int lttng_ust_add_fd_to_tracker(int fd);
 void lttng_ust_delete_fd_from_tracker(int fd);
 void lttng_ust_lock_fd_tracker(void);
 void lttng_ust_unlock_fd_tracker(void);
-void lttng_ust_fd_tracker_register_thread(void);
 
 int lttng_ust_safe_close_fd(int fd, int (*close_cb)(int));
 int lttng_ust_safe_fclose_stream(FILE *stream, int (*fclose_cb)(FILE *stream));
