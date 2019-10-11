@@ -77,19 +77,11 @@ static int ust_safe_guard_saved_cancelstate;
 
 /*
  * Track whether we are within lttng-ust or application, for close
- * system call override by LD_PRELOAD library. Threads registered
- * as being lttng-ust listener threads need to perform fd tracker
- * locking explicitly around their use of file descriptor manipulation
- * functions.
- */
-static DEFINE_URCU_TLS(int, thread_fd_tracking);
-
-/*
- * Track whether we are invoking close() from a signal handler nested on
- * an application thread.
+ * system call override by LD_PRELOAD library. This also tracks whether
+ * we are invoking close() from a signal handler nested on an
+ * application thread.
  */
 static DEFINE_URCU_TLS(int, ust_fd_mutex_nest);
-
 
 /* fd_set used to book keep fd being used by lttng-ust. */
 static fd_set *lttng_fd_set;
@@ -102,7 +94,6 @@ static int init_done;
  */
 void lttng_ust_fixup_fd_tracker_tls(void)
 {
-	asm volatile ("" : : "m" (URCU_TLS(thread_fd_tracking)));
 	asm volatile ("" : : "m" (URCU_TLS(ust_fd_mutex_nest)));
 }
 
@@ -357,7 +348,7 @@ int lttng_ust_safe_close_fd(int fd, int (*close_cb)(int fd))
 	 * If called from lttng-ust, we directly call close without
 	 * validating whether the FD is part of the tracked set.
 	 */
-	if (URCU_TLS(thread_fd_tracking))
+	if (URCU_TLS(ust_fd_mutex_nest))
 		return close_cb(fd);
 
 	lttng_ust_lock_fd_tracker();
@@ -393,7 +384,7 @@ int lttng_ust_safe_fclose_stream(FILE *stream, int (*fclose_cb)(FILE *stream))
 	 * If called from lttng-ust, we directly call fclose without
 	 * validating whether the FD is part of the tracked set.
 	 */
-	if (URCU_TLS(thread_fd_tracking))
+	if (URCU_TLS(ust_fd_mutex_nest))
 		return fclose_cb(stream);
 
 	fd = fileno(stream);
@@ -456,7 +447,7 @@ int lttng_ust_safe_closefrom_fd(int lowfd, int (*close_cb)(int fd))
 	 * If called from lttng-ust, we directly call close without
 	 * validating whether the FD is part of the tracked set.
 	 */
-	if (URCU_TLS(thread_fd_tracking)) {
+	if (URCU_TLS(ust_fd_mutex_nest)) {
 		for (i = lowfd; i < lttng_ust_max_fd; i++) {
 			if (close_cb(i) < 0) {
 				switch (errno) {
@@ -500,9 +491,4 @@ int lttng_ust_safe_closefrom_fd(int lowfd, int (*close_cb)(int fd))
 	}
 end:
 	return ret;
-}
-
-void lttng_ust_fd_tracker_register_thread(void)
-{
-	URCU_TLS(thread_fd_tracking) = 1;
 }
