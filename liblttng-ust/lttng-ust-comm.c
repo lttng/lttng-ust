@@ -1453,7 +1453,6 @@ void *ust_listener_thread(void *arg)
 	long timeout;
 
 	lttng_ust_fixup_tls();
-	lttng_ust_fd_tracker_register_thread();
 	/*
 	 * If available, add '-ust' to the end of this thread's
 	 * process name
