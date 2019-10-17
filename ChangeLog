@@ -1,3 +1,6 @@
+2019-10-17 (Wear Something Gaudy Day) lttng-ust 2.11.0
+	* (no change)
+
 2019-10-11 (National Sausage Pizza Day) lttng-ust 2.11.0-rc5
 	* Fix: lttng perf counter deadlock
 	* Revert "Fix: fd tracker: do not allow signal handlers to close lttng-ust FDs"
