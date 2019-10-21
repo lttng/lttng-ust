@@ -34,9 +34,18 @@ SUBDIRS += tests doc
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = lttng-ust.pc
 
-dist_doc_DATA = README.md ChangeLog
+dist_doc_DATA = \
+	ChangeLog \
+	COPYING \
+	LICENSE \
+	README.md
 
-dist_noinst_DATA = CodingStyle
+dist_noinst_DATA = \
+	CodingStyle \
+	CONTRIBUTING.md \
+	gpl-2.0.txt \
+	lgpl-2.1.txt \
+	mit-license.txt
 
 check-loop:
 	cd tests && $(MAKE) $(AM_MAKEFLAGS) check-loop
