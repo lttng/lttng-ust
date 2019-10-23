@@ -1,10 +1,10 @@
 dnl Version infos
 m4_define([V_MAJOR], [2])
-m4_define([V_MINOR], [11])
+m4_define([V_MINOR], [12])
 m4_define([V_PATCH], [0])
-m4_define([V_EXTRA], [rc1])
-m4_define([V_NAME], [[Lafontaine]])
-m4_define([V_DESC], [[A modern Saison beer from Montréal's Oshlag microbrewery, Lafontaine is a refreshing, zesty, rice beer with hints of fruit and spices.]])
+m4_define([V_EXTRA], [pre])
+m4_define([V_NAME], [[Codename TBD]])
+m4_define([V_DESC], [[Description TBD]])
 
 m4_define([V_STRING], [V_MAJOR.V_MINOR.V_PATCH])
 m4_ifdef([V_EXTRA], [m4_append([V_STRING], [-V_EXTRA])])
