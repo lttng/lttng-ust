@@ -555,6 +555,7 @@ AC_CONFIG_FILES([
 	tests/test-app-ctx/Makefile
 	tests/gcc-weak-hidden/Makefile
 	lttng-ust.pc
+	lttng-ust-ctl.pc
 ])
 
 # Create link for python agent for the VPATH guru.

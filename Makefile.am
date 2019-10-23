@@ -32,7 +32,7 @@ SUBDIRS += tests doc
 # liblttng-ust-malloc
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = lttng-ust.pc
+pkgconfig_DATA = lttng-ust.pc lttng-ust-ctl.pc
 
 dist_doc_DATA = \
 	ChangeLog \
