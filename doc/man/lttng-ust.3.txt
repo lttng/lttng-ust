@@ -804,15 +804,15 @@ The following man:namespaces(7) context fields are supported by LTTng-UST:
 
 `ipc_ns`::
     System V IPC, POSIX message queues namespace: inode number of the
-    current IPC namespace in the proc filesystem.
+    current man:ipc_namespaces(7) namespace in the proc filesystem.
 
 `mnt_ns`::
-    Mount points namespace: inode number of the current Mount namespace
-    in the proc filesystem.
+    Mount points namespace: inode number of the current
+    man:mount_namespaces(7) in the proc filesystem.
 
 `net_ns`::
     Network devices, stacks, ports namespace: inode number of the
-    current Network namespace in the proc filesystem.
+    current man:network_namespaces(7) in the proc filesystem.
 
 `pid_ns`::
     Process IDs namespace: inode number of the current
@@ -824,7 +824,7 @@ The following man:namespaces(7) context fields are supported by LTTng-UST:
 
 `uts_ns`::
     Hostname and NIS domain name namespace: inode number of the
-    current UTS namespace in the proc filesystem.
+    current man:uts_namespaces(7) in the proc filesystem.
 
 The following man:credentials(7) context fields are supported by LTTng-UST:
 
