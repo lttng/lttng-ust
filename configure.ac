@@ -41,7 +41,7 @@ AC_CONFIG_SRCDIR([include/lttng/tracepoint.h])
 AC_CANONICAL_TARGET
 AC_CANONICAL_HOST
 
-AM_INIT_AUTOMAKE([1.9 foreign dist-bzip2 no-dist-gzip tar-ustar])
+AM_INIT_AUTOMAKE([1.12 foreign dist-bzip2 no-dist-gzip tar-ustar])
 AM_MAINTAINER_MODE([enable])
 
 # Enable silent rules if available (Introduced in AM 1.11)
