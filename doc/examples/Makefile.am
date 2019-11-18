@@ -149,7 +149,7 @@ all-local:
 				$(MAKE) all \
 					JAVA_CLASSPATH_OVERRIDE_JUL="../../../liblttng-ust-java-agent/java/lttng-ust-agent-jul" \
 					JAVA_CLASSPATH_OVERRIDE_COMMON="../../../liblttng-ust-java-agent/java/lttng-ust-agent-common" \
-					$(AM_MAKEFLAGS) \
+					$(AM_MAKEFLAGS) \
 			) || exit 1; \
 		done; \
 	fi; \
