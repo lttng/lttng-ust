@@ -123,16 +123,45 @@ all-local:
 		rel_build_subdir="../"; \
 	fi; \
 	for subdir in $(SUBDIRS_PROXY); do \
-		(cd $$subdir && $(MAKE) AR="$(AR)" CC="$(CC)" CPPFLAGS="$(CPPFLAGS)" AM_CPPFLAGS="$(AM_CPPFLAGS) -I$$rel_src_subdir$(top_srcdir)/include/ -I$$rel_build_subdir$(top_builddir)/include/" CFLAGS='$(CFLAGS)' AM_CFLAGS='$(AM_CFLAGS)' LDFLAGS="$(LDFLAGS)" AM_LDFLAGS='$(AM_LDFLAGS) -L../../../liblttng-ust/.libs -Wl,-rpath="$(PWD)/../../liblttng-ust/.libs/" -Wl,-rpath-link="$(PWD)/../../liblttng-ust/.libs/"' LTTNG_GEN_TP_PATH="../../../tools/" AM_V_P="$(AM_V_P)" AM_V_at="$(AM_V_at)" $(AM_MAKEFLAGS) all && cd ..) || exit 1; \
+		( \
+			cd $$subdir && \
+			$(MAKE) all \
+				AR="$(AR)" \
+				CC="$(CC)" \
+				CPPFLAGS="$(CPPFLAGS)" \
+				AM_CPPFLAGS="$(AM_CPPFLAGS) \
+				-I$$rel_src_subdir$(top_srcdir)/include/ \
+				-I$$rel_build_subdir$(top_builddir)/include/" \
+				CFLAGS='$(CFLAGS)' \
+				AM_CFLAGS='$(AM_CFLAGS)' \
+				LDFLAGS="$(LDFLAGS)" \
+				AM_LDFLAGS='$(AM_LDFLAGS) -L../../../liblttng-ust/.libs -Wl,-rpath="$(PWD)/../../liblttng-ust/.libs/" -Wl,-rpath-link="$(PWD)/../../liblttng-ust/.libs/"' \
+				LTTNG_GEN_TP_PATH="../../../tools/" \
+				AM_V_P="$(AM_V_P)" \
+				AM_V_at="$(AM_V_at)" \
+				$(AM_MAKEFLAGS) \
+		) || exit 1; \
 	done; \
 	if [ x"$(SUBDIRS_JUL)" != x"" ]; then \
 		for subdir in $(SUBDIRS_JUL); do \
-			(cd $$subdir && $(MAKE) JAVA_CLASSPATH_OVERRIDE_JUL="../../../liblttng-ust-java-agent/java/lttng-ust-agent-jul" JAVA_CLASSPATH_OVERRIDE_COMMON="../../../liblttng-ust-java-agent/java/lttng-ust-agent-common" $(AM_MAKEFLAGS) all && cd ..) || exit 1; \
+			( \
+				cd $$subdir && \
+				$(MAKE) all \
+					JAVA_CLASSPATH_OVERRIDE_JUL="../../../liblttng-ust-java-agent/java/lttng-ust-agent-jul" \
+					JAVA_CLASSPATH_OVERRIDE_COMMON="../../../liblttng-ust-java-agent/java/lttng-ust-agent-common" \
+					$(AM_MAKEFLAGS) \
+			) || exit 1; \
 		done; \
 	fi; \
 	if [ x"$(SUBDIRS_LOG4J)" != x"" ]; then \
 		for subdir in $(SUBDIRS_LOG4J); do \
-			(cd $$subdir && $(MAKE) JAVA_CLASSPATH_OVERRIDE_LOG4J="../../../liblttng-ust-java-agent/java/lttng-ust-agent-log4j" JAVA_CLASSPATH_OVERRIDE_COMMON="../../../liblttng-ust-java-agent/java/lttng-ust-agent-common" $(AM_MAKEFLAGS) all && cd ..) || exit 1; \
+			( \
+				cd $$subdir && \
+				$(MAKE) all \
+					JAVA_CLASSPATH_OVERRIDE_LOG4J="../../../liblttng-ust-java-agent/java/lttng-ust-agent-log4j" \
+					JAVA_CLASSPATH_OVERRIDE_COMMON="../../../liblttng-ust-java-agent/java/lttng-ust-agent-common" \
+					$(AM_MAKEFLAGS) \
+			) || exit 1; \
 		done; \
 	fi; \
 	if [ x"$(SUBDIRS_CMAKE)" != x"" ]; then \
@@ -142,17 +171,16 @@ all-local:
 				$(MKDIR_P) build && \
 				cd build && \
 				AR="$(AR)" \
-				CC="$(CC)" \
-				CXX="$(CXX)" \
-				cmake \
-				-DCMAKE_INCLUDE_PATH="$(abs_top_srcdir)/include;$(abs_top_builddir)/include" \
-				-DCMAKE_LIBRARY_PATH="$(abs_top_builddir)/liblttng-ust/.libs" \
-				-DCMAKE_C_FLAGS="$(AM_CFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(CFLAGS)" \
-				-DCMAKE_CXX_FLAGS="$(AM_CXXFLAGS) $(AM_CPPFLAGS) $(CXXFLAGS) $(CPPFLAGS)" \
-				-DCMAKE_EXE_LINKER_FLAGS="$(AM_LDFLAGS) $(LDFLAGS)" \
-				.. && \
-				$(MAKE) && \
-				cd .. \
+					CC="$(CC)" \
+					CXX="$(CXX)" \
+					cmake \
+					-DCMAKE_INCLUDE_PATH="$(abs_top_srcdir)/include;$(abs_top_builddir)/include" \
+					-DCMAKE_LIBRARY_PATH="$(abs_top_builddir)/liblttng-ust/.libs" \
+					-DCMAKE_C_FLAGS="$(AM_CFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(CFLAGS)" \
+					-DCMAKE_CXX_FLAGS="$(AM_CXXFLAGS) $(AM_CPPFLAGS) $(CXXFLAGS) $(CPPFLAGS)" \
+					-DCMAKE_EXE_LINKER_FLAGS="$(AM_LDFLAGS) $(LDFLAGS)" \
+					.. && \
+				$(MAKE) \
 			) || exit 1; \
 		done; \
 	fi;
