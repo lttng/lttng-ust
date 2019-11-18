@@ -66,6 +66,7 @@ AS_IF([test "x${ax_cv_sys_weak_alias}" = "xno"], [
 ])
 
 # Checks for programs.
+AM_PROG_AR
 AC_PROG_SED
 AC_PROG_GREP
 AC_PROG_LN_S
