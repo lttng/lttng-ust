@@ -61,6 +61,7 @@ liblttng_ust_runtime_la_SOURCES = \
 	ust_lib.c \
 	ust_lib.h \
 	tracepoint-internal.h \
+	ust-events-internal.h \
 	clock.h \
 	compat.h \
 	wait.h \

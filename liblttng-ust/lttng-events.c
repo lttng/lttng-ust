@@ -59,6 +59,7 @@
 #include "lttng-tracer.h"
 #include "lttng-tracer-core.h"
 #include "lttng-ust-statedump.h"
+#include "ust-events-internal.h"
 #include "wait.h"
 #include "../libringbuffer/shm.h"
 #include "jhash.h"
@@ -79,9 +80,9 @@ static void _lttng_event_destroy(struct lttng_event *event);
 static void _lttng_enum_destroy(struct lttng_enum *_enum);
 
 static
-void lttng_session_lazy_sync_enablers(struct lttng_session *session);
+void lttng_session_lazy_sync_event_enablers(struct lttng_session *session);
 static
-void lttng_session_sync_enablers(struct lttng_session *session);
+void lttng_session_sync_event_enablers(struct lttng_session *session);
 static
 void lttng_enabler_destroy(struct lttng_enabler *enabler);
 
@@ -225,7 +226,7 @@ void lttng_session_destroy(struct lttng_session *session)
 	struct lttng_channel *chan, *tmpchan;
 	struct lttng_event *event, *tmpevent;
 	struct lttng_enum *_enum, *tmp_enum;
-	struct lttng_enabler *enabler, *tmpenabler;
+	struct lttng_event_enabler *event_enabler, *event_tmpenabler;
 
 	CMM_ACCESS_ONCE(session->active) = 0;
 	cds_list_for_each_entry(event, &session->events_head, node) {
@@ -233,9 +234,9 @@ void lttng_session_destroy(struct lttng_session *session)
 	}
 	synchronize_trace();	/* Wait for in-flight events to complete */
 	__tracepoint_probe_prune_release_queue();
-	cds_list_for_each_entry_safe(enabler, tmpenabler,
+	cds_list_for_each_entry_safe(event_enabler, event_tmpenabler,
 			&session->enablers_head, node)
-		lttng_enabler_destroy(enabler);
+		lttng_event_enabler_destroy(event_enabler);
 	cds_list_for_each_entry_safe(event, tmpevent,
 			&session->events_head, node)
 		_lttng_event_destroy(event);
@@ -247,6 +248,29 @@ void lttng_session_destroy(struct lttng_session *session)
 	cds_list_del(&session->node);
 	lttng_destroy_context(session->ctx);
 	free(session);
+}
+
+static
+void lttng_enabler_destroy(struct lttng_enabler *enabler)
+{
+	struct lttng_ust_filter_bytecode_node *filter_node, *tmp_filter_node;
+	struct lttng_ust_excluder_node *excluder_node, *tmp_excluder_node;
+
+	if (!enabler) {
+		return;
+	}
+
+	/* Destroy filter bytecode */
+	cds_list_for_each_entry_safe(filter_node, tmp_filter_node,
+			&enabler->filter_bytecode_head, node) {
+		free(filter_node);
+	}
+
+	/* Destroy excluders */
+	cds_list_for_each_entry_safe(excluder_node, tmp_excluder_node,
+			&enabler->excluder_head, node) {
+		free(excluder_node);
+	}
 }
 
 static
@@ -428,7 +452,7 @@ int lttng_session_enable(struct lttng_session *session)
 	session->tstate = 1;
 
 	/* We need to sync enablers with session before activation. */
-	lttng_session_sync_enablers(session);
+	lttng_session_sync_event_enablers(session);
 
 	/*
 	 * Snapshot the number of events per channel to know the type of header
@@ -497,7 +521,7 @@ int lttng_session_disable(struct lttng_session *session)
 
 	/* Set transient enabler state to "disabled" */
 	session->tstate = 0;
-	lttng_session_sync_enablers(session);
+	lttng_session_sync_event_enablers(session);
 end:
 	return ret;
 }
@@ -512,7 +536,7 @@ int lttng_channel_enable(struct lttng_channel *channel)
 	}
 	/* Set transient enabler state to "enabled" */
 	channel->tstate = 1;
-	lttng_session_sync_enablers(channel->session);
+	lttng_session_sync_event_enablers(channel->session);
 	/* Set atomically the state to "enabled" */
 	CMM_ACCESS_ONCE(channel->enabled) = 1;
 end:
@@ -531,7 +555,7 @@ int lttng_channel_disable(struct lttng_channel *channel)
 	CMM_ACCESS_ONCE(channel->enabled) = 0;
 	/* Set transient enabler state to "enabled" */
 	channel->tstate = 0;
-	lttng_session_sync_enablers(channel->session);
+	lttng_session_sync_event_enablers(channel->session);
 end:
 	return ret;
 }
@@ -710,24 +734,25 @@ int lttng_desc_match_enabler(const struct lttng_event_desc *desc,
 }
 
 static
-int lttng_event_match_enabler(struct lttng_event *event,
-		struct lttng_enabler *enabler)
+int lttng_event_enabler_match_event(struct lttng_event_enabler *event_enabler,
+		struct lttng_event *event)
 {
-	if (lttng_desc_match_enabler(event->desc, enabler)
-			&& event->chan == enabler->chan)
+	if (lttng_desc_match_enabler(event->desc,
+			lttng_event_enabler_as_enabler(event_enabler))
+			&& event->chan == event_enabler->chan)
 		return 1;
 	else
 		return 0;
 }
 
 static
-struct lttng_enabler_ref * lttng_event_enabler_ref(struct lttng_event *event,
+struct lttng_enabler_ref *lttng_enabler_ref(
+		struct cds_list_head *enabler_ref_list,
 		struct lttng_enabler *enabler)
 {
 	struct lttng_enabler_ref *enabler_ref;
 
-	cds_list_for_each_entry(enabler_ref,
-			&event->enablers_ref_head, node) {
+	cds_list_for_each_entry(enabler_ref, enabler_ref_list, node) {
 		if (enabler_ref->ref == enabler)
 			return enabler_ref;
 	}
@@ -739,9 +764,9 @@ struct lttng_enabler_ref * lttng_event_enabler_ref(struct lttng_event *event,
  * tracepoint probes.
  */
 static
-void lttng_create_event_if_missing(struct lttng_enabler *enabler)
+void lttng_create_event_if_missing(struct lttng_event_enabler *event_enabler)
 {
-	struct lttng_session *session = enabler->chan->session;
+	struct lttng_session *session = event_enabler->chan->session;
 	struct lttng_probe_desc *probe_desc;
 	const struct lttng_event_desc *desc;
 	struct lttng_event *event;
@@ -765,7 +790,8 @@ void lttng_create_event_if_missing(struct lttng_enabler *enabler)
 			uint32_t hash;
 
 			desc = probe_desc->event_desc[i];
-			if (!lttng_desc_match_enabler(desc, enabler))
+			if (!lttng_desc_match_enabler(desc,
+					lttng_event_enabler_as_enabler(event_enabler)))
 				continue;
 			event_name = desc->name;
 			name_len = strlen(event_name);
@@ -777,7 +803,7 @@ void lttng_create_event_if_missing(struct lttng_enabler *enabler)
 			head = &session->events_ht.table[hash & (LTTNG_UST_EVENT_HT_SIZE - 1)];
 			cds_hlist_for_each_entry(event, node, head, hlist) {
 				if (event->desc == desc
-						&& event->chan == enabler->chan) {
+						&& event->chan == event_enabler->chan) {
 					found = true;
 					break;
 				}
@@ -790,7 +816,7 @@ void lttng_create_event_if_missing(struct lttng_enabler *enabler)
 			 * event probe.
 			 */
 			ret = lttng_event_create(probe_desc->event_desc[i],
-					enabler->chan);
+					event_enabler->chan);
 			if (ret) {
 				DBG("Unable to create event %s, error %d\n",
 					probe_desc->event_desc[i]->name, ret);
@@ -914,25 +940,26 @@ void lttng_probe_provider_unregister_events(struct lttng_probe_desc *provider_de
  * and add backward reference from the event to the enabler.
  */
 static
-int lttng_enabler_ref_events(struct lttng_enabler *enabler)
+int lttng_event_enabler_ref_events(struct lttng_event_enabler *event_enabler)
 {
-	struct lttng_session *session = enabler->chan->session;
+	struct lttng_session *session = event_enabler->chan->session;
 	struct lttng_event *event;
 
-	if (!enabler->enabled)
+	if (!lttng_event_enabler_as_enabler(event_enabler)->enabled)
 		goto end;
 
 	/* First ensure that probe events are created for this enabler. */
-	lttng_create_event_if_missing(enabler);
+	lttng_create_event_if_missing(event_enabler);
 
 	/* For each event matching enabler in session event list. */
 	cds_list_for_each_entry(event, &session->events_head, node) {
 		struct lttng_enabler_ref *enabler_ref;
 
-		if (!lttng_event_match_enabler(event, enabler))
+		if (!lttng_event_enabler_match_event(event_enabler, event))
 			continue;
 
-		enabler_ref = lttng_event_enabler_ref(event, enabler);
+		enabler_ref = lttng_enabler_ref(&event->enablers_ref_head,
+			lttng_event_enabler_as_enabler(event_enabler));
 		if (!enabler_ref) {
 			/*
 			 * If no backward ref, create it.
@@ -941,7 +968,8 @@ int lttng_enabler_ref_events(struct lttng_enabler *enabler)
 			enabler_ref = zmalloc(sizeof(*enabler_ref));
 			if (!enabler_ref)
 				return -ENOMEM;
-			enabler_ref->ref = enabler;
+			enabler_ref->ref = lttng_event_enabler_as_enabler(
+				event_enabler);
 			cds_list_add(&enabler_ref->node,
 				&event->enablers_ref_head);
 		}
@@ -949,7 +977,7 @@ int lttng_enabler_ref_events(struct lttng_enabler *enabler)
 		/*
 		 * Link filter bytecodes if not linked yet.
 		 */
-		lttng_enabler_event_link_bytecode(event, enabler);
+		lttng_event_enabler_link_bytecode(event, event_enabler);
 
 		/* TODO: merge event context. */
 	}
@@ -967,7 +995,7 @@ int lttng_fix_pending_events(void)
 	struct lttng_session *session;
 
 	cds_list_for_each_entry(session, &sessions, node) {
-		lttng_session_lazy_sync_enablers(session);
+		lttng_session_lazy_sync_event_enablers(session);
 	}
 	return 0;
 }
@@ -1041,57 +1069,79 @@ void lttng_ust_events_exit(void)
 /*
  * Enabler management.
  */
-struct lttng_enabler *lttng_enabler_create(enum lttng_enabler_format_type format_type,
+struct lttng_event_enabler *lttng_event_enabler_create(
+		enum lttng_enabler_format_type format_type,
 		struct lttng_ust_event *event_param,
 		struct lttng_channel *chan)
 {
-	struct lttng_enabler *enabler;
+	struct lttng_event_enabler *event_enabler;
 
-	enabler = zmalloc(sizeof(*enabler));
-	if (!enabler)
+	event_enabler = zmalloc(sizeof(*event_enabler));
+	if (!event_enabler)
 		return NULL;
-	enabler->format_type = format_type;
-	CDS_INIT_LIST_HEAD(&enabler->filter_bytecode_head);
-	CDS_INIT_LIST_HEAD(&enabler->excluder_head);
-	memcpy(&enabler->event_param, event_param,
-		sizeof(enabler->event_param));
-	enabler->chan = chan;
+	event_enabler->base.format_type = format_type;
+	CDS_INIT_LIST_HEAD(&event_enabler->base.filter_bytecode_head);
+	CDS_INIT_LIST_HEAD(&event_enabler->base.excluder_head);
+	memcpy(&event_enabler->base.event_param, event_param,
+		sizeof(event_enabler->base.event_param));
+	event_enabler->chan = chan;
 	/* ctx left NULL */
-	enabler->enabled = 0;
-	cds_list_add(&enabler->node, &enabler->chan->session->enablers_head);
-	lttng_session_lazy_sync_enablers(enabler->chan->session);
-	return enabler;
+	event_enabler->base.enabled = 0;
+	cds_list_add(&event_enabler->node, &event_enabler->chan->session->enablers_head);
+	lttng_session_lazy_sync_event_enablers(event_enabler->chan->session);
+
+	return event_enabler;
 }
 
-int lttng_enabler_enable(struct lttng_enabler *enabler)
+int lttng_event_enabler_enable(struct lttng_event_enabler *event_enabler)
 {
-	enabler->enabled = 1;
-	lttng_session_lazy_sync_enablers(enabler->chan->session);
+	lttng_event_enabler_as_enabler(event_enabler)->enabled = 1;
+	lttng_session_lazy_sync_event_enablers(event_enabler->chan->session);
+
 	return 0;
 }
 
-int lttng_enabler_disable(struct lttng_enabler *enabler)
+int lttng_event_enabler_disable(struct lttng_event_enabler *event_enabler)
 {
-	enabler->enabled = 0;
-	lttng_session_lazy_sync_enablers(enabler->chan->session);
+	lttng_event_enabler_as_enabler(event_enabler)->enabled = 0;
+	lttng_session_lazy_sync_event_enablers(event_enabler->chan->session);
+
 	return 0;
 }
 
-int lttng_enabler_attach_bytecode(struct lttng_enabler *enabler,
+static
+void _lttng_enabler_attach_bytecode(struct lttng_enabler *enabler,
 		struct lttng_ust_filter_bytecode_node *bytecode)
 {
 	bytecode->enabler = enabler;
 	cds_list_add_tail(&bytecode->node, &enabler->filter_bytecode_head);
-	lttng_session_lazy_sync_enablers(enabler->chan->session);
+}
+
+int lttng_event_enabler_attach_bytecode(struct lttng_event_enabler *event_enabler,
+		struct lttng_ust_filter_bytecode_node *bytecode)
+{
+	_lttng_enabler_attach_bytecode(
+		lttng_event_enabler_as_enabler(event_enabler), bytecode);
+
+	lttng_session_lazy_sync_event_enablers(event_enabler->chan->session);
 	return 0;
 }
 
-int lttng_enabler_attach_exclusion(struct lttng_enabler *enabler,
+static
+void _lttng_enabler_attach_exclusion(struct lttng_enabler *enabler,
 		struct lttng_ust_excluder_node *excluder)
 {
 	excluder->enabler = enabler;
 	cds_list_add_tail(&excluder->node, &enabler->excluder_head);
-	lttng_session_lazy_sync_enablers(enabler->chan->session);
+}
+
+int lttng_event_enabler_attach_exclusion(struct lttng_event_enabler *event_enabler,
+		struct lttng_ust_excluder_node *excluder)
+{
+	_lttng_enabler_attach_exclusion(
+		lttng_event_enabler_as_enabler(event_enabler), excluder);
+
+	lttng_session_lazy_sync_event_enablers(event_enabler->chan->session);
 	return 0;
 }
 
@@ -1167,59 +1217,37 @@ int lttng_attach_context(struct lttng_ust_context *context_param,
 	}
 }
 
-int lttng_enabler_attach_context(struct lttng_enabler *enabler,
+int lttng_event_enabler_attach_context(struct lttng_event_enabler *enabler,
 		struct lttng_ust_context *context_param)
 {
-#if 0	// disabled for now.
-	struct lttng_session *session = enabler->chan->session;
-	int ret;
-
-	ret = lttng_attach_context(context_param, &enabler->ctx,
-			session);
-	if (ret)
-		return ret;
-	lttng_session_lazy_sync_enablers(enabler->chan->session);
-#endif
 	return -ENOSYS;
 }
 
-static
-void lttng_enabler_destroy(struct lttng_enabler *enabler)
+void lttng_event_enabler_destroy(struct lttng_event_enabler *event_enabler)
 {
-	struct lttng_ust_filter_bytecode_node *filter_node, *tmp_filter_node;
-	struct lttng_ust_excluder_node *excluder_node, *tmp_excluder_node;
-
-	/* Destroy filter bytecode */
-	cds_list_for_each_entry_safe(filter_node, tmp_filter_node,
-			&enabler->filter_bytecode_head, node) {
-		free(filter_node);
+	if (!event_enabler) {
+		return;
 	}
+	cds_list_del(&event_enabler->node);
 
-	/* Destroy excluders */
-	cds_list_for_each_entry_safe(excluder_node, tmp_excluder_node,
-			&enabler->excluder_head, node) {
-		free(excluder_node);
-	}
+	lttng_enabler_destroy(lttng_event_enabler_as_enabler(event_enabler));
 
-	/* Destroy contexts */
-	lttng_destroy_context(enabler->ctx);
-
-	cds_list_del(&enabler->node);
-	free(enabler);
+	lttng_destroy_context(event_enabler->ctx);
+	free(event_enabler);
 }
 
 /*
- * lttng_session_sync_enablers should be called just before starting a
+ * lttng_session_sync_event_enablers should be called just before starting a
  * session.
  */
 static
-void lttng_session_sync_enablers(struct lttng_session *session)
+void lttng_session_sync_event_enablers(struct lttng_session *session)
 {
-	struct lttng_enabler *enabler;
+	struct lttng_event_enabler *event_enabler;
 	struct lttng_event *event;
 
-	cds_list_for_each_entry(enabler, &session->enablers_head, node)
-		lttng_enabler_ref_events(enabler);
+	cds_list_for_each_entry(event_enabler, &session->enablers_head, node)
+		lttng_event_enabler_ref_events(event_enabler);
 	/*
 	 * For each event, if at least one of its enablers is enabled,
 	 * and its channel and session transient states are enabled, we
@@ -1286,12 +1314,12 @@ void lttng_session_sync_enablers(struct lttng_session *session)
  * "lazy" sync means we only sync if required.
  */
 static
-void lttng_session_lazy_sync_enablers(struct lttng_session *session)
+void lttng_session_lazy_sync_event_enablers(struct lttng_session *session)
 {
 	/* We can skip if session is not active */
 	if (!session->active)
 		return;
-	lttng_session_sync_enablers(session);
+	lttng_session_sync_event_enablers(session);
 }
 
 /*

@@ -57,6 +57,7 @@
 #include "../libringbuffer/shm.h"
 #include "lttng-tracer.h"
 #include "string-utils.h"
+#include "ust-events-internal.h"
 
 #define OBJ_NAME_LEN	16
 
@@ -281,7 +282,7 @@ void lttng_ust_objd_table_owner_cleanup(void *owner)
 static const struct lttng_ust_objd_ops lttng_ops;
 static const struct lttng_ust_objd_ops lttng_session_ops;
 static const struct lttng_ust_objd_ops lttng_channel_ops;
-static const struct lttng_ust_objd_ops lttng_enabler_ops;
+static const struct lttng_ust_objd_ops lttng_event_enabler_ops;
 static const struct lttng_ust_objd_ops lttng_tracepoint_list_ops;
 static const struct lttng_ust_objd_ops lttng_tracepoint_field_list_ops;
 
@@ -794,17 +795,18 @@ error_add_stream:
 }
 
 static
-int lttng_abi_create_enabler(int channel_objd,
+int lttng_abi_create_event_enabler(int channel_objd,
 			   struct lttng_ust_event *event_param,
 			   void *owner,
 			   enum lttng_enabler_format_type format_type)
 {
 	struct lttng_channel *channel = objd_private(channel_objd);
-	struct lttng_enabler *enabler;
+	struct lttng_event_enabler *enabler;
 	int event_objd, ret;
 
 	event_param->name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
-	event_objd = objd_alloc(NULL, &lttng_enabler_ops, owner, "enabler");
+	event_objd = objd_alloc(NULL, &lttng_event_enabler_ops, owner,
+		"event enabler");
 	if (event_objd < 0) {
 		ret = event_objd;
 		goto objd_error;
@@ -813,7 +815,7 @@ int lttng_abi_create_enabler(int channel_objd,
 	 * We tolerate no failure path after event creation. It will stay
 	 * invariant for the rest of the session.
 	 */
-	enabler = lttng_enabler_create(format_type, event_param, channel);
+	enabler = lttng_event_enabler_create(format_type, event_param, channel);
 	if (!enabler) {
 		ret = -ENOMEM;
 		goto event_error;
@@ -891,10 +893,10 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg,
 			 * If the event name is a star globbing pattern,
 			 * we create the special star globbing enabler.
 			 */
-			return lttng_abi_create_enabler(objd, event_param,
+			return lttng_abi_create_event_enabler(objd, event_param,
 					owner, LTTNG_ENABLER_FORMAT_STAR_GLOB);
 		} else {
-			return lttng_abi_create_enabler(objd, event_param,
+			return lttng_abi_create_event_enabler(objd, event_param,
 					owner, LTTNG_ENABLER_FORMAT_EVENT);
 		}
 	}
@@ -951,24 +953,24 @@ static const struct lttng_ust_objd_ops lttng_channel_ops = {
  *		Attach exclusions to an enabler.
  */
 static
-long lttng_enabler_cmd(int objd, unsigned int cmd, unsigned long arg,
+long lttng_event_enabler_cmd(int objd, unsigned int cmd, unsigned long arg,
 	union ust_args *uargs, void *owner)
 {
-	struct lttng_enabler *enabler = objd_private(objd);
+	struct lttng_event_enabler *enabler = objd_private(objd);
 
 	switch (cmd) {
 	case LTTNG_UST_CONTEXT:
-		return lttng_enabler_attach_context(enabler,
+		return lttng_event_enabler_attach_context(enabler,
 				(struct lttng_ust_context *) arg);
 	case LTTNG_UST_ENABLE:
-		return lttng_enabler_enable(enabler);
+		return lttng_event_enabler_enable(enabler);
 	case LTTNG_UST_DISABLE:
-		return lttng_enabler_disable(enabler);
+		return lttng_event_enabler_disable(enabler);
 	case LTTNG_UST_FILTER:
 	{
 		int ret;
 
-		ret = lttng_enabler_attach_bytecode(enabler,
+		ret = lttng_event_enabler_attach_bytecode(enabler,
 				(struct lttng_ust_filter_bytecode_node *) arg);
 		if (ret)
 			return ret;
@@ -976,7 +978,7 @@ long lttng_enabler_cmd(int objd, unsigned int cmd, unsigned long arg,
 	}
 	case LTTNG_UST_EXCLUSION:
 	{
-		return lttng_enabler_attach_exclusion(enabler,
+		return lttng_event_enabler_attach_exclusion(enabler,
 				(struct lttng_ust_excluder_node *) arg);
 	}
 	default:
@@ -985,18 +987,19 @@ long lttng_enabler_cmd(int objd, unsigned int cmd, unsigned long arg,
 }
 
 static
-int lttng_enabler_release(int objd)
+int lttng_event_enabler_release(int objd)
 {
-	struct lttng_enabler *enabler = objd_private(objd);
+	struct lttng_event_enabler *event_enabler = objd_private(objd);
 
-	if (enabler)
-		return lttng_ust_objd_unref(enabler->chan->objd, 0);
+	if (event_enabler)
+		return lttng_ust_objd_unref(event_enabler->chan->objd, 0);
+
 	return 0;
 }
 
-static const struct lttng_ust_objd_ops lttng_enabler_ops = {
-	.release = lttng_enabler_release,
-	.cmd = lttng_enabler_cmd,
+static const struct lttng_ust_objd_ops lttng_event_enabler_ops = {
+	.release = lttng_event_enabler_release,
+	.cmd = lttng_event_enabler_cmd,
 };
 
 void lttng_ust_abi_exit(void)
