@@ -439,8 +439,6 @@ ssize_t ustcomm_send_fds_unix_sock(int sock, int *fds, size_t nb_fd)
 /*
  * Recv a message accompanied by fd(s) from a unix socket.
  *
- * Returns the size of received data, or negative error value.
- *
  * Expect at most "nb_fd" file descriptors. Returns the number of fd
  * actually received in nb_fd.
  * Returns -EPIPE on orderly shutdown.
@@ -510,7 +508,7 @@ ssize_t ustcomm_recv_fds_unix_sock(int sock, int *fds, size_t nb_fd)
 		goto end;
 	}
 	memcpy(fds, CMSG_DATA(cmsg), sizeof_fds);
-	ret = sizeof_fds;
+	ret = nb_fd;
 end:
 	return ret;
 }
