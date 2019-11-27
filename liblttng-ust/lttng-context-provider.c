@@ -73,7 +73,7 @@ int lttng_ust_context_provider_register(struct lttng_ust_context_provider *provi
 	/* Provider name starts with "$app.". */
 	if (strncmp("$app.", provider->name, strlen("$app.")) != 0)
 		return -EINVAL;
-	/* Provider name cannot contain a column character. */
+	/* Provider name cannot contain a colon character. */
 	if (strchr(provider->name, ':'))
 		return -EINVAL;
 	if (ust_lock()) {
