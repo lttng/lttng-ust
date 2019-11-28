@@ -752,7 +752,6 @@ void lttng_probes_prune_field_list(struct lttng_ust_field_list *list);
 struct lttng_ust_field_iter *
 	lttng_ust_field_list_get_iter_next(struct lttng_ust_field_list *list);
 
-void lttng_filter_event_link_bytecode(struct lttng_event *event);
 void lttng_enabler_event_link_bytecode(struct lttng_event *event,
 		struct lttng_enabler *enabler);
 void lttng_free_event_filter_runtime(struct lttng_event *event);
@@ -775,6 +774,7 @@ void lttng_ust_fixup_fd_tracker_tls(void);
 extern struct lttng_ctx *lttng_static_ctx;
 void lttng_context_init(void);
 void lttng_context_exit(void);
+void lttng_filter_event_link_bytecode(struct lttng_event *event);
 
 #ifdef __cplusplus
 }
