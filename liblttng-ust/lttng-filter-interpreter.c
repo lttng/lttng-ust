@@ -370,7 +370,7 @@ static int context_get_index(struct lttng_ctx *ctx,
 	return 0;
 }
 
-static int dynamic_get_index(struct lttng_session *session,
+static int dynamic_get_index(struct lttng_ctx *ctx,
 		struct bytecode_runtime *runtime,
 		uint64_t index, struct estack_entry *stack_top)
 {
@@ -437,9 +437,6 @@ static int dynamic_get_index(struct lttng_session *session,
 	case LOAD_ROOT_CONTEXT:
 	case LOAD_ROOT_APP_CONTEXT:	/* Fall-through */
 	{
-		struct lttng_ctx *ctx;
-
-		ctx = rcu_dereference(session->ctx);
 		ret = context_get_index(ctx,
 				&stack_top->u.ptr,
 				gid->ctx_index);
@@ -634,7 +631,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		const char *filter_stack_data)
 {
 	struct bytecode_runtime *bytecode = filter_data;
-	struct lttng_session *session = bytecode->p.session;
+	struct lttng_ctx *ctx = rcu_dereference(*bytecode->p.pctx);
 	void *pc, *next_pc, *start_pc;
 	int ret = -EINVAL;
 	uint64_t retval = 0;
@@ -2013,13 +2010,11 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			struct load_op *insn = (struct load_op *) pc;
 			struct field_ref *ref = (struct field_ref *) insn->data;
-			struct lttng_ctx *ctx;
 			struct lttng_ctx_field *ctx_field;
 			struct lttng_ctx_value v;
 
 			dbg_printf("get context ref offset %u type dynamic\n",
 				ref->offset);
-			ctx = rcu_dereference(session->ctx);
 			ctx_field = &ctx->fields[ref->offset];
 			ctx_field->get_value(ctx_field, &v);
 			estack_push(stack, top, ax, bx, ax_t, bx_t);
@@ -2063,13 +2058,11 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			struct load_op *insn = (struct load_op *) pc;
 			struct field_ref *ref = (struct field_ref *) insn->data;
-			struct lttng_ctx *ctx;
 			struct lttng_ctx_field *ctx_field;
 			struct lttng_ctx_value v;
 
 			dbg_printf("get context ref offset %u type string\n",
 				ref->offset);
-			ctx = rcu_dereference(session->ctx);
 			ctx_field = &ctx->fields[ref->offset];
 			ctx_field->get_value(ctx_field, &v);
 			estack_push(stack, top, ax, bx, ax_t, bx_t);
@@ -2092,13 +2085,11 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			struct load_op *insn = (struct load_op *) pc;
 			struct field_ref *ref = (struct field_ref *) insn->data;
-			struct lttng_ctx *ctx;
 			struct lttng_ctx_field *ctx_field;
 			struct lttng_ctx_value v;
 
 			dbg_printf("get context ref offset %u type s64\n",
 				ref->offset);
-			ctx = rcu_dereference(session->ctx);
 			ctx_field = &ctx->fields[ref->offset];
 			ctx_field->get_value(ctx_field, &v);
 			estack_push(stack, top, ax, bx, ax_t, bx_t);
@@ -2113,13 +2104,11 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		{
 			struct load_op *insn = (struct load_op *) pc;
 			struct field_ref *ref = (struct field_ref *) insn->data;
-			struct lttng_ctx *ctx;
 			struct lttng_ctx_field *ctx_field;
 			struct lttng_ctx_value v;
 
 			dbg_printf("get context ref offset %u type double\n",
 				ref->offset);
-			ctx = rcu_dereference(session->ctx);
 			ctx_field = &ctx->fields[ref->offset];
 			ctx_field->get_value(ctx_field, &v);
 			estack_push(stack, top, ax, bx, ax_t, bx_t);
@@ -2205,7 +2194,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			struct get_index_u16 *index = (struct get_index_u16 *) insn->data;
 
 			dbg_printf("op get index u16\n");
-			ret = dynamic_get_index(session, bytecode, index->index, estack_ax(stack, top));
+			ret = dynamic_get_index(ctx, bytecode, index->index, estack_ax(stack, top));
 			if (ret)
 				goto end;
 			estack_ax_v = estack_ax(stack, top)->u.v;
@@ -2220,7 +2209,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			struct get_index_u64 *index = (struct get_index_u64 *) insn->data;
 
 			dbg_printf("op get index u64\n");
-			ret = dynamic_get_index(session, bytecode, index->index, estack_ax(stack, top));
+			ret = dynamic_get_index(ctx, bytecode, index->index, estack_ax(stack, top));
 			if (ret)
 				goto end;
 			estack_ax_v = estack_ax(stack, top)->u.v;

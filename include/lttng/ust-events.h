@@ -471,7 +471,11 @@ struct lttng_bytecode_runtime {
 	uint64_t (*filter)(void *filter_data, const char *filter_stack_data);
 	int link_failed;
 	struct cds_list_head node;	/* list of bytecode runtime in event */
-	struct lttng_session *session;
+	/*
+	 * Pointer to a `struct lttng_session`-owned and URCU-protected
+	 * pointer.
+	 */
+	struct lttng_ctx **pctx;
 };
 
 /*

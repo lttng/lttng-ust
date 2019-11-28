@@ -300,22 +300,21 @@ int apply_context_reloc(struct lttng_event *event,
 	struct load_op *op;
 	struct lttng_ctx_field *ctx_field;
 	int idx;
-	struct lttng_session *session = runtime->p.session;
+	struct lttng_ctx *ctx = *runtime->p.pctx;
 
 	dbg_printf("Apply context reloc: %u %s\n", reloc_offset, context_name);
 
 	/* Get context index */
-	idx = lttng_get_context_index(session->ctx, context_name);
+	idx = lttng_get_context_index(ctx, context_name);
 	if (idx < 0) {
 		if (lttng_context_is_app(context_name)) {
 			int ret;
 
 			ret = lttng_ust_add_app_context_to_ctx_rcu(context_name,
-					&session->ctx);
+					&ctx);
 			if (ret)
 				return ret;
-			idx = lttng_get_context_index(session->ctx,
-				context_name);
+			idx = lttng_get_context_index(ctx, context_name);
 			if (idx < 0)
 				return -ENOENT;
 		} else {
@@ -327,7 +326,7 @@ int apply_context_reloc(struct lttng_event *event,
 		return -EINVAL;
 
 	/* Get context return type */
-	ctx_field = &session->ctx->fields[idx];
+	ctx_field = &ctx->fields[idx];
 	op = (struct load_op *) &runtime->code[reloc_offset];
 
 	switch (filter_op) {
@@ -449,7 +448,7 @@ int _lttng_filter_event_link_bytecode(struct lttng_event *event,
 		goto alloc_error;
 	}
 	runtime->p.bc = filter_bytecode;
-	runtime->p.session = event->chan->session;
+	runtime->p.pctx = &event->chan->session->ctx;
 	runtime->len = filter_bytecode->bc.reloc_offset;
 	/* copy original bytecode */
 	memcpy(runtime->code, filter_bytecode->bc.data, runtime->len);
@@ -569,13 +568,19 @@ int lttng_filter_enabler_attach_bytecode(struct lttng_enabler *enabler,
 	return 0;
 }
 
-void lttng_free_event_filter_runtime(struct lttng_event *event)
+static
+void free_filter_runtime(struct cds_list_head *bytecode_runtime_head)
 {
 	struct bytecode_runtime *runtime, *tmp;
 
-	cds_list_for_each_entry_safe(runtime, tmp,
-			&event->bytecode_runtime_head, p.node) {
+	cds_list_for_each_entry_safe(runtime, tmp, bytecode_runtime_head,
+			p.node) {
 		free(runtime->data);
 		free(runtime);
 	}
+}
+
+void lttng_free_event_filter_runtime(struct lttng_event *event)
+{
+	free_filter_runtime(&event->bytecode_runtime_head);
 }
