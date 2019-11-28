@@ -557,16 +557,6 @@ int lttng_filter_enabler_attach_bytecode(struct lttng_enabler *enabler,
 	return 0;
 }
 
-void lttng_free_enabler_filter_bytecode(struct lttng_enabler *enabler)
-{
-	struct lttng_ust_filter_bytecode_node *filter_bytecode, *tmp;
-
-	cds_list_for_each_entry_safe(filter_bytecode, tmp,
-			&enabler->filter_bytecode_head, node) {
-		free(filter_bytecode);
-	}
-}
-
 void lttng_free_event_filter_runtime(struct lttng_event *event)
 {
 	struct bytecode_runtime *runtime, *tmp;
