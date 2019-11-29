@@ -38,6 +38,7 @@
  */
 
 #define _LGPL_SOURCE
+#include <fcntl.h>
 #include <stdint.h>
 #include <unistd.h>
 
@@ -280,9 +281,11 @@ void lttng_ust_objd_table_owner_cleanup(void *owner)
  */
 
 static const struct lttng_ust_objd_ops lttng_ops;
+static const struct lttng_ust_objd_ops lttng_event_notifier_group_ops;
 static const struct lttng_ust_objd_ops lttng_session_ops;
 static const struct lttng_ust_objd_ops lttng_channel_ops;
 static const struct lttng_ust_objd_ops lttng_event_enabler_ops;
+static const struct lttng_ust_objd_ops lttng_event_notifier_enabler_ops;
 static const struct lttng_ust_objd_ops lttng_tracepoint_list_ops;
 static const struct lttng_ust_objd_ops lttng_tracepoint_field_list_ops;
 
@@ -341,6 +344,53 @@ long lttng_abi_tracer_version(int objd,
 }
 
 static
+int lttng_abi_event_notifier_send_fd(void *owner, int event_notifier_notif_fd)
+{
+	struct lttng_event_notifier_group *event_notifier_group;
+	int event_notifier_group_objd, ret, fd_flag, close_ret;
+
+	event_notifier_group = lttng_event_notifier_group_create();
+	if (!event_notifier_group)
+		return -ENOMEM;
+
+	/*
+	 * Set this file descriptor as NON-BLOCKING.
+	 */
+	fd_flag = fcntl(event_notifier_notif_fd, F_GETFL);
+
+	fd_flag |= O_NONBLOCK;
+
+	ret = fcntl(event_notifier_notif_fd, F_SETFL, fd_flag);
+	if (ret) {
+		ret = -errno;
+		goto fd_error;
+	}
+
+	event_notifier_group_objd = objd_alloc(event_notifier_group,
+		&lttng_event_notifier_group_ops, owner, "event_notifier_group");
+	if (event_notifier_group_objd < 0) {
+		ret = event_notifier_group_objd;
+		goto objd_error;
+	}
+
+	event_notifier_group->objd = event_notifier_group_objd;
+	event_notifier_group->owner = owner;
+	event_notifier_group->notification_fd = event_notifier_notif_fd;
+
+	return event_notifier_group_objd;
+
+objd_error:
+	lttng_event_notifier_group_destroy(event_notifier_group);
+fd_error:
+	close_ret = close(event_notifier_notif_fd);
+	if (close_ret) {
+		PERROR("close");
+	}
+
+	return ret;
+}
+
+static
 long lttng_abi_add_context(int objd,
 	struct lttng_ust_context *context_param,
 	union ust_args *uargs,
@@ -389,6 +439,9 @@ long lttng_cmd(int objd, unsigned int cmd, unsigned long arg,
 	case LTTNG_UST_WAIT_QUIESCENT:
 		synchronize_trace();
 		return 0;
+	case LTTNG_UST_EVENT_NOTIFIER_GROUP_CREATE:
+		return lttng_abi_event_notifier_send_fd(owner,
+			uargs->event_notifier_handle.event_notifier_notif_fd);
 	default:
 		return -EINVAL;
 	}
@@ -613,6 +666,129 @@ int lttng_release_session(int objd)
 static const struct lttng_ust_objd_ops lttng_session_ops = {
 	.release = lttng_release_session,
 	.cmd = lttng_session_cmd,
+};
+
+static int lttng_ust_event_notifier_enabler_create(int event_notifier_group_obj,
+		void *owner, struct lttng_ust_event_notifier *event_notifier_param,
+		enum lttng_enabler_format_type type)
+{
+	struct lttng_event_notifier_group *event_notifier_group =
+		objd_private(event_notifier_group_obj);
+	struct lttng_event_notifier_enabler *event_notifier_enabler;
+	int event_notifier_objd, ret;
+
+	event_notifier_param->event.name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+	event_notifier_objd = objd_alloc(NULL, &lttng_event_notifier_enabler_ops, owner,
+		"event_notifier enabler");
+	if (event_notifier_objd < 0) {
+		ret = event_notifier_objd;
+		goto objd_error;
+	}
+
+	event_notifier_enabler = lttng_event_notifier_enabler_create(
+		event_notifier_group, type, event_notifier_param);
+	if (!event_notifier_enabler) {
+		ret = -ENOMEM;
+		goto event_notifier_error;
+	}
+
+	objd_set_private(event_notifier_objd, event_notifier_enabler);
+	/* The event_notifier holds a reference on the event_notifier group. */
+	objd_ref(event_notifier_enabler->group->objd);
+
+	return event_notifier_objd;
+
+event_notifier_error:
+	{
+		int err;
+
+		err = lttng_ust_objd_unref(event_notifier_objd, 1);
+		assert(!err);
+	}
+objd_error:
+	return ret;
+}
+
+static
+long lttng_event_notifier_enabler_cmd(int objd, unsigned int cmd, unsigned long arg,
+		union ust_args *uargs, void *owner)
+{
+	struct lttng_event_notifier_enabler *event_notifier_enabler = objd_private(objd);
+	switch (cmd) {
+	case LTTNG_UST_FILTER:
+		return lttng_event_notifier_enabler_attach_bytecode(event_notifier_enabler,
+			(struct lttng_ust_filter_bytecode_node *) arg);
+	case LTTNG_UST_EXCLUSION:
+		return lttng_event_notifier_enabler_attach_exclusion(event_notifier_enabler,
+			(struct lttng_ust_excluder_node *) arg);
+	case LTTNG_UST_ENABLE:
+		return lttng_event_notifier_enabler_enable(event_notifier_enabler);
+	case LTTNG_UST_DISABLE:
+		return lttng_event_notifier_enabler_disable(event_notifier_enabler);
+	default:
+		return -EINVAL;
+	}
+}
+
+static
+long lttng_event_notifier_group_cmd(int objd, unsigned int cmd, unsigned long arg,
+		union ust_args *uargs, void *owner)
+{
+	switch (cmd) {
+	case LTTNG_UST_EVENT_NOTIFIER_CREATE:
+	{
+		struct lttng_ust_event_notifier *event_notifier_param =
+			(struct lttng_ust_event_notifier *) arg;
+		if (strutils_is_star_glob_pattern(event_notifier_param->event.name)) {
+			/*
+			 * If the event name is a star globbing pattern,
+			 * we create the special star globbing enabler.
+			 */
+			return lttng_ust_event_notifier_enabler_create(objd,
+					owner, event_notifier_param,
+					LTTNG_ENABLER_FORMAT_STAR_GLOB);
+		} else {
+			return lttng_ust_event_notifier_enabler_create(objd,
+					owner, event_notifier_param,
+					LTTNG_ENABLER_FORMAT_EVENT);
+		}
+	}
+	default:
+		return -EINVAL;
+	}
+}
+
+static
+int lttng_event_notifier_enabler_release(int objd)
+{
+	struct lttng_event_notifier_enabler *event_notifier_enabler = objd_private(objd);
+
+	if (event_notifier_enabler)
+		return lttng_ust_objd_unref(event_notifier_enabler->group->objd, 0);
+	return 0;
+}
+
+static const struct lttng_ust_objd_ops lttng_event_notifier_enabler_ops = {
+	.release = lttng_event_notifier_enabler_release,
+	.cmd = lttng_event_notifier_enabler_cmd,
+};
+
+static
+int lttng_release_event_notifier_group(int objd)
+{
+	struct lttng_event_notifier_group *event_notifier_group = objd_private(objd);
+
+	if (event_notifier_group) {
+		lttng_event_notifier_group_destroy(event_notifier_group);
+		return 0;
+	} else {
+		return -EINVAL;
+	}
+}
+
+static const struct lttng_ust_objd_ops lttng_event_notifier_group_ops = {
+	.release = lttng_release_event_notifier_group,
+	.cmd = lttng_event_notifier_group_cmd,
 };
 
 static

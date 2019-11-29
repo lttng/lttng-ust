@@ -102,6 +102,28 @@ int ustctl_start_session(int sock, int handle);
 int ustctl_stop_session(int sock, int handle);
 
 /*
+ * ustctl_create_event notifier_group creates a event notifier group. It
+ * establishes the connection with the application by providing a file
+ * descriptor of the pipe to be used by the application when a event notifier
+ * of that group is fired. It returns a handle to be used when creating event
+ * notifier in that group.
+ */
+int ustctl_create_event_notifier_group(int sock, int pipe_fd,
+		struct lttng_ust_object_data **event_notifier_group);
+
+/*
+ * ustctl_create_event notifier creates a event notifier in a event notifier
+ * group giving a event notifier description and a event notifier group handle.
+ * It returns a event notifier handle to be used when enabling the event
+ * notifier, attaching filter, attaching exclusion, and disabling the event
+ * notifier.
+ */
+int ustctl_create_event_notifier(int sock,
+		struct lttng_ust_event_notifier *event_notifier,
+		struct lttng_ust_object_data *event_notifier_group,
+		struct lttng_ust_object_data **event_notifier_data);
+
+/*
  * ustctl_tracepoint_list returns a tracepoint list handle, or negative
  * error value.
  */

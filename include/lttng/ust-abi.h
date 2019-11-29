@@ -120,6 +120,18 @@ struct lttng_ust_event {
 	} u;
 } LTTNG_PACKED;
 
+#define LTTNG_UST_EVENT_NOTIFIER_PADDING1	16
+struct lttng_ust_event_notifier {
+	struct lttng_ust_event event;
+	char padding[LTTNG_UST_EVENT_NOTIFIER_PADDING1];
+} LTTNG_PACKED;
+
+#define LTTNG_EVENT_NOTIFIER_NOTIFICATION_PADDING 32
+struct lttng_ust_event_notifier_notification {
+	uint64_t token;
+	char padding[LTTNG_EVENT_NOTIFIER_NOTIFICATION_PADDING];
+} LTTNG_PACKED;
+
 enum lttng_ust_field_type {
 	LTTNG_UST_FIELD_OTHER			= 0,
 	LTTNG_UST_FIELD_INTEGER			= 1,
@@ -218,6 +230,8 @@ enum lttng_ust_object_type {
 	LTTNG_UST_OBJECT_TYPE_STREAM = 1,
 	LTTNG_UST_OBJECT_TYPE_EVENT = 2,
 	LTTNG_UST_OBJECT_TYPE_CONTEXT = 3,
+	LTTNG_UST_OBJECT_TYPE_EVENT_NOTIFIER_GROUP = 4,
+	LTTNG_UST_OBJECT_TYPE_EVENT_NOTIFIER = 5,
 };
 
 #define LTTNG_UST_OBJECT_DATA_PADDING1	32
@@ -292,6 +306,7 @@ struct lttng_ust_event_exclusion {
 #define LTTNG_UST_WAIT_QUIESCENT		_UST_CMD(0x43)
 #define LTTNG_UST_REGISTER_DONE			_UST_CMD(0x44)
 #define LTTNG_UST_TRACEPOINT_FIELD_LIST		_UST_CMD(0x45)
+#define LTTNG_UST_EVENT_NOTIFIER_GROUP_CREATE	_UST_CMD(0x46)
 
 /* Session FD commands */
 #define LTTNG_UST_CHANNEL			\
@@ -323,6 +338,10 @@ struct lttng_ust_event_exclusion {
 #define LTTNG_UST_FILTER			_UST_CMD(0xA0)
 #define LTTNG_UST_EXCLUSION			_UST_CMD(0xA1)
 
+/* Event notifier group commands */
+#define LTTNG_UST_EVENT_NOTIFIER_CREATE		\
+	_UST_CMDW(0xB0, struct lttng_ust_event_notifier)
+
 #define LTTNG_UST_ROOT_HANDLE	0
 
 struct lttng_ust_obj;
@@ -342,6 +361,9 @@ union ust_args {
 	struct {
 		char *ctxname;
 	} app_context;
+	struct {
+		int event_notifier_notif_fd;
+	} event_notifier_handle;
 };
 
 struct lttng_ust_objd_ops {

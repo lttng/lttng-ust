@@ -44,6 +44,13 @@ struct lttng_event_enabler {
 	struct lttng_ctx *ctx;
 };
 
+struct lttng_event_notifier_enabler {
+	struct lttng_enabler base;
+	struct cds_list_head node;	/* per-app list of event notifier enablers */
+	struct lttng_event_notifier_group *group; /* weak ref */
+	uint64_t user_token;		/* User-provided token */
+};
+
 struct lttng_ust_filter_bytecode_node {
 	struct cds_list_head node;
 	struct lttng_enabler *enabler;
@@ -71,6 +78,12 @@ struct lttng_enabler *lttng_event_enabler_as_enabler(
 	return &event_enabler->base;
 }
 
+static inline
+struct lttng_enabler *lttng_event_notifier_enabler_as_enabler(
+		struct lttng_event_notifier_enabler *event_notifier_enabler)
+{
+	return &event_notifier_enabler->base;
+}
 
 /*
  * Allocate and initialize a `struct lttng_event_enabler` object.
@@ -140,5 +153,85 @@ void lttng_enabler_link_bytecode(const struct lttng_event_desc *event_desc,
 		struct lttng_ctx **ctx,
 		struct cds_list_head *bytecode_runtime_head,
 		struct lttng_enabler *enabler);
+
+/*
+ * Allocate and initialize a `struct lttng_event_notifier_group` object.
+ *
+ * On success, returns a `struct lttng_triggre_group`,
+ * on memory error, returns NULL.
+ */
+LTTNG_HIDDEN
+struct lttng_event_notifier_group *lttng_event_notifier_group_create(void);
+
+/*
+ * Destroy a `struct lttng_event_notifier_group` object.
+ */
+LTTNG_HIDDEN
+void lttng_event_notifier_group_destroy(
+		struct lttng_event_notifier_group *event_notifier_group);
+
+/*
+ * Allocate and initialize a `struct lttng_event_notifier_enabler` object.
+ *
+ * On success, returns a `struct lttng_event_notifier_enabler`,
+ * On memory error, returns NULL.
+ */
+LTTNG_HIDDEN
+struct lttng_event_notifier_enabler *lttng_event_notifier_enabler_create(
+		struct lttng_event_notifier_group *event_notifier_group,
+		enum lttng_enabler_format_type format_type,
+		struct lttng_ust_event_notifier *event_notifier_param);
+
+/*
+ * Destroy a `struct lttng_event_notifier_enabler` object.
+ */
+LTTNG_HIDDEN
+void lttng_event_notifier_enabler_destroy(
+		struct lttng_event_notifier_enabler *event_notifier_enabler);
+
+/*
+ * Enable a `struct lttng_event_notifier_enabler` object and all event
+ * notifiers related to this enabler.
+ */
+LTTNG_HIDDEN
+int lttng_event_notifier_enabler_enable(
+		struct lttng_event_notifier_enabler *event_notifier_enabler);
+
+/*
+ * Disable a `struct lttng_event_notifier_enabler` object and all event
+ * notifiers related to this enabler.
+ */
+LTTNG_HIDDEN
+int lttng_event_notifier_enabler_disable(
+		struct lttng_event_notifier_enabler *event_notifier_enabler);
+
+/*
+ * Attach filter bytecode program to `struct lttng_event_notifier_enabler` and
+ * all event notifiers related to this enabler.
+ */
+LTTNG_HIDDEN
+int lttng_event_notifier_enabler_attach_bytecode(
+		struct lttng_event_notifier_enabler *event_notifier_enabler,
+		struct lttng_ust_filter_bytecode_node *bytecode);
+
+/*
+ * Attach exclusion list to `struct lttng_event_notifier_enabler` and all
+ * event notifiers related to this enabler.
+ */
+LTTNG_HIDDEN
+int lttng_event_notifier_enabler_attach_exclusion(
+		struct lttng_event_notifier_enabler *event_notifier_enabler,
+		struct lttng_ust_excluder_node *excluder);
+
+LTTNG_HIDDEN
+void lttng_free_event_notifier_filter_runtime(
+		struct lttng_event_notifier *event_notifier);
+
+/*
+ * Connect the probe on all enablers matching this event description.
+ * Called on library load.
+ */
+LTTNG_HIDDEN
+int lttng_fix_pending_event_notifiers(void);
 
 #endif /* _LTTNG_UST_EVENTS_INTERNAL_H */

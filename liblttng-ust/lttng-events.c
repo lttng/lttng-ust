@@ -22,10 +22,10 @@
 
 #define _LGPL_SOURCE
 #include <stdio.h>
-#include <urcu/list.h>
-#include <urcu/hlist.h>
-#include <pthread.h>
+#include <assert.h>
 #include <errno.h>
+#include <limits.h>
+#include <pthread.h>
 #include <sys/shm.h>
 #include <sys/ipc.h>
 #include <stdint.h>
@@ -33,13 +33,15 @@
 #include <inttypes.h>
 #include <time.h>
 #include <stdbool.h>
+#include <unistd.h>
 #include <lttng/ust-endian.h>
-#include "clock.h"
 
 #include <urcu-bp.h>
-#include <urcu/compiler.h>
-#include <urcu/uatomic.h>
 #include <urcu/arch.h>
+#include <urcu/compiler.h>
+#include <urcu/hlist.h>
+#include <urcu/list.h>
+#include <urcu/uatomic.h>
 
 #include <lttng/tracepoint.h>
 #include <lttng/ust-events.h>
@@ -48,6 +50,7 @@
 #include <helper.h>
 #include <lttng/ust-ctl.h>
 #include <ust-comm.h>
+#include <ust-fd.h>
 #include <lttng/ust-dynamic-type.h>
 #include <lttng/ust-context-provider.h>
 #include "error.h"
@@ -63,6 +66,7 @@
 #include "wait.h"
 #include "../libringbuffer/shm.h"
 #include "jhash.h"
+#include <lttng/ust-abi.h>
 
 /*
  * All operations within this file are called by the communication
@@ -70,6 +74,7 @@
  */
 
 static CDS_LIST_HEAD(sessions);
+static CDS_LIST_HEAD(event_notifier_groups);
 
 struct cds_list_head *_lttng_get_sessions(void)
 {
@@ -77,12 +82,17 @@ struct cds_list_head *_lttng_get_sessions(void)
 }
 
 static void _lttng_event_destroy(struct lttng_event *event);
+static void _lttng_event_notifier_destroy(
+		struct lttng_event_notifier *event_notifier);
 static void _lttng_enum_destroy(struct lttng_enum *_enum);
 
 static
 void lttng_session_lazy_sync_event_enablers(struct lttng_session *session);
 static
 void lttng_session_sync_event_enablers(struct lttng_session *session);
+static
+void lttng_event_notifier_group_sync_enablers(
+		struct lttng_event_notifier_group *event_notifier_group);
 static
 void lttng_enabler_destroy(struct lttng_enabler *enabler);
 
@@ -159,6 +169,25 @@ struct lttng_session *lttng_session_create(void)
 	return session;
 }
 
+struct lttng_event_notifier_group *lttng_event_notifier_group_create(void)
+{
+	struct lttng_event_notifier_group *event_notifier_group;
+	int i;
+
+	event_notifier_group = zmalloc(sizeof(struct lttng_event_notifier_group));
+	if (!event_notifier_group)
+		return NULL;
+
+	CDS_INIT_LIST_HEAD(&event_notifier_group->enablers_head);
+	CDS_INIT_LIST_HEAD(&event_notifier_group->event_notifiers_head);
+	for (i = 0; i < LTTNG_UST_EVENT_NOTIFIER_HT_SIZE; i++)
+		CDS_INIT_HLIST_HEAD(&event_notifier_group->event_notifiers_ht.table[i]);
+
+	cds_list_add(&event_notifier_group->node, &event_notifier_groups);
+
+	return event_notifier_group;
+}
+
 /*
  * Only used internally at session destruction.
  */
@@ -196,6 +225,21 @@ void register_event(struct lttng_event *event)
 }
 
 static
+void register_event_notifier(struct lttng_event_notifier *event_notifier)
+{
+	int ret;
+	const struct lttng_event_desc *desc;
+
+	assert(event_notifier->registered == 0);
+	desc = event_notifier->desc;
+	ret = __tracepoint_probe_register_queue_release(desc->name,
+		desc->u.ext.event_notifier_callback, event_notifier, desc->signature);
+	WARN_ON_ONCE(ret);
+	if (!ret)
+		event_notifier->registered = 1;
+}
+
+static
 void unregister_event(struct lttng_event *event)
 {
 	int ret;
@@ -211,6 +255,21 @@ void unregister_event(struct lttng_event *event)
 		event->registered = 0;
 }
 
+static
+void unregister_event_notifier(struct lttng_event_notifier *event_notifier)
+{
+	int ret;
+	const struct lttng_event_desc *desc;
+
+	assert(event_notifier->registered == 1);
+	desc = event_notifier->desc;
+	ret = __tracepoint_probe_unregister_queue_release(desc->name,
+		desc->u.ext.event_notifier_callback, event_notifier);
+	WARN_ON_ONCE(ret);
+	if (!ret)
+		event_notifier->registered = 0;
+}
+
 /*
  * Only used internally at session destruction.
  */
@@ -219,6 +278,16 @@ void _lttng_event_unregister(struct lttng_event *event)
 {
 	if (event->registered)
 		unregister_event(event);
+}
+
+/*
+ * Only used internally at session destruction.
+ */
+static
+void _lttng_event_notifier_unregister(struct lttng_event_notifier *event_notifier)
+{
+	if (event_notifier->registered)
+		unregister_event_notifier(event_notifier);
 }
 
 void lttng_session_destroy(struct lttng_session *session)
@@ -250,6 +319,49 @@ void lttng_session_destroy(struct lttng_session *session)
 	free(session);
 }
 
+void lttng_event_notifier_group_destroy(
+		struct lttng_event_notifier_group *event_notifier_group)
+{
+	int close_ret;
+	struct lttng_event_notifier_enabler *notifier_enabler, *tmpnotifier_enabler;
+	struct lttng_event_notifier *notifier, *tmpnotifier;
+
+	if (!event_notifier_group) {
+		return;
+	}
+
+	cds_list_for_each_entry(notifier,
+			&event_notifier_group->event_notifiers_head, node)
+		_lttng_event_notifier_unregister(notifier);
+
+	synchronize_trace();
+
+	cds_list_for_each_entry_safe(notifier_enabler, tmpnotifier_enabler,
+			&event_notifier_group->enablers_head, node)
+		lttng_event_notifier_enabler_destroy(notifier_enabler);
+
+	cds_list_for_each_entry_safe(notifier, tmpnotifier,
+			&event_notifier_group->event_notifiers_head, node)
+		_lttng_event_notifier_destroy(notifier);
+
+	/* Close the notification fd to the listener of event notifiers. */
+
+	lttng_ust_lock_fd_tracker();
+	close_ret = close(event_notifier_group->notification_fd);
+	if (!close_ret) {
+		lttng_ust_delete_fd_from_tracker(
+				event_notifier_group->notification_fd);
+	} else {
+		PERROR("close");
+		abort();
+	}
+	lttng_ust_unlock_fd_tracker();
+
+	cds_list_del(&event_notifier_group->node);
+
+	free(event_notifier_group);
+}
+
 static
 void lttng_enabler_destroy(struct lttng_enabler *enabler)
 {
@@ -271,6 +383,19 @@ void lttng_enabler_destroy(struct lttng_enabler *enabler)
 			&enabler->excluder_head, node) {
 		free(excluder_node);
 	}
+}
+
+ void lttng_event_notifier_enabler_destroy(struct lttng_event_notifier_enabler *event_notifier_enabler)
+{
+	if (!event_notifier_enabler) {
+		return;
+	}
+
+	cds_list_del(&event_notifier_enabler->node);
+
+	lttng_enabler_destroy(lttng_event_notifier_enabler_as_enabler(event_notifier_enabler));
+
+	free(event_notifier_enabler);
 }
 
 static
@@ -663,6 +788,69 @@ socket_error:
 }
 
 static
+int lttng_event_notifier_create(const struct lttng_event_desc *desc,
+		uint64_t token,
+		struct lttng_event_notifier_group *event_notifier_group)
+{
+	struct lttng_event_notifier *event_notifier;
+	struct cds_hlist_head *head;
+	int ret = 0;
+
+	/*
+	 * Get the hashtable bucket the created lttng_event_notifier object
+	 * should be inserted.
+	 */
+	head = borrow_hash_table_bucket(
+		event_notifier_group->event_notifiers_ht.table,
+		LTTNG_UST_EVENT_NOTIFIER_HT_SIZE, desc);
+
+	event_notifier = zmalloc(sizeof(struct lttng_event_notifier));
+	if (!event_notifier) {
+		ret = -ENOMEM;
+		goto error;
+	}
+
+	event_notifier->group = event_notifier_group;
+	event_notifier->user_token = token;
+
+	/* Event notifier will be enabled by enabler sync. */
+	event_notifier->enabled = 0;
+	event_notifier->registered = 0;
+
+	CDS_INIT_LIST_HEAD(&event_notifier->filter_bytecode_runtime_head);
+	CDS_INIT_LIST_HEAD(&event_notifier->enablers_ref_head);
+	event_notifier->desc = desc;
+
+	cds_list_add(&event_notifier->node,
+			&event_notifier_group->event_notifiers_head);
+	cds_hlist_add_head(&event_notifier->hlist, head);
+
+	return 0;
+
+error:
+	return ret;
+}
+
+static
+void _lttng_event_notifier_destroy(struct lttng_event_notifier *event_notifier)
+{
+	struct lttng_enabler_ref *enabler_ref, *tmp_enabler_ref;
+
+	/* Remove from event_notifier list. */
+	cds_list_del(&event_notifier->node);
+	/* Remove from event_notifier hash table. */
+	cds_hlist_del(&event_notifier->hlist);
+
+	lttng_free_event_notifier_filter_runtime(event_notifier);
+
+	/* Free event_notifier enabler refs */
+	cds_list_for_each_entry_safe(enabler_ref, tmp_enabler_ref,
+			&event_notifier->enablers_ref_head, node)
+		free(enabler_ref);
+	free(event_notifier);
+}
+
+static
 int lttng_desc_match_star_glob_enabler(const struct lttng_event_desc *desc,
 		struct lttng_enabler *enabler)
 {
@@ -760,6 +948,21 @@ int lttng_event_enabler_match_event(struct lttng_event_enabler *event_enabler,
 }
 
 static
+int lttng_event_notifier_enabler_match_event_notifier(
+		struct lttng_event_notifier_enabler *event_notifier_enabler,
+		struct lttng_event_notifier *event_notifier)
+{
+	int desc_matches = lttng_desc_match_enabler(event_notifier->desc,
+		lttng_event_notifier_enabler_as_enabler(event_notifier_enabler));
+
+	if (desc_matches && event_notifier->group == event_notifier_enabler->group &&
+			event_notifier->user_token == event_notifier_enabler->user_token)
+		return 1;
+	else
+		return 0;
+}
+
+static
 struct lttng_enabler_ref *lttng_enabler_ref(
 		struct cds_list_head *enabler_ref_list,
 		struct lttng_enabler *enabler)
@@ -835,7 +1038,9 @@ void lttng_create_event_if_missing(struct lttng_event_enabler *event_enabler)
 
 static
 void probe_provider_event_for_each(struct lttng_probe_desc *provider_desc,
-		void (*event_func)(struct lttng_session *session, struct lttng_event *event))
+		void (*event_func)(struct lttng_session *session,
+			struct lttng_event *event),
+		void (*event_notifier_func)(struct lttng_event_notifier *event_notifier))
 {
 	struct cds_hlist_node *node, *tmp_node;
 	struct cds_list_head *sessionsp;
@@ -850,6 +1055,8 @@ void probe_provider_event_for_each(struct lttng_probe_desc *provider_desc,
 	 */
 	for (i = 0; i < provider_desc->nr_events; i++) {
 		const struct lttng_event_desc *event_desc;
+		struct lttng_event_notifier_group *event_notifier_group;
+		struct lttng_event_notifier *event_notifier;
 		struct lttng_session *session;
 		struct cds_hlist_head *head;
 		struct lttng_event *event;
@@ -872,6 +1079,28 @@ void probe_provider_event_for_each(struct lttng_probe_desc *provider_desc,
 			cds_hlist_for_each_entry_safe(event, node, tmp_node, head, hlist) {
 				if (event_desc == event->desc) {
 					event_func(session, event);
+					break;
+				}
+			}
+		}
+
+		/*
+		 * Iterate over all event_notifier groups to find the current event
+		 * description.
+		 */
+		cds_list_for_each_entry(event_notifier_group, &event_notifier_groups, node) {
+			/*
+			 * Get the list of event_notifiers in the hashtable bucket and
+			 * iterate to find the event_notifier matching this
+			 * descriptor.
+			 */
+			head = borrow_hash_table_bucket(
+				event_notifier_group->event_notifiers_ht.table,
+				LTTNG_UST_EVENT_NOTIFIER_HT_SIZE, event_desc);
+
+			cds_hlist_for_each_entry_safe(event_notifier, node, tmp_node, head, hlist) {
+				if (event_desc == event_notifier->desc) {
+					event_notifier_func(event_notifier);
 					break;
 				}
 			}
@@ -932,7 +1161,8 @@ void lttng_probe_provider_unregister_events(
 	 * Iterate over all events in the probe provider descriptions and sessions
 	 * to queue the unregistration of the events.
 	 */
-	probe_provider_event_for_each(provider_desc, _unregister_event);
+	probe_provider_event_for_each(provider_desc, _unregister_event,
+		_lttng_event_notifier_unregister);
 
 	/* Wait for grace period. */
 	synchronize_trace();
@@ -943,11 +1173,12 @@ void lttng_probe_provider_unregister_events(
 	 * It is now safe to destroy the events and remove them from the event list
 	 * and hashtables.
 	 */
-	probe_provider_event_for_each(provider_desc, _event_enum_destroy);
+	probe_provider_event_for_each(provider_desc, _event_enum_destroy,
+		_lttng_event_notifier_destroy);
 }
 
 /*
- * Create events associated with an enabler (if not already present),
+ * Create events associated with an event enabler (if not already present),
  * and add backward reference from the event to the enabler.
  */
 static
@@ -1010,6 +1241,16 @@ int lttng_fix_pending_events(void)
 
 	cds_list_for_each_entry(session, &sessions, node) {
 		lttng_session_lazy_sync_event_enablers(session);
+	}
+	return 0;
+}
+
+int lttng_fix_pending_event_notifiers(void)
+{
+	struct lttng_event_notifier_group *event_notifier_group;
+
+	cds_list_for_each_entry(event_notifier_group, &event_notifier_groups, node) {
+		lttng_event_notifier_group_sync_enablers(event_notifier_group);
 	}
 	return 0;
 }
@@ -1107,6 +1348,43 @@ struct lttng_event_enabler *lttng_event_enabler_create(
 	return event_enabler;
 }
 
+struct lttng_event_notifier_enabler *lttng_event_notifier_enabler_create(
+		struct lttng_event_notifier_group *event_notifier_group,
+		enum lttng_enabler_format_type format_type,
+		struct lttng_ust_event_notifier *event_notifier_param)
+{
+	struct lttng_event_notifier_enabler *event_notifier_enabler;
+
+	event_notifier_enabler = zmalloc(sizeof(*event_notifier_enabler));
+	if (!event_notifier_enabler)
+		return NULL;
+	event_notifier_enabler->base.format_type = format_type;
+	CDS_INIT_LIST_HEAD(&event_notifier_enabler->base.filter_bytecode_head);
+	CDS_INIT_LIST_HEAD(&event_notifier_enabler->base.excluder_head);
+
+	event_notifier_enabler->user_token = event_notifier_param->event.token;
+
+	memcpy(&event_notifier_enabler->base.event_param.name,
+		event_notifier_param->event.name,
+		sizeof(event_notifier_enabler->base.event_param.name));
+	event_notifier_enabler->base.event_param.instrumentation =
+		event_notifier_param->event.instrumentation;
+	event_notifier_enabler->base.event_param.loglevel =
+		event_notifier_param->event.loglevel;
+	event_notifier_enabler->base.event_param.loglevel_type =
+		event_notifier_param->event.loglevel_type;
+
+	event_notifier_enabler->base.enabled = 0;
+	event_notifier_enabler->group = event_notifier_group;
+
+	cds_list_add(&event_notifier_enabler->node,
+			&event_notifier_group->enablers_head);
+
+	lttng_event_notifier_group_sync_enablers(event_notifier_group);
+
+	return event_notifier_enabler;
+}
+
 int lttng_event_enabler_enable(struct lttng_event_enabler *event_enabler)
 {
 	lttng_event_enabler_as_enabler(event_enabler)->enabled = 1;
@@ -1156,6 +1434,48 @@ int lttng_event_enabler_attach_exclusion(struct lttng_event_enabler *event_enabl
 		lttng_event_enabler_as_enabler(event_enabler), excluder);
 
 	lttng_session_lazy_sync_event_enablers(event_enabler->chan->session);
+	return 0;
+}
+
+int lttng_event_notifier_enabler_enable(
+		struct lttng_event_notifier_enabler *event_notifier_enabler)
+{
+	lttng_event_notifier_enabler_as_enabler(event_notifier_enabler)->enabled = 1;
+	lttng_event_notifier_group_sync_enablers(event_notifier_enabler->group);
+
+	return 0;
+}
+
+int lttng_event_notifier_enabler_disable(
+		struct lttng_event_notifier_enabler *event_notifier_enabler)
+{
+	lttng_event_notifier_enabler_as_enabler(event_notifier_enabler)->enabled = 0;
+	lttng_event_notifier_group_sync_enablers(event_notifier_enabler->group);
+
+	return 0;
+}
+
+int lttng_event_notifier_enabler_attach_bytecode(
+		struct lttng_event_notifier_enabler *event_notifier_enabler,
+		struct lttng_ust_filter_bytecode_node *bytecode)
+{
+	_lttng_enabler_attach_bytecode(
+		lttng_event_notifier_enabler_as_enabler(event_notifier_enabler),
+		bytecode);
+
+	lttng_event_notifier_group_sync_enablers(event_notifier_enabler->group);
+	return 0;
+}
+
+int lttng_event_notifier_enabler_attach_exclusion(
+		struct lttng_event_notifier_enabler *event_notifier_enabler,
+		struct lttng_ust_excluder_node *excluder)
+{
+	_lttng_enabler_attach_exclusion(
+		lttng_event_notifier_enabler_as_enabler(event_notifier_enabler),
+		excluder);
+
+	lttng_event_notifier_group_sync_enablers(event_notifier_enabler->group);
 	return 0;
 }
 
@@ -1321,6 +1641,187 @@ void lttng_session_sync_event_enablers(struct lttng_session *session)
 	__tracepoint_probe_prune_release_queue();
 }
 
+static
+void lttng_create_event_notifier_if_missing(
+		struct lttng_event_notifier_enabler *event_notifier_enabler)
+{
+	struct lttng_event_notifier_group *event_notifier_group = event_notifier_enabler->group;
+	struct lttng_probe_desc *probe_desc;
+	struct cds_list_head *probe_list;
+	int i;
+
+	probe_list = lttng_get_probe_list_head();
+
+	cds_list_for_each_entry(probe_desc, probe_list, head) {
+		for (i = 0; i < probe_desc->nr_events; i++) {
+			int ret;
+			bool found = false;
+			const struct lttng_event_desc *desc;
+			struct lttng_event_notifier *event_notifier;
+			struct cds_hlist_head *head;
+			struct cds_hlist_node *node;
+
+			desc = probe_desc->event_desc[i];
+			if (!lttng_desc_match_enabler(desc,
+					lttng_event_notifier_enabler_as_enabler(event_notifier_enabler)))
+				continue;
+
+			/*
+			 * Given the current event_notifier group, get the bucket that
+			 * the target event_notifier would be if it was already
+			 * created.
+			 */
+			head = borrow_hash_table_bucket(
+				event_notifier_group->event_notifiers_ht.table,
+				LTTNG_UST_EVENT_NOTIFIER_HT_SIZE, desc);
+
+			cds_hlist_for_each_entry(event_notifier, node, head, hlist) {
+				/*
+				 * Check if event_notifier already exists by checking
+				 * if the event_notifier and enabler share the same
+				 * description and id.
+				 */
+				if (event_notifier->desc == desc &&
+						event_notifier->user_token == event_notifier_enabler->user_token) {
+					found = true;
+					break;
+				}
+			}
+
+			if (found)
+				continue;
+
+			/*
+			 * We need to create a event_notifier for this event probe.
+			 */
+			ret = lttng_event_notifier_create(desc,
+				event_notifier_enabler->user_token,
+				event_notifier_group);
+			if (ret) {
+				DBG("Unable to create event_notifier %s, error %d\n",
+					probe_desc->event_desc[i]->name, ret);
+			}
+		}
+	}
+}
+
+/*
+ * Create event_notifiers associated with a event_notifier enabler (if not already present).
+ */
+static
+int lttng_event_notifier_enabler_ref_event_notifiers(
+		struct lttng_event_notifier_enabler *event_notifier_enabler)
+{
+	struct lttng_event_notifier_group *event_notifier_group = event_notifier_enabler->group;
+	struct lttng_event_notifier *event_notifier;
+
+	 /*
+	  * Only try to create event_notifiers for enablers that are enabled, the user
+	  * might still be attaching filter or exclusion to the
+	  * event_notifier_enabler.
+	  */
+	if (!lttng_event_notifier_enabler_as_enabler(event_notifier_enabler)->enabled)
+		goto end;
+
+	/* First, ensure that probe event_notifiers are created for this enabler. */
+	lttng_create_event_notifier_if_missing(event_notifier_enabler);
+
+	/* Link the created event_notifier with its associated enabler. */
+	cds_list_for_each_entry(event_notifier, &event_notifier_group->event_notifiers_head, node) {
+		struct lttng_enabler_ref *enabler_ref;
+
+		if (!lttng_event_notifier_enabler_match_event_notifier(event_notifier_enabler, event_notifier))
+			continue;
+
+		enabler_ref = lttng_enabler_ref(&event_notifier->enablers_ref_head,
+			lttng_event_notifier_enabler_as_enabler(event_notifier_enabler));
+		if (!enabler_ref) {
+			/*
+			 * If no backward ref, create it.
+			 * Add backward ref from event_notifier to enabler.
+			 */
+			enabler_ref = zmalloc(sizeof(*enabler_ref));
+			if (!enabler_ref)
+				return -ENOMEM;
+
+			enabler_ref->ref = lttng_event_notifier_enabler_as_enabler(
+				event_notifier_enabler);
+			cds_list_add(&enabler_ref->node,
+				&event_notifier->enablers_ref_head);
+		}
+
+		/*
+		 * Link filter bytecodes if not linked yet.
+		 */
+		lttng_enabler_link_bytecode(event_notifier->desc,
+			&event_notifier_group->ctx, &event_notifier->filter_bytecode_runtime_head,
+			lttng_event_notifier_enabler_as_enabler(event_notifier_enabler));
+	}
+end:
+	return 0;
+}
+
+static
+void lttng_event_notifier_group_sync_enablers(struct lttng_event_notifier_group *event_notifier_group)
+{
+	struct lttng_event_notifier_enabler *event_notifier_enabler;
+	struct lttng_event_notifier *event_notifier;
+
+	cds_list_for_each_entry(event_notifier_enabler, &event_notifier_group->enablers_head, node)
+		lttng_event_notifier_enabler_ref_event_notifiers(event_notifier_enabler);
+
+	/*
+	 * For each event_notifier, if at least one of its enablers is enabled,
+	 * we enable the event_notifier, else we disable it.
+	 */
+	cds_list_for_each_entry(event_notifier, &event_notifier_group->event_notifiers_head, node) {
+		struct lttng_enabler_ref *enabler_ref;
+		struct lttng_bytecode_runtime *runtime;
+		int enabled = 0, has_enablers_without_bytecode = 0;
+
+		/* Enable event_notifiers */
+		cds_list_for_each_entry(enabler_ref,
+				&event_notifier->enablers_ref_head, node) {
+			if (enabler_ref->ref->enabled) {
+				enabled = 1;
+				break;
+			}
+		}
+
+		CMM_STORE_SHARED(event_notifier->enabled, enabled);
+		/*
+		 * Sync tracepoint registration with event_notifier enabled
+		 * state.
+		 */
+		if (enabled) {
+			if (!event_notifier->registered)
+				register_event_notifier(event_notifier);
+		} else {
+			if (event_notifier->registered)
+				unregister_event_notifier(event_notifier);
+		}
+
+		/* Check if has enablers without bytecode enabled */
+		cds_list_for_each_entry(enabler_ref,
+				&event_notifier->enablers_ref_head, node) {
+			if (enabler_ref->ref->enabled
+					&& cds_list_empty(&enabler_ref->ref->filter_bytecode_head)) {
+				has_enablers_without_bytecode = 1;
+				break;
+			}
+		}
+		event_notifier->has_enablers_without_bytecode =
+			has_enablers_without_bytecode;
+
+		/* Enable filters */
+		cds_list_for_each_entry(runtime,
+				&event_notifier->filter_bytecode_runtime_head, node) {
+			lttng_filter_sync_state(runtime);
+		}
+	}
+	__tracepoint_probe_prune_release_queue();
+}
+
 /*
  * Apply enablers to session events, adding events to session if need
  * be. It is required after each modification applied to an active
@@ -1374,5 +1875,33 @@ void lttng_ust_context_set_session_provider(const char *name,
 			if (ret)
 				abort();
 		}
+	}
+}
+
+/*
+ * Update all event_notifier groups with the given app context.
+ * Called with ust lock held.
+ * This is invoked when an application context gets loaded/unloaded. It
+ * ensures the context callbacks are in sync with the application
+ * context (either app context callbacks, or dummy callbacks).
+ */
+void lttng_ust_context_set_event_notifier_group_provider(const char *name,
+		size_t (*get_size)(struct lttng_ctx_field *field, size_t offset),
+		void (*record)(struct lttng_ctx_field *field,
+			struct lttng_ust_lib_ring_buffer_ctx *ctx,
+			struct lttng_channel *chan),
+		void (*get_value)(struct lttng_ctx_field *field,
+			struct lttng_ctx_value *value))
+{
+	struct lttng_event_notifier_group *event_notifier_group;
+
+	cds_list_for_each_entry(event_notifier_group, &event_notifier_groups, node) {
+		int ret;
+
+		ret = lttng_ust_context_set_provider_rcu(
+				&event_notifier_group->ctx,
+				name, get_size, record, get_value);
+		if (ret)
+			abort();
 	}
 }

@@ -434,6 +434,24 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));
 #include TRACEPOINT_INCLUDE
 
 /*
+ * Stage 2.1 of tracepoint event generation.
+ *
+ * Create probe event notifier callback prototypes.
+ */
+
+/* Reset all macros within TRACEPOINT_EVENT */
+#include <lttng/ust-tracepoint-event-reset.h>
+
+#undef TP_ARGS
+#define TP_ARGS(...) __VA_ARGS__
+
+#undef TRACEPOINT_EVENT_CLASS
+#define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)		\
+static void __event_notifier_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));
+
+#include TRACEPOINT_INCLUDE
+
+/*
  * Stage 3.0 of tracepoint event generation.
  *
  * Create static inline function that calculates event size.
@@ -914,6 +932,48 @@ static const char __tp_event_signature___##_provider##___##_name[] = 	\
 #undef _TP_EXTRACT_STRING2
 
 /*
+ * Stage 5.2 of tracepoint event generation.
+ *
+ * Create the event notifier probe function.
+ */
+#undef TRACEPOINT_EVENT_CLASS
+#define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
+static lttng_ust_notrace						      \
+void __event_notifier_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));    \
+static									      \
+void __event_notifier_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))     \
+{									      \
+	struct lttng_event_notifier *__event_notifier = (struct lttng_event_notifier *) __tp_data; \
+	const size_t __num_fields = _TP_ARRAY_SIZE(__event_fields___##_provider##___##_name) - 1;\
+	union {								      \
+		size_t __dynamic_len[__num_fields];			      \
+		char __filter_stack_data[2 * sizeof(unsigned long) * __num_fields]; \
+	} __stackvar;							      \
+	if (caa_unlikely(!CMM_ACCESS_ONCE(__event_notifier->enabled)))	      \
+		return;							      \
+	if (caa_unlikely(!TP_RCU_LINK_TEST()))				      \
+		return;							      \
+	if (caa_unlikely(!cds_list_empty(&__event_notifier->filter_bytecode_runtime_head))) { \
+		struct lttng_bytecode_runtime *__filter_bc_runtime;		       \
+		int __filter_record = __event_notifier->has_enablers_without_bytecode; \
+									      \
+		__event_prepare_filter_stack__##_provider##___##_name(__stackvar.__filter_stack_data, \
+			_TP_ARGS_DATA_VAR(_args));			      \
+		tp_list_for_each_entry_rcu(__filter_bc_runtime, &__event_notifier->filter_bytecode_runtime_head, node) { \
+			if (caa_unlikely(__filter_bc_runtime->filter(__filter_bc_runtime,	     \
+					__stackvar.__filter_stack_data) & LTTNG_FILTER_RECORD_FLAG)) \
+				__filter_record = 1;			      \
+		}							      \
+		if (caa_likely(!__filter_record))			      \
+			return;						      \
+	}								      \
+									      \
+	lttng_event_notifier_notification_send(__event_notifier);	      \
+}
+
+#include TRACEPOINT_INCLUDE
+
+/*
  * Stage 6 of tracepoint event generation.
  *
  * Tracepoint loglevel mapping definition generation. We generate a
@@ -1008,6 +1068,7 @@ static const struct lttng_event_desc __event_desc___##_provider##_##_name = {	  
 	.u = {								       \
 	    .ext = {							       \
 		  .model_emf_uri = &__ref_model_emf_uri___##_provider##___##_name, \
+		  .event_notifier_callback = (void (*)(void)) &__event_notifier_probe__##_provider##___##_template,\
 		},							       \
 	},								       \
 };

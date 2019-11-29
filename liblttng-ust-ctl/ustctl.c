@@ -135,6 +135,8 @@ int ustctl_release_object(int sock, struct lttng_ust_object_data *data)
 		break;
 	case LTTNG_UST_OBJECT_TYPE_EVENT:
 	case LTTNG_UST_OBJECT_TYPE_CONTEXT:
+	case LTTNG_UST_OBJECT_TYPE_EVENT_NOTIFIER_GROUP:
+	case LTTNG_UST_OBJECT_TYPE_EVENT_NOTIFIER:
 		break;
 	default:
 		assert(0);
@@ -419,6 +421,97 @@ int ustctl_stop_session(int sock, int handle)
 
 	obj.handle = handle;
 	return ustctl_disable(sock, &obj);
+}
+
+int ustctl_create_event_notifier_group(int sock, int pipe_fd,
+		struct lttng_ust_object_data **_event_notifier_group_data)
+{
+	struct lttng_ust_object_data *event_notifier_group_data;
+	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_reply lur;
+	ssize_t len;
+	int ret;
+
+	if (!_event_notifier_group_data)
+		return -EINVAL;
+
+	event_notifier_group_data = zmalloc(sizeof(*event_notifier_group_data));
+	if (!event_notifier_group_data)
+		return -ENOMEM;
+
+	event_notifier_group_data->type = LTTNG_UST_OBJECT_TYPE_EVENT_NOTIFIER_GROUP;
+
+	memset(&lum, 0, sizeof(lum));
+	lum.handle = LTTNG_UST_ROOT_HANDLE;
+	lum.cmd = LTTNG_UST_EVENT_NOTIFIER_GROUP_CREATE;
+
+	ret = ustcomm_send_app_msg(sock, &lum);
+	if (ret)
+		goto error;
+
+	/* Send event_notifier notification pipe. */
+	len = ustcomm_send_fds_unix_sock(sock, &pipe_fd, 1);
+	if (len <= 0) {
+		ret = len;
+		goto error;
+	}
+
+	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	if (ret)
+		goto error;
+
+	event_notifier_group_data->handle = lur.ret_val;
+	DBG("received event_notifier group handle %d", event_notifier_group_data->handle);
+
+	*_event_notifier_group_data = event_notifier_group_data;
+
+	ret = 0;
+	goto end;
+error:
+	free(event_notifier_group_data);
+
+end:
+	return ret;
+}
+
+int ustctl_create_event_notifier(int sock, struct lttng_ust_event_notifier *event_notifier,
+		struct lttng_ust_object_data *event_notifier_group,
+		struct lttng_ust_object_data **_event_notifier_data)
+{
+	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_reply lur;
+	struct lttng_ust_object_data *event_notifier_data;
+	int ret;
+
+	if (!event_notifier_group || !_event_notifier_data)
+		return -EINVAL;
+
+	event_notifier_data = zmalloc(sizeof(*event_notifier_data));
+	if (!event_notifier_data)
+		return -ENOMEM;
+
+	event_notifier_data->type = LTTNG_UST_OBJECT_TYPE_EVENT_NOTIFIER;
+
+	memset(&lum, 0, sizeof(lum));
+	lum.handle = event_notifier_group->handle;
+	lum.cmd = LTTNG_UST_EVENT_NOTIFIER_CREATE;
+
+	strncpy(lum.u.event_notifier.event.name, event_notifier->event.name,
+		LTTNG_UST_SYM_NAME_LEN);
+	lum.u.event_notifier.event.instrumentation = event_notifier->event.instrumentation;
+	lum.u.event_notifier.event.loglevel_type = event_notifier->event.loglevel_type;
+	lum.u.event_notifier.event.loglevel = event_notifier->event.loglevel;
+	lum.u.event_notifier.event.token = event_notifier->event.token;
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+	if (ret) {
+		free(event_notifier_data);
+		return ret;
+	}
+	event_notifier_data->handle = lur.ret_val;
+	DBG("received event_notifier handle %u", event_notifier_data->handle);
+	*_event_notifier_data = event_notifier_data;
+
+	return ret;
 }
 
 int ustctl_tracepoint_list(int sock)

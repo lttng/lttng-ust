@@ -35,6 +35,7 @@
 #include "lttng-tracer-core.h"
 #include "jhash.h"
 #include "error.h"
+#include "ust-events-internal.h"
 
 /*
  * probe list is protected by ust_lock()/ust_unlock().
@@ -203,6 +204,8 @@ int lttng_probe_register(struct lttng_probe_desc *desc)
 	 */
 	if (lttng_session_active())
 		fixup_lazy_probes();
+
+	lttng_fix_pending_event_notifiers();
 
 	ust_unlock();
 	return ret;

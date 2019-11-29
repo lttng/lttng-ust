@@ -584,3 +584,9 @@ void lttng_free_event_filter_runtime(struct lttng_event *event)
 {
 	free_filter_runtime(&event->bytecode_runtime_head);
 }
+
+void lttng_free_event_notifier_filter_runtime(
+		struct lttng_event_notifier *event_notifier)
+{
+	free_filter_runtime(&event_notifier->filter_bytecode_runtime_head);
+}

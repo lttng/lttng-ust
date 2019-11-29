@@ -360,6 +360,7 @@ struct lttng_event_desc {
 	union {
 		struct {
 			const char **model_emf_uri;
+			void (*event_notifier_callback)(void);
 		} ext;
 		char padding[LTTNG_UST_EVENT_DESC_PADDING];
 	} u;
@@ -446,14 +447,20 @@ struct lttng_bytecode_runtime {
 	int link_failed;
 	struct cds_list_head node;	/* list of bytecode runtime in event */
 	/*
-	 * Pointer to a `struct lttng_session`-owned and URCU-protected
-	 * pointer.
+	 * Pointer to a URCU-protected pointer owned by an `struct
+	 * lttng_session`or `struct lttng_event_notifier_group`.
 	 */
 	struct lttng_ctx **pctx;
 };
 
 /*
- * Objects in a linked-list of enablers, owned by an event.
+ * Objects in a linked-list of enablers, owned by an event or event_notifier.
+ * This is used because an event (or a event_notifier) can be enabled by more
+ * than one enabler and we want a quick way to iterate over all enablers of an
+ * object.
+ *
+ * For example, event rules "my_app:a*" and "my_app:ab*" will both match the
+ * event with the name "my_app:abc".
  */
 struct lttng_enabler_ref {
 	struct cds_list_head node;		/* enabler ref list */
@@ -490,6 +497,19 @@ struct lttng_event {
 	struct cds_list_head enablers_ref_head;
 	struct cds_hlist_node hlist;	/* session ht of events */
 	int registered;			/* has reg'd tracepoint probe */
+};
+
+struct lttng_event_notifier {
+	uint64_t user_token;
+	int enabled;
+	int registered;			/* has reg'd tracepoint probe */
+	struct cds_list_head filter_bytecode_runtime_head;
+	int has_enablers_without_bytecode;
+	struct cds_list_head enablers_ref_head;
+	const struct lttng_event_desc *desc;
+	struct cds_hlist_node hlist;	/* hashtable of event_notifiers */
+	struct cds_list_head node;	/* event_notifier list in session */
+	struct lttng_event_notifier_group *group; /* weak ref */
 };
 
 struct lttng_enum {
@@ -600,6 +620,12 @@ struct lttng_ust_event_ht {
 	struct cds_hlist_head table[LTTNG_UST_EVENT_HT_SIZE];
 };
 
+#define LTTNG_UST_EVENT_NOTIFIER_HT_BITS		12
+#define LTTNG_UST_EVENT_NOTIFIER_HT_SIZE		(1U << LTTNG_UST_EVENT_NOTIFIER_HT_BITS)
+struct lttng_ust_event_notifier_ht {
+	struct cds_hlist_head table[LTTNG_UST_EVENT_NOTIFIER_HT_SIZE];
+};
+
 #define LTTNG_UST_ENUM_HT_BITS		12
 #define LTTNG_UST_ENUM_HT_SIZE		(1U << LTTNG_UST_ENUM_HT_BITS)
 
@@ -640,6 +666,17 @@ struct lttng_session {
 	struct lttng_ctx *ctx;			/* contexts for filters. */
 };
 
+struct lttng_event_notifier_group {
+	int objd;
+	void *owner;
+	int notification_fd;
+	struct cds_list_head node;		/* Event notifier group handle list */
+	struct cds_list_head enablers_head;
+	struct cds_list_head event_notifiers_head;	/* list of event_notifiers */
+	struct lttng_ust_event_notifier_ht event_notifiers_ht; /* hashtable of event_notifiers */
+	struct lttng_ctx *ctx;			/* contexts for filters. */
+};
+
 struct lttng_transport {
 	char *name;
 	struct cds_list_head node;
@@ -652,6 +689,9 @@ int lttng_session_enable(struct lttng_session *session);
 int lttng_session_disable(struct lttng_session *session);
 int lttng_session_statedump(struct lttng_session *session);
 void lttng_session_destroy(struct lttng_session *session);
+
+void lttng_event_notifier_notification_send(
+		struct lttng_event_notifier *event_notifier);
 
 struct lttng_channel *lttng_channel_create(struct lttng_session *session,
 				       const char *transport_name,

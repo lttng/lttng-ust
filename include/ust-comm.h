@@ -88,6 +88,7 @@ struct ustcomm_ust_msg {
 	uint32_t cmd;
 	char padding[USTCOMM_MSG_PADDING1];
 	union {
+		struct lttng_ust_event_notifier event_notifier;
 		struct lttng_ust_channel channel;
 		struct lttng_ust_stream stream;
 		struct lttng_ust_event event;
@@ -219,6 +220,8 @@ ssize_t ustcomm_recv_channel_from_sessiond(int sock,
 int ustcomm_recv_stream_from_sessiond(int sock,
 		uint64_t *memory_map_size,
 		int *shm_fd, int *wakeup_fd);
+ssize_t ustcomm_recv_event_notifier_notif_fd_from_sessiond(int sock,
+		int *event_notifier_notif_fd);
 
 /*
  * Returns 0 on success, negative error value on error.

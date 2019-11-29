@@ -27,8 +27,10 @@
 #include <unistd.h>
 
 #include <lttng/ust-context-provider.h>
+
 #include "lttng-tracer-core.h"
 #include "jhash.h"
+#include "context-provider-internal.h"
 #include <helper.h>
 
 #define CONTEXT_PROVIDER_HT_BITS	12
@@ -90,7 +92,12 @@ int lttng_ust_context_provider_register(struct lttng_ust_context_provider *provi
 	hash = jhash(provider->name, name_len, 0);
 	head = &context_provider_ht.table[hash & (CONTEXT_PROVIDER_HT_SIZE - 1)];
 	cds_hlist_add_head(&provider->node, head);
+
 	lttng_ust_context_set_session_provider(provider->name,
+		provider->get_size, provider->record,
+		provider->get_value);
+
+	lttng_ust_context_set_event_notifier_group_provider(provider->name,
 		provider->get_size, provider->record,
 		provider->get_value);
 end:
@@ -107,6 +114,11 @@ void lttng_ust_context_provider_unregister(struct lttng_ust_context_provider *pr
 	lttng_ust_context_set_session_provider(provider->name,
 		lttng_ust_dummy_get_size, lttng_ust_dummy_record,
 		lttng_ust_dummy_get_value);
+
+	lttng_ust_context_set_event_notifier_group_provider(provider->name,
+		lttng_ust_dummy_get_size, lttng_ust_dummy_record,
+		lttng_ust_dummy_get_value);
+
 	cds_hlist_del(&provider->node);
 end:
 	ust_unlock();
