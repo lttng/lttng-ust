@@ -136,7 +136,9 @@ int lttng_event_enabler_attach_exclusion(struct lttng_event_enabler *enabler,
  * each is linked to the provided event.
  */
 LTTNG_HIDDEN
-void lttng_event_enabler_link_bytecode(struct lttng_event *event,
-		struct lttng_event_enabler *enabler);
+void lttng_enabler_link_bytecode(const struct lttng_event_desc *event_desc,
+		struct lttng_ctx **ctx,
+		struct cds_list_head *bytecode_runtime_head,
+		struct lttng_enabler *enabler);
 
 #endif /* _LTTNG_UST_EVENTS_INTERNAL_H */

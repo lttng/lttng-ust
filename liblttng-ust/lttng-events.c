@@ -977,7 +977,10 @@ int lttng_event_enabler_ref_events(struct lttng_event_enabler *event_enabler)
 		/*
 		 * Link filter bytecodes if not linked yet.
 		 */
-		lttng_event_enabler_link_bytecode(event, event_enabler);
+		lttng_enabler_link_bytecode(event->desc,
+			&session->ctx,
+			&event->bytecode_runtime_head,
+			lttng_event_enabler_as_enabler(event_enabler));
 
 		/* TODO: merge event context. */
 	}
