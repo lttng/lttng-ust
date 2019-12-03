@@ -25,8 +25,9 @@
  */
 
 #define _LGPL_SOURCE
-#include <urcu-pointer.h>
+#include <stddef.h>
 #include <stdint.h>
+#include <urcu-pointer.h>
 #include <byteswap.h>
 #include "lttng-filter.h"
 #include "string-utils.h"

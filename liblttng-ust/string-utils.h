@@ -24,6 +24,7 @@
  */
 
 #include <stdbool.h>
+#include <stddef.h>
 
 bool strutils_is_star_glob_pattern(const char *pattern);
 bool strutils_is_star_at_the_end_only_glob_pattern(const char *pattern);

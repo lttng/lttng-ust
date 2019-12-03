@@ -25,6 +25,8 @@
  */
 
 #define _LGPL_SOURCE
+#include <stddef.h>
+
 #include "lttng-filter.h"
 #include <lttng/align.h>
 

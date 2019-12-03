@@ -27,6 +27,7 @@
  */
 
 #include <lttng/tracepoint.h>
+#include <stddef.h>
 #include <stdbool.h>
 
 TRACEPOINT_EVENT(ust_tests_hello, tptest,

@@ -22,6 +22,7 @@
  */
 
 #include <stdint.h>
+#include <stddef.h>
 #include <limits.h>
 #include "shm_internal.h"
 

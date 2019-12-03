@@ -34,6 +34,7 @@
 #define UST_SNPRINTF_VARIOUS_H
 
 #include <stdarg.h>
+#include <stddef.h>
 
 struct __lttng_ust_sbuf {
         unsigned char *_base;

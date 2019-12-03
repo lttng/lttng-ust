@@ -23,6 +23,7 @@
  * SOFTWARE.
  */
 
+#include <stddef.h>
 #include <lttng/ust-events.h>
 #include <urcu/hlist.h>
 

@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <sys/mman.h>
 #include <sys/syscall.h>
 #include <lttng/ust-events.h>

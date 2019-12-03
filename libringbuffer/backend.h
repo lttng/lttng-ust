@@ -26,6 +26,7 @@
  * the reader in flight recorder mode.
  */
 
+#include <stddef.h>
 #include <unistd.h>
 
 /* Internal helpers */

@@ -21,6 +21,7 @@
  */
 
 #define _LGPL_SOURCE
+#include <stddef.h>
 #include <pthread.h>
 #include <lttng/ust-events.h>
 #include <lttng/ust-tracer.h>

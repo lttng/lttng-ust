@@ -28,6 +28,7 @@
  *
  * See ring_buffer_frontend.c for more information on wait-free algorithms.
  */
+#include <stddef.h>
 
 #include <urcu/compiler.h>
 #include <urcu/uatomic.h>

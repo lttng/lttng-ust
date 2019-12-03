@@ -29,6 +29,7 @@
 
 #include <urcu/list.h>
 #include <urcu/hlist.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <lttng/ust-config.h>
 #include <lttng/ust-abi.h>

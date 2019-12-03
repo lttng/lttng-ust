@@ -19,6 +19,7 @@
  */
 
 #define _LGPL_SOURCE
+#include <stddef.h>
 #include <stdlib.h>
 #include <lttng/ust-events.h>
 #include <usterr-signal-safe.h>

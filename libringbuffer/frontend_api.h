@@ -30,9 +30,12 @@
  * See frontend.h for channel allocation and read-side API.
  */
 
-#include "frontend.h"
+#include <stddef.h>
+
 #include <urcu-bp.h>
 #include <urcu/compiler.h>
+
+#include "frontend.h"
 
 /**
  * lib_ring_buffer_get_cpu - Precedes ring buffer reserve/commit.

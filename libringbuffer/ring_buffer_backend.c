@@ -20,6 +20,7 @@
 
 #define _GNU_SOURCE
 #define _LGPL_SOURCE
+#include <stddef.h>
 #include <unistd.h>
 #include <urcu/arch.h>
 #include <limits.h>

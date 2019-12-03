@@ -28,6 +28,7 @@
 
 #define _GNU_SOURCE
 #define _LGPL_SOURCE
+#include <stddef.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <lttng/ust-events.h>

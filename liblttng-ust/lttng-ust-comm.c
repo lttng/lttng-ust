@@ -21,6 +21,7 @@
 
 #define _LGPL_SOURCE
 #define _GNU_SOURCE
+#include <stddef.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/mman.h>

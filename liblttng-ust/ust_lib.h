@@ -32,6 +32,7 @@ extern "C" {
  * SOFTWARE.
  */
 
+#include <stddef.h>
 #include <stdint.h>
 #include <unistd.h>
 

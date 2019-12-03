@@ -22,6 +22,7 @@
  */
 
 #define _LGPL_SOURCE
+#include <stddef.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>

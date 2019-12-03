@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <sys/types.h>
 #include <usterr-signal-safe.h>
 #include <helper.h>

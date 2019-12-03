@@ -35,6 +35,8 @@
 /*
  * I/O descriptors for __sfvwrite().
  */
+#include <stddef.h>
+
 struct __lttng_ust_siov {
 	void	*iov_base;
 	size_t	iov_len;

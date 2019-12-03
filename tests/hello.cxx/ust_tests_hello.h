@@ -27,6 +27,7 @@
  */
 
 #include <lttng/tracepoint.h>
+#include <stddef.h>
 
 TRACEPOINT_ENUM(ust_tests_hello, my_enum,
 	TP_ENUM_VALUES(
