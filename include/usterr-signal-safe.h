@@ -67,11 +67,6 @@ static inline int ust_debug(void)
 extern int ust_safe_snprintf(char *str, size_t n, const char *fmt, ...)
 	__attribute__ ((format (printf, 3, 4)));
 
-static inline void __attribute__ ((format (printf, 1, 2)))
-	__check_ust_safe_fmt(const char *fmt, ...)
-{
-}
-
 /* Can't use dynamic allocation. Limit ourselves to USTERR_MAX_LEN chars. */
 /* Add end of string in case of buffer overflow. */
 #define sigsafe_print_err(fmt, args...)					\
