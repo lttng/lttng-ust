@@ -36,7 +36,8 @@
 
 /*ARGSUSED*/
 size_t
-ust_safe_mbrtowc(wchar_t *pwc, const char *s, size_t n, mbstate_t *ps)
+ust_safe_mbrtowc(wchar_t *pwc, const char *s, size_t n,
+		mbstate_t *ps __attribute__((unused)))
 {
 
 	/* pwc may be NULL */
