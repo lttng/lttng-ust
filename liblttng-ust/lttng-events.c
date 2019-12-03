@@ -560,6 +560,23 @@ end:
 	return ret;
 }
 
+static inline
+struct cds_hlist_head *borrow_hash_table_bucket(
+		struct cds_hlist_head *hash_table,
+		unsigned int hash_table_size,
+		const struct lttng_event_desc *desc)
+{
+	const char *event_name;
+	size_t name_len;
+	uint32_t hash;
+
+	event_name = desc->name;
+	name_len = strlen(event_name);
+
+	hash = jhash(event_name, name_len, 0);
+	return &hash_table[hash & (hash_table_size - 1)];
+}
+
 /*
  * Supports event creation while tracing session is active.
  */
@@ -567,18 +584,15 @@ static
 int lttng_event_create(const struct lttng_event_desc *desc,
 		struct lttng_channel *chan)
 {
-	const char *event_name = desc->name;
 	struct lttng_event *event;
 	struct lttng_session *session = chan->session;
 	struct cds_hlist_head *head;
 	int ret = 0;
-	size_t name_len = strlen(event_name);
-	uint32_t hash;
 	int notify_socket, loglevel;
 	const char *uri;
 
-	hash = jhash(event_name, name_len, 0);
-	head = &chan->session->events_ht.table[hash & (LTTNG_UST_EVENT_HT_SIZE - 1)];
+	head = borrow_hash_table_bucket(chan->session->events_ht.table,
+		LTTNG_UST_EVENT_HT_SIZE, desc);
 
 	notify_socket = lttng_get_notify_socket(session->owner);
 	if (notify_socket < 0) {
@@ -624,7 +638,7 @@ int lttng_event_create(const struct lttng_event_desc *desc,
 		session,
 		session->objd,
 		chan->objd,
-		event_name,
+		desc->name,
 		loglevel,
 		desc->signature,
 		desc->nr_fields,
@@ -785,22 +799,16 @@ void lttng_create_event_if_missing(struct lttng_event_enabler *event_enabler)
 			bool found = false;
 			struct cds_hlist_head *head;
 			struct cds_hlist_node *node;
-			const char *event_name;
-			size_t name_len;
-			uint32_t hash;
 
 			desc = probe_desc->event_desc[i];
 			if (!lttng_desc_match_enabler(desc,
 					lttng_event_enabler_as_enabler(event_enabler)))
 				continue;
-			event_name = desc->name;
-			name_len = strlen(event_name);
 
-			/*
-			 * Check if already created.
-			 */
-			hash = jhash(event_name, name_len, 0);
-			head = &session->events_ht.table[hash & (LTTNG_UST_EVENT_HT_SIZE - 1)];
+			head = borrow_hash_table_bucket(
+				session->events_ht.table,
+				LTTNG_UST_EVENT_HT_SIZE, desc);
+
 			cds_hlist_for_each_entry(event, node, head, hlist) {
 				if (event->desc == desc
 						&& event->chan == event_enabler->chan) {
@@ -848,14 +856,8 @@ void lttng_probe_provider_unregister_events(struct lttng_probe_desc *provider_de
 	 */
 	for (i = 0; i < provider_desc->nr_events; i++) {
 		const struct lttng_event_desc *event_desc;
-		const char *event_name;
-		size_t name_len;
-		uint32_t hash;
 
 		event_desc = provider_desc->event_desc[i];
-		event_name = event_desc->name;
-		name_len = strlen(event_name);
-		hash = jhash(event_name, name_len, 0);
 
 		/* Iterate over all session to find the current event description. */
 		cds_list_for_each_entry(session, sessionsp, node) {
@@ -863,7 +865,10 @@ void lttng_probe_provider_unregister_events(struct lttng_probe_desc *provider_de
 			 * Get the list of events in the hashtable bucket and iterate to
 			 * find the event matching this descriptor.
 			 */
-			head = &session->events_ht.table[hash & (LTTNG_UST_EVENT_HT_SIZE - 1)];
+			head = borrow_hash_table_bucket(
+				session->events_ht.table,
+				LTTNG_UST_EVENT_HT_SIZE, event_desc);
+
 			cds_hlist_for_each_entry(event, node, head, hlist) {
 				if (event_desc == event->desc) {
 					/* Queue the unregistration of this event. */
@@ -885,14 +890,8 @@ void lttng_probe_provider_unregister_events(struct lttng_probe_desc *provider_de
 	 */
 	for (i = 0; i < provider_desc->nr_events; i++) {
 		const struct lttng_event_desc *event_desc;
-		const char *event_name;
-		size_t name_len;
-		uint32_t hash;
 
 		event_desc = provider_desc->event_desc[i];
-		event_name = event_desc->name;
-		name_len = strlen(event_name);
-		hash = jhash(event_name, name_len, 0);
 
 		/* Iterate over all sessions to find the current event description. */
 		cds_list_for_each_entry(session, sessionsp, node) {
@@ -900,7 +899,10 @@ void lttng_probe_provider_unregister_events(struct lttng_probe_desc *provider_de
 			 * Get the list of events in the hashtable bucket and iterate to
 			 * find the event matching this descriptor.
 			 */
-			head = &session->events_ht.table[hash & (LTTNG_UST_EVENT_HT_SIZE - 1)];
+			head = borrow_hash_table_bucket(
+				session->events_ht.table,
+				LTTNG_UST_EVENT_HT_SIZE, event_desc);
+
 			cds_hlist_for_each_entry_safe(event, node, tmp_node, head, hlist) {
 				if (event_desc == event->desc) {
 					/* Destroy enums of the current event. */
