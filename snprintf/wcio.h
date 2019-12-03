@@ -33,6 +33,7 @@
 #define _WCIO_H_
 
 #include <stddef.h>
+#include <wchar.h>
 
 /* minimal requirement of SUSv2 */
 #define WCIO_UNGETWC_BUFSIZE 1

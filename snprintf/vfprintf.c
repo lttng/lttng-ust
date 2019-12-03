@@ -51,6 +51,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <wchar.h>
 
 #include "local.h"
 #include "fvwrite.h"

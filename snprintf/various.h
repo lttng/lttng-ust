@@ -36,6 +36,7 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <wchar.h>
 
 struct __lttng_ust_sbuf {
         unsigned char *_base;
