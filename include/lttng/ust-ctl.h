@@ -19,10 +19,12 @@
 #ifndef _LTTNG_UST_CTL_H
 #define _LTTNG_UST_CTL_H
 
-#include <stddef.h>
-#include <lttng/ust-abi.h>
-#include <sys/types.h>
 #include <limits.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <sys/types.h>
+
+#include <lttng/ust-abi.h>
 
 #ifndef LTTNG_PACKED
 #error "LTTNG_PACKED should be defined"

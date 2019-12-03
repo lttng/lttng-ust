@@ -28,6 +28,7 @@
  * See ring_buffer_frontend.c for more information on wait-free algorithms.
  */
 
+#include <stdint.h>
 #include <string.h>
 #include <time.h>	/* for timer_t */
 

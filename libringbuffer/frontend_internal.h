@@ -34,6 +34,7 @@
 #include <urcu/compiler.h>
 #include <urcu/tls-compat.h>
 #include <signal.h>
+#include <stdint.h>
 #include <pthread.h>
 
 #include <lttng/ringbuffer-config.h>

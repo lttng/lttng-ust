@@ -26,6 +26,7 @@
  * These declarations should NOT be considered stable API.
  */
 
+#include <stdint.h>
 #include <limits.h>
 #include <unistd.h>
 #include <lttng/ust-abi.h>

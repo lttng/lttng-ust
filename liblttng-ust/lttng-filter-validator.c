@@ -26,11 +26,13 @@
 
 #define _LGPL_SOURCE
 #include <stddef.h>
-#include <urcu-bp.h>
+#include <stdint.h>
 #include <time.h>
-#include "lttng-filter.h"
 
+#include <urcu-bp.h>
 #include <urcu/rculfhash.h>
+
+#include "lttng-filter.h"
 #include "lttng-hash-helper.h"
 #include "string-utils.h"
 

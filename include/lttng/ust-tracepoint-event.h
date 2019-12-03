@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <urcu/compiler.h>

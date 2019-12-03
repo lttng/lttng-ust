@@ -24,6 +24,7 @@
  */
 
 #include <limits.h>
+#include <stdint.h>
 #include "shm_internal.h"
 #include "vatomic.h"
 

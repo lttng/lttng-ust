@@ -61,6 +61,7 @@
 #include <signal.h>
 #include <time.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <urcu/compiler.h>
 #include <urcu/ref.h>
 #include <urcu/tls-compat.h>

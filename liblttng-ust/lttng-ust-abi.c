@@ -38,21 +38,24 @@
  */
 
 #define _LGPL_SOURCE
-#include <lttng/ust-abi.h>
-#include <lttng/ust-error.h>
+#include <stdint.h>
+
 #include <urcu/compiler.h>
 #include <urcu/list.h>
+
+#include <helper.h>
+#include <lttng/tracepoint.h>
+#include <lttng/ust-abi.h>
+#include <lttng/ust-error.h>
 #include <lttng/ust-events.h>
 #include <lttng/ust-version.h>
-#include <lttng/tracepoint.h>
 #include <ust-fd.h>
-#include "tracepoint-internal.h"
 #include <usterr-signal-safe.h>
-#include <helper.h>
+
+#include "../libringbuffer/frontend_types.h"
+#include "../libringbuffer/shm.h"
 #include "lttng-tracer.h"
 #include "string-utils.h"
-#include "../libringbuffer/shm.h"
-#include "../libringbuffer/frontend_types.h"
 
 #define OBJ_NAME_LEN	16
 

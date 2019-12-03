@@ -21,6 +21,7 @@
 #include <error.h>
 #include <dlfcn.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <usterr-signal-safe.h>
 #include <lttng/ust-clock.h>
 #include <urcu/system.h>

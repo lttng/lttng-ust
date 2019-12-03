@@ -27,6 +27,7 @@
  * SOFTWARE.
  */
 
+#include <stdint.h>
 #include <lttng/ust-abi.h>
 
 #ifndef LTTNG_PACKED

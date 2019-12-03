@@ -26,7 +26,10 @@
 
 #define _LGPL_SOURCE
 #include <stddef.h>
+#include <stdint.h>
+
 #include <urcu/rculist.h>
+
 #include "lttng-filter.h"
 
 static const char *opnames[] = {

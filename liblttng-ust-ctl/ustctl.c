@@ -17,14 +17,15 @@
  */
 
 #define _GNU_SOURCE
+#include <byteswap.h>
+#include <stdint.h>
 #include <string.h>
+#include <sys/mman.h>
+
 #include <lttng/ust-config.h>
 #include <lttng/ust-ctl.h>
 #include <lttng/ust-abi.h>
 #include <lttng/ust-events.h>
-#include <sys/mman.h>
-#include <byteswap.h>
-
 #include <usterr-signal-safe.h>
 #include <ust-comm.h>
 #include <helper.h>

@@ -19,6 +19,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include <stdint.h>
+
 struct lttng_ust_client_lib_ring_buffer_client_cb {
 	struct lttng_ust_lib_ring_buffer_client_cb parent;
 

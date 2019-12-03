@@ -34,6 +34,7 @@
 #include <lttng/align.h>
 #include <limits.h>
 #include <stdbool.h>
+#include <stdint.h>
 #ifdef HAVE_LIBNUMA
 #include <numa.h>
 #include <numaif.h>

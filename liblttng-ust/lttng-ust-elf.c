@@ -18,16 +18,19 @@
 
 #define _GNU_SOURCE
 #define _LGPL_SOURCE
+#include <fcntl.h>
 #include <helper.h>
-#include <string.h>
 #include <lttng/align.h>
 #include <lttng/ust-elf.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 #include <ust-fd.h>
+
 #include "lttng-tracer-core.h"
 
 #define BUF_LEN	4096
