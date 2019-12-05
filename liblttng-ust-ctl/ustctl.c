@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <unistd.h>
 
 #include <lttng/ust-config.h>
 #include <lttng/ust-ctl.h>

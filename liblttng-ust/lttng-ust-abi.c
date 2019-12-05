@@ -39,6 +39,7 @@
 
 #define _LGPL_SOURCE
 #include <stdint.h>
+#include <unistd.h>
 
 #include <urcu/compiler.h>
 #include <urcu/list.h>
