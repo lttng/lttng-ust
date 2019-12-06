@@ -766,8 +766,10 @@ void lttng_create_event_if_missing(struct lttng_enabler *enabler)
 			head = &session->events_ht.table[hash & (LTTNG_UST_EVENT_HT_SIZE - 1)];
 			cds_hlist_for_each_entry(event, node, head, hlist) {
 				if (event->desc == desc
-						&& event->chan == enabler->chan)
+						&& event->chan == enabler->chan) {
 					found = 1;
+					break;
+				}
 			}
 			if (found)
 				continue;
