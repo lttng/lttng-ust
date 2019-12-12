@@ -631,12 +631,12 @@ ssize_t ustcomm_recv_channel_from_sessiond(int sock,
 
 	ret = lttng_ust_add_fd_to_tracker(wakeup_fd);
 	if (ret < 0) {
-		lttng_ust_unlock_fd_tracker();
 		ret = close(wakeup_fd);
 		if (ret) {
 			PERROR("close on wakeup_fd");
 		}
 		len = -EIO;
+		lttng_ust_unlock_fd_tracker();
 		goto error_recv;
 	}
 
@@ -677,19 +677,18 @@ int ustcomm_recv_stream_from_sessiond(int sock,
 
 	ret = lttng_ust_add_fd_to_tracker(fds[0]);
 	if (ret < 0) {
-		lttng_ust_unlock_fd_tracker();
 		ret = close(fds[0]);
 		if (ret) {
 			PERROR("close on received shm_fd");
 		}
 		ret = -EIO;
+		lttng_ust_unlock_fd_tracker();
 		goto error;
 	}
 	*shm_fd = ret;
 
 	ret = lttng_ust_add_fd_to_tracker(fds[1]);
 	if (ret < 0) {
-		lttng_ust_unlock_fd_tracker();
 		ret = close(*shm_fd);
 		if (ret) {
 			PERROR("close on shm_fd");
@@ -700,6 +699,7 @@ int ustcomm_recv_stream_from_sessiond(int sock,
 			PERROR("close on received wakeup_fd");
 		}
 		ret = -EIO;
+		lttng_ust_unlock_fd_tracker();
 		goto error;
 	}
 	*wakeup_fd = ret;
