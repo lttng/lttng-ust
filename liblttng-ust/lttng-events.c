@@ -631,7 +631,7 @@ int lttng_desc_match_star_glob_enabler(const struct lttng_event_desc *desc,
 	int loglevel = 0;
 	unsigned int has_loglevel = 0;
 
-	assert(enabler->type == LTTNG_ENABLER_STAR_GLOB);
+	assert(enabler->format_type == LTTNG_ENABLER_FORMAT_STAR_GLOB);
 	if (!strutils_star_glob_match(enabler->event_param.name, SIZE_MAX,
 			desc->name, SIZE_MAX))
 		return 0;
@@ -654,7 +654,7 @@ int lttng_desc_match_event_enabler(const struct lttng_event_desc *desc,
 	int loglevel = 0;
 	unsigned int has_loglevel = 0;
 
-	assert(enabler->type == LTTNG_ENABLER_EVENT);
+	assert(enabler->format_type == LTTNG_ENABLER_FORMAT_EVENT);
 	if (strcmp(desc->name, enabler->event_param.name))
 		return 0;
 	if (desc->loglevel) {
@@ -673,8 +673,8 @@ static
 int lttng_desc_match_enabler(const struct lttng_event_desc *desc,
 		struct lttng_enabler *enabler)
 {
-	switch (enabler->type) {
-	case LTTNG_ENABLER_STAR_GLOB:
+	switch (enabler->format_type) {
+	case LTTNG_ENABLER_FORMAT_STAR_GLOB:
 	{
 		struct lttng_ust_excluder_node *excluder;
 
@@ -702,7 +702,7 @@ int lttng_desc_match_enabler(const struct lttng_event_desc *desc,
 		}
 		return 1;
 	}
-	case LTTNG_ENABLER_EVENT:
+	case LTTNG_ENABLER_FORMAT_EVENT:
 		return lttng_desc_match_event_enabler(desc, enabler);
 	default:
 		return -EINVAL;
@@ -1041,7 +1041,7 @@ void lttng_ust_events_exit(void)
 /*
  * Enabler management.
  */
-struct lttng_enabler *lttng_enabler_create(enum lttng_enabler_type type,
+struct lttng_enabler *lttng_enabler_create(enum lttng_enabler_format_type format_type,
 		struct lttng_ust_event *event_param,
 		struct lttng_channel *chan)
 {
@@ -1050,7 +1050,7 @@ struct lttng_enabler *lttng_enabler_create(enum lttng_enabler_type type,
 	enabler = zmalloc(sizeof(*enabler));
 	if (!enabler)
 		return NULL;
-	enabler->type = type;
+	enabler->format_type = format_type;
 	CDS_INIT_LIST_HEAD(&enabler->filter_bytecode_head);
 	CDS_INIT_LIST_HEAD(&enabler->excluder_head);
 	memcpy(&enabler->event_param, event_param,

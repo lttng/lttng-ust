@@ -797,7 +797,7 @@ static
 int lttng_abi_create_enabler(int channel_objd,
 			   struct lttng_ust_event *event_param,
 			   void *owner,
-			   enum lttng_enabler_type type)
+			   enum lttng_enabler_format_type format_type)
 {
 	struct lttng_channel *channel = objd_private(channel_objd);
 	struct lttng_enabler *enabler;
@@ -813,7 +813,7 @@ int lttng_abi_create_enabler(int channel_objd,
 	 * We tolerate no failure path after event creation. It will stay
 	 * invariant for the rest of the session.
 	 */
-	enabler = lttng_enabler_create(type, event_param, channel);
+	enabler = lttng_enabler_create(format_type, event_param, channel);
 	if (!enabler) {
 		ret = -ENOMEM;
 		goto event_error;
@@ -892,10 +892,10 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg,
 			 * we create the special star globbing enabler.
 			 */
 			return lttng_abi_create_enabler(objd, event_param,
-					owner, LTTNG_ENABLER_STAR_GLOB);
+					owner, LTTNG_ENABLER_FORMAT_STAR_GLOB);
 		} else {
 			return lttng_abi_create_enabler(objd, event_param,
-					owner, LTTNG_ENABLER_EVENT);
+					owner, LTTNG_ENABLER_FORMAT_EVENT);
 		}
 	}
 	case LTTNG_UST_CONTEXT:

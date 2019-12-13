@@ -380,9 +380,9 @@ struct lttng_probe_desc {
 
 /* Data structures used by the tracer. */
 
-enum lttng_enabler_type {
-	LTTNG_ENABLER_STAR_GLOB,
-	LTTNG_ENABLER_EVENT,
+enum lttng_enabler_format_type {
+	LTTNG_ENABLER_FORMAT_STAR_GLOB,
+	LTTNG_ENABLER_FORMAT_EVENT,
 };
 
 /*
@@ -390,7 +390,7 @@ enum lttng_enabler_type {
  * backward reference.
  */
 struct lttng_enabler {
-	enum lttng_enabler_type type;
+	enum lttng_enabler_format_type format_type;
 
 	/* head list of struct lttng_ust_filter_bytecode_node */
 	struct cds_list_head filter_bytecode_head;
@@ -692,7 +692,7 @@ struct lttng_channel *lttng_channel_create(struct lttng_session *session,
 int lttng_channel_enable(struct lttng_channel *channel);
 int lttng_channel_disable(struct lttng_channel *channel);
 
-struct lttng_enabler *lttng_enabler_create(enum lttng_enabler_type type,
+struct lttng_enabler *lttng_enabler_create(enum lttng_enabler_format_type type,
 		struct lttng_ust_event *event_param,
 		struct lttng_channel *chan);
 int lttng_enabler_enable(struct lttng_enabler *enabler);
