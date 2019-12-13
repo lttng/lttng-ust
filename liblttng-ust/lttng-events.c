@@ -744,7 +744,8 @@ void lttng_create_event_if_missing(struct lttng_enabler *enabler)
 	 */
 	cds_list_for_each_entry(probe_desc, probe_list, head) {
 		for (i = 0; i < probe_desc->nr_events; i++) {
-			int found = 0, ret;
+			int ret;
+			bool found = false;
 			struct cds_hlist_head *head;
 			struct cds_hlist_node *node;
 			const char *event_name;
@@ -765,7 +766,7 @@ void lttng_create_event_if_missing(struct lttng_enabler *enabler)
 			cds_hlist_for_each_entry(event, node, head, hlist) {
 				if (event->desc == desc
 						&& event->chan == enabler->chan) {
-					found = 1;
+					found = true;
 					break;
 				}
 			}
