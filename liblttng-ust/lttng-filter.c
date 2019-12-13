@@ -438,7 +438,6 @@ int _lttng_filter_event_link_bytecode(struct lttng_event *event,
 	}
 	runtime->p.bc = filter_bytecode;
 	runtime->p.session = event->chan->session;
-	runtime->p.event = event;
 	runtime->len = filter_bytecode->bc.reloc_offset;
 	/* copy original bytecode */
 	memcpy(runtime->code, filter_bytecode->bc.data, runtime->len);
