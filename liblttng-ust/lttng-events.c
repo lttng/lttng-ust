@@ -833,51 +833,106 @@ void lttng_create_event_if_missing(struct lttng_event_enabler *event_enabler)
 	}
 }
 
-/*
- * Iterate over all the UST sessions to unregister and destroy all probes from
- * the probe provider descriptor received as argument. Must me called with the
- * ust_lock held.
- */
-void lttng_probe_provider_unregister_events(struct lttng_probe_desc *provider_desc)
+static
+void probe_provider_event_for_each(struct lttng_probe_desc *provider_desc,
+		void (*event_func)(struct lttng_session *session, struct lttng_event *event))
 {
 	struct cds_hlist_node *node, *tmp_node;
 	struct cds_list_head *sessionsp;
-	struct lttng_session *session;
-	struct cds_hlist_head *head;
-	struct lttng_event *event;
-	unsigned int i, j;
+	unsigned int i;
 
 	/* Get handle on list of sessions. */
 	sessionsp = _lttng_get_sessions();
 
 	/*
-	 * Iterate over all events in the probe provider descriptions and sessions
-	 * to queue the unregistration of the events.
+	 * Iterate over all events in the probe provider descriptions and
+	 * sessions to queue the unregistration of the events.
 	 */
 	for (i = 0; i < provider_desc->nr_events; i++) {
 		const struct lttng_event_desc *event_desc;
+		struct lttng_session *session;
+		struct cds_hlist_head *head;
+		struct lttng_event *event;
 
 		event_desc = provider_desc->event_desc[i];
 
-		/* Iterate over all session to find the current event description. */
+		/*
+		 * Iterate over all session to find the current event
+		 * description.
+		 */
 		cds_list_for_each_entry(session, sessionsp, node) {
 			/*
-			 * Get the list of events in the hashtable bucket and iterate to
-			 * find the event matching this descriptor.
+			 * Get the list of events in the hashtable bucket and
+			 * iterate to find the event matching this descriptor.
 			 */
 			head = borrow_hash_table_bucket(
 				session->events_ht.table,
 				LTTNG_UST_EVENT_HT_SIZE, event_desc);
 
-			cds_hlist_for_each_entry(event, node, head, hlist) {
+			cds_hlist_for_each_entry_safe(event, node, tmp_node, head, hlist) {
 				if (event_desc == event->desc) {
-					/* Queue the unregistration of this event. */
-					_lttng_event_unregister(event);
+					event_func(session, event);
 					break;
 				}
 			}
 		}
 	}
+}
+
+static
+void _unregister_event(struct lttng_session *session,
+		struct lttng_event *event)
+{
+	_lttng_event_unregister(event);
+}
+
+static
+void _event_enum_destroy(struct lttng_session *session,
+		struct lttng_event *event)
+{
+	unsigned int i;
+
+	/* Destroy enums of the current event. */
+	for (i = 0; i < event->desc->nr_fields; i++) {
+		const struct lttng_enum_desc *enum_desc;
+		const struct lttng_event_field *field;
+		struct lttng_enum *curr_enum;
+
+		field = &(event->desc->fields[i]);
+		switch (field->type.atype) {
+		case atype_enum:
+			enum_desc = field->type.u.legacy.basic.enumeration.desc;
+			break;
+		case atype_enum_nestable:
+			enum_desc = field->type.u.enum_nestable.desc;
+			break;
+		default:
+			continue;
+		}
+
+		curr_enum = lttng_ust_enum_get_from_desc(session, enum_desc);
+		if (curr_enum) {
+			_lttng_enum_destroy(curr_enum);
+		}
+	}
+
+	/* Destroy event. */
+	_lttng_event_destroy(event);
+}
+
+/*
+ * Iterate over all the UST sessions to unregister and destroy all probes from
+ * the probe provider descriptor received as argument. Must me called with the
+ * ust_lock held.
+ */
+void lttng_probe_provider_unregister_events(
+		struct lttng_probe_desc *provider_desc)
+{
+	/*
+	 * Iterate over all events in the probe provider descriptions and sessions
+	 * to queue the unregistration of the events.
+	 */
+	probe_provider_event_for_each(provider_desc, _unregister_event);
 
 	/* Wait for grace period. */
 	synchronize_trace();
@@ -888,53 +943,7 @@ void lttng_probe_provider_unregister_events(struct lttng_probe_desc *provider_de
 	 * It is now safe to destroy the events and remove them from the event list
 	 * and hashtables.
 	 */
-	for (i = 0; i < provider_desc->nr_events; i++) {
-		const struct lttng_event_desc *event_desc;
-
-		event_desc = provider_desc->event_desc[i];
-
-		/* Iterate over all sessions to find the current event description. */
-		cds_list_for_each_entry(session, sessionsp, node) {
-			/*
-			 * Get the list of events in the hashtable bucket and iterate to
-			 * find the event matching this descriptor.
-			 */
-			head = borrow_hash_table_bucket(
-				session->events_ht.table,
-				LTTNG_UST_EVENT_HT_SIZE, event_desc);
-
-			cds_hlist_for_each_entry_safe(event, node, tmp_node, head, hlist) {
-				if (event_desc == event->desc) {
-					/* Destroy enums of the current event. */
-					for (j = 0; j < event->desc->nr_fields; j++) {
-						const struct lttng_enum_desc *enum_desc;
-						const struct lttng_event_field *field;
-						struct lttng_enum *curr_enum;
-
-						field = &(event->desc->fields[j]);
-						switch (field->type.atype) {
-						case atype_enum:
-							enum_desc = field->type.u.legacy.basic.enumeration.desc;
-							break;
-						case atype_enum_nestable:
-							enum_desc = field->type.u.enum_nestable.desc;
-							break;
-						default:
-							continue;
-						}
-						curr_enum = lttng_ust_enum_get_from_desc(session, enum_desc);
-						if (curr_enum) {
-							_lttng_enum_destroy(curr_enum);
-						}
-					}
-
-					/* Destroy event. */
-					_lttng_event_destroy(event);
-					break;
-				}
-			}
-		}
-	}
+	probe_provider_event_for_each(provider_desc, _event_enum_destroy);
 }
 
 /*
