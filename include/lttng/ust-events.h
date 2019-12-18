@@ -366,6 +366,10 @@ struct lttng_enabler {
 
 	struct lttng_ust_event event_param;
 	struct lttng_channel *chan;
+	/*
+	 * Unused, but kept around to make it explicit that the tracer can do
+	 * it.
+	 */
 	struct lttng_ctx *ctx;
 	unsigned int enabled:1;
 };
