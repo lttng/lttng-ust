@@ -77,8 +77,6 @@ extern void lttng_ring_buffer_client_discard_exit(void);
 extern void lttng_ring_buffer_client_discard_rt_exit(void);
 extern void lttng_ring_buffer_metadata_client_exit(void);
 
-volatile enum ust_loglevel ust_loglevel;
-
 int ustctl_release_handle(int sock, int handle)
 {
 	struct ustcomm_ust_msg lum;
