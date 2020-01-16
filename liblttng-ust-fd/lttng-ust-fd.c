@@ -28,8 +28,6 @@
 #include <helper.h>
 #include "usterr-signal-safe.h"
 
-volatile enum ust_loglevel ust_loglevel;
-
 static int (*__lttng_ust_fd_plibc_close)(int fd);
 static int (*__lttng_ust_fd_plibc_fclose)(FILE *stream);
 
