@@ -2,9 +2,9 @@ dnl Version infos
 m4_define([V_MAJOR], [2])
 m4_define([V_MINOR], [12])
 m4_define([V_PATCH], [0])
-m4_define([V_EXTRA], [pre])
-m4_define([V_NAME], [[Codename TBD]])
-m4_define([V_DESC], [[Description TBD]])
+m4_define([V_EXTRA], [rc1])
+m4_define([V_NAME], [[(Ta) Meilleure]])
+m4_define([V_DESC], [[Ta Meilleure is a Northeast IPA beer brewed by Lagabière. Translating to "Your best one", this beer gives out strong aromas of passion fruit, lemon, and peaches. Tastewise, expect a lot of fruit, a creamy texture, and a smooth lingering hop bitterness.]])
 
 m4_define([V_STRING], [V_MAJOR.V_MINOR.V_PATCH])
 m4_ifdef([V_EXTRA], [m4_append([V_STRING], [-V_EXTRA])])
