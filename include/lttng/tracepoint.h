@@ -580,7 +580,7 @@ __tracepoints__ptrs_destroy(void)
  * How to use the TRACEPOINT_EVENT macro:
  *
  * An example:
- * 
+ *
  * TRACEPOINT_EVENT(someproject_component, event_name,
  *
  *     * TP_ARGS takes from 0 to 10 "type, field_name" pairs *
@@ -591,23 +591,23 @@ __tracepoints__ptrs_destroy(void)
  *	* TP_FIELDS describes the event payload layout in the trace *
  *
  *     TP_FIELDS(
- *         * Integer, printed in base 10 * 
+ *         * Integer, printed in base 10 *
  *         ctf_integer(int, field_a, arg0)
  *
- *         * Integer, printed with 0x base 16 * 
+ *         * Integer, printed with 0x base 16 *
  *         ctf_integer_hex(unsigned long, field_d, arg1)
  *
  *         * Enumeration *
  *         ctf_enum(someproject_component, enum_name, int, field_e, arg0)
  *
- *         * Array Sequence, printed as UTF8-encoded array of bytes * 
+ *         * Array Sequence, printed as UTF8-encoded array of bytes *
  *         ctf_array_text(char, field_b, string, FIXED_LEN)
  *         ctf_sequence_text(char, field_c, string, size_t, strlen)
  *
- *         * String, printed as UTF8-encoded string * 
+ *         * String, printed as UTF8-encoded string *
  *         ctf_string(field_e, string)
  *
- *         * Array sequence of signed integer values * 
+ *         * Array sequence of signed integer values *
  *         ctf_array(long, field_f, arg4, FIXED_LEN4)
  *         ctf_sequence(long, field_g, arg4, size_t, arg4_len)
  *     )

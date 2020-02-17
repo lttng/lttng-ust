@@ -43,7 +43,7 @@ extern void ust_after_setregid(void);
 extern void ust_after_setresuid(void);
 extern void ust_after_setresgid(void);
 
-#ifdef __cplusplus 
+#ifdef __cplusplus
 }
 #endif
 
