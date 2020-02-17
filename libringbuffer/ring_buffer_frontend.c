@@ -1155,7 +1155,7 @@ void channel_release(struct channel *chan, struct lttng_ust_shm_handle *handle,
  * Call "destroy" callback, finalize channels, decrement the channel
  * reference count. Note that when readers have completed data
  * consumption of finalized channels, get_subbuf() will return -ENODATA.
- * They should release their handle at that point. 
+ * They should release their handle at that point.
  */
 void channel_destroy(struct channel *chan, struct lttng_ust_shm_handle *handle,
 		int consumer)
