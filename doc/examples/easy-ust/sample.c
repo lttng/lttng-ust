@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2012  Matthew Khouzam <matthew.khouzam@ericsson.com> 
+ * Copyright (C) 2011-2012  Matthew Khouzam <matthew.khouzam@ericsson.com>
  * Copyright (C) 2012  Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,7 +20,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
- 
+
 #include <unistd.h>
 
 /*
