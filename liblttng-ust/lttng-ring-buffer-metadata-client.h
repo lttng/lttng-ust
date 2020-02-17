@@ -270,7 +270,6 @@ void lttng_event_write(struct lttng_ust_lib_ring_buffer_ctx *ctx, const void *sr
 
 static
 size_t lttng_packet_avail_size(struct channel *chan, struct lttng_ust_shm_handle *handle)
-			     
 {
 	unsigned long o_begin;
 	struct lttng_ust_lib_ring_buffer *buf;

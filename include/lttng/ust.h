@@ -33,7 +33,7 @@ extern void ust_before_fork(sigset_t *save_sigset);
 extern void ust_after_fork_parent(sigset_t *restore_sigset);
 extern void ust_after_fork_child(sigset_t *restore_sigset);
 
-#ifdef __cplusplus 
+#ifdef __cplusplus
 }
 #endif
 

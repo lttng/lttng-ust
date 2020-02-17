@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2012  Matthew Khouzam <matthew.khouzam@ericsson.com> 
+# Copyright (C) 2011-2012  Matthew Khouzam <matthew.khouzam@ericsson.com>
 # Copyright (C) 2012  Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
 #
 # THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
