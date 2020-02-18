@@ -441,7 +441,8 @@ extern struct lttng_ust_tracepoint * const __stop___tracepoints_ptrs[]
 		};								\
 	static struct lttng_ust_tracepoint *					\
 		__tracepoint_ptr_##_provider##___##_name			\
-		__attribute__((used, section("__tracepoints_ptrs"))) =		\
+		__attribute__((section("__tracepoints_ptrs"), used))		\
+		__lttng_ust_variable_attribute_no_sanitize_address =		\
 			&__tracepoint_##_provider##___##_name;
 
 static void lttng_ust_notrace __attribute__((constructor))

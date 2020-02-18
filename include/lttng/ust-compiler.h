@@ -27,4 +27,20 @@
 #define lttng_ust_notrace __attribute__((no_instrument_function))
 #define LTTNG_PACKED	__attribute__((__packed__))
 
+/*
+ * Clang supports the no_sanitize variable attribute on global variables.
+ * GCC only supports the no_sanitize_address function attribute, which is
+ * not what we need.
+ */
+#if defined(__clang__)
+# if __has_feature(address_sanitizer)
+#  define __lttng_ust_variable_attribute_no_sanitize_address \
+	__attribute__((no_sanitize("address")))
+# else
+#  define __lttng_ust_variable_attribute_no_sanitize_address
+# endif
+#else
+#  define __lttng_ust_variable_attribute_no_sanitize_address
+#endif
+
 #endif /* _LTTNG_UST_COMPILER_H */
