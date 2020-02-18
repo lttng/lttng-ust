@@ -109,33 +109,13 @@ uint32_t hashlittle(const void *key, size_t length, uint32_t initval)
 
 		/*----------------------------- handle the last (probably partial) block */
 		/*
-		 * "k[2]&0xffffff" actually reads beyond the end of the string, but
-		 * then masks off the part it's not allowed to read.	Because the
-		 * string is aligned, the masked-off tail is in the same word as the
-		 * rest of the string.	Every machine with memory protection I've seen
-		 * does it on word boundaries, so is OK with this.	But VALGRIND will
-		 * still catch it and complain.	The masking trick does make the hash
-		 * noticably faster for short strings (like English words).
+		 * The original jhash.h reads beyond the end of string, and implements
+		 * a special code path for VALGRIND. It seems to make ASan unhappy too
+		 * though, so considering that hashing event names is not a fast-path
+		 * in lttng-ust, remove the "fast" code entirely and use the slower
+		 * but verifiable VALGRIND version of the code which does not issue
+		 * out-of-bound reads.
 		 */
-#ifndef VALGRIND
-
-		switch (length) {
-		case 12: c+=k[2]; b+=k[1]; a+=k[0]; break;
-		case 11: c+=k[2]&0xffffff; b+=k[1]; a+=k[0]; break;
-		case 10: c+=k[2]&0xffff; b+=k[1]; a+=k[0]; break;
-		case 9 : c+=k[2]&0xff; b+=k[1]; a+=k[0]; break;
-		case 8 : b+=k[1]; a+=k[0]; break;
-		case 7 : b+=k[1]&0xffffff; a+=k[0]; break;
-		case 6 : b+=k[1]&0xffff; a+=k[0]; break;
-		case 5 : b+=k[1]&0xff; a+=k[0]; break;
-		case 4 : a+=k[0]; break;
-		case 3 : a+=k[0]&0xffffff; break;
-		case 2 : a+=k[0]&0xffff; break;
-		case 1 : a+=k[0]&0xff; break;
-		case 0 : return c;		/* zero length strings require no mixing */
-		}
-
-#else /* make valgrind happy */
 		{
 			const uint8_t *k8;
 
@@ -156,7 +136,6 @@ uint32_t hashlittle(const void *key, size_t length, uint32_t initval)
 			case 0 : return c;
 			}
 		}
-#endif /* !valgrind */
 
 	} else if (HASH_LITTLE_ENDIAN && ((u.i & 0x1) == 0)) {
 		const uint16_t *k = (const uint16_t *) key;	/* read 16-bit chunks */
