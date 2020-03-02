@@ -107,6 +107,7 @@ int ustcomm_connect_unix_sock(const char *pathname, long timeout)
 	/*
 	 * libust threads require the close-on-exec flag for all
 	 * resources so it does not leak file descriptors upon exec.
+	 * SOCK_CLOEXEC is not used since it is linux specific.
 	 */
 	fd = socket(PF_UNIX, SOCK_STREAM, 0);
 	if (fd < 0) {
@@ -452,6 +453,7 @@ ssize_t ustcomm_recv_fds_unix_sock(int sock, int *fds, size_t nb_fd)
 	char recv_fd[CMSG_SPACE(sizeof_fds)];
 	struct msghdr msg;
 	char dummy;
+	int i;
 
 	memset(&msg, 0, sizeof(msg));
 
@@ -507,7 +509,18 @@ ssize_t ustcomm_recv_fds_unix_sock(int sock, int *fds, size_t nb_fd)
 		ret = -1;
 		goto end;
 	}
+
 	memcpy(fds, CMSG_DATA(cmsg), sizeof_fds);
+
+	/* Set FD_CLOEXEC */
+	for (i = 0; i < nb_fd; i++) {
+		ret = fcntl(fds[i], F_SETFD, FD_CLOEXEC);
+		if (ret < 0) {
+			PERROR("fcntl failed to set FD_CLOEXEC on fd %d",
+			       fds[i]);
+		}
+	}
+
 	ret = nb_fd;
 end:
 	return ret;

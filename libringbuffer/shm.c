@@ -329,11 +329,6 @@ struct shm_object *shm_object_table_append_shm(struct shm_object_table *table,
 	obj->shm_fd = shm_fd;
 	obj->shm_fd_ownership = 1;
 
-	ret = fcntl(obj->wait_fd[1], F_SETFD, FD_CLOEXEC);
-	if (ret < 0) {
-		PERROR("fcntl");
-		goto error_fcntl;
-	}
 	/* The write end of the pipe needs to be non-blocking */
 	ret = fcntl(obj->wait_fd[1], F_SETFL, O_NONBLOCK);
 	if (ret < 0) {
