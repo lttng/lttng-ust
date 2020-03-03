@@ -59,6 +59,13 @@ TP_TRACELOG_CB_TEMPLATE(TRACE_DEBUG);
 				fmt, ## __VA_ARGS__); \
 	} while (0)
 
+#define vtracelog(level, fmt, ap)					\
+	do {								\
+		if (caa_unlikely(__tracepoint_lttng_ust_tracelog___##level.state)) \
+			_lttng_ust_tracelog_##level(__FILE__, __LINE__, __func__, \
+				fmt, ap); \
+	} while (0)
+
 #ifdef __cplusplus
 }
 #endif

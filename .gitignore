@@ -56,6 +56,7 @@ doc/examples/gen-tp/sample_tracepoint.h
 doc/examples/demo-tracef/demo-tracef
 doc/examples/demo-tracef/demo-vtracef
 doc/examples/demo-tracelog/demo-tracelog
+doc/examples/demo-tracelog/demo-vtracelog
 doc/examples/cmake-multiple-shared-libraries/build/
 
 doc/man/*.xml

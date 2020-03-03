@@ -15,6 +15,7 @@ SYNOPSIS
 
 [verse]
 #define *tracelog*('level', 'fmt', ...)
+#define *vtracelog*('level', 'fmt', 'va_list' ap)
 
 Link with `-llttng-ust`.
 
@@ -34,9 +35,9 @@ The available values for the 'level' parameter are:
 
 include::log-levels.txt[]
 
-To use `tracelog()`, include `<lttng/tracelog.h>` where you need it, and
-link your application with `liblttng-ust`. See the <<example,EXAMPLE>>
-section below for a complete usage example.
+To use `tracelog()` or `vtracelog()`, include `<lttng/tracelog.h>` where you
+need it, and link your application with `liblttng-ust`.
+See the <<example,EXAMPLE>> section below for a complete usage example.
 
 Once your application is instrumented with `tracelog()` calls and
 ready to run, use man:lttng-enable-event(1) to enable the
@@ -67,7 +68,7 @@ If you do not need to attach a specific log level to a `tracelog()`
 call, use man:tracef(3) instead.
 
 See also the <<limitations,LIMITATIONS>> section below for important
-limitations to consider when using `tracelog()`.
+limitations to consider when using `tracelog()` or `vtracelog()`.
 
 
 [[example]]

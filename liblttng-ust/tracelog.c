@@ -30,16 +30,14 @@
 #include "lttng-ust-tracelog-provider.h"
 
 #define TRACELOG_CB(level) \
-	void _lttng_ust_tracelog_##level(const char *file, \
+	static inline __attribute__((always_inline)) \
+	void __lttng_ust_vtracelog_##level(const char *file, \
 			int line, const char *func, \
-			const char *fmt, ...) \
+			const char *fmt, va_list ap) \
 	{ \
-		va_list ap; \
 		char *msg; \
-		int len; \
+		const int len = vasprintf(&msg, fmt, ap); \
 		\
-		va_start(ap, fmt); \
-		len = vasprintf(&msg, fmt, ap); \
 		/* len does not include the final \0 */ \
 		if (len < 0) \
 			goto end; \
@@ -48,6 +46,24 @@
 			LTTNG_UST_CALLER_IP()); \
 		free(msg); \
 	end: \
+		return; \
+	} \
+	\
+	void _lttng_ust_vtracelog_##level(const char *file, \
+			int line, const char *func, \
+			const char *fmt, va_list ap) \
+	{ \
+		__lttng_ust_vtracelog_##level(file, line, func, fmt, ap); \
+	} \
+	\
+	void _lttng_ust_tracelog_##level(const char *file, \
+			int line, const char *func, \
+			const char *fmt, ...) \
+	{ \
+		va_list ap; \
+		\
+		va_start(ap, fmt); \
+		__lttng_ust_vtracelog_##level(file, line, func, fmt, ap); \
 		va_end(ap); \
 	}
 

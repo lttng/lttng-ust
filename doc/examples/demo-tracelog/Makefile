@@ -20,7 +20,7 @@ LIBS = -ldl -llttng-ust	# On Linux
 LOCAL_CPPFLAGS += -I.
 AM_V_P := :
 
-all: demo-tracelog
+all: demo-tracelog demo-vtracelog
 
 demo-tracelog.o: demo-tracelog.c
 	@if $(AM_V_P); then set -x; else echo "  CC       $@"; fi; \
@@ -32,6 +32,16 @@ demo-tracelog: demo-tracelog.o
 		$(CC) $(LDFLAGS) $(AM_CFLAGS) $(AM_LDFLAGS) $(CFLAGS) \
 		-o $@ $< $(LIBS)
 
+demo-vtracelog.o: demo-vtracelog.c
+	@if $(AM_V_P); then set -x; else echo "  CC       $@"; fi; \
+		$(CC) $(CPPFLAGS) $(LOCAL_CPPFLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) \
+		$(CFLAGS) -c -o $@ $<
+
+demo-vtracelog: demo-vtracelog.o
+	@if $(AM_V_P); then set -x; else echo "  CCLD     $@"; fi; \
+		$(CC) $(LDFLAGS) $(AM_CFLAGS) $(AM_LDFLAGS) $(CFLAGS) \
+		-o $@ $< $(LIBS)
+
 .PHONY: clean
 clean:
-	rm -f *.o *.a demo-tracelog
+	rm -f *.o *.a demo-tracelog demo-vtracelog
