@@ -21,4 +21,7 @@ Thus, +{macro-name}()+ is useful for quick prototyping and debugging, but
 should not be considered for any permanent/serious application
 instrumentation.
 
++v{macro-name}()+ does not have a `STAP_PROBEV()` call, because `STAP_PROBEV()`
+does not support `va_list`. If you need it, you should emit this call yourself.
+
 See man:lttng-ust(3) to learn more about custom tracepoint providers.

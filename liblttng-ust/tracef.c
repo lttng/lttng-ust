@@ -29,14 +29,12 @@
 #define TRACEPOINT_DEFINE
 #include "lttng-ust-tracef-provider.h"
 
-void _lttng_ust_tracef(const char *fmt, ...)
+static inline __attribute__((always_inline))
+void __lttng_ust_vtracef(const char *fmt, va_list ap)
 {
-	va_list ap;
 	char *msg;
-	int len;
+	const int len = vasprintf(&msg, fmt, ap);
 
-	va_start(ap, fmt);
-	len = vasprintf(&msg, fmt, ap);
 	/* len does not include the final \0 */
 	if (len < 0)
 		goto end;
@@ -44,5 +42,19 @@ void _lttng_ust_tracef(const char *fmt, ...)
 		LTTNG_UST_CALLER_IP());
 	free(msg);
 end:
+	return;
+}
+
+void _lttng_ust_vtracef(const char *fmt, va_list ap)
+{
+	__lttng_ust_vtracef(fmt, ap);
+}
+
+void _lttng_ust_tracef(const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	__lttng_ust_vtracef(fmt, ap);
 	va_end(ap);
 }

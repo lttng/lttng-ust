@@ -54,6 +54,7 @@ doc/examples/hello-static-lib/hello
 doc/examples/gen-tp/sample
 doc/examples/gen-tp/sample_tracepoint.h
 doc/examples/demo-tracef/demo-tracef
+doc/examples/demo-tracef/demo-vtracef
 doc/examples/demo-tracelog/demo-tracelog
 doc/examples/cmake-multiple-shared-libraries/build/
 

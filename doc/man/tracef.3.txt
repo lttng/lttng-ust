@@ -5,7 +5,7 @@ tracef(3)
 
 NAME
 ----
-tracef - LTTng-UST printf(3)-like interface
+tracef, vtracef - LTTng-UST printf(3)-like interface
 
 
 SYNOPSIS
@@ -15,6 +15,7 @@ SYNOPSIS
 
 [verse]
 #define *tracef*('fmt', ...)
+#define *vtracef*('fmt', 'va_list' ap)
 
 Link with `-llttng-ust`.
 
@@ -26,11 +27,11 @@ the help of a simple man:printf(3)-like macro. The 'fmt' argument is
 passed directly to the 'fmt' parameter of man:vasprintf(3), as well as
 the optional parameters following 'fmt'.
 
-To use `tracef()`, include `<lttng/tracef.h>` where you need it, and
-link your application with `liblttng-ust`. See the <<example,EXAMPLE>>
+To use `tracef()` or `vtracef()`, include `<lttng/tracef.h>` where you need it,
+and link your application with `liblttng-ust`. See the <<example,EXAMPLE>>
 section below for a complete usage example.
 
-Once your application is instrumented with `tracef()` calls and
+Once your application is instrumented with `tracef()` or `vtracef()` calls and
 ready to run, use man:lttng-enable-event(1) to enable the
 `lttng_ust_tracef:*` event.
 
@@ -41,7 +42,7 @@ If you need to attach a specific log level to a `tracef()` call, use
 man:tracelog(3) instead.
 
 See also the <<limitations,LIMITATIONS>> section below for important
-limitations to consider when using `tracef()`.
+limitations to consider when using `tracef()` or `vtracef()`.
 
 
 [[example]]
