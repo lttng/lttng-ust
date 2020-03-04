@@ -81,6 +81,7 @@ dist_doc_examples_hello_static_lib_DATA = hello-static-lib/Makefile \
 
 dist_doc_examples_demo_tracef_DATA = demo-tracef/Makefile \
 	demo-tracef/demo-tracef.c \
+	demo-tracef/demo-vtracef.c \
 	demo-tracef/README
 
 dist_doc_examples_demo_tracelog_DATA = demo-tracelog/Makefile \
