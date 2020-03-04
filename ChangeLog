@@ -1,3 +1,16 @@
+2020-03-04 (National Grammar Day) lttng-ust 2.11.1
+	* Fix: set FD_CLOEXEC on incoming FDs.
+	* Fix: tracepoint.h: Disable address sanitizer on pointer array section variables
+	* Fix: jhash.h: remove out-of-bound reads
+	* Cleanup: remove trailing white spaces across project
+	* Fix: lttng-ust-comm.c: return number of fd rather size of array
+	* liblttng-ust: exit loop early on event enabler match
+	* Add git-review config
+	* Fix: build with -fno-common
+	* Fix: uninitialized variable in lib_ring_buffer_reserve_committed
+	* Fix: document proper liburcu version dependency
+	* Fix: Add missing files to distribution
+
 2019-10-17 (Wear Something Gaudy Day) lttng-ust 2.11.0
 	* (no change)
 
