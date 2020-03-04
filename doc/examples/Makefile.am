@@ -86,6 +86,7 @@ dist_doc_examples_demo_tracef_DATA = demo-tracef/Makefile \
 
 dist_doc_examples_demo_tracelog_DATA = demo-tracelog/Makefile \
 	demo-tracelog/demo-tracelog.c \
+	demo-tracelog/demo-vtracelog.c \
 	demo-tracelog/README
 
 dist_doc_examples_clock_override_DATA = clock-override/Makefile \
