@@ -1,3 +1,13 @@
+2020-03-04 (National Grammar Day) lttng-ust 2.10.7
+	* Fix: set FD_CLOEXEC on incoming FDs.
+	* Fix: lttng-ust-comm.c: return number of fd rather size of array
+	* Fix: tracepoint.h: Disable address sanitizer on pointer array section variables
+	* Fix: jhash.h: remove out-of-bound reads
+	* Cleanup: remove trailing white spaces across project
+	* Fix: build with -fno-common
+	* Fix: uninitialized variable in lib_ring_buffer_reserve_committed
+	* fix: Add missing files to distribution
+
 2019-10-17 (Wear Something Gaudy Day) lttng-ust 2.10.6
 	* Fix: lttng perf counter deadlock
 	* Revert "Fix: fd tracker: do not allow signal handlers to close lttng-ust FDs"
