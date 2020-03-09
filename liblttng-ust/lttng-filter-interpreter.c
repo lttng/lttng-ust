@@ -297,6 +297,7 @@ static int context_get_index(struct lttng_ctx *ctx,
 		break;
 	case atype_float:
 		ptr->object_type = OBJECT_TYPE_DOUBLE;
+		ctx_field->get_value(ctx_field, &v);
 		ptr->u.d = v.u.d;
 		ptr->ptr = &ptr->u.d;
 		break;
