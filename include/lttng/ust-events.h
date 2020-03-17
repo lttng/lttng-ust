@@ -491,7 +491,7 @@ struct lttng_event {
 
 	/* LTTng-UST 2.1 starts here */
 	/* list of struct lttng_bytecode_runtime, sorted by seqnum */
-	struct cds_list_head bytecode_runtime_head;
+	struct cds_list_head filter_bytecode_runtime_head;
 	int has_enablers_without_bytecode;
 	/* Backward references: list of lttng_enabler_ref (ref to enablers) */
 	struct cds_list_head enablers_ref_head;

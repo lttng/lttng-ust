@@ -582,7 +582,7 @@ void free_filter_runtime(struct cds_list_head *bytecode_runtime_head)
 
 void lttng_free_event_filter_runtime(struct lttng_event *event)
 {
-	free_filter_runtime(&event->bytecode_runtime_head);
+	free_filter_runtime(&event->filter_bytecode_runtime_head);
 }
 
 void lttng_free_event_notifier_filter_runtime(

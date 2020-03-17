@@ -745,7 +745,7 @@ int lttng_event_create(const struct lttng_event_desc *desc,
 	/* Event will be enabled by enabler sync. */
 	event->enabled = 0;
 	event->registered = 0;
-	CDS_INIT_LIST_HEAD(&event->bytecode_runtime_head);
+	CDS_INIT_LIST_HEAD(&event->filter_bytecode_runtime_head);
 	CDS_INIT_LIST_HEAD(&event->enablers_ref_head);
 	event->desc = desc;
 
@@ -1221,7 +1221,7 @@ int lttng_event_enabler_ref_events(struct lttng_event_enabler *event_enabler)
 		 */
 		lttng_enabler_link_bytecode(event->desc,
 			&session->ctx,
-			&event->bytecode_runtime_head,
+			&event->filter_bytecode_runtime_head,
 			lttng_event_enabler_as_enabler(event_enabler));
 
 		/* TODO: merge event context. */
@@ -1402,17 +1402,17 @@ int lttng_event_enabler_disable(struct lttng_event_enabler *event_enabler)
 }
 
 static
-void _lttng_enabler_attach_bytecode(struct lttng_enabler *enabler,
+void _lttng_enabler_attach_filter_bytecode(struct lttng_enabler *enabler,
 		struct lttng_ust_filter_bytecode_node *bytecode)
 {
 	bytecode->enabler = enabler;
 	cds_list_add_tail(&bytecode->node, &enabler->filter_bytecode_head);
 }
 
-int lttng_event_enabler_attach_bytecode(struct lttng_event_enabler *event_enabler,
+int lttng_event_enabler_attach_filter_bytecode(struct lttng_event_enabler *event_enabler,
 		struct lttng_ust_filter_bytecode_node *bytecode)
 {
-	_lttng_enabler_attach_bytecode(
+	_lttng_enabler_attach_filter_bytecode(
 		lttng_event_enabler_as_enabler(event_enabler), bytecode);
 
 	lttng_session_lazy_sync_event_enablers(event_enabler->chan->session);
@@ -1455,11 +1455,11 @@ int lttng_event_notifier_enabler_disable(
 	return 0;
 }
 
-int lttng_event_notifier_enabler_attach_bytecode(
+int lttng_event_notifier_enabler_attach_filter_bytecode(
 		struct lttng_event_notifier_enabler *event_notifier_enabler,
 		struct lttng_ust_filter_bytecode_node *bytecode)
 {
-	_lttng_enabler_attach_bytecode(
+	_lttng_enabler_attach_filter_bytecode(
 		lttng_event_notifier_enabler_as_enabler(event_notifier_enabler),
 		bytecode);
 
@@ -1634,7 +1634,7 @@ void lttng_session_sync_event_enablers(struct lttng_session *session)
 
 		/* Enable filters */
 		cds_list_for_each_entry(runtime,
-				&event->bytecode_runtime_head, node) {
+				&event->filter_bytecode_runtime_head, node) {
 			lttng_filter_sync_state(runtime);
 		}
 	}

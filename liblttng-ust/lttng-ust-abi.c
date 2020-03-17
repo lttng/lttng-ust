@@ -716,7 +716,8 @@ long lttng_event_notifier_enabler_cmd(int objd, unsigned int cmd, unsigned long 
 	struct lttng_event_notifier_enabler *event_notifier_enabler = objd_private(objd);
 	switch (cmd) {
 	case LTTNG_UST_FILTER:
-		return lttng_event_notifier_enabler_attach_bytecode(event_notifier_enabler,
+		return lttng_event_notifier_enabler_attach_filter_bytecode(
+			event_notifier_enabler,
 			(struct lttng_ust_filter_bytecode_node *) arg);
 	case LTTNG_UST_EXCLUSION:
 		return lttng_event_notifier_enabler_attach_exclusion(event_notifier_enabler,
@@ -1146,7 +1147,7 @@ long lttng_event_enabler_cmd(int objd, unsigned int cmd, unsigned long arg,
 	{
 		int ret;
 
-		ret = lttng_event_enabler_attach_bytecode(enabler,
+		ret = lttng_event_enabler_attach_filter_bytecode(enabler,
 				(struct lttng_ust_filter_bytecode_node *) arg);
 		if (ret)
 			return ret;
