@@ -781,9 +781,10 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 	struct lttng_stack_ctx __lttng_ctx;				      \
 	size_t __event_len, __event_align;				      \
 	size_t __dynamic_len_idx = 0;					      \
+	const size_t __num_fields = _TP_ARRAY_SIZE(__event_fields___##_provider##___##_name) - 1; \
 	union {								      \
-		size_t __dynamic_len[_TP_ARRAY_SIZE(__event_fields___##_provider##___##_name) - 1]; \
-		char __filter_stack_data[2 * sizeof(unsigned long) * (_TP_ARRAY_SIZE(__event_fields___##_provider##___##_name) - 1)]; \
+		size_t __dynamic_len[__num_fields];			      \
+		char __filter_stack_data[2 * sizeof(unsigned long) * __num_fields]; \
 	} __stackvar;							      \
 	int __ret;							      \
 									      \
