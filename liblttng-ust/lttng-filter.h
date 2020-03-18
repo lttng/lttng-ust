@@ -128,6 +128,13 @@ struct filter_get_index_data {
 	uint64_t offset;	/* in bytes */
 	size_t ctx_index;
 	size_t array_len;
+	/*
+	 * Field is only populated for LOAD_ROOT_CONTEXT, LOAD_ROOT_APP_CONTEXT
+	 * and LOAD_ROOT_PAYLOAD. Left NULL for LOAD_OBJECT, considering that the
+	 * interpreter needs to find it from the event fields and types to
+	 * support variants.
+	 */
+	const struct lttng_event_field *field;
 	struct {
 		size_t len;
 		enum object_type type;
@@ -208,6 +215,7 @@ struct load_ptr {
 	enum load_type type;
 	enum object_type object_type;
 	const void *ptr;
+	size_t nr_elem;
 	bool rev_bo;
 	/* Temporary place-holders for contexts. */
 	union {
@@ -215,10 +223,6 @@ struct load_ptr {
 		uint64_t u64;
 		double d;
 	} u;
-	/*
-	 * "field" is only needed when nested under a variant, in which
-	 * case we cannot specialize the nested operations.
-	 */
 	const struct lttng_event_field *field;
 };
 
@@ -289,13 +293,49 @@ struct estack {
 		(top)--;					\
 	} while (0)
 
+enum lttng_interpreter_type {
+	LTTNG_INTERPRETER_TYPE_S64,
+	LTTNG_INTERPRETER_TYPE_U64,
+	LTTNG_INTERPRETER_TYPE_SIGNED_ENUM,
+	LTTNG_INTERPRETER_TYPE_UNSIGNED_ENUM,
+	LTTNG_INTERPRETER_TYPE_DOUBLE,
+	LTTNG_INTERPRETER_TYPE_STRING,
+	LTTNG_INTERPRETER_TYPE_SEQUENCE,
+};
+
+/*
+ * Represents the output parameter of the lttng interpreter.
+ * Currently capturable field classes are integer, double, string and sequence
+ * of integer.
+ */
+struct lttng_interpreter_output {
+	enum lttng_interpreter_type type;
+	union {
+		int64_t s;
+		uint64_t u;
+		double d;
+
+		struct {
+			const char *str;
+			size_t len;
+		} str;
+		struct {
+			const void *ptr;
+			size_t nr_elem;
+
+			/* Inner type. */
+			const struct lttng_type *nested_type;
+		} sequence;
+	} u;
+};
+
 const char *print_op(enum filter_op op);
 
 int lttng_filter_validate_bytecode(struct bytecode_runtime *bytecode);
 int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 		struct bytecode_runtime *bytecode);
 
-uint64_t lttng_filter_false(void *filter_data,
+uint64_t lttng_filter_interpret_bytecode_false(void *filter_data,
 		const char *filter_stack_data);
 uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 		const char *filter_stack_data);

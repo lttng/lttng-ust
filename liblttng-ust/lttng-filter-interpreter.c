@@ -28,9 +28,14 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <urcu-pointer.h>
+#include <byteswap.h>
+
 #include <lttng/ust-endian.h>
+#include <lttng/ust-events.h>
+
 #include "lttng-filter.h"
 #include "string-utils.h"
+
 
 /*
  * -1: wildcard found.
@@ -161,7 +166,7 @@ int stack_strcmp(struct estack *stack, int top, const char *cmp_type)
 	return diff;
 }
 
-uint64_t lttng_filter_false(void *filter_data,
+uint64_t lttng_filter_interpret_bytecode_false(void *filter_data,
 		const char *filter_stack_data)
 {
 	return LTTNG_FILTER_DISCARD;
@@ -235,8 +240,7 @@ static int context_get_index(struct lttng_ctx *ctx,
 	ctx_field = &ctx->fields[idx];
 	field = &ctx_field->event_field;
 	ptr->type = LOAD_OBJECT;
-	/* field is only used for types nested within variants. */
-	ptr->field = NULL;
+	ptr->field = field;
 
 	switch (field->type.atype) {
 	case atype_integer:
@@ -380,13 +384,6 @@ static int dynamic_get_index(struct lttng_ctx *ctx,
 	int ret;
 	const struct filter_get_index_data *gid;
 
-	/*
-	 * Types nested within variants need to perform dynamic lookup
-	 * based on the field descriptions. LTTng-UST does not implement
-	 * variants for now.
-	 */
-	if (stack_top->u.ptr.field)
-		return -EINVAL;
 	gid = (const struct filter_get_index_data *) &runtime->data[index];
 	switch (stack_top->u.ptr.type) {
 	case LOAD_OBJECT:
@@ -402,7 +399,8 @@ static int dynamic_get_index(struct lttng_ctx *ctx,
 			stack_top->u.ptr.ptr = ptr;
 			stack_top->u.ptr.object_type = gid->elem.type;
 			stack_top->u.ptr.rev_bo = gid->elem.rev_bo;
-			/* field is only used for types nested within variants. */
+			assert(stack_top->u.ptr.field->type.atype == atype_array ||
+					stack_top->u.ptr.field->type.atype == atype_array_nestable);
 			stack_top->u.ptr.field = NULL;
 			break;
 		}
@@ -421,7 +419,8 @@ static int dynamic_get_index(struct lttng_ctx *ctx,
 			stack_top->u.ptr.ptr = ptr;
 			stack_top->u.ptr.object_type = gid->elem.type;
 			stack_top->u.ptr.rev_bo = gid->elem.rev_bo;
-			/* field is only used for types nested within variants. */
+			assert(stack_top->u.ptr.field->type.atype == atype_sequence ||
+					stack_top->u.ptr.field->type.atype == atype_sequence_nestable);
 			stack_top->u.ptr.field = NULL;
 			break;
 		}
@@ -454,8 +453,7 @@ static int dynamic_get_index(struct lttng_ctx *ctx,
 			stack_top->u.ptr.ptr = *(const char * const *) stack_top->u.ptr.ptr;
 		stack_top->u.ptr.object_type = gid->elem.type;
 		stack_top->u.ptr.type = LOAD_OBJECT;
-		/* field is only used for types nested within variants. */
-		stack_top->u.ptr.field = NULL;
+		stack_top->u.ptr.field = gid->field;
 		break;
 	}
 	return 0;
@@ -625,15 +623,89 @@ end:
 	return ret;
 }
 
+static
+int lttng_bytecode_interpret_format_output(struct estack_entry *ax,
+		struct lttng_interpreter_output *output)
+{
+	int ret;
+
+again:
+	switch (ax->type) {
+	case REG_S64:
+		output->type = LTTNG_INTERPRETER_TYPE_S64;
+		output->u.s = ax->u.v;
+		break;
+	case REG_U64:
+		output->type = LTTNG_INTERPRETER_TYPE_U64;
+		output->u.u = (uint64_t) ax->u.v;
+		break;
+	case REG_DOUBLE:
+		output->type = LTTNG_INTERPRETER_TYPE_DOUBLE;
+		output->u.d = ax->u.d;
+		break;
+	case REG_STRING:
+		output->type = LTTNG_INTERPRETER_TYPE_STRING;
+		output->u.str.str = ax->u.s.str;
+		output->u.str.len = ax->u.s.seq_len;
+		break;
+	case REG_PTR:
+		switch (ax->u.ptr.object_type) {
+		case OBJECT_TYPE_S8:
+		case OBJECT_TYPE_S16:
+		case OBJECT_TYPE_S32:
+		case OBJECT_TYPE_S64:
+		case OBJECT_TYPE_U8:
+		case OBJECT_TYPE_U16:
+		case OBJECT_TYPE_U32:
+		case OBJECT_TYPE_U64:
+		case OBJECT_TYPE_DOUBLE:
+		case OBJECT_TYPE_STRING:
+		case OBJECT_TYPE_STRING_SEQUENCE:
+			ret = dynamic_load_field(ax);
+			if (ret)
+				return ret;
+			/* Retry after loading ptr into stack top. */
+			goto again;
+		case OBJECT_TYPE_SEQUENCE:
+			output->type = LTTNG_INTERPRETER_TYPE_SEQUENCE;
+			output->u.sequence.ptr = *(const char **) (ax->u.ptr.ptr + sizeof(unsigned long));
+			output->u.sequence.nr_elem = *(unsigned long *) ax->u.ptr.ptr;
+			output->u.sequence.nested_type = ax->u.ptr.field->type.u.sequence_nestable.elem_type;
+			break;
+		case OBJECT_TYPE_ARRAY:
+			/* Skip count (unsigned long) */
+			output->type = LTTNG_INTERPRETER_TYPE_SEQUENCE;
+			output->u.sequence.ptr = *(const char **) (ax->u.ptr.ptr + sizeof(unsigned long));
+			output->u.sequence.nr_elem = ax->u.ptr.field->type.u.array_nestable.length;
+			output->u.sequence.nested_type = ax->u.ptr.field->type.u.array_nestable.elem_type;
+			break;
+		case OBJECT_TYPE_STRUCT:
+		case OBJECT_TYPE_VARIANT:
+		default:
+			return -EINVAL;
+		}
+
+		break;
+	case REG_STAR_GLOB_STRING:
+	case REG_UNKNOWN:
+	default:
+		return -EINVAL;
+	}
+
+	return LTTNG_FILTER_RECORD_FLAG;
+}
+
 /*
  * Return 0 (discard), or raise the 0x1 flag (log event).
  * Currently, other flags are kept for future extensions and have no
  * effect.
  */
-uint64_t lttng_filter_interpret_bytecode(void *filter_data,
-		const char *filter_stack_data)
+static
+uint64_t bytecode_interpret(void *interpreter_data,
+		const char *interpreter_stack_data,
+		struct lttng_interpreter_output *output)
 {
-	struct bytecode_runtime *bytecode = filter_data;
+	struct bytecode_runtime *bytecode = interpreter_data;
 	struct lttng_ctx *ctx = rcu_dereference(*bytecode->p.pctx);
 	void *pc, *next_pc, *start_pc;
 	int ret = -EINVAL;
@@ -802,7 +874,15 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 				break;
 			case REG_DOUBLE:
 			case REG_STRING:
+			case REG_PTR:
+				if (!output) {
+					ret = -EINVAL;
+					goto end;
+				}
+				retval = 0;
+				break;
 			case REG_STAR_GLOB_STRING:
+			case REG_UNKNOWN:
 			default:
 				ret = -EINVAL;
 				goto end;
@@ -1872,7 +1952,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 				ref->offset);
 			estack_push(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax(stack, top)->u.s.str =
-				*(const char * const *) &filter_stack_data[ref->offset];
+				*(const char * const *) &interpreter_stack_data[ref->offset];
 			if (unlikely(!estack_ax(stack, top)->u.s.str)) {
 				dbg_printf("Filter warning: loading a NULL string.\n");
 				ret = -EINVAL;
@@ -1896,9 +1976,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 				ref->offset);
 			estack_push(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax(stack, top)->u.s.seq_len =
-				*(unsigned long *) &filter_stack_data[ref->offset];
+				*(unsigned long *) &interpreter_stack_data[ref->offset];
 			estack_ax(stack, top)->u.s.str =
-				*(const char **) (&filter_stack_data[ref->offset
+				*(const char **) (&interpreter_stack_data[ref->offset
 								+ sizeof(unsigned long)]);
 			estack_ax_t = REG_STRING;
 			if (unlikely(!estack_ax(stack, top)->u.s.str)) {
@@ -1921,7 +2001,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 				ref->offset);
 			estack_push(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v =
-				((struct literal_numeric *) &filter_stack_data[ref->offset])->v;
+				((struct literal_numeric *) &interpreter_stack_data[ref->offset])->v;
 			estack_ax_t = REG_S64;
 			dbg_printf("ref load s64 %" PRIi64 "\n", estack_ax_v);
 			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
@@ -1936,7 +2016,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			dbg_printf("load field ref offset %u type double\n",
 				ref->offset);
 			estack_push(stack, top, ax, bx, ax_t, bx_t);
-			memcpy(&estack_ax(stack, top)->u.d, &filter_stack_data[ref->offset],
+			memcpy(&estack_ax(stack, top)->u.d, &interpreter_stack_data[ref->offset],
 				sizeof(struct literal_double));
 			estack_ax_t = REG_DOUBLE;
 			dbg_printf("ref load double %g\n", estack_ax(stack, top)->u.d);
@@ -2183,7 +2263,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			dbg_printf("op get app payload root\n");
 			estack_push(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax(stack, top)->u.ptr.type = LOAD_ROOT_PAYLOAD;
-			estack_ax(stack, top)->u.ptr.ptr = filter_stack_data;
+			estack_ax(stack, top)->u.ptr.ptr = interpreter_stack_data;
 			/* "field" only needed for variants. */
 			estack_ax(stack, top)->u.ptr.field = NULL;
 			estack_ax_t = REG_PTR;
@@ -2394,7 +2474,19 @@ end:
 	/* Return _DISCARD on error. */
 	if (ret)
 		return LTTNG_FILTER_DISCARD;
+
+	if (output) {
+		return lttng_bytecode_interpret_format_output(estack_ax(stack, top),
+				output);
+	}
+
 	return retval;
+}
+
+uint64_t lttng_filter_interpret_bytecode(void *filter_data,
+		const char *filter_stack_data)
+{
+	return bytecode_interpret(filter_data, filter_stack_data, NULL);
 }
 
 #undef START_OP
