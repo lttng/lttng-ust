@@ -1,0 +1,9 @@
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/tests/utils
+
+noinst_PROGRAMS = test_msgpack
+test_msgpack_SOURCES = test_msgpack.c
+test_msgpack_LDADD = \
+ $(top_builddir)/libmsgpack/libmsgpack.la \
+ $(top_builddir)/tests/utils/libtap.a
+
+test_msgpack_CFLAGS = $(AM_CFLAGS)

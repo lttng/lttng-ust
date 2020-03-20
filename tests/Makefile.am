@@ -7,6 +7,7 @@ LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 TESTS = \
 	unit/libringbuffer/test_shm \
 	unit/gcc-weak-hidden/test_gcc_weak_hidden \
+	unit/libmsgpack/test_msgpack \
 	unit/pthread_name/test_pthread_name \
 	unit/snprintf/test_snprintf \
 	unit/ust-elf/test_ust_elf

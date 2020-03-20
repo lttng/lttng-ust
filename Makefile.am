@@ -1,6 +1,7 @@
 ACLOCAL_AMFLAGS = -I m4
 
 SUBDIRS = . include snprintf libringbuffer liblttng-ust-comm \
+		libmsgpack \
 		liblttng-ust \
 		liblttng-ust-ctl \
 		liblttng-ust-fd \
