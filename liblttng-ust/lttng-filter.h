@@ -87,6 +87,7 @@ struct bytecode_runtime {
 
 enum entry_type {
 	REG_S64,
+	REG_U64,
 	REG_DOUBLE,
 	REG_STRING,
 	REG_STAR_GLOB_STRING,
