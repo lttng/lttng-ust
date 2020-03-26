@@ -13,6 +13,8 @@ TESTS = snprintf/test_snprintf \
 	ust-elf/test_ust_elf \
 	gcc-weak-hidden/test_gcc_weak_hidden
 
+EXTRA_DIST = README
+
 check-loop:
 	while [ 0 ]; do \
 		$(MAKE) $(AM_MAKEFLAGS) check; \

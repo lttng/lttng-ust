@@ -10,4 +10,4 @@ bench2_CFLAGS = -DTRACING $(AM_CFLAGS)
 
 dist_noinst_SCRIPTS = test_benchmark ptime
 
-extra_DIST = README
+EXTRA_DIST = README

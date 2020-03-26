@@ -33,4 +33,6 @@ endif
 
 all-local: org_lttng_ust_LTTngUst.h
 
+EXTRA_DIST = README
+
 CLEANFILES = $(jarfile) $(pkgpath)/*.class jni-header.stamp org_lttng_ust_LTTngUst.h

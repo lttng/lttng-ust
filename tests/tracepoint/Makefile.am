@@ -10,5 +10,5 @@ AM_CPPFLAGS = -I$(top_srcdir)/include
 #ust/tests/tracepoint/tracepoint_test.c:64: undefined reference to
 #`register_trace_ust_event_msg'
 #CFLAGS_tracepoint_test.o = -I$(src) $(AM_CFLAGS)
-noinst_SCRIPTS = run
-EXTRA_DIST = run
+
+dist_noinst_SCRIPTS = run

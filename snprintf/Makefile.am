@@ -20,3 +20,5 @@ libustsnprintf_la_SOURCES = \
 
 libustsnprintf_la_LDFLAGS = -no-undefined -static
 libustsnprintf_la_CFLAGS = -DUST_COMPONENT="lttng_ust_snprintf" -fPIC $(AM_CFLAGS)
+
+EXTRA_DIST = README

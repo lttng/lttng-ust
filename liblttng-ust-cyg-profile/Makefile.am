@@ -22,5 +22,4 @@ liblttng_ust_cyg_profile_fast_la_LIBADD = \
 	-llttng-ust \
 	$(DL_LIBS)
 
-noinst_SCRIPTS = run run-fast
-EXTRA_DIST = run run-fast
+dist_noinst_SCRIPTS = run run-fast

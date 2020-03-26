@@ -22,5 +22,5 @@ liblttng_ust_pthread_wrapper_la_LIBADD = \
 	-llttng-ust \
 	$(DL_LIBS)
 
-noinst_SCRIPTS = run
-EXTRA_DIST = run
+dist_noinst_SCRIPTS = run
+EXTRA_DIST = README
