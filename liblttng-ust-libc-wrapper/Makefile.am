@@ -9,8 +9,7 @@ liblttng_ust_libc_wrapper_la_SOURCES = \
 	ust_libc.h
 
 liblttng_ust_libc_wrapper_la_LIBADD = \
-	-L$(top_builddir)/liblttng-ust/.libs \
-	-llttng-ust \
+	$(top_builddir)/liblttng-ust/liblttng-ust.la \
 	$(DL_LIBS)
 
 liblttng_ust_pthread_wrapper_la_SOURCES = \
@@ -18,8 +17,7 @@ liblttng_ust_pthread_wrapper_la_SOURCES = \
 	ust_pthread.h
 
 liblttng_ust_pthread_wrapper_la_LIBADD = \
-	-L$(top_builddir)/liblttng-ust/.libs \
-	-llttng-ust \
+	$(top_builddir)/liblttng-ust/liblttng-ust.la \
 	$(DL_LIBS)
 
 dist_noinst_SCRIPTS = run
