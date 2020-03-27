@@ -1,3 +1,6 @@
+2020-03-27 (International Stay At Home Month) lttng-ust 2.12.0-rc3
+	* Fix: v.u.d might be uninitialized
+
 2020-03-04 (National Grammar Day) lttng-ust 2.12.0-rc2
 	* Fix: set FD_CLOEXEC on incoming FDs.
 	* Fix: tracepoint.h: Disable address sanitizer on pointer array section variables
