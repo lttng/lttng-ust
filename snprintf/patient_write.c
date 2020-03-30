@@ -22,6 +22,9 @@
 /* write() */
 #include <unistd.h>
 
+/* writev() */
+#include <sys/uio.h>
+
 /* send() */
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -56,6 +59,52 @@ ssize_t patient_write(int fd, const void *buf, size_t count)
 	}
 
 	return bufc-(const char *)buf;
+}
+
+/*
+ * The `struct iovec *iov` is not `const` because we modify it to support
+ * partial writes.
+ */
+ssize_t patient_writev(int fd, struct iovec *iov, int iovcnt)
+{
+	ssize_t written, total_written = 0;
+	int curr_element_idx = 0;
+
+	for(;;) {
+		written = writev(fd, iov + curr_element_idx,
+				iovcnt - curr_element_idx);
+		if (written == -1 && errno == EINTR) {
+			continue;
+		}
+		if (written <= 0) {
+			return written;
+		}
+
+		total_written += written;
+
+		/*
+		 * If it's not the last element in the vector and we have
+		 * written more than the current element size, then increment
+		 * the current element index until we reach the element that
+		 * was partially written.
+		 */
+		while (curr_element_idx < iovcnt &&
+				written >= iov[curr_element_idx].iov_len) {
+			written -= iov[curr_element_idx].iov_len;
+			curr_element_idx++;
+		}
+
+		/* Maybe we are done. */
+		if (curr_element_idx >= iovcnt) {
+			break;
+		}
+
+		/* Update the current element base and size. */
+		iov[curr_element_idx].iov_base += written;
+		iov[curr_element_idx].iov_len -= written;
+	}
+
+	return total_written;
 }
 
 ssize_t patient_send(int fd, const void *buf, size_t count, int flags)

@@ -24,8 +24,10 @@
  */
 
 #include <stdlib.h>
+#include <sys/uio.h>
 
 ssize_t patient_write(int fd, const void *buf, size_t count);
+ssize_t patient_writev(int fd, struct iovec *iov, int iovcnt);
 ssize_t patient_send(int fd, const void *buf, size_t count, int flags);
 
 #endif /* _LTTNG_SHARE_H */
