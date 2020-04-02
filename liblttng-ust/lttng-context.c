@@ -180,13 +180,13 @@ void lttng_context_update(struct lttng_ctx *ctx)
 		type = &ctx->fields[i].event_field.type;
 		switch (type->atype) {
 		case atype_integer:
-			field_align = type->u.basic.integer.alignment;
+			field_align = type->u.integer.alignment;
 			break;
 		case atype_array:
 		{
 			struct lttng_basic_type *btype;
 
-			btype = &type->u.array.elem_type;
+			btype = &type->u.legacy.array.elem_type;
 			switch (btype->atype) {
 			case atype_integer:
 				field_align = btype->u.basic.integer.alignment;
@@ -195,18 +195,44 @@ void lttng_context_update(struct lttng_ctx *ctx)
 				break;
 
 			case atype_array:
+			case atype_array_nestable:
 			case atype_sequence:
+			case atype_sequence_nestable:
 			default:
 				WARN_ON_ONCE(1);
 				break;
 			}
 			break;
 		}
+		case atype_array_nestable:
+		{
+			const struct lttng_type *nested_type;
+
+			nested_type = type->u.array_nestable.elem_type;
+			switch (nested_type->atype) {
+			case atype_integer:
+				field_align = nested_type->u.integer.alignment;
+				break;
+			case atype_string:
+				break;
+
+			case atype_array:
+			case atype_array_nestable:
+			case atype_sequence:
+			case atype_sequence_nestable:
+			default:
+				WARN_ON_ONCE(1);
+				break;
+			}
+			field_align = max_t(size_t, field_align,
+					type->u.array_nestable.alignment);
+			break;
+		}
 		case atype_sequence:
 		{
 			struct lttng_basic_type *btype;
 
-			btype = &type->u.sequence.length_type;
+			btype = &type->u.legacy.sequence.length_type;
 			switch (btype->atype) {
 			case atype_integer:
 				field_align = btype->u.basic.integer.alignment;
@@ -214,13 +240,15 @@ void lttng_context_update(struct lttng_ctx *ctx)
 
 			case atype_string:
 			case atype_array:
+			case atype_array_nestable:
 			case atype_sequence:
+			case atype_sequence_nestable:
 			default:
 				WARN_ON_ONCE(1);
 				break;
 			}
 
-			btype = &type->u.sequence.elem_type;
+			btype = &type->u.legacy.sequence.elem_type;
 			switch (btype->atype) {
 			case atype_integer:
 				field_align = max_t(size_t,
@@ -232,11 +260,38 @@ void lttng_context_update(struct lttng_ctx *ctx)
 				break;
 
 			case atype_array:
+			case atype_array_nestable:
 			case atype_sequence:
+			case atype_sequence_nestable:
 			default:
 				WARN_ON_ONCE(1);
 				break;
 			}
+			break;
+		}
+		case atype_sequence_nestable:
+		{
+			const struct lttng_type *nested_type;
+
+			nested_type = type->u.sequence_nestable.elem_type;
+			switch (nested_type->atype) {
+			case atype_integer:
+				field_align = nested_type->u.integer.alignment;
+				break;
+
+			case atype_string:
+				break;
+
+			case atype_array:
+			case atype_array_nestable:
+			case atype_sequence:
+			case atype_sequence_nestable:
+			default:
+				WARN_ON_ONCE(1);
+				break;
+			}
+			field_align = max_t(size_t, field_align,
+					type->u.sequence_nestable.alignment);
 			break;
 		}
 		case atype_string:
@@ -244,6 +299,7 @@ void lttng_context_update(struct lttng_ctx *ctx)
 		case atype_dynamic:
 			break;
 		case atype_enum:
+		case atype_enum_nestable:
 		default:
 			WARN_ON_ONCE(1);
 			break;

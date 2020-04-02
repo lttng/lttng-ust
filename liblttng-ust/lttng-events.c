@@ -318,7 +318,20 @@ int lttng_create_enum_check(const struct lttng_type *type,
 		const struct lttng_enum_desc *enum_desc;
 		int ret;
 
-		enum_desc = type->u.basic.enumeration.desc;
+		enum_desc = type->u.legacy.basic.enumeration.desc;
+		ret = lttng_enum_create(enum_desc, session);
+		if (ret && ret != -EEXIST) {
+			DBG("Unable to create enum error: (%d)", ret);
+			return ret;
+		}
+		break;
+	}
+	case atype_enum_nestable:
+	{
+		const struct lttng_enum_desc *enum_desc;
+		int ret;
+
+		enum_desc = type->u.enum_nestable.desc;
 		ret = lttng_enum_create(enum_desc, session);
 		if (ret && ret != -EEXIST) {
 			DBG("Unable to create enum error: (%d)", ret);
@@ -333,7 +346,7 @@ int lttng_create_enum_check(const struct lttng_type *type,
 		int ret;
 
 		tag_field_generic = lttng_ust_dynamic_type_tag_field();
-		enum_desc = tag_field_generic->type.u.basic.enumeration.desc;
+		enum_desc = tag_field_generic->type.u.enum_nestable.desc;
 		ret = lttng_enum_create(enum_desc, session);
 		if (ret && ret != -EEXIST) {
 			DBG("Unable to create enum error: (%d)", ret);
@@ -872,11 +885,16 @@ void lttng_probe_provider_unregister_events(struct lttng_probe_desc *provider_de
 						struct lttng_enum *curr_enum;
 
 						field = &(event->desc->fields[j]);
-						if (field->type.atype != atype_enum) {
+						switch (field->type.atype) {
+						case atype_enum:
+							enum_desc = field->type.u.legacy.basic.enumeration.desc;
+							break;
+						case atype_enum_nestable:
+							enum_desc = field->type.u.enum_nestable.desc;
+							break;
+						default:
 							continue;
 						}
-
-						enum_desc = field->type.u.basic.enumeration.desc;
 						curr_enum = lttng_ust_enum_get_from_desc(session, enum_desc);
 						if (curr_enum) {
 							_lttng_enum_destroy(curr_enum);

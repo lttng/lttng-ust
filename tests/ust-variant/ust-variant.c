@@ -128,23 +128,18 @@ static void __event_probe__myprobe___myevent(void * __tp_data)
 static const struct lttng_event_field myfields[] = {
 	[0] = {
 		.name = "mytag",
-		.type.atype = atype_enum,
-		.type.u.basic.enumeration.desc = &myenum_desc,
-		.type.u.basic.enumeration.container_type = {
-			.size = sizeof(char) * CHAR_BIT,
-			.alignment = lttng_alignof(char) * CHAR_BIT,
-			.signedness = lttng_is_signed_type(char),
-			.reverse_byte_order = 0,
-			.base = 10,
-			.encoding = lttng_encode_none,
-		},
+		.type.atype = atype_enum_nestable,
+		.type.u.enum_nestable.desc = &myenum_desc,
+		.type.u.enum_nestable.container_type =
+			__LTTNG_COMPOUND_LITERAL(struct lttng_type,
+					__type_integer(char, BYTE_ORDER, 10, none)),
 		.nowrite = 0,
 	},
 	[1] = {
 		.name = "myfield",
 		.type = {
-			.atype = atype_variant,
-			.u.variant = &myvariant,
+			.atype = atype_variant_nestable,
+			.u.variant_nestable = &myvariant,
 		},
 		.nowrite = 0,
 	},

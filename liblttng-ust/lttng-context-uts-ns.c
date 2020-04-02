@@ -143,12 +143,12 @@ int lttng_add_uts_ns_to_ctx(struct lttng_ctx **ctx)
 	}
 	field->event_field.name = "uts_ns";
 	field->event_field.type.atype = atype_integer;
-	field->event_field.type.u.basic.integer.size = sizeof(ino_t) * CHAR_BIT;
-	field->event_field.type.u.basic.integer.alignment = lttng_alignof(ino_t) * CHAR_BIT;
-	field->event_field.type.u.basic.integer.signedness = lttng_is_signed_type(ino_t);
-	field->event_field.type.u.basic.integer.reverse_byte_order = 0;
-	field->event_field.type.u.basic.integer.base = 10;
-	field->event_field.type.u.basic.integer.encoding = lttng_encode_none;
+	field->event_field.type.u.integer.size = sizeof(ino_t) * CHAR_BIT;
+	field->event_field.type.u.integer.alignment = lttng_alignof(ino_t) * CHAR_BIT;
+	field->event_field.type.u.integer.signedness = lttng_is_signed_type(ino_t);
+	field->event_field.type.u.integer.reverse_byte_order = 0;
+	field->event_field.type.u.integer.base = 10;
+	field->event_field.type.u.integer.encoding = lttng_encode_none;
 	field->get_size = uts_ns_get_size;
 	field->record = uts_ns_record;
 	field->get_value = uts_ns_get_value;

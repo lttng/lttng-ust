@@ -78,12 +78,12 @@ int lttng_add_cpu_id_to_ctx(struct lttng_ctx **ctx)
 	}
 	field->event_field.name = "cpu_id";
 	field->event_field.type.atype = atype_integer;
-	field->event_field.type.u.basic.integer.size = sizeof(int) * CHAR_BIT;
-	field->event_field.type.u.basic.integer.alignment = lttng_alignof(int) * CHAR_BIT;
-	field->event_field.type.u.basic.integer.signedness = lttng_is_signed_type(int);
-	field->event_field.type.u.basic.integer.reverse_byte_order = 0;
-	field->event_field.type.u.basic.integer.base = 10;
-	field->event_field.type.u.basic.integer.encoding = lttng_encode_none;
+	field->event_field.type.u.integer.size = sizeof(int) * CHAR_BIT;
+	field->event_field.type.u.integer.alignment = lttng_alignof(int) * CHAR_BIT;
+	field->event_field.type.u.integer.signedness = lttng_is_signed_type(int);
+	field->event_field.type.u.integer.reverse_byte_order = 0;
+	field->event_field.type.u.integer.base = 10;
+	field->event_field.type.u.integer.encoding = lttng_encode_none;
 	field->get_size = cpu_id_get_size;
 	field->record = cpu_id_record;
 	field->get_value = cpu_id_get_value;

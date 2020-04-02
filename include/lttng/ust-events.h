@@ -88,13 +88,17 @@ enum lttng_client_types {
 /* Update the astract_types name table in lttng-types.c along with this enum */
 enum lttng_abstract_types {
 	atype_integer,
-	atype_enum,
-	atype_array,
-	atype_sequence,
+	atype_enum,	/* legacy */
+	atype_array,	/* legacy */
+	atype_sequence,	/* legacy */
 	atype_string,
 	atype_float,
 	atype_dynamic,
-	atype_struct,
+	atype_struct,	/* legacy */
+	atype_enum_nestable,
+	atype_array_nestable,
+	atype_sequence_nestable,
+	atype_struct_nestable,
 	NR_ABSTRACT_TYPES,
 };
 
@@ -132,17 +136,14 @@ struct lttng_enum_entry {
 	  .atype = atype_integer,				\
 	  .u =							\
 		{						\
-		  .basic = 					\
+		  .integer =					\
 			{					\
-			  .integer =				\
-				{				\
-				  .size = sizeof(_type) * CHAR_BIT,		\
-				  .alignment = lttng_alignof(_type) * CHAR_BIT,	\
-				  .signedness = lttng_is_signed_type(_type),	\
-				  .reverse_byte_order = _byte_order != BYTE_ORDER, \
-				  .base = _base,				\
-				  .encoding = lttng_encode_##_encoding,		\
-				}				\
+			  .size = sizeof(_type) * CHAR_BIT,	\
+			  .alignment = lttng_alignof(_type) * CHAR_BIT,	\
+			  .signedness = lttng_is_signed_type(_type), \
+			  .reverse_byte_order = _byte_order != BYTE_ORDER, \
+			  .base = _base,			\
+			  .encoding = lttng_encode_##_encoding,	\
 			}					\
 		},						\
 	}							\
@@ -172,18 +173,15 @@ struct lttng_integer_type {
 	  .atype = atype_float,					\
 	  .u =							\
 		{						\
-		  .basic =					\
+		  ._float =					\
 			{					\
-			  ._float =				\
-				{				\
-				  .exp_dig = sizeof(_type) * CHAR_BIT		\
-						  - _float_mant_dig(_type),	\
-				  .mant_dig = _float_mant_dig(_type),		\
-				  .alignment = lttng_alignof(_type) * CHAR_BIT,	\
-				  .reverse_byte_order = BYTE_ORDER != FLOAT_WORD_ORDER,	\
-				}				\
+			  .exp_dig = sizeof(_type) * CHAR_BIT	\
+					  - _float_mant_dig(_type), \
+			  .mant_dig = _float_mant_dig(_type),	\
+			  .alignment = lttng_alignof(_type) * CHAR_BIT, \
+			  .reverse_byte_order = BYTE_ORDER != FLOAT_WORD_ORDER,	\
 			}					\
-		},						\
+		}						\
 	}							\
 
 #define LTTNG_UST_FLOAT_TYPE_PADDING	24
@@ -195,20 +193,22 @@ struct lttng_float_type {
 	char padding[LTTNG_UST_FLOAT_TYPE_PADDING];
 };
 
+/* legacy */
 #define LTTNG_UST_BASIC_TYPE_PADDING	128
 union _lttng_basic_type {
-	struct lttng_integer_type integer;
+	struct lttng_integer_type integer;	/* legacy */
 	struct {
 		const struct lttng_enum_desc *desc;	/* Enumeration mapping */
 		struct lttng_integer_type container_type;
-	} enumeration;
+	} enumeration;				/* legacy */
 	struct {
 		enum lttng_string_encodings encoding;
-	} string;
-	struct lttng_float_type _float;
+	} string;				/* legacy */
+	struct lttng_float_type _float;		/* legacy */
 	char padding[LTTNG_UST_BASIC_TYPE_PADDING];
 };
 
+/* legacy */
 struct lttng_basic_type {
 	enum lttng_abstract_types atype;
 	union {
@@ -220,19 +220,48 @@ struct lttng_basic_type {
 struct lttng_type {
 	enum lttng_abstract_types atype;
 	union {
-		union _lttng_basic_type basic;
+		/* provider ABI 2.0 */
+		struct lttng_integer_type integer;
+		struct lttng_float_type _float;
 		struct {
-			struct lttng_basic_type elem_type;
-			unsigned int length;		/* num. elems. */
-		} array;
+			enum lttng_string_encodings encoding;
+		} string;
 		struct {
-			struct lttng_basic_type length_type;
-			struct lttng_basic_type elem_type;
-		} sequence;
+			const struct lttng_enum_desc *desc;	/* Enumeration mapping */
+			struct lttng_type *container_type;
+		} enum_nestable;
 		struct {
-			uint32_t nr_fields;
-			struct lttng_event_field *fields;	/* Array of fields. */
-		} _struct;
+			const struct lttng_type *elem_type;
+			unsigned int length;			/* Num. elems. */
+			unsigned int alignment;
+		} array_nestable;
+		struct {
+			const char *length_name;		/* Length field name. */
+			const struct lttng_type *elem_type;
+			unsigned int alignment;			/* Alignment before elements. */
+		} sequence_nestable;
+		struct {
+			unsigned int nr_fields;
+			const struct lttng_event_field *fields;	/* Array of fields. */
+			unsigned int alignment;
+		} struct_nestable;
+
+		union {
+			/* legacy provider ABI 1.0 */
+			union _lttng_basic_type basic;	/* legacy */
+			struct {
+				struct lttng_basic_type elem_type;
+				unsigned int length;		/* Num. elems. */
+			} array;			/* legacy */
+			struct {
+				struct lttng_basic_type length_type;
+				struct lttng_basic_type elem_type;
+			} sequence;			/* legacy */
+			struct {
+				unsigned int nr_fields;
+				struct lttng_event_field *fields;	/* Array of fields. */
+			} _struct;			/* legacy */
+		} legacy;
 		char padding[LTTNG_UST_TYPE_PADDING];
 	} u;
 };
@@ -258,7 +287,12 @@ struct lttng_event_field {
 	const char *name;
 	struct lttng_type type;
 	unsigned int nowrite;	/* do not write into trace */
-	char padding[LTTNG_UST_EVENT_FIELD_PADDING];
+	union {
+		struct {
+			unsigned int nofilter:1;	/* do not consider for filter */
+		} ext;
+		char padding[LTTNG_UST_EVENT_FIELD_PADDING];
+	} u;
 };
 
 enum lttng_ust_dynamic_type {

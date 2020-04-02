@@ -114,12 +114,12 @@ int lttng_add_vgid_to_ctx(struct lttng_ctx **ctx)
 	}
 	field->event_field.name = "vgid";
 	field->event_field.type.atype = atype_integer;
-	field->event_field.type.u.basic.integer.size = sizeof(gid_t) * CHAR_BIT;
-	field->event_field.type.u.basic.integer.alignment = lttng_alignof(gid_t) * CHAR_BIT;
-	field->event_field.type.u.basic.integer.signedness = lttng_is_signed_type(gid_t);
-	field->event_field.type.u.basic.integer.reverse_byte_order = 0;
-	field->event_field.type.u.basic.integer.base = 10;
-	field->event_field.type.u.basic.integer.encoding = lttng_encode_none;
+	field->event_field.type.u.integer.size = sizeof(gid_t) * CHAR_BIT;
+	field->event_field.type.u.integer.alignment = lttng_alignof(gid_t) * CHAR_BIT;
+	field->event_field.type.u.integer.signedness = lttng_is_signed_type(gid_t);
+	field->event_field.type.u.integer.reverse_byte_order = 0;
+	field->event_field.type.u.integer.base = 10;
+	field->event_field.type.u.integer.encoding = lttng_encode_none;
 	field->get_size = vgid_get_size;
 	field->record = vgid_record;
 	field->get_value = vgid_get_value;

@@ -69,12 +69,12 @@ int lttng_add_pthread_id_to_ctx(struct lttng_ctx **ctx)
 	}
 	field->event_field.name = "pthread_id";
 	field->event_field.type.atype = atype_integer;
-	field->event_field.type.u.basic.integer.size = sizeof(unsigned long) * CHAR_BIT;
-	field->event_field.type.u.basic.integer.alignment = lttng_alignof(unsigned long) * CHAR_BIT;
-	field->event_field.type.u.basic.integer.signedness = lttng_is_signed_type(unsigned long);
-	field->event_field.type.u.basic.integer.reverse_byte_order = 0;
-	field->event_field.type.u.basic.integer.base = 10;
-	field->event_field.type.u.basic.integer.encoding = lttng_encode_none;
+	field->event_field.type.u.integer.size = sizeof(unsigned long) * CHAR_BIT;
+	field->event_field.type.u.integer.alignment = lttng_alignof(unsigned long) * CHAR_BIT;
+	field->event_field.type.u.integer.signedness = lttng_is_signed_type(unsigned long);
+	field->event_field.type.u.integer.reverse_byte_order = 0;
+	field->event_field.type.u.integer.base = 10;
+	field->event_field.type.u.integer.encoding = lttng_encode_none;
 	field->get_size = pthread_id_get_size;
 	field->record = pthread_id_record;
 	field->get_value = pthread_id_get_value;

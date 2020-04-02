@@ -237,6 +237,11 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 	  .name = #_item,					\
 	  .type = __type_integer(_type, _byte_order, _base, none),\
 	  .nowrite = _nowrite,					\
+	  .u = {						\
+		  .ext = {					\
+			  .nofilter = 0,			\
+		  },						\
+	  },							\
 	},
 
 #undef _ctf_float
@@ -245,6 +250,11 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 	  .name = #_item,					\
 	  .type = __type_float(_type),				\
 	  .nowrite = _nowrite,					\
+	  .u = {						\
+		  .ext = {					\
+			  .nofilter = 0,			\
+		  },						\
+	  },							\
 	},
 
 #undef _ctf_array_encoded
@@ -255,17 +265,24 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 	  .name = #_item,					\
 	  .type =						\
 		{						\
-		  .atype = atype_array,				\
+		  .atype = atype_array_nestable,		\
 		  .u =						\
 			{					\
-			  .array =				\
+			  .array_nestable =			\
 				{				\
-				  .elem_type = __type_integer(_type, _byte_order, _elem_type_base, _encoding), \
+				  .elem_type = __LTTNG_COMPOUND_LITERAL(struct lttng_type, \
+					__type_integer(_type, _byte_order, _elem_type_base, _encoding)), \
 				  .length = _length,		\
+				  .alignment = 0,		\
 				}				\
 			}					\
 		},						\
 	  .nowrite = _nowrite,					\
+	  .u = {						\
+		  .ext = {					\
+			  .nofilter = 0,			\
+		  },						\
+	  },							\
 	},
 
 #undef _ctf_sequence_encoded
@@ -273,20 +290,37 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 			_length_type, _src_length, _encoding, _nowrite, \
 			_elem_type_base)			\
 	{							\
+	  .name = "_" #_item "_length",				\
+	  .type = __type_integer(_length_type, BYTE_ORDER, 10, none), \
+	  .nowrite = _nowrite,					\
+	  .u = {						\
+		  .ext = {					\
+			  .nofilter = 1,			\
+		  },						\
+	  },							\
+	},							\
+	{							\
 	  .name = #_item,					\
 	  .type =						\
 		{						\
-		  .atype = atype_sequence,			\
+		  .atype = atype_sequence_nestable,		\
 		  .u =						\
 			{					\
-			  .sequence =				\
+			  .sequence_nestable =			\
 				{				\
-				  .length_type = __type_integer(_length_type, BYTE_ORDER, 10, none), \
-				  .elem_type = __type_integer(_type, _byte_order, _elem_type_base, _encoding), \
+				  .length_name = "_" #_item "_length", \
+				  .elem_type = __LTTNG_COMPOUND_LITERAL(struct lttng_type, \
+					__type_integer(_type, _byte_order, _elem_type_base, _encoding)), \
+				  .alignment = 0,		\
 				},				\
 			},					\
 		},						\
 	  .nowrite = _nowrite,					\
+	  .u = {						\
+		  .ext = {					\
+			  .nofilter = 0,			\
+		  },						\
+	  },							\
 	},
 
 #undef _ctf_string
@@ -298,10 +332,15 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 		  .atype = atype_string,			\
 		  .u =						\
 			{					\
-			  .basic = { .string = { .encoding = lttng_encode_UTF8 } } \
+			  .string = { .encoding = lttng_encode_UTF8 } \
 			},					\
 		},						\
 	  .nowrite = _nowrite,					\
+	  .u = {						\
+		  .ext = {					\
+			  .nofilter = 0,			\
+		  },						\
+	  },							\
 	},
 
 #undef _ctf_enum
@@ -309,24 +348,21 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 	{							\
 		.name = #_item,					\
 		.type = {					\
-			.atype = atype_enum,			\
+			.atype = atype_enum_nestable,		\
 			.u = {					\
-				.basic = {			\
-					.enumeration = {	\
-						.desc = &__enum_##_provider##_##_name, \
-						.container_type = { \
-							.size = sizeof(_type) * CHAR_BIT, \
-							.alignment = lttng_alignof(_type) * CHAR_BIT, \
-							.signedness = lttng_is_signed_type(_type), \
-							.reverse_byte_order = 0, \
-							.base = 10, \
-							.encoding = lttng_encode_none, \
-						},		\
-					},			\
-				 },				\
+				.enum_nestable = {		\
+					.desc = &__enum_##_provider##_##_name, \
+					.container_type = __LTTNG_COMPOUND_LITERAL(struct lttng_type, \
+								__type_integer(_type, BYTE_ORDER, 10, none)), \
+				},				\
 			},					\
 		},						\
 		.nowrite = _nowrite,				\
+		.u = {						\
+			.ext = {				\
+				.nofilter = 0,			\
+			},					\
+		},						\
 	},
 
 #undef TP_FIELDS

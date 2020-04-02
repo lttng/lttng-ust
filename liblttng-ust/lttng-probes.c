@@ -385,15 +385,29 @@ int lttng_probes_get_field_list(struct lttng_ust_field_list *list)
 					list_entry->field.type = LTTNG_UST_FIELD_STRING;
 					break;
 				case atype_array:
-					if (event_field->type.u.array.elem_type.atype != atype_integer
-						|| event_field->type.u.array.elem_type.u.basic.integer.encoding == lttng_encode_none)
+					if (event_field->type.u.legacy.array.elem_type.atype != atype_integer
+						|| event_field->type.u.legacy.array.elem_type.u.basic.integer.encoding == lttng_encode_none)
+						list_entry->field.type = LTTNG_UST_FIELD_OTHER;
+					else
+						list_entry->field.type = LTTNG_UST_FIELD_STRING;
+					break;
+				case atype_array_nestable:
+					if (event_field->type.u.array_nestable.elem_type->atype != atype_integer
+						|| event_field->type.u.array_nestable.elem_type->u.integer.encoding == lttng_encode_none)
 						list_entry->field.type = LTTNG_UST_FIELD_OTHER;
 					else
 						list_entry->field.type = LTTNG_UST_FIELD_STRING;
 					break;
 				case atype_sequence:
-					if (event_field->type.u.sequence.elem_type.atype != atype_integer
-						|| event_field->type.u.sequence.elem_type.u.basic.integer.encoding == lttng_encode_none)
+					if (event_field->type.u.legacy.sequence.elem_type.atype != atype_integer
+						|| event_field->type.u.legacy.sequence.elem_type.u.basic.integer.encoding == lttng_encode_none)
+						list_entry->field.type = LTTNG_UST_FIELD_OTHER;
+					else
+						list_entry->field.type = LTTNG_UST_FIELD_STRING;
+					break;
+				case atype_sequence_nestable:
+					if (event_field->type.u.sequence_nestable.elem_type->atype != atype_integer
+						|| event_field->type.u.sequence_nestable.elem_type->u.integer.encoding == lttng_encode_none)
 						list_entry->field.type = LTTNG_UST_FIELD_OTHER;
 					else
 						list_entry->field.type = LTTNG_UST_FIELD_STRING;
@@ -401,7 +415,8 @@ int lttng_probes_get_field_list(struct lttng_ust_field_list *list)
 				case atype_float:
 					list_entry->field.type = LTTNG_UST_FIELD_FLOAT;
 					break;
-				case atype_enum:
+				case atype_enum:	/* Fall-through */
+				case atype_enum_nestable:
 					list_entry->field.type = LTTNG_UST_FIELD_ENUM;
 					break;
 				default:

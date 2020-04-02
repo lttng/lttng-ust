@@ -70,8 +70,9 @@ const struct lttng_event_field dt_var_fields[_NR_LTTNG_UST_DYNAMIC_TYPES] = {
 	[LTTNG_UST_DYNAMIC_TYPE_NONE] = {
 		.name = "none",
 		.type = {
-			.atype = atype_struct,
-			.u._struct.nr_fields = 0,	/* empty struct. */
+			.atype = atype_struct_nestable,
+			.u.struct_nestable.nr_fields = 0,	/* empty struct. */
+			.u.struct_nestable.alignment = 0,
 		},
 		.nowrite = 0,
 	},
@@ -129,7 +130,7 @@ const struct lttng_event_field dt_var_fields[_NR_LTTNG_UST_DYNAMIC_TYPES] = {
 		.name = "string",
 		.type = {
 			.atype = atype_string,
-			.u.basic.string.encoding = lttng_encode_UTF8,
+			.u.string.encoding = lttng_encode_UTF8,
 		},
 		.nowrite = 0,
 	},
@@ -137,16 +138,11 @@ const struct lttng_event_field dt_var_fields[_NR_LTTNG_UST_DYNAMIC_TYPES] = {
 
 static const struct lttng_event_field dt_enum_field = {
 	.name = NULL,
-	.type.atype = atype_enum,
-	.type.u.basic.enumeration.desc = &dt_enum_desc,
-	.type.u.basic.enumeration.container_type = {
-		.size = sizeof(char) * CHAR_BIT,
-		.alignment = lttng_alignof(char) * CHAR_BIT,
-		.signedness = lttng_is_signed_type(char),
-		.reverse_byte_order = 0,
-		.base = 10,
-		.encoding = lttng_encode_none,
-	},
+	.type.atype = atype_enum_nestable,
+	.type.u.enum_nestable.desc = &dt_enum_desc,
+	.type.u.enum_nestable.container_type =
+		__LTTNG_COMPOUND_LITERAL(struct lttng_type,
+			__type_integer(char, BYTE_ORDER, 10, none)),
 	.nowrite = 0,
 };
 

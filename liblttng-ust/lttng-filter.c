@@ -211,6 +211,9 @@ int apply_field_reloc(struct lttng_event *event,
 		return -EINVAL;
 	nr_fields = desc->nr_fields;
 	for (i = 0; i < nr_fields; i++) {
+		if (fields[i].u.ext.nofilter) {
+			continue;
+		}
 		if (!strcmp(fields[i].name, field_name)) {
 			field = &fields[i];
 			break;
@@ -219,10 +222,13 @@ int apply_field_reloc(struct lttng_event *event,
 		switch (fields[i].type.atype) {
 		case atype_integer:
 		case atype_enum:
+		case atype_enum_nestable:
 			field_offset += sizeof(int64_t);
 			break;
 		case atype_array:
+		case atype_array_nestable:
 		case atype_sequence:
+		case atype_sequence_nestable:
 			field_offset += sizeof(unsigned long);
 			field_offset += sizeof(void *);
 			break;
@@ -255,10 +261,13 @@ int apply_field_reloc(struct lttng_event *event,
 		switch (field->type.atype) {
 		case atype_integer:
 		case atype_enum:
+		case atype_enum_nestable:
 			op->op = FILTER_OP_LOAD_FIELD_REF_S64;
 			break;
 		case atype_array:
+		case atype_array_nestable:
 		case atype_sequence:
+		case atype_sequence_nestable:
 			op->op = FILTER_OP_LOAD_FIELD_REF_SEQUENCE;
 			break;
 		case atype_string:
@@ -330,12 +339,15 @@ int apply_context_reloc(struct lttng_event *event,
 		switch (ctx_field->event_field.type.atype) {
 		case atype_integer:
 		case atype_enum:
+		case atype_enum_nestable:
 			op->op = FILTER_OP_GET_CONTEXT_REF_S64;
 			break;
 			/* Sequence and array supported as string */
 		case atype_string:
 		case atype_array:
+		case atype_array_nestable:
 		case atype_sequence:
+		case atype_sequence_nestable:
 			op->op = FILTER_OP_GET_CONTEXT_REF_STRING;
 			break;
 		case atype_float:

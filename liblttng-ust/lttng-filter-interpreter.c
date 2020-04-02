@@ -238,7 +238,7 @@ static int context_get_index(struct lttng_ctx *ctx,
 	switch (field->type.atype) {
 	case atype_integer:
 		ctx_field->get_value(ctx_field, &v);
-		if (field->type.u.basic.integer.signedness) {
+		if (field->type.u.integer.signedness) {
 			ptr->object_type = OBJECT_TYPE_S64;
 			ptr->u.s64 = v.u.s64;
 			ptr->ptr = &ptr->u.s64;
@@ -248,11 +248,16 @@ static int context_get_index(struct lttng_ctx *ctx,
 			ptr->ptr = &ptr->u.u64;
 		}
 		break;
-	case atype_enum:
+	case atype_enum:	/* Fall-through */
+	case atype_enum_nestable:
 	{
-		const struct lttng_integer_type *itype =
-			&field->type.u.basic.enumeration.container_type;
+		const struct lttng_integer_type *itype;
 
+		if (field->type.atype == atype_enum) {
+			itype = &field->type.u.legacy.basic.enumeration.container_type;
+		} else {
+			itype = &field->type.u.enum_nestable.container_type->u.integer;
+		}
 		ctx_field->get_value(ctx_field, &v);
 		if (itype->signedness) {
 			ptr->object_type = OBJECT_TYPE_S64;
@@ -266,11 +271,24 @@ static int context_get_index(struct lttng_ctx *ctx,
 		break;
 	}
 	case atype_array:
-		if (field->type.u.array.elem_type.atype != atype_integer) {
+		if (field->type.u.legacy.array.elem_type.atype != atype_integer) {
 			ERR("Array nesting only supports integer types.");
 			return -EINVAL;
 		}
-		if (field->type.u.array.elem_type.u.basic.integer.encoding == lttng_encode_none) {
+		if (field->type.u.legacy.array.elem_type.u.basic.integer.encoding == lttng_encode_none) {
+			ERR("Only string arrays are supported for contexts.");
+			return -EINVAL;
+		}
+		ptr->object_type = OBJECT_TYPE_STRING;
+		ctx_field->get_value(ctx_field, &v);
+		ptr->ptr = v.u.str;
+		break;
+	case atype_array_nestable:
+		if (field->type.u.array_nestable.elem_type->atype != atype_integer) {
+			ERR("Array nesting only supports integer types.");
+			return -EINVAL;
+		}
+		if (field->type.u.array_nestable.elem_type->u.integer.encoding == lttng_encode_none) {
 			ERR("Only string arrays are supported for contexts.");
 			return -EINVAL;
 		}
@@ -279,11 +297,24 @@ static int context_get_index(struct lttng_ctx *ctx,
 		ptr->ptr = v.u.str;
 		break;
 	case atype_sequence:
-		if (field->type.u.sequence.elem_type.atype != atype_integer) {
+		if (field->type.u.legacy.sequence.elem_type.atype != atype_integer) {
 			ERR("Sequence nesting only supports integer types.");
 			return -EINVAL;
 		}
-		if (field->type.u.sequence.elem_type.u.basic.integer.encoding == lttng_encode_none) {
+		if (field->type.u.legacy.sequence.elem_type.u.basic.integer.encoding == lttng_encode_none) {
+			ERR("Only string sequences are supported for contexts.");
+			return -EINVAL;
+		}
+		ptr->object_type = OBJECT_TYPE_STRING;
+		ctx_field->get_value(ctx_field, &v);
+		ptr->ptr = v.u.str;
+		break;
+	case atype_sequence_nestable:
+		if (field->type.u.sequence_nestable.elem_type->atype != atype_integer) {
+			ERR("Sequence nesting only supports integer types.");
+			return -EINVAL;
+		}
+		if (field->type.u.sequence_nestable.elem_type->u.integer.encoding == lttng_encode_none) {
 			ERR("Only string sequences are supported for contexts.");
 			return -EINVAL;
 		}

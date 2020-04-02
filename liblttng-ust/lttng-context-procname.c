@@ -100,6 +100,9 @@ void procname_get_value(struct lttng_ctx_field *field,
 	value->u.str = wrapper_getprocname();
 }
 
+static const struct lttng_type procname_array_elem_type =
+	__type_integer(char, BYTE_ORDER, 10, UTF8);
+
 int lttng_add_procname_to_ctx(struct lttng_ctx **ctx)
 {
 	struct lttng_ctx_field *field;
@@ -112,15 +115,10 @@ int lttng_add_procname_to_ctx(struct lttng_ctx **ctx)
 		return -EEXIST;
 	}
 	field->event_field.name = "procname";
-	field->event_field.type.atype = atype_array;
-	field->event_field.type.u.array.elem_type.atype = atype_integer;
-	field->event_field.type.u.array.elem_type.u.basic.integer.size = sizeof(char) * CHAR_BIT;
-	field->event_field.type.u.array.elem_type.u.basic.integer.alignment = lttng_alignof(char) * CHAR_BIT;
-	field->event_field.type.u.array.elem_type.u.basic.integer.signedness = lttng_is_signed_type(char);
-	field->event_field.type.u.array.elem_type.u.basic.integer.reverse_byte_order = 0;
-	field->event_field.type.u.array.elem_type.u.basic.integer.base = 10;
-	field->event_field.type.u.array.elem_type.u.basic.integer.encoding = lttng_encode_UTF8;
-	field->event_field.type.u.array.length = LTTNG_UST_PROCNAME_LEN;
+	field->event_field.type.atype = atype_array_nestable;
+	field->event_field.type.u.array_nestable.elem_type =
+		&procname_array_elem_type;
+	field->event_field.type.u.array_nestable.length = LTTNG_UST_PROCNAME_LEN;
 	field->get_size = procname_get_size;
 	field->record = procname_record;
 	field->get_value = procname_get_value;

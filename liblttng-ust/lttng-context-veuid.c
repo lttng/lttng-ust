@@ -114,12 +114,12 @@ int lttng_add_veuid_to_ctx(struct lttng_ctx **ctx)
 	}
 	field->event_field.name = "veuid";
 	field->event_field.type.atype = atype_integer;
-	field->event_field.type.u.basic.integer.size = sizeof(uid_t) * CHAR_BIT;
-	field->event_field.type.u.basic.integer.alignment = lttng_alignof(uid_t) * CHAR_BIT;
-	field->event_field.type.u.basic.integer.signedness = lttng_is_signed_type(uid_t);
-	field->event_field.type.u.basic.integer.reverse_byte_order = 0;
-	field->event_field.type.u.basic.integer.base = 10;
-	field->event_field.type.u.basic.integer.encoding = lttng_encode_none;
+	field->event_field.type.u.integer.size = sizeof(uid_t) * CHAR_BIT;
+	field->event_field.type.u.integer.alignment = lttng_alignof(uid_t) * CHAR_BIT;
+	field->event_field.type.u.integer.signedness = lttng_is_signed_type(uid_t);
+	field->event_field.type.u.integer.reverse_byte_order = 0;
+	field->event_field.type.u.integer.base = 10;
+	field->event_field.type.u.integer.encoding = lttng_encode_none;
 	field->get_size = veuid_get_size;
 	field->record = veuid_record;
 	field->get_value = veuid_get_value;
