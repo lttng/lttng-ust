@@ -1854,7 +1854,8 @@ int ustctl_recv_reg_msg(int sock,
 	*uint64_t_alignment = reg_msg.uint64_t_alignment;
 	*long_alignment = reg_msg.long_alignment;
 	memcpy(name, reg_msg.name, LTTNG_UST_ABI_PROCNAME_LEN);
-	if (reg_msg.major != LTTNG_UST_ABI_MAJOR_VERSION) {
+	if (reg_msg.major < LTTNG_UST_ABI_MAJOR_VERSION_OLDEST_COMPATIBLE ||
+			reg_msg.major > LTTNG_UST_ABI_MAJOR_VERSION) {
 		return -LTTNG_UST_ERR_UNSUP_MAJOR;
 	}
 
