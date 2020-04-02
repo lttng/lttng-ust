@@ -43,4 +43,21 @@
 #  define __lttng_ust_variable_attribute_no_sanitize_address
 #endif
 
+/*
+ * Compound literals with static storage are needed by LTTng.
+ * Compound literals are part of the C99 and C11 standards, but not
+ * part of the C++ standards. However, those are supported by both g++ and
+ * clang. In order to be strictly C++11 compliant, defining
+ * LTTNG_ALLOCATE_COMPOUND_LITERAL_ON_HEAP before including this header
+ * allocates those on the heap in C++.
+ *
+ * Example use:
+ * static struct mystruct *var = __LTTNG_COMPOUND_LITERAL(struct mystruct, { 1, 2, 3 });
+ */
+#if defined (__cplusplus) && defined (LTTNG_ALLOCATE_COMPOUND_LITERAL_ON_HEAP)
+#define __LTTNG_COMPOUND_LITERAL(type, ...)	new (type) __VA_ARGS__
+#else
+#define __LTTNG_COMPOUND_LITERAL(type, ...)	(type[]) { __VA_ARGS__ }
+#endif
+
 #endif /* _LTTNG_UST_COMPILER_H */
