@@ -503,6 +503,13 @@ struct lttng_channel_ops {
 	void (*channel_destroy)(struct lttng_channel *chan);
 	union {
 		void *_deprecated1;
+		/*
+		 * has_strcpy is needed by probe providers version 1.0 to
+		 * dynamically detect whether the LTTng-UST tracepoint
+		 * provider ABI implements event_strcpy. Starting from
+		 * probe providers version 2.0, the check is not needed,
+		 * but backward compatibility is provided for older versions.
+		 */
 		unsigned long has_strcpy:1;		/* ABI has strcpy */
 	} u;
 	void *_deprecated2;

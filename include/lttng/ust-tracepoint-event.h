@@ -691,15 +691,6 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 	__chan->ops->event_write(&__ctx, _src,				\
 		sizeof(_type) * __get_dynamic_len(dest));
 
-/*
- * __chan->ops->u.has_strcpy is a flag letting us know if the LTTng-UST
- * tracepoint provider ABI implements event_strcpy. This dynamic check
- * can be removed when the tracepoint provider ABI moves to 2.
- */
-#if (LTTNG_UST_PROVIDER_MAJOR > 1)
-#error "Tracepoint probe provider major version has changed. Please remove dynamic check for has_strcpy."
-#endif
-
 #undef _ctf_string
 #define _ctf_string(_item, _src, _nowrite)			        \
 	{									\
@@ -707,12 +698,8 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 			((_src) ? (_src) : __LTTNG_UST_NULL_STRING);		\
 		lib_ring_buffer_align_ctx(&__ctx,				\
 			lttng_alignof(*__ctf_tmp_string));			\
-		if (__chan->ops->u.has_strcpy)					\
-			__chan->ops->event_strcpy(&__ctx, __ctf_tmp_string,	\
-				__get_dynamic_len(dest));			\
-		else								\
-			__chan->ops->event_write(&__ctx, __ctf_tmp_string,	\
-				__get_dynamic_len(dest));			\
+		__chan->ops->event_strcpy(&__ctx, __ctf_tmp_string,		\
+			__get_dynamic_len(dest));				\
 	}
 
 
