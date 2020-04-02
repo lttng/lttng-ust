@@ -56,7 +56,7 @@ extern "C" {
  * library, but the opposite is rejected: a newer tracepoint provider is
  * rejected by an older lttng-ust library.
  */
-#define LTTNG_UST_PROVIDER_MAJOR	1
+#define LTTNG_UST_PROVIDER_MAJOR	2
 #define LTTNG_UST_PROVIDER_MINOR	0
 
 struct lttng_channel;
