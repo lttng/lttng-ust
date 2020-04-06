@@ -483,6 +483,9 @@ int link_bytecode(const struct lttng_event_desc *event_desc,
 	case LTTNG_UST_BYTECODE_NODE_TYPE_FILTER:
 		runtime->p.interpreter_funcs.filter = lttng_bytecode_filter_interpret;
 		break;
+	case LTTNG_UST_BYTECODE_NODE_TYPE_CAPTURE:
+		runtime->p.interpreter_funcs.capture = lttng_bytecode_capture_interpret;
+		break;
 	default:
 		abort();
 	}
@@ -496,6 +499,9 @@ link_error:
 	switch (bytecode->type) {
 	case LTTNG_UST_BYTECODE_NODE_TYPE_FILTER:
 		runtime->p.interpreter_funcs.filter = lttng_bytecode_filter_interpret_false;
+		break;
+	case LTTNG_UST_BYTECODE_NODE_TYPE_CAPTURE:
+		runtime->p.interpreter_funcs.capture = lttng_bytecode_capture_interpret_false;
 		break;
 	default:
 		abort();
@@ -516,6 +522,16 @@ void lttng_bytecode_filter_sync_state(struct lttng_bytecode_runtime *runtime)
 		runtime->interpreter_funcs.filter = lttng_bytecode_filter_interpret_false;
 	else
 		runtime->interpreter_funcs.filter = lttng_bytecode_filter_interpret;
+}
+
+void lttng_bytecode_capture_sync_state(struct lttng_bytecode_runtime *runtime)
+{
+	struct lttng_ust_bytecode_node *bc = runtime->bc;
+
+	if (!bc->enabler->enabled || runtime->link_failed)
+		runtime->interpreter_funcs.capture = lttng_bytecode_capture_interpret_false;
+	else
+		runtime->interpreter_funcs.capture = lttng_bytecode_capture_interpret;
 }
 
 /*

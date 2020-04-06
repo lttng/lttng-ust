@@ -30,9 +30,24 @@
 #include "lttng-bytecode.h"
 #include "share.h"
 
-static
-void capture_enum(struct lttng_msgpack_writer *writer,
-		struct lttng_interpreter_output *output) __attribute__ ((unused));
+/*
+ * We want this write to be atomic AND non-blocking, meaning that we
+ * want to write either everything OR nothing.
+ * According to `pipe(7)`, writes that are less than `PIPE_BUF` bytes must be
+ * atomic, so we bound the capture buffer size to the `PIPE_BUF` minus the size
+ * of the notification struct we are sending alongside the capture buffer.
+ */
+#define CAPTURE_BUFFER_SIZE \
+	(PIPE_BUF - sizeof(struct lttng_ust_event_notifier_notification) - 1)
+
+struct lttng_event_notifier_notification {
+	int notification_fd;
+	uint64_t event_notifier_token;
+	uint8_t capture_buf[CAPTURE_BUFFER_SIZE];
+	struct lttng_msgpack_writer writer;
+	bool has_captures;
+};
+
 static
 void capture_enum(struct lttng_msgpack_writer *writer,
 		struct lttng_interpreter_output *output)
@@ -157,9 +172,6 @@ uint64_t capture_sequence_element_unsigned(uint8_t *ptr,
 
 static
 void capture_sequence(struct lttng_msgpack_writer *writer,
-		struct lttng_interpreter_output *output) __attribute__ ((unused));
-static
-void capture_sequence(struct lttng_msgpack_writer *writer,
 		struct lttng_interpreter_output *output)
 {
 	const struct lttng_integer_type *integer_type;
@@ -210,27 +222,111 @@ void capture_sequence(struct lttng_msgpack_writer *writer,
 	lttng_msgpack_end_array(writer);
 }
 
-void lttng_event_notifier_notification_send(
+static
+void notification_init(struct lttng_event_notifier_notification *notif,
 		struct lttng_event_notifier *event_notifier)
 {
-	/*
-	 * We want this write to be atomic AND non-blocking, meaning that we
-	 * want to write either everything OR nothing.
-	 * According to `pipe(7)`, writes that are smaller that the `PIPE_BUF`
-	 * value must be atomic, so we assert that the message we send is less
-	 * than PIPE_BUF.
-	 */
-	struct lttng_ust_event_notifier_notification notif;
+	struct lttng_msgpack_writer *writer = &notif->writer;
+
+	notif->event_notifier_token = event_notifier->user_token;
+	notif->notification_fd = event_notifier->group->notification_fd;
+	notif->has_captures = false;
+
+	if (event_notifier->num_captures > 0) {
+		lttng_msgpack_writer_init(writer, notif->capture_buf,
+				CAPTURE_BUFFER_SIZE);
+
+		lttng_msgpack_begin_array(writer, event_notifier->num_captures);
+		notif->has_captures = true;
+	}
+}
+
+static
+void notification_append_capture(
+		struct lttng_event_notifier_notification *notif,
+		struct lttng_interpreter_output *output)
+{
+	struct lttng_msgpack_writer *writer = &notif->writer;
+
+	switch (output->type) {
+	case LTTNG_INTERPRETER_TYPE_S64:
+		lttng_msgpack_write_signed_integer(writer, output->u.s);
+		break;
+	case LTTNG_INTERPRETER_TYPE_U64:
+		lttng_msgpack_write_unsigned_integer(writer, output->u.u);
+		break;
+	case LTTNG_INTERPRETER_TYPE_DOUBLE:
+		lttng_msgpack_write_double(writer, output->u.d);
+		break;
+	case LTTNG_INTERPRETER_TYPE_STRING:
+		lttng_msgpack_write_str(writer, output->u.str.str);
+		break;
+	case LTTNG_INTERPRETER_TYPE_SEQUENCE:
+		capture_sequence(writer, output);
+		break;
+	case LTTNG_INTERPRETER_TYPE_SIGNED_ENUM:
+	case LTTNG_INTERPRETER_TYPE_UNSIGNED_ENUM:
+		capture_enum(writer, output);
+		break;
+	default:
+		abort();
+	}
+}
+
+static
+void notification_append_empty_capture(
+		struct lttng_event_notifier_notification *notif)
+{
+	lttng_msgpack_write_nil(&notif->writer);
+}
+
+static
+void notification_send(struct lttng_event_notifier_notification *notif)
+{
 	ssize_t ret;
+	size_t content_len;
+	int iovec_count = 1;
+	struct lttng_ust_event_notifier_notification ust_notif;
+	struct iovec iov[2];
 
-	assert(event_notifier);
-	assert(event_notifier->group);
-	assert(sizeof(notif) <= PIPE_BUF);
+	assert(notif);
 
-	notif.token = event_notifier->user_token;
+	ust_notif.token = notif->event_notifier_token;
 
-	ret = patient_write(event_notifier->group->notification_fd, &notif,
-		sizeof(notif));
+	/*
+	 * Prepare sending the notification from multiple buffers using an
+	 * array of `struct iovec`. The first buffer of the vector is
+	 * notification structure itself and is always present.
+	 */
+	iov[0].iov_base = &ust_notif;
+	iov[0].iov_len = sizeof(ust_notif);
+
+	if (notif->has_captures) {
+		/*
+		 * If captures were requested, the second buffer of the array
+		 * is the capture buffer.
+		 */
+		assert(notif->writer.buffer);
+		content_len = notif->writer.write_pos - notif->writer.buffer;
+
+		assert(content_len > 0 && content_len <= CAPTURE_BUFFER_SIZE);
+
+		iov[1].iov_base = notif->capture_buf;
+		iov[1].iov_len = content_len;
+
+		iovec_count++;
+	} else {
+		content_len = 0;
+	}
+
+	/*
+	 * Update the capture buffer size so that receiver of the buffer will
+	 * know how much to expect.
+	 */
+	ust_notif.capture_buf_size = content_len;
+
+	/* Send all the buffers. */
+	ret = patient_writev(notif->notification_fd, iov, iovec_count);
 	if (ret == -1) {
 		if (errno == EAGAIN) {
 			DBG("Cannot send event notifier notification without blocking: %s",
@@ -241,4 +337,43 @@ void lttng_event_notifier_notification_send(
 			abort();
 		}
 	}
+}
+
+void lttng_event_notifier_notification_send(struct lttng_event_notifier *event_notifier,
+		const char *stack_data)
+{
+	/*
+	 * This function is called from the probe, we must do dynamic
+	 * allocation in this context.
+	 */
+	struct lttng_event_notifier_notification notif = {0};
+
+	notification_init(&notif, event_notifier);
+
+	if (caa_unlikely(!cds_list_empty(&event_notifier->capture_bytecode_runtime_head))) {
+		struct lttng_bytecode_runtime *capture_bc_runtime;
+
+		/*
+		 * Iterate over all the capture bytecodes. If the interpreter
+		 * functions returns successfully, append the value of the
+		 * `output` parameter to the capture buffer. If the interpreter
+		 * fails, append an empty capture to the buffer.
+		 */
+		cds_list_for_each_entry(capture_bc_runtime,
+				&event_notifier->capture_bytecode_runtime_head, node) {
+			struct lttng_interpreter_output output;
+
+			if (capture_bc_runtime->interpreter_funcs.capture(capture_bc_runtime,
+					stack_data, &output) & LTTNG_INTERPRETER_RECORD_FLAG)
+				notification_append_capture(&notif, &output);
+			else
+				notification_append_empty_capture(&notif);
+		}
+	}
+
+	/*
+	 * Send the notification (including the capture buffer) to the
+	 * sessiond.
+	 */
+	notification_send(&notif);
 }

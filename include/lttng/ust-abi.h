@@ -129,6 +129,7 @@ struct lttng_ust_event_notifier {
 #define LTTNG_EVENT_NOTIFIER_NOTIFICATION_PADDING 32
 struct lttng_ust_event_notifier_notification {
 	uint64_t token;
+	uint16_t capture_buf_size;
 	char padding[LTTNG_EVENT_NOTIFIER_NOTIFICATION_PADDING];
 } LTTNG_PACKED;
 
@@ -282,6 +283,16 @@ struct lttng_ust_filter_bytecode {
 	char data[0];
 } LTTNG_PACKED;
 
+#define CAPTURE_BYTECODE_MAX_LEN	65536
+#define LTTNG_UST_CAPTURE_PADDING	32
+struct lttng_ust_capture_bytecode {
+	uint32_t len;
+	uint32_t reloc_offset;
+	uint64_t seqnum;
+	char padding[LTTNG_UST_CAPTURE_PADDING];
+	char data[0];
+} LTTNG_PACKED;
+
 #define LTTNG_UST_EXCLUSION_PADDING	32
 struct lttng_ust_event_exclusion {
 	uint32_t count;
@@ -341,6 +352,7 @@ struct lttng_ust_event_exclusion {
 /* Event notifier group commands */
 #define LTTNG_UST_EVENT_NOTIFIER_CREATE		\
 	_UST_CMDW(0xB0, struct lttng_ust_event_notifier)
+#define LTTNG_UST_CAPTURE			_UST_CMD(0xB1)
 
 #define LTTNG_UST_ROOT_HANDLE	0
 

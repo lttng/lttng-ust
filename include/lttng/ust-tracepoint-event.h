@@ -665,7 +665,7 @@ size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, _TP_ARGS
 #undef TRACEPOINT_EVENT_CLASS
 #define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
 static inline								      \
-void __event_prepare_filter_stack__##_provider##___##_name(char *__stack_data,\
+void __event_prepare_interpreter_stack__##_provider##___##_name(char *__stack_data,\
 						 _TP_ARGS_DATA_PROTO(_args))  \
 {									      \
 	_fields								      \
@@ -875,7 +875,7 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 		struct lttng_bytecode_runtime *__filter_bc_runtime;		      \
 		int __filter_record = __event->has_enablers_without_bytecode; \
 									      \
-		__event_prepare_filter_stack__##_provider##___##_name(__stackvar.__filter_stack_data, \
+		__event_prepare_interpreter_stack__##_provider##___##_name(__stackvar.__filter_stack_data, \
 			_TP_ARGS_DATA_VAR(_args));			      \
 		tp_list_for_each_entry_rcu(__filter_bc_runtime, &__event->filter_bytecode_runtime_head, node) { \
 			if (caa_unlikely(__filter_bc_runtime->interpreter_funcs.filter(__filter_bc_runtime,     \
@@ -947,7 +947,7 @@ void __event_notifier_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))
 	const size_t __num_fields = _TP_ARRAY_SIZE(__event_fields___##_provider##___##_name) - 1;\
 	union {								      \
 		size_t __dynamic_len[__num_fields];			      \
-		char __filter_stack_data[2 * sizeof(unsigned long) * __num_fields]; \
+		char __interpreter_stack_data[2 * sizeof(unsigned long) * __num_fields]; \
 	} __stackvar;							      \
 	if (caa_unlikely(!CMM_ACCESS_ONCE(__event_notifier->enabled)))	      \
 		return;							      \
@@ -957,18 +957,22 @@ void __event_notifier_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))
 		struct lttng_bytecode_runtime *__filter_bc_runtime;		       \
 		int __filter_record = __event_notifier->has_enablers_without_bytecode; \
 									      \
-		__event_prepare_filter_stack__##_provider##___##_name(__stackvar.__filter_stack_data, \
+		__event_prepare_interpreter_stack__##_provider##___##_name(__stackvar.__interpreter_stack_data, \
 			_TP_ARGS_DATA_VAR(_args));			      \
 		tp_list_for_each_entry_rcu(__filter_bc_runtime, &__event_notifier->filter_bytecode_runtime_head, node) { \
 			if (caa_unlikely(__filter_bc_runtime->interpreter_funcs.filter(__filter_bc_runtime,	  \
-					__stackvar.__filter_stack_data) & LTTNG_INTERPRETER_RECORD_FLAG)) \
+					__stackvar.__interpreter_stack_data) & LTTNG_INTERPRETER_RECORD_FLAG)) \
 				__filter_record = 1;			      \
 		}							      \
 		if (caa_likely(!__filter_record))			      \
 			return;						      \
 	}								      \
+	if (caa_unlikely(!cds_list_empty(&__event_notifier->capture_bytecode_runtime_head))) \
+		__event_prepare_interpreter_stack__##_provider##___##_name(__stackvar.__interpreter_stack_data, \
+			_TP_ARGS_DATA_VAR(_args));			      \
 									      \
-	lttng_event_notifier_notification_send(__event_notifier);	      \
+	lttng_event_notifier_notification_send(__event_notifier,	      \
+			__stackvar.__interpreter_stack_data);		      \
 }
 
 #include TRACEPOINT_INCLUDE

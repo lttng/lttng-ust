@@ -435,6 +435,8 @@ enum lttng_bytecode_interpreter_ret {
 	/* Other bits are kept for future use. */
 };
 
+struct lttng_interpreter_output;
+
 /*
  * This structure is used in the probes. More specifically, the `filter` and
  * `node` fields are explicity used in the probes. When modifying this
@@ -447,6 +449,9 @@ struct lttng_bytecode_runtime {
 	union {
 		uint64_t (*filter)(void *interpreter_data,
 				const char *interpreter_stack_data);
+		uint64_t (*capture)(void *interpreter_data,
+				const char *interpreter_stack_data,
+				struct lttng_interpreter_output *interpreter_output);
 	} interpreter_funcs;
 	int link_failed;
 	struct cds_list_head node;	/* list of bytecode runtime in event */
@@ -507,7 +512,9 @@ struct lttng_event_notifier {
 	uint64_t user_token;
 	int enabled;
 	int registered;			/* has reg'd tracepoint probe */
+	size_t num_captures;		/* Needed to allocate the msgpack array. */
 	struct cds_list_head filter_bytecode_runtime_head;
+	struct cds_list_head capture_bytecode_runtime_head;
 	int has_enablers_without_bytecode;
 	struct cds_list_head enablers_ref_head;
 	const struct lttng_event_desc *desc;
@@ -695,7 +702,8 @@ int lttng_session_statedump(struct lttng_session *session);
 void lttng_session_destroy(struct lttng_session *session);
 
 void lttng_event_notifier_notification_send(
-		struct lttng_event_notifier *event_notifier);
+		struct lttng_event_notifier *event_notifier,
+		const char *stack_data);
 
 struct lttng_channel *lttng_channel_create(struct lttng_session *session,
 				       const char *transport_name,

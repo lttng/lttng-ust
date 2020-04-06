@@ -103,6 +103,11 @@ struct ustcomm_ust_msg {
 		struct {
 			uint32_t count;	/* how many names follow */
 		} LTTNG_PACKED exclusion;
+		struct {
+			uint32_t data_size;	/* following capture data */
+			uint32_t reloc_offset;
+			uint64_t seqnum;
+		} LTTNG_PACKED capture;
 		char padding[USTCOMM_MSG_PADDING2];
 	} u;
 } LTTNG_PACKED;

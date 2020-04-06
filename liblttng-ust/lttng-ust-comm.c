@@ -748,6 +748,8 @@ static inline
 const char *bytecode_type_str(uint32_t cmd)
 {
 	switch (cmd) {
+	case LTTNG_UST_CAPTURE:
+		return "capture";
 	case LTTNG_UST_FILTER:
 		return "filter";
 	default:
@@ -774,6 +776,13 @@ int handle_bytecode_recv(struct sock_info *sock_info,
 		data_size_max = FILTER_BYTECODE_MAX_LEN;
 		reloc_offset = lum->u.filter.reloc_offset;
 		seqnum = lum->u.filter.seqnum;
+		break;
+	case LTTNG_UST_CAPTURE:
+		type = LTTNG_UST_BYTECODE_NODE_TYPE_CAPTURE;
+		data_size = lum->u.capture.data_size;
+		data_size_max = CAPTURE_BYTECODE_MAX_LEN;
+		reloc_offset = lum->u.capture.reloc_offset;
+		seqnum = lum->u.capture.seqnum;
 		break;
 	default:
 		abort();
@@ -897,6 +906,7 @@ int handle_message(struct sock_info *sock_info,
 		else
 			ret = lttng_ust_objd_unref(lum->handle, 1);
 		break;
+	case LTTNG_UST_CAPTURE:
 	case LTTNG_UST_FILTER:
 		ret = handle_bytecode_recv(sock_info, sock, lum);
 		if (ret)

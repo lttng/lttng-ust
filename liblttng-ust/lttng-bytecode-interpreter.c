@@ -172,6 +172,13 @@ uint64_t lttng_bytecode_filter_interpret_false(void *filter_data,
 	return LTTNG_INTERPRETER_DISCARD;
 }
 
+uint64_t lttng_bytecode_capture_interpret_false(void *capture_data,
+		const char *capture_stack_data,
+		struct lttng_interpreter_output *output)
+{
+	return LTTNG_INTERPRETER_DISCARD;
+}
+
 #ifdef INTERPRETER_USE_SWITCH
 
 /*
@@ -751,9 +758,12 @@ again:
 }
 
 /*
- * Return 0 (discard), or raise the 0x1 flag (log event).
- * Currently, other flags are kept for future extensions and have no
- * effect.
+ * For `output` equal to NULL:
+ *  Return 0 (discard), or raise the 0x1 flag (log event).
+ *  Currently, other flags are kept for future extensions and have no
+ *  effect.
+ * For `output` not equal to NULL:
+ *  Return 0 on success, negative error value on error.
  */
 static
 uint64_t bytecode_interpret(void *interpreter_data,
@@ -2542,6 +2552,14 @@ uint64_t lttng_bytecode_filter_interpret(void *filter_data,
 		const char *filter_stack_data)
 {
 	return bytecode_interpret(filter_data, filter_stack_data, NULL);
+}
+
+uint64_t lttng_bytecode_capture_interpret(void *capture_data,
+		const char *capture_stack_data,
+		struct lttng_interpreter_output *output)
+{
+	return bytecode_interpret(capture_data, capture_stack_data,
+			(struct lttng_interpreter_output *) output);
 }
 
 #undef START_OP

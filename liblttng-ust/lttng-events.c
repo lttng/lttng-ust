@@ -826,6 +826,7 @@ int lttng_event_notifier_create(const struct lttng_event_desc *desc,
 	event_notifier->registered = 0;
 
 	CDS_INIT_LIST_HEAD(&event_notifier->filter_bytecode_runtime_head);
+	CDS_INIT_LIST_HEAD(&event_notifier->capture_bytecode_runtime_head);
 	CDS_INIT_LIST_HEAD(&event_notifier->enablers_ref_head);
 	event_notifier->desc = desc;
 
@@ -1368,9 +1369,11 @@ struct lttng_event_notifier_enabler *lttng_event_notifier_enabler_create(
 		return NULL;
 	event_notifier_enabler->base.format_type = format_type;
 	CDS_INIT_LIST_HEAD(&event_notifier_enabler->base.filter_bytecode_head);
+	CDS_INIT_LIST_HEAD(&event_notifier_enabler->capture_bytecode_head);
 	CDS_INIT_LIST_HEAD(&event_notifier_enabler->base.excluder_head);
 
 	event_notifier_enabler->user_token = event_notifier_param->event.token;
+	event_notifier_enabler->num_captures = 0;
 
 	memcpy(&event_notifier_enabler->base.event_param.name,
 		event_notifier_param->event.name,
@@ -1470,6 +1473,20 @@ int lttng_event_notifier_enabler_attach_filter_bytecode(
 	_lttng_enabler_attach_filter_bytecode(
 		lttng_event_notifier_enabler_as_enabler(event_notifier_enabler),
 		bytecode);
+
+	lttng_event_notifier_group_sync_enablers(event_notifier_enabler->group);
+	return 0;
+}
+
+int lttng_event_notifier_enabler_attach_capture_bytecode(
+		struct lttng_event_notifier_enabler *event_notifier_enabler,
+		struct lttng_ust_bytecode_node *bytecode)
+{
+	bytecode->enabler = lttng_event_notifier_enabler_as_enabler(
+			event_notifier_enabler);
+	cds_list_add_tail(&bytecode->node,
+			&event_notifier_enabler->capture_bytecode_head);
+	event_notifier_enabler->num_captures++;
 
 	lttng_event_notifier_group_sync_enablers(event_notifier_enabler->group);
 	return 0;
@@ -1670,6 +1687,7 @@ void lttng_create_event_notifier_if_missing(
 			struct cds_hlist_node *node;
 
 			desc = probe_desc->event_desc[i];
+
 			if (!lttng_desc_match_enabler(desc,
 					lttng_event_notifier_enabler_as_enabler(event_notifier_enabler)))
 				continue;
@@ -1765,6 +1783,15 @@ int lttng_event_notifier_enabler_ref_event_notifiers(
 			&event_notifier_group->ctx,
 			&event_notifier->filter_bytecode_runtime_head,
 			&lttng_event_notifier_enabler_as_enabler(event_notifier_enabler)->filter_bytecode_head);
+
+		/*
+		 * Link capture bytecodes if not linked yet.
+		 */
+		lttng_enabler_link_bytecode(event_notifier->desc,
+			&event_notifier_group->ctx, &event_notifier->capture_bytecode_runtime_head,
+			&event_notifier_enabler->capture_bytecode_head);
+
+		event_notifier->num_captures = event_notifier_enabler->num_captures;
 	}
 end:
 	return 0;
@@ -1826,6 +1853,12 @@ void lttng_event_notifier_group_sync_enablers(struct lttng_event_notifier_group 
 		cds_list_for_each_entry(runtime,
 				&event_notifier->filter_bytecode_runtime_head, node) {
 			lttng_bytecode_filter_sync_state(runtime);
+		}
+
+		/* Enable captures. */
+		cds_list_for_each_entry(runtime,
+				&event_notifier->capture_bytecode_runtime_head, node) {
+			lttng_bytecode_capture_sync_state(runtime);
 		}
 	}
 	__tracepoint_probe_prune_release_queue();

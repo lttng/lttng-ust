@@ -46,13 +46,16 @@ struct lttng_event_enabler {
 
 struct lttng_event_notifier_enabler {
 	struct lttng_enabler base;
-	struct cds_list_head node;	/* per-app list of event notifier enablers */
+	struct cds_list_head node;	/* per-app list of event_notifier enablers */
+	struct cds_list_head capture_bytecode_head;
 	struct lttng_event_notifier_group *group; /* weak ref */
 	uint64_t user_token;		/* User-provided token */
+	uint64_t num_captures;
 };
 
 enum lttng_ust_bytecode_node_type {
 	LTTNG_UST_BYTECODE_NODE_TYPE_FILTER,
+	LTTNG_UST_BYTECODE_NODE_TYPE_CAPTURE,
 };
 
 struct lttng_ust_bytecode_node {
@@ -150,10 +153,11 @@ int lttng_event_enabler_attach_exclusion(struct lttng_event_enabler *enabler,
 		struct lttng_ust_excluder_node *excluder);
 
 /*
- * Synchronize bytecodes for the enabler and the instance (event or trigger).
+ * Synchronize bytecodes for the enabler and the instance (event or
+ * event_notifier).
  *
  * This function goes over all bytecode programs of the enabler (event or
- * trigger enabler) to ensure each is linked to the provided instance.
+ * event_notifier enabler) to ensure each is linked to the provided instance.
  */
 LTTNG_HIDDEN
 void lttng_enabler_link_bytecode(const struct lttng_event_desc *event_desc,
@@ -218,6 +222,15 @@ int lttng_event_notifier_enabler_disable(
  */
 LTTNG_HIDDEN
 int lttng_event_notifier_enabler_attach_filter_bytecode(
+		struct lttng_event_notifier_enabler *event_notifier_enabler,
+		struct lttng_ust_bytecode_node *bytecode);
+
+/*
+ * Attach capture bytecode program to `struct lttng_event_notifier_enabler` and
+ * all event_notifiers related to this enabler.
+ */
+LTTNG_HIDDEN
+int lttng_event_notifier_enabler_attach_capture_bytecode(
 		struct lttng_event_notifier_enabler *event_notifier_enabler,
 		struct lttng_ust_bytecode_node *bytecode);
 
