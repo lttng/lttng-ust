@@ -249,6 +249,17 @@ AM_CONDITIONAL([HAVE_DLINFO], [test "x${ac_cv_have_decl_RTLD_DI_LINKMAP}" = "xye
 
 # URCU
 
+AC_MSG_CHECKING([DEFINE_URCU_TLS_INIT()])
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+	#include <urcu/tls-compat.h>
+	DEFINE_URCU_TLS_INIT(int, a, 1);
+]])], [
+	AC_MSG_RESULT([yes])
+], [
+	AC_MSG_RESULT([no])
+	AC_MSG_ERROR([Please upgrade your version of liburcu to 0.12.0 or better])
+])
+
 # urcu - check if we just find the headers it out of the box.
 AC_CHECK_HEADERS([urcu-bp.h], [], [AC_MSG_ERROR([Cannot find [URCU] headers (urcu-bp.h). Use [CPPFLAGS]=-Idir to specify their location.
 This error can also occur when the liburcu package's configure script has not been run.])])
