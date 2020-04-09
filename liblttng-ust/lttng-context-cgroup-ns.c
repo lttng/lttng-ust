@@ -38,7 +38,11 @@
  * We cache the result to ensure we don't stat(2) the proc filesystem on
  * each event.
  */
+#ifdef CONFIG_RCU_TLS
 static DEFINE_URCU_TLS(ino_t, cached_cgroup_ns) = NS_INO_UNINITIALIZED;
+#else
+static DEFINE_URCU_TLS_INIT(ino_t, cached_cgroup_ns, NS_INO_UNINITIALIZED);
+#endif
 
 static
 ino_t get_cgroup_ns(void)
