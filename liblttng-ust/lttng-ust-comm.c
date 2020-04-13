@@ -744,6 +744,122 @@ void handle_pending_statedump(struct sock_info *sock_info)
 	}
 }
 
+static inline
+const char *bytecode_type_str(uint32_t cmd)
+{
+	switch (cmd) {
+	case LTTNG_UST_FILTER:
+		return "filter";
+	default:
+		abort();
+	}
+}
+
+static
+int handle_bytecode_recv(struct sock_info *sock_info,
+		int sock, struct ustcomm_ust_msg *lum)
+{
+	struct lttng_ust_bytecode_node *bytecode;
+	enum lttng_ust_bytecode_node_type type;
+	const struct lttng_ust_objd_ops *ops;
+	uint32_t data_size, data_size_max, reloc_offset;
+	uint64_t seqnum;
+	ssize_t len;
+	int ret = 0;
+
+	switch (lum->cmd) {
+	case LTTNG_UST_FILTER:
+		type = LTTNG_UST_BYTECODE_NODE_TYPE_FILTER;
+		data_size = lum->u.filter.data_size;
+		data_size_max = FILTER_BYTECODE_MAX_LEN;
+		reloc_offset = lum->u.filter.reloc_offset;
+		seqnum = lum->u.filter.seqnum;
+		break;
+	default:
+		abort();
+	}
+
+	if (data_size > data_size_max) {
+		ERR("Bytecode %s data size is too large: %u bytes",
+				bytecode_type_str(lum->cmd), data_size);
+		ret = -EINVAL;
+		goto end;
+	}
+
+	if (reloc_offset > data_size) {
+		ERR("Bytecode %s reloc offset %u is not within data",
+				bytecode_type_str(lum->cmd), reloc_offset);
+		ret = -EINVAL;
+		goto end;
+	}
+
+	/* Allocate the structure AND the `data[]` field. */
+	bytecode = zmalloc(sizeof(*bytecode) + data_size);
+	if (!bytecode) {
+		ret = -ENOMEM;
+		goto end;
+	}
+
+	bytecode->bc.len = data_size;
+	bytecode->bc.reloc_offset = reloc_offset;
+	bytecode->bc.seqnum = seqnum;
+	bytecode->type = type;
+
+	len = ustcomm_recv_unix_sock(sock, bytecode->bc.data, bytecode->bc.len);
+	switch (len) {
+	case 0:	/* orderly shutdown */
+		ret = 0;
+		goto error_free_bytecode;
+	default:
+		if (len == bytecode->bc.len) {
+			DBG("Bytecode %s data received",
+					bytecode_type_str(lum->cmd));
+			break;
+		} else if (len < 0) {
+			DBG("Receive failed from lttng-sessiond with errno %d",
+					(int) -len);
+			if (len == -ECONNRESET) {
+				ERR("%s remote end closed connection",
+						sock_info->name);
+				ret = len;
+				goto error_free_bytecode;
+			}
+			ret = len;
+			goto error_free_bytecode;
+		} else {
+			DBG("Incorrect %s bytecode data message size: %zd",
+					bytecode_type_str(lum->cmd), len);
+			ret = -EINVAL;
+			goto error_free_bytecode;
+		}
+	}
+
+	ops = objd_ops(lum->handle);
+	if (!ops) {
+		ret = -ENOENT;
+		goto error_free_bytecode;
+	}
+
+	if (ops->cmd) {
+		ret = ops->cmd(lum->handle, lum->cmd,
+			(unsigned long) bytecode,
+			NULL, sock_info);
+		if (ret)
+			goto error_free_bytecode;
+		/* don't free bytecode if everything went fine. */
+	} else {
+		ret = -ENOSYS;
+		goto error_free_bytecode;
+	}
+
+	goto end;
+
+error_free_bytecode:
+	free(bytecode);
+end:
+	return ret;
+}
+
 static
 int handle_message(struct sock_info *sock_info,
 		int sock, struct ustcomm_ust_msg *lum)
@@ -782,76 +898,10 @@ int handle_message(struct sock_info *sock_info,
 			ret = lttng_ust_objd_unref(lum->handle, 1);
 		break;
 	case LTTNG_UST_FILTER:
-	{
-		/* Receive filter data */
-		struct lttng_ust_bytecode_node *bytecode;
-
-		if (lum->u.filter.data_size > FILTER_BYTECODE_MAX_LEN) {
-			ERR("Filter data size is too large: %u bytes",
-				lum->u.filter.data_size);
-			ret = -EINVAL;
+		ret = handle_bytecode_recv(sock_info, sock, lum);
+		if (ret)
 			goto error;
-		}
-
-		if (lum->u.filter.reloc_offset > lum->u.filter.data_size) {
-			ERR("Filter reloc offset %u is not within data",
-				lum->u.filter.reloc_offset);
-			ret = -EINVAL;
-			goto error;
-		}
-
-		bytecode = zmalloc(sizeof(*bytecode) + lum->u.filter.data_size);
-		if (!bytecode) {
-			ret = -ENOMEM;
-			goto error;
-		}
-
-		len = ustcomm_recv_unix_sock(sock, bytecode->bc.data,
-				lum->u.filter.data_size);
-		switch (len) {
-		case 0:	/* orderly shutdown */
-			ret = 0;
-			free(bytecode);
-			goto error;
-		default:
-			if (len == lum->u.filter.data_size) {
-				DBG("filter data received");
-				break;
-			} else if (len < 0) {
-				DBG("Receive failed from lttng-sessiond with errno %d", (int) -len);
-				if (len == -ECONNRESET) {
-					ERR("%s remote end closed connection", sock_info->name);
-					ret = len;
-					free(bytecode);
-					goto error;
-				}
-				ret = len;
-				free(bytecode);
-				goto error;
-			} else {
-				DBG("incorrect filter data message size: %zd", len);
-				ret = -EINVAL;
-				free(bytecode);
-				goto error;
-			}
-		}
-		bytecode->bc.len = lum->u.filter.data_size;
-		bytecode->bc.reloc_offset = lum->u.filter.reloc_offset;
-		bytecode->bc.seqnum = lum->u.filter.seqnum;
-		if (ops->cmd) {
-			ret = ops->cmd(lum->handle, lum->cmd,
-					(unsigned long) bytecode,
-					&args, sock_info);
-			if (ret) {
-				free(bytecode);
-			}
-			/* don't free bytecode if everything went fine. */
-		} else {
-			ret = -ENOSYS;
-			free(bytecode);
-		}
 		break;
-	}
 	case LTTNG_UST_EXCLUSION:
 	{
 		/* Receive exclusion names */
