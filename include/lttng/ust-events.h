@@ -442,8 +442,9 @@ enum lttng_filter_ret {
  */
 struct lttng_bytecode_runtime {
 	/* Associated bytecode */
-	struct lttng_ust_filter_bytecode_node *bc;
-	uint64_t (*filter)(void *filter_data, const char *filter_stack_data);
+	struct lttng_ust_bytecode_node *bc;
+	uint64_t (*filter)(void *interpreter_data,
+			const char *interpreter_stack_data);
 	int link_failed;
 	struct cds_list_head node;	/* list of bytecode runtime in event */
 	/*

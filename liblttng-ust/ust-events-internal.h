@@ -51,14 +51,20 @@ struct lttng_event_notifier_enabler {
 	uint64_t user_token;		/* User-provided token */
 };
 
-struct lttng_ust_filter_bytecode_node {
+enum lttng_ust_bytecode_node_type {
+	LTTNG_UST_BYTECODE_NODE_TYPE_FILTER,
+};
+
+struct lttng_ust_bytecode_node {
+	enum lttng_ust_bytecode_node_type type;
 	struct cds_list_head node;
 	struct lttng_enabler *enabler;
-	/*
-	 * struct lttng_ust_filter_bytecode has var. sized array, must
-	 * be last field.
-	 */
-	struct lttng_ust_filter_bytecode bc;
+	struct  {
+		uint32_t len;
+		uint32_t reloc_offset;
+		uint64_t seqnum;
+		char data[];
+	} bc;
 };
 
 struct lttng_ust_excluder_node {
@@ -124,7 +130,7 @@ int lttng_event_enabler_disable(struct lttng_event_enabler *enabler);
 LTTNG_HIDDEN
 int lttng_event_enabler_attach_filter_bytecode(
 		struct lttng_event_enabler *enabler,
-		struct lttng_ust_filter_bytecode_node *bytecode);
+		struct lttng_ust_bytecode_node *bytecode);
 
 /*
  * Attach an application context to an event enabler.
@@ -213,7 +219,7 @@ int lttng_event_notifier_enabler_disable(
 LTTNG_HIDDEN
 int lttng_event_notifier_enabler_attach_filter_bytecode(
 		struct lttng_event_notifier_enabler *event_notifier_enabler,
-		struct lttng_ust_filter_bytecode_node *bytecode);
+		struct lttng_ust_bytecode_node *bytecode);
 
 /*
  * Attach exclusion list to `struct lttng_event_notifier_enabler` and all
