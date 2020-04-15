@@ -1,7 +1,7 @@
 /*
- * lttng-filter-specialize.c
+ * lttng-bytecode-specialize.c
  *
- * LTTng UST filter code specializer.
+ * LTTng UST bytecode specializer.
  *
  * Copyright (C) 2010-2016 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
@@ -28,7 +28,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "lttng-filter.h"
+#include "lttng-bytecode.h"
 #include <lttng/align.h>
 #include "ust-events-internal.h"
 
@@ -80,7 +80,7 @@ static ssize_t bytecode_reserve_data(struct bytecode_runtime *runtime,
 	size_t new_alloc_len = new_len;
 	size_t old_alloc_len = runtime->data_alloc_len;
 
-	if (new_len > FILTER_MAX_DATA_LEN)
+	if (new_len > BYTECODE_MAX_DATA_LEN)
 		return -EINVAL;
 
 	if (new_alloc_len > old_alloc_len) {
@@ -126,7 +126,7 @@ static int specialize_load_field(struct vstack_entry *stack_top,
 	case LOAD_ROOT_APP_CONTEXT:
 	case LOAD_ROOT_PAYLOAD:
 	default:
-		dbg_printf("Filter warning: cannot load root, missing field name.\n");
+		dbg_printf("Bytecode warning: cannot load root, missing field name.\n");
 		ret = -EINVAL;
 		goto end;
 	}
@@ -135,62 +135,62 @@ static int specialize_load_field(struct vstack_entry *stack_top,
 		dbg_printf("op load field s8\n");
 		stack_top->type = REG_S64;
 		if (!stack_top->load.rev_bo)
-			insn->op = FILTER_OP_LOAD_FIELD_S8;
+			insn->op = BYTECODE_OP_LOAD_FIELD_S8;
 		break;
 	case OBJECT_TYPE_S16:
 		dbg_printf("op load field s16\n");
 		stack_top->type = REG_S64;
 		if (!stack_top->load.rev_bo)
-			insn->op = FILTER_OP_LOAD_FIELD_S16;
+			insn->op = BYTECODE_OP_LOAD_FIELD_S16;
 		break;
 	case OBJECT_TYPE_S32:
 		dbg_printf("op load field s32\n");
 		stack_top->type = REG_S64;
 		if (!stack_top->load.rev_bo)
-			insn->op = FILTER_OP_LOAD_FIELD_S32;
+			insn->op = BYTECODE_OP_LOAD_FIELD_S32;
 		break;
 	case OBJECT_TYPE_S64:
 		dbg_printf("op load field s64\n");
 		stack_top->type = REG_S64;
 		if (!stack_top->load.rev_bo)
-			insn->op = FILTER_OP_LOAD_FIELD_S64;
+			insn->op = BYTECODE_OP_LOAD_FIELD_S64;
 		break;
 	case OBJECT_TYPE_U8:
 		dbg_printf("op load field u8\n");
 		stack_top->type = REG_U64;
-		insn->op = FILTER_OP_LOAD_FIELD_U8;
+		insn->op = BYTECODE_OP_LOAD_FIELD_U8;
 		break;
 	case OBJECT_TYPE_U16:
 		dbg_printf("op load field u16\n");
 		stack_top->type = REG_U64;
 		if (!stack_top->load.rev_bo)
-			insn->op = FILTER_OP_LOAD_FIELD_U16;
+			insn->op = BYTECODE_OP_LOAD_FIELD_U16;
 		break;
 	case OBJECT_TYPE_U32:
 		dbg_printf("op load field u32\n");
 		stack_top->type = REG_U64;
 		if (!stack_top->load.rev_bo)
-			insn->op = FILTER_OP_LOAD_FIELD_U32;
+			insn->op = BYTECODE_OP_LOAD_FIELD_U32;
 		break;
 	case OBJECT_TYPE_U64:
 		dbg_printf("op load field u64\n");
 		stack_top->type = REG_U64;
 		if (!stack_top->load.rev_bo)
-			insn->op = FILTER_OP_LOAD_FIELD_U64;
+			insn->op = BYTECODE_OP_LOAD_FIELD_U64;
 		break;
 	case OBJECT_TYPE_DOUBLE:
 		stack_top->type = REG_DOUBLE;
-		insn->op = FILTER_OP_LOAD_FIELD_DOUBLE;
+		insn->op = BYTECODE_OP_LOAD_FIELD_DOUBLE;
 		break;
 	case OBJECT_TYPE_STRING:
 		dbg_printf("op load field string\n");
 		stack_top->type = REG_STRING;
-		insn->op = FILTER_OP_LOAD_FIELD_STRING;
+		insn->op = BYTECODE_OP_LOAD_FIELD_STRING;
 		break;
 	case OBJECT_TYPE_STRING_SEQUENCE:
 		dbg_printf("op load field string sequence\n");
 		stack_top->type = REG_STRING;
-		insn->op = FILTER_OP_LOAD_FIELD_SEQUENCE;
+		insn->op = BYTECODE_OP_LOAD_FIELD_SEQUENCE;
 		break;
 	case OBJECT_TYPE_DYNAMIC:
 		dbg_printf("op load field dynamic\n");
@@ -251,7 +251,7 @@ static int specialize_get_index(struct bytecode_runtime *runtime,
 		int idx_len)
 {
 	int ret;
-	struct filter_get_index_data gid;
+	struct bytecode_get_index_data gid;
 	ssize_t data_offset;
 
 	memset(&gid, 0, sizeof(gid));
@@ -514,7 +514,7 @@ static int specialize_context_lookup(struct lttng_ctx *ctx,
 	int idx, ret;
 	struct lttng_ctx_field *ctx_field;
 	struct lttng_event_field *field;
-	struct filter_get_index_data gid;
+	struct bytecode_get_index_data gid;
 	ssize_t data_offset;
 
 	idx = specialize_context_lookup_name(ctx, runtime, insn);
@@ -527,7 +527,7 @@ static int specialize_context_lookup(struct lttng_ctx *ctx,
 	if (ret)
 		return ret;
 	/* Specialize each get_symbol into a get_index. */
-	insn->op = FILTER_OP_GET_INDEX_U16;
+	insn->op = BYTECODE_OP_GET_INDEX_U16;
 	memset(&gid, 0, sizeof(gid));
 	gid.ctx_index = idx;
 	gid.elem.type = load->object_type;
@@ -553,7 +553,7 @@ static int specialize_app_context_lookup(struct lttng_ctx **pctx,
 	int idx, ret;
 	struct lttng_ctx_field *ctx_field;
 	struct lttng_event_field *field;
-	struct filter_get_index_data gid;
+	struct bytecode_get_index_data gid;
 	ssize_t data_offset;
 
 	offset = ((struct get_symbol *) insn->data)->offset;
@@ -582,7 +582,7 @@ static int specialize_app_context_lookup(struct lttng_ctx **pctx,
 	if (ret)
 		goto end;
 	/* Specialize each get_symbol into a get_index. */
-	insn->op = FILTER_OP_GET_INDEX_U16;
+	insn->op = BYTECODE_OP_GET_INDEX_U16;
 	memset(&gid, 0, sizeof(gid));
 	gid.ctx_index = idx;
 	gid.elem.type = load->object_type;
@@ -613,7 +613,7 @@ static int specialize_payload_lookup(const struct lttng_event_desc *event_desc,
 	uint32_t field_offset = 0;
 	const struct lttng_event_field *field;
 	int ret;
-	struct filter_get_index_data gid;
+	struct bytecode_get_index_data gid;
 	ssize_t data_offset;
 
 	nr_fields = event_desc->nr_fields;
@@ -663,7 +663,7 @@ static int specialize_payload_lookup(const struct lttng_event_desc *event_desc,
 		goto end;
 
 	/* Specialize each get_symbol into a get_index. */
-	insn->op = FILTER_OP_GET_INDEX_U16;
+	insn->op = BYTECODE_OP_GET_INDEX_U16;
 	memset(&gid, 0, sizeof(gid));
 	gid.offset = field_offset;
 	gid.elem.type = load->object_type;
@@ -681,7 +681,7 @@ end:
 	return ret;
 }
 
-int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
+int lttng_bytecode_specialize(const struct lttng_event_desc *event_desc,
 		struct bytecode_runtime *bytecode)
 {
 	void *pc, *next_pc, *start_pc;
@@ -695,22 +695,22 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 	start_pc = &bytecode->code[0];
 	for (pc = next_pc = start_pc; pc - start_pc < bytecode->len;
 			pc = next_pc) {
-		switch (*(filter_opcode_t *) pc) {
-		case FILTER_OP_UNKNOWN:
+		switch (*(bytecode_opcode_t *) pc) {
+		case BYTECODE_OP_UNKNOWN:
 		default:
 			ERR("unknown bytecode op %u\n",
-				(unsigned int) *(filter_opcode_t *) pc);
+				(unsigned int) *(bytecode_opcode_t *) pc);
 			ret = -EINVAL;
 			goto end;
 
-		case FILTER_OP_RETURN:
+		case BYTECODE_OP_RETURN:
 			if (vstack_ax(stack)->type == REG_S64 ||
 					vstack_ax(stack)->type == REG_U64)
-				*(filter_opcode_t *) pc = FILTER_OP_RETURN_S64;
+				*(bytecode_opcode_t *) pc = BYTECODE_OP_RETURN_S64;
 			ret = 0;
 			goto end;
 
-		case FILTER_OP_RETURN_S64:
+		case BYTECODE_OP_RETURN_S64:
 			if (vstack_ax(stack)->type != REG_S64 &&
 					vstack_ax(stack)->type != REG_U64) {
 				ERR("Unexpected register type\n");
@@ -721,17 +721,17 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			goto end;
 
 		/* binary */
-		case FILTER_OP_MUL:
-		case FILTER_OP_DIV:
-		case FILTER_OP_MOD:
-		case FILTER_OP_PLUS:
-		case FILTER_OP_MINUS:
+		case BYTECODE_OP_MUL:
+		case BYTECODE_OP_DIV:
+		case BYTECODE_OP_MOD:
+		case BYTECODE_OP_PLUS:
+		case BYTECODE_OP_MINUS:
 			ERR("unsupported bytecode op %u\n",
-				(unsigned int) *(filter_opcode_t *) pc);
+				(unsigned int) *(bytecode_opcode_t *) pc);
 			ret = -EINVAL;
 			goto end;
 
-		case FILTER_OP_EQ:
+		case BYTECODE_OP_EQ:
 		{
 			struct binary_op *insn = (struct binary_op *) pc;
 
@@ -745,14 +745,14 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 				if (vstack_bx(stack)->type == REG_UNKNOWN)
 					break;
 				if (vstack_bx(stack)->type == REG_STAR_GLOB_STRING)
-					insn->op = FILTER_OP_EQ_STAR_GLOB_STRING;
+					insn->op = BYTECODE_OP_EQ_STAR_GLOB_STRING;
 				else
-					insn->op = FILTER_OP_EQ_STRING;
+					insn->op = BYTECODE_OP_EQ_STRING;
 				break;
 			case REG_STAR_GLOB_STRING:
 				if (vstack_bx(stack)->type == REG_UNKNOWN)
 					break;
-				insn->op = FILTER_OP_EQ_STAR_GLOB_STRING;
+				insn->op = BYTECODE_OP_EQ_STAR_GLOB_STRING;
 				break;
 			case REG_S64:
 			case REG_U64:
@@ -760,18 +760,18 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 					break;
 				if (vstack_bx(stack)->type == REG_S64 ||
 						vstack_bx(stack)->type == REG_U64)
-					insn->op = FILTER_OP_EQ_S64;
+					insn->op = BYTECODE_OP_EQ_S64;
 				else
-					insn->op = FILTER_OP_EQ_DOUBLE_S64;
+					insn->op = BYTECODE_OP_EQ_DOUBLE_S64;
 				break;
 			case REG_DOUBLE:
 				if (vstack_bx(stack)->type == REG_UNKNOWN)
 					break;
 				if (vstack_bx(stack)->type == REG_S64 ||
 						vstack_bx(stack)->type == REG_U64)
-					insn->op = FILTER_OP_EQ_S64_DOUBLE;
+					insn->op = BYTECODE_OP_EQ_S64_DOUBLE;
 				else
-					insn->op = FILTER_OP_EQ_DOUBLE;
+					insn->op = BYTECODE_OP_EQ_DOUBLE;
 				break;
 			case REG_UNKNOWN:
 				break;	/* Dynamic typing. */
@@ -786,7 +786,7 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			break;
 		}
 
-		case FILTER_OP_NE:
+		case BYTECODE_OP_NE:
 		{
 			struct binary_op *insn = (struct binary_op *) pc;
 
@@ -800,14 +800,14 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 				if (vstack_bx(stack)->type == REG_UNKNOWN)
 					break;
 				if (vstack_bx(stack)->type == REG_STAR_GLOB_STRING)
-					insn->op = FILTER_OP_NE_STAR_GLOB_STRING;
+					insn->op = BYTECODE_OP_NE_STAR_GLOB_STRING;
 				else
-					insn->op = FILTER_OP_NE_STRING;
+					insn->op = BYTECODE_OP_NE_STRING;
 				break;
 			case REG_STAR_GLOB_STRING:
 				if (vstack_bx(stack)->type == REG_UNKNOWN)
 					break;
-				insn->op = FILTER_OP_NE_STAR_GLOB_STRING;
+				insn->op = BYTECODE_OP_NE_STAR_GLOB_STRING;
 				break;
 			case REG_S64:
 			case REG_U64:
@@ -815,18 +815,18 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 					break;
 				if (vstack_bx(stack)->type == REG_S64 ||
 						vstack_bx(stack)->type == REG_U64)
-					insn->op = FILTER_OP_NE_S64;
+					insn->op = BYTECODE_OP_NE_S64;
 				else
-					insn->op = FILTER_OP_NE_DOUBLE_S64;
+					insn->op = BYTECODE_OP_NE_DOUBLE_S64;
 				break;
 			case REG_DOUBLE:
 				if (vstack_bx(stack)->type == REG_UNKNOWN)
 					break;
 				if (vstack_bx(stack)->type == REG_S64 ||
 						vstack_bx(stack)->type == REG_U64)
-					insn->op = FILTER_OP_NE_S64_DOUBLE;
+					insn->op = BYTECODE_OP_NE_S64_DOUBLE;
 				else
-					insn->op = FILTER_OP_NE_DOUBLE;
+					insn->op = BYTECODE_OP_NE_DOUBLE;
 				break;
 			case REG_UNKNOWN:
 				break;	/* Dynamic typing. */
@@ -841,7 +841,7 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			break;
 		}
 
-		case FILTER_OP_GT:
+		case BYTECODE_OP_GT:
 		{
 			struct binary_op *insn = (struct binary_op *) pc;
 
@@ -858,7 +858,7 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			case REG_STRING:
 				if (vstack_bx(stack)->type == REG_UNKNOWN)
 					break;
-				insn->op = FILTER_OP_GT_STRING;
+				insn->op = BYTECODE_OP_GT_STRING;
 				break;
 			case REG_S64:
 			case REG_U64:
@@ -866,18 +866,18 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 					break;
 				if (vstack_bx(stack)->type == REG_S64 ||
 						vstack_bx(stack)->type == REG_U64)
-					insn->op = FILTER_OP_GT_S64;
+					insn->op = BYTECODE_OP_GT_S64;
 				else
-					insn->op = FILTER_OP_GT_DOUBLE_S64;
+					insn->op = BYTECODE_OP_GT_DOUBLE_S64;
 				break;
 			case REG_DOUBLE:
 				if (vstack_bx(stack)->type == REG_UNKNOWN)
 					break;
 				if (vstack_bx(stack)->type == REG_S64 ||
 						vstack_bx(stack)->type == REG_U64)
-					insn->op = FILTER_OP_GT_S64_DOUBLE;
+					insn->op = BYTECODE_OP_GT_S64_DOUBLE;
 				else
-					insn->op = FILTER_OP_GT_DOUBLE;
+					insn->op = BYTECODE_OP_GT_DOUBLE;
 				break;
 			case REG_UNKNOWN:
 				break;	/* Dynamic typing. */
@@ -892,7 +892,7 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			break;
 		}
 
-		case FILTER_OP_LT:
+		case BYTECODE_OP_LT:
 		{
 			struct binary_op *insn = (struct binary_op *) pc;
 
@@ -909,7 +909,7 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			case REG_STRING:
 				if (vstack_bx(stack)->type == REG_UNKNOWN)
 					break;
-				insn->op = FILTER_OP_LT_STRING;
+				insn->op = BYTECODE_OP_LT_STRING;
 				break;
 			case REG_S64:
 			case REG_U64:
@@ -917,18 +917,18 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 					break;
 				if (vstack_bx(stack)->type == REG_S64 ||
 						vstack_bx(stack)->type == REG_U64)
-					insn->op = FILTER_OP_LT_S64;
+					insn->op = BYTECODE_OP_LT_S64;
 				else
-					insn->op = FILTER_OP_LT_DOUBLE_S64;
+					insn->op = BYTECODE_OP_LT_DOUBLE_S64;
 				break;
 			case REG_DOUBLE:
 				if (vstack_bx(stack)->type == REG_UNKNOWN)
 					break;
 				if (vstack_bx(stack)->type == REG_S64 ||
 						vstack_bx(stack)->type == REG_U64)
-					insn->op = FILTER_OP_LT_S64_DOUBLE;
+					insn->op = BYTECODE_OP_LT_S64_DOUBLE;
 				else
-					insn->op = FILTER_OP_LT_DOUBLE;
+					insn->op = BYTECODE_OP_LT_DOUBLE;
 				break;
 			case REG_UNKNOWN:
 				break;	/* Dynamic typing. */
@@ -943,7 +943,7 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			break;
 		}
 
-		case FILTER_OP_GE:
+		case BYTECODE_OP_GE:
 		{
 			struct binary_op *insn = (struct binary_op *) pc;
 
@@ -960,7 +960,7 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			case REG_STRING:
 				if (vstack_bx(stack)->type == REG_UNKNOWN)
 					break;
-				insn->op = FILTER_OP_GE_STRING;
+				insn->op = BYTECODE_OP_GE_STRING;
 				break;
 			case REG_S64:
 			case REG_U64:
@@ -968,18 +968,18 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 					break;
 				if (vstack_bx(stack)->type == REG_S64 ||
 						vstack_bx(stack)->type == REG_U64)
-					insn->op = FILTER_OP_GE_S64;
+					insn->op = BYTECODE_OP_GE_S64;
 				else
-					insn->op = FILTER_OP_GE_DOUBLE_S64;
+					insn->op = BYTECODE_OP_GE_DOUBLE_S64;
 				break;
 			case REG_DOUBLE:
 				if (vstack_bx(stack)->type == REG_UNKNOWN)
 					break;
 				if (vstack_bx(stack)->type == REG_S64 ||
 						vstack_bx(stack)->type == REG_U64)
-					insn->op = FILTER_OP_GE_S64_DOUBLE;
+					insn->op = BYTECODE_OP_GE_S64_DOUBLE;
 				else
-					insn->op = FILTER_OP_GE_DOUBLE;
+					insn->op = BYTECODE_OP_GE_DOUBLE;
 				break;
 			case REG_UNKNOWN:
 				break;	/* Dynamic typing. */
@@ -993,7 +993,7 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			next_pc += sizeof(struct binary_op);
 			break;
 		}
-		case FILTER_OP_LE:
+		case BYTECODE_OP_LE:
 		{
 			struct binary_op *insn = (struct binary_op *) pc;
 
@@ -1010,7 +1010,7 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			case REG_STRING:
 				if (vstack_bx(stack)->type == REG_UNKNOWN)
 					break;
-				insn->op = FILTER_OP_LE_STRING;
+				insn->op = BYTECODE_OP_LE_STRING;
 				break;
 			case REG_S64:
 			case REG_U64:
@@ -1018,18 +1018,18 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 					break;
 				if (vstack_bx(stack)->type == REG_S64 ||
 						vstack_bx(stack)->type == REG_U64)
-					insn->op = FILTER_OP_LE_S64;
+					insn->op = BYTECODE_OP_LE_S64;
 				else
-					insn->op = FILTER_OP_LE_DOUBLE_S64;
+					insn->op = BYTECODE_OP_LE_DOUBLE_S64;
 				break;
 			case REG_DOUBLE:
 				if (vstack_bx(stack)->type == REG_UNKNOWN)
 					break;
 				if (vstack_bx(stack)->type == REG_S64 ||
 						vstack_bx(stack)->type == REG_U64)
-					insn->op = FILTER_OP_LE_S64_DOUBLE;
+					insn->op = BYTECODE_OP_LE_S64_DOUBLE;
 				else
-					insn->op = FILTER_OP_LE_DOUBLE;
+					insn->op = BYTECODE_OP_LE_DOUBLE;
 				break;
 			case REG_UNKNOWN:
 				break;	/* Dynamic typing. */
@@ -1039,38 +1039,38 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			break;
 		}
 
-		case FILTER_OP_EQ_STRING:
-		case FILTER_OP_NE_STRING:
-		case FILTER_OP_GT_STRING:
-		case FILTER_OP_LT_STRING:
-		case FILTER_OP_GE_STRING:
-		case FILTER_OP_LE_STRING:
-		case FILTER_OP_EQ_STAR_GLOB_STRING:
-		case FILTER_OP_NE_STAR_GLOB_STRING:
-		case FILTER_OP_EQ_S64:
-		case FILTER_OP_NE_S64:
-		case FILTER_OP_GT_S64:
-		case FILTER_OP_LT_S64:
-		case FILTER_OP_GE_S64:
-		case FILTER_OP_LE_S64:
-		case FILTER_OP_EQ_DOUBLE:
-		case FILTER_OP_NE_DOUBLE:
-		case FILTER_OP_GT_DOUBLE:
-		case FILTER_OP_LT_DOUBLE:
-		case FILTER_OP_GE_DOUBLE:
-		case FILTER_OP_LE_DOUBLE:
-		case FILTER_OP_EQ_DOUBLE_S64:
-		case FILTER_OP_NE_DOUBLE_S64:
-		case FILTER_OP_GT_DOUBLE_S64:
-		case FILTER_OP_LT_DOUBLE_S64:
-		case FILTER_OP_GE_DOUBLE_S64:
-		case FILTER_OP_LE_DOUBLE_S64:
-		case FILTER_OP_EQ_S64_DOUBLE:
-		case FILTER_OP_NE_S64_DOUBLE:
-		case FILTER_OP_GT_S64_DOUBLE:
-		case FILTER_OP_LT_S64_DOUBLE:
-		case FILTER_OP_GE_S64_DOUBLE:
-		case FILTER_OP_LE_S64_DOUBLE:
+		case BYTECODE_OP_EQ_STRING:
+		case BYTECODE_OP_NE_STRING:
+		case BYTECODE_OP_GT_STRING:
+		case BYTECODE_OP_LT_STRING:
+		case BYTECODE_OP_GE_STRING:
+		case BYTECODE_OP_LE_STRING:
+		case BYTECODE_OP_EQ_STAR_GLOB_STRING:
+		case BYTECODE_OP_NE_STAR_GLOB_STRING:
+		case BYTECODE_OP_EQ_S64:
+		case BYTECODE_OP_NE_S64:
+		case BYTECODE_OP_GT_S64:
+		case BYTECODE_OP_LT_S64:
+		case BYTECODE_OP_GE_S64:
+		case BYTECODE_OP_LE_S64:
+		case BYTECODE_OP_EQ_DOUBLE:
+		case BYTECODE_OP_NE_DOUBLE:
+		case BYTECODE_OP_GT_DOUBLE:
+		case BYTECODE_OP_LT_DOUBLE:
+		case BYTECODE_OP_GE_DOUBLE:
+		case BYTECODE_OP_LE_DOUBLE:
+		case BYTECODE_OP_EQ_DOUBLE_S64:
+		case BYTECODE_OP_NE_DOUBLE_S64:
+		case BYTECODE_OP_GT_DOUBLE_S64:
+		case BYTECODE_OP_LT_DOUBLE_S64:
+		case BYTECODE_OP_GE_DOUBLE_S64:
+		case BYTECODE_OP_LE_DOUBLE_S64:
+		case BYTECODE_OP_EQ_S64_DOUBLE:
+		case BYTECODE_OP_NE_S64_DOUBLE:
+		case BYTECODE_OP_GT_S64_DOUBLE:
+		case BYTECODE_OP_LT_S64_DOUBLE:
+		case BYTECODE_OP_GE_S64_DOUBLE:
+		case BYTECODE_OP_LE_S64_DOUBLE:
 		{
 			/* Pop 2, push 1 */
 			if (vstack_pop(stack)) {
@@ -1082,11 +1082,11 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			break;
 		}
 
-		case FILTER_OP_BIT_RSHIFT:
-		case FILTER_OP_BIT_LSHIFT:
-		case FILTER_OP_BIT_AND:
-		case FILTER_OP_BIT_OR:
-		case FILTER_OP_BIT_XOR:
+		case BYTECODE_OP_BIT_RSHIFT:
+		case BYTECODE_OP_BIT_LSHIFT:
+		case BYTECODE_OP_BIT_AND:
+		case BYTECODE_OP_BIT_OR:
+		case BYTECODE_OP_BIT_XOR:
 		{
 			/* Pop 2, push 1 */
 			if (vstack_pop(stack)) {
@@ -1099,7 +1099,7 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 		}
 
 		/* unary */
-		case FILTER_OP_UNARY_PLUS:
+		case BYTECODE_OP_UNARY_PLUS:
 		{
 			struct unary_op *insn = (struct unary_op *) pc;
 
@@ -1111,10 +1111,10 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 
 			case REG_S64:
 			case REG_U64:
-				insn->op = FILTER_OP_UNARY_PLUS_S64;
+				insn->op = BYTECODE_OP_UNARY_PLUS_S64;
 				break;
 			case REG_DOUBLE:
-				insn->op = FILTER_OP_UNARY_PLUS_DOUBLE;
+				insn->op = BYTECODE_OP_UNARY_PLUS_DOUBLE;
 				break;
 			case REG_UNKNOWN:	/* Dynamic typing. */
 				break;
@@ -1124,7 +1124,7 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			break;
 		}
 
-		case FILTER_OP_UNARY_MINUS:
+		case BYTECODE_OP_UNARY_MINUS:
 		{
 			struct unary_op *insn = (struct unary_op *) pc;
 
@@ -1136,10 +1136,10 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 
 			case REG_S64:
 			case REG_U64:
-				insn->op = FILTER_OP_UNARY_MINUS_S64;
+				insn->op = BYTECODE_OP_UNARY_MINUS_S64;
 				break;
 			case REG_DOUBLE:
-				insn->op = FILTER_OP_UNARY_MINUS_DOUBLE;
+				insn->op = BYTECODE_OP_UNARY_MINUS_DOUBLE;
 				break;
 			case REG_UNKNOWN:	/* Dynamic typing. */
 				break;
@@ -1149,7 +1149,7 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			break;
 		}
 
-		case FILTER_OP_UNARY_NOT:
+		case BYTECODE_OP_UNARY_NOT:
 		{
 			struct unary_op *insn = (struct unary_op *) pc;
 
@@ -1161,10 +1161,10 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 
 			case REG_S64:
 			case REG_U64:
-				insn->op = FILTER_OP_UNARY_NOT_S64;
+				insn->op = BYTECODE_OP_UNARY_NOT_S64;
 				break;
 			case REG_DOUBLE:
-				insn->op = FILTER_OP_UNARY_NOT_DOUBLE;
+				insn->op = BYTECODE_OP_UNARY_NOT_DOUBLE;
 				break;
 			case REG_UNKNOWN:	/* Dynamic typing. */
 				break;
@@ -1174,19 +1174,19 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			break;
 		}
 
-		case FILTER_OP_UNARY_BIT_NOT:
+		case BYTECODE_OP_UNARY_BIT_NOT:
 		{
 			/* Pop 1, push 1 */
 			next_pc += sizeof(struct unary_op);
 			break;
 		}
 
-		case FILTER_OP_UNARY_PLUS_S64:
-		case FILTER_OP_UNARY_MINUS_S64:
-		case FILTER_OP_UNARY_NOT_S64:
-		case FILTER_OP_UNARY_PLUS_DOUBLE:
-		case FILTER_OP_UNARY_MINUS_DOUBLE:
-		case FILTER_OP_UNARY_NOT_DOUBLE:
+		case BYTECODE_OP_UNARY_PLUS_S64:
+		case BYTECODE_OP_UNARY_MINUS_S64:
+		case BYTECODE_OP_UNARY_NOT_S64:
+		case BYTECODE_OP_UNARY_PLUS_DOUBLE:
+		case BYTECODE_OP_UNARY_MINUS_DOUBLE:
+		case BYTECODE_OP_UNARY_NOT_DOUBLE:
 		{
 			/* Pop 1, push 1 */
 			next_pc += sizeof(struct unary_op);
@@ -1194,8 +1194,8 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 		}
 
 		/* logical */
-		case FILTER_OP_AND:
-		case FILTER_OP_OR:
+		case BYTECODE_OP_AND:
+		case BYTECODE_OP_OR:
 		{
 			/* Continue to next instruction */
 			/* Pop 1 when jump not taken */
@@ -1208,14 +1208,14 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 		}
 
 		/* load field ref */
-		case FILTER_OP_LOAD_FIELD_REF:
+		case BYTECODE_OP_LOAD_FIELD_REF:
 		{
 			ERR("Unknown field ref type\n");
 			ret = -EINVAL;
 			goto end;
 		}
 		/* get context ref */
-		case FILTER_OP_GET_CONTEXT_REF:
+		case BYTECODE_OP_GET_CONTEXT_REF:
 		{
 			if (vstack_push(stack)) {
 				ret = -EINVAL;
@@ -1225,9 +1225,9 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
 			break;
 		}
-		case FILTER_OP_LOAD_FIELD_REF_STRING:
-		case FILTER_OP_LOAD_FIELD_REF_SEQUENCE:
-		case FILTER_OP_GET_CONTEXT_REF_STRING:
+		case BYTECODE_OP_LOAD_FIELD_REF_STRING:
+		case BYTECODE_OP_LOAD_FIELD_REF_SEQUENCE:
+		case BYTECODE_OP_GET_CONTEXT_REF_STRING:
 		{
 			if (vstack_push(stack)) {
 				ret = -EINVAL;
@@ -1237,8 +1237,8 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
 			break;
 		}
-		case FILTER_OP_LOAD_FIELD_REF_S64:
-		case FILTER_OP_GET_CONTEXT_REF_S64:
+		case BYTECODE_OP_LOAD_FIELD_REF_S64:
+		case BYTECODE_OP_GET_CONTEXT_REF_S64:
 		{
 			if (vstack_push(stack)) {
 				ret = -EINVAL;
@@ -1248,8 +1248,8 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
 			break;
 		}
-		case FILTER_OP_LOAD_FIELD_REF_DOUBLE:
-		case FILTER_OP_GET_CONTEXT_REF_DOUBLE:
+		case BYTECODE_OP_LOAD_FIELD_REF_DOUBLE:
+		case BYTECODE_OP_GET_CONTEXT_REF_DOUBLE:
 		{
 			if (vstack_push(stack)) {
 				ret = -EINVAL;
@@ -1261,7 +1261,7 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 		}
 
 		/* load from immediate operand */
-		case FILTER_OP_LOAD_STRING:
+		case BYTECODE_OP_LOAD_STRING:
 		{
 			struct load_op *insn = (struct load_op *) pc;
 
@@ -1274,7 +1274,7 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			break;
 		}
 
-		case FILTER_OP_LOAD_STAR_GLOB_STRING:
+		case BYTECODE_OP_LOAD_STAR_GLOB_STRING:
 		{
 			struct load_op *insn = (struct load_op *) pc;
 
@@ -1287,7 +1287,7 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			break;
 		}
 
-		case FILTER_OP_LOAD_S64:
+		case BYTECODE_OP_LOAD_S64:
 		{
 			if (vstack_push(stack)) {
 				ret = -EINVAL;
@@ -1299,7 +1299,7 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			break;
 		}
 
-		case FILTER_OP_LOAD_DOUBLE:
+		case BYTECODE_OP_LOAD_DOUBLE:
 		{
 			if (vstack_push(stack)) {
 				ret = -EINVAL;
@@ -1312,7 +1312,7 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 		}
 
 		/* cast */
-		case FILTER_OP_CAST_TO_S64:
+		case BYTECODE_OP_CAST_TO_S64:
 		{
 			struct cast_op *insn = (struct cast_op *) pc;
 
@@ -1328,10 +1328,10 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 				ret = -EINVAL;
 				goto end;
 			case REG_S64:
-				insn->op = FILTER_OP_CAST_NOP;
+				insn->op = BYTECODE_OP_CAST_NOP;
 				break;
 			case REG_DOUBLE:
-				insn->op = FILTER_OP_CAST_DOUBLE_TO_S64;
+				insn->op = BYTECODE_OP_CAST_DOUBLE_TO_S64;
 				break;
 			case REG_UNKNOWN:
 			case REG_U64:
@@ -1342,14 +1342,14 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			next_pc += sizeof(struct cast_op);
 			break;
 		}
-		case FILTER_OP_CAST_DOUBLE_TO_S64:
+		case BYTECODE_OP_CAST_DOUBLE_TO_S64:
 		{
 			/* Pop 1, push 1 */
 			vstack_ax(stack)->type = REG_S64;
 			next_pc += sizeof(struct cast_op);
 			break;
 		}
-		case FILTER_OP_CAST_NOP:
+		case BYTECODE_OP_CAST_NOP:
 		{
 			next_pc += sizeof(struct cast_op);
 			break;
@@ -1358,7 +1358,7 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 		/*
 		 * Instructions for recursive traversal through composed types.
 		 */
-		case FILTER_OP_GET_CONTEXT_ROOT:
+		case BYTECODE_OP_GET_CONTEXT_ROOT:
 		{
 			if (vstack_push(stack)) {
 				ret = -EINVAL;
@@ -1369,7 +1369,7 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			next_pc += sizeof(struct load_op);
 			break;
 		}
-		case FILTER_OP_GET_APP_CONTEXT_ROOT:
+		case BYTECODE_OP_GET_APP_CONTEXT_ROOT:
 		{
 			if (vstack_push(stack)) {
 				ret = -EINVAL;
@@ -1380,7 +1380,7 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			next_pc += sizeof(struct load_op);
 			break;
 		}
-		case FILTER_OP_GET_PAYLOAD_ROOT:
+		case BYTECODE_OP_GET_PAYLOAD_ROOT:
 		{
 			if (vstack_push(stack)) {
 				ret = -EINVAL;
@@ -1392,7 +1392,7 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			break;
 		}
 
-		case FILTER_OP_LOAD_FIELD:
+		case BYTECODE_OP_LOAD_FIELD:
 		{
 			struct load_op *insn = (struct load_op *) pc;
 
@@ -1406,10 +1406,10 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			break;
 		}
 
-		case FILTER_OP_LOAD_FIELD_S8:
-		case FILTER_OP_LOAD_FIELD_S16:
-		case FILTER_OP_LOAD_FIELD_S32:
-		case FILTER_OP_LOAD_FIELD_S64:
+		case BYTECODE_OP_LOAD_FIELD_S8:
+		case BYTECODE_OP_LOAD_FIELD_S16:
+		case BYTECODE_OP_LOAD_FIELD_S32:
+		case BYTECODE_OP_LOAD_FIELD_S64:
 		{
 			/* Pop 1, push 1 */
 			vstack_ax(stack)->type = REG_S64;
@@ -1417,10 +1417,10 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			break;
 		}
 
-		case FILTER_OP_LOAD_FIELD_U8:
-		case FILTER_OP_LOAD_FIELD_U16:
-		case FILTER_OP_LOAD_FIELD_U32:
-		case FILTER_OP_LOAD_FIELD_U64:
+		case BYTECODE_OP_LOAD_FIELD_U8:
+		case BYTECODE_OP_LOAD_FIELD_U16:
+		case BYTECODE_OP_LOAD_FIELD_U32:
+		case BYTECODE_OP_LOAD_FIELD_U64:
 		{
 			/* Pop 1, push 1 */
 			vstack_ax(stack)->type = REG_U64;
@@ -1428,8 +1428,8 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			break;
 		}
 
-		case FILTER_OP_LOAD_FIELD_STRING:
-		case FILTER_OP_LOAD_FIELD_SEQUENCE:
+		case BYTECODE_OP_LOAD_FIELD_STRING:
+		case BYTECODE_OP_LOAD_FIELD_SEQUENCE:
 		{
 			/* Pop 1, push 1 */
 			vstack_ax(stack)->type = REG_STRING;
@@ -1437,7 +1437,7 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			break;
 		}
 
-		case FILTER_OP_LOAD_FIELD_DOUBLE:
+		case BYTECODE_OP_LOAD_FIELD_DOUBLE:
 		{
 			/* Pop 1, push 1 */
 			vstack_ax(stack)->type = REG_DOUBLE;
@@ -1445,7 +1445,7 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			break;
 		}
 
-		case FILTER_OP_GET_SYMBOL:
+		case BYTECODE_OP_GET_SYMBOL:
 		{
 			struct load_op *insn = (struct load_op *) pc;
 
@@ -1484,14 +1484,14 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			break;
 		}
 
-		case FILTER_OP_GET_SYMBOL_FIELD:
+		case BYTECODE_OP_GET_SYMBOL_FIELD:
 		{
 			/* Always generated by specialize phase. */
 			ret = -EINVAL;
 			goto end;
 		}
 
-		case FILTER_OP_GET_INDEX_U16:
+		case BYTECODE_OP_GET_INDEX_U16:
 		{
 			struct load_op *insn = (struct load_op *) pc;
 			struct get_index_u16 *index = (struct get_index_u16 *) insn->data;
@@ -1506,7 +1506,7 @@ int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
 			break;
 		}
 
-		case FILTER_OP_GET_INDEX_U64:
+		case BYTECODE_OP_GET_INDEX_U64:
 		{
 			struct load_op *insn = (struct load_op *) pc;
 			struct get_index_u64 *index = (struct get_index_u64 *) insn->data;

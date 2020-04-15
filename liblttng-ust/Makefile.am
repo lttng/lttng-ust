@@ -21,9 +21,15 @@ liblttng_ust_tracepoint_la_LDFLAGS = -no-undefined -version-info $(LTTNG_UST_LIB
 liblttng_ust_tracepoint_la_CFLAGS = -DUST_COMPONENT="liblttng_ust_tracepoint" $(AM_CFLAGS)
 
 liblttng_ust_runtime_la_SOURCES = \
+	bytecode.h \
 	lttng-ust-comm.c \
 	lttng-ust-abi.c \
 	lttng-probes.c \
+	lttng-bytecode.c \
+	lttng-bytecode.h \
+	lttng-bytecode-validator.c \
+	lttng-bytecode-specialize.c \
+	lttng-bytecode-interpreter.c \
 	lttng-context-provider.c \
 	lttng-context-vtid.c \
 	lttng-context-vpid.c \
@@ -47,12 +53,6 @@ liblttng_ust_runtime_la_SOURCES = \
 	lttng-context-vsgid.c \
 	lttng-context.c \
 	lttng-events.c \
-	lttng-filter.c \
-	lttng-filter.h \
-	lttng-filter-validator.c \
-	lttng-filter-specialize.c \
-	lttng-filter-interpreter.c \
-	filter-bytecode.h \
 	lttng-hash-helper.h \
 	lttng-ust-elf.c \
 	lttng-ust-statedump.c \

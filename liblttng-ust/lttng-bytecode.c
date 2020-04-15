@@ -1,7 +1,7 @@
 /*
- * lttng-filter.c
+ * lttng-bytecode.c
  *
- * LTTng UST filter code.
+ * LTTng UST bytecode code.
  *
  * Copyright (C) 2010-2016 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
@@ -30,158 +30,158 @@
 
 #include <urcu/rculist.h>
 
-#include "lttng-filter.h"
+#include "lttng-bytecode.h"
 #include "ust-events-internal.h"
 
 static const char *opnames[] = {
-	[ FILTER_OP_UNKNOWN ] = "UNKNOWN",
+	[ BYTECODE_OP_UNKNOWN ] = "UNKNOWN",
 
-	[ FILTER_OP_RETURN ] = "RETURN",
+	[ BYTECODE_OP_RETURN ] = "RETURN",
 
 	/* binary */
-	[ FILTER_OP_MUL ] = "MUL",
-	[ FILTER_OP_DIV ] = "DIV",
-	[ FILTER_OP_MOD ] = "MOD",
-	[ FILTER_OP_PLUS ] = "PLUS",
-	[ FILTER_OP_MINUS ] = "MINUS",
-	[ FILTER_OP_BIT_RSHIFT ] = "BIT_RSHIFT",
-	[ FILTER_OP_BIT_LSHIFT ] = "BIT_LSHIFT",
-	[ FILTER_OP_BIT_AND ] = "BIT_AND",
-	[ FILTER_OP_BIT_OR ] = "BIT_OR",
-	[ FILTER_OP_BIT_XOR ] = "BIT_XOR",
+	[ BYTECODE_OP_MUL ] = "MUL",
+	[ BYTECODE_OP_DIV ] = "DIV",
+	[ BYTECODE_OP_MOD ] = "MOD",
+	[ BYTECODE_OP_PLUS ] = "PLUS",
+	[ BYTECODE_OP_MINUS ] = "MINUS",
+	[ BYTECODE_OP_BIT_RSHIFT ] = "BIT_RSHIFT",
+	[ BYTECODE_OP_BIT_LSHIFT ] = "BIT_LSHIFT",
+	[ BYTECODE_OP_BIT_AND ] = "BIT_AND",
+	[ BYTECODE_OP_BIT_OR ] = "BIT_OR",
+	[ BYTECODE_OP_BIT_XOR ] = "BIT_XOR",
 
 	/* binary comparators */
-	[ FILTER_OP_EQ ] = "EQ",
-	[ FILTER_OP_NE ] = "NE",
-	[ FILTER_OP_GT ] = "GT",
-	[ FILTER_OP_LT ] = "LT",
-	[ FILTER_OP_GE ] = "GE",
-	[ FILTER_OP_LE ] = "LE",
+	[ BYTECODE_OP_EQ ] = "EQ",
+	[ BYTECODE_OP_NE ] = "NE",
+	[ BYTECODE_OP_GT ] = "GT",
+	[ BYTECODE_OP_LT ] = "LT",
+	[ BYTECODE_OP_GE ] = "GE",
+	[ BYTECODE_OP_LE ] = "LE",
 
 	/* string binary comparators */
-	[ FILTER_OP_EQ_STRING ] = "EQ_STRING",
-	[ FILTER_OP_NE_STRING ] = "NE_STRING",
-	[ FILTER_OP_GT_STRING ] = "GT_STRING",
-	[ FILTER_OP_LT_STRING ] = "LT_STRING",
-	[ FILTER_OP_GE_STRING ] = "GE_STRING",
-	[ FILTER_OP_LE_STRING ] = "LE_STRING",
+	[ BYTECODE_OP_EQ_STRING ] = "EQ_STRING",
+	[ BYTECODE_OP_NE_STRING ] = "NE_STRING",
+	[ BYTECODE_OP_GT_STRING ] = "GT_STRING",
+	[ BYTECODE_OP_LT_STRING ] = "LT_STRING",
+	[ BYTECODE_OP_GE_STRING ] = "GE_STRING",
+	[ BYTECODE_OP_LE_STRING ] = "LE_STRING",
 
 	/* s64 binary comparators */
-	[ FILTER_OP_EQ_S64 ] = "EQ_S64",
-	[ FILTER_OP_NE_S64 ] = "NE_S64",
-	[ FILTER_OP_GT_S64 ] = "GT_S64",
-	[ FILTER_OP_LT_S64 ] = "LT_S64",
-	[ FILTER_OP_GE_S64 ] = "GE_S64",
-	[ FILTER_OP_LE_S64 ] = "LE_S64",
+	[ BYTECODE_OP_EQ_S64 ] = "EQ_S64",
+	[ BYTECODE_OP_NE_S64 ] = "NE_S64",
+	[ BYTECODE_OP_GT_S64 ] = "GT_S64",
+	[ BYTECODE_OP_LT_S64 ] = "LT_S64",
+	[ BYTECODE_OP_GE_S64 ] = "GE_S64",
+	[ BYTECODE_OP_LE_S64 ] = "LE_S64",
 
 	/* double binary comparators */
-	[ FILTER_OP_EQ_DOUBLE ] = "EQ_DOUBLE",
-	[ FILTER_OP_NE_DOUBLE ] = "NE_DOUBLE",
-	[ FILTER_OP_GT_DOUBLE ] = "GT_DOUBLE",
-	[ FILTER_OP_LT_DOUBLE ] = "LT_DOUBLE",
-	[ FILTER_OP_GE_DOUBLE ] = "GE_DOUBLE",
-	[ FILTER_OP_LE_DOUBLE ] = "LE_DOUBLE",
+	[ BYTECODE_OP_EQ_DOUBLE ] = "EQ_DOUBLE",
+	[ BYTECODE_OP_NE_DOUBLE ] = "NE_DOUBLE",
+	[ BYTECODE_OP_GT_DOUBLE ] = "GT_DOUBLE",
+	[ BYTECODE_OP_LT_DOUBLE ] = "LT_DOUBLE",
+	[ BYTECODE_OP_GE_DOUBLE ] = "GE_DOUBLE",
+	[ BYTECODE_OP_LE_DOUBLE ] = "LE_DOUBLE",
 
 	/* Mixed S64-double binary comparators */
-	[ FILTER_OP_EQ_DOUBLE_S64 ] = "EQ_DOUBLE_S64",
-	[ FILTER_OP_NE_DOUBLE_S64 ] = "NE_DOUBLE_S64",
-	[ FILTER_OP_GT_DOUBLE_S64 ] = "GT_DOUBLE_S64",
-	[ FILTER_OP_LT_DOUBLE_S64 ] = "LT_DOUBLE_S64",
-	[ FILTER_OP_GE_DOUBLE_S64 ] = "GE_DOUBLE_S64",
-	[ FILTER_OP_LE_DOUBLE_S64 ] = "LE_DOUBLE_S64",
+	[ BYTECODE_OP_EQ_DOUBLE_S64 ] = "EQ_DOUBLE_S64",
+	[ BYTECODE_OP_NE_DOUBLE_S64 ] = "NE_DOUBLE_S64",
+	[ BYTECODE_OP_GT_DOUBLE_S64 ] = "GT_DOUBLE_S64",
+	[ BYTECODE_OP_LT_DOUBLE_S64 ] = "LT_DOUBLE_S64",
+	[ BYTECODE_OP_GE_DOUBLE_S64 ] = "GE_DOUBLE_S64",
+	[ BYTECODE_OP_LE_DOUBLE_S64 ] = "LE_DOUBLE_S64",
 
-	[ FILTER_OP_EQ_S64_DOUBLE ] = "EQ_S64_DOUBLE",
-	[ FILTER_OP_NE_S64_DOUBLE ] = "NE_S64_DOUBLE",
-	[ FILTER_OP_GT_S64_DOUBLE ] = "GT_S64_DOUBLE",
-	[ FILTER_OP_LT_S64_DOUBLE ] = "LT_S64_DOUBLE",
-	[ FILTER_OP_GE_S64_DOUBLE ] = "GE_S64_DOUBLE",
-	[ FILTER_OP_LE_S64_DOUBLE ] = "LE_S64_DOUBLE",
+	[ BYTECODE_OP_EQ_S64_DOUBLE ] = "EQ_S64_DOUBLE",
+	[ BYTECODE_OP_NE_S64_DOUBLE ] = "NE_S64_DOUBLE",
+	[ BYTECODE_OP_GT_S64_DOUBLE ] = "GT_S64_DOUBLE",
+	[ BYTECODE_OP_LT_S64_DOUBLE ] = "LT_S64_DOUBLE",
+	[ BYTECODE_OP_GE_S64_DOUBLE ] = "GE_S64_DOUBLE",
+	[ BYTECODE_OP_LE_S64_DOUBLE ] = "LE_S64_DOUBLE",
 
 	/* unary */
-	[ FILTER_OP_UNARY_PLUS ] = "UNARY_PLUS",
-	[ FILTER_OP_UNARY_MINUS ] = "UNARY_MINUS",
-	[ FILTER_OP_UNARY_NOT ] = "UNARY_NOT",
-	[ FILTER_OP_UNARY_PLUS_S64 ] = "UNARY_PLUS_S64",
-	[ FILTER_OP_UNARY_MINUS_S64 ] = "UNARY_MINUS_S64",
-	[ FILTER_OP_UNARY_NOT_S64 ] = "UNARY_NOT_S64",
-	[ FILTER_OP_UNARY_PLUS_DOUBLE ] = "UNARY_PLUS_DOUBLE",
-	[ FILTER_OP_UNARY_MINUS_DOUBLE ] = "UNARY_MINUS_DOUBLE",
-	[ FILTER_OP_UNARY_NOT_DOUBLE ] = "UNARY_NOT_DOUBLE",
+	[ BYTECODE_OP_UNARY_PLUS ] = "UNARY_PLUS",
+	[ BYTECODE_OP_UNARY_MINUS ] = "UNARY_MINUS",
+	[ BYTECODE_OP_UNARY_NOT ] = "UNARY_NOT",
+	[ BYTECODE_OP_UNARY_PLUS_S64 ] = "UNARY_PLUS_S64",
+	[ BYTECODE_OP_UNARY_MINUS_S64 ] = "UNARY_MINUS_S64",
+	[ BYTECODE_OP_UNARY_NOT_S64 ] = "UNARY_NOT_S64",
+	[ BYTECODE_OP_UNARY_PLUS_DOUBLE ] = "UNARY_PLUS_DOUBLE",
+	[ BYTECODE_OP_UNARY_MINUS_DOUBLE ] = "UNARY_MINUS_DOUBLE",
+	[ BYTECODE_OP_UNARY_NOT_DOUBLE ] = "UNARY_NOT_DOUBLE",
 
 	/* logical */
-	[ FILTER_OP_AND ] = "AND",
-	[ FILTER_OP_OR ] = "OR",
+	[ BYTECODE_OP_AND ] = "AND",
+	[ BYTECODE_OP_OR ] = "OR",
 
 	/* load field ref */
-	[ FILTER_OP_LOAD_FIELD_REF ] = "LOAD_FIELD_REF",
-	[ FILTER_OP_LOAD_FIELD_REF_STRING ] = "LOAD_FIELD_REF_STRING",
-	[ FILTER_OP_LOAD_FIELD_REF_SEQUENCE ] = "LOAD_FIELD_REF_SEQUENCE",
-	[ FILTER_OP_LOAD_FIELD_REF_S64 ] = "LOAD_FIELD_REF_S64",
-	[ FILTER_OP_LOAD_FIELD_REF_DOUBLE ] = "LOAD_FIELD_REF_DOUBLE",
+	[ BYTECODE_OP_LOAD_FIELD_REF ] = "LOAD_FIELD_REF",
+	[ BYTECODE_OP_LOAD_FIELD_REF_STRING ] = "LOAD_FIELD_REF_STRING",
+	[ BYTECODE_OP_LOAD_FIELD_REF_SEQUENCE ] = "LOAD_FIELD_REF_SEQUENCE",
+	[ BYTECODE_OP_LOAD_FIELD_REF_S64 ] = "LOAD_FIELD_REF_S64",
+	[ BYTECODE_OP_LOAD_FIELD_REF_DOUBLE ] = "LOAD_FIELD_REF_DOUBLE",
 
 	/* load from immediate operand */
-	[ FILTER_OP_LOAD_STRING ] = "LOAD_STRING",
-	[ FILTER_OP_LOAD_S64 ] = "LOAD_S64",
-	[ FILTER_OP_LOAD_DOUBLE ] = "LOAD_DOUBLE",
+	[ BYTECODE_OP_LOAD_STRING ] = "LOAD_STRING",
+	[ BYTECODE_OP_LOAD_S64 ] = "LOAD_S64",
+	[ BYTECODE_OP_LOAD_DOUBLE ] = "LOAD_DOUBLE",
 
 	/* cast */
-	[ FILTER_OP_CAST_TO_S64 ] = "CAST_TO_S64",
-	[ FILTER_OP_CAST_DOUBLE_TO_S64 ] = "CAST_DOUBLE_TO_S64",
-	[ FILTER_OP_CAST_NOP ] = "CAST_NOP",
+	[ BYTECODE_OP_CAST_TO_S64 ] = "CAST_TO_S64",
+	[ BYTECODE_OP_CAST_DOUBLE_TO_S64 ] = "CAST_DOUBLE_TO_S64",
+	[ BYTECODE_OP_CAST_NOP ] = "CAST_NOP",
 
 	/* get context ref */
-	[ FILTER_OP_GET_CONTEXT_REF ] = "GET_CONTEXT_REF",
-	[ FILTER_OP_GET_CONTEXT_REF_STRING ] = "GET_CONTEXT_REF_STRING",
-	[ FILTER_OP_GET_CONTEXT_REF_S64 ] = "GET_CONTEXT_REF_S64",
-	[ FILTER_OP_GET_CONTEXT_REF_DOUBLE ] = "GET_CONTEXT_REF_DOUBLE",
+	[ BYTECODE_OP_GET_CONTEXT_REF ] = "GET_CONTEXT_REF",
+	[ BYTECODE_OP_GET_CONTEXT_REF_STRING ] = "GET_CONTEXT_REF_STRING",
+	[ BYTECODE_OP_GET_CONTEXT_REF_S64 ] = "GET_CONTEXT_REF_S64",
+	[ BYTECODE_OP_GET_CONTEXT_REF_DOUBLE ] = "GET_CONTEXT_REF_DOUBLE",
 
 	/* load userspace field ref */
-	[ FILTER_OP_LOAD_FIELD_REF_USER_STRING ] = "LOAD_FIELD_REF_USER_STRING",
-	[ FILTER_OP_LOAD_FIELD_REF_USER_SEQUENCE ] = "LOAD_FIELD_REF_USER_SEQUENCE",
+	[ BYTECODE_OP_LOAD_FIELD_REF_USER_STRING ] = "LOAD_FIELD_REF_USER_STRING",
+	[ BYTECODE_OP_LOAD_FIELD_REF_USER_SEQUENCE ] = "LOAD_FIELD_REF_USER_SEQUENCE",
 
 	/*
 	 * load immediate star globbing pattern (literal string)
 	 * from immediate.
 	 */
-	[ FILTER_OP_LOAD_STAR_GLOB_STRING ] = "LOAD_STAR_GLOB_STRING",
+	[ BYTECODE_OP_LOAD_STAR_GLOB_STRING ] = "LOAD_STAR_GLOB_STRING",
 
 	/* globbing pattern binary operator: apply to */
-	[ FILTER_OP_EQ_STAR_GLOB_STRING ] = "EQ_STAR_GLOB_STRING",
-	[ FILTER_OP_NE_STAR_GLOB_STRING ] = "NE_STAR_GLOB_STRING",
+	[ BYTECODE_OP_EQ_STAR_GLOB_STRING ] = "EQ_STAR_GLOB_STRING",
+	[ BYTECODE_OP_NE_STAR_GLOB_STRING ] = "NE_STAR_GLOB_STRING",
 
 	/*
 	 * Instructions for recursive traversal through composed types.
 	 */
-	[ FILTER_OP_GET_CONTEXT_ROOT ] = "GET_CONTEXT_ROOT",
-	[ FILTER_OP_GET_APP_CONTEXT_ROOT ] = "GET_APP_CONTEXT_ROOT",
-	[ FILTER_OP_GET_PAYLOAD_ROOT ] = "GET_PAYLOAD_ROOT",
+	[ BYTECODE_OP_GET_CONTEXT_ROOT ] = "GET_CONTEXT_ROOT",
+	[ BYTECODE_OP_GET_APP_CONTEXT_ROOT ] = "GET_APP_CONTEXT_ROOT",
+	[ BYTECODE_OP_GET_PAYLOAD_ROOT ] = "GET_PAYLOAD_ROOT",
 
-	[ FILTER_OP_GET_SYMBOL ] = "GET_SYMBOL",
-	[ FILTER_OP_GET_SYMBOL_FIELD ] = "GET_SYMBOL_FIELD",
-	[ FILTER_OP_GET_INDEX_U16 ] = "GET_INDEX_U16",
-	[ FILTER_OP_GET_INDEX_U64 ] = "GET_INDEX_U64",
+	[ BYTECODE_OP_GET_SYMBOL ] = "GET_SYMBOL",
+	[ BYTECODE_OP_GET_SYMBOL_FIELD ] = "GET_SYMBOL_FIELD",
+	[ BYTECODE_OP_GET_INDEX_U16 ] = "GET_INDEX_U16",
+	[ BYTECODE_OP_GET_INDEX_U64 ] = "GET_INDEX_U64",
 
-	[ FILTER_OP_LOAD_FIELD ] = "LOAD_FIELD",
-	[ FILTER_OP_LOAD_FIELD_S8 ] = "LOAD_FIELD_S8",
-	[ FILTER_OP_LOAD_FIELD_S16 ] = "LOAD_FIELD_S16",
-	[ FILTER_OP_LOAD_FIELD_S32 ] = "LOAD_FIELD_S32",
-	[ FILTER_OP_LOAD_FIELD_S64 ] = "LOAD_FIELD_S64",
-	[ FILTER_OP_LOAD_FIELD_U8 ] = "LOAD_FIELD_U8",
-	[ FILTER_OP_LOAD_FIELD_U16 ] = "LOAD_FIELD_U16",
-	[ FILTER_OP_LOAD_FIELD_U32 ] = "LOAD_FIELD_U32",
-	[ FILTER_OP_LOAD_FIELD_U64 ] = "LOAD_FIELD_U64",
-	[ FILTER_OP_LOAD_FIELD_STRING ] = "LOAD_FIELD_STRING",
-	[ FILTER_OP_LOAD_FIELD_SEQUENCE ] = "LOAD_FIELD_SEQUENCE",
-	[ FILTER_OP_LOAD_FIELD_DOUBLE ] = "LOAD_FIELD_DOUBLE",
+	[ BYTECODE_OP_LOAD_FIELD ] = "LOAD_FIELD",
+	[ BYTECODE_OP_LOAD_FIELD_S8 ] = "LOAD_FIELD_S8",
+	[ BYTECODE_OP_LOAD_FIELD_S16 ] = "LOAD_FIELD_S16",
+	[ BYTECODE_OP_LOAD_FIELD_S32 ] = "LOAD_FIELD_S32",
+	[ BYTECODE_OP_LOAD_FIELD_S64 ] = "LOAD_FIELD_S64",
+	[ BYTECODE_OP_LOAD_FIELD_U8 ] = "LOAD_FIELD_U8",
+	[ BYTECODE_OP_LOAD_FIELD_U16 ] = "LOAD_FIELD_U16",
+	[ BYTECODE_OP_LOAD_FIELD_U32 ] = "LOAD_FIELD_U32",
+	[ BYTECODE_OP_LOAD_FIELD_U64 ] = "LOAD_FIELD_U64",
+	[ BYTECODE_OP_LOAD_FIELD_STRING ] = "LOAD_FIELD_STRING",
+	[ BYTECODE_OP_LOAD_FIELD_SEQUENCE ] = "LOAD_FIELD_SEQUENCE",
+	[ BYTECODE_OP_LOAD_FIELD_DOUBLE ] = "LOAD_FIELD_DOUBLE",
 
-	[ FILTER_OP_UNARY_BIT_NOT ] = "UNARY_BIT_NOT",
+	[ BYTECODE_OP_UNARY_BIT_NOT ] = "UNARY_BIT_NOT",
 
-	[ FILTER_OP_RETURN_S64 ] = "RETURN_S64",
+	[ BYTECODE_OP_RETURN_S64 ] = "RETURN_S64",
 };
 
-const char *print_op(enum filter_op op)
+const char *print_op(enum bytecode_op op)
 {
-	if (op >= NR_FILTER_OPS)
+	if (op >= NR_BYTECODE_OPS)
 		return "UNKNOWN";
 	else
 		return opnames[op];
@@ -193,7 +193,7 @@ int apply_field_reloc(const struct lttng_event_desc *event_desc,
 		uint32_t runtime_len,
 		uint32_t reloc_offset,
 		const char *field_name,
-		enum filter_op filter_op)
+		enum bytecode_op bytecode_op)
 {
 	const struct lttng_event_field *fields, *field = NULL;
 	unsigned int nr_fields, i;
@@ -251,8 +251,8 @@ int apply_field_reloc(const struct lttng_event_desc *event_desc,
 	/* set type */
 	op = (struct load_op *) &runtime->code[reloc_offset];
 
-	switch (filter_op) {
-	case FILTER_OP_LOAD_FIELD_REF:
+	switch (bytecode_op) {
+	case BYTECODE_OP_LOAD_FIELD_REF:
 	{
 		struct field_ref *field_ref;
 
@@ -261,19 +261,19 @@ int apply_field_reloc(const struct lttng_event_desc *event_desc,
 		case atype_integer:
 		case atype_enum:
 		case atype_enum_nestable:
-			op->op = FILTER_OP_LOAD_FIELD_REF_S64;
+			op->op = BYTECODE_OP_LOAD_FIELD_REF_S64;
 			break;
 		case atype_array:
 		case atype_array_nestable:
 		case atype_sequence:
 		case atype_sequence_nestable:
-			op->op = FILTER_OP_LOAD_FIELD_REF_SEQUENCE;
+			op->op = BYTECODE_OP_LOAD_FIELD_REF_SEQUENCE;
 			break;
 		case atype_string:
-			op->op = FILTER_OP_LOAD_FIELD_REF_STRING;
+			op->op = BYTECODE_OP_LOAD_FIELD_REF_STRING;
 			break;
 		case atype_float:
-			op->op = FILTER_OP_LOAD_FIELD_REF_DOUBLE;
+			op->op = BYTECODE_OP_LOAD_FIELD_REF_DOUBLE;
 			break;
 		default:
 			return -EINVAL;
@@ -293,7 +293,7 @@ int apply_context_reloc(struct bytecode_runtime *runtime,
 		uint32_t runtime_len,
 		uint32_t reloc_offset,
 		const char *context_name,
-		enum filter_op filter_op)
+		enum bytecode_op bytecode_op)
 {
 	struct load_op *op;
 	struct lttng_ctx_field *ctx_field;
@@ -327,8 +327,8 @@ int apply_context_reloc(struct bytecode_runtime *runtime,
 	ctx_field = &ctx->fields[idx];
 	op = (struct load_op *) &runtime->code[reloc_offset];
 
-	switch (filter_op) {
-	case FILTER_OP_GET_CONTEXT_REF:
+	switch (bytecode_op) {
+	case BYTECODE_OP_GET_CONTEXT_REF:
 	{
 		struct field_ref *field_ref;
 
@@ -337,7 +337,7 @@ int apply_context_reloc(struct bytecode_runtime *runtime,
 		case atype_integer:
 		case atype_enum:
 		case atype_enum_nestable:
-			op->op = FILTER_OP_GET_CONTEXT_REF_S64;
+			op->op = BYTECODE_OP_GET_CONTEXT_REF_S64;
 			break;
 			/* Sequence and array supported as string */
 		case atype_string:
@@ -345,13 +345,13 @@ int apply_context_reloc(struct bytecode_runtime *runtime,
 		case atype_array_nestable:
 		case atype_sequence:
 		case atype_sequence_nestable:
-			op->op = FILTER_OP_GET_CONTEXT_REF_STRING;
+			op->op = BYTECODE_OP_GET_CONTEXT_REF_STRING;
 			break;
 		case atype_float:
-			op->op = FILTER_OP_GET_CONTEXT_REF_DOUBLE;
+			op->op = BYTECODE_OP_GET_CONTEXT_REF_DOUBLE;
 			break;
 		case atype_dynamic:
-			op->op = FILTER_OP_GET_CONTEXT_REF;
+			op->op = BYTECODE_OP_GET_CONTEXT_REF;
 			break;
 		default:
 			return -EINVAL;
@@ -383,14 +383,14 @@ int apply_reloc(const struct lttng_event_desc *event_desc,
 
 	op = (struct load_op *) &runtime->code[reloc_offset];
 	switch (op->op) {
-	case FILTER_OP_LOAD_FIELD_REF:
+	case BYTECODE_OP_LOAD_FIELD_REF:
 		return apply_field_reloc(event_desc, runtime, runtime_len,
 			reloc_offset, name, op->op);
-	case FILTER_OP_GET_CONTEXT_REF:
+	case BYTECODE_OP_GET_CONTEXT_REF:
 		return apply_context_reloc(runtime, runtime_len,
 			reloc_offset, name, op->op);
-	case FILTER_OP_GET_SYMBOL:
-	case FILTER_OP_GET_SYMBOL_FIELD:
+	case BYTECODE_OP_GET_SYMBOL:
+	case BYTECODE_OP_GET_SYMBOL_FIELD:
 		/*
 		 * Will be handled by load specialize phase or
 		 * dynamically by interpreter.
@@ -469,23 +469,23 @@ int _lttng_filter_link_bytecode(const struct lttng_event_desc *event_desc,
 		next_offset = offset + sizeof(uint16_t) + strlen(name) + 1;
 	}
 	/* Validate bytecode */
-	ret = lttng_filter_validate_bytecode(runtime);
+	ret = lttng_bytecode_validate(runtime);
 	if (ret) {
 		goto link_error;
 	}
 	/* Specialize bytecode */
-	ret = lttng_filter_specialize_bytecode(event_desc, runtime);
+	ret = lttng_bytecode_specialize(event_desc, runtime);
 	if (ret) {
 		goto link_error;
 	}
-	runtime->p.filter = lttng_filter_interpret_bytecode;
+	runtime->p.filter = lttng_bytecode_filter_interpret;
 	runtime->p.link_failed = 0;
 	cds_list_add_rcu(&runtime->p.node, insert_loc);
 	dbg_printf("Linking successful.\n");
 	return 0;
 
 link_error:
-	runtime->p.filter = lttng_filter_interpret_bytecode_false;
+	runtime->p.filter = lttng_bytecode_filter_interpret_false;
 	runtime->p.link_failed = 1;
 	cds_list_add_rcu(&runtime->p.node, insert_loc);
 alloc_error:
@@ -498,9 +498,9 @@ void lttng_filter_sync_state(struct lttng_bytecode_runtime *runtime)
 	struct lttng_ust_bytecode_node *bc = runtime->bc;
 
 	if (!bc->enabler->enabled || runtime->link_failed)
-		runtime->filter = lttng_filter_interpret_bytecode_false;
+		runtime->filter = lttng_bytecode_filter_interpret_false;
 	else
-		runtime->filter = lttng_filter_interpret_bytecode;
+		runtime->filter = lttng_bytecode_filter_interpret;
 }
 
 /*

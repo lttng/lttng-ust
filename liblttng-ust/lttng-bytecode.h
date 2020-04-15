@@ -1,10 +1,10 @@
-#ifndef _LTTNG_FILTER_H
-#define _LTTNG_FILTER_H
+#ifndef _LTTNG_BYTECODE_H
+#define _LTTNG_BYTECODE_H
 
 /*
- * lttng-filter.h
+ * lttng-bytecode.h
  *
- * LTTng UST filter header.
+ * LTTng UST bytecode header.
  *
  * Copyright (C) 2010-2016 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
@@ -40,13 +40,13 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <usterr-signal-safe.h>
-#include "filter-bytecode.h"
+#include "bytecode.h"
 
-/* Filter stack length, in number of entries */
-#define FILTER_STACK_LEN	10	/* includes 2 dummy */
-#define FILTER_STACK_EMPTY	1
+/* Interpreter stack length, in number of entries */
+#define INTERPRETER_STACK_LEN	10	/* includes 2 dummy */
+#define INTERPRETER_STACK_EMPTY	1
 
-#define FILTER_MAX_DATA_LEN	65536
+#define BYTECODE_MAX_DATA_LEN	65536
 
 #ifndef min_t
 #define min_t(type, a, b)	\
@@ -124,7 +124,7 @@ enum object_type {
 	OBJECT_TYPE_DYNAMIC,
 };
 
-struct filter_get_index_data {
+struct bytecode_get_index_data {
 	uint64_t offset;	/* in bytes */
 	size_t ctx_index;
 	size_t array_len;
@@ -157,7 +157,7 @@ struct vstack_entry {
 
 struct vstack {
 	int top;	/* top of stack */
-	struct vstack_entry e[FILTER_STACK_LEN];
+	struct vstack_entry e[INTERPRETER_STACK_LEN];
 };
 
 static inline
@@ -185,7 +185,7 @@ struct vstack_entry *vstack_bx(struct vstack *stack)
 static inline
 int vstack_push(struct vstack *stack)
 {
-	if (stack->top >= FILTER_STACK_LEN - 1) {
+	if (stack->top >= INTERPRETER_STACK_LEN - 1) {
 		ERR("Stack full\n");
 		return -EINVAL;
 	}
@@ -243,7 +243,7 @@ struct estack_entry {
 
 struct estack {
 	int top;	/* top of stack */
-	struct estack_entry e[FILTER_STACK_LEN];
+	struct estack_entry e[INTERPRETER_STACK_LEN];
 };
 
 /*
@@ -260,13 +260,13 @@ struct estack {
  */
 #define estack_ax(stack, top)					\
 	({							\
-		assert((top) > FILTER_STACK_EMPTY);		\
+		assert((top) > INTERPRETER_STACK_EMPTY);	\
 		&(stack)->e[top];				\
 	})
 
 #define estack_bx(stack, top)					\
 	({							\
-		assert((top) > FILTER_STACK_EMPTY + 1);		\
+		assert((top) > INTERPRETER_STACK_EMPTY + 1);	\
 		&(stack)->e[(top) - 1];				\
 	})
 
@@ -275,7 +275,7 @@ struct estack {
  */
 #define estack_push(stack, top, ax, bx, ax_t, bx_t)		\
 	do {							\
-		assert((top) < FILTER_STACK_LEN - 1);		\
+		assert((top) < INTERPRETER_STACK_LEN - 1);	\
 		(stack)->e[(top) - 1].u.v = (bx);		\
 		(stack)->e[(top) - 1].type = (bx_t);		\
 		(bx) = (ax);					\
@@ -285,7 +285,7 @@ struct estack {
 
 #define estack_pop(stack, top, ax, bx, ax_t, bx_t)		\
 	do {							\
-		assert((top) > FILTER_STACK_EMPTY);		\
+		assert((top) > INTERPRETER_STACK_EMPTY);	\
 		(ax) = (bx);					\
 		(ax_t) = (bx_t);				\
 		(bx) = (stack)->e[(top) - 2].u.v;		\
@@ -329,15 +329,15 @@ struct lttng_interpreter_output {
 	} u;
 };
 
-const char *print_op(enum filter_op op);
+const char *print_op(enum bytecode_op op);
 
-int lttng_filter_validate_bytecode(struct bytecode_runtime *bytecode);
-int lttng_filter_specialize_bytecode(const struct lttng_event_desc *event_desc,
+int lttng_bytecode_validate(struct bytecode_runtime *bytecode);
+int lttng_bytecode_specialize(const struct lttng_event_desc *event_desc,
 		struct bytecode_runtime *bytecode);
 
-uint64_t lttng_filter_interpret_bytecode_false(void *filter_data,
+uint64_t lttng_bytecode_filter_interpret_false(void *filter_data,
 		const char *filter_stack_data);
-uint64_t lttng_filter_interpret_bytecode(void *filter_data,
+uint64_t lttng_bytecode_filter_interpret(void *filter_data,
 		const char *filter_stack_data);
 
-#endif /* _LTTNG_FILTER_H */
+#endif /* _LTTNG_BYTECODE_H */
