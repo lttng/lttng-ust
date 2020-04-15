@@ -20,11 +20,195 @@
 
 #define _LGPL_SOURCE
 
+#include <assert.h>
+#include <byteswap.h>
 #include <errno.h>
 #include <lttng/ust-events.h>
 #include <usterr-signal-safe.h>
 
+#include "../libmsgpack/msgpack.h"
+#include "lttng-bytecode.h"
 #include "share.h"
+
+static
+void capture_enum(struct lttng_msgpack_writer *writer,
+		struct lttng_interpreter_output *output) __attribute__ ((unused));
+static
+void capture_enum(struct lttng_msgpack_writer *writer,
+		struct lttng_interpreter_output *output)
+{
+	lttng_msgpack_begin_map(writer, 2);
+	lttng_msgpack_write_str(writer, "type");
+	lttng_msgpack_write_str(writer, "enum");
+
+	lttng_msgpack_write_str(writer, "value");
+
+	switch (output->type) {
+	case LTTNG_INTERPRETER_TYPE_SIGNED_ENUM:
+		lttng_msgpack_write_signed_integer(writer, output->u.s);
+		break;
+	case LTTNG_INTERPRETER_TYPE_UNSIGNED_ENUM:
+		lttng_msgpack_write_signed_integer(writer, output->u.u);
+		break;
+	default:
+		abort();
+	}
+
+	lttng_msgpack_end_map(writer);
+}
+
+static
+int64_t capture_sequence_element_signed(uint8_t *ptr,
+		const struct lttng_integer_type *type)
+{
+	int64_t value;
+	unsigned int size = type->size;
+	bool byte_order_reversed = type->reverse_byte_order;
+
+	switch (size) {
+	case 8:
+		value = *ptr;
+		break;
+	case 16:
+	{
+		int16_t tmp;
+		tmp = *(int16_t *) ptr;
+		if (byte_order_reversed)
+			tmp = bswap_16(tmp);
+
+		value = tmp;
+		break;
+	}
+	case 32:
+	{
+		int32_t tmp;
+		tmp = *(int32_t *) ptr;
+		if (byte_order_reversed)
+			tmp = bswap_32(tmp);
+
+		value = tmp;
+		break;
+	}
+	case 64:
+	{
+		int64_t tmp;
+		tmp = *(int64_t *) ptr;
+		if (byte_order_reversed)
+			tmp = bswap_64(tmp);
+
+		value = tmp;
+		break;
+	}
+	default:
+		abort();
+	}
+
+	return value;
+}
+
+static
+uint64_t capture_sequence_element_unsigned(uint8_t *ptr,
+		const struct lttng_integer_type *type)
+{
+	uint64_t value;
+	unsigned int size = type->size;
+	bool byte_order_reversed = type->reverse_byte_order;
+
+	switch (size) {
+	case 8:
+		value = *ptr;
+		break;
+	case 16:
+	{
+		uint16_t tmp;
+		tmp = *(uint16_t *) ptr;
+		if (byte_order_reversed)
+			tmp = bswap_16(tmp);
+
+		value = tmp;
+		break;
+	}
+	case 32:
+	{
+		uint32_t tmp;
+		tmp = *(uint32_t *) ptr;
+		if (byte_order_reversed)
+			tmp = bswap_32(tmp);
+
+		value = tmp;
+		break;
+	}
+	case 64:
+	{
+		uint64_t tmp;
+		tmp = *(uint64_t *) ptr;
+		if (byte_order_reversed)
+			tmp = bswap_64(tmp);
+
+		value = tmp;
+		break;
+	}
+	default:
+		abort();
+	}
+
+	return value;
+}
+
+static
+void capture_sequence(struct lttng_msgpack_writer *writer,
+		struct lttng_interpreter_output *output) __attribute__ ((unused));
+static
+void capture_sequence(struct lttng_msgpack_writer *writer,
+		struct lttng_interpreter_output *output)
+{
+	const struct lttng_integer_type *integer_type;
+	const struct lttng_type *nested_type;
+	uint8_t *ptr;
+	bool signedness;
+	int i;
+
+	lttng_msgpack_begin_array(writer, output->u.sequence.nr_elem);
+
+	ptr = (uint8_t *) output->u.sequence.ptr;
+	nested_type = output->u.sequence.nested_type;
+	switch (nested_type->atype) {
+	case atype_integer:
+		integer_type = &nested_type->u.integer;
+		break;
+	case atype_enum:
+		/* Treat enumeration as an integer. */
+		integer_type = &nested_type->u.enum_nestable.container_type->u.integer;
+		break;
+	default:
+		/* Capture of array of non-integer are not supported. */
+		abort();
+	}
+	signedness = integer_type->signedness;
+	for (i = 0; i < output->u.sequence.nr_elem; i++) {
+		if (signedness) {
+			lttng_msgpack_write_signed_integer(writer,
+				capture_sequence_element_signed(ptr, integer_type));
+		} else {
+			lttng_msgpack_write_unsigned_integer(writer,
+				capture_sequence_element_unsigned(ptr, integer_type));
+		}
+
+		/*
+		 * We assume that alignment is smaller or equal to the size.
+		 * This currently holds true but if it changes in the future,
+		 * we will want to change the pointer arithmetics below to
+		 * take into account that the next element might be further
+		 * away.
+		 */
+		assert(integer_type->alignment <= integer_type->size);
+
+		/* Size is in number of bits. */
+		ptr += (integer_type->size / CHAR_BIT) ;
+	}
+
+	lttng_msgpack_end_array(writer);
+}
 
 void lttng_event_notifier_notification_send(
 		struct lttng_event_notifier *event_notifier)
