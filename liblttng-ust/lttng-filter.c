@@ -536,11 +536,12 @@ void lttng_enabler_event_link_bytecode(struct lttng_event *event,
 
 		/*
 		 * Insert at specified priority (seqnum) in increasing
-		 * order.
+		 * order. If there already is a bytecode of the same priority,
+		 * insert the new bytecode right after it.
 		 */
 		cds_list_for_each_entry_reverse(runtime,
 				&event->bytecode_runtime_head, node) {
-			if (runtime->bc->bc.seqnum < bc->bc.seqnum) {
+			if (runtime->bc->bc.seqnum <= bc->bc.seqnum) {
 				/* insert here */
 				insert_loc = &runtime->node;
 				goto add_within;
