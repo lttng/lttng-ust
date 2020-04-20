@@ -459,6 +459,12 @@ enum lttng_filter_ret {
 	/* Other bits are kept for future use. */
 };
 
+/*
+ * This structure is used in the probes. More specifically, the `filter` and
+ * `node` fields are explicity used in the probes. When modifying this
+ * structure we must not change the layout of these two fields as it is
+ * considered ABI.
+ */
 struct lttng_bytecode_runtime {
 	/* Associated bytecode */
 	struct lttng_ust_filter_bytecode_node *bc;
