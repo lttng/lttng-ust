@@ -44,6 +44,17 @@
 #endif
 
 /*
+ * g++ 4.8 and prior do not support C99 compound literals. Therefore,
+ * force allocating those on the heap with these C++ compilers.
+ */
+#if defined (__cplusplus) && defined (__GNUC__) && \
+	(__GNUC__ < 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ <= 8))
+# ifndef LTTNG_ALLOCATE_COMPOUND_LITERAL_ON_HEAP
+#  define LTTNG_ALLOCATE_COMPOUND_LITERAL_ON_HEAP
+# endif
+#endif
+
+/*
  * Compound literals with static storage are needed by LTTng.
  * Compound literals are part of the C99 and C11 standards, but not
  * part of the C++ standards. However, those are supported by both g++ and
