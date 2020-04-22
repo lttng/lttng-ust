@@ -22,20 +22,20 @@ JARFILE_COMMON=lttng-ust-agent-common.jar
 
 # Check if the top level makefile overrides the JUL Jar file's path.
 ifeq "$(JAVA_CLASSPATH_OVERRIDE_JUL)" ""
-	CLASSPATH=/usr/local/share/java/$(JARFILE_JUL):/usr/share/java/$(JARFILE_JUL)
+	JUL_CP = /usr/local/share/java/$(JARFILE_JUL):/usr/share/java/$(JARFILE_JUL)
 else
-	CLASSPATH=$(JAVA_CLASSPATH_OVERRIDE_JUL)/$(JARFILE_JUL)
+	JUL_CP = $(JAVA_CLASSPATH_OVERRIDE_JUL)/$(JARFILE_JUL)
 endif
 
 # Check if the top level makefile overrides the Common Jar file's path.
 ifeq "$(JAVA_CLASSPATH_OVERRIDE_COMMON)" ""
-	CLASSPATH:=$(CLASSPATH):/usr/local/share/java/$(JARFILE_COMMON):/usr/share/java/$(JARFILE_COMMON)
+	COMMON_CP = /usr/local/share/java/$(JARFILE_COMMON):/usr/share/java/$(JARFILE_COMMON)
 else
-	CLASSPATH:=$(CLASSPATH):$(JAVA_CLASSPATH_OVERRIDE_COMMON)/$(JARFILE_COMMON)
+	COMMON_CP = $(JAVA_CLASSPATH_OVERRIDE_COMMON)/$(JARFILE_COMMON)
 endif
 
 JFLAGS = -g
-JC = javac -classpath "$(CLASSPATH):."
+JC = javac -classpath "$(CLASSPATH):$(JUL_CP):$(COMMON_CP):."
 .SUFFIXES: .java .class
 .java.class:
 	$(JC) $(JFLAGS) $*.java
