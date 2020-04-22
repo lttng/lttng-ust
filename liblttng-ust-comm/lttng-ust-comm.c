@@ -779,7 +779,7 @@ ssize_t count_one_type(const struct lttng_type *lt)
 		return 1;
 	case atype_struct:
 		return count_fields_recursive(lt->u.legacy._struct.nr_fields,
-				lt->u.legacy._struct.fields);
+				lt->u.legacy._struct.fields) + 1;
 	case atype_enum_nestable:
 		return count_one_type(lt->u.enum_nestable.container_type) + 1;
 	case atype_array_nestable:
@@ -788,7 +788,7 @@ ssize_t count_one_type(const struct lttng_type *lt)
 		return count_one_type(lt->u.sequence_nestable.elem_type) + 1;
 	case atype_struct_nestable:
 		return count_fields_recursive(lt->u.struct_nestable.nr_fields,
-				lt->u.struct_nestable.fields);
+				lt->u.struct_nestable.fields) + 1;
 
 	case atype_dynamic:
 	{
@@ -801,10 +801,10 @@ ssize_t count_one_type(const struct lttng_type *lt)
 		if (ret)
 			return ret;
 		/*
-		 * One field for enum, one field for variant, and
+		 * Two fields for enum, one field for variant, and
 		 * one field per choice.
 		 */
-		return count_fields_recursive(nr_choices, choices) + 2;
+		return count_fields_recursive(nr_choices, choices) + 3;
 	}
 
 	default:
