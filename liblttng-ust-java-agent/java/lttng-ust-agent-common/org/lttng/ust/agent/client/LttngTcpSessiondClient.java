@@ -133,11 +133,31 @@ public class LttngTcpSessiondClient implements Runnable {
 				handleSessiondCmd();
 			} catch (UnknownHostException uhe) {
 				uhe.printStackTrace();
+				/*
+				 * Terminate agent thread.
+				 */
+				close();
 			} catch (IOException ioe) {
+				/*
+				 * I/O exception may have been triggered by a session daemon
+				 * closing the socket. Close our own socket and
+				 * retry connecting after a delay.
+				 */
 				try {
+					if (this.sessiondSock != null) {
+						this.sessiondSock.close();
+					}
 					Thread.sleep(3000);
 				} catch (InterruptedException e) {
-					e.printStackTrace();
+					/*
+					 * Retry immediately if sleep is interrupted.
+					 */
+				} catch (IOException closeioe) {
+					closeioe.printStackTrace();
+					/*
+					 * Terminate agent thread.
+					 */
+					close();
 				}
 			}
 		}
