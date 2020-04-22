@@ -367,7 +367,7 @@ public class LttngTcpSessiondClient implements Runnable {
 		int bytesLeft = data.length;
 		int bytesOffset = 0;
 
-		while (bytesLeft != 0) {
+		while (bytesLeft >= 0) {
 			int bytesRead = this.inFromSessiond.read(data, bytesOffset, bytesLeft);
 
 			if (bytesRead < 0) {
@@ -396,7 +396,7 @@ public class LttngTcpSessiondClient implements Runnable {
 			return null;
 		}
 
-		while (bytesLeft != 0) {
+		while (bytesLeft >= 0) {
 			int bytesRead = inFromSessiond.read(payload, bytesOffset, bytesLeft);
 
 			if (bytesRead < 0) {
