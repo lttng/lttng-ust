@@ -24,6 +24,7 @@ autom4te.cache/
 /include/lttng/ust-version.h
 /include/lttng/ust-config.h
 /config.h.in
+/config/ar-lib
 /config/compile
 /config/config.guess
 /config/config.sub
@@ -44,6 +45,7 @@ config.status
 /stamp-h1
 /libtool
 lttng-ust.pc
+lttng-ust-ctl.pc
 
 ustctl/ustctl
 ust-consumerd/ust-consumerd
@@ -64,6 +66,7 @@ doc/man/lttng-ust-dl.3
 doc/man/lttng-ust.3
 doc/man/tracef.3
 doc/man/tracelog.3
+doc/man/vtracef.3
 
 tests/hello/hello
 tests/hello-many/hello-many
