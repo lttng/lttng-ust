@@ -131,12 +131,12 @@ all-local:
 	done; \
 	if [ x"$(SUBDIRS_JUL)" != x"" ]; then \
 		for subdir in $(SUBDIRS_JUL); do \
-			(cd $$subdir && $(MAKE) JAVA_CLASSPATH_OVERRIDE_JUL="../../../liblttng-ust-java-agent/java/lttng-ust-agent-jul" JAVA_CLASSPATH_OVERRIDE_COMMON="../../../liblttng-ust-java-agent/java/lttng-ust-agent-common" $(AM_MAKEFLAGS) all && cd ..) || exit 1; \
+			(cd $$subdir && $(MAKE) CLASSPATH="$(CLASSPATH)" JAVA_CLASSPATH_OVERRIDE_JUL="../../../liblttng-ust-java-agent/java/lttng-ust-agent-jul" JAVA_CLASSPATH_OVERRIDE_COMMON="../../../liblttng-ust-java-agent/java/lttng-ust-agent-common" $(AM_MAKEFLAGS) all && cd ..) || exit 1; \
 		done; \
 	fi; \
 	if [ x"$(SUBDIRS_LOG4J)" != x"" ]; then \
 		for subdir in $(SUBDIRS_LOG4J); do \
-			(cd $$subdir && $(MAKE) JAVA_CLASSPATH_OVERRIDE_LOG4J="../../../liblttng-ust-java-agent/java/lttng-ust-agent-log4j" JAVA_CLASSPATH_OVERRIDE_COMMON="../../../liblttng-ust-java-agent/java/lttng-ust-agent-common" $(AM_MAKEFLAGS) all && cd ..) || exit 1; \
+			(cd $$subdir && $(MAKE) CLASSPATH="$(CLASSPATH)" JAVA_CLASSPATH_OVERRIDE_LOG4J="../../../liblttng-ust-java-agent/java/lttng-ust-agent-log4j" JAVA_CLASSPATH_OVERRIDE_COMMON="../../../liblttng-ust-java-agent/java/lttng-ust-agent-common" $(AM_MAKEFLAGS) all && cd ..) || exit 1; \
 		done; \
 	fi; \
 	if [ x"$(SUBDIRS_CMAKE)" != x"" ]; then \

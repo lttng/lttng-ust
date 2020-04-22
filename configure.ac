@@ -360,6 +360,7 @@ AS_IF([test "x$jni_interface" = "xyes" || test "x$java_agent_jul" = "xyes" || te
 	AX_PROG_JAVAC
 	AX_PROG_JAVA
 	AX_PROG_JAR
+	AC_ARG_VAR([CLASSPATH], [Java class path])
 
 	AX_JNI_INCLUDE_DIR
 	for JNI_INCLUDE_DIR in $JNI_INCLUDE_DIRS

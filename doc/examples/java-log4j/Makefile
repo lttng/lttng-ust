@@ -22,7 +22,7 @@ JARFILE_COMMON=lttng-ust-agent-common.jar
 
 # If system classpath is empty, try to guess log4j location
 ifeq "$(CLASSPATH)" ""
-	CLASSPATH="/usr/local/share/java/log4j.jar:/usr/share/java/log4j.jar"
+	CLASSPATH=/usr/local/share/java/log4j.jar:/usr/share/java/log4j.jar
 endif
 
 # Check if the top level makefile overrides the Log4j Jar file's path.
