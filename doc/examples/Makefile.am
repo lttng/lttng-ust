@@ -147,6 +147,7 @@ all-local:
 			( \
 				cd $$subdir && \
 				$(MAKE) all \
+					CLASSPATH="$(CLASSPATH)" \
 					JAVA_CLASSPATH_OVERRIDE_JUL="../../../liblttng-ust-java-agent/java/lttng-ust-agent-jul" \
 					JAVA_CLASSPATH_OVERRIDE_COMMON="../../../liblttng-ust-java-agent/java/lttng-ust-agent-common" \
 					$(AM_MAKEFLAGS) \
@@ -158,6 +159,7 @@ all-local:
 			( \
 				cd $$subdir && \
 				$(MAKE) all \
+					CLASSPATH="$(CLASSPATH)" \
 					JAVA_CLASSPATH_OVERRIDE_LOG4J="../../../liblttng-ust-java-agent/java/lttng-ust-agent-log4j" \
 					JAVA_CLASSPATH_OVERRIDE_COMMON="../../../liblttng-ust-java-agent/java/lttng-ust-agent-common" \
 					$(AM_MAKEFLAGS) \
