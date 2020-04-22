@@ -27,20 +27,20 @@ endif
 
 # Check if the top level makefile overrides the Log4j Jar file's path.
 ifeq "$(JAVA_CLASSPATH_OVERRIDE_LOG4J)" ""
-	CLASSPATH:=$(CLASSPATH):/usr/local/share/java/$(JARFILE_LOG4J):/usr/share/java/$(JARFILE_LOG4J)
+	LOG4J_CP = /usr/local/share/java/$(JARFILE_LOG4J):/usr/share/java/$(JARFILE_LOG4J)
 else
-	CLASSPATH:=$(CLASSPATH):$(JAVA_CLASSPATH_OVERRIDE_LOG4J)/$(JARFILE_LOG4J)
+	LOG4J_CP = $(JAVA_CLASSPATH_OVERRIDE_LOG4J)/$(JARFILE_LOG4J)
 endif
 
 # Check if the top level makefile overrides the Common Jar file's path.
 ifeq "$(JAVA_CLASSPATH_OVERRIDE_COMMON)" ""
-	CLASSPATH:=$(CLASSPATH):/usr/local/share/java/$(JARFILE_COMMON):/usr/share/java/$(JARFILE_COMMON)
+	COMMON_CP = /usr/local/share/java/$(JARFILE_COMMON):/usr/share/java/$(JARFILE_COMMON)
 else
-	CLASSPATH:=$(CLASSPATH):$(JAVA_CLASSPATH_OVERRIDE_COMMON)/$(JARFILE_COMMON)
+	COMMON_CP = $(JAVA_CLASSPATH_OVERRIDE_COMMON)/$(JARFILE_COMMON)
 endif
 
 JFLAGS = -g
-JC = javac -classpath "$(CLASSPATH):."
+JC = javac -classpath "$(CLASSPATH):$(LOG4J_CP):$(COMMON_CP):."
 .SUFFIXES: .java .class
 .java.class:
 	$(JC) $(JFLAGS) $*.java
