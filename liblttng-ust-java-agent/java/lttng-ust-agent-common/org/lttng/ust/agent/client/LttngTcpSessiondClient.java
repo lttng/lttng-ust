@@ -364,10 +364,17 @@ public class LttngTcpSessiondClient implements Runnable {
 	 */
 	private SessiondCommandHeader recvHeader() throws IOException {
 		byte data[] = new byte[SessiondCommandHeader.HEADER_SIZE];
+		int bytesLeft = data.length;
+		int bytesOffset = 0;
 
-		int readLen = this.inFromSessiond.read(data, 0, data.length);
-		if (readLen != data.length) {
-			throw new IOException();
+		while (bytesLeft != 0) {
+			int bytesRead = this.inFromSessiond.read(data, bytesOffset, bytesLeft);
+
+			if (bytesRead < 0) {
+				throw new IOException();
+			}
+			bytesLeft -= bytesRead;
+			bytesOffset += bytesRead;
 		}
 		return new SessiondCommandHeader(data);
 	}
@@ -381,15 +388,22 @@ public class LttngTcpSessiondClient implements Runnable {
 	 */
 	private byte[] recvPayload(SessiondCommandHeader headerCmd) throws IOException {
 		byte payload[] = new byte[(int) headerCmd.getDataSize()];
+		int bytesLeft = payload.length;
+		int bytesOffset = 0;
 
 		/* Failsafe check so we don't waste our time reading 0 bytes. */
-		if (payload.length == 0) {
+		if (bytesLeft == 0) {
 			return null;
 		}
 
-		int read = inFromSessiond.read(payload, 0, payload.length);
-		if (read != payload.length) {
-			throw new IOException("Unexpected number of bytes read in sessiond command payload");
+		while (bytesLeft != 0) {
+			int bytesRead = inFromSessiond.read(payload, bytesOffset, bytesLeft);
+
+			if (bytesRead < 0) {
+				throw new IOException();
+			}
+			bytesLeft -= bytesRead;
+			bytesOffset += bytesRead;
 		}
 		return payload;
 	}
