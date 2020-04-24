@@ -24,6 +24,8 @@
  * SOFTWARE.
  */
 
+#include <assert.h>
+
 #define lttng_ust_notrace __attribute__((no_instrument_function))
 #define LTTNG_PACKED	__attribute__((__packed__))
 
@@ -69,6 +71,33 @@
 #define __LTTNG_COMPOUND_LITERAL(type, ...)	new (type) __VA_ARGS__
 #else
 #define __LTTNG_COMPOUND_LITERAL(type, ...)	(type[]) { __VA_ARGS__ }
+#endif
+
+/*
+ * Compile time assertion.
+ * - predicate: boolean expression to evaluate,
+ * - msg: string to print to the user on failure when `static_assert()` is
+ *   supported,
+ * - c_identifier_msg: message to be included in the typedef to emulate a
+ *   static assertion. This parameter must be a valid C identifier as it will
+ *   be used as a typedef name.
+ */
+#if defined (__cplusplus) || __STDC_VERSION__ >= 201112L
+#define lttng_static_assert(predicate, msg, c_identifier_msg)  \
+	static_assert(predicate, msg)
+#else
+/*
+ * Evaluates the predicate and emit a compilation error on failure.
+ *
+ * If the predicate evaluates to true, this macro emits a typedef of an array
+ * of size 0.
+ *
+ * If the predicate evaluates to false, this macro emits a typedef of an array
+ * of negative size which is invalid in C and forces a compiler error. The msg
+ * parameter is used in the tentative typedef so it is printed to the user.
+ */
+#define lttng_static_assert(predicate, msg, c_identifier_msg)  \
+    typedef char lttng_static_assert_##c_identifier_msg[2*!!(predicate)-1];
 #endif
 
 #endif /* _LTTNG_UST_COMPILER_H */
