@@ -27,6 +27,13 @@
  * SOFTWARE.
  */
 
+#include <stdint.h>
+
+#if defined (__cplusplus)
+#include <type_traits>
+#endif
+
+#include <lttng/ust-compiler.h>
 #include <lttng/ust-config.h>
 #include <lttng/ust-version.h>
 
@@ -46,5 +53,30 @@
 #endif
 
 #define lttng_is_signed_type(type)           ((type) -1 < (type) 0)
+
+/*
+ * This macro adds a compilation assertion that CTF arrays and sequences
+ * declared by the users are of an integral type.
+ */
+
+#if defined(__cplusplus)
+#define _lttng_is_integer(type) (std::is_integral<type>::value)
+#else
+#define _lttng_is_integer(type) (__builtin_types_compatible_p(type, _Bool) || \
+		__builtin_types_compatible_p(type, char) || \
+		__builtin_types_compatible_p(type, int8_t) || \
+		__builtin_types_compatible_p(type, uint8_t) || \
+		__builtin_types_compatible_p(type, int16_t) || \
+		__builtin_types_compatible_p(type, uint16_t) || \
+		__builtin_types_compatible_p(type, int32_t) || \
+		__builtin_types_compatible_p(type, uint32_t) || \
+		__builtin_types_compatible_p(type, int64_t) || \
+		__builtin_types_compatible_p(type, uint64_t))
+#endif
+
+#define _lttng_array_element_type_is_supported(_type, _item) \
+		lttng_static_assert(_lttng_is_integer(_type), \
+			"Non-integer type `" #_item "` not supported as element of CTF_ARRAY or CTF_SEQUENCE", \
+			Non_integer_type__##_item##__not_supported_as_element_of_CTF_ARRAY_or_CTF_SEQUENCE);
 
 #endif /* _LTTNG_UST_TRACER_H */

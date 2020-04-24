@@ -216,6 +216,36 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 		_values							\
 		ctf_enum_value("", 0)	/* Dummy, 0-len array forbidden by C99. */ \
 	};
+#include TRACEPOINT_INCLUDE
+
+/*
+ * Stage 0.9.1
+ * Verifying array and sequence elements are of an integer type.
+ */
+
+/* Reset all macros within TRACEPOINT_EVENT */
+#include <lttng/ust-tracepoint-event-reset.h>
+#include <lttng/ust-tracepoint-event-write.h>
+#include <lttng/ust-tracepoint-event-nowrite.h>
+
+#undef _ctf_array_encoded
+#define _ctf_array_encoded(_type, _item, _src, _byte_order,	\
+			_length, _encoding, _nowrite,		\
+			_elem_type_base)			\
+	_lttng_array_element_type_is_supported(_type, _item)
+
+#undef _ctf_sequence_encoded
+#define _ctf_sequence_encoded(_type, _item, _src, _byte_order,	\
+			_length_type, _src_length, _encoding, _nowrite, \
+			_elem_type_base)			\
+	_lttng_array_element_type_is_supported(_type, _item)
+
+#undef TP_FIELDS
+#define TP_FIELDS(...) __VA_ARGS__	/* Only one used in this phase */
+
+#undef TRACEPOINT_EVENT_CLASS
+#define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	\
+		_fields
 
 #include TRACEPOINT_INCLUDE
 
