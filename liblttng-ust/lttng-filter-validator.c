@@ -1301,6 +1301,9 @@ int exec_insn(struct bytecode_runtime *bytecode,
 		switch (vstack_ax(stack)->type) {
 		case REG_S64:
 		case REG_U64:
+		case REG_DOUBLE:
+		case REG_STRING:
+		case REG_PTR:
 		case REG_UNKNOWN:
 			break;
 		default:
