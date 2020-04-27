@@ -878,7 +878,7 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 		__event_prepare_filter_stack__##_provider##___##_name(__stackvar.__filter_stack_data, \
 			_TP_ARGS_DATA_VAR(_args));			      \
 		tp_list_for_each_entry_rcu(__filter_bc_runtime, &__event->filter_bytecode_runtime_head, node) { \
-			if (caa_unlikely(__filter_bc_runtime->filter(__filter_bc_runtime,	      \
+			if (caa_unlikely(__filter_bc_runtime->interpreter_funcs.filter(__filter_bc_runtime,     \
 					__stackvar.__filter_stack_data) & LTTNG_INTERPRETER_RECORD_FLAG)) { \
 				__filter_record = 1;			      \
 				break;					      \
@@ -960,7 +960,7 @@ void __event_notifier_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))
 		__event_prepare_filter_stack__##_provider##___##_name(__stackvar.__filter_stack_data, \
 			_TP_ARGS_DATA_VAR(_args));			      \
 		tp_list_for_each_entry_rcu(__filter_bc_runtime, &__event_notifier->filter_bytecode_runtime_head, node) { \
-			if (caa_unlikely(__filter_bc_runtime->filter(__filter_bc_runtime,	     \
+			if (caa_unlikely(__filter_bc_runtime->interpreter_funcs.filter(__filter_bc_runtime,	  \
 					__stackvar.__filter_stack_data) & LTTNG_INTERPRETER_RECORD_FLAG)) \
 				__filter_record = 1;			      \
 		}							      \

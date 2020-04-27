@@ -478,14 +478,29 @@ int _lttng_filter_link_bytecode(const struct lttng_event_desc *event_desc,
 	if (ret) {
 		goto link_error;
 	}
-	runtime->p.filter = lttng_bytecode_filter_interpret;
+
+	switch (bytecode->type) {
+	case LTTNG_UST_BYTECODE_NODE_TYPE_FILTER:
+		runtime->p.interpreter_funcs.filter = lttng_bytecode_filter_interpret;
+		break;
+	default:
+		abort();
+	}
+
 	runtime->p.link_failed = 0;
 	cds_list_add_rcu(&runtime->p.node, insert_loc);
 	dbg_printf("Linking successful.\n");
 	return 0;
 
 link_error:
-	runtime->p.filter = lttng_bytecode_filter_interpret_false;
+	switch (bytecode->type) {
+	case LTTNG_UST_BYTECODE_NODE_TYPE_FILTER:
+		runtime->p.interpreter_funcs.filter = lttng_bytecode_filter_interpret_false;
+		break;
+	default:
+		abort();
+	}
+
 	runtime->p.link_failed = 1;
 	cds_list_add_rcu(&runtime->p.node, insert_loc);
 alloc_error:
@@ -498,9 +513,9 @@ void lttng_bytecode_filter_sync_state(struct lttng_bytecode_runtime *runtime)
 	struct lttng_ust_bytecode_node *bc = runtime->bc;
 
 	if (!bc->enabler->enabled || runtime->link_failed)
-		runtime->filter = lttng_bytecode_filter_interpret_false;
+		runtime->interpreter_funcs.filter = lttng_bytecode_filter_interpret_false;
 	else
-		runtime->filter = lttng_bytecode_filter_interpret;
+		runtime->interpreter_funcs.filter = lttng_bytecode_filter_interpret;
 }
 
 /*
