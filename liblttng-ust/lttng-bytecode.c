@@ -421,7 +421,7 @@ int bytecode_is_linked(struct lttng_ust_bytecode_node *bytecode,
  * bytecode runtime.
  */
 static
-int _lttng_filter_link_bytecode(const struct lttng_event_desc *event_desc,
+int link_bytecode(const struct lttng_event_desc *event_desc,
 		struct lttng_ctx **ctx,
 		struct lttng_ust_bytecode_node *bytecode,
 		struct cds_list_head *insert_loc)
@@ -565,8 +565,7 @@ void lttng_enabler_link_bytecode(const struct lttng_event_desc *event_desc,
 		insert_loc = bytecode_runtime_head;
 	add_within:
 		dbg_printf("linking bytecode\n");
-		ret = _lttng_filter_link_bytecode(event_desc, ctx, bc,
-			insert_loc);
+		ret = link_bytecode(event_desc, ctx, bc, insert_loc);
 		if (ret) {
 			dbg_printf("[lttng filter] warning: cannot link event bytecode\n");
 		}
