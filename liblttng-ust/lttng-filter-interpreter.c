@@ -454,6 +454,7 @@ static int dynamic_get_index(struct lttng_ctx *ctx,
 		stack_top->u.ptr.object_type = gid->elem.type;
 		stack_top->u.ptr.type = LOAD_OBJECT;
 		stack_top->u.ptr.field = gid->field;
+		stack_top->u.ptr.rev_bo = gid->elem.rev_bo;
 		break;
 	}
 
