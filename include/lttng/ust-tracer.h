@@ -27,8 +27,6 @@
  * SOFTWARE.
  */
 
-#include <stdint.h>
-
 #if defined (__cplusplus)
 #include <type_traits>
 #endif
@@ -64,14 +62,15 @@
 #else
 #define _lttng_is_integer(type) (__builtin_types_compatible_p(type, _Bool) || \
 		__builtin_types_compatible_p(type, char) || \
-		__builtin_types_compatible_p(type, int8_t) || \
-		__builtin_types_compatible_p(type, uint8_t) || \
-		__builtin_types_compatible_p(type, int16_t) || \
-		__builtin_types_compatible_p(type, uint16_t) || \
-		__builtin_types_compatible_p(type, int32_t) || \
-		__builtin_types_compatible_p(type, uint32_t) || \
-		__builtin_types_compatible_p(type, int64_t) || \
-		__builtin_types_compatible_p(type, uint64_t))
+		__builtin_types_compatible_p(type, unsigned char) || \
+		__builtin_types_compatible_p(type, short) || \
+		__builtin_types_compatible_p(type, unsigned short) || \
+		__builtin_types_compatible_p(type, int) || \
+		__builtin_types_compatible_p(type, unsigned int) || \
+		__builtin_types_compatible_p(type, long) || \
+		__builtin_types_compatible_p(type, unsigned long) || \
+		__builtin_types_compatible_p(type, long long) || \
+		__builtin_types_compatible_p(type, unsigned long long))
 #endif
 
 #define _lttng_array_element_type_is_supported(_type, _item) \
