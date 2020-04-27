@@ -59,6 +59,7 @@
 
 #include "tracepoint-internal.h"
 #include "string-utils.h"
+#include "lttng-bytecode.h"
 #include "lttng-tracer.h"
 #include "lttng-tracer-core.h"
 #include "lttng-ust-statedump.h"
@@ -1635,7 +1636,7 @@ void lttng_session_sync_event_enablers(struct lttng_session *session)
 		/* Enable filters */
 		cds_list_for_each_entry(runtime,
 				&event->filter_bytecode_runtime_head, node) {
-			lttng_filter_sync_state(runtime);
+			lttng_bytecode_filter_sync_state(runtime);
 		}
 	}
 	__tracepoint_probe_prune_release_queue();
@@ -1816,7 +1817,7 @@ void lttng_event_notifier_group_sync_enablers(struct lttng_event_notifier_group 
 		/* Enable filters */
 		cds_list_for_each_entry(runtime,
 				&event_notifier->filter_bytecode_runtime_head, node) {
-			lttng_filter_sync_state(runtime);
+			lttng_bytecode_filter_sync_state(runtime);
 		}
 	}
 	__tracepoint_probe_prune_release_queue();
