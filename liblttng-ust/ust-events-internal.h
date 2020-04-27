@@ -150,16 +150,16 @@ int lttng_event_enabler_attach_exclusion(struct lttng_event_enabler *enabler,
 		struct lttng_ust_excluder_node *excluder);
 
 /*
- * Synchronize bytecodes for the enabler and the event.
+ * Synchronize bytecodes for the enabler and the instance (event or trigger).
  *
- * This function goes over all bytecode programs of the event enabler to ensure
- * each is linked to the provided event.
+ * This function goes over all bytecode programs of the enabler (event or
+ * trigger enabler) to ensure each is linked to the provided instance.
  */
 LTTNG_HIDDEN
 void lttng_enabler_link_bytecode(const struct lttng_event_desc *event_desc,
 		struct lttng_ctx **ctx,
-		struct cds_list_head *bytecode_runtime_head,
-		struct lttng_enabler *enabler);
+		struct cds_list_head *instance_bytecode_runtime_head,
+		struct cds_list_head *enabler_bytecode_runtime_head);
 
 /*
  * Allocate and initialize a `struct lttng_event_notifier_group` object.
