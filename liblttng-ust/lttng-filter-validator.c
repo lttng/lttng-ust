@@ -35,6 +35,7 @@
 #include "lttng-filter.h"
 #include "lttng-hash-helper.h"
 #include "string-utils.h"
+#include "ust-events-internal.h"
 
 /*
  * Number of merge points for hash table size. Hash table initialized to

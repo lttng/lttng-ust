@@ -44,6 +44,26 @@ struct lttng_event_enabler {
 	struct lttng_ctx *ctx;
 };
 
+struct lttng_ust_filter_bytecode_node {
+	struct cds_list_head node;
+	struct lttng_enabler *enabler;
+	/*
+	 * struct lttng_ust_filter_bytecode has var. sized array, must
+	 * be last field.
+	 */
+	struct lttng_ust_filter_bytecode bc;
+};
+
+struct lttng_ust_excluder_node {
+	struct cds_list_head node;
+	struct lttng_enabler *enabler;
+	/*
+	 * struct lttng_ust_event_exclusion had variable sized array,
+	 * must be last field.
+	 */
+	struct lttng_ust_event_exclusion excluder;
+};
+
 static inline
 struct lttng_enabler *lttng_event_enabler_as_enabler(
 		struct lttng_event_enabler *event_enabler)

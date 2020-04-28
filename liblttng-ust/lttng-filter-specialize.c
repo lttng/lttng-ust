@@ -30,6 +30,7 @@
 
 #include "lttng-filter.h"
 #include <lttng/align.h>
+#include "ust-events-internal.h"
 
 static int lttng_fls(int val)
 {

@@ -424,25 +424,6 @@ struct lttng_ust_field_list {
 struct ust_pending_probe;
 struct lttng_event;
 
-struct lttng_ust_filter_bytecode_node {
-	struct cds_list_head node;
-	struct lttng_enabler *enabler;
-	/*
-	 * struct lttng_ust_filter_bytecode has var. sized array, must
-	 * be last field.
-	 */
-	struct lttng_ust_filter_bytecode bc;
-};
-
-struct lttng_ust_excluder_node {
-	struct cds_list_head node;
-	struct lttng_enabler *enabler;
-	/*
-	 * struct lttng_ust_event_exclusion had variable sized array,
-	 * must be last field.
-	 */
-	struct lttng_ust_event_exclusion excluder;
-};
 /*
  * Filter return value masks.
  */
@@ -807,6 +788,8 @@ void lttng_ust_fixup_fd_tracker_tls(void);
 
 /* For backward compatibility. Leave those exported symbols in place. */
 extern struct lttng_ctx *lttng_static_ctx;
+struct lttng_ust_filter_bytecode_node;
+struct lttng_ust_excluder_node;
 void lttng_context_init(void);
 void lttng_context_exit(void);
 void lttng_filter_event_link_bytecode(struct lttng_event *event);
