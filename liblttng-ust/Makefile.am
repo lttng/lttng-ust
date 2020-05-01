@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-only
+
 AM_CFLAGS += -I$(srcdir) -fno-strict-aliasing
 
 noinst_LTLIBRARIES = liblttng-ust-runtime.la liblttng-ust-support.la

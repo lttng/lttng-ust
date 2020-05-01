@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+
 import lttngust
 import logging
 import time

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-only
+
 # Use setup.py for the installation instead of Autoconf.
 # This ease the installation process and assure a *pythonic*
 # installation.

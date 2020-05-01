@@ -1,4 +1,6 @@
 #!/bin/sh
+#
+# SPDX-License-Identifier: MIT
 
 # launch with: run-getcpu-override progname args
 

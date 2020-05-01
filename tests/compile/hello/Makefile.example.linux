@@ -1,4 +1,6 @@
-# Example makefile for build outside of the LTTng-UST tree.
+# SPDX-License-Identifier: LGPL-2.1-only
+#
+# Example makefile to build outside of the LTTng-UST tree.
 
 hello:
 	${CC} -O2 -I. -o hello -ldl -llttng-ust hello.c tp.c

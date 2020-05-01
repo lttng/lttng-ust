@@ -1,5 +1,6 @@
 #!/bin/bash
-
+#
+# SPDX-License-Identifier: MIT
 #
 # The -cp path should be changed to the lttng ust JUL jar file on your system
 # or locally to the project. Same goes for the Java library path in order to

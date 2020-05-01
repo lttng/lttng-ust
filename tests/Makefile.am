@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-only
+
 SUBDIRS = utils unit compile benchmark
 
 LOG_DRIVER_FLAGS='--merge'

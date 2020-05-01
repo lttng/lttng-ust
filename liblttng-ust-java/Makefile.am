@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-only
+
 JAVAROOT = .
 jarfile = liblttng-ust-java.jar
 jardir = $(datadir)/java

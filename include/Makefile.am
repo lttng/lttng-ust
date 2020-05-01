@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-only
+
 nobase_include_HEADERS = \
 	lttng/tracepoint.h \
 	lttng/tracepoint-rcu.h \

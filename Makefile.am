@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-only
+
 ACLOCAL_AMFLAGS = -I m4
 
 SUBDIRS = . include snprintf libringbuffer liblttng-ust-comm \
@@ -38,16 +40,18 @@ pkgconfig_DATA = lttng-ust.pc lttng-ust-ctl.pc
 
 dist_doc_DATA = \
 	ChangeLog \
-	COPYING \
 	LICENSE \
 	README.md
 
 dist_noinst_DATA = \
 	CodingStyle \
 	CONTRIBUTING.md \
-	gpl-2.0.txt \
-	lgpl-2.1.txt \
-	mit-license.txt
+	LICENSES/BSD-2-Clause \
+	LICENSES/BSD-3-Clause \
+	LICENSES/GPL-2.0 \
+	LICENSES/GPL-3.0 \
+	LICENSES/LGPL-2.1 \
+	LICENSES/MIT
 
 check-loop:
 	cd tests && $(MAKE) $(AM_MAKEFLAGS) check-loop

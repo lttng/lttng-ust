@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-only
+
 AM_CPPFLAGS += -I$(builddir) -I$(srcdir) $(JNI_CPPFLAGS)
 
 lib_LTLIBRARIES = liblttng-ust-context-jni.la

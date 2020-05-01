@@ -1,3 +1,7 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
+
 /* ust/config.h.in. Manually generated for control over the contained defs. */
 
 /* Use efficient unaligned access. */

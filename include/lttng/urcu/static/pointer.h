@@ -1,33 +1,17 @@
-#ifndef _LTTNG_URCU_POINTER_STATIC_H
-#define _LTTNG_URCU_POINTER_STATIC_H
-
 /*
- * lttng/urcu/static/pointer.h
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * Copyright (c) 2009 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+ * Copyright (c) 2009 Paul E. McKenney, IBM Corporation.
  *
  * Userspace RCU header. Operations on pointers.
  *
  * TO BE INCLUDED ONLY IN CODE THAT IS TO BE RECOMPILED ON EACH LIBURCU
  * RELEASE. See urcu.h for linking dynamically with the userspace rcu library.
- *
- * Copyright (c) 2009 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
- * Copyright (c) 2009 Paul E. McKenney, IBM Corporation.
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- *
- * IBM's contributions to this file may be relicensed under LGPLv2 or later.
  */
+
+#ifndef _LTTNG_URCU_POINTER_STATIC_H
+#define _LTTNG_URCU_POINTER_STATIC_H
 
 #include <urcu/compiler.h>
 #include <urcu/arch.h>

@@ -1,8 +1,8 @@
-#ifndef _LTTNG_UST_URCU_H
-#define _LTTNG_UST_URCU_H
-
 /*
- * urcu-ust.h
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * Copyright (c) 2009 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+ * Copyright (c) 2009 Paul E. McKenney, IBM Corporation.
  *
  * Userspace RCU header for LTTng-UST. Derived from liburcu
  * "bulletproof" flavor.
@@ -10,30 +10,14 @@
  * Slower RCU read-side adapted for tracing library. Does not require thread
  * registration nor unregistration. Also signal-safe.
  *
- * Copyright (c) 2009 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
- * Copyright (c) 2009 Paul E. McKenney, IBM Corporation.
- *
  * LGPL-compatible code should include this header with :
  *
  * #define _LGPL_SOURCE
  * #include <lttng/urcu-ust.h>
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- *
- * IBM's contributions to this file may be relicensed under LGPLv2 or later.
  */
+
+#ifndef _LTTNG_UST_URCU_H
+#define _LTTNG_UST_URCU_H
 
 #include <stdlib.h>
 #include <pthread.h>

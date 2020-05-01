@@ -1,15 +1,8 @@
+# SPDX-License-Identifier: MIT
+#
 # Copyright (C) 2011-2012  Matthew Khouzam <matthew.khouzam@ericsson.com>
 # Copyright (C) 2012  Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
 # Copyright (C) 2012  Yannick Brosseau <yannick.brosseau@gmail.com>
-#
-# THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
-# OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
-#
-# Permission is hereby granted to use or copy this program for any
-# purpose,  provided the above notices are retained on all copies.
-# Permission to modify the code and to distribute modified code is
-# granted, provided the above notices are retained, and a notice that
-# the code was modified is included with the above copyright notice.
 #
 # This makefile is not using automake so that people can see how to make
 # simply. It builds a program with a statically embedded tracepoint

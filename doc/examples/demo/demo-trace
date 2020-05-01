@@ -1,4 +1,6 @@
 #!/bin/sh
+#
+# SPDX-License-Identifier: MIT
 
 DIR=$(dirname "$0")
 DIR=$(readlink -f "$DIR")

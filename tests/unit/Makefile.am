@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-only
+
 SUBDIRS = \
 	gcc-weak-hidden \
 	libmsgpack \

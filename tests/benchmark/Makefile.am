@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-only
+
 AM_CPPFLAGS += -I$(srcdir) -Wsystem-headers
 
 noinst_PROGRAMS = bench1 bench2

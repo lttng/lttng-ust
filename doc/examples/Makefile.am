@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-only
+
 doc_examplesdir = ${docdir}/examples
 doc_examples_easy_ustdir = ${docdir}/examples/easy-ust
 doc_examples_gen_tpdir = ${docdir}/examples/gen-tp

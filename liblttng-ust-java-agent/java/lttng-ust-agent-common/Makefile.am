@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-only
+
 JAVAROOT = .
 
 pkgpath = org/lttng/ust/agent

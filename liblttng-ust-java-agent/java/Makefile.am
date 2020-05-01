@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-only
+
 SUBDIRS = lttng-ust-agent-common lttng-ust-agent-all
 
 if BUILD_JAVA_AGENT_WITH_JUL

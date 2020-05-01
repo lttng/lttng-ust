@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: LGPL-2.1-only
 
 TEST_DIR=$(dirname "$0")
 "${TEST_DIR}/ust-elf" "@abs_top_srcdir@/tests/unit/ust-elf"

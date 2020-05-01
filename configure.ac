@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-only
+
 dnl Version infos
 m4_define([V_MAJOR], [2])
 m4_define([V_MINOR], [13])

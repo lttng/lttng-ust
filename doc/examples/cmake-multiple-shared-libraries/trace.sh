@@ -1,4 +1,6 @@
 #!/bin/bash
+#
+# SPDX-License-Identifier: MIT
 
 lttng create
 lttng enable-event -u 'gydle_om:*'

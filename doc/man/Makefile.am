@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-only
+
 # Man pages are only built if they are enabled at configure time.
 #
 # They should always be built before creating a distribution tarball.
