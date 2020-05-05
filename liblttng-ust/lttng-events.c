@@ -920,6 +920,9 @@ int lttng_enabler_ref_events(struct lttng_enabler *enabler)
 	struct lttng_session *session = enabler->chan->session;
 	struct lttng_event *event;
 
+	if (!enabler->enabled)
+		goto end;
+
 	/* First ensure that probe events are created for this enabler. */
 	lttng_create_event_if_missing(enabler);
 
@@ -951,6 +954,7 @@ int lttng_enabler_ref_events(struct lttng_enabler *enabler)
 
 		/* TODO: merge event context. */
 	}
+end:
 	return 0;
 }
 
