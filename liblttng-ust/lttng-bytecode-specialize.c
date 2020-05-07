@@ -155,6 +155,10 @@ static int specialize_load_field(struct vstack_entry *stack_top,
 		if (!stack_top->load.rev_bo)
 			insn->op = BYTECODE_OP_LOAD_FIELD_S64;
 		break;
+	case OBJECT_TYPE_SIGNED_ENUM:
+		dbg_printf("op load field signed enumeration\n");
+		stack_top->type = REG_PTR;
+		break;
 	case OBJECT_TYPE_U8:
 		dbg_printf("op load field u8\n");
 		stack_top->type = REG_U64;
@@ -177,6 +181,10 @@ static int specialize_load_field(struct vstack_entry *stack_top,
 		stack_top->type = REG_U64;
 		if (!stack_top->load.rev_bo)
 			insn->op = BYTECODE_OP_LOAD_FIELD_U64;
+		break;
+	case OBJECT_TYPE_UNSIGNED_ENUM:
+		dbg_printf("op load field unsigned enumeration\n");
+		stack_top->type = REG_PTR;
 		break;
 	case OBJECT_TYPE_DOUBLE:
 		stack_top->type = REG_DOUBLE;
@@ -416,9 +424,9 @@ static int specialize_load_object(const struct lttng_event_field *field,
 			itype = &field->type.u.enum_nestable.container_type->u.integer;
 		}
 		if (itype->signedness)
-			load->object_type = OBJECT_TYPE_S64;
+			load->object_type = OBJECT_TYPE_SIGNED_ENUM;
 		else
-			load->object_type = OBJECT_TYPE_U64;
+			load->object_type = OBJECT_TYPE_UNSIGNED_ENUM;
 		load->rev_bo = false;
 		break;
 	}

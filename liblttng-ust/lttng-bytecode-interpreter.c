@@ -267,11 +267,11 @@ static int context_get_index(struct lttng_ctx *ctx,
 		}
 		ctx_field->get_value(ctx_field, &v);
 		if (itype->signedness) {
-			ptr->object_type = OBJECT_TYPE_S64;
+			ptr->object_type = OBJECT_TYPE_SIGNED_ENUM;
 			ptr->u.s64 = v.u.s64;
 			ptr->ptr = &ptr->u.s64;
 		} else {
-			ptr->object_type = OBJECT_TYPE_U64;
+			ptr->object_type = OBJECT_TYPE_UNSIGNED_ENUM;
 			ptr->u.u64 = v.u.s64;	/* Cast. */
 			ptr->ptr = &ptr->u.u64;
 		}
@@ -523,6 +523,18 @@ static int dynamic_load_field(struct estack_entry *stack_top)
 		stack_top->type = REG_S64;
 		break;
 	}
+	case OBJECT_TYPE_SIGNED_ENUM:
+	{
+		int64_t tmp;
+
+		dbg_printf("op load field signed enumeration\n");
+		tmp = *(int64_t *) stack_top->u.ptr.ptr;
+		if (stack_top->u.ptr.rev_bo)
+			tmp = bswap_64(tmp);
+		stack_top->u.v = tmp;
+		stack_top->type = REG_S64;
+		break;
+	}
 	case OBJECT_TYPE_U8:
 		dbg_printf("op load field u8\n");
 		stack_top->u.v = *(uint8_t *) stack_top->u.ptr.ptr;
@@ -557,6 +569,18 @@ static int dynamic_load_field(struct estack_entry *stack_top)
 		uint64_t tmp;
 
 		dbg_printf("op load field u64\n");
+		tmp = *(uint64_t *) stack_top->u.ptr.ptr;
+		if (stack_top->u.ptr.rev_bo)
+			tmp = bswap_64(tmp);
+		stack_top->u.v = tmp;
+		stack_top->type = REG_U64;
+		break;
+	}
+	case OBJECT_TYPE_UNSIGNED_ENUM:
+	{
+		uint64_t tmp;
+
+		dbg_printf("op load field unsigned enumeration\n");
 		tmp = *(uint64_t *) stack_top->u.ptr.ptr;
 		if (stack_top->u.ptr.rev_bo)
 			tmp = bswap_64(tmp);
@@ -682,6 +706,20 @@ again:
 			output->u.sequence.ptr = *(const char **) (ax->u.ptr.ptr + sizeof(unsigned long));
 			output->u.sequence.nr_elem = ax->u.ptr.field->type.u.array_nestable.length;
 			output->u.sequence.nested_type = ax->u.ptr.field->type.u.array_nestable.elem_type;
+			break;
+		case OBJECT_TYPE_SIGNED_ENUM:
+			ret = dynamic_load_field(ax);
+			if (ret)
+				return ret;
+			output->type = LTTNG_INTERPRETER_TYPE_SIGNED_ENUM;
+			output->u.s = ax->u.v;
+			break;
+		case OBJECT_TYPE_UNSIGNED_ENUM:
+			ret = dynamic_load_field(ax);
+			if (ret)
+				return ret;
+			output->type = LTTNG_INTERPRETER_TYPE_UNSIGNED_ENUM;
+			output->u.u = ax->u.v;
 			break;
 		case OBJECT_TYPE_STRUCT:
 		case OBJECT_TYPE_VARIANT:
