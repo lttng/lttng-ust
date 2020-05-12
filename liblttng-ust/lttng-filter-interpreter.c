@@ -164,7 +164,7 @@ int stack_strcmp(struct estack *stack, int top, const char *cmp_type)
 uint64_t lttng_filter_false(void *filter_data,
 		const char *filter_stack_data)
 {
-	return 0;
+	return LTTNG_FILTER_DISCARD;
 }
 
 #ifdef INTERPRETER_USE_SWITCH
@@ -793,7 +793,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			goto end;
 
 		OP(FILTER_OP_RETURN):
-			/* LTTNG_FILTER_DISCARD  or LTTNG_FILTER_RECORD_FLAG */
+			/* LTTNG_FILTER_DISCARD or LTTNG_FILTER_RECORD_FLAG */
 			/* Handle dynamic typing. */
 			switch (estack_ax_t) {
 			case REG_S64:
@@ -810,7 +810,7 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 			goto end;
 
 		OP(FILTER_OP_RETURN_S64):
-			/* LTTNG_FILTER_DISCARD  or LTTNG_FILTER_RECORD_FLAG */
+			/* LTTNG_FILTER_DISCARD or LTTNG_FILTER_RECORD_FLAG */
 			retval = !!estack_ax_v;
 			ret = 0;
 			goto end;
@@ -2367,9 +2367,9 @@ uint64_t lttng_filter_interpret_bytecode(void *filter_data,
 
 	END_OP
 end:
-	/* return 0 (discard) on error */
+	/* Return _DISCARD on error. */
 	if (ret)
-		return 0;
+		return LTTNG_FILTER_DISCARD;
 	return retval;
 }
 
