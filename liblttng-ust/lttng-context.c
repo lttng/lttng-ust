@@ -31,6 +31,8 @@
 #include <string.h>
 #include <assert.h>
 
+#include "context-internal.h"
+
 /*
  * The filter implementation requires that two consecutive "get" for the
  * same context performed by the same thread return the same result.
@@ -400,7 +402,7 @@ field_error:
 	return ret;
 }
 
-int lttng_session_context_init(struct lttng_ctx **ctx)
+int lttng_context_init_all(struct lttng_ctx **ctx)
 {
 	int ret;
 
@@ -516,4 +518,9 @@ void lttng_context_init(void)
 
 void lttng_context_exit(void)
 {
+}
+
+int lttng_session_context_init(struct lttng_ctx **ctx)
+{
+	return 0;
 }

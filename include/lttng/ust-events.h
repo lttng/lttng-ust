@@ -712,8 +712,6 @@ int lttng_channel_disable(struct lttng_channel *channel);
 int lttng_attach_context(struct lttng_ust_context *context_param,
 		union ust_args *uargs,
 		struct lttng_ctx **ctx, struct lttng_session *session);
-int lttng_session_context_init(struct lttng_ctx **ctx);
-
 void lttng_transport_register(struct lttng_transport *transport);
 void lttng_transport_unregister(struct lttng_transport *transport);
 
@@ -850,6 +848,8 @@ int lttng_enabler_attach_exclusion(struct lttng_enabler *enabler,
 void lttng_enabler_event_link_bytecode(struct lttng_event *event,
 		struct lttng_enabler *enabler);
 void lttng_filter_sync_state(struct lttng_bytecode_runtime *runtime);
+int lttng_session_context_init(struct lttng_ctx **ctx);
+
 
 #ifdef __cplusplus
 }

@@ -63,6 +63,7 @@
 #include "lttng-tracer.h"
 #include "lttng-tracer-core.h"
 #include "lttng-ust-statedump.h"
+#include "context-internal.h"
 #include "ust-events-internal.h"
 #include "wait.h"
 #include "../libringbuffer/shm.h"
@@ -154,7 +155,7 @@ struct lttng_session *lttng_session_create(void)
 	session = zmalloc(sizeof(struct lttng_session));
 	if (!session)
 		return NULL;
-	if (lttng_session_context_init(&session->ctx)) {
+	if (lttng_context_init_all(&session->ctx)) {
 		free(session);
 		return NULL;
 	}
@@ -178,6 +179,12 @@ struct lttng_event_notifier_group *lttng_event_notifier_group_create(void)
 	event_notifier_group = zmalloc(sizeof(struct lttng_event_notifier_group));
 	if (!event_notifier_group)
 		return NULL;
+
+	/* Add all contexts. */
+	if (lttng_context_init_all(&event_notifier_group->ctx)) {
+		free(event_notifier_group);
+		return NULL;
+	}
 
 	CDS_INIT_LIST_HEAD(&event_notifier_group->enablers_head);
 	CDS_INIT_LIST_HEAD(&event_notifier_group->event_notifiers_head);

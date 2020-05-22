@@ -60,6 +60,7 @@ liblttng_ust_runtime_la_SOURCES = \
 	lttng-ust-statedump-provider.h \
 	ust_lib.c \
 	ust_lib.h \
+	context-internal.h \
 	context-provider-internal.h \
 	tracepoint-internal.h \
 	ust-events-internal.h \
