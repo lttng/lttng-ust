@@ -240,16 +240,16 @@ void test_get_value(struct lttng_ctx_field *field,
 		value->u.s64 = -64;
 		break;
 	case LTTNG_UST_DYNAMIC_TYPE_U8:
-		value->u.s64 = 8;
+		value->u.u64 = 8;
 		break;
 	case LTTNG_UST_DYNAMIC_TYPE_U16:
-		value->u.s64 = 16;
+		value->u.u64 = 16;
 		break;
 	case LTTNG_UST_DYNAMIC_TYPE_U32:
-		value->u.s64 = 32;
+		value->u.u64 = 32;
 		break;
 	case LTTNG_UST_DYNAMIC_TYPE_U64:
-		value->u.s64 = 64;
+		value->u.u64 = 64;
 		break;
 	case LTTNG_UST_DYNAMIC_TYPE_FLOAT:
 		value->u.d = 22322.0;

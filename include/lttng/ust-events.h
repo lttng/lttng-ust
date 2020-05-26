@@ -315,6 +315,7 @@ struct lttng_ctx_value {
 	enum lttng_ust_dynamic_type sel;
 	union {
 		int64_t s64;
+		uint64_t u64;
 		const char *str;
 		double d;
 	} u;

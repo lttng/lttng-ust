@@ -345,12 +345,25 @@ static int context_get_index(struct lttng_ctx *ctx,
 		switch (v.sel) {
 		case LTTNG_UST_DYNAMIC_TYPE_NONE:
 			return -EINVAL;
+		case LTTNG_UST_DYNAMIC_TYPE_U8:
+		case LTTNG_UST_DYNAMIC_TYPE_U16:
+		case LTTNG_UST_DYNAMIC_TYPE_U32:
+		case LTTNG_UST_DYNAMIC_TYPE_U64:
+			ptr->object_type = OBJECT_TYPE_U64;
+			ptr->u.u64 = v.u.u64;
+			ptr->ptr = &ptr->u.u64;
+			dbg_printf("context get index dynamic u64 %" PRIi64 "\n", ptr->u.u64);
+			break;
+		case LTTNG_UST_DYNAMIC_TYPE_S8:
+		case LTTNG_UST_DYNAMIC_TYPE_S16:
+		case LTTNG_UST_DYNAMIC_TYPE_S32:
 		case LTTNG_UST_DYNAMIC_TYPE_S64:
 			ptr->object_type = OBJECT_TYPE_S64;
 			ptr->u.s64 = v.u.s64;
 			ptr->ptr = &ptr->u.s64;
 			dbg_printf("context get index dynamic s64 %" PRIi64 "\n", ptr->u.s64);
 			break;
+		case LTTNG_UST_DYNAMIC_TYPE_FLOAT:
 		case LTTNG_UST_DYNAMIC_TYPE_DOUBLE:
 			ptr->object_type = OBJECT_TYPE_DOUBLE;
 			ptr->u.d = v.u.d;
