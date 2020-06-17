@@ -564,6 +564,7 @@ AC_CONFIG_FILES([
 AC_CONFIG_LINKS([
 	python-lttngust/lttngust/agent.py:python-lttngust/lttngust/agent.py
 	python-lttngust/lttngust/cmd.py:python-lttngust/lttngust/cmd.py
+	python-lttngust/lttngust/compat.py:python-lttngust/lttngust/compat.py
 	python-lttngust/lttngust/debug.py:python-lttngust/lttngust/debug.py
 	python-lttngust/lttngust/loghandler.py:python-lttngust/lttngust/loghandler.py
 ])
