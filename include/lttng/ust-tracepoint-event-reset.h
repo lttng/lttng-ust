@@ -22,11 +22,11 @@
 
 /* Define to "nothing" all macros used for TRACEPOINT_EVENT */
 
-#undef TRACEPOINT_EVENT_CLASS
-#define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)
+#undef _TRACEPOINT_EVENT_CLASS
+#define _TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)
 
-#undef TRACEPOINT_EVENT_INSTANCE
-#define TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)
+#undef _TRACEPOINT_EVENT_INSTANCE
+#define _TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)
 
 #undef TRACEPOINT_ENUM
 #define TRACEPOINT_ENUM(_provider, _name, _values)
