@@ -35,9 +35,24 @@
 #include <lttng/ust-compiler.h>
 
 #ifdef LTTNG_UST_HAVE_SDT_INTEGRATION
-#define SDT_USE_VARIADIC
+/*
+ * Instead of using SDT_USE_VARIADIC from 'sys/sdt.h', use our own namespaced
+ * macros since the instrumented application might already have included
+ * 'sys/sdt.h' without variadic support.
+ */
 #include <sys/sdt.h>
-#define LTTNG_STAP_PROBEV STAP_PROBEV
+
+#define _LTTNG_SDT_NARG(...) \
+	__LTTNG_SDT_NARG(__VA_ARGS__, 12,11,10,9,8,7,6,5,4,3,2,1,0)
+
+#define __LTTNG_SDT_NARG(_0,_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12, N, ...) N
+
+#define _LTTNG_SDT_PROBE_N(provider, name, N, ...) \
+	_SDT_PROBE(provider, name, N, (__VA_ARGS__))
+
+#define LTTNG_STAP_PROBEV(provider, name, ...) \
+	_LTTNG_SDT_PROBE_N(provider, name, _LTTNG_SDT_NARG(0, ##__VA_ARGS__), ##__VA_ARGS__)
+
 #else
 #define LTTNG_STAP_PROBEV(...)
 #endif
