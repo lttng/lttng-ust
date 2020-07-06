@@ -818,6 +818,10 @@ The following man:namespaces(7) context fields are supported by LTTng-UST:
     Process IDs namespace: inode number of the current
     man:pid_namespaces(7) in the proc filesystem.
 
+`time_ns`::
+    Time and system clock namespace: inode number of the current
+    man:time_namespaces(7) in the proc filesystem.
+
 `user_ns`::
     User and group IDs namespace: inode number of the current
     man:user_namespaces(7) in the proc filesystem.

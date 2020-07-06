@@ -434,6 +434,7 @@ void lttng_ust_fixup_tls(void)
 	lttng_fixup_cgroup_ns_tls();
 	lttng_fixup_ipc_ns_tls();
 	lttng_fixup_net_ns_tls();
+	lttng_fixup_time_ns_tls();
 	lttng_fixup_uts_ns_tls();
 }
 
@@ -2065,6 +2066,7 @@ void ust_context_ns_reset(void)
 	lttng_context_mnt_ns_reset();
 	lttng_context_net_ns_reset();
 	lttng_context_user_ns_reset();
+	lttng_context_time_ns_reset();
 	lttng_context_uts_ns_reset();
 }
 

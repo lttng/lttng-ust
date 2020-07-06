@@ -1145,6 +1145,8 @@ int lttng_attach_context(struct lttng_ust_context *context_param,
 		return lttng_add_net_ns_to_ctx(ctx);
 	case LTTNG_UST_CONTEXT_PID_NS:
 		return lttng_add_pid_ns_to_ctx(ctx);
+	case LTTNG_UST_CONTEXT_TIME_NS:
+		return lttng_add_time_ns_to_ctx(ctx);
 	case LTTNG_UST_CONTEXT_USER_NS:
 		return lttng_add_user_ns_to_ctx(ctx);
 	case LTTNG_UST_CONTEXT_UTS_NS:

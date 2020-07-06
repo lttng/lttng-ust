@@ -454,6 +454,11 @@ int lttng_session_context_init(struct lttng_ctx **ctx)
 		WARN("Cannot add context lttng_add_pid_ns_to_ctx");
 		goto error;
 	}
+	ret = lttng_add_time_ns_to_ctx(ctx);
+	if (ret) {
+		WARN("Cannot add context lttng_add_time_ns_to_ctx");
+		goto error;
+	}
 	ret = lttng_add_user_ns_to_ctx(ctx);
 	if (ret) {
 		WARN("Cannot add context lttng_add_user_ns_to_ctx");

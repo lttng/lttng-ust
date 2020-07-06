@@ -38,6 +38,7 @@ liblttng_ust_runtime_la_SOURCES = \
 	lttng-context-mnt-ns.c \
 	lttng-context-net-ns.c \
 	lttng-context-pid-ns.c \
+	lttng-context-time-ns.c \
 	lttng-context-user-ns.c \
 	lttng-context-uts-ns.c \
 	lttng-context-vuid.c \
