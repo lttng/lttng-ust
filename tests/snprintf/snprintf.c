@@ -38,5 +38,5 @@ int main()
 	sprintf(test_desc, test_desc_fmt_str, escaped_test_fmt_str);
 	ok(strcmp(buf, expected) == 0, test_desc);
 
-	return 0;
+	return exit_status();
 }

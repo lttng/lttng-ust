@@ -166,5 +166,5 @@ int main(int argc, char **argv)
 		AARCH64_BE_CRC);
 	test_pic(test_dir);
 
-	return EXIT_SUCCESS;
+	return exit_status();
 }
