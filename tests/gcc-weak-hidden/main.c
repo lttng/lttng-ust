@@ -82,5 +82,6 @@ int main()
 		"Weak-hidden behavior is the same for 4 bytes integer and pointer objects within main program");
 	ok(match_matrix[MATCH_LIB_INT] == match_matrix[MATCH_LIB_PTR],
 		"Weak-hidden behavior is the same for 4 bytes integer and pointer objects within shared library");
-	return 0;
+
+	return exit_status();
 }
