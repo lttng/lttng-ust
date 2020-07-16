@@ -74,11 +74,6 @@ tests/hello/hello
 tests/hello-many/hello-many
 tests/hello.cxx/hello
 tests/same_line_tracepoint/same_line_tracepoint
-tests/ust-basic-tracing/ust-basic-tracing
-tests/ust-multi-test/ust-multi-test
-tests/trace_event/trace_event_test
-tests/tracepoint/benchmark/tracepoint_benchmark
-tests/tracepoint/tracepoint_test
 tests/snprintf/test_snprintf
 tests/ust-elf/ust-elf
 tests/ust-elf/test_ust_elf
