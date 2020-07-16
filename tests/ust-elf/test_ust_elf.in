@@ -1,4 +1,0 @@
-#!/bin/sh
-
-TEST_DIR=$(dirname "$0")
-"${TEST_DIR}/ust-elf" "@abs_top_srcdir@/tests/ust-elf"

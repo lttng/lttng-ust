@@ -70,19 +70,19 @@ doc/man/tracef.3
 doc/man/tracelog.3
 doc/man/vtracef.3
 
-tests/hello/hello
-tests/hello-many/hello-many
-tests/hello.cxx/hello
-tests/same_line_tracepoint/same_line_tracepoint
-tests/snprintf/test_snprintf
-tests/ust-elf/ust-elf
-tests/ust-elf/test_ust_elf
 tests/benchmark/bench1
 tests/benchmark/bench2
-tests/ctf-types/ctf-types
-tests/test-app-ctx/hello
-tests/gcc-weak-hidden/test_gcc_weak_hidden
-tests/pthread_name/test_pthread_name
+tests/compile/ctf-types/ctf-types
+tests/compile/hello.cxx/hello
+tests/compile/hello/hello
+tests/compile/hello-many/hello-many
+tests/compile/same_line_tracepoint/same_line_tracepoint
+tests/compile/test-app-ctx/hello
+tests/unit/gcc-weak-hidden/test_gcc_weak_hidden
+tests/unit/pthread_name/test_pthread_name
+tests/unit/snprintf/test_snprintf
+tests/unit/ust-elf/test_ust_elf
+tests/unit/ust-elf/ust-elf
 
 # Java agent library
 *.class

@@ -1,18 +1,14 @@
-SUBDIRS = utils hello same_line_tracepoint snprintf benchmark ust-elf \
-		ctf-types test-app-ctx gcc-weak-hidden hello-many pthread_name
-
-if CXX_WORKS
-SUBDIRS += hello.cxx
-endif
+SUBDIRS = utils unit compile benchmark
 
 LOG_DRIVER_FLAGS='--merge'
 LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 	$(top_srcdir)/config/tap-driver.sh
 
-TESTS = snprintf/test_snprintf \
-	ust-elf/test_ust_elf \
-	gcc-weak-hidden/test_gcc_weak_hidden \
-	pthread_name/test_pthread_name
+TESTS = \
+	unit/gcc-weak-hidden/test_gcc_weak_hidden \
+	unit/pthread_name/test_pthread_name \
+	unit/snprintf/test_snprintf \
+	unit/ust-elf/test_ust_elf
 
 EXTRA_DIST = README
 

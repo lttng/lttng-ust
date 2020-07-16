@@ -566,18 +566,20 @@ AC_CONFIG_FILES([
 	python-lttngust/lttngust/__init__.py
 	tools/Makefile
 	tests/Makefile
-	tests/ctf-types/Makefile
-	tests/hello/Makefile
-	tests/hello-many/Makefile
-	tests/hello.cxx/Makefile
-	tests/same_line_tracepoint/Makefile
-	tests/snprintf/Makefile
-	tests/ust-elf/Makefile
+	tests/compile/Makefile
+	tests/compile/ctf-types/Makefile
+	tests/compile/hello.cxx/Makefile
+	tests/compile/hello/Makefile
+	tests/compile/hello-many/Makefile
+	tests/compile/same_line_tracepoint/Makefile
+	tests/compile/test-app-ctx/Makefile
 	tests/benchmark/Makefile
-	tests/pthread_name/Makefile
+	tests/unit/gcc-weak-hidden/Makefile
+	tests/unit/Makefile
+	tests/unit/pthread_name/Makefile
+	tests/unit/snprintf/Makefile
+	tests/unit/ust-elf/Makefile
 	tests/utils/Makefile
-	tests/test-app-ctx/Makefile
-	tests/gcc-weak-hidden/Makefile
 	lttng-ust.pc
 	lttng-ust-ctl.pc
 ])
@@ -591,7 +593,7 @@ AC_CONFIG_LINKS([
 	python-lttngust/lttngust/loghandler.py:python-lttngust/lttngust/loghandler.py
 ])
 
-AC_CONFIG_FILES([tests/ust-elf/test_ust_elf],[chmod +x tests/ust-elf/test_ust_elf])
+AC_CONFIG_FILES([tests/unit/ust-elf/test_ust_elf],[chmod +x tests/unit/ust-elf/test_ust_elf])
 
 AC_OUTPUT
 
