@@ -9,7 +9,7 @@ m4_define([V_DESC], [[Description TBD]])
 m4_define([V_STRING], [V_MAJOR.V_MINOR.V_PATCH])
 m4_ifdef([V_EXTRA], [m4_append([V_STRING], [-V_EXTRA])])
 
-AC_PREREQ(2.59)
+AC_PREREQ([2.69])
 AC_INIT([lttng-ust], V_STRING, [mathieu dot desnoyers at efficios dot com], [], [https://lttng.org])
 
 dnl Substitute minor/major/patchlevel version numbers
