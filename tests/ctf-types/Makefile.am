@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include -Wsystem-headers
+AM_CPPFLAGS += -I$(srcdir) -Wsystem-headers
 
 noinst_PROGRAMS = ctf-types
 ctf_types_SOURCES = ctf-types.c tp.c ust_tests_ctf_types.h

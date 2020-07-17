@@ -1,4 +1,3 @@
-AM_CPPFLAGS = -I$(top_srcdir)/include
 AM_CFLAGS += -fno-strict-aliasing
 
 lib_LTLIBRARIES = liblttng-ust-fork.la

@@ -18,12 +18,13 @@ cscope.*
 configure
 /aclocal.m4
 autom4te.cache/
-/config.h
+/include/config.h
+/include/config.h.in
+/include/stamp-h1
 /include/lttng/config.h
 /include/lttng/stamp-h2
 /include/lttng/ust-version.h
 /include/lttng/ust-config.h
-/config.h.in
 /config/ar-lib
 /config/compile
 /config/config.guess
@@ -42,7 +43,6 @@ autom4te.cache/
 /m4/ltversion.m4
 config.log
 config.status
-/stamp-h1
 /libtool
 lttng-ust.pc
 lttng-ust-ctl.pc

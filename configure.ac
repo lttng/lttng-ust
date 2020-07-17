@@ -33,7 +33,7 @@ AC_DEFINE([CONFIG_LTTNG_UST_LIBRARY_VERSION_MAJOR], [UST_LIB_V_MAJOR], [Major SO
 # liblttng-ust, lttng-sessiond, and lttng-consumerd.
 AC_SUBST([LTTNG_UST_CTL_LIBRARY_VERSION], [4:0:0])
 
-AC_CONFIG_HEADERS([config.h include/lttng/ust-config.h])
+AC_CONFIG_HEADERS([include/config.h include/lttng/ust-config.h])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([include/lttng/tracepoint.h])
@@ -41,7 +41,7 @@ AC_CONFIG_SRCDIR([include/lttng/tracepoint.h])
 AC_CANONICAL_TARGET
 AC_CANONICAL_HOST
 
-AM_INIT_AUTOMAKE([1.12 foreign dist-bzip2 no-dist-gzip tar-ustar])
+AM_INIT_AUTOMAKE([1.12 foreign dist-bzip2 no-dist-gzip tar-ustar nostdinc])
 AM_MAINTAINER_MODE([enable])
 
 # Enable silent rules if available (Introduced in AM 1.11)
@@ -524,6 +524,13 @@ _AC_DEFINE_AND_SUBST([LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_MS], [3000])
 
 AM_CFLAGS="-Wall $PTHREAD_CFLAGS"
 AC_SUBST(AM_CFLAGS)
+
+# The order in which the include folders are searched is important.
+# The top_builddir should always be searched first in the event that a build
+# time generated file is included.
+AM_CPPFLAGS="-I\$(top_builddir)/include -I\$(top_srcdir)/include -include config.h"
+AC_SUBST(AM_CPPFLAGS)
+
 AC_SUBST(JNI_CPPFLAGS)
 
 AC_CONFIG_FILES([

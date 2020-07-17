@@ -1,7 +1,5 @@
 # tracepoint provider: always built/installed (does not depend on Python per se)
-AM_CPPFLAGS = -I$(top_srcdir)/include/ \
-	-I$(top_builddir)/include/
-AM_CFLAGS += -fno-strict-aliasing
+AM_CFLAGS += -I$(srcdir) -fno-strict-aliasing
 
 lib_LTLIBRARIES = liblttng-ust-python-agent.la
 

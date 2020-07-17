@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/tests/utils
+AM_CPPFLAGS += -I$(top_srcdir)/tests/utils
 
 noinst_LTLIBRARIES = libgcc-wh.la
 libgcc_wh_la_SOURCES = c.c d.c

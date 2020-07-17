@@ -33,7 +33,6 @@
 #include <lttng/ust-error.h>
 #include <lttng/ust-compiler.h>
 #include <lttng/ust-ctl.h>
-#include <config.h>
 
 #ifndef LTTNG_PACKED
 #error "LTTNG_PACKED should be defined"

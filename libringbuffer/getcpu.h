@@ -22,7 +22,6 @@
 #include <urcu/compiler.h>
 #include <urcu/system.h>
 #include <urcu/arch.h>
-#include <config.h>
 
 void lttng_ust_getcpu_init(void);
 

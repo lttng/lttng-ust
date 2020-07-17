@@ -17,7 +17,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#define _GNU_SOURCE
 /*
  * Do _not_ define _LGPL_SOURCE because we don't want to create a
  * circular dependency loop between this malloc wrapper, liburcu and

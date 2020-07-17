@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/tests/utils
+AM_CPPFLAGS += -I$(top_srcdir)/tests/utils
 
 noinst_PROGRAMS = ust-elf
 ust_elf_SOURCES = ust-elf.c

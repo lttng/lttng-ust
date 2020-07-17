@@ -180,8 +180,8 @@ all-local:
 					cmake \
 					-DCMAKE_INCLUDE_PATH="$(abs_top_srcdir)/include;$(abs_top_builddir)/include" \
 					-DCMAKE_LIBRARY_PATH="$(abs_top_builddir)/liblttng-ust/.libs" \
-					-DCMAKE_C_FLAGS="$(AM_CFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(CFLAGS)" \
-					-DCMAKE_CXX_FLAGS="$(AM_CXXFLAGS) $(AM_CPPFLAGS) $(CXXFLAGS) $(CPPFLAGS)" \
+					-DCMAKE_C_FLAGS="$(AM_CFLAGS) $(CPPFLAGS) $(CFLAGS)" \
+					-DCMAKE_CXX_FLAGS="$(AM_CXXFLAGS) $(CXXFLAGS) $(CPPFLAGS)" \
 					-DCMAKE_EXE_LINKER_FLAGS="$(AM_LDFLAGS) $(LDFLAGS)" \
 					.. && \
 				$(MAKE) \

@@ -20,7 +20,6 @@
  * SOFTWARE.
  */
 
-#define _GNU_SOURCE
 #define _LGPL_SOURCE
 #include <stdio.h>
 #include <helper.h>
