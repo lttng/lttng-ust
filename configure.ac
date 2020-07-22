@@ -44,8 +44,8 @@ AC_CANONICAL_HOST
 AM_INIT_AUTOMAKE([1.12 foreign dist-bzip2 no-dist-gzip tar-ustar nostdinc -Wall -Wno-portability -Werror])
 AM_MAINTAINER_MODE([enable])
 
-# Enable silent rules if available (Introduced in AM 1.11)
-m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+# Enable silent rules by default
+AM_SILENT_RULES([yes])
 
 # Checks for C compiler
 AC_USE_SYSTEM_EXTENSIONS
