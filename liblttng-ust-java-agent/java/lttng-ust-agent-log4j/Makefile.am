@@ -1,5 +1,5 @@
 JAVAROOT = .
-CLASSPATH_ENV = CLASSPATH=$(CLASSPATH):$(builddir)/../lttng-ust-agent-common/lttng-ust-agent-common.jar
+AM_JAVACFLAGS = -classpath $(CLASSPATH):$(builddir)/../lttng-ust-agent-common/lttng-ust-agent-common.jar
 
 pkgpath = org/lttng/ust/agent/log4j
 
@@ -29,7 +29,7 @@ $(jarfile): classnoinst.stamp
 if !HAVE_JAVAH
 # If we don't have javah, assume we are running openjdk >= 10 and use javac
 # to generate the jni header file.
-AM_JAVACFLAGS = -h $(log4jjniout)
+AM_JAVACFLAGS += -h $(log4jjniout)
 else
 log4j-jni-header.stamp: $(dist_noinst_JAVA)
 	$(JAVAH) -classpath $(CLASSPATH):$(srcdir) -d $(log4jjniout) $(JAVAHFLAGS) org.lttng.ust.agent.log4j.LttngLog4jApi && \
