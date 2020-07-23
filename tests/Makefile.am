@@ -2,7 +2,7 @@ SUBDIRS = utils unit compile benchmark
 
 LOG_DRIVER_FLAGS='--merge'
 LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
-	$(top_srcdir)/config/tap-driver.sh
+	$(srcdir)/utils/tap-driver.sh
 
 TESTS = \
 	unit/gcc-weak-hidden/test_gcc_weak_hidden \
