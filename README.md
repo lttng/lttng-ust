@@ -29,6 +29,7 @@ compile the Git repository tree:
     **Autoheader >= 2.69**;
     make sure your system-wide `automake` points to a recent version!)
   - **[GNU Libtool](https://www.gnu.org/software/libtool/) >= 2.2**
+  - **[pkg-config](https://www.freedesktop.org/wiki/Software/pkg-config/)**
 
 
 ### Optional dependencies

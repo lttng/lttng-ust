@@ -249,48 +249,10 @@ AS_IF([test "x${ac_cv_header_dlfcn_h}" = "xyes"], [
 
 AM_CONDITIONAL([HAVE_DLINFO], [test "x${ac_cv_have_decl_RTLD_DI_LINKMAP}" = "xyes"])
 
-# URCU
-
-AC_MSG_CHECKING([DEFINE_URCU_TLS_INIT()])
-AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
-	#include <urcu/tls-compat.h>
-	DEFINE_URCU_TLS_INIT(int, a, 1);
-]])], [
-	AC_MSG_RESULT([yes])
-], [
-	AC_MSG_RESULT([no])
-	AC_MSG_ERROR([Please upgrade your version of liburcu to 0.12.0 or better])
-])
-
-# urcu - check if we just find the headers it out of the box.
-AC_CHECK_HEADERS([urcu-bp.h], [], [AC_MSG_ERROR([Cannot find [URCU] headers (urcu-bp.h). Use [CPPFLAGS]=-Idir to specify their location.
-This error can also occur when the liburcu package's configure script has not been run.])])
-
-# urcu-cds - check that URCU Concurrent Data Structure lib is available to compilation
-# Part of Userspace RCU library 0.7.2 or better.
-AC_CHECK_LIB([urcu-cds], [_cds_lfht_new], [], [AC_MSG_ERROR([Cannot find
-liburcu-cds lib, part of Userspace RCU 0.7 or better. Use [LDFLAGS]=-Ldir to specify its location.])])
-
-AC_MSG_CHECKING([caa_likely()])
-AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
-	#include <urcu/compiler.h>
-	void fct(void)
-	{
-		if (caa_likely(1)) {
-		}
-	}
-]])], [
-	AC_MSG_RESULT([yes])
-], [
-	AC_MSG_RESULT([no])
-	AC_MSG_ERROR([Please upgrade your version of liburcu to 0.6.6 or better])
-])
-
-# urcu - check that URCU lib is available to compilation
-AC_CHECK_LIB([urcu-bp], [urcu_bp_synchronize_rcu], [], [AC_MSG_ERROR([Cannot find liburcu-bp 0.11 or newer. Use [LDFLAGS]=-Ldir to specify its location.])])
-
-# urcu - check that URCU lib is at least version 0.11
-AC_CHECK_LIB([urcu-bp], [urcu_bp_call_rcu], [], [AC_MSG_ERROR([liburcu 0.11 or newer is needed, please update your version or use [LDFLAGS]=-Ldir to specify the right location.])])
+# Require URCU >= 0.12 for DEFINE_URCU_TLS_INIT
+PKG_CHECK_MODULES([URCU], [liburcu >= 0.12])
+PKG_CHECK_MODULES([URCU_BP], [liburcu-bp >= 0.12])
+PKG_CHECK_MODULES([URCU_CDS], [liburcu-cds >= 0.12])
 
 # numa.h integration
 AS_IF([test "x$NO_NUMA" = "x1"],[
@@ -520,7 +482,7 @@ AC_DEFUN([_AC_DEFINE_AND_SUBST], [
 
 _AC_DEFINE_AND_SUBST([LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_MS], [3000])
 
-AM_CFLAGS="-Wall $PTHREAD_CFLAGS"
+AM_CFLAGS="-Wall $URCU_CFLAGS $PTHREAD_CFLAGS"
 AC_SUBST(AM_CFLAGS)
 
 # The order in which the include folders are searched is important.

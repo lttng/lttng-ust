@@ -13,7 +13,7 @@ liblttng_ust_tracepoint_la_SOURCES = \
 	error.h
 
 liblttng_ust_tracepoint_la_LIBADD = \
-	-lurcu-bp \
+	$(URCU_BP_LIBS) \
 	$(top_builddir)/snprintf/libustsnprintf.la \
 	$(DL_LIBS)
 
@@ -109,7 +109,7 @@ liblttng_ust_support_la_LIBADD = \
 
 liblttng_ust_la_LIBADD = \
 	-lrt \
-	-lurcu-cds \
+	$(URCU_CDS_LIBS) \
 	$(top_builddir)/snprintf/libustsnprintf.la \
 	$(top_builddir)/liblttng-ust-comm/liblttng-ust-comm.la \
 	liblttng-ust-tracepoint.la \
