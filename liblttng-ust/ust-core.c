@@ -28,12 +28,24 @@
 #include "jhash.h"
 
 static CDS_LIST_HEAD(lttng_transport_list);
+static CDS_LIST_HEAD(lttng_counter_transport_list);
 
 struct lttng_transport *lttng_transport_find(const char *name)
 {
 	struct lttng_transport *transport;
 
 	cds_list_for_each_entry(transport, &lttng_transport_list, node) {
+		if (!strcmp(transport->name, name))
+			return transport;
+	}
+	return NULL;
+}
+
+struct lttng_counter_transport *lttng_counter_transport_find(const char *name)
+{
+	struct lttng_counter_transport *transport;
+
+	cds_list_for_each_entry(transport, &lttng_counter_transport_list, node) {
 		if (!strcmp(transport->name, name))
 			return transport;
 	}
@@ -58,6 +70,28 @@ void lttng_transport_register(struct lttng_transport *transport)
  * Called with ust_lock held.
  */
 void lttng_transport_unregister(struct lttng_transport *transport)
+{
+	cds_list_del(&transport->node);
+}
+
+/**
+ * lttng_counter_transport_register - LTTng counter transport registration
+ * @transport: transport structure
+ *
+ * Registers a counter transport which can be used as output to extract
+ * the data out of LTTng. Called with ust_lock held.
+ */
+void lttng_counter_transport_register(struct lttng_counter_transport *transport)
+{
+	cds_list_add_tail(&transport->node, &lttng_counter_transport_list);
+}
+
+/**
+ * lttng_counter_transport_unregister - LTTng counter transport unregistration
+ * @transport: transport structure
+ * Called with ust_lock held.
+ */
+void lttng_counter_transport_unregister(struct lttng_counter_transport *transport)
 {
 	cds_list_del(&transport->node);
 }

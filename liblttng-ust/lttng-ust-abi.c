@@ -56,6 +56,7 @@
 
 #include "../libringbuffer/frontend_types.h"
 #include "../libringbuffer/shm.h"
+#include "../libcounter/counter.h"
 #include "lttng-tracer.h"
 #include "string-utils.h"
 #include "ust-events-internal.h"
@@ -637,6 +638,11 @@ long lttng_session_cmd(int objd, unsigned int cmd, unsigned long arg,
 		return lttng_session_disable(session);
 	case LTTNG_UST_SESSION_STATEDUMP:
 		return lttng_session_statedump(session);
+	case LTTNG_UST_COUNTER:
+	case LTTNG_UST_COUNTER_GLOBAL:
+	case LTTNG_UST_COUNTER_CPU:
+		/* Not implemented yet. */
+		return -EINVAL;
 	default:
 		return -EINVAL;
 	}
@@ -735,6 +741,133 @@ long lttng_event_notifier_enabler_cmd(int objd, unsigned int cmd, unsigned long 
 	}
 }
 
+/**
+ *	lttng_event_notifier_group_error_counter_cmd - lttng event_notifier group error counter object command
+ *
+ *	@obj: the object
+ *	@cmd: the command
+ *	@arg: command arg
+ *	@uargs: UST arguments (internal)
+ *	@owner: objd owner
+ *
+ *	This descriptor implements lttng commands:
+ *      LTTNG_UST_COUNTER_GLOBAL
+ *        Return negative error code on error, 0 on success.
+ *      LTTNG_UST_COUNTER_CPU
+ *        Return negative error code on error, 0 on success.
+ */
+static
+long lttng_event_notifier_group_error_counter_cmd(int objd, unsigned int cmd, unsigned long arg,
+	union ust_args *uargs, void *owner)
+{
+	struct lttng_counter *counter = objd_private(objd);
+
+	switch (cmd) {
+	case LTTNG_UST_COUNTER_GLOBAL:
+		return -EINVAL;		/* Unimplemented. */
+	case LTTNG_UST_COUNTER_CPU:
+	{
+		struct lttng_ust_counter_cpu *counter_cpu =
+			(struct lttng_ust_counter_cpu *)arg;
+		return lttng_counter_set_cpu_shm(counter->counter,
+			counter_cpu->cpu_nr, uargs->counter_shm.shm_fd);
+	}
+	default:
+		return -EINVAL;
+	}
+}
+
+int lttng_release_event_notifier_group_error_counter(int objd)
+{
+	struct lttng_counter *counter = objd_private(objd);
+
+	if (counter) {
+		return lttng_ust_objd_unref(counter->event_notifier_group->objd, 0);
+	} else {
+		return -EINVAL;
+	}
+}
+
+static const struct lttng_ust_objd_ops lttng_event_notifier_group_error_counter_ops = {
+	.release = lttng_release_event_notifier_group_error_counter,
+	.cmd = lttng_event_notifier_group_error_counter_cmd,
+};
+
+static
+int lttng_ust_event_notifier_group_create_error_counter(int event_notifier_group_objd, void *owner,
+		struct lttng_ust_counter_conf *error_counter_conf)
+{
+	const char *counter_transport_name;
+	struct lttng_event_notifier_group *event_notifier_group =
+		objd_private(event_notifier_group_objd);
+	struct lttng_counter *counter;
+	int counter_objd, ret;
+	struct lttng_counter_dimension dimensions[1];
+	size_t counter_len;
+
+	if (event_notifier_group->error_counter)
+		return -EBUSY;
+
+	if (error_counter_conf->arithmetic != LTTNG_UST_COUNTER_ARITHMETIC_MODULAR)
+		return -EINVAL;
+
+	if (error_counter_conf->number_dimensions != 1)
+		return -EINVAL;
+
+	switch (error_counter_conf->bitness) {
+	case LTTNG_UST_COUNTER_BITNESS_64BITS:
+		counter_transport_name = "counter-per-cpu-64-modular";
+		break;
+	case LTTNG_UST_COUNTER_BITNESS_32BITS:
+		counter_transport_name = "counter-per-cpu-32-modular";
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	counter_objd = objd_alloc(NULL, &lttng_event_notifier_group_error_counter_ops, owner,
+		"event_notifier group error counter");
+	if (counter_objd < 0) {
+		ret = counter_objd;
+		goto objd_error;
+	}
+
+	counter_len = error_counter_conf->dimensions[0].size;
+	dimensions[0].size = counter_len;
+	dimensions[0].underflow_index = 0;
+	dimensions[0].overflow_index = 0;
+	dimensions[0].has_underflow = 0;
+	dimensions[0].has_overflow = 0;
+
+	counter = lttng_ust_counter_create(counter_transport_name, 1, dimensions);
+	if (!counter) {
+		ret = -EINVAL;
+		goto create_error;
+	}
+
+	event_notifier_group->error_counter = counter;
+	event_notifier_group->error_counter_len = counter_len;
+
+	counter->objd = counter_objd;
+	counter->event_notifier_group = event_notifier_group;	/* owner */
+
+	objd_set_private(counter_objd, counter);
+	/* The error counter holds a reference on the event_notifier group. */
+	objd_ref(event_notifier_group->objd);
+
+	return counter_objd;
+
+create_error:
+	{
+		int err;
+
+		err = lttng_ust_objd_unref(counter_objd, 1);
+		assert(!err);
+	}
+objd_error:
+	return ret;
+}
+
 static
 long lttng_event_notifier_group_cmd(int objd, unsigned int cmd, unsigned long arg,
 		union ust_args *uargs, void *owner)
@@ -757,6 +890,13 @@ long lttng_event_notifier_group_cmd(int objd, unsigned int cmd, unsigned long ar
 					owner, event_notifier_param,
 					LTTNG_ENABLER_FORMAT_EVENT);
 		}
+	}
+	case LTTNG_UST_COUNTER:
+	{
+		struct lttng_ust_counter_conf *counter_conf =
+			(struct lttng_ust_counter_conf *) uargs->counter.counter_data;
+		return lttng_ust_event_notifier_group_create_error_counter(
+				objd, owner, counter_conf);
 	}
 	default:
 		return -EINVAL;

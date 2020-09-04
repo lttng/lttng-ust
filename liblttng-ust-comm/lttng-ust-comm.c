@@ -765,6 +765,75 @@ error:
 	return ret;
 }
 
+ssize_t ustcomm_recv_counter_from_sessiond(int sock,
+		void **_counter_data, uint64_t var_len)
+{
+	void *counter_data;
+	ssize_t len;
+
+	if (var_len > LTTNG_UST_COUNTER_DATA_MAX_LEN) {
+		len = -EINVAL;
+		goto error_check;
+	}
+	/* Receive variable length data */
+	counter_data = zmalloc(var_len);
+	if (!counter_data) {
+		len = -ENOMEM;
+		goto error_alloc;
+	}
+	len = ustcomm_recv_unix_sock(sock, counter_data, var_len);
+	if (len != var_len) {
+		goto error_recv;
+	}
+	*_counter_data = counter_data;
+	return len;
+
+error_recv:
+	free(counter_data);
+error_alloc:
+error_check:
+	return len;
+}
+
+int ustcomm_recv_counter_shm_from_sessiond(int sock,
+		int *shm_fd)
+{
+	ssize_t len;
+	int ret;
+	int fds[1];
+
+	/* recv shm fd fd */
+	lttng_ust_lock_fd_tracker();
+	len = ustcomm_recv_fds_unix_sock(sock, fds, 1);
+	if (len <= 0) {
+		lttng_ust_unlock_fd_tracker();
+		if (len < 0) {
+			ret = len;
+			goto error;
+		} else {
+			ret = -EIO;
+			goto error;
+		}
+	}
+
+	ret = lttng_ust_add_fd_to_tracker(fds[0]);
+	if (ret < 0) {
+		ret = close(fds[0]);
+		if (ret) {
+			PERROR("close on received shm_fd");
+		}
+		ret = -EIO;
+		lttng_ust_unlock_fd_tracker();
+		goto error;
+	}
+	*shm_fd = ret;
+	lttng_ust_unlock_fd_tracker();
+	return 0;
+
+error:
+	return ret;
+}
+
 /*
  * Returns 0 on success, negative error value on error.
  */

@@ -22,6 +22,7 @@
 #include <limits.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <sys/types.h>
 
 #include <lttng/ust-abi.h>
@@ -590,5 +591,82 @@ int ustctl_reply_register_channel(int sock,
 	uint32_t chan_id,
 	enum ustctl_channel_header header_type,
 	int ret_code);			/* return code. 0 ok, negative error */
+
+/*
+ * Counter API.
+ */
+
+enum ustctl_counter_bitness {
+	USTCTL_COUNTER_BITNESS_32 = 4,
+	USTCTL_COUNTER_BITNESS_64 = 8,
+};
+
+enum ustctl_counter_arithmetic {
+	USTCTL_COUNTER_ARITHMETIC_MODULAR	= 0,
+	USTCTL_COUNTER_ARITHMETIC_SATURATION	= 1,
+};
+
+/* Used as alloc flags. */
+enum ustctl_counter_alloc {
+	USTCTL_COUNTER_ALLOC_PER_CPU = (1 << 0),
+	USTCTL_COUNTER_ALLOC_GLOBAL = (1 << 1),
+};
+
+struct ustctl_daemon_counter;
+
+int ustctl_get_nr_cpu_per_counter(void);
+
+struct ustctl_counter_dimension {
+	uint64_t size;
+	uint64_t underflow_index;
+	uint64_t overflow_index;
+	uint8_t has_underflow;
+	uint8_t has_overflow;
+};
+
+struct ustctl_daemon_counter *
+	ustctl_create_counter(size_t nr_dimensions,
+		const struct ustctl_counter_dimension *dimensions,
+		int64_t global_sum_step,
+		int global_counter_fd,
+		int nr_counter_cpu_fds,
+		const int *counter_cpu_fds,
+		enum ustctl_counter_bitness bitness,
+		enum ustctl_counter_arithmetic arithmetic,
+		uint32_t alloc_flags);
+
+int ustctl_create_counter_data(struct ustctl_daemon_counter *counter,
+		struct lttng_ust_object_data **counter_data);
+
+int ustctl_create_counter_global_data(struct ustctl_daemon_counter *counter,
+		struct lttng_ust_object_data **counter_global_data);
+int ustctl_create_counter_cpu_data(struct ustctl_daemon_counter *counter, int cpu,
+		struct lttng_ust_object_data **counter_cpu_data);
+
+/*
+ * Each counter data and counter cpu data created need to be destroyed
+ * before calling ustctl_destroy_counter().
+ */
+void ustctl_destroy_counter(struct ustctl_daemon_counter *counter);
+
+int ustctl_send_counter_data_to_ust(int sock, int parent_handle,
+		struct lttng_ust_object_data *counter_data);
+int ustctl_send_counter_global_data_to_ust(int sock,
+		struct lttng_ust_object_data *counter_data,
+		struct lttng_ust_object_data *counter_global_data);
+int ustctl_send_counter_cpu_data_to_ust(int sock,
+		struct lttng_ust_object_data *counter_data,
+		struct lttng_ust_object_data *counter_cpu_data);
+
+int ustctl_counter_read(struct ustctl_daemon_counter *counter,
+		const size_t *dimension_indexes,
+		int cpu, int64_t *value,
+		bool *overflow, bool *underflow);
+int ustctl_counter_aggregate(struct ustctl_daemon_counter *counter,
+		const size_t *dimension_indexes,
+		int64_t *value,
+		bool *overflow, bool *underflow);
+int ustctl_counter_clear(struct ustctl_daemon_counter *counter,
+		const size_t *dimension_indexes);
 
 #endif /* _LTTNG_UST_CTL_H */

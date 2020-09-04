@@ -67,6 +67,7 @@
 #include "ust-events-internal.h"
 #include "wait.h"
 #include "../libringbuffer/shm.h"
+#include "../libcounter/counter.h"
 #include "jhash.h"
 #include <lttng/ust-abi.h>
 
@@ -169,6 +170,46 @@ struct lttng_session *lttng_session_create(void)
 		CDS_INIT_HLIST_HEAD(&session->enums_ht.table[i]);
 	cds_list_add(&session->node, &sessions);
 	return session;
+}
+
+struct lttng_counter *lttng_ust_counter_create(
+		const char *counter_transport_name,
+		size_t number_dimensions, const struct lttng_counter_dimension *dimensions)
+{
+	struct lttng_counter_transport *counter_transport = NULL;
+	struct lttng_counter *counter = NULL;
+
+	counter_transport = lttng_counter_transport_find(counter_transport_name);
+	if (!counter_transport)
+		goto notransport;
+	counter = zmalloc(sizeof(struct lttng_counter));
+	if (!counter)
+		goto nomem;
+
+	counter->ops = &counter_transport->ops;
+	counter->transport = counter_transport;
+
+	counter->counter = counter->ops->counter_create(
+			number_dimensions, dimensions, 0,
+			-1, 0, NULL, false);
+	if (!counter->counter) {
+		goto create_error;
+	}
+
+	return counter;
+
+create_error:
+	free(counter);
+nomem:
+notransport:
+	return NULL;
+}
+
+static
+void lttng_ust_counter_destroy(struct lttng_counter *counter)
+{
+	counter->ops->counter_destroy(counter->counter);
+	free(counter);
 }
 
 struct lttng_event_notifier_group *lttng_event_notifier_group_create(void)
@@ -352,7 +393,10 @@ void lttng_event_notifier_group_destroy(
 			&event_notifier_group->event_notifiers_head, node)
 		_lttng_event_notifier_destroy(notifier);
 
-	/* Close the notification fd to the listener of event notifiers. */
+	if (event_notifier_group->error_counter)
+		lttng_ust_counter_destroy(event_notifier_group->error_counter);
+
+	/* Close the notification fd to the listener of event_notifiers. */
 
 	lttng_ust_lock_fd_tracker();
 	close_ret = close(event_notifier_group->notification_fd);
