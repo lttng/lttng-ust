@@ -111,8 +111,10 @@ int ustctl_release_object(int sock, struct lttng_ust_object_data *data)
 				ret = -errno;
 				return ret;
 			}
+			data->u.channel.wakeup_fd = -1;
 		}
 		free(data->u.channel.data);
+		data->u.channel.data = NULL;
 		break;
 	case LTTNG_UST_OBJECT_TYPE_STREAM:
 		if (data->u.stream.shm_fd >= 0) {
@@ -121,6 +123,7 @@ int ustctl_release_object(int sock, struct lttng_ust_object_data *data)
 				ret = -errno;
 				return ret;
 			}
+			data->u.stream.shm_fd = -1;
 		}
 		if (data->u.stream.wakeup_fd >= 0) {
 			ret = close(data->u.stream.wakeup_fd);
@@ -128,6 +131,7 @@ int ustctl_release_object(int sock, struct lttng_ust_object_data *data)
 				ret = -errno;
 				return ret;
 			}
+			data->u.stream.wakeup_fd = -1;
 		}
 		break;
 	case LTTNG_UST_OBJECT_TYPE_EVENT:
