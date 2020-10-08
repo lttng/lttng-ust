@@ -16,6 +16,7 @@
 
 #include <lttng/ust-abi.h>
 #include <lttng/ust-utils.h>
+#include <lttng/ust-sigbus.h>
 
 #ifndef LTTNG_UST_UUID_LEN
 #define LTTNG_UST_UUID_LEN	16
@@ -251,9 +252,9 @@ int lttng_ust_ctl_get_subbuf(struct lttng_ust_ctl_consumer_stream *stream,
 		unsigned long *pos);
 int lttng_ust_ctl_put_subbuf(struct lttng_ust_ctl_consumer_stream *stream);
 
-void lttng_ust_ctl_flush_buffer(struct lttng_ust_ctl_consumer_stream *stream,
+int lttng_ust_ctl_flush_buffer(struct lttng_ust_ctl_consumer_stream *stream,
 		int producer_active);
-void lttng_ust_ctl_clear_buffer(struct lttng_ust_ctl_consumer_stream *stream);
+int lttng_ust_ctl_clear_buffer(struct lttng_ust_ctl_consumer_stream *stream);
 
 /* index */
 
@@ -652,5 +653,7 @@ int lttng_ust_ctl_counter_aggregate(struct lttng_ust_ctl_daemon_counter *counter
 		bool *overflow, bool *underflow);
 int lttng_ust_ctl_counter_clear(struct lttng_ust_ctl_daemon_counter *counter,
 		const size_t *dimension_indexes);
+
+void lttng_ust_ctl_sigbus_handle(void *addr);
 
 #endif /* _LTTNG_UST_CTL_H */

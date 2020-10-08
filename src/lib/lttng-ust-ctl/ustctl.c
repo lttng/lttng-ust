@@ -17,6 +17,8 @@
 #include <lttng/ust-abi.h>
 #include <lttng/ust-endian.h>
 #include <lttng/ust-common.h>
+#include <lttng/ust-sigbus.h>
+#include <urcu/rculist.h>
 
 #include "common/logging.h"
 #include "common/ustcomm.h"
@@ -62,6 +64,7 @@ struct lttng_ust_ctl_consumer_stream {
 	int shm_fd, wait_fd, wakeup_fd;
 	int cpu;
 	uint64_t memory_map_size;
+	void *memory_map_addr;
 };
 
 #define LTTNG_UST_CTL_COUNTER_ATTR_DIMENSION_MAX 8
@@ -82,6 +85,67 @@ struct lttng_ust_ctl_daemon_counter {
 	const struct lttng_counter_ops *ops;
 	struct lttng_ust_ctl_counter_attr *attr;	/* initial attributes */
 };
+
+/*
+ * Evaluates to false if transaction begins, true if it has failed due to SIGBUS.
+ * The entire transaction must complete before the current function returns.
+ * A transaction can contain 0 or more tracked ranges as sigbus begin/end pairs.
+ */
+#define sigbus_begin() \
+({ \
+	assert(!lttng_ust_sigbus_state.jmp_ready); \
+	if (!lttng_ust_sigbus_state.head.next) { \
+		/* \
+		 * Lazy init because static list initialisation is \
+		 * problematic for TLS variable. \
+		 */ \
+		CDS_INIT_LIST_HEAD(&lttng_ust_sigbus_state.head); \
+	} \
+	if (sigsetjmp(lttng_ust_sigbus_state.sj_env, 1)) { \
+		/* SIGBUS. */ \
+		CMM_STORE_SHARED(lttng_ust_sigbus_state.jmp_ready, 0); \
+		true; \
+	} \
+	cmm_barrier(); \
+	CMM_STORE_SHARED(lttng_ust_sigbus_state.jmp_ready, 1); \
+	false; \
+})
+
+static void sigbus_end(void)
+{
+	assert(lttng_ust_sigbus_state.jmp_ready);
+	cmm_barrier();
+	CMM_STORE_SHARED(lttng_ust_sigbus_state.jmp_ready, 0);
+}
+
+static
+void lttng_ust_sigbus_add_range(struct lttng_ust_sigbus_range *range, void *start, size_t len)
+{
+	range->start = start;
+	range->end = (char *)start + len;
+	cds_list_add_rcu(&range->node, &lttng_ust_sigbus_state.head);
+	cmm_barrier();
+}
+
+static
+void lttng_ust_sigbus_del_range(struct lttng_ust_sigbus_range *range)
+{
+	cmm_barrier();
+	cds_list_del_rcu(&range->node);
+}
+
+void lttng_ust_ctl_sigbus_handle(void *addr)
+{
+	struct lttng_ust_sigbus_range *range;
+
+	if (!CMM_LOAD_SHARED(lttng_ust_sigbus_state.jmp_ready))
+		return;
+	cds_list_for_each_entry_rcu(range, &lttng_ust_sigbus_state.head, node) {
+		if (addr < range->start || addr >= range->end)
+			continue;
+		siglongjmp(lttng_ust_sigbus_state.sj_env, 1);
+	}
+}
 
 int lttng_ust_ctl_release_handle(int sock, int handle)
 {
@@ -1446,6 +1510,7 @@ struct lttng_ust_ctl_consumer_stream *
 	struct lttng_ust_ring_buffer_channel *rb_chan;
 	int shm_fd, wait_fd, wakeup_fd;
 	uint64_t memory_map_size;
+	void *memory_map_addr;
 	struct lttng_ust_ring_buffer *buf;
 	int ret;
 
@@ -1458,7 +1523,7 @@ struct lttng_ust_ctl_consumer_stream *
 
 	buf = channel_get_ring_buffer(&rb_chan->backend.config,
 		rb_chan, cpu, handle, &shm_fd, &wait_fd,
-		&wakeup_fd, &memory_map_size);
+		&wakeup_fd, &memory_map_size, &memory_map_addr);
 	if (!buf)
 		return NULL;
 	ret = lib_ring_buffer_open_read(buf, handle);
@@ -1474,6 +1539,7 @@ struct lttng_ust_ctl_consumer_stream *
 	stream->wait_fd = wait_fd;
 	stream->wakeup_fd = wakeup_fd;
 	stream->memory_map_size = memory_map_size;
+	stream->memory_map_addr = memory_map_addr;
 	stream->cpu = cpu;
 	return stream;
 
@@ -1541,12 +1607,21 @@ void *lttng_ust_ctl_get_mmap_base(struct lttng_ust_ctl_consumer_stream *stream)
 {
 	struct lttng_ust_ring_buffer *buf;
 	struct lttng_ust_ctl_consumer_channel *consumer_chan;
+	struct lttng_ust_sigbus_range range;
+	void *p;
 
 	if (!stream)
 		return NULL;
 	buf = stream->buf;
 	consumer_chan = stream->chan;
-	return shmp(consumer_chan->chan->priv->rb_chan->handle, buf->backend.memory_map);
+	if (sigbus_begin())
+		return NULL;
+	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
+				stream->memory_map_size);
+	p = shmp(consumer_chan->chan->priv->rb_chan->handle, buf->backend.memory_map);
+	lttng_ust_sigbus_del_range(&range);
+	sigbus_end();
+	return p;	/* Users of this pointer should check for sigbus. */
 }
 
 /* returns the length to mmap. */
@@ -1602,6 +1677,8 @@ int lttng_ust_ctl_get_mmap_read_offset(struct lttng_ust_ctl_consumer_stream *str
 	struct lttng_ust_ctl_consumer_channel *consumer_chan;
 	struct lttng_ust_ring_buffer_backend_pages_shmp *barray_idx;
 	struct lttng_ust_ring_buffer_backend_pages *pages;
+	struct lttng_ust_sigbus_range range;
+	int ret;
 
 	if (!stream)
 		return -EINVAL;
@@ -1610,17 +1687,31 @@ int lttng_ust_ctl_get_mmap_read_offset(struct lttng_ust_ctl_consumer_stream *str
 	rb_chan = consumer_chan->chan->priv->rb_chan;
 	if (rb_chan->backend.config.output != RING_BUFFER_MMAP)
 		return -EINVAL;
+
+	if (sigbus_begin())
+		return -EIO;
+	ret = 0;
+	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
+				stream->memory_map_size);
+
 	sb_bindex = subbuffer_id_get_index(&rb_chan->backend.config,
 					buf->backend.buf_rsb.id);
 	barray_idx = shmp_index(rb_chan->handle, buf->backend.array,
 			sb_bindex);
-	if (!barray_idx)
-		return -EINVAL;
+	if (!barray_idx) {
+		ret = -EINVAL;
+		goto end;
+	}
 	pages = shmp(rb_chan->handle, barray_idx->shmp);
-	if (!pages)
-		return -EINVAL;
+	if (!pages) {
+		ret = -EINVAL;
+		goto end;
+	}
 	*off = pages->mmap_offset;
-	return 0;
+end:
+	lttng_ust_sigbus_del_range(&range);
+	sigbus_end();
+	return ret;
 }
 
 /* returns the size of the current sub-buffer, without padding (for mmap). */
@@ -1630,6 +1721,7 @@ int lttng_ust_ctl_get_subbuf_size(struct lttng_ust_ctl_consumer_stream *stream,
 	struct lttng_ust_ctl_consumer_channel *consumer_chan;
 	struct lttng_ust_ring_buffer_channel *rb_chan;
 	struct lttng_ust_ring_buffer *buf;
+	struct lttng_ust_sigbus_range range;
 
 	if (!stream)
 		return -EINVAL;
@@ -1637,8 +1729,14 @@ int lttng_ust_ctl_get_subbuf_size(struct lttng_ust_ctl_consumer_stream *stream,
 	buf = stream->buf;
 	consumer_chan = stream->chan;
 	rb_chan = consumer_chan->chan->priv->rb_chan;
+	if (sigbus_begin())
+		return -EIO;
+	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
+				stream->memory_map_size);
 	*len = lib_ring_buffer_get_read_data_size(&rb_chan->backend.config, buf,
 		rb_chan->handle);
+	lttng_ust_sigbus_del_range(&range);
+	sigbus_end();
 	return 0;
 }
 
@@ -1649,15 +1747,22 @@ int lttng_ust_ctl_get_padded_subbuf_size(struct lttng_ust_ctl_consumer_stream *s
 	struct lttng_ust_ctl_consumer_channel *consumer_chan;
 	struct lttng_ust_ring_buffer_channel *rb_chan;
 	struct lttng_ust_ring_buffer *buf;
+	struct lttng_ust_sigbus_range range;
 
 	if (!stream)
 		return -EINVAL;
 	buf = stream->buf;
 	consumer_chan = stream->chan;
 	rb_chan = consumer_chan->chan->priv->rb_chan;
+	if (sigbus_begin())
+		return -EIO;
+	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
+				stream->memory_map_size);
 	*len = lib_ring_buffer_get_read_data_size(&rb_chan->backend.config, buf,
 		rb_chan->handle);
 	*len = LTTNG_UST_PAGE_ALIGN(*len);
+	lttng_ust_sigbus_del_range(&range);
+	sigbus_end();
 	return 0;
 }
 
@@ -1666,27 +1771,42 @@ int lttng_ust_ctl_get_next_subbuf(struct lttng_ust_ctl_consumer_stream *stream)
 {
 	struct lttng_ust_ring_buffer *buf;
 	struct lttng_ust_ctl_consumer_channel *consumer_chan;
+	struct lttng_ust_sigbus_range range;
+	int ret;
 
 	if (!stream)
 		return -EINVAL;
 	buf = stream->buf;
 	consumer_chan = stream->chan;
-	return lib_ring_buffer_get_next_subbuf(buf,
+	if (sigbus_begin())
+		return -EIO;
+	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
+				stream->memory_map_size);
+	ret = lib_ring_buffer_get_next_subbuf(buf,
 			consumer_chan->chan->priv->rb_chan->handle);
+	lttng_ust_sigbus_del_range(&range);
+	sigbus_end();
+	return ret;
 }
-
 
 /* Release exclusive sub-buffer access, move consumer forward. */
 int lttng_ust_ctl_put_next_subbuf(struct lttng_ust_ctl_consumer_stream *stream)
 {
 	struct lttng_ust_ring_buffer *buf;
 	struct lttng_ust_ctl_consumer_channel *consumer_chan;
+	struct lttng_ust_sigbus_range range;
 
 	if (!stream)
 		return -EINVAL;
 	buf = stream->buf;
 	consumer_chan = stream->chan;
+	if (sigbus_begin())
+		return -EIO;
+	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
+				stream->memory_map_size);
 	lib_ring_buffer_put_next_subbuf(buf, consumer_chan->chan->priv->rb_chan->handle);
+	lttng_ust_sigbus_del_range(&range);
+	sigbus_end();
 	return 0;
 }
 
@@ -1697,13 +1817,22 @@ int lttng_ust_ctl_snapshot(struct lttng_ust_ctl_consumer_stream *stream)
 {
 	struct lttng_ust_ring_buffer *buf;
 	struct lttng_ust_ctl_consumer_channel *consumer_chan;
+	struct lttng_ust_sigbus_range range;
+	int ret;
 
 	if (!stream)
 		return -EINVAL;
 	buf = stream->buf;
 	consumer_chan = stream->chan;
-	return lib_ring_buffer_snapshot(buf, &buf->cons_snapshot,
+	if (sigbus_begin())
+		return -EIO;
+	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
+				stream->memory_map_size);
+	ret = lib_ring_buffer_snapshot(buf, &buf->cons_snapshot,
 			&buf->prod_snapshot, consumer_chan->chan->priv->rb_chan->handle);
+	lttng_ust_sigbus_del_range(&range);
+	sigbus_end();
+	return ret;
 }
 
 /*
@@ -1715,14 +1844,23 @@ int lttng_ust_ctl_snapshot_sample_positions(struct lttng_ust_ctl_consumer_stream
 {
 	struct lttng_ust_ring_buffer *buf;
 	struct lttng_ust_ctl_consumer_channel *consumer_chan;
+	struct lttng_ust_sigbus_range range;
+	int ret;
 
 	if (!stream)
 		return -EINVAL;
 	buf = stream->buf;
 	consumer_chan = stream->chan;
-	return lib_ring_buffer_snapshot_sample_positions(buf,
+	if (sigbus_begin())
+		return -EIO;
+	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
+				stream->memory_map_size);
+	ret = lib_ring_buffer_snapshot_sample_positions(buf,
 			&buf->cons_snapshot, &buf->prod_snapshot,
 			consumer_chan->chan->priv->rb_chan->handle);
+	lttng_ust_sigbus_del_range(&range);
+	sigbus_end();
+	return ret;
 }
 
 /* Get the consumer position (iteration start) */
@@ -1757,13 +1895,22 @@ int lttng_ust_ctl_get_subbuf(struct lttng_ust_ctl_consumer_stream *stream,
 {
 	struct lttng_ust_ring_buffer *buf;
 	struct lttng_ust_ctl_consumer_channel *consumer_chan;
+	struct lttng_ust_sigbus_range range;
+	int ret;
 
 	if (!stream)
 		return -EINVAL;
 	buf = stream->buf;
 	consumer_chan = stream->chan;
-	return lib_ring_buffer_get_subbuf(buf, *pos,
+	if (sigbus_begin())
+		return -EIO;
+	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
+				stream->memory_map_size);
+	ret = lib_ring_buffer_get_subbuf(buf, *pos,
 			consumer_chan->chan->priv->rb_chan->handle);
+	lttng_ust_sigbus_del_range(&range);
+	sigbus_end();
+	return ret;
 }
 
 /* Release exclusive sub-buffer access */
@@ -1771,40 +1918,63 @@ int lttng_ust_ctl_put_subbuf(struct lttng_ust_ctl_consumer_stream *stream)
 {
 	struct lttng_ust_ring_buffer *buf;
 	struct lttng_ust_ctl_consumer_channel *consumer_chan;
+	struct lttng_ust_sigbus_range range;
 
 	if (!stream)
 		return -EINVAL;
 	buf = stream->buf;
 	consumer_chan = stream->chan;
+	if (sigbus_begin())
+		return -EIO;
+	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
+				stream->memory_map_size);
 	lib_ring_buffer_put_subbuf(buf, consumer_chan->chan->priv->rb_chan->handle);
+	lttng_ust_sigbus_del_range(&range);
+	sigbus_end();
 	return 0;
 }
 
-void lttng_ust_ctl_flush_buffer(struct lttng_ust_ctl_consumer_stream *stream,
+int lttng_ust_ctl_flush_buffer(struct lttng_ust_ctl_consumer_stream *stream,
 		int producer_active)
 {
 	struct lttng_ust_ring_buffer *buf;
 	struct lttng_ust_ctl_consumer_channel *consumer_chan;
+	struct lttng_ust_sigbus_range range;
 
 	assert(stream);
 	buf = stream->buf;
 	consumer_chan = stream->chan;
+	if (sigbus_begin())
+		return -EIO;
+	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
+				stream->memory_map_size);
 	lib_ring_buffer_switch_slow(buf,
 		producer_active ? SWITCH_ACTIVE : SWITCH_FLUSH,
 		consumer_chan->chan->priv->rb_chan->handle);
+	lttng_ust_sigbus_del_range(&range);
+	sigbus_end();
+	return 0;
 }
 
-void lttng_ust_ctl_clear_buffer(struct lttng_ust_ctl_consumer_stream *stream)
+int lttng_ust_ctl_clear_buffer(struct lttng_ust_ctl_consumer_stream *stream)
 {
 	struct lttng_ust_ring_buffer *buf;
 	struct lttng_ust_ctl_consumer_channel *consumer_chan;
+	struct lttng_ust_sigbus_range range;
 
 	assert(stream);
 	buf = stream->buf;
 	consumer_chan = stream->chan;
+	if (sigbus_begin())
+		return -EIO;
+	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
+				stream->memory_map_size);
 	lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE,
 		consumer_chan->chan->priv->rb_chan->handle);
 	lib_ring_buffer_clear_reader(buf, consumer_chan->chan->priv->rb_chan->handle);
+	lttng_ust_sigbus_del_range(&range);
+	sigbus_end();
+	return 0;
 }
 
 static
@@ -1830,6 +2000,8 @@ int lttng_ust_ctl_get_timestamp_begin(struct lttng_ust_ctl_consumer_stream *stre
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
 	struct lttng_ust_ring_buffer_channel *chan;
 	struct lttng_ust_ring_buffer *buf;
+	struct lttng_ust_sigbus_range range;
+	int ret;
 
 	if (!stream || !timestamp_begin)
 		return -EINVAL;
@@ -1838,7 +2010,14 @@ int lttng_ust_ctl_get_timestamp_begin(struct lttng_ust_ctl_consumer_stream *stre
 	client_cb = get_client_cb(buf, chan);
 	if (!client_cb)
 		return -ENOSYS;
-	return client_cb->timestamp_begin(buf, chan, timestamp_begin);
+	if (sigbus_begin())
+		return -EIO;
+	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
+				stream->memory_map_size);
+	ret = client_cb->timestamp_begin(buf, chan, timestamp_begin);
+	lttng_ust_sigbus_del_range(&range);
+	sigbus_end();
+	return ret;
 }
 
 int lttng_ust_ctl_get_timestamp_end(struct lttng_ust_ctl_consumer_stream *stream,
@@ -1847,6 +2026,8 @@ int lttng_ust_ctl_get_timestamp_end(struct lttng_ust_ctl_consumer_stream *stream
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
 	struct lttng_ust_ring_buffer_channel *chan;
 	struct lttng_ust_ring_buffer *buf;
+	struct lttng_ust_sigbus_range range;
+	int ret;
 
 	if (!stream || !timestamp_end)
 		return -EINVAL;
@@ -1855,7 +2036,14 @@ int lttng_ust_ctl_get_timestamp_end(struct lttng_ust_ctl_consumer_stream *stream
 	client_cb = get_client_cb(buf, chan);
 	if (!client_cb)
 		return -ENOSYS;
-	return client_cb->timestamp_end(buf, chan, timestamp_end);
+	if (sigbus_begin())
+		return -EIO;
+	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
+				stream->memory_map_size);
+	ret = client_cb->timestamp_end(buf, chan, timestamp_end);
+	lttng_ust_sigbus_del_range(&range);
+	sigbus_end();
+	return ret;
 }
 
 int lttng_ust_ctl_get_events_discarded(struct lttng_ust_ctl_consumer_stream *stream,
@@ -1864,6 +2052,8 @@ int lttng_ust_ctl_get_events_discarded(struct lttng_ust_ctl_consumer_stream *str
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
 	struct lttng_ust_ring_buffer_channel *chan;
 	struct lttng_ust_ring_buffer *buf;
+	struct lttng_ust_sigbus_range range;
+	int ret;
 
 	if (!stream || !events_discarded)
 		return -EINVAL;
@@ -1872,7 +2062,14 @@ int lttng_ust_ctl_get_events_discarded(struct lttng_ust_ctl_consumer_stream *str
 	client_cb = get_client_cb(buf, chan);
 	if (!client_cb)
 		return -ENOSYS;
-	return client_cb->events_discarded(buf, chan, events_discarded);
+	if (sigbus_begin())
+		return -EIO;
+	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
+				stream->memory_map_size);
+	ret = client_cb->events_discarded(buf, chan, events_discarded);
+	lttng_ust_sigbus_del_range(&range);
+	sigbus_end();
+	return ret;
 }
 
 int lttng_ust_ctl_get_content_size(struct lttng_ust_ctl_consumer_stream *stream,
@@ -1881,6 +2078,8 @@ int lttng_ust_ctl_get_content_size(struct lttng_ust_ctl_consumer_stream *stream,
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
 	struct lttng_ust_ring_buffer_channel *chan;
 	struct lttng_ust_ring_buffer *buf;
+	struct lttng_ust_sigbus_range range;
+	int ret;
 
 	if (!stream || !content_size)
 		return -EINVAL;
@@ -1889,7 +2088,14 @@ int lttng_ust_ctl_get_content_size(struct lttng_ust_ctl_consumer_stream *stream,
 	client_cb = get_client_cb(buf, chan);
 	if (!client_cb)
 		return -ENOSYS;
-	return client_cb->content_size(buf, chan, content_size);
+	if (sigbus_begin())
+		return -EIO;
+	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
+				stream->memory_map_size);
+	ret = client_cb->content_size(buf, chan, content_size);
+	lttng_ust_sigbus_del_range(&range);
+	sigbus_end();
+	return ret;
 }
 
 int lttng_ust_ctl_get_packet_size(struct lttng_ust_ctl_consumer_stream *stream,
@@ -1898,6 +2104,8 @@ int lttng_ust_ctl_get_packet_size(struct lttng_ust_ctl_consumer_stream *stream,
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
 	struct lttng_ust_ring_buffer_channel *chan;
 	struct lttng_ust_ring_buffer *buf;
+	struct lttng_ust_sigbus_range range;
+	int ret;
 
 	if (!stream || !packet_size)
 		return -EINVAL;
@@ -1906,7 +2114,14 @@ int lttng_ust_ctl_get_packet_size(struct lttng_ust_ctl_consumer_stream *stream,
 	client_cb = get_client_cb(buf, chan);
 	if (!client_cb)
 		return -ENOSYS;
-	return client_cb->packet_size(buf, chan, packet_size);
+	if (sigbus_begin())
+		return -EIO;
+	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
+				stream->memory_map_size);
+	ret = client_cb->packet_size(buf, chan, packet_size);
+	lttng_ust_sigbus_del_range(&range);
+	sigbus_end();
+	return ret;
 }
 
 int lttng_ust_ctl_get_stream_id(struct lttng_ust_ctl_consumer_stream *stream,
@@ -1915,6 +2130,8 @@ int lttng_ust_ctl_get_stream_id(struct lttng_ust_ctl_consumer_stream *stream,
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
 	struct lttng_ust_ring_buffer_channel *chan;
 	struct lttng_ust_ring_buffer *buf;
+	struct lttng_ust_sigbus_range range;
+	int ret;
 
 	if (!stream || !stream_id)
 		return -EINVAL;
@@ -1923,7 +2140,14 @@ int lttng_ust_ctl_get_stream_id(struct lttng_ust_ctl_consumer_stream *stream,
 	client_cb = get_client_cb(buf, chan);
 	if (!client_cb)
 		return -ENOSYS;
-	return client_cb->stream_id(buf, chan, stream_id);
+	if (sigbus_begin())
+		return -EIO;
+	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
+				stream->memory_map_size);
+	ret = client_cb->stream_id(buf, chan, stream_id);
+	lttng_ust_sigbus_del_range(&range);
+	sigbus_end();
+	return ret;
 }
 
 int lttng_ust_ctl_get_current_timestamp(struct lttng_ust_ctl_consumer_stream *stream,
@@ -1932,6 +2156,8 @@ int lttng_ust_ctl_get_current_timestamp(struct lttng_ust_ctl_consumer_stream *st
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
 	struct lttng_ust_ring_buffer_channel *chan;
 	struct lttng_ust_ring_buffer *buf;
+	struct lttng_ust_sigbus_range range;
+	int ret;
 
 	if (!stream || !ts)
 		return -EINVAL;
@@ -1940,7 +2166,14 @@ int lttng_ust_ctl_get_current_timestamp(struct lttng_ust_ctl_consumer_stream *st
 	client_cb = get_client_cb(buf, chan);
 	if (!client_cb || !client_cb->current_timestamp)
 		return -ENOSYS;
-	return client_cb->current_timestamp(buf, chan, ts);
+	if (sigbus_begin())
+		return -EIO;
+	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
+				stream->memory_map_size);
+	ret = client_cb->current_timestamp(buf, chan, ts);
+	lttng_ust_sigbus_del_range(&range);
+	sigbus_end();
+	return ret;
 }
 
 int lttng_ust_ctl_get_sequence_number(struct lttng_ust_ctl_consumer_stream *stream,
@@ -1949,6 +2182,8 @@ int lttng_ust_ctl_get_sequence_number(struct lttng_ust_ctl_consumer_stream *stre
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
 	struct lttng_ust_ring_buffer_channel *chan;
 	struct lttng_ust_ring_buffer *buf;
+	struct lttng_ust_sigbus_range range;
+	int ret;
 
 	if (!stream || !seq)
 		return -EINVAL;
@@ -1957,7 +2192,14 @@ int lttng_ust_ctl_get_sequence_number(struct lttng_ust_ctl_consumer_stream *stre
 	client_cb = get_client_cb(buf, chan);
 	if (!client_cb || !client_cb->sequence_number)
 		return -ENOSYS;
-	return client_cb->sequence_number(buf, chan, seq);
+	if (sigbus_begin())
+		return -EIO;
+	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
+				stream->memory_map_size);
+	ret = client_cb->sequence_number(buf, chan, seq);
+	lttng_ust_sigbus_del_range(&range);
+	sigbus_end();
+	return ret;
 }
 
 int lttng_ust_ctl_get_instance_id(struct lttng_ust_ctl_consumer_stream *stream,
@@ -1966,6 +2208,8 @@ int lttng_ust_ctl_get_instance_id(struct lttng_ust_ctl_consumer_stream *stream,
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
 	struct lttng_ust_ring_buffer_channel *chan;
 	struct lttng_ust_ring_buffer *buf;
+	struct lttng_ust_sigbus_range range;
+	int ret;
 
 	if (!stream || !id)
 		return -EINVAL;
@@ -1974,7 +2218,14 @@ int lttng_ust_ctl_get_instance_id(struct lttng_ust_ctl_consumer_stream *stream,
 	client_cb = get_client_cb(buf, chan);
 	if (!client_cb)
 		return -ENOSYS;
-	return client_cb->instance_id(buf, chan, id);
+	if (sigbus_begin())
+		return -EIO;
+	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
+				stream->memory_map_size);
+	ret = client_cb->instance_id(buf, chan, id);
+	lttng_ust_sigbus_del_range(&range);
+	sigbus_end();
+	return ret;
 }
 
 #ifdef HAVE_LINUX_PERF_EVENT_H
