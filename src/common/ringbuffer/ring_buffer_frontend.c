@@ -1182,7 +1182,8 @@ struct lttng_ust_ring_buffer *channel_get_ring_buffer(
 					struct lttng_ust_shm_handle *handle,
 					int *shm_fd, int *wait_fd,
 					int *wakeup_fd,
-					uint64_t *memory_map_size)
+					uint64_t *memory_map_size,
+					void **memory_map_addr)
 {
 	struct shm_ref *ref;
 
@@ -1198,6 +1199,7 @@ struct lttng_ust_ring_buffer *channel_get_ring_buffer(
 	*wakeup_fd = shm_get_wakeup_fd(handle, ref);
 	if (shm_get_shm_size(handle, ref, memory_map_size))
 		return NULL;
+	*memory_map_addr = handle->table->objects[ref->index].memory_map;
 	return shmp(handle, chan->backend.buf[cpu].shmp);
 }
 

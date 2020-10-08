@@ -327,10 +327,11 @@ int lttng_flush_buffer(struct lttng_ust_channel_buffer *chan)
 	struct lttng_ust_ring_buffer *buf;
 	int shm_fd, wait_fd, wakeup_fd;
 	uint64_t memory_map_size;
+	void *memory_map_addr;
 
 	buf = channel_get_ring_buffer(&client_config, rb_chan,
 			0, rb_chan->handle, &shm_fd, &wait_fd, &wakeup_fd,
-			&memory_map_size);
+			&memory_map_size, &memory_map_addr);
 	lib_ring_buffer_switch(&client_config, buf,
 			SWITCH_ACTIVE, rb_chan->handle);
 	return 0;
