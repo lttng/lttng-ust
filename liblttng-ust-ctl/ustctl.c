@@ -18,6 +18,9 @@
 
 #define _GNU_SOURCE
 #include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+
 #include <lttng/ust-config.h>
 #include <lttng/ust-ctl.h>
 #include <lttng/ust-abi.h>
@@ -1782,6 +1785,104 @@ int ustctl_has_perf_counters(void)
 
 #endif
 
+#ifdef __linux__
+/*
+ * Override application pid/uid/gid with unix socket credentials. If
+ * the application announced a pid matching our view, it means it is
+ * within the same pid namespace, so expose the ppid provided by the
+ * application.
+ */
+static
+int get_cred(int sock,
+	const struct ustctl_reg_msg *reg_msg,
+	uint32_t *pid,
+	uint32_t *ppid,
+	uint32_t *uid,
+	uint32_t *gid)
+{
+	struct ucred ucred;
+	socklen_t ucred_len = sizeof(struct ucred);
+	int ret;
+
+	ret = getsockopt(sock, SOL_SOCKET, SO_PEERCRED, &ucred, &ucred_len);
+	if (ret) {
+		return -LTTNG_UST_ERR_PEERCRED;
+	}
+	DBG("Unix socket peercred [ pid: %u, uid: %u, gid: %u ], "
+		"application registered claiming [ pid: %u, ppid: %u, uid: %u, gid: %u ]",
+		ucred.pid, ucred.uid, ucred.gid,
+		reg_msg->pid, reg_msg->ppid, reg_msg->uid, reg_msg->gid);
+	if (!ucred.pid) {
+		ERR("Unix socket credential pid=0. Refusing application in distinct, non-nested pid namespace.");
+		return -LTTNG_UST_ERR_PEERCRED_PID;
+	}
+	*pid = ucred.pid;
+	*uid = ucred.uid;
+	*gid = ucred.gid;
+	if (ucred.pid == reg_msg->pid) {
+		*ppid = reg_msg->ppid;
+	} else {
+		*ppid = 0;
+	}
+	return 0;
+}
+#elif defined(__FreeBSD__)
+#include <sys/ucred.h>
+
+/*
+ * Override application uid/gid with unix socket credentials. Use the
+ * first group of the cr_groups.
+ * Use the pid and ppid provided by the application on registration.
+ */
+static
+int get_cred(int sock,
+	const struct ustctl_reg_msg *reg_msg,
+	uint32_t *pid,
+	uint32_t *ppid,
+	uint32_t *uid,
+	uint32_t *gid)
+{
+	struct xucred xucred;
+	socklen_t xucred_len = sizeof(struct xucred);
+	int ret;
+
+	ret = getsockopt(sock, SOL_SOCKET, LOCAL_PEERCRED, &xucred, &xucred_len);
+	if (ret) {
+		return -LTTNG_UST_ERR_PEERCRED;
+	}
+	if (xucred.cr_version != XUCRED_VERSION || xucred.cr_ngroups < 1) {
+		return -LTTNG_UST_ERR_PEERCRED;
+	}
+	DBG("Unix socket peercred [ uid: %u, gid: %u ], "
+		"application registered claiming [ pid: %d, ppid: %d, uid: %u, gid: %u ]",
+		xucred.uid, xucred.cr_groups[0],
+		reg_msg->pid, reg_msg->ppid, reg_msg->uid, reg_msg->gid);
+	*pid = reg_msg->pid;
+	*ppid = reg_msg->ppid;
+	*uid = xucred.uid;
+	*gid = xucred.cr_groups[0];
+	return 0;
+}
+#else
+#warning "Using insecure fallback: trusting user id provided by registered applications. Please consider implementing use of unix socket credentials on your platform."
+static
+int get_cred(int sock,
+	const struct ustctl_reg_msg *reg_msg,
+	uint32_t *pid,
+	uint32_t *ppid,
+	uint32_t *uid,
+	uint32_t *gid)
+{
+	DBG("Application registered claiming [ pid: %u, ppid: %d, uid: %u, gid: %u ]",
+		reg_msg->pid, reg_msg->ppid, reg_msg->uid, reg_msg->gid);
+	*pid = reg_msg->pid;
+	*ppid = reg_msg->ppid;
+	*uid = reg_msg->uid;
+	*gid = reg_msg->gid;
+	return 0;
+}
+#endif
+
 /*
  * Returns 0 on success, negative error value on error.
  */
@@ -1832,10 +1933,6 @@ int ustctl_recv_reg_msg(int sock,
 	}
 	*major = reg_msg.major;
 	*minor = reg_msg.minor;
-	*pid = reg_msg.pid;
-	*ppid = reg_msg.ppid;
-	*uid = reg_msg.uid;
-	*gid = reg_msg.gid;
 	*bits_per_long = reg_msg.bits_per_long;
 	*uint8_t_alignment = reg_msg.uint8_t_alignment;
 	*uint16_t_alignment = reg_msg.uint16_t_alignment;
@@ -1846,8 +1943,7 @@ int ustctl_recv_reg_msg(int sock,
 	if (reg_msg.major != LTTNG_UST_ABI_MAJOR_VERSION) {
 		return -LTTNG_UST_ERR_UNSUP_MAJOR;
 	}
-
-	return 0;
+	return get_cred(sock, &reg_msg, pid, ppid, uid, gid);
 }
 
 int ustctl_recv_notify(int sock, enum ustctl_notify_cmd *notify_cmd)

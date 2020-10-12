@@ -50,6 +50,8 @@ enum lttng_ust_error_code {
 	LTTNG_UST_ERR_INVAL_MAGIC = 1031,	/* Invalid magic number */
 	LTTNG_UST_ERR_INVAL_SOCKET_TYPE = 1032,	/* Invalid socket type */
 	LTTNG_UST_ERR_UNSUP_MAJOR = 1033,	/* Unsupported major version */
+	LTTNG_UST_ERR_PEERCRED = 1034,		/* Cannot get unix socket peer credentials */
+	LTTNG_UST_ERR_PEERCRED_PID = 1035,	/* Peer credentials PID is invalid. Socket appears to belong to a distinct, non-nested pid namespace. */
 
 	/* MUST be last element */
 	LTTNG_UST_ERR_NR,			/* Last element */
