@@ -841,7 +841,7 @@ socket_error:
 
 static
 int lttng_event_notifier_create(const struct lttng_event_desc *desc,
-		uint64_t token,
+		uint64_t token, uint64_t error_counter_index,
 		struct lttng_event_notifier_group *event_notifier_group)
 {
 	struct lttng_event_notifier *event_notifier;
@@ -864,6 +864,7 @@ int lttng_event_notifier_create(const struct lttng_event_desc *desc,
 
 	event_notifier->group = event_notifier_group;
 	event_notifier->user_token = token;
+	event_notifier->error_counter_index = error_counter_index;
 
 	/* Event notifier will be enabled by enabler sync. */
 	event_notifier->enabled = 0;
@@ -1766,6 +1767,7 @@ void lttng_create_event_notifier_if_missing(
 			 */
 			ret = lttng_event_notifier_create(desc,
 				event_notifier_enabler->user_token,
+				event_notifier_enabler->error_counter_index,
 				event_notifier_group);
 			if (ret) {
 				DBG("Unable to create event_notifier %s, error %d\n",

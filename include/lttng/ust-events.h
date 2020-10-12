@@ -511,6 +511,7 @@ struct lttng_event {
 
 struct lttng_event_notifier {
 	uint64_t user_token;
+	uint64_t error_counter_index;
 	int enabled;
 	int registered;			/* has reg'd tracepoint probe */
 	size_t num_captures;		/* Needed to allocate the msgpack array. */

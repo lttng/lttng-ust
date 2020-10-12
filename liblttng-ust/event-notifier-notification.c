@@ -280,8 +280,24 @@ void notification_append_empty_capture(
 	lttng_msgpack_write_nil(&notif->writer);
 }
 
+static void record_error(struct lttng_event_notifier *event_notifier)
+{
+	struct lttng_event_notifier_group *event_notifier_group =
+			event_notifier->group;
+	size_t dimension_index[1];
+	int ret;
+
+	dimension_index[0] = event_notifier->error_counter_index;
+	ret = event_notifier_group->error_counter->ops->counter_add(
+			event_notifier_group->error_counter->counter,
+			dimension_index, 1);
+	if (ret)
+		WARN_ON_ONCE(1);
+}
+
 static
-void notification_send(struct lttng_event_notifier_notification *notif)
+void notification_send(struct lttng_event_notifier_notification *notif,
+		struct lttng_event_notifier *event_notifier)
 {
 	ssize_t ret;
 	size_t content_len;
@@ -291,7 +307,7 @@ void notification_send(struct lttng_event_notifier_notification *notif)
 
 	assert(notif);
 
-	ust_notif.token = notif->event_notifier_token;
+	ust_notif.token = event_notifier->user_token;
 
 	/*
 	 * Prepare sending the notification from multiple buffers using an
@@ -329,7 +345,8 @@ void notification_send(struct lttng_event_notifier_notification *notif)
 	ret = patient_writev(notif->notification_fd, iov, iovec_count);
 	if (ret == -1) {
 		if (errno == EAGAIN) {
-			DBG("Cannot send event notifier notification without blocking: %s",
+			record_error(event_notifier);
+			DBG("Cannot send event_notifier notification without blocking: %s",
 				strerror(errno));
 		} else {
 			DBG("Error to sending event notifier notification: %s",
@@ -339,7 +356,8 @@ void notification_send(struct lttng_event_notifier_notification *notif)
 	}
 }
 
-void lttng_event_notifier_notification_send(struct lttng_event_notifier *event_notifier,
+void lttng_event_notifier_notification_send(
+		struct lttng_event_notifier *event_notifier,
 		const char *stack_data)
 {
 	/*
@@ -375,5 +393,5 @@ void lttng_event_notifier_notification_send(struct lttng_event_notifier *event_n
 	 * Send the notification (including the capture buffer) to the
 	 * sessiond.
 	 */
-	notification_send(&notif);
+	notification_send(&notif, event_notifier);
 }

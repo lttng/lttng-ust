@@ -46,6 +46,7 @@ struct lttng_event_enabler {
 
 struct lttng_event_notifier_enabler {
 	struct lttng_enabler base;
+	uint64_t error_counter_index;
 	struct cds_list_head node;	/* per-app list of event_notifier enablers */
 	struct cds_list_head capture_bytecode_head;
 	struct lttng_event_notifier_group *group; /* weak ref */
