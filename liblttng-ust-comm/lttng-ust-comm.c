@@ -76,6 +76,8 @@ static const char *ustcomm_readable_code[] = {
 	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_INVAL_MAGIC) ] = "Invalid magic number",
 	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_INVAL_SOCKET_TYPE) ] = "Invalid socket type",
 	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_UNSUP_MAJOR) ] = "Unsupported major version",
+	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_PEERCRED) ] = "Cannot get unix socket peer credentials",
+	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_PEERCRED_PID) ] = "Peer credentials PID is invalid. Socket appears to belong to a distinct, non-nested pid namespace.",
 };
 
 /*
