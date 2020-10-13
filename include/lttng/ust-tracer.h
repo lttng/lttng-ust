@@ -27,6 +27,8 @@
  * SOFTWARE.
  */
 
+#include <limits.h>
+
 #if defined (__cplusplus)
 #include <type_traits>
 #endif
