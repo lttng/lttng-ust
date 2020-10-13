@@ -33,9 +33,13 @@
 #define PAGE_SIZE		sysconf(_SC_PAGE_SIZE)
 #endif
 
+#ifndef PAGE_MASK	/* FreeBSD and macOS defines their own PAGE_MASK. */
 #define PAGE_MASK		(~(PAGE_SIZE - 1))
+#endif
 #define __ALIGN_MASK(v, mask)	(((v) + (mask)) & ~(mask))
+#ifndef ALIGN		/* FreeBSD and macOS defines their own ALIGN. */
 #define ALIGN(v, align)		__ALIGN_MASK(v, (__typeof__(v)) (align) - 1)
+#endif
 #define PAGE_ALIGN(addr)	ALIGN(addr, PAGE_SIZE)
 
 /**
