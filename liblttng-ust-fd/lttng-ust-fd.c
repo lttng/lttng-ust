@@ -77,13 +77,13 @@ int fclose(FILE *stream)
 /* Solaris and FreeBSD. */
 void closefrom(int lowfd)
 {
-	(void) lttng_ust_safe_closefrom(lowfd, __lttng_ust_fd_plibc_close);
+	(void) lttng_ust_safe_closefrom_fd(lowfd, __lttng_ust_fd_plibc_close);
 }
 #elif defined(__NetBSD__) || defined(__OpenBSD__)
 /* NetBSD and OpenBSD. */
 int closefrom(int lowfd)
 {
-	return lttng_ust_safe_closefrom(lowfd, __lttng_ust_fd_plibc_close);
+	return lttng_ust_safe_closefrom_fd(lowfd, __lttng_ust_fd_plibc_close);
 }
 #else
 /* As far as we know, this OS does not implement closefrom. */
