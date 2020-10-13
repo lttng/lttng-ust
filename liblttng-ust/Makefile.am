@@ -15,7 +15,6 @@ liblttng_ust_tracepoint_la_SOURCES = \
 
 liblttng_ust_tracepoint_la_LIBADD = \
 	-lurcu-bp \
-	-lpthread \
 	$(top_builddir)/snprintf/libustsnprintf.la \
 	$(DL_LIBS)
 
@@ -110,7 +109,6 @@ liblttng_ust_support_la_LIBADD = \
 	$(top_builddir)/libringbuffer/libringbuffer.la
 
 liblttng_ust_la_LIBADD = \
-	-lpthread \
 	-lrt \
 	-lurcu-cds \
 	$(top_builddir)/snprintf/libustsnprintf.la \

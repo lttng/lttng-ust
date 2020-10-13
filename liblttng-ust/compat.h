@@ -20,80 +20,62 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-/*
- * lttng_ust_getprocname.
- */
-#ifdef __linux__
-
-#include <sys/prctl.h>
-
-#define LTTNG_UST_PROCNAME_LEN 17
-
-static inline
-void lttng_ust_getprocname(char *name)
-{
-	(void) prctl(PR_GET_NAME, (unsigned long) name, 0, 0, 0);
-}
-
-/*
- * If pthread_setname_np is available.
- */
-#ifdef HAVE_PTHREAD_SETNAME_NP
-static inline
-int lttng_pthread_setname_np(pthread_t thread, const char *name)
-{
-	return pthread_setname_np(thread, name);
-}
-#endif
-
-#elif defined(__FreeBSD__)
-
-#include <stdlib.h>
-#include <string.h>
+#include <pthread.h>
 
 /*
  * Limit imposed by Linux UST-sessiond ABI.
  */
 #define LTTNG_UST_PROCNAME_LEN 17
 
+#define LTTNG_UST_PROCNAME_SUFFIX "-ust"
+
+
+#if defined(HAVE_PTHREAD_SETNAME_NP_WITH_TID)
+static inline
+int lttng_pthread_setname_np(const char *name)
+{
+        return pthread_setname_np(pthread_self(), name);
+}
+
+static inline
+int lttng_pthread_getname_np(char *name, size_t len)
+{
+        return pthread_getname_np(pthread_self(), name, len);
+}
+#elif defined(HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID)
+static inline
+int lttng_pthread_setname_np(const char *name)
+{
+        return pthread_setname_np(name);
+}
+
+static inline
+int lttng_pthread_getname_np(char *name, size_t len)
+{
+        return pthread_getname_np(name, len);
+}
+#else
 /*
- * Acts like linux prctl, the string is not necessarily 0-terminated if
- * 16-byte long.
+ * For platforms without thread name support, do nothing.
  */
+static inline
+int lttng_pthread_setname_np(const char *name)
+{
+        return -ENOSYS;
+}
+
+static inline
+int lttng_pthread_getname_np(char *name, size_t len)
+{
+        return -ENOSYS;
+}
+#endif
+
 static inline
 void lttng_ust_getprocname(char *name)
 {
-	const char *bsd_name;
-
-	bsd_name = getprogname();
-	if (!bsd_name)
-		name[0] = '\0';
-	else
-		strncpy(name, bsd_name, LTTNG_UST_PROCNAME_LEN - 1);
+	lttng_pthread_getname_np(name, LTTNG_UST_PROCNAME_LEN);
 }
-
-/*
- * If pthread_set_name_np is available.
- */
-#ifdef HAVE_PTHREAD_SET_NAME_NP
-static inline
-int lttng_pthread_setname_np(pthread_t thread, const char *name)
-{
-	return pthread_set_name_np(thread, name);
-}
-#endif
-
-#endif
-
-/*
- * If a pthread setname/set_name function is available, declare
- * the setustprocname() function that will add '-ust' to the end
- * of the current process name, while truncating it if needed.
- */
-#if defined(HAVE_PTHREAD_SETNAME_NP) || defined(HAVE_PTHREAD_SETNAME_NP)
-#define LTTNG_UST_PROCNAME_SUFFIX "-ust"
-
-#include <pthread.h>
 
 static inline
 int lttng_ust_setustprocname(void)
@@ -102,7 +84,7 @@ int lttng_ust_setustprocname(void)
 	char name[LTTNG_UST_PROCNAME_LEN];
 	int limit = LTTNG_UST_PROCNAME_LEN - strlen(LTTNG_UST_PROCNAME_SUFFIX) - 1;
 
-	lttng_ust_getprocname(name);
+	lttng_pthread_getname_np(name, LTTNG_UST_PROCNAME_LEN);
 
 	len = strlen(name);
 	if (len > limit) {
@@ -114,18 +96,12 @@ int lttng_ust_setustprocname(void)
 		goto error;
 	}
 
-	ret = lttng_pthread_setname_np(pthread_self(), name);
+	ret = lttng_pthread_setname_np(name);
 
 error:
 	return ret;
 }
-#else
-static inline
-int lttng_ust_setustprocname(void)
-{
-	return 0;
-}
-#endif
+
 
 #include <errno.h>
 

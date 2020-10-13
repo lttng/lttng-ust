@@ -14,7 +14,6 @@ libringbuffer_la_SOURCES = \
 	nohz.h vatomic.h rb-init.h
 
 libringbuffer_la_LIBADD = \
-	-lpthread \
 	-lrt
 
 if HAVE_LIBNUMA

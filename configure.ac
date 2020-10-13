@@ -132,6 +132,8 @@ AS_IF([test "x$ax_cv___attribute__" = "xyes"],
 	[:],
 	[AC_MSG_ERROR([The compiler does not support __attribute__ extensions])])
 
+AX_PTHREAD(,[AC_MSG_ERROR([Could not configure pthreads support])])
+
 # Checks for library functions.
 AC_FUNC_CHOWN
 AC_FUNC_FORK
@@ -160,6 +162,9 @@ AC_CHECK_FUNCS([ \
 	strtol \
 	sysconf \
 ])
+
+# Check for pthread_setname_np and its signature
+LTTNG_PTHREAD_SETNAME_NP
 
 # AC_FUNC_MALLOC causes problems when cross-compiling.
 #AC_FUNC_MALLOC
@@ -227,13 +232,6 @@ AH_TEMPLATE([HAVE_DLMOPEN], ["Define to 1 if dlmopen is available."])
 AC_CHECK_LIB([$libdl_name], [dlmopen],
 	[AC_DEFINE([HAVE_DLMOPEN], [1])]
 )
-
-AC_CHECK_LIB([pthread], [pthread_create])
-AC_CHECK_LIB([pthread], [pthread_setname_np],
-	AC_DEFINE([HAVE_PTHREAD_SETNAME_NP], [1], [Define to 1 if pthread_setname_np is available.]),
-	AC_CHECK_LIB([pthread], [pthread_set_name_np],
-		AC_DEFINE([HAVE_PTHREAD_SET_NAME_NP], [1], [Define to 1 if pthread_set_name_np is available.]),
-		AC_MSG_RESULT([pthread setname/set_name not found.])))
 
 # Check for dlfcn.h
 AC_CHECK_HEADER([dlfcn.h])
@@ -519,7 +517,7 @@ AC_DEFUN([_AC_DEFINE_AND_SUBST], [
 
 _AC_DEFINE_AND_SUBST([LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_MS], [3000])
 
-AM_CFLAGS="-Wall"
+AM_CFLAGS="-Wall $PTHREAD_CFLAGS"
 AC_SUBST(AM_CFLAGS)
 AC_SUBST(JNI_CPPFLAGS)
 
