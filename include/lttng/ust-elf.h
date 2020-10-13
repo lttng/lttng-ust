@@ -21,7 +21,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <byteswap.h>
 #include <elf.h>
 #include <lttng/ust-endian.h>
 

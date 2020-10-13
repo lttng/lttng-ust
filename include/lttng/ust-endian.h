@@ -29,8 +29,12 @@
 
 #if (defined(__linux__) || defined(__CYGWIN__))
 #include <endian.h>
+#include <byteswap.h>
 #elif defined(__FreeBSD__)
-#include <machine/endian.h>
+#include <sys/endian.h>
+#define bswap_16(x)	bswap16(x)
+#define bswap_32(x)	bswap32(x)
+#define bswap_64(x)	bswap64(x)
 #else
 #error "Please add support for your OS."
 #endif

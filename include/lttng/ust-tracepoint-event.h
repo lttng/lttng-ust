@@ -29,7 +29,7 @@
 #include <lttng/ringbuffer-config.h>
 #include <lttng/ust-compiler.h>
 #include <lttng/tracepoint.h>
-#include <byteswap.h>
+#include <lttng/ust-endian.h>
 #include <string.h>
 
 #define __LTTNG_UST_NULL_STRING	"(null)"

@@ -28,7 +28,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <urcu-pointer.h>
-#include <byteswap.h>
+#include <lttng/ust-endian.h>
 #include "lttng-filter.h"
 #include "string-utils.h"
 
