@@ -207,6 +207,11 @@ AS_CASE([$host_cpu],
 		NO_UNALIGNED_ACCESS=1
 	])
 
+# Set os specific options
+AS_CASE([$host_os],
+	[freebsd*], [NO_NUMA=1]
+)
+
 # Configuration options, which will be installed in the config.h
 AH_TEMPLATE([LTTNG_UST_HAVE_EFFICIENT_UNALIGNED_ACCESS], [Use efficient unaligned access.])
 AH_TEMPLATE([LTTNG_UST_HAVE_SDT_INTEGRATION], [SystemTap integration via sdt.h])
