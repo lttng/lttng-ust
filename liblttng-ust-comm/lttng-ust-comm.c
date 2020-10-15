@@ -754,7 +754,7 @@ int ustcomm_send_reg_msg(int sock,
 	reg_msg.uint64_t_alignment = uint64_t_alignment;
 	reg_msg.long_alignment = long_alignment;
 	reg_msg.socket_type = type;
-	lttng_ust_getprocname(reg_msg.name);
+	lttng_pthread_getname_np(reg_msg.name, LTTNG_UST_ABI_PROCNAME_LEN);
 	memset(reg_msg.padding, 0, sizeof(reg_msg.padding));
 
 	len = ustcomm_send_unix_sock(sock, &reg_msg, sizeof(reg_msg));

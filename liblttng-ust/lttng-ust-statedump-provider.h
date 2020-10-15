@@ -99,7 +99,7 @@ TRACEPOINT_EVENT(lttng_ust_statedump, procname,
 		char *, name
 	),
 	TP_FIELDS(
-		ctf_array_text(char, procname, name, LTTNG_UST_PROCNAME_LEN)
+		ctf_array_text(char, procname, name, LTTNG_UST_ABI_PROCNAME_LEN)
 	)
 )
 
