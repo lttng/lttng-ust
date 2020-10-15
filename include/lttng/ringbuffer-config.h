@@ -346,7 +346,7 @@ unsigned int lib_ring_buffer_align(size_t align_drift, size_t size_of_type);
 static inline
 unsigned int lib_ring_buffer_align(size_t align_drift, size_t size_of_type)
 {
-	return offset_align(align_drift, size_of_type);
+	return lttng_ust_offset_align(align_drift, size_of_type);
 }
 
 #else

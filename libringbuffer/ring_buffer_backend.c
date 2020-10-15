@@ -25,6 +25,7 @@
 #include <urcu/arch.h>
 #include <limits.h>
 
+#include <lttng/align.h>
 #include <lttng/ringbuffer-config.h>
 #include "vatomic.h"
 #include "backend.h"
@@ -64,7 +65,7 @@ int lib_ring_buffer_backend_allocate(const struct lttng_ust_lib_ring_buffer_conf
 	if (extra_reader_sb)
 		num_subbuf_alloc++;
 
-	page_size = sysconf(_SC_PAGE_SIZE);
+	page_size = LTTNG_UST_PAGE_SIZE;
 	if (page_size <= 0) {
 		goto page_size_error;
 	}
@@ -281,7 +282,7 @@ int channel_backend_init(struct channel_backend *chanb,
 	if (!name)
 		return -EPERM;
 
-	page_size = sysconf(_SC_PAGE_SIZE);
+	page_size = LTTNG_UST_PAGE_SIZE;
 	if (page_size <= 0) {
 		return -ENOMEM;
 	}
@@ -321,28 +322,28 @@ int channel_backend_init(struct channel_backend *chanb,
 	memcpy(&chanb->config, config, sizeof(*config));
 
 	/* Per-cpu buffer size: control (prior to backend) */
-	shmsize = offset_align(shmsize, __alignof__(struct lttng_ust_lib_ring_buffer));
+	shmsize = lttng_ust_offset_align(shmsize, __alignof__(struct lttng_ust_lib_ring_buffer));
 	shmsize += sizeof(struct lttng_ust_lib_ring_buffer);
-	shmsize += offset_align(shmsize, __alignof__(struct commit_counters_hot));
+	shmsize += lttng_ust_offset_align(shmsize, __alignof__(struct commit_counters_hot));
 	shmsize += sizeof(struct commit_counters_hot) * num_subbuf;
-	shmsize += offset_align(shmsize, __alignof__(struct commit_counters_cold));
+	shmsize += lttng_ust_offset_align(shmsize, __alignof__(struct commit_counters_cold));
 	shmsize += sizeof(struct commit_counters_cold) * num_subbuf;
 	/* Sampled timestamp end */
-	shmsize += offset_align(shmsize, __alignof__(uint64_t));
+	shmsize += lttng_ust_offset_align(shmsize, __alignof__(uint64_t));
 	shmsize += sizeof(uint64_t) * num_subbuf;
 
 	/* Per-cpu buffer size: backend */
 	/* num_subbuf + 1 is the worse case */
 	num_subbuf_alloc = num_subbuf + 1;
-	shmsize += offset_align(shmsize, __alignof__(struct lttng_ust_lib_ring_buffer_backend_pages_shmp));
+	shmsize += lttng_ust_offset_align(shmsize, __alignof__(struct lttng_ust_lib_ring_buffer_backend_pages_shmp));
 	shmsize += sizeof(struct lttng_ust_lib_ring_buffer_backend_pages_shmp) * num_subbuf_alloc;
-	shmsize += offset_align(shmsize, page_size);
+	shmsize += lttng_ust_offset_align(shmsize, page_size);
 	shmsize += subbuf_size * num_subbuf_alloc;
-	shmsize += offset_align(shmsize, __alignof__(struct lttng_ust_lib_ring_buffer_backend_pages));
+	shmsize += lttng_ust_offset_align(shmsize, __alignof__(struct lttng_ust_lib_ring_buffer_backend_pages));
 	shmsize += sizeof(struct lttng_ust_lib_ring_buffer_backend_pages) * num_subbuf_alloc;
-	shmsize += offset_align(shmsize, __alignof__(struct lttng_ust_lib_ring_buffer_backend_subbuffer));
+	shmsize += lttng_ust_offset_align(shmsize, __alignof__(struct lttng_ust_lib_ring_buffer_backend_subbuffer));
 	shmsize += sizeof(struct lttng_ust_lib_ring_buffer_backend_subbuffer) * num_subbuf;
-	shmsize += offset_align(shmsize, __alignof__(struct lttng_ust_lib_ring_buffer_backend_counts));
+	shmsize += lttng_ust_offset_align(shmsize, __alignof__(struct lttng_ust_lib_ring_buffer_backend_counts));
 	shmsize += sizeof(struct lttng_ust_lib_ring_buffer_backend_counts) * num_subbuf;
 
 	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU) {

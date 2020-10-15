@@ -449,7 +449,7 @@ int lttng_ust_elf_get_build_id_from_segment(
 		size_t read_len;
 
 		/* Align start of note entry */
-		offset += offset_align(offset, ELF_NOTE_ENTRY_ALIGN);
+		offset += lttng_ust_offset_align(offset, ELF_NOTE_ENTRY_ALIGN);
 		if (offset >= segment_end) {
 			break;
 		}
@@ -474,7 +474,7 @@ int lttng_ust_elf_get_build_id_from_segment(
 
 		offset += sizeof(nhdr) + nhdr.n_namesz;
 		/* Align start of desc entry */
-		offset += offset_align(offset, ELF_NOTE_DESC_ALIGN);
+		offset += lttng_ust_offset_align(offset, ELF_NOTE_DESC_ALIGN);
 
 		if (nhdr.n_type != NT_GNU_BUILD_ID) {
 			/*

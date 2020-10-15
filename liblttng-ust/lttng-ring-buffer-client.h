@@ -474,7 +474,7 @@ static void client_buffer_end(struct lttng_ust_lib_ring_buffer *buf, uint64_t ts
 	header->ctx.content_size =
 		(uint64_t) data_size * CHAR_BIT;		/* in bits */
 	header->ctx.packet_size =
-		(uint64_t) PAGE_ALIGN(data_size) * CHAR_BIT;	/* in bits */
+		(uint64_t) LTTNG_UST_PAGE_ALIGN(data_size) * CHAR_BIT;	/* in bits */
 
 	records_lost += lib_ring_buffer_get_records_lost_full(&client_config, buf);
 	records_lost += lib_ring_buffer_get_records_lost_wrap(&client_config, buf);

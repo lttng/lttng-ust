@@ -1456,7 +1456,7 @@ int ustctl_get_padded_subbuf_size(struct ustctl_consumer_stream *stream,
 	chan = consumer_chan->chan->chan;
 	*len = lib_ring_buffer_get_read_data_size(&chan->backend.config, buf,
 		consumer_chan->chan->handle);
-	*len = PAGE_ALIGN(*len);
+	*len = LTTNG_UST_PAGE_ALIGN(*len);
 	return 0;
 }
 

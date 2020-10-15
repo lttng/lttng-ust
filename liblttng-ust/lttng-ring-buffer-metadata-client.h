@@ -139,7 +139,7 @@ static void client_buffer_end(struct lttng_ust_lib_ring_buffer *buf, uint64_t ts
 	if (!header)
 		return;
 	header->content_size = data_size * CHAR_BIT;		/* in bits */
-	header->packet_size = PAGE_ALIGN(data_size) * CHAR_BIT; /* in bits */
+	header->packet_size = LTTNG_UST_PAGE_ALIGN(data_size) * CHAR_BIT; /* in bits */
 	/*
 	 * We do not care about the records lost count, because the metadata
 	 * channel waits and retry.

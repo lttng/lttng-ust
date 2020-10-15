@@ -42,6 +42,7 @@
 #include <urcu/futex.h>
 #include <urcu/compiler.h>
 
+#include <lttng/align.h>
 #include <lttng/ust-events.h>
 #include <lttng/ust-abi.h>
 #include <lttng/ust.h>
@@ -1173,7 +1174,7 @@ void cleanup_sock_info(struct sock_info *sock_info, int exiting)
 	if (sock_info->wait_shm_mmap) {
 		long page_size;
 
-		page_size = sysconf(_SC_PAGE_SIZE);
+		page_size = LTTNG_UST_PAGE_SIZE;
 		if (page_size <= 0) {
 			if (!page_size) {
 				errno = EINVAL;

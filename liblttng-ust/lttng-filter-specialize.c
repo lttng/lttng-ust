@@ -74,7 +74,7 @@ static ssize_t bytecode_reserve_data(struct bytecode_runtime *runtime,
 		size_t align, size_t len)
 {
 	ssize_t ret;
-	size_t padding = offset_align(runtime->data_len, align);
+	size_t padding = lttng_ust_offset_align(runtime->data_len, align);
 	size_t new_len = runtime->data_len + padding + len;
 	size_t new_alloc_len = new_len;
 	size_t old_alloc_len = runtime->data_alloc_len;

@@ -252,7 +252,7 @@ int consume_stream(struct lttng_ust_shm_handle *handle, int cpu, char *outfile)
 		}
 		read_size = lib_ring_buffer_get_read_data_size(
 			&chan->backend.config, buf, handle);
-		read_size = PAGE_ALIGN(read_size);
+		read_size = LTTNG_UST_PAGE_ALIGN(read_size);
 		ptr = lib_ring_buffer_read_offset_address(
 			&buf->backend, 0, handle);
 		printf("WRITE: copy %lu bytes\n", read_size);

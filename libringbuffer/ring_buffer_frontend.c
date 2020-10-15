@@ -1022,11 +1022,11 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 
 	/* Calculate the shm allocation layout */
 	shmsize = sizeof(struct channel);
-	shmsize += offset_align(shmsize, __alignof__(struct lttng_ust_lib_ring_buffer_shmp));
+	shmsize += lttng_ust_offset_align(shmsize, __alignof__(struct lttng_ust_lib_ring_buffer_shmp));
 	shmsize += sizeof(struct lttng_ust_lib_ring_buffer_shmp) * nr_streams;
 	chansize = shmsize;
 	if (priv_data_align)
-		shmsize += offset_align(shmsize, priv_data_align);
+		shmsize += lttng_ust_offset_align(shmsize, priv_data_align);
 	shmsize += priv_data_size;
 
 	/* Allocate normal memory for channel (not shared) */

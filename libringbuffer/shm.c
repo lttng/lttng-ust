@@ -518,6 +518,6 @@ struct shm_ref zalloc_shm(struct shm_object *obj, size_t len)
 
 void align_shm(struct shm_object *obj, size_t align)
 {
-	size_t offset_len = offset_align(obj->allocated_len, align);
+	size_t offset_len = lttng_ust_offset_align(obj->allocated_len, align);
 	obj->allocated_len += offset_len;
 }
