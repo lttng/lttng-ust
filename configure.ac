@@ -575,6 +575,7 @@ AC_CONFIG_FILES([
 	tests/snprintf/Makefile
 	tests/ust-elf/Makefile
 	tests/benchmark/Makefile
+	tests/pthread_name/Makefile
 	tests/utils/Makefile
 	tests/test-app-ctx/Makefile
 	tests/gcc-weak-hidden/Makefile

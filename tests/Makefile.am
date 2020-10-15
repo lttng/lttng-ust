@@ -1,5 +1,5 @@
 SUBDIRS = utils hello same_line_tracepoint snprintf benchmark ust-elf \
-		ctf-types test-app-ctx gcc-weak-hidden hello-many
+		ctf-types test-app-ctx gcc-weak-hidden hello-many pthread_name
 
 if CXX_WORKS
 SUBDIRS += hello.cxx
@@ -11,7 +11,8 @@ LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 
 TESTS = snprintf/test_snprintf \
 	ust-elf/test_ust_elf \
-	gcc-weak-hidden/test_gcc_weak_hidden
+	gcc-weak-hidden/test_gcc_weak_hidden \
+	pthread_name/test_pthread_name
 
 EXTRA_DIST = README
 

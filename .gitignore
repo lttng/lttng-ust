@@ -87,6 +87,7 @@ tests/benchmark/bench2
 tests/ctf-types/ctf-types
 tests/test-app-ctx/hello
 tests/gcc-weak-hidden/test_gcc_weak_hidden
+tests/pthread_name/test_pthread_name
 
 # Java agent library
 *.class
