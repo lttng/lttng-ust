@@ -242,7 +242,6 @@ AC_CHECK_LIB([$libdl_name], [dlmopen],
 AC_CHECK_HEADER([dlfcn.h])
 AS_IF([test "x${ac_cv_header_dlfcn_h}" = "xyes"], [
 	AC_CHECK_DECLS([RTLD_DI_LINKMAP], [], [], [
-		#define _GNU_SOURCE /* Required on Linux to get GNU extensions */
 		#include <dlfcn.h>
 	])
 ], [
