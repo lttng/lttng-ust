@@ -485,6 +485,9 @@ _AC_DEFINE_AND_SUBST([LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_MS], [3000])
 AM_CFLAGS="-Wall $URCU_CFLAGS $PTHREAD_CFLAGS"
 AC_SUBST(AM_CFLAGS)
 
+AM_CXXFLAGS="$AM_CFLAGS"
+AC_SUBST(AM_CXXFLAGS)
+
 # The order in which the include folders are searched is important.
 # The top_builddir should always be searched first in the event that a build
 # time generated file is included.
