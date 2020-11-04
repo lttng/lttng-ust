@@ -149,12 +149,14 @@ struct shm_object *_shm_object_table_alloc_shm(struct shm_object_table *table,
 		PERROR("zero_file");
 		goto error_zero_file;
 	}
+
 	/*
 	 * Also ensure the file metadata is synced with the storage by using
-	 * fsync(2).
+	 * fsync(2). Some platforms don't allow fsync on POSIX shm fds, ignore
+	 * EINVAL accordingly.
 	 */
 	ret = fsync(shmfd);
-	if (ret) {
+	if (ret && errno != EINVAL) {
 		PERROR("fsync");
 		goto error_fsync;
 	}
