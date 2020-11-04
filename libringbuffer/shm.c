@@ -128,18 +128,26 @@ struct shm_object *_shm_object_table_alloc_shm(struct shm_object_table *table,
 	}
 	memcpy(obj->wait_fd, waitfd, sizeof(waitfd));
 
-	/* create shm */
+	/*
+	 * Set POSIX shared memory object size
+	 *
+	 * First, use ftruncate() to set its size, some implementations won't
+	 * allow writes past the size set by ftruncate.
+	 * Then, use write() to fill it with zeros, this allows us to fully
+	 * allocate it and detect a shortage of shm space without dealing with
+	 * a SIGBUS.
+	 */
 
 	shmfd = stream_fd;
-	ret = zero_file(shmfd, memory_map_size);
-	if (ret) {
-		PERROR("zero_file");
-		goto error_zero_file;
-	}
 	ret = ftruncate(shmfd, memory_map_size);
 	if (ret) {
 		PERROR("ftruncate");
 		goto error_ftruncate;
+	}
+	ret = zero_file(shmfd, memory_map_size);
+	if (ret) {
+		PERROR("zero_file");
+		goto error_zero_file;
 	}
 	/*
 	 * Also ensure the file metadata is synced with the storage by using
