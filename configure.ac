@@ -540,6 +540,7 @@ AC_CONFIG_FILES([
 	tests/benchmark/Makefile
 	tests/unit/gcc-weak-hidden/Makefile
 	tests/unit/Makefile
+	tests/unit/libringbuffer/Makefile
 	tests/unit/pthread_name/Makefile
 	tests/unit/snprintf/Makefile
 	tests/unit/ust-elf/Makefile

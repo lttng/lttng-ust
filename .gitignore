@@ -79,6 +79,7 @@ tests/compile/hello-many/hello-many
 tests/compile/same_line_tracepoint/same_line_tracepoint
 tests/compile/test-app-ctx/hello
 tests/unit/gcc-weak-hidden/test_gcc_weak_hidden
+tests/unit/libringbuffer/test_shm
 tests/unit/pthread_name/test_pthread_name
 tests/unit/snprintf/test_snprintf
 tests/unit/ust-elf/test_ust_elf
