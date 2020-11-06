@@ -34,6 +34,14 @@
 static inline
 int lttng_pthread_setname_np(const char *name)
 {
+	/*
+	 * Some implementations don't error out, replicate this behavior for
+	 * consistency.
+	 */
+	if (strnlen(name, LTTNG_UST_ABI_PROCNAME_LEN) >= LTTNG_UST_ABI_PROCNAME_LEN) {
+		return ERANGE;
+	}
+
 	return pthread_setname_np(pthread_self(), name);
 }
 
