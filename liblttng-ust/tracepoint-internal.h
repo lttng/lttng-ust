@@ -20,8 +20,8 @@
  */
 
 #include <urcu/list.h>
-#include <urcu-bp.h>
 #include <lttng/tracepoint-types.h>
+#include <lttng/ust-events.h>
 
 #define TRACE_DEFAULT	TRACE_DEBUG_LINE
 
@@ -44,13 +44,15 @@ extern int __tracepoint_probe_unregister_queue_release(const char *name,
 		void (*func)(void), void *data);
 extern void __tracepoint_probe_prune_release_queue(void);
 
+void lttng_ust_synchronize_trace(void);
+
 /*
  * call after disconnection of last probe implemented within a
  * shared object before unmapping the library that contains the probe.
  */
 static inline void tracepoint_synchronize_unregister(void)
 {
-	urcu_bp_synchronize_rcu();
+	lttng_ust_synchronize_trace();
 }
 
 extern void init_tracepoint(void);

@@ -251,8 +251,6 @@ AM_CONDITIONAL([HAVE_DLINFO], [test "x${ac_cv_have_decl_RTLD_DI_LINKMAP}" = "xye
 
 # Require URCU >= 0.12 for DEFINE_URCU_TLS_INIT
 PKG_CHECK_MODULES([URCU], [liburcu >= 0.12])
-PKG_CHECK_MODULES([URCU_BP], [liburcu-bp >= 0.12])
-PKG_CHECK_MODULES([URCU_CDS], [liburcu-cds >= 0.12])
 
 # numa.h integration
 AS_IF([test "x$NO_NUMA" = "x1"],[

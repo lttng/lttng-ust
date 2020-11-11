@@ -24,12 +24,13 @@
 #include <lttng/ust-events.h>
 #include <lttng/ust-tracer.h>
 #include <lttng/ust-context-provider.h>
-#include <urcu-pointer.h>
+#include <lttng/urcu/pointer.h>
 #include <usterr-signal-safe.h>
 #include <helper.h>
 #include <stddef.h>
 #include <string.h>
 #include <assert.h>
+#include "tracepoint-internal.h"
 
 #include "context-internal.h"
 
@@ -157,8 +158,8 @@ int lttng_context_add_rcu(struct lttng_ctx **ctx_p,
 	}
 	*nf = *f;
 	lttng_context_update(new_ctx);
-	rcu_assign_pointer(*ctx_p, new_ctx);
-	synchronize_trace();
+	lttng_ust_rcu_assign_pointer(*ctx_p, new_ctx);
+	lttng_ust_synchronize_trace();
 	if (old_ctx) {
 		free(old_ctx->fields);
 		free(old_ctx);
@@ -391,8 +392,8 @@ int lttng_ust_context_set_provider_rcu(struct lttng_ctx **_ctx,
 		new_fields[i].get_value = get_value;
 	}
 	new_ctx->fields = new_fields;
-	rcu_assign_pointer(*_ctx, new_ctx);
-	synchronize_trace();
+	lttng_ust_rcu_assign_pointer(*_ctx, new_ctx);
+	lttng_ust_synchronize_trace();
 	free(ctx->fields);
 	free(ctx);
 	return 0;

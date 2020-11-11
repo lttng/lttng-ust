@@ -39,8 +39,9 @@
 #include <signal.h>
 #include <limits.h>
 #include <urcu/uatomic.h>
-#include <urcu/futex.h>
+#include "futex.h"
 #include <urcu/compiler.h>
+#include <lttng/urcu/urcu-ust.h>
 
 #include <lttng/align.h>
 #include <lttng/ust-events.h>
@@ -434,8 +435,7 @@ void lttng_fixup_ust_mutex_nest_tls(void)
 static
 void lttng_fixup_urcu_bp_tls(void)
 {
-	rcu_read_lock();
-	rcu_read_unlock();
+	(void) lttng_ust_urcu_read_ongoing();
 }
 
 void lttng_ust_fixup_tls(void)
@@ -1624,7 +1624,7 @@ void wait_for_sessiond(struct sock_info *sock_info)
 	if (uatomic_read((int32_t *) sock_info->wait_shm_mmap))
 		goto end_wait;
 
-	while (futex_async((int32_t *) sock_info->wait_shm_mmap,
+	while (lttng_ust_futex_async((int32_t *) sock_info->wait_shm_mmap,
 			FUTEX_WAIT, 0, NULL, NULL, 0)) {
 		switch (errno) {
 		case EWOULDBLOCK:
@@ -2315,7 +2315,9 @@ void ust_before_fork(sigset_t *save_sigset)
 	pthread_mutex_lock(&ust_fork_mutex);
 
 	ust_lock_nocheck();
-	urcu_bp_before_fork();
+	lttng_ust_urcu_before_fork();
+	if (lttng_ust_liburcu_bp_before_fork)
+		lttng_ust_liburcu_bp_before_fork();
 	lttng_ust_lock_fd_tracker();
 	lttng_perf_lock();
 }
@@ -2343,7 +2345,9 @@ void ust_after_fork_parent(sigset_t *restore_sigset)
 	if (URCU_TLS(lttng_ust_nest_count))
 		return;
 	DBG("process %d", getpid());
-	urcu_bp_after_fork_parent();
+	lttng_ust_urcu_after_fork_parent();
+	if (lttng_ust_liburcu_bp_after_fork_parent)
+		lttng_ust_liburcu_bp_after_fork_parent();
 	/* Release mutexes and reenable signals */
 	ust_after_fork_common(restore_sigset);
 }
@@ -2369,7 +2373,9 @@ void ust_after_fork_child(sigset_t *restore_sigset)
 	ust_context_vgids_reset();
 	DBG("process %d", getpid());
 	/* Release urcu mutexes */
-	urcu_bp_after_fork_child();
+	lttng_ust_urcu_after_fork_child();
+	if (lttng_ust_liburcu_bp_after_fork_child)
+		lttng_ust_liburcu_bp_after_fork_child();
 	lttng_ust_cleanup(0);
 	/* Release mutexes and reenable signals */
 	ust_after_fork_common(restore_sigset);

@@ -29,8 +29,7 @@
 #include <stdint.h>
 #include <time.h>
 
-#include <urcu-bp.h>
-#include <urcu/rculfhash.h>
+#include "rculfhash.h"
 
 #include "lttng-bytecode.h"
 #include "lttng-hash-helper.h"
@@ -49,7 +48,7 @@
 
 /* merge point table node */
 struct lfht_mp_node {
-	struct cds_lfht_node node;
+	struct lttng_ust_lfht_node node;
 
 	/* Context at merge point */
 	struct vstack stack;
@@ -60,7 +59,7 @@ static unsigned long lttng_hash_seed;
 static unsigned int lttng_hash_seed_ready;
 
 static
-int lttng_hash_match(struct cds_lfht_node *node, const void *key)
+int lttng_hash_match(struct lttng_ust_lfht_node *node, const void *key)
 {
 	struct lfht_mp_node *mp_node =
 		caa_container_of(node, struct lfht_mp_node, node);
@@ -92,14 +91,14 @@ int merge_points_compare(const struct vstack *stacka,
 }
 
 static
-int merge_point_add_check(struct cds_lfht *ht, unsigned long target_pc,
+int merge_point_add_check(struct lttng_ust_lfht *ht, unsigned long target_pc,
 		const struct vstack *stack)
 {
 	struct lfht_mp_node *node;
 	unsigned long hash = lttng_hash_mix((const char *) target_pc,
 				sizeof(target_pc),
 				lttng_hash_seed);
-	struct cds_lfht_node *ret;
+	struct lttng_ust_lfht_node *ret;
 
 	dbg_printf("Bytecode: adding merge point at offset %lu, hash %lu\n",
 			target_pc, hash);
@@ -108,7 +107,7 @@ int merge_point_add_check(struct cds_lfht *ht, unsigned long target_pc,
 		return -ENOMEM;
 	node->target_pc = target_pc;
 	memcpy(&node->stack, stack, sizeof(node->stack));
-	ret = cds_lfht_add_unique(ht, hash, lttng_hash_match,
+	ret = lttng_ust_lfht_add_unique(ht, hash, lttng_hash_match,
 		(const char *) target_pc, &node->node);
 	if (ret != &node->node) {
 		struct lfht_mp_node *ret_mp =
@@ -547,16 +546,16 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 }
 
 static
-unsigned long delete_all_nodes(struct cds_lfht *ht)
+unsigned long delete_all_nodes(struct lttng_ust_lfht *ht)
 {
-	struct cds_lfht_iter iter;
+	struct lttng_ust_lfht_iter iter;
 	struct lfht_mp_node *node;
 	unsigned long nr_nodes = 0;
 
-	cds_lfht_for_each_entry(ht, &iter, node, node) {
+	lttng_ust_lfht_for_each_entry(ht, &iter, node, node) {
 		int ret;
 
-		ret = cds_lfht_del(ht, cds_lfht_iter_get_node(&iter));
+		ret = lttng_ust_lfht_del(ht, lttng_ust_lfht_iter_get_node(&iter));
 		assert(!ret);
 		/* note: this hash table is never used concurrently */
 		free(node);
@@ -1223,15 +1222,15 @@ end:
  */
 static
 int validate_instruction_all_contexts(struct bytecode_runtime *bytecode,
-		struct cds_lfht *merge_points,
+		struct lttng_ust_lfht *merge_points,
 		struct vstack *stack,
 		char *start_pc,
 		char *pc)
 {
 	int ret;
 	unsigned long target_pc = pc - start_pc;
-	struct cds_lfht_iter iter;
-	struct cds_lfht_node *node;
+	struct lttng_ust_lfht_iter iter;
+	struct lttng_ust_lfht_node *node;
 	struct lfht_mp_node *mp_node;
 	unsigned long hash;
 
@@ -1243,9 +1242,9 @@ int validate_instruction_all_contexts(struct bytecode_runtime *bytecode,
 	/* Validate merge points */
 	hash = lttng_hash_mix((const char *) target_pc, sizeof(target_pc),
 			lttng_hash_seed);
-	cds_lfht_lookup(merge_points, hash, lttng_hash_match,
+	lttng_ust_lfht_lookup(merge_points, hash, lttng_hash_match,
 			(const char *) target_pc, &iter);
-	node = cds_lfht_iter_get_node(&iter);
+	node = lttng_ust_lfht_iter_get_node(&iter);
 	if (node) {
 		mp_node = caa_container_of(node, struct lfht_mp_node, node);
 
@@ -1259,7 +1258,7 @@ int validate_instruction_all_contexts(struct bytecode_runtime *bytecode,
 		/* Once validated, we can remove the merge point */
 		dbg_printf("Bytecode: remove merge point at offset %lu\n",
 				target_pc);
-		ret = cds_lfht_del(merge_points, node);
+		ret = lttng_ust_lfht_del(merge_points, node);
 		assert(!ret);
 	}
 	return 0;
@@ -1273,7 +1272,7 @@ int validate_instruction_all_contexts(struct bytecode_runtime *bytecode,
  */
 static
 int exec_insn(struct bytecode_runtime *bytecode,
-		struct cds_lfht *merge_points,
+		struct lttng_ust_lfht *merge_points,
 		struct vstack *stack,
 		char **_next_pc,
 		char *pc)
@@ -1960,7 +1959,7 @@ end:
  */
 int lttng_bytecode_validate(struct bytecode_runtime *bytecode)
 {
-	struct cds_lfht *merge_points;
+	struct lttng_ust_lfht *merge_points;
 	char *pc, *next_pc, *start_pc;
 	int ret = -EINVAL;
 	struct vstack stack;
@@ -1977,7 +1976,7 @@ int lttng_bytecode_validate(struct bytecode_runtime *bytecode)
 	 * holding RCU read-side lock and free nodes without using
 	 * call_rcu.
 	 */
-	merge_points = cds_lfht_new(DEFAULT_NR_MERGE_POINTS,
+	merge_points = lttng_ust_lfht_new(DEFAULT_NR_MERGE_POINTS,
 			MIN_NR_BUCKETS, MAX_NR_BUCKETS,
 			0, NULL);
 	if (!merge_points) {
@@ -2017,7 +2016,7 @@ end:
 			ret = -EINVAL;
 		}
 	}
-	if (cds_lfht_destroy(merge_points, NULL)) {
+	if (lttng_ust_lfht_destroy(merge_points)) {
 		ERR("Error destroying hash table\n");
 	}
 	return ret;

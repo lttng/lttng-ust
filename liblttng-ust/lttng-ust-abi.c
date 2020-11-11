@@ -57,6 +57,7 @@
 #include "../libringbuffer/frontend_types.h"
 #include "../libringbuffer/shm.h"
 #include "../libcounter/counter.h"
+#include "tracepoint-internal.h"
 #include "lttng-tracer.h"
 #include "string-utils.h"
 #include "ust-events-internal.h"
@@ -438,7 +439,7 @@ long lttng_cmd(int objd, unsigned int cmd, unsigned long arg,
 	case LTTNG_UST_TRACEPOINT_FIELD_LIST:
 		return lttng_abi_tracepoint_field_list(owner);
 	case LTTNG_UST_WAIT_QUIESCENT:
-		synchronize_trace();
+		lttng_ust_synchronize_trace();
 		return 0;
 	case LTTNG_UST_EVENT_NOTIFIER_GROUP_CREATE:
 		return lttng_abi_event_notifier_send_fd(owner,

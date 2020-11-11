@@ -34,9 +34,9 @@
 #include <time.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <dlfcn.h>
 #include <lttng/ust-endian.h>
 
-#include <urcu-bp.h>
 #include <urcu/arch.h>
 #include <urcu/compiler.h>
 #include <urcu/hlist.h>
@@ -141,11 +141,6 @@ int lttng_loglevel_match(int loglevel,
 		else
 			return 0;
 	}
-}
-
-void synchronize_trace(void)
-{
-	synchronize_rcu();
 }
 
 struct lttng_session *lttng_session_create(void)
@@ -350,7 +345,7 @@ void lttng_session_destroy(struct lttng_session *session)
 	cds_list_for_each_entry(event, &session->events_head, node) {
 		_lttng_event_unregister(event);
 	}
-	synchronize_trace();	/* Wait for in-flight events to complete */
+	lttng_ust_synchronize_trace();	/* Wait for in-flight events to complete */
 	__tracepoint_probe_prune_release_queue();
 	cds_list_for_each_entry_safe(event_enabler, event_tmpenabler,
 			&session->enablers_head, node)
@@ -383,7 +378,7 @@ void lttng_event_notifier_group_destroy(
 			&event_notifier_group->event_notifiers_head, node)
 		_lttng_event_notifier_unregister(notifier);
 
-	synchronize_trace();
+	lttng_ust_synchronize_trace();
 
 	cds_list_for_each_entry_safe(notifier_enabler, tmpnotifier_enabler,
 			&event_notifier_group->enablers_head, node)
@@ -1219,7 +1214,7 @@ void lttng_probe_provider_unregister_events(
 		_lttng_event_notifier_unregister);
 
 	/* Wait for grace period. */
-	synchronize_trace();
+	lttng_ust_synchronize_trace();
 	/* Prune the unregistration queue. */
 	__tracepoint_probe_prune_release_queue();
 

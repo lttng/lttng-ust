@@ -36,9 +36,9 @@
 
 #undef tp_list_for_each_entry_rcu
 #define tp_list_for_each_entry_rcu(pos, head, member)	\
-	for (pos = cds_list_entry(tp_rcu_dereference_bp((head)->next), __typeof__(*pos), member);	\
+	for (pos = cds_list_entry(tp_rcu_dereference((head)->next), __typeof__(*pos), member);	\
 	     &pos->member != (head);					\
-	     pos = cds_list_entry(tp_rcu_dereference_bp(pos->member.next), __typeof__(*pos), member))
+	     pos = cds_list_entry(tp_rcu_dereference(pos->member.next), __typeof__(*pos), member))
 
 /*
  * TRACEPOINT_EVENT_CLASS declares a class of tracepoints receiving the
@@ -892,8 +892,8 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 	__event_align = __event_get_align__##_provider##___##_name(_TP_ARGS_VAR(_args)); \
 	memset(&__lttng_ctx, 0, sizeof(__lttng_ctx));			      \
 	__lttng_ctx.event = __event;					      \
-	__lttng_ctx.chan_ctx = tp_rcu_dereference_bp(__chan->ctx);	      \
-	__lttng_ctx.event_ctx = tp_rcu_dereference_bp(__event->ctx);	      \
+	__lttng_ctx.chan_ctx = tp_rcu_dereference(__chan->ctx);		      \
+	__lttng_ctx.event_ctx = tp_rcu_dereference(__event->ctx);	      \
 	lib_ring_buffer_ctx_init(&__ctx, __chan->chan, __event, __event_len,  \
 				 __event_align, -1, __chan->handle, &__lttng_ctx); \
 	__ctx.ip = _TP_IP_PARAM(TP_IP_PARAM);				      \

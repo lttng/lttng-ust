@@ -24,26 +24,27 @@
  */
 
 #include <urcu/compiler.h>
+#include <lttng/urcu/pointer.h>
 
 #ifdef _LGPL_SOURCE
 
-#include <urcu/urcu-bp.h>
+#include <lttng/urcu/urcu-ust.h>
 
-#define tp_rcu_read_lock_bp	urcu_bp_read_lock
-#define tp_rcu_read_unlock_bp	urcu_bp_read_unlock
-#define tp_rcu_dereference_bp	rcu_dereference
+#define tp_rcu_read_lock	lttng_ust_urcu_read_lock
+#define tp_rcu_read_unlock	lttng_ust_urcu_read_unlock
+#define tp_rcu_dereference	lttng_ust_rcu_dereference
 #define TP_RCU_LINK_TEST()	1
 
 #else	/* _LGPL_SOURCE */
 
-#define tp_rcu_read_lock_bp	tracepoint_dlopen_ptr->rcu_read_lock_sym_bp
-#define tp_rcu_read_unlock_bp	tracepoint_dlopen_ptr->rcu_read_unlock_sym_bp
+#define tp_rcu_read_lock	tracepoint_dlopen_ptr->rcu_read_lock_sym
+#define tp_rcu_read_unlock	tracepoint_dlopen_ptr->rcu_read_unlock_sym
 
-#define tp_rcu_dereference_bp(p)					   \
+#define tp_rcu_dereference(p)						   \
 		URCU_FORCE_CAST(__typeof__(p),				   \
-			tracepoint_dlopen_ptr->rcu_dereference_sym_bp(URCU_FORCE_CAST(void *, p)))
+			tracepoint_dlopen_ptr->rcu_dereference_sym(URCU_FORCE_CAST(void *, p)))
 
-#define TP_RCU_LINK_TEST()	(tracepoint_dlopen_ptr && tp_rcu_read_lock_bp)
+#define TP_RCU_LINK_TEST()	(tracepoint_dlopen_ptr && tp_rcu_read_lock)
 
 #endif	/* _LGPL_SOURCE */
 

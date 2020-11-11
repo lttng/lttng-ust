@@ -10,10 +10,11 @@ liblttng_ust_tracepoint_la_SOURCES = \
 	tracepoint-internal.h \
 	lttng-tracer-core.h \
 	jhash.h \
-	error.h
+	error.h \
+	lttng-ust-urcu.c \
+	lttng-ust-urcu-pointer.c
 
 liblttng_ust_tracepoint_la_LIBADD = \
-	$(URCU_BP_LIBS) \
 	$(top_builddir)/snprintf/libustsnprintf.la \
 	$(DL_LIBS)
 
@@ -79,7 +80,15 @@ liblttng_ust_runtime_la_SOURCES = \
 	string-utils.h \
 	event-notifier-notification.c \
 	ns.h \
-	creds.h
+	creds.h \
+	rculfhash.c \
+	rculfhash.h \
+	rculfhash-internal.h \
+	rculfhash-mm-chunk.c \
+	rculfhash-mm-mmap.c \
+	rculfhash-mm-order.c \
+	compat_futex.c \
+	futex.h
 
 if HAVE_PERF_EVENT
 liblttng_ust_runtime_la_SOURCES += \
@@ -116,7 +125,6 @@ liblttng_ust_support_la_LIBADD = \
 
 liblttng_ust_la_LIBADD = \
 	-lrt \
-	$(URCU_CDS_LIBS) \
 	$(top_builddir)/snprintf/libustsnprintf.la \
 	$(top_builddir)/liblttng-ust-comm/liblttng-ust-comm.la \
 	liblttng-ust-tracepoint.la \

@@ -26,7 +26,7 @@
 #include <stdio.h>
 
 #include <urcu/arch.h>
-#include <urcu/urcu-bp.h>
+#include <lttng/urcu/urcu-ust.h>
 #include <urcu/hlist.h>
 #include <urcu/uatomic.h>
 #include <urcu/compiler.h>
@@ -151,6 +151,72 @@ struct callsite_entry {
 	bool tp_entry_callsite_ref; /* Has a tp_entry took a ref on this callsite */
 };
 
+static int tracepoint_v1_api_used;
+static void (*lttng_ust_liburcu_bp_synchronize_rcu)(void);
+static void (*lttng_ust_liburcu_bp_rcu_read_lock)(void);
+static void (*lttng_ust_liburcu_bp_rcu_read_unlock)(void);
+void (*lttng_ust_liburcu_bp_before_fork)(void);
+void (*lttng_ust_liburcu_bp_after_fork_parent)(void);
+void (*lttng_ust_liburcu_bp_after_fork_child)(void);
+
+static bool lttng_ust_tracepoint_v1_used(void)
+{
+	return uatomic_read(&tracepoint_v1_api_used);
+}
+
+static void lttng_ust_tracepoint_set_v1_used(void)
+{
+	if (!lttng_ust_tracepoint_v1_used()) {
+		/*
+		 * Perform dlsym here rather than lazily on first use to
+		 * eliminate nesting of dynamic loader lock (used within
+		 * dlsym) inside the ust lock.
+		 */
+		if (!lttng_ust_liburcu_bp_synchronize_rcu) {
+			lttng_ust_liburcu_bp_synchronize_rcu = URCU_FORCE_CAST(void (*)(void),
+				dlsym(RTLD_DEFAULT, "synchronize_rcu_bp"));
+			if (!lttng_ust_liburcu_bp_synchronize_rcu)
+				abort();
+		}
+		if (!lttng_ust_liburcu_bp_before_fork) {
+			lttng_ust_liburcu_bp_before_fork = URCU_FORCE_CAST(void (*)(void),
+				dlsym(RTLD_DEFAULT, "rcu_bp_before_fork"));
+			if (!lttng_ust_liburcu_bp_before_fork)
+				abort();
+		}
+		if (!lttng_ust_liburcu_bp_after_fork_parent) {
+			lttng_ust_liburcu_bp_after_fork_parent = URCU_FORCE_CAST(void (*)(void),
+				dlsym(RTLD_DEFAULT, "rcu_bp_after_fork_parent"));
+			if (!lttng_ust_liburcu_bp_after_fork_parent)
+				abort();
+		}
+		if (!lttng_ust_liburcu_bp_after_fork_child) {
+			lttng_ust_liburcu_bp_after_fork_child = URCU_FORCE_CAST(void (*)(void),
+				dlsym(RTLD_DEFAULT, "rcu_bp_after_fork_child"));
+			if (!lttng_ust_liburcu_bp_after_fork_child)
+				abort();
+		}
+		if (!lttng_ust_liburcu_bp_rcu_read_lock) {
+			lttng_ust_liburcu_bp_rcu_read_lock = URCU_FORCE_CAST(void (*)(void),
+				dlsym(RTLD_DEFAULT, "rcu_read_lock_bp"));
+			if (!lttng_ust_liburcu_bp_rcu_read_lock)
+				abort();
+		}
+		if (!lttng_ust_liburcu_bp_rcu_read_unlock) {
+			lttng_ust_liburcu_bp_rcu_read_unlock = URCU_FORCE_CAST(void (*)(void),
+				dlsym(RTLD_DEFAULT, "rcu_read_unlock_bp"));
+			if (!lttng_ust_liburcu_bp_rcu_read_unlock)
+				abort();
+		}
+
+		/* Fixup URCU bp TLS. */
+		lttng_ust_liburcu_bp_rcu_read_lock();
+		lttng_ust_liburcu_bp_rcu_read_unlock();
+
+		uatomic_set(&tracepoint_v1_api_used, 1);
+	}
+}
+
 /* coverity[+alloc] */
 static void *allocate_probes(int count)
 {
@@ -166,7 +232,7 @@ static void release_probes(void *old)
 	if (old) {
 		struct tp_probes *tp_probes = caa_container_of(old,
 			struct tp_probes, probes[0]);
-		urcu_bp_synchronize_rcu();
+		lttng_ust_synchronize_trace();
 		free(tp_probes);
 	}
 }
@@ -386,7 +452,7 @@ static void set_tracepoint(struct tracepoint_entry **entry,
 	 * include/linux/tracepoints.h. A matching cmm_smp_read_barrier_depends()
 	 * is used.
 	 */
-	rcu_assign_pointer(elem->probes, (*entry)->probes);
+	lttng_ust_rcu_assign_pointer(elem->probes, (*entry)->probes);
 	CMM_STORE_SHARED(elem->state, active);
 }
 
@@ -399,7 +465,7 @@ static void set_tracepoint(struct tracepoint_entry **entry,
 static void disable_tracepoint(struct lttng_ust_tracepoint *elem)
 {
 	CMM_STORE_SHARED(elem->state, 0);
-	rcu_assign_pointer(elem->probes, NULL);
+	lttng_ust_rcu_assign_pointer(elem->probes, NULL);
 }
 
 /*
@@ -750,7 +816,7 @@ void __tracepoint_probe_prune_release_queue(void)
 	release_queue_need_update = 0;
 
 	/* Wait for grace period between all sync_callsites and free. */
-	urcu_bp_synchronize_rcu();
+	lttng_ust_synchronize_trace();
 
 	cds_list_for_each_entry_safe(pos, next, &release_probes, u.list) {
 		cds_list_del(&pos->u.list);
@@ -841,7 +907,7 @@ void tracepoint_probe_update_all(void)
 
 	tracepoint_update_probes();
 	/* Wait for grace period between update_probes and free. */
-	urcu_bp_synchronize_rcu();
+	lttng_ust_synchronize_trace();
 	cds_list_for_each_entry_safe(pos, next, &release_probes, u.list) {
 		cds_list_del(&pos->u.list);
 		free(pos);
@@ -868,8 +934,20 @@ static void new_tracepoints(struct lttng_ust_tracepoint * const *start,
 	}
 }
 
-int tracepoint_register_lib(struct lttng_ust_tracepoint * const *tracepoints_start,
-			    int tracepoints_count)
+/*
+ * tracepoint_{un,}register_lib is meant to be looked up by instrumented
+ * applications through dlsym(). If found, those can register their
+ * tracepoints, else those tracepoints will not be available for
+ * tracing. The number at the end of those symbols acts as a major
+ * version for tracepoints.
+ *
+ * Older instrumented applications should still work with newer
+ * liblttng-ust, but it is fine that instrumented applications compiled
+ * against recent liblttng-ust headers require a recent liblttng-ust
+ * runtime for those tracepoints to be taken into account.
+ */
+int tracepoint_register_lib2(struct lttng_ust_tracepoint * const *tracepoints_start,
+			     int tracepoints_count)
 {
 	struct tracepoint_lib *pl, *iter;
 
@@ -917,7 +995,15 @@ lib_added:
 	return 0;
 }
 
-int tracepoint_unregister_lib(struct lttng_ust_tracepoint * const *tracepoints_start)
+/* Exposed for backward compatibility with old instrumented applications. */
+int tracepoint_register_lib(struct lttng_ust_tracepoint * const *tracepoints_start,
+			     int tracepoints_count)
+{
+	lttng_ust_tracepoint_set_v1_used();
+	return tracepoint_register_lib2(tracepoints_start, tracepoints_count);
+}
+
+int tracepoint_unregister_lib2(struct lttng_ust_tracepoint * const *tracepoints_start)
 {
 	struct tracepoint_lib *lib;
 
@@ -941,6 +1027,13 @@ int tracepoint_unregister_lib(struct lttng_ust_tracepoint * const *tracepoints_s
 	}
 	pthread_mutex_unlock(&tracepoint_mutex);
 	return 0;
+}
+
+/* Exposed for backward compatibility with old instrumented applications. */
+int tracepoint_unregister_lib(struct lttng_ust_tracepoint * const *tracepoints_start)
+{
+	lttng_ust_tracepoint_set_v1_used();
+	return tracepoint_unregister_lib2(tracepoints_start);
 }
 
 /*
@@ -981,23 +1074,23 @@ void exit_tracepoint(void)
 /*
  * Create the wrapper symbols.
  */
-#undef tp_rcu_read_lock_bp
-#undef tp_rcu_read_unlock_bp
-#undef tp_rcu_dereference_bp
+#undef tp_rcu_read_lock
+#undef tp_rcu_read_unlock
+#undef tp_rcu_dereference
 
-void tp_rcu_read_lock_bp(void)
+void tp_rcu_read_lock(void)
 {
-	urcu_bp_read_lock();
+	lttng_ust_urcu_read_lock();
 }
 
-void tp_rcu_read_unlock_bp(void)
+void tp_rcu_read_unlock(void)
 {
-	urcu_bp_read_unlock();
+	lttng_ust_urcu_read_unlock();
 }
 
-void *tp_rcu_dereference_sym_bp(void *p)
+void *tp_rcu_dereference_sym(void *p)
 {
-	return urcu_bp_dereference(p);
+	return lttng_ust_rcu_dereference(p);
 }
 
 /*
@@ -1023,4 +1116,33 @@ void tp_disable_destructors(void)
 int tp_get_destructors_state(void)
 {
 	return uatomic_read(&tracepoint_destructors_state);
+}
+
+void lttng_ust_synchronize_trace(void)
+{
+	lttng_ust_urcu_synchronize_rcu();
+	/*
+	 * For legacy tracepoint instrumentation, also wait for urcu-bp
+	 * grace period.
+	 */
+	if (lttng_ust_liburcu_bp_synchronize_rcu)
+		lttng_ust_liburcu_bp_synchronize_rcu();
+}
+
+/*
+ * Create the wrapper symbols for legacy v1 API.
+ */
+void tp_rcu_read_lock_bp(void)
+{
+	lttng_ust_urcu_read_lock();
+}
+
+void tp_rcu_read_unlock_bp(void)
+{
+	lttng_ust_urcu_read_unlock();
+}
+
+void *tp_rcu_dereference_sym_bp(void *p)
+{
+	return lttng_ust_rcu_dereference(p);
 }
