@@ -28,7 +28,7 @@
  */
 
 #ifdef __linux__
-#include <syscall.h>
+#include <sys/syscall.h>
 #endif
 
 #if defined(__NR_gettid)
