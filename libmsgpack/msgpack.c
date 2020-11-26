@@ -316,7 +316,7 @@ int lttng_msgpack_begin_map(struct lttng_msgpack_writer *writer, size_t count)
 {
 	int ret;
 
-	if (count < 0 || count >= (1 << 16)) {
+	if (count >= (1 << 16)) {
 		ret = -1;
 		goto end;
 	}
@@ -343,7 +343,7 @@ int lttng_msgpack_begin_array(
 {
 	int ret;
 
-	if (count < 0 || count >= (1 << 16)) {
+	if (count >= (1 << 16)) {
 		ret = -1;
 		goto end;
 	}
@@ -370,7 +370,8 @@ int lttng_msgpack_write_str(struct lttng_msgpack_writer *writer,
 {
 	int ret;
 	size_t length = strlen(str);
-	if (length < 0 || length >= (1 << 16)) {
+
+	if (length >= (1 << 16)) {
 		ret = -1;
 		goto end;
 	}
