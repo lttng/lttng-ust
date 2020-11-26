@@ -388,25 +388,25 @@ struct lttng_ust_event_exclusion {
 #define LTTNG_UST_TRACEPOINT_FIELD_LIST		_UST_CMD(0x45)
 #define LTTNG_UST_EVENT_NOTIFIER_GROUP_CREATE	_UST_CMD(0x46)
 
-/* Session FD commands */
+/* Session commands */
 #define LTTNG_UST_CHANNEL			\
 	_UST_CMDW(0x51, struct lttng_ust_channel)
 #define LTTNG_UST_SESSION_START			_UST_CMD(0x52)
 #define LTTNG_UST_SESSION_STOP			_UST_CMD(0x53)
 #define LTTNG_UST_SESSION_STATEDUMP		_UST_CMD(0x54)
 
-/* Channel FD commands */
+/* Channel commands */
 #define LTTNG_UST_STREAM			_UST_CMD(0x60)
 #define LTTNG_UST_EVENT			\
 	_UST_CMDW(0x61, struct lttng_ust_event)
 
-/* Event and Channel FD commands */
+/* Event and channel commands */
 #define LTTNG_UST_CONTEXT			\
 	_UST_CMDW(0x70, struct lttng_ust_context)
 #define LTTNG_UST_FLUSH_BUFFER			\
 	_UST_CMD(0x71)
 
-/* Event, Channel and Session commands */
+/* Event, event notifier, channel and session commands */
 #define LTTNG_UST_ENABLE			_UST_CMD(0x80)
 #define LTTNG_UST_DISABLE			_UST_CMD(0x81)
 
@@ -414,14 +414,16 @@ struct lttng_ust_event_exclusion {
 #define LTTNG_UST_TRACEPOINT_LIST_GET		_UST_CMD(0x90)
 #define LTTNG_UST_TRACEPOINT_FIELD_LIST_GET	_UST_CMD(0x91)
 
-/* Event FD commands */
+/* Event and event notifier commands */
 #define LTTNG_UST_FILTER			_UST_CMD(0xA0)
 #define LTTNG_UST_EXCLUSION			_UST_CMD(0xA1)
 
 /* Event notifier group commands */
 #define LTTNG_UST_EVENT_NOTIFIER_CREATE		\
 	_UST_CMDW(0xB0, struct lttng_ust_event_notifier)
-#define LTTNG_UST_CAPTURE			_UST_CMD(0xB1)
+
+/* Event notifier commands */
+#define LTTNG_UST_CAPTURE			_UST_CMD(0xB6)
 
 /* Session and event notifier group commands */
 #define LTTNG_UST_COUNTER			\
