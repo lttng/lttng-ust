@@ -188,7 +188,7 @@ int validate_args(const struct lib_counter_config *config,
 		return -1;
 	if (!(config->alloc & COUNTER_ALLOC_PER_CPU) && counter_cpu_fds)
 		return -1;
-	if (!(config->alloc & COUNTER_ALLOC_PER_CPU) && counter_cpu_fds >= 0)
+	if (!(config->alloc & COUNTER_ALLOC_PER_CPU) && nr_counter_cpu_fds >= 0)
 		return -1;
 	if (counter_cpu_fds && nr_cpus != nr_counter_cpu_fds)
 		return -1;
