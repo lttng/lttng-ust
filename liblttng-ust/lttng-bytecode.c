@@ -298,21 +298,21 @@ int apply_context_reloc(struct bytecode_runtime *runtime,
 	struct load_op *op;
 	struct lttng_ctx_field *ctx_field;
 	int idx;
-	struct lttng_ctx *ctx = *runtime->p.pctx;
+	struct lttng_ctx **pctx = runtime->p.pctx;
 
 	dbg_printf("Apply context reloc: %u %s\n", reloc_offset, context_name);
 
 	/* Get context index */
-	idx = lttng_get_context_index(ctx, context_name);
+	idx = lttng_get_context_index(*pctx, context_name);
 	if (idx < 0) {
 		if (lttng_context_is_app(context_name)) {
 			int ret;
 
 			ret = lttng_ust_add_app_context_to_ctx_rcu(context_name,
-					&ctx);
+					pctx);
 			if (ret)
 				return ret;
-			idx = lttng_get_context_index(ctx, context_name);
+			idx = lttng_get_context_index(*pctx, context_name);
 			if (idx < 0)
 				return -ENOENT;
 		} else {
@@ -324,7 +324,7 @@ int apply_context_reloc(struct bytecode_runtime *runtime,
 		return -EINVAL;
 
 	/* Get context return type */
-	ctx_field = &ctx->fields[idx];
+	ctx_field = &(*pctx)->fields[idx];
 	op = (struct load_op *) &runtime->code[reloc_offset];
 
 	switch (bytecode_op) {
