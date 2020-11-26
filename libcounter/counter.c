@@ -75,9 +75,9 @@ static int lttng_counter_layout_init(struct lib_counter *counter, int cpu, int s
 	counters_offset = shm_length;
 	shm_length += counter_size * nr_elem;
 	overflow_offset = shm_length;
-	shm_length += ALIGN(nr_elem, 8) / 8;
+	shm_length += LTTNG_UST_ALIGN(nr_elem, 8) / 8;
 	underflow_offset = shm_length;
-	shm_length += ALIGN(nr_elem, 8) / 8;
+	shm_length += LTTNG_UST_ALIGN(nr_elem, 8) / 8;
 	layout->shm_len = shm_length;
 	if (counter->is_daemon) {
 		/* Allocate and clear shared memory. */
