@@ -76,7 +76,7 @@
 
 #else /* __KERNEL__ */
 
-#include <endian.h>
+#include <lttng/ust-endian.h>
 #include <stdio.h>
 #include <string.h>
 

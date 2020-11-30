@@ -27,7 +27,6 @@
 #define _LGPL_SOURCE
 #include <stddef.h>
 #include <stdint.h>
-#include <byteswap.h>
 
 #include <lttng/urcu/pointer.h>
 #include <lttng/ust-endian.h>

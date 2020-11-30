@@ -21,9 +21,9 @@
 #define _LGPL_SOURCE
 
 #include <assert.h>
-#include <byteswap.h>
 #include <errno.h>
 #include <lttng/ust-events.h>
+#include <lttng/ust-endian.h>
 #include <usterr-signal-safe.h>
 
 #include "../libmsgpack/msgpack.h"
