@@ -144,7 +144,7 @@ static inline int lttng_ust_futex_async(int32_t *uaddr, int op, int32_t val,
 static inline int lttng_ust_futex_noasync(int32_t *uaddr, int op, int32_t val,
 		const struct timespec *timeout, int32_t *uaddr2, int32_t val3)
 {
-	return futex_async(uaddr, op, val, timeout, uaddr2, val3);
+	return lttng_ust_futex_async(uaddr, op, val, timeout, uaddr2, val3);
 }
 
 #elif defined(__CYGWIN__)
