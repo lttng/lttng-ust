@@ -101,6 +101,8 @@ static inline int __lttng_counter_add(const struct lib_counter_config *config,
 			} while (old != res);
 			break;
 		}
+		default:
+			return -EINVAL;
 		}
 		if (v > 0 && (v >= UINT8_MAX || n < old))
 			overflow = true;
@@ -140,6 +142,8 @@ static inline int __lttng_counter_add(const struct lib_counter_config *config,
 			} while (old != res);
 			break;
 		}
+		default:
+			return -EINVAL;
 		}
 		if (v > 0 && (v >= UINT16_MAX || n < old))
 			overflow = true;
@@ -179,6 +183,8 @@ static inline int __lttng_counter_add(const struct lib_counter_config *config,
 			} while (old != res);
 			break;
 		}
+		default:
+			return -EINVAL;
 		}
 		if (v > 0 && (v >= UINT32_MAX || n < old))
 			overflow = true;
@@ -219,6 +225,8 @@ static inline int __lttng_counter_add(const struct lib_counter_config *config,
 			} while (old != res);
 			break;
 		}
+		default:
+			return -EINVAL;
 		}
 		if (v > 0 && n < old)
 			overflow = true;
