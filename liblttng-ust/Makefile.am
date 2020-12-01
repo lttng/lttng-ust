@@ -2,7 +2,13 @@ AM_CFLAGS += -I$(srcdir) -fno-strict-aliasing
 
 noinst_LTLIBRARIES = liblttng-ust-runtime.la liblttng-ust-support.la
 
-lib_LTLIBRARIES = liblttng-ust-tracepoint.la liblttng-ust.la
+lib_LTLIBRARIES = liblttng-ust-common.la liblttng-ust-tracepoint.la liblttng-ust.la
+
+liblttng_ust_common_la_SOURCES = \
+	lttng-ust-urcu.c \
+	lttng-ust-urcu-pointer.c
+
+liblttng_ust_common_la_LDFLAGS = -no-undefined -version-info $(LTTNG_UST_LIBRARY_VERSION)
 
 liblttng_ust_tracepoint_la_SOURCES = \
 	tracepoint.c \
@@ -10,11 +16,10 @@ liblttng_ust_tracepoint_la_SOURCES = \
 	tracepoint-internal.h \
 	lttng-tracer-core.h \
 	jhash.h \
-	error.h \
-	lttng-ust-urcu.c \
-	lttng-ust-urcu-pointer.c
+	error.h
 
 liblttng_ust_tracepoint_la_LIBADD = \
+	liblttng-ust-common.la \
 	$(top_builddir)/snprintf/libustsnprintf.la \
 	$(DL_LIBS)
 
@@ -125,6 +130,7 @@ liblttng_ust_support_la_LIBADD = \
 
 liblttng_ust_la_LIBADD = \
 	-lrt \
+	liblttng-ust-common.la \
 	$(top_builddir)/snprintf/libustsnprintf.la \
 	$(top_builddir)/liblttng-ust-comm/liblttng-ust-comm.la \
 	liblttng-ust-tracepoint.la \

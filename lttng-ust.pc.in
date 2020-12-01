@@ -7,6 +7,6 @@ Name: LTTng Userspace Tracer
 Description: The LTTng Userspace Tracer (UST) is a library accompanied by a set of tools to trace userspace code. 
 Version: @PACKAGE_VERSION@
 Requires:
-Libs: -L${libdir} -llttng-ust -ldl
+Libs: -L${libdir} -llttng-ust -llttng-ust-common -ldl
 Cflags: -I${includedir} 
 
