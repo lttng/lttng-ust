@@ -583,6 +583,7 @@ int ustctl_create_event_notifier(int sock, struct lttng_ust_event_notifier *even
 	lum.u.event_notifier.event.loglevel_type = event_notifier->event.loglevel_type;
 	lum.u.event_notifier.event.loglevel = event_notifier->event.loglevel;
 	lum.u.event_notifier.event.token = event_notifier->event.token;
+	lum.u.event_notifier.error_counter_index = event_notifier->error_counter_index;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret) {
 		free(event_notifier_data);

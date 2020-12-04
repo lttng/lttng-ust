@@ -1413,6 +1413,7 @@ struct lttng_event_notifier_enabler *lttng_event_notifier_enabler_create(
 	CDS_INIT_LIST_HEAD(&event_notifier_enabler->base.excluder_head);
 
 	event_notifier_enabler->user_token = event_notifier_param->event.token;
+	event_notifier_enabler->error_counter_index = event_notifier_param->error_counter_index;
 	event_notifier_enabler->num_captures = 0;
 
 	memcpy(&event_notifier_enabler->base.event_param.name,
