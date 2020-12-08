@@ -2563,7 +2563,7 @@ int ustctl_create_counter_data(struct ustctl_daemon_counter *counter,
 		struct lttng_ust_object_data **_counter_data)
 {
 	struct lttng_ust_object_data *counter_data;
-	struct lttng_ust_counter_conf counter_conf;
+	struct lttng_ust_counter_conf counter_conf = {0};
 	size_t i;
 	int ret;
 
