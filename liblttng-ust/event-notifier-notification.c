@@ -284,17 +284,26 @@ static void record_error(struct lttng_event_notifier *event_notifier)
 {
 	struct lttng_event_notifier_group *event_notifier_group =
 			event_notifier->group;
+	struct lttng_counter *error_counter;
 	size_t dimension_index[1];
 	int ret;
 
+	error_counter = CMM_LOAD_SHARED(event_notifier_group->error_counter);
+	/*
+	 * load-acquire paired with store-release orders creation of the
+	 * error counter and setting error_counter_len before the
+	 * error_counter is used.
+	 * Currently a full memory barrier is used, which could be
+	 * turned into acquire-release barriers.
+	 */
+	cmm_smp_mb();
 	/* This group may not have an error counter attached to it. */
-	if (!event_notifier_group->error_counter)
+	if (!error_counter)
 		return;
 
 	dimension_index[0] = event_notifier->error_counter_index;
 	ret = event_notifier_group->error_counter->ops->counter_add(
-			event_notifier_group->error_counter->counter,
-			dimension_index, 1);
+			error_counter->counter, dimension_index, 1);
 	if (ret)
 		WARN_ON_ONCE(1);
 }

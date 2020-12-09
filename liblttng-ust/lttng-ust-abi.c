@@ -846,8 +846,16 @@ int lttng_ust_event_notifier_group_create_error_counter(int event_notifier_group
 		goto create_error;
 	}
 
-	event_notifier_group->error_counter = counter;
 	event_notifier_group->error_counter_len = counter_len;
+	/*
+	 * store-release to publish error counter matches load-acquire
+	 * in record_error. Ensures the counter is created and the
+	 * error_counter_len is set before they are used.
+	 * Currently a full memory barrier is used, which could be
+	 * turned into acquire-release barriers.
+	 */
+	cmm_smp_mb();
+	CMM_STORE_SHARED(event_notifier_group->error_counter, counter);
 
 	counter->objd = counter_objd;
 	counter->event_notifier_group = event_notifier_group;	/* owner */
