@@ -287,6 +287,10 @@ static void record_error(struct lttng_event_notifier *event_notifier)
 	size_t dimension_index[1];
 	int ret;
 
+	/* This group may not have an error counter attached to it. */
+	if (!event_notifier_group->error_counter)
+		return;
+
 	dimension_index[0] = event_notifier->error_counter_index;
 	ret = event_notifier_group->error_counter->ops->counter_add(
 			event_notifier_group->error_counter->counter,
