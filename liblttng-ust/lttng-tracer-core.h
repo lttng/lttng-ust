@@ -84,6 +84,11 @@ extern void (*lttng_ust_liburcu_bp_before_fork)(void);
 extern void (*lttng_ust_liburcu_bp_after_fork_parent)(void);
 extern void (*lttng_ust_liburcu_bp_after_fork_child)(void);
 
+LTTNG_HIDDEN
+void lttng_event_notifier_notification_send(
+		struct lttng_event_notifier *event_notifier,
+		const char *stack_data);
+
 #ifdef LTTNG_UST_HAVE_PERF_EVENT
 void lttng_ust_fixup_perf_counter_tls(void);
 void lttng_perf_lock(void);

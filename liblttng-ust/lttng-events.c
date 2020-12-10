@@ -869,6 +869,7 @@ int lttng_event_notifier_create(const struct lttng_event_desc *desc,
 	CDS_INIT_LIST_HEAD(&event_notifier->capture_bytecode_runtime_head);
 	CDS_INIT_LIST_HEAD(&event_notifier->enablers_ref_head);
 	event_notifier->desc = desc;
+	event_notifier->notification_send = lttng_event_notifier_notification_send;
 
 	cds_list_add(&event_notifier->node,
 			&event_notifier_group->event_notifiers_head);

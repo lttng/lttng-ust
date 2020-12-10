@@ -957,6 +957,7 @@ void __event_notifier_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))
 		size_t __dynamic_len[__num_fields];			      \
 		char __interpreter_stack_data[2 * sizeof(unsigned long) * __num_fields]; \
 	} __stackvar;							      \
+									      \
 	if (caa_unlikely(!CMM_ACCESS_ONCE(__event_notifier->enabled)))	      \
 		return;							      \
 	if (caa_unlikely(!TP_RCU_LINK_TEST()))				      \
@@ -979,7 +980,7 @@ void __event_notifier_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))
 		__event_prepare_interpreter_stack__##_provider##___##_name(__stackvar.__interpreter_stack_data, \
 			_TP_ARGS_DATA_VAR(_args));			      \
 									      \
-	lttng_event_notifier_notification_send(__event_notifier,	      \
+	__event_notifier->notification_send(__event_notifier,		      \
 			__stackvar.__interpreter_stack_data);		      \
 }
 

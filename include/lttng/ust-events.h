@@ -64,6 +64,7 @@ struct lttng_session;
 struct lttng_ust_lib_ring_buffer_ctx;
 struct lttng_ust_context_app;
 struct lttng_event_field;
+struct lttng_event_notifier;
 struct lttng_event_notifier_group;
 
 /*
@@ -515,6 +516,8 @@ struct lttng_event_notifier {
 	int enabled;
 	int registered;			/* has reg'd tracepoint probe */
 	size_t num_captures;		/* Needed to allocate the msgpack array. */
+	void (*notification_send)(struct lttng_event_notifier *event_notifier,
+		const char *stack_data);
 	struct cds_list_head filter_bytecode_runtime_head;
 	struct cds_list_head capture_bytecode_runtime_head;
 	int has_enablers_without_bytecode;
@@ -750,10 +753,6 @@ int lttng_session_enable(struct lttng_session *session);
 int lttng_session_disable(struct lttng_session *session);
 int lttng_session_statedump(struct lttng_session *session);
 void lttng_session_destroy(struct lttng_session *session);
-
-void lttng_event_notifier_notification_send(
-		struct lttng_event_notifier *event_notifier,
-		const char *stack_data);
 
 struct lttng_channel *lttng_channel_create(struct lttng_session *session,
 				       const char *transport_name,
