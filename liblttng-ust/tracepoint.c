@@ -175,8 +175,22 @@ static void lttng_ust_tracepoint_set_v1_used(void)
 		if (!lttng_ust_liburcu_bp_synchronize_rcu) {
 			lttng_ust_liburcu_bp_synchronize_rcu = URCU_FORCE_CAST(void (*)(void),
 				dlsym(RTLD_DEFAULT, "synchronize_rcu_bp"));
+			/*
+			 * Allow legacy applications compiled without
+			 * _LGPL_SOURCE to use v1 API. Those are not
+			 * required to be linked against liburcu-bp,
+			 * so in those situations the liburcu-bp symbols
+			 * are not present in the global symbol table,
+			 * and we do not need to call urcu-bp
+			 * synchronize.
+			 *
+			 * However, nothing prevents a _LGPL_SOURCE
+			 * instrumented library loaded afterwards to
+			 * require liburcu-bp, so we need to check again
+			 * in that situation.
+			 */
 			if (!lttng_ust_liburcu_bp_synchronize_rcu)
-				abort();
+				return;
 		}
 		if (!lttng_ust_liburcu_bp_before_fork) {
 			lttng_ust_liburcu_bp_before_fork = URCU_FORCE_CAST(void (*)(void),
