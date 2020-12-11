@@ -597,8 +597,8 @@ int ustctl_reply_register_channel(int sock,
  */
 
 enum ustctl_counter_bitness {
-	USTCTL_COUNTER_BITNESS_32 = 4,
-	USTCTL_COUNTER_BITNESS_64 = 8,
+	USTCTL_COUNTER_BITNESS_32 = 0,
+	USTCTL_COUNTER_BITNESS_64 = 1,
 };
 
 enum ustctl_counter_arithmetic {
