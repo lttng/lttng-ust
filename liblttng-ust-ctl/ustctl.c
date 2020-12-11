@@ -2579,10 +2579,10 @@ int ustctl_create_counter_data(struct ustctl_daemon_counter *counter,
 	}
 	switch (counter->attr->bitness) {
 	case USTCTL_COUNTER_BITNESS_32:
-		counter_conf.bitness = LTTNG_UST_COUNTER_BITNESS_32BITS;
+		counter_conf.bitness = LTTNG_UST_COUNTER_BITNESS_32;
 		break;
 	case USTCTL_COUNTER_BITNESS_64:
-		counter_conf.bitness = LTTNG_UST_COUNTER_BITNESS_64BITS;
+		counter_conf.bitness = LTTNG_UST_COUNTER_BITNESS_64;
 		break;
 	default:
 		return -EINVAL;

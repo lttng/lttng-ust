@@ -816,10 +816,10 @@ int lttng_ust_event_notifier_group_create_error_counter(int event_notifier_group
 		return -EINVAL;
 
 	switch (error_counter_conf->bitness) {
-	case LTTNG_UST_COUNTER_BITNESS_64BITS:
+	case LTTNG_UST_COUNTER_BITNESS_64:
 		counter_transport_name = "counter-per-cpu-64-modular";
 		break;
-	case LTTNG_UST_COUNTER_BITNESS_32BITS:
+	case LTTNG_UST_COUNTER_BITNESS_32:
 		counter_transport_name = "counter-per-cpu-32-modular";
 		break;
 	default:
