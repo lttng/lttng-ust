@@ -110,8 +110,8 @@ enum lttng_ust_counter_arithmetic {
 };
 
 enum lttng_ust_counter_bitness {
-	LTTNG_UST_COUNTER_BITNESS_32 = 4,
-	LTTNG_UST_COUNTER_BITNESS_64 = 8,
+	LTTNG_UST_COUNTER_BITNESS_32 = 0,
+	LTTNG_UST_COUNTER_BITNESS_64 = 1,
 };
 
 struct lttng_ust_counter_dimension {
