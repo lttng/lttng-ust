@@ -315,7 +315,7 @@ void notification_send(struct lttng_event_notifier_notification *notif,
 	ssize_t ret;
 	size_t content_len;
 	int iovec_count = 1;
-	struct lttng_ust_event_notifier_notification ust_notif;
+	struct lttng_ust_event_notifier_notification ust_notif = {0};
 	struct iovec iov[2];
 
 	assert(notif);
