@@ -346,10 +346,10 @@ long lttng_abi_tracer_version(int objd,
 }
 
 static
-int lttng_abi_event_notifier_send_fd(void *owner, int event_notifier_notif_fd)
+int lttng_abi_event_notifier_send_fd(void *owner, int *event_notifier_notif_fd)
 {
 	struct lttng_event_notifier_group *event_notifier_group;
-	int event_notifier_group_objd, ret, fd_flag, close_ret;
+	int event_notifier_group_objd, ret, fd_flag;
 
 	event_notifier_group = lttng_event_notifier_group_create();
 	if (!event_notifier_group)
@@ -358,11 +358,11 @@ int lttng_abi_event_notifier_send_fd(void *owner, int event_notifier_notif_fd)
 	/*
 	 * Set this file descriptor as NON-BLOCKING.
 	 */
-	fd_flag = fcntl(event_notifier_notif_fd, F_GETFL);
+	fd_flag = fcntl(*event_notifier_notif_fd, F_GETFL);
 
 	fd_flag |= O_NONBLOCK;
 
-	ret = fcntl(event_notifier_notif_fd, F_SETFL, fd_flag);
+	ret = fcntl(*event_notifier_notif_fd, F_SETFL, fd_flag);
 	if (ret) {
 		ret = -errno;
 		goto fd_error;
@@ -377,18 +377,15 @@ int lttng_abi_event_notifier_send_fd(void *owner, int event_notifier_notif_fd)
 
 	event_notifier_group->objd = event_notifier_group_objd;
 	event_notifier_group->owner = owner;
-	event_notifier_group->notification_fd = event_notifier_notif_fd;
+	event_notifier_group->notification_fd = *event_notifier_notif_fd;
+	/* Object descriptor takes ownership of notification fd. */
+	*event_notifier_notif_fd = -1;
 
 	return event_notifier_group_objd;
 
 objd_error:
 	lttng_event_notifier_group_destroy(event_notifier_group);
 fd_error:
-	close_ret = close(event_notifier_notif_fd);
-	if (close_ret) {
-		PERROR("close");
-	}
-
 	return ret;
 }
 
@@ -443,7 +440,7 @@ long lttng_cmd(int objd, unsigned int cmd, unsigned long arg,
 		return 0;
 	case LTTNG_UST_EVENT_NOTIFIER_GROUP_CREATE:
 		return lttng_abi_event_notifier_send_fd(owner,
-			uargs->event_notifier_handle.event_notifier_notif_fd);
+			&uargs->event_notifier_handle.event_notifier_notif_fd);
 	default:
 		return -EINVAL;
 	}

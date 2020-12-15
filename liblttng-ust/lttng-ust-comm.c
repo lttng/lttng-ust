@@ -987,7 +987,7 @@ int handle_message(struct sock_info *sock_info,
 	}
 	case LTTNG_UST_EVENT_NOTIFIER_GROUP_CREATE:
 	{
-		int event_notifier_notif_fd;
+		int event_notifier_notif_fd, close_ret;
 
 		len = ustcomm_recv_event_notifier_notif_fd_from_sessiond(sock,
 			&event_notifier_notif_fd);
@@ -1024,6 +1024,13 @@ int handle_message(struct sock_info *sock_info,
 					&args, sock_info);
 		else
 			ret = -ENOSYS;
+		if (args.event_notifier_handle.event_notifier_notif_fd >= 0) {
+			lttng_ust_lock_fd_tracker();
+			close_ret = close(args.event_notifier_handle.event_notifier_notif_fd);
+			lttng_ust_unlock_fd_tracker();
+			if (close_ret)
+				PERROR("close");
+		}
 		break;
 	}
 	case LTTNG_UST_CHANNEL:
