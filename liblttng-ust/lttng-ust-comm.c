@@ -938,6 +938,8 @@ int handle_message(struct sock_info *sock_info,
 	}
 	case LTTNG_UST_STREAM:
 	{
+		int close_ret;
+
 		/* Receive shm_fd, wakeup_fd */
 		ret = ustcomm_recv_stream_from_sessiond(sock,
 			NULL,
@@ -953,6 +955,22 @@ int handle_message(struct sock_info *sock_info,
 					&args, sock_info);
 		else
 			ret = -ENOSYS;
+		if (args.stream.shm_fd >= 0) {
+			lttng_ust_lock_fd_tracker();
+			close_ret = close(args.stream.shm_fd);
+			lttng_ust_unlock_fd_tracker();
+			args.stream.shm_fd = -1;
+			if (close_ret)
+				PERROR("close");
+		}
+		if (args.stream.wakeup_fd >= 0) {
+			lttng_ust_lock_fd_tracker();
+			close_ret = close(args.stream.wakeup_fd);
+			lttng_ust_unlock_fd_tracker();
+			args.stream.wakeup_fd = -1;
+			if (close_ret)
+				PERROR("close");
+		}
 		break;
 	}
 	case LTTNG_UST_CONTEXT:

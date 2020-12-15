@@ -772,6 +772,9 @@ int lttng_abi_map_stream(int channel_objd, struct lttng_ust_stream *info,
 		info->stream_nr, info->len);
 	if (ret)
 		goto error_add_stream;
+	/* Take ownership of shm_fd and wakeup_fd. */
+	uargs->stream.shm_fd = -1;
+	uargs->stream.wakeup_fd = -1;
 
 	return 0;
 
