@@ -134,7 +134,7 @@ int lttng_event_enabler_disable(struct lttng_event_enabler *enabler);
 LTTNG_HIDDEN
 int lttng_event_enabler_attach_filter_bytecode(
 		struct lttng_event_enabler *enabler,
-		struct lttng_ust_bytecode_node *bytecode);
+		struct lttng_ust_bytecode_node **bytecode);
 
 /*
  * Attach an application context to an event enabler.
@@ -224,7 +224,7 @@ int lttng_event_notifier_enabler_disable(
 LTTNG_HIDDEN
 int lttng_event_notifier_enabler_attach_filter_bytecode(
 		struct lttng_event_notifier_enabler *event_notifier_enabler,
-		struct lttng_ust_bytecode_node *bytecode);
+		struct lttng_ust_bytecode_node **bytecode);
 
 /*
  * Attach capture bytecode program to `struct lttng_event_notifier_enabler` and

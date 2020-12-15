@@ -1456,14 +1456,16 @@ int lttng_event_enabler_disable(struct lttng_event_enabler *event_enabler)
 
 static
 void _lttng_enabler_attach_filter_bytecode(struct lttng_enabler *enabler,
-		struct lttng_ust_bytecode_node *bytecode)
+		struct lttng_ust_bytecode_node **bytecode)
 {
-	bytecode->enabler = enabler;
-	cds_list_add_tail(&bytecode->node, &enabler->filter_bytecode_head);
+	(*bytecode)->enabler = enabler;
+	cds_list_add_tail(&(*bytecode)->node, &enabler->filter_bytecode_head);
+	/* Take ownership of bytecode */
+	*bytecode = NULL;
 }
 
 int lttng_event_enabler_attach_filter_bytecode(struct lttng_event_enabler *event_enabler,
-		struct lttng_ust_bytecode_node *bytecode)
+		struct lttng_ust_bytecode_node **bytecode)
 {
 	_lttng_enabler_attach_filter_bytecode(
 		lttng_event_enabler_as_enabler(event_enabler), bytecode);
@@ -1512,7 +1514,7 @@ int lttng_event_notifier_enabler_disable(
 
 int lttng_event_notifier_enabler_attach_filter_bytecode(
 		struct lttng_event_notifier_enabler *event_notifier_enabler,
-		struct lttng_ust_bytecode_node *bytecode)
+		struct lttng_ust_bytecode_node **bytecode)
 {
 	_lttng_enabler_attach_filter_bytecode(
 		lttng_event_notifier_enabler_as_enabler(event_notifier_enabler),

@@ -772,7 +772,7 @@ static
 int handle_bytecode_recv(struct sock_info *sock_info,
 		int sock, struct ustcomm_ust_msg *lum)
 {
-	struct lttng_ust_bytecode_node *bytecode;
+	struct lttng_ust_bytecode_node *bytecode = NULL;
 	enum lttng_ust_bytecode_node_type type;
 	const struct lttng_ust_objd_ops *ops;
 	uint32_t data_size, data_size_max, reloc_offset;
@@ -829,7 +829,7 @@ int handle_bytecode_recv(struct sock_info *sock_info,
 	switch (len) {
 	case 0:	/* orderly shutdown */
 		ret = 0;
-		goto error_free_bytecode;
+		goto end;
 	default:
 		if (len == bytecode->bc.len) {
 			DBG("Bytecode %s data received",
@@ -842,41 +842,33 @@ int handle_bytecode_recv(struct sock_info *sock_info,
 				ERR("%s remote end closed connection",
 						sock_info->name);
 				ret = len;
-				goto error_free_bytecode;
+				goto end;
 			}
 			ret = len;
-			goto error_free_bytecode;
+			goto end;
 		} else {
 			DBG("Incorrect %s bytecode data message size: %zd",
 					bytecode_type_str(lum->cmd), len);
 			ret = -EINVAL;
-			goto error_free_bytecode;
+			goto end;
 		}
 	}
 
 	ops = objd_ops(lum->handle);
 	if (!ops) {
 		ret = -ENOENT;
-		goto error_free_bytecode;
+		goto end;
 	}
 
-	if (ops->cmd) {
+	if (ops->cmd)
 		ret = ops->cmd(lum->handle, lum->cmd,
-			(unsigned long) bytecode,
+			(unsigned long) &bytecode,
 			NULL, sock_info);
-		if (ret)
-			goto error_free_bytecode;
-		/* don't free bytecode if everything went fine. */
-	} else {
+	else
 		ret = -ENOSYS;
-		goto error_free_bytecode;
-	}
 
-	goto end;
-
-error_free_bytecode:
-	free(bytecode);
 end:
+	free(bytecode);
 	return ret;
 }
 
