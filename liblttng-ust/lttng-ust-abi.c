@@ -453,6 +453,7 @@ static const struct lttng_ust_objd_ops lttng_ops = {
 	.cmd = lttng_cmd,
 };
 
+static
 int lttng_abi_map_channel(int session_objd,
 		struct lttng_ust_channel *ust_chan,
 		union ust_args *uargs,
