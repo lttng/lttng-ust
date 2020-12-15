@@ -971,18 +971,13 @@ int handle_message(struct sock_info *sock_info,
 				goto error;
 			}
 		}
-		if (ops->cmd) {
+		if (ops->cmd)
 			ret = ops->cmd(lum->handle, lum->cmd,
-					(unsigned long) node,
+					(unsigned long) &node,
 					&args, sock_info);
-			if (ret) {
-				free(node);
-			}
-			/* Don't free exclusion data if everything went fine. */
-		} else {
+		else
 			ret = -ENOSYS;
-			free(node);
-		}
+		free(node);
 		break;
 	}
 	case LTTNG_UST_EVENT_NOTIFIER_GROUP_CREATE:

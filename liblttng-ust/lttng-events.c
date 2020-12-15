@@ -1474,14 +1474,16 @@ int lttng_event_enabler_attach_filter_bytecode(struct lttng_event_enabler *event
 
 static
 void _lttng_enabler_attach_exclusion(struct lttng_enabler *enabler,
-		struct lttng_ust_excluder_node *excluder)
+		struct lttng_ust_excluder_node **excluder)
 {
-	excluder->enabler = enabler;
-	cds_list_add_tail(&excluder->node, &enabler->excluder_head);
+	(*excluder)->enabler = enabler;
+	cds_list_add_tail(&(*excluder)->node, &enabler->excluder_head);
+	/* Take ownership of excluder */
+	*excluder = NULL;
 }
 
 int lttng_event_enabler_attach_exclusion(struct lttng_event_enabler *event_enabler,
-		struct lttng_ust_excluder_node *excluder)
+		struct lttng_ust_excluder_node **excluder)
 {
 	_lttng_enabler_attach_exclusion(
 		lttng_event_enabler_as_enabler(event_enabler), excluder);
@@ -1536,7 +1538,7 @@ int lttng_event_notifier_enabler_attach_capture_bytecode(
 
 int lttng_event_notifier_enabler_attach_exclusion(
 		struct lttng_event_notifier_enabler *event_notifier_enabler,
-		struct lttng_ust_excluder_node *excluder)
+		struct lttng_ust_excluder_node **excluder)
 {
 	_lttng_enabler_attach_exclusion(
 		lttng_event_notifier_enabler_as_enabler(event_notifier_enabler),

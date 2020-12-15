@@ -151,7 +151,7 @@ int lttng_event_enabler_attach_context(struct lttng_event_enabler *enabler,
  */
 LTTNG_HIDDEN
 int lttng_event_enabler_attach_exclusion(struct lttng_event_enabler *enabler,
-		struct lttng_ust_excluder_node *excluder);
+		struct lttng_ust_excluder_node **excluder);
 
 /*
  * Synchronize bytecodes for the enabler and the instance (event or
@@ -242,7 +242,7 @@ int lttng_event_notifier_enabler_attach_capture_bytecode(
 LTTNG_HIDDEN
 int lttng_event_notifier_enabler_attach_exclusion(
 		struct lttng_event_notifier_enabler *event_notifier_enabler,
-		struct lttng_ust_excluder_node *excluder);
+		struct lttng_ust_excluder_node **excluder);
 
 LTTNG_HIDDEN
 void lttng_free_event_notifier_filter_runtime(
