@@ -1203,6 +1203,7 @@ int handle_message(struct sock_info *sock_info,
 					&args, sock_info);
 		else
 			ret = -ENOSYS;
+		free(args.counter.counter_data);
 		break;
 	}
 	case LTTNG_UST_COUNTER_GLOBAL:
@@ -1220,6 +1221,16 @@ int handle_message(struct sock_info *sock_info,
 					&args, sock_info);
 		else
 			ret = -ENOSYS;
+		if (args.counter_shm.shm_fd >= 0) {
+			int close_ret;
+
+			lttng_ust_lock_fd_tracker();
+			close_ret = close(args.counter_shm.shm_fd);
+			lttng_ust_unlock_fd_tracker();
+			args.counter_shm.shm_fd = -1;
+			if (close_ret)
+				PERROR("close");
+		}
 		break;
 	}
 	case LTTNG_UST_COUNTER_CPU:
@@ -1237,6 +1248,16 @@ int handle_message(struct sock_info *sock_info,
 					&args, sock_info);
 		else
 			ret = -ENOSYS;
+		if (args.counter_shm.shm_fd >= 0) {
+			int close_ret;
+
+			lttng_ust_lock_fd_tracker();
+			close_ret = close(args.counter_shm.shm_fd);
+			lttng_ust_unlock_fd_tracker();
+			args.counter_shm.shm_fd = -1;
+			if (close_ret)
+				PERROR("close");
+		}
 		break;
 	}
 	case LTTNG_UST_EVENT_NOTIFIER_CREATE:
