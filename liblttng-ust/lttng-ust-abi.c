@@ -498,6 +498,10 @@ int lttng_abi_map_channel(int session_objd,
 		goto handle_error;
 	}
 
+	/* Ownership of chan_data and wakeup_fd taken by channel handle. */
+	uargs->channel.chan_data = NULL;
+	uargs->channel.wakeup_fd = -1;
+
 	chan = shmp(channel_handle, channel_handle->chan);
 	assert(chan);
 	chan->handle = channel_handle;
@@ -581,24 +585,9 @@ alloc_error:
 	channel_destroy(chan, channel_handle, 0);
 	return ret;
 
-	/*
-	 * error path before channel creation (owning chan_data and
-	 * wakeup_fd).
-	 */
 handle_error:
 active:
 invalid:
-	{
-		int close_ret;
-
-		lttng_ust_lock_fd_tracker();
-		close_ret = close(wakeup_fd);
-		lttng_ust_unlock_fd_tracker();
-		if (close_ret) {
-			PERROR("close");
-		}
-	}
-	free(chan_data);
 	return ret;
 }
 

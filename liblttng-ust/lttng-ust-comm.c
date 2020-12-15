@@ -1065,6 +1065,17 @@ int handle_message(struct sock_info *sock_info,
 					&args, sock_info);
 		else
 			ret = -ENOSYS;
+		if (args.channel.wakeup_fd >= 0) {
+			int close_ret;
+
+			lttng_ust_lock_fd_tracker();
+			close_ret = close(args.channel.wakeup_fd);
+			lttng_ust_unlock_fd_tracker();
+			args.channel.wakeup_fd = -1;
+			if (close_ret)
+				PERROR("close");
+		}
+		free(args.channel.chan_data);
 		break;
 	}
 	case LTTNG_UST_STREAM:
