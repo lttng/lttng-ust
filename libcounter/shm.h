@@ -27,6 +27,7 @@
 #include <usterr-signal-safe.h>
 #include <urcu/compiler.h>
 #include "shm_types.h"
+#include "helper.h"
 
 /* lttng_counter_handle_create - for UST. */
 extern
@@ -37,6 +38,7 @@ extern
 int lttng_counter_handle_add_cpu(struct lttng_counter_shm_handle *handle,
 		int shm_fd, uint32_t cpu_nr,
 		uint64_t memory_map_size);
+LTTNG_HIDDEN
 unsigned int lttng_counter_handle_get_nr_cpus(struct lttng_counter_shm_handle *handle);
 
 /*
@@ -85,17 +87,22 @@ void _lttng_counter_set_shmp(struct lttng_counter_shm_ref *ref, struct lttng_cou
 
 #define lttng_counter_set_shmp(ref, src)	_lttng_counter_set_shmp(&(ref)._ref, src)
 
+LTTNG_HIDDEN
 struct lttng_counter_shm_object_table *lttng_counter_shm_object_table_create(size_t max_nb_obj);
+LTTNG_HIDDEN
 struct lttng_counter_shm_object *lttng_counter_shm_object_table_alloc(struct lttng_counter_shm_object_table *table,
 			size_t memory_map_size,
 			enum lttng_counter_shm_object_type type,
 			const int cpu_fd,
 			int cpu);
+LTTNG_HIDDEN
 struct lttng_counter_shm_object *lttng_counter_shm_object_table_append_shm(struct lttng_counter_shm_object_table *table,
 			int shm_fd, size_t memory_map_size);
 /* mem ownership is passed to lttng_counter_shm_object_table_append_mem(). */
+LTTNG_HIDDEN
 struct lttng_counter_shm_object *lttng_counter_shm_object_table_append_mem(struct lttng_counter_shm_object_table *table,
 			void *mem, size_t memory_map_size);
+LTTNG_HIDDEN
 void lttng_counter_shm_object_table_destroy(struct lttng_counter_shm_object_table *table, int consumer);
 
 /*
@@ -105,7 +112,9 @@ void lttng_counter_shm_object_table_destroy(struct lttng_counter_shm_object_tabl
  * *NOT* multithread-safe (should be protected by mutex).
  * Returns a -1, -1 tuple on error.
  */
+LTTNG_HIDDEN
 struct lttng_counter_shm_ref lttng_counter_zalloc_shm(struct lttng_counter_shm_object *obj, size_t len);
+LTTNG_HIDDEN
 void lttng_counter_align_shm(struct lttng_counter_shm_object *obj, size_t align);
 
 static inline
