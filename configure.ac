@@ -167,6 +167,7 @@ AC_CHECK_FUNCS([ \
 
 # Check for pthread_setname_np and its signature
 LTTNG_PTHREAD_SETNAME_NP
+LTTNG_PTHREAD_GETNAME_NP
 
 # AC_FUNC_MALLOC causes problems when cross-compiling.
 #AC_FUNC_MALLOC
