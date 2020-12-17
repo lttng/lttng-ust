@@ -88,7 +88,6 @@ struct ustcomm_ust_msg {
 	uint32_t cmd;
 	char padding[USTCOMM_MSG_PADDING1];
 	union {
-		struct lttng_ust_event_notifier event_notifier;
 		struct lttng_ust_channel channel;
 		struct lttng_ust_stream stream;
 		struct lttng_ust_event event;
@@ -111,6 +110,15 @@ struct ustcomm_ust_msg {
 		struct lttng_ust_counter counter;
 		struct lttng_ust_counter_global counter_global;
 		struct lttng_ust_counter_cpu counter_cpu;
+		/*
+		 * For LTTNG_UST_EVENT_NOTIFIER_CREATE, a struct
+		 * lttng_ust_event_notifier implicitly follows struct
+		 * ustcomm_ust_msg.
+		 */
+		struct {
+			/* Length of struct lttng_ust_event_notifier */
+			uint32_t len;
+		} event_notifier;
 		char padding[USTCOMM_MSG_PADDING2];
 	} u;
 } LTTNG_PACKED;

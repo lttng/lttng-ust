@@ -1216,6 +1216,48 @@ int handle_message(struct sock_info *sock_info,
 			ret = -ENOSYS;
 		break;
 	}
+	case LTTNG_UST_EVENT_NOTIFIER_CREATE:
+	{
+		/* Receive struct lttng_ust_event_notifier */
+		struct lttng_ust_event_notifier event_notifier;
+
+		if (sizeof(event_notifier) != lum->u.event_notifier.len) {
+			DBG("incorrect event notifier data message size: %u", lum->u.event_notifier.len);
+			ret = -EINVAL;
+			goto error;
+		}
+		len = ustcomm_recv_unix_sock(sock, &event_notifier, sizeof(event_notifier));
+		switch (len) {
+		case 0:	/* orderly shutdown */
+			ret = 0;
+			goto error;
+		default:
+			if (len == sizeof(event_notifier)) {
+				DBG("event notifier data received");
+				break;
+			} else if (len < 0) {
+				DBG("Receive failed from lttng-sessiond with errno %d", (int) -len);
+				if (len == -ECONNRESET) {
+					ERR("%s remote end closed connection", sock_info->name);
+					ret = len;
+					goto error;
+				}
+				ret = len;
+				goto error;
+			} else {
+				DBG("incorrect event notifier data message size: %zd", len);
+				ret = -EINVAL;
+				goto error;
+			}
+		}
+		if (ops->cmd)
+			ret = ops->cmd(lum->handle, lum->cmd,
+					(unsigned long) &event_notifier,
+					&args, sock_info);
+		else
+			ret = -ENOSYS;
+		break;
+	}
 
 	default:
 		if (ops->cmd)

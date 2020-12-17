@@ -562,6 +562,7 @@ int ustctl_create_event_notifier(int sock, struct lttng_ust_event_notifier *even
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
 	struct lttng_ust_object_data *event_notifier_data;
+	ssize_t len;
 	int ret;
 
 	if (!event_notifier_group || !_event_notifier_data)
@@ -576,18 +577,20 @@ int ustctl_create_event_notifier(int sock, struct lttng_ust_event_notifier *even
 	memset(&lum, 0, sizeof(lum));
 	lum.handle = event_notifier_group->handle;
 	lum.cmd = LTTNG_UST_EVENT_NOTIFIER_CREATE;
+	lum.u.event_notifier.len = sizeof(*event_notifier);
 
-	strncpy(lum.u.event_notifier.event.name, event_notifier->event.name,
-		LTTNG_UST_SYM_NAME_LEN);
-	lum.u.event_notifier.event.instrumentation = event_notifier->event.instrumentation;
-	lum.u.event_notifier.event.loglevel_type = event_notifier->event.loglevel_type;
-	lum.u.event_notifier.event.loglevel = event_notifier->event.loglevel;
-	lum.u.event_notifier.event.token = event_notifier->event.token;
-	lum.u.event_notifier.error_counter_index = event_notifier->error_counter_index;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret) {
 		free(event_notifier_data);
 		return ret;
+	}
+	/* Send struct lttng_ust_event_notifier */
+	len = ustcomm_send_unix_sock(sock, event_notifier, sizeof(*event_notifier));
+	if (len != sizeof(*event_notifier)) {
+		if (len < 0)
+			return len;
+		else
+			return -EIO;
 	}
 	event_notifier_data->handle = lur.ret_val;
 	DBG("received event_notifier handle %u", event_notifier_data->handle);
