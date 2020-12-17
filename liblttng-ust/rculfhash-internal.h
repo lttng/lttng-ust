@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include "helper.h"
 
 #ifdef DEBUG
 #define dbg_printf(fmt, args...)     printf("[debug lttng-ust rculfhash] " fmt, ## args)
@@ -139,7 +140,11 @@ struct lttng_ust_lfht {
 	 */
 };
 
+LTTNG_HIDDEN
 extern unsigned int lttng_ust_lfht_fls_ulong(unsigned long x);
+LTTNG_HIDDEN
+extern int lttng_ust_lfht_get_count_order_u32(uint32_t x);
+LTTNG_HIDDEN
 extern int lttng_ust_lfht_get_count_order_ulong(unsigned long x);
 
 #ifdef POISON_FREE
