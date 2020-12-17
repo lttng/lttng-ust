@@ -63,6 +63,7 @@
 #include "../libringbuffer/getcpu.h"
 #include "getenv.h"
 #include "ust-events-internal.h"
+#include "context-internal.h"
 
 /* Concatenate lttng ust shared library name with its major version number. */
 #define LTTNG_UST_LIB_SO_NAME "liblttng-ust.so." __ust_stringify(CONFIG_LTTNG_UST_LIBRARY_VERSION_MAJOR)

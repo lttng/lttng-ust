@@ -31,4 +31,10 @@
 LTTNG_HIDDEN
 int lttng_context_init_all(struct lttng_ctx **ctx);
 
+LTTNG_HIDDEN
+void lttng_context_time_ns_reset(void);
+
+LTTNG_HIDDEN
+int lttng_add_time_ns_to_ctx(struct lttng_ctx **ctx);
+
 #endif /* _LTTNG_UST_CONTEXT_INTERNAL_H */

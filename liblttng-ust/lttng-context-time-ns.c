@@ -33,6 +33,7 @@
 #include <urcu/tls-compat.h>
 #include "lttng-tracer-core.h"
 #include "ns.h"
+#include "context-internal.h"
 
 
 /*
