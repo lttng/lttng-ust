@@ -255,4 +255,9 @@ void lttng_free_event_notifier_filter_runtime(
 LTTNG_HIDDEN
 int lttng_fix_pending_event_notifiers(void);
 
+LTTNG_HIDDEN
+struct lttng_counter *lttng_ust_counter_create(
+		const char *counter_transport_name,
+		size_t number_dimensions, const struct lttng_counter_dimension *dimensions);
+
 #endif /* _LTTNG_UST_EVENTS_INTERNAL_H */

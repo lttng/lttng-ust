@@ -746,10 +746,6 @@ int lttng_attach_context(struct lttng_ust_context *context_param,
 void lttng_transport_register(struct lttng_transport *transport);
 void lttng_transport_unregister(struct lttng_transport *transport);
 
-struct lttng_counter *lttng_ust_counter_create(
-		const char *counter_transport_name,
-		size_t number_dimensions, const struct lttng_counter_dimension *dimensions);
-
 int lttng_probe_register(struct lttng_probe_desc *desc);
 void lttng_probe_unregister(struct lttng_probe_desc *desc);
 void lttng_probe_provider_unregister_events(struct lttng_probe_desc *desc);
