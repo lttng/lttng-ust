@@ -56,6 +56,7 @@ void lttng_fixup_procname_tls(void);
 void lttng_fixup_cgroup_ns_tls(void);
 void lttng_fixup_ipc_ns_tls(void);
 void lttng_fixup_net_ns_tls(void);
+LTTNG_HIDDEN
 void lttng_fixup_time_ns_tls(void);
 void lttng_fixup_uts_ns_tls(void);
 
