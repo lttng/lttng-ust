@@ -746,9 +746,6 @@ int lttng_attach_context(struct lttng_ust_context *context_param,
 void lttng_transport_register(struct lttng_transport *transport);
 void lttng_transport_unregister(struct lttng_transport *transport);
 
-void lttng_counter_transport_register(struct lttng_counter_transport *transport);
-void lttng_counter_transport_unregister(struct lttng_counter_transport *transport);
-
 struct lttng_counter *lttng_ust_counter_create(
 		const char *counter_transport_name,
 		size_t number_dimensions, const struct lttng_counter_dimension *dimensions);
@@ -837,7 +834,6 @@ extern const struct lttng_ust_client_lib_ring_buffer_client_cb *lttng_client_cal
 extern const struct lttng_ust_client_lib_ring_buffer_client_cb *lttng_client_callbacks_overwrite;
 
 struct lttng_transport *lttng_transport_find(const char *name);
-struct lttng_counter_transport *lttng_counter_transport_find(const char *name);
 
 int lttng_probes_get_event_list(struct lttng_ust_tracepoint_list *list);
 void lttng_probes_prune_event_list(struct lttng_ust_tracepoint_list *list);

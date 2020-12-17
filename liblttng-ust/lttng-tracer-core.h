@@ -91,6 +91,13 @@ void lttng_event_notifier_notification_send(
 		struct lttng_event_notifier *event_notifier,
 		const char *stack_data);
 
+LTTNG_HIDDEN
+struct lttng_counter_transport *lttng_counter_transport_find(const char *name);
+LTTNG_HIDDEN
+void lttng_counter_transport_register(struct lttng_counter_transport *transport);
+LTTNG_HIDDEN
+void lttng_counter_transport_unregister(struct lttng_counter_transport *transport);
+
 #ifdef LTTNG_UST_HAVE_PERF_EVENT
 void lttng_ust_fixup_perf_counter_tls(void);
 void lttng_perf_lock(void);

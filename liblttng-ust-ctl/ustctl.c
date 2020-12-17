@@ -36,6 +36,7 @@
 #include "../liblttng-ust/lttng-rb-clients.h"
 #include "../liblttng-ust/clock.h"
 #include "../liblttng-ust/getenv.h"
+#include "../liblttng-ust/lttng-tracer-core.h"
 
 #include "../libcounter/shm.h"
 #include "../libcounter/smp.h"
