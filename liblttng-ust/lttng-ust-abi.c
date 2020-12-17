@@ -765,6 +765,7 @@ long lttng_event_notifier_group_error_counter_cmd(int objd, unsigned int cmd, un
 	}
 }
 
+LTTNG_HIDDEN
 int lttng_release_event_notifier_group_error_counter(int objd)
 {
 	struct lttng_counter *counter = objd_private(objd);
