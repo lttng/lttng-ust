@@ -99,9 +99,13 @@ extern void lttng_ring_buffer_client_overwrite_rt_exit(void);
 extern void lttng_ring_buffer_client_discard_exit(void);
 extern void lttng_ring_buffer_client_discard_rt_exit(void);
 extern void lttng_ring_buffer_metadata_client_exit(void);
+LTTNG_HIDDEN
 extern void lttng_counter_client_percpu_32_modular_init(void);
+LTTNG_HIDDEN
 extern void lttng_counter_client_percpu_32_modular_exit(void);
+LTTNG_HIDDEN
 extern void lttng_counter_client_percpu_64_modular_init(void);
+LTTNG_HIDDEN
 extern void lttng_counter_client_percpu_64_modular_exit(void);
 
 int ustctl_release_handle(int sock, int handle)
