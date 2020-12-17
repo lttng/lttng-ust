@@ -28,6 +28,8 @@
 #include <time.h>
 #include <sys/syscall.h>
 
+#include "helper.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -49,8 +51,10 @@ extern "C" {
  * (returns EINTR).
  */
 
+LTTNG_HIDDEN
 extern int lttng_ust_compat_futex_noasync(int32_t *uaddr, int op, int32_t val,
 		const struct timespec *timeout, int32_t *uaddr2, int32_t val3);
+LTTNG_HIDDEN
 extern int lttng_ust_compat_futex_async(int32_t *uaddr, int op, int32_t val,
 		const struct timespec *timeout, int32_t *uaddr2, int32_t val3);
 
