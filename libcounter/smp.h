@@ -21,12 +21,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include "helper.h"
+
 /*
  * 4kB of per-cpu data available.
  */
 #define LTTNG_COUNTER_PER_CPU_MEM_SIZE	4096
 
+LTTNG_HIDDEN
 extern int __lttng_counter_num_possible_cpus;
+LTTNG_HIDDEN
 extern void _lttng_counter_get_num_possible_cpus(void);
 
 static inline
