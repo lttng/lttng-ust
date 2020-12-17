@@ -33,6 +33,7 @@
 #include <lttng/ust-error.h>
 #include <lttng/ust-compiler.h>
 #include <lttng/ust-ctl.h>
+#include "helper.h"
 
 #ifndef LTTNG_PACKED
 #error "LTTNG_PACKED should be defined"
@@ -236,11 +237,14 @@ ssize_t ustcomm_recv_channel_from_sessiond(int sock,
 int ustcomm_recv_stream_from_sessiond(int sock,
 		uint64_t *memory_map_size,
 		int *shm_fd, int *wakeup_fd);
+LTTNG_HIDDEN
 ssize_t ustcomm_recv_event_notifier_notif_fd_from_sessiond(int sock,
 		int *event_notifier_notif_fd);
 
+LTTNG_HIDDEN
 ssize_t ustcomm_recv_counter_from_sessiond(int sock,
 		void **counter_data, uint64_t len);
+LTTNG_HIDDEN
 int ustcomm_recv_counter_shm_from_sessiond(int sock,
 		int *shm_fd);
 
