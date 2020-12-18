@@ -579,7 +579,7 @@ int ustctl_create_event_notifier(int sock, struct lttng_ust_event_notifier *even
 	lum.cmd = LTTNG_UST_EVENT_NOTIFIER_CREATE;
 	lum.u.event_notifier.len = sizeof(*event_notifier);
 
-	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+	ret = ustcomm_send_app_msg(sock, &lum);
 	if (ret) {
 		free(event_notifier_data);
 		return ret;
@@ -591,6 +591,11 @@ int ustctl_create_event_notifier(int sock, struct lttng_ust_event_notifier *even
 			return len;
 		else
 			return -EIO;
+	}
+	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	if (ret) {
+		free(event_notifier_data);
+		return ret;
 	}
 	event_notifier_data->handle = lur.ret_val;
 	DBG("received event_notifier handle %u", event_notifier_data->handle);
