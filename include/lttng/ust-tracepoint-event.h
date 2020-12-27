@@ -1056,4 +1056,5 @@ _TP_COMBINE_TOKENS(__lttng_events_exit__, TRACEPOINT_PROVIDER)(void)
 	lttng_probe_unregister(&_TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PROVIDER));
 }
 
-int _TP_COMBINE_TOKENS(__tracepoint_provider_, TRACEPOINT_PROVIDER);
+int _TP_COMBINE_TOKENS(__tracepoint_provider_, TRACEPOINT_PROVIDER)
+__attribute__((visibility("default")));
