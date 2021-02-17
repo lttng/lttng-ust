@@ -1,3 +1,21 @@
+2021-02-17 (Random Act of Kindness Day) lttng-ust 2.12.1
+	* Fix: Use default visibility for tracepoint provider symbol
+	* Fix: configure: support Autoconf 2.70
+	* Fix: ust-tracepoint: make sure to expand tracepoint provider token
+	* Fix: ustctl_release_object: eliminate double-close/free on error
+	* tests: return the proper TAP exit code
+	* Fix: python agent: 'time' has no attribute 'clock'
+	* Fix: libc-wrapper: undef temporary token rather than value
+	* Fix: support compile units including 'sys/sdt.h' without defining SDT_USE_VARIADIC
+	* Fix: event probes attached before event enabled
+	* Fix: agent: read: end of loop condition should exclude 0
+	* fix: Java examples CLASSPATH override
+	* Add missing files to .gitignore
+	* fix: Add CLASSPATH to autoconf precious variables
+	* Fix: Java agent: close session daemon socket on error
+	* Fix: Java agent: handle partial payload read
+	* Fix: namespace contexts !CONFIG_RCU_TLS variable initialization
+
 2020-04-08 (The Day After National Beer Day) lttng-ust 2.12.0
 	* (no change)
 
