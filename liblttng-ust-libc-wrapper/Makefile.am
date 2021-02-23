@@ -11,6 +11,8 @@ liblttng_ust_libc_wrapper_la_LIBADD = \
 	$(top_builddir)/liblttng-ust/liblttng-ust.la \
 	$(DL_LIBS)
 
+liblttng_ust_libc_wrapper_la_LDFLAGS = -version-info $(LTTNG_UST_LIBRARY_VERSION)
+
 liblttng_ust_pthread_wrapper_la_SOURCES = \
 	lttng-ust-pthread.c \
 	ust_pthread.h
@@ -18,6 +20,8 @@ liblttng_ust_pthread_wrapper_la_SOURCES = \
 liblttng_ust_pthread_wrapper_la_LIBADD = \
 	$(top_builddir)/liblttng-ust/liblttng-ust.la \
 	$(DL_LIBS)
+
+liblttng_ust_pthread_wrapper_la_LDFLAGS = -version-info $(LTTNG_UST_LIBRARY_VERSION)
 
 dist_noinst_SCRIPTS = run
 EXTRA_DIST = README

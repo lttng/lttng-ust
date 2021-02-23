@@ -20,7 +20,7 @@ AC_SUBST([PATCHLEVEL_VERSION], [V_PATCH])
 # Following the numbering scheme proposed by libtool for the library version
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
 # This is the library version of liblttng-ust.
-m4_define([UST_LIB_V_MAJOR], [0])
+m4_define([UST_LIB_V_MAJOR], [1])
 m4_define([UST_LIB_V_MINOR], [0])
 m4_define([UST_LIB_V_PATCH], [0])
 

@@ -7,3 +7,5 @@ liblttng_ust_fork_la_LIBADD = \
 	$(DL_LIBS)
 
 liblttng_ust_fork_la_CFLAGS = -DUST_COMPONENT=liblttng-ust-fork $(AM_CFLAGS)
+
+liblttng_ust_fork_la_LDFLAGS = -version-info $(LTTNG_UST_LIBRARY_VERSION)

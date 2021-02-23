@@ -349,7 +349,7 @@ __tracepoints__init(void)
 		tracepoint_dlopen_ptr = &tracepoint_dlopen;
 	if (!tracepoint_dlopen_ptr->liblttngust_handle)
 		tracepoint_dlopen_ptr->liblttngust_handle =
-			dlopen("liblttng-ust-tracepoint.so.0", RTLD_NOW | RTLD_GLOBAL);
+			dlopen("liblttng-ust-tracepoint.so.1", RTLD_NOW | RTLD_GLOBAL);
 	if (!tracepoint_dlopen_ptr->liblttngust_handle)
 		return;
 	__tracepoint__init_urcu_sym();
@@ -471,7 +471,7 @@ __tracepoints__ptrs_init(void)
 		tracepoint_dlopen_ptr = &tracepoint_dlopen;
 	if (!tracepoint_dlopen_ptr->liblttngust_handle)
 		tracepoint_dlopen_ptr->liblttngust_handle =
-			dlopen("liblttng-ust-tracepoint.so.0", RTLD_NOW | RTLD_GLOBAL);
+			dlopen("liblttng-ust-tracepoint.so.1", RTLD_NOW | RTLD_GLOBAL);
 	if (!tracepoint_dlopen_ptr->liblttngust_handle)
 		return;
 	if (!tracepoint_destructors_syms_ptr)
