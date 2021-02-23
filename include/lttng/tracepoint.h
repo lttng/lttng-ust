@@ -271,7 +271,6 @@ struct lttng_ust_tracepoint_dlopen *tracepoint_dlopen_ptr
  * control and check if the destructors should be executed.
  */
 struct lttng_ust_tracepoint_destructors_syms {
-	int *old_tracepoint_disable_destructors;
 	void (*tracepoint_disable_destructors)(void);
 	int (*tracepoint_get_destructors_state)(void);
 };
@@ -293,7 +292,6 @@ static inline void tracepoint_disable_destructors(void)
 	if (tracepoint_dlopen_ptr->liblttngust_handle
 			&& tracepoint_destructors_syms_ptr->tracepoint_disable_destructors)
 		tracepoint_destructors_syms_ptr->tracepoint_disable_destructors();
-	*tracepoint_destructors_syms_ptr->old_tracepoint_disable_destructors = 1;
 }
 
 #ifndef _LGPL_SOURCE
@@ -384,19 +382,6 @@ __tracepoints__destroy(void)
 		 */
 		return;
 	}
-	/*
-	 * Lookup if destructors must be executed using the old method.
-	 */
-	if (tracepoint_destructors_syms_ptr->old_tracepoint_disable_destructors
-		&& *tracepoint_destructors_syms_ptr->old_tracepoint_disable_destructors) {
-		/*
-		 * The old_tracepoint_disable_destructors symbol was found with
-		 * dlsym but its value is 1 meaning that destructors must not
-		 * be executed.
-		 */
-		return;
-	}
-
 	ret = dlclose(tracepoint_dlopen_ptr->liblttngust_handle);
 	if (ret) {
 		fprintf(stderr, "Error (%d) in dlclose\n", ret);
@@ -479,15 +464,11 @@ __tracepoints__ptrs_init(void)
 	tracepoint_dlopen_ptr->tracepoint_register_lib =
 		URCU_FORCE_CAST(int (*)(struct lttng_ust_tracepoint * const *, int),
 				dlsym(tracepoint_dlopen_ptr->liblttngust_handle,
-					"tracepoint_register_lib2"));
+					"tracepoint_register_lib"));
 	tracepoint_dlopen_ptr->tracepoint_unregister_lib =
 		URCU_FORCE_CAST(int (*)(struct lttng_ust_tracepoint * const *),
 				dlsym(tracepoint_dlopen_ptr->liblttngust_handle,
-					"tracepoint_unregister_lib2"));
-	tracepoint_destructors_syms_ptr->old_tracepoint_disable_destructors =
-		URCU_FORCE_CAST(int *,
-				dlsym(tracepoint_dlopen_ptr->liblttngust_handle,
-					"__tracepoints__disable_destructors"));
+					"tracepoint_unregister_lib"));
 	tracepoint_destructors_syms_ptr->tracepoint_disable_destructors =
 		URCU_FORCE_CAST(void (*)(void),
 				dlsym(tracepoint_dlopen_ptr->liblttngust_handle,
