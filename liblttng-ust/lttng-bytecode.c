@@ -632,8 +632,3 @@ void lttng_free_event_notifier_filter_runtime(
 {
 	free_filter_runtime(&event_notifier->filter_bytecode_runtime_head);
 }
-
-/* For backward compatibility. Leave those exported symbols in place. */
-void lttng_filter_sync_state(struct lttng_bytecode_runtime *runtime)
-{
-}

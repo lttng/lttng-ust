@@ -211,12 +211,6 @@ int lttng_probe_register(struct lttng_probe_desc *desc)
 	return ret;
 }
 
-/* Backward compatibility with UST 2.0 */
-int ltt_probe_register(struct lttng_probe_desc *desc)
-{
-	return lttng_probe_register(desc);
-}
-
 void lttng_probe_unregister(struct lttng_probe_desc *desc)
 {
 	lttng_ust_fixup_tls();
@@ -234,12 +228,6 @@ void lttng_probe_unregister(struct lttng_probe_desc *desc)
 	DBG("just unregistered probes of provider %s", desc->provider);
 
 	ust_unlock();
-}
-
-/* Backward compatibility with UST 2.0 */
-void ltt_probe_unregister(struct lttng_probe_desc *desc)
-{
-	lttng_probe_unregister(desc);
 }
 
 void lttng_probes_prune_event_list(struct lttng_ust_tracepoint_list *list)

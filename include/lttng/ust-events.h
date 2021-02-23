@@ -890,31 +890,6 @@ struct lttng_enum *lttng_ust_enum_get_from_desc(struct lttng_session *session,
 void lttng_ust_dl_update(void *ip);
 void lttng_ust_fixup_fd_tracker_tls(void);
 
-/* For backward compatibility. Leave those exported symbols in place. */
-extern struct lttng_ctx *lttng_static_ctx;
-struct lttng_ust_filter_bytecode_node;
-struct lttng_ust_excluder_node;
-void lttng_context_init(void);
-void lttng_context_exit(void);
-void lttng_filter_event_link_bytecode(struct lttng_event *event);
-struct lttng_enabler *lttng_enabler_create(
-		enum lttng_enabler_format_type format_type,
-		struct lttng_ust_event *event_param,
-		struct lttng_channel *chan);
-int lttng_enabler_enable(struct lttng_enabler *enabler);
-int lttng_enabler_disable(struct lttng_enabler *enabler);
-int lttng_enabler_attach_bytecode(struct lttng_enabler *enabler,
-		struct lttng_ust_filter_bytecode_node *bytecode);
-int lttng_enabler_attach_context(struct lttng_enabler *enabler,
-		struct lttng_ust_context *ctx);
-int lttng_enabler_attach_exclusion(struct lttng_enabler *enabler,
-		struct lttng_ust_excluder_node *excluder);
-void lttng_enabler_event_link_bytecode(struct lttng_event *event,
-		struct lttng_enabler *enabler);
-void lttng_filter_sync_state(struct lttng_bytecode_runtime *runtime);
-int lttng_session_context_init(struct lttng_ctx **ctx);
-
-
 #ifdef __cplusplus
 }
 #endif
