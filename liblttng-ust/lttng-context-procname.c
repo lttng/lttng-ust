@@ -15,6 +15,8 @@
 #include <assert.h>
 #include "compat.h"
 
+#include "context-internal.h"
+
 /* Maximum number of nesting levels for the procname cache. */
 #define PROCNAME_NESTING_MAX	2
 

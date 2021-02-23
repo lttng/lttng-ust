@@ -46,6 +46,7 @@
 #include "lttng-tracer.h"
 #include "string-utils.h"
 #include "ust-events-internal.h"
+#include "context-internal.h"
 
 #define OBJ_NAME_LEN	16
 

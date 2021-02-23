@@ -21,6 +21,8 @@
 #include <lttng/ringbuffer-config.h>
 #include "../libringbuffer/getcpu.h"
 
+#include "context-internal.h"
+
 static
 size_t cpu_id_get_size(struct lttng_ctx_field *field, size_t offset)
 {

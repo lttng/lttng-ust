@@ -29,6 +29,8 @@
 #include <signal.h>
 #include <urcu/tls-compat.h>
 #include "perf_event.h"
+
+#include "context-internal.h"
 #include "lttng-tracer-core.h"
 #include "ust-events-internal.h"
 

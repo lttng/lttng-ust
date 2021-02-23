@@ -14,6 +14,7 @@
 
 #include <ust-context-provider.h>
 
+#include "context-internal.h"
 #include "lttng-tracer-core.h"
 #include "jhash.h"
 #include "context-provider-internal.h"

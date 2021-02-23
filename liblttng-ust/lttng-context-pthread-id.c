@@ -13,6 +13,8 @@
 #include <lttng/ust-tracer.h>
 #include <lttng/ringbuffer-config.h>
 
+#include "context-internal.h"
+
 static
 size_t pthread_id_get_size(struct lttng_ctx_field *field, size_t offset)
 {

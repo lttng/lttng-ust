@@ -10,8 +10,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "lttng-bytecode.h"
 #include <lttng/align.h>
+
+#include "context-internal.h"
+#include "lttng-bytecode.h"
 #include "ust-events-internal.h"
 
 static int lttng_fls(int val)

@@ -14,6 +14,8 @@
 #include <lttng/ust-tracer.h>
 #include <lttng/ringbuffer-config.h>
 
+#include "context-internal.h"
+
 /*
  * We cache the result to ensure we don't trigger a system call for
  * each event.

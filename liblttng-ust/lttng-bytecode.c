@@ -12,6 +12,7 @@
 
 #include <urcu/rculist.h>
 
+#include "context-internal.h"
 #include "lttng-bytecode.h"
 #include "ust-events-internal.h"
 
