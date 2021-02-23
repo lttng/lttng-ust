@@ -31,7 +31,7 @@ struct mmsghdr;
 /* Internal header. */
 #include <lttng/ust-events.h>
 #include <lttng/ringbuffer-config.h>
-#include <lttng/ust-context-provider.h>
+#include <ust-context-provider.h>
 
 static __thread unsigned int test_count;
 

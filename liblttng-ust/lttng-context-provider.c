@@ -12,7 +12,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <lttng/ust-context-provider.h>
+#include <ust-context-provider.h>
 
 #include "lttng-tracer-core.h"
 #include "jhash.h"

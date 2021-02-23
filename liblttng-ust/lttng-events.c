@@ -37,8 +37,8 @@
 #include <lttng/ust-ctl.h>
 #include <ust-comm.h>
 #include <ust-fd.h>
-#include <lttng/ust-dynamic-type.h>
-#include <lttng/ust-context-provider.h>
+#include <ust-dynamic-type.h>
+#include <ust-context-provider.h>
 #include "error.h"
 #include "compat.h"
 #include "lttng-ust-uuid.h"

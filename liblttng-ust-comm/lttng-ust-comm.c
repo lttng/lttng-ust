@@ -25,7 +25,7 @@
 #include <helper.h>
 #include <lttng/ust-error.h>
 #include <lttng/ust-events.h>
-#include <lttng/ust-dynamic-type.h>
+#include <ust-dynamic-type.h>
 #include <usterr-signal-safe.h>
 
 #include "../liblttng-ust/compat.h"

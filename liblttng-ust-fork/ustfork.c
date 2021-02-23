@@ -5,7 +5,7 @@
  * Copyright (C) 2011-2012  Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
-#include <lttng/ust-dlfcn.h>
+#include <ust-dlfcn.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <signal.h>

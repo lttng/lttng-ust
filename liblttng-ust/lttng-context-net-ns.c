@@ -15,7 +15,7 @@
 #include <lttng/ust-events.h>
 #include <lttng/ust-tracer.h>
 #include <lttng/ringbuffer-config.h>
-#include <lttng/ust-tid.h>
+#include <ust-tid.h>
 #include <urcu/tls-compat.h>
 #include "lttng-tracer-core.h"
 #include "ns.h"

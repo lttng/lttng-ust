@@ -14,7 +14,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <share.h>
-#include "lttng/ust-tid.h"
+#include "ust-tid.h"
 
 enum ust_loglevel {
 	UST_LOGLEVEL_UNKNOWN = 0,

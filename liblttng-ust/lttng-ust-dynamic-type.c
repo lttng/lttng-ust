@@ -13,7 +13,7 @@
 #include <inttypes.h>
 
 #include <helper.h>
-#include <lttng/ust-dynamic-type.h>
+#include <ust-dynamic-type.h>
 
 #define ctf_enum_value(_string, _value)					\
 	{								\

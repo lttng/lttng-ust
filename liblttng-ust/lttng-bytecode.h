@@ -14,7 +14,7 @@
 #include <stdbool.h>
 #include <helper.h>
 #include <lttng/ust-events.h>
-#include <lttng/ust-context-provider.h>
+#include <ust-context-provider.h>
 #include <stdint.h>
 #include <assert.h>
 #include <errno.h>

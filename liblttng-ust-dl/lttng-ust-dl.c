@@ -13,7 +13,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <lttng/ust-dlfcn.h>
+#include <ust-dlfcn.h>
 #include <lttng/ust-elf.h>
 #include <lttng/ust-events.h>
 #include <helper.h>

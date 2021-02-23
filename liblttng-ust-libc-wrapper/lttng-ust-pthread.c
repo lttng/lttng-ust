@@ -9,7 +9,7 @@
  * circular dependency loop between this malloc wrapper, liburcu and
  * libc.
  */
-#include <lttng/ust-dlfcn.h>
+#include <ust-dlfcn.h>
 #include <helper.h>
 #include <pthread.h>
 

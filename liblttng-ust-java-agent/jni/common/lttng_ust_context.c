@@ -12,7 +12,7 @@
 #include <inttypes.h>
 #include <lttng/ust-events.h>
 #include <lttng/ringbuffer-config.h>
-#include <lttng/ust-context-provider.h>
+#include <ust-context-provider.h>
 
 #include "helper.h"
 #include "lttng_ust_context.h"

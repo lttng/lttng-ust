@@ -10,7 +10,7 @@
 #define _LTTNG_UST_DLFCN_H
 
 #ifdef _DLFCN_H
-#error "Please include lttng/ust-dlfcn.h before dlfcn.h."
+#error "Please include ust-dlfcn.h before dlfcn.h."
 #endif /* _DLFCN_H */
 
 #ifdef __GLIBC__
