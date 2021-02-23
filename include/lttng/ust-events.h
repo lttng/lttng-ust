@@ -487,20 +487,14 @@ struct lttng_enabler_ref {
  * removed.
  */
 struct lttng_event {
-	/* LTTng-UST 2.0 starts here */
 	unsigned int id;
 	struct lttng_channel *chan;
 	int enabled;
 	const struct lttng_event_desc *desc;
-	void *_deprecated1;
 	struct lttng_ctx *ctx;
 	enum lttng_ust_instrumentation instrumentation;
 	struct cds_list_head node;		/* Event list in session */
-	struct cds_list_head _deprecated2;
-	void *_deprecated3;
-	unsigned int _deprecated4:1;
 
-	/* LTTng-UST 2.1 starts here */
 	/* list of struct lttng_bytecode_runtime, sorted by seqnum */
 	struct cds_list_head filter_bytecode_runtime_head;
 	int has_enablers_without_bytecode;
@@ -555,18 +549,6 @@ struct lttng_channel_ops {
 			const int *stream_fds, int nr_stream_fds,
 			int64_t blocking_timeout);
 	void (*channel_destroy)(struct lttng_channel *chan);
-	union {
-		void *_deprecated1;
-		/*
-		 * has_strcpy is needed by probe providers version 1.0 to
-		 * dynamically detect whether the LTTng-UST tracepoint
-		 * provider ABI implements event_strcpy. Starting from
-		 * probe providers version 2.0, the check is not needed,
-		 * but backward compatibility is provided for older versions.
-		 */
-		unsigned long has_strcpy:1;		/* ABI has strcpy */
-	} u;
-	void *_deprecated2;
 	int (*event_reserve)(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			     uint32_t event_id);
 	void (*event_commit)(struct lttng_ust_lib_ring_buffer_ctx *ctx);
@@ -579,8 +561,6 @@ struct lttng_channel_ops {
 	 */
 	size_t (*packet_avail_size)(struct channel *chan,
 				    struct lttng_ust_shm_handle *handle);
-	//wait_queue_head_t *(*get_reader_wait_queue)(struct channel *chan);
-	//wait_queue_head_t *(*get_hp_wait_queue)(struct channel *chan);
 	int (*is_finalized)(struct channel *chan);
 	int (*is_disabled)(struct channel *chan);
 	int (*flush_buffer)(struct channel *chan, struct lttng_ust_shm_handle *handle);
@@ -606,13 +586,10 @@ struct lttng_channel {
 	/* Event ID management */
 	struct lttng_session *session;
 	int objd;			/* Object associated to channel */
-	unsigned int _deprecated1;
-	unsigned int _deprecated2;
 	struct cds_list_head node;	/* Channel list in session */
 	const struct lttng_channel_ops *ops;
 	int header_type;		/* 0: unset, 1: compact, 2: large */
 	struct lttng_ust_shm_handle *handle;	/* shared-memory handle */
-	unsigned int _deprecated3:1;
 
 	/* Channel ID */
 	unsigned int id;
@@ -688,13 +665,9 @@ struct lttng_session {
 	int active;				/* Is trace session active ? */
 	int been_active;			/* Been active ? */
 	int objd;				/* Object associated */
-	void *_deprecated1;
 	struct cds_list_head chan_head;		/* Channel list head */
 	struct cds_list_head events_head;	/* list of events */
-	struct cds_list_head _deprecated2;
 	struct cds_list_head node;		/* Session list */
-	int _deprecated3;
-	unsigned int _deprecated4:1;
 
 	/* New UST 2.1 */
 	/* List of enablers */
