@@ -1828,6 +1828,7 @@ int get_cred(int sock,
 }
 #elif defined(__FreeBSD__)
 #include <sys/ucred.h>
+#include <sys/un.h>
 
 /*
  * Override application uid/gid with unix socket credentials. Use the
@@ -1855,11 +1856,11 @@ int get_cred(int sock,
 	}
 	DBG("Unix socket peercred [ uid: %u, gid: %u ], "
 		"application registered claiming [ pid: %d, ppid: %d, uid: %u, gid: %u ]",
-		xucred.uid, xucred.cr_groups[0],
+		xucred.cr_uid, xucred.cr_groups[0],
 		reg_msg->pid, reg_msg->ppid, reg_msg->uid, reg_msg->gid);
 	*pid = reg_msg->pid;
 	*ppid = reg_msg->ppid;
-	*uid = xucred.uid;
+	*uid = xucred.cr_uid;
 	*gid = xucred.cr_groups[0];
 	return 0;
 }
