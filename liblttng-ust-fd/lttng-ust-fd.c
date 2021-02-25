@@ -18,6 +18,12 @@
 static int (*__lttng_ust_fd_plibc_close)(int fd);
 static int (*__lttng_ust_fd_plibc_fclose)(FILE *stream);
 
+static __attribute__((constructor))
+void _lttng_ust_fd_init(void)
+{
+	ust_err_init();
+}
+
 static
 int _lttng_ust_fd_libc_close(int fd)
 {

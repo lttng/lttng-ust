@@ -2921,8 +2921,8 @@ int ustctl_counter_clear(struct ustctl_daemon_counter *counter,
 static __attribute__((constructor))
 void ustctl_init(void)
 {
-	init_usterr();
-	lttng_ust_getenv_init();	/* Needs init_usterr() to be completed. */
+	ust_err_init();
+	lttng_ust_getenv_init();	/* Needs ust_err_init() to be completed. */
 	lttng_ust_clock_init();
 	lttng_ring_buffer_metadata_client_init();
 	lttng_ring_buffer_client_overwrite_init();

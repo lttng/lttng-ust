@@ -12,34 +12,40 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <ust-share.h>
+#include "ust-helper.h"
 #include "ust-tid.h"
 #include "ust-snprintf.h"
 
-enum ust_loglevel {
-	UST_LOGLEVEL_UNKNOWN = 0,
-	UST_LOGLEVEL_NORMAL,
-	UST_LOGLEVEL_DEBUG,
+enum ust_err_loglevel {
+	UST_ERR_LOGLEVEL_UNKNOWN = 0,
+	UST_ERR_LOGLEVEL_NORMAL,
+	UST_ERR_LOGLEVEL_DEBUG,
 };
 
-extern volatile enum ust_loglevel ust_loglevel;
-void init_usterr(void);
+LTTNG_HIDDEN
+extern volatile enum ust_err_loglevel ust_err_loglevel;
+LTTNG_HIDDEN
+void ust_err_init(void);
 
 #ifdef LTTNG_UST_DEBUG
-static inline int ust_debug(void)
+static inline bool ust_err_debug_enabled(void)
 {
-	return 1;
+	return true;
 }
 #else /* #ifdef LTTNG_UST_DEBUG */
-static inline int ust_debug(void)
+static inline bool ust_err_debug_enabled(void)
 {
-	return ust_loglevel == UST_LOGLEVEL_DEBUG;
+	return ust_err_loglevel == UST_ERR_LOGLEVEL_DEBUG;
 }
 #endif /* #else #ifdef LTTNG_UST_DEBUG */
 
+/*
+ * The default component for error messages.
+ */
 #ifndef UST_COMPONENT
-//#error UST_COMPONENT is undefined
 #define UST_COMPONENT libust
 #endif
 
@@ -47,17 +53,18 @@ static inline int ust_debug(void)
 #define UST_XSTR(d) UST_STR(d)
 #define UST_STR(s) #s
 
-#define USTERR_MAX_LEN	512
+#define UST_ERR_MAX_LEN	512
 
-/* We sometimes print in the tracing path, and tracing can occur in
+/*
+ * We sometimes print in the tracing path, and tracing can occur in
  * signal handlers, so we must use a print method which is signal safe.
  */
-/* Can't use dynamic allocation. Limit ourselves to USTERR_MAX_LEN chars. */
+/* Can't use dynamic allocation. Limit ourselves to UST_ERR_MAX_LEN chars. */
 /* Add end of string in case of buffer overflow. */
 #define sigsafe_print_err(fmt, args...)					\
 do {									\
-	if (ust_debug()) {						\
-		char ____buf[USTERR_MAX_LEN];				\
+	if (ust_err_debug_enabled()) {					\
+		char ____buf[UST_ERR_MAX_LEN];				\
 		int ____saved_errno;					\
 									\
 		____saved_errno = errno;	/* signal-safety */	\
@@ -92,7 +99,7 @@ do {									\
  */
 #define PERROR(call, args...)						\
 	do {								\
-		if (ust_debug()) {					\
+		if (ust_err_debug_enabled()) {				\
 			char buf[200] = "Error in strerror_r()";	\
 			strerror_r(errno, buf, sizeof(buf));		\
 			ERRMSG("Error: " call ": %s", ## args, buf);	\
@@ -104,7 +111,7 @@ do {									\
  */
 #define PERROR(call, args...)						\
 	do {								\
-		if (ust_debug()) {					\
+		if (ust_err_debug_enabled()) {				\
 			char *buf;					\
 			char tmp[200];					\
 			buf = strerror_r(errno, tmp, sizeof(tmp));	\

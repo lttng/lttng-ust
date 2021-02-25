@@ -1718,7 +1718,7 @@ void wait_for_sessiond(struct sock_info *sock_info)
 "Please upgrade your kernel "
 "(fix is commit 9ea71503a8ed9184d2d0b8ccc4d269d05f7940ae in Linux kernel "
 "mainline). LTTng-UST will use polling mode fallback.");
-			if (ust_debug())
+			if (ust_err_debug_enabled())
 				PERROR("futex");
 			goto end_wait;
 		}
@@ -2107,8 +2107,8 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	 * sessiond (otherwise leading to errors when trying to create
 	 * sessiond before the init functions are completed).
 	 */
-	init_usterr();
-	lttng_ust_getenv_init();	/* Needs init_usterr() to be completed. */
+	ust_err_init();
+	lttng_ust_getenv_init();	/* Needs ust_err_init() to be completed. */
 	init_tracepoint();
 	lttng_ust_init_fd_tracker();
 	lttng_ust_clock_init();

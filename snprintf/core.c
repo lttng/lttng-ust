@@ -6,13 +6,13 @@
 
 #include <usterr-signal-safe.h>
 
-volatile enum ust_loglevel ust_loglevel;
+volatile enum ust_err_loglevel ust_err_loglevel;
 
-void init_usterr(void)
+void ust_err_init(void)
 {
 	char *ust_debug;
 
-	if (ust_loglevel == UST_LOGLEVEL_UNKNOWN) {
+	if (ust_err_loglevel == UST_ERR_LOGLEVEL_UNKNOWN) {
 		/*
 		 * This getenv is not part of lttng_getenv() because it
 		 * is required to print ERR() performed during getenv
@@ -20,8 +20,8 @@ void init_usterr(void)
 		 */
 		ust_debug = getenv("LTTNG_UST_DEBUG");
 		if (ust_debug)
-			ust_loglevel = UST_LOGLEVEL_DEBUG;
+			ust_err_loglevel = UST_ERR_LOGLEVEL_DEBUG;
 		else
-			ust_loglevel = UST_LOGLEVEL_NORMAL;
+			ust_err_loglevel = UST_ERR_LOGLEVEL_NORMAL;
 	}
 }

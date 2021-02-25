@@ -897,7 +897,7 @@ lib_added:
 
 	DBG("just registered a tracepoints section from %p and having %d tracepoints",
 		tracepoints_start, tracepoints_count);
-	if (ust_debug()) {
+	if (ust_err_debug_enabled()) {
 		int i;
 
 		for (i = 0; i < tracepoints_count; i++) {
@@ -960,7 +960,7 @@ void init_tracepoint(void)
 {
 	if (uatomic_xchg(&initialized, 1) == 1)
 		return;
-	init_usterr();
+	ust_err_init();
 	check_weak_hidden();
 }
 
