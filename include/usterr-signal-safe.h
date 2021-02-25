@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <ust-share.h>
 #include "ust-tid.h"
+#include "ust-snprintf.h"
 
 enum ust_loglevel {
 	UST_LOGLEVEL_UNKNOWN = 0,
@@ -51,10 +52,6 @@ static inline int ust_debug(void)
 /* We sometimes print in the tracing path, and tracing can occur in
  * signal handlers, so we must use a print method which is signal safe.
  */
-
-extern int ust_safe_snprintf(char *str, size_t n, const char *fmt, ...)
-	__attribute__ ((format (printf, 3, 4)));
-
 /* Can't use dynamic allocation. Limit ourselves to USTERR_MAX_LEN chars. */
 /* Add end of string in case of buffer overflow. */
 #define sigsafe_print_err(fmt, args...)					\
