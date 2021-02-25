@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <lttng/ust-events.h>
 #include "ust-bitfield.h"
+#include "ust-compat.h"
 #include "clock.h"
 #include "lttng-tracer.h"
 #include "../libringbuffer/frontend_types.h"

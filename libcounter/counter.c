@@ -13,9 +13,9 @@
 #include <urcu/compiler.h>
 #include <stdbool.h>
 #include <ust-helper.h>
-#include <lttng/align.h>
 #include "smp.h"
 #include "shm.h"
+#include "ust-compat.h"
 
 #include "ust-bitmap.h"
 

@@ -20,6 +20,7 @@
 #include <usterr-signal-safe.h>
 #include <ust-comm.h>
 #include <ust-helper.h>
+#include "ust-compat.h"
 
 #include "../libringbuffer/backend.h"
 #include "../libringbuffer/frontend.h"

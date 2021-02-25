@@ -19,8 +19,8 @@
 #include <urcu/compiler.h>
 #include <urcu/tls-compat.h>
 #include <urcu/arch.h>
-#include <lttng/align.h>
 #include <ust-helper.h>
+#include "ust-compat.h"
 
 #define TRACEPOINT_DEFINE
 #define TRACEPOINT_CREATE_PROBES

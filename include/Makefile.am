@@ -55,6 +55,7 @@ noinst_HEADERS = \
 	ust-snprintf.h \
 	ust-bitmap.h \
 	ust-comm.h \
+	ust-compat.h \
 	ust-fd.h \
 	ust-tid.h \
 	ust-bitfield.h \

@@ -12,8 +12,8 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 
-#include <lttng/align.h>
 #include "libringbuffer/shm.h"
+#include "ust-compat.h"
 
 #include "tap.h"
 

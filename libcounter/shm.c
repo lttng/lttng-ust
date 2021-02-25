@@ -368,6 +368,6 @@ struct lttng_counter_shm_ref lttng_counter_zalloc_shm(struct lttng_counter_shm_o
 
 void lttng_counter_align_shm(struct lttng_counter_shm_object *obj, size_t align)
 {
-	size_t offset_len = offset_align(obj->allocated_len, align);
+	size_t offset_len = lttng_ust_offset_align(obj->allocated_len, align);
 	obj->allocated_len += offset_len;
 }
