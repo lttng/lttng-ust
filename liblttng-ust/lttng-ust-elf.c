@@ -6,7 +6,7 @@
 
 #define _LGPL_SOURCE
 #include <fcntl.h>
-#include <helper.h>
+#include <ust-helper.h>
 #include <lttng/align.h>
 #include <lttng/ust-elf.h>
 #include <stdbool.h>

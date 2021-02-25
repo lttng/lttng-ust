@@ -12,7 +12,7 @@
 #include <ust-context-provider.h>
 #include <lttng/urcu/pointer.h>
 #include <usterr-signal-safe.h>
-#include <helper.h>
+#include <ust-helper.h>
 #include <stddef.h>
 #include <string.h>
 #include <assert.h>

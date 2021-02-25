@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <sys/uio.h>
 
-#include "helper.h"
+#include "ust-helper.h"
 
 /* Should be hidden but would break the ABI */
 ssize_t patient_write(int fd, const void *buf, size_t count);

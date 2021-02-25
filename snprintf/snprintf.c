@@ -15,7 +15,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include "local.h"
-#include "ust_snprintf.h"
+#include "ust-snprintf.h"
 
 #define DUMMY_LEN	1
 

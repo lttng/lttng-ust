@@ -13,7 +13,7 @@
 #include <stdint.h>
 #include <pthread.h>
 #include <urcu/compiler.h>
-#include "helper.h"
+#include "ust-helper.h"
 
 #ifdef __cplusplus
 extern "C" {

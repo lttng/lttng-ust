@@ -22,7 +22,7 @@
 #include <lttng/ust-ctl.h>
 #include <ust-comm.h>
 #include <ust-fd.h>
-#include <helper.h>
+#include <ust-helper.h>
 #include <lttng/ust-error.h>
 #include <lttng/ust-events.h>
 #include <ust-dynamic-type.h>

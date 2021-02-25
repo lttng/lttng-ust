@@ -24,7 +24,7 @@
 #include <numa.h>
 #include <numaif.h>
 #endif
-#include <helper.h>
+#include <ust-helper.h>
 #include <ust-fd.h>
 #include "mmap.h"
 

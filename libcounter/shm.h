@@ -13,7 +13,7 @@
 #include <usterr-signal-safe.h>
 #include <urcu/compiler.h>
 #include "shm_types.h"
-#include "helper.h"
+#include "ust-helper.h"
 
 /* lttng_counter_handle_create - for UST. */
 extern

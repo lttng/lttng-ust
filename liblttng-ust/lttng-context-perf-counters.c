@@ -23,7 +23,7 @@
 #include <urcu/system.h>
 #include <urcu/arch.h>
 #include <urcu/rculist.h>
-#include <helper.h>
+#include <ust-helper.h>
 #include <urcu/ref.h>
 #include <usterr-signal-safe.h>
 #include <signal.h>

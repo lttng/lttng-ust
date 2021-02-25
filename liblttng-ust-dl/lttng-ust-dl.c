@@ -16,7 +16,7 @@
 #include <ust-dlfcn.h>
 #include <lttng/ust-elf.h>
 #include <lttng/ust-events.h>
-#include <helper.h>
+#include <ust-helper.h>
 #include "usterr-signal-safe.h"
 
 /* Include link.h last else it conflicts with ust-dlfcn. */

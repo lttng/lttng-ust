@@ -15,7 +15,7 @@
 #include <lttng/tracepoint.h>
 #include "tracepoint-internal.h"
 #include <assert.h>
-#include <helper.h>
+#include <ust-helper.h>
 #include <ctype.h>
 
 #include "lttng-tracer-core.h"

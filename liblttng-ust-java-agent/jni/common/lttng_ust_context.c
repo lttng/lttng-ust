@@ -14,7 +14,7 @@
 #include <lttng/ringbuffer-config.h>
 #include <ust-context-provider.h>
 
-#include "helper.h"
+#include "ust-helper.h"
 #include "lttng_ust_context.h"
 
 enum lttng_ust_jni_type {

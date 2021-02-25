@@ -33,7 +33,7 @@
 #include <lttng/ust-events.h>
 
 #include <usterr-signal-safe.h>
-#include <helper.h>
+#include <ust-helper.h>
 #include <lttng/ust-ctl.h>
 #include <ust-comm.h>
 #include <ust-fd.h>

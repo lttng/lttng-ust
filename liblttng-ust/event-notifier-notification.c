@@ -14,7 +14,7 @@
 
 #include "../libmsgpack/msgpack.h"
 #include "lttng-bytecode.h"
-#include "share.h"
+#include "ust-share.h"
 
 /*
  * We want this write to be atomic AND non-blocking, meaning that we

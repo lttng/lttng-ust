@@ -19,7 +19,7 @@
 #include <lttng/ust-endian.h>
 #include <usterr-signal-safe.h>
 #include <ust-comm.h>
-#include <helper.h>
+#include <ust-helper.h>
 
 #include "../libringbuffer/backend.h"
 #include "../libringbuffer/frontend.h"

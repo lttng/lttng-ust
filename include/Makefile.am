@@ -53,7 +53,7 @@ nobase_nodist_include_HEADERS = \
 
 noinst_HEADERS = \
 	usterr-signal-safe.h \
-	ust_snprintf.h \
+	ust-snprintf.h \
 	ust-comm.h \
 	ust-fd.h \
 	ust-tid.h \
@@ -61,6 +61,6 @@ noinst_HEADERS = \
 	ust-dlfcn.h \
 	ust-dynamic-type.h \
 	ust-context-provider.h \
-	helper.h \
-	share.h
+	ust-helper.h \
+	ust-share.h
 

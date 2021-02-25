@@ -17,7 +17,7 @@
 #include "lttng-tracer-core.h"
 #include "jhash.h"
 #include "context-provider-internal.h"
-#include <helper.h>
+#include <ust-helper.h>
 
 #define CONTEXT_PROVIDER_HT_BITS	12
 #define CONTEXT_PROVIDER_HT_SIZE	(1U << CONTEXT_PROVIDER_HT_BITS)

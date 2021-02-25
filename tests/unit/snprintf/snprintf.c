@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "ust_snprintf.h"
+#include "ust-snprintf.h"
 
 #include "tap.h"
 

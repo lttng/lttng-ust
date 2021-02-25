@@ -17,7 +17,7 @@
 #include <unistd.h>
 
 #include <lttng/ust-elf.h>
-#include <helper.h>
+#include <ust-helper.h>
 #include "lttng-tracer-core.h"
 #include "lttng-ust-statedump.h"
 #include "jhash.h"

@@ -13,7 +13,7 @@
 #include <urcu/system.h>
 #include <urcu/compiler.h>
 #include <stdbool.h>
-#include <helper.h>
+#include <ust-helper.h>
 #include <lttng/align.h>
 #include "smp.h"
 #include "shm.h"

@@ -6,7 +6,7 @@
 
 #define _LGPL_SOURCE
 #include <stdio.h>
-#include <helper.h>
+#include <ust-helper.h>
 
 #define TRACEPOINT_CREATE_PROBES
 #define TRACEPOINT_DEFINE

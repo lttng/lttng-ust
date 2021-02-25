@@ -24,7 +24,7 @@
 #include <lttng/ust-abi.h>	/* for LTTNG_UST_SYM_NAME_LEN */
 
 #include <usterr-signal-safe.h>
-#include <helper.h>
+#include <ust-helper.h>
 
 #include "tracepoint-internal.h"
 #include "lttng-tracer-core.h"

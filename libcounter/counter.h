@@ -12,7 +12,7 @@
 #include <stdint.h>
 #include <lttng/ust-config.h>
 #include "counter-types.h"
-#include "helper.h"
+#include "ust-helper.h"
 
 /* max_nr_elem is for each dimension. */
 LTTNG_HIDDEN

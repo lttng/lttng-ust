@@ -10,7 +10,7 @@
  * libc.
  */
 #include <ust-dlfcn.h>
-#include <helper.h>
+#include <ust-helper.h>
 #include <pthread.h>
 
 #define TRACEPOINT_DEFINE

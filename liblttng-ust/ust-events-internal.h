@@ -12,7 +12,7 @@
 #include <urcu/list.h>
 #include <urcu/hlist.h>
 
-#include <helper.h>
+#include <ust-helper.h>
 #include <lttng/ust-events.h>
 
 struct lttng_event_enabler {

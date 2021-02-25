@@ -12,7 +12,7 @@
 #include <linux/types.h>
 #else /* __KERNEL__ */
 #include <stdint.h>
-#include "helper.h"
+#include "ust-helper.h"
 #endif /* __KERNEL__ */
 
 struct lttng_msgpack_writer {

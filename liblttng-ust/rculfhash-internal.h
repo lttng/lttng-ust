@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "helper.h"
+#include "ust-helper.h"
 
 #ifdef DEBUG
 #define dbg_printf(fmt, args...)     printf("[debug lttng-ust rculfhash] " fmt, ## args)

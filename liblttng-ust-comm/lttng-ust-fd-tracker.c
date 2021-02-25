@@ -26,7 +26,7 @@
 #include <urcu/system.h>
 
 #include <ust-fd.h>
-#include <helper.h>
+#include <ust-helper.h>
 #include <lttng/ust-error.h>
 #include <usterr-signal-safe.h>
 

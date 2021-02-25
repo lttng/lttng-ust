@@ -50,7 +50,7 @@
 #include <urcu/ref.h>
 #include <urcu/tls-compat.h>
 #include <poll.h>
-#include <helper.h>
+#include <ust-helper.h>
 
 #include "smp.h"
 #include <lttng/ringbuffer-config.h>

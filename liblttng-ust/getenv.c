@@ -10,7 +10,7 @@
 #include <stddef.h>
 #include <sys/types.h>
 #include <usterr-signal-safe.h>
-#include <helper.h>
+#include <ust-helper.h>
 #include "getenv.h"
 
 enum lttng_env_secure {

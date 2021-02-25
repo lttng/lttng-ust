@@ -16,7 +16,7 @@
 #include <lttng/bug.h>
 #include <lttng/ringbuffer-config.h>
 #include <usterr-signal-safe.h>
-#include <helper.h>
+#include <ust-helper.h>
 
 /*
  * The longuest possible namespace proc path is with the cgroup ns

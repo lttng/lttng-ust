@@ -7,7 +7,7 @@
 #ifndef _LIBCOUNTER_SMP_H
 #define _LIBCOUNTER_SMP_H
 
-#include "helper.h"
+#include "ust-helper.h"
 
 /*
  * 4kB of per-cpu data available.

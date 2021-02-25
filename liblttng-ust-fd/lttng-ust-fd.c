@@ -12,7 +12,7 @@
 #include <ust-fd.h>
 #include <dlfcn.h>
 
-#include <helper.h>
+#include <ust-helper.h>
 #include "usterr-signal-safe.h"
 
 static int (*__lttng_ust_fd_plibc_close)(int fd);

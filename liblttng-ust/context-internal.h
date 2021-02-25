@@ -8,7 +8,7 @@
 #define _LTTNG_UST_CONTEXT_INTERNAL_H
 
 #include <lttng/ust-events.h>
-#include "helper.h"
+#include "ust-helper.h"
 
 LTTNG_HIDDEN
 int lttng_context_init_all(struct lttng_ctx **ctx);

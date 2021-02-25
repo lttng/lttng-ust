@@ -9,7 +9,7 @@
 
 #include <stddef.h>
 #include <lttng/ust-events.h>
-#include "helper.h"
+#include "ust-helper.h"
 
 LTTNG_HIDDEN
 void lttng_ust_context_set_event_notifier_group_provider(const char *name,

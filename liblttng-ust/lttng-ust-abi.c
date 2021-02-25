@@ -30,7 +30,7 @@
 #include <urcu/compiler.h>
 #include <urcu/list.h>
 
-#include <helper.h>
+#include <ust-helper.h>
 #include <lttng/tracepoint.h>
 #include <lttng/ust-abi.h>
 #include <lttng/ust-error.h>

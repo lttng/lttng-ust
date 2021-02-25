@@ -13,7 +13,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <share.h>
+#include <ust-share.h>
 #include "ust-tid.h"
 
 enum ust_loglevel {

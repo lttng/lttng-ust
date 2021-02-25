@@ -39,7 +39,7 @@
 #include <ust-comm.h>
 #include <ust-fd.h>
 #include <usterr-signal-safe.h>
-#include <helper.h>
+#include <ust-helper.h>
 #include "tracepoint-internal.h"
 #include "lttng-tracer-core.h"
 #include "compat.h"

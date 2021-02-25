@@ -20,7 +20,7 @@
 #include <urcu/tls-compat.h>
 #include <urcu/arch.h>
 #include <lttng/align.h>
-#include <helper.h>
+#include <ust-helper.h>
 
 #define TRACEPOINT_DEFINE
 #define TRACEPOINT_CREATE_PROBES

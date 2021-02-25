@@ -12,7 +12,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <helper.h>
+#include <ust-helper.h>
 #include <lttng/ust-events.h>
 #include <ust-context-provider.h>
 #include <stdint.h>
