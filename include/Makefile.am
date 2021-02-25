@@ -33,7 +33,6 @@ nobase_include_HEADERS = \
 	lttng/ust-getcpu.h \
 	lttng/ust-elf.h \
 	lttng/counter-config.h \
-	lttng/bitmap.h \
 	lttng/urcu/pointer.h \
 	lttng/urcu/urcu-ust.h \
 	lttng/urcu/static/pointer.h \
@@ -54,6 +53,7 @@ nobase_nodist_include_HEADERS = \
 noinst_HEADERS = \
 	usterr-signal-safe.h \
 	ust-snprintf.h \
+	ust-bitmap.h \
 	ust-comm.h \
 	ust-fd.h \
 	ust-tid.h \

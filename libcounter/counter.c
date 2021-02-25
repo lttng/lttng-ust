@@ -9,7 +9,6 @@
 #include <errno.h>
 #include "counter.h"
 #include "counter-internal.h"
-#include <lttng/bitmap.h>
 #include <urcu/system.h>
 #include <urcu/compiler.h>
 #include <stdbool.h>
@@ -17,6 +16,8 @@
 #include <lttng/align.h>
 #include "smp.h"
 #include "shm.h"
+
+#include "ust-bitmap.h"
 
 static size_t lttng_counter_get_dimension_nr_elements(struct lib_counter_dimension *dimension)
 {
