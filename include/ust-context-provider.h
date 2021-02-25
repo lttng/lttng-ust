@@ -2,6 +2,10 @@
  * SPDX-License-Identifier: MIT
  *
  * Copyright (C) 2016 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+ *
+ * The context provider feature is part of the ABI and used by the Java jni
+ * interface. This header should be moved to the public header directory once
+ * some test code and documentation is written.
  */
 
 #ifndef _LTTNG_UST_CONTEXT_PROVIDER_H

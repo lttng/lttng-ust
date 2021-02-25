@@ -60,7 +60,10 @@ noinst_HEADERS = \
 	ust-bitfield.h \
 	ust-dlfcn.h \
 	ust-dynamic-type.h \
-	ust-context-provider.h \
 	ust-helper.h \
 	ust-share.h
 
+# Should be moved to the public headers when tested and documented. The symbols
+# are still part of the ABI and used by the Java jni interface.
+noinst_HEADERS += \
+	ust-context-provider.h
