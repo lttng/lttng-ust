@@ -719,7 +719,7 @@ long lttng_event_notifier_enabler_cmd(int objd, unsigned int cmd, unsigned long 
 	case LTTNG_UST_CAPTURE:
 		return lttng_event_notifier_enabler_attach_capture_bytecode(
 			event_notifier_enabler,
-			(struct lttng_ust_bytecode_node *) arg);
+			(struct lttng_ust_bytecode_node **) arg);
 	case LTTNG_UST_ENABLE:
 		return lttng_event_notifier_enabler_enable(event_notifier_enabler);
 	case LTTNG_UST_DISABLE:

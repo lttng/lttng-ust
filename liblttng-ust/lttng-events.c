@@ -1526,12 +1526,14 @@ int lttng_event_notifier_enabler_attach_filter_bytecode(
 
 int lttng_event_notifier_enabler_attach_capture_bytecode(
 		struct lttng_event_notifier_enabler *event_notifier_enabler,
-		struct lttng_ust_bytecode_node *bytecode)
+		struct lttng_ust_bytecode_node **bytecode)
 {
-	bytecode->enabler = lttng_event_notifier_enabler_as_enabler(
+	(*bytecode)->enabler = lttng_event_notifier_enabler_as_enabler(
 			event_notifier_enabler);
-	cds_list_add_tail(&bytecode->node,
+	cds_list_add_tail(&(*bytecode)->node,
 			&event_notifier_enabler->capture_bytecode_head);
+	/* Take ownership of bytecode */
+	*bytecode = NULL;
 	event_notifier_enabler->num_captures++;
 
 	lttng_event_notifier_group_sync_enablers(event_notifier_enabler->group);

@@ -233,7 +233,7 @@ int lttng_event_notifier_enabler_attach_filter_bytecode(
 LTTNG_HIDDEN
 int lttng_event_notifier_enabler_attach_capture_bytecode(
 		struct lttng_event_notifier_enabler *event_notifier_enabler,
-		struct lttng_ust_bytecode_node *bytecode);
+		struct lttng_ust_bytecode_node **bytecode);
 
 /*
  * Attach exclusion list to `struct lttng_event_notifier_enabler` and all
