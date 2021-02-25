@@ -25,7 +25,7 @@
  * This write is patient because it restarts if it was incomplete.
  */
 
-ssize_t patient_write(int fd, const void *buf, size_t count)
+ssize_t ust_patient_write(int fd, const void *buf, size_t count)
 {
 	const char *bufc = (const char *) buf;
 	int result;
@@ -53,7 +53,7 @@ ssize_t patient_write(int fd, const void *buf, size_t count)
  * The `struct iovec *iov` is not `const` because we modify it to support
  * partial writes.
  */
-ssize_t patient_writev(int fd, struct iovec *iov, int iovcnt)
+ssize_t ust_patient_writev(int fd, struct iovec *iov, int iovcnt)
 {
 	ssize_t written, total_written = 0;
 	int curr_element_idx = 0;
@@ -95,7 +95,7 @@ ssize_t patient_writev(int fd, struct iovec *iov, int iovcnt)
 	return total_written;
 }
 
-ssize_t patient_send(int fd, const void *buf, size_t count, int flags)
+ssize_t ust_patient_send(int fd, const void *buf, size_t count, int flags)
 {
 	const char *bufc = (const char *) buf;
 	int result;

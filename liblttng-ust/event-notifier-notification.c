@@ -341,7 +341,7 @@ void notification_send(struct lttng_event_notifier_notification *notif,
 	ust_notif.capture_buf_size = content_len;
 
 	/* Send all the buffers. */
-	ret = patient_writev(notif->notification_fd, iov, iovec_count);
+	ret = ust_patient_writev(notif->notification_fd, iov, iovec_count);
 	if (ret == -1) {
 		if (errno == EAGAIN) {
 			record_error(event_notifier);

@@ -49,7 +49,7 @@ nobase_nodist_include_HEADERS = \
 ### Global private headers ###
 ###                        ###
 
-# note: usterr-signal-safe.h, core.h and share.h need namespace cleanup.
+# note: usterr-signal-safe.h need namespace cleanup.
 
 noinst_HEADERS = \
 	usterr-signal-safe.h \
