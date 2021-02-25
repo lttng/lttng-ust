@@ -804,6 +804,7 @@ void lib_ring_buffer_channel_switch_timer_start(struct channel *chan)
 
 	lib_ring_buffer_setup_timer_thread();
 
+	memset(&sev, 0, sizeof(sev));
 	sev.sigev_notify = SIGEV_SIGNAL;
 	sev.sigev_signo = LTTNG_UST_RB_SIG_FLUSH;
 	sev.sigev_value.sival_ptr = chan;
