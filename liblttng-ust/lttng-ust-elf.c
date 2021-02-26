@@ -19,6 +19,7 @@
 #include <ust-fd.h>
 
 #include "lttng-tracer-core.h"
+#include "lttng-ust-elf.h"
 
 #define BUF_LEN	4096
 
