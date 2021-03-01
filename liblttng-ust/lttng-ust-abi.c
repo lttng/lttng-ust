@@ -733,21 +733,32 @@ static
 long lttng_event_notifier_group_error_counter_cmd(int objd, unsigned int cmd, unsigned long arg,
 	union ust_args *uargs, void *owner)
 {
+	int ret;
 	struct lttng_counter *counter = objd_private(objd);
 
 	switch (cmd) {
 	case LTTNG_UST_COUNTER_GLOBAL:
-		return -EINVAL;		/* Unimplemented. */
+		ret = -EINVAL;	/* Unimplemented. */
+		break;
 	case LTTNG_UST_COUNTER_CPU:
 	{
 		struct lttng_ust_counter_cpu *counter_cpu =
 			(struct lttng_ust_counter_cpu *)arg;
-		return lttng_counter_set_cpu_shm(counter->counter,
+
+		ret = lttng_counter_set_cpu_shm(counter->counter,
 			counter_cpu->cpu_nr, uargs->counter_shm.shm_fd);
+		if (!ret) {
+			/* Take ownership of the shm_fd. */
+			uargs->counter_shm.shm_fd = -1;
+		}
+		break;
 	}
 	default:
-		return -EINVAL;
+		ret = -EINVAL;
+		break;
 	}
+
+	return ret;
 }
 
 LTTNG_HIDDEN
