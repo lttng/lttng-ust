@@ -71,4 +71,4 @@ noinst_HEADERS += \
 
 # Used by liblttng-ust-fd
 noinst_HEADERS += \
-	ust-fd.h \
+	ust-fd.h
