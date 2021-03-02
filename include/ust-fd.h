@@ -8,8 +8,9 @@
 #define _LTTNG_UST_FD_H
 
 /*
- * This header is meant for liblttng and libust internal use ONLY.
- * These declarations should NOT be considered stable API.
+ * The fd tracker feature is part of the ABI and used by liblttng-ust-fd.
+ * However, some test code and documentation needs to be written before it is
+ * exposed to users with a public header.
  */
 
 #include <stdio.h>

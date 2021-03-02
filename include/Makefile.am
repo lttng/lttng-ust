@@ -54,7 +54,6 @@ noinst_HEADERS = \
 	ust-bitmap.h \
 	ust-comm.h \
 	ust-compat.h \
-	ust-fd.h \
 	ust-tid.h \
 	ust-bitfield.h \
 	ust-dlfcn.h \
@@ -62,7 +61,14 @@ noinst_HEADERS = \
 	ust-helper.h \
 	ust-share.h
 
-# Should be moved to the public headers when tested and documented. The symbols
-# are still part of the ABI and used by the Java jni interface.
+
+# These headers should be moved to the public headers when tested and
+# documented. The symbols are still part of the ABI.
+
+# Used by the Java jni interface.
 noinst_HEADERS += \
 	ust-context-provider.h
+
+# Used by liblttng-ust-fd
+noinst_HEADERS += \
+	ust-fd.h \
