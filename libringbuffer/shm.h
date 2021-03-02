@@ -13,17 +13,22 @@
 #include <usterr-signal-safe.h>
 #include <urcu/compiler.h>
 #include "shm_types.h"
+#include "ust-helper.h"
 
 /* channel_handle_create - for UST. */
+LTTNG_HIDDEN
 extern
 struct lttng_ust_shm_handle *channel_handle_create(void *data,
 				uint64_t memory_map_size, int wakeup_fd);
 /* channel_handle_add_stream - for UST. */
+LTTNG_HIDDEN
 extern
 int channel_handle_add_stream(struct lttng_ust_shm_handle *handle,
 		int shm_fd, int wakeup_fd, uint32_t stream_nr,
 		uint64_t memory_map_size);
+LTTNG_HIDDEN
 unsigned int channel_handle_get_nr_streams(struct lttng_ust_shm_handle *handle);
+LTTNG_HIDDEN
 extern
 void channel_destroy(struct channel *chan, struct lttng_ust_shm_handle *handle,
 		int consumer);
@@ -73,18 +78,23 @@ void _set_shmp(struct shm_ref *ref, struct shm_ref src)
 
 #define set_shmp(ref, src)	_set_shmp(&(ref)._ref, src)
 
+LTTNG_HIDDEN
 struct shm_object_table *shm_object_table_create(size_t max_nb_obj);
+LTTNG_HIDDEN
 struct shm_object *shm_object_table_alloc(struct shm_object_table *table,
 			size_t memory_map_size,
 			enum shm_object_type type,
 			const int stream_fd,
 			int cpu);
+LTTNG_HIDDEN
 struct shm_object *shm_object_table_append_shm(struct shm_object_table *table,
 			int shm_fd, int wakeup_fd, uint32_t stream_nr,
 			size_t memory_map_size);
 /* mem ownership is passed to shm_object_table_append_mem(). */
+LTTNG_HIDDEN
 struct shm_object *shm_object_table_append_mem(struct shm_object_table *table,
 			void *mem, size_t memory_map_size, int wakeup_fd);
+LTTNG_HIDDEN
 void shm_object_table_destroy(struct shm_object_table *table, int consumer);
 
 /*
@@ -94,7 +104,9 @@ void shm_object_table_destroy(struct shm_object_table *table, int consumer);
  * *NOT* multithread-safe (should be protected by mutex).
  * Returns a -1, -1 tuple on error.
  */
+LTTNG_HIDDEN
 struct shm_ref zalloc_shm(struct shm_object *obj, size_t len);
+LTTNG_HIDDEN
 void align_shm(struct shm_object *obj, size_t align);
 
 static inline

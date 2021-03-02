@@ -18,33 +18,44 @@
 #include "backend_types.h"
 #include "frontend_types.h"
 #include "shm.h"
+#include "ust-helper.h"
 
 /* Ring buffer backend API presented to the frontend */
 
 /* Ring buffer and channel backend create/free */
 
+LTTNG_HIDDEN
 int lib_ring_buffer_backend_create(struct lttng_ust_lib_ring_buffer_backend *bufb,
 				   struct channel_backend *chan, int cpu,
 				   struct lttng_ust_shm_handle *handle,
 				   struct shm_object *shmobj);
+LTTNG_HIDDEN
 void channel_backend_unregister_notifiers(struct channel_backend *chanb);
+LTTNG_HIDDEN
 void lib_ring_buffer_backend_free(struct lttng_ust_lib_ring_buffer_backend *bufb);
+LTTNG_HIDDEN
 int channel_backend_init(struct channel_backend *chanb,
 			 const char *name,
 			 const struct lttng_ust_lib_ring_buffer_config *config,
 			 size_t subbuf_size,
 			 size_t num_subbuf, struct lttng_ust_shm_handle *handle,
 			 const int *stream_fds);
+LTTNG_HIDDEN
 void channel_backend_free(struct channel_backend *chanb,
 			  struct lttng_ust_shm_handle *handle);
 
+LTTNG_HIDDEN
 void lib_ring_buffer_backend_reset(struct lttng_ust_lib_ring_buffer_backend *bufb,
 				   struct lttng_ust_shm_handle *handle);
+LTTNG_HIDDEN
 void channel_backend_reset(struct channel_backend *chanb);
 
+LTTNG_HIDDEN
 int lib_ring_buffer_backend_init(void);
+LTTNG_HIDDEN
 void lib_ring_buffer_backend_exit(void);
 
+LTTNG_HIDDEN
 extern void _lib_ring_buffer_write(struct lttng_ust_lib_ring_buffer_backend *bufb,
 				   size_t offset, const void *src, size_t len,
 				   ssize_t pagecpy);

@@ -18,6 +18,8 @@
 #include <urcu/uatomic.h>
 
 #include "smp.h"
+#include "ust-helper.h"
+
 /* Internal helpers */
 #include "frontend_internal.h"
 
@@ -39,6 +41,7 @@
  * private data area.
  */
 
+LTTNG_HIDDEN
 extern
 struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buffer_config *config,
 				const char *name,
@@ -57,6 +60,7 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
  * channel_destroy finalizes all channel's buffers, waits for readers to
  * release all references, and destroys the channel.
  */
+LTTNG_HIDDEN
 extern
 void channel_destroy(struct channel *chan, struct lttng_ust_shm_handle *handle,
 		int consumer);
@@ -73,6 +77,7 @@ void channel_destroy(struct channel *chan, struct lttng_ust_shm_handle *handle,
 #define for_each_channel_cpu(cpu, chan)					\
 	for_each_possible_cpu(cpu)
 
+LTTNG_HIDDEN
 extern struct lttng_ust_lib_ring_buffer *channel_get_ring_buffer(
 				const struct lttng_ust_lib_ring_buffer_config *config,
 				struct channel *chan, int cpu,
@@ -80,27 +85,33 @@ extern struct lttng_ust_lib_ring_buffer *channel_get_ring_buffer(
 				int *shm_fd, int *wait_fd,
 				int *wakeup_fd,
 				uint64_t *memory_map_size);
+LTTNG_HIDDEN
 extern
 int ring_buffer_channel_close_wait_fd(const struct lttng_ust_lib_ring_buffer_config *config,
 			struct channel *chan,
 			struct lttng_ust_shm_handle *handle);
+LTTNG_HIDDEN
 extern
 int ring_buffer_channel_close_wakeup_fd(const struct lttng_ust_lib_ring_buffer_config *config,
 			struct channel *chan,
 			struct lttng_ust_shm_handle *handle);
+LTTNG_HIDDEN
 extern
 int ring_buffer_stream_close_wait_fd(const struct lttng_ust_lib_ring_buffer_config *config,
 		struct channel *chan,
 		struct lttng_ust_shm_handle *handle,
 		int cpu);
+LTTNG_HIDDEN
 extern
 int ring_buffer_stream_close_wakeup_fd(const struct lttng_ust_lib_ring_buffer_config *config,
 		struct channel *chan,
 		struct lttng_ust_shm_handle *handle,
 		int cpu);
 
+LTTNG_HIDDEN
 extern int lib_ring_buffer_open_read(struct lttng_ust_lib_ring_buffer *buf,
 				     struct lttng_ust_shm_handle *handle);
+LTTNG_HIDDEN
 extern void lib_ring_buffer_release_read(struct lttng_ust_lib_ring_buffer *buf,
 					 struct lttng_ust_shm_handle *handle);
 
@@ -108,27 +119,33 @@ extern void lib_ring_buffer_release_read(struct lttng_ust_lib_ring_buffer *buf,
  * Initialize signals for ring buffer. Should be called early e.g. by
  * main() in the program to affect all threads.
  */
+LTTNG_HIDDEN
 void lib_ringbuffer_signal_init(void);
 
 /*
  * Read sequence: snapshot, many get_subbuf/put_subbuf, move_consumer.
  */
+LTTNG_HIDDEN
 extern int lib_ring_buffer_snapshot(struct lttng_ust_lib_ring_buffer *buf,
 				    unsigned long *consumed,
 				    unsigned long *produced,
 				    struct lttng_ust_shm_handle *handle);
+LTTNG_HIDDEN
 extern int lib_ring_buffer_snapshot_sample_positions(
 				    struct lttng_ust_lib_ring_buffer *buf,
 				    unsigned long *consumed,
 				    unsigned long *produced,
 				    struct lttng_ust_shm_handle *handle);
+LTTNG_HIDDEN
 extern void lib_ring_buffer_move_consumer(struct lttng_ust_lib_ring_buffer *buf,
 					  unsigned long consumed_new,
 					  struct lttng_ust_shm_handle *handle);
 
+LTTNG_HIDDEN
 extern int lib_ring_buffer_get_subbuf(struct lttng_ust_lib_ring_buffer *buf,
 				      unsigned long consumed,
 				      struct lttng_ust_shm_handle *handle);
+LTTNG_HIDDEN
 extern void lib_ring_buffer_put_subbuf(struct lttng_ust_lib_ring_buffer *buf,
 				       struct lttng_ust_shm_handle *handle);
 
@@ -163,7 +180,9 @@ void lib_ring_buffer_put_next_subbuf(struct lttng_ust_lib_ring_buffer *buf,
 			handle);
 }
 
+LTTNG_HIDDEN
 extern void channel_reset(struct channel *chan);
+LTTNG_HIDDEN
 extern void lib_ring_buffer_reset(struct lttng_ust_lib_ring_buffer *buf,
 				  struct lttng_ust_shm_handle *handle);
 

@@ -21,6 +21,7 @@
 #include "backend_types.h"
 #include "frontend_types.h"
 #include "shm.h"
+#include "ust-helper.h"
 
 /* Buffer offset macros */
 
@@ -138,15 +139,18 @@ int last_tsc_overflow(const struct lttng_ust_lib_ring_buffer_config *config,
 }
 #endif
 
+LTTNG_HIDDEN
 extern
 int lib_ring_buffer_reserve_slow(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		void *client_ctx);
 
+LTTNG_HIDDEN
 extern
 void lib_ring_buffer_switch_slow(struct lttng_ust_lib_ring_buffer *buf,
 				 enum switch_mode mode,
 				 struct lttng_ust_shm_handle *handle);
 
+LTTNG_HIDDEN
 void lib_ring_buffer_check_deliver_slow(const struct lttng_ust_lib_ring_buffer_config *config,
 				   struct lttng_ust_lib_ring_buffer *buf,
 			           struct channel *chan,
@@ -337,14 +341,17 @@ void lib_ring_buffer_write_commit_counter(const struct lttng_ust_lib_ring_buffer
 		v_set(config, &cc_hot->seq, commit_count);
 }
 
+LTTNG_HIDDEN
 extern int lib_ring_buffer_create(struct lttng_ust_lib_ring_buffer *buf,
 				  struct channel_backend *chanb, int cpu,
 				  struct lttng_ust_shm_handle *handle,
 				  struct shm_object *shmobj);
+LTTNG_HIDDEN
 extern void lib_ring_buffer_free(struct lttng_ust_lib_ring_buffer *buf,
 				 struct lttng_ust_shm_handle *handle);
 
 /* Keep track of trap nesting inside ring buffer code */
+LTTNG_HIDDEN
 extern DECLARE_URCU_TLS(unsigned int, lib_ring_buffer_nesting);
 
 #endif /* _LTTNG_RING_BUFFER_FRONTEND_INTERNAL_H */

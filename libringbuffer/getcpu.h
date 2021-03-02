@@ -11,8 +11,12 @@
 #include <urcu/system.h>
 #include <urcu/arch.h>
 
+#include "ust-helper.h"
+
+LTTNG_HIDDEN
 void lttng_ust_getcpu_init(void);
 
+LTTNG_HIDDEN
 extern int (*lttng_get_cpu)(void);
 
 #ifdef LTTNG_UST_DEBUG_VALGRIND
