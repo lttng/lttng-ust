@@ -10,6 +10,8 @@
  * Chris Torek.
  */
 
+#include "ust-helper.h"
+
 /*
  * Floating point scanf/printf (input/output) definitions.
  */
@@ -31,6 +33,9 @@
 #error "floating point buffers too small"
 #endif
 
+LTTNG_HIDDEN
 char *__hdtoa(double, const char *, int, int *, int *, char **);
+LTTNG_HIDDEN
 char *__hldtoa(long double, const char *, int, int *, int *, char **);
+LTTNG_HIDDEN
 char *__ldtoa(long double *, int, int, int *, int *, char **);

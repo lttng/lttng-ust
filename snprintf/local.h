@@ -17,27 +17,45 @@
 
 #include <stdio.h>
 #include <wchar.h>
+#include "ust-helper.h"
 #include "various.h"
 #include "wcio.h"
 #include "fileext.h"
 
+LTTNG_HIDDEN
 int	__sflush(LTTNG_UST_LFILE *);
+LTTNG_HIDDEN
 LTTNG_UST_LFILE	*__sfp(void);
+LTTNG_HIDDEN
 int	__srefill(LTTNG_UST_LFILE *);
+LTTNG_HIDDEN
 int	__sread(void *, char *, int);
+LTTNG_HIDDEN
 int	__swrite(void *, const char *, int);
+LTTNG_HIDDEN
 fpos_t	__sseek(void *, fpos_t, int);
+LTTNG_HIDDEN
 int	__sclose(void *);
+LTTNG_HIDDEN
 void	__sinit(void);
+LTTNG_HIDDEN
 void	_cleanup(void);
+LTTNG_HIDDEN
 void	__smakebuf(LTTNG_UST_LFILE *);
+LTTNG_HIDDEN
 int	__swhatbuf(LTTNG_UST_LFILE *, size_t *, int *);
+LTTNG_HIDDEN
 int	_fwalk(int (*)(LTTNG_UST_LFILE *));
+LTTNG_HIDDEN
 int	__swsetup(LTTNG_UST_LFILE *);
+LTTNG_HIDDEN
 int	__sflags(const char *, int *);
+LTTNG_HIDDEN
 wint_t __fgetwc_unlock(LTTNG_UST_LFILE *);
 
+LTTNG_HIDDEN
 extern void __atexit_register_cleanup(void (*)(void));
+LTTNG_HIDDEN
 extern int __sdidinit;
 
 /*

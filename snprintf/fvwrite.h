@@ -15,6 +15,8 @@
  */
 #include <stddef.h>
 
+#include "ust-helper.h"
+
 struct __lttng_ust_siov {
 	void	*iov_base;
 	size_t	iov_len;
@@ -25,4 +27,5 @@ struct __lttng_ust_suio {
 	int	uio_resid;
 };
 
+LTTNG_HIDDEN
 extern int __sfvwrite(LTTNG_UST_LFILE *, struct __lttng_ust_suio *);
