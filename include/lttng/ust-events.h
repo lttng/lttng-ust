@@ -806,7 +806,6 @@ struct lttng_enum *lttng_ust_enum_get_from_desc(struct lttng_session *session,
 		const struct lttng_enum_desc *enum_desc);
 
 void lttng_ust_dl_update(void *ip);
-void lttng_ust_fixup_fd_tracker_tls(void);
 
 #ifdef __cplusplus
 }

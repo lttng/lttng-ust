@@ -48,6 +48,9 @@ LTTNG_HIDDEN
 void lttng_fixup_time_ns_tls(void);
 void lttng_fixup_uts_ns_tls(void);
 
+LTTNG_HIDDEN
+void lttng_ust_fixup_fd_tracker_tls(void);
+
 const char *lttng_ust_obj_get_name(int id);
 
 int lttng_get_notify_socket(void *owner);
