@@ -3,6 +3,7 @@
 INSTALLED_FILES=$(builddir)/installed_files.txt
 
 STATIC_BINDINGS_DEPS = \
+	lttngust/__init__.py \
 	lttngust/agent.py \
 	lttngust/cmd.py \
 	lttngust/compat.py \

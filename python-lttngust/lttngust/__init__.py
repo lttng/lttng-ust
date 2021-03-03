@@ -6,8 +6,8 @@
 
 from __future__ import unicode_literals
 
+from .version import __version__
+from .version import __soname_major__
+
 # this creates the daemon threads and registers the application
 import lttngust.agent
-
-
-__version__ = '@PACKAGE_VERSION@'

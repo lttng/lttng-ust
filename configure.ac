@@ -489,6 +489,9 @@ AM_CONDITIONAL([HAVE_PERF_EVENT], [test "x$ac_cv_header_linux_perf_event_h" = "x
 AC_SUBST([LTTNG_UST_LIBRARY_VERSION], ust_lib_version)
 AC_SUBST([LTTNG_UST_CTL_LIBRARY_VERSION], ust_ctl_lib_version)
 
+# Major soname for python-lttngust
+AC_SUBST([LTTNG_UST_LIB_SONAME_MAJOR], [ust_lib_version_current])
+
 AM_CFLAGS="-Wall $URCU_CFLAGS $PTHREAD_CFLAGS"
 AC_SUBST(AM_CFLAGS)
 
@@ -541,7 +544,7 @@ AC_CONFIG_FILES([
   liblttng-ust-python-agent/Makefile
   python-lttngust/Makefile
   python-lttngust/setup.py
-  python-lttngust/lttngust/__init__.py
+  python-lttngust/lttngust/version.py
   tools/Makefile
   tests/Makefile
   tests/compile/Makefile

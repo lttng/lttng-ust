@@ -100,7 +100,7 @@ org_lttng_ust_agent_jul_LttngJulApi.h
 org_lttng_ust_agent_log4j_LttngLog4jApi.h
 
 # Python agent
-python-lttngust/lttngust/__init__.py
+python-lttngust/lttngust/version.py
 python-lttngust/**/*.pyc
 python-lttngust/build
 python-lttngust/setup.py

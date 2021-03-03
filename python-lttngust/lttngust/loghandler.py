@@ -9,9 +9,10 @@ from __future__ import unicode_literals
 import logging
 import ctypes
 
+from .version import __soname_major__
 
 class _Handler(logging.Handler):
-    _LIB_NAME = 'liblttng-ust-python-agent.so.0'
+    _LIB_NAME = 'liblttng-ust-python-agent.so.' + __soname_major__
 
     def __init__(self):
         super(self.__class__, self).__init__(level=logging.NOTSET)
