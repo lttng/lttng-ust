@@ -1,0 +1,668 @@
+<abi-corpus architecture='elf-amd-x86_64' soname='liblttng-ust-common.so.1'>
+  <elf-needed>
+    <dependency name='libdl.so.2'/>
+    <dependency name='libnuma.so.1'/>
+    <dependency name='libpthread.so.0'/>
+    <dependency name='libc.so.6'/>
+    <dependency name='ld-linux-x86-64.so.2'/>
+  </elf-needed>
+  <elf-function-symbols>
+    <!-- lttng_ust_add_fd_to_tracker -->
+    <elf-symbol name='lttng_ust_add_fd_to_tracker' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_common_alloc_tls -->
+    <elf-symbol name='lttng_ust_common_alloc_tls' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_common_ctor -->
+    <elf-symbol name='lttng_ust_common_ctor' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_delete_fd_from_tracker -->
+    <elf-symbol name='lttng_ust_delete_fd_from_tracker' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_enable_trace_clock_override -->
+    <elf-symbol name='lttng_ust_enable_trace_clock_override' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_getcpu_override -->
+    <elf-symbol name='lttng_ust_getcpu_override' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_lock_fd_tracker -->
+    <elf-symbol name='lttng_ust_lock_fd_tracker' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_rcu_cmpxchg_pointer_sym -->
+    <elf-symbol name='lttng_ust_rcu_cmpxchg_pointer_sym' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_rcu_dereference_sym -->
+    <elf-symbol name='lttng_ust_rcu_dereference_sym' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_rcu_set_pointer_sym -->
+    <elf-symbol name='lttng_ust_rcu_set_pointer_sym' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_rcu_xchg_pointer_sym -->
+    <elf-symbol name='lttng_ust_rcu_xchg_pointer_sym' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_safe_close_fd -->
+    <elf-symbol name='lttng_ust_safe_close_fd' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_safe_closefrom_fd -->
+    <elf-symbol name='lttng_ust_safe_closefrom_fd' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_safe_fclose_stream -->
+    <elf-symbol name='lttng_ust_safe_fclose_stream' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_trace_clock_get_description_cb -->
+    <elf-symbol name='lttng_ust_trace_clock_get_description_cb' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_trace_clock_get_freq_cb -->
+    <elf-symbol name='lttng_ust_trace_clock_get_freq_cb' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_trace_clock_get_name_cb -->
+    <elf-symbol name='lttng_ust_trace_clock_get_name_cb' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_trace_clock_get_read64_cb -->
+    <elf-symbol name='lttng_ust_trace_clock_get_read64_cb' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_trace_clock_get_uuid_cb -->
+    <elf-symbol name='lttng_ust_trace_clock_get_uuid_cb' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_trace_clock_set_description_cb -->
+    <elf-symbol name='lttng_ust_trace_clock_set_description_cb' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_trace_clock_set_freq_cb -->
+    <elf-symbol name='lttng_ust_trace_clock_set_freq_cb' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_trace_clock_set_name_cb -->
+    <elf-symbol name='lttng_ust_trace_clock_set_name_cb' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_trace_clock_set_read64_cb -->
+    <elf-symbol name='lttng_ust_trace_clock_set_read64_cb' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_trace_clock_set_uuid_cb -->
+    <elf-symbol name='lttng_ust_trace_clock_set_uuid_cb' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_unlock_fd_tracker -->
+    <elf-symbol name='lttng_ust_unlock_fd_tracker' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_urcu_after_fork_child -->
+    <elf-symbol name='lttng_ust_urcu_after_fork_child' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_urcu_after_fork_parent -->
+    <elf-symbol name='lttng_ust_urcu_after_fork_parent' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_urcu_before_fork -->
+    <elf-symbol name='lttng_ust_urcu_before_fork' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_urcu_read_lock -->
+    <elf-symbol name='lttng_ust_urcu_read_lock' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_urcu_read_ongoing -->
+    <elf-symbol name='lttng_ust_urcu_read_ongoing' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_urcu_read_unlock -->
+    <elf-symbol name='lttng_ust_urcu_read_unlock' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_urcu_register -->
+    <elf-symbol name='lttng_ust_urcu_register' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_urcu_register_thread -->
+    <elf-symbol name='lttng_ust_urcu_register_thread' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_urcu_synchronize_rcu -->
+    <elf-symbol name='lttng_ust_urcu_synchronize_rcu' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+  </elf-function-symbols>
+  <elf-variable-symbols>
+    <!-- lttng_ust_get_cpu_sym -->
+    <elf-symbol name='lttng_ust_get_cpu_sym' size='8' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_trace_clock -->
+    <elf-symbol name='lttng_ust_trace_clock' size='8' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_urcu_gp -->
+    <elf-symbol name='lttng_ust_urcu_gp' size='128' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_urcu_has_sys_membarrier -->
+    <elf-symbol name='lttng_ust_urcu_has_sys_membarrier' size='4' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_urcu_reader -->
+    <elf-symbol name='lttng_ust_urcu_reader' size='8' type='tls-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+  </elf-variable-symbols>
+  <abi-instr version='1.0' address-size='64' path='clock.c' comp-dir-path='src/lib/lttng-ust-common' language='LANG_C99'>
+    <!-- char -->
+    <type-decl name='char' size-in-bits='8' id='type-id-1'/>
+    <!-- int -->
+    <type-decl name='int' size-in-bits='32' id='type-id-2'/>
+    <!-- unsigned long int -->
+    <type-decl name='unsigned long int' size-in-bits='64' id='type-id-3'/>
+    <!-- struct lttng_ust_trace_clock -->
+    <class-decl name='lttng_ust_trace_clock' size-in-bits='320' is-struct='yes' visibility='default' filepath='../../../src/common/clock.h' line='20' column='1' id='type-id-4'>
+      <data-member access='public' layout-offset-in-bits='0'>
+        <!-- typedef uint64_t ()* lttng_ust_trace_clock::read64 -->
+        <var-decl name='read64' type-id='type-id-5' visibility='default' filepath='../../../src/common/clock.h' line='21' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='64'>
+        <!-- typedef uint64_t ()* lttng_ust_trace_clock::freq -->
+        <var-decl name='freq' type-id='type-id-5' visibility='default' filepath='../../../src/common/clock.h' line='22' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='128'>
+        <!-- int (char*)* lttng_ust_trace_clock::uuid -->
+        <var-decl name='uuid' type-id='type-id-6' visibility='default' filepath='../../../src/common/clock.h' line='23' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='192'>
+        <!-- const char* ()* lttng_ust_trace_clock::name -->
+        <var-decl name='name' type-id='type-id-7' visibility='default' filepath='../../../src/common/clock.h' line='24' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='256'>
+        <!-- const char* ()* lttng_ust_trace_clock::description -->
+        <var-decl name='description' type-id='type-id-7' visibility='default' filepath='../../../src/common/clock.h' line='25' column='1'/>
+      </data-member>
+    </class-decl>
+    <!-- typedef __uint64_t uint64_t -->
+    <typedef-decl name='uint64_t' type-id='type-id-8' filepath='/usr/include/bits/stdint-uintn.h' line='27' column='1' id='type-id-9'/>
+    <!-- typedef unsigned long int __uint64_t -->
+    <typedef-decl name='__uint64_t' type-id='type-id-3' filepath='/usr/include/bits/types.h' line='45' column='1' id='type-id-8'/>
+    <!-- typedef const char* ()* lttng_ust_clock_description_function -->
+    <typedef-decl name='lttng_ust_clock_description_function' type-id='type-id-7' filepath='../../../include/lttng/ust-clock.h' line='23' column='1' id='type-id-10'/>
+    <!-- typedef const char* ()* lttng_ust_clock_name_function -->
+    <typedef-decl name='lttng_ust_clock_name_function' type-id='type-id-7' filepath='../../../include/lttng/ust-clock.h' line='22' column='1' id='type-id-11'/>
+    <!-- typedef int (char*)* lttng_ust_clock_uuid_function -->
+    <typedef-decl name='lttng_ust_clock_uuid_function' type-id='type-id-6' filepath='../../../include/lttng/ust-clock.h' line='21' column='1' id='type-id-12'/>
+    <!-- typedef typedef uint64_t ()* lttng_ust_clock_freq_function -->
+    <typedef-decl name='lttng_ust_clock_freq_function' type-id='type-id-5' filepath='../../../include/lttng/ust-clock.h' line='20' column='1' id='type-id-13'/>
+    <!-- typedef typedef uint64_t ()* lttng_ust_clock_read64_function -->
+    <typedef-decl name='lttng_ust_clock_read64_function' type-id='type-id-5' filepath='../../../include/lttng/ust-clock.h' line='19' column='1' id='type-id-14'/>
+    <!-- char* -->
+    <pointer-type-def type-id='type-id-1' size-in-bits='64' id='type-id-15'/>
+    <!-- const char -->
+    <qualified-type-def type-id='type-id-1' const='yes' id='type-id-16'/>
+    <!-- const char* -->
+    <pointer-type-def type-id='type-id-16' size-in-bits='64' id='type-id-17'/>
+    <!-- const char* ()* -->
+    <pointer-type-def type-id='type-id-18' size-in-bits='64' id='type-id-7'/>
+    <!-- int (char*)* -->
+    <pointer-type-def type-id='type-id-19' size-in-bits='64' id='type-id-6'/>
+    <!-- lttng_ust_clock_description_function* -->
+    <pointer-type-def type-id='type-id-10' size-in-bits='64' id='type-id-20'/>
+    <!-- lttng_ust_clock_freq_function* -->
+    <pointer-type-def type-id='type-id-13' size-in-bits='64' id='type-id-21'/>
+    <!-- lttng_ust_clock_name_function* -->
+    <pointer-type-def type-id='type-id-11' size-in-bits='64' id='type-id-22'/>
+    <!-- lttng_ust_clock_read64_function* -->
+    <pointer-type-def type-id='type-id-14' size-in-bits='64' id='type-id-23'/>
+    <!-- lttng_ust_clock_uuid_function* -->
+    <pointer-type-def type-id='type-id-12' size-in-bits='64' id='type-id-24'/>
+    <!-- lttng_ust_trace_clock* -->
+    <pointer-type-def type-id='type-id-4' size-in-bits='64' id='type-id-25'/>
+    <!-- typedef uint64_t ()* -->
+    <pointer-type-def type-id='type-id-26' size-in-bits='64' id='type-id-5'/>
+    <!-- lttng_ust_trace_clock* lttng_ust_trace_clock -->
+    <var-decl name='lttng_ust_trace_clock' type-id='type-id-25' mangled-name='lttng_ust_trace_clock' visibility='default' filepath='../../../src/common/clock.h' line='33' column='1' elf-symbol-id='lttng_ust_trace_clock'/>
+    <!-- int lttng_ust_enable_trace_clock_override() -->
+    <function-decl name='lttng_ust_enable_trace_clock_override' mangled-name='lttng_ust_enable_trace_clock_override' filepath='src/lib/lttng-ust-common/clock.c' line='181' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_enable_trace_clock_override'>
+      <!-- int -->
+      <return type-id='type-id-2'/>
+    </function-decl>
+    <!-- int lttng_ust_trace_clock_get_description_cb(lttng_ust_clock_description_function*) -->
+    <function-decl name='lttng_ust_trace_clock_get_description_cb' mangled-name='lttng_ust_trace_clock_get_description_cb' filepath='src/lib/lttng-ust-common/clock.c' line='168' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_trace_clock_get_description_cb'>
+      <!-- parameter of type 'lttng_ust_clock_description_function*' -->
+      <parameter type-id='type-id-20' name='description_cb' filepath='src/lib/lttng-ust-common/clock.c' line='168' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-2'/>
+    </function-decl>
+    <!-- int lttng_ust_trace_clock_set_description_cb(lttng_ust_clock_description_function) -->
+    <function-decl name='lttng_ust_trace_clock_set_description_cb' mangled-name='lttng_ust_trace_clock_set_description_cb' filepath='src/lib/lttng-ust-common/clock.c' line='160' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_trace_clock_set_description_cb'>
+      <!-- parameter of type 'typedef lttng_ust_clock_description_function' -->
+      <parameter type-id='type-id-10' name='description_cb' filepath='src/lib/lttng-ust-common/clock.c' line='160' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-2'/>
+    </function-decl>
+    <!-- int lttng_ust_trace_clock_get_name_cb(lttng_ust_clock_name_function*) -->
+    <function-decl name='lttng_ust_trace_clock_get_name_cb' mangled-name='lttng_ust_trace_clock_get_name_cb' filepath='src/lib/lttng-ust-common/clock.c' line='147' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_trace_clock_get_name_cb'>
+      <!-- parameter of type 'lttng_ust_clock_name_function*' -->
+      <parameter type-id='type-id-22' name='name_cb' filepath='src/lib/lttng-ust-common/clock.c' line='147' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-2'/>
+    </function-decl>
+    <!-- int lttng_ust_trace_clock_set_name_cb(lttng_ust_clock_name_function) -->
+    <function-decl name='lttng_ust_trace_clock_set_name_cb' mangled-name='lttng_ust_trace_clock_set_name_cb' filepath='src/lib/lttng-ust-common/clock.c' line='139' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_trace_clock_set_name_cb'>
+      <!-- parameter of type 'typedef lttng_ust_clock_name_function' -->
+      <parameter type-id='type-id-11' name='name_cb' filepath='src/lib/lttng-ust-common/clock.c' line='139' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-2'/>
+    </function-decl>
+    <!-- int lttng_ust_trace_clock_get_uuid_cb(lttng_ust_clock_uuid_function*) -->
+    <function-decl name='lttng_ust_trace_clock_get_uuid_cb' mangled-name='lttng_ust_trace_clock_get_uuid_cb' filepath='src/lib/lttng-ust-common/clock.c' line='126' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_trace_clock_get_uuid_cb'>
+      <!-- parameter of type 'lttng_ust_clock_uuid_function*' -->
+      <parameter type-id='type-id-24' name='uuid_cb' filepath='src/lib/lttng-ust-common/clock.c' line='126' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-2'/>
+    </function-decl>
+    <!-- int lttng_ust_trace_clock_set_uuid_cb(lttng_ust_clock_uuid_function) -->
+    <function-decl name='lttng_ust_trace_clock_set_uuid_cb' mangled-name='lttng_ust_trace_clock_set_uuid_cb' filepath='src/lib/lttng-ust-common/clock.c' line='118' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_trace_clock_set_uuid_cb'>
+      <!-- parameter of type 'typedef lttng_ust_clock_uuid_function' -->
+      <parameter type-id='type-id-12' name='uuid_cb' filepath='src/lib/lttng-ust-common/clock.c' line='118' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-2'/>
+    </function-decl>
+    <!-- int lttng_ust_trace_clock_get_freq_cb(lttng_ust_clock_freq_function*) -->
+    <function-decl name='lttng_ust_trace_clock_get_freq_cb' mangled-name='lttng_ust_trace_clock_get_freq_cb' filepath='src/lib/lttng-ust-common/clock.c' line='105' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_trace_clock_get_freq_cb'>
+      <!-- parameter of type 'lttng_ust_clock_freq_function*' -->
+      <parameter type-id='type-id-21' name='freq_cb' filepath='src/lib/lttng-ust-common/clock.c' line='105' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-2'/>
+    </function-decl>
+    <!-- int lttng_ust_trace_clock_set_freq_cb(lttng_ust_clock_freq_function) -->
+    <function-decl name='lttng_ust_trace_clock_set_freq_cb' mangled-name='lttng_ust_trace_clock_set_freq_cb' filepath='src/lib/lttng-ust-common/clock.c' line='97' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_trace_clock_set_freq_cb'>
+      <!-- parameter of type 'typedef lttng_ust_clock_freq_function' -->
+      <parameter type-id='type-id-13' name='freq_cb' filepath='src/lib/lttng-ust-common/clock.c' line='97' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-2'/>
+    </function-decl>
+    <!-- int lttng_ust_trace_clock_get_read64_cb(lttng_ust_clock_read64_function*) -->
+    <function-decl name='lttng_ust_trace_clock_get_read64_cb' mangled-name='lttng_ust_trace_clock_get_read64_cb' filepath='src/lib/lttng-ust-common/clock.c' line='84' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_trace_clock_get_read64_cb'>
+      <!-- parameter of type 'lttng_ust_clock_read64_function*' -->
+      <parameter type-id='type-id-23' name='read64_cb' filepath='src/lib/lttng-ust-common/clock.c' line='84' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-2'/>
+    </function-decl>
+    <!-- int lttng_ust_trace_clock_set_read64_cb(lttng_ust_clock_read64_function) -->
+    <function-decl name='lttng_ust_trace_clock_set_read64_cb' mangled-name='lttng_ust_trace_clock_set_read64_cb' filepath='src/lib/lttng-ust-common/clock.c' line='76' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_trace_clock_set_read64_cb'>
+      <!-- parameter of type 'typedef lttng_ust_clock_read64_function' -->
+      <parameter type-id='type-id-14' name='read64_cb' filepath='src/lib/lttng-ust-common/clock.c' line='76' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-2'/>
+    </function-decl>
+    <!-- const char* () -->
+    <function-type size-in-bits='64' id='type-id-18'>
+      <!-- const char* -->
+      <return type-id='type-id-17'/>
+    </function-type>
+    <!-- int (char*) -->
+    <function-type size-in-bits='64' id='type-id-19'>
+      <!-- parameter of type 'char*' -->
+      <parameter type-id='type-id-15'/>
+      <!-- int -->
+      <return type-id='type-id-2'/>
+    </function-type>
+    <!-- uint64_t () -->
+    <function-type size-in-bits='64' id='type-id-26'>
+      <!-- typedef uint64_t -->
+      <return type-id='type-id-9'/>
+    </function-type>
+  </abi-instr>
+  <abi-instr version='1.0' address-size='64' path='fd-tracker.c' comp-dir-path='src/lib/lttng-ust-common' language='LANG_C99'>
+
+
+    <!-- char[1] -->
+    <array-type-def dimensions='1' type-id='type-id-1' size-in-bits='8' id='type-id-27'>
+      <!-- <anonymous range>[1] -->
+      <subrange length='1' type-id='type-id-3' id='type-id-28'/>
+
+    </array-type-def>
+    <!-- char[20] -->
+    <array-type-def dimensions='1' type-id='type-id-1' size-in-bits='160' id='type-id-29'>
+      <!-- <anonymous range>[20] -->
+      <subrange length='20' type-id='type-id-3' id='type-id-30'/>
+
+    </array-type-def>
+    <!-- struct _IO_codecvt -->
+    <class-decl name='_IO_codecvt' is-struct='yes' visibility='default' is-declaration-only='yes' id='type-id-31'/>
+    <!-- struct _IO_marker -->
+    <class-decl name='_IO_marker' is-struct='yes' visibility='default' is-declaration-only='yes' id='type-id-32'/>
+    <!-- struct _IO_wide_data -->
+    <class-decl name='_IO_wide_data' is-struct='yes' visibility='default' is-declaration-only='yes' id='type-id-33'/>
+    <!-- long int -->
+    <type-decl name='long int' size-in-bits='64' id='type-id-34'/>
+    <!-- signed char -->
+    <type-decl name='signed char' size-in-bits='8' id='type-id-35'/>
+    <!-- unsigned short int -->
+    <type-decl name='unsigned short int' size-in-bits='16' id='type-id-36'/>
+    <!-- void -->
+    <type-decl name='void' id='type-id-37'/>
+    <!-- typedef _IO_FILE FILE -->
+    <typedef-decl name='FILE' type-id='type-id-38' filepath='/usr/include/bits/types/FILE.h' line='7' column='1' id='type-id-39'/>
+    <!-- struct _IO_FILE -->
+    <class-decl name='_IO_FILE' size-in-bits='1728' is-struct='yes' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='49' column='1' id='type-id-38'>
+      <data-member access='public' layout-offset-in-bits='0'>
+        <!-- int _IO_FILE::_flags -->
+        <var-decl name='_flags' type-id='type-id-2' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='51' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='64'>
+        <!-- char* _IO_FILE::_IO_read_ptr -->
+        <var-decl name='_IO_read_ptr' type-id='type-id-15' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='54' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='128'>
+        <!-- char* _IO_FILE::_IO_read_end -->
+        <var-decl name='_IO_read_end' type-id='type-id-15' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='55' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='192'>
+        <!-- char* _IO_FILE::_IO_read_base -->
+        <var-decl name='_IO_read_base' type-id='type-id-15' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='56' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='256'>
+        <!-- char* _IO_FILE::_IO_write_base -->
+        <var-decl name='_IO_write_base' type-id='type-id-15' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='57' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='320'>
+        <!-- char* _IO_FILE::_IO_write_ptr -->
+        <var-decl name='_IO_write_ptr' type-id='type-id-15' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='58' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='384'>
+        <!-- char* _IO_FILE::_IO_write_end -->
+        <var-decl name='_IO_write_end' type-id='type-id-15' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='59' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='448'>
+        <!-- char* _IO_FILE::_IO_buf_base -->
+        <var-decl name='_IO_buf_base' type-id='type-id-15' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='60' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='512'>
+        <!-- char* _IO_FILE::_IO_buf_end -->
+        <var-decl name='_IO_buf_end' type-id='type-id-15' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='61' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='576'>
+        <!-- char* _IO_FILE::_IO_save_base -->
+        <var-decl name='_IO_save_base' type-id='type-id-15' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='64' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='640'>
+        <!-- char* _IO_FILE::_IO_backup_base -->
+        <var-decl name='_IO_backup_base' type-id='type-id-15' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='65' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='704'>
+        <!-- char* _IO_FILE::_IO_save_end -->
+        <var-decl name='_IO_save_end' type-id='type-id-15' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='66' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='768'>
+        <!-- _IO_marker* _IO_FILE::_markers -->
+        <var-decl name='_markers' type-id='type-id-40' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='68' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='832'>
+        <!-- _IO_FILE* _IO_FILE::_chain -->
+        <var-decl name='_chain' type-id='type-id-41' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='70' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='896'>
+        <!-- int _IO_FILE::_fileno -->
+        <var-decl name='_fileno' type-id='type-id-2' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='72' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='928'>
+        <!-- int _IO_FILE::_flags2 -->
+        <var-decl name='_flags2' type-id='type-id-2' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='73' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='960'>
+        <!-- __off_t _IO_FILE::_old_offset -->
+        <var-decl name='_old_offset' type-id='type-id-42' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='74' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='1024'>
+        <!-- unsigned short int _IO_FILE::_cur_column -->
+        <var-decl name='_cur_column' type-id='type-id-36' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='77' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='1040'>
+        <!-- signed char _IO_FILE::_vtable_offset -->
+        <var-decl name='_vtable_offset' type-id='type-id-35' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='78' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='1048'>
+        <!-- char _IO_FILE::_shortbuf[1] -->
+        <var-decl name='_shortbuf' type-id='type-id-27' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='79' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='1088'>
+        <!-- _IO_lock_t* _IO_FILE::_lock -->
+        <var-decl name='_lock' type-id='type-id-43' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='81' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='1152'>
+        <!-- __off64_t _IO_FILE::_offset -->
+        <var-decl name='_offset' type-id='type-id-44' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='89' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='1216'>
+        <!-- _IO_codecvt* _IO_FILE::_codecvt -->
+        <var-decl name='_codecvt' type-id='type-id-45' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='91' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='1280'>
+        <!-- _IO_wide_data* _IO_FILE::_wide_data -->
+        <var-decl name='_wide_data' type-id='type-id-46' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='92' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='1344'>
+        <!-- _IO_FILE* _IO_FILE::_freeres_list -->
+        <var-decl name='_freeres_list' type-id='type-id-41' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='93' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='1408'>
+        <!-- void* _IO_FILE::_freeres_buf -->
+        <var-decl name='_freeres_buf' type-id='type-id-47' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='94' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='1472'>
+        <!-- size_t _IO_FILE::__pad5 -->
+        <var-decl name='__pad5' type-id='type-id-48' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='95' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='1536'>
+        <!-- int _IO_FILE::_mode -->
+        <var-decl name='_mode' type-id='type-id-2' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='96' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='1568'>
+        <!-- char _IO_FILE::_unused2[20] -->
+        <var-decl name='_unused2' type-id='type-id-29' visibility='default' filepath='/usr/include/bits/types/struct_FILE.h' line='98' column='1'/>
+      </data-member>
+    </class-decl>
+    <!-- typedef long int __off_t -->
+    <typedef-decl name='__off_t' type-id='type-id-34' filepath='/usr/include/bits/types.h' line='152' column='1' id='type-id-42'/>
+    <!-- typedef void _IO_lock_t -->
+    <typedef-decl name='_IO_lock_t' type-id='type-id-37' filepath='/usr/include/bits/types/struct_FILE.h' line='43' column='1' id='type-id-49'/>
+    <!-- typedef long int __off64_t -->
+    <typedef-decl name='__off64_t' type-id='type-id-34' filepath='/usr/include/bits/types.h' line='153' column='1' id='type-id-44'/>
+    <!-- typedef unsigned long int size_t -->
+    <typedef-decl name='size_t' type-id='type-id-3' filepath='/usr/lib/gcc/x86_64-pc-linux-gnu/10.2.0/include/stddef.h' line='209' column='1' id='type-id-48'/>
+    <!-- FILE* -->
+    <pointer-type-def type-id='type-id-39' size-in-bits='64' id='type-id-50'/>
+    <!-- _IO_FILE* -->
+    <pointer-type-def type-id='type-id-38' size-in-bits='64' id='type-id-41'/>
+    <!-- _IO_codecvt* -->
+    <pointer-type-def type-id='type-id-31' size-in-bits='64' id='type-id-45'/>
+    <!-- _IO_lock_t* -->
+    <pointer-type-def type-id='type-id-49' size-in-bits='64' id='type-id-43'/>
+    <!-- _IO_marker* -->
+    <pointer-type-def type-id='type-id-32' size-in-bits='64' id='type-id-40'/>
+    <!-- _IO_wide_data* -->
+    <pointer-type-def type-id='type-id-33' size-in-bits='64' id='type-id-46'/>
+    <!-- int (FILE*)* -->
+    <pointer-type-def type-id='type-id-51' size-in-bits='64' id='type-id-52'/>
+    <!-- int (int)* -->
+    <pointer-type-def type-id='type-id-53' size-in-bits='64' id='type-id-54'/>
+    <!-- void* -->
+    <pointer-type-def type-id='type-id-37' size-in-bits='64' id='type-id-47'/>
+    <!-- int lttng_ust_safe_closefrom_fd(int, int (int)*) -->
+    <function-decl name='lttng_ust_safe_closefrom_fd' mangled-name='lttng_ust_safe_closefrom_fd' filepath='src/lib/lttng-ust-common/fd-tracker.c' line='413' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_safe_closefrom_fd'>
+      <!-- parameter of type 'int' -->
+      <parameter type-id='type-id-2' name='lowfd' filepath='src/lib/lttng-ust-common/fd-tracker.c' line='413' column='1'/>
+      <!-- parameter of type 'int (int)*' -->
+      <parameter type-id='type-id-54' name='close_cb' filepath='src/lib/lttng-ust-common/fd-tracker.c' line='413' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-2'/>
+    </function-decl>
+    <!-- int lttng_ust_safe_fclose_stream(FILE*, int (FILE*)*) -->
+    <function-decl name='lttng_ust_safe_fclose_stream' mangled-name='lttng_ust_safe_fclose_stream' filepath='src/lib/lttng-ust-common/fd-tracker.c' line='358' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_safe_fclose_stream'>
+      <!-- parameter of type 'FILE*' -->
+      <parameter type-id='type-id-50' name='stream' filepath='src/lib/lttng-ust-common/fd-tracker.c' line='358' column='1'/>
+      <!-- parameter of type 'int (FILE*)*' -->
+      <parameter type-id='type-id-52' name='fclose_cb' filepath='src/lib/lttng-ust-common/fd-tracker.c' line='358' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-2'/>
+    </function-decl>
+    <!-- int lttng_ust_safe_close_fd(int, int (int)*) -->
+    <function-decl name='lttng_ust_safe_close_fd' mangled-name='lttng_ust_safe_close_fd' filepath='src/lib/lttng-ust-common/fd-tracker.c' line='322' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_safe_close_fd'>
+      <!-- parameter of type 'int' -->
+      <parameter type-id='type-id-2' name='fd' filepath='src/lib/lttng-ust-common/fd-tracker.c' line='322' column='1'/>
+      <!-- parameter of type 'int (int)*' -->
+      <parameter type-id='type-id-54' name='close_cb' filepath='src/lib/lttng-ust-common/fd-tracker.c' line='322' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-2'/>
+    </function-decl>
+    <!-- void lttng_ust_delete_fd_from_tracker(int) -->
+    <function-decl name='lttng_ust_delete_fd_from_tracker' mangled-name='lttng_ust_delete_fd_from_tracker' filepath='src/lib/lttng-ust-common/fd-tracker.c' line='300' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_delete_fd_from_tracker'>
+      <!-- parameter of type 'int' -->
+      <parameter type-id='type-id-2' name='fd' filepath='src/lib/lttng-ust-common/fd-tracker.c' line='300' column='1'/>
+      <!-- void -->
+      <return type-id='type-id-37'/>
+    </function-decl>
+    <!-- int lttng_ust_add_fd_to_tracker(int) -->
+    <function-decl name='lttng_ust_add_fd_to_tracker' mangled-name='lttng_ust_add_fd_to_tracker' filepath='src/lib/lttng-ust-common/fd-tracker.c' line='267' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_add_fd_to_tracker'>
+      <!-- parameter of type 'int' -->
+      <parameter type-id='type-id-2' name='fd' filepath='src/lib/lttng-ust-common/fd-tracker.c' line='267' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-2'/>
+    </function-decl>
+    <!-- void lttng_ust_unlock_fd_tracker() -->
+    <function-decl name='lttng_ust_unlock_fd_tracker' mangled-name='lttng_ust_unlock_fd_tracker' filepath='src/lib/lttng-ust-common/fd-tracker.c' line='155' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_unlock_fd_tracker'>
+      <!-- void -->
+      <return type-id='type-id-37'/>
+    </function-decl>
+    <!-- void lttng_ust_lock_fd_tracker() -->
+    <function-decl name='lttng_ust_lock_fd_tracker' mangled-name='lttng_ust_lock_fd_tracker' filepath='src/lib/lttng-ust-common/fd-tracker.c' line='126' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_lock_fd_tracker'>
+      <!-- void -->
+      <return type-id='type-id-37'/>
+    </function-decl>
+    <!-- int (FILE*) -->
+    <function-type size-in-bits='64' id='type-id-51'>
+      <!-- parameter of type 'FILE*' -->
+      <parameter type-id='type-id-50'/>
+      <!-- int -->
+      <return type-id='type-id-2'/>
+    </function-type>
+    <!-- int (int) -->
+    <function-type size-in-bits='64' id='type-id-53'>
+      <!-- parameter of type 'int' -->
+      <parameter type-id='type-id-2'/>
+      <!-- int -->
+      <return type-id='type-id-2'/>
+    </function-type>
+  </abi-instr>
+  <abi-instr version='1.0' address-size='64' path='getcpu.c' comp-dir-path='src/lib/lttng-ust-common' language='LANG_C99'>
+    <!-- int ()* -->
+    <pointer-type-def type-id='type-id-55' size-in-bits='64' id='type-id-56'/>
+    <!-- int ()* lttng_ust_get_cpu_sym -->
+    <var-decl name='lttng_ust_get_cpu_sym' type-id='type-id-56' mangled-name='lttng_ust_get_cpu_sym' visibility='default' filepath='../../../src/common/getcpu.h' line='25' column='1' elf-symbol-id='lttng_ust_get_cpu_sym'/>
+    <!-- int lttng_ust_getcpu_override(int ()*) -->
+    <function-decl name='lttng_ust_getcpu_override' mangled-name='lttng_ust_getcpu_override' filepath='src/lib/lttng-ust-common/getcpu.c' line='28' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_getcpu_override'>
+      <!-- parameter of type 'int ()*' -->
+      <parameter type-id='type-id-56' name='getcpu' filepath='src/lib/lttng-ust-common/getcpu.c' line='28' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-2'/>
+    </function-decl>
+    <!-- int () -->
+    <function-type size-in-bits='64' id='type-id-55'>
+      <!-- int -->
+      <return type-id='type-id-2'/>
+    </function-type>
+  </abi-instr>
+  <abi-instr version='1.0' address-size='64' path='ust-common.c' comp-dir-path='src/lib/lttng-ust-common' language='LANG_C99'>
+    <!-- void lttng_ust_common_alloc_tls() -->
+    <function-decl name='lttng_ust_common_alloc_tls' mangled-name='lttng_ust_common_alloc_tls' filepath='src/lib/lttng-ust-common/ust-common.c' line='41' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_common_alloc_tls'>
+      <!-- void -->
+      <return type-id='type-id-37'/>
+    </function-decl>
+    <!-- void lttng_ust_common_ctor() -->
+    <function-decl name='lttng_ust_common_ctor' mangled-name='lttng_ust_common_ctor' filepath='src/lib/lttng-ust-common/ust-common.c' line='23' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_common_ctor'>
+      <!-- void -->
+      <return type-id='type-id-37'/>
+    </function-decl>
+  </abi-instr>
+  <abi-instr version='1.0' address-size='64' path='lttng-ust-urcu.c' comp-dir-path='src/lib/lttng-ust-common' language='LANG_C99'>
+    <!-- struct lttng_ust_urcu_gp -->
+    <class-decl name='lttng_ust_urcu_gp' size-in-bits='1024' is-struct='yes' visibility='default' filepath='../../../include/lttng/urcu/static/urcu-ust.h' line='61' column='1' id='type-id-57'>
+      <data-member access='public' layout-offset-in-bits='0'>
+        <!-- unsigned long int lttng_ust_urcu_gp::ctr -->
+        <var-decl name='ctr' type-id='type-id-3' visibility='default' filepath='../../../include/lttng/urcu/static/urcu-ust.h' line='69' column='1'/>
+      </data-member>
+    </class-decl>
+    <!-- struct lttng_ust_urcu_reader -->
+    <class-decl name='lttng_ust_urcu_reader' size-in-bits='2048' is-struct='yes' visibility='default' filepath='../../../include/lttng/urcu/static/urcu-ust.h' line='74' column='1' id='type-id-58'>
+      <data-member access='public' layout-offset-in-bits='0'>
+        <!-- unsigned long int lttng_ust_urcu_reader::ctr -->
+        <var-decl name='ctr' type-id='type-id-3' visibility='default' filepath='../../../include/lttng/urcu/static/urcu-ust.h' line='76' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='1024'>
+        <!-- cds_list_head lttng_ust_urcu_reader::node -->
+        <var-decl name='node' type-id='type-id-59' visibility='default' filepath='../../../include/lttng/urcu/static/urcu-ust.h' line='78' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='1152'>
+        <!-- pthread_t lttng_ust_urcu_reader::tid -->
+        <var-decl name='tid' type-id='type-id-60' visibility='default' filepath='../../../include/lttng/urcu/static/urcu-ust.h' line='79' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='1216'>
+        <!-- int lttng_ust_urcu_reader::alloc -->
+        <var-decl name='alloc' type-id='type-id-2' visibility='default' filepath='../../../include/lttng/urcu/static/urcu-ust.h' line='80' column='1'/>
+      </data-member>
+    </class-decl>
+    <!-- struct cds_list_head -->
+    <class-decl name='cds_list_head' size-in-bits='128' is-struct='yes' visibility='default' filepath='/usr/include/urcu/list.h' line='35' column='1' id='type-id-59'>
+      <data-member access='public' layout-offset-in-bits='0'>
+        <!-- cds_list_head* cds_list_head::next -->
+        <var-decl name='next' type-id='type-id-61' visibility='default' filepath='/usr/include/urcu/list.h' line='36' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='64'>
+        <!-- cds_list_head* cds_list_head::prev -->
+        <var-decl name='prev' type-id='type-id-61' visibility='default' filepath='/usr/include/urcu/list.h' line='36' column='1'/>
+      </data-member>
+    </class-decl>
+    <!-- typedef unsigned long int pthread_t -->
+    <typedef-decl name='pthread_t' type-id='type-id-3' filepath='/usr/include/bits/pthreadtypes.h' line='27' column='1' id='type-id-60'/>
+    <!-- cds_list_head* -->
+    <pointer-type-def type-id='type-id-59' size-in-bits='64' id='type-id-61'/>
+    <!-- lttng_ust_urcu_reader* -->
+    <pointer-type-def type-id='type-id-58' size-in-bits='64' id='type-id-62'/>
+    <!-- int lttng_ust_urcu_has_sys_membarrier -->
+    <var-decl name='lttng_ust_urcu_has_sys_membarrier' type-id='type-id-2' mangled-name='lttng_ust_urcu_has_sys_membarrier' visibility='default' filepath='../../../include/lttng/urcu/static/urcu-ust.h' line='93' column='1' elf-symbol-id='lttng_ust_urcu_has_sys_membarrier'/>
+    <!-- lttng_ust_urcu_gp lttng_ust_urcu_gp -->
+    <var-decl name='lttng_ust_urcu_gp' type-id='type-id-57' mangled-name='lttng_ust_urcu_gp' visibility='default' filepath='../../../include/lttng/urcu/static/urcu-ust.h' line='72' column='1' elf-symbol-id='lttng_ust_urcu_gp'/>
+    <!-- lttng_ust_urcu_reader* lttng_ust_urcu_reader -->
+    <var-decl name='lttng_ust_urcu_reader' type-id='type-id-62' mangled-name='lttng_ust_urcu_reader' visibility='default' filepath='../../../include/lttng/urcu/static/urcu-ust.h' line='88' column='1' elf-symbol-id='lttng_ust_urcu_reader'/>
+    <!-- void lttng_ust_urcu_after_fork_child() -->
+    <function-decl name='lttng_ust_urcu_after_fork_child' mangled-name='lttng_ust_urcu_after_fork_child' filepath='src/lib/lttng-ust-common/lttng-ust-urcu.c' line='710' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_urcu_after_fork_child'>
+      <!-- void -->
+      <return type-id='type-id-37'/>
+    </function-decl>
+    <!-- void lttng_ust_urcu_after_fork_parent() -->
+    <function-decl name='lttng_ust_urcu_after_fork_parent' mangled-name='lttng_ust_urcu_after_fork_parent' filepath='src/lib/lttng-ust-common/lttng-ust-urcu.c' line='675' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_urcu_after_fork_parent'>
+      <!-- void -->
+      <return type-id='type-id-37'/>
+    </function-decl>
+    <!-- void lttng_ust_urcu_before_fork() -->
+    <function-decl name='lttng_ust_urcu_before_fork' mangled-name='lttng_ust_urcu_before_fork' filepath='src/lib/lttng-ust-common/lttng-ust-urcu.c' line='661' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_urcu_before_fork'>
+      <!-- void -->
+      <return type-id='type-id-37'/>
+    </function-decl>
+    <!-- void lttng_ust_urcu_register_thread() -->
+    <function-decl name='lttng_ust_urcu_register_thread' mangled-name='lttng_ust_urcu_register_thread' filepath='src/lib/lttng-ust-common/lttng-ust-urcu.c' line='544' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_urcu_register_thread'>
+      <!-- void -->
+      <return type-id='type-id-37'/>
+    </function-decl>
+    <!-- void lttng_ust_urcu_register() -->
+    <function-decl name='lttng_ust_urcu_register' mangled-name='lttng_ust_urcu_register' filepath='src/lib/lttng-ust-common/lttng-ust-urcu.c' line='511' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_urcu_register'>
+      <!-- void -->
+      <return type-id='type-id-37'/>
+    </function-decl>
+    <!-- int lttng_ust_urcu_read_ongoing() -->
+    <function-decl name='lttng_ust_urcu_read_ongoing' mangled-name='lttng_ust_urcu_read_ongoing' filepath='src/lib/lttng-ust-common/lttng-ust-urcu.c' line='344' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_urcu_read_ongoing'>
+      <!-- int -->
+      <return type-id='type-id-2'/>
+    </function-decl>
+    <!-- void lttng_ust_urcu_read_unlock() -->
+    <function-decl name='lttng_ust_urcu_read_unlock' mangled-name='lttng_ust_urcu_read_unlock' filepath='src/lib/lttng-ust-common/lttng-ust-urcu.c' line='339' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_urcu_read_unlock'>
+      <!-- void -->
+      <return type-id='type-id-37'/>
+    </function-decl>
+    <!-- void lttng_ust_urcu_read_lock() -->
+    <function-decl name='lttng_ust_urcu_read_lock' mangled-name='lttng_ust_urcu_read_lock' filepath='src/lib/lttng-ust-common/lttng-ust-urcu.c' line='334' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_urcu_read_lock'>
+      <!-- void -->
+      <return type-id='type-id-37'/>
+    </function-decl>
+    <!-- void lttng_ust_urcu_synchronize_rcu() -->
+    <function-decl name='lttng_ust_urcu_synchronize_rcu' mangled-name='lttng_ust_urcu_synchronize_rcu' filepath='src/lib/lttng-ust-common/lttng-ust-urcu.c' line='251' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_urcu_synchronize_rcu'>
+      <!-- void -->
+      <return type-id='type-id-37'/>
+    </function-decl>
+  </abi-instr>
+  <abi-instr version='1.0' address-size='64' path='lttng-ust-urcu-pointer.c' comp-dir-path='src/lib/lttng-ust-common' language='LANG_C99'>
+    <!-- void** -->
+    <pointer-type-def type-id='type-id-47' size-in-bits='64' id='type-id-63'/>
+    <!-- void* lttng_ust_rcu_cmpxchg_pointer_sym(void**, void*, void*) -->
+    <function-decl name='lttng_ust_rcu_cmpxchg_pointer_sym' mangled-name='lttng_ust_rcu_cmpxchg_pointer_sym' filepath='src/lib/lttng-ust-common/lttng-ust-urcu-pointer.c' line='34' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_rcu_cmpxchg_pointer_sym'>
+      <!-- parameter of type 'void**' -->
+      <parameter type-id='type-id-63' name='p' filepath='src/lib/lttng-ust-common/lttng-ust-urcu-pointer.c' line='34' column='1'/>
+      <!-- parameter of type 'void*' -->
+      <parameter type-id='type-id-47' name='old' filepath='src/lib/lttng-ust-common/lttng-ust-urcu-pointer.c' line='34' column='1'/>
+      <!-- parameter of type 'void*' -->
+      <parameter type-id='type-id-47' name='_new' filepath='src/lib/lttng-ust-common/lttng-ust-urcu-pointer.c' line='34' column='1'/>
+      <!-- void* -->
+      <return type-id='type-id-47'/>
+    </function-decl>
+    <!-- void* lttng_ust_rcu_xchg_pointer_sym(void**, void*) -->
+    <function-decl name='lttng_ust_rcu_xchg_pointer_sym' mangled-name='lttng_ust_rcu_xchg_pointer_sym' filepath='src/lib/lttng-ust-common/lttng-ust-urcu-pointer.c' line='28' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_rcu_xchg_pointer_sym'>
+      <!-- parameter of type 'void**' -->
+      <parameter type-id='type-id-63' name='p' filepath='src/lib/lttng-ust-common/lttng-ust-urcu-pointer.c' line='28' column='1'/>
+      <!-- parameter of type 'void*' -->
+      <parameter type-id='type-id-47' name='v' filepath='src/lib/lttng-ust-common/lttng-ust-urcu-pointer.c' line='28' column='1'/>
+      <!-- void* -->
+      <return type-id='type-id-47'/>
+    </function-decl>
+    <!-- void* lttng_ust_rcu_set_pointer_sym(void**, void*) -->
+    <function-decl name='lttng_ust_rcu_set_pointer_sym' mangled-name='lttng_ust_rcu_set_pointer_sym' filepath='src/lib/lttng-ust-common/lttng-ust-urcu-pointer.c' line='21' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_rcu_set_pointer_sym'>
+      <!-- parameter of type 'void**' -->
+      <parameter type-id='type-id-63' name='p' filepath='src/lib/lttng-ust-common/lttng-ust-urcu-pointer.c' line='21' column='1'/>
+      <!-- parameter of type 'void*' -->
+      <parameter type-id='type-id-47' name='v' filepath='src/lib/lttng-ust-common/lttng-ust-urcu-pointer.c' line='21' column='1'/>
+      <!-- void* -->
+      <return type-id='type-id-47'/>
+    </function-decl>
+    <!-- void* lttng_ust_rcu_dereference_sym(void*) -->
+    <function-decl name='lttng_ust_rcu_dereference_sym' mangled-name='lttng_ust_rcu_dereference_sym' filepath='src/lib/lttng-ust-common/lttng-ust-urcu-pointer.c' line='16' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_rcu_dereference_sym'>
+      <!-- parameter of type 'void*' -->
+      <parameter type-id='type-id-47' name='p' filepath='src/lib/lttng-ust-common/lttng-ust-urcu-pointer.c' line='16' column='1'/>
+      <!-- void* -->
+      <return type-id='type-id-47'/>
+    </function-decl>
+  </abi-instr>
+  <abi-instr version='1.0' address-size='64' path='logging.c' comp-dir-path='src/common' language='LANG_C99'>
+    <!-- int lttng_ust_log_level -->
+    <var-decl name='lttng_ust_log_level' type-id='type-id-2' visibility='default' filepath='../../src/common/logging.h' line='38' column='1'/>
+    <!-- int lttng_ust_log_critical_action -->
+    <var-decl name='lttng_ust_log_critical_action' type-id='type-id-2' visibility='default' filepath='../../src/common/logging.h' line='41' column='1'/>
+  </abi-instr>
+</abi-corpus>

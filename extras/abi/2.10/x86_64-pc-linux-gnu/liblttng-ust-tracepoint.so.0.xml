@@ -1,0 +1,777 @@
+<abi-corpus architecture='elf-amd-x86_64' soname='liblttng-ust-tracepoint.so.0'>
+  <elf-needed>
+    <dependency name='libdl.so.2'/>
+    <dependency name='liburcu-bp.so.6'/>
+    <dependency name='liburcu-cds.so.6'/>
+    <dependency name='libpthread.so.0'/>
+    <dependency name='libc.so.6'/>
+    <dependency name='ld-linux-x86-64.so.2'/>
+  </elf-needed>
+  <elf-function-symbols>
+    <!-- __sflush -->
+    <elf-symbol name='__sflush' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- __sfvwrite -->
+    <elf-symbol name='__sfvwrite' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- __swsetup -->
+    <elf-symbol name='__swsetup' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- __tracepoint_probe_prune_release_queue -->
+    <elf-symbol name='__tracepoint_probe_prune_release_queue' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- __tracepoint_probe_register -->
+    <elf-symbol name='__tracepoint_probe_register' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- __tracepoint_probe_register_queue_release -->
+    <elf-symbol name='__tracepoint_probe_register_queue_release' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- __tracepoint_probe_unregister -->
+    <elf-symbol name='__tracepoint_probe_unregister' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- __tracepoint_probe_unregister_queue_release -->
+    <elf-symbol name='__tracepoint_probe_unregister_queue_release' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- exit_tracepoint -->
+    <elf-symbol name='exit_tracepoint' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- init_tracepoint -->
+    <elf-symbol name='init_tracepoint' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- init_usterr -->
+    <elf-symbol name='init_usterr' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- patient_send -->
+    <elf-symbol name='patient_send' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- patient_write -->
+    <elf-symbol name='patient_write' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- tp_rcu_dereference_sym_bp -->
+    <elf-symbol name='tp_rcu_dereference_sym_bp' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- tp_rcu_read_lock_bp -->
+    <elf-symbol name='tp_rcu_read_lock_bp' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- tp_rcu_read_unlock_bp -->
+    <elf-symbol name='tp_rcu_read_unlock_bp' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- tracepoint_probe_register_noupdate -->
+    <elf-symbol name='tracepoint_probe_register_noupdate' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- tracepoint_probe_unregister_noupdate -->
+    <elf-symbol name='tracepoint_probe_unregister_noupdate' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- tracepoint_probe_update_all -->
+    <elf-symbol name='tracepoint_probe_update_all' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- tracepoint_register_lib -->
+    <elf-symbol name='tracepoint_register_lib' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- tracepoint_set_new_tracepoint_cb -->
+    <elf-symbol name='tracepoint_set_new_tracepoint_cb' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- tracepoint_unregister_lib -->
+    <elf-symbol name='tracepoint_unregister_lib' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- ust_safe_fflush -->
+    <elf-symbol name='ust_safe_fflush' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- ust_safe_mbrtowc -->
+    <elf-symbol name='ust_safe_mbrtowc' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- ust_safe_snprintf -->
+    <elf-symbol name='ust_safe_snprintf' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- ust_safe_vfprintf -->
+    <elf-symbol name='ust_safe_vfprintf' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- ust_safe_vsnprintf -->
+    <elf-symbol name='ust_safe_vsnprintf' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+  </elf-function-symbols>
+  <elf-variable-symbols>
+    <!-- __tracepoints__disable_destructors -->
+    <elf-symbol name='__tracepoints__disable_destructors' size='4' type='object-type' binding='weak-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- ust_loglevel -->
+    <elf-symbol name='ust_loglevel' size='4' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+  </elf-variable-symbols>
+  <abi-instr version='1.0' address-size='64' path='tracepoint.c' comp-dir-path='liblttng-ust' language='LANG_C99'>
+
+    <!-- char -->
+    <type-decl name='char' size-in-bits='8' id='type-id-1'/>
+    <!-- char[16] -->
+    <array-type-def dimensions='1' type-id='type-id-1' size-in-bits='128' id='type-id-2'>
+      <!-- <anonymous range>[16] -->
+      <subrange length='16' type-id='type-id-3' id='type-id-4'/>
+
+    </array-type-def>
+    <!-- int -->
+    <type-decl name='int' size-in-bits='32' id='type-id-5'/>
+    <!-- unsigned long int -->
+    <type-decl name='unsigned long int' size-in-bits='64' id='type-id-3'/>
+    <!-- void -->
+    <type-decl name='void' id='type-id-6'/>
+    <!-- struct lttng_ust_tracepoint_dlopen -->
+    <class-decl name='lttng_ust_tracepoint_dlopen' size-in-bits='384' is-struct='yes' visibility='default' filepath='../include/lttng/tracepoint.h' line='215' column='1' id='type-id-7'>
+      <data-member access='public' layout-offset-in-bits='0'>
+        <!-- void* lttng_ust_tracepoint_dlopen::liblttngust_handle -->
+        <var-decl name='liblttngust_handle' type-id='type-id-8' visibility='default' filepath='../include/lttng/tracepoint.h' line='216' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='64'>
+        <!-- int (lttng_ust_tracepoint* const*, int)* lttng_ust_tracepoint_dlopen::tracepoint_register_lib -->
+        <var-decl name='tracepoint_register_lib' type-id='type-id-9' visibility='default' filepath='../include/lttng/tracepoint.h' line='218' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='128'>
+        <!-- int (lttng_ust_tracepoint* const*)* lttng_ust_tracepoint_dlopen::tracepoint_unregister_lib -->
+        <var-decl name='tracepoint_unregister_lib' type-id='type-id-10' visibility='default' filepath='../include/lttng/tracepoint.h' line='220' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='192'>
+        <!-- void ()* lttng_ust_tracepoint_dlopen::rcu_read_lock_sym_bp -->
+        <var-decl name='rcu_read_lock_sym_bp' type-id='type-id-11' visibility='default' filepath='../include/lttng/tracepoint.h' line='221' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='256'>
+        <!-- void ()* lttng_ust_tracepoint_dlopen::rcu_read_unlock_sym_bp -->
+        <var-decl name='rcu_read_unlock_sym_bp' type-id='type-id-11' visibility='default' filepath='../include/lttng/tracepoint.h' line='222' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='320'>
+        <!-- void* (void*)* lttng_ust_tracepoint_dlopen::rcu_dereference_sym_bp -->
+        <var-decl name='rcu_dereference_sym_bp' type-id='type-id-12' visibility='default' filepath='../include/lttng/tracepoint.h' line='223' column='1'/>
+      </data-member>
+    </class-decl>
+    <!-- struct lttng_ust_tracepoint -->
+    <class-decl name='lttng_ust_tracepoint' size-in-bits='448' is-struct='yes' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='32' column='1' id='type-id-13'>
+      <data-member access='public' layout-offset-in-bits='0'>
+        <!-- const char* lttng_ust_tracepoint::name -->
+        <var-decl name='name' type-id='type-id-14' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='33' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='64'>
+        <!-- int lttng_ust_tracepoint::state -->
+        <var-decl name='state' type-id='type-id-5' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='34' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='128'>
+        <!-- lttng_ust_tracepoint_probe* lttng_ust_tracepoint::probes -->
+        <var-decl name='probes' type-id='type-id-15' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='35' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='192'>
+        <!-- int* lttng_ust_tracepoint::tracepoint_provider_ref -->
+        <var-decl name='tracepoint_provider_ref' type-id='type-id-16' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='36' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='256'>
+        <!-- const char* lttng_ust_tracepoint::signature -->
+        <var-decl name='signature' type-id='type-id-14' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='37' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='320'>
+        <!-- char lttng_ust_tracepoint::padding[16] -->
+        <var-decl name='padding' type-id='type-id-2' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='38' column='1'/>
+      </data-member>
+    </class-decl>
+    <!-- struct lttng_ust_tracepoint_probe -->
+    <class-decl name='lttng_ust_tracepoint_probe' size-in-bits='128' is-struct='yes' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='26' column='1' id='type-id-17'>
+      <data-member access='public' layout-offset-in-bits='0'>
+        <!-- void ()* lttng_ust_tracepoint_probe::func -->
+        <var-decl name='func' type-id='type-id-11' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='27' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='64'>
+        <!-- void* lttng_ust_tracepoint_probe::data -->
+        <var-decl name='data' type-id='type-id-8' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='28' column='1'/>
+      </data-member>
+    </class-decl>
+    <!-- const char -->
+    <qualified-type-def type-id='type-id-1' const='yes' id='type-id-18'/>
+    <!-- const char* -->
+    <pointer-type-def type-id='type-id-18' size-in-bits='64' id='type-id-14'/>
+    <!-- int (lttng_ust_tracepoint* const*)* -->
+    <pointer-type-def type-id='type-id-19' size-in-bits='64' id='type-id-10'/>
+    <!-- int (lttng_ust_tracepoint* const*, int)* -->
+    <pointer-type-def type-id='type-id-20' size-in-bits='64' id='type-id-9'/>
+    <!-- int* -->
+    <pointer-type-def type-id='type-id-5' size-in-bits='64' id='type-id-16'/>
+    <!-- lttng_ust_tracepoint* -->
+    <pointer-type-def type-id='type-id-13' size-in-bits='64' id='type-id-21'/>
+    <!-- lttng_ust_tracepoint* const -->
+    <qualified-type-def type-id='type-id-21' const='yes' id='type-id-22'/>
+    <!-- lttng_ust_tracepoint* const* -->
+    <pointer-type-def type-id='type-id-22' size-in-bits='64' id='type-id-23'/>
+    <!-- lttng_ust_tracepoint_dlopen* -->
+    <pointer-type-def type-id='type-id-7' size-in-bits='64' id='type-id-24'/>
+    <!-- lttng_ust_tracepoint_probe* -->
+    <pointer-type-def type-id='type-id-17' size-in-bits='64' id='type-id-15'/>
+    <!-- void ()* -->
+    <pointer-type-def type-id='type-id-25' size-in-bits='64' id='type-id-11'/>
+    <!-- void (lttng_ust_tracepoint*)* -->
+    <pointer-type-def type-id='type-id-26' size-in-bits='64' id='type-id-27'/>
+    <!-- void* -->
+    <pointer-type-def type-id='type-id-6' size-in-bits='64' id='type-id-8'/>
+    <!-- void* (void*)* -->
+    <pointer-type-def type-id='type-id-28' size-in-bits='64' id='type-id-12'/>
+    <!-- int __tracepoints__disable_destructors -->
+    <var-decl name='__tracepoints__disable_destructors' type-id='type-id-5' mangled-name='__tracepoints__disable_destructors' visibility='default' filepath='../include/lttng/tracepoint.h' line='230' column='1' elf-symbol-id='__tracepoints__disable_destructors'/>
+    <!-- lttng_ust_tracepoint_dlopen tracepoint_dlopen -->
+    <var-decl name='tracepoint_dlopen' type-id='type-id-7' visibility='default' filepath='../include/lttng/tracepoint.h' line='226' column='1'/>
+    <!-- lttng_ust_tracepoint_dlopen* tracepoint_dlopen_ptr -->
+    <var-decl name='tracepoint_dlopen_ptr' type-id='type-id-24' visibility='default' filepath='../include/lttng/tracepoint.h' line='227' column='1'/>
+    <!-- void* tp_rcu_dereference_sym_bp(void*) -->
+    <function-decl name='tp_rcu_dereference_sym_bp' mangled-name='tp_rcu_dereference_sym_bp' filepath='liblttng-ust/tracepoint.c' line='957' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='tp_rcu_dereference_sym_bp'>
+      <!-- parameter of type 'void*' -->
+      <parameter type-id='type-id-8' name='p' filepath='liblttng-ust/tracepoint.c' line='957' column='1'/>
+      <!-- void* -->
+      <return type-id='type-id-8'/>
+    </function-decl>
+    <!-- void tp_rcu_read_unlock_bp() -->
+    <function-decl name='tp_rcu_read_unlock_bp' mangled-name='tp_rcu_read_unlock_bp' filepath='liblttng-ust/tracepoint.c' line='952' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='tp_rcu_read_unlock_bp'>
+      <!-- void -->
+      <return type-id='type-id-6'/>
+    </function-decl>
+    <!-- void tp_rcu_read_lock_bp() -->
+    <function-decl name='tp_rcu_read_lock_bp' mangled-name='tp_rcu_read_lock_bp' filepath='liblttng-ust/tracepoint.c' line='947' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='tp_rcu_read_lock_bp'>
+      <!-- void -->
+      <return type-id='type-id-6'/>
+    </function-decl>
+    <!-- void exit_tracepoint() -->
+    <function-decl name='exit_tracepoint' mangled-name='exit_tracepoint' filepath='liblttng-ust/tracepoint.c' line='935' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='exit_tracepoint'>
+      <!-- void -->
+      <return type-id='type-id-6'/>
+    </function-decl>
+    <!-- void init_tracepoint() -->
+    <function-decl name='init_tracepoint' mangled-name='init_tracepoint' filepath='liblttng-ust/tracepoint.c' line='927' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='init_tracepoint'>
+      <!-- void -->
+      <return type-id='type-id-6'/>
+    </function-decl>
+    <!-- int tracepoint_unregister_lib(lttng_ust_tracepoint* const*) -->
+    <function-decl name='tracepoint_unregister_lib' mangled-name='tracepoint_unregister_lib' filepath='liblttng-ust/tracepoint.c' line='879' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='tracepoint_unregister_lib'>
+      <!-- parameter of type 'lttng_ust_tracepoint* const*' -->
+      <parameter type-id='type-id-23' name='tracepoints_start' filepath='liblttng-ust/tracepoint.c' line='879' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-5'/>
+    </function-decl>
+    <!-- int tracepoint_register_lib(lttng_ust_tracepoint* const*, int) -->
+    <function-decl name='tracepoint_register_lib' mangled-name='tracepoint_register_lib' filepath='liblttng-ust/tracepoint.c' line='830' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='tracepoint_register_lib'>
+      <!-- parameter of type 'lttng_ust_tracepoint* const*' -->
+      <parameter type-id='type-id-23' name='tracepoints_start' filepath='liblttng-ust/tracepoint.c' line='830' column='1'/>
+      <!-- parameter of type 'int' -->
+      <parameter type-id='type-id-5' name='tracepoints_count' filepath='liblttng-ust/tracepoint.c' line='831' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-5'/>
+    </function-decl>
+    <!-- void tracepoint_set_new_tracepoint_cb(void (lttng_ust_tracepoint*)*) -->
+    <function-decl name='tracepoint_set_new_tracepoint_cb' mangled-name='tracepoint_set_new_tracepoint_cb' filepath='liblttng-ust/tracepoint.c' line='812' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='tracepoint_set_new_tracepoint_cb'>
+      <!-- parameter of type 'void (lttng_ust_tracepoint*)*' -->
+      <parameter type-id='type-id-27' name='cb' filepath='liblttng-ust/tracepoint.c' line='812' column='1'/>
+      <!-- void -->
+      <return type-id='type-id-6'/>
+    </function-decl>
+    <!-- void tracepoint_probe_update_all() -->
+    <function-decl name='tracepoint_probe_update_all' mangled-name='tracepoint_probe_update_all' filepath='liblttng-ust/tracepoint.c' line='788' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='tracepoint_probe_update_all'>
+      <!-- void -->
+      <return type-id='type-id-6'/>
+    </function-decl>
+    <!-- int tracepoint_probe_unregister_noupdate(const char*, void ()*, void*) -->
+    <function-decl name='tracepoint_probe_unregister_noupdate' mangled-name='tracepoint_probe_unregister_noupdate' filepath='liblttng-ust/tracepoint.c' line='765' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='tracepoint_probe_unregister_noupdate'>
+      <!-- parameter of type 'const char*' -->
+      <parameter type-id='type-id-14' name='name' filepath='liblttng-ust/tracepoint.c' line='765' column='1'/>
+      <!-- parameter of type 'void ()*' -->
+      <parameter type-id='type-id-11' name='probe' filepath='liblttng-ust/tracepoint.c' line='765' column='1'/>
+      <!-- parameter of type 'void*' -->
+      <parameter type-id='type-id-8' name='data' filepath='liblttng-ust/tracepoint.c' line='766' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-5'/>
+    </function-decl>
+    <!-- int tracepoint_probe_register_noupdate(const char*, void ()*, void*, const char*) -->
+    <function-decl name='tracepoint_probe_register_noupdate' mangled-name='tracepoint_probe_register_noupdate' filepath='liblttng-ust/tracepoint.c' line='739' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='tracepoint_probe_register_noupdate'>
+      <!-- parameter of type 'const char*' -->
+      <parameter type-id='type-id-14' name='name' filepath='liblttng-ust/tracepoint.c' line='739' column='1'/>
+      <!-- parameter of type 'void ()*' -->
+      <parameter type-id='type-id-11' name='probe' filepath='liblttng-ust/tracepoint.c' line='739' column='1'/>
+      <!-- parameter of type 'void*' -->
+      <parameter type-id='type-id-8' name='data' filepath='liblttng-ust/tracepoint.c' line='740' column='1'/>
+      <!-- parameter of type 'const char*' -->
+      <parameter type-id='type-id-14' name='signature' filepath='liblttng-ust/tracepoint.c' line='740' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-5'/>
+    </function-decl>
+    <!-- void __tracepoint_probe_prune_release_queue() -->
+    <function-decl name='__tracepoint_probe_prune_release_queue' mangled-name='__tracepoint_probe_prune_release_queue' filepath='liblttng-ust/tracepoint.c' line='697' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='__tracepoint_probe_prune_release_queue'>
+      <!-- void -->
+      <return type-id='type-id-6'/>
+    </function-decl>
+    <!-- int __tracepoint_probe_unregister_queue_release(const char*, void ()*, void*) -->
+    <function-decl name='__tracepoint_probe_unregister_queue_release' mangled-name='__tracepoint_probe_unregister_queue_release' filepath='liblttng-ust/tracepoint.c' line='676' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='__tracepoint_probe_unregister_queue_release'>
+      <!-- parameter of type 'const char*' -->
+      <parameter type-id='type-id-14' name='name' filepath='liblttng-ust/tracepoint.c' line='676' column='1'/>
+      <!-- parameter of type 'void ()*' -->
+      <parameter type-id='type-id-11' name='probe' filepath='liblttng-ust/tracepoint.c' line='677' column='1'/>
+      <!-- parameter of type 'void*' -->
+      <parameter type-id='type-id-8' name='data' filepath='liblttng-ust/tracepoint.c' line='677' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-5'/>
+    </function-decl>
+    <!-- int __tracepoint_probe_unregister(const char*, void ()*, void*) -->
+    <function-decl name='__tracepoint_probe_unregister' mangled-name='__tracepoint_probe_unregister' filepath='liblttng-ust/tracepoint.c' line='650' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='__tracepoint_probe_unregister'>
+      <!-- parameter of type 'const char*' -->
+      <parameter type-id='type-id-14' name='name' filepath='liblttng-ust/tracepoint.c' line='650' column='1'/>
+      <!-- parameter of type 'void ()*' -->
+      <parameter type-id='type-id-11' name='probe' filepath='liblttng-ust/tracepoint.c' line='650' column='1'/>
+      <!-- parameter of type 'void*' -->
+      <parameter type-id='type-id-8' name='data' filepath='liblttng-ust/tracepoint.c' line='651' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-5'/>
+    </function-decl>
+    <!-- int __tracepoint_probe_register_queue_release(const char*, void ()*, void*, const char*) -->
+    <function-decl name='__tracepoint_probe_register_queue_release' mangled-name='__tracepoint_probe_register_queue_release' filepath='liblttng-ust/tracepoint.c' line='605' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='__tracepoint_probe_register_queue_release'>
+      <!-- parameter of type 'const char*' -->
+      <parameter type-id='type-id-14' name='name' filepath='liblttng-ust/tracepoint.c' line='605' column='1'/>
+      <!-- parameter of type 'void ()*' -->
+      <parameter type-id='type-id-11' name='probe' filepath='liblttng-ust/tracepoint.c' line='606' column='1'/>
+      <!-- parameter of type 'void*' -->
+      <parameter type-id='type-id-8' name='data' filepath='liblttng-ust/tracepoint.c' line='606' column='1'/>
+      <!-- parameter of type 'const char*' -->
+      <parameter type-id='type-id-14' name='signature' filepath='liblttng-ust/tracepoint.c' line='606' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-5'/>
+    </function-decl>
+    <!-- int __tracepoint_probe_register(const char*, void ()*, void*, const char*) -->
+    <function-decl name='__tracepoint_probe_register' mangled-name='__tracepoint_probe_register' filepath='liblttng-ust/tracepoint.c' line='578' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='__tracepoint_probe_register'>
+      <!-- parameter of type 'const char*' -->
+      <parameter type-id='type-id-14' name='name' filepath='liblttng-ust/tracepoint.c' line='578' column='1'/>
+      <!-- parameter of type 'void ()*' -->
+      <parameter type-id='type-id-11' name='probe' filepath='liblttng-ust/tracepoint.c' line='578' column='1'/>
+      <!-- parameter of type 'void*' -->
+      <parameter type-id='type-id-8' name='data' filepath='liblttng-ust/tracepoint.c' line='579' column='1'/>
+      <!-- parameter of type 'const char*' -->
+      <parameter type-id='type-id-14' name='signature' filepath='liblttng-ust/tracepoint.c' line='579' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-5'/>
+    </function-decl>
+    <!-- int (lttng_ust_tracepoint* const*) -->
+    <function-type size-in-bits='64' id='type-id-19'>
+      <!-- parameter of type 'lttng_ust_tracepoint* const*' -->
+      <parameter type-id='type-id-23'/>
+      <!-- int -->
+      <return type-id='type-id-5'/>
+    </function-type>
+    <!-- int (lttng_ust_tracepoint* const*, int) -->
+    <function-type size-in-bits='64' id='type-id-20'>
+      <!-- parameter of type 'lttng_ust_tracepoint* const*' -->
+      <parameter type-id='type-id-23'/>
+      <!-- parameter of type 'int' -->
+      <parameter type-id='type-id-5'/>
+      <!-- int -->
+      <return type-id='type-id-5'/>
+    </function-type>
+    <!-- void () -->
+    <function-type size-in-bits='64' id='type-id-25'>
+      <!-- void -->
+      <return type-id='type-id-6'/>
+    </function-type>
+    <!-- void (lttng_ust_tracepoint*) -->
+    <function-type size-in-bits='64' id='type-id-26'>
+      <!-- parameter of type 'lttng_ust_tracepoint*' -->
+      <parameter type-id='type-id-21'/>
+      <!-- void -->
+      <return type-id='type-id-6'/>
+    </function-type>
+    <!-- void* (void*) -->
+    <function-type size-in-bits='64' id='type-id-28'>
+      <!-- parameter of type 'void*' -->
+      <parameter type-id='type-id-8'/>
+      <!-- void* -->
+      <return type-id='type-id-8'/>
+    </function-type>
+  </abi-instr>
+  <abi-instr version='1.0' address-size='64' path='fflush.c' comp-dir-path='snprintf' language='LANG_C99'>
+
+
+
+    <!-- char[4] -->
+    <array-type-def dimensions='1' type-id='type-id-1' size-in-bits='32' id='type-id-29'>
+      <!-- <anonymous range>[4] -->
+      <subrange length='4' type-id='type-id-3' id='type-id-30'/>
+
+    </array-type-def>
+    <!-- long int -->
+    <type-decl name='long int' size-in-bits='64' id='type-id-31'/>
+    <!-- short int -->
+    <type-decl name='short int' size-in-bits='16' id='type-id-32'/>
+    <!-- unsigned char -->
+    <type-decl name='unsigned char' size-in-bits='8' id='type-id-33'/>
+    <!-- unsigned char[1] -->
+    <array-type-def dimensions='1' type-id='type-id-33' size-in-bits='8' id='type-id-34'>
+      <!-- <anonymous range>[1] -->
+      <subrange length='1' type-id='type-id-3' id='type-id-35'/>
+
+    </array-type-def>
+    <!-- unsigned char[3] -->
+    <array-type-def dimensions='1' type-id='type-id-33' size-in-bits='24' id='type-id-36'>
+      <!-- <anonymous range>[3] -->
+      <subrange length='3' type-id='type-id-3' id='type-id-37'/>
+
+    </array-type-def>
+    <!-- unsigned int -->
+    <type-decl name='unsigned int' size-in-bits='32' id='type-id-38'/>
+    <!-- typedef __lttng_ust_sFILE LTTNG_UST_LFILE -->
+    <typedef-decl name='LTTNG_UST_LFILE' type-id='type-id-39' filepath='snprintf/various.h' line='99' column='1' id='type-id-40'/>
+    <!-- struct __lttng_ust_sFILE -->
+    <class-decl name='__lttng_ust_sFILE' size-in-bits='1280' is-struct='yes' visibility='default' filepath='snprintf/various.h' line='67' column='1' id='type-id-39'>
+      <data-member access='public' layout-offset-in-bits='0'>
+        <!-- unsigned char* __lttng_ust_sFILE::_p -->
+        <var-decl name='_p' type-id='type-id-41' visibility='default' filepath='snprintf/various.h' line='68' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='64'>
+        <!-- int __lttng_ust_sFILE::_r -->
+        <var-decl name='_r' type-id='type-id-5' visibility='default' filepath='snprintf/various.h' line='69' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='96'>
+        <!-- int __lttng_ust_sFILE::_w -->
+        <var-decl name='_w' type-id='type-id-5' visibility='default' filepath='snprintf/various.h' line='70' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='128'>
+        <!-- short int __lttng_ust_sFILE::_flags -->
+        <var-decl name='_flags' type-id='type-id-32' visibility='default' filepath='snprintf/various.h' line='71' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='144'>
+        <!-- short int __lttng_ust_sFILE::_file -->
+        <var-decl name='_file' type-id='type-id-32' visibility='default' filepath='snprintf/various.h' line='72' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='192'>
+        <!-- __lttng_ust_sbuf __lttng_ust_sFILE::_bf -->
+        <var-decl name='_bf' type-id='type-id-42' visibility='default' filepath='snprintf/various.h' line='73' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='320'>
+        <!-- int __lttng_ust_sFILE::_lbfsize -->
+        <var-decl name='_lbfsize' type-id='type-id-5' visibility='default' filepath='snprintf/various.h' line='74' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='384'>
+        <!-- void* __lttng_ust_sFILE::_cookie -->
+        <var-decl name='_cookie' type-id='type-id-8' visibility='default' filepath='snprintf/various.h' line='77' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='448'>
+        <!-- int (void*)* __lttng_ust_sFILE::_close -->
+        <var-decl name='_close' type-id='type-id-43' visibility='default' filepath='snprintf/various.h' line='78' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='512'>
+        <!-- int (void*, char*, int)* __lttng_ust_sFILE::_read -->
+        <var-decl name='_read' type-id='type-id-44' visibility='default' filepath='snprintf/various.h' line='79' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='576'>
+        <!-- typedef fpos_t (void*, typedef fpos_t, int)* __lttng_ust_sFILE::_seek -->
+        <var-decl name='_seek' type-id='type-id-45' visibility='default' filepath='snprintf/various.h' line='80' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='640'>
+        <!-- int (void*, const char*, int)* __lttng_ust_sFILE::_write -->
+        <var-decl name='_write' type-id='type-id-46' visibility='default' filepath='snprintf/various.h' line='81' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='704'>
+        <!-- __lttng_ust_sbuf __lttng_ust_sFILE::_ext -->
+        <var-decl name='_ext' type-id='type-id-42' visibility='default' filepath='snprintf/various.h' line='84' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='832'>
+        <!-- unsigned char* __lttng_ust_sFILE::_up -->
+        <var-decl name='_up' type-id='type-id-41' visibility='default' filepath='snprintf/various.h' line='86' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='896'>
+        <!-- int __lttng_ust_sFILE::_ur -->
+        <var-decl name='_ur' type-id='type-id-5' visibility='default' filepath='snprintf/various.h' line='87' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='928'>
+        <!-- unsigned char __lttng_ust_sFILE::_ubuf[3] -->
+        <var-decl name='_ubuf' type-id='type-id-36' visibility='default' filepath='snprintf/various.h' line='90' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='952'>
+        <!-- unsigned char __lttng_ust_sFILE::_nbuf[1] -->
+        <var-decl name='_nbuf' type-id='type-id-34' visibility='default' filepath='snprintf/various.h' line='91' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='960'>
+        <!-- __lttng_ust_sbuf __lttng_ust_sFILE::_lb -->
+        <var-decl name='_lb' type-id='type-id-42' visibility='default' filepath='snprintf/various.h' line='94' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='1088'>
+        <!-- int __lttng_ust_sFILE::_blksize -->
+        <var-decl name='_blksize' type-id='type-id-5' visibility='default' filepath='snprintf/various.h' line='97' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='1152'>
+        <!-- fpos_t __lttng_ust_sFILE::_offset -->
+        <var-decl name='_offset' type-id='type-id-47' visibility='default' filepath='snprintf/various.h' line='98' column='1'/>
+      </data-member>
+    </class-decl>
+    <!-- struct __lttng_ust_sbuf -->
+    <class-decl name='__lttng_ust_sbuf' size-in-bits='128' is-struct='yes' visibility='default' filepath='snprintf/various.h' line='38' column='1' id='type-id-42'>
+      <data-member access='public' layout-offset-in-bits='0'>
+        <!-- unsigned char* __lttng_ust_sbuf::_base -->
+        <var-decl name='_base' type-id='type-id-41' visibility='default' filepath='snprintf/various.h' line='39' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='64'>
+        <!-- int __lttng_ust_sbuf::_size -->
+        <var-decl name='_size' type-id='type-id-5' visibility='default' filepath='snprintf/various.h' line='40' column='1'/>
+      </data-member>
+    </class-decl>
+    <!-- typedef __fpos_t fpos_t -->
+    <typedef-decl name='fpos_t' type-id='type-id-48' filepath='/usr/include/stdio.h' line='84' column='1' id='type-id-47'/>
+    <!-- typedef _G_fpos_t __fpos_t -->
+    <typedef-decl name='__fpos_t' type-id='type-id-49' filepath='/usr/include/bits/types/__fpos_t.h' line='14' column='1' id='type-id-48'/>
+    <!-- struct _G_fpos_t -->
+    <class-decl name='_G_fpos_t' size-in-bits='128' is-struct='yes' visibility='default' filepath='/usr/include/bits/types/__fpos_t.h' line='10' column='1' id='type-id-49'>
+      <data-member access='public' layout-offset-in-bits='0'>
+        <!-- __off_t _G_fpos_t::__pos -->
+        <var-decl name='__pos' type-id='type-id-50' visibility='default' filepath='/usr/include/bits/types/__fpos_t.h' line='12' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='64'>
+        <!-- __mbstate_t _G_fpos_t::__state -->
+        <var-decl name='__state' type-id='type-id-51' visibility='default' filepath='/usr/include/bits/types/__fpos_t.h' line='13' column='1'/>
+      </data-member>
+    </class-decl>
+    <!-- typedef long int __off_t -->
+    <typedef-decl name='__off_t' type-id='type-id-31' filepath='/usr/include/bits/types.h' line='152' column='1' id='type-id-50'/>
+    <!-- typedef __anonymous_struct__ __mbstate_t -->
+    <typedef-decl name='__mbstate_t' type-id='type-id-52' filepath='/usr/include/bits/types/__mbstate_t.h' line='21' column='1' id='type-id-51'/>
+    <!-- struct {int __count; union {unsigned int __wch; char __wchb[4];} __value;} -->
+    <class-decl name='__anonymous_struct__' size-in-bits='64' is-struct='yes' is-anonymous='yes' naming-typedef-id='type-id-51' visibility='default' filepath='/usr/include/bits/types/__mbstate_t.h' line='13' column='1' id='type-id-52'>
+      <data-member access='public' layout-offset-in-bits='0'>
+        <!-- int __count -->
+        <var-decl name='__count' type-id='type-id-5' visibility='default' filepath='/usr/include/bits/types/__mbstate_t.h' line='15' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='32'>
+        <!-- union {unsigned int __wch; char __wchb[4];} __value -->
+        <var-decl name='__value' type-id='type-id-53' visibility='default' filepath='/usr/include/bits/types/__mbstate_t.h' line='20' column='1'/>
+      </data-member>
+    </class-decl>
+    <!-- union {unsigned int __wch; char __wchb[4];} -->
+    <union-decl name='__anonymous_union__' size-in-bits='32' is-anonymous='yes' visibility='default' filepath='/usr/include/bits/types/__mbstate_t.h' line='16' column='1' id='type-id-53'>
+      <data-member access='private'>
+        <!-- unsigned int __wch -->
+        <var-decl name='__wch' type-id='type-id-38' visibility='default' filepath='/usr/include/bits/types/__mbstate_t.h' line='18' column='1'/>
+      </data-member>
+      <data-member access='private'>
+        <!-- char __wchb[4] -->
+        <var-decl name='__wchb' type-id='type-id-29' visibility='default' filepath='/usr/include/bits/types/__mbstate_t.h' line='19' column='1'/>
+      </data-member>
+    </union-decl>
+    <!-- LTTNG_UST_LFILE* -->
+    <pointer-type-def type-id='type-id-40' size-in-bits='64' id='type-id-54'/>
+    <!-- char* -->
+    <pointer-type-def type-id='type-id-1' size-in-bits='64' id='type-id-55'/>
+    <!-- int (void*)* -->
+    <pointer-type-def type-id='type-id-56' size-in-bits='64' id='type-id-43'/>
+    <!-- int (void*, char*, int)* -->
+    <pointer-type-def type-id='type-id-57' size-in-bits='64' id='type-id-44'/>
+    <!-- int (void*, const char*, int)* -->
+    <pointer-type-def type-id='type-id-58' size-in-bits='64' id='type-id-46'/>
+    <!-- typedef fpos_t (void*, typedef fpos_t, int)* -->
+    <pointer-type-def type-id='type-id-59' size-in-bits='64' id='type-id-45'/>
+    <!-- unsigned char* -->
+    <pointer-type-def type-id='type-id-33' size-in-bits='64' id='type-id-41'/>
+    <!-- int __sflush(LTTNG_UST_LFILE*) -->
+    <function-decl name='__sflush' mangled-name='__sflush' filepath='snprintf/fflush.c' line='53' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='__sflush'>
+      <!-- parameter of type 'LTTNG_UST_LFILE*' -->
+      <parameter type-id='type-id-54' name='fp' filepath='snprintf/fflush.c' line='53' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-5'/>
+    </function-decl>
+    <!-- int ust_safe_fflush(LTTNG_UST_LFILE*) -->
+    <function-decl name='ust_safe_fflush' mangled-name='ust_safe_fflush' filepath='snprintf/fflush.c' line='39' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='ust_safe_fflush'>
+      <!-- parameter of type 'LTTNG_UST_LFILE*' -->
+      <parameter type-id='type-id-54' name='fp' filepath='snprintf/fflush.c' line='39' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-5'/>
+    </function-decl>
+    <!-- int (void*) -->
+    <function-type size-in-bits='64' id='type-id-56'>
+      <!-- parameter of type 'void*' -->
+      <parameter type-id='type-id-8'/>
+      <!-- int -->
+      <return type-id='type-id-5'/>
+    </function-type>
+    <!-- int (void*, char*, int) -->
+    <function-type size-in-bits='64' id='type-id-57'>
+      <!-- parameter of type 'void*' -->
+      <parameter type-id='type-id-8'/>
+      <!-- parameter of type 'char*' -->
+      <parameter type-id='type-id-55'/>
+      <!-- parameter of type 'int' -->
+      <parameter type-id='type-id-5'/>
+      <!-- int -->
+      <return type-id='type-id-5'/>
+    </function-type>
+    <!-- int (void*, const char*, int) -->
+    <function-type size-in-bits='64' id='type-id-58'>
+      <!-- parameter of type 'void*' -->
+      <parameter type-id='type-id-8'/>
+      <!-- parameter of type 'const char*' -->
+      <parameter type-id='type-id-14'/>
+      <!-- parameter of type 'int' -->
+      <parameter type-id='type-id-5'/>
+      <!-- int -->
+      <return type-id='type-id-5'/>
+    </function-type>
+    <!-- fpos_t (void*, fpos_t, int) -->
+    <function-type size-in-bits='64' id='type-id-59'>
+      <!-- parameter of type 'void*' -->
+      <parameter type-id='type-id-8'/>
+      <!-- parameter of type 'typedef fpos_t' -->
+      <parameter type-id='type-id-47'/>
+      <!-- parameter of type 'int' -->
+      <parameter type-id='type-id-5'/>
+      <!-- typedef fpos_t -->
+      <return type-id='type-id-47'/>
+    </function-type>
+  </abi-instr>
+  <abi-instr version='1.0' address-size='64' path='fvwrite.c' comp-dir-path='snprintf' language='LANG_C99'>
+    <!-- struct __lttng_ust_suio -->
+    <class-decl name='__lttng_ust_suio' size-in-bits='128' is-struct='yes' visibility='default' filepath='snprintf/fvwrite.h' line='42' column='1' id='type-id-60'>
+      <data-member access='public' layout-offset-in-bits='0'>
+        <!-- __lttng_ust_siov* __lttng_ust_suio::uio_iov -->
+        <var-decl name='uio_iov' type-id='type-id-61' visibility='default' filepath='snprintf/fvwrite.h' line='43' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='64'>
+        <!-- int __lttng_ust_suio::uio_iovcnt -->
+        <var-decl name='uio_iovcnt' type-id='type-id-5' visibility='default' filepath='snprintf/fvwrite.h' line='44' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='96'>
+        <!-- int __lttng_ust_suio::uio_resid -->
+        <var-decl name='uio_resid' type-id='type-id-5' visibility='default' filepath='snprintf/fvwrite.h' line='45' column='1'/>
+      </data-member>
+    </class-decl>
+    <!-- struct __lttng_ust_siov -->
+    <class-decl name='__lttng_ust_siov' size-in-bits='128' is-struct='yes' visibility='default' filepath='snprintf/fvwrite.h' line='38' column='1' id='type-id-62'>
+      <data-member access='public' layout-offset-in-bits='0'>
+        <!-- void* __lttng_ust_siov::iov_base -->
+        <var-decl name='iov_base' type-id='type-id-8' visibility='default' filepath='snprintf/fvwrite.h' line='39' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='64'>
+        <!-- size_t __lttng_ust_siov::iov_len -->
+        <var-decl name='iov_len' type-id='type-id-63' visibility='default' filepath='snprintf/fvwrite.h' line='40' column='1'/>
+      </data-member>
+    </class-decl>
+    <!-- typedef unsigned long int size_t -->
+    <typedef-decl name='size_t' type-id='type-id-3' filepath='/usr/lib/gcc/x86_64-pc-linux-gnu/10.2.0/include/stddef.h' line='209' column='1' id='type-id-63'/>
+    <!-- __lttng_ust_siov* -->
+    <pointer-type-def type-id='type-id-62' size-in-bits='64' id='type-id-61'/>
+    <!-- __lttng_ust_suio* -->
+    <pointer-type-def type-id='type-id-60' size-in-bits='64' id='type-id-64'/>
+    <!-- int __sfvwrite(LTTNG_UST_LFILE*, __lttng_ust_suio*) -->
+    <function-decl name='__sfvwrite' mangled-name='__sfvwrite' filepath='snprintf/fvwrite.c' line='49' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='__sfvwrite'>
+      <!-- parameter of type 'LTTNG_UST_LFILE*' -->
+      <parameter type-id='type-id-54' name='fp' filepath='snprintf/fvwrite.c' line='49' column='1'/>
+      <!-- parameter of type '__lttng_ust_suio*' -->
+      <parameter type-id='type-id-64' name='uio' filepath='snprintf/fvwrite.c' line='49' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-5'/>
+    </function-decl>
+  </abi-instr>
+  <abi-instr version='1.0' address-size='64' path='mbrtowc_sb.c' comp-dir-path='snprintf' language='LANG_C99'>
+    <!-- typedef int wchar_t -->
+    <typedef-decl name='wchar_t' type-id='type-id-5' filepath='/usr/lib/gcc/x86_64-pc-linux-gnu/10.2.0/include/stddef.h' line='321' column='1' id='type-id-65'/>
+    <!-- typedef __mbstate_t mbstate_t -->
+    <typedef-decl name='mbstate_t' type-id='type-id-51' filepath='/usr/include/bits/types/mbstate_t.h' line='6' column='1' id='type-id-66'/>
+    <!-- mbstate_t* -->
+    <pointer-type-def type-id='type-id-66' size-in-bits='64' id='type-id-67'/>
+    <!-- wchar_t* -->
+    <pointer-type-def type-id='type-id-65' size-in-bits='64' id='type-id-68'/>
+    <!-- size_t ust_safe_mbrtowc(wchar_t*, const char*, size_t, mbstate_t*) -->
+    <function-decl name='ust_safe_mbrtowc' mangled-name='ust_safe_mbrtowc' filepath='snprintf/mbrtowc_sb.c' line='39' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='ust_safe_mbrtowc'>
+      <!-- parameter of type 'wchar_t*' -->
+      <parameter type-id='type-id-68' name='pwc' filepath='snprintf/mbrtowc_sb.c' line='39' column='1'/>
+      <!-- parameter of type 'const char*' -->
+      <parameter type-id='type-id-14' name='s' filepath='snprintf/mbrtowc_sb.c' line='39' column='1'/>
+      <!-- parameter of type 'typedef size_t' -->
+      <parameter type-id='type-id-63' name='n' filepath='snprintf/mbrtowc_sb.c' line='39' column='1'/>
+      <!-- parameter of type 'mbstate_t*' -->
+      <parameter type-id='type-id-67' name='ps' filepath='snprintf/mbrtowc_sb.c' line='39' column='1'/>
+      <!-- typedef size_t -->
+      <return type-id='type-id-63'/>
+    </function-decl>
+  </abi-instr>
+  <abi-instr version='1.0' address-size='64' path='snprintf.c' comp-dir-path='snprintf' language='LANG_C99'>
+    <!-- struct __va_list_tag -->
+    <class-decl name='__va_list_tag' size-in-bits='192' is-struct='yes' visibility='default' id='type-id-69'>
+      <data-member access='public' layout-offset-in-bits='0'>
+        <!-- unsigned int __va_list_tag::gp_offset -->
+        <var-decl name='gp_offset' type-id='type-id-38' visibility='default'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='32'>
+        <!-- unsigned int __va_list_tag::fp_offset -->
+        <var-decl name='fp_offset' type-id='type-id-38' visibility='default'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='64'>
+        <!-- void* __va_list_tag::overflow_arg_area -->
+        <var-decl name='overflow_arg_area' type-id='type-id-8' visibility='default'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='128'>
+        <!-- void* __va_list_tag::reg_save_area -->
+        <var-decl name='reg_save_area' type-id='type-id-8' visibility='default'/>
+      </data-member>
+    </class-decl>
+    <!-- __va_list_tag* -->
+    <pointer-type-def type-id='type-id-69' size-in-bits='64' id='type-id-70'/>
+    <!-- int ust_safe_snprintf(char*, size_t, const char*, ...) -->
+    <function-decl name='ust_safe_snprintf' mangled-name='ust_safe_snprintf' filepath='snprintf/snprintf.c' line='68' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='ust_safe_snprintf'>
+      <!-- parameter of type 'char*' -->
+      <parameter type-id='type-id-55' name='str' filepath='snprintf/snprintf.c' line='68' column='1'/>
+      <!-- parameter of type 'typedef size_t' -->
+      <parameter type-id='type-id-63' name='n' filepath='snprintf/snprintf.c' line='68' column='1'/>
+      <!-- parameter of type 'const char*' -->
+      <parameter type-id='type-id-14' name='fmt' filepath='snprintf/snprintf.c' line='68' column='1'/>
+      <parameter is-variadic='yes'/>
+      <!-- int -->
+      <return type-id='type-id-5'/>
+    </function-decl>
+    <!-- int ust_safe_vsnprintf(char*, size_t, const char*, __va_list_tag*) -->
+    <function-decl name='ust_safe_vsnprintf' mangled-name='ust_safe_vsnprintf' filepath='snprintf/snprintf.c' line='43' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='ust_safe_vsnprintf'>
+      <!-- parameter of type 'char*' -->
+      <parameter type-id='type-id-55' name='str' filepath='snprintf/snprintf.c' line='43' column='1'/>
+      <!-- parameter of type 'typedef size_t' -->
+      <parameter type-id='type-id-63' name='n' filepath='snprintf/snprintf.c' line='43' column='1'/>
+      <!-- parameter of type 'const char*' -->
+      <parameter type-id='type-id-14' name='fmt' filepath='snprintf/snprintf.c' line='43' column='1'/>
+      <!-- parameter of type '__va_list_tag*' -->
+      <parameter type-id='type-id-70' name='ap' filepath='snprintf/snprintf.c' line='43' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-5'/>
+    </function-decl>
+  </abi-instr>
+  <abi-instr version='1.0' address-size='64' path='vfprintf.c' comp-dir-path='snprintf' language='LANG_C99'>
+    <!-- int ust_safe_vfprintf(LTTNG_UST_LFILE*, const char*, __va_list_tag*) -->
+    <function-decl name='ust_safe_vfprintf' mangled-name='ust_safe_vfprintf' filepath='snprintf/vfprintf.c' line='192' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='ust_safe_vfprintf'>
+      <!-- parameter of type 'LTTNG_UST_LFILE*' -->
+      <parameter type-id='type-id-54' name='fp' filepath='snprintf/vfprintf.c' line='192' column='1'/>
+      <!-- parameter of type 'const char*' -->
+      <parameter type-id='type-id-14' name='fmt0' filepath='snprintf/vfprintf.c' line='192' column='1'/>
+      <!-- parameter of type '__va_list_tag*' -->
+      <parameter type-id='type-id-70' name='ap' filepath='snprintf/vfprintf.c' line='192' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-5'/>
+    </function-decl>
+  </abi-instr>
+  <abi-instr version='1.0' address-size='64' path='wsetup.c' comp-dir-path='snprintf' language='LANG_C99'>
+    <!-- int __swsetup(LTTNG_UST_LFILE*) -->
+    <function-decl name='__swsetup' mangled-name='__swsetup' filepath='snprintf/wsetup.c' line='45' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='__swsetup'>
+      <!-- parameter of type 'LTTNG_UST_LFILE*' -->
+      <parameter type-id='type-id-54' name='fp' filepath='snprintf/wsetup.c' line='45' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-5'/>
+    </function-decl>
+  </abi-instr>
+  <abi-instr version='1.0' address-size='64' path='core.c' comp-dir-path='snprintf' language='LANG_C99'>
+    <!-- unnamed&#45;enum&#45;underlying&#45;type -->
+    <type-decl name='unnamed-enum-underlying-type' is-anonymous='yes' size-in-bits='32' alignment-in-bits='32' id='type-id-71'/>
+    <!-- enum ust_loglevel -->
+    <enum-decl name='ust_loglevel' filepath='../include/usterr-signal-safe.h' line='31' column='1' id='type-id-72'>
+      <underlying-type type-id='type-id-71'/>
+      <enumerator name='UST_LOGLEVEL_UNKNOWN' value='0'/>
+      <enumerator name='UST_LOGLEVEL_NORMAL' value='1'/>
+      <enumerator name='UST_LOGLEVEL_DEBUG' value='2'/>
+    </enum-decl>
+    <!-- volatile ust_loglevel -->
+    <qualified-type-def type-id='type-id-72' volatile='yes' id='type-id-73'/>
+    <!-- volatile ust_loglevel ust_loglevel -->
+    <var-decl name='ust_loglevel' type-id='type-id-73' mangled-name='ust_loglevel' visibility='default' filepath='../include/usterr-signal-safe.h' line='37' column='1' elf-symbol-id='ust_loglevel'/>
+    <!-- void init_usterr() -->
+    <function-decl name='init_usterr' mangled-name='init_usterr' filepath='snprintf/core.c' line='25' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='init_usterr'>
+      <!-- void -->
+      <return type-id='type-id-6'/>
+    </function-decl>
+  </abi-instr>
+  <abi-instr version='1.0' address-size='64' path='patient_write.c' comp-dir-path='snprintf' language='LANG_C99'>
+    <!-- typedef __ssize_t ssize_t -->
+    <typedef-decl name='ssize_t' type-id='type-id-74' filepath='/usr/include/unistd.h' line='220' column='1' id='type-id-75'/>
+    <!-- typedef long int __ssize_t -->
+    <typedef-decl name='__ssize_t' type-id='type-id-31' filepath='/usr/include/bits/types.h' line='194' column='1' id='type-id-74'/>
+    <!-- ssize_t patient_send(int, void*, size_t, int) -->
+    <function-decl name='patient_send' mangled-name='patient_send' filepath='snprintf/patient_write.c' line='59' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='patient_send'>
+      <!-- parameter of type 'int' -->
+      <parameter type-id='type-id-5' name='fd' filepath='snprintf/patient_write.c' line='59' column='1'/>
+      <!-- parameter of type 'void*' -->
+      <parameter type-id='type-id-8' name='buf' filepath='snprintf/patient_write.c' line='59' column='1'/>
+      <!-- parameter of type 'typedef size_t' -->
+      <parameter type-id='type-id-63' name='count' filepath='snprintf/patient_write.c' line='59' column='1'/>
+      <!-- parameter of type 'int' -->
+      <parameter type-id='type-id-5' name='flags' filepath='snprintf/patient_write.c' line='59' column='1'/>
+      <!-- typedef ssize_t -->
+      <return type-id='type-id-75'/>
+    </function-decl>
+    <!-- ssize_t patient_write(int, void*, size_t) -->
+    <function-decl name='patient_write' mangled-name='patient_write' filepath='snprintf/patient_write.c' line='35' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='patient_write'>
+      <!-- parameter of type 'int' -->
+      <parameter type-id='type-id-5' name='fd' filepath='snprintf/patient_write.c' line='35' column='1'/>
+      <!-- parameter of type 'void*' -->
+      <parameter type-id='type-id-8' name='buf' filepath='snprintf/patient_write.c' line='35' column='1'/>
+      <!-- parameter of type 'typedef size_t' -->
+      <parameter type-id='type-id-63' name='count' filepath='snprintf/patient_write.c' line='35' column='1'/>
+      <!-- typedef ssize_t -->
+      <return type-id='type-id-75'/>
+    </function-decl>
+  </abi-instr>
+</abi-corpus>

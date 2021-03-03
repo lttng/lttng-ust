@@ -1,0 +1,224 @@
+<abi-corpus architecture='elf-amd-x86_64' soname='liblttng-ust-dl.so.0'>
+  <elf-needed>
+    <dependency name='liblttng-ust.so.0'/>
+    <dependency name='liblttng-ust-tracepoint.so.0'/>
+    <dependency name='librt.so.1'/>
+    <dependency name='libdl.so.2'/>
+    <dependency name='liburcu-bp.so.6'/>
+    <dependency name='liburcu-cds.so.6'/>
+    <dependency name='libpthread.so.0'/>
+    <dependency name='libc.so.6'/>
+    <dependency name='ld-linux-x86-64.so.2'/>
+  </elf-needed>
+  <elf-function-symbols>
+    <!-- dlclose -->
+    <elf-symbol name='dlclose' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- dlmopen -->
+    <elf-symbol name='dlmopen' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- dlopen -->
+    <elf-symbol name='dlopen' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+  </elf-function-symbols>
+  <elf-variable-symbols>
+    <!-- __tracepoint_lttng_ust_dl___build_id -->
+    <elf-symbol name='__tracepoint_lttng_ust_dl___build_id' size='56' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- __tracepoint_lttng_ust_dl___debug_link -->
+    <elf-symbol name='__tracepoint_lttng_ust_dl___debug_link' size='56' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- __tracepoint_lttng_ust_dl___dlclose -->
+    <elf-symbol name='__tracepoint_lttng_ust_dl___dlclose' size='56' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- __tracepoint_lttng_ust_dl___dlmopen -->
+    <elf-symbol name='__tracepoint_lttng_ust_dl___dlmopen' size='56' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- __tracepoint_lttng_ust_dl___dlopen -->
+    <elf-symbol name='__tracepoint_lttng_ust_dl___dlopen' size='56' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- __tracepoint_provider_lttng_ust_dl -->
+    <elf-symbol name='__tracepoint_provider_lttng_ust_dl' size='4' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- __tracepoints__disable_destructors -->
+    <elf-symbol name='__tracepoints__disable_destructors' size='4' type='object-type' binding='weak-binding' visibility='default-visibility' is-defined='yes'/>
+  </elf-variable-symbols>
+  <abi-instr version='1.0' address-size='64' path='lttng-ust-dl.c' comp-dir-path='liblttng-ust-dl' language='LANG_C99'>
+
+    <!-- char -->
+    <type-decl name='char' size-in-bits='8' id='type-id-1'/>
+    <!-- char[16] -->
+    <array-type-def dimensions='1' type-id='type-id-1' size-in-bits='128' id='type-id-2'>
+      <!-- <anonymous range>[16] -->
+      <subrange length='16' type-id='type-id-3' id='type-id-4'/>
+
+    </array-type-def>
+    <!-- int -->
+    <type-decl name='int' size-in-bits='32' id='type-id-5'/>
+    <!-- long int -->
+    <type-decl name='long int' size-in-bits='64' id='type-id-6'/>
+    <!-- unsigned long int -->
+    <type-decl name='unsigned long int' size-in-bits='64' id='type-id-3'/>
+    <!-- void -->
+    <type-decl name='void' id='type-id-7'/>
+    <!-- struct lttng_ust_tracepoint_dlopen -->
+    <class-decl name='lttng_ust_tracepoint_dlopen' size-in-bits='384' is-struct='yes' visibility='default' filepath='../include/lttng/tracepoint.h' line='215' column='1' id='type-id-8'>
+      <data-member access='public' layout-offset-in-bits='0'>
+        <!-- void* lttng_ust_tracepoint_dlopen::liblttngust_handle -->
+        <var-decl name='liblttngust_handle' type-id='type-id-9' visibility='default' filepath='../include/lttng/tracepoint.h' line='216' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='64'>
+        <!-- int (lttng_ust_tracepoint* const*, int)* lttng_ust_tracepoint_dlopen::tracepoint_register_lib -->
+        <var-decl name='tracepoint_register_lib' type-id='type-id-10' visibility='default' filepath='../include/lttng/tracepoint.h' line='218' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='128'>
+        <!-- int (lttng_ust_tracepoint* const*)* lttng_ust_tracepoint_dlopen::tracepoint_unregister_lib -->
+        <var-decl name='tracepoint_unregister_lib' type-id='type-id-11' visibility='default' filepath='../include/lttng/tracepoint.h' line='220' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='192'>
+        <!-- void ()* lttng_ust_tracepoint_dlopen::rcu_read_lock_sym_bp -->
+        <var-decl name='rcu_read_lock_sym_bp' type-id='type-id-12' visibility='default' filepath='../include/lttng/tracepoint.h' line='221' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='256'>
+        <!-- void ()* lttng_ust_tracepoint_dlopen::rcu_read_unlock_sym_bp -->
+        <var-decl name='rcu_read_unlock_sym_bp' type-id='type-id-12' visibility='default' filepath='../include/lttng/tracepoint.h' line='222' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='320'>
+        <!-- void* (void*)* lttng_ust_tracepoint_dlopen::rcu_dereference_sym_bp -->
+        <var-decl name='rcu_dereference_sym_bp' type-id='type-id-13' visibility='default' filepath='../include/lttng/tracepoint.h' line='223' column='1'/>
+      </data-member>
+    </class-decl>
+    <!-- struct lttng_ust_tracepoint -->
+    <class-decl name='lttng_ust_tracepoint' size-in-bits='448' is-struct='yes' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='32' column='1' id='type-id-14'>
+      <data-member access='public' layout-offset-in-bits='0'>
+        <!-- const char* lttng_ust_tracepoint::name -->
+        <var-decl name='name' type-id='type-id-15' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='33' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='64'>
+        <!-- int lttng_ust_tracepoint::state -->
+        <var-decl name='state' type-id='type-id-5' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='34' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='128'>
+        <!-- lttng_ust_tracepoint_probe* lttng_ust_tracepoint::probes -->
+        <var-decl name='probes' type-id='type-id-16' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='35' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='192'>
+        <!-- int* lttng_ust_tracepoint::tracepoint_provider_ref -->
+        <var-decl name='tracepoint_provider_ref' type-id='type-id-17' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='36' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='256'>
+        <!-- const char* lttng_ust_tracepoint::signature -->
+        <var-decl name='signature' type-id='type-id-15' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='37' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='320'>
+        <!-- char lttng_ust_tracepoint::padding[16] -->
+        <var-decl name='padding' type-id='type-id-2' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='38' column='1'/>
+      </data-member>
+    </class-decl>
+    <!-- struct lttng_ust_tracepoint_probe -->
+    <class-decl name='lttng_ust_tracepoint_probe' size-in-bits='128' is-struct='yes' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='26' column='1' id='type-id-18'>
+      <data-member access='public' layout-offset-in-bits='0'>
+        <!-- void ()* lttng_ust_tracepoint_probe::func -->
+        <var-decl name='func' type-id='type-id-12' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='27' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='64'>
+        <!-- void* lttng_ust_tracepoint_probe::data -->
+        <var-decl name='data' type-id='type-id-9' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='28' column='1'/>
+      </data-member>
+    </class-decl>
+    <!-- typedef long int Lmid_t -->
+    <typedef-decl name='Lmid_t' type-id='type-id-6' filepath='/usr/include/dlfcn.h' line='44' column='1' id='type-id-19'/>
+    <!-- const char -->
+    <qualified-type-def type-id='type-id-1' const='yes' id='type-id-20'/>
+    <!-- const char* -->
+    <pointer-type-def type-id='type-id-20' size-in-bits='64' id='type-id-15'/>
+    <!-- int (lttng_ust_tracepoint* const*)* -->
+    <pointer-type-def type-id='type-id-21' size-in-bits='64' id='type-id-11'/>
+    <!-- int (lttng_ust_tracepoint* const*, int)* -->
+    <pointer-type-def type-id='type-id-22' size-in-bits='64' id='type-id-10'/>
+    <!-- int* -->
+    <pointer-type-def type-id='type-id-5' size-in-bits='64' id='type-id-17'/>
+    <!-- lttng_ust_tracepoint* -->
+    <pointer-type-def type-id='type-id-14' size-in-bits='64' id='type-id-23'/>
+    <!-- lttng_ust_tracepoint* const -->
+    <qualified-type-def type-id='type-id-23' const='yes' id='type-id-24'/>
+    <!-- lttng_ust_tracepoint* const* -->
+    <pointer-type-def type-id='type-id-24' size-in-bits='64' id='type-id-25'/>
+    <!-- lttng_ust_tracepoint_dlopen* -->
+    <pointer-type-def type-id='type-id-8' size-in-bits='64' id='type-id-26'/>
+    <!-- lttng_ust_tracepoint_probe* -->
+    <pointer-type-def type-id='type-id-18' size-in-bits='64' id='type-id-16'/>
+    <!-- void ()* -->
+    <pointer-type-def type-id='type-id-27' size-in-bits='64' id='type-id-12'/>
+    <!-- void* -->
+    <pointer-type-def type-id='type-id-7' size-in-bits='64' id='type-id-9'/>
+    <!-- void* (void*)* -->
+    <pointer-type-def type-id='type-id-28' size-in-bits='64' id='type-id-13'/>
+    <!-- int __tracepoints__disable_destructors -->
+    <var-decl name='__tracepoints__disable_destructors' type-id='type-id-5' mangled-name='__tracepoints__disable_destructors' visibility='default' filepath='../include/lttng/tracepoint.h' line='230' column='1' elf-symbol-id='__tracepoints__disable_destructors'/>
+    <!-- lttng_ust_tracepoint_dlopen tracepoint_dlopen -->
+    <var-decl name='tracepoint_dlopen' type-id='type-id-8' visibility='default' filepath='../include/lttng/tracepoint.h' line='226' column='1'/>
+    <!-- lttng_ust_tracepoint_dlopen* tracepoint_dlopen_ptr -->
+    <var-decl name='tracepoint_dlopen_ptr' type-id='type-id-26' visibility='default' filepath='../include/lttng/tracepoint.h' line='227' column='1'/>
+    <!-- lttng_ust_tracepoint __tracepoint_lttng_ust_dl___dlopen -->
+    <var-decl name='__tracepoint_lttng_ust_dl___dlopen' type-id='type-id-14' mangled-name='__tracepoint_lttng_ust_dl___dlopen' visibility='default' filepath='liblttng-ust-dl/ust_dl.h' line='41' column='1' elf-symbol-id='__tracepoint_lttng_ust_dl___dlopen'/>
+    <!-- lttng_ust_tracepoint __tracepoint_lttng_ust_dl___dlmopen -->
+    <var-decl name='__tracepoint_lttng_ust_dl___dlmopen' type-id='type-id-14' mangled-name='__tracepoint_lttng_ust_dl___dlmopen' visibility='default' filepath='liblttng-ust-dl/ust_dl.h' line='56' column='1' elf-symbol-id='__tracepoint_lttng_ust_dl___dlmopen'/>
+    <!-- lttng_ust_tracepoint __tracepoint_lttng_ust_dl___build_id -->
+    <var-decl name='__tracepoint_lttng_ust_dl___build_id' type-id='type-id-14' mangled-name='__tracepoint_lttng_ust_dl___build_id' visibility='default' filepath='liblttng-ust-dl/ust_dl.h' line='73' column='1' elf-symbol-id='__tracepoint_lttng_ust_dl___build_id'/>
+    <!-- lttng_ust_tracepoint __tracepoint_lttng_ust_dl___debug_link -->
+    <var-decl name='__tracepoint_lttng_ust_dl___debug_link' type-id='type-id-14' mangled-name='__tracepoint_lttng_ust_dl___debug_link' visibility='default' filepath='liblttng-ust-dl/ust_dl.h' line='87' column='1' elf-symbol-id='__tracepoint_lttng_ust_dl___debug_link'/>
+    <!-- lttng_ust_tracepoint __tracepoint_lttng_ust_dl___dlclose -->
+    <var-decl name='__tracepoint_lttng_ust_dl___dlclose' type-id='type-id-14' mangled-name='__tracepoint_lttng_ust_dl___dlclose' visibility='default' filepath='liblttng-ust-dl/ust_dl.h' line='101' column='1' elf-symbol-id='__tracepoint_lttng_ust_dl___dlclose'/>
+    <!-- int dlclose(void*) -->
+    <function-decl name='dlclose' mangled-name='dlclose' filepath='liblttng-ust-dl/lttng-ust-dl.c' line='255' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='dlclose'>
+      <!-- parameter of type 'void*' -->
+      <parameter type-id='type-id-9' name='handle' filepath='liblttng-ust-dl/lttng-ust-dl.c' line='255' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-5'/>
+    </function-decl>
+    <!-- void* dlmopen(Lmid_t, const char*, int) -->
+    <function-decl name='dlmopen' mangled-name='dlmopen' filepath='liblttng-ust-dl/lttng-ust-dl.c' line='233' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='dlmopen'>
+      <!-- parameter of type 'typedef Lmid_t' -->
+      <parameter type-id='type-id-19' name='nsid' filepath='liblttng-ust-dl/lttng-ust-dl.c' line='233' column='1'/>
+      <!-- parameter of type 'const char*' -->
+      <parameter type-id='type-id-15' name='filename' filepath='liblttng-ust-dl/lttng-ust-dl.c' line='233' column='1'/>
+      <!-- parameter of type 'int' -->
+      <parameter type-id='type-id-5' name='flags' filepath='liblttng-ust-dl/lttng-ust-dl.c' line='233' column='1'/>
+      <!-- void* -->
+      <return type-id='type-id-9'/>
+    </function-decl>
+    <!-- void* dlopen(const char*, int) -->
+    <function-decl name='dlopen' mangled-name='dlopen' filepath='liblttng-ust-dl/lttng-ust-dl.c' line='213' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='dlopen'>
+      <!-- parameter of type 'const char*' -->
+      <parameter type-id='type-id-15' name='filename' filepath='liblttng-ust-dl/lttng-ust-dl.c' line='213' column='1'/>
+      <!-- parameter of type 'int' -->
+      <parameter type-id='type-id-5' name='flags' filepath='liblttng-ust-dl/lttng-ust-dl.c' line='213' column='1'/>
+      <!-- void* -->
+      <return type-id='type-id-9'/>
+    </function-decl>
+    <!-- int (lttng_ust_tracepoint* const*) -->
+    <function-type size-in-bits='64' id='type-id-21'>
+      <!-- parameter of type 'lttng_ust_tracepoint* const*' -->
+      <parameter type-id='type-id-25'/>
+      <!-- int -->
+      <return type-id='type-id-5'/>
+    </function-type>
+    <!-- int (lttng_ust_tracepoint* const*, int) -->
+    <function-type size-in-bits='64' id='type-id-22'>
+      <!-- parameter of type 'lttng_ust_tracepoint* const*' -->
+      <parameter type-id='type-id-25'/>
+      <!-- parameter of type 'int' -->
+      <parameter type-id='type-id-5'/>
+      <!-- int -->
+      <return type-id='type-id-5'/>
+    </function-type>
+    <!-- void () -->
+    <function-type size-in-bits='64' id='type-id-27'>
+      <!-- void -->
+      <return type-id='type-id-7'/>
+    </function-type>
+    <!-- void* (void*) -->
+    <function-type size-in-bits='64' id='type-id-28'>
+      <!-- parameter of type 'void*' -->
+      <parameter type-id='type-id-9'/>
+      <!-- void* -->
+      <return type-id='type-id-9'/>
+    </function-type>
+  </abi-instr>
+  <abi-instr version='1.0' address-size='64' path='ust_dl.c' comp-dir-path='liblttng-ust-dl' language='LANG_C99'>
+    <!-- int __tracepoint_provider_lttng_ust_dl -->
+    <var-decl name='__tracepoint_provider_lttng_ust_dl' type-id='type-id-5' mangled-name='__tracepoint_provider_lttng_ust_dl' visibility='default' filepath='../include/lttng/ust-tracepoint-event.h' line='1051' column='1' elf-symbol-id='__tracepoint_provider_lttng_ust_dl'/>
+  </abi-instr>
+</abi-corpus>

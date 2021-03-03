@@ -1,0 +1,289 @@
+<abi-corpus architecture='elf-amd-x86_64' soname='liblttng-ust-libc-wrapper.so.0'>
+  <elf-needed>
+    <dependency name='liblttng-ust.so.0'/>
+    <dependency name='liblttng-ust-tracepoint.so.0'/>
+    <dependency name='librt.so.1'/>
+    <dependency name='libdl.so.2'/>
+    <dependency name='libnuma.so.1'/>
+    <dependency name='liburcu-bp.so.6'/>
+    <dependency name='liburcu-cds.so.6'/>
+    <dependency name='libpthread.so.0'/>
+    <dependency name='libc.so.6'/>
+    <dependency name='ld-linux-x86-64.so.2'/>
+  </elf-needed>
+  <elf-function-symbols>
+    <!-- calloc -->
+    <elf-symbol name='calloc' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- free -->
+    <elf-symbol name='free' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- lttng_ust_malloc_wrapper_init -->
+    <elf-symbol name='lttng_ust_malloc_wrapper_init' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- malloc -->
+    <elf-symbol name='malloc' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- memalign -->
+    <elf-symbol name='memalign' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- posix_memalign -->
+    <elf-symbol name='posix_memalign' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- realloc -->
+    <elf-symbol name='realloc' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+  </elf-function-symbols>
+  <elf-variable-symbols>
+    <!-- __tracepoint_lttng_ust_libc___calloc -->
+    <elf-symbol name='__tracepoint_lttng_ust_libc___calloc' size='56' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- __tracepoint_lttng_ust_libc___free -->
+    <elf-symbol name='__tracepoint_lttng_ust_libc___free' size='56' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- __tracepoint_lttng_ust_libc___malloc -->
+    <elf-symbol name='__tracepoint_lttng_ust_libc___malloc' size='56' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- __tracepoint_lttng_ust_libc___memalign -->
+    <elf-symbol name='__tracepoint_lttng_ust_libc___memalign' size='56' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- __tracepoint_lttng_ust_libc___posix_memalign -->
+    <elf-symbol name='__tracepoint_lttng_ust_libc___posix_memalign' size='56' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- __tracepoint_lttng_ust_libc___realloc -->
+    <elf-symbol name='__tracepoint_lttng_ust_libc___realloc' size='56' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- __tracepoint_provider_lttng_ust_libc -->
+    <elf-symbol name='__tracepoint_provider_lttng_ust_libc' size='4' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+  </elf-variable-symbols>
+  <abi-instr version='1.0' address-size='64' path='lttng-ust-malloc.c' comp-dir-path='liblttng-ust-libc-wrapper' language='LANG_C99'>
+
+    <!-- char -->
+    <type-decl name='char' size-in-bits='8' id='type-id-1'/>
+    <!-- char[16] -->
+    <array-type-def dimensions='1' type-id='type-id-1' size-in-bits='128' id='type-id-2'>
+      <!-- <anonymous range>[16] -->
+      <subrange length='16' type-id='type-id-3' id='type-id-4'/>
+
+    </array-type-def>
+    <!-- int -->
+    <type-decl name='int' size-in-bits='32' id='type-id-5'/>
+    <!-- unsigned long int -->
+    <type-decl name='unsigned long int' size-in-bits='64' id='type-id-3'/>
+    <!-- void -->
+    <type-decl name='void' id='type-id-6'/>
+    <!-- struct lttng_ust_tracepoint_dlopen -->
+    <class-decl name='lttng_ust_tracepoint_dlopen' size-in-bits='384' is-struct='yes' visibility='default' filepath='../include/lttng/tracepoint.h' line='230' column='1' id='type-id-7'>
+      <data-member access='public' layout-offset-in-bits='0'>
+        <!-- void* lttng_ust_tracepoint_dlopen::liblttngust_handle -->
+        <var-decl name='liblttngust_handle' type-id='type-id-8' visibility='default' filepath='../include/lttng/tracepoint.h' line='231' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='64'>
+        <!-- int (lttng_ust_tracepoint* const*, int)* lttng_ust_tracepoint_dlopen::tracepoint_register_lib -->
+        <var-decl name='tracepoint_register_lib' type-id='type-id-9' visibility='default' filepath='../include/lttng/tracepoint.h' line='233' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='128'>
+        <!-- int (lttng_ust_tracepoint* const*)* lttng_ust_tracepoint_dlopen::tracepoint_unregister_lib -->
+        <var-decl name='tracepoint_unregister_lib' type-id='type-id-10' visibility='default' filepath='../include/lttng/tracepoint.h' line='235' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='192'>
+        <!-- void ()* lttng_ust_tracepoint_dlopen::rcu_read_lock_sym_bp -->
+        <var-decl name='rcu_read_lock_sym_bp' type-id='type-id-11' visibility='default' filepath='../include/lttng/tracepoint.h' line='236' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='256'>
+        <!-- void ()* lttng_ust_tracepoint_dlopen::rcu_read_unlock_sym_bp -->
+        <var-decl name='rcu_read_unlock_sym_bp' type-id='type-id-11' visibility='default' filepath='../include/lttng/tracepoint.h' line='237' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='320'>
+        <!-- void* (void*)* lttng_ust_tracepoint_dlopen::rcu_dereference_sym_bp -->
+        <var-decl name='rcu_dereference_sym_bp' type-id='type-id-12' visibility='default' filepath='../include/lttng/tracepoint.h' line='238' column='1'/>
+      </data-member>
+    </class-decl>
+    <!-- struct lttng_ust_tracepoint -->
+    <class-decl name='lttng_ust_tracepoint' size-in-bits='448' is-struct='yes' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='32' column='1' id='type-id-13'>
+      <data-member access='public' layout-offset-in-bits='0'>
+        <!-- const char* lttng_ust_tracepoint::name -->
+        <var-decl name='name' type-id='type-id-14' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='33' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='64'>
+        <!-- int lttng_ust_tracepoint::state -->
+        <var-decl name='state' type-id='type-id-5' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='34' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='128'>
+        <!-- lttng_ust_tracepoint_probe* lttng_ust_tracepoint::probes -->
+        <var-decl name='probes' type-id='type-id-15' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='35' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='192'>
+        <!-- int* lttng_ust_tracepoint::tracepoint_provider_ref -->
+        <var-decl name='tracepoint_provider_ref' type-id='type-id-16' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='36' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='256'>
+        <!-- const char* lttng_ust_tracepoint::signature -->
+        <var-decl name='signature' type-id='type-id-14' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='37' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='320'>
+        <!-- char lttng_ust_tracepoint::padding[16] -->
+        <var-decl name='padding' type-id='type-id-2' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='38' column='1'/>
+      </data-member>
+    </class-decl>
+    <!-- struct lttng_ust_tracepoint_probe -->
+    <class-decl name='lttng_ust_tracepoint_probe' size-in-bits='128' is-struct='yes' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='26' column='1' id='type-id-17'>
+      <data-member access='public' layout-offset-in-bits='0'>
+        <!-- void ()* lttng_ust_tracepoint_probe::func -->
+        <var-decl name='func' type-id='type-id-11' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='27' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='64'>
+        <!-- void* lttng_ust_tracepoint_probe::data -->
+        <var-decl name='data' type-id='type-id-8' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='28' column='1'/>
+      </data-member>
+    </class-decl>
+    <!-- struct lttng_ust_tracepoint_destructors_syms -->
+    <class-decl name='lttng_ust_tracepoint_destructors_syms' size-in-bits='192' is-struct='yes' visibility='default' filepath='../include/lttng/tracepoint.h' line='273' column='1' id='type-id-18'>
+      <data-member access='public' layout-offset-in-bits='0'>
+        <!-- int* lttng_ust_tracepoint_destructors_syms::old_tracepoint_disable_destructors -->
+        <var-decl name='old_tracepoint_disable_destructors' type-id='type-id-16' visibility='default' filepath='../include/lttng/tracepoint.h' line='274' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='64'>
+        <!-- void ()* lttng_ust_tracepoint_destructors_syms::tracepoint_disable_destructors -->
+        <var-decl name='tracepoint_disable_destructors' type-id='type-id-11' visibility='default' filepath='../include/lttng/tracepoint.h' line='275' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='128'>
+        <!-- int ()* lttng_ust_tracepoint_destructors_syms::tracepoint_get_destructors_state -->
+        <var-decl name='tracepoint_get_destructors_state' type-id='type-id-19' visibility='default' filepath='../include/lttng/tracepoint.h' line='276' column='1'/>
+      </data-member>
+    </class-decl>
+    <!-- typedef unsigned long int size_t -->
+    <typedef-decl name='size_t' type-id='type-id-3' filepath='/usr/lib/gcc/x86_64-pc-linux-gnu/10.2.0/include/stddef.h' line='209' column='1' id='type-id-20'/>
+    <!-- const char -->
+    <qualified-type-def type-id='type-id-1' const='yes' id='type-id-21'/>
+    <!-- const char* -->
+    <pointer-type-def type-id='type-id-21' size-in-bits='64' id='type-id-14'/>
+    <!-- int ()* -->
+    <pointer-type-def type-id='type-id-22' size-in-bits='64' id='type-id-19'/>
+    <!-- int (lttng_ust_tracepoint* const*)* -->
+    <pointer-type-def type-id='type-id-23' size-in-bits='64' id='type-id-10'/>
+    <!-- int (lttng_ust_tracepoint* const*, int)* -->
+    <pointer-type-def type-id='type-id-24' size-in-bits='64' id='type-id-9'/>
+    <!-- int* -->
+    <pointer-type-def type-id='type-id-5' size-in-bits='64' id='type-id-16'/>
+    <!-- lttng_ust_tracepoint* -->
+    <pointer-type-def type-id='type-id-13' size-in-bits='64' id='type-id-25'/>
+    <!-- lttng_ust_tracepoint* const -->
+    <qualified-type-def type-id='type-id-25' const='yes' id='type-id-26'/>
+    <!-- lttng_ust_tracepoint* const* -->
+    <pointer-type-def type-id='type-id-26' size-in-bits='64' id='type-id-27'/>
+    <!-- lttng_ust_tracepoint_destructors_syms* -->
+    <pointer-type-def type-id='type-id-18' size-in-bits='64' id='type-id-28'/>
+    <!-- lttng_ust_tracepoint_dlopen* -->
+    <pointer-type-def type-id='type-id-7' size-in-bits='64' id='type-id-29'/>
+    <!-- lttng_ust_tracepoint_probe* -->
+    <pointer-type-def type-id='type-id-17' size-in-bits='64' id='type-id-15'/>
+    <!-- void ()* -->
+    <pointer-type-def type-id='type-id-30' size-in-bits='64' id='type-id-11'/>
+    <!-- void* -->
+    <pointer-type-def type-id='type-id-6' size-in-bits='64' id='type-id-8'/>
+    <!-- void* (void*)* -->
+    <pointer-type-def type-id='type-id-31' size-in-bits='64' id='type-id-12'/>
+    <!-- void** -->
+    <pointer-type-def type-id='type-id-8' size-in-bits='64' id='type-id-32'/>
+    <!-- lttng_ust_tracepoint_dlopen tracepoint_dlopen -->
+    <var-decl name='tracepoint_dlopen' type-id='type-id-7' visibility='default' filepath='../include/lttng/tracepoint.h' line='241' column='1'/>
+    <!-- lttng_ust_tracepoint_dlopen* tracepoint_dlopen_ptr -->
+    <var-decl name='tracepoint_dlopen_ptr' type-id='type-id-29' visibility='default' filepath='../include/lttng/tracepoint.h' line='242' column='1'/>
+    <!-- lttng_ust_tracepoint_destructors_syms tracepoint_destructors_syms -->
+    <var-decl name='tracepoint_destructors_syms' type-id='type-id-18' visibility='default' filepath='../include/lttng/tracepoint.h' line='279' column='1'/>
+    <!-- lttng_ust_tracepoint_destructors_syms* tracepoint_destructors_syms_ptr -->
+    <var-decl name='tracepoint_destructors_syms_ptr' type-id='type-id-28' visibility='default' filepath='../include/lttng/tracepoint.h' line='280' column='1'/>
+    <!-- lttng_ust_tracepoint __tracepoint_lttng_ust_libc___malloc -->
+    <var-decl name='__tracepoint_lttng_ust_libc___malloc' type-id='type-id-13' mangled-name='__tracepoint_lttng_ust_libc___malloc' visibility='default' filepath='liblttng-ust-libc-wrapper/ust_libc.h' line='35' column='1' elf-symbol-id='__tracepoint_lttng_ust_libc___malloc'/>
+    <!-- lttng_ust_tracepoint __tracepoint_lttng_ust_libc___free -->
+    <var-decl name='__tracepoint_lttng_ust_libc___free' type-id='type-id-13' mangled-name='__tracepoint_lttng_ust_libc___free' visibility='default' filepath='liblttng-ust-libc-wrapper/ust_libc.h' line='43' column='1' elf-symbol-id='__tracepoint_lttng_ust_libc___free'/>
+    <!-- lttng_ust_tracepoint __tracepoint_lttng_ust_libc___calloc -->
+    <var-decl name='__tracepoint_lttng_ust_libc___calloc' type-id='type-id-13' mangled-name='__tracepoint_lttng_ust_libc___calloc' visibility='default' filepath='liblttng-ust-libc-wrapper/ust_libc.h' line='50' column='1' elf-symbol-id='__tracepoint_lttng_ust_libc___calloc'/>
+    <!-- lttng_ust_tracepoint __tracepoint_lttng_ust_libc___realloc -->
+    <var-decl name='__tracepoint_lttng_ust_libc___realloc' type-id='type-id-13' mangled-name='__tracepoint_lttng_ust_libc___realloc' visibility='default' filepath='liblttng-ust-libc-wrapper/ust_libc.h' line='59' column='1' elf-symbol-id='__tracepoint_lttng_ust_libc___realloc'/>
+    <!-- lttng_ust_tracepoint __tracepoint_lttng_ust_libc___memalign -->
+    <var-decl name='__tracepoint_lttng_ust_libc___memalign' type-id='type-id-13' mangled-name='__tracepoint_lttng_ust_libc___memalign' visibility='default' filepath='liblttng-ust-libc-wrapper/ust_libc.h' line='68' column='1' elf-symbol-id='__tracepoint_lttng_ust_libc___memalign'/>
+    <!-- lttng_ust_tracepoint __tracepoint_lttng_ust_libc___posix_memalign -->
+    <var-decl name='__tracepoint_lttng_ust_libc___posix_memalign' type-id='type-id-13' mangled-name='__tracepoint_lttng_ust_libc___posix_memalign' visibility='default' filepath='liblttng-ust-libc-wrapper/ust_libc.h' line='77' column='1' elf-symbol-id='__tracepoint_lttng_ust_libc___posix_memalign'/>
+    <!-- int __tracepoint_provider_lttng_ust_libc -->
+    <var-decl name='__tracepoint_provider_lttng_ust_libc' type-id='type-id-5' mangled-name='__tracepoint_provider_lttng_ust_libc' visibility='default' filepath='liblttng-ust-libc-wrapper/ust_libc.h' line='35' column='1' elf-symbol-id='__tracepoint_provider_lttng_ust_libc'/>
+    <!-- void lttng_ust_malloc_wrapper_init() -->
+    <function-decl name='lttng_ust_malloc_wrapper_init' mangled-name='lttng_ust_malloc_wrapper_init' filepath='liblttng-ust-libc-wrapper/lttng-ust-malloc.c' line='431' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='lttng_ust_malloc_wrapper_init'>
+      <!-- void -->
+      <return type-id='type-id-6'/>
+    </function-decl>
+    <!-- int posix_memalign(void**, size_t, size_t) -->
+    <function-decl name='posix_memalign' mangled-name='posix_memalign' filepath='/usr/include/stdlib.h' line='580' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='posix_memalign'>
+      <!-- parameter of type 'void**' -->
+      <parameter type-id='type-id-32' name='memptr' filepath='liblttng-ust-libc-wrapper/lttng-ust-malloc.c' line='402' column='1'/>
+      <!-- parameter of type 'typedef size_t' -->
+      <parameter type-id='type-id-20' name='alignment' filepath='liblttng-ust-libc-wrapper/lttng-ust-malloc.c' line='402' column='1'/>
+      <!-- parameter of type 'typedef size_t' -->
+      <parameter type-id='type-id-20' name='size' filepath='liblttng-ust-libc-wrapper/lttng-ust-malloc.c' line='402' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-5'/>
+    </function-decl>
+    <!-- void* memalign(size_t, size_t) -->
+    <function-decl name='memalign' mangled-name='memalign' filepath='liblttng-ust-libc-wrapper/lttng-ust-malloc.c' line='380' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='memalign'>
+      <!-- parameter of type 'typedef size_t' -->
+      <parameter type-id='type-id-20' name='alignment' filepath='liblttng-ust-libc-wrapper/lttng-ust-malloc.c' line='380' column='1'/>
+      <!-- parameter of type 'typedef size_t' -->
+      <parameter type-id='type-id-20' name='size' filepath='liblttng-ust-libc-wrapper/lttng-ust-malloc.c' line='380' column='1'/>
+      <!-- void* -->
+      <return type-id='type-id-8'/>
+    </function-decl>
+    <!-- void* realloc(void*, size_t) -->
+    <function-decl name='realloc' mangled-name='realloc' filepath='/usr/include/stdlib.h' line='550' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='realloc'>
+      <!-- parameter of type 'void*' -->
+      <parameter type-id='type-id-8' name='ptr' filepath='liblttng-ust-libc-wrapper/lttng-ust-malloc.c' line='327' column='1'/>
+      <!-- parameter of type 'typedef size_t' -->
+      <parameter type-id='type-id-20' name='size' filepath='liblttng-ust-libc-wrapper/lttng-ust-malloc.c' line='327' column='1'/>
+      <!-- void* -->
+      <return type-id='type-id-8'/>
+    </function-decl>
+    <!-- void* calloc(size_t, size_t) -->
+    <function-decl name='calloc' mangled-name='calloc' filepath='/usr/include/stdlib.h' line='542' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='calloc'>
+      <!-- parameter of type 'typedef size_t' -->
+      <parameter type-id='type-id-20' name='nmemb' filepath='liblttng-ust-libc-wrapper/lttng-ust-malloc.c' line='306' column='1'/>
+      <!-- parameter of type 'typedef size_t' -->
+      <parameter type-id='type-id-20' name='size' filepath='liblttng-ust-libc-wrapper/lttng-ust-malloc.c' line='306' column='1'/>
+      <!-- void* -->
+      <return type-id='type-id-8'/>
+    </function-decl>
+    <!-- void free(void*) -->
+    <function-decl name='free' mangled-name='free' filepath='/usr/include/stdlib.h' line='565' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='free'>
+      <!-- parameter of type 'void*' -->
+      <parameter type-id='type-id-8' name='ptr' filepath='liblttng-ust-libc-wrapper/lttng-ust-malloc.c' line='277' column='1'/>
+      <!-- void -->
+      <return type-id='type-id-6'/>
+    </function-decl>
+    <!-- void* malloc(size_t) -->
+    <function-decl name='malloc' mangled-name='malloc' filepath='/usr/include/stdlib.h' line='539' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='malloc'>
+      <!-- parameter of type 'typedef size_t' -->
+      <parameter type-id='type-id-20' name='size' filepath='liblttng-ust-libc-wrapper/lttng-ust-malloc.c' line='256' column='1'/>
+      <!-- void* -->
+      <return type-id='type-id-8'/>
+    </function-decl>
+    <!-- int () -->
+    <function-type size-in-bits='64' id='type-id-22'>
+      <!-- int -->
+      <return type-id='type-id-5'/>
+    </function-type>
+    <!-- int (lttng_ust_tracepoint* const*) -->
+    <function-type size-in-bits='64' id='type-id-23'>
+      <!-- parameter of type 'lttng_ust_tracepoint* const*' -->
+      <parameter type-id='type-id-27'/>
+      <!-- int -->
+      <return type-id='type-id-5'/>
+    </function-type>
+    <!-- int (lttng_ust_tracepoint* const*, int) -->
+    <function-type size-in-bits='64' id='type-id-24'>
+      <!-- parameter of type 'lttng_ust_tracepoint* const*' -->
+      <parameter type-id='type-id-27'/>
+      <!-- parameter of type 'int' -->
+      <parameter type-id='type-id-5'/>
+      <!-- int -->
+      <return type-id='type-id-5'/>
+    </function-type>
+    <!-- void () -->
+    <function-type size-in-bits='64' id='type-id-30'>
+      <!-- void -->
+      <return type-id='type-id-6'/>
+    </function-type>
+    <!-- void* (void*) -->
+    <function-type size-in-bits='64' id='type-id-31'>
+      <!-- parameter of type 'void*' -->
+      <parameter type-id='type-id-8'/>
+      <!-- void* -->
+      <return type-id='type-id-8'/>
+    </function-type>
+  </abi-instr>
+</abi-corpus>

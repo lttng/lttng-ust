@@ -575,6 +575,7 @@ AC_CONFIG_FILES([
   doc/examples/Makefile
   doc/Makefile
   doc/man/Makefile
+  extras/Makefile
   include/Makefile
   src/common/Makefile
   src/lib/lttng-ust-common/Makefile
