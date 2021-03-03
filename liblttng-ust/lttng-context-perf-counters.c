@@ -30,6 +30,7 @@
 #include <urcu/tls-compat.h>
 #include "perf_event.h"
 #include "lttng-tracer-core.h"
+#include "ust-events-internal.h"
 
 /*
  * We use a global perf counter key and iterate on per-thread RCU lists

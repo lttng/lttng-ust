@@ -13,7 +13,6 @@
 #include <urcu/hlist.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <lttng/ust-config.h>
 #include <lttng/ust-abi.h>
 #include <lttng/ust-tracer.h>
 #include <lttng/ust-endian.h>
@@ -778,32 +777,6 @@ void lttng_context_vgid_reset(void);
 void lttng_context_vegid_reset(void);
 void lttng_context_vsgid_reset(void);
 
-#ifdef LTTNG_UST_HAVE_PERF_EVENT
-int lttng_add_perf_counter_to_ctx(uint32_t type,
-				  uint64_t config,
-				  const char *name,
-				  struct lttng_ctx **ctx);
-int lttng_perf_counter_init(void);
-void lttng_perf_counter_exit(void);
-#else /* #ifdef LTTNG_UST_HAVE_PERF_EVENT */
-static inline
-int lttng_add_perf_counter_to_ctx(uint32_t type,
-				  uint64_t config,
-				  const char *name,
-				  struct lttng_ctx **ctx)
-{
-	return -ENOSYS;
-}
-static inline
-int lttng_perf_counter_init(void)
-{
-	return 0;
-}
-static inline
-void lttng_perf_counter_exit(void)
-{
-}
-#endif /* #else #ifdef LTTNG_UST_HAVE_PERF_EVENT */
 
 extern const struct lttng_ust_client_lib_ring_buffer_client_cb *lttng_client_callbacks_metadata;
 extern const struct lttng_ust_client_lib_ring_buffer_client_cb *lttng_client_callbacks_discard;

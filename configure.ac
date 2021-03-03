@@ -217,7 +217,6 @@ AS_CASE([$host_os],
 # Configuration options, which will be installed in the config.h
 AH_TEMPLATE([LTTNG_UST_HAVE_EFFICIENT_UNALIGNED_ACCESS], [Use efficient unaligned access.])
 AH_TEMPLATE([LTTNG_UST_HAVE_SDT_INTEGRATION], [SystemTap integration via sdt.h])
-AH_TEMPLATE([LTTNG_UST_HAVE_PERF_EVENT], [Perf event integration via perf_event.h])
 
 # Checks for libraries.
 AC_CHECK_LIB([dl], [dlopen], [
@@ -283,8 +282,9 @@ AC_CHECK_HEADERS([linux/perf_event.h], [have_perf_event=yes], [])
 # perf, using the read system call as fallback.
 AM_CONDITIONAL([HAVE_PERF_EVENT], [test "x$have_perf_event" = "xyes"])
 
+AH_TEMPLATE([HAVE_PERF_EVENT], ["Perf event integration via perf_event.h"])
 AS_IF([test "x$have_perf_event" = "xyes"], [
-	AC_DEFINE([LTTNG_UST_HAVE_PERF_EVENT], [1])
+	AC_DEFINE([HAVE_PERF_EVENT], [1])
 ])
 
 AS_IF([test "x$NO_UNALIGNED_ACCESS" = "x"], [

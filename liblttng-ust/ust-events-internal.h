@@ -242,4 +242,37 @@ struct lttng_counter *lttng_ust_counter_create(
 		const char *counter_transport_name,
 		size_t number_dimensions, const struct lttng_counter_dimension *dimensions);
 
+#ifdef HAVE_PERF_EVENT
+
+LTTNG_HIDDEN
+int lttng_add_perf_counter_to_ctx(uint32_t type,
+				  uint64_t config,
+				  const char *name,
+				  struct lttng_ctx **ctx);
+LTTNG_HIDDEN
+int lttng_perf_counter_init(void);
+LTTNG_HIDDEN
+void lttng_perf_counter_exit(void);
+
+#else /* #ifdef HAVE_PERF_EVENT */
+
+static inline
+int lttng_add_perf_counter_to_ctx(uint32_t type,
+				  uint64_t config,
+				  const char *name,
+				  struct lttng_ctx **ctx)
+{
+	return -ENOSYS;
+}
+static inline
+int lttng_perf_counter_init(void)
+{
+	return 0;
+}
+static inline
+void lttng_perf_counter_exit(void)
+{
+}
+#endif /* #else #ifdef HAVE_PERF_EVENT */
+
 #endif /* _LTTNG_UST_EVENTS_INTERNAL_H */

@@ -9,6 +9,3 @@
 
 /* DTrace/GDB/SystemTap integration via sdt.h */
 #undef LTTNG_UST_HAVE_SDT_INTEGRATION
-
-/* Perf event integration via perf_event.h */
-#undef LTTNG_UST_HAVE_PERF_EVENT
