@@ -33,7 +33,7 @@ AC_DEFINE([CONFIG_LTTNG_UST_LIBRARY_VERSION_MAJOR], [UST_LIB_V_MAJOR], [Major SO
 
 # This is the library version of liblttng-ust-ctl, used internally by
 # liblttng-ust, lttng-sessiond, and lttng-consumerd.
-AC_SUBST([LTTNG_UST_CTL_LIBRARY_VERSION], [4:0:0])
+AC_SUBST([LTTNG_UST_CTL_LIBRARY_VERSION], [5:0:0])
 
 AC_CONFIG_HEADERS([include/config.h include/lttng/ust-config.h])
 AC_CONFIG_AUX_DIR([config])
