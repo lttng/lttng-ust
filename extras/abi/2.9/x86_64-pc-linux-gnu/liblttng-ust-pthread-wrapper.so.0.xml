@@ -1,0 +1,290 @@
+<abi-corpus architecture='elf-amd-x86_64' soname='liblttng-ust-pthread-wrapper.so.0'>
+  <elf-needed>
+    <dependency name='liblttng-ust.so.0'/>
+    <dependency name='liblttng-ust-tracepoint.so.0'/>
+    <dependency name='librt.so.1'/>
+    <dependency name='libdl.so.2'/>
+    <dependency name='liburcu-bp.so.6'/>
+    <dependency name='liburcu-cds.so.6'/>
+    <dependency name='libpthread.so.0'/>
+    <dependency name='libc.so.6'/>
+    <dependency name='ld-linux-x86-64.so.2'/>
+  </elf-needed>
+  <elf-function-symbols>
+    <!-- pthread_mutex_lock -->
+    <elf-symbol name='pthread_mutex_lock' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- pthread_mutex_trylock -->
+    <elf-symbol name='pthread_mutex_trylock' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- pthread_mutex_unlock -->
+    <elf-symbol name='pthread_mutex_unlock' type='func-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+  </elf-function-symbols>
+  <elf-variable-symbols>
+    <!-- __tracepoint_lttng_ust_pthread___pthread_mutex_lock_acq -->
+    <elf-symbol name='__tracepoint_lttng_ust_pthread___pthread_mutex_lock_acq' size='56' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- __tracepoint_lttng_ust_pthread___pthread_mutex_lock_req -->
+    <elf-symbol name='__tracepoint_lttng_ust_pthread___pthread_mutex_lock_req' size='56' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- __tracepoint_lttng_ust_pthread___pthread_mutex_trylock -->
+    <elf-symbol name='__tracepoint_lttng_ust_pthread___pthread_mutex_trylock' size='56' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- __tracepoint_lttng_ust_pthread___pthread_mutex_unlock -->
+    <elf-symbol name='__tracepoint_lttng_ust_pthread___pthread_mutex_unlock' size='56' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- __tracepoint_provider_lttng_ust_pthread -->
+    <elf-symbol name='__tracepoint_provider_lttng_ust_pthread' size='4' type='object-type' binding='global-binding' visibility='default-visibility' is-defined='yes'/>
+    <!-- __tracepoints__disable_destructors -->
+    <elf-symbol name='__tracepoints__disable_destructors' size='4' type='object-type' binding='weak-binding' visibility='default-visibility' is-defined='yes'/>
+  </elf-variable-symbols>
+  <abi-instr version='1.0' address-size='64' path='lttng-ust-pthread.c' comp-dir-path='liblttng-ust-libc-wrapper' language='LANG_C99'>
+
+
+    <!-- char -->
+    <type-decl name='char' size-in-bits='8' id='type-id-1'/>
+    <!-- char[16] -->
+    <array-type-def dimensions='1' type-id='type-id-1' size-in-bits='128' id='type-id-2'>
+      <!-- <anonymous range>[16] -->
+      <subrange length='16' type-id='type-id-3' id='type-id-4'/>
+
+    </array-type-def>
+    <!-- char[40] -->
+    <array-type-def dimensions='1' type-id='type-id-1' size-in-bits='320' id='type-id-5'>
+      <!-- <anonymous range>[40] -->
+      <subrange length='40' type-id='type-id-3' id='type-id-6'/>
+
+    </array-type-def>
+    <!-- int -->
+    <type-decl name='int' size-in-bits='32' id='type-id-7'/>
+    <!-- long int -->
+    <type-decl name='long int' size-in-bits='64' id='type-id-8'/>
+    <!-- short int -->
+    <type-decl name='short int' size-in-bits='16' id='type-id-9'/>
+    <!-- unsigned int -->
+    <type-decl name='unsigned int' size-in-bits='32' id='type-id-10'/>
+    <!-- unsigned long int -->
+    <type-decl name='unsigned long int' size-in-bits='64' id='type-id-3'/>
+    <!-- void -->
+    <type-decl name='void' id='type-id-11'/>
+    <!-- struct lttng_ust_tracepoint_dlopen -->
+    <class-decl name='lttng_ust_tracepoint_dlopen' size-in-bits='384' is-struct='yes' visibility='default' filepath='../include/lttng/tracepoint.h' line='215' column='1' id='type-id-12'>
+      <data-member access='public' layout-offset-in-bits='0'>
+        <!-- void* lttng_ust_tracepoint_dlopen::liblttngust_handle -->
+        <var-decl name='liblttngust_handle' type-id='type-id-13' visibility='default' filepath='../include/lttng/tracepoint.h' line='216' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='64'>
+        <!-- int (lttng_ust_tracepoint* const*, int)* lttng_ust_tracepoint_dlopen::tracepoint_register_lib -->
+        <var-decl name='tracepoint_register_lib' type-id='type-id-14' visibility='default' filepath='../include/lttng/tracepoint.h' line='218' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='128'>
+        <!-- int (lttng_ust_tracepoint* const*)* lttng_ust_tracepoint_dlopen::tracepoint_unregister_lib -->
+        <var-decl name='tracepoint_unregister_lib' type-id='type-id-15' visibility='default' filepath='../include/lttng/tracepoint.h' line='220' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='192'>
+        <!-- void ()* lttng_ust_tracepoint_dlopen::rcu_read_lock_sym_bp -->
+        <var-decl name='rcu_read_lock_sym_bp' type-id='type-id-16' visibility='default' filepath='../include/lttng/tracepoint.h' line='221' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='256'>
+        <!-- void ()* lttng_ust_tracepoint_dlopen::rcu_read_unlock_sym_bp -->
+        <var-decl name='rcu_read_unlock_sym_bp' type-id='type-id-16' visibility='default' filepath='../include/lttng/tracepoint.h' line='222' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='320'>
+        <!-- void* (void*)* lttng_ust_tracepoint_dlopen::rcu_dereference_sym_bp -->
+        <var-decl name='rcu_dereference_sym_bp' type-id='type-id-17' visibility='default' filepath='../include/lttng/tracepoint.h' line='223' column='1'/>
+      </data-member>
+    </class-decl>
+    <!-- struct lttng_ust_tracepoint -->
+    <class-decl name='lttng_ust_tracepoint' size-in-bits='448' is-struct='yes' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='32' column='1' id='type-id-18'>
+      <data-member access='public' layout-offset-in-bits='0'>
+        <!-- const char* lttng_ust_tracepoint::name -->
+        <var-decl name='name' type-id='type-id-19' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='33' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='64'>
+        <!-- int lttng_ust_tracepoint::state -->
+        <var-decl name='state' type-id='type-id-7' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='34' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='128'>
+        <!-- lttng_ust_tracepoint_probe* lttng_ust_tracepoint::probes -->
+        <var-decl name='probes' type-id='type-id-20' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='35' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='192'>
+        <!-- int* lttng_ust_tracepoint::tracepoint_provider_ref -->
+        <var-decl name='tracepoint_provider_ref' type-id='type-id-21' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='36' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='256'>
+        <!-- const char* lttng_ust_tracepoint::signature -->
+        <var-decl name='signature' type-id='type-id-19' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='37' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='320'>
+        <!-- char lttng_ust_tracepoint::padding[16] -->
+        <var-decl name='padding' type-id='type-id-2' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='38' column='1'/>
+      </data-member>
+    </class-decl>
+    <!-- struct lttng_ust_tracepoint_probe -->
+    <class-decl name='lttng_ust_tracepoint_probe' size-in-bits='128' is-struct='yes' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='26' column='1' id='type-id-22'>
+      <data-member access='public' layout-offset-in-bits='0'>
+        <!-- void ()* lttng_ust_tracepoint_probe::func -->
+        <var-decl name='func' type-id='type-id-16' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='27' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='64'>
+        <!-- void* lttng_ust_tracepoint_probe::data -->
+        <var-decl name='data' type-id='type-id-13' visibility='default' filepath='../include/lttng/tracepoint-types.h' line='28' column='1'/>
+      </data-member>
+    </class-decl>
+    <!-- typedef __anonymous_union__ pthread_mutex_t -->
+    <typedef-decl name='pthread_mutex_t' type-id='type-id-23' filepath='/usr/include/bits/pthreadtypes.h' line='72' column='1' id='type-id-24'/>
+    <!-- union {__pthread_mutex_s __data; char __size[40]; long int __align;} -->
+    <union-decl name='__anonymous_union__' size-in-bits='320' is-anonymous='yes' visibility='default' filepath='/usr/include/bits/pthreadtypes.h' line='67' column='1' id='type-id-23'>
+      <data-member access='private'>
+        <!-- __pthread_mutex_s __data -->
+        <var-decl name='__data' type-id='type-id-25' visibility='default' filepath='/usr/include/bits/pthreadtypes.h' line='69' column='1'/>
+      </data-member>
+      <data-member access='private'>
+        <!-- char __size[40] -->
+        <var-decl name='__size' type-id='type-id-5' visibility='default' filepath='/usr/include/bits/pthreadtypes.h' line='70' column='1'/>
+      </data-member>
+      <data-member access='private'>
+        <!-- long int __align -->
+        <var-decl name='__align' type-id='type-id-8' visibility='default' filepath='/usr/include/bits/pthreadtypes.h' line='71' column='1'/>
+      </data-member>
+    </union-decl>
+    <!-- struct __pthread_mutex_s -->
+    <class-decl name='__pthread_mutex_s' size-in-bits='320' is-struct='yes' visibility='default' filepath='/usr/include/bits/struct_mutex.h' line='22' column='1' id='type-id-25'>
+      <data-member access='public' layout-offset-in-bits='0'>
+        <!-- int __pthread_mutex_s::__lock -->
+        <var-decl name='__lock' type-id='type-id-7' visibility='default' filepath='/usr/include/bits/struct_mutex.h' line='24' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='32'>
+        <!-- unsigned int __pthread_mutex_s::__count -->
+        <var-decl name='__count' type-id='type-id-10' visibility='default' filepath='/usr/include/bits/struct_mutex.h' line='25' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='64'>
+        <!-- int __pthread_mutex_s::__owner -->
+        <var-decl name='__owner' type-id='type-id-7' visibility='default' filepath='/usr/include/bits/struct_mutex.h' line='26' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='96'>
+        <!-- unsigned int __pthread_mutex_s::__nusers -->
+        <var-decl name='__nusers' type-id='type-id-10' visibility='default' filepath='/usr/include/bits/struct_mutex.h' line='28' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='128'>
+        <!-- int __pthread_mutex_s::__kind -->
+        <var-decl name='__kind' type-id='type-id-7' visibility='default' filepath='/usr/include/bits/struct_mutex.h' line='32' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='160'>
+        <!-- short int __pthread_mutex_s::__spins -->
+        <var-decl name='__spins' type-id='type-id-9' visibility='default' filepath='/usr/include/bits/struct_mutex.h' line='34' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='176'>
+        <!-- short int __pthread_mutex_s::__elision -->
+        <var-decl name='__elision' type-id='type-id-9' visibility='default' filepath='/usr/include/bits/struct_mutex.h' line='35' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='192'>
+        <!-- __pthread_list_t __pthread_mutex_s::__list -->
+        <var-decl name='__list' type-id='type-id-26' visibility='default' filepath='/usr/include/bits/struct_mutex.h' line='36' column='1'/>
+      </data-member>
+    </class-decl>
+    <!-- typedef __pthread_internal_list __pthread_list_t -->
+    <typedef-decl name='__pthread_list_t' type-id='type-id-27' filepath='/usr/include/bits/thread-shared-types.h' line='53' column='1' id='type-id-26'/>
+    <!-- struct __pthread_internal_list -->
+    <class-decl name='__pthread_internal_list' size-in-bits='128' is-struct='yes' visibility='default' filepath='/usr/include/bits/thread-shared-types.h' line='49' column='1' id='type-id-27'>
+      <data-member access='public' layout-offset-in-bits='0'>
+        <!-- __pthread_internal_list* __pthread_internal_list::__prev -->
+        <var-decl name='__prev' type-id='type-id-28' visibility='default' filepath='/usr/include/bits/thread-shared-types.h' line='51' column='1'/>
+      </data-member>
+      <data-member access='public' layout-offset-in-bits='64'>
+        <!-- __pthread_internal_list* __pthread_internal_list::__next -->
+        <var-decl name='__next' type-id='type-id-28' visibility='default' filepath='/usr/include/bits/thread-shared-types.h' line='52' column='1'/>
+      </data-member>
+    </class-decl>
+    <!-- __pthread_internal_list* -->
+    <pointer-type-def type-id='type-id-27' size-in-bits='64' id='type-id-28'/>
+    <!-- const char -->
+    <qualified-type-def type-id='type-id-1' const='yes' id='type-id-29'/>
+    <!-- const char* -->
+    <pointer-type-def type-id='type-id-29' size-in-bits='64' id='type-id-19'/>
+    <!-- int (lttng_ust_tracepoint* const*)* -->
+    <pointer-type-def type-id='type-id-30' size-in-bits='64' id='type-id-15'/>
+    <!-- int (lttng_ust_tracepoint* const*, int)* -->
+    <pointer-type-def type-id='type-id-31' size-in-bits='64' id='type-id-14'/>
+    <!-- int* -->
+    <pointer-type-def type-id='type-id-7' size-in-bits='64' id='type-id-21'/>
+    <!-- lttng_ust_tracepoint* -->
+    <pointer-type-def type-id='type-id-18' size-in-bits='64' id='type-id-32'/>
+    <!-- lttng_ust_tracepoint* const -->
+    <qualified-type-def type-id='type-id-32' const='yes' id='type-id-33'/>
+    <!-- lttng_ust_tracepoint* const* -->
+    <pointer-type-def type-id='type-id-33' size-in-bits='64' id='type-id-34'/>
+    <!-- lttng_ust_tracepoint_dlopen* -->
+    <pointer-type-def type-id='type-id-12' size-in-bits='64' id='type-id-35'/>
+    <!-- lttng_ust_tracepoint_probe* -->
+    <pointer-type-def type-id='type-id-22' size-in-bits='64' id='type-id-20'/>
+    <!-- pthread_mutex_t* -->
+    <pointer-type-def type-id='type-id-24' size-in-bits='64' id='type-id-36'/>
+    <!-- void ()* -->
+    <pointer-type-def type-id='type-id-37' size-in-bits='64' id='type-id-16'/>
+    <!-- void* -->
+    <pointer-type-def type-id='type-id-11' size-in-bits='64' id='type-id-13'/>
+    <!-- void* (void*)* -->
+    <pointer-type-def type-id='type-id-38' size-in-bits='64' id='type-id-17'/>
+    <!-- int __tracepoints__disable_destructors -->
+    <var-decl name='__tracepoints__disable_destructors' type-id='type-id-7' mangled-name='__tracepoints__disable_destructors' visibility='default' filepath='../include/lttng/tracepoint.h' line='230' column='1' elf-symbol-id='__tracepoints__disable_destructors'/>
+    <!-- lttng_ust_tracepoint_dlopen tracepoint_dlopen -->
+    <var-decl name='tracepoint_dlopen' type-id='type-id-12' visibility='default' filepath='../include/lttng/tracepoint.h' line='226' column='1'/>
+    <!-- lttng_ust_tracepoint_dlopen* tracepoint_dlopen_ptr -->
+    <var-decl name='tracepoint_dlopen_ptr' type-id='type-id-35' visibility='default' filepath='../include/lttng/tracepoint.h' line='227' column='1'/>
+    <!-- lttng_ust_tracepoint __tracepoint_lttng_ust_pthread___pthread_mutex_lock_req -->
+    <var-decl name='__tracepoint_lttng_ust_pthread___pthread_mutex_lock_req' type-id='type-id-18' mangled-name='__tracepoint_lttng_ust_pthread___pthread_mutex_lock_req' visibility='default' filepath='liblttng-ust-libc-wrapper/ust_pthread.h' line='35' column='1' elf-symbol-id='__tracepoint_lttng_ust_pthread___pthread_mutex_lock_req'/>
+    <!-- lttng_ust_tracepoint __tracepoint_lttng_ust_pthread___pthread_mutex_lock_acq -->
+    <var-decl name='__tracepoint_lttng_ust_pthread___pthread_mutex_lock_acq' type-id='type-id-18' mangled-name='__tracepoint_lttng_ust_pthread___pthread_mutex_lock_acq' visibility='default' filepath='liblttng-ust-libc-wrapper/ust_pthread.h' line='42' column='1' elf-symbol-id='__tracepoint_lttng_ust_pthread___pthread_mutex_lock_acq'/>
+    <!-- lttng_ust_tracepoint __tracepoint_lttng_ust_pthread___pthread_mutex_trylock -->
+    <var-decl name='__tracepoint_lttng_ust_pthread___pthread_mutex_trylock' type-id='type-id-18' mangled-name='__tracepoint_lttng_ust_pthread___pthread_mutex_trylock' visibility='default' filepath='liblttng-ust-libc-wrapper/ust_pthread.h' line='50' column='1' elf-symbol-id='__tracepoint_lttng_ust_pthread___pthread_mutex_trylock'/>
+    <!-- lttng_ust_tracepoint __tracepoint_lttng_ust_pthread___pthread_mutex_unlock -->
+    <var-decl name='__tracepoint_lttng_ust_pthread___pthread_mutex_unlock' type-id='type-id-18' mangled-name='__tracepoint_lttng_ust_pthread___pthread_mutex_unlock' visibility='default' filepath='liblttng-ust-libc-wrapper/ust_pthread.h' line='58' column='1' elf-symbol-id='__tracepoint_lttng_ust_pthread___pthread_mutex_unlock'/>
+    <!-- int __tracepoint_provider_lttng_ust_pthread -->
+    <var-decl name='__tracepoint_provider_lttng_ust_pthread' type-id='type-id-7' mangled-name='__tracepoint_provider_lttng_ust_pthread' visibility='default' filepath='liblttng-ust-libc-wrapper/ust_pthread.h' line='35' column='1' elf-symbol-id='__tracepoint_provider_lttng_ust_pthread'/>
+    <!-- int pthread_mutex_unlock(pthread_mutex_t*) -->
+    <function-decl name='pthread_mutex_unlock' mangled-name='pthread_mutex_unlock' filepath='/usr/include/pthread.h' line='789' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='pthread_mutex_unlock'>
+      <!-- parameter of type 'pthread_mutex_t*' -->
+      <parameter type-id='type-id-36' name='mutex' filepath='liblttng-ust-libc-wrapper/lttng-ust-pthread.c' line='92' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-7'/>
+    </function-decl>
+    <!-- int pthread_mutex_trylock(pthread_mutex_t*) -->
+    <function-decl name='pthread_mutex_trylock' mangled-name='pthread_mutex_trylock' filepath='/usr/include/pthread.h' line='767' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='pthread_mutex_trylock'>
+      <!-- parameter of type 'pthread_mutex_t*' -->
+      <parameter type-id='type-id-36' name='mutex' filepath='liblttng-ust-libc-wrapper/lttng-ust-pthread.c' line='65' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-7'/>
+    </function-decl>
+    <!-- int pthread_mutex_lock(pthread_mutex_t*) -->
+    <function-decl name='pthread_mutex_lock' mangled-name='pthread_mutex_lock' filepath='/usr/include/pthread.h' line='771' column='1' visibility='default' binding='global' size-in-bits='64' elf-symbol-id='pthread_mutex_lock'>
+      <!-- parameter of type 'pthread_mutex_t*' -->
+      <parameter type-id='type-id-36' name='mutex' filepath='liblttng-ust-libc-wrapper/lttng-ust-pthread.c' line='36' column='1'/>
+      <!-- int -->
+      <return type-id='type-id-7'/>
+    </function-decl>
+    <!-- int (lttng_ust_tracepoint* const*) -->
+    <function-type size-in-bits='64' id='type-id-30'>
+      <!-- parameter of type 'lttng_ust_tracepoint* const*' -->
+      <parameter type-id='type-id-34'/>
+      <!-- int -->
+      <return type-id='type-id-7'/>
+    </function-type>
+    <!-- int (lttng_ust_tracepoint* const*, int) -->
+    <function-type size-in-bits='64' id='type-id-31'>
+      <!-- parameter of type 'lttng_ust_tracepoint* const*' -->
+      <parameter type-id='type-id-34'/>
+      <!-- parameter of type 'int' -->
+      <parameter type-id='type-id-7'/>
+      <!-- int -->
+      <return type-id='type-id-7'/>
+    </function-type>
+    <!-- void () -->
+    <function-type size-in-bits='64' id='type-id-37'>
+      <!-- void -->
+      <return type-id='type-id-11'/>
+    </function-type>
+    <!-- void* (void*) -->
+    <function-type size-in-bits='64' id='type-id-38'>
+      <!-- parameter of type 'void*' -->
+      <parameter type-id='type-id-13'/>
+      <!-- void* -->
+      <return type-id='type-id-13'/>
+    </function-type>
+  </abi-instr>
+</abi-corpus>

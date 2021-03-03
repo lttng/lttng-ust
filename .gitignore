@@ -155,6 +155,7 @@ cscope.*
 /doc/Makefile
 /doc/examples/Makefile
 /doc/man/Makefile
+/extras/Makefile
 /include/Makefile
 /src/common/Makefile
 /src/lib/lttng-ust-common/Makefile

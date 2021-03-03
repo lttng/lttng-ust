@@ -7,7 +7,8 @@ SUBDIRS = \
 	src \
 	tools \
 	doc \
-	tests
+	tests \
+	extras
 
 dist_doc_DATA = \
 	ChangeLog \
