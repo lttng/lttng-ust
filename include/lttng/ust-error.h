@@ -6,11 +6,6 @@
  * Copyright (C) 2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
-/*
- * This header is meant for liblttng and libust internal use ONLY.
- * These declarations should NOT be considered stable API.
- */
-
 #ifndef _LTTNG_UST_ERROR_H
 #define _LTTNG_UST_ERROR_H
 
@@ -49,7 +44,7 @@ enum lttng_ust_error_code {
  * Return a human-readable error message for an lttng-ust error code.
  * code must be a positive value (or 0).
  */
-extern const char *lttng_ust_strerror(int code);
+const char *lttng_ust_strerror(int code);
 
 #ifdef __cplusplus
 }
