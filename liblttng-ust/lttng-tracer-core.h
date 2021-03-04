@@ -73,10 +73,6 @@ void lttng_ust_dummy_get_value(struct lttng_ctx_field *field,
 int lttng_context_is_app(const char *name);
 void lttng_ust_fixup_tls(void);
 
-extern void (*lttng_ust_liburcu_bp_before_fork)(void);
-extern void (*lttng_ust_liburcu_bp_after_fork_parent)(void);
-extern void (*lttng_ust_liburcu_bp_after_fork_child)(void);
-
 LTTNG_HIDDEN
 void lttng_event_notifier_notification_send(
 		struct lttng_event_notifier *event_notifier,
