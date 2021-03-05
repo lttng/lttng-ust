@@ -352,27 +352,6 @@ struct lttng_probe_desc {
 
 /* Data structures used by the tracer. */
 
-enum lttng_enabler_format_type {
-	LTTNG_ENABLER_FORMAT_STAR_GLOB,
-	LTTNG_ENABLER_FORMAT_EVENT,
-};
-
-/*
- * Enabler field, within whatever object is enabling an event. Target of
- * backward reference.
- */
-struct lttng_enabler {
-	enum lttng_enabler_format_type format_type;
-
-	/* head list of struct lttng_ust_filter_bytecode_node */
-	struct cds_list_head filter_bytecode_head;
-	/* head list of struct lttng_ust_excluder_node */
-	struct cds_list_head excluder_head;
-
-	struct lttng_ust_event event_param;
-	unsigned int enabled:1;
-};
-
 struct tp_list_entry {
 	struct lttng_ust_tracepoint_iter tp;
 	struct cds_list_head head;
