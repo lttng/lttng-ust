@@ -371,9 +371,6 @@ struct lttng_ust_field_list {
 	struct cds_list_head head;
 };
 
-struct ust_pending_probe;
-struct lttng_event;
-
 /*
  * Bytecode interpreter return value masks.
  */
@@ -667,34 +664,8 @@ struct lttng_counter_transport {
 	const struct lib_counter_config *client_config;
 };
 
-struct lttng_session *lttng_session_create(void);
-int lttng_session_enable(struct lttng_session *session);
-int lttng_session_disable(struct lttng_session *session);
-int lttng_session_statedump(struct lttng_session *session);
-void lttng_session_destroy(struct lttng_session *session);
-
-struct lttng_channel *lttng_channel_create(struct lttng_session *session,
-				       const char *transport_name,
-				       void *buf_addr,
-				       size_t subbuf_size, size_t num_subbuf,
-				       unsigned int switch_timer_interval,
-				       unsigned int read_timer_interval,
-				       int **shm_fd, int **wait_fd,
-				       uint64_t **memory_map_size,
-				       struct lttng_channel *chan_priv_init);
-
-int lttng_channel_enable(struct lttng_channel *channel);
-int lttng_channel_disable(struct lttng_channel *channel);
-
-void lttng_transport_register(struct lttng_transport *transport);
-void lttng_transport_unregister(struct lttng_transport *transport);
-
 int lttng_probe_register(struct lttng_probe_desc *desc);
 void lttng_probe_unregister(struct lttng_probe_desc *desc);
-void lttng_probe_provider_unregister_events(struct lttng_probe_desc *desc);
-int lttng_fix_pending_events(void);
-int lttng_probes_init(void);
-void lttng_probes_exit(void);
 
 /*
  * Can be used by applications that change their procname to clear the ust cached value.
@@ -703,26 +674,9 @@ void lttng_context_procname_reset(void);
 
 struct lttng_transport *lttng_transport_find(const char *name);
 
-int lttng_probes_get_event_list(struct lttng_ust_tracepoint_list *list);
-void lttng_probes_prune_event_list(struct lttng_ust_tracepoint_list *list);
-struct lttng_ust_tracepoint_iter *
-	lttng_ust_tracepoint_list_get_iter_next(struct lttng_ust_tracepoint_list *list);
-int lttng_probes_get_field_list(struct lttng_ust_field_list *list);
-void lttng_probes_prune_field_list(struct lttng_ust_field_list *list);
-struct lttng_ust_field_iter *
-	lttng_ust_field_list_get_iter_next(struct lttng_ust_field_list *list);
-
-void lttng_free_event_filter_runtime(struct lttng_event *event);
-
-struct cds_list_head *lttng_get_probe_list_head(void);
 int lttng_session_active(void);
 
 typedef int (*t_statedump_func_ptr)(struct lttng_session *session);
-void lttng_handle_pending_statedump(void *owner);
-struct cds_list_head *_lttng_get_sessions(void);
-
-struct lttng_enum *lttng_ust_enum_get_from_desc(struct lttng_session *session,
-		const struct lttng_enum_desc *enum_desc);
 
 void lttng_ust_dl_update(void *ip);
 

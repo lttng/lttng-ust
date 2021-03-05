@@ -8,7 +8,8 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <lttng/ust-events.h>
+
+#include <ust-events-internal.h>
 #include "ust-bitfield.h"
 #include "ust-compat.h"
 #include "clock.h"

@@ -248,6 +248,9 @@ int lttng_event_notifier_enabler_attach_exclusion(
 		struct lttng_ust_excluder_node **excluder);
 
 LTTNG_HIDDEN
+void lttng_free_event_filter_runtime(struct lttng_event *event);
+
+LTTNG_HIDDEN
 void lttng_free_event_notifier_filter_runtime(
 		struct lttng_event_notifier *event_notifier);
 
@@ -295,5 +298,73 @@ void lttng_perf_counter_exit(void)
 {
 }
 #endif /* #else #ifdef HAVE_PERF_EVENT */
+
+LTTNG_HIDDEN
+int lttng_probes_get_event_list(struct lttng_ust_tracepoint_list *list);
+LTTNG_HIDDEN
+void lttng_probes_prune_event_list(struct lttng_ust_tracepoint_list *list);
+
+LTTNG_HIDDEN
+int lttng_probes_get_field_list(struct lttng_ust_field_list *list);
+LTTNG_HIDDEN
+void lttng_probes_prune_field_list(struct lttng_ust_field_list *list);
+
+LTTNG_HIDDEN
+struct lttng_ust_tracepoint_iter *
+	lttng_ust_tracepoint_list_get_iter_next(struct lttng_ust_tracepoint_list *list);
+LTTNG_HIDDEN
+struct lttng_ust_field_iter *
+	lttng_ust_field_list_get_iter_next(struct lttng_ust_field_list *list);
+
+LTTNG_HIDDEN
+struct lttng_session *lttng_session_create(void);
+LTTNG_HIDDEN
+int lttng_session_enable(struct lttng_session *session);
+LTTNG_HIDDEN
+int lttng_session_disable(struct lttng_session *session);
+LTTNG_HIDDEN
+int lttng_session_statedump(struct lttng_session *session);
+LTTNG_HIDDEN
+void lttng_session_destroy(struct lttng_session *session);
+
+LTTNG_HIDDEN
+struct cds_list_head *lttng_get_sessions(void);
+
+LTTNG_HIDDEN
+void lttng_handle_pending_statedump(void *owner);
+
+LTTNG_HIDDEN
+struct lttng_channel *lttng_channel_create(struct lttng_session *session,
+				       const char *transport_name,
+				       void *buf_addr,
+				       size_t subbuf_size, size_t num_subbuf,
+				       unsigned int switch_timer_interval,
+				       unsigned int read_timer_interval,
+				       int **shm_fd, int **wait_fd,
+				       uint64_t **memory_map_size,
+				       struct lttng_channel *chan_priv_init);
+
+LTTNG_HIDDEN
+int lttng_channel_enable(struct lttng_channel *channel);
+LTTNG_HIDDEN
+int lttng_channel_disable(struct lttng_channel *channel);
+
+LTTNG_HIDDEN
+void lttng_transport_register(struct lttng_transport *transport);
+LTTNG_HIDDEN
+void lttng_transport_unregister(struct lttng_transport *transport);
+
+LTTNG_HIDDEN
+void lttng_probe_provider_unregister_events(struct lttng_probe_desc *desc);
+
+LTTNG_HIDDEN
+int lttng_fix_pending_events(void);
+
+LTTNG_HIDDEN
+struct cds_list_head *lttng_get_probe_list_head(void);
+
+LTTNG_HIDDEN
+struct lttng_enum *lttng_ust_enum_get_from_desc(struct lttng_session *session,
+		const struct lttng_enum_desc *enum_desc);
 
 #endif /* _LTTNG_UST_EVENTS_INTERNAL_H */

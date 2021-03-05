@@ -23,6 +23,7 @@
 #include "jhash.h"
 #include "getenv.h"
 #include "compat.h"
+#include "ust-events-internal.h"
 
 #define TRACEPOINT_DEFINE
 #include "ust_lib.h"				/* Only define. */
@@ -192,7 +193,7 @@ void trace_statedump_event(tracepoint_cb tp_cb, void *owner, void *priv)
 	struct cds_list_head *sessionsp;
 	struct lttng_session *session;
 
-	sessionsp = _lttng_get_sessions();
+	sessionsp = lttng_get_sessions();
 	cds_list_for_each_entry(session, sessionsp, node) {
 		if (session->owner != owner)
 			continue;

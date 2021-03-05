@@ -65,7 +65,7 @@
 static CDS_LIST_HEAD(sessions);
 static CDS_LIST_HEAD(event_notifier_groups);
 
-struct cds_list_head *_lttng_get_sessions(void)
+struct cds_list_head *lttng_get_sessions(void)
 {
 	return &sessions;
 }
@@ -1083,7 +1083,7 @@ void probe_provider_event_for_each(struct lttng_probe_desc *provider_desc,
 	unsigned int i;
 
 	/* Get handle on list of sessions. */
-	sessionsp = _lttng_get_sessions();
+	sessionsp = lttng_get_sessions();
 
 	/*
 	 * Iterate over all events in the probe provider descriptions and

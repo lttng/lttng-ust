@@ -24,10 +24,10 @@
 #include <ust-fd.h>
 #include <ust-helper.h>
 #include <lttng/ust-error.h>
-#include <lttng/ust-events.h>
 #include <ust-dynamic-type.h>
 #include <usterr-signal-safe.h>
 
+#include "../liblttng-ust/ust-events-internal.h"
 #include "../liblttng-ust/compat.h"
 
 #define USTCOMM_CODE_OFFSET(code)	\
