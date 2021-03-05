@@ -53,19 +53,6 @@ struct lttng_event_notifier_group;
  * tracer. Those structures have padding for future extension.
  */
 
-/*
- * LTTng client type enumeration. Used by the consumer to map the
- * callbacks from its own address space.
- */
-enum lttng_client_types {
-	LTTNG_CLIENT_METADATA = 0,
-	LTTNG_CLIENT_DISCARD = 1,
-	LTTNG_CLIENT_OVERWRITE = 2,
-	LTTNG_CLIENT_DISCARD_RT = 3,
-	LTTNG_CLIENT_OVERWRITE_RT = 4,
-	LTTNG_NR_CLIENT_TYPES,
-};
-
 /* Type description */
 
 /* Update the astract_types name table in lttng-types.c along with this enum */

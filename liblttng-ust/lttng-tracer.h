@@ -34,4 +34,17 @@
 #define LTTNG_RFLAG_EXTENDED		RING_BUFFER_RFLAG_END
 #define LTTNG_RFLAG_END			(LTTNG_RFLAG_EXTENDED << 1)
 
+/*
+ * LTTng client type enumeration. Used by the consumer to map the
+ * callbacks from its own address space.
+ */
+enum lttng_client_types {
+	LTTNG_CLIENT_METADATA = 0,
+	LTTNG_CLIENT_DISCARD = 1,
+	LTTNG_CLIENT_OVERWRITE = 2,
+	LTTNG_CLIENT_DISCARD_RT = 3,
+	LTTNG_CLIENT_OVERWRITE_RT = 4,
+	LTTNG_NR_CLIENT_TYPES,
+};
+
 #endif /* _LTTNG_TRACER_H */
