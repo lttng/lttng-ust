@@ -8,7 +8,8 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include <lttng/ust-events.h>
+
+#include "ust-events-internal.h"
 #include <usterr-signal-safe.h>
 #include "lttng-tracer-core.h"
 #include "jhash.h"

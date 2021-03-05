@@ -15,8 +15,8 @@
 #include <lttng/ust-config.h>
 #include <lttng/ust-ctl.h>
 #include <lttng/ust-abi.h>
-#include <lttng/ust-events.h>
 #include <lttng/ust-endian.h>
+
 #include <usterr-signal-safe.h>
 #include <ust-comm.h>
 #include <ust-helper.h>
@@ -24,6 +24,7 @@
 
 #include "../libringbuffer/backend.h"
 #include "../libringbuffer/frontend.h"
+#include "../liblttng-ust/ust-events-internal.h"
 #include "../liblttng-ust/wait.h"
 #include "../liblttng-ust/lttng-rb-clients.h"
 #include "../liblttng-ust/clock.h"

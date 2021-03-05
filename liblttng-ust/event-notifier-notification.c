@@ -8,10 +8,10 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <lttng/ust-events.h>
 #include <lttng/ust-endian.h>
 #include <usterr-signal-safe.h>
 
+#include "ust-events-internal.h"
 #include "../libmsgpack/msgpack.h"
 #include "lttng-bytecode.h"
 #include "ust-share.h"

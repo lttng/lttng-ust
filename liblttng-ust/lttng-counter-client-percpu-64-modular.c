@@ -8,7 +8,7 @@
  * Copyright (C) 2020 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
-#include <lttng/ust-events.h>
+#include "ust-events-internal.h"
 #include "../libcounter/counter.h"
 #include "../libcounter/counter-api.h"
 #include "lttng-tracer-core.h"

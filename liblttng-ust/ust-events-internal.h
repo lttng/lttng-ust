@@ -84,6 +84,87 @@ struct lttng_ust_excluder_node {
 	struct lttng_ust_event_exclusion excluder;
 };
 
+/* Data structures used by the tracer. */
+
+struct tp_list_entry {
+	struct lttng_ust_tracepoint_iter tp;
+	struct cds_list_head head;
+};
+
+struct lttng_ust_tracepoint_list {
+	struct tp_list_entry *iter;
+	struct cds_list_head head;
+};
+
+struct tp_field_list_entry {
+	struct lttng_ust_field_iter field;
+	struct cds_list_head head;
+};
+
+struct lttng_ust_field_list {
+	struct tp_field_list_entry *iter;
+	struct cds_list_head head;
+};
+
+/*
+ * Objects in a linked-list of enablers, owned by an event or event_notifier.
+ * This is used because an event (or a event_notifier) can be enabled by more
+ * than one enabler and we want a quick way to iterate over all enablers of an
+ * object.
+ *
+ * For example, event rules "my_app:a*" and "my_app:ab*" will both match the
+ * event with the name "my_app:abc".
+ */
+struct lttng_enabler_ref {
+	struct cds_list_head node;		/* enabler ref list */
+	struct lttng_enabler *ref;		/* backward ref */
+};
+
+#define LTTNG_COUNTER_DIMENSION_MAX	8
+struct lttng_counter_dimension {
+	uint64_t size;
+	uint64_t underflow_index;
+	uint64_t overflow_index;
+	uint8_t has_underflow;
+	uint8_t has_overflow;
+};
+
+struct lttng_counter {
+	int objd;
+	struct lttng_event_notifier_group *event_notifier_group;    /* owner */
+	struct lttng_counter_transport *transport;
+	struct lib_counter *counter;
+	struct lttng_counter_ops *ops;
+};
+
+struct lttng_event_notifier_group {
+	int objd;
+	void *owner;
+	int notification_fd;
+	struct cds_list_head node;		/* Event notifier group handle list */
+	struct cds_list_head enablers_head;
+	struct cds_list_head event_notifiers_head;	/* list of event_notifiers */
+	struct lttng_ust_event_notifier_ht event_notifiers_ht; /* hashtable of event_notifiers */
+	struct lttng_ctx *ctx;			/* contexts for filters. */
+
+	struct lttng_counter *error_counter;
+	size_t error_counter_len;
+};
+
+struct lttng_transport {
+	char *name;
+	struct cds_list_head node;
+	struct lttng_channel_ops ops;
+	const struct lttng_ust_lib_ring_buffer_config *client_config;
+};
+
+struct lttng_counter_transport {
+	char *name;
+	struct cds_list_head node;
+	struct lttng_counter_ops ops;
+	const struct lib_counter_config *client_config;
+};
+
 static inline
 struct lttng_enabler *lttng_event_enabler_as_enabler(
 		struct lttng_event_enabler *event_enabler)
