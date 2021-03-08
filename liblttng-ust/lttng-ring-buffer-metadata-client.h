@@ -186,8 +186,6 @@ static const struct lttng_ust_lib_ring_buffer_config client_config = {
 	 .cb_ptr = &client_cb.parent,
 };
 
-const struct lttng_ust_client_lib_ring_buffer_client_cb *LTTNG_CLIENT_CALLBACKS = &client_cb;
-
 static
 struct lttng_channel *_channel_create(const char *name,
 				void *buf_addr,

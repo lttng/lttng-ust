@@ -16,5 +16,4 @@
 #define RING_BUFFER_MODE_TEMPLATE_EXIT	\
 	lttng_ring_buffer_metadata_client_exit
 #define LTTNG_CLIENT_TYPE			LTTNG_CLIENT_METADATA
-#define LTTNG_CLIENT_CALLBACKS			lttng_client_callbacks_metadata
 #include "lttng-ring-buffer-metadata-client.h"
