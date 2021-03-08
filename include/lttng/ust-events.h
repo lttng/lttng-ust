@@ -598,8 +598,6 @@ struct lttng_transport *lttng_transport_find(const char *name);
 
 int lttng_session_active(void);
 
-typedef int (*t_statedump_func_ptr)(struct lttng_session *session);
-
 void lttng_ust_dl_update(void *ip);
 
 #ifdef __cplusplus
