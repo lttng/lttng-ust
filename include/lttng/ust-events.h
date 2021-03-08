@@ -778,10 +778,6 @@ void lttng_context_vegid_reset(void);
 void lttng_context_vsgid_reset(void);
 
 
-extern const struct lttng_ust_client_lib_ring_buffer_client_cb *lttng_client_callbacks_metadata;
-extern const struct lttng_ust_client_lib_ring_buffer_client_cb *lttng_client_callbacks_discard;
-extern const struct lttng_ust_client_lib_ring_buffer_client_cb *lttng_client_callbacks_overwrite;
-
 struct lttng_transport *lttng_transport_find(const char *name);
 
 int lttng_probes_get_event_list(struct lttng_ust_tracepoint_list *list);
