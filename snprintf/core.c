@@ -14,7 +14,7 @@ void ust_err_init(void)
 
 	if (ust_err_loglevel == UST_ERR_LOGLEVEL_UNKNOWN) {
 		/*
-		 * This getenv is not part of lttng_getenv() because it
+		 * This getenv is not part of lttng_ust_getenv() because it
 		 * is required to print ERR() performed during getenv
 		 * initialization.
 		 */

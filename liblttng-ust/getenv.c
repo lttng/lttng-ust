@@ -50,7 +50,7 @@ int lttng_is_setuid_setgid(void)
 	return geteuid() != getuid() || getegid() != getgid();
 }
 
-char *lttng_getenv(const char *name)
+char *lttng_ust_getenv(const char *name)
 {
 	size_t i;
 	struct lttng_env *e;

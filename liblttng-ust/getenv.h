@@ -7,17 +7,21 @@
 #ifndef _COMPAT_GETENV_H
 #define _COMPAT_GETENV_H
 
+#include "ust-helper.h"
+
 /*
- * Always add the lttng-ust environment variables to lttng_getenv()
- * infrastructure rather than using getenv() directly from lttng-ust.
- * This ensures that we don't trigger races between getenv() invoked by
- * lttng-ust listener threads invoked concurrently with setenv() called
- * by an otherwise single-threaded application thread. (the application
- * is not aware that it runs with lttng-ust)
+ * Always add the lttng-ust environment variables using the lttng_ust_getenv()
+ * infrastructure rather than using getenv() directly.  This ensures that we
+ * don't trigger races between getenv() invoked by lttng-ust listener threads
+ * invoked concurrently with setenv() called by an otherwise single-threaded
+ * application thread. (the application is not aware that it runs with
+ * lttng-ust)
  */
 
-char *lttng_getenv(const char *name);
+LTTNG_HIDDEN
+char *lttng_ust_getenv(const char *name);
 
+LTTNG_HIDDEN
 void lttng_ust_getenv_init(void);
 
 #endif /* _COMPAT_GETENV_H */

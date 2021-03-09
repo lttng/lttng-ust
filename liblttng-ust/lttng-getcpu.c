@@ -34,7 +34,7 @@ void lttng_ust_getcpu_init(void)
 
 	if (getcpu_handle)
 		return;
-	libname = lttng_getenv("LTTNG_UST_GETCPU_PLUGIN");
+	libname = lttng_ust_getenv("LTTNG_UST_GETCPU_PLUGIN");
 	if (!libname)
 		return;
 	getcpu_handle = dlopen(libname, RTLD_NOW);

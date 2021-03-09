@@ -548,7 +548,7 @@ void lttng_ust_dl_update(void *ip)
 {
 	struct dl_iterate_data data;
 
-	if (lttng_getenv("LTTNG_UST_WITHOUT_BADDR_STATEDUMP"))
+	if (lttng_ust_getenv("LTTNG_UST_WITHOUT_BADDR_STATEDUMP"))
 		return;
 
 	/*
@@ -582,7 +582,7 @@ void lttng_ust_dl_update(void *ip)
 static
 int do_baddr_statedump(void *owner)
 {
-	if (lttng_getenv("LTTNG_UST_WITHOUT_BADDR_STATEDUMP"))
+	if (lttng_ust_getenv("LTTNG_UST_WITHOUT_BADDR_STATEDUMP"))
 		return 0;
 	lttng_ust_dl_update(LTTNG_UST_CALLER_IP());
 	ust_dl_table_statedump(owner);
@@ -592,7 +592,7 @@ int do_baddr_statedump(void *owner)
 static
 int do_procname_statedump(void *owner)
 {
-	if (lttng_getenv("LTTNG_UST_WITHOUT_PROCNAME_STATEDUMP"))
+	if (lttng_ust_getenv("LTTNG_UST_WITHOUT_PROCNAME_STATEDUMP"))
 		return 0;
 
 	trace_statedump_event(procname_cb, owner, lttng_ust_sockinfo_get_procname(owner));

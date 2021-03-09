@@ -90,7 +90,7 @@ void lttng_ust_clock_init(void)
 
 	if (clock_handle)
 		return;
-	libname = lttng_getenv("LTTNG_UST_CLOCK_PLUGIN");
+	libname = lttng_ust_getenv("LTTNG_UST_CLOCK_PLUGIN");
 	if (!libname)
 		return;
 	clock_handle = dlopen(libname, RTLD_NOW);

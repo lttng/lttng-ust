@@ -398,11 +398,11 @@ const char *get_lttng_home_dir(void)
 {
        const char *val;
 
-       val = (const char *) lttng_getenv("LTTNG_HOME");
+       val = (const char *) lttng_ust_getenv("LTTNG_HOME");
        if (val != NULL) {
                return val;
        }
-       return (const char *) lttng_getenv("HOME");
+       return (const char *) lttng_ust_getenv("HOME");
 }
 
 /*
@@ -552,7 +552,7 @@ long get_timeout(void)
 	long constructor_delay_ms = LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_MS;
 
 	if (!got_timeout_env) {
-		str_timeout = lttng_getenv("LTTNG_UST_REGISTER_TIMEOUT");
+		str_timeout = lttng_ust_getenv("LTTNG_UST_REGISTER_TIMEOUT");
 		got_timeout_env = 1;
 	}
 	if (str_timeout)
@@ -619,7 +619,7 @@ static
 void get_allow_blocking(void)
 {
 	const char *str_allow_blocking =
-		lttng_getenv("LTTNG_UST_ALLOW_BLOCKING");
+		lttng_ust_getenv("LTTNG_UST_ALLOW_BLOCKING");
 
 	if (str_allow_blocking) {
 		DBG("%s environment variable is set",
