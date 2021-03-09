@@ -34,8 +34,11 @@ struct lttng_ust_lib_ring_buffer_ctx;
 struct lttng_ctx_value;
 struct lttng_event_notifier;
 
+LTTNG_HIDDEN
 int ust_lock(void) __attribute__ ((warn_unused_result));
+LTTNG_HIDDEN
 void ust_lock_nocheck(void);
+LTTNG_HIDDEN
 void ust_unlock(void);
 
 void lttng_fixup_event_tls(void);
