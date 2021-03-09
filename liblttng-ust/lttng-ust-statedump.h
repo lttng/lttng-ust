@@ -10,9 +10,14 @@
 
 #include <lttng/ust-events.h>
 
+#include "ust-helper.h"
+
+LTTNG_HIDDEN
 void lttng_ust_statedump_init(void);
+LTTNG_HIDDEN
 void lttng_ust_statedump_destroy(void);
 
+LTTNG_HIDDEN
 int do_lttng_ust_statedump(void *owner);
 
 #endif /* LTTNG_UST_STATEDUMP_H */
