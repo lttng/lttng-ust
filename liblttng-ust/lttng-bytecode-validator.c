@@ -1975,7 +1975,7 @@ int lttng_bytecode_validate(struct bytecode_runtime *bytecode)
 			goto end;
 		}
 		dbg_printf("Validating op %s (%u)\n",
-			print_op((unsigned int) *(bytecode_opcode_t *) pc),
+			lttng_bytecode_print_op((unsigned int) *(bytecode_opcode_t *) pc),
 			(unsigned int) *(bytecode_opcode_t *) pc);
 
 		/*

@@ -162,7 +162,7 @@ static const char *opnames[] = {
 	[ BYTECODE_OP_RETURN_S64 ] = "RETURN_S64",
 };
 
-const char *print_op(enum bytecode_op op)
+const char *lttng_bytecode_print_op(enum bytecode_op op)
 {
 	if (op >= NR_BYTECODE_OPS)
 		return "UNKNOWN";

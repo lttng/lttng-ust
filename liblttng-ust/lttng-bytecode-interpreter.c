@@ -171,7 +171,7 @@ uint64_t lttng_bytecode_capture_interpret_false(void *capture_data,
 	for (pc = next_pc = start_pc; pc - start_pc < bytecode->len;	\
 			pc = next_pc) {					\
 		dbg_printf("Executing op %s (%u)\n",			\
-			print_op((unsigned int) *(bytecode_opcode_t *) pc), \
+			lttng_bytecode_print_op((unsigned int) *(bytecode_opcode_t *) pc), \
 			(unsigned int) *(bytecode_opcode_t *) pc); 	\
 		switch (*(bytecode_opcode_t *) pc)	{
 

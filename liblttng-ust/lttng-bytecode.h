@@ -314,8 +314,8 @@ struct lttng_interpreter_output {
 	} u;
 };
 
-/* Should be hidden but would break the ABI */
-const char *print_op(enum bytecode_op op);
+LTTNG_HIDDEN
+const char *lttng_bytecode_print_op(enum bytecode_op op);
 
 LTTNG_HIDDEN
 void lttng_bytecode_filter_sync_state(struct lttng_bytecode_runtime *runtime);
