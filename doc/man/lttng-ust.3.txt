@@ -755,7 +755,9 @@ man:lttng-add-context(1).
 
 The following context fields are supported by LTTng-UST:
 
-`cpu_id`::
+General context fields::
++
+`cpu_id`:::
     CPU ID.
 +
 NOTE: This context field is always enabled, and it cannot be added
@@ -763,98 +765,106 @@ with man:lttng-add-context(1). Its main purpose is to be used for
 dynamic event filtering. See man:lttng-enable-event(1) for more
 information about event filtering.
 
-`ip`::
+`ip`:::
     Instruction pointer: enables recording the exact address from which
     an event was emitted. This context field can be used to
     reverse-lookup the source location that caused the event
     to be emitted.
 
-`perf:thread:COUNTER`::
+`pthread_id`:::
+    POSIX thread identifier.
++
+Can be used on architectures where `pthread_t` maps nicely to an
+`unsigned long` type.
+
+Process context fields::
++
+`procname`:::
+    Thread name, as set by man:exec(3) or man:prctl(2). It is
+    recommended that programs set their thread name with man:prctl(2)
+    before hitting the first tracepoint for that thread.
+
+`vpid`:::
+    Virtual process ID: process ID as seen from the point of view of the
+    current process ID namespace (see man:pid_namespaces(7)).
+
+`vtid`:::
+    Virtual thread ID: thread ID as seen from the point of view of the
+    current process ID namespace (see man:pid_namespaces(7)).
+
+perf context fields::
++
+`perf:thread:COUNTER`:::
     perf counter named 'COUNTER'. Use `lttng add-context --list` to
     list the available perf counters.
 +
 Only available on IA-32 and x86-64 architectures.
 
-`perf:thread:raw:rN:NAME`::
+`perf:thread:raw:rN:NAME`:::
     perf counter with raw ID 'N' and custom name 'NAME'. See
     man:lttng-add-context(1) for more details.
 
-`pthread_id`::
-    POSIX thread identifier. Can be used on architectures where
-    `pthread_t` maps nicely to an `unsigned long` type.
+Namespace context fields (see man:namespaces(7))::
++
+`cgroup_ns`:::
+    Inode number of the current control group namespace (see
+    man:cgroup_namespaces(7)) in the proc file system.
 
-`procname`::
-    Thread name, as set by man:exec(3) or man:prctl(2). It is
-    recommended that programs set their thread name with man:prctl(2)
-    before hitting the first tracepoint for that thread.
+`ipc_ns`:::
+    Inode number of the current IPC namespace (see
+    man:ipc_namespaces(7)) in the proc file system.
 
-`vpid`::
-    Virtual process ID: process ID as seen from the point of view of
-    the current man:pid_namespaces(7).
+`mnt_ns`:::
+    Inode number of the current mount point namespace (see
+    man:mount_namespaces(7)) in the proc file system.
 
-`vtid`::
-    Virtual thread ID: thread ID as seen from the point of view of
-    the current man:pid_namespaces(7).
+`net_ns`:::
+    Inode number of the current network namespace (see
+    man:network_namespaces(7)) in the proc file system.
 
-The following man:namespaces(7) context fields are supported by LTTng-UST:
+`pid_ns`:::
+    Inode number of the current process ID namespace (see
+    man:pid_namespaces(7)) in the proc file system.
 
-`cgroup_ns`::
-    Cgroup root directory namespace: inode number of the current
-    man:cgroup_namespaces(7) in the proc filesystem.
+`time_ns`:::
+    Inode number of the current clock namespace (see
+    man:time_namespaces(7)) in the proc file system.
 
-`ipc_ns`::
-    System V IPC, POSIX message queues namespace: inode number of the
-    current man:ipc_namespaces(7) namespace in the proc filesystem.
+`user_ns`:::
+    Inode number of the current user namespace (see
+    man:user_namespaces(7)) in the proc file system.
 
-`mnt_ns`::
-    Mount points namespace: inode number of the current
-    man:mount_namespaces(7) in the proc filesystem.
+`uts_ns`:::
+    Inode number of the current UTS namespace (see
+    man:uts_namespaces(7)) in the proc file system.
 
-`net_ns`::
-    Network devices, stacks, ports namespace: inode number of the
-    current man:network_namespaces(7) in the proc filesystem.
-
-`pid_ns`::
-    Process IDs namespace: inode number of the current
-    man:pid_namespaces(7) in the proc filesystem.
-
-`time_ns`::
-    Time and system clock namespace: inode number of the current
-    man:time_namespaces(7) in the proc filesystem.
-
-`user_ns`::
-    User and group IDs namespace: inode number of the current
-    man:user_namespaces(7) in the proc filesystem.
-
-`uts_ns`::
-    Hostname and NIS domain name namespace: inode number of the
-    current man:uts_namespaces(7) in the proc filesystem.
-
-The following man:credentials(7) context fields are supported by LTTng-UST:
-
-`vuid`::
+Credential context fields (see man:credentials(7))::
++
+`vuid`:::
     Virtual real user ID: real user ID as seen from the point of view of
-    the current man:user_namespaces(7).
+    the current user namespace (see man:user_namespaces(7)).
 
-`vgid`::
-    Virtual real group ID: real group ID as seen from the point of view of
-    the current man:user_namespaces(7).
+`vgid`:::
+    Virtual real group ID: real group ID as seen from the point of view
+    of the current user namespace (see man:user_namespaces(7)).
 
-`veuid`::
-    Virtual effective user ID: effective user ID as seen from the point of
-    view of the current man:user_namespaces(7).
+`veuid`:::
+    Virtual effective user ID: effective user ID as seen from the point
+    of view of the current user namespace (see man:user_namespaces(7)).
 
-`vegid`::
-    Virtual effective group ID: effective group ID as seen from the point of
-    view of the current man:user_namespaces(7).
+`vegid`:::
+    Virtual effective group ID: effective group ID as seen from the
+    point of view of the current user namespace (see
+    man:user_namespaces(7)).
 
-`vsuid`::
-    Virtual saved set-user ID: saved set-user ID as seen from the point of
-    view of the current man:user_namespaces(7).
+`vsuid`:::
+    Virtual saved set-user ID: saved set-user ID as seen from the point
+    of view of the current user namespace (see man:user_namespaces(7)).
 
-`vsgid`::
-    Virtual saved set-group ID: saved set-group ID as seen from the point of
-    view of the current man:user_namespaces(7).
+`vsgid`:::
+    Virtual saved set-group ID: saved set-group ID as seen from the
+    point of view of the current user namespace (see
+    man:user_namespaces(7)).
 
 
 [[state-dump]]
