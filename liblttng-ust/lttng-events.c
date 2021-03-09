@@ -254,7 +254,7 @@ void register_event(struct lttng_ust_event_common *event)
 
 	assert(event->priv->registered == 0);
 	desc = event->priv->desc;
-	ret = __tracepoint_probe_register_queue_release(desc->name,
+	ret = lttng_ust_tp_probe_register_queue_release(desc->name,
 			desc->probe_callback,
 			event, desc->signature);
 	WARN_ON_ONCE(ret);
@@ -270,7 +270,7 @@ void unregister_event(struct lttng_ust_event_common *event)
 
 	assert(event->priv->registered == 1);
 	desc = event->priv->desc;
-	ret = __tracepoint_probe_unregister_queue_release(desc->name,
+	ret = lttng_ust_tp_probe_unregister_queue_release(desc->name,
 			desc->probe_callback,
 			event);
 	WARN_ON_ONCE(ret);
@@ -297,7 +297,7 @@ void lttng_session_destroy(struct lttng_session *session)
 		_lttng_event_unregister(event_recorder_priv->parent.pub);
 	}
 	lttng_ust_urcu_synchronize_rcu();	/* Wait for in-flight events to complete */
-	__tracepoint_probe_prune_release_queue();
+	lttng_ust_tp_probe_prune_release_queue();
 	cds_list_for_each_entry_safe(event_enabler, event_tmpenabler,
 			&session->priv->enablers_head, node)
 		lttng_event_enabler_destroy(event_enabler);
@@ -1186,7 +1186,7 @@ void lttng_probe_provider_unregister_events(
 	/* Wait for grace period. */
 	lttng_ust_urcu_synchronize_rcu();
 	/* Prune the unregistration queue. */
-	__tracepoint_probe_prune_release_queue();
+	lttng_ust_tp_probe_prune_release_queue();
 
 	/*
 	 * It is now safe to destroy the events and remove them from the event list
@@ -1703,7 +1703,7 @@ void lttng_session_sync_event_enablers(struct lttng_session *session)
 			lttng_bytecode_filter_sync_state(runtime);
 		}
 	}
-	__tracepoint_probe_prune_release_queue();
+	lttng_ust_tp_probe_prune_release_queue();
 }
 
 /* Support for event notifier is introduced by probe provider major version 2. */
@@ -1921,7 +1921,7 @@ void lttng_event_notifier_group_sync_enablers(struct lttng_event_notifier_group 
 			lttng_bytecode_capture_sync_state(runtime);
 		}
 	}
-	__tracepoint_probe_prune_release_queue();
+	lttng_ust_tp_probe_prune_release_queue();
 }
 
 /*

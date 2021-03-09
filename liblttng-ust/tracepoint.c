@@ -619,10 +619,10 @@ end:
 
 /*
  * Caller needs to invoke __tracepoint_probe_release_queue() after
- * calling __tracepoint_probe_register_queue_release() one or multiple
+ * calling lttng_ust_tp_probe_register_queue_release() one or multiple
  * times to ensure it does not leak memory.
  */
-int __tracepoint_probe_register_queue_release(const char *name,
+int lttng_ust_tp_probe_register_queue_release(const char *name,
 		void (*probe)(void), void *data, const char *signature)
 {
 	void *old;
@@ -690,10 +690,10 @@ end:
 
 /*
  * Caller needs to invoke __tracepoint_probe_release_queue() after
- * calling __tracepoint_probe_unregister_queue_release() one or multiple
+ * calling lttng_ust_tp_probe_unregister_queue_release() one or multiple
  * times to ensure it does not leak memory.
  */
-int __tracepoint_probe_unregister_queue_release(const char *name,
+int lttng_ust_tp_probe_unregister_queue_release(const char *name,
 		void (*probe)(void), void *data)
 {
 	void *old;
@@ -714,7 +714,7 @@ end:
 	return ret;
 }
 
-void __tracepoint_probe_prune_release_queue(void)
+void lttng_ust_tp_probe_prune_release_queue(void)
 {
 	CDS_LIST_HEAD(release_probes);
 	struct tp_probes *pos, *next;
