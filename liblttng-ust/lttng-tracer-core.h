@@ -41,14 +41,23 @@ void ust_lock_nocheck(void);
 LTTNG_HIDDEN
 void ust_unlock(void);
 
+LTTNG_HIDDEN
+void lttng_ust_fixup_tls(void);
+LTTNG_HIDDEN
 void lttng_fixup_event_tls(void);
+LTTNG_HIDDEN
 void lttng_fixup_vtid_tls(void);
+LTTNG_HIDDEN
 void lttng_fixup_procname_tls(void);
+LTTNG_HIDDEN
 void lttng_fixup_cgroup_ns_tls(void);
+LTTNG_HIDDEN
 void lttng_fixup_ipc_ns_tls(void);
+LTTNG_HIDDEN
 void lttng_fixup_net_ns_tls(void);
 LTTNG_HIDDEN
 void lttng_fixup_time_ns_tls(void);
+LTTNG_HIDDEN
 void lttng_fixup_uts_ns_tls(void);
 
 LTTNG_HIDDEN
@@ -74,7 +83,6 @@ void lttng_ust_dummy_record(struct lttng_ctx_field *field,
 void lttng_ust_dummy_get_value(struct lttng_ctx_field *field,
 		struct lttng_ctx_value *value);
 int lttng_context_is_app(const char *name);
-void lttng_ust_fixup_tls(void);
 
 LTTNG_HIDDEN
 void lttng_event_notifier_notification_send(
@@ -89,6 +97,7 @@ LTTNG_HIDDEN
 void lttng_counter_transport_unregister(struct lttng_counter_transport *transport);
 
 #ifdef HAVE_PERF_EVENT
+LTTNG_HIDDEN
 void lttng_ust_fixup_perf_counter_tls(void);
 void lttng_perf_lock(void);
 void lttng_perf_unlock(void);
