@@ -85,7 +85,7 @@ struct lttng_ust_stream {
 	 */
 } LTTNG_PACKED;
 
-#define LTTNG_UST_COUNTER_DIMENSION_MAX 8
+#define LTTNG_UST_COUNTER_DIMENSION_MAX 4
 
 enum lttng_ust_counter_arithmetic {
 	LTTNG_UST_COUNTER_ARITHMETIC_MODULAR = 0,
