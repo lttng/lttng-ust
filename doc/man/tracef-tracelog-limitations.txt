@@ -1,6 +1,6 @@
-The +{macro-name}()+ utility macro was developed to make user space
-tracing super simple, albeit with notable disadvantages compared to
-custom, full-fledged tracepoint providers:
+The +{macro-name}()+ and +v{macro-name}()+ utility macros were
+developed to make user space tracing super simple, albeit with notable
+disadvantages compared to custom, full-fledged tracepoint providers:
 
   * All generated events have the same provider/event names.
   * There's no static type checking.
@@ -9,19 +9,21 @@ custom, full-fledged tracepoint providers:
     macro using your own format. This also means that you cannot use
     filtering using a custom expression at run time because there are no
     isolated fields.
-  * Since +{macro-name}()+ uses C standard library's man:vasprintf(3)
-    function in the background to format the strings at run time, its
-    expected performance is lower than using custom tracepoint providers
-    with typed fields, which do not require a conversion to a string.
+  * Since +{macro-name}()+ and +v{macro-name}()+ use C standard
+    library's man:vasprintf(3) function in the background to format the
+    strings at run time, their expected performance is lower than using
+    custom tracepoint providers with typed fields, which do not require
+    a conversion to a string.
   * Generally, a string containing the textual representation of the
-    user data fields is not as compact as binary fields in the
-    resulting trace.
+    user data fields is not as compact as binary fields in the resulting
+    trace.
 
-Thus, +{macro-name}()+ is useful for quick prototyping and debugging, but
-should not be considered for any permanent/serious application
-instrumentation.
+Thus, +{macro-name}()+/+v{macro-name}()+ are useful for quick
+prototyping and debugging, but should not be considered for any
+permanent/serious application instrumentation.
 
-+v{macro-name}()+ does not have a `STAP_PROBEV()` call, because `STAP_PROBEV()`
-does not support `va_list`. If you need it, you should emit this call yourself.
++v{macro-name}()+ does not have a `STAP_PROBEV()` call, because
+`STAP_PROBEV()` does not support `va_list`. If you need it, you should
+emit this call yourself.
 
 See man:lttng-ust(3) to learn more about custom tracepoint providers.
