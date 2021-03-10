@@ -15,8 +15,6 @@
 #include <stddef.h>
 #include <unistd.h>
 
-#include "ust-helper.h"
-
 /* Internal helpers */
 #include "backend_internal.h"
 #include "frontend_internal.h"
@@ -25,12 +23,12 @@
 
 /* Ring buffer backend access (read/write) */
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 extern size_t lib_ring_buffer_read(struct lttng_ust_lib_ring_buffer_backend *bufb,
 				   size_t offset, void *dest, size_t len,
 				   struct lttng_ust_shm_handle *handle);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 extern int lib_ring_buffer_read_cstr(struct lttng_ust_lib_ring_buffer_backend *bufb,
 				     size_t offset, void *dest, size_t len,
 				     struct lttng_ust_shm_handle *handle);
@@ -41,12 +39,13 @@ extern int lib_ring_buffer_read_cstr(struct lttng_ust_lib_ring_buffer_backend *b
  * it's never on a page boundary, it's safe to write directly to this address,
  * as long as the write is never bigger than a page size.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 extern void *
 lib_ring_buffer_offset_address(struct lttng_ust_lib_ring_buffer_backend *bufb,
 			       size_t offset,
 			       struct lttng_ust_shm_handle *handle);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 extern void *
 lib_ring_buffer_read_offset_address(struct lttng_ust_lib_ring_buffer_backend *bufb,
 				    size_t offset,

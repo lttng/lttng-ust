@@ -12,7 +12,6 @@
 #include <linux/types.h>
 #else /* __KERNEL__ */
 #include <stdint.h>
-#include "ust-helper.h"
 #endif /* __KERNEL__ */
 
 struct lttng_msgpack_writer {
@@ -23,39 +22,49 @@ struct lttng_msgpack_writer {
 	uint8_t map_nesting;
 };
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 void lttng_msgpack_writer_init(
 		struct lttng_msgpack_writer *writer,
 		uint8_t *buffer, size_t size);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 void lttng_msgpack_writer_fini(struct lttng_msgpack_writer *writer);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int lttng_msgpack_write_nil(struct lttng_msgpack_writer *writer);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int lttng_msgpack_write_true(struct lttng_msgpack_writer *writer);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int lttng_msgpack_write_false(struct lttng_msgpack_writer *writer);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int lttng_msgpack_write_unsigned_integer(
 		struct lttng_msgpack_writer *writer, uint64_t value);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int lttng_msgpack_write_signed_integer(
 		struct lttng_msgpack_writer *writer, int64_t value);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int lttng_msgpack_write_double(struct lttng_msgpack_writer *writer, double value);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int lttng_msgpack_write_str(struct lttng_msgpack_writer *writer,
 		const char *value);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int lttng_msgpack_begin_map(struct lttng_msgpack_writer *writer, size_t count);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int lttng_msgpack_end_map(struct lttng_msgpack_writer *writer);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int lttng_msgpack_begin_array(
 		struct lttng_msgpack_writer *writer, size_t count);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int lttng_msgpack_end_array(struct lttng_msgpack_writer *writer);
 
 #endif /* _LTTNG_UST_MSGPACK_H */

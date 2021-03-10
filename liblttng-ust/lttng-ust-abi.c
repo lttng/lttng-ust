@@ -30,7 +30,6 @@
 #include <urcu/compiler.h>
 #include <urcu/list.h>
 
-#include <ust-helper.h>
 #include <lttng/tracepoint.h>
 #include <lttng/ust-abi.h>
 #include <lttng/ust-error.h>
@@ -47,6 +46,7 @@
 #include "string-utils.h"
 #include "ust-events-internal.h"
 #include "context-internal.h"
+#include "ust-helper.h"
 
 #define OBJ_NAME_LEN	16
 
@@ -762,7 +762,7 @@ long lttng_event_notifier_group_error_counter_cmd(int objd, unsigned int cmd, un
 	return ret;
 }
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int lttng_release_event_notifier_group_error_counter(int objd)
 {
 	struct lttng_counter *counter = objd_private(objd);

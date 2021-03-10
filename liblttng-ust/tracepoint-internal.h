@@ -11,8 +11,6 @@
 #include <lttng/tracepoint-types.h>
 #include <lttng/ust-events.h>
 
-#include "ust-helper.h"
-
 #define TRACE_DEFAULT	TRACE_DEBUG_LINE
 
 struct tracepoint_lib {
@@ -22,19 +20,26 @@ struct tracepoint_lib {
 	struct cds_list_head callsites;
 };
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int tracepoint_probe_register_noupdate(const char *name,
 		void (*callback)(void), void *priv,
 		const char *signature);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int tracepoint_probe_unregister_noupdate(const char *name,
 		void (*callback)(void), void *priv);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 void tracepoint_probe_update_all(void);
 
+
+__attribute__((visibility("hidden")))
 void *lttng_ust_tp_check_weak_hidden1(void);
+
+__attribute__((visibility("hidden")))
 void *lttng_ust_tp_check_weak_hidden2(void);
+
+__attribute__((visibility("hidden")))
 void *lttng_ust_tp_check_weak_hidden3(void);
 
 /*

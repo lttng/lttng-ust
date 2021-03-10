@@ -16,8 +16,6 @@
 #include <stdio.h>
 #include <wchar.h>
 
-#include "ust-helper.h"
-
 struct __lttng_ust_sbuf {
         unsigned char *_base;
         int     _size;
@@ -100,12 +98,13 @@ typedef struct __lttng_ust_sFILE {
 
 #define __sferror(p)    (((p)->_flags & __SERR) != 0)
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 extern int ust_safe_fflush(LTTNG_UST_LFILE *fp);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 extern int ust_safe_vfprintf(LTTNG_UST_LFILE *fp, const char *fmt0, va_list ap);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 extern size_t ust_safe_mbrtowc(wchar_t *pwc, const char *s, size_t n, mbstate_t *ps);
 
 #endif /* UST_SNPRINTF_VARIOUS_H */

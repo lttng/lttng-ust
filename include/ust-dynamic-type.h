@@ -9,14 +9,14 @@
 
 #include <lttng/ust-events.h>
 
-#include "ust-helper.h"
-
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int lttng_ust_dynamic_type_choices(size_t *nr_choices,
 		const struct lttng_ust_event_field ***choices);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 const struct lttng_ust_event_field *lttng_ust_dynamic_type_field(int64_t value);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 const struct lttng_ust_event_field *lttng_ust_dynamic_type_tag_field(void);
 
 #endif /* _LTTNG_UST_DYNAMIC_TYPE_H */

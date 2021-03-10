@@ -15,7 +15,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <ust-share.h>
-#include "ust-helper.h"
 #include "ust-tid.h"
 #include "ust-snprintf.h"
 
@@ -25,9 +24,10 @@ enum ust_err_loglevel {
 	UST_ERR_LOGLEVEL_DEBUG,
 };
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 extern volatile enum ust_err_loglevel ust_err_loglevel;
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 void ust_err_init(void);
 
 #ifdef LTTNG_UST_DEBUG

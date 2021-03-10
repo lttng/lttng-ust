@@ -20,6 +20,7 @@
 
 #include "lttng-tracer-core.h"
 #include "lttng-ust-elf.h"
+#include "ust-helper.h"
 
 #define BUF_LEN	4096
 

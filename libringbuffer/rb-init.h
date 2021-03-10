@@ -7,11 +7,10 @@
 #ifndef _LTTNG_UST_LIB_RINGBUFFER_RB_INIT_H
 #define _LTTNG_UST_LIB_RINGBUFFER_RB_INIT_H
 
-#include "ust-helper.h"
-
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 void lttng_fixup_ringbuffer_tls(void);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 void lttng_ust_ringbuffer_set_allow_blocking(void);
 
 #endif /* _LTTNG_UST_LIB_RINGBUFFER_RB_INIT_H */

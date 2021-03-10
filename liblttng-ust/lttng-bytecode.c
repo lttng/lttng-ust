@@ -15,6 +15,7 @@
 #include "context-internal.h"
 #include "lttng-bytecode.h"
 #include "ust-events-internal.h"
+#include "ust-helper.h"
 
 static const char *opnames[] = {
 	[ BYTECODE_OP_UNKNOWN ] = "UNKNOWN",

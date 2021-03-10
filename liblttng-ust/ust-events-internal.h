@@ -12,7 +12,6 @@
 #include <urcu/list.h>
 #include <urcu/hlist.h>
 
-#include <ust-helper.h>
 #include <lttng/ust-events.h>
 
 
@@ -334,7 +333,7 @@ struct lttng_enabler *lttng_event_notifier_enabler_as_enabler(
  * On success, returns a `struct lttng_event_enabler`,
  * On memory error, returns NULL.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 struct lttng_event_enabler *lttng_event_enabler_create(
 		enum lttng_enabler_format_type format_type,
 		struct lttng_ust_abi_event *event_param,
@@ -343,28 +342,28 @@ struct lttng_event_enabler *lttng_event_enabler_create(
 /*
  * Destroy a `struct lttng_event_enabler` object.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 void lttng_event_enabler_destroy(struct lttng_event_enabler *enabler);
 
 /*
  * Enable a `struct lttng_event_enabler` object and all events related to this
  * enabler.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int lttng_event_enabler_enable(struct lttng_event_enabler *enabler);
 
 /*
  * Disable a `struct lttng_event_enabler` object and all events related to this
  * enabler.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int lttng_event_enabler_disable(struct lttng_event_enabler *enabler);
 
 /*
  * Attach filter bytecode program to `struct lttng_event_enabler` and all
  * events related to this enabler.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int lttng_event_enabler_attach_filter_bytecode(
 		struct lttng_event_enabler *enabler,
 		struct lttng_ust_bytecode_node **bytecode);
@@ -374,7 +373,7 @@ int lttng_event_enabler_attach_filter_bytecode(
  *
  * Not implemented.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int lttng_event_enabler_attach_context(struct lttng_event_enabler *enabler,
 		struct lttng_ust_abi_context *ctx);
 
@@ -382,7 +381,7 @@ int lttng_event_enabler_attach_context(struct lttng_event_enabler *enabler,
  * Attach exclusion list to `struct lttng_event_enabler` and all
  * events related to this enabler.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int lttng_event_enabler_attach_exclusion(struct lttng_event_enabler *enabler,
 		struct lttng_ust_excluder_node **excluder);
 
@@ -393,7 +392,7 @@ int lttng_event_enabler_attach_exclusion(struct lttng_event_enabler *enabler,
  * This function goes over all bytecode programs of the enabler (event or
  * event_notifier enabler) to ensure each is linked to the provided instance.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 void lttng_enabler_link_bytecode(const struct lttng_ust_event_desc *event_desc,
 		struct lttng_ctx **ctx,
 		struct cds_list_head *instance_bytecode_runtime_head,
@@ -405,13 +404,13 @@ void lttng_enabler_link_bytecode(const struct lttng_ust_event_desc *event_desc,
  * On success, returns a `struct lttng_triggre_group`,
  * on memory error, returns NULL.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 struct lttng_event_notifier_group *lttng_event_notifier_group_create(void);
 
 /*
  * Destroy a `struct lttng_event_notifier_group` object.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 void lttng_event_notifier_group_destroy(
 		struct lttng_event_notifier_group *event_notifier_group);
 
@@ -421,7 +420,7 @@ void lttng_event_notifier_group_destroy(
  * On success, returns a `struct lttng_event_notifier_enabler`,
  * On memory error, returns NULL.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 struct lttng_event_notifier_enabler *lttng_event_notifier_enabler_create(
 		struct lttng_event_notifier_group *event_notifier_group,
 		enum lttng_enabler_format_type format_type,
@@ -430,7 +429,7 @@ struct lttng_event_notifier_enabler *lttng_event_notifier_enabler_create(
 /*
  * Destroy a `struct lttng_event_notifier_enabler` object.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 void lttng_event_notifier_enabler_destroy(
 		struct lttng_event_notifier_enabler *event_notifier_enabler);
 
@@ -438,7 +437,7 @@ void lttng_event_notifier_enabler_destroy(
  * Enable a `struct lttng_event_notifier_enabler` object and all event
  * notifiers related to this enabler.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int lttng_event_notifier_enabler_enable(
 		struct lttng_event_notifier_enabler *event_notifier_enabler);
 
@@ -446,7 +445,7 @@ int lttng_event_notifier_enabler_enable(
  * Disable a `struct lttng_event_notifier_enabler` object and all event
  * notifiers related to this enabler.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int lttng_event_notifier_enabler_disable(
 		struct lttng_event_notifier_enabler *event_notifier_enabler);
 
@@ -454,7 +453,7 @@ int lttng_event_notifier_enabler_disable(
  * Attach filter bytecode program to `struct lttng_event_notifier_enabler` and
  * all event notifiers related to this enabler.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int lttng_event_notifier_enabler_attach_filter_bytecode(
 		struct lttng_event_notifier_enabler *event_notifier_enabler,
 		struct lttng_ust_bytecode_node **bytecode);
@@ -463,7 +462,7 @@ int lttng_event_notifier_enabler_attach_filter_bytecode(
  * Attach capture bytecode program to `struct lttng_event_notifier_enabler` and
  * all event_notifiers related to this enabler.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int lttng_event_notifier_enabler_attach_capture_bytecode(
 		struct lttng_event_notifier_enabler *event_notifier_enabler,
 		struct lttng_ust_bytecode_node **bytecode);
@@ -472,36 +471,38 @@ int lttng_event_notifier_enabler_attach_capture_bytecode(
  * Attach exclusion list to `struct lttng_event_notifier_enabler` and all
  * event notifiers related to this enabler.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int lttng_event_notifier_enabler_attach_exclusion(
 		struct lttng_event_notifier_enabler *event_notifier_enabler,
 		struct lttng_ust_excluder_node **excluder);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 void lttng_free_event_filter_runtime(struct lttng_ust_event_common *event);
 
 /*
  * Connect the probe on all enablers matching this event description.
  * Called on library load.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int lttng_fix_pending_event_notifiers(void);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 struct lttng_counter *lttng_ust_counter_create(
 		const char *counter_transport_name,
 		size_t number_dimensions, const struct lttng_counter_dimension *dimensions);
 
 #ifdef HAVE_PERF_EVENT
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int lttng_add_perf_counter_to_ctx(uint32_t type,
 				  uint64_t config,
 				  const char *name,
 				  struct lttng_ctx **ctx);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int lttng_perf_counter_init(void);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 void lttng_perf_counter_exit(void);
 
 #else /* #ifdef HAVE_PERF_EVENT */
@@ -525,41 +526,48 @@ void lttng_perf_counter_exit(void)
 }
 #endif /* #else #ifdef HAVE_PERF_EVENT */
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int lttng_probes_get_event_list(struct lttng_ust_tracepoint_list *list);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 void lttng_probes_prune_event_list(struct lttng_ust_tracepoint_list *list);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int lttng_probes_get_field_list(struct lttng_ust_field_list *list);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 void lttng_probes_prune_field_list(struct lttng_ust_field_list *list);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 struct lttng_ust_abi_tracepoint_iter *
 	lttng_ust_tracepoint_list_get_iter_next(struct lttng_ust_tracepoint_list *list);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 struct lttng_ust_abi_field_iter *
 	lttng_ust_field_list_get_iter_next(struct lttng_ust_field_list *list);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 struct lttng_session *lttng_session_create(void);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int lttng_session_enable(struct lttng_session *session);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int lttng_session_disable(struct lttng_session *session);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int lttng_session_statedump(struct lttng_session *session);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 void lttng_session_destroy(struct lttng_session *session);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 struct cds_list_head *lttng_get_sessions(void);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 void lttng_handle_pending_statedump(void *owner);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 struct lttng_channel *lttng_channel_create(struct lttng_session *session,
 				       const char *transport_name,
 				       void *buf_addr,
@@ -570,41 +578,47 @@ struct lttng_channel *lttng_channel_create(struct lttng_session *session,
 				       uint64_t **memory_map_size,
 				       struct lttng_channel *chan_priv_init);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int lttng_channel_enable(struct lttng_channel *channel);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int lttng_channel_disable(struct lttng_channel *channel);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 void lttng_transport_register(struct lttng_transport *transport);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 void lttng_transport_unregister(struct lttng_transport *transport);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 void lttng_probe_provider_unregister_events(struct lttng_ust_probe_desc *desc);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int lttng_fix_pending_events(void);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 struct cds_list_head *lttng_get_probe_list_head(void);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 struct lttng_enum *lttng_ust_enum_get_from_desc(struct lttng_session *session,
 		const struct lttng_ust_enum_desc *enum_desc);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int lttng_abi_create_root_handle(void);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 const struct lttng_ust_abi_objd_ops *lttng_ust_abi_objd_ops(int id);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int lttng_ust_abi_objd_unref(int id, int is_owner);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 void lttng_ust_abi_exit(void);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 void lttng_ust_abi_events_exit(void);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 void lttng_ust_abi_objd_table_owner_cleanup(void *owner);
 
 #endif /* _LTTNG_UST_EVENTS_INTERNAL_H */

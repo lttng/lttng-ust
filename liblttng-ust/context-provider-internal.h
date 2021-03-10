@@ -9,9 +9,8 @@
 
 #include <stddef.h>
 #include <lttng/ust-events.h>
-#include "ust-helper.h"
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 void lttng_ust_context_set_event_notifier_group_provider(const char *name,
 		size_t (*get_size)(struct lttng_ctx_field *field, size_t offset),
 		void (*record)(struct lttng_ctx_field *field,

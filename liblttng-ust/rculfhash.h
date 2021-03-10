@@ -13,7 +13,6 @@
 #include <stdint.h>
 #include <pthread.h>
 #include <urcu/compiler.h>
-#include "ust-helper.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -97,11 +96,13 @@ struct lttng_ust_lfht_mm_type {
 			unsigned long index);
 };
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 extern const struct lttng_ust_lfht_mm_type lttng_ust_lfht_mm_order;
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 extern const struct lttng_ust_lfht_mm_type lttng_ust_lfht_mm_chunk;
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 extern const struct lttng_ust_lfht_mm_type lttng_ust_lfht_mm_mmap;
 
 /*
@@ -121,7 +122,7 @@ extern const struct lttng_ust_lfht_mm_type lttng_ust_lfht_mm_mmap;
  * Return NULL on error.
  * Note: the RCU flavor must be already included before the hash table header.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 extern struct lttng_ust_lfht *lttng_ust_lfht_new(unsigned long init_size,
 			unsigned long min_nr_alloc_buckets,
 			unsigned long max_nr_buckets,
@@ -145,7 +146,7 @@ extern struct lttng_ust_lfht *lttng_ust_lfht_new(unsigned long init_size,
  * thread to handle resize operations, which removes RCU requirements on
  * lttng_ust_lfht_destroy.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 extern int lttng_ust_lfht_destroy(struct lttng_ust_lfht *ht);
 
 /*
@@ -158,7 +159,7 @@ extern int lttng_ust_lfht_destroy(struct lttng_ust_lfht *ht);
  * Call with rcu_read_lock held.
  * Threads calling this API need to be registered RCU read-side threads.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 extern void lttng_ust_lfht_count_nodes(struct lttng_ust_lfht *ht,
 		long *split_count_before,
 		unsigned long *count,
@@ -176,7 +177,7 @@ extern void lttng_ust_lfht_count_nodes(struct lttng_ust_lfht *ht,
  * Threads calling this API need to be registered RCU read-side threads.
  * This function acts as a rcu_dereference() to read the node pointer.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 extern void lttng_ust_lfht_lookup(struct lttng_ust_lfht *ht, unsigned long hash,
 		lttng_ust_lfht_match_fct match, const void *key,
 		struct lttng_ust_lfht_iter *iter);
@@ -201,7 +202,7 @@ extern void lttng_ust_lfht_lookup(struct lttng_ust_lfht *ht, unsigned long hash,
  * Threads calling this API need to be registered RCU read-side threads.
  * This function acts as a rcu_dereference() to read the node pointer.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 extern void lttng_ust_lfht_next_duplicate(struct lttng_ust_lfht *ht,
 		lttng_ust_lfht_match_fct match, const void *key,
 		struct lttng_ust_lfht_iter *iter);
@@ -216,7 +217,7 @@ extern void lttng_ust_lfht_next_duplicate(struct lttng_ust_lfht *ht,
  * Threads calling this API need to be registered RCU read-side threads.
  * This function acts as a rcu_dereference() to read the node pointer.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 extern void lttng_ust_lfht_first(struct lttng_ust_lfht *ht, struct lttng_ust_lfht_iter *iter);
 
 /*
@@ -231,7 +232,7 @@ extern void lttng_ust_lfht_first(struct lttng_ust_lfht *ht, struct lttng_ust_lfh
  * Threads calling this API need to be registered RCU read-side threads.
  * This function acts as a rcu_dereference() to read the node pointer.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 extern void lttng_ust_lfht_next(struct lttng_ust_lfht *ht, struct lttng_ust_lfht_iter *iter);
 
 /*
@@ -246,7 +247,7 @@ extern void lttng_ust_lfht_next(struct lttng_ust_lfht *ht, struct lttng_ust_lfht
  * This function issues a full memory barrier before and after its
  * atomic commit.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 extern void lttng_ust_lfht_add(struct lttng_ust_lfht *ht, unsigned long hash,
 		struct lttng_ust_lfht_node *node);
 
@@ -277,7 +278,7 @@ extern void lttng_ust_lfht_add(struct lttng_ust_lfht *ht, unsigned long hash,
  * node pointer. The failure case does not guarantee any other memory
  * barrier.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 extern struct lttng_ust_lfht_node *lttng_ust_lfht_add_unique(struct lttng_ust_lfht *ht,
 		unsigned long hash,
 		lttng_ust_lfht_match_fct match,
@@ -314,7 +315,7 @@ extern struct lttng_ust_lfht_node *lttng_ust_lfht_add_unique(struct lttng_ust_lf
  * This function issues a full memory barrier before and after its
  * atomic commit.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 extern struct lttng_ust_lfht_node *lttng_ust_lfht_add_replace(struct lttng_ust_lfht *ht,
 		unsigned long hash,
 		lttng_ust_lfht_match_fct match,
@@ -350,7 +351,7 @@ extern struct lttng_ust_lfht_node *lttng_ust_lfht_add_replace(struct lttng_ust_l
  * after its atomic commit. Upon failure, this function does not issue
  * any memory barrier.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 extern int lttng_ust_lfht_replace(struct lttng_ust_lfht *ht,
 		struct lttng_ust_lfht_iter *old_iter,
 		unsigned long hash,
@@ -379,7 +380,7 @@ extern int lttng_ust_lfht_replace(struct lttng_ust_lfht *ht,
  * after its atomic commit. Upon failure, this function does not issue
  * any memory barrier.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 extern int lttng_ust_lfht_del(struct lttng_ust_lfht *ht, struct lttng_ust_lfht_node *node);
 
 /*
@@ -395,7 +396,7 @@ extern int lttng_ust_lfht_del(struct lttng_ust_lfht *ht, struct lttng_ust_lfht_n
  * Threads calling this API need to be registered RCU read-side threads.
  * This function does not issue any memory barrier.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 extern int lttng_ust_lfht_is_node_deleted(const struct lttng_ust_lfht_node *node);
 
 /*
@@ -408,7 +409,7 @@ extern int lttng_ust_lfht_is_node_deleted(const struct lttng_ust_lfht_node *node
  * lttng_ust_lfht_resize should *not* be called from a RCU read-side critical
  * section.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 extern void lttng_ust_lfht_resize(struct lttng_ust_lfht *ht, unsigned long new_size);
 
 /*

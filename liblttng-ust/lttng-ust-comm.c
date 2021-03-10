@@ -361,13 +361,17 @@ extern void lttng_ring_buffer_client_overwrite_rt_exit(void);
 extern void lttng_ring_buffer_client_discard_exit(void);
 extern void lttng_ring_buffer_client_discard_rt_exit(void);
 extern void lttng_ring_buffer_metadata_client_exit(void);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 extern void lttng_counter_client_percpu_32_modular_init(void);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 extern void lttng_counter_client_percpu_32_modular_exit(void);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 extern void lttng_counter_client_percpu_64_modular_init(void);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 extern void lttng_counter_client_percpu_64_modular_exit(void);
 
 static char *get_map_shm(struct sock_info *sock_info);
@@ -455,7 +459,6 @@ int lttng_get_notify_socket(void *owner)
 }
 
 
-LTTNG_HIDDEN
 char* lttng_ust_sockinfo_get_procname(void *owner)
 {
 	struct sock_info *info = owner;

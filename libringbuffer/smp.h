@@ -7,7 +7,6 @@
 #ifndef _LIBRINGBUFFER_SMP_H
 #define _LIBRINGBUFFER_SMP_H
 
-#include "ust-helper.h"
 #include "getcpu.h"
 
 /*
@@ -16,9 +15,10 @@
  */
 #define PER_CPU_MEM_SIZE	4096
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 extern int __num_possible_cpus;
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 extern void _get_num_possible_cpus(void);
 
 static inline

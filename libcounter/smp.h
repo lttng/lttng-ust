@@ -7,16 +7,15 @@
 #ifndef _LIBCOUNTER_SMP_H
 #define _LIBCOUNTER_SMP_H
 
-#include "ust-helper.h"
-
 /*
  * 4kB of per-cpu data available.
  */
 #define LTTNG_COUNTER_PER_CPU_MEM_SIZE	4096
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 extern int __lttng_counter_num_possible_cpus;
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 extern void _lttng_counter_get_num_possible_cpus(void);
 
 static inline

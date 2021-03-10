@@ -17,45 +17,59 @@
 
 #include <stdio.h>
 #include <wchar.h>
-#include "ust-helper.h"
 #include "various.h"
 #include "wcio.h"
 #include "fileext.h"
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int	__sflush(LTTNG_UST_LFILE *);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 LTTNG_UST_LFILE	*__sfp(void);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int	__srefill(LTTNG_UST_LFILE *);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int	__sread(void *, char *, int);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int	__swrite(void *, const char *, int);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 fpos_t	__sseek(void *, fpos_t, int);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int	__sclose(void *);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 void	__sinit(void);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 void	_cleanup(void);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 void	__smakebuf(LTTNG_UST_LFILE *);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int	__swhatbuf(LTTNG_UST_LFILE *, size_t *, int *);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int	_fwalk(int (*)(LTTNG_UST_LFILE *));
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int	__swsetup(LTTNG_UST_LFILE *);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int	__sflags(const char *, int *);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 wint_t __fgetwc_unlock(LTTNG_UST_LFILE *);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 extern void __atexit_register_cleanup(void (*)(void));
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 extern int __sdidinit;
 
 /*

@@ -21,7 +21,6 @@
 #include <lttng/ust-error.h>
 #include <lttng/ust-compiler.h>
 #include <lttng/ust-ctl.h>
-#include "ust-helper.h"
 
 #ifndef LTTNG_PACKED
 #error "LTTNG_PACKED should be defined"
@@ -199,56 +198,70 @@ struct ustcomm_notify_channel_reply {
  * struct lttng_ust_field_iter field.
  */
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int ustcomm_create_unix_sock(const char *pathname);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int ustcomm_connect_unix_sock(const char *pathname,
  	long timeout);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int ustcomm_accept_unix_sock(int sock);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int ustcomm_listen_unix_sock(int sock);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int ustcomm_close_unix_sock(int sock);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 ssize_t ustcomm_recv_unix_sock(int sock, void *buf, size_t len);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 ssize_t ustcomm_send_unix_sock(int sock, const void *buf, size_t len);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 ssize_t ustcomm_send_fds_unix_sock(int sock, int *fds, size_t nb_fd);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 ssize_t ustcomm_recv_fds_unix_sock(int sock, int *fds, size_t nb_fd);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 const char *ustcomm_get_readable_code(int code);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int ustcomm_send_app_msg(int sock, struct ustcomm_ust_msg *lum);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int ustcomm_recv_app_reply(int sock, struct ustcomm_ust_reply *lur,
  	uint32_t expected_handle, uint32_t expected_cmd);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int ustcomm_send_app_cmd(int sock,
 		struct ustcomm_ust_msg *lum,
 		struct ustcomm_ust_reply *lur);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int ustcomm_recv_fd(int sock);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 ssize_t ustcomm_recv_channel_from_sessiond(int sock,
 		void **chan_data, uint64_t len, int *wakeup_fd);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int ustcomm_recv_stream_from_sessiond(int sock,
 		uint64_t *memory_map_size,
 		int *shm_fd, int *wakeup_fd);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 ssize_t ustcomm_recv_event_notifier_notif_fd_from_sessiond(int sock,
 		int *event_notifier_notif_fd);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 ssize_t ustcomm_recv_counter_from_sessiond(int sock,
 		void **counter_data, uint64_t len);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int ustcomm_recv_counter_shm_from_sessiond(int sock,
 		int *shm_fd);
 
@@ -256,7 +269,7 @@ int ustcomm_recv_counter_shm_from_sessiond(int sock,
  * Returns 0 on success, negative error value on error.
  * Returns -EPIPE or -ECONNRESET if other end has hung up.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int ustcomm_send_reg_msg(int sock,
 		enum ustctl_socket_type type,
 		uint32_t bits_per_long,
@@ -270,7 +283,7 @@ int ustcomm_send_reg_msg(int sock,
  * Returns 0 on success, negative error value on error.
  * Returns -EPIPE or -ECONNRESET if other end has hung up.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int ustcomm_register_event(int sock,
 	struct lttng_session *session,
 	int session_objd,		/* session descriptor */
@@ -287,7 +300,7 @@ int ustcomm_register_event(int sock,
  * Returns 0 on success, negative error value on error.
  * Returns -EPIPE or -ECONNRESET if other end has hung up.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int ustcomm_register_enum(int sock,
 	int session_objd,		/* session descriptor */
 	const char *enum_name,		/* enum name (input) */
@@ -299,7 +312,7 @@ int ustcomm_register_enum(int sock,
  * Returns 0 on success, negative error value on error.
  * Returns -EPIPE or -ECONNRESET if other end has hung up.
  */
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int ustcomm_register_channel(int sock,
 	struct lttng_session *session,
 	int session_objd,		/* session descriptor */
@@ -309,9 +322,10 @@ int ustcomm_register_channel(int sock,
 	uint32_t *chan_id,		/* channel id (output) */
 	int *header_type); 		/* header type (output) */
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int ustcomm_setsockopt_rcv_timeout(int sock, unsigned int msec);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int ustcomm_setsockopt_snd_timeout(int sock, unsigned int msec);
 
 #endif	/* _LTTNG_UST_COMM_H */

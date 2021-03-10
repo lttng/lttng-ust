@@ -314,32 +314,36 @@ struct lttng_interpreter_output {
 	} u;
 };
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 const char *lttng_bytecode_print_op(enum bytecode_op op);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 void lttng_bytecode_filter_sync_state(struct lttng_ust_bytecode_runtime *runtime);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 void lttng_bytecode_capture_sync_state(struct lttng_ust_bytecode_runtime *runtime);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 int lttng_bytecode_validate(struct bytecode_runtime *bytecode);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 int lttng_bytecode_specialize(const struct lttng_ust_event_desc *event_desc,
 		struct bytecode_runtime *bytecode);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 uint64_t lttng_bytecode_filter_interpret_false(void *filter_data,
 		const char *filter_stack_data);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 uint64_t lttng_bytecode_filter_interpret(void *filter_data,
 		const char *filter_stack_data);
 
-LTTNG_HIDDEN
+__attribute__((visibility("hidden")))
 uint64_t lttng_bytecode_capture_interpret_false(void *capture_data,
 		const char *capture_stack_data,
 		struct lttng_interpreter_output *output);
-LTTNG_HIDDEN
+
+__attribute__((visibility("hidden")))
 uint64_t lttng_bytecode_capture_interpret(void *capture_data,
 		const char *capture_stack_data,
 		struct lttng_interpreter_output *output);
