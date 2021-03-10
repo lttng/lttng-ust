@@ -17,6 +17,9 @@ MAN3_NAMES = \
 	lttng-ust-dl \
 	lttng-ust-cyg-profile
 
+# Man page aliases (generated from other sources):
+MAN3_ALIASES = vtracef.3 vtracelog.3
+
 # troff man pages:
 MAN3_TROFF = do_tracepoint.3 tracepoint.3 tracepoint_enabled.3
 
@@ -43,7 +46,7 @@ COMMON_DEPS = $(ASCIIDOC_CONF) $(COMMON_TXT)
 
 # Man pages destinations:
 MAN1 = $(addsuffix .1,$(MAN1_NAMES))
-MAN3 = $(addsuffix .3,$(MAN3_NAMES))
+MAN3 = $(addsuffix .3,$(MAN3_NAMES)) $(MAN3_ALIASES)
 MAN = $(MAN1) $(MAN3)
 
 if MAN_PAGES_OPT
@@ -77,6 +80,12 @@ XTO = $(xmlto_verbose)$(XMLTO) -m $(XSL_FILE) man
 
 %.3.xml: $(srcdir)/%.3.txt $(COMMON_DEPS)
 	$(ADOC_DOCBOOK) -o $@ $<
+
+tracef.3 vtracef.3 &: tracef.3.xml $(XSL_FILE)
+	$(XTO) $< 2>/dev/null
+
+tracelog.3 vtracelog.3 &: tracelog.3.xml $(XSL_FILE)
+	$(XTO) $< 2>/dev/null
 
 %.3: %.3.xml $(XSL_FILE)
 	$(XTO) $< 2>/dev/null
