@@ -145,7 +145,7 @@ static void release_probes(void *old)
 	if (old) {
 		struct tp_probes *tp_probes = caa_container_of(old,
 			struct tp_probes, probes[0]);
-		lttng_ust_synchronize_trace();
+		lttng_ust_urcu_synchronize_rcu();
 		free(tp_probes);
 	}
 }
@@ -729,7 +729,7 @@ void __tracepoint_probe_prune_release_queue(void)
 	release_queue_need_update = 0;
 
 	/* Wait for grace period between all sync_callsites and free. */
-	lttng_ust_synchronize_trace();
+	lttng_ust_urcu_synchronize_rcu();
 
 	cds_list_for_each_entry_safe(pos, next, &release_probes, u.list) {
 		cds_list_del(&pos->u.list);
@@ -820,7 +820,7 @@ void tracepoint_probe_update_all(void)
 
 	tracepoint_update_probes();
 	/* Wait for grace period between update_probes and free. */
-	lttng_ust_synchronize_trace();
+	lttng_ust_urcu_synchronize_rcu();
 	cds_list_for_each_entry_safe(pos, next, &release_probes, u.list) {
 		cds_list_del(&pos->u.list);
 		free(pos);
@@ -1014,9 +1014,4 @@ void tp_disable_destructors(void)
 int tp_get_destructors_state(void)
 {
 	return uatomic_read(&tracepoint_destructors_state);
-}
-
-void lttng_ust_synchronize_trace(void)
-{
-	lttng_ust_urcu_synchronize_rcu();
 }

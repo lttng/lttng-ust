@@ -331,7 +331,7 @@ void lttng_session_destroy(struct lttng_session *session)
 	cds_list_for_each_entry(event, &session->events_head, node) {
 		_lttng_event_unregister(event);
 	}
-	lttng_ust_synchronize_trace();	/* Wait for in-flight events to complete */
+	lttng_ust_urcu_synchronize_rcu();	/* Wait for in-flight events to complete */
 	__tracepoint_probe_prune_release_queue();
 	cds_list_for_each_entry_safe(event_enabler, event_tmpenabler,
 			&session->enablers_head, node)
@@ -364,7 +364,7 @@ void lttng_event_notifier_group_destroy(
 			&event_notifier_group->event_notifiers_head, node)
 		_lttng_event_notifier_unregister(notifier);
 
-	lttng_ust_synchronize_trace();
+	lttng_ust_urcu_synchronize_rcu();
 
 	cds_list_for_each_entry_safe(notifier_enabler, tmpnotifier_enabler,
 			&event_notifier_group->enablers_head, node)
@@ -1201,7 +1201,7 @@ void lttng_probe_provider_unregister_events(
 		_lttng_event_notifier_unregister);
 
 	/* Wait for grace period. */
-	lttng_ust_synchronize_trace();
+	lttng_ust_urcu_synchronize_rcu();
 	/* Prune the unregistration queue. */
 	__tracepoint_probe_prune_release_queue();
 

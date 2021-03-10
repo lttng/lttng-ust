@@ -422,7 +422,7 @@ long lttng_cmd(int objd, unsigned int cmd, unsigned long arg,
 	case LTTNG_UST_TRACEPOINT_FIELD_LIST:
 		return lttng_abi_tracepoint_field_list(owner);
 	case LTTNG_UST_WAIT_QUIESCENT:
-		lttng_ust_synchronize_trace();
+		lttng_ust_urcu_synchronize_rcu();
 		return 0;
 	case LTTNG_UST_EVENT_NOTIFIER_GROUP_CREATE:
 		return lttng_abi_event_notifier_send_fd(owner,

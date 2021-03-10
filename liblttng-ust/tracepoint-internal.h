@@ -32,17 +32,6 @@ extern int __tracepoint_probe_unregister_queue_release(const char *name,
 		void (*func)(void), void *data);
 extern void __tracepoint_probe_prune_release_queue(void);
 
-void lttng_ust_synchronize_trace(void);
-
-/*
- * call after disconnection of last probe implemented within a
- * shared object before unmapping the library that contains the probe.
- */
-static inline void tracepoint_synchronize_unregister(void)
-{
-	lttng_ust_synchronize_trace();
-}
-
 extern void init_tracepoint(void);
 extern void exit_tracepoint(void);
 
