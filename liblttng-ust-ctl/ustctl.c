@@ -72,6 +72,7 @@ struct ustctl_counter_attr {
 	uint32_t nr_dimensions;
 	int64_t global_sum_step;
 	struct ustctl_counter_dimension dimensions[USTCTL_COUNTER_ATTR_DIMENSION_MAX];
+	bool coalesce_hits;
 };
 
 /*
@@ -2568,7 +2569,8 @@ struct ustctl_daemon_counter *
 		const int *counter_cpu_fds,
 		enum ustctl_counter_bitness bitness,
 		enum ustctl_counter_arithmetic arithmetic,
-		uint32_t alloc_flags)
+		uint32_t alloc_flags,
+		bool coalesce_hits)
 {
 	const char *transport_name;
 	struct ustctl_daemon_counter *counter;
@@ -2634,6 +2636,7 @@ struct ustctl_daemon_counter *
 	counter->attr->arithmetic = arithmetic;
 	counter->attr->nr_dimensions = nr_dimensions;
 	counter->attr->global_sum_step = global_sum_step;
+	counter->attr->coalesce_hits = coalesce_hits;
 	for (i = 0; i < nr_dimensions; i++)
 		counter->attr->dimensions[i] = dimensions[i];
 
@@ -2689,6 +2692,7 @@ int ustctl_create_counter_data(struct ustctl_daemon_counter *counter,
 	}
 	counter_conf.number_dimensions = counter->attr->nr_dimensions;
 	counter_conf.global_sum_step = counter->attr->global_sum_step;
+	counter_conf.coalesce_hits = counter->attr->coalesce_hits;
 	for (i = 0; i < counter->attr->nr_dimensions; i++) {
 		counter_conf.dimensions[i].size = counter->attr->dimensions[i].size;
 		counter_conf.dimensions[i].underflow_index = counter->attr->dimensions[i].underflow_index;

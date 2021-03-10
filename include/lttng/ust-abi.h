@@ -85,6 +85,7 @@ struct lttng_ust_stream {
 	 */
 } LTTNG_PACKED;
 
+#define LTTNG_UST_COUNTER_DIMENSION_MAX 8
 
 enum lttng_ust_counter_arithmetic {
 	LTTNG_UST_COUNTER_ARITHMETIC_MODULAR = 0,
@@ -104,13 +105,15 @@ struct lttng_ust_counter_dimension {
 	uint8_t has_overflow;
 } LTTNG_PACKED;
 
-#define LTTNG_UST_COUNTER_DIMENSION_MAX 8
+#define LTTNG_UST_COUNTER_CONF_PADDING1 67
 struct lttng_ust_counter_conf {
 	uint32_t arithmetic;	/* enum lttng_ust_counter_arithmetic */
 	uint32_t bitness;	/* enum lttng_ust_counter_bitness */
 	uint32_t number_dimensions;
 	int64_t global_sum_step;
 	struct lttng_ust_counter_dimension dimensions[LTTNG_UST_COUNTER_DIMENSION_MAX];
+	uint8_t coalesce_hits;
+	char padding[LTTNG_UST_COUNTER_CONF_PADDING1];
 } LTTNG_PACKED;
 
 struct lttng_ust_counter_value {

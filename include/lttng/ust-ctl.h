@@ -622,7 +622,8 @@ struct ustctl_daemon_counter *
 		const int *counter_cpu_fds,
 		enum ustctl_counter_bitness bitness,
 		enum ustctl_counter_arithmetic arithmetic,
-		uint32_t alloc_flags);
+		uint32_t alloc_flags,
+		bool coalesce_hits);
 
 int ustctl_create_counter_data(struct ustctl_daemon_counter *counter,
 		struct lttng_ust_object_data **counter_data);
