@@ -415,7 +415,7 @@ void lttng_ust_fixup_malloc_nesting_tls(void)
 }
 
 __attribute__((constructor))
-void lttng_ust_malloc_wrapper_init(void)
+void lttng_ust_libc_wrapper_malloc_init(void)
 {
 	/* Initialization already done */
 	if (cur_alloc.calloc) {

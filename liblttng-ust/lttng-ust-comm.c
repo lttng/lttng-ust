@@ -34,6 +34,7 @@
 #include <lttng/ust.h>
 #include <lttng/ust-error.h>
 #include <lttng/ust-ctl.h>
+#include <lttng/ust-libc-wrapper.h>
 #include <urcu/tls-compat.h>
 #include <ust-comm.h>
 #include <ust-fd.h>
@@ -2052,7 +2053,7 @@ quit:
  * Weak symbol to call when the ust malloc wrapper is not loaded.
  */
 __attribute__((weak))
-void lttng_ust_malloc_wrapper_init(void)
+void lttng_ust_libc_wrapper_malloc_init(void)
 {
 }
 
@@ -2125,7 +2126,7 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	/*
 	 * Invoke ust malloc wrapper init before starting other threads.
 	 */
-	lttng_ust_malloc_wrapper_init();
+	lttng_ust_libc_wrapper_malloc_init();
 
 	timeout_mode = get_constructor_timeout(&constructor_timeout);
 
