@@ -33,6 +33,13 @@ LTTNG_HIDDEN
 void lttng_destroy_context(struct lttng_ctx *ctx);
 
 LTTNG_HIDDEN
+int lttng_context_add_rcu(struct lttng_ctx **ctx_p,
+		const struct lttng_ctx_field *f);
+
+LTTNG_HIDDEN
+int lttng_context_is_app(const char *name);
+
+LTTNG_HIDDEN
 void lttng_context_vtid_reset(void);
 LTTNG_HIDDEN
 void lttng_context_vpid_reset(void);

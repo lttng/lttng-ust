@@ -29,8 +29,6 @@ struct lttng_ust_context_provider {
 int lttng_ust_context_provider_register(struct lttng_ust_context_provider *provider);
 void lttng_ust_context_provider_unregister(struct lttng_ust_context_provider *provider);
 
-int lttng_context_is_app(const char *name);
-
 void lttng_ust_context_set_session_provider(const char *name,
 		size_t (*get_size)(struct lttng_ctx_field *field, size_t offset),
 		void (*record)(struct lttng_ctx_field *field,
@@ -48,7 +46,5 @@ int lttng_ust_context_set_provider_rcu(struct lttng_ctx **_ctx,
 			struct lttng_channel *chan),
 		void (*get_value)(struct lttng_ctx_field *field,
 			struct lttng_ctx_value *value));
-int lttng_context_add_rcu(struct lttng_ctx **ctx_p,
-		const struct lttng_ctx_field *f);
 
 #endif /* _LTTNG_UST_CONTEXT_PROVIDER_H */

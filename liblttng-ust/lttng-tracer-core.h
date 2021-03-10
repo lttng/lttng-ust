@@ -82,7 +82,6 @@ void lttng_ust_dummy_record(struct lttng_ctx_field *field,
 		 struct lttng_channel *chan);
 void lttng_ust_dummy_get_value(struct lttng_ctx_field *field,
 		struct lttng_ctx_value *value);
-int lttng_context_is_app(const char *name);
 
 LTTNG_HIDDEN
 void lttng_event_notifier_notification_send(

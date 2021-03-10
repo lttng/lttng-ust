@@ -13,6 +13,7 @@
 #include "ust-bitfield.h"
 #include "ust-compat.h"
 #include "clock.h"
+#include "context-internal.h"
 #include "lttng-tracer.h"
 #include "../libringbuffer/frontend_types.h"
 
