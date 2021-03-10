@@ -15,37 +15,46 @@ SYNOPSIS
 
 [verse]
 #define *tracelog*('level', 'fmt', ...)
-#define *vtracelog*('level', 'fmt', 'va_list' ap)
+#define *vtracelog*('level', 'fmt', 'ap')
 
 Link with `-llttng-ust`.
 
 
 DESCRIPTION
 -----------
-The LTTng-UST `tracelog()` API allows you to trace your application with
-the help of a simple man:printf(3)-like macro, with an additional
-parameter for the desired log level. The 'fmt' argument is passed
-directly to the 'fmt' parameter of man:vasprintf(3), as well as
-the optional parameters following 'fmt'.
+The LTTng-UST `tracelog()` and `vtracelog()` API allows you to trace
+your application with the help of simple man:printf(3)-like and
+man:vprintf(3)-like macros, with an additional parameter for the desired
+log level.
 
-The purpose of `tracelog()` is to ease the migration from logging to
-tracing.
+The 'fmt' argument is passed directly as the 'fmt' parameter of
+man:vasprintf(3), as well as:
+
+For `tracelog()`::
+    The optional parameters following 'fmt'.
+
+For `vtracelog()`::
+    The 'ap' parameter as the 'ap' parameter of man:vasprintf(3)
+    (`va_list` type).
+
+The purpose of `tracelog()` and `vtracelog()` is to ease the migration
+from logging to tracing.
 
 The available values for the 'level' parameter are:
 
 include::log-levels.txt[]
 
-To use `tracelog()` or `vtracelog()`, include `<lttng/tracelog.h>` where you
-need it, and link your application with `liblttng-ust`.
-See the <<example,EXAMPLE>> section below for a complete usage example.
+To use `tracelog()` or `vtracelog()`, include `<lttng/tracelog.h>` where
+you need it, and link your application with `liblttng-ust`. See the
+<<example,EXAMPLE>> section below for a complete usage example.
 
-Once your application is instrumented with `tracelog()` calls and
-ready to run, use man:lttng-enable-event(1) to enable the
-`lttng_ust_tracelog:*` event. You can isolate specific log levels with
-the nloption:--loglevel and nloption:--loglevel-only options of this
-command.
+Once your application is instrumented with `tracelog()` and/or
+`vtracelog()` calls and ready to run, use man:lttng-enable-event(1) to
+enable the `lttng_ust_tracelog:*` event. You can isolate specific log
+levels with the nloption:--loglevel and nloption:--loglevel-only options
+of this command.
 
-The `tracelog()` events contain the following fields:
+The `tracelog()` and `vtracelog()` events contain the following fields:
 
 [options="header"]
 |===
@@ -64,8 +73,8 @@ The `tracelog()` events contain the following fields:
 |Formatted string output.
 |===
 
-If you do not need to attach a specific log level to a `tracelog()`
-call, use man:tracef(3) instead.
+If you do not need to attach a specific log level to a
+`tracelog()`/`vtracelog()` call, use man:tracef(3) instead.
 
 See also the <<limitations,LIMITATIONS>> section below for important
 limitations to consider when using `tracelog()` or `vtracelog()`.
@@ -162,6 +171,7 @@ include::common-authors.txt[]
 SEE ALSO
 --------
 man:tracef(3),
+man:vtracef(3),
 man:lttng-ust(3),
 man:lttng(1),
 man:printf(3)

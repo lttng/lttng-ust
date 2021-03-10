@@ -15,31 +15,40 @@ SYNOPSIS
 
 [verse]
 #define *tracef*('fmt', ...)
-#define *vtracef*('fmt', 'va_list' ap)
+#define *vtracef*('fmt', 'ap')
 
 Link with `-llttng-ust`.
 
 
 DESCRIPTION
 -----------
-The LTTng-UST `tracef()` API allows you to trace your application with
-the help of a simple man:printf(3)-like macro. The 'fmt' argument is
-passed directly to the 'fmt' parameter of man:vasprintf(3), as well as
-the optional parameters following 'fmt'.
+The LTTng-UST `tracef()` and `vtracef()` API allows you to trace your
+application with the help of simple man:printf(3)-like and
+man:vprintf(3)-like macros.
 
-To use `tracef()` or `vtracef()`, include `<lttng/tracef.h>` where you need it,
-and link your application with `liblttng-ust`. See the <<example,EXAMPLE>>
-section below for a complete usage example.
+The 'fmt' argument is passed directly as the 'fmt' parameter of
+man:vasprintf(3), as well as:
 
-Once your application is instrumented with `tracef()` or `vtracef()` calls and
-ready to run, use man:lttng-enable-event(1) to enable the
+For `tracef()`::
+    The optional parameters following 'fmt'.
+
+For `vtracef()`::
+    The 'ap' parameter as the 'ap' parameter of man:vasprintf(3)
+    (`va_list` type).
+
+To use `tracef()` or `vtracef()`, include `<lttng/tracef.h>` where you
+need it, and link your application with `liblttng-ust`. See the
+<<example,EXAMPLE>> section below for a complete usage example.
+
+Once your application is instrumented with `tracef()` and/or `vtracef()`
+calls and ready to run, use man:lttng-enable-event(1) to enable the
 `lttng_ust_tracef:*` event.
 
-The `tracef()` events contain a single field, named `msg`, which is the
-formatted string output.
+The `tracef()` and `vtracef()` events contain a single field, named
+`msg`, which is the formatted string output.
 
-If you need to attach a specific log level to a `tracef()` call, use
-man:tracelog(3) instead.
+If you need to attach a specific log level to a `tracef()`/`vtracef()`
+call, use man:tracelog(3) and man:vtracelog(3) instead.
 
 See also the <<limitations,LIMITATIONS>> section below for important
 limitations to consider when using `tracef()` or `vtracef()`.
@@ -118,6 +127,7 @@ include::common-authors.txt[]
 SEE ALSO
 --------
 man:tracelog(3),
+man:vtracelog(3),
 man:lttng-ust(3),
 man:lttng(1),
 man:printf(3)
