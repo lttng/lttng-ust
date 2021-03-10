@@ -2110,7 +2110,7 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	 */
 	ust_err_init();
 	lttng_ust_getenv_init();	/* Needs ust_err_init() to be completed. */
-	init_tracepoint();
+	lttng_ust_tp_init();
 	lttng_ust_init_fd_tracker();
 	lttng_ust_clock_init();
 	lttng_ust_getcpu_init();
@@ -2270,7 +2270,7 @@ void lttng_ust_cleanup(int exiting)
 	lttng_counter_client_percpu_32_modular_exit();
 	lttng_counter_client_percpu_64_modular_exit();
 	lttng_ust_statedump_destroy();
-	exit_tracepoint();
+	lttng_ust_tp_exit();
 	if (!exiting) {
 		/* Reinitialize values for fork */
 		sem_count = sem_count_initial_value;

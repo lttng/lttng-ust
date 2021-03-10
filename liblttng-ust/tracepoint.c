@@ -864,7 +864,7 @@ int tracepoint_register_lib(struct lttng_ust_tracepoint * const *tracepoints_sta
 {
 	struct tracepoint_lib *pl, *iter;
 
-	init_tracepoint();
+	lttng_ust_tp_init();
 
 	pl = (struct tracepoint_lib *) zmalloc(sizeof(struct tracepoint_lib));
 	if (!pl) {
@@ -956,7 +956,7 @@ static void check_weak_hidden(void)
 			"DIFFERENT addresses");
 }
 
-void init_tracepoint(void)
+void lttng_ust_tp_init(void)
 {
 	if (uatomic_xchg(&initialized, 1) == 1)
 		return;
@@ -964,7 +964,7 @@ void init_tracepoint(void)
 	check_weak_hidden();
 }
 
-void exit_tracepoint(void)
+void lttng_ust_tp_exit(void)
 {
 	initialized = 0;
 }
