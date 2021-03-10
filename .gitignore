@@ -69,6 +69,7 @@ doc/man/lttng-ust.3
 doc/man/tracef.3
 doc/man/tracelog.3
 doc/man/vtracef.3
+doc/man/vtracelog.3
 
 tests/benchmark/bench1
 tests/benchmark/bench2
