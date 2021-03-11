@@ -174,7 +174,7 @@ void capture_sequence(struct lttng_msgpack_writer *writer,
 	case atype_integer:
 		integer_type = &nested_type->u.integer;
 		break;
-	case atype_enum:
+	case atype_enum_nestable:
 		/* Treat enumeration as an integer. */
 		integer_type = &nested_type->u.enum_nestable.container_type->u.integer;
 		break;

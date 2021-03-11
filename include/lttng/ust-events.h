@@ -57,13 +57,9 @@ struct lttng_event_notifier_group;
 /* Update the astract_types name table in lttng-types.c along with this enum */
 enum lttng_abstract_types {
 	atype_integer,
-	atype_enum,	/* legacy */
-	atype_array,	/* legacy */
-	atype_sequence,	/* legacy */
 	atype_string,
 	atype_float,
 	atype_dynamic,
-	atype_struct,	/* legacy */
 	atype_enum_nestable,
 	atype_array_nestable,
 	atype_sequence_nestable,
@@ -162,29 +158,6 @@ struct lttng_float_type {
 	char padding[LTTNG_UST_FLOAT_TYPE_PADDING];
 };
 
-/* legacy */
-#define LTTNG_UST_BASIC_TYPE_PADDING	128
-union _lttng_basic_type {
-	struct lttng_integer_type integer;	/* legacy */
-	struct {
-		const struct lttng_enum_desc *desc;	/* Enumeration mapping */
-		struct lttng_integer_type container_type;
-	} enumeration;				/* legacy */
-	struct {
-		enum lttng_string_encodings encoding;
-	} string;				/* legacy */
-	struct lttng_float_type _float;		/* legacy */
-	char padding[LTTNG_UST_BASIC_TYPE_PADDING];
-};
-
-/* legacy */
-struct lttng_basic_type {
-	enum lttng_abstract_types atype;
-	union {
-		union _lttng_basic_type basic;
-	} u;
-};
-
 #define LTTNG_UST_TYPE_PADDING	128
 struct lttng_type {
 	enum lttng_abstract_types atype;
@@ -215,22 +188,6 @@ struct lttng_type {
 			unsigned int alignment;
 		} struct_nestable;
 
-		union {
-			/* legacy provider ABI 1.0 */
-			union _lttng_basic_type basic;	/* legacy */
-			struct {
-				struct lttng_basic_type elem_type;
-				unsigned int length;		/* Num. elems. */
-			} array;			/* legacy */
-			struct {
-				struct lttng_basic_type length_type;
-				struct lttng_basic_type elem_type;
-			} sequence;			/* legacy */
-			struct {
-				unsigned int nr_fields;
-				struct lttng_event_field *fields;	/* Array of fields. */
-			} _struct;			/* legacy */
-		} legacy;
 		char padding[LTTNG_UST_TYPE_PADDING];
 	} u;
 };

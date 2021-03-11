@@ -505,19 +505,6 @@ int lttng_create_enum_check(const struct lttng_type *type,
 		struct lttng_session *session)
 {
 	switch (type->atype) {
-	case atype_enum:
-	{
-		const struct lttng_enum_desc *enum_desc;
-		int ret;
-
-		enum_desc = type->u.legacy.basic.enumeration.desc;
-		ret = lttng_enum_create(enum_desc, session);
-		if (ret && ret != -EEXIST) {
-			DBG("Unable to create enum error: (%d)", ret);
-			return ret;
-		}
-		break;
-	}
 	case atype_enum_nestable:
 	{
 		const struct lttng_enum_desc *enum_desc;
@@ -1187,9 +1174,6 @@ void _event_enum_destroy(struct lttng_session *session,
 
 		field = &(event->priv->desc->fields[i]);
 		switch (field->type.atype) {
-		case atype_enum:
-			enum_desc = field->type.u.legacy.basic.enumeration.desc;
-			break;
 		case atype_enum_nestable:
 			enum_desc = field->type.u.enum_nestable.desc;
 			break;

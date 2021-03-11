@@ -203,13 +203,10 @@ int apply_field_reloc(const struct lttng_event_desc *event_desc,
 		/* compute field offset */
 		switch (fields[i].type.atype) {
 		case atype_integer:
-		case atype_enum:
 		case atype_enum_nestable:
 			field_offset += sizeof(int64_t);
 			break;
-		case atype_array:
 		case atype_array_nestable:
-		case atype_sequence:
 		case atype_sequence_nestable:
 			field_offset += sizeof(unsigned long);
 			field_offset += sizeof(void *);
@@ -242,13 +239,10 @@ int apply_field_reloc(const struct lttng_event_desc *event_desc,
 		field_ref = (struct field_ref *) op->data;
 		switch (field->type.atype) {
 		case atype_integer:
-		case atype_enum:
 		case atype_enum_nestable:
 			op->op = BYTECODE_OP_LOAD_FIELD_REF_S64;
 			break;
-		case atype_array:
 		case atype_array_nestable:
-		case atype_sequence:
 		case atype_sequence_nestable:
 			op->op = BYTECODE_OP_LOAD_FIELD_REF_SEQUENCE;
 			break;
@@ -318,15 +312,12 @@ int apply_context_reloc(struct bytecode_runtime *runtime,
 		field_ref = (struct field_ref *) op->data;
 		switch (ctx_field->event_field.type.atype) {
 		case atype_integer:
-		case atype_enum:
 		case atype_enum_nestable:
 			op->op = BYTECODE_OP_GET_CONTEXT_REF_S64;
 			break;
 			/* Sequence and array supported as string */
 		case atype_string:
-		case atype_array:
 		case atype_array_nestable:
-		case atype_sequence:
 		case atype_sequence_nestable:
 			op->op = BYTECODE_OP_GET_CONTEXT_REF_STRING;
 			break;

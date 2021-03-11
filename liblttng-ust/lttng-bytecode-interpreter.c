@@ -244,16 +244,11 @@ static int context_get_index(struct lttng_ctx *ctx,
 			ptr->ptr = &ptr->u.u64;
 		}
 		break;
-	case atype_enum:	/* Fall-through */
 	case atype_enum_nestable:
 	{
 		const struct lttng_integer_type *itype;
 
-		if (field->type.atype == atype_enum) {
-			itype = &field->type.u.legacy.basic.enumeration.container_type;
-		} else {
-			itype = &field->type.u.enum_nestable.container_type->u.integer;
-		}
+		itype = &field->type.u.enum_nestable.container_type->u.integer;
 		ctx_field->get_value(ctx_field, &v);
 		if (itype->signedness) {
 			ptr->object_type = OBJECT_TYPE_SIGNED_ENUM;
@@ -266,19 +261,6 @@ static int context_get_index(struct lttng_ctx *ctx,
 		}
 		break;
 	}
-	case atype_array:
-		if (field->type.u.legacy.array.elem_type.atype != atype_integer) {
-			ERR("Array nesting only supports integer types.");
-			return -EINVAL;
-		}
-		if (field->type.u.legacy.array.elem_type.u.basic.integer.encoding == lttng_encode_none) {
-			ERR("Only string arrays are supported for contexts.");
-			return -EINVAL;
-		}
-		ptr->object_type = OBJECT_TYPE_STRING;
-		ctx_field->get_value(ctx_field, &v);
-		ptr->ptr = v.u.str;
-		break;
 	case atype_array_nestable:
 		if (field->type.u.array_nestable.elem_type->atype != atype_integer) {
 			ERR("Array nesting only supports integer types.");
@@ -286,19 +268,6 @@ static int context_get_index(struct lttng_ctx *ctx,
 		}
 		if (field->type.u.array_nestable.elem_type->u.integer.encoding == lttng_encode_none) {
 			ERR("Only string arrays are supported for contexts.");
-			return -EINVAL;
-		}
-		ptr->object_type = OBJECT_TYPE_STRING;
-		ctx_field->get_value(ctx_field, &v);
-		ptr->ptr = v.u.str;
-		break;
-	case atype_sequence:
-		if (field->type.u.legacy.sequence.elem_type.atype != atype_integer) {
-			ERR("Sequence nesting only supports integer types.");
-			return -EINVAL;
-		}
-		if (field->type.u.legacy.sequence.elem_type.u.basic.integer.encoding == lttng_encode_none) {
-			ERR("Only string sequences are supported for contexts.");
 			return -EINVAL;
 		}
 		ptr->object_type = OBJECT_TYPE_STRING;
@@ -369,9 +338,6 @@ static int context_get_index(struct lttng_ctx *ctx,
 			return -EINVAL;
 		}
 		break;
-	case atype_struct:
-		ERR("Structure type cannot be loaded.");
-		return -EINVAL;
 	default:
 		ERR("Unknown type: %d", (int) field->type.atype);
 		return -EINVAL;
@@ -401,8 +367,7 @@ static int dynamic_get_index(struct lttng_ctx *ctx,
 			stack_top->u.ptr.ptr = ptr;
 			stack_top->u.ptr.object_type = gid->elem.type;
 			stack_top->u.ptr.rev_bo = gid->elem.rev_bo;
-			assert(stack_top->u.ptr.field->type.atype == atype_array ||
-					stack_top->u.ptr.field->type.atype == atype_array_nestable);
+			assert(stack_top->u.ptr.field->type.atype == atype_array_nestable);
 			stack_top->u.ptr.field = NULL;
 			break;
 		}
@@ -421,8 +386,7 @@ static int dynamic_get_index(struct lttng_ctx *ctx,
 			stack_top->u.ptr.ptr = ptr;
 			stack_top->u.ptr.object_type = gid->elem.type;
 			stack_top->u.ptr.rev_bo = gid->elem.rev_bo;
-			assert(stack_top->u.ptr.field->type.atype == atype_sequence ||
-					stack_top->u.ptr.field->type.atype == atype_sequence_nestable);
+			assert(stack_top->u.ptr.field->type.atype == atype_sequence_nestable);
 			stack_top->u.ptr.field = NULL;
 			break;
 		}
