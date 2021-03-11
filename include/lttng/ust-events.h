@@ -559,6 +559,7 @@ struct lttng_ust_session_private;
  * removed.
  */
 struct lttng_session {
+	uint32_t struct_size;			/* Size of this structure */
 	struct lttng_ust_session_private *priv;	/* Private session interface */
 
 	int active;				/* Is trace session active ? */

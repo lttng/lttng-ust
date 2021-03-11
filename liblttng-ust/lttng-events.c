@@ -138,6 +138,7 @@ struct lttng_session *lttng_session_create(void)
 	session = zmalloc(sizeof(struct lttng_session));
 	if (!session)
 		return NULL;
+	session->struct_size = sizeof(struct lttng_session);
 	session_priv = zmalloc(sizeof(struct lttng_ust_session_private));
 	if (!session_priv) {
 		free(session);
