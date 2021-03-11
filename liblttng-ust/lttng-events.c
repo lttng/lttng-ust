@@ -784,6 +784,7 @@ int lttng_event_create(const struct lttng_event_desc *desc,
 		ret = -ENOMEM;
 		goto cache_error;
 	}
+	event->struct_size = sizeof(struct lttng_event);
 	event_priv = zmalloc(sizeof(struct lttng_ust_event_private));
 	if (!event_priv) {
 		ret = -ENOMEM;

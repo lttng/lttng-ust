@@ -395,6 +395,7 @@ struct lttng_bytecode_runtime {
 struct lttng_ust_event_private;
 
 struct lttng_event {
+	uint32_t struct_size;			/* Size of this structure. */
 	struct lttng_ust_event_private *priv;	/* Private event interface */
 
 	unsigned int id;
