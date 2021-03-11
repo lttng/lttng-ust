@@ -312,8 +312,8 @@ int lttng_abi_create_session(void *owner)
 		ret = session_objd;
 		goto objd_error;
 	}
-	session->objd = session_objd;
-	session->owner = owner;
+	session->priv->objd = session_objd;
+	session->priv->owner = owner;
 	return session_objd;
 
 objd_error:
@@ -470,7 +470,7 @@ int lttng_abi_map_channel(int session_objd,
 		goto invalid;
 	}
 
-	if (session->been_active) {
+	if (session->priv->been_active) {
 		ret = -EBUSY;
 		goto active;	/* Refuse to add channel to active session */
 	}
@@ -546,7 +546,7 @@ int lttng_abi_map_channel(int session_objd,
 	memcpy(&lttng_chan->chan->backend.config,
 		transport->client_config,
 		sizeof(lttng_chan->chan->backend.config));
-	cds_list_add(&lttng_chan->node, &session->chan_head);
+	cds_list_add(&lttng_chan->node, &session->priv->chan_head);
 	lttng_chan->header_type = 0;
 	lttng_chan->handle = channel_handle;
 	lttng_chan->type = type;
@@ -1239,7 +1239,7 @@ int lttng_channel_release(int objd)
 	struct lttng_channel *channel = objd_private(objd);
 
 	if (channel)
-		return lttng_ust_objd_unref(channel->session->objd, 0);
+		return lttng_ust_objd_unref(channel->session->priv->objd, 0);
 	return 0;
 }
 

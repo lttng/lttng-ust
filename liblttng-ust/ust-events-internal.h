@@ -190,6 +190,31 @@ struct lttng_ust_bytecode_runtime_private {
 	struct lttng_ctx **pctx;
 };
 
+struct lttng_ust_session_private {
+	struct lttng_session *pub;		/* Public session interface */
+
+	int been_active;			/* Been active ? */
+	int objd;				/* Object associated */
+	struct cds_list_head chan_head;		/* Channel list head */
+	struct cds_list_head events_head;	/* list of events */
+	struct cds_list_head node;		/* Session list */
+
+	/* New UST 2.1 */
+	/* List of enablers */
+	struct cds_list_head enablers_head;
+	struct lttng_ust_event_ht events_ht;	/* ht of events */
+	void *owner;				/* object owner */
+	int tstate:1;				/* Transient enable state */
+
+	/* New UST 2.4 */
+	int statedump_pending:1;
+
+	/* New UST 2.8 */
+	struct lttng_ust_enum_ht enums_ht;	/* ht of enumerations */
+	struct cds_list_head enums_head;
+	struct lttng_ctx *ctx;			/* contexts for filters. */
+};
+
 static inline
 struct lttng_enabler *lttng_event_enabler_as_enabler(
 		struct lttng_event_enabler *event_enabler)
