@@ -56,7 +56,7 @@ char *wrapper_getprocname(void)
 }
 
 /* Reset should not be called from a signal handler. */
-void lttng_context_procname_reset(void)
+void lttng_ust_context_procname_reset(void)
 {
 	CMM_STORE_SHARED(URCU_TLS(cached_procname)[1][0], '\0');
 	CMM_STORE_SHARED(URCU_TLS(procname_nesting), 1);

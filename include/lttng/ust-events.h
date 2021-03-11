@@ -609,9 +609,12 @@ int lttng_ust_probe_register(struct lttng_ust_probe_desc *desc);
 void lttng_ust_probe_unregister(struct lttng_ust_probe_desc *desc);
 
 /*
- * Can be used by applications that change their procname to clear the ust cached value.
+ * Applications that change their procname and need the new value to be
+ * reflected in the procname event context have to call this function to clear
+ * the internally cached value. This should not be called from a signal
+ * handler.
  */
-void lttng_context_procname_reset(void);
+void lttng_ust_context_procname_reset(void);
 
 struct lttng_transport *lttng_transport_find(const char *name);
 

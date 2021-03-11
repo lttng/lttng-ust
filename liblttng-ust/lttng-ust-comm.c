@@ -2444,7 +2444,7 @@ void ust_after_fork_child(sigset_t *restore_sigset)
 		return;
 	lttng_context_vpid_reset();
 	lttng_context_vtid_reset();
-	lttng_context_procname_reset();
+	lttng_ust_context_procname_reset();
 	ust_context_ns_reset();
 	ust_context_vuids_reset();
 	ust_context_vgids_reset();
