@@ -522,7 +522,7 @@ int lttng_abi_map_channel(int session_objd,
 		ret = -EINVAL;
 		goto notransport;
 	}
-	transport = lttng_transport_find(transport_name);
+	transport = lttng_ust_transport_find(transport_name);
 	if (!transport) {
 		DBG("LTTng transport %s not found\n",
 		       transport_name);

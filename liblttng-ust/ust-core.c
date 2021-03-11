@@ -17,7 +17,7 @@
 static CDS_LIST_HEAD(lttng_transport_list);
 static CDS_LIST_HEAD(lttng_counter_transport_list);
 
-struct lttng_transport *lttng_transport_find(const char *name)
+struct lttng_transport *lttng_ust_transport_find(const char *name)
 {
 	struct lttng_transport *transport;
 
