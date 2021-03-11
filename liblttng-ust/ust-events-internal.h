@@ -178,6 +178,18 @@ struct lttng_ust_event_private {
 	int registered;			/* has reg'd tracepoint probe */
 };
 
+struct lttng_ust_bytecode_runtime_private {
+	struct bytecode_runtime *pub;	/* Public bytecode runtime interface */
+
+	struct lttng_ust_bytecode_node *bc;
+	int link_failed;
+	/*
+	 * Pointer to a URCU-protected pointer owned by an `struct
+	 * lttng_session`or `struct lttng_event_notifier_group`.
+	 */
+	struct lttng_ctx **pctx;
+};
+
 static inline
 struct lttng_enabler *lttng_event_enabler_as_enabler(
 		struct lttng_event_enabler *event_enabler)

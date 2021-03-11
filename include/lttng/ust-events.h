@@ -361,16 +361,18 @@ enum lttng_bytecode_interpreter_ret {
 };
 
 struct lttng_interpreter_output;
+struct lttng_ust_bytecode_runtime_private;
 
 /*
- * This structure is used in the probes. More specifically, the `filter` and
- * `node` fields are explicity used in the probes. When modifying this
- * structure we must not change the layout of these two fields as it is
- * considered ABI.
+ * This structure is used in the probes. More specifically, the
+ * `interpreter_funcs` and `node` fields are explicity used in the
+ * probes. When modifying this structure we must not change the layout
+ * of these two fields as it is considered ABI.
  */
 struct lttng_bytecode_runtime {
+	struct lttng_ust_bytecode_runtime_private *priv;
+
 	/* Associated bytecode */
-	struct lttng_ust_bytecode_node *bc;
 	union {
 		uint64_t (*filter)(void *interpreter_data,
 				const char *interpreter_stack_data);
@@ -378,13 +380,7 @@ struct lttng_bytecode_runtime {
 				const char *interpreter_stack_data,
 				struct lttng_interpreter_output *interpreter_output);
 	} interpreter_funcs;
-	int link_failed;
 	struct cds_list_head node;	/* list of bytecode runtime in event */
-	/*
-	 * Pointer to a URCU-protected pointer owned by an `struct
-	 * lttng_session`or `struct lttng_event_notifier_group`.
-	 */
-	struct lttng_ctx **pctx;
 };
 
 /*

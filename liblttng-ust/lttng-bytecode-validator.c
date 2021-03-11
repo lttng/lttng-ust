@@ -255,11 +255,11 @@ int validate_get_symbol(struct bytecode_runtime *bytecode,
 	const char *str, *str_limit;
 	size_t len_limit;
 
-	if (sym->offset >= bytecode->p.bc->bc.len - bytecode->p.bc->bc.reloc_offset)
+	if (sym->offset >= bytecode->p.priv->bc->bc.len - bytecode->p.priv->bc->bc.reloc_offset)
 		return -EINVAL;
 
-	str = bytecode->p.bc->bc.data + bytecode->p.bc->bc.reloc_offset + sym->offset;
-	str_limit = bytecode->p.bc->bc.data + bytecode->p.bc->bc.len;
+	str = bytecode->p.priv->bc->bc.data + bytecode->p.priv->bc->bc.reloc_offset + sym->offset;
+	str_limit = bytecode->p.priv->bc->bc.data + bytecode->p.priv->bc->bc.len;
 	len_limit = str_limit - str;
 	if (strnlen(str, len_limit) == len_limit)
 		return -EINVAL;

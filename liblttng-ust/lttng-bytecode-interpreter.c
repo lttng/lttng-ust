@@ -13,6 +13,7 @@
 #include <lttng/urcu/pointer.h>
 #include <lttng/ust-endian.h>
 #include <lttng/ust-events.h>
+#include "ust-events-internal.h"
 
 #include "lttng-bytecode.h"
 #include "string-utils.h"
@@ -752,7 +753,7 @@ uint64_t bytecode_interpret(void *interpreter_data,
 		struct lttng_interpreter_output *output)
 {
 	struct bytecode_runtime *bytecode = interpreter_data;
-	struct lttng_ctx *ctx = lttng_ust_rcu_dereference(*bytecode->p.pctx);
+	struct lttng_ctx *ctx = lttng_ust_rcu_dereference(*bytecode->p.priv->pctx);
 	void *pc, *next_pc, *start_pc;
 	int ret = -EINVAL;
 	uint64_t retval = 0;
