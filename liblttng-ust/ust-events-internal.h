@@ -165,6 +165,19 @@ struct lttng_counter_transport {
 	const struct lib_counter_config *client_config;
 };
 
+struct lttng_ust_event_private {
+	struct lttng_event *pub;	/* Public event interface */
+
+	const struct lttng_event_desc *desc;
+	enum lttng_ust_instrumentation instrumentation;
+	struct cds_list_head node;		/* Event list in session */
+
+	/* Backward references: list of lttng_enabler_ref (ref to enablers) */
+	struct cds_list_head enablers_ref_head;
+	struct cds_hlist_node hlist;	/* session ht of events */
+	int registered;			/* has reg'd tracepoint probe */
+};
+
 static inline
 struct lttng_enabler *lttng_event_enabler_as_enabler(
 		struct lttng_event_enabler *event_enabler)

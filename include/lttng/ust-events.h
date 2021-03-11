@@ -395,22 +395,19 @@ struct lttng_bytecode_runtime {
  * UST. Fields need to be only added at the end, never reordered, never
  * removed.
  */
-struct lttng_event {
-	unsigned int id;
-	struct lttng_channel *chan;
-	int enabled;
-	const struct lttng_event_desc *desc;
-	struct lttng_ctx *ctx;
-	enum lttng_ust_instrumentation instrumentation;
-	struct cds_list_head node;		/* Event list in session */
 
+struct lttng_ust_event_private;
+
+struct lttng_event {
+	struct lttng_ust_event_private *priv;	/* Private event interface */
+
+	unsigned int id;
+	int enabled;
+	int has_enablers_without_bytecode;
 	/* list of struct lttng_bytecode_runtime, sorted by seqnum */
 	struct cds_list_head filter_bytecode_runtime_head;
-	int has_enablers_without_bytecode;
-	/* Backward references: list of lttng_enabler_ref (ref to enablers) */
-	struct cds_list_head enablers_ref_head;
-	struct cds_hlist_node hlist;	/* session ht of events */
-	int registered;			/* has reg'd tracepoint probe */
+	struct lttng_channel *chan;
+	struct lttng_ctx *ctx;
 };
 
 struct lttng_event_notifier {
