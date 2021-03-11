@@ -561,6 +561,12 @@ int lttng_session_statedump(struct lttng_session *session);
 __attribute__((visibility("hidden")))
 void lttng_session_destroy(struct lttng_session *session);
 
+/*
+ * Called with ust lock held.
+ */
+__attribute__((visibility("hidden")))
+int lttng_session_active(void);
+
 __attribute__((visibility("hidden")))
 struct cds_list_head *lttng_get_sessions(void);
 

@@ -618,8 +618,6 @@ void lttng_ust_context_procname_reset(void);
 
 struct lttng_transport *lttng_transport_find(const char *name);
 
-int lttng_session_active(void);
-
 void lttng_ust_dl_update(void *ip);
 
 #ifdef __cplusplus
