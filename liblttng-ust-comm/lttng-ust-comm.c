@@ -950,6 +950,43 @@ ssize_t count_ctx_fields_recursive(size_t nr_fields,
 }
 
 static
+int serialize_string_encoding(int32_t *ue,
+		enum lttng_string_encodings le)
+{
+	switch (le) {
+	case lttng_encode_none:
+		*ue = ustctl_encode_none;
+		break;
+	case lttng_encode_UTF8:
+		*ue = ustctl_encode_UTF8;
+		break;
+	case lttng_encode_ASCII:
+		*ue = ustctl_encode_ASCII;
+		break;
+	default:
+		return -EINVAL;
+	}
+	return 0;
+}
+
+static
+int serialize_integer_type(struct ustctl_integer_type *uit,
+		const struct lttng_integer_type *lit)
+{
+	int32_t encoding;
+
+	uit->size = lit->size;
+	uit->signedness = lit->signedness;
+	uit->reverse_byte_order = lit->reverse_byte_order;
+	uit->base = lit->base;
+	if (serialize_string_encoding(&encoding, lit->encoding))
+		return -EINVAL;
+	uit->encoding = encoding;
+	uit->alignment = lit->alignment;
+	return 0;
+}
+
+static
 int serialize_dynamic_type(struct lttng_session *session,
 		struct ustctl_field *fields, size_t *iter_output,
 		const char *field_name)
@@ -1022,8 +1059,66 @@ int serialize_one_type(struct lttng_session *session,
 
 	switch (lt->atype) {
 	case atype_integer:
+	{
+		struct ustctl_field *uf = &fields[*iter_output];
+		struct ustctl_type *ut = &uf->type;
+
+		if (field_name) {
+			strncpy(uf->name, field_name, LTTNG_UST_SYM_NAME_LEN);
+			uf->name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+		} else {
+			uf->name[0] = '\0';
+		}
+		ret = serialize_integer_type(&ut->u.integer, &lt->u.integer);
+		if (ret)
+			return ret;
+		ut->atype = ustctl_atype_integer;
+		(*iter_output)++;
+		break;
+	}
 	case atype_float:
+	{
+		struct ustctl_field *uf = &fields[*iter_output];
+		struct ustctl_type *ut = &uf->type;
+		struct ustctl_float_type *uft;
+		const struct lttng_float_type *lft;
+
+		if (field_name) {
+			strncpy(uf->name, field_name, LTTNG_UST_SYM_NAME_LEN);
+			uf->name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+		} else {
+			uf->name[0] = '\0';
+		}
+		uft = &ut->u._float;
+		lft = &lt->u._float;
+		uft->exp_dig = lft->exp_dig;
+		uft->mant_dig = lft->mant_dig;
+		uft->alignment = lft->alignment;
+		uft->reverse_byte_order = lft->reverse_byte_order;
+		ut->atype = ustctl_atype_float;
+		(*iter_output)++;
+		break;
+	}
 	case atype_string:
+	{
+		struct ustctl_field *uf = &fields[*iter_output];
+		struct ustctl_type *ut = &uf->type;
+		int32_t encoding;
+
+		if (field_name) {
+			strncpy(uf->name, field_name, LTTNG_UST_SYM_NAME_LEN);
+			uf->name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+		} else {
+			uf->name[0] = '\0';
+		}
+		ret = serialize_string_encoding(&encoding, lt->u.string.encoding);
+		if (ret)
+			return ret;
+		ut->u.string.encoding = encoding;
+		ut->atype = ustctl_atype_string;
+		(*iter_output)++;
+		break;
+	}
 	case atype_array_nestable:
 	{
 		struct ustctl_field *uf = &fields[*iter_output];
