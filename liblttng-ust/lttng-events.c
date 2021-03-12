@@ -774,12 +774,12 @@ int lttng_event_recorder_create(const struct lttng_event_desc *desc,
 	}
 	event_recorder->struct_size = sizeof(struct lttng_ust_event_recorder);
 
-	event_recorder->parent = zmalloc(sizeof(struct lttng_event_common));
+	event_recorder->parent = zmalloc(sizeof(struct lttng_ust_event_common));
 	if (!event_recorder->parent) {
 		ret = -ENOMEM;
 		goto parent_error;
 	}
-	event_recorder->parent->struct_size = sizeof(struct lttng_event_common);
+	event_recorder->parent->struct_size = sizeof(struct lttng_ust_event_common);
 
 	event_recorder_priv = zmalloc(sizeof(struct lttng_ust_event_recorder_private));
 	if (!event_recorder_priv) {

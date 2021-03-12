@@ -166,7 +166,7 @@ struct lttng_counter_transport {
 };
 
 struct lttng_ust_event_common_private {
-	struct lttng_event_common *pub;	/* Public event interface */
+	struct lttng_ust_event_common *pub;	/* Public event interface */
 
 	const struct lttng_event_desc *desc;
 	/* Backward references: list of lttng_enabler_ref (ref to enablers) */
