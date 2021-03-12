@@ -616,8 +616,6 @@ void lttng_ust_probe_unregister(struct lttng_ust_probe_desc *desc);
  */
 void lttng_ust_context_procname_reset(void);
 
-void lttng_ust_dl_update(void *ip);
-
 #ifdef __cplusplus
 }
 #endif

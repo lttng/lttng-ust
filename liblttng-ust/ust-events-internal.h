@@ -599,6 +599,9 @@ void lttng_transport_unregister(struct lttng_transport *transport);
 /* This is ABI between liblttng-ust and liblttng-ust-ctl */
 struct lttng_transport *lttng_ust_transport_find(const char *name);
 
+/* This is ABI between liblttng-ust and liblttng-ust-dl */
+void lttng_ust_dl_update(void *ip);
+
 __attribute__((visibility("hidden")))
 void lttng_probe_provider_unregister_events(struct lttng_ust_probe_desc *desc);
 
