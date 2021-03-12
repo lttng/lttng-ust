@@ -25,7 +25,8 @@
 
 __attribute__((visibility("hidden")))
 int lib_ring_buffer_backend_create(struct lttng_ust_lib_ring_buffer_backend *bufb,
-				   struct channel_backend *chan, int cpu,
+				   struct channel_backend *chan,
+				   int cpu,
 				   struct lttng_ust_shm_handle *handle,
 				   struct shm_object *shmobj);
 
@@ -284,7 +285,7 @@ void subbuffer_consume_record(const struct lttng_ust_lib_ring_buffer_config *con
 			      struct lttng_ust_shm_handle *handle)
 {
 	unsigned long sb_bindex;
-	struct channel *chan;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 	struct lttng_ust_lib_ring_buffer_backend_pages_shmp *pages_shmp;
 	struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
 
@@ -504,7 +505,7 @@ void lib_ring_buffer_set_noref_offset(const struct lttng_ust_lib_ring_buffer_con
 				      struct lttng_ust_shm_handle *handle)
 {
 	struct lttng_ust_lib_ring_buffer_backend_subbuffer *wsb;
-	struct channel *chan;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 
 	if (config->mode != RING_BUFFER_OVERWRITE)
 		return;
@@ -554,7 +555,7 @@ int update_read_sb_index(const struct lttng_ust_lib_ring_buffer_config *config,
 		return -EPERM;
 
 	if (config->mode == RING_BUFFER_OVERWRITE) {
-		struct channel *chan;
+		struct lttng_ust_lib_ring_buffer_channel *chan;
 
 		/*
 		 * Exchange the target writer subbuffer with our own unused

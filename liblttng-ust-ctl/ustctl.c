@@ -1417,7 +1417,7 @@ end:
 
 int ustctl_channel_close_wait_fd(struct ustctl_consumer_channel *consumer_chan)
 {
-	struct channel *chan;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 	int ret;
 
 	chan = consumer_chan->chan->chan;
@@ -1430,7 +1430,7 @@ int ustctl_channel_close_wait_fd(struct ustctl_consumer_channel *consumer_chan)
 
 int ustctl_channel_close_wakeup_fd(struct ustctl_consumer_channel *consumer_chan)
 {
-	struct channel *chan;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 	int ret;
 
 	chan = consumer_chan->chan->chan;
@@ -1443,7 +1443,7 @@ int ustctl_channel_close_wakeup_fd(struct ustctl_consumer_channel *consumer_chan
 
 int ustctl_stream_close_wait_fd(struct ustctl_consumer_stream *stream)
 {
-	struct channel *chan;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 
 	chan = stream->chan->chan->chan;
 	return ring_buffer_stream_close_wait_fd(&chan->backend.config,
@@ -1452,7 +1452,7 @@ int ustctl_stream_close_wait_fd(struct ustctl_consumer_stream *stream)
 
 int ustctl_stream_close_wakeup_fd(struct ustctl_consumer_stream *stream)
 {
-	struct channel *chan;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 
 	chan = stream->chan->chan->chan;
 	return ring_buffer_stream_close_wakeup_fd(&chan->backend.config,
@@ -1465,7 +1465,7 @@ struct ustctl_consumer_stream *
 {
 	struct ustctl_consumer_stream *stream;
 	struct lttng_ust_shm_handle *handle;
-	struct channel *chan;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 	int shm_fd, wait_fd, wakeup_fd;
 	uint64_t memory_map_size;
 	struct lttng_ust_lib_ring_buffer *buf;
@@ -1578,7 +1578,7 @@ int ustctl_get_mmap_len(struct ustctl_consumer_stream *stream,
 {
 	struct ustctl_consumer_channel *consumer_chan;
 	unsigned long mmap_buf_len;
-	struct channel *chan;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 
 	if (!stream)
 		return -EINVAL;
@@ -1600,7 +1600,7 @@ int ustctl_get_max_subbuf_size(struct ustctl_consumer_stream *stream,
 		unsigned long *len)
 {
 	struct ustctl_consumer_channel *consumer_chan;
-	struct channel *chan;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 
 	if (!stream)
 		return -EINVAL;
@@ -1619,7 +1619,7 @@ int ustctl_get_max_subbuf_size(struct ustctl_consumer_stream *stream,
 int ustctl_get_mmap_read_offset(struct ustctl_consumer_stream *stream,
 		unsigned long *off)
 {
-	struct channel *chan;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 	unsigned long sb_bindex;
 	struct lttng_ust_lib_ring_buffer *buf;
 	struct ustctl_consumer_channel *consumer_chan;
@@ -1651,7 +1651,7 @@ int ustctl_get_subbuf_size(struct ustctl_consumer_stream *stream,
 		unsigned long *len)
 {
 	struct ustctl_consumer_channel *consumer_chan;
-	struct channel *chan;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 	struct lttng_ust_lib_ring_buffer *buf;
 
 	if (!stream)
@@ -1670,7 +1670,7 @@ int ustctl_get_padded_subbuf_size(struct ustctl_consumer_stream *stream,
 		unsigned long *len)
 {
 	struct ustctl_consumer_channel *consumer_chan;
-	struct channel *chan;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 	struct lttng_ust_lib_ring_buffer *buf;
 
 	if (!stream)
@@ -1835,7 +1835,7 @@ struct lttng_ust_client_lib_ring_buffer_client_cb *get_client_cb(
 		struct lttng_ust_lib_ring_buffer *buf,
 		struct lttng_ust_shm_handle *handle)
 {
-	struct channel *chan;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 	const struct lttng_ust_lib_ring_buffer_config *config;
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
 

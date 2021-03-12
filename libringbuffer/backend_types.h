@@ -42,7 +42,7 @@ struct lttng_ust_lib_ring_buffer_backend_counts {
 /*
  * Forward declaration of frontend-specific channel and ring_buffer.
  */
-struct channel;
+struct lttng_ust_lib_ring_buffer_channel;
 struct lttng_ust_lib_ring_buffer;
 
 struct lttng_ust_lib_ring_buffer_backend_pages_shmp {
@@ -64,7 +64,7 @@ struct lttng_ust_lib_ring_buffer_backend {
 	DECLARE_SHMP(struct lttng_ust_lib_ring_buffer_backend_pages_shmp, array);
 	DECLARE_SHMP(char, memory_map);	/* memory mapping */
 
-	DECLARE_SHMP(struct channel, chan);	/* Associated channel */
+	DECLARE_SHMP(struct lttng_ust_lib_ring_buffer_channel, chan);	/* Associated channel */
 	int cpu;			/* This buffer's cpu. -1 if global. */
 	union v_atomic records_read;	/* Number of records read */
 	unsigned int allocated:1;	/* is buffer allocated ? */

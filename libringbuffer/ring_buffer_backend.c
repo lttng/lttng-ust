@@ -223,7 +223,8 @@ void lib_ring_buffer_backend_reset(struct lttng_ust_lib_ring_buffer_backend *buf
  */
 void channel_backend_reset(struct channel_backend *chanb)
 {
-	struct channel *chan = caa_container_of(chanb, struct channel, backend);
+	struct lttng_ust_lib_ring_buffer_channel *chan = caa_container_of(chanb,
+			struct lttng_ust_lib_ring_buffer_channel, backend);
 	const struct lttng_ust_lib_ring_buffer_config *config = &chanb->config;
 
 	/*
@@ -260,7 +261,8 @@ int channel_backend_init(struct channel_backend *chanb,
 			 struct lttng_ust_shm_handle *handle,
 			 const int *stream_fds)
 {
-	struct channel *chan = caa_container_of(chanb, struct channel, backend);
+	struct lttng_ust_lib_ring_buffer_channel *chan = caa_container_of(chanb,
+			struct lttng_ust_lib_ring_buffer_channel, backend);
 	unsigned int i;
 	int ret;
 	size_t shmsize = 0, num_subbuf_alloc;

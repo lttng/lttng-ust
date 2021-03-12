@@ -61,7 +61,8 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
  */
 __attribute__((visibility("hidden")))
 extern
-void channel_destroy(struct channel *chan, struct lttng_ust_shm_handle *handle,
+void channel_destroy(struct lttng_ust_lib_ring_buffer_channel *chan,
+		struct lttng_ust_shm_handle *handle,
 		int consumer);
 
 
@@ -79,7 +80,7 @@ void channel_destroy(struct channel *chan, struct lttng_ust_shm_handle *handle,
 __attribute__((visibility("hidden")))
 extern struct lttng_ust_lib_ring_buffer *channel_get_ring_buffer(
 				const struct lttng_ust_lib_ring_buffer_config *config,
-				struct channel *chan, int cpu,
+				struct lttng_ust_lib_ring_buffer_channel *chan, int cpu,
 				struct lttng_ust_shm_handle *handle,
 				int *shm_fd, int *wait_fd,
 				int *wakeup_fd,
@@ -88,26 +89,26 @@ extern struct lttng_ust_lib_ring_buffer *channel_get_ring_buffer(
 __attribute__((visibility("hidden")))
 extern
 int ring_buffer_channel_close_wait_fd(const struct lttng_ust_lib_ring_buffer_config *config,
-			struct channel *chan,
+			struct lttng_ust_lib_ring_buffer_channel *chan,
 			struct lttng_ust_shm_handle *handle);
 
 __attribute__((visibility("hidden")))
 extern
 int ring_buffer_channel_close_wakeup_fd(const struct lttng_ust_lib_ring_buffer_config *config,
-			struct channel *chan,
+			struct lttng_ust_lib_ring_buffer_channel *chan,
 			struct lttng_ust_shm_handle *handle);
 
 __attribute__((visibility("hidden")))
 extern
 int ring_buffer_stream_close_wait_fd(const struct lttng_ust_lib_ring_buffer_config *config,
-		struct channel *chan,
+		struct lttng_ust_lib_ring_buffer_channel *chan,
 		struct lttng_ust_shm_handle *handle,
 		int cpu);
 
 __attribute__((visibility("hidden")))
 extern
 int ring_buffer_stream_close_wakeup_fd(const struct lttng_ust_lib_ring_buffer_config *config,
-		struct channel *chan,
+		struct lttng_ust_lib_ring_buffer_channel *chan,
 		struct lttng_ust_shm_handle *handle,
 		int cpu);
 
@@ -176,7 +177,7 @@ static inline
 void lib_ring_buffer_put_next_subbuf(struct lttng_ust_lib_ring_buffer *buf,
 				     struct lttng_ust_shm_handle *handle)
 {
-	struct channel *chan;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 
 	chan = shmp(handle, buf->backend.chan);
 	if (!chan)
@@ -187,7 +188,7 @@ void lib_ring_buffer_put_next_subbuf(struct lttng_ust_lib_ring_buffer *buf,
 }
 
 __attribute__((visibility("hidden")))
-extern void channel_reset(struct channel *chan);
+extern void channel_reset(struct lttng_ust_lib_ring_buffer_channel *chan);
 
 __attribute__((visibility("hidden")))
 extern void lib_ring_buffer_reset(struct lttng_ust_lib_ring_buffer *buf,
@@ -224,13 +225,13 @@ int lib_ring_buffer_is_finalized(const struct lttng_ust_lib_ring_buffer_config *
 }
 
 static inline
-int lib_ring_buffer_channel_is_finalized(const struct channel *chan)
+int lib_ring_buffer_channel_is_finalized(const struct lttng_ust_lib_ring_buffer_channel *chan)
 {
 	return chan->finalized;
 }
 
 static inline
-int lib_ring_buffer_channel_is_disabled(const struct channel *chan)
+int lib_ring_buffer_channel_is_disabled(const struct lttng_ust_lib_ring_buffer_channel *chan)
 {
 	return uatomic_read(&chan->record_disabled);
 }

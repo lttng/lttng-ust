@@ -20,7 +20,7 @@
 #include <lttng/ust-compiler.h>
 
 struct lttng_ust_lib_ring_buffer;
-struct channel;
+struct lttng_ust_lib_ring_buffer_channel;
 struct lttng_ust_lib_ring_buffer_config;
 struct lttng_ust_lib_ring_buffer_ctx;
 struct lttng_ust_shm_handle;
@@ -35,9 +35,10 @@ struct lttng_ust_lib_ring_buffer_client_cb {
 	/* Mandatory callbacks */
 
 	/* A static inline version is also required for fast path */
-	uint64_t (*ring_buffer_clock_read) (struct channel *chan);
+	uint64_t (*ring_buffer_clock_read) (struct lttng_ust_lib_ring_buffer_channel *chan);
 	size_t (*record_header_size) (const struct lttng_ust_lib_ring_buffer_config *config,
-				      struct channel *chan, size_t offset,
+				      struct lttng_ust_lib_ring_buffer_channel *chan,
+				      size_t offset,
 				      size_t *pre_header_padding,
 				      struct lttng_ust_lib_ring_buffer_ctx *ctx,
 				      void *client_ctx);
@@ -71,7 +72,8 @@ struct lttng_ust_lib_ring_buffer_client_cb {
 	 * iterator.
 	 */
 	void (*record_get) (const struct lttng_ust_lib_ring_buffer_config *config,
-			    struct channel *chan, struct lttng_ust_lib_ring_buffer *buf,
+			    struct lttng_ust_lib_ring_buffer_channel *chan,
+			    struct lttng_ust_lib_ring_buffer *buf,
 			    size_t offset, size_t *header_len,
 			    size_t *payload_len, uint64_t *timestamp,
 			    struct lttng_ust_shm_handle *handle);
@@ -215,7 +217,7 @@ struct lttng_ust_lib_ring_buffer_ctx {
 	uint32_t struct_size;		/* Size of this structure. */
 
 	/* input received by lib_ring_buffer_reserve(), saved here. */
-	struct channel *chan;		/* channel */
+	struct lttng_ust_lib_ring_buffer_channel *chan; /* channel */
 	void *priv;			/* client private data */
 	struct lttng_ust_shm_handle *handle;	/* shared-memory handle */
 	size_t data_size;		/* size of payload */
@@ -255,13 +257,13 @@ struct lttng_ust_lib_ring_buffer_ctx {
  */
 static inline lttng_ust_notrace
 void lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
-			      struct channel *chan, void *priv,
-			      size_t data_size, int largest_align,
+			      struct lttng_ust_lib_ring_buffer_channel *chan,
+			      void *priv, size_t data_size, int largest_align,
 			      int cpu, struct lttng_ust_shm_handle *handle);
 static inline
 void lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
-			      struct channel *chan, void *priv,
-			      size_t data_size, int largest_align,
+			      struct lttng_ust_lib_ring_buffer_channel *chan,
+			      void *priv, size_t data_size, int largest_align,
 			      int cpu, struct lttng_ust_shm_handle *handle)
 {
 	ctx->struct_size = sizeof(struct lttng_ust_lib_ring_buffer_ctx);

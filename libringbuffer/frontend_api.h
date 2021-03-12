@@ -71,7 +71,7 @@ int lib_ring_buffer_try_reserve(const struct lttng_ust_lib_ring_buffer_config *c
 				unsigned long *o_begin, unsigned long *o_end,
 				unsigned long *o_old, size_t *before_hdr_pad)
 {
-	struct channel *chan = ctx->chan;
+	struct lttng_ust_lib_ring_buffer_channel *chan = ctx->chan;
 	struct lttng_ust_lib_ring_buffer *buf = ctx->buf;
 	*o_begin = v_read(config, &buf->offset);
 	*o_old = *o_begin;
@@ -139,7 +139,7 @@ int lib_ring_buffer_reserve(const struct lttng_ust_lib_ring_buffer_config *confi
 			    struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			    void *client_ctx)
 {
-	struct channel *chan = ctx->chan;
+	struct lttng_ust_lib_ring_buffer_channel *chan = ctx->chan;
 	struct lttng_ust_shm_handle *handle = ctx->handle;
 	struct lttng_ust_lib_ring_buffer *buf;
 	unsigned long o_begin, o_end, o_old;
@@ -231,7 +231,7 @@ static inline
 void lib_ring_buffer_commit(const struct lttng_ust_lib_ring_buffer_config *config,
 			    const struct lttng_ust_lib_ring_buffer_ctx *ctx)
 {
-	struct channel *chan = ctx->chan;
+	struct lttng_ust_lib_ring_buffer_channel *chan = ctx->chan;
 	struct lttng_ust_shm_handle *handle = ctx->handle;
 	struct lttng_ust_lib_ring_buffer *buf = ctx->buf;
 	unsigned long offset_end = ctx->buf_offset;
@@ -326,14 +326,14 @@ int lib_ring_buffer_try_discard_reserve(const struct lttng_ust_lib_ring_buffer_c
 
 static inline
 void channel_record_disable(const struct lttng_ust_lib_ring_buffer_config *config,
-			    struct channel *chan)
+			    struct lttng_ust_lib_ring_buffer_channel *chan)
 {
 	uatomic_inc(&chan->record_disabled);
 }
 
 static inline
 void channel_record_enable(const struct lttng_ust_lib_ring_buffer_config *config,
-			   struct channel *chan)
+			   struct lttng_ust_lib_ring_buffer_channel *chan)
 {
 	uatomic_dec(&chan->record_disabled);
 }

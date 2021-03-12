@@ -35,14 +35,15 @@ struct metadata_record_header {
 
 static const struct lttng_ust_lib_ring_buffer_config client_config;
 
-static inline uint64_t lib_ring_buffer_clock_read(struct channel *chan)
+static inline uint64_t lib_ring_buffer_clock_read(struct lttng_ust_lib_ring_buffer_channel *chan)
 {
 	return 0;
 }
 
 static inline
 size_t record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
-				 struct channel *chan, size_t offset,
+				 struct lttng_ust_lib_ring_buffer_channel *chan,
+				 size_t offset,
 				 size_t *pre_header_padding,
 				 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 				 void *client_ctx)
@@ -53,14 +54,15 @@ size_t record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
 #include "../libringbuffer/api.h"
 #include "lttng-rb-clients.h"
 
-static uint64_t client_ring_buffer_clock_read(struct channel *chan)
+static uint64_t client_ring_buffer_clock_read(struct lttng_ust_lib_ring_buffer_channel *chan)
 {
 	return 0;
 }
 
 static
 size_t client_record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
-				 struct channel *chan, size_t offset,
+				 struct lttng_ust_lib_ring_buffer_channel *chan,
+				 size_t offset,
 				 size_t *pre_header_padding,
 				 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 				 void *client_ctx)
@@ -84,7 +86,7 @@ static void client_buffer_begin(struct lttng_ust_lib_ring_buffer *buf, uint64_t 
 				unsigned int subbuf_idx,
 				struct lttng_ust_shm_handle *handle)
 {
-	struct channel *chan = shmp(handle, buf->backend.chan);
+	struct lttng_ust_lib_ring_buffer_channel *chan = shmp(handle, buf->backend.chan);
 	struct metadata_packet_header *header =
 		(struct metadata_packet_header *)
 			lib_ring_buffer_offset_address(&buf->backend,
@@ -115,7 +117,7 @@ static void client_buffer_end(struct lttng_ust_lib_ring_buffer *buf, uint64_t ts
 			      unsigned int subbuf_idx, unsigned long data_size,
 			      struct lttng_ust_shm_handle *handle)
 {
-	struct channel *chan = shmp(handle, buf->backend.chan);
+	struct lttng_ust_lib_ring_buffer_channel *chan = shmp(handle, buf->backend.chan);
 	struct metadata_packet_header *header =
 		(struct metadata_packet_header *)
 			lib_ring_buffer_offset_address(&buf->backend,
@@ -255,7 +257,8 @@ void lttng_event_write(struct lttng_ust_lib_ring_buffer_ctx *ctx, const void *sr
 }
 
 static
-size_t lttng_packet_avail_size(struct channel *chan, struct lttng_ust_shm_handle *handle)
+size_t lttng_packet_avail_size(struct lttng_ust_lib_ring_buffer_channel *chan,
+		struct lttng_ust_shm_handle *handle)
 {
 	unsigned long o_begin;
 	struct lttng_ust_lib_ring_buffer *buf;
@@ -272,32 +275,33 @@ size_t lttng_packet_avail_size(struct channel *chan, struct lttng_ust_shm_handle
 
 #if 0
 static
-wait_queue_head_t *lttng_get_reader_wait_queue(struct channel *chan)
+wait_queue_head_t *lttng_get_reader_wait_queue(struct lttng_ust_lib_ring_buffer_channel *chan)
 {
 	return &chan->read_wait;
 }
 
 static
-wait_queue_head_t *lttng_get_hp_wait_queue(struct channel *chan)
+wait_queue_head_t *lttng_get_hp_wait_queue(struct lttng_ust_lib_ring_buffer_channel *chan)
 {
 	return &chan->hp_wait;
 }
 #endif //0
 
 static
-int lttng_is_finalized(struct channel *chan)
+int lttng_is_finalized(struct lttng_ust_lib_ring_buffer_channel *chan)
 {
 	return lib_ring_buffer_channel_is_finalized(chan);
 }
 
 static
-int lttng_is_disabled(struct channel *chan)
+int lttng_is_disabled(struct lttng_ust_lib_ring_buffer_channel *chan)
 {
 	return lib_ring_buffer_channel_is_disabled(chan);
 }
 
 static
-int lttng_flush_buffer(struct channel *chan, struct lttng_ust_shm_handle *handle)
+int lttng_flush_buffer(struct lttng_ust_lib_ring_buffer_channel *chan,
+		struct lttng_ust_shm_handle *handle)
 {
 	struct lttng_ust_lib_ring_buffer *buf;
 	int shm_fd, wait_fd, wakeup_fd;

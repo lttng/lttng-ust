@@ -196,7 +196,7 @@ unsigned long lib_ring_buffer_get_records_unread(
 	struct lttng_ust_lib_ring_buffer_backend *bufb = &buf->backend;
 	unsigned long records_unread = 0, sb_bindex;
 	unsigned int i;
-	struct channel *chan;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 
 	chan = shmp(handle, bufb->chan);
 	if (!chan)

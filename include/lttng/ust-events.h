@@ -438,7 +438,7 @@ struct lttng_ust_event_notifier {
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
-struct channel;
+struct lttng_ust_lib_ring_buffer_channel;
 struct lttng_ust_shm_handle;
 
 /*
@@ -473,11 +473,12 @@ struct lttng_ust_channel_ops {
 	 * packet. Note that the size returned is only a hint, since it
 	 * may change due to concurrent writes.
 	 */
-	size_t (*packet_avail_size)(struct channel *chan,
+	size_t (*packet_avail_size)(struct lttng_ust_lib_ring_buffer_channel *chan,
 				    struct lttng_ust_shm_handle *handle);
-	int (*is_finalized)(struct channel *chan);
-	int (*is_disabled)(struct channel *chan);
-	int (*flush_buffer)(struct channel *chan, struct lttng_ust_shm_handle *handle);
+	int (*is_finalized)(struct lttng_ust_lib_ring_buffer_channel *chan);
+	int (*is_disabled)(struct lttng_ust_lib_ring_buffer_channel *chan);
+	int (*flush_buffer)(struct lttng_ust_lib_ring_buffer_channel *chan,
+			    struct lttng_ust_shm_handle *handle);
 	void (*event_strcpy)(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			const char *src, size_t len);
 
@@ -496,7 +497,7 @@ struct lttng_channel {
 	 * consumer process is designed to be allowed to do is to read
 	 * and perform subbuffer flush.
 	 */
-	struct channel *chan;		/* Channel buffers */
+	struct lttng_ust_lib_ring_buffer_channel *chan; /* Channel buffers */
 	int enabled;
 	struct lttng_ctx *ctx;
 	/* Event ID management */

@@ -289,7 +289,7 @@ int lttng_abi_create_root_handle(void)
 static
 int lttng_is_channel_ready(struct lttng_channel *lttng_chan)
 {
-	struct channel *chan;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 	unsigned int nr_streams, exp_streams;
 
 	chan = lttng_chan->chan;
@@ -449,7 +449,7 @@ int lttng_abi_map_channel(int session_objd,
 	int chan_objd;
 	struct lttng_ust_shm_handle *channel_handle;
 	struct lttng_channel *lttng_chan;
-	struct channel *chan;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 	struct lttng_ust_lib_ring_buffer_config *config;
 	void *chan_data;
 	int wakeup_fd;

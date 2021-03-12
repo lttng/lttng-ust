@@ -33,7 +33,7 @@ enum switch_mode { SWITCH_ACTIVE, SWITCH_FLUSH };
 
 /* channel: collection of per-cpu ring buffers. */
 #define RB_CHANNEL_PADDING		32
-struct channel {
+struct lttng_ust_lib_ring_buffer_channel {
 	int record_disabled;
 	unsigned long commit_count_mask;	/*
 						 * Commit count mask, removing
@@ -222,7 +222,7 @@ struct lttng_ust_lib_ring_buffer {
 } __attribute__((aligned(CAA_CACHE_LINE_SIZE)));
 
 static inline
-void *channel_get_private(struct channel *chan)
+void *channel_get_private(struct lttng_ust_lib_ring_buffer_channel *chan)
 {
 	return ((char *) chan) + chan->priv_data_offset;
 }
@@ -238,14 +238,15 @@ void *channel_get_private(struct channel *chan)
  */
 #define CHAN_WARN_ON(c, cond)						\
 	({								\
-		struct channel *__chan;					\
+		struct lttng_ust_lib_ring_buffer_channel *__chan;	\
 		int _____ret = caa_unlikely(cond);				\
 		if (_____ret) {						\
 			if (__rb_same_type(*(c), struct channel_backend))	\
 				__chan = caa_container_of((void *) (c),	\
-							struct channel, \
-							backend);	\
-			else if (__rb_same_type(*(c), struct channel))	\
+					struct lttng_ust_lib_ring_buffer_channel, \
+					backend);			\
+			else if (__rb_same_type(*(c),			\
+					struct lttng_ust_lib_ring_buffer_channel)) \
 				__chan = (void *) (c);			\
 			else						\
 				BUG_ON(1);				\

@@ -232,7 +232,7 @@ struct lttng_event_notifier_group *lttng_event_notifier_group_create(void)
 static
 void _lttng_channel_unmap(struct lttng_channel *lttng_chan)
 {
-	struct channel *chan;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 	struct lttng_ust_shm_handle *handle;
 
 	cds_list_del(&lttng_chan->node);

@@ -32,7 +32,8 @@ unsigned int channel_handle_get_nr_streams(struct lttng_ust_shm_handle *handle);
 
 __attribute__((visibility("hidden")))
 extern
-void channel_destroy(struct channel *chan, struct lttng_ust_shm_handle *handle,
+void channel_destroy(struct lttng_ust_lib_ring_buffer_channel *chan,
+		struct lttng_ust_shm_handle *handle,
 		int consumer);
 
 /*

@@ -26,7 +26,8 @@
 
 /* buf_trunc mask selects only the buffer number. */
 static inline
-unsigned long buf_trunc(unsigned long offset, struct channel *chan)
+unsigned long buf_trunc(unsigned long offset,
+			struct lttng_ust_lib_ring_buffer_channel *chan)
 {
 	return offset & ~(chan->backend.buf_size - 1);
 
@@ -34,35 +35,40 @@ unsigned long buf_trunc(unsigned long offset, struct channel *chan)
 
 /* Select the buffer number value (counter). */
 static inline
-unsigned long buf_trunc_val(unsigned long offset, struct channel *chan)
+unsigned long buf_trunc_val(unsigned long offset,
+			struct lttng_ust_lib_ring_buffer_channel *chan)
 {
 	return buf_trunc(offset, chan) >> chan->backend.buf_size_order;
 }
 
 /* buf_offset mask selects only the offset within the current buffer. */
 static inline
-unsigned long buf_offset(unsigned long offset, struct channel *chan)
+unsigned long buf_offset(unsigned long offset,
+			struct lttng_ust_lib_ring_buffer_channel *chan)
 {
 	return offset & (chan->backend.buf_size - 1);
 }
 
 /* subbuf_offset mask selects the offset within the current subbuffer. */
 static inline
-unsigned long subbuf_offset(unsigned long offset, struct channel *chan)
+unsigned long subbuf_offset(unsigned long offset,
+			struct lttng_ust_lib_ring_buffer_channel *chan)
 {
 	return offset & (chan->backend.subbuf_size - 1);
 }
 
 /* subbuf_trunc mask selects the subbuffer number. */
 static inline
-unsigned long subbuf_trunc(unsigned long offset, struct channel *chan)
+unsigned long subbuf_trunc(unsigned long offset,
+			struct lttng_ust_lib_ring_buffer_channel *chan)
 {
 	return offset & ~(chan->backend.subbuf_size - 1);
 }
 
 /* subbuf_align aligns the offset to the next subbuffer. */
 static inline
-unsigned long subbuf_align(unsigned long offset, struct channel *chan)
+unsigned long subbuf_align(unsigned long offset,
+			struct lttng_ust_lib_ring_buffer_channel *chan)
 {
 	return (offset + chan->backend.subbuf_size)
 	       & ~(chan->backend.subbuf_size - 1);
@@ -70,7 +76,8 @@ unsigned long subbuf_align(unsigned long offset, struct channel *chan)
 
 /* subbuf_index returns the index of the current subbuffer within the buffer. */
 static inline
-unsigned long subbuf_index(unsigned long offset, struct channel *chan)
+unsigned long subbuf_index(unsigned long offset,
+			struct lttng_ust_lib_ring_buffer_channel *chan)
 {
 	return buf_offset(offset, chan) >> chan->backend.subbuf_size_order;
 }
@@ -152,7 +159,7 @@ void lib_ring_buffer_switch_slow(struct lttng_ust_lib_ring_buffer *buf,
 __attribute__((visibility("hidden")))
 void lib_ring_buffer_check_deliver_slow(const struct lttng_ust_lib_ring_buffer_config *config,
 				   struct lttng_ust_lib_ring_buffer *buf,
-			           struct channel *chan,
+			           struct lttng_ust_lib_ring_buffer_channel *chan,
 			           unsigned long offset,
 				   unsigned long commit_count,
 			           unsigned long idx,
@@ -163,7 +170,7 @@ void lib_ring_buffer_check_deliver_slow(const struct lttng_ust_lib_ring_buffer_c
 
 static inline
 void lib_ring_buffer_reserve_push_reader(struct lttng_ust_lib_ring_buffer *buf,
-					 struct channel *chan,
+					 struct lttng_ust_lib_ring_buffer_channel *chan,
 					 unsigned long offset)
 {
 	unsigned long consumed_old, consumed_new;
@@ -202,7 +209,7 @@ static inline
 void lib_ring_buffer_clear_reader(struct lttng_ust_lib_ring_buffer *buf,
 				  struct lttng_ust_shm_handle *handle)
 {
-	struct channel *chan;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 	const struct lttng_ust_lib_ring_buffer_config *config;
 	unsigned long offset, consumed_old, consumed_new;
 
@@ -225,7 +232,7 @@ void lib_ring_buffer_clear_reader(struct lttng_ust_lib_ring_buffer *buf,
 static inline
 int lib_ring_buffer_pending_data(const struct lttng_ust_lib_ring_buffer_config *config,
 				 struct lttng_ust_lib_ring_buffer *buf,
-				 struct channel *chan)
+				 struct lttng_ust_lib_ring_buffer_channel *chan)
 {
 	return !!subbuf_offset(v_read(config, &buf->offset), chan);
 }
@@ -247,7 +254,7 @@ unsigned long lib_ring_buffer_get_data_size(const struct lttng_ust_lib_ring_buff
 static inline
 int lib_ring_buffer_reserve_committed(const struct lttng_ust_lib_ring_buffer_config *config,
 				      struct lttng_ust_lib_ring_buffer *buf,
-				      struct channel *chan,
+				      struct lttng_ust_lib_ring_buffer_channel *chan,
 				      struct lttng_ust_shm_handle *handle)
 {
 	unsigned long offset, idx, commit_count;
@@ -287,7 +294,7 @@ int lib_ring_buffer_reserve_committed(const struct lttng_ust_lib_ring_buffer_con
 static inline
 void lib_ring_buffer_check_deliver(const struct lttng_ust_lib_ring_buffer_config *config,
 				   struct lttng_ust_lib_ring_buffer *buf,
-			           struct channel *chan,
+			           struct lttng_ust_lib_ring_buffer_channel *chan,
 			           unsigned long offset,
 				   unsigned long commit_count,
 			           unsigned long idx,
@@ -315,7 +322,7 @@ void lib_ring_buffer_check_deliver(const struct lttng_ust_lib_ring_buffer_config
 static inline
 void lib_ring_buffer_write_commit_counter(const struct lttng_ust_lib_ring_buffer_config *config,
 					  struct lttng_ust_lib_ring_buffer *buf,
-				          struct channel *chan,
+				          struct lttng_ust_lib_ring_buffer_channel *chan,
 				          unsigned long buf_offset,
 				          unsigned long commit_count,
 					  struct lttng_ust_shm_handle *handle,
