@@ -172,6 +172,7 @@ struct lttng_ust_event_common_private {
 	/* Backward references: list of lttng_enabler_ref (ref to enablers) */
 	struct cds_list_head enablers_ref_head;
 	int registered;			/* has reg'd tracepoint probe */
+	uint64_t user_token;
 };
 
 struct lttng_ust_event_recorder_private {
@@ -180,6 +181,17 @@ struct lttng_ust_event_recorder_private {
 	struct lttng_ust_event_recorder *pub;	/* Public event interface */
 	struct cds_list_head node;		/* Event list in session */
 	struct cds_hlist_node hlist;		/* session ht of events */
+};
+
+struct lttng_ust_event_notifier_private {
+	struct lttng_ust_event_common_private parent;
+
+	struct lttng_event_notifier *pub;	/* Public event notifier interface */
+	struct cds_hlist_node hlist;		/* hashtable of event_notifiers */
+	struct cds_list_head node;		/* event_notifier list in session */
+	struct lttng_event_notifier_group *group; /* weak ref */
+	size_t num_captures;			/* Needed to allocate the msgpack array. */
+	uint64_t error_counter_index;
 };
 
 struct lttng_ust_bytecode_runtime_private {

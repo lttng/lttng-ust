@@ -270,13 +270,13 @@ void register_event_notifier(struct lttng_event_notifier *event_notifier)
 	int ret;
 	const struct lttng_event_desc *desc;
 
-	assert(event_notifier->registered == 0);
-	desc = event_notifier->desc;
+	assert(event_notifier->parent->priv->registered == 0);
+	desc = event_notifier->parent->priv->desc;
 	ret = __tracepoint_probe_register_queue_release(desc->name,
 		desc->u.ext.event_notifier_callback, event_notifier, desc->signature);
 	WARN_ON_ONCE(ret);
 	if (!ret)
-		event_notifier->registered = 1;
+		event_notifier->parent->priv->registered = 1;
 }
 
 static
@@ -301,13 +301,13 @@ void unregister_event_notifier(struct lttng_event_notifier *event_notifier)
 	int ret;
 	const struct lttng_event_desc *desc;
 
-	assert(event_notifier->registered == 1);
-	desc = event_notifier->desc;
+	assert(event_notifier->parent->priv->registered == 1);
+	desc = event_notifier->parent->priv->desc;
 	ret = __tracepoint_probe_unregister_queue_release(desc->name,
 		desc->u.ext.event_notifier_callback, event_notifier);
 	WARN_ON_ONCE(ret);
 	if (!ret)
-		event_notifier->registered = 0;
+		event_notifier->parent->priv->registered = 0;
 }
 
 /*
@@ -326,7 +326,7 @@ void _lttng_event_recorder_unregister(struct lttng_ust_event_recorder *event_rec
 static
 void _lttng_event_notifier_unregister(struct lttng_event_notifier *event_notifier)
 {
-	if (event_notifier->registered)
+	if (event_notifier->parent->priv->registered)
 		unregister_event_notifier(event_notifier);
 }
 
@@ -365,15 +365,15 @@ void lttng_event_notifier_group_destroy(
 {
 	int close_ret;
 	struct lttng_event_notifier_enabler *notifier_enabler, *tmpnotifier_enabler;
-	struct lttng_event_notifier *notifier, *tmpnotifier;
+	struct lttng_ust_event_notifier_private *notifier_priv, *tmpnotifier_priv;
 
 	if (!event_notifier_group) {
 		return;
 	}
 
-	cds_list_for_each_entry(notifier,
+	cds_list_for_each_entry(notifier_priv,
 			&event_notifier_group->event_notifiers_head, node)
-		_lttng_event_notifier_unregister(notifier);
+		_lttng_event_notifier_unregister(notifier_priv->pub);
 
 	lttng_ust_urcu_synchronize_rcu();
 
@@ -381,9 +381,9 @@ void lttng_event_notifier_group_destroy(
 			&event_notifier_group->enablers_head, node)
 		lttng_event_notifier_enabler_destroy(notifier_enabler);
 
-	cds_list_for_each_entry_safe(notifier, tmpnotifier,
+	cds_list_for_each_entry_safe(notifier_priv, tmpnotifier_priv,
 			&event_notifier_group->event_notifiers_head, node)
-		_lttng_event_notifier_destroy(notifier);
+		_lttng_event_notifier_destroy(notifier_priv->pub);
 
 	if (event_notifier_group->error_counter)
 		lttng_ust_counter_destroy(event_notifier_group->error_counter);
@@ -848,6 +848,7 @@ int lttng_event_notifier_create(const struct lttng_event_desc *desc,
 		struct lttng_event_notifier_group *event_notifier_group)
 {
 	struct lttng_event_notifier *event_notifier;
+	struct lttng_ust_event_notifier_private *event_notifier_priv;
 	struct cds_hlist_head *head;
 	int ret = 0;
 
@@ -864,27 +865,49 @@ int lttng_event_notifier_create(const struct lttng_event_desc *desc,
 		ret = -ENOMEM;
 		goto error;
 	}
+	event_notifier->struct_size = sizeof(struct lttng_event_notifier);
 
-	event_notifier->group = event_notifier_group;
-	event_notifier->user_token = token;
-	event_notifier->error_counter_index = error_counter_index;
+	event_notifier->parent = zmalloc(sizeof(struct lttng_ust_event_common));
+	if (!event_notifier->parent) {
+		ret = -ENOMEM;
+		goto parent_error;
+	}
+	event_notifier->parent->struct_size = sizeof(struct lttng_ust_event_common);
+
+	event_notifier_priv = zmalloc(sizeof(struct lttng_ust_event_notifier_private));
+	if (!event_notifier_priv) {
+		ret = -ENOMEM;
+		goto priv_error;
+	}
+	event_notifier->priv = event_notifier_priv;
+	event_notifier_priv->pub = event_notifier;
+	event_notifier->parent->priv = &event_notifier_priv->parent;
+	event_notifier_priv->parent.pub = event_notifier->parent;
+
+	event_notifier_priv->group = event_notifier_group;
+	event_notifier_priv->parent.user_token = token;
+	event_notifier_priv->error_counter_index = error_counter_index;
 
 	/* Event notifier will be enabled by enabler sync. */
-	event_notifier->enabled = 0;
-	event_notifier->registered = 0;
+	event_notifier->parent->enabled = 0;
+	event_notifier_priv->parent.registered = 0;
 
-	CDS_INIT_LIST_HEAD(&event_notifier->filter_bytecode_runtime_head);
+	CDS_INIT_LIST_HEAD(&event_notifier->parent->filter_bytecode_runtime_head);
 	CDS_INIT_LIST_HEAD(&event_notifier->capture_bytecode_runtime_head);
-	CDS_INIT_LIST_HEAD(&event_notifier->enablers_ref_head);
-	event_notifier->desc = desc;
+	CDS_INIT_LIST_HEAD(&event_notifier_priv->parent.enablers_ref_head);
+	event_notifier_priv->parent.desc = desc;
 	event_notifier->notification_send = lttng_event_notifier_notification_send;
 
-	cds_list_add(&event_notifier->node,
+	cds_list_add(&event_notifier_priv->node,
 			&event_notifier_group->event_notifiers_head);
-	cds_hlist_add_head(&event_notifier->hlist, head);
+	cds_hlist_add_head(&event_notifier_priv->hlist, head);
 
 	return 0;
 
+priv_error:
+	free(event_notifier->parent);
+parent_error:
+	free(event_notifier);
 error:
 	return ret;
 }
@@ -895,16 +918,18 @@ void _lttng_event_notifier_destroy(struct lttng_event_notifier *event_notifier)
 	struct lttng_enabler_ref *enabler_ref, *tmp_enabler_ref;
 
 	/* Remove from event_notifier list. */
-	cds_list_del(&event_notifier->node);
+	cds_list_del(&event_notifier->priv->node);
 	/* Remove from event_notifier hash table. */
-	cds_hlist_del(&event_notifier->hlist);
+	cds_hlist_del(&event_notifier->priv->hlist);
 
 	lttng_free_event_notifier_filter_runtime(event_notifier);
 
 	/* Free event_notifier enabler refs */
 	cds_list_for_each_entry_safe(enabler_ref, tmp_enabler_ref,
-			&event_notifier->enablers_ref_head, node)
+			&event_notifier->priv->parent.enablers_ref_head, node)
 		free(enabler_ref);
+	free(event_notifier->priv);
+	free(event_notifier->parent);
 	free(event_notifier);
 }
 
@@ -1010,11 +1035,11 @@ int lttng_event_notifier_enabler_match_event_notifier(
 		struct lttng_event_notifier_enabler *event_notifier_enabler,
 		struct lttng_event_notifier *event_notifier)
 {
-	int desc_matches = lttng_desc_match_enabler(event_notifier->desc,
+	int desc_matches = lttng_desc_match_enabler(event_notifier->priv->parent.desc,
 		lttng_event_notifier_enabler_as_enabler(event_notifier_enabler));
 
-	if (desc_matches && event_notifier->group == event_notifier_enabler->group &&
-			event_notifier->user_token == event_notifier_enabler->user_token)
+	if (desc_matches && event_notifier->priv->group == event_notifier_enabler->group &&
+			event_notifier->priv->parent.user_token == event_notifier_enabler->user_token)
 		return 1;
 	else
 		return 0;
@@ -1114,7 +1139,7 @@ void probe_provider_event_for_each(struct lttng_probe_desc *provider_desc,
 	for (i = 0; i < provider_desc->nr_events; i++) {
 		const struct lttng_event_desc *event_desc;
 		struct lttng_event_notifier_group *event_notifier_group;
-		struct lttng_event_notifier *event_notifier;
+		struct lttng_ust_event_notifier_private *event_notifier_priv;
 		struct lttng_ust_session_private *session_priv;
 		struct cds_hlist_head *head;
 		struct lttng_ust_event_recorder_private *event_recorder_priv;
@@ -1156,9 +1181,9 @@ void probe_provider_event_for_each(struct lttng_probe_desc *provider_desc,
 				event_notifier_group->event_notifiers_ht.table,
 				LTTNG_UST_EVENT_NOTIFIER_HT_SIZE, event_desc);
 
-			cds_hlist_for_each_entry_safe(event_notifier, node, tmp_node, head, hlist) {
-				if (event_desc == event_notifier->desc) {
-					event_notifier_func(event_notifier);
+			cds_hlist_for_each_entry_safe(event_notifier_priv, node, tmp_node, head, hlist) {
+				if (event_desc == event_notifier_priv->parent.desc) {
+					event_notifier_func(event_notifier_priv->pub);
 					break;
 				}
 			}
@@ -1744,7 +1769,7 @@ void lttng_create_event_notifier_if_missing(
 			int ret;
 			bool found = false;
 			const struct lttng_event_desc *desc;
-			struct lttng_event_notifier *event_notifier;
+			struct lttng_ust_event_notifier_private *event_notifier_priv;
 			struct cds_hlist_head *head;
 			struct cds_hlist_node *node;
 
@@ -1763,14 +1788,14 @@ void lttng_create_event_notifier_if_missing(
 				event_notifier_group->event_notifiers_ht.table,
 				LTTNG_UST_EVENT_NOTIFIER_HT_SIZE, desc);
 
-			cds_hlist_for_each_entry(event_notifier, node, head, hlist) {
+			cds_hlist_for_each_entry(event_notifier_priv, node, head, hlist) {
 				/*
 				 * Check if event_notifier already exists by checking
 				 * if the event_notifier and enabler share the same
 				 * description and id.
 				 */
-				if (event_notifier->desc == desc &&
-						event_notifier->user_token == event_notifier_enabler->user_token) {
+				if (event_notifier_priv->parent.desc == desc &&
+						event_notifier_priv->parent.user_token == event_notifier_enabler->user_token) {
 					found = true;
 					break;
 				}
@@ -1814,7 +1839,7 @@ int lttng_event_notifier_enabler_ref_event_notifiers(
 		struct lttng_event_notifier_enabler *event_notifier_enabler)
 {
 	struct lttng_event_notifier_group *event_notifier_group = event_notifier_enabler->group;
-	struct lttng_event_notifier *event_notifier;
+	struct lttng_ust_event_notifier_private *event_notifier_priv;
 
 	 /*
 	  * Only try to create event_notifiers for enablers that are enabled, the user
@@ -1828,13 +1853,13 @@ int lttng_event_notifier_enabler_ref_event_notifiers(
 	lttng_create_event_notifier_if_missing(event_notifier_enabler);
 
 	/* Link the created event_notifier with its associated enabler. */
-	cds_list_for_each_entry(event_notifier, &event_notifier_group->event_notifiers_head, node) {
+	cds_list_for_each_entry(event_notifier_priv, &event_notifier_group->event_notifiers_head, node) {
 		struct lttng_enabler_ref *enabler_ref;
 
-		if (!lttng_event_notifier_enabler_match_event_notifier(event_notifier_enabler, event_notifier))
+		if (!lttng_event_notifier_enabler_match_event_notifier(event_notifier_enabler, event_notifier_priv->pub))
 			continue;
 
-		enabler_ref = lttng_enabler_ref(&event_notifier->enablers_ref_head,
+		enabler_ref = lttng_enabler_ref(&event_notifier_priv->parent.enablers_ref_head,
 			lttng_event_notifier_enabler_as_enabler(event_notifier_enabler));
 		if (!enabler_ref) {
 			/*
@@ -1848,25 +1873,25 @@ int lttng_event_notifier_enabler_ref_event_notifiers(
 			enabler_ref->ref = lttng_event_notifier_enabler_as_enabler(
 				event_notifier_enabler);
 			cds_list_add(&enabler_ref->node,
-				&event_notifier->enablers_ref_head);
+				&event_notifier_priv->parent.enablers_ref_head);
 		}
 
 		/*
 		 * Link filter bytecodes if not linked yet.
 		 */
-		lttng_enabler_link_bytecode(event_notifier->desc,
+		lttng_enabler_link_bytecode(event_notifier_priv->parent.desc,
 			&event_notifier_group->ctx,
-			&event_notifier->filter_bytecode_runtime_head,
+			&event_notifier_priv->pub->parent->filter_bytecode_runtime_head,
 			&lttng_event_notifier_enabler_as_enabler(event_notifier_enabler)->filter_bytecode_head);
 
 		/*
 		 * Link capture bytecodes if not linked yet.
 		 */
-		lttng_enabler_link_bytecode(event_notifier->desc,
-			&event_notifier_group->ctx, &event_notifier->capture_bytecode_runtime_head,
+		lttng_enabler_link_bytecode(event_notifier_priv->parent.desc,
+			&event_notifier_group->ctx, &event_notifier_priv->pub->capture_bytecode_runtime_head,
 			&event_notifier_enabler->capture_bytecode_head);
 
-		event_notifier->num_captures = event_notifier_enabler->num_captures;
+		event_notifier_priv->num_captures = event_notifier_enabler->num_captures;
 	}
 end:
 	return 0;
@@ -1876,7 +1901,7 @@ static
 void lttng_event_notifier_group_sync_enablers(struct lttng_event_notifier_group *event_notifier_group)
 {
 	struct lttng_event_notifier_enabler *event_notifier_enabler;
-	struct lttng_event_notifier *event_notifier;
+	struct lttng_ust_event_notifier_private *event_notifier_priv;
 
 	cds_list_for_each_entry(event_notifier_enabler, &event_notifier_group->enablers_head, node)
 		lttng_event_notifier_enabler_ref_event_notifiers(event_notifier_enabler);
@@ -1885,54 +1910,54 @@ void lttng_event_notifier_group_sync_enablers(struct lttng_event_notifier_group 
 	 * For each event_notifier, if at least one of its enablers is enabled,
 	 * we enable the event_notifier, else we disable it.
 	 */
-	cds_list_for_each_entry(event_notifier, &event_notifier_group->event_notifiers_head, node) {
+	cds_list_for_each_entry(event_notifier_priv, &event_notifier_group->event_notifiers_head, node) {
 		struct lttng_enabler_ref *enabler_ref;
 		struct lttng_bytecode_runtime *runtime;
 		int enabled = 0, has_enablers_without_bytecode = 0;
 
 		/* Enable event_notifiers */
 		cds_list_for_each_entry(enabler_ref,
-				&event_notifier->enablers_ref_head, node) {
+				&event_notifier_priv->parent.enablers_ref_head, node) {
 			if (enabler_ref->ref->enabled) {
 				enabled = 1;
 				break;
 			}
 		}
 
-		CMM_STORE_SHARED(event_notifier->enabled, enabled);
+		CMM_STORE_SHARED(event_notifier_priv->pub->parent->enabled, enabled);
 		/*
 		 * Sync tracepoint registration with event_notifier enabled
 		 * state.
 		 */
 		if (enabled) {
-			if (!event_notifier->registered)
-				register_event_notifier(event_notifier);
+			if (!event_notifier_priv->parent.registered)
+				register_event_notifier(event_notifier_priv->pub);
 		} else {
-			if (event_notifier->registered)
-				unregister_event_notifier(event_notifier);
+			if (event_notifier_priv->parent.registered)
+				unregister_event_notifier(event_notifier_priv->pub);
 		}
 
 		/* Check if has enablers without bytecode enabled */
 		cds_list_for_each_entry(enabler_ref,
-				&event_notifier->enablers_ref_head, node) {
+				&event_notifier_priv->parent.enablers_ref_head, node) {
 			if (enabler_ref->ref->enabled
 					&& cds_list_empty(&enabler_ref->ref->filter_bytecode_head)) {
 				has_enablers_without_bytecode = 1;
 				break;
 			}
 		}
-		event_notifier->has_enablers_without_bytecode =
+		event_notifier_priv->pub->parent->has_enablers_without_bytecode =
 			has_enablers_without_bytecode;
 
 		/* Enable filters */
 		cds_list_for_each_entry(runtime,
-				&event_notifier->filter_bytecode_runtime_head, node) {
+				&event_notifier_priv->pub->parent->filter_bytecode_runtime_head, node) {
 			lttng_bytecode_filter_sync_state(runtime);
 		}
 
 		/* Enable captures. */
 		cds_list_for_each_entry(runtime,
-				&event_notifier->capture_bytecode_runtime_head, node) {
+				&event_notifier_priv->pub->capture_bytecode_runtime_head, node) {
 			lttng_bytecode_capture_sync_state(runtime);
 		}
 	}

@@ -214,15 +214,15 @@ void notification_init(struct lttng_event_notifier_notification *notif,
 {
 	struct lttng_msgpack_writer *writer = &notif->writer;
 
-	notif->event_notifier_token = event_notifier->user_token;
-	notif->notification_fd = event_notifier->group->notification_fd;
+	notif->event_notifier_token = event_notifier->priv->parent.user_token;
+	notif->notification_fd = event_notifier->priv->group->notification_fd;
 	notif->has_captures = false;
 
-	if (event_notifier->num_captures > 0) {
+	if (event_notifier->priv->num_captures > 0) {
 		lttng_msgpack_writer_init(writer, notif->capture_buf,
 				CAPTURE_BUFFER_SIZE);
 
-		lttng_msgpack_begin_array(writer, event_notifier->num_captures);
+		lttng_msgpack_begin_array(writer, event_notifier->priv->num_captures);
 		notif->has_captures = true;
 	}
 }
@@ -269,7 +269,7 @@ void notification_append_empty_capture(
 static void record_error(struct lttng_event_notifier *event_notifier)
 {
 	struct lttng_event_notifier_group *event_notifier_group =
-			event_notifier->group;
+			event_notifier->priv->group;
 	struct lttng_counter *error_counter;
 	size_t dimension_index[1];
 	int ret;
@@ -287,7 +287,7 @@ static void record_error(struct lttng_event_notifier *event_notifier)
 	if (!error_counter)
 		return;
 
-	dimension_index[0] = event_notifier->error_counter_index;
+	dimension_index[0] = event_notifier->priv->error_counter_index;
 	ret = event_notifier_group->error_counter->ops->counter_add(
 			error_counter->counter, dimension_index, 1);
 	if (ret)
@@ -306,7 +306,7 @@ void notification_send(struct lttng_event_notifier_notification *notif,
 
 	assert(notif);
 
-	ust_notif.token = event_notifier->user_token;
+	ust_notif.token = event_notifier->priv->parent.user_token;
 
 	/*
 	 * Prepare sending the notification from multiple buffers using an

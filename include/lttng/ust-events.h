@@ -373,22 +373,16 @@ struct lttng_ust_event_recorder {
 	struct lttng_ctx *ctx;
 };
 
+struct lttng_ust_event_notifier_private;
+
 struct lttng_event_notifier {
-	uint64_t user_token;
-	uint64_t error_counter_index;
-	int enabled;
-	int registered;			/* has reg'd tracepoint probe */
-	size_t num_captures;		/* Needed to allocate the msgpack array. */
+	uint32_t struct_size;				/* Size of this structure. */
+	struct lttng_ust_event_common *parent;
+	struct lttng_ust_event_notifier_private *priv;	/* Private event notifier interface */
+
 	void (*notification_send)(struct lttng_event_notifier *event_notifier,
 		const char *stack_data);
-	struct cds_list_head filter_bytecode_runtime_head;
 	struct cds_list_head capture_bytecode_runtime_head;
-	int has_enablers_without_bytecode;
-	struct cds_list_head enablers_ref_head;
-	const struct lttng_event_desc *desc;
-	struct cds_hlist_node hlist;	/* hashtable of event_notifiers */
-	struct cds_list_head node;	/* event_notifier list in session */
-	struct lttng_event_notifier_group *group; /* weak ref */
 };
 
 struct lttng_enum {

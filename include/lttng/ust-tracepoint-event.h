@@ -942,17 +942,17 @@ void __event_notifier_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))
 		char __interpreter_stack_data[2 * sizeof(unsigned long) * __num_fields]; \
 	} __stackvar;							      \
 									      \
-	if (caa_unlikely(!CMM_ACCESS_ONCE(__event_notifier->enabled)))	      \
+	if (caa_unlikely(!CMM_ACCESS_ONCE(__event_notifier->parent->enabled))) \
 		return;							      \
 	if (caa_unlikely(!TP_RCU_LINK_TEST()))				      \
 		return;							      \
-	if (caa_unlikely(!cds_list_empty(&__event_notifier->filter_bytecode_runtime_head))) { \
+	if (caa_unlikely(!cds_list_empty(&__event_notifier->parent->filter_bytecode_runtime_head))) { \
 		struct lttng_bytecode_runtime *__filter_bc_runtime;		       \
-		int __filter_record = __event_notifier->has_enablers_without_bytecode; \
+		int __filter_record = __event_notifier->parent->has_enablers_without_bytecode; \
 									      \
 		__event_prepare_interpreter_stack__##_provider##___##_name(__stackvar.__interpreter_stack_data, \
 			_TP_ARGS_DATA_VAR(_args));			      \
-		tp_list_for_each_entry_rcu(__filter_bc_runtime, &__event_notifier->filter_bytecode_runtime_head, node) { \
+		tp_list_for_each_entry_rcu(__filter_bc_runtime, &__event_notifier->parent->filter_bytecode_runtime_head, node) { \
 			if (caa_unlikely(__filter_bc_runtime->interpreter_funcs.filter(__filter_bc_runtime,	  \
 					__stackvar.__interpreter_stack_data) & LTTNG_INTERPRETER_RECORD_FLAG)) \
 				__filter_record = 1;			      \
