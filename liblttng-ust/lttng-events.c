@@ -254,14 +254,14 @@ void register_event(struct lttng_event *event)
 	int ret;
 	const struct lttng_event_desc *desc;
 
-	assert(event->priv->registered == 0);
-	desc = event->priv->desc;
+	assert(event->parent->priv->registered == 0);
+	desc = event->parent->priv->desc;
 	ret = __tracepoint_probe_register_queue_release(desc->name,
 			desc->probe_callback,
 			event, desc->signature);
 	WARN_ON_ONCE(ret);
 	if (!ret)
-		event->priv->registered = 1;
+		event->parent->priv->registered = 1;
 }
 
 static
@@ -285,14 +285,14 @@ void unregister_event(struct lttng_event *event)
 	int ret;
 	const struct lttng_event_desc *desc;
 
-	assert(event->priv->registered == 1);
-	desc = event->priv->desc;
+	assert(event->parent->priv->registered == 1);
+	desc = event->parent->priv->desc;
 	ret = __tracepoint_probe_unregister_queue_release(desc->name,
 			desc->probe_callback,
 			event);
 	WARN_ON_ONCE(ret);
 	if (!ret)
-		event->priv->registered = 0;
+		event->parent->priv->registered = 0;
 }
 
 static
@@ -316,7 +316,7 @@ void unregister_event_notifier(struct lttng_event_notifier *event_notifier)
 static
 void _lttng_event_unregister(struct lttng_event *event)
 {
-	if (event->priv->registered)
+	if (event->parent->priv->registered)
 		unregister_event(event);
 }
 
@@ -773,6 +773,14 @@ int lttng_event_create(const struct lttng_event_desc *desc,
 		goto cache_error;
 	}
 	event->struct_size = sizeof(struct lttng_event);
+
+	event->parent = zmalloc(sizeof(struct lttng_event_common));
+	if (!event->parent) {
+		ret = -ENOMEM;
+		goto parent_error;
+	}
+	event->parent->struct_size = sizeof(struct lttng_event_common);
+
 	event_priv = zmalloc(sizeof(struct lttng_ust_event_private));
 	if (!event_priv) {
 		ret = -ENOMEM;
@@ -780,17 +788,20 @@ int lttng_event_create(const struct lttng_event_desc *desc,
 	}
 	event->priv = event_priv;
 	event_priv->pub = event;
+	event->parent->priv = &event_priv->parent;
+	event_priv->parent.pub = event->parent;
+
 	event->chan = chan;
 
 	/* Event will be enabled by enabler sync. */
-	event->enabled = 0;
-	event->priv->registered = 0;
-	CDS_INIT_LIST_HEAD(&event->filter_bytecode_runtime_head);
-	CDS_INIT_LIST_HEAD(&event->priv->enablers_ref_head);
-	event->priv->desc = desc;
+	event->parent->enabled = 0;
+	event->parent->priv->registered = 0;
+	CDS_INIT_LIST_HEAD(&event->parent->filter_bytecode_runtime_head);
+	CDS_INIT_LIST_HEAD(&event->parent->priv->enablers_ref_head);
+	event->parent->priv->desc = desc;
 
 	if (desc->loglevel)
-		loglevel = *(*event->priv->desc->loglevel);
+		loglevel = *(*event->parent->priv->desc->loglevel);
 	else
 		loglevel = TRACE_DEFAULT;
 	if (desc->u.ext.model_emf_uri)
@@ -822,6 +833,8 @@ int lttng_event_create(const struct lttng_event_desc *desc,
 sessiond_register_error:
 	free(event_priv);
 priv_error:
+	free(event->parent);
+parent_error:
 	free(event);
 cache_error:
 create_enum_error:
@@ -984,7 +997,7 @@ static
 int lttng_event_enabler_match_event(struct lttng_event_enabler *event_enabler,
 		struct lttng_event *event)
 {
-	if (lttng_desc_match_enabler(event->priv->desc,
+	if (lttng_desc_match_enabler(event->parent->priv->desc,
 			lttng_event_enabler_as_enabler(event_enabler))
 			&& event->chan == event_enabler->chan)
 		return 1;
@@ -1058,7 +1071,7 @@ void lttng_create_event_if_missing(struct lttng_event_enabler *event_enabler)
 				LTTNG_UST_EVENT_HT_SIZE, desc);
 
 			cds_hlist_for_each_entry(event_priv, node, head, hlist) {
-				if (event_priv->desc == desc
+				if (event_priv->parent.desc == desc
 						&& event_priv->pub->chan == event_enabler->chan) {
 					found = true;
 					break;
@@ -1122,7 +1135,7 @@ void probe_provider_event_for_each(struct lttng_probe_desc *provider_desc,
 				LTTNG_UST_EVENT_HT_SIZE, event_desc);
 
 			cds_hlist_for_each_entry_safe(event_priv, node, tmp_node, head, hlist) {
-				if (event_desc == event_priv->desc) {
+				if (event_desc == event_priv->parent.desc) {
 					event_func(session_priv->pub, event_priv->pub);
 					break;
 				}
@@ -1167,12 +1180,12 @@ void _event_enum_destroy(struct lttng_session *session,
 	unsigned int i;
 
 	/* Destroy enums of the current event. */
-	for (i = 0; i < event->priv->desc->nr_fields; i++) {
+	for (i = 0; i < event->parent->priv->desc->nr_fields; i++) {
 		const struct lttng_enum_desc *enum_desc;
 		const struct lttng_event_field *field;
 		struct lttng_enum *curr_enum;
 
-		field = &(event->priv->desc->fields[i]);
+		field = &(event->parent->priv->desc->fields[i]);
 		switch (field->type.atype) {
 		case atype_enum_nestable:
 			enum_desc = field->type.u.enum_nestable.desc;
@@ -1242,7 +1255,7 @@ int lttng_event_enabler_ref_events(struct lttng_event_enabler *event_enabler)
 		if (!lttng_event_enabler_match_event(event_enabler, event_priv->pub))
 			continue;
 
-		enabler_ref = lttng_enabler_ref(&event_priv->enablers_ref_head,
+		enabler_ref = lttng_enabler_ref(&event_priv->parent.enablers_ref_head,
 			lttng_event_enabler_as_enabler(event_enabler));
 		if (!enabler_ref) {
 			/*
@@ -1255,15 +1268,15 @@ int lttng_event_enabler_ref_events(struct lttng_event_enabler *event_enabler)
 			enabler_ref->ref = lttng_event_enabler_as_enabler(
 				event_enabler);
 			cds_list_add(&enabler_ref->node,
-				&event_priv->enablers_ref_head);
+				&event_priv->parent.enablers_ref_head);
 		}
 
 		/*
 		 * Link filter bytecodes if not linked yet.
 		 */
-		lttng_enabler_link_bytecode(event_priv->desc,
+		lttng_enabler_link_bytecode(event_priv->parent.desc,
 			&session->priv->ctx,
-			&event_priv->pub->filter_bytecode_runtime_head,
+			&event_priv->pub->parent->filter_bytecode_runtime_head,
 			&lttng_event_enabler_as_enabler(event_enabler)->filter_bytecode_head);
 
 		/* TODO: merge event context. */
@@ -1342,9 +1355,10 @@ void _lttng_event_destroy(struct lttng_event *event)
 	lttng_free_event_filter_runtime(event);
 	/* Free event enabler refs */
 	cds_list_for_each_entry_safe(enabler_ref, tmp_enabler_ref,
-			&event->priv->enablers_ref_head, node)
+			&event->parent->priv->enablers_ref_head, node)
 		free(enabler_ref);
 	free(event->priv);
+	free(event->parent);
 	free(event);
 }
 
@@ -1660,7 +1674,7 @@ void lttng_session_sync_event_enablers(struct lttng_session *session)
 
 		/* Enable events */
 		cds_list_for_each_entry(enabler_ref,
-				&event_priv->enablers_ref_head, node) {
+				&event_priv->parent.enablers_ref_head, node) {
 			if (enabler_ref->ref->enabled) {
 				enabled = 1;
 				break;
@@ -1673,34 +1687,34 @@ void lttng_session_sync_event_enablers(struct lttng_session *session)
 		 */
 		enabled = enabled && session->priv->tstate && event_priv->pub->chan->tstate;
 
-		CMM_STORE_SHARED(event_priv->pub->enabled, enabled);
+		CMM_STORE_SHARED(event_priv->pub->parent->enabled, enabled);
 		/*
 		 * Sync tracepoint registration with event enabled
 		 * state.
 		 */
 		if (enabled) {
-			if (!event_priv->registered)
+			if (!event_priv->parent.registered)
 				register_event(event_priv->pub);
 		} else {
-			if (event_priv->registered)
+			if (event_priv->parent.registered)
 				unregister_event(event_priv->pub);
 		}
 
 		/* Check if has enablers without bytecode enabled */
 		cds_list_for_each_entry(enabler_ref,
-				&event_priv->enablers_ref_head, node) {
+				&event_priv->parent.enablers_ref_head, node) {
 			if (enabler_ref->ref->enabled
 					&& cds_list_empty(&enabler_ref->ref->filter_bytecode_head)) {
 				has_enablers_without_bytecode = 1;
 				break;
 			}
 		}
-		event_priv->pub->has_enablers_without_bytecode =
+		event_priv->pub->parent->has_enablers_without_bytecode =
 			has_enablers_without_bytecode;
 
 		/* Enable filters */
 		cds_list_for_each_entry(runtime,
-				&event_priv->pub->filter_bytecode_runtime_head, node) {
+				&event_priv->pub->parent->filter_bytecode_runtime_head, node) {
 			lttng_bytecode_filter_sync_state(runtime);
 		}
 	}

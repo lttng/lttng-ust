@@ -349,17 +349,26 @@ struct lttng_bytecode_runtime {
  * removed.
  */
 
-struct lttng_ust_event_private;
+struct lttng_ust_event_common_private;
 
-struct lttng_event {
-	uint32_t struct_size;			/* Size of this structure. */
-	struct lttng_ust_event_private *priv;	/* Private event interface */
+struct lttng_event_common {
+	uint32_t struct_size;				/* Size of this structure. */
+	struct lttng_ust_event_common_private *priv;	/* Private event interface */
 
-	unsigned int id;
 	int enabled;
 	int has_enablers_without_bytecode;
 	/* list of struct lttng_bytecode_runtime, sorted by seqnum */
 	struct cds_list_head filter_bytecode_runtime_head;
+};
+
+struct lttng_ust_event_private;
+
+struct lttng_event {
+	uint32_t struct_size;			/* Size of this structure. */
+	struct lttng_event_common *parent;
+	struct lttng_ust_event_private *priv;	/* Private event interface */
+
+	unsigned int id;
 	struct lttng_channel *chan;
 	struct lttng_ctx *ctx;
 };
