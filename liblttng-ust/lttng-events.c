@@ -72,7 +72,7 @@ struct cds_list_head *lttng_get_sessions(void)
 
 static void _lttng_event_recorder_destroy(struct lttng_ust_event_recorder *event_recorder);
 static void _lttng_event_notifier_destroy(
-		struct lttng_event_notifier *event_notifier);
+		struct lttng_ust_event_notifier *event_notifier);
 static void _lttng_enum_destroy(struct lttng_enum *_enum);
 
 static
@@ -265,7 +265,7 @@ void register_event_recorder(struct lttng_ust_event_recorder *event_recorder)
 }
 
 static
-void register_event_notifier(struct lttng_event_notifier *event_notifier)
+void register_event_notifier(struct lttng_ust_event_notifier *event_notifier)
 {
 	int ret;
 	const struct lttng_event_desc *desc;
@@ -296,7 +296,7 @@ void unregister_event_recorder(struct lttng_ust_event_recorder *event_recorder)
 }
 
 static
-void unregister_event_notifier(struct lttng_event_notifier *event_notifier)
+void unregister_event_notifier(struct lttng_ust_event_notifier *event_notifier)
 {
 	int ret;
 	const struct lttng_event_desc *desc;
@@ -324,7 +324,7 @@ void _lttng_event_recorder_unregister(struct lttng_ust_event_recorder *event_rec
  * Only used internally at session destruction.
  */
 static
-void _lttng_event_notifier_unregister(struct lttng_event_notifier *event_notifier)
+void _lttng_event_notifier_unregister(struct lttng_ust_event_notifier *event_notifier)
 {
 	if (event_notifier->parent->priv->registered)
 		unregister_event_notifier(event_notifier);
@@ -847,7 +847,7 @@ int lttng_event_notifier_create(const struct lttng_event_desc *desc,
 		uint64_t token, uint64_t error_counter_index,
 		struct lttng_event_notifier_group *event_notifier_group)
 {
-	struct lttng_event_notifier *event_notifier;
+	struct lttng_ust_event_notifier *event_notifier;
 	struct lttng_ust_event_notifier_private *event_notifier_priv;
 	struct cds_hlist_head *head;
 	int ret = 0;
@@ -860,12 +860,12 @@ int lttng_event_notifier_create(const struct lttng_event_desc *desc,
 		event_notifier_group->event_notifiers_ht.table,
 		LTTNG_UST_EVENT_NOTIFIER_HT_SIZE, desc);
 
-	event_notifier = zmalloc(sizeof(struct lttng_event_notifier));
+	event_notifier = zmalloc(sizeof(struct lttng_ust_event_notifier));
 	if (!event_notifier) {
 		ret = -ENOMEM;
 		goto error;
 	}
-	event_notifier->struct_size = sizeof(struct lttng_event_notifier);
+	event_notifier->struct_size = sizeof(struct lttng_ust_event_notifier);
 
 	event_notifier->parent = zmalloc(sizeof(struct lttng_ust_event_common));
 	if (!event_notifier->parent) {
@@ -913,7 +913,7 @@ error:
 }
 
 static
-void _lttng_event_notifier_destroy(struct lttng_event_notifier *event_notifier)
+void _lttng_event_notifier_destroy(struct lttng_ust_event_notifier *event_notifier)
 {
 	struct lttng_enabler_ref *enabler_ref, *tmp_enabler_ref;
 
@@ -1033,7 +1033,7 @@ int lttng_event_enabler_match_event(struct lttng_event_enabler *event_enabler,
 static
 int lttng_event_notifier_enabler_match_event_notifier(
 		struct lttng_event_notifier_enabler *event_notifier_enabler,
-		struct lttng_event_notifier *event_notifier)
+		struct lttng_ust_event_notifier *event_notifier)
 {
 	int desc_matches = lttng_desc_match_enabler(event_notifier->priv->parent.desc,
 		lttng_event_notifier_enabler_as_enabler(event_notifier_enabler));
@@ -1123,7 +1123,7 @@ static
 void probe_provider_event_for_each(struct lttng_probe_desc *provider_desc,
 		void (*event_func)(struct lttng_session *session,
 			struct lttng_ust_event_recorder *event_recorder),
-		void (*event_notifier_func)(struct lttng_event_notifier *event_notifier))
+		void (*event_notifier_func)(struct lttng_ust_event_notifier *event_notifier))
 {
 	struct cds_hlist_node *node, *tmp_node;
 	struct cds_list_head *sessionsp;

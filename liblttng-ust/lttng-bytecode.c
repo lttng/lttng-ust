@@ -614,7 +614,7 @@ void lttng_free_event_recorder_filter_runtime(struct lttng_ust_event_recorder *e
 }
 
 void lttng_free_event_notifier_filter_runtime(
-		struct lttng_event_notifier *event_notifier)
+		struct lttng_ust_event_notifier *event_notifier)
 {
 	free_filter_runtime(&event_notifier->parent->filter_bytecode_runtime_head);
 }

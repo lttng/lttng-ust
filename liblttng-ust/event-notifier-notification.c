@@ -210,7 +210,7 @@ void capture_sequence(struct lttng_msgpack_writer *writer,
 
 static
 void notification_init(struct lttng_event_notifier_notification *notif,
-		struct lttng_event_notifier *event_notifier)
+		struct lttng_ust_event_notifier *event_notifier)
 {
 	struct lttng_msgpack_writer *writer = &notif->writer;
 
@@ -266,7 +266,7 @@ void notification_append_empty_capture(
 	lttng_msgpack_write_nil(&notif->writer);
 }
 
-static void record_error(struct lttng_event_notifier *event_notifier)
+static void record_error(struct lttng_ust_event_notifier *event_notifier)
 {
 	struct lttng_event_notifier_group *event_notifier_group =
 			event_notifier->priv->group;
@@ -296,7 +296,7 @@ static void record_error(struct lttng_event_notifier *event_notifier)
 
 static
 void notification_send(struct lttng_event_notifier_notification *notif,
-		struct lttng_event_notifier *event_notifier)
+		struct lttng_ust_event_notifier *event_notifier)
 {
 	ssize_t ret;
 	size_t content_len;
@@ -356,7 +356,7 @@ void notification_send(struct lttng_event_notifier_notification *notif,
 }
 
 void lttng_event_notifier_notification_send(
-		struct lttng_event_notifier *event_notifier,
+		struct lttng_ust_event_notifier *event_notifier,
 		const char *stack_data)
 {
 	/*

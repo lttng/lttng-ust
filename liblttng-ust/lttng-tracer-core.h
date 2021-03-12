@@ -32,7 +32,7 @@ struct lttng_event;
 struct lttng_ctx_field;
 struct lttng_ust_lib_ring_buffer_ctx;
 struct lttng_ctx_value;
-struct lttng_event_notifier;
+struct lttng_ust_event_notifier;
 
 LTTNG_HIDDEN
 int ust_lock(void) __attribute__ ((warn_unused_result));
@@ -90,7 +90,7 @@ void lttng_ust_dummy_get_value(struct lttng_ctx_field *field,
 
 LTTNG_HIDDEN
 void lttng_event_notifier_notification_send(
-		struct lttng_event_notifier *event_notifier,
+		struct lttng_ust_event_notifier *event_notifier,
 		const char *stack_data);
 
 LTTNG_HIDDEN

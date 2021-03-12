@@ -935,7 +935,7 @@ void __event_notifier_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))
 static									      \
 void __event_notifier_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))     \
 {									      \
-	struct lttng_event_notifier *__event_notifier = (struct lttng_event_notifier *) __tp_data; \
+	struct lttng_ust_event_notifier *__event_notifier = (struct lttng_ust_event_notifier *) __tp_data; \
 	const size_t __num_fields = _TP_ARRAY_SIZE(__event_fields___##_provider##___##_name) - 1;\
 	union {								      \
 		size_t __dynamic_len[__num_fields];			      \

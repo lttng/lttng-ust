@@ -44,7 +44,6 @@ struct lttng_channel;
 struct lttng_session;
 struct lttng_ust_lib_ring_buffer_ctx;
 struct lttng_event_field;
-struct lttng_event_notifier;
 struct lttng_event_notifier_group;
 
 /*
@@ -375,12 +374,12 @@ struct lttng_ust_event_recorder {
 
 struct lttng_ust_event_notifier_private;
 
-struct lttng_event_notifier {
+struct lttng_ust_event_notifier {
 	uint32_t struct_size;				/* Size of this structure. */
 	struct lttng_ust_event_common *parent;
 	struct lttng_ust_event_notifier_private *priv;	/* Private event notifier interface */
 
-	void (*notification_send)(struct lttng_event_notifier *event_notifier,
+	void (*notification_send)(struct lttng_ust_event_notifier *event_notifier,
 		const char *stack_data);
 	struct cds_list_head capture_bytecode_runtime_head;
 };

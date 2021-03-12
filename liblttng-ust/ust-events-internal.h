@@ -221,7 +221,7 @@ struct lttng_ust_event_recorder_private {
 struct lttng_ust_event_notifier_private {
 	struct lttng_ust_event_common_private parent;
 
-	struct lttng_event_notifier *pub;	/* Public event notifier interface */
+	struct lttng_ust_event_notifier *pub;	/* Public event notifier interface */
 	struct cds_hlist_node hlist;		/* hashtable of event_notifiers */
 	struct cds_list_head node;		/* event_notifier list in session */
 	struct lttng_event_notifier_group *group; /* weak ref */
@@ -434,7 +434,7 @@ void lttng_free_event_recorder_filter_runtime(struct lttng_ust_event_recorder *e
 
 LTTNG_HIDDEN
 void lttng_free_event_notifier_filter_runtime(
-		struct lttng_event_notifier *event_notifier);
+		struct lttng_ust_event_notifier *event_notifier);
 
 /*
  * Connect the probe on all enablers matching this event description.
