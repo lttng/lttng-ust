@@ -246,59 +246,6 @@ struct lttng_ust_event_field {
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
-enum lttng_ust_dynamic_type {
-	LTTNG_UST_DYNAMIC_TYPE_NONE,
-	LTTNG_UST_DYNAMIC_TYPE_S8,
-	LTTNG_UST_DYNAMIC_TYPE_S16,
-	LTTNG_UST_DYNAMIC_TYPE_S32,
-	LTTNG_UST_DYNAMIC_TYPE_S64,
-	LTTNG_UST_DYNAMIC_TYPE_U8,
-	LTTNG_UST_DYNAMIC_TYPE_U16,
-	LTTNG_UST_DYNAMIC_TYPE_U32,
-	LTTNG_UST_DYNAMIC_TYPE_U64,
-	LTTNG_UST_DYNAMIC_TYPE_FLOAT,
-	LTTNG_UST_DYNAMIC_TYPE_DOUBLE,
-	LTTNG_UST_DYNAMIC_TYPE_STRING,
-	_NR_LTTNG_UST_DYNAMIC_TYPES,
-};
-
-struct lttng_ctx_value {
-	enum lttng_ust_dynamic_type sel;
-	union {
-		int64_t s64;
-		uint64_t u64;
-		const char *str;
-		double d;
-	} u;
-};
-
-struct lttng_perf_counter_field;
-
-#define LTTNG_UST_CTX_FIELD_PADDING	40
-struct lttng_ctx_field {
-	struct lttng_ust_event_field event_field;
-	size_t (*get_size)(struct lttng_ctx_field *field, size_t offset);
-	void (*record)(struct lttng_ctx_field *field,
-		       struct lttng_ust_lib_ring_buffer_ctx *ctx,
-		       struct lttng_channel *chan);
-	void (*get_value)(struct lttng_ctx_field *field,
-			 struct lttng_ctx_value *value);
-	union {
-		struct lttng_perf_counter_field *perf_counter;
-		char padding[LTTNG_UST_CTX_FIELD_PADDING];
-	} u;
-	void (*destroy)(struct lttng_ctx_field *field);
-	char *field_name;	/* Has ownership, dynamically allocated. */
-};
-
-#define LTTNG_UST_CTX_PADDING	20
-struct lttng_ctx {
-	struct lttng_ctx_field *fields;
-	unsigned int nr_fields;
-	unsigned int allocated_fields;
-	unsigned int largest_align;
-	char padding[LTTNG_UST_CTX_PADDING];
-};
 
 /*
  * IMPORTANT: this structure is part of the ABI between the probe and
@@ -396,6 +343,7 @@ struct lttng_ust_bytecode_runtime {
  * removed.
  */
 
+struct lttng_ctx;
 struct lttng_ust_event_common_private;
 
 enum lttng_ust_event_type {

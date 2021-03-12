@@ -14,6 +14,7 @@
 
 #include <lttng/ust-events.h>
 
+#include "ust-context-provider.h"
 
 struct lttng_ust_abi_obj;
 

@@ -9,6 +9,7 @@
 
 #include <lttng/ust-events.h>
 #include "ust-events-internal.h"
+#include "ust-context-provider.h"
 
 __attribute__((visibility("hidden")))
 int lttng_context_init_all(struct lttng_ctx **ctx);

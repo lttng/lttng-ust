@@ -15,6 +15,46 @@
 #include <lttng/ust-events.h>
 #include <urcu/hlist.h>
 
+#include "ust-dynamic-type.h"
+
+struct lttng_ctx_value {
+	enum lttng_ust_dynamic_type sel;
+	union {
+		int64_t s64;
+		uint64_t u64;
+		const char *str;
+		double d;
+	} u;
+};
+
+struct lttng_perf_counter_field;
+
+#define LTTNG_UST_CTX_FIELD_PADDING	40
+struct lttng_ctx_field {
+	struct lttng_ust_event_field event_field;
+	size_t (*get_size)(struct lttng_ctx_field *field, size_t offset);
+	void (*record)(struct lttng_ctx_field *field,
+		       struct lttng_ust_lib_ring_buffer_ctx *ctx,
+		       struct lttng_channel *chan);
+	void (*get_value)(struct lttng_ctx_field *field,
+			 struct lttng_ctx_value *value);
+	union {
+		struct lttng_perf_counter_field *perf_counter;
+		char padding[LTTNG_UST_CTX_FIELD_PADDING];
+	} u;
+	void (*destroy)(struct lttng_ctx_field *field);
+	char *field_name;	/* Has ownership, dynamically allocated. */
+};
+
+#define LTTNG_UST_CTX_PADDING	20
+struct lttng_ctx {
+	struct lttng_ctx_field *fields;
+	unsigned int nr_fields;
+	unsigned int allocated_fields;
+	unsigned int largest_align;
+	char padding[LTTNG_UST_CTX_PADDING];
+};
+
 struct lttng_ust_context_provider {
 	char *name;
 	size_t (*get_size)(struct lttng_ctx_field *field, size_t offset);
