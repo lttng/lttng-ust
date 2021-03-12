@@ -456,7 +456,7 @@ struct lttng_channel {
 
 	/* Channel ID */
 	unsigned int id;
-	enum lttng_ust_chan_type type;
+	enum lttng_ust_abi_chan_type type;
 	unsigned char uuid[LTTNG_UST_UUID_LEN]; /* Trace session unique ID */
 	int tstate:1;			/* Transient enable state */
 };

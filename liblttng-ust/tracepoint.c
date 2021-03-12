@@ -21,7 +21,7 @@
 #include <urcu/system.h>
 
 #include <lttng/tracepoint.h>
-#include <lttng/ust-abi.h>	/* for LTTNG_UST_SYM_NAME_LEN */
+#include <lttng/ust-abi.h>	/* for LTTNG_UST_ABI_SYM_NAME_LEN */
 
 #include <usterr-signal-safe.h>
 #include <ust-helper.h>
@@ -256,14 +256,14 @@ static struct tracepoint_entry *get_tracepoint(const char *name)
 	size_t name_len = strlen(name);
 	uint32_t hash;
 
-	if (name_len > LTTNG_UST_SYM_NAME_LEN - 1) {
-		WARN("Truncating tracepoint name %s which exceeds size limits of %u chars", name, LTTNG_UST_SYM_NAME_LEN - 1);
-		name_len = LTTNG_UST_SYM_NAME_LEN - 1;
+	if (name_len > LTTNG_UST_ABI_SYM_NAME_LEN - 1) {
+		WARN("Truncating tracepoint name %s which exceeds size limits of %u chars", name, LTTNG_UST_ABI_SYM_NAME_LEN - 1);
+		name_len = LTTNG_UST_ABI_SYM_NAME_LEN - 1;
 	}
 	hash = jhash(name, name_len, 0);
 	head = &tracepoint_table[hash & (TRACEPOINT_TABLE_SIZE - 1)];
 	cds_hlist_for_each_entry(e, node, head, hlist) {
-		if (!strncmp(name, e->name, LTTNG_UST_SYM_NAME_LEN - 1))
+		if (!strncmp(name, e->name, LTTNG_UST_ABI_SYM_NAME_LEN - 1))
 			return e;
 	}
 	return NULL;
@@ -284,14 +284,14 @@ static struct tracepoint_entry *add_tracepoint(const char *name,
 	size_t sig_off, name_off;
 	uint32_t hash;
 
-	if (name_len > LTTNG_UST_SYM_NAME_LEN - 1) {
-		WARN("Truncating tracepoint name %s which exceeds size limits of %u chars", name, LTTNG_UST_SYM_NAME_LEN - 1);
-		name_len = LTTNG_UST_SYM_NAME_LEN - 1;
+	if (name_len > LTTNG_UST_ABI_SYM_NAME_LEN - 1) {
+		WARN("Truncating tracepoint name %s which exceeds size limits of %u chars", name, LTTNG_UST_ABI_SYM_NAME_LEN - 1);
+		name_len = LTTNG_UST_ABI_SYM_NAME_LEN - 1;
 	}
 	hash = jhash(name, name_len, 0);
 	head = &tracepoint_table[hash & (TRACEPOINT_TABLE_SIZE - 1)];
 	cds_hlist_for_each_entry(e, node, head, hlist) {
-		if (!strncmp(name, e->name, LTTNG_UST_SYM_NAME_LEN - 1)) {
+		if (!strncmp(name, e->name, LTTNG_UST_ABI_SYM_NAME_LEN - 1)) {
 			DBG("tracepoint %s busy", name);
 			return ERR_PTR(-EEXIST);	/* Already there */
 		}
@@ -339,7 +339,7 @@ static void remove_tracepoint(struct tracepoint_entry *e)
 static void set_tracepoint(struct tracepoint_entry **entry,
 	struct lttng_ust_tracepoint *elem, int active)
 {
-	WARN_ON(strncmp((*entry)->name, elem->name, LTTNG_UST_SYM_NAME_LEN - 1) != 0);
+	WARN_ON(strncmp((*entry)->name, elem->name, LTTNG_UST_ABI_SYM_NAME_LEN - 1) != 0);
 	/*
 	 * Check that signatures match before connecting a probe to a
 	 * tracepoint. Warn the user if they don't.
@@ -394,9 +394,9 @@ static void add_callsite(struct tracepoint_lib * lib, struct lttng_ust_tracepoin
 	uint32_t hash;
 	struct tracepoint_entry *tp_entry;
 
-	if (name_len > LTTNG_UST_SYM_NAME_LEN - 1) {
-		WARN("Truncating tracepoint name %s which exceeds size limits of %u chars", name, LTTNG_UST_SYM_NAME_LEN - 1);
-		name_len = LTTNG_UST_SYM_NAME_LEN - 1;
+	if (name_len > LTTNG_UST_ABI_SYM_NAME_LEN - 1) {
+		WARN("Truncating tracepoint name %s which exceeds size limits of %u chars", name, LTTNG_UST_ABI_SYM_NAME_LEN - 1);
+		name_len = LTTNG_UST_ABI_SYM_NAME_LEN - 1;
 	}
 	hash = jhash(name, name_len, 0);
 	head = &callsite_table[hash & (CALLSITE_TABLE_SIZE - 1)];
@@ -451,16 +451,16 @@ static void tracepoint_sync_callsites(const char *name)
 	struct tracepoint_entry *tp_entry;
 
 	tp_entry = get_tracepoint(name);
-	if (name_len > LTTNG_UST_SYM_NAME_LEN - 1) {
-		WARN("Truncating tracepoint name %s which exceeds size limits of %u chars", name, LTTNG_UST_SYM_NAME_LEN - 1);
-		name_len = LTTNG_UST_SYM_NAME_LEN - 1;
+	if (name_len > LTTNG_UST_ABI_SYM_NAME_LEN - 1) {
+		WARN("Truncating tracepoint name %s which exceeds size limits of %u chars", name, LTTNG_UST_ABI_SYM_NAME_LEN - 1);
+		name_len = LTTNG_UST_ABI_SYM_NAME_LEN - 1;
 	}
 	hash = jhash(name, name_len, 0);
 	head = &callsite_table[hash & (CALLSITE_TABLE_SIZE - 1)];
 	cds_hlist_for_each_entry(e, node, head, hlist) {
 		struct lttng_ust_tracepoint *tp = e->tp;
 
-		if (strncmp(name, tp->name, LTTNG_UST_SYM_NAME_LEN - 1))
+		if (strncmp(name, tp->name, LTTNG_UST_ABI_SYM_NAME_LEN - 1))
 			continue;
 		if (tp_entry) {
 			if (!e->tp_entry_callsite_ref) {

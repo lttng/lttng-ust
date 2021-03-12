@@ -50,7 +50,7 @@ int check_event_provider(struct lttng_probe_desc *desc)
 	size_t provider_name_len;
 
 	provider_name_len = strnlen(desc->provider,
-				LTTNG_UST_SYM_NAME_LEN - 1);
+				LTTNG_UST_ABI_SYM_NAME_LEN - 1);
 	for (i = 0; i < desc->nr_events; i++) {
 		if (strncmp(desc->event_desc[i]->name,
 				desc->provider,
@@ -247,8 +247,8 @@ int lttng_probes_get_event_list(struct lttng_ust_tracepoint_list *list)
 			cds_list_add(&list_entry->head, &list->head);
 			strncpy(list_entry->tp.name,
 				probe_desc->event_desc[i]->name,
-				LTTNG_UST_SYM_NAME_LEN);
-			list_entry->tp.name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+				LTTNG_UST_ABI_SYM_NAME_LEN);
+			list_entry->tp.name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
 			if (!probe_desc->event_desc[i]->loglevel) {
 				list_entry->tp.loglevel = TRACE_DEFAULT;
 			} else {
@@ -272,7 +272,7 @@ err_nomem:
  * Return current iteration position, advance internal iterator to next.
  * Return NULL if end of list.
  */
-struct lttng_ust_tracepoint_iter *
+struct lttng_ust_abi_tracepoint_iter *
 	lttng_ust_tracepoint_list_get_iter_next(struct lttng_ust_tracepoint_list *list)
 {
 	struct tp_list_entry *entry;
@@ -325,10 +325,10 @@ int lttng_probes_get_field_list(struct lttng_ust_field_list *list)
 				cds_list_add(&list_entry->head, &list->head);
 				strncpy(list_entry->field.event_name,
 					event_desc->name,
-					LTTNG_UST_SYM_NAME_LEN);
-				list_entry->field.event_name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+					LTTNG_UST_ABI_SYM_NAME_LEN);
+				list_entry->field.event_name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
 				list_entry->field.field_name[0] = '\0';
-				list_entry->field.type = LTTNG_UST_FIELD_OTHER;
+				list_entry->field.type = LTTNG_UST_ABI_FIELD_OTHER;
 				if (!event_desc->loglevel) {
 					list_entry->field.loglevel = TRACE_DEFAULT;
 				} else {
@@ -348,41 +348,41 @@ int lttng_probes_get_field_list(struct lttng_ust_field_list *list)
 				cds_list_add(&list_entry->head, &list->head);
 				strncpy(list_entry->field.event_name,
 					event_desc->name,
-					LTTNG_UST_SYM_NAME_LEN);
-				list_entry->field.event_name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+					LTTNG_UST_ABI_SYM_NAME_LEN);
+				list_entry->field.event_name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
 				strncpy(list_entry->field.field_name,
 					event_field->name,
-					LTTNG_UST_SYM_NAME_LEN);
-				list_entry->field.field_name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+					LTTNG_UST_ABI_SYM_NAME_LEN);
+				list_entry->field.field_name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
 				switch (event_field->type.atype) {
 				case atype_integer:
-					list_entry->field.type = LTTNG_UST_FIELD_INTEGER;
+					list_entry->field.type = LTTNG_UST_ABI_FIELD_INTEGER;
 					break;
 				case atype_string:
-					list_entry->field.type = LTTNG_UST_FIELD_STRING;
+					list_entry->field.type = LTTNG_UST_ABI_FIELD_STRING;
 					break;
 				case atype_array_nestable:
 					if (event_field->type.u.array_nestable.elem_type->atype != atype_integer
 						|| event_field->type.u.array_nestable.elem_type->u.integer.encoding == lttng_encode_none)
-						list_entry->field.type = LTTNG_UST_FIELD_OTHER;
+						list_entry->field.type = LTTNG_UST_ABI_FIELD_OTHER;
 					else
-						list_entry->field.type = LTTNG_UST_FIELD_STRING;
+						list_entry->field.type = LTTNG_UST_ABI_FIELD_STRING;
 					break;
 				case atype_sequence_nestable:
 					if (event_field->type.u.sequence_nestable.elem_type->atype != atype_integer
 						|| event_field->type.u.sequence_nestable.elem_type->u.integer.encoding == lttng_encode_none)
-						list_entry->field.type = LTTNG_UST_FIELD_OTHER;
+						list_entry->field.type = LTTNG_UST_ABI_FIELD_OTHER;
 					else
-						list_entry->field.type = LTTNG_UST_FIELD_STRING;
+						list_entry->field.type = LTTNG_UST_ABI_FIELD_STRING;
 					break;
 				case atype_float:
-					list_entry->field.type = LTTNG_UST_FIELD_FLOAT;
+					list_entry->field.type = LTTNG_UST_ABI_FIELD_FLOAT;
 					break;
 				case atype_enum_nestable:
-					list_entry->field.type = LTTNG_UST_FIELD_ENUM;
+					list_entry->field.type = LTTNG_UST_ABI_FIELD_ENUM;
 					break;
 				default:
-					list_entry->field.type = LTTNG_UST_FIELD_OTHER;
+					list_entry->field.type = LTTNG_UST_ABI_FIELD_OTHER;
 				}
 				if (!event_desc->loglevel) {
 					list_entry->field.loglevel = TRACE_DEFAULT;
@@ -410,7 +410,7 @@ err_nomem:
  * Return current iteration position, advance internal iterator to next.
  * Return NULL if end of list.
  */
-struct lttng_ust_field_iter *
+struct lttng_ust_abi_field_iter *
 	lttng_ust_field_list_get_iter_next(struct lttng_ust_field_list *list)
 {
 	struct tp_field_list_entry *entry;

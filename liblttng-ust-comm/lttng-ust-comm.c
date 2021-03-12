@@ -606,7 +606,7 @@ ssize_t ustcomm_recv_channel_from_sessiond(int sock,
 	ssize_t len, nr_fd;
 	int wakeup_fd, ret;
 
-	if (var_len > LTTNG_UST_CHANNEL_DATA_MAX_LEN) {
+	if (var_len > LTTNG_UST_ABI_CHANNEL_DATA_MAX_LEN) {
 		len = -EINVAL;
 		goto error_check;
 	}
@@ -761,7 +761,7 @@ ssize_t ustcomm_recv_counter_from_sessiond(int sock,
 	void *counter_data;
 	ssize_t len;
 
-	if (var_len > LTTNG_UST_COUNTER_DATA_MAX_LEN) {
+	if (var_len > LTTNG_UST_ABI_COUNTER_DATA_MAX_LEN) {
 		len = -EINVAL;
 		goto error_check;
 	}
@@ -839,7 +839,7 @@ int ustcomm_send_reg_msg(int sock,
 	ssize_t len;
 	struct ustctl_reg_msg reg_msg;
 
-	reg_msg.magic = LTTNG_UST_COMM_MAGIC;
+	reg_msg.magic = LTTNG_UST_ABI_COMM_MAGIC;
 	reg_msg.major = LTTNG_UST_ABI_MAJOR_VERSION;
 	reg_msg.minor = LTTNG_UST_ABI_MINOR_VERSION;
 	reg_msg.pid = getpid();
@@ -992,7 +992,7 @@ int serialize_dynamic_type(struct lttng_session *session,
 		const char *field_name)
 {
 	const struct lttng_event_field *choices;
-	char tag_field_name[LTTNG_UST_SYM_NAME_LEN];
+	char tag_field_name[LTTNG_UST_ABI_SYM_NAME_LEN];
 	const struct lttng_type *tag_type;
 	const struct lttng_event_field *tag_field_generic;
 	struct lttng_event_field tag_field = {
@@ -1007,11 +1007,11 @@ int serialize_dynamic_type(struct lttng_session *session,
 	tag_type = &tag_field_generic->type;
 
 	/* Serialize enum field. */
-	strncpy(tag_field_name, field_name, LTTNG_UST_SYM_NAME_LEN);
-	tag_field_name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+	strncpy(tag_field_name, field_name, LTTNG_UST_ABI_SYM_NAME_LEN);
+	tag_field_name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
 	strncat(tag_field_name,
 		"_tag",
-		LTTNG_UST_SYM_NAME_LEN - strlen(tag_field_name) - 1);
+		LTTNG_UST_ABI_SYM_NAME_LEN - strlen(tag_field_name) - 1);
 	tag_field.type = *tag_type;
 	ret = serialize_one_field(session, fields, iter_output,
 		&tag_field);
@@ -1024,14 +1024,14 @@ int serialize_dynamic_type(struct lttng_session *session,
 	if (ret)
 		return ret;
 
-	strncpy(uf->name, field_name, LTTNG_UST_SYM_NAME_LEN);
-	uf->name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+	strncpy(uf->name, field_name, LTTNG_UST_ABI_SYM_NAME_LEN);
+	uf->name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
 	uf->type.atype = ustctl_atype_variant;
 	uf->type.u.variant_nestable.nr_choices = nr_choices;
 	strncpy(uf->type.u.variant_nestable.tag_name,
 		tag_field_name,
-		LTTNG_UST_SYM_NAME_LEN);
-	uf->type.u.variant_nestable.tag_name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+		LTTNG_UST_ABI_SYM_NAME_LEN);
+	uf->type.u.variant_nestable.tag_name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
 	uf->type.u.variant_nestable.alignment = 0;
 	(*iter_output)++;
 
@@ -1064,8 +1064,8 @@ int serialize_one_type(struct lttng_session *session,
 		struct ustctl_type *ut = &uf->type;
 
 		if (field_name) {
-			strncpy(uf->name, field_name, LTTNG_UST_SYM_NAME_LEN);
-			uf->name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+			strncpy(uf->name, field_name, LTTNG_UST_ABI_SYM_NAME_LEN);
+			uf->name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
 		} else {
 			uf->name[0] = '\0';
 		}
@@ -1084,8 +1084,8 @@ int serialize_one_type(struct lttng_session *session,
 		const struct lttng_float_type *lft;
 
 		if (field_name) {
-			strncpy(uf->name, field_name, LTTNG_UST_SYM_NAME_LEN);
-			uf->name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+			strncpy(uf->name, field_name, LTTNG_UST_ABI_SYM_NAME_LEN);
+			uf->name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
 		} else {
 			uf->name[0] = '\0';
 		}
@@ -1106,8 +1106,8 @@ int serialize_one_type(struct lttng_session *session,
 		int32_t encoding;
 
 		if (field_name) {
-			strncpy(uf->name, field_name, LTTNG_UST_SYM_NAME_LEN);
-			uf->name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+			strncpy(uf->name, field_name, LTTNG_UST_ABI_SYM_NAME_LEN);
+			uf->name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
 		} else {
 			uf->name[0] = '\0';
 		}
@@ -1125,8 +1125,8 @@ int serialize_one_type(struct lttng_session *session,
 		struct ustctl_type *ut = &uf->type;
 
 		if (field_name) {
-			strncpy(uf->name, field_name, LTTNG_UST_SYM_NAME_LEN);
-			uf->name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+			strncpy(uf->name, field_name, LTTNG_UST_ABI_SYM_NAME_LEN);
+			uf->name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
 		} else {
 			uf->name[0] = '\0';
 		}
@@ -1147,16 +1147,16 @@ int serialize_one_type(struct lttng_session *session,
 		struct ustctl_type *ut = &uf->type;
 
 		if (field_name) {
-			strncpy(uf->name, field_name, LTTNG_UST_SYM_NAME_LEN);
-			uf->name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+			strncpy(uf->name, field_name, LTTNG_UST_ABI_SYM_NAME_LEN);
+			uf->name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
 		} else {
 			uf->name[0] = '\0';
 		}
 		ut->atype = ustctl_atype_sequence_nestable;
 		strncpy(ut->u.sequence_nestable.length_name,
 			lt->u.sequence_nestable.length_name,
-			LTTNG_UST_SYM_NAME_LEN);
-		ut->u.sequence_nestable.length_name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+			LTTNG_UST_ABI_SYM_NAME_LEN);
+		ut->u.sequence_nestable.length_name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
 		ut->u.sequence_nestable.alignment = lt->u.sequence_nestable.alignment;
 		(*iter_output)++;
 
@@ -1179,8 +1179,8 @@ int serialize_one_type(struct lttng_session *session,
 		struct ustctl_field *uf = &fields[*iter_output];
 
 		if (field_name) {
-			strncpy(uf->name, field_name, LTTNG_UST_SYM_NAME_LEN);
-			uf->name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+			strncpy(uf->name, field_name, LTTNG_UST_ABI_SYM_NAME_LEN);
+			uf->name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
 		} else {
 			uf->name[0] = '\0';
 		}
@@ -1202,14 +1202,14 @@ int serialize_one_type(struct lttng_session *session,
 		struct ustctl_type *ut = &uf->type;
 
 		if (field_name) {
-			strncpy(uf->name, field_name, LTTNG_UST_SYM_NAME_LEN);
-			uf->name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+			strncpy(uf->name, field_name, LTTNG_UST_ABI_SYM_NAME_LEN);
+			uf->name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
 		} else {
 			uf->name[0] = '\0';
 		}
 		strncpy(ut->u.enum_nestable.name, lt->u.enum_nestable.desc->name,
-				LTTNG_UST_SYM_NAME_LEN);
-		ut->u.enum_nestable.name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+				LTTNG_UST_ABI_SYM_NAME_LEN);
+		ut->u.enum_nestable.name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
 		ut->atype = ustctl_atype_enum_nestable;
 		(*iter_output)++;
 
@@ -1323,8 +1323,8 @@ int serialize_entries(struct ustctl_enum_entry **_entries,
 		uentry->start.signedness = lentry->start.signedness;
 		uentry->end.value = lentry->end.value;
 		uentry->end.signedness = lentry->end.signedness;
-		strncpy(uentry->string, lentry->string, LTTNG_UST_SYM_NAME_LEN);
-		uentry->string[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+		strncpy(uentry->string, lentry->string, LTTNG_UST_ABI_SYM_NAME_LEN);
+		uentry->string[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
 
 		if (lentry->u.extra.options & LTTNG_ENUM_ENTRY_OPTION_IS_AUTO) {
 			uentry->u.extra.options |=
@@ -1406,8 +1406,8 @@ int ustcomm_register_event(int sock,
 	msg.header.notify_cmd = USTCTL_NOTIFY_CMD_EVENT;
 	msg.m.session_objd = session_objd;
 	msg.m.channel_objd = channel_objd;
-	strncpy(msg.m.event_name, event_name, LTTNG_UST_SYM_NAME_LEN);
-	msg.m.event_name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+	strncpy(msg.m.event_name, event_name, LTTNG_UST_ABI_SYM_NAME_LEN);
+	msg.m.event_name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
 	msg.m.loglevel = loglevel;
 	signature_len = strlen(signature) + 1;
 	msg.m.signature_len = signature_len;
@@ -1542,8 +1542,8 @@ int ustcomm_register_enum(int sock,
 	memset(&msg, 0, sizeof(msg));
 	msg.header.notify_cmd = USTCTL_NOTIFY_CMD_ENUM;
 	msg.m.session_objd = session_objd;
-	strncpy(msg.m.enum_name, enum_name, LTTNG_UST_SYM_NAME_LEN);
-	msg.m.enum_name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+	strncpy(msg.m.enum_name, enum_name, LTTNG_UST_ABI_SYM_NAME_LEN);
+	msg.m.enum_name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
 
 	/* Calculate entries len, serialize entries. */
 	if (nr_entries > 0) {

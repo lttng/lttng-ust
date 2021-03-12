@@ -62,11 +62,11 @@ int lttng_abi_tracepoint_field_list(void *owner);
  * by the caller.
  */
 
-struct lttng_ust_obj {
+struct lttng_ust_abi_obj {
 	union {
 		struct {
 			void *private_data;
-			const struct lttng_ust_objd_ops *ops;
+			const struct lttng_ust_abi_objd_ops *ops;
 			int f_count;
 			int owner_ref;	/* has ref from owner */
 			void *owner;
@@ -76,21 +76,21 @@ struct lttng_ust_obj {
 	} u;
 };
 
-struct lttng_ust_objd_table {
-	struct lttng_ust_obj *array;
+struct lttng_ust_abi_objd_table {
+	struct lttng_ust_abi_obj *array;
 	unsigned int len, allocated_len;
 	int freelist_head;		/* offset freelist head. end is -1 */
 };
 
-static struct lttng_ust_objd_table objd_table = {
+static struct lttng_ust_abi_objd_table objd_table = {
 	.freelist_head = -1,
 };
 
 static
-int objd_alloc(void *private_data, const struct lttng_ust_objd_ops *ops,
+int objd_alloc(void *private_data, const struct lttng_ust_abi_objd_ops *ops,
 		void *owner, const char *name)
 {
-	struct lttng_ust_obj *obj;
+	struct lttng_ust_abi_obj *obj;
 
 	if (objd_table.freelist_head != -1) {
 		obj = &objd_table.array[objd_table.freelist_head];
@@ -100,7 +100,7 @@ int objd_alloc(void *private_data, const struct lttng_ust_objd_ops *ops,
 
 	if (objd_table.len >= objd_table.allocated_len) {
 		unsigned int new_allocated_len, old_allocated_len;
-		struct lttng_ust_obj *new_table, *old_table;
+		struct lttng_ust_abi_obj *new_table, *old_table;
 
 		old_allocated_len = objd_table.allocated_len;
 		old_table = objd_table.array;
@@ -108,11 +108,11 @@ int objd_alloc(void *private_data, const struct lttng_ust_objd_ops *ops,
 			new_allocated_len = 1;
 		else
 			new_allocated_len = old_allocated_len << 1;
-		new_table = zmalloc(sizeof(struct lttng_ust_obj) * new_allocated_len);
+		new_table = zmalloc(sizeof(struct lttng_ust_abi_obj) * new_allocated_len);
 		if (!new_table)
 			return -ENOMEM;
 		memcpy(new_table, old_table,
-		       sizeof(struct lttng_ust_obj) * old_allocated_len);
+		       sizeof(struct lttng_ust_abi_obj) * old_allocated_len);
 		free(old_table);
 		objd_table.array = new_table;
 		objd_table.allocated_len = new_allocated_len;
@@ -132,7 +132,7 @@ end:
 }
 
 static
-struct lttng_ust_obj *_objd_get(int id)
+struct lttng_ust_abi_obj *_objd_get(int id)
 {
 	if (id >= objd_table.len)
 		return NULL;
@@ -144,7 +144,7 @@ struct lttng_ust_obj *_objd_get(int id)
 static
 void *objd_private(int id)
 {
-	struct lttng_ust_obj *obj = _objd_get(id);
+	struct lttng_ust_abi_obj *obj = _objd_get(id);
 	assert(obj);
 	return obj->u.s.private_data;
 }
@@ -152,14 +152,14 @@ void *objd_private(int id)
 static
 void objd_set_private(int id, void *private_data)
 {
-	struct lttng_ust_obj *obj = _objd_get(id);
+	struct lttng_ust_abi_obj *obj = _objd_get(id);
 	assert(obj);
 	obj->u.s.private_data = private_data;
 }
 
-const struct lttng_ust_objd_ops *objd_ops(int id)
+const struct lttng_ust_abi_objd_ops *lttng_ust_abi_objd_ops(int id)
 {
-	struct lttng_ust_obj *obj = _objd_get(id);
+	struct lttng_ust_abi_obj *obj = _objd_get(id);
 
 	if (!obj)
 		return NULL;
@@ -169,7 +169,7 @@ const struct lttng_ust_objd_ops *objd_ops(int id)
 static
 void objd_free(int id)
 {
-	struct lttng_ust_obj *obj = _objd_get(id);
+	struct lttng_ust_abi_obj *obj = _objd_get(id);
 
 	assert(obj);
 	obj->u.freelist_next = objd_table.freelist_head;
@@ -181,14 +181,14 @@ void objd_free(int id)
 static
 void objd_ref(int id)
 {
-	struct lttng_ust_obj *obj = _objd_get(id);
+	struct lttng_ust_abi_obj *obj = _objd_get(id);
 	assert(obj != NULL);
 	obj->u.s.f_count++;
 }
 
-int lttng_ust_objd_unref(int id, int is_owner)
+int lttng_ust_abi_objd_unref(int id, int is_owner)
 {
-	struct lttng_ust_obj *obj = _objd_get(id);
+	struct lttng_ust_abi_obj *obj = _objd_get(id);
 
 	if (!obj)
 		return -EINVAL;
@@ -204,7 +204,7 @@ int lttng_ust_objd_unref(int id, int is_owner)
 		obj->u.s.owner_ref--;
 	}
 	if ((--obj->u.s.f_count) == 1) {
-		const struct lttng_ust_objd_ops *ops = objd_ops(id);
+		const struct lttng_ust_abi_objd_ops *ops = lttng_ust_abi_objd_ops(id);
 
 		if (ops->release)
 			ops->release(id);
@@ -219,14 +219,14 @@ void objd_table_destroy(void)
 	int i;
 
 	for (i = 0; i < objd_table.allocated_len; i++) {
-		struct lttng_ust_obj *obj;
+		struct lttng_ust_abi_obj *obj;
 
 		obj = _objd_get(i);
 		if (!obj)
 			continue;
 		if (!obj->u.s.owner_ref)
 			continue;	/* only unref owner ref. */
-		(void) lttng_ust_objd_unref(i, 1);
+		(void) lttng_ust_abi_objd_unref(i, 1);
 	}
 	free(objd_table.array);
 	objd_table.array = NULL;
@@ -237,19 +237,19 @@ void objd_table_destroy(void)
 
 const char *lttng_ust_obj_get_name(int id)
 {
-	struct lttng_ust_obj *obj = _objd_get(id);
+	struct lttng_ust_abi_obj *obj = _objd_get(id);
 
 	if (!obj)
 		return NULL;
 	return obj->u.s.name;
 }
 
-void lttng_ust_objd_table_owner_cleanup(void *owner)
+void lttng_ust_abi_objd_table_owner_cleanup(void *owner)
 {
 	int i;
 
 	for (i = 0; i < objd_table.allocated_len; i++) {
-		struct lttng_ust_obj *obj;
+		struct lttng_ust_abi_obj *obj;
 
 		obj = _objd_get(i);
 		if (!obj)
@@ -259,7 +259,7 @@ void lttng_ust_objd_table_owner_cleanup(void *owner)
 		if (!obj->u.s.owner_ref)
 			continue;	/* only unref owner ref. */
 		if (obj->u.s.owner == owner)
-			(void) lttng_ust_objd_unref(i, 1);
+			(void) lttng_ust_abi_objd_unref(i, 1);
 	}
 }
 
@@ -268,14 +268,14 @@ void lttng_ust_objd_table_owner_cleanup(void *owner)
  * We send commands over a socket.
  */
 
-static const struct lttng_ust_objd_ops lttng_ops;
-static const struct lttng_ust_objd_ops lttng_event_notifier_group_ops;
-static const struct lttng_ust_objd_ops lttng_session_ops;
-static const struct lttng_ust_objd_ops lttng_channel_ops;
-static const struct lttng_ust_objd_ops lttng_event_enabler_ops;
-static const struct lttng_ust_objd_ops lttng_event_notifier_enabler_ops;
-static const struct lttng_ust_objd_ops lttng_tracepoint_list_ops;
-static const struct lttng_ust_objd_ops lttng_tracepoint_field_list_ops;
+static const struct lttng_ust_abi_objd_ops lttng_ops;
+static const struct lttng_ust_abi_objd_ops lttng_event_notifier_group_ops;
+static const struct lttng_ust_abi_objd_ops lttng_session_ops;
+static const struct lttng_ust_abi_objd_ops lttng_channel_ops;
+static const struct lttng_ust_abi_objd_ops lttng_event_enabler_ops;
+static const struct lttng_ust_abi_objd_ops lttng_event_notifier_enabler_ops;
+static const struct lttng_ust_abi_objd_ops lttng_tracepoint_list_ops;
+static const struct lttng_ust_abi_objd_ops lttng_tracepoint_field_list_ops;
 
 int lttng_abi_create_root_handle(void)
 {
@@ -323,7 +323,7 @@ objd_error:
 
 static
 long lttng_abi_tracer_version(int objd,
-	struct lttng_ust_tracer_version *v)
+	struct lttng_ust_abi_tracer_version *v)
 {
 	v->major = LTTNG_UST_MAJOR_VERSION;
 	v->minor = LTTNG_UST_MINOR_VERSION;
@@ -377,8 +377,8 @@ fd_error:
 
 static
 long lttng_abi_add_context(int objd,
-	struct lttng_ust_context *context_param,
-	union ust_args *uargs,
+	struct lttng_ust_abi_context *context_param,
+	union lttng_ust_abi_args *uargs,
 	struct lttng_ctx **ctx, struct lttng_session *session)
 {
 	return lttng_attach_context(context_param, uargs, ctx, session);
@@ -394,37 +394,37 @@ long lttng_abi_add_context(int objd,
  *	@owner: objd owner
  *
  *	This descriptor implements lttng commands:
- *	LTTNG_UST_SESSION
+ *	LTTNG_UST_ABI_SESSION
  *		Returns a LTTng trace session object descriptor
- *	LTTNG_UST_TRACER_VERSION
+ *	LTTNG_UST_ABI_TRACER_VERSION
  *		Returns the LTTng kernel tracer version
- *	LTTNG_UST_TRACEPOINT_LIST
+ *	LTTNG_UST_ABI_TRACEPOINT_LIST
  *		Returns a file descriptor listing available tracepoints
- *	LTTNG_UST_TRACEPOINT_FIELD_LIST
+ *	LTTNG_UST_ABI_TRACEPOINT_FIELD_LIST
  *		Returns a file descriptor listing available tracepoint fields
- *	LTTNG_UST_WAIT_QUIESCENT
+ *	LTTNG_UST_ABI_WAIT_QUIESCENT
  *		Returns after all previously running probes have completed
  *
  * The returned session will be deleted when its file descriptor is closed.
  */
 static
 long lttng_cmd(int objd, unsigned int cmd, unsigned long arg,
-	union ust_args *uargs, void *owner)
+	union lttng_ust_abi_args *uargs, void *owner)
 {
 	switch (cmd) {
-	case LTTNG_UST_SESSION:
+	case LTTNG_UST_ABI_SESSION:
 		return lttng_abi_create_session(owner);
-	case LTTNG_UST_TRACER_VERSION:
+	case LTTNG_UST_ABI_TRACER_VERSION:
 		return lttng_abi_tracer_version(objd,
-				(struct lttng_ust_tracer_version *) arg);
-	case LTTNG_UST_TRACEPOINT_LIST:
+				(struct lttng_ust_abi_tracer_version *) arg);
+	case LTTNG_UST_ABI_TRACEPOINT_LIST:
 		return lttng_abi_tracepoint_list(owner);
-	case LTTNG_UST_TRACEPOINT_FIELD_LIST:
+	case LTTNG_UST_ABI_TRACEPOINT_FIELD_LIST:
 		return lttng_abi_tracepoint_field_list(owner);
-	case LTTNG_UST_WAIT_QUIESCENT:
+	case LTTNG_UST_ABI_WAIT_QUIESCENT:
 		lttng_ust_urcu_synchronize_rcu();
 		return 0;
-	case LTTNG_UST_EVENT_NOTIFIER_GROUP_CREATE:
+	case LTTNG_UST_ABI_EVENT_NOTIFIER_GROUP_CREATE:
 		return lttng_abi_event_notifier_send_fd(owner,
 			&uargs->event_notifier_handle.event_notifier_notif_fd);
 	default:
@@ -432,14 +432,14 @@ long lttng_cmd(int objd, unsigned int cmd, unsigned long arg,
 	}
 }
 
-static const struct lttng_ust_objd_ops lttng_ops = {
+static const struct lttng_ust_abi_objd_ops lttng_ops = {
 	.cmd = lttng_cmd,
 };
 
 static
 int lttng_abi_map_channel(int session_objd,
-		struct lttng_ust_channel *ust_chan,
-		union ust_args *uargs,
+		struct lttng_ust_abi_channel *ust_chan,
+		union lttng_ust_abi_args *uargs,
 		void *owner)
 {
 	struct lttng_session *session = objd_private(session_objd);
@@ -455,7 +455,7 @@ int lttng_abi_map_channel(int session_objd,
 	int wakeup_fd;
 	uint64_t len;
 	int ret;
-	enum lttng_ust_chan_type type;
+	enum lttng_ust_abi_chan_type type;
 
 	chan_data = uargs->channel.chan_data;
 	wakeup_fd = uargs->channel.wakeup_fd;
@@ -463,7 +463,7 @@ int lttng_abi_map_channel(int session_objd,
 	type = ust_chan->type;
 
 	switch (type) {
-	case LTTNG_UST_CHAN_PER_CPU:
+	case LTTNG_UST_ABI_CHAN_PER_CPU:
 		break;
 	default:
 		ret = -EINVAL;
@@ -497,7 +497,7 @@ int lttng_abi_map_channel(int session_objd,
 
 	/* Lookup transport name */
 	switch (type) {
-	case LTTNG_UST_CHAN_PER_CPU:
+	case LTTNG_UST_ABI_CHAN_PER_CPU:
 		if (config->output == RING_BUFFER_MMAP) {
 			if (config->mode == RING_BUFFER_OVERWRITE) {
 				if (config->wakeup == RING_BUFFER_WAKEUP_BY_WRITER) {
@@ -584,37 +584,37 @@ invalid:
  *	@owner: objd owner
  *
  *	This descriptor implements lttng commands:
- *	LTTNG_UST_CHANNEL
+ *	LTTNG_UST_ABI_CHANNEL
  *		Returns a LTTng channel object descriptor
- *	LTTNG_UST_ENABLE
+ *	LTTNG_UST_ABI_ENABLE
  *		Enables tracing for a session (weak enable)
- *	LTTNG_UST_DISABLE
+ *	LTTNG_UST_ABI_DISABLE
  *		Disables tracing for a session (strong disable)
  *
  * The returned channel will be deleted when its file descriptor is closed.
  */
 static
 long lttng_session_cmd(int objd, unsigned int cmd, unsigned long arg,
-	union ust_args *uargs, void *owner)
+	union lttng_ust_abi_args *uargs, void *owner)
 {
 	struct lttng_session *session = objd_private(objd);
 
 	switch (cmd) {
-	case LTTNG_UST_CHANNEL:
+	case LTTNG_UST_ABI_CHANNEL:
 		return lttng_abi_map_channel(objd,
-				(struct lttng_ust_channel *) arg,
+				(struct lttng_ust_abi_channel *) arg,
 				uargs, owner);
-	case LTTNG_UST_SESSION_START:
-	case LTTNG_UST_ENABLE:
+	case LTTNG_UST_ABI_SESSION_START:
+	case LTTNG_UST_ABI_ENABLE:
 		return lttng_session_enable(session);
-	case LTTNG_UST_SESSION_STOP:
-	case LTTNG_UST_DISABLE:
+	case LTTNG_UST_ABI_SESSION_STOP:
+	case LTTNG_UST_ABI_DISABLE:
 		return lttng_session_disable(session);
-	case LTTNG_UST_SESSION_STATEDUMP:
+	case LTTNG_UST_ABI_SESSION_STATEDUMP:
 		return lttng_session_statedump(session);
-	case LTTNG_UST_COUNTER:
-	case LTTNG_UST_COUNTER_GLOBAL:
-	case LTTNG_UST_COUNTER_CPU:
+	case LTTNG_UST_ABI_COUNTER:
+	case LTTNG_UST_ABI_COUNTER_GLOBAL:
+	case LTTNG_UST_ABI_COUNTER_CPU:
 		/* Not implemented yet. */
 		return -EINVAL;
 	default:
@@ -643,13 +643,13 @@ int lttng_release_session(int objd)
 	}
 }
 
-static const struct lttng_ust_objd_ops lttng_session_ops = {
+static const struct lttng_ust_abi_objd_ops lttng_session_ops = {
 	.release = lttng_release_session,
 	.cmd = lttng_session_cmd,
 };
 
 static int lttng_ust_event_notifier_enabler_create(int event_notifier_group_obj,
-		void *owner, struct lttng_ust_event_notifier *event_notifier_param,
+		void *owner, struct lttng_ust_abi_event_notifier *event_notifier_param,
 		enum lttng_enabler_format_type type)
 {
 	struct lttng_event_notifier_group *event_notifier_group =
@@ -657,7 +657,7 @@ static int lttng_ust_event_notifier_enabler_create(int event_notifier_group_obj,
 	struct lttng_event_notifier_enabler *event_notifier_enabler;
 	int event_notifier_objd, ret;
 
-	event_notifier_param->event.name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+	event_notifier_param->event.name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
 	event_notifier_objd = objd_alloc(NULL, &lttng_event_notifier_enabler_ops, owner,
 		"event_notifier enabler");
 	if (event_notifier_objd < 0) {
@@ -682,7 +682,7 @@ event_notifier_error:
 	{
 		int err;
 
-		err = lttng_ust_objd_unref(event_notifier_objd, 1);
+		err = lttng_ust_abi_objd_unref(event_notifier_objd, 1);
 		assert(!err);
 	}
 objd_error:
@@ -691,24 +691,24 @@ objd_error:
 
 static
 long lttng_event_notifier_enabler_cmd(int objd, unsigned int cmd, unsigned long arg,
-		union ust_args *uargs, void *owner)
+		union lttng_ust_abi_args *uargs, void *owner)
 {
 	struct lttng_event_notifier_enabler *event_notifier_enabler = objd_private(objd);
 	switch (cmd) {
-	case LTTNG_UST_FILTER:
+	case LTTNG_UST_ABI_FILTER:
 		return lttng_event_notifier_enabler_attach_filter_bytecode(
 			event_notifier_enabler,
 			(struct lttng_ust_bytecode_node **) arg);
-	case LTTNG_UST_EXCLUSION:
+	case LTTNG_UST_ABI_EXCLUSION:
 		return lttng_event_notifier_enabler_attach_exclusion(event_notifier_enabler,
 			(struct lttng_ust_excluder_node **) arg);
-	case LTTNG_UST_CAPTURE:
+	case LTTNG_UST_ABI_CAPTURE:
 		return lttng_event_notifier_enabler_attach_capture_bytecode(
 			event_notifier_enabler,
 			(struct lttng_ust_bytecode_node **) arg);
-	case LTTNG_UST_ENABLE:
+	case LTTNG_UST_ABI_ENABLE:
 		return lttng_event_notifier_enabler_enable(event_notifier_enabler);
-	case LTTNG_UST_DISABLE:
+	case LTTNG_UST_ABI_DISABLE:
 		return lttng_event_notifier_enabler_disable(event_notifier_enabler);
 	default:
 		return -EINVAL;
@@ -725,26 +725,26 @@ long lttng_event_notifier_enabler_cmd(int objd, unsigned int cmd, unsigned long 
  *	@owner: objd owner
  *
  *	This descriptor implements lttng commands:
- *      LTTNG_UST_COUNTER_GLOBAL
+ *      LTTNG_UST_ABI_COUNTER_GLOBAL
  *        Return negative error code on error, 0 on success.
- *      LTTNG_UST_COUNTER_CPU
+ *      LTTNG_UST_ABI_COUNTER_CPU
  *        Return negative error code on error, 0 on success.
  */
 static
 long lttng_event_notifier_group_error_counter_cmd(int objd, unsigned int cmd, unsigned long arg,
-	union ust_args *uargs, void *owner)
+	union lttng_ust_abi_args *uargs, void *owner)
 {
 	int ret;
 	struct lttng_counter *counter = objd_private(objd);
 
 	switch (cmd) {
-	case LTTNG_UST_COUNTER_GLOBAL:
+	case LTTNG_UST_ABI_COUNTER_GLOBAL:
 		ret = -EINVAL;	/* Unimplemented. */
 		break;
-	case LTTNG_UST_COUNTER_CPU:
+	case LTTNG_UST_ABI_COUNTER_CPU:
 	{
-		struct lttng_ust_counter_cpu *counter_cpu =
-			(struct lttng_ust_counter_cpu *)arg;
+		struct lttng_ust_abi_counter_cpu *counter_cpu =
+			(struct lttng_ust_abi_counter_cpu *)arg;
 
 		ret = lttng_counter_set_cpu_shm(counter->counter,
 			counter_cpu->cpu_nr, uargs->counter_shm.shm_fd);
@@ -768,20 +768,20 @@ int lttng_release_event_notifier_group_error_counter(int objd)
 	struct lttng_counter *counter = objd_private(objd);
 
 	if (counter) {
-		return lttng_ust_objd_unref(counter->event_notifier_group->objd, 0);
+		return lttng_ust_abi_objd_unref(counter->event_notifier_group->objd, 0);
 	} else {
 		return -EINVAL;
 	}
 }
 
-static const struct lttng_ust_objd_ops lttng_event_notifier_group_error_counter_ops = {
+static const struct lttng_ust_abi_objd_ops lttng_event_notifier_group_error_counter_ops = {
 	.release = lttng_release_event_notifier_group_error_counter,
 	.cmd = lttng_event_notifier_group_error_counter_cmd,
 };
 
 static
 int lttng_ust_event_notifier_group_create_error_counter(int event_notifier_group_objd, void *owner,
-		struct lttng_ust_counter_conf *error_counter_conf)
+		struct lttng_ust_abi_counter_conf *error_counter_conf)
 {
 	const char *counter_transport_name;
 	struct lttng_event_notifier_group *event_notifier_group =
@@ -794,17 +794,17 @@ int lttng_ust_event_notifier_group_create_error_counter(int event_notifier_group
 	if (event_notifier_group->error_counter)
 		return -EBUSY;
 
-	if (error_counter_conf->arithmetic != LTTNG_UST_COUNTER_ARITHMETIC_MODULAR)
+	if (error_counter_conf->arithmetic != LTTNG_UST_ABI_COUNTER_ARITHMETIC_MODULAR)
 		return -EINVAL;
 
 	if (error_counter_conf->number_dimensions != 1)
 		return -EINVAL;
 
 	switch (error_counter_conf->bitness) {
-	case LTTNG_UST_COUNTER_BITNESS_64:
+	case LTTNG_UST_ABI_COUNTER_BITNESS_64:
 		counter_transport_name = "counter-per-cpu-64-modular";
 		break;
-	case LTTNG_UST_COUNTER_BITNESS_32:
+	case LTTNG_UST_ABI_COUNTER_BITNESS_32:
 		counter_transport_name = "counter-per-cpu-32-modular";
 		break;
 	default:
@@ -855,7 +855,7 @@ create_error:
 	{
 		int err;
 
-		err = lttng_ust_objd_unref(counter_objd, 1);
+		err = lttng_ust_abi_objd_unref(counter_objd, 1);
 		assert(!err);
 	}
 objd_error:
@@ -864,13 +864,13 @@ objd_error:
 
 static
 long lttng_event_notifier_group_cmd(int objd, unsigned int cmd, unsigned long arg,
-		union ust_args *uargs, void *owner)
+		union lttng_ust_abi_args *uargs, void *owner)
 {
 	switch (cmd) {
-	case LTTNG_UST_EVENT_NOTIFIER_CREATE:
+	case LTTNG_UST_ABI_EVENT_NOTIFIER_CREATE:
 	{
-		struct lttng_ust_event_notifier *event_notifier_param =
-			(struct lttng_ust_event_notifier *) arg;
+		struct lttng_ust_abi_event_notifier *event_notifier_param =
+			(struct lttng_ust_abi_event_notifier *) arg;
 		if (strutils_is_star_glob_pattern(event_notifier_param->event.name)) {
 			/*
 			 * If the event name is a star globbing pattern,
@@ -885,10 +885,10 @@ long lttng_event_notifier_group_cmd(int objd, unsigned int cmd, unsigned long ar
 					LTTNG_ENABLER_FORMAT_EVENT);
 		}
 	}
-	case LTTNG_UST_COUNTER:
+	case LTTNG_UST_ABI_COUNTER:
 	{
-		struct lttng_ust_counter_conf *counter_conf =
-			(struct lttng_ust_counter_conf *) uargs->counter.counter_data;
+		struct lttng_ust_abi_counter_conf *counter_conf =
+			(struct lttng_ust_abi_counter_conf *) uargs->counter.counter_data;
 		return lttng_ust_event_notifier_group_create_error_counter(
 				objd, owner, counter_conf);
 	}
@@ -903,11 +903,11 @@ int lttng_event_notifier_enabler_release(int objd)
 	struct lttng_event_notifier_enabler *event_notifier_enabler = objd_private(objd);
 
 	if (event_notifier_enabler)
-		return lttng_ust_objd_unref(event_notifier_enabler->group->objd, 0);
+		return lttng_ust_abi_objd_unref(event_notifier_enabler->group->objd, 0);
 	return 0;
 }
 
-static const struct lttng_ust_objd_ops lttng_event_notifier_enabler_ops = {
+static const struct lttng_ust_abi_objd_ops lttng_event_notifier_enabler_ops = {
 	.release = lttng_event_notifier_enabler_release,
 	.cmd = lttng_event_notifier_enabler_cmd,
 };
@@ -925,22 +925,22 @@ int lttng_release_event_notifier_group(int objd)
 	}
 }
 
-static const struct lttng_ust_objd_ops lttng_event_notifier_group_ops = {
+static const struct lttng_ust_abi_objd_ops lttng_event_notifier_group_ops = {
 	.release = lttng_release_event_notifier_group,
 	.cmd = lttng_event_notifier_group_cmd,
 };
 
 static
 long lttng_tracepoint_list_cmd(int objd, unsigned int cmd, unsigned long arg,
-	union ust_args *uargs, void *owner)
+	union lttng_ust_abi_args *uargs, void *owner)
 {
 	struct lttng_ust_tracepoint_list *list = objd_private(objd);
-	struct lttng_ust_tracepoint_iter *tp =
-		(struct lttng_ust_tracepoint_iter *) arg;
-	struct lttng_ust_tracepoint_iter *iter;
+	struct lttng_ust_abi_tracepoint_iter *tp =
+		(struct lttng_ust_abi_tracepoint_iter *) arg;
+	struct lttng_ust_abi_tracepoint_iter *iter;
 
 	switch (cmd) {
-	case LTTNG_UST_TRACEPOINT_LIST_GET:
+	case LTTNG_UST_ABI_TRACEPOINT_LIST_GET:
 	{
 		iter = lttng_ust_tracepoint_list_get_iter_next(list);
 		if (!iter)
@@ -984,7 +984,7 @@ alloc_error:
 	{
 		int err;
 
-		err = lttng_ust_objd_unref(list_objd, 1);
+		err = lttng_ust_abi_objd_unref(list_objd, 1);
 		assert(!err);
 	}
 objd_error:
@@ -1005,21 +1005,21 @@ int lttng_release_tracepoint_list(int objd)
 	}
 }
 
-static const struct lttng_ust_objd_ops lttng_tracepoint_list_ops = {
+static const struct lttng_ust_abi_objd_ops lttng_tracepoint_list_ops = {
 	.release = lttng_release_tracepoint_list,
 	.cmd = lttng_tracepoint_list_cmd,
 };
 
 static
 long lttng_tracepoint_field_list_cmd(int objd, unsigned int cmd,
-	unsigned long arg, union ust_args *uargs, void *owner)
+	unsigned long arg, union lttng_ust_abi_args *uargs, void *owner)
 {
 	struct lttng_ust_field_list *list = objd_private(objd);
-	struct lttng_ust_field_iter *tp = &uargs->field_list.entry;
-	struct lttng_ust_field_iter *iter;
+	struct lttng_ust_abi_field_iter *tp = &uargs->field_list.entry;
+	struct lttng_ust_abi_field_iter *iter;
 
 	switch (cmd) {
-	case LTTNG_UST_TRACEPOINT_FIELD_LIST_GET:
+	case LTTNG_UST_ABI_TRACEPOINT_FIELD_LIST_GET:
 	{
 		iter = lttng_ust_field_list_get_iter_next(list);
 		if (!iter)
@@ -1064,7 +1064,7 @@ alloc_error:
 	{
 		int err;
 
-		err = lttng_ust_objd_unref(list_objd, 1);
+		err = lttng_ust_abi_objd_unref(list_objd, 1);
 		assert(!err);
 	}
 objd_error:
@@ -1085,14 +1085,14 @@ int lttng_release_tracepoint_field_list(int objd)
 	}
 }
 
-static const struct lttng_ust_objd_ops lttng_tracepoint_field_list_ops = {
+static const struct lttng_ust_abi_objd_ops lttng_tracepoint_field_list_ops = {
 	.release = lttng_release_tracepoint_field_list,
 	.cmd = lttng_tracepoint_field_list_cmd,
 };
 
 static
-int lttng_abi_map_stream(int channel_objd, struct lttng_ust_stream *info,
-		union ust_args *uargs, void *owner)
+int lttng_abi_map_stream(int channel_objd, struct lttng_ust_abi_stream *info,
+		union lttng_ust_abi_args *uargs, void *owner)
 {
 	struct lttng_channel *channel = objd_private(channel_objd);
 	int ret;
@@ -1114,7 +1114,7 @@ error_add_stream:
 
 static
 int lttng_abi_create_event_enabler(int channel_objd,
-			   struct lttng_ust_event *event_param,
+			   struct lttng_ust_abi_event *event_param,
 			   void *owner,
 			   enum lttng_enabler_format_type format_type)
 {
@@ -1122,7 +1122,7 @@ int lttng_abi_create_event_enabler(int channel_objd,
 	struct lttng_event_enabler *enabler;
 	int event_objd, ret;
 
-	event_param->name[LTTNG_UST_SYM_NAME_LEN - 1] = '\0';
+	event_param->name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
 	event_objd = objd_alloc(NULL, &lttng_event_enabler_ops, owner,
 		"event enabler");
 	if (event_objd < 0) {
@@ -1147,7 +1147,7 @@ event_error:
 	{
 		int err;
 
-		err = lttng_ust_objd_unref(event_objd, 1);
+		err = lttng_ust_abi_objd_unref(event_objd, 1);
 		assert(!err);
 	}
 objd_error:
@@ -1164,27 +1164,27 @@ objd_error:
  *	@owner: objd owner
  *
  *	This object descriptor implements lttng commands:
- *      LTTNG_UST_STREAM
+ *      LTTNG_UST_ABI_STREAM
  *              Returns an event stream object descriptor or failure.
  *              (typically, one event stream records events from one CPU)
- *	LTTNG_UST_EVENT
+ *	LTTNG_UST_ABI_EVENT
  *		Returns an event object descriptor or failure.
- *	LTTNG_UST_CONTEXT
+ *	LTTNG_UST_ABI_CONTEXT
  *		Prepend a context field to each event in the channel
- *	LTTNG_UST_ENABLE
+ *	LTTNG_UST_ABI_ENABLE
  *		Enable recording for events in this channel (weak enable)
- *	LTTNG_UST_DISABLE
+ *	LTTNG_UST_ABI_DISABLE
  *		Disable recording for events in this channel (strong disable)
  *
  * Channel and event file descriptors also hold a reference on the session.
  */
 static
 long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg,
-	union ust_args *uargs, void *owner)
+	union lttng_ust_abi_args *uargs, void *owner)
 {
 	struct lttng_channel *channel = objd_private(objd);
 
-	if (cmd != LTTNG_UST_STREAM) {
+	if (cmd != LTTNG_UST_ABI_STREAM) {
 		/*
 		 * Check if channel received all streams.
 		 */
@@ -1193,18 +1193,18 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg,
 	}
 
 	switch (cmd) {
-	case LTTNG_UST_STREAM:
+	case LTTNG_UST_ABI_STREAM:
 	{
-		struct lttng_ust_stream *stream;
+		struct lttng_ust_abi_stream *stream;
 
-		stream = (struct lttng_ust_stream *) arg;
+		stream = (struct lttng_ust_abi_stream *) arg;
 		/* stream used as output */
 		return lttng_abi_map_stream(objd, stream, uargs, owner);
 	}
-	case LTTNG_UST_EVENT:
+	case LTTNG_UST_ABI_EVENT:
 	{
-		struct lttng_ust_event *event_param =
-			(struct lttng_ust_event *) arg;
+		struct lttng_ust_abi_event *event_param =
+			(struct lttng_ust_abi_event *) arg;
 
 		if (strutils_is_star_glob_pattern(event_param->name)) {
 			/*
@@ -1218,15 +1218,15 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg,
 					owner, LTTNG_ENABLER_FORMAT_EVENT);
 		}
 	}
-	case LTTNG_UST_CONTEXT:
+	case LTTNG_UST_ABI_CONTEXT:
 		return lttng_abi_add_context(objd,
-				(struct lttng_ust_context *) arg, uargs,
+				(struct lttng_ust_abi_context *) arg, uargs,
 				&channel->ctx, channel->session);
-	case LTTNG_UST_ENABLE:
+	case LTTNG_UST_ABI_ENABLE:
 		return lttng_channel_enable(channel);
-	case LTTNG_UST_DISABLE:
+	case LTTNG_UST_ABI_DISABLE:
 		return lttng_channel_disable(channel);
-	case LTTNG_UST_FLUSH_BUFFER:
+	case LTTNG_UST_ABI_FLUSH_BUFFER:
 		return channel->ops->flush_buffer(channel->chan, channel->handle);
 	default:
 		return -EINVAL;
@@ -1239,11 +1239,11 @@ int lttng_channel_release(int objd)
 	struct lttng_channel *channel = objd_private(objd);
 
 	if (channel)
-		return lttng_ust_objd_unref(channel->session->priv->objd, 0);
+		return lttng_ust_abi_objd_unref(channel->session->priv->objd, 0);
 	return 0;
 }
 
-static const struct lttng_ust_objd_ops lttng_channel_ops = {
+static const struct lttng_ust_abi_objd_ops lttng_channel_ops = {
 	.release = lttng_channel_release,
 	.cmd = lttng_channel_cmd,
 };
@@ -1258,33 +1258,33 @@ static const struct lttng_ust_objd_ops lttng_channel_ops = {
  *	@owner: objd owner
  *
  *	This object descriptor implements lttng commands:
- *	LTTNG_UST_CONTEXT
+ *	LTTNG_UST_ABI_CONTEXT
  *		Prepend a context field to each record of events of this
  *		enabler.
- *	LTTNG_UST_ENABLE
+ *	LTTNG_UST_ABI_ENABLE
  *		Enable recording for this enabler
- *	LTTNG_UST_DISABLE
+ *	LTTNG_UST_ABI_DISABLE
  *		Disable recording for this enabler
- *	LTTNG_UST_FILTER
+ *	LTTNG_UST_ABI_FILTER
  *		Attach a filter to an enabler.
- *	LTTNG_UST_EXCLUSION
+ *	LTTNG_UST_ABI_EXCLUSION
  *		Attach exclusions to an enabler.
  */
 static
 long lttng_event_enabler_cmd(int objd, unsigned int cmd, unsigned long arg,
-	union ust_args *uargs, void *owner)
+	union lttng_ust_abi_args *uargs, void *owner)
 {
 	struct lttng_event_enabler *enabler = objd_private(objd);
 
 	switch (cmd) {
-	case LTTNG_UST_CONTEXT:
+	case LTTNG_UST_ABI_CONTEXT:
 		return lttng_event_enabler_attach_context(enabler,
-				(struct lttng_ust_context *) arg);
-	case LTTNG_UST_ENABLE:
+				(struct lttng_ust_abi_context *) arg);
+	case LTTNG_UST_ABI_ENABLE:
 		return lttng_event_enabler_enable(enabler);
-	case LTTNG_UST_DISABLE:
+	case LTTNG_UST_ABI_DISABLE:
 		return lttng_event_enabler_disable(enabler);
-	case LTTNG_UST_FILTER:
+	case LTTNG_UST_ABI_FILTER:
 	{
 		int ret;
 
@@ -1294,7 +1294,7 @@ long lttng_event_enabler_cmd(int objd, unsigned int cmd, unsigned long arg,
 			return ret;
 		return 0;
 	}
-	case LTTNG_UST_EXCLUSION:
+	case LTTNG_UST_ABI_EXCLUSION:
 	{
 		return lttng_event_enabler_attach_exclusion(enabler,
 				(struct lttng_ust_excluder_node **) arg);
@@ -1310,12 +1310,12 @@ int lttng_event_enabler_release(int objd)
 	struct lttng_event_enabler *event_enabler = objd_private(objd);
 
 	if (event_enabler)
-		return lttng_ust_objd_unref(event_enabler->chan->objd, 0);
+		return lttng_ust_abi_objd_unref(event_enabler->chan->objd, 0);
 
 	return 0;
 }
 
-static const struct lttng_ust_objd_ops lttng_event_enabler_ops = {
+static const struct lttng_ust_abi_objd_ops lttng_event_enabler_ops = {
 	.release = lttng_event_enabler_release,
 	.cmd = lttng_event_enabler_cmd,
 };

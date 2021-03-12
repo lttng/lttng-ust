@@ -15,6 +15,41 @@
 #include <ust-helper.h>
 #include <lttng/ust-events.h>
 
+
+struct lttng_ust_abi_obj;
+
+union lttng_ust_abi_args {
+	struct {
+		void *chan_data;
+		int wakeup_fd;
+	} channel;
+	struct {
+		int shm_fd;
+		int wakeup_fd;
+	} stream;
+	struct {
+		struct lttng_ust_abi_field_iter entry;
+	} field_list;
+	struct {
+		char *ctxname;
+	} app_context;
+	struct {
+		int event_notifier_notif_fd;
+	} event_notifier_handle;
+	struct {
+		void *counter_data;
+	} counter;
+	struct {
+		int shm_fd;
+	} counter_shm;
+};
+
+struct lttng_ust_abi_objd_ops {
+	long (*cmd)(int objd, unsigned int cmd, unsigned long arg,
+		union lttng_ust_abi_args *args, void *owner);
+	int (*release)(int objd);
+};
+
 enum lttng_enabler_format_type {
 	LTTNG_ENABLER_FORMAT_STAR_GLOB,
 	LTTNG_ENABLER_FORMAT_EVENT,
@@ -32,7 +67,7 @@ struct lttng_enabler {
 	/* head list of struct lttng_ust_excluder_node */
 	struct cds_list_head excluder_head;
 
-	struct lttng_ust_event event_param;
+	struct lttng_ust_abi_event event_param;
 	unsigned int enabled:1;
 };
 
@@ -81,13 +116,13 @@ struct lttng_ust_excluder_node {
 	 * struct lttng_ust_event_exclusion had variable sized array,
 	 * must be last field.
 	 */
-	struct lttng_ust_event_exclusion excluder;
+	struct lttng_ust_abi_event_exclusion excluder;
 };
 
 /* Data structures used by the tracer. */
 
 struct tp_list_entry {
-	struct lttng_ust_tracepoint_iter tp;
+	struct lttng_ust_abi_tracepoint_iter tp;
 	struct cds_list_head head;
 };
 
@@ -97,7 +132,7 @@ struct lttng_ust_tracepoint_list {
 };
 
 struct tp_field_list_entry {
-	struct lttng_ust_field_iter field;
+	struct lttng_ust_abi_field_iter field;
 	struct cds_list_head head;
 };
 
@@ -254,7 +289,7 @@ struct lttng_enabler *lttng_event_notifier_enabler_as_enabler(
 LTTNG_HIDDEN
 struct lttng_event_enabler *lttng_event_enabler_create(
 		enum lttng_enabler_format_type format_type,
-		struct lttng_ust_event *event_param,
+		struct lttng_ust_abi_event *event_param,
 		struct lttng_channel *chan);
 
 /*
@@ -293,7 +328,7 @@ int lttng_event_enabler_attach_filter_bytecode(
  */
 LTTNG_HIDDEN
 int lttng_event_enabler_attach_context(struct lttng_event_enabler *enabler,
-		struct lttng_ust_context *ctx);
+		struct lttng_ust_abi_context *ctx);
 
 /*
  * Attach exclusion list to `struct lttng_event_enabler` and all
@@ -342,7 +377,7 @@ LTTNG_HIDDEN
 struct lttng_event_notifier_enabler *lttng_event_notifier_enabler_create(
 		struct lttng_event_notifier_group *event_notifier_group,
 		enum lttng_enabler_format_type format_type,
-		struct lttng_ust_event_notifier *event_notifier_param);
+		struct lttng_ust_abi_event_notifier *event_notifier_param);
 
 /*
  * Destroy a `struct lttng_event_notifier_enabler` object.
@@ -457,10 +492,10 @@ LTTNG_HIDDEN
 void lttng_probes_prune_field_list(struct lttng_ust_field_list *list);
 
 LTTNG_HIDDEN
-struct lttng_ust_tracepoint_iter *
+struct lttng_ust_abi_tracepoint_iter *
 	lttng_ust_tracepoint_list_get_iter_next(struct lttng_ust_tracepoint_list *list);
 LTTNG_HIDDEN
-struct lttng_ust_field_iter *
+struct lttng_ust_abi_field_iter *
 	lttng_ust_field_list_get_iter_next(struct lttng_ust_field_list *list);
 
 LTTNG_HIDDEN
@@ -513,5 +548,19 @@ struct cds_list_head *lttng_get_probe_list_head(void);
 LTTNG_HIDDEN
 struct lttng_enum *lttng_ust_enum_get_from_desc(struct lttng_session *session,
 		const struct lttng_enum_desc *enum_desc);
+
+LTTNG_HIDDEN
+int lttng_abi_create_root_handle(void);
+
+LTTNG_HIDDEN
+const struct lttng_ust_abi_objd_ops *lttng_ust_abi_objd_ops(int id);
+LTTNG_HIDDEN
+int lttng_ust_abi_objd_unref(int id, int is_owner);
+LTTNG_HIDDEN
+void lttng_ust_abi_exit(void);
+LTTNG_HIDDEN
+void lttng_ust_abi_events_exit(void);
+LTTNG_HIDDEN
+void lttng_ust_abi_objd_table_owner_cleanup(void *owner);
 
 #endif /* _LTTNG_UST_EVENTS_INTERNAL_H */

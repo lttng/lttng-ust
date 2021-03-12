@@ -107,7 +107,7 @@ void _TP_COMBINE_TOKENS(__tracepoint_provider_check_, TRACEPOINT_PROVIDER)(void)
 #undef _TRACEPOINT_EVENT_INSTANCE
 #define _TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	\
 static const char							\
-	__tp_name_len_check##_provider##___##_name[LTTNG_UST_SYM_NAME_LEN] \
+	__tp_name_len_check##_provider##___##_name[LTTNG_UST_ABI_SYM_NAME_LEN] \
 	__attribute__((unused)) =					\
 		#_provider ":" #_name;
 

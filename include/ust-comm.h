@@ -77,12 +77,12 @@ struct ustcomm_ust_msg {
 	uint32_t cmd;
 	char padding[USTCOMM_MSG_PADDING1];
 	union {
-		struct lttng_ust_channel channel;
-		struct lttng_ust_stream stream;
-		struct lttng_ust_event event;
-		struct lttng_ust_context context;
-		struct lttng_ust_tracer_version version;
-		struct lttng_ust_tracepoint_iter tracepoint;
+		struct lttng_ust_abi_channel channel;
+		struct lttng_ust_abi_stream stream;
+		struct lttng_ust_abi_event event;
+		struct lttng_ust_abi_context context;
+		struct lttng_ust_abi_tracer_version version;
+		struct lttng_ust_abi_tracepoint_iter tracepoint;
 		struct {
 			uint32_t data_size;	/* following filter data */
 			uint32_t reloc_offset;
@@ -96,16 +96,16 @@ struct ustcomm_ust_msg {
 			uint32_t reloc_offset;
 			uint64_t seqnum;
 		} LTTNG_PACKED capture;
-		struct lttng_ust_counter counter;
-		struct lttng_ust_counter_global counter_global;
-		struct lttng_ust_counter_cpu counter_cpu;
+		struct lttng_ust_abi_counter counter;
+		struct lttng_ust_abi_counter_global counter_global;
+		struct lttng_ust_abi_counter_cpu counter_cpu;
 		/*
-		 * For LTTNG_UST_EVENT_NOTIFIER_CREATE, a struct
-		 * lttng_ust_event_notifier implicitly follows struct
+		 * For lttng_ust_abi_EVENT_NOTIFIER_CREATE, a struct
+		 * lttng_ust_abi_event_notifier implicitly follows struct
 		 * ustcomm_ust_msg.
 		 */
 		struct {
-			/* Length of struct lttng_ust_event_notifier */
+			/* Length of struct lttng_ust_abi_event_notifier */
 			uint32_t len;
 		} event_notifier;
 		char padding[USTCOMM_MSG_PADDING2];
@@ -131,8 +131,8 @@ struct ustcomm_ust_reply {
 		struct {
 			uint64_t memory_map_size;
 		} LTTNG_PACKED stream;
-		struct lttng_ust_tracer_version version;
-		struct lttng_ust_tracepoint_iter tracepoint;
+		struct lttng_ust_abi_tracer_version version;
+		struct lttng_ust_abi_tracepoint_iter tracepoint;
 		char padding[USTCOMM_REPLY_PADDING2];
 	} u;
 } LTTNG_PACKED;
@@ -145,7 +145,7 @@ struct ustcomm_notify_hdr {
 struct ustcomm_notify_event_msg {
 	uint32_t session_objd;
 	uint32_t channel_objd;
-	char event_name[LTTNG_UST_SYM_NAME_LEN];
+	char event_name[LTTNG_UST_ABI_SYM_NAME_LEN];
 	int32_t loglevel;
 	uint32_t signature_len;
 	uint32_t fields_len;
@@ -164,7 +164,7 @@ struct ustcomm_notify_event_reply {
 #define USTCOMM_NOTIFY_ENUM_MSG_PADDING		32
 struct ustcomm_notify_enum_msg {
 	uint32_t session_objd;
-	char enum_name[LTTNG_UST_SYM_NAME_LEN];
+	char enum_name[LTTNG_UST_ABI_SYM_NAME_LEN];
 	uint32_t entries_len;
 	char padding[USTCOMM_NOTIFY_ENUM_MSG_PADDING];
 	/* followed by enum entries */

@@ -102,25 +102,25 @@ int lttng_session_active(void)
 static
 int lttng_loglevel_match(int loglevel,
 		unsigned int has_loglevel,
-		enum lttng_ust_loglevel_type req_type,
+		enum lttng_ust_abi_loglevel_type req_type,
 		int req_loglevel)
 {
 	if (!has_loglevel)
 		loglevel = TRACE_DEFAULT;
 	switch (req_type) {
-	case LTTNG_UST_LOGLEVEL_RANGE:
+	case LTTNG_UST_ABI_LOGLEVEL_RANGE:
 		if (loglevel <= req_loglevel
 				|| (req_loglevel == -1 && loglevel <= TRACE_DEBUG))
 			return 1;
 		else
 			return 0;
-	case LTTNG_UST_LOGLEVEL_SINGLE:
+	case LTTNG_UST_ABI_LOGLEVEL_SINGLE:
 		if (loglevel == req_loglevel
 				|| (req_loglevel == -1 && loglevel <= TRACE_DEBUG))
 			return 1;
 		else
 			return 0;
-	case LTTNG_UST_LOGLEVEL_ALL:
+	case LTTNG_UST_ABI_LOGLEVEL_ALL:
 	default:
 		if (loglevel <= TRACE_DEBUG)
 			return 1;
@@ -1003,8 +1003,8 @@ int lttng_desc_match_enabler(const struct lttng_event_desc *desc,
 				char *excluder_name;
 
 				excluder_name = (char *) (excluder->excluder.names)
-						+ count * LTTNG_UST_SYM_NAME_LEN;
-				len = strnlen(excluder_name, LTTNG_UST_SYM_NAME_LEN);
+						+ count * LTTNG_UST_ABI_SYM_NAME_LEN;
+				len = strnlen(excluder_name, LTTNG_UST_ABI_SYM_NAME_LEN);
 				if (len > 0 && strutils_star_glob_match(excluder_name, len, desc->name, SIZE_MAX))
 					return 0;
 			}
@@ -1395,7 +1395,7 @@ void _lttng_enum_destroy(struct lttng_enum *_enum)
 	free(_enum);
 }
 
-void lttng_ust_events_exit(void)
+void lttng_ust_abi_events_exit(void)
 {
 	struct lttng_ust_session_private *session_priv, *tmpsession_priv;
 
@@ -1408,7 +1408,7 @@ void lttng_ust_events_exit(void)
  */
 struct lttng_event_enabler *lttng_event_enabler_create(
 		enum lttng_enabler_format_type format_type,
-		struct lttng_ust_event *event_param,
+		struct lttng_ust_abi_event *event_param,
 		struct lttng_channel *chan)
 {
 	struct lttng_event_enabler *event_enabler;
@@ -1433,7 +1433,7 @@ struct lttng_event_enabler *lttng_event_enabler_create(
 struct lttng_event_notifier_enabler *lttng_event_notifier_enabler_create(
 		struct lttng_event_notifier_group *event_notifier_group,
 		enum lttng_enabler_format_type format_type,
-		struct lttng_ust_event_notifier *event_notifier_param)
+		struct lttng_ust_abi_event_notifier *event_notifier_param)
 {
 	struct lttng_event_notifier_enabler *event_notifier_enabler;
 
@@ -1584,8 +1584,8 @@ int lttng_event_notifier_enabler_attach_exclusion(
 	return 0;
 }
 
-int lttng_attach_context(struct lttng_ust_context *context_param,
-		union ust_args *uargs,
+int lttng_attach_context(struct lttng_ust_abi_context *context_param,
+		union lttng_ust_abi_args *uargs,
 		struct lttng_ctx **ctx, struct lttng_session *session)
 {
 	/*
@@ -1597,11 +1597,11 @@ int lttng_attach_context(struct lttng_ust_context *context_param,
 		return -EPERM;
 
 	switch (context_param->ctx) {
-	case LTTNG_UST_CONTEXT_PTHREAD_ID:
+	case LTTNG_UST_ABI_CONTEXT_PTHREAD_ID:
 		return lttng_add_pthread_id_to_ctx(ctx);
-	case LTTNG_UST_CONTEXT_PERF_THREAD_COUNTER:
+	case LTTNG_UST_ABI_CONTEXT_PERF_THREAD_COUNTER:
 	{
-		struct lttng_ust_perf_counter_ctx *perf_ctx_param;
+		struct lttng_ust_abi_perf_counter_ctx *perf_ctx_param;
 
 		perf_ctx_param = &context_param->u.perf_counter;
 		return lttng_add_perf_counter_to_ctx(
@@ -1610,46 +1610,46 @@ int lttng_attach_context(struct lttng_ust_context *context_param,
 			perf_ctx_param->name,
 			ctx);
 	}
-	case LTTNG_UST_CONTEXT_VTID:
+	case LTTNG_UST_ABI_CONTEXT_VTID:
 		return lttng_add_vtid_to_ctx(ctx);
-	case LTTNG_UST_CONTEXT_VPID:
+	case LTTNG_UST_ABI_CONTEXT_VPID:
 		return lttng_add_vpid_to_ctx(ctx);
-	case LTTNG_UST_CONTEXT_PROCNAME:
+	case LTTNG_UST_ABI_CONTEXT_PROCNAME:
 		return lttng_add_procname_to_ctx(ctx);
-	case LTTNG_UST_CONTEXT_IP:
+	case LTTNG_UST_ABI_CONTEXT_IP:
 		return lttng_add_ip_to_ctx(ctx);
-	case LTTNG_UST_CONTEXT_CPU_ID:
+	case LTTNG_UST_ABI_CONTEXT_CPU_ID:
 		return lttng_add_cpu_id_to_ctx(ctx);
-	case LTTNG_UST_CONTEXT_APP_CONTEXT:
+	case LTTNG_UST_ABI_CONTEXT_APP_CONTEXT:
 		return lttng_ust_add_app_context_to_ctx_rcu(uargs->app_context.ctxname,
 			ctx);
-	case LTTNG_UST_CONTEXT_CGROUP_NS:
+	case LTTNG_UST_ABI_CONTEXT_CGROUP_NS:
 		return lttng_add_cgroup_ns_to_ctx(ctx);
-	case LTTNG_UST_CONTEXT_IPC_NS:
+	case LTTNG_UST_ABI_CONTEXT_IPC_NS:
 		return lttng_add_ipc_ns_to_ctx(ctx);
-	case LTTNG_UST_CONTEXT_MNT_NS:
+	case LTTNG_UST_ABI_CONTEXT_MNT_NS:
 		return lttng_add_mnt_ns_to_ctx(ctx);
-	case LTTNG_UST_CONTEXT_NET_NS:
+	case LTTNG_UST_ABI_CONTEXT_NET_NS:
 		return lttng_add_net_ns_to_ctx(ctx);
-	case LTTNG_UST_CONTEXT_PID_NS:
+	case LTTNG_UST_ABI_CONTEXT_PID_NS:
 		return lttng_add_pid_ns_to_ctx(ctx);
-	case LTTNG_UST_CONTEXT_TIME_NS:
+	case LTTNG_UST_ABI_CONTEXT_TIME_NS:
 		return lttng_add_time_ns_to_ctx(ctx);
-	case LTTNG_UST_CONTEXT_USER_NS:
+	case LTTNG_UST_ABI_CONTEXT_USER_NS:
 		return lttng_add_user_ns_to_ctx(ctx);
-	case LTTNG_UST_CONTEXT_UTS_NS:
+	case LTTNG_UST_ABI_CONTEXT_UTS_NS:
 		return lttng_add_uts_ns_to_ctx(ctx);
-	case LTTNG_UST_CONTEXT_VUID:
+	case LTTNG_UST_ABI_CONTEXT_VUID:
 		return lttng_add_vuid_to_ctx(ctx);
-	case LTTNG_UST_CONTEXT_VEUID:
+	case LTTNG_UST_ABI_CONTEXT_VEUID:
 		return lttng_add_veuid_to_ctx(ctx);
-	case LTTNG_UST_CONTEXT_VSUID:
+	case LTTNG_UST_ABI_CONTEXT_VSUID:
 		return lttng_add_vsuid_to_ctx(ctx);
-	case LTTNG_UST_CONTEXT_VGID:
+	case LTTNG_UST_ABI_CONTEXT_VGID:
 		return lttng_add_vgid_to_ctx(ctx);
-	case LTTNG_UST_CONTEXT_VEGID:
+	case LTTNG_UST_ABI_CONTEXT_VEGID:
 		return lttng_add_vegid_to_ctx(ctx);
-	case LTTNG_UST_CONTEXT_VSGID:
+	case LTTNG_UST_ABI_CONTEXT_VSGID:
 		return lttng_add_vsgid_to_ctx(ctx);
 	default:
 		return -EINVAL;
@@ -1657,7 +1657,7 @@ int lttng_attach_context(struct lttng_ust_context *context_param,
 }
 
 int lttng_event_enabler_attach_context(struct lttng_event_enabler *enabler,
-		struct lttng_ust_context *context_param)
+		struct lttng_ust_abi_context *context_param)
 {
 	return -ENOSYS;
 }

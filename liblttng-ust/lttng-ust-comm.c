@@ -301,51 +301,51 @@ struct sock_info local_apps = {
 static int wait_poll_fallback;
 
 static const char *cmd_name_mapping[] = {
-	[ LTTNG_UST_RELEASE ] = "Release",
-	[ LTTNG_UST_SESSION ] = "Create Session",
-	[ LTTNG_UST_TRACER_VERSION ] = "Get Tracer Version",
+	[ LTTNG_UST_ABI_RELEASE ] = "Release",
+	[ LTTNG_UST_ABI_SESSION ] = "Create Session",
+	[ LTTNG_UST_ABI_TRACER_VERSION ] = "Get Tracer Version",
 
-	[ LTTNG_UST_TRACEPOINT_LIST ] = "Create Tracepoint List",
-	[ LTTNG_UST_WAIT_QUIESCENT ] = "Wait for Quiescent State",
-	[ LTTNG_UST_REGISTER_DONE ] = "Registration Done",
-	[ LTTNG_UST_TRACEPOINT_FIELD_LIST ] = "Create Tracepoint Field List",
+	[ LTTNG_UST_ABI_TRACEPOINT_LIST ] = "Create Tracepoint List",
+	[ LTTNG_UST_ABI_WAIT_QUIESCENT ] = "Wait for Quiescent State",
+	[ LTTNG_UST_ABI_REGISTER_DONE ] = "Registration Done",
+	[ LTTNG_UST_ABI_TRACEPOINT_FIELD_LIST ] = "Create Tracepoint Field List",
 
-	[ LTTNG_UST_EVENT_NOTIFIER_GROUP_CREATE ] = "Create event notifier group",
+	[ LTTNG_UST_ABI_EVENT_NOTIFIER_GROUP_CREATE ] = "Create event notifier group",
 
 	/* Session FD commands */
-	[ LTTNG_UST_CHANNEL ] = "Create Channel",
-	[ LTTNG_UST_SESSION_START ] = "Start Session",
-	[ LTTNG_UST_SESSION_STOP ] = "Stop Session",
+	[ LTTNG_UST_ABI_CHANNEL ] = "Create Channel",
+	[ LTTNG_UST_ABI_SESSION_START ] = "Start Session",
+	[ LTTNG_UST_ABI_SESSION_STOP ] = "Stop Session",
 
 	/* Channel FD commands */
-	[ LTTNG_UST_STREAM ] = "Create Stream",
-	[ LTTNG_UST_EVENT ] = "Create Event",
+	[ LTTNG_UST_ABI_STREAM ] = "Create Stream",
+	[ LTTNG_UST_ABI_EVENT ] = "Create Event",
 
 	/* Event and Channel FD commands */
-	[ LTTNG_UST_CONTEXT ] = "Create Context",
-	[ LTTNG_UST_FLUSH_BUFFER ] = "Flush Buffer",
+	[ LTTNG_UST_ABI_CONTEXT ] = "Create Context",
+	[ LTTNG_UST_ABI_FLUSH_BUFFER ] = "Flush Buffer",
 
 	/* Event, Channel and Session commands */
-	[ LTTNG_UST_ENABLE ] = "Enable",
-	[ LTTNG_UST_DISABLE ] = "Disable",
+	[ LTTNG_UST_ABI_ENABLE ] = "Enable",
+	[ LTTNG_UST_ABI_DISABLE ] = "Disable",
 
 	/* Tracepoint list commands */
-	[ LTTNG_UST_TRACEPOINT_LIST_GET ] = "List Next Tracepoint",
-	[ LTTNG_UST_TRACEPOINT_FIELD_LIST_GET ] = "List Next Tracepoint Field",
+	[ LTTNG_UST_ABI_TRACEPOINT_LIST_GET ] = "List Next Tracepoint",
+	[ LTTNG_UST_ABI_TRACEPOINT_FIELD_LIST_GET ] = "List Next Tracepoint Field",
 
 	/* Event FD commands */
-	[ LTTNG_UST_FILTER ] = "Create Filter",
-	[ LTTNG_UST_EXCLUSION ] = "Add exclusions to event",
+	[ LTTNG_UST_ABI_FILTER ] = "Create Filter",
+	[ LTTNG_UST_ABI_EXCLUSION ] = "Add exclusions to event",
 
 	/* Event notifier group commands */
-	[ LTTNG_UST_EVENT_NOTIFIER_CREATE ] = "Create event notifier",
+	[ LTTNG_UST_ABI_EVENT_NOTIFIER_CREATE ] = "Create event notifier",
 
 	/* Session and event notifier group commands */
-	[ LTTNG_UST_COUNTER ] = "Create Counter",
+	[ LTTNG_UST_ABI_COUNTER ] = "Create Counter",
 
 	/* Counter commands */
-	[ LTTNG_UST_COUNTER_GLOBAL ] = "Create Counter Global",
-	[ LTTNG_UST_COUNTER_CPU ] = "Create Counter CPU",
+	[ LTTNG_UST_ABI_COUNTER_GLOBAL ] = "Create Counter Global",
+	[ LTTNG_UST_ABI_COUNTER_CPU ] = "Create Counter CPU",
 };
 
 static const char *str_timeout;
@@ -751,9 +751,9 @@ static inline
 const char *bytecode_type_str(uint32_t cmd)
 {
 	switch (cmd) {
-	case LTTNG_UST_CAPTURE:
+	case LTTNG_UST_ABI_CAPTURE:
 		return "capture";
-	case LTTNG_UST_FILTER:
+	case LTTNG_UST_ABI_FILTER:
 		return "filter";
 	default:
 		abort();
@@ -766,24 +766,24 @@ int handle_bytecode_recv(struct sock_info *sock_info,
 {
 	struct lttng_ust_bytecode_node *bytecode = NULL;
 	enum lttng_ust_bytecode_node_type type;
-	const struct lttng_ust_objd_ops *ops;
+	const struct lttng_ust_abi_objd_ops *ops;
 	uint32_t data_size, data_size_max, reloc_offset;
 	uint64_t seqnum;
 	ssize_t len;
 	int ret = 0;
 
 	switch (lum->cmd) {
-	case LTTNG_UST_FILTER:
+	case LTTNG_UST_ABI_FILTER:
 		type = LTTNG_UST_BYTECODE_NODE_TYPE_FILTER;
 		data_size = lum->u.filter.data_size;
-		data_size_max = FILTER_BYTECODE_MAX_LEN;
+		data_size_max = LTTNG_UST_ABI_FILTER_BYTECODE_MAX_LEN;
 		reloc_offset = lum->u.filter.reloc_offset;
 		seqnum = lum->u.filter.seqnum;
 		break;
-	case LTTNG_UST_CAPTURE:
+	case LTTNG_UST_ABI_CAPTURE:
 		type = LTTNG_UST_BYTECODE_NODE_TYPE_CAPTURE;
 		data_size = lum->u.capture.data_size;
-		data_size_max = CAPTURE_BYTECODE_MAX_LEN;
+		data_size_max = LTTNG_UST_ABI_CAPTURE_BYTECODE_MAX_LEN;
 		reloc_offset = lum->u.capture.reloc_offset;
 		seqnum = lum->u.capture.seqnum;
 		break;
@@ -846,7 +846,7 @@ int handle_bytecode_recv(struct sock_info *sock_info,
 		}
 	}
 
-	ops = objd_ops(lum->handle);
+	ops = lttng_ust_abi_objd_ops(lum->handle);
 	if (!ops) {
 		ret = -ENOENT;
 		goto end;
@@ -869,10 +869,10 @@ int handle_message(struct sock_info *sock_info,
 		int sock, struct ustcomm_ust_msg *lum)
 {
 	int ret = 0;
-	const struct lttng_ust_objd_ops *ops;
+	const struct lttng_ust_abi_objd_ops *ops;
 	struct ustcomm_ust_reply lur;
-	union ust_args args;
-	char ctxstr[LTTNG_UST_SYM_NAME_LEN];	/* App context string. */
+	union lttng_ust_abi_args args;
+	char ctxstr[LTTNG_UST_ABI_SYM_NAME_LEN];	/* App context string. */
 	ssize_t len;
 
 	memset(&lur, 0, sizeof(lur));
@@ -882,32 +882,32 @@ int handle_message(struct sock_info *sock_info,
 		goto error;
 	}
 
-	ops = objd_ops(lum->handle);
+	ops = lttng_ust_abi_objd_ops(lum->handle);
 	if (!ops) {
 		ret = -ENOENT;
 		goto error;
 	}
 
 	switch (lum->cmd) {
-	case LTTNG_UST_REGISTER_DONE:
-		if (lum->handle == LTTNG_UST_ROOT_HANDLE)
+	case LTTNG_UST_ABI_REGISTER_DONE:
+		if (lum->handle == LTTNG_UST_ABI_ROOT_HANDLE)
 			ret = handle_register_done(sock_info);
 		else
 			ret = -EINVAL;
 		break;
-	case LTTNG_UST_RELEASE:
-		if (lum->handle == LTTNG_UST_ROOT_HANDLE)
+	case LTTNG_UST_ABI_RELEASE:
+		if (lum->handle == LTTNG_UST_ABI_ROOT_HANDLE)
 			ret = -EPERM;
 		else
-			ret = lttng_ust_objd_unref(lum->handle, 1);
+			ret = lttng_ust_abi_objd_unref(lum->handle, 1);
 		break;
-	case LTTNG_UST_CAPTURE:
-	case LTTNG_UST_FILTER:
+	case LTTNG_UST_ABI_CAPTURE:
+	case LTTNG_UST_ABI_FILTER:
 		ret = handle_bytecode_recv(sock_info, sock, lum);
 		if (ret)
 			goto error;
 		break;
-	case LTTNG_UST_EXCLUSION:
+	case LTTNG_UST_ABI_EXCLUSION:
 	{
 		/* Receive exclusion names */
 		struct lttng_ust_excluder_node *node;
@@ -920,21 +920,21 @@ int handle_message(struct sock_info *sock_info,
 			goto error;
 		}
 		node = zmalloc(sizeof(*node) +
-				count * LTTNG_UST_SYM_NAME_LEN);
+				count * LTTNG_UST_ABI_SYM_NAME_LEN);
 		if (!node) {
 			ret = -ENOMEM;
 			goto error;
 		}
 		node->excluder.count = count;
 		len = ustcomm_recv_unix_sock(sock, node->excluder.names,
-				count * LTTNG_UST_SYM_NAME_LEN);
+				count * LTTNG_UST_ABI_SYM_NAME_LEN);
 		switch (len) {
 		case 0:	/* orderly shutdown */
 			ret = 0;
 			free(node);
 			goto error;
 		default:
-			if (len == count * LTTNG_UST_SYM_NAME_LEN) {
+			if (len == count * LTTNG_UST_ABI_SYM_NAME_LEN) {
 				DBG("Exclusion data received");
 				break;
 			} else if (len < 0) {
@@ -964,7 +964,7 @@ int handle_message(struct sock_info *sock_info,
 		free(node);
 		break;
 	}
-	case LTTNG_UST_EVENT_NOTIFIER_GROUP_CREATE:
+	case LTTNG_UST_ABI_EVENT_NOTIFIER_GROUP_CREATE:
 	{
 		int event_notifier_notif_fd, close_ret;
 
@@ -1012,7 +1012,7 @@ int handle_message(struct sock_info *sock_info,
 		}
 		break;
 	}
-	case LTTNG_UST_CHANNEL:
+	case LTTNG_UST_ABI_CHANNEL:
 	{
 		void *chan_data;
 		int wakeup_fd;
@@ -1064,7 +1064,7 @@ int handle_message(struct sock_info *sock_info,
 		free(args.channel.chan_data);
 		break;
 	}
-	case LTTNG_UST_STREAM:
+	case LTTNG_UST_ABI_STREAM:
 	{
 		int close_ret;
 
@@ -1101,16 +1101,16 @@ int handle_message(struct sock_info *sock_info,
 		}
 		break;
 	}
-	case LTTNG_UST_CONTEXT:
+	case LTTNG_UST_ABI_CONTEXT:
 		switch (lum->u.context.ctx) {
-		case LTTNG_UST_CONTEXT_APP_CONTEXT:
+		case LTTNG_UST_ABI_CONTEXT_APP_CONTEXT:
 		{
 			char *p;
 			size_t ctxlen, recvlen;
 
 			ctxlen = strlen("$app.") + lum->u.context.u.app_ctx.provider_name_len - 1
 					+ strlen(":") + lum->u.context.u.app_ctx.ctx_name_len;
-			if (ctxlen >= LTTNG_UST_SYM_NAME_LEN) {
+			if (ctxlen >= LTTNG_UST_ABI_SYM_NAME_LEN) {
 				ERR("Application context string length size is too large: %zu bytes",
 					ctxlen);
 				ret = -EINVAL;
@@ -1159,7 +1159,7 @@ int handle_message(struct sock_info *sock_info,
 			ret = -ENOSYS;
 		}
 		break;
-	case LTTNG_UST_COUNTER:
+	case LTTNG_UST_ABI_COUNTER:
 	{
 		void *counter_data;
 
@@ -1198,7 +1198,7 @@ int handle_message(struct sock_info *sock_info,
 		free(args.counter.counter_data);
 		break;
 	}
-	case LTTNG_UST_COUNTER_GLOBAL:
+	case LTTNG_UST_ABI_COUNTER_GLOBAL:
 	{
 		/* Receive shm_fd */
 		ret = ustcomm_recv_counter_shm_from_sessiond(sock,
@@ -1225,7 +1225,7 @@ int handle_message(struct sock_info *sock_info,
 		}
 		break;
 	}
-	case LTTNG_UST_COUNTER_CPU:
+	case LTTNG_UST_ABI_COUNTER_CPU:
 	{
 		/* Receive shm_fd */
 		ret = ustcomm_recv_counter_shm_from_sessiond(sock,
@@ -1252,10 +1252,10 @@ int handle_message(struct sock_info *sock_info,
 		}
 		break;
 	}
-	case LTTNG_UST_EVENT_NOTIFIER_CREATE:
+	case LTTNG_UST_ABI_EVENT_NOTIFIER_CREATE:
 	{
 		/* Receive struct lttng_ust_event_notifier */
-		struct lttng_ust_event_notifier event_notifier;
+		struct lttng_ust_abi_event_notifier event_notifier;
 
 		if (sizeof(event_notifier) != lum->u.event_notifier.len) {
 			DBG("incorrect event notifier data message size: %u", lum->u.event_notifier.len);
@@ -1345,10 +1345,10 @@ int handle_message(struct sock_info *sock_info,
 	}
 	if (ret >= 0) {
 		switch (lum->cmd) {
-		case LTTNG_UST_TRACER_VERSION:
+		case LTTNG_UST_ABI_TRACER_VERSION:
 			lur.u.version = lum->u.version;
 			break;
-		case LTTNG_UST_TRACEPOINT_LIST_GET:
+		case LTTNG_UST_ABI_TRACEPOINT_LIST_GET:
 			memcpy(&lur.u.tracepoint, &lum->u.tracepoint, sizeof(lur.u.tracepoint));
 			break;
 		}
@@ -1381,7 +1381,7 @@ int handle_message(struct sock_info *sock_info,
 	 */
 	if (lur.ret_code == LTTNG_UST_OK) {
 		switch (lum->cmd) {
-		case LTTNG_UST_TRACEPOINT_FIELD_LIST_GET:
+		case LTTNG_UST_ABI_TRACEPOINT_FIELD_LIST_GET:
 			len = ustcomm_send_unix_sock(sock,
 				&args.field_list.entry,
 				sizeof(args.field_list.entry));
@@ -1408,7 +1408,7 @@ void cleanup_sock_info(struct sock_info *sock_info, int exiting)
 	int ret;
 
 	if (sock_info->root_handle != -1) {
-		ret = lttng_ust_objd_unref(sock_info->root_handle, 1);
+		ret = lttng_ust_abi_objd_unref(sock_info->root_handle, 1);
 		if (ret) {
 			ERR("Error unref root handle");
 		}
@@ -2036,7 +2036,7 @@ end:
 		goto quit;
 	}
 	/* Cleanup socket handles before trying to reconnect */
-	lttng_ust_objd_table_owner_cleanup(sock_info);
+	lttng_ust_abi_objd_table_owner_cleanup(sock_info);
 	ust_unlock();
 	goto restart;	/* try to reconnect */
 
@@ -2260,7 +2260,7 @@ void lttng_ust_cleanup(int exiting)
 	 * point.
 	 */
 	lttng_ust_abi_exit();
-	lttng_ust_events_exit();
+	lttng_ust_abi_events_exit();
 	lttng_perf_counter_exit();
 	lttng_ring_buffer_client_discard_rt_exit();
 	lttng_ring_buffer_client_discard_exit();

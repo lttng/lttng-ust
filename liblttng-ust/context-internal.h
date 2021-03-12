@@ -9,13 +9,14 @@
 
 #include <lttng/ust-events.h>
 #include "ust-helper.h"
+#include "ust-events-internal.h"
 
 LTTNG_HIDDEN
 int lttng_context_init_all(struct lttng_ctx **ctx);
 
 LTTNG_HIDDEN
-int lttng_attach_context(struct lttng_ust_context *context_param,
-		union ust_args *uargs,
+int lttng_attach_context(struct lttng_ust_abi_context *context_param,
+		union lttng_ust_abi_args *uargs,
 		struct lttng_ctx **ctx, struct lttng_session *session);
 
 LTTNG_HIDDEN
