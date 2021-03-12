@@ -172,7 +172,7 @@ size_t record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
 				 struct lttng_client_ctx *client_ctx)
 {
 	struct lttng_channel *lttng_chan = channel_get_private(chan);
-	struct lttng_event *event = ctx->priv;
+	struct lttng_ust_event_recorder *event_recorder = ctx->priv;
 	struct lttng_stack_ctx *lttng_ctx = ctx->priv2;
 	size_t orig_offset = offset;
 	size_t padding;
@@ -222,7 +222,7 @@ size_t record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
 		/* Pre 2.8 probe ABI. */
 		offset += ctx_get_aligned_size(offset, lttng_chan->ctx,
 				client_ctx->packet_context_len);
-		offset += ctx_get_aligned_size(offset, event->ctx,
+		offset += ctx_get_aligned_size(offset, event_recorder->ctx,
 				client_ctx->event_context_len);
 	}
 	*pre_header_padding = padding;
@@ -252,7 +252,7 @@ void lttng_write_event_header(const struct lttng_ust_lib_ring_buffer_config *con
 			    uint32_t event_id)
 {
 	struct lttng_channel *lttng_chan = channel_get_private(ctx->chan);
-	struct lttng_event *event = ctx->priv;
+	struct lttng_ust_event_recorder *event_recorder = ctx->priv;
 	struct lttng_stack_ctx *lttng_ctx = ctx->priv2;
 
 	if (caa_unlikely(ctx->rflags))
@@ -295,7 +295,7 @@ void lttng_write_event_header(const struct lttng_ust_lib_ring_buffer_config *con
 	} else {
 		/* Pre 2.8 probe ABI. */
 		ctx_record(ctx, lttng_chan, lttng_chan->ctx, APP_CTX_DISABLED);
-		ctx_record(ctx, lttng_chan, event->ctx, APP_CTX_DISABLED);
+		ctx_record(ctx, lttng_chan, event_recorder->ctx, APP_CTX_DISABLED);
 	}
 	lib_ring_buffer_align_ctx(ctx, ctx->largest_align);
 
@@ -311,7 +311,7 @@ void lttng_write_event_header_slow(const struct lttng_ust_lib_ring_buffer_config
 				 uint32_t event_id)
 {
 	struct lttng_channel *lttng_chan = channel_get_private(ctx->chan);
-	struct lttng_event *event = ctx->priv;
+	struct lttng_ust_event_recorder *event_recorder = ctx->priv;
 	struct lttng_stack_ctx *lttng_ctx = ctx->priv2;
 
 	switch (lttng_chan->header_type) {
@@ -376,7 +376,7 @@ void lttng_write_event_header_slow(const struct lttng_ust_lib_ring_buffer_config
 	} else {
 		/* Pre 2.8 probe ABI. */
 		ctx_record(ctx, lttng_chan, lttng_chan->ctx, APP_CTX_DISABLED);
-		ctx_record(ctx, lttng_chan, event->ctx, APP_CTX_DISABLED);
+		ctx_record(ctx, lttng_chan, event_recorder->ctx, APP_CTX_DISABLED);
 	}
 	lib_ring_buffer_align_ctx(ctx, ctx->largest_align);
 }
@@ -706,7 +706,7 @@ int lttng_event_reserve(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		      uint32_t event_id)
 {
 	struct lttng_channel *lttng_chan = channel_get_private(ctx->chan);
-	struct lttng_event *event = ctx->priv;
+	struct lttng_ust_event_recorder *event_recorder = ctx->priv;
 	struct lttng_stack_ctx *lttng_ctx = ctx->priv2;
 	struct lttng_client_ctx client_ctx;
 	int ret, cpu;
@@ -723,7 +723,7 @@ int lttng_event_reserve(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		/* Pre 2.8 probe ABI. */
 		ctx_get_struct_size(lttng_chan->ctx, &client_ctx.packet_context_len,
 				APP_CTX_DISABLED);
-		ctx_get_struct_size(event->ctx, &client_ctx.event_context_len,
+		ctx_get_struct_size(event_recorder->ctx, &client_ctx.event_context_len,
 				APP_CTX_DISABLED);
 	}
 

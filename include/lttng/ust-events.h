@@ -361,12 +361,12 @@ struct lttng_event_common {
 	struct cds_list_head filter_bytecode_runtime_head;
 };
 
-struct lttng_ust_event_private;
+struct lttng_ust_event_recorder_private;
 
-struct lttng_event {
-	uint32_t struct_size;			/* Size of this structure. */
+struct lttng_ust_event_recorder {
+	uint32_t struct_size;				/* Size of this structure. */
 	struct lttng_event_common *parent;
-	struct lttng_ust_event_private *priv;	/* Private event interface */
+	struct lttng_ust_event_recorder_private *priv;	/* Private event record interface */
 
 	unsigned int id;
 	struct lttng_channel *chan;
@@ -491,7 +491,7 @@ struct lttng_counter_ops {
 
 #define LTTNG_UST_STACK_CTX_PADDING	32
 struct lttng_stack_ctx {
-	struct lttng_event *event;
+	struct lttng_ust_event_recorder *event_recorder;
 	struct lttng_ctx *chan_ctx;	/* RCU dereferenced. */
 	struct lttng_ctx *event_ctx;	/* RCU dereferenced. */
 	char padding[LTTNG_UST_STACK_CTX_PADDING];

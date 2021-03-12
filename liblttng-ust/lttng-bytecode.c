@@ -608,9 +608,9 @@ void free_filter_runtime(struct cds_list_head *bytecode_runtime_head)
 	}
 }
 
-void lttng_free_event_filter_runtime(struct lttng_event *event)
+void lttng_free_event_recorder_filter_runtime(struct lttng_ust_event_recorder *event_recorder)
 {
-	free_filter_runtime(&event->parent->filter_bytecode_runtime_head);
+	free_filter_runtime(&event_recorder->parent->filter_bytecode_runtime_head);
 }
 
 void lttng_free_event_notifier_filter_runtime(

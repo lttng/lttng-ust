@@ -838,8 +838,8 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));      \
 static									      \
 void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 {									      \
-	struct lttng_event *__event = (struct lttng_event *) __tp_data;	      \
-	struct lttng_channel *__chan = __event->chan;			      \
+	struct lttng_ust_event_recorder *__event_recorder = (struct lttng_ust_event_recorder *) __tp_data; \
+	struct lttng_channel *__chan = __event_recorder->chan;		      \
 	struct lttng_ust_lib_ring_buffer_ctx __ctx;			      \
 	struct lttng_stack_ctx __lttng_ctx;				      \
 	size_t __event_len, __event_align;				      \
@@ -859,17 +859,17 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 		return;							      \
 	if (caa_unlikely(!CMM_ACCESS_ONCE(__chan->enabled)))		      \
 		return;							      \
-	if (caa_unlikely(!CMM_ACCESS_ONCE(__event->parent->enabled)))	      \
+	if (caa_unlikely(!CMM_ACCESS_ONCE(__event_recorder->parent->enabled)))\
 		return;							      \
 	if (caa_unlikely(!TP_RCU_LINK_TEST()))				      \
 		return;							      \
-	if (caa_unlikely(!cds_list_empty(&__event->parent->filter_bytecode_runtime_head))) { \
+	if (caa_unlikely(!cds_list_empty(&__event_recorder->parent->filter_bytecode_runtime_head))) { \
 		struct lttng_bytecode_runtime *__filter_bc_runtime;		      \
-		int __filter_record = __event->parent->has_enablers_without_bytecode; \
+		int __filter_record = __event_recorder->parent->has_enablers_without_bytecode; \
 									      \
 		__event_prepare_interpreter_stack__##_provider##___##_name(__stackvar.__filter_stack_data, \
 			_TP_ARGS_DATA_VAR(_args));			      \
-		tp_list_for_each_entry_rcu(__filter_bc_runtime, &__event->parent->filter_bytecode_runtime_head, node) { \
+		tp_list_for_each_entry_rcu(__filter_bc_runtime, &__event_recorder->parent->filter_bytecode_runtime_head, node) { \
 			if (caa_unlikely(__filter_bc_runtime->interpreter_funcs.filter(__filter_bc_runtime,     \
 					__stackvar.__filter_stack_data) & LTTNG_INTERPRETER_RECORD_FLAG)) { \
 				__filter_record = 1;			      \
@@ -883,13 +883,13 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 		 _TP_ARGS_DATA_VAR(_args));				      \
 	__event_align = __event_get_align__##_provider##___##_name(_TP_ARGS_VAR(_args)); \
 	memset(&__lttng_ctx, 0, sizeof(__lttng_ctx));			      \
-	__lttng_ctx.event = __event;					      \
+	__lttng_ctx.event_recorder = __event_recorder;			      \
 	__lttng_ctx.chan_ctx = tp_rcu_dereference(__chan->ctx);		      \
-	__lttng_ctx.event_ctx = tp_rcu_dereference(__event->ctx);	      \
-	lib_ring_buffer_ctx_init(&__ctx, __chan->chan, __event, __event_len,  \
+	__lttng_ctx.event_ctx = tp_rcu_dereference(__event_recorder->ctx);    \
+	lib_ring_buffer_ctx_init(&__ctx, __chan->chan, __event_recorder, __event_len,  \
 				 __event_align, -1, __chan->handle, &__lttng_ctx); \
 	__ctx.ip = _TP_IP_PARAM(TP_IP_PARAM);				      \
-	__ret = __chan->ops->event_reserve(&__ctx, __event->id);	      \
+	__ret = __chan->ops->event_reserve(&__ctx, __event_recorder->id);     \
 	if (__ret < 0)							      \
 		return;							      \
 	_fields								      \

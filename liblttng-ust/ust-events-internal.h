@@ -174,12 +174,12 @@ struct lttng_ust_event_common_private {
 	int registered;			/* has reg'd tracepoint probe */
 };
 
-struct lttng_ust_event_private {
+struct lttng_ust_event_recorder_private {
 	struct lttng_ust_event_common_private parent;
 
-	struct lttng_event *pub;	/* Public event interface */
-	struct cds_list_head node;	/* Event list in session */
-	struct cds_hlist_node hlist;	/* session ht of events */
+	struct lttng_ust_event_recorder *pub;	/* Public event interface */
+	struct cds_list_head node;		/* Event list in session */
+	struct cds_hlist_node hlist;		/* session ht of events */
 };
 
 struct lttng_ust_bytecode_runtime_private {
@@ -383,7 +383,7 @@ int lttng_event_notifier_enabler_attach_exclusion(
 		struct lttng_ust_excluder_node **excluder);
 
 LTTNG_HIDDEN
-void lttng_free_event_filter_runtime(struct lttng_event *event);
+void lttng_free_event_recorder_filter_runtime(struct lttng_ust_event_recorder *event_recorder);
 
 LTTNG_HIDDEN
 void lttng_free_event_notifier_filter_runtime(
