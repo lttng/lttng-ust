@@ -210,9 +210,10 @@ struct lttng_ust_lib_ring_buffer_config {
  * UST. Fields need to be only added at the end, never reordered, never
  * removed.
  */
-#define LTTNG_UST_RING_BUFFER_CTX_PADDING	\
-		(24 - sizeof(int) - sizeof(void *) - sizeof(void *))
+#define LTTNG_UST_RING_BUFFER_CTX_PADDING	64
 struct lttng_ust_lib_ring_buffer_ctx {
+	uint32_t struct_size;		/* Size of this structure. */
+
 	/* input received by lib_ring_buffer_reserve(), saved here. */
 	struct channel *chan;		/* channel */
 	void *priv;			/* client private data */
@@ -239,21 +240,7 @@ struct lttng_ust_lib_ring_buffer_ctx {
 					 */
 	uint64_t tsc;			/* time-stamp counter value */
 	unsigned int rflags;		/* reservation flags */
-	/*
-	 * The field ctx_len is the length of struct
-	 * lttng_ust_lib_ring_buffer_ctx as known by the user of
-	 * lib_ring_buffer_ctx_init.
-	 */
-	unsigned int ctx_len;
 	void *ip;			/* caller ip address */
-	void *priv2;			/* 2nd priv data */
-	char padding2[LTTNG_UST_RING_BUFFER_CTX_PADDING];
-	/*
-	 * This is the end of the initial fields expected by the original ABI
-	 * between probes and UST. Only the fields above can be used if
-	 * ctx_len is 0. Use the value of ctx_len to find out which of the
-	 * following fields may be used.
-	 */
 	struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
 };
 
@@ -270,15 +257,14 @@ static inline lttng_ust_notrace
 void lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			      struct channel *chan, void *priv,
 			      size_t data_size, int largest_align,
-			      int cpu, struct lttng_ust_shm_handle *handle,
-			      void *priv2);
+			      int cpu, struct lttng_ust_shm_handle *handle);
 static inline
 void lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			      struct channel *chan, void *priv,
 			      size_t data_size, int largest_align,
-			      int cpu, struct lttng_ust_shm_handle *handle,
-			      void *priv2)
+			      int cpu, struct lttng_ust_shm_handle *handle)
 {
+	ctx->struct_size = sizeof(struct lttng_ust_lib_ring_buffer_ctx);
 	ctx->chan = chan;
 	ctx->priv = priv;
 	ctx->data_size = data_size;
@@ -286,10 +272,7 @@ void lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 	ctx->cpu = cpu;
 	ctx->rflags = 0;
 	ctx->handle = handle;
-	ctx->ctx_len = sizeof(struct lttng_ust_lib_ring_buffer_ctx);
 	ctx->ip = 0;
-	ctx->priv2 = priv2;
-	memset(ctx->padding2, 0, LTTNG_UST_RING_BUFFER_CTX_PADDING);
 }
 
 /*

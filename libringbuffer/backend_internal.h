@@ -236,9 +236,6 @@ struct lttng_ust_lib_ring_buffer_backend_pages *
 	lib_ring_buffer_get_backend_pages_from_ctx(const struct lttng_ust_lib_ring_buffer_config *config,
 		struct lttng_ust_lib_ring_buffer_ctx *ctx)
 {
-	if (caa_unlikely(ctx->ctx_len
-			< sizeof(struct lttng_ust_lib_ring_buffer_ctx)))
-		return NULL;
 	return ctx->backend_pages;
 }
 

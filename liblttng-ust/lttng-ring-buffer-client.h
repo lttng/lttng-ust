@@ -172,8 +172,7 @@ size_t record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
 				 struct lttng_client_ctx *client_ctx)
 {
 	struct lttng_channel *lttng_chan = channel_get_private(chan);
-	struct lttng_ust_event_recorder *event_recorder = ctx->priv;
-	struct lttng_stack_ctx *lttng_ctx = ctx->priv2;
+	struct lttng_stack_ctx *lttng_ctx = ctx->priv;
 	size_t orig_offset = offset;
 	size_t padding;
 
@@ -212,19 +211,10 @@ size_t record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
 		padding = 0;
 		WARN_ON_ONCE(1);
 	}
-	if (lttng_ctx) {
-		/* 2.8+ probe ABI. */
-		offset += ctx_get_aligned_size(offset, lttng_ctx->chan_ctx,
-				client_ctx->packet_context_len);
-		offset += ctx_get_aligned_size(offset, lttng_ctx->event_ctx,
-				client_ctx->event_context_len);
-	} else {
-		/* Pre 2.8 probe ABI. */
-		offset += ctx_get_aligned_size(offset, lttng_chan->ctx,
-				client_ctx->packet_context_len);
-		offset += ctx_get_aligned_size(offset, event_recorder->ctx,
-				client_ctx->event_context_len);
-	}
+	offset += ctx_get_aligned_size(offset, lttng_ctx->chan_ctx,
+			client_ctx->packet_context_len);
+	offset += ctx_get_aligned_size(offset, lttng_ctx->event_ctx,
+			client_ctx->event_context_len);
 	*pre_header_padding = padding;
 	return offset - orig_offset;
 }
@@ -252,8 +242,7 @@ void lttng_write_event_header(const struct lttng_ust_lib_ring_buffer_config *con
 			    uint32_t event_id)
 {
 	struct lttng_channel *lttng_chan = channel_get_private(ctx->chan);
-	struct lttng_ust_event_recorder *event_recorder = ctx->priv;
-	struct lttng_stack_ctx *lttng_ctx = ctx->priv2;
+	struct lttng_stack_ctx *lttng_ctx = ctx->priv;
 
 	if (caa_unlikely(ctx->rflags))
 		goto slow_path;
@@ -288,15 +277,8 @@ void lttng_write_event_header(const struct lttng_ust_lib_ring_buffer_config *con
 		WARN_ON_ONCE(1);
 	}
 
-	if (lttng_ctx) {
-		/* 2.8+ probe ABI. */
-		ctx_record(ctx, lttng_chan, lttng_ctx->chan_ctx, APP_CTX_ENABLED);
-		ctx_record(ctx, lttng_chan, lttng_ctx->event_ctx, APP_CTX_ENABLED);
-	} else {
-		/* Pre 2.8 probe ABI. */
-		ctx_record(ctx, lttng_chan, lttng_chan->ctx, APP_CTX_DISABLED);
-		ctx_record(ctx, lttng_chan, event_recorder->ctx, APP_CTX_DISABLED);
-	}
+	ctx_record(ctx, lttng_chan, lttng_ctx->chan_ctx, APP_CTX_ENABLED);
+	ctx_record(ctx, lttng_chan, lttng_ctx->event_ctx, APP_CTX_ENABLED);
 	lib_ring_buffer_align_ctx(ctx, ctx->largest_align);
 
 	return;
@@ -311,8 +293,7 @@ void lttng_write_event_header_slow(const struct lttng_ust_lib_ring_buffer_config
 				 uint32_t event_id)
 {
 	struct lttng_channel *lttng_chan = channel_get_private(ctx->chan);
-	struct lttng_ust_event_recorder *event_recorder = ctx->priv;
-	struct lttng_stack_ctx *lttng_ctx = ctx->priv2;
+	struct lttng_stack_ctx *lttng_ctx = ctx->priv;
 
 	switch (lttng_chan->header_type) {
 	case 1:	/* compact */
@@ -369,15 +350,8 @@ void lttng_write_event_header_slow(const struct lttng_ust_lib_ring_buffer_config
 	default:
 		WARN_ON_ONCE(1);
 	}
-	if (lttng_ctx) {
-		/* 2.8+ probe ABI. */
-		ctx_record(ctx, lttng_chan, lttng_ctx->chan_ctx, APP_CTX_ENABLED);
-		ctx_record(ctx, lttng_chan, lttng_ctx->event_ctx, APP_CTX_ENABLED);
-	} else {
-		/* Pre 2.8 probe ABI. */
-		ctx_record(ctx, lttng_chan, lttng_chan->ctx, APP_CTX_DISABLED);
-		ctx_record(ctx, lttng_chan, event_recorder->ctx, APP_CTX_DISABLED);
-	}
+	ctx_record(ctx, lttng_chan, lttng_ctx->chan_ctx, APP_CTX_ENABLED);
+	ctx_record(ctx, lttng_chan, lttng_ctx->event_ctx, APP_CTX_ENABLED);
 	lib_ring_buffer_align_ctx(ctx, ctx->largest_align);
 }
 
@@ -706,26 +680,15 @@ int lttng_event_reserve(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		      uint32_t event_id)
 {
 	struct lttng_channel *lttng_chan = channel_get_private(ctx->chan);
-	struct lttng_ust_event_recorder *event_recorder = ctx->priv;
-	struct lttng_stack_ctx *lttng_ctx = ctx->priv2;
+	struct lttng_stack_ctx *lttng_ctx = ctx->priv;
 	struct lttng_client_ctx client_ctx;
 	int ret, cpu;
 
 	/* Compute internal size of context structures. */
-
-	if (lttng_ctx) {
-		/* 2.8+ probe ABI. */
-		ctx_get_struct_size(lttng_ctx->chan_ctx, &client_ctx.packet_context_len,
-				APP_CTX_ENABLED);
-		ctx_get_struct_size(lttng_ctx->event_ctx, &client_ctx.event_context_len,
-				APP_CTX_ENABLED);
-	} else {
-		/* Pre 2.8 probe ABI. */
-		ctx_get_struct_size(lttng_chan->ctx, &client_ctx.packet_context_len,
-				APP_CTX_DISABLED);
-		ctx_get_struct_size(event_recorder->ctx, &client_ctx.event_context_len,
-				APP_CTX_DISABLED);
-	}
+	ctx_get_struct_size(lttng_ctx->chan_ctx, &client_ctx.packet_context_len,
+			APP_CTX_ENABLED);
+	ctx_get_struct_size(lttng_ctx->event_ctx, &client_ctx.event_context_len,
+			APP_CTX_ENABLED);
 
 	cpu = lib_ring_buffer_get_cpu(&client_config);
 	if (cpu < 0)
@@ -748,13 +711,10 @@ int lttng_event_reserve(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 	ret = lib_ring_buffer_reserve(&client_config, ctx, &client_ctx);
 	if (caa_unlikely(ret))
 		goto put;
-	if (caa_likely(ctx->ctx_len
-			>= sizeof(struct lttng_ust_lib_ring_buffer_ctx))) {
-		if (lib_ring_buffer_backend_get_pages(&client_config, ctx,
-				&ctx->backend_pages)) {
-			ret = -EPERM;
-			goto put;
-		}
+	if (lib_ring_buffer_backend_get_pages(&client_config, ctx,
+			&ctx->backend_pages)) {
+		ret = -EPERM;
+		goto put;
 	}
 	lttng_write_event_header(&client_config, ctx, event_id);
 	return 0;
