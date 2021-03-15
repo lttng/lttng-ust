@@ -354,6 +354,17 @@ enum lttng_ust_event_type {
 	LTTNG_UST_EVENT_TYPE_NOTIFIER = 1,
 };
 
+/*
+ * struct lttng_ust_event_common is the common ancestor of the various
+ * public event actions. Inheritance is done by composition: The parent
+ * has a pointer to its child, and the child has a pointer to its
+ * parent. Inheritance of those public structures is done by composition
+ * to ensure both parent and child structures can be extended.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
+ */
 struct lttng_ust_event_common {
 	uint32_t struct_size;				/* Size of this structure. */
 	struct lttng_ust_event_common_private *priv;	/* Private event interface */
@@ -365,10 +376,22 @@ struct lttng_ust_event_common {
 	int has_enablers_without_bytecode;
 	/* list of struct lttng_bytecode_runtime, sorted by seqnum */
 	struct cds_list_head filter_bytecode_runtime_head;
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
 struct lttng_ust_event_recorder_private;
 
+/*
+ * struct lttng_ust_event_recorder is the action for recording events
+ * into a ring buffer. It inherits from struct lttng_ust_event_common
+ * by composition to ensure both parent and child structure are
+ * extensible.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
+ */
 struct lttng_ust_event_recorder {
 	uint32_t struct_size;				/* Size of this structure. */
 	struct lttng_ust_event_common *parent;		/* Inheritance by aggregation. */
@@ -377,10 +400,22 @@ struct lttng_ust_event_recorder {
 	unsigned int id;
 	struct lttng_channel *chan;
 	struct lttng_ctx *ctx;
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
 struct lttng_ust_event_notifier_private;
 
+/*
+ * struct lttng_ust_event_notifier is the action for sending
+ * notifications. It inherits from struct lttng_ust_event_common
+ * by composition to ensure both parent and child structure are
+ * extensible.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
+ */
 struct lttng_ust_event_notifier {
 	uint32_t struct_size;				/* Size of this structure. */
 	struct lttng_ust_event_common *parent;		/* Inheritance by aggregation. */
@@ -389,6 +424,8 @@ struct lttng_ust_event_notifier {
 	void (*notification_send)(struct lttng_ust_event_notifier *event_notifier,
 		const char *stack_data);
 	struct cds_list_head capture_bytecode_runtime_head;
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
 struct lttng_enum {
