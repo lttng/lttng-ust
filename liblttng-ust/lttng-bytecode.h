@@ -325,7 +325,7 @@ void lttng_bytecode_capture_sync_state(struct lttng_bytecode_runtime *runtime);
 LTTNG_HIDDEN
 int lttng_bytecode_validate(struct bytecode_runtime *bytecode);
 LTTNG_HIDDEN
-int lttng_bytecode_specialize(const struct lttng_event_desc *event_desc,
+int lttng_bytecode_specialize(const struct lttng_ust_event_desc *event_desc,
 		struct bytecode_runtime *bytecode);
 
 LTTNG_HIDDEN

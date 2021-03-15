@@ -171,7 +171,7 @@ const char *lttng_bytecode_print_op(enum bytecode_op op)
 }
 
 static
-int apply_field_reloc(const struct lttng_event_desc *event_desc,
+int apply_field_reloc(const struct lttng_ust_event_desc *event_desc,
 		struct bytecode_runtime *runtime,
 		uint32_t runtime_len,
 		uint32_t reloc_offset,
@@ -341,7 +341,7 @@ int apply_context_reloc(struct bytecode_runtime *runtime,
 }
 
 static
-int apply_reloc(const struct lttng_event_desc *event_desc,
+int apply_reloc(const struct lttng_ust_event_desc *event_desc,
 		struct bytecode_runtime *runtime,
 		uint32_t runtime_len,
 		uint32_t reloc_offset,
@@ -395,7 +395,7 @@ int bytecode_is_linked(struct lttng_ust_bytecode_node *bytecode,
  * bytecode runtime.
  */
 static
-int link_bytecode(const struct lttng_event_desc *event_desc,
+int link_bytecode(const struct lttng_ust_event_desc *event_desc,
 		struct lttng_ctx **ctx,
 		struct lttng_ust_bytecode_node *bytecode,
 		struct cds_list_head *bytecode_runtime_head,
@@ -527,7 +527,7 @@ void lttng_bytecode_capture_sync_state(struct lttng_bytecode_runtime *runtime)
  * This function is called after we confirmed that name enabler and the
  * instance are name matching (or glob pattern matching).
  */
-void lttng_enabler_link_bytecode(const struct lttng_event_desc *event_desc,
+void lttng_enabler_link_bytecode(const struct lttng_ust_event_desc *event_desc,
 		struct lttng_ctx **ctx,
 		struct cds_list_head *instance_bytecode_head,
 		struct cds_list_head *enabler_bytecode_head)

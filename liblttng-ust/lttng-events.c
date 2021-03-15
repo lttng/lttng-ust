@@ -250,7 +250,7 @@ static
 void register_event(struct lttng_ust_event_common *event)
 {
 	int ret;
-	const struct lttng_event_desc *desc;
+	const struct lttng_ust_event_desc *desc;
 
 	assert(event->priv->registered == 0);
 	desc = event->priv->desc;
@@ -266,7 +266,7 @@ static
 void unregister_event(struct lttng_ust_event_common *event)
 {
 	int ret;
-	const struct lttng_event_desc *desc;
+	const struct lttng_ust_event_desc *desc;
 
 	assert(event->priv->registered == 1);
 	desc = event->priv->desc;
@@ -675,7 +675,7 @@ static inline
 struct cds_hlist_head *borrow_hash_table_bucket(
 		struct cds_hlist_head *hash_table,
 		unsigned int hash_table_size,
-		const struct lttng_event_desc *desc)
+		const struct lttng_ust_event_desc *desc)
 {
 	const char *event_name;
 	size_t name_len;
@@ -692,7 +692,7 @@ struct cds_hlist_head *borrow_hash_table_bucket(
  * Supports event creation while tracing session is active.
  */
 static
-int lttng_event_recorder_create(const struct lttng_event_desc *desc,
+int lttng_event_recorder_create(const struct lttng_ust_event_desc *desc,
 		struct lttng_channel *chan)
 {
 	struct lttng_ust_event_recorder *event_recorder;
@@ -761,8 +761,8 @@ int lttng_event_recorder_create(const struct lttng_event_desc *desc,
 		loglevel = *(*event_recorder->parent->priv->desc->loglevel);
 	else
 		loglevel = TRACE_DEFAULT;
-	if (desc->u.ext.model_emf_uri)
-		uri = *(desc->u.ext.model_emf_uri);
+	if (desc->model_emf_uri)
+		uri = *(desc->model_emf_uri);
 	else
 		uri = NULL;
 
@@ -800,7 +800,7 @@ socket_error:
 }
 
 static
-int lttng_event_notifier_create(const struct lttng_event_desc *desc,
+int lttng_event_notifier_create(const struct lttng_ust_event_desc *desc,
 		uint64_t token, uint64_t error_counter_index,
 		struct lttng_event_notifier_group *event_notifier_group)
 {
@@ -872,7 +872,7 @@ error:
 }
 
 static
-int lttng_desc_match_star_glob_enabler(const struct lttng_event_desc *desc,
+int lttng_desc_match_star_glob_enabler(const struct lttng_ust_event_desc *desc,
 		struct lttng_enabler *enabler)
 {
 	int loglevel = 0;
@@ -895,7 +895,7 @@ int lttng_desc_match_star_glob_enabler(const struct lttng_event_desc *desc,
 }
 
 static
-int lttng_desc_match_event_enabler(const struct lttng_event_desc *desc,
+int lttng_desc_match_event_enabler(const struct lttng_ust_event_desc *desc,
 		struct lttng_enabler *enabler)
 {
 	int loglevel = 0;
@@ -917,7 +917,7 @@ int lttng_desc_match_event_enabler(const struct lttng_event_desc *desc,
 }
 
 static
-int lttng_desc_match_enabler(const struct lttng_event_desc *desc,
+int lttng_desc_match_enabler(const struct lttng_ust_event_desc *desc,
 		struct lttng_enabler *enabler)
 {
 	switch (enabler->format_type) {
@@ -1005,8 +1005,8 @@ static
 void lttng_create_event_recorder_if_missing(struct lttng_event_enabler *event_enabler)
 {
 	struct lttng_session *session = event_enabler->chan->session;
-	struct lttng_probe_desc *probe_desc;
-	const struct lttng_event_desc *desc;
+	struct lttng_ust_probe_desc *probe_desc;
+	const struct lttng_ust_event_desc *desc;
 	struct lttng_ust_event_recorder_private *event_recorder_priv;
 	int i;
 	struct cds_list_head *probe_list;
@@ -1058,7 +1058,7 @@ void lttng_create_event_recorder_if_missing(struct lttng_event_enabler *event_en
 }
 
 static
-void probe_provider_event_for_each(struct lttng_probe_desc *provider_desc,
+void probe_provider_event_for_each(struct lttng_ust_probe_desc *provider_desc,
 		void (*event_func)(struct lttng_ust_event_common *event))
 {
 	struct cds_hlist_node *node, *tmp_node;
@@ -1073,7 +1073,7 @@ void probe_provider_event_for_each(struct lttng_probe_desc *provider_desc,
 	 * sessions to queue the unregistration of the events.
 	 */
 	for (i = 0; i < provider_desc->nr_events; i++) {
-		const struct lttng_event_desc *event_desc;
+		const struct lttng_ust_event_desc *event_desc;
 		struct lttng_event_notifier_group *event_notifier_group;
 		struct lttng_ust_event_recorder_private *event_recorder_priv;
 		struct lttng_ust_event_notifier_private *event_notifier_priv;
@@ -1175,7 +1175,7 @@ void _event_enum_destroy(struct lttng_ust_event_common *event)
  * ust_lock held.
  */
 void lttng_probe_provider_unregister_events(
-		struct lttng_probe_desc *provider_desc)
+		struct lttng_ust_probe_desc *provider_desc)
 {
 	/*
 	 * Iterate over all events in the probe provider descriptions and sessions
@@ -1708,7 +1708,7 @@ void lttng_session_sync_event_enablers(struct lttng_session *session)
 
 /* Support for event notifier is introduced by probe provider major version 2. */
 static
-bool lttng_ust_probe_supports_event_notifier(struct lttng_probe_desc *probe_desc)
+bool lttng_ust_probe_supports_event_notifier(struct lttng_ust_probe_desc *probe_desc)
 {
 	return probe_desc->major >= 2;
 }
@@ -1718,7 +1718,7 @@ void lttng_create_event_notifier_if_missing(
 		struct lttng_event_notifier_enabler *event_notifier_enabler)
 {
 	struct lttng_event_notifier_group *event_notifier_group = event_notifier_enabler->group;
-	struct lttng_probe_desc *probe_desc;
+	struct lttng_ust_probe_desc *probe_desc;
 	struct cds_list_head *probe_list;
 	int i;
 
@@ -1728,7 +1728,7 @@ void lttng_create_event_notifier_if_missing(
 		for (i = 0; i < probe_desc->nr_events; i++) {
 			int ret;
 			bool found = false;
-			const struct lttng_event_desc *desc;
+			const struct lttng_ust_event_desc *desc;
 			struct lttng_ust_event_notifier_private *event_notifier_priv;
 			struct cds_hlist_head *head;
 			struct cds_hlist_node *node;

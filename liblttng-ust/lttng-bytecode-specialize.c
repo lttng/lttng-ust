@@ -546,7 +546,7 @@ end:
 	return ret;
 }
 
-static int specialize_payload_lookup(const struct lttng_event_desc *event_desc,
+static int specialize_payload_lookup(const struct lttng_ust_event_desc *event_desc,
 		struct bytecode_runtime *runtime,
 		struct load_op *insn,
 		struct vstack_load *load)
@@ -623,7 +623,7 @@ end:
 	return ret;
 }
 
-int lttng_bytecode_specialize(const struct lttng_event_desc *event_desc,
+int lttng_bytecode_specialize(const struct lttng_ust_event_desc *event_desc,
 		struct bytecode_runtime *bytecode)
 {
 	void *pc, *next_pc, *start_pc;

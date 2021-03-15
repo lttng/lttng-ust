@@ -44,7 +44,7 @@ static int lazy_nesting;
  * Called under ust lock.
  */
 static
-int check_event_provider(struct lttng_probe_desc *desc)
+int check_event_provider(struct lttng_ust_probe_desc *desc)
 {
 	int i;
 	size_t provider_name_len;
@@ -64,9 +64,9 @@ int check_event_provider(struct lttng_probe_desc *desc)
  * Called under ust lock.
  */
 static
-void lttng_lazy_probe_register(struct lttng_probe_desc *desc)
+void lttng_lazy_probe_register(struct lttng_ust_probe_desc *desc)
 {
-	struct lttng_probe_desc *iter;
+	struct lttng_ust_probe_desc *iter;
 	struct cds_list_head *probe_list;
 
 	/*
@@ -84,7 +84,7 @@ void lttng_lazy_probe_register(struct lttng_probe_desc *desc)
 	 */
 
 	/*
-	 * We sort the providers by struct lttng_probe_desc pointer
+	 * We sort the providers by struct lttng_ust_probe_desc pointer
 	 * address.
 	 */
 	probe_list = &_probe_list;
@@ -109,7 +109,7 @@ desc_added:
 static
 void fixup_lazy_probes(void)
 {
-	struct lttng_probe_desc *iter, *tmp;
+	struct lttng_ust_probe_desc *iter, *tmp;
 	int ret;
 
 	lazy_nesting++;
@@ -135,7 +135,7 @@ struct cds_list_head *lttng_get_probe_list_head(void)
 }
 
 static
-int check_provider_version(struct lttng_probe_desc *desc)
+int check_provider_version(struct lttng_ust_probe_desc *desc)
 {
 	/*
 	 * Check tracepoint provider version compatibility.
@@ -164,7 +164,7 @@ int check_provider_version(struct lttng_probe_desc *desc)
 }
 
 
-int lttng_probe_register(struct lttng_probe_desc *desc)
+int lttng_ust_probe_register(struct lttng_ust_probe_desc *desc)
 {
 	int ret = 0;
 
@@ -197,7 +197,7 @@ int lttng_probe_register(struct lttng_probe_desc *desc)
 	return ret;
 }
 
-void lttng_probe_unregister(struct lttng_probe_desc *desc)
+void lttng_ust_probe_unregister(struct lttng_ust_probe_desc *desc)
 {
 	lttng_ust_fixup_tls();
 
@@ -231,7 +231,7 @@ void lttng_probes_prune_event_list(struct lttng_ust_tracepoint_list *list)
  */
 int lttng_probes_get_event_list(struct lttng_ust_tracepoint_list *list)
 {
-	struct lttng_probe_desc *probe_desc;
+	struct lttng_ust_probe_desc *probe_desc;
 	int i;
 	struct cds_list_head *probe_list;
 
@@ -303,7 +303,7 @@ void lttng_probes_prune_field_list(struct lttng_ust_field_list *list)
  */
 int lttng_probes_get_field_list(struct lttng_ust_field_list *list)
 {
-	struct lttng_probe_desc *probe_desc;
+	struct lttng_ust_probe_desc *probe_desc;
 	int i;
 	struct cds_list_head *probe_list;
 
@@ -311,7 +311,7 @@ int lttng_probes_get_field_list(struct lttng_ust_field_list *list)
 	CDS_INIT_LIST_HEAD(&list->head);
 	cds_list_for_each_entry(probe_desc, probe_list, head) {
 		for (i = 0; i < probe_desc->nr_events; i++) {
-			const struct lttng_event_desc *event_desc =
+			const struct lttng_ust_event_desc *event_desc =
 				probe_desc->event_desc[i];
 			int j;
 

@@ -203,7 +203,7 @@ struct lttng_counter_transport {
 struct lttng_ust_event_common_private {
 	struct lttng_ust_event_common *pub;	/* Public event interface */
 
-	const struct lttng_event_desc *desc;
+	const struct lttng_ust_event_desc *desc;
 	/* Backward references: list of lttng_enabler_ref (ref to enablers) */
 	struct cds_list_head enablers_ref_head;
 	int registered;			/* has reg'd tracepoint probe */
@@ -346,7 +346,7 @@ int lttng_event_enabler_attach_exclusion(struct lttng_event_enabler *enabler,
  * event_notifier enabler) to ensure each is linked to the provided instance.
  */
 LTTNG_HIDDEN
-void lttng_enabler_link_bytecode(const struct lttng_event_desc *event_desc,
+void lttng_enabler_link_bytecode(const struct lttng_ust_event_desc *event_desc,
 		struct lttng_ctx **ctx,
 		struct cds_list_head *instance_bytecode_runtime_head,
 		struct cds_list_head *enabler_bytecode_runtime_head);
@@ -533,7 +533,7 @@ LTTNG_HIDDEN
 void lttng_transport_unregister(struct lttng_transport *transport);
 
 LTTNG_HIDDEN
-void lttng_probe_provider_unregister_events(struct lttng_probe_desc *desc);
+void lttng_probe_provider_unregister_events(struct lttng_ust_probe_desc *desc);
 
 LTTNG_HIDDEN
 int lttng_fix_pending_events(void);

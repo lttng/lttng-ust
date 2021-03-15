@@ -1020,19 +1020,16 @@ static const int *							       \
 static const char *							       \
 	__ref_model_emf_uri___##_provider##___##_name			       \
 	__attribute__((weakref ("_model_emf_uri___" #_provider "___" #_name)));\
-static const struct lttng_event_desc __event_desc___##_provider##_##_name = {	       \
+static const struct lttng_ust_event_desc __event_desc___##_provider##_##_name = { \
+	.struct_size = sizeof(struct lttng_ust_event_desc),		       \
 	.name = #_provider ":" #_name,					       \
-	.probe_callback = (void (*)(void)) &__event_probe__##_provider##___##_template,\
+	.probe_callback = (void (*)(void)) &__event_probe__##_provider##___##_template, \
 	.ctx = NULL,							       \
 	.fields = __event_fields___##_provider##___##_template,		       \
 	.nr_fields = _TP_ARRAY_SIZE(__event_fields___##_provider##___##_template) - 1, \
 	.loglevel = &__ref_loglevel___##_provider##___##_name,		       \
 	.signature = __tp_event_signature___##_provider##___##_template,       \
-	.u = {								       \
-	    .ext = {							       \
-		  .model_emf_uri = &__ref_model_emf_uri___##_provider##___##_name, \
-		},							       \
-	},								       \
+	.model_emf_uri = &__ref_model_emf_uri___##_provider##___##_name,       \
 };
 
 #include TRACEPOINT_INCLUDE
@@ -1050,7 +1047,7 @@ static const struct lttng_event_desc __event_desc___##_provider##_##_name = {	  
 #define _TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	       \
 	&__event_desc___##_provider##_##_name,
 
-static const struct lttng_event_desc *_TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER)[] = {
+static const struct lttng_ust_event_desc *_TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER)[] = {
 #include TRACEPOINT_INCLUDE
 	NULL,	/* Dummy, C99 forbids 0-len array. */
 };
@@ -1063,7 +1060,8 @@ static const struct lttng_event_desc *_TP_COMBINE_TOKENS(__event_desc___, TRACEP
  */
 
 /* non-const because list head will be modified when registered. */
-static struct lttng_probe_desc _TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PROVIDER) = {
+static struct lttng_ust_probe_desc _TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PROVIDER) = {
+	.struct_size = sizeof(struct lttng_ust_probe_desc),
 	.provider = __tp_stringify(TRACEPOINT_PROVIDER),
 	.event_desc = _TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER),
 	.nr_events = _TP_ARRAY_SIZE(_TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER)) - 1,
@@ -1109,7 +1107,7 @@ _TP_COMBINE_TOKENS(__lttng_events_init__, TRACEPOINT_PROVIDER)(void)
 	 * error will appear.
 	 */
 	_TP_COMBINE_TOKENS(__tracepoint_provider_check_, TRACEPOINT_PROVIDER)();
-	ret = lttng_probe_register(&_TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PROVIDER));
+	ret = lttng_ust_probe_register(&_TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PROVIDER));
 	if (ret) {
 		fprintf(stderr, "LTTng-UST: Error (%d) while registering tracepoint probe.\n", ret);
 		abort();
@@ -1125,7 +1123,7 @@ _TP_COMBINE_TOKENS(__lttng_events_exit__, TRACEPOINT_PROVIDER)(void)
 			TRACEPOINT_PROVIDER)) {
 		return;
 	}
-	lttng_probe_unregister(&_TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PROVIDER));
+	lttng_ust_probe_unregister(&_TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PROVIDER));
 }
 
 int _TP_COMBINE_TOKENS(__tracepoint_provider_, TRACEPOINT_PROVIDER)

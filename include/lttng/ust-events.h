@@ -274,34 +274,51 @@ struct lttng_ctx {
 	char padding[LTTNG_UST_CTX_PADDING];
 };
 
-#define LTTNG_UST_EVENT_DESC_PADDING	40
-struct lttng_event_desc {
+/*
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
+ */
+struct lttng_ust_event_desc {
+	uint32_t struct_size;			/* Size of this structure. */
 	const char *name;
 	void (*probe_callback)(void);
 	const struct lttng_event_ctx *ctx;	/* context */
 	const struct lttng_event_field *fields;	/* event payload */
 	unsigned int nr_fields;
 	const int **loglevel;
-	const char *signature;	/* Argument types/names received */
-	union {
-		struct {
-			const char **model_emf_uri;
-		} ext;
-		char padding[LTTNG_UST_EVENT_DESC_PADDING];
-	} u;
+	const char *signature;			/* Argument types/names received */
+	const char **model_emf_uri;
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
-#define LTTNG_UST_PROBE_DESC_PADDING	12
-struct lttng_probe_desc {
+/*
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
+ */
+struct lttng_ust_probe_desc {
+	uint32_t struct_size;			/* Size of this structure. */
+
 	const char *provider;
-	const struct lttng_event_desc **event_desc;
+	const struct lttng_ust_event_desc **event_desc;
 	unsigned int nr_events;
 	struct cds_list_head head;		/* chain registered probes */
 	struct cds_list_head lazy_init_head;
 	int lazy;				/* lazy registration */
 	uint32_t major;
 	uint32_t minor;
-	char padding[LTTNG_UST_PROBE_DESC_PADDING];
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
 /* Data structures used by the tracer. */
@@ -586,8 +603,8 @@ struct lttng_session {
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
-int lttng_probe_register(struct lttng_probe_desc *desc);
-void lttng_probe_unregister(struct lttng_probe_desc *desc);
+int lttng_ust_probe_register(struct lttng_ust_probe_desc *desc);
+void lttng_ust_probe_unregister(struct lttng_ust_probe_desc *desc);
 
 /*
  * Can be used by applications that change their procname to clear the ust cached value.
