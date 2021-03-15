@@ -37,16 +37,16 @@
 
 static
 ssize_t count_fields_recursive(size_t nr_fields,
-		const struct lttng_event_field *lttng_fields);
+		const struct lttng_ust_event_field **lttng_fields);
 static
 int serialize_one_field(struct lttng_session *session,
 		struct ustctl_field *fields, size_t *iter_output,
-		const struct lttng_event_field *lf);
+		const struct lttng_ust_event_field *lf);
 static
 int serialize_fields(struct lttng_session *session,
 		struct ustctl_field *ustctl_fields,
 		size_t *iter_output, size_t nr_lttng_fields,
-		const struct lttng_event_field *lttng_fields);
+		const struct lttng_ust_event_field **lttng_fields);
 
 /*
  * Human readable error message.
@@ -884,7 +884,7 @@ ssize_t count_one_type(const struct lttng_type *lt)
 
 	case atype_dynamic:
 	{
-		const struct lttng_event_field *choices;
+		const struct lttng_ust_event_field **choices;
 		size_t nr_choices;
 		int ret;
 
@@ -907,15 +907,15 @@ ssize_t count_one_type(const struct lttng_type *lt)
 
 static
 ssize_t count_fields_recursive(size_t nr_fields,
-		const struct lttng_event_field *lttng_fields)
+		const struct lttng_ust_event_field **lttng_fields)
 {
 	int i;
 	ssize_t ret, count = 0;
 
 	for (i = 0; i < nr_fields; i++) {
-		const struct lttng_event_field *lf;
+		const struct lttng_ust_event_field *lf;
 
-		lf = &lttng_fields[i];
+		lf = lttng_fields[i];
 		/* skip 'nowrite' fields */
 		if (lf->nowrite)
 			continue;
@@ -935,7 +935,7 @@ ssize_t count_ctx_fields_recursive(size_t nr_fields,
 	ssize_t ret, count = 0;
 
 	for (i = 0; i < nr_fields; i++) {
-		const struct lttng_event_field *lf;
+		const struct lttng_ust_event_field *lf;
 
 		lf = &lttng_fields[i].event_field;
 		/* skip 'nowrite' fields */
@@ -991,11 +991,11 @@ int serialize_dynamic_type(struct lttng_session *session,
 		struct ustctl_field *fields, size_t *iter_output,
 		const char *field_name)
 {
-	const struct lttng_event_field *choices;
+	const struct lttng_ust_event_field **choices;
 	char tag_field_name[LTTNG_UST_ABI_SYM_NAME_LEN];
 	const struct lttng_type *tag_type;
-	const struct lttng_event_field *tag_field_generic;
-	struct lttng_event_field tag_field = {
+	const struct lttng_ust_event_field *tag_field_generic;
+	struct lttng_ust_event_field tag_field = {
 		.name = tag_field_name,
 		.nowrite = 0,
 	};
@@ -1038,7 +1038,7 @@ int serialize_dynamic_type(struct lttng_session *session,
 	/* Serialize choice fields after variant. */
 	for (i = 0; i < nr_choices; i++) {
 		ret = serialize_one_field(session, fields,
-			iter_output, &choices[i]);
+			iter_output, choices[i]);
 		if (ret)
 			return ret;
 	}
@@ -1238,7 +1238,7 @@ int serialize_one_type(struct lttng_session *session,
 static
 int serialize_one_field(struct lttng_session *session,
 		struct ustctl_field *fields, size_t *iter_output,
-		const struct lttng_event_field *lf)
+		const struct lttng_ust_event_field *lf)
 {
 	/* skip 'nowrite' fields */
 	if (lf->nowrite)
@@ -1251,14 +1251,14 @@ static
 int serialize_fields(struct lttng_session *session,
 		struct ustctl_field *ustctl_fields,
 		size_t *iter_output, size_t nr_lttng_fields,
-		const struct lttng_event_field *lttng_fields)
+		const struct lttng_ust_event_field **lttng_fields)
 {
 	int ret;
 	size_t i;
 
 	for (i = 0; i < nr_lttng_fields; i++) {
 		ret = serialize_one_field(session, ustctl_fields,
-				iter_output, &lttng_fields[i]);
+				iter_output, lttng_fields[i]);
 		if (ret)
 			return ret;
 	}
@@ -1270,7 +1270,7 @@ int alloc_serialize_fields(struct lttng_session *session,
 		size_t *_nr_write_fields,
 		struct ustctl_field **ustctl_fields,
 		size_t nr_fields,
-		const struct lttng_event_field *lttng_fields)
+		const struct lttng_ust_event_field **lttng_fields)
 {
 	struct ustctl_field *fields;
 	int ret;
@@ -1384,7 +1384,7 @@ int ustcomm_register_event(int sock,
 	int loglevel,
 	const char *signature,		/* event signature (input) */
 	size_t nr_fields,		/* fields */
-	const struct lttng_event_field *lttng_fields,
+	const struct lttng_ust_event_field **lttng_fields,
 	const char *model_emf_uri,
 	uint32_t *id)			/* event id (output) */
 {

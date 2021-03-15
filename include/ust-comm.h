@@ -42,7 +42,7 @@
 #define LTTNG_UST_COMM_MAX_LISTEN			10
 #define LTTNG_UST_COMM_REG_MSG_PADDING			64
 
-struct lttng_event_field;
+struct lttng_ust_event_field;
 struct lttng_ctx_field;
 struct lttng_enum_entry;
 struct lttng_integer_type;
@@ -279,7 +279,7 @@ int ustcomm_register_event(int sock,
 	int loglevel,
 	const char *signature,		/* event signature (input) */
 	size_t nr_fields,		/* fields */
-	const struct lttng_event_field *fields,
+	const struct lttng_ust_event_field **fields,
 	const char *model_emf_uri,
 	uint32_t *id);			/* event id (output) */
 

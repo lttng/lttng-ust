@@ -223,7 +223,7 @@ static int context_get_index(struct lttng_ctx *ctx,
 {
 
 	struct lttng_ctx_field *ctx_field;
-	struct lttng_event_field *field;
+	struct lttng_ust_event_field *field;
 	struct lttng_ctx_value v;
 
 	ctx_field = &ctx->fields[idx];

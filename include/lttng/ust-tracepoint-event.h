@@ -254,120 +254,95 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 #include <lttng/ust-tracepoint-event-nowrite.h>
 
 #undef _ctf_integer_ext
-#define _ctf_integer_ext(_type, _item, _src, _byte_order, _base, _nowrite)	\
-	{							\
-	  .name = #_item,					\
-	  .type = __type_integer(_type, _byte_order, _base, none),\
-	  .nowrite = _nowrite,					\
-	  .u = {						\
-		  .ext = {					\
-			  .nofilter = 0,			\
-		  },						\
-	  },							\
-	},
+#define _ctf_integer_ext(_type, _item, _src, _byte_order, _base, _nowrite) \
+	__LTTNG_COMPOUND_LITERAL(struct lttng_ust_event_field, {	\
+		.struct_size = sizeof(struct lttng_ust_event_field), \
+		.name = #_item,					\
+		.type = __type_integer(_type, _byte_order, _base, none), \
+		.nowrite = _nowrite,				\
+		.nofilter = 0,					\
+	}),
 
 #undef _ctf_float
 #define _ctf_float(_type, _item, _src, _nowrite)		\
-	{							\
-	  .name = #_item,					\
-	  .type = __type_float(_type),				\
-	  .nowrite = _nowrite,					\
-	  .u = {						\
-		  .ext = {					\
-			  .nofilter = 0,			\
-		  },						\
-	  },							\
-	},
+	__LTTNG_COMPOUND_LITERAL(struct lttng_ust_event_field, {	\
+		.struct_size = sizeof(struct lttng_ust_event_field), \
+		.name = #_item,					\
+		.type = __type_float(_type),			\
+		.nowrite = _nowrite,				\
+		.nofilter = 0,					\
+	}),
 
 #undef _ctf_array_encoded
 #define _ctf_array_encoded(_type, _item, _src, _byte_order,	\
 			_length, _encoding, _nowrite,		\
 			_elem_type_base)			\
-	{							\
-	  .name = #_item,					\
-	  .type =						\
-		{						\
-		  .atype = atype_array_nestable,		\
-		  .u =						\
-			{					\
-			  .array_nestable =			\
-				{				\
-				  .elem_type = __LTTNG_COMPOUND_LITERAL(struct lttng_type, \
+	__LTTNG_COMPOUND_LITERAL(struct lttng_ust_event_field, {	\
+		.struct_size = sizeof(struct lttng_ust_event_field), \
+		.name = #_item,					\
+		.type = {					\
+			.atype = atype_array_nestable,		\
+			.u = {					\
+				.array_nestable = {		\
+					.elem_type = __LTTNG_COMPOUND_LITERAL(struct lttng_type, \
 					__type_integer(_type, _byte_order, _elem_type_base, _encoding)), \
-				  .length = _length,		\
-				  .alignment = 0,		\
+					.length = _length,	\
+					.alignment = 0,		\
 				}				\
 			}					\
 		},						\
-	  .nowrite = _nowrite,					\
-	  .u = {						\
-		  .ext = {					\
-			  .nofilter = 0,			\
-		  },						\
-	  },							\
-	},
+		.nowrite = _nowrite,				\
+		.nofilter = 0,					\
+	}),
 
 #undef _ctf_sequence_encoded
 #define _ctf_sequence_encoded(_type, _item, _src, _byte_order,	\
 			_length_type, _src_length, _encoding, _nowrite, \
 			_elem_type_base)			\
-	{							\
-	  .name = "_" #_item "_length",				\
-	  .type = __type_integer(_length_type, BYTE_ORDER, 10, none), \
-	  .nowrite = _nowrite,					\
-	  .u = {						\
-		  .ext = {					\
-			  .nofilter = 1,			\
-		  },						\
-	  },							\
-	},							\
-	{							\
-	  .name = #_item,					\
-	  .type =						\
-		{						\
-		  .atype = atype_sequence_nestable,		\
-		  .u =						\
-			{					\
-			  .sequence_nestable =			\
-				{				\
-				  .length_name = "_" #_item "_length", \
-				  .elem_type = __LTTNG_COMPOUND_LITERAL(struct lttng_type, \
-					__type_integer(_type, _byte_order, _elem_type_base, _encoding)), \
-				  .alignment = 0,		\
+	__LTTNG_COMPOUND_LITERAL(struct lttng_ust_event_field, {	\
+		.struct_size = sizeof(struct lttng_ust_event_field), \
+		.name = "_" #_item "_length",			\
+		.type = __type_integer(_length_type, BYTE_ORDER, 10, none), \
+		.nowrite = _nowrite,				\
+		.nofilter = 1,					\
+	}),							\
+	__LTTNG_COMPOUND_LITERAL(struct lttng_ust_event_field, {	\
+		.struct_size = sizeof(struct lttng_ust_event_field), \
+		.name = #_item,					\
+		.type = {					\
+			.atype = atype_sequence_nestable,	\
+			.u = {					\
+				.sequence_nestable = {		\
+					.length_name = "_" #_item "_length", \
+					.elem_type = __LTTNG_COMPOUND_LITERAL(struct lttng_type, \
+						__type_integer(_type, _byte_order, _elem_type_base, _encoding)), \
+					.alignment = 0,		\
 				},				\
 			},					\
 		},						\
-	  .nowrite = _nowrite,					\
-	  .u = {						\
-		  .ext = {					\
-			  .nofilter = 0,			\
-		  },						\
-	  },							\
-	},
+		.nowrite = _nowrite,				\
+		.nofilter = 0,					\
+	}),
 
 #undef _ctf_string
 #define _ctf_string(_item, _src, _nowrite)			\
-	{							\
-	  .name = #_item,					\
-	  .type =						\
-		{						\
-		  .atype = atype_string,			\
-		  .u =						\
-			{					\
-			  .string = { .encoding = lttng_encode_UTF8 } \
+	__LTTNG_COMPOUND_LITERAL(struct lttng_ust_event_field, {	\
+		.struct_size = sizeof(struct lttng_ust_event_field), \
+		.name = #_item,					\
+		.type = {					\
+			.atype = atype_string,			\
+			.u = {					\
+				.string = { .encoding = lttng_encode_UTF8 } \
 			},					\
 		},						\
-	  .nowrite = _nowrite,					\
-	  .u = {						\
-		  .ext = {					\
-			  .nofilter = 0,			\
-		  },						\
-	  },							\
-	},
+		.nowrite = _nowrite,				\
+		.nofilter = 0,					\
+	}),
 
 #undef _ctf_enum
 #define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite) \
-	{							\
+	__LTTNG_COMPOUND_LITERAL(struct lttng_ust_event_field, {	\
+		.struct_size = sizeof(struct lttng_ust_event_field), \
 		.name = #_item,					\
 		.type = {					\
 			.atype = atype_enum_nestable,		\
@@ -380,19 +355,15 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 			},					\
 		},						\
 		.nowrite = _nowrite,				\
-		.u = {						\
-			.ext = {				\
-				.nofilter = 0,			\
-			},					\
-		},						\
-	},
+		.nofilter = 0,					\
+	}),
 
 #undef TP_FIELDS
 #define TP_FIELDS(...) __VA_ARGS__	/* Only one used in this phase */
 
 #undef _TRACEPOINT_EVENT_CLASS
 #define _TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)		   	     \
-	static const struct lttng_event_field __event_fields___##_provider##___##_name[] = { \
+	static const struct lttng_ust_event_field *__event_fields___##_provider##___##_name[] = { \
 		_fields									     \
 		ctf_integer(int, dummy, 0)	/* Dummy, C99 forbids 0-len array. */	     \
 	};

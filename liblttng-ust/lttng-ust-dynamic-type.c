@@ -51,8 +51,9 @@ static const struct lttng_enum_desc dt_enum_desc = {
 	.nr_entries = LTTNG_ARRAY_SIZE(dt_enum),
 };
 
-const struct lttng_event_field dt_var_fields[_NR_LTTNG_UST_DYNAMIC_TYPES] = {
-	[LTTNG_UST_DYNAMIC_TYPE_NONE] = {
+const struct lttng_ust_event_field *dt_var_fields[_NR_LTTNG_UST_DYNAMIC_TYPES] = {
+	[LTTNG_UST_DYNAMIC_TYPE_NONE] = __LTTNG_COMPOUND_LITERAL(struct lttng_ust_event_field, {
+		.struct_size = sizeof(struct lttng_ust_event_field),
 		.name = "none",
 		.type = {
 			.atype = atype_struct_nestable,
@@ -60,68 +61,79 @@ const struct lttng_event_field dt_var_fields[_NR_LTTNG_UST_DYNAMIC_TYPES] = {
 			.u.struct_nestable.alignment = 0,
 		},
 		.nowrite = 0,
-	},
-	[LTTNG_UST_DYNAMIC_TYPE_S8] = {
+	}),
+	[LTTNG_UST_DYNAMIC_TYPE_S8] = __LTTNG_COMPOUND_LITERAL(struct lttng_ust_event_field, {
+		.struct_size = sizeof(struct lttng_ust_event_field),
 		.name = "int8",
 		.type = __type_integer(int8_t, BYTE_ORDER, 10, none),
 		.nowrite = 0,
-	},
-	[LTTNG_UST_DYNAMIC_TYPE_S16] = {
+	}),
+	[LTTNG_UST_DYNAMIC_TYPE_S16] = __LTTNG_COMPOUND_LITERAL(struct lttng_ust_event_field, {
+		.struct_size = sizeof(struct lttng_ust_event_field),
 		.name = "int16",
 		.type = __type_integer(int16_t, BYTE_ORDER, 10, none),
 		.nowrite = 0,
-	},
-	[LTTNG_UST_DYNAMIC_TYPE_S32] = {
+	}),
+	[LTTNG_UST_DYNAMIC_TYPE_S32] = __LTTNG_COMPOUND_LITERAL(struct lttng_ust_event_field, {
+		.struct_size = sizeof(struct lttng_ust_event_field),
 		.name = "int32",
 		.type = __type_integer(int32_t, BYTE_ORDER, 10, none),
 		.nowrite = 0,
-	},
-	[LTTNG_UST_DYNAMIC_TYPE_S64] = {
+	}),
+	[LTTNG_UST_DYNAMIC_TYPE_S64] = __LTTNG_COMPOUND_LITERAL(struct lttng_ust_event_field, {
+		.struct_size = sizeof(struct lttng_ust_event_field),
 		.name = "int64",
 		.type = __type_integer(int64_t, BYTE_ORDER, 10, none),
 		.nowrite = 0,
-	},
-	[LTTNG_UST_DYNAMIC_TYPE_U8] = {
+	}),
+	[LTTNG_UST_DYNAMIC_TYPE_U8] = __LTTNG_COMPOUND_LITERAL(struct lttng_ust_event_field, {
+		.struct_size = sizeof(struct lttng_ust_event_field),
 		.name = "uint8",
 		.type = __type_integer(uint8_t, BYTE_ORDER, 10, none),
 		.nowrite = 0,
-	},
-	[LTTNG_UST_DYNAMIC_TYPE_U16] = {
+	}),
+	[LTTNG_UST_DYNAMIC_TYPE_U16] = __LTTNG_COMPOUND_LITERAL(struct lttng_ust_event_field, {
+		.struct_size = sizeof(struct lttng_ust_event_field),
 		.name = "uint16",
 		.type = __type_integer(uint16_t, BYTE_ORDER, 10, none),
 		.nowrite = 0,
-	},
-	[LTTNG_UST_DYNAMIC_TYPE_U32] = {
+	}),
+	[LTTNG_UST_DYNAMIC_TYPE_U32] = __LTTNG_COMPOUND_LITERAL(struct lttng_ust_event_field, {
+		.struct_size = sizeof(struct lttng_ust_event_field),
 		.name = "uint32",
 		.type = __type_integer(uint32_t, BYTE_ORDER, 10, none),
 		.nowrite = 0,
-	},
-	[LTTNG_UST_DYNAMIC_TYPE_U64] = {
+	}),
+	[LTTNG_UST_DYNAMIC_TYPE_U64] = __LTTNG_COMPOUND_LITERAL(struct lttng_ust_event_field, {
+		.struct_size = sizeof(struct lttng_ust_event_field),
 		.name = "uint64",
 		.type = __type_integer(uint64_t, BYTE_ORDER, 10, none),
 		.nowrite = 0,
-	},
-	[LTTNG_UST_DYNAMIC_TYPE_FLOAT] = {
+	}),
+	[LTTNG_UST_DYNAMIC_TYPE_FLOAT] = __LTTNG_COMPOUND_LITERAL(struct lttng_ust_event_field, {
+		.struct_size = sizeof(struct lttng_ust_event_field),
 		.name = "float",
 		.type = __type_float(float),
 		.nowrite = 0,
-	},
-	[LTTNG_UST_DYNAMIC_TYPE_DOUBLE] = {
+	}),
+	[LTTNG_UST_DYNAMIC_TYPE_DOUBLE] = __LTTNG_COMPOUND_LITERAL(struct lttng_ust_event_field, {
+		.struct_size = sizeof(struct lttng_ust_event_field),
 		.name = "double",
 		.type = __type_float(double),
 		.nowrite = 0,
-	},
-	[LTTNG_UST_DYNAMIC_TYPE_STRING] = {
+	}),
+	[LTTNG_UST_DYNAMIC_TYPE_STRING] = __LTTNG_COMPOUND_LITERAL(struct lttng_ust_event_field, {
+		.struct_size = sizeof(struct lttng_ust_event_field),
 		.name = "string",
 		.type = {
 			.atype = atype_string,
 			.u.string.encoding = lttng_encode_UTF8,
 		},
 		.nowrite = 0,
-	},
+	}),
 };
 
-static const struct lttng_event_field dt_enum_field = {
+static const struct lttng_ust_event_field dt_enum_field = {
 	.name = NULL,
 	.type.atype = atype_enum_nestable,
 	.type.u.enum_nestable.desc = &dt_enum_desc,
@@ -131,21 +143,21 @@ static const struct lttng_event_field dt_enum_field = {
 	.nowrite = 0,
 };
 
-const struct lttng_event_field *lttng_ust_dynamic_type_field(int64_t value)
+const struct lttng_ust_event_field *lttng_ust_dynamic_type_field(int64_t value)
 {
 	if (value >= _NR_LTTNG_UST_DYNAMIC_TYPES || value < 0)
 		return NULL;
-	return &dt_var_fields[value];
+	return dt_var_fields[value];
 }
 
-int lttng_ust_dynamic_type_choices(size_t *nr_choices, const struct lttng_event_field **choices)
+int lttng_ust_dynamic_type_choices(size_t *nr_choices, const struct lttng_ust_event_field ***choices)
 {
 	*nr_choices = _NR_LTTNG_UST_DYNAMIC_TYPES;
 	*choices = dt_var_fields;
 	return 0;
 }
 
-const struct lttng_event_field *lttng_ust_dynamic_type_tag_field(void)
+const struct lttng_ust_event_field *lttng_ust_dynamic_type_tag_field(void)
 {
 	return &dt_enum_field;
 }

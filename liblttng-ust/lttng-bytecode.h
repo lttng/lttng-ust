@@ -119,7 +119,7 @@ struct bytecode_get_index_data {
 	 * interpreter needs to find it from the event fields and types to
 	 * support variants.
 	 */
-	const struct lttng_event_field *field;
+	const struct lttng_ust_event_field *field;
 	struct {
 		size_t len;
 		enum object_type type;
@@ -131,7 +131,7 @@ struct bytecode_get_index_data {
 struct vstack_load {
 	enum load_type type;
 	enum object_type object_type;
-	const struct lttng_event_field *field;
+	const struct lttng_ust_event_field *field;
 	bool rev_bo;	/* reverse byte order */
 };
 
@@ -208,7 +208,7 @@ struct load_ptr {
 		uint64_t u64;
 		double d;
 	} u;
-	const struct lttng_event_field *field;
+	const struct lttng_ust_event_field *field;
 };
 
 struct estack_entry {

@@ -178,7 +178,7 @@ int apply_field_reloc(const struct lttng_ust_event_desc *event_desc,
 		const char *field_name,
 		enum bytecode_op bytecode_op)
 {
-	const struct lttng_event_field *fields, *field = NULL;
+	const struct lttng_ust_event_field **fields, *field = NULL;
 	unsigned int nr_fields, i;
 	struct load_op *op;
 	uint32_t field_offset = 0;
@@ -193,15 +193,15 @@ int apply_field_reloc(const struct lttng_ust_event_desc *event_desc,
 		return -EINVAL;
 	nr_fields = event_desc->nr_fields;
 	for (i = 0; i < nr_fields; i++) {
-		if (fields[i].u.ext.nofilter) {
+		if (fields[i]->nofilter) {
 			continue;
 		}
-		if (!strcmp(fields[i].name, field_name)) {
-			field = &fields[i];
+		if (!strcmp(fields[i]->name, field_name)) {
+			field = fields[i];
 			break;
 		}
 		/* compute field offset */
-		switch (fields[i].type.atype) {
+		switch (fields[i]->type.atype) {
 		case atype_integer:
 		case atype_enum_nestable:
 			field_offset += sizeof(int64_t);

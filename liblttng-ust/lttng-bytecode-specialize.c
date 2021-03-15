@@ -253,7 +253,7 @@ static int specialize_get_index(struct bytecode_runtime *runtime,
 		case OBJECT_TYPE_ARRAY:
 		{
 			const struct lttng_integer_type *integer_type;
-			const struct lttng_event_field *field;
+			const struct lttng_ust_event_field *field;
 			uint32_t elem_len, num_elems;
 			int signedness;
 
@@ -293,7 +293,7 @@ static int specialize_get_index(struct bytecode_runtime *runtime,
 		case OBJECT_TYPE_SEQUENCE:
 		{
 			const struct lttng_integer_type *integer_type;
-			const struct lttng_event_field *field;
+			const struct lttng_ust_event_field *field;
 			uint32_t elem_len;
 			int signedness;
 
@@ -377,7 +377,7 @@ static int specialize_context_lookup_name(struct lttng_ctx *ctx,
 	return lttng_get_context_index(ctx, name);
 }
 
-static int specialize_load_object(const struct lttng_event_field *field,
+static int specialize_load_object(const struct lttng_ust_event_field *field,
 		struct vstack_load *load, bool is_context)
 {
 	load->type = LOAD_OBJECT;
@@ -458,7 +458,7 @@ static int specialize_context_lookup(struct lttng_ctx *ctx,
 {
 	int idx, ret;
 	struct lttng_ctx_field *ctx_field;
-	struct lttng_event_field *field;
+	struct lttng_ust_event_field *field;
 	struct bytecode_get_index_data gid;
 	ssize_t data_offset;
 
@@ -497,7 +497,7 @@ static int specialize_app_context_lookup(struct lttng_ctx **pctx,
 	char *name = NULL;
 	int idx, ret;
 	struct lttng_ctx_field *ctx_field;
-	struct lttng_event_field *field;
+	struct lttng_ust_event_field *field;
 	struct bytecode_get_index_data gid;
 	ssize_t data_offset;
 
@@ -556,7 +556,7 @@ static int specialize_payload_lookup(const struct lttng_ust_event_desc *event_de
 	unsigned int i, nr_fields;
 	bool found = false;
 	uint32_t field_offset = 0;
-	const struct lttng_event_field *field;
+	const struct lttng_ust_event_field *field;
 	int ret;
 	struct bytecode_get_index_data gid;
 	ssize_t data_offset;
@@ -565,8 +565,8 @@ static int specialize_payload_lookup(const struct lttng_ust_event_desc *event_de
 	offset = ((struct get_symbol *) insn->data)->offset;
 	name = runtime->p.priv->bc->bc.data + runtime->p.priv->bc->bc.reloc_offset + offset;
 	for (i = 0; i < nr_fields; i++) {
-		field = &event_desc->fields[i];
-		if (field->u.ext.nofilter) {
+		field = event_desc->fields[i];
+		if (field->nofilter) {
 			continue;
 		}
 		if (!strcmp(field->name, name)) {

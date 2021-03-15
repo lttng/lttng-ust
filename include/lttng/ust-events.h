@@ -43,7 +43,7 @@ extern "C" {
 struct lttng_channel;
 struct lttng_session;
 struct lttng_ust_lib_ring_buffer_ctx;
-struct lttng_event_field;
+struct lttng_ust_event_field;
 struct lttng_event_notifier_group;
 
 /*
@@ -183,7 +183,7 @@ struct lttng_type {
 		} sequence_nestable;
 		struct {
 			unsigned int nr_fields;
-			const struct lttng_event_field *fields;	/* Array of fields. */
+			const struct lttng_ust_event_field **fields; /* Array of pointers to fields. */
 			unsigned int alignment;
 		} struct_nestable;
 
@@ -205,19 +205,21 @@ struct lttng_enum_desc {
  * IMPORTANT: this structure is part of the ABI between the probe and
  * UST. Fields need to be only added at the end, never reordered, never
  * removed.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
  */
 
-#define LTTNG_UST_EVENT_FIELD_PADDING	28
-struct lttng_event_field {
+struct lttng_ust_event_field {
+	uint32_t struct_size;
+
 	const char *name;
 	struct lttng_type type;
-	unsigned int nowrite;	/* do not write into trace */
-	union {
-		struct {
-			unsigned int nofilter:1;	/* do not consider for filter */
-		} ext;
-		char padding[LTTNG_UST_EVENT_FIELD_PADDING];
-	} u;
+	unsigned int nowrite:1,		/* do not write into trace */
+		nofilter:1;		/* do not consider for filter */
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
 enum lttng_ust_dynamic_type {
@@ -250,7 +252,7 @@ struct lttng_perf_counter_field;
 
 #define LTTNG_UST_CTX_FIELD_PADDING	40
 struct lttng_ctx_field {
-	struct lttng_event_field event_field;
+	struct lttng_ust_event_field event_field;
 	size_t (*get_size)(struct lttng_ctx_field *field, size_t offset);
 	void (*record)(struct lttng_ctx_field *field,
 		       struct lttng_ust_lib_ring_buffer_ctx *ctx,
@@ -288,7 +290,7 @@ struct lttng_ust_event_desc {
 	const char *name;
 	void (*probe_callback)(void);
 	const struct lttng_event_ctx *ctx;	/* context */
-	const struct lttng_event_field *fields;	/* event payload */
+	const struct lttng_ust_event_field **fields;	/* event payload */
 	unsigned int nr_fields;
 	const int **loglevel;
 	const char *signature;			/* Argument types/names received */

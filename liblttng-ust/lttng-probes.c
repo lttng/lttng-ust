@@ -338,8 +338,8 @@ int lttng_probes_get_field_list(struct lttng_ust_field_list *list)
 			}
 
 			for (j = 0; j < event_desc->nr_fields; j++) {
-				const struct lttng_event_field *event_field =
-					&event_desc->fields[j];
+				const struct lttng_ust_event_field *event_field =
+					event_desc->fields[j];
 				struct tp_field_list_entry *list_entry;
 
 				list_entry = zmalloc(sizeof(*list_entry));
