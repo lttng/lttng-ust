@@ -608,13 +608,7 @@ void free_filter_runtime(struct cds_list_head *bytecode_runtime_head)
 	}
 }
 
-void lttng_free_event_recorder_filter_runtime(struct lttng_ust_event_recorder *event_recorder)
+void lttng_free_event_filter_runtime(struct lttng_ust_event_common *event)
 {
-	free_filter_runtime(&event_recorder->parent->filter_bytecode_runtime_head);
-}
-
-void lttng_free_event_notifier_filter_runtime(
-		struct lttng_ust_event_notifier *event_notifier)
-{
-	free_filter_runtime(&event_notifier->parent->filter_bytecode_runtime_head);
+	free_filter_runtime(&event->filter_bytecode_runtime_head);
 }

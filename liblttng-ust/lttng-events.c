@@ -922,7 +922,7 @@ void _lttng_event_notifier_destroy(struct lttng_ust_event_notifier *event_notifi
 	/* Remove from event_notifier hash table. */
 	cds_hlist_del(&event_notifier->priv->hlist);
 
-	lttng_free_event_notifier_filter_runtime(event_notifier);
+	lttng_free_event_filter_runtime(event_notifier->parent);
 
 	/* Free event_notifier enabler refs */
 	cds_list_for_each_entry_safe(enabler_ref, tmp_enabler_ref,
@@ -1377,7 +1377,7 @@ void _lttng_event_recorder_destroy(struct lttng_ust_event_recorder *event_record
 	cds_hlist_del(&event_recorder->priv->hlist);
 
 	lttng_destroy_context(event_recorder->ctx);
-	lttng_free_event_recorder_filter_runtime(event_recorder);
+	lttng_free_event_filter_runtime(event_recorder->parent);
 	/* Free event enabler refs */
 	cds_list_for_each_entry_safe(enabler_ref, tmp_enabler_ref,
 			&event_recorder->parent->priv->enablers_ref_head, node)

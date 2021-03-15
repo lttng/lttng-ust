@@ -430,11 +430,7 @@ int lttng_event_notifier_enabler_attach_exclusion(
 		struct lttng_ust_excluder_node **excluder);
 
 LTTNG_HIDDEN
-void lttng_free_event_recorder_filter_runtime(struct lttng_ust_event_recorder *event_recorder);
-
-LTTNG_HIDDEN
-void lttng_free_event_notifier_filter_runtime(
-		struct lttng_ust_event_notifier *event_notifier);
+void lttng_free_event_filter_runtime(struct lttng_ust_event_common *event);
 
 /*
  * Connect the probe on all enablers matching this event description.
