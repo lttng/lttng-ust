@@ -355,6 +355,10 @@ enum lttng_ust_event_type {
 };
 
 /*
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
+ *
  * struct lttng_ust_event_common is the common ancestor of the various
  * public event actions. Inheritance is done by composition: The parent
  * has a pointer to its child, and the child has a pointer to its
@@ -383,6 +387,10 @@ struct lttng_ust_event_common {
 struct lttng_ust_event_recorder_private;
 
 /*
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
+ *
  * struct lttng_ust_event_recorder is the action for recording events
  * into a ring buffer. It inherits from struct lttng_ust_event_common
  * by composition to ensure both parent and child structure are
@@ -407,6 +415,10 @@ struct lttng_ust_event_recorder {
 struct lttng_ust_event_notifier_private;
 
 /*
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
+ *
  * struct lttng_ust_event_notifier is the action for sending
  * notifications. It inherits from struct lttng_ust_event_common
  * by composition to ensure both parent and child structure are
@@ -560,12 +572,18 @@ struct lttng_ust_session_private;
  * IMPORTANT: this structure is part of the ABI between the probe and
  * UST. Fields need to be only added at the end, never reordered, never
  * removed.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
  */
 struct lttng_session {
 	uint32_t struct_size;			/* Size of this structure */
 	struct lttng_ust_session_private *priv;	/* Private session interface */
 
 	int active;				/* Is trace session active ? */
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
 int lttng_probe_register(struct lttng_probe_desc *desc);
