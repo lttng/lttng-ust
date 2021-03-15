@@ -214,19 +214,19 @@ struct lttng_ust_event_recorder_private {
 	struct lttng_ust_event_common_private parent;
 
 	struct lttng_ust_event_recorder *pub;	/* Public event interface */
-	struct cds_list_head node;		/* Event list in session */
-	struct cds_hlist_node hlist;		/* session ht of events */
+	struct cds_list_head node;		/* Event recorder list */
+	struct cds_hlist_node hlist;		/* Hash table of event recorders */
 };
 
 struct lttng_ust_event_notifier_private {
 	struct lttng_ust_event_common_private parent;
 
 	struct lttng_ust_event_notifier *pub;	/* Public event notifier interface */
-	struct cds_hlist_node hlist;		/* hashtable of event_notifiers */
-	struct cds_list_head node;		/* event_notifier list in session */
 	struct lttng_event_notifier_group *group; /* weak ref */
 	size_t num_captures;			/* Needed to allocate the msgpack array. */
 	uint64_t error_counter_index;
+	struct cds_list_head node;		/* Event notifier list */
+	struct cds_hlist_node hlist;		/* Hash table of event notifiers */
 };
 
 struct lttng_ust_bytecode_runtime_private {

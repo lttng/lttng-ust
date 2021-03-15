@@ -286,7 +286,6 @@ struct lttng_event_desc {
 	union {
 		struct {
 			const char **model_emf_uri;
-			void (*event_notifier_callback)(void);
 		} ext;
 		char padding[LTTNG_UST_EVENT_DESC_PADDING];
 	} u;
@@ -360,6 +359,8 @@ struct lttng_ust_event_common {
 	struct lttng_ust_event_common_private *priv;	/* Private event interface */
 
 	enum lttng_ust_event_type type;
+	void *child;					/* Pointer to child, for inheritance by aggregation. */
+
 	int enabled;
 	int has_enablers_without_bytecode;
 	/* list of struct lttng_bytecode_runtime, sorted by seqnum */
@@ -370,7 +371,7 @@ struct lttng_ust_event_recorder_private;
 
 struct lttng_ust_event_recorder {
 	uint32_t struct_size;				/* Size of this structure. */
-	struct lttng_ust_event_common *parent;
+	struct lttng_ust_event_common *parent;		/* Inheritance by aggregation. */
 	struct lttng_ust_event_recorder_private *priv;	/* Private event record interface */
 
 	unsigned int id;
@@ -382,7 +383,7 @@ struct lttng_ust_event_notifier_private;
 
 struct lttng_ust_event_notifier {
 	uint32_t struct_size;				/* Size of this structure. */
-	struct lttng_ust_event_common *parent;
+	struct lttng_ust_event_common *parent;		/* Inheritance by aggregation. */
 	struct lttng_ust_event_notifier_private *priv;	/* Private event notifier interface */
 
 	void (*notification_send)(struct lttng_ust_event_notifier *event_notifier,

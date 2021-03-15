@@ -426,24 +426,6 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));
 #include TRACEPOINT_INCLUDE
 
 /*
- * Stage 2.1 of tracepoint event generation.
- *
- * Create probe event notifier callback prototypes.
- */
-
-/* Reset all macros within TRACEPOINT_EVENT */
-#include <lttng/ust-tracepoint-event-reset.h>
-
-#undef TP_ARGS
-#define TP_ARGS(...) __VA_ARGS__
-
-#undef _TRACEPOINT_EVENT_CLASS
-#define _TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)		\
-static void __event_notifier_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));
-
-#include TRACEPOINT_INCLUDE
-
-/*
  * Stage 3.0 of tracepoint event generation.
  *
  * Create static inline function that calculates event size.
@@ -838,40 +820,47 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));      \
 static									      \
 void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 {									      \
-	struct lttng_ust_event_recorder *__event_recorder = (struct lttng_ust_event_recorder *) __tp_data; \
-	struct lttng_channel *__chan = __event_recorder->chan;		      \
-	struct lttng_ust_lib_ring_buffer_ctx __ctx;			      \
-	struct lttng_stack_ctx __lttng_ctx;				      \
-	size_t __event_len, __event_align;				      \
+	struct lttng_ust_event_common *__event = (struct lttng_ust_event_common *) __tp_data; \
 	size_t __dynamic_len_idx = 0;					      \
 	const size_t __num_fields = _TP_ARRAY_SIZE(__event_fields___##_provider##___##_name) - 1; \
 	union {								      \
 		size_t __dynamic_len[__num_fields];			      \
-		char __filter_stack_data[2 * sizeof(unsigned long) * __num_fields]; \
+		char __interpreter_stack_data[2 * sizeof(unsigned long) * __num_fields]; \
 	} __stackvar;							      \
 	int __ret;							      \
 									      \
 	if (0)								      \
 		(void) __dynamic_len_idx;	/* don't warn if unused */    \
-	if (!_TP_SESSION_CHECK(session, __chan->session))		      \
-		return;							      \
-	if (caa_unlikely(!CMM_ACCESS_ONCE(__chan->session->active)))	      \
-		return;							      \
-	if (caa_unlikely(!CMM_ACCESS_ONCE(__chan->enabled)))		      \
-		return;							      \
-	if (caa_unlikely(!CMM_ACCESS_ONCE(__event_recorder->parent->enabled)))\
+	switch (__event->type) {					      \
+	case LTTNG_UST_EVENT_TYPE_RECORDER:				      \
+	{								      \
+		struct lttng_ust_event_recorder *__event_recorder = (struct lttng_ust_event_recorder *) __event->child; \
+		struct lttng_channel *__chan = __event_recorder->chan;	      \
+									      \
+		if (!_TP_SESSION_CHECK(session, __chan->session))	      \
+			return;						      \
+		if (caa_unlikely(!CMM_ACCESS_ONCE(__chan->session->active)))  \
+			return;						      \
+		if (caa_unlikely(!CMM_ACCESS_ONCE(__chan->enabled)))	      \
+			return;						      \
+		break;							      \
+	}								      \
+	case LTTNG_UST_EVENT_TYPE_NOTIFIER:				      \
+		break;							      \
+	}								      \
+	if (caa_unlikely(!CMM_ACCESS_ONCE(__event->enabled)))		      \
 		return;							      \
 	if (caa_unlikely(!TP_RCU_LINK_TEST()))				      \
 		return;							      \
-	if (caa_unlikely(!cds_list_empty(&__event_recorder->parent->filter_bytecode_runtime_head))) { \
-		struct lttng_bytecode_runtime *__filter_bc_runtime;		      \
-		int __filter_record = __event_recorder->parent->has_enablers_without_bytecode; \
+	if (caa_unlikely(!cds_list_empty(&__event->filter_bytecode_runtime_head))) { \
+		struct lttng_bytecode_runtime *__filter_bc_runtime;	      \
+		int __filter_record = __event->has_enablers_without_bytecode; \
 									      \
-		__event_prepare_interpreter_stack__##_provider##___##_name(__stackvar.__filter_stack_data, \
+		__event_prepare_interpreter_stack__##_provider##___##_name(__stackvar.__interpreter_stack_data, \
 			_TP_ARGS_DATA_VAR(_args));			      \
-		tp_list_for_each_entry_rcu(__filter_bc_runtime, &__event_recorder->parent->filter_bytecode_runtime_head, node) { \
+		tp_list_for_each_entry_rcu(__filter_bc_runtime, &__event->filter_bytecode_runtime_head, node) { \
 			if (caa_unlikely(__filter_bc_runtime->interpreter_funcs.filter(__filter_bc_runtime,     \
-					__stackvar.__filter_stack_data) & LTTNG_INTERPRETER_RECORD_FLAG)) { \
+					__stackvar.__interpreter_stack_data) & LTTNG_INTERPRETER_RECORD_FLAG)) { \
 				__filter_record = 1;			      \
 				break;					      \
 			}						      \
@@ -879,21 +868,45 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 		if (caa_likely(!__filter_record))			      \
 			return;						      \
 	}								      \
-	__event_len = __event_get_size__##_provider##___##_name(__stackvar.__dynamic_len, \
-		 _TP_ARGS_DATA_VAR(_args));				      \
-	__event_align = __event_get_align__##_provider##___##_name(_TP_ARGS_VAR(_args)); \
-	memset(&__lttng_ctx, 0, sizeof(__lttng_ctx));			      \
-	__lttng_ctx.event_recorder = __event_recorder;			      \
-	__lttng_ctx.chan_ctx = tp_rcu_dereference(__chan->ctx);		      \
-	__lttng_ctx.event_ctx = tp_rcu_dereference(__event_recorder->ctx);    \
-	lib_ring_buffer_ctx_init(&__ctx, __chan->chan, &__lttng_ctx, __event_len,  \
-				 __event_align, -1, __chan->handle); \
-	__ctx.ip = _TP_IP_PARAM(TP_IP_PARAM);				      \
-	__ret = __chan->ops->event_reserve(&__ctx, __event_recorder->id);     \
-	if (__ret < 0)							      \
-		return;							      \
-	_fields								      \
-	__chan->ops->event_commit(&__ctx);				      \
+	switch (__event->type) {					      \
+	case LTTNG_UST_EVENT_TYPE_RECORDER:				      \
+	{								      \
+		size_t __event_len, __event_align;			      \
+		struct lttng_ust_event_recorder *__event_recorder = (struct lttng_ust_event_recorder *) __event->child; \
+		struct lttng_channel *__chan = __event_recorder->chan;	      \
+		struct lttng_ust_lib_ring_buffer_ctx __ctx;		      \
+		struct lttng_stack_ctx __lttng_ctx;			      \
+									      \
+		__event_len = __event_get_size__##_provider##___##_name(__stackvar.__dynamic_len, \
+			 _TP_ARGS_DATA_VAR(_args));			      \
+		__event_align = __event_get_align__##_provider##___##_name(_TP_ARGS_VAR(_args)); \
+		memset(&__lttng_ctx, 0, sizeof(__lttng_ctx));		      \
+		__lttng_ctx.event_recorder = __event_recorder;		      \
+		__lttng_ctx.chan_ctx = tp_rcu_dereference(__chan->ctx);	      \
+		__lttng_ctx.event_ctx = tp_rcu_dereference(__event_recorder->ctx); \
+		lib_ring_buffer_ctx_init(&__ctx, __chan->chan, &__lttng_ctx, __event_len, \
+					 __event_align, -1, __chan->handle); \
+		__ctx.ip = _TP_IP_PARAM(TP_IP_PARAM);			      \
+		__ret = __chan->ops->event_reserve(&__ctx, __event_recorder->id); \
+		if (__ret < 0)						      \
+			return;						      \
+		_fields							      \
+		__chan->ops->event_commit(&__ctx);			      \
+		break;							      \
+	}								      \
+	case LTTNG_UST_EVENT_TYPE_NOTIFIER:				      \
+	{								      \
+		struct lttng_ust_event_notifier *__event_notifier = (struct lttng_ust_event_notifier *) __event->child; \
+									      \
+		if (caa_unlikely(!cds_list_empty(&__event_notifier->capture_bytecode_runtime_head))) \
+			__event_prepare_interpreter_stack__##_provider##___##_name(__stackvar.__interpreter_stack_data, \
+				_TP_ARGS_DATA_VAR(_args));		      \
+									      \
+		__event_notifier->notification_send(__event_notifier,	      \
+				__stackvar.__interpreter_stack_data);	      \
+		break;							      \
+	}								      \
+	}								      \
 }
 
 #include TRACEPOINT_INCLUDE
@@ -922,53 +935,6 @@ static const char __tp_event_signature___##_provider##___##_name[] = 	\
 #include TRACEPOINT_INCLUDE
 
 #undef _TP_EXTRACT_STRING2
-
-/*
- * Stage 5.2 of tracepoint event generation.
- *
- * Create the event notifier probe function.
- */
-#undef _TRACEPOINT_EVENT_CLASS
-#define _TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
-static lttng_ust_notrace						      \
-void __event_notifier_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));    \
-static									      \
-void __event_notifier_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))     \
-{									      \
-	struct lttng_ust_event_notifier *__event_notifier = (struct lttng_ust_event_notifier *) __tp_data; \
-	const size_t __num_fields = _TP_ARRAY_SIZE(__event_fields___##_provider##___##_name) - 1;\
-	union {								      \
-		size_t __dynamic_len[__num_fields];			      \
-		char __interpreter_stack_data[2 * sizeof(unsigned long) * __num_fields]; \
-	} __stackvar;							      \
-									      \
-	if (caa_unlikely(!CMM_ACCESS_ONCE(__event_notifier->parent->enabled))) \
-		return;							      \
-	if (caa_unlikely(!TP_RCU_LINK_TEST()))				      \
-		return;							      \
-	if (caa_unlikely(!cds_list_empty(&__event_notifier->parent->filter_bytecode_runtime_head))) { \
-		struct lttng_bytecode_runtime *__filter_bc_runtime;		       \
-		int __filter_record = __event_notifier->parent->has_enablers_without_bytecode; \
-									      \
-		__event_prepare_interpreter_stack__##_provider##___##_name(__stackvar.__interpreter_stack_data, \
-			_TP_ARGS_DATA_VAR(_args));			      \
-		tp_list_for_each_entry_rcu(__filter_bc_runtime, &__event_notifier->parent->filter_bytecode_runtime_head, node) { \
-			if (caa_unlikely(__filter_bc_runtime->interpreter_funcs.filter(__filter_bc_runtime,	  \
-					__stackvar.__interpreter_stack_data) & LTTNG_INTERPRETER_RECORD_FLAG)) \
-				__filter_record = 1;			      \
-		}							      \
-		if (caa_likely(!__filter_record))			      \
-			return;						      \
-	}								      \
-	if (caa_unlikely(!cds_list_empty(&__event_notifier->capture_bytecode_runtime_head))) \
-		__event_prepare_interpreter_stack__##_provider##___##_name(__stackvar.__interpreter_stack_data, \
-			_TP_ARGS_DATA_VAR(_args));			      \
-									      \
-	__event_notifier->notification_send(__event_notifier,		      \
-			__stackvar.__interpreter_stack_data);		      \
-}
-
-#include TRACEPOINT_INCLUDE
 
 /*
  * Stage 6 of tracepoint event generation.
@@ -1065,7 +1031,6 @@ static const struct lttng_event_desc __event_desc___##_provider##_##_name = {	  
 	.u = {								       \
 	    .ext = {							       \
 		  .model_emf_uri = &__ref_model_emf_uri___##_provider##___##_name, \
-		  .event_notifier_callback = (void (*)(void)) &__event_notifier_probe__##_provider##___##_template,\
 		},							       \
 	},								       \
 };
