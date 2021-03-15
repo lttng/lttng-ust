@@ -780,6 +780,7 @@ int lttng_event_recorder_create(const struct lttng_event_desc *desc,
 		goto parent_error;
 	}
 	event_recorder->parent->struct_size = sizeof(struct lttng_ust_event_common);
+	event_recorder->parent->type = LTTNG_UST_EVENT_TYPE_RECORDER;
 
 	event_recorder_priv = zmalloc(sizeof(struct lttng_ust_event_recorder_private));
 	if (!event_recorder_priv) {
@@ -873,6 +874,7 @@ int lttng_event_notifier_create(const struct lttng_event_desc *desc,
 		goto parent_error;
 	}
 	event_notifier->parent->struct_size = sizeof(struct lttng_ust_event_common);
+	event_notifier->parent->type = LTTNG_UST_EVENT_TYPE_NOTIFIER;
 
 	event_notifier_priv = zmalloc(sizeof(struct lttng_ust_event_notifier_private));
 	if (!event_notifier_priv) {

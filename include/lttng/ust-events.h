@@ -350,10 +350,16 @@ struct lttng_bytecode_runtime {
 
 struct lttng_ust_event_common_private;
 
+enum lttng_ust_event_type {
+	LTTNG_UST_EVENT_TYPE_RECORDER = 0,
+	LTTNG_UST_EVENT_TYPE_NOTIFIER = 1,
+};
+
 struct lttng_ust_event_common {
 	uint32_t struct_size;				/* Size of this structure. */
 	struct lttng_ust_event_common_private *priv;	/* Private event interface */
 
+	enum lttng_ust_event_type type;
 	int enabled;
 	int has_enablers_without_bytecode;
 	/* list of struct lttng_bytecode_runtime, sorted by seqnum */
