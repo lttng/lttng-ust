@@ -2,8 +2,28 @@
  * SPDX-License-Identifier: MIT
  *
  * Copyright (C) 2012 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+ */
+
+/*
+ * This header defines the following endian macros based on the current
+ * platform endian headers:
  *
- * endian.h compatibility layer.
+ *   BYTE_ORDER         this macro shall have a value equal to one
+ *                      of the *_ENDIAN macros in this header.
+ *   FLOAT_WORD_ORDER   this macro shall have a value equal to one
+ *                      of the *_ENDIAN macros in this header.
+ *   LITTLE_ENDIAN      if BYTE_ORDER == LITTLE_ENDIAN, the host
+ *                      byte order is from least significant to
+ *                      most significant.
+ *   BIG_ENDIAN         if BYTE_ORDER == BIG_ENDIAN, the host byte
+ *                      order is from most significant to least
+ *                      significant.
+ *
+ * Direct byte swapping interfaces:
+ *
+ *   uint16_t bswap_16(uint16_t x); (* swap bytes 16-bit word *)
+ *   uint32_t bswap_32(uint32_t x); (* swap bytes 32-bit word *)
+ *   uint64_t bswap_64(uint32_t x); (* swap bytes 64-bit word *)
  */
 
 #ifndef _LTTNG_UST_ENDIAN_H
