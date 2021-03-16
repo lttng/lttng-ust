@@ -568,26 +568,6 @@ struct lttng_stack_ctx {
 	char padding[LTTNG_UST_STACK_CTX_PADDING];
 };
 
-#define LTTNG_UST_EVENT_HT_BITS		12
-#define LTTNG_UST_EVENT_HT_SIZE		(1U << LTTNG_UST_EVENT_HT_BITS)
-
-struct lttng_ust_event_ht {
-	struct cds_hlist_head table[LTTNG_UST_EVENT_HT_SIZE];
-};
-
-#define LTTNG_UST_EVENT_NOTIFIER_HT_BITS		12
-#define LTTNG_UST_EVENT_NOTIFIER_HT_SIZE		(1U << LTTNG_UST_EVENT_NOTIFIER_HT_BITS)
-struct lttng_ust_event_notifier_ht {
-	struct cds_hlist_head table[LTTNG_UST_EVENT_NOTIFIER_HT_SIZE];
-};
-
-#define LTTNG_UST_ENUM_HT_BITS		12
-#define LTTNG_UST_ENUM_HT_SIZE		(1U << LTTNG_UST_ENUM_HT_BITS)
-
-struct lttng_ust_enum_ht {
-	struct cds_hlist_head table[LTTNG_UST_ENUM_HT_SIZE];
-};
-
 struct lttng_ust_session_private;
 
 /*

@@ -192,6 +192,26 @@ struct lttng_counter {
 	struct lttng_counter_ops *ops;
 };
 
+#define LTTNG_UST_EVENT_HT_BITS		12
+#define LTTNG_UST_EVENT_HT_SIZE		(1U << LTTNG_UST_EVENT_HT_BITS)
+
+struct lttng_ust_event_ht {
+	struct cds_hlist_head table[LTTNG_UST_EVENT_HT_SIZE];
+};
+
+#define LTTNG_UST_EVENT_NOTIFIER_HT_BITS		12
+#define LTTNG_UST_EVENT_NOTIFIER_HT_SIZE		(1U << LTTNG_UST_EVENT_NOTIFIER_HT_BITS)
+struct lttng_ust_event_notifier_ht {
+	struct cds_hlist_head table[LTTNG_UST_EVENT_NOTIFIER_HT_SIZE];
+};
+
+#define LTTNG_UST_ENUM_HT_BITS		12
+#define LTTNG_UST_ENUM_HT_SIZE		(1U << LTTNG_UST_ENUM_HT_BITS)
+
+struct lttng_ust_enum_ht {
+	struct cds_hlist_head table[LTTNG_UST_ENUM_HT_SIZE];
+};
+
 struct lttng_event_notifier_group {
 	int objd;
 	void *owner;
