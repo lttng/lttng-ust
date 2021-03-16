@@ -105,19 +105,17 @@ struct lttng_ust_enum_entry {
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
-#define __type_integer(_type, _byte_order, _base, _encoding)	\
-	{							\
-	  .atype = atype_integer,				\
-	  .u =							\
-		{						\
-		  .integer =					\
-			{					\
-			  .size = sizeof(_type) * CHAR_BIT,	\
-			  .alignment = lttng_alignof(_type) * CHAR_BIT,	\
-			  .signedness = lttng_is_signed_type(_type), \
-			  .reverse_byte_order = _byte_order != BYTE_ORDER, \
-			  .base = _base,			\
-			  .encoding = lttng_encode_##_encoding,	\
+#define __type_integer(_type, _byte_order, _base, _encoding)		\
+	{								\
+		.atype = atype_integer,					\
+		.u = {							\
+			.integer = {					\
+				.size = sizeof(_type) * CHAR_BIT,	\
+				.alignment = lttng_alignof(_type) * CHAR_BIT, \
+				.signedness = lttng_is_signed_type(_type), \
+				.reverse_byte_order = _byte_order != BYTE_ORDER, \
+				.base = _base,			\
+				.encoding = lttng_encode_##_encoding, \
 			}					\
 		},						\
 	}							\
@@ -142,21 +140,19 @@ struct lttng_integer_type {
 		: (sizeof(_type) == sizeof(double) ? DBL_MANT_DIG	\
 		: 0))
 
-#define __type_float(_type)					\
-	{							\
-	  .atype = atype_float,					\
-	  .u =							\
-		{						\
-		  ._float =					\
-			{					\
-			  .exp_dig = sizeof(_type) * CHAR_BIT	\
-					  - _float_mant_dig(_type), \
-			  .mant_dig = _float_mant_dig(_type),	\
-			  .alignment = lttng_alignof(_type) * CHAR_BIT, \
-			  .reverse_byte_order = BYTE_ORDER != FLOAT_WORD_ORDER,	\
-			}					\
-		}						\
-	}							\
+#define __type_float(_type)						\
+	{								\
+		.atype = atype_float,					\
+		.u = {							\
+			._float = {					\
+				.exp_dig = sizeof(_type) * CHAR_BIT	\
+					- _float_mant_dig(_type),	\
+				.mant_dig = _float_mant_dig(_type),	\
+				.alignment = lttng_alignof(_type) * CHAR_BIT, \
+				.reverse_byte_order = BYTE_ORDER != FLOAT_WORD_ORDER,	\
+			}						\
+		}							\
+	}								\
 
 #define LTTNG_UST_FLOAT_TYPE_PADDING	24
 struct lttng_float_type {
