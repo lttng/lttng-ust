@@ -147,7 +147,8 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 /* Enumeration entry (single value) */
 #undef ctf_enum_value
 #define ctf_enum_value(_string, _value)					\
-	{								\
+	__LTTNG_COMPOUND_LITERAL(struct lttng_ust_enum_entry, {		\
+		.struct_size = sizeof(struct lttng_ust_enum_entry),		\
 		.start = {						\
 			.value = lttng_is_signed_type(__typeof__(_value)) ? \
 				(long long) (_value) : (_value),	\
@@ -159,12 +160,13 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 			.signedness = lttng_is_signed_type(__typeof__(_value)), \
 		},							\
 		.string = (_string),					\
-	},
+	}),
 
 /* Enumeration entry (range) */
 #undef ctf_enum_range
 #define ctf_enum_range(_string, _range_start, _range_end)		\
-	{								\
+	__LTTNG_COMPOUND_LITERAL(struct lttng_ust_enum_entry, {		\
+		.struct_size = sizeof(struct lttng_ust_enum_entry),		\
 		.start = {						\
 			.value = lttng_is_signed_type(__typeof__(_range_start)) ? \
 				(long long) (_range_start) : (_range_start), \
@@ -176,12 +178,13 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 			.signedness = lttng_is_signed_type(__typeof__(_range_end)), \
 		},							\
 		.string = (_string),					\
-	},
+	}),
 
 /* Enumeration entry (automatic value; follows the rules of CTF) */
 #undef ctf_enum_auto
-#define ctf_enum_auto(_string)					\
-	{								\
+#define ctf_enum_auto(_string)						\
+	__LTTNG_COMPOUND_LITERAL(struct lttng_ust_enum_entry, {		\
+		.struct_size = sizeof(struct lttng_ust_enum_entry),		\
 		.start = {						\
 			.value = -1ULL, 				\
 			.signedness = 0, 				\
@@ -191,12 +194,8 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 			.signedness = 0, 				\
 		},							\
 		.string = (_string),					\
-		.u = {							\
-			.extra = {					\
-				.options = LTTNG_ENUM_ENTRY_OPTION_IS_AUTO, \
-			},						\
-		},							\
-	},
+		.options = LTTNG_ENUM_ENTRY_OPTION_IS_AUTO,		\
+	}),
 
 #undef TP_ENUM_VALUES
 #define TP_ENUM_VALUES(...)						\
@@ -204,7 +203,7 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 
 #undef TRACEPOINT_ENUM
 #define TRACEPOINT_ENUM(_provider, _name, _values)			\
-	const struct lttng_enum_entry __enum_values__##_provider##_##_name[] = { \
+	const struct lttng_ust_enum_entry *__enum_values__##_provider##_##_name[] = { \
 		_values							\
 		ctf_enum_value("", 0)	/* Dummy, 0-len array forbidden by C99. */ \
 	};
@@ -370,7 +369,8 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 
 #undef TRACEPOINT_ENUM
 #define TRACEPOINT_ENUM(_provider, _name, _values)					\
-	static const struct lttng_enum_desc __enum_##_provider##_##_name = {		\
+	static const struct lttng_ust_enum_desc __enum_##_provider##_##_name = {		\
+		.struct_size = sizeof(struct lttng_ust_enum_desc),				\
 		.name = #_provider "_" #_name,						\
 		.entries = __enum_values__##_provider##_##_name,			\
 		.nr_entries = _TP_ARRAY_SIZE(__enum_values__##_provider##_##_name) - 1,	\

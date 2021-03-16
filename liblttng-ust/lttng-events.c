@@ -398,7 +398,7 @@ void lttng_enabler_destroy(struct lttng_enabler *enabler)
 }
 
 static
-int lttng_enum_create(const struct lttng_enum_desc *desc,
+int lttng_enum_create(const struct lttng_ust_enum_desc *desc,
 		struct lttng_session *session)
 {
 	const char *enum_name = desc->name;
@@ -462,7 +462,7 @@ int lttng_create_enum_check(const struct lttng_type *type,
 	switch (type->atype) {
 	case atype_enum_nestable:
 	{
-		const struct lttng_enum_desc *enum_desc;
+		const struct lttng_ust_enum_desc *enum_desc;
 		int ret;
 
 		enum_desc = type->u.enum_nestable.desc;
@@ -476,7 +476,7 @@ int lttng_create_enum_check(const struct lttng_type *type,
 	case atype_dynamic:
 	{
 		const struct lttng_ust_event_field *tag_field_generic;
-		const struct lttng_enum_desc *enum_desc;
+		const struct lttng_ust_enum_desc *enum_desc;
 		int ret;
 
 		tag_field_generic = lttng_ust_dynamic_type_tag_field();
@@ -1140,7 +1140,7 @@ void _event_enum_destroy(struct lttng_ust_event_common *event)
 
 		/* Destroy enums of the current event. */
 		for (i = 0; i < event_recorder->parent->priv->desc->nr_fields; i++) {
-			const struct lttng_enum_desc *enum_desc;
+			const struct lttng_ust_enum_desc *enum_desc;
 			const struct lttng_ust_event_field *field;
 			struct lttng_enum *curr_enum;
 

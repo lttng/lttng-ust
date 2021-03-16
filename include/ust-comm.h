@@ -44,7 +44,7 @@
 
 struct lttng_ust_event_field;
 struct lttng_ctx_field;
-struct lttng_enum_entry;
+struct lttng_ust_enum_entry;
 struct lttng_integer_type;
 struct lttng_session;
 
@@ -292,7 +292,7 @@ int ustcomm_register_enum(int sock,
 	int session_objd,		/* session descriptor */
 	const char *enum_name,		/* enum name (input) */
 	size_t nr_entries,		/* entries */
-	const struct lttng_enum_entry *entries,
+	const struct lttng_ust_enum_entry **entries,
 	uint64_t *id);			/* enum id (output) */
 
 /*

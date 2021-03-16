@@ -1303,7 +1303,7 @@ error_type:
 static
 int serialize_entries(struct ustctl_enum_entry **_entries,
 		size_t nr_entries,
-		const struct lttng_enum_entry *lttng_entries)
+		const struct lttng_ust_enum_entry **lttng_entries)
 {
 	struct ustctl_enum_entry *entries;
 	int i;
@@ -1314,10 +1314,10 @@ int serialize_entries(struct ustctl_enum_entry **_entries,
 		return -ENOMEM;
 	for (i = 0; i < nr_entries; i++) {
 		struct ustctl_enum_entry *uentry;
-		const struct lttng_enum_entry *lentry;
+		const struct lttng_ust_enum_entry *lentry;
 
 		uentry = &entries[i];
-		lentry = &lttng_entries[i];
+		lentry = lttng_entries[i];
 
 		uentry->start.value = lentry->start.value;
 		uentry->start.signedness = lentry->start.signedness;
@@ -1326,7 +1326,7 @@ int serialize_entries(struct ustctl_enum_entry **_entries,
 		strncpy(uentry->string, lentry->string, LTTNG_UST_ABI_SYM_NAME_LEN);
 		uentry->string[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
 
-		if (lentry->u.extra.options & LTTNG_ENUM_ENTRY_OPTION_IS_AUTO) {
+		if (lentry->options & LTTNG_ENUM_ENTRY_OPTION_IS_AUTO) {
 			uentry->u.extra.options |=
 				USTCTL_UST_ENUM_ENTRY_OPTION_IS_AUTO;
 		}
@@ -1523,7 +1523,7 @@ int ustcomm_register_enum(int sock,
 	int session_objd,		/* session descriptor */
 	const char *enum_name,		/* enum name (input) */
 	size_t nr_entries,		/* entries */
-	const struct lttng_enum_entry *lttng_entries,
+	const struct lttng_ust_enum_entry **lttng_entries,
 	uint64_t *id)
 {
 	ssize_t len;

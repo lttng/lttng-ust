@@ -83,16 +83,26 @@ enum lttng_enum_entry_options {
 	LTTNG_ENUM_ENTRY_OPTION_IS_AUTO = 1U << 0,
 };
 
-#define LTTNG_UST_ENUM_ENTRY_PADDING	16
-struct lttng_enum_entry {
+/*
+ * Enumeration entry description
+ *
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
+ */
+
+struct lttng_ust_enum_entry {
+	uint32_t struct_size;
+
 	struct lttng_enum_value start, end; /* start and end are inclusive */
 	const char *string;
-	union {
-		struct {
-			unsigned int options;
-		} LTTNG_PACKED extra;
-		char padding[LTTNG_UST_ENUM_ENTRY_PADDING];
-	} u;
+	unsigned int options;
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
 #define __type_integer(_type, _byte_order, _base, _encoding)	\
@@ -168,7 +178,7 @@ struct lttng_type {
 			enum lttng_string_encodings encoding;
 		} string;
 		struct {
-			const struct lttng_enum_desc *desc;	/* Enumeration mapping */
+			const struct lttng_ust_enum_desc *desc;	/* Enumeration mapping */
 			struct lttng_type *container_type;
 		} enum_nestable;
 		struct {
@@ -191,12 +201,26 @@ struct lttng_type {
 	} u;
 };
 
-#define LTTNG_UST_ENUM_TYPE_PADDING	24
-struct lttng_enum_desc {
+/*
+ * Enumeration description
+ *
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
+ */
+
+struct lttng_ust_enum_desc {
+	uint32_t struct_size;
+
 	const char *name;
-	const struct lttng_enum_entry *entries;
+	const struct lttng_ust_enum_entry **entries;
 	unsigned int nr_entries;
-	char padding[LTTNG_UST_ENUM_TYPE_PADDING];
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
 /*
@@ -460,7 +484,7 @@ struct lttng_ust_event_notifier {
 };
 
 struct lttng_enum {
-	const struct lttng_enum_desc *desc;
+	const struct lttng_ust_enum_desc *desc;
 	struct lttng_session *session;
 	struct cds_list_head node;	/* Enum list in session */
 	struct cds_hlist_node hlist;	/* Session ht of enums */

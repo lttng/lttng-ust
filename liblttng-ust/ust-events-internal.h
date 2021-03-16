@@ -543,7 +543,7 @@ struct cds_list_head *lttng_get_probe_list_head(void);
 
 LTTNG_HIDDEN
 struct lttng_enum *lttng_ust_enum_get_from_desc(struct lttng_session *session,
-		const struct lttng_enum_desc *enum_desc);
+		const struct lttng_ust_enum_desc *enum_desc);
 
 LTTNG_HIDDEN
 int lttng_abi_create_root_handle(void);

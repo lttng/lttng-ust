@@ -16,7 +16,8 @@
 #include <ust-dynamic-type.h>
 
 #define ctf_enum_value(_string, _value)					\
-	{								\
+	__LTTNG_COMPOUND_LITERAL(struct lttng_ust_enum_entry, {		\
+		.struct_size = sizeof(struct lttng_ust_enum_entry),		\
 		.start = {						\
 			.signedness = lttng_is_signed_type(__typeof__(_value)), \
 			.value = lttng_is_signed_type(__typeof__(_value)) ? \
@@ -28,9 +29,9 @@
 				(long long) (_value) : (_value),	\
 		},							\
 		.string = (_string),					\
-	},
+	}),
 
-static const struct lttng_enum_entry dt_enum[_NR_LTTNG_UST_DYNAMIC_TYPES] = {
+static const struct lttng_ust_enum_entry *dt_enum[_NR_LTTNG_UST_DYNAMIC_TYPES] = {
 	[LTTNG_UST_DYNAMIC_TYPE_NONE] = ctf_enum_value("_none", 0)
 	[LTTNG_UST_DYNAMIC_TYPE_S8] = ctf_enum_value("_int8", 1)
 	[LTTNG_UST_DYNAMIC_TYPE_S16] = ctf_enum_value("_int16", 2)
@@ -45,7 +46,7 @@ static const struct lttng_enum_entry dt_enum[_NR_LTTNG_UST_DYNAMIC_TYPES] = {
 	[LTTNG_UST_DYNAMIC_TYPE_STRING] = ctf_enum_value("_string", 11)
 };
 
-static const struct lttng_enum_desc dt_enum_desc = {
+static const struct lttng_ust_enum_desc dt_enum_desc = {
 	.name = "dynamic_type_enum",
 	.entries = dt_enum,
 	.nr_entries = LTTNG_ARRAY_SIZE(dt_enum),
