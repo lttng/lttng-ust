@@ -498,8 +498,14 @@ struct lttng_ust_shm_handle;
  * IMPORTANT: this structure is part of the ABI between the probe and
  * UST. Fields need to be only added at the end, never reordered, never
  * removed.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
  */
-struct lttng_channel_ops {
+struct lttng_ust_channel_ops {
+	uint32_t struct_size;
+
 	struct lttng_channel *(*channel_create)(const char *name,
 			void *buf_addr,
 			size_t subbuf_size, size_t num_subbuf,
@@ -527,6 +533,8 @@ struct lttng_channel_ops {
 	int (*flush_buffer)(struct channel *chan, struct lttng_ust_shm_handle *handle);
 	void (*event_strcpy)(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			const char *src, size_t len);
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
 /*
@@ -548,7 +556,7 @@ struct lttng_channel {
 	struct lttng_session *session;
 	int objd;			/* Object associated to channel */
 	struct cds_list_head node;	/* Channel list in session */
-	const struct lttng_channel_ops *ops;
+	const struct lttng_ust_channel_ops *ops;
 	int header_type;		/* 0: unset, 1: compact, 2: large */
 	struct lttng_ust_shm_handle *handle;	/* shared-memory handle */
 

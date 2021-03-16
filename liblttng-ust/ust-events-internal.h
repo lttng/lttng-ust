@@ -189,7 +189,7 @@ struct lttng_event_notifier_group {
 struct lttng_transport {
 	char *name;
 	struct cds_list_head node;
-	struct lttng_channel_ops ops;
+	struct lttng_ust_channel_ops ops;
 	const struct lttng_ust_lib_ring_buffer_config *client_config;
 };
 
