@@ -17,6 +17,7 @@
 #include "ust-context-provider.h"
 
 struct lttng_ust_abi_obj;
+struct lttng_event_notifier_group;
 
 union lttng_ust_abi_args {
 	struct {

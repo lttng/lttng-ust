@@ -44,7 +44,6 @@ struct lttng_channel;
 struct lttng_ust_session;
 struct lttng_ust_lib_ring_buffer_ctx;
 struct lttng_ust_event_field;
-struct lttng_event_notifier_group;
 
 /*
  * Data structures used by tracepoint event declarations, and by the
