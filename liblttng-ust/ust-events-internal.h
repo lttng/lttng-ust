@@ -164,6 +164,26 @@ struct lttng_counter_dimension {
 	uint8_t has_overflow;
 };
 
+struct lttng_counter_ops {
+	struct lib_counter *(*counter_create)(size_t nr_dimensions,
+			const struct lttng_counter_dimension *dimensions,
+			int64_t global_sum_step,
+			int global_counter_fd,
+			int nr_counter_cpu_fds,
+			const int *counter_cpu_fds,
+			bool is_daemon);
+	void (*counter_destroy)(struct lib_counter *counter);
+	int (*counter_add)(struct lib_counter *counter,
+			const size_t *dimension_indexes, int64_t v);
+	int (*counter_read)(struct lib_counter *counter,
+			const size_t *dimension_indexes, int cpu,
+			int64_t *value, bool *overflow, bool *underflow);
+	int (*counter_aggregate)(struct lib_counter *counter,
+			const size_t *dimension_indexes, int64_t *value,
+			bool *overflow, bool *underflow);
+	int (*counter_clear)(struct lib_counter *counter, const size_t *dimension_indexes);
+};
+
 struct lttng_counter {
 	int objd;
 	struct lttng_event_notifier_group *event_notifier_group;    /* owner */
