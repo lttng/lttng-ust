@@ -258,6 +258,7 @@ struct lttng_ust_event_field {
  */
 struct lttng_ust_event_desc {
 	uint32_t struct_size;			/* Size of this structure. */
+
 	const char *name;
 	void (*probe_callback)(void);
 	const struct lttng_event_ctx *ctx;	/* context */
@@ -368,6 +369,7 @@ enum lttng_ust_event_type {
  */
 struct lttng_ust_event_common {
 	uint32_t struct_size;				/* Size of this structure. */
+
 	struct lttng_ust_event_common_private *priv;	/* Private event interface */
 
 	enum lttng_ust_event_type type;
@@ -399,6 +401,7 @@ struct lttng_ust_event_recorder_private;
  */
 struct lttng_ust_event_recorder {
 	uint32_t struct_size;				/* Size of this structure. */
+
 	struct lttng_ust_event_common *parent;		/* Inheritance by aggregation. */
 	struct lttng_ust_event_recorder_private *priv;	/* Private event record interface */
 
@@ -547,6 +550,7 @@ struct lttng_ust_session_private;
  */
 struct lttng_session {
 	uint32_t struct_size;			/* Size of this structure */
+
 	struct lttng_ust_session_private *priv;	/* Private session interface */
 
 	int active;				/* Is trace session active ? */
