@@ -315,6 +315,32 @@ struct lttng_enum {
 	uint64_t id;			/* Enumeration ID in sessiond */
 };
 
+struct lttng_ust_channel_ops_private {
+	struct lttng_ust_channel_ops *pub;	/* Public channels ops interface */
+
+	struct lttng_channel *(*channel_create)(const char *name,
+			void *buf_addr,
+			size_t subbuf_size, size_t num_subbuf,
+			unsigned int switch_timer_interval,
+			unsigned int read_timer_interval,
+			unsigned char *uuid,
+			uint32_t chan_id,
+			const int *stream_fds, int nr_stream_fds,
+			int64_t blocking_timeout);
+	void (*channel_destroy)(struct lttng_channel *chan);
+	/*
+	 * packet_avail_size returns the available size in the current
+	 * packet. Note that the size returned is only a hint, since it
+	 * may change due to concurrent writes.
+	 */
+	size_t (*packet_avail_size)(struct lttng_ust_lib_ring_buffer_channel *chan,
+				    struct lttng_ust_shm_handle *handle);
+	int (*is_finalized)(struct lttng_ust_lib_ring_buffer_channel *chan);
+	int (*is_disabled)(struct lttng_ust_lib_ring_buffer_channel *chan);
+	int (*flush_buffer)(struct lttng_ust_lib_ring_buffer_channel *chan,
+			    struct lttng_ust_shm_handle *handle);
+};
+
 static inline
 struct lttng_enabler *lttng_event_enabler_as_enabler(
 		struct lttng_event_enabler *event_enabler)

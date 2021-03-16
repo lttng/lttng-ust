@@ -797,15 +797,18 @@ static struct lttng_transport lttng_relay_transport = {
 	.name = "relay-" RING_BUFFER_MODE_TEMPLATE_STRING "-mmap",
 	.ops = {
 		.struct_size = sizeof(struct lttng_ust_channel_ops),
-		.channel_create = _channel_create,
-		.channel_destroy = lttng_channel_destroy,
+		.priv = __LTTNG_COMPOUND_LITERAL(struct lttng_ust_channel_ops_private, {
+			.pub = &lttng_relay_transport.ops,
+			.channel_create = _channel_create,
+			.channel_destroy = lttng_channel_destroy,
+			.packet_avail_size = NULL,	/* Would be racy anyway */
+			.is_finalized = lttng_is_finalized,
+			.is_disabled = lttng_is_disabled,
+			.flush_buffer = lttng_flush_buffer,
+		}),
 		.event_reserve = lttng_event_reserve,
 		.event_commit = lttng_event_commit,
 		.event_write = lttng_event_write,
-		.packet_avail_size = NULL,	/* Would be racy anyway */
-		.is_finalized = lttng_is_finalized,
-		.is_disabled = lttng_is_disabled,
-		.flush_buffer = lttng_flush_buffer,
 		.event_strcpy = lttng_event_strcpy,
 	},
 	.client_config = &client_config,

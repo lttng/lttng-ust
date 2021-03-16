@@ -1227,7 +1227,7 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg,
 	case LTTNG_UST_ABI_DISABLE:
 		return lttng_channel_disable(channel);
 	case LTTNG_UST_ABI_FLUSH_BUFFER:
-		return channel->ops->flush_buffer(channel->chan, channel->handle);
+		return channel->ops->priv->flush_buffer(channel->chan, channel->handle);
 	default:
 		return -EINVAL;
 	}

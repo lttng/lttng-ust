@@ -1279,7 +1279,7 @@ struct ustctl_consumer_channel *
 	if (!chan)
 		return NULL;
 
-	chan->chan = transport->ops.channel_create(transport_name, NULL,
+	chan->chan = transport->ops.priv->channel_create(transport_name, NULL,
 			attr->subbuf_size, attr->num_subbuf,
 			attr->switch_timer_interval,
 			attr->read_timer_interval,
@@ -1304,7 +1304,7 @@ void ustctl_destroy_channel(struct ustctl_consumer_channel *chan)
 {
 	(void) ustctl_channel_close_wait_fd(chan);
 	(void) ustctl_channel_close_wakeup_fd(chan);
-	chan->chan->ops->channel_destroy(chan->chan);
+	chan->chan->ops->priv->channel_destroy(chan->chan);
 	free(chan);
 }
 
@@ -1350,7 +1350,7 @@ int ustctl_write_metadata_to_channel(
 
 	for (pos = 0; pos < len; pos += reserve_len) {
 		reserve_len = min_t(size_t,
-				chan->ops->packet_avail_size(chan->chan, chan->handle),
+				chan->ops->priv->packet_avail_size(chan->chan, chan->handle),
 				len - pos);
 		lib_ring_buffer_ctx_init(&ctx, chan->chan, NULL, reserve_len,
 					 sizeof(char), -1, chan->handle);
@@ -1397,7 +1397,7 @@ ssize_t ustctl_write_one_packet_to_channel(
 	int ret;
 
 	reserve_len = min_t(ssize_t,
-			chan->ops->packet_avail_size(chan->chan, chan->handle),
+			chan->ops->priv->packet_avail_size(chan->chan, chan->handle),
 			len);
 	lib_ring_buffer_ctx_init(&ctx, chan->chan, NULL, reserve_len,
 			sizeof(char), -1, chan->handle);
