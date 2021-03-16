@@ -473,6 +473,7 @@ struct lttng_ust_event_notifier_private;
  */
 struct lttng_ust_event_notifier {
 	uint32_t struct_size;				/* Size of this structure. */
+
 	struct lttng_ust_event_common *parent;		/* Inheritance by aggregation. */
 	struct lttng_ust_event_notifier_private *priv;	/* Private event notifier interface */
 
