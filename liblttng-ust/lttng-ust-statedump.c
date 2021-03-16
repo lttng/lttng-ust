@@ -63,7 +63,7 @@ struct lttng_ust_dl_node {
 #define UST_DL_STATE_TABLE_SIZE	(1 << UST_DL_STATE_HASH_BITS)
 struct cds_hlist_head dl_state_table[UST_DL_STATE_TABLE_SIZE];
 
-typedef void (*tracepoint_cb)(struct lttng_session *session, void *priv);
+typedef void (*tracepoint_cb)(struct lttng_ust_session *session, void *priv);
 
 static
 struct lttng_ust_dl_node *alloc_dl_node(const struct bin_info_data *bin_data)
@@ -204,7 +204,7 @@ void trace_statedump_event(tracepoint_cb tp_cb, void *owner, void *priv)
 }
 
 static
-void trace_bin_info_cb(struct lttng_session *session, void *priv)
+void trace_bin_info_cb(struct lttng_ust_session *session, void *priv)
 {
 	struct bin_info_data *bin_data = (struct bin_info_data *) priv;
 
@@ -216,7 +216,7 @@ void trace_bin_info_cb(struct lttng_session *session, void *priv)
 }
 
 static
-void trace_build_id_cb(struct lttng_session *session, void *priv)
+void trace_build_id_cb(struct lttng_ust_session *session, void *priv)
 {
 	struct bin_info_data *bin_data = (struct bin_info_data *) priv;
 
@@ -226,7 +226,7 @@ void trace_build_id_cb(struct lttng_session *session, void *priv)
 }
 
 static
-void trace_debug_link_cb(struct lttng_session *session, void *priv)
+void trace_debug_link_cb(struct lttng_ust_session *session, void *priv)
 {
 	struct bin_info_data *bin_data = (struct bin_info_data *) priv;
 
@@ -236,20 +236,20 @@ void trace_debug_link_cb(struct lttng_session *session, void *priv)
 }
 
 static
-void procname_cb(struct lttng_session *session, void *priv)
+void procname_cb(struct lttng_ust_session *session, void *priv)
 {
 	char *procname = (char *) priv;
 	tracepoint(lttng_ust_statedump, procname, session, procname);
 }
 
 static
-void trace_start_cb(struct lttng_session *session, void *priv)
+void trace_start_cb(struct lttng_ust_session *session, void *priv)
 {
 	tracepoint(lttng_ust_statedump, start, session);
 }
 
 static
-void trace_end_cb(struct lttng_session *session, void *priv)
+void trace_end_cb(struct lttng_ust_session *session, void *priv)
 {
 	tracepoint(lttng_ust_statedump, end, session);
 }

@@ -25,7 +25,7 @@
  */
 #define LTTNG_PROC_NS_PATH_MAX 40
 
-struct lttng_session;
+struct lttng_ust_session;
 struct lttng_channel;
 struct lttng_event;
 struct lttng_ust_ctx_field;

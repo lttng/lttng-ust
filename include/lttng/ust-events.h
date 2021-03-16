@@ -41,7 +41,7 @@ extern "C" {
 #define LTTNG_UST_PROVIDER_MINOR	0
 
 struct lttng_channel;
-struct lttng_session;
+struct lttng_ust_session;
 struct lttng_ust_lib_ring_buffer_ctx;
 struct lttng_ust_event_field;
 struct lttng_event_notifier_group;
@@ -500,7 +500,7 @@ struct lttng_channel {
 	int enabled;
 	struct lttng_ust_ctx *ctx;
 	/* Event ID management */
-	struct lttng_session *session;
+	struct lttng_ust_session *session;
 	int objd;			/* Object associated to channel */
 	struct cds_list_head node;	/* Channel list in session */
 	const struct lttng_ust_channel_ops *ops;
@@ -544,7 +544,7 @@ struct lttng_ust_session_private;
  * structure. It should be queried before using additional fields added
  * at the end of the structure.
  */
-struct lttng_session {
+struct lttng_ust_session {
 	uint32_t struct_size;			/* Size of this structure */
 
 	struct lttng_ust_session_private *priv;	/* Private session interface */

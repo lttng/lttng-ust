@@ -86,7 +86,7 @@ void lttng_counter_transport_unregister(struct lttng_counter_transport *transpor
 /*
  * Needed by comm layer.
  */
-struct lttng_enum *lttng_ust_enum_get_from_desc(struct lttng_session *session,
+struct lttng_enum *lttng_ust_enum_get_from_desc(struct lttng_ust_session *session,
 		const struct lttng_ust_enum_desc *enum_desc)
 {
 	struct lttng_enum *_enum;

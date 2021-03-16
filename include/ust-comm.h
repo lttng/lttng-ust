@@ -45,7 +45,7 @@ struct lttng_ust_event_field;
 struct lttng_ust_ctx_field;
 struct lttng_ust_enum_entry;
 struct lttng_integer_type;
-struct lttng_session;
+struct lttng_ust_session;
 
 struct ustctl_reg_msg {
 	uint32_t magic;
@@ -285,7 +285,7 @@ int ustcomm_send_reg_msg(int sock,
  */
 __attribute__((visibility("hidden")))
 int ustcomm_register_event(int sock,
-	struct lttng_session *session,
+	struct lttng_ust_session *session,
 	int session_objd,		/* session descriptor */
 	int channel_objd,		/* channel descriptor */
 	const char *event_name,		/* event name (input) */
@@ -314,7 +314,7 @@ int ustcomm_register_enum(int sock,
  */
 __attribute__((visibility("hidden")))
 int ustcomm_register_channel(int sock,
-	struct lttng_session *session,
+	struct lttng_ust_session *session,
 	int session_objd,		/* session descriptor */
 	int channel_objd,		/* channel descriptor */
 	size_t nr_ctx_fields,

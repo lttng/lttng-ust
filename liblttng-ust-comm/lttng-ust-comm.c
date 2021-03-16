@@ -39,11 +39,11 @@ static
 ssize_t count_fields_recursive(size_t nr_fields,
 		const struct lttng_ust_event_field **lttng_fields);
 static
-int serialize_one_field(struct lttng_session *session,
+int serialize_one_field(struct lttng_ust_session *session,
 		struct ustctl_field *fields, size_t *iter_output,
 		const struct lttng_ust_event_field *lf);
 static
-int serialize_fields(struct lttng_session *session,
+int serialize_fields(struct lttng_ust_session *session,
 		struct ustctl_field *ustctl_fields,
 		size_t *iter_output, size_t nr_lttng_fields,
 		const struct lttng_ust_event_field **lttng_fields);
@@ -987,7 +987,7 @@ int serialize_integer_type(struct ustctl_integer_type *uit,
 }
 
 static
-int serialize_dynamic_type(struct lttng_session *session,
+int serialize_dynamic_type(struct lttng_ust_session *session,
 		struct ustctl_field *fields, size_t *iter_output,
 		const char *field_name)
 {
@@ -1046,7 +1046,7 @@ int serialize_dynamic_type(struct lttng_session *session,
 }
 
 static
-int serialize_one_type(struct lttng_session *session,
+int serialize_one_type(struct lttng_ust_session *session,
 		struct ustctl_field *fields, size_t *iter_output,
 		const char *field_name, const struct lttng_type *lt)
 {
@@ -1236,7 +1236,7 @@ int serialize_one_type(struct lttng_session *session,
 }
 
 static
-int serialize_one_field(struct lttng_session *session,
+int serialize_one_field(struct lttng_ust_session *session,
 		struct ustctl_field *fields, size_t *iter_output,
 		const struct lttng_ust_event_field *lf)
 {
@@ -1248,7 +1248,7 @@ int serialize_one_field(struct lttng_session *session,
 }
 
 static
-int serialize_fields(struct lttng_session *session,
+int serialize_fields(struct lttng_ust_session *session,
 		struct ustctl_field *ustctl_fields,
 		size_t *iter_output, size_t nr_lttng_fields,
 		const struct lttng_ust_event_field **lttng_fields)
@@ -1266,7 +1266,7 @@ int serialize_fields(struct lttng_session *session,
 }
 
 static
-int alloc_serialize_fields(struct lttng_session *session,
+int alloc_serialize_fields(struct lttng_ust_session *session,
 		size_t *_nr_write_fields,
 		struct ustctl_field **ustctl_fields,
 		size_t nr_fields,
@@ -1336,7 +1336,7 @@ int serialize_entries(struct ustctl_enum_entry **_entries,
 }
 
 static
-int serialize_ctx_fields(struct lttng_session *session,
+int serialize_ctx_fields(struct lttng_ust_session *session,
 		size_t *_nr_write_fields,
 		struct ustctl_field **ustctl_fields,
 		size_t nr_fields,
@@ -1377,7 +1377,7 @@ error_type:
  * Returns 0 on success, negative error value on error.
  */
 int ustcomm_register_event(int sock,
-	struct lttng_session *session,
+	struct lttng_ust_session *session,
 	int session_objd,		/* session descriptor */
 	int channel_objd,		/* channel descriptor */
 	const char *event_name,		/* event name (input) */
@@ -1624,7 +1624,7 @@ error_entries:
  * Returns -EPIPE or -ECONNRESET if other end has hung up.
  */
 int ustcomm_register_channel(int sock,
-	struct lttng_session *session,
+	struct lttng_ust_session *session,
 	int session_objd,		/* session descriptor */
 	int channel_objd,		/* channel descriptor */
 	size_t nr_ctx_fields,

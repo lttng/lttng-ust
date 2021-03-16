@@ -301,7 +301,7 @@ int lttng_is_channel_ready(struct lttng_channel *lttng_chan)
 static
 int lttng_abi_create_session(void *owner)
 {
-	struct lttng_session *session;
+	struct lttng_ust_session *session;
 	int session_objd, ret;
 
 	session = lttng_session_create();
@@ -379,7 +379,7 @@ static
 long lttng_abi_add_context(int objd,
 	struct lttng_ust_abi_context *context_param,
 	union lttng_ust_abi_args *uargs,
-	struct lttng_ust_ctx **ctx, struct lttng_session *session)
+	struct lttng_ust_ctx **ctx, struct lttng_ust_session *session)
 {
 	return lttng_attach_context(context_param, uargs, ctx, session);
 }
@@ -442,7 +442,7 @@ int lttng_abi_map_channel(int session_objd,
 		union lttng_ust_abi_args *uargs,
 		void *owner)
 {
-	struct lttng_session *session = objd_private(session_objd);
+	struct lttng_ust_session *session = objd_private(session_objd);
 	const char *transport_name;
 	const struct lttng_transport *transport;
 	const char *chan_name;
@@ -597,7 +597,7 @@ static
 long lttng_session_cmd(int objd, unsigned int cmd, unsigned long arg,
 	union lttng_ust_abi_args *uargs, void *owner)
 {
-	struct lttng_session *session = objd_private(objd);
+	struct lttng_ust_session *session = objd_private(objd);
 
 	switch (cmd) {
 	case LTTNG_UST_ABI_CHANNEL:
@@ -633,7 +633,7 @@ long lttng_session_cmd(int objd, unsigned int cmd, unsigned long arg,
 static
 int lttng_release_session(int objd)
 {
-	struct lttng_session *session = objd_private(objd);
+	struct lttng_ust_session *session = objd_private(objd);
 
 	if (session) {
 		lttng_session_destroy(session);

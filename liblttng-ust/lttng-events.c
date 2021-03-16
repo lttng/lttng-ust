@@ -74,9 +74,9 @@ static void _lttng_event_destroy(struct lttng_ust_event_common *event);
 static void _lttng_enum_destroy(struct lttng_enum *_enum);
 
 static
-void lttng_session_lazy_sync_event_enablers(struct lttng_session *session);
+void lttng_session_lazy_sync_event_enablers(struct lttng_ust_session *session);
 static
-void lttng_session_sync_event_enablers(struct lttng_session *session);
+void lttng_session_sync_event_enablers(struct lttng_ust_session *session);
 static
 void lttng_event_notifier_group_sync_enablers(
 		struct lttng_event_notifier_group *event_notifier_group);
@@ -127,16 +127,16 @@ int lttng_loglevel_match(int loglevel,
 	}
 }
 
-struct lttng_session *lttng_session_create(void)
+struct lttng_ust_session *lttng_session_create(void)
 {
-	struct lttng_session *session;
+	struct lttng_ust_session *session;
 	struct lttng_ust_session_private *session_priv;
 	int i;
 
-	session = zmalloc(sizeof(struct lttng_session));
+	session = zmalloc(sizeof(struct lttng_ust_session));
 	if (!session)
 		return NULL;
-	session->struct_size = sizeof(struct lttng_session);
+	session->struct_size = sizeof(struct lttng_ust_session);
 	session_priv = zmalloc(sizeof(struct lttng_ust_session_private));
 	if (!session_priv) {
 		free(session);
@@ -285,7 +285,7 @@ void _lttng_event_unregister(struct lttng_ust_event_common *event)
 		unregister_event(event);
 }
 
-void lttng_session_destroy(struct lttng_session *session)
+void lttng_session_destroy(struct lttng_ust_session *session)
 {
 	struct lttng_channel *chan, *tmpchan;
 	struct lttng_ust_event_recorder_private *event_recorder_priv, *tmpevent_recorder_priv;
@@ -399,7 +399,7 @@ void lttng_enabler_destroy(struct lttng_enabler *enabler)
 
 static
 int lttng_enum_create(const struct lttng_ust_enum_desc *desc,
-		struct lttng_session *session)
+		struct lttng_ust_session *session)
 {
 	const char *enum_name = desc->name;
 	struct lttng_enum *_enum;
@@ -457,7 +457,7 @@ exist:
 
 static
 int lttng_create_enum_check(const struct lttng_type *type,
-		struct lttng_session *session)
+		struct lttng_ust_session *session)
 {
 	switch (type->atype) {
 	case atype_enum_nestable:
@@ -498,7 +498,7 @@ int lttng_create_enum_check(const struct lttng_type *type,
 static
 int lttng_create_all_event_enums(size_t nr_fields,
 		const struct lttng_ust_event_field **event_fields,
-		struct lttng_session *session)
+		struct lttng_ust_session *session)
 {
 	size_t i;
 	int ret;
@@ -517,7 +517,7 @@ int lttng_create_all_event_enums(size_t nr_fields,
 static
 int lttng_create_all_ctx_enums(size_t nr_fields,
 		struct lttng_ust_ctx_field **ctx_fields,
-		struct lttng_session *session)
+		struct lttng_ust_session *session)
 {
 	size_t i;
 	int ret;
@@ -537,14 +537,14 @@ int lttng_create_all_ctx_enums(size_t nr_fields,
  * Ensure that a state-dump will be performed for this session at the end
  * of the current handle_message().
  */
-int lttng_session_statedump(struct lttng_session *session)
+int lttng_session_statedump(struct lttng_ust_session *session)
 {
 	session->priv->statedump_pending = 1;
 	lttng_ust_sockinfo_session_enabled(session->priv->owner);
 	return 0;
 }
 
-int lttng_session_enable(struct lttng_session *session)
+int lttng_session_enable(struct lttng_ust_session *session)
 {
 	int ret = 0;
 	struct lttng_channel *chan;
@@ -619,7 +619,7 @@ end:
 	return ret;
 }
 
-int lttng_session_disable(struct lttng_session *session)
+int lttng_session_disable(struct lttng_ust_session *session)
 {
 	int ret = 0;
 
@@ -697,7 +697,7 @@ int lttng_event_recorder_create(const struct lttng_ust_event_desc *desc,
 {
 	struct lttng_ust_event_recorder *event_recorder;
 	struct lttng_ust_event_recorder_private *event_recorder_priv;
-	struct lttng_session *session = chan->session;
+	struct lttng_ust_session *session = chan->session;
 	struct cds_hlist_head *head;
 	int ret = 0;
 	int notify_socket, loglevel;
@@ -1004,7 +1004,7 @@ struct lttng_enabler_ref *lttng_enabler_ref(
 static
 void lttng_create_event_recorder_if_missing(struct lttng_event_enabler *event_enabler)
 {
-	struct lttng_session *session = event_enabler->chan->session;
+	struct lttng_ust_session *session = event_enabler->chan->session;
 	struct lttng_ust_probe_desc *probe_desc;
 	const struct lttng_ust_event_desc *desc;
 	struct lttng_ust_event_recorder_private *event_recorder_priv;
@@ -1135,7 +1135,7 @@ void _event_enum_destroy(struct lttng_ust_event_common *event)
 	case LTTNG_UST_EVENT_TYPE_RECORDER:
 	{
 		struct lttng_ust_event_recorder *event_recorder = event->child;
-		struct lttng_session *session = event_recorder->chan->session;
+		struct lttng_ust_session *session = event_recorder->chan->session;
 		unsigned int i;
 
 		/* Destroy enums of the current event. */
@@ -1202,7 +1202,7 @@ void lttng_probe_provider_unregister_events(
 static
 int lttng_event_enabler_ref_event_recorders(struct lttng_event_enabler *event_enabler)
 {
-	struct lttng_session *session = event_enabler->chan->session;
+	struct lttng_ust_session *session = event_enabler->chan->session;
 	struct lttng_ust_event_recorder_private *event_recorder_priv;
 
 	if (!lttng_event_enabler_as_enabler(event_enabler)->enabled)
@@ -1546,7 +1546,7 @@ int lttng_event_notifier_enabler_attach_exclusion(
 
 int lttng_attach_context(struct lttng_ust_abi_context *context_param,
 		union lttng_ust_abi_args *uargs,
-		struct lttng_ust_ctx **ctx, struct lttng_session *session)
+		struct lttng_ust_ctx **ctx, struct lttng_ust_session *session)
 {
 	/*
 	 * We cannot attach a context after trace has been started for a
@@ -1640,7 +1640,7 @@ void lttng_event_enabler_destroy(struct lttng_event_enabler *event_enabler)
  * session.
  */
 static
-void lttng_session_sync_event_enablers(struct lttng_session *session)
+void lttng_session_sync_event_enablers(struct lttng_ust_session *session)
 {
 	struct lttng_event_enabler *event_enabler;
 	struct lttng_ust_event_recorder_private *event_recorder_priv;
@@ -1931,7 +1931,7 @@ void lttng_event_notifier_group_sync_enablers(struct lttng_event_notifier_group 
  * "lazy" sync means we only sync if required.
  */
 static
-void lttng_session_lazy_sync_event_enablers(struct lttng_session *session)
+void lttng_session_lazy_sync_event_enablers(struct lttng_ust_session *session)
 {
 	/* We can skip if session is not active */
 	if (!session->active)

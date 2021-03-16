@@ -17,7 +17,7 @@ int lttng_context_init_all(struct lttng_ust_ctx **ctx);
 __attribute__((visibility("hidden")))
 int lttng_attach_context(struct lttng_ust_abi_context *context_param,
 		union lttng_ust_abi_args *uargs,
-		struct lttng_ust_ctx **ctx, struct lttng_session *session);
+		struct lttng_ust_ctx **ctx, struct lttng_ust_session *session);
 
 __attribute__((visibility("hidden")))
 int lttng_find_context(struct lttng_ust_ctx *ctx, const char *name);

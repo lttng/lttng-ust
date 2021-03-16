@@ -282,7 +282,7 @@ struct lttng_ust_bytecode_runtime_private {
 };
 
 struct lttng_ust_session_private {
-	struct lttng_session *pub;		/* Public session interface */
+	struct lttng_ust_session *pub;		/* Public session interface */
 
 	int been_active;			/* Been active ? */
 	int objd;				/* Object associated */
@@ -308,7 +308,7 @@ struct lttng_ust_session_private {
 
 struct lttng_enum {
 	const struct lttng_ust_enum_desc *desc;
-	struct lttng_session *session;
+	struct lttng_ust_session *session;
 	struct cds_list_head node;	/* Enum list in session */
 	struct cds_hlist_node hlist;	/* Session ht of enums */
 	uint64_t id;			/* Enumeration ID in sessiond */
@@ -548,19 +548,19 @@ struct lttng_ust_abi_field_iter *
 	lttng_ust_field_list_get_iter_next(struct lttng_ust_field_list *list);
 
 __attribute__((visibility("hidden")))
-struct lttng_session *lttng_session_create(void);
+struct lttng_ust_session *lttng_session_create(void);
 
 __attribute__((visibility("hidden")))
-int lttng_session_enable(struct lttng_session *session);
+int lttng_session_enable(struct lttng_ust_session *session);
 
 __attribute__((visibility("hidden")))
-int lttng_session_disable(struct lttng_session *session);
+int lttng_session_disable(struct lttng_ust_session *session);
 
 __attribute__((visibility("hidden")))
-int lttng_session_statedump(struct lttng_session *session);
+int lttng_session_statedump(struct lttng_ust_session *session);
 
 __attribute__((visibility("hidden")))
-void lttng_session_destroy(struct lttng_session *session);
+void lttng_session_destroy(struct lttng_ust_session *session);
 
 /*
  * Called with ust lock held.
@@ -575,7 +575,7 @@ __attribute__((visibility("hidden")))
 void lttng_handle_pending_statedump(void *owner);
 
 __attribute__((visibility("hidden")))
-struct lttng_channel *lttng_channel_create(struct lttng_session *session,
+struct lttng_channel *lttng_channel_create(struct lttng_ust_session *session,
 				       const char *transport_name,
 				       void *buf_addr,
 				       size_t subbuf_size, size_t num_subbuf,
@@ -613,7 +613,7 @@ __attribute__((visibility("hidden")))
 struct cds_list_head *lttng_get_probe_list_head(void);
 
 __attribute__((visibility("hidden")))
-struct lttng_enum *lttng_ust_enum_get_from_desc(struct lttng_session *session,
+struct lttng_enum *lttng_ust_enum_get_from_desc(struct lttng_ust_session *session,
 		const struct lttng_ust_enum_desc *enum_desc);
 
 __attribute__((visibility("hidden")))
