@@ -42,7 +42,7 @@
 #define LTTNG_UST_COMM_REG_MSG_PADDING			64
 
 struct lttng_ust_event_field;
-struct lttng_ctx_field;
+struct lttng_ust_ctx_field;
 struct lttng_ust_enum_entry;
 struct lttng_integer_type;
 struct lttng_session;
@@ -318,7 +318,7 @@ int ustcomm_register_channel(int sock,
 	int session_objd,		/* session descriptor */
 	int channel_objd,		/* channel descriptor */
 	size_t nr_ctx_fields,
-	const struct lttng_ctx_field *ctx_fields,
+	struct lttng_ust_ctx_field **ctx_fields,
 	uint32_t *chan_id,		/* channel id (output) */
 	int *header_type); 		/* header type (output) */
 

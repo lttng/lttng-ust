@@ -379,7 +379,7 @@ static
 long lttng_abi_add_context(int objd,
 	struct lttng_ust_abi_context *context_param,
 	union lttng_ust_abi_args *uargs,
-	struct lttng_ctx **ctx, struct lttng_session *session)
+	struct lttng_ust_ctx **ctx, struct lttng_session *session)
 {
 	return lttng_attach_context(context_param, uargs, ctx, session);
 }

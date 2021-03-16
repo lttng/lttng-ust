@@ -26,7 +26,7 @@
  * same context performed by the same thread return the same result.
  */
 
-int lttng_find_context(struct lttng_ctx *ctx, const char *name)
+int lttng_find_context(struct lttng_ust_ctx *ctx, const char *name)
 {
 	unsigned int i;
 	const char *subname;
@@ -38,15 +38,15 @@ int lttng_find_context(struct lttng_ctx *ctx, const char *name)
 	}
 	for (i = 0; i < ctx->nr_fields; i++) {
 		/* Skip allocated (but non-initialized) contexts */
-		if (!ctx->fields[i].event_field.name)
+		if (!ctx->fields[i]->event_field->name)
 			continue;
-		if (!strcmp(ctx->fields[i].event_field.name, subname))
+		if (!strcmp(ctx->fields[i]->event_field->name, subname))
 			return 1;
 	}
 	return 0;
 }
 
-int lttng_get_context_index(struct lttng_ctx *ctx, const char *name)
+int lttng_get_context_index(struct lttng_ust_ctx *ctx, const char *name)
 {
 	unsigned int i;
 	const char *subname;
@@ -60,23 +60,23 @@ int lttng_get_context_index(struct lttng_ctx *ctx, const char *name)
 	}
 	for (i = 0; i < ctx->nr_fields; i++) {
 		/* Skip allocated (but non-initialized) contexts */
-		if (!ctx->fields[i].event_field.name)
+		if (!ctx->fields[i]->event_field->name)
 			continue;
-		if (!strcmp(ctx->fields[i].event_field.name, subname))
+		if (!strcmp(ctx->fields[i]->event_field->name, subname))
 			return i;
 	}
 	return -1;
 }
 
-static int lttng_find_context_provider(struct lttng_ctx *ctx, const char *name)
+static int lttng_find_context_provider(struct lttng_ust_ctx *ctx, const char *name)
 {
 	unsigned int i;
 
 	for (i = 0; i < ctx->nr_fields; i++) {
 		/* Skip allocated (but non-initialized) contexts */
-		if (!ctx->fields[i].event_field.name)
+		if (!ctx->fields[i]->event_field->name)
 			continue;
-		if (!strncmp(ctx->fields[i].event_field.name, name,
+		if (!strncmp(ctx->fields[i]->event_field->name, name,
 				strlen(name)))
 			return 1;
 	}
@@ -85,65 +85,100 @@ static int lttng_find_context_provider(struct lttng_ctx *ctx, const char *name)
 
 /*
  * Note: as we append context information, the pointer location may change.
+ * lttng_add_context leaves the new last context initialized to NULL.
  */
-struct lttng_ctx_field *lttng_append_context(struct lttng_ctx **ctx_p)
+static
+int lttng_add_context(struct lttng_ust_ctx **ctx_p)
 {
-	struct lttng_ctx_field *field;
-	struct lttng_ctx *ctx;
+	struct lttng_ust_ctx *ctx;
 
 	if (!*ctx_p) {
-		*ctx_p = zmalloc(sizeof(struct lttng_ctx));
+		*ctx_p = zmalloc(sizeof(struct lttng_ust_ctx));
 		if (!*ctx_p)
-			return NULL;
+			return -ENOMEM;
+		(*ctx_p)->struct_size = sizeof(struct lttng_ust_ctx);
 		(*ctx_p)->largest_align = 1;
 	}
 	ctx = *ctx_p;
 	if (ctx->nr_fields + 1 > ctx->allocated_fields) {
-		struct lttng_ctx_field *new_fields;
+		struct lttng_ust_ctx_field **new_fields;
 
 		ctx->allocated_fields = max_t(size_t, 1, 2 * ctx->allocated_fields);
-		new_fields = zmalloc(ctx->allocated_fields * sizeof(struct lttng_ctx_field));
+		new_fields = zmalloc(ctx->allocated_fields * sizeof(*new_fields));
 		if (!new_fields)
-			return NULL;
+			return -ENOMEM;
+		/* Copy pointers */
 		if (ctx->fields)
 			memcpy(new_fields, ctx->fields, sizeof(*ctx->fields) * ctx->nr_fields);
 		free(ctx->fields);
 		ctx->fields = new_fields;
 	}
-	field = &ctx->fields[ctx->nr_fields];
 	ctx->nr_fields++;
-	return field;
+	return 0;
 }
 
-int lttng_context_add_rcu(struct lttng_ctx **ctx_p,
-		const struct lttng_ctx_field *f)
+struct lttng_ust_ctx_field *lttng_append_context(struct lttng_ust_ctx **ctx_p)
 {
-	struct lttng_ctx *old_ctx = *ctx_p, *new_ctx = NULL;
-	struct lttng_ctx_field *new_fields = NULL;
-	struct lttng_ctx_field *nf;
+	struct lttng_ust_ctx_field *field;
+	int ret;
+
+	field = zmalloc(sizeof(struct lttng_ust_ctx_field));
+	if (!field)
+		goto error_alloc_field;
+	field->struct_size = sizeof(struct lttng_ust_ctx_field);
+	field->event_field = zmalloc(sizeof(struct lttng_ust_event_field));
+	if (!field->event_field)
+		goto error_alloc_event_field;
+	field->event_field->struct_size = sizeof(struct lttng_ust_event_field);
+
+	ret = lttng_add_context(ctx_p);
+	if (ret)
+		goto error_add_context;
+	(*ctx_p)->fields[(*ctx_p)->nr_fields - 1] = field;
+	return field;
+
+error_add_context:
+	free(field->event_field);
+error_alloc_event_field:
+	free(field);
+error_alloc_field:
+	return NULL;
+}
+
+/*
+ * Takes ownership of @f on success.
+ */
+int lttng_context_add_rcu(struct lttng_ust_ctx **ctx_p,
+		struct lttng_ust_ctx_field *f)
+{
+	struct lttng_ust_ctx *old_ctx = *ctx_p, *new_ctx = NULL;
+	struct lttng_ust_ctx_field **new_fields = NULL;
+	int ret;
 
 	if (old_ctx) {
-		new_ctx = zmalloc(sizeof(struct lttng_ctx));
+		new_ctx = zmalloc(sizeof(struct lttng_ust_ctx));
 		if (!new_ctx)
 			return -ENOMEM;
+		new_ctx->struct_size = sizeof(struct lttng_ust_ctx);
 		*new_ctx = *old_ctx;
-		new_fields = zmalloc(new_ctx->allocated_fields
-				* sizeof(struct lttng_ctx_field));
+		new_fields = zmalloc(new_ctx->allocated_fields * sizeof(*new_fields));
 		if (!new_fields) {
 			free(new_ctx);
 			return -ENOMEM;
 		}
+		/* Copy pointers */
 		memcpy(new_fields, old_ctx->fields,
 				sizeof(*old_ctx->fields) * old_ctx->nr_fields);
 		new_ctx->fields = new_fields;
 	}
-	nf = lttng_append_context(&new_ctx);
-	if (!nf) {
+	ret = lttng_add_context(&new_ctx);
+	if (ret) {
 		free(new_fields);
 		free(new_ctx);
-		return -ENOMEM;
+		return ret;
 	}
-	*nf = *f;
+	/* Taking ownership of f. */
+	(*ctx_p)->fields[(*ctx_p)->nr_fields - 1] = f;
 	lttng_context_update(new_ctx);
 	lttng_ust_rcu_assign_pointer(*ctx_p, new_ctx);
 	lttng_ust_urcu_synchronize_rcu();
@@ -158,7 +193,7 @@ int lttng_context_add_rcu(struct lttng_ctx **ctx_p,
  * lttng_context_update() should be called at least once between context
  * modification and trace start.
  */
-void lttng_context_update(struct lttng_ctx *ctx)
+void lttng_context_update(struct lttng_ust_ctx *ctx)
 {
 	int i;
 	size_t largest_align = 8;	/* in bits */
@@ -167,7 +202,7 @@ void lttng_context_update(struct lttng_ctx *ctx)
 		struct lttng_type *type;
 		size_t field_align = 8;
 
-		type = &ctx->fields[i].event_field.type;
+		type = &ctx->fields[i]->event_field->type;
 		switch (type->atype) {
 		case atype_integer:
 			field_align = type->u.integer.alignment;
@@ -234,28 +269,30 @@ void lttng_context_update(struct lttng_ctx *ctx)
 /*
  * Remove last context field.
  */
-void lttng_remove_context_field(struct lttng_ctx **ctx_p,
-				struct lttng_ctx_field *field)
+void lttng_remove_context_field(struct lttng_ust_ctx **ctx_p,
+				struct lttng_ust_ctx_field *field)
 {
-	struct lttng_ctx *ctx;
+	struct lttng_ust_ctx *ctx;
 
 	ctx = *ctx_p;
 	ctx->nr_fields--;
-	assert(&ctx->fields[ctx->nr_fields] == field);
+	assert(ctx->fields[ctx->nr_fields] == field);
 	assert(field->field_name == NULL);
-	memset(&ctx->fields[ctx->nr_fields], 0, sizeof(struct lttng_ctx_field));
+	ctx->fields[ctx->nr_fields] = NULL;
 }
 
-void lttng_destroy_context(struct lttng_ctx *ctx)
+void lttng_destroy_context(struct lttng_ust_ctx *ctx)
 {
 	int i;
 
 	if (!ctx)
 		return;
 	for (i = 0; i < ctx->nr_fields; i++) {
-		if (ctx->fields[i].destroy)
-			ctx->fields[i].destroy(&ctx->fields[i]);
-		free(ctx->fields[i].field_name);
+		if (ctx->fields[i]->destroy)
+			ctx->fields[i]->destroy(ctx->fields[i]);
+		free(ctx->fields[i]->field_name);
+		free(ctx->fields[i]->event_field);
+		free(ctx->fields[i]);
 	}
 	free(ctx->fields);
 	free(ctx);
@@ -273,18 +310,18 @@ void lttng_destroy_context(struct lttng_ctx *ctx)
  * a single RCU read-side critical section see either all old, or all
  * new handlers.
  */
-int lttng_ust_context_set_provider_rcu(struct lttng_ctx **_ctx,
+int lttng_ust_context_set_provider_rcu(struct lttng_ust_ctx **_ctx,
 		const char *name,
-		size_t (*get_size)(struct lttng_ctx_field *field, size_t offset),
-		void (*record)(struct lttng_ctx_field *field,
+		size_t (*get_size)(struct lttng_ust_ctx_field *field, size_t offset),
+		void (*record)(struct lttng_ust_ctx_field *field,
 			struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			struct lttng_channel *chan),
-		void (*get_value)(struct lttng_ctx_field *field,
-			struct lttng_ctx_value *value))
+		void (*get_value)(struct lttng_ust_ctx_field *field,
+			struct lttng_ust_ctx_value *value))
 {
 	int i, ret;
-	struct lttng_ctx *ctx = *_ctx, *new_ctx;
-	struct lttng_ctx_field *new_fields;
+	struct lttng_ust_ctx *ctx = *_ctx, *new_ctx;
+	struct lttng_ust_ctx_field **new_fields;
 
 	if (!ctx || !lttng_find_context_provider(ctx, name))
 		return 0;
@@ -294,21 +331,23 @@ int lttng_ust_context_set_provider_rcu(struct lttng_ctx **_ctx,
 	new_ctx = zmalloc(sizeof(*new_ctx));
 	if (!new_ctx)
 		return -ENOMEM;
+	new_ctx->struct_size = sizeof(*new_ctx);
 	*new_ctx = *ctx;
 	new_fields = zmalloc(sizeof(*new_fields) * ctx->allocated_fields);
 	if (!new_fields) {
 		ret = -ENOMEM;
 		goto field_error;
 	}
+	/* Copy pointers */
 	memcpy(new_fields, ctx->fields,
 		sizeof(*new_fields) * ctx->allocated_fields);
 	for (i = 0; i < ctx->nr_fields; i++) {
-		if (strncmp(new_fields[i].event_field.name,
+		if (strncmp(new_fields[i]->event_field->name,
 				name, strlen(name)) != 0)
 			continue;
-		new_fields[i].get_size = get_size;
-		new_fields[i].record = record;
-		new_fields[i].get_value = get_value;
+		new_fields[i]->get_size = get_size;
+		new_fields[i]->record = record;
+		new_fields[i]->get_value = get_value;
 	}
 	new_ctx->fields = new_fields;
 	lttng_ust_rcu_assign_pointer(*_ctx, new_ctx);
@@ -322,7 +361,7 @@ field_error:
 	return ret;
 }
 
-int lttng_context_init_all(struct lttng_ctx **ctx)
+int lttng_context_init_all(struct lttng_ust_ctx **ctx)
 {
 	int ret;
 

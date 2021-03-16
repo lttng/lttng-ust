@@ -90,7 +90,7 @@ void lttng_context_uts_ns_reset(void)
 }
 
 static
-size_t uts_ns_get_size(struct lttng_ctx_field *field, size_t offset)
+size_t uts_ns_get_size(struct lttng_ust_ctx_field *field, size_t offset)
 {
 	size_t size = 0;
 
@@ -100,7 +100,7 @@ size_t uts_ns_get_size(struct lttng_ctx_field *field, size_t offset)
 }
 
 static
-void uts_ns_record(struct lttng_ctx_field *field,
+void uts_ns_record(struct lttng_ust_ctx_field *field,
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		 struct lttng_channel *chan)
 {
@@ -112,15 +112,15 @@ void uts_ns_record(struct lttng_ctx_field *field,
 }
 
 static
-void uts_ns_get_value(struct lttng_ctx_field *field,
-		struct lttng_ctx_value *value)
+void uts_ns_get_value(struct lttng_ust_ctx_field *field,
+		struct lttng_ust_ctx_value *value)
 {
 	value->u.s64 = get_uts_ns();
 }
 
-int lttng_add_uts_ns_to_ctx(struct lttng_ctx **ctx)
+int lttng_add_uts_ns_to_ctx(struct lttng_ust_ctx **ctx)
 {
-	struct lttng_ctx_field *field;
+	struct lttng_ust_ctx_field *field;
 
 	field = lttng_append_context(ctx);
 	if (!field)
@@ -129,14 +129,14 @@ int lttng_add_uts_ns_to_ctx(struct lttng_ctx **ctx)
 		lttng_remove_context_field(ctx, field);
 		return -EEXIST;
 	}
-	field->event_field.name = "uts_ns";
-	field->event_field.type.atype = atype_integer;
-	field->event_field.type.u.integer.size = sizeof(ino_t) * CHAR_BIT;
-	field->event_field.type.u.integer.alignment = lttng_alignof(ino_t) * CHAR_BIT;
-	field->event_field.type.u.integer.signedness = lttng_is_signed_type(ino_t);
-	field->event_field.type.u.integer.reverse_byte_order = 0;
-	field->event_field.type.u.integer.base = 10;
-	field->event_field.type.u.integer.encoding = lttng_encode_none;
+	field->event_field->name = "uts_ns";
+	field->event_field->type.atype = atype_integer;
+	field->event_field->type.u.integer.size = sizeof(ino_t) * CHAR_BIT;
+	field->event_field->type.u.integer.alignment = lttng_alignof(ino_t) * CHAR_BIT;
+	field->event_field->type.u.integer.signedness = lttng_is_signed_type(ino_t);
+	field->event_field->type.u.integer.reverse_byte_order = 0;
+	field->event_field->type.u.integer.base = 10;
+	field->event_field->type.u.integer.encoding = lttng_encode_none;
 	field->get_size = uts_ns_get_size;
 	field->record = uts_ns_record;
 	field->get_value = uts_ns_get_value;

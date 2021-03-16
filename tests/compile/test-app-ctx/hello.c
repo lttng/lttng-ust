@@ -41,7 +41,7 @@ void test_inc_count(void)
 }
 
 static
-size_t test_get_size(struct lttng_ctx_field *field, size_t offset)
+size_t test_get_size(struct lttng_ust_ctx_field *field, size_t offset)
 {
 	int sel = test_count % _NR_LTTNG_UST_DYNAMIC_TYPES;
 	size_t size = 0;
@@ -102,7 +102,7 @@ size_t test_get_size(struct lttng_ctx_field *field, size_t offset)
 }
 
 static
-void test_record(struct lttng_ctx_field *field,
+void test_record(struct lttng_ust_ctx_field *field,
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		 struct lttng_channel *chan)
 {
@@ -206,8 +206,8 @@ void test_record(struct lttng_ctx_field *field,
 }
 
 static
-void test_get_value(struct lttng_ctx_field *field,
-		struct lttng_ctx_value *value)
+void test_get_value(struct lttng_ust_ctx_field *field,
+		struct lttng_ust_ctx_value *value)
 {
 	int sel = test_count % _NR_LTTNG_UST_DYNAMIC_TYPES;
 
@@ -254,6 +254,7 @@ void test_get_value(struct lttng_ctx_field *field,
 }
 
 struct lttng_ust_context_provider myprovider = {
+	.struct_size = sizeof(struct lttng_ust_context_provider),
 	.name = "$app.myprovider",
 	.get_size = test_get_size,
 	.record = test_record,

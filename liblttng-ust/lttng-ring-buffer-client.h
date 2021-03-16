@@ -70,7 +70,7 @@ static inline uint64_t lib_ring_buffer_clock_read(struct lttng_ust_lib_ring_buff
 }
 
 static inline
-size_t ctx_get_aligned_size(size_t offset, struct lttng_ctx *ctx,
+size_t ctx_get_aligned_size(size_t offset, struct lttng_ust_ctx *ctx,
 		size_t ctx_len)
 {
 	size_t orig_offset = offset;
@@ -83,7 +83,7 @@ size_t ctx_get_aligned_size(size_t offset, struct lttng_ctx *ctx,
 }
 
 static inline
-void ctx_get_struct_size(struct lttng_ctx *ctx, size_t *ctx_len,
+void ctx_get_struct_size(struct lttng_ust_ctx *ctx, size_t *ctx_len,
 		enum app_ctx_mode mode)
 {
 	int i;
@@ -95,9 +95,9 @@ void ctx_get_struct_size(struct lttng_ctx *ctx, size_t *ctx_len,
 	}
 	for (i = 0; i < ctx->nr_fields; i++) {
 		if (mode == APP_CTX_ENABLED) {
-			offset += ctx->fields[i].get_size(&ctx->fields[i], offset);
+			offset += ctx->fields[i]->get_size(ctx->fields[i], offset);
 		} else {
-			if (lttng_context_is_app(ctx->fields[i].event_field.name)) {
+			if (lttng_context_is_app(ctx->fields[i]->event_field->name)) {
 				/*
 				 * Before UST 2.8, we cannot use the
 				 * application context, because we
@@ -108,9 +108,9 @@ void ctx_get_struct_size(struct lttng_ctx *ctx, size_t *ctx_len,
 				 * concurrently with application context
 				 * register/unregister.
 				 */
-				offset += lttng_ust_dummy_get_size(&ctx->fields[i], offset);
+				offset += lttng_ust_dummy_get_size(ctx->fields[i], offset);
 			} else {
-				offset += ctx->fields[i].get_size(&ctx->fields[i], offset);
+				offset += ctx->fields[i]->get_size(ctx->fields[i], offset);
 			}
 		}
 	}
@@ -120,7 +120,7 @@ void ctx_get_struct_size(struct lttng_ctx *ctx, size_t *ctx_len,
 static inline
 void ctx_record(struct lttng_ust_lib_ring_buffer_ctx *bufctx,
 		struct lttng_channel *chan,
-		struct lttng_ctx *ctx,
+		struct lttng_ust_ctx *ctx,
 		enum app_ctx_mode mode)
 {
 	int i;
@@ -130,9 +130,9 @@ void ctx_record(struct lttng_ust_lib_ring_buffer_ctx *bufctx,
 	lib_ring_buffer_align_ctx(bufctx, ctx->largest_align);
 	for (i = 0; i < ctx->nr_fields; i++) {
 		if (mode == APP_CTX_ENABLED) {
-			ctx->fields[i].record(&ctx->fields[i], bufctx, chan);
+			ctx->fields[i]->record(ctx->fields[i], bufctx, chan);
 		} else {
-			if (lttng_context_is_app(ctx->fields[i].event_field.name)) {
+			if (lttng_context_is_app(ctx->fields[i]->event_field->name)) {
 				/*
 				 * Before UST 2.8, we cannot use the
 				 * application context, because we
@@ -143,9 +143,9 @@ void ctx_record(struct lttng_ust_lib_ring_buffer_ctx *bufctx,
 				 * concurrently with application context
 				 * register/unregister.
 				 */
-				lttng_ust_dummy_record(&ctx->fields[i], bufctx, chan);
+				lttng_ust_dummy_record(ctx->fields[i], bufctx, chan);
 			} else {
-				ctx->fields[i].record(&ctx->fields[i], bufctx, chan);
+				ctx->fields[i]->record(ctx->fields[i], bufctx, chan);
 			}
 		}
 	}

@@ -929,7 +929,7 @@ ssize_t count_fields_recursive(size_t nr_fields,
 
 static
 ssize_t count_ctx_fields_recursive(size_t nr_fields,
-		const struct lttng_ctx_field *lttng_fields)
+		struct lttng_ust_ctx_field **lttng_fields)
 {
 	int i;
 	ssize_t ret, count = 0;
@@ -937,7 +937,7 @@ ssize_t count_ctx_fields_recursive(size_t nr_fields,
 	for (i = 0; i < nr_fields; i++) {
 		const struct lttng_ust_event_field *lf;
 
-		lf = &lttng_fields[i].event_field;
+		lf = lttng_fields[i]->event_field;
 		/* skip 'nowrite' fields */
 		if (lf->nowrite)
 			continue;
@@ -1340,7 +1340,7 @@ int serialize_ctx_fields(struct lttng_session *session,
 		size_t *_nr_write_fields,
 		struct ustctl_field **ustctl_fields,
 		size_t nr_fields,
-		const struct lttng_ctx_field *lttng_fields)
+		struct lttng_ust_ctx_field **lttng_fields)
 {
 	struct ustctl_field *fields;
 	int ret;
@@ -1359,7 +1359,7 @@ int serialize_ctx_fields(struct lttng_session *session,
 
 	for (i = 0; i < nr_fields; i++) {
 		ret = serialize_one_field(session, fields, &iter_output,
-				&lttng_fields[i].event_field);
+				lttng_fields[i]->event_field);
 		if (ret)
 			goto error_type;
 	}
@@ -1628,7 +1628,7 @@ int ustcomm_register_channel(int sock,
 	int session_objd,		/* session descriptor */
 	int channel_objd,		/* channel descriptor */
 	size_t nr_ctx_fields,
-	const struct lttng_ctx_field *ctx_fields,
+	struct lttng_ust_ctx_field **ctx_fields,
 	uint32_t *chan_id,		/* channel id (output) */
 	int *header_type) 		/* header type (output) */
 {

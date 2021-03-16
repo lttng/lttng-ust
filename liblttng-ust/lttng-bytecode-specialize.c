@@ -366,7 +366,7 @@ end:
 	return ret;
 }
 
-static int specialize_context_lookup_name(struct lttng_ctx *ctx,
+static int specialize_context_lookup_name(struct lttng_ust_ctx *ctx,
 		struct bytecode_runtime *bytecode,
 		struct load_op *insn)
 {
@@ -452,13 +452,13 @@ static int specialize_load_object(const struct lttng_ust_event_field *field,
 	return 0;
 }
 
-static int specialize_context_lookup(struct lttng_ctx *ctx,
+static int specialize_context_lookup(struct lttng_ust_ctx *ctx,
 		struct bytecode_runtime *runtime,
 		struct load_op *insn,
 		struct vstack_load *load)
 {
 	int idx, ret;
-	struct lttng_ctx_field *ctx_field;
+	struct lttng_ust_ctx_field *ctx_field;
 	struct lttng_ust_event_field *field;
 	struct bytecode_get_index_data gid;
 	ssize_t data_offset;
@@ -467,8 +467,8 @@ static int specialize_context_lookup(struct lttng_ctx *ctx,
 	if (idx < 0) {
 		return -ENOENT;
 	}
-	ctx_field = &ctx->fields[idx];
-	field = &ctx_field->event_field;
+	ctx_field = ctx->fields[idx];
+	field = ctx_field->event_field;
 	ret = specialize_load_object(field, load, true);
 	if (ret)
 		return ret;
@@ -488,7 +488,7 @@ static int specialize_context_lookup(struct lttng_ctx *ctx,
 	return 0;
 }
 
-static int specialize_app_context_lookup(struct lttng_ctx **pctx,
+static int specialize_app_context_lookup(struct lttng_ust_ctx **pctx,
 		struct bytecode_runtime *runtime,
 		struct load_op *insn,
 		struct vstack_load *load)
@@ -497,7 +497,7 @@ static int specialize_app_context_lookup(struct lttng_ctx **pctx,
 	const char *orig_name;
 	char *name = NULL;
 	int idx, ret;
-	struct lttng_ctx_field *ctx_field;
+	struct lttng_ust_ctx_field *ctx_field;
 	struct lttng_ust_event_field *field;
 	struct bytecode_get_index_data gid;
 	ssize_t data_offset;
@@ -522,8 +522,8 @@ static int specialize_app_context_lookup(struct lttng_ctx **pctx,
 		if (idx < 0)
 			return -ENOENT;
 	}
-	ctx_field = &(*pctx)->fields[idx];
-	field = &ctx_field->event_field;
+	ctx_field = (*pctx)->fields[idx];
+	field = ctx_field->event_field;
 	ret = specialize_load_object(field, load, true);
 	if (ret)
 		goto end;
@@ -631,7 +631,7 @@ int lttng_bytecode_specialize(const struct lttng_ust_event_desc *event_desc,
 	int ret = -EINVAL;
 	struct vstack _stack;
 	struct vstack *stack = &_stack;
-	struct lttng_ctx **pctx = bytecode->p.priv->pctx;
+	struct lttng_ust_ctx **pctx = bytecode->p.priv->pctx;
 
 	vstack_init(stack);
 

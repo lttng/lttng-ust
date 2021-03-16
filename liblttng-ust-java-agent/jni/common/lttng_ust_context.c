@@ -73,7 +73,7 @@ static struct lttng_ust_jni_ctx_entry *lookup_ctx_by_name(const char *ctx_name)
 	return NULL;
 }
 
-static size_t get_size_cb(struct lttng_ctx_field *field, size_t offset)
+static size_t get_size_cb(struct lttng_ust_ctx_field *field, size_t offset)
 {
 	struct lttng_ust_jni_ctx_entry *jctx;
 	size_t size = 0;
@@ -135,7 +135,7 @@ static size_t get_size_cb(struct lttng_ctx_field *field, size_t offset)
 
 }
 
-static void record_cb(struct lttng_ctx_field *field,
+static void record_cb(struct lttng_ust_ctx_field *field,
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		 struct lttng_channel *chan)
 {
@@ -256,8 +256,8 @@ static void record_cb(struct lttng_ctx_field *field,
 	}
 }
 
-static void get_value_cb(struct lttng_ctx_field *field,
-		struct lttng_ctx_value *value)
+static void get_value_cb(struct lttng_ust_ctx_field *field,
+		struct lttng_ust_ctx_value *value)
 {
 	struct lttng_ust_jni_ctx_entry *jctx;
 	const char *ctx_name = field->event_field.name;
@@ -354,6 +354,7 @@ JNIEXPORT jlong JNICALL Java_org_lttng_ust_agent_context_LttngContextApi_registe
 	if (!provider) {
 		goto error_provider;
 	}
+	provider->struct_size = sizeof(*provider);
 	provider->name = provider_name_cstr;
 	provider->get_size = get_size_cb;
 	provider->record = record_cb;

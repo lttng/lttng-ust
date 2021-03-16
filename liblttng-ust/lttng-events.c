@@ -516,7 +516,7 @@ int lttng_create_all_event_enums(size_t nr_fields,
 
 static
 int lttng_create_all_ctx_enums(size_t nr_fields,
-		const struct lttng_ctx_field *ctx_fields,
+		struct lttng_ust_ctx_field **ctx_fields,
 		struct lttng_session *session)
 {
 	size_t i;
@@ -524,7 +524,7 @@ int lttng_create_all_ctx_enums(size_t nr_fields,
 
 	/* For each field, ensure enum is part of the session. */
 	for (i = 0; i < nr_fields; i++) {
-		const struct lttng_type *type = &ctx_fields[i].event_field.type;
+		const struct lttng_type *type = &ctx_fields[i]->event_field->type;
 
 		ret = lttng_create_enum_check(type, session);
 		if (ret)
@@ -570,8 +570,8 @@ int lttng_session_enable(struct lttng_session *session)
 	 * we need to use.
 	 */
 	cds_list_for_each_entry(chan, &session->priv->chan_head, node) {
-		const struct lttng_ctx *ctx;
-		const struct lttng_ctx_field *fields = NULL;
+		const struct lttng_ust_ctx *ctx;
+		struct lttng_ust_ctx_field **fields = NULL;
 		size_t nr_fields = 0;
 		uint32_t chan_id;
 
@@ -1546,7 +1546,7 @@ int lttng_event_notifier_enabler_attach_exclusion(
 
 int lttng_attach_context(struct lttng_ust_abi_context *context_param,
 		union lttng_ust_abi_args *uargs,
-		struct lttng_ctx **ctx, struct lttng_session *session)
+		struct lttng_ust_ctx **ctx, struct lttng_session *session)
 {
 	/*
 	 * We cannot attach a context after trace has been started for a
@@ -1947,12 +1947,12 @@ void lttng_session_lazy_sync_event_enablers(struct lttng_session *session)
  * context (either app context callbacks, or dummy callbacks).
  */
 void lttng_ust_context_set_session_provider(const char *name,
-		size_t (*get_size)(struct lttng_ctx_field *field, size_t offset),
-		void (*record)(struct lttng_ctx_field *field,
+		size_t (*get_size)(struct lttng_ust_ctx_field *field, size_t offset),
+		void (*record)(struct lttng_ust_ctx_field *field,
 			struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			struct lttng_channel *chan),
-		void (*get_value)(struct lttng_ctx_field *field,
-			struct lttng_ctx_value *value))
+		void (*get_value)(struct lttng_ust_ctx_field *field,
+			struct lttng_ust_ctx_value *value))
 {
 	struct lttng_ust_session_private *session_priv;
 
@@ -1988,12 +1988,12 @@ void lttng_ust_context_set_session_provider(const char *name,
  * context (either app context callbacks, or dummy callbacks).
  */
 void lttng_ust_context_set_event_notifier_group_provider(const char *name,
-		size_t (*get_size)(struct lttng_ctx_field *field, size_t offset),
-		void (*record)(struct lttng_ctx_field *field,
+		size_t (*get_size)(struct lttng_ust_ctx_field *field, size_t offset),
+		void (*record)(struct lttng_ust_ctx_field *field,
 			struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			struct lttng_channel *chan),
-		void (*get_value)(struct lttng_ctx_field *field,
-			struct lttng_ctx_value *value))
+		void (*get_value)(struct lttng_ust_ctx_field *field,
+			struct lttng_ust_ctx_value *value))
 {
 	struct lttng_event_notifier_group *event_notifier_group;
 

@@ -217,17 +217,18 @@ LABEL_##name
 #define IS_INTEGER_REGISTER(reg_type) \
 		(reg_type == REG_U64 || reg_type == REG_S64)
 
-static int context_get_index(struct lttng_ctx *ctx,
+static int context_get_index(struct lttng_ust_ctx *ctx,
 		struct load_ptr *ptr,
 		uint32_t idx)
 {
 
-	struct lttng_ctx_field *ctx_field;
+	struct lttng_ust_ctx_field *ctx_field;
 	struct lttng_ust_event_field *field;
-	struct lttng_ctx_value v;
+	struct lttng_ust_ctx_value v;
 
-	ctx_field = &ctx->fields[idx];
-	field = &ctx_field->event_field;
+	v.struct_size = sizeof(struct lttng_ust_ctx_value);
+	ctx_field = ctx->fields[idx];
+	field = ctx_field->event_field;
 	ptr->type = LOAD_OBJECT;
 	ptr->field = field;
 
@@ -345,7 +346,7 @@ static int context_get_index(struct lttng_ctx *ctx,
 	return 0;
 }
 
-static int dynamic_get_index(struct lttng_ctx *ctx,
+static int dynamic_get_index(struct lttng_ust_ctx *ctx,
 		struct bytecode_runtime *runtime,
 		uint64_t index, struct estack_entry *stack_top)
 {
@@ -717,7 +718,7 @@ uint64_t bytecode_interpret(void *interpreter_data,
 		struct lttng_interpreter_output *output)
 {
 	struct bytecode_runtime *bytecode = interpreter_data;
-	struct lttng_ctx *ctx = lttng_ust_rcu_dereference(*bytecode->p.priv->pctx);
+	struct lttng_ust_ctx *ctx = lttng_ust_rcu_dereference(*bytecode->p.priv->pctx);
 	void *pc, *next_pc, *start_pc;
 	int ret = -EINVAL;
 	uint64_t retval = 0;
@@ -2136,12 +2137,13 @@ uint64_t bytecode_interpret(void *interpreter_data,
 		{
 			struct load_op *insn = (struct load_op *) pc;
 			struct field_ref *ref = (struct field_ref *) insn->data;
-			struct lttng_ctx_field *ctx_field;
-			struct lttng_ctx_value v;
+			struct lttng_ust_ctx_field *ctx_field;
+			struct lttng_ust_ctx_value v;
 
+			v.struct_size = sizeof(struct lttng_ust_ctx_value);
 			dbg_printf("get context ref offset %u type dynamic\n",
 				ref->offset);
-			ctx_field = &ctx->fields[ref->offset];
+			ctx_field = ctx->fields[ref->offset];
 			ctx_field->get_value(ctx_field, &v);
 			estack_push(stack, top, ax, bx, ax_t, bx_t);
 			switch (v.sel) {
@@ -2184,12 +2186,13 @@ uint64_t bytecode_interpret(void *interpreter_data,
 		{
 			struct load_op *insn = (struct load_op *) pc;
 			struct field_ref *ref = (struct field_ref *) insn->data;
-			struct lttng_ctx_field *ctx_field;
-			struct lttng_ctx_value v;
+			struct lttng_ust_ctx_field *ctx_field;
+			struct lttng_ust_ctx_value v;
 
+			v.struct_size = sizeof(struct lttng_ust_ctx_value);
 			dbg_printf("get context ref offset %u type string\n",
 				ref->offset);
-			ctx_field = &ctx->fields[ref->offset];
+			ctx_field = ctx->fields[ref->offset];
 			ctx_field->get_value(ctx_field, &v);
 			estack_push(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax(stack, top)->u.s.str = v.u.str;
@@ -2211,12 +2214,13 @@ uint64_t bytecode_interpret(void *interpreter_data,
 		{
 			struct load_op *insn = (struct load_op *) pc;
 			struct field_ref *ref = (struct field_ref *) insn->data;
-			struct lttng_ctx_field *ctx_field;
-			struct lttng_ctx_value v;
+			struct lttng_ust_ctx_field *ctx_field;
+			struct lttng_ust_ctx_value v;
 
+			v.struct_size = sizeof(struct lttng_ust_ctx_value);
 			dbg_printf("get context ref offset %u type s64\n",
 				ref->offset);
-			ctx_field = &ctx->fields[ref->offset];
+			ctx_field = ctx->fields[ref->offset];
 			ctx_field->get_value(ctx_field, &v);
 			estack_push(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = v.u.s64;
@@ -2230,12 +2234,13 @@ uint64_t bytecode_interpret(void *interpreter_data,
 		{
 			struct load_op *insn = (struct load_op *) pc;
 			struct field_ref *ref = (struct field_ref *) insn->data;
-			struct lttng_ctx_field *ctx_field;
-			struct lttng_ctx_value v;
+			struct lttng_ust_ctx_field *ctx_field;
+			struct lttng_ust_ctx_value v;
 
+			v.struct_size = sizeof(struct lttng_ust_ctx_value);
 			dbg_printf("get context ref offset %u type double\n",
 				ref->offset);
-			ctx_field = &ctx->fields[ref->offset];
+			ctx_field = ctx->fields[ref->offset];
 			ctx_field->get_value(ctx_field, &v);
 			estack_push(stack, top, ax, bx, ax_t, bx_t);
 			memcpy(&estack_ax(stack, top)->u.d, &v.u.d, sizeof(struct literal_double));

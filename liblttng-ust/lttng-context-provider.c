@@ -120,42 +120,64 @@ end:
  * metadata describing the context.
  */
 int lttng_ust_add_app_context_to_ctx_rcu(const char *name,
-		struct lttng_ctx **ctx)
+		struct lttng_ust_ctx **ctx)
 {
 	struct lttng_ust_context_provider *provider;
-	struct lttng_ctx_field new_field;
+	struct lttng_ust_ctx_field *new_field = NULL;
 	int ret;
 
 	if (*ctx && lttng_find_context(*ctx, name))
 		return -EEXIST;
-	/*
-	 * For application context, add it by expanding
-	 * ctx array.
-	 */
-	memset(&new_field, 0, sizeof(new_field));
-	new_field.field_name = strdup(name);
-	if (!new_field.field_name)
-		return -ENOMEM;
-	new_field.event_field.name = new_field.field_name;
-	new_field.event_field.type.atype = atype_dynamic;
+	new_field = zmalloc(sizeof(struct lttng_ust_ctx_field));
+	if (!new_field) {
+		ret = -ENOMEM;
+		goto error_field_alloc;
+	}
+	new_field->struct_size = sizeof(struct lttng_ust_ctx_field);
+	new_field->event_field = zmalloc(sizeof(struct lttng_ust_event_field));
+	if (!new_field->event_field) {
+		ret = -ENOMEM;
+		goto error_event_field_alloc;
+	}
+	new_field->field_name = strdup(name);
+	if (!new_field->field_name) {
+		ret = -ENOMEM;
+		goto error_field_name_alloc;
+	}
+	new_field->event_field->name = new_field->field_name;
+	new_field->event_field->type.atype = atype_dynamic;
 	/*
 	 * If provider is not found, we add the context anyway, but
 	 * it will provide a dummy context.
 	 */
 	provider = lookup_provider_by_name(name);
 	if (provider) {
-		new_field.get_size = provider->get_size;
-		new_field.record = provider->record;
-		new_field.get_value = provider->get_value;
+		new_field->get_size = provider->get_size;
+		new_field->record = provider->record;
+		new_field->get_value = provider->get_value;
 	} else {
-		new_field.get_size = lttng_ust_dummy_get_size;
-		new_field.record = lttng_ust_dummy_record;
-		new_field.get_value = lttng_ust_dummy_get_value;
+		new_field->get_size = lttng_ust_dummy_get_size;
+		new_field->record = lttng_ust_dummy_record;
+		new_field->get_value = lttng_ust_dummy_get_value;
 	}
-	ret = lttng_context_add_rcu(ctx, &new_field);
+	/*
+	 * For application context, add it by expanding
+	 * ctx array. Ownership of new_field is passed to the callee on
+	 * success.
+	 */
+	ret = lttng_context_add_rcu(ctx, new_field);
 	if (ret) {
-		free(new_field.field_name);
+		free(new_field->field_name);
+		free(new_field->event_field);
+		free(new_field);
 		return ret;
 	}
 	return 0;
+
+error_field_name_alloc:
+	free(new_field->event_field);
+error_event_field_alloc:
+	free(new_field);
+error_field_alloc:
+	return ret;
 }

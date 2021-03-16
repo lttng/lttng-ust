@@ -343,7 +343,7 @@ struct lttng_ust_bytecode_runtime {
  * removed.
  */
 
-struct lttng_ctx;
+struct lttng_ust_ctx;
 struct lttng_ust_event_common_private;
 
 enum lttng_ust_event_type {
@@ -404,7 +404,7 @@ struct lttng_ust_event_recorder {
 
 	unsigned int id;
 	struct lttng_channel *chan;
-	struct lttng_ctx *ctx;
+	struct lttng_ust_ctx *ctx;
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
@@ -499,7 +499,7 @@ struct lttng_channel {
 	 */
 	struct lttng_ust_lib_ring_buffer_channel *chan; /* Channel buffers */
 	int enabled;
-	struct lttng_ctx *ctx;
+	struct lttng_ust_ctx *ctx;
 	/* Event ID management */
 	struct lttng_session *session;
 	int objd;			/* Object associated to channel */
@@ -528,8 +528,8 @@ struct lttng_ust_stack_ctx {
 	uint32_t struct_size;			/* Size of this structure */
 
 	struct lttng_ust_event_recorder *event_recorder;
-	struct lttng_ctx *chan_ctx;	/* RCU dereferenced. */
-	struct lttng_ctx *event_ctx;	/* RCU dereferenced. */
+	struct lttng_ust_ctx *chan_ctx;	/* RCU dereferenced. */
+	struct lttng_ust_ctx *event_ctx;	/* RCU dereferenced. */
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };

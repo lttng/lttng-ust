@@ -274,9 +274,9 @@ int apply_context_reloc(struct bytecode_runtime *runtime,
 		enum bytecode_op bytecode_op)
 {
 	struct load_op *op;
-	struct lttng_ctx_field *ctx_field;
+	struct lttng_ust_ctx_field *ctx_field;
 	int idx;
-	struct lttng_ctx **pctx = runtime->p.priv->pctx;
+	struct lttng_ust_ctx **pctx = runtime->p.priv->pctx;
 
 	dbg_printf("Apply context reloc: %u %s\n", reloc_offset, context_name);
 
@@ -302,7 +302,7 @@ int apply_context_reloc(struct bytecode_runtime *runtime,
 		return -EINVAL;
 
 	/* Get context return type */
-	ctx_field = &(*pctx)->fields[idx];
+	ctx_field = (*pctx)->fields[idx];
 	op = (struct load_op *) &runtime->code[reloc_offset];
 
 	switch (bytecode_op) {
@@ -311,7 +311,7 @@ int apply_context_reloc(struct bytecode_runtime *runtime,
 		struct field_ref *field_ref;
 
 		field_ref = (struct field_ref *) op->data;
-		switch (ctx_field->event_field.type.atype) {
+		switch (ctx_field->event_field->type.atype) {
 		case atype_integer:
 		case atype_enum_nestable:
 			op->op = BYTECODE_OP_GET_CONTEXT_REF_S64;
@@ -397,7 +397,7 @@ int bytecode_is_linked(struct lttng_ust_bytecode_node *bytecode,
  */
 static
 int link_bytecode(const struct lttng_ust_event_desc *event_desc,
-		struct lttng_ctx **ctx,
+		struct lttng_ust_ctx **ctx,
 		struct lttng_ust_bytecode_node *bytecode,
 		struct cds_list_head *bytecode_runtime_head,
 		struct cds_list_head *insert_loc)
@@ -530,7 +530,7 @@ void lttng_bytecode_capture_sync_state(struct lttng_ust_bytecode_runtime *runtim
  * instance are name matching (or glob pattern matching).
  */
 void lttng_enabler_link_bytecode(const struct lttng_ust_event_desc *event_desc,
-		struct lttng_ctx **ctx,
+		struct lttng_ust_ctx **ctx,
 		struct cds_list_head *instance_bytecode_head,
 		struct cds_list_head *enabler_bytecode_head)
 {

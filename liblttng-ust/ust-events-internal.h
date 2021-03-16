@@ -79,7 +79,7 @@ struct lttng_event_enabler {
 	 * Unused, but kept around to make it explicit that the tracer can do
 	 * it.
 	 */
-	struct lttng_ctx *ctx;
+	struct lttng_ust_ctx *ctx;
 };
 
 struct lttng_event_notifier_enabler {
@@ -220,7 +220,7 @@ struct lttng_event_notifier_group {
 	struct cds_list_head enablers_head;
 	struct cds_list_head event_notifiers_head;	/* list of event_notifiers */
 	struct lttng_ust_event_notifier_ht event_notifiers_ht; /* hashtable of event_notifiers */
-	struct lttng_ctx *ctx;			/* contexts for filters. */
+	struct lttng_ust_ctx *ctx;			/* contexts for filters. */
 
 	struct lttng_counter *error_counter;
 	size_t error_counter_len;
@@ -278,7 +278,7 @@ struct lttng_ust_bytecode_runtime_private {
 	 * Pointer to a URCU-protected pointer owned by an `struct
 	 * lttng_session`or `struct lttng_event_notifier_group`.
 	 */
-	struct lttng_ctx **pctx;
+	struct lttng_ust_ctx **pctx;
 };
 
 struct lttng_ust_session_private {
@@ -303,7 +303,7 @@ struct lttng_ust_session_private {
 	/* New UST 2.8 */
 	struct lttng_ust_enum_ht enums_ht;	/* ht of enumerations */
 	struct cds_list_head enums_head;
-	struct lttng_ctx *ctx;			/* contexts for filters. */
+	struct lttng_ust_ctx *ctx;			/* contexts for filters. */
 };
 
 struct lttng_enum {
@@ -395,7 +395,7 @@ int lttng_event_enabler_attach_exclusion(struct lttng_event_enabler *enabler,
  */
 __attribute__((visibility("hidden")))
 void lttng_enabler_link_bytecode(const struct lttng_ust_event_desc *event_desc,
-		struct lttng_ctx **ctx,
+		struct lttng_ust_ctx **ctx,
 		struct cds_list_head *instance_bytecode_runtime_head,
 		struct cds_list_head *enabler_bytecode_runtime_head);
 
@@ -498,7 +498,7 @@ __attribute__((visibility("hidden")))
 int lttng_add_perf_counter_to_ctx(uint32_t type,
 				  uint64_t config,
 				  const char *name,
-				  struct lttng_ctx **ctx);
+				  struct lttng_ust_ctx **ctx);
 
 __attribute__((visibility("hidden")))
 int lttng_perf_counter_init(void);
@@ -512,7 +512,7 @@ static inline
 int lttng_add_perf_counter_to_ctx(uint32_t type,
 				  uint64_t config,
 				  const char *name,
-				  struct lttng_ctx **ctx)
+				  struct lttng_ust_ctx **ctx)
 {
 	return -ENOSYS;
 }

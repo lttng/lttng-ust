@@ -65,13 +65,13 @@ void lttng_ust_context_procname_reset(void)
 }
 
 static
-size_t procname_get_size(struct lttng_ctx_field *field, size_t offset)
+size_t procname_get_size(struct lttng_ust_ctx_field *field, size_t offset)
 {
 	return LTTNG_UST_ABI_PROCNAME_LEN;
 }
 
 static
-void procname_record(struct lttng_ctx_field *field,
+void procname_record(struct lttng_ust_ctx_field *field,
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		 struct lttng_channel *chan)
 {
@@ -82,8 +82,8 @@ void procname_record(struct lttng_ctx_field *field,
 }
 
 static
-void procname_get_value(struct lttng_ctx_field *field,
-		struct lttng_ctx_value *value)
+void procname_get_value(struct lttng_ust_ctx_field *field,
+		struct lttng_ust_ctx_value *value)
 {
 	value->u.str = wrapper_getprocname();
 }
@@ -91,9 +91,9 @@ void procname_get_value(struct lttng_ctx_field *field,
 static const struct lttng_type procname_array_elem_type =
 	__type_integer(char, BYTE_ORDER, 10, UTF8);
 
-int lttng_add_procname_to_ctx(struct lttng_ctx **ctx)
+int lttng_add_procname_to_ctx(struct lttng_ust_ctx **ctx)
 {
-	struct lttng_ctx_field *field;
+	struct lttng_ust_ctx_field *field;
 
 	field = lttng_append_context(ctx);
 	if (!field)
@@ -102,11 +102,11 @@ int lttng_add_procname_to_ctx(struct lttng_ctx **ctx)
 		lttng_remove_context_field(ctx, field);
 		return -EEXIST;
 	}
-	field->event_field.name = "procname";
-	field->event_field.type.atype = atype_array_nestable;
-	field->event_field.type.u.array_nestable.elem_type =
+	field->event_field->name = "procname";
+	field->event_field->type.atype = atype_array_nestable;
+	field->event_field->type.u.array_nestable.elem_type =
 		&procname_array_elem_type;
-	field->event_field.type.u.array_nestable.length = LTTNG_UST_ABI_PROCNAME_LEN;
+	field->event_field->type.u.array_nestable.length = LTTNG_UST_ABI_PROCNAME_LEN;
 	field->get_size = procname_get_size;
 	field->record = procname_record;
 	field->get_value = procname_get_value;

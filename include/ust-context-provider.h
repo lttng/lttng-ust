@@ -17,7 +17,21 @@
 
 #include "ust-dynamic-type.h"
 
-struct lttng_ctx_value {
+/*
+ * Context value
+ *
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
+ */
+
+struct lttng_ust_ctx_value {
+	uint32_t struct_size;
+
 	enum lttng_ust_dynamic_type sel;
 	union {
 		int64_t s64;
@@ -25,66 +39,108 @@ struct lttng_ctx_value {
 		const char *str;
 		double d;
 	} u;
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
-struct lttng_perf_counter_field;
+/*
+ * Context field
+ *
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
+ */
 
-#define LTTNG_UST_CTX_FIELD_PADDING	40
-struct lttng_ctx_field {
-	struct lttng_ust_event_field event_field;
-	size_t (*get_size)(struct lttng_ctx_field *field, size_t offset);
-	void (*record)(struct lttng_ctx_field *field,
+struct lttng_ust_ctx_field {
+	uint32_t struct_size;
+	void *priv;
+
+	struct lttng_ust_event_field *event_field;
+	size_t (*get_size)(struct lttng_ust_ctx_field *field, size_t offset);
+	void (*record)(struct lttng_ust_ctx_field *field,
 		       struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		       struct lttng_channel *chan);
-	void (*get_value)(struct lttng_ctx_field *field,
-			 struct lttng_ctx_value *value);
-	union {
-		struct lttng_perf_counter_field *perf_counter;
-		char padding[LTTNG_UST_CTX_FIELD_PADDING];
-	} u;
-	void (*destroy)(struct lttng_ctx_field *field);
+	void (*get_value)(struct lttng_ust_ctx_field *field,
+			 struct lttng_ust_ctx_value *value);
+	void (*destroy)(struct lttng_ust_ctx_field *field);
 	char *field_name;	/* Has ownership, dynamically allocated. */
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
-#define LTTNG_UST_CTX_PADDING	20
-struct lttng_ctx {
-	struct lttng_ctx_field *fields;
+/*
+ * All context fields for a given event/channel
+ *
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
+ */
+
+struct lttng_ust_ctx {
+	uint32_t struct_size;
+
+	struct lttng_ust_ctx_field **fields;
 	unsigned int nr_fields;
 	unsigned int allocated_fields;
 	unsigned int largest_align;
-	char padding[LTTNG_UST_CTX_PADDING];
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
+/*
+ * Context provider
+ *
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
+ */
+
 struct lttng_ust_context_provider {
+	uint32_t struct_size;
+
 	char *name;
-	size_t (*get_size)(struct lttng_ctx_field *field, size_t offset);
-	void (*record)(struct lttng_ctx_field *field,
+	size_t (*get_size)(struct lttng_ust_ctx_field *field, size_t offset);
+	void (*record)(struct lttng_ust_ctx_field *field,
 		       struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		       struct lttng_channel *chan);
-	void (*get_value)(struct lttng_ctx_field *field,
-			 struct lttng_ctx_value *value);
+	void (*get_value)(struct lttng_ust_ctx_field *field,
+			 struct lttng_ust_ctx_value *value);
 	struct cds_hlist_node node;
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
 int lttng_ust_context_provider_register(struct lttng_ust_context_provider *provider);
 void lttng_ust_context_provider_unregister(struct lttng_ust_context_provider *provider);
 
 void lttng_ust_context_set_session_provider(const char *name,
-		size_t (*get_size)(struct lttng_ctx_field *field, size_t offset),
-		void (*record)(struct lttng_ctx_field *field,
+		size_t (*get_size)(struct lttng_ust_ctx_field *field, size_t offset),
+		void (*record)(struct lttng_ust_ctx_field *field,
 			struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			struct lttng_channel *chan),
-		void (*get_value)(struct lttng_ctx_field *field,
-			struct lttng_ctx_value *value));
+		void (*get_value)(struct lttng_ust_ctx_field *field,
+			struct lttng_ust_ctx_value *value));
 
-int lttng_ust_add_app_context_to_ctx_rcu(const char *name, struct lttng_ctx **ctx);
-int lttng_ust_context_set_provider_rcu(struct lttng_ctx **_ctx,
+int lttng_ust_add_app_context_to_ctx_rcu(const char *name, struct lttng_ust_ctx **ctx);
+int lttng_ust_context_set_provider_rcu(struct lttng_ust_ctx **_ctx,
 		const char *name,
-		size_t (*get_size)(struct lttng_ctx_field *field, size_t offset),
-		void (*record)(struct lttng_ctx_field *field,
+		size_t (*get_size)(struct lttng_ust_ctx_field *field, size_t offset),
+		void (*record)(struct lttng_ust_ctx_field *field,
 			struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			struct lttng_channel *chan),
-		void (*get_value)(struct lttng_ctx_field *field,
-			struct lttng_ctx_value *value));
+		void (*get_value)(struct lttng_ust_ctx_field *field,
+			struct lttng_ust_ctx_value *value));
 
 #endif /* _LTTNG_UST_CONTEXT_PROVIDER_H */
