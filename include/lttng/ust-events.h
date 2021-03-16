@@ -483,14 +483,6 @@ struct lttng_ust_event_notifier {
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
-struct lttng_enum {
-	const struct lttng_ust_enum_desc *desc;
-	struct lttng_session *session;
-	struct cds_list_head node;	/* Enum list in session */
-	struct cds_hlist_node hlist;	/* Session ht of enums */
-	uint64_t id;			/* Enumeration ID in sessiond */
-};
-
 struct channel;
 struct lttng_ust_shm_handle;
 

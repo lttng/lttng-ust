@@ -266,6 +266,14 @@ struct lttng_ust_session_private {
 	struct lttng_ctx *ctx;			/* contexts for filters. */
 };
 
+struct lttng_enum {
+	const struct lttng_ust_enum_desc *desc;
+	struct lttng_session *session;
+	struct cds_list_head node;	/* Enum list in session */
+	struct cds_hlist_node hlist;	/* Session ht of enums */
+	uint64_t id;			/* Enumeration ID in sessiond */
+};
+
 static inline
 struct lttng_enabler *lttng_event_enabler_as_enabler(
 		struct lttng_event_enabler *event_enabler)
