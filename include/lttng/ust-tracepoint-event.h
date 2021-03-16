@@ -846,12 +846,13 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 		struct lttng_ust_event_recorder *__event_recorder = (struct lttng_ust_event_recorder *) __event->child; \
 		struct lttng_channel *__chan = __event_recorder->chan;	      \
 		struct lttng_ust_lib_ring_buffer_ctx __ctx;		      \
-		struct lttng_stack_ctx __lttng_ctx;			      \
+		struct lttng_ust_stack_ctx __lttng_ctx;			      \
 									      \
 		__event_len = __event_get_size__##_provider##___##_name(__stackvar.__dynamic_len, \
 			 _TP_ARGS_DATA_VAR(_args));			      \
 		__event_align = __event_get_align__##_provider##___##_name(_TP_ARGS_VAR(_args)); \
 		memset(&__lttng_ctx, 0, sizeof(__lttng_ctx));		      \
+		__lttng_ctx.struct_size = sizeof(struct lttng_ust_stack_ctx);     \
 		__lttng_ctx.event_recorder = __event_recorder;		      \
 		__lttng_ctx.chan_ctx = tp_rcu_dereference(__chan->ctx);	      \
 		__lttng_ctx.event_ctx = tp_rcu_dereference(__event_recorder->ctx); \

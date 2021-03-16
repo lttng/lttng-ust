@@ -566,12 +566,23 @@ struct lttng_channel {
 	int tstate:1;			/* Transient enable state */
 };
 
-#define LTTNG_UST_STACK_CTX_PADDING	32
-struct lttng_stack_ctx {
+/*
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
+ */
+struct lttng_ust_stack_ctx {
+	uint32_t struct_size;			/* Size of this structure */
+
 	struct lttng_ust_event_recorder *event_recorder;
 	struct lttng_ctx *chan_ctx;	/* RCU dereferenced. */
 	struct lttng_ctx *event_ctx;	/* RCU dereferenced. */
-	char padding[LTTNG_UST_STACK_CTX_PADDING];
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
 struct lttng_ust_session_private;
