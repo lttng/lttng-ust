@@ -362,14 +362,18 @@ struct lttng_interpreter_output;
 struct lttng_ust_bytecode_runtime_private;
 
 /*
- * This structure is used in the probes. More specifically, the
- * `interpreter_funcs` and `node` fields are explicity used in the
- * probes. When modifying this structure we must not change the layout
- * of these two fields as it is considered ABI.
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
  */
-struct lttng_bytecode_runtime {
-	struct lttng_ust_bytecode_runtime_private *priv;
+struct lttng_ust_bytecode_runtime {
+	uint32_t struct_size;			/* Size of this structure. */
 
+	struct lttng_ust_bytecode_runtime_private *priv;
 	/* Associated bytecode */
 	union {
 		uint64_t (*filter)(void *interpreter_data,
@@ -379,6 +383,8 @@ struct lttng_bytecode_runtime {
 				struct lttng_interpreter_output *interpreter_output);
 	} interpreter_funcs;
 	struct cds_list_head node;	/* list of bytecode runtime in event */
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
 /*
@@ -421,7 +427,7 @@ struct lttng_ust_event_common {
 
 	int enabled;
 	int has_enablers_without_bytecode;
-	/* list of struct lttng_bytecode_runtime, sorted by seqnum */
+	/* list of struct lttng_ust_bytecode_runtime, sorted by seqnum */
 	struct cds_list_head filter_bytecode_runtime_head;
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */

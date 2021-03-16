@@ -381,7 +381,7 @@ static
 int bytecode_is_linked(struct lttng_ust_bytecode_node *bytecode,
 		struct cds_list_head *bytecode_runtime_head)
 {
-	struct lttng_bytecode_runtime *bc_runtime;
+	struct lttng_ust_bytecode_runtime *bc_runtime;
 
 	cds_list_for_each_entry(bc_runtime, bytecode_runtime_head, node) {
 		if (bc_runtime->priv->bc == bytecode)
@@ -429,6 +429,7 @@ int link_bytecode(const struct lttng_ust_event_desc *event_desc,
 		goto alloc_error;
 	}
 	runtime->p.priv = runtime_priv;
+	runtime->p.struct_size = sizeof(struct lttng_ust_bytecode_runtime);
 	runtime_priv->pub = runtime;
 	runtime_priv->bc = bytecode;
 	runtime_priv->pctx = ctx;
@@ -499,7 +500,7 @@ alloc_error:
 	return ret;
 }
 
-void lttng_bytecode_filter_sync_state(struct lttng_bytecode_runtime *runtime)
+void lttng_bytecode_filter_sync_state(struct lttng_ust_bytecode_runtime *runtime)
 {
 	struct lttng_ust_bytecode_node *bc = runtime->priv->bc;
 
@@ -509,7 +510,7 @@ void lttng_bytecode_filter_sync_state(struct lttng_bytecode_runtime *runtime)
 		runtime->interpreter_funcs.filter = lttng_bytecode_filter_interpret;
 }
 
-void lttng_bytecode_capture_sync_state(struct lttng_bytecode_runtime *runtime)
+void lttng_bytecode_capture_sync_state(struct lttng_ust_bytecode_runtime *runtime)
 {
 	struct lttng_ust_bytecode_node *bc = runtime->priv->bc;
 
@@ -533,7 +534,7 @@ void lttng_enabler_link_bytecode(const struct lttng_ust_event_desc *event_desc,
 		struct cds_list_head *enabler_bytecode_head)
 {
 	struct lttng_ust_bytecode_node *enabler_bc;
-	struct lttng_bytecode_runtime *runtime;
+	struct lttng_ust_bytecode_runtime *runtime;
 
 	assert(event_desc);
 

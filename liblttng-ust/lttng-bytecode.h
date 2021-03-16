@@ -59,7 +59,7 @@ do {								\
 
 /* Linked bytecode. Child of struct lttng_bytecode_runtime. */
 struct bytecode_runtime {
-	struct lttng_bytecode_runtime p;
+	struct lttng_ust_bytecode_runtime p;
 	size_t data_len;
 	size_t data_alloc_len;
 	char *data;
@@ -318,9 +318,9 @@ LTTNG_HIDDEN
 const char *lttng_bytecode_print_op(enum bytecode_op op);
 
 LTTNG_HIDDEN
-void lttng_bytecode_filter_sync_state(struct lttng_bytecode_runtime *runtime);
+void lttng_bytecode_filter_sync_state(struct lttng_ust_bytecode_runtime *runtime);
 LTTNG_HIDDEN
-void lttng_bytecode_capture_sync_state(struct lttng_bytecode_runtime *runtime);
+void lttng_bytecode_capture_sync_state(struct lttng_ust_bytecode_runtime *runtime);
 
 LTTNG_HIDDEN
 int lttng_bytecode_validate(struct bytecode_runtime *bytecode);

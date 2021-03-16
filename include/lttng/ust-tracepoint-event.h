@@ -824,7 +824,7 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 	if (caa_unlikely(!TP_RCU_LINK_TEST()))				      \
 		return;							      \
 	if (caa_unlikely(!cds_list_empty(&__event->filter_bytecode_runtime_head))) { \
-		struct lttng_bytecode_runtime *__filter_bc_runtime;	      \
+		struct lttng_ust_bytecode_runtime *__filter_bc_runtime;	      \
 		int __filter_record = __event->has_enablers_without_bytecode; \
 									      \
 		__event_prepare_interpreter_stack__##_provider##___##_name(__stackvar.__interpreter_stack_data, \

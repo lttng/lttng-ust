@@ -1654,7 +1654,7 @@ void lttng_session_sync_event_enablers(struct lttng_session *session)
 	 */
 	cds_list_for_each_entry(event_recorder_priv, &session->priv->events_head, node) {
 		struct lttng_enabler_ref *enabler_ref;
-		struct lttng_bytecode_runtime *runtime;
+		struct lttng_ust_bytecode_runtime *runtime;
 		int enabled = 0, has_enablers_without_bytecode = 0;
 
 		/* Enable events */
@@ -1872,7 +1872,7 @@ void lttng_event_notifier_group_sync_enablers(struct lttng_event_notifier_group 
 	 */
 	cds_list_for_each_entry(event_notifier_priv, &event_notifier_group->event_notifiers_head, node) {
 		struct lttng_enabler_ref *enabler_ref;
-		struct lttng_bytecode_runtime *runtime;
+		struct lttng_ust_bytecode_runtime *runtime;
 		int enabled = 0, has_enablers_without_bytecode = 0;
 
 		/* Enable event_notifiers */

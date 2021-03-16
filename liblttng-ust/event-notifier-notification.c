@@ -368,7 +368,7 @@ void lttng_event_notifier_notification_send(
 	notification_init(&notif, event_notifier);
 
 	if (caa_unlikely(!cds_list_empty(&event_notifier->capture_bytecode_runtime_head))) {
-		struct lttng_bytecode_runtime *capture_bc_runtime;
+		struct lttng_ust_bytecode_runtime *capture_bc_runtime;
 
 		/*
 		 * Iterate over all the capture bytecodes. If the interpreter
