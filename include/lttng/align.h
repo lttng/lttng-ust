@@ -7,7 +7,7 @@
 #ifndef _LTTNG_ALIGN_H
 #define _LTTNG_ALIGN_H
 
-#include <lttng/bug.h>
+#include <lttng/ust-bug.h>
 
 /**
  * lttng_ust_offset_align - Calculate the offset needed to align an object on

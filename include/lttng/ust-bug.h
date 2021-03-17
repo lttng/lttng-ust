@@ -4,8 +4,8 @@
  * Copyright (C) 2010-2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
-#ifndef _LTTNG_BUG_H
-#define _LTTNG_BUG_H
+#ifndef _LTTNG_UST_BUG_H
+#define _LTTNG_UST_BUG_H
 
 #include <urcu/compiler.h>
 #include <stdio.h>
