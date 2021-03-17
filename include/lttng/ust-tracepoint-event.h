@@ -828,7 +828,7 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 			_TP_ARGS_DATA_VAR(_args));			      \
 		tp_list_for_each_entry_rcu(__filter_bc_runtime, &__event->filter_bytecode_runtime_head, node) { \
 			if (caa_unlikely(__filter_bc_runtime->interpreter_funcs.filter(__filter_bc_runtime,     \
-					__stackvar.__interpreter_stack_data) & LTTNG_INTERPRETER_RECORD_FLAG)) { \
+				__stackvar.__interpreter_stack_data) & LTTNG_UST_BYTECODE_INTERPRETER_RECORD_FLAG)) { \
 				__filter_record = 1;			      \
 				break;					      \
 			}						      \

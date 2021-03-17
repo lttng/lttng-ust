@@ -381,7 +381,7 @@ void lttng_event_notifier_notification_send(
 			struct lttng_interpreter_output output;
 
 			if (capture_bc_runtime->interpreter_funcs.capture(capture_bc_runtime,
-					stack_data, &output) & LTTNG_INTERPRETER_RECORD_FLAG)
+					stack_data, &output) & LTTNG_UST_BYTECODE_INTERPRETER_RECORD_FLAG)
 				notification_append_capture(&notif, &output);
 			else
 				notification_append_empty_capture(&notif);

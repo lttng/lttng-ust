@@ -303,9 +303,9 @@ struct lttng_ust_probe_desc {
 /*
  * Bytecode interpreter return value masks.
  */
-enum lttng_bytecode_interpreter_ret {
-	LTTNG_INTERPRETER_DISCARD = 0,
-	LTTNG_INTERPRETER_RECORD_FLAG = (1ULL << 0),
+enum lttng_ust_bytecode_interpreter_ret {
+	LTTNG_UST_BYTECODE_INTERPRETER_DISCARD = 0,
+	LTTNG_UST_BYTECODE_INTERPRETER_RECORD_FLAG = (1ULL << 0),
 	/* Other bits are kept for future use. */
 };
 

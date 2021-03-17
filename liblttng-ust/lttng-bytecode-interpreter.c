@@ -151,14 +151,14 @@ int stack_strcmp(struct estack *stack, int top, const char *cmp_type)
 uint64_t lttng_bytecode_filter_interpret_false(void *filter_data,
 		const char *filter_stack_data)
 {
-	return LTTNG_INTERPRETER_DISCARD;
+	return LTTNG_UST_BYTECODE_INTERPRETER_DISCARD;
 }
 
 uint64_t lttng_bytecode_capture_interpret_false(void *capture_data,
 		const char *capture_stack_data,
 		struct lttng_interpreter_output *output)
 {
-	return LTTNG_INTERPRETER_DISCARD;
+	return LTTNG_UST_BYTECODE_INTERPRETER_DISCARD;
 }
 
 #ifdef INTERPRETER_USE_SWITCH
@@ -700,7 +700,7 @@ again:
 		return -EINVAL;
 	}
 
-	return LTTNG_INTERPRETER_RECORD_FLAG;
+	return LTTNG_UST_BYTECODE_INTERPRETER_RECORD_FLAG;
 }
 
 /*
@@ -876,7 +876,7 @@ uint64_t bytecode_interpret(void *interpreter_data,
 			goto end;
 
 		OP(BYTECODE_OP_RETURN):
-			/* LTTNG_INTERPRETER_DISCARD or LTTNG_INTERPRETER_RECORD_FLAG */
+			/* LTTNG_UST_BYTECODE_INTERPRETER_DISCARD or LTTNG_UST_BYTECODE_INTERPRETER_RECORD_FLAG */
 			/* Handle dynamic typing. */
 			switch (estack_ax_t) {
 			case REG_S64:
@@ -902,7 +902,7 @@ uint64_t bytecode_interpret(void *interpreter_data,
 			goto end;
 
 		OP(BYTECODE_OP_RETURN_S64):
-			/* LTTNG_INTERPRETER_DISCARD or LTTNG_INTERPRETER_RECORD_FLAG */
+			/* LTTNG_UST_BYTECODE_INTERPRETER_DISCARD or LTTNG_UST_BYTECODE_INTERPRETER_RECORD_FLAG */
 			retval = !!estack_ax_v;
 			ret = 0;
 			goto end;
@@ -2484,7 +2484,7 @@ uint64_t bytecode_interpret(void *interpreter_data,
 end:
 	/* Return _DISCARD on error. */
 	if (ret)
-		return LTTNG_INTERPRETER_DISCARD;
+		return LTTNG_UST_BYTECODE_INTERPRETER_DISCARD;
 
 	if (output) {
 		return lttng_bytecode_interpret_format_output(estack_ax(stack, top),
