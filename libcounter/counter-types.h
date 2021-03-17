@@ -13,7 +13,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <sys/types.h>
-#include <lttng/counter-config.h>
+#include "counter-config.h"
 #include <lttng/ust-config.h>
 #include "shm_types.h"
 

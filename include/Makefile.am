@@ -32,7 +32,6 @@ nobase_include_HEADERS = \
 	lttng/ust-clock.h \
 	lttng/ust-getcpu.h \
 	lttng/ust-elf.h \
-	lttng/counter-config.h \
 	lttng/ust-libc-wrapper.h \
 	lttng/urcu/pointer.h \
 	lttng/urcu/urcu-ust.h \

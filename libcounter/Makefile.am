@@ -7,7 +7,8 @@ noinst_LTLIBRARIES = libcounter.la
 
 libcounter_la_SOURCES = \
 	counter.c smp.c smp.h shm.c shm.h shm_internal.h shm_types.h \
-	counter-api.h counter.h counter-internal.h counter-types.h
+	counter-api.h counter.h counter-internal.h counter-types.h \
+	counter-config.h
 
 libcounter_la_LIBADD = \
 	-lpthread \
