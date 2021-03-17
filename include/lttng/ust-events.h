@@ -146,7 +146,7 @@ struct lttng_ust_type_float {
  * Only float and double are supported. long double is not supported at
  * the moment.
  */
-#define _float_mant_dig(_type)						\
+#define lttng_ust_float_mant_dig(_type)					\
 	(sizeof(_type) == sizeof(float) ? FLT_MANT_DIG			\
 		: (sizeof(_type) == sizeof(double) ? DBL_MANT_DIG	\
 		: 0))
@@ -158,8 +158,8 @@ struct lttng_ust_type_float {
 		},							\
 		.struct_size = sizeof(struct lttng_ust_type_float),	\
 		.exp_dig = sizeof(_type) * CHAR_BIT			\
-			- _float_mant_dig(_type),			\
-		.mant_dig = _float_mant_dig(_type),			\
+			- lttng_ust_float_mant_dig(_type),		\
+		.mant_dig = lttng_ust_float_mant_dig(_type),		\
 		.alignment = lttng_alignof(_type) * CHAR_BIT,		\
 		.reverse_byte_order = BYTE_ORDER != FLOAT_WORD_ORDER,	\
 	}))
