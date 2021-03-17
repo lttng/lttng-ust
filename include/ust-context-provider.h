@@ -21,26 +21,20 @@
  * Context value
  *
  * IMPORTANT: this structure is part of the ABI between the probe and
- * UST. Fields need to be only added at the end, never reordered, never
- * removed.
- *
- * The field @struct_size should be used to determine the size of the
- * structure. It should be queried before using additional fields added
- * at the end of the structure.
+ * UST. Additional selectors may be added in the future, mapping to new
+ * union fields, which means the overall size of this structure may
+ * increase. This means this structure should never be nested within a
+ * public structure interface, nor embedded in an array.
  */
 
 struct lttng_ust_ctx_value {
-	uint32_t struct_size;
-
-	enum lttng_ust_dynamic_type sel;
+	enum lttng_ust_dynamic_type sel;	/* Type selector */
 	union {
 		int64_t s64;
 		uint64_t u64;
 		const char *str;
 		double d;
 	} u;
-
-	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
 /*

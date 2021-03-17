@@ -226,7 +226,6 @@ static int context_get_index(struct lttng_ust_ctx *ctx,
 	struct lttng_ust_event_field *field;
 	struct lttng_ust_ctx_value v;
 
-	v.struct_size = sizeof(struct lttng_ust_ctx_value);
 	ctx_field = ctx->fields[idx];
 	field = ctx_field->event_field;
 	ptr->type = LOAD_OBJECT;
@@ -2140,7 +2139,6 @@ uint64_t bytecode_interpret(void *interpreter_data,
 			struct lttng_ust_ctx_field *ctx_field;
 			struct lttng_ust_ctx_value v;
 
-			v.struct_size = sizeof(struct lttng_ust_ctx_value);
 			dbg_printf("get context ref offset %u type dynamic\n",
 				ref->offset);
 			ctx_field = ctx->fields[ref->offset];
@@ -2189,7 +2187,6 @@ uint64_t bytecode_interpret(void *interpreter_data,
 			struct lttng_ust_ctx_field *ctx_field;
 			struct lttng_ust_ctx_value v;
 
-			v.struct_size = sizeof(struct lttng_ust_ctx_value);
 			dbg_printf("get context ref offset %u type string\n",
 				ref->offset);
 			ctx_field = ctx->fields[ref->offset];
@@ -2217,7 +2214,6 @@ uint64_t bytecode_interpret(void *interpreter_data,
 			struct lttng_ust_ctx_field *ctx_field;
 			struct lttng_ust_ctx_value v;
 
-			v.struct_size = sizeof(struct lttng_ust_ctx_value);
 			dbg_printf("get context ref offset %u type s64\n",
 				ref->offset);
 			ctx_field = ctx->fields[ref->offset];
@@ -2237,7 +2233,6 @@ uint64_t bytecode_interpret(void *interpreter_data,
 			struct lttng_ust_ctx_field *ctx_field;
 			struct lttng_ust_ctx_value v;
 
-			v.struct_size = sizeof(struct lttng_ust_ctx_value);
 			dbg_printf("get context ref offset %u type double\n",
 				ref->offset);
 			ctx_field = ctx->fields[ref->offset];
