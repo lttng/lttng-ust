@@ -10,13 +10,13 @@
 #if !defined(_TRACEPOINT_LTTNG_UST_TRACEF_PROVIDER_H) || defined(TRACEPOINT_HEADER_MULTI_READ)
 #define _TRACEPOINT_LTTNG_UST_TRACEF_PROVIDER_H
 
-#include <lttng/lttng-ust-tracef.h>
+#include <lttng/tp/lttng-ust-tracef.h>
 
 #endif /* _TRACEPOINT_LTTNG_UST_TRACEF_PROVIDER_H */
 
 #define TP_IP_PARAM ip	/* IP context received as parameter */
 #undef TRACEPOINT_INCLUDE
-#define TRACEPOINT_INCLUDE "./lttng-ust-tracef.h"
+#define TRACEPOINT_INCLUDE "./tp/lttng-ust-tracef.h"
 
 /* This part must be outside ifdef protection */
 #include <lttng/tracepoint-event.h>

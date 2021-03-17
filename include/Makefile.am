@@ -26,9 +26,9 @@ nobase_include_HEADERS = \
 	lttng/ust-bug.h \
 	lttng/ust-error.h \
 	lttng/tracef.h \
-	lttng/lttng-ust-tracef.h \
+	lttng/tp/lttng-ust-tracef.h \
 	lttng/tracelog.h \
-	lttng/lttng-ust-tracelog.h \
+	lttng/tp/lttng-ust-tracelog.h \
 	lttng/ust-clock.h \
 	lttng/ust-getcpu.h \
 	lttng/ust-libc-wrapper.h \

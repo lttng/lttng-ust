@@ -7,7 +7,7 @@
 #ifndef _LTTNG_UST_TRACELOG_H
 #define _LTTNG_UST_TRACELOG_H
 
-#include <lttng/lttng-ust-tracelog.h>
+#include <lttng/tp/lttng-ust-tracelog.h>
 
 #ifdef __cplusplus
 extern "C" {
