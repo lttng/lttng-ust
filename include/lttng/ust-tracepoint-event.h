@@ -194,7 +194,7 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 			.signedness = 0, 				\
 		},							\
 		.string = (_string),					\
-		.options = LTTNG_ENUM_ENTRY_OPTION_IS_AUTO,		\
+		.options = LTTNG_UST_ENUM_ENTRY_OPTION_IS_AUTO,		\
 	}),
 
 #undef TP_ENUM_VALUES

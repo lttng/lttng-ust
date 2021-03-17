@@ -71,13 +71,13 @@ enum lttng_ust_string_encoding {
 	NR_LTTNG_UST_STRING_ENCODING,
 };
 
-struct lttng_enum_value {
+struct lttng_ust_enum_value {
 	unsigned long long value;
 	unsigned int signedness:1;
 };
 
-enum lttng_enum_entry_options {
-	LTTNG_ENUM_ENTRY_OPTION_IS_AUTO = 1U << 0,
+enum lttng_ust_enum_entry_option {
+	LTTNG_UST_ENUM_ENTRY_OPTION_IS_AUTO = 1U << 0,
 };
 
 /*
@@ -95,7 +95,7 @@ enum lttng_enum_entry_options {
 struct lttng_ust_enum_entry {
 	uint32_t struct_size;
 
-	struct lttng_enum_value start, end; /* start and end are inclusive */
+	struct lttng_ust_enum_value start, end; /* start and end are inclusive */
 	const char *string;
 	unsigned int options;
 

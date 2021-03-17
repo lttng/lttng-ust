@@ -1332,7 +1332,7 @@ int serialize_entries(struct ustctl_enum_entry **_entries,
 		strncpy(uentry->string, lentry->string, LTTNG_UST_ABI_SYM_NAME_LEN);
 		uentry->string[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
 
-		if (lentry->options & LTTNG_ENUM_ENTRY_OPTION_IS_AUTO) {
+		if (lentry->options & LTTNG_UST_ENUM_ENTRY_OPTION_IS_AUTO) {
 			uentry->u.extra.options |=
 				USTCTL_UST_ENUM_ENTRY_OPTION_IS_AUTO;
 		}
