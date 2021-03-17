@@ -4,8 +4,8 @@
  * Copyright (C) 2010-2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
-#ifndef _LTTNG_ALIGN_H
-#define _LTTNG_ALIGN_H
+#ifndef _LTTNG_UST_ALIGN_H
+#define _LTTNG_UST_ALIGN_H
 
 #include <lttng/ust-bug.h>
 
@@ -40,4 +40,4 @@
 		(((align_drift) - (alignment)) & ((alignment) - 1));	       \
 	})
 
-#endif /* _LTTNG_ALIGN_H */
+#endif /* _LTTNG_UST_ALIGN_H */

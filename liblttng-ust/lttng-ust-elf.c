@@ -6,9 +6,6 @@
 
 #define _LGPL_SOURCE
 #include <fcntl.h>
-#include <ust-helper.h>
-#include <lttng/align.h>
-#include <ust-elf.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -16,6 +13,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <lttng/ust-align.h>
+
+#include <ust-elf.h>
 #include <ust-fd.h>
 
 #include "lttng-tracer-core.h"

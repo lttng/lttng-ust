@@ -11,13 +11,14 @@
 #define _LTTNG_RING_BUFFER_CONFIG_H
 
 #include <errno.h>
-#include <lttng/ust-tracer.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <urcu/arch.h>
 #include <string.h>
-#include <lttng/align.h>
+
+#include <lttng/ust-align.h>
 #include <lttng/ust-compiler.h>
+#include <lttng/ust-tracer.h>
 
 struct lttng_ust_lib_ring_buffer;
 struct lttng_ust_lib_ring_buffer_channel;

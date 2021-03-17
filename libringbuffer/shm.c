@@ -16,14 +16,17 @@
 #include <stdio.h>
 #include <signal.h>
 #include <dirent.h>
-#include <lttng/align.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdint.h>
+
 #ifdef HAVE_LIBNUMA
 #include <numa.h>
 #include <numaif.h>
 #endif
+
+#include <lttng/ust-align.h>
+
 #include <ust-helper.h>
 #include <ust-fd.h>
 #include "mmap.h"

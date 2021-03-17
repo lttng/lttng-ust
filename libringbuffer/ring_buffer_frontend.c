@@ -52,9 +52,10 @@
 #include <poll.h>
 #include <ust-helper.h>
 
-#include <lttng/align.h>
-#include "smp.h"
+#include <lttng/ust-align.h>
 #include <lttng/ringbuffer-context.h>
+
+#include "smp.h"
 #include "ringbuffer-config.h"
 #include "vatomic.h"
 #include "backend.h"

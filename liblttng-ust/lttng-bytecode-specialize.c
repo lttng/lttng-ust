@@ -10,7 +10,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <lttng/align.h>
+#include <lttng/ust-align.h>
 
 #include "context-internal.h"
 #include "lttng-bytecode.h"
