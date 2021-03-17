@@ -210,8 +210,18 @@ extern int __tracepoint_probe_unregister(const char *name, void (*func)(void),
 /*
  * tracepoint dynamic linkage handling (callbacks). Hidden visibility:
  * shared across objects in a module/main executable.
+ *
+ * IMPORTANT: this structure is part of the ABI between instrumented
+ * applications and UST. Fields need to be only added at the end, never
+ * reordered, never removed.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
  */
 struct lttng_ust_tracepoint_dlopen {
+	uint32_t struct_size;
+
 	void *liblttngust_handle;
 
 	int (*tracepoint_register_lib)(struct lttng_ust_tracepoint * const *tracepoints_start,
@@ -220,6 +230,8 @@ struct lttng_ust_tracepoint_dlopen {
 	void (*rcu_read_lock_sym)(void);
 	void (*rcu_read_unlock_sym)(void);
 	void *(*rcu_dereference_sym)(void *p);
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
 extern struct lttng_ust_tracepoint_dlopen tracepoint_dlopen;
@@ -235,7 +247,9 @@ int __tracepoint_registered
 int __tracepoint_ptrs_registered
 	__attribute__((weak, visibility("hidden")));
 struct lttng_ust_tracepoint_dlopen tracepoint_dlopen
-	__attribute__((weak, visibility("hidden")));
+		__attribute__((weak, visibility("hidden"))) = {
+	.struct_size = sizeof(struct lttng_ust_tracepoint_dlopen),
+};
 /*
  * Deal with gcc O1 optimisation issues with weak hidden symbols. gcc
  * 4.8 and prior does not have the same behavior for symbol scoping on
@@ -253,17 +267,31 @@ struct lttng_ust_tracepoint_dlopen *tracepoint_dlopen_ptr
  * Tracepoint dynamic linkage handling (callbacks). Hidden visibility: shared
  * across objects in a module/main executable. The callbacks are used to
  * control and check if the destructors should be executed.
+ *
+ * IMPORTANT: this structure is part of the ABI between instrumented
+ * applications and UST. Fields need to be only added at the end, never
+ * reordered, never removed.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
  */
 struct lttng_ust_tracepoint_destructors_syms {
+	uint32_t struct_size;
+
 	void (*tracepoint_disable_destructors)(void);
 	int (*tracepoint_get_destructors_state)(void);
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
 extern struct lttng_ust_tracepoint_destructors_syms tracepoint_destructors_syms;
 extern struct lttng_ust_tracepoint_destructors_syms *tracepoint_destructors_syms_ptr;
 
 struct lttng_ust_tracepoint_destructors_syms tracepoint_destructors_syms
-	__attribute__((weak, visibility("hidden")));
+	__attribute__((weak, visibility("hidden"))) = {
+	.struct_size = sizeof(struct lttng_ust_tracepoint_destructors_syms),
+};
 struct lttng_ust_tracepoint_destructors_syms *tracepoint_destructors_syms_ptr
 	__attribute__((weak, visibility("hidden")));
 
@@ -414,14 +442,13 @@ extern struct lttng_ust_tracepoint * const __stop___tracepoints_ptrs[]
 		__attribute__((section("__tracepoints_strings"))) =		\
 			#_provider ":" #_name;					\
 	struct lttng_ust_tracepoint __tracepoint_##_provider##___##_name	\
-		__attribute__((section("__tracepoints"))) =			\
-		{								\
+		__attribute__((section("__tracepoints"))) = {			\
+			sizeof(struct lttng_ust_tracepoint),			\
 			__tp_strtab_##_provider##___##_name,			\
 			0,							\
 			NULL,							\
 			_TRACEPOINT_UNDEFINED_REF(_provider), 			\
 			_TP_EXTRACT_STRING(_args),				\
-			{ },							\
 		};								\
 	static struct lttng_ust_tracepoint *					\
 		__tracepoint_ptr_##_provider##___##_name			\
