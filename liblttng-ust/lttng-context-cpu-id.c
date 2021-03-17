@@ -18,8 +18,8 @@
 #include <unistd.h>
 #include <lttng/ust-events.h>
 #include <lttng/ust-tracer.h>
-#include <lttng/ringbuffer-config.h>
 #include "../libringbuffer/getcpu.h"
+#include <lttng/ringbuffer-context.h>
 
 #include "context-internal.h"
 

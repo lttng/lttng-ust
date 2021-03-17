@@ -14,7 +14,8 @@
 #include <unistd.h>
 #include <urcu/compiler.h>
 
-#include <lttng/ringbuffer-config.h>
+#include <lttng/ringbuffer-context.h>
+#include "ringbuffer-config.h"
 #include "backend_types.h"
 #include "frontend_types.h"
 #include "shm.h"

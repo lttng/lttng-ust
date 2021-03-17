@@ -12,7 +12,7 @@ libringbuffer_la_SOURCES = \
 	api.h mmap.h \
 	backend.h backend_internal.h backend_types.h \
 	frontend_api.h frontend.h frontend_internal.h frontend_types.h \
-	nohz.h vatomic.h rb-init.h
+	nohz.h vatomic.h rb-init.h ringbuffer-config.h
 
 libringbuffer_la_LIBADD = \
 	-lrt

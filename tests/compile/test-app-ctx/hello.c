@@ -28,9 +28,9 @@ struct mmsghdr;
 #define TRACEPOINT_DEFINE
 #include "ust_tests_hello.h"
 
-/* Internal header. */
 #include <lttng/ust-events.h>
-#include <lttng/ringbuffer-config.h>
+#include <lttng/ringbuffer-context.h>
+/* Internal header. */
 #include <ust-context-provider.h>
 
 static __thread unsigned int test_count;

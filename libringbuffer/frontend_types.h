@@ -18,7 +18,8 @@
 #include <urcu/list.h>
 #include <urcu/uatomic.h>
 
-#include <lttng/ringbuffer-config.h>
+#include <lttng/ringbuffer-context.h>
+#include "ringbuffer-config.h"
 #include <usterr-signal-safe.h>
 #include "backend_types.h"
 #include "shm_internal.h"

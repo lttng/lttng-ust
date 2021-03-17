@@ -54,7 +54,8 @@
 
 #include <lttng/align.h>
 #include "smp.h"
-#include <lttng/ringbuffer-config.h>
+#include <lttng/ringbuffer-context.h>
+#include "ringbuffer-config.h"
 #include "vatomic.h"
 #include "backend.h"
 #include "frontend.h"

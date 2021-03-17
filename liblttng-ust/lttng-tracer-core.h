@@ -14,7 +14,7 @@
 #include <urcu/list.h>
 #include <lttng/ust-tracer.h>
 #include <lttng/bug.h>
-#include <lttng/ringbuffer-config.h>
+#include <lttng/ringbuffer-context.h>
 #include <usterr-signal-safe.h>
 
 /*

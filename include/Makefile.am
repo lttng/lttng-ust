@@ -21,7 +21,7 @@ nobase_include_HEADERS = \
 	lttng/ust-compiler.h \
 	lttng/ust.h \
 	lttng/ust-endian.h \
-	lttng/ringbuffer-config.h \
+	lttng/ringbuffer-context.h \
 	lttng/align.h \
 	lttng/bug.h \
 	lttng/ust-error.h \
