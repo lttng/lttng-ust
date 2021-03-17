@@ -354,31 +354,29 @@ int lttng_probes_get_field_list(struct lttng_ust_field_list *list)
 					event_field->name,
 					LTTNG_UST_ABI_SYM_NAME_LEN);
 				list_entry->field.field_name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
-				switch (event_field->type.atype) {
-				case atype_integer:
+				switch (event_field->type->type) {
+				case lttng_ust_type_integer:
 					list_entry->field.type = LTTNG_UST_ABI_FIELD_INTEGER;
 					break;
-				case atype_string:
+				case lttng_ust_type_string:
 					list_entry->field.type = LTTNG_UST_ABI_FIELD_STRING;
 					break;
-				case atype_array_nestable:
-					if (event_field->type.u.array_nestable.elem_type->atype != atype_integer
-						|| event_field->type.u.array_nestable.elem_type->u.integer.encoding == lttng_encode_none)
+				case lttng_ust_type_array:
+					if (lttng_ust_get_type_array(event_field->type)->encoding == lttng_ust_string_encoding_none)
 						list_entry->field.type = LTTNG_UST_ABI_FIELD_OTHER;
 					else
 						list_entry->field.type = LTTNG_UST_ABI_FIELD_STRING;
 					break;
-				case atype_sequence_nestable:
-					if (event_field->type.u.sequence_nestable.elem_type->atype != atype_integer
-						|| event_field->type.u.sequence_nestable.elem_type->u.integer.encoding == lttng_encode_none)
+				case lttng_ust_type_sequence:
+					if (lttng_ust_get_type_sequence(event_field->type)->encoding == lttng_ust_string_encoding_none)
 						list_entry->field.type = LTTNG_UST_ABI_FIELD_OTHER;
 					else
 						list_entry->field.type = LTTNG_UST_ABI_FIELD_STRING;
 					break;
-				case atype_float:
+				case lttng_ust_type_float:
 					list_entry->field.type = LTTNG_UST_ABI_FIELD_FLOAT;
 					break;
-				case atype_enum_nestable:
+				case lttng_ust_type_enum:
 					list_entry->field.type = LTTNG_UST_ABI_FIELD_ENUM;
 					break;
 				default:

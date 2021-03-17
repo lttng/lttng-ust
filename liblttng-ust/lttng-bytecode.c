@@ -179,7 +179,7 @@ int apply_field_reloc(const struct lttng_ust_event_desc *event_desc,
 		const char *field_name,
 		enum bytecode_op bytecode_op)
 {
-	const struct lttng_ust_event_field **fields, *field = NULL;
+	struct lttng_ust_event_field **fields, *field = NULL;
 	unsigned int nr_fields, i;
 	struct load_op *op;
 	uint32_t field_offset = 0;
@@ -202,20 +202,20 @@ int apply_field_reloc(const struct lttng_ust_event_desc *event_desc,
 			break;
 		}
 		/* compute field offset */
-		switch (fields[i]->type.atype) {
-		case atype_integer:
-		case atype_enum_nestable:
+		switch (fields[i]->type->type) {
+		case lttng_ust_type_integer:
+		case lttng_ust_type_enum:
 			field_offset += sizeof(int64_t);
 			break;
-		case atype_array_nestable:
-		case atype_sequence_nestable:
+		case lttng_ust_type_array:
+		case lttng_ust_type_sequence:
 			field_offset += sizeof(unsigned long);
 			field_offset += sizeof(void *);
 			break;
-		case atype_string:
+		case lttng_ust_type_string:
 			field_offset += sizeof(void *);
 			break;
-		case atype_float:
+		case lttng_ust_type_float:
 			field_offset += sizeof(double);
 			break;
 		default:
@@ -238,19 +238,19 @@ int apply_field_reloc(const struct lttng_ust_event_desc *event_desc,
 		struct field_ref *field_ref;
 
 		field_ref = (struct field_ref *) op->data;
-		switch (field->type.atype) {
-		case atype_integer:
-		case atype_enum_nestable:
+		switch (field->type->type) {
+		case lttng_ust_type_integer:
+		case lttng_ust_type_enum:
 			op->op = BYTECODE_OP_LOAD_FIELD_REF_S64;
 			break;
-		case atype_array_nestable:
-		case atype_sequence_nestable:
+		case lttng_ust_type_array:
+		case lttng_ust_type_sequence:
 			op->op = BYTECODE_OP_LOAD_FIELD_REF_SEQUENCE;
 			break;
-		case atype_string:
+		case lttng_ust_type_string:
 			op->op = BYTECODE_OP_LOAD_FIELD_REF_STRING;
 			break;
-		case atype_float:
+		case lttng_ust_type_float:
 			op->op = BYTECODE_OP_LOAD_FIELD_REF_DOUBLE;
 			break;
 		default:
@@ -311,21 +311,21 @@ int apply_context_reloc(struct bytecode_runtime *runtime,
 		struct field_ref *field_ref;
 
 		field_ref = (struct field_ref *) op->data;
-		switch (ctx_field->event_field->type.atype) {
-		case atype_integer:
-		case atype_enum_nestable:
+		switch (ctx_field->event_field->type->type) {
+		case lttng_ust_type_integer:
+		case lttng_ust_type_enum:
 			op->op = BYTECODE_OP_GET_CONTEXT_REF_S64;
 			break;
 			/* Sequence and array supported as string */
-		case atype_string:
-		case atype_array_nestable:
-		case atype_sequence_nestable:
+		case lttng_ust_type_string:
+		case lttng_ust_type_array:
+		case lttng_ust_type_sequence:
 			op->op = BYTECODE_OP_GET_CONTEXT_REF_STRING;
 			break;
-		case atype_float:
+		case lttng_ust_type_float:
 			op->op = BYTECODE_OP_GET_CONTEXT_REF_DOUBLE;
 			break;
-		case atype_dynamic:
+		case lttng_ust_type_dynamic:
 			op->op = BYTECODE_OP_GET_CONTEXT_REF;
 			break;
 		default:
@@ -396,7 +396,7 @@ int bytecode_is_linked(struct lttng_ust_bytecode_node *bytecode,
  * bytecode runtime.
  */
 static
-int link_bytecode(const struct lttng_ust_event_desc *event_desc,
+int link_bytecode(struct lttng_ust_event_desc *event_desc,
 		struct lttng_ust_ctx **ctx,
 		struct lttng_ust_bytecode_node *bytecode,
 		struct cds_list_head *bytecode_runtime_head,
@@ -529,7 +529,7 @@ void lttng_bytecode_capture_sync_state(struct lttng_ust_bytecode_runtime *runtim
  * This function is called after we confirmed that name enabler and the
  * instance are name matching (or glob pattern matching).
  */
-void lttng_enabler_link_bytecode(const struct lttng_ust_event_desc *event_desc,
+void lttng_enabler_link_bytecode(struct lttng_ust_event_desc *event_desc,
 		struct lttng_ust_ctx **ctx,
 		struct cds_list_head *instance_bytecode_head,
 		struct cds_list_head *enabler_bytecode_head)

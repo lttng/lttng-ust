@@ -253,20 +253,20 @@ static int specialize_get_index(struct bytecode_runtime *runtime,
 		switch (stack_top->load.object_type) {
 		case OBJECT_TYPE_ARRAY:
 		{
-			const struct lttng_integer_type *integer_type;
-			const struct lttng_ust_event_field *field;
+			struct lttng_ust_type_integer *integer_type;
+			struct lttng_ust_event_field *field;
 			uint32_t elem_len, num_elems;
 			int signedness;
 
 			field = stack_top->load.field;
-			switch (field->type.atype) {
-			case atype_array_nestable:
-				if (field->type.u.array_nestable.elem_type->atype != atype_integer) {
+			switch (field->type->type) {
+			case lttng_ust_type_array:
+				if (lttng_ust_get_type_array(field->type)->elem_type->type != lttng_ust_type_integer) {
 					ret = -EINVAL;
 					goto end;
 				}
-				integer_type = &field->type.u.array_nestable.elem_type->u.integer;
-				num_elems = field->type.u.array_nestable.length;
+				integer_type = lttng_ust_get_type_integer(lttng_ust_get_type_array(field->type)->elem_type);
+				num_elems = lttng_ust_get_type_array(field->type)->length;
 				break;
 			default:
 				ret = -EINVAL;
@@ -293,19 +293,19 @@ static int specialize_get_index(struct bytecode_runtime *runtime,
 		}
 		case OBJECT_TYPE_SEQUENCE:
 		{
-			const struct lttng_integer_type *integer_type;
-			const struct lttng_ust_event_field *field;
+			struct lttng_ust_type_integer *integer_type;
+			struct lttng_ust_event_field *field;
 			uint32_t elem_len;
 			int signedness;
 
 			field = stack_top->load.field;
-			switch (field->type.atype) {
-			case atype_sequence_nestable:
-				if (field->type.u.sequence_nestable.elem_type->atype != atype_integer) {
+			switch (field->type->type) {
+			case lttng_ust_type_sequence:
+				if (lttng_ust_get_type_sequence(field->type)->elem_type->type != lttng_ust_type_integer) {
 					ret = -EINVAL;
 					goto end;
 				}
-				integer_type = &field->type.u.sequence_nestable.elem_type->u.integer;
+				integer_type = lttng_ust_get_type_integer(lttng_ust_get_type_sequence(field->type)->elem_type);
 				break;
 			default:
 				ret = -EINVAL;
@@ -378,24 +378,24 @@ static int specialize_context_lookup_name(struct lttng_ust_ctx *ctx,
 	return lttng_get_context_index(ctx, name);
 }
 
-static int specialize_load_object(const struct lttng_ust_event_field *field,
+static int specialize_load_object(struct lttng_ust_event_field *field,
 		struct vstack_load *load, bool is_context)
 {
 	load->type = LOAD_OBJECT;
 
-	switch (field->type.atype) {
-	case atype_integer:
-		if (field->type.u.integer.signedness)
+	switch (field->type->type) {
+	case lttng_ust_type_integer:
+		if (lttng_ust_get_type_integer(field->type)->signedness)
 			load->object_type = OBJECT_TYPE_S64;
 		else
 			load->object_type = OBJECT_TYPE_U64;
 		load->rev_bo = false;
 		break;
-	case atype_enum_nestable:
+	case lttng_ust_type_enum:
 	{
-		const struct lttng_integer_type *itype;
+		struct lttng_ust_type_integer *itype;
 
-		itype = &field->type.u.enum_nestable.container_type->u.integer;
+		itype = lttng_ust_get_type_integer(lttng_ust_get_type_enum(field->type)->container_type);
 		if (itype->signedness)
 			load->object_type = OBJECT_TYPE_SIGNED_ENUM;
 		else
@@ -403,15 +403,15 @@ static int specialize_load_object(const struct lttng_ust_event_field *field,
 		load->rev_bo = false;
 		break;
 	}
-	case atype_array_nestable:
-		if (field->type.u.array_nestable.elem_type->atype != atype_integer) {
+	case lttng_ust_type_array:
+		if (lttng_ust_get_type_array(field->type)->elem_type->type != lttng_ust_type_integer) {
 			ERR("Array nesting only supports integer types.");
 			return -EINVAL;
 		}
 		if (is_context) {
 			load->object_type = OBJECT_TYPE_STRING;
 		} else {
-			if (field->type.u.array_nestable.elem_type->u.integer.encoding == lttng_encode_none) {
+			if (lttng_ust_get_type_array(field->type)->encoding == lttng_ust_string_encoding_none) {
 				load->object_type = OBJECT_TYPE_ARRAY;
 				load->field = field;
 			} else {
@@ -419,15 +419,15 @@ static int specialize_load_object(const struct lttng_ust_event_field *field,
 			}
 		}
 		break;
-	case atype_sequence_nestable:
-		if (field->type.u.sequence_nestable.elem_type->atype != atype_integer) {
+	case lttng_ust_type_sequence:
+		if (lttng_ust_get_type_sequence(field->type)->elem_type->type != lttng_ust_type_integer) {
 			ERR("Sequence nesting only supports integer types.");
 			return -EINVAL;
 		}
 		if (is_context) {
 			load->object_type = OBJECT_TYPE_STRING;
 		} else {
-			if (field->type.u.sequence_nestable.elem_type->u.integer.encoding == lttng_encode_none) {
+			if (lttng_ust_get_type_sequence(field->type)->encoding == lttng_ust_string_encoding_none) {
 				load->object_type = OBJECT_TYPE_SEQUENCE;
 				load->field = field;
 			} else {
@@ -436,17 +436,17 @@ static int specialize_load_object(const struct lttng_ust_event_field *field,
 		}
 		break;
 
-	case atype_string:
+	case lttng_ust_type_string:
 		load->object_type = OBJECT_TYPE_STRING;
 		break;
-	case atype_float:
+	case lttng_ust_type_float:
 		load->object_type = OBJECT_TYPE_DOUBLE;
 		break;
-	case atype_dynamic:
+	case lttng_ust_type_dynamic:
 		load->object_type = OBJECT_TYPE_DYNAMIC;
 		break;
 	default:
-		ERR("Unknown type: %d", (int) field->type.atype);
+		ERR("Unknown type: %d", (int) field->type->type);
 		return -EINVAL;
 	}
 	return 0;
@@ -547,7 +547,7 @@ end:
 	return ret;
 }
 
-static int specialize_payload_lookup(const struct lttng_ust_event_desc *event_desc,
+static int specialize_payload_lookup(struct lttng_ust_event_desc *event_desc,
 		struct bytecode_runtime *runtime,
 		struct load_op *insn,
 		struct vstack_load *load)
@@ -557,7 +557,7 @@ static int specialize_payload_lookup(const struct lttng_ust_event_desc *event_de
 	unsigned int i, nr_fields;
 	bool found = false;
 	uint32_t field_offset = 0;
-	const struct lttng_ust_event_field *field;
+	struct lttng_ust_event_field *field;
 	int ret;
 	struct bytecode_get_index_data gid;
 	ssize_t data_offset;
@@ -575,20 +575,20 @@ static int specialize_payload_lookup(const struct lttng_ust_event_desc *event_de
 			break;
 		}
 		/* compute field offset on stack */
-		switch (field->type.atype) {
-		case atype_integer:
-		case atype_enum_nestable:
+		switch (field->type->type) {
+		case lttng_ust_type_integer:
+		case lttng_ust_type_enum:
 			field_offset += sizeof(int64_t);
 			break;
-		case atype_array_nestable:
-		case atype_sequence_nestable:
+		case lttng_ust_type_array:
+		case lttng_ust_type_sequence:
 			field_offset += sizeof(unsigned long);
 			field_offset += sizeof(void *);
 			break;
-		case atype_string:
+		case lttng_ust_type_string:
 			field_offset += sizeof(void *);
 			break;
-		case atype_float:
+		case lttng_ust_type_float:
 			field_offset += sizeof(double);
 			break;
 		default:
@@ -624,7 +624,7 @@ end:
 	return ret;
 }
 
-int lttng_bytecode_specialize(const struct lttng_ust_event_desc *event_desc,
+int lttng_bytecode_specialize(struct lttng_ust_event_desc *event_desc,
 		struct bytecode_runtime *bytecode)
 {
 	void *pc, *next_pc, *start_pc;

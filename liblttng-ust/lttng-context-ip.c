@@ -41,24 +41,39 @@ void ip_record(struct lttng_ust_ctx_field *field,
 int lttng_add_ip_to_ctx(struct lttng_ust_ctx **ctx)
 {
 	struct lttng_ust_ctx_field *field;
+	struct lttng_ust_type_common *type;
+	int ret;
 
-	field = lttng_append_context(ctx);
-	if (!field)
+	type = lttng_ust_create_type_integer(sizeof(void *) * CHAR_BIT,
+			lttng_alignof(void *) * CHAR_BIT,
+			lttng_is_signed_type(void *),
+			BYTE_ORDER, 16);
+	if (!type)
 		return -ENOMEM;
-	if (lttng_find_context(*ctx, "ip")) {
-		lttng_remove_context_field(ctx, field);
-		return -EEXIST;
+	field = lttng_append_context(ctx);
+	if (!field) {
+		ret = -ENOMEM;
+		goto error_context;
 	}
-	field->event_field->name = "ip";
-	field->event_field->type.atype = atype_integer;
-	field->event_field->type.u.integer.size = sizeof(void *) * CHAR_BIT;
-	field->event_field->type.u.integer.alignment = lttng_alignof(void *) * CHAR_BIT;
-	field->event_field->type.u.integer.signedness = lttng_is_signed_type(void *);
-	field->event_field->type.u.integer.reverse_byte_order = 0;
-	field->event_field->type.u.integer.base = 16;
-	field->event_field->type.u.integer.encoding = lttng_encode_none;
+	if (lttng_find_context(*ctx, "ip")) {
+		ret = -EEXIST;
+		goto error_find_context;
+	}
+	field->event_field->name = strdup("ip");
+	if (!field->event_field->name) {
+		ret = -ENOMEM;
+		goto error_name;
+	}
+	field->event_field->type = type;
 	field->get_size = ip_get_size;
 	field->record = ip_record;
 	lttng_context_update(*ctx);
 	return 0;
+
+error_name:
+error_find_context:
+	lttng_remove_context_field(ctx, field);
+error_context:
+	lttng_ust_destroy_type(type);
+	return ret;
 }

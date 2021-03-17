@@ -88,30 +88,42 @@ void procname_get_value(struct lttng_ust_ctx_field *field,
 	value->u.str = wrapper_getprocname();
 }
 
-static const struct lttng_type procname_array_elem_type =
-	__type_integer(char, BYTE_ORDER, 10, UTF8);
-
 int lttng_add_procname_to_ctx(struct lttng_ust_ctx **ctx)
 {
 	struct lttng_ust_ctx_field *field;
+	struct lttng_ust_type_common *type;
+	int ret;
 
-	field = lttng_append_context(ctx);
-	if (!field)
+	type = lttng_ust_create_type_array_text(LTTNG_UST_ABI_PROCNAME_LEN);
+	if (!type)
 		return -ENOMEM;
-	if (lttng_find_context(*ctx, "procname")) {
-		lttng_remove_context_field(ctx, field);
-		return -EEXIST;
+	field = lttng_append_context(ctx);
+	if (!field) {
+		ret = -ENOMEM;
+		goto error_context;
 	}
-	field->event_field->name = "procname";
-	field->event_field->type.atype = atype_array_nestable;
-	field->event_field->type.u.array_nestable.elem_type =
-		&procname_array_elem_type;
-	field->event_field->type.u.array_nestable.length = LTTNG_UST_ABI_PROCNAME_LEN;
+	if (lttng_find_context(*ctx, "procname")) {
+		ret = -EEXIST;
+		goto error_find_context;
+	}
+	field->event_field->name = strdup("procname");
+	if (!field->event_field->name) {
+		ret = -ENOMEM;
+		goto error_name;
+	}
+	field->event_field->type = type;
 	field->get_size = procname_get_size;
 	field->record = procname_record;
 	field->get_value = procname_get_value;
 	lttng_context_update(*ctx);
 	return 0;
+
+error_name:
+error_find_context:
+	lttng_remove_context_field(ctx, field);
+error_context:
+	lttng_ust_destroy_type(type);
+	return ret;
 }
 
 /*

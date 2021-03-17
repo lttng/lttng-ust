@@ -60,11 +60,11 @@ void capture_enum(struct lttng_msgpack_writer *writer,
 
 static
 int64_t capture_sequence_element_signed(uint8_t *ptr,
-		const struct lttng_integer_type *type)
+		struct lttng_ust_type_integer *integer_type)
 {
 	int64_t value;
-	unsigned int size = type->size;
-	bool byte_order_reversed = type->reverse_byte_order;
+	unsigned int size = integer_type->size;
+	bool byte_order_reversed = integer_type->reverse_byte_order;
 
 	switch (size) {
 	case 8:
@@ -109,11 +109,11 @@ int64_t capture_sequence_element_signed(uint8_t *ptr,
 
 static
 uint64_t capture_sequence_element_unsigned(uint8_t *ptr,
-		const struct lttng_integer_type *type)
+		struct lttng_ust_type_integer *integer_type)
 {
 	uint64_t value;
-	unsigned int size = type->size;
-	bool byte_order_reversed = type->reverse_byte_order;
+	unsigned int size = integer_type->size;
+	bool byte_order_reversed = integer_type->reverse_byte_order;
 
 	switch (size) {
 	case 8:
@@ -160,8 +160,8 @@ static
 void capture_sequence(struct lttng_msgpack_writer *writer,
 		struct lttng_interpreter_output *output)
 {
-	const struct lttng_integer_type *integer_type;
-	const struct lttng_type *nested_type;
+	struct lttng_ust_type_integer *integer_type;
+	struct lttng_ust_type_common *nested_type;
 	uint8_t *ptr;
 	bool signedness;
 	int i;
@@ -170,13 +170,13 @@ void capture_sequence(struct lttng_msgpack_writer *writer,
 
 	ptr = (uint8_t *) output->u.sequence.ptr;
 	nested_type = output->u.sequence.nested_type;
-	switch (nested_type->atype) {
-	case atype_integer:
-		integer_type = &nested_type->u.integer;
+	switch (nested_type->type) {
+	case lttng_ust_type_integer:
+		integer_type = lttng_ust_get_type_integer(nested_type);
 		break;
-	case atype_enum_nestable:
+	case lttng_ust_type_enum:
 		/* Treat enumeration as an integer. */
-		integer_type = &nested_type->u.enum_nestable.container_type->u.integer;
+		integer_type = lttng_ust_get_type_integer(lttng_ust_get_type_enum(nested_type)->container_type);
 		break;
 	default:
 		/* Capture of array of non-integer are not supported. */

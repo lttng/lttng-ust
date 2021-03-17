@@ -14,6 +14,7 @@
 
 #include <lttng/ust-events.h>
 
+#include <ust-helper.h>
 #include "ust-context-provider.h"
 
 struct lttng_ust_abi_obj;
@@ -244,7 +245,7 @@ struct lttng_counter_transport {
 struct lttng_ust_event_common_private {
 	struct lttng_ust_event_common *pub;	/* Public event interface */
 
-	const struct lttng_ust_event_desc *desc;
+	struct lttng_ust_event_desc *desc;
 	/* Backward references: list of lttng_enabler_ref (ref to enablers) */
 	struct cds_list_head enablers_ref_head;
 	int registered;			/* has reg'd tracepoint probe */
@@ -308,7 +309,7 @@ struct lttng_ust_session_private {
 };
 
 struct lttng_enum {
-	const struct lttng_ust_enum_desc *desc;
+	struct lttng_ust_enum_desc *desc;
 	struct lttng_ust_session *session;
 	struct cds_list_head node;	/* Enum list in session */
 	struct cds_hlist_node hlist;	/* Session ht of enums */
@@ -340,6 +341,160 @@ struct lttng_ust_channel_ops_private {
 	int (*flush_buffer)(struct lttng_ust_lib_ring_buffer_channel *chan,
 			    struct lttng_ust_shm_handle *handle);
 };
+
+static inline
+struct lttng_ust_type_integer *lttng_ust_get_type_integer(struct lttng_ust_type_common *type)
+{
+	if (type->type != lttng_ust_type_integer)
+		return NULL;
+	return caa_container_of(type, struct lttng_ust_type_integer, parent);
+}
+
+static inline
+struct lttng_ust_type_float *lttng_ust_get_type_float(struct lttng_ust_type_common *type)
+{
+	if (type->type != lttng_ust_type_float)
+		return NULL;
+	return caa_container_of(type, struct lttng_ust_type_float, parent);
+}
+
+static inline
+struct lttng_ust_type_string *lttng_ust_get_type_string(struct lttng_ust_type_common *type)
+{
+	if (type->type != lttng_ust_type_string)
+		return NULL;
+	return caa_container_of(type, struct lttng_ust_type_string, parent);
+}
+
+static inline
+struct lttng_ust_type_enum *lttng_ust_get_type_enum(struct lttng_ust_type_common *type)
+{
+	if (type->type != lttng_ust_type_enum)
+		return NULL;
+	return caa_container_of(type, struct lttng_ust_type_enum, parent);
+}
+
+static inline
+struct lttng_ust_type_array *lttng_ust_get_type_array(struct lttng_ust_type_common *type)
+{
+	if (type->type != lttng_ust_type_array)
+		return NULL;
+	return caa_container_of(type, struct lttng_ust_type_array, parent);
+}
+
+static inline
+struct lttng_ust_type_sequence *lttng_ust_get_type_sequence(struct lttng_ust_type_common *type)
+{
+	if (type->type != lttng_ust_type_sequence)
+		return NULL;
+	return caa_container_of(type, struct lttng_ust_type_sequence, parent);
+}
+
+static inline
+struct lttng_ust_type_struct *lttng_ust_get_type_struct(struct lttng_ust_type_common *type)
+{
+	if (type->type != lttng_ust_type_struct)
+		return NULL;
+	return caa_container_of(type, struct lttng_ust_type_struct, parent);
+}
+
+/* Create dynamically allocated types. */
+static inline
+struct lttng_ust_type_common *lttng_ust_create_type_integer(unsigned int size,
+		unsigned short alignment, bool signedness, unsigned int byte_order,
+		unsigned int base)
+{
+	struct lttng_ust_type_integer *integer_type;
+
+	integer_type = zmalloc(sizeof(struct lttng_ust_type_integer));
+	if (!integer_type)
+		return NULL;
+	integer_type->parent.type = lttng_ust_type_integer;
+	integer_type->struct_size = sizeof(struct lttng_ust_type_integer);
+	integer_type->size = size;
+	integer_type->alignment = alignment;
+	integer_type->signedness = signedness;
+	integer_type->reverse_byte_order = byte_order != BYTE_ORDER;
+	integer_type->base = base;
+	return (struct lttng_ust_type_common *) integer_type;
+}
+
+static inline
+struct lttng_ust_type_common *lttng_ust_create_type_array_text(unsigned int length)
+{
+	struct lttng_ust_type_array *array_type;
+
+	array_type = zmalloc(sizeof(struct lttng_ust_type_array));
+	if (!array_type)
+		return NULL;
+	array_type->parent.type = lttng_ust_type_array;
+	array_type->struct_size = sizeof(struct lttng_ust_type_array);
+	array_type->length = length;
+	array_type->alignment = 0;
+	array_type->encoding = lttng_ust_string_encoding_UTF8;
+	array_type->elem_type = lttng_ust_create_type_integer(sizeof(char) * CHAR_BIT,
+			lttng_alignof(char) * CHAR_BIT, lttng_is_signed_type(char),
+			BYTE_ORDER, 10);
+	if (!array_type->elem_type)
+		goto error_elem;
+	return (struct lttng_ust_type_common *) array_type;
+
+error_elem:
+	free(array_type);
+	return NULL;
+}
+
+/*
+ * Destroy dynamically allocated types, including nested types.
+ * For enumerations, it does not free the enumeration mapping description.
+ */
+static inline
+void lttng_ust_destroy_type(struct lttng_ust_type_common *type)
+{
+	if (!type)
+		return;
+
+	switch (type->type) {
+	case lttng_ust_type_integer:
+	case lttng_ust_type_string:
+	case lttng_ust_type_float:
+	case lttng_ust_type_dynamic:
+		free(type);
+		break;
+	case lttng_ust_type_enum:
+	{
+		struct lttng_ust_type_enum *enum_type = (struct lttng_ust_type_enum *) type;
+
+		lttng_ust_destroy_type(enum_type->container_type);
+		break;
+	}
+	case lttng_ust_type_array:
+	{
+		struct lttng_ust_type_array *array_type = (struct lttng_ust_type_array *) type;
+
+		lttng_ust_destroy_type(array_type->elem_type);
+		break;
+	}
+	case lttng_ust_type_sequence:
+	{
+		struct lttng_ust_type_sequence *sequence_type = (struct lttng_ust_type_sequence *) type;
+
+		lttng_ust_destroy_type(sequence_type->elem_type);
+		break;
+	}
+	case lttng_ust_type_struct:
+	{
+		struct lttng_ust_type_struct *struct_type = (struct lttng_ust_type_struct *) type;
+		unsigned int i;
+
+		for (i = 0; i < struct_type->nr_fields; i++)
+			lttng_ust_destroy_type(struct_type->fields[i]->type);
+		break;
+	}
+	default:
+		abort();
+	}
+}
 
 static inline
 struct lttng_enabler *lttng_event_enabler_as_enabler(
@@ -421,7 +576,7 @@ int lttng_event_enabler_attach_exclusion(struct lttng_event_enabler *enabler,
  * event_notifier enabler) to ensure each is linked to the provided instance.
  */
 __attribute__((visibility("hidden")))
-void lttng_enabler_link_bytecode(const struct lttng_ust_event_desc *event_desc,
+void lttng_enabler_link_bytecode(struct lttng_ust_event_desc *event_desc,
 		struct lttng_ust_ctx **ctx,
 		struct cds_list_head *instance_bytecode_runtime_head,
 		struct cds_list_head *enabler_bytecode_runtime_head);
@@ -641,7 +796,7 @@ struct cds_list_head *lttng_get_probe_list_head(void);
 
 __attribute__((visibility("hidden")))
 struct lttng_enum *lttng_ust_enum_get_from_desc(struct lttng_ust_session *session,
-		const struct lttng_ust_enum_desc *enum_desc);
+		struct lttng_ust_enum_desc *enum_desc);
 
 __attribute__((visibility("hidden")))
 int lttng_abi_create_root_handle(void);

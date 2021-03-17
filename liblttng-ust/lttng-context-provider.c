@@ -139,13 +139,17 @@ int lttng_ust_add_app_context_to_ctx_rcu(const char *name,
 		ret = -ENOMEM;
 		goto error_event_field_alloc;
 	}
-	new_field->field_name = strdup(name);
-	if (!new_field->field_name) {
+	new_field->event_field->name = strdup(name);
+	if (!new_field->event_field->name) {
 		ret = -ENOMEM;
 		goto error_field_name_alloc;
 	}
-	new_field->event_field->name = new_field->field_name;
-	new_field->event_field->type.atype = atype_dynamic;
+	new_field->event_field->type = zmalloc(sizeof(struct lttng_ust_type_common));
+	if (!new_field->event_field->type) {
+		ret = -ENOMEM;
+		goto error_field_type_alloc;
+	}
+	new_field->event_field->type->type = lttng_ust_type_dynamic;
 	/*
 	 * If provider is not found, we add the context anyway, but
 	 * it will provide a dummy context.
@@ -167,13 +171,16 @@ int lttng_ust_add_app_context_to_ctx_rcu(const char *name,
 	 */
 	ret = lttng_context_add_rcu(ctx, new_field);
 	if (ret) {
-		free(new_field->field_name);
+		free(new_field->event_field->type);
+		free((char *) new_field->event_field->name);
 		free(new_field->event_field);
 		free(new_field);
 		return ret;
 	}
 	return 0;
 
+error_field_type_alloc:
+	free((char *) new_field->event_field->name);
 error_field_name_alloc:
 	free(new_field->event_field);
 error_event_field_alloc:

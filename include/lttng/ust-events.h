@@ -47,30 +47,28 @@ struct lttng_ust_event_field;
 
 /*
  * Data structures used by tracepoint event declarations, and by the
- * tracer. Those structures have padding for future extension.
+ * tracer.
  */
 
 /* Type description */
 
-/* Update the astract_types name table in lttng-types.c along with this enum */
-enum lttng_abstract_types {
-	atype_integer,
-	atype_string,
-	atype_float,
-	atype_dynamic,
-	atype_enum_nestable,
-	atype_array_nestable,
-	atype_sequence_nestable,
-	atype_struct_nestable,
-	NR_ABSTRACT_TYPES,
+enum lttng_ust_type {
+	lttng_ust_type_integer,
+	lttng_ust_type_string,
+	lttng_ust_type_float,
+	lttng_ust_type_dynamic,
+	lttng_ust_type_enum,
+	lttng_ust_type_array,
+	lttng_ust_type_sequence,
+	lttng_ust_type_struct,
+	NR_LTTNG_UST_TYPE,
 };
 
-/* Update the string_encodings name table in lttng-types.c along with this enum */
-enum lttng_string_encodings {
-	lttng_encode_none = 0,
-	lttng_encode_UTF8 = 1,
-	lttng_encode_ASCII = 2,
-	NR_STRING_ENCODINGS,
+enum lttng_ust_string_encoding {
+	lttng_ust_string_encoding_none = 0,
+	lttng_ust_string_encoding_UTF8 = 1,
+	lttng_ust_string_encoding_ASCII = 2,
+	NR_LTTNG_UST_STRING_ENCODING,
 };
 
 struct lttng_enum_value {
@@ -104,30 +102,44 @@ struct lttng_ust_enum_entry {
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
-#define __type_integer(_type, _byte_order, _base, _encoding)		\
-	{								\
-		.atype = atype_integer,					\
-		.u = {							\
-			.integer = {					\
-				.size = sizeof(_type) * CHAR_BIT,	\
-				.alignment = lttng_alignof(_type) * CHAR_BIT, \
-				.signedness = lttng_is_signed_type(_type), \
-				.reverse_byte_order = _byte_order != BYTE_ORDER, \
-				.base = _base,			\
-				.encoding = lttng_encode_##_encoding, \
-			}					\
-		},						\
-	}							\
+/*
+ * struct lttng_ust_type_common is fixed-size. Its children inherits
+ * from it by embedding struct lttng_ust_type_common as its first field.
+ */
+struct lttng_ust_type_common {
+	enum lttng_ust_type type;
+};
 
-#define LTTNG_UST_INTEGER_TYPE_PADDING	24
-struct lttng_integer_type {
+struct lttng_ust_type_integer {
+	struct lttng_ust_type_common parent;
+	uint32_t struct_size;
 	unsigned int size;		/* in bits */
 	unsigned short alignment;	/* in bits */
 	unsigned int signedness:1;
 	unsigned int reverse_byte_order:1;
 	unsigned int base;		/* 2, 8, 10, 16, for pretty print */
-	enum lttng_string_encodings encoding;
-	char padding[LTTNG_UST_INTEGER_TYPE_PADDING];
+};
+
+#define lttng_ust_type_integer_define(_type, _byte_order, _base)	\
+	((struct lttng_ust_type_common *) __LTTNG_COMPOUND_LITERAL(struct lttng_ust_type_integer, { \
+		.parent = {						\
+			.type = lttng_ust_type_integer,			\
+		},							\
+		.struct_size = sizeof(struct lttng_ust_type_integer),	\
+		.size = sizeof(_type) * CHAR_BIT,			\
+		.alignment = lttng_alignof(_type) * CHAR_BIT,		\
+		.signedness = lttng_is_signed_type(_type),		\
+		.reverse_byte_order = _byte_order != BYTE_ORDER,	\
+		.base = _base,						\
+	}))
+
+struct lttng_ust_type_float {
+	struct lttng_ust_type_common parent;
+	uint32_t struct_size;
+	unsigned int exp_dig;		/* exponent digits, in bits */
+	unsigned int mant_dig;		/* mantissa digits, in bits */
+	unsigned short alignment;	/* in bits */
+	unsigned int reverse_byte_order:1;
 };
 
 /*
@@ -139,61 +151,57 @@ struct lttng_integer_type {
 		: (sizeof(_type) == sizeof(double) ? DBL_MANT_DIG	\
 		: 0))
 
-#define __type_float(_type)						\
-	{								\
-		.atype = atype_float,					\
-		.u = {							\
-			._float = {					\
-				.exp_dig = sizeof(_type) * CHAR_BIT	\
-					- _float_mant_dig(_type),	\
-				.mant_dig = _float_mant_dig(_type),	\
-				.alignment = lttng_alignof(_type) * CHAR_BIT, \
-				.reverse_byte_order = BYTE_ORDER != FLOAT_WORD_ORDER,	\
-			}						\
-		}							\
-	}								\
+#define lttng_ust_type_float_define(_type)				\
+	((struct lttng_ust_type_common *) __LTTNG_COMPOUND_LITERAL(struct lttng_ust_type_float, { \
+		.parent = {						\
+			.type = lttng_ust_type_float,			\
+		},							\
+		.struct_size = sizeof(struct lttng_ust_type_float),	\
+		.exp_dig = sizeof(_type) * CHAR_BIT			\
+			- _float_mant_dig(_type),			\
+		.mant_dig = _float_mant_dig(_type),			\
+		.alignment = lttng_alignof(_type) * CHAR_BIT,		\
+		.reverse_byte_order = BYTE_ORDER != FLOAT_WORD_ORDER,	\
+	}))
 
-#define LTTNG_UST_FLOAT_TYPE_PADDING	24
-struct lttng_float_type {
-	unsigned int exp_dig;		/* exponent digits, in bits */
-	unsigned int mant_dig;		/* mantissa digits, in bits */
-	unsigned short alignment;	/* in bits */
-	unsigned int reverse_byte_order:1;
-	char padding[LTTNG_UST_FLOAT_TYPE_PADDING];
+
+struct lttng_ust_type_string {
+	struct lttng_ust_type_common parent;
+	uint32_t struct_size;
+	enum lttng_ust_string_encoding encoding;
 };
 
-#define LTTNG_UST_TYPE_PADDING	128
-struct lttng_type {
-	enum lttng_abstract_types atype;
-	union {
-		/* provider ABI 2.0 */
-		struct lttng_integer_type integer;
-		struct lttng_float_type _float;
-		struct {
-			enum lttng_string_encodings encoding;
-		} string;
-		struct {
-			const struct lttng_ust_enum_desc *desc;	/* Enumeration mapping */
-			struct lttng_type *container_type;
-		} enum_nestable;
-		struct {
-			const struct lttng_type *elem_type;
-			unsigned int length;			/* Num. elems. */
-			unsigned int alignment;
-		} array_nestable;
-		struct {
-			const char *length_name;		/* Length field name. */
-			const struct lttng_type *elem_type;
-			unsigned int alignment;			/* Alignment before elements. */
-		} sequence_nestable;
-		struct {
-			unsigned int nr_fields;
-			const struct lttng_ust_event_field **fields; /* Array of pointers to fields. */
-			unsigned int alignment;
-		} struct_nestable;
+struct lttng_ust_type_enum {
+	struct lttng_ust_type_common parent;
+	uint32_t struct_size;
+	struct lttng_ust_enum_desc *desc;	/* Enumeration mapping */
+	struct lttng_ust_type_common *container_type;
+};
 
-		char padding[LTTNG_UST_TYPE_PADDING];
-	} u;
+struct lttng_ust_type_array {
+	struct lttng_ust_type_common parent;
+	uint32_t struct_size;
+	struct lttng_ust_type_common *elem_type;
+	unsigned int length;			/* Num. elems. */
+	unsigned int alignment;
+	enum lttng_ust_string_encoding encoding;
+};
+
+struct lttng_ust_type_sequence {
+	struct lttng_ust_type_common parent;
+	uint32_t struct_size;
+	const char *length_name;	/* Length field name. */
+	struct lttng_ust_type_common *elem_type;
+	unsigned int alignment;		/* Alignment before elements. */
+	enum lttng_ust_string_encoding encoding;
+};
+
+struct lttng_ust_type_struct {
+	struct lttng_ust_type_common parent;
+	uint32_t struct_size;
+	unsigned int nr_fields;
+	struct lttng_ust_event_field **fields;	/* Array of pointers to fields. */
+	unsigned int alignment;
 };
 
 /*
@@ -212,7 +220,7 @@ struct lttng_ust_enum_desc {
 	uint32_t struct_size;
 
 	const char *name;
-	const struct lttng_ust_enum_entry **entries;
+	struct lttng_ust_enum_entry **entries;
 	unsigned int nr_entries;
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */
@@ -234,7 +242,7 @@ struct lttng_ust_event_field {
 	uint32_t struct_size;
 
 	const char *name;
-	struct lttng_type type;
+	struct lttng_ust_type_common *type;
 	unsigned int nowrite:1,		/* do not write into trace */
 		nofilter:1;		/* do not consider for filter */
 
@@ -256,8 +264,8 @@ struct lttng_ust_event_desc {
 
 	const char *name;
 	void (*probe_callback)(void);
-	const struct lttng_event_ctx *ctx;	/* context */
-	const struct lttng_ust_event_field **fields;	/* event payload */
+	struct lttng_event_ctx *ctx;		/* context */
+	struct lttng_ust_event_field **fields;	/* event payload */
 	unsigned int nr_fields;
 	const int **loglevel;
 	const char *signature;			/* Argument types/names received */
@@ -279,7 +287,7 @@ struct lttng_ust_probe_desc {
 	uint32_t struct_size;			/* Size of this structure. */
 
 	const char *provider;
-	const struct lttng_ust_event_desc **event_desc;
+	struct lttng_ust_event_desc **event_desc;
 	unsigned int nr_events;
 	struct cds_list_head head;		/* chain registered probes */
 	struct cds_list_head lazy_init_head;
@@ -484,7 +492,7 @@ struct lttng_channel {
 	struct lttng_ust_session *session;
 	int objd;			/* Object associated to channel */
 	struct cds_list_head node;	/* Channel list in session */
-	const struct lttng_ust_channel_ops *ops;
+	struct lttng_ust_channel_ops *ops;
 	int header_type;		/* 0: unset, 1: compact, 2: large */
 	struct lttng_ust_shm_handle *handle;	/* shared-memory handle */
 

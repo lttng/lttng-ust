@@ -231,10 +231,10 @@ static int context_get_index(struct lttng_ust_ctx *ctx,
 	ptr->type = LOAD_OBJECT;
 	ptr->field = field;
 
-	switch (field->type.atype) {
-	case atype_integer:
+	switch (field->type->type) {
+	case lttng_ust_type_integer:
 		ctx_field->get_value(ctx_field, &v);
-		if (field->type.u.integer.signedness) {
+		if (lttng_ust_get_type_integer(field->type)->signedness) {
 			ptr->object_type = OBJECT_TYPE_S64;
 			ptr->u.s64 = v.u.s64;
 			ptr->ptr = &ptr->u.s64;
@@ -244,11 +244,11 @@ static int context_get_index(struct lttng_ust_ctx *ctx,
 			ptr->ptr = &ptr->u.u64;
 		}
 		break;
-	case atype_enum_nestable:
+	case lttng_ust_type_enum:
 	{
-		const struct lttng_integer_type *itype;
+		const struct lttng_ust_type_integer *itype;
 
-		itype = &field->type.u.enum_nestable.container_type->u.integer;
+		itype = lttng_ust_get_type_integer(lttng_ust_get_type_enum(field->type)->container_type);
 		ctx_field->get_value(ctx_field, &v);
 		if (itype->signedness) {
 			ptr->object_type = OBJECT_TYPE_SIGNED_ENUM;
@@ -261,12 +261,12 @@ static int context_get_index(struct lttng_ust_ctx *ctx,
 		}
 		break;
 	}
-	case atype_array_nestable:
-		if (field->type.u.array_nestable.elem_type->atype != atype_integer) {
+	case lttng_ust_type_array:
+		if (lttng_ust_get_type_array(field->type)->elem_type->type != lttng_ust_type_integer) {
 			ERR("Array nesting only supports integer types.");
 			return -EINVAL;
 		}
-		if (field->type.u.array_nestable.elem_type->u.integer.encoding == lttng_encode_none) {
+		if (lttng_ust_get_type_array(field->type)->encoding == lttng_ust_string_encoding_none) {
 			ERR("Only string arrays are supported for contexts.");
 			return -EINVAL;
 		}
@@ -274,12 +274,12 @@ static int context_get_index(struct lttng_ust_ctx *ctx,
 		ctx_field->get_value(ctx_field, &v);
 		ptr->ptr = v.u.str;
 		break;
-	case atype_sequence_nestable:
-		if (field->type.u.sequence_nestable.elem_type->atype != atype_integer) {
+	case lttng_ust_type_sequence:
+		if (lttng_ust_get_type_sequence(field->type)->elem_type->type != lttng_ust_type_integer) {
 			ERR("Sequence nesting only supports integer types.");
 			return -EINVAL;
 		}
-		if (field->type.u.sequence_nestable.elem_type->u.integer.encoding == lttng_encode_none) {
+		if (lttng_ust_get_type_sequence(field->type)->encoding == lttng_ust_string_encoding_none) {
 			ERR("Only string sequences are supported for contexts.");
 			return -EINVAL;
 		}
@@ -287,18 +287,18 @@ static int context_get_index(struct lttng_ust_ctx *ctx,
 		ctx_field->get_value(ctx_field, &v);
 		ptr->ptr = v.u.str;
 		break;
-	case atype_string:
+	case lttng_ust_type_string:
 		ptr->object_type = OBJECT_TYPE_STRING;
 		ctx_field->get_value(ctx_field, &v);
 		ptr->ptr = v.u.str;
 		break;
-	case atype_float:
+	case lttng_ust_type_float:
 		ptr->object_type = OBJECT_TYPE_DOUBLE;
 		ctx_field->get_value(ctx_field, &v);
 		ptr->u.d = v.u.d;
 		ptr->ptr = &ptr->u.d;
 		break;
-	case atype_dynamic:
+	case lttng_ust_type_dynamic:
 		ctx_field->get_value(ctx_field, &v);
 		switch (v.sel) {
 		case LTTNG_UST_DYNAMIC_TYPE_NONE:
@@ -339,7 +339,7 @@ static int context_get_index(struct lttng_ust_ctx *ctx,
 		}
 		break;
 	default:
-		ERR("Unknown type: %d", (int) field->type.atype);
+		ERR("Unknown type: %d", (int) field->type->type);
 		return -EINVAL;
 	}
 	return 0;
@@ -367,7 +367,7 @@ static int dynamic_get_index(struct lttng_ust_ctx *ctx,
 			stack_top->u.ptr.ptr = ptr;
 			stack_top->u.ptr.object_type = gid->elem.type;
 			stack_top->u.ptr.rev_bo = gid->elem.rev_bo;
-			assert(stack_top->u.ptr.field->type.atype == atype_array_nestable);
+			assert(stack_top->u.ptr.field->type->type == lttng_ust_type_array);
 			stack_top->u.ptr.field = NULL;
 			break;
 		}
@@ -386,7 +386,7 @@ static int dynamic_get_index(struct lttng_ust_ctx *ctx,
 			stack_top->u.ptr.ptr = ptr;
 			stack_top->u.ptr.object_type = gid->elem.type;
 			stack_top->u.ptr.rev_bo = gid->elem.rev_bo;
-			assert(stack_top->u.ptr.field->type.atype == atype_sequence_nestable);
+			assert(stack_top->u.ptr.field->type->type == lttng_ust_type_sequence);
 			stack_top->u.ptr.field = NULL;
 			break;
 		}
@@ -664,14 +664,14 @@ again:
 			output->type = LTTNG_INTERPRETER_TYPE_SEQUENCE;
 			output->u.sequence.ptr = *(const char **) (ax->u.ptr.ptr + sizeof(unsigned long));
 			output->u.sequence.nr_elem = *(unsigned long *) ax->u.ptr.ptr;
-			output->u.sequence.nested_type = ax->u.ptr.field->type.u.sequence_nestable.elem_type;
+			output->u.sequence.nested_type = lttng_ust_get_type_sequence(ax->u.ptr.field->type)->elem_type;
 			break;
 		case OBJECT_TYPE_ARRAY:
 			/* Skip count (unsigned long) */
 			output->type = LTTNG_INTERPRETER_TYPE_SEQUENCE;
 			output->u.sequence.ptr = *(const char **) (ax->u.ptr.ptr + sizeof(unsigned long));
-			output->u.sequence.nr_elem = ax->u.ptr.field->type.u.array_nestable.length;
-			output->u.sequence.nested_type = ax->u.ptr.field->type.u.array_nestable.elem_type;
+			output->u.sequence.nr_elem = lttng_ust_get_type_array(ax->u.ptr.field->type)->length;
+			output->u.sequence.nested_type = lttng_ust_get_type_array(ax->u.ptr.field->type)->elem_type;
 			break;
 		case OBJECT_TYPE_SIGNED_ENUM:
 			ret = dynamic_load_field(ax);

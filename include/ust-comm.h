@@ -292,7 +292,7 @@ int ustcomm_register_event(int sock,
 	int loglevel,
 	const char *signature,		/* event signature (input) */
 	size_t nr_fields,		/* fields */
-	const struct lttng_ust_event_field **fields,
+	struct lttng_ust_event_field **fields,
 	const char *model_emf_uri,
 	uint32_t *id);			/* event id (output) */
 
@@ -305,7 +305,7 @@ int ustcomm_register_enum(int sock,
 	int session_objd,		/* session descriptor */
 	const char *enum_name,		/* enum name (input) */
 	size_t nr_entries,		/* entries */
-	const struct lttng_ust_enum_entry **entries,
+	struct lttng_ust_enum_entry **entries,
 	uint64_t *id);			/* enum id (output) */
 
 /*

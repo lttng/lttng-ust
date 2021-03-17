@@ -250,7 +250,7 @@ static
 void register_event(struct lttng_ust_event_common *event)
 {
 	int ret;
-	const struct lttng_ust_event_desc *desc;
+	struct lttng_ust_event_desc *desc;
 
 	assert(event->priv->registered == 0);
 	desc = event->priv->desc;
@@ -266,7 +266,7 @@ static
 void unregister_event(struct lttng_ust_event_common *event)
 {
 	int ret;
-	const struct lttng_ust_event_desc *desc;
+	struct lttng_ust_event_desc *desc;
 
 	assert(event->priv->registered == 1);
 	desc = event->priv->desc;
@@ -398,7 +398,7 @@ void lttng_enabler_destroy(struct lttng_enabler *enabler)
 }
 
 static
-int lttng_enum_create(const struct lttng_ust_enum_desc *desc,
+int lttng_enum_create(struct lttng_ust_enum_desc *desc,
 		struct lttng_ust_session *session)
 {
 	const char *enum_name = desc->name;
@@ -456,16 +456,16 @@ exist:
 }
 
 static
-int lttng_create_enum_check(const struct lttng_type *type,
+int lttng_create_enum_check(struct lttng_ust_type_common *type,
 		struct lttng_ust_session *session)
 {
-	switch (type->atype) {
-	case atype_enum_nestable:
+	switch (type->type) {
+	case lttng_ust_type_enum:
 	{
-		const struct lttng_ust_enum_desc *enum_desc;
+		struct lttng_ust_enum_desc *enum_desc;
 		int ret;
 
-		enum_desc = type->u.enum_nestable.desc;
+		enum_desc = lttng_ust_get_type_enum(type)->desc;
 		ret = lttng_enum_create(enum_desc, session);
 		if (ret && ret != -EEXIST) {
 			DBG("Unable to create enum error: (%d)", ret);
@@ -473,14 +473,14 @@ int lttng_create_enum_check(const struct lttng_type *type,
 		}
 		break;
 	}
-	case atype_dynamic:
+	case lttng_ust_type_dynamic:
 	{
-		const struct lttng_ust_event_field *tag_field_generic;
-		const struct lttng_ust_enum_desc *enum_desc;
+		struct lttng_ust_event_field *tag_field_generic;
+		struct lttng_ust_enum_desc *enum_desc;
 		int ret;
 
 		tag_field_generic = lttng_ust_dynamic_type_tag_field();
-		enum_desc = tag_field_generic->type.u.enum_nestable.desc;
+		enum_desc = lttng_ust_get_type_enum(tag_field_generic->type)->desc;
 		ret = lttng_enum_create(enum_desc, session);
 		if (ret && ret != -EEXIST) {
 			DBG("Unable to create enum error: (%d)", ret);
@@ -497,7 +497,7 @@ int lttng_create_enum_check(const struct lttng_type *type,
 
 static
 int lttng_create_all_event_enums(size_t nr_fields,
-		const struct lttng_ust_event_field **event_fields,
+		struct lttng_ust_event_field **event_fields,
 		struct lttng_ust_session *session)
 {
 	size_t i;
@@ -505,7 +505,7 @@ int lttng_create_all_event_enums(size_t nr_fields,
 
 	/* For each field, ensure enum is part of the session. */
 	for (i = 0; i < nr_fields; i++) {
-		const struct lttng_type *type = &event_fields[i]->type;
+		struct lttng_ust_type_common *type = event_fields[i]->type;
 
 		ret = lttng_create_enum_check(type, session);
 		if (ret)
@@ -524,7 +524,7 @@ int lttng_create_all_ctx_enums(size_t nr_fields,
 
 	/* For each field, ensure enum is part of the session. */
 	for (i = 0; i < nr_fields; i++) {
-		const struct lttng_type *type = &ctx_fields[i]->event_field->type;
+		struct lttng_ust_type_common *type = ctx_fields[i]->event_field->type;
 
 		ret = lttng_create_enum_check(type, session);
 		if (ret)
@@ -570,7 +570,7 @@ int lttng_session_enable(struct lttng_ust_session *session)
 	 * we need to use.
 	 */
 	cds_list_for_each_entry(chan, &session->priv->chan_head, node) {
-		const struct lttng_ust_ctx *ctx;
+		struct lttng_ust_ctx *ctx;
 		struct lttng_ust_ctx_field **fields = NULL;
 		size_t nr_fields = 0;
 		uint32_t chan_id;
@@ -675,7 +675,7 @@ static inline
 struct cds_hlist_head *borrow_hash_table_bucket(
 		struct cds_hlist_head *hash_table,
 		unsigned int hash_table_size,
-		const struct lttng_ust_event_desc *desc)
+		struct lttng_ust_event_desc *desc)
 {
 	const char *event_name;
 	size_t name_len;
@@ -692,7 +692,7 @@ struct cds_hlist_head *borrow_hash_table_bucket(
  * Supports event creation while tracing session is active.
  */
 static
-int lttng_event_recorder_create(const struct lttng_ust_event_desc *desc,
+int lttng_event_recorder_create(struct lttng_ust_event_desc *desc,
 		struct lttng_channel *chan)
 {
 	struct lttng_ust_event_recorder *event_recorder;
@@ -800,7 +800,7 @@ socket_error:
 }
 
 static
-int lttng_event_notifier_create(const struct lttng_ust_event_desc *desc,
+int lttng_event_notifier_create(struct lttng_ust_event_desc *desc,
 		uint64_t token, uint64_t error_counter_index,
 		struct lttng_event_notifier_group *event_notifier_group)
 {
@@ -872,7 +872,7 @@ error:
 }
 
 static
-int lttng_desc_match_star_glob_enabler(const struct lttng_ust_event_desc *desc,
+int lttng_desc_match_star_glob_enabler(struct lttng_ust_event_desc *desc,
 		struct lttng_enabler *enabler)
 {
 	int loglevel = 0;
@@ -895,7 +895,7 @@ int lttng_desc_match_star_glob_enabler(const struct lttng_ust_event_desc *desc,
 }
 
 static
-int lttng_desc_match_event_enabler(const struct lttng_ust_event_desc *desc,
+int lttng_desc_match_event_enabler(struct lttng_ust_event_desc *desc,
 		struct lttng_enabler *enabler)
 {
 	int loglevel = 0;
@@ -917,7 +917,7 @@ int lttng_desc_match_event_enabler(const struct lttng_ust_event_desc *desc,
 }
 
 static
-int lttng_desc_match_enabler(const struct lttng_ust_event_desc *desc,
+int lttng_desc_match_enabler(struct lttng_ust_event_desc *desc,
 		struct lttng_enabler *enabler)
 {
 	switch (enabler->format_type) {
@@ -1006,7 +1006,7 @@ void lttng_create_event_recorder_if_missing(struct lttng_event_enabler *event_en
 {
 	struct lttng_ust_session *session = event_enabler->chan->session;
 	struct lttng_ust_probe_desc *probe_desc;
-	const struct lttng_ust_event_desc *desc;
+	struct lttng_ust_event_desc *desc;
 	struct lttng_ust_event_recorder_private *event_recorder_priv;
 	int i;
 	struct cds_list_head *probe_list;
@@ -1073,7 +1073,7 @@ void probe_provider_event_for_each(struct lttng_ust_probe_desc *provider_desc,
 	 * sessions to queue the unregistration of the events.
 	 */
 	for (i = 0; i < provider_desc->nr_events; i++) {
-		const struct lttng_ust_event_desc *event_desc;
+		struct lttng_ust_event_desc *event_desc;
 		struct lttng_event_notifier_group *event_notifier_group;
 		struct lttng_ust_event_recorder_private *event_recorder_priv;
 		struct lttng_ust_event_notifier_private *event_notifier_priv;
@@ -1140,14 +1140,14 @@ void _event_enum_destroy(struct lttng_ust_event_common *event)
 
 		/* Destroy enums of the current event. */
 		for (i = 0; i < event_recorder->parent->priv->desc->nr_fields; i++) {
-			const struct lttng_ust_enum_desc *enum_desc;
-			const struct lttng_ust_event_field *field;
+			struct lttng_ust_enum_desc *enum_desc;
+			struct lttng_ust_event_field *field;
 			struct lttng_enum *curr_enum;
 
 			field = event_recorder->parent->priv->desc->fields[i];
-			switch (field->type.atype) {
-			case atype_enum_nestable:
-				enum_desc = field->type.u.enum_nestable.desc;
+			switch (field->type->type) {
+			case lttng_ust_type_enum:
+				enum_desc = lttng_ust_get_type_enum(field->type)->desc;
 				break;
 			default:
 				continue;
@@ -1728,7 +1728,7 @@ void lttng_create_event_notifier_if_missing(
 		for (i = 0; i < probe_desc->nr_events; i++) {
 			int ret;
 			bool found = false;
-			const struct lttng_ust_event_desc *desc;
+			struct lttng_ust_event_desc *desc;
 			struct lttng_ust_event_notifier_private *event_notifier_priv;
 			struct cds_hlist_head *head;
 			struct cds_hlist_node *node;

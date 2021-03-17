@@ -189,6 +189,42 @@ int lttng_context_add_rcu(struct lttng_ust_ctx **ctx_p,
 	return 0;
 }
 
+static size_t get_type_max_align(struct lttng_ust_type_common *type)
+{
+	switch (type->type) {
+	case lttng_ust_type_integer:
+		return lttng_ust_get_type_integer(type)->alignment;
+	case lttng_ust_type_string:
+		return CHAR_BIT;
+	case lttng_ust_type_dynamic:
+		return 0;
+	case lttng_ust_type_enum:
+		return get_type_max_align(lttng_ust_get_type_enum(type)->container_type);
+	case lttng_ust_type_array:
+		return max_t(size_t, get_type_max_align(lttng_ust_get_type_array(type)->elem_type),
+				lttng_ust_get_type_array(type)->alignment);
+	case lttng_ust_type_sequence:
+		return max_t(size_t, get_type_max_align(lttng_ust_get_type_sequence(type)->elem_type),
+				lttng_ust_get_type_sequence(type)->alignment);
+	case lttng_ust_type_struct:
+	{
+		unsigned int i;
+		size_t field_align = 0;
+		struct lttng_ust_type_struct *struct_type = lttng_ust_get_type_struct(type);
+
+		for (i = 0; i < struct_type->nr_fields; i++) {
+			field_align = max_t(size_t,
+				get_type_max_align(struct_type->fields[i]->type),
+				field_align);
+		}
+		return field_align;
+	}
+	default:
+		WARN_ON_ONCE(1);
+		return 0;
+	}
+}
+
 /*
  * lttng_context_update() should be called at least once between context
  * modification and trace start.
@@ -199,68 +235,9 @@ void lttng_context_update(struct lttng_ust_ctx *ctx)
 	size_t largest_align = 8;	/* in bits */
 
 	for (i = 0; i < ctx->nr_fields; i++) {
-		struct lttng_type *type;
 		size_t field_align = 8;
 
-		type = &ctx->fields[i]->event_field->type;
-		switch (type->atype) {
-		case atype_integer:
-			field_align = type->u.integer.alignment;
-			break;
-		case atype_array_nestable:
-		{
-			const struct lttng_type *nested_type;
-
-			nested_type = type->u.array_nestable.elem_type;
-			switch (nested_type->atype) {
-			case atype_integer:
-				field_align = nested_type->u.integer.alignment;
-				break;
-			case atype_string:
-				break;
-
-			case atype_array_nestable:
-			case atype_sequence_nestable:
-			default:
-				WARN_ON_ONCE(1);
-				break;
-			}
-			field_align = max_t(size_t, field_align,
-					type->u.array_nestable.alignment);
-			break;
-		}
-		case atype_sequence_nestable:
-		{
-			const struct lttng_type *nested_type;
-
-			nested_type = type->u.sequence_nestable.elem_type;
-			switch (nested_type->atype) {
-			case atype_integer:
-				field_align = nested_type->u.integer.alignment;
-				break;
-
-			case atype_string:
-				break;
-
-			case atype_array_nestable:
-			case atype_sequence_nestable:
-			default:
-				WARN_ON_ONCE(1);
-				break;
-			}
-			field_align = max_t(size_t, field_align,
-					type->u.sequence_nestable.alignment);
-			break;
-		}
-		case atype_string:
-			break;
-		case atype_dynamic:
-			break;
-		case atype_enum_nestable:
-		default:
-			WARN_ON_ONCE(1);
-			break;
-		}
+		field_align = get_type_max_align(ctx->fields[i]->event_field->type);
 		largest_align = max_t(size_t, largest_align, field_align);
 	}
 	ctx->largest_align = largest_align >> 3;	/* bits to bytes */
@@ -277,7 +254,10 @@ void lttng_remove_context_field(struct lttng_ust_ctx **ctx_p,
 	ctx = *ctx_p;
 	ctx->nr_fields--;
 	assert(ctx->fields[ctx->nr_fields] == field);
-	assert(field->field_name == NULL);
+	lttng_ust_destroy_type(field->event_field->type);
+	free((char *) field->event_field->name);
+	free(field->event_field);
+	free(field);
 	ctx->fields[ctx->nr_fields] = NULL;
 }
 
@@ -290,7 +270,8 @@ void lttng_destroy_context(struct lttng_ust_ctx *ctx)
 	for (i = 0; i < ctx->nr_fields; i++) {
 		if (ctx->fields[i]->destroy)
 			ctx->fields[i]->destroy(ctx->fields[i]);
-		free(ctx->fields[i]->field_name);
+		lttng_ust_destroy_type(ctx->fields[i]->event_field->type);
+		free((char *) ctx->fields[i]->event_field->name);
 		free(ctx->fields[i]->event_field);
 		free(ctx->fields[i]);
 	}

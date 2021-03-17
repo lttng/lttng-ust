@@ -529,6 +529,7 @@ int lttng_add_perf_counter_to_ctx(uint32_t type,
 				struct lttng_ust_ctx **ctx)
 {
 	struct lttng_ust_ctx_field *field;
+	struct lttng_ust_type_common *ust_type;
 	struct lttng_perf_counter_field *perf_field;
 	char *name_alloc;
 	int ret;
@@ -543,6 +544,14 @@ int lttng_add_perf_counter_to_ctx(uint32_t type,
 		ret = -ENOMEM;
 		goto perf_field_alloc_error;
 	}
+	ust_type = lttng_ust_create_type_integer(sizeof(uint64_t) * CHAR_BIT,
+			lttng_alignof(uint64_t) * CHAR_BIT,
+			lttng_is_signed_type(uint64_t),
+			BYTE_ORDER, 10);
+	if (!type) {
+		ret = -ENOMEM;
+		goto type_alloc_error;
+	}
 	field = lttng_append_context(ctx);
 	if (!field) {
 		ret = -ENOMEM;
@@ -556,16 +565,7 @@ int lttng_add_perf_counter_to_ctx(uint32_t type,
 	field->destroy = lttng_destroy_perf_counter_field;
 
 	field->event_field->name = name_alloc;
-	field->event_field->type.atype = atype_integer;
-	field->event_field->type.u.integer.size =
-			sizeof(uint64_t) * CHAR_BIT;
-	field->event_field->type.u.integer.alignment =
-			lttng_alignof(uint64_t) * CHAR_BIT;
-	field->event_field->type.u.integer.signedness =
-			lttng_is_signed_type(uint64_t);
-	field->event_field->type.u.integer.reverse_byte_order = 0;
-	field->event_field->type.u.integer.base = 10;
-	field->event_field->type.u.integer.encoding = lttng_encode_none;
+	field->event_field->type = ust_type;
 	field->get_size = perf_counter_get_size;
 	field->record = perf_counter_record;
 	field->get_value = perf_counter_get_value;
@@ -597,6 +597,8 @@ setup_error:
 find_error:
 	lttng_remove_context_field(ctx, field);
 append_context_error:
+	lttng_ust_destroy_type(ust_type);
+type_alloc_error:
 	free(perf_field);
 perf_field_alloc_error:
 	free(name_alloc);

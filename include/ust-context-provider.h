@@ -61,7 +61,6 @@ struct lttng_ust_ctx_field {
 	void (*get_value)(struct lttng_ust_ctx_field *field,
 			 struct lttng_ust_ctx_value *value);
 	void (*destroy)(struct lttng_ust_ctx_field *field);
-	char *field_name;	/* Has ownership, dynamically allocated. */
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };

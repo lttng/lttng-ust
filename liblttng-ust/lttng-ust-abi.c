@@ -444,7 +444,7 @@ int lttng_abi_map_channel(int session_objd,
 {
 	struct lttng_ust_session *session = objd_private(session_objd);
 	const char *transport_name;
-	const struct lttng_transport *transport;
+	struct lttng_transport *transport;
 	const char *chan_name;
 	int chan_objd;
 	struct lttng_ust_shm_handle *channel_handle;
