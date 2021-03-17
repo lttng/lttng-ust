@@ -12,10 +12,6 @@
 #include <stdint.h>
 #include <lttng/ust-compiler.h>
 
-#ifndef LTTNG_PACKED
-#error "LTTNG_PACKED should be defined"
-#endif
-
 #ifndef __ust_stringify
 #define __ust_stringify1(x)	#x
 #define __ust_stringify(x)	__ust_stringify1(x)
@@ -57,7 +53,7 @@ struct lttng_ust_abi_tracer_version {
 	uint32_t major;
 	uint32_t minor;
 	uint32_t patchlevel;
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 #define LTTNG_UST_ABI_CHANNEL_PADDING	(LTTNG_UST_ABI_SYM_NAME_LEN + 32)
 /*
@@ -72,7 +68,7 @@ struct lttng_ust_abi_channel {
 	int32_t type;	/* enum lttng_ust_abi_chan_type */
 	char padding[LTTNG_UST_ABI_CHANNEL_PADDING];
 	char data[];	/* variable sized data */
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 #define LTTNG_UST_ABI_STREAM_PADDING1	(LTTNG_UST_ABI_SYM_NAME_LEN + 32)
 struct lttng_ust_abi_stream {
@@ -83,7 +79,7 @@ struct lttng_ust_abi_stream {
 	 * shm_fd and wakeup_fd are send over unix socket as file
 	 * descriptors after this structure.
 	 */
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 #define LTTNG_UST_ABI_COUNTER_DIMENSION_MAX 4
 
@@ -103,7 +99,7 @@ struct lttng_ust_abi_counter_dimension {
 	uint64_t overflow_index;
 	uint8_t has_underflow;
 	uint8_t has_overflow;
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 #define LTTNG_UST_ABI_COUNTER_CONF_PADDING1 67
 struct lttng_ust_abi_counter_conf {
@@ -114,13 +110,13 @@ struct lttng_ust_abi_counter_conf {
 	struct lttng_ust_abi_counter_dimension dimensions[LTTNG_UST_ABI_COUNTER_DIMENSION_MAX];
 	uint8_t coalesce_hits;
 	char padding[LTTNG_UST_ABI_COUNTER_CONF_PADDING1];
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 struct lttng_ust_abi_counter_value {
 	uint32_t number_dimensions;
 	uint64_t dimension_indexes[LTTNG_UST_ABI_COUNTER_DIMENSION_MAX];
 	int64_t value;
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 #define LTTNG_UST_ABI_EVENT_PADDING1	8
 #define LTTNG_UST_ABI_EVENT_PADDING2	(LTTNG_UST_ABI_SYM_NAME_LEN + 32)
@@ -137,21 +133,21 @@ struct lttng_ust_abi_event {
 	union {
 		char padding[LTTNG_UST_ABI_EVENT_PADDING2];
 	} u;
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 #define LTTNG_UST_ABI_EVENT_NOTIFIER_PADDING	32
 struct lttng_ust_abi_event_notifier {
 	struct lttng_ust_abi_event event;
 	uint64_t error_counter_index;
 	char padding[LTTNG_UST_ABI_EVENT_NOTIFIER_PADDING];
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 #define LTTNG_UST_ABI_EVENT_NOTIFIER_NOTIFICATION_PADDING 32
 struct lttng_ust_abi_event_notifier_notification {
 	uint64_t token;
 	uint16_t capture_buf_size;
 	char padding[LTTNG_UST_ABI_EVENT_NOTIFIER_NOTIFICATION_PADDING];
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 #define LTTNG_UST_ABI_COUNTER_PADDING1		(LTTNG_UST_ABI_SYM_NAME_LEN + 32)
 #define LTTNG_UST_ABI_COUNTER_DATA_MAX_LEN	4096U
@@ -159,20 +155,20 @@ struct lttng_ust_abi_counter {
 	uint64_t len;
 	char padding[LTTNG_UST_ABI_COUNTER_PADDING1];
 	char data[];	/* variable sized data */
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 #define LTTNG_UST_ABI_COUNTER_GLOBAL_PADDING1	(LTTNG_UST_ABI_SYM_NAME_LEN + 32)
 struct lttng_ust_abi_counter_global {
 	uint64_t len;		/* shm len */
 	char padding[LTTNG_UST_ABI_COUNTER_GLOBAL_PADDING1];
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 #define LTTNG_UST_ABI_COUNTER_CPU_PADDING1	(LTTNG_UST_ABI_SYM_NAME_LEN + 32)
 struct lttng_ust_abi_counter_cpu {
 	uint64_t len;		/* shm len */
 	uint32_t cpu_nr;
 	char padding[LTTNG_UST_ABI_COUNTER_CPU_PADDING1];
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 enum lttng_ust_abi_field_type {
 	LTTNG_UST_ABI_FIELD_OTHER			= 0,
@@ -190,7 +186,7 @@ struct lttng_ust_abi_field_iter {
 	int loglevel;				/* event loglevel */
 	int nowrite;
 	char padding[LTTNG_UST_ABI_FIELD_ITER_PADDING];
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 enum lttng_ust_abi_context_type {
 	LTTNG_UST_ABI_CONTEXT_VTID			= 0,
@@ -221,7 +217,7 @@ struct lttng_ust_abi_perf_counter_ctx {
 	uint32_t type;
 	uint64_t config;
 	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 #define LTTNG_UST_ABI_CONTEXT_PADDING1	16
 #define LTTNG_UST_ABI_CONTEXT_PADDING2	(LTTNG_UST_ABI_SYM_NAME_LEN + 32)
@@ -238,7 +234,7 @@ struct lttng_ust_abi_context {
 		} app_ctx;
 		char padding[LTTNG_UST_ABI_CONTEXT_PADDING2];
 	} u;
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 /*
  * Tracer channel attributes.
@@ -257,14 +253,14 @@ struct lttng_ust_abi_channel_attr {
 		} s;
 		char padding[LTTNG_UST_ABI_CHANNEL_ATTR_PADDING];
 	} u;
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 #define LTTNG_UST_ABI_TRACEPOINT_ITER_PADDING	16
 struct lttng_ust_abi_tracepoint_iter {
 	char name[LTTNG_UST_ABI_SYM_NAME_LEN];	/* provider:name */
 	int loglevel;
 	char padding[LTTNG_UST_ABI_TRACEPOINT_ITER_PADDING];
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 enum lttng_ust_abi_object_type {
 	LTTNG_UST_ABI_OBJECT_TYPE_UNKNOWN = -1,
@@ -310,7 +306,7 @@ struct lttng_ust_abi_object_data {
 		} counter_cpu;
 		char padding2[LTTNG_UST_ABI_OBJECT_DATA_PADDING2];
 	} u;
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 enum lttng_ust_calibrate_type {
 	LTTNG_UST_ABI_CALIBRATE_TRACEPOINT,
@@ -325,7 +321,7 @@ struct lttng_ust_abi_calibrate {
 	union {
 		char padding[LTTNG_UST_ABI_CALIBRATE_PADDING2];
 	} u;
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 #define LTTNG_UST_ABI_FILTER_BYTECODE_MAX_LEN	65536
 #define LTTNG_UST_ABI_FILTER_PADDING		32
@@ -335,7 +331,7 @@ struct lttng_ust_abi_filter_bytecode {
 	uint64_t seqnum;
 	char padding[LTTNG_UST_ABI_FILTER_PADDING];
 	char data[0];
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 #define LTTNG_UST_ABI_CAPTURE_BYTECODE_MAX_LEN	65536
 #define LTTNG_UST_ABI_CAPTURE_PADDING		32
@@ -345,14 +341,14 @@ struct lttng_ust_abi_capture_bytecode {
 	uint64_t seqnum;
 	char padding[LTTNG_UST_ABI_CAPTURE_PADDING];
 	char data[0];
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 #define LTTNG_UST_ABI_EXCLUSION_PADDING	32
 struct lttng_ust_abi_event_exclusion {
 	uint32_t count;
 	char padding[LTTNG_UST_ABI_EXCLUSION_PADDING];
 	char names[LTTNG_UST_ABI_SYM_NAME_LEN][0];
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 #define LTTNG_UST_ABI_CMD(minor)		(minor)
 #define LTTNG_UST_ABI_CMDR(minor, type)		(minor)

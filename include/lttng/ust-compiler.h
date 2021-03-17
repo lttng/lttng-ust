@@ -11,7 +11,6 @@
 #include <assert.h>
 
 #define lttng_ust_notrace __attribute__((no_instrument_function))
-#define LTTNG_PACKED	__attribute__((__packed__))
 
 /*
  * Clang supports the no_sanitize variable attribute on global variables.

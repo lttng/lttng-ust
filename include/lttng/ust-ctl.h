@@ -16,10 +16,6 @@
 
 #include <lttng/ust-abi.h>
 
-#ifndef LTTNG_PACKED
-#error "LTTNG_PACKED should be defined"
-#endif
-
 #ifndef LTTNG_UST_UUID_LEN
 #define LTTNG_UST_UUID_LEN	16
 #endif
@@ -51,7 +47,7 @@ struct ustctl_consumer_channel_attr {
 	uint32_t chan_id;			/* channel ID */
 	unsigned char uuid[LTTNG_UST_UUID_LEN]; /* Trace session unique ID */
 	int64_t blocking_timeout;			/* Blocking timeout (usec) */
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 /*
  * API used by sessiond.
@@ -358,7 +354,7 @@ struct ustctl_integer_type {
 	int32_t encoding;	/* enum ustctl_string_encodings */
 	uint16_t alignment;	/* in bits */
 	char padding[USTCTL_UST_INTEGER_TYPE_PADDING];
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 #define USTCTL_UST_FLOAT_TYPE_PADDING	24
 struct ustctl_float_type {
@@ -367,14 +363,14 @@ struct ustctl_float_type {
 	uint32_t reverse_byte_order;
 	uint16_t alignment;	/* in bits */
 	char padding[USTCTL_UST_FLOAT_TYPE_PADDING];
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 #define USTCTL_UST_ENUM_VALUE_PADDING	15
 struct ustctl_enum_value {
 	uint64_t value;
 	uint8_t signedness;
 	char padding[USTCTL_UST_ENUM_VALUE_PADDING];
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 enum ustctl_ust_enum_entry_options {
 	USTCTL_UST_ENUM_ENTRY_OPTION_IS_AUTO = 1U << 0,
@@ -387,10 +383,10 @@ struct ustctl_enum_entry {
 	union {
 		struct {
 			uint32_t options;
-		} LTTNG_PACKED extra;
+		} __attribute__((packed)) extra;
 		char padding[USTCTL_UST_ENUM_ENTRY_PADDING];
 	} u;
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 /* legacy */
 #define USTCTL_UST_BASIC_TYPE_PADDING	296
@@ -406,7 +402,7 @@ union _ustctl_basic_type {
 	} string;
 	struct ustctl_float_type _float;
 	char padding[USTCTL_UST_BASIC_TYPE_PADDING];
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 /* legacy */
 struct ustctl_basic_type {
@@ -414,7 +410,7 @@ struct ustctl_basic_type {
 	union {
 		union _ustctl_basic_type basic;
 	} u;
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 /*
  * Padding is derived from largest member: u.legacy.sequence which
@@ -479,14 +475,14 @@ struct ustctl_type {
 		} legacy;
 		char padding[USTCTL_UST_TYPE_PADDING];
 	} u;
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 #define USTCTL_UST_FIELD_PADDING	28
 struct ustctl_field {
 	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
 	struct ustctl_type type;
 	char padding[USTCTL_UST_FIELD_PADDING];
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 /*
  * Returns 0 on success, negative error value on error.

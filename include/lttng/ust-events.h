@@ -21,10 +21,6 @@
 #include <urcu/ref.h>
 #include <pthread.h>
 
-#ifndef LTTNG_PACKED
-#error "LTTNG_PACKED should be defined"
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif

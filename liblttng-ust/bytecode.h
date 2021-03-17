@@ -10,10 +10,6 @@
 #include <stdint.h>
 #include <lttng/ust-abi.h>
 
-#ifndef LTTNG_PACKED
-#error "LTTNG_PACKED should be defined"
-#endif
-
 /*
  * offsets are absolute from start of bytecode.
  */
@@ -26,15 +22,15 @@ struct field_ref {
 struct get_symbol {
 	/* Symbol offset. */
 	uint16_t offset;
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 struct get_index_u16 {
 	uint16_t index;
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 struct get_index_u64 {
 	uint64_t index;
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 struct literal_numeric {
 	int64_t v;

@@ -22,10 +22,6 @@
 #include <lttng/ust-compiler.h>
 #include <lttng/ust-ctl.h>
 
-#ifndef LTTNG_PACKED
-#error "LTTNG_PACKED should be defined"
-#endif
-
 /*
  * Default timeout the application waits for the sessiond to send its
  * "register done" command. Can be overridden with the environment
@@ -64,7 +60,7 @@ struct ustctl_reg_msg {
 	uint32_t socket_type;			/* enum ustctl_socket_type */
 	char name[LTTNG_UST_ABI_PROCNAME_LEN];	/* process name */
 	char padding[LTTNG_UST_COMM_REG_MSG_PADDING];
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 /*
  * Data structure for the commands sent from sessiond to UST.
@@ -86,15 +82,15 @@ struct ustcomm_ust_msg {
 			uint32_t data_size;	/* following filter data */
 			uint32_t reloc_offset;
 			uint64_t seqnum;
-		} LTTNG_PACKED filter;
+		} __attribute__((packed)) filter;
 		struct {
 			uint32_t count;	/* how many names follow */
-		} LTTNG_PACKED exclusion;
+		} __attribute__((packed)) exclusion;
 		struct {
 			uint32_t data_size;	/* following capture data */
 			uint32_t reloc_offset;
 			uint64_t seqnum;
-		} LTTNG_PACKED capture;
+		} __attribute__((packed)) capture;
 		struct lttng_ust_abi_counter counter;
 		struct lttng_ust_abi_counter_global counter_global;
 		struct lttng_ust_abi_counter_cpu counter_cpu;
@@ -109,7 +105,7 @@ struct ustcomm_ust_msg {
 		} event_notifier;
 		char padding[USTCOMM_MSG_PADDING2];
 	} u;
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 /*
  * Data structure for the response from UST to the session daemon.
@@ -126,19 +122,19 @@ struct ustcomm_ust_reply {
 	union {
 		struct {
 			uint64_t memory_map_size;
-		} LTTNG_PACKED channel;
+		} __attribute__((packed)) channel;
 		struct {
 			uint64_t memory_map_size;
-		} LTTNG_PACKED stream;
+		} __attribute__((packed)) stream;
 		struct lttng_ust_abi_tracer_version version;
 		struct lttng_ust_abi_tracepoint_iter tracepoint;
 		char padding[USTCOMM_REPLY_PADDING2];
 	} u;
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 struct ustcomm_notify_hdr {
 	uint32_t notify_cmd;
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 #define USTCOMM_NOTIFY_EVENT_MSG_PADDING	32
 struct ustcomm_notify_event_msg {
@@ -151,14 +147,14 @@ struct ustcomm_notify_event_msg {
 	uint32_t model_emf_uri_len;
 	char padding[USTCOMM_NOTIFY_EVENT_MSG_PADDING];
 	/* followed by signature, fields, and model_emf_uri */
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 #define USTCOMM_NOTIFY_EVENT_REPLY_PADDING	32
 struct ustcomm_notify_event_reply {
 	int32_t ret_code;	/* 0: ok, negative: error code */
 	uint32_t event_id;
 	char padding[USTCOMM_NOTIFY_EVENT_REPLY_PADDING];
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 #define USTCOMM_NOTIFY_ENUM_MSG_PADDING		32
 struct ustcomm_notify_enum_msg {
@@ -167,14 +163,14 @@ struct ustcomm_notify_enum_msg {
 	uint32_t entries_len;
 	char padding[USTCOMM_NOTIFY_ENUM_MSG_PADDING];
 	/* followed by enum entries */
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 #define USTCOMM_NOTIFY_EVENT_REPLY_PADDING	32
 struct ustcomm_notify_enum_reply {
 	int32_t ret_code;	/* 0: ok, negative: error code */
 	uint64_t enum_id;
 	char padding[USTCOMM_NOTIFY_EVENT_REPLY_PADDING];
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 #define USTCOMM_NOTIFY_CHANNEL_MSG_PADDING	32
 struct ustcomm_notify_channel_msg {
@@ -183,7 +179,7 @@ struct ustcomm_notify_channel_msg {
 	uint32_t ctx_fields_len;
 	char padding[USTCOMM_NOTIFY_CHANNEL_MSG_PADDING];
 	/* followed by context fields */
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 #define USTCOMM_NOTIFY_CHANNEL_REPLY_PADDING	32
 struct ustcomm_notify_channel_reply {
@@ -191,7 +187,7 @@ struct ustcomm_notify_channel_reply {
 	uint32_t chan_id;
 	uint32_t header_type;	/* enum ustctl_channel_header */
 	char padding[USTCOMM_NOTIFY_CHANNEL_REPLY_PADDING];
-} LTTNG_PACKED;
+} __attribute__((packed));
 
 /*
  * LTTNG_UST_TRACEPOINT_FIELD_LIST reply is followed by a
