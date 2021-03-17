@@ -31,7 +31,6 @@ nobase_include_HEADERS = \
 	lttng/lttng-ust-tracelog.h \
 	lttng/ust-clock.h \
 	lttng/ust-getcpu.h \
-	lttng/ust-elf.h \
 	lttng/ust-libc-wrapper.h \
 	lttng/urcu/pointer.h \
 	lttng/urcu/urcu-ust.h \
@@ -54,6 +53,7 @@ noinst_HEADERS = \
 	ust-bitmap.h \
 	ust-comm.h \
 	ust-compat.h \
+	ust-elf.h \
 	ust-tid.h \
 	ust-bitfield.h \
 	ust-dlfcn.h \

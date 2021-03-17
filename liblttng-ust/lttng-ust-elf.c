@@ -8,7 +8,7 @@
 #include <fcntl.h>
 #include <ust-helper.h>
 #include <lttng/align.h>
-#include <lttng/ust-elf.h>
+#include <ust-elf.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>

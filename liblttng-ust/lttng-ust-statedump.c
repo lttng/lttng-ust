@@ -16,7 +16,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <lttng/ust-elf.h>
+#include <ust-elf.h>
 #include <ust-helper.h>
 #include "lttng-tracer-core.h"
 #include "lttng-ust-statedump.h"

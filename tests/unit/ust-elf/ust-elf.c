@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <lttng/ust-elf.h>
+#include <ust-elf.h>
 #include "tap.h"
 
 #define NUM_ARCH 4

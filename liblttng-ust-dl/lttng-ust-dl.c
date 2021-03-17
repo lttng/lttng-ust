@@ -14,7 +14,7 @@
 #include <unistd.h>
 
 #include <ust-dlfcn.h>
-#include <lttng/ust-elf.h>
+#include <ust-elf.h>
 #include <lttng/ust-events.h>
 #include <ust-helper.h>
 #include "usterr-signal-safe.h"
