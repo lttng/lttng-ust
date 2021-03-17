@@ -590,6 +590,7 @@ int ustctl_create_event_notifier(int sock, struct lttng_ust_abi_event_notifier *
 	/* Send struct lttng_ust_event_notifier */
 	len = ustcomm_send_unix_sock(sock, event_notifier, sizeof(*event_notifier));
 	if (len != sizeof(*event_notifier)) {
+		free(event_notifier_data);
 		if (len < 0)
 			return len;
 		else
