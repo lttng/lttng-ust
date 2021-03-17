@@ -466,6 +466,7 @@ void lttng_ust_destroy_type(struct lttng_ust_type_common *type)
 		struct lttng_ust_type_enum *enum_type = (struct lttng_ust_type_enum *) type;
 
 		lttng_ust_destroy_type(enum_type->container_type);
+		free(enum_type);
 		break;
 	}
 	case lttng_ust_type_array:
@@ -473,6 +474,7 @@ void lttng_ust_destroy_type(struct lttng_ust_type_common *type)
 		struct lttng_ust_type_array *array_type = (struct lttng_ust_type_array *) type;
 
 		lttng_ust_destroy_type(array_type->elem_type);
+		free(array_type);
 		break;
 	}
 	case lttng_ust_type_sequence:
@@ -480,6 +482,7 @@ void lttng_ust_destroy_type(struct lttng_ust_type_common *type)
 		struct lttng_ust_type_sequence *sequence_type = (struct lttng_ust_type_sequence *) type;
 
 		lttng_ust_destroy_type(sequence_type->elem_type);
+		free(sequence_type);
 		break;
 	}
 	case lttng_ust_type_struct:
@@ -489,6 +492,7 @@ void lttng_ust_destroy_type(struct lttng_ust_type_common *type)
 
 		for (i = 0; i < struct_type->nr_fields; i++)
 			lttng_ust_destroy_type(struct_type->fields[i]->type);
+		free(struct_type);
 		break;
 	}
 	default:
