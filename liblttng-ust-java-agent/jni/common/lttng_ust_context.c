@@ -77,7 +77,7 @@ static size_t get_size_cb(struct lttng_ust_ctx_field *field, size_t offset)
 {
 	struct lttng_ust_jni_ctx_entry *jctx;
 	size_t size = 0;
-	const char *ctx_name = field->event_field.name;
+	const char *ctx_name = field->event_field->name;
 	enum lttng_ust_jni_type jni_type;
 
 
@@ -140,7 +140,7 @@ static void record_cb(struct lttng_ust_ctx_field *field,
 		 struct lttng_channel *chan)
 {
 	struct lttng_ust_jni_ctx_entry *jctx;
-	const char *ctx_name = field->event_field.name;
+	const char *ctx_name = field->event_field->name;
 	enum lttng_ust_jni_type jni_type;
 	char sel_char;
 
@@ -260,7 +260,7 @@ static void get_value_cb(struct lttng_ust_ctx_field *field,
 		struct lttng_ust_ctx_value *value)
 {
 	struct lttng_ust_jni_ctx_entry *jctx;
-	const char *ctx_name = field->event_field.name;
+	const char *ctx_name = field->event_field->name;
 	enum lttng_ust_jni_type jni_type;
 
 	jctx = lookup_ctx_by_name(ctx_name);
