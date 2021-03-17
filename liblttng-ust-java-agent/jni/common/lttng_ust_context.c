@@ -11,7 +11,7 @@
 #include <string.h>
 #include <inttypes.h>
 #include <lttng/ust-events.h>
-#include <lttng/ringbuffer-config.h>
+#include <lttng/ringbuffer-context.h>
 #include <ust-context-provider.h>
 
 #include "ust-helper.h"
