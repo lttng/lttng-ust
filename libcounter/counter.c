@@ -5,7 +5,6 @@
  * Copyright (C) 2020 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
-#define _GNU_SOURCE
 #include <errno.h>
 #include "counter.h"
 #include "counter-internal.h"

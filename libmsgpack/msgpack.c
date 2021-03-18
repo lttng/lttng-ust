@@ -4,7 +4,6 @@
  * Copyright (C) 2020 Francis Deslauriers <francis.deslauriers@efficios.com>
  */
 
-#define _GNU_SOURCE
 #define _LGPL_SOURCE
 #include <stddef.h>
 

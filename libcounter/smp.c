@@ -5,7 +5,6 @@
  * Copyright (C) 2019 Michael Jeanson <mjeanson@efficios.com>
  */
 
-#define _GNU_SOURCE
 #define _LGPL_SOURCE
 
 #include <unistd.h>

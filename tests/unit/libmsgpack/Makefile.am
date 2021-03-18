@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1-only
 
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/tests/utils
+AM_CPPFLAGS += -I$(top_srcdir)/tests/utils
 
 noinst_PROGRAMS = test_msgpack
 test_msgpack_SOURCES = test_msgpack.c

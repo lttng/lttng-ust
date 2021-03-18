@@ -5,7 +5,6 @@
  */
 
 #define _LGPL_SOURCE
-#include <config.h>
 #include "shm.h"
 #include <unistd.h>
 #include <fcntl.h>
