@@ -11,6 +11,7 @@
 #include <urcu/rculist.h>
 #include <lttng/ust-events.h>
 #include <lttng/ringbuffer-context.h>
+#include <lttng/ust-arch.h>
 #include <lttng/ust-compiler.h>
 #include <lttng/tracepoint.h>
 #include <lttng/ust-endian.h>
@@ -766,11 +767,11 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 #define _TP_IP_PARAM(x)		(x)
 #else /* TP_IP_PARAM */
 
-#if defined(__PPC__) && !defined(__PPC64__)
+#if defined(LTTNG_UST_ARCH_PPC) && !defined(LTTNG_UST_ARCH_PPC64)
 #define _TP_IP_PARAM(x)		NULL
-#else /* #if defined(__PPC__) && !defined(__PPC64__) */
+#else
 #define _TP_IP_PARAM(x)		__builtin_return_address(0)
-#endif /* #else #if defined(__PPC__) && !defined(__PPC64__) */
+#endif
 
 #endif /* TP_IP_PARAM */
 

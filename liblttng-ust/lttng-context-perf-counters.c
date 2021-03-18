@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include <sys/mman.h>
 #include <sys/syscall.h>
+#include <lttng/ust-arch.h>
 #include <lttng/ust-events.h>
 #include <lttng/ust-tracer.h>
 #include <lttng/ringbuffer-context.h>
@@ -181,7 +182,7 @@ uint64_t read_perf_counter_syscall(
 	return count;
 }
 
-#if defined(__x86_64__) || defined(__i386__)
+#if defined(LTTNG_UST_ARCH_X86)
 
 static
 uint64_t rdpmc(unsigned int counter)
@@ -504,7 +505,7 @@ void lttng_destroy_perf_counter_field(struct lttng_ust_ctx_field *field)
 	free(perf_field);
 }
 
-#ifdef __ARM_ARCH_7A__
+#ifdef LTTNG_UST_ARCH_ARMV7
 
 static
 int perf_get_exclude_kernel(void)
@@ -512,7 +513,7 @@ int perf_get_exclude_kernel(void)
 	return 0;
 }
 
-#else /* __ARM_ARCH_7A__ */
+#else /* LTTNG_UST_ARCH_ARMV7 */
 
 static
 int perf_get_exclude_kernel(void)
@@ -520,7 +521,7 @@ int perf_get_exclude_kernel(void)
 	return 1;
 }
 
-#endif /* __ARM_ARCH_7A__ */
+#endif /* LTTNG_UST_ARCH_ARMV7 */
 
 /* Called with UST lock held */
 int lttng_add_perf_counter_to_ctx(uint32_t type,

@@ -15,11 +15,12 @@
 #include <type_traits>
 #endif
 
+#include <lttng/ust-arch.h>
 #include <lttng/ust-compiler.h>
 #include <lttng/ust-config.h>
 #include <lttng/ust-version.h>
 
-#ifndef LTTNG_UST_HAVE_EFFICIENT_UNALIGNED_ACCESS
+#ifndef LTTNG_UST_ARCH_HAS_EFFICIENT_UNALIGNED_ACCESS
 /* Align data on its natural alignment */
 #define RING_BUFFER_ALIGN
 #endif

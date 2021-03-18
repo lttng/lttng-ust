@@ -196,18 +196,16 @@ AS_CASE([$host_cpu],
 	[ppc64le], [],
 	[powerpc64], [],
 	[powerpc64le], [],
-	[s390], [NO_UNALIGNED_ACCESS=1],
-	[s390x], [NO_UNALIGNED_ACCESS=1],
+	[s390], [],
+	[s390x], [],
 	[arm*], [
-		NO_UNALIGNED_ACCESS=1
 		NO_NUMA=1
 		],
-	[aarch64*], [NO_UNALIGNED_ACCESS=1],
-	[mips*], [NO_UNALIGNED_ACCESS=1],
-	[tile*], [NO_UNALIGNED_ACCESS=1],
+	[aarch64*], [],
+	[mips*], [],
+	[tile*], [],
 	[
 		UNSUPPORTED_ARCH=1
-		NO_UNALIGNED_ACCESS=1
 	])
 
 # Set os specific options
@@ -216,7 +214,6 @@ AS_CASE([$host_os],
 )
 
 # Configuration options, which will be installed in the config.h
-AH_TEMPLATE([LTTNG_UST_HAVE_EFFICIENT_UNALIGNED_ACCESS], [Use efficient unaligned access.])
 AH_TEMPLATE([LTTNG_UST_HAVE_SDT_INTEGRATION], [SystemTap integration via sdt.h])
 
 # Checks for libraries.
@@ -286,10 +283,6 @@ AM_CONDITIONAL([HAVE_PERF_EVENT], [test "x$have_perf_event" = "xyes"])
 AH_TEMPLATE([HAVE_PERF_EVENT], ["Perf event integration via perf_event.h"])
 AS_IF([test "x$have_perf_event" = "xyes"], [
 	AC_DEFINE([HAVE_PERF_EVENT], [1])
-])
-
-AS_IF([test "x$NO_UNALIGNED_ACCESS" = "x"], [
-	AC_DEFINE([LTTNG_UST_HAVE_EFFICIENT_UNALIGNED_ACCESS], [1])
 ])
 
 # Check for JNI header files if requested
@@ -566,9 +559,6 @@ AS_ECHO
 PPRINT_SUBTITLE([System])
 
 PPRINT_PROP_STRING([Target architecture], $host_cpu)
-
-test "x$NO_UNALIGNED_ACCESS" != "x1" && value=1 || value=0
-PPRINT_PROP_BOOL([Efficient unaligned memory access], $value)
 
 AS_IF([test "x$UNSUPPORTED_ARCH" = "x1"],[
        PPRINT_WARN([Your architecture ($host_cpu) is unsupported, using safe default of no unaligned access.])

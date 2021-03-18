@@ -256,6 +256,7 @@
 #include <sched.h>
 #include <unistd.h>
 
+#include <lttng/ust-arch.h>
 #include <lttng/urcu/pointer.h>
 #include <urcu/arch.h>
 #include <urcu/uatomic.h>
@@ -405,7 +406,7 @@ unsigned long bit_reverse_ulong(unsigned long v)
  * Returns 0 if no bit is set, else returns the position of the most
  * significant bit (from 1 to 32 on 32-bit, from 1 to 64 on 64-bit).
  */
-#if defined(__i386) || defined(__x86_64)
+#if defined(LTTNG_UST_ARCH_X86)
 static inline
 unsigned int fls_u32(uint32_t x)
 {
@@ -421,7 +422,7 @@ unsigned int fls_u32(uint32_t x)
 #define HAS_FLS_U32
 #endif
 
-#if defined(__x86_64)
+#if defined(LTTNG_UST_ARCH_AMD64)
 static inline
 unsigned int fls_u64(uint64_t x)
 {

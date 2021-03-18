@@ -2,10 +2,12 @@
  * SPDX-License-Identifier: MIT
  */
 
-/* ust/config.h.in. Manually generated for control over the contained defs. */
+#ifndef _LTTNG_UST_CONFIG_H
+#define _LTTNG_UST_CONFIG_H
 
-/* Use efficient unaligned access. */
-#undef LTTNG_UST_HAVE_EFFICIENT_UNALIGNED_ACCESS
+/* lttng/ust-config.h.in. Manually generated for control over the contained defs. */
 
 /* DTrace/GDB/SystemTap integration via sdt.h */
 #undef LTTNG_UST_HAVE_SDT_INTEGRATION
+
+#endif

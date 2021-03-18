@@ -9,6 +9,8 @@
 
 #include <stdlib.h>
 
+#include <lttng/ust-arch.h>
+
 static inline __attribute__((always_inline))
 void *zmalloc(size_t len)
 {
@@ -37,10 +39,10 @@ void *zmalloc(size_t len)
  * architecture for now by always using the NULL value for the ip
  * context.
  */
-#if defined(__PPC__) && !defined(__PPC64__)
+#if defined(LTTNG_UST_ARCH_PPC) && !defined(LTTNG_UST_ARCH_PPC64)
 #define LTTNG_UST_CALLER_IP()		NULL
-#else /* #if defined(__PPC__) && !defined(__PPC64__) */
+#else
 #define LTTNG_UST_CALLER_IP()		__builtin_return_address(0)
-#endif /* #else #if defined(__PPC__) && !defined(__PPC64__) */
+#endif
 
 #endif /* _LTTNG_UST_HELPER_H */
