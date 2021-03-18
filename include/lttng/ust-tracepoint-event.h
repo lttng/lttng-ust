@@ -803,13 +803,14 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 	case LTTNG_UST_EVENT_TYPE_RECORDER:				      \
 	{								      \
 		struct lttng_ust_event_recorder *__event_recorder = (struct lttng_ust_event_recorder *) __event->child; \
-		struct lttng_channel *__chan = __event_recorder->chan;	      \
+		struct lttng_ust_channel_buffer *__chan = __event_recorder->chan; \
+		struct lttng_ust_channel_common *__chan_common = __chan->parent; \
 									      \
-		if (!_TP_SESSION_CHECK(session, __chan->session))	      \
+		if (!_TP_SESSION_CHECK(session, __chan_common->session))      \
 			return;						      \
-		if (caa_unlikely(!CMM_ACCESS_ONCE(__chan->session->active)))  \
+		if (caa_unlikely(!CMM_ACCESS_ONCE(__chan_common->session->active))) \
 			return;						      \
-		if (caa_unlikely(!CMM_ACCESS_ONCE(__chan->enabled)))	      \
+		if (caa_unlikely(!CMM_ACCESS_ONCE(__chan_common->enabled)))   \
 			return;						      \
 		break;							      \
 	}								      \
@@ -841,7 +842,7 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 	{								      \
 		size_t __event_len, __event_align;			      \
 		struct lttng_ust_event_recorder *__event_recorder = (struct lttng_ust_event_recorder *) __event->child; \
-		struct lttng_channel *__chan = __event_recorder->chan;	      \
+		struct lttng_ust_channel_buffer *__chan = __event_recorder->chan; \
 		struct lttng_ust_lib_ring_buffer_ctx __ctx;		      \
 		struct lttng_ust_stack_ctx __lttng_ctx;			      \
 									      \
@@ -851,7 +852,7 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 		memset(&__lttng_ctx, 0, sizeof(__lttng_ctx));		      \
 		__lttng_ctx.struct_size = sizeof(struct lttng_ust_stack_ctx);     \
 		__lttng_ctx.event_recorder = __event_recorder;		      \
-		__lttng_ctx.chan_ctx = tp_rcu_dereference(__chan->ctx);	      \
+		__lttng_ctx.chan_ctx = tp_rcu_dereference(__chan->ctx);   \
 		__lttng_ctx.event_ctx = tp_rcu_dereference(__event_recorder->ctx); \
 		lib_ring_buffer_ctx_init(&__ctx, __chan->chan, &__lttng_ctx, __event_len, \
 					 __event_align, -1, __chan->handle); \

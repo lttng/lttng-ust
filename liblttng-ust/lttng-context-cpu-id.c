@@ -36,7 +36,7 @@ size_t cpu_id_get_size(struct lttng_ust_ctx_field *field, size_t offset)
 static
 void cpu_id_record(struct lttng_ust_ctx_field *field,
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
-		 struct lttng_channel *chan)
+		 struct lttng_ust_channel_buffer *chan)
 {
 	int cpu;
 

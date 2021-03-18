@@ -76,7 +76,7 @@ struct lttng_enabler {
 struct lttng_event_enabler {
 	struct lttng_enabler base;
 	struct cds_list_head node;	/* per-session list of enablers */
-	struct lttng_channel *chan;
+	struct lttng_ust_channel_buffer *chan;
 	/*
 	 * Unused, but kept around to make it explicit that the tracer can do
 	 * it.
@@ -316,10 +316,12 @@ struct lttng_enum {
 	uint64_t id;			/* Enumeration ID in sessiond */
 };
 
+struct lttng_ust_shm_handle;
+
 struct lttng_ust_channel_ops_private {
 	struct lttng_ust_channel_ops *pub;	/* Public channels ops interface */
 
-	struct lttng_channel *(*channel_create)(const char *name,
+	struct lttng_ust_channel_buffer *(*channel_create)(const char *name,
 			void *buf_addr,
 			size_t subbuf_size, size_t num_subbuf,
 			unsigned int switch_timer_interval,
@@ -328,7 +330,7 @@ struct lttng_ust_channel_ops_private {
 			uint32_t chan_id,
 			const int *stream_fds, int nr_stream_fds,
 			int64_t blocking_timeout);
-	void (*channel_destroy)(struct lttng_channel *chan);
+	void (*channel_destroy)(struct lttng_ust_channel_buffer *chan);
 	/*
 	 * packet_avail_size returns the available size in the current
 	 * packet. Note that the size returned is only a hint, since it
@@ -340,6 +342,24 @@ struct lttng_ust_channel_ops_private {
 	int (*is_disabled)(struct lttng_ust_lib_ring_buffer_channel *chan);
 	int (*flush_buffer)(struct lttng_ust_lib_ring_buffer_channel *chan,
 			    struct lttng_ust_shm_handle *handle);
+};
+
+struct lttng_ust_channel_common_private {
+	struct lttng_ust_channel_common *pub;	/* Public channel interface */
+
+	int objd;	/* Object associated with channel. */
+	int tstate:1;			/* Transient enable state */
+};
+
+struct lttng_ust_channel_buffer_private {
+	struct lttng_ust_channel_common_private parent;
+
+	struct lttng_ust_channel_buffer *pub;	/* Public channel buffer interface */
+	struct cds_list_head node;	/* Channel list in session */
+	int header_type;		/* 0: unset, 1: compact, 2: large */
+	unsigned int id;		/* Channel ID */
+	enum lttng_ust_abi_chan_type type;
+	unsigned char uuid[LTTNG_UST_UUID_LEN];	/* Trace session unique ID */
 };
 
 /*
@@ -550,7 +570,7 @@ __attribute__((visibility("hidden")))
 struct lttng_event_enabler *lttng_event_enabler_create(
 		enum lttng_enabler_format_type format_type,
 		struct lttng_ust_abi_event *event_param,
-		struct lttng_channel *chan);
+		struct lttng_ust_channel_buffer *chan);
 
 /*
  * Destroy a `struct lttng_event_enabler` object.
@@ -787,21 +807,10 @@ __attribute__((visibility("hidden")))
 void lttng_handle_pending_statedump(void *owner);
 
 __attribute__((visibility("hidden")))
-struct lttng_channel *lttng_channel_create(struct lttng_ust_session *session,
-				       const char *transport_name,
-				       void *buf_addr,
-				       size_t subbuf_size, size_t num_subbuf,
-				       unsigned int switch_timer_interval,
-				       unsigned int read_timer_interval,
-				       int **shm_fd, int **wait_fd,
-				       uint64_t **memory_map_size,
-				       struct lttng_channel *chan_priv_init);
+int lttng_channel_enable(struct lttng_ust_channel_common *lttng_channel);
 
 __attribute__((visibility("hidden")))
-int lttng_channel_enable(struct lttng_channel *channel);
-
-__attribute__((visibility("hidden")))
-int lttng_channel_disable(struct lttng_channel *channel);
+int lttng_channel_disable(struct lttng_ust_channel_common *lttng_channel);
 
 __attribute__((visibility("hidden")))
 void lttng_transport_register(struct lttng_transport *transport);
@@ -845,5 +854,11 @@ void lttng_ust_abi_events_exit(void);
 
 __attribute__((visibility("hidden")))
 void lttng_ust_abi_objd_table_owner_cleanup(void *owner);
+
+__attribute__((visibility("hidden")))
+struct lttng_ust_channel_buffer *lttng_ust_alloc_channel_buffer(void);
+
+__attribute__((visibility("hidden")))
+void lttng_ust_free_channel_common(struct lttng_ust_channel_common *chan);
 
 #endif /* _LTTNG_UST_EVENTS_INTERNAL_H */

@@ -36,7 +36,7 @@ extern "C" {
 #define LTTNG_UST_PROVIDER_MAJOR	2
 #define LTTNG_UST_PROVIDER_MINOR	0
 
-struct lttng_channel;
+struct lttng_ust_channel_buffer;
 struct lttng_ust_session;
 struct lttng_ust_lib_ring_buffer_ctx;
 struct lttng_ust_event_field;
@@ -405,7 +405,7 @@ struct lttng_ust_event_recorder {
 	struct lttng_ust_event_recorder_private *priv;	/* Private event record interface */
 
 	unsigned int id;
-	struct lttng_channel *chan;
+	struct lttng_ust_channel_buffer *chan;
 	struct lttng_ust_ctx *ctx;
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */
@@ -441,7 +441,6 @@ struct lttng_ust_event_notifier {
 };
 
 struct lttng_ust_lib_ring_buffer_channel;
-struct lttng_ust_shm_handle;
 struct lttng_ust_channel_ops_private;
 
 /*
@@ -469,34 +468,58 @@ struct lttng_ust_channel_ops {
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
+enum lttng_ust_channel_type {
+	LTTNG_UST_CHANNEL_TYPE_BUFFER = 0,
+};
+
+struct lttng_ust_channel_common_private;
+
 /*
  * IMPORTANT: this structure is part of the ABI between the probe and
  * UST. Fields need to be only added at the end, never reordered, never
  * removed.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
  */
-struct lttng_channel {
-	/*
-	 * The pointers located in this private data are NOT safe to be
-	 * dereferenced by the consumer. The only operations the
-	 * consumer process is designed to be allowed to do is to read
-	 * and perform subbuffer flush.
-	 */
-	struct lttng_ust_lib_ring_buffer_channel *chan; /* Channel buffers */
-	int enabled;
-	struct lttng_ust_ctx *ctx;
-	/* Event ID management */
-	struct lttng_ust_session *session;
-	int objd;			/* Object associated to channel */
-	struct cds_list_head node;	/* Channel list in session */
-	struct lttng_ust_channel_ops *ops;
-	int header_type;		/* 0: unset, 1: compact, 2: large */
-	struct lttng_ust_shm_handle *handle;	/* shared-memory handle */
+struct lttng_ust_channel_common {
+	uint32_t struct_size;				/* Size of this structure. */
 
-	/* Channel ID */
-	unsigned int id;
-	enum lttng_ust_abi_chan_type type;
-	unsigned char uuid[LTTNG_UST_UUID_LEN]; /* Trace session unique ID */
-	int tstate:1;			/* Transient enable state */
+	struct lttng_ust_channel_common_private *priv;	/* Private channel interface */
+
+	enum lttng_ust_channel_type type;
+	void *child;					/* Pointer to child, for inheritance by aggregation. */
+
+	int enabled;
+	struct lttng_ust_session *session;
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
+};
+
+struct lttng_ust_channel_buffer_private;
+
+/*
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
+ */
+struct lttng_ust_channel_buffer {
+	uint32_t struct_size;				/* Size of this structure. */
+
+	struct lttng_ust_channel_common *parent;	/* Inheritance by aggregation. */
+	struct lttng_ust_channel_buffer_private *priv;	/* Private channel buffer interface */
+
+	struct lttng_ust_ctx *ctx;
+	struct lttng_ust_channel_ops *ops;
+	struct lttng_ust_lib_ring_buffer_channel *chan;	/* Channel buffers */
+	struct lttng_ust_shm_handle *handle;		/* shared-memory handle */
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
 /*

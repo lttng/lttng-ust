@@ -57,7 +57,7 @@ struct lttng_ust_ctx_field {
 	size_t (*get_size)(struct lttng_ust_ctx_field *field, size_t offset);
 	void (*record)(struct lttng_ust_ctx_field *field,
 		       struct lttng_ust_lib_ring_buffer_ctx *ctx,
-		       struct lttng_channel *chan);
+		       struct lttng_ust_channel_buffer *chan);
 	void (*get_value)(struct lttng_ust_ctx_field *field,
 			 struct lttng_ust_ctx_value *value);
 	void (*destroy)(struct lttng_ust_ctx_field *field);
@@ -107,7 +107,7 @@ struct lttng_ust_context_provider {
 	size_t (*get_size)(struct lttng_ust_ctx_field *field, size_t offset);
 	void (*record)(struct lttng_ust_ctx_field *field,
 		       struct lttng_ust_lib_ring_buffer_ctx *ctx,
-		       struct lttng_channel *chan);
+		       struct lttng_ust_channel_buffer *chan);
 	void (*get_value)(struct lttng_ust_ctx_field *field,
 			 struct lttng_ust_ctx_value *value);
 	struct cds_hlist_node node;
@@ -122,7 +122,7 @@ void lttng_ust_context_set_session_provider(const char *name,
 		size_t (*get_size)(struct lttng_ust_ctx_field *field, size_t offset),
 		void (*record)(struct lttng_ust_ctx_field *field,
 			struct lttng_ust_lib_ring_buffer_ctx *ctx,
-			struct lttng_channel *chan),
+			struct lttng_ust_channel_buffer *chan),
 		void (*get_value)(struct lttng_ust_ctx_field *field,
 			struct lttng_ust_ctx_value *value));
 
@@ -132,7 +132,7 @@ int lttng_ust_context_set_provider_rcu(struct lttng_ust_ctx **_ctx,
 		size_t (*get_size)(struct lttng_ust_ctx_field *field, size_t offset),
 		void (*record)(struct lttng_ust_ctx_field *field,
 			struct lttng_ust_lib_ring_buffer_ctx *ctx,
-			struct lttng_channel *chan),
+			struct lttng_ust_channel_buffer *chan),
 		void (*get_value)(struct lttng_ust_ctx_field *field,
 			struct lttng_ust_ctx_value *value));
 

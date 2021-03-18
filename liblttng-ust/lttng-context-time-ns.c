@@ -100,7 +100,7 @@ size_t time_ns_get_size(struct lttng_ust_ctx_field *field, size_t offset)
 static
 void time_ns_record(struct lttng_ust_ctx_field *field,
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
-		 struct lttng_channel *chan)
+		 struct lttng_ust_channel_buffer *chan)
 {
 	ino_t time_ns;
 

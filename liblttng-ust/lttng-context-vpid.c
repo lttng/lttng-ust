@@ -57,7 +57,7 @@ size_t vpid_get_size(struct lttng_ust_ctx_field *field, size_t offset)
 static
 void vpid_record(struct lttng_ust_ctx_field *field,
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
-		 struct lttng_channel *chan)
+		 struct lttng_ust_channel_buffer *chan)
 {
 	pid_t vpid = wrapper_getvpid();
 

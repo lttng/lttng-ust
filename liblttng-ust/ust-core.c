@@ -116,7 +116,7 @@ size_t lttng_ust_dummy_get_size(struct lttng_ust_ctx_field *field, size_t offset
 
 void lttng_ust_dummy_record(struct lttng_ust_ctx_field *field,
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
-		 struct lttng_channel *chan)
+		 struct lttng_ust_channel_buffer *chan)
 {
 	char sel_char = (char) LTTNG_UST_DYNAMIC_TYPE_NONE;
 
@@ -136,4 +136,57 @@ int lttng_context_is_app(const char *name)
 		return 0;
 	}
 	return 1;
+}
+
+struct lttng_ust_channel_buffer *lttng_ust_alloc_channel_buffer(void)
+{
+	struct lttng_ust_channel_buffer *lttng_chan_buf;
+	struct lttng_ust_channel_common *lttng_chan_common;
+	struct lttng_ust_channel_buffer_private *lttng_chan_buf_priv;
+
+	lttng_chan_buf = zmalloc(sizeof(struct lttng_ust_channel_buffer));
+	if (!lttng_chan_buf)
+		goto lttng_chan_buf_error;
+	lttng_chan_buf->struct_size = sizeof(struct lttng_ust_channel_buffer);
+	lttng_chan_common = zmalloc(sizeof(struct lttng_ust_channel_common));
+	if (!lttng_chan_common)
+		goto lttng_chan_common_error;
+	lttng_chan_common->struct_size = sizeof(struct lttng_ust_channel_common);
+	lttng_chan_buf_priv = zmalloc(sizeof(struct lttng_ust_channel_buffer_private));
+	if (!lttng_chan_buf_priv)
+		goto lttng_chan_buf_priv_error;
+	lttng_chan_buf->parent = lttng_chan_common;
+	lttng_chan_common->type = LTTNG_UST_CHANNEL_TYPE_BUFFER;
+	lttng_chan_common->child = lttng_chan_buf;
+	lttng_chan_buf->priv = lttng_chan_buf_priv;
+	lttng_chan_common->priv = &lttng_chan_buf_priv->parent;
+	lttng_chan_buf_priv->pub = lttng_chan_buf;
+	lttng_chan_buf_priv->parent.pub = lttng_chan_common;
+
+	return lttng_chan_buf;
+
+lttng_chan_buf_priv_error:
+	free(lttng_chan_common);
+lttng_chan_common_error:
+	free(lttng_chan_buf);
+lttng_chan_buf_error:
+	return NULL;
+}
+
+void lttng_ust_free_channel_common(struct lttng_ust_channel_common *chan)
+{
+	switch (chan->type) {
+	case LTTNG_UST_CHANNEL_TYPE_BUFFER:
+	{
+		struct lttng_ust_channel_buffer *chan_buf;
+
+		chan_buf = (struct lttng_ust_channel_buffer *)chan->child;
+		free(chan_buf->parent);
+		free(chan_buf->priv);
+		free(chan_buf);
+		break;
+	}
+	default:
+		abort();
+	}
 }

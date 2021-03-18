@@ -438,7 +438,7 @@ uint64_t wrapper_perf_counter_read(struct lttng_ust_ctx_field *field)
 static
 void perf_counter_record(struct lttng_ust_ctx_field *field,
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
-		 struct lttng_channel *chan)
+		 struct lttng_ust_channel_buffer *chan)
 {
 	uint64_t value;
 

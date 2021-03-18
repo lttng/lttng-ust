@@ -230,16 +230,18 @@ struct lttng_event_notifier_group *lttng_event_notifier_group_create(void)
  * Only used internally at session destruction.
  */
 static
-void _lttng_channel_unmap(struct lttng_channel *lttng_chan)
+void _lttng_channel_unmap(struct lttng_ust_channel_buffer *lttng_chan)
 {
 	struct lttng_ust_lib_ring_buffer_channel *chan;
 	struct lttng_ust_shm_handle *handle;
 
-	cds_list_del(&lttng_chan->node);
+	cds_list_del(&lttng_chan->priv->node);
 	lttng_destroy_context(lttng_chan->ctx);
 	chan = lttng_chan->chan;
 	handle = lttng_chan->handle;
 	channel_destroy(chan, handle, 0);
+	free(lttng_chan->parent);
+	free(lttng_chan->priv);
 	free(lttng_chan);
 }
 
@@ -284,7 +286,7 @@ void _lttng_event_unregister(struct lttng_ust_event_common *event)
 
 void lttng_session_destroy(struct lttng_ust_session *session)
 {
-	struct lttng_channel *chan, *tmpchan;
+	struct lttng_ust_channel_buffer_private *chan, *tmpchan;
 	struct lttng_ust_event_recorder_private *event_recorder_priv, *tmpevent_recorder_priv;
 	struct lttng_enum *_enum, *tmp_enum;
 	struct lttng_event_enabler *event_enabler, *event_tmpenabler;
@@ -305,7 +307,7 @@ void lttng_session_destroy(struct lttng_ust_session *session)
 			&session->priv->enums_head, node)
 		_lttng_enum_destroy(_enum);
 	cds_list_for_each_entry_safe(chan, tmpchan, &session->priv->chan_head, node)
-		_lttng_channel_unmap(chan);
+		_lttng_channel_unmap(chan->pub);
 	cds_list_del(&session->priv->node);
 	lttng_destroy_context(session->priv->ctx);
 	free(session->priv);
@@ -544,7 +546,7 @@ int lttng_session_statedump(struct lttng_ust_session *session)
 int lttng_session_enable(struct lttng_ust_session *session)
 {
 	int ret = 0;
-	struct lttng_channel *chan;
+	struct lttng_ust_channel_buffer_private *chan;
 	int notify_socket;
 
 	if (session->active) {
@@ -575,7 +577,7 @@ int lttng_session_enable(struct lttng_ust_session *session)
 		/* don't change it if session stop/restart */
 		if (chan->header_type)
 			continue;
-		ctx = chan->ctx;
+		ctx = chan->pub->ctx;
 		if (ctx) {
 			nr_fields = ctx->nr_fields;
 			fields = ctx->fields;
@@ -589,7 +591,7 @@ int lttng_session_enable(struct lttng_ust_session *session)
 		ret = ustcomm_register_channel(notify_socket,
 			session,
 			session->priv->objd,
-			chan->objd,
+			chan->parent.objd,
 			nr_fields,
 			fields,
 			&chan_id,
@@ -634,36 +636,36 @@ end:
 	return ret;
 }
 
-int lttng_channel_enable(struct lttng_channel *channel)
+int lttng_channel_enable(struct lttng_ust_channel_common *lttng_channel)
 {
 	int ret = 0;
 
-	if (channel->enabled) {
+	if (lttng_channel->enabled) {
 		ret = -EBUSY;
 		goto end;
 	}
 	/* Set transient enabler state to "enabled" */
-	channel->tstate = 1;
-	lttng_session_sync_event_enablers(channel->session);
+	lttng_channel->priv->tstate = 1;
+	lttng_session_sync_event_enablers(lttng_channel->session);
 	/* Set atomically the state to "enabled" */
-	CMM_ACCESS_ONCE(channel->enabled) = 1;
+	CMM_ACCESS_ONCE(lttng_channel->enabled) = 1;
 end:
 	return ret;
 }
 
-int lttng_channel_disable(struct lttng_channel *channel)
+int lttng_channel_disable(struct lttng_ust_channel_common *lttng_channel)
 {
 	int ret = 0;
 
-	if (!channel->enabled) {
+	if (!lttng_channel->enabled) {
 		ret = -EBUSY;
 		goto end;
 	}
 	/* Set atomically the state to "disabled" */
-	CMM_ACCESS_ONCE(channel->enabled) = 0;
+	CMM_ACCESS_ONCE(lttng_channel->enabled) = 0;
 	/* Set transient enabler state to "enabled" */
-	channel->tstate = 0;
-	lttng_session_sync_event_enablers(channel->session);
+	lttng_channel->priv->tstate = 0;
+	lttng_session_sync_event_enablers(lttng_channel->session);
 end:
 	return ret;
 }
@@ -690,17 +692,17 @@ struct cds_hlist_head *borrow_hash_table_bucket(
  */
 static
 int lttng_event_recorder_create(struct lttng_ust_event_desc *desc,
-		struct lttng_channel *chan)
+		struct lttng_ust_channel_buffer *chan)
 {
 	struct lttng_ust_event_recorder *event_recorder;
 	struct lttng_ust_event_recorder_private *event_recorder_priv;
-	struct lttng_ust_session *session = chan->session;
+	struct lttng_ust_session *session = chan->parent->session;
 	struct cds_hlist_head *head;
 	int ret = 0;
 	int notify_socket, loglevel;
 	const char *uri;
 
-	head = borrow_hash_table_bucket(chan->session->priv->events_ht.table,
+	head = borrow_hash_table_bucket(chan->parent->session->priv->events_ht.table,
 		LTTNG_UST_EVENT_HT_SIZE, desc);
 
 	notify_socket = lttng_get_notify_socket(session->priv->owner);
@@ -767,7 +769,7 @@ int lttng_event_recorder_create(struct lttng_ust_event_desc *desc,
 	ret = ustcomm_register_event(notify_socket,
 		session,
 		session->priv->objd,
-		chan->objd,
+		chan->priv->parent.objd,
 		desc->name,
 		loglevel,
 		desc->signature,
@@ -780,7 +782,7 @@ int lttng_event_recorder_create(struct lttng_ust_event_desc *desc,
 		goto sessiond_register_error;
 	}
 
-	cds_list_add(&event_recorder_priv->node, &chan->session->priv->events_head);
+	cds_list_add(&event_recorder_priv->node, &chan->parent->session->priv->events_head);
 	cds_hlist_add_head(&event_recorder_priv->hlist, head);
 	return 0;
 
@@ -1001,7 +1003,7 @@ struct lttng_enabler_ref *lttng_enabler_ref(
 static
 void lttng_create_event_recorder_if_missing(struct lttng_event_enabler *event_enabler)
 {
-	struct lttng_ust_session *session = event_enabler->chan->session;
+	struct lttng_ust_session *session = event_enabler->chan->parent->session;
 	struct lttng_ust_probe_desc *probe_desc;
 	struct lttng_ust_event_desc *desc;
 	struct lttng_ust_event_recorder_private *event_recorder_priv;
@@ -1132,7 +1134,7 @@ void _event_enum_destroy(struct lttng_ust_event_common *event)
 	case LTTNG_UST_EVENT_TYPE_RECORDER:
 	{
 		struct lttng_ust_event_recorder *event_recorder = event->child;
-		struct lttng_ust_session *session = event_recorder->chan->session;
+		struct lttng_ust_session *session = event_recorder->chan->parent->session;
 		unsigned int i;
 
 		/* Destroy enums of the current event. */
@@ -1199,7 +1201,7 @@ void lttng_probe_provider_unregister_events(
 static
 int lttng_event_enabler_ref_event_recorders(struct lttng_event_enabler *event_enabler)
 {
-	struct lttng_ust_session *session = event_enabler->chan->session;
+	struct lttng_ust_session *session = event_enabler->chan->parent->session;
 	struct lttng_ust_event_recorder_private *event_recorder_priv;
 
 	if (!lttng_event_enabler_as_enabler(event_enabler)->enabled)
@@ -1366,7 +1368,7 @@ void lttng_ust_abi_events_exit(void)
 struct lttng_event_enabler *lttng_event_enabler_create(
 		enum lttng_enabler_format_type format_type,
 		struct lttng_ust_abi_event *event_param,
-		struct lttng_channel *chan)
+		struct lttng_ust_channel_buffer *chan)
 {
 	struct lttng_event_enabler *event_enabler;
 
@@ -1381,8 +1383,8 @@ struct lttng_event_enabler *lttng_event_enabler_create(
 	event_enabler->chan = chan;
 	/* ctx left NULL */
 	event_enabler->base.enabled = 0;
-	cds_list_add(&event_enabler->node, &event_enabler->chan->session->priv->enablers_head);
-	lttng_session_lazy_sync_event_enablers(event_enabler->chan->session);
+	cds_list_add(&event_enabler->node, &event_enabler->chan->parent->session->priv->enablers_head);
+	lttng_session_lazy_sync_event_enablers(event_enabler->chan->parent->session);
 
 	return event_enabler;
 }
@@ -1430,7 +1432,7 @@ struct lttng_event_notifier_enabler *lttng_event_notifier_enabler_create(
 int lttng_event_enabler_enable(struct lttng_event_enabler *event_enabler)
 {
 	lttng_event_enabler_as_enabler(event_enabler)->enabled = 1;
-	lttng_session_lazy_sync_event_enablers(event_enabler->chan->session);
+	lttng_session_lazy_sync_event_enablers(event_enabler->chan->parent->session);
 
 	return 0;
 }
@@ -1438,7 +1440,7 @@ int lttng_event_enabler_enable(struct lttng_event_enabler *event_enabler)
 int lttng_event_enabler_disable(struct lttng_event_enabler *event_enabler)
 {
 	lttng_event_enabler_as_enabler(event_enabler)->enabled = 0;
-	lttng_session_lazy_sync_event_enablers(event_enabler->chan->session);
+	lttng_session_lazy_sync_event_enablers(event_enabler->chan->parent->session);
 
 	return 0;
 }
@@ -1459,7 +1461,7 @@ int lttng_event_enabler_attach_filter_bytecode(struct lttng_event_enabler *event
 	_lttng_enabler_attach_filter_bytecode(
 		lttng_event_enabler_as_enabler(event_enabler), bytecode);
 
-	lttng_session_lazy_sync_event_enablers(event_enabler->chan->session);
+	lttng_session_lazy_sync_event_enablers(event_enabler->chan->parent->session);
 	return 0;
 }
 
@@ -1479,7 +1481,7 @@ int lttng_event_enabler_attach_exclusion(struct lttng_event_enabler *event_enabl
 	_lttng_enabler_attach_exclusion(
 		lttng_event_enabler_as_enabler(event_enabler), excluder);
 
-	lttng_session_lazy_sync_event_enablers(event_enabler->chan->session);
+	lttng_session_lazy_sync_event_enablers(event_enabler->chan->parent->session);
 	return 0;
 }
 
@@ -1667,7 +1669,7 @@ void lttng_session_sync_event_enablers(struct lttng_ust_session *session)
 		 * intesection of session and channel transient enable
 		 * states.
 		 */
-		enabled = enabled && session->priv->tstate && event_recorder_priv->pub->chan->tstate;
+		enabled = enabled && session->priv->tstate && event_recorder_priv->pub->chan->priv->parent.tstate;
 
 		CMM_STORE_SHARED(event_recorder_priv->pub->parent->enabled, enabled);
 		/*
@@ -1947,14 +1949,14 @@ void lttng_ust_context_set_session_provider(const char *name,
 		size_t (*get_size)(struct lttng_ust_ctx_field *field, size_t offset),
 		void (*record)(struct lttng_ust_ctx_field *field,
 			struct lttng_ust_lib_ring_buffer_ctx *ctx,
-			struct lttng_channel *chan),
+			struct lttng_ust_channel_buffer *chan),
 		void (*get_value)(struct lttng_ust_ctx_field *field,
 			struct lttng_ust_ctx_value *value))
 {
 	struct lttng_ust_session_private *session_priv;
 
 	cds_list_for_each_entry(session_priv, &sessions, node) {
-		struct lttng_channel *chan;
+		struct lttng_ust_channel_buffer_private *chan;
 		struct lttng_ust_event_recorder_private *event_recorder_priv;
 		int ret;
 
@@ -1963,7 +1965,7 @@ void lttng_ust_context_set_session_provider(const char *name,
 		if (ret)
 			abort();
 		cds_list_for_each_entry(chan, &session_priv->chan_head, node) {
-			ret = lttng_ust_context_set_provider_rcu(&chan->ctx,
+			ret = lttng_ust_context_set_provider_rcu(&chan->pub->ctx,
 					name, get_size, record, get_value);
 			if (ret)
 				abort();
@@ -1988,7 +1990,7 @@ void lttng_ust_context_set_event_notifier_group_provider(const char *name,
 		size_t (*get_size)(struct lttng_ust_ctx_field *field, size_t offset),
 		void (*record)(struct lttng_ust_ctx_field *field,
 			struct lttng_ust_lib_ring_buffer_ctx *ctx,
-			struct lttng_channel *chan),
+			struct lttng_ust_channel_buffer *chan),
 		void (*get_value)(struct lttng_ust_ctx_field *field,
 			struct lttng_ust_ctx_value *value))
 {

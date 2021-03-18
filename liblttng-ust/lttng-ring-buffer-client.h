@@ -119,7 +119,7 @@ void ctx_get_struct_size(struct lttng_ust_ctx *ctx, size_t *ctx_len,
 
 static inline
 void ctx_record(struct lttng_ust_lib_ring_buffer_ctx *bufctx,
-		struct lttng_channel *chan,
+		struct lttng_ust_channel_buffer *chan,
 		struct lttng_ust_ctx *ctx,
 		enum app_ctx_mode mode)
 {
@@ -172,12 +172,12 @@ size_t record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
 				 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 				 struct lttng_client_ctx *client_ctx)
 {
-	struct lttng_channel *lttng_chan = channel_get_private(chan);
+	struct lttng_ust_channel_buffer *lttng_chan = channel_get_private(chan);
 	struct lttng_ust_stack_ctx *lttng_ctx = ctx->priv;
 	size_t orig_offset = offset;
 	size_t padding;
 
-	switch (lttng_chan->header_type) {
+	switch (lttng_chan->priv->header_type) {
 	case 1:	/* compact */
 		padding = lib_ring_buffer_align(offset, lttng_alignof(uint32_t));
 		offset += padding;
@@ -242,13 +242,13 @@ void lttng_write_event_header(const struct lttng_ust_lib_ring_buffer_config *con
 			    struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			    uint32_t event_id)
 {
-	struct lttng_channel *lttng_chan = channel_get_private(ctx->chan);
+	struct lttng_ust_channel_buffer *lttng_chan = channel_get_private(ctx->chan);
 	struct lttng_ust_stack_ctx *lttng_ctx = ctx->priv;
 
 	if (caa_unlikely(ctx->rflags))
 		goto slow_path;
 
-	switch (lttng_chan->header_type) {
+	switch (lttng_chan->priv->header_type) {
 	case 1:	/* compact */
 	{
 		uint32_t id_time = 0;
@@ -293,10 +293,10 @@ void lttng_write_event_header_slow(const struct lttng_ust_lib_ring_buffer_config
 				 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 				 uint32_t event_id)
 {
-	struct lttng_channel *lttng_chan = channel_get_private(ctx->chan);
+	struct lttng_ust_channel_buffer *lttng_chan = channel_get_private(ctx->chan);
 	struct lttng_ust_stack_ctx *lttng_ctx = ctx->priv;
 
-	switch (lttng_chan->header_type) {
+	switch (lttng_chan->priv->header_type) {
 	case 1:	/* compact */
 		if (!(ctx->rflags & (RING_BUFFER_RFLAG_FULL_TSC | LTTNG_RFLAG_EXTENDED))) {
 			uint32_t id_time = 0;
@@ -397,15 +397,15 @@ static void client_buffer_begin(struct lttng_ust_lib_ring_buffer *buf, uint64_t 
 			lib_ring_buffer_offset_address(&buf->backend,
 				subbuf_idx * chan->backend.subbuf_size,
 				handle);
-	struct lttng_channel *lttng_chan = channel_get_private(chan);
+	struct lttng_ust_channel_buffer *lttng_chan = channel_get_private(chan);
 	uint64_t cnt = shmp_index(handle, buf->backend.buf_cnt, subbuf_idx)->seq_cnt;
 
 	assert(header);
 	if (!header)
 		return;
 	header->magic = CTF_MAGIC_NUMBER;
-	memcpy(header->uuid, lttng_chan->uuid, sizeof(lttng_chan->uuid));
-	header->stream_id = lttng_chan->id;
+	memcpy(header->uuid, lttng_chan->priv->uuid, sizeof(lttng_chan->priv->uuid));
+	header->stream_id = lttng_chan->priv->id;
 	header->stream_instance_id = buf->backend.cpu;
 	header->ctx.timestamp_begin = tsc;
 	header->ctx.timestamp_end = 0;
@@ -548,9 +548,9 @@ static int client_stream_id(struct lttng_ust_lib_ring_buffer *buf,
 {
 	struct lttng_ust_lib_ring_buffer_channel *chan = shmp(handle,
 			buf->backend.chan);
-	struct lttng_channel *lttng_chan = channel_get_private(chan);
+	struct lttng_ust_channel_buffer *lttng_chan = channel_get_private(chan);
 
-	*stream_id = lttng_chan->id;
+	*stream_id = lttng_chan->priv->id;
 
 	return 0;
 }
@@ -639,7 +639,7 @@ static const struct lttng_ust_lib_ring_buffer_config client_config = {
 };
 
 static
-struct lttng_channel *_channel_create(const char *name,
+struct lttng_ust_channel_buffer *_channel_create(const char *name,
 				void *buf_addr,
 				size_t subbuf_size, size_t num_subbuf,
 				unsigned int switch_timer_interval,
@@ -651,13 +651,13 @@ struct lttng_channel *_channel_create(const char *name,
 {
 	struct lttng_ust_abi_channel_config chan_priv_init;
 	struct lttng_ust_shm_handle *handle;
-	struct lttng_channel *lttng_chan;
+	struct lttng_ust_channel_buffer *lttng_chan_buf;
 
-	lttng_chan = zmalloc(sizeof(struct lttng_channel));
-	if (!lttng_chan)
+	lttng_chan_buf = lttng_ust_alloc_channel_buffer();
+	if (!lttng_chan_buf)
 		return NULL;
-	memcpy(lttng_chan->uuid, uuid, LTTNG_UST_UUID_LEN);
-	lttng_chan->id = chan_id;
+	memcpy(lttng_chan_buf->priv->uuid, uuid, LTTNG_UST_UUID_LEN);
+	lttng_chan_buf->priv->id = chan_id;
 
 	memset(&chan_priv_init, 0, sizeof(chan_priv_init));
 	memcpy(chan_priv_init.uuid, uuid, LTTNG_UST_UUID_LEN);
@@ -667,32 +667,32 @@ struct lttng_channel *_channel_create(const char *name,
 			__alignof__(struct lttng_ust_abi_channel_config),
 			sizeof(struct lttng_ust_abi_channel_config),
 			&chan_priv_init,
-			lttng_chan, buf_addr, subbuf_size, num_subbuf,
+			lttng_chan_buf, buf_addr, subbuf_size, num_subbuf,
 			switch_timer_interval, read_timer_interval,
 			stream_fds, nr_stream_fds, blocking_timeout);
 	if (!handle)
 		goto error;
-	lttng_chan->handle = handle;
-	lttng_chan->chan = shmp(handle, handle->chan);
-	return lttng_chan;
+	lttng_chan_buf->handle = handle;
+	lttng_chan_buf->chan = shmp(handle, handle->chan);
+	return lttng_chan_buf;
 
 error:
-	free(lttng_chan);
+	lttng_ust_free_channel_common(lttng_chan_buf->parent);
 	return NULL;
 }
 
 static
-void lttng_channel_destroy(struct lttng_channel *chan)
+void lttng_channel_destroy(struct lttng_ust_channel_buffer *lttng_chan_buf)
 {
-	channel_destroy(chan->chan, chan->handle, 1);
-	free(chan);
+	channel_destroy(lttng_chan_buf->chan, lttng_chan_buf->handle, 1);
+	lttng_ust_free_channel_common(lttng_chan_buf->parent);
 }
 
 static
 int lttng_event_reserve(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		      uint32_t event_id)
 {
-	struct lttng_channel *lttng_chan = channel_get_private(ctx->chan);
+	struct lttng_ust_channel_buffer *lttng_chan = channel_get_private(ctx->chan);
 	struct lttng_ust_stack_ctx *lttng_ctx = ctx->priv;
 	struct lttng_client_ctx client_ctx;
 	int ret, cpu;
@@ -708,7 +708,7 @@ int lttng_event_reserve(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		return -EPERM;
 	ctx->cpu = cpu;
 
-	switch (lttng_chan->header_type) {
+	switch (lttng_chan->priv->header_type) {
 	case 1:	/* compact */
 		if (event_id > 30)
 			ctx->rflags |= LTTNG_RFLAG_EXTENDED;

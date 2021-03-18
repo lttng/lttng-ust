@@ -92,13 +92,13 @@ static void client_buffer_begin(struct lttng_ust_lib_ring_buffer *buf, uint64_t 
 			lib_ring_buffer_offset_address(&buf->backend,
 				subbuf_idx * chan->backend.subbuf_size,
 				handle);
-	struct lttng_channel *lttng_chan = channel_get_private(chan);
+	struct lttng_ust_channel_buffer *lttng_chan = channel_get_private(chan);
 
 	assert(header);
 	if (!header)
 		return;
 	header->magic = TSDL_MAGIC_NUMBER;
-	memcpy(header->uuid, lttng_chan->uuid, sizeof(lttng_chan->uuid));
+	memcpy(header->uuid, lttng_chan->priv->uuid, sizeof(lttng_chan->priv->uuid));
 	header->checksum = 0;		/* 0 if unused */
 	header->content_size = 0xFFFFFFFF; /* in bits, for debugging */
 	header->packet_size = 0xFFFFFFFF;  /* in bits, for debugging */
@@ -190,7 +190,7 @@ static const struct lttng_ust_lib_ring_buffer_config client_config = {
 };
 
 static
-struct lttng_channel *_channel_create(const char *name,
+struct lttng_ust_channel_buffer *_channel_create(const char *name,
 				void *buf_addr,
 				size_t subbuf_size, size_t num_subbuf,
 				unsigned int switch_timer_interval,
@@ -202,41 +202,41 @@ struct lttng_channel *_channel_create(const char *name,
 {
 	struct lttng_ust_abi_channel_config chan_priv_init;
 	struct lttng_ust_shm_handle *handle;
-	struct lttng_channel *lttng_chan;
+	struct lttng_ust_channel_buffer *lttng_chan_buf;
 
-	lttng_chan = zmalloc(sizeof(struct lttng_channel));
-	if (!lttng_chan)
+	lttng_chan_buf = lttng_ust_alloc_channel_buffer();
+	if (!lttng_chan_buf)
 		return NULL;
-	memcpy(lttng_chan->uuid, uuid, LTTNG_UST_UUID_LEN);
-	lttng_chan->id = chan_id;
+	memcpy(lttng_chan_buf->priv->uuid, uuid, LTTNG_UST_UUID_LEN);
+	lttng_chan_buf->priv->id = chan_id;
 
 	memset(&chan_priv_init, 0, sizeof(chan_priv_init));
 	memcpy(chan_priv_init.uuid, uuid, LTTNG_UST_UUID_LEN);
 	chan_priv_init.id = chan_id;
 
 	handle = channel_create(&client_config, name,
-			__alignof__(struct lttng_channel),
-			sizeof(struct lttng_channel),
+			__alignof__(struct lttng_ust_channel_buffer),
+			sizeof(struct lttng_ust_channel_buffer),
 			&chan_priv_init,
-			lttng_chan, buf_addr, subbuf_size, num_subbuf,
+			lttng_chan_buf, buf_addr, subbuf_size, num_subbuf,
 			switch_timer_interval, read_timer_interval,
 			stream_fds, nr_stream_fds, blocking_timeout);
 	if (!handle)
 		goto error;
-	lttng_chan->handle = handle;
-	lttng_chan->chan = shmp(handle, handle->chan);
-	return lttng_chan;
+	lttng_chan_buf->handle = handle;
+	lttng_chan_buf->chan = shmp(handle, handle->chan);
+	return lttng_chan_buf;
 
 error:
-	free(lttng_chan);
+	lttng_ust_free_channel_common(lttng_chan_buf->parent);
 	return NULL;
 }
 
 static
-void lttng_channel_destroy(struct lttng_channel *chan)
+void lttng_channel_destroy(struct lttng_ust_channel_buffer *lttng_chan_buf)
 {
-	channel_destroy(chan->chan, chan->handle, 1);
-	free(chan);
+	channel_destroy(lttng_chan_buf->chan, lttng_chan_buf->handle, 1);
+	lttng_ust_free_channel_common(lttng_chan_buf->parent);
 }
 
 static

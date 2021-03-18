@@ -25,11 +25,11 @@
 #define LTTNG_PROC_NS_PATH_MAX 40
 
 struct lttng_ust_session;
-struct lttng_channel;
-struct lttng_event;
+struct lttng_ust_channel_buffer;
 struct lttng_ust_ctx_field;
 struct lttng_ust_lib_ring_buffer_ctx;
 struct lttng_ust_ctx_value;
+struct lttng_ust_event_recorder;
 struct lttng_ust_event_notifier;
 
 __attribute__((visibility("hidden")))
@@ -92,7 +92,7 @@ size_t lttng_ust_dummy_get_size(struct lttng_ust_ctx_field *field, size_t offset
 __attribute__((visibility("hidden")))
 void lttng_ust_dummy_record(struct lttng_ust_ctx_field *field,
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
-		 struct lttng_channel *chan);
+		 struct lttng_ust_channel_buffer *chan);
 __attribute__((visibility("hidden")))
 void lttng_ust_dummy_get_value(struct lttng_ust_ctx_field *field,
 		struct lttng_ust_ctx_value *value);

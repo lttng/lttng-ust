@@ -45,7 +45,7 @@
  * Channel representation within consumer.
  */
 struct ustctl_consumer_channel {
-	struct lttng_channel *chan;		/* lttng channel buffers */
+	struct lttng_ust_channel_buffer *chan;	/* lttng channel buffers */
 
 	/* initial attributes */
 	struct ustctl_consumer_channel_attr attr;
@@ -1344,17 +1344,17 @@ int ustctl_write_metadata_to_channel(
 		size_t len)			/* metadata length */
 {
 	struct lttng_ust_lib_ring_buffer_ctx ctx;
-	struct lttng_channel *chan = channel->chan;
+	struct lttng_ust_channel_buffer *lttng_chan_buf = channel->chan;
 	const char *str = metadata_str;
 	int ret = 0, waitret;
 	size_t reserve_len, pos;
 
 	for (pos = 0; pos < len; pos += reserve_len) {
 		reserve_len = min_t(size_t,
-				chan->ops->priv->packet_avail_size(chan->chan, chan->handle),
+				lttng_chan_buf->ops->priv->packet_avail_size(lttng_chan_buf->chan, lttng_chan_buf->handle),
 				len - pos);
-		lib_ring_buffer_ctx_init(&ctx, chan->chan, NULL, reserve_len,
-					 sizeof(char), -1, chan->handle);
+		lib_ring_buffer_ctx_init(&ctx, lttng_chan_buf->chan, NULL, reserve_len,
+					 sizeof(char), -1, lttng_chan_buf->handle);
 		/*
 		 * We don't care about metadata buffer's records lost
 		 * count, because we always retry here. Report error if
@@ -1363,7 +1363,7 @@ int ustctl_write_metadata_to_channel(
 		 */
 		waitret = wait_cond_interruptible_timeout(
 			({
-				ret = chan->ops->event_reserve(&ctx, 0);
+				ret = lttng_chan_buf->ops->event_reserve(&ctx, 0);
 				ret != -ENOBUFS || !ret;
 			}),
 			LTTNG_METADATA_TIMEOUT_MSEC);
@@ -1375,8 +1375,8 @@ int ustctl_write_metadata_to_channel(
 				ret = waitret;
 			goto end;
 		}
-		chan->ops->event_write(&ctx, &str[pos], reserve_len);
-		chan->ops->event_commit(&ctx);
+		lttng_chan_buf->ops->event_write(&ctx, &str[pos], reserve_len);
+		lttng_chan_buf->ops->event_commit(&ctx);
 	}
 end:
 	return ret;
@@ -1392,25 +1392,25 @@ ssize_t ustctl_write_one_packet_to_channel(
 		size_t len)			/* metadata length */
 {
 	struct lttng_ust_lib_ring_buffer_ctx ctx;
-	struct lttng_channel *chan = channel->chan;
+	struct lttng_ust_channel_buffer *lttng_chan_buf = channel->chan;
 	const char *str = metadata_str;
 	ssize_t reserve_len;
 	int ret;
 
 	reserve_len = min_t(ssize_t,
-			chan->ops->priv->packet_avail_size(chan->chan, chan->handle),
+			lttng_chan_buf->ops->priv->packet_avail_size(lttng_chan_buf->chan, lttng_chan_buf->handle),
 			len);
-	lib_ring_buffer_ctx_init(&ctx, chan->chan, NULL, reserve_len,
-			sizeof(char), -1, chan->handle);
-	ret = chan->ops->event_reserve(&ctx, 0);
+	lib_ring_buffer_ctx_init(&ctx, lttng_chan_buf->chan, NULL, reserve_len,
+			sizeof(char), -1, lttng_chan_buf->handle);
+	ret = lttng_chan_buf->ops->event_reserve(&ctx, 0);
 	if (ret != 0) {
 		DBG("LTTng: event reservation failed");
 		assert(ret < 0);
 		reserve_len = ret;
 		goto end;
 	}
-	chan->ops->event_write(&ctx, str, reserve_len);
-	chan->ops->event_commit(&ctx);
+	lttng_chan_buf->ops->event_write(&ctx, str, reserve_len);
+	lttng_chan_buf->ops->event_commit(&ctx);
 
 end:
 	return reserve_len;

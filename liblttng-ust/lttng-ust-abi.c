@@ -287,7 +287,7 @@ int lttng_abi_create_root_handle(void)
 }
 
 static
-int lttng_is_channel_ready(struct lttng_channel *lttng_chan)
+int lttng_is_channel_ready(struct lttng_ust_channel_buffer *lttng_chan)
 {
 	struct lttng_ust_lib_ring_buffer_channel *chan;
 	unsigned int nr_streams, exp_streams;
@@ -449,7 +449,7 @@ int lttng_abi_map_channel(int session_objd,
 	int chan_objd;
 	struct lttng_ust_shm_handle *channel_handle;
 	struct lttng_ust_abi_channel_config *lttng_chan_config;
-	struct lttng_channel *lttng_chan;
+	struct lttng_ust_channel_buffer *lttng_chan_buf;
 	struct lttng_ust_lib_ring_buffer_channel *chan;
 	struct lttng_ust_lib_ring_buffer_config *config;
 	void *chan_data;
@@ -476,10 +476,10 @@ int lttng_abi_map_channel(int session_objd,
 		goto active;	/* Refuse to add channel to active session */
 	}
 
-	lttng_chan = zmalloc(sizeof(struct lttng_channel));
-	if (!lttng_chan) {
+	lttng_chan_buf = lttng_ust_alloc_channel_buffer();
+	if (!lttng_chan_buf) {
 		ret = -ENOMEM;
-		goto lttng_chan_error;
+		goto lttng_chan_buf_error;
 	}
 
 	channel_handle = channel_handle_create(chan_data, len, wakeup_fd);
@@ -544,30 +544,33 @@ int lttng_abi_map_channel(int session_objd,
 	}
 
 	/* Initialize our lttng chan */
-	lttng_chan->chan = chan;
-	lttng_chan->tstate = 1;
-	lttng_chan->enabled = 1;
-	lttng_chan->ctx = NULL;
-	lttng_chan->session = session;
-	lttng_chan->ops = &transport->ops;
-	memcpy(&lttng_chan->chan->backend.config,
+	lttng_chan_buf->parent->enabled = 1;
+	lttng_chan_buf->parent->session = session;
+
+	lttng_chan_buf->priv->parent.tstate = 1;
+
+	lttng_chan_buf->ctx = NULL;
+	lttng_chan_buf->ops = &transport->ops;
+	lttng_chan_buf->chan = chan;
+	lttng_chan_buf->handle = channel_handle;
+
+	memcpy(&chan->backend.config,
 		transport->client_config,
-		sizeof(lttng_chan->chan->backend.config));
-	cds_list_add(&lttng_chan->node, &session->priv->chan_head);
-	lttng_chan->header_type = 0;
-	lttng_chan->handle = channel_handle;
-	lttng_chan->type = type;
+		sizeof(chan->backend.config));
+	cds_list_add(&lttng_chan_buf->priv->node, &session->priv->chan_head);
+	lttng_chan_buf->priv->header_type = 0;
+	lttng_chan_buf->priv->type = type;
 	/* Copy fields from lttng ust chan config. */
-	lttng_chan->id = lttng_chan_config->id;
-	memcpy(lttng_chan->uuid, lttng_chan_config->uuid, LTTNG_UST_UUID_LEN);
-	channel_set_private(chan, lttng_chan);
+	lttng_chan_buf->priv->id = lttng_chan_config->id;
+	memcpy(lttng_chan_buf->priv->uuid, lttng_chan_config->uuid, LTTNG_UST_UUID_LEN);
+	channel_set_private(chan, lttng_chan_buf);
 
 	/*
 	 * We tolerate no failure path after channel creation. It will stay
 	 * invariant for the rest of the session.
 	 */
-	objd_set_private(chan_objd, lttng_chan);
-	lttng_chan->objd = chan_objd;
+	objd_set_private(chan_objd, lttng_chan_buf);
+	lttng_chan_buf->priv->parent.objd = chan_objd;
 	/* The channel created holds a reference on the session */
 	objd_ref(session_objd);
 	return chan_objd;
@@ -577,12 +580,12 @@ objd_error:
 notransport:
 alloc_error:
 	channel_destroy(chan, channel_handle, 0);
-	free(lttng_chan);
+	lttng_ust_free_channel_common(lttng_chan_buf->parent);
 	return ret;
 
 handle_error:
-	free(lttng_chan);
-lttng_chan_error:
+	lttng_ust_free_channel_common(lttng_chan_buf->parent);
+lttng_chan_buf_error:
 active:
 invalid:
 	return ret;
@@ -1108,10 +1111,10 @@ static
 int lttng_abi_map_stream(int channel_objd, struct lttng_ust_abi_stream *info,
 		union lttng_ust_abi_args *uargs, void *owner)
 {
-	struct lttng_channel *channel = objd_private(channel_objd);
+	struct lttng_ust_channel_buffer *lttng_chan_buf = objd_private(channel_objd);
 	int ret;
 
-	ret = channel_handle_add_stream(channel->handle,
+	ret = channel_handle_add_stream(lttng_chan_buf->handle,
 		uargs->stream.shm_fd, uargs->stream.wakeup_fd,
 		info->stream_nr, info->len);
 	if (ret)
@@ -1132,7 +1135,7 @@ int lttng_abi_create_event_enabler(int channel_objd,
 			   void *owner,
 			   enum lttng_enabler_format_type format_type)
 {
-	struct lttng_channel *channel = objd_private(channel_objd);
+	struct lttng_ust_channel_buffer *channel = objd_private(channel_objd);
 	struct lttng_event_enabler *enabler;
 	int event_objd, ret;
 
@@ -1196,13 +1199,13 @@ static
 long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg,
 	union lttng_ust_abi_args *uargs, void *owner)
 {
-	struct lttng_channel *channel = objd_private(objd);
+	struct lttng_ust_channel_buffer *lttng_chan_buf = objd_private(objd);
 
 	if (cmd != LTTNG_UST_ABI_STREAM) {
 		/*
 		 * Check if channel received all streams.
 		 */
-		if (!lttng_is_channel_ready(channel))
+		if (!lttng_is_channel_ready(lttng_chan_buf))
 			return -EPERM;
 	}
 
@@ -1235,13 +1238,15 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg,
 	case LTTNG_UST_ABI_CONTEXT:
 		return lttng_abi_add_context(objd,
 				(struct lttng_ust_abi_context *) arg, uargs,
-				&channel->ctx, channel->session);
+				&lttng_chan_buf->ctx,
+				lttng_chan_buf->parent->session);
 	case LTTNG_UST_ABI_ENABLE:
-		return lttng_channel_enable(channel);
+		return lttng_channel_enable(lttng_chan_buf->parent);
 	case LTTNG_UST_ABI_DISABLE:
-		return lttng_channel_disable(channel);
+		return lttng_channel_disable(lttng_chan_buf->parent);
 	case LTTNG_UST_ABI_FLUSH_BUFFER:
-		return channel->ops->priv->flush_buffer(channel->chan, channel->handle);
+		return lttng_chan_buf->ops->priv->flush_buffer(lttng_chan_buf->chan,
+				lttng_chan_buf->handle);
 	default:
 		return -EINVAL;
 	}
@@ -1250,10 +1255,10 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg,
 static
 int lttng_channel_release(int objd)
 {
-	struct lttng_channel *channel = objd_private(objd);
+	struct lttng_ust_channel_buffer *lttng_chan_buf = objd_private(objd);
 
-	if (channel)
-		return lttng_ust_abi_objd_unref(channel->session->priv->objd, 0);
+	if (lttng_chan_buf)
+		return lttng_ust_abi_objd_unref(lttng_chan_buf->parent->session->priv->objd, 0);
 	return 0;
 }
 
@@ -1324,7 +1329,7 @@ int lttng_event_enabler_release(int objd)
 	struct lttng_event_enabler *event_enabler = objd_private(objd);
 
 	if (event_enabler)
-		return lttng_ust_abi_objd_unref(event_enabler->chan->objd, 0);
+		return lttng_ust_abi_objd_unref(event_enabler->chan->priv->parent.objd, 0);
 
 	return 0;
 }
