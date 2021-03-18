@@ -73,8 +73,8 @@ AC_PROG_GREP
 AC_PROG_LN_S
 AC_PROG_MKDIR_P
 AC_PROG_MAKE_SET
-AC_CHECK_PROG([HAVE_CMAKE], [cmake], ["yes"])
-AM_CONDITIONAL([HAVE_CMAKE], [test "x$HAVE_CMAKE" = "xyes"])
+AC_CHECK_PROG([CMAKE], [cmake])
+AM_CONDITIONAL([HAVE_CMAKE], [test "x$CMAKE" != "x"])
 
 # libtool link_all_deplibs fixup. See http://bugs.lttng.org/issues/321.
 AC_ARG_ENABLE([libtool-linkdep-fixup], [
