@@ -148,17 +148,11 @@ int stack_strcmp(struct estack *stack, int top, const char *cmp_type)
 	return diff;
 }
 
-uint64_t lttng_bytecode_filter_interpret_false(void *filter_data,
-		const char *filter_stack_data)
+int lttng_bytecode_interpret_error(struct lttng_ust_bytecode_runtime *bytecode_runtime,
+		const char *stack_data,
+		void *ctx)
 {
-	return LTTNG_UST_BYTECODE_INTERPRETER_DISCARD;
-}
-
-uint64_t lttng_bytecode_capture_interpret_false(void *capture_data,
-		const char *capture_stack_data,
-		struct lttng_interpreter_output *output)
-{
-	return LTTNG_UST_BYTECODE_INTERPRETER_DISCARD;
+	return LTTNG_UST_BYTECODE_INTERPRETER_ERROR;
 }
 
 #ifdef INTERPRETER_USE_SWITCH
@@ -700,7 +694,7 @@ again:
 		return -EINVAL;
 	}
 
-	return LTTNG_UST_BYTECODE_INTERPRETER_RECORD_FLAG;
+	return 0;
 }
 
 /*
@@ -711,16 +705,14 @@ again:
  * For `output` not equal to NULL:
  *  Return 0 on success, negative error value on error.
  */
-static
-uint64_t bytecode_interpret(void *interpreter_data,
+int lttng_bytecode_interpret(struct lttng_ust_bytecode_runtime *ust_bytecode,
 		const char *interpreter_stack_data,
-		struct lttng_interpreter_output *output)
+		void *caller_ctx)
 {
-	struct bytecode_runtime *bytecode = interpreter_data;
-	struct lttng_ust_ctx *ctx = lttng_ust_rcu_dereference(*bytecode->p.priv->pctx);
+	struct bytecode_runtime *bytecode = caa_container_of(ust_bytecode, struct bytecode_runtime, p);
+	struct lttng_ust_ctx *ctx = lttng_ust_rcu_dereference(*ust_bytecode->priv->pctx);
 	void *pc, *next_pc, *start_pc;
-	int ret = -EINVAL;
-	uint64_t retval = 0;
+	int ret = -EINVAL, retval = 0;
 	struct estack _stack;
 	struct estack *stack = &_stack;
 	register int64_t ax = 0, bx = 0;
@@ -876,7 +868,7 @@ uint64_t bytecode_interpret(void *interpreter_data,
 			goto end;
 
 		OP(BYTECODE_OP_RETURN):
-			/* LTTNG_UST_BYTECODE_INTERPRETER_DISCARD or LTTNG_UST_BYTECODE_INTERPRETER_RECORD_FLAG */
+			/* LTTNG_UST_BYTECODE_INTERPRETER_ERROR or LTTNG_UST_BYTECODE_INTERPRETER_OK */
 			/* Handle dynamic typing. */
 			switch (estack_ax_t) {
 			case REG_S64:
@@ -886,7 +878,7 @@ uint64_t bytecode_interpret(void *interpreter_data,
 			case REG_DOUBLE:
 			case REG_STRING:
 			case REG_PTR:
-				if (!output) {
+				if (ust_bytecode->priv->type != LTTNG_UST_BYTECODE_TYPE_CAPTURE) {
 					ret = -EINVAL;
 					goto end;
 				}
@@ -902,7 +894,7 @@ uint64_t bytecode_interpret(void *interpreter_data,
 			goto end;
 
 		OP(BYTECODE_OP_RETURN_S64):
-			/* LTTNG_UST_BYTECODE_INTERPRETER_DISCARD or LTTNG_UST_BYTECODE_INTERPRETER_RECORD_FLAG */
+			/* LTTNG_UST_BYTECODE_INTERPRETER_ERROR or LTTNG_UST_BYTECODE_INTERPRETER_OK */
 			retval = !!estack_ax_v;
 			ret = 0;
 			goto end;
@@ -2482,30 +2474,34 @@ uint64_t bytecode_interpret(void *interpreter_data,
 
 	END_OP
 end:
-	/* Return _DISCARD on error. */
+	/* No need to prepare output if an error occurred. */
 	if (ret)
-		return LTTNG_UST_BYTECODE_INTERPRETER_DISCARD;
+		return LTTNG_UST_BYTECODE_INTERPRETER_ERROR;
 
-	if (output) {
-		return lttng_bytecode_interpret_format_output(estack_ax(stack, top),
-				output);
+	/* Prepare output. */
+	switch (ust_bytecode->priv->type) {
+	case LTTNG_UST_BYTECODE_TYPE_FILTER:
+	{
+		struct lttng_ust_bytecode_filter_ctx *filter_ctx =
+			(struct lttng_ust_bytecode_filter_ctx *) caller_ctx;
+		if (retval)
+			filter_ctx->result = LTTNG_UST_BYTECODE_FILTER_ACCEPT;
+		else
+			filter_ctx->result = LTTNG_UST_BYTECODE_FILTER_REJECT;
+		break;
 	}
-
-	return retval;
-}
-
-uint64_t lttng_bytecode_filter_interpret(void *filter_data,
-		const char *filter_stack_data)
-{
-	return bytecode_interpret(filter_data, filter_stack_data, NULL);
-}
-
-uint64_t lttng_bytecode_capture_interpret(void *capture_data,
-		const char *capture_stack_data,
-		struct lttng_interpreter_output *output)
-{
-	return bytecode_interpret(capture_data, capture_stack_data,
-			(struct lttng_interpreter_output *) output);
+	case LTTNG_UST_BYTECODE_TYPE_CAPTURE:
+		ret = lttng_bytecode_interpret_format_output(estack_ax(stack, top),
+				(struct lttng_interpreter_output *) caller_ctx);
+		break;
+	default:
+		ret = -EINVAL;
+		break;
+	}
+	if (ret)
+		return LTTNG_UST_BYTECODE_INTERPRETER_ERROR;
+	else
+		return LTTNG_UST_BYTECODE_INTERPRETER_OK;
 }
 
 #undef START_OP

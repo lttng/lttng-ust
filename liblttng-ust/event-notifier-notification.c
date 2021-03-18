@@ -380,8 +380,8 @@ void lttng_event_notifier_notification_send(
 				&event_notifier->capture_bytecode_runtime_head, node) {
 			struct lttng_interpreter_output output;
 
-			if (capture_bc_runtime->interpreter_funcs.capture(capture_bc_runtime,
-					stack_data, &output) & LTTNG_UST_BYTECODE_INTERPRETER_RECORD_FLAG)
+			if (capture_bc_runtime->interpreter_func(capture_bc_runtime,
+					stack_data, &output) == LTTNG_UST_BYTECODE_INTERPRETER_OK)
 				notification_append_capture(&notif, &output);
 			else
 				notification_append_empty_capture(&notif);

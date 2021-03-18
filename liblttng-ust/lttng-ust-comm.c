@@ -768,7 +768,7 @@ int handle_bytecode_recv(struct sock_info *sock_info,
 		int sock, struct ustcomm_ust_msg *lum)
 {
 	struct lttng_ust_bytecode_node *bytecode = NULL;
-	enum lttng_ust_bytecode_node_type type;
+	enum lttng_ust_bytecode_type type;
 	const struct lttng_ust_abi_objd_ops *ops;
 	uint32_t data_size, data_size_max, reloc_offset;
 	uint64_t seqnum;
@@ -777,14 +777,14 @@ int handle_bytecode_recv(struct sock_info *sock_info,
 
 	switch (lum->cmd) {
 	case LTTNG_UST_ABI_FILTER:
-		type = LTTNG_UST_BYTECODE_NODE_TYPE_FILTER;
+		type = LTTNG_UST_BYTECODE_TYPE_FILTER;
 		data_size = lum->u.filter.data_size;
 		data_size_max = LTTNG_UST_ABI_FILTER_BYTECODE_MAX_LEN;
 		reloc_offset = lum->u.filter.reloc_offset;
 		seqnum = lum->u.filter.seqnum;
 		break;
 	case LTTNG_UST_ABI_CAPTURE:
-		type = LTTNG_UST_BYTECODE_NODE_TYPE_CAPTURE;
+		type = LTTNG_UST_BYTECODE_TYPE_CAPTURE;
 		data_size = lum->u.capture.data_size;
 		data_size_max = LTTNG_UST_ABI_CAPTURE_BYTECODE_MAX_LEN;
 		reloc_offset = lum->u.capture.reloc_offset;

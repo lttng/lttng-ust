@@ -1699,7 +1699,7 @@ void lttng_session_sync_event_enablers(struct lttng_ust_session *session)
 		/* Enable filters */
 		cds_list_for_each_entry(runtime,
 				&event_recorder_priv->pub->parent->filter_bytecode_runtime_head, node) {
-			lttng_bytecode_filter_sync_state(runtime);
+			lttng_bytecode_sync_state(runtime);
 		}
 	}
 	lttng_ust_tp_probe_prune_release_queue();
@@ -1911,13 +1911,13 @@ void lttng_event_notifier_group_sync_enablers(struct lttng_event_notifier_group 
 		/* Enable filters */
 		cds_list_for_each_entry(runtime,
 				&event_notifier_priv->pub->parent->filter_bytecode_runtime_head, node) {
-			lttng_bytecode_filter_sync_state(runtime);
+			lttng_bytecode_sync_state(runtime);
 		}
 
 		/* Enable captures. */
 		cds_list_for_each_entry(runtime,
 				&event_notifier_priv->pub->capture_bytecode_runtime_head, node) {
-			lttng_bytecode_capture_sync_state(runtime);
+			lttng_bytecode_sync_state(runtime);
 		}
 	}
 	lttng_ust_tp_probe_prune_release_queue();

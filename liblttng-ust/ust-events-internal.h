@@ -94,13 +94,13 @@ struct lttng_event_notifier_enabler {
 	uint64_t num_captures;
 };
 
-enum lttng_ust_bytecode_node_type {
-	LTTNG_UST_BYTECODE_NODE_TYPE_FILTER,
-	LTTNG_UST_BYTECODE_NODE_TYPE_CAPTURE,
+enum lttng_ust_bytecode_type {
+	LTTNG_UST_BYTECODE_TYPE_FILTER,
+	LTTNG_UST_BYTECODE_TYPE_CAPTURE,
 };
 
 struct lttng_ust_bytecode_node {
-	enum lttng_ust_bytecode_node_type type;
+	enum lttng_ust_bytecode_type type;
 	struct cds_list_head node;
 	struct lttng_enabler *enabler;
 	struct  {
@@ -275,6 +275,7 @@ struct lttng_ust_event_notifier_private {
 struct lttng_ust_bytecode_runtime_private {
 	struct bytecode_runtime *pub;	/* Public bytecode runtime interface */
 
+	enum lttng_ust_bytecode_type type;
 	struct lttng_ust_bytecode_node *bc;
 	int link_failed;
 	/*

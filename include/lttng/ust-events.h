@@ -297,16 +297,37 @@ struct lttng_ust_probe_desc {
 /* Data structures used by the tracer. */
 
 /*
- * Bytecode interpreter return value masks.
+ * Bytecode interpreter return value.
  */
 enum lttng_ust_bytecode_interpreter_ret {
-	LTTNG_UST_BYTECODE_INTERPRETER_DISCARD = 0,
-	LTTNG_UST_BYTECODE_INTERPRETER_RECORD_FLAG = (1ULL << 0),
-	/* Other bits are kept for future use. */
+	LTTNG_UST_BYTECODE_INTERPRETER_ERROR = -1,
+	LTTNG_UST_BYTECODE_INTERPRETER_OK = 0,
 };
 
 struct lttng_interpreter_output;
 struct lttng_ust_bytecode_runtime_private;
+
+enum lttng_ust_bytecode_filter_result {
+	LTTNG_UST_BYTECODE_FILTER_ACCEPT = 0,
+	LTTNG_UST_BYTECODE_FILTER_REJECT = 1,
+};
+
+/*
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
+ */
+struct lttng_ust_bytecode_filter_ctx {
+	uint32_t struct_size;			/* Size of this structure. */
+
+	enum lttng_ust_bytecode_filter_result result;
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
+};
 
 /*
  * IMPORTANT: this structure is part of the ABI between the probe and
@@ -321,14 +342,9 @@ struct lttng_ust_bytecode_runtime {
 	uint32_t struct_size;			/* Size of this structure. */
 
 	struct lttng_ust_bytecode_runtime_private *priv;
-	/* Associated bytecode */
-	union {
-		uint64_t (*filter)(void *interpreter_data,
-				const char *interpreter_stack_data);
-		uint64_t (*capture)(void *interpreter_data,
-				const char *interpreter_stack_data,
-				struct lttng_interpreter_output *interpreter_output);
-	} interpreter_funcs;
+	int (*interpreter_func)(struct lttng_ust_bytecode_runtime *bytecode_runtime,
+			const char *interpreter_stack_data,
+			void *ctx);
 	struct cds_list_head node;	/* list of bytecode runtime in event */
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */
