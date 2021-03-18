@@ -63,7 +63,6 @@ xmlto_verbose_0 = @echo "  XMLTO     " $@;
 
 # Tools to execute:
 ADOC = $(asciidoc_verbose)$(ASCIIDOC) -f $(ASCIIDOC_CONF) -d manpage \
-	-a lttng_ust_register_timeout="@LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_MS@" \
 	-a mansource="LTTng" \
 	-a manmanual="LTTng Manual" \
 	-a manversion="$(PACKAGE_VERSION)"

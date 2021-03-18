@@ -28,7 +28,7 @@
  * variable "LTTNG_UST_REGISTER_TIMEOUT". Note that if the sessiond is not
  * found, the application proceeds directly without any delay.
  */
-#define LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_MS	CONFIG_LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_MS
+#define LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_MS	3000
 
 #define LTTNG_DEFAULT_RUNDIR				LTTNG_SYSTEM_RUNDIR
 #define LTTNG_DEFAULT_HOME_RUNDIR			".lttng"

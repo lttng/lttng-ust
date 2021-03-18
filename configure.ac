@@ -475,15 +475,6 @@ they will not be installed.
 AM_CONDITIONAL([MAN_PAGES_OPT], [test "x$man_pages_opt" != "xno"])
 AM_CONDITIONAL([HAVE_ASCIIDOC_XMLTO], [test "x$have_asciidoc_xmlto" = "xyes"])
 
-# Default values
-AC_DEFUN([_AC_DEFINE_AND_SUBST], [
-	AC_DEFINE_UNQUOTED([CONFIG_$1], [$2], [$1])
-	$1="$2"
-	AC_SUBST([$1])
-])
-
-_AC_DEFINE_AND_SUBST([LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_MS], [3000])
-
 AM_CFLAGS="-Wall $URCU_CFLAGS $PTHREAD_CFLAGS"
 AC_SUBST(AM_CFLAGS)
 
