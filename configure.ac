@@ -55,10 +55,8 @@ AC_SYS_LARGEFILE
 AC_PROG_CC
 # AC_PROG_CC_STDC was merged in AC_PROG_CC in autoconf 2.70
 m4_version_prereq([2.70], [], [AC_PROG_CC_STDC])
-AC_PROG_CXX
-AX_CXX_COMPILE_STDCXX([11])
-RW_PROG_CXX_WORKS
-AM_CONDITIONAL([HAVE_CXX], [test "x$rw_cv_prog_cxx_works" = "xyes"])
+AX_CXX_COMPILE_STDCXX([11], [noext], [optional])
+AM_CONDITIONAL([HAVE_CXX], [test "$HAVE_CXX11" = "1"])
 
 # Check if the compiler support weak symbols
 AX_SYS_WEAK_ALIAS
