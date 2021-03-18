@@ -147,7 +147,7 @@ all-local:
 				cd build && \
 				CC="$(CC)" \
 				CXX="$(CXX)" \
-				cmake \
+				$(CMAKE) \
 				-DCMAKE_INCLUDE_PATH="$(abs_top_srcdir)/include;$(abs_top_builddir)/include" \
 				-DCMAKE_LIBRARY_PATH="$(abs_top_builddir)/liblttng-ust/.libs" \
 				-DCMAKE_C_FLAGS="$(AM_CFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(CFLAGS)" \
