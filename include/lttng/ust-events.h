@@ -406,7 +406,6 @@ struct lttng_ust_event_recorder {
 
 	unsigned int id;
 	struct lttng_ust_channel_buffer *chan;
-	struct lttng_ust_ctx *ctx;
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
@@ -534,7 +533,6 @@ struct lttng_ust_stack_ctx {
 	uint32_t struct_size;			/* Size of this structure */
 
 	struct lttng_ust_event_recorder *event_recorder;
-	struct lttng_ust_ctx *event_ctx;	/* RCU dereferenced. */
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };

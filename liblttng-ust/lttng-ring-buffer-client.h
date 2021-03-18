@@ -64,6 +64,7 @@ struct lttng_client_ctx {
 	size_t packet_context_len;
 	size_t event_context_len;
 	struct lttng_ust_ctx *chan_ctx;
+	struct lttng_ust_ctx *event_ctx;
 };
 
 static inline uint64_t lib_ring_buffer_clock_read(struct lttng_ust_lib_ring_buffer_channel *chan)
@@ -175,7 +176,6 @@ size_t record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
 				 struct lttng_client_ctx *client_ctx)
 {
 	struct lttng_ust_channel_buffer *lttng_chan = channel_get_private(chan);
-	struct lttng_ust_stack_ctx *lttng_ctx = ctx->priv;
 	size_t orig_offset = offset;
 	size_t padding;
 
@@ -216,7 +216,7 @@ size_t record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
 	}
 	offset += ctx_get_aligned_size(offset, client_ctx->chan_ctx,
 			client_ctx->packet_context_len);
-	offset += ctx_get_aligned_size(offset, lttng_ctx->event_ctx,
+	offset += ctx_get_aligned_size(offset, client_ctx->event_ctx,
 			client_ctx->event_context_len);
 	*pre_header_padding = padding;
 	return offset - orig_offset;
@@ -247,7 +247,6 @@ void lttng_write_event_header(const struct lttng_ust_lib_ring_buffer_config *con
 			    uint32_t event_id)
 {
 	struct lttng_ust_channel_buffer *lttng_chan = channel_get_private(ctx->chan);
-	struct lttng_ust_stack_ctx *lttng_ctx = ctx->priv;
 
 	if (caa_unlikely(ctx->rflags))
 		goto slow_path;
@@ -283,7 +282,7 @@ void lttng_write_event_header(const struct lttng_ust_lib_ring_buffer_config *con
 	}
 
 	ctx_record(ctx, lttng_chan, client_ctx->chan_ctx, APP_CTX_ENABLED);
-	ctx_record(ctx, lttng_chan, lttng_ctx->event_ctx, APP_CTX_ENABLED);
+	ctx_record(ctx, lttng_chan, client_ctx->event_ctx, APP_CTX_ENABLED);
 	lib_ring_buffer_align_ctx(ctx, ctx->largest_align);
 
 	return;
@@ -299,7 +298,6 @@ void lttng_write_event_header_slow(const struct lttng_ust_lib_ring_buffer_config
 				 uint32_t event_id)
 {
 	struct lttng_ust_channel_buffer *lttng_chan = channel_get_private(ctx->chan);
-	struct lttng_ust_stack_ctx *lttng_ctx = ctx->priv;
 
 	switch (lttng_chan->priv->header_type) {
 	case 1:	/* compact */
@@ -357,7 +355,7 @@ void lttng_write_event_header_slow(const struct lttng_ust_lib_ring_buffer_config
 		WARN_ON_ONCE(1);
 	}
 	ctx_record(ctx, lttng_chan, client_ctx->chan_ctx, APP_CTX_ENABLED);
-	ctx_record(ctx, lttng_chan, lttng_ctx->event_ctx, APP_CTX_ENABLED);
+	ctx_record(ctx, lttng_chan, client_ctx->event_ctx, APP_CTX_ENABLED);
 	lib_ring_buffer_align_ctx(ctx, ctx->largest_align);
 }
 
@@ -699,14 +697,16 @@ int lttng_event_reserve(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 {
 	struct lttng_ust_channel_buffer *lttng_chan = channel_get_private(ctx->chan);
 	struct lttng_ust_stack_ctx *lttng_ctx = ctx->priv;
+	struct lttng_ust_event_recorder *event_recorder = lttng_ctx->event_recorder;
 	struct lttng_client_ctx client_ctx;
 	int ret, cpu;
 
 	client_ctx.chan_ctx = lttng_ust_rcu_dereference(lttng_chan->priv->ctx);
+	client_ctx.event_ctx = lttng_ust_rcu_dereference(event_recorder->priv->ctx);
 	/* Compute internal size of context structures. */
 	ctx_get_struct_size(client_ctx.chan_ctx, &client_ctx.packet_context_len,
 			APP_CTX_ENABLED);
-	ctx_get_struct_size(lttng_ctx->event_ctx, &client_ctx.event_context_len,
+	ctx_get_struct_size(client_ctx.event_ctx, &client_ctx.event_context_len,
 			APP_CTX_ENABLED);
 
 	cpu = lib_ring_buffer_get_cpu(&client_config);

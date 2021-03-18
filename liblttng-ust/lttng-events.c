@@ -1321,7 +1321,7 @@ void _lttng_event_destroy(struct lttng_ust_event_common *event)
 		/* Remove from event hash table. */
 		cds_hlist_del(&event_recorder->priv->hlist);
 
-		lttng_destroy_context(event_recorder->ctx);
+		lttng_destroy_context(event_recorder->priv->ctx);
 		free(event_recorder->parent);
 		free(event_recorder->priv);
 		free(event_recorder);
@@ -1971,7 +1971,7 @@ void lttng_ust_context_set_session_provider(const char *name,
 				abort();
 		}
 		cds_list_for_each_entry(event_recorder_priv, &session_priv->events_head, node) {
-			ret = lttng_ust_context_set_provider_rcu(&event_recorder_priv->pub->ctx,
+			ret = lttng_ust_context_set_provider_rcu(&event_recorder_priv->ctx,
 					name, get_size, record, get_value);
 			if (ret)
 				abort();

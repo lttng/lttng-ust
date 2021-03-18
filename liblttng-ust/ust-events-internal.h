@@ -258,6 +258,7 @@ struct lttng_ust_event_recorder_private {
 	struct lttng_ust_event_recorder *pub;	/* Public event interface */
 	struct cds_list_head node;		/* Event recorder list */
 	struct cds_hlist_node hlist;		/* Hash table of event recorders */
+	struct lttng_ust_ctx *ctx;
 };
 
 struct lttng_ust_event_notifier_private {
