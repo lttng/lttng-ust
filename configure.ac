@@ -554,8 +554,6 @@ AC_CONFIG_FILES([
 	lttng-ust-ctl.pc
 ])
 
-AC_CONFIG_FILES([tests/unit/ust-elf/test_ust_elf],[chmod +x tests/unit/ust-elf/test_ust_elf])
-
 AC_OUTPUT
 
 

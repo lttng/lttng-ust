@@ -2,9 +2,11 @@
 
 SUBDIRS = utils unit compile benchmark
 
-LOG_DRIVER_FLAGS='--merge'
-LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
-	$(srcdir)/utils/tap-driver.sh
+LOG_DRIVER_FLAGS = --merge --comments
+LOG_DRIVER = env AM_TAP_AWK='$(AWK)' \
+	UST_TESTS_SRCDIR='$(abs_top_srcdir)/tests' \
+	UST_TESTS_BUILDDIR='$(abs_top_builddir)/tests' \
+	$(SHELL) $(srcdir)/utils/tap-driver.sh
 
 TESTS = \
 	unit/libringbuffer/test_shm \

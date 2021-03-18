@@ -84,7 +84,6 @@ tests/unit/libmsgpack/test_msgpack
 tests/unit/libringbuffer/test_shm
 tests/unit/pthread_name/test_pthread_name
 tests/unit/snprintf/test_snprintf
-tests/unit/ust-elf/test_ust_elf
 tests/unit/ust-elf/ust-elf
 
 # Java agent library
