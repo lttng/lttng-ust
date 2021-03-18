@@ -17,7 +17,7 @@ libringbuffer_la_SOURCES = \
 libringbuffer_la_LIBADD = \
 	-lrt
 
-if HAVE_LIBNUMA
+if ENABLE_NUMA
 libringbuffer_la_LIBADD += -lnuma
 endif
 

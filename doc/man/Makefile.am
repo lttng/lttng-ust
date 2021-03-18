@@ -49,7 +49,7 @@ MAN1 = $(addsuffix .1,$(MAN1_NAMES))
 MAN3 = $(addsuffix .3,$(MAN3_NAMES)) $(MAN3_ALIASES)
 MAN = $(MAN1) $(MAN3)
 
-if MAN_PAGES_OPT
+if ENABLE_MAN_PAGES
 # At this point, we know the user asked to build the man pages.
 if HAVE_ASCIIDOC_XMLTO
 
@@ -105,28 +105,28 @@ ERR_MSG += "Make sure both tools are installed and run the configure script agai
 	@echo $(ERR_MSG)
 	@false
 endif # HAVE_ASCIIDOC_XMLTO
-endif # MAN_PAGES_OPT
+endif # ENABLE_MAN_PAGES
 
 # Start with empty distributed/installed man pages:
 dist_man1_MANS =
 dist_man3_MANS =
 EXTRA_DIST =
 
-if MAN_PAGES_OPT
+if ENABLE_MAN_PAGES
 # Building man pages: we can install and distribute them.
 dist_man1_MANS += $(MAN1)
 dist_man3_MANS += $(MAN3) $(MAN3_TROFF)
-else # MAN_PAGES_OPT
+else # ENABLE_MAN_PAGES
 # Those are not known by automake yet because dist_man3_MANS is empty
 # at this point, so make sure they are distributed.
 EXTRA_DIST += $(MAN3_TROFF)
-endif # MAN_PAGES_OPT
+endif # ENABLE_MAN_PAGES
 
-if !MAN_PAGES_OPT
+if !ENABLE_MAN_PAGES
 dist-hook:
 	@echo "Error: Please enable the man pages before creating a distribution tarball."
 	@false
-endif # !MAN_PAGES_OPT
+endif # !ENABLE_MAN_PAGES
 
 # Always distribute the source files.
 EXTRA_DIST += $(MAN_TXT) $(COMMON_TXT) $(XSL_FILE) $(ASCIIDOC_CONF) README.md

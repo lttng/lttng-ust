@@ -58,7 +58,7 @@ m4_version_prereq([2.70], [], [AC_PROG_CC_STDC])
 AC_PROG_CXX
 AX_CXX_COMPILE_STDCXX([11])
 RW_PROG_CXX_WORKS
-AM_CONDITIONAL([CXX_WORKS], [test "x$rw_cv_prog_cxx_works" = "xyes"])
+AM_CONDITIONAL([HAVE_CXX], [test "x$rw_cv_prog_cxx_works" = "xyes"])
 
 # Check if the compiler support weak symbols
 AX_SYS_WEAK_ALIAS
@@ -247,7 +247,7 @@ AS_IF([test "x${ac_cv_header_dlfcn_h}" = "xyes"], [
 	ac_cv_have_decl_RTLD_DI_LINKMAP="no"
 ])
 
-AM_CONDITIONAL([HAVE_DLINFO], [test "x${ac_cv_have_decl_RTLD_DI_LINKMAP}" = "xyes"])
+AM_CONDITIONAL([ENABLE_UST_DL], [test "x${ac_cv_have_decl_RTLD_DI_LINKMAP}" = "xyes"])
 
 # Require URCU >= 0.12 for DEFINE_URCU_TLS_INIT
 PKG_CHECK_MODULES([URCU], [liburcu >= 0.12])
@@ -271,7 +271,7 @@ AS_IF([test "x$enable_numa" = "xyes"], [
 [AC_MSG_ERROR([libnuma is not available. Please either install it (e.g. libnuma-dev) or use [LDFLAGS]=-Ldir to specify the right location, or use --disable-numa configure argument to disable NUMA support.])])
 	have_libnuma=yes
 ])
-AM_CONDITIONAL([HAVE_LIBNUMA], [test "x$have_libnuma" = "xyes"])
+AM_CONDITIONAL([ENABLE_NUMA], [test "x$have_libnuma" = "xyes"])
 
 # optional linux/perf_event.h
 AC_CHECK_HEADERS([linux/perf_event.h], [have_perf_event=yes], [])
@@ -294,7 +294,7 @@ AS_HELP_STRING([--enable-jni-interface], [build JNI interface between C and Java
 	jni_interface=no
 ])
 
-AM_CONDITIONAL([BUILD_JNI_INTERFACE], [test "x$jni_interface" = "xyes"])
+AM_CONDITIONAL([ENABLE_JNI_INTERFACE], [test "x$jni_interface" = "xyes"])
 
 
 AC_ARG_ENABLE([java-agent-jul], [
@@ -320,9 +320,9 @@ AS_HELP_STRING([--enable-java-agent-all], [build the LTTng UST Java agent with a
 	java_agent_log4j=$enableval
 ], [:])
 
-AM_CONDITIONAL([BUILD_JAVA_AGENT], [test "x$java_agent_jul" = "xyes" || test "x$java_agent_log4j" = "xyes"])
-AM_CONDITIONAL([BUILD_JAVA_AGENT_WITH_JUL], [test "x$java_agent_jul" = "xyes"])
-AM_CONDITIONAL([BUILD_JAVA_AGENT_WITH_LOG4J], [test "x$java_agent_log4j" = "xyes"])
+AM_CONDITIONAL([ENABLE_JAVA_AGENT], [test "x$java_agent_jul" = "xyes" || test "x$java_agent_log4j" = "xyes"])
+AM_CONDITIONAL([ENABLE_JAVA_AGENT_WITH_JUL], [test "x$java_agent_jul" = "xyes"])
+AM_CONDITIONAL([ENABLE_JAVA_AGENT_WITH_LOG4J], [test "x$java_agent_log4j" = "xyes"])
 
 AS_IF([test "x$jni_interface" = "xyes" || test "x$java_agent_jul" = "xyes" || test "x$java_agent_log4j" = "xyes"], [
 	AX_JAVA_OPTIONS
@@ -359,7 +359,7 @@ AS_HELP_STRING([--enable-python-agent], [build the LTTng UST Python agent [defau
 ], [
 	python_agent=$enableval
 ], [:])
-AM_CONDITIONAL([BUILD_PYTHON_AGENT], [test "x$python_agent" = "xyes"])
+AM_CONDITIONAL([ENABLE_PYTHON_AGENT], [test "x$python_agent" = "xyes"])
 AS_IF([test "x$python_agent" = "xyes"], [
 	AM_PATH_PYTHON([2.7])
 ])
@@ -401,8 +401,8 @@ AS_HELP_STRING([--with-lttng-system-rundir], [Location of the system directory w
 AC_DEFINE_UNQUOTED([LTTNG_SYSTEM_RUNDIR], ["$lttng_system_rundir"],
 		[LTTng system runtime directory])
 
-AC_CHECK_PROG([BUILD_GEN_TP_EXAMPLES], [python], ["yes"])
-AM_CONDITIONAL([BUILD_GEN_TP_EXAMPLES], [test "x$BUILD_GEN_TP_EXAMPLES" = "xyes"])
+AC_CHECK_PROG([ENABLE_GEN_TP_EXAMPLES], [python], ["yes"])
+AM_CONDITIONAL([ENABLE_GEN_TP_EXAMPLES], [test "x$ENABLE_GEN_TP_EXAMPLES" = "xyes"])
 
 # Enable building examples
 AC_ARG_ENABLE(
@@ -465,7 +465,7 @@ they will not be installed.
 
 # Export man page build condition: build the man pages if the user
 # asked for it, and if the tools are available.
-AM_CONDITIONAL([MAN_PAGES_OPT], [test "x$man_pages_opt" != "xno"])
+AM_CONDITIONAL([ENABLE_MAN_PAGES], [test "x$man_pages_opt" != "xno"])
 AM_CONDITIONAL([HAVE_ASCIIDOC_XMLTO], [test "x$have_asciidoc_xmlto" = "xyes"])
 
 AM_CFLAGS="-Wall $URCU_CFLAGS $PTHREAD_CFLAGS"

@@ -11,7 +11,7 @@ doc_examples_clock_overridedir = ${docdir}/examples/clock-override
 doc_examples_getcpu_overridedir = ${docdir}/examples/getcpu-override
 doc_examples_cmakedir = ${docdir}/examples/cmake-multiple-shared-libraries
 
-if BUILD_JAVA_AGENT_WITH_JUL
+if ENABLE_JAVA_AGENT_WITH_JUL
 doc_examples_java_juldir = ${docdir}/examples/java-jul
 dist_doc_examples_java_jul_DATA = java-jul/Makefile \
 				  java-jul/Hello.java \
@@ -22,7 +22,7 @@ dist_doc_examples_java_jul_DATA = java-jul/Makefile \
 SUBDIRS_JUL = java-jul
 endif
 
-if BUILD_JAVA_AGENT_WITH_LOG4J
+if ENABLE_JAVA_AGENT_WITH_LOG4J
 doc_examples_java_log4jdir = ${docdir}/examples/java-log4j
 dist_doc_examples_java_log4j_DATA = java-log4j/Makefile \
 				  java-log4j/Hello.java \
@@ -30,13 +30,13 @@ dist_doc_examples_java_log4j_DATA = java-log4j/Makefile \
 SUBDIRS_LOG4J = java-log4j
 endif
 
-if BUILD_PYTHON_AGENT
+if ENABLE_PYTHON_AGENT
 doc_examples_pythondir = ${docdir}/examples/python
 dist_doc_examples_python_DATA = python/hello.py
 endif
 
 if HAVE_CMAKE
-if CXX_WORKS
+if HAVE_CXX
 SUBDIRS_CMAKE = cmake-multiple-shared-libraries
 endif
 endif
@@ -105,7 +105,7 @@ dist_doc_examples_getcpu_override_DATA = getcpu-override/Makefile \
 SUBDIRS_PROXY = easy-ust demo hello-static-lib demo-tracef clock-override \
 		getcpu-override demo-tracelog
 
-if BUILD_GEN_TP_EXAMPLES
+if ENABLE_GEN_TP_EXAMPLES
 SUBDIRS_PROXY += gen-tp
 endif
 

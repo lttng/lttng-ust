@@ -13,7 +13,7 @@ libcounter_la_LIBADD = \
 	-lpthread \
 	-lrt
 
-if HAVE_LIBNUMA
+if ENABLE_NUMA
 libcounter_la_LIBADD += -lnuma
 endif
 

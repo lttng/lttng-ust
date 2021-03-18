@@ -7,7 +7,7 @@ SUBDIRS = \
 	same_line_tracepoint \
 	test-app-ctx
 
-if CXX_WORKS
+if HAVE_CXX
 SUBDIRS += hello.cxx
 endif
 
