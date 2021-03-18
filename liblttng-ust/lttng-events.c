@@ -239,11 +239,8 @@ void _lttng_channel_unmap(struct lttng_channel *lttng_chan)
 	lttng_destroy_context(lttng_chan->ctx);
 	chan = lttng_chan->chan;
 	handle = lttng_chan->handle;
-	/*
-	 * note: lttng_chan is private data contained within handle. It
-	 * will be freed along with the handle.
-	 */
 	channel_destroy(chan, handle, 0);
+	free(lttng_chan);
 }
 
 static

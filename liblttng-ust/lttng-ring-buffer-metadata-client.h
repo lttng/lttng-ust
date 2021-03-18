@@ -200,33 +200,43 @@ struct lttng_channel *_channel_create(const char *name,
 				const int *stream_fds, int nr_stream_fds,
 				int64_t blocking_timeout)
 {
-	struct lttng_channel chan_priv_init;
+	struct lttng_ust_abi_channel_config chan_priv_init;
 	struct lttng_ust_shm_handle *handle;
 	struct lttng_channel *lttng_chan;
-	void *priv;
+
+	lttng_chan = zmalloc(sizeof(struct lttng_channel));
+	if (!lttng_chan)
+		return NULL;
+	memcpy(lttng_chan->uuid, uuid, LTTNG_UST_UUID_LEN);
+	lttng_chan->id = chan_id;
 
 	memset(&chan_priv_init, 0, sizeof(chan_priv_init));
 	memcpy(chan_priv_init.uuid, uuid, LTTNG_UST_UUID_LEN);
 	chan_priv_init.id = chan_id;
+
 	handle = channel_create(&client_config, name,
-			&priv, __alignof__(struct lttng_channel),
+			__alignof__(struct lttng_channel),
 			sizeof(struct lttng_channel),
 			&chan_priv_init,
-			buf_addr, subbuf_size, num_subbuf,
+			lttng_chan, buf_addr, subbuf_size, num_subbuf,
 			switch_timer_interval, read_timer_interval,
 			stream_fds, nr_stream_fds, blocking_timeout);
 	if (!handle)
-		return NULL;
-	lttng_chan = priv;
+		goto error;
 	lttng_chan->handle = handle;
 	lttng_chan->chan = shmp(handle, handle->chan);
 	return lttng_chan;
+
+error:
+	free(lttng_chan);
+	return NULL;
 }
 
 static
 void lttng_channel_destroy(struct lttng_channel *chan)
 {
 	channel_destroy(chan->chan, chan->handle, 1);
+	free(chan);
 }
 
 static

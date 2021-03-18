@@ -52,13 +52,14 @@ struct lttng_ust_lib_ring_buffer_channel {
 	int read_timer_enabled;
 
 	int finalized;				/* Has channel been finalized */
-	size_t priv_data_offset;
+	size_t priv_data_offset;		/* Offset of private data channel config */
 	unsigned int nr_streams;		/* Number of streams */
 	struct lttng_ust_shm_handle *handle;
 	/* Extended options. */
 	union {
 		struct {
 			int32_t blocking_timeout_ms;
+			void *priv;		/* Private data pointer. */
 		} s;
 		char padding[RB_CHANNEL_PADDING];
 	} u;
@@ -223,9 +224,21 @@ struct lttng_ust_lib_ring_buffer {
 } __attribute__((aligned(CAA_CACHE_LINE_SIZE)));
 
 static inline
-void *channel_get_private(struct lttng_ust_lib_ring_buffer_channel *chan)
+void *channel_get_private_config(struct lttng_ust_lib_ring_buffer_channel *chan)
 {
 	return ((char *) chan) + chan->priv_data_offset;
+}
+
+static inline
+void *channel_get_private(struct lttng_ust_lib_ring_buffer_channel *chan)
+{
+	return chan->u.s.priv;
+}
+
+static inline
+void channel_set_private(struct lttng_ust_lib_ring_buffer_channel *chan, void *priv)
+{
+	chan->u.s.priv = priv;
 }
 
 #ifndef __rb_same_type

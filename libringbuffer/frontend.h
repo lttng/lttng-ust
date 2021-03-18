@@ -34,20 +34,19 @@
  * address mapping. It is used only by RING_BUFFER_STATIC configuration. It can
  * be set to NULL for other backends.
  *
- * priv_data (output) is set to a pointer into a "priv_data_len"-sized
- * memory area for client-specific data. This memory is managed by lib
- * ring buffer. priv_data_align is the alignment required for the
- * private data area.
+ * private data is a memory area for configuration data. This memory is
+ * managed by lib ring buffer. priv_data_align is the alignment required
+ * for the private data area.
  */
 
 __attribute__((visibility("hidden")))
 extern
 struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buffer_config *config,
 				const char *name,
-				void **priv_data,
 				size_t priv_data_align,
 				size_t priv_data_size,
 				void *priv_data_init,
+				void *priv,
 				void *buf_addr,
 				size_t subbuf_size, size_t num_subbuf,
 				unsigned int switch_timer_interval,

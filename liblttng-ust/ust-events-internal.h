@@ -342,6 +342,32 @@ struct lttng_ust_channel_ops_private {
 			    struct lttng_ust_shm_handle *handle);
 };
 
+/*
+ * IMPORTANT: this structure is part of the ABI between the consumer
+ * daemon and the UST library within traced applications. Changing it
+ * breaks the UST communication protocol.
+ *
+ * TODO: remove unused fields on next UST communication protocol
+ * breaking update.
+ */
+struct lttng_ust_abi_channel_config {
+	void *unused1;
+	int unused2;
+	void *unused3;
+	void *unused4;
+	int unused5;
+	struct cds_list_head unused6;
+	void *unused7;
+	int unused8;
+	void *unused9;
+
+	/* Channel ID */
+	unsigned int id;
+	enum lttng_ust_abi_chan_type unused10;
+	unsigned char uuid[LTTNG_UST_UUID_LEN]; /* Trace session unique ID */
+	int unused11:1;
+};
+
 static inline
 struct lttng_ust_type_integer *lttng_ust_get_type_integer(struct lttng_ust_type_common *type)
 {

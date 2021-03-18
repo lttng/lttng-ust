@@ -448,6 +448,7 @@ int lttng_abi_map_channel(int session_objd,
 	const char *chan_name;
 	int chan_objd;
 	struct lttng_ust_shm_handle *channel_handle;
+	struct lttng_ust_abi_channel_config *lttng_chan_config;
 	struct lttng_channel *lttng_chan;
 	struct lttng_ust_lib_ring_buffer_channel *chan;
 	struct lttng_ust_lib_ring_buffer_config *config;
@@ -475,6 +476,12 @@ int lttng_abi_map_channel(int session_objd,
 		goto active;	/* Refuse to add channel to active session */
 	}
 
+	lttng_chan = zmalloc(sizeof(struct lttng_channel));
+	if (!lttng_chan) {
+		ret = -ENOMEM;
+		goto lttng_chan_error;
+	}
+
 	channel_handle = channel_handle_create(chan_data, len, wakeup_fd);
 	if (!channel_handle) {
 		ret = -EINVAL;
@@ -489,8 +496,8 @@ int lttng_abi_map_channel(int session_objd,
 	assert(chan);
 	chan->handle = channel_handle;
 	config = &chan->backend.config;
-	lttng_chan = channel_get_private(chan);
-	if (!lttng_chan) {
+	lttng_chan_config = channel_get_private_config(chan);
+	if (!lttng_chan_config) {
 		ret = -EINVAL;
 		goto alloc_error;
 	}
@@ -550,6 +557,10 @@ int lttng_abi_map_channel(int session_objd,
 	lttng_chan->header_type = 0;
 	lttng_chan->handle = channel_handle;
 	lttng_chan->type = type;
+	/* Copy fields from lttng ust chan config. */
+	lttng_chan->id = lttng_chan_config->id;
+	memcpy(lttng_chan->uuid, lttng_chan_config->uuid, LTTNG_UST_UUID_LEN);
+	channel_set_private(chan, lttng_chan);
 
 	/*
 	 * We tolerate no failure path after channel creation. It will stay
@@ -566,9 +577,12 @@ objd_error:
 notransport:
 alloc_error:
 	channel_destroy(chan, channel_handle, 0);
+	free(lttng_chan);
 	return ret;
 
 handle_error:
+	free(lttng_chan);
+lttng_chan_error:
 active:
 invalid:
 	return ret;

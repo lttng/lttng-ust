@@ -336,7 +336,7 @@ int lib_ring_buffer_create(struct lttng_ust_lib_ring_buffer *buf,
 	struct lttng_ust_lib_ring_buffer_backend_subbuffer *wsb;
 	struct lttng_ust_lib_ring_buffer_channel *shmp_chan;
 	struct commit_counters_hot *cc_hot;
-	void *priv = channel_get_private(chan);
+	void *priv = channel_get_private_config(chan);
 	size_t subbuf_header_size;
 	uint64_t tsc;
 	int ret;
@@ -938,9 +938,10 @@ static void channel_free(struct lttng_ust_lib_ring_buffer_channel *chan,
  * channel_create - Create channel.
  * @config: ring buffer instance configuration
  * @name: name of the channel
- * @priv_data: ring buffer client private data area pointer (output)
- * @priv_data_size: length, in bytes, of the private data area.
- * @priv_data_init: initialization data for private data.
+ * @priv_data_align: alignment, in bytes, of the private data area. (config)
+ * @priv_data_size: length, in bytes, of the private data area. (config)
+ * @priv_data_init: initialization data for private data. (config)
+ * @priv: local private data (memory owner by caller)
  * @buf_addr: pointer the the beginning of the preallocated buffer contiguous
  *            address mapping. It is used only by RING_BUFFER_STATIC
  *            configuration. It can be set to NULL for other backends.
@@ -958,10 +959,10 @@ static void channel_free(struct lttng_ust_lib_ring_buffer_channel *chan,
  */
 struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buffer_config *config,
 		   const char *name,
-		   void **priv_data,
 		   size_t priv_data_align,
 		   size_t priv_data_size,
 		   void *priv_data_init,
+		   void *priv,
 		   void *buf_addr, size_t subbuf_size,
 		   size_t num_subbuf, unsigned int switch_timer_interval,
 		   unsigned int read_timer_interval,
@@ -1035,6 +1036,8 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 
 	/* space for private data */
 	if (priv_data_size) {
+		void *priv_config;
+
 		DECLARE_SHMP(void, priv_data_alloc);
 
 		align_shm(shmobj, priv_data_align);
@@ -1042,15 +1045,15 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 		set_shmp(priv_data_alloc, zalloc_shm(shmobj, priv_data_size));
 		if (!shmp(handle, priv_data_alloc))
 			goto error_append;
-		*priv_data = channel_get_private(chan);
-		memcpy(*priv_data, priv_data_init, priv_data_size);
+		priv_config = channel_get_private_config(chan);
+		memcpy(priv_config, priv_data_init, priv_data_size);
 	} else {
 		chan->priv_data_offset = -1;
-		if (priv_data)
-			*priv_data = NULL;
 	}
 
 	chan->u.s.blocking_timeout_ms = (int32_t) blocking_timeout_ms;
+
+	channel_set_private(chan, priv);
 
 	ret = channel_backend_init(&chan->backend, name, config,
 				   subbuf_size, num_subbuf, handle,
@@ -1681,8 +1684,7 @@ void lib_ring_buffer_print_subbuffer_errors(struct lttng_ust_lib_ring_buffer *bu
 static
 void lib_ring_buffer_print_buffer_errors(struct lttng_ust_lib_ring_buffer *buf,
 					 struct lttng_ust_lib_ring_buffer_channel *chan,
-					 void *priv, int cpu,
-					 struct lttng_ust_shm_handle *handle)
+					 int cpu, struct lttng_ust_shm_handle *handle)
 {
 	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
 	unsigned long write_offset, cons_offset;
@@ -1715,7 +1717,6 @@ void lib_ring_buffer_print_errors(struct lttng_ust_lib_ring_buffer_channel *chan
 				struct lttng_ust_shm_handle *handle)
 {
 	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
-	void *priv = channel_get_private(chan);
 
 	if (!strcmp(chan->backend.name, "relay-metadata-mmap")) {
 		DBG("ring buffer %s: %lu records written, "
@@ -1741,7 +1742,7 @@ void lib_ring_buffer_print_errors(struct lttng_ust_lib_ring_buffer_channel *chan
 				v_read(config, &buf->records_lost_wrap),
 				v_read(config, &buf->records_lost_big));
 	}
-	lib_ring_buffer_print_buffer_errors(buf, chan, priv, cpu, handle);
+	lib_ring_buffer_print_buffer_errors(buf, chan, cpu, handle);
 }
 
 /*
