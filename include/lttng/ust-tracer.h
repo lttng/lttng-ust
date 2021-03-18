@@ -29,4 +29,12 @@
 #define lttng_alignof(type)	1
 #endif
 
+/*
+ * Concatenate lttng ust shared libraries name with their major version number.
+ */
+#define LTTNG_UST_LIB_SONAME "liblttng-ust.so." lttng_ust_stringify(LTTNG_UST_LIB_SONAME_MAJOR)
+#define LTTNG_UST_TRACEPOINT_LIB_SONAME "liblttng-ust-tracepoint.so." lttng_ust_stringify(LTTNG_UST_LIB_SONAME_MAJOR)
+#define LTTNG_UST_CTL_LIB_SONAME "liblttng-ust-ctl.so." lttng_ust_stringify(LTTNG_UST_CTL_LIB_SONAME_MAJOR)
+
+
 #endif /* _LTTNG_UST_TRACER_H */

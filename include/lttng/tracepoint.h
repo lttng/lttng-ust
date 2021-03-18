@@ -15,8 +15,10 @@
 #include <urcu/system.h>
 #include <dlfcn.h>	/* for dlopen */
 #include <string.h>	/* for memset */
+
 #include <lttng/ust-config.h>	/* for sdt */
 #include <lttng/ust-compiler.h>
+#include <lttng/ust-tracer.h>
 
 #ifdef LTTNG_UST_HAVE_SDT_INTEGRATION
 /*
@@ -359,7 +361,7 @@ __tracepoints__init(void)
 		tracepoint_dlopen_ptr = &tracepoint_dlopen;
 	if (!tracepoint_dlopen_ptr->liblttngust_handle)
 		tracepoint_dlopen_ptr->liblttngust_handle =
-			dlopen("liblttng-ust-tracepoint.so.1", RTLD_NOW | RTLD_GLOBAL);
+			dlopen(LTTNG_UST_TRACEPOINT_LIB_SONAME, RTLD_NOW | RTLD_GLOBAL);
 	if (!tracepoint_dlopen_ptr->liblttngust_handle)
 		return;
 	__tracepoint__init_urcu_sym();
@@ -467,7 +469,7 @@ __tracepoints__ptrs_init(void)
 		tracepoint_dlopen_ptr = &tracepoint_dlopen;
 	if (!tracepoint_dlopen_ptr->liblttngust_handle)
 		tracepoint_dlopen_ptr->liblttngust_handle =
-			dlopen("liblttng-ust-tracepoint.so.1", RTLD_NOW | RTLD_GLOBAL);
+			dlopen(LTTNG_UST_TRACEPOINT_LIB_SONAME, RTLD_NOW | RTLD_GLOBAL);
 	if (!tracepoint_dlopen_ptr->liblttngust_handle)
 		return;
 	if (!tracepoint_destructors_syms_ptr)
