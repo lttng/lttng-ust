@@ -236,7 +236,7 @@ void _lttng_channel_unmap(struct lttng_ust_channel_buffer *lttng_chan)
 	struct lttng_ust_shm_handle *handle;
 
 	cds_list_del(&lttng_chan->priv->node);
-	lttng_destroy_context(lttng_chan->ctx);
+	lttng_destroy_context(lttng_chan->priv->ctx);
 	chan = lttng_chan->chan;
 	handle = lttng_chan->handle;
 	channel_destroy(chan, handle, 0);
@@ -577,7 +577,7 @@ int lttng_session_enable(struct lttng_ust_session *session)
 		/* don't change it if session stop/restart */
 		if (chan->header_type)
 			continue;
-		ctx = chan->pub->ctx;
+		ctx = chan->ctx;
 		if (ctx) {
 			nr_fields = ctx->nr_fields;
 			fields = ctx->fields;
@@ -1965,7 +1965,7 @@ void lttng_ust_context_set_session_provider(const char *name,
 		if (ret)
 			abort();
 		cds_list_for_each_entry(chan, &session_priv->chan_head, node) {
-			ret = lttng_ust_context_set_provider_rcu(&chan->pub->ctx,
+			ret = lttng_ust_context_set_provider_rcu(&chan->ctx,
 					name, get_size, record, get_value);
 			if (ret)
 				abort();

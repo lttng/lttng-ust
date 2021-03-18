@@ -514,7 +514,6 @@ struct lttng_ust_channel_buffer {
 	struct lttng_ust_channel_common *parent;	/* Inheritance by aggregation. */
 	struct lttng_ust_channel_buffer_private *priv;	/* Private channel buffer interface */
 
-	struct lttng_ust_ctx *ctx;
 	struct lttng_ust_channel_ops *ops;
 	struct lttng_ust_lib_ring_buffer_channel *chan;	/* Channel buffers */
 	struct lttng_ust_shm_handle *handle;		/* shared-memory handle */
@@ -535,7 +534,6 @@ struct lttng_ust_stack_ctx {
 	uint32_t struct_size;			/* Size of this structure */
 
 	struct lttng_ust_event_recorder *event_recorder;
-	struct lttng_ust_ctx *chan_ctx;	/* RCU dereferenced. */
 	struct lttng_ust_ctx *event_ctx;	/* RCU dereferenced. */
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */

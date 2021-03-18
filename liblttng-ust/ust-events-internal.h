@@ -359,6 +359,7 @@ struct lttng_ust_channel_buffer_private {
 	int header_type;		/* 0: unset, 1: compact, 2: large */
 	unsigned int id;		/* Channel ID */
 	enum lttng_ust_abi_chan_type type;
+	struct lttng_ust_ctx *ctx;
 	unsigned char uuid[LTTNG_UST_UUID_LEN];	/* Trace session unique ID */
 };
 

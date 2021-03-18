@@ -548,8 +548,8 @@ int lttng_abi_map_channel(int session_objd,
 	lttng_chan_buf->parent->session = session;
 
 	lttng_chan_buf->priv->parent.tstate = 1;
+	lttng_chan_buf->priv->ctx = NULL;
 
-	lttng_chan_buf->ctx = NULL;
 	lttng_chan_buf->ops = &transport->ops;
 	lttng_chan_buf->chan = chan;
 	lttng_chan_buf->handle = channel_handle;
@@ -1238,7 +1238,7 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg,
 	case LTTNG_UST_ABI_CONTEXT:
 		return lttng_abi_add_context(objd,
 				(struct lttng_ust_abi_context *) arg, uargs,
-				&lttng_chan_buf->ctx,
+				&lttng_chan_buf->priv->ctx,
 				lttng_chan_buf->parent->session);
 	case LTTNG_UST_ABI_ENABLE:
 		return lttng_channel_enable(lttng_chan_buf->parent);
