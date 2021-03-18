@@ -105,3 +105,5 @@ python-lttngust/lttngust/__init__.py
 python-lttngust/**/*.pyc
 python-lttngust/build
 python-lttngust/setup.py
+python-lttngust/build-python-bindings.stamp
+python-lttngust/copy-static-deps.stamp

@@ -554,15 +554,6 @@ AC_CONFIG_FILES([
 	lttng-ust-ctl.pc
 ])
 
-# Create link for python agent for the VPATH guru.
-AC_CONFIG_LINKS([
-	python-lttngust/lttngust/agent.py:python-lttngust/lttngust/agent.py
-	python-lttngust/lttngust/cmd.py:python-lttngust/lttngust/cmd.py
-	python-lttngust/lttngust/compat.py:python-lttngust/lttngust/compat.py
-	python-lttngust/lttngust/debug.py:python-lttngust/lttngust/debug.py
-	python-lttngust/lttngust/loghandler.py:python-lttngust/lttngust/loghandler.py
-])
-
 AC_CONFIG_FILES([tests/unit/ust-elf/test_ust_elf],[chmod +x tests/unit/ust-elf/test_ust_elf])
 
 AC_OUTPUT
