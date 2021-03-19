@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <lttng/ust-endian.h>
 #include <usterr-signal-safe.h>
+#include <urcu/rculist.h>
 
 #include "ust-events-internal.h"
 #include "../libmsgpack/msgpack.h"
@@ -357,7 +358,8 @@ void notification_send(struct lttng_event_notifier_notification *notif,
 
 void lttng_event_notifier_notification_send(
 		struct lttng_ust_event_notifier *event_notifier,
-		const char *stack_data)
+		const char *stack_data,
+		struct lttng_ust_notification_ctx *notif_ctx)
 {
 	/*
 	 * This function is called from the probe, we must do dynamic
@@ -367,7 +369,7 @@ void lttng_event_notifier_notification_send(
 
 	notification_init(&notif, event_notifier);
 
-	if (caa_unlikely(!cds_list_empty(&event_notifier->capture_bytecode_runtime_head))) {
+	if (caa_unlikely(notif_ctx->eval_capture)) {
 		struct lttng_ust_bytecode_runtime *capture_bc_runtime;
 
 		/*
@@ -376,8 +378,8 @@ void lttng_event_notifier_notification_send(
 		 * `output` parameter to the capture buffer. If the interpreter
 		 * fails, append an empty capture to the buffer.
 		 */
-		cds_list_for_each_entry(capture_bc_runtime,
-				&event_notifier->capture_bytecode_runtime_head, node) {
+		cds_list_for_each_entry_rcu(capture_bc_runtime,
+				&event_notifier->priv->capture_bytecode_runtime_head, node) {
 			struct lttng_interpreter_output output;
 
 			if (capture_bc_runtime->interpreter_func(capture_bc_runtime,

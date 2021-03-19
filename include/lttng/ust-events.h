@@ -297,60 +297,6 @@ struct lttng_ust_probe_desc {
 /* Data structures used by the tracer. */
 
 /*
- * Bytecode interpreter return value.
- */
-enum lttng_ust_bytecode_interpreter_ret {
-	LTTNG_UST_BYTECODE_INTERPRETER_ERROR = -1,
-	LTTNG_UST_BYTECODE_INTERPRETER_OK = 0,
-};
-
-struct lttng_interpreter_output;
-struct lttng_ust_bytecode_runtime_private;
-
-enum lttng_ust_bytecode_filter_result {
-	LTTNG_UST_BYTECODE_FILTER_ACCEPT = 0,
-	LTTNG_UST_BYTECODE_FILTER_REJECT = 1,
-};
-
-/*
- * IMPORTANT: this structure is part of the ABI between the probe and
- * UST. Fields need to be only added at the end, never reordered, never
- * removed.
- *
- * The field @struct_size should be used to determine the size of the
- * structure. It should be queried before using additional fields added
- * at the end of the structure.
- */
-struct lttng_ust_bytecode_filter_ctx {
-	uint32_t struct_size;			/* Size of this structure. */
-
-	enum lttng_ust_bytecode_filter_result result;
-
-	/* End of base ABI. Fields below should be used after checking struct_size. */
-};
-
-/*
- * IMPORTANT: this structure is part of the ABI between the probe and
- * UST. Fields need to be only added at the end, never reordered, never
- * removed.
- *
- * The field @struct_size should be used to determine the size of the
- * structure. It should be queried before using additional fields added
- * at the end of the structure.
- */
-struct lttng_ust_bytecode_runtime {
-	uint32_t struct_size;			/* Size of this structure. */
-
-	struct lttng_ust_bytecode_runtime_private *priv;
-	int (*interpreter_func)(struct lttng_ust_bytecode_runtime *bytecode_runtime,
-			const char *interpreter_stack_data,
-			void *ctx);
-	struct cds_list_head node;	/* list of bytecode runtime in event */
-
-	/* End of base ABI. Fields below should be used after checking struct_size. */
-};
-
-/*
  * lttng_event structure is referred to by the tracing fast path. It
  * must be kept small.
  *
@@ -365,6 +311,14 @@ struct lttng_ust_event_common_private;
 enum lttng_ust_event_type {
 	LTTNG_UST_EVENT_TYPE_RECORDER = 0,
 	LTTNG_UST_EVENT_TYPE_NOTIFIER = 1,
+};
+
+/*
+ * Result of the run_filter() callback.
+ */
+enum lttng_ust_event_filter_result {
+	LTTNG_UST_EVENT_FILTER_ACCEPT = 0,
+	LTTNG_UST_EVENT_FILTER_REJECT = 1,
 };
 
 /*
@@ -391,9 +345,10 @@ struct lttng_ust_event_common {
 	void *child;					/* Pointer to child, for inheritance by aggregation. */
 
 	int enabled;
-	int has_enablers_without_bytecode;
-	/* list of struct lttng_ust_bytecode_runtime, sorted by seqnum */
-	struct cds_list_head filter_bytecode_runtime_head;
+	int eval_filter;				/* Need to evaluate filters */
+	int (*run_filter)(struct lttng_ust_event_common *event,
+		const char *stack_data,
+		void *filter_ctx);
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
@@ -426,6 +381,22 @@ struct lttng_ust_event_recorder {
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
+/*
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
+ */
+struct lttng_ust_notification_ctx {
+	uint32_t struct_size;		/* Size of this structure. */
+	int eval_capture;		/* Capture evaluation available. */
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
+};
+
 struct lttng_ust_event_notifier_private;
 
 /*
@@ -448,9 +419,10 @@ struct lttng_ust_event_notifier {
 	struct lttng_ust_event_common *parent;		/* Inheritance by aggregation. */
 	struct lttng_ust_event_notifier_private *priv;	/* Private event notifier interface */
 
+	int eval_capture;				/* Need to evaluate capture */
 	void (*notification_send)(struct lttng_ust_event_notifier *event_notifier,
-		const char *stack_data);
-	struct cds_list_head capture_bytecode_runtime_head;
+		const char *stack_data,
+		struct lttng_ust_notification_ctx *notif_ctx);
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };

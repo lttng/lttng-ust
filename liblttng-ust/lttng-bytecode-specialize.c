@@ -374,7 +374,7 @@ static int specialize_context_lookup_name(struct lttng_ust_ctx *ctx,
 	const char *name;
 
 	offset = ((struct get_symbol *) insn->data)->offset;
-	name = bytecode->p.priv->bc->bc.data + bytecode->p.priv->bc->bc.reloc_offset + offset;
+	name = bytecode->p.bc->bc.data + bytecode->p.bc->bc.reloc_offset + offset;
 	return lttng_get_context_index(ctx, name);
 }
 
@@ -503,7 +503,7 @@ static int specialize_app_context_lookup(struct lttng_ust_ctx **pctx,
 	ssize_t data_offset;
 
 	offset = ((struct get_symbol *) insn->data)->offset;
-	orig_name = runtime->p.priv->bc->bc.data + runtime->p.priv->bc->bc.reloc_offset + offset;
+	orig_name = runtime->p.bc->bc.data + runtime->p.bc->bc.reloc_offset + offset;
 	name = zmalloc(strlen(orig_name) + strlen("$app.") + 1);
 	if (!name) {
 		ret = -ENOMEM;
@@ -564,7 +564,7 @@ static int specialize_payload_lookup(struct lttng_ust_event_desc *event_desc,
 
 	nr_fields = event_desc->nr_fields;
 	offset = ((struct get_symbol *) insn->data)->offset;
-	name = runtime->p.priv->bc->bc.data + runtime->p.priv->bc->bc.reloc_offset + offset;
+	name = runtime->p.bc->bc.data + runtime->p.bc->bc.reloc_offset + offset;
 	for (i = 0; i < nr_fields; i++) {
 		field = event_desc->fields[i];
 		if (field->nofilter) {
@@ -631,7 +631,7 @@ int lttng_bytecode_specialize(struct lttng_ust_event_desc *event_desc,
 	int ret = -EINVAL;
 	struct vstack _stack;
 	struct vstack *stack = &_stack;
-	struct lttng_ust_ctx **pctx = bytecode->p.priv->pctx;
+	struct lttng_ust_ctx **pctx = bytecode->p.pctx;
 
 	vstack_init(stack);
 

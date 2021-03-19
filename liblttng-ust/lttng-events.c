@@ -750,9 +750,10 @@ int lttng_event_recorder_create(struct lttng_ust_event_desc *desc,
 	event_recorder->chan = chan;
 
 	/* Event will be enabled by enabler sync. */
+	event_recorder->parent->run_filter = lttng_ust_interpret_event_filter;
 	event_recorder->parent->enabled = 0;
 	event_recorder->parent->priv->registered = 0;
-	CDS_INIT_LIST_HEAD(&event_recorder->parent->filter_bytecode_runtime_head);
+	CDS_INIT_LIST_HEAD(&event_recorder->parent->priv->filter_bytecode_runtime_head);
 	CDS_INIT_LIST_HEAD(&event_recorder->parent->priv->enablers_ref_head);
 	event_recorder->parent->priv->desc = desc;
 
@@ -847,11 +848,12 @@ int lttng_event_notifier_create(struct lttng_ust_event_desc *desc,
 	event_notifier_priv->error_counter_index = error_counter_index;
 
 	/* Event notifier will be enabled by enabler sync. */
+	event_notifier->parent->run_filter = lttng_ust_interpret_event_filter;
 	event_notifier->parent->enabled = 0;
 	event_notifier_priv->parent.registered = 0;
 
-	CDS_INIT_LIST_HEAD(&event_notifier->parent->filter_bytecode_runtime_head);
-	CDS_INIT_LIST_HEAD(&event_notifier->capture_bytecode_runtime_head);
+	CDS_INIT_LIST_HEAD(&event_notifier->parent->priv->filter_bytecode_runtime_head);
+	CDS_INIT_LIST_HEAD(&event_notifier->priv->capture_bytecode_runtime_head);
 	CDS_INIT_LIST_HEAD(&event_notifier_priv->parent.enablers_ref_head);
 	event_notifier_priv->parent.desc = desc;
 	event_notifier->notification_send = lttng_event_notifier_notification_send;
@@ -1238,7 +1240,7 @@ int lttng_event_enabler_ref_event_recorders(struct lttng_event_enabler *event_en
 		 */
 		lttng_enabler_link_bytecode(event_recorder_priv->parent.desc,
 			&session->priv->ctx,
-			&event_recorder_priv->pub->parent->filter_bytecode_runtime_head,
+			&event_recorder_priv->parent.filter_bytecode_runtime_head,
 			&lttng_event_enabler_as_enabler(event_enabler)->filter_bytecode_head);
 
 		/* TODO: merge event context. */
@@ -1654,7 +1656,8 @@ void lttng_session_sync_event_enablers(struct lttng_ust_session *session)
 	cds_list_for_each_entry(event_recorder_priv, &session->priv->events_head, node) {
 		struct lttng_enabler_ref *enabler_ref;
 		struct lttng_ust_bytecode_runtime *runtime;
-		int enabled = 0, has_enablers_without_bytecode = 0;
+		int enabled = 0, has_enablers_without_filter_bytecode = 0;
+		int nr_filters = 0;
 
 		/* Enable events */
 		cds_list_for_each_entry(enabler_ref,
@@ -1689,18 +1692,21 @@ void lttng_session_sync_event_enablers(struct lttng_ust_session *session)
 				&event_recorder_priv->parent.enablers_ref_head, node) {
 			if (enabler_ref->ref->enabled
 					&& cds_list_empty(&enabler_ref->ref->filter_bytecode_head)) {
-				has_enablers_without_bytecode = 1;
+				has_enablers_without_filter_bytecode = 1;
 				break;
 			}
 		}
-		event_recorder_priv->pub->parent->has_enablers_without_bytecode =
-			has_enablers_without_bytecode;
+		event_recorder_priv->parent.has_enablers_without_filter_bytecode =
+			has_enablers_without_filter_bytecode;
 
 		/* Enable filters */
 		cds_list_for_each_entry(runtime,
-				&event_recorder_priv->pub->parent->filter_bytecode_runtime_head, node) {
+				&event_recorder_priv->parent.filter_bytecode_runtime_head, node) {
 			lttng_bytecode_sync_state(runtime);
+			nr_filters++;
 		}
+		CMM_STORE_SHARED(event_recorder_priv->parent.pub->eval_filter,
+			!(has_enablers_without_filter_bytecode || !nr_filters));
 	}
 	lttng_ust_tp_probe_prune_release_queue();
 }
@@ -1840,14 +1846,14 @@ int lttng_event_notifier_enabler_ref_event_notifiers(
 		 */
 		lttng_enabler_link_bytecode(event_notifier_priv->parent.desc,
 			&event_notifier_group->ctx,
-			&event_notifier_priv->pub->parent->filter_bytecode_runtime_head,
+			&event_notifier_priv->parent.filter_bytecode_runtime_head,
 			&lttng_event_notifier_enabler_as_enabler(event_notifier_enabler)->filter_bytecode_head);
 
 		/*
 		 * Link capture bytecodes if not linked yet.
 		 */
 		lttng_enabler_link_bytecode(event_notifier_priv->parent.desc,
-			&event_notifier_group->ctx, &event_notifier_priv->pub->capture_bytecode_runtime_head,
+			&event_notifier_group->ctx, &event_notifier_priv->capture_bytecode_runtime_head,
 			&event_notifier_enabler->capture_bytecode_head);
 
 		event_notifier_priv->num_captures = event_notifier_enabler->num_captures;
@@ -1872,7 +1878,8 @@ void lttng_event_notifier_group_sync_enablers(struct lttng_event_notifier_group 
 	cds_list_for_each_entry(event_notifier_priv, &event_notifier_group->event_notifiers_head, node) {
 		struct lttng_enabler_ref *enabler_ref;
 		struct lttng_ust_bytecode_runtime *runtime;
-		int enabled = 0, has_enablers_without_bytecode = 0;
+		int enabled = 0, has_enablers_without_filter_bytecode = 0;
+		int nr_filters = 0, nr_captures = 0;
 
 		/* Enable event_notifiers */
 		cds_list_for_each_entry(enabler_ref,
@@ -1901,24 +1908,30 @@ void lttng_event_notifier_group_sync_enablers(struct lttng_event_notifier_group 
 				&event_notifier_priv->parent.enablers_ref_head, node) {
 			if (enabler_ref->ref->enabled
 					&& cds_list_empty(&enabler_ref->ref->filter_bytecode_head)) {
-				has_enablers_without_bytecode = 1;
+				has_enablers_without_filter_bytecode = 1;
 				break;
 			}
 		}
-		event_notifier_priv->pub->parent->has_enablers_without_bytecode =
-			has_enablers_without_bytecode;
+		event_notifier_priv->parent.has_enablers_without_filter_bytecode =
+			has_enablers_without_filter_bytecode;
 
 		/* Enable filters */
 		cds_list_for_each_entry(runtime,
-				&event_notifier_priv->pub->parent->filter_bytecode_runtime_head, node) {
+				&event_notifier_priv->parent.filter_bytecode_runtime_head, node) {
 			lttng_bytecode_sync_state(runtime);
+			nr_filters++;
 		}
+		CMM_STORE_SHARED(event_notifier_priv->parent.pub->eval_filter,
+			!(has_enablers_without_filter_bytecode || !nr_filters));
 
 		/* Enable captures. */
 		cds_list_for_each_entry(runtime,
-				&event_notifier_priv->pub->capture_bytecode_runtime_head, node) {
+				&event_notifier_priv->capture_bytecode_runtime_head, node) {
 			lttng_bytecode_sync_state(runtime);
+			nr_captures++;
 		}
+		CMM_STORE_SHARED(event_notifier_priv->pub->eval_capture,
+				!!nr_captures);
 	}
 	lttng_ust_tp_probe_prune_release_queue();
 }

@@ -11,6 +11,7 @@
 #include <stdint.h>
 
 #include <lttng/urcu/pointer.h>
+#include <urcu/rculist.h>
 #include <lttng/ust-endian.h>
 #include <lttng/ust-events.h>
 #include "ust-events-internal.h"
@@ -711,7 +712,7 @@ int lttng_bytecode_interpret(struct lttng_ust_bytecode_runtime *ust_bytecode,
 		void *caller_ctx)
 {
 	struct bytecode_runtime *bytecode = caa_container_of(ust_bytecode, struct bytecode_runtime, p);
-	struct lttng_ust_ctx *ctx = lttng_ust_rcu_dereference(*ust_bytecode->priv->pctx);
+	struct lttng_ust_ctx *ctx = lttng_ust_rcu_dereference(*ust_bytecode->pctx);
 	void *pc, *next_pc, *start_pc;
 	int ret = -EINVAL, retval = 0;
 	struct estack _stack;
@@ -879,7 +880,7 @@ int lttng_bytecode_interpret(struct lttng_ust_bytecode_runtime *ust_bytecode,
 			case REG_DOUBLE:
 			case REG_STRING:
 			case REG_PTR:
-				if (ust_bytecode->priv->type != LTTNG_UST_BYTECODE_TYPE_CAPTURE) {
+				if (ust_bytecode->type != LTTNG_UST_BYTECODE_TYPE_CAPTURE) {
 					ret = -EINVAL;
 					goto end;
 				}
@@ -2480,7 +2481,7 @@ end:
 		return LTTNG_UST_BYTECODE_INTERPRETER_ERROR;
 
 	/* Prepare output. */
-	switch (ust_bytecode->priv->type) {
+	switch (ust_bytecode->type) {
 	case LTTNG_UST_BYTECODE_TYPE_FILTER:
 	{
 		struct lttng_ust_bytecode_filter_ctx *filter_ctx =
@@ -2503,6 +2504,33 @@ end:
 		return LTTNG_UST_BYTECODE_INTERPRETER_ERROR;
 	else
 		return LTTNG_UST_BYTECODE_INTERPRETER_OK;
+}
+
+/*
+ * Return LTTNG_UST_EVENT_FILTER_ACCEPT or LTTNG_UST_EVENT_FILTER_REJECT.
+ */
+int lttng_ust_interpret_event_filter(struct lttng_ust_event_common *event,
+		const char *interpreter_stack_data,
+		void *event_filter_ctx)
+{
+	struct lttng_ust_bytecode_runtime *filter_bc_runtime;
+	struct cds_list_head *filter_bytecode_runtime_head = &event->priv->filter_bytecode_runtime_head;
+	struct lttng_ust_bytecode_filter_ctx bytecode_filter_ctx;
+	bool filter_record = false;
+
+	cds_list_for_each_entry_rcu(filter_bc_runtime, filter_bytecode_runtime_head, node) {
+		if (caa_likely(filter_bc_runtime->interpreter_func(filter_bc_runtime,
+				interpreter_stack_data, &bytecode_filter_ctx) == LTTNG_UST_BYTECODE_INTERPRETER_OK)) {
+			if (caa_unlikely(bytecode_filter_ctx.result == LTTNG_UST_BYTECODE_FILTER_ACCEPT)) {
+				filter_record = true;
+				break;
+			}
+		}
+	}
+	if (filter_record)
+		return LTTNG_UST_EVENT_FILTER_ACCEPT;
+	else
+		return LTTNG_UST_EVENT_FILTER_REJECT;
 }
 
 #undef START_OP

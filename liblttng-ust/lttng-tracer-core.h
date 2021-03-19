@@ -31,6 +31,7 @@ struct lttng_ust_lib_ring_buffer_ctx;
 struct lttng_ust_ctx_value;
 struct lttng_ust_event_recorder;
 struct lttng_ust_event_notifier;
+struct lttng_ust_notification_ctx;
 
 __attribute__((visibility("hidden")))
 int ust_lock(void) __attribute__ ((warn_unused_result));
@@ -100,7 +101,8 @@ void lttng_ust_dummy_get_value(struct lttng_ust_ctx_field *field,
 __attribute__((visibility("hidden")))
 void lttng_event_notifier_notification_send(
 		struct lttng_ust_event_notifier *event_notifier,
-		const char *stack_data);
+		const char *stack_data,
+		struct lttng_ust_notification_ctx *notif_ctx);
 
 __attribute__((visibility("hidden")))
 struct lttng_counter_transport *lttng_counter_transport_find(const char *name);

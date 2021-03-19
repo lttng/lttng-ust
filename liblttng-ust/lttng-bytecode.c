@@ -276,7 +276,7 @@ int apply_context_reloc(struct bytecode_runtime *runtime,
 	struct load_op *op;
 	struct lttng_ust_ctx_field *ctx_field;
 	int idx;
-	struct lttng_ust_ctx **pctx = runtime->p.priv->pctx;
+	struct lttng_ust_ctx **pctx = runtime->p.pctx;
 
 	dbg_printf("Apply context reloc: %u %s\n", reloc_offset, context_name);
 
@@ -385,7 +385,7 @@ int bytecode_is_linked(struct lttng_ust_bytecode_node *bytecode,
 	struct lttng_ust_bytecode_runtime *bc_runtime;
 
 	cds_list_for_each_entry(bc_runtime, bytecode_runtime_head, node) {
-		if (bc_runtime->priv->bc == bytecode)
+		if (bc_runtime->bc == bytecode)
 			return 1;
 	}
 	return 0;
@@ -404,7 +404,6 @@ int link_bytecode(struct lttng_ust_event_desc *event_desc,
 {
 	int ret, offset, next_offset;
 	struct bytecode_runtime *runtime = NULL;
-	struct lttng_ust_bytecode_runtime_private *runtime_priv = NULL;
 	size_t runtime_alloc_len;
 
 	if (!bytecode)
@@ -422,19 +421,9 @@ int link_bytecode(struct lttng_ust_event_desc *event_desc,
 		ret = -ENOMEM;
 		goto alloc_error;
 	}
-	runtime_priv = zmalloc(sizeof(struct lttng_ust_bytecode_runtime_private));
-	if (!runtime_priv) {
-		free(runtime);
-		runtime = NULL;
-		ret = -ENOMEM;
-		goto alloc_error;
-	}
-	runtime->p.priv = runtime_priv;
-	runtime->p.struct_size = sizeof(struct lttng_ust_bytecode_runtime);
-	runtime_priv->pub = runtime;
-	runtime_priv->type = bytecode->type;
-	runtime_priv->bc = bytecode;
-	runtime_priv->pctx = ctx;
+	runtime->p.type = bytecode->type;
+	runtime->p.bc = bytecode;
+	runtime->p.pctx = ctx;
 	runtime->len = bytecode->bc.reloc_offset;
 	/* copy original bytecode */
 	memcpy(runtime->code, bytecode->bc.data, runtime->len);
@@ -468,14 +457,14 @@ int link_bytecode(struct lttng_ust_event_desc *event_desc,
 	}
 
 	runtime->p.interpreter_func = lttng_bytecode_interpret;
-	runtime->p.priv->link_failed = 0;
+	runtime->p.link_failed = 0;
 	cds_list_add_rcu(&runtime->p.node, insert_loc);
 	dbg_printf("Linking successful.\n");
 	return 0;
 
 link_error:
 	runtime->p.interpreter_func = lttng_bytecode_interpret_error;
-	runtime_priv->link_failed = 1;
+	runtime->p.link_failed = 1;
 	cds_list_add_rcu(&runtime->p.node, insert_loc);
 alloc_error:
 	dbg_printf("Linking failed.\n");
@@ -484,9 +473,9 @@ alloc_error:
 
 void lttng_bytecode_sync_state(struct lttng_ust_bytecode_runtime *runtime)
 {
-	struct lttng_ust_bytecode_node *bc = runtime->priv->bc;
+	struct lttng_ust_bytecode_node *bc = runtime->bc;
 
-	if (!bc->enabler->enabled || runtime->priv->link_failed)
+	if (!bc->enabler->enabled || runtime->link_failed)
 		runtime->interpreter_func = lttng_bytecode_interpret_error;
 	else
 		runtime->interpreter_func = lttng_bytecode_interpret;
@@ -520,7 +509,7 @@ void lttng_enabler_link_bytecode(struct lttng_ust_event_desc *event_desc,
 		 * linked with the instance.
 		 */
 		cds_list_for_each_entry(runtime, instance_bytecode_head, node) {
-			if (runtime->priv->bc == enabler_bc) {
+			if (runtime->bc == enabler_bc) {
 				found = 1;
 				break;
 			}
@@ -540,7 +529,7 @@ void lttng_enabler_link_bytecode(struct lttng_ust_event_desc *event_desc,
 		 */
 		cds_list_for_each_entry_reverse(runtime,
 				instance_bytecode_head, node) {
-			if (runtime->priv->bc->bc.seqnum <= enabler_bc->bc.seqnum) {
+			if (runtime->bc->bc.seqnum <= enabler_bc->bc.seqnum) {
 				/* insert here */
 				insert_loc = &runtime->node;
 				goto add_within;
@@ -576,12 +565,11 @@ void free_filter_runtime(struct cds_list_head *bytecode_runtime_head)
 	cds_list_for_each_entry_safe(runtime, tmp, bytecode_runtime_head,
 			p.node) {
 		free(runtime->data);
-		free(runtime->p.priv);
 		free(runtime);
 	}
 }
 
 void lttng_free_event_filter_runtime(struct lttng_ust_event_common *event)
 {
-	free_filter_runtime(&event->filter_bytecode_runtime_head);
+	free_filter_runtime(&event->priv->filter_bytecode_runtime_head);
 }

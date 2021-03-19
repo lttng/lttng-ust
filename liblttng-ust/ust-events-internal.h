@@ -111,6 +111,26 @@ struct lttng_ust_bytecode_node {
 	} bc;
 };
 
+/*
+ * Bytecode interpreter return value.
+ */
+enum lttng_ust_bytecode_interpreter_ret {
+	LTTNG_UST_BYTECODE_INTERPRETER_ERROR = -1,
+	LTTNG_UST_BYTECODE_INTERPRETER_OK = 0,
+};
+
+struct lttng_interpreter_output;
+struct lttng_ust_bytecode_runtime_private;
+
+enum lttng_ust_bytecode_filter_result {
+	LTTNG_UST_BYTECODE_FILTER_ACCEPT = 0,
+	LTTNG_UST_BYTECODE_FILTER_REJECT = 1,
+};
+
+struct lttng_ust_bytecode_filter_ctx {
+	enum lttng_ust_bytecode_filter_result result;
+};
+
 struct lttng_ust_excluder_node {
 	struct cds_list_head node;
 	struct lttng_enabler *enabler;
@@ -250,6 +270,10 @@ struct lttng_ust_event_common_private {
 	struct cds_list_head enablers_ref_head;
 	int registered;			/* has reg'd tracepoint probe */
 	uint64_t user_token;
+
+	int has_enablers_without_filter_bytecode;
+	/* list of struct lttng_ust_bytecode_runtime, sorted by seqnum */
+	struct cds_list_head filter_bytecode_runtime_head;
 };
 
 struct lttng_ust_event_recorder_private {
@@ -270,14 +294,18 @@ struct lttng_ust_event_notifier_private {
 	uint64_t error_counter_index;
 	struct cds_list_head node;		/* Event notifier list */
 	struct cds_hlist_node hlist;		/* Hash table of event notifiers */
+	struct cds_list_head capture_bytecode_runtime_head;
+
 };
 
-struct lttng_ust_bytecode_runtime_private {
-	struct bytecode_runtime *pub;	/* Public bytecode runtime interface */
-
+struct lttng_ust_bytecode_runtime {
 	enum lttng_ust_bytecode_type type;
 	struct lttng_ust_bytecode_node *bc;
 	int link_failed;
+	int (*interpreter_func)(struct lttng_ust_bytecode_runtime *bytecode_runtime,
+			const char *interpreter_stack_data,
+			void *ctx);
+	struct cds_list_head node;	/* list of bytecode runtime in event */
 	/*
 	 * Pointer to a URCU-protected pointer owned by an `struct
 	 * lttng_session`or `struct lttng_event_notifier_group`.
@@ -863,5 +891,10 @@ struct lttng_ust_channel_buffer *lttng_ust_alloc_channel_buffer(void);
 
 __attribute__((visibility("hidden")))
 void lttng_ust_free_channel_common(struct lttng_ust_channel_common *chan);
+
+__attribute__((visibility("hidden")))
+int lttng_ust_interpret_event_filter(struct lttng_ust_event_common *event,
+		const char *interpreter_stack_data,
+		void *filter_ctx);
 
 #endif /* _LTTNG_UST_EVENTS_INTERNAL_H */

@@ -796,6 +796,7 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 		char __interpreter_stack_data[2 * sizeof(unsigned long) * __num_fields]; \
 	} __stackvar;							      \
 	int __ret;							      \
+	bool __interpreter_stack_prepared = false;			      \
 									      \
 	if (0)								      \
 		(void) __dynamic_len_idx;	/* don't warn if unused */    \
@@ -821,24 +822,12 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 		return;							      \
 	if (caa_unlikely(!TP_RCU_LINK_TEST()))				      \
 		return;							      \
-	if (caa_unlikely(!cds_list_empty(&__event->filter_bytecode_runtime_head))) { \
-		struct lttng_ust_bytecode_runtime *__filter_bc_runtime;	      \
-		int __filter_record = __event->has_enablers_without_bytecode; \
-		struct lttng_ust_bytecode_filter_ctx filter_ctx;	      \
-									      \
-		filter_ctx.struct_size = sizeof(struct lttng_ust_bytecode_filter_ctx); \
+	if (caa_unlikely(CMM_ACCESS_ONCE(__event->eval_filter))) { \
 		__event_prepare_interpreter_stack__##_provider##___##_name(__stackvar.__interpreter_stack_data, \
 			_TP_ARGS_DATA_VAR(_args));			      \
-		tp_list_for_each_entry_rcu(__filter_bc_runtime, &__event->filter_bytecode_runtime_head, node) { \
-			if (caa_likely(__filter_bc_runtime->interpreter_func(__filter_bc_runtime, \
-				__stackvar.__interpreter_stack_data, &filter_ctx) == LTTNG_UST_BYTECODE_INTERPRETER_OK)) { \
-				if (caa_unlikely(filter_ctx.result == LTTNG_UST_BYTECODE_FILTER_ACCEPT)) { \
-					__filter_record = 1;		      \
-					break;				      \
-				}					      \
-			}						      \
-		}							      \
-		if (caa_likely(!__filter_record))			      \
+		__interpreter_stack_prepared = true;			      \
+		if (caa_likely(__event->run_filter(__event, \
+				__stackvar.__interpreter_stack_data, NULL) != LTTNG_UST_EVENT_FILTER_ACCEPT)) \
 			return;						      \
 	}								      \
 	switch (__event->type) {					      \
@@ -869,13 +858,18 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 	case LTTNG_UST_EVENT_TYPE_NOTIFIER:				      \
 	{								      \
 		struct lttng_ust_event_notifier *__event_notifier = (struct lttng_ust_event_notifier *) __event->child; \
+		struct lttng_ust_notification_ctx __notif_ctx;		      \
 									      \
-		if (caa_unlikely(!cds_list_empty(&__event_notifier->capture_bytecode_runtime_head))) \
+		__notif_ctx.struct_size = sizeof(struct lttng_ust_notification_ctx); \
+		__notif_ctx.eval_capture = CMM_ACCESS_ONCE(__event_notifier->eval_capture); \
+									      \
+		if (caa_unlikely(!__interpreter_stack_prepared && __notif_ctx.eval_capture)) \
 			__event_prepare_interpreter_stack__##_provider##___##_name(__stackvar.__interpreter_stack_data, \
 				_TP_ARGS_DATA_VAR(_args));		      \
 									      \
 		__event_notifier->notification_send(__event_notifier,	      \
-				__stackvar.__interpreter_stack_data);	      \
+				__stackvar.__interpreter_stack_data,	      \
+				&__notif_ctx);				      \
 		break;							      \
 	}								      \
 	}								      \
