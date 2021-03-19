@@ -698,12 +698,13 @@ again:
 }
 
 /*
- * For `output` equal to NULL:
- *  Return 0 (discard), or raise the 0x1 flag (log event).
- *  Currently, other flags are kept for future extensions and have no
- *  effect.
- * For `output` not equal to NULL:
- *  Return 0 on success, negative error value on error.
+ * Return LTTNG_UST_BYTECODE_INTERPRETER_OK on success.
+ * Return LTTNG_UST_BYTECODE_INTERPRETER_ERROR on error.
+ *
+ * For FILTER bytecode: expect a struct lttng_ust_bytecode_filter_ctx *
+ * as @ctx argument.
+ * For CAPTURE bytecode: expect a struct lttng_interpreter_output *
+ * as @ctx argument.
  */
 int lttng_bytecode_interpret(struct lttng_ust_bytecode_runtime *ust_bytecode,
 		const char *interpreter_stack_data,
