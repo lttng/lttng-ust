@@ -21,8 +21,8 @@ autom4te.cache/
 /include/config.h
 /include/config.h.in
 /include/stamp-h1
-/include/lttng/config.h
 /include/lttng/stamp-h2
+/include/lttng/stamp-h3
 /include/lttng/ust-version.h
 /include/lttng/ust-config.h
 /config/ar-lib
