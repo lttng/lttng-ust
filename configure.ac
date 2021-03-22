@@ -41,7 +41,6 @@ AC_INIT([lttng-ust],[ust_version],[mathieu dot desnoyers at efficios dot com],[]
 AC_CONFIG_HEADERS([include/config.h include/lttng/ust-config.h include/lttng/ust-version.h])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_SRCDIR([include/lttng/tracepoint.h])
 
 AC_CANONICAL_TARGET
 AC_CANONICAL_HOST
@@ -64,7 +63,7 @@ AM_SILENT_RULES([yes])
 
 # Set os specific options
 AS_CASE([$host_os],
-  [freebsd*], [NO_NUMA=1]
+  [freebsd*], [AE_FEATURE_DISABLE([numa])]
 )
 
 # Set architecture specific options
@@ -79,9 +78,7 @@ AS_CASE([$host_cpu],
   [powerpc64le], [],
   [s390], [],
   [s390x], [],
-  [arm*], [
-    NO_NUMA=1
-    ],
+  [arm*], [AE_FEATURE_DISABLE([numa])],
   [aarch64*], [],
   [mips*], [],
   [tile*], [],
@@ -262,15 +259,197 @@ AC_CHECK_LIB([$libdl_name], [dlmopen], [
 PKG_CHECK_MODULES([URCU], [liburcu >= 0.12])
 
 
-AM_CONDITIONAL([HAVE_CMAKE], [test "x$CMAKE" != "x"])
+##                 ##
+## User variables  ##
+##                 ##
 
-AC_MSG_CHECKING([whether shared libraries are enabled])
-AS_IF([test "x$enable_shared" = "xyes"], [
-	AC_MSG_RESULT([yes])
+# Additional variables captured during ./configure
+
+AC_ARG_VAR([CLASSPATH], [Java class path])
+
+
+##                              ##
+## Optionnal features selection ##
+##                              ##
+
+# numa integration
+# Enabled by default, except on some platforms
+AE_FEATURE_DEFAULT_ENABLE
+AE_FEATURE([numa],[disable NUMA support])
+
+# Java JNI interface library
+# Disabled by default
+AE_FEATURE_DEFAULT_DISABLE
+AE_FEATURE([jni-interface], [build JNI interface between C and Java])
+
+# Build the Java Logging API agent
+# Disabled by default
+AE_FEATURE_DEFAULT_DISABLE
+AE_FEATURE([java-agent-jul],[build the LTTng UST Java agent with JUL support])
+
+# Build the Java Log4j agent
+# Disabled by default
+AE_FEATURE_DEFAULT_DISABLE
+AE_FEATURE([java-agent-log4j],[build the LTTng UST Java agent with Log4j support])
+
+# Build both Java agents
+# Disabled by default
+AE_FEATURE_DEFAULT_DISABLE
+AE_FEATURE([java-agent-all],[build the LTTng UST Java agent with all supported backends])
+
+# Build the Python agent
+# Disabled by default
+AE_FEATURE_DEFAULT_DISABLE
+AE_FEATURE([python-agent],[build the LTTng UST Python agent])
+
+# Build the examples
+# Disabled by default
+AE_FEATURE_DEFAULT_ENABLE
+AE_FEATURE([examples],[Do not build and install examples])
+
+# Man pages
+# Enabled by default
+AE_FEATURE_DEFAULT_ENABLE
+AE_FEATURE([man-pages],[Do not build and install man pages (already built in a distributed tarball)])
+
+# Systemtap sdt.h integration
+# Disabled by default
+AC_ARG_WITH([sdt],
+  [AS_HELP_STRING([--with-sdt], [provide SystemTap integration via sdt.h [default=no]])]
+)
+
+# Override the default runtime directory
+AC_ARG_WITH([lttng-system-rundir], [
+AS_HELP_STRING([--with-lttng-system-rundir], [Location of the system directory where LTTng-UST expects the system-wide lttng-sessiond runtime files. The default is "/var/run/lttng".]),
 ], [
-	AC_MSG_RESULT([no])
-	AC_MSG_ERROR([LTTng-UST requires shared libraries to be enabled])
+  lttng_system_rundir="$withval"
+], [
+  lttng_system_rundir="/var/run/lttng"
 ])
+
+# Add the java command line arguments like '--wit-java-prefix'
+AX_JAVA_OPTIONS
+
+
+##                                          ##
+## Check for conflicting features selection ##
+##                                          ##
+
+AE_IF_FEATURE_DISABLED([shared], [
+  AC_MSG_ERROR(LTTng-UST requires shared libraries to be enabled)
+])
+
+AE_IF_FEATURE_ENABLED([java-agent-all], [
+  AE_FEATURE_ENABLE([java-agent-jul])
+  AE_FEATURE_ENABLE([java-agent-log4j])
+])
+
+
+##                                          ##
+## Check for optional features dependencies ##
+##                                          ##
+
+# The numa integration requires libnuma
+AE_IF_FEATURE_ENABLED([numa], [
+  AC_CHECK_LIB([numa], [numa_available], [], [
+    AC_MSG_ERROR([dnl
+libnuma is not available. Please either install it (e.g. libnuma-dev) or use
+[LDFLAGS]=-Ldir to specify the right location, or use --disable-numa configure
+argument to disable NUMA support.
+    ])
+  ])
+])
+
+# The JNI interface and Java Agents require a working Java JDK
+AS_IF([AE_IS_FEATURE_ENABLED([jni-interface]) || AE_IS_FEATURE_ENABLED([java-agent-jul]) || AE_IS_FEATURE_ENABLED([java-agent-log4j])], [
+  # We detected a java compiler earlier, make sure it works
+  AX_PROG_JAVAC_WORKS
+
+  # Get the CPPFLAGS required to build jni libaries
+  AX_JNI_INCLUDE_DIR
+  for jni_include_dir in $JNI_INCLUDE_DIRS; do
+    JNI_CPPFLAGS="$JNI_CPPFLAGS -I$jni_include_dir"
+  done
+
+  # Check for javah and jni.h
+  saved_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS $JNI_CPPFLAGS"
+  AX_PROG_JAVAH
+  CPPFLAGS="$saved_CPPFLAGS"
+])
+
+# The log4j agent requires the log4j jar in the classpath
+AE_IF_FEATURE_ENABLED([java-agent-log4j], [
+  AX_CHECK_CLASS([org.apache.log4j.Logger])
+  AS_IF([test "x$ac_cv_class_org_apache_log4j_Logger" = "xno"], [
+    AC_MSG_ERROR([dnl
+The UST Java agent support for log4j was requested but the Log4j classes were
+not found. Please specify the location of the Log4j jar via the Java CLASSPATH
+environment variable, e.g. ./configure CLASSPATH="/path/to/log4j.jar"
+
+Current CLASSPATH: "$CLASSPATH"
+    ])
+  ])
+])
+
+# The python agent requires a python interpreter
+AE_IF_FEATURE_ENABLED([python-agent], [
+  AS_IF([test "x$PYTHON" = "x"], [
+    AC_MSG_ERROR([dnl
+Cannot find a suitable python interpreter. You can override it with the PYTHON
+environment variable.
+    ])
+  ])
+])
+
+# Check for asciidoc and xmlto if we enabled building the man pages.
+AE_IF_FEATURE_ENABLED([man-pages], [
+  AS_IF([test "x$ASCIIDOC" = "x" || test "x$XMLTO" = "x"], [
+    AE_IF_IN_GIT_REPO([
+      # This is an error because we're in the Git repo, which
+      # means the man pages are not already generated for us,
+      # thus asciidoc/xmlto are required because we were asked
+      # to build the man pages.
+      AC_MSG_ERROR([dnl
+Both asciidoc and xmlto are needed to build the LTTng-UST man pages. Use
+--disable-man-pages to disable building the man pages, in which case
+they will not be installed.
+      ])
+    ], [
+      # Only warn here: since we're in the tarball, the man
+      # pages should already be generated at this point, thus
+      # asciidoc/xmlto are not strictly required.
+      warn_prebuilt_man_pages=yes
+    ])
+  ], [
+    have_asciidoc_xmlto=yes
+  ])
+])
+
+AS_IF([test "x$with_sdt" = "xyes"], [
+  AC_MSG_CHECKING([STAP_PROBEV()])
+  AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+    #define SDT_USE_VARIADIC
+    #include <sys/sdt.h>
+    void fct(void)
+    {
+      STAP_PROBEV(provider,name,1,2,3,4,5,6,7,8,9,10);
+    }
+  ]])], [
+    AC_MSG_RESULT([yes])
+    AC_DEFINE([LTTNG_UST_HAVE_SDT_INTEGRATION], [1], [SystemTap integration via sdt.h])
+  ], [
+    AC_MSG_RESULT([no])
+    AC_MSG_ERROR([dnl
+The sdt.h integration was requested but the STAP_PROBEV define cannot be used.
+Make sure it is installed, and up to date, or use CPPFLAGS=-I/path/ to specify
+a non-standard path to sys/sdt.h
+    ])
+  ])
+])
+
+
+AM_CONDITIONAL([HAVE_CMAKE], [test "x$CMAKE" != "x"])
 
 # Configuration options, which will be installed in the config.h
 AH_TEMPLATE([LTTNG_UST_HAVE_SDT_INTEGRATION], [SystemTap integration via sdt.h])
@@ -278,191 +457,27 @@ AH_TEMPLATE([LTTNG_UST_HAVE_SDT_INTEGRATION], [SystemTap integration via sdt.h])
 
 AM_CONDITIONAL([ENABLE_UST_DL], [test "x${ac_cv_have_decl_RTLD_DI_LINKMAP}" = "xyes"])
 
-# numa.h integration
-AS_IF([test "x$NO_NUMA" = "x1"],[
-      AS_IF([test "x$enable_numa" = "x" ], [enable_numa=no])
-])
 
-AC_ARG_ENABLE([numa], [
-AS_HELP_STRING([--disable-numa], [disable NUMA support])
-], [
-	enable_numa=$enableval
-], [
-	enable_numa=yes
-])
-
-AS_IF([test "x$enable_numa" = "xyes"], [
-	# numa - check that numa lib is available
-	AC_CHECK_LIB([numa], [numa_available], [],
-[AC_MSG_ERROR([libnuma is not available. Please either install it (e.g. libnuma-dev) or use [LDFLAGS]=-Ldir to specify the right location, or use --disable-numa configure argument to disable NUMA support.])])
-	have_libnuma=yes
-])
 AM_CONDITIONAL([ENABLE_NUMA], [test "x$have_libnuma" = "xyes"])
 
 AM_CONDITIONAL([HAVE_PERF_EVENT], [test "x$ac_cv_header_linux_perf_event_h" = "xyes"])
 
-# Check for JNI header files if requested
-AC_ARG_ENABLE([jni-interface], [
-AS_HELP_STRING([--enable-jni-interface], [build JNI interface between C and Java. Needs Java include files [default=no]])
-], [
-	jni_interface=$enableval
-], [
-	jni_interface=no
-])
-
 AM_CONDITIONAL([ENABLE_JNI_INTERFACE], [test "x$jni_interface" = "xyes"])
-
-
-AC_ARG_ENABLE([java-agent-jul], [
-AS_HELP_STRING([--enable-java-agent-jul], [build the LTTng UST Java agent with JUL support [default=no]])
-], [
-	java_agent_jul=$enableval
-], [
-	java_agent_jul=no
-])
-
-AC_ARG_ENABLE([java-agent-log4j], [
-AS_HELP_STRING([--enable-java-agent-log4j], [build the LTTng UST Java agent with Log4j support [default=no]])
-], [
-	java_agent_log4j=$enableval
-], [
-	java_agent_log4j=no
-])
-
-AC_ARG_ENABLE([java-agent-all], [
-AS_HELP_STRING([--enable-java-agent-all], [build the LTTng UST Java agent with all supported backends [default=no]])
-], [
-	java_agent_jul=$enableval
-	java_agent_log4j=$enableval
-], [:])
-
 AM_CONDITIONAL([ENABLE_JAVA_AGENT], [test "x$java_agent_jul" = "xyes" || test "x$java_agent_log4j" = "xyes"])
 AM_CONDITIONAL([ENABLE_JAVA_AGENT_WITH_JUL], [test "x$java_agent_jul" = "xyes"])
 AM_CONDITIONAL([ENABLE_JAVA_AGENT_WITH_LOG4J], [test "x$java_agent_log4j" = "xyes"])
 
-AS_IF([test "x$jni_interface" = "xyes" || test "x$java_agent_jul" = "xyes" || test "x$java_agent_log4j" = "xyes"], [
-	AX_JAVA_OPTIONS
-	AC_ARG_VAR([CLASSPATH], [Java class path])
-
-	AX_JNI_INCLUDE_DIR
-	for JNI_INCLUDE_DIR in $JNI_INCLUDE_DIRS
-	do
-		JNI_CPPFLAGS="$JNI_CPPFLAGS -I$JNI_INCLUDE_DIR"
-	done
-
-	saved_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS $JNI_CPPFLAGS"
-	AX_PROG_JAVAH
-	CPPFLAGS="$saved_CPPFLAGS"
-])
-
 AM_CONDITIONAL([HAVE_JAVAH], [test "x$JAVAH" != "x"])
 
-AS_IF([test "x$java_agent_log4j" = "xyes"], [
-	AX_CHECK_CLASSPATH
-	AX_CHECK_CLASS([org.apache.log4j.Logger])
-	AS_IF([test "x$ac_cv_class_org_apache_log4j_Logger" = "xno"], [
-		AC_MSG_ERROR([The UST Java agent support for log4j was requested but the Log4j classes were not found. Please specify the location of the Log4j jar via the Java CLASSPATH e.g: export CLASSPATH="/path/to/log4j.jar"])
-	])
-])
-
-# Option to build the python agent
-AC_ARG_ENABLE([python-agent], [
-AS_HELP_STRING([--enable-python-agent], [build the LTTng UST Python agent [default=no]])
-], [
-	python_agent=$enableval
-], [:])
 AM_CONDITIONAL([ENABLE_PYTHON_AGENT], [test "x$python_agent" = "xyes"])
 
-# sdt.h integration
-AC_ARG_WITH([sdt], [
-AS_HELP_STRING([--with-sdt], [provide SystemTap integration via sdt.h [default=no]])
-], [
-	with_sdt=$withval
-], [
-	with_sdt="no"
-])
-
-AS_IF([test "x$with_sdt" = "xyes"], [
-	AC_MSG_CHECKING([STAP_PROBEV()])
-	AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
-		#define SDT_USE_VARIADIC
-		#include <sys/sdt.h>
-		void fct(void)
-		{
-			STAP_PROBEV(provider,name,1,2,3,4,5,6,7,8,9,10);
-		}
-	]])], [
-		AC_MSG_RESULT([yes])
-		AC_DEFINE([LTTNG_UST_HAVE_SDT_INTEGRATION], [1])
-	], [
-		AC_MSG_RESULT([no])
-		AC_MSG_ERROR([The sdt.h integration was requested but the STAP_PROBEV define cannot be used. Make sure it is installed, and up to date, or use CPPFLAGS=-I/path/ to specify a non-standard path to sys/sdt.h])
-	])
-])
-
-AC_ARG_WITH([lttng-system-rundir], [
-AS_HELP_STRING([--with-lttng-system-rundir], [Location of the system directory where LTTng-UST expects the system-wide lttng-sessiond runtime files. The default is "/var/run/lttng".]),
-], [
-	lttng_system_rundir="$withval"
-], [
-	lttng_system_rundir="/var/run/lttng"
-])
 AC_DEFINE_UNQUOTED([LTTNG_SYSTEM_RUNDIR], ["$lttng_system_rundir"],
 		[LTTng system runtime directory])
 
 AM_CONDITIONAL([ENABLE_GEN_TP_EXAMPLES], [test "x$PYTHON" != "x"])
 
-# Enable building examples
-AC_ARG_ENABLE(
-	examples,
-	AS_HELP_STRING(
-		[--disable-examples],
-		[Do not build and install examples]
-	),
-	[enable_examples=$enableval],
-	[enable_examples=yes]
-)
 
 AM_CONDITIONAL([ENABLE_EXAMPLES], [test "x$enable_examples" != "xno"])
-
-# Enable building man pages (user's intention).
-AC_ARG_ENABLE(
-	man-pages,
-	AS_HELP_STRING(
-		[--disable-man-pages],
-		[Do not build and install man pages (already built in a distributed tarball)]
-	),
-	[man_pages_opt=$enableval],
-	[man_pages_opt=yes]
-)
-
-# Check for asciidoc and xmlto if we enabled building the man pages.
-have_asciidoc_xmlto=no
-warn_prebuilt_man_pages=no
-
-AS_IF([test "x$man_pages_opt" = "xyes"], [
-	AS_IF([test "x$ASCIIDOC" = "x" || test "x$XMLTO" = "x"], [
-		AE_IF_IN_GIT_REPO([
-			# This is an error because we're in the Git repo, which
-			# means the man pages are not already generated for us,
-			# thus asciidoc/xmlto are required because we were asked
-			# to build the man pages.
-			AC_MSG_ERROR([
-Both asciidoc and xmlto are needed to build the LTTng-UST man pages. Use
---disable-man-pages to disable building the man pages, in which case
-they will not be installed.
-			])
-		], [
-			# Only warn here: since we're in the tarball, the man
-			# pages should already be generated at this point, thus
-			# asciidoc/xmlto are not strictly required.
-			warn_prebuilt_man_pages=yes
-		])
-	], [
-		have_asciidoc_xmlto=yes
-	])
-])
 
 # Export man page build condition: build the man pages if the user
 # asked for it, and if the tools are available.
@@ -598,47 +613,47 @@ PPRINT_SET_INDENT(1)
 test "x$with_sdt" = "xyes" && value=1 || value=0
 PPRINT_PROP_BOOL_CUSTOM([sdt.h integration], $value, [use --with-sdt])
 
-test "x$java_agent_jul" = xyes && value=1 || value=0
+AE_IS_FEATURE_ENABLED([java-agent-jul]) && value=1 || value=0
 PPRINT_PROP_BOOL_CUSTOM([Java agent (JUL support)], $value, [use --enable-java-agent-jul])
 
-test "x$java_agent_log4j" = xyes && value=1 || value=0
+AE_IS_FEATURE_ENABLED([java-agent-log4j]) && value=1 || value=0
 PPRINT_PROP_BOOL_CUSTOM([Java agent (Log4j support)], $value, [use --enable-java-agent-log4j])
 
-test "x$jni_interface" = xyes && value=1 || value=0
+AE_IS_FEATURE_ENABLED([jni-interface]) && value=1 || value=0
 PPRINT_PROP_BOOL_CUSTOM([JNI interface (JNI)], $value, [use --enable-jni-interface])
 
-test "x$python_agent" = xyes && value=1 || value=0
+AE_IS_FEATURE_ENABLED([python-agent]) && value=1 || value=0
 PPRINT_PROP_BOOL_CUSTOM([Python agent], $value, [use --enable-python-agent])
 
 test "x$ac_cv_header_linux_perf_event_h" = "xyes" && value=1 || value=0
 PPRINT_PROP_BOOL_CUSTOM([Perf event integration], $value)
 
-test "x$enable_numa" = xyes && value=1 || value=0
+AE_IS_FEATURE_ENABLED([numa]) && value=1 || value=0
 PPRINT_PROP_BOOL([NUMA], $value)
 
 AS_ECHO
 PPRINT_SET_INDENT(0)
 
-test "x$enable_examples" = xyes && value=1 || value=0
+AE_IS_FEATURE_ENABLED([examples]) && value=1 || value=0
 PPRINT_PROP_BOOL([Build and install examples], $value, $PPRINT_COLOR_SUBTITLE)
 
 # man pages build enabled/disabled
 m4_pushdef([build_man_pages_msg], [Build and install man pages])
 
-AS_IF([test "x$man_pages_opt" != "xno"], [
-	AE_IF_IN_GIT_REPO([
-		PPRINT_PROP_BOOL([build_man_pages_msg], 1, $PPRINT_COLOR_SUBTITLE)
-	], [
-		AS_IF([test "x$have_asciidoc_xmlto" = "xyes"], [
-			PPRINT_PROP_BOOL([build_man_pages_msg], 1, $PPRINT_COLOR_SUBTITLE)
-		], [
-			PPRINT_PROP_STRING([build_man_pages_msg],
-				[${PPRINT_COLOR_BLDGRN}yes (already built)],
-				$PPRINT_COLOR_SUBTITLE)
-		])
-	])
+AE_IF_FEATURE_ENABLED([man-pages], [
+  AE_IF_IN_GIT_REPO([
+    PPRINT_PROP_BOOL([build_man_pages_msg], 1, $PPRINT_COLOR_SUBTITLE)
+  ], [
+    AS_IF([test "x$have_asciidoc_xmlto" = "xyes"], [
+      PPRINT_PROP_BOOL([build_man_pages_msg], 1, $PPRINT_COLOR_SUBTITLE)
+    ], [
+      PPRINT_PROP_STRING([build_man_pages_msg],
+        [${PPRINT_COLOR_BLDGRN}yes (already built)],
+        $PPRINT_COLOR_SUBTITLE)
+    ])
+  ])
 ], [
-	PPRINT_PROP_BOOL([build_man_pages_msg], 0, $PPRINT_COLOR_SUBTITLE)
+  PPRINT_PROP_BOOL([build_man_pages_msg], 0, $PPRINT_COLOR_SUBTITLE)
 ])
 
 m4_popdef([build_man_pages_msg])
@@ -662,8 +677,9 @@ PPRINT_PROP_STRING([lttng-sessiond rundir], [$lttng_system_rundir])
 PPRINT_SET_INDENT(0)
 
 AS_IF([test "x$warn_prebuilt_man_pages" = "xyes" ], [
-	AS_ECHO
-	PPRINT_WARN([Both asciidoc and xmlto are needed to build the LTTng-UST man pages.
+  AS_ECHO
+  PPRINT_WARN([dnl
+Both asciidoc and xmlto are needed to build the LTTng-UST man pages.
 
 Note that the man pages are already built in this distribution tarball,
 therefore asciidoc and xmlto are only needed if you intend to modify
