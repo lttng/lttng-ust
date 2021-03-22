@@ -295,7 +295,6 @@ struct lttng_ust_event_notifier_private {
 	struct cds_list_head node;		/* Event notifier list */
 	struct cds_hlist_node hlist;		/* Hash table of event notifiers */
 	struct cds_list_head capture_bytecode_runtime_head;
-
 };
 
 struct lttng_ust_bytecode_runtime {
