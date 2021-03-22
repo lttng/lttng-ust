@@ -244,9 +244,23 @@ int apply_field_reloc(const struct lttng_ust_event_desc *event_desc,
 			op->op = BYTECODE_OP_LOAD_FIELD_REF_S64;
 			break;
 		case lttng_ust_type_array:
-		case lttng_ust_type_sequence:
+		{
+			struct lttng_ust_type_array *array = (struct lttng_ust_type_array *) field->type;
+
+			if (array->encoding == lttng_ust_string_encoding_none)
+				return -EINVAL;
 			op->op = BYTECODE_OP_LOAD_FIELD_REF_SEQUENCE;
 			break;
+		}
+		case lttng_ust_type_sequence:
+		{
+			struct lttng_ust_type_sequence *sequence = (struct lttng_ust_type_sequence *) field->type;
+
+			if (sequence->encoding == lttng_ust_string_encoding_none)
+				return -EINVAL;
+			op->op = BYTECODE_OP_LOAD_FIELD_REF_SEQUENCE;
+			break;
+		}
 		case lttng_ust_type_string:
 			op->op = BYTECODE_OP_LOAD_FIELD_REF_STRING;
 			break;
@@ -316,10 +330,26 @@ int apply_context_reloc(struct bytecode_runtime *runtime,
 		case lttng_ust_type_enum:
 			op->op = BYTECODE_OP_GET_CONTEXT_REF_S64;
 			break;
-			/* Sequence and array supported as string */
-		case lttng_ust_type_string:
+			/* Sequence and array supported only as string */
 		case lttng_ust_type_array:
+		{
+			struct lttng_ust_type_array *array = (struct lttng_ust_type_array *) ctx_field->event_field->type;
+
+			if (array->encoding == lttng_ust_string_encoding_none)
+				return -EINVAL;
+			op->op = BYTECODE_OP_GET_CONTEXT_REF_STRING;
+			break;
+		}
 		case lttng_ust_type_sequence:
+		{
+			struct lttng_ust_type_sequence *sequence = (struct lttng_ust_type_sequence *) ctx_field->event_field->type;
+
+			if (sequence->encoding == lttng_ust_string_encoding_none)
+				return -EINVAL;
+			op->op = BYTECODE_OP_GET_CONTEXT_REF_STRING;
+			break;
+		}
+		case lttng_ust_type_string:
 			op->op = BYTECODE_OP_GET_CONTEXT_REF_STRING;
 			break;
 		case lttng_ust_type_float:
