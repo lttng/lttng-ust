@@ -423,11 +423,6 @@ AC_ARG_ENABLE(
 
 AM_CONDITIONAL([ENABLE_EXAMPLES], [test "x$enable_examples" != "xno"])
 
-# Set $IN_GIT_REPO if we're in the Git repository; the `bootstrap` file
-# is not distributed in tarballs.
-AS_IF([test -f "$srcdir/bootstrap"], [in_git_repo=yes], [in_git_repo=no])
-AM_CONDITIONAL([IN_GIT_REPO], [test "x$in_git_repo" = "xyes"])
-
 # Enable building man pages (user's intention).
 AC_ARG_ENABLE(
 	man-pages,
@@ -448,7 +443,7 @@ AS_IF([test "x$man_pages_opt" = "xyes"], [
 	AC_PATH_PROG([XMLTO], [xmlto], [no])
 
 	AS_IF([test "x$ASCIIDOC" = "xno" || test "x$XMLTO" = "xno"], [
-		AS_IF([test "x$in_git_repo" = "xyes"], [
+		AE_IF_IN_GIT_REPO([
 			# This is an error because we're in the Git repo, which
 			# means the man pages are not already generated for us,
 			# thus asciidoc/xmlto are required because we were asked
@@ -631,7 +626,7 @@ PPRINT_PROP_BOOL([Build and install examples], $value, $PPRINT_COLOR_SUBTITLE)
 m4_pushdef([build_man_pages_msg], [Build and install man pages])
 
 AS_IF([test "x$man_pages_opt" != "xno"], [
-	AS_IF([test "x$in_git_repo" = "xyes"], [
+	AE_IF_IN_GIT_REPO([
 		PPRINT_PROP_BOOL([build_man_pages_msg], 1, $PPRINT_COLOR_SUBTITLE)
 	], [
 		AS_IF([test "x$have_asciidoc_xmlto" = "xyes"], [
