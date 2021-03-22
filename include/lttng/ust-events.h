@@ -451,6 +451,8 @@ struct lttng_ust_channel_ops {
 			const void *src, size_t len);
 	void (*event_strcpy)(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			const char *src, size_t len);
+	void (*event_strcpy_pad)(struct lttng_ust_lib_ring_buffer_ctx *ctx,
+			const char *src, size_t len);
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };

@@ -763,6 +763,13 @@ void lttng_event_strcpy(struct lttng_ust_lib_ring_buffer_ctx *ctx, const char *s
 	lib_ring_buffer_strcpy(&client_config, ctx, src, len, '#');
 }
 
+static
+void lttng_event_strcpy_pad(struct lttng_ust_lib_ring_buffer_ctx *ctx,
+		     const char *src, size_t len)
+{
+	lib_ring_buffer_strcpy(&client_config, ctx, src, len, '\0');
+}
+
 #if 0
 static
 wait_queue_head_t *lttng_get_reader_wait_queue(struct lttng_ust_lib_ring_buffer_channel *chan)
@@ -826,6 +833,7 @@ static struct lttng_transport lttng_relay_transport = {
 		.event_commit = lttng_event_commit,
 		.event_write = lttng_event_write,
 		.event_strcpy = lttng_event_strcpy,
+		.event_strcpy_pad = lttng_event_strcpy_pad,
 	},
 	.client_config = &client_config,
 };
