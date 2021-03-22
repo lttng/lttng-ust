@@ -166,6 +166,70 @@ AX_PROG_JAR
 LT_INIT([disable-static])
 
 
+##                ##
+## Library checks ##
+##                ##
+
+AC_FUNC_CHOWN
+AC_FUNC_FORK
+AC_FUNC_MMAP
+AC_FUNC_STRERROR_R
+AC_FUNC_STRNLEN
+AC_CHECK_FUNCS([ \
+  atexit \
+  clock_gettime \
+  ftruncate \
+  getpagesize \
+  gettimeofday \
+  localeconv \
+  memchr \
+  memmove \
+  memset \
+  mkdir \
+  munmap \
+  realpath \
+  sched_getcpu \
+  socket \
+  strchr \
+  strdup \
+  strerror \
+  strtol \
+  strtoul \
+  sysconf \
+])
+
+# AC_FUNC_MALLOC causes problems when cross-compiling.
+#AC_FUNC_MALLOC
+#AC_FUNC_REALLOC
+
+# Check for pthread_setname_np and its signature
+LTTNG_PTHREAD_SETNAME_NP
+LTTNG_PTHREAD_GETNAME_NP
+
+# Check dor dlopen() in -ldl or -lc
+AC_CHECK_LIB([dl], [dlopen], [
+  libdl_name=dl
+  DL_LIBS="-ldl"
+], [
+  # dlopen not found in libdl, check in libc
+  AC_CHECK_LIB([c], [dlopen], [
+    libdl_name=c
+    DL_LIBS="-lc"
+  ], [
+    AC_MSG_ERROR([Cannot find dlopen in libdl nor libc. Use [LDFLAGS]=-Ldir to specify their location.])
+  ])
+])
+AC_SUBST(DL_LIBS)
+
+# Check if libdl has dlmopen()
+AC_CHECK_LIB([$libdl_name], [dlmopen], [
+  AC_DEFINE([HAVE_DLMOPEN], [1], [Define to 1 if dlmopen is available.])
+])
+
+# Require URCU >= 0.12 for DEFINE_URCU_TLS_INIT
+PKG_CHECK_MODULES([URCU], [liburcu >= 0.12])
+
+
 AM_CONDITIONAL([HAVE_CMAKE], [test "x$CMAKE" != "x"])
 
 AC_MSG_CHECKING([whether shared libraries are enabled])
@@ -175,43 +239,6 @@ AS_IF([test "x$enable_shared" = "xyes"], [
 	AC_MSG_RESULT([no])
 	AC_MSG_ERROR([LTTng-UST requires shared libraries to be enabled])
 ])
-
-# Checks for library functions.
-AC_FUNC_CHOWN
-AC_FUNC_FORK
-AC_FUNC_MMAP
-AC_FUNC_REALLOC
-AC_FUNC_STRERROR_R
-AC_FUNC_STRNLEN
-AC_CHECK_FUNCS([ \
-	atexit \
-	clock_gettime \
-	ftruncate \
-	getpagesize \
-	gettimeofday \
-	localeconv \
-	memchr \
-	memmove \
-	memset \
-	mkdir \
-	munmap \
-	realpath \
-	sched_getcpu \
-	socket \
-	strchr \
-	strdup \
-	strerror \
-	strtol \
-	strtoul \
-	sysconf \
-])
-
-# Check for pthread_setname_np and its signature
-LTTNG_PTHREAD_SETNAME_NP
-LTTNG_PTHREAD_GETNAME_NP
-
-# AC_FUNC_MALLOC causes problems when cross-compiling.
-#AC_FUNC_MALLOC
 
 # Set architecture specific options
 AS_CASE([$host_cpu],
@@ -243,31 +270,8 @@ AS_CASE([$host_os],
 # Configuration options, which will be installed in the config.h
 AH_TEMPLATE([LTTNG_UST_HAVE_SDT_INTEGRATION], [SystemTap integration via sdt.h])
 
-# Checks for libraries.
-AC_CHECK_LIB([dl], [dlopen], [
-	libdl_name=dl
-	DL_LIBS="-ldl"
-], [
-	#libdl not found, check for dlopen in libc.
-	AC_CHECK_LIB([c], [dlopen], [
-		libdl_name=c
-		DL_LIBS="-lc"
-	], [
-		AC_MSG_ERROR([Cannot find dlopen in libdl nor libc. Use [LDFLAGS]=-Ldir to specify their location.])
-	])
-])
-AC_SUBST(DL_LIBS)
-
-# Check if libdl has dlmopen support.
-AH_TEMPLATE([HAVE_DLMOPEN], ["Define to 1 if dlmopen is available."])
-AC_CHECK_LIB([$libdl_name], [dlmopen],
-	[AC_DEFINE([HAVE_DLMOPEN], [1])]
-)
 
 AM_CONDITIONAL([ENABLE_UST_DL], [test "x${ac_cv_have_decl_RTLD_DI_LINKMAP}" = "xyes"])
-
-# Require URCU >= 0.12 for DEFINE_URCU_TLS_INIT
-PKG_CHECK_MODULES([URCU], [liburcu >= 0.12])
 
 # numa.h integration
 AS_IF([test "x$NO_NUMA" = "x1"],[
