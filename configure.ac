@@ -58,6 +58,38 @@ AM_MAINTAINER_MODE([enable])
 AM_SILENT_RULES([yes])
 
 
+##                               ##
+## OS and Arch specific defaults ##
+##                               ##
+
+# Set os specific options
+AS_CASE([$host_os],
+  [freebsd*], [NO_NUMA=1]
+)
+
+# Set architecture specific options
+AS_CASE([$host_cpu],
+  [i[[3456]]86], [],
+  [x86_64], [],
+  [amd64], [],
+  [powerpc], [],
+  [ppc64], [],
+  [ppc64le], [],
+  [powerpc64], [],
+  [powerpc64le], [],
+  [s390], [],
+  [s390x], [],
+  [arm*], [
+    NO_NUMA=1
+    ],
+  [aarch64*], [],
+  [mips*], [],
+  [tile*], [],
+  [
+    unsupported_arch="yes"
+  ])
+
+
 ##                   ##
 ## C compiler checks ##
 ##                   ##
@@ -239,33 +271,6 @@ AS_IF([test "x$enable_shared" = "xyes"], [
 	AC_MSG_RESULT([no])
 	AC_MSG_ERROR([LTTng-UST requires shared libraries to be enabled])
 ])
-
-# Set architecture specific options
-AS_CASE([$host_cpu],
-	[i[[3456]]86], [],
-	[x86_64], [],
-	[amd64], [],
-	[powerpc], [],
-	[ppc64], [],
-	[ppc64le], [],
-	[powerpc64], [],
-	[powerpc64le], [],
-	[s390], [],
-	[s390x], [],
-	[arm*], [
-		NO_NUMA=1
-		],
-	[aarch64*], [],
-	[mips*], [],
-	[tile*], [],
-	[
-		UNSUPPORTED_ARCH=1
-	])
-
-# Set os specific options
-AS_CASE([$host_os],
-	[freebsd*], [NO_NUMA=1]
-)
 
 # Configuration options, which will be installed in the config.h
 AH_TEMPLATE([LTTNG_UST_HAVE_SDT_INTEGRATION], [SystemTap integration via sdt.h])
@@ -582,7 +587,7 @@ PPRINT_SUBTITLE([System])
 
 PPRINT_PROP_STRING([Target architecture], $host_cpu)
 
-AS_IF([test "x$UNSUPPORTED_ARCH" = "x1"],[
+AS_IF([test "x$unsupported_arch" = "xyes"],[
        PPRINT_WARN([Your architecture ($host_cpu) is unsupported, using safe default of no unaligned access.])
 ])
 
