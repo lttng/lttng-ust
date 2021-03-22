@@ -754,7 +754,7 @@ struct lttng_counter *lttng_ust_counter_create(
 		const char *counter_transport_name,
 		size_t number_dimensions, const struct lttng_counter_dimension *dimensions);
 
-#ifdef HAVE_PERF_EVENT
+#ifdef HAVE_LINUX_PERF_EVENT_H
 
 __attribute__((visibility("hidden")))
 int lttng_add_perf_counter_to_ctx(uint32_t type,
@@ -768,7 +768,7 @@ int lttng_perf_counter_init(void);
 __attribute__((visibility("hidden")))
 void lttng_perf_counter_exit(void);
 
-#else /* #ifdef HAVE_PERF_EVENT */
+#else /* #ifdef HAVE_LINUX_PERF_EVENT_H */
 
 static inline
 int lttng_add_perf_counter_to_ctx(uint32_t type,
@@ -787,7 +787,7 @@ static inline
 void lttng_perf_counter_exit(void)
 {
 }
-#endif /* #else #ifdef HAVE_PERF_EVENT */
+#endif /* #else #ifdef HAVE_LINUX_PERF_EVENT_H */
 
 __attribute__((visibility("hidden")))
 int lttng_probes_get_event_list(struct lttng_ust_tracepoint_list *list);

@@ -113,7 +113,7 @@ void lttng_counter_transport_register(struct lttng_counter_transport *transport)
 __attribute__((visibility("hidden")))
 void lttng_counter_transport_unregister(struct lttng_counter_transport *transport);
 
-#ifdef HAVE_PERF_EVENT
+#ifdef HAVE_LINUX_PERF_EVENT_H
 __attribute__((visibility("hidden")))
 void lttng_ust_fixup_perf_counter_tls(void);
 
@@ -122,7 +122,7 @@ void lttng_perf_lock(void);
 
 __attribute__((visibility("hidden")))
 void lttng_perf_unlock(void);
-#else /* #ifdef HAVE_PERF_EVENT */
+#else /* #ifdef HAVE_LINUX_PERF_EVENT_H */
 static inline
 void lttng_ust_fixup_perf_counter_tls(void)
 {
@@ -135,6 +135,6 @@ static inline
 void lttng_perf_unlock(void)
 {
 }
-#endif /* #else #ifdef HAVE_PERF_EVENT */
+#endif /* #else #ifdef HAVE_LINUX_PERF_EVENT_H */
 
 #endif /* _LTTNG_TRACER_CORE_H */

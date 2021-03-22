@@ -2005,7 +2005,7 @@ int ustctl_get_instance_id(struct ustctl_consumer_stream *stream,
 	return client_cb->instance_id(buf, handle, id);
 }
 
-#ifdef HAVE_PERF_EVENT
+#ifdef HAVE_LINUX_PERF_EVENT_H
 
 int ustctl_has_perf_counters(void)
 {

@@ -116,6 +116,31 @@ AX_CXX_COMPILE_STDCXX([11], [noext], [optional])
 AM_CONDITIONAL([HAVE_CXX], [test "$HAVE_CXX11" = "1"])
 
 
+##               ##
+## Header checks ##
+##               ##
+
+AC_HEADER_STDBOOL
+AC_CHECK_HEADERS([ \
+  arpa/inet.h \
+  dlfcn.h \
+  fcntl.h \
+  float.h \
+  limits.h \
+  linux/perf_event.h \
+  locale.h \
+  stddef.h \
+  sys/socket.h \
+  sys/time.h \
+  wchar.h \
+])
+
+# Check for dlinfo() by testing for RTLD_DI_LINKMAP in dlfcn.h
+AS_IF([test "x$ac_cv_header_dlfcn_h" = "xyes"], [
+  AC_CHECK_DECL([RTLD_DI_LINKMAP], [], [], [[#include <dlfcn.h>]])
+])
+
+
 # Checks for programs.
 AM_PROG_AR
 AC_PROG_SED
@@ -196,20 +221,6 @@ LTTNG_PTHREAD_GETNAME_NP
 # AC_FUNC_MALLOC causes problems when cross-compiling.
 #AC_FUNC_MALLOC
 
-# Checks for header files.
-AC_HEADER_STDBOOL
-AC_CHECK_HEADERS([ \
-	arpa/inet.h \
-	fcntl.h \
-	float.h \
-	limits.h \
-	locale.h \
-	stddef.h \
-	sys/socket.h \
-	sys/time.h \
-	wchar.h \
-])
-
 # Set architecture specific options
 AS_CASE([$host_cpu],
 	[i[[3456]]86], [],
@@ -261,16 +272,6 @@ AC_CHECK_LIB([$libdl_name], [dlmopen],
 	[AC_DEFINE([HAVE_DLMOPEN], [1])]
 )
 
-# Check for dlfcn.h
-AC_CHECK_HEADER([dlfcn.h])
-AS_IF([test "x${ac_cv_header_dlfcn_h}" = "xyes"], [
-	AC_CHECK_DECLS([RTLD_DI_LINKMAP], [], [], [
-		#include <dlfcn.h>
-	])
-], [
-	ac_cv_have_decl_RTLD_DI_LINKMAP="no"
-])
-
 AM_CONDITIONAL([ENABLE_UST_DL], [test "x${ac_cv_have_decl_RTLD_DI_LINKMAP}" = "xyes"])
 
 # Require URCU >= 0.12 for DEFINE_URCU_TLS_INIT
@@ -297,17 +298,7 @@ AS_IF([test "x$enable_numa" = "xyes"], [
 ])
 AM_CONDITIONAL([ENABLE_NUMA], [test "x$have_libnuma" = "xyes"])
 
-# optional linux/perf_event.h
-AC_CHECK_HEADERS([linux/perf_event.h], [have_perf_event=yes], [])
-
-# Perf event counters are supported on all architectures supported by
-# perf, using the read system call as fallback.
-AM_CONDITIONAL([HAVE_PERF_EVENT], [test "x$have_perf_event" = "xyes"])
-
-AH_TEMPLATE([HAVE_PERF_EVENT], ["Perf event integration via perf_event.h"])
-AS_IF([test "x$have_perf_event" = "xyes"], [
-	AC_DEFINE([HAVE_PERF_EVENT], [1])
-])
+AM_CONDITIONAL([HAVE_PERF_EVENT], [test "x$ac_cv_header_linux_perf_event_h" = "xyes"])
 
 # Check for JNI header files if requested
 AC_ARG_ENABLE([jni-interface], [
@@ -628,7 +619,7 @@ PPRINT_PROP_BOOL_CUSTOM([JNI interface (JNI)], $value, [use --enable-jni-interfa
 test "x$python_agent" = xyes && value=1 || value=0
 PPRINT_PROP_BOOL_CUSTOM([Python agent], $value, [use --enable-python-agent])
 
-test "x$have_perf_event" = "xyes" && value=1 || value=0
+test "x$ac_cv_header_linux_perf_event_h" = "xyes" && value=1 || value=0
 PPRINT_PROP_BOOL_CUSTOM([Perf event integration], $value)
 
 test "x$enable_numa" = xyes && value=1 || value=0
