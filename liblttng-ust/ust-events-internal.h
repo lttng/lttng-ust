@@ -332,6 +332,9 @@ struct lttng_ust_session_private {
 	struct lttng_ust_enum_ht enums_ht;	/* ht of enumerations */
 	struct cds_list_head enums_head;
 	struct lttng_ust_ctx *ctx;		/* contexts for filters. */
+
+	unsigned char uuid[LTTNG_UST_UUID_LEN];	/* Trace session unique ID */
+	bool uuid_set;				/* Is uuid set ? */
 };
 
 struct lttng_enum {
@@ -892,5 +895,9 @@ __attribute__((visibility("hidden")))
 int lttng_ust_interpret_event_filter(struct lttng_ust_event_common *event,
 		const char *interpreter_stack_data,
 		void *filter_ctx);
+
+__attribute__((visibility("hidden")))
+int lttng_ust_session_uuid_validate(struct lttng_ust_session *session,
+		unsigned char *uuid);
 
 #endif /* _LTTNG_UST_EVENTS_INTERNAL_H */

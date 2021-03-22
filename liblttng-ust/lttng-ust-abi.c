@@ -502,6 +502,11 @@ int lttng_abi_map_channel(int session_objd,
 		goto alloc_error;
 	}
 
+	if (lttng_ust_session_uuid_validate(session, lttng_chan_config->uuid)) {
+		ret = -EINVAL;
+		goto uuid_error;
+	}
+
 	/* Lookup transport name */
 	switch (type) {
 	case LTTNG_UST_ABI_CHAN_PER_CPU:
@@ -578,6 +583,7 @@ int lttng_abi_map_channel(int session_objd,
 	/* error path after channel was created */
 objd_error:
 notransport:
+uuid_error:
 alloc_error:
 	channel_destroy(chan, channel_handle, 0);
 	lttng_ust_free_channel_common(lttng_chan_buf->parent);
