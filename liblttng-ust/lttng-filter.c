@@ -257,7 +257,7 @@ int apply_field_reloc(struct lttng_event *event,
 		{
 			const struct lttng_basic_type *elem_type = &field->type.u.array.elem_type;
 
-			if (elem_type != atype_integer || elem_type->u.basic.integer.encoding == lttng_encode_none)
+			if (elem_type->atype != atype_integer || elem_type->u.basic.integer.encoding == lttng_encode_none)
 				return -EINVAL;
 			op->op = FILTER_OP_LOAD_FIELD_REF_SEQUENCE;
 			break;
@@ -266,7 +266,7 @@ int apply_field_reloc(struct lttng_event *event,
 		{
 			const struct lttng_basic_type *elem_type = &field->type.u.sequence.elem_type;
 
-			if (elem_type != atype_integer || elem_type->u.basic.integer.encoding == lttng_encode_none)
+			if (elem_type->atype != atype_integer || elem_type->u.basic.integer.encoding == lttng_encode_none)
 				return -EINVAL;
 			op->op = FILTER_OP_LOAD_FIELD_REF_SEQUENCE;
 			break;
@@ -347,7 +347,7 @@ int apply_context_reloc(struct lttng_event *event,
 		{
 			const struct lttng_basic_type *elem_type = &ctx_field->event_field.type.u.array.elem_type;
 
-			if (elem_type != atype_integer || elem_type->u.basic.integer.encoding == lttng_encode_none)
+			if (elem_type->atype != atype_integer || elem_type->u.basic.integer.encoding == lttng_encode_none)
 				return -EINVAL;
 			op->op = FILTER_OP_GET_CONTEXT_REF_STRING;
 			break;
@@ -356,7 +356,7 @@ int apply_context_reloc(struct lttng_event *event,
 		{
 			const struct lttng_basic_type *elem_type = &ctx_field->event_field.type.u.sequence.elem_type;
 
-			if (elem_type != atype_integer || elem_type->u.basic.integer.encoding == lttng_encode_none)
+			if (elem_type->atype != atype_integer || elem_type->u.basic.integer.encoding == lttng_encode_none)
 				return -EINVAL;
 			op->op = FILTER_OP_GET_CONTEXT_REF_STRING;
 			break;
