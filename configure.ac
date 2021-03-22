@@ -142,7 +142,6 @@ AC_CHECK_TYPES([ptrdiff_t])
 
 # Find an optional C++11 compiler without GNU extensions (-std=c++11)
 AX_CXX_COMPILE_STDCXX([11], [noext], [optional])
-AM_CONDITIONAL([HAVE_CXX], [test "$HAVE_CXX11" = "1"])
 
 
 ##               ##
@@ -464,37 +463,25 @@ AC_DEFINE([LTTNG_UST_LIB_SONAME_MAJOR], [ust_lib_version_current], [Major SONAME
 AC_DEFINE([LTTNG_UST_CTL_LIB_SONAME_MAJOR], [ust_ctl_lib_version_current], [Major SONAME number of liblttng-ust-ctl])
 
 
-AM_CONDITIONAL([HAVE_CMAKE], [test "x$CMAKE" != "x"])
+##                                                                          ##
+## Set automake variables for optional feature conditionnals in Makefile.am ##
+##                                                                          ##
 
-# Configuration options, which will be installed in the config.h
-AH_TEMPLATE([LTTNG_UST_HAVE_SDT_INTEGRATION], [SystemTap integration via sdt.h])
-
-
-AM_CONDITIONAL([ENABLE_UST_DL], [test "x${ac_cv_have_decl_RTLD_DI_LINKMAP}" = "xyes"])
-
-
-AM_CONDITIONAL([ENABLE_NUMA], [test "x$have_libnuma" = "xyes"])
-
-AM_CONDITIONAL([HAVE_PERF_EVENT], [test "x$ac_cv_header_linux_perf_event_h" = "xyes"])
-
-AM_CONDITIONAL([ENABLE_JNI_INTERFACE], [test "x$jni_interface" = "xyes"])
-AM_CONDITIONAL([ENABLE_JAVA_AGENT], [test "x$java_agent_jul" = "xyes" || test "x$java_agent_log4j" = "xyes"])
-AM_CONDITIONAL([ENABLE_JAVA_AGENT_WITH_JUL], [test "x$java_agent_jul" = "xyes"])
-AM_CONDITIONAL([ENABLE_JAVA_AGENT_WITH_LOG4J], [test "x$java_agent_log4j" = "xyes"])
-
-AM_CONDITIONAL([HAVE_JAVAH], [test "x$JAVAH" != "x"])
-
-AM_CONDITIONAL([ENABLE_PYTHON_AGENT], [test "x$python_agent" = "xyes"])
-
+AM_CONDITIONAL([ENABLE_EXAMPLES], AE_IS_FEATURE_ENABLED([examples]))
 AM_CONDITIONAL([ENABLE_GEN_TP_EXAMPLES], [test "x$PYTHON" != "x"])
-
-
-AM_CONDITIONAL([ENABLE_EXAMPLES], [test "x$enable_examples" != "xno"])
-
-# Export man page build condition: build the man pages if the user
-# asked for it, and if the tools are available.
-AM_CONDITIONAL([ENABLE_MAN_PAGES], [test "x$man_pages_opt" != "xno"])
+AM_CONDITIONAL([ENABLE_JAVA_AGENT], AE_IS_FEATURE_ENABLED([java-agent-jul]) || AE_IS_FEATURE_ENABLED([java-agent-log4j]))
+AM_CONDITIONAL([ENABLE_JAVA_AGENT_WITH_JUL], AE_IS_FEATURE_ENABLED([java-agent-jul]))
+AM_CONDITIONAL([ENABLE_JAVA_AGENT_WITH_LOG4J], AE_IS_FEATURE_ENABLED([java-agent-log4j]))
+AM_CONDITIONAL([ENABLE_JNI_INTERFACE], AE_IS_FEATURE_ENABLED([jni-interface]))
+AM_CONDITIONAL([ENABLE_MAN_PAGES], AE_IS_FEATURE_ENABLED([man-pages]))
+AM_CONDITIONAL([ENABLE_NUMA], AE_IS_FEATURE_ENABLED([numa]))
+AM_CONDITIONAL([ENABLE_PYTHON_AGENT], AE_IS_FEATURE_ENABLED([python-agent]))
+AM_CONDITIONAL([ENABLE_UST_DL], [test "x$ac_cv_have_decl_RTLD_DI_LINKMAP" = "xyes"])
 AM_CONDITIONAL([HAVE_ASCIIDOC_XMLTO], [test "x$have_asciidoc_xmlto" = "xyes"])
+AM_CONDITIONAL([HAVE_CMAKE], [test "x$CMAKE" != "x"])
+AM_CONDITIONAL([HAVE_CXX], [test "$HAVE_CXX11" = "1"])
+AM_CONDITIONAL([HAVE_JAVAH], [test "x$JAVAH" != "x"])
+AM_CONDITIONAL([HAVE_PERF_EVENT], [test "x$ac_cv_header_linux_perf_event_h" = "xyes"])
 
 AM_CFLAGS="-Wall $URCU_CFLAGS $PTHREAD_CFLAGS"
 AC_SUBST(AM_CFLAGS)
