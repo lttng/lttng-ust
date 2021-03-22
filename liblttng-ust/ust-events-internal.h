@@ -240,9 +240,9 @@ struct lttng_event_notifier_group {
 	int notification_fd;
 	struct cds_list_head node;		/* Event notifier group handle list */
 	struct cds_list_head enablers_head;
-	struct cds_list_head event_notifiers_head;	/* list of event_notifiers */
+	struct cds_list_head event_notifiers_head; /* list of event_notifiers */
 	struct lttng_ust_event_notifier_ht event_notifiers_ht; /* hashtable of event_notifiers */
-	struct lttng_ust_ctx *ctx;			/* contexts for filters. */
+	struct lttng_ust_ctx *ctx;		/* contexts for filters. */
 
 	struct lttng_counter *error_counter;
 	size_t error_counter_len;
@@ -268,7 +268,7 @@ struct lttng_ust_event_common_private {
 	struct lttng_ust_event_desc *desc;
 	/* Backward references: list of lttng_enabler_ref (ref to enablers) */
 	struct cds_list_head enablers_ref_head;
-	int registered;			/* has reg'd tracepoint probe */
+	int registered;				/* has reg'd tracepoint probe */
 	uint64_t user_token;
 
 	int has_enablers_without_filter_bytecode;
@@ -305,7 +305,7 @@ struct lttng_ust_bytecode_runtime {
 	int (*interpreter_func)(struct lttng_ust_bytecode_runtime *bytecode_runtime,
 			const char *interpreter_stack_data,
 			void *ctx);
-	struct cds_list_head node;	/* list of bytecode runtime in event */
+	struct cds_list_head node;		/* list of bytecode runtime in event */
 	/*
 	 * Pointer to a URCU-protected pointer owned by an `struct
 	 * lttng_session`or `struct lttng_event_notifier_group`.
@@ -332,15 +332,15 @@ struct lttng_ust_session_private {
 
 	struct lttng_ust_enum_ht enums_ht;	/* ht of enumerations */
 	struct cds_list_head enums_head;
-	struct lttng_ust_ctx *ctx;			/* contexts for filters. */
+	struct lttng_ust_ctx *ctx;		/* contexts for filters. */
 };
 
 struct lttng_enum {
 	struct lttng_ust_enum_desc *desc;
 	struct lttng_ust_session *session;
-	struct cds_list_head node;	/* Enum list in session */
-	struct cds_hlist_node hlist;	/* Session ht of enums */
-	uint64_t id;			/* Enumeration ID in sessiond */
+	struct cds_list_head node;		/* Enum list in session */
+	struct cds_hlist_node hlist;		/* Session ht of enums */
+	uint64_t id;				/* Enumeration ID in sessiond */
 };
 
 struct lttng_ust_shm_handle;
@@ -374,17 +374,17 @@ struct lttng_ust_channel_ops_private {
 struct lttng_ust_channel_common_private {
 	struct lttng_ust_channel_common *pub;	/* Public channel interface */
 
-	int objd;	/* Object associated with channel. */
-	int tstate:1;			/* Transient enable state */
+	int objd;				/* Object associated with channel. */
+	int tstate:1;				/* Transient enable state */
 };
 
 struct lttng_ust_channel_buffer_private {
 	struct lttng_ust_channel_common_private parent;
 
 	struct lttng_ust_channel_buffer *pub;	/* Public channel buffer interface */
-	struct cds_list_head node;	/* Channel list in session */
-	int header_type;		/* 0: unset, 1: compact, 2: large */
-	unsigned int id;		/* Channel ID */
+	struct cds_list_head node;		/* Channel list in session */
+	int header_type;			/* 0: unset, 1: compact, 2: large */
+	unsigned int id;			/* Channel ID */
 	enum lttng_ust_abi_chan_type type;
 	struct lttng_ust_ctx *ctx;
 	unsigned char uuid[LTTNG_UST_UUID_LEN];	/* Trace session unique ID */
