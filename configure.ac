@@ -141,40 +141,32 @@ AS_IF([test "x$ac_cv_header_dlfcn_h" = "xyes"], [
 ])
 
 
-# Checks for programs.
+##                 ##
+## Programs checks ##
+##                 ##
+
 AM_PROG_AR
 AC_PROG_SED
 AC_PROG_GREP
 AC_PROG_LN_S
 AC_PROG_MKDIR_P
 AC_PROG_MAKE_SET
-AC_CHECK_PROG([CMAKE], [cmake])
-AM_CONDITIONAL([HAVE_CMAKE], [test "x$CMAKE" != "x"])
+AC_CHECK_PROGS([ASCIIDOC], [asciidoc])
+AC_CHECK_PROGS([CMAKE], [cmake])
+AC_CHECK_PROGS([FOLD], [fold])
+AC_CHECK_PROGS([XMLTO], [xmlto])
 
-# libtool link_all_deplibs fixup. See http://bugs.lttng.org/issues/321.
-AC_ARG_ENABLE([libtool-linkdep-fixup], [
-AS_HELP_STRING([--disable-libtool-linkdep-fixup], [disable the libtool fixup for linking all dependent libraries (link_all_deplibs)])
-], [
-	libtool_fixup=$enableval
-], [
-	libtool_fixup=yes
-])
+AM_PATH_PYTHON([2.7], [], [PYTHON=""])
 
-AS_IF([test "x$libtool_fixup" = "xyes"], [
-	libtool_m4="$srcdir/m4/libtool.m4"
-	libtool_flag_pattern=".*link_all_deplibs\s*,\s*\$1\s*)"
-	AC_MSG_CHECKING([for occurence(s) of link_all_deplibs = no in $libtool_m4])
-	libtool_flag_pattern_count=$(grep -c "$libtool_flag_pattern\s*=\s*no" $libtool_m4)
+AX_PROG_JAVAC
+AX_PROG_JAVA
+AX_PROG_JAR
 
-	AS_IF([test $libtool_flag_pattern_count -ne 0], [
-	AC_MSG_RESULT([$libtool_flag_pattern_count])
-	AC_MSG_WARN([the detected libtool will not link all dependencies, forcing link_all_deplibs = unknown])
-		$SED -i "s/\($libtool_flag_pattern\)\s*=\s*no/\1=unknown/g" $libtool_m4
-	], [
-		AC_MSG_RESULT([none])
-	])
-])
+# Initialize and configure libtool
 LT_INIT([disable-static])
+
+
+AM_CONDITIONAL([HAVE_CMAKE], [test "x$CMAKE" != "x"])
 
 AC_MSG_CHECKING([whether shared libraries are enabled])
 AS_IF([test "x$enable_shared" = "xyes"], [
@@ -341,9 +333,6 @@ AM_CONDITIONAL([ENABLE_JAVA_AGENT_WITH_LOG4J], [test "x$java_agent_log4j" = "xye
 
 AS_IF([test "x$jni_interface" = "xyes" || test "x$java_agent_jul" = "xyes" || test "x$java_agent_log4j" = "xyes"], [
 	AX_JAVA_OPTIONS
-	AX_PROG_JAVAC
-	AX_PROG_JAVA
-	AX_PROG_JAR
 	AC_ARG_VAR([CLASSPATH], [Java class path])
 
 	AX_JNI_INCLUDE_DIR
@@ -375,9 +364,6 @@ AS_HELP_STRING([--enable-python-agent], [build the LTTng UST Python agent [defau
 	python_agent=$enableval
 ], [:])
 AM_CONDITIONAL([ENABLE_PYTHON_AGENT], [test "x$python_agent" = "xyes"])
-AS_IF([test "x$python_agent" = "xyes"], [
-	AM_PATH_PYTHON([2.7])
-])
 
 # sdt.h integration
 AC_ARG_WITH([sdt], [
@@ -416,8 +402,7 @@ AS_HELP_STRING([--with-lttng-system-rundir], [Location of the system directory w
 AC_DEFINE_UNQUOTED([LTTNG_SYSTEM_RUNDIR], ["$lttng_system_rundir"],
 		[LTTng system runtime directory])
 
-AC_CHECK_PROG([ENABLE_GEN_TP_EXAMPLES], [python], ["yes"])
-AM_CONDITIONAL([ENABLE_GEN_TP_EXAMPLES], [test "x$ENABLE_GEN_TP_EXAMPLES" = "xyes"])
+AM_CONDITIONAL([ENABLE_GEN_TP_EXAMPLES], [test "x$PYTHON" != "x"])
 
 # Enable building examples
 AC_ARG_ENABLE(
@@ -448,10 +433,7 @@ have_asciidoc_xmlto=no
 warn_prebuilt_man_pages=no
 
 AS_IF([test "x$man_pages_opt" = "xyes"], [
-	AC_PATH_PROG([ASCIIDOC], [asciidoc], [no])
-	AC_PATH_PROG([XMLTO], [xmlto], [no])
-
-	AS_IF([test "x$ASCIIDOC" = "xno" || test "x$XMLTO" = "xno"], [
+	AS_IF([test "x$ASCIIDOC" = "x" || test "x$XMLTO" = "x"], [
 		AE_IF_IN_GIT_REPO([
 			# This is an error because we're in the Git repo, which
 			# means the man pages are not already generated for us,
