@@ -449,6 +449,21 @@ a non-standard path to sys/sdt.h
 ])
 
 
+##                                                                    ##
+## Set defines for optional features conditionnals in the source code ##
+##                                                                    ##
+
+AC_DEFINE_UNQUOTED([LTTNG_SYSTEM_RUNDIR], ["$lttng_system_rundir"], [LTTng system runtime directory])
+
+# Defined in include/lttng/ust-version.h
+AC_DEFINE([LTTNG_UST_MAJOR_VERSION], ust_version_major, [LTTng UST major version])
+AC_DEFINE([LTTNG_UST_MINOR_VERSION], ust_version_minor, [LTTng UST minor version])
+AC_DEFINE([LTTNG_UST_PATCHLEVEL_VERSION], ust_version_patch, [LTTng UST patch version])
+AC_DEFINE([LTTNG_UST_VERSION], ["]ust_version["], [LTTng UST version string])
+AC_DEFINE([LTTNG_UST_LIB_SONAME_MAJOR], [ust_lib_version_current], [Major SONAME number of liblttng-ust])
+AC_DEFINE([LTTNG_UST_CTL_LIB_SONAME_MAJOR], [ust_ctl_lib_version_current], [Major SONAME number of liblttng-ust-ctl])
+
+
 AM_CONDITIONAL([HAVE_CMAKE], [test "x$CMAKE" != "x"])
 
 # Configuration options, which will be installed in the config.h
@@ -471,9 +486,6 @@ AM_CONDITIONAL([HAVE_JAVAH], [test "x$JAVAH" != "x"])
 
 AM_CONDITIONAL([ENABLE_PYTHON_AGENT], [test "x$python_agent" = "xyes"])
 
-AC_DEFINE_UNQUOTED([LTTNG_SYSTEM_RUNDIR], ["$lttng_system_rundir"],
-		[LTTng system runtime directory])
-
 AM_CONDITIONAL([ENABLE_GEN_TP_EXAMPLES], [test "x$PYTHON" != "x"])
 
 
@@ -483,16 +495,6 @@ AM_CONDITIONAL([ENABLE_EXAMPLES], [test "x$enable_examples" != "xno"])
 # asked for it, and if the tools are available.
 AM_CONDITIONAL([ENABLE_MAN_PAGES], [test "x$man_pages_opt" != "xno"])
 AM_CONDITIONAL([HAVE_ASCIIDOC_XMLTO], [test "x$have_asciidoc_xmlto" = "xyes"])
-
-
-# Defined in include/lttng/ust-version.h
-AC_DEFINE([LTTNG_UST_MAJOR_VERSION], ust_version_major, [LTTng UST major version])
-AC_DEFINE([LTTNG_UST_MINOR_VERSION], ust_version_minor, [LTTng UST minor version])
-AC_DEFINE([LTTNG_UST_PATCHLEVEL_VERSION], ust_version_patch, [LTTng UST patch version])
-AC_DEFINE([LTTNG_UST_VERSION], ["]ust_version["], [LTTng UST version string])
-AC_DEFINE([LTTNG_UST_LIB_SONAME_MAJOR], [ust_lib_version_current], [Major SONAME number of liblttng-ust])
-AC_DEFINE([LTTNG_UST_CTL_LIB_SONAME_MAJOR], [ust_ctl_lib_version_current], [Major SONAME number of liblttng-ust-ctl])
-
 
 AM_CFLAGS="-Wall $URCU_CFLAGS $PTHREAD_CFLAGS"
 AC_SUBST(AM_CFLAGS)
