@@ -513,58 +513,58 @@ AC_SUBST(JNI_CPPFLAGS)
 
 # List of files to be generated from '.in' templates by AC_OUTPUT
 AC_CONFIG_FILES([
-	Makefile
-	doc/Makefile
-	doc/examples/Makefile
-	doc/man/Makefile
-	include/Makefile
-	snprintf/Makefile
-	libcounter/Makefile
-	libmsgpack/Makefile
-	libringbuffer/Makefile
-	liblttng-ust-comm/Makefile
-	liblttng-ust/Makefile
-	liblttng-ust-ctl/Makefile
-	liblttng-ust-fork/Makefile
-	liblttng-ust-dl/Makefile
-	liblttng-ust-fd/Makefile
-	liblttng-ust-java/Makefile
-	liblttng-ust-java-agent/Makefile
-	liblttng-ust-java-agent/java/Makefile
-	liblttng-ust-java-agent/java/lttng-ust-agent-all/Makefile
-	liblttng-ust-java-agent/java/lttng-ust-agent-common/Makefile
-	liblttng-ust-java-agent/java/lttng-ust-agent-jul/Makefile
-	liblttng-ust-java-agent/java/lttng-ust-agent-log4j/Makefile
-	liblttng-ust-java-agent/jni/Makefile
-	liblttng-ust-java-agent/jni/common/Makefile
-	liblttng-ust-java-agent/jni/jul/Makefile
-	liblttng-ust-java-agent/jni/log4j/Makefile
-	liblttng-ust-libc-wrapper/Makefile
-	liblttng-ust-cyg-profile/Makefile
-	liblttng-ust-python-agent/Makefile
-	python-lttngust/Makefile
-	python-lttngust/setup.py
-	python-lttngust/lttngust/__init__.py
-	tools/Makefile
-	tests/Makefile
-	tests/compile/Makefile
-	tests/compile/ctf-types/Makefile
-	tests/compile/hello.cxx/Makefile
-	tests/compile/hello/Makefile
-	tests/compile/hello-many/Makefile
-	tests/compile/same_line_tracepoint/Makefile
-	tests/compile/test-app-ctx/Makefile
-	tests/benchmark/Makefile
-	tests/unit/gcc-weak-hidden/Makefile
-	tests/unit/libmsgpack/Makefile
-	tests/unit/Makefile
-	tests/unit/libringbuffer/Makefile
-	tests/unit/pthread_name/Makefile
-	tests/unit/snprintf/Makefile
-	tests/unit/ust-elf/Makefile
-	tests/utils/Makefile
-	lttng-ust.pc
-	lttng-ust-ctl.pc
+  Makefile
+  doc/Makefile
+  doc/examples/Makefile
+  doc/man/Makefile
+  include/Makefile
+  snprintf/Makefile
+  libcounter/Makefile
+  libmsgpack/Makefile
+  libringbuffer/Makefile
+  liblttng-ust-comm/Makefile
+  liblttng-ust/Makefile
+  liblttng-ust-ctl/Makefile
+  liblttng-ust-fork/Makefile
+  liblttng-ust-dl/Makefile
+  liblttng-ust-fd/Makefile
+  liblttng-ust-java/Makefile
+  liblttng-ust-java-agent/Makefile
+  liblttng-ust-java-agent/java/Makefile
+  liblttng-ust-java-agent/java/lttng-ust-agent-all/Makefile
+  liblttng-ust-java-agent/java/lttng-ust-agent-common/Makefile
+  liblttng-ust-java-agent/java/lttng-ust-agent-jul/Makefile
+  liblttng-ust-java-agent/java/lttng-ust-agent-log4j/Makefile
+  liblttng-ust-java-agent/jni/Makefile
+  liblttng-ust-java-agent/jni/common/Makefile
+  liblttng-ust-java-agent/jni/jul/Makefile
+  liblttng-ust-java-agent/jni/log4j/Makefile
+  liblttng-ust-libc-wrapper/Makefile
+  liblttng-ust-cyg-profile/Makefile
+  liblttng-ust-python-agent/Makefile
+  python-lttngust/Makefile
+  python-lttngust/setup.py
+  python-lttngust/lttngust/__init__.py
+  tools/Makefile
+  tests/Makefile
+  tests/compile/Makefile
+  tests/compile/ctf-types/Makefile
+  tests/compile/hello.cxx/Makefile
+  tests/compile/hello/Makefile
+  tests/compile/hello-many/Makefile
+  tests/compile/same_line_tracepoint/Makefile
+  tests/compile/test-app-ctx/Makefile
+  tests/benchmark/Makefile
+  tests/unit/gcc-weak-hidden/Makefile
+  tests/unit/libmsgpack/Makefile
+  tests/unit/Makefile
+  tests/unit/libringbuffer/Makefile
+  tests/unit/pthread_name/Makefile
+  tests/unit/snprintf/Makefile
+  tests/unit/ust-elf/Makefile
+  tests/utils/Makefile
+  lttng-ust.pc
+  lttng-ust-ctl.pc
 ])
 
 AC_OUTPUT
@@ -686,3 +686,5 @@ their sources.
 Use --disable-man-pages to completely disable building and installing
 the man pages.])
 ])
+
+# vim: shiftwidth=2 softtabstop=2 expandtab
