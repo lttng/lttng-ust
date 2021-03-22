@@ -483,6 +483,15 @@ AM_CONDITIONAL([HAVE_CXX], [test "$HAVE_CXX11" = "1"])
 AM_CONDITIONAL([HAVE_JAVAH], [test "x$JAVAH" != "x"])
 AM_CONDITIONAL([HAVE_PERF_EVENT], [test "x$ac_cv_header_linux_perf_event_h" = "xyes"])
 
+
+##                                             ##
+## Substitute variables for use in Makefile.am ##
+##                                             ##
+
+# Library versions for libtool
+AC_SUBST([LTTNG_UST_LIBRARY_VERSION], ust_lib_version)
+AC_SUBST([LTTNG_UST_CTL_LIBRARY_VERSION], ust_ctl_lib_version)
+
 AM_CFLAGS="-Wall $URCU_CFLAGS $PTHREAD_CFLAGS"
 AC_SUBST(AM_CFLAGS)
 
