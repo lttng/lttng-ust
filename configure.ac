@@ -135,6 +135,50 @@ AC_TYPE_UINT64_T
 AC_TYPE_UINT8_T
 AC_CHECK_TYPES([ptrdiff_t])
 
+# Detect warning flags supported by the C compiler and append them to
+# WARN_CFLAGS.
+m4_define([WARN_FLAGS_LIST], [ dnl
+  -Wall dnl
+  -Wextra dnl
+  -Wmissing-prototypes dnl
+  -Wmissing-declarations dnl
+  -Wnull-dereference dnl
+  -Wundef dnl
+  -Wshadow dnl
+  -Wjump-misses-init dnl
+  -Wsuggest-attribute=format dnl
+  -Wtautological-constant-out-of-range-compare dnl
+  -Wnested-externs dnl
+  -Wwrite-strings dnl
+  -Wformat=2 dnl
+  -Wstrict-aliasing dnl
+  -Wmissing-noreturn dnl
+  -Winit-self dnl
+  -Wduplicated-cond dnl
+  -Wduplicated-branches dnl
+  -Wlogical-op dnl
+  dnl These would require reworking the tracepoint macros
+  dnl-Wredundant-decls dnl
+  -Wno-sign-compare dnl
+  -Wno-missing-field-initializers dnl
+  -Wno-null-dereference dnl
+])
+
+# Pass -Werror as an extra flag during the test: this is needed to make the
+# -Wunknown-warning-option diagnostic fatal with clang.
+AC_LANG_PUSH([C])
+AX_APPEND_COMPILE_FLAGS([WARN_FLAGS_LIST], [WARN_CFLAGS], [-Werror])
+AC_LANG_POP([C])
+
+# The test used in AX_APPEND_COMPILE_FLAGS, generated using AC_LANG_PROGRAM, is
+# written in such a way that it triggers warnings with the following warning
+# flags.  So they would always end up disabled if we put them there, because
+# the test program would not build.
+#
+# Enable them here unconditionally.  They are supported by GCC >= 4.8 and by
+# Clang >= 3.3 (required by the project) and are only valid for C code.
+WARN_CFLAGS="${WARN_CFLAGS} -Wold-style-definition -Wstrict-prototypes"
+
 
 ##                     ##
 ## C++ compiler checks ##
@@ -142,6 +186,14 @@ AC_CHECK_TYPES([ptrdiff_t])
 
 # Find an optional C++11 compiler without GNU extensions (-std=c++11)
 AX_CXX_COMPILE_STDCXX([11], [noext], [optional])
+
+AS_IF([test "$HAVE_CXX11" = "1"], [
+  # Pass -Werror as an extra flag during the test: this is needed to make the
+  # -Wunknown-warning-option diagnostic fatal with clang.
+  AC_LANG_PUSH([C++])
+  AX_APPEND_COMPILE_FLAGS([WARN_FLAGS_LIST -Wno-undef -Wno-duplicated-branches], [WARN_CXXFLAGS], [-Werror])
+  AC_LANG_POP([C++])
+])
 
 
 ##               ##
@@ -492,10 +544,10 @@ AC_SUBST([LTTNG_UST_CTL_LIBRARY_VERSION], ust_ctl_lib_version)
 # Major soname for python-lttngust
 AC_SUBST([LTTNG_UST_LIB_SONAME_MAJOR], [ust_lib_version_current])
 
-AM_CFLAGS="-Wall $URCU_CFLAGS $PTHREAD_CFLAGS"
+AM_CFLAGS="$WARN_CFLAGS $URCU_CFLAGS $PTHREAD_CFLAGS"
 AC_SUBST(AM_CFLAGS)
 
-AM_CXXFLAGS="$AM_CFLAGS"
+AM_CXXFLAGS="$WARN_CXXFLAGS $URCU_CFLAGS $PTHREAD_CFLAGS"
 AC_SUBST(AM_CXXFLAGS)
 
 # The order in which the include folders are searched is important.
