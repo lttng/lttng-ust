@@ -10,6 +10,8 @@
 #
 # This makefile is purposefully kept simple to support GNU and BSD make.
 
+PYTHON := python
+
 LIBS = -ldl -llttng-ust		#On Linux
 #LIBS = -lc -llttng-ust		#On BSD
 AM_V_P := :
@@ -39,7 +41,7 @@ sample.o: sample.c sample_tracepoint.h
 		CFLAGS="$(AM_CFLAGS) $(CFLAGS)" \
 		LDFLAGS="$(AM_LDFLAGS) $(LDFLAGS)" \
 		CC="$(CC)" \
-		$(LTTNG_GEN_TP_PATH)lttng-gen-tp -o $@ $<
+		$(PYTHON) $(LTTNG_GEN_TP_PATH)lttng-gen-tp -o $@ $<
 
 # The following rule can be used to generate all files instead of having one
 # for each file type. Note that the sample.o has a dependency on the
@@ -49,11 +51,11 @@ sample.o: sample.c sample_tracepoint.h
 
 %.h: %.tp
 	@if $(AM_V_P); then set -x; else echo "  GEN      $@"; fi; \
-		$(LTTNG_GEN_TP_PATH)lttng-gen-tp -o $@ $<
+		$(PYTHON) $(LTTNG_GEN_TP_PATH)lttng-gen-tp -o $@ $<
 
 %.c: %.tp
 	@if $(AM_V_P); then set -x; else echo "  GEN      $@"; fi; \
-		$(LTTNG_GEN_TP_PATH)lttng-gen-tp -o $@ $<
+		$(PYTHON)  $(LTTNG_GEN_TP_PATH)lttng-gen-tp -o $@ $<
 
 .PHONY: clean
 clean:

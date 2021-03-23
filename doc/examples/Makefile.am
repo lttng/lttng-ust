@@ -132,6 +132,7 @@ all-local:
 			$(MAKE) all \
 				AR="$(AR)" \
 				CC="$(CC)" \
+				PYTHON="$(PYTHON)" \
 				CPPFLAGS="$(CPPFLAGS)" \
 				AM_CPPFLAGS="$(AM_CPPFLAGS) \
 				-I$$rel_src_subdir$(top_srcdir)/include/ \
