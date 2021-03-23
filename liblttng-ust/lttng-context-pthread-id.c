@@ -7,6 +7,7 @@
  */
 
 #define _LGPL_SOURCE
+#include <limits.h>
 #include <stddef.h>
 #include <pthread.h>
 #include <lttng/ust-events.h>

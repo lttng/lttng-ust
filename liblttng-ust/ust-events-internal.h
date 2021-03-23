@@ -7,6 +7,7 @@
 #ifndef _LTTNG_UST_EVENTS_INTERNAL_H
 #define _LTTNG_UST_EVENTS_INTERNAL_H
 
+#include <limits.h>
 #include <stdint.h>
 
 #include <urcu/list.h>

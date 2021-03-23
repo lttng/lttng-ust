@@ -7,6 +7,7 @@
  */
 
 #define _LGPL_SOURCE
+#include <limits.h>
 #include <stddef.h>
 #include <sys/types.h>
 #include <unistd.h>

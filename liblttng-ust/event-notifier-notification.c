@@ -8,6 +8,8 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <limits.h>
+
 #include <lttng/ust-endian.h>
 #include <usterr-signal-safe.h>
 #include <urcu/rculist.h>

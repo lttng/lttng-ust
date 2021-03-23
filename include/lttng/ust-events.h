@@ -20,6 +20,7 @@
 #include <errno.h>
 #include <urcu/ref.h>
 #include <pthread.h>
+#include <limits.h>
 
 #ifdef __cplusplus
 extern "C" {

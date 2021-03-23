@@ -16,6 +16,7 @@
 #include <stddef.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <limits.h>
 #include <lttng/ust-events.h>
 #include <lttng/ust-tracer.h>
 #include "../libringbuffer/getcpu.h"

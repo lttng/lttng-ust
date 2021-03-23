@@ -6,6 +6,7 @@
  * LTTng lib ring buffer client template.
  */
 
+#include <limits.h>
 #include <stddef.h>
 #include <stdint.h>
 
