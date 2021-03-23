@@ -428,7 +428,7 @@ struct lttng_ust_event_notifier {
 };
 
 struct lttng_ust_lib_ring_buffer_channel;
-struct lttng_ust_channel_ops_private;
+struct lttng_ust_channel_buffer_ops_private;
 
 /*
  * IMPORTANT: this structure is part of the ABI between the probe and
@@ -439,10 +439,10 @@ struct lttng_ust_channel_ops_private;
  * structure. It should be queried before using additional fields added
  * at the end of the structure.
  */
-struct lttng_ust_channel_ops {
+struct lttng_ust_channel_buffer_ops {
 	uint32_t struct_size;
 
-	struct lttng_ust_channel_ops_private *priv;	/* Private channel ops interface */
+	struct lttng_ust_channel_buffer_ops_private *priv;	/* Private channel buffer ops interface */
 
 	int (*event_reserve)(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			     uint32_t event_id);
@@ -503,7 +503,7 @@ struct lttng_ust_channel_buffer {
 	struct lttng_ust_channel_common *parent;	/* Inheritance by aggregation. */
 	struct lttng_ust_channel_buffer_private *priv;	/* Private channel buffer interface */
 
-	struct lttng_ust_channel_ops *ops;
+	struct lttng_ust_channel_buffer_ops *ops;
 	struct lttng_ust_lib_ring_buffer_channel *chan;	/* Channel buffers */
 	struct lttng_ust_shm_handle *handle;		/* shared-memory handle */
 

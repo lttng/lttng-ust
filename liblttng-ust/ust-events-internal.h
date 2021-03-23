@@ -251,7 +251,7 @@ struct lttng_event_notifier_group {
 struct lttng_transport {
 	char *name;
 	struct cds_list_head node;
-	struct lttng_ust_channel_ops ops;
+	struct lttng_ust_channel_buffer_ops ops;
 	const struct lttng_ust_lib_ring_buffer_config *client_config;
 };
 
@@ -347,8 +347,8 @@ struct lttng_enum {
 
 struct lttng_ust_shm_handle;
 
-struct lttng_ust_channel_ops_private {
-	struct lttng_ust_channel_ops *pub;	/* Public channels ops interface */
+struct lttng_ust_channel_buffer_ops_private {
+	struct lttng_ust_channel_buffer_ops *pub;	/* Public channel buffer ops interface */
 
 	struct lttng_ust_channel_buffer *(*channel_create)(const char *name,
 			void *buf_addr,

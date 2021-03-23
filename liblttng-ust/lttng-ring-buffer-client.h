@@ -819,8 +819,8 @@ int lttng_flush_buffer(struct lttng_ust_lib_ring_buffer_channel *chan,
 static struct lttng_transport lttng_relay_transport = {
 	.name = "relay-" RING_BUFFER_MODE_TEMPLATE_STRING "-mmap",
 	.ops = {
-		.struct_size = sizeof(struct lttng_ust_channel_ops),
-		.priv = __LTTNG_COMPOUND_LITERAL(struct lttng_ust_channel_ops_private, {
+		.struct_size = sizeof(struct lttng_ust_channel_buffer_ops),
+		.priv = __LTTNG_COMPOUND_LITERAL(struct lttng_ust_channel_buffer_ops_private, {
 			.pub = &lttng_relay_transport.ops,
 			.channel_create = _channel_create,
 			.channel_destroy = lttng_channel_destroy,
