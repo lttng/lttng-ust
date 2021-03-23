@@ -186,10 +186,6 @@ AC_CHECK_PROGS([XMLTO], [xmlto])
 
 AM_PATH_PYTHON([2.7], [], [PYTHON=""])
 
-AX_PROG_JAVAC
-AX_PROG_JAVA
-AX_PROG_JAR
-
 # Initialize and configure libtool
 LT_INIT([disable-static])
 
@@ -361,8 +357,9 @@ argument to disable NUMA support.
 
 # The JNI interface and Java Agents require a working Java JDK
 AS_IF([AE_IS_FEATURE_ENABLED([jni-interface]) || AE_IS_FEATURE_ENABLED([java-agent-jul]) || AE_IS_FEATURE_ENABLED([java-agent-log4j])], [
-  # We detected a java compiler earlier, make sure it works
-  AX_PROG_JAVAC_WORKS
+  AX_PROG_JAVAC
+  AX_PROG_JAVA
+  AX_PROG_JAR
 
   # Get the CPPFLAGS required to build jni libaries
   AX_JNI_INCLUDE_DIR
