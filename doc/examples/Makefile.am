@@ -140,7 +140,7 @@ all-local:
 				AM_CFLAGS='$(AM_CFLAGS)' \
 				LDFLAGS="$(LDFLAGS)" \
 				AM_LDFLAGS='$(AM_LDFLAGS) -L../../../liblttng-ust/.libs -Wl,-rpath="$(PWD)/../../liblttng-ust/.libs/" -Wl,-rpath-link="$(PWD)/../../liblttng-ust/.libs/"' \
-				LTTNG_GEN_TP_PATH="../../../tools/" \
+				LTTNG_GEN_TP_PATH="$$rel_src_subdir$(top_srcdir)/tools/" \
 				AM_V_P="$(AM_V_P)" \
 				AM_V_at="$(AM_V_at)" \
 				$(AM_MAKEFLAGS) \
