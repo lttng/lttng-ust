@@ -11,16 +11,19 @@
 
 #include <lttng/ust-arch.h>
 #include <lttng/ust-compiler.h>
-#include <lttng/ust-config.h>
 #include <lttng/ust-utils.h>
 #include <lttng/ust-version.h>
 
+/*
+ * Default to having the content of the ringbuffer respect the natural
+ * alignment of the system. Only pack its content on architectures we know
+ * have efficient unaligned memory access.
+ */
 #ifndef LTTNG_UST_ARCH_HAS_EFFICIENT_UNALIGNED_ACCESS
-/* Align data on its natural alignment */
-#define RING_BUFFER_ALIGN
+#define LTTNG_UST_RING_BUFFER_NATURAL_ALIGN
 #endif
 
-#ifdef RING_BUFFER_ALIGN
+#ifdef LTTNG_UST_RING_BUFFER_NATURAL_ALIGN
 #define lttng_alignof(type)	__alignof__(type)
 #else
 #define lttng_alignof(type)	1

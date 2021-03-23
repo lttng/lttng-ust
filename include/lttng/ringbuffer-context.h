@@ -101,18 +101,20 @@ void lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 }
 
 /*
- * We need to define RING_BUFFER_ALIGN_ATTR so it is known early at
+ * We need to define LTTNG_UST_RING_BUFFER_ALIGN_ATTR so it is known early at
  * compile-time. We have to duplicate the "config->align" information and the
  * definition here because config->align is used both in the slow and fast
- * paths, but RING_BUFFER_ALIGN_ATTR is only available for the client code.
+ * paths, but LTTNG_UST_RING_BUFFER_ALIGN_ATTR is only available for the client
+ * code.
  */
-#ifdef RING_BUFFER_ALIGN
+#ifdef LTTNG_UST_RING_BUFFER_NATURAL_ALIGN
 
-# define RING_BUFFER_ALIGN_ATTR		/* Default arch alignment */
+# define LTTNG_UST_RING_BUFFER_ALIGN_ATTR	/* Default arch alignment */
 
 /*
- * Calculate the offset needed to align the type.
- * size_of_type must be non-zero.
+ * lib_ring_buffer_align - Calculate the offset needed to align the type.
+ * @align_drift:  object offset from an "alignment"-aligned address.
+ * @size_of_type: Must be non-zero, power of 2.
  */
 static inline lttng_ust_notrace
 unsigned int lib_ring_buffer_align(size_t align_drift, size_t size_of_type);
@@ -124,17 +126,22 @@ unsigned int lib_ring_buffer_align(size_t align_drift, size_t size_of_type)
 
 #else
 
-# define RING_BUFFER_ALIGN_ATTR __attribute__((packed))
+# define LTTNG_UST_RING_BUFFER_ALIGN_ATTR __attribute__((packed))
 
 /*
- * Calculate the offset needed to align the type.
- * size_of_type must be non-zero.
+ * lib_ring_buffer_align - Calculate the offset needed to align the type.
+ * @align_drift:  object offset from an "alignment"-aligned address.
+ * @size_of_type: Must be non-zero, power of 2.
  */
 static inline lttng_ust_notrace
 unsigned int lib_ring_buffer_align(size_t align_drift, size_t size_of_type);
 static inline
 unsigned int lib_ring_buffer_align(size_t align_drift, size_t size_of_type)
 {
+	/*
+	 * On architectures with efficient unaligned memory access, the content
+	 * of the ringbuffer is packed and so the offset is always zero.
+	 */
 	return 0;
 }
 
