@@ -32,7 +32,7 @@
 #include <lttng/ust-utils.h>
 #include <lttng/ust-events.h>
 #include <lttng/ust-abi.h>
-#include <lttng/ust.h>
+#include <lttng/ust-fork.h>
 #include <lttng/ust-error.h>
 #include <lttng/ust-ctl.h>
 #include <lttng/ust-libc-wrapper.h>
@@ -2371,7 +2371,7 @@ void ust_context_vgids_reset(void)
  * in the middle of an tracepoint or ust tracing state modification.
  * Holding this mutex protects these structures across fork and clone.
  */
-void ust_before_fork(sigset_t *save_sigset)
+void lttng_ust_before_fork(sigset_t *save_sigset)
 {
 	/*
 	 * Disable signals. This is to avoid that the child intervenes
@@ -2420,7 +2420,7 @@ static void ust_after_fork_common(sigset_t *restore_sigset)
 	}
 }
 
-void ust_after_fork_parent(sigset_t *restore_sigset)
+void lttng_ust_after_fork_parent(sigset_t *restore_sigset)
 {
 	if (URCU_TLS(lttng_ust_nest_count))
 		return;
@@ -2439,7 +2439,7 @@ void ust_after_fork_parent(sigset_t *restore_sigset)
  * This is meant for forks() that have tracing in the child between the
  * fork and following exec call (if there is any).
  */
-void ust_after_fork_child(sigset_t *restore_sigset)
+void lttng_ust_after_fork_child(sigset_t *restore_sigset)
 {
 	if (URCU_TLS(lttng_ust_nest_count))
 		return;
@@ -2458,56 +2458,56 @@ void ust_after_fork_child(sigset_t *restore_sigset)
 	lttng_ust_init();
 }
 
-void ust_after_setns(void)
+void lttng_ust_after_setns(void)
 {
 	ust_context_ns_reset();
 	ust_context_vuids_reset();
 	ust_context_vgids_reset();
 }
 
-void ust_after_unshare(void)
+void lttng_ust_after_unshare(void)
 {
 	ust_context_ns_reset();
 	ust_context_vuids_reset();
 	ust_context_vgids_reset();
 }
 
-void ust_after_setuid(void)
+void lttng_ust_after_setuid(void)
 {
 	ust_context_vuids_reset();
 }
 
-void ust_after_seteuid(void)
+void lttng_ust_after_seteuid(void)
 {
 	ust_context_vuids_reset();
 }
 
-void ust_after_setreuid(void)
+void lttng_ust_after_setreuid(void)
 {
 	ust_context_vuids_reset();
 }
 
-void ust_after_setresuid(void)
+void lttng_ust_after_setresuid(void)
 {
 	ust_context_vuids_reset();
 }
 
-void ust_after_setgid(void)
+void lttng_ust_after_setgid(void)
 {
 	ust_context_vgids_reset();
 }
 
-void ust_after_setegid(void)
+void lttng_ust_after_setegid(void)
 {
 	ust_context_vgids_reset();
 }
 
-void ust_after_setregid(void)
+void lttng_ust_after_setregid(void)
 {
 	ust_context_vgids_reset();
 }
 
-void ust_after_setresgid(void)
+void lttng_ust_after_setresgid(void)
 {
 	ust_context_vgids_reset();
 }

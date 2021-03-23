@@ -13,7 +13,7 @@
 #include <stdarg.h>
 #include <errno.h>
 
-#include <lttng/ust.h>
+#include <lttng/ust-fork.h>
 
 pid_t fork(void)
 {
@@ -31,15 +31,15 @@ pid_t fork(void)
 		}
 	}
 
-	ust_before_fork(&sigset);
+	lttng_ust_before_fork(&sigset);
 	/* Do the real fork */
 	retval = plibc_func();
 	saved_errno = errno;
 	if (retval == 0) {
 		/* child */
-		ust_after_fork_child(&sigset);
+		lttng_ust_after_fork_child(&sigset);
 	} else {
-		ust_after_fork_parent(&sigset);
+		lttng_ust_after_fork_parent(&sigset);
 	}
 	errno = saved_errno;
 	return retval;
@@ -61,16 +61,16 @@ int daemon(int nochdir, int noclose)
 		}
 	}
 
-	ust_before_fork(&sigset);
+	lttng_ust_before_fork(&sigset);
 	/* Do the real daemon call */
 	retval = plibc_func(nochdir, noclose);
 	saved_errno = errno;
 	if (retval == 0) {
 		/* child, parent called _exit() directly */
-		ust_after_fork_child(&sigset);
+		lttng_ust_after_fork_child(&sigset);
 	} else {
 		/* on error in the parent */
-		ust_after_fork_parent(&sigset);
+		lttng_ust_after_fork_parent(&sigset);
 	}
 	errno = saved_errno;
 	return retval;
@@ -95,7 +95,7 @@ int setuid(uid_t uid)
 	retval = plibc_func(uid);
 	saved_errno = errno;
 
-	ust_after_setuid();
+	lttng_ust_after_setuid();
 
 	errno = saved_errno;
 	return retval;
@@ -120,7 +120,7 @@ int setgid(gid_t gid)
 	retval = plibc_func(gid);
 	saved_errno = errno;
 
-	ust_after_setgid();
+	lttng_ust_after_setgid();
 
 	errno = saved_errno;
 	return retval;
@@ -145,7 +145,7 @@ int seteuid(uid_t euid)
 	retval = plibc_func(euid);
 	saved_errno = errno;
 
-	ust_after_seteuid();
+	lttng_ust_after_seteuid();
 
 	errno = saved_errno;
 	return retval;
@@ -170,7 +170,7 @@ int setegid(gid_t egid)
 	retval = plibc_func(egid);
 	saved_errno = errno;
 
-	ust_after_setegid();
+	lttng_ust_after_setegid();
 
 	errno = saved_errno;
 	return retval;
@@ -195,7 +195,7 @@ int setreuid(uid_t ruid, uid_t euid)
 	retval = plibc_func(ruid, euid);
 	saved_errno = errno;
 
-	ust_after_setreuid();
+	lttng_ust_after_setreuid();
 
 	errno = saved_errno;
 	return retval;
@@ -220,7 +220,7 @@ int setregid(gid_t rgid, gid_t egid)
 	retval = plibc_func(rgid, egid);
 	saved_errno = errno;
 
-	ust_after_setregid();
+	lttng_ust_after_setregid();
 
 	errno = saved_errno;
 	return retval;
@@ -241,7 +241,7 @@ static int clone_fn(void *arg)
 	struct ustfork_clone_info *info = (struct ustfork_clone_info *) arg;
 
 	/* clone is now done and we are in child */
-	ust_after_fork_child(&info->sigset);
+	lttng_ust_after_fork_child(&info->sigset);
 	return info->fn(info->arg);
 }
 
@@ -286,12 +286,12 @@ int clone(int (*fn)(void *), void *child_stack, int flags, void *arg, ...)
 		/* Creating a real process, we need to intervene. */
 		struct ustfork_clone_info info = { .fn = fn, .arg = arg };
 
-		ust_before_fork(&info.sigset);
+		lttng_ust_before_fork(&info.sigset);
 		retval = plibc_func(clone_fn, child_stack, flags, &info,
 				ptid, tls, ctid);
 		saved_errno = errno;
 		/* The child doesn't get here. */
-		ust_after_fork_parent(&info.sigset);
+		lttng_ust_after_fork_parent(&info.sigset);
 	}
 	errno = saved_errno;
 	return retval;
@@ -316,7 +316,7 @@ int setns(int fd, int nstype)
 	retval = plibc_func(fd, nstype);
 	saved_errno = errno;
 
-	ust_after_setns();
+	lttng_ust_after_setns();
 
 	errno = saved_errno;
 	return retval;
@@ -341,7 +341,7 @@ int unshare(int flags)
 	retval = plibc_func(flags);
 	saved_errno = errno;
 
-	ust_after_unshare();
+	lttng_ust_after_unshare();
 
 	errno = saved_errno;
 	return retval;
@@ -366,7 +366,7 @@ int setresuid(uid_t ruid, uid_t euid, uid_t suid)
 	retval = plibc_func(ruid, euid, suid);
 	saved_errno = errno;
 
-	ust_after_setresuid();
+	lttng_ust_after_setresuid();
 
 	errno = saved_errno;
 	return retval;
@@ -391,7 +391,7 @@ int setresgid(gid_t rgid, gid_t egid, gid_t sgid)
 	retval = plibc_func(rgid, egid, sgid);
 	saved_errno = errno;
 
-	ust_after_setresgid();
+	lttng_ust_after_setresgid();
 
 	errno = saved_errno;
 	return retval;
@@ -415,15 +415,15 @@ pid_t rfork(int flags)
 		}
 	}
 
-	ust_before_fork(&sigset);
+	lttng_ust_before_fork(&sigset);
 	/* Do the real rfork */
 	retval = plibc_func();
 	saved_errno = errno;
 	if (retval == 0) {
 		/* child */
-		ust_after_fork_child(&sigset);
+		lttng_ust_after_fork_child(&sigset);
 	} else {
-		ust_after_fork_parent(&sigset);
+		lttng_ust_after_fork_parent(&sigset);
 	}
 	errno = saved_errno;
 	return retval;
