@@ -19,7 +19,7 @@
 
 #include "lttng-ust-uuid.h"
 
-struct lttng_trace_clock {
+struct lttng_ust_trace_clock {
 	uint64_t (*read64)(void);
 	uint64_t (*freq)(void);
 	int (*uuid)(char *uuid);
@@ -27,7 +27,8 @@ struct lttng_trace_clock {
 	const char *(*description)(void);
 };
 
-extern struct lttng_trace_clock *lttng_trace_clock;
+__attribute__((visibility("hidden")))
+extern struct lttng_ust_trace_clock *lttng_ust_trace_clock;
 
 void lttng_ust_clock_init(void);
 
@@ -48,7 +49,7 @@ uint64_t trace_clock_read64_monotonic(void)
 static __inline__
 uint64_t trace_clock_read64(void)
 {
-	struct lttng_trace_clock *ltc = CMM_LOAD_SHARED(lttng_trace_clock);
+	struct lttng_ust_trace_clock *ltc = CMM_LOAD_SHARED(lttng_ust_trace_clock);
 
 	if (caa_likely(!ltc)) {
 		return trace_clock_read64_monotonic();

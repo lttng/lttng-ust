@@ -9,6 +9,7 @@
 #include <dlfcn.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <usterr-signal-safe.h>
 #include <lttng/ust-clock.h>
 #include <urcu/system.h>
@@ -17,57 +18,167 @@
 #include "clock.h"
 #include "getenv.h"
 
-struct lttng_trace_clock *lttng_trace_clock;
+struct lttng_ust_trace_clock *lttng_ust_trace_clock;
 
 static
-struct lttng_trace_clock user_tc;
+struct lttng_ust_trace_clock user_tc;
 
 static
 void *clock_handle;
 
-int lttng_ust_trace_clock_set_read64_cb(uint64_t (*read64)(void))
+static
+uint64_t trace_clock_freq_monotonic(void)
 {
-	if (CMM_LOAD_SHARED(lttng_trace_clock))
+	return 1000000000ULL;
+}
+
+static
+int trace_clock_uuid_monotonic(char *uuid)
+{
+	int ret = 0;
+	size_t len;
+	FILE *fp;
+
+	/*
+	 * boot_id needs to be read once before being used concurrently
+	 * to deal with a Linux kernel race. A fix is proposed for
+	 * upstream, but the work-around is needed for older kernels.
+	 */
+	fp = fopen("/proc/sys/kernel/random/boot_id", "r");
+	if (!fp) {
+		return -ENOENT;
+	}
+	len = fread(uuid, 1, LTTNG_UST_UUID_STR_LEN - 1, fp);
+	if (len < LTTNG_UST_UUID_STR_LEN - 1) {
+		ret = -EINVAL;
+		goto end;
+	}
+	uuid[LTTNG_UST_UUID_STR_LEN - 1] = '\0';
+end:
+	fclose(fp);
+	return ret;
+}
+
+static
+const char *trace_clock_name_monotonic(void)
+{
+	return "monotonic";
+}
+
+static
+const char *trace_clock_description_monotonic(void)
+{
+	return "Monotonic Clock";
+}
+
+int lttng_ust_trace_clock_set_read64_cb(lttng_ust_clock_read64_function read64_cb)
+{
+	if (CMM_LOAD_SHARED(lttng_ust_trace_clock))
 		return -EBUSY;
-	user_tc.read64 = read64;
+	user_tc.read64 = read64_cb;
 	return 0;
 }
 
-int lttng_ust_trace_clock_set_freq_cb(uint64_t (*freq)(void))
+int lttng_ust_trace_clock_get_read64_cb(lttng_ust_clock_read64_function *read64_cb)
 {
-	if (CMM_LOAD_SHARED(lttng_trace_clock))
-		return -EBUSY;
-	user_tc.freq = freq;
+	struct lttng_ust_trace_clock *ltc = CMM_LOAD_SHARED(lttng_ust_trace_clock);
+
+	if (caa_likely(!ltc)) {
+		*read64_cb = &trace_clock_read64_monotonic;
+	} else {
+		cmm_read_barrier_depends();     /* load ltc before content */
+		*read64_cb = ltc->read64;
+	}
 	return 0;
 }
 
-int lttng_ust_trace_clock_set_uuid_cb(int (*uuid)(char *uuid))
+int lttng_ust_trace_clock_set_freq_cb(lttng_ust_clock_freq_function freq_cb)
 {
-	if (CMM_LOAD_SHARED(lttng_trace_clock))
+	if (CMM_LOAD_SHARED(lttng_ust_trace_clock))
 		return -EBUSY;
-	user_tc.uuid = uuid;
+	user_tc.freq = freq_cb;
 	return 0;
 }
 
-int lttng_ust_trace_clock_set_name_cb(const char *(*name)(void))
+int lttng_ust_trace_clock_get_freq_cb(lttng_ust_clock_freq_function *freq_cb)
 {
-	if (CMM_LOAD_SHARED(lttng_trace_clock))
-		return -EBUSY;
-	user_tc.name = name;
+	struct lttng_ust_trace_clock *ltc = CMM_LOAD_SHARED(lttng_ust_trace_clock);
+
+	if (caa_likely(!ltc)) {
+		*freq_cb = &trace_clock_freq_monotonic;
+	} else {
+		cmm_read_barrier_depends();     /* load ltc before content */
+		*freq_cb = ltc->freq;
+	}
 	return 0;
 }
 
-int lttng_ust_trace_clock_set_description_cb(const char *(*description)(void))
+int lttng_ust_trace_clock_set_uuid_cb(lttng_ust_clock_uuid_function uuid_cb)
 {
-	if (CMM_LOAD_SHARED(lttng_trace_clock))
+	if (CMM_LOAD_SHARED(lttng_ust_trace_clock))
 		return -EBUSY;
-	user_tc.description = description;
+	user_tc.uuid = uuid_cb;
+	return 0;
+}
+
+int lttng_ust_trace_clock_get_uuid_cb(lttng_ust_clock_uuid_function *uuid_cb)
+{
+	struct lttng_ust_trace_clock *ltc = CMM_LOAD_SHARED(lttng_ust_trace_clock);
+
+	if (caa_likely(!ltc)) {
+		*uuid_cb = &trace_clock_uuid_monotonic;
+	} else {
+		cmm_read_barrier_depends();     /* load ltc before content */
+		*uuid_cb = ltc->uuid;
+	}
+	return 0;
+}
+
+int lttng_ust_trace_clock_set_name_cb(lttng_ust_clock_name_function name_cb)
+{
+	if (CMM_LOAD_SHARED(lttng_ust_trace_clock))
+		return -EBUSY;
+	user_tc.name = name_cb;
+	return 0;
+}
+
+int lttng_ust_trace_clock_get_name_cb(lttng_ust_clock_name_function *name_cb)
+{
+	struct lttng_ust_trace_clock *ltc = CMM_LOAD_SHARED(lttng_ust_trace_clock);
+
+	if (caa_likely(!ltc)) {
+		*name_cb = &trace_clock_name_monotonic;
+	} else {
+		cmm_read_barrier_depends();     /* load ltc before content */
+		*name_cb = ltc->name;
+	}
+	return 0;
+}
+
+int lttng_ust_trace_clock_set_description_cb(lttng_ust_clock_description_function description_cb)
+{
+	if (CMM_LOAD_SHARED(lttng_ust_trace_clock))
+		return -EBUSY;
+	user_tc.description = description_cb;
+	return 0;
+}
+
+int lttng_ust_trace_clock_get_description_cb(lttng_ust_clock_description_function *description_cb)
+{
+	struct lttng_ust_trace_clock *ltc = CMM_LOAD_SHARED(lttng_ust_trace_clock);
+
+	if (caa_likely(!ltc)) {
+		*description_cb = &trace_clock_description_monotonic;
+	} else {
+		cmm_read_barrier_depends();     /* load ltc before content */
+		*description_cb = ltc->description;
+	}
 	return 0;
 }
 
 int lttng_ust_enable_trace_clock_override(void)
 {
-	if (CMM_LOAD_SHARED(lttng_trace_clock))
+	if (CMM_LOAD_SHARED(lttng_ust_trace_clock))
 		return -EBUSY;
 	if (!user_tc.read64)
 		return -EINVAL;
@@ -79,7 +190,7 @@ int lttng_ust_enable_trace_clock_override(void)
 		return -EINVAL;
 	/* Use default uuid cb when NULL */
 	cmm_smp_mb();	/* Store callbacks before trace clock */
-	CMM_STORE_SHARED(lttng_trace_clock, &user_tc);
+	CMM_STORE_SHARED(lttng_ust_trace_clock, &user_tc);
 	return 0;
 }
 
