@@ -16,7 +16,7 @@
 #include <string.h>
 
 #include <lttng/ust-tracer.h>
-#include <lttng/ust-align.h>
+#include <lttng/ust-utils.h>
 #include <lttng/ust-compiler.h>
 
 struct lttng_ust_lib_ring_buffer;

@@ -151,14 +151,14 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 	__LTTNG_COMPOUND_LITERAL(struct lttng_ust_enum_entry, {		\
 		.struct_size = sizeof(struct lttng_ust_enum_entry),		\
 		.start = {						\
-			.value = lttng_is_signed_type(__typeof__(_value)) ? \
+			.value = lttng_ust_is_signed_type(__typeof__(_value)) ? \
 				(long long) (_value) : (_value),	\
-			.signedness = lttng_is_signed_type(__typeof__(_value)), \
+			.signedness = lttng_ust_is_signed_type(__typeof__(_value)), \
 		},							\
 		.end = {						\
-			.value = lttng_is_signed_type(__typeof__(_value)) ? \
+			.value = lttng_ust_is_signed_type(__typeof__(_value)) ? \
 				(long long) (_value) : (_value),	\
-			.signedness = lttng_is_signed_type(__typeof__(_value)), \
+			.signedness = lttng_ust_is_signed_type(__typeof__(_value)), \
 		},							\
 		.string = (_string),					\
 	}),
@@ -169,14 +169,14 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 	__LTTNG_COMPOUND_LITERAL(struct lttng_ust_enum_entry, {		\
 		.struct_size = sizeof(struct lttng_ust_enum_entry),		\
 		.start = {						\
-			.value = lttng_is_signed_type(__typeof__(_range_start)) ? \
+			.value = lttng_ust_is_signed_type(__typeof__(_range_start)) ? \
 				(long long) (_range_start) : (_range_start), \
-			.signedness = lttng_is_signed_type(__typeof__(_range_start)), \
+			.signedness = lttng_ust_is_signed_type(__typeof__(_range_start)), \
 		},							\
 		.end = {						\
-			.value = lttng_is_signed_type(__typeof__(_range_end)) ? \
+			.value = lttng_ust_is_signed_type(__typeof__(_range_end)) ? \
 				(long long) (_range_end) : (_range_end), \
-			.signedness = lttng_is_signed_type(__typeof__(_range_end)), \
+			.signedness = lttng_ust_is_signed_type(__typeof__(_range_end)), \
 		},							\
 		.string = (_string),					\
 	}),
@@ -224,13 +224,13 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 #define _ctf_array_encoded(_type, _item, _src, _byte_order,	\
 			_length, _encoding, _nowrite,		\
 			_elem_type_base)			\
-	_lttng_array_element_type_is_supported(_type, _item)
+	lttng_ust_ctf_array_element_type_is_supported(_type, _item)
 
 #undef _ctf_sequence_encoded
 #define _ctf_sequence_encoded(_type, _item, _src, _byte_order,	\
 			_length_type, _src_length, _encoding, _nowrite, \
 			_elem_type_base)			\
-	_lttng_array_element_type_is_supported(_type, _item)
+	lttng_ust_ctf_array_element_type_is_supported(_type, _item)
 
 #undef TP_FIELDS
 #define TP_FIELDS(...) __VA_ARGS__	/* Only one used in this phase */
@@ -477,7 +477,7 @@ size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, _TP_ARGS
 
 #undef _ctf_integer_ext
 #define _ctf_integer_ext(_type, _item, _src, _byte_order, _base, _nowrite)     \
-	if (lttng_is_signed_type(_type)) {				       \
+	if (lttng_ust_is_signed_type(_type)) {				       \
 		int64_t __ctf_tmp_int64;				       \
 		switch (sizeof(_type)) {				       \
 		case 1:							       \

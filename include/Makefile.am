@@ -23,8 +23,7 @@ nobase_include_HEADERS = \
 	lttng/ust.h \
 	lttng/ust-endian.h \
 	lttng/ringbuffer-context.h \
-	lttng/ust-align.h \
-	lttng/ust-bug.h \
+	lttng/ust-utils.h \
 	lttng/ust-error.h \
 	lttng/tracef.h \
 	lttng/tp/lttng-ust-tracef.h \

@@ -12,11 +12,6 @@
 #include <stdint.h>
 #include <lttng/ust-compiler.h>
 
-#ifndef __ust_stringify
-#define __ust_stringify1(x)	#x
-#define __ust_stringify(x)	__ust_stringify1(x)
-#endif /* __ust_stringify */
-
 #define LTTNG_UST_ABI_SYM_NAME_LEN			256
 #define LTTNG_UST_ABI_PROCNAME_LEN		16
 

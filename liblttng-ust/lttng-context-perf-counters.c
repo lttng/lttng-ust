@@ -547,7 +547,7 @@ int lttng_add_perf_counter_to_ctx(uint32_t type,
 	}
 	ust_type = lttng_ust_create_type_integer(sizeof(uint64_t) * CHAR_BIT,
 			lttng_alignof(uint64_t) * CHAR_BIT,
-			lttng_is_signed_type(uint64_t),
+			lttng_ust_is_signed_type(uint64_t),
 			BYTE_ORDER, 10);
 	if (!ust_type) {
 		ret = -ENOMEM;

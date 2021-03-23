@@ -13,7 +13,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <lttng/ust-align.h>
+#include <lttng/ust-utils.h>
 
 #include <ust-elf.h>
 #include <ust-fd.h>

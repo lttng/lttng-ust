@@ -84,7 +84,7 @@ int lttng_add_vtid_to_ctx(struct lttng_ust_ctx **ctx)
 
 	type = lttng_ust_create_type_integer(sizeof(pid_t) * CHAR_BIT,
 			lttng_alignof(pid_t) * CHAR_BIT,
-			lttng_is_signed_type(pid_t),
+			lttng_ust_is_signed_type(pid_t),
 			BYTE_ORDER, 10);
 	if (!type)
 		return -ENOMEM;

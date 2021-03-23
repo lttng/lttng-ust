@@ -101,7 +101,7 @@ int lttng_add_vsgid_to_ctx(struct lttng_ust_ctx **ctx)
 
 	type = lttng_ust_create_type_integer(sizeof(gid_t) * CHAR_BIT,
 			lttng_alignof(gid_t) * CHAR_BIT,
-			lttng_is_signed_type(gid_t),
+			lttng_ust_is_signed_type(gid_t),
 			BYTE_ORDER, 10);
 	if (!type)
 		return -ENOMEM;

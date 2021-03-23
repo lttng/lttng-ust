@@ -15,6 +15,7 @@
 #include <sys/types.h>
 
 #include <lttng/ust-abi.h>
+#include <lttng/ust-utils.h>
 
 #ifndef LTTNG_UST_UUID_LEN
 #define LTTNG_UST_UUID_LEN	16
@@ -23,7 +24,7 @@
 /* Default unix socket path */
 #define LTTNG_UST_SOCK_FILENAME					\
 	"lttng-ust-sock-"					\
-	__ust_stringify(LTTNG_UST_ABI_MAJOR_VERSION)
+	lttng_ust_stringify(LTTNG_UST_ABI_MAJOR_VERSION)
 
 /*
  * Shared memory files path are automatically related to shm root, e.g.
@@ -31,7 +32,7 @@
  */
 #define LTTNG_UST_WAIT_FILENAME					\
 	"lttng-ust-wait-"					\
-	__ust_stringify(LTTNG_UST_ABI_MAJOR_VERSION)
+	lttng_ust_stringify(LTTNG_UST_ABI_MAJOR_VERSION)
 
 struct lttng_ust_lib_ring_buffer;
 

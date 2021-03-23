@@ -125,7 +125,7 @@ int lttng_add_ipc_ns_to_ctx(struct lttng_ust_ctx **ctx)
 
 	type = lttng_ust_create_type_integer(sizeof(ino_t) * CHAR_BIT,
 			lttng_alignof(ino_t) * CHAR_BIT,
-			lttng_is_signed_type(ino_t),
+			lttng_ust_is_signed_type(ino_t),
 			BYTE_ORDER, 10);
 	if (!type)
 		return -ENOMEM;

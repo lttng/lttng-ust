@@ -19,13 +19,13 @@
 	__LTTNG_COMPOUND_LITERAL(struct lttng_ust_enum_entry, {		\
 		.struct_size = sizeof(struct lttng_ust_enum_entry),		\
 		.start = {						\
-			.signedness = lttng_is_signed_type(__typeof__(_value)), \
-			.value = lttng_is_signed_type(__typeof__(_value)) ? \
+			.signedness = lttng_ust_is_signed_type(__typeof__(_value)), \
+			.value = lttng_ust_is_signed_type(__typeof__(_value)) ? \
 				(long long) (_value) : (_value),	\
 		},							\
 		.end = {						\
-			.signedness = lttng_is_signed_type(__typeof__(_value)), \
-			.value = lttng_is_signed_type(__typeof__(_value)) ? \
+			.signedness = lttng_ust_is_signed_type(__typeof__(_value)), \
+			.value = lttng_ust_is_signed_type(__typeof__(_value)) ? \
 				(long long) (_value) : (_value),	\
 		},							\
 		.string = (_string),					\

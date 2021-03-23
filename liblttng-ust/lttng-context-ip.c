@@ -46,7 +46,7 @@ int lttng_add_ip_to_ctx(struct lttng_ust_ctx **ctx)
 
 	type = lttng_ust_create_type_integer(sizeof(void *) * CHAR_BIT,
 			lttng_alignof(void *) * CHAR_BIT,
-			lttng_is_signed_type(void *),
+			lttng_ust_is_signed_type(void *),
 			BYTE_ORDER, 16);
 	if (!type)
 		return -ENOMEM;

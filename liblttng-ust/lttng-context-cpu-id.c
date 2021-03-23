@@ -60,7 +60,7 @@ int lttng_add_cpu_id_to_ctx(struct lttng_ust_ctx **ctx)
 
 	type = lttng_ust_create_type_integer(sizeof(int) * CHAR_BIT,
 			lttng_alignof(int) * CHAR_BIT,
-			lttng_is_signed_type(int),
+			lttng_ust_is_signed_type(int),
 			BYTE_ORDER, 10);
 	if (!type)
 		return -ENOMEM;

@@ -11,7 +11,7 @@
 #include <urcu/arch.h>
 #include <limits.h>
 
-#include <lttng/ust-align.h>
+#include <lttng/ust-utils.h>
 #include <lttng/ringbuffer-context.h>
 
 #include "ringbuffer-config.h"

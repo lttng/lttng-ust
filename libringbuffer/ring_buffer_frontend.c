@@ -52,7 +52,7 @@
 #include <poll.h>
 #include <ust-helper.h>
 
-#include <lttng/ust-align.h>
+#include <lttng/ust-utils.h>
 #include <lttng/ringbuffer-context.h>
 
 #include "smp.h"

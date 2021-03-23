@@ -52,7 +52,7 @@ int lttng_add_pthread_id_to_ctx(struct lttng_ust_ctx **ctx)
 
 	type = lttng_ust_create_type_integer(sizeof(unsigned long) * CHAR_BIT,
 			lttng_alignof(unsigned long) * CHAR_BIT,
-			lttng_is_signed_type(unsigned long),
+			lttng_ust_is_signed_type(unsigned long),
 			BYTE_ORDER, 10);
 	if (!type)
 		return -ENOMEM;

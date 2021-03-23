@@ -25,7 +25,7 @@
 #include <numaif.h>
 #endif
 
-#include <lttng/ust-align.h>
+#include <lttng/ust-utils.h>
 
 #include <ust-helper.h>
 #include <ust-fd.h>
