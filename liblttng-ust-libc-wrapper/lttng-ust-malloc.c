@@ -14,11 +14,16 @@
 #include <sys/types.h>
 #include <stdio.h>
 #include <assert.h>
+#include <malloc.h>
+
 #include <urcu/system.h>
 #include <urcu/uatomic.h>
 #include <urcu/compiler.h>
 #include <urcu/tls-compat.h>
 #include <urcu/arch.h>
+
+#include <lttng/ust-libc-wrapper.h>
+
 #include <ust-helper.h>
 #include "ust-compat.h"
 

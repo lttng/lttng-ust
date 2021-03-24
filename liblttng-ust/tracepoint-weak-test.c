@@ -4,6 +4,8 @@
  * Copyright (C) 2016 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
+#include "tracepoint-internal.h"
+
 /* Test compiler support for weak symbols with hidden visibility. */
 int __tracepoint_test_symbol1 __attribute__((weak, visibility("hidden")));
 void *__tracepoint_test_symbol2 __attribute__((weak, visibility("hidden")));

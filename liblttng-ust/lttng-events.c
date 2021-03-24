@@ -58,6 +58,7 @@
 #include "../libcounter/counter.h"
 #include "jhash.h"
 #include <lttng/ust-abi.h>
+#include "context-provider-internal.h"
 
 /*
  * All operations within this file are called by the communication

@@ -31,6 +31,7 @@
 #include <usterr-signal-safe.h>
 
 #include "../liblttng-ust/compat.h"
+#include "../liblttng-ust/lttng-tracer-core.h"
 
 /* Operations on the fd set. */
 #define IS_FD_VALID(fd)			((fd) >= 0 && (fd) < lttng_ust_max_fd)

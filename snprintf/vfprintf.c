@@ -33,6 +33,7 @@
 
 #include "local.h"
 #include "fvwrite.h"
+#include "various.h"
 
 union arg {
 	int			intarg;

@@ -31,6 +31,11 @@ end:
 	return;
 }
 
+/*
+ * FIXME: We should include <lttng/tracef.h> for the declarations here, but it
+ * fails with tracepoint magic above my paygrade.
+ */
+
 void _lttng_ust_vtracef(const char *fmt, va_list ap)
 	__attribute__((format(printf, 1, 0)));
 void _lttng_ust_vtracef(const char *fmt, va_list ap)

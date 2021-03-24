@@ -2,6 +2,8 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  */
 
+#include "libgcc-wh.h"
+
 int testint __attribute__((weak, visibility("hidden")));
 void *testptr __attribute__((weak, visibility("hidden")));
 struct {

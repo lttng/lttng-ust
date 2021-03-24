@@ -12,6 +12,8 @@
 #include <stdlib.h>
 #include <wchar.h>
 
+#include "various.h"
+
 /*ARGSUSED*/
 size_t
 ust_safe_mbrtowc(wchar_t *pwc, const char *s, size_t n,

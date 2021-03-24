@@ -19,7 +19,7 @@
 
 #define SHM_PATH "/ust-shm-test"
 
-int main()
+int main(void)
 {
 	int shmfd;
 	size_t shmsize = LTTNG_UST_PAGE_SIZE * 10;

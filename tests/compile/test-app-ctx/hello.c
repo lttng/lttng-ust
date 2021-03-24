@@ -35,6 +35,7 @@ struct mmsghdr;
 
 static __thread unsigned int test_count;
 
+static
 void test_inc_count(void)
 {
 	test_count++;
@@ -250,12 +251,14 @@ struct lttng_ust_context_provider myprovider = {
 	.get_value = test_get_value,
 };
 
+static
 void inthandler(int sig)
 {
 	printf("in SIGUSR1 handler\n");
 	tracepoint(ust_tests_hello, tptest_sighandler);
 }
 
+static
 int init_int_handler(void)
 {
 	int result;
@@ -282,8 +285,6 @@ int init_int_handler(void)
 
 	return 0;
 }
-
-void test_inc_count(void);
 
 int main(int argc, char **argv)
 {

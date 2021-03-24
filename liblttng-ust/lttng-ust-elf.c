@@ -580,6 +580,7 @@ error:
  *
  * Returns 0 on success, -1 if an error occurred.
  */
+static
 int lttng_ust_elf_get_debug_link_from_section(struct lttng_ust_elf *elf,
 					char **filename, uint32_t *crc,
 					struct lttng_ust_elf_shdr *shdr)

@@ -36,6 +36,7 @@
 #include <lttng/ust-error.h>
 #include <lttng/ust-ctl.h>
 #include <lttng/ust-libc-wrapper.h>
+#include <lttng/ust-thread.h>
 #include <lttng/ust-tracer.h>
 #include <urcu/tls-compat.h>
 #include <ust-comm.h>

@@ -80,6 +80,10 @@ const char *plugin_description(void)
 	return "Coarse monotonic clock at 1KHz";
 }
 
+/*
+ * Entry-point called by liblttng-ust through dlsym();
+ */
+void lttng_ust_clock_plugin_init(void);
 void lttng_ust_clock_plugin_init(void)
 {
 	int ret;

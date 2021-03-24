@@ -577,16 +577,6 @@ void lttng_enabler_link_bytecode(struct lttng_ust_event_desc *event_desc,
 	}
 }
 
-/*
- * We own the bytecode if we return success.
- */
-int lttng_filter_enabler_attach_bytecode(struct lttng_enabler *enabler,
-		struct lttng_ust_bytecode_node *bytecode)
-{
-	cds_list_add(&bytecode->node, &enabler->filter_bytecode_head);
-	return 0;
-}
-
 static
 void free_filter_runtime(struct cds_list_head *bytecode_runtime_head)
 {

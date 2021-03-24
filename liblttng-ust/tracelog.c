@@ -45,6 +45,9 @@
 	\
 	void _lttng_ust_vtracelog_##level(const char *file, \
 			int line, const char *func, \
+			const char *fmt, va_list ap); \
+	void _lttng_ust_vtracelog_##level(const char *file, \
+			int line, const char *func, \
 			const char *fmt, va_list ap) \
 	{ \
 		__lttng_ust_vtracelog_##level(file, line, func, fmt, ap); \
@@ -55,6 +58,9 @@
 			const char *fmt, ...) \
 		__attribute__ ((format(printf, 4, 5))); \
 	\
+	void _lttng_ust_tracelog_##level(const char *file, \
+			int line, const char *func, \
+			const char *fmt, ...); \
 	void _lttng_ust_tracelog_##level(const char *file, \
 			int line, const char *func, \
 			const char *fmt, ...) \

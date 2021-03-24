@@ -8,7 +8,7 @@
 #define TRACEPOINT_CREATE_PROBES
 #include "ust_tests_sameline.h"
 
-int main()
+int main(void)
 {
 	tracepoint(ust_tests_sameline, event1);	tracepoint(ust_tests_sameline, event2);
 	return 0;

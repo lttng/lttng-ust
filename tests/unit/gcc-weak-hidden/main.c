@@ -5,6 +5,7 @@
  */
 
 #include <stdbool.h>
+#include "b.h"
 #include "tap.h"
 
 #define NUM_TESTS 2
@@ -39,7 +40,7 @@ enum {
 
 static bool match_matrix[NR_MATCH];
 
-int main()
+int main(void)
 {
 	plan_tests(NUM_TESTS);
 

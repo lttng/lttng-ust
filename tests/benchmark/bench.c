@@ -37,6 +37,7 @@ static unsigned long duration;
 
 static volatile int test_go, test_stop;
 
+static
 void do_stuff(void)
 {
 	int i;
@@ -51,6 +52,8 @@ void do_stuff(void)
 #endif
 }
 
+
+static
 void *function(void *arg)
 {
 	unsigned long long nr_loops = 0;
@@ -69,6 +72,7 @@ void *function(void *arg)
 	return NULL;
 }
 
+static
 void usage(char **argv) {
 	printf("Usage: %s nr_threads duration(s) <OPTIONS>\n", argv[0]);
 	printf("OPTIONS:\n");

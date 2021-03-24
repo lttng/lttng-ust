@@ -8,6 +8,7 @@
 
 #define _LGPL_SOURCE
 #include "lttng-tracer.h"
+#include "lttng-rb-clients.h"
 
 #define RING_BUFFER_MODE_TEMPLATE		RING_BUFFER_OVERWRITE
 #define RING_BUFFER_MODE_TEMPLATE_STRING	"overwrite-rt"

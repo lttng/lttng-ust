@@ -10,7 +10,7 @@
 
 #include "tap.h"
 
-int main()
+int main(void)
 {
 	char buf[100];
 	const char expected_str[] = "header 9999, hello, 005, '    9'";

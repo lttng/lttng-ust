@@ -829,11 +829,6 @@ end:
 	pthread_mutex_unlock(&tracepoint_mutex);
 }
 
-void tracepoint_set_new_tracepoint_cb(void (*cb)(struct lttng_ust_tracepoint *))
-{
-	new_tracepoint_cb = cb;
-}
-
 static void new_tracepoints(struct lttng_ust_tracepoint * const *start,
 			    struct lttng_ust_tracepoint * const *end)
 {
@@ -859,6 +854,8 @@ static void new_tracepoints(struct lttng_ust_tracepoint * const *start,
  * against recent liblttng-ust headers require a recent liblttng-ust
  * runtime for those tracepoints to be taken into account.
  */
+int tracepoint_register_lib(struct lttng_ust_tracepoint * const *tracepoints_start,
+			     int tracepoints_count);
 int tracepoint_register_lib(struct lttng_ust_tracepoint * const *tracepoints_start,
 			     int tracepoints_count)
 {
@@ -908,6 +905,7 @@ lib_added:
 	return 0;
 }
 
+int tracepoint_unregister_lib(struct lttng_ust_tracepoint * const *tracepoints_start);
 int tracepoint_unregister_lib(struct lttng_ust_tracepoint * const *tracepoints_start)
 {
 	struct tracepoint_lib *lib;
@@ -976,16 +974,19 @@ void lttng_ust_tp_exit(void)
 #undef tp_rcu_read_unlock
 #undef tp_rcu_dereference
 
+void tp_rcu_read_lock(void);
 void tp_rcu_read_lock(void)
 {
 	lttng_ust_urcu_read_lock();
 }
 
+void tp_rcu_read_unlock(void);
 void tp_rcu_read_unlock(void)
 {
 	lttng_ust_urcu_read_unlock();
 }
 
+void *tp_rcu_dereference_sym(void *p);
 void *tp_rcu_dereference_sym(void *p)
 {
 	return lttng_ust_rcu_dereference(p);
@@ -1002,6 +1003,7 @@ void *tp_rcu_dereference_sym(void *p)
  * dlopen(3) and dlsym(3) to get an handle on the
  * tp_disable_destructors and tp_get_destructors_state symbols below.
  */
+void tp_disable_destructors(void);
 void tp_disable_destructors(void)
 {
 	uatomic_set(&tracepoint_destructors_state, 0);
@@ -1011,6 +1013,7 @@ void tp_disable_destructors(void)
  * Returns 1 if the destructors are enabled and should be executed.
  * Returns 0 if the destructors are disabled.
  */
+int tp_get_destructors_state(void);
 int tp_get_destructors_state(void)
 {
 	return uatomic_read(&tracepoint_destructors_state);

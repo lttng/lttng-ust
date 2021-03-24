@@ -14,6 +14,7 @@
 #include <urcu/tls-compat.h>
 #include <assert.h>
 #include "compat.h"
+#include "lttng-tracer-core.h"
 
 #include "context-internal.h"
 

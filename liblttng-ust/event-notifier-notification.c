@@ -14,6 +14,7 @@
 #include <usterr-signal-safe.h>
 #include <urcu/rculist.h>
 
+#include "lttng-tracer-core.h"
 #include "ust-events-internal.h"
 #include "../libmsgpack/msgpack.h"
 #include "lttng-bytecode.h"
