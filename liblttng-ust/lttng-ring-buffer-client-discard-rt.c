@@ -20,4 +20,4 @@
 	lttng_ring_buffer_client_discard_rt_exit
 #define LTTNG_CLIENT_TYPE			LTTNG_CLIENT_DISCARD_RT
 #define LTTNG_CLIENT_WAKEUP			RING_BUFFER_WAKEUP_BY_TIMER
-#include "lttng-ring-buffer-client.h"
+#include "lttng-ring-buffer-client-template.h"
