@@ -487,7 +487,6 @@ void lttng_msgpack_writer_init(struct lttng_msgpack_writer *writer,
 		uint8_t *buffer, size_t size)
 {
 	lttng_msgpack_assert(buffer);
-	lttng_msgpack_assert(size >= 0);
 
 	writer->buffer = buffer;
 	writer->write_pos = buffer;
