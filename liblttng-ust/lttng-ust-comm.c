@@ -53,6 +53,7 @@
 #include "ust-events-internal.h"
 #include "context-internal.h"
 #include "ust-compat.h"
+#include "lttng-counter-client.h"
 
 /*
  * Has lttng ust comm constructor been called ?
@@ -360,18 +361,6 @@ extern void lttng_ring_buffer_client_overwrite_rt_exit(void);
 extern void lttng_ring_buffer_client_discard_exit(void);
 extern void lttng_ring_buffer_client_discard_rt_exit(void);
 extern void lttng_ring_buffer_metadata_client_exit(void);
-
-__attribute__((visibility("hidden")))
-extern void lttng_counter_client_percpu_32_modular_init(void);
-
-__attribute__((visibility("hidden")))
-extern void lttng_counter_client_percpu_32_modular_exit(void);
-
-__attribute__((visibility("hidden")))
-extern void lttng_counter_client_percpu_64_modular_init(void);
-
-__attribute__((visibility("hidden")))
-extern void lttng_counter_client_percpu_64_modular_exit(void);
 
 static char *get_map_shm(struct sock_info *sock_info);
 

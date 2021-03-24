@@ -119,6 +119,7 @@ liblttng_ust_support_la_SOURCES = \
 	lttng-ring-buffer-client-overwrite-rt.c \
 	lttng-ring-buffer-metadata-client.h \
 	lttng-ring-buffer-metadata-client.c \
+	lttng-counter-client.h \
 	lttng-counter-client-percpu-32-modular.c \
 	lttng-counter-client-percpu-64-modular.c \
 	lttng-clock.c lttng-getcpu.c

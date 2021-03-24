@@ -30,6 +30,7 @@
 #include "../liblttng-ust/clock.h"
 #include "../liblttng-ust/getenv.h"
 #include "../liblttng-ust/lttng-tracer-core.h"
+#include "../liblttng-ust/lttng-counter-client.h"
 
 #include "../libcounter/shm.h"
 #include "../libcounter/smp.h"
@@ -93,18 +94,6 @@ extern void lttng_ring_buffer_client_overwrite_rt_exit(void);
 extern void lttng_ring_buffer_client_discard_exit(void);
 extern void lttng_ring_buffer_client_discard_rt_exit(void);
 extern void lttng_ring_buffer_metadata_client_exit(void);
-
-__attribute__((visibility("hidden")))
-extern void lttng_counter_client_percpu_32_modular_init(void);
-
-__attribute__((visibility("hidden")))
-extern void lttng_counter_client_percpu_32_modular_exit(void);
-
-__attribute__((visibility("hidden")))
-extern void lttng_counter_client_percpu_64_modular_init(void);
-
-__attribute__((visibility("hidden")))
-extern void lttng_counter_client_percpu_64_modular_exit(void);
 
 int ustctl_release_handle(int sock, int handle)
 {

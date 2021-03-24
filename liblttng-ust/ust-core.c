@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 
+#include "context-internal.h"
 #include "ust-events-internal.h"
 #include <usterr-signal-safe.h>
 #include "lttng-tracer-core.h"

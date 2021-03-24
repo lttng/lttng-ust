@@ -12,6 +12,7 @@
 #include "../libcounter/counter.h"
 #include "../libcounter/counter-api.h"
 #include "lttng-tracer-core.h"
+#include "lttng-counter-client.h"
 
 static const struct lib_counter_config client_config = {
 	.alloc = COUNTER_ALLOC_PER_CPU,
