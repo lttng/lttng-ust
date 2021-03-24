@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (C) 2004 Nik Clayton
- * All rights reserved.
+ * Copyright (C) 2017 Jérémie Galarneau
  */
 
 /* '## __VA_ARGS__' is a gcc'ism. C99 doesn't allow the token pasting
@@ -54,17 +54,29 @@
 
 #define skip_end() } while(0);
 
-unsigned int _gen_result(int, const char *, char *, unsigned int, char *, ...);
+#ifdef __MINGW_PRINTF_FORMAT
+# define TAP_PRINTF_FORMAT __MINGW_PRINTF_FORMAT
+#else
+# define TAP_PRINTF_FORMAT printf
+#endif
+
+__attribute__((format(TAP_PRINTF_FORMAT, 5, 6)))
+unsigned int _gen_result(int, const char *, const char *, unsigned int, const char *, ...);
 
 int plan_no_plan(void);
-int plan_skip_all(char *);
+__attribute__((noreturn))
+int plan_skip_all(const char *);
 int plan_tests(unsigned int);
 
-unsigned int diag(char *, ...);
+__attribute__((format(TAP_PRINTF_FORMAT, 1, 2)))
+unsigned int diag(const char *, ...);
+void diag_multiline(const char *);
 
-int skip(unsigned int, char *, ...);
+__attribute__((format(TAP_PRINTF_FORMAT, 2, 3)))
+int skip(unsigned int, const char *, ...);
 
-void todo_start(char *, ...);
+__attribute__((format(TAP_PRINTF_FORMAT, 1, 2)))
+void todo_start(const char *, ...);
 void todo_end(void);
 
 int exit_status(void);

@@ -2,13 +2,16 @@
  * SPDX-License-Identifier: BSD-2-Clause
  *
  * Copyright (C) 2004 Nik Clayton
- * All rights reserved.
+ * Copyright (C) 2017 Jérémie Galarneau
  */
 
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <limits.h>
+#include <assert.h>
 
 #include "tap.h"
 
@@ -19,7 +22,7 @@ static unsigned int test_count = 0; /* Number of tests that have been run */
 static unsigned int e_tests = 0; /* Expected number of tests to run */
 static unsigned int failures = 0; /* Number of tests that failed */
 static char *todo_msg = NULL;
-static char *todo_msg_fixed = "libtap malloc issue";
+static const char *todo_msg_fixed = "libtap malloc issue";
 static int todo = 0;
 static int test_died = 0;
 
@@ -39,6 +42,18 @@ static void _expected_tests(unsigned int);
 static void _tap_init(void);
 static void _cleanup(void);
 
+#ifdef __MINGW32__
+static inline
+void flockfile (FILE * filehandle) {
+       return;
+}
+
+static inline
+void funlockfile(FILE * filehandle) {
+       return;
+}
+#endif
+
 /*
  * Generate a test result.
  *
@@ -47,8 +62,8 @@ static void _cleanup(void);
  * test_comment -- a comment to print afterwards, may be NULL
  */
 unsigned int
-_gen_result(int ok, const char *func, char *file, unsigned int line,
-	    char *test_name, ...)
+_gen_result(int ok, const char *func, const char *file, unsigned int line,
+	    const char *test_name, ...)
 {
 	va_list ap;
 	char *local_test_name = NULL;
@@ -74,7 +89,7 @@ _gen_result(int ok, const char *func, char *file, unsigned int line,
 		if(local_test_name) {
 			name_is_digits = 1;
 			for(c = local_test_name; *c != '\0'; c++) {
-				if(!isdigit(*c) && !isspace(*c)) {
+				if(!isdigit((unsigned char) *c) && !isspace((unsigned char) *c)) {
 					name_is_digits = 0;
 					break;
 				}
@@ -193,7 +208,7 @@ plan_no_plan(void)
  * Note that the plan is to skip all tests
  */
 int
-plan_skip_all(char *reason)
+plan_skip_all(const char *reason)
 {
 
 	LOCK;
@@ -249,7 +264,7 @@ plan_tests(unsigned int tests)
 }
 
 unsigned int
-diag(char *fmt, ...)
+diag(const char *fmt, ...)
 {
 	va_list ap;
 
@@ -265,6 +280,28 @@ diag(char *fmt, ...)
 }
 
 void
+diag_multiline(const char *val)
+{
+	size_t len, i, line_start_idx = 0;
+
+	assert(val);
+	len = strlen(val);
+
+	for (i = 0; i < len; i++) {
+		int line_length;
+
+		if (val[i] != '\n') {
+			continue;
+		}
+
+		assert((i - line_start_idx + 1) <= INT_MAX);
+		line_length = i - line_start_idx + 1;
+		fprintf(stderr, "# %.*s", line_length, &val[line_start_idx]);
+		line_start_idx = i + 1;
+	}
+}
+
+void
 _expected_tests(unsigned int tests)
 {
 
@@ -273,7 +310,7 @@ _expected_tests(unsigned int tests)
 }
 
 int
-skip(unsigned int n, char *fmt, ...)
+skip(unsigned int n, const char *fmt, ...)
 {
 	va_list ap;
 	char *skip_msg = NULL;
@@ -281,7 +318,7 @@ skip(unsigned int n, char *fmt, ...)
 	LOCK;
 
 	va_start(ap, fmt);
-	if (asprintf(&skip_msg, fmt, ap) == -1) {
+	if (vasprintf(&skip_msg, fmt, ap) == -1) {
 		skip_msg = NULL;
 	}
 	va_end(ap);
@@ -301,7 +338,7 @@ skip(unsigned int n, char *fmt, ...)
 }
 
 void
-todo_start(char *fmt, ...)
+todo_start(const char *fmt, ...)
 {
 	va_list ap;
 
