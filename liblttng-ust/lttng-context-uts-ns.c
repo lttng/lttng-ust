@@ -95,7 +95,7 @@ size_t uts_ns_get_size(struct lttng_ust_ctx_field *field, size_t offset)
 {
 	size_t size = 0;
 
-	size += lib_ring_buffer_align(offset, lttng_alignof(ino_t));
+	size += lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(ino_t));
 	size += sizeof(ino_t);
 	return size;
 }
@@ -108,7 +108,7 @@ void uts_ns_record(struct lttng_ust_ctx_field *field,
 	ino_t uts_ns;
 
 	uts_ns = get_uts_ns();
-	lib_ring_buffer_align_ctx(ctx, lttng_alignof(uts_ns));
+	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(uts_ns));
 	chan->ops->event_write(ctx, &uts_ns, sizeof(uts_ns));
 }
 

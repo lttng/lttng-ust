@@ -81,7 +81,7 @@ static size_t get_size_cb(struct lttng_ust_ctx_field *field, size_t offset)
 	enum lttng_ust_jni_type jni_type;
 
 
-	size += lib_ring_buffer_align(offset, lttng_alignof(char));
+	size += lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(char));
 	size += sizeof(char);		/* tag */
 	jctx = lookup_ctx_by_name(ctx_name);
 	if (!jctx) {
@@ -93,28 +93,28 @@ static size_t get_size_cb(struct lttng_ust_ctx_field *field, size_t offset)
 	case JNI_TYPE_NULL:
 		break;
 	case JNI_TYPE_INTEGER:
-		size += lib_ring_buffer_align(offset, lttng_alignof(int32_t));
+		size += lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(int32_t));
 		size += sizeof(int32_t);	/* variant */
 		break;
 	case JNI_TYPE_LONG:
-		size += lib_ring_buffer_align(offset, lttng_alignof(int64_t));
+		size += lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(int64_t));
 		size += sizeof(int64_t);	/* variant */
 		break;
 	case JNI_TYPE_DOUBLE:
-		size += lib_ring_buffer_align(offset, lttng_alignof(double));
+		size += lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(double));
 		size += sizeof(double);		/* variant */
 		break;
 	case JNI_TYPE_FLOAT:
-		size += lib_ring_buffer_align(offset, lttng_alignof(float));
+		size += lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(float));
 		size += sizeof(float);		/* variant */
 		break;
 	case JNI_TYPE_SHORT:
-		size += lib_ring_buffer_align(offset, lttng_alignof(int16_t));
+		size += lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(int16_t));
 		size += sizeof(int16_t);	/* variant */
 		break;
 	case JNI_TYPE_BYTE:		/* Fall-through. */
 	case JNI_TYPE_BOOLEAN:
-		size += lib_ring_buffer_align(offset, lttng_alignof(char));
+		size += lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(char));
 		size += sizeof(char);		/* variant */
 		break;
 	case JNI_TYPE_STRING:
@@ -154,7 +154,7 @@ static void record_cb(struct lttng_ust_ctx_field *field,
 	switch (jni_type) {
 	case JNI_TYPE_NULL:
 		sel_char = LTTNG_UST_DYNAMIC_TYPE_NONE;
-		lib_ring_buffer_align_ctx(ctx, lttng_alignof(char));
+		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(char));
 		lttng_chan_buf->ops->event_write(ctx, &sel_char, sizeof(sel_char));
 		break;
 	case JNI_TYPE_INTEGER:
@@ -162,9 +162,9 @@ static void record_cb(struct lttng_ust_ctx_field *field,
 		int32_t v = jctx->value._integer;
 
 		sel_char = LTTNG_UST_DYNAMIC_TYPE_S32;
-		lib_ring_buffer_align_ctx(ctx, lttng_alignof(char));
+		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(char));
 		lttng_chan_buf->ops->event_write(ctx, &sel_char, sizeof(sel_char));
-		lib_ring_buffer_align_ctx(ctx, lttng_alignof(v));
+		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(v));
 		lttng_chan_buf->ops->event_write(ctx, &v, sizeof(v));
 		break;
 	}
@@ -173,9 +173,9 @@ static void record_cb(struct lttng_ust_ctx_field *field,
 		int64_t v = jctx->value._long;
 
 		sel_char = LTTNG_UST_DYNAMIC_TYPE_S64;
-		lib_ring_buffer_align_ctx(ctx, lttng_alignof(char));
+		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(char));
 		lttng_chan_buf->ops->event_write(ctx, &sel_char, sizeof(sel_char));
-		lib_ring_buffer_align_ctx(ctx, lttng_alignof(v));
+		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(v));
 		lttng_chan_buf->ops->event_write(ctx, &v, sizeof(v));
 		break;
 	}
@@ -184,9 +184,9 @@ static void record_cb(struct lttng_ust_ctx_field *field,
 		double v = jctx->value._double;
 
 		sel_char = LTTNG_UST_DYNAMIC_TYPE_DOUBLE;
-		lib_ring_buffer_align_ctx(ctx, lttng_alignof(char));
+		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(char));
 		lttng_chan_buf->ops->event_write(ctx, &sel_char, sizeof(sel_char));
-		lib_ring_buffer_align_ctx(ctx, lttng_alignof(v));
+		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(v));
 		lttng_chan_buf->ops->event_write(ctx, &v, sizeof(v));
 		break;
 	}
@@ -195,9 +195,9 @@ static void record_cb(struct lttng_ust_ctx_field *field,
 		float v = jctx->value._float;
 
 		sel_char = LTTNG_UST_DYNAMIC_TYPE_FLOAT;
-		lib_ring_buffer_align_ctx(ctx, lttng_alignof(char));
+		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(char));
 		lttng_chan_buf->ops->event_write(ctx, &sel_char, sizeof(sel_char));
-		lib_ring_buffer_align_ctx(ctx, lttng_alignof(v));
+		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(v));
 		lttng_chan_buf->ops->event_write(ctx, &v, sizeof(v));
 		break;
 	}
@@ -206,9 +206,9 @@ static void record_cb(struct lttng_ust_ctx_field *field,
 		int16_t v = jctx->value._short;
 
 		sel_char = LTTNG_UST_DYNAMIC_TYPE_S16;
-		lib_ring_buffer_align_ctx(ctx, lttng_alignof(char));
+		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(char));
 		lttng_chan_buf->ops->event_write(ctx, &sel_char, sizeof(sel_char));
-		lib_ring_buffer_align_ctx(ctx, lttng_alignof(v));
+		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(v));
 		lttng_chan_buf->ops->event_write(ctx, &v, sizeof(v));
 		break;
 	}
@@ -217,9 +217,9 @@ static void record_cb(struct lttng_ust_ctx_field *field,
 		char v = jctx->value._byte;
 
 		sel_char = LTTNG_UST_DYNAMIC_TYPE_S8;
-		lib_ring_buffer_align_ctx(ctx, lttng_alignof(char));
+		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(char));
 		lttng_chan_buf->ops->event_write(ctx, &sel_char, sizeof(sel_char));
-		lib_ring_buffer_align_ctx(ctx, lttng_alignof(v));
+		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(v));
 		lttng_chan_buf->ops->event_write(ctx, &v, sizeof(v));
 		break;
 	}
@@ -228,9 +228,9 @@ static void record_cb(struct lttng_ust_ctx_field *field,
 		char v = jctx->value._boolean;
 
 		sel_char = LTTNG_UST_DYNAMIC_TYPE_S8;
-		lib_ring_buffer_align_ctx(ctx, lttng_alignof(char));
+		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(char));
 		lttng_chan_buf->ops->event_write(ctx, &sel_char, sizeof(sel_char));
-		lib_ring_buffer_align_ctx(ctx, lttng_alignof(v));
+		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(v));
 		lttng_chan_buf->ops->event_write(ctx, &v, sizeof(v));
 		break;
 	}
@@ -244,7 +244,7 @@ static void record_cb(struct lttng_ust_ctx_field *field,
 			} else {
 				sel_char = LTTNG_UST_DYNAMIC_TYPE_NONE;
 			}
-			lib_ring_buffer_align_ctx(ctx, lttng_alignof(char));
+			lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(char));
 			lttng_chan_buf->ops->event_write(ctx, &sel_char, sizeof(sel_char));
 			if (str) {
 				lttng_chan_buf->ops->event_write(ctx, str, strlen(str) + 1);

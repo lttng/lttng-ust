@@ -27,7 +27,7 @@ struct lttng_ust_lib_ring_buffer_ctx;
  * ring buffer context
  *
  * Context passed to lib_ring_buffer_reserve(), lib_ring_buffer_commit(),
- * lib_ring_buffer_try_discard_reserve(), lib_ring_buffer_align_ctx() and
+ * lib_ring_buffer_try_discard_reserve(), lttng_ust_lib_ring_buffer_align_ctx() and
  * lib_ring_buffer_write().
  *
  * IMPORTANT: this structure is part of the ABI between the probe and
@@ -74,7 +74,7 @@ struct lttng_ust_lib_ring_buffer_ctx {
 };
 
 /**
- * lib_ring_buffer_ctx_init - initialize ring buffer context
+ * lttng_ust_lib_ring_buffer_ctx_init - initialize ring buffer context
  * @ctx: ring buffer context to initialize
  * @chan: channel
  * @priv: client private data
@@ -82,11 +82,11 @@ struct lttng_ust_lib_ring_buffer_ctx {
  * @largest_align: largest alignment within data payload types
  */
 static inline lttng_ust_notrace
-void lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
+void lttng_ust_lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			      struct lttng_ust_lib_ring_buffer_channel *chan,
 			      void *priv, size_t data_size, int largest_align);
 static inline
-void lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
+void lttng_ust_lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			      struct lttng_ust_lib_ring_buffer_channel *chan,
 			      void *priv, size_t data_size, int largest_align)
 {
@@ -112,14 +112,14 @@ void lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 # define LTTNG_UST_RING_BUFFER_ALIGN_ATTR	/* Default arch alignment */
 
 /*
- * lib_ring_buffer_align - Calculate the offset needed to align the type.
+ * lttng_ust_lib_ring_buffer_align - Calculate the offset needed to align the type.
  * @align_drift:  object offset from an "alignment"-aligned address.
  * @size_of_type: Must be non-zero, power of 2.
  */
 static inline lttng_ust_notrace
-unsigned int lib_ring_buffer_align(size_t align_drift, size_t size_of_type);
+unsigned int lttng_ust_lib_ring_buffer_align(size_t align_drift, size_t size_of_type);
 static inline
-unsigned int lib_ring_buffer_align(size_t align_drift, size_t size_of_type)
+unsigned int lttng_ust_lib_ring_buffer_align(size_t align_drift, size_t size_of_type)
 {
 	return lttng_ust_offset_align(align_drift, size_of_type);
 }
@@ -129,14 +129,14 @@ unsigned int lib_ring_buffer_align(size_t align_drift, size_t size_of_type)
 # define LTTNG_UST_RING_BUFFER_ALIGN_ATTR __attribute__((packed))
 
 /*
- * lib_ring_buffer_align - Calculate the offset needed to align the type.
+ * lttng_ust_lib_ring_buffer_align - Calculate the offset needed to align the type.
  * @align_drift:  object offset from an "alignment"-aligned address.
  * @size_of_type: Must be non-zero, power of 2.
  */
 static inline lttng_ust_notrace
-unsigned int lib_ring_buffer_align(size_t align_drift, size_t size_of_type);
+unsigned int lttng_ust_lib_ring_buffer_align(size_t align_drift, size_t size_of_type);
 static inline
-unsigned int lib_ring_buffer_align(size_t align_drift, size_t size_of_type)
+unsigned int lttng_ust_lib_ring_buffer_align(size_t align_drift, size_t size_of_type)
 {
 	/*
 	 * On architectures with efficient unaligned memory access, the content
@@ -148,17 +148,17 @@ unsigned int lib_ring_buffer_align(size_t align_drift, size_t size_of_type)
 #endif
 
 /**
- * lib_ring_buffer_align_ctx - Align context offset on "alignment"
+ * lttng_ust_lib_ring_buffer_align_ctx - Align context offset on "alignment"
  * @ctx: ring buffer context.
  */
 static inline lttng_ust_notrace
-void lib_ring_buffer_align_ctx(struct lttng_ust_lib_ring_buffer_ctx *ctx,
+void lttng_ust_lib_ring_buffer_align_ctx(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			   size_t alignment);
 static inline
-void lib_ring_buffer_align_ctx(struct lttng_ust_lib_ring_buffer_ctx *ctx,
+void lttng_ust_lib_ring_buffer_align_ctx(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			   size_t alignment)
 {
-	ctx->buf_offset += lib_ring_buffer_align(ctx->buf_offset,
+	ctx->buf_offset += lttng_ust_lib_ring_buffer_align(ctx->buf_offset,
 						 alignment);
 }
 

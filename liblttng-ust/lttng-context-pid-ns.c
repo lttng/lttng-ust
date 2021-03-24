@@ -80,7 +80,7 @@ size_t pid_ns_get_size(struct lttng_ust_ctx_field *field, size_t offset)
 {
 	size_t size = 0;
 
-	size += lib_ring_buffer_align(offset, lttng_alignof(ino_t));
+	size += lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(ino_t));
 	size += sizeof(ino_t);
 	return size;
 }
@@ -93,7 +93,7 @@ void pid_ns_record(struct lttng_ust_ctx_field *field,
 	ino_t pid_ns;
 
 	pid_ns = get_pid_ns();
-	lib_ring_buffer_align_ctx(ctx, lttng_alignof(pid_ns));
+	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(pid_ns));
 	chan->ops->event_write(ctx, &pid_ns, sizeof(pid_ns));
 }
 

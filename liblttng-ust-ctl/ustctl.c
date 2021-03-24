@@ -1353,7 +1353,7 @@ int ustctl_write_metadata_to_channel(
 		reserve_len = min_t(size_t,
 				lttng_chan_buf->ops->priv->packet_avail_size(lttng_chan_buf),
 				len - pos);
-		lib_ring_buffer_ctx_init(&ctx, rb_chan, NULL, reserve_len, sizeof(char));
+		lttng_ust_lib_ring_buffer_ctx_init(&ctx, rb_chan, NULL, reserve_len, sizeof(char));
 		/*
 		 * We don't care about metadata buffer's records lost
 		 * count, because we always retry here. Report error if
@@ -1400,7 +1400,7 @@ ssize_t ustctl_write_one_packet_to_channel(
 	reserve_len = min_t(ssize_t,
 			lttng_chan_buf->ops->priv->packet_avail_size(lttng_chan_buf),
 			len);
-	lib_ring_buffer_ctx_init(&ctx, rb_chan, NULL, reserve_len, sizeof(char));
+	lttng_ust_lib_ring_buffer_ctx_init(&ctx, rb_chan, NULL, reserve_len, sizeof(char));
 	ret = lttng_chan_buf->ops->event_reserve(&ctx, 0);
 	if (ret != 0) {
 		DBG("LTTng: event reservation failed");

@@ -90,7 +90,7 @@ int lib_ring_buffer_try_reserve(const struct lttng_ust_lib_ring_buffer_config *c
 	ctx->slot_size = record_header_size(config, chan, *o_begin,
 					    before_hdr_pad, ctx, client_ctx);
 	ctx->slot_size +=
-		lib_ring_buffer_align(*o_begin + ctx->slot_size,
+		lttng_ust_lib_ring_buffer_align(*o_begin + ctx->slot_size,
 				      ctx->largest_align) + ctx->data_size;
 	if (caa_unlikely((subbuf_offset(*o_begin, chan) + ctx->slot_size)
 		     > chan->backend.subbuf_size))

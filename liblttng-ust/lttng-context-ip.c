@@ -22,7 +22,7 @@ size_t ip_get_size(struct lttng_ust_ctx_field *field, size_t offset)
 {
 	size_t size = 0;
 
-	size += lib_ring_buffer_align(offset, lttng_alignof(void *));
+	size += lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(void *));
 	size += sizeof(void *);
 	return size;
 }
@@ -35,7 +35,7 @@ void ip_record(struct lttng_ust_ctx_field *field,
 	void *ip;
 
 	ip = ctx->ip;
-	lib_ring_buffer_align_ctx(ctx, lttng_alignof(ip));
+	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(ip));
 	chan->ops->event_write(ctx, &ip, sizeof(ip));
 }
 

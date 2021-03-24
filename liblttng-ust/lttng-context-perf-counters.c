@@ -162,7 +162,7 @@ size_t perf_counter_get_size(struct lttng_ust_ctx_field *field, size_t offset)
 {
 	size_t size = 0;
 
-	size += lib_ring_buffer_align(offset, lttng_alignof(uint64_t));
+	size += lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(uint64_t));
 	size += sizeof(uint64_t);
 	return size;
 }
@@ -445,7 +445,7 @@ void perf_counter_record(struct lttng_ust_ctx_field *field,
 	uint64_t value;
 
 	value = wrapper_perf_counter_read(field);
-	lib_ring_buffer_align_ctx(ctx, lttng_alignof(value));
+	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(value));
 	chan->ops->event_write(ctx, &value, sizeof(value));
 }
 

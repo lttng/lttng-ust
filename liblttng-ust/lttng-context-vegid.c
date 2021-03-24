@@ -66,7 +66,7 @@ size_t vegid_get_size(struct lttng_ust_ctx_field *field, size_t offset)
 {
 	size_t size = 0;
 
-	size += lib_ring_buffer_align(offset, lttng_alignof(gid_t));
+	size += lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(gid_t));
 	size += sizeof(gid_t);
 	return size;
 }
@@ -79,7 +79,7 @@ void vegid_record(struct lttng_ust_ctx_field *field,
 	gid_t vegid;
 
 	vegid = get_vegid();
-	lib_ring_buffer_align_ctx(ctx, lttng_alignof(vegid));
+	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(vegid));
 	chan->ops->event_write(ctx, &vegid, sizeof(vegid));
 }
 

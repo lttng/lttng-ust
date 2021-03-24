@@ -2152,7 +2152,7 @@ retry:
 						&offsets->pre_header_padding,
 						ctx, client_ctx);
 		offsets->size +=
-			lib_ring_buffer_align(offsets->begin + offsets->size,
+			lttng_ust_lib_ring_buffer_align(offsets->begin + offsets->size,
 					      ctx->largest_align)
 			+ ctx->data_size;
 		if (caa_unlikely(subbuf_offset(offsets->begin, chan) +
@@ -2258,7 +2258,7 @@ retry:
 						&offsets->pre_header_padding,
 						ctx, client_ctx);
 		offsets->size +=
-			lib_ring_buffer_align(offsets->begin + offsets->size,
+			lttng_ust_lib_ring_buffer_align(offsets->begin + offsets->size,
 					      ctx->largest_align)
 			+ ctx->data_size;
 		if (caa_unlikely(subbuf_offset(offsets->begin, chan)

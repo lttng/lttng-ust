@@ -50,7 +50,7 @@ size_t vpid_get_size(struct lttng_ust_ctx_field *field, size_t offset)
 {
 	size_t size = 0;
 
-	size += lib_ring_buffer_align(offset, lttng_alignof(pid_t));
+	size += lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(pid_t));
 	size += sizeof(pid_t);
 	return size;
 }
@@ -62,7 +62,7 @@ void vpid_record(struct lttng_ust_ctx_field *field,
 {
 	pid_t vpid = wrapper_getvpid();
 
-	lib_ring_buffer_align_ctx(ctx, lttng_alignof(vpid));
+	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(vpid));
 	chan->ops->event_write(ctx, &vpid, sizeof(vpid));
 }
 

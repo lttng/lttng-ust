@@ -66,7 +66,7 @@ size_t vgid_get_size(struct lttng_ust_ctx_field *field, size_t offset)
 {
 	size_t size = 0;
 
-	size += lib_ring_buffer_align(offset, lttng_alignof(gid_t));
+	size += lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(gid_t));
 	size += sizeof(gid_t);
 	return size;
 }
@@ -79,7 +79,7 @@ void vgid_record(struct lttng_ust_ctx_field *field,
 	gid_t vgid;
 
 	vgid = get_vgid();
-	lib_ring_buffer_align_ctx(ctx, lttng_alignof(vgid));
+	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(vgid));
 	chan->ops->event_write(ctx, &vgid, sizeof(vgid));
 }
 

@@ -66,7 +66,7 @@ size_t veuid_get_size(struct lttng_ust_ctx_field *field, size_t offset)
 {
 	size_t size = 0;
 
-	size += lib_ring_buffer_align(offset, lttng_alignof(uid_t));
+	size += lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(uid_t));
 	size += sizeof(uid_t);
 	return size;
 }
@@ -79,7 +79,7 @@ void veuid_record(struct lttng_ust_ctx_field *field,
 	uid_t veuid;
 
 	veuid = get_veuid();
-	lib_ring_buffer_align_ctx(ctx, lttng_alignof(veuid));
+	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(veuid));
 	chan->ops->event_write(ctx, &veuid, sizeof(veuid));
 }
 
