@@ -271,7 +271,7 @@ retry:
 			goto retry;
 		case '\\':
 			/* Go to escaped character. */
-			p++;
+			p++;	/* Fallthrough */
 
 			/*
 			 * Fall through the default case which will

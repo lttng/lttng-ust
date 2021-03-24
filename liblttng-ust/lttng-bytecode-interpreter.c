@@ -2098,7 +2098,7 @@ int lttng_bytecode_interpret(struct lttng_ust_bytecode_runtime *ust_bytecode,
 				JUMP_TO(BYTECODE_OP_CAST_DOUBLE_TO_S64);
 			case REG_U64:
 				estack_ax_t = REG_S64;
-				next_pc += sizeof(struct cast_op);
+				next_pc += sizeof(struct cast_op); /* Fall-through */
 			case REG_STRING: /* Fall-through */
 			case REG_STAR_GLOB_STRING:
 				ret = -EINVAL;
