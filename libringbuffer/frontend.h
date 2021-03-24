@@ -59,7 +59,6 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
  * release all references, and destroys the channel.
  */
 __attribute__((visibility("hidden")))
-extern
 void channel_destroy(struct lttng_ust_lib_ring_buffer_channel *chan,
 		struct lttng_ust_shm_handle *handle,
 		int consumer);

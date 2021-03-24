@@ -54,6 +54,7 @@
 #include "wait.h"
 #include "../libringbuffer/shm.h"
 #include "../libringbuffer/frontend_types.h"
+#include "../libringbuffer/frontend.h"
 #include "../libcounter/counter.h"
 #include "jhash.h"
 #include <lttng/ust-abi.h>

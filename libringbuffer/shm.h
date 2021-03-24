@@ -30,12 +30,6 @@ int channel_handle_add_stream(struct lttng_ust_shm_handle *handle,
 __attribute__((visibility("hidden")))
 unsigned int channel_handle_get_nr_streams(struct lttng_ust_shm_handle *handle);
 
-__attribute__((visibility("hidden")))
-extern
-void channel_destroy(struct lttng_ust_lib_ring_buffer_channel *chan,
-		struct lttng_ust_shm_handle *handle,
-		int consumer);
-
 /*
  * Pointer dereferencing. We don't trust the shm_ref, so we validate
  * both the index and offset with known boundaries.
