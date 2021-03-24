@@ -100,9 +100,11 @@ do {									\
 #define PERROR(call, args...)						\
 	do {								\
 		if (ust_err_debug_enabled()) {				\
-			char buf[200] = "Error in strerror_r()";	\
-			strerror_r(errno, buf, sizeof(buf));		\
-			ERRMSG("Error: " call ": %s", ## args, buf);	\
+			char perror_buf[200] = "Error in strerror_r()";	\
+			strerror_r(errno, perror_buf,			\
+					sizeof(perror_buf));		\
+			ERRMSG("Error: " call ": %s", ## args, 		\
+					perror_buf);			\
 		}							\
 	} while(0)
 #else
@@ -112,10 +114,12 @@ do {									\
 #define PERROR(call, args...)						\
 	do {								\
 		if (ust_err_debug_enabled()) {				\
-			char *buf;					\
-			char tmp[200];					\
-			buf = strerror_r(errno, tmp, sizeof(tmp));	\
-			ERRMSG("Error: " call ": %s", ## args, buf);	\
+			char *perror_buf;				\
+			char perror_tmp[200];				\
+			perror_buf = strerror_r(errno, perror_tmp,	\
+					sizeof(perror_tmp));		\
+			ERRMSG("Error: " call ": %s", ## args,		\
+					perror_buf);			\
 		}							\
 	} while(0)
 #endif

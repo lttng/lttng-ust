@@ -64,12 +64,8 @@ char *_shmp_offset(struct shm_object_table *table, struct shm_ref *ref,
 	return &obj->memory_map[ref_offset];
 }
 
-#define shmp_index(handle, ref, index)					\
-	({								\
-		__typeof__((ref)._type) ____ptr_ret;			\
-		____ptr_ret = (__typeof__(____ptr_ret)) _shmp_offset((handle)->table, &(ref)._ref, index, sizeof(*____ptr_ret));	\
-		____ptr_ret;						\
-	})
+#define shmp_index(handle, ref, index)	\
+	((__typeof__((ref)._type)) _shmp_offset((handle)->table, &(ref)._ref, index, sizeof(*((ref)._type))))
 
 #define shmp(handle, ref)	shmp_index(handle, ref, 0)
 
