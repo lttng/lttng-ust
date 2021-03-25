@@ -41,30 +41,7 @@
 #error "bitfield.h requires the compiler representation of signed integers to be two's complement."
 #endif
 
-/*
- * _bt_is_signed_type() willingly generates comparison of unsigned
- * expression < 0, which is always false. Silence compiler warnings.
- * GCC versions lower than 4.6.0 do not accept diagnostic pragma inside
- * functions.
- */
-#if defined (__GNUC__) && (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__) >= 40600
-# define _BT_DIAG_PUSH			_Pragma("GCC diagnostic push")
-# define _BT_DIAG_POP			_Pragma("GCC diagnostic pop")
-
-# define _BT_DIAG_STRINGIFY_1(x)	#x
-# define _BT_DIAG_STRINGIFY(x)		_BT_DIAG_STRINGIFY_1(x)
-
-# define _BT_DIAG_IGNORE(option)	\
-	_Pragma(_BT_DIAG_STRINGIFY(GCC diagnostic ignored option))
-# define _BT_DIAG_IGNORE_TYPE_LIMITS	_BT_DIAG_IGNORE("-Wtype-limits")
-#else
-# define _BT_DIAG_PUSH
-# define _BT_DIAG_POP
-# define _BT_DIAG_IGNORE
-# define _BT_DIAG_IGNORE_TYPE_LIMITS
-#endif
-
-#define _bt_is_signed_type(type)	((type) -1 < (type) 0)
+#define _bt_is_signed_type(type)	((type) -1 < (type) 1)
 
 /*
  * Produce a build-time error if the condition `cond` is non-zero.
@@ -387,7 +364,6 @@ do {									\
 	unsigned long _ts = sizeof(type) * CHAR_BIT; /* type size */	\
 	unsigned long _start_unit, _end_unit, _this_unit;		\
 	unsigned long _end, _cshift; /* _cshift is "complement shift" */ \
-	bool _is_signed_type;						\
 									\
 	if (!_length) {							\
 		*_vptr = 0;						\
@@ -399,11 +375,7 @@ do {									\
 	_end_unit = (_end + (_ts - 1)) / _ts;				\
 									\
 	_this_unit = _end_unit - 1;					\
-	_BT_DIAG_PUSH							\
-	_BT_DIAG_IGNORE_TYPE_LIMITS					\
-	_is_signed_type = _bt_is_signed_type(__typeof__(_v));		\
-	_BT_DIAG_POP							\
-	if (_is_signed_type						\
+	if (_bt_is_signed_type(__typeof__(_v))				\
 	    && (_ptr[_this_unit] & _bt_lshift((type) 1, (_end % _ts ? _end % _ts : _ts) - 1))) \
 		_v = ~(__typeof__(_v)) 0;				\
 	else								\
@@ -459,7 +431,6 @@ do {									\
 	unsigned long _ts = sizeof(type) * CHAR_BIT; /* type size */	\
 	unsigned long _start_unit, _end_unit, _this_unit;		\
 	unsigned long _end, _cshift; /* _cshift is "complement shift" */ \
-	bool _is_signed_type;						\
 									\
 	if (!_length) {							\
 		*_vptr = 0;						\
@@ -471,11 +442,7 @@ do {									\
 	_end_unit = (_end + (_ts - 1)) / _ts;				\
 									\
 	_this_unit = _start_unit;					\
-	_BT_DIAG_PUSH							\
-	_BT_DIAG_IGNORE_TYPE_LIMITS					\
-	_is_signed_type = _bt_is_signed_type(__typeof__(_v));		\
-	_BT_DIAG_POP							\
-	if (_is_signed_type						\
+	if (_bt_is_signed_type(__typeof__(_v))				\
 	    && (_ptr[_this_unit] & _bt_lshift((type) 1, _ts - (_start % _ts) - 1))) \
 		_v = ~(__typeof__(_v)) 0;				\
 	else								\
