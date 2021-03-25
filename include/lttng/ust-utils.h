@@ -42,6 +42,7 @@
 #define lttng_ust_is_integer_type(type) \
 		(__builtin_types_compatible_p(type, _Bool) || \
 		__builtin_types_compatible_p(type, char) || \
+		__builtin_types_compatible_p(type, signed char) || \
 		__builtin_types_compatible_p(type, unsigned char) || \
 		__builtin_types_compatible_p(type, short) || \
 		__builtin_types_compatible_p(type, unsigned short) || \
