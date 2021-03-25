@@ -28,7 +28,11 @@
  *
  * Returns true if the type of @type is signed.
  */
-#define lttng_ust_is_signed_type(type)           ((type) -1 < (type) 1)
+#if defined(__cplusplus)
+#define lttng_ust_is_signed_type(type)	(std::is_signed<type>::value)
+#else
+#define lttng_ust_is_signed_type(type)	((type) -1 < (type) 1)
+#endif
 
 
 /**
