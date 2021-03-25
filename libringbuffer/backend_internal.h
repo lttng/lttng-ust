@@ -635,7 +635,7 @@ do {								\
  * write len bytes to dest with c
  */
 static inline
-void lib_ring_buffer_do_memset(char *dest, int c, unsigned long len)
+void lib_ring_buffer_do_memset(char *dest, char c, unsigned long len)
 {
 	unsigned long i;
 

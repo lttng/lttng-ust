@@ -137,7 +137,7 @@ size_t lib_ring_buffer_do_strcpy(const struct lttng_ust_lib_ring_buffer_config *
 static inline __attribute__((always_inline))
 void lib_ring_buffer_strcpy(const struct lttng_ust_lib_ring_buffer_config *config,
 			   struct lttng_ust_lib_ring_buffer_ctx *ctx,
-			   const char *src, size_t len, int pad)
+			   const char *src, size_t len, char pad)
 {
 	struct channel_backend *chanb = &ctx->chan->backend;
 	struct lttng_ust_shm_handle *handle = ctx->handle;
