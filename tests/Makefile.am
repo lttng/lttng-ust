@@ -14,7 +14,8 @@ TESTS = \
 	unit/libmsgpack/test_msgpack \
 	unit/pthread_name/test_pthread_name \
 	unit/snprintf/test_snprintf \
-	unit/ust-elf/test_ust_elf
+	unit/ust-elf/test_ust_elf \
+	unit/ust-error/test_ust_error
 
 EXTRA_DIST = README
 

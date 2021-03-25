@@ -85,6 +85,7 @@ tests/unit/libringbuffer/test_shm
 tests/unit/pthread_name/test_pthread_name
 tests/unit/snprintf/test_snprintf
 tests/unit/ust-elf/ust-elf
+tests/unit/ust-error/test_ust_error
 
 # Java agent library
 *.class

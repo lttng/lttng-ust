@@ -6,4 +6,5 @@ SUBDIRS = \
 	libringbuffer \
 	pthread_name \
 	snprintf \
-	ust-elf
+	ust-elf \
+	ust-error
