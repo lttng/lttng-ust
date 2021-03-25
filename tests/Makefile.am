@@ -15,7 +15,13 @@ TESTS = \
 	unit/pthread_name/test_pthread_name \
 	unit/snprintf/test_snprintf \
 	unit/ust-elf/test_ust_elf \
-	unit/ust-error/test_ust_error
+	unit/ust-error/test_ust_error \
+	unit/ust-utils/test_ust_utils
+
+if HAVE_CXX
+TESTS += \
+	unit/ust-utils/test_ust_utils_cxx
+endif
 
 EXTRA_DIST = README
 

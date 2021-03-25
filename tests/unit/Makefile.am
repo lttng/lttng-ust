@@ -7,4 +7,5 @@ SUBDIRS = \
 	pthread_name \
 	snprintf \
 	ust-elf \
-	ust-error
+	ust-error \
+	ust-utils

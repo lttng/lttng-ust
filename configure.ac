@@ -563,6 +563,7 @@ AC_CONFIG_FILES([
   tests/unit/snprintf/Makefile
   tests/unit/ust-elf/Makefile
   tests/unit/ust-error/Makefile
+  tests/unit/ust-utils/Makefile
   tests/utils/Makefile
   lttng-ust.pc
   lttng-ust-ctl.pc
