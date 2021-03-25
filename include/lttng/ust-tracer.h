@@ -35,7 +35,7 @@
 #define lttng_alignof(type)	1
 #endif
 
-#define lttng_is_signed_type(type)           ((type) -1 < (type) 0)
+#define lttng_is_signed_type(type)           ((type) -1 < (type) 1)
 
 /*
  * This macro adds a compilation assertion that CTF arrays and sequences
