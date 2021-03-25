@@ -707,7 +707,7 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 	if (lttng_ust_string_encoding_##_encoding == lttng_ust_string_encoding_none) \
 		__chan->ops->event_write(&__ctx, _src, sizeof(_type) * (_length)); \
 	else								\
-		__chan->ops->event_strcpy_pad(&__ctx, (const char *) (_src), _length); \
+		__chan->ops->event_pstrcpy_pad(&__ctx, (const char *) (_src), _length); \
 
 #undef _ctf_sequence_encoded
 #define _ctf_sequence_encoded(_type, _item, _src, _byte_order, _length_type, \
@@ -722,7 +722,7 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 		__chan->ops->event_write(&__ctx, _src,			\
 			sizeof(_type) * __get_dynamic_len(dest));	\
 	else								\
-		__chan->ops->event_strcpy_pad(&__ctx, (const char *) (_src), __get_dynamic_len(dest)); \
+		__chan->ops->event_pstrcpy_pad(&__ctx, (const char *) (_src), __get_dynamic_len(dest)); \
 
 #undef _ctf_string
 #define _ctf_string(_item, _src, _nowrite)			        \

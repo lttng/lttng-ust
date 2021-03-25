@@ -182,6 +182,64 @@ void lib_ring_buffer_strcpy(const struct lttng_ust_lib_ring_buffer_config *confi
 	ctx->buf_offset += len;
 }
 
+/**
+ * lib_ring_buffer_pstrcpy - write to a buffer backend P-string
+ * @config : ring buffer instance configuration
+ * @ctx: ring buffer context. (input arguments only)
+ * @src : source pointer to copy from
+ * @len : length of data to copy
+ * @pad : character to use for padding
+ *
+ * This function copies up to @len bytes of data from a source pointer
+ * to a Pascal String into the buffer backend. If a terminating '\0'
+ * character is found in @src before @len characters are copied, pad the
+ * buffer with @pad characters (e.g.  '\0').
+ *
+ * The length of the pascal strings in the ring buffer is explicit: it
+ * is either the array or sequence length.
+ */
+static inline __attribute__((always_inline))
+void lib_ring_buffer_pstrcpy(const struct lttng_ust_lib_ring_buffer_config *config,
+			   struct lttng_ust_lib_ring_buffer_ctx *ctx,
+			   const char *src, size_t len, char pad)
+{
+	struct channel_backend *chanb = &ctx->chan->backend;
+	struct lttng_ust_shm_handle *handle = ctx->handle;
+	size_t count;
+	size_t offset = ctx->buf_offset;
+	struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
+	void *p;
+
+	if (caa_unlikely(!len))
+		return;
+	/*
+	 * Underlying layer should never ask for writes across
+	 * subbuffers.
+	 */
+	CHAN_WARN_ON(chanb, (offset & (chanb->buf_size - 1)) + len > chanb->buf_size);
+	backend_pages = lib_ring_buffer_get_backend_pages_from_ctx(config, ctx);
+	if (caa_unlikely(!backend_pages)) {
+		if (lib_ring_buffer_backend_get_pages(config, ctx, &backend_pages))
+			return;
+	}
+	p = shmp_index(handle, backend_pages->p, offset & (chanb->subbuf_size - 1));
+	if (caa_unlikely(!p))
+		return;
+
+	count = lib_ring_buffer_do_strcpy(config, p, src, len);
+	offset += count;
+	/* Padding */
+	if (caa_unlikely(count < len)) {
+		size_t pad_len = len - count;
+
+		p = shmp_index(handle, backend_pages->p, offset & (chanb->subbuf_size - 1));
+		if (caa_unlikely(!p))
+			return;
+		lib_ring_buffer_do_memset(p, pad, pad_len);
+	}
+	ctx->buf_offset += len;
+}
+
 /*
  * This accessor counts the number of unread records in a buffer.
  * It only provides a consistent value if no reads not writes are performed

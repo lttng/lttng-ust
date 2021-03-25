@@ -764,10 +764,10 @@ void lttng_event_strcpy(struct lttng_ust_lib_ring_buffer_ctx *ctx, const char *s
 }
 
 static
-void lttng_event_strcpy_pad(struct lttng_ust_lib_ring_buffer_ctx *ctx,
+void lttng_event_pstrcpy_pad(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		     const char *src, size_t len)
 {
-	lib_ring_buffer_strcpy(&client_config, ctx, src, len, '\0');
+	lib_ring_buffer_pstrcpy(&client_config, ctx, src, len, '\0');
 }
 
 #if 0
@@ -833,7 +833,7 @@ static struct lttng_transport lttng_relay_transport = {
 		.event_commit = lttng_event_commit,
 		.event_write = lttng_event_write,
 		.event_strcpy = lttng_event_strcpy,
-		.event_strcpy_pad = lttng_event_strcpy_pad,
+		.event_pstrcpy_pad = lttng_event_pstrcpy_pad,
 	},
 	.client_config = &client_config,
 };
