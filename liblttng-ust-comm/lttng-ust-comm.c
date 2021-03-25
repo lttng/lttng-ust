@@ -70,19 +70,18 @@ static const char *ustcomm_readable_code[] = {
 
 /*
  * lttng_ust_strerror
+ * @code: must be a negative value of enum lttng_ust_error_code (or 0).
  *
- * Receives positive error value.
- * Return ptr to string representing a human readable
- * error code from the ustcomm_return_code enum.
+ * Returns a ptr to a string representing a human readable error code from the
+ * ustcomm_return_code enum.
  */
 const char *lttng_ust_strerror(int code)
 {
-	if (code == LTTNG_UST_OK)
-		return ustcomm_readable_code[USTCOMM_CODE_OFFSET(code)];
-	if (code < LTTNG_UST_ERR)
-		return strerror(code);
-	if (code >= LTTNG_UST_ERR_NR)
+	code = -code;
+
+	if (code < LTTNG_UST_OK || code >= LTTNG_UST_ERR_NR)
 		code = LTTNG_UST_ERR;
+
 	return ustcomm_readable_code[USTCOMM_CODE_OFFSET(code)];
 }
 

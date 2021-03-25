@@ -41,8 +41,11 @@ enum lttng_ust_error_code {
 };
 
 /*
- * Return a human-readable error message for an lttng-ust error code.
- * code must be a positive value (or 0).
+ * lttng_ust_strerror
+ * @code: must be a negative value of enum lttng_ust_error_code (or 0).
+ *
+ * Returns a ptr to a string representing a human readable error code from the
+ * ustcomm_return_code enum.
  */
 const char *lttng_ust_strerror(int code);
 
