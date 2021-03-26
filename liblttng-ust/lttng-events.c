@@ -53,6 +53,7 @@
 #include "ust-events-internal.h"
 #include "wait.h"
 #include "../libringbuffer/shm.h"
+#include "../libringbuffer/frontend_types.h"
 #include "../libcounter/counter.h"
 #include "jhash.h"
 #include <lttng/ust-abi.h>
@@ -238,7 +239,7 @@ void _lttng_channel_unmap(struct lttng_ust_channel_buffer *lttng_chan)
 	cds_list_del(&lttng_chan->priv->node);
 	lttng_destroy_context(lttng_chan->priv->ctx);
 	chan = lttng_chan->chan;
-	handle = lttng_chan->handle;
+	handle = chan->handle;
 	channel_destroy(chan, handle, 0);
 	free(lttng_chan->parent);
 	free(lttng_chan->priv);

@@ -1314,7 +1314,7 @@ int ustctl_send_channel_to_sessiond(int sock,
 {
 	struct shm_object_table *table;
 
-	table = channel->chan->handle->table;
+	table = channel->chan->chan->handle->table;
 	if (table->size <= 0)
 		return -EINVAL;
 	return ustctl_send_channel(sock,
@@ -1351,7 +1351,8 @@ int ustctl_write_metadata_to_channel(
 
 	for (pos = 0; pos < len; pos += reserve_len) {
 		reserve_len = min_t(size_t,
-				lttng_chan_buf->ops->priv->packet_avail_size(lttng_chan_buf->chan, lttng_chan_buf->handle),
+				lttng_chan_buf->ops->priv->packet_avail_size(lttng_chan_buf->chan,
+						lttng_chan_buf->chan->handle),
 				len - pos);
 		lib_ring_buffer_ctx_init(&ctx, lttng_chan_buf->chan, NULL, reserve_len, sizeof(char));
 		/*
@@ -1397,7 +1398,8 @@ ssize_t ustctl_write_one_packet_to_channel(
 	int ret;
 
 	reserve_len = min_t(ssize_t,
-			lttng_chan_buf->ops->priv->packet_avail_size(lttng_chan_buf->chan, lttng_chan_buf->handle),
+			lttng_chan_buf->ops->priv->packet_avail_size(lttng_chan_buf->chan,
+					lttng_chan_buf->chan->handle),
 			len);
 	lib_ring_buffer_ctx_init(&ctx, lttng_chan_buf->chan, NULL, reserve_len, sizeof(char));
 	ret = lttng_chan_buf->ops->event_reserve(&ctx, 0);
@@ -1472,7 +1474,7 @@ struct ustctl_consumer_stream *
 
 	if (!channel)
 		return NULL;
-	handle = channel->chan->handle;
+	handle = channel->chan->chan->handle;
 	if (!handle)
 		return NULL;
 
@@ -1513,7 +1515,7 @@ void ustctl_destroy_stream(struct ustctl_consumer_stream *stream)
 	consumer_chan = stream->chan;
 	(void) ustctl_stream_close_wait_fd(stream);
 	(void) ustctl_stream_close_wakeup_fd(stream);
-	lib_ring_buffer_release_read(buf, consumer_chan->chan->handle);
+	lib_ring_buffer_release_read(buf, consumer_chan->chan->chan->handle);
 	free(stream);
 }
 
@@ -1521,16 +1523,16 @@ int ustctl_channel_get_wait_fd(struct ustctl_consumer_channel *chan)
 {
 	if (!chan)
 		return -EINVAL;
-	return shm_get_wait_fd(chan->chan->handle,
-		&chan->chan->handle->chan._ref);
+	return shm_get_wait_fd(chan->chan->chan->handle,
+		&chan->chan->chan->handle->chan._ref);
 }
 
 int ustctl_channel_get_wakeup_fd(struct ustctl_consumer_channel *chan)
 {
 	if (!chan)
 		return -EINVAL;
-	return shm_get_wakeup_fd(chan->chan->handle,
-		&chan->chan->handle->chan._ref);
+	return shm_get_wakeup_fd(chan->chan->chan->handle,
+		&chan->chan->chan->handle->chan._ref);
 }
 
 int ustctl_stream_get_wait_fd(struct ustctl_consumer_stream *stream)
@@ -1542,7 +1544,7 @@ int ustctl_stream_get_wait_fd(struct ustctl_consumer_stream *stream)
 		return -EINVAL;
 	buf = stream->buf;
 	consumer_chan = stream->chan;
-	return shm_get_wait_fd(consumer_chan->chan->handle, &buf->self._ref);
+	return shm_get_wait_fd(consumer_chan->chan->chan->handle, &buf->self._ref);
 }
 
 int ustctl_stream_get_wakeup_fd(struct ustctl_consumer_stream *stream)
@@ -1554,7 +1556,7 @@ int ustctl_stream_get_wakeup_fd(struct ustctl_consumer_stream *stream)
 		return -EINVAL;
 	buf = stream->buf;
 	consumer_chan = stream->chan;
-	return shm_get_wakeup_fd(consumer_chan->chan->handle, &buf->self._ref);
+	return shm_get_wakeup_fd(consumer_chan->chan->chan->handle, &buf->self._ref);
 }
 
 /* For mmap mode, readable without "get" operation */
@@ -1568,7 +1570,7 @@ void *ustctl_get_mmap_base(struct ustctl_consumer_stream *stream)
 		return NULL;
 	buf = stream->buf;
 	consumer_chan = stream->chan;
-	return shmp(consumer_chan->chan->handle, buf->backend.memory_map);
+	return shmp(consumer_chan->chan->chan->handle, buf->backend.memory_map);
 }
 
 /* returns the length to mmap. */
@@ -1634,11 +1636,11 @@ int ustctl_get_mmap_read_offset(struct ustctl_consumer_stream *stream,
 		return -EINVAL;
 	sb_bindex = subbuffer_id_get_index(&chan->backend.config,
 					buf->backend.buf_rsb.id);
-	barray_idx = shmp_index(consumer_chan->chan->handle, buf->backend.array,
+	barray_idx = shmp_index(consumer_chan->chan->chan->handle, buf->backend.array,
 			sb_bindex);
 	if (!barray_idx)
 		return -EINVAL;
-	pages = shmp(consumer_chan->chan->handle, barray_idx->shmp);
+	pages = shmp(consumer_chan->chan->chan->handle, barray_idx->shmp);
 	if (!pages)
 		return -EINVAL;
 	*off = pages->mmap_offset;
@@ -1660,7 +1662,7 @@ int ustctl_get_subbuf_size(struct ustctl_consumer_stream *stream,
 	consumer_chan = stream->chan;
 	chan = consumer_chan->chan->chan;
 	*len = lib_ring_buffer_get_read_data_size(&chan->backend.config, buf,
-		consumer_chan->chan->handle);
+		consumer_chan->chan->chan->handle);
 	return 0;
 }
 
@@ -1678,7 +1680,7 @@ int ustctl_get_padded_subbuf_size(struct ustctl_consumer_stream *stream,
 	consumer_chan = stream->chan;
 	chan = consumer_chan->chan->chan;
 	*len = lib_ring_buffer_get_read_data_size(&chan->backend.config, buf,
-		consumer_chan->chan->handle);
+		consumer_chan->chan->chan->handle);
 	*len = LTTNG_UST_PAGE_ALIGN(*len);
 	return 0;
 }
@@ -1694,7 +1696,7 @@ int ustctl_get_next_subbuf(struct ustctl_consumer_stream *stream)
 	buf = stream->buf;
 	consumer_chan = stream->chan;
 	return lib_ring_buffer_get_next_subbuf(buf,
-			consumer_chan->chan->handle);
+			consumer_chan->chan->chan->handle);
 }
 
 
@@ -1708,7 +1710,7 @@ int ustctl_put_next_subbuf(struct ustctl_consumer_stream *stream)
 		return -EINVAL;
 	buf = stream->buf;
 	consumer_chan = stream->chan;
-	lib_ring_buffer_put_next_subbuf(buf, consumer_chan->chan->handle);
+	lib_ring_buffer_put_next_subbuf(buf, consumer_chan->chan->chan->handle);
 	return 0;
 }
 
@@ -1725,7 +1727,7 @@ int ustctl_snapshot(struct ustctl_consumer_stream *stream)
 	buf = stream->buf;
 	consumer_chan = stream->chan;
 	return lib_ring_buffer_snapshot(buf, &buf->cons_snapshot,
-			&buf->prod_snapshot, consumer_chan->chan->handle);
+			&buf->prod_snapshot, consumer_chan->chan->chan->handle);
 }
 
 /*
@@ -1744,7 +1746,7 @@ int ustctl_snapshot_sample_positions(struct ustctl_consumer_stream *stream)
 	consumer_chan = stream->chan;
 	return lib_ring_buffer_snapshot_sample_positions(buf,
 			&buf->cons_snapshot, &buf->prod_snapshot,
-			consumer_chan->chan->handle);
+			consumer_chan->chan->chan->handle);
 }
 
 /* Get the consumer position (iteration start) */
@@ -1785,7 +1787,7 @@ int ustctl_get_subbuf(struct ustctl_consumer_stream *stream,
 	buf = stream->buf;
 	consumer_chan = stream->chan;
 	return lib_ring_buffer_get_subbuf(buf, *pos,
-			consumer_chan->chan->handle);
+			consumer_chan->chan->chan->handle);
 }
 
 /* Release exclusive sub-buffer access */
@@ -1798,7 +1800,7 @@ int ustctl_put_subbuf(struct ustctl_consumer_stream *stream)
 		return -EINVAL;
 	buf = stream->buf;
 	consumer_chan = stream->chan;
-	lib_ring_buffer_put_subbuf(buf, consumer_chan->chan->handle);
+	lib_ring_buffer_put_subbuf(buf, consumer_chan->chan->chan->handle);
 	return 0;
 }
 
@@ -1813,7 +1815,7 @@ void ustctl_flush_buffer(struct ustctl_consumer_stream *stream,
 	consumer_chan = stream->chan;
 	lib_ring_buffer_switch_slow(buf,
 		producer_active ? SWITCH_ACTIVE : SWITCH_FLUSH,
-		consumer_chan->chan->handle);
+		consumer_chan->chan->chan->handle);
 }
 
 void ustctl_clear_buffer(struct ustctl_consumer_stream *stream)
@@ -1825,8 +1827,8 @@ void ustctl_clear_buffer(struct ustctl_consumer_stream *stream)
 	buf = stream->buf;
 	consumer_chan = stream->chan;
 	lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE,
-		consumer_chan->chan->handle);
-	lib_ring_buffer_clear_reader(buf, consumer_chan->chan->handle);
+		consumer_chan->chan->chan->handle);
+	lib_ring_buffer_clear_reader(buf, consumer_chan->chan->chan->handle);
 }
 
 static
@@ -1860,7 +1862,7 @@ int ustctl_get_timestamp_begin(struct ustctl_consumer_stream *stream,
 	if (!stream || !timestamp_begin)
 		return -EINVAL;
 	buf = stream->buf;
-	handle = stream->chan->chan->handle;
+	handle = stream->chan->chan->chan->handle;
 	client_cb = get_client_cb(buf, handle);
 	if (!client_cb)
 		return -ENOSYS;
@@ -1877,7 +1879,7 @@ int ustctl_get_timestamp_end(struct ustctl_consumer_stream *stream,
 	if (!stream || !timestamp_end)
 		return -EINVAL;
 	buf = stream->buf;
-	handle = stream->chan->chan->handle;
+	handle = stream->chan->chan->chan->handle;
 	client_cb = get_client_cb(buf, handle);
 	if (!client_cb)
 		return -ENOSYS;
@@ -1894,7 +1896,7 @@ int ustctl_get_events_discarded(struct ustctl_consumer_stream *stream,
 	if (!stream || !events_discarded)
 		return -EINVAL;
 	buf = stream->buf;
-	handle = stream->chan->chan->handle;
+	handle = stream->chan->chan->chan->handle;
 	client_cb = get_client_cb(buf, handle);
 	if (!client_cb)
 		return -ENOSYS;
@@ -1911,7 +1913,7 @@ int ustctl_get_content_size(struct ustctl_consumer_stream *stream,
 	if (!stream || !content_size)
 		return -EINVAL;
 	buf = stream->buf;
-	handle = stream->chan->chan->handle;
+	handle = stream->chan->chan->chan->handle;
 	client_cb = get_client_cb(buf, handle);
 	if (!client_cb)
 		return -ENOSYS;
@@ -1928,7 +1930,7 @@ int ustctl_get_packet_size(struct ustctl_consumer_stream *stream,
 	if (!stream || !packet_size)
 		return -EINVAL;
 	buf = stream->buf;
-	handle = stream->chan->chan->handle;
+	handle = stream->chan->chan->chan->handle;
 	client_cb = get_client_cb(buf, handle);
 	if (!client_cb)
 		return -ENOSYS;
@@ -1945,7 +1947,7 @@ int ustctl_get_stream_id(struct ustctl_consumer_stream *stream,
 	if (!stream || !stream_id)
 		return -EINVAL;
 	buf = stream->buf;
-	handle = stream->chan->chan->handle;
+	handle = stream->chan->chan->chan->handle;
 	client_cb = get_client_cb(buf, handle);
 	if (!client_cb)
 		return -ENOSYS;
@@ -1962,7 +1964,7 @@ int ustctl_get_current_timestamp(struct ustctl_consumer_stream *stream,
 	if (!stream || !ts)
 		return -EINVAL;
 	buf = stream->buf;
-	handle = stream->chan->chan->handle;
+	handle = stream->chan->chan->chan->handle;
 	client_cb = get_client_cb(buf, handle);
 	if (!client_cb || !client_cb->current_timestamp)
 		return -ENOSYS;
@@ -1979,7 +1981,7 @@ int ustctl_get_sequence_number(struct ustctl_consumer_stream *stream,
 	if (!stream || !seq)
 		return -EINVAL;
 	buf = stream->buf;
-	handle = stream->chan->chan->handle;
+	handle = stream->chan->chan->chan->handle;
 	client_cb = get_client_cb(buf, handle);
 	if (!client_cb || !client_cb->sequence_number)
 		return -ENOSYS;
@@ -1996,7 +1998,7 @@ int ustctl_get_instance_id(struct ustctl_consumer_stream *stream,
 	if (!stream || !id)
 		return -EINVAL;
 	buf = stream->buf;
-	handle = stream->chan->chan->handle;
+	handle = stream->chan->chan->chan->handle;
 	client_cb = get_client_cb(buf, handle);
 	if (!client_cb)
 		return -ENOSYS;

@@ -223,7 +223,6 @@ struct lttng_ust_channel_buffer *_channel_create(const char *name,
 			stream_fds, nr_stream_fds, blocking_timeout);
 	if (!handle)
 		goto error;
-	lttng_chan_buf->handle = handle;
 	lttng_chan_buf->chan = shmp(handle, handle->chan);
 	return lttng_chan_buf;
 
@@ -235,7 +234,7 @@ error:
 static
 void lttng_channel_destroy(struct lttng_ust_channel_buffer *lttng_chan_buf)
 {
-	channel_destroy(lttng_chan_buf->chan, lttng_chan_buf->handle, 1);
+	channel_destroy(lttng_chan_buf->chan, lttng_chan_buf->chan->handle, 1);
 	lttng_ust_free_channel_common(lttng_chan_buf->parent);
 }
 

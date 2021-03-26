@@ -33,7 +33,6 @@
 	"lttng-ust-wait-"					\
 	__ust_stringify(LTTNG_UST_ABI_MAJOR_VERSION)
 
-struct lttng_ust_shm_handle;
 struct lttng_ust_lib_ring_buffer;
 
 struct ustctl_consumer_channel_attr {
