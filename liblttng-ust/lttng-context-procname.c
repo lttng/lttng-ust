@@ -37,7 +37,7 @@ static DEFINE_URCU_TLS(procname_array, cached_procname);
 static DEFINE_URCU_TLS(int, procname_nesting);
 
 static inline
-char *wrapper_getprocname(void)
+const char *wrapper_getprocname(void)
 {
 	int nesting = CMM_LOAD_SHARED(URCU_TLS(procname_nesting));
 
@@ -76,7 +76,7 @@ void procname_record(struct lttng_ust_ctx_field *field,
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		 struct lttng_ust_channel_buffer *chan)
 {
-	char *procname;
+	const char *procname;
 
 	procname = wrapper_getprocname();
 	chan->ops->event_write(ctx, procname, LTTNG_UST_ABI_PROCNAME_LEN, 1);

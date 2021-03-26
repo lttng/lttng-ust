@@ -243,9 +243,10 @@ void test_get_value(struct lttng_ust_ctx_field *field,
 	}
 }
 
+static char myprovider_name[] = "$app.myprovider";
 struct lttng_ust_context_provider myprovider = {
 	.struct_size = sizeof(struct lttng_ust_context_provider),
-	.name = "$app.myprovider",
+	.name = myprovider_name,
 	.get_size = test_get_size,
 	.record = test_record,
 	.get_value = test_get_value,

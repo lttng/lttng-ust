@@ -35,6 +35,9 @@
 #include "fvwrite.h"
 #include "various.h"
 
+static char null_str[] = "(null)";
+static char bad_base_str[] = "bug in ust_safe_vfprintf: bad base";
+
 union arg {
 	int			intarg;
 	unsigned int		uintarg;
@@ -715,7 +718,7 @@ fp_common:
 			goto nosign;
 		case 's':
 			if ((cp = GETARG(char *)) == NULL)
-				cp = "(null)";
+				cp = null_str;
 			if (prec >= 0) {
 				/*
 				 * can't use strlen; can only look for the
@@ -802,7 +805,7 @@ number:			if ((dprec = prec) >= 0)
 					break;
 
 				default:
-					cp = "bug in ust_safe_vfprintf: bad base";
+					cp = bad_base_str;
 					size = strlen(cp);
 					goto skipsize;
 				}

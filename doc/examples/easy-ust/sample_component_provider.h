@@ -74,7 +74,7 @@ TRACEPOINT_EVENT(
 	 * 		TP_ARGS() is valid to mean no arguments
 	 * 		TP_ARGS( void ) is valid too
 	 */
-	TP_ARGS(char *, text),
+	TP_ARGS(const char *, text),
 	/*
 	 * TP_FIELDS describes how to write the fields of the trace event.
 	 * You can use the args here
