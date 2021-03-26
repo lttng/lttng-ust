@@ -974,6 +974,19 @@ LTTNG_TP_EXTERN_C const char *_model_emf_uri___##__provider##___##__name   \
 #undef LTTNG_TP_EXTERN_C
 
 /*
+ * Stage 7.0 of tracepoint event generation.
+ *
+ * Declare toplevel descriptor for the whole probe.
+ * Unlike C, C++ does not allow tentative definitions. Therefore, we
+ * need to explicitly declare the variable with "extern", using hidden
+ * visibility to keep this symbol from being exported to the global
+ * symbol table.
+ */
+
+extern struct lttng_ust_probe_desc _TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PROVIDER)
+	__attribute__((visibility("hidden")));
+
+/*
  * Stage 7.1 of tracepoint event generation.
  *
  * Create events description structures. We use a weakref because
@@ -994,7 +1007,8 @@ static const char *							       \
 	__attribute__((weakref ("_model_emf_uri___" #_provider "___" #_name)));\
 static struct lttng_ust_event_desc __event_desc___##_provider##_##_name = {    \
 	.struct_size = sizeof(struct lttng_ust_event_desc),		       \
-	.name = #_provider ":" #_name,					       \
+	.event_name = #_name,						       \
+	.probe_desc = &__probe_desc___##_provider,			       \
 	.probe_callback = (void (*)(void)) &__event_probe__##_provider##___##_template, \
 	.ctx = NULL,							       \
 	.fields = __event_fields___##_provider##___##_template,		       \
@@ -1031,10 +1045,9 @@ static struct lttng_ust_event_desc *_TP_COMBINE_TOKENS(__event_desc___, TRACEPOI
  * Create a toplevel descriptor for the whole probe.
  */
 
-/* non-const because list head will be modified when registered. */
-static struct lttng_ust_probe_desc _TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PROVIDER) = {
+struct lttng_ust_probe_desc _TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PROVIDER) = {
 	.struct_size = sizeof(struct lttng_ust_probe_desc),
-	.provider = __tp_stringify(TRACEPOINT_PROVIDER),
+	.provider_name = __tp_stringify(TRACEPOINT_PROVIDER),
 	.event_desc = _TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER),
 	.nr_events = _TP_ARRAY_SIZE(_TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER)) - 1,
 	.head = { NULL, NULL },

@@ -258,7 +258,8 @@ struct lttng_ust_event_field {
 struct lttng_ust_event_desc {
 	uint32_t struct_size;			/* Size of this structure. */
 
-	const char *name;
+	const char *event_name;
+	struct lttng_ust_probe_desc *probe_desc;
 	void (*probe_callback)(void);
 	struct lttng_event_ctx *ctx;		/* context */
 	struct lttng_ust_event_field **fields;	/* event payload */
@@ -282,7 +283,7 @@ struct lttng_ust_event_desc {
 struct lttng_ust_probe_desc {
 	uint32_t struct_size;			/* Size of this structure. */
 
-	const char *provider;
+	const char *provider_name;
 	struct lttng_ust_event_desc **event_desc;
 	unsigned int nr_events;
 	struct cds_list_head head;		/* chain registered probes */

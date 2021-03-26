@@ -41,23 +41,29 @@ static CDS_LIST_HEAD(lazy_probe_init);
 static int lazy_nesting;
 
 /*
- * Called under ust lock.
+ * Validate that each event within the probe provider refers to the
+ * right probe, and that the resulting name is not too long.
  */
 static
-int check_event_provider(struct lttng_ust_probe_desc *desc)
+bool check_event_provider(struct lttng_ust_probe_desc *probe_desc)
 {
 	int i;
-	size_t provider_name_len;
 
-	provider_name_len = strnlen(desc->provider,
-				LTTNG_UST_ABI_SYM_NAME_LEN - 1);
-	for (i = 0; i < desc->nr_events; i++) {
-		if (strncmp(desc->event_desc[i]->name,
-				desc->provider,
-				provider_name_len))
-			return 0;	/* provider mismatch */
+	for (i = 0; i < probe_desc->nr_events; i++) {
+		const struct lttng_ust_event_desc *event_desc = probe_desc->event_desc[i];
+
+		if (event_desc->probe_desc != probe_desc) {
+			ERR("Error registering probe provider '%s'. Event '%s:%s' refers to the wrong provider descriptor.",
+				probe_desc->provider_name, probe_desc->provider_name, event_desc->event_name);
+			return false;	/* provider mismatch */
+		}
+		if (!lttng_ust_validate_event_name(event_desc)) {
+			ERR("Error registering probe provider '%s'. Event '%s:%s' name is too long.",
+				probe_desc->provider_name, probe_desc->provider_name, event_desc->event_name);
+			return false;	/* provider mismatch */
+		}
 	}
-	return 1;
+	return true;
 }
 
 /*
@@ -68,14 +74,6 @@ void lttng_lazy_probe_register(struct lttng_ust_probe_desc *desc)
 {
 	struct lttng_ust_probe_desc *iter;
 	struct cds_list_head *probe_list;
-
-	/*
-	 * Each provider enforce that every event name begins with the
-	 * provider name. Check this in an assertion for extra
-	 * carefulness. This ensures we cannot have duplicate event
-	 * names across providers.
-	 */
-	assert(check_event_provider(desc));
 
 	/*
 	 * The provider ensures there are no duplicate event names.
@@ -100,7 +98,7 @@ void lttng_lazy_probe_register(struct lttng_ust_probe_desc *desc)
 	cds_list_add(&desc->head, probe_list);
 desc_added:
 	DBG("just registered probe %s containing %u events",
-		desc->provider, desc->nr_events);
+		desc->provider_name, desc->nr_events);
 }
 
 /*
@@ -143,7 +141,7 @@ int check_provider_version(struct lttng_ust_probe_desc *desc)
 	if (desc->major <= LTTNG_UST_PROVIDER_MAJOR) {
 		DBG("Provider \"%s\" accepted, version %u.%u is compatible "
 			"with LTTng UST provider version %u.%u.",
-			desc->provider, desc->major, desc->minor,
+			desc->provider_name, desc->major, desc->minor,
 			LTTNG_UST_PROVIDER_MAJOR,
 			LTTNG_UST_PROVIDER_MINOR);
 		if (desc->major < LTTNG_UST_PROVIDER_MAJOR) {
@@ -156,7 +154,7 @@ int check_provider_version(struct lttng_ust_probe_desc *desc)
 		ERR("Provider \"%s\" rejected, version %u.%u is incompatible "
 			"with LTTng UST provider version %u.%u. Please upgrade "
 			"LTTng UST.",
-			desc->provider, desc->major, desc->minor,
+			desc->provider_name, desc->major, desc->minor,
 			LTTNG_UST_PROVIDER_MAJOR,
 			LTTNG_UST_PROVIDER_MINOR);
 		return 0;		/* reject */
@@ -176,13 +174,15 @@ int lttng_ust_probe_register(struct lttng_ust_probe_desc *desc)
 	 */
 	if (!check_provider_version(desc))
 		return 0;
+	if (!check_event_provider(desc))
+		return 0;
 
 	ust_lock_nocheck();
 
 	cds_list_add(&desc->lazy_init_head, &lazy_probe_init);
 	desc->lazy = 1;
 	DBG("adding probe %s containing %u events to lazy registration list",
-		desc->provider, desc->nr_events);
+		desc->provider_name, desc->nr_events);
 	/*
 	 * If there is at least one active session, we need to register
 	 * the probe immediately, since we cannot delay event
@@ -211,7 +211,7 @@ void lttng_ust_probe_unregister(struct lttng_ust_probe_desc *desc)
 		cds_list_del(&desc->lazy_init_head);
 
 	lttng_probe_provider_unregister_events(desc);
-	DBG("just unregistered probes of provider %s", desc->provider);
+	DBG("just unregistered probes of provider %s", desc->provider_name);
 
 	ust_unlock();
 }
@@ -239,20 +239,22 @@ int lttng_probes_get_event_list(struct lttng_ust_tracepoint_list *list)
 	CDS_INIT_LIST_HEAD(&list->head);
 	cds_list_for_each_entry(probe_desc, probe_list, head) {
 		for (i = 0; i < probe_desc->nr_events; i++) {
+			const struct lttng_ust_event_desc *event_desc =
+				probe_desc->event_desc[i];
 			struct tp_list_entry *list_entry;
 
+			/* Skip event if name is too long. */
+			if (!lttng_ust_validate_event_name(event_desc))
+				continue;
 			list_entry = zmalloc(sizeof(*list_entry));
 			if (!list_entry)
 				goto err_nomem;
 			cds_list_add(&list_entry->head, &list->head);
-			strncpy(list_entry->tp.name,
-				probe_desc->event_desc[i]->name,
-				LTTNG_UST_ABI_SYM_NAME_LEN);
-			list_entry->tp.name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
-			if (!probe_desc->event_desc[i]->loglevel) {
+			lttng_ust_format_event_name(event_desc, list_entry->tp.name);
+			if (!event_desc->loglevel) {
 				list_entry->tp.loglevel = TRACE_DEFAULT;
 			} else {
-				list_entry->tp.loglevel = *(*probe_desc->event_desc[i]->loglevel);
+				list_entry->tp.loglevel = *(*event_desc->loglevel);
 			}
 		}
 	}
@@ -319,14 +321,14 @@ int lttng_probes_get_field_list(struct lttng_ust_field_list *list)
 				/* Events without fields. */
 				struct tp_field_list_entry *list_entry;
 
+				/* Skip event if name is too long. */
+				if (!lttng_ust_validate_event_name(event_desc))
+					continue;
 				list_entry = zmalloc(sizeof(*list_entry));
 				if (!list_entry)
 					goto err_nomem;
 				cds_list_add(&list_entry->head, &list->head);
-				strncpy(list_entry->field.event_name,
-					event_desc->name,
-					LTTNG_UST_ABI_SYM_NAME_LEN);
-				list_entry->field.event_name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
+				lttng_ust_format_event_name(event_desc, list_entry->field.event_name);
 				list_entry->field.field_name[0] = '\0';
 				list_entry->field.type = LTTNG_UST_ABI_FIELD_OTHER;
 				if (!event_desc->loglevel) {
@@ -342,14 +344,14 @@ int lttng_probes_get_field_list(struct lttng_ust_field_list *list)
 					event_desc->fields[j];
 				struct tp_field_list_entry *list_entry;
 
+				/* Skip event if name is too long. */
+				if (!lttng_ust_validate_event_name(event_desc))
+					continue;
 				list_entry = zmalloc(sizeof(*list_entry));
 				if (!list_entry)
 					goto err_nomem;
 				cds_list_add(&list_entry->head, &list->head);
-				strncpy(list_entry->field.event_name,
-					event_desc->name,
-					LTTNG_UST_ABI_SYM_NAME_LEN);
-				list_entry->field.event_name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
+				lttng_ust_format_event_name(event_desc, list_entry->field.event_name);
 				strncpy(list_entry->field.field_name,
 					event_field->name,
 					LTTNG_UST_ABI_SYM_NAME_LEN);

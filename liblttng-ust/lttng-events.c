@@ -84,6 +84,22 @@ void lttng_event_notifier_group_sync_enablers(
 static
 void lttng_enabler_destroy(struct lttng_enabler *enabler);
 
+bool lttng_ust_validate_event_name(const struct lttng_ust_event_desc *desc)
+{
+	if (strlen(desc->probe_desc->provider_name) + 1 +
+			strlen(desc->event_name) >= LTTNG_UST_ABI_SYM_NAME_LEN)
+		return false;
+	return true;
+}
+
+void lttng_ust_format_event_name(const struct lttng_ust_event_desc *desc,
+		char *name)
+{
+	strcpy(name, desc->probe_desc->provider_name);
+	strcat(name, ":");
+	strcat(name, desc->event_name);
+}
+
 /*
  * Called with ust lock held.
  */
@@ -251,10 +267,12 @@ void register_event(struct lttng_ust_event_common *event)
 {
 	int ret;
 	struct lttng_ust_event_desc *desc;
+	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
 
 	assert(event->priv->registered == 0);
 	desc = event->priv->desc;
-	ret = lttng_ust_tp_probe_register_queue_release(desc->name,
+	lttng_ust_format_event_name(desc, name);
+	ret = lttng_ust_tp_probe_register_queue_release(name,
 			desc->probe_callback,
 			event, desc->signature);
 	WARN_ON_ONCE(ret);
@@ -267,10 +285,12 @@ void unregister_event(struct lttng_ust_event_common *event)
 {
 	int ret;
 	struct lttng_ust_event_desc *desc;
+	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
 
 	assert(event->priv->registered == 1);
 	desc = event->priv->desc;
-	ret = lttng_ust_tp_probe_unregister_queue_release(desc->name,
+	lttng_ust_format_event_name(desc, name);
+	ret = lttng_ust_tp_probe_unregister_queue_release(name,
 			desc->probe_callback,
 			event);
 	WARN_ON_ONCE(ret);
@@ -677,14 +697,14 @@ struct cds_hlist_head *borrow_hash_table_bucket(
 		unsigned int hash_table_size,
 		struct lttng_ust_event_desc *desc)
 {
-	const char *event_name;
+	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
 	size_t name_len;
 	uint32_t hash;
 
-	event_name = desc->name;
-	name_len = strlen(event_name);
+	lttng_ust_format_event_name(desc, name);
+	name_len = strlen(name);
 
-	hash = jhash(event_name, name_len, 0);
+	hash = jhash(name, name_len, 0);
 	return &hash_table[hash & (hash_table_size - 1)];
 }
 
@@ -695,6 +715,7 @@ static
 int lttng_event_recorder_create(struct lttng_ust_event_desc *desc,
 		struct lttng_ust_channel_buffer *chan)
 {
+	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
 	struct lttng_ust_event_recorder *event_recorder;
 	struct lttng_ust_event_recorder_private *event_recorder_priv;
 	struct lttng_ust_session *session = chan->parent->session;
@@ -767,12 +788,14 @@ int lttng_event_recorder_create(struct lttng_ust_event_desc *desc,
 	else
 		uri = NULL;
 
+	lttng_ust_format_event_name(desc, name);
+
 	/* Fetch event ID from sessiond */
 	ret = ustcomm_register_event(notify_socket,
 		session,
 		session->priv->objd,
 		chan->priv->parent.objd,
-		desc->name,
+		name,
 		loglevel,
 		desc->signature,
 		desc->nr_fields,
@@ -877,12 +900,14 @@ static
 int lttng_desc_match_star_glob_enabler(struct lttng_ust_event_desc *desc,
 		struct lttng_enabler *enabler)
 {
+	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
 	int loglevel = 0;
 	unsigned int has_loglevel = 0;
 
+	lttng_ust_format_event_name(desc, name);
 	assert(enabler->format_type == LTTNG_ENABLER_FORMAT_STAR_GLOB);
 	if (!strutils_star_glob_match(enabler->event_param.name, SIZE_MAX,
-			desc->name, SIZE_MAX))
+			name, SIZE_MAX))
 		return 0;
 	if (desc->loglevel) {
 		loglevel = *(*desc->loglevel);
@@ -900,11 +925,13 @@ static
 int lttng_desc_match_event_enabler(struct lttng_ust_event_desc *desc,
 		struct lttng_enabler *enabler)
 {
+	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
 	int loglevel = 0;
 	unsigned int has_loglevel = 0;
 
+	lttng_ust_format_event_name(desc, name);
 	assert(enabler->format_type == LTTNG_ENABLER_FORMAT_EVENT);
-	if (strcmp(desc->name, enabler->event_param.name))
+	if (strcmp(name, enabler->event_param.name))
 		return 0;
 	if (desc->loglevel) {
 		loglevel = *(*desc->loglevel);
@@ -945,8 +972,14 @@ int lttng_desc_match_enabler(struct lttng_ust_event_desc *desc,
 				excluder_name = (char *) (excluder->excluder.names)
 						+ count * LTTNG_UST_ABI_SYM_NAME_LEN;
 				len = strnlen(excluder_name, LTTNG_UST_ABI_SYM_NAME_LEN);
-				if (len > 0 && strutils_star_glob_match(excluder_name, len, desc->name, SIZE_MAX))
-					return 0;
+				if (len > 0) {
+					char name[LTTNG_UST_ABI_SYM_NAME_LEN];
+
+					lttng_ust_format_event_name(desc, name);
+					if (strutils_star_glob_match(excluder_name, len, name, SIZE_MAX)) {
+						return 0;
+					}
+				}
 			}
 		}
 		return 1;
@@ -1052,8 +1085,9 @@ void lttng_create_event_recorder_if_missing(struct lttng_event_enabler *event_en
 			ret = lttng_event_recorder_create(probe_desc->event_desc[i],
 					event_enabler->chan);
 			if (ret) {
-				DBG("Unable to create event %s, error %d\n",
-					probe_desc->event_desc[i]->name, ret);
+				DBG("Unable to create event \"%s:%s\", error %d\n",
+					probe_desc->provider_name,
+					probe_desc->event_desc[i]->event_name, ret);
 			}
 		}
 	}
@@ -1772,12 +1806,12 @@ void lttng_create_event_notifier_if_missing(
 
 			/* Check that the probe supports event notifiers, else report the error. */
 			if (!lttng_ust_probe_supports_event_notifier(probe_desc)) {
-				ERR("Probe \"%s\" contains event \"%s\" which matches an enabled event notifier, "
+				ERR("Probe \"%s\" contains event \"%s:%s\" which matches an enabled event notifier, "
 					"but its version (%u.%u) is too old and does not implement event notifiers. "
 					"It needs to be recompiled against a newer version of LTTng-UST, otherwise "
 					"this event will not generate any notification.",
-					probe_desc->provider,
-					desc->name,
+					probe_desc->provider_name,
+					probe_desc->provider_name, desc->event_name,
 					probe_desc->major,
 					probe_desc->minor);
 				continue;
@@ -1790,8 +1824,9 @@ void lttng_create_event_notifier_if_missing(
 				event_notifier_enabler->error_counter_index,
 				event_notifier_group);
 			if (ret) {
-				DBG("Unable to create event_notifier %s, error %d\n",
-					probe_desc->event_desc[i]->name, ret);
+				DBG("Unable to create event_notifier \"%s:%s\", error %d\n",
+					probe_desc->provider_name,
+					probe_desc->event_desc[i]->event_name, ret);
 			}
 		}
 	}

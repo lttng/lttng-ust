@@ -899,4 +899,11 @@ __attribute__((visibility("hidden")))
 int lttng_ust_session_uuid_validate(struct lttng_ust_session *session,
 		unsigned char *uuid);
 
+__attribute__((visibility("hidden")))
+bool lttng_ust_validate_event_name(const struct lttng_ust_event_desc *desc);
+
+__attribute__((visibility("hidden")))
+void lttng_ust_format_event_name(const struct lttng_ust_event_desc *desc,
+		char *name);
+
 #endif /* _LTTNG_UST_EVENTS_INTERNAL_H */
