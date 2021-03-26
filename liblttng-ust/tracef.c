@@ -12,7 +12,7 @@
 #define TRACEPOINT_DEFINE
 #include "lttng-ust-tracef-provider.h"
 
-static inline __attribute__((always_inline))
+static inline __attribute__((always_inline, format(printf, 1, 0)))
 void __lttng_ust_vtracef(const char *fmt, va_list ap)
 {
 	char *msg;
@@ -28,11 +28,15 @@ end:
 	return;
 }
 
+__attribute__((format(printf, 1, 0)))
+void _lttng_ust_vtracef(const char *fmt, va_list ap);
 void _lttng_ust_vtracef(const char *fmt, va_list ap)
 {
 	__lttng_ust_vtracef(fmt, ap);
 }
 
+__attribute__((format(printf, 1, 2)))
+void _lttng_ust_tracef(const char *fmt, ...);
 void _lttng_ust_tracef(const char *fmt, ...)
 {
 	va_list ap;

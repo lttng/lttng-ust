@@ -11,6 +11,7 @@
 
 #include <lttng/tracelog.h>
 
+__attribute__((format(printf, 1, 2)))
 void print_err(const char* msg, ...)
 {
 	va_list ap;

@@ -14,8 +14,10 @@ extern "C" {
 #endif
 
 #define TP_TRACELOG_CB_TEMPLATE(level)					\
+	__attribute__ ((format(printf, 4, 5)))				\
 	extern void _lttng_ust_tracelog_##level(const char *file,	\
 		int line, const char *func, const char *fmt, ...);	\
+	__attribute__ ((format(printf, 4, 0)))				\
 	extern void _lttng_ust_vtracelog_##level(const char *file,	\
 		int line, const char *func, const char *fmt, va_list ap);
 

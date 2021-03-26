@@ -14,9 +14,11 @@ extern "C" {
 #endif
 
 extern
+__attribute__((format(printf, 1, 2)))
 void _lttng_ust_tracef(const char *fmt, ...);
 
 extern
+__attribute__((format(printf, 1, 0)))
 void _lttng_ust_vtracef(const char *fmt, va_list ap);
 
 #define tracef(fmt, ...)						\

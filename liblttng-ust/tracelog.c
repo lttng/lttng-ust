@@ -13,7 +13,7 @@
 #include "lttng-ust-tracelog-provider.h"
 
 #define TRACELOG_CB(level) \
-	static inline __attribute__((always_inline)) \
+	static inline __attribute__((always_inline, format(printf, 4, 0))) \
 	void __lttng_ust_vtracelog_##level(const char *file, \
 			int line, const char *func, \
 			const char *fmt, va_list ap) \
@@ -32,6 +32,7 @@
 		return; \
 	} \
 	\
+	__attribute__ ((format(printf, 4, 0))) \
 	void _lttng_ust_vtracelog_##level(const char *file, \
 			int line, const char *func, \
 			const char *fmt, va_list ap) \
@@ -39,6 +40,7 @@
 		__lttng_ust_vtracelog_##level(file, line, func, fmt, ap); \
 	} \
 	\
+	__attribute__ ((format(printf, 4, 5))) \
 	void _lttng_ust_tracelog_##level(const char *file, \
 			int line, const char *func, \
 			const char *fmt, ...) \
