@@ -2321,7 +2321,7 @@ int lib_ring_buffer_reserve_slow(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 	int ret;
 
 	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU)
-		buf = shmp(handle, chan->backend.buf[ctx->cpu].shmp);
+		buf = shmp(handle, chan->backend.buf[ctx->reserve_cpu].shmp);
 	else
 		buf = shmp(handle, chan->backend.buf[0].shmp);
 	if (!buf)

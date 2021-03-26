@@ -18,12 +18,11 @@
 #include "frontend.h"
 
 /**
- * lib_ring_buffer_get_cpu - Precedes ring buffer reserve/commit.
+ * lib_ring_buffer_nesting_inc - Ring buffer recursive use protection.
  *
- * Keeps a ring buffer nesting count as supplementary safety net to
- * ensure tracer client code will never trigger an endless recursion.
- * Returns the processor ID on success, -EPERM on failure (nesting count
- * too high).
+ * The rint buffer buffer nesting count is a safety net to ensure tracer
+ * client code will never trigger an endless recursion.
+ * Returns 0 on success, -EPERM on failure (nesting count too high).
  *
  * asm volatile and "memory" clobber prevent the compiler from moving
  * instructions out of the ring buffer nesting count. This is required to ensure
@@ -32,27 +31,22 @@
  * section.
  */
 static inline
-int lib_ring_buffer_get_cpu(const struct lttng_ust_lib_ring_buffer_config *config)
+int lib_ring_buffer_nesting_inc(const struct lttng_ust_lib_ring_buffer_config *config)
 {
-	int cpu, nesting;
+	int nesting;
 
-	cpu = lttng_ust_get_cpu();
 	nesting = ++URCU_TLS(lib_ring_buffer_nesting);
 	cmm_barrier();
-
 	if (caa_unlikely(nesting > 4)) {
 		WARN_ON_ONCE(1);
 		URCU_TLS(lib_ring_buffer_nesting)--;
 		return -EPERM;
-	} else
-		return cpu;
+	}
+	return 0;
 }
 
-/**
- * lib_ring_buffer_put_cpu - Follows ring buffer reserve/commit.
- */
 static inline
-void lib_ring_buffer_put_cpu(const struct lttng_ust_lib_ring_buffer_config *config)
+void lib_ring_buffer_nesting_dec(const struct lttng_ust_lib_ring_buffer_config *config)
 {
 	cmm_barrier();
 	URCU_TLS(lib_ring_buffer_nesting)--;		/* TLS */
@@ -148,10 +142,12 @@ int lib_ring_buffer_reserve(const struct lttng_ust_lib_ring_buffer_config *confi
 	if (caa_unlikely(uatomic_read(&chan->record_disabled)))
 		return -EAGAIN;
 
-	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU)
-		buf = shmp(handle, chan->backend.buf[ctx->cpu].shmp);
-	else
+	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU) {
+		ctx->reserve_cpu = lttng_ust_get_cpu();
+		buf = shmp(handle, chan->backend.buf[ctx->reserve_cpu].shmp);
+	} else {
 		buf = shmp(handle, chan->backend.buf[0].shmp);
+	}
 	if (caa_unlikely(!buf))
 		return -EIO;
 	if (caa_unlikely(uatomic_read(&buf->record_disabled)))

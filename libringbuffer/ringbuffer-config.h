@@ -96,9 +96,7 @@ struct lttng_ust_lib_ring_buffer_client_cb {
  * alloc/sync pairs:
  *
  * RING_BUFFER_ALLOC_PER_CPU and RING_BUFFER_SYNC_PER_CPU :
- *   Per-cpu buffers with per-cpu synchronization. Tracing must be performed
- *   with preemption disabled (lib_ring_buffer_get_cpu() and
- *   lib_ring_buffer_put_cpu()).
+ *   Per-cpu buffers with per-cpu synchronization.
  *
  * RING_BUFFER_ALLOC_PER_CPU and RING_BUFFER_SYNC_GLOBAL :
  *   Per-cpu buffer with global synchronization. Tracing can be performed with

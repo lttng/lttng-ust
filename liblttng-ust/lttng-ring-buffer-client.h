@@ -699,7 +699,7 @@ int lttng_event_reserve(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 	struct lttng_ust_stack_ctx *lttng_ctx = ctx->priv;
 	struct lttng_ust_event_recorder *event_recorder = lttng_ctx->event_recorder;
 	struct lttng_client_ctx client_ctx;
-	int ret, cpu;
+	int ret;
 
 	client_ctx.chan_ctx = lttng_ust_rcu_dereference(lttng_chan->priv->ctx);
 	client_ctx.event_ctx = lttng_ust_rcu_dereference(event_recorder->priv->ctx);
@@ -709,10 +709,8 @@ int lttng_event_reserve(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 	ctx_get_struct_size(client_ctx.event_ctx, &client_ctx.event_context_len,
 			APP_CTX_ENABLED);
 
-	cpu = lib_ring_buffer_get_cpu(&client_config);
-	if (cpu < 0)
+	if (lib_ring_buffer_nesting_inc(&client_config) < 0)
 		return -EPERM;
-	ctx->cpu = cpu;
 
 	switch (lttng_chan->priv->header_type) {
 	case 1:	/* compact */
@@ -738,7 +736,7 @@ int lttng_event_reserve(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 	lttng_write_event_header(&client_config, ctx, &client_ctx, event_id);
 	return 0;
 put:
-	lib_ring_buffer_put_cpu(&client_config);
+	lib_ring_buffer_nesting_dec(&client_config);
 	return ret;
 }
 
@@ -746,7 +744,7 @@ static
 void lttng_event_commit(struct lttng_ust_lib_ring_buffer_ctx *ctx)
 {
 	lib_ring_buffer_commit(&client_config, ctx);
-	lib_ring_buffer_put_cpu(&client_config);
+	lib_ring_buffer_nesting_dec(&client_config);
 }
 
 static

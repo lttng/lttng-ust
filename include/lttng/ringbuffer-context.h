@@ -51,9 +51,9 @@ struct lttng_ust_lib_ring_buffer_ctx {
 					 * alignment of the largest element
 					 * in the payload
 					 */
-	int cpu;			/* processor id */
 
 	/* output from lib_ring_buffer_reserve() */
+	int reserve_cpu;		/* processor id updated by the reserve */
 	struct lttng_ust_lib_ring_buffer *buf;	/*
 					 * buffer corresponding to processor id
 					 * for this channel
@@ -81,25 +81,24 @@ struct lttng_ust_lib_ring_buffer_ctx {
  * @priv: client private data
  * @data_size: size of record data payload
  * @largest_align: largest alignment within data payload types
- * @cpu: processor id
  */
 static inline lttng_ust_notrace
 void lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			      struct lttng_ust_lib_ring_buffer_channel *chan,
 			      void *priv, size_t data_size, int largest_align,
-			      int cpu, struct lttng_ust_shm_handle *handle);
+			      struct lttng_ust_shm_handle *handle);
 static inline
 void lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			      struct lttng_ust_lib_ring_buffer_channel *chan,
 			      void *priv, size_t data_size, int largest_align,
-			      int cpu, struct lttng_ust_shm_handle *handle)
+			      struct lttng_ust_shm_handle *handle)
 {
 	ctx->struct_size = sizeof(struct lttng_ust_lib_ring_buffer_ctx);
 	ctx->chan = chan;
 	ctx->priv = priv;
 	ctx->data_size = data_size;
+	ctx->reserve_cpu = -1;
 	ctx->largest_align = largest_align;
-	ctx->cpu = cpu;
 	ctx->rflags = 0;
 	ctx->handle = handle;
 	ctx->ip = 0;

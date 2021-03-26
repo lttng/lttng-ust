@@ -853,7 +853,7 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 		__lttng_ctx.struct_size = sizeof(struct lttng_ust_stack_ctx);     \
 		__lttng_ctx.event_recorder = __event_recorder;		      \
 		lib_ring_buffer_ctx_init(&__ctx, __chan->chan, &__lttng_ctx, __event_len, \
-					 __event_align, -1, __chan->handle); \
+					 __event_align, __chan->handle);      \
 		__ctx.ip = _TP_IP_PARAM(TP_IP_PARAM);			      \
 		__ret = __chan->ops->event_reserve(&__ctx, __event_recorder->id); \
 		if (__ret < 0)						      \
