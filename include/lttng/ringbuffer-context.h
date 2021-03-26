@@ -45,7 +45,6 @@ struct lttng_ust_lib_ring_buffer_ctx {
 	/* input received by lib_ring_buffer_reserve(), saved here. */
 	struct lttng_ust_lib_ring_buffer_channel *chan; /* channel */
 	void *priv;			/* client private data */
-	struct lttng_ust_shm_handle *handle;	/* shared-memory handle */
 	size_t data_size;		/* size of payload */
 	int largest_align;		/*
 					 * alignment of the largest element
@@ -85,13 +84,11 @@ struct lttng_ust_lib_ring_buffer_ctx {
 static inline lttng_ust_notrace
 void lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			      struct lttng_ust_lib_ring_buffer_channel *chan,
-			      void *priv, size_t data_size, int largest_align,
-			      struct lttng_ust_shm_handle *handle);
+			      void *priv, size_t data_size, int largest_align);
 static inline
 void lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			      struct lttng_ust_lib_ring_buffer_channel *chan,
-			      void *priv, size_t data_size, int largest_align,
-			      struct lttng_ust_shm_handle *handle)
+			      void *priv, size_t data_size, int largest_align)
 {
 	ctx->struct_size = sizeof(struct lttng_ust_lib_ring_buffer_ctx);
 	ctx->chan = chan;
@@ -100,7 +97,6 @@ void lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 	ctx->reserve_cpu = -1;
 	ctx->largest_align = largest_align;
 	ctx->rflags = 0;
-	ctx->handle = handle;
 	ctx->ip = 0;
 }
 

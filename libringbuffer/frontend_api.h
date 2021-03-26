@@ -134,7 +134,7 @@ int lib_ring_buffer_reserve(const struct lttng_ust_lib_ring_buffer_config *confi
 			    void *client_ctx)
 {
 	struct lttng_ust_lib_ring_buffer_channel *chan = ctx->chan;
-	struct lttng_ust_shm_handle *handle = ctx->handle;
+	struct lttng_ust_shm_handle *handle = ctx->chan->handle;
 	struct lttng_ust_lib_ring_buffer *buf;
 	unsigned long o_begin, o_end, o_old;
 	size_t before_hdr_pad = 0;
@@ -228,7 +228,7 @@ void lib_ring_buffer_commit(const struct lttng_ust_lib_ring_buffer_config *confi
 			    const struct lttng_ust_lib_ring_buffer_ctx *ctx)
 {
 	struct lttng_ust_lib_ring_buffer_channel *chan = ctx->chan;
-	struct lttng_ust_shm_handle *handle = ctx->handle;
+	struct lttng_ust_shm_handle *handle = ctx->chan->handle;
 	struct lttng_ust_lib_ring_buffer *buf = ctx->buf;
 	unsigned long offset_end = ctx->buf_offset;
 	unsigned long endidx = subbuf_index(offset_end - 1, chan);

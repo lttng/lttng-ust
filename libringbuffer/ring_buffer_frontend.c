@@ -2125,7 +2125,7 @@ int lib_ring_buffer_try_reserve_slow(struct lttng_ust_lib_ring_buffer *buf,
 				     void *client_ctx)
 {
 	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
-	struct lttng_ust_shm_handle *handle = ctx->handle;
+	struct lttng_ust_shm_handle *handle = ctx->chan->handle;
 	unsigned long reserve_commit_diff, offset_cmp;
 	int timeout_left_ms = lttng_ust_ringbuffer_get_timeout(chan);
 
@@ -2314,7 +2314,7 @@ int lib_ring_buffer_reserve_slow(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		void *client_ctx)
 {
 	struct lttng_ust_lib_ring_buffer_channel *chan = ctx->chan;
-	struct lttng_ust_shm_handle *handle = ctx->handle;
+	struct lttng_ust_shm_handle *handle = ctx->chan->handle;
 	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
 	struct lttng_ust_lib_ring_buffer *buf;
 	struct switch_offsets offsets;

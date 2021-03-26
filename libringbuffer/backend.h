@@ -69,7 +69,7 @@ void lib_ring_buffer_write(const struct lttng_ust_lib_ring_buffer_config *config
 			   const void *src, size_t len)
 {
 	struct channel_backend *chanb = &ctx->chan->backend;
-	struct lttng_ust_shm_handle *handle = ctx->handle;
+	struct lttng_ust_shm_handle *handle = ctx->chan->handle;
 	size_t offset = ctx->buf_offset;
 	struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
 	void *p;
@@ -140,7 +140,7 @@ void lib_ring_buffer_strcpy(const struct lttng_ust_lib_ring_buffer_config *confi
 			   const char *src, size_t len, char pad)
 {
 	struct channel_backend *chanb = &ctx->chan->backend;
-	struct lttng_ust_shm_handle *handle = ctx->handle;
+	struct lttng_ust_shm_handle *handle = ctx->chan->handle;
 	size_t count;
 	size_t offset = ctx->buf_offset;
 	struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
@@ -204,7 +204,7 @@ void lib_ring_buffer_pstrcpy(const struct lttng_ust_lib_ring_buffer_config *conf
 			   const char *src, size_t len, char pad)
 {
 	struct channel_backend *chanb = &ctx->chan->backend;
-	struct lttng_ust_shm_handle *handle = ctx->handle;
+	struct lttng_ust_shm_handle *handle = ctx->chan->handle;
 	size_t count;
 	size_t offset = ctx->buf_offset;
 	struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;

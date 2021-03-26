@@ -209,7 +209,7 @@ int lib_ring_buffer_backend_get_pages(const struct lttng_ust_lib_ring_buffer_con
 {
 	struct lttng_ust_lib_ring_buffer_backend *bufb = &ctx->buf->backend;
 	struct channel_backend *chanb = &ctx->chan->backend;
-	struct lttng_ust_shm_handle *handle = ctx->handle;
+	struct lttng_ust_shm_handle *handle = ctx->chan->handle;
 	size_t sbidx;
 	size_t offset = ctx->buf_offset;
 	struct lttng_ust_lib_ring_buffer_backend_subbuffer *wsb;
