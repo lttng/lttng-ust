@@ -4,6 +4,7 @@
  * Copyright (C) 2015 Antoine Busque <abusque@efficios.com>
  */
 
+#include <inttypes.h>
 #include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -76,7 +77,7 @@ void test_elf(const char *test_dir, const char *arch, uint64_t exp_memsz,
 	ret = lttng_ust_elf_get_memsz(elf, &memsz);
 	ok(ret == 0, "lttng_ust_elf_get_memsz returned successfully");
 	ok(memsz == exp_memsz,
-		"memsz - expected: %lu, got: %lu",
+		"memsz - expected: %" PRIu64 ", got: %" PRIu64,
 		exp_memsz, memsz);
 
 	ret = lttng_ust_elf_get_build_id(elf, &build_id, &build_id_len,
@@ -84,7 +85,7 @@ void test_elf(const char *test_dir, const char *arch, uint64_t exp_memsz,
 	ok(ret == 0, "lttng_ust_elf_get_build_id returned successfully");
 	ok(has_build_id == 1, "build id marked as found");
 	ok(build_id_len == BUILD_ID_LEN,
-		"build_id_len - expected: %u, got: %u",
+		"build_id_len - expected: %u, got: %zu",
 		BUILD_ID_LEN, build_id_len);
 	ok(memcmp(build_id, exp_build_id, build_id_len) == 0,
 		"build_id has expected value");
