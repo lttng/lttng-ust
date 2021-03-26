@@ -24,9 +24,9 @@
 #endif
 
 #ifdef LTTNG_UST_RING_BUFFER_NATURAL_ALIGN
-#define lttng_alignof(type)	__alignof__(type)
+#define lttng_ust_rb_alignof(type)	__alignof__(type)
 #else
-#define lttng_alignof(type)	1
+#define lttng_ust_rb_alignof(type)	1
 #endif
 
 /*

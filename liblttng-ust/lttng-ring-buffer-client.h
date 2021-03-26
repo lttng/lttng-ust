@@ -182,7 +182,7 @@ size_t record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
 
 	switch (lttng_chan->priv->header_type) {
 	case 1:	/* compact */
-		padding = lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(uint32_t));
+		padding = lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(uint32_t));
 		offset += padding;
 		if (!(ctx->rflags & (RING_BUFFER_RFLAG_FULL_TSC | LTTNG_RFLAG_EXTENDED))) {
 			offset += sizeof(uint32_t);	/* id and timestamp */
@@ -190,24 +190,24 @@ size_t record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
 			/* Minimum space taken by LTTNG_COMPACT_EVENT_BITS id */
 			offset += (LTTNG_COMPACT_EVENT_BITS + CHAR_BIT - 1) / CHAR_BIT;
 			/* Align extended struct on largest member */
-			offset += lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(uint64_t));
+			offset += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(uint64_t));
 			offset += sizeof(uint32_t);	/* id */
-			offset += lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(uint64_t));
+			offset += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(uint64_t));
 			offset += sizeof(uint64_t);	/* timestamp */
 		}
 		break;
 	case 2:	/* large */
-		padding = lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(uint16_t));
+		padding = lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(uint16_t));
 		offset += padding;
 		offset += sizeof(uint16_t);
 		if (!(ctx->rflags & (RING_BUFFER_RFLAG_FULL_TSC | LTTNG_RFLAG_EXTENDED))) {
-			offset += lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(uint32_t));
+			offset += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(uint32_t));
 			offset += sizeof(uint32_t);	/* timestamp */
 		} else {
 			/* Align extended struct on largest member */
-			offset += lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(uint64_t));
+			offset += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(uint64_t));
 			offset += sizeof(uint32_t);	/* id */
-			offset += lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(uint64_t));
+			offset += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(uint64_t));
 			offset += sizeof(uint64_t);	/* timestamp */
 		}
 		break;
@@ -274,7 +274,7 @@ void lttng_write_event_header(const struct lttng_ust_lib_ring_buffer_config *con
 		uint16_t id = event_id;
 
 		lib_ring_buffer_write(config, ctx, &id, sizeof(id));
-		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(uint32_t));
+		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(uint32_t));
 		lib_ring_buffer_write(config, ctx, &timestamp, sizeof(timestamp));
 		break;
 	}
@@ -324,9 +324,9 @@ void lttng_write_event_header_slow(const struct lttng_ust_lib_ring_buffer_config
 					31);
 			lib_ring_buffer_write(config, ctx, &id, sizeof(id));
 			/* Align extended struct on largest member */
-			lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(uint64_t));
+			lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(uint64_t));
 			lib_ring_buffer_write(config, ctx, &event_id, sizeof(event_id));
-			lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(uint64_t));
+			lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(uint64_t));
 			lib_ring_buffer_write(config, ctx, &timestamp, sizeof(timestamp));
 		}
 		break;
@@ -337,7 +337,7 @@ void lttng_write_event_header_slow(const struct lttng_ust_lib_ring_buffer_config
 			uint16_t id = event_id;
 
 			lib_ring_buffer_write(config, ctx, &id, sizeof(id));
-			lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(uint32_t));
+			lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(uint32_t));
 			lib_ring_buffer_write(config, ctx, &timestamp, sizeof(timestamp));
 		} else {
 			uint16_t id = 65535;
@@ -345,9 +345,9 @@ void lttng_write_event_header_slow(const struct lttng_ust_lib_ring_buffer_config
 
 			lib_ring_buffer_write(config, ctx, &id, sizeof(id));
 			/* Align extended struct on largest member */
-			lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(uint64_t));
+			lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(uint64_t));
 			lib_ring_buffer_write(config, ctx, &event_id, sizeof(event_id));
-			lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(uint64_t));
+			lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(uint64_t));
 			lib_ring_buffer_write(config, ctx, &timestamp, sizeof(timestamp));
 		}
 		break;

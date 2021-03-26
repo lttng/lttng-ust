@@ -509,7 +509,7 @@ struct lttng_ust_type_common *lttng_ust_create_type_array_text(unsigned int leng
 	array_type->alignment = 0;
 	array_type->encoding = lttng_ust_string_encoding_UTF8;
 	array_type->elem_type = lttng_ust_create_type_integer(sizeof(char) * CHAR_BIT,
-			lttng_alignof(char) * CHAR_BIT, lttng_ust_is_signed_type(char),
+			lttng_ust_rb_alignof(char) * CHAR_BIT, lttng_ust_is_signed_type(char),
 			BYTE_ORDER, 10);
 	if (!array_type->elem_type)
 		goto error_elem;

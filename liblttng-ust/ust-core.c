@@ -109,7 +109,7 @@ size_t lttng_ust_dummy_get_size(struct lttng_ust_ctx_field *field, size_t offset
 {
 	size_t size = 0;
 
-	size += lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(char));
+	size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(char));
 	size += sizeof(char);		/* tag */
 	return size;
 }
@@ -120,7 +120,7 @@ void lttng_ust_dummy_record(struct lttng_ust_ctx_field *field,
 {
 	char sel_char = (char) LTTNG_UST_DYNAMIC_TYPE_NONE;
 
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(sel_char));
+	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(sel_char));
 	chan->ops->event_write(ctx, &sel_char, sizeof(sel_char));
 }
 

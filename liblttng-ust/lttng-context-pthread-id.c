@@ -21,7 +21,7 @@ size_t pthread_id_get_size(struct lttng_ust_ctx_field *field, size_t offset)
 {
 	size_t size = 0;
 
-	size += lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(unsigned long));
+	size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(unsigned long));
 	size += sizeof(unsigned long);
 	return size;
 }
@@ -34,7 +34,7 @@ void pthread_id_record(struct lttng_ust_ctx_field *field,
 	unsigned long pthread_id;
 
 	pthread_id = (unsigned long) pthread_self();
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(pthread_id));
+	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(pthread_id));
 	chan->ops->event_write(ctx, &pthread_id, sizeof(pthread_id));
 }
 
@@ -52,7 +52,7 @@ int lttng_add_pthread_id_to_ctx(struct lttng_ust_ctx **ctx)
 	int ret;
 
 	type = lttng_ust_create_type_integer(sizeof(unsigned long) * CHAR_BIT,
-			lttng_alignof(unsigned long) * CHAR_BIT,
+			lttng_ust_rb_alignof(unsigned long) * CHAR_BIT,
 			lttng_ust_is_signed_type(unsigned long),
 			BYTE_ORDER, 10);
 	if (!type)

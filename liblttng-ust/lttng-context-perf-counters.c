@@ -162,7 +162,7 @@ size_t perf_counter_get_size(struct lttng_ust_ctx_field *field, size_t offset)
 {
 	size_t size = 0;
 
-	size += lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(uint64_t));
+	size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(uint64_t));
 	size += sizeof(uint64_t);
 	return size;
 }
@@ -445,7 +445,7 @@ void perf_counter_record(struct lttng_ust_ctx_field *field,
 	uint64_t value;
 
 	value = wrapper_perf_counter_read(field);
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(value));
+	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(value));
 	chan->ops->event_write(ctx, &value, sizeof(value));
 }
 
@@ -547,7 +547,7 @@ int lttng_add_perf_counter_to_ctx(uint32_t type,
 		goto perf_field_alloc_error;
 	}
 	ust_type = lttng_ust_create_type_integer(sizeof(uint64_t) * CHAR_BIT,
-			lttng_alignof(uint64_t) * CHAR_BIT,
+			lttng_ust_rb_alignof(uint64_t) * CHAR_BIT,
 			lttng_ust_is_signed_type(uint64_t),
 			BYTE_ORDER, 10);
 	if (!ust_type) {

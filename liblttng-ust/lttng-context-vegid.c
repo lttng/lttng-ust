@@ -66,7 +66,7 @@ size_t vegid_get_size(struct lttng_ust_ctx_field *field, size_t offset)
 {
 	size_t size = 0;
 
-	size += lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(gid_t));
+	size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(gid_t));
 	size += sizeof(gid_t);
 	return size;
 }
@@ -79,7 +79,7 @@ void vegid_record(struct lttng_ust_ctx_field *field,
 	gid_t vegid;
 
 	vegid = get_vegid();
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(vegid));
+	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(vegid));
 	chan->ops->event_write(ctx, &vegid, sizeof(vegid));
 }
 
@@ -97,7 +97,7 @@ int lttng_add_vegid_to_ctx(struct lttng_ust_ctx **ctx)
 	int ret;
 
 	type = lttng_ust_create_type_integer(sizeof(gid_t) * CHAR_BIT,
-			lttng_alignof(gid_t) * CHAR_BIT,
+			lttng_ust_rb_alignof(gid_t) * CHAR_BIT,
 			lttng_ust_is_signed_type(gid_t),
 			BYTE_ORDER, 10);
 	if (!type)

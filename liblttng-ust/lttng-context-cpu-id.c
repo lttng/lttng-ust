@@ -29,7 +29,7 @@ size_t cpu_id_get_size(struct lttng_ust_ctx_field *field, size_t offset)
 {
 	size_t size = 0;
 
-	size += lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(int));
+	size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(int));
 	size += sizeof(int);
 	return size;
 }
@@ -42,7 +42,7 @@ void cpu_id_record(struct lttng_ust_ctx_field *field,
 	int cpu;
 
 	cpu = lttng_ust_get_cpu();
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(cpu));
+	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(cpu));
 	chan->ops->event_write(ctx, &cpu, sizeof(cpu));
 }
 
@@ -60,7 +60,7 @@ int lttng_add_cpu_id_to_ctx(struct lttng_ust_ctx **ctx)
 	int ret;
 
 	type = lttng_ust_create_type_integer(sizeof(int) * CHAR_BIT,
-			lttng_alignof(int) * CHAR_BIT,
+			lttng_ust_rb_alignof(int) * CHAR_BIT,
 			lttng_ust_is_signed_type(int),
 			BYTE_ORDER, 10);
 	if (!type)

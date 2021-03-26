@@ -94,7 +94,7 @@ size_t ipc_ns_get_size(struct lttng_ust_ctx_field *field, size_t offset)
 {
 	size_t size = 0;
 
-	size += lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(ino_t));
+	size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(ino_t));
 	size += sizeof(ino_t);
 	return size;
 }
@@ -107,7 +107,7 @@ void ipc_ns_record(struct lttng_ust_ctx_field *field,
 	ino_t ipc_ns;
 
 	ipc_ns = get_ipc_ns();
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(ipc_ns));
+	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(ipc_ns));
 	chan->ops->event_write(ctx, &ipc_ns, sizeof(ipc_ns));
 }
 
@@ -125,7 +125,7 @@ int lttng_add_ipc_ns_to_ctx(struct lttng_ust_ctx **ctx)
 	int ret;
 
 	type = lttng_ust_create_type_integer(sizeof(ino_t) * CHAR_BIT,
-			lttng_alignof(ino_t) * CHAR_BIT,
+			lttng_ust_rb_alignof(ino_t) * CHAR_BIT,
 			lttng_ust_is_signed_type(ino_t),
 			BYTE_ORDER, 10);
 	if (!type)

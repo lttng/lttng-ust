@@ -70,7 +70,7 @@ size_t vsuid_get_size(struct lttng_ust_ctx_field *field, size_t offset)
 {
 	size_t size = 0;
 
-	size += lttng_ust_lib_ring_buffer_align(offset, lttng_alignof(uid_t));
+	size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(uid_t));
 	size += sizeof(uid_t);
 	return size;
 }
@@ -83,7 +83,7 @@ void vsuid_record(struct lttng_ust_ctx_field *field,
 	uid_t vsuid;
 
 	vsuid = get_vsuid();
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_alignof(vsuid));
+	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(vsuid));
 	chan->ops->event_write(ctx, &vsuid, sizeof(vsuid));
 }
 
@@ -101,7 +101,7 @@ int lttng_add_vsuid_to_ctx(struct lttng_ust_ctx **ctx)
 	int ret;
 
 	type = lttng_ust_create_type_integer(sizeof(uid_t) * CHAR_BIT,
-			lttng_alignof(uid_t) * CHAR_BIT,
+			lttng_ust_rb_alignof(uid_t) * CHAR_BIT,
 			lttng_ust_is_signed_type(uid_t),
 			BYTE_ORDER, 10);
 	if (!type)

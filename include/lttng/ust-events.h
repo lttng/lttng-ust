@@ -124,7 +124,7 @@ struct lttng_ust_type_integer {
 		},							\
 		.struct_size = sizeof(struct lttng_ust_type_integer),	\
 		.size = sizeof(_type) * CHAR_BIT,			\
-		.alignment = lttng_alignof(_type) * CHAR_BIT,		\
+		.alignment = lttng_ust_rb_alignof(_type) * CHAR_BIT,	\
 		.signedness = lttng_ust_is_signed_type(_type),		\
 		.reverse_byte_order = _byte_order != BYTE_ORDER,	\
 		.base = _base,						\
@@ -157,7 +157,7 @@ struct lttng_ust_type_float {
 		.exp_dig = sizeof(_type) * CHAR_BIT			\
 			- lttng_ust_float_mant_dig(_type),		\
 		.mant_dig = lttng_ust_float_mant_dig(_type),		\
-		.alignment = lttng_alignof(_type) * CHAR_BIT,		\
+		.alignment = lttng_ust_rb_alignof(_type) * CHAR_BIT,	\
 		.reverse_byte_order = BYTE_ORDER != FLOAT_WORD_ORDER,	\
 	}))
 
