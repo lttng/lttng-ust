@@ -22,13 +22,10 @@
 struct lttng_ust_lib_ring_buffer;
 struct lttng_ust_lib_ring_buffer_channel;
 struct lttng_ust_lib_ring_buffer_ctx;
+struct lttng_ust_lib_ring_buffer_ctx_private;
 
 /*
  * ring buffer context
- *
- * Context passed to lib_ring_buffer_reserve(), lib_ring_buffer_commit(),
- * lib_ring_buffer_try_discard_reserve(), lttng_ust_lib_ring_buffer_align_ctx() and
- * lib_ring_buffer_write().
  *
  * IMPORTANT: this structure is part of the ABI between the probe and
  * UST. Fields need to be only added at the end, never reordered, never
@@ -41,34 +38,16 @@ struct lttng_ust_lib_ring_buffer_ctx;
 struct lttng_ust_lib_ring_buffer_ctx {
 	uint32_t struct_size;			/* Size of this structure. */
 
-	/* input received by lib_ring_buffer_reserve(). */
-	struct lttng_ust_lib_ring_buffer_channel *chan; /* channel */
-	void *priv;				/* client private data */
+	void *client_priv;			/* Ring buffer client private data */
 	size_t data_size;			/* size of payload */
 	int largest_align;			/*
 						 * alignment of the largest element
 						 * in the payload
 						 */
-
-	/* output from lib_ring_buffer_reserve() */
-	int reserve_cpu;			/* processor id updated by the reserve */
-	size_t slot_size;			/* size of the reserved slot */
-	unsigned long buf_offset;		/* offset following the record header */
-	unsigned long pre_offset;		/*
-						 * Initial offset position _before_
-						 * the record is written. Positioned
-						 * prior to record header alignment
-						 * padding.
-						 */
-	uint64_t tsc;				/* time-stamp counter value */
-	unsigned int rflags;			/* reservation flags */
 	void *ip;				/* caller ip address */
 
-	struct lttng_ust_lib_ring_buffer *buf;	/*
-						 * buffer corresponding to processor id
-						 * for this channel
-						 */
-	struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
+	/* Private ring buffer context, set by reserve callback. */
+	struct lttng_ust_lib_ring_buffer_ctx_private *priv;
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
@@ -76,28 +55,26 @@ struct lttng_ust_lib_ring_buffer_ctx {
 /**
  * lttng_ust_lib_ring_buffer_ctx_init - initialize ring buffer context
  * @ctx: ring buffer context to initialize
- * @chan: channel
- * @priv: client private data
+ * @client_priv: client private data
  * @data_size: size of record data payload
  * @largest_align: largest alignment within data payload types
+ * @ip: caller ip address
  */
 static inline lttng_ust_notrace
 void lttng_ust_lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
-			      struct lttng_ust_lib_ring_buffer_channel *chan,
-			      void *priv, size_t data_size, int largest_align);
+					void *client_priv, size_t data_size, int largest_align,
+					void *ip);
 static inline
 void lttng_ust_lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
-			      struct lttng_ust_lib_ring_buffer_channel *chan,
-			      void *priv, size_t data_size, int largest_align)
+					void *client_priv, size_t data_size, int largest_align,
+					void *ip)
 {
 	ctx->struct_size = sizeof(struct lttng_ust_lib_ring_buffer_ctx);
-	ctx->chan = chan;
-	ctx->priv = priv;
+	ctx->client_priv = client_priv;
 	ctx->data_size = data_size;
-	ctx->reserve_cpu = -1;
 	ctx->largest_align = largest_align;
-	ctx->rflags = 0;
-	ctx->ip = 0;
+	ctx->ip = ip;
+	ctx->priv = NULL;
 }
 
 /*
@@ -146,20 +123,5 @@ unsigned int lttng_ust_lib_ring_buffer_align(size_t align_drift, size_t size_of_
 }
 
 #endif
-
-/**
- * lttng_ust_lib_ring_buffer_align_ctx - Align context offset on "alignment"
- * @ctx: ring buffer context.
- */
-static inline lttng_ust_notrace
-void lttng_ust_lib_ring_buffer_align_ctx(struct lttng_ust_lib_ring_buffer_ctx *ctx,
-			   size_t alignment);
-static inline
-void lttng_ust_lib_ring_buffer_align_ctx(struct lttng_ust_lib_ring_buffer_ctx *ctx,
-			   size_t alignment)
-{
-	ctx->buf_offset += lttng_ust_lib_ring_buffer_align(ctx->buf_offset,
-						 alignment);
-}
 
 #endif /* _LTTNG_RING_BUFFER_CONTEXT_H */

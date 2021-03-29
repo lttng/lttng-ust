@@ -78,7 +78,7 @@ void procname_record(struct lttng_ust_ctx_field *field,
 	char *procname;
 
 	procname = wrapper_getprocname();
-	chan->ops->event_write(ctx, procname, LTTNG_UST_ABI_PROCNAME_LEN);
+	chan->ops->event_write(ctx, procname, LTTNG_UST_ABI_PROCNAME_LEN, 1);
 }
 
 static

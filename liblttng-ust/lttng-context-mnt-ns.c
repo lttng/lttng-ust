@@ -90,8 +90,7 @@ void mnt_ns_record(struct lttng_ust_ctx_field *field,
 	ino_t mnt_ns;
 
 	mnt_ns = get_mnt_ns();
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(mnt_ns));
-	chan->ops->event_write(ctx, &mnt_ns, sizeof(mnt_ns));
+	chan->ops->event_write(ctx, &mnt_ns, sizeof(mnt_ns), lttng_ust_rb_alignof(mnt_ns));
 }
 
 static

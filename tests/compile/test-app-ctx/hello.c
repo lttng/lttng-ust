@@ -109,8 +109,7 @@ void test_record(struct lttng_ust_ctx_field *field,
 	int sel = test_count % _NR_LTTNG_UST_DYNAMIC_TYPES;
 	char sel_char = (char) sel;
 
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(char));
-	lttng_chan_buf->ops->event_write(ctx, &sel_char, sizeof(sel_char));
+	lttng_chan_buf->ops->event_write(ctx, &sel_char, sizeof(sel_char), lttng_ust_rb_alignof(char));
 	switch (sel) {
 	case LTTNG_UST_DYNAMIC_TYPE_NONE:
 		break;
@@ -118,86 +117,76 @@ void test_record(struct lttng_ust_ctx_field *field,
 	{
 		int8_t v = -8;
 
-		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(v));
-		lttng_chan_buf->ops->event_write(ctx, &v, sizeof(v));
+		lttng_chan_buf->ops->event_write(ctx, &v, sizeof(v), lttng_ust_rb_alignof(v));
 		break;
 	}
 	case LTTNG_UST_DYNAMIC_TYPE_S16:
 	{
 		int16_t v = -16;
 
-		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(v));
-		lttng_chan_buf->ops->event_write(ctx, &v, sizeof(v));
+		lttng_chan_buf->ops->event_write(ctx, &v, sizeof(v), lttng_ust_rb_alignof(v));
 		break;
 	}
 	case LTTNG_UST_DYNAMIC_TYPE_S32:
 	{
 		int32_t v = -32;
 
-		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(v));
-		lttng_chan_buf->ops->event_write(ctx, &v, sizeof(v));
+		lttng_chan_buf->ops->event_write(ctx, &v, sizeof(v), lttng_ust_rb_alignof(v));
 		break;
 	}
 	case LTTNG_UST_DYNAMIC_TYPE_S64:
 	{
 		int64_t v = -64;
 
-		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(v));
-		lttng_chan_buf->ops->event_write(ctx, &v, sizeof(v));
+		lttng_chan_buf->ops->event_write(ctx, &v, sizeof(v), lttng_ust_rb_alignof(v));
 		break;
 	}
 	case LTTNG_UST_DYNAMIC_TYPE_U8:
 	{
 		uint8_t v = 8;
 
-		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(v));
-		lttng_chan_buf->ops->event_write(ctx, &v, sizeof(v));
+		lttng_chan_buf->ops->event_write(ctx, &v, sizeof(v), lttng_ust_rb_alignof(v));
 		break;
 	}
 	case LTTNG_UST_DYNAMIC_TYPE_U16:
 	{
 		uint16_t v = 16;
 
-		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(v));
-		lttng_chan_buf->ops->event_write(ctx, &v, sizeof(v));
+		lttng_chan_buf->ops->event_write(ctx, &v, sizeof(v), lttng_ust_rb_alignof(v));
 		break;
 	}
 	case LTTNG_UST_DYNAMIC_TYPE_U32:
 	{
 		uint32_t v = 32;
 
-		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(v));
-		lttng_chan_buf->ops->event_write(ctx, &v, sizeof(v));
+		lttng_chan_buf->ops->event_write(ctx, &v, sizeof(v), lttng_ust_rb_alignof(v));
 		break;
 	}
 	case LTTNG_UST_DYNAMIC_TYPE_U64:
 	{
 		uint64_t v = 64;
 
-		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(v));
-		lttng_chan_buf->ops->event_write(ctx, &v, sizeof(v));
+		lttng_chan_buf->ops->event_write(ctx, &v, sizeof(v), lttng_ust_rb_alignof(v));
 		break;
 	}
 	case LTTNG_UST_DYNAMIC_TYPE_FLOAT:
 	{
 		float f = 22322.0;
 
-		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(f));
-		lttng_chan_buf->ops->event_write(ctx, &f, sizeof(f));
+		lttng_chan_buf->ops->event_write(ctx, &f, sizeof(f), lttng_ust_rb_alignof(f));
 		break;
 	}
 	case LTTNG_UST_DYNAMIC_TYPE_DOUBLE:
 	{
 		double d = 2.0;
 
-		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(d));
-		lttng_chan_buf->ops->event_write(ctx, &d, sizeof(d));
+		lttng_chan_buf->ops->event_write(ctx, &d, sizeof(d), lttng_ust_rb_alignof(d));
 		break;
 	}
 	case LTTNG_UST_DYNAMIC_TYPE_STRING:
 	{
 		const char *str = "teststr";
-		lttng_chan_buf->ops->event_write(ctx, str, strlen(str) + 1);
+		lttng_chan_buf->ops->event_write(ctx, str, strlen(str) + 1, 1);
 		break;
 	}
 	default:

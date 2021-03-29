@@ -26,6 +26,8 @@
 #include "shm_types.h"
 #include "vatomic.h"
 
+#define LIB_RING_BUFFER_MAX_NESTING	5
+
 /*
  * A switch is done during tracing or as a final flush after tracing (so it
  * won't write in the new sub-buffer).
@@ -223,6 +225,43 @@ struct lttng_ust_lib_ring_buffer {
 	char padding[RB_RING_BUFFER_PADDING];
 } __attribute__((aligned(CAA_CACHE_LINE_SIZE)));
 
+/*
+ * ring buffer private context
+ *
+ * Private context passed to lib_ring_buffer_reserve(), lib_ring_buffer_commit(),
+ * lib_ring_buffer_try_discard_reserve(), lttng_ust_lib_ring_buffer_align_ctx() and
+ * lib_ring_buffer_write().
+ *
+ * This context is allocated on an internal shadow-stack by a successful reserve
+ * operation, used by align/write, and freed by commit.
+ */
+
+struct lttng_ust_lib_ring_buffer_ctx_private {
+	/* input received by lib_ring_buffer_reserve(). */
+	struct lttng_ust_lib_ring_buffer_ctx *pub;
+	struct lttng_ust_lib_ring_buffer_channel *chan; /* channel */
+
+	/* output from lib_ring_buffer_reserve() */
+	int reserve_cpu;			/* processor id updated by the reserve */
+	size_t slot_size;			/* size of the reserved slot */
+	unsigned long buf_offset;		/* offset following the record header */
+	unsigned long pre_offset;		/*
+						 * Initial offset position _before_
+						 * the record is written. Positioned
+						 * prior to record header alignment
+						 * padding.
+						 */
+	uint64_t tsc;				/* time-stamp counter value */
+	unsigned int rflags;			/* reservation flags */
+	void *ip;				/* caller ip address */
+
+	struct lttng_ust_lib_ring_buffer *buf;	/*
+						 * buffer corresponding to processor id
+						 * for this channel
+						 */
+	struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
+};
+
 static inline
 void *channel_get_private_config(struct lttng_ust_lib_ring_buffer_channel *chan)
 {
@@ -269,5 +308,22 @@ void channel_set_private(struct lttng_ust_lib_ring_buffer_channel *chan, void *p
 		}							\
 		_____ret = _____ret; /* For clang "unused result". */	\
 	})
+
+/**
+ * lttng_ust_lib_ring_buffer_align_ctx - Align context offset on "alignment"
+ * @ctx: ring buffer context.
+ */
+static inline lttng_ust_notrace
+void lttng_ust_lib_ring_buffer_align_ctx(struct lttng_ust_lib_ring_buffer_ctx *ctx,
+			   size_t alignment);
+static inline
+void lttng_ust_lib_ring_buffer_align_ctx(struct lttng_ust_lib_ring_buffer_ctx *ctx,
+			   size_t alignment)
+{
+	struct lttng_ust_lib_ring_buffer_ctx_private *ctx_private = ctx->priv;
+
+	ctx_private->buf_offset += lttng_ust_lib_ring_buffer_align(ctx_private->buf_offset,
+						 alignment);
+}
 
 #endif /* _LTTNG_RING_BUFFER_FRONTEND_TYPES_H */

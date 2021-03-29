@@ -23,7 +23,7 @@
 struct lttng_ust_lib_ring_buffer;
 struct lttng_ust_lib_ring_buffer_channel;
 struct lttng_ust_lib_ring_buffer_config;
-struct lttng_ust_lib_ring_buffer_ctx;
+struct lttng_ust_lib_ring_buffer_ctx_private;
 struct lttng_ust_shm_handle;
 
 /*

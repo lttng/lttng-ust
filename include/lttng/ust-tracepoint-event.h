@@ -688,24 +688,21 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 #define _ctf_integer_ext(_type, _item, _src, _byte_order, _base, _nowrite) \
 	{								\
 		_type __tmp = (_src);					\
-		lttng_ust_lib_ring_buffer_align_ctx(&__ctx, lttng_ust_rb_alignof(__tmp));\
-		__chan->ops->event_write(&__ctx, &__tmp, sizeof(__tmp));\
+		__chan->ops->event_write(&__ctx, &__tmp, sizeof(__tmp), lttng_ust_rb_alignof(__tmp));\
 	}
 
 #undef _ctf_float
 #define _ctf_float(_type, _item, _src, _nowrite)		        \
 	{								\
 		_type __tmp = (_src);					\
-		lttng_ust_lib_ring_buffer_align_ctx(&__ctx, lttng_ust_rb_alignof(__tmp));\
-		__chan->ops->event_write(&__ctx, &__tmp, sizeof(__tmp));\
+		__chan->ops->event_write(&__ctx, &__tmp, sizeof(__tmp), lttng_ust_rb_alignof(__tmp));\
 	}
 
 #undef _ctf_array_encoded
 #define _ctf_array_encoded(_type, _item, _src, _byte_order, _length,	\
 			_encoding, _nowrite, _elem_type_base)		\
-	lttng_ust_lib_ring_buffer_align_ctx(&__ctx, lttng_ust_rb_alignof(_type));	\
 	if (lttng_ust_string_encoding_##_encoding == lttng_ust_string_encoding_none) \
-		__chan->ops->event_write(&__ctx, _src, sizeof(_type) * (_length)); \
+		__chan->ops->event_write(&__ctx, _src, sizeof(_type) * (_length), lttng_ust_rb_alignof(_type)); \
 	else								\
 		__chan->ops->event_pstrcpy_pad(&__ctx, (const char *) (_src), _length); \
 
@@ -714,23 +711,19 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 			_src_length, _encoding, _nowrite, _elem_type_base) \
 	{								\
 		_length_type __tmpl = __stackvar.__dynamic_len[__dynamic_len_idx]; \
-		lttng_ust_lib_ring_buffer_align_ctx(&__ctx, lttng_ust_rb_alignof(_length_type));\
-		__chan->ops->event_write(&__ctx, &__tmpl, sizeof(_length_type));\
+		__chan->ops->event_write(&__ctx, &__tmpl, sizeof(_length_type), lttng_ust_rb_alignof(_length_type));\
 	}								\
-	lttng_ust_lib_ring_buffer_align_ctx(&__ctx, lttng_ust_rb_alignof(_type));	\
 	if (lttng_ust_string_encoding_##_encoding == lttng_ust_string_encoding_none) \
 		__chan->ops->event_write(&__ctx, _src,			\
-			sizeof(_type) * __get_dynamic_len(dest));	\
+			sizeof(_type) * __get_dynamic_len(dest), lttng_ust_rb_alignof(_type));	\
 	else								\
 		__chan->ops->event_pstrcpy_pad(&__ctx, (const char *) (_src), __get_dynamic_len(dest)); \
 
 #undef _ctf_string
-#define _ctf_string(_item, _src, _nowrite)			        \
+#define _ctf_string(_item, _src, _nowrite)					\
 	{									\
 		const char *__ctf_tmp_string =					\
 			((_src) ? (_src) : __LTTNG_UST_NULL_STRING);		\
-		lttng_ust_lib_ring_buffer_align_ctx(&__ctx,				\
-			lttng_ust_rb_alignof(*__ctf_tmp_string));			\
 		__chan->ops->event_strcpy(&__ctx, __ctf_tmp_string,		\
 			__get_dynamic_len(dest));				\
 	}
@@ -844,17 +837,13 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 		struct lttng_ust_event_recorder *__event_recorder = (struct lttng_ust_event_recorder *) __event->child; \
 		struct lttng_ust_channel_buffer *__chan = __event_recorder->chan; \
 		struct lttng_ust_lib_ring_buffer_ctx __ctx;		      \
-		struct lttng_ust_stack_ctx __lttng_ctx;			      \
 									      \
 		__event_len = __event_get_size__##_provider##___##_name(__stackvar.__dynamic_len, \
 			 _TP_ARGS_DATA_VAR(_args));			      \
 		__event_align = __event_get_align__##_provider##___##_name(_TP_ARGS_VAR(_args)); \
-		memset(&__lttng_ctx, 0, sizeof(__lttng_ctx));		      \
-		__lttng_ctx.struct_size = sizeof(struct lttng_ust_stack_ctx); \
-		__lttng_ctx.event_recorder = __event_recorder;		      \
-		lttng_ust_lib_ring_buffer_ctx_init(&__ctx, NULL, &__lttng_ctx, __event_len, __event_align); \
-		__ctx.ip = _TP_IP_PARAM(TP_IP_PARAM);			      \
-		__ret = __chan->ops->event_reserve(&__ctx, __event_recorder->id); \
+		lttng_ust_lib_ring_buffer_ctx_init(&__ctx, __event_recorder, __event_len, __event_align, \
+				_TP_IP_PARAM(TP_IP_PARAM));		      \
+		__ret = __chan->ops->event_reserve(&__ctx);		      \
 		if (__ret < 0)						      \
 			return;						      \
 		_fields							      \

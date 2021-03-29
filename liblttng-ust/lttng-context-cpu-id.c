@@ -42,8 +42,7 @@ void cpu_id_record(struct lttng_ust_ctx_field *field,
 	int cpu;
 
 	cpu = lttng_ust_get_cpu();
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(cpu));
-	chan->ops->event_write(ctx, &cpu, sizeof(cpu));
+	chan->ops->event_write(ctx, &cpu, sizeof(cpu), lttng_ust_rb_alignof(cpu));
 }
 
 static

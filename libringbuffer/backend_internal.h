@@ -207,11 +207,12 @@ int lib_ring_buffer_backend_get_pages(const struct lttng_ust_lib_ring_buffer_con
 			struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			struct lttng_ust_lib_ring_buffer_backend_pages **backend_pages)
 {
-	struct lttng_ust_lib_ring_buffer_backend *bufb = &ctx->buf->backend;
-	struct channel_backend *chanb = &ctx->chan->backend;
-	struct lttng_ust_shm_handle *handle = ctx->chan->handle;
+	struct lttng_ust_lib_ring_buffer_ctx_private *ctx_private = ctx->priv;
+	struct lttng_ust_lib_ring_buffer_backend *bufb = &ctx_private->buf->backend;
+	struct channel_backend *chanb = &ctx_private->chan->backend;
+	struct lttng_ust_shm_handle *handle = ctx_private->chan->handle;
 	size_t sbidx;
-	size_t offset = ctx->buf_offset;
+	size_t offset = ctx_private->buf_offset;
 	struct lttng_ust_lib_ring_buffer_backend_subbuffer *wsb;
 	struct lttng_ust_lib_ring_buffer_backend_pages_shmp *rpages;
 	unsigned long sb_bindex, id;
@@ -227,7 +228,7 @@ int lib_ring_buffer_backend_get_pages(const struct lttng_ust_lib_ring_buffer_con
 	rpages = shmp_index(handle, bufb->array, sb_bindex);
 	if (caa_unlikely(!rpages))
 		return -1;
-	CHAN_WARN_ON(ctx->chan,
+	CHAN_WARN_ON(ctx_private->chan,
 		     config->mode == RING_BUFFER_OVERWRITE
 		     && subbuffer_id_is_noref(config, id));
 	_backend_pages = shmp(handle, rpages->shmp);
@@ -243,7 +244,7 @@ struct lttng_ust_lib_ring_buffer_backend_pages *
 	lib_ring_buffer_get_backend_pages_from_ctx(const struct lttng_ust_lib_ring_buffer_config *config,
 		struct lttng_ust_lib_ring_buffer_ctx *ctx)
 {
-	return ctx->backend_pages;
+	return ctx->priv->backend_pages;
 }
 
 /*

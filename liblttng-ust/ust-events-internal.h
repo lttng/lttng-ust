@@ -284,6 +284,7 @@ struct lttng_ust_event_recorder_private {
 	struct cds_list_head node;		/* Event recorder list */
 	struct cds_hlist_node hlist;		/* Hash table of event recorders */
 	struct lttng_ust_ctx *ctx;
+	unsigned int id;
 };
 
 struct lttng_ust_event_notifier_private {

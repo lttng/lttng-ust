@@ -79,8 +79,7 @@ void veuid_record(struct lttng_ust_ctx_field *field,
 	uid_t veuid;
 
 	veuid = get_veuid();
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(veuid));
-	chan->ops->event_write(ctx, &veuid, sizeof(veuid));
+	chan->ops->event_write(ctx, &veuid, sizeof(veuid), lttng_ust_rb_alignof(veuid));
 }
 
 static

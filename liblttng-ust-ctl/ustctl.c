@@ -1342,7 +1342,7 @@ int ustctl_write_metadata_to_channel(
 		reserve_len = min_t(size_t,
 				lttng_chan_buf->ops->priv->packet_avail_size(lttng_chan_buf),
 				len - pos);
-		lttng_ust_lib_ring_buffer_ctx_init(&ctx, rb_chan, NULL, reserve_len, sizeof(char));
+		lttng_ust_lib_ring_buffer_ctx_init(&ctx, rb_chan, reserve_len, sizeof(char), NULL);
 		/*
 		 * We don't care about metadata buffer's records lost
 		 * count, because we always retry here. Report error if
@@ -1351,7 +1351,7 @@ int ustctl_write_metadata_to_channel(
 		 */
 		waitret = wait_cond_interruptible_timeout(
 			({
-				ret = lttng_chan_buf->ops->event_reserve(&ctx, 0);
+				ret = lttng_chan_buf->ops->event_reserve(&ctx);
 				ret != -ENOBUFS || !ret;
 			}),
 			LTTNG_METADATA_TIMEOUT_MSEC);
@@ -1363,7 +1363,7 @@ int ustctl_write_metadata_to_channel(
 				ret = waitret;
 			goto end;
 		}
-		lttng_chan_buf->ops->event_write(&ctx, &str[pos], reserve_len);
+		lttng_chan_buf->ops->event_write(&ctx, &str[pos], reserve_len, 1);
 		lttng_chan_buf->ops->event_commit(&ctx);
 	}
 end:
@@ -1389,15 +1389,15 @@ ssize_t ustctl_write_one_packet_to_channel(
 	reserve_len = min_t(ssize_t,
 			lttng_chan_buf->ops->priv->packet_avail_size(lttng_chan_buf),
 			len);
-	lttng_ust_lib_ring_buffer_ctx_init(&ctx, rb_chan, NULL, reserve_len, sizeof(char));
-	ret = lttng_chan_buf->ops->event_reserve(&ctx, 0);
+	lttng_ust_lib_ring_buffer_ctx_init(&ctx, rb_chan, reserve_len, sizeof(char), NULL);
+	ret = lttng_chan_buf->ops->event_reserve(&ctx);
 	if (ret != 0) {
 		DBG("LTTng: event reservation failed");
 		assert(ret < 0);
 		reserve_len = ret;
 		goto end;
 	}
-	lttng_chan_buf->ops->event_write(&ctx, str, reserve_len);
+	lttng_chan_buf->ops->event_write(&ctx, str, reserve_len, 1);
 	lttng_chan_buf->ops->event_commit(&ctx);
 
 end:

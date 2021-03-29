@@ -68,9 +68,10 @@ void lib_ring_buffer_write(const struct lttng_ust_lib_ring_buffer_config *config
 			   struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			   const void *src, size_t len)
 {
-	struct channel_backend *chanb = &ctx->chan->backend;
-	struct lttng_ust_shm_handle *handle = ctx->chan->handle;
-	size_t offset = ctx->buf_offset;
+	struct lttng_ust_lib_ring_buffer_ctx_private *ctx_private = ctx->priv;
+	struct channel_backend *chanb = &ctx_private->chan->backend;
+	struct lttng_ust_shm_handle *handle = ctx_private->chan->handle;
+	size_t offset = ctx_private->buf_offset;
 	struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
 	void *p;
 
@@ -90,7 +91,7 @@ void lib_ring_buffer_write(const struct lttng_ust_lib_ring_buffer_config *config
 	if (caa_unlikely(!p))
 		return;
 	lib_ring_buffer_do_copy(config, p, src, len);
-	ctx->buf_offset += len;
+	ctx_private->buf_offset += len;
 }
 
 /*
@@ -139,10 +140,11 @@ void lib_ring_buffer_strcpy(const struct lttng_ust_lib_ring_buffer_config *confi
 			   struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			   const char *src, size_t len, char pad)
 {
-	struct channel_backend *chanb = &ctx->chan->backend;
-	struct lttng_ust_shm_handle *handle = ctx->chan->handle;
+	struct lttng_ust_lib_ring_buffer_ctx_private *ctx_private = ctx->priv;
+	struct channel_backend *chanb = &ctx_private->chan->backend;
+	struct lttng_ust_shm_handle *handle = ctx_private->chan->handle;
 	size_t count;
-	size_t offset = ctx->buf_offset;
+	size_t offset = ctx_private->buf_offset;
 	struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
 	void *p;
 
@@ -179,7 +181,7 @@ void lib_ring_buffer_strcpy(const struct lttng_ust_lib_ring_buffer_config *confi
 	if (caa_unlikely(!p))
 		return;
 	lib_ring_buffer_do_memset(p, '\0', 1);
-	ctx->buf_offset += len;
+	ctx_private->buf_offset += len;
 }
 
 /**
@@ -203,10 +205,11 @@ void lib_ring_buffer_pstrcpy(const struct lttng_ust_lib_ring_buffer_config *conf
 			   struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			   const char *src, size_t len, char pad)
 {
-	struct channel_backend *chanb = &ctx->chan->backend;
-	struct lttng_ust_shm_handle *handle = ctx->chan->handle;
+	struct lttng_ust_lib_ring_buffer_ctx_private *ctx_private = ctx->priv;
+	struct channel_backend *chanb = &ctx_private->chan->backend;
+	struct lttng_ust_shm_handle *handle = ctx_private->chan->handle;
 	size_t count;
-	size_t offset = ctx->buf_offset;
+	size_t offset = ctx_private->buf_offset;
 	struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
 	void *p;
 
@@ -237,7 +240,7 @@ void lib_ring_buffer_pstrcpy(const struct lttng_ust_lib_ring_buffer_config *conf
 			return;
 		lib_ring_buffer_do_memset(p, pad, pad_len);
 	}
-	ctx->buf_offset += len;
+	ctx_private->buf_offset += len;
 }
 
 /*

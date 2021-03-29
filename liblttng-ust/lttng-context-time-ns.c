@@ -106,8 +106,7 @@ void time_ns_record(struct lttng_ust_ctx_field *field,
 	ino_t time_ns;
 
 	time_ns = get_time_ns();
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(time_ns));
-	chan->ops->event_write(ctx, &time_ns, sizeof(time_ns));
+	chan->ops->event_write(ctx, &time_ns, sizeof(time_ns), lttng_ust_rb_alignof(time_ns));
 }
 
 static

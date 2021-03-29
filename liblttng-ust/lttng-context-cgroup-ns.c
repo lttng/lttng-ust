@@ -108,8 +108,8 @@ void cgroup_ns_record(struct lttng_ust_ctx_field *field,
 	ino_t cgroup_ns;
 
 	cgroup_ns = get_cgroup_ns();
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(cgroup_ns));
-	chan->ops->event_write(ctx, &cgroup_ns, sizeof(cgroup_ns));
+	chan->ops->event_write(ctx, &cgroup_ns, sizeof(cgroup_ns),
+			lttng_ust_rb_alignof(cgroup_ns));
 }
 
 static

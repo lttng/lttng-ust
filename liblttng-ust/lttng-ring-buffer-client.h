@@ -18,6 +18,7 @@
 #include "context-internal.h"
 #include "lttng-tracer.h"
 #include "../libringbuffer/frontend_types.h"
+#include <urcu/tls-compat.h>
 
 #define LTTNG_COMPACT_EVENT_BITS       5
 #define LTTNG_COMPACT_TSC_BITS         27
@@ -67,6 +68,21 @@ struct lttng_client_ctx {
 	struct lttng_ust_ctx *chan_ctx;
 	struct lttng_ust_ctx *event_ctx;
 };
+
+/*
+ * Indexed by lib_ring_buffer_nesting_count().
+ */
+typedef struct lttng_ust_lib_ring_buffer_ctx_private private_ctx_stack_t[LIB_RING_BUFFER_MAX_NESTING];
+static DEFINE_URCU_TLS(private_ctx_stack_t, private_ctx_stack);
+
+/*
+ * Force a read (imply TLS fixup for dlopen) of TLS variables.
+ */
+static
+void lttng_fixup_rb_client_tls(void)
+{
+	asm volatile ("" : : "m" (URCU_TLS(private_ctx_stack)));
+}
 
 static inline uint64_t lib_ring_buffer_clock_read(struct lttng_ust_lib_ring_buffer_channel *chan)
 {
@@ -184,7 +200,7 @@ size_t record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
 	case 1:	/* compact */
 		padding = lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(uint32_t));
 		offset += padding;
-		if (!(ctx->rflags & (RING_BUFFER_RFLAG_FULL_TSC | LTTNG_RFLAG_EXTENDED))) {
+		if (!(ctx->priv->rflags & (RING_BUFFER_RFLAG_FULL_TSC | LTTNG_RFLAG_EXTENDED))) {
 			offset += sizeof(uint32_t);	/* id and timestamp */
 		} else {
 			/* Minimum space taken by LTTNG_COMPACT_EVENT_BITS id */
@@ -200,7 +216,7 @@ size_t record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
 		padding = lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(uint16_t));
 		offset += padding;
 		offset += sizeof(uint16_t);
-		if (!(ctx->rflags & (RING_BUFFER_RFLAG_FULL_TSC | LTTNG_RFLAG_EXTENDED))) {
+		if (!(ctx->priv->rflags & (RING_BUFFER_RFLAG_FULL_TSC | LTTNG_RFLAG_EXTENDED))) {
 			offset += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(uint32_t));
 			offset += sizeof(uint32_t);	/* timestamp */
 		} else {
@@ -247,9 +263,9 @@ void lttng_write_event_header(const struct lttng_ust_lib_ring_buffer_config *con
 			    struct lttng_client_ctx *client_ctx,
 			    uint32_t event_id)
 {
-	struct lttng_ust_channel_buffer *lttng_chan = channel_get_private(ctx->chan);
+	struct lttng_ust_channel_buffer *lttng_chan = channel_get_private(ctx->priv->chan);
 
-	if (caa_unlikely(ctx->rflags))
+	if (caa_unlikely(ctx->priv->rflags))
 		goto slow_path;
 
 	switch (lttng_chan->priv->header_type) {
@@ -264,13 +280,13 @@ void lttng_write_event_header(const struct lttng_ust_lib_ring_buffer_config *con
 		bt_bitfield_write(&id_time, uint32_t,
 				LTTNG_COMPACT_EVENT_BITS,
 				LTTNG_COMPACT_TSC_BITS,
-				ctx->tsc);
+				ctx->priv->tsc);
 		lib_ring_buffer_write(config, ctx, &id_time, sizeof(id_time));
 		break;
 	}
 	case 2:	/* large */
 	{
-		uint32_t timestamp = (uint32_t) ctx->tsc;
+		uint32_t timestamp = (uint32_t) ctx->priv->tsc;
 		uint16_t id = event_id;
 
 		lib_ring_buffer_write(config, ctx, &id, sizeof(id));
@@ -298,11 +314,12 @@ void lttng_write_event_header_slow(const struct lttng_ust_lib_ring_buffer_config
 				 struct lttng_client_ctx *client_ctx,
 				 uint32_t event_id)
 {
-	struct lttng_ust_channel_buffer *lttng_chan = channel_get_private(ctx->chan);
+	struct lttng_ust_lib_ring_buffer_ctx_private *ctx_private = ctx->priv;
+	struct lttng_ust_channel_buffer *lttng_chan = channel_get_private(ctx->priv->chan);
 
 	switch (lttng_chan->priv->header_type) {
 	case 1:	/* compact */
-		if (!(ctx->rflags & (RING_BUFFER_RFLAG_FULL_TSC | LTTNG_RFLAG_EXTENDED))) {
+		if (!(ctx_private->rflags & (RING_BUFFER_RFLAG_FULL_TSC | LTTNG_RFLAG_EXTENDED))) {
 			uint32_t id_time = 0;
 
 			bt_bitfield_write(&id_time, uint32_t,
@@ -312,11 +329,11 @@ void lttng_write_event_header_slow(const struct lttng_ust_lib_ring_buffer_config
 			bt_bitfield_write(&id_time, uint32_t,
 					LTTNG_COMPACT_EVENT_BITS,
 					LTTNG_COMPACT_TSC_BITS,
-					ctx->tsc);
+					ctx_private->tsc);
 			lib_ring_buffer_write(config, ctx, &id_time, sizeof(id_time));
 		} else {
 			uint8_t id = 0;
-			uint64_t timestamp = ctx->tsc;
+			uint64_t timestamp = ctx_private->tsc;
 
 			bt_bitfield_write(&id, uint8_t,
 					0,
@@ -332,8 +349,8 @@ void lttng_write_event_header_slow(const struct lttng_ust_lib_ring_buffer_config
 		break;
 	case 2:	/* large */
 	{
-		if (!(ctx->rflags & (RING_BUFFER_RFLAG_FULL_TSC | LTTNG_RFLAG_EXTENDED))) {
-			uint32_t timestamp = (uint32_t) ctx->tsc;
+		if (!(ctx_private->rflags & (RING_BUFFER_RFLAG_FULL_TSC | LTTNG_RFLAG_EXTENDED))) {
+			uint32_t timestamp = (uint32_t) ctx_private->tsc;
 			uint16_t id = event_id;
 
 			lib_ring_buffer_write(config, ctx, &id, sizeof(id));
@@ -341,7 +358,7 @@ void lttng_write_event_header_slow(const struct lttng_ust_lib_ring_buffer_config
 			lib_ring_buffer_write(config, ctx, &timestamp, sizeof(timestamp));
 		} else {
 			uint16_t id = 65535;
-			uint64_t timestamp = ctx->tsc;
+			uint64_t timestamp = ctx_private->tsc;
 
 			lib_ring_buffer_write(config, ctx, &id, sizeof(id));
 			/* Align extended struct on largest member */
@@ -693,16 +710,16 @@ void lttng_channel_destroy(struct lttng_ust_channel_buffer *lttng_chan_buf)
 }
 
 static
-int lttng_event_reserve(struct lttng_ust_lib_ring_buffer_ctx *ctx,
-		      uint32_t event_id)
+int lttng_event_reserve(struct lttng_ust_lib_ring_buffer_ctx *ctx)
 {
-	struct lttng_ust_stack_ctx *lttng_ctx = ctx->priv;
-	struct lttng_ust_event_recorder *event_recorder = lttng_ctx->event_recorder;
+	struct lttng_ust_event_recorder *event_recorder = ctx->client_priv;
 	struct lttng_ust_channel_buffer *lttng_chan = event_recorder->chan;
 	struct lttng_client_ctx client_ctx;
-	int ret;
+	int ret, nesting;
+	struct lttng_ust_lib_ring_buffer_ctx_private *private_ctx;
+	uint32_t event_id;
 
-	ctx->chan = lttng_chan->priv->rb_chan;
+	event_id = event_recorder->priv->id;
 	client_ctx.chan_ctx = lttng_ust_rcu_dereference(lttng_chan->priv->ctx);
 	client_ctx.event_ctx = lttng_ust_rcu_dereference(event_recorder->priv->ctx);
 	/* Compute internal size of context structures. */
@@ -711,17 +728,25 @@ int lttng_event_reserve(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 	ctx_get_struct_size(client_ctx.event_ctx, &client_ctx.event_context_len,
 			APP_CTX_ENABLED);
 
-	if (lib_ring_buffer_nesting_inc(&client_config) < 0)
+	nesting = lib_ring_buffer_nesting_inc(&client_config);
+	if (nesting < 0)
 		return -EPERM;
+
+	private_ctx = &private_ctx_stack[nesting];
+	memset(private_ctx, 0, sizeof(*private_ctx));
+	private_ctx->pub = ctx;
+	private_ctx->chan = lttng_chan->priv->rb_chan;
+
+	ctx->priv = private_ctx;
 
 	switch (lttng_chan->priv->header_type) {
 	case 1:	/* compact */
 		if (event_id > 30)
-			ctx->rflags |= LTTNG_RFLAG_EXTENDED;
+			private_ctx->rflags |= LTTNG_RFLAG_EXTENDED;
 		break;
 	case 2:	/* large */
 		if (event_id > 65534)
-			ctx->rflags |= LTTNG_RFLAG_EXTENDED;
+			private_ctx->rflags |= LTTNG_RFLAG_EXTENDED;
 		break;
 	default:
 		WARN_ON_ONCE(1);
@@ -731,7 +756,7 @@ int lttng_event_reserve(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 	if (caa_unlikely(ret))
 		goto put;
 	if (lib_ring_buffer_backend_get_pages(&client_config, ctx,
-			&ctx->backend_pages)) {
+			&private_ctx->backend_pages)) {
 		ret = -EPERM;
 		goto put;
 	}
@@ -750,22 +775,23 @@ void lttng_event_commit(struct lttng_ust_lib_ring_buffer_ctx *ctx)
 }
 
 static
-void lttng_event_write(struct lttng_ust_lib_ring_buffer_ctx *ctx, const void *src,
-		     size_t len)
+void lttng_event_write(struct lttng_ust_lib_ring_buffer_ctx *ctx,
+		const void *src, size_t len, size_t alignment)
 {
+	lttng_ust_lib_ring_buffer_align_ctx(ctx, alignment);
 	lib_ring_buffer_write(&client_config, ctx, src, len);
 }
 
 static
-void lttng_event_strcpy(struct lttng_ust_lib_ring_buffer_ctx *ctx, const char *src,
-		     size_t len)
+void lttng_event_strcpy(struct lttng_ust_lib_ring_buffer_ctx *ctx,
+		const char *src, size_t len)
 {
 	lib_ring_buffer_strcpy(&client_config, ctx, src, len, '#');
 }
 
 static
 void lttng_event_pstrcpy_pad(struct lttng_ust_lib_ring_buffer_ctx *ctx,
-		     const char *src, size_t len)
+		const char *src, size_t len)
 {
 	lib_ring_buffer_pstrcpy(&client_config, ctx, src, len, '\0');
 }
@@ -832,6 +858,7 @@ void RING_BUFFER_MODE_TEMPLATE_INIT(void)
 {
 	DBG("LTT : ltt ring buffer client \"%s\" init\n",
 		"relay-" RING_BUFFER_MODE_TEMPLATE_STRING "-mmap");
+	lttng_fixup_rb_client_tls();
 	lttng_transport_register(&lttng_relay_transport);
 }
 

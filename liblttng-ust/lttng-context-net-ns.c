@@ -107,8 +107,7 @@ void net_ns_record(struct lttng_ust_ctx_field *field,
 	ino_t net_ns;
 
 	net_ns = get_net_ns();
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(net_ns));
-	chan->ops->event_write(ctx, &net_ns, sizeof(net_ns));
+	chan->ops->event_write(ctx, &net_ns, sizeof(net_ns), lttng_ust_rb_alignof(net_ns));
 }
 
 static

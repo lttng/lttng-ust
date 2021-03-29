@@ -15,6 +15,7 @@
 #include "ust-compat.h"
 #include "lttng-tracer.h"
 #include "../libringbuffer/frontend_types.h"
+#include <urcu/tls-compat.h>
 
 struct metadata_packet_header {
 	uint32_t magic;			/* 0x75D11D57 */
@@ -35,6 +36,9 @@ struct metadata_record_header {
 };
 
 static const struct lttng_ust_lib_ring_buffer_config client_config;
+
+/* No nested use supported for metadata ring buffer. */
+static DEFINE_URCU_TLS(struct lttng_ust_lib_ring_buffer_ctx_private, private_ctx);
 
 static inline uint64_t lib_ring_buffer_clock_read(struct lttng_ust_lib_ring_buffer_channel *chan)
 {
@@ -240,15 +244,19 @@ void lttng_channel_destroy(struct lttng_ust_channel_buffer *lttng_chan_buf)
 }
 
 static
-int lttng_event_reserve(struct lttng_ust_lib_ring_buffer_ctx *ctx, uint32_t event_id)
+int lttng_event_reserve(struct lttng_ust_lib_ring_buffer_ctx *ctx)
 {
 	int ret;
 
+	memset(&private_ctx, 0, sizeof(private_ctx));
+	private_ctx.pub = ctx;
+	private_ctx.chan = ctx->client_priv;
+	ctx->priv = &private_ctx;
 	ret = lib_ring_buffer_reserve(&client_config, ctx, NULL);
 	if (ret)
 		return ret;
 	if (lib_ring_buffer_backend_get_pages(&client_config, ctx,
-			&ctx->backend_pages))
+			&ctx->priv->backend_pages))
 		return -EPERM;
 	return 0;
 }
@@ -260,9 +268,10 @@ void lttng_event_commit(struct lttng_ust_lib_ring_buffer_ctx *ctx)
 }
 
 static
-void lttng_event_write(struct lttng_ust_lib_ring_buffer_ctx *ctx, const void *src,
-		     size_t len)
+void lttng_event_write(struct lttng_ust_lib_ring_buffer_ctx *ctx,
+		const void *src, size_t len, size_t alignment)
 {
+	lttng_ust_lib_ring_buffer_align_ctx(ctx, alignment);
 	lib_ring_buffer_write(&client_config, ctx, src, len);
 }
 

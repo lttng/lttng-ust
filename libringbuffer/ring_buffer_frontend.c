@@ -2124,8 +2124,9 @@ int lib_ring_buffer_try_reserve_slow(struct lttng_ust_lib_ring_buffer *buf,
 				     struct lttng_ust_lib_ring_buffer_ctx *ctx,
 				     void *client_ctx)
 {
+	struct lttng_ust_lib_ring_buffer_ctx_private *ctx_private = ctx->priv;
 	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
-	struct lttng_ust_shm_handle *handle = ctx->chan->handle;
+	struct lttng_ust_shm_handle *handle = chan->handle;
 	unsigned long reserve_commit_diff, offset_cmp;
 	int timeout_left_ms = lttng_ust_ringbuffer_get_timeout(chan);
 
@@ -2137,14 +2138,14 @@ retry:
 	offsets->switch_old_end = 0;
 	offsets->pre_header_padding = 0;
 
-	ctx->tsc = config->cb.ring_buffer_clock_read(chan);
-	if ((int64_t) ctx->tsc == -EIO)
+	ctx_private->tsc = config->cb.ring_buffer_clock_read(chan);
+	if ((int64_t) ctx_private->tsc == -EIO)
 		return -EIO;
 
-	if (last_tsc_overflow(config, buf, ctx->tsc))
-		ctx->rflags |= RING_BUFFER_RFLAG_FULL_TSC;
+	if (last_tsc_overflow(config, buf, ctx_private->tsc))
+		ctx_private->rflags |= RING_BUFFER_RFLAG_FULL_TSC;
 
-	if (caa_unlikely(subbuf_offset(offsets->begin, ctx->chan) == 0)) {
+	if (caa_unlikely(subbuf_offset(offsets->begin, chan) == 0)) {
 		offsets->switch_new_start = 1;		/* For offsets->begin */
 	} else {
 		offsets->size = config->cb.record_header_size(config, chan,
@@ -2153,7 +2154,7 @@ retry:
 						ctx, client_ctx);
 		offsets->size +=
 			lttng_ust_lib_ring_buffer_align(offsets->begin + offsets->size,
-					      ctx->largest_align)
+					     ctx->largest_align)
 			+ ctx->data_size;
 		if (caa_unlikely(subbuf_offset(offsets->begin, chan) +
 			     offsets->size > chan->backend.subbuf_size)) {
@@ -2313,20 +2314,21 @@ retry:
 int lib_ring_buffer_reserve_slow(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		void *client_ctx)
 {
-	struct lttng_ust_lib_ring_buffer_channel *chan = ctx->chan;
-	struct lttng_ust_shm_handle *handle = ctx->chan->handle;
+	struct lttng_ust_lib_ring_buffer_ctx_private *ctx_private = ctx->priv;
+	struct lttng_ust_lib_ring_buffer_channel *chan = ctx_private->chan;
+	struct lttng_ust_shm_handle *handle = chan->handle;
 	const struct lttng_ust_lib_ring_buffer_config *config = &chan->backend.config;
 	struct lttng_ust_lib_ring_buffer *buf;
 	struct switch_offsets offsets;
 	int ret;
 
 	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU)
-		buf = shmp(handle, chan->backend.buf[ctx->reserve_cpu].shmp);
+		buf = shmp(handle, chan->backend.buf[ctx_private->reserve_cpu].shmp);
 	else
 		buf = shmp(handle, chan->backend.buf[0].shmp);
 	if (!buf)
 		return -EIO;
-	ctx->buf = buf;
+	ctx_private->buf = buf;
 
 	offsets.size = 0;
 
@@ -2345,7 +2347,7 @@ int lib_ring_buffer_reserve_slow(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 	 * records, never the opposite (missing a full TSC record when it would
 	 * be needed).
 	 */
-	save_last_tsc(config, buf, ctx->tsc);
+	save_last_tsc(config, buf, ctx_private->tsc);
 
 	/*
 	 * Push the reader if necessary
@@ -2366,21 +2368,21 @@ int lib_ring_buffer_reserve_slow(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		lib_ring_buffer_clear_noref(config, &buf->backend,
 					    subbuf_index(offsets.old - 1, chan),
 					    handle);
-		lib_ring_buffer_switch_old_end(buf, chan, &offsets, ctx->tsc, handle);
+		lib_ring_buffer_switch_old_end(buf, chan, &offsets, ctx_private->tsc, handle);
 	}
 
 	/*
 	 * Populate new subbuffer.
 	 */
 	if (caa_unlikely(offsets.switch_new_start))
-		lib_ring_buffer_switch_new_start(buf, chan, &offsets, ctx->tsc, handle);
+		lib_ring_buffer_switch_new_start(buf, chan, &offsets, ctx_private->tsc, handle);
 
 	if (caa_unlikely(offsets.switch_new_end))
-		lib_ring_buffer_switch_new_end(buf, chan, &offsets, ctx->tsc, handle);
+		lib_ring_buffer_switch_new_end(buf, chan, &offsets, ctx_private->tsc, handle);
 
-	ctx->slot_size = offsets.size;
-	ctx->pre_offset = offsets.begin;
-	ctx->buf_offset = offsets.begin + offsets.pre_header_padding;
+	ctx_private->slot_size = offsets.size;
+	ctx_private->pre_offset = offsets.begin;
+	ctx_private->buf_offset = offsets.begin + offsets.pre_header_padding;
 	return 0;
 }
 

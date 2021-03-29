@@ -90,8 +90,7 @@ void user_ns_record(struct lttng_ust_ctx_field *field,
 	ino_t user_ns;
 
 	user_ns = get_user_ns();
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(user_ns));
-	chan->ops->event_write(ctx, &user_ns, sizeof(user_ns));
+	chan->ops->event_write(ctx, &user_ns, sizeof(user_ns), lttng_ust_rb_alignof(user_ns));
 }
 
 static

@@ -83,8 +83,7 @@ void vsuid_record(struct lttng_ust_ctx_field *field,
 	uid_t vsuid;
 
 	vsuid = get_vsuid();
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(vsuid));
-	chan->ops->event_write(ctx, &vsuid, sizeof(vsuid));
+	chan->ops->event_write(ctx, &vsuid, sizeof(vsuid), lttng_ust_rb_alignof(vsuid));
 }
 
 static

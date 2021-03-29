@@ -22,7 +22,8 @@
  *
  * The rint buffer buffer nesting count is a safety net to ensure tracer
  * client code will never trigger an endless recursion.
- * Returns 0 on success, -EPERM on failure (nesting count too high).
+ * Returns a nesting level >= 0 on success, -EPERM on failure (nesting
+ * count too high).
  *
  * asm volatile and "memory" clobber prevent the compiler from moving
  * instructions out of the ring buffer nesting count. This is required to ensure
@@ -37,12 +38,18 @@ int lib_ring_buffer_nesting_inc(const struct lttng_ust_lib_ring_buffer_config *c
 
 	nesting = ++URCU_TLS(lib_ring_buffer_nesting);
 	cmm_barrier();
-	if (caa_unlikely(nesting > 4)) {
+	if (caa_unlikely(nesting >= LIB_RING_BUFFER_MAX_NESTING)) {
 		WARN_ON_ONCE(1);
 		URCU_TLS(lib_ring_buffer_nesting)--;
 		return -EPERM;
 	}
-	return 0;
+	return nesting - 1;
+}
+
+static inline
+int lib_ring_buffer_nesting_count(const struct lttng_ust_lib_ring_buffer_config *config)
+{
+	return URCU_TLS(lib_ring_buffer_nesting);
 }
 
 static inline
@@ -65,13 +72,14 @@ int lib_ring_buffer_try_reserve(const struct lttng_ust_lib_ring_buffer_config *c
 				unsigned long *o_begin, unsigned long *o_end,
 				unsigned long *o_old, size_t *before_hdr_pad)
 {
-	struct lttng_ust_lib_ring_buffer_channel *chan = ctx->chan;
-	struct lttng_ust_lib_ring_buffer *buf = ctx->buf;
+	struct lttng_ust_lib_ring_buffer_ctx_private *ctx_private = ctx->priv;
+	struct lttng_ust_lib_ring_buffer_channel *chan = ctx_private->chan;
+	struct lttng_ust_lib_ring_buffer *buf = ctx_private->buf;
 	*o_begin = v_read(config, &buf->offset);
 	*o_old = *o_begin;
 
-	ctx->tsc = lib_ring_buffer_clock_read(chan);
-	if ((int64_t) ctx->tsc == -EIO)
+	ctx_private->tsc = lib_ring_buffer_clock_read(chan);
+	if ((int64_t) ctx_private->tsc == -EIO)
 		return 1;
 
 	/*
@@ -81,18 +89,18 @@ int lib_ring_buffer_try_reserve(const struct lttng_ust_lib_ring_buffer_config *c
 	 */
 	//prefetch(&buf->commit_hot[subbuf_index(*o_begin, chan)]);
 
-	if (last_tsc_overflow(config, buf, ctx->tsc))
-		ctx->rflags |= RING_BUFFER_RFLAG_FULL_TSC;
+	if (last_tsc_overflow(config, buf, ctx_private->tsc))
+		ctx_private->rflags |= RING_BUFFER_RFLAG_FULL_TSC;
 
 	if (caa_unlikely(subbuf_offset(*o_begin, chan) == 0))
 		return 1;
 
-	ctx->slot_size = record_header_size(config, chan, *o_begin,
+	ctx_private->slot_size = record_header_size(config, chan, *o_begin,
 					    before_hdr_pad, ctx, client_ctx);
-	ctx->slot_size +=
-		lttng_ust_lib_ring_buffer_align(*o_begin + ctx->slot_size,
+	ctx_private->slot_size +=
+		lttng_ust_lib_ring_buffer_align(*o_begin + ctx_private->slot_size,
 				      ctx->largest_align) + ctx->data_size;
-	if (caa_unlikely((subbuf_offset(*o_begin, chan) + ctx->slot_size)
+	if (caa_unlikely((subbuf_offset(*o_begin, chan) + ctx_private->slot_size)
 		     > chan->backend.subbuf_size))
 		return 1;
 
@@ -100,7 +108,7 @@ int lib_ring_buffer_try_reserve(const struct lttng_ust_lib_ring_buffer_config *c
 	 * Record fits in the current buffer and we are not on a switch
 	 * boundary. It's safe to write.
 	 */
-	*o_end = *o_begin + ctx->slot_size;
+	*o_end = *o_begin + ctx_private->slot_size;
 
 	if (caa_unlikely((subbuf_offset(*o_end, chan)) == 0))
 		/*
@@ -133,8 +141,9 @@ int lib_ring_buffer_reserve(const struct lttng_ust_lib_ring_buffer_config *confi
 			    struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			    void *client_ctx)
 {
-	struct lttng_ust_lib_ring_buffer_channel *chan = ctx->chan;
-	struct lttng_ust_shm_handle *handle = ctx->chan->handle;
+	struct lttng_ust_lib_ring_buffer_ctx_private *ctx_private = ctx->priv;
+	struct lttng_ust_lib_ring_buffer_channel *chan = ctx_private->chan;
+	struct lttng_ust_shm_handle *handle = chan->handle;
 	struct lttng_ust_lib_ring_buffer *buf;
 	unsigned long o_begin, o_end, o_old;
 	size_t before_hdr_pad = 0;
@@ -143,8 +152,8 @@ int lib_ring_buffer_reserve(const struct lttng_ust_lib_ring_buffer_config *confi
 		return -EAGAIN;
 
 	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU) {
-		ctx->reserve_cpu = lttng_ust_get_cpu();
-		buf = shmp(handle, chan->backend.buf[ctx->reserve_cpu].shmp);
+		ctx_private->reserve_cpu = lttng_ust_get_cpu();
+		buf = shmp(handle, chan->backend.buf[ctx_private->reserve_cpu].shmp);
 	} else {
 		buf = shmp(handle, chan->backend.buf[0].shmp);
 	}
@@ -152,7 +161,7 @@ int lib_ring_buffer_reserve(const struct lttng_ust_lib_ring_buffer_config *confi
 		return -EIO;
 	if (caa_unlikely(uatomic_read(&buf->record_disabled)))
 		return -EAGAIN;
-	ctx->buf = buf;
+	ctx_private->buf = buf;
 
 	/*
 	 * Perform retryable operations.
@@ -161,7 +170,7 @@ int lib_ring_buffer_reserve(const struct lttng_ust_lib_ring_buffer_config *confi
 						 &o_end, &o_old, &before_hdr_pad)))
 		goto slow_path;
 
-	if (caa_unlikely(v_cmpxchg(config, &ctx->buf->offset, o_old, o_end)
+	if (caa_unlikely(v_cmpxchg(config, &buf->offset, o_old, o_end)
 		     != o_old))
 		goto slow_path;
 
@@ -171,21 +180,21 @@ int lib_ring_buffer_reserve(const struct lttng_ust_lib_ring_buffer_config *confi
 	 * record headers, never the opposite (missing a full TSC record header
 	 * when it would be needed).
 	 */
-	save_last_tsc(config, ctx->buf, ctx->tsc);
+	save_last_tsc(config, buf, ctx_private->tsc);
 
 	/*
 	 * Push the reader if necessary
 	 */
-	lib_ring_buffer_reserve_push_reader(ctx->buf, chan, o_end - 1);
+	lib_ring_buffer_reserve_push_reader(buf, chan, o_end - 1);
 
 	/*
 	 * Clear noref flag for this subbuffer.
 	 */
-	lib_ring_buffer_clear_noref(config, &ctx->buf->backend,
+	lib_ring_buffer_clear_noref(config, &buf->backend,
 				subbuf_index(o_end - 1, chan), handle);
 
-	ctx->pre_offset = o_begin;
-	ctx->buf_offset = o_begin + before_hdr_pad;
+	ctx_private->pre_offset = o_begin;
+	ctx_private->buf_offset = o_begin + before_hdr_pad;
 	return 0;
 slow_path:
 	return lib_ring_buffer_reserve_slow(ctx, client_ctx);
@@ -227,10 +236,11 @@ static inline
 void lib_ring_buffer_commit(const struct lttng_ust_lib_ring_buffer_config *config,
 			    const struct lttng_ust_lib_ring_buffer_ctx *ctx)
 {
-	struct lttng_ust_lib_ring_buffer_channel *chan = ctx->chan;
-	struct lttng_ust_shm_handle *handle = ctx->chan->handle;
-	struct lttng_ust_lib_ring_buffer *buf = ctx->buf;
-	unsigned long offset_end = ctx->buf_offset;
+	struct lttng_ust_lib_ring_buffer_ctx_private *ctx_private = ctx->priv;
+	struct lttng_ust_lib_ring_buffer_channel *chan = ctx_private->chan;
+	struct lttng_ust_shm_handle *handle = chan->handle;
+	struct lttng_ust_lib_ring_buffer *buf = ctx_private->buf;
+	unsigned long offset_end = ctx_private->buf_offset;
 	unsigned long endidx = subbuf_index(offset_end - 1, chan);
 	unsigned long commit_count;
 	struct commit_counters_hot *cc_hot = shmp_index(handle,
@@ -250,7 +260,7 @@ void lib_ring_buffer_commit(const struct lttng_ust_lib_ring_buffer_config *confi
 	 */
 	cmm_smp_wmb();
 
-	v_add(config, ctx->slot_size, &cc_hot->cc);
+	v_add(config, ctx_private->slot_size, &cc_hot->cc);
 
 	/*
 	 * commit count read can race with concurrent OOO commit count updates.
@@ -273,7 +283,7 @@ void lib_ring_buffer_commit(const struct lttng_ust_lib_ring_buffer_config *confi
 	commit_count = v_read(config, &cc_hot->cc);
 
 	lib_ring_buffer_check_deliver(config, buf, chan, offset_end - 1,
-				      commit_count, endidx, handle, ctx->tsc);
+				      commit_count, endidx, handle, ctx_private->tsc);
 	/*
 	 * Update used size at each commit. It's needed only for extracting
 	 * ring_buffer buffers from vmcore, after crash.
@@ -296,8 +306,9 @@ static inline
 int lib_ring_buffer_try_discard_reserve(const struct lttng_ust_lib_ring_buffer_config *config,
 					const struct lttng_ust_lib_ring_buffer_ctx *ctx)
 {
-	struct lttng_ust_lib_ring_buffer *buf = ctx->buf;
-	unsigned long end_offset = ctx->pre_offset + ctx->slot_size;
+	struct lttng_ust_lib_ring_buffer_ctx_private *ctx_private = ctx->priv;
+	struct lttng_ust_lib_ring_buffer *buf = ctx_private->buf;
+	unsigned long end_offset = ctx_private->pre_offset + ctx_private->slot_size;
 
 	/*
 	 * We need to ensure that if the cmpxchg succeeds and discards the
@@ -313,7 +324,7 @@ int lib_ring_buffer_try_discard_reserve(const struct lttng_ust_lib_ring_buffer_c
 	 */
 	save_last_tsc(config, buf, 0ULL);
 
-	if (caa_likely(v_cmpxchg(config, &buf->offset, end_offset, ctx->pre_offset)
+	if (caa_likely(v_cmpxchg(config, &buf->offset, end_offset, ctx_private->pre_offset)
 		   != end_offset))
 		return -EPERM;
 	else

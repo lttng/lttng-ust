@@ -35,8 +35,7 @@ void ip_record(struct lttng_ust_ctx_field *field,
 	void *ip;
 
 	ip = ctx->ip;
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(ip));
-	chan->ops->event_write(ctx, &ip, sizeof(ip));
+	chan->ops->event_write(ctx, &ip, sizeof(ip), lttng_ust_rb_alignof(ip));
 }
 
 int lttng_add_ip_to_ctx(struct lttng_ust_ctx **ctx)

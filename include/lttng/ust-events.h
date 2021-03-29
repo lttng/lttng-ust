@@ -377,7 +377,6 @@ struct lttng_ust_event_recorder {
 	struct lttng_ust_event_common *parent;		/* Inheritance by aggregation. */
 	struct lttng_ust_event_recorder_private *priv;	/* Private event record interface */
 
-	unsigned int id;
 	struct lttng_ust_channel_buffer *chan;
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */
@@ -446,11 +445,10 @@ struct lttng_ust_channel_buffer_ops {
 
 	struct lttng_ust_channel_buffer_ops_private *priv;	/* Private channel buffer ops interface */
 
-	int (*event_reserve)(struct lttng_ust_lib_ring_buffer_ctx *ctx,
-			     uint32_t event_id);
+	int (*event_reserve)(struct lttng_ust_lib_ring_buffer_ctx *ctx);
 	void (*event_commit)(struct lttng_ust_lib_ring_buffer_ctx *ctx);
 	void (*event_write)(struct lttng_ust_lib_ring_buffer_ctx *ctx,
-			const void *src, size_t len);
+			const void *src, size_t len, size_t alignment);
 	void (*event_strcpy)(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			const char *src, size_t len);
 	void (*event_pstrcpy_pad)(struct lttng_ust_lib_ring_buffer_ctx *ctx,

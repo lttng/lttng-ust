@@ -34,8 +34,7 @@ void pthread_id_record(struct lttng_ust_ctx_field *field,
 	unsigned long pthread_id;
 
 	pthread_id = (unsigned long) pthread_self();
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(pthread_id));
-	chan->ops->event_write(ctx, &pthread_id, sizeof(pthread_id));
+	chan->ops->event_write(ctx, &pthread_id, sizeof(pthread_id), lttng_ust_rb_alignof(pthread_id));
 }
 
 static

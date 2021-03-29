@@ -93,8 +93,7 @@ void pid_ns_record(struct lttng_ust_ctx_field *field,
 	ino_t pid_ns;
 
 	pid_ns = get_pid_ns();
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(pid_ns));
-	chan->ops->event_write(ctx, &pid_ns, sizeof(pid_ns));
+	chan->ops->event_write(ctx, &pid_ns, sizeof(pid_ns), lttng_ust_rb_alignof(pid_ns));
 }
 
 static

@@ -79,8 +79,7 @@ void vegid_record(struct lttng_ust_ctx_field *field,
 	gid_t vegid;
 
 	vegid = get_vegid();
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(vegid));
-	chan->ops->event_write(ctx, &vegid, sizeof(vegid));
+	chan->ops->event_write(ctx, &vegid, sizeof(vegid), lttng_ust_rb_alignof(vegid));
 }
 
 static

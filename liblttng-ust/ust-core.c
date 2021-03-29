@@ -121,8 +121,7 @@ void lttng_ust_dummy_record(struct lttng_ust_ctx_field *field,
 {
 	char sel_char = (char) LTTNG_UST_DYNAMIC_TYPE_NONE;
 
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(sel_char));
-	chan->ops->event_write(ctx, &sel_char, sizeof(sel_char));
+	chan->ops->event_write(ctx, &sel_char, sizeof(sel_char), lttng_ust_rb_alignof(sel_char));
 }
 
 void lttng_ust_dummy_get_value(struct lttng_ust_ctx_field *field,

@@ -107,8 +107,7 @@ void ipc_ns_record(struct lttng_ust_ctx_field *field,
 	ino_t ipc_ns;
 
 	ipc_ns = get_ipc_ns();
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(ipc_ns));
-	chan->ops->event_write(ctx, &ipc_ns, sizeof(ipc_ns));
+	chan->ops->event_write(ctx, &ipc_ns, sizeof(ipc_ns), lttng_ust_rb_alignof(ipc_ns));
 }
 
 static

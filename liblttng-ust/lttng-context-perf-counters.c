@@ -445,8 +445,7 @@ void perf_counter_record(struct lttng_ust_ctx_field *field,
 	uint64_t value;
 
 	value = wrapper_perf_counter_read(field);
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(value));
-	chan->ops->event_write(ctx, &value, sizeof(value));
+	chan->ops->event_write(ctx, &value, sizeof(value), lttng_ust_rb_alignof(value));
 }
 
 static

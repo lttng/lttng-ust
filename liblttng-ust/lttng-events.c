@@ -801,7 +801,7 @@ int lttng_event_recorder_create(struct lttng_ust_event_desc *desc,
 		desc->nr_fields,
 		desc->fields,
 		uri,
-		&event_recorder->id);
+		&event_recorder->priv->id);
 	if (ret < 0) {
 		DBG("Error (%d) registering event to sessiond", ret);
 		goto sessiond_register_error;

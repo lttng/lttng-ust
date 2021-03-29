@@ -83,8 +83,7 @@ void vsgid_record(struct lttng_ust_ctx_field *field,
 	gid_t vsgid;
 
 	vsgid = get_vsgid();
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(vsgid));
-	chan->ops->event_write(ctx, &vsgid, sizeof(vsgid));
+	chan->ops->event_write(ctx, &vsgid, sizeof(vsgid), lttng_ust_rb_alignof(vsgid));
 }
 
 static

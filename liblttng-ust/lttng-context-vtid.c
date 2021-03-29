@@ -66,8 +66,7 @@ void vtid_record(struct lttng_ust_ctx_field *field,
 {
 	pid_t vtid = wrapper_getvtid();
 
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(vtid));
-	chan->ops->event_write(ctx, &vtid, sizeof(vtid));
+	chan->ops->event_write(ctx, &vtid, sizeof(vtid), lttng_ust_rb_alignof(vtid));
 }
 
 static
