@@ -223,7 +223,7 @@ struct lttng_ust_channel_buffer *_channel_create(const char *name,
 			stream_fds, nr_stream_fds, blocking_timeout);
 	if (!handle)
 		goto error;
-	lttng_chan_buf->chan = shmp(handle, handle->chan);
+	lttng_chan_buf->priv->rb_chan = shmp(handle, handle->chan);
 	return lttng_chan_buf;
 
 error:
@@ -234,7 +234,7 @@ error:
 static
 void lttng_channel_destroy(struct lttng_ust_channel_buffer *lttng_chan_buf)
 {
-	channel_destroy(lttng_chan_buf->chan, lttng_chan_buf->chan->handle, 1);
+	channel_destroy(lttng_chan_buf->priv->rb_chan, lttng_chan_buf->priv->rb_chan->handle, 1);
 	lttng_ust_free_channel_common(lttng_chan_buf->parent);
 }
 
@@ -266,61 +266,51 @@ void lttng_event_write(struct lttng_ust_lib_ring_buffer_ctx *ctx, const void *sr
 }
 
 static
-size_t lttng_packet_avail_size(struct lttng_ust_lib_ring_buffer_channel *chan,
-		struct lttng_ust_shm_handle *handle)
+size_t lttng_packet_avail_size(struct lttng_ust_channel_buffer *chan)
 {
+	struct lttng_ust_lib_ring_buffer_channel *rb_chan = chan->priv->rb_chan;
 	unsigned long o_begin;
 	struct lttng_ust_lib_ring_buffer *buf;
 
-	buf = shmp(handle, chan->backend.buf[0].shmp);	/* Only for global buffer ! */
+	buf = shmp(rb_chan->handle, rb_chan->backend.buf[0].shmp);	/* Only for global buffer ! */
 	o_begin = v_read(&client_config, &buf->offset);
-	if (subbuf_offset(o_begin, chan) != 0) {
-		return chan->backend.subbuf_size - subbuf_offset(o_begin, chan);
+	if (subbuf_offset(o_begin, rb_chan) != 0) {
+		return rb_chan->backend.subbuf_size - subbuf_offset(o_begin, rb_chan);
 	} else {
-		return chan->backend.subbuf_size - subbuf_offset(o_begin, chan)
+		return rb_chan->backend.subbuf_size - subbuf_offset(o_begin, rb_chan)
 			- sizeof(struct metadata_packet_header);
 	}
 }
 
-#if 0
 static
-wait_queue_head_t *lttng_get_reader_wait_queue(struct lttng_ust_lib_ring_buffer_channel *chan)
+int lttng_is_finalized(struct lttng_ust_channel_buffer *chan)
 {
-	return &chan->read_wait;
+	struct lttng_ust_lib_ring_buffer_channel *rb_chan = chan->priv->rb_chan;
+
+	return lib_ring_buffer_channel_is_finalized(rb_chan);
 }
 
 static
-wait_queue_head_t *lttng_get_hp_wait_queue(struct lttng_ust_lib_ring_buffer_channel *chan)
+int lttng_is_disabled(struct lttng_ust_channel_buffer *chan)
 {
-	return &chan->hp_wait;
-}
-#endif //0
+	struct lttng_ust_lib_ring_buffer_channel *rb_chan = chan->priv->rb_chan;
 
-static
-int lttng_is_finalized(struct lttng_ust_lib_ring_buffer_channel *chan)
-{
-	return lib_ring_buffer_channel_is_finalized(chan);
+	return lib_ring_buffer_channel_is_disabled(rb_chan);
 }
 
 static
-int lttng_is_disabled(struct lttng_ust_lib_ring_buffer_channel *chan)
+int lttng_flush_buffer(struct lttng_ust_channel_buffer *chan)
 {
-	return lib_ring_buffer_channel_is_disabled(chan);
-}
-
-static
-int lttng_flush_buffer(struct lttng_ust_lib_ring_buffer_channel *chan,
-		struct lttng_ust_shm_handle *handle)
-{
+	struct lttng_ust_lib_ring_buffer_channel *rb_chan = chan->priv->rb_chan;
 	struct lttng_ust_lib_ring_buffer *buf;
 	int shm_fd, wait_fd, wakeup_fd;
 	uint64_t memory_map_size;
 
-	buf = channel_get_ring_buffer(&client_config, chan,
-			0, handle, &shm_fd, &wait_fd, &wakeup_fd,
+	buf = channel_get_ring_buffer(&client_config, rb_chan,
+			0, rb_chan->handle, &shm_fd, &wait_fd, &wakeup_fd,
 			&memory_map_size);
 	lib_ring_buffer_switch(&client_config, buf,
-			SWITCH_ACTIVE, handle);
+			SWITCH_ACTIVE, rb_chan->handle);
 	return 0;
 }
 

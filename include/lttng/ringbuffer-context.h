@@ -39,34 +39,35 @@ struct lttng_ust_lib_ring_buffer_ctx;
  * at the end of the structure.
  */
 struct lttng_ust_lib_ring_buffer_ctx {
-	uint32_t struct_size;		/* Size of this structure. */
+	uint32_t struct_size;			/* Size of this structure. */
 
-	/* input received by lib_ring_buffer_reserve(), saved here. */
+	/* input received by lib_ring_buffer_reserve(). */
 	struct lttng_ust_lib_ring_buffer_channel *chan; /* channel */
-	void *priv;			/* client private data */
-	size_t data_size;		/* size of payload */
-	int largest_align;		/*
-					 * alignment of the largest element
-					 * in the payload
-					 */
+	void *priv;				/* client private data */
+	size_t data_size;			/* size of payload */
+	int largest_align;			/*
+						 * alignment of the largest element
+						 * in the payload
+						 */
 
 	/* output from lib_ring_buffer_reserve() */
-	int reserve_cpu;		/* processor id updated by the reserve */
+	int reserve_cpu;			/* processor id updated by the reserve */
+	size_t slot_size;			/* size of the reserved slot */
+	unsigned long buf_offset;		/* offset following the record header */
+	unsigned long pre_offset;		/*
+						 * Initial offset position _before_
+						 * the record is written. Positioned
+						 * prior to record header alignment
+						 * padding.
+						 */
+	uint64_t tsc;				/* time-stamp counter value */
+	unsigned int rflags;			/* reservation flags */
+	void *ip;				/* caller ip address */
+
 	struct lttng_ust_lib_ring_buffer *buf;	/*
-					 * buffer corresponding to processor id
-					 * for this channel
-					 */
-	size_t slot_size;		/* size of the reserved slot */
-	unsigned long buf_offset;	/* offset following the record header */
-	unsigned long pre_offset;	/*
-					 * Initial offset position _before_
-					 * the record is written. Positioned
-					 * prior to record header alignment
-					 * padding.
-					 */
-	uint64_t tsc;			/* time-stamp counter value */
-	unsigned int rflags;		/* reservation flags */
-	void *ip;			/* caller ip address */
+						 * buffer corresponding to processor id
+						 * for this channel
+						 */
 	struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */

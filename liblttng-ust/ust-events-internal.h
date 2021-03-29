@@ -365,12 +365,10 @@ struct lttng_ust_channel_buffer_ops_private {
 	 * packet. Note that the size returned is only a hint, since it
 	 * may change due to concurrent writes.
 	 */
-	size_t (*packet_avail_size)(struct lttng_ust_lib_ring_buffer_channel *chan,
-				    struct lttng_ust_shm_handle *handle);
-	int (*is_finalized)(struct lttng_ust_lib_ring_buffer_channel *chan);
-	int (*is_disabled)(struct lttng_ust_lib_ring_buffer_channel *chan);
-	int (*flush_buffer)(struct lttng_ust_lib_ring_buffer_channel *chan,
-			    struct lttng_ust_shm_handle *handle);
+	size_t (*packet_avail_size)(struct lttng_ust_channel_buffer *chan);
+	int (*is_finalized)(struct lttng_ust_channel_buffer *chan);
+	int (*is_disabled)(struct lttng_ust_channel_buffer *chan);
+	int (*flush_buffer)(struct lttng_ust_channel_buffer *chan);
 };
 
 struct lttng_ust_channel_common_private {
@@ -389,6 +387,7 @@ struct lttng_ust_channel_buffer_private {
 	unsigned int id;			/* Channel ID */
 	enum lttng_ust_abi_chan_type type;
 	struct lttng_ust_ctx *ctx;
+	struct lttng_ust_lib_ring_buffer_channel *rb_chan;	/* Ring buffer channel */
 	unsigned char uuid[LTTNG_UST_UUID_LEN];	/* Trace session unique ID */
 };
 

@@ -292,8 +292,8 @@ int lttng_is_channel_ready(struct lttng_ust_channel_buffer *lttng_chan)
 	struct lttng_ust_lib_ring_buffer_channel *chan;
 	unsigned int nr_streams, exp_streams;
 
-	chan = lttng_chan->chan;
-	nr_streams = channel_handle_get_nr_streams(lttng_chan->chan->handle);
+	chan = lttng_chan->priv->rb_chan;
+	nr_streams = channel_handle_get_nr_streams(lttng_chan->priv->rb_chan->handle);
 	exp_streams = chan->nr_streams;
 	return nr_streams == exp_streams;
 }
@@ -554,9 +554,9 @@ int lttng_abi_map_channel(int session_objd,
 
 	lttng_chan_buf->priv->parent.tstate = 1;
 	lttng_chan_buf->priv->ctx = NULL;
+	lttng_chan_buf->priv->rb_chan = chan;
 
 	lttng_chan_buf->ops = &transport->ops;
-	lttng_chan_buf->chan = chan;
 
 	memcpy(&chan->backend.config,
 		transport->client_config,
@@ -1119,7 +1119,7 @@ int lttng_abi_map_stream(int channel_objd, struct lttng_ust_abi_stream *info,
 	struct lttng_ust_channel_buffer *lttng_chan_buf = objd_private(channel_objd);
 	int ret;
 
-	ret = channel_handle_add_stream(lttng_chan_buf->chan->handle,
+	ret = channel_handle_add_stream(lttng_chan_buf->priv->rb_chan->handle,
 		uargs->stream.shm_fd, uargs->stream.wakeup_fd,
 		info->stream_nr, info->len);
 	if (ret)
@@ -1250,8 +1250,7 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg,
 	case LTTNG_UST_ABI_DISABLE:
 		return lttng_channel_disable(lttng_chan_buf->parent);
 	case LTTNG_UST_ABI_FLUSH_BUFFER:
-		return lttng_chan_buf->ops->priv->flush_buffer(lttng_chan_buf->chan,
-				lttng_chan_buf->chan->handle);
+		return lttng_chan_buf->ops->priv->flush_buffer(lttng_chan_buf);
 	default:
 		return -EINVAL;
 	}

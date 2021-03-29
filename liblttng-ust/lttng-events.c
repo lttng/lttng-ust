@@ -238,7 +238,7 @@ void _lttng_channel_unmap(struct lttng_ust_channel_buffer *lttng_chan)
 
 	cds_list_del(&lttng_chan->priv->node);
 	lttng_destroy_context(lttng_chan->priv->ctx);
-	chan = lttng_chan->chan;
+	chan = lttng_chan->priv->rb_chan;
 	handle = chan->handle;
 	channel_destroy(chan, handle, 0);
 	free(lttng_chan->parent);

@@ -57,7 +57,6 @@ struct ustctl_consumer_channel {
  * Stream representation within consumer.
  */
 struct ustctl_consumer_stream {
-	struct lttng_ust_shm_handle *handle;	/* shared-memory handle */
 	struct lttng_ust_lib_ring_buffer *buf;
 	struct ustctl_consumer_channel *chan;
 	int shm_fd, wait_fd, wakeup_fd;
@@ -1314,7 +1313,7 @@ int ustctl_send_channel_to_sessiond(int sock,
 {
 	struct shm_object_table *table;
 
-	table = channel->chan->chan->handle->table;
+	table = channel->chan->priv->rb_chan->handle->table;
 	if (table->size <= 0)
 		return -EINVAL;
 	return ustctl_send_channel(sock,
@@ -1345,16 +1344,16 @@ int ustctl_write_metadata_to_channel(
 {
 	struct lttng_ust_lib_ring_buffer_ctx ctx;
 	struct lttng_ust_channel_buffer *lttng_chan_buf = channel->chan;
+	struct lttng_ust_lib_ring_buffer_channel *rb_chan = lttng_chan_buf->priv->rb_chan;
 	const char *str = metadata_str;
 	int ret = 0, waitret;
 	size_t reserve_len, pos;
 
 	for (pos = 0; pos < len; pos += reserve_len) {
 		reserve_len = min_t(size_t,
-				lttng_chan_buf->ops->priv->packet_avail_size(lttng_chan_buf->chan,
-						lttng_chan_buf->chan->handle),
+				lttng_chan_buf->ops->priv->packet_avail_size(lttng_chan_buf),
 				len - pos);
-		lib_ring_buffer_ctx_init(&ctx, lttng_chan_buf->chan, NULL, reserve_len, sizeof(char));
+		lib_ring_buffer_ctx_init(&ctx, rb_chan, NULL, reserve_len, sizeof(char));
 		/*
 		 * We don't care about metadata buffer's records lost
 		 * count, because we always retry here. Report error if
@@ -1393,15 +1392,15 @@ ssize_t ustctl_write_one_packet_to_channel(
 {
 	struct lttng_ust_lib_ring_buffer_ctx ctx;
 	struct lttng_ust_channel_buffer *lttng_chan_buf = channel->chan;
+	struct lttng_ust_lib_ring_buffer_channel *rb_chan = lttng_chan_buf->priv->rb_chan;
 	const char *str = metadata_str;
 	ssize_t reserve_len;
 	int ret;
 
 	reserve_len = min_t(ssize_t,
-			lttng_chan_buf->ops->priv->packet_avail_size(lttng_chan_buf->chan,
-					lttng_chan_buf->chan->handle),
+			lttng_chan_buf->ops->priv->packet_avail_size(lttng_chan_buf),
 			len);
-	lib_ring_buffer_ctx_init(&ctx, lttng_chan_buf->chan, NULL, reserve_len, sizeof(char));
+	lib_ring_buffer_ctx_init(&ctx, rb_chan, NULL, reserve_len, sizeof(char));
 	ret = lttng_chan_buf->ops->event_reserve(&ctx, 0);
 	if (ret != 0) {
 		DBG("LTTng: event reservation failed");
@@ -1421,7 +1420,7 @@ int ustctl_channel_close_wait_fd(struct ustctl_consumer_channel *consumer_chan)
 	struct lttng_ust_lib_ring_buffer_channel *chan;
 	int ret;
 
-	chan = consumer_chan->chan->chan;
+	chan = consumer_chan->chan->priv->rb_chan;
 	ret = ring_buffer_channel_close_wait_fd(&chan->backend.config,
 			chan, chan->handle);
 	if (!ret)
@@ -1434,7 +1433,7 @@ int ustctl_channel_close_wakeup_fd(struct ustctl_consumer_channel *consumer_chan
 	struct lttng_ust_lib_ring_buffer_channel *chan;
 	int ret;
 
-	chan = consumer_chan->chan->chan;
+	chan = consumer_chan->chan->priv->rb_chan;
 	ret = ring_buffer_channel_close_wakeup_fd(&chan->backend.config,
 			chan, chan->handle);
 	if (!ret)
@@ -1446,18 +1445,18 @@ int ustctl_stream_close_wait_fd(struct ustctl_consumer_stream *stream)
 {
 	struct lttng_ust_lib_ring_buffer_channel *chan;
 
-	chan = stream->chan->chan->chan;
+	chan = stream->chan->chan->priv->rb_chan;
 	return ring_buffer_stream_close_wait_fd(&chan->backend.config,
-			chan, stream->handle, stream->cpu);
+			chan, chan->handle, stream->cpu);
 }
 
 int ustctl_stream_close_wakeup_fd(struct ustctl_consumer_stream *stream)
 {
 	struct lttng_ust_lib_ring_buffer_channel *chan;
 
-	chan = stream->chan->chan->chan;
+	chan = stream->chan->chan->priv->rb_chan;
 	return ring_buffer_stream_close_wakeup_fd(&chan->backend.config,
-			chan, stream->handle, stream->cpu);
+			chan, chan->handle, stream->cpu);
 }
 
 struct ustctl_consumer_stream *
@@ -1466,7 +1465,7 @@ struct ustctl_consumer_stream *
 {
 	struct ustctl_consumer_stream *stream;
 	struct lttng_ust_shm_handle *handle;
-	struct lttng_ust_lib_ring_buffer_channel *chan;
+	struct lttng_ust_lib_ring_buffer_channel *rb_chan;
 	int shm_fd, wait_fd, wakeup_fd;
 	uint64_t memory_map_size;
 	struct lttng_ust_lib_ring_buffer *buf;
@@ -1474,13 +1473,13 @@ struct ustctl_consumer_stream *
 
 	if (!channel)
 		return NULL;
-	handle = channel->chan->chan->handle;
+	rb_chan = channel->chan->priv->rb_chan;
+	handle = rb_chan->handle;
 	if (!handle)
 		return NULL;
 
-	chan = channel->chan->chan;
-	buf = channel_get_ring_buffer(&chan->backend.config,
-		chan, cpu, handle, &shm_fd, &wait_fd,
+	buf = channel_get_ring_buffer(&rb_chan->backend.config,
+		rb_chan, cpu, handle, &shm_fd, &wait_fd,
 		&wakeup_fd, &memory_map_size);
 	if (!buf)
 		return NULL;
@@ -1491,7 +1490,6 @@ struct ustctl_consumer_stream *
 	stream = zmalloc(sizeof(*stream));
 	if (!stream)
 		goto alloc_error;
-	stream->handle = handle;
 	stream->buf = buf;
 	stream->chan = channel;
 	stream->shm_fd = shm_fd;
@@ -1515,7 +1513,7 @@ void ustctl_destroy_stream(struct ustctl_consumer_stream *stream)
 	consumer_chan = stream->chan;
 	(void) ustctl_stream_close_wait_fd(stream);
 	(void) ustctl_stream_close_wakeup_fd(stream);
-	lib_ring_buffer_release_read(buf, consumer_chan->chan->chan->handle);
+	lib_ring_buffer_release_read(buf, consumer_chan->chan->priv->rb_chan->handle);
 	free(stream);
 }
 
@@ -1523,16 +1521,16 @@ int ustctl_channel_get_wait_fd(struct ustctl_consumer_channel *chan)
 {
 	if (!chan)
 		return -EINVAL;
-	return shm_get_wait_fd(chan->chan->chan->handle,
-		&chan->chan->chan->handle->chan._ref);
+	return shm_get_wait_fd(chan->chan->priv->rb_chan->handle,
+		&chan->chan->priv->rb_chan->handle->chan._ref);
 }
 
 int ustctl_channel_get_wakeup_fd(struct ustctl_consumer_channel *chan)
 {
 	if (!chan)
 		return -EINVAL;
-	return shm_get_wakeup_fd(chan->chan->chan->handle,
-		&chan->chan->chan->handle->chan._ref);
+	return shm_get_wakeup_fd(chan->chan->priv->rb_chan->handle,
+		&chan->chan->priv->rb_chan->handle->chan._ref);
 }
 
 int ustctl_stream_get_wait_fd(struct ustctl_consumer_stream *stream)
@@ -1544,7 +1542,7 @@ int ustctl_stream_get_wait_fd(struct ustctl_consumer_stream *stream)
 		return -EINVAL;
 	buf = stream->buf;
 	consumer_chan = stream->chan;
-	return shm_get_wait_fd(consumer_chan->chan->chan->handle, &buf->self._ref);
+	return shm_get_wait_fd(consumer_chan->chan->priv->rb_chan->handle, &buf->self._ref);
 }
 
 int ustctl_stream_get_wakeup_fd(struct ustctl_consumer_stream *stream)
@@ -1556,7 +1554,7 @@ int ustctl_stream_get_wakeup_fd(struct ustctl_consumer_stream *stream)
 		return -EINVAL;
 	buf = stream->buf;
 	consumer_chan = stream->chan;
-	return shm_get_wakeup_fd(consumer_chan->chan->chan->handle, &buf->self._ref);
+	return shm_get_wakeup_fd(consumer_chan->chan->priv->rb_chan->handle, &buf->self._ref);
 }
 
 /* For mmap mode, readable without "get" operation */
@@ -1570,7 +1568,7 @@ void *ustctl_get_mmap_base(struct ustctl_consumer_stream *stream)
 		return NULL;
 	buf = stream->buf;
 	consumer_chan = stream->chan;
-	return shmp(consumer_chan->chan->chan->handle, buf->backend.memory_map);
+	return shmp(consumer_chan->chan->priv->rb_chan->handle, buf->backend.memory_map);
 }
 
 /* returns the length to mmap. */
@@ -1579,17 +1577,17 @@ int ustctl_get_mmap_len(struct ustctl_consumer_stream *stream,
 {
 	struct ustctl_consumer_channel *consumer_chan;
 	unsigned long mmap_buf_len;
-	struct lttng_ust_lib_ring_buffer_channel *chan;
+	struct lttng_ust_lib_ring_buffer_channel *rb_chan;
 
 	if (!stream)
 		return -EINVAL;
 	consumer_chan = stream->chan;
-	chan = consumer_chan->chan->chan;
-	if (chan->backend.config.output != RING_BUFFER_MMAP)
+	rb_chan = consumer_chan->chan->priv->rb_chan;
+	if (rb_chan->backend.config.output != RING_BUFFER_MMAP)
 		return -EINVAL;
-	mmap_buf_len = chan->backend.buf_size;
-	if (chan->backend.extra_reader_sb)
-		mmap_buf_len += chan->backend.subbuf_size;
+	mmap_buf_len = rb_chan->backend.buf_size;
+	if (rb_chan->backend.extra_reader_sb)
+		mmap_buf_len += rb_chan->backend.subbuf_size;
 	if (mmap_buf_len > INT_MAX)
 		return -EFBIG;
 	*len = mmap_buf_len;
@@ -1601,13 +1599,13 @@ int ustctl_get_max_subbuf_size(struct ustctl_consumer_stream *stream,
 		unsigned long *len)
 {
 	struct ustctl_consumer_channel *consumer_chan;
-	struct lttng_ust_lib_ring_buffer_channel *chan;
+	struct lttng_ust_lib_ring_buffer_channel *rb_chan;
 
 	if (!stream)
 		return -EINVAL;
 	consumer_chan = stream->chan;
-	chan = consumer_chan->chan->chan;
-	*len = chan->backend.subbuf_size;
+	rb_chan = consumer_chan->chan->priv->rb_chan;
+	*len = rb_chan->backend.subbuf_size;
 	return 0;
 }
 
@@ -1620,7 +1618,7 @@ int ustctl_get_max_subbuf_size(struct ustctl_consumer_stream *stream,
 int ustctl_get_mmap_read_offset(struct ustctl_consumer_stream *stream,
 		unsigned long *off)
 {
-	struct lttng_ust_lib_ring_buffer_channel *chan;
+	struct lttng_ust_lib_ring_buffer_channel *rb_chan;
 	unsigned long sb_bindex;
 	struct lttng_ust_lib_ring_buffer *buf;
 	struct ustctl_consumer_channel *consumer_chan;
@@ -1631,16 +1629,16 @@ int ustctl_get_mmap_read_offset(struct ustctl_consumer_stream *stream,
 		return -EINVAL;
 	buf = stream->buf;
 	consumer_chan = stream->chan;
-	chan = consumer_chan->chan->chan;
-	if (chan->backend.config.output != RING_BUFFER_MMAP)
+	rb_chan = consumer_chan->chan->priv->rb_chan;
+	if (rb_chan->backend.config.output != RING_BUFFER_MMAP)
 		return -EINVAL;
-	sb_bindex = subbuffer_id_get_index(&chan->backend.config,
+	sb_bindex = subbuffer_id_get_index(&rb_chan->backend.config,
 					buf->backend.buf_rsb.id);
-	barray_idx = shmp_index(consumer_chan->chan->chan->handle, buf->backend.array,
+	barray_idx = shmp_index(rb_chan->handle, buf->backend.array,
 			sb_bindex);
 	if (!barray_idx)
 		return -EINVAL;
-	pages = shmp(consumer_chan->chan->chan->handle, barray_idx->shmp);
+	pages = shmp(rb_chan->handle, barray_idx->shmp);
 	if (!pages)
 		return -EINVAL;
 	*off = pages->mmap_offset;
@@ -1652,7 +1650,7 @@ int ustctl_get_subbuf_size(struct ustctl_consumer_stream *stream,
 		unsigned long *len)
 {
 	struct ustctl_consumer_channel *consumer_chan;
-	struct lttng_ust_lib_ring_buffer_channel *chan;
+	struct lttng_ust_lib_ring_buffer_channel *rb_chan;
 	struct lttng_ust_lib_ring_buffer *buf;
 
 	if (!stream)
@@ -1660,9 +1658,9 @@ int ustctl_get_subbuf_size(struct ustctl_consumer_stream *stream,
 
 	buf = stream->buf;
 	consumer_chan = stream->chan;
-	chan = consumer_chan->chan->chan;
-	*len = lib_ring_buffer_get_read_data_size(&chan->backend.config, buf,
-		consumer_chan->chan->chan->handle);
+	rb_chan = consumer_chan->chan->priv->rb_chan;
+	*len = lib_ring_buffer_get_read_data_size(&rb_chan->backend.config, buf,
+		rb_chan->handle);
 	return 0;
 }
 
@@ -1671,16 +1669,16 @@ int ustctl_get_padded_subbuf_size(struct ustctl_consumer_stream *stream,
 		unsigned long *len)
 {
 	struct ustctl_consumer_channel *consumer_chan;
-	struct lttng_ust_lib_ring_buffer_channel *chan;
+	struct lttng_ust_lib_ring_buffer_channel *rb_chan;
 	struct lttng_ust_lib_ring_buffer *buf;
 
 	if (!stream)
 		return -EINVAL;
 	buf = stream->buf;
 	consumer_chan = stream->chan;
-	chan = consumer_chan->chan->chan;
-	*len = lib_ring_buffer_get_read_data_size(&chan->backend.config, buf,
-		consumer_chan->chan->chan->handle);
+	rb_chan = consumer_chan->chan->priv->rb_chan;
+	*len = lib_ring_buffer_get_read_data_size(&rb_chan->backend.config, buf,
+		rb_chan->handle);
 	*len = LTTNG_UST_PAGE_ALIGN(*len);
 	return 0;
 }
@@ -1696,7 +1694,7 @@ int ustctl_get_next_subbuf(struct ustctl_consumer_stream *stream)
 	buf = stream->buf;
 	consumer_chan = stream->chan;
 	return lib_ring_buffer_get_next_subbuf(buf,
-			consumer_chan->chan->chan->handle);
+			consumer_chan->chan->priv->rb_chan->handle);
 }
 
 
@@ -1710,7 +1708,7 @@ int ustctl_put_next_subbuf(struct ustctl_consumer_stream *stream)
 		return -EINVAL;
 	buf = stream->buf;
 	consumer_chan = stream->chan;
-	lib_ring_buffer_put_next_subbuf(buf, consumer_chan->chan->chan->handle);
+	lib_ring_buffer_put_next_subbuf(buf, consumer_chan->chan->priv->rb_chan->handle);
 	return 0;
 }
 
@@ -1727,7 +1725,7 @@ int ustctl_snapshot(struct ustctl_consumer_stream *stream)
 	buf = stream->buf;
 	consumer_chan = stream->chan;
 	return lib_ring_buffer_snapshot(buf, &buf->cons_snapshot,
-			&buf->prod_snapshot, consumer_chan->chan->chan->handle);
+			&buf->prod_snapshot, consumer_chan->chan->priv->rb_chan->handle);
 }
 
 /*
@@ -1746,7 +1744,7 @@ int ustctl_snapshot_sample_positions(struct ustctl_consumer_stream *stream)
 	consumer_chan = stream->chan;
 	return lib_ring_buffer_snapshot_sample_positions(buf,
 			&buf->cons_snapshot, &buf->prod_snapshot,
-			consumer_chan->chan->chan->handle);
+			consumer_chan->chan->priv->rb_chan->handle);
 }
 
 /* Get the consumer position (iteration start) */
@@ -1787,7 +1785,7 @@ int ustctl_get_subbuf(struct ustctl_consumer_stream *stream,
 	buf = stream->buf;
 	consumer_chan = stream->chan;
 	return lib_ring_buffer_get_subbuf(buf, *pos,
-			consumer_chan->chan->chan->handle);
+			consumer_chan->chan->priv->rb_chan->handle);
 }
 
 /* Release exclusive sub-buffer access */
@@ -1800,7 +1798,7 @@ int ustctl_put_subbuf(struct ustctl_consumer_stream *stream)
 		return -EINVAL;
 	buf = stream->buf;
 	consumer_chan = stream->chan;
-	lib_ring_buffer_put_subbuf(buf, consumer_chan->chan->chan->handle);
+	lib_ring_buffer_put_subbuf(buf, consumer_chan->chan->priv->rb_chan->handle);
 	return 0;
 }
 
@@ -1815,7 +1813,7 @@ void ustctl_flush_buffer(struct ustctl_consumer_stream *stream,
 	consumer_chan = stream->chan;
 	lib_ring_buffer_switch_slow(buf,
 		producer_active ? SWITCH_ACTIVE : SWITCH_FLUSH,
-		consumer_chan->chan->chan->handle);
+		consumer_chan->chan->priv->rb_chan->handle);
 }
 
 void ustctl_clear_buffer(struct ustctl_consumer_stream *stream)
@@ -1827,22 +1825,18 @@ void ustctl_clear_buffer(struct ustctl_consumer_stream *stream)
 	buf = stream->buf;
 	consumer_chan = stream->chan;
 	lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE,
-		consumer_chan->chan->chan->handle);
-	lib_ring_buffer_clear_reader(buf, consumer_chan->chan->chan->handle);
+		consumer_chan->chan->priv->rb_chan->handle);
+	lib_ring_buffer_clear_reader(buf, consumer_chan->chan->priv->rb_chan->handle);
 }
 
 static
 struct lttng_ust_client_lib_ring_buffer_client_cb *get_client_cb(
 		struct lttng_ust_lib_ring_buffer *buf,
-		struct lttng_ust_shm_handle *handle)
+		struct lttng_ust_lib_ring_buffer_channel *chan)
 {
-	struct lttng_ust_lib_ring_buffer_channel *chan;
 	const struct lttng_ust_lib_ring_buffer_config *config;
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
 
-	chan = shmp(handle, buf->backend.chan);
-	if (!chan)
-		return NULL;
 	config = &chan->backend.config;
 	if (!config->cb_ptr)
 		return NULL;
@@ -1856,153 +1850,153 @@ int ustctl_get_timestamp_begin(struct ustctl_consumer_stream *stream,
 		uint64_t *timestamp_begin)
 {
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 	struct lttng_ust_lib_ring_buffer *buf;
-	struct lttng_ust_shm_handle *handle;
 
 	if (!stream || !timestamp_begin)
 		return -EINVAL;
 	buf = stream->buf;
-	handle = stream->chan->chan->chan->handle;
-	client_cb = get_client_cb(buf, handle);
+	chan = stream->chan->chan->priv->rb_chan;
+	client_cb = get_client_cb(buf, chan);
 	if (!client_cb)
 		return -ENOSYS;
-	return client_cb->timestamp_begin(buf, handle, timestamp_begin);
+	return client_cb->timestamp_begin(buf, chan, timestamp_begin);
 }
 
 int ustctl_get_timestamp_end(struct ustctl_consumer_stream *stream,
 	uint64_t *timestamp_end)
 {
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 	struct lttng_ust_lib_ring_buffer *buf;
-	struct lttng_ust_shm_handle *handle;
 
 	if (!stream || !timestamp_end)
 		return -EINVAL;
 	buf = stream->buf;
-	handle = stream->chan->chan->chan->handle;
-	client_cb = get_client_cb(buf, handle);
+	chan = stream->chan->chan->priv->rb_chan;
+	client_cb = get_client_cb(buf, chan);
 	if (!client_cb)
 		return -ENOSYS;
-	return client_cb->timestamp_end(buf, handle, timestamp_end);
+	return client_cb->timestamp_end(buf, chan, timestamp_end);
 }
 
 int ustctl_get_events_discarded(struct ustctl_consumer_stream *stream,
 	uint64_t *events_discarded)
 {
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 	struct lttng_ust_lib_ring_buffer *buf;
-	struct lttng_ust_shm_handle *handle;
 
 	if (!stream || !events_discarded)
 		return -EINVAL;
 	buf = stream->buf;
-	handle = stream->chan->chan->chan->handle;
-	client_cb = get_client_cb(buf, handle);
+	chan = stream->chan->chan->priv->rb_chan;
+	client_cb = get_client_cb(buf, chan);
 	if (!client_cb)
 		return -ENOSYS;
-	return client_cb->events_discarded(buf, handle, events_discarded);
+	return client_cb->events_discarded(buf, chan, events_discarded);
 }
 
 int ustctl_get_content_size(struct ustctl_consumer_stream *stream,
 	uint64_t *content_size)
 {
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 	struct lttng_ust_lib_ring_buffer *buf;
-	struct lttng_ust_shm_handle *handle;
 
 	if (!stream || !content_size)
 		return -EINVAL;
 	buf = stream->buf;
-	handle = stream->chan->chan->chan->handle;
-	client_cb = get_client_cb(buf, handle);
+	chan = stream->chan->chan->priv->rb_chan;
+	client_cb = get_client_cb(buf, chan);
 	if (!client_cb)
 		return -ENOSYS;
-	return client_cb->content_size(buf, handle, content_size);
+	return client_cb->content_size(buf, chan, content_size);
 }
 
 int ustctl_get_packet_size(struct ustctl_consumer_stream *stream,
 	uint64_t *packet_size)
 {
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 	struct lttng_ust_lib_ring_buffer *buf;
-	struct lttng_ust_shm_handle *handle;
 
 	if (!stream || !packet_size)
 		return -EINVAL;
 	buf = stream->buf;
-	handle = stream->chan->chan->chan->handle;
-	client_cb = get_client_cb(buf, handle);
+	chan = stream->chan->chan->priv->rb_chan;
+	client_cb = get_client_cb(buf, chan);
 	if (!client_cb)
 		return -ENOSYS;
-	return client_cb->packet_size(buf, handle, packet_size);
+	return client_cb->packet_size(buf, chan, packet_size);
 }
 
 int ustctl_get_stream_id(struct ustctl_consumer_stream *stream,
 		uint64_t *stream_id)
 {
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 	struct lttng_ust_lib_ring_buffer *buf;
-	struct lttng_ust_shm_handle *handle;
 
 	if (!stream || !stream_id)
 		return -EINVAL;
 	buf = stream->buf;
-	handle = stream->chan->chan->chan->handle;
-	client_cb = get_client_cb(buf, handle);
+	chan = stream->chan->chan->priv->rb_chan;
+	client_cb = get_client_cb(buf, chan);
 	if (!client_cb)
 		return -ENOSYS;
-	return client_cb->stream_id(buf, handle, stream_id);
+	return client_cb->stream_id(buf, chan, stream_id);
 }
 
 int ustctl_get_current_timestamp(struct ustctl_consumer_stream *stream,
 		uint64_t *ts)
 {
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 	struct lttng_ust_lib_ring_buffer *buf;
-	struct lttng_ust_shm_handle *handle;
 
 	if (!stream || !ts)
 		return -EINVAL;
 	buf = stream->buf;
-	handle = stream->chan->chan->chan->handle;
-	client_cb = get_client_cb(buf, handle);
+	chan = stream->chan->chan->priv->rb_chan;
+	client_cb = get_client_cb(buf, chan);
 	if (!client_cb || !client_cb->current_timestamp)
 		return -ENOSYS;
-	return client_cb->current_timestamp(buf, handle, ts);
+	return client_cb->current_timestamp(buf, chan, ts);
 }
 
 int ustctl_get_sequence_number(struct ustctl_consumer_stream *stream,
 		uint64_t *seq)
 {
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 	struct lttng_ust_lib_ring_buffer *buf;
-	struct lttng_ust_shm_handle *handle;
 
 	if (!stream || !seq)
 		return -EINVAL;
 	buf = stream->buf;
-	handle = stream->chan->chan->chan->handle;
-	client_cb = get_client_cb(buf, handle);
+	chan = stream->chan->chan->priv->rb_chan;
+	client_cb = get_client_cb(buf, chan);
 	if (!client_cb || !client_cb->sequence_number)
 		return -ENOSYS;
-	return client_cb->sequence_number(buf, handle, seq);
+	return client_cb->sequence_number(buf, chan, seq);
 }
 
 int ustctl_get_instance_id(struct ustctl_consumer_stream *stream,
 		uint64_t *id)
 {
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
+	struct lttng_ust_lib_ring_buffer_channel *chan;
 	struct lttng_ust_lib_ring_buffer *buf;
-	struct lttng_ust_shm_handle *handle;
 
 	if (!stream || !id)
 		return -EINVAL;
 	buf = stream->buf;
-	handle = stream->chan->chan->chan->handle;
-	client_cb = get_client_cb(buf, handle);
+	chan = stream->chan->chan->priv->rb_chan;
+	client_cb = get_client_cb(buf, chan);
 	if (!client_cb)
 		return -ENOSYS;
-	return client_cb->instance_id(buf, handle, id);
+	return client_cb->instance_id(buf, chan, id);
 }
 
 #ifdef HAVE_LINUX_PERF_EVENT_H

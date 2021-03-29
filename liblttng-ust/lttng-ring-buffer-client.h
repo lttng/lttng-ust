@@ -481,9 +481,10 @@ static struct packet_header *client_packet_header(struct lttng_ust_lib_ring_buff
 }
 
 static int client_timestamp_begin(struct lttng_ust_lib_ring_buffer *buf,
-		struct lttng_ust_shm_handle *handle,
+		struct lttng_ust_lib_ring_buffer_channel *chan,
 		uint64_t *timestamp_begin)
 {
+	struct lttng_ust_shm_handle *handle = chan->handle;
 	struct packet_header *header;
 
 	header = client_packet_header(buf, handle);
@@ -494,9 +495,10 @@ static int client_timestamp_begin(struct lttng_ust_lib_ring_buffer *buf,
 }
 
 static int client_timestamp_end(struct lttng_ust_lib_ring_buffer *buf,
-		struct lttng_ust_shm_handle *handle,
+		struct lttng_ust_lib_ring_buffer_channel *chan,
 		uint64_t *timestamp_end)
 {
+	struct lttng_ust_shm_handle *handle = chan->handle;
 	struct packet_header *header;
 
 	header = client_packet_header(buf, handle);
@@ -507,9 +509,10 @@ static int client_timestamp_end(struct lttng_ust_lib_ring_buffer *buf,
 }
 
 static int client_events_discarded(struct lttng_ust_lib_ring_buffer *buf,
-		struct lttng_ust_shm_handle *handle,
+		struct lttng_ust_lib_ring_buffer_channel *chan,
 		uint64_t *events_discarded)
 {
+	struct lttng_ust_shm_handle *handle = chan->handle;
 	struct packet_header *header;
 
 	header = client_packet_header(buf, handle);
@@ -520,9 +523,10 @@ static int client_events_discarded(struct lttng_ust_lib_ring_buffer *buf,
 }
 
 static int client_content_size(struct lttng_ust_lib_ring_buffer *buf,
-		struct lttng_ust_shm_handle *handle,
+		struct lttng_ust_lib_ring_buffer_channel *chan,
 		uint64_t *content_size)
 {
+	struct lttng_ust_shm_handle *handle = chan->handle;
 	struct packet_header *header;
 
 	header = client_packet_header(buf, handle);
@@ -533,9 +537,10 @@ static int client_content_size(struct lttng_ust_lib_ring_buffer *buf,
 }
 
 static int client_packet_size(struct lttng_ust_lib_ring_buffer *buf,
-		struct lttng_ust_shm_handle *handle,
+		struct lttng_ust_lib_ring_buffer_channel *chan,
 		uint64_t *packet_size)
 {
+	struct lttng_ust_shm_handle *handle = chan->handle;
 	struct packet_header *header;
 
 	header = client_packet_header(buf, handle);
@@ -546,11 +551,9 @@ static int client_packet_size(struct lttng_ust_lib_ring_buffer *buf,
 }
 
 static int client_stream_id(struct lttng_ust_lib_ring_buffer *buf,
-		struct lttng_ust_shm_handle *handle,
+		struct lttng_ust_lib_ring_buffer_channel *chan,
 		uint64_t *stream_id)
 {
-	struct lttng_ust_lib_ring_buffer_channel *chan = shmp(handle,
-			buf->backend.chan);
 	struct lttng_ust_channel_buffer *lttng_chan = channel_get_private(chan);
 
 	*stream_id = lttng_chan->priv->id;
@@ -559,21 +562,19 @@ static int client_stream_id(struct lttng_ust_lib_ring_buffer *buf,
 }
 
 static int client_current_timestamp(struct lttng_ust_lib_ring_buffer *buf,
-		struct lttng_ust_shm_handle *handle,
+		struct lttng_ust_lib_ring_buffer_channel *chan,
 		uint64_t *ts)
 {
-	struct lttng_ust_lib_ring_buffer_channel *chan;
-
-	chan = shmp(handle, handle->chan);
 	*ts = client_ring_buffer_clock_read(chan);
 
 	return 0;
 }
 
 static int client_sequence_number(struct lttng_ust_lib_ring_buffer *buf,
-		struct lttng_ust_shm_handle *handle,
+		struct lttng_ust_lib_ring_buffer_channel *chan,
 		uint64_t *seq)
 {
+	struct lttng_ust_shm_handle *handle = chan->handle;
 	struct packet_header *header;
 
 	header = client_packet_header(buf, handle);
@@ -584,7 +585,7 @@ static int client_sequence_number(struct lttng_ust_lib_ring_buffer *buf,
 }
 
 static int client_instance_id(struct lttng_ust_lib_ring_buffer *buf,
-		struct lttng_ust_shm_handle *handle,
+		struct lttng_ust_lib_ring_buffer_channel *chan,
 		uint64_t *id)
 {
 	*id = buf->backend.cpu;
@@ -675,7 +676,7 @@ struct lttng_ust_channel_buffer *_channel_create(const char *name,
 			stream_fds, nr_stream_fds, blocking_timeout);
 	if (!handle)
 		goto error;
-	lttng_chan_buf->chan = shmp(handle, handle->chan);
+	lttng_chan_buf->priv->rb_chan = shmp(handle, handle->chan);
 	return lttng_chan_buf;
 
 error:
@@ -686,7 +687,7 @@ error:
 static
 void lttng_channel_destroy(struct lttng_ust_channel_buffer *lttng_chan_buf)
 {
-	channel_destroy(lttng_chan_buf->chan, lttng_chan_buf->chan->handle, 1);
+	channel_destroy(lttng_chan_buf->priv->rb_chan, lttng_chan_buf->priv->rb_chan->handle, 1);
 	lttng_ust_free_channel_common(lttng_chan_buf->parent);
 }
 
@@ -694,12 +695,13 @@ static
 int lttng_event_reserve(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		      uint32_t event_id)
 {
-	struct lttng_ust_channel_buffer *lttng_chan = channel_get_private(ctx->chan);
 	struct lttng_ust_stack_ctx *lttng_ctx = ctx->priv;
 	struct lttng_ust_event_recorder *event_recorder = lttng_ctx->event_recorder;
+	struct lttng_ust_channel_buffer *lttng_chan = event_recorder->chan;
 	struct lttng_client_ctx client_ctx;
 	int ret;
 
+	ctx->chan = lttng_chan->priv->rb_chan;
 	client_ctx.chan_ctx = lttng_ust_rcu_dereference(lttng_chan->priv->ctx);
 	client_ctx.event_ctx = lttng_ust_rcu_dereference(event_recorder->priv->ctx);
 	/* Compute internal size of context structures. */
@@ -767,48 +769,38 @@ void lttng_event_pstrcpy_pad(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 	lib_ring_buffer_pstrcpy(&client_config, ctx, src, len, '\0');
 }
 
-#if 0
 static
-wait_queue_head_t *lttng_get_reader_wait_queue(struct lttng_ust_lib_ring_buffer_channel *chan)
+int lttng_is_finalized(struct lttng_ust_channel_buffer *chan)
 {
-	return &chan->read_wait;
+	struct lttng_ust_lib_ring_buffer_channel *rb_chan = chan->priv->rb_chan;
+
+	return lib_ring_buffer_channel_is_finalized(rb_chan);
 }
 
 static
-wait_queue_head_t *lttng_get_hp_wait_queue(struct lttng_ust_lib_ring_buffer_channel *chan)
+int lttng_is_disabled(struct lttng_ust_channel_buffer *chan)
 {
-	return &chan->hp_wait;
-}
-#endif //0
+	struct lttng_ust_lib_ring_buffer_channel *rb_chan = chan->priv->rb_chan;
 
-static
-int lttng_is_finalized(struct lttng_ust_lib_ring_buffer_channel *chan)
-{
-	return lib_ring_buffer_channel_is_finalized(chan);
+	return lib_ring_buffer_channel_is_disabled(rb_chan);
 }
 
 static
-int lttng_is_disabled(struct lttng_ust_lib_ring_buffer_channel *chan)
+int lttng_flush_buffer(struct lttng_ust_channel_buffer *chan)
 {
-	return lib_ring_buffer_channel_is_disabled(chan);
-}
-
-static
-int lttng_flush_buffer(struct lttng_ust_lib_ring_buffer_channel *chan,
-		struct lttng_ust_shm_handle *handle)
-{
+	struct lttng_ust_lib_ring_buffer_channel *rb_chan = chan->priv->rb_chan;
 	struct lttng_ust_lib_ring_buffer *buf;
 	int cpu;
 
-	for_each_channel_cpu(cpu, chan) {
+	for_each_channel_cpu(cpu, rb_chan) {
 		int shm_fd, wait_fd, wakeup_fd;
 		uint64_t memory_map_size;
 
-		buf = channel_get_ring_buffer(&client_config, chan,
-				cpu, handle, &shm_fd, &wait_fd,
+		buf = channel_get_ring_buffer(&client_config, rb_chan,
+				cpu, rb_chan->handle, &shm_fd, &wait_fd,
 				&wakeup_fd, &memory_map_size);
 		lib_ring_buffer_switch(&client_config, buf,
-				SWITCH_ACTIVE, handle);
+				SWITCH_ACTIVE, rb_chan->handle);
 	}
 	return 0;
 }

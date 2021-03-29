@@ -504,7 +504,6 @@ struct lttng_ust_channel_buffer {
 	struct lttng_ust_channel_buffer_private *priv;	/* Private channel buffer interface */
 
 	struct lttng_ust_channel_buffer_ops *ops;
-	struct lttng_ust_lib_ring_buffer_channel *chan;	/* Channel buffers */
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };

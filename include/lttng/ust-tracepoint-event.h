@@ -850,10 +850,9 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 			 _TP_ARGS_DATA_VAR(_args));			      \
 		__event_align = __event_get_align__##_provider##___##_name(_TP_ARGS_VAR(_args)); \
 		memset(&__lttng_ctx, 0, sizeof(__lttng_ctx));		      \
-		__lttng_ctx.struct_size = sizeof(struct lttng_ust_stack_ctx);     \
+		__lttng_ctx.struct_size = sizeof(struct lttng_ust_stack_ctx); \
 		__lttng_ctx.event_recorder = __event_recorder;		      \
-		lib_ring_buffer_ctx_init(&__ctx, __chan->chan, &__lttng_ctx, __event_len, \
-					 __event_align);		      \
+		lib_ring_buffer_ctx_init(&__ctx, NULL, &__lttng_ctx, __event_len, __event_align); \
 		__ctx.ip = _TP_IP_PARAM(TP_IP_PARAM);			      \
 		__ret = __chan->ops->event_reserve(&__ctx, __event_recorder->id); \
 		if (__ret < 0)						      \
