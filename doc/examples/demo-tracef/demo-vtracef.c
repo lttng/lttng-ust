@@ -11,7 +11,10 @@
 
 #include <lttng/tracef.h>
 
-__attribute__((format(printf, 1, 2)))
+static
+void print_debug(const char* msg, ...)
+	__attribute__((format(printf, 1, 2)));
+static
 void print_debug(const char* msg, ...)
 {
 	va_list ap;
