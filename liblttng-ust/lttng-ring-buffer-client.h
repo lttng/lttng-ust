@@ -732,7 +732,7 @@ int lttng_event_reserve(struct lttng_ust_lib_ring_buffer_ctx *ctx)
 	if (nesting < 0)
 		return -EPERM;
 
-	private_ctx = &private_ctx_stack[nesting];
+	private_ctx = &URCU_TLS(private_ctx_stack[nesting]);
 	memset(private_ctx, 0, sizeof(*private_ctx));
 	private_ctx->pub = ctx;
 	private_ctx->chan = lttng_chan->priv->rb_chan;
