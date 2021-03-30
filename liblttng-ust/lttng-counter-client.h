@@ -10,12 +10,20 @@
 #define _LTTNG_UST_COUNTER_CLIENT_H
 
 /*
- * These symbol are part of the private ABI between liblttng-ust and
- * liblttng-ust-ctl.
+ * The counter clients init/exit symbols are private ABI for
+ * liblttng-ust-ctl, which is why they are not hidden.
  */
+
+void lttng_ust_counter_clients_init(void);
+void lttng_ust_counter_clients_exit(void);
+
+__attribute__((visibility("hidden")))
 void lttng_counter_client_percpu_32_modular_init(void);
+__attribute__((visibility("hidden")))
 void lttng_counter_client_percpu_32_modular_exit(void);
+__attribute__((visibility("hidden")))
 void lttng_counter_client_percpu_64_modular_init(void);
+__attribute__((visibility("hidden")))
 void lttng_counter_client_percpu_64_modular_exit(void);
 
 #endif

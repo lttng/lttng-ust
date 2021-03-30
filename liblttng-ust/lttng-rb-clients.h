@@ -8,6 +8,7 @@
 #define _LTTNG_RB_CLIENT_H
 
 #include <stdint.h>
+#include "../libringbuffer/ringbuffer-config.h"
 
 struct lttng_ust_client_lib_ring_buffer_client_cb {
 	struct lttng_ust_lib_ring_buffer_client_cb parent;
@@ -40,13 +41,41 @@ struct lttng_ust_client_lib_ring_buffer_client_cb {
 };
 
 /*
- * The ring buffer and counter clients init/exit symbols are private ABI
- * for liblttng-ust-ctl, which is why they are not hidden.
+ * The ring buffer clients init/exit symbols are private ABI for
+ * liblttng-ust-ctl, which is why they are not hidden.
  */
 void lttng_ust_ring_buffer_clients_init(void);
 void lttng_ust_ring_buffer_clients_exit(void);
 
-void lttng_ust_counter_clients_init(void);
-void lttng_ust_counter_clients_exit(void);
+__attribute__((visibility("hidden")))
+void lttng_ring_buffer_client_overwrite_init(void);
+__attribute__((visibility("hidden")))
+void lttng_ring_buffer_client_overwrite_rt_init(void);
+__attribute__((visibility("hidden")))
+void lttng_ring_buffer_client_discard_init(void);
+__attribute__((visibility("hidden")))
+void lttng_ring_buffer_client_discard_rt_init(void);
+__attribute__((visibility("hidden")))
+void lttng_ring_buffer_metadata_client_init(void);
+
+__attribute__((visibility("hidden")))
+void lttng_ring_buffer_client_overwrite_exit(void);
+__attribute__((visibility("hidden")))
+void lttng_ring_buffer_client_overwrite_rt_exit(void);
+__attribute__((visibility("hidden")))
+void lttng_ring_buffer_client_discard_exit(void);
+__attribute__((visibility("hidden")))
+void lttng_ring_buffer_client_discard_rt_exit(void);
+__attribute__((visibility("hidden")))
+void lttng_ring_buffer_metadata_client_exit(void);
+
+__attribute__((visibility("hidden")))
+void lttng_ust_fixup_ring_buffer_client_overwrite_tls(void);
+__attribute__((visibility("hidden")))
+void lttng_ust_fixup_ring_buffer_client_overwrite_rt_tls(void);
+__attribute__((visibility("hidden")))
+void lttng_ust_fixup_ring_buffer_client_discard_tls(void);
+__attribute__((visibility("hidden")))
+void lttng_ust_fixup_ring_buffer_client_discard_rt_tls(void);
 
 #endif /* _LTTNG_RB_CLIENT_H */

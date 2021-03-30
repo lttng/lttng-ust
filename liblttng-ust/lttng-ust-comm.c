@@ -54,6 +54,7 @@
 #include "context-internal.h"
 #include "ust-compat.h"
 #include "lttng-counter-client.h"
+#include "lttng-rb-clients.h"
 
 /*
  * Has lttng ust comm constructor been called ?
@@ -2060,36 +2061,6 @@ quit:
 __attribute__((weak))
 void lttng_ust_libc_wrapper_malloc_init(void)
 {
-}
-
-void lttng_ust_ring_buffer_clients_init(void)
-{
-	lttng_ring_buffer_metadata_client_init();
-	lttng_ring_buffer_client_overwrite_init();
-	lttng_ring_buffer_client_overwrite_rt_init();
-	lttng_ring_buffer_client_discard_init();
-	lttng_ring_buffer_client_discard_rt_init();
-}
-
-void lttng_ust_ring_buffer_clients_exit(void)
-{
-	lttng_ring_buffer_client_discard_rt_exit();
-	lttng_ring_buffer_client_discard_exit();
-	lttng_ring_buffer_client_overwrite_rt_exit();
-	lttng_ring_buffer_client_overwrite_exit();
-	lttng_ring_buffer_metadata_client_exit();
-}
-
-void lttng_ust_counter_clients_init(void)
-{
-	lttng_counter_client_percpu_64_modular_init();
-	lttng_counter_client_percpu_32_modular_init();
-}
-
-void lttng_ust_counter_clients_exit(void)
-{
-	lttng_counter_client_percpu_32_modular_exit();
-	lttng_counter_client_percpu_64_modular_exit();
 }
 
 /*
