@@ -420,7 +420,6 @@ void lttng_ust_fixup_malloc_nesting_tls(void)
 	asm volatile ("" : : "m" (URCU_TLS(malloc_nesting)));
 }
 
-__attribute__((constructor))
 void lttng_ust_libc_wrapper_malloc_init(void)
 {
 	/* Initialization already done */

@@ -93,7 +93,8 @@ enum membarrier_cmd {
 };
 
 static
-void __attribute__((constructor)) _lttng_ust_urcu_init(void);
+void _lttng_ust_urcu_init(void)
+	__attribute__((constructor));
 static
 void __attribute__((destructor)) lttng_ust_urcu_exit(void);
 

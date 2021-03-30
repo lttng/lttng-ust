@@ -346,8 +346,9 @@ __tracepoint__init_urcu_sym(void)
 }
 #endif
 
-static void lttng_ust_notrace __attribute__((constructor))
-__tracepoints__init(void);
+static void
+__tracepoints__init(void)
+	lttng_ust_notrace __attribute__((constructor));
 static void
 __tracepoints__init(void)
 {
@@ -459,8 +460,9 @@ extern struct lttng_ust_tracepoint * const __stop___tracepoints_ptrs[]
 		__lttng_ust_variable_attribute_no_sanitize_address =		\
 			&__tracepoint_##_provider##___##_name;
 
-static void lttng_ust_notrace __attribute__((constructor))
-__tracepoints__ptrs_init(void);
+static void
+__tracepoints__ptrs_init(void)
+	lttng_ust_notrace __attribute__((constructor));
 static void
 __tracepoints__ptrs_init(void)
 {

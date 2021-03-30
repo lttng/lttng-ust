@@ -1061,8 +1061,9 @@ static int _TP_COMBINE_TOKENS(__probe_register_refcount___, TRACEPOINT_PROVIDER)
 
 /* Reset all macros within TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
-static void lttng_ust_notrace __attribute__((constructor))
-_TP_COMBINE_TOKENS(__lttng_events_init__, TRACEPOINT_PROVIDER)(void);
+static void
+_TP_COMBINE_TOKENS(__lttng_events_init__, TRACEPOINT_PROVIDER)(void)
+	lttng_ust_notrace __attribute__((constructor));
 static void
 _TP_COMBINE_TOKENS(__lttng_events_init__, TRACEPOINT_PROVIDER)(void)
 {

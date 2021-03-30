@@ -2900,7 +2900,10 @@ int ustctl_counter_clear(struct ustctl_daemon_counter *counter,
 	return counter->ops->counter_clear(counter->counter, dimension_indexes);
 }
 
-static __attribute__((constructor))
+static
+void ustctl_init(void)
+	__attribute__((constructor));
+static
 void ustctl_init(void)
 {
 	ust_err_init();

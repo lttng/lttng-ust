@@ -2067,7 +2067,11 @@ void lttng_ust_libc_wrapper_malloc_init(void)
  * sessiond monitoring thread: monitor presence of global and per-user
  * sessiond by polling the application common named pipe.
  */
-void __attribute__((constructor)) lttng_ust_init(void)
+static
+void lttng_ust_init(void)
+	__attribute__((constructor));
+static
+void lttng_ust_init(void)
 {
 	struct timespec constructor_timeout;
 	sigset_t sig_all_blocked, orig_parent_mask;
