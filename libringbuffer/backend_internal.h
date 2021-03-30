@@ -596,7 +596,11 @@ int update_read_sb_index(const struct lttng_ust_lib_ring_buffer_config *config,
 #define inline_memcpy(dest, src, n)	memcpy(dest, src, n)
 #endif
 
-static inline __attribute__((always_inline))
+static inline
+void lttng_inline_memcpy(void *dest, const void *src,
+		unsigned long len)
+	__attribute__((always_inline));
+static inline
 void lttng_inline_memcpy(void *dest, const void *src,
 		unsigned long len)
 {

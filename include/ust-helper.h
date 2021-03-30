@@ -11,7 +11,10 @@
 
 #include <lttng/ust-arch.h>
 
-static inline __attribute__((always_inline))
+static inline
+void *zmalloc(size_t len)
+	__attribute__((always_inline));
+static inline
 void *zmalloc(size_t len)
 {
 	return calloc(len, 1);

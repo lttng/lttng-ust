@@ -63,7 +63,12 @@ lib_ring_buffer_read_offset_address(struct lttng_ust_lib_ring_buffer_backend *bu
  * backend-specific memcpy() operation. Calls the slow path (_ring_buffer_write)
  * if copy is crossing a page boundary.
  */
-static inline __attribute__((always_inline))
+static inline
+void lib_ring_buffer_write(const struct lttng_ust_lib_ring_buffer_config *config,
+			   struct lttng_ust_lib_ring_buffer_ctx *ctx,
+			   const void *src, size_t len)
+	__attribute__((always_inline));
+static inline
 void lib_ring_buffer_write(const struct lttng_ust_lib_ring_buffer_config *config,
 			   struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			   const void *src, size_t len)
@@ -99,7 +104,11 @@ void lib_ring_buffer_write(const struct lttng_ust_lib_ring_buffer_config *config
  * terminating character is found in @src. Returns the number of bytes
  * copied. Does *not* terminate @dest with NULL terminating character.
  */
-static inline __attribute__((always_inline))
+static inline
+size_t lib_ring_buffer_do_strcpy(const struct lttng_ust_lib_ring_buffer_config *config,
+		char *dest, const char *src, size_t len)
+	__attribute__((always_inline));
+static inline
 size_t lib_ring_buffer_do_strcpy(const struct lttng_ust_lib_ring_buffer_config *config,
 		char *dest, const char *src, size_t len)
 {
@@ -135,7 +144,12 @@ size_t lib_ring_buffer_do_strcpy(const struct lttng_ust_lib_ring_buffer_config *
  * character is found in @src before @len - 1 characters are copied, pad
  * the buffer with @pad characters (e.g. '#').
  */
-static inline __attribute__((always_inline))
+static inline
+void lib_ring_buffer_strcpy(const struct lttng_ust_lib_ring_buffer_config *config,
+			   struct lttng_ust_lib_ring_buffer_ctx *ctx,
+			   const char *src, size_t len, char pad)
+	__attribute__((always_inline));
+static inline
 void lib_ring_buffer_strcpy(const struct lttng_ust_lib_ring_buffer_config *config,
 			   struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			   const char *src, size_t len, char pad)
@@ -200,7 +214,12 @@ void lib_ring_buffer_strcpy(const struct lttng_ust_lib_ring_buffer_config *confi
  * The length of the pascal strings in the ring buffer is explicit: it
  * is either the array or sequence length.
  */
-static inline __attribute__((always_inline))
+static inline
+void lib_ring_buffer_pstrcpy(const struct lttng_ust_lib_ring_buffer_config *config,
+			   struct lttng_ust_lib_ring_buffer_ctx *ctx,
+			   const char *src, size_t len, char pad)
+	__attribute__((always_inline));
+static inline
 void lib_ring_buffer_pstrcpy(const struct lttng_ust_lib_ring_buffer_config *config,
 			   struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			   const char *src, size_t len, char pad)
