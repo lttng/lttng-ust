@@ -84,17 +84,6 @@ struct ustctl_daemon_counter {
 	struct ustctl_counter_attr *attr;	/* initial attributes */
 };
 
-extern void lttng_ring_buffer_client_overwrite_init(void);
-extern void lttng_ring_buffer_client_overwrite_rt_init(void);
-extern void lttng_ring_buffer_client_discard_init(void);
-extern void lttng_ring_buffer_client_discard_rt_init(void);
-extern void lttng_ring_buffer_metadata_client_init(void);
-extern void lttng_ring_buffer_client_overwrite_exit(void);
-extern void lttng_ring_buffer_client_overwrite_rt_exit(void);
-extern void lttng_ring_buffer_client_discard_exit(void);
-extern void lttng_ring_buffer_client_discard_rt_exit(void);
-extern void lttng_ring_buffer_metadata_client_exit(void);
-
 int ustctl_release_handle(int sock, int handle)
 {
 	struct ustcomm_ust_msg lum;
@@ -2917,24 +2906,14 @@ void ustctl_init(void)
 	ust_err_init();
 	lttng_ust_getenv_init();	/* Needs ust_err_init() to be completed. */
 	lttng_ust_clock_init();
-	lttng_ring_buffer_metadata_client_init();
-	lttng_ring_buffer_client_overwrite_init();
-	lttng_ring_buffer_client_overwrite_rt_init();
-	lttng_ring_buffer_client_discard_init();
-	lttng_ring_buffer_client_discard_rt_init();
-	lttng_counter_client_percpu_32_modular_init();
-	lttng_counter_client_percpu_64_modular_init();
+	lttng_ust_ring_buffer_clients_init();
+	lttng_ust_counter_clients_init();
 	lib_ringbuffer_signal_init();
 }
 
 static __attribute__((destructor))
 void ustctl_exit(void)
 {
-	lttng_ring_buffer_client_discard_rt_exit();
-	lttng_ring_buffer_client_discard_exit();
-	lttng_ring_buffer_client_overwrite_rt_exit();
-	lttng_ring_buffer_client_overwrite_exit();
-	lttng_ring_buffer_metadata_client_exit();
-	lttng_counter_client_percpu_32_modular_exit();
-	lttng_counter_client_percpu_64_modular_exit();
+	lttng_ust_counter_clients_exit();
+	lttng_ust_ring_buffer_clients_exit();
 }

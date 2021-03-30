@@ -78,8 +78,7 @@ static DEFINE_URCU_TLS(private_ctx_stack_t, private_ctx_stack);
 /*
  * Force a read (imply TLS fixup for dlopen) of TLS variables.
  */
-static
-void lttng_fixup_rb_client_tls(void)
+void RING_BUFFER_MODE_TEMPLATE_TLS_FIXUP(void)
 {
 	asm volatile ("" : : "m" (URCU_TLS(private_ctx_stack)));
 }
@@ -858,7 +857,6 @@ void RING_BUFFER_MODE_TEMPLATE_INIT(void)
 {
 	DBG("LTT : ltt ring buffer client \"%s\" init\n",
 		"relay-" RING_BUFFER_MODE_TEMPLATE_STRING "-mmap");
-	lttng_fixup_rb_client_tls();
 	lttng_transport_register(&lttng_relay_transport);
 }
 

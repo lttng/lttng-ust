@@ -11,6 +11,8 @@
 
 #define RING_BUFFER_MODE_TEMPLATE		RING_BUFFER_OVERWRITE
 #define RING_BUFFER_MODE_TEMPLATE_STRING	"overwrite"
+#define RING_BUFFER_MODE_TEMPLATE_TLS_FIXUP	\
+	lttng_ust_fixup_ring_buffer_client_overwrite_tls
 #define RING_BUFFER_MODE_TEMPLATE_INIT	\
 	lttng_ring_buffer_client_overwrite_init
 #define RING_BUFFER_MODE_TEMPLATE_EXIT	\

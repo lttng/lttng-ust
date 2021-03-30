@@ -351,17 +351,6 @@ static const char *cmd_name_mapping[] = {
 static const char *str_timeout;
 static int got_timeout_env;
 
-extern void lttng_ring_buffer_client_overwrite_init(void);
-extern void lttng_ring_buffer_client_overwrite_rt_init(void);
-extern void lttng_ring_buffer_client_discard_init(void);
-extern void lttng_ring_buffer_client_discard_rt_init(void);
-extern void lttng_ring_buffer_metadata_client_init(void);
-extern void lttng_ring_buffer_client_overwrite_exit(void);
-extern void lttng_ring_buffer_client_overwrite_rt_exit(void);
-extern void lttng_ring_buffer_client_discard_exit(void);
-extern void lttng_ring_buffer_client_discard_rt_exit(void);
-extern void lttng_ring_buffer_metadata_client_exit(void);
-
 static char *get_map_shm(struct sock_info *sock_info);
 
 ssize_t lttng_ust_read(int fd, void *buf, size_t len)
@@ -437,6 +426,31 @@ void lttng_ust_fixup_tls(void)
 	lttng_fixup_net_ns_tls();
 	lttng_fixup_time_ns_tls();
 	lttng_fixup_uts_ns_tls();
+	lttng_ust_fixup_ring_buffer_client_discard_tls();
+	lttng_ust_fixup_ring_buffer_client_discard_rt_tls();
+	lttng_ust_fixup_ring_buffer_client_overwrite_tls();
+	lttng_ust_fixup_ring_buffer_client_overwrite_rt_tls();
+}
+
+/*
+ * LTTng-UST uses Global Dynamic model TLS variables rather than IE
+ * model because many versions of glibc don't preallocate a pool large
+ * enough for TLS variables IE model defined in other shared libraries,
+ * and causes issues when using LTTng-UST for Java tracing.
+ *
+ * Because of this use of Global Dynamic TLS variables, users wishing to
+ * trace from signal handlers need to explicitly trigger the lazy
+ * allocation of those variables for each thread before using them.
+ * This can be triggered by calling lttng_ust_init_thread().
+ */
+void lttng_ust_init_thread(void)
+{
+	/*
+	 * Because those TLS variables are global dynamic, we need to
+	 * ensure those are initialized before a signal handler nesting over
+	 * this thread attempts to use them.
+	 */
+	lttng_ust_fixup_tls();
 }
 
 int lttng_get_notify_socket(void *owner)
@@ -2048,6 +2062,36 @@ void lttng_ust_libc_wrapper_malloc_init(void)
 {
 }
 
+void lttng_ust_ring_buffer_clients_init(void)
+{
+	lttng_ring_buffer_metadata_client_init();
+	lttng_ring_buffer_client_overwrite_init();
+	lttng_ring_buffer_client_overwrite_rt_init();
+	lttng_ring_buffer_client_discard_init();
+	lttng_ring_buffer_client_discard_rt_init();
+}
+
+void lttng_ust_ring_buffer_clients_exit(void)
+{
+	lttng_ring_buffer_client_discard_rt_exit();
+	lttng_ring_buffer_client_discard_exit();
+	lttng_ring_buffer_client_overwrite_rt_exit();
+	lttng_ring_buffer_client_overwrite_exit();
+	lttng_ring_buffer_metadata_client_exit();
+}
+
+void lttng_ust_counter_clients_init(void)
+{
+	lttng_counter_client_percpu_64_modular_init();
+	lttng_counter_client_percpu_32_modular_init();
+}
+
+void lttng_ust_counter_clients_exit(void)
+{
+	lttng_counter_client_percpu_32_modular_exit();
+	lttng_counter_client_percpu_64_modular_exit();
+}
+
 /*
  * sessiond monitoring thread: monitor presence of global and per-user
  * sessiond by polling the application common named pipe.
@@ -2106,13 +2150,8 @@ void __attribute__((constructor)) lttng_ust_init(void)
 	lttng_ust_clock_init();
 	lttng_ust_getcpu_init();
 	lttng_ust_statedump_init();
-	lttng_ring_buffer_metadata_client_init();
-	lttng_ring_buffer_client_overwrite_init();
-	lttng_ring_buffer_client_overwrite_rt_init();
-	lttng_ring_buffer_client_discard_init();
-	lttng_ring_buffer_client_discard_rt_init();
-	lttng_counter_client_percpu_32_modular_init();
-	lttng_counter_client_percpu_64_modular_init();
+	lttng_ust_ring_buffer_clients_init();
+	lttng_ust_counter_clients_init();
 	lttng_perf_counter_init();
 	/*
 	 * Invoke ust malloc wrapper init before starting other threads.
@@ -2253,13 +2292,8 @@ void lttng_ust_cleanup(int exiting)
 	lttng_ust_abi_exit();
 	lttng_ust_abi_events_exit();
 	lttng_perf_counter_exit();
-	lttng_ring_buffer_client_discard_rt_exit();
-	lttng_ring_buffer_client_discard_exit();
-	lttng_ring_buffer_client_overwrite_rt_exit();
-	lttng_ring_buffer_client_overwrite_exit();
-	lttng_ring_buffer_metadata_client_exit();
-	lttng_counter_client_percpu_32_modular_exit();
-	lttng_counter_client_percpu_64_modular_exit();
+	lttng_ust_ring_buffer_clients_exit();
+	lttng_ust_counter_clients_exit();
 	lttng_ust_statedump_destroy();
 	lttng_ust_tp_exit();
 	if (!exiting) {

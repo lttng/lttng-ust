@@ -32,6 +32,7 @@ nobase_include_HEADERS = \
 	lttng/ust-clock.h \
 	lttng/ust-getcpu.h \
 	lttng/ust-libc-wrapper.h \
+	lttng/ust-thread.h \
 	lttng/urcu/pointer.h \
 	lttng/urcu/urcu-ust.h \
 	lttng/urcu/static/pointer.h \

@@ -39,4 +39,14 @@ struct lttng_ust_client_lib_ring_buffer_client_cb {
 			struct lttng_ust_lib_ring_buffer_channel *chan, uint64_t *id);
 };
 
+/*
+ * The ring buffer and counter clients init/exit symbols are private ABI
+ * for liblttng-ust-ctl, which is why they are not hidden.
+ */
+void lttng_ust_ring_buffer_clients_init(void);
+void lttng_ust_ring_buffer_clients_exit(void);
+
+void lttng_ust_counter_clients_init(void);
+void lttng_ust_counter_clients_exit(void);
+
 #endif /* _LTTNG_RB_CLIENT_H */
