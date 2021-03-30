@@ -221,10 +221,11 @@ struct lttng_ust_lib_ring_buffer_config {
  * lib_ring_buffer_check_config() returns 0 on success.
  * Used internally to check for valid configurations at channel creation.
  */
-static inline lttng_ust_notrace
+static inline
 int lib_ring_buffer_check_config(const struct lttng_ust_lib_ring_buffer_config *config,
 			     unsigned int switch_timer_interval,
-			     unsigned int read_timer_interval);
+			     unsigned int read_timer_interval)
+	lttng_ust_notrace;
 static inline
 int lib_ring_buffer_check_config(const struct lttng_ust_lib_ring_buffer_config *config,
 			     unsigned int switch_timer_interval,

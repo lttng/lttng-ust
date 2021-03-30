@@ -313,9 +313,10 @@ void channel_set_private(struct lttng_ust_lib_ring_buffer_channel *chan, void *p
  * lttng_ust_lib_ring_buffer_align_ctx - Align context offset on "alignment"
  * @ctx: ring buffer context.
  */
-static inline lttng_ust_notrace
+static inline
 void lttng_ust_lib_ring_buffer_align_ctx(struct lttng_ust_lib_ring_buffer_ctx *ctx,
-			   size_t alignment);
+			   size_t alignment)
+	lttng_ust_notrace;
 static inline
 void lttng_ust_lib_ring_buffer_align_ctx(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			   size_t alignment)

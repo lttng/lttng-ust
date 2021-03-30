@@ -72,8 +72,9 @@
 /* Reset all macros within TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 
-static inline lttng_ust_notrace
-void _TP_COMBINE_TOKENS(__tracepoint_provider_mismatch_, TRACEPOINT_PROVIDER)(void);
+static inline
+void _TP_COMBINE_TOKENS(__tracepoint_provider_mismatch_, TRACEPOINT_PROVIDER)(void)
+	lttng_ust_notrace;
 static inline
 void _TP_COMBINE_TOKENS(__tracepoint_provider_mismatch_, TRACEPOINT_PROVIDER)(void)
 {
@@ -87,8 +88,9 @@ void _TP_COMBINE_TOKENS(__tracepoint_provider_mismatch_, TRACEPOINT_PROVIDER)(vo
 #define _TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	\
 	__tracepoint_provider_mismatch_##_provider();
 
-static inline lttng_ust_notrace
-void _TP_COMBINE_TOKENS(__tracepoint_provider_check_, TRACEPOINT_PROVIDER)(void);
+static inline
+void _TP_COMBINE_TOKENS(__tracepoint_provider_check_, TRACEPOINT_PROVIDER)(void)
+	lttng_ust_notrace;
 static inline
 void _TP_COMBINE_TOKENS(__tracepoint_provider_check_, TRACEPOINT_PROVIDER)(void)
 {
@@ -447,8 +449,9 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));
 
 #undef _TRACEPOINT_EVENT_CLASS
 #define _TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
-static inline lttng_ust_notrace						      \
-size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, _TP_ARGS_DATA_PROTO(_args)); \
+static inline								      \
+size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, _TP_ARGS_DATA_PROTO(_args)) \
+	lttng_ust_notrace;						      \
 static inline								      \
 size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, _TP_ARGS_DATA_PROTO(_args)) \
 {									      \
@@ -660,8 +663,9 @@ void __event_prepare_interpreter_stack__##_provider##___##_name(char *__stack_da
 
 #undef _TRACEPOINT_EVENT_CLASS
 #define _TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
-static inline lttng_ust_notrace						      \
-size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args));     \
+static inline								      \
+size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
+	lttng_ust_notrace;						      \
 static inline								      \
 size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 {									      \
@@ -783,8 +787,9 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
  */
 #undef _TRACEPOINT_EVENT_CLASS
 #define _TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
-static lttng_ust_notrace						      \
-void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));      \
+static									      \
+void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
+	lttng_ust_notrace;						      \
 static									      \
 void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 {									      \

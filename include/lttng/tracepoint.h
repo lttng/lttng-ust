@@ -185,9 +185,10 @@ void __tracepoint_cb_##_provider##___##_name(_TP_ARGS_PROTO(__VA_ARGS__))		\
 end:											\
 	tp_rcu_read_unlock();								\
 }											\
-static inline lttng_ust_notrace								\
+static inline										\
 void __tracepoint_register_##_provider##___##_name(char *name,				\
-		void (*func)(void), void *data);					\
+		void (*func)(void), void *data)						\
+	lttng_ust_notrace;								\
 static inline										\
 void __tracepoint_register_##_provider##___##_name(char *name,				\
 		void (*func)(void), void *data)						\
@@ -195,9 +196,10 @@ void __tracepoint_register_##_provider##___##_name(char *name,				\
 	__tracepoint_probe_register(name, func, data,					\
 		__tracepoint_##_provider##___##_name.signature);			\
 }											\
-static inline lttng_ust_notrace								\
+static inline										\
 void __tracepoint_unregister_##_provider##___##_name(char *name,			\
-		void (*func)(void), void *data);					\
+		void (*func)(void), void *data)						\
+	lttng_ust_notrace;								\
 static inline										\
 void __tracepoint_unregister_##_provider##___##_name(char *name,			\
 		void (*func)(void), void *data)						\
@@ -310,8 +312,9 @@ static inline void tracepoint_disable_destructors(void)
 }
 
 #ifndef _LGPL_SOURCE
-static inline void lttng_ust_notrace
-__tracepoint__init_urcu_sym(void);
+static inline void
+__tracepoint__init_urcu_sym(void)
+	lttng_ust_notrace;
 static inline void
 __tracepoint__init_urcu_sym(void)
 {
@@ -338,8 +341,9 @@ __tracepoint__init_urcu_sym(void)
 					"tp_rcu_dereference_sym"));
 }
 #else
-static inline void lttng_ust_notrace
-__tracepoint__init_urcu_sym(void);
+static inline void
+__tracepoint__init_urcu_sym(void)
+	lttng_ust_notrace;
 static inline void
 __tracepoint__init_urcu_sym(void)
 {

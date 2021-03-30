@@ -60,10 +60,11 @@ struct lttng_ust_lib_ring_buffer_ctx {
  * @largest_align: largest alignment within data payload types
  * @ip: caller ip address
  */
-static inline lttng_ust_notrace
+static inline
 void lttng_ust_lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 					void *client_priv, size_t data_size, int largest_align,
-					void *ip);
+					void *ip)
+	lttng_ust_notrace;
 static inline
 void lttng_ust_lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 					void *client_priv, size_t data_size, int largest_align,
@@ -93,8 +94,9 @@ void lttng_ust_lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ct
  * @align_drift:  object offset from an "alignment"-aligned address.
  * @size_of_type: Must be non-zero, power of 2.
  */
-static inline lttng_ust_notrace
-unsigned int lttng_ust_lib_ring_buffer_align(size_t align_drift, size_t size_of_type);
+static inline
+unsigned int lttng_ust_lib_ring_buffer_align(size_t align_drift, size_t size_of_type)
+	lttng_ust_notrace;
 static inline
 unsigned int lttng_ust_lib_ring_buffer_align(size_t align_drift, size_t size_of_type)
 {
@@ -110,8 +112,9 @@ unsigned int lttng_ust_lib_ring_buffer_align(size_t align_drift, size_t size_of_
  * @align_drift:  object offset from an "alignment"-aligned address.
  * @size_of_type: Must be non-zero, power of 2.
  */
-static inline lttng_ust_notrace
-unsigned int lttng_ust_lib_ring_buffer_align(size_t align_drift, size_t size_of_type);
+static inline
+unsigned int lttng_ust_lib_ring_buffer_align(size_t align_drift, size_t size_of_type)
+	lttng_ust_notrace;
 static inline
 unsigned int lttng_ust_lib_ring_buffer_align(size_t align_drift, size_t size_of_type)
 {
