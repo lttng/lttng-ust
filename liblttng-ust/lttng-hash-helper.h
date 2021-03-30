@@ -43,7 +43,10 @@ do { \
 	c ^= b; c -= rot(b, 24); \
 }
 
-static inline __attribute__((unused))
+static inline
+uint32_t lttng_hash_u32(const uint32_t *k, size_t length, uint32_t initval)
+	__attribute__((unused));
+static inline
 uint32_t lttng_hash_u32(
 	const uint32_t *k,	/* the key, an array of uint32_t values */
 	size_t length,		/* the length of the key, in uint32_ts */

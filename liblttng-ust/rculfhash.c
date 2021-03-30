@@ -439,7 +439,10 @@ unsigned int fls_u64(uint64_t x)
 #endif
 
 #ifndef HAS_FLS_U64
-static __attribute__((unused))
+static
+unsigned int fls_u64(uint64_t x)
+	__attribute__((unused));
+static
 unsigned int fls_u64(uint64_t x)
 {
 	unsigned int r = 64;
@@ -476,7 +479,10 @@ unsigned int fls_u64(uint64_t x)
 #endif
 
 #ifndef HAS_FLS_U32
-static __attribute__((unused))
+static
+unsigned int fls_u32(uint32_t x)
+	__attribute__((unused));
+static
 unsigned int fls_u32(uint32_t x)
 {
 	unsigned int r = 32;

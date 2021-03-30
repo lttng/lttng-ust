@@ -56,7 +56,10 @@ void *static_calloc(size_t nmemb, size_t size);
  */
 static int ust_malloc_lock;
 
-static __attribute__((unused))
+static
+void ust_malloc_spin_lock(pthread_mutex_t *lock)
+	__attribute__((unused));
+static
 void ust_malloc_spin_lock(pthread_mutex_t *lock)
 {
 	/*
@@ -68,7 +71,10 @@ void ust_malloc_spin_lock(pthread_mutex_t *lock)
 		caa_cpu_relax();
 }
 
-static __attribute__((unused))
+static
+void ust_malloc_spin_unlock(pthread_mutex_t *lock)
+	__attribute__((unused));
+static
 void ust_malloc_spin_unlock(pthread_mutex_t *lock)
 {
 	/*

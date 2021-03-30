@@ -161,8 +161,9 @@ extern "C" {
  */
 #define _DECLARE_TRACEPOINT(_provider, _name, ...)			 		\
 extern struct lttng_ust_tracepoint __tracepoint_##_provider##___##_name;		\
-static inline __attribute__((always_inline, unused)) lttng_ust_notrace			\
-void __tracepoint_cb_##_provider##___##_name(_TP_ARGS_PROTO(__VA_ARGS__));		\
+static inline										\
+void __tracepoint_cb_##_provider##___##_name(_TP_ARGS_PROTO(__VA_ARGS__))		\
+	__attribute__((always_inline, unused)) lttng_ust_notrace;			\
 static											\
 void __tracepoint_cb_##_provider##___##_name(_TP_ARGS_PROTO(__VA_ARGS__))		\
 {											\
