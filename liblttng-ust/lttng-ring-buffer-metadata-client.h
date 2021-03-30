@@ -248,10 +248,10 @@ int lttng_event_reserve(struct lttng_ust_lib_ring_buffer_ctx *ctx)
 {
 	int ret;
 
-	memset(&private_ctx, 0, sizeof(private_ctx));
-	private_ctx.pub = ctx;
-	private_ctx.chan = ctx->client_priv;
-	ctx->priv = &private_ctx;
+	memset(&URCU_TLS(private_ctx), 0, sizeof(struct lttng_ust_lib_ring_buffer_ctx_private));
+	URCU_TLS(private_ctx).pub = ctx;
+	URCU_TLS(private_ctx).chan = ctx->client_priv;
+	ctx->priv = &URCU_TLS(private_ctx);
 	ret = lib_ring_buffer_reserve(&client_config, ctx, NULL);
 	if (ret)
 		return ret;
