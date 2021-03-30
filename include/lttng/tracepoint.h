@@ -369,8 +369,9 @@ __tracepoints__init(void)
 	__tracepoint__init_urcu_sym();
 }
 
-static void lttng_ust_notrace __attribute__((destructor))
-__tracepoints__destroy(void);
+static void
+__tracepoints__destroy(void)
+	lttng_ust_notrace __attribute__((destructor));
 static void
 __tracepoints__destroy(void)
 {
@@ -501,8 +502,9 @@ __tracepoints__ptrs_init(void)
 	}
 }
 
-static void lttng_ust_notrace __attribute__((destructor))
-__tracepoints__ptrs_destroy(void);
+static void
+__tracepoints__ptrs_destroy(void)
+	lttng_ust_notrace __attribute__((destructor));
 static void
 __tracepoints__ptrs_destroy(void)
 {

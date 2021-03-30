@@ -2279,7 +2279,11 @@ void lttng_ust_cleanup(int exiting)
 	}
 }
 
-void __attribute__((destructor)) lttng_ust_exit(void)
+static
+void lttng_ust_exit(void)
+	__attribute__((destructor));
+static
+void lttng_ust_exit(void)
 {
 	int ret;
 

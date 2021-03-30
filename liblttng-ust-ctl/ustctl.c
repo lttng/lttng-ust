@@ -2914,7 +2914,10 @@ void ustctl_init(void)
 	lib_ringbuffer_signal_init();
 }
 
-static __attribute__((destructor))
+static
+void ustctl_exit(void)
+	__attribute__((destructor));
+static
 void ustctl_exit(void)
 {
 	lttng_ust_counter_clients_exit();

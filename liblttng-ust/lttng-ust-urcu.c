@@ -96,7 +96,8 @@ static
 void _lttng_ust_urcu_init(void)
 	__attribute__((constructor));
 static
-void __attribute__((destructor)) lttng_ust_urcu_exit(void);
+void lttng_ust_urcu_exit(void)
+	__attribute__((destructor));
 
 #ifndef CONFIG_RCU_FORCE_SYS_MEMBARRIER
 int lttng_ust_urcu_has_sys_membarrier;
