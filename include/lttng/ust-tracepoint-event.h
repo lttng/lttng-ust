@@ -1108,4 +1108,4 @@ _TP_COMBINE_TOKENS(__lttng_events_exit__, TRACEPOINT_PROVIDER)(void)
 }
 
 int _TP_COMBINE_TOKENS(__tracepoint_provider_, TRACEPOINT_PROVIDER)
-__attribute__((visibility("default")));
+	__attribute__((visibility("default")));

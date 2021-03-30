@@ -24,11 +24,11 @@ enum ust_err_loglevel {
 	UST_ERR_LOGLEVEL_DEBUG,
 };
 
-__attribute__((visibility("hidden")))
-extern volatile enum ust_err_loglevel ust_err_loglevel;
+extern volatile enum ust_err_loglevel ust_err_loglevel
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-void ust_err_init(void);
+void ust_err_init(void)
+	__attribute__((visibility("hidden")));
 
 #ifdef LTTNG_UST_DEBUG
 static inline bool ust_err_debug_enabled(void)

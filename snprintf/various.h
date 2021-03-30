@@ -98,13 +98,13 @@ typedef struct __lttng_ust_sFILE {
 
 #define __sferror(p)    (((p)->_flags & __SERR) != 0)
 
-__attribute__((visibility("hidden")))
-extern int ust_safe_fflush(LTTNG_UST_LFILE *fp);
+extern int ust_safe_fflush(LTTNG_UST_LFILE *fp)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-extern int ust_safe_vfprintf(LTTNG_UST_LFILE *fp, const char *fmt0, va_list ap);
+extern int ust_safe_vfprintf(LTTNG_UST_LFILE *fp, const char *fmt0, va_list ap)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-extern size_t ust_safe_mbrtowc(wchar_t *pwc, const char *s, size_t n, mbstate_t *ps);
+extern size_t ust_safe_mbrtowc(wchar_t *pwc, const char *s, size_t n, mbstate_t *ps)
+	__attribute__((visibility("hidden")));
 
 #endif /* UST_SNPRINTF_VARIOUS_H */

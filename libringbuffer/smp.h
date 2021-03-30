@@ -15,11 +15,11 @@
  */
 #define PER_CPU_MEM_SIZE	4096
 
-__attribute__((visibility("hidden")))
-extern int __num_possible_cpus;
+extern int __num_possible_cpus
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-extern void _get_num_possible_cpus(void);
+extern void _get_num_possible_cpus(void)
+	__attribute__((visibility("hidden")));
 
 static inline
 int num_possible_cpus(void)

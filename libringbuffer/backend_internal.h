@@ -24,48 +24,48 @@
 
 /* Ring buffer and channel backend create/free */
 
-__attribute__((visibility("hidden")))
 int lib_ring_buffer_backend_create(struct lttng_ust_lib_ring_buffer_backend *bufb,
 				   struct channel_backend *chan,
 				   int cpu,
 				   struct lttng_ust_shm_handle *handle,
-				   struct shm_object *shmobj);
+				   struct shm_object *shmobj)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-void channel_backend_unregister_notifiers(struct channel_backend *chanb);
+void channel_backend_unregister_notifiers(struct channel_backend *chanb)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-void lib_ring_buffer_backend_free(struct lttng_ust_lib_ring_buffer_backend *bufb);
+void lib_ring_buffer_backend_free(struct lttng_ust_lib_ring_buffer_backend *bufb)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
 int channel_backend_init(struct channel_backend *chanb,
 			 const char *name,
 			 const struct lttng_ust_lib_ring_buffer_config *config,
 			 size_t subbuf_size,
 			 size_t num_subbuf, struct lttng_ust_shm_handle *handle,
-			 const int *stream_fds);
+			 const int *stream_fds)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
 void channel_backend_free(struct channel_backend *chanb,
-			  struct lttng_ust_shm_handle *handle);
+			  struct lttng_ust_shm_handle *handle)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
 void lib_ring_buffer_backend_reset(struct lttng_ust_lib_ring_buffer_backend *bufb,
-				   struct lttng_ust_shm_handle *handle);
+				   struct lttng_ust_shm_handle *handle)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-void channel_backend_reset(struct channel_backend *chanb);
+void channel_backend_reset(struct channel_backend *chanb)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-int lib_ring_buffer_backend_init(void);
+int lib_ring_buffer_backend_init(void)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-void lib_ring_buffer_backend_exit(void);
+void lib_ring_buffer_backend_exit(void)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
 extern void _lib_ring_buffer_write(struct lttng_ust_lib_ring_buffer_backend *bufb,
 				   size_t offset, const void *src, size_t len,
-				   ssize_t pagecpy);
+				   ssize_t pagecpy)
+	__attribute__((visibility("hidden")));
 
 /*
  * Subbuffer ID bits for overwrite mode. Need to fit within a single word to be

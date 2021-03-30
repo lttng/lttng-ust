@@ -17,13 +17,16 @@
 void lttng_ust_counter_clients_init(void);
 void lttng_ust_counter_clients_exit(void);
 
-__attribute__((visibility("hidden")))
-void lttng_counter_client_percpu_32_modular_init(void);
-__attribute__((visibility("hidden")))
-void lttng_counter_client_percpu_32_modular_exit(void);
-__attribute__((visibility("hidden")))
-void lttng_counter_client_percpu_64_modular_init(void);
-__attribute__((visibility("hidden")))
-void lttng_counter_client_percpu_64_modular_exit(void);
+void lttng_counter_client_percpu_32_modular_init(void)
+	__attribute__((visibility("hidden")));
+
+void lttng_counter_client_percpu_32_modular_exit(void)
+	__attribute__((visibility("hidden")));
+
+void lttng_counter_client_percpu_64_modular_init(void)
+	__attribute__((visibility("hidden")));
+
+void lttng_counter_client_percpu_64_modular_exit(void)
+	__attribute__((visibility("hidden")));
 
 #endif

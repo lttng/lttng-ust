@@ -22,49 +22,49 @@ struct lttng_msgpack_writer {
 	uint8_t map_nesting;
 };
 
-__attribute__((visibility("hidden")))
 void lttng_msgpack_writer_init(
 		struct lttng_msgpack_writer *writer,
-		uint8_t *buffer, size_t size);
+		uint8_t *buffer, size_t size)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-void lttng_msgpack_writer_fini(struct lttng_msgpack_writer *writer);
+void lttng_msgpack_writer_fini(struct lttng_msgpack_writer *writer)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-int lttng_msgpack_write_nil(struct lttng_msgpack_writer *writer);
+int lttng_msgpack_write_nil(struct lttng_msgpack_writer *writer)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-int lttng_msgpack_write_true(struct lttng_msgpack_writer *writer);
+int lttng_msgpack_write_true(struct lttng_msgpack_writer *writer)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-int lttng_msgpack_write_false(struct lttng_msgpack_writer *writer);
+int lttng_msgpack_write_false(struct lttng_msgpack_writer *writer)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
 int lttng_msgpack_write_unsigned_integer(
-		struct lttng_msgpack_writer *writer, uint64_t value);
+		struct lttng_msgpack_writer *writer, uint64_t value)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
 int lttng_msgpack_write_signed_integer(
-		struct lttng_msgpack_writer *writer, int64_t value);
+		struct lttng_msgpack_writer *writer, int64_t value)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-int lttng_msgpack_write_double(struct lttng_msgpack_writer *writer, double value);
+int lttng_msgpack_write_double(struct lttng_msgpack_writer *writer, double value)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
 int lttng_msgpack_write_str(struct lttng_msgpack_writer *writer,
-		const char *value);
+		const char *value)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-int lttng_msgpack_begin_map(struct lttng_msgpack_writer *writer, size_t count);
+int lttng_msgpack_begin_map(struct lttng_msgpack_writer *writer, size_t count)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-int lttng_msgpack_end_map(struct lttng_msgpack_writer *writer);
+int lttng_msgpack_end_map(struct lttng_msgpack_writer *writer)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
 int lttng_msgpack_begin_array(
-		struct lttng_msgpack_writer *writer, size_t count);
+		struct lttng_msgpack_writer *writer, size_t count)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-int lttng_msgpack_end_array(struct lttng_msgpack_writer *writer);
+int lttng_msgpack_end_array(struct lttng_msgpack_writer *writer)
+	__attribute__((visibility("hidden")));
 
 #endif /* _LTTNG_UST_MSGPACK_H */

@@ -125,14 +125,14 @@ struct lttng_ust_lfht {
 	 */
 };
 
-__attribute__((visibility("hidden")))
-extern unsigned int lttng_ust_lfht_fls_ulong(unsigned long x);
+extern unsigned int lttng_ust_lfht_fls_ulong(unsigned long x)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-extern int lttng_ust_lfht_get_count_order_u32(uint32_t x);
+extern int lttng_ust_lfht_get_count_order_u32(uint32_t x)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-extern int lttng_ust_lfht_get_count_order_ulong(unsigned long x);
+extern int lttng_ust_lfht_get_count_order_ulong(unsigned long x)
+	__attribute__((visibility("hidden")));
 
 #ifdef POISON_FREE
 #define poison_free(ptr)					\

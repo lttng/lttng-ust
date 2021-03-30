@@ -15,20 +15,20 @@
 #include "shm_types.h"
 
 /* channel_handle_create - for UST. */
-__attribute__((visibility("hidden")))
 extern
 struct lttng_ust_shm_handle *channel_handle_create(void *data,
-				uint64_t memory_map_size, int wakeup_fd);
+				uint64_t memory_map_size, int wakeup_fd)
+	__attribute__((visibility("hidden")));
 
 /* channel_handle_add_stream - for UST. */
-__attribute__((visibility("hidden")))
 extern
 int channel_handle_add_stream(struct lttng_ust_shm_handle *handle,
 		int shm_fd, int wakeup_fd, uint32_t stream_nr,
-		uint64_t memory_map_size);
+		uint64_t memory_map_size)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-unsigned int channel_handle_get_nr_streams(struct lttng_ust_shm_handle *handle);
+unsigned int channel_handle_get_nr_streams(struct lttng_ust_shm_handle *handle)
+	__attribute__((visibility("hidden")));
 
 /*
  * Pointer dereferencing. We don't trust the shm_ref, so we validate
@@ -71,28 +71,28 @@ void _set_shmp(struct shm_ref *ref, struct shm_ref src)
 
 #define set_shmp(ref, src)	_set_shmp(&(ref)._ref, src)
 
-__attribute__((visibility("hidden")))
-struct shm_object_table *shm_object_table_create(size_t max_nb_obj);
+struct shm_object_table *shm_object_table_create(size_t max_nb_obj)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
 struct shm_object *shm_object_table_alloc(struct shm_object_table *table,
 			size_t memory_map_size,
 			enum shm_object_type type,
 			const int stream_fd,
-			int cpu);
+			int cpu)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
 struct shm_object *shm_object_table_append_shm(struct shm_object_table *table,
 			int shm_fd, int wakeup_fd, uint32_t stream_nr,
-			size_t memory_map_size);
+			size_t memory_map_size)
+	__attribute__((visibility("hidden")));
 
 /* mem ownership is passed to shm_object_table_append_mem(). */
-__attribute__((visibility("hidden")))
 struct shm_object *shm_object_table_append_mem(struct shm_object_table *table,
-			void *mem, size_t memory_map_size, int wakeup_fd);
+			void *mem, size_t memory_map_size, int wakeup_fd)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-void shm_object_table_destroy(struct shm_object_table *table, int consumer);
+void shm_object_table_destroy(struct shm_object_table *table, int consumer)
+	__attribute__((visibility("hidden")));
 
 /*
  * zalloc_shm - allocate memory within a shm object.
@@ -101,11 +101,11 @@ void shm_object_table_destroy(struct shm_object_table *table, int consumer);
  * *NOT* multithread-safe (should be protected by mutex).
  * Returns a -1, -1 tuple on error.
  */
-__attribute__((visibility("hidden")))
-struct shm_ref zalloc_shm(struct shm_object *obj, size_t len);
+struct shm_ref zalloc_shm(struct shm_object *obj, size_t len)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-void align_shm(struct shm_object *obj, size_t align);
+void align_shm(struct shm_object *obj, size_t align)
+	__attribute__((visibility("hidden")));
 
 static inline
 int shm_get_wait_fd(struct lttng_ust_shm_handle *handle, struct shm_ref *ref)

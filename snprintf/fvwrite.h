@@ -25,5 +25,5 @@ struct __lttng_ust_suio {
 	int	uio_resid;
 };
 
-__attribute__((visibility("hidden")))
-extern int __sfvwrite(LTTNG_UST_LFILE *, struct __lttng_ust_suio *);
+extern int __sfvwrite(LTTNG_UST_LFILE *, struct __lttng_ust_suio *)
+	__attribute__((visibility("hidden")));

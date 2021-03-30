@@ -47,35 +47,48 @@ struct lttng_ust_client_lib_ring_buffer_client_cb {
 void lttng_ust_ring_buffer_clients_init(void);
 void lttng_ust_ring_buffer_clients_exit(void);
 
-__attribute__((visibility("hidden")))
-void lttng_ring_buffer_client_overwrite_init(void);
-__attribute__((visibility("hidden")))
-void lttng_ring_buffer_client_overwrite_rt_init(void);
-__attribute__((visibility("hidden")))
-void lttng_ring_buffer_client_discard_init(void);
-__attribute__((visibility("hidden")))
-void lttng_ring_buffer_client_discard_rt_init(void);
-__attribute__((visibility("hidden")))
-void lttng_ring_buffer_metadata_client_init(void);
+void lttng_ring_buffer_client_overwrite_init(void)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-void lttng_ring_buffer_client_overwrite_exit(void);
-__attribute__((visibility("hidden")))
-void lttng_ring_buffer_client_overwrite_rt_exit(void);
-__attribute__((visibility("hidden")))
-void lttng_ring_buffer_client_discard_exit(void);
-__attribute__((visibility("hidden")))
-void lttng_ring_buffer_client_discard_rt_exit(void);
-__attribute__((visibility("hidden")))
-void lttng_ring_buffer_metadata_client_exit(void);
+void lttng_ring_buffer_client_overwrite_rt_init(void)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-void lttng_ust_fixup_ring_buffer_client_overwrite_tls(void);
-__attribute__((visibility("hidden")))
-void lttng_ust_fixup_ring_buffer_client_overwrite_rt_tls(void);
-__attribute__((visibility("hidden")))
-void lttng_ust_fixup_ring_buffer_client_discard_tls(void);
-__attribute__((visibility("hidden")))
-void lttng_ust_fixup_ring_buffer_client_discard_rt_tls(void);
+void lttng_ring_buffer_client_discard_init(void)
+	__attribute__((visibility("hidden")));
+
+void lttng_ring_buffer_client_discard_rt_init(void)
+	__attribute__((visibility("hidden")));
+
+void lttng_ring_buffer_metadata_client_init(void)
+	__attribute__((visibility("hidden")));
+
+
+void lttng_ring_buffer_client_overwrite_exit(void)
+	__attribute__((visibility("hidden")));
+
+void lttng_ring_buffer_client_overwrite_rt_exit(void)
+	__attribute__((visibility("hidden")));
+
+void lttng_ring_buffer_client_discard_exit(void)
+	__attribute__((visibility("hidden")));
+
+void lttng_ring_buffer_client_discard_rt_exit(void)
+	__attribute__((visibility("hidden")));
+
+void lttng_ring_buffer_metadata_client_exit(void)
+	__attribute__((visibility("hidden")));
+
+
+void lttng_ust_fixup_ring_buffer_client_overwrite_tls(void)
+	__attribute__((visibility("hidden")));
+
+void lttng_ust_fixup_ring_buffer_client_overwrite_rt_tls(void)
+	__attribute__((visibility("hidden")));
+
+void lttng_ust_fixup_ring_buffer_client_discard_tls(void)
+	__attribute__((visibility("hidden")));
+
+void lttng_ust_fixup_ring_buffer_client_discard_rt_tls(void)
+	__attribute__((visibility("hidden")));
 
 #endif /* _LTTNG_RB_CLIENT_H */

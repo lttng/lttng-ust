@@ -8,15 +8,17 @@
 #define _LTTNG_RING_BUFFER_NOHZ_H
 
 #ifdef CONFIG_LIB_RING_BUFFER
-__attribute__((visibility("hidden")))
-void lib_ring_buffer_tick_nohz_flush(void);
+void lib_ring_buffer_tick_nohz_flush(void)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-void lib_ring_buffer_tick_nohz_stop(void);
+void lib_ring_buffer_tick_nohz_stop(void)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-void lib_ring_buffer_tick_nohz_restart(void);
+void lib_ring_buffer_tick_nohz_restart(void)
+	__attribute__((visibility("hidden")));
+
 #else
+
 static inline void lib_ring_buffer_tick_nohz_flush(void)
 {
 }

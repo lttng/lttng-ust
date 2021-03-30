@@ -12,11 +12,11 @@
  */
 #define LTTNG_COUNTER_PER_CPU_MEM_SIZE	4096
 
-__attribute__((visibility("hidden")))
-extern int __lttng_counter_num_possible_cpus;
+extern int __lttng_counter_num_possible_cpus
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-extern void _lttng_counter_get_num_possible_cpus(void);
+extern void _lttng_counter_get_num_possible_cpus(void)
+	__attribute__((visibility("hidden")));
 
 static inline
 int lttng_counter_num_possible_cpus(void)

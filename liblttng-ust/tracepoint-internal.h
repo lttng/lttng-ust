@@ -20,27 +20,27 @@ struct tracepoint_lib {
 	struct cds_list_head callsites;
 };
 
-__attribute__((visibility("hidden")))
 int tracepoint_probe_register_noupdate(const char *name,
 		void (*callback)(void), void *priv,
-		const char *signature);
+		const char *signature)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
 int tracepoint_probe_unregister_noupdate(const char *name,
-		void (*callback)(void), void *priv);
+		void (*callback)(void), void *priv)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-void tracepoint_probe_update_all(void);
+void tracepoint_probe_update_all(void)
+	__attribute__((visibility("hidden")));
 
 
-__attribute__((visibility("hidden")))
-void *lttng_ust_tp_check_weak_hidden1(void);
+void *lttng_ust_tp_check_weak_hidden1(void)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-void *lttng_ust_tp_check_weak_hidden2(void);
+void *lttng_ust_tp_check_weak_hidden2(void)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-void *lttng_ust_tp_check_weak_hidden3(void);
+void *lttng_ust_tp_check_weak_hidden3(void)
+	__attribute__((visibility("hidden")));
 
 /*
  * These symbols are ABI between liblttng-ust-tracepoint and liblttng-ust,

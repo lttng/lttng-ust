@@ -96,14 +96,14 @@ struct lttng_ust_lfht_mm_type {
 			unsigned long index);
 };
 
-__attribute__((visibility("hidden")))
-extern const struct lttng_ust_lfht_mm_type lttng_ust_lfht_mm_order;
+extern const struct lttng_ust_lfht_mm_type lttng_ust_lfht_mm_order
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-extern const struct lttng_ust_lfht_mm_type lttng_ust_lfht_mm_chunk;
+extern const struct lttng_ust_lfht_mm_type lttng_ust_lfht_mm_chunk
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-extern const struct lttng_ust_lfht_mm_type lttng_ust_lfht_mm_mmap;
+extern const struct lttng_ust_lfht_mm_type lttng_ust_lfht_mm_mmap
+	__attribute__((visibility("hidden")));
 
 /*
  * lttng_ust_lfht_new - allocate a hash table.
@@ -122,12 +122,12 @@ extern const struct lttng_ust_lfht_mm_type lttng_ust_lfht_mm_mmap;
  * Return NULL on error.
  * Note: the RCU flavor must be already included before the hash table header.
  */
-__attribute__((visibility("hidden")))
 extern struct lttng_ust_lfht *lttng_ust_lfht_new(unsigned long init_size,
 			unsigned long min_nr_alloc_buckets,
 			unsigned long max_nr_buckets,
 			int flags,
-			const struct lttng_ust_lfht_mm_type *mm);
+			const struct lttng_ust_lfht_mm_type *mm)
+	__attribute__((visibility("hidden")));
 
 /*
  * lttng_ust_lfht_destroy - destroy a hash table.
@@ -146,8 +146,8 @@ extern struct lttng_ust_lfht *lttng_ust_lfht_new(unsigned long init_size,
  * thread to handle resize operations, which removes RCU requirements on
  * lttng_ust_lfht_destroy.
  */
-__attribute__((visibility("hidden")))
-extern int lttng_ust_lfht_destroy(struct lttng_ust_lfht *ht);
+extern int lttng_ust_lfht_destroy(struct lttng_ust_lfht *ht)
+	__attribute__((visibility("hidden")));
 
 /*
  * lttng_ust_lfht_count_nodes - count the number of nodes in the hash table.
@@ -159,11 +159,11 @@ extern int lttng_ust_lfht_destroy(struct lttng_ust_lfht *ht);
  * Call with rcu_read_lock held.
  * Threads calling this API need to be registered RCU read-side threads.
  */
-__attribute__((visibility("hidden")))
 extern void lttng_ust_lfht_count_nodes(struct lttng_ust_lfht *ht,
 		long *split_count_before,
 		unsigned long *count,
-		long *split_count_after);
+		long *split_count_after)
+	__attribute__((visibility("hidden")));
 
 /*
  * lttng_ust_lfht_lookup - lookup a node by key.
@@ -177,10 +177,10 @@ extern void lttng_ust_lfht_count_nodes(struct lttng_ust_lfht *ht,
  * Threads calling this API need to be registered RCU read-side threads.
  * This function acts as a rcu_dereference() to read the node pointer.
  */
-__attribute__((visibility("hidden")))
 extern void lttng_ust_lfht_lookup(struct lttng_ust_lfht *ht, unsigned long hash,
 		lttng_ust_lfht_match_fct match, const void *key,
-		struct lttng_ust_lfht_iter *iter);
+		struct lttng_ust_lfht_iter *iter)
+	__attribute__((visibility("hidden")));
 
 /*
  * lttng_ust_lfht_next_duplicate - get the next item with same key, after iterator.
@@ -202,10 +202,10 @@ extern void lttng_ust_lfht_lookup(struct lttng_ust_lfht *ht, unsigned long hash,
  * Threads calling this API need to be registered RCU read-side threads.
  * This function acts as a rcu_dereference() to read the node pointer.
  */
-__attribute__((visibility("hidden")))
 extern void lttng_ust_lfht_next_duplicate(struct lttng_ust_lfht *ht,
 		lttng_ust_lfht_match_fct match, const void *key,
-		struct lttng_ust_lfht_iter *iter);
+		struct lttng_ust_lfht_iter *iter)
+	__attribute__((visibility("hidden")));
 
 /*
  * lttng_ust_lfht_first - get the first node in the table.
@@ -217,8 +217,8 @@ extern void lttng_ust_lfht_next_duplicate(struct lttng_ust_lfht *ht,
  * Threads calling this API need to be registered RCU read-side threads.
  * This function acts as a rcu_dereference() to read the node pointer.
  */
-__attribute__((visibility("hidden")))
-extern void lttng_ust_lfht_first(struct lttng_ust_lfht *ht, struct lttng_ust_lfht_iter *iter);
+extern void lttng_ust_lfht_first(struct lttng_ust_lfht *ht, struct lttng_ust_lfht_iter *iter)
+	__attribute__((visibility("hidden")));
 
 /*
  * lttng_ust_lfht_next - get the next node in the table.
@@ -232,8 +232,8 @@ extern void lttng_ust_lfht_first(struct lttng_ust_lfht *ht, struct lttng_ust_lfh
  * Threads calling this API need to be registered RCU read-side threads.
  * This function acts as a rcu_dereference() to read the node pointer.
  */
-__attribute__((visibility("hidden")))
-extern void lttng_ust_lfht_next(struct lttng_ust_lfht *ht, struct lttng_ust_lfht_iter *iter);
+extern void lttng_ust_lfht_next(struct lttng_ust_lfht *ht, struct lttng_ust_lfht_iter *iter)
+	__attribute__((visibility("hidden")));
 
 /*
  * lttng_ust_lfht_add - add a node to the hash table.
@@ -247,9 +247,9 @@ extern void lttng_ust_lfht_next(struct lttng_ust_lfht *ht, struct lttng_ust_lfht
  * This function issues a full memory barrier before and after its
  * atomic commit.
  */
-__attribute__((visibility("hidden")))
 extern void lttng_ust_lfht_add(struct lttng_ust_lfht *ht, unsigned long hash,
-		struct lttng_ust_lfht_node *node);
+		struct lttng_ust_lfht_node *node)
+	__attribute__((visibility("hidden")));
 
 /*
  * lttng_ust_lfht_add_unique - add a node to hash table, if key is not present.
@@ -278,12 +278,12 @@ extern void lttng_ust_lfht_add(struct lttng_ust_lfht *ht, unsigned long hash,
  * node pointer. The failure case does not guarantee any other memory
  * barrier.
  */
-__attribute__((visibility("hidden")))
 extern struct lttng_ust_lfht_node *lttng_ust_lfht_add_unique(struct lttng_ust_lfht *ht,
 		unsigned long hash,
 		lttng_ust_lfht_match_fct match,
 		const void *key,
-		struct lttng_ust_lfht_node *node);
+		struct lttng_ust_lfht_node *node)
+	__attribute__((visibility("hidden")));
 
 /*
  * lttng_ust_lfht_add_replace - replace or add a node within hash table.
@@ -315,12 +315,12 @@ extern struct lttng_ust_lfht_node *lttng_ust_lfht_add_unique(struct lttng_ust_lf
  * This function issues a full memory barrier before and after its
  * atomic commit.
  */
-__attribute__((visibility("hidden")))
 extern struct lttng_ust_lfht_node *lttng_ust_lfht_add_replace(struct lttng_ust_lfht *ht,
 		unsigned long hash,
 		lttng_ust_lfht_match_fct match,
 		const void *key,
-		struct lttng_ust_lfht_node *node);
+		struct lttng_ust_lfht_node *node)
+	__attribute__((visibility("hidden")));
 
 /*
  * lttng_ust_lfht_replace - replace a node pointed to by iter within hash table.
@@ -351,13 +351,13 @@ extern struct lttng_ust_lfht_node *lttng_ust_lfht_add_replace(struct lttng_ust_l
  * after its atomic commit. Upon failure, this function does not issue
  * any memory barrier.
  */
-__attribute__((visibility("hidden")))
 extern int lttng_ust_lfht_replace(struct lttng_ust_lfht *ht,
 		struct lttng_ust_lfht_iter *old_iter,
 		unsigned long hash,
 		lttng_ust_lfht_match_fct match,
 		const void *key,
-		struct lttng_ust_lfht_node *new_node);
+		struct lttng_ust_lfht_node *new_node)
+	__attribute__((visibility("hidden")));
 
 /*
  * lttng_ust_lfht_del - remove node pointed to by iterator from hash table.
@@ -380,8 +380,8 @@ extern int lttng_ust_lfht_replace(struct lttng_ust_lfht *ht,
  * after its atomic commit. Upon failure, this function does not issue
  * any memory barrier.
  */
-__attribute__((visibility("hidden")))
-extern int lttng_ust_lfht_del(struct lttng_ust_lfht *ht, struct lttng_ust_lfht_node *node);
+extern int lttng_ust_lfht_del(struct lttng_ust_lfht *ht, struct lttng_ust_lfht_node *node)
+	__attribute__((visibility("hidden")));
 
 /*
  * lttng_ust_lfht_is_node_deleted - query whether a node is removed from hash table.
@@ -396,8 +396,8 @@ extern int lttng_ust_lfht_del(struct lttng_ust_lfht *ht, struct lttng_ust_lfht_n
  * Threads calling this API need to be registered RCU read-side threads.
  * This function does not issue any memory barrier.
  */
-__attribute__((visibility("hidden")))
-extern int lttng_ust_lfht_is_node_deleted(const struct lttng_ust_lfht_node *node);
+extern int lttng_ust_lfht_is_node_deleted(const struct lttng_ust_lfht_node *node)
+	__attribute__((visibility("hidden")));
 
 /*
  * lttng_ust_lfht_resize - Force a hash table resize
@@ -409,8 +409,8 @@ extern int lttng_ust_lfht_is_node_deleted(const struct lttng_ust_lfht_node *node
  * lttng_ust_lfht_resize should *not* be called from a RCU read-side critical
  * section.
  */
-__attribute__((visibility("hidden")))
-extern void lttng_ust_lfht_resize(struct lttng_ust_lfht *ht, unsigned long new_size);
+extern void lttng_ust_lfht_resize(struct lttng_ust_lfht *ht, unsigned long new_size)
+	__attribute__((visibility("hidden")));
 
 /*
  * Note: it is safe to perform element removal (del), replacement, or

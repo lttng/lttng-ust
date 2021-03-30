@@ -21,56 +21,56 @@
 #include "wcio.h"
 #include "fileext.h"
 
-__attribute__((visibility("hidden")))
-int	__sflush(LTTNG_UST_LFILE *);
+int	__sflush(LTTNG_UST_LFILE *)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-LTTNG_UST_LFILE	*__sfp(void);
+LTTNG_UST_LFILE	*__sfp(void)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-int	__srefill(LTTNG_UST_LFILE *);
+int	__srefill(LTTNG_UST_LFILE *)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-int	__sread(void *, char *, int);
+int	__sread(void *, char *, int)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-int	__swrite(void *, const char *, int);
+int	__swrite(void *, const char *, int)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-fpos_t	__sseek(void *, fpos_t, int);
+fpos_t	__sseek(void *, fpos_t, int)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-int	__sclose(void *);
+int	__sclose(void *)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-void	__sinit(void);
+void	__sinit(void)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-void	_cleanup(void);
+void	_cleanup(void)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-void	__smakebuf(LTTNG_UST_LFILE *);
+void	__smakebuf(LTTNG_UST_LFILE *)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-int	__swhatbuf(LTTNG_UST_LFILE *, size_t *, int *);
+int	__swhatbuf(LTTNG_UST_LFILE *, size_t *, int *)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-int	_fwalk(int (*)(LTTNG_UST_LFILE *));
+int	_fwalk(int (*)(LTTNG_UST_LFILE *))
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-int	__swsetup(LTTNG_UST_LFILE *);
+int	__swsetup(LTTNG_UST_LFILE *)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-int	__sflags(const char *, int *);
+int	__sflags(const char *, int *)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-wint_t __fgetwc_unlock(LTTNG_UST_LFILE *);
+wint_t __fgetwc_unlock(LTTNG_UST_LFILE *)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-extern void __atexit_register_cleanup(void (*)(void));
+extern void __atexit_register_cleanup(void (*)(void))
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-extern int __sdidinit;
+extern int __sdidinit
+	__attribute__((visibility("hidden")));
 
 /*
  * Return true if the given LTTNG_UST_LFILE cannot be written now.

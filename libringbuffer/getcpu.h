@@ -11,11 +11,11 @@
 #include <urcu/system.h>
 #include <urcu/arch.h>
 
-__attribute__((visibility("hidden")))
-void lttng_ust_getcpu_init(void);
+void lttng_ust_getcpu_init(void)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-extern int (*lttng_get_cpu)(void);
+extern int (*lttng_get_cpu)(void)
+	__attribute__((visibility("hidden")));
 
 #ifdef LTTNG_UST_DEBUG_VALGRIND
 

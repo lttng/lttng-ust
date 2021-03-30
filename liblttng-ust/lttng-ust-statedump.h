@@ -10,13 +10,13 @@
 
 #include <lttng/ust-events.h>
 
-__attribute__((visibility("hidden")))
-void lttng_ust_statedump_init(void);
+void lttng_ust_statedump_init(void)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-void lttng_ust_statedump_destroy(void);
+void lttng_ust_statedump_destroy(void)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-int do_lttng_ust_statedump(void *owner);
+int do_lttng_ust_statedump(void *owner)
+	__attribute__((visibility("hidden")));
 
 #endif /* LTTNG_UST_STATEDUMP_H */

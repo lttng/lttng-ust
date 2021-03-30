@@ -25,14 +25,14 @@ enum lttng_ust_dynamic_type {
 	_NR_LTTNG_UST_DYNAMIC_TYPES,
 };
 
-__attribute__((visibility("hidden")))
 int lttng_ust_dynamic_type_choices(size_t *nr_choices,
-		struct lttng_ust_event_field ***choices);
+		struct lttng_ust_event_field ***choices)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-struct lttng_ust_event_field *lttng_ust_dynamic_type_field(int64_t value);
+struct lttng_ust_event_field *lttng_ust_dynamic_type_field(int64_t value)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-struct lttng_ust_event_field *lttng_ust_dynamic_type_tag_field(void);
+struct lttng_ust_event_field *lttng_ust_dynamic_type_tag_field(void)
+	__attribute__((visibility("hidden")));
 
 #endif /* _LTTNG_UST_DYNAMIC_TYPE_H */

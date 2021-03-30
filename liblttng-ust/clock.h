@@ -27,8 +27,8 @@ struct lttng_ust_trace_clock {
 	const char *(*description)(void);
 };
 
-__attribute__((visibility("hidden")))
-extern struct lttng_ust_trace_clock *lttng_ust_trace_clock;
+extern struct lttng_ust_trace_clock *lttng_ust_trace_clock
+	__attribute__((visibility("hidden")));
 
 void lttng_ust_clock_init(void);
 

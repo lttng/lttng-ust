@@ -785,7 +785,8 @@ long lttng_event_notifier_group_error_counter_cmd(int objd, unsigned int cmd, un
 	return ret;
 }
 
-__attribute__((visibility("hidden")))
+int lttng_release_event_notifier_group_error_counter(int objd)
+	__attribute__((visibility("hidden")));
 int lttng_release_event_notifier_group_error_counter(int objd)
 {
 	struct lttng_counter *counter = objd_private(objd);

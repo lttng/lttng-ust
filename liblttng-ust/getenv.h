@@ -16,10 +16,10 @@
  * lttng-ust)
  */
 
-__attribute__((visibility("hidden")))
-char *lttng_ust_getenv(const char *name);
+char *lttng_ust_getenv(const char *name)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-void lttng_ust_getenv_init(void);
+void lttng_ust_getenv_init(void)
+	__attribute__((visibility("hidden")));
 
 #endif /* _COMPAT_GETENV_H */

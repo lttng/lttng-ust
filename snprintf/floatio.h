@@ -31,11 +31,11 @@
 #error "floating point buffers too small"
 #endif
 
-__attribute__((visibility("hidden")))
-char *__hdtoa(double, const char *, int, int *, int *, char **);
+char *__hdtoa(double, const char *, int, int *, int *, char **)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-char *__hldtoa(long double, const char *, int, int *, int *, char **);
+char *__hldtoa(long double, const char *, int, int *, int *, char **)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-char *__ldtoa(long double *, int, int, int *, int *, char **);
+char *__ldtoa(long double *, int, int, int *, int *, char **)
+	__attribute__((visibility("hidden")));

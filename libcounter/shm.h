@@ -24,8 +24,8 @@ int lttng_counter_handle_add_cpu(struct lttng_counter_shm_handle *handle,
 		int shm_fd, uint32_t cpu_nr,
 		uint64_t memory_map_size);
 
-__attribute__((visibility("hidden")))
-unsigned int lttng_counter_handle_get_nr_cpus(struct lttng_counter_shm_handle *handle);
+unsigned int lttng_counter_handle_get_nr_cpus(struct lttng_counter_shm_handle *handle)
+	__attribute__((visibility("hidden")));
 
 /*
  * Pointer dereferencing. We don't trust the shm_ref, so we validate
@@ -73,27 +73,27 @@ void _lttng_counter_set_shmp(struct lttng_counter_shm_ref *ref, struct lttng_cou
 
 #define lttng_counter_set_shmp(ref, src)	_lttng_counter_set_shmp(&(ref)._ref, src)
 
-__attribute__((visibility("hidden")))
-struct lttng_counter_shm_object_table *lttng_counter_shm_object_table_create(size_t max_nb_obj);
+struct lttng_counter_shm_object_table *lttng_counter_shm_object_table_create(size_t max_nb_obj)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
 struct lttng_counter_shm_object *lttng_counter_shm_object_table_alloc(struct lttng_counter_shm_object_table *table,
 			size_t memory_map_size,
 			enum lttng_counter_shm_object_type type,
 			const int cpu_fd,
-			int cpu);
+			int cpu)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
 struct lttng_counter_shm_object *lttng_counter_shm_object_table_append_shm(struct lttng_counter_shm_object_table *table,
-			int shm_fd, size_t memory_map_size);
+			int shm_fd, size_t memory_map_size)
+	__attribute__((visibility("hidden")));
 
 /* mem ownership is passed to lttng_counter_shm_object_table_append_mem(). */
-__attribute__((visibility("hidden")))
 struct lttng_counter_shm_object *lttng_counter_shm_object_table_append_mem(struct lttng_counter_shm_object_table *table,
-			void *mem, size_t memory_map_size);
+			void *mem, size_t memory_map_size)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-void lttng_counter_shm_object_table_destroy(struct lttng_counter_shm_object_table *table, int consumer);
+void lttng_counter_shm_object_table_destroy(struct lttng_counter_shm_object_table *table, int consumer)
+	__attribute__((visibility("hidden")));
 
 /*
  * lttng_counter_zalloc_shm - allocate memory within a shm object.
@@ -102,11 +102,11 @@ void lttng_counter_shm_object_table_destroy(struct lttng_counter_shm_object_tabl
  * *NOT* multithread-safe (should be protected by mutex).
  * Returns a -1, -1 tuple on error.
  */
-__attribute__((visibility("hidden")))
-struct lttng_counter_shm_ref lttng_counter_zalloc_shm(struct lttng_counter_shm_object *obj, size_t len);
+struct lttng_counter_shm_ref lttng_counter_zalloc_shm(struct lttng_counter_shm_object *obj, size_t len)
+	__attribute__((visibility("hidden")));
 
-__attribute__((visibility("hidden")))
-void lttng_counter_align_shm(struct lttng_counter_shm_object *obj, size_t align);
+void lttng_counter_align_shm(struct lttng_counter_shm_object *obj, size_t align)
+	__attribute__((visibility("hidden")));
 
 static inline
 int lttng_counter_shm_get_shm_fd(struct lttng_counter_shm_handle *handle, struct lttng_counter_shm_ref *ref)
