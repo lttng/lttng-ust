@@ -8,7 +8,7 @@ source $TESTDIR/utils/tap.sh
 
 plan_tests 1
 
-: ${ITERS:=20}
+: ${ITERS:=10}
 : ${NR_EVENTS:=7000000}
 : ${NR_CPUS:=1}
 
@@ -27,12 +27,8 @@ trap signal_cleanup SIGTERM SIGINT
 CMD_NOTRACING="$TIME '$PROG_NOTRACING >/dev/null 2>&1'"
 CMD_TRACING="$TIME '$PROG_TRACING >/dev/null 2>&1'"
 
-time_notrace=0
 for i in $(seq $ITERS); do
-	if [[ $EUID -eq 0 ]]; then
-		echo 3 >/proc/sys/vm/drop_caches
-	fi
-	time_notrace="$time_notrace+$(sh -c "$CMD_NOTRACING")"
+	time_notrace[i]=$(sh -c "$CMD_NOTRACING")
 done
 
 
@@ -41,12 +37,8 @@ lttng -q create --snapshot
 lttng -q enable-event -u -a
 lttng -q start
 
-time_trace=0
 for i in $(seq $ITERS); do
-	if [[ $EUID -eq 0 ]]; then
-		echo 3 >/proc/sys/vm/drop_caches
-	fi
-	time_trace="$time_trace+$(sh -c "$CMD_TRACING")"
+	time_trace[i]=$(sh -c "$CMD_TRACING")
 done
 
 lttng -q stop
@@ -54,9 +46,27 @@ lttng -q destroy
 killall lttng-sessiond
 
 pass "Trace benchmark"
-S_PER_EVENT=$(echo "( ($time_trace) - ($time_notrace) ) / $ITERS / $NR_EVENTS" | bc -l)
-NS_PER_EVENT=$(echo "$S_PER_EVENT * 1000000000" | bc -l)
+
+avg_delta=0
+for i in $(seq $ITERS); do
+	delta[$i]=$(echo "( ((${time_trace[$i]}) - (${time_notrace[$i]})) / $NR_EVENTS)" | bc -l)
+	avg_delta=$(echo "(${avg_delta} + ${delta[$i]})" | bc -l)
+done
+avg_delta=$(echo "(${avg_delta} / $ITERS)" | bc -l)
+
+std_dev=0
+for i in $(seq $ITERS); do
+	dev[$i]=$(echo "(( (${delta[$i]}) - (${avg_delta}) ) ^ 2)" | bc -l)
+	std_dev=$(echo "( (${std_dev}) + (${dev[i]}) )" | bc -l)
+done
+std_dev=$(echo "( (${std_dev}) / $ITERS )" | bc -l)
+std_dev=$(echo "(sqrt(${std_dev}))" | bc -l)
+
+NS_PER_EVENT=$(echo "($avg_delta * 1000000000)" | bc -l)
 # Remove fractions
 NS_PER_EVENT=${NS_PER_EVENT%%.*}
 
-diag "Average tracing overhead per event is ${NS_PER_EVENT}ns"
+STD_DEV_NS_PER_EVENT=$(echo "($std_dev * 1000000000)" | bc -l)
+STD_DEV_NS_PER_EVENT=${STD_DEV_NS_PER_EVENT%%.*}
+
+diag "Average tracing overhead per event is ${NS_PER_EVENT}ns, std.dev.: ${STD_DEV_NS_PER_EVENT}ns"
