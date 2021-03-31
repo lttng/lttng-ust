@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <sched.h>
 #include <time.h>
+#include <urcu/compiler.h>
 
 #ifdef TRACING
 #define TRACEPOINT_DEFINE
@@ -38,28 +39,23 @@ static unsigned long nr_events;
 
 void do_stuff(void)
 {
-	int v;
-	FILE *file;
+	int i;
+#ifdef TRACING
+	int v = 50;
+#endif
 
-	v = 1;
-
-	file = fopen("/dev/null", "a");
-	fprintf(file, "%d", v);
-	fclose(file);
-	time(NULL);
-
+	for (i = 0; i < 100; i++)
+		cmm_barrier();
 #ifdef TRACING
 	tracepoint(ust_tests_benchmark, tpbench, v);
 #endif
-
 }
-
 
 void *function(void *arg)
 {
 	unsigned long i;
 
-	for(i = 0; i < nr_events; i++) {
+	for (i = 0; i < nr_events; i++) {
 		do_stuff();
 	}
 	return NULL;
