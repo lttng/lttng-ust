@@ -16,7 +16,7 @@ def main():
 	os.system(cmd)
 	t2 = time.time()
 
-	print(t2-t1)
+	print("Wall time: " + str(t2-t1))
 
 if __name__ == "__main__":
 	main()
