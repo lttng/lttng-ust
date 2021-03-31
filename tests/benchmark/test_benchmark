@@ -9,28 +9,33 @@ source $TESTDIR/utils/tap.sh
 plan_tests 1
 
 : ${ITERS:=10}
-: ${NR_EVENTS:=7000000}
-: ${NR_CPUS:=1}
+: ${DURATION:=2}
+: ${NR_THREADS:=1}
+: ${NR_CPUS:=$(lscpu | grep "^CPU(s)" | sed 's/^.*:[ \t]*//g')}
 
 : ${TIME:="./$CURDIR/ptime"}
 
-: ${PROG_NOTRACING:="./$CURDIR/bench1 $NR_CPUS $NR_EVENTS"}
-: ${PROG_TRACING:="./$CURDIR/bench2 $NR_CPUS $NR_EVENTS"}
+: ${PROG_NOTRACING:="./$CURDIR/bench1 $NR_THREADS $DURATION"}
+: ${PROG_TRACING:="./$CURDIR/bench2 $NR_THREADS $DURATION"}
 
 function signal_cleanup ()
 {
 	killall lttng-sessiond
+	exit
 }
 
 trap signal_cleanup SIGTERM SIGINT
 
-CMD_NOTRACING="$TIME '$PROG_NOTRACING >/dev/null 2>&1'"
-CMD_TRACING="$TIME '$PROG_TRACING >/dev/null 2>&1'"
+CMD_NOTRACING="$TIME '$PROG_NOTRACING'"
+CMD_TRACING="$TIME '$PROG_TRACING'"
+
+NR_ACTIVE_CPUS=$(( $NR_CPUS > $NR_THREADS ? $NR_THREADS : $NR_CPUS ))
 
 for i in $(seq $ITERS); do
-	time_notrace[i]=$(sh -c "$CMD_NOTRACING")
+	res=$(sh -c "$CMD_NOTRACING")
+	loops_notrace[$i]=$(echo "${res}" | grep "^Number of loops:" | sed 's/^.*: //g')
+	time_notrace[$i]=$(echo "${res}" | grep "^Wall time:" | sed 's/^.*: //g')
 done
-
 
 lttng-sessiond -d --no-kernel
 lttng -q create --snapshot
@@ -38,7 +43,9 @@ lttng -q enable-event -u -a
 lttng -q start
 
 for i in $(seq $ITERS); do
-	time_trace[i]=$(sh -c "$CMD_TRACING")
+	res=$(sh -c "$CMD_TRACING")
+	loops_trace[$i]=$(echo "${res}" | grep "^Number of loops:" | sed 's/^.*: //g')
+	time_trace[$i]=$(echo "${res}" | grep "^Wall time:" | sed 's/^.*: //g')
 done
 
 lttng -q stop
@@ -47,9 +54,12 @@ killall lttng-sessiond
 
 pass "Trace benchmark"
 
+# Multiply the wall time by the number of active CPUs to get the
+# overhead of events on each active cpu.
+
 avg_delta=0
 for i in $(seq $ITERS); do
-	delta[$i]=$(echo "( ((${time_trace[$i]}) - (${time_notrace[$i]})) / $NR_EVENTS)" | bc -l)
+	delta[$i]=$(echo "((${time_trace[$i]} * ${NR_ACTIVE_CPUS} / ${loops_trace[$i]}) - (${time_notrace[$i]} * ${NR_ACTIVE_CPUS} / ${loops_notrace[$i]}))" | bc -l)
 	avg_delta=$(echo "(${avg_delta} + ${delta[$i]})" | bc -l)
 done
 avg_delta=$(echo "(${avg_delta} / $ITERS)" | bc -l)
@@ -67,6 +77,7 @@ NS_PER_EVENT=$(echo "($avg_delta * 1000000000)" | bc -l)
 NS_PER_EVENT=${NS_PER_EVENT%%.*}
 
 STD_DEV_NS_PER_EVENT=$(echo "($std_dev * 1000000000)" | bc -l)
+# Remove fractions
 STD_DEV_NS_PER_EVENT=${STD_DEV_NS_PER_EVENT%%.*}
 
-diag "Average tracing overhead per event is ${NS_PER_EVENT}ns, std.dev.: ${STD_DEV_NS_PER_EVENT}ns"
+diag "Average tracing overhead per event is ${NS_PER_EVENT}ns, std.dev.: ${STD_DEV_NS_PER_EVENT}ns { NR_THREADS=${NR_THREADS}, NR_ACTIVE_CPUS=${NR_ACTIVE_CPUS} }"

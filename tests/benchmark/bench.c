@@ -2,6 +2,7 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * Copyright 2010 Douglas Santos <douglas.santos@polymtl.ca>
+ * Copyright 2021 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
  * LTTng Userspace Tracer (UST) - benchmark tool
  */
@@ -19,8 +20,22 @@
 #include "ust_tests_benchmark.h"
 #endif
 
-static int nr_cpus;
-static unsigned long nr_events;
+#define printf_verbose(fmt, args...)		\
+	do {					\
+		if (verbose_mode)		\
+			printf(fmt, ## args);	\
+	} while (0)
+
+static int verbose_mode;
+
+struct thread_counter {
+	unsigned long long nr_loops;
+};
+
+static int nr_threads;
+static unsigned long duration;
+
+static volatile int test_go, test_stop;
 
 void do_stuff(void)
 {
@@ -38,21 +53,33 @@ void do_stuff(void)
 
 void *function(void *arg)
 {
-	unsigned long i;
+	unsigned long long nr_loops = 0;
+	struct thread_counter *thread_counter = arg;
 
-	for (i = 0; i < nr_events; i++) {
+	while (!test_go)
+		cmm_barrier();
+
+	for (;;) {
 		do_stuff();
+		nr_loops++;
+		if (test_stop)
+			break;
 	}
+	thread_counter->nr_loops = nr_loops;
 	return NULL;
 }
 
 void usage(char **argv) {
-	printf("Usage: %s nr_cpus nr_events\n", argv[0]);
+	printf("Usage: %s nr_threads duration(s) <OPTIONS>\n", argv[0]);
+	printf("OPTIONS:\n");
+	printf("        [-v] (verbose output)\n");
+	printf("\n");
 }
-
 
 int main(int argc, char **argv)
 {
+	unsigned long long total_loops = 0;
+	unsigned long i_thr;
 	void *retval;
 	int i;
 
@@ -61,25 +88,53 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	nr_cpus = atoi(argv[1]);
-	printf("using %d processor(s)\n", nr_cpus);
+	nr_threads = atoi(argv[1]);
+	duration = atol(argv[2]);
 
-	nr_events = atol(argv[2]);
-	printf("using %ld events per cpu\n", nr_events);
+	for (i = 3; i < argc; i++) {
+		if (argv[i][0] != '-')
+			continue;
+		switch (argv[i][1]) {
+		case 'v':
+			verbose_mode = 1;
+			break;
+		}
+	}
 
-	pthread_t thread[nr_cpus];
-	for (i = 0; i < nr_cpus; i++) {
-		if (pthread_create(&thread[i], NULL, function, NULL)) {
+	printf_verbose("using %d thread(s)\n", nr_threads);
+	printf_verbose("for a duration of %lds\n", duration);
+
+	pthread_t thread[nr_threads];
+	struct thread_counter thread_counter[nr_threads];
+
+	for (i = 0; i < nr_threads; i++) {
+		thread_counter[i].nr_loops = 0;
+		if (pthread_create(&thread[i], NULL, function, &thread_counter[i])) {
 			fprintf(stderr, "thread create %d failed\n", i);
 			exit(1);
 		}
 	}
 
-	for (i = 0; i < nr_cpus; i++) {
+	test_go = 1;
+
+	for (i_thr = 0; i_thr < duration; i_thr++) {
+		sleep(1);
+		if (verbose_mode) {
+			fwrite(".", sizeof(char), 1, stdout);
+			fflush(stdout);
+		}
+	}
+	printf_verbose("\n");
+
+	test_stop = 1;
+
+	for (i = 0; i < nr_threads; i++) {
 		if (pthread_join(thread[i], &retval)) {
 			fprintf(stderr, "thread join %d failed\n", i);
 			exit(1);
 		}
+		total_loops += thread_counter[i].nr_loops;
 	}
+	printf("Number of loops: %llu\n", total_loops);
 	return 0;
 }
