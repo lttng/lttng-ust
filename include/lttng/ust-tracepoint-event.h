@@ -340,6 +340,9 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 		.nofilter = 0,					\
 	}),
 
+#undef _ctf_unused
+#define _ctf_unused(_src)
+
 #undef _ctf_enum
 #define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite) \
 	__LTTNG_COMPOUND_LITERAL(struct lttng_ust_event_field, { \
@@ -408,23 +411,31 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));
 
 #undef _ctf_integer_ext
 #define _ctf_integer_ext(_type, _item, _src, _byte_order, _base, _nowrite)       \
+	if (0) 									 \
+		(void) (_src);	/* Unused */					 \
 	__event_len += lttng_ust_lib_ring_buffer_align(__event_len, lttng_ust_rb_alignof(_type)); \
 	__event_len += sizeof(_type);
 
 #undef _ctf_float
 #define _ctf_float(_type, _item, _src, _nowrite)				 \
+	if (0)									 \
+		(void) (_src);	/* Unused */					 \
 	__event_len += lttng_ust_lib_ring_buffer_align(__event_len, lttng_ust_rb_alignof(_type)); \
 	__event_len += sizeof(_type);
 
 #undef _ctf_array_encoded
 #define _ctf_array_encoded(_type, _item, _src, _byte_order, _length, _encoding,	 \
 			_nowrite, _elem_type_base)				 \
+	if (0)									 \
+		(void) (_src);	/* Unused */					 \
 	__event_len += lttng_ust_lib_ring_buffer_align(__event_len, lttng_ust_rb_alignof(_type)); \
 	__event_len += sizeof(_type) * (_length);
 
 #undef _ctf_sequence_encoded
 #define _ctf_sequence_encoded(_type, _item, _src, _byte_order, _length_type,	 \
 			_src_length, _encoding, _nowrite, _elem_type_base)	 \
+	if (0)									 \
+		(void) (_src);	/* Unused */					 \
 	__event_len += lttng_ust_lib_ring_buffer_align(__event_len, lttng_ust_rb_alignof(_length_type));   \
 	__event_len += sizeof(_length_type);				       \
 	__event_len += lttng_ust_lib_ring_buffer_align(__event_len, lttng_ust_rb_alignof(_type)); \
@@ -436,6 +447,11 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));
 #define _ctf_string(_item, _src, _nowrite)				       \
 	__event_len += __dynamic_len[__dynamic_len_idx++] =		       \
 		strlen((_src) ? (_src) : __LTTNG_UST_NULL_STRING) + 1;
+
+#undef _ctf_unused
+#define _ctf_unused(_src)							\
+	if (0)									\
+		(void) (_src);  /* Unused */
 
 #undef _ctf_enum
 #define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite)		\
@@ -453,13 +469,16 @@ static inline								      \
 size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, _TP_ARGS_DATA_PROTO(_args)) \
 	lttng_ust_notrace;						      \
 static inline								      \
-size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, _TP_ARGS_DATA_PROTO(_args)) \
+size_t __event_get_size__##_provider##___##_name(			      \
+		size_t *__dynamic_len __attribute__((__unused__)),	      \
+		_TP_ARGS_DATA_PROTO(_args))				      \
 {									      \
 	size_t __event_len = 0;						      \
-	unsigned int __dynamic_len_idx = 0;				      \
+	unsigned int __dynamic_len_idx __attribute__((__unused__)) = 0;	      \
 									      \
 	if (0)								      \
-		(void) __dynamic_len_idx;	/* don't warn if unused */    \
+		(void) __tp_data;	/* don't warn if unused */	      \
+									      \
 	_fields								      \
 	return __event_len;						      \
 }
@@ -598,6 +617,11 @@ size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, _TP_ARGS
 		__stack_data += sizeof(void *);				       \
 	}
 
+#undef _ctf_unused
+#define _ctf_unused(_src)							\
+	if (0)									\
+		(void) (_src);
+
 #undef _ctf_enum
 #define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite)		\
 	_ctf_integer_ext(_type, _item, _src, BYTE_ORDER, 10, _nowrite)
@@ -614,6 +638,11 @@ static inline								      \
 void __event_prepare_interpreter_stack__##_provider##___##_name(char *__stack_data,\
 						 _TP_ARGS_DATA_PROTO(_args))  \
 {									      \
+	if (0) {							      \
+		(void) __tp_data;	/* don't warn if unused */	      \
+		(void) __stack_data;	/* don't warn if unused */	      \
+	}								      \
+									      \
 	_fields								      \
 }
 
@@ -631,25 +660,42 @@ void __event_prepare_interpreter_stack__##_provider##___##_name(char *__stack_da
 
 #undef _ctf_integer_ext
 #define _ctf_integer_ext(_type, _item, _src, _byte_order, _base, _nowrite)     \
+	if (0)								       \
+		(void) (_src);	/* Unused */				       \
 	__event_align = _tp_max_t(size_t, __event_align, lttng_ust_rb_alignof(_type));
 
 #undef _ctf_float
 #define _ctf_float(_type, _item, _src, _nowrite)			       \
+	if (0)								       \
+		(void) (_src);	/* Unused */ 				       \
 	__event_align = _tp_max_t(size_t, __event_align, lttng_ust_rb_alignof(_type));
 
 #undef _ctf_array_encoded
 #define _ctf_array_encoded(_type, _item, _src, _byte_order, _length,	       \
 			_encoding, _nowrite, _elem_type_base)		       \
+	if (0)								       \
+		(void) (_src);	/* Unused */				       \
 	__event_align = _tp_max_t(size_t, __event_align, lttng_ust_rb_alignof(_type));
 
 #undef _ctf_sequence_encoded
 #define _ctf_sequence_encoded(_type, _item, _src, _byte_order, _length_type,   \
 			_src_length, _encoding, _nowrite, _elem_type_base)     \
+	if (0)								       \
+		(void) (_src);	/* Unused */				       \
+	if (0)								       \
+		(void) (_src_length);	/* Unused */			       \
 	__event_align = _tp_max_t(size_t, __event_align, lttng_ust_rb_alignof(_length_type));	  \
 	__event_align = _tp_max_t(size_t, __event_align, lttng_ust_rb_alignof(_type));
 
 #undef _ctf_string
-#define _ctf_string(_item, _src, _nowrite)
+#define _ctf_string(_item, _src, _nowrite)					\
+	if (0)									\
+		(void) (_src);	/* Unused */
+
+#undef _ctf_unused
+#define _ctf_unused(_src)							\
+	if (0)									\
+		(void) (_src);	/* Unused */
 
 #undef _ctf_enum
 #define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite)		\
@@ -732,6 +778,8 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 			__get_dynamic_len(dest));				\
 	}
 
+#undef _ctf_unused
+#define _ctf_unused(_src)
 
 #undef _ctf_enum
 #define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite)	\

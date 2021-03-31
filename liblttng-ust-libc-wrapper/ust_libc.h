@@ -21,6 +21,7 @@ TRACEPOINT_EVENT(lttng_ust_libc, malloc,
 	TP_FIELDS(
 		ctf_integer(size_t, size, size)
 		ctf_integer_hex(void *, ptr, ptr)
+		ctf_unused(ip)
 	)
 )
 
@@ -28,6 +29,7 @@ TRACEPOINT_EVENT(lttng_ust_libc, free,
 	TP_ARGS(void *, ptr, void *, ip),
 	TP_FIELDS(
 		ctf_integer_hex(void *, ptr, ptr)
+		ctf_unused(ip)
 	)
 )
 
@@ -37,6 +39,7 @@ TRACEPOINT_EVENT(lttng_ust_libc, calloc,
 		ctf_integer(size_t, nmemb, nmemb)
 		ctf_integer(size_t, size, size)
 		ctf_integer_hex(void *, ptr, ptr)
+		ctf_unused(ip)
 	)
 )
 
@@ -46,6 +49,7 @@ TRACEPOINT_EVENT(lttng_ust_libc, realloc,
 		ctf_integer_hex(void *, in_ptr, in_ptr)
 		ctf_integer(size_t, size, size)
 		ctf_integer_hex(void *, ptr, ptr)
+		ctf_unused(ip)
 	)
 )
 
@@ -55,6 +59,7 @@ TRACEPOINT_EVENT(lttng_ust_libc, memalign,
 		ctf_integer(size_t, alignment, alignment)
 		ctf_integer(size_t, size, size)
 		ctf_integer_hex(void *, ptr, ptr)
+		ctf_unused(ip)
 	)
 )
 
@@ -65,6 +70,7 @@ TRACEPOINT_EVENT(lttng_ust_libc, posix_memalign,
 		ctf_integer(size_t, alignment, alignment)
 		ctf_integer(size_t, size, size)
 		ctf_integer(int, result, result)
+		ctf_unused(ip)
 	)
 )
 

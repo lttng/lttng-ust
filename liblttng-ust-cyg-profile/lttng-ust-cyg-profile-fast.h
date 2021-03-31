@@ -29,7 +29,9 @@ TRACEPOINT_LOGLEVEL(lttng_ust_cyg_profile_fast, func_entry,
 
 TRACEPOINT_EVENT(lttng_ust_cyg_profile_fast, func_exit,
 	TP_ARGS(void *, func_addr),
-	TP_FIELDS()
+	TP_FIELDS(
+		ctf_unused(func_addr)
+	)
 )
 
 TRACEPOINT_LOGLEVEL(lttng_ust_cyg_profile_fast, func_exit,

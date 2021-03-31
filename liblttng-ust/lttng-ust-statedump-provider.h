@@ -26,7 +26,9 @@ extern "C" {
 
 TRACEPOINT_EVENT(lttng_ust_statedump, start,
 	TP_ARGS(struct lttng_ust_session *, session),
-	TP_FIELDS()
+	TP_FIELDS(
+		ctf_unused(session)
+	)
 )
 
 TRACEPOINT_EVENT(lttng_ust_statedump, bin_info,
@@ -40,6 +42,7 @@ TRACEPOINT_EVENT(lttng_ust_statedump, bin_info,
 		uint8_t, has_debug_link
 	),
 	TP_FIELDS(
+		ctf_unused(session)
 		ctf_integer_hex(void *, baddr, baddr)
 		ctf_integer(uint64_t, memsz, memsz)
 		ctf_string(path, path)
@@ -57,6 +60,7 @@ TRACEPOINT_EVENT(lttng_ust_statedump, build_id,
 		size_t, build_id_len
 	),
 	TP_FIELDS(
+		ctf_unused(session)
 		ctf_integer_hex(void *, baddr, baddr)
 		ctf_sequence_hex(uint8_t, build_id, build_id,
 			size_t, build_id_len)
@@ -71,6 +75,7 @@ TRACEPOINT_EVENT(lttng_ust_statedump, debug_link,
 		uint32_t, crc
 	),
 	TP_FIELDS(
+		ctf_unused(session)
 		ctf_integer_hex(void *, baddr, baddr)
 		ctf_integer(uint32_t, crc, crc)
 		ctf_string(filename, filename)
@@ -83,13 +88,16 @@ TRACEPOINT_EVENT(lttng_ust_statedump, procname,
 		char *, name
 	),
 	TP_FIELDS(
+		ctf_unused(session)
 		ctf_array_text(char, procname, name, LTTNG_UST_ABI_PROCNAME_LEN)
 	)
 )
 
 TRACEPOINT_EVENT(lttng_ust_statedump, end,
 	TP_ARGS(struct lttng_ust_session *, session),
-	TP_FIELDS()
+	TP_FIELDS(
+		ctf_unused(session)
+	)
 )
 
 #endif /* _TRACEPOINT_LTTNG_UST_STATEDUMP_H */

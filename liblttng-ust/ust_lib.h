@@ -28,6 +28,7 @@ TRACEPOINT_EVENT(lttng_ust_lib, load,
 		uint64_t, memsz, uint8_t, has_build_id,
 		uint8_t, has_debug_link),
 	TP_FIELDS(
+		ctf_unused(ip)
 		ctf_integer_hex(void *, baddr, baddr)
 		ctf_integer(uint64_t, memsz, memsz)
 		ctf_string(path, path)
@@ -44,6 +45,7 @@ TRACEPOINT_EVENT(lttng_ust_lib, build_id,
 		size_t, build_id_len
 	),
 	TP_FIELDS(
+		ctf_unused(ip)
 		ctf_integer_hex(void *, baddr, baddr)
 		ctf_sequence_hex(uint8_t, build_id, build_id,
 			size_t, build_id_len)
@@ -58,6 +60,7 @@ TRACEPOINT_EVENT(lttng_ust_lib, debug_link,
 		uint32_t, crc
 	),
 	TP_FIELDS(
+		ctf_unused(ip)
 		ctf_integer_hex(void *, baddr, baddr)
 		ctf_integer(uint32_t, crc, crc)
 		ctf_string(filename, filename)
@@ -67,6 +70,7 @@ TRACEPOINT_EVENT(lttng_ust_lib, debug_link,
 TRACEPOINT_EVENT(lttng_ust_lib, unload,
 	TP_ARGS(void *, ip, void *, baddr),
 	TP_FIELDS(
+		ctf_unused(ip)
 		ctf_integer_hex(void *, baddr, baddr)
 	)
 )
