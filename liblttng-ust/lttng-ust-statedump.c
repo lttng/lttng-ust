@@ -243,13 +243,13 @@ void procname_cb(struct lttng_ust_session *session, void *priv)
 }
 
 static
-void trace_start_cb(struct lttng_ust_session *session, void *priv)
+void trace_start_cb(struct lttng_ust_session *session, void *priv __attribute__((unused)))
 {
 	tracepoint(lttng_ust_statedump, start, session);
 }
 
 static
-void trace_end_cb(struct lttng_ust_session *session, void *priv)
+void trace_end_cb(struct lttng_ust_session *session, void *priv __attribute__((unused)))
 {
 	tracepoint(lttng_ust_statedump, end, session);
 }
@@ -444,7 +444,7 @@ end:
 }
 
 static
-int extract_bin_info_events(struct dl_phdr_info *info, size_t size, void *_data)
+int extract_bin_info_events(struct dl_phdr_info *info, size_t size __attribute__((unused)), void *_data)
 {
 	int j, ret = 0;
 	struct dl_iterate_data *data = _data;

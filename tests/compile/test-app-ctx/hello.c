@@ -42,7 +42,7 @@ void test_inc_count(void)
 }
 
 static
-size_t test_get_size(struct lttng_ust_ctx_field *field, size_t offset)
+size_t test_get_size(struct lttng_ust_ctx_field *field __attribute__((unused)), size_t offset)
 {
 	int sel = test_count % _NR_LTTNG_UST_DYNAMIC_TYPES;
 	size_t size = 0;
@@ -103,7 +103,7 @@ size_t test_get_size(struct lttng_ust_ctx_field *field, size_t offset)
 }
 
 static
-void test_record(struct lttng_ust_ctx_field *field,
+void test_record(struct lttng_ust_ctx_field *field __attribute__((unused)),
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		 struct lttng_ust_channel_buffer *lttng_chan_buf)
 {
@@ -196,7 +196,7 @@ void test_record(struct lttng_ust_ctx_field *field,
 }
 
 static
-void test_get_value(struct lttng_ust_ctx_field *field,
+void test_get_value(struct lttng_ust_ctx_field *field __attribute__((unused)),
 		struct lttng_ust_ctx_value *value)
 {
 	int sel = test_count % _NR_LTTNG_UST_DYNAMIC_TYPES;
@@ -253,7 +253,7 @@ struct lttng_ust_context_provider myprovider = {
 };
 
 static
-void inthandler(int sig)
+void inthandler(int sig __attribute__((unused)))
 {
 	printf("in SIGUSR1 handler\n");
 	tracepoint(ust_tests_hello, tptest_sighandler);

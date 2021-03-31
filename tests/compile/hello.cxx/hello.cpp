@@ -21,7 +21,7 @@
 #include "ust_tests_hello.h"
 
 static
-void inthandler(int sig)
+void inthandler(int sig __attribute__((unused)))
 {
 	printf("in SIGUSR1 handler\n");
 	tracepoint(ust_tests_hello, tptest_sighandler);

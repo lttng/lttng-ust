@@ -23,8 +23,9 @@ static size_t lttng_counter_get_dimension_nr_elements(struct lib_counter_dimensi
 	return dimension->max_nr_elem;
 }
 
-static int lttng_counter_init_stride(const struct lib_counter_config *config,
-				      struct lib_counter *counter)
+static int lttng_counter_init_stride(
+		const struct lib_counter_config *config __attribute__((unused)),
+		struct lib_counter *counter)
 {
 	size_t nr_dimensions = counter->nr_dimensions;
 	size_t stride = 1;
@@ -162,7 +163,7 @@ int lttng_counter_set_global_sum_step(struct lib_counter *counter,
 
 static
 int validate_args(const struct lib_counter_config *config,
-	size_t nr_dimensions,
+	size_t nr_dimensions __attribute__((unused)),
 	const size_t *max_nr_elem,
 	int64_t global_sum_step,
 	int global_counter_fd,

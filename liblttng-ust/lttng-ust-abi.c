@@ -323,7 +323,7 @@ objd_error:
 }
 
 static
-long lttng_abi_tracer_version(int objd,
+long lttng_abi_tracer_version(int objd __attribute__((unused)),
 	struct lttng_ust_abi_tracer_version *v)
 {
 	v->major = LTTNG_UST_MAJOR_VERSION;
@@ -377,7 +377,7 @@ fd_error:
 }
 
 static
-long lttng_abi_add_context(int objd,
+long lttng_abi_add_context(int objd __attribute__((unused)),
 	struct lttng_ust_abi_context *context_param,
 	union lttng_ust_abi_args *uargs,
 	struct lttng_ust_ctx **ctx, struct lttng_ust_session *session)
@@ -714,7 +714,8 @@ objd_error:
 
 static
 long lttng_event_notifier_enabler_cmd(int objd, unsigned int cmd, unsigned long arg,
-		union lttng_ust_abi_args *uargs, void *owner)
+		union lttng_ust_abi_args *uargs __attribute__((unused)),
+		void *owner __attribute__((unused)))
 {
 	struct lttng_event_notifier_enabler *event_notifier_enabler = objd_private(objd);
 	switch (cmd) {
@@ -755,7 +756,7 @@ long lttng_event_notifier_enabler_cmd(int objd, unsigned int cmd, unsigned long 
  */
 static
 long lttng_event_notifier_group_error_counter_cmd(int objd, unsigned int cmd, unsigned long arg,
-	union lttng_ust_abi_args *uargs, void *owner)
+	union lttng_ust_abi_args *uargs, void *owner __attribute__((unused)))
 {
 	int ret;
 	struct lttng_counter *counter = objd_private(objd);
@@ -956,7 +957,8 @@ static const struct lttng_ust_abi_objd_ops lttng_event_notifier_group_ops = {
 
 static
 long lttng_tracepoint_list_cmd(int objd, unsigned int cmd, unsigned long arg,
-	union lttng_ust_abi_args *uargs, void *owner)
+	union lttng_ust_abi_args *uargs __attribute__((unused)),
+	void *owner __attribute__((unused)))
 {
 	struct lttng_ust_tracepoint_list *list = objd_private(objd);
 	struct lttng_ust_abi_tracepoint_iter *tp =
@@ -1036,7 +1038,8 @@ static const struct lttng_ust_abi_objd_ops lttng_tracepoint_list_ops = {
 
 static
 long lttng_tracepoint_field_list_cmd(int objd, unsigned int cmd,
-	unsigned long arg, union lttng_ust_abi_args *uargs, void *owner)
+	unsigned long arg __attribute__((unused)), union lttng_ust_abi_args *uargs,
+	void *owner __attribute__((unused)))
 {
 	struct lttng_ust_field_list *list = objd_private(objd);
 	struct lttng_ust_abi_field_iter *tp = &uargs->field_list.entry;
@@ -1116,7 +1119,7 @@ static const struct lttng_ust_abi_objd_ops lttng_tracepoint_field_list_ops = {
 
 static
 int lttng_abi_map_stream(int channel_objd, struct lttng_ust_abi_stream *info,
-		union lttng_ust_abi_args *uargs, void *owner)
+		union lttng_ust_abi_args *uargs, void *owner __attribute__((unused)))
 {
 	struct lttng_ust_channel_buffer *lttng_chan_buf = objd_private(channel_objd);
 	int ret;
@@ -1297,7 +1300,8 @@ static const struct lttng_ust_abi_objd_ops lttng_channel_ops = {
  */
 static
 long lttng_event_enabler_cmd(int objd, unsigned int cmd, unsigned long arg,
-	union lttng_ust_abi_args *uargs, void *owner)
+	union lttng_ust_abi_args *uargs __attribute__((unused)),
+	void *owner __attribute__((unused)))
 {
 	struct lttng_event_enabler *enabler = objd_private(objd);
 

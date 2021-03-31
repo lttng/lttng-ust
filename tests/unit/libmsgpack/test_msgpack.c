@@ -255,7 +255,7 @@ static void nil_test(uint8_t *buf)
 	lttng_msgpack_writer_fini(&writer);
 }
 
-int main(int argc, char *argv[])
+int main(void)
 {
 	uint8_t buf[BUFFER_SIZE] = {0};
 	double arr_double[] = {1.1, 2.3, -12345.2};

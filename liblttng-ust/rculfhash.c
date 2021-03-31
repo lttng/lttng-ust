@@ -334,7 +334,8 @@ void lttng_ust_lfht_iter_debug_set_ht(struct lttng_ust_lfht *ht, struct lttng_us
 #else
 
 static
-void lttng_ust_lfht_iter_debug_set_ht(struct lttng_ust_lfht *ht, struct lttng_ust_lfht_iter *iter)
+void lttng_ust_lfht_iter_debug_set_ht(struct lttng_ust_lfht *ht __attribute__((unused)),
+		struct lttng_ust_lfht_iter *iter __attribute__((unused)))
 {
 }
 
@@ -1105,7 +1106,8 @@ void lttng_ust_lfht_lookup(struct lttng_ust_lfht *ht, unsigned long hash,
 	iter->next = next;
 }
 
-void lttng_ust_lfht_next_duplicate(struct lttng_ust_lfht *ht, lttng_ust_lfht_match_fct match,
+void lttng_ust_lfht_next_duplicate(struct lttng_ust_lfht *ht __attribute__((unused)),
+		lttng_ust_lfht_match_fct match,
 		const void *key, struct lttng_ust_lfht_iter *iter)
 {
 	struct lttng_ust_lfht_node *node, *next;
@@ -1139,7 +1141,8 @@ void lttng_ust_lfht_next_duplicate(struct lttng_ust_lfht *ht, lttng_ust_lfht_mat
 	iter->next = next;
 }
 
-void lttng_ust_lfht_next(struct lttng_ust_lfht *ht, struct lttng_ust_lfht_iter *iter)
+void lttng_ust_lfht_next(struct lttng_ust_lfht *ht __attribute__((unused)),
+		struct lttng_ust_lfht_iter *iter)
 {
 	struct lttng_ust_lfht_node *node, *next;
 

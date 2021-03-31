@@ -158,7 +158,8 @@ void lttng_perf_unlock(void)
 }
 
 static
-size_t perf_counter_get_size(struct lttng_ust_ctx_field *field, size_t offset)
+size_t perf_counter_get_size(struct lttng_ust_ctx_field *field __attribute__((unused)),
+		size_t offset)
 {
 	size_t size = 0;
 

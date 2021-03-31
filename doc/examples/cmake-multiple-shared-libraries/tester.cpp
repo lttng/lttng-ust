@@ -7,7 +7,7 @@
 #include "aligner-lib.h"
 #include "tester-lib.h"
 
-int main(int argc, char **argv)
+int main(void)
 {
 	/* Generate alignment */
 	align_query("moleculeX");

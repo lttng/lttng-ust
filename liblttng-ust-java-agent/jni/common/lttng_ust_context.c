@@ -311,7 +311,7 @@ static void get_value_cb(struct lttng_ust_ctx_field *field,
  * so we create and register a corresponding provider on the C side.
  */
 JNIEXPORT jlong JNICALL Java_org_lttng_ust_agent_context_LttngContextApi_registerProvider(JNIEnv *env,
-						jobject jobj,
+						jobject jobj __attribute__((unused)),
 						jstring provider_name)
 {
 	jboolean iscopy;
@@ -367,8 +367,8 @@ error_jstr:
  * Called from the Java side when an application unregisters a context retriever,
  * so we unregister and delete the corresponding provider on the C side.
  */
-JNIEXPORT void JNICALL Java_org_lttng_ust_agent_context_LttngContextApi_unregisterProvider(JNIEnv *env,
-						jobject jobj,
+JNIEXPORT void JNICALL Java_org_lttng_ust_agent_context_LttngContextApi_unregisterProvider(JNIEnv *env __attribute__((unused)),
+						jobject jobj __attribute__((unused)),
 						jlong provider_ref)
 {
 	struct lttng_ust_context_provider *provider =

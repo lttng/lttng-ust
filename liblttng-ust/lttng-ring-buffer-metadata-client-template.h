@@ -40,18 +40,20 @@ static const struct lttng_ust_lib_ring_buffer_config client_config;
 /* No nested use supported for metadata ring buffer. */
 static DEFINE_URCU_TLS(struct lttng_ust_lib_ring_buffer_ctx_private, private_ctx);
 
-static inline uint64_t lib_ring_buffer_clock_read(struct lttng_ust_lib_ring_buffer_channel *chan)
+static inline uint64_t lib_ring_buffer_clock_read(
+		struct lttng_ust_lib_ring_buffer_channel *chan __attribute__((unused)))
 {
 	return 0;
 }
 
 static inline
-size_t record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
-				 struct lttng_ust_lib_ring_buffer_channel *chan,
-				 size_t offset,
-				 size_t *pre_header_padding,
-				 struct lttng_ust_lib_ring_buffer_ctx *ctx,
-				 void *client_ctx)
+size_t record_header_size(
+		const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)),
+		struct lttng_ust_lib_ring_buffer_channel *chan __attribute__((unused)),
+		size_t offset __attribute__((unused)),
+		size_t *pre_header_padding __attribute__((unused)),
+		struct lttng_ust_lib_ring_buffer_ctx *ctx __attribute__((unused)),
+		void *client_ctx __attribute__((unused)))
 {
 	return 0;
 }
@@ -59,18 +61,20 @@ size_t record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
 #include "../libringbuffer/api.h"
 #include "lttng-rb-clients.h"
 
-static uint64_t client_ring_buffer_clock_read(struct lttng_ust_lib_ring_buffer_channel *chan)
+static uint64_t client_ring_buffer_clock_read(
+		struct lttng_ust_lib_ring_buffer_channel *chan __attribute__((unused)))
 {
 	return 0;
 }
 
 static
-size_t client_record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
-				 struct lttng_ust_lib_ring_buffer_channel *chan,
-				 size_t offset,
-				 size_t *pre_header_padding,
-				 struct lttng_ust_lib_ring_buffer_ctx *ctx,
-				 void *client_ctx)
+size_t client_record_header_size(
+		const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)),
+		struct lttng_ust_lib_ring_buffer_channel *chan __attribute__((unused)),
+		size_t offset __attribute__((unused)),
+		size_t *pre_header_padding __attribute__((unused)),
+		struct lttng_ust_lib_ring_buffer_ctx *ctx __attribute__((unused)),
+		void *client_ctx __attribute__((unused)))
 {
 	return 0;
 }
@@ -87,9 +91,10 @@ static size_t client_packet_header_size(void)
 	return offsetof(struct metadata_packet_header, header_end);
 }
 
-static void client_buffer_begin(struct lttng_ust_lib_ring_buffer *buf, uint64_t tsc,
-				unsigned int subbuf_idx,
-				struct lttng_ust_shm_handle *handle)
+static void client_buffer_begin(struct lttng_ust_lib_ring_buffer *buf,
+		uint64_t tsc __attribute__((unused)),
+		unsigned int subbuf_idx,
+		struct lttng_ust_shm_handle *handle)
 {
 	struct lttng_ust_lib_ring_buffer_channel *chan = shmp(handle, buf->backend.chan);
 	struct metadata_packet_header *header =
@@ -118,9 +123,10 @@ static void client_buffer_begin(struct lttng_ust_lib_ring_buffer *buf, uint64_t 
  * offset is assumed to never be 0 here : never deliver a completely empty
  * subbuffer. data_size is between 1 and subbuf_size.
  */
-static void client_buffer_end(struct lttng_ust_lib_ring_buffer *buf, uint64_t tsc,
-			      unsigned int subbuf_idx, unsigned long data_size,
-			      struct lttng_ust_shm_handle *handle)
+static void client_buffer_end(struct lttng_ust_lib_ring_buffer *buf,
+		uint64_t tsc  __attribute__((unused)),
+		unsigned int subbuf_idx, unsigned long data_size,
+		struct lttng_ust_shm_handle *handle)
 {
 	struct lttng_ust_lib_ring_buffer_channel *chan = shmp(handle, buf->backend.chan);
 	struct metadata_packet_header *header =
@@ -145,16 +151,21 @@ static void client_buffer_end(struct lttng_ust_lib_ring_buffer *buf, uint64_t ts
 	WARN_ON_ONCE(records_lost != 0);
 }
 
-static int client_buffer_create(struct lttng_ust_lib_ring_buffer *buf, void *priv,
-				int cpu, const char *name,
-				struct lttng_ust_shm_handle *handle)
+static int client_buffer_create(
+		struct lttng_ust_lib_ring_buffer *buf __attribute__((unused)),
+		void *priv __attribute__((unused)),
+		int cpu __attribute__((unused)),
+		const char *name __attribute__((unused)),
+		struct lttng_ust_shm_handle *handle __attribute__((unused)))
 {
 	return 0;
 }
 
-static void client_buffer_finalize(struct lttng_ust_lib_ring_buffer *buf,
-				   void *priv, int cpu,
-				   struct lttng_ust_shm_handle *handle)
+static void client_buffer_finalize(
+		struct lttng_ust_lib_ring_buffer *buf __attribute__((unused)),
+		void *priv __attribute__((unused)),
+		int cpu __attribute__((unused)),
+		struct lttng_ust_shm_handle *handle __attribute__((unused)))
 {
 }
 

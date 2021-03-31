@@ -209,7 +209,8 @@ error_type:
  * (unknown), negative error value on error.
  */
 static
-int bin_op_bitwise_check(struct vstack *stack, bytecode_opcode_t opcode,
+int bin_op_bitwise_check(struct vstack *stack,
+		bytecode_opcode_t opcode __attribute__((unused)),
 		const char *str)
 {
 	if (unlikely(!vstack_ax(stack) || !vstack_bx(stack)))
@@ -553,7 +554,8 @@ unsigned long delete_all_nodes(struct lttng_ust_lfht *ht)
  * <0: error
  */
 static
-int validate_instruction_context(struct bytecode_runtime *bytecode,
+int validate_instruction_context(
+		struct bytecode_runtime *bytecode __attribute__((unused)),
 		struct vstack *stack,
 		char *start_pc,
 		char *pc)
@@ -1254,7 +1256,7 @@ int validate_instruction_all_contexts(struct bytecode_runtime *bytecode,
  * <0: error
  */
 static
-int exec_insn(struct bytecode_runtime *bytecode,
+int exec_insn(struct bytecode_runtime *bytecode __attribute__((unused)),
 		struct lttng_ust_lfht *merge_points,
 		struct vstack *stack,
 		char **_next_pc,

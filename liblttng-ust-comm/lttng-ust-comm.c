@@ -698,7 +698,7 @@ error:
 }
 
 int ustcomm_recv_stream_from_sessiond(int sock,
-		uint64_t *memory_map_size,
+		uint64_t *memory_map_size __attribute__((unused)),
 		int *shm_fd, int *wakeup_fd)
 {
 	ssize_t len;

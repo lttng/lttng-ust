@@ -12,7 +12,7 @@
 #include "lttng_ust_java.h"
 
 JNIEXPORT void JNICALL Java_org_lttng_ust_LTTngUst_tracepointInt(JNIEnv *env,
-						jobject jobj,
+						jobject jobj __attribute__((unused)),
 						jstring ev_name,
 						jint payload)
 {
@@ -25,7 +25,7 @@ JNIEXPORT void JNICALL Java_org_lttng_ust_LTTngUst_tracepointInt(JNIEnv *env,
 }
 
 JNIEXPORT void JNICALL Java_org_lttng_ust_LTTngUst_tracepointIntInt(JNIEnv *env,
-						jobject jobj,
+						jobject jobj __attribute__((unused)),
 						jstring ev_name,
 						jint payload1,
 						jint payload2)
@@ -39,7 +39,7 @@ JNIEXPORT void JNICALL Java_org_lttng_ust_LTTngUst_tracepointIntInt(JNIEnv *env,
 }
 
 JNIEXPORT void JNICALL Java_org_lttng_ust_LTTngUst_tracepointLong(JNIEnv *env,
-						jobject jobj,
+						jobject jobj  __attribute__((unused)),
 						jstring ev_name,
 						jlong payload)
 {
@@ -52,7 +52,7 @@ JNIEXPORT void JNICALL Java_org_lttng_ust_LTTngUst_tracepointLong(JNIEnv *env,
 }
 
 JNIEXPORT void JNICALL Java_org_lttng_ust_LTTngUst_tracepointLongLong(JNIEnv *env,
-						jobject jobj,
+						jobject jobj  __attribute__((unused)),
 						jstring ev_name,
 						jlong payload1,
 						jlong payload2)
@@ -66,7 +66,7 @@ JNIEXPORT void JNICALL Java_org_lttng_ust_LTTngUst_tracepointLongLong(JNIEnv *en
 }
 
 JNIEXPORT void JNICALL Java_org_lttng_ust_LTTngUst_tracepointString(JNIEnv *env,
-						jobject jobj,
+						jobject jobj __attribute__((unused)),
 						jstring ev_name,
 						jstring payload)
 {

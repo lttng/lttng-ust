@@ -14,9 +14,10 @@
 #include <urcu/compiler.h>
 #include "counter-types.h"
 
-static inline int lttng_counter_validate_indexes(const struct lib_counter_config *config,
-						 struct lib_counter *counter,
-						 const size_t *dimension_indexes)
+static inline int lttng_counter_validate_indexes(
+		const struct lib_counter_config *config __attribute__((unused)),
+		struct lib_counter *counter,
+		const size_t *dimension_indexes)
 {
 	size_t nr_dimensions = counter->nr_dimensions, i;
 
@@ -28,9 +29,10 @@ static inline int lttng_counter_validate_indexes(const struct lib_counter_config
 }
 
 
-static inline size_t lttng_counter_get_index(const struct lib_counter_config *config,
-					     struct lib_counter *counter,
-					     const size_t *dimension_indexes)
+static inline size_t lttng_counter_get_index(
+		const struct lib_counter_config *config __attribute__((unused)),
+		struct lib_counter *counter,
+		const size_t *dimension_indexes)
 {
 	size_t nr_dimensions = counter->nr_dimensions, i;
 	size_t index = 0;

@@ -65,7 +65,7 @@ static
 void ust_malloc_spin_lock(pthread_mutex_t *lock)
 	__attribute__((unused));
 static
-void ust_malloc_spin_lock(pthread_mutex_t *lock)
+void ust_malloc_spin_lock(pthread_mutex_t *lock __attribute__((unused)))
 {
 	/*
 	 * The memory barrier within cmpxchg takes care of ordering
@@ -80,7 +80,7 @@ static
 void ust_malloc_spin_unlock(pthread_mutex_t *lock)
 	__attribute__((unused));
 static
-void ust_malloc_spin_unlock(pthread_mutex_t *lock)
+void ust_malloc_spin_unlock(pthread_mutex_t *lock __attribute__((unused)))
 {
 	/*
 	 * Ensure memory accesses within the critical section do not
@@ -150,7 +150,7 @@ void *static_malloc(size_t size)
 }
 
 static
-void static_free(void *ptr)
+void static_free(void *ptr __attribute__((unused)))
 {
 	/* no-op. */
 }

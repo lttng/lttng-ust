@@ -122,8 +122,9 @@ unsigned long subbuffer_id(const struct lttng_ust_lib_ring_buffer_config *config
  * bits are identical, else 0.
  */
 static inline
-int subbuffer_id_compare_offset(const struct lttng_ust_lib_ring_buffer_config *config,
-				unsigned long id, unsigned long offset)
+int subbuffer_id_compare_offset(
+		const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)),
+		unsigned long id, unsigned long offset)
 {
 	return (id & SB_ID_OFFSET_MASK) == (offset << SB_ID_OFFSET_SHIFT);
 }
@@ -241,7 +242,8 @@ int lib_ring_buffer_backend_get_pages(const struct lttng_ust_lib_ring_buffer_con
 /* Get backend pages from cache. */
 static inline
 struct lttng_ust_lib_ring_buffer_backend_pages *
-	lib_ring_buffer_get_backend_pages_from_ctx(const struct lttng_ust_lib_ring_buffer_config *config,
+	lib_ring_buffer_get_backend_pages_from_ctx(
+		const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)),
 		struct lttng_ust_lib_ring_buffer_ctx *ctx)
 {
 	return ctx->priv->backend_pages;
@@ -269,10 +271,11 @@ void subbuffer_count_record(const struct lttng_ust_lib_ring_buffer_config *confi
 }
 #else /* LTTNG_RING_BUFFER_COUNT_EVENTS */
 static inline
-void subbuffer_count_record(const struct lttng_ust_lib_ring_buffer_config *config,
-			    const struct lttng_ust_lib_ring_buffer_ctx *ctx,
-			    struct lttng_ust_lib_ring_buffer_backend *bufb,
-			    unsigned long idx, struct lttng_ust_shm_handle *handle)
+void subbuffer_count_record(const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)),
+		const struct lttng_ust_lib_ring_buffer_ctx *ctx __attribute__((unused)),
+		struct lttng_ust_lib_ring_buffer_backend *bufb __attribute__((unused)),
+		unsigned long idx __attribute__((unused)),
+		struct lttng_ust_shm_handle *handle __attribute__((unused)))
 {
 }
 #endif /* #else LTTNG_RING_BUFFER_COUNT_EVENTS */
@@ -440,7 +443,8 @@ unsigned long subbuffer_get_data_size(
 }
 
 static inline
-void subbuffer_inc_packet_count(const struct lttng_ust_lib_ring_buffer_config *config,
+void subbuffer_inc_packet_count(
+		const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)),
 		struct lttng_ust_lib_ring_buffer_backend *bufb,
 		unsigned long idx, struct lttng_ust_shm_handle *handle)
 {
@@ -544,7 +548,7 @@ void lib_ring_buffer_set_noref_offset(const struct lttng_ust_lib_ring_buffer_con
 static inline
 int update_read_sb_index(const struct lttng_ust_lib_ring_buffer_config *config,
 			 struct lttng_ust_lib_ring_buffer_backend *bufb,
-			 struct channel_backend *chanb,
+			 struct channel_backend *chanb __attribute__((unused)),
 			 unsigned long consumed_idx,
 			 unsigned long consumed_count,
 			 struct lttng_ust_shm_handle *handle)

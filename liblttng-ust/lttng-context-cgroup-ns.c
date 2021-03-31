@@ -91,7 +91,8 @@ void lttng_context_cgroup_ns_reset(void)
 }
 
 static
-size_t cgroup_ns_get_size(struct lttng_ust_ctx_field *field, size_t offset)
+size_t cgroup_ns_get_size(struct lttng_ust_ctx_field *field __attribute__((unused)),
+		size_t offset)
 {
 	size_t size = 0;
 
@@ -101,7 +102,7 @@ size_t cgroup_ns_get_size(struct lttng_ust_ctx_field *field, size_t offset)
 }
 
 static
-void cgroup_ns_record(struct lttng_ust_ctx_field *field,
+void cgroup_ns_record(struct lttng_ust_ctx_field *field __attribute__((unused)),
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		 struct lttng_ust_channel_buffer *chan)
 {
@@ -113,7 +114,7 @@ void cgroup_ns_record(struct lttng_ust_ctx_field *field,
 }
 
 static
-void cgroup_ns_get_value(struct lttng_ust_ctx_field *field,
+void cgroup_ns_get_value(struct lttng_ust_ctx_field *field __attribute__((unused)),
 		struct lttng_ust_ctx_value *value)
 {
 	value->u.s64 = get_cgroup_ns();

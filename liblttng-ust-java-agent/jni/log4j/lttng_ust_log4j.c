@@ -18,7 +18,7 @@
  * Deprecated function from before the context information was passed.
  */
 JNIEXPORT void JNICALL Java_org_lttng_ust_agent_log4j_LttngLog4jApi_tracepoint(JNIEnv *env,
-						jobject jobj,
+						jobject jobj __attribute__((unused)),
 						jstring msg,
 						jstring logger_name,
 						jstring class_name,
@@ -53,7 +53,7 @@ JNIEXPORT void JNICALL Java_org_lttng_ust_agent_log4j_LttngLog4jApi_tracepoint(J
  * Tracepoint used by Java applications using the log4j handler.
  */
 JNIEXPORT void JNICALL Java_org_lttng_ust_agent_log4j_LttngLog4jApi_tracepointWithContext(JNIEnv *env,
-						jobject jobj,
+						jobject jobj __attribute__((unused)),
 						jstring msg,
 						jstring logger_name,
 						jstring class_name,

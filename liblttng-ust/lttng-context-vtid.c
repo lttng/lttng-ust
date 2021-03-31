@@ -37,7 +37,8 @@ void lttng_context_vtid_reset(void)
 }
 
 static
-size_t vtid_get_size(struct lttng_ust_ctx_field *field, size_t offset)
+size_t vtid_get_size(struct lttng_ust_ctx_field *field __attribute__((unused)),
+		size_t offset)
 {
 	size_t size = 0;
 
@@ -60,7 +61,7 @@ pid_t wrapper_getvtid(void)
 }
 
 static
-void vtid_record(struct lttng_ust_ctx_field *field,
+void vtid_record(struct lttng_ust_ctx_field *field __attribute__((unused)),
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		 struct lttng_ust_channel_buffer *chan)
 {
@@ -70,7 +71,7 @@ void vtid_record(struct lttng_ust_ctx_field *field,
 }
 
 static
-void vtid_get_value(struct lttng_ust_ctx_field *field,
+void vtid_get_value(struct lttng_ust_ctx_field *field __attribute__((unused)),
 		struct lttng_ust_ctx_value *value)
 {
 	value->u.s64 = wrapper_getvtid();

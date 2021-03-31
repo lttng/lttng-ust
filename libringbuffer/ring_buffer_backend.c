@@ -33,7 +33,7 @@
 static
 int lib_ring_buffer_backend_allocate(const struct lttng_ust_lib_ring_buffer_config *config,
 				     struct lttng_ust_lib_ring_buffer_backend *bufb,
-				     size_t size, size_t num_subbuf,
+				     size_t size __attribute__((unused)), size_t num_subbuf,
 				     int extra_reader_sb,
 				     struct lttng_ust_shm_handle *handle,
 				     struct shm_object *shmobj)
@@ -395,8 +395,8 @@ end:
  *
  * Destroy all channel buffers and frees the channel.
  */
-void channel_backend_free(struct channel_backend *chanb,
-			  struct lttng_ust_shm_handle *handle)
+void channel_backend_free(struct channel_backend *chanb __attribute__((unused)),
+			  struct lttng_ust_shm_handle *handle __attribute__((unused)))
 {
 	/* SHM teardown takes care of everything */
 }

@@ -174,7 +174,7 @@ const char *lttng_bytecode_print_op(enum bytecode_op op)
 static
 int apply_field_reloc(const struct lttng_ust_event_desc *event_desc,
 		struct bytecode_runtime *runtime,
-		uint32_t runtime_len,
+		uint32_t runtime_len __attribute__((unused)),
 		uint32_t reloc_offset,
 		const char *field_name,
 		enum bytecode_op bytecode_op)
@@ -282,7 +282,7 @@ int apply_field_reloc(const struct lttng_ust_event_desc *event_desc,
 
 static
 int apply_context_reloc(struct bytecode_runtime *runtime,
-		uint32_t runtime_len,
+		uint32_t runtime_len __attribute__((unused)),
 		uint32_t reloc_offset,
 		const char *context_name,
 		enum bytecode_op bytecode_op)

@@ -109,7 +109,8 @@ size_t lib_ring_buffer_do_strcpy(const struct lttng_ust_lib_ring_buffer_config *
 		char *dest, const char *src, size_t len)
 	__attribute__((always_inline));
 static inline
-size_t lib_ring_buffer_do_strcpy(const struct lttng_ust_lib_ring_buffer_config *config,
+size_t lib_ring_buffer_do_strcpy(
+		const struct lttng_ust_lib_ring_buffer_config *config  __attribute__((unused)),
 		char *dest, const char *src, size_t len)
 {
 	size_t count;

@@ -14,7 +14,7 @@
 #define TRACEPOINT_DEFINE
 #include "sample_component_provider.h"
 
-int main(int argc, char **argv)
+int main(void)
 {
 	int i = 0;
 

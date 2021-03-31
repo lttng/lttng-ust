@@ -66,13 +66,14 @@ void lttng_ust_context_procname_reset(void)
 }
 
 static
-size_t procname_get_size(struct lttng_ust_ctx_field *field, size_t offset)
+size_t procname_get_size(struct lttng_ust_ctx_field *field __attribute__((unused)),
+		size_t offset __attribute__((unused)))
 {
 	return LTTNG_UST_ABI_PROCNAME_LEN;
 }
 
 static
-void procname_record(struct lttng_ust_ctx_field *field,
+void procname_record(struct lttng_ust_ctx_field *field __attribute__((unused)),
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		 struct lttng_ust_channel_buffer *chan)
 {
@@ -83,7 +84,7 @@ void procname_record(struct lttng_ust_ctx_field *field,
 }
 
 static
-void procname_get_value(struct lttng_ust_ctx_field *field,
+void procname_get_value(struct lttng_ust_ctx_field *field __attribute__((unused)),
 		struct lttng_ust_ctx_value *value)
 {
 	value->u.str = wrapper_getprocname();

@@ -54,7 +54,7 @@ void do_stuff(void)
 
 
 static
-void *function(void *arg)
+void *function(void *arg __attribute__((unused)))
 {
 	unsigned long long nr_loops = 0;
 	struct thread_counter *thread_counter = arg;

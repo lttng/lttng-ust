@@ -1654,8 +1654,9 @@ int lttng_attach_context(struct lttng_ust_abi_context *context_param,
 	}
 }
 
-int lttng_event_enabler_attach_context(struct lttng_event_enabler *enabler,
-		struct lttng_ust_abi_context *context_param)
+int lttng_event_enabler_attach_context(
+		struct lttng_event_enabler *enabler __attribute__((unused)),
+		struct lttng_ust_abi_context *context_param __attribute__((unused)))
 {
 	return -ENOSYS;
 }

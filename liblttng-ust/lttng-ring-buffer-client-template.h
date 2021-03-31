@@ -83,7 +83,8 @@ void RING_BUFFER_MODE_TEMPLATE_TLS_FIXUP(void)
 	asm volatile ("" : : "m" (URCU_TLS(private_ctx_stack)));
 }
 
-static inline uint64_t lib_ring_buffer_clock_read(struct lttng_ust_lib_ring_buffer_channel *chan)
+static inline uint64_t lib_ring_buffer_clock_read(
+		struct lttng_ust_lib_ring_buffer_channel *chan __attribute__((unused)))
 {
 	return trace_clock_read64();
 }
@@ -184,12 +185,13 @@ void ctx_record(struct lttng_ust_lib_ring_buffer_ctx *bufctx,
  * contains.
  */
 static __inline__
-size_t record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
-				 struct lttng_ust_lib_ring_buffer_channel *chan,
-				 size_t offset,
-				 size_t *pre_header_padding,
-				 struct lttng_ust_lib_ring_buffer_ctx *ctx,
-				 struct lttng_client_ctx *client_ctx)
+size_t record_header_size(
+		const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)),
+		struct lttng_ust_lib_ring_buffer_channel *chan,
+		size_t offset,
+		size_t *pre_header_padding,
+		struct lttng_ust_lib_ring_buffer_ctx *ctx,
+		struct lttng_client_ctx *client_ctx)
 {
 	struct lttng_ust_channel_buffer *lttng_chan = channel_get_private(chan);
 	size_t orig_offset = offset;
@@ -467,25 +469,35 @@ static void client_buffer_end(struct lttng_ust_lib_ring_buffer *buf, uint64_t ts
 	header->ctx.events_discarded = records_lost;
 }
 
-static int client_buffer_create(struct lttng_ust_lib_ring_buffer *buf, void *priv,
-				int cpu, const char *name, struct lttng_ust_shm_handle *handle)
+static int client_buffer_create(
+		struct lttng_ust_lib_ring_buffer *buf __attribute__((unused)),
+		void *priv __attribute__((unused)),
+		int cpu __attribute__((unused)),
+		const char *name __attribute__((unused)),
+		struct lttng_ust_shm_handle *handle __attribute__((unused)))
 {
 	return 0;
 }
 
-static void client_buffer_finalize(struct lttng_ust_lib_ring_buffer *buf, void *priv, int cpu, struct lttng_ust_shm_handle *handle)
+static void client_buffer_finalize(
+		struct lttng_ust_lib_ring_buffer *buf __attribute__((unused)),
+		void *priv __attribute__((unused)),
+		int cpu __attribute__((unused)),
+		struct lttng_ust_shm_handle *handle __attribute__((unused)))
 {
 }
 
-static void client_content_size_field(const struct lttng_ust_lib_ring_buffer_config *config,
-				      size_t *offset, size_t *length)
+static void client_content_size_field(
+		const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)),
+		size_t *offset, size_t *length)
 {
 	*offset = offsetof(struct packet_header, ctx.content_size);
 	*length = sizeof(((struct packet_header *) NULL)->ctx.content_size);
 }
 
-static void client_packet_size_field(const struct lttng_ust_lib_ring_buffer_config *config,
-				      size_t *offset, size_t *length)
+static void client_packet_size_field(
+		const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)),
+		size_t *offset, size_t *length)
 {
 	*offset = offsetof(struct packet_header, ctx.packet_size);
 	*length = sizeof(((struct packet_header *) NULL)->ctx.packet_size);
@@ -567,7 +579,7 @@ static int client_packet_size(struct lttng_ust_lib_ring_buffer *buf,
 	return 0;
 }
 
-static int client_stream_id(struct lttng_ust_lib_ring_buffer *buf,
+static int client_stream_id(struct lttng_ust_lib_ring_buffer *buf __attribute__((unused)),
 		struct lttng_ust_lib_ring_buffer_channel *chan,
 		uint64_t *stream_id)
 {
@@ -578,7 +590,8 @@ static int client_stream_id(struct lttng_ust_lib_ring_buffer *buf,
 	return 0;
 }
 
-static int client_current_timestamp(struct lttng_ust_lib_ring_buffer *buf,
+static int client_current_timestamp(
+		struct lttng_ust_lib_ring_buffer *buf  __attribute__((unused)),
 		struct lttng_ust_lib_ring_buffer_channel *chan,
 		uint64_t *ts)
 {
@@ -602,7 +615,7 @@ static int client_sequence_number(struct lttng_ust_lib_ring_buffer *buf,
 }
 
 static int client_instance_id(struct lttng_ust_lib_ring_buffer *buf,
-		struct lttng_ust_lib_ring_buffer_channel *chan,
+		struct lttng_ust_lib_ring_buffer_channel *chan __attribute__((unused)),
 		uint64_t *id)
 {
 	*id = buf->backend.cpu;

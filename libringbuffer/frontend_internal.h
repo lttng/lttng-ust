@@ -322,13 +322,14 @@ void lib_ring_buffer_check_deliver(const struct lttng_ust_lib_ring_buffer_config
  * useful for crash dump.
  */
 static inline
-void lib_ring_buffer_write_commit_counter(const struct lttng_ust_lib_ring_buffer_config *config,
-					  struct lttng_ust_lib_ring_buffer *buf,
-				          struct lttng_ust_lib_ring_buffer_channel *chan,
-				          unsigned long buf_offset,
-				          unsigned long commit_count,
-					  struct lttng_ust_shm_handle *handle,
-					  struct commit_counters_hot *cc_hot)
+void lib_ring_buffer_write_commit_counter(
+		const struct lttng_ust_lib_ring_buffer_config *config,
+		struct lttng_ust_lib_ring_buffer *buf __attribute__((unused)),
+		struct lttng_ust_lib_ring_buffer_channel *chan,
+		unsigned long buf_offset,
+		unsigned long commit_count,
+		struct lttng_ust_shm_handle *handle __attribute__((unused)),
+		struct commit_counters_hot *cc_hot)
 {
 	unsigned long commit_seq_old;
 

@@ -73,7 +73,8 @@ void lttng_context_user_ns_reset(void)
 }
 
 static
-size_t user_ns_get_size(struct lttng_ust_ctx_field *field, size_t offset)
+size_t user_ns_get_size(struct lttng_ust_ctx_field *field __attribute__((unused)),
+		size_t offset)
 {
 	size_t size = 0;
 
@@ -83,7 +84,7 @@ size_t user_ns_get_size(struct lttng_ust_ctx_field *field, size_t offset)
 }
 
 static
-void user_ns_record(struct lttng_ust_ctx_field *field,
+void user_ns_record(struct lttng_ust_ctx_field *field __attribute__((unused)),
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		 struct lttng_ust_channel_buffer *chan)
 {
@@ -94,7 +95,7 @@ void user_ns_record(struct lttng_ust_ctx_field *field,
 }
 
 static
-void user_ns_get_value(struct lttng_ust_ctx_field *field,
+void user_ns_get_value(struct lttng_ust_ctx_field *field __attribute__((unused)),
 		struct lttng_ust_ctx_value *value)
 {
 	value->u.s64 = get_user_ns();

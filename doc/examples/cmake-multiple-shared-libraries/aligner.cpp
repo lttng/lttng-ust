@@ -6,7 +6,7 @@
 
 #include "aligner-lib.h"
 
-int main(int argc, char **argv)
+int main(void)
 {
 	align_query("molecule-foo");
 

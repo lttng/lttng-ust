@@ -116,7 +116,8 @@ static inline
 unsigned int lttng_ust_lib_ring_buffer_align(size_t align_drift, size_t size_of_type)
 	lttng_ust_notrace;
 static inline
-unsigned int lttng_ust_lib_ring_buffer_align(size_t align_drift, size_t size_of_type)
+unsigned int lttng_ust_lib_ring_buffer_align(size_t align_drift __attribute__((unused)),
+		size_t size_of_type __attribute__((unused)))
 {
 	/*
 	 * On architectures with efficient unaligned memory access, the content

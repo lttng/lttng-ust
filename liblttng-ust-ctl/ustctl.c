@@ -707,7 +707,8 @@ int ustctl_wait_quiescent(int sock)
 	return 0;
 }
 
-int ustctl_calibrate(int sock, struct lttng_ust_abi_calibrate *calibrate)
+int ustctl_calibrate(int sock __attribute__((unused)),
+		struct lttng_ust_abi_calibrate *calibrate)
 {
 	if (!calibrate)
 		return -EINVAL;
@@ -1809,7 +1810,7 @@ void ustctl_clear_buffer(struct ustctl_consumer_stream *stream)
 
 static
 struct lttng_ust_client_lib_ring_buffer_client_cb *get_client_cb(
-		struct lttng_ust_lib_ring_buffer *buf,
+		struct lttng_ust_lib_ring_buffer *buf __attribute__((unused)),
 		struct lttng_ust_lib_ring_buffer_channel *chan)
 {
 	const struct lttng_ust_lib_ring_buffer_config *config;

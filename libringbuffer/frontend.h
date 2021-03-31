@@ -201,8 +201,9 @@ unsigned long lib_ring_buffer_get_offset(const struct lttng_ust_lib_ring_buffer_
 }
 
 static inline
-unsigned long lib_ring_buffer_get_consumed(const struct lttng_ust_lib_ring_buffer_config *config,
-					   struct lttng_ust_lib_ring_buffer *buf)
+unsigned long lib_ring_buffer_get_consumed(
+		const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)),
+		struct lttng_ust_lib_ring_buffer *buf)
 {
 	return uatomic_read(&buf->consumed);
 }
@@ -212,8 +213,9 @@ unsigned long lib_ring_buffer_get_consumed(const struct lttng_ust_lib_ring_buffe
  * ordering enforced with respect to trace teardown).
  */
 static inline
-int lib_ring_buffer_is_finalized(const struct lttng_ust_lib_ring_buffer_config *config,
-				 struct lttng_ust_lib_ring_buffer *buf)
+int lib_ring_buffer_is_finalized(
+		const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)),
+		 struct lttng_ust_lib_ring_buffer *buf)
 {
 	int finalized = CMM_ACCESS_ONCE(buf->finalized);
 	/*

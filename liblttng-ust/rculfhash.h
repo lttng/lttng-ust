@@ -75,7 +75,7 @@ typedef int (*lttng_ust_lfht_match_fct)(struct lttng_ust_lfht_node *node, const 
  * (detection of memory corruption).
  */
 static inline
-void lttng_ust_lfht_node_init(struct lttng_ust_lfht_node *node)
+void lttng_ust_lfht_node_init(struct lttng_ust_lfht_node *node __attribute__((unused)))
 {
 }
 

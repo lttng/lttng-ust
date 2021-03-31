@@ -18,7 +18,8 @@
 #include "context-internal.h"
 
 static
-size_t ip_get_size(struct lttng_ust_ctx_field *field, size_t offset)
+size_t ip_get_size(struct lttng_ust_ctx_field *field __attribute__((unused)),
+		size_t offset)
 {
 	size_t size = 0;
 
@@ -28,7 +29,7 @@ size_t ip_get_size(struct lttng_ust_ctx_field *field, size_t offset)
 }
 
 static
-void ip_record(struct lttng_ust_ctx_field *field,
+void ip_record(struct lttng_ust_ctx_field *field __attribute__((unused)),
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		 struct lttng_ust_channel_buffer *chan)
 {

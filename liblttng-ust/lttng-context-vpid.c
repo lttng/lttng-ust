@@ -46,7 +46,8 @@ void lttng_context_vpid_reset(void)
 }
 
 static
-size_t vpid_get_size(struct lttng_ust_ctx_field *field, size_t offset)
+size_t vpid_get_size(struct lttng_ust_ctx_field *field __attribute__((unused)),
+		size_t offset)
 {
 	size_t size = 0;
 
@@ -56,7 +57,7 @@ size_t vpid_get_size(struct lttng_ust_ctx_field *field, size_t offset)
 }
 
 static
-void vpid_record(struct lttng_ust_ctx_field *field,
+void vpid_record(struct lttng_ust_ctx_field *field __attribute__((unused)),
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		 struct lttng_ust_channel_buffer *chan)
 {
@@ -66,7 +67,7 @@ void vpid_record(struct lttng_ust_ctx_field *field,
 }
 
 static
-void vpid_get_value(struct lttng_ust_ctx_field *field,
+void vpid_get_value(struct lttng_ust_ctx_field *field __attribute__((unused)),
 		struct lttng_ust_ctx_value *value)
 {
 	value->u.s64 = wrapper_getvpid();

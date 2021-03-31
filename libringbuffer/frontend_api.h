@@ -32,7 +32,8 @@
  * section.
  */
 static inline
-int lib_ring_buffer_nesting_inc(const struct lttng_ust_lib_ring_buffer_config *config)
+int lib_ring_buffer_nesting_inc(
+		const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)))
 {
 	int nesting;
 
@@ -47,13 +48,15 @@ int lib_ring_buffer_nesting_inc(const struct lttng_ust_lib_ring_buffer_config *c
 }
 
 static inline
-int lib_ring_buffer_nesting_count(const struct lttng_ust_lib_ring_buffer_config *config)
+int lib_ring_buffer_nesting_count(
+		const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)))
 {
 	return URCU_TLS(lib_ring_buffer_nesting);
 }
 
 static inline
-void lib_ring_buffer_nesting_dec(const struct lttng_ust_lib_ring_buffer_config *config)
+void lib_ring_buffer_nesting_dec(
+		const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)))
 {
 	cmm_barrier();
 	URCU_TLS(lib_ring_buffer_nesting)--;		/* TLS */
@@ -215,9 +218,10 @@ slow_path:
  * disabled, for RING_BUFFER_SYNC_PER_CPU configuration.
  */
 static inline
-void lib_ring_buffer_switch(const struct lttng_ust_lib_ring_buffer_config *config,
-			    struct lttng_ust_lib_ring_buffer *buf, enum switch_mode mode,
-			    struct lttng_ust_shm_handle *handle)
+void lib_ring_buffer_switch(
+		const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)),
+		struct lttng_ust_lib_ring_buffer *buf, enum switch_mode mode,
+		struct lttng_ust_shm_handle *handle)
 {
 	lib_ring_buffer_switch_slow(buf, mode, handle);
 }
@@ -332,29 +336,33 @@ int lib_ring_buffer_try_discard_reserve(const struct lttng_ust_lib_ring_buffer_c
 }
 
 static inline
-void channel_record_disable(const struct lttng_ust_lib_ring_buffer_config *config,
-			    struct lttng_ust_lib_ring_buffer_channel *chan)
+void channel_record_disable(
+		const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)),
+		struct lttng_ust_lib_ring_buffer_channel *chan)
 {
 	uatomic_inc(&chan->record_disabled);
 }
 
 static inline
-void channel_record_enable(const struct lttng_ust_lib_ring_buffer_config *config,
-			   struct lttng_ust_lib_ring_buffer_channel *chan)
+void channel_record_enable(
+		const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)),
+		struct lttng_ust_lib_ring_buffer_channel *chan)
 {
 	uatomic_dec(&chan->record_disabled);
 }
 
 static inline
-void lib_ring_buffer_record_disable(const struct lttng_ust_lib_ring_buffer_config *config,
-				    struct lttng_ust_lib_ring_buffer *buf)
+void lib_ring_buffer_record_disable(
+		const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)),
+		struct lttng_ust_lib_ring_buffer *buf)
 {
 	uatomic_inc(&buf->record_disabled);
 }
 
 static inline
-void lib_ring_buffer_record_enable(const struct lttng_ust_lib_ring_buffer_config *config,
-				   struct lttng_ust_lib_ring_buffer *buf)
+void lib_ring_buffer_record_enable(
+		const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)),
+		struct lttng_ust_lib_ring_buffer *buf)
 {
 	uatomic_dec(&buf->record_disabled);
 }

@@ -428,7 +428,8 @@ free_chanbuf:
 }
 
 static
-void lib_ring_buffer_channel_switch_timer(int sig, siginfo_t *si, void *uc)
+void lib_ring_buffer_channel_switch_timer(int sig __attribute__((unused)),
+		siginfo_t *si, void *uc __attribute__((unused)))
 {
 	const struct lttng_ust_lib_ring_buffer_config *config;
 	struct lttng_ust_shm_handle *handle;
@@ -628,7 +629,8 @@ end:
 }
 
 static
-void lib_ring_buffer_channel_read_timer(int sig, siginfo_t *si, void *uc)
+void lib_ring_buffer_channel_read_timer(int sig __attribute__((unused)),
+		siginfo_t *si, void *uc __attribute__((unused)))
 {
 	struct lttng_ust_lib_ring_buffer_channel *chan;
 
@@ -663,7 +665,7 @@ void rb_setmask(sigset_t *mask)
 }
 
 static
-void *sig_thread(void *arg)
+void *sig_thread(void *arg __attribute__((unused)))
 {
 	sigset_t mask;
 	siginfo_t info;
@@ -895,7 +897,7 @@ void lib_ring_buffer_channel_read_timer_stop(struct lttng_ust_lib_ring_buffer_ch
 }
 
 static void channel_unregister_notifiers(struct lttng_ust_lib_ring_buffer_channel *chan,
-			   struct lttng_ust_shm_handle *handle)
+			   struct lttng_ust_shm_handle *handle __attribute__((unused)))
 {
 	lib_ring_buffer_channel_switch_timer_stop(chan);
 	lib_ring_buffer_channel_read_timer_stop(chan);
@@ -963,7 +965,7 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
 		   size_t priv_data_size,
 		   void *priv_data_init,
 		   void *priv,
-		   void *buf_addr, size_t subbuf_size,
+		   void *buf_addr __attribute__((unused)), size_t subbuf_size,
 		   size_t num_subbuf, unsigned int switch_timer_interval,
 		   unsigned int read_timer_interval,
 		   const int *stream_fds, int nr_stream_fds,
@@ -1197,9 +1199,10 @@ struct lttng_ust_lib_ring_buffer *channel_get_ring_buffer(
 	return shmp(handle, chan->backend.buf[cpu].shmp);
 }
 
-int ring_buffer_channel_close_wait_fd(const struct lttng_ust_lib_ring_buffer_config *config,
-			struct lttng_ust_lib_ring_buffer_channel *chan,
-			struct lttng_ust_shm_handle *handle)
+int ring_buffer_channel_close_wait_fd(
+		const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)),
+		struct lttng_ust_lib_ring_buffer_channel *chan __attribute__((unused)),
+		struct lttng_ust_shm_handle *handle)
 {
 	struct shm_ref *ref;
 
@@ -1207,9 +1210,10 @@ int ring_buffer_channel_close_wait_fd(const struct lttng_ust_lib_ring_buffer_con
 	return shm_close_wait_fd(handle, ref);
 }
 
-int ring_buffer_channel_close_wakeup_fd(const struct lttng_ust_lib_ring_buffer_config *config,
-			struct lttng_ust_lib_ring_buffer_channel *chan,
-			struct lttng_ust_shm_handle *handle)
+int ring_buffer_channel_close_wakeup_fd(
+		const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)),
+		struct lttng_ust_lib_ring_buffer_channel *chan __attribute__((unused)),
+		struct lttng_ust_shm_handle *handle)
 {
 	struct shm_ref *ref;
 
@@ -1256,7 +1260,7 @@ int ring_buffer_stream_close_wakeup_fd(const struct lttng_ust_lib_ring_buffer_co
 }
 
 int lib_ring_buffer_open_read(struct lttng_ust_lib_ring_buffer *buf,
-			      struct lttng_ust_shm_handle *handle)
+			      struct lttng_ust_shm_handle *handle __attribute__((unused)))
 {
 	if (uatomic_cmpxchg(&buf->active_readers, 0, 1) != 0)
 		return -EBUSY;
@@ -2423,10 +2427,11 @@ void deliver_count_events(const struct lttng_ust_lib_ring_buffer_config *config,
 }
 #else /* LTTNG_RING_BUFFER_COUNT_EVENTS */
 static
-void deliver_count_events(const struct lttng_ust_lib_ring_buffer_config *config,
-		struct lttng_ust_lib_ring_buffer *buf,
-		unsigned long idx,
-		struct lttng_ust_shm_handle *handle)
+void deliver_count_events(
+		const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)),
+		struct lttng_ust_lib_ring_buffer *buf __attribute__((unused)),
+		unsigned long idx __attribute__((unused)),
+		struct lttng_ust_shm_handle *handle __attribute__((unused)))
 {
 }
 #endif /* #else LTTNG_RING_BUFFER_COUNT_EVENTS */
@@ -2438,7 +2443,7 @@ void lib_ring_buffer_check_deliver_slow(const struct lttng_ust_lib_ring_buffer_c
 				   unsigned long commit_count,
 			           unsigned long idx,
 				   struct lttng_ust_shm_handle *handle,
-				   uint64_t tsc)
+				   uint64_t tsc __attribute__((unused)))
 {
 	unsigned long old_commit_count = commit_count
 					 - chan->backend.subbuf_size;

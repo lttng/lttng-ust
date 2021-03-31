@@ -56,7 +56,7 @@ void v_inc(const struct lttng_ust_lib_ring_buffer_config *config, union v_atomic
  * Non-atomic decrement. Only used by reader, apply to reader-owned subbuffer.
  */
 static inline
-void _v_dec(const struct lttng_ust_lib_ring_buffer_config *config, union v_atomic *v_a)
+void _v_dec(const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)), union v_atomic *v_a)
 {
 	--v_a->v;
 }

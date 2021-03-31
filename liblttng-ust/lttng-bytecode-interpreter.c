@@ -57,7 +57,8 @@ size_t get_str_or_seq_len(const struct estack_entry *entry)
 }
 
 static
-int stack_star_glob_match(struct estack *stack, int top, const char *cmp_type)
+int stack_star_glob_match(struct estack *stack, int top,
+		const char *cmp_type __attribute__((unused)))
 {
 	const char *pattern;
 	const char *candidate;
@@ -83,7 +84,7 @@ int stack_star_glob_match(struct estack *stack, int top, const char *cmp_type)
 }
 
 static
-int stack_strcmp(struct estack *stack, int top, const char *cmp_type)
+int stack_strcmp(struct estack *stack, int top, const char *cmp_type __attribute__((unused)))
 {
 	const char *p = estack_bx(stack, top)->u.s.str, *q = estack_ax(stack, top)->u.s.str;
 	int ret;
@@ -149,9 +150,10 @@ int stack_strcmp(struct estack *stack, int top, const char *cmp_type)
 	return diff;
 }
 
-int lttng_bytecode_interpret_error(struct lttng_ust_bytecode_runtime *bytecode_runtime,
-		const char *stack_data,
-		void *ctx)
+int lttng_bytecode_interpret_error(
+		struct lttng_ust_bytecode_runtime *bytecode_runtime __attribute__((unused)),
+		const char *stack_data __attribute__((unused)),
+		void *ctx __attribute__((unused)))
 {
 	return LTTNG_UST_BYTECODE_INTERPRETER_ERROR;
 }
@@ -2511,7 +2513,7 @@ end:
  */
 int lttng_ust_interpret_event_filter(struct lttng_ust_event_common *event,
 		const char *interpreter_stack_data,
-		void *event_filter_ctx)
+		void *event_filter_ctx __attribute__((unused)))
 {
 	struct lttng_ust_bytecode_runtime *filter_bc_runtime;
 	struct cds_list_head *filter_bytecode_runtime_head = &event->priv->filter_bytecode_runtime_head;

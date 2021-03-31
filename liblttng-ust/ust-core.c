@@ -108,7 +108,8 @@ struct lttng_enum *lttng_ust_enum_get_from_desc(struct lttng_ust_session *sessio
 	return NULL;
 }
 
-size_t lttng_ust_dummy_get_size(struct lttng_ust_ctx_field *field, size_t offset)
+size_t lttng_ust_dummy_get_size(struct lttng_ust_ctx_field *field __attribute__((unused)),
+		size_t offset)
 {
 	size_t size = 0;
 
@@ -117,7 +118,7 @@ size_t lttng_ust_dummy_get_size(struct lttng_ust_ctx_field *field, size_t offset
 	return size;
 }
 
-void lttng_ust_dummy_record(struct lttng_ust_ctx_field *field,
+void lttng_ust_dummy_record(struct lttng_ust_ctx_field *field __attribute__((unused)),
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		 struct lttng_ust_channel_buffer *chan)
 {
@@ -126,7 +127,7 @@ void lttng_ust_dummy_record(struct lttng_ust_ctx_field *field,
 	chan->ops->event_write(ctx, &sel_char, sizeof(sel_char), lttng_ust_rb_alignof(sel_char));
 }
 
-void lttng_ust_dummy_get_value(struct lttng_ust_ctx_field *field,
+void lttng_ust_dummy_get_value(struct lttng_ust_ctx_field *field __attribute__((unused)),
 		struct lttng_ust_ctx_value *value)
 {
 	value->sel = LTTNG_UST_DYNAMIC_TYPE_NONE;
