@@ -141,8 +141,8 @@ liblttng_ust_support_la_LIBADD = \
 liblttng_ust_la_LIBADD = \
 	-lrt \
 	liblttng-ust-common.la \
+	$(top_builddir)/src/common/libustcomm.la \
 	$(top_builddir)/src/common/libcommon.la \
-	$(top_builddir)/src/liblttng-ust-comm/liblttng-ust-comm.la \
 	liblttng-ust-tracepoint.la \
 	liblttng-ust-runtime.la liblttng-ust-support.la \
 	$(DL_LIBS)

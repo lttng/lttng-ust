@@ -15,8 +15,7 @@ noinst_HEADERS = \
 	logging.h \
 	macros.h \
 	patient.h \
-	safe-snprintf.h \
-	ustcomm.h
+	safe-snprintf.h
 
 noinst_HEADERS += \
 	compat/dlfcn.h \
@@ -42,7 +41,8 @@ noinst_LTLIBRARIES = \
 	msgpack/libmsgpack.la \
 	libringbuffer.la \
 	snprintf/libsnprintf.la \
-	libcommon.la
+	libcommon.la \
+	libustcomm.la
 
 # counter
 libcounter_la_SOURCES = \
@@ -132,5 +132,9 @@ libcommon_la_SOURCES = \
 libcommon_la_LIBADD = \
 	msgpack/libmsgpack.la \
 	snprintf/libsnprintf.la
+
+libustcomm_la_SOURCES = \
+	ustcomm.c \
+	ustcomm.h
 
 EXTRA_DIST = snprintf/README

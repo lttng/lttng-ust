@@ -2,7 +2,6 @@
 
 SUBDIRS = \
 	common \
-	liblttng-ust-comm \
 	liblttng-ust \
 	lib
 
