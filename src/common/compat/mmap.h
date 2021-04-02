@@ -4,8 +4,8 @@
  * Copyright (C) 2019 Jonathan Rajotte <jonathan.rajotte-julien@efficios.com>
  */
 
-#ifndef _LTTNG_MMAP_H
-#define _LTTNG_MMAP_H
+#ifndef _UST_COMMON_COMPAT_MMAP_H
+#define _UST_COMMON_COMPAT_MMAP_H
 
 #include <sys/mman.h>
 
@@ -15,4 +15,4 @@
 # define LTTNG_MAP_POPULATE 0
 #endif /* __linux__ && MAP_POPULATE */
 
-#endif /* _LTTNG_MMAP_H */
+#endif /* _UST_COMMON_COMPAT_MMAP_H */

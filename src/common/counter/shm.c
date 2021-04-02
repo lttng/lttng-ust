@@ -29,7 +29,7 @@
 
 #include "common/macros.h"
 #include "common/ust-fd.h"
-#include "common/ringbuffer/mmap.h"
+#include "common/compat/mmap.h"
 
 /*
  * Ensure we have the required amount of space available by writing 0

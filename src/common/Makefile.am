@@ -19,6 +19,7 @@ noinst_HEADERS = \
 
 noinst_HEADERS += \
 	compat/dlfcn.h \
+	compat/mmap.h \
 	compat/tid.h
 
 # These headers should be moved to the public headers when tested and
@@ -85,7 +86,6 @@ libringbuffer_la_SOURCES = \
 	ringbuffer/frontend_internal.h \
 	ringbuffer/frontend_types.h \
 	ringbuffer/getcpu.h \
-	ringbuffer/mmap.h \
 	ringbuffer/nohz.h \
 	ringbuffer/rb-init.h \
 	ringbuffer/ring_buffer_backend.c \
