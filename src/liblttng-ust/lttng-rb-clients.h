@@ -8,7 +8,7 @@
 #define _LTTNG_RB_CLIENT_H
 
 #include <stdint.h>
-#include "../libringbuffer/ringbuffer-config.h"
+#include "common/ringbuffer/ringbuffer-config.h"
 
 struct lttng_ust_client_lib_ring_buffer_client_cb {
 	struct lttng_ust_lib_ring_buffer_client_cb parent;

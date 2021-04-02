@@ -14,7 +14,7 @@
 #include <urcu/arch.h>
 
 #include "getenv.h"
-#include "../libringbuffer/getcpu.h"
+#include "common/ringbuffer/getcpu.h"
 
 int (*lttng_get_cpu)(void);
 

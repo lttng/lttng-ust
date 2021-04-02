@@ -22,8 +22,8 @@
 #include "common/macros.h"
 #include "common/align.h"
 
-#include "libringbuffer/backend.h"
-#include "libringbuffer/frontend.h"
+#include "common/ringbuffer/backend.h"
+#include "common/ringbuffer/frontend.h"
 #include "liblttng-ust/ust-events-internal.h"
 #include "liblttng-ust/wait.h"
 #include "liblttng-ust/lttng-rb-clients.h"

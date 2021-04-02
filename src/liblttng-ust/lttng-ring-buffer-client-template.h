@@ -17,7 +17,7 @@
 #include "clock.h"
 #include "context-internal.h"
 #include "lttng-tracer.h"
-#include "../libringbuffer/frontend_types.h"
+#include "common/ringbuffer/frontend_types.h"
 #include <urcu/tls-compat.h>
 
 #define LTTNG_COMPACT_EVENT_BITS       5
@@ -195,7 +195,7 @@ size_t record_header_size(
 	return offset - orig_offset;
 }
 
-#include "../libringbuffer/api.h"
+#include "common/ringbuffer/api.h"
 #include "lttng-rb-clients.h"
 
 static

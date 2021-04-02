@@ -39,9 +39,9 @@
 #include "common/ust-fd.h"
 #include "common/logging.h"
 
-#include "../libringbuffer/frontend_types.h"
-#include "../libringbuffer/frontend.h"
-#include "../libringbuffer/shm.h"
+#include "common/ringbuffer/frontend_types.h"
+#include "common/ringbuffer/frontend.h"
+#include "common/ringbuffer/shm.h"
 #include "common/counter/counter.h"
 #include "tracepoint-internal.h"
 #include "lttng-tracer.h"

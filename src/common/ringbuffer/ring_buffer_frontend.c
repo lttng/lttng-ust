@@ -62,7 +62,7 @@
 #include "frontend.h"
 #include "shm.h"
 #include "rb-init.h"
-#include "../liblttng-ust/compat.h"	/* For ENODATA */
+#include "liblttng-ust/compat.h"	/* For ENODATA */
 
 /* Print DBG() messages about events lost only every 1048576 hits */
 #define DBG_PRINT_NR_LOST	(1UL << 20)

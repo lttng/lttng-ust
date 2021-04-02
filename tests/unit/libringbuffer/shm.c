@@ -12,7 +12,7 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 
-#include "../../../src/libringbuffer/shm.h"
+#include "common/ringbuffer/shm.h"
 #include "common/align.h"
 
 #include "tap.h"

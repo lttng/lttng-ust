@@ -146,7 +146,6 @@ cscope.*
 /src/lib/lttng-ust-python-agent/Makefile
 /src/lib/Makefile
 /src/liblttng-ust/Makefile
-/src/libringbuffer/Makefile
 /src/python-lttngust/Makefile
 /src/Makefile
 /tests/Makefile

@@ -14,7 +14,7 @@
 #include "common/bitfield.h"
 #include "common/align.h"
 #include "lttng-tracer.h"
-#include "../libringbuffer/frontend_types.h"
+#include "common/ringbuffer/frontend_types.h"
 #include <urcu/tls-compat.h>
 
 struct metadata_packet_header {
@@ -58,7 +58,7 @@ size_t record_header_size(
 	return 0;
 }
 
-#include "../libringbuffer/api.h"
+#include "common/ringbuffer/api.h"
 #include "lttng-rb-clients.h"
 
 static uint64_t client_ring_buffer_clock_read(

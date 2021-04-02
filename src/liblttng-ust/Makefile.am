@@ -130,7 +130,7 @@ liblttng_ust_la_SOURCES =
 liblttng_ust_la_LDFLAGS = -no-undefined -version-info $(LTTNG_UST_LIBRARY_VERSION)
 
 liblttng_ust_support_la_LIBADD = \
-	$(top_builddir)/src/libringbuffer/libringbuffer.la \
+	$(top_builddir)/src/common/libringbuffer.la \
 	$(top_builddir)/src/common/libcounter.la
 
 liblttng_ust_la_LIBADD = \

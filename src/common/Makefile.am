@@ -40,6 +40,7 @@ noinst_HEADERS += \
 noinst_LTLIBRARIES = \
 	libcounter.la \
 	msgpack/libmsgpack.la \
+	libringbuffer.la \
 	snprintf/libsnprintf.la \
 	libcommon.la
 
@@ -72,6 +73,40 @@ msgpack_libmsgpack_la_SOURCES = \
 	msgpack/msgpack.h
 
 msgpack_libmsgpack_la_CFLAGS = -DUST_COMPONENT="libmsgpack" $(AM_CFLAGS)
+
+# ringbuffer
+libringbuffer_la_SOURCES = \
+	ringbuffer/api.h \
+	ringbuffer/backend.h \
+	ringbuffer/backend_internal.h \
+	ringbuffer/backend_types.h \
+	ringbuffer/frontend_api.h \
+	ringbuffer/frontend.h \
+	ringbuffer/frontend_internal.h \
+	ringbuffer/frontend_types.h \
+	ringbuffer/getcpu.h \
+	ringbuffer/mmap.h \
+	ringbuffer/nohz.h \
+	ringbuffer/rb-init.h \
+	ringbuffer/ring_buffer_backend.c \
+	ringbuffer/ringbuffer-config.h \
+	ringbuffer/ring_buffer_frontend.c \
+	ringbuffer/shm.c \
+	ringbuffer/shm.h \
+	ringbuffer/shm_internal.h \
+	ringbuffer/shm_types.h \
+	ringbuffer/smp.c \
+	ringbuffer/smp.h \
+	ringbuffer/vatomic.h
+
+libringbuffer_la_LIBADD = \
+	-lrt
+
+if ENABLE_NUMA
+libringbuffer_la_LIBADD += -lnuma
+endif
+
+libringbuffer_la_CFLAGS = -DUST_COMPONENT="libringbuffer" $(AM_CFLAGS)
 
 # snprintf
 snprintf_libsnprintf_la_SOURCES = \
