@@ -38,7 +38,7 @@ m4_define([ust_ctl_lib_version], ust_ctl_lib_version_current[:]ust_ctl_lib_versi
 AC_PREREQ([2.69])
 AC_INIT([lttng-ust],[ust_version],[mathieu dot desnoyers at efficios dot com],[],[https://lttng.org])
 
-AC_CONFIG_HEADERS([include/config.h include/lttng/ust-config.h include/lttng/ust-version.h])
+AC_CONFIG_HEADERS([src/common/config.h include/lttng/ust-config.h include/lttng/ust-version.h])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -501,7 +501,7 @@ AC_SUBST(AM_CXXFLAGS)
 # The order in which the include folders are searched is important.
 # The top_builddir should always be searched first in the event that a build
 # time generated file is included.
-AM_CPPFLAGS="-I\$(top_builddir)/include -I\$(top_srcdir)/include -include config.h"
+AM_CPPFLAGS="-I\$(top_builddir)/include -I\$(top_srcdir)/include -I\$(top_builddir)/src -I\$(top_srcdir)/src -include common/config.h"
 AC_SUBST(AM_CPPFLAGS)
 
 AC_SUBST(JNI_CPPFLAGS)

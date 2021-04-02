@@ -136,7 +136,9 @@ all-local:
 				CPPFLAGS="$(CPPFLAGS)" \
 				AM_CPPFLAGS="$(AM_CPPFLAGS) \
 				-I$$rel_src_subdir$(top_srcdir)/include/ \
-				-I$$rel_build_subdir$(top_builddir)/include/" \
+				-I$$rel_build_subdir$(top_builddir)/include/ \
+				-I$$rel_src_subdir$(top_srcdir)/src/ \
+				-I$$rel_build_subdir$(top_builddir)/src/" \
 				CFLAGS='$(CFLAGS)' \
 				AM_CFLAGS='$(AM_CFLAGS)' \
 				LDFLAGS="$(LDFLAGS)" \
