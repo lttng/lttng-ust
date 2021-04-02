@@ -9,8 +9,8 @@
  */
 
 #include "ust-events-internal.h"
-#include "../libcounter/counter.h"
-#include "../libcounter/counter-api.h"
+#include "common/counter/counter.h"
+#include "common/counter/counter-api.h"
 #include "lttng-tracer-core.h"
 #include "lttng-counter-client.h"
 

@@ -32,9 +32,8 @@
 #include "liblttng-ust/lttng-tracer-core.h"
 #include "liblttng-ust/lttng-counter-client.h"
 
-#include "libcounter/shm.h"
-#include "libcounter/smp.h"
-#include "libcounter/counter.h"
+#include "common/counter/smp.h"
+#include "common/counter/counter.h"
 
 /*
  * Number of milliseconds to retry before failing metadata writes on

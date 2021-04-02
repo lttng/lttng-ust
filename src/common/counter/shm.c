@@ -29,7 +29,7 @@
 
 #include "common/macros.h"
 #include "common/ust-fd.h"
-#include "../libringbuffer/mmap.h"
+#include "libringbuffer/mmap.h"
 
 /*
  * Ensure we have the required amount of space available by writing 0

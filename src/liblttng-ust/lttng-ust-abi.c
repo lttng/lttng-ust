@@ -42,7 +42,7 @@
 #include "../libringbuffer/frontend_types.h"
 #include "../libringbuffer/frontend.h"
 #include "../libringbuffer/shm.h"
-#include "../libcounter/counter.h"
+#include "common/counter/counter.h"
 #include "tracepoint-internal.h"
 #include "lttng-tracer.h"
 #include "string-utils.h"

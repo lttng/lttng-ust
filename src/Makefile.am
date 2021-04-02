@@ -4,7 +4,6 @@ SUBDIRS = \
 	common \
 	libringbuffer \
 	liblttng-ust-comm \
-	libcounter \
 	liblttng-ust \
 	lib
 

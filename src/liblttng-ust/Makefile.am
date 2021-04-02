@@ -6,6 +6,7 @@ noinst_LTLIBRARIES = liblttng-ust-runtime.la liblttng-ust-support.la
 
 lib_LTLIBRARIES = liblttng-ust-common.la liblttng-ust-tracepoint.la liblttng-ust.la
 
+# ust-common
 liblttng_ust_common_la_SOURCES = \
 	lttng-ust-urcu.c \
 	lttng-ust-urcu-pointer.c
@@ -130,7 +131,7 @@ liblttng_ust_la_LDFLAGS = -no-undefined -version-info $(LTTNG_UST_LIBRARY_VERSIO
 
 liblttng_ust_support_la_LIBADD = \
 	$(top_builddir)/src/libringbuffer/libringbuffer.la \
-	$(top_builddir)/src/libcounter/libcounter.la
+	$(top_builddir)/src/common/libcounter.la
 
 liblttng_ust_la_LIBADD = \
 	-lrt \

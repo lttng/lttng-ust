@@ -38,9 +38,33 @@ noinst_HEADERS += \
 ###                      ###
 
 noinst_LTLIBRARIES = \
+	libcounter.la \
 	msgpack/libmsgpack.la \
 	snprintf/libsnprintf.la \
 	libcommon.la
+
+# counter
+libcounter_la_SOURCES = \
+	counter/counter-api.h \
+	counter/counter.c \
+	counter/counter-config.h \
+	counter/counter.h \
+	counter/counter-internal.h \
+	counter/counter-types.h \
+	counter/shm.c \
+	counter/shm.h \
+	counter/shm_internal.h \
+	counter/shm_types.h \
+	counter/smp.c \
+	counter/smp.h
+
+libcounter_la_LIBADD = -lrt
+
+if ENABLE_NUMA
+libcounter_la_LIBADD += -lnuma
+endif
+
+libcounter_la_CFLAGS = -DUST_COMPONENT="libcounter" $(AM_CFLAGS)
 
 # msgpack
 msgpack_libmsgpack_la_SOURCES = \
