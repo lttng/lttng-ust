@@ -9,11 +9,11 @@
 #define _LGPL_SOURCE
 #include <lttng/ust-events.h>
 #include <lttng/ust-tracer.h>
-#include <ust-context-provider.h>
+#include <common/ust-context-provider.h>
 #include <lttng/urcu/pointer.h>
 #include <lttng/urcu/urcu-ust.h>
-#include <usterr-signal-safe.h>
-#include <ust-helper.h>
+#include "common/logging.h"
+#include "common/macros.h"
 #include <stddef.h>
 #include <string.h>
 #include <assert.h>

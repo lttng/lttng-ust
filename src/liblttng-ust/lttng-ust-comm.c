@@ -39,10 +39,10 @@
 #include <lttng/ust-thread.h>
 #include <lttng/ust-tracer.h>
 #include <urcu/tls-compat.h>
-#include <ust-comm.h>
-#include <ust-fd.h>
-#include <usterr-signal-safe.h>
-#include <ust-helper.h>
+#include "common/ustcomm.h"
+#include "common/ust-fd.h"
+#include "common/logging.h"
+#include "common/macros.h"
 #include "tracepoint-internal.h"
 #include "lttng-tracer-core.h"
 #include "compat.h"
@@ -53,7 +53,7 @@
 #include "getenv.h"
 #include "ust-events-internal.h"
 #include "context-internal.h"
-#include "ust-compat.h"
+#include "common/align.h"
 #include "lttng-counter-client.h"
 #include "lttng-rb-clients.h"
 

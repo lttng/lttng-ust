@@ -4,13 +4,16 @@
  * Copyright (C) 2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
-#ifndef _LTTNG_UST_HELPER_H
-#define _LTTNG_UST_HELPER_H
+#ifndef _UST_COMMON_MACROS_H
+#define _UST_COMMON_MACROS_H
 
 #include <stdlib.h>
 
 #include <lttng/ust-arch.h>
 
+/*
+ * Memory allocation zeroed
+ */
 static inline
 void *zmalloc(size_t len)
 	__attribute__((always_inline));
@@ -48,4 +51,4 @@ void *zmalloc(size_t len)
 #define LTTNG_UST_CALLER_IP()		__builtin_return_address(0)
 #endif
 
-#endif /* _LTTNG_UST_HELPER_H */
+#endif /* _UST_COMMON_MACROS_H */

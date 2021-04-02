@@ -12,13 +12,13 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <ust-context-provider.h>
+#include <common/ust-context-provider.h>
 
 #include "context-internal.h"
 #include "lttng-tracer-core.h"
 #include "jhash.h"
 #include "context-provider-internal.h"
-#include <ust-helper.h>
+#include "common/macros.h"
 
 struct lttng_ust_registered_context_provider {
 	const struct lttng_ust_context_provider *provider;

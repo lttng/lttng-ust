@@ -6,8 +6,8 @@
  * gettid compatibility layer.
  */
 
-#ifndef _LTTNG_UST_TID_H
-#define _LTTNG_UST_TID_H
+#ifndef _UST_COMMON_COMPAT_GETTID_H
+#define _UST_COMMON_COMPAT_GETTID_H
 
 #ifdef __linux__
 #include <sys/syscall.h>
@@ -34,4 +34,4 @@ static inline pid_t lttng_gettid(void)
 
 #endif
 
-#endif /* _LTTNG_UST_TID_H */
+#endif /* _UST_COMMON_COMPAT_GETTID_H */

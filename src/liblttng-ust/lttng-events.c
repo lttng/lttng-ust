@@ -32,13 +32,13 @@
 #include <lttng/tracepoint.h>
 #include <lttng/ust-events.h>
 
-#include <usterr-signal-safe.h>
-#include <ust-helper.h>
+#include "common/logging.h"
+#include "common/macros.h"
 #include <lttng/ust-ctl.h>
-#include <ust-comm.h>
-#include <ust-fd.h>
-#include <ust-dynamic-type.h>
-#include <ust-context-provider.h>
+#include "common/ustcomm.h"
+#include "common/ust-fd.h"
+#include "common/dynamic-type.h"
+#include "common/ust-context-provider.h"
 #include "error.h"
 #include "compat.h"
 #include "lttng-ust-uuid.h"

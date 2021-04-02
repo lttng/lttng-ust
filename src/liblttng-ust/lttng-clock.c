@@ -10,10 +10,12 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <usterr-signal-safe.h>
+
 #include <lttng/ust-clock.h>
 #include <urcu/system.h>
 #include <urcu/arch.h>
+
+#include "common/logging.h"
 
 #include "clock.h"
 #include "getenv.h"

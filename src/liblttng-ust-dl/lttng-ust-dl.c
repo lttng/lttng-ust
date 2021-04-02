@@ -7,17 +7,20 @@
  */
 
 #define _LGPL_SOURCE
+
+/* Has to be included first to override dlfcn.h */
+#include <common/compat/dlfcn.h>
+
 #include <limits.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <ust-dlfcn.h>
-#include <ust-elf.h>
+#include "common/elf.h"
 #include <lttng/ust-events.h>
-#include <ust-helper.h>
-#include "usterr-signal-safe.h"
+#include "common/macros.h"
+#include "common/logging.h"
 
 #include "../liblttng-ust/ust-events-internal.h"
 

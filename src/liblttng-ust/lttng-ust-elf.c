@@ -15,12 +15,12 @@
 
 #include <lttng/ust-utils.h>
 
-#include <ust-elf.h>
-#include <ust-fd.h>
+#include "common/elf.h"
+#include "common/ust-fd.h"
 
 #include "lttng-tracer-core.h"
 #include "lttng-ust-elf.h"
-#include "ust-helper.h"
+#include "common/macros.h"
 
 #define BUF_LEN	4096
 

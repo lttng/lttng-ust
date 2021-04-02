@@ -50,7 +50,7 @@
 #include <urcu/ref.h>
 #include <urcu/tls-compat.h>
 #include <poll.h>
-#include <ust-helper.h>
+#include "common/macros.h"
 
 #include <lttng/ust-utils.h>
 #include <lttng/ringbuffer-context.h>

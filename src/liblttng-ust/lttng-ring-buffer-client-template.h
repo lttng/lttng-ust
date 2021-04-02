@@ -12,8 +12,8 @@
 
 #include <ust-events-internal.h>
 #include <lttng/urcu/pointer.h>
-#include "ust-bitfield.h"
-#include "ust-compat.h"
+#include "common/bitfield.h"
+#include "common/align.h"
 #include "clock.h"
 #include "context-internal.h"
 #include "lttng-tracer.h"

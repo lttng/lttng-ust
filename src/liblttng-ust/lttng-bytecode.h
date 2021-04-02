@@ -12,16 +12,16 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <ust-helper.h>
+#include "common/macros.h"
 #include <lttng/ust-events.h>
-#include <ust-context-provider.h>
+#include "common/ust-context-provider.h"
 #include <stdint.h>
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
 #include <inttypes.h>
 #include <limits.h>
-#include <usterr-signal-safe.h>
+#include "common/logging.h"
 #include "bytecode.h"
 #include "ust-events-internal.h"
 

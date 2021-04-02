@@ -4,8 +4,8 @@
  * Copyright (C) 2010-2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
-#ifndef _LTTNG_UST_COMPAT_H
-#define _LTTNG_UST_COMPAT_H
+#ifndef _UST_COMMON_ALIGN_H
+#define _UST_COMMON_ALIGN_H
 
 #include <unistd.h>
 #include <limits.h>
@@ -28,4 +28,4 @@
 #define LTTNG_UST_ALIGN(v, align)	__LTTNG_UST_ALIGN_MASK(v, (__typeof__(v)) (align) - 1)
 #define LTTNG_UST_PAGE_ALIGN(addr)	LTTNG_UST_ALIGN(addr, LTTNG_UST_PAGE_SIZE)
 
-#endif
+#endif /* _UST_COMMON_ALIGN_H */

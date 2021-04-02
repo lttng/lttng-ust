@@ -25,10 +25,10 @@
 #include <urcu/tls-compat.h>
 #include <urcu/system.h>
 
-#include <ust-fd.h>
-#include <ust-helper.h>
+#include "common/ust-fd.h"
+#include "common/macros.h"
 #include <lttng/ust-error.h>
-#include <usterr-signal-safe.h>
+#include "common/logging.h"
 
 #include "../liblttng-ust/compat.h"
 #include "../liblttng-ust/lttng-tracer-core.h"

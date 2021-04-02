@@ -16,8 +16,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <ust-elf.h>
-#include <ust-helper.h>
+#include "common/elf.h"
+#include "common/macros.h"
 #include "lttng-tracer-core.h"
 #include "lttng-ust-statedump.h"
 #include "jhash.h"

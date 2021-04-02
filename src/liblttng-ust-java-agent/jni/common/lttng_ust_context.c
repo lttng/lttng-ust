@@ -12,9 +12,9 @@
 #include <inttypes.h>
 #include <lttng/ust-events.h>
 #include <lttng/ringbuffer-context.h>
-#include <ust-context-provider.h>
+#include <common/ust-context-provider.h>
 
-#include "ust-helper.h"
+#include "common/macros.h"
 #include "lttng_ust_context.h"
 
 enum lttng_ust_jni_type {

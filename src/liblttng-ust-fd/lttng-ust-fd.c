@@ -9,10 +9,10 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <ust-fd.h>
+#include "common/ust-fd.h"
 #include <dlfcn.h>
 
-#include <ust-helper.h>
+#include "common/macros.h"
 
 static int (*__lttng_ust_fd_plibc_close)(int fd);
 static int (*__lttng_ust_fd_plibc_fclose)(FILE *stream);

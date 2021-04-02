@@ -15,7 +15,7 @@
 #include <unistd.h>
 #include <lttng/ust-events.h>
 #include <lttng/ust-tracer.h>
-#include <ust-tid.h>
+#include "common/compat/tid.h"
 #include <urcu/tls-compat.h>
 #include <lttng/ringbuffer-context.h>
 

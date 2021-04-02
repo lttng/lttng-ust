@@ -20,7 +20,7 @@
 
 #include <lttng/ringbuffer-context.h>
 #include "ringbuffer-config.h"
-#include <usterr-signal-safe.h>
+#include "common/logging.h"
 #include "backend_types.h"
 #include "shm_internal.h"
 #include "shm_types.h"

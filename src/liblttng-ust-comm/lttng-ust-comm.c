@@ -20,12 +20,12 @@
 #include <fcntl.h>
 
 #include <lttng/ust-ctl.h>
-#include <ust-comm.h>
-#include <ust-fd.h>
-#include <ust-helper.h>
+#include "common/ustcomm.h"
+#include "common/ust-fd.h"
+#include "common/macros.h"
 #include <lttng/ust-error.h>
-#include <ust-dynamic-type.h>
-#include <usterr-signal-safe.h>
+#include "common/dynamic-type.h"
+#include "common/logging.h"
 
 #include "../liblttng-ust/ust-events-internal.h"
 #include "../liblttng-ust/compat.h"

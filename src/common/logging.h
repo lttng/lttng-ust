@@ -14,9 +14,9 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <ust-share.h>
-#include "ust-tid.h"
-#include "ust-snprintf.h"
+#include "common/patient.h"
+#include "common/compat/tid.h"
+#include "common/safe-snprintf.h"
 
 enum ust_err_loglevel {
 	UST_ERR_LOGLEVEL_UNKNOWN = 0,

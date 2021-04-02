@@ -4,8 +4,8 @@
  * Copyright (C) 2010-2019 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
-#ifndef _BABELTRACE_BITFIELD_H
-#define _BABELTRACE_BITFIELD_H
+#ifndef _UST_COMMON_BITFIELD_H
+#define _UST_COMMON_BITFIELD_H
 
 #include <stdint.h>	/* C99 5.2.4.2 Numerical limits */
 #include <limits.h>	/* C99 5.2.4.2 Numerical limits */

@@ -4,7 +4,7 @@
  * Copyright (C) 2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
-#include <usterr-signal-safe.h>
+#include "common/logging.h"
 
 volatile enum ust_err_loglevel ust_err_loglevel;
 

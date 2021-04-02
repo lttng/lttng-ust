@@ -4,8 +4,8 @@
  * Copyright (C) 2015 Antoine Busque <abusque@efficios.com>
  */
 
-#ifndef _LTTNG_UST_ELF_H
-#define _LTTNG_UST_ELF_H
+#ifndef _UST_COMMON_ELF_H
+#define _UST_COMMON_ELF_H
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -76,4 +76,4 @@ int lttng_ust_elf_get_build_id(struct lttng_ust_elf *elf, uint8_t **build_id,
 int lttng_ust_elf_get_debug_link(struct lttng_ust_elf *elf, char **filename,
 			uint32_t *crc, int *found);
 
-#endif	/* _LTTNG_UST_ELF_H */
+#endif	/* _UST_COMMON_ELF_H */

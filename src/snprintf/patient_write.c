@@ -19,7 +19,7 @@
 
 #include <errno.h>
 
-#include <ust-share.h>
+#include "common/patient.h"
 
 /*
  * This write is patient because it restarts if it was incomplete.

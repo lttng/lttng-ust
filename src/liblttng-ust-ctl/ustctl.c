@@ -17,10 +17,10 @@
 #include <lttng/ust-abi.h>
 #include <lttng/ust-endian.h>
 
-#include <usterr-signal-safe.h>
-#include <ust-comm.h>
-#include <ust-helper.h>
-#include "ust-compat.h"
+#include "common/logging.h"
+#include "common/ustcomm.h"
+#include "common/macros.h"
+#include "common/align.h"
 
 #include "../libringbuffer/backend.h"
 #include "../libringbuffer/frontend.h"

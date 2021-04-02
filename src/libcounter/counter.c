@@ -11,12 +11,13 @@
 #include <urcu/system.h>
 #include <urcu/compiler.h>
 #include <stdbool.h>
-#include <ust-helper.h>
+
+#include "common/macros.h"
+#include "common/align.h"
+#include "common/bitmap.h"
+
 #include "smp.h"
 #include "shm.h"
-#include "ust-compat.h"
-
-#include "ust-bitmap.h"
 
 static size_t lttng_counter_get_dimension_nr_elements(struct lib_counter_dimension *dimension)
 {

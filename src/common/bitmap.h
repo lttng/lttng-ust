@@ -6,8 +6,8 @@
  * LTTng Bitmap API
  */
 
-#ifndef _LTTNG_BITMAP_H
-#define _LTTNG_BITMAP_H
+#ifndef _UST_COMMON_BITMAP_H
+#define _UST_COMMON_BITMAP_H
 
 #include <urcu/compiler.h>
 #include <urcu/system.h>
@@ -49,4 +49,4 @@ static inline bool lttng_bitmap_test_bit(unsigned int index, unsigned long *p)
 	return (CMM_LOAD_SHARED(p[word]) >> bit) & 0x1;
 }
 
-#endif /* _LTTNG_BITMAP_H */
+#endif /* _UST_COMMON_BITMAP_H */

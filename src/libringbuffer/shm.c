@@ -27,8 +27,8 @@
 
 #include <lttng/ust-utils.h>
 
-#include <ust-helper.h>
-#include <ust-fd.h>
+#include "common/macros.h"
+#include "common/ust-fd.h"
 #include "mmap.h"
 
 /*

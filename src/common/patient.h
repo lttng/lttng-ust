@@ -4,8 +4,8 @@
  * Copyright (C) 2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
-#ifndef _LTTNG_SHARE_H
-#define _LTTNG_SHARE_H
+#ifndef _UST_COMMON_PATIENT_H
+#define _UST_COMMON_PATIENT_H
 
 #include <stdlib.h>
 #include <sys/uio.h>
@@ -19,4 +19,4 @@ ssize_t ust_patient_writev(int fd, struct iovec *iov, int iovcnt)
 ssize_t ust_patient_send(int fd, const void *buf, size_t count, int flags)
 	__attribute__((visibility("hidden")));
 
-#endif /* _LTTNG_SHARE_H */
+#endif /* _UST_COMMON_PATIENT_H */

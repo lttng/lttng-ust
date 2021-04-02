@@ -9,8 +9,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <sys/types.h>
-#include <usterr-signal-safe.h>
-#include <ust-helper.h>
+#include "common/logging.h"
+#include "common/macros.h"
 #include "getenv.h"
 
 enum lttng_env_secure {

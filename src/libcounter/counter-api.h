@@ -15,7 +15,7 @@
 #include "counter-internal.h"
 #include <urcu/compiler.h>
 #include <urcu/uatomic.h>
-#include "ust-bitmap.h"
+#include "common/bitmap.h"
 #include "../libringbuffer/getcpu.h"
 
 /*

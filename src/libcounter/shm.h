@@ -10,7 +10,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <unistd.h>
-#include <usterr-signal-safe.h>
+#include "common/logging.h"
 #include <urcu/compiler.h>
 #include "shm_types.h"
 

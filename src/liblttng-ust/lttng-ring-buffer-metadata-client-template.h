@@ -11,8 +11,8 @@
 #include <stdint.h>
 
 #include <ust-events-internal.h>
-#include "ust-bitfield.h"
-#include "ust-compat.h"
+#include "common/bitfield.h"
+#include "common/align.h"
 #include "lttng-tracer.h"
 #include "../libringbuffer/frontend_types.h"
 #include <urcu/tls-compat.h>

@@ -8,7 +8,7 @@
 #include <error.h>
 #include <dlfcn.h>
 #include <stdlib.h>
-#include <usterr-signal-safe.h>
+#include "common/logging.h"
 #include <lttng/ust-getcpu.h>
 #include <urcu/system.h>
 #include <urcu/arch.h>

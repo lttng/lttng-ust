@@ -23,8 +23,8 @@
 #include <lttng/tracepoint.h>
 #include <lttng/ust-abi.h>	/* for LTTNG_UST_ABI_SYM_NAME_LEN */
 
-#include <usterr-signal-safe.h>
-#include <ust-helper.h>
+#include "common/logging.h"
+#include "common/macros.h"
 
 #include "tracepoint-internal.h"
 #include "lttng-tracer-core.h"

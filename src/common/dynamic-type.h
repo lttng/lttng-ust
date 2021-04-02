@@ -4,8 +4,8 @@
  * Copyright (C) 2016 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
-#ifndef _LTTNG_UST_DYNAMIC_TYPE_H
-#define _LTTNG_UST_DYNAMIC_TYPE_H
+#ifndef _UST_COMMON_DYNAMIC_TYPE_H
+#define _UST_COMMON_DYNAMIC_TYPE_H
 
 #include <lttng/ust-events.h>
 
@@ -35,4 +35,4 @@ const struct lttng_ust_event_field *lttng_ust_dynamic_type_field(int64_t value)
 const struct lttng_ust_event_field *lttng_ust_dynamic_type_tag_field(void)
 	__attribute__((visibility("hidden")));
 
-#endif /* _LTTNG_UST_DYNAMIC_TYPE_H */
+#endif /* _UST_COMMON_DYNAMIC_TYPE_H */

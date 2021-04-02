@@ -6,11 +6,11 @@
  * dlfcn.h compatibility layer.
  */
 
-#ifndef _LTTNG_UST_DLFCN_H
-#define _LTTNG_UST_DLFCN_H
+#ifndef _UST_COMMON_COMPAT_DLFCN_H
+#define _UST_COMMON_COMPAT_DLFCN_H
 
 #ifdef _DLFCN_H
-#error "Please include ust-dlfcn.h before dlfcn.h."
+#error "Please include compat/dlfcn.h before dlfcn.h."
 #endif /* _DLFCN_H */
 
 #ifdef __GLIBC__
@@ -54,4 +54,4 @@ extern void *dlvsym(void *__restrict __handle,
 #include <dlfcn.h>
 #endif /* __GLIBC__ */
 
-#endif /* _LTTNG_UST_DLFCN_H */
+#endif /* _UST_COMMON_COMPAT_DLFCN_H */

@@ -17,7 +17,7 @@
 #include "lttng-hash-helper.h"
 #include "string-utils.h"
 #include "ust-events-internal.h"
-#include "ust-helper.h"
+#include "common/macros.h"
 
 /*
  * Number of merge points for hash table size. Hash table initialized to

@@ -5,7 +5,9 @@
  * Copyright (C) 2011-2012  Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
-#include <ust-dlfcn.h>
+/* Has to be included first to override dlfcn.h */
+#include <common/compat/dlfcn.h>
+
 #include <unistd.h>
 #include <stdio.h>
 #include <signal.h>

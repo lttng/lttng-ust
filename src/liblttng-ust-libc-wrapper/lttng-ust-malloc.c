@@ -10,7 +10,10 @@
  * circular dependency loop between this malloc wrapper, liburcu and
  * libc.
  */
-#include <ust-dlfcn.h>
+
+/* Has to be included first to override dlfcn.h */
+#include <common/compat/dlfcn.h>
+
 #include <sys/types.h>
 #include <stdio.h>
 #include <assert.h>
@@ -24,8 +27,8 @@
 
 #include <lttng/ust-libc-wrapper.h>
 
-#include <ust-helper.h>
-#include "ust-compat.h"
+#include "common/macros.h"
+#include "common/align.h"
 
 #define TRACEPOINT_DEFINE
 #define TRACEPOINT_CREATE_PROBES

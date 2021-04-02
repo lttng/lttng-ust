@@ -25,9 +25,9 @@
 #include <urcu/system.h>
 #include <urcu/arch.h>
 #include <urcu/rculist.h>
-#include <ust-helper.h>
+#include "common/macros.h"
 #include <urcu/ref.h>
-#include <usterr-signal-safe.h>
+#include "common/logging.h"
 #include <signal.h>
 #include <urcu/tls-compat.h>
 #include "perf_event.h"

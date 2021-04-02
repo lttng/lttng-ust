@@ -15,8 +15,8 @@
 
 #include <lttng/ust-events.h>
 
-#include <ust-helper.h>
-#include "ust-context-provider.h"
+#include "common/macros.h"
+#include "common/ust-context-provider.h"
 
 struct lttng_ust_abi_obj;
 struct lttng_event_notifier_group;

@@ -14,7 +14,7 @@
 #include <stddef.h>
 #include <lttng/ust-events.h>
 
-#include "ust-dynamic-type.h"
+#include "common/dynamic-type.h"
 
 struct lttng_ust_registered_context_provider;
 

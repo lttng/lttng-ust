@@ -20,7 +20,7 @@
 #include "frontend.h"
 #include "smp.h"
 #include "shm.h"
-#include "ust-compat.h"
+#include "common/align.h"
 
 /**
  * lib_ring_buffer_backend_allocate - allocate a channel buffer

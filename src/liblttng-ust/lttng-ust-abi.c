@@ -35,8 +35,9 @@
 #include <lttng/ust-error.h>
 #include <lttng/ust-events.h>
 #include <lttng/ust-version.h>
-#include <ust-fd.h>
-#include <usterr-signal-safe.h>
+
+#include "common/ust-fd.h"
+#include "common/logging.h"
 
 #include "../libringbuffer/frontend_types.h"
 #include "../libringbuffer/frontend.h"
@@ -47,7 +48,7 @@
 #include "string-utils.h"
 #include "ust-events-internal.h"
 #include "context-internal.h"
-#include "ust-helper.h"
+#include "common/macros.h"
 
 #define OBJ_NAME_LEN	16
 

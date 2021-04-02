@@ -14,7 +14,7 @@
 #include <urcu/list.h>
 #include <lttng/ust-tracer.h>
 #include <lttng/ringbuffer-context.h>
-#include <usterr-signal-safe.h>
+#include "common/logging.h"
 
 /*
  * The longuest possible namespace proc path is with the cgroup ns

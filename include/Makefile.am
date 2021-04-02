@@ -42,34 +42,3 @@ nobase_include_HEADERS = \
 nobase_nodist_include_HEADERS = \
 	lttng/ust-config.h \
 	lttng/ust-version.h
-
-
-###                        ###
-### Global private headers ###
-###                        ###
-
-noinst_HEADERS = \
-	usterr-signal-safe.h \
-	ust-snprintf.h \
-	ust-bitmap.h \
-	ust-comm.h \
-	ust-compat.h \
-	ust-elf.h \
-	ust-tid.h \
-	ust-bitfield.h \
-	ust-dlfcn.h \
-	ust-dynamic-type.h \
-	ust-helper.h \
-	ust-share.h
-
-
-# These headers should be moved to the public headers when tested and
-# documented. The symbols are still part of the ABI.
-
-# Used by the Java jni interface.
-noinst_HEADERS += \
-	ust-context-provider.h
-
-# Used by liblttng-ust-fd
-noinst_HEADERS += \
-	ust-fd.h

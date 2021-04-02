@@ -13,7 +13,7 @@
 #include <fcntl.h>
 
 #include "../../../src/libringbuffer/shm.h"
-#include "ust-compat.h"
+#include "common/align.h"
 
 #include "tap.h"
 

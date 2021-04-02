@@ -11,8 +11,8 @@
  * These declarations should NOT be considered stable API.
  */
 
-#ifndef _LTTNG_UST_COMM_H
-#define _LTTNG_UST_COMM_H
+#ifndef _UST_COMMON_USTCOMM_H
+#define _UST_COMMON_USTCOMM_H
 
 #include <stdint.h>
 #include <limits.h>
@@ -324,4 +324,4 @@ int ustcomm_setsockopt_rcv_timeout(int sock, unsigned int msec)
 int ustcomm_setsockopt_snd_timeout(int sock, unsigned int msec)
 	__attribute__((visibility("hidden")));
 
-#endif	/* _LTTNG_UST_COMM_H */
+#endif	/* _UST_COMMON_USTCOMM_H */

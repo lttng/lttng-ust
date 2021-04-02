@@ -11,14 +11,14 @@
 #include <limits.h>
 
 #include <lttng/ust-endian.h>
-#include <usterr-signal-safe.h>
+#include "common/logging.h"
 #include <urcu/rculist.h>
 
 #include "lttng-tracer-core.h"
 #include "ust-events-internal.h"
 #include "../libmsgpack/msgpack.h"
 #include "lttng-bytecode.h"
-#include "ust-share.h"
+#include "common/patient.h"
 
 /*
  * We want this write to be atomic AND non-blocking, meaning that we

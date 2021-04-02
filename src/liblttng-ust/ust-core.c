@@ -11,7 +11,7 @@
 
 #include "context-internal.h"
 #include "ust-events-internal.h"
-#include <usterr-signal-safe.h>
+#include "common/logging.h"
 #include "lttng-tracer-core.h"
 #include "lttng-rb-clients.h"
 #include "lttng-counter-client.h"

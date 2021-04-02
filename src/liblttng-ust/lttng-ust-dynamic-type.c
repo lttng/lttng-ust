@@ -12,8 +12,8 @@
 #include <stddef.h>
 #include <inttypes.h>
 
-#include <ust-helper.h>
-#include <ust-dynamic-type.h>
+#include "common/macros.h"
+#include "common/dynamic-type.h"
 
 #define ctf_enum_value(_string, _value)					\
 	__LTTNG_COMPOUND_LITERAL(struct lttng_ust_enum_entry, {		\
