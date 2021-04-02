@@ -16,7 +16,7 @@
 
 #include "lttng-tracer-core.h"
 #include "ust-events-internal.h"
-#include "../libmsgpack/msgpack.h"
+#include "common/msgpack/msgpack.h"
 #include "lttng-bytecode.h"
 #include "common/patient.h"
 

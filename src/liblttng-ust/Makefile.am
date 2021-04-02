@@ -139,7 +139,6 @@ liblttng_ust_la_LIBADD = \
 	$(top_builddir)/src/liblttng-ust-comm/liblttng-ust-comm.la \
 	liblttng-ust-tracepoint.la \
 	liblttng-ust-runtime.la liblttng-ust-support.la \
-	$(top_builddir)/src/libmsgpack/libmsgpack.la \
 	$(DL_LIBS)
 
 liblttng_ust_la_CFLAGS = -DUST_COMPONENT="liblttng_ust" $(AM_CFLAGS)

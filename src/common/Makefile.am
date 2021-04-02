@@ -38,8 +38,16 @@ noinst_HEADERS += \
 ###                      ###
 
 noinst_LTLIBRARIES = \
+	msgpack/libmsgpack.la \
 	snprintf/libsnprintf.la \
 	libcommon.la
+
+# msgpack
+msgpack_libmsgpack_la_SOURCES = \
+	msgpack/msgpack.c \
+	msgpack/msgpack.h
+
+msgpack_libmsgpack_la_CFLAGS = -DUST_COMPONENT="libmsgpack" $(AM_CFLAGS)
 
 # snprintf
 snprintf_libsnprintf_la_SOURCES = \
@@ -63,6 +71,7 @@ libcommon_la_SOURCES = \
 	patient.c
 
 libcommon_la_LIBADD = \
+	msgpack/libmsgpack.la \
 	snprintf/libsnprintf.la
 
 EXTRA_DIST = snprintf/README

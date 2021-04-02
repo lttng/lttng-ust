@@ -5,7 +5,6 @@ SUBDIRS = \
 	libringbuffer \
 	liblttng-ust-comm \
 	libcounter \
-	libmsgpack \
 	liblttng-ust \
 	liblttng-ust-ctl \
 	liblttng-ust-fd \
