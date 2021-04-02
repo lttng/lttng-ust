@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: LGPL-2.1-only
 
+AUTOMAKE_OPTIONS = subdir-objects
+
 ###                        ###
 ### Global private headers ###
 ###                        ###
@@ -30,3 +32,37 @@ noinst_HEADERS += \
 # Used by liblttng-ust-fd
 noinst_HEADERS += \
 	ust-fd.h
+
+###                      ###
+##  Convenience libraries ##
+###                      ###
+
+noinst_LTLIBRARIES = \
+	snprintf/libsnprintf.la \
+	libcommon.la
+
+# snprintf
+snprintf_libsnprintf_la_SOURCES = \
+	snprintf/fflush.c \
+	snprintf/fileext.h \
+	snprintf/floatio.h \
+	snprintf/fvwrite.c \
+	snprintf/fvwrite.h \
+	snprintf/local.h \
+	snprintf/mbrtowc_sb.c \
+	snprintf/snprintf.c \
+	snprintf/various.h \
+	snprintf/vfprintf.c \
+	snprintf/wcio.h \
+	snprintf/wsetup.c
+
+# Common library
+libcommon_la_SOURCES = \
+	logging.c \
+	logging.h \
+	patient.c
+
+libcommon_la_LIBADD = \
+	snprintf/libsnprintf.la
+
+EXTRA_DIST = snprintf/README

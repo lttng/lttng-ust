@@ -548,7 +548,6 @@ AC_CONFIG_FILES([
   src/python-lttngust/lttngust/version.py
   src/python-lttngust/Makefile
   src/python-lttngust/setup.py
-  src/snprintf/Makefile
   tests/benchmark/Makefile
   tests/compile/ctf-types/Makefile
   tests/compile/hello.cxx/Makefile

@@ -7,5 +7,5 @@ test_shm_SOURCES = shm.c
 test_shm_LDADD = \
 	$(top_builddir)/src/libringbuffer/libringbuffer.la \
 	$(top_builddir)/src/liblttng-ust-comm/liblttng-ust-comm.la \
-	$(top_builddir)/src/snprintf/libustsnprintf.la \
+	$(top_builddir)/src/common/libcommon.la \
 	$(top_builddir)/tests/utils/libtap.a

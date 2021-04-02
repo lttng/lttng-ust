@@ -15,6 +15,7 @@ Makefile.in
 *.info
 *.class
 cscope.*
+.dirstamp
 
 /configure
 /aclocal.m4
@@ -148,7 +149,6 @@ cscope.*
 /src/libmsgpack/Makefile
 /src/libringbuffer/Makefile
 /src/python-lttngust/Makefile
-/src/snprintf/Makefile
 /src/Makefile
 /tests/Makefile
 /tests/benchmark/Makefile

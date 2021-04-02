@@ -10,7 +10,7 @@ liblttng_ust_dl_la_SOURCES = \
 
 liblttng_ust_dl_la_LIBADD = \
 	$(top_builddir)/src/liblttng-ust/liblttng-ust.la \
-	$(top_builddir)/src/snprintf/libustsnprintf.la \
+	$(top_builddir)/src/common/libcommon.la \
 	$(DL_LIBS)
 
 liblttng_ust_dl_la_CFLAGS = -DUST_COMPONENT=liblttng-ust-dl $(AM_CFLAGS)

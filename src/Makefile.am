@@ -2,7 +2,6 @@
 
 SUBDIRS = \
 	common \
-	snprintf \
 	libringbuffer \
 	liblttng-ust-comm \
 	libcounter \

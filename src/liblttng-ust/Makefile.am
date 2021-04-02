@@ -22,7 +22,7 @@ liblttng_ust_tracepoint_la_SOURCES = \
 
 liblttng_ust_tracepoint_la_LIBADD = \
 	liblttng-ust-common.la \
-	$(top_builddir)/src/snprintf/libustsnprintf.la \
+	$(top_builddir)/src/common/libcommon.la \
 	$(DL_LIBS)
 
 liblttng_ust_tracepoint_la_LDFLAGS = -no-undefined -version-info $(LTTNG_UST_LIBRARY_VERSION)
@@ -135,7 +135,7 @@ liblttng_ust_support_la_LIBADD = \
 liblttng_ust_la_LIBADD = \
 	-lrt \
 	liblttng-ust-common.la \
-	$(top_builddir)/src/snprintf/libustsnprintf.la \
+	$(top_builddir)/src/common/libcommon.la \
 	$(top_builddir)/src/liblttng-ust-comm/liblttng-ust-comm.la \
 	liblttng-ust-tracepoint.la \
 	liblttng-ust-runtime.la liblttng-ust-support.la \

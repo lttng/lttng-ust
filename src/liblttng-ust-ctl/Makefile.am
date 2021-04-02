@@ -12,5 +12,5 @@ liblttng_ust_ctl_la_LDFLAGS = \
 liblttng_ust_ctl_la_LIBADD = \
 	$(top_builddir)/src/liblttng-ust-comm/liblttng-ust-comm.la \
 	$(top_builddir)/src/liblttng-ust/liblttng-ust-support.la \
-	$(top_builddir)/src/snprintf/libustsnprintf.la \
+	$(top_builddir)/src/common/libcommon.la \
 	$(DL_LIBS)
