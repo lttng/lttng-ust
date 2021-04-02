@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "compat.h"
+#include "../../../src/liblttng-ust/compat.h"
 
 #include "tap.h"
 

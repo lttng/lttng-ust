@@ -12,7 +12,7 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 
-#include "libringbuffer/shm.h"
+#include "../../../src/libringbuffer/shm.h"
 #include "ust-compat.h"
 
 #include "tap.h"

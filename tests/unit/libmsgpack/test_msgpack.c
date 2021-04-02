@@ -12,7 +12,7 @@
 
 #include "tap.h"
 
-#include "../../libmsgpack/msgpack.h"
+#include "../../src/libmsgpack/msgpack.h"
 
 #define BUFFER_SIZE 4096
 #define NUM_TESTS 23

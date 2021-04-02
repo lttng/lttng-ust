@@ -7,7 +7,7 @@ liblttng_ust_fd_la_SOURCES = \
 	lttng-ust-fd.c
 
 liblttng_ust_fd_la_LIBADD = \
-	$(top_builddir)/liblttng-ust/liblttng-ust.la \
+	$(top_builddir)/src/liblttng-ust/liblttng-ust.la \
 	$(DL_LIBS)
 
 liblttng_ust_fd_la_LDFLAGS = -version-info $(LTTNG_UST_LIBRARY_VERSION)

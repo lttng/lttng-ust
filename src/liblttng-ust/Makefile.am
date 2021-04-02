@@ -22,7 +22,7 @@ liblttng_ust_tracepoint_la_SOURCES = \
 
 liblttng_ust_tracepoint_la_LIBADD = \
 	liblttng-ust-common.la \
-	$(top_builddir)/snprintf/libustsnprintf.la \
+	$(top_builddir)/src/snprintf/libustsnprintf.la \
 	$(DL_LIBS)
 
 liblttng_ust_tracepoint_la_LDFLAGS = -no-undefined -version-info $(LTTNG_UST_LIBRARY_VERSION)
@@ -129,17 +129,17 @@ liblttng_ust_la_SOURCES =
 liblttng_ust_la_LDFLAGS = -no-undefined -version-info $(LTTNG_UST_LIBRARY_VERSION)
 
 liblttng_ust_support_la_LIBADD = \
-	$(top_builddir)/libringbuffer/libringbuffer.la \
-	$(top_builddir)/libcounter/libcounter.la
+	$(top_builddir)/src/libringbuffer/libringbuffer.la \
+	$(top_builddir)/src/libcounter/libcounter.la
 
 liblttng_ust_la_LIBADD = \
 	-lrt \
 	liblttng-ust-common.la \
-	$(top_builddir)/snprintf/libustsnprintf.la \
-	$(top_builddir)/liblttng-ust-comm/liblttng-ust-comm.la \
+	$(top_builddir)/src/snprintf/libustsnprintf.la \
+	$(top_builddir)/src/liblttng-ust-comm/liblttng-ust-comm.la \
 	liblttng-ust-tracepoint.la \
 	liblttng-ust-runtime.la liblttng-ust-support.la \
-	$(top_builddir)/libmsgpack/libmsgpack.la \
+	$(top_builddir)/src/libmsgpack/libmsgpack.la \
 	$(DL_LIBS)
 
 liblttng_ust_la_CFLAGS = -DUST_COMPONENT="liblttng_ust" $(AM_CFLAGS)

@@ -15,7 +15,7 @@ liblttng_ust_java_la_SOURCES = LTTngUst.c lttng_ust_java.h
 nodist_liblttng_ust_java_la_SOURCES = org_lttng_ust_LTTngUst.h
 
 liblttng_ust_java_la_LIBADD = -lc \
-	$(top_builddir)/liblttng-ust/liblttng-ust.la
+	$(top_builddir)/src/liblttng-ust/liblttng-ust.la
 
 $(jarfile): classnoinst.stamp
 	$(JAR) cf $(JARFLAGS) $@ $(pkgpath)/*.class

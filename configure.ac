@@ -514,59 +514,60 @@ AC_SUBST(JNI_CPPFLAGS)
 # List of files to be generated from '.in' templates by AC_OUTPUT
 AC_CONFIG_FILES([
   Makefile
-  doc/Makefile
   doc/examples/Makefile
+  doc/Makefile
   doc/man/Makefile
   include/Makefile
-  snprintf/Makefile
-  libcounter/Makefile
-  libmsgpack/Makefile
-  libringbuffer/Makefile
-  liblttng-ust-comm/Makefile
-  liblttng-ust/Makefile
-  liblttng-ust-ctl/Makefile
-  liblttng-ust-fork/Makefile
-  liblttng-ust-dl/Makefile
-  liblttng-ust-fd/Makefile
-  liblttng-ust-java/Makefile
-  liblttng-ust-java-agent/Makefile
-  liblttng-ust-java-agent/java/Makefile
-  liblttng-ust-java-agent/java/lttng-ust-agent-all/Makefile
-  liblttng-ust-java-agent/java/lttng-ust-agent-common/Makefile
-  liblttng-ust-java-agent/java/lttng-ust-agent-jul/Makefile
-  liblttng-ust-java-agent/java/lttng-ust-agent-log4j/Makefile
-  liblttng-ust-java-agent/jni/Makefile
-  liblttng-ust-java-agent/jni/common/Makefile
-  liblttng-ust-java-agent/jni/jul/Makefile
-  liblttng-ust-java-agent/jni/log4j/Makefile
-  liblttng-ust-libc-wrapper/Makefile
-  liblttng-ust-cyg-profile/Makefile
-  liblttng-ust-python-agent/Makefile
-  python-lttngust/Makefile
-  python-lttngust/setup.py
-  python-lttngust/lttngust/version.py
-  tools/Makefile
-  tests/Makefile
-  tests/compile/Makefile
+  src/libcounter/Makefile
+  src/liblttng-ust-comm/Makefile
+  src/liblttng-ust-ctl/Makefile
+  src/liblttng-ust-cyg-profile/Makefile
+  src/liblttng-ust-dl/Makefile
+  src/liblttng-ust-fd/Makefile
+  src/liblttng-ust-fork/Makefile
+  src/liblttng-ust-java-agent/java/lttng-ust-agent-all/Makefile
+  src/liblttng-ust-java-agent/java/lttng-ust-agent-common/Makefile
+  src/liblttng-ust-java-agent/java/lttng-ust-agent-jul/Makefile
+  src/liblttng-ust-java-agent/java/lttng-ust-agent-log4j/Makefile
+  src/liblttng-ust-java-agent/java/Makefile
+  src/liblttng-ust-java-agent/jni/common/Makefile
+  src/liblttng-ust-java-agent/jni/jul/Makefile
+  src/liblttng-ust-java-agent/jni/log4j/Makefile
+  src/liblttng-ust-java-agent/jni/Makefile
+  src/liblttng-ust-java-agent/Makefile
+  src/liblttng-ust-java/Makefile
+  src/liblttng-ust-libc-wrapper/Makefile
+  src/liblttng-ust/Makefile
+  src/liblttng-ust-python-agent/Makefile
+  src/libmsgpack/Makefile
+  src/libringbuffer/Makefile
+  src/lttng-ust-ctl.pc
+  src/lttng-ust.pc
+  src/Makefile
+  src/python-lttngust/lttngust/version.py
+  src/python-lttngust/Makefile
+  src/python-lttngust/setup.py
+  src/snprintf/Makefile
+  tests/benchmark/Makefile
   tests/compile/ctf-types/Makefile
   tests/compile/hello.cxx/Makefile
   tests/compile/hello/Makefile
   tests/compile/hello-many/Makefile
+  tests/compile/Makefile
   tests/compile/same_line_tracepoint/Makefile
   tests/compile/test-app-ctx/Makefile
-  tests/benchmark/Makefile
+  tests/Makefile
   tests/unit/gcc-weak-hidden/Makefile
   tests/unit/libmsgpack/Makefile
-  tests/unit/Makefile
   tests/unit/libringbuffer/Makefile
+  tests/unit/Makefile
   tests/unit/pthread_name/Makefile
   tests/unit/snprintf/Makefile
   tests/unit/ust-elf/Makefile
   tests/unit/ust-error/Makefile
   tests/unit/ust-utils/Makefile
   tests/utils/Makefile
-  lttng-ust.pc
-  lttng-ust-ctl.pc
+  tools/Makefile
 ])
 
 AC_OUTPUT

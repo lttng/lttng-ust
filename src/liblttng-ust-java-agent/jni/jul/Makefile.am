@@ -9,5 +9,5 @@ liblttng_ust_jul_jni_la_SOURCES = lttng_ust_jul.c \
 nodist_liblttng_ust_jul_jni_la_SOURCES = org_lttng_ust_agent_jul_LttngJulApi.h
 
 liblttng_ust_jul_jni_la_LIBADD = -lc \
-	$(top_builddir)/liblttng-ust/liblttng-ust.la \
-	$(top_builddir)/liblttng-ust-java-agent/jni/common/liblttng-ust-context-jni.la
+	$(top_builddir)/src/liblttng-ust/liblttng-ust.la \
+	$(top_builddir)/src/liblttng-ust-java-agent/jni/common/liblttng-ust-context-jni.la

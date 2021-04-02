@@ -140,7 +140,7 @@ all-local:
 				CFLAGS='$(CFLAGS)' \
 				AM_CFLAGS='$(AM_CFLAGS)' \
 				LDFLAGS="$(LDFLAGS)" \
-				AM_LDFLAGS='$(AM_LDFLAGS) -L../../../liblttng-ust/.libs -Wl,-rpath="$(PWD)/../../liblttng-ust/.libs/" -Wl,-rpath-link="$(PWD)/../../liblttng-ust/.libs/"' \
+				AM_LDFLAGS='$(AM_LDFLAGS) -L../../../src/liblttng-ust/.libs -Wl,-rpath="$(PWD)/../../src/liblttng-ust/.libs/" -Wl,-rpath-link="$(PWD)/../../src/liblttng-ust/.libs/"' \
 				LTTNG_GEN_TP_PATH="$$rel_src_subdir$(top_srcdir)/tools/" \
 				AM_V_P="$(AM_V_P)" \
 				AM_V_at="$(AM_V_at)" \
@@ -153,8 +153,8 @@ all-local:
 				cd $$subdir && \
 				$(MAKE) all \
 					CLASSPATH="$(CLASSPATH)" \
-					JAVA_CLASSPATH_OVERRIDE_JUL="../../../liblttng-ust-java-agent/java/lttng-ust-agent-jul" \
-					JAVA_CLASSPATH_OVERRIDE_COMMON="../../../liblttng-ust-java-agent/java/lttng-ust-agent-common" \
+					JAVA_CLASSPATH_OVERRIDE_JUL="../../../src/liblttng-ust-java-agent/java/lttng-ust-agent-jul" \
+					JAVA_CLASSPATH_OVERRIDE_COMMON="../../../src/liblttng-ust-java-agent/java/lttng-ust-agent-common" \
 					$(AM_MAKEFLAGS) \
 			) || exit 1; \
 		done; \
@@ -165,8 +165,8 @@ all-local:
 				cd $$subdir && \
 				$(MAKE) all \
 					CLASSPATH="$(CLASSPATH)" \
-					JAVA_CLASSPATH_OVERRIDE_LOG4J="../../../liblttng-ust-java-agent/java/lttng-ust-agent-log4j" \
-					JAVA_CLASSPATH_OVERRIDE_COMMON="../../../liblttng-ust-java-agent/java/lttng-ust-agent-common" \
+					JAVA_CLASSPATH_OVERRIDE_LOG4J="../../../src/liblttng-ust-java-agent/java/lttng-ust-agent-log4j" \
+					JAVA_CLASSPATH_OVERRIDE_COMMON="../../../src/liblttng-ust-java-agent/java/lttng-ust-agent-common" \
 					$(AM_MAKEFLAGS) \
 			) || exit 1; \
 		done; \
@@ -182,7 +182,7 @@ all-local:
 					CXX="$(CXX)" \
 					$(CMAKE) \
 					-DCMAKE_INCLUDE_PATH="$(abs_top_srcdir)/include;$(abs_top_builddir)/include" \
-					-DCMAKE_LIBRARY_PATH="$(abs_top_builddir)/liblttng-ust/.libs" \
+					-DCMAKE_LIBRARY_PATH="$(abs_top_builddir)/src/liblttng-ust/.libs" \
 					-DCMAKE_C_FLAGS="$(AM_CFLAGS) $(CPPFLAGS) $(CFLAGS)" \
 					-DCMAKE_CXX_FLAGS="$(AM_CXXFLAGS) $(CXXFLAGS) $(CPPFLAGS)" \
 					-DCMAKE_EXE_LINKER_FLAGS="$(AM_LDFLAGS) $(LDFLAGS)" \
