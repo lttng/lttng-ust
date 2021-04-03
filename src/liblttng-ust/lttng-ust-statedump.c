@@ -22,7 +22,6 @@
 #include "lttng-ust-statedump.h"
 #include "jhash.h"
 #include "getenv.h"
-#include "compat.h"
 #include "ust-events-internal.h"
 
 #define TRACEPOINT_DEFINE

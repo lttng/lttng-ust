@@ -15,11 +15,14 @@ noinst_HEADERS = \
 	logging.h \
 	macros.h \
 	patient.h \
+	procname.h \
 	safe-snprintf.h
 
 noinst_HEADERS += \
 	compat/dlfcn.h \
+	compat/errno.h \
 	compat/mmap.h \
+	compat/pthread.h \
 	compat/tid.h
 
 # These headers should be moved to the public headers when tested and

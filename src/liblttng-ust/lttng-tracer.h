@@ -15,7 +15,6 @@
 #include <stdint.h>
 #include <lttng/ust-events.h>
 #include "lttng-tracer-core.h"
-#include "compat.h"
 
 /* Tracer properties */
 #define CTF_MAGIC_NUMBER		0xC1FC1FC1

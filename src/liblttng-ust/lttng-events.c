@@ -40,7 +40,6 @@
 #include "common/dynamic-type.h"
 #include "common/ust-context-provider.h"
 #include "error.h"
-#include "compat.h"
 #include "lttng-ust-uuid.h"
 
 #include "tracepoint-internal.h"

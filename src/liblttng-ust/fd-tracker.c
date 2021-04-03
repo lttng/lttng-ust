@@ -30,8 +30,6 @@
 #include <lttng/ust-error.h>
 #include "common/logging.h"
 
-#include "liblttng-ust/compat.h"
-
 /* Operations on the fd set. */
 #define IS_FD_VALID(fd)			((fd) >= 0 && (fd) < lttng_ust_max_fd)
 #define GET_FD_SET_FOR_FD(fd, fd_sets)	(&((fd_sets)[(fd) / FD_SETSIZE]))

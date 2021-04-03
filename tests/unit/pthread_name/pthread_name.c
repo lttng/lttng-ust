@@ -6,7 +6,8 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "../../../src/liblttng-ust/compat.h"
+#include "common/compat/pthread.h"
+#include "common/procname.h"
 
 #include "tap.h"
 

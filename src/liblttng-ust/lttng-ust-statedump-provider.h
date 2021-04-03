@@ -19,7 +19,6 @@ extern "C" {
 #include <stdint.h>
 #include <unistd.h>
 #include <lttng/ust-events.h>
-#include "compat.h"
 
 #define LTTNG_UST_STATEDUMP_PROVIDER
 #include <lttng/tracepoint.h>

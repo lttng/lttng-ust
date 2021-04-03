@@ -28,7 +28,7 @@
 #include "common/logging.h"
 
 #include "../liblttng-ust/ust-events-internal.h"
-#include "../liblttng-ust/compat.h"
+#include "common/compat/pthread.h"
 
 #define USTCOMM_CODE_OFFSET(code)	\
 	(code == LTTNG_UST_OK ? 0 : (code - LTTNG_UST_ERR + 1))

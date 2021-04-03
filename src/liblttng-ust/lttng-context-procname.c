@@ -13,7 +13,7 @@
 #include <lttng/ringbuffer-context.h>
 #include <urcu/tls-compat.h>
 #include <assert.h>
-#include "compat.h"
+#include "common/compat/pthread.h"
 #include "lttng-tracer-core.h"
 
 #include "context-internal.h"
