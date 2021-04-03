@@ -15,7 +15,7 @@
 #include <urcu/rculist.h>
 
 #include "lttng-tracer-core.h"
-#include "ust-events-internal.h"
+#include "lib/lttng-ust/events.h"
 #include "common/msgpack/msgpack.h"
 #include "lttng-bytecode.h"
 #include "common/patient.h"

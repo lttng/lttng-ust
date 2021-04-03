@@ -78,7 +78,7 @@ liblttng_ust_runtime_la_SOURCES = \
 	context-internal.h \
 	context-provider-internal.h \
 	tracepoint-internal.h \
-	ust-events-internal.h \
+	events.h \
 	clock.h \
 	jhash.h \
 	lttng-ust-uuid.h \

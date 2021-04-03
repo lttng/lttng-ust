@@ -21,7 +21,7 @@
 #include "lttng-tracer-core.h"
 #include "jhash.h"
 #include "error.h"
-#include "ust-events-internal.h"
+#include "lib/lttng-ust/events.h"
 
 /*
  * probe list is protected by ust_lock()/ust_unlock().

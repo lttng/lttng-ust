@@ -49,7 +49,7 @@
 #include "lttng-tracer-core.h"
 #include "lttng-ust-statedump.h"
 #include "context-internal.h"
-#include "ust-events-internal.h"
+#include "lib/lttng-ust/events.h"
 #include "wait.h"
 #include "common/ringbuffer/shm.h"
 #include "common/ringbuffer/frontend_types.h"

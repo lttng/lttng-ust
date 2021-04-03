@@ -13,6 +13,7 @@ noinst_HEADERS = \
 	clock.h \
 	dynamic-type.h \
 	elf.h \
+	events.h \
 	logging.h \
 	macros.h \
 	patient.h \

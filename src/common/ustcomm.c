@@ -27,7 +27,7 @@
 #include "common/dynamic-type.h"
 #include "common/logging.h"
 
-#include "lib/lttng-ust/ust-events-internal.h"
+#include "common/events.h"
 #include "common/compat/pthread.h"
 
 #define USTCOMM_CODE_OFFSET(code)	\

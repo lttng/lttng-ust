@@ -14,7 +14,7 @@
 #include <urcu/rculist.h>
 #include <lttng/ust-endian.h>
 #include <lttng/ust-events.h>
-#include "ust-events-internal.h"
+#include "lib/lttng-ust/events.h"
 
 #include "lttng-bytecode.h"
 #include "string-utils.h"

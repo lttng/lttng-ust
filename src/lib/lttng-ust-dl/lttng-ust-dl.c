@@ -21,8 +21,7 @@
 #include <lttng/ust-events.h>
 #include "common/macros.h"
 #include "common/logging.h"
-
-#include "lib/lttng-ust/ust-events-internal.h"
+#include "common/events.h"
 
 /* Include link.h last else it conflicts with ust-dlfcn. */
 #include <link.h>

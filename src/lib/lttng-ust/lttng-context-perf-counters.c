@@ -34,7 +34,7 @@
 
 #include "context-internal.h"
 #include "lttng-tracer-core.h"
-#include "ust-events-internal.h"
+#include "lib/lttng-ust/events.h"
 
 /*
  * We use a global perf counter key and iterate on per-thread RCU lists

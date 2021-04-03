@@ -15,7 +15,7 @@
 
 #include "context-internal.h"
 #include "lttng-bytecode.h"
-#include "ust-events-internal.h"
+#include "lib/lttng-ust/events.h"
 #include "common/macros.h"
 
 static int lttng_fls(int val)

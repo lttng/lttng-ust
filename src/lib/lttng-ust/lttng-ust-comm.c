@@ -52,7 +52,7 @@
 #include "clock.h"
 #include "lib/lttng-ust/getcpu.h"
 #include "common/getenv.h"
-#include "ust-events-internal.h"
+#include "lib/lttng-ust/events.h"
 #include "context-internal.h"
 #include "common/align.h"
 #include "lttng-counter-client.h"

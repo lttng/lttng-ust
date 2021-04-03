@@ -23,7 +23,7 @@
 #include <limits.h>
 #include "common/logging.h"
 #include "bytecode.h"
-#include "ust-events-internal.h"
+#include "lib/lttng-ust/events.h"
 
 /* Interpreter stack length, in number of entries */
 #define INTERPRETER_STACK_LEN	10	/* includes 2 dummy */

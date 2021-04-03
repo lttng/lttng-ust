@@ -10,7 +10,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <ust-events-internal.h>
+#include "lib/lttng-ust/events.h"
 #include <lttng/urcu/pointer.h>
 #include "common/bitfield.h"
 #include "common/align.h"
