@@ -45,7 +45,7 @@ static int lazy_nesting;
  * right probe, and that the resulting name is not too long.
  */
 static
-bool check_event_provider(struct lttng_ust_probe_desc *probe_desc)
+bool check_event_provider(const struct lttng_ust_probe_desc *probe_desc)
 {
 	int i;
 
@@ -70,9 +70,9 @@ bool check_event_provider(struct lttng_ust_probe_desc *probe_desc)
  * Called under ust lock.
  */
 static
-void lttng_lazy_probe_register(struct lttng_ust_probe_desc *desc)
+void lttng_lazy_probe_register(struct lttng_ust_registered_probe *reg_probe)
 {
-	struct lttng_ust_probe_desc *iter;
+	struct lttng_ust_registered_probe *iter;
 	struct cds_list_head *probe_list;
 
 	/*
@@ -87,18 +87,18 @@ void lttng_lazy_probe_register(struct lttng_ust_probe_desc *desc)
 	 */
 	probe_list = &_probe_list;
 	cds_list_for_each_entry_reverse(iter, probe_list, head) {
-		BUG_ON(iter == desc); /* Should never be in the list twice */
-		if (iter < desc) {
+		BUG_ON(iter == reg_probe); /* Should never be in the list twice */
+		if (iter < reg_probe) {
 			/* We belong to the location right after iter. */
-			cds_list_add(&desc->head, &iter->head);
-			goto desc_added;
+			cds_list_add(&reg_probe->head, &iter->head);
+			goto probe_added;
 		}
 	}
 	/* We should be added at the head of the list */
-	cds_list_add(&desc->head, probe_list);
-desc_added:
+	cds_list_add(&reg_probe->head, probe_list);
+probe_added:
 	DBG("just registered probe %s containing %u events",
-		desc->provider_name, desc->nr_events);
+		reg_probe->desc->provider_name, reg_probe->desc->nr_events);
 }
 
 /*
@@ -107,7 +107,7 @@ desc_added:
 static
 void fixup_lazy_probes(void)
 {
-	struct lttng_ust_probe_desc *iter, *tmp;
+	struct lttng_ust_registered_probe *iter, *tmp;
 	int ret;
 
 	lazy_nesting++;
@@ -133,7 +133,7 @@ struct cds_list_head *lttng_get_probe_list_head(void)
 }
 
 static
-int check_provider_version(struct lttng_ust_probe_desc *desc)
+int check_provider_version(const struct lttng_ust_probe_desc *desc)
 {
 	/*
 	 * Check tracepoint provider version compatibility.
@@ -161,10 +161,9 @@ int check_provider_version(struct lttng_ust_probe_desc *desc)
 	}
 }
 
-
-int lttng_ust_probe_register(struct lttng_ust_probe_desc *desc)
+struct lttng_ust_registered_probe *lttng_ust_probe_register(const struct lttng_ust_probe_desc *desc)
 {
-	int ret = 0;
+	struct lttng_ust_registered_probe *reg_probe = NULL;
 
 	lttng_ust_fixup_tls();
 
@@ -173,14 +172,19 @@ int lttng_ust_probe_register(struct lttng_ust_probe_desc *desc)
 	 * on caller. The version check just prints an error.
 	 */
 	if (!check_provider_version(desc))
-		return 0;
+		return NULL;
 	if (!check_event_provider(desc))
-		return 0;
+		return NULL;
 
 	ust_lock_nocheck();
 
-	cds_list_add(&desc->lazy_init_head, &lazy_probe_init);
-	desc->lazy = 1;
+	reg_probe = zmalloc(sizeof(struct lttng_ust_registered_probe));
+	if (!reg_probe)
+		goto end;
+	reg_probe->desc = desc;
+	cds_list_add(&reg_probe->lazy_init_head, &lazy_probe_init);
+	reg_probe->lazy = 1;
+
 	DBG("adding probe %s containing %u events to lazy registration list",
 		desc->provider_name, desc->nr_events);
 	/*
@@ -192,28 +196,30 @@ int lttng_ust_probe_register(struct lttng_ust_probe_desc *desc)
 		fixup_lazy_probes();
 
 	lttng_fix_pending_event_notifiers();
-
+end:
 	ust_unlock();
-	return ret;
+	return reg_probe;
 }
 
-void lttng_ust_probe_unregister(struct lttng_ust_probe_desc *desc)
+void lttng_ust_probe_unregister(struct lttng_ust_registered_probe *reg_probe)
 {
 	lttng_ust_fixup_tls();
 
-	if (!check_provider_version(desc))
+	if (!reg_probe)
+		return;
+	if (!check_provider_version(reg_probe->desc))
 		return;
 
 	ust_lock_nocheck();
-	if (!desc->lazy)
-		cds_list_del(&desc->head);
+	if (!reg_probe->lazy)
+		cds_list_del(&reg_probe->head);
 	else
-		cds_list_del(&desc->lazy_init_head);
+		cds_list_del(&reg_probe->lazy_init_head);
 
-	lttng_probe_provider_unregister_events(desc);
-	DBG("just unregistered probes of provider %s", desc->provider_name);
-
+	lttng_probe_provider_unregister_events(reg_probe->desc);
+	DBG("just unregistered probes of provider %s", reg_probe->desc->provider_name);
 	ust_unlock();
+	free(reg_probe);
 }
 
 void lttng_probes_prune_event_list(struct lttng_ust_tracepoint_list *list)
@@ -231,13 +237,15 @@ void lttng_probes_prune_event_list(struct lttng_ust_tracepoint_list *list)
  */
 int lttng_probes_get_event_list(struct lttng_ust_tracepoint_list *list)
 {
-	struct lttng_ust_probe_desc *probe_desc;
-	int i;
+	struct lttng_ust_registered_probe *reg_probe;
 	struct cds_list_head *probe_list;
+	int i;
 
 	probe_list = lttng_get_probe_list_head();
 	CDS_INIT_LIST_HEAD(&list->head);
-	cds_list_for_each_entry(probe_desc, probe_list, head) {
+	cds_list_for_each_entry(reg_probe, probe_list, head) {
+		const struct lttng_ust_probe_desc *probe_desc = reg_probe->desc;
+
 		for (i = 0; i < probe_desc->nr_events; i++) {
 			const struct lttng_ust_event_desc *event_desc =
 				probe_desc->event_desc[i];
@@ -305,13 +313,15 @@ void lttng_probes_prune_field_list(struct lttng_ust_field_list *list)
  */
 int lttng_probes_get_field_list(struct lttng_ust_field_list *list)
 {
-	struct lttng_ust_probe_desc *probe_desc;
-	int i;
+	struct lttng_ust_registered_probe *reg_probe;
 	struct cds_list_head *probe_list;
+	int i;
 
 	probe_list = lttng_get_probe_list_head();
 	CDS_INIT_LIST_HEAD(&list->head);
-	cds_list_for_each_entry(probe_desc, probe_list, head) {
+	cds_list_for_each_entry(reg_probe, probe_list, head) {
+		const struct lttng_ust_probe_desc *probe_desc = reg_probe->desc;
+
 		for (i = 0; i < probe_desc->nr_events; i++) {
 			const struct lttng_ust_event_desc *event_desc =
 				probe_desc->event_desc[i];

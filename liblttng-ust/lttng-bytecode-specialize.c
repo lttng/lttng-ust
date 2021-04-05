@@ -254,8 +254,8 @@ static int specialize_get_index(struct bytecode_runtime *runtime,
 		switch (stack_top->load.object_type) {
 		case OBJECT_TYPE_ARRAY:
 		{
-			struct lttng_ust_type_integer *integer_type;
-			struct lttng_ust_event_field *field;
+			const struct lttng_ust_type_integer *integer_type;
+			const struct lttng_ust_event_field *field;
 			uint32_t elem_len, num_elems;
 			int signedness;
 
@@ -294,8 +294,8 @@ static int specialize_get_index(struct bytecode_runtime *runtime,
 		}
 		case OBJECT_TYPE_SEQUENCE:
 		{
-			struct lttng_ust_type_integer *integer_type;
-			struct lttng_ust_event_field *field;
+			const struct lttng_ust_type_integer *integer_type;
+			const struct lttng_ust_event_field *field;
 			uint32_t elem_len;
 			int signedness;
 
@@ -379,7 +379,7 @@ static int specialize_context_lookup_name(struct lttng_ust_ctx *ctx,
 	return lttng_get_context_index(ctx, name);
 }
 
-static int specialize_load_object(struct lttng_ust_event_field *field,
+static int specialize_load_object(const struct lttng_ust_event_field *field,
 		struct vstack_load *load, bool is_context)
 {
 	load->type = LOAD_OBJECT;
@@ -394,7 +394,7 @@ static int specialize_load_object(struct lttng_ust_event_field *field,
 		break;
 	case lttng_ust_type_enum:
 	{
-		struct lttng_ust_type_integer *itype;
+		const struct lttng_ust_type_integer *itype;
 
 		itype = lttng_ust_get_type_integer(lttng_ust_get_type_enum(field->type)->container_type);
 		if (itype->signedness)
@@ -459,8 +459,8 @@ static int specialize_context_lookup(struct lttng_ust_ctx *ctx,
 		struct vstack_load *load)
 {
 	int idx, ret;
-	struct lttng_ust_ctx_field *ctx_field;
-	struct lttng_ust_event_field *field;
+	const struct lttng_ust_ctx_field *ctx_field;
+	const struct lttng_ust_event_field *field;
 	struct bytecode_get_index_data gid;
 	ssize_t data_offset;
 
@@ -468,7 +468,7 @@ static int specialize_context_lookup(struct lttng_ust_ctx *ctx,
 	if (idx < 0) {
 		return -ENOENT;
 	}
-	ctx_field = ctx->fields[idx];
+	ctx_field = &ctx->fields[idx];
 	field = ctx_field->event_field;
 	ret = specialize_load_object(field, load, true);
 	if (ret)
@@ -498,8 +498,8 @@ static int specialize_app_context_lookup(struct lttng_ust_ctx **pctx,
 	const char *orig_name;
 	char *name = NULL;
 	int idx, ret;
-	struct lttng_ust_ctx_field *ctx_field;
-	struct lttng_ust_event_field *field;
+	const struct lttng_ust_ctx_field *ctx_field;
+	const struct lttng_ust_event_field *field;
 	struct bytecode_get_index_data gid;
 	ssize_t data_offset;
 
@@ -523,7 +523,7 @@ static int specialize_app_context_lookup(struct lttng_ust_ctx **pctx,
 		if (idx < 0)
 			return -ENOENT;
 	}
-	ctx_field = (*pctx)->fields[idx];
+	ctx_field = &(*pctx)->fields[idx];
 	field = ctx_field->event_field;
 	ret = specialize_load_object(field, load, true);
 	if (ret)
@@ -548,7 +548,7 @@ end:
 	return ret;
 }
 
-static int specialize_payload_lookup(struct lttng_ust_event_desc *event_desc,
+static int specialize_payload_lookup(const struct lttng_ust_event_desc *event_desc,
 		struct bytecode_runtime *runtime,
 		struct load_op *insn,
 		struct vstack_load *load)
@@ -558,7 +558,7 @@ static int specialize_payload_lookup(struct lttng_ust_event_desc *event_desc,
 	unsigned int i, nr_fields;
 	bool found = false;
 	uint32_t field_offset = 0;
-	struct lttng_ust_event_field *field;
+	const struct lttng_ust_event_field *field;
 	int ret;
 	struct bytecode_get_index_data gid;
 	ssize_t data_offset;
@@ -625,7 +625,7 @@ end:
 	return ret;
 }
 
-int lttng_bytecode_specialize(struct lttng_ust_event_desc *event_desc,
+int lttng_bytecode_specialize(const struct lttng_ust_event_desc *event_desc,
 		struct bytecode_runtime *bytecode)
 {
 	void *pc, *next_pc, *start_pc;

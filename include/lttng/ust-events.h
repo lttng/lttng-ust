@@ -9,8 +9,6 @@
 #ifndef _LTTNG_UST_EVENTS_H
 #define _LTTNG_UST_EVENTS_H
 
-#include <urcu/list.h>
-#include <urcu/hlist.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <lttng/ust-abi.h>
@@ -41,6 +39,7 @@ struct lttng_ust_channel_buffer;
 struct lttng_ust_session;
 struct lttng_ust_lib_ring_buffer_ctx;
 struct lttng_ust_event_field;
+struct lttng_ust_registered_probe;
 
 /*
  * Data structures used by tracepoint event declarations, and by the
@@ -171,14 +170,14 @@ struct lttng_ust_type_string {
 struct lttng_ust_type_enum {
 	struct lttng_ust_type_common parent;
 	uint32_t struct_size;
-	struct lttng_ust_enum_desc *desc;	/* Enumeration mapping */
-	struct lttng_ust_type_common *container_type;
+	const struct lttng_ust_enum_desc *desc;	/* Enumeration mapping */
+	const struct lttng_ust_type_common *container_type;
 };
 
 struct lttng_ust_type_array {
 	struct lttng_ust_type_common parent;
 	uint32_t struct_size;
-	struct lttng_ust_type_common *elem_type;
+	const struct lttng_ust_type_common *elem_type;
 	unsigned int length;			/* Num. elems. */
 	unsigned int alignment;
 	enum lttng_ust_string_encoding encoding;
@@ -188,7 +187,7 @@ struct lttng_ust_type_sequence {
 	struct lttng_ust_type_common parent;
 	uint32_t struct_size;
 	const char *length_name;	/* Length field name. */
-	struct lttng_ust_type_common *elem_type;
+	const struct lttng_ust_type_common *elem_type;
 	unsigned int alignment;		/* Alignment before elements. */
 	enum lttng_ust_string_encoding encoding;
 };
@@ -197,7 +196,7 @@ struct lttng_ust_type_struct {
 	struct lttng_ust_type_common parent;
 	uint32_t struct_size;
 	unsigned int nr_fields;
-	struct lttng_ust_event_field **fields;	/* Array of pointers to fields. */
+	const struct lttng_ust_event_field **fields;	/* Array of pointers to fields. */
 	unsigned int alignment;
 };
 
@@ -217,7 +216,7 @@ struct lttng_ust_enum_desc {
 	uint32_t struct_size;
 
 	const char *name;
-	struct lttng_ust_enum_entry **entries;
+	const struct lttng_ust_enum_entry **entries;
 	unsigned int nr_entries;
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */
@@ -239,7 +238,7 @@ struct lttng_ust_event_field {
 	uint32_t struct_size;
 
 	const char *name;
-	struct lttng_ust_type_common *type;
+	const struct lttng_ust_type_common *type;
 	unsigned int nowrite:1,		/* do not write into trace */
 		nofilter:1;		/* do not consider for filter */
 
@@ -257,16 +256,15 @@ struct lttng_ust_event_field {
  * at the end of the structure.
  */
 struct lttng_ust_event_desc {
-	uint32_t struct_size;			/* Size of this structure. */
+	uint32_t struct_size;				/* Size of this structure. */
 
 	const char *event_name;
-	struct lttng_ust_probe_desc *probe_desc;
+	const struct lttng_ust_probe_desc *probe_desc;
 	void (*probe_callback)(void);
-	struct lttng_event_ctx *ctx;		/* context */
-	struct lttng_ust_event_field **fields;	/* event payload */
+	const struct lttng_ust_event_field **fields;	/* event payload */
 	unsigned int nr_fields;
 	const int **loglevel;
-	const char *signature;			/* Argument types/names received */
+	const char *signature;				/* Argument types/names received */
 	const char **model_emf_uri;
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */
@@ -285,11 +283,8 @@ struct lttng_ust_probe_desc {
 	uint32_t struct_size;			/* Size of this structure. */
 
 	const char *provider_name;
-	struct lttng_ust_event_desc **event_desc;
+	const struct lttng_ust_event_desc **event_desc;
 	unsigned int nr_events;
-	struct cds_list_head head;		/* chain registered probes */
-	struct cds_list_head lazy_init_head;
-	int lazy;				/* lazy registration */
 	uint32_t major;
 	uint32_t minor;
 
@@ -307,7 +302,6 @@ struct lttng_ust_probe_desc {
  * removed.
  */
 
-struct lttng_ust_ctx;
 struct lttng_ust_event_common_private;
 
 enum lttng_ust_event_type {
@@ -546,8 +540,15 @@ struct lttng_ust_session {
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
-int lttng_ust_probe_register(struct lttng_ust_probe_desc *desc);
-void lttng_ust_probe_unregister(struct lttng_ust_probe_desc *desc);
+/*
+ * On successful registration of a probe, a pointer to an opaque
+ * structure is returned. This pointer should be passed to
+ * lttng_ust_probe_unregister for unregistration.
+ * lttng_ust_probe_register returns NULL on error.
+ */
+struct lttng_ust_registered_probe *lttng_ust_probe_register(const struct lttng_ust_probe_desc *desc);
+
+void lttng_ust_probe_unregister(struct lttng_ust_registered_probe *reg_probe);
 
 /*
  * Applications that change their procname and need the new value to be

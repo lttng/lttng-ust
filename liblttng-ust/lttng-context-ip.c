@@ -18,7 +18,7 @@
 #include "context-internal.h"
 
 static
-size_t ip_get_size(struct lttng_ust_ctx_field *field __attribute__((unused)),
+size_t ip_get_size(void *priv __attribute__((unused)),
 		size_t offset)
 {
 	size_t size = 0;
@@ -29,7 +29,7 @@ size_t ip_get_size(struct lttng_ust_ctx_field *field __attribute__((unused)),
 }
 
 static
-void ip_record(struct lttng_ust_ctx_field *field __attribute__((unused)),
+void ip_record(void *priv __attribute__((unused)),
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		 struct lttng_ust_channel_buffer *chan)
 {
@@ -39,42 +39,30 @@ void ip_record(struct lttng_ust_ctx_field *field __attribute__((unused)),
 	chan->ops->event_write(ctx, &ip, sizeof(ip), lttng_ust_rb_alignof(ip));
 }
 
+static const struct lttng_ust_ctx_field *ctx_field = lttng_ust_static_ctx_field(
+	lttng_ust_static_event_field("ip",
+		lttng_ust_static_type_integer(sizeof(void *) * CHAR_BIT,
+				lttng_ust_rb_alignof(void *) * CHAR_BIT,
+				lttng_ust_is_signed_type(void *),
+				BYTE_ORDER, 10),
+		false, false),
+	ip_get_size,
+	ip_record,
+	NULL, NULL, NULL);
+
 int lttng_add_ip_to_ctx(struct lttng_ust_ctx **ctx)
 {
-	struct lttng_ust_ctx_field *field;
-	struct lttng_ust_type_common *type;
 	int ret;
 
-	type = lttng_ust_create_type_integer(sizeof(void *) * CHAR_BIT,
-			lttng_ust_rb_alignof(void *) * CHAR_BIT,
-			lttng_ust_is_signed_type(void *),
-			BYTE_ORDER, 16);
-	if (!type)
-		return -ENOMEM;
-	field = lttng_append_context(ctx);
-	if (!field) {
-		ret = -ENOMEM;
-		goto error_context;
-	}
-	if (lttng_find_context(*ctx, "ip")) {
+	if (lttng_find_context(*ctx, ctx_field->event_field->name)) {
 		ret = -EEXIST;
 		goto error_find_context;
 	}
-	field->event_field->name = strdup("ip");
-	if (!field->event_field->name) {
-		ret = -ENOMEM;
-		goto error_name;
-	}
-	field->event_field->type = type;
-	field->get_size = ip_get_size;
-	field->record = ip_record;
-	lttng_context_update(*ctx);
+	ret = lttng_ust_context_append(ctx, ctx_field);
+	if (ret)
+		return ret;
 	return 0;
 
-error_name:
 error_find_context:
-	lttng_remove_context_field(ctx, field);
-error_context:
-	lttng_ust_destroy_type(type);
 	return ret;
 }

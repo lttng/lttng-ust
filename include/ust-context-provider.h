@@ -13,9 +13,10 @@
 
 #include <stddef.h>
 #include <lttng/ust-events.h>
-#include <urcu/hlist.h>
 
 #include "ust-dynamic-type.h"
+
+struct lttng_ust_registered_context_provider;
 
 /*
  * Context value
@@ -38,57 +39,6 @@ struct lttng_ust_ctx_value {
 };
 
 /*
- * Context field
- *
- * IMPORTANT: this structure is part of the ABI between the probe and
- * UST. Fields need to be only added at the end, never reordered, never
- * removed.
- *
- * The field @struct_size should be used to determine the size of the
- * structure. It should be queried before using additional fields added
- * at the end of the structure.
- */
-
-struct lttng_ust_ctx_field {
-	uint32_t struct_size;
-	void *priv;
-
-	struct lttng_ust_event_field *event_field;
-	size_t (*get_size)(struct lttng_ust_ctx_field *field, size_t offset);
-	void (*record)(struct lttng_ust_ctx_field *field,
-		       struct lttng_ust_lib_ring_buffer_ctx *ctx,
-		       struct lttng_ust_channel_buffer *chan);
-	void (*get_value)(struct lttng_ust_ctx_field *field,
-			 struct lttng_ust_ctx_value *value);
-	void (*destroy)(struct lttng_ust_ctx_field *field);
-
-	/* End of base ABI. Fields below should be used after checking struct_size. */
-};
-
-/*
- * All context fields for a given event/channel
- *
- * IMPORTANT: this structure is part of the ABI between the probe and
- * UST. Fields need to be only added at the end, never reordered, never
- * removed.
- *
- * The field @struct_size should be used to determine the size of the
- * structure. It should be queried before using additional fields added
- * at the end of the structure.
- */
-
-struct lttng_ust_ctx {
-	uint32_t struct_size;
-
-	struct lttng_ust_ctx_field **fields;
-	unsigned int nr_fields;
-	unsigned int allocated_fields;
-	unsigned int largest_align;
-
-	/* End of base ABI. Fields below should be used after checking struct_size. */
-};
-
-/*
  * Context provider
  *
  * IMPORTANT: this structure is part of the ABI between the probe and
@@ -103,37 +53,23 @@ struct lttng_ust_ctx {
 struct lttng_ust_context_provider {
 	uint32_t struct_size;
 
-	char *name;
-	size_t (*get_size)(struct lttng_ust_ctx_field *field, size_t offset);
-	void (*record)(struct lttng_ust_ctx_field *field,
-		       struct lttng_ust_lib_ring_buffer_ctx *ctx,
+	const char *name;
+	size_t (*get_size)(void *priv, size_t offset);
+	void (*record)(void *priv, struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		       struct lttng_ust_channel_buffer *chan);
-	void (*get_value)(struct lttng_ust_ctx_field *field,
-			 struct lttng_ust_ctx_value *value);
-	struct cds_hlist_node node;
+	void (*get_value)(void *priv, struct lttng_ust_ctx_value *value);
+	void *priv;
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
-int lttng_ust_context_provider_register(struct lttng_ust_context_provider *provider);
-void lttng_ust_context_provider_unregister(struct lttng_ust_context_provider *provider);
+/*
+ * Returns an opaque pointer on success, which must be passed to
+ * lttng_ust_context_provider_unregister for unregistration. Returns
+ * NULL on error.
+ */
+struct lttng_ust_registered_context_provider *lttng_ust_context_provider_register(struct lttng_ust_context_provider *provider);
 
-void lttng_ust_context_set_session_provider(const char *name,
-		size_t (*get_size)(struct lttng_ust_ctx_field *field, size_t offset),
-		void (*record)(struct lttng_ust_ctx_field *field,
-			struct lttng_ust_lib_ring_buffer_ctx *ctx,
-			struct lttng_ust_channel_buffer *chan),
-		void (*get_value)(struct lttng_ust_ctx_field *field,
-			struct lttng_ust_ctx_value *value));
-
-int lttng_ust_add_app_context_to_ctx_rcu(const char *name, struct lttng_ust_ctx **ctx);
-int lttng_ust_context_set_provider_rcu(struct lttng_ust_ctx **_ctx,
-		const char *name,
-		size_t (*get_size)(struct lttng_ust_ctx_field *field, size_t offset),
-		void (*record)(struct lttng_ust_ctx_field *field,
-			struct lttng_ust_lib_ring_buffer_ctx *ctx,
-			struct lttng_ust_channel_buffer *chan),
-		void (*get_value)(struct lttng_ust_ctx_field *field,
-			struct lttng_ust_ctx_value *value));
+void lttng_ust_context_provider_unregister(struct lttng_ust_registered_context_provider *reg_provider);
 
 #endif /* _LTTNG_UST_CONTEXT_PROVIDER_H */

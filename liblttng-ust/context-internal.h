@@ -25,21 +25,15 @@ int lttng_find_context(struct lttng_ust_ctx *ctx, const char *name)
 int lttng_get_context_index(struct lttng_ust_ctx *ctx, const char *name)
 	__attribute__((visibility("hidden")));
 
-struct lttng_ust_ctx_field *lttng_append_context(struct lttng_ust_ctx **ctx_p)
-	__attribute__((visibility("hidden")));
-
-void lttng_context_update(struct lttng_ust_ctx *ctx)
-	__attribute__((visibility("hidden")));
-
-void lttng_remove_context_field(struct lttng_ust_ctx **ctx_p,
-				struct lttng_ust_ctx_field *field)
-	__attribute__((visibility("hidden")));
-
 void lttng_destroy_context(struct lttng_ust_ctx *ctx)
 	__attribute__((visibility("hidden")));
 
-int lttng_context_add_rcu(struct lttng_ust_ctx **ctx_p,
-		struct lttng_ust_ctx_field *f)
+int lttng_ust_context_append_rcu(struct lttng_ust_ctx **ctx_p,
+		const struct lttng_ust_ctx_field *f)
+	__attribute__((visibility("hidden")));
+
+int lttng_ust_context_append(struct lttng_ust_ctx **ctx_p,
+		const struct lttng_ust_ctx_field *f)
 	__attribute__((visibility("hidden")));
 
 int lttng_context_is_app(const char *name)

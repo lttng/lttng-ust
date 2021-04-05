@@ -66,14 +66,14 @@ void lttng_ust_context_procname_reset(void)
 }
 
 static
-size_t procname_get_size(struct lttng_ust_ctx_field *field __attribute__((unused)),
+size_t procname_get_size(void *priv __attribute__((unused)),
 		size_t offset __attribute__((unused)))
 {
 	return LTTNG_UST_ABI_PROCNAME_LEN;
 }
 
 static
-void procname_record(struct lttng_ust_ctx_field *field __attribute__((unused)),
+void procname_record(void *priv __attribute__((unused)),
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		 struct lttng_ust_channel_buffer *chan)
 {
@@ -84,47 +84,35 @@ void procname_record(struct lttng_ust_ctx_field *field __attribute__((unused)),
 }
 
 static
-void procname_get_value(struct lttng_ust_ctx_field *field __attribute__((unused)),
+void procname_get_value(void *priv __attribute__((unused)),
 		struct lttng_ust_ctx_value *value)
 {
 	value->u.str = wrapper_getprocname();
 }
 
+static const struct lttng_ust_ctx_field *ctx_field = lttng_ust_static_ctx_field(
+	lttng_ust_static_event_field("procname",
+		lttng_ust_static_type_array_text(LTTNG_UST_ABI_PROCNAME_LEN),
+		false, false),
+	procname_get_size,
+	procname_record,
+	procname_get_value,
+	NULL, NULL);
+
 int lttng_add_procname_to_ctx(struct lttng_ust_ctx **ctx)
 {
-	struct lttng_ust_ctx_field *field;
-	struct lttng_ust_type_common *type;
 	int ret;
 
-	type = lttng_ust_create_type_array_text(LTTNG_UST_ABI_PROCNAME_LEN);
-	if (!type)
-		return -ENOMEM;
-	field = lttng_append_context(ctx);
-	if (!field) {
-		ret = -ENOMEM;
-		goto error_context;
-	}
-	if (lttng_find_context(*ctx, "procname")) {
+	if (lttng_find_context(*ctx, ctx_field->event_field->name)) {
 		ret = -EEXIST;
 		goto error_find_context;
 	}
-	field->event_field->name = strdup("procname");
-	if (!field->event_field->name) {
-		ret = -ENOMEM;
-		goto error_name;
-	}
-	field->event_field->type = type;
-	field->get_size = procname_get_size;
-	field->record = procname_record;
-	field->get_value = procname_get_value;
-	lttng_context_update(*ctx);
+	ret = lttng_ust_context_append(ctx, ctx_field);
+	if (ret)
+		return ret;
 	return 0;
 
-error_name:
 error_find_context:
-	lttng_remove_context_field(ctx, field);
-error_context:
-	lttng_ust_destroy_type(type);
 	return ret;
 }
 

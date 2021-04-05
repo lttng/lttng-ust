@@ -37,16 +37,16 @@
 
 static
 ssize_t count_fields_recursive(size_t nr_fields,
-		struct lttng_ust_event_field **lttng_fields);
+		const struct lttng_ust_event_field **lttng_fields);
 static
 int serialize_one_field(struct lttng_ust_session *session,
 		struct ustctl_field *fields, size_t *iter_output,
-		struct lttng_ust_event_field *lf);
+		const struct lttng_ust_event_field *lf);
 static
 int serialize_fields(struct lttng_ust_session *session,
 		struct ustctl_field *ustctl_fields,
 		size_t *iter_output, size_t nr_lttng_fields,
-		struct lttng_ust_event_field **lttng_fields);
+		const struct lttng_ust_event_field **lttng_fields);
 
 /*
  * Human readable error message.
@@ -864,7 +864,7 @@ int ustcomm_send_reg_msg(int sock,
 }
 
 static
-ssize_t count_one_type(struct lttng_ust_type_common *lt)
+ssize_t count_one_type(const struct lttng_ust_type_common *lt)
 {
 	switch (lt->type) {
 	case lttng_ust_type_integer:
@@ -883,7 +883,7 @@ ssize_t count_one_type(struct lttng_ust_type_common *lt)
 
 	case lttng_ust_type_dynamic:
 	{
-		struct lttng_ust_event_field **choices;
+		const struct lttng_ust_event_field **choices;
 		size_t nr_choices;
 		int ret;
 
@@ -906,7 +906,7 @@ ssize_t count_one_type(struct lttng_ust_type_common *lt)
 
 static
 ssize_t count_fields_recursive(size_t nr_fields,
-		struct lttng_ust_event_field **lttng_fields)
+		const struct lttng_ust_event_field **lttng_fields)
 {
 	int i;
 	ssize_t ret, count = 0;
@@ -928,7 +928,7 @@ ssize_t count_fields_recursive(size_t nr_fields,
 
 static
 ssize_t count_ctx_fields_recursive(size_t nr_fields,
-		struct lttng_ust_ctx_field **lttng_fields)
+		struct lttng_ust_ctx_field *lttng_fields)
 {
 	int i;
 	ssize_t ret, count = 0;
@@ -936,7 +936,7 @@ ssize_t count_ctx_fields_recursive(size_t nr_fields,
 	for (i = 0; i < nr_fields; i++) {
 		const struct lttng_ust_event_field *lf;
 
-		lf = lttng_fields[i]->event_field;
+		lf = lttng_fields[i].event_field;
 		/* skip 'nowrite' fields */
 		if (lf->nowrite)
 			continue;
@@ -991,10 +991,10 @@ int serialize_dynamic_type(struct lttng_ust_session *session,
 		struct ustctl_field *fields, size_t *iter_output,
 		const char *field_name)
 {
-	struct lttng_ust_event_field **choices;
+	const struct lttng_ust_event_field **choices;
 	char tag_field_name[LTTNG_UST_ABI_SYM_NAME_LEN];
-	struct lttng_ust_type_common *tag_type;
-	struct lttng_ust_event_field *tag_field_generic;
+	const struct lttng_ust_type_common *tag_type;
+	const struct lttng_ust_event_field *tag_field_generic;
 	struct lttng_ust_event_field tag_field = {
 		.name = tag_field_name,
 		.nowrite = 0,
@@ -1048,7 +1048,7 @@ int serialize_dynamic_type(struct lttng_ust_session *session,
 static
 int serialize_one_type(struct lttng_ust_session *session,
 		struct ustctl_field *fields, size_t *iter_output,
-		const char *field_name, struct lttng_ust_type_common *lt,
+		const char *field_name, const struct lttng_ust_type_common *lt,
 		enum lttng_ust_string_encoding parent_encoding)
 {
 	int ret;
@@ -1083,7 +1083,7 @@ int serialize_one_type(struct lttng_ust_session *session,
 		struct ustctl_field *uf = &fields[*iter_output];
 		struct ustctl_type *ut = &uf->type;
 		struct ustctl_float_type *uft;
-		struct lttng_ust_type_float *lft;
+		const struct lttng_ust_type_float *lft;
 
 		if (field_name) {
 			strncpy(uf->name, field_name, LTTNG_UST_ABI_SYM_NAME_LEN);
@@ -1243,7 +1243,7 @@ int serialize_one_type(struct lttng_ust_session *session,
 static
 int serialize_one_field(struct lttng_ust_session *session,
 		struct ustctl_field *fields, size_t *iter_output,
-		struct lttng_ust_event_field *lf)
+		const struct lttng_ust_event_field *lf)
 {
 	/* skip 'nowrite' fields */
 	if (lf->nowrite)
@@ -1256,7 +1256,7 @@ static
 int serialize_fields(struct lttng_ust_session *session,
 		struct ustctl_field *ustctl_fields,
 		size_t *iter_output, size_t nr_lttng_fields,
-		struct lttng_ust_event_field **lttng_fields)
+		const struct lttng_ust_event_field **lttng_fields)
 {
 	int ret;
 	size_t i;
@@ -1275,7 +1275,7 @@ int alloc_serialize_fields(struct lttng_ust_session *session,
 		size_t *_nr_write_fields,
 		struct ustctl_field **ustctl_fields,
 		size_t nr_fields,
-		struct lttng_ust_event_field **lttng_fields)
+		const struct lttng_ust_event_field **lttng_fields)
 {
 	struct ustctl_field *fields;
 	int ret;
@@ -1308,7 +1308,7 @@ error_type:
 static
 int serialize_entries(struct ustctl_enum_entry **_entries,
 		size_t nr_entries,
-		struct lttng_ust_enum_entry **lttng_entries)
+		const struct lttng_ust_enum_entry **lttng_entries)
 {
 	struct ustctl_enum_entry *entries;
 	int i;
@@ -1345,7 +1345,7 @@ int serialize_ctx_fields(struct lttng_ust_session *session,
 		size_t *_nr_write_fields,
 		struct ustctl_field **ustctl_fields,
 		size_t nr_fields,
-		struct lttng_ust_ctx_field **lttng_fields)
+		struct lttng_ust_ctx_field *lttng_fields)
 {
 	struct ustctl_field *fields;
 	int ret;
@@ -1364,7 +1364,7 @@ int serialize_ctx_fields(struct lttng_ust_session *session,
 
 	for (i = 0; i < nr_fields; i++) {
 		ret = serialize_one_field(session, fields, &iter_output,
-				lttng_fields[i]->event_field);
+				lttng_fields[i].event_field);
 		if (ret)
 			goto error_type;
 	}
@@ -1389,7 +1389,7 @@ int ustcomm_register_event(int sock,
 	int loglevel,
 	const char *signature,		/* event signature (input) */
 	size_t nr_fields,		/* fields */
-	struct lttng_ust_event_field **lttng_fields,
+	const struct lttng_ust_event_field **lttng_fields,
 	const char *model_emf_uri,
 	uint32_t *id)			/* event id (output) */
 {
@@ -1528,7 +1528,7 @@ int ustcomm_register_enum(int sock,
 	int session_objd,		/* session descriptor */
 	const char *enum_name,		/* enum name (input) */
 	size_t nr_entries,		/* entries */
-	struct lttng_ust_enum_entry **lttng_entries,
+	const struct lttng_ust_enum_entry **lttng_entries,
 	uint64_t *id)
 {
 	ssize_t len;
@@ -1633,7 +1633,7 @@ int ustcomm_register_channel(int sock,
 	int session_objd,		/* session descriptor */
 	int channel_objd,		/* channel descriptor */
 	size_t nr_ctx_fields,
-	struct lttng_ust_ctx_field **ctx_fields,
+	struct lttng_ust_ctx_field *ctx_fields,
 	uint32_t *chan_id,		/* channel id (output) */
 	int *header_type) 		/* header type (output) */
 {

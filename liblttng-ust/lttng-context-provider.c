@@ -20,6 +20,12 @@
 #include "context-provider-internal.h"
 #include <ust-helper.h>
 
+struct lttng_ust_registered_context_provider {
+	const struct lttng_ust_context_provider *provider;
+
+	struct cds_hlist_node node;
+};
+
 #define CONTEXT_PROVIDER_HT_BITS	12
 #define CONTEXT_PROVIDER_HT_SIZE	(1U << CONTEXT_PROVIDER_HT_BITS)
 struct context_provider_ht {
@@ -28,12 +34,12 @@ struct context_provider_ht {
 
 static struct context_provider_ht context_provider_ht;
 
-static struct lttng_ust_context_provider *
+static const struct lttng_ust_context_provider *
 		lookup_provider_by_name(const char *name)
 {
 	struct cds_hlist_head *head;
 	struct cds_hlist_node *node;
-	struct lttng_ust_context_provider *provider;
+	struct lttng_ust_registered_context_provider *reg_provider;
 	uint32_t hash;
 	const char *end;
 	size_t len;
@@ -46,69 +52,70 @@ static struct lttng_ust_context_provider *
 		len = strlen(name);
 	hash = jhash(name, len, 0);
 	head = &context_provider_ht.table[hash & (CONTEXT_PROVIDER_HT_SIZE - 1)];
-	cds_hlist_for_each_entry(provider, node, head, node) {
-		if (!strncmp(provider->name, name, len))
-			return provider;
+	cds_hlist_for_each_entry(reg_provider, node, head, node) {
+		if (!strncmp(reg_provider->provider->name, name, len))
+			return reg_provider->provider;
 	}
 	return NULL;
 }
 
-int lttng_ust_context_provider_register(struct lttng_ust_context_provider *provider)
+struct lttng_ust_registered_context_provider *lttng_ust_context_provider_register(struct lttng_ust_context_provider *provider)
 {
+	struct lttng_ust_registered_context_provider *reg_provider = NULL;
 	struct cds_hlist_head *head;
 	size_t name_len = strlen(provider->name);
 	uint32_t hash;
-	int ret = 0;
 
 	lttng_ust_fixup_tls();
 
 	/* Provider name starts with "$app.". */
 	if (strncmp("$app.", provider->name, strlen("$app.")) != 0)
-		return -EINVAL;
+		return NULL;
 	/* Provider name cannot contain a colon character. */
 	if (strchr(provider->name, ':'))
-		return -EINVAL;
-	if (ust_lock()) {
-		ret = -EBUSY;
+		return NULL;
+	if (ust_lock())
 		goto end;
-	}
-	if (lookup_provider_by_name(provider->name)) {
-		ret = -EBUSY;
+	if (lookup_provider_by_name(provider->name))
 		goto end;
-	}
+	reg_provider = zmalloc(sizeof(struct lttng_ust_registered_context_provider));
+	if (!reg_provider)
+		goto end;
+	reg_provider->provider = provider;
 	hash = jhash(provider->name, name_len, 0);
 	head = &context_provider_ht.table[hash & (CONTEXT_PROVIDER_HT_SIZE - 1)];
-	cds_hlist_add_head(&provider->node, head);
+	cds_hlist_add_head(&reg_provider->node, head);
 
 	lttng_ust_context_set_session_provider(provider->name,
 		provider->get_size, provider->record,
-		provider->get_value);
+		provider->get_value, provider->priv);
 
 	lttng_ust_context_set_event_notifier_group_provider(provider->name,
 		provider->get_size, provider->record,
-		provider->get_value);
+		provider->get_value, provider->priv);
 end:
 	ust_unlock();
-	return ret;
+	return reg_provider;
 }
 
-void lttng_ust_context_provider_unregister(struct lttng_ust_context_provider *provider)
+void lttng_ust_context_provider_unregister(struct lttng_ust_registered_context_provider *reg_provider)
 {
 	lttng_ust_fixup_tls();
 
 	if (ust_lock())
 		goto end;
-	lttng_ust_context_set_session_provider(provider->name,
+	lttng_ust_context_set_session_provider(reg_provider->provider->name,
 		lttng_ust_dummy_get_size, lttng_ust_dummy_record,
-		lttng_ust_dummy_get_value);
+		lttng_ust_dummy_get_value, NULL);
 
-	lttng_ust_context_set_event_notifier_group_provider(provider->name,
+	lttng_ust_context_set_event_notifier_group_provider(reg_provider->provider->name,
 		lttng_ust_dummy_get_size, lttng_ust_dummy_record,
-		lttng_ust_dummy_get_value);
+		lttng_ust_dummy_get_value, NULL);
 
-	cds_hlist_del(&provider->node);
+	cds_hlist_del(&reg_provider->node);
 end:
 	ust_unlock();
+	free(reg_provider);
 }
 
 /*
@@ -122,8 +129,10 @@ end:
 int lttng_ust_add_app_context_to_ctx_rcu(const char *name,
 		struct lttng_ust_ctx **ctx)
 {
-	struct lttng_ust_context_provider *provider;
+	const struct lttng_ust_context_provider *provider;
 	struct lttng_ust_ctx_field *new_field = NULL;
+	struct lttng_ust_event_field *event_field = NULL;
+	struct lttng_ust_type_common *type = NULL;
 	int ret;
 
 	if (*ctx && lttng_find_context(*ctx, name))
@@ -133,23 +142,24 @@ int lttng_ust_add_app_context_to_ctx_rcu(const char *name,
 		ret = -ENOMEM;
 		goto error_field_alloc;
 	}
-	new_field->struct_size = sizeof(struct lttng_ust_ctx_field);
-	new_field->event_field = zmalloc(sizeof(struct lttng_ust_event_field));
-	if (!new_field->event_field) {
+	event_field = zmalloc(sizeof(struct lttng_ust_event_field));
+	if (!event_field) {
 		ret = -ENOMEM;
 		goto error_event_field_alloc;
 	}
-	new_field->event_field->name = strdup(name);
-	if (!new_field->event_field->name) {
+	event_field->name = strdup(name);
+	if (!event_field->name) {
 		ret = -ENOMEM;
 		goto error_field_name_alloc;
 	}
-	new_field->event_field->type = zmalloc(sizeof(struct lttng_ust_type_common));
-	if (!new_field->event_field->type) {
+	type = zmalloc(sizeof(struct lttng_ust_type_common));
+	if (!type) {
 		ret = -ENOMEM;
 		goto error_field_type_alloc;
 	}
-	new_field->event_field->type->type = lttng_ust_type_dynamic;
+	type->type = lttng_ust_type_dynamic;
+	event_field->type = type;
+	new_field->event_field = event_field;
 	/*
 	 * If provider is not found, we add the context anyway, but
 	 * it will provide a dummy context.
@@ -169,11 +179,11 @@ int lttng_ust_add_app_context_to_ctx_rcu(const char *name,
 	 * ctx array. Ownership of new_field is passed to the callee on
 	 * success.
 	 */
-	ret = lttng_context_add_rcu(ctx, new_field);
+	ret = lttng_ust_context_append_rcu(ctx, new_field);
 	if (ret) {
-		free(new_field->event_field->type);
+		free(type);
 		free((char *) new_field->event_field->name);
-		free(new_field->event_field);
+		free(event_field);
 		free(new_field);
 		return ret;
 	}
@@ -182,7 +192,7 @@ int lttng_ust_add_app_context_to_ctx_rcu(const char *name,
 error_field_type_alloc:
 	free((char *) new_field->event_field->name);
 error_field_name_alloc:
-	free(new_field->event_field);
+	free(event_field);
 error_event_field_alloc:
 	free(new_field);
 error_field_alloc:

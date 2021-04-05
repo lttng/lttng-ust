@@ -266,7 +266,7 @@ struct lttng_counter_transport {
 struct lttng_ust_event_common_private {
 	struct lttng_ust_event_common *pub;	/* Public event interface */
 
-	struct lttng_ust_event_desc *desc;
+	const struct lttng_ust_event_desc *desc;
 	/* Backward references: list of lttng_enabler_ref (ref to enablers) */
 	struct cds_list_head enablers_ref_head;
 	int registered;				/* has reg'd tracepoint probe */
@@ -340,7 +340,7 @@ struct lttng_ust_session_private {
 };
 
 struct lttng_enum {
-	struct lttng_ust_enum_desc *desc;
+	const struct lttng_ust_enum_desc *desc;
 	struct lttng_ust_session *session;
 	struct cds_list_head node;		/* Enum list in session */
 	struct cds_hlist_node hlist;		/* Session ht of enums */
@@ -419,163 +419,137 @@ struct lttng_ust_abi_channel_config {
 	int unused11:1;
 };
 
+/* Global (filter), event and channel contexts. */
+struct lttng_ust_ctx {
+	struct lttng_ust_ctx_field *fields;
+	unsigned int nr_fields;
+	unsigned int allocated_fields;
+	unsigned int largest_align;
+};
+
+struct lttng_ust_registered_probe {
+	const struct lttng_ust_probe_desc *desc;
+
+	struct cds_list_head head;		/* chain registered probes */
+	struct cds_list_head lazy_init_head;
+	int lazy;				/* lazy registration */
+};
+
+/*
+ * Context field
+ */
+
+struct lttng_ust_ctx_field {
+	const struct lttng_ust_event_field *event_field;
+	size_t (*get_size)(void *priv, size_t offset);
+	void (*record)(void *priv, struct lttng_ust_lib_ring_buffer_ctx *ctx,
+		       struct lttng_ust_channel_buffer *chan);
+	void (*get_value)(void *priv, struct lttng_ust_ctx_value *value);
+	void (*destroy)(void *priv);
+	void *priv;
+};
+
 static inline
-struct lttng_ust_type_integer *lttng_ust_get_type_integer(struct lttng_ust_type_common *type)
+const struct lttng_ust_type_integer *lttng_ust_get_type_integer(const struct lttng_ust_type_common *type)
 {
 	if (type->type != lttng_ust_type_integer)
 		return NULL;
-	return caa_container_of(type, struct lttng_ust_type_integer, parent);
+	return caa_container_of(type, const struct lttng_ust_type_integer, parent);
 }
 
 static inline
-struct lttng_ust_type_float *lttng_ust_get_type_float(struct lttng_ust_type_common *type)
+const struct lttng_ust_type_float *lttng_ust_get_type_float(const struct lttng_ust_type_common *type)
 {
 	if (type->type != lttng_ust_type_float)
 		return NULL;
-	return caa_container_of(type, struct lttng_ust_type_float, parent);
+	return caa_container_of(type, const struct lttng_ust_type_float, parent);
 }
 
 static inline
-struct lttng_ust_type_string *lttng_ust_get_type_string(struct lttng_ust_type_common *type)
+const struct lttng_ust_type_string *lttng_ust_get_type_string(const struct lttng_ust_type_common *type)
 {
 	if (type->type != lttng_ust_type_string)
 		return NULL;
-	return caa_container_of(type, struct lttng_ust_type_string, parent);
+	return caa_container_of(type, const struct lttng_ust_type_string, parent);
 }
 
 static inline
-struct lttng_ust_type_enum *lttng_ust_get_type_enum(struct lttng_ust_type_common *type)
+const struct lttng_ust_type_enum *lttng_ust_get_type_enum(const struct lttng_ust_type_common *type)
 {
 	if (type->type != lttng_ust_type_enum)
 		return NULL;
-	return caa_container_of(type, struct lttng_ust_type_enum, parent);
+	return caa_container_of(type, const struct lttng_ust_type_enum, parent);
 }
 
 static inline
-struct lttng_ust_type_array *lttng_ust_get_type_array(struct lttng_ust_type_common *type)
+const struct lttng_ust_type_array *lttng_ust_get_type_array(const struct lttng_ust_type_common *type)
 {
 	if (type->type != lttng_ust_type_array)
 		return NULL;
-	return caa_container_of(type, struct lttng_ust_type_array, parent);
+	return caa_container_of(type, const struct lttng_ust_type_array, parent);
 }
 
 static inline
-struct lttng_ust_type_sequence *lttng_ust_get_type_sequence(struct lttng_ust_type_common *type)
+const struct lttng_ust_type_sequence *lttng_ust_get_type_sequence(const struct lttng_ust_type_common *type)
 {
 	if (type->type != lttng_ust_type_sequence)
 		return NULL;
-	return caa_container_of(type, struct lttng_ust_type_sequence, parent);
+	return caa_container_of(type, const struct lttng_ust_type_sequence, parent);
 }
 
 static inline
-struct lttng_ust_type_struct *lttng_ust_get_type_struct(struct lttng_ust_type_common *type)
+const struct lttng_ust_type_struct *lttng_ust_get_type_struct(const struct lttng_ust_type_common *type)
 {
 	if (type->type != lttng_ust_type_struct)
 		return NULL;
-	return caa_container_of(type, struct lttng_ust_type_struct, parent);
+	return caa_container_of(type, const struct lttng_ust_type_struct, parent);
 }
 
-/* Create dynamically allocated types. */
-static inline
-struct lttng_ust_type_common *lttng_ust_create_type_integer(unsigned int size,
-		unsigned short alignment, bool signedness, unsigned int byte_order,
-		unsigned int base)
-{
-	struct lttng_ust_type_integer *integer_type;
+#define lttng_ust_static_type_integer(_size, _alignment, _signedness, _byte_order, _base)		\
+	((const struct lttng_ust_type_common *) __LTTNG_COMPOUND_LITERAL(const struct lttng_ust_type_integer, { \
+		.parent = {										\
+			.type = lttng_ust_type_integer,							\
+		},											\
+		.struct_size = sizeof(struct lttng_ust_type_integer),					\
+		.size = (_size),									\
+		.alignment = (_alignment),								\
+		.signedness = (_signedness),								\
+		.reverse_byte_order = (_byte_order) != BYTE_ORDER,					\
+		.base = (_base),									\
+	}))
 
-	integer_type = zmalloc(sizeof(struct lttng_ust_type_integer));
-	if (!integer_type)
-		return NULL;
-	integer_type->parent.type = lttng_ust_type_integer;
-	integer_type->struct_size = sizeof(struct lttng_ust_type_integer);
-	integer_type->size = size;
-	integer_type->alignment = alignment;
-	integer_type->signedness = signedness;
-	integer_type->reverse_byte_order = byte_order != BYTE_ORDER;
-	integer_type->base = base;
-	return (struct lttng_ust_type_common *) integer_type;
-}
+#define lttng_ust_static_type_array_text(_length)							\
+	((const struct lttng_ust_type_common *) __LTTNG_COMPOUND_LITERAL(const struct lttng_ust_type_array, { \
+		.parent = {										\
+			.type = lttng_ust_type_array,							\
+		},											\
+		.struct_size = sizeof(struct lttng_ust_type_array),					\
+		.length = (_length),									\
+		.alignment = 0,										\
+		.encoding = lttng_ust_string_encoding_UTF8,						\
+		.elem_type = lttng_ust_static_type_integer(sizeof(char) * CHAR_BIT,			\
+				lttng_ust_rb_alignof(char) * CHAR_BIT, lttng_ust_is_signed_type(char),	\
+				BYTE_ORDER, 10),							\
+	}))
 
-static inline
-struct lttng_ust_type_common *lttng_ust_create_type_array_text(unsigned int length)
-{
-	struct lttng_ust_type_array *array_type;
+#define lttng_ust_static_event_field(_name, _type, _nowrite, _nofilter)					\
+	__LTTNG_COMPOUND_LITERAL(const struct lttng_ust_event_field, {					\
+		.struct_size = sizeof(struct lttng_ust_event_field),					\
+		.name = (_name),									\
+		.type = (_type),									\
+		.nowrite = (_nowrite),									\
+		.nofilter = (_nofilter),								\
+	})
 
-	array_type = zmalloc(sizeof(struct lttng_ust_type_array));
-	if (!array_type)
-		return NULL;
-	array_type->parent.type = lttng_ust_type_array;
-	array_type->struct_size = sizeof(struct lttng_ust_type_array);
-	array_type->length = length;
-	array_type->alignment = 0;
-	array_type->encoding = lttng_ust_string_encoding_UTF8;
-	array_type->elem_type = lttng_ust_create_type_integer(sizeof(char) * CHAR_BIT,
-			lttng_ust_rb_alignof(char) * CHAR_BIT, lttng_ust_is_signed_type(char),
-			BYTE_ORDER, 10);
-	if (!array_type->elem_type)
-		goto error_elem;
-	return (struct lttng_ust_type_common *) array_type;
-
-error_elem:
-	free(array_type);
-	return NULL;
-}
-
-/*
- * Destroy dynamically allocated types, including nested types.
- * For enumerations, it does not free the enumeration mapping description.
- */
-static inline
-void lttng_ust_destroy_type(struct lttng_ust_type_common *type)
-{
-	if (!type)
-		return;
-
-	switch (type->type) {
-	case lttng_ust_type_integer:
-	case lttng_ust_type_string:
-	case lttng_ust_type_float:
-	case lttng_ust_type_dynamic:
-		free(type);
-		break;
-	case lttng_ust_type_enum:
-	{
-		struct lttng_ust_type_enum *enum_type = (struct lttng_ust_type_enum *) type;
-
-		lttng_ust_destroy_type(enum_type->container_type);
-		free(enum_type);
-		break;
-	}
-	case lttng_ust_type_array:
-	{
-		struct lttng_ust_type_array *array_type = (struct lttng_ust_type_array *) type;
-
-		lttng_ust_destroy_type(array_type->elem_type);
-		free(array_type);
-		break;
-	}
-	case lttng_ust_type_sequence:
-	{
-		struct lttng_ust_type_sequence *sequence_type = (struct lttng_ust_type_sequence *) type;
-
-		lttng_ust_destroy_type(sequence_type->elem_type);
-		free(sequence_type);
-		break;
-	}
-	case lttng_ust_type_struct:
-	{
-		struct lttng_ust_type_struct *struct_type = (struct lttng_ust_type_struct *) type;
-		unsigned int i;
-
-		for (i = 0; i < struct_type->nr_fields; i++)
-			lttng_ust_destroy_type(struct_type->fields[i]->type);
-		free(struct_type);
-		break;
-	}
-	default:
-		abort();
-	}
-}
+#define lttng_ust_static_ctx_field(_event_field, _get_size, _record, _get_value, _destroy, _priv)	\
+	__LTTNG_COMPOUND_LITERAL(const struct lttng_ust_ctx_field, {					\
+		.event_field = (_event_field),								\
+		.get_size = (_get_size),								\
+		.record = (_record),									\
+		.get_value = (_get_value),								\
+		.destroy = (_destroy),									\
+		.priv = (_priv),									\
+	})
 
 static inline
 struct lttng_enabler *lttng_event_enabler_as_enabler(
@@ -656,7 +630,7 @@ int lttng_event_enabler_attach_exclusion(struct lttng_event_enabler *enabler,
  * This function goes over all bytecode programs of the enabler (event or
  * event_notifier enabler) to ensure each is linked to the provided instance.
  */
-void lttng_enabler_link_bytecode(struct lttng_ust_event_desc *event_desc,
+void lttng_enabler_link_bytecode(const struct lttng_ust_event_desc *event_desc,
 		struct lttng_ust_ctx **ctx,
 		struct cds_list_head *instance_bytecode_runtime_head,
 		struct cds_list_head *enabler_bytecode_runtime_head)
@@ -855,7 +829,7 @@ struct lttng_transport *lttng_ust_transport_find(const char *name);
 /* This is ABI between liblttng-ust and liblttng-ust-dl */
 void lttng_ust_dl_update(void *ip);
 
-void lttng_probe_provider_unregister_events(struct lttng_ust_probe_desc *desc)
+void lttng_probe_provider_unregister_events(const struct lttng_ust_probe_desc *desc)
 	__attribute__((visibility("hidden")));
 
 int lttng_fix_pending_events(void)
@@ -865,7 +839,7 @@ struct cds_list_head *lttng_get_probe_list_head(void)
 	__attribute__((visibility("hidden")));
 
 struct lttng_enum *lttng_ust_enum_get_from_desc(struct lttng_ust_session *session,
-		struct lttng_ust_enum_desc *enum_desc)
+		const struct lttng_ust_enum_desc *enum_desc)
 	__attribute__((visibility("hidden")));
 
 int lttng_abi_create_root_handle(void)
@@ -906,6 +880,26 @@ bool lttng_ust_validate_event_name(const struct lttng_ust_event_desc *desc)
 
 void lttng_ust_format_event_name(const struct lttng_ust_event_desc *desc,
 		char *name)
+	__attribute__((visibility("hidden")));
+
+int lttng_ust_add_app_context_to_ctx_rcu(const char *name, struct lttng_ust_ctx **ctx)
+	__attribute__((visibility("hidden")));
+
+int lttng_ust_context_set_provider_rcu(struct lttng_ust_ctx **_ctx,
+		const char *name,
+		size_t (*get_size)(void *priv, size_t offset),
+		void (*record)(void *priv, struct lttng_ust_lib_ring_buffer_ctx *ctx,
+			struct lttng_ust_channel_buffer *chan),
+		void (*get_value)(void *priv, struct lttng_ust_ctx_value *value),
+		void *priv)
+	__attribute__((visibility("hidden")));
+
+void lttng_ust_context_set_session_provider(const char *name,
+		size_t (*get_size)(void *priv, size_t offset),
+		void (*record)(void *priv, struct lttng_ust_lib_ring_buffer_ctx *ctx,
+			struct lttng_ust_channel_buffer *chan),
+		void (*get_value)(void *priv, struct lttng_ust_ctx_value *value),
+		void *priv)
 	__attribute__((visibility("hidden")));
 
 #endif /* _LTTNG_UST_EVENTS_INTERNAL_H */

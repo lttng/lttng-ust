@@ -42,7 +42,7 @@ void test_inc_count(void)
 }
 
 static
-size_t test_get_size(struct lttng_ust_ctx_field *field __attribute__((unused)), size_t offset)
+size_t test_get_size(void *priv __attribute__((unused)), size_t offset)
 {
 	int sel = test_count % _NR_LTTNG_UST_DYNAMIC_TYPES;
 	size_t size = 0;
@@ -103,7 +103,7 @@ size_t test_get_size(struct lttng_ust_ctx_field *field __attribute__((unused)), 
 }
 
 static
-void test_record(struct lttng_ust_ctx_field *field __attribute__((unused)),
+void test_record(void *priv __attribute__((unused)),
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		 struct lttng_ust_channel_buffer *lttng_chan_buf)
 {
@@ -196,7 +196,7 @@ void test_record(struct lttng_ust_ctx_field *field __attribute__((unused)),
 }
 
 static
-void test_get_value(struct lttng_ust_ctx_field *field __attribute__((unused)),
+void test_get_value(void *priv __attribute__((unused)),
 		struct lttng_ust_ctx_value *value)
 {
 	int sel = test_count % _NR_LTTNG_UST_DYNAMIC_TYPES;
@@ -289,6 +289,7 @@ int init_int_handler(void)
 
 int main(int argc, char **argv)
 {
+	struct lttng_ust_registered_context_provider *reg_provider;
 	int i, netint;
 	long values[] = { 1, 2, 3 };
 	char text[10] = "test";
@@ -302,7 +303,8 @@ int main(int argc, char **argv)
 	if (argc == 2)
 		delay = atoi(argv[1]);
 
-	if (lttng_ust_context_provider_register(&myprovider))
+	reg_provider = lttng_ust_context_provider_register(&myprovider);
+	if (!reg_provider)
 		abort();
 
 	fprintf(stderr, "Hello, World!\n");
@@ -317,7 +319,7 @@ int main(int argc, char **argv)
 		test_inc_count();
 		//usleep(100000);
 	}
-	lttng_ust_context_provider_unregister(&myprovider);
+	lttng_ust_context_provider_unregister(reg_provider);
 	fprintf(stderr, " done.\n");
 	return 0;
 }

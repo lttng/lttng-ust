@@ -61,6 +61,7 @@ struct lttng_perf_counter_thread {
 struct lttng_perf_counter_field {
 	struct perf_event_attr attr;
 	struct cds_list_head thread_field_list;	/* Per-field list of thread fields */
+	char *name;
 };
 
 static pthread_key_t perf_counter_key;
@@ -158,7 +159,7 @@ void lttng_perf_unlock(void)
 }
 
 static
-size_t perf_counter_get_size(struct lttng_ust_ctx_field *field __attribute__((unused)),
+size_t perf_counter_get_size(void *priv __attribute__((unused)),
 		size_t offset)
 {
 	size_t size = 0;
@@ -428,32 +429,32 @@ struct lttng_perf_counter_thread_field *
 }
 
 static
-uint64_t wrapper_perf_counter_read(struct lttng_ust_ctx_field *field)
+uint64_t wrapper_perf_counter_read(void *priv)
 {
 	struct lttng_perf_counter_field *perf_field;
 	struct lttng_perf_counter_thread_field *perf_thread_field;
 
-	perf_field = (struct lttng_perf_counter_field *) field->priv;
+	perf_field = (struct lttng_perf_counter_field *) priv;
 	perf_thread_field = get_thread_field(perf_field);
 	return arch_read_perf_counter(perf_thread_field);
 }
 
 static
-void perf_counter_record(struct lttng_ust_ctx_field *field,
+void perf_counter_record(void *priv,
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		 struct lttng_ust_channel_buffer *chan)
 {
 	uint64_t value;
 
-	value = wrapper_perf_counter_read(field);
+	value = wrapper_perf_counter_read(priv);
 	chan->ops->event_write(ctx, &value, sizeof(value), lttng_ust_rb_alignof(value));
 }
 
 static
-void perf_counter_get_value(struct lttng_ust_ctx_field *field,
+void perf_counter_get_value(void *priv,
 		struct lttng_ust_ctx_value *value)
 {
-	value->u.s64 = wrapper_perf_counter_read(field);
+	value->u.s64 = wrapper_perf_counter_read(priv);
 }
 
 /* Called with perf lock held */
@@ -484,13 +485,13 @@ void lttng_destroy_perf_thread_key(void *_key)
 
 /* Called with UST lock held */
 static
-void lttng_destroy_perf_counter_field(struct lttng_ust_ctx_field *field)
+void lttng_destroy_perf_counter_ctx_field(void *priv)
 {
 	struct lttng_perf_counter_field *perf_field;
 	struct lttng_perf_counter_thread_field *pos, *p;
 
-	free((char *) field->event_field->name);
-	perf_field = (struct lttng_perf_counter_field *) field->priv;
+	perf_field = (struct lttng_perf_counter_field *) priv;
+	free(perf_field->name);
 	/*
 	 * This put is performed when no threads can concurrently
 	 * perform a "get" concurrently, thanks to urcu-bp grace
@@ -524,59 +525,51 @@ int perf_get_exclude_kernel(void)
 
 #endif /* LTTNG_UST_ARCH_ARMV7 */
 
+static const struct lttng_ust_type_common *ust_type =
+	lttng_ust_static_type_integer(sizeof(uint64_t) * CHAR_BIT,
+			lttng_ust_rb_alignof(uint64_t) * CHAR_BIT,
+			lttng_ust_is_signed_type(uint64_t),
+			BYTE_ORDER, 10);
+
 /* Called with UST lock held */
 int lttng_add_perf_counter_to_ctx(uint32_t type,
 				uint64_t config,
 				const char *name,
 				struct lttng_ust_ctx **ctx)
 {
-	struct lttng_ust_ctx_field *field;
-	struct lttng_ust_type_common *ust_type;
+	struct lttng_ust_ctx_field ctx_field;
+	struct lttng_ust_event_field *event_field;
 	struct lttng_perf_counter_field *perf_field;
 	char *name_alloc;
 	int ret;
 
+	if (lttng_find_context(*ctx, name)) {
+		ret = -EEXIST;
+		goto find_error;
+	}
 	name_alloc = strdup(name);
 	if (!name_alloc) {
 		ret = -ENOMEM;
 		goto name_alloc_error;
 	}
+	event_field = zmalloc(sizeof(*event_field));
+	if (!event_field) {
+		ret = -ENOMEM;
+		goto event_field_alloc_error;
+	}
+	event_field->name = name_alloc;
+	event_field->type = ust_type;
+
 	perf_field = zmalloc(sizeof(*perf_field));
 	if (!perf_field) {
 		ret = -ENOMEM;
 		goto perf_field_alloc_error;
 	}
-	ust_type = lttng_ust_create_type_integer(sizeof(uint64_t) * CHAR_BIT,
-			lttng_ust_rb_alignof(uint64_t) * CHAR_BIT,
-			lttng_ust_is_signed_type(uint64_t),
-			BYTE_ORDER, 10);
-	if (!ust_type) {
-		ret = -ENOMEM;
-		goto type_alloc_error;
-	}
-	field = lttng_append_context(ctx);
-	if (!field) {
-		ret = -ENOMEM;
-		goto append_context_error;
-	}
-	if (lttng_find_context(*ctx, name_alloc)) {
-		ret = -EEXIST;
-		goto find_error;
-	}
-
-	field->destroy = lttng_destroy_perf_counter_field;
-
-	field->event_field->name = name_alloc;
-	field->event_field->type = ust_type;
-	field->get_size = perf_counter_get_size;
-	field->record = perf_counter_record;
-	field->get_value = perf_counter_get_value;
-
 	perf_field->attr.type = type;
 	perf_field->attr.config = config;
 	perf_field->attr.exclude_kernel = perf_get_exclude_kernel();
 	CDS_INIT_LIST_HEAD(&perf_field->thread_field_list);
-	field->priv = perf_field;
+	perf_field->name = name_alloc;
 
 	/* Ensure that this perf counter can be used in this process. */
 	ret = open_perf_fd(&perf_field->attr);
@@ -586,25 +579,29 @@ int lttng_add_perf_counter_to_ctx(uint32_t type,
 	}
 	close_perf_fd(ret);
 
-	/*
-	 * Contexts can only be added before tracing is started, so we
-	 * don't have to synchronize against concurrent threads using
-	 * the field here.
-	 */
+	ctx_field.event_field = event_field;
+	ctx_field.get_size = perf_counter_get_size;
+	ctx_field.record = perf_counter_record;
+	ctx_field.get_value = perf_counter_get_value;
+	ctx_field.destroy = lttng_destroy_perf_counter_ctx_field;
+	ctx_field.priv = perf_field;
 
-	lttng_context_update(*ctx);
+	ret = lttng_ust_context_append(ctx, &ctx_field);
+	if (ret) {
+		ret = -ENOMEM;
+		goto append_context_error;
+	}
 	return 0;
 
-setup_error:
-find_error:
-	lttng_remove_context_field(ctx, field);
 append_context_error:
-	lttng_ust_destroy_type(ust_type);
-type_alloc_error:
+setup_error:
 	free(perf_field);
 perf_field_alloc_error:
+	free(event_field);
+event_field_alloc_error:
 	free(name_alloc);
 name_alloc_error:
+find_error:
 	return ret;
 }
 

@@ -219,18 +219,18 @@ static int context_get_index(struct lttng_ust_ctx *ctx,
 		uint32_t idx)
 {
 
-	struct lttng_ust_ctx_field *ctx_field;
-	struct lttng_ust_event_field *field;
+	const struct lttng_ust_ctx_field *ctx_field;
+	const struct lttng_ust_event_field *field;
 	struct lttng_ust_ctx_value v;
 
-	ctx_field = ctx->fields[idx];
+	ctx_field = &ctx->fields[idx];
 	field = ctx_field->event_field;
 	ptr->type = LOAD_OBJECT;
 	ptr->field = field;
 
 	switch (field->type->type) {
 	case lttng_ust_type_integer:
-		ctx_field->get_value(ctx_field, &v);
+		ctx_field->get_value(ctx_field->priv, &v);
 		if (lttng_ust_get_type_integer(field->type)->signedness) {
 			ptr->object_type = OBJECT_TYPE_S64;
 			ptr->u.s64 = v.u.s64;
@@ -246,7 +246,7 @@ static int context_get_index(struct lttng_ust_ctx *ctx,
 		const struct lttng_ust_type_integer *itype;
 
 		itype = lttng_ust_get_type_integer(lttng_ust_get_type_enum(field->type)->container_type);
-		ctx_field->get_value(ctx_field, &v);
+		ctx_field->get_value(ctx_field->priv, &v);
 		if (itype->signedness) {
 			ptr->object_type = OBJECT_TYPE_SIGNED_ENUM;
 			ptr->u.s64 = v.u.s64;
@@ -268,7 +268,7 @@ static int context_get_index(struct lttng_ust_ctx *ctx,
 			return -EINVAL;
 		}
 		ptr->object_type = OBJECT_TYPE_STRING;
-		ctx_field->get_value(ctx_field, &v);
+		ctx_field->get_value(ctx_field->priv, &v);
 		ptr->ptr = v.u.str;
 		break;
 	case lttng_ust_type_sequence:
@@ -281,22 +281,22 @@ static int context_get_index(struct lttng_ust_ctx *ctx,
 			return -EINVAL;
 		}
 		ptr->object_type = OBJECT_TYPE_STRING;
-		ctx_field->get_value(ctx_field, &v);
+		ctx_field->get_value(ctx_field->priv, &v);
 		ptr->ptr = v.u.str;
 		break;
 	case lttng_ust_type_string:
 		ptr->object_type = OBJECT_TYPE_STRING;
-		ctx_field->get_value(ctx_field, &v);
+		ctx_field->get_value(ctx_field->priv, &v);
 		ptr->ptr = v.u.str;
 		break;
 	case lttng_ust_type_float:
 		ptr->object_type = OBJECT_TYPE_DOUBLE;
-		ctx_field->get_value(ctx_field, &v);
+		ctx_field->get_value(ctx_field->priv, &v);
 		ptr->u.d = v.u.d;
 		ptr->ptr = &ptr->u.d;
 		break;
 	case lttng_ust_type_dynamic:
-		ctx_field->get_value(ctx_field, &v);
+		ctx_field->get_value(ctx_field->priv, &v);
 		switch (v.sel) {
 		case LTTNG_UST_DYNAMIC_TYPE_NONE:
 			return -EINVAL;
@@ -2132,13 +2132,13 @@ int lttng_bytecode_interpret(struct lttng_ust_bytecode_runtime *ust_bytecode,
 		{
 			struct load_op *insn = (struct load_op *) pc;
 			struct field_ref *ref = (struct field_ref *) insn->data;
-			struct lttng_ust_ctx_field *ctx_field;
+			const struct lttng_ust_ctx_field *ctx_field;
 			struct lttng_ust_ctx_value v;
 
 			dbg_printf("get context ref offset %u type dynamic\n",
 				ref->offset);
-			ctx_field = ctx->fields[ref->offset];
-			ctx_field->get_value(ctx_field, &v);
+			ctx_field = &ctx->fields[ref->offset];
+			ctx_field->get_value(ctx_field->priv, &v);
 			estack_push(stack, top, ax, bx, ax_t, bx_t);
 			switch (v.sel) {
 			case LTTNG_UST_DYNAMIC_TYPE_NONE:
@@ -2180,13 +2180,13 @@ int lttng_bytecode_interpret(struct lttng_ust_bytecode_runtime *ust_bytecode,
 		{
 			struct load_op *insn = (struct load_op *) pc;
 			struct field_ref *ref = (struct field_ref *) insn->data;
-			struct lttng_ust_ctx_field *ctx_field;
+			const struct lttng_ust_ctx_field *ctx_field;
 			struct lttng_ust_ctx_value v;
 
 			dbg_printf("get context ref offset %u type string\n",
 				ref->offset);
-			ctx_field = ctx->fields[ref->offset];
-			ctx_field->get_value(ctx_field, &v);
+			ctx_field = &ctx->fields[ref->offset];
+			ctx_field->get_value(ctx_field->priv, &v);
 			estack_push(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax(stack, top)->u.s.str = v.u.str;
 			if (unlikely(!estack_ax(stack, top)->u.s.str)) {
@@ -2207,13 +2207,13 @@ int lttng_bytecode_interpret(struct lttng_ust_bytecode_runtime *ust_bytecode,
 		{
 			struct load_op *insn = (struct load_op *) pc;
 			struct field_ref *ref = (struct field_ref *) insn->data;
-			struct lttng_ust_ctx_field *ctx_field;
+			const struct lttng_ust_ctx_field *ctx_field;
 			struct lttng_ust_ctx_value v;
 
 			dbg_printf("get context ref offset %u type s64\n",
 				ref->offset);
-			ctx_field = ctx->fields[ref->offset];
-			ctx_field->get_value(ctx_field, &v);
+			ctx_field = &ctx->fields[ref->offset];
+			ctx_field->get_value(ctx_field->priv, &v);
 			estack_push(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = v.u.s64;
 			estack_ax_t = REG_S64;
@@ -2226,13 +2226,13 @@ int lttng_bytecode_interpret(struct lttng_ust_bytecode_runtime *ust_bytecode,
 		{
 			struct load_op *insn = (struct load_op *) pc;
 			struct field_ref *ref = (struct field_ref *) insn->data;
-			struct lttng_ust_ctx_field *ctx_field;
+			const struct lttng_ust_ctx_field *ctx_field;
 			struct lttng_ust_ctx_value v;
 
 			dbg_printf("get context ref offset %u type double\n",
 				ref->offset);
-			ctx_field = ctx->fields[ref->offset];
-			ctx_field->get_value(ctx_field, &v);
+			ctx_field = &ctx->fields[ref->offset];
+			ctx_field->get_value(ctx_field->priv, &v);
 			estack_push(stack, top, ax, bx, ax_t, bx_t);
 			memcpy(&estack_ax(stack, top)->u.d, &v.u.d, sizeof(struct literal_double));
 			estack_ax_t = REG_DOUBLE;

@@ -44,6 +44,12 @@ struct lttng_ust_jni_ctx_entry {
 	} value;
 } __attribute__((packed));
 
+struct lttng_ust_jni_provider {
+	struct lttng_ust_registered_context_provider *reg_provider;
+	char *name;
+	struct lttng_ust_context_provider provider;
+};
+
 /* TLS passing context info from JNI to callbacks. */
 __thread struct lttng_ust_jni_tls lttng_ust_context_info_tls;
 
@@ -73,13 +79,13 @@ static struct lttng_ust_jni_ctx_entry *lookup_ctx_by_name(const char *ctx_name)
 	return NULL;
 }
 
-static size_t get_size_cb(struct lttng_ust_ctx_field *field, size_t offset)
+static size_t get_size_cb(void *priv, size_t offset)
 {
 	struct lttng_ust_jni_ctx_entry *jctx;
 	size_t size = 0;
-	const char *ctx_name = field->event_field->name;
+	struct lttng_ust_jni_provider *jni_provider = (struct lttng_ust_jni_provider *) priv;
+	const char *ctx_name = jni_provider->name;
 	enum lttng_ust_jni_type jni_type;
-
 
 	size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(char));
 	size += sizeof(char);		/* tag */
@@ -135,12 +141,13 @@ static size_t get_size_cb(struct lttng_ust_ctx_field *field, size_t offset)
 
 }
 
-static void record_cb(struct lttng_ust_ctx_field *field,
+static void record_cb(void *priv,
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		 struct lttng_ust_channel_buffer *lttng_chan_buf)
 {
 	struct lttng_ust_jni_ctx_entry *jctx;
-	const char *ctx_name = field->event_field->name;
+	struct lttng_ust_jni_provider *jni_provider = (struct lttng_ust_jni_provider *) priv;
+	const char *ctx_name = jni_provider->name;
 	enum lttng_ust_jni_type jni_type;
 	char sel_char;
 
@@ -240,11 +247,11 @@ static void record_cb(struct lttng_ust_ctx_field *field,
 	}
 }
 
-static void get_value_cb(struct lttng_ust_ctx_field *field,
-		struct lttng_ust_ctx_value *value)
+static void get_value_cb(void *priv, struct lttng_ust_ctx_value *value)
 {
+	struct lttng_ust_jni_provider *jni_provider = (struct lttng_ust_jni_provider *) priv;
 	struct lttng_ust_jni_ctx_entry *jctx;
-	const char *ctx_name = field->event_field->name;
+	const char *ctx_name = jni_provider->name;
 	enum lttng_ust_jni_type jni_type;
 
 	jctx = lookup_ctx_by_name(ctx_name);
@@ -318,6 +325,7 @@ JNIEXPORT jlong JNICALL Java_org_lttng_ust_agent_context_LttngContextApi_registe
 	const char *provider_name_jstr;
 	char *provider_name_cstr;
 	struct lttng_ust_context_provider *provider;
+	struct lttng_ust_jni_provider *jni_provider;
 	/*
 	 * Note: a "jlong" is 8 bytes on all architectures, whereas a
 	 * C "long" varies.
@@ -334,26 +342,30 @@ JNIEXPORT jlong JNICALL Java_org_lttng_ust_agent_context_LttngContextApi_registe
 	if (!provider_name_cstr) {
 		goto error_strdup;
 	}
-	provider = zmalloc(sizeof(*provider));
-	if (!provider) {
+	jni_provider = zmalloc(sizeof(*jni_provider));
+	if (!jni_provider) {
 		goto error_provider;
 	}
+	provider = &jni_provider->provider;
 	provider->struct_size = sizeof(*provider);
-	provider->name = provider_name_cstr;
+	jni_provider->name = provider_name_cstr;
+	provider->name = jni_provider->name;
 	provider->get_size = get_size_cb;
 	provider->record = record_cb;
 	provider->get_value = get_value_cb;
+	provider->priv = jni_provider;
 
-	if (lttng_ust_context_provider_register(provider)) {
+	jni_provider->reg_provider = lttng_ust_context_provider_register(provider);
+	if (!jni_provider->reg_provider) {
 		goto error_register;
 	}
 
-	provider_ref = (jlong) (long) provider;
+	provider_ref = (jlong) (long) jni_provider;
 	return provider_ref;
 
 	/* Error handling. */
 error_register:
-	free(provider);
+	free(jni_provider);
 error_provider:
 	free(provider_name_cstr);
 error_strdup:
@@ -371,15 +383,15 @@ JNIEXPORT void JNICALL Java_org_lttng_ust_agent_context_LttngContextApi_unregist
 						jobject jobj __attribute__((unused)),
 						jlong provider_ref)
 {
-	struct lttng_ust_context_provider *provider =
-			(struct lttng_ust_context_provider*) (unsigned long) provider_ref;
+	struct lttng_ust_jni_provider *jni_provider =
+			(struct lttng_ust_jni_provider *) (unsigned long) provider_ref;
 
-	if (!provider) {
+	if (!jni_provider) {
 		return;
 	}
 
-	lttng_ust_context_provider_unregister(provider);
+	lttng_ust_context_provider_unregister(jni_provider->reg_provider);
 
-	free(provider->name);
-	free(provider);
+	free(jni_provider->name);
+	free(jni_provider);
 }

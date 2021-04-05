@@ -64,7 +64,7 @@ void capture_enum(struct lttng_msgpack_writer *writer,
 
 static
 int64_t capture_sequence_element_signed(uint8_t *ptr,
-		struct lttng_ust_type_integer *integer_type)
+		const struct lttng_ust_type_integer *integer_type)
 {
 	int64_t value;
 	unsigned int size = integer_type->size;
@@ -113,7 +113,7 @@ int64_t capture_sequence_element_signed(uint8_t *ptr,
 
 static
 uint64_t capture_sequence_element_unsigned(uint8_t *ptr,
-		struct lttng_ust_type_integer *integer_type)
+		const struct lttng_ust_type_integer *integer_type)
 {
 	uint64_t value;
 	unsigned int size = integer_type->size;
@@ -164,8 +164,8 @@ static
 void capture_sequence(struct lttng_msgpack_writer *writer,
 		struct lttng_interpreter_output *output)
 {
-	struct lttng_ust_type_integer *integer_type;
-	struct lttng_ust_type_common *nested_type;
+	const struct lttng_ust_type_integer *integer_type;
+	const struct lttng_ust_type_common *nested_type;
 	uint8_t *ptr;
 	bool signedness;
 	int i;

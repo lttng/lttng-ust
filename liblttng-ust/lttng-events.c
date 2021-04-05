@@ -268,7 +268,7 @@ static
 void register_event(struct lttng_ust_event_common *event)
 {
 	int ret;
-	struct lttng_ust_event_desc *desc;
+	const struct lttng_ust_event_desc *desc;
 	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
 
 	assert(event->priv->registered == 0);
@@ -286,7 +286,7 @@ static
 void unregister_event(struct lttng_ust_event_common *event)
 {
 	int ret;
-	struct lttng_ust_event_desc *desc;
+	const struct lttng_ust_event_desc *desc;
 	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
 
 	assert(event->priv->registered == 1);
@@ -420,7 +420,7 @@ void lttng_enabler_destroy(struct lttng_enabler *enabler)
 }
 
 static
-int lttng_enum_create(struct lttng_ust_enum_desc *desc,
+int lttng_enum_create(const struct lttng_ust_enum_desc *desc,
 		struct lttng_ust_session *session)
 {
 	const char *enum_name = desc->name;
@@ -478,13 +478,13 @@ exist:
 }
 
 static
-int lttng_create_enum_check(struct lttng_ust_type_common *type,
+int lttng_create_enum_check(const struct lttng_ust_type_common *type,
 		struct lttng_ust_session *session)
 {
 	switch (type->type) {
 	case lttng_ust_type_enum:
 	{
-		struct lttng_ust_enum_desc *enum_desc;
+		const struct lttng_ust_enum_desc *enum_desc;
 		int ret;
 
 		enum_desc = lttng_ust_get_type_enum(type)->desc;
@@ -497,8 +497,8 @@ int lttng_create_enum_check(struct lttng_ust_type_common *type,
 	}
 	case lttng_ust_type_dynamic:
 	{
-		struct lttng_ust_event_field *tag_field_generic;
-		struct lttng_ust_enum_desc *enum_desc;
+		const struct lttng_ust_event_field *tag_field_generic;
+		const struct lttng_ust_enum_desc *enum_desc;
 		int ret;
 
 		tag_field_generic = lttng_ust_dynamic_type_tag_field();
@@ -519,7 +519,7 @@ int lttng_create_enum_check(struct lttng_ust_type_common *type,
 
 static
 int lttng_create_all_event_enums(size_t nr_fields,
-		struct lttng_ust_event_field **event_fields,
+		const struct lttng_ust_event_field **event_fields,
 		struct lttng_ust_session *session)
 {
 	size_t i;
@@ -527,7 +527,7 @@ int lttng_create_all_event_enums(size_t nr_fields,
 
 	/* For each field, ensure enum is part of the session. */
 	for (i = 0; i < nr_fields; i++) {
-		struct lttng_ust_type_common *type = event_fields[i]->type;
+		const struct lttng_ust_type_common *type = event_fields[i]->type;
 
 		ret = lttng_create_enum_check(type, session);
 		if (ret)
@@ -538,7 +538,7 @@ int lttng_create_all_event_enums(size_t nr_fields,
 
 static
 int lttng_create_all_ctx_enums(size_t nr_fields,
-		struct lttng_ust_ctx_field **ctx_fields,
+		struct lttng_ust_ctx_field *ctx_fields,
 		struct lttng_ust_session *session)
 {
 	size_t i;
@@ -546,7 +546,7 @@ int lttng_create_all_ctx_enums(size_t nr_fields,
 
 	/* For each field, ensure enum is part of the session. */
 	for (i = 0; i < nr_fields; i++) {
-		struct lttng_ust_type_common *type = ctx_fields[i]->event_field->type;
+		const struct lttng_ust_type_common *type = ctx_fields[i].event_field->type;
 
 		ret = lttng_create_enum_check(type, session);
 		if (ret)
@@ -593,7 +593,7 @@ int lttng_session_enable(struct lttng_ust_session *session)
 	 */
 	cds_list_for_each_entry(chan, &session->priv->chan_head, node) {
 		struct lttng_ust_ctx *ctx;
-		struct lttng_ust_ctx_field **fields = NULL;
+		struct lttng_ust_ctx_field *fields = NULL;
 		size_t nr_fields = 0;
 		uint32_t chan_id;
 
@@ -697,7 +697,7 @@ static inline
 struct cds_hlist_head *borrow_hash_table_bucket(
 		struct cds_hlist_head *hash_table,
 		unsigned int hash_table_size,
-		struct lttng_ust_event_desc *desc)
+		const struct lttng_ust_event_desc *desc)
 {
 	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
 	size_t name_len;
@@ -714,7 +714,7 @@ struct cds_hlist_head *borrow_hash_table_bucket(
  * Supports event creation while tracing session is active.
  */
 static
-int lttng_event_recorder_create(struct lttng_ust_event_desc *desc,
+int lttng_event_recorder_create(const struct lttng_ust_event_desc *desc,
 		struct lttng_ust_channel_buffer *chan)
 {
 	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
@@ -826,7 +826,7 @@ socket_error:
 }
 
 static
-int lttng_event_notifier_create(struct lttng_ust_event_desc *desc,
+int lttng_event_notifier_create(const struct lttng_ust_event_desc *desc,
 		uint64_t token, uint64_t error_counter_index,
 		struct lttng_event_notifier_group *event_notifier_group)
 {
@@ -899,7 +899,7 @@ error:
 }
 
 static
-int lttng_desc_match_star_glob_enabler(struct lttng_ust_event_desc *desc,
+int lttng_desc_match_star_glob_enabler(const struct lttng_ust_event_desc *desc,
 		struct lttng_enabler *enabler)
 {
 	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
@@ -924,7 +924,7 @@ int lttng_desc_match_star_glob_enabler(struct lttng_ust_event_desc *desc,
 }
 
 static
-int lttng_desc_match_event_enabler(struct lttng_ust_event_desc *desc,
+int lttng_desc_match_event_enabler(const struct lttng_ust_event_desc *desc,
 		struct lttng_enabler *enabler)
 {
 	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
@@ -948,7 +948,7 @@ int lttng_desc_match_event_enabler(struct lttng_ust_event_desc *desc,
 }
 
 static
-int lttng_desc_match_enabler(struct lttng_ust_event_desc *desc,
+int lttng_desc_match_enabler(const struct lttng_ust_event_desc *desc,
 		struct lttng_enabler *enabler)
 {
 	switch (enabler->format_type) {
@@ -1042,8 +1042,8 @@ static
 void lttng_create_event_recorder_if_missing(struct lttng_event_enabler *event_enabler)
 {
 	struct lttng_ust_session *session = event_enabler->chan->parent->session;
-	struct lttng_ust_probe_desc *probe_desc;
-	struct lttng_ust_event_desc *desc;
+	struct lttng_ust_registered_probe *reg_probe;
+	const struct lttng_ust_event_desc *desc;
 	struct lttng_ust_event_recorder_private *event_recorder_priv;
 	int i;
 	struct cds_list_head *probe_list;
@@ -1054,7 +1054,9 @@ void lttng_create_event_recorder_if_missing(struct lttng_event_enabler *event_en
 	 * our enabler, create an associated lttng_event if not
 	 * already present.
 	 */
-	cds_list_for_each_entry(probe_desc, probe_list, head) {
+	cds_list_for_each_entry(reg_probe, probe_list, head) {
+		const struct lttng_ust_probe_desc *probe_desc = reg_probe->desc;
+
 		for (i = 0; i < probe_desc->nr_events; i++) {
 			int ret;
 			bool found = false;
@@ -1096,7 +1098,7 @@ void lttng_create_event_recorder_if_missing(struct lttng_event_enabler *event_en
 }
 
 static
-void probe_provider_event_for_each(struct lttng_ust_probe_desc *provider_desc,
+void probe_provider_event_for_each(const struct lttng_ust_probe_desc *provider_desc,
 		void (*event_func)(struct lttng_ust_event_common *event))
 {
 	struct cds_hlist_node *node, *tmp_node;
@@ -1111,7 +1113,7 @@ void probe_provider_event_for_each(struct lttng_ust_probe_desc *provider_desc,
 	 * sessions to queue the unregistration of the events.
 	 */
 	for (i = 0; i < provider_desc->nr_events; i++) {
-		struct lttng_ust_event_desc *event_desc;
+		const struct lttng_ust_event_desc *event_desc;
 		struct lttng_event_notifier_group *event_notifier_group;
 		struct lttng_ust_event_recorder_private *event_recorder_priv;
 		struct lttng_ust_event_notifier_private *event_notifier_priv;
@@ -1178,8 +1180,8 @@ void _event_enum_destroy(struct lttng_ust_event_common *event)
 
 		/* Destroy enums of the current event. */
 		for (i = 0; i < event_recorder->parent->priv->desc->nr_fields; i++) {
-			struct lttng_ust_enum_desc *enum_desc;
-			struct lttng_ust_event_field *field;
+			const struct lttng_ust_enum_desc *enum_desc;
+			const struct lttng_ust_event_field *field;
 			struct lttng_enum *curr_enum;
 
 			field = event_recorder->parent->priv->desc->fields[i];
@@ -1213,7 +1215,7 @@ void _event_enum_destroy(struct lttng_ust_event_common *event)
  * ust_lock held.
  */
 void lttng_probe_provider_unregister_events(
-		struct lttng_ust_probe_desc *provider_desc)
+		const struct lttng_ust_probe_desc *provider_desc)
 {
 	/*
 	 * Iterate over all events in the probe provider descriptions and sessions
@@ -1751,7 +1753,7 @@ void lttng_session_sync_event_enablers(struct lttng_ust_session *session)
 
 /* Support for event notifier is introduced by probe provider major version 2. */
 static
-bool lttng_ust_probe_supports_event_notifier(struct lttng_ust_probe_desc *probe_desc)
+bool lttng_ust_probe_supports_event_notifier(const struct lttng_ust_probe_desc *probe_desc)
 {
 	return probe_desc->major >= 2;
 }
@@ -1761,17 +1763,19 @@ void lttng_create_event_notifier_if_missing(
 		struct lttng_event_notifier_enabler *event_notifier_enabler)
 {
 	struct lttng_event_notifier_group *event_notifier_group = event_notifier_enabler->group;
-	struct lttng_ust_probe_desc *probe_desc;
+	struct lttng_ust_registered_probe *reg_probe;
 	struct cds_list_head *probe_list;
 	int i;
 
 	probe_list = lttng_get_probe_list_head();
 
-	cds_list_for_each_entry(probe_desc, probe_list, head) {
+	cds_list_for_each_entry(reg_probe, probe_list, head) {
+		const struct lttng_ust_probe_desc *probe_desc = reg_probe->desc;
+
 		for (i = 0; i < probe_desc->nr_events; i++) {
 			int ret;
 			bool found = false;
-			struct lttng_ust_event_desc *desc;
+			const struct lttng_ust_event_desc *desc;
 			struct lttng_ust_event_notifier_private *event_notifier_priv;
 			struct cds_hlist_head *head;
 			struct cds_hlist_node *node;
@@ -1998,12 +2002,11 @@ void lttng_session_lazy_sync_event_enablers(struct lttng_ust_session *session)
  * context (either app context callbacks, or dummy callbacks).
  */
 void lttng_ust_context_set_session_provider(const char *name,
-		size_t (*get_size)(struct lttng_ust_ctx_field *field, size_t offset),
-		void (*record)(struct lttng_ust_ctx_field *field,
-			struct lttng_ust_lib_ring_buffer_ctx *ctx,
+		size_t (*get_size)(void *priv, size_t offset),
+		void (*record)(void *priv, struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			struct lttng_ust_channel_buffer *chan),
-		void (*get_value)(struct lttng_ust_ctx_field *field,
-			struct lttng_ust_ctx_value *value))
+		void (*get_value)(void *priv, struct lttng_ust_ctx_value *value),
+		void *priv)
 {
 	struct lttng_ust_session_private *session_priv;
 
@@ -2013,18 +2016,18 @@ void lttng_ust_context_set_session_provider(const char *name,
 		int ret;
 
 		ret = lttng_ust_context_set_provider_rcu(&session_priv->ctx,
-				name, get_size, record, get_value);
+				name, get_size, record, get_value, priv);
 		if (ret)
 			abort();
 		cds_list_for_each_entry(chan, &session_priv->chan_head, node) {
 			ret = lttng_ust_context_set_provider_rcu(&chan->ctx,
-					name, get_size, record, get_value);
+					name, get_size, record, get_value, priv);
 			if (ret)
 				abort();
 		}
 		cds_list_for_each_entry(event_recorder_priv, &session_priv->events_head, node) {
 			ret = lttng_ust_context_set_provider_rcu(&event_recorder_priv->ctx,
-					name, get_size, record, get_value);
+					name, get_size, record, get_value, priv);
 			if (ret)
 				abort();
 		}
@@ -2039,12 +2042,11 @@ void lttng_ust_context_set_session_provider(const char *name,
  * context (either app context callbacks, or dummy callbacks).
  */
 void lttng_ust_context_set_event_notifier_group_provider(const char *name,
-		size_t (*get_size)(struct lttng_ust_ctx_field *field, size_t offset),
-		void (*record)(struct lttng_ust_ctx_field *field,
-			struct lttng_ust_lib_ring_buffer_ctx *ctx,
+		size_t (*get_size)(void *priv, size_t offset),
+		void (*record)(void *priv, struct lttng_ust_lib_ring_buffer_ctx *ctx,
 			struct lttng_ust_channel_buffer *chan),
-		void (*get_value)(struct lttng_ust_ctx_field *field,
-			struct lttng_ust_ctx_value *value))
+		void (*get_value)(void *priv, struct lttng_ust_ctx_value *value),
+		void *priv)
 {
 	struct lttng_event_notifier_group *event_notifier_group;
 
@@ -2053,7 +2055,7 @@ void lttng_ust_context_set_event_notifier_group_provider(const char *name,
 
 		ret = lttng_ust_context_set_provider_rcu(
 				&event_notifier_group->ctx,
-				name, get_size, record, get_value);
+				name, get_size, record, get_value, priv);
 		if (ret)
 			abort();
 	}

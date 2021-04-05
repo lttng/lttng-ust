@@ -120,7 +120,7 @@ struct bytecode_get_index_data {
 	 * interpreter needs to find it from the event fields and types to
 	 * support variants.
 	 */
-	struct lttng_ust_event_field *field;
+	const struct lttng_ust_event_field *field;
 	struct {
 		size_t len;
 		enum object_type type;
@@ -132,7 +132,7 @@ struct bytecode_get_index_data {
 struct vstack_load {
 	enum load_type type;
 	enum object_type object_type;
-	struct lttng_ust_event_field *field;
+	const struct lttng_ust_event_field *field;
 	bool rev_bo;	/* reverse byte order */
 };
 
@@ -310,7 +310,7 @@ struct lttng_interpreter_output {
 			size_t nr_elem;
 
 			/* Inner type. */
-			struct lttng_ust_type_common *nested_type;
+			const struct lttng_ust_type_common *nested_type;
 		} sequence;
 	} u;
 };
@@ -324,7 +324,7 @@ void lttng_bytecode_sync_state(struct lttng_ust_bytecode_runtime *runtime)
 int lttng_bytecode_validate(struct bytecode_runtime *bytecode)
 	__attribute__((visibility("hidden")));
 
-int lttng_bytecode_specialize(struct lttng_ust_event_desc *event_desc,
+int lttng_bytecode_specialize(const struct lttng_ust_event_desc *event_desc,
 		struct bytecode_runtime *bytecode)
 	__attribute__((visibility("hidden")));
 

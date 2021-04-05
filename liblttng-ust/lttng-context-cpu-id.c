@@ -25,7 +25,7 @@
 #include "context-internal.h"
 
 static
-size_t cpu_id_get_size(struct lttng_ust_ctx_field *field __attribute__((unused)),
+size_t cpu_id_get_size(void *priv __attribute__((unused)),
 		size_t offset)
 {
 	size_t size = 0;
@@ -36,7 +36,7 @@ size_t cpu_id_get_size(struct lttng_ust_ctx_field *field __attribute__((unused))
 }
 
 static
-void cpu_id_record(struct lttng_ust_ctx_field *field __attribute__((unused)),
+void cpu_id_record(void *priv __attribute__((unused)),
 		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
 		 struct lttng_ust_channel_buffer *chan)
 {
@@ -47,49 +47,37 @@ void cpu_id_record(struct lttng_ust_ctx_field *field __attribute__((unused)),
 }
 
 static
-void cpu_id_get_value(struct lttng_ust_ctx_field *field __attribute__((unused)),
+void cpu_id_get_value(void *priv __attribute__((unused)),
 		struct lttng_ust_ctx_value *value)
 {
 	value->u.s64 = lttng_ust_get_cpu();
 }
 
+static const struct lttng_ust_ctx_field *ctx_field = lttng_ust_static_ctx_field(
+	lttng_ust_static_event_field("cpu_id",
+		lttng_ust_static_type_integer(sizeof(int) * CHAR_BIT,
+				lttng_ust_rb_alignof(int) * CHAR_BIT,
+				lttng_ust_is_signed_type(int),
+				BYTE_ORDER, 10),
+		false, false),
+	cpu_id_get_size,
+	cpu_id_record,
+	cpu_id_get_value,
+	NULL, NULL);
+
 int lttng_add_cpu_id_to_ctx(struct lttng_ust_ctx **ctx)
 {
-	struct lttng_ust_ctx_field *field;
-	struct lttng_ust_type_common *type;
 	int ret;
 
-	type = lttng_ust_create_type_integer(sizeof(int) * CHAR_BIT,
-			lttng_ust_rb_alignof(int) * CHAR_BIT,
-			lttng_ust_is_signed_type(int),
-			BYTE_ORDER, 10);
-	if (!type)
-		return -ENOMEM;
-	field = lttng_append_context(ctx);
-	if (!field) {
-		ret = -ENOMEM;
-		goto error_context;
-	}
-	if (lttng_find_context(*ctx, "cpu_id")) {
+	if (lttng_find_context(*ctx, ctx_field->event_field->name)) {
 		ret = -EEXIST;
 		goto error_find_context;
 	}
-	field->event_field->name = strdup("cpu_id");
-	if (!field->event_field->name) {
-		ret = -ENOMEM;
-		goto error_name;
-	}
-	field->event_field->type = type;
-	field->get_size = cpu_id_get_size;
-	field->record = cpu_id_record;
-	field->get_value = cpu_id_get_value;
-	lttng_context_update(*ctx);
+	ret = lttng_ust_context_append(ctx, ctx_field);
+	if (ret)
+		return ret;
 	return 0;
 
-error_name:
 error_find_context:
-	lttng_remove_context_field(ctx, field);
-error_context:
-	lttng_ust_destroy_type(type);
 	return ret;
 }
