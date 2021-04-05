@@ -15,9 +15,14 @@
 #include <lttng/ust-version.h>
 
 /*
- * Default to having the content of the ringbuffer respect the natural
- * alignment of the system. Only pack its content on architectures we know
- * have efficient unaligned memory access.
+ * On architectures without efficient unaligned accesses, layout the
+ * content of the ringbuffer respect the natural alignment of the
+ * system. Only pack its content on architectures we know have efficient
+ * unaligned memory access.
+ *
+ * Whether to pack the ring buffer contents or not is part of the ABI
+ * between the probe providers and the tracer, and is selected by the
+ * lttng/ust-arch.h header.
  */
 #ifndef LTTNG_UST_ARCH_HAS_EFFICIENT_UNALIGNED_ACCESS
 #define LTTNG_UST_RING_BUFFER_NATURAL_ALIGN
