@@ -29,7 +29,6 @@
 #include <lttng/ust-tracepoint-event.h>
 
 #undef TRACEPOINT_HEADER_MULTI_READ
-#undef TRACEPOINT_INCLUDE_FILE
 #undef TRACEPOINT_INCLUDE
 
 #define TRACEPOINT_CREATE_PROBES
