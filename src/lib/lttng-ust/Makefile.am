@@ -80,7 +80,6 @@ liblttng_ust_runtime_la_SOURCES = \
 	tracepoint-internal.h \
 	ust-events-internal.h \
 	clock.h \
-	wait.h \
 	jhash.h \
 	lttng-ust-uuid.h \
 	error.h \

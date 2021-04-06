@@ -16,7 +16,8 @@ noinst_HEADERS = \
 	macros.h \
 	patient.h \
 	procname.h \
-	safe-snprintf.h
+	safe-snprintf.h \
+	wait.h
 
 noinst_HEADERS += \
 	compat/dlfcn.h \

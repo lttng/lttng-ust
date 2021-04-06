@@ -25,7 +25,7 @@
 #include "common/ringbuffer/backend.h"
 #include "common/ringbuffer/frontend.h"
 #include "lib/lttng-ust/ust-events-internal.h"
-#include "lib/lttng-ust/wait.h"
+#include "common/wait.h"
 #include "lib/lttng-ust/lttng-rb-clients.h"
 #include "lib/lttng-ust/clock.h"
 #include "lib/lttng-ust/getenv.h"
