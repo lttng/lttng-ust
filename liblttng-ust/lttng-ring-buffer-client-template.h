@@ -23,11 +23,6 @@
 #define LTTNG_COMPACT_EVENT_BITS       5
 #define LTTNG_COMPACT_TSC_BITS         27
 
-enum app_ctx_mode {
-	APP_CTX_DISABLED,
-	APP_CTX_ENABLED,
-};
-
 /*
  * Keep the natural field alignment for _each field_ within this structure if
  * you ever add/remove a field from this header. Packed attribute is not used
@@ -103,8 +98,7 @@ size_t ctx_get_aligned_size(size_t offset, struct lttng_ust_ctx *ctx,
 }
 
 static inline
-void ctx_get_struct_size(struct lttng_ust_ctx *ctx, size_t *ctx_len,
-		enum app_ctx_mode mode)
+void ctx_get_struct_size(struct lttng_ust_ctx *ctx, size_t *ctx_len)
 {
 	int i;
 	size_t offset = 0;
@@ -113,62 +107,23 @@ void ctx_get_struct_size(struct lttng_ust_ctx *ctx, size_t *ctx_len,
 		*ctx_len = 0;
 		return;
 	}
-	for (i = 0; i < ctx->nr_fields; i++) {
-		if (mode == APP_CTX_ENABLED) {
-			offset += ctx->fields[i].get_size(&ctx->fields[i], offset);
-		} else {
-			if (lttng_context_is_app(ctx->fields[i].event_field->name)) {
-				/*
-				 * Before UST 2.8, we cannot use the
-				 * application context, because we
-				 * cannot trust that the handler used
-				 * for get_size is the same used for
-				 * ctx_record, which would result in
-				 * corrupted traces when tracing
-				 * concurrently with application context
-				 * register/unregister.
-				 */
-				offset += lttng_ust_dummy_get_size(&ctx->fields[i], offset);
-			} else {
-				offset += ctx->fields[i].get_size(&ctx->fields[i], offset);
-			}
-		}
-	}
+	for (i = 0; i < ctx->nr_fields; i++)
+		offset += ctx->fields[i].get_size(&ctx->fields[i], offset);
 	*ctx_len = offset;
 }
 
 static inline
 void ctx_record(struct lttng_ust_lib_ring_buffer_ctx *bufctx,
 		struct lttng_ust_channel_buffer *chan,
-		struct lttng_ust_ctx *ctx,
-		enum app_ctx_mode mode)
+		struct lttng_ust_ctx *ctx)
 {
 	int i;
 
 	if (caa_likely(!ctx))
 		return;
 	lttng_ust_lib_ring_buffer_align_ctx(bufctx, ctx->largest_align);
-	for (i = 0; i < ctx->nr_fields; i++) {
-		if (mode == APP_CTX_ENABLED) {
-			ctx->fields[i].record(&ctx->fields[i], bufctx, chan);
-		} else {
-			if (lttng_context_is_app(ctx->fields[i].event_field->name)) {
-				/*
-				 * Before UST 2.8, we cannot use the
-				 * application context, because we
-				 * cannot trust that the handler used
-				 * for get_size is the same used for
-				 * ctx_record, which would result in
-				 * corrupted traces when tracing
-				 * concurrently with application context
-				 * register/unregister.
-				 */
-				lttng_ust_dummy_record(&ctx->fields[i], bufctx, chan);
-			} else {
-				ctx->fields[i].record(&ctx->fields[i], bufctx, chan);
-			}
-		}
-	}
+	for (i = 0; i < ctx->nr_fields; i++)
+		ctx->fields[i].record(&ctx->fields[i], bufctx, chan);
 }
 
 /*
@@ -299,8 +254,8 @@ void lttng_write_event_header(const struct lttng_ust_lib_ring_buffer_config *con
 		WARN_ON_ONCE(1);
 	}
 
-	ctx_record(ctx, lttng_chan, client_ctx->chan_ctx, APP_CTX_ENABLED);
-	ctx_record(ctx, lttng_chan, client_ctx->event_ctx, APP_CTX_ENABLED);
+	ctx_record(ctx, lttng_chan, client_ctx->chan_ctx);
+	ctx_record(ctx, lttng_chan, client_ctx->event_ctx);
 	lttng_ust_lib_ring_buffer_align_ctx(ctx, ctx->largest_align);
 
 	return;
@@ -373,8 +328,8 @@ void lttng_write_event_header_slow(const struct lttng_ust_lib_ring_buffer_config
 	default:
 		WARN_ON_ONCE(1);
 	}
-	ctx_record(ctx, lttng_chan, client_ctx->chan_ctx, APP_CTX_ENABLED);
-	ctx_record(ctx, lttng_chan, client_ctx->event_ctx, APP_CTX_ENABLED);
+	ctx_record(ctx, lttng_chan, client_ctx->chan_ctx);
+	ctx_record(ctx, lttng_chan, client_ctx->event_ctx);
 	lttng_ust_lib_ring_buffer_align_ctx(ctx, ctx->largest_align);
 }
 
@@ -735,10 +690,8 @@ int lttng_event_reserve(struct lttng_ust_lib_ring_buffer_ctx *ctx)
 	client_ctx.chan_ctx = lttng_ust_rcu_dereference(lttng_chan->priv->ctx);
 	client_ctx.event_ctx = lttng_ust_rcu_dereference(event_recorder->priv->ctx);
 	/* Compute internal size of context structures. */
-	ctx_get_struct_size(client_ctx.chan_ctx, &client_ctx.packet_context_len,
-			APP_CTX_ENABLED);
-	ctx_get_struct_size(client_ctx.event_ctx, &client_ctx.event_context_len,
-			APP_CTX_ENABLED);
+	ctx_get_struct_size(client_ctx.chan_ctx, &client_ctx.packet_context_len);
+	ctx_get_struct_size(client_ctx.event_ctx, &client_ctx.event_context_len);
 
 	nesting = lib_ring_buffer_nesting_inc(&client_config);
 	if (nesting < 0)
