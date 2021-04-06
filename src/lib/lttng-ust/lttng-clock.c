@@ -5,7 +5,6 @@
  */
 
 #define _LGPL_SOURCE
-#include <error.h>
 #include <dlfcn.h>
 #include <stdlib.h>
 #include <stdint.h>

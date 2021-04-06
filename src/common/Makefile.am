@@ -14,6 +14,7 @@ noinst_HEADERS = \
 	creds.h \
 	dynamic-type.h \
 	elf.h \
+	err-ptr.h \
 	events.h \
 	jhash.h \
 	logging.h \

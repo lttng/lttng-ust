@@ -20,7 +20,6 @@
 
 #include "lttng-tracer-core.h"
 #include "common/jhash.h"
-#include "error.h"
 #include "lib/lttng-ust/events.h"
 
 /*

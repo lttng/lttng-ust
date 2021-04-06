@@ -39,7 +39,6 @@
 #include "common/ust-fd.h"
 #include "common/dynamic-type.h"
 #include "common/ust-context-provider.h"
-#include "error.h"
 #include "lttng-ust-uuid.h"
 
 #include "tracepoint-internal.h"

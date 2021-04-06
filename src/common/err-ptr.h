@@ -4,8 +4,8 @@
  * Copyright (C) 2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
-#ifndef _LTTNG_ERROR_H
-#define _LTTNG_ERROR_H
+#ifndef _UST_COMMON_ERR_PTR_H
+#define _UST_COMMON_ERR_PTR_H
 
 #include <urcu/compiler.h>
 #include <unistd.h>
@@ -39,4 +39,4 @@ int IS_ERR(const void *ptr)
 	return IS_ERR_VALUE((long) ptr);
 }
 
-#endif /* _LTTNG_ERROR_H */
+#endif /* _UST_COMMON_ERR_PTR_H */

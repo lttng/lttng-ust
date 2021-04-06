@@ -29,7 +29,7 @@
 #include "tracepoint-internal.h"
 #include "lttng-tracer-core.h"
 #include "common/jhash.h"
-#include "error.h"
+#include "common/err-ptr.h"
 
 /* Test compiler support for weak symbols with hidden visibility. */
 int __tracepoint_test_symbol1 __attribute__((weak, visibility("hidden")));
