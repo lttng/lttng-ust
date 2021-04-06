@@ -14,7 +14,7 @@ static
 void lttng_ust_common_init(void)
 {
 	/* Initialize logging for liblttng-ust-common */
-	ust_err_init();
+	lttng_ust_logging_init();
 
 	/*
 	 * Initialize the fd-tracker, other libraries using it should also call

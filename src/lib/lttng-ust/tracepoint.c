@@ -894,7 +894,7 @@ lib_added:
 
 	DBG("just registered a tracepoints section from %p and having %d tracepoints",
 		tracepoints_start, tracepoints_count);
-	if (ust_err_debug_enabled()) {
+	if (lttng_ust_logging_debug_enabled()) {
 		int i;
 
 		for (i = 0; i < tracepoints_count; i++) {
@@ -958,7 +958,7 @@ void lttng_ust_tp_init(void)
 {
 	if (uatomic_xchg(&initialized, 1) == 1)
 		return;
-	ust_err_init();
+	lttng_ust_logging_init();
 	check_weak_hidden();
 }
 

@@ -5,8 +5,8 @@
  * Copyright (C) 2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
-#ifndef _USTERR_SIGNAL_SAFE_H
-#define _USTERR_SIGNAL_SAFE_H
+#ifndef _UST_COMMON_LOGGING_H
+#define _UST_COMMON_LOGGING_H
 
 #include <string.h>
 #include <sys/types.h>
@@ -14,31 +14,34 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
+
+#include <lttng/ust-utils.h>
+
 #include "common/patient.h"
 #include "common/compat/tid.h"
 #include "common/safe-snprintf.h"
 
-enum ust_err_loglevel {
-	UST_ERR_LOGLEVEL_UNKNOWN = 0,
-	UST_ERR_LOGLEVEL_NORMAL,
-	UST_ERR_LOGLEVEL_DEBUG,
+enum lttng_ust_log_level {
+	LTTNG_UST_LOG_LEVEL_UNKNOWN = 0,
+	LTTNG_UST_LOG_LEVEL_NORMAL,
+	LTTNG_UST_LOG_LEVEL_DEBUG,
 };
 
-extern volatile enum ust_err_loglevel ust_err_loglevel
+extern volatile enum lttng_ust_log_level lttng_ust_log_level
 	__attribute__((visibility("hidden")));
 
-void ust_err_init(void)
+void lttng_ust_logging_init(void)
 	__attribute__((visibility("hidden")));
 
 #ifdef LTTNG_UST_DEBUG
-static inline bool ust_err_debug_enabled(void)
+static inline bool lttng_ust_logging_debug_enabled(void)
 {
 	return true;
 }
 #else /* #ifdef LTTNG_UST_DEBUG */
-static inline bool ust_err_debug_enabled(void)
+static inline bool lttng_ust_logging_debug_enabled(void)
 {
-	return ust_err_loglevel == UST_ERR_LOGLEVEL_DEBUG;
+	return lttng_ust_log_level == LTTNG_UST_LOG_LEVEL_DEBUG;
 }
 #endif /* #else #ifdef LTTNG_UST_DEBUG */
 
@@ -49,22 +52,18 @@ static inline bool ust_err_debug_enabled(void)
 #define UST_COMPONENT libust
 #endif
 
-/* To stringify the expansion of a define */
-#define UST_XSTR(d) UST_STR(d)
-#define UST_STR(s) #s
-
-#define UST_ERR_MAX_LEN	512
+#define LTTNG_UST_LOG_MAX_LEN	512
 
 /*
  * We sometimes print in the tracing path, and tracing can occur in
  * signal handlers, so we must use a print method which is signal safe.
  */
-/* Can't use dynamic allocation. Limit ourselves to UST_ERR_MAX_LEN chars. */
+/* Can't use dynamic allocation. Limit ourselves to LTTNG_UST_LOG_MAX_LEN chars. */
 /* Add end of string in case of buffer overflow. */
 #define sigsafe_print_err(fmt, args...)					\
 do {									\
-	if (ust_err_debug_enabled()) {					\
-		char ____buf[UST_ERR_MAX_LEN];				\
+	if (lttng_ust_logging_debug_enabled()) {			\
+		char ____buf[LTTNG_UST_LOG_MAX_LEN];			\
 		int ____saved_errno;					\
 									\
 		____saved_errno = errno;	/* signal-safety */	\
@@ -76,11 +75,11 @@ do {									\
 	}								\
 } while (0)
 
-#define UST_STR_COMPONENT UST_XSTR(UST_COMPONENT)
+#define LTTNG_UST_STR_COMPONENT lttng_ust_stringify(UST_COMPONENT)
 
 #define ERRMSG(fmt, args...)			\
 	do {					\
-		sigsafe_print_err(UST_STR_COMPONENT "[%ld/%ld]: " fmt " (in %s() at " __FILE__ ":" UST_XSTR(__LINE__) ")\n", \
+		sigsafe_print_err(LTTNG_UST_STR_COMPONENT "[%ld/%ld]: " fmt " (in %s() at " __FILE__ ":" lttng_ust_stringify(__LINE__) ")\n", \
 		(long) getpid(),		\
 		(long) lttng_gettid(),		\
 		## args, __func__);		\
@@ -99,7 +98,7 @@ do {									\
  */
 #define PERROR(call, args...)						\
 	do {								\
-		if (ust_err_debug_enabled()) {				\
+		if (lttng_ust_logging_debug_enabled()) {		\
 			char perror_buf[200] = "Error in strerror_r()";	\
 			strerror_r(errno, perror_buf,			\
 					sizeof(perror_buf));		\
@@ -113,7 +112,7 @@ do {									\
  */
 #define PERROR(call, args...)						\
 	do {								\
-		if (ust_err_debug_enabled()) {				\
+		if (lttng_ust_logging_debug_enabled()) {		\
 			char *perror_buf;				\
 			char perror_tmp[200];				\
 			perror_buf = strerror_r(errno, perror_tmp,	\
@@ -136,4 +135,4 @@ do {									\
 	} while(0)
 #define WARN_ON_ONCE(condition) WARN_ON(condition)
 
-#endif /* _USTERR_SIGNAL_SAFE_H */
+#endif /* _UST_COMMON_LOGGING_H */

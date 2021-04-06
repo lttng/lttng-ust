@@ -2906,8 +2906,8 @@ void ustctl_init(void)
 static
 void ustctl_init(void)
 {
-	ust_err_init();
-	lttng_ust_getenv_init();	/* Needs ust_err_init() to be completed. */
+	lttng_ust_logging_init();
+	lttng_ust_getenv_init();	/* Needs lttng_ust_logging_init() to be completed. */
 	lttng_ust_clock_init();
 	lttng_ust_ring_buffer_clients_init();
 	lttng_ust_counter_clients_init();

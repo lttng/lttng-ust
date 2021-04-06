@@ -43,7 +43,7 @@ void _lttng_ust_dl_init(void)
 static
 void _lttng_ust_dl_init(void)
 {
-	ust_err_init();
+	lttng_ust_logging_init();
 }
 
 static
