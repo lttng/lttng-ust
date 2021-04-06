@@ -21,7 +21,7 @@
 #include "lttng-tracer-core.h"
 #include "lttng-ust-statedump.h"
 #include "jhash.h"
-#include "getenv.h"
+#include "common/getenv.h"
 #include "ust-events-internal.h"
 
 #define TRACEPOINT_DEFINE

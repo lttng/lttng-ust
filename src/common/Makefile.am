@@ -129,6 +129,8 @@ libsnprintf_la_SOURCES = \
 
 # Common library
 libcommon_la_SOURCES = \
+	getenv.c \
+	getenv.h \
 	logging.c \
 	logging.h \
 	patient.c

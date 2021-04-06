@@ -12,7 +12,7 @@
 #include <urcu/system.h>
 #include <urcu/arch.h>
 
-#include "getenv.h"
+#include "common/getenv.h"
 #include "lib/lttng-ust/getcpu.h"
 
 /* Function pointer to the current getcpu callback. */

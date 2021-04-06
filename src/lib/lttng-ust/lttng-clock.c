@@ -18,7 +18,7 @@
 #include "common/logging.h"
 
 #include "clock.h"
-#include "getenv.h"
+#include "common/getenv.h"
 
 struct lttng_ust_trace_clock *lttng_ust_trace_clock;
 

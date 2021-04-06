@@ -9,9 +9,10 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <sys/types.h>
+#include <urcu/system.h>
 #include "common/logging.h"
 #include "common/macros.h"
-#include "getenv.h"
+#include "common/getenv.h"
 
 enum lttng_env_secure {
 	LTTNG_ENV_SECURE,
@@ -23,6 +24,9 @@ struct lttng_env {
 	enum lttng_env_secure secure;
 	char *value;
 };
+
+static
+int lttng_ust_getenv_is_init = 0;
 
 static struct lttng_env lttng_env[] = {
 	/*
@@ -50,11 +54,18 @@ int lttng_is_setuid_setgid(void)
 	return geteuid() != getuid() || getegid() != getgid();
 }
 
+/*
+ * Wrapper over getenv that will only return the values of whitelisted
+ * environment variables when the current process is setuid and/or setgid.
+ */
 char *lttng_ust_getenv(const char *name)
 {
 	size_t i;
 	struct lttng_env *e;
 	bool found = false;
+
+	if (!CMM_LOAD_SHARED(lttng_ust_getenv_is_init))
+		abort();
 
 	for (i = 0; i < LTTNG_ARRAY_SIZE(lttng_env); i++) {
 		e = &lttng_env[i];
@@ -74,6 +85,9 @@ void lttng_ust_getenv_init(void)
 {
 	size_t i;
 
+	if (CMM_LOAD_SHARED(lttng_ust_getenv_is_init))
+		return;
+
 	for (i = 0; i < LTTNG_ARRAY_SIZE(lttng_env); i++) {
 		struct lttng_env *e = &lttng_env[i];
 
@@ -84,4 +98,5 @@ void lttng_ust_getenv_init(void)
 		}
 		e->value = getenv(e->key);
 	}
+	CMM_STORE_SHARED(lttng_ust_getenv_is_init, 1);
 }

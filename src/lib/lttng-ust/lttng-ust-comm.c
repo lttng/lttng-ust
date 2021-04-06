@@ -51,7 +51,7 @@
 #include "lttng-ust-statedump.h"
 #include "clock.h"
 #include "lib/lttng-ust/getcpu.h"
-#include "getenv.h"
+#include "common/getenv.h"
 #include "ust-events-internal.h"
 #include "context-internal.h"
 #include "common/align.h"

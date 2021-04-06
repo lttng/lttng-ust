@@ -28,7 +28,7 @@
 #include "common/wait.h"
 #include "lib/lttng-ust/lttng-rb-clients.h"
 #include "common/clock.h"
-#include "lib/lttng-ust/getenv.h"
+#include "common/getenv.h"
 #include "lib/lttng-ust/lttng-tracer-core.h"
 #include "lib/lttng-ust/lttng-counter-client.h"
 

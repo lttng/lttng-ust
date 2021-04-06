@@ -87,7 +87,6 @@ liblttng_ust_runtime_la_SOURCES = \
 	lttng-ust-tracef-provider.h \
 	tracelog.c \
 	lttng-ust-tracelog-provider.h \
-	getenv.h \
 	string-utils.c \
 	string-utils.h \
 	event-notifier-notification.c \
@@ -112,8 +111,6 @@ liblttng_ust_support_la_SOURCES = \
 	lttng-tracer.h \
 	lttng-tracer-core.h \
 	ust-core.c \
-	getenv.h \
-	getenv.c \
 	lttng-ust-dynamic-type.c \
 	lttng-rb-clients.h \
 	lttng-ring-buffer-client-template.h \

@@ -4,8 +4,8 @@
  * Copyright (C) 2015 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
-#ifndef _COMPAT_GETENV_H
-#define _COMPAT_GETENV_H
+#ifndef _UST_COMMON_GETENV_H
+#define _UST_COMMON_GETENV_H
 
 /*
  * Always add the lttng-ust environment variables using the lttng_ust_getenv()
@@ -19,7 +19,11 @@
 char *lttng_ust_getenv(const char *name)
 	__attribute__((visibility("hidden")));
 
+
+/*
+ * Initialize the internal filtered list of environment variables.
+ */
 void lttng_ust_getenv_init(void)
 	__attribute__((visibility("hidden")));
 
-#endif /* _COMPAT_GETENV_H */
+#endif /* _UST_COMMON_GETENV_H */
