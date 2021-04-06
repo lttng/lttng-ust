@@ -26,6 +26,12 @@ struct lttng_ust_registered_context_provider {
 	struct cds_hlist_node node;
 };
 
+struct lttng_ust_app_ctx {
+	char *name;
+	struct lttng_ust_event_field *event_field;
+	struct lttng_ust_type_common *type;
+};
+
 #define CONTEXT_PROVIDER_HT_BITS	12
 #define CONTEXT_PROVIDER_HT_SIZE	(1U << CONTEXT_PROVIDER_HT_BITS)
 struct context_provider_ht {
@@ -118,6 +124,16 @@ end:
 	free(reg_provider);
 }
 
+static void destroy_app_ctx(void *priv)
+{
+	struct lttng_ust_app_ctx *app_ctx = (struct lttng_ust_app_ctx *) priv;
+
+	free(app_ctx->name);
+	free(app_ctx->event_field);
+	free(app_ctx->type);
+	free(app_ctx);
+}
+
 /*
  * Called with ust mutex held.
  * Add application context to array of context, even if the application
@@ -130,25 +146,22 @@ int lttng_ust_add_app_context_to_ctx_rcu(const char *name,
 		struct lttng_ust_ctx **ctx)
 {
 	const struct lttng_ust_context_provider *provider;
-	struct lttng_ust_ctx_field *new_field = NULL;
+	struct lttng_ust_ctx_field new_field = { 0 };
 	struct lttng_ust_event_field *event_field = NULL;
 	struct lttng_ust_type_common *type = NULL;
+	struct lttng_ust_app_ctx *app_ctx = NULL;
+	char *ctx_name;
 	int ret;
 
 	if (*ctx && lttng_find_context(*ctx, name))
 		return -EEXIST;
-	new_field = zmalloc(sizeof(struct lttng_ust_ctx_field));
-	if (!new_field) {
-		ret = -ENOMEM;
-		goto error_field_alloc;
-	}
 	event_field = zmalloc(sizeof(struct lttng_ust_event_field));
 	if (!event_field) {
 		ret = -ENOMEM;
 		goto error_event_field_alloc;
 	}
-	event_field->name = strdup(name);
-	if (!event_field->name) {
+	ctx_name = strdup(name);
+	if (!ctx_name) {
 		ret = -ENOMEM;
 		goto error_field_name_alloc;
 	}
@@ -157,44 +170,48 @@ int lttng_ust_add_app_context_to_ctx_rcu(const char *name,
 		ret = -ENOMEM;
 		goto error_field_type_alloc;
 	}
+	app_ctx = zmalloc(sizeof(struct lttng_ust_app_ctx));
+	if (!app_ctx) {
+		ret = -ENOMEM;
+		goto error_app_ctx_alloc;
+	}
+	event_field->name = ctx_name;
 	type->type = lttng_ust_type_dynamic;
 	event_field->type = type;
-	new_field->event_field = event_field;
+	new_field.event_field = event_field;
 	/*
 	 * If provider is not found, we add the context anyway, but
 	 * it will provide a dummy context.
 	 */
 	provider = lookup_provider_by_name(name);
 	if (provider) {
-		new_field->get_size = provider->get_size;
-		new_field->record = provider->record;
-		new_field->get_value = provider->get_value;
+		new_field.get_size = provider->get_size;
+		new_field.record = provider->record;
+		new_field.get_value = provider->get_value;
 	} else {
-		new_field->get_size = lttng_ust_dummy_get_size;
-		new_field->record = lttng_ust_dummy_record;
-		new_field->get_value = lttng_ust_dummy_get_value;
+		new_field.get_size = lttng_ust_dummy_get_size;
+		new_field.record = lttng_ust_dummy_record;
+		new_field.get_value = lttng_ust_dummy_get_value;
 	}
+	new_field.destroy = destroy_app_ctx;
+	new_field.priv = app_ctx;
 	/*
 	 * For application context, add it by expanding
-	 * ctx array. Ownership of new_field is passed to the callee on
-	 * success.
+	 * ctx array.
 	 */
-	ret = lttng_ust_context_append_rcu(ctx, new_field);
+	ret = lttng_ust_context_append_rcu(ctx, &new_field);
 	if (ret) {
-		free(type);
-		free((char *) new_field->event_field->name);
-		free(event_field);
-		free(new_field);
+		destroy_app_ctx(app_ctx);
 		return ret;
 	}
 	return 0;
 
+error_app_ctx_alloc:
+	free(type);
 error_field_type_alloc:
-	free((char *) new_field->event_field->name);
+	free(ctx_name);
 error_field_name_alloc:
 	free(event_field);
 error_event_field_alloc:
-	free(new_field);
-error_field_alloc:
 	return ret;
 }

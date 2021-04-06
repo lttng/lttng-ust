@@ -202,7 +202,6 @@ int lttng_ust_context_append_rcu(struct lttng_ust_ctx **ctx_p,
 		free(new_ctx);
 		return ret;
 	}
-	/* Taking ownership of f. */
 	new_ctx->fields[new_ctx->nr_fields - 1] = *f;
 	lttng_context_update(new_ctx);
 	lttng_ust_rcu_assign_pointer(*ctx_p, new_ctx);
