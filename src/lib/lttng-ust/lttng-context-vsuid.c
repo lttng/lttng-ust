@@ -18,7 +18,7 @@
 #include <lttng/ringbuffer-context.h>
 
 #include "context-internal.h"
-#include "creds.h"
+#include "common/creds.h"
 
 
 /*

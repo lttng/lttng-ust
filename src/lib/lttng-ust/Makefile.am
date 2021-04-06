@@ -91,7 +91,6 @@ liblttng_ust_runtime_la_SOURCES = \
 	string-utils.h \
 	event-notifier-notification.c \
 	ns.h \
-	creds.h \
 	rculfhash.c \
 	rculfhash.h \
 	rculfhash-internal.h \

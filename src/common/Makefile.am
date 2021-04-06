@@ -11,6 +11,7 @@ noinst_HEADERS = \
 	bitfield.h \
 	bitmap.h \
 	clock.h \
+	creds.h \
 	dynamic-type.h \
 	elf.h \
 	events.h \
