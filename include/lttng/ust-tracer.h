@@ -15,8 +15,8 @@
 #include <lttng/ust-version.h>
 
 /*
- * On architectures without efficient unaligned accesses, layout the
- * content of the ringbuffer respect the natural alignment of the
+ * On architectures without efficient unaligned accesses, the layout of
+ * the ringbuffer's content respects the natural alignment of the
  * system. Only pack its content on architectures we know have efficient
  * unaligned memory access.
  *
