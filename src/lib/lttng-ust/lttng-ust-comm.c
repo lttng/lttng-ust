@@ -25,7 +25,6 @@
 #include <signal.h>
 #include <limits.h>
 #include <urcu/uatomic.h>
-#include "futex.h"
 #include <urcu/compiler.h>
 #include <lttng/urcu/urcu-ust.h>
 
@@ -39,6 +38,7 @@
 #include <lttng/ust-thread.h>
 #include <lttng/ust-tracer.h>
 #include <urcu/tls-compat.h>
+#include "common/compat/futex.h"
 #include "common/ustcomm.h"
 #include "common/ust-fd.h"
 #include "common/logging.h"

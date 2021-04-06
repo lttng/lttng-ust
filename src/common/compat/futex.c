@@ -16,7 +16,8 @@
 
 #include <urcu/arch.h>
 #include <urcu/system.h>
-#include "futex.h"
+
+#include "common/compat/futex.h"
 
 /*
  * Using attribute "weak" for __lttng_ust_compat_futex_lock and

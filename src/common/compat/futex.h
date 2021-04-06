@@ -6,8 +6,8 @@
  * Userspace RCU - sys_futex/compat_futex header.
  */
 
-#ifndef _LTTNG_UST_FUTEX_H
-#define _LTTNG_UST_FUTEX_H
+#ifndef _UST_COMMON_COMPAT_FUTEX_H
+#define _UST_COMMON_COMPAT_FUTEX_H
 
 #include <errno.h>
 #include <stdint.h>
@@ -175,4 +175,4 @@ static inline int lttng_ust_futex_async(int32_t *uaddr, int op, int32_t val,
 }
 #endif
 
-#endif /* _LTTNG_UST_FUTEX_H */
+#endif /* _UST_COMMON_COMPAT_FUTEX_H */
