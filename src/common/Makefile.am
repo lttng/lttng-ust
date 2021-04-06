@@ -10,6 +10,7 @@ noinst_HEADERS = \
 	align.h \
 	bitfield.h \
 	bitmap.h \
+	clock.h \
 	dynamic-type.h \
 	elf.h \
 	logging.h \

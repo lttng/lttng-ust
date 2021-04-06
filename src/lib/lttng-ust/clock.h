@@ -17,6 +17,7 @@
 #include <urcu/arch.h>
 #include <lttng/ust-clock.h>
 
+#include "common/clock.h"
 #include "lttng-ust-uuid.h"
 
 struct lttng_ust_trace_clock {
@@ -29,8 +30,6 @@ struct lttng_ust_trace_clock {
 
 extern struct lttng_ust_trace_clock *lttng_ust_trace_clock
 	__attribute__((visibility("hidden")));
-
-void lttng_ust_clock_init(void);
 
 /* Use the kernel MONOTONIC clock. */
 
