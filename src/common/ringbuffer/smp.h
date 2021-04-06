@@ -7,7 +7,7 @@
 #ifndef _LIBRINGBUFFER_SMP_H
 #define _LIBRINGBUFFER_SMP_H
 
-#include "getcpu.h"
+#include "lib/lttng-ust/getcpu.h"
 
 /*
  * 4kB of per-cpu data available. Enough to hold the control structures,

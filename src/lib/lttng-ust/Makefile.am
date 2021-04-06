@@ -126,7 +126,8 @@ liblttng_ust_support_la_SOURCES = \
 	lttng-counter-client.h \
 	lttng-counter-client-percpu-32-modular.c \
 	lttng-counter-client-percpu-64-modular.c \
-	lttng-clock.c lttng-getcpu.c
+	lttng-clock.c \
+	getcpu.c getcpu.h
 
 liblttng_ust_la_SOURCES =
 

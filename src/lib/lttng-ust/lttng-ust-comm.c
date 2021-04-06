@@ -50,7 +50,7 @@
 #include "common/ringbuffer/rb-init.h"
 #include "lttng-ust-statedump.h"
 #include "clock.h"
-#include "common/ringbuffer/getcpu.h"
+#include "lib/lttng-ust/getcpu.h"
 #include "getenv.h"
 #include "ust-events-internal.h"
 #include "context-internal.h"
@@ -2125,7 +2125,7 @@ void lttng_ust_init(void)
 	lttng_ust_tp_init();
 	lttng_ust_init_fd_tracker();
 	lttng_ust_clock_init();
-	lttng_ust_getcpu_init();
+	lttng_ust_getcpu_plugin_init();
 	lttng_ust_statedump_init();
 	lttng_ust_ring_buffer_clients_init();
 	lttng_ust_counter_clients_init();

@@ -90,7 +90,6 @@ libringbuffer_la_SOURCES = \
 	ringbuffer/frontend.h \
 	ringbuffer/frontend_internal.h \
 	ringbuffer/frontend_types.h \
-	ringbuffer/getcpu.h \
 	ringbuffer/nohz.h \
 	ringbuffer/rb-init.h \
 	ringbuffer/ring_buffer_backend.c \

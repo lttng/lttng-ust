@@ -11,10 +11,21 @@
 #include <urcu/system.h>
 #include <urcu/arch.h>
 
-void lttng_ust_getcpu_init(void)
+#include <lttng/ust-getcpu.h>
+
+
+/*
+ * Initialize the getcpu plugin if it's present.
+ */
+void lttng_ust_getcpu_plugin_init(void)
 	__attribute__((visibility("hidden")));
 
-extern int (*lttng_get_cpu)(void)
+/*
+ * Function pointer to the user provided getcpu callback, can be set at library
+ * initialization by a dlopened plugin or at runtime by a user by calling
+ * lttng_ust_getcpu_override() from the public API.
+ */
+extern int (*lttng_ust_get_cpu_sym)(void)
 	__attribute__((visibility("hidden")));
 
 #ifdef LTTNG_UST_DEBUG_VALGRIND
@@ -92,12 +103,16 @@ int lttng_ust_get_cpu_internal(void)
 static inline
 int lttng_ust_get_cpu(void)
 {
-	int (*getcpu)(void) = CMM_LOAD_SHARED(lttng_get_cpu);
+	int (*lttng_ust_get_cpu_current)(void) = CMM_LOAD_SHARED(lttng_ust_get_cpu_sym);
 
-	if (caa_likely(!getcpu)) {
+	/*
+	 * Fallback to the internal getcpu implementation if no override was
+	 * provided the user.
+	 */
+	if (caa_likely(!lttng_ust_get_cpu_current)) {
 		return lttng_ust_get_cpu_internal();
 	} else {
-		return getcpu();
+		return lttng_ust_get_cpu_current();
 	}
 }
 
