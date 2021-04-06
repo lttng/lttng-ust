@@ -179,6 +179,11 @@ AC_LANG_POP([C])
 # Clang >= 3.3 (required by the project) and are only valid for C code.
 WARN_CFLAGS="${WARN_CFLAGS} -Wold-style-definition -Wstrict-prototypes"
 
+# Disable 'strict aliasing' if the compiler supports it.
+AC_LANG_PUSH([C])
+AX_APPEND_COMPILE_FLAGS([-fno-strict-aliasing], [OPT_CFLAGS], [-Werror])
+AC_LANG_POP([C])
+
 
 ##                     ##
 ## C++ compiler checks ##
@@ -544,7 +549,7 @@ AC_SUBST([LTTNG_UST_CTL_LIBRARY_VERSION], ust_ctl_lib_version)
 # Major soname for python-lttngust
 AC_SUBST([LTTNG_UST_LIB_SONAME_MAJOR], [ust_lib_version_current])
 
-AM_CFLAGS="$WARN_CFLAGS $URCU_CFLAGS $PTHREAD_CFLAGS"
+AM_CFLAGS="$OPT_CFLAGS $WARN_CFLAGS $URCU_CFLAGS $PTHREAD_CFLAGS"
 AC_SUBST(AM_CFLAGS)
 
 AM_CXXFLAGS="$WARN_CXXFLAGS $URCU_CFLAGS $PTHREAD_CFLAGS"

@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: LGPL-2.1-only
 
-AM_CFLAGS += -fno-strict-aliasing
-
 lib_LTLIBRARIES = liblttng-ust-fork.la
 liblttng_ust_fork_la_SOURCES = ustfork.c
 liblttng_ust_fork_la_LIBADD = \

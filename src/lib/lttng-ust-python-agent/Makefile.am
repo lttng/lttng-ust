@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: LGPL-2.1-only
 
 # tracepoint provider: always built/installed (does not depend on Python per se)
-AM_CFLAGS += -I$(srcdir) -fno-strict-aliasing
+AM_CFLAGS += -I$(srcdir)
 
 lib_LTLIBRARIES = liblttng-ust-python-agent.la
 
