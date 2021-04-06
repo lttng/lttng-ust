@@ -21,7 +21,7 @@
 
 #include "context-internal.h"
 #include "lttng-tracer-core.h"
-#include "ns.h"
+#include "common/ns.h"
 
 
 /*

@@ -16,14 +16,6 @@
 #include <lttng/ringbuffer-context.h>
 #include "common/logging.h"
 
-/*
- * The longuest possible namespace proc path is with the cgroup ns
- * and the maximum theoretical linux pid of 536870912 :
- *
- *  /proc/self/task/536870912/ns/cgroup
- */
-#define LTTNG_PROC_NS_PATH_MAX 40
-
 struct lttng_ust_session;
 struct lttng_ust_channel_buffer;
 struct lttng_ust_ctx_field;

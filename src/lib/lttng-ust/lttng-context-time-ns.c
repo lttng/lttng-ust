@@ -19,7 +19,7 @@
 #include "common/compat/tid.h"
 #include <urcu/tls-compat.h>
 #include "lttng-tracer-core.h"
-#include "ns.h"
+#include "common/ns.h"
 #include "context-internal.h"
 
 

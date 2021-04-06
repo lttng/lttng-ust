@@ -21,7 +21,7 @@
 
 #include "context-internal.h"
 #include "lttng-tracer-core.h"
-#include "ns.h"
+#include "common/ns.h"
 
 /*
  * We cache the result to ensure we don't stat(2) the proc filesystem on

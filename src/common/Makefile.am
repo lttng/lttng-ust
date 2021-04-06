@@ -20,6 +20,7 @@ noinst_HEADERS = \
 	jhash.h \
 	logging.h \
 	macros.h \
+	ns.h \
 	patient.h \
 	procname.h \
 	safe-snprintf.h \

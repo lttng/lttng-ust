@@ -24,4 +24,12 @@ enum ns_ino_state {
 	NS_INO_MIN		= 0xF0000000,
 };
 
+/*
+ * The longest possible namespace proc path is with the cgroup ns
+ * and the maximum theoretical linux pid of 536870912 :
+ *
+ *  /proc/self/task/536870912/ns/cgroup
+ */
+#define LTTNG_PROC_NS_PATH_MAX 40
+
 #endif /* _LTTNG_NS_H */
