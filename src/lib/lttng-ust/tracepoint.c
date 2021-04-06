@@ -28,7 +28,7 @@
 
 #include "tracepoint-internal.h"
 #include "lttng-tracer-core.h"
-#include "jhash.h"
+#include "common/jhash.h"
 #include "error.h"
 
 /* Test compiler support for weak symbols with hidden visibility. */

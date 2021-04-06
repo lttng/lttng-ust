@@ -20,7 +20,7 @@
 #include "common/macros.h"
 #include "lttng-tracer-core.h"
 #include "lttng-ust-statedump.h"
-#include "jhash.h"
+#include "common/jhash.h"
 #include "common/getenv.h"
 #include "lib/lttng-ust/events.h"
 

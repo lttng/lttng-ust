@@ -23,7 +23,6 @@ liblttng_ust_tracepoint_la_SOURCES = \
 	tracepoint-weak-test.c \
 	tracepoint-internal.h \
 	lttng-tracer-core.h \
-	jhash.h \
 	error.h
 
 liblttng_ust_tracepoint_la_LIBADD = \
@@ -80,7 +79,6 @@ liblttng_ust_runtime_la_SOURCES = \
 	tracepoint-internal.h \
 	events.h \
 	clock.h \
-	jhash.h \
 	lttng-ust-uuid.h \
 	error.h \
 	tracef.c \

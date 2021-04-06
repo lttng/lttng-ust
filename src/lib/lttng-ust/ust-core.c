@@ -15,7 +15,7 @@
 #include "lttng-tracer-core.h"
 #include "lttng-rb-clients.h"
 #include "lttng-counter-client.h"
-#include "jhash.h"
+#include "common/jhash.h"
 
 static CDS_LIST_HEAD(lttng_transport_list);
 static CDS_LIST_HEAD(lttng_counter_transport_list);

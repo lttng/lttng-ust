@@ -15,6 +15,7 @@ noinst_HEADERS = \
 	dynamic-type.h \
 	elf.h \
 	events.h \
+	jhash.h \
 	logging.h \
 	macros.h \
 	patient.h \

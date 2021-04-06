@@ -4,6 +4,9 @@
  * Copyright (C) 2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
+#ifndef _UST_COMMON_JHASH_H
+#define _UST_COMMON_JHASH_H
+
 #include <stddef.h>
 #include <stdint.h>
 #include <urcu/compiler.h>
@@ -222,3 +225,5 @@ uint32_t jhash(const void *key, size_t length, uint32_t seed)
 {
 	return hashlittle(key, length, seed);
 }
+
+#endif /* _UST_COMMON_JHASH_H */

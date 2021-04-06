@@ -55,7 +55,7 @@
 #include "common/ringbuffer/frontend_types.h"
 #include "common/ringbuffer/frontend.h"
 #include "common/counter/counter.h"
-#include "jhash.h"
+#include "common/jhash.h"
 #include <lttng/ust-abi.h>
 #include "context-provider-internal.h"
 
