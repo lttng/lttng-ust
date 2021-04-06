@@ -6,8 +6,8 @@
  * LTTng hash table helpers.
  */
 
-#ifndef _LTTNG_HASH_HELPER_H
-#define _LTTNG_HASH_HELPER_H
+#ifndef _UST_COMMON_HASH_H
+#define _UST_COMMON_HASH_H
 
 #include <assert.h>
 #include <stddef.h>
@@ -147,4 +147,4 @@ unsigned long lttng_hash_mix(const void *_key, size_t length, unsigned long seed
 }
 #endif
 
-#endif /* _LTTNG_HASH_HELPER_H */
+#endif /* _UST_COMMON_HASH_H */

@@ -16,6 +16,7 @@ noinst_HEADERS = \
 	elf.h \
 	err-ptr.h \
 	events.h \
+	hash.h \
 	jhash.h \
 	logging.h \
 	macros.h \

@@ -14,7 +14,7 @@
 #include "rculfhash.h"
 
 #include "lttng-bytecode.h"
-#include "lttng-hash-helper.h"
+#include "common/hash.h"
 #include "string-utils.h"
 #include "lib/lttng-ust/events.h"
 #include "common/macros.h"

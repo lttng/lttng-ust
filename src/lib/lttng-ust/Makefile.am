@@ -65,7 +65,6 @@ liblttng_ust_runtime_la_SOURCES = \
 	lttng-context-vsgid.c \
 	lttng-context.c \
 	lttng-events.c \
-	lttng-hash-helper.h \
 	lttng-ust-elf.c \
 	lttng-ust-elf.h \
 	lttng-ust-statedump.c \
