@@ -24,19 +24,6 @@
 
 #define TRACEPOINT_HEADER_MULTI_READ
 
-/*
- * LTTng-UST 2.0 expects TRACEPOINT_INCLUDE_FILE, but this approach has
- * the unwanted side-effect of expanding any macro name found within
- * TRACEPOINT_INCLUDE_FILE.
- *
- * Starting from LTTng-UST 2.1, we expect the TRACEPOINT_INCLUDE to be
- * defined by probes as a string. We still check for
- * TRACEPOINT_INCLUDE_FILE for API backward compatibility.
- */
-#ifdef TRACEPOINT_INCLUDE_FILE
-#define TRACEPOINT_INCLUDE	__tp_stringify(TRACEPOINT_INCLUDE_FILE)
-#endif
-
 #include TRACEPOINT_INCLUDE
 
 #include <lttng/ust-tracepoint-event.h>
