@@ -108,7 +108,7 @@ void ctx_get_struct_size(struct lttng_ust_ctx *ctx, size_t *ctx_len)
 		return;
 	}
 	for (i = 0; i < ctx->nr_fields; i++)
-		offset += ctx->fields[i].get_size(&ctx->fields[i], offset);
+		offset += ctx->fields[i].get_size(ctx->fields[i].priv, offset);
 	*ctx_len = offset;
 }
 
@@ -123,7 +123,7 @@ void ctx_record(struct lttng_ust_lib_ring_buffer_ctx *bufctx,
 		return;
 	lttng_ust_lib_ring_buffer_align_ctx(bufctx, ctx->largest_align);
 	for (i = 0; i < ctx->nr_fields; i++)
-		ctx->fields[i].record(&ctx->fields[i], bufctx, chan);
+		ctx->fields[i].record(ctx->fields[i].priv, bufctx, chan);
 }
 
 /*

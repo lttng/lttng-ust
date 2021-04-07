@@ -234,7 +234,7 @@ void lttng_destroy_context(struct lttng_ust_ctx *ctx)
 		return;
 	for (i = 0; i < ctx->nr_fields; i++) {
 		if (ctx->fields[i].destroy)
-			ctx->fields[i].destroy(&ctx->fields[i]);
+			ctx->fields[i].destroy(ctx->fields[i].priv);
 	}
 	free(ctx->fields);
 	free(ctx);
