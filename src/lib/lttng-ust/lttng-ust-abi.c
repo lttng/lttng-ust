@@ -45,7 +45,7 @@
 #include "common/counter/counter.h"
 #include "tracepoint-internal.h"
 #include "lttng-tracer.h"
-#include "string-utils.h"
+#include "common/strutils.h"
 #include "lib/lttng-ust/events.h"
 #include "context-internal.h"
 #include "common/macros.h"

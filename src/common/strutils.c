@@ -10,7 +10,7 @@
 #include <stdbool.h>
 #include <assert.h>
 
-#include "string-utils.h"
+#include "common/strutils.h"
 
 enum star_glob_pattern_type_flags {
 	STAR_GLOB_PATTERN_TYPE_FLAG_NONE = 0,

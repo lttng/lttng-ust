@@ -82,8 +82,6 @@ liblttng_ust_runtime_la_SOURCES = \
 	lttng-ust-tracef-provider.h \
 	tracelog.c \
 	lttng-ust-tracelog-provider.h \
-	string-utils.c \
-	string-utils.h \
 	event-notifier-notification.c \
 	rculfhash.c \
 	rculfhash.h \

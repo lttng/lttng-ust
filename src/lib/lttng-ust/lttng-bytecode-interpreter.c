@@ -17,7 +17,7 @@
 #include "lib/lttng-ust/events.h"
 
 #include "lttng-bytecode.h"
-#include "string-utils.h"
+#include "common/strutils.h"
 
 
 /*

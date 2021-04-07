@@ -42,7 +42,7 @@
 #include "lttng-ust-uuid.h"
 
 #include "tracepoint-internal.h"
-#include "string-utils.h"
+#include "common/strutils.h"
 #include "lttng-bytecode.h"
 #include "lttng-tracer.h"
 #include "lttng-tracer-core.h"

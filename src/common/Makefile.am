@@ -145,6 +145,8 @@ libcommon_la_SOURCES = \
 	getenv.h \
 	logging.c \
 	logging.h \
+	strutils.c \
+	strutils.h \
 	patient.c
 
 libcommon_la_LIBADD = \

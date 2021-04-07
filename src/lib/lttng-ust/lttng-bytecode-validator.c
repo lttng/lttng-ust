@@ -15,7 +15,7 @@
 
 #include "lttng-bytecode.h"
 #include "common/hash.h"
-#include "string-utils.h"
+#include "common/strutils.h"
 #include "lib/lttng-ust/events.h"
 #include "common/macros.h"
 
