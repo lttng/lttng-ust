@@ -2,23 +2,11 @@
 
 AM_CFLAGS += -I$(srcdir) -fno-strict-aliasing
 
-noinst_LTLIBRARIES = liblttng-ust-runtime.la liblttng-ust-support.la
+lib_LTLIBRARIES = liblttng-ust.la
 
-lib_LTLIBRARIES = liblttng-ust-tracepoint.la liblttng-ust.la
-
-liblttng_ust_tracepoint_la_SOURCES = \
-	tracepoint.c \
-	tracepoint-weak-test.c \
-	tracepoint-internal.h \
-	lttng-tracer-core.h
-
-liblttng_ust_tracepoint_la_LIBADD = \
-	$(top_builddir)/src/lib/lttng-ust-common/liblttng-ust-common.la \
-	$(top_builddir)/src/common/libcommon.la \
-	$(DL_LIBS)
-
-liblttng_ust_tracepoint_la_LDFLAGS = -no-undefined -version-info $(LTTNG_UST_LIBRARY_VERSION)
-liblttng_ust_tracepoint_la_CFLAGS = -DUST_COMPONENT="liblttng_ust_tracepoint" $(AM_CFLAGS)
+noinst_LTLIBRARIES = \
+	liblttng-ust-runtime.la \
+	liblttng-ust-support.la
 
 liblttng_ust_runtime_la_SOURCES = \
 	bytecode.h \
@@ -62,7 +50,6 @@ liblttng_ust_runtime_la_SOURCES = \
 	ust_lib.h \
 	context-internal.h \
 	context-provider-internal.h \
-	tracepoint-internal.h \
 	events.h \
 	clock.h \
 	lttng-ust-uuid.h \
@@ -116,7 +103,7 @@ liblttng_ust_la_LIBADD = \
 	$(top_builddir)/src/lib/lttng-ust-common/liblttng-ust-common.la \
 	$(top_builddir)/src/common/libustcomm.la \
 	$(top_builddir)/src/common/libcommon.la \
-	liblttng-ust-tracepoint.la \
+	$(top_builddir)/src/lib/lttng-ust-tracepoint/liblttng-ust-tracepoint.la \
 	liblttng-ust-runtime.la liblttng-ust-support.la \
 	$(DL_LIBS)
 

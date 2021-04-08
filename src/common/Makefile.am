@@ -24,6 +24,7 @@ noinst_HEADERS = \
 	patient.h \
 	procname.h \
 	safe-snprintf.h \
+	tracepoint.h \
 	wait.h
 
 noinst_HEADERS += \

@@ -26,8 +26,8 @@
 #include "common/logging.h"
 #include "common/macros.h"
 
-#include "tracepoint-internal.h"
-#include "lttng-tracer-core.h"
+#include "lib/lttng-ust-tracepoint/tracepoint.h"
+#include "common/tracepoint.h"
 #include "common/jhash.h"
 #include "common/err-ptr.h"
 

@@ -18,7 +18,7 @@
 #include <string.h>
 #include <assert.h>
 #include <limits.h>
-#include "tracepoint-internal.h"
+#include "common/tracepoint.h"
 
 #include "context-internal.h"
 

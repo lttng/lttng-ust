@@ -41,7 +41,7 @@
 #include "common/ust-context-provider.h"
 #include "lttng-ust-uuid.h"
 
-#include "tracepoint-internal.h"
+#include "common/tracepoint.h"
 #include "common/strutils.h"
 #include "lttng-bytecode.h"
 #include "lttng-tracer.h"

@@ -43,7 +43,7 @@
 #include "common/ust-fd.h"
 #include "common/logging.h"
 #include "common/macros.h"
-#include "tracepoint-internal.h"
+#include "common/tracepoint.h"
 #include "lttng-tracer-core.h"
 #include "common/compat/pthread.h"
 #include "common/procname.h"

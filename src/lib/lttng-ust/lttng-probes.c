@@ -13,7 +13,7 @@
 #include <urcu/hlist.h>
 #include <lttng/ust-events.h>
 #include <lttng/tracepoint.h>
-#include "tracepoint-internal.h"
+#include "common/tracepoint.h"
 #include <assert.h>
 #include "common/macros.h"
 #include <ctype.h>

@@ -43,7 +43,7 @@
 #include "common/ringbuffer/frontend.h"
 #include "common/ringbuffer/shm.h"
 #include "common/counter/counter.h"
-#include "tracepoint-internal.h"
+#include "common/tracepoint.h"
 #include "lttng-tracer.h"
 #include "common/strutils.h"
 #include "lib/lttng-ust/events.h"

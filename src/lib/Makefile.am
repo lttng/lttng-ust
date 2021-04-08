@@ -2,6 +2,7 @@
 
 SUBDIRS = \
 	lttng-ust-common \
+	lttng-ust-tracepoint \
 	lttng-ust \
 	lttng-ust-ctl \
 	lttng-ust-fd \
