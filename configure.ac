@@ -519,6 +519,7 @@ AC_CONFIG_FILES([
   doc/man/Makefile
   include/Makefile
   src/common/Makefile
+  src/lib/lttng-ust-common/Makefile
   src/lib/lttng-ust-ctl/Makefile
   src/lib/lttng-ust-cyg-profile/Makefile
   src/lib/lttng-ust-dl/Makefile

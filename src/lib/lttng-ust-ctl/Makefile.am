@@ -10,7 +10,7 @@ liblttng_ust_ctl_la_LDFLAGS = \
 	-version-info $(LTTNG_UST_CTL_LIBRARY_VERSION)
 
 liblttng_ust_ctl_la_LIBADD = \
-	$(top_builddir)/src/lib/lttng-ust/liblttng-ust-common.la \
+	$(top_builddir)/src/lib/lttng-ust-common/liblttng-ust-common.la \
 	$(top_builddir)/src/lib/lttng-ust/liblttng-ust-support.la \
 	$(top_builddir)/src/common/libustcomm.la \
 	$(top_builddir)/src/common/libcommon.la \

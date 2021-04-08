@@ -6,6 +6,6 @@ noinst_PROGRAMS = test_shm
 test_shm_SOURCES = shm.c
 test_shm_LDADD = \
 	$(top_builddir)/src/common/libringbuffer.la \
-	$(top_builddir)/src/lib/lttng-ust/liblttng-ust-common.la \
+	$(top_builddir)/src/lib/lttng-ust-common/liblttng-ust-common.la \
 	$(top_builddir)/src/common/libcommon.la \
 	$(top_builddir)/tests/utils/libtap.a
