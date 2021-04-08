@@ -24,12 +24,6 @@
 #define CTF_SPEC_MAJOR			1
 #define CTF_SPEC_MINOR			8
 
-/*
- * Number of milliseconds to retry before failing metadata writes on buffer full
- * condition. (10 seconds)
- */
-#define LTTNG_METADATA_TIMEOUT_MSEC	10000
-
 #define LTTNG_RFLAG_EXTENDED		RING_BUFFER_RFLAG_END
 #define LTTNG_RFLAG_END			(LTTNG_RFLAG_EXTENDED << 1)
 
