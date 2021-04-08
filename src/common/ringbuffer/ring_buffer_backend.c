@@ -18,7 +18,7 @@
 #include "vatomic.h"
 #include "backend.h"
 #include "frontend.h"
-#include "smp.h"
+#include "common/smp.h"
 #include "shm.h"
 #include "common/align.h"
 

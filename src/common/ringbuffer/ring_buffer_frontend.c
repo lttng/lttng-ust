@@ -55,7 +55,7 @@
 #include <lttng/ust-utils.h>
 #include <lttng/ust-ringbuffer-context.h>
 
-#include "smp.h"
+#include "common/smp.h"
 #include "ringbuffer-config.h"
 #include "vatomic.h"
 #include "backend.h"

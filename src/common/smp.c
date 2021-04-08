@@ -8,12 +8,15 @@
 #define _LGPL_SOURCE
 #include <unistd.h>
 #include <pthread.h>
-#include "smp.h"
 
-int __num_possible_cpus;
+#include <urcu/compiler.h>
+
+#include "common/smp.h"
+
+static int num_possible_cpus_cache;
 
 #if (defined(__GLIBC__) || defined( __UCLIBC__))
-void _get_num_possible_cpus(void)
+static void _get_num_possible_cpus(void)
 {
 	int result;
 
@@ -28,7 +31,7 @@ void _get_num_possible_cpus(void)
 	result = sysconf(_SC_NPROCESSORS_CONF);
 	if (result == -1)
 		return;
-	__num_possible_cpus = result;
+	num_possible_cpus_cache = result;
 }
 
 #else
@@ -51,7 +54,7 @@ void _get_num_possible_cpus(void)
 
 #define __max(a,b) ((a)>(b)?(a):(b))
 
-void _get_num_possible_cpus(void)
+static void _get_num_possible_cpus(void)
 {
 	int result, count = 0;
 	DIR *cpudir;
@@ -91,6 +94,20 @@ end:
 	 */
 	if (result < 1)
 		return;
-	__num_possible_cpus = result;
+	num_possible_cpus_cache = result;
 }
 #endif
+
+/*
+ * Returns the total number of CPUs in the system. If the cache is not yet
+ * initialized, get the value from the system through sysconf and cache it.
+ *
+ * If the sysconf call fails, don't populate the cache and return 0.
+ */
+int num_possible_cpus(void)
+{
+	if (caa_unlikely(!num_possible_cpus_cache))
+		_get_num_possible_cpus();
+
+	return num_possible_cpus_cache;
+}

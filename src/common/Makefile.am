@@ -69,9 +69,7 @@ libcounter_la_SOURCES = \
 	counter/shm.c \
 	counter/shm.h \
 	counter/shm_internal.h \
-	counter/shm_types.h \
-	counter/smp.c \
-	counter/smp.h
+	counter/shm_types.h
 
 libcounter_la_LIBADD = -lrt
 
@@ -112,8 +110,6 @@ libringbuffer_la_SOURCES = \
 	ringbuffer/shm.h \
 	ringbuffer/shm_internal.h \
 	ringbuffer/shm_types.h \
-	ringbuffer/smp.c \
-	ringbuffer/smp.h \
 	ringbuffer/vatomic.h
 
 libringbuffer_la_LIBADD = \
@@ -146,6 +142,8 @@ libcommon_la_SOURCES = \
 	getenv.h \
 	logging.c \
 	logging.h \
+	smp.c \
+	smp.h \
 	strutils.c \
 	strutils.h \
 	patient.c

@@ -17,7 +17,7 @@
 #include <urcu/compiler.h>
 #include <urcu/uatomic.h>
 
-#include "smp.h"
+#include "common/smp.h"
 
 /* Internal helpers */
 #include "frontend_internal.h"

@@ -16,7 +16,7 @@
 #include "common/align.h"
 #include "common/bitmap.h"
 
-#include "smp.h"
+#include "common/smp.h"
 #include "shm.h"
 
 static size_t lttng_counter_get_dimension_nr_elements(struct lib_counter_dimension *dimension)
@@ -118,7 +118,7 @@ int lttng_counter_set_cpu_shm(struct lib_counter *counter, int cpu, int fd)
 	struct lib_counter_config *config = &counter->config;
 	struct lib_counter_layout *layout;
 
-	if (cpu < 0 || cpu >= lttng_counter_num_possible_cpus())
+	if (cpu < 0 || cpu >= num_possible_cpus())
 		return -EINVAL;
 
 	if (!(config->alloc & COUNTER_ALLOC_PER_CPU))
@@ -171,7 +171,7 @@ int validate_args(const struct lib_counter_config *config,
 	int nr_counter_cpu_fds,
 	const int *counter_cpu_fds)
 {
-	int nr_cpus = lttng_counter_num_possible_cpus();
+	int nr_cpus = num_possible_cpus();
 
 	if (CAA_BITS_PER_LONG != 64 && config->counter_size == COUNTER_SIZE_64_BIT) {
 		WARN_ON_ONCE(1);
@@ -210,7 +210,7 @@ struct lib_counter *lttng_counter_create(const struct lib_counter_config *config
 	size_t dimension, nr_elem = 1;
 	int cpu, ret;
 	int nr_handles = 0;
-	int nr_cpus = lttng_counter_num_possible_cpus();
+	int nr_cpus = num_possible_cpus();
 
 	if (validate_args(config, nr_dimensions, max_nr_elem,
 			global_sum_step, global_counter_fd, nr_counter_cpu_fds,
@@ -234,7 +234,7 @@ struct lib_counter *lttng_counter_create(const struct lib_counter_config *config
 		counter->percpu_counters = zmalloc(sizeof(struct lib_counter_layout) * nr_cpus);
 		if (!counter->percpu_counters)
 			goto error_alloc_percpu;
-		lttng_counter_for_each_possible_cpu(cpu)
+		for_each_possible_cpu(cpu)
 			counter->percpu_counters[cpu].shm_fd = -1;
 	}
 
@@ -260,7 +260,7 @@ struct lib_counter *lttng_counter_create(const struct lib_counter_config *config
 			goto layout_init_error;
 	}
 	if ((config->alloc & COUNTER_ALLOC_PER_CPU) && counter_cpu_fds) {
-		lttng_counter_for_each_possible_cpu(cpu) {
+		for_each_possible_cpu(cpu) {
 			ret = lttng_counter_layout_init(counter, cpu, counter_cpu_fds[cpu]);
 			if (ret)
 				goto layout_init_error;
@@ -309,7 +309,7 @@ int lttng_counter_get_cpu_shm(struct lib_counter *counter, int cpu, int *fd, siz
 	struct lib_counter_layout *layout;
 	int shm_fd;
 
-	if (cpu >= lttng_counter_num_possible_cpus())
+	if (cpu >= num_possible_cpus())
 		return -1;
 	layout = &counter->percpu_counters[cpu];
 	shm_fd = layout->shm_fd;
@@ -335,13 +335,13 @@ int lttng_counter_read(const struct lib_counter_config *config,
 
 	switch (config->alloc) {
 	case COUNTER_ALLOC_PER_CPU:
-		if (cpu < 0 || cpu >= lttng_counter_num_possible_cpus())
+		if (cpu < 0 || cpu >= num_possible_cpus())
 			return -EINVAL;
 		layout = &counter->percpu_counters[cpu];
 		break;
 	case COUNTER_ALLOC_PER_CPU | COUNTER_ALLOC_GLOBAL:
 		if (cpu >= 0) {
-			if (cpu >= lttng_counter_num_possible_cpus())
+			if (cpu >= num_possible_cpus())
 				return -EINVAL;
 			layout = &counter->percpu_counters[cpu];
 		} else {
@@ -430,7 +430,7 @@ int lttng_counter_aggregate(const struct lib_counter_config *config,
 		break;
 	case COUNTER_ALLOC_PER_CPU | COUNTER_ALLOC_GLOBAL:	/* Fallthrough */
 	case COUNTER_ALLOC_PER_CPU:
-		lttng_counter_for_each_possible_cpu(cpu) {
+		for_each_possible_cpu(cpu) {
 			int64_t old = sum;
 
 			ret = lttng_counter_read(config, counter, dimension_indexes,
@@ -469,13 +469,13 @@ int lttng_counter_clear_cpu(const struct lib_counter_config *config,
 
 	switch (config->alloc) {
 	case COUNTER_ALLOC_PER_CPU:
-		if (cpu < 0 || cpu >= lttng_counter_num_possible_cpus())
+		if (cpu < 0 || cpu >= num_possible_cpus())
 			return -EINVAL;
 		layout = &counter->percpu_counters[cpu];
 		break;
 	case COUNTER_ALLOC_PER_CPU | COUNTER_ALLOC_GLOBAL:
 		if (cpu >= 0) {
-			if (cpu >= lttng_counter_num_possible_cpus())
+			if (cpu >= num_possible_cpus())
 				return -EINVAL;
 			layout = &counter->percpu_counters[cpu];
 		} else {
@@ -551,7 +551,7 @@ int lttng_counter_clear(const struct lib_counter_config *config,
 	switch (config->alloc) {
 	case COUNTER_ALLOC_PER_CPU:	/* Fallthrough */
 	case COUNTER_ALLOC_PER_CPU | COUNTER_ALLOC_GLOBAL:
-		lttng_counter_for_each_possible_cpu(cpu) {
+		for_each_possible_cpu(cpu) {
 			ret = lttng_counter_clear_cpu(config, counter, dimension_indexes, cpu);
 			if (ret < 0)
 				return ret;

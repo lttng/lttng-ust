@@ -32,7 +32,7 @@
 #include "lib/lttng-ust/lttng-tracer-core.h"
 #include "lib/lttng-ust/lttng-counter-client.h"
 
-#include "common/counter/smp.h"
+#include "common/smp.h"
 #include "common/counter/counter.h"
 
 /*
@@ -2534,7 +2534,7 @@ int ustctl_regenerate_statedump(int sock, int handle)
 
 int ustctl_get_nr_cpu_per_counter(void)
 {
-	return lttng_counter_num_possible_cpus();
+	return num_possible_cpus();
 }
 
 struct ustctl_daemon_counter *
