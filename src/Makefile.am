@@ -9,10 +9,6 @@ SUBDIRS = \
 	liblttng-ust-ctl \
 	lib
 
-if ENABLE_UST_DL
-SUBDIRS += liblttng-ust-dl
-endif
-
 if ENABLE_JNI_INTERFACE
 SUBDIRS += liblttng-ust-java
 endif

@@ -6,6 +6,10 @@ SUBDIRS = \
 	lttng-ust-cyg-profile \
 	lttng-ust-libc-wrapper
 
+if ENABLE_UST_DL
+SUBDIRS += lttng-ust-dl
+endif
+
 if ENABLE_PYTHON_AGENT
 SUBDIRS += lttng-ust-python-agent
 endif
