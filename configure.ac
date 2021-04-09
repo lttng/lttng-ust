@@ -526,17 +526,17 @@ AC_CONFIG_FILES([
   src/lib/lttng-ust-dl/Makefile
   src/lib/lttng-ust-fd/Makefile
   src/lib/lttng-ust-fork/Makefile
-  src/liblttng-ust-java-agent/java/lttng-ust-agent-all/Makefile
-  src/liblttng-ust-java-agent/java/lttng-ust-agent-common/Makefile
-  src/liblttng-ust-java-agent/java/lttng-ust-agent-jul/Makefile
-  src/liblttng-ust-java-agent/java/lttng-ust-agent-log4j/Makefile
-  src/liblttng-ust-java-agent/java/Makefile
-  src/liblttng-ust-java-agent/jni/common/Makefile
-  src/liblttng-ust-java-agent/jni/jul/Makefile
-  src/liblttng-ust-java-agent/jni/log4j/Makefile
-  src/liblttng-ust-java-agent/jni/Makefile
-  src/liblttng-ust-java-agent/Makefile
-  src/liblttng-ust-java/Makefile
+  src/lib/lttng-ust-java-agent/java/lttng-ust-agent-all/Makefile
+  src/lib/lttng-ust-java-agent/java/lttng-ust-agent-common/Makefile
+  src/lib/lttng-ust-java-agent/java/lttng-ust-agent-jul/Makefile
+  src/lib/lttng-ust-java-agent/java/lttng-ust-agent-log4j/Makefile
+  src/lib/lttng-ust-java-agent/java/Makefile
+  src/lib/lttng-ust-java-agent/jni/common/Makefile
+  src/lib/lttng-ust-java-agent/jni/jul/Makefile
+  src/lib/lttng-ust-java-agent/jni/log4j/Makefile
+  src/lib/lttng-ust-java-agent/jni/Makefile
+  src/lib/lttng-ust-java-agent/Makefile
+  src/lib/lttng-ust-java/Makefile
   src/lib/lttng-ust-libc-wrapper/Makefile
   src/liblttng-ust/Makefile
   src/lib/lttng-ust-python-agent/Makefile

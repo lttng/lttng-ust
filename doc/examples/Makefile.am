@@ -155,8 +155,8 @@ all-local:
 				cd $$subdir && \
 				$(MAKE) all \
 					CLASSPATH="$(CLASSPATH)" \
-					JAVA_CLASSPATH_OVERRIDE_JUL="../../../src/liblttng-ust-java-agent/java/lttng-ust-agent-jul" \
-					JAVA_CLASSPATH_OVERRIDE_COMMON="../../../src/liblttng-ust-java-agent/java/lttng-ust-agent-common" \
+					JAVA_CLASSPATH_OVERRIDE_JUL="../../../src/lib/lttng-ust-java-agent/java/lttng-ust-agent-jul" \
+					JAVA_CLASSPATH_OVERRIDE_COMMON="../../../src/lib/lttng-ust-java-agent/java/lttng-ust-agent-common" \
 					$(AM_MAKEFLAGS) \
 			) || exit 1; \
 		done; \
@@ -167,8 +167,8 @@ all-local:
 				cd $$subdir && \
 				$(MAKE) all \
 					CLASSPATH="$(CLASSPATH)" \
-					JAVA_CLASSPATH_OVERRIDE_LOG4J="../../../src/liblttng-ust-java-agent/java/lttng-ust-agent-log4j" \
-					JAVA_CLASSPATH_OVERRIDE_COMMON="../../../src/liblttng-ust-java-agent/java/lttng-ust-agent-common" \
+					JAVA_CLASSPATH_OVERRIDE_LOG4J="../../../src/lib/lttng-ust-java-agent/java/lttng-ust-agent-log4j" \
+					JAVA_CLASSPATH_OVERRIDE_COMMON="../../../src/lib/lttng-ust-java-agent/java/lttng-ust-agent-common" \
 					$(AM_MAKEFLAGS) \
 			) || exit 1; \
 		done; \

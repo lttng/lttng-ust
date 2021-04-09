@@ -10,6 +10,14 @@ if ENABLE_UST_DL
 SUBDIRS += lttng-ust-dl
 endif
 
+if ENABLE_JNI_INTERFACE
+SUBDIRS += lttng-ust-java
+endif
+
+if ENABLE_JAVA_AGENT
+SUBDIRS += lttng-ust-java-agent
+endif
+
 if ENABLE_PYTHON_AGENT
 SUBDIRS += lttng-ust-python-agent
 endif

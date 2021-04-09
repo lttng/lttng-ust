@@ -9,14 +9,6 @@ SUBDIRS = \
 	liblttng-ust-ctl \
 	lib
 
-if ENABLE_JNI_INTERFACE
-SUBDIRS += liblttng-ust-java
-endif
-
-if ENABLE_JAVA_AGENT
-SUBDIRS += liblttng-ust-java-agent
-endif
-
 if ENABLE_PYTHON_AGENT
 SUBDIRS += python-lttngust
 endif
