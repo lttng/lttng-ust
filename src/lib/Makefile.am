@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: LGPL-2.1-only
 
 SUBDIRS = \
+	lttng-ust-fork \
+	lttng-ust-cyg-profile \
 	lttng-ust-libc-wrapper
 
 if ENABLE_PYTHON_AGENT

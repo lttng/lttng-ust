@@ -522,10 +522,10 @@ AC_CONFIG_FILES([
   src/libcounter/Makefile
   src/liblttng-ust-comm/Makefile
   src/liblttng-ust-ctl/Makefile
-  src/liblttng-ust-cyg-profile/Makefile
+  src/lib/lttng-ust-cyg-profile/Makefile
   src/liblttng-ust-dl/Makefile
   src/liblttng-ust-fd/Makefile
-  src/liblttng-ust-fork/Makefile
+  src/lib/lttng-ust-fork/Makefile
   src/liblttng-ust-java-agent/java/lttng-ust-agent-all/Makefile
   src/liblttng-ust-java-agent/java/lttng-ust-agent-common/Makefile
   src/liblttng-ust-java-agent/java/lttng-ust-agent-jul/Makefile

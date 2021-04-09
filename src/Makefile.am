@@ -8,9 +8,7 @@ SUBDIRS = \
 	liblttng-ust \
 	liblttng-ust-ctl \
 	lib \
-	liblttng-ust-fd \
-	liblttng-ust-fork \
-	liblttng-ust-cyg-profile
+	liblttng-ust-fd
 
 if ENABLE_UST_DL
 SUBDIRS += liblttng-ust-dl
