@@ -7,8 +7,7 @@ SUBDIRS = \
 	libcounter \
 	liblttng-ust \
 	liblttng-ust-ctl \
-	lib \
-	liblttng-ust-fd
+	lib
 
 if ENABLE_UST_DL
 SUBDIRS += liblttng-ust-dl
