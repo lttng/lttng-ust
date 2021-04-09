@@ -537,7 +537,7 @@ AC_CONFIG_FILES([
   src/liblttng-ust-java-agent/jni/Makefile
   src/liblttng-ust-java-agent/Makefile
   src/liblttng-ust-java/Makefile
-  src/liblttng-ust-libc-wrapper/Makefile
+  src/lib/lttng-ust-libc-wrapper/Makefile
   src/liblttng-ust/Makefile
   src/lib/lttng-ust-python-agent/Makefile
   src/lib/Makefile

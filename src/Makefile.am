@@ -10,7 +10,6 @@ SUBDIRS = \
 	lib \
 	liblttng-ust-fd \
 	liblttng-ust-fork \
-	liblttng-ust-libc-wrapper \
 	liblttng-ust-cyg-profile
 
 if ENABLE_UST_DL
