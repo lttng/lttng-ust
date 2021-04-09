@@ -6,7 +6,6 @@ SUBDIRS = \
 	liblttng-ust-comm \
 	libcounter \
 	liblttng-ust \
-	liblttng-ust-ctl \
 	lib
 
 if ENABLE_PYTHON_AGENT

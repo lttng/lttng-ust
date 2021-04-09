@@ -22,19 +22,19 @@
 #include "common/macros.h"
 #include "common/align.h"
 
-#include "../libringbuffer/backend.h"
-#include "../libringbuffer/frontend.h"
-#include "../liblttng-ust/ust-events-internal.h"
-#include "../liblttng-ust/wait.h"
-#include "../liblttng-ust/lttng-rb-clients.h"
-#include "../liblttng-ust/clock.h"
-#include "../liblttng-ust/getenv.h"
-#include "../liblttng-ust/lttng-tracer-core.h"
-#include "../liblttng-ust/lttng-counter-client.h"
+#include "libringbuffer/backend.h"
+#include "libringbuffer/frontend.h"
+#include "liblttng-ust/ust-events-internal.h"
+#include "liblttng-ust/wait.h"
+#include "liblttng-ust/lttng-rb-clients.h"
+#include "liblttng-ust/clock.h"
+#include "liblttng-ust/getenv.h"
+#include "liblttng-ust/lttng-tracer-core.h"
+#include "liblttng-ust/lttng-counter-client.h"
 
-#include "../libcounter/shm.h"
-#include "../libcounter/smp.h"
-#include "../libcounter/counter.h"
+#include "libcounter/shm.h"
+#include "libcounter/smp.h"
+#include "libcounter/counter.h"
 
 /*
  * Number of milliseconds to retry before failing metadata writes on

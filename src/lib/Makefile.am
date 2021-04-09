@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: LGPL-2.1-only
 
 SUBDIRS = \
+	lttng-ust-ctl \
 	lttng-ust-fd \
 	lttng-ust-fork \
 	lttng-ust-cyg-profile \

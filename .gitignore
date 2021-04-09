@@ -127,7 +127,7 @@ cscope.*
 /src/common/Makefile
 /src/libcounter/Makefile
 /src/liblttng-ust-comm/Makefile
-/src/liblttng-ust-ctl/Makefile
+/src/lib/lttng-ust-ctl/Makefile
 /src/lib/lttng-ust-cyg-profile/Makefile
 /src/lib/lttng-ust-dl/Makefile
 /src/lib/lttng-ust-fd/Makefile

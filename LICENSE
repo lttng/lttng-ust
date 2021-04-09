@@ -32,8 +32,8 @@ According with:
 
 This applies to:
 
-	liblttng-ust-ctl/ust-ctl-private.h
-	liblttng-ust-ctl/ustctl.c
+	src/lib/lttng-ust-ctl/ust-ctl-private.h
+	src/lib/lttng-ust-ctl/ustctl.c
 
 
 
