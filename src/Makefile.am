@@ -7,6 +7,7 @@ SUBDIRS = \
 	libcounter \
 	liblttng-ust \
 	liblttng-ust-ctl \
+	lib \
 	liblttng-ust-fd \
 	liblttng-ust-fork \
 	liblttng-ust-libc-wrapper \
@@ -25,9 +26,7 @@ SUBDIRS += liblttng-ust-java-agent
 endif
 
 if ENABLE_PYTHON_AGENT
-SUBDIRS += \
-	python-lttngust \
-	liblttng-ust-python-agent
+SUBDIRS += python-lttngust
 endif
 
 pkgconfigdir = $(libdir)/pkgconfig

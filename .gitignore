@@ -144,7 +144,8 @@ cscope.*
 /src/liblttng-ust-java-agent/jni/log4j/Makefile
 /src/liblttng-ust-java/Makefile
 /src/liblttng-ust-libc-wrapper/Makefile
-/src/liblttng-ust-python-agent/Makefile
+/src/lib/lttng-ust-python-agent/Makefile
+/src/lib/Makefile
 /src/liblttng-ust/Makefile
 /src/libringbuffer/Makefile
 /src/python-lttngust/Makefile
