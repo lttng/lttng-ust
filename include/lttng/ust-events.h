@@ -174,12 +174,19 @@ struct lttng_ust_type_enum {
 	const struct lttng_ust_type_common *container_type;
 };
 
+/*
+ * The alignment field in structure, array, and sequence types is a
+ * minimum alignment requirement. The actual alignment of a type may be
+ * larger than this explicit alignment value if its nested types have a
+ * larger alignment.
+ */
+
 struct lttng_ust_type_array {
 	struct lttng_ust_type_common parent;
 	uint32_t struct_size;
 	const struct lttng_ust_type_common *elem_type;
-	unsigned int length;			/* Num. elems. */
-	unsigned int alignment;
+	unsigned int length;		/* Num. elems. */
+	unsigned int alignment;		/* Minimum alignment for this type. */
 	enum lttng_ust_string_encoding encoding;
 };
 
@@ -188,7 +195,7 @@ struct lttng_ust_type_sequence {
 	uint32_t struct_size;
 	const char *length_name;	/* Length field name. */
 	const struct lttng_ust_type_common *elem_type;
-	unsigned int alignment;		/* Alignment before elements. */
+	unsigned int alignment;		/* Minimum alignment before elements. */
 	enum lttng_ust_string_encoding encoding;
 };
 
@@ -197,7 +204,7 @@ struct lttng_ust_type_struct {
 	uint32_t struct_size;
 	unsigned int nr_fields;
 	const struct lttng_ust_event_field **fields;	/* Array of pointers to fields. */
-	unsigned int alignment;
+	unsigned int alignment;		/* Minimum alignment for this type. */
 };
 
 /*
