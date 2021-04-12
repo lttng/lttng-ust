@@ -360,7 +360,7 @@ void lttng_ust__event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARG
 				.type = lttng_ust_type_sequence, \
 			},					\
 			.struct_size = sizeof(struct lttng_ust_type_sequence), \
-			.length_name = "_" #_item "_length",	\
+			.length_name = NULL,	/* Use previous field. */ \
 			.elem_type = lttng_ust_type_integer_define(_type, _byte_order, _elem_type_base), \
 			.alignment = 0,				\
 			.encoding = lttng_ust_string_encoding_##_encoding, \

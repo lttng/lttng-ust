@@ -193,7 +193,7 @@ struct lttng_ust_type_array {
 struct lttng_ust_type_sequence {
 	struct lttng_ust_type_common parent;
 	uint32_t struct_size;
-	const char *length_name;	/* Length field name. */
+	const char *length_name;	/* Length field name. If NULL, use previous field. */
 	const struct lttng_ust_type_common *elem_type;
 	unsigned int alignment;		/* Minimum alignment before elements. */
 	enum lttng_ust_string_encoding encoding;
