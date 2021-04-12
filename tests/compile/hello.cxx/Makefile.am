@@ -5,7 +5,7 @@ AM_CPPFLAGS += -I$(srcdir) -Wsystem-headers
 noinst_PROGRAMS = hello
 hello_SOURCES = hello.cpp tp-cpp.cpp ust_tests_hello.h
 hello_LDADD = \
-	$(top_builddir)/src/liblttng-ust/liblttng-ust.la \
+	$(top_builddir)/src/lib/lttng-ust/liblttng-ust.la \
 	$(DL_LIBS)
 
 EXTRA_DIST = README

@@ -9,7 +9,7 @@ liblttng_ust_dl_la_SOURCES = \
 	ust_dl.h
 
 liblttng_ust_dl_la_LIBADD = \
-	$(top_builddir)/src/liblttng-ust/liblttng-ust.la \
+	$(top_builddir)/src/lib/lttng-ust/liblttng-ust.la \
 	$(top_builddir)/src/common/libcommon.la \
 	$(DL_LIBS)
 

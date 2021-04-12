@@ -2,7 +2,6 @@
 
 SUBDIRS = \
 	common \
-	liblttng-ust \
 	lib
 
 if ENABLE_PYTHON_AGENT

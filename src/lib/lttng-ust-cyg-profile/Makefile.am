@@ -10,7 +10,7 @@ liblttng_ust_cyg_profile_la_SOURCES = \
 	lttng-ust-cyg-profile.h
 
 liblttng_ust_cyg_profile_la_LIBADD = \
-	$(top_builddir)/src/liblttng-ust/liblttng-ust.la \
+	$(top_builddir)/src/lib/lttng-ust/liblttng-ust.la \
 	$(DL_LIBS)
 
 liblttng_ust_cyg_profile_la_LDFLAGS = -version-info $(LTTNG_UST_LIBRARY_VERSION)
@@ -20,7 +20,7 @@ liblttng_ust_cyg_profile_fast_la_SOURCES = \
 	lttng-ust-cyg-profile-fast.h
 
 liblttng_ust_cyg_profile_fast_la_LIBADD = \
-	$(top_builddir)/src/liblttng-ust/liblttng-ust.la \
+	$(top_builddir)/src/lib/lttng-ust/liblttng-ust.la \
 	$(DL_LIBS)
 
 liblttng_ust_cyg_profile_fast_la_LDFLAGS = -version-info $(LTTNG_UST_LIBRARY_VERSION)
