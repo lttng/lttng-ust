@@ -42,9 +42,9 @@ noinst_HEADERS += \
 
 noinst_LTLIBRARIES = \
 	libcounter.la \
-	msgpack/libmsgpack.la \
+	libmsgpack.la \
 	libringbuffer.la \
-	snprintf/libsnprintf.la \
+	libsnprintf.la \
 	libcommon.la \
 	libustcomm.la
 
@@ -72,11 +72,11 @@ endif
 libcounter_la_CFLAGS = -DUST_COMPONENT="libcounter" $(AM_CFLAGS)
 
 # msgpack
-msgpack_libmsgpack_la_SOURCES = \
+libmsgpack_la_SOURCES = \
 	msgpack/msgpack.c \
 	msgpack/msgpack.h
 
-msgpack_libmsgpack_la_CFLAGS = -DUST_COMPONENT="libmsgpack" $(AM_CFLAGS)
+libmsgpack_la_CFLAGS = -DUST_COMPONENT="libmsgpack" $(AM_CFLAGS)
 
 # ringbuffer
 libringbuffer_la_SOURCES = \
@@ -112,7 +112,7 @@ endif
 libringbuffer_la_CFLAGS = -DUST_COMPONENT="libringbuffer" $(AM_CFLAGS)
 
 # snprintf
-snprintf_libsnprintf_la_SOURCES = \
+libsnprintf_la_SOURCES = \
 	snprintf/fflush.c \
 	snprintf/fileext.h \
 	snprintf/floatio.h \
@@ -133,8 +133,8 @@ libcommon_la_SOURCES = \
 	patient.c
 
 libcommon_la_LIBADD = \
-	msgpack/libmsgpack.la \
-	snprintf/libsnprintf.la
+	libmsgpack.la \
+	libsnprintf.la
 
 libustcomm_la_SOURCES = \
 	ustcomm.c \
