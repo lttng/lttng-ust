@@ -69,9 +69,6 @@ void lttng_fixup_time_ns_tls(void)
 void lttng_fixup_uts_ns_tls(void)
 	__attribute__((visibility("hidden")));
 
-void lttng_ust_fixup_fd_tracker_tls(void)
-	__attribute__((visibility("hidden")));
-
 const char *lttng_ust_obj_get_name(int id)
 	__attribute__((visibility("hidden")));
 

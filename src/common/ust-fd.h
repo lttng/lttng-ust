@@ -11,6 +11,8 @@
  * The fd tracker feature is part of the ABI and used by liblttng-ust-fd.
  * However, some test code and documentation needs to be written before it is
  * exposed to users with a public header.
+ *
+ * These symbols are provided by 'liblttng-ust-common'.
  */
 
 #include <stdio.h>
@@ -24,5 +26,7 @@ void lttng_ust_unlock_fd_tracker(void);
 int lttng_ust_safe_close_fd(int fd, int (*close_cb)(int));
 int lttng_ust_safe_fclose_stream(FILE *stream, int (*fclose_cb)(FILE *stream));
 int lttng_ust_safe_closefrom_fd(int lowfd, int (*close_cb)(int));
+
+void lttng_ust_fixup_fd_tracker_tls(void);
 
 #endif	/* _LTTNG_UST_FD_H */

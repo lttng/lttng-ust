@@ -8,8 +8,13 @@ lib_LTLIBRARIES = liblttng-ust-common.la liblttng-ust-tracepoint.la liblttng-ust
 
 # ust-common
 liblttng_ust_common_la_SOURCES = \
+	fd-tracker.c \
+	ust-common.c \
 	lttng-ust-urcu.c \
 	lttng-ust-urcu-pointer.c
+
+liblttng_ust_common_la_LIBADD = \
+	$(top_builddir)/src/common/libcommon.la
 
 liblttng_ust_common_la_LDFLAGS = -no-undefined -version-info $(LTTNG_UST_LIBRARY_VERSION)
 

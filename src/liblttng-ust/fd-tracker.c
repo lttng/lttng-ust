@@ -30,8 +30,7 @@
 #include <lttng/ust-error.h>
 #include "common/logging.h"
 
-#include "../liblttng-ust/compat.h"
-#include "../liblttng-ust/lttng-tracer-core.h"
+#include "liblttng-ust/compat.h"
 
 /* Operations on the fd set. */
 #define IS_FD_VALID(fd)			((fd) >= 0 && (fd) < lttng_ust_max_fd)
