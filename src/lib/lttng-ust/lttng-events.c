@@ -780,7 +780,7 @@ int lttng_event_recorder_create(const struct lttng_ust_event_desc *desc,
 	event_recorder->parent->priv->desc = desc;
 
 	if (desc->loglevel)
-		loglevel = *(*event_recorder->parent->priv->desc->loglevel);
+		loglevel = *(*desc->loglevel);
 	else
 		loglevel = TRACE_DEFAULT;
 	if (desc->model_emf_uri)
