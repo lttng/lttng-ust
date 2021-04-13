@@ -379,7 +379,7 @@ void lttng_event_notifier_group_destroy(
 	lttng_ust_unlock_fd_tracker();
 
 	cds_list_del(&event_notifier_group->node);
-
+	lttng_destroy_context(event_notifier_group->ctx);
 	free(event_notifier_group);
 }
 
