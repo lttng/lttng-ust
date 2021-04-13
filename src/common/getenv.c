@@ -64,8 +64,11 @@ char *lttng_ust_getenv(const char *name)
 	struct lttng_env *e;
 	bool found = false;
 
-	if (!CMM_LOAD_SHARED(lttng_ust_getenv_is_init))
-		abort();
+	/*
+	 * Perform lazy initialization of lttng_ust_getenv for early use
+	 * by library constructors.
+	 */
+	lttng_ust_getenv_init();
 
 	for (i = 0; i < LTTNG_ARRAY_SIZE(lttng_env); i++) {
 		e = &lttng_env[i];
