@@ -30,6 +30,8 @@
 #include <lttng/ust-error.h>
 #include "common/logging.h"
 
+#include "lib/lttng-ust-common/fd-tracker.h"
+
 /* Operations on the fd set. */
 #define IS_FD_VALID(fd)			((fd) >= 0 && (fd) < lttng_ust_max_fd)
 #define GET_FD_SET_FOR_FD(fd, fd_sets)	(&((fd_sets)[(fd) / FD_SETSIZE]))
@@ -87,7 +89,7 @@ void lttng_ust_fixup_fd_tracker_tls(void)
  * process. This will be called during the constructor execution
  * and will also be called in the child after fork via lttng_ust_init.
  */
-void lttng_ust_init_fd_tracker(void)
+void lttng_ust_fd_tracker_init(void)
 {
 	struct rlimit rlim;
 	int i;
@@ -269,7 +271,7 @@ int lttng_ust_add_fd_to_tracker(int fd)
 	 * Ensure the tracker is initialized when called from
 	 * constructors.
 	 */
-	lttng_ust_init_fd_tracker();
+	lttng_ust_fd_tracker_init();
 	assert(URCU_TLS(ust_fd_mutex_nest));
 
 	if (IS_FD_STD(fd)) {
@@ -301,7 +303,7 @@ void lttng_ust_delete_fd_from_tracker(int fd)
 	 * Ensure the tracker is initialized when called from
 	 * constructors.
 	 */
-	lttng_ust_init_fd_tracker();
+	lttng_ust_fd_tracker_init();
 
 	assert(URCU_TLS(ust_fd_mutex_nest));
 	/* Not a valid fd. */
@@ -327,7 +329,7 @@ int lttng_ust_safe_close_fd(int fd, int (*close_cb)(int fd))
 	 * Ensure the tracker is initialized when called from
 	 * constructors.
 	 */
-	lttng_ust_init_fd_tracker();
+	lttng_ust_fd_tracker_init();
 
 	/*
 	 * If called from lttng-ust, we directly call close without
@@ -363,7 +365,7 @@ int lttng_ust_safe_fclose_stream(FILE *stream, int (*fclose_cb)(FILE *stream))
 	 * Ensure the tracker is initialized when called from
 	 * constructors.
 	 */
-	lttng_ust_init_fd_tracker();
+	lttng_ust_fd_tracker_init();
 
 	/*
 	 * If called from lttng-ust, we directly call fclose without
@@ -418,7 +420,7 @@ int lttng_ust_safe_closefrom_fd(int lowfd, int (*close_cb)(int fd))
 	 * Ensure the tracker is initialized when called from
 	 * constructors.
 	 */
-	lttng_ust_init_fd_tracker();
+	lttng_ust_fd_tracker_init();
 
 	if (lowfd < 0) {
 		/*

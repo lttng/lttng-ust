@@ -37,6 +37,7 @@
 #include <lttng/ust-libc-wrapper.h>
 #include <lttng/ust-thread.h>
 #include <lttng/ust-tracer.h>
+#include <lttng/ust-common.h>
 #include <urcu/tls-compat.h>
 #include "common/compat/futex.h"
 #include "common/ustcomm.h"
@@ -2061,7 +2062,7 @@ quit:
  * Weak symbol to call when the ust malloc wrapper is not loaded.
  */
 __attribute__((weak))
-void lttng_ust_libc_wrapper_malloc_init(void)
+void lttng_ust_libc_wrapper_malloc_ctor(void)
 {
 }
 
@@ -2070,10 +2071,10 @@ void lttng_ust_libc_wrapper_malloc_init(void)
  * sessiond by polling the application common named pipe.
  */
 static
-void lttng_ust_init(void)
+void lttng_ust_ctor(void)
 	__attribute__((constructor));
 static
-void lttng_ust_init(void)
+void lttng_ust_ctor(void)
 {
 	struct timespec constructor_timeout;
 	sigset_t sig_all_blocked, orig_parent_mask;
@@ -2131,8 +2132,10 @@ void lttng_ust_init(void)
 	lttng_ust_logging_init();
 	lttng_ust_getenv_init();
 
+	/* Call the liblttng-ust-common constructor. */
+	lttng_ust_common_ctor();
+
 	lttng_ust_tp_init();
-	lttng_ust_init_fd_tracker();
 	lttng_ust_clock_init();
 	lttng_ust_getcpu_plugin_init();
 	lttng_ust_statedump_init();
@@ -2142,7 +2145,7 @@ void lttng_ust_init(void)
 	/*
 	 * Invoke ust malloc wrapper init before starting other threads.
 	 */
-	lttng_ust_libc_wrapper_malloc_init();
+	lttng_ust_libc_wrapper_malloc_ctor();
 
 	timeout_mode = get_constructor_timeout(&constructor_timeout);
 
@@ -2445,7 +2448,7 @@ void lttng_ust_after_fork_parent(sigset_t *restore_sigset)
  * After fork, in the child, we need to cleanup all the leftover state,
  * except the worker thread which already magically disappeared thanks
  * to the weird Linux fork semantics. After tyding up, we call
- * lttng_ust_init() again to start over as a new PID.
+ * lttng_ust_ctor() again to start over as a new PID.
  *
  * This is meant for forks() that have tracing in the child between the
  * fork and following exec call (if there is any).
@@ -2466,7 +2469,7 @@ void lttng_ust_after_fork_child(sigset_t *restore_sigset)
 	lttng_ust_cleanup(0);
 	/* Release mutexes and reenable signals */
 	ust_after_fork_common(restore_sigset);
-	lttng_ust_init();
+	lttng_ust_ctor();
 }
 
 void lttng_ust_after_setns(void)

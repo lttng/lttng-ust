@@ -20,7 +20,7 @@
  * function in liblttng-ust that is overridden by the one in
  * liblttng-ust-wrapper-libc when it's preloaded.
  */
-void lttng_ust_libc_wrapper_malloc_init(void)
+void lttng_ust_libc_wrapper_malloc_ctor(void)
 	__attribute__((constructor));
 
 #endif

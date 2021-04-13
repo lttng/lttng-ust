@@ -22,6 +22,7 @@
 
 #include <lttng/tracepoint.h>
 #include <lttng/ust-abi.h>	/* for LTTNG_UST_ABI_SYM_NAME_LEN */
+#include <lttng/ust-common.h>
 
 #include "common/logging.h"
 #include "common/macros.h"
@@ -963,6 +964,7 @@ void lttng_ust_tp_init(void)
 	if (uatomic_xchg(&initialized, 1) == 1)
 		return;
 	lttng_ust_logging_init();
+	lttng_ust_common_ctor();
 	check_weak_hidden();
 }
 

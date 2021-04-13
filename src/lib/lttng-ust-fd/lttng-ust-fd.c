@@ -9,13 +9,24 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include "common/ust-fd.h"
 #include <dlfcn.h>
 
+#include <lttng/ust-common.h>
+
 #include "common/macros.h"
+#include "common/ust-fd.h"
 
 static int (*__lttng_ust_fd_plibc_close)(int fd);
 static int (*__lttng_ust_fd_plibc_fclose)(FILE *stream);
+
+static
+void _lttng_ust_fd_ctor(void)
+	__attribute__((constructor));
+static
+void _lttng_ust_fd_ctor(void)
+{
+	lttng_ust_common_ctor();
+}
 
 static
 int _lttng_ust_fd_libc_close(int fd)

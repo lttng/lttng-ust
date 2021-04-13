@@ -428,7 +428,7 @@ void lttng_ust_fixup_malloc_nesting_tls(void)
 	asm volatile ("" : : "m" (URCU_TLS(malloc_nesting)));
 }
 
-void lttng_ust_libc_wrapper_malloc_init(void)
+void lttng_ust_libc_wrapper_malloc_ctor(void)
 {
 	/* Initialization already done */
 	if (cur_alloc.calloc) {

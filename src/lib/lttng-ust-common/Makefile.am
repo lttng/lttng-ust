@@ -4,6 +4,7 @@ lib_LTLIBRARIES = liblttng-ust-common.la
 
 liblttng_ust_common_la_SOURCES = \
 	fd-tracker.c \
+	fd-tracker.h \
 	ust-common.c \
 	lttng-ust-urcu.c \
 	lttng-ust-urcu-pointer.c

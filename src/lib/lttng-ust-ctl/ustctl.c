@@ -16,6 +16,7 @@
 #include <lttng/ust-ctl.h>
 #include <lttng/ust-abi.h>
 #include <lttng/ust-endian.h>
+#include <lttng/ust-common.h>
 
 #include "common/logging.h"
 #include "common/ustcomm.h"
@@ -2901,11 +2902,16 @@ int ustctl_counter_clear(struct ustctl_daemon_counter *counter,
 }
 
 static
-void ustctl_init(void)
+void lttng_ust_ctl_ctor(void)
 	__attribute__((constructor));
 static
-void ustctl_init(void)
+void lttng_ust_ctl_ctor(void)
 {
+	/*
+	 * Call the liblttng-ust-common constructor to ensure it runs first.
+	 */
+	lttng_ust_common_ctor();
+
 	lttng_ust_clock_init();
 	lttng_ust_ring_buffer_clients_init();
 	lttng_ust_counter_clients_init();

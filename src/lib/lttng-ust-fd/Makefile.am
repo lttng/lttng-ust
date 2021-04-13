@@ -8,6 +8,8 @@ liblttng_ust_fd_la_SOURCES = \
 
 liblttng_ust_fd_la_LIBADD = \
 	$(top_builddir)/src/lib/lttng-ust/liblttng-ust.la \
+	$(top_builddir)/src/lib/lttng-ust-common/liblttng-ust-common.la \
+	$(top_builddir)/src/common/libcommon.la \
 	$(DL_LIBS)
 
 liblttng_ust_fd_la_LDFLAGS = -version-info $(LTTNG_UST_LIBRARY_VERSION)

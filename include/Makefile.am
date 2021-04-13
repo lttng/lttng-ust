@@ -15,6 +15,7 @@ nobase_include_HEADERS = \
 	lttng/ust-tracepoint-event-nowrite.h \
 	lttng/ust-arch.h \
 	lttng/ust-events.h \
+	lttng/ust-common.h \
 	lttng/ust-ctl.h \
 	lttng/ust-abi.h \
 	lttng/ust-tracer.h \
