@@ -62,6 +62,7 @@ struct lttng_perf_counter_field {
 	struct perf_event_attr attr;
 	struct cds_list_head thread_field_list;	/* Per-field list of thread fields */
 	char *name;
+	struct lttng_ust_event_field *event_field;
 };
 
 static pthread_key_t perf_counter_key;
@@ -504,6 +505,7 @@ void lttng_destroy_perf_counter_ctx_field(void *priv)
 			thread_field_node)
 		lttng_destroy_perf_thread_field(pos);
 	lttng_perf_unlock();
+	free(perf_field->event_field);
 	free(perf_field);
 }
 
@@ -570,6 +572,7 @@ int lttng_add_perf_counter_to_ctx(uint32_t type,
 	perf_field->attr.exclude_kernel = perf_get_exclude_kernel();
 	CDS_INIT_LIST_HEAD(&perf_field->thread_field_list);
 	perf_field->name = name_alloc;
+	perf_field->event_field = event_field;
 
 	/* Ensure that this perf counter can be used in this process. */
 	ret = open_perf_fd(&perf_field->attr);
