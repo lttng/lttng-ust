@@ -16,6 +16,8 @@
 #include <stdio.h>
 
 #include <lttng/ust-utils.h>
+#include <urcu/compiler.h>
+#include <urcu/system.h>
 
 #include "common/patient.h"
 #include "common/compat/tid.h"
@@ -23,27 +25,48 @@
 
 enum lttng_ust_log_level {
 	LTTNG_UST_LOG_LEVEL_UNKNOWN = 0,
-	LTTNG_UST_LOG_LEVEL_NORMAL,
+	LTTNG_UST_LOG_LEVEL_SILENT,
 	LTTNG_UST_LOG_LEVEL_DEBUG,
 };
 
-extern volatile enum lttng_ust_log_level lttng_ust_log_level
+extern int lttng_ust_log_level			/* enum lttng_ust_log_level */
 	__attribute__((visibility("hidden")));
 
-void lttng_ust_logging_init(void)
+/*
+ * Initialize the global log level from the "LTTNG_UST_DEBUG" environment
+ * variable.
+ *
+ * This could end up being called concurrently by multiple threads but doesn't
+ * require a mutex since the input is invariant across threads and the result
+ * will be the same.
+ *
+ * Return the current log level to save the caller a second read of the global
+ * log level.
+ */
+int lttng_ust_logging_init(void)
 	__attribute__((visibility("hidden")));
 
 #ifdef LTTNG_UST_DEBUG
-static inline bool lttng_ust_logging_debug_enabled(void)
+static inline
+bool lttng_ust_logging_debug_enabled(void)
 {
 	return true;
 }
 #else /* #ifdef LTTNG_UST_DEBUG */
-static inline bool lttng_ust_logging_debug_enabled(void)
+static inline
+bool lttng_ust_logging_debug_enabled(void)
 {
-	return lttng_ust_log_level == LTTNG_UST_LOG_LEVEL_DEBUG;
+	int current_log_level;
+
+	current_log_level = CMM_LOAD_SHARED(lttng_ust_log_level);
+
+	/* If the global log level is unknown, lazy-initialize it. */
+	if (caa_unlikely(current_log_level == LTTNG_UST_LOG_LEVEL_UNKNOWN))
+		current_log_level = lttng_ust_logging_init();
+
+	return current_log_level == LTTNG_UST_LOG_LEVEL_DEBUG;
 }
-#endif /* #else #ifdef LTTNG_UST_DEBUG */
+#endif /* #ifdef LTTNG_UST_DEBUG */
 
 /*
  * The default component for error messages.

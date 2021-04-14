@@ -37,15 +37,6 @@ static void *(*__lttng_ust_plibc_dlmopen)(Lmid_t nsid, const char *filename,
 static int (*__lttng_ust_plibc_dlclose)(void *handle);
 
 static
-void _lttng_ust_dl_init(void)
-	__attribute__((constructor));
-static
-void _lttng_ust_dl_init(void)
-{
-	lttng_ust_logging_init();
-}
-
-static
 void *_lttng_ust_dl_libc_dlopen(const char *filename, int flags)
 {
 	if (!__lttng_ust_plibc_dlopen) {

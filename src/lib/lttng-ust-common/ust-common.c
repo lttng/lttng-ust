@@ -13,9 +13,6 @@ void lttng_ust_common_init(void)
 static
 void lttng_ust_common_init(void)
 {
-	/* Initialize logging for liblttng-ust-common */
-	lttng_ust_logging_init();
-
 	/*
 	 * Initialize the fd-tracker, other libraries using it should also call
 	 * this in their constructor in case it gets executed before this one.

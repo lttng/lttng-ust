@@ -2120,8 +2120,17 @@ void lttng_ust_init(void)
 	 * sessiond (otherwise leading to errors when trying to create
 	 * sessiond before the init functions are completed).
 	 */
+
+	/*
+	 * Both the logging and getenv lazy-initialization uses getenv()
+	 * internally and thus needs to be explicitly initialized in
+	 * liblttng-ust before we start any threads as an unsuspecting normally
+	 * single threaded application using liblttng-ust could be using
+	 * setenv() which is not thread-safe.
+	 */
 	lttng_ust_logging_init();
-	lttng_ust_getenv_init();	/* Needs lttng_ust_logging_init() to be completed. */
+	lttng_ust_getenv_init();
+
 	lttng_ust_tp_init();
 	lttng_ust_init_fd_tracker();
 	lttng_ust_clock_init();
