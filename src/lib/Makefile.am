@@ -8,7 +8,8 @@ SUBDIRS = \
 	lttng-ust-fd \
 	lttng-ust-fork \
 	lttng-ust-cyg-profile \
-	lttng-ust-libc-wrapper
+	lttng-ust-libc-wrapper \
+	lttng-ust-pthread-wrapper
 
 if ENABLE_UST_DL
 SUBDIRS += lttng-ust-dl
