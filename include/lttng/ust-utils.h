@@ -67,7 +67,7 @@
 #define lttng_ust_ctf_array_element_type_is_supported(type, item) \
 		lttng_ust_static_assert(lttng_ust_is_integer_type(type), \
 			"Non-integer type `" #item "` not supported as element of CTF_ARRAY or CTF_SEQUENCE", \
-			Non_integer_type__##item##__not_supported_as_element_of_CTF_ARRAY_or_CTF_SEQUENCE);
+			Non_integer_type__##item##__not_supported_as_element_of_CTF_ARRAY_or_CTF_SEQUENCE)
 
 
 /**

@@ -226,13 +226,13 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 #define _ctf_array_encoded(_type, _item, _src, _byte_order,	\
 			_length, _encoding, _nowrite,		\
 			_elem_type_base)			\
-	lttng_ust_ctf_array_element_type_is_supported(_type, _item)
+	lttng_ust_ctf_array_element_type_is_supported(_type, _item);
 
 #undef _ctf_sequence_encoded
 #define _ctf_sequence_encoded(_type, _item, _src, _byte_order,	\
 			_length_type, _src_length, _encoding, _nowrite, \
 			_elem_type_base)			\
-	lttng_ust_ctf_array_element_type_is_supported(_type, _item)
+	lttng_ust_ctf_array_element_type_is_supported(_type, _item);
 
 #undef TP_FIELDS
 #define TP_FIELDS(...) __VA_ARGS__	/* Only one used in this phase */

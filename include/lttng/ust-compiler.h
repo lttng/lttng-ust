@@ -80,7 +80,7 @@
  * parameter is used in the tentative typedef so it is printed to the user.
  */
 #define lttng_ust_static_assert(predicate, msg, c_identifier_msg)  \
-    typedef char lttng_ust_static_assert_##c_identifier_msg[2*!!(predicate)-1];
+    typedef char lttng_ust_static_assert_##c_identifier_msg[2*!!(predicate)-1]
 #endif
 
 #endif /* _LTTNG_UST_COMPILER_H */
