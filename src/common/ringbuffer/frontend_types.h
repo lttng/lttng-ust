@@ -36,7 +36,7 @@ enum switch_mode { SWITCH_ACTIVE, SWITCH_FLUSH };
 
 /* channel: collection of per-cpu ring buffers. */
 #define RB_CHANNEL_PADDING		32
-struct lttng_ust_lib_ring_buffer_channel {
+struct lttng_ust_ring_buffer_channel {
 	int record_disabled;
 	unsigned long commit_count_mask;	/*
 						 * Commit count mask, removing
@@ -165,7 +165,7 @@ struct lttng_crash_abi {
 	uint32_t mode;		/* Buffer mode: 0: overwrite, 1: discard */
 } __attribute__((packed));
 
-struct lttng_ust_lib_ring_buffer {
+struct lttng_ust_ring_buffer {
 	/* First 32 bytes are for the buffer crash dump ABI */
 	struct lttng_crash_abi crash_abi;
 
@@ -185,7 +185,7 @@ struct lttng_ust_lib_ring_buffer {
 					 * Last timestamp written in the buffer.
 					 */
 
-	struct lttng_ust_lib_ring_buffer_backend backend;
+	struct lttng_ust_ring_buffer_backend backend;
 					/* Associated backend */
 
 	DECLARE_SHMP(struct commit_counters_cold, commit_cold);
@@ -221,7 +221,7 @@ struct lttng_ust_lib_ring_buffer {
 	unsigned long cons_snapshot;	/* Consumer count snapshot */
 	unsigned int get_subbuf:1;	/* Sub-buffer being held by reader */
 	/* shmp pointer to self */
-	DECLARE_SHMP(struct lttng_ust_lib_ring_buffer, self);
+	DECLARE_SHMP(struct lttng_ust_ring_buffer, self);
 	char padding[RB_RING_BUFFER_PADDING];
 } __attribute__((aligned(CAA_CACHE_LINE_SIZE)));
 
@@ -229,17 +229,17 @@ struct lttng_ust_lib_ring_buffer {
  * ring buffer private context
  *
  * Private context passed to lib_ring_buffer_reserve(), lib_ring_buffer_commit(),
- * lib_ring_buffer_try_discard_reserve(), lttng_ust_lib_ring_buffer_align_ctx() and
+ * lib_ring_buffer_try_discard_reserve(), lttng_ust_ring_buffer_align_ctx() and
  * lib_ring_buffer_write().
  *
  * This context is allocated on an internal shadow-stack by a successful reserve
  * operation, used by align/write, and freed by commit.
  */
 
-struct lttng_ust_lib_ring_buffer_ctx_private {
+struct lttng_ust_ring_buffer_ctx_private {
 	/* input received by lib_ring_buffer_reserve(). */
-	struct lttng_ust_lib_ring_buffer_ctx *pub;
-	struct lttng_ust_lib_ring_buffer_channel *chan; /* channel */
+	struct lttng_ust_ring_buffer_ctx *pub;
+	struct lttng_ust_ring_buffer_channel *chan; /* channel */
 
 	/* output from lib_ring_buffer_reserve() */
 	int reserve_cpu;			/* processor id updated by the reserve */
@@ -255,27 +255,27 @@ struct lttng_ust_lib_ring_buffer_ctx_private {
 	unsigned int rflags;			/* reservation flags */
 	void *ip;				/* caller ip address */
 
-	struct lttng_ust_lib_ring_buffer *buf;	/*
+	struct lttng_ust_ring_buffer *buf;	/*
 						 * buffer corresponding to processor id
 						 * for this channel
 						 */
-	struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
+	struct lttng_ust_ring_buffer_backend_pages *backend_pages;
 };
 
 static inline
-void *channel_get_private_config(struct lttng_ust_lib_ring_buffer_channel *chan)
+void *channel_get_private_config(struct lttng_ust_ring_buffer_channel *chan)
 {
 	return ((char *) chan) + chan->priv_data_offset;
 }
 
 static inline
-void *channel_get_private(struct lttng_ust_lib_ring_buffer_channel *chan)
+void *channel_get_private(struct lttng_ust_ring_buffer_channel *chan)
 {
 	return chan->u.s.priv;
 }
 
 static inline
-void channel_set_private(struct lttng_ust_lib_ring_buffer_channel *chan, void *priv)
+void channel_set_private(struct lttng_ust_ring_buffer_channel *chan, void *priv)
 {
 	chan->u.s.priv = priv;
 }
@@ -286,20 +286,20 @@ void channel_set_private(struct lttng_ust_lib_ring_buffer_channel *chan, void *p
 
 /*
  * Issue warnings and disable channels upon internal error.
- * Can receive struct lttng_ust_lib_ring_buffer or struct lttng_ust_lib_ring_buffer_backend
+ * Can receive struct lttng_ust_ring_buffer or struct lttng_ust_ring_buffer_backend
  * parameters.
  */
 #define CHAN_WARN_ON(c, cond)						\
 	({								\
-		struct lttng_ust_lib_ring_buffer_channel *__chan;	\
+		struct lttng_ust_ring_buffer_channel *__chan;	\
 		int _____ret = caa_unlikely(cond);				\
 		if (_____ret) {						\
 			if (__rb_same_type(*(c), struct channel_backend))	\
 				__chan = caa_container_of((void *) (c),	\
-					struct lttng_ust_lib_ring_buffer_channel, \
+					struct lttng_ust_ring_buffer_channel, \
 					backend);			\
 			else if (__rb_same_type(*(c),			\
-					struct lttng_ust_lib_ring_buffer_channel)) \
+					struct lttng_ust_ring_buffer_channel)) \
 				__chan = (void *) (c);			\
 			else						\
 				BUG_ON(1);				\
@@ -310,20 +310,20 @@ void channel_set_private(struct lttng_ust_lib_ring_buffer_channel *chan, void *p
 	})
 
 /**
- * lttng_ust_lib_ring_buffer_align_ctx - Align context offset on "alignment"
+ * lttng_ust_ring_buffer_align_ctx - Align context offset on "alignment"
  * @ctx: ring buffer context.
  */
 static inline
-void lttng_ust_lib_ring_buffer_align_ctx(struct lttng_ust_lib_ring_buffer_ctx *ctx,
+void lttng_ust_ring_buffer_align_ctx(struct lttng_ust_ring_buffer_ctx *ctx,
 			   size_t alignment)
 	lttng_ust_notrace;
 static inline
-void lttng_ust_lib_ring_buffer_align_ctx(struct lttng_ust_lib_ring_buffer_ctx *ctx,
+void lttng_ust_ring_buffer_align_ctx(struct lttng_ust_ring_buffer_ctx *ctx,
 			   size_t alignment)
 {
-	struct lttng_ust_lib_ring_buffer_ctx_private *ctx_private = ctx->priv;
+	struct lttng_ust_ring_buffer_ctx_private *ctx_private = ctx->priv;
 
-	ctx_private->buf_offset += lttng_ust_lib_ring_buffer_align(ctx_private->buf_offset,
+	ctx_private->buf_offset += lttng_ust_ring_buffer_align(ctx_private->buf_offset,
 						 alignment);
 }
 

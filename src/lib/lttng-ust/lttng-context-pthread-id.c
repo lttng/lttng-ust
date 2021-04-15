@@ -22,14 +22,14 @@ size_t pthread_id_get_size(void *priv __attribute__((unused)),
 {
 	size_t size = 0;
 
-	size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(unsigned long));
+	size += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(unsigned long));
 	size += sizeof(unsigned long);
 	return size;
 }
 
 static
 void pthread_id_record(void *priv __attribute__((unused)),
-		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
+		 struct lttng_ust_ring_buffer_ctx *ctx,
 		 struct lttng_ust_channel_buffer *chan)
 {
 	unsigned long pthread_id;

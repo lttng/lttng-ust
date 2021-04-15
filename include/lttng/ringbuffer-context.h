@@ -19,10 +19,10 @@
 #include <lttng/ust-utils.h>
 #include <lttng/ust-compiler.h>
 
-struct lttng_ust_lib_ring_buffer;
-struct lttng_ust_lib_ring_buffer_channel;
-struct lttng_ust_lib_ring_buffer_ctx;
-struct lttng_ust_lib_ring_buffer_ctx_private;
+struct lttng_ust_ring_buffer;
+struct lttng_ust_ring_buffer_channel;
+struct lttng_ust_ring_buffer_ctx;
+struct lttng_ust_ring_buffer_ctx_private;
 
 /*
  * ring buffer context
@@ -35,7 +35,7 @@ struct lttng_ust_lib_ring_buffer_ctx_private;
  * structure. It should be queried before using additional fields added
  * at the end of the structure.
  */
-struct lttng_ust_lib_ring_buffer_ctx {
+struct lttng_ust_ring_buffer_ctx {
 	uint32_t struct_size;			/* Size of this structure. */
 
 	void *client_priv;			/* Ring buffer client private data */
@@ -47,13 +47,13 @@ struct lttng_ust_lib_ring_buffer_ctx {
 	void *ip;				/* caller ip address */
 
 	/* Private ring buffer context, set by reserve callback. */
-	struct lttng_ust_lib_ring_buffer_ctx_private *priv;
+	struct lttng_ust_ring_buffer_ctx_private *priv;
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
 /**
- * lttng_ust_lib_ring_buffer_ctx_init - initialize ring buffer context
+ * lttng_ust_ring_buffer_ctx_init - initialize ring buffer context
  * @ctx: ring buffer context to initialize
  * @client_priv: client private data
  * @data_size: size of record data payload
@@ -61,16 +61,16 @@ struct lttng_ust_lib_ring_buffer_ctx {
  * @ip: caller ip address
  */
 static inline
-void lttng_ust_lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
+void lttng_ust_ring_buffer_ctx_init(struct lttng_ust_ring_buffer_ctx *ctx,
 					void *client_priv, size_t data_size, int largest_align,
 					void *ip)
 	lttng_ust_notrace;
 static inline
-void lttng_ust_lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ctx,
+void lttng_ust_ring_buffer_ctx_init(struct lttng_ust_ring_buffer_ctx *ctx,
 					void *client_priv, size_t data_size, int largest_align,
 					void *ip)
 {
-	ctx->struct_size = sizeof(struct lttng_ust_lib_ring_buffer_ctx);
+	ctx->struct_size = sizeof(struct lttng_ust_ring_buffer_ctx);
 	ctx->client_priv = client_priv;
 	ctx->data_size = data_size;
 	ctx->largest_align = largest_align;
@@ -90,15 +90,15 @@ void lttng_ust_lib_ring_buffer_ctx_init(struct lttng_ust_lib_ring_buffer_ctx *ct
 # define LTTNG_UST_RING_BUFFER_ALIGN_ATTR	/* Default arch alignment */
 
 /*
- * lttng_ust_lib_ring_buffer_align - Calculate the offset needed to align the type.
+ * lttng_ust_ring_buffer_align - Calculate the offset needed to align the type.
  * @align_drift:  object offset from an "alignment"-aligned address.
  * @size_of_type: Must be non-zero, power of 2.
  */
 static inline
-unsigned int lttng_ust_lib_ring_buffer_align(size_t align_drift, size_t size_of_type)
+unsigned int lttng_ust_ring_buffer_align(size_t align_drift, size_t size_of_type)
 	lttng_ust_notrace;
 static inline
-unsigned int lttng_ust_lib_ring_buffer_align(size_t align_drift, size_t size_of_type)
+unsigned int lttng_ust_ring_buffer_align(size_t align_drift, size_t size_of_type)
 {
 	return lttng_ust_offset_align(align_drift, size_of_type);
 }
@@ -108,15 +108,15 @@ unsigned int lttng_ust_lib_ring_buffer_align(size_t align_drift, size_t size_of_
 # define LTTNG_UST_RING_BUFFER_ALIGN_ATTR __attribute__((packed))
 
 /*
- * lttng_ust_lib_ring_buffer_align - Calculate the offset needed to align the type.
+ * lttng_ust_ring_buffer_align - Calculate the offset needed to align the type.
  * @align_drift:  object offset from an "alignment"-aligned address.
  * @size_of_type: Must be non-zero, power of 2.
  */
 static inline
-unsigned int lttng_ust_lib_ring_buffer_align(size_t align_drift, size_t size_of_type)
+unsigned int lttng_ust_ring_buffer_align(size_t align_drift, size_t size_of_type)
 	lttng_ust_notrace;
 static inline
-unsigned int lttng_ust_lib_ring_buffer_align(size_t align_drift __attribute__((unused)),
+unsigned int lttng_ust_ring_buffer_align(size_t align_drift __attribute__((unused)),
 		size_t size_of_type __attribute__((unused)))
 {
 	/*

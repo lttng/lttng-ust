@@ -23,12 +23,12 @@
 
 /* Ring buffer backend access (read/write) */
 
-extern size_t lib_ring_buffer_read(struct lttng_ust_lib_ring_buffer_backend *bufb,
+extern size_t lib_ring_buffer_read(struct lttng_ust_ring_buffer_backend *bufb,
 				   size_t offset, void *dest, size_t len,
 				   struct lttng_ust_shm_handle *handle)
 	__attribute__((visibility("hidden")));
 
-extern int lib_ring_buffer_read_cstr(struct lttng_ust_lib_ring_buffer_backend *bufb,
+extern int lib_ring_buffer_read_cstr(struct lttng_ust_ring_buffer_backend *bufb,
 				     size_t offset, void *dest, size_t len,
 				     struct lttng_ust_shm_handle *handle)
 	__attribute__((visibility("hidden")));
@@ -40,13 +40,13 @@ extern int lib_ring_buffer_read_cstr(struct lttng_ust_lib_ring_buffer_backend *b
  * as long as the write is never bigger than a page size.
  */
 extern void *
-lib_ring_buffer_offset_address(struct lttng_ust_lib_ring_buffer_backend *bufb,
+lib_ring_buffer_offset_address(struct lttng_ust_ring_buffer_backend *bufb,
 			       size_t offset,
 			       struct lttng_ust_shm_handle *handle)
 	__attribute__((visibility("hidden")));
 
 extern void *
-lib_ring_buffer_read_offset_address(struct lttng_ust_lib_ring_buffer_backend *bufb,
+lib_ring_buffer_read_offset_address(struct lttng_ust_ring_buffer_backend *bufb,
 				    size_t offset,
 				    struct lttng_ust_shm_handle *handle)
 	__attribute__((visibility("hidden")));
@@ -64,20 +64,20 @@ lib_ring_buffer_read_offset_address(struct lttng_ust_lib_ring_buffer_backend *bu
  * if copy is crossing a page boundary.
  */
 static inline
-void lib_ring_buffer_write(const struct lttng_ust_lib_ring_buffer_config *config,
-			   struct lttng_ust_lib_ring_buffer_ctx *ctx,
+void lib_ring_buffer_write(const struct lttng_ust_ring_buffer_config *config,
+			   struct lttng_ust_ring_buffer_ctx *ctx,
 			   const void *src, size_t len)
 	__attribute__((always_inline));
 static inline
-void lib_ring_buffer_write(const struct lttng_ust_lib_ring_buffer_config *config,
-			   struct lttng_ust_lib_ring_buffer_ctx *ctx,
+void lib_ring_buffer_write(const struct lttng_ust_ring_buffer_config *config,
+			   struct lttng_ust_ring_buffer_ctx *ctx,
 			   const void *src, size_t len)
 {
-	struct lttng_ust_lib_ring_buffer_ctx_private *ctx_private = ctx->priv;
+	struct lttng_ust_ring_buffer_ctx_private *ctx_private = ctx->priv;
 	struct channel_backend *chanb = &ctx_private->chan->backend;
 	struct lttng_ust_shm_handle *handle = ctx_private->chan->handle;
 	size_t offset = ctx_private->buf_offset;
-	struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
+	struct lttng_ust_ring_buffer_backend_pages *backend_pages;
 	void *p;
 
 	if (caa_unlikely(!len))
@@ -105,12 +105,12 @@ void lib_ring_buffer_write(const struct lttng_ust_lib_ring_buffer_config *config
  * copied. Does *not* terminate @dest with NULL terminating character.
  */
 static inline
-size_t lib_ring_buffer_do_strcpy(const struct lttng_ust_lib_ring_buffer_config *config,
+size_t lib_ring_buffer_do_strcpy(const struct lttng_ust_ring_buffer_config *config,
 		char *dest, const char *src, size_t len)
 	__attribute__((always_inline));
 static inline
 size_t lib_ring_buffer_do_strcpy(
-		const struct lttng_ust_lib_ring_buffer_config *config  __attribute__((unused)),
+		const struct lttng_ust_ring_buffer_config *config  __attribute__((unused)),
 		char *dest, const char *src, size_t len)
 {
 	size_t count;
@@ -146,21 +146,21 @@ size_t lib_ring_buffer_do_strcpy(
  * the buffer with @pad characters (e.g. '#').
  */
 static inline
-void lib_ring_buffer_strcpy(const struct lttng_ust_lib_ring_buffer_config *config,
-			   struct lttng_ust_lib_ring_buffer_ctx *ctx,
+void lib_ring_buffer_strcpy(const struct lttng_ust_ring_buffer_config *config,
+			   struct lttng_ust_ring_buffer_ctx *ctx,
 			   const char *src, size_t len, char pad)
 	__attribute__((always_inline));
 static inline
-void lib_ring_buffer_strcpy(const struct lttng_ust_lib_ring_buffer_config *config,
-			   struct lttng_ust_lib_ring_buffer_ctx *ctx,
+void lib_ring_buffer_strcpy(const struct lttng_ust_ring_buffer_config *config,
+			   struct lttng_ust_ring_buffer_ctx *ctx,
 			   const char *src, size_t len, char pad)
 {
-	struct lttng_ust_lib_ring_buffer_ctx_private *ctx_private = ctx->priv;
+	struct lttng_ust_ring_buffer_ctx_private *ctx_private = ctx->priv;
 	struct channel_backend *chanb = &ctx_private->chan->backend;
 	struct lttng_ust_shm_handle *handle = ctx_private->chan->handle;
 	size_t count;
 	size_t offset = ctx_private->buf_offset;
-	struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
+	struct lttng_ust_ring_buffer_backend_pages *backend_pages;
 	void *p;
 
 	if (caa_unlikely(!len))
@@ -216,21 +216,21 @@ void lib_ring_buffer_strcpy(const struct lttng_ust_lib_ring_buffer_config *confi
  * is either the array or sequence length.
  */
 static inline
-void lib_ring_buffer_pstrcpy(const struct lttng_ust_lib_ring_buffer_config *config,
-			   struct lttng_ust_lib_ring_buffer_ctx *ctx,
+void lib_ring_buffer_pstrcpy(const struct lttng_ust_ring_buffer_config *config,
+			   struct lttng_ust_ring_buffer_ctx *ctx,
 			   const char *src, size_t len, char pad)
 	__attribute__((always_inline));
 static inline
-void lib_ring_buffer_pstrcpy(const struct lttng_ust_lib_ring_buffer_config *config,
-			   struct lttng_ust_lib_ring_buffer_ctx *ctx,
+void lib_ring_buffer_pstrcpy(const struct lttng_ust_ring_buffer_config *config,
+			   struct lttng_ust_ring_buffer_ctx *ctx,
 			   const char *src, size_t len, char pad)
 {
-	struct lttng_ust_lib_ring_buffer_ctx_private *ctx_private = ctx->priv;
+	struct lttng_ust_ring_buffer_ctx_private *ctx_private = ctx->priv;
 	struct channel_backend *chanb = &ctx_private->chan->backend;
 	struct lttng_ust_shm_handle *handle = ctx_private->chan->handle;
 	size_t count;
 	size_t offset = ctx_private->buf_offset;
-	struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
+	struct lttng_ust_ring_buffer_backend_pages *backend_pages;
 	void *p;
 
 	if (caa_unlikely(!len))
@@ -270,22 +270,22 @@ void lib_ring_buffer_pstrcpy(const struct lttng_ust_lib_ring_buffer_config *conf
  */
 static inline
 unsigned long lib_ring_buffer_get_records_unread(
-				const struct lttng_ust_lib_ring_buffer_config *config,
-				struct lttng_ust_lib_ring_buffer *buf,
+				const struct lttng_ust_ring_buffer_config *config,
+				struct lttng_ust_ring_buffer *buf,
 				struct lttng_ust_shm_handle *handle)
 {
-	struct lttng_ust_lib_ring_buffer_backend *bufb = &buf->backend;
+	struct lttng_ust_ring_buffer_backend *bufb = &buf->backend;
 	unsigned long records_unread = 0, sb_bindex;
 	unsigned int i;
-	struct lttng_ust_lib_ring_buffer_channel *chan;
+	struct lttng_ust_ring_buffer_channel *chan;
 
 	chan = shmp(handle, bufb->chan);
 	if (!chan)
 		return 0;
 	for (i = 0; i < chan->backend.num_subbuf; i++) {
-		struct lttng_ust_lib_ring_buffer_backend_subbuffer *wsb;
-		struct lttng_ust_lib_ring_buffer_backend_pages_shmp *rpages;
-		struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
+		struct lttng_ust_ring_buffer_backend_subbuffer *wsb;
+		struct lttng_ust_ring_buffer_backend_pages_shmp *rpages;
+		struct lttng_ust_ring_buffer_backend_pages *backend_pages;
 
 		wsb = shmp_index(handle, bufb->buf_wsb, i);
 		if (!wsb)
@@ -300,8 +300,8 @@ unsigned long lib_ring_buffer_get_records_unread(
 		records_unread += v_read(config, &backend_pages->records_unread);
 	}
 	if (config->mode == RING_BUFFER_OVERWRITE) {
-		struct lttng_ust_lib_ring_buffer_backend_pages_shmp *rpages;
-		struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
+		struct lttng_ust_ring_buffer_backend_pages_shmp *rpages;
+		struct lttng_ust_ring_buffer_backend_pages *backend_pages;
 
 		sb_bindex = subbuffer_id_get_index(config, bufb->buf_rsb.id);
 		rpages = shmp_index(handle, bufb->array, sb_bindex);

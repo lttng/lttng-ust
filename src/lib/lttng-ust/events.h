@@ -322,7 +322,7 @@ int lttng_ust_add_app_context_to_ctx_rcu(const char *name, struct lttng_ust_ctx 
 int lttng_ust_context_set_provider_rcu(struct lttng_ust_ctx **_ctx,
 		const char *name,
 		size_t (*get_size)(void *priv, size_t offset),
-		void (*record)(void *priv, struct lttng_ust_lib_ring_buffer_ctx *ctx,
+		void (*record)(void *priv, struct lttng_ust_ring_buffer_ctx *ctx,
 			struct lttng_ust_channel_buffer *chan),
 		void (*get_value)(void *priv, struct lttng_ust_ctx_value *value),
 		void *priv)
@@ -330,7 +330,7 @@ int lttng_ust_context_set_provider_rcu(struct lttng_ust_ctx **_ctx,
 
 void lttng_ust_context_set_session_provider(const char *name,
 		size_t (*get_size)(void *priv, size_t offset),
-		void (*record)(void *priv, struct lttng_ust_lib_ring_buffer_ctx *ctx,
+		void (*record)(void *priv, struct lttng_ust_ring_buffer_ctx *ctx,
 			struct lttng_ust_channel_buffer *chan),
 		void (*get_value)(void *priv, struct lttng_ust_ctx_value *value),
 		void *priv)

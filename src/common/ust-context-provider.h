@@ -55,7 +55,7 @@ struct lttng_ust_context_provider {
 
 	const char *name;
 	size_t (*get_size)(void *priv, size_t offset);
-	void (*record)(void *priv, struct lttng_ust_lib_ring_buffer_ctx *ctx,
+	void (*record)(void *priv, struct lttng_ust_ring_buffer_ctx *ctx,
 		       struct lttng_ust_channel_buffer *chan);
 	void (*get_value)(void *priv, struct lttng_ust_ctx_value *value);
 	void *priv;

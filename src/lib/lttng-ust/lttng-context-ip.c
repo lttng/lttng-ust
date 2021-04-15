@@ -23,14 +23,14 @@ size_t ip_get_size(void *priv __attribute__((unused)),
 {
 	size_t size = 0;
 
-	size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(void *));
+	size += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(void *));
 	size += sizeof(void *);
 	return size;
 }
 
 static
 void ip_record(void *priv __attribute__((unused)),
-		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
+		 struct lttng_ust_ring_buffer_ctx *ctx,
 		 struct lttng_ust_channel_buffer *chan)
 {
 	void *ip;

@@ -253,7 +253,7 @@ struct lttng_transport {
 	const char *name;
 	struct cds_list_head node;
 	struct lttng_ust_channel_buffer_ops ops;
-	const struct lttng_ust_lib_ring_buffer_config *client_config;
+	const struct lttng_ust_ring_buffer_config *client_config;
 };
 
 struct lttng_counter_transport {
@@ -389,7 +389,7 @@ struct lttng_ust_channel_buffer_private {
 	unsigned int id;			/* Channel ID */
 	enum lttng_ust_abi_chan_type type;
 	struct lttng_ust_ctx *ctx;
-	struct lttng_ust_lib_ring_buffer_channel *rb_chan;	/* Ring buffer channel */
+	struct lttng_ust_ring_buffer_channel *rb_chan;	/* Ring buffer channel */
 	unsigned char uuid[LTTNG_UST_UUID_LEN];	/* Trace session unique ID */
 };
 
@@ -442,7 +442,7 @@ struct lttng_ust_registered_probe {
 struct lttng_ust_ctx_field {
 	const struct lttng_ust_event_field *event_field;
 	size_t (*get_size)(void *priv, size_t offset);
-	void (*record)(void *priv, struct lttng_ust_lib_ring_buffer_ctx *ctx,
+	void (*record)(void *priv, struct lttng_ust_ring_buffer_ctx *ctx,
 		       struct lttng_ust_channel_buffer *chan);
 	void (*get_value)(void *priv, struct lttng_ust_ctx_value *value);
 	void (*destroy)(void *priv);

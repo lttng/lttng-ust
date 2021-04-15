@@ -20,10 +20,10 @@
 #include <lttng/ust-compiler.h>
 #include <lttng/ust-tracer.h>
 
-struct lttng_ust_lib_ring_buffer;
-struct lttng_ust_lib_ring_buffer_channel;
-struct lttng_ust_lib_ring_buffer_config;
-struct lttng_ust_lib_ring_buffer_ctx_private;
+struct lttng_ust_ring_buffer;
+struct lttng_ust_ring_buffer_channel;
+struct lttng_ust_ring_buffer_config;
+struct lttng_ust_ring_buffer_ctx_private;
 struct lttng_ust_shm_handle;
 
 /*
@@ -32,38 +32,38 @@ struct lttng_ust_shm_handle;
  * provided as inline functions too.  These may simply return 0 if not used by
  * the client.
  */
-struct lttng_ust_lib_ring_buffer_client_cb {
+struct lttng_ust_ring_buffer_client_cb {
 	/* Mandatory callbacks */
 
 	/* A static inline version is also required for fast path */
-	uint64_t (*ring_buffer_clock_read) (struct lttng_ust_lib_ring_buffer_channel *chan);
-	size_t (*record_header_size) (const struct lttng_ust_lib_ring_buffer_config *config,
-				      struct lttng_ust_lib_ring_buffer_channel *chan,
+	uint64_t (*ring_buffer_clock_read) (struct lttng_ust_ring_buffer_channel *chan);
+	size_t (*record_header_size) (const struct lttng_ust_ring_buffer_config *config,
+				      struct lttng_ust_ring_buffer_channel *chan,
 				      size_t offset,
 				      size_t *pre_header_padding,
-				      struct lttng_ust_lib_ring_buffer_ctx *ctx,
+				      struct lttng_ust_ring_buffer_ctx *ctx,
 				      void *client_ctx);
 
 	/* Slow path only, at subbuffer switch */
 	size_t (*subbuffer_header_size) (void);
-	void (*buffer_begin) (struct lttng_ust_lib_ring_buffer *buf, uint64_t tsc,
+	void (*buffer_begin) (struct lttng_ust_ring_buffer *buf, uint64_t tsc,
 			      unsigned int subbuf_idx,
 			      struct lttng_ust_shm_handle *handle);
-	void (*buffer_end) (struct lttng_ust_lib_ring_buffer *buf, uint64_t tsc,
+	void (*buffer_end) (struct lttng_ust_ring_buffer *buf, uint64_t tsc,
 			    unsigned int subbuf_idx, unsigned long data_size,
 			    struct lttng_ust_shm_handle *handle);
 
 	/* Optional callbacks (can be set to NULL) */
 
 	/* Called at buffer creation/finalize */
-	int (*buffer_create) (struct lttng_ust_lib_ring_buffer *buf, void *priv,
+	int (*buffer_create) (struct lttng_ust_ring_buffer *buf, void *priv,
 			      int cpu, const char *name,
 			      struct lttng_ust_shm_handle *handle);
 	/*
 	 * Clients should guarantee that no new reader handle can be opened
 	 * after finalize.
 	 */
-	void (*buffer_finalize) (struct lttng_ust_lib_ring_buffer *buf,
+	void (*buffer_finalize) (struct lttng_ust_ring_buffer *buf,
 				 void *priv, int cpu,
 				 struct lttng_ust_shm_handle *handle);
 
@@ -72,18 +72,18 @@ struct lttng_ust_lib_ring_buffer_client_cb {
 	 * record. Used by buffer iterators. Timestamp is only used by channel
 	 * iterator.
 	 */
-	void (*record_get) (const struct lttng_ust_lib_ring_buffer_config *config,
-			    struct lttng_ust_lib_ring_buffer_channel *chan,
-			    struct lttng_ust_lib_ring_buffer *buf,
+	void (*record_get) (const struct lttng_ust_ring_buffer_config *config,
+			    struct lttng_ust_ring_buffer_channel *chan,
+			    struct lttng_ust_ring_buffer *buf,
 			    size_t offset, size_t *header_len,
 			    size_t *payload_len, uint64_t *timestamp,
 			    struct lttng_ust_shm_handle *handle);
 	/*
 	 * Offset and size of content size field in client.
 	 */
-	void (*content_size_field) (const struct lttng_ust_lib_ring_buffer_config *config,
+	void (*content_size_field) (const struct lttng_ust_ring_buffer_config *config,
 				size_t *offset, size_t *length);
-	void (*packet_size_field) (const struct lttng_ust_lib_ring_buffer_config *config,
+	void (*packet_size_field) (const struct lttng_ust_ring_buffer_config *config,
 				size_t *offset, size_t *length);
 };
 
@@ -126,22 +126,22 @@ struct lttng_ust_lib_ring_buffer_client_cb {
  */
 #define LTTNG_UST_RING_BUFFER_CONFIG_PADDING	20
 
-enum lttng_ust_lib_ring_buffer_alloc_types {
+enum lttng_ust_ring_buffer_alloc_types {
 	RING_BUFFER_ALLOC_PER_CPU,
 	RING_BUFFER_ALLOC_GLOBAL,
 };
 
-enum lttng_ust_lib_ring_buffer_sync_types {
+enum lttng_ust_ring_buffer_sync_types {
 	RING_BUFFER_SYNC_PER_CPU,	/* Wait-free */
 	RING_BUFFER_SYNC_GLOBAL,	/* Lock-free */
 };
 
-enum lttng_ust_lib_ring_buffer_mode_types {
+enum lttng_ust_ring_buffer_mode_types {
 	RING_BUFFER_OVERWRITE = 0,	/* Overwrite when buffer full */
 	RING_BUFFER_DISCARD = 1,	/* Discard when buffer full */
 };
 
-enum lttng_ust_lib_ring_buffer_output_types {
+enum lttng_ust_ring_buffer_output_types {
 	RING_BUFFER_SPLICE,
 	RING_BUFFER_MMAP,
 	RING_BUFFER_READ,		/* TODO */
@@ -149,23 +149,23 @@ enum lttng_ust_lib_ring_buffer_output_types {
 	RING_BUFFER_NONE,
 };
 
-enum lttng_ust_lib_ring_buffer_backend_types {
+enum lttng_ust_ring_buffer_backend_types {
 	RING_BUFFER_PAGE,
 	RING_BUFFER_VMAP,		/* TODO */
 	RING_BUFFER_STATIC,		/* TODO */
 };
 
-enum lttng_ust_lib_ring_buffer_oops_types {
+enum lttng_ust_ring_buffer_oops_types {
 	RING_BUFFER_NO_OOPS_CONSISTENCY,
 	RING_BUFFER_OOPS_CONSISTENCY,
 };
 
-enum lttng_ust_lib_ring_buffer_ipi_types {
+enum lttng_ust_ring_buffer_ipi_types {
 	RING_BUFFER_IPI_BARRIER,
 	RING_BUFFER_NO_IPI_BARRIER,
 };
 
-enum lttng_ust_lib_ring_buffer_wakeup_types {
+enum lttng_ust_ring_buffer_wakeup_types {
 	RING_BUFFER_WAKEUP_BY_TIMER,	/* wake up performed by timer */
 	RING_BUFFER_WAKEUP_BY_WRITER,	/*
 					 * writer wakes up reader,
@@ -174,21 +174,21 @@ enum lttng_ust_lib_ring_buffer_wakeup_types {
 					 */
 };
 
-struct lttng_ust_lib_ring_buffer_config {
-	enum lttng_ust_lib_ring_buffer_alloc_types alloc;
-	enum lttng_ust_lib_ring_buffer_sync_types sync;
-	enum lttng_ust_lib_ring_buffer_mode_types mode;
-	enum lttng_ust_lib_ring_buffer_output_types output;
-	enum lttng_ust_lib_ring_buffer_backend_types backend;
-	enum lttng_ust_lib_ring_buffer_oops_types oops;
-	enum lttng_ust_lib_ring_buffer_ipi_types ipi;
-	enum lttng_ust_lib_ring_buffer_wakeup_types wakeup;
+struct lttng_ust_ring_buffer_config {
+	enum lttng_ust_ring_buffer_alloc_types alloc;
+	enum lttng_ust_ring_buffer_sync_types sync;
+	enum lttng_ust_ring_buffer_mode_types mode;
+	enum lttng_ust_ring_buffer_output_types output;
+	enum lttng_ust_ring_buffer_backend_types backend;
+	enum lttng_ust_ring_buffer_oops_types oops;
+	enum lttng_ust_ring_buffer_ipi_types ipi;
+	enum lttng_ust_ring_buffer_wakeup_types wakeup;
 	/*
 	 * tsc_bits: timestamp bits saved at each record.
 	 *   0 and 64 disable the timestamp compression scheme.
 	 */
 	unsigned int tsc_bits;
-	struct lttng_ust_lib_ring_buffer_client_cb cb;
+	struct lttng_ust_ring_buffer_client_cb cb;
 	/*
 	 * client_type is used by the consumer process (which is in a
 	 * different address space) to lookup the appropriate client
@@ -196,7 +196,7 @@ struct lttng_ust_lib_ring_buffer_config {
 	 */
 	int client_type;
 	int _unused1;
-	const struct lttng_ust_lib_ring_buffer_client_cb *cb_ptr;
+	const struct lttng_ust_ring_buffer_client_cb *cb_ptr;
 	char padding[LTTNG_UST_RING_BUFFER_CONFIG_PADDING];
 };
 
@@ -222,13 +222,13 @@ struct lttng_ust_lib_ring_buffer_config {
  * Used internally to check for valid configurations at channel creation.
  */
 static inline
-int lib_ring_buffer_check_config(const struct lttng_ust_lib_ring_buffer_config *config,
+int lib_ring_buffer_check_config(const struct lttng_ust_ring_buffer_config *config,
 			     unsigned int switch_timer_interval,
 			     unsigned int read_timer_interval)
 	lttng_ust_notrace;
 
 static inline
-int lib_ring_buffer_check_config(const struct lttng_ust_lib_ring_buffer_config *config,
+int lib_ring_buffer_check_config(const struct lttng_ust_ring_buffer_config *config,
 			     unsigned int switch_timer_interval,
 			     unsigned int read_timer_interval __attribute__((unused)))
 {

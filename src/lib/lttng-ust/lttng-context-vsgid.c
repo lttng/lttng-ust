@@ -71,14 +71,14 @@ size_t vsgid_get_size(void *priv __attribute__((unused)),
 {
 	size_t size = 0;
 
-	size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(gid_t));
+	size += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(gid_t));
 	size += sizeof(gid_t);
 	return size;
 }
 
 static
 void vsgid_record(void *priv __attribute__((unused)),
-		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
+		 struct lttng_ust_ring_buffer_ctx *ctx,
 		 struct lttng_ust_channel_buffer *chan)
 {
 	gid_t vsgid;

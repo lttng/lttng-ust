@@ -31,8 +31,8 @@
  * @extra_reader_sb: need extra subbuffer for reader
  */
 static
-int lib_ring_buffer_backend_allocate(const struct lttng_ust_lib_ring_buffer_config *config,
-				     struct lttng_ust_lib_ring_buffer_backend *bufb,
+int lib_ring_buffer_backend_allocate(const struct lttng_ust_ring_buffer_config *config,
+				     struct lttng_ust_ring_buffer_backend *bufb,
 				     size_t size __attribute__((unused)), size_t num_subbuf,
 				     int extra_reader_sb,
 				     struct lttng_ust_shm_handle *handle,
@@ -59,9 +59,9 @@ int lib_ring_buffer_backend_allocate(const struct lttng_ust_lib_ring_buffer_conf
 		goto page_size_error;
 	}
 
-	align_shm(shmobj, __alignof__(struct lttng_ust_lib_ring_buffer_backend_pages_shmp));
+	align_shm(shmobj, __alignof__(struct lttng_ust_ring_buffer_backend_pages_shmp));
 	set_shmp(bufb->array, zalloc_shm(shmobj,
-			sizeof(struct lttng_ust_lib_ring_buffer_backend_pages_shmp) * num_subbuf_alloc));
+			sizeof(struct lttng_ust_ring_buffer_backend_pages_shmp) * num_subbuf_alloc));
 	if (caa_unlikely(!shmp(handle, bufb->array)))
 		goto array_error;
 
@@ -77,24 +77,24 @@ int lib_ring_buffer_backend_allocate(const struct lttng_ust_lib_ring_buffer_conf
 
 	/* Allocate backend pages array elements */
 	for (i = 0; i < num_subbuf_alloc; i++) {
-		align_shm(shmobj, __alignof__(struct lttng_ust_lib_ring_buffer_backend_pages));
+		align_shm(shmobj, __alignof__(struct lttng_ust_ring_buffer_backend_pages));
 		set_shmp(shmp_index(handle, bufb->array, i)->shmp,
 			zalloc_shm(shmobj,
-				sizeof(struct lttng_ust_lib_ring_buffer_backend_pages)));
+				sizeof(struct lttng_ust_ring_buffer_backend_pages)));
 		if (!shmp(handle, shmp_index(handle, bufb->array, i)->shmp))
 			goto free_array;
 	}
 
 	/* Allocate write-side subbuffer table */
-	align_shm(shmobj, __alignof__(struct lttng_ust_lib_ring_buffer_backend_subbuffer));
+	align_shm(shmobj, __alignof__(struct lttng_ust_ring_buffer_backend_subbuffer));
 	set_shmp(bufb->buf_wsb, zalloc_shm(shmobj,
-				sizeof(struct lttng_ust_lib_ring_buffer_backend_subbuffer)
+				sizeof(struct lttng_ust_ring_buffer_backend_subbuffer)
 				* num_subbuf));
 	if (caa_unlikely(!shmp(handle, bufb->buf_wsb)))
 		goto free_array;
 
 	for (i = 0; i < num_subbuf; i++) {
-		struct lttng_ust_lib_ring_buffer_backend_subbuffer *sb;
+		struct lttng_ust_ring_buffer_backend_subbuffer *sb;
 
 		sb = shmp_index(handle, bufb->buf_wsb, i);
 		if (!sb)
@@ -110,17 +110,17 @@ int lib_ring_buffer_backend_allocate(const struct lttng_ust_lib_ring_buffer_conf
 		bufb->buf_rsb.id = subbuffer_id(config, 0, 1, 0);
 
 	/* Allocate subbuffer packet counter table */
-	align_shm(shmobj, __alignof__(struct lttng_ust_lib_ring_buffer_backend_counts));
+	align_shm(shmobj, __alignof__(struct lttng_ust_ring_buffer_backend_counts));
 	set_shmp(bufb->buf_cnt, zalloc_shm(shmobj,
-				sizeof(struct lttng_ust_lib_ring_buffer_backend_counts)
+				sizeof(struct lttng_ust_ring_buffer_backend_counts)
 				* num_subbuf));
 	if (caa_unlikely(!shmp(handle, bufb->buf_cnt)))
 		goto free_wsb;
 
 	/* Assign pages to page index */
 	for (i = 0; i < num_subbuf_alloc; i++) {
-		struct lttng_ust_lib_ring_buffer_backend_pages_shmp *sbp;
-		struct lttng_ust_lib_ring_buffer_backend_pages *pages;
+		struct lttng_ust_ring_buffer_backend_pages_shmp *sbp;
+		struct lttng_ust_ring_buffer_backend_pages *pages;
 		struct shm_ref ref;
 
 		ref.index = bufb->memory_map._ref.index;
@@ -152,12 +152,12 @@ page_size_error:
 	return -ENOMEM;
 }
 
-int lib_ring_buffer_backend_create(struct lttng_ust_lib_ring_buffer_backend *bufb,
+int lib_ring_buffer_backend_create(struct lttng_ust_ring_buffer_backend *bufb,
 				   struct channel_backend *chanb, int cpu,
 				   struct lttng_ust_shm_handle *handle,
 				   struct shm_object *shmobj)
 {
-	const struct lttng_ust_lib_ring_buffer_config *config = &chanb->config;
+	const struct lttng_ust_ring_buffer_config *config = &chanb->config;
 
 	set_shmp(bufb->chan, handle->chan._ref);
 	bufb->cpu = cpu;
@@ -168,11 +168,11 @@ int lib_ring_buffer_backend_create(struct lttng_ust_lib_ring_buffer_backend *buf
 						handle, shmobj);
 }
 
-void lib_ring_buffer_backend_reset(struct lttng_ust_lib_ring_buffer_backend *bufb,
+void lib_ring_buffer_backend_reset(struct lttng_ust_ring_buffer_backend *bufb,
 				   struct lttng_ust_shm_handle *handle)
 {
 	struct channel_backend *chanb;
-	const struct lttng_ust_lib_ring_buffer_config *config;
+	const struct lttng_ust_ring_buffer_config *config;
 	unsigned long num_subbuf_alloc;
 	unsigned int i;
 
@@ -186,7 +186,7 @@ void lib_ring_buffer_backend_reset(struct lttng_ust_lib_ring_buffer_backend *buf
 		num_subbuf_alloc++;
 
 	for (i = 0; i < chanb->num_subbuf; i++) {
-		struct lttng_ust_lib_ring_buffer_backend_subbuffer *sb;
+		struct lttng_ust_ring_buffer_backend_subbuffer *sb;
 
 		sb = shmp_index(handle, bufb->buf_wsb, i);
 		if (!sb)
@@ -200,8 +200,8 @@ void lib_ring_buffer_backend_reset(struct lttng_ust_lib_ring_buffer_backend *buf
 		bufb->buf_rsb.id = subbuffer_id(config, 0, 1, 0);
 
 	for (i = 0; i < num_subbuf_alloc; i++) {
-		struct lttng_ust_lib_ring_buffer_backend_pages_shmp *sbp;
-		struct lttng_ust_lib_ring_buffer_backend_pages *pages;
+		struct lttng_ust_ring_buffer_backend_pages_shmp *sbp;
+		struct lttng_ust_ring_buffer_backend_pages *pages;
 
 		sbp = shmp_index(handle, bufb->array, i);
 		if (!sbp)
@@ -225,9 +225,9 @@ void lib_ring_buffer_backend_reset(struct lttng_ust_lib_ring_buffer_backend *buf
  */
 void channel_backend_reset(struct channel_backend *chanb)
 {
-	struct lttng_ust_lib_ring_buffer_channel *chan = caa_container_of(chanb,
-			struct lttng_ust_lib_ring_buffer_channel, backend);
-	const struct lttng_ust_lib_ring_buffer_config *config = &chanb->config;
+	struct lttng_ust_ring_buffer_channel *chan = caa_container_of(chanb,
+			struct lttng_ust_ring_buffer_channel, backend);
+	const struct lttng_ust_ring_buffer_config *config = &chanb->config;
 
 	/*
 	 * Don't reset buf_size, subbuf_size, subbuf_size_order,
@@ -258,13 +258,13 @@ void channel_backend_reset(struct channel_backend *chanb)
  */
 int channel_backend_init(struct channel_backend *chanb,
 			 const char *name,
-			 const struct lttng_ust_lib_ring_buffer_config *config,
+			 const struct lttng_ust_ring_buffer_config *config,
 			 size_t subbuf_size, size_t num_subbuf,
 			 struct lttng_ust_shm_handle *handle,
 			 const int *stream_fds)
 {
-	struct lttng_ust_lib_ring_buffer_channel *chan = caa_container_of(chanb,
-			struct lttng_ust_lib_ring_buffer_channel, backend);
+	struct lttng_ust_ring_buffer_channel *chan = caa_container_of(chanb,
+			struct lttng_ust_ring_buffer_channel, backend);
 	unsigned int i;
 	int ret;
 	size_t shmsize = 0, num_subbuf_alloc;
@@ -313,8 +313,8 @@ int channel_backend_init(struct channel_backend *chanb,
 	memcpy(&chanb->config, config, sizeof(*config));
 
 	/* Per-cpu buffer size: control (prior to backend) */
-	shmsize = lttng_ust_offset_align(shmsize, __alignof__(struct lttng_ust_lib_ring_buffer));
-	shmsize += sizeof(struct lttng_ust_lib_ring_buffer);
+	shmsize = lttng_ust_offset_align(shmsize, __alignof__(struct lttng_ust_ring_buffer));
+	shmsize += sizeof(struct lttng_ust_ring_buffer);
 	shmsize += lttng_ust_offset_align(shmsize, __alignof__(struct commit_counters_hot));
 	shmsize += sizeof(struct commit_counters_hot) * num_subbuf;
 	shmsize += lttng_ust_offset_align(shmsize, __alignof__(struct commit_counters_cold));
@@ -326,19 +326,19 @@ int channel_backend_init(struct channel_backend *chanb,
 	/* Per-cpu buffer size: backend */
 	/* num_subbuf + 1 is the worse case */
 	num_subbuf_alloc = num_subbuf + 1;
-	shmsize += lttng_ust_offset_align(shmsize, __alignof__(struct lttng_ust_lib_ring_buffer_backend_pages_shmp));
-	shmsize += sizeof(struct lttng_ust_lib_ring_buffer_backend_pages_shmp) * num_subbuf_alloc;
+	shmsize += lttng_ust_offset_align(shmsize, __alignof__(struct lttng_ust_ring_buffer_backend_pages_shmp));
+	shmsize += sizeof(struct lttng_ust_ring_buffer_backend_pages_shmp) * num_subbuf_alloc;
 	shmsize += lttng_ust_offset_align(shmsize, page_size);
 	shmsize += subbuf_size * num_subbuf_alloc;
-	shmsize += lttng_ust_offset_align(shmsize, __alignof__(struct lttng_ust_lib_ring_buffer_backend_pages));
-	shmsize += sizeof(struct lttng_ust_lib_ring_buffer_backend_pages) * num_subbuf_alloc;
-	shmsize += lttng_ust_offset_align(shmsize, __alignof__(struct lttng_ust_lib_ring_buffer_backend_subbuffer));
-	shmsize += sizeof(struct lttng_ust_lib_ring_buffer_backend_subbuffer) * num_subbuf;
-	shmsize += lttng_ust_offset_align(shmsize, __alignof__(struct lttng_ust_lib_ring_buffer_backend_counts));
-	shmsize += sizeof(struct lttng_ust_lib_ring_buffer_backend_counts) * num_subbuf;
+	shmsize += lttng_ust_offset_align(shmsize, __alignof__(struct lttng_ust_ring_buffer_backend_pages));
+	shmsize += sizeof(struct lttng_ust_ring_buffer_backend_pages) * num_subbuf_alloc;
+	shmsize += lttng_ust_offset_align(shmsize, __alignof__(struct lttng_ust_ring_buffer_backend_subbuffer));
+	shmsize += sizeof(struct lttng_ust_ring_buffer_backend_subbuffer) * num_subbuf;
+	shmsize += lttng_ust_offset_align(shmsize, __alignof__(struct lttng_ust_ring_buffer_backend_counts));
+	shmsize += sizeof(struct lttng_ust_ring_buffer_backend_counts) * num_subbuf;
 
 	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU) {
-		struct lttng_ust_lib_ring_buffer *buf;
+		struct lttng_ust_ring_buffer *buf;
 		/*
 		 * We need to allocate for all possible cpus.
 		 */
@@ -349,8 +349,8 @@ int channel_backend_init(struct channel_backend *chanb,
 					SHM_OBJECT_SHM, stream_fds[i], i);
 			if (!shmobj)
 				goto end;
-			align_shm(shmobj, __alignof__(struct lttng_ust_lib_ring_buffer));
-			set_shmp(chanb->buf[i].shmp, zalloc_shm(shmobj, sizeof(struct lttng_ust_lib_ring_buffer)));
+			align_shm(shmobj, __alignof__(struct lttng_ust_ring_buffer));
+			set_shmp(chanb->buf[i].shmp, zalloc_shm(shmobj, sizeof(struct lttng_ust_ring_buffer)));
 			buf = shmp(handle, chanb->buf[i].shmp);
 			if (!buf)
 				goto end;
@@ -362,14 +362,14 @@ int channel_backend_init(struct channel_backend *chanb,
 		}
 	} else {
 		struct shm_object *shmobj;
-		struct lttng_ust_lib_ring_buffer *buf;
+		struct lttng_ust_ring_buffer *buf;
 
 		shmobj = shm_object_table_alloc(handle->table, shmsize,
 					SHM_OBJECT_SHM, stream_fds[0], -1);
 		if (!shmobj)
 			goto end;
-		align_shm(shmobj, __alignof__(struct lttng_ust_lib_ring_buffer));
-		set_shmp(chanb->buf[0].shmp, zalloc_shm(shmobj, sizeof(struct lttng_ust_lib_ring_buffer)));
+		align_shm(shmobj, __alignof__(struct lttng_ust_ring_buffer));
+		set_shmp(chanb->buf[0].shmp, zalloc_shm(shmobj, sizeof(struct lttng_ust_ring_buffer)));
 		buf = shmp(handle, chanb->buf[0].shmp);
 		if (!buf)
 			goto end;
@@ -411,14 +411,14 @@ void channel_backend_free(struct channel_backend *chanb __attribute__((unused)),
  * Should be protected by get_subbuf/put_subbuf.
  * Returns the length copied.
  */
-size_t lib_ring_buffer_read(struct lttng_ust_lib_ring_buffer_backend *bufb, size_t offset,
+size_t lib_ring_buffer_read(struct lttng_ust_ring_buffer_backend *bufb, size_t offset,
 			    void *dest, size_t len, struct lttng_ust_shm_handle *handle)
 {
 	struct channel_backend *chanb;
-	const struct lttng_ust_lib_ring_buffer_config *config;
+	const struct lttng_ust_ring_buffer_config *config;
 	ssize_t orig_len;
-	struct lttng_ust_lib_ring_buffer_backend_pages_shmp *rpages;
-	struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
+	struct lttng_ust_ring_buffer_backend_pages_shmp *rpages;
+	struct lttng_ust_ring_buffer_backend_pages *backend_pages;
 	unsigned long sb_bindex, id;
 	void *src;
 
@@ -464,15 +464,15 @@ size_t lib_ring_buffer_read(struct lttng_ust_lib_ring_buffer_backend *bufb, size
  * Should be protected by get_subbuf/put_subbuf.
  * Destination length should be at least 1 to hold '\0'.
  */
-int lib_ring_buffer_read_cstr(struct lttng_ust_lib_ring_buffer_backend *bufb, size_t offset,
+int lib_ring_buffer_read_cstr(struct lttng_ust_ring_buffer_backend *bufb, size_t offset,
 			      void *dest, size_t len, struct lttng_ust_shm_handle *handle)
 {
 	struct channel_backend *chanb;
-	const struct lttng_ust_lib_ring_buffer_config *config;
+	const struct lttng_ust_ring_buffer_config *config;
 	ssize_t string_len, orig_offset;
 	char *str;
-	struct lttng_ust_lib_ring_buffer_backend_pages_shmp *rpages;
-	struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
+	struct lttng_ust_ring_buffer_backend_pages_shmp *rpages;
+	struct lttng_ust_ring_buffer_backend_pages *backend_pages;
 	unsigned long sb_bindex, id;
 
 	chanb = &shmp(handle, bufb->chan)->backend;
@@ -520,14 +520,14 @@ int lib_ring_buffer_read_cstr(struct lttng_ust_lib_ring_buffer_backend *bufb, si
  * from/to this address, as long as the read/write is never bigger than
  * a page size.
  */
-void *lib_ring_buffer_read_offset_address(struct lttng_ust_lib_ring_buffer_backend *bufb,
+void *lib_ring_buffer_read_offset_address(struct lttng_ust_ring_buffer_backend *bufb,
 					  size_t offset,
 					  struct lttng_ust_shm_handle *handle)
 {
-	struct lttng_ust_lib_ring_buffer_backend_pages_shmp *rpages;
-	struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
+	struct lttng_ust_ring_buffer_backend_pages_shmp *rpages;
+	struct lttng_ust_ring_buffer_backend_pages *backend_pages;
 	struct channel_backend *chanb;
-	const struct lttng_ust_lib_ring_buffer_config *config;
+	const struct lttng_ust_ring_buffer_config *config;
 	unsigned long sb_bindex, id;
 
 	chanb = &shmp(handle, bufb->chan)->backend;
@@ -558,17 +558,17 @@ void *lib_ring_buffer_read_offset_address(struct lttng_ust_lib_ring_buffer_backe
  * it's always at the beginning of a page, it's safe to write directly to this
  * address, as long as the write is never bigger than a page size.
  */
-void *lib_ring_buffer_offset_address(struct lttng_ust_lib_ring_buffer_backend *bufb,
+void *lib_ring_buffer_offset_address(struct lttng_ust_ring_buffer_backend *bufb,
 				     size_t offset,
 				     struct lttng_ust_shm_handle *handle)
 {
 	size_t sbidx;
-	struct lttng_ust_lib_ring_buffer_backend_pages_shmp *rpages;
-	struct lttng_ust_lib_ring_buffer_backend_pages *backend_pages;
+	struct lttng_ust_ring_buffer_backend_pages_shmp *rpages;
+	struct lttng_ust_ring_buffer_backend_pages *backend_pages;
 	struct channel_backend *chanb;
-	const struct lttng_ust_lib_ring_buffer_config *config;
+	const struct lttng_ust_ring_buffer_config *config;
 	unsigned long sb_bindex, id;
-	struct lttng_ust_lib_ring_buffer_backend_subbuffer *sb;
+	struct lttng_ust_ring_buffer_backend_subbuffer *sb;
 
 	chanb = &shmp(handle, bufb->chan)->backend;
 	if (!chanb)

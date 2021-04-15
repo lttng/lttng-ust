@@ -11,33 +11,33 @@
 #include "common/ringbuffer/ringbuffer-config.h"
 
 struct lttng_ust_client_lib_ring_buffer_client_cb {
-	struct lttng_ust_lib_ring_buffer_client_cb parent;
+	struct lttng_ust_ring_buffer_client_cb parent;
 
-	int (*timestamp_begin) (struct lttng_ust_lib_ring_buffer *buf,
-			struct lttng_ust_lib_ring_buffer_channel *chan,
+	int (*timestamp_begin) (struct lttng_ust_ring_buffer *buf,
+			struct lttng_ust_ring_buffer_channel *chan,
 			uint64_t *timestamp_begin);
-	int (*timestamp_end) (struct lttng_ust_lib_ring_buffer *buf,
-			struct lttng_ust_lib_ring_buffer_channel *chan,
+	int (*timestamp_end) (struct lttng_ust_ring_buffer *buf,
+			struct lttng_ust_ring_buffer_channel *chan,
 			uint64_t *timestamp_end);
-	int (*events_discarded) (struct lttng_ust_lib_ring_buffer *buf,
-			struct lttng_ust_lib_ring_buffer_channel *chan,
+	int (*events_discarded) (struct lttng_ust_ring_buffer *buf,
+			struct lttng_ust_ring_buffer_channel *chan,
 			uint64_t *events_discarded);
-	int (*content_size) (struct lttng_ust_lib_ring_buffer *buf,
-			struct lttng_ust_lib_ring_buffer_channel *chan,
+	int (*content_size) (struct lttng_ust_ring_buffer *buf,
+			struct lttng_ust_ring_buffer_channel *chan,
 			uint64_t *content_size);
-	int (*packet_size) (struct lttng_ust_lib_ring_buffer *buf,
-			struct lttng_ust_lib_ring_buffer_channel *chan,
+	int (*packet_size) (struct lttng_ust_ring_buffer *buf,
+			struct lttng_ust_ring_buffer_channel *chan,
 			uint64_t *packet_size);
-	int (*stream_id) (struct lttng_ust_lib_ring_buffer *buf,
-			struct lttng_ust_lib_ring_buffer_channel *chan,
+	int (*stream_id) (struct lttng_ust_ring_buffer *buf,
+			struct lttng_ust_ring_buffer_channel *chan,
 			uint64_t *stream_id);
-	int (*current_timestamp) (struct lttng_ust_lib_ring_buffer *buf,
-			struct lttng_ust_lib_ring_buffer_channel *chan,
+	int (*current_timestamp) (struct lttng_ust_ring_buffer *buf,
+			struct lttng_ust_ring_buffer_channel *chan,
 			uint64_t *ts);
-	int (*sequence_number) (struct lttng_ust_lib_ring_buffer *buf,
-		struct lttng_ust_lib_ring_buffer_channel *chan, uint64_t *seq);
-	int (*instance_id) (struct lttng_ust_lib_ring_buffer *buf,
-			struct lttng_ust_lib_ring_buffer_channel *chan, uint64_t *id);
+	int (*sequence_number) (struct lttng_ust_ring_buffer *buf,
+		struct lttng_ust_ring_buffer_channel *chan, uint64_t *seq);
+	int (*instance_id) (struct lttng_ust_ring_buffer *buf,
+			struct lttng_ust_ring_buffer_channel *chan, uint64_t *id);
 };
 
 /*

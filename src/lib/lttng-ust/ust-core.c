@@ -113,13 +113,13 @@ size_t lttng_ust_dummy_get_size(void *priv __attribute__((unused)),
 {
 	size_t size = 0;
 
-	size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(char));
+	size += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(char));
 	size += sizeof(char);		/* tag */
 	return size;
 }
 
 void lttng_ust_dummy_record(void *priv __attribute__((unused)),
-		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
+		 struct lttng_ust_ring_buffer_ctx *ctx,
 		 struct lttng_ust_channel_buffer *chan)
 {
 	char sel_char = (char) LTTNG_UST_DYNAMIC_TYPE_NONE;

@@ -67,7 +67,7 @@ struct lttng_client_ctx {
 /*
  * Indexed by lib_ring_buffer_nesting_count().
  */
-typedef struct lttng_ust_lib_ring_buffer_ctx_private private_ctx_stack_t[LIB_RING_BUFFER_MAX_NESTING];
+typedef struct lttng_ust_ring_buffer_ctx_private private_ctx_stack_t[LIB_RING_BUFFER_MAX_NESTING];
 static DEFINE_URCU_TLS(private_ctx_stack_t, private_ctx_stack);
 
 /*
@@ -79,7 +79,7 @@ void RING_BUFFER_MODE_TEMPLATE_TLS_FIXUP(void)
 }
 
 static inline uint64_t lib_ring_buffer_clock_read(
-		struct lttng_ust_lib_ring_buffer_channel *chan __attribute__((unused)))
+		struct lttng_ust_ring_buffer_channel *chan __attribute__((unused)))
 {
 	return trace_clock_read64();
 }
@@ -92,7 +92,7 @@ size_t ctx_get_aligned_size(size_t offset, struct lttng_ust_ctx *ctx,
 
 	if (caa_likely(!ctx))
 		return 0;
-	offset += lttng_ust_lib_ring_buffer_align(offset, ctx->largest_align);
+	offset += lttng_ust_ring_buffer_align(offset, ctx->largest_align);
 	offset += ctx_len;
 	return offset - orig_offset;
 }
@@ -113,7 +113,7 @@ void ctx_get_struct_size(struct lttng_ust_ctx *ctx, size_t *ctx_len)
 }
 
 static inline
-void ctx_record(struct lttng_ust_lib_ring_buffer_ctx *bufctx,
+void ctx_record(struct lttng_ust_ring_buffer_ctx *bufctx,
 		struct lttng_ust_channel_buffer *chan,
 		struct lttng_ust_ctx *ctx)
 {
@@ -121,7 +121,7 @@ void ctx_record(struct lttng_ust_lib_ring_buffer_ctx *bufctx,
 
 	if (caa_likely(!ctx))
 		return;
-	lttng_ust_lib_ring_buffer_align_ctx(bufctx, ctx->largest_align);
+	lttng_ust_ring_buffer_align_ctx(bufctx, ctx->largest_align);
 	for (i = 0; i < ctx->nr_fields; i++)
 		ctx->fields[i].record(ctx->fields[i].priv, bufctx, chan);
 }
@@ -141,11 +141,11 @@ void ctx_record(struct lttng_ust_lib_ring_buffer_ctx *bufctx,
  */
 static __inline__
 size_t record_header_size(
-		const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)),
-		struct lttng_ust_lib_ring_buffer_channel *chan,
+		const struct lttng_ust_ring_buffer_config *config __attribute__((unused)),
+		struct lttng_ust_ring_buffer_channel *chan,
 		size_t offset,
 		size_t *pre_header_padding,
-		struct lttng_ust_lib_ring_buffer_ctx *ctx,
+		struct lttng_ust_ring_buffer_ctx *ctx,
 		struct lttng_client_ctx *client_ctx)
 {
 	struct lttng_ust_channel_buffer *lttng_chan = channel_get_private(chan);
@@ -154,7 +154,7 @@ size_t record_header_size(
 
 	switch (lttng_chan->priv->header_type) {
 	case 1:	/* compact */
-		padding = lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(uint32_t));
+		padding = lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(uint32_t));
 		offset += padding;
 		if (!(ctx->priv->rflags & (RING_BUFFER_RFLAG_FULL_TSC | LTTNG_RFLAG_EXTENDED))) {
 			offset += sizeof(uint32_t);	/* id and timestamp */
@@ -162,24 +162,24 @@ size_t record_header_size(
 			/* Minimum space taken by LTTNG_COMPACT_EVENT_BITS id */
 			offset += (LTTNG_COMPACT_EVENT_BITS + CHAR_BIT - 1) / CHAR_BIT;
 			/* Align extended struct on largest member */
-			offset += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(uint64_t));
+			offset += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(uint64_t));
 			offset += sizeof(uint32_t);	/* id */
-			offset += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(uint64_t));
+			offset += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(uint64_t));
 			offset += sizeof(uint64_t);	/* timestamp */
 		}
 		break;
 	case 2:	/* large */
-		padding = lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(uint16_t));
+		padding = lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(uint16_t));
 		offset += padding;
 		offset += sizeof(uint16_t);
 		if (!(ctx->priv->rflags & (RING_BUFFER_RFLAG_FULL_TSC | LTTNG_RFLAG_EXTENDED))) {
-			offset += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(uint32_t));
+			offset += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(uint32_t));
 			offset += sizeof(uint32_t);	/* timestamp */
 		} else {
 			/* Align extended struct on largest member */
-			offset += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(uint64_t));
+			offset += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(uint64_t));
 			offset += sizeof(uint32_t);	/* id */
-			offset += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(uint64_t));
+			offset += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(uint64_t));
 			offset += sizeof(uint64_t);	/* timestamp */
 		}
 		break;
@@ -199,8 +199,8 @@ size_t record_header_size(
 #include "lttng-rb-clients.h"
 
 static
-void lttng_write_event_header_slow(const struct lttng_ust_lib_ring_buffer_config *config,
-				 struct lttng_ust_lib_ring_buffer_ctx *ctx,
+void lttng_write_event_header_slow(const struct lttng_ust_ring_buffer_config *config,
+				 struct lttng_ust_ring_buffer_ctx *ctx,
 				 struct lttng_client_ctx *client_ctx,
 				 uint32_t event_id);
 
@@ -214,8 +214,8 @@ void lttng_write_event_header_slow(const struct lttng_ust_lib_ring_buffer_config
  * @event_id: event ID
  */
 static __inline__
-void lttng_write_event_header(const struct lttng_ust_lib_ring_buffer_config *config,
-			    struct lttng_ust_lib_ring_buffer_ctx *ctx,
+void lttng_write_event_header(const struct lttng_ust_ring_buffer_config *config,
+			    struct lttng_ust_ring_buffer_ctx *ctx,
 			    struct lttng_client_ctx *client_ctx,
 			    uint32_t event_id)
 {
@@ -246,7 +246,7 @@ void lttng_write_event_header(const struct lttng_ust_lib_ring_buffer_config *con
 		uint16_t id = event_id;
 
 		lib_ring_buffer_write(config, ctx, &id, sizeof(id));
-		lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(uint32_t));
+		lttng_ust_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(uint32_t));
 		lib_ring_buffer_write(config, ctx, &timestamp, sizeof(timestamp));
 		break;
 	}
@@ -256,7 +256,7 @@ void lttng_write_event_header(const struct lttng_ust_lib_ring_buffer_config *con
 
 	ctx_record(ctx, lttng_chan, client_ctx->chan_ctx);
 	ctx_record(ctx, lttng_chan, client_ctx->event_ctx);
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, ctx->largest_align);
+	lttng_ust_ring_buffer_align_ctx(ctx, ctx->largest_align);
 
 	return;
 
@@ -265,12 +265,12 @@ slow_path:
 }
 
 static
-void lttng_write_event_header_slow(const struct lttng_ust_lib_ring_buffer_config *config,
-				 struct lttng_ust_lib_ring_buffer_ctx *ctx,
+void lttng_write_event_header_slow(const struct lttng_ust_ring_buffer_config *config,
+				 struct lttng_ust_ring_buffer_ctx *ctx,
 				 struct lttng_client_ctx *client_ctx,
 				 uint32_t event_id)
 {
-	struct lttng_ust_lib_ring_buffer_ctx_private *ctx_private = ctx->priv;
+	struct lttng_ust_ring_buffer_ctx_private *ctx_private = ctx->priv;
 	struct lttng_ust_channel_buffer *lttng_chan = channel_get_private(ctx->priv->chan);
 
 	switch (lttng_chan->priv->header_type) {
@@ -297,9 +297,9 @@ void lttng_write_event_header_slow(const struct lttng_ust_lib_ring_buffer_config
 					31);
 			lib_ring_buffer_write(config, ctx, &id, sizeof(id));
 			/* Align extended struct on largest member */
-			lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(uint64_t));
+			lttng_ust_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(uint64_t));
 			lib_ring_buffer_write(config, ctx, &event_id, sizeof(event_id));
-			lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(uint64_t));
+			lttng_ust_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(uint64_t));
 			lib_ring_buffer_write(config, ctx, &timestamp, sizeof(timestamp));
 		}
 		break;
@@ -310,7 +310,7 @@ void lttng_write_event_header_slow(const struct lttng_ust_lib_ring_buffer_config
 			uint16_t id = event_id;
 
 			lib_ring_buffer_write(config, ctx, &id, sizeof(id));
-			lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(uint32_t));
+			lttng_ust_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(uint32_t));
 			lib_ring_buffer_write(config, ctx, &timestamp, sizeof(timestamp));
 		} else {
 			uint16_t id = 65535;
@@ -318,9 +318,9 @@ void lttng_write_event_header_slow(const struct lttng_ust_lib_ring_buffer_config
 
 			lib_ring_buffer_write(config, ctx, &id, sizeof(id));
 			/* Align extended struct on largest member */
-			lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(uint64_t));
+			lttng_ust_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(uint64_t));
 			lib_ring_buffer_write(config, ctx, &event_id, sizeof(event_id));
-			lttng_ust_lib_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(uint64_t));
+			lttng_ust_ring_buffer_align_ctx(ctx, lttng_ust_rb_alignof(uint64_t));
 			lib_ring_buffer_write(config, ctx, &timestamp, sizeof(timestamp));
 		}
 		break;
@@ -330,22 +330,22 @@ void lttng_write_event_header_slow(const struct lttng_ust_lib_ring_buffer_config
 	}
 	ctx_record(ctx, lttng_chan, client_ctx->chan_ctx);
 	ctx_record(ctx, lttng_chan, client_ctx->event_ctx);
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, ctx->largest_align);
+	lttng_ust_ring_buffer_align_ctx(ctx, ctx->largest_align);
 }
 
-static const struct lttng_ust_lib_ring_buffer_config client_config;
+static const struct lttng_ust_ring_buffer_config client_config;
 
-static uint64_t client_ring_buffer_clock_read(struct lttng_ust_lib_ring_buffer_channel *chan)
+static uint64_t client_ring_buffer_clock_read(struct lttng_ust_ring_buffer_channel *chan)
 {
 	return lib_ring_buffer_clock_read(chan);
 }
 
 static
-size_t client_record_header_size(const struct lttng_ust_lib_ring_buffer_config *config,
-				 struct lttng_ust_lib_ring_buffer_channel *chan,
+size_t client_record_header_size(const struct lttng_ust_ring_buffer_config *config,
+				 struct lttng_ust_ring_buffer_channel *chan,
 				 size_t offset,
 				 size_t *pre_header_padding,
-				 struct lttng_ust_lib_ring_buffer_ctx *ctx,
+				 struct lttng_ust_ring_buffer_ctx *ctx,
 				 void *client_ctx)
 {
 	return record_header_size(config, chan, offset,
@@ -364,11 +364,11 @@ static size_t client_packet_header_size(void)
 	return offsetof(struct packet_header, ctx.header_end);
 }
 
-static void client_buffer_begin(struct lttng_ust_lib_ring_buffer *buf, uint64_t tsc,
+static void client_buffer_begin(struct lttng_ust_ring_buffer *buf, uint64_t tsc,
 				unsigned int subbuf_idx,
 				struct lttng_ust_shm_handle *handle)
 {
-	struct lttng_ust_lib_ring_buffer_channel *chan = shmp(handle, buf->backend.chan);
+	struct lttng_ust_ring_buffer_channel *chan = shmp(handle, buf->backend.chan);
 	struct packet_header *header =
 		(struct packet_header *)
 			lib_ring_buffer_offset_address(&buf->backend,
@@ -397,11 +397,11 @@ static void client_buffer_begin(struct lttng_ust_lib_ring_buffer *buf, uint64_t 
  * offset is assumed to never be 0 here : never deliver a completely empty
  * subbuffer. data_size is between 1 and subbuf_size.
  */
-static void client_buffer_end(struct lttng_ust_lib_ring_buffer *buf, uint64_t tsc,
+static void client_buffer_end(struct lttng_ust_ring_buffer *buf, uint64_t tsc,
 			      unsigned int subbuf_idx, unsigned long data_size,
 			      struct lttng_ust_shm_handle *handle)
 {
-	struct lttng_ust_lib_ring_buffer_channel *chan = shmp(handle, buf->backend.chan);
+	struct lttng_ust_ring_buffer_channel *chan = shmp(handle, buf->backend.chan);
 	struct packet_header *header =
 		(struct packet_header *)
 			lib_ring_buffer_offset_address(&buf->backend,
@@ -425,7 +425,7 @@ static void client_buffer_end(struct lttng_ust_lib_ring_buffer *buf, uint64_t ts
 }
 
 static int client_buffer_create(
-		struct lttng_ust_lib_ring_buffer *buf __attribute__((unused)),
+		struct lttng_ust_ring_buffer *buf __attribute__((unused)),
 		void *priv __attribute__((unused)),
 		int cpu __attribute__((unused)),
 		const char *name __attribute__((unused)),
@@ -435,7 +435,7 @@ static int client_buffer_create(
 }
 
 static void client_buffer_finalize(
-		struct lttng_ust_lib_ring_buffer *buf __attribute__((unused)),
+		struct lttng_ust_ring_buffer *buf __attribute__((unused)),
 		void *priv __attribute__((unused)),
 		int cpu __attribute__((unused)),
 		struct lttng_ust_shm_handle *handle __attribute__((unused)))
@@ -443,7 +443,7 @@ static void client_buffer_finalize(
 }
 
 static void client_content_size_field(
-		const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)),
+		const struct lttng_ust_ring_buffer_config *config __attribute__((unused)),
 		size_t *offset, size_t *length)
 {
 	*offset = offsetof(struct packet_header, ctx.content_size);
@@ -451,21 +451,21 @@ static void client_content_size_field(
 }
 
 static void client_packet_size_field(
-		const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)),
+		const struct lttng_ust_ring_buffer_config *config __attribute__((unused)),
 		size_t *offset, size_t *length)
 {
 	*offset = offsetof(struct packet_header, ctx.packet_size);
 	*length = sizeof(((struct packet_header *) NULL)->ctx.packet_size);
 }
 
-static struct packet_header *client_packet_header(struct lttng_ust_lib_ring_buffer *buf,
+static struct packet_header *client_packet_header(struct lttng_ust_ring_buffer *buf,
 		struct lttng_ust_shm_handle *handle)
 {
 	return lib_ring_buffer_read_offset_address(&buf->backend, 0, handle);
 }
 
-static int client_timestamp_begin(struct lttng_ust_lib_ring_buffer *buf,
-		struct lttng_ust_lib_ring_buffer_channel *chan,
+static int client_timestamp_begin(struct lttng_ust_ring_buffer *buf,
+		struct lttng_ust_ring_buffer_channel *chan,
 		uint64_t *timestamp_begin)
 {
 	struct lttng_ust_shm_handle *handle = chan->handle;
@@ -478,8 +478,8 @@ static int client_timestamp_begin(struct lttng_ust_lib_ring_buffer *buf,
 	return 0;
 }
 
-static int client_timestamp_end(struct lttng_ust_lib_ring_buffer *buf,
-		struct lttng_ust_lib_ring_buffer_channel *chan,
+static int client_timestamp_end(struct lttng_ust_ring_buffer *buf,
+		struct lttng_ust_ring_buffer_channel *chan,
 		uint64_t *timestamp_end)
 {
 	struct lttng_ust_shm_handle *handle = chan->handle;
@@ -492,8 +492,8 @@ static int client_timestamp_end(struct lttng_ust_lib_ring_buffer *buf,
 	return 0;
 }
 
-static int client_events_discarded(struct lttng_ust_lib_ring_buffer *buf,
-		struct lttng_ust_lib_ring_buffer_channel *chan,
+static int client_events_discarded(struct lttng_ust_ring_buffer *buf,
+		struct lttng_ust_ring_buffer_channel *chan,
 		uint64_t *events_discarded)
 {
 	struct lttng_ust_shm_handle *handle = chan->handle;
@@ -506,8 +506,8 @@ static int client_events_discarded(struct lttng_ust_lib_ring_buffer *buf,
 	return 0;
 }
 
-static int client_content_size(struct lttng_ust_lib_ring_buffer *buf,
-		struct lttng_ust_lib_ring_buffer_channel *chan,
+static int client_content_size(struct lttng_ust_ring_buffer *buf,
+		struct lttng_ust_ring_buffer_channel *chan,
 		uint64_t *content_size)
 {
 	struct lttng_ust_shm_handle *handle = chan->handle;
@@ -520,8 +520,8 @@ static int client_content_size(struct lttng_ust_lib_ring_buffer *buf,
 	return 0;
 }
 
-static int client_packet_size(struct lttng_ust_lib_ring_buffer *buf,
-		struct lttng_ust_lib_ring_buffer_channel *chan,
+static int client_packet_size(struct lttng_ust_ring_buffer *buf,
+		struct lttng_ust_ring_buffer_channel *chan,
 		uint64_t *packet_size)
 {
 	struct lttng_ust_shm_handle *handle = chan->handle;
@@ -534,8 +534,8 @@ static int client_packet_size(struct lttng_ust_lib_ring_buffer *buf,
 	return 0;
 }
 
-static int client_stream_id(struct lttng_ust_lib_ring_buffer *buf __attribute__((unused)),
-		struct lttng_ust_lib_ring_buffer_channel *chan,
+static int client_stream_id(struct lttng_ust_ring_buffer *buf __attribute__((unused)),
+		struct lttng_ust_ring_buffer_channel *chan,
 		uint64_t *stream_id)
 {
 	struct lttng_ust_channel_buffer *lttng_chan = channel_get_private(chan);
@@ -546,8 +546,8 @@ static int client_stream_id(struct lttng_ust_lib_ring_buffer *buf __attribute__(
 }
 
 static int client_current_timestamp(
-		struct lttng_ust_lib_ring_buffer *buf  __attribute__((unused)),
-		struct lttng_ust_lib_ring_buffer_channel *chan,
+		struct lttng_ust_ring_buffer *buf  __attribute__((unused)),
+		struct lttng_ust_ring_buffer_channel *chan,
 		uint64_t *ts)
 {
 	*ts = client_ring_buffer_clock_read(chan);
@@ -555,8 +555,8 @@ static int client_current_timestamp(
 	return 0;
 }
 
-static int client_sequence_number(struct lttng_ust_lib_ring_buffer *buf,
-		struct lttng_ust_lib_ring_buffer_channel *chan,
+static int client_sequence_number(struct lttng_ust_ring_buffer *buf,
+		struct lttng_ust_ring_buffer_channel *chan,
 		uint64_t *seq)
 {
 	struct lttng_ust_shm_handle *handle = chan->handle;
@@ -569,8 +569,8 @@ static int client_sequence_number(struct lttng_ust_lib_ring_buffer *buf,
 	return 0;
 }
 
-static int client_instance_id(struct lttng_ust_lib_ring_buffer *buf,
-		struct lttng_ust_lib_ring_buffer_channel *chan __attribute__((unused)),
+static int client_instance_id(struct lttng_ust_ring_buffer *buf,
+		struct lttng_ust_ring_buffer_channel *chan __attribute__((unused)),
 		uint64_t *id)
 {
 	*id = buf->backend.cpu;
@@ -602,7 +602,7 @@ struct lttng_ust_client_lib_ring_buffer_client_cb client_cb = {
 	.instance_id = client_instance_id,
 };
 
-static const struct lttng_ust_lib_ring_buffer_config client_config = {
+static const struct lttng_ust_ring_buffer_config client_config = {
 	.cb.ring_buffer_clock_read = client_ring_buffer_clock_read,
 	.cb.record_header_size = client_record_header_size,
 	.cb.subbuffer_header_size = client_packet_header_size,
@@ -677,13 +677,13 @@ void lttng_channel_destroy(struct lttng_ust_channel_buffer *lttng_chan_buf)
 }
 
 static
-int lttng_event_reserve(struct lttng_ust_lib_ring_buffer_ctx *ctx)
+int lttng_event_reserve(struct lttng_ust_ring_buffer_ctx *ctx)
 {
 	struct lttng_ust_event_recorder *event_recorder = ctx->client_priv;
 	struct lttng_ust_channel_buffer *lttng_chan = event_recorder->chan;
 	struct lttng_client_ctx client_ctx;
 	int ret, nesting;
-	struct lttng_ust_lib_ring_buffer_ctx_private *private_ctx;
+	struct lttng_ust_ring_buffer_ctx_private *private_ctx;
 	uint32_t event_id;
 
 	event_id = event_recorder->priv->id;
@@ -733,29 +733,29 @@ put:
 }
 
 static
-void lttng_event_commit(struct lttng_ust_lib_ring_buffer_ctx *ctx)
+void lttng_event_commit(struct lttng_ust_ring_buffer_ctx *ctx)
 {
 	lib_ring_buffer_commit(&client_config, ctx);
 	lib_ring_buffer_nesting_dec(&client_config);
 }
 
 static
-void lttng_event_write(struct lttng_ust_lib_ring_buffer_ctx *ctx,
+void lttng_event_write(struct lttng_ust_ring_buffer_ctx *ctx,
 		const void *src, size_t len, size_t alignment)
 {
-	lttng_ust_lib_ring_buffer_align_ctx(ctx, alignment);
+	lttng_ust_ring_buffer_align_ctx(ctx, alignment);
 	lib_ring_buffer_write(&client_config, ctx, src, len);
 }
 
 static
-void lttng_event_strcpy(struct lttng_ust_lib_ring_buffer_ctx *ctx,
+void lttng_event_strcpy(struct lttng_ust_ring_buffer_ctx *ctx,
 		const char *src, size_t len)
 {
 	lib_ring_buffer_strcpy(&client_config, ctx, src, len, '#');
 }
 
 static
-void lttng_event_pstrcpy_pad(struct lttng_ust_lib_ring_buffer_ctx *ctx,
+void lttng_event_pstrcpy_pad(struct lttng_ust_ring_buffer_ctx *ctx,
 		const char *src, size_t len)
 {
 	lib_ring_buffer_pstrcpy(&client_config, ctx, src, len, '\0');
@@ -764,7 +764,7 @@ void lttng_event_pstrcpy_pad(struct lttng_ust_lib_ring_buffer_ctx *ctx,
 static
 int lttng_is_finalized(struct lttng_ust_channel_buffer *chan)
 {
-	struct lttng_ust_lib_ring_buffer_channel *rb_chan = chan->priv->rb_chan;
+	struct lttng_ust_ring_buffer_channel *rb_chan = chan->priv->rb_chan;
 
 	return lib_ring_buffer_channel_is_finalized(rb_chan);
 }
@@ -772,7 +772,7 @@ int lttng_is_finalized(struct lttng_ust_channel_buffer *chan)
 static
 int lttng_is_disabled(struct lttng_ust_channel_buffer *chan)
 {
-	struct lttng_ust_lib_ring_buffer_channel *rb_chan = chan->priv->rb_chan;
+	struct lttng_ust_ring_buffer_channel *rb_chan = chan->priv->rb_chan;
 
 	return lib_ring_buffer_channel_is_disabled(rb_chan);
 }
@@ -780,8 +780,8 @@ int lttng_is_disabled(struct lttng_ust_channel_buffer *chan)
 static
 int lttng_flush_buffer(struct lttng_ust_channel_buffer *chan)
 {
-	struct lttng_ust_lib_ring_buffer_channel *rb_chan = chan->priv->rb_chan;
-	struct lttng_ust_lib_ring_buffer *buf;
+	struct lttng_ust_ring_buffer_channel *rb_chan = chan->priv->rb_chan;
+	struct lttng_ust_ring_buffer *buf;
 	int cpu;
 
 	for_each_channel_cpu(cpu, rb_chan) {

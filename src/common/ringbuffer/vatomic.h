@@ -24,14 +24,14 @@ union v_atomic {
 };
 
 static inline
-long v_read(const struct lttng_ust_lib_ring_buffer_config *config, union v_atomic *v_a)
+long v_read(const struct lttng_ust_ring_buffer_config *config, union v_atomic *v_a)
 {
 	assert(config->sync != RING_BUFFER_SYNC_PER_CPU);
 	return uatomic_read(&v_a->a);
 }
 
 static inline
-void v_set(const struct lttng_ust_lib_ring_buffer_config *config, union v_atomic *v_a,
+void v_set(const struct lttng_ust_ring_buffer_config *config, union v_atomic *v_a,
 	   long v)
 {
 	assert(config->sync != RING_BUFFER_SYNC_PER_CPU);
@@ -39,14 +39,14 @@ void v_set(const struct lttng_ust_lib_ring_buffer_config *config, union v_atomic
 }
 
 static inline
-void v_add(const struct lttng_ust_lib_ring_buffer_config *config, long v, union v_atomic *v_a)
+void v_add(const struct lttng_ust_ring_buffer_config *config, long v, union v_atomic *v_a)
 {
 	assert(config->sync != RING_BUFFER_SYNC_PER_CPU);
 	uatomic_add(&v_a->a, v);
 }
 
 static inline
-void v_inc(const struct lttng_ust_lib_ring_buffer_config *config, union v_atomic *v_a)
+void v_inc(const struct lttng_ust_ring_buffer_config *config, union v_atomic *v_a)
 {
 	assert(config->sync != RING_BUFFER_SYNC_PER_CPU);
 	uatomic_inc(&v_a->a);
@@ -56,13 +56,13 @@ void v_inc(const struct lttng_ust_lib_ring_buffer_config *config, union v_atomic
  * Non-atomic decrement. Only used by reader, apply to reader-owned subbuffer.
  */
 static inline
-void _v_dec(const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)), union v_atomic *v_a)
+void _v_dec(const struct lttng_ust_ring_buffer_config *config __attribute__((unused)), union v_atomic *v_a)
 {
 	--v_a->v;
 }
 
 static inline
-long v_cmpxchg(const struct lttng_ust_lib_ring_buffer_config *config, union v_atomic *v_a,
+long v_cmpxchg(const struct lttng_ust_ring_buffer_config *config, union v_atomic *v_a,
 	       long old, long _new)
 {
 	assert(config->sync != RING_BUFFER_SYNC_PER_CPU);

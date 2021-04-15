@@ -47,49 +47,49 @@ size_t test_get_size(void *priv __attribute__((unused)), size_t offset)
 	int sel = test_count % _NR_LTTNG_UST_DYNAMIC_TYPES;
 	size_t size = 0;
 
-	size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(char));
+	size += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(char));
 	size += sizeof(char);		/* tag */
 	switch (sel) {
 	case LTTNG_UST_DYNAMIC_TYPE_NONE:
 		break;
 	case LTTNG_UST_DYNAMIC_TYPE_S8:
-		size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(int8_t));
+		size += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(int8_t));
 		size += sizeof(int8_t);		/* variant */
 		break;
 	case LTTNG_UST_DYNAMIC_TYPE_S16:
-		size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(int16_t));
+		size += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(int16_t));
 		size += sizeof(int16_t);	/* variant */
 		break;
 	case LTTNG_UST_DYNAMIC_TYPE_S32:
-		size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(int32_t));
+		size += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(int32_t));
 		size += sizeof(int32_t);	/* variant */
 		break;
 	case LTTNG_UST_DYNAMIC_TYPE_S64:
-		size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(int64_t));
+		size += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(int64_t));
 		size += sizeof(int64_t);	/* variant */
 		break;
 	case LTTNG_UST_DYNAMIC_TYPE_U8:
-		size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(uint8_t));
+		size += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(uint8_t));
 		size += sizeof(uint8_t);		/* variant */
 		break;
 	case LTTNG_UST_DYNAMIC_TYPE_U16:
-		size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(uint16_t));
+		size += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(uint16_t));
 		size += sizeof(uint16_t);	/* variant */
 		break;
 	case LTTNG_UST_DYNAMIC_TYPE_U32:
-		size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(uint32_t));
+		size += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(uint32_t));
 		size += sizeof(uint32_t);	/* variant */
 		break;
 	case LTTNG_UST_DYNAMIC_TYPE_U64:
-		size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(uint64_t));
+		size += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(uint64_t));
 		size += sizeof(uint64_t);	/* variant */
 		break;
 	case LTTNG_UST_DYNAMIC_TYPE_FLOAT:
-		size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(float));
+		size += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(float));
 		size += sizeof(float);		/* variant */
 		break;
 	case LTTNG_UST_DYNAMIC_TYPE_DOUBLE:
-		size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(double));
+		size += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(double));
 		size += sizeof(double);		/* variant */
 		break;
 	case LTTNG_UST_DYNAMIC_TYPE_STRING:
@@ -104,7 +104,7 @@ size_t test_get_size(void *priv __attribute__((unused)), size_t offset)
 
 static
 void test_record(void *priv __attribute__((unused)),
-		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
+		 struct lttng_ust_ring_buffer_ctx *ctx,
 		 struct lttng_ust_channel_buffer *lttng_chan_buf)
 {
 	int sel = test_count % _NR_LTTNG_UST_DYNAMIC_TYPES;

@@ -37,7 +37,7 @@ extern "C" {
 
 struct lttng_ust_channel_buffer;
 struct lttng_ust_session;
-struct lttng_ust_lib_ring_buffer_ctx;
+struct lttng_ust_ring_buffer_ctx;
 struct lttng_ust_event_field;
 struct lttng_ust_registered_probe;
 
@@ -429,7 +429,7 @@ struct lttng_ust_event_notifier {
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
-struct lttng_ust_lib_ring_buffer_channel;
+struct lttng_ust_ring_buffer_channel;
 struct lttng_ust_channel_buffer_ops_private;
 
 /*
@@ -446,13 +446,13 @@ struct lttng_ust_channel_buffer_ops {
 
 	struct lttng_ust_channel_buffer_ops_private *priv;	/* Private channel buffer ops interface */
 
-	int (*event_reserve)(struct lttng_ust_lib_ring_buffer_ctx *ctx);
-	void (*event_commit)(struct lttng_ust_lib_ring_buffer_ctx *ctx);
-	void (*event_write)(struct lttng_ust_lib_ring_buffer_ctx *ctx,
+	int (*event_reserve)(struct lttng_ust_ring_buffer_ctx *ctx);
+	void (*event_commit)(struct lttng_ust_ring_buffer_ctx *ctx);
+	void (*event_write)(struct lttng_ust_ring_buffer_ctx *ctx,
 			const void *src, size_t len, size_t alignment);
-	void (*event_strcpy)(struct lttng_ust_lib_ring_buffer_ctx *ctx,
+	void (*event_strcpy)(struct lttng_ust_ring_buffer_ctx *ctx,
 			const char *src, size_t len);
-	void (*event_pstrcpy_pad)(struct lttng_ust_lib_ring_buffer_ctx *ctx,
+	void (*event_pstrcpy_pad)(struct lttng_ust_ring_buffer_ctx *ctx,
 			const char *src, size_t len);
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */

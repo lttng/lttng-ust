@@ -40,7 +40,7 @@
  */
 
 extern
-struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buffer_config *config,
+struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_ring_buffer_config *config,
 				const char *name,
 				size_t priv_data_align,
 				size_t priv_data_size,
@@ -58,7 +58,7 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_lib_ring_buff
  * channel_destroy finalizes all channel's buffers, waits for readers to
  * release all references, and destroys the channel.
  */
-void channel_destroy(struct lttng_ust_lib_ring_buffer_channel *chan,
+void channel_destroy(struct lttng_ust_ring_buffer_channel *chan,
 		struct lttng_ust_shm_handle *handle,
 		int consumer)
 	__attribute__((visibility("hidden")));
@@ -75,9 +75,9 @@ void channel_destroy(struct lttng_ust_lib_ring_buffer_channel *chan,
 #define for_each_channel_cpu(cpu, chan)					\
 	for_each_possible_cpu(cpu)
 
-extern struct lttng_ust_lib_ring_buffer *channel_get_ring_buffer(
-				const struct lttng_ust_lib_ring_buffer_config *config,
-				struct lttng_ust_lib_ring_buffer_channel *chan, int cpu,
+extern struct lttng_ust_ring_buffer *channel_get_ring_buffer(
+				const struct lttng_ust_ring_buffer_config *config,
+				struct lttng_ust_ring_buffer_channel *chan, int cpu,
 				struct lttng_ust_shm_handle *handle,
 				int *shm_fd, int *wait_fd,
 				int *wakeup_fd,
@@ -85,36 +85,36 @@ extern struct lttng_ust_lib_ring_buffer *channel_get_ring_buffer(
 	__attribute__((visibility("hidden")));
 
 extern
-int ring_buffer_channel_close_wait_fd(const struct lttng_ust_lib_ring_buffer_config *config,
-			struct lttng_ust_lib_ring_buffer_channel *chan,
+int ring_buffer_channel_close_wait_fd(const struct lttng_ust_ring_buffer_config *config,
+			struct lttng_ust_ring_buffer_channel *chan,
 			struct lttng_ust_shm_handle *handle)
 	__attribute__((visibility("hidden")));
 
 extern
-int ring_buffer_channel_close_wakeup_fd(const struct lttng_ust_lib_ring_buffer_config *config,
-			struct lttng_ust_lib_ring_buffer_channel *chan,
+int ring_buffer_channel_close_wakeup_fd(const struct lttng_ust_ring_buffer_config *config,
+			struct lttng_ust_ring_buffer_channel *chan,
 			struct lttng_ust_shm_handle *handle)
 	__attribute__((visibility("hidden")));
 
 extern
-int ring_buffer_stream_close_wait_fd(const struct lttng_ust_lib_ring_buffer_config *config,
-		struct lttng_ust_lib_ring_buffer_channel *chan,
+int ring_buffer_stream_close_wait_fd(const struct lttng_ust_ring_buffer_config *config,
+		struct lttng_ust_ring_buffer_channel *chan,
 		struct lttng_ust_shm_handle *handle,
 		int cpu)
 	__attribute__((visibility("hidden")));
 
 extern
-int ring_buffer_stream_close_wakeup_fd(const struct lttng_ust_lib_ring_buffer_config *config,
-		struct lttng_ust_lib_ring_buffer_channel *chan,
+int ring_buffer_stream_close_wakeup_fd(const struct lttng_ust_ring_buffer_config *config,
+		struct lttng_ust_ring_buffer_channel *chan,
 		struct lttng_ust_shm_handle *handle,
 		int cpu)
 	__attribute__((visibility("hidden")));
 
-extern int lib_ring_buffer_open_read(struct lttng_ust_lib_ring_buffer *buf,
+extern int lib_ring_buffer_open_read(struct lttng_ust_ring_buffer *buf,
 				     struct lttng_ust_shm_handle *handle)
 	__attribute__((visibility("hidden")));
 
-extern void lib_ring_buffer_release_read(struct lttng_ust_lib_ring_buffer *buf,
+extern void lib_ring_buffer_release_read(struct lttng_ust_ring_buffer *buf,
 					 struct lttng_ust_shm_handle *handle)
 	__attribute__((visibility("hidden")));
 
@@ -128,30 +128,30 @@ void lib_ringbuffer_signal_init(void)
 /*
  * Read sequence: snapshot, many get_subbuf/put_subbuf, move_consumer.
  */
-extern int lib_ring_buffer_snapshot(struct lttng_ust_lib_ring_buffer *buf,
+extern int lib_ring_buffer_snapshot(struct lttng_ust_ring_buffer *buf,
 				    unsigned long *consumed,
 				    unsigned long *produced,
 				    struct lttng_ust_shm_handle *handle)
 	__attribute__((visibility("hidden")));
 
 extern int lib_ring_buffer_snapshot_sample_positions(
-				    struct lttng_ust_lib_ring_buffer *buf,
+				    struct lttng_ust_ring_buffer *buf,
 				    unsigned long *consumed,
 				    unsigned long *produced,
 				    struct lttng_ust_shm_handle *handle)
 	__attribute__((visibility("hidden")));
 
-extern void lib_ring_buffer_move_consumer(struct lttng_ust_lib_ring_buffer *buf,
+extern void lib_ring_buffer_move_consumer(struct lttng_ust_ring_buffer *buf,
 					  unsigned long consumed_new,
 					  struct lttng_ust_shm_handle *handle)
 	__attribute__((visibility("hidden")));
 
-extern int lib_ring_buffer_get_subbuf(struct lttng_ust_lib_ring_buffer *buf,
+extern int lib_ring_buffer_get_subbuf(struct lttng_ust_ring_buffer *buf,
 				      unsigned long consumed,
 				      struct lttng_ust_shm_handle *handle)
 	__attribute__((visibility("hidden")));
 
-extern void lib_ring_buffer_put_subbuf(struct lttng_ust_lib_ring_buffer *buf,
+extern void lib_ring_buffer_put_subbuf(struct lttng_ust_ring_buffer *buf,
 				       struct lttng_ust_shm_handle *handle)
 	__attribute__((visibility("hidden")));
 
@@ -159,7 +159,7 @@ extern void lib_ring_buffer_put_subbuf(struct lttng_ust_lib_ring_buffer *buf,
  * lib_ring_buffer_get_next_subbuf/lib_ring_buffer_put_next_subbuf are helpers
  * to read sub-buffers sequentially.
  */
-static inline int lib_ring_buffer_get_next_subbuf(struct lttng_ust_lib_ring_buffer *buf,
+static inline int lib_ring_buffer_get_next_subbuf(struct lttng_ust_ring_buffer *buf,
 						  struct lttng_ust_shm_handle *handle)
 {
 	int ret;
@@ -173,10 +173,10 @@ static inline int lib_ring_buffer_get_next_subbuf(struct lttng_ust_lib_ring_buff
 }
 
 static inline
-void lib_ring_buffer_put_next_subbuf(struct lttng_ust_lib_ring_buffer *buf,
+void lib_ring_buffer_put_next_subbuf(struct lttng_ust_ring_buffer *buf,
 				     struct lttng_ust_shm_handle *handle)
 {
-	struct lttng_ust_lib_ring_buffer_channel *chan;
+	struct lttng_ust_ring_buffer_channel *chan;
 
 	chan = shmp(handle, buf->backend.chan);
 	if (!chan)
@@ -186,24 +186,24 @@ void lib_ring_buffer_put_next_subbuf(struct lttng_ust_lib_ring_buffer *buf,
 			handle);
 }
 
-extern void channel_reset(struct lttng_ust_lib_ring_buffer_channel *chan)
+extern void channel_reset(struct lttng_ust_ring_buffer_channel *chan)
 	__attribute__((visibility("hidden")));
 
-extern void lib_ring_buffer_reset(struct lttng_ust_lib_ring_buffer *buf,
+extern void lib_ring_buffer_reset(struct lttng_ust_ring_buffer *buf,
 				  struct lttng_ust_shm_handle *handle)
 	__attribute__((visibility("hidden")));
 
 static inline
-unsigned long lib_ring_buffer_get_offset(const struct lttng_ust_lib_ring_buffer_config *config,
-					 struct lttng_ust_lib_ring_buffer *buf)
+unsigned long lib_ring_buffer_get_offset(const struct lttng_ust_ring_buffer_config *config,
+					 struct lttng_ust_ring_buffer *buf)
 {
 	return v_read(config, &buf->offset);
 }
 
 static inline
 unsigned long lib_ring_buffer_get_consumed(
-		const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)),
-		struct lttng_ust_lib_ring_buffer *buf)
+		const struct lttng_ust_ring_buffer_config *config __attribute__((unused)),
+		struct lttng_ust_ring_buffer *buf)
 {
 	return uatomic_read(&buf->consumed);
 }
@@ -214,8 +214,8 @@ unsigned long lib_ring_buffer_get_consumed(
  */
 static inline
 int lib_ring_buffer_is_finalized(
-		const struct lttng_ust_lib_ring_buffer_config *config __attribute__((unused)),
-		 struct lttng_ust_lib_ring_buffer *buf)
+		const struct lttng_ust_ring_buffer_config *config __attribute__((unused)),
+		 struct lttng_ust_ring_buffer *buf)
 {
 	int finalized = CMM_ACCESS_ONCE(buf->finalized);
 	/*
@@ -226,21 +226,21 @@ int lib_ring_buffer_is_finalized(
 }
 
 static inline
-int lib_ring_buffer_channel_is_finalized(const struct lttng_ust_lib_ring_buffer_channel *chan)
+int lib_ring_buffer_channel_is_finalized(const struct lttng_ust_ring_buffer_channel *chan)
 {
 	return chan->finalized;
 }
 
 static inline
-int lib_ring_buffer_channel_is_disabled(const struct lttng_ust_lib_ring_buffer_channel *chan)
+int lib_ring_buffer_channel_is_disabled(const struct lttng_ust_ring_buffer_channel *chan)
 {
 	return uatomic_read(&chan->record_disabled);
 }
 
 static inline
 unsigned long lib_ring_buffer_get_read_data_size(
-				const struct lttng_ust_lib_ring_buffer_config *config,
-				struct lttng_ust_lib_ring_buffer *buf,
+				const struct lttng_ust_ring_buffer_config *config,
+				struct lttng_ust_ring_buffer *buf,
 				struct lttng_ust_shm_handle *handle)
 {
 	return subbuffer_get_read_data_size(config, &buf->backend, handle);
@@ -248,48 +248,48 @@ unsigned long lib_ring_buffer_get_read_data_size(
 
 static inline
 unsigned long lib_ring_buffer_get_records_count(
-				const struct lttng_ust_lib_ring_buffer_config *config,
-				struct lttng_ust_lib_ring_buffer *buf)
+				const struct lttng_ust_ring_buffer_config *config,
+				struct lttng_ust_ring_buffer *buf)
 {
 	return v_read(config, &buf->records_count);
 }
 
 static inline
 unsigned long lib_ring_buffer_get_records_overrun(
-				const struct lttng_ust_lib_ring_buffer_config *config,
-				struct lttng_ust_lib_ring_buffer *buf)
+				const struct lttng_ust_ring_buffer_config *config,
+				struct lttng_ust_ring_buffer *buf)
 {
 	return v_read(config, &buf->records_overrun);
 }
 
 static inline
 unsigned long lib_ring_buffer_get_records_lost_full(
-				const struct lttng_ust_lib_ring_buffer_config *config,
-				struct lttng_ust_lib_ring_buffer *buf)
+				const struct lttng_ust_ring_buffer_config *config,
+				struct lttng_ust_ring_buffer *buf)
 {
 	return v_read(config, &buf->records_lost_full);
 }
 
 static inline
 unsigned long lib_ring_buffer_get_records_lost_wrap(
-				const struct lttng_ust_lib_ring_buffer_config *config,
-				struct lttng_ust_lib_ring_buffer *buf)
+				const struct lttng_ust_ring_buffer_config *config,
+				struct lttng_ust_ring_buffer *buf)
 {
 	return v_read(config, &buf->records_lost_wrap);
 }
 
 static inline
 unsigned long lib_ring_buffer_get_records_lost_big(
-				const struct lttng_ust_lib_ring_buffer_config *config,
-				struct lttng_ust_lib_ring_buffer *buf)
+				const struct lttng_ust_ring_buffer_config *config,
+				struct lttng_ust_ring_buffer *buf)
 {
 	return v_read(config, &buf->records_lost_big);
 }
 
 static inline
 unsigned long lib_ring_buffer_get_records_read(
-				const struct lttng_ust_lib_ring_buffer_config *config,
-				struct lttng_ust_lib_ring_buffer *buf)
+				const struct lttng_ust_ring_buffer_config *config,
+				struct lttng_ust_ring_buffer *buf)
 {
 	return v_read(config, &buf->backend.records_read);
 }

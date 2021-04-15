@@ -30,14 +30,14 @@ size_t cpu_id_get_size(void *priv __attribute__((unused)),
 {
 	size_t size = 0;
 
-	size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(int));
+	size += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(int));
 	size += sizeof(int);
 	return size;
 }
 
 static
 void cpu_id_record(void *priv __attribute__((unused)),
-		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
+		 struct lttng_ust_ring_buffer_ctx *ctx,
 		 struct lttng_ust_channel_buffer *chan)
 {
 	int cpu;

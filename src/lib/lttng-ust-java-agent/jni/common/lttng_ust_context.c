@@ -87,7 +87,7 @@ static size_t get_size_cb(void *priv, size_t offset)
 	const char *ctx_name = jni_provider->name;
 	enum lttng_ust_jni_type jni_type;
 
-	size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(char));
+	size += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(char));
 	size += sizeof(char);		/* tag */
 	jctx = lookup_ctx_by_name(ctx_name);
 	if (!jctx) {
@@ -99,28 +99,28 @@ static size_t get_size_cb(void *priv, size_t offset)
 	case JNI_TYPE_NULL:
 		break;
 	case JNI_TYPE_INTEGER:
-		size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(int32_t));
+		size += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(int32_t));
 		size += sizeof(int32_t);	/* variant */
 		break;
 	case JNI_TYPE_LONG:
-		size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(int64_t));
+		size += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(int64_t));
 		size += sizeof(int64_t);	/* variant */
 		break;
 	case JNI_TYPE_DOUBLE:
-		size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(double));
+		size += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(double));
 		size += sizeof(double);		/* variant */
 		break;
 	case JNI_TYPE_FLOAT:
-		size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(float));
+		size += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(float));
 		size += sizeof(float);		/* variant */
 		break;
 	case JNI_TYPE_SHORT:
-		size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(int16_t));
+		size += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(int16_t));
 		size += sizeof(int16_t);	/* variant */
 		break;
 	case JNI_TYPE_BYTE:		/* Fall-through. */
 	case JNI_TYPE_BOOLEAN:
-		size += lttng_ust_lib_ring_buffer_align(offset, lttng_ust_rb_alignof(char));
+		size += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(char));
 		size += sizeof(char);		/* variant */
 		break;
 	case JNI_TYPE_STRING:
@@ -142,7 +142,7 @@ static size_t get_size_cb(void *priv, size_t offset)
 }
 
 static void record_cb(void *priv,
-		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
+		 struct lttng_ust_ring_buffer_ctx *ctx,
 		 struct lttng_ust_channel_buffer *lttng_chan_buf)
 {
 	struct lttng_ust_jni_ctx_entry *jctx;

@@ -74,7 +74,7 @@ size_t procname_get_size(void *priv __attribute__((unused)),
 
 static
 void procname_record(void *priv __attribute__((unused)),
-		 struct lttng_ust_lib_ring_buffer_ctx *ctx,
+		 struct lttng_ust_ring_buffer_ctx *ctx,
 		 struct lttng_ust_channel_buffer *chan)
 {
 	const char *procname;

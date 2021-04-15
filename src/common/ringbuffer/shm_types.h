@@ -12,7 +12,7 @@
 #include <limits.h>
 #include "shm_internal.h"
 
-struct lttng_ust_lib_ring_buffer_channel;
+struct lttng_ust_ring_buffer_channel;
 
 enum shm_object_type {
 	SHM_OBJECT_SHM,
@@ -38,7 +38,7 @@ struct shm_object_table {
 
 struct lttng_ust_shm_handle {
 	struct shm_object_table *table;
-	DECLARE_SHMP(struct lttng_ust_lib_ring_buffer_channel, chan);
+	DECLARE_SHMP(struct lttng_ust_ring_buffer_channel, chan);
 };
 
 #endif /* _LIBRINGBUFFER_SHM_TYPES_H */

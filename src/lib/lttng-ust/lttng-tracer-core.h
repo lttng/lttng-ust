@@ -19,7 +19,7 @@
 struct lttng_ust_session;
 struct lttng_ust_channel_buffer;
 struct lttng_ust_ctx_field;
-struct lttng_ust_lib_ring_buffer_ctx;
+struct lttng_ust_ring_buffer_ctx;
 struct lttng_ust_ctx_value;
 struct lttng_ust_event_recorder;
 struct lttng_ust_event_notifier;
@@ -79,7 +79,7 @@ ssize_t lttng_ust_read(int fd, void *buf, size_t len)
 size_t lttng_ust_dummy_get_size(void *priv, size_t offset)
 	__attribute__((visibility("hidden")));
 
-void lttng_ust_dummy_record(void *priv, struct lttng_ust_lib_ring_buffer_ctx *ctx,
+void lttng_ust_dummy_record(void *priv, struct lttng_ust_ring_buffer_ctx *ctx,
 		 struct lttng_ust_channel_buffer *chan)
 	__attribute__((visibility("hidden")));
 

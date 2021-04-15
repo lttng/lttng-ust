@@ -248,7 +248,7 @@ struct lttng_event_notifier_group *lttng_event_notifier_group_create(void)
 static
 void _lttng_channel_unmap(struct lttng_ust_channel_buffer *lttng_chan)
 {
-	struct lttng_ust_lib_ring_buffer_channel *chan;
+	struct lttng_ust_ring_buffer_channel *chan;
 	struct lttng_ust_shm_handle *handle;
 
 	cds_list_del(&lttng_chan->priv->node);
@@ -2000,7 +2000,7 @@ void lttng_session_lazy_sync_event_enablers(struct lttng_ust_session *session)
  */
 void lttng_ust_context_set_session_provider(const char *name,
 		size_t (*get_size)(void *priv, size_t offset),
-		void (*record)(void *priv, struct lttng_ust_lib_ring_buffer_ctx *ctx,
+		void (*record)(void *priv, struct lttng_ust_ring_buffer_ctx *ctx,
 			struct lttng_ust_channel_buffer *chan),
 		void (*get_value)(void *priv, struct lttng_ust_ctx_value *value),
 		void *priv)
@@ -2040,7 +2040,7 @@ void lttng_ust_context_set_session_provider(const char *name,
  */
 void lttng_ust_context_set_event_notifier_group_provider(const char *name,
 		size_t (*get_size)(void *priv, size_t offset),
-		void (*record)(void *priv, struct lttng_ust_lib_ring_buffer_ctx *ctx,
+		void (*record)(void *priv, struct lttng_ust_ring_buffer_ctx *ctx,
 			struct lttng_ust_channel_buffer *chan),
 		void (*get_value)(void *priv, struct lttng_ust_ctx_value *value),
 		void *priv)

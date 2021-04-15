@@ -34,8 +34,6 @@
 	"lttng-ust-wait-"					\
 	lttng_ust_stringify(LTTNG_UST_ABI_MAJOR_VERSION)
 
-struct lttng_ust_lib_ring_buffer;
-
 struct ustctl_consumer_channel_attr {
 	enum lttng_ust_abi_chan_type type;
 	uint64_t subbuf_size;			/* bytes */
