@@ -34,8 +34,8 @@
  */
 #if defined (__cplusplus) && defined (__GNUC__) && \
 	(__GNUC__ < 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ <= 8))
-# ifndef LTTNG_ALLOCATE_COMPOUND_LITERAL_ON_HEAP
-#  define LTTNG_ALLOCATE_COMPOUND_LITERAL_ON_HEAP
+# ifndef LTTNG_UST_ALLOCATE_COMPOUND_LITERAL_ON_HEAP
+#  define LTTNG_UST_ALLOCATE_COMPOUND_LITERAL_ON_HEAP
 # endif
 #endif
 
@@ -44,13 +44,13 @@
  * Compound literals are part of the C99 and C11 standards, but not
  * part of the C++ standards. However, those are supported by both g++ and
  * clang. In order to be strictly C++11 compliant, defining
- * LTTNG_ALLOCATE_COMPOUND_LITERAL_ON_HEAP before including this header
+ * LTTNG_UST_ALLOCATE_COMPOUND_LITERAL_ON_HEAP before including this header
  * allocates those on the heap in C++.
  *
  * Example use:
  * static struct mystruct *var = LTTNG_UST_COMPOUND_LITERAL(struct mystruct, { 1, 2, 3 });
  */
-#if defined (__cplusplus) && defined (LTTNG_ALLOCATE_COMPOUND_LITERAL_ON_HEAP)
+#if defined (__cplusplus) && defined (LTTNG_UST_ALLOCATE_COMPOUND_LITERAL_ON_HEAP)
 #define LTTNG_UST_COMPOUND_LITERAL(type, ...)	new (type) __VA_ARGS__
 #else
 #define LTTNG_UST_COMPOUND_LITERAL(type, ...)	(type[]) { __VA_ARGS__ }
