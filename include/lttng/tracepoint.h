@@ -20,6 +20,8 @@
 #include <lttng/ust-compiler.h>
 #include <lttng/ust-tracer.h>
 
+#define LTTNG_UST_TRACEPOINT_NAME_LEN_MAX	256
+
 #ifdef LTTNG_UST_HAVE_SDT_INTEGRATION
 /*
  * Instead of using SDT_USE_VARIADIC from 'sys/sdt.h', use our own namespaced
@@ -153,6 +155,25 @@ extern "C" {
 #define _TP_ARGS_DATA_PROTO(...)	_TP_DATA_PROTO_N(_TP_NARGS(0, ##__VA_ARGS__), ##__VA_ARGS__)
 #define _TP_ARGS_DATA_VAR(...)		_TP_DATA_VAR_N(_TP_NARGS(0, ##__VA_ARGS__), ##__VA_ARGS__)
 #define _TP_PARAMS(...)			__VA_ARGS__
+
+/*
+ * sizeof(#_provider) - 1 : length of the provider string (excluding \0).
+ * sizeof(#_name) - 1     : length of the name string (excluding \0).
+ * + 1                    : separator between provider and event name.
+ *
+ * Upper bound (inclusive) is LTTNG_UST_TRACEPOINT_NAME_LEN_MAX - 1 to
+ * account for \0.
+ *
+ * The comparison is:
+ *   left hand side:   sizeof(#_provider) - 1 + sizeof(#_name) - 1 + 1
+ *   right hand side:  LTTNG_UST_TRACEPOINT_NAME_LEN_MAX - 1
+ *   operator:         <=  (inclusive)
+ * Simplified in the code below.
+ */
+#define lttng_ust_tracepoint_validate_name_len(_provider, _name)						\
+	lttng_ust_static_assert(sizeof(#_provider) + sizeof(#_name) <= LTTNG_UST_TRACEPOINT_NAME_LEN_MAX,	\
+		"Tracepoint name length is too long",								\
+		Tracepoint_name_length_is_too_long)
 
 /*
  * The tracepoint cb is marked always inline so we can distinguish
@@ -446,6 +467,7 @@ extern struct lttng_ust_tracepoint * const __stop___tracepoints_ptrs[]
 #define _TP_EXTRACT_STRING(...)	#__VA_ARGS__
 
 #define _DEFINE_TRACEPOINT(_provider, _name, _args)				\
+	lttng_ust_tracepoint_validate_name_len(_provider, _name);		\
 	extern int __tracepoint_provider_##_provider; 				\
 	static const char __tp_strtab_##_provider##___##_name[]			\
 		__attribute__((section("__tracepoints_strings"))) =		\

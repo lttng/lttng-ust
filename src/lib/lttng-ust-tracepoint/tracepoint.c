@@ -130,6 +130,10 @@ struct callsite_entry {
 	bool tp_entry_callsite_ref; /* Has a tp_entry took a ref on this callsite */
 };
 
+lttng_ust_static_assert(LTTNG_UST_TRACEPOINT_NAME_LEN_MAX == LTTNG_UST_ABI_SYM_NAME_LEN,
+		"Tracepoint name max length mismatch between UST ABI and tracepoint API",
+		Tracepoint_name_max_length_mismatch);
+
 /* coverity[+alloc] */
 static void *allocate_probes(int count)
 {
