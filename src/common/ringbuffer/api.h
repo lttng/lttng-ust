@@ -11,7 +11,6 @@
 
 #include "backend.h"
 #include "frontend.h"
-#include <lttng/ringbuffer-abi.h>
 
 /*
  * ring_buffer_frontend_api.h contains static inline functions that depend on

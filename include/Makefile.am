@@ -17,7 +17,6 @@ nobase_include_HEADERS = \
 	lttng/ust-events.h \
 	lttng/ust-ctl.h \
 	lttng/ust-abi.h \
-	lttng/ringbuffer-abi.h \
 	lttng/ust-tracer.h \
 	lttng/ust-compiler.h \
 	lttng/ust-fork.h \
