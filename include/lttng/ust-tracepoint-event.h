@@ -150,7 +150,7 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 /* Enumeration entry (single value) */
 #undef ctf_enum_value
 #define ctf_enum_value(_string, _value)					\
-	__LTTNG_COMPOUND_LITERAL(const struct lttng_ust_enum_entry, {	\
+	LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_enum_entry, {	\
 		.struct_size = sizeof(struct lttng_ust_enum_entry),		\
 		.start = {						\
 			.value = lttng_ust_is_signed_type(__typeof__(_value)) ? \
@@ -168,7 +168,7 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 /* Enumeration entry (range) */
 #undef ctf_enum_range
 #define ctf_enum_range(_string, _range_start, _range_end)		\
-	__LTTNG_COMPOUND_LITERAL(const struct lttng_ust_enum_entry, {	\
+	LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_enum_entry, {	\
 		.struct_size = sizeof(struct lttng_ust_enum_entry),		\
 		.start = {						\
 			.value = lttng_ust_is_signed_type(__typeof__(_range_start)) ? \
@@ -186,7 +186,7 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 /* Enumeration entry (automatic value; follows the rules of CTF) */
 #undef ctf_enum_auto
 #define ctf_enum_auto(_string)						\
-	__LTTNG_COMPOUND_LITERAL(const struct lttng_ust_enum_entry, {	\
+	LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_enum_entry, {	\
 		.struct_size = sizeof(struct lttng_ust_enum_entry),		\
 		.start = {						\
 			.value = -1ULL, 				\
@@ -257,7 +257,7 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 
 #undef _ctf_integer_ext
 #define _ctf_integer_ext(_type, _item, _src, _byte_order, _base, _nowrite) \
-	__LTTNG_COMPOUND_LITERAL(const struct lttng_ust_event_field, { \
+	LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_event_field, { \
 		.struct_size = sizeof(struct lttng_ust_event_field), \
 		.name = #_item,					\
 		.type = lttng_ust_type_integer_define(_type, _byte_order, _base), \
@@ -267,7 +267,7 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 
 #undef _ctf_float
 #define _ctf_float(_type, _item, _src, _nowrite)		\
-	__LTTNG_COMPOUND_LITERAL(const struct lttng_ust_event_field, { \
+	LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_event_field, { \
 		.struct_size = sizeof(struct lttng_ust_event_field), \
 		.name = #_item,					\
 		.type = lttng_ust_type_float_define(_type),	\
@@ -279,10 +279,10 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 #define _ctf_array_encoded(_type, _item, _src, _byte_order,	\
 			_length, _encoding, _nowrite,		\
 			_elem_type_base)			\
-	__LTTNG_COMPOUND_LITERAL(const struct lttng_ust_event_field, { \
+	LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_event_field, { \
 		.struct_size = sizeof(struct lttng_ust_event_field), \
 		.name = #_item,					\
-		.type = (const struct lttng_ust_type_common *) __LTTNG_COMPOUND_LITERAL(const struct lttng_ust_type_array, { \
+		.type = (const struct lttng_ust_type_common *) LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_type_array, { \
 			.parent = {				\
 				.type = lttng_ust_type_array,	\
 			},					\
@@ -300,17 +300,17 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 #define _ctf_sequence_encoded(_type, _item, _src, _byte_order,	\
 			_length_type, _src_length, _encoding, _nowrite, \
 			_elem_type_base)			\
-	__LTTNG_COMPOUND_LITERAL(const struct lttng_ust_event_field, { \
+	LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_event_field, { \
 		.struct_size = sizeof(struct lttng_ust_event_field), \
 		.name = "_" #_item "_length",			\
 		.type = lttng_ust_type_integer_define(_length_type, BYTE_ORDER, 10), \
 		.nowrite = _nowrite,				\
 		.nofilter = 1,					\
 	}),							\
-	__LTTNG_COMPOUND_LITERAL(const struct lttng_ust_event_field, { \
+	LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_event_field, { \
 		.struct_size = sizeof(struct lttng_ust_event_field), \
 		.name = #_item,					\
-		.type = (const struct lttng_ust_type_common *) __LTTNG_COMPOUND_LITERAL(const struct lttng_ust_type_sequence, { \
+		.type = (const struct lttng_ust_type_common *) LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_type_sequence, { \
 			.parent = {				\
 				.type = lttng_ust_type_sequence, \
 			},					\
@@ -326,10 +326,10 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 
 #undef _ctf_string
 #define _ctf_string(_item, _src, _nowrite)			\
-	__LTTNG_COMPOUND_LITERAL(const struct lttng_ust_event_field, { \
+	LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_event_field, { \
 		.struct_size = sizeof(struct lttng_ust_event_field), \
 		.name = #_item,					\
-		.type = (const struct lttng_ust_type_common *) __LTTNG_COMPOUND_LITERAL(const struct lttng_ust_type_string, { \
+		.type = (const struct lttng_ust_type_common *) LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_type_string, { \
 			.parent = {				\
 				.type = lttng_ust_type_string,	\
 			},					\
@@ -345,10 +345,10 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 
 #undef _ctf_enum
 #define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite) \
-	__LTTNG_COMPOUND_LITERAL(const struct lttng_ust_event_field, { \
+	LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_event_field, { \
 		.struct_size = sizeof(struct lttng_ust_event_field), \
 		.name = #_item,					\
-		.type = (const struct lttng_ust_type_common *) __LTTNG_COMPOUND_LITERAL(const struct lttng_ust_type_enum, { \
+		.type = (const struct lttng_ust_type_common *) LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_type_enum, { \
 			.parent = {				\
 				.type = lttng_ust_type_enum,	\
 			},					\

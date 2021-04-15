@@ -117,7 +117,7 @@ struct lttng_ust_type_integer {
 };
 
 #define lttng_ust_type_integer_define(_type, _byte_order, _base)	\
-	((struct lttng_ust_type_common *) __LTTNG_COMPOUND_LITERAL(struct lttng_ust_type_integer, { \
+	((struct lttng_ust_type_common *) LTTNG_UST_COMPOUND_LITERAL(struct lttng_ust_type_integer, { \
 		.parent = {						\
 			.type = lttng_ust_type_integer,			\
 		},							\
@@ -148,7 +148,7 @@ struct lttng_ust_type_float {
 		: 0))
 
 #define lttng_ust_type_float_define(_type)				\
-	((struct lttng_ust_type_common *) __LTTNG_COMPOUND_LITERAL(struct lttng_ust_type_float, { \
+	((struct lttng_ust_type_common *) LTTNG_UST_COMPOUND_LITERAL(struct lttng_ust_type_float, { \
 		.parent = {						\
 			.type = lttng_ust_type_float,			\
 		},							\

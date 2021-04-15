@@ -48,12 +48,12 @@
  * allocates those on the heap in C++.
  *
  * Example use:
- * static struct mystruct *var = __LTTNG_COMPOUND_LITERAL(struct mystruct, { 1, 2, 3 });
+ * static struct mystruct *var = LTTNG_UST_COMPOUND_LITERAL(struct mystruct, { 1, 2, 3 });
  */
 #if defined (__cplusplus) && defined (LTTNG_ALLOCATE_COMPOUND_LITERAL_ON_HEAP)
-#define __LTTNG_COMPOUND_LITERAL(type, ...)	new (type) __VA_ARGS__
+#define LTTNG_UST_COMPOUND_LITERAL(type, ...)	new (type) __VA_ARGS__
 #else
-#define __LTTNG_COMPOUND_LITERAL(type, ...)	(type[]) { __VA_ARGS__ }
+#define LTTNG_UST_COMPOUND_LITERAL(type, ...)	(type[]) { __VA_ARGS__ }
 #endif
 
 /*

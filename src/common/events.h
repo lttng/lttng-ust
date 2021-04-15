@@ -506,7 +506,7 @@ const struct lttng_ust_type_struct *lttng_ust_get_type_struct(const struct lttng
 }
 
 #define lttng_ust_static_type_integer(_size, _alignment, _signedness, _byte_order, _base)		\
-	((const struct lttng_ust_type_common *) __LTTNG_COMPOUND_LITERAL(const struct lttng_ust_type_integer, { \
+	((const struct lttng_ust_type_common *) LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_type_integer, { \
 		.parent = {										\
 			.type = lttng_ust_type_integer,							\
 		},											\
@@ -519,7 +519,7 @@ const struct lttng_ust_type_struct *lttng_ust_get_type_struct(const struct lttng
 	}))
 
 #define lttng_ust_static_type_array_text(_length)							\
-	((const struct lttng_ust_type_common *) __LTTNG_COMPOUND_LITERAL(const struct lttng_ust_type_array, { \
+	((const struct lttng_ust_type_common *) LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_type_array, { \
 		.parent = {										\
 			.type = lttng_ust_type_array,							\
 		},											\
@@ -533,7 +533,7 @@ const struct lttng_ust_type_struct *lttng_ust_get_type_struct(const struct lttng
 	}))
 
 #define lttng_ust_static_event_field(_name, _type, _nowrite, _nofilter)					\
-	__LTTNG_COMPOUND_LITERAL(const struct lttng_ust_event_field, {					\
+	LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_event_field, {				\
 		.struct_size = sizeof(struct lttng_ust_event_field),					\
 		.name = (_name),									\
 		.type = (_type),									\
@@ -542,7 +542,7 @@ const struct lttng_ust_type_struct *lttng_ust_get_type_struct(const struct lttng
 	})
 
 #define lttng_ust_static_ctx_field(_event_field, _get_size, _record, _get_value, _destroy, _priv)	\
-	__LTTNG_COMPOUND_LITERAL(const struct lttng_ust_ctx_field, {					\
+	LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_ctx_field, {				\
 		.event_field = (_event_field),								\
 		.get_size = (_get_size),								\
 		.record = (_record),									\

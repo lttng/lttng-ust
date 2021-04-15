@@ -340,7 +340,7 @@ static struct lttng_transport lttng_relay_transport = {
 	.ops = {
 		.struct_size = sizeof(struct lttng_ust_channel_buffer_ops),
 
-		.priv = __LTTNG_COMPOUND_LITERAL(struct lttng_ust_channel_buffer_ops_private, {
+		.priv = LTTNG_UST_COMPOUND_LITERAL(struct lttng_ust_channel_buffer_ops_private, {
 			.pub = &lttng_relay_transport.ops,
 			.channel_create = _channel_create,
 			.channel_destroy = lttng_channel_destroy,
