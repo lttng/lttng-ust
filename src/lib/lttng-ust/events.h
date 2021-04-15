@@ -300,7 +300,7 @@ struct lttng_ust_channel_buffer *lttng_ust_alloc_channel_buffer(void)
 void lttng_ust_free_channel_common(struct lttng_ust_channel_common *chan)
 	__attribute__((visibility("hidden")));
 
-int lttng_ust_interpret_event_filter(struct lttng_ust_event_common *event,
+int lttng_ust_interpret_event_filter(const struct lttng_ust_event_common *event,
 		const char *interpreter_stack_data,
 		void *filter_ctx)
 	__attribute__((visibility("hidden")));

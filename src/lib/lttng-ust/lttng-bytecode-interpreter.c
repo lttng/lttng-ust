@@ -2511,7 +2511,7 @@ end:
 /*
  * Return LTTNG_UST_EVENT_FILTER_ACCEPT or LTTNG_UST_EVENT_FILTER_REJECT.
  */
-int lttng_ust_interpret_event_filter(struct lttng_ust_event_common *event,
+int lttng_ust_interpret_event_filter(const struct lttng_ust_event_common *event,
 		const char *interpreter_stack_data,
 		void *event_filter_ctx __attribute__((unused)))
 {

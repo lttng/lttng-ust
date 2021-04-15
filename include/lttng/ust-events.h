@@ -349,7 +349,7 @@ struct lttng_ust_event_common {
 
 	int enabled;
 	int eval_filter;				/* Need to evaluate filters */
-	int (*run_filter)(struct lttng_ust_event_common *event,
+	int (*run_filter)(const struct lttng_ust_event_common *event,
 		const char *stack_data,
 		void *filter_ctx);
 
