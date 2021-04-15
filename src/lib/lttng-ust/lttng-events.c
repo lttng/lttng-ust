@@ -266,12 +266,11 @@ void register_event(struct lttng_ust_event_common *event)
 {
 	int ret;
 	const struct lttng_ust_event_desc *desc;
-	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
 
 	assert(event->priv->registered == 0);
 	desc = event->priv->desc;
-	lttng_ust_format_event_name(desc, name);
-	ret = lttng_ust_tp_probe_register_queue_release(name,
+	ret = lttng_ust_tp_probe_register_queue_release(desc->probe_desc->provider_name,
+			desc->event_name,
 			desc->probe_callback,
 			event, desc->signature);
 	WARN_ON_ONCE(ret);
@@ -284,12 +283,11 @@ void unregister_event(struct lttng_ust_event_common *event)
 {
 	int ret;
 	const struct lttng_ust_event_desc *desc;
-	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
 
 	assert(event->priv->registered == 1);
 	desc = event->priv->desc;
-	lttng_ust_format_event_name(desc, name);
-	ret = lttng_ust_tp_probe_unregister_queue_release(name,
+	ret = lttng_ust_tp_probe_unregister_queue_release(desc->probe_desc->provider_name,
+			desc->event_name,
 			desc->probe_callback,
 			event);
 	WARN_ON_ONCE(ret);

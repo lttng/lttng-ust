@@ -38,7 +38,8 @@ struct lttng_ust_tracepoint_probe {
 struct lttng_ust_tracepoint {
 	uint32_t struct_size;
 
-	const char *name;
+	const char *provider_name;
+	const char *event_name;
 	int state;
 	struct lttng_ust_tracepoint_probe *probes;
 	int *tracepoint_provider_ref;

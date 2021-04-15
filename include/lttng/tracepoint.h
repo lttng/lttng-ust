@@ -207,31 +207,31 @@ end:											\
 	tp_rcu_read_unlock();								\
 }											\
 static inline										\
-void __tracepoint_register_##_provider##___##_name(char *name,				\
+void __tracepoint_register_##_provider##___##_name(char *provider_name, char *event_name, \
 		void (*func)(void), void *data)						\
 	lttng_ust_notrace;								\
 static inline										\
-void __tracepoint_register_##_provider##___##_name(char *name,				\
+void __tracepoint_register_##_provider##___##_name(char *provider_name, char *event_name, \
 		void (*func)(void), void *data)						\
 {											\
-	__tracepoint_probe_register(name, func, data,					\
+	__tracepoint_probe_register(provider_name, event_name, func, data,		\
 		__tracepoint_##_provider##___##_name.signature);			\
 }											\
 static inline										\
-void __tracepoint_unregister_##_provider##___##_name(char *name,			\
+void __tracepoint_unregister_##_provider##___##_name(char *provider_name, char *event_name, \
 		void (*func)(void), void *data)						\
 	lttng_ust_notrace;								\
 static inline										\
-void __tracepoint_unregister_##_provider##___##_name(char *name,			\
+void __tracepoint_unregister_##_provider##___##_name(char *provider_name, char *event_name, \
 		void (*func)(void), void *data)						\
 {											\
-	__tracepoint_probe_unregister(name, func, data);				\
+	__tracepoint_probe_unregister(provider_name, event_name, func, data);		\
 }
 
-extern int __tracepoint_probe_register(const char *name, void (*func)(void),
-		void *data, const char *signature);
-extern int __tracepoint_probe_unregister(const char *name, void (*func)(void),
-		void *data);
+extern int __tracepoint_probe_register(const char *provider_name, const char *event_name,
+		void (*func)(void), void *data, const char *signature);
+extern int __tracepoint_probe_unregister(const char *provider_name, const char *event_name,
+		void (*func)(void), void *data);
 
 /*
  * tracepoint dynamic linkage handling (callbacks). Hidden visibility:
@@ -469,13 +469,17 @@ extern struct lttng_ust_tracepoint * const __stop___tracepoints_ptrs[]
 #define _DEFINE_TRACEPOINT(_provider, _name, _args)				\
 	lttng_ust_tracepoint_validate_name_len(_provider, _name);		\
 	extern int __tracepoint_provider_##_provider; 				\
-	static const char __tp_strtab_##_provider##___##_name[]			\
+	static const char __tp_provider_strtab_##_provider##___##_name[]	\
 		__attribute__((section("__tracepoints_strings"))) =		\
-			#_provider ":" #_name;					\
+			#_provider;						\
+	static const char __tp_name_strtab_##_provider##___##_name[]		\
+		__attribute__((section("__tracepoints_strings"))) =		\
+			#_name;							\
 	struct lttng_ust_tracepoint __tracepoint_##_provider##___##_name	\
 		__attribute__((section("__tracepoints"))) = {			\
 			sizeof(struct lttng_ust_tracepoint),			\
-			__tp_strtab_##_provider##___##_name,			\
+			__tp_provider_strtab_##_provider##___##_name,		\
+			__tp_name_strtab_##_provider##___##_name,		\
 			0,							\
 			NULL,							\
 			_TRACEPOINT_UNDEFINED_REF(_provider), 			\

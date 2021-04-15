@@ -104,7 +104,8 @@ struct tracepoint_entry {
 	int refcount;	/* Number of times armed. 0 if disarmed. */
 	int callsite_refcount;	/* how many libs use this tracepoint */
 	char *signature;
-	char *name;
+	char *provider_name;
+	char *event_name;
 };
 
 struct tp_probes {
@@ -134,6 +135,15 @@ struct callsite_entry {
 lttng_ust_static_assert(LTTNG_UST_TRACEPOINT_NAME_LEN_MAX == LTTNG_UST_ABI_SYM_NAME_LEN,
 		"Tracepoint name max length mismatch between UST ABI and tracepoint API",
 		Tracepoint_name_max_length_mismatch);
+
+static
+bool lttng_ust_tp_validate_event_name(const struct lttng_ust_tracepoint *tp)
+{
+	if (strlen(tp->provider_name) + 1 +
+			strlen(tp->event_name) >= LTTNG_UST_TRACEPOINT_NAME_LEN_MAX)
+		return false;
+	return true;
+}
 
 /* coverity[+alloc] */
 static void *allocate_probes(int count)
@@ -253,22 +263,18 @@ tracepoint_entry_remove_probe(struct tracepoint_entry *entry,
  * Must be called with tracepoint mutex held.
  * Returns NULL if not present.
  */
-static struct tracepoint_entry *get_tracepoint(const char *name)
+static struct tracepoint_entry *get_tracepoint(const char *provider_name, const char *event_name)
 {
 	struct cds_hlist_head *head;
 	struct cds_hlist_node *node;
 	struct tracepoint_entry *e;
-	size_t name_len = strlen(name);
 	uint32_t hash;
 
-	if (name_len > LTTNG_UST_ABI_SYM_NAME_LEN - 1) {
-		WARN("Truncating tracepoint name %s which exceeds size limits of %u chars", name, LTTNG_UST_ABI_SYM_NAME_LEN - 1);
-		name_len = LTTNG_UST_ABI_SYM_NAME_LEN - 1;
-	}
-	hash = jhash(name, name_len, 0);
+	hash = jhash(provider_name, strlen(provider_name), 0) ^
+		jhash(event_name, strlen(event_name), 0);
 	head = &tracepoint_table[hash & (TRACEPOINT_TABLE_SIZE - 1)];
 	cds_hlist_for_each_entry(e, node, head, hlist) {
-		if (!strncmp(name, e->name, LTTNG_UST_ABI_SYM_NAME_LEN - 1))
+		if (!strcmp(event_name, e->event_name) && !strcmp(provider_name, e->provider_name))
 			return e;
 	}
 	return NULL;
@@ -278,26 +284,24 @@ static struct tracepoint_entry *get_tracepoint(const char *name)
  * Add the tracepoint to the tracepoint hash table. Must be called with
  * tracepoint mutex held.
  */
-static struct tracepoint_entry *add_tracepoint(const char *name,
+static struct tracepoint_entry *add_tracepoint(const char *provider_name, const char *event_name,
 		const char *signature)
 {
 	struct cds_hlist_head *head;
 	struct cds_hlist_node *node;
 	struct tracepoint_entry *e;
-	size_t name_len = strlen(name);
 	size_t sig_len = strlen(signature);
-	size_t sig_off, name_off;
+	size_t sig_off, provider_name_off, event_name_off;
+	size_t provider_name_len = strlen(provider_name);
+	size_t event_name_len = strlen(event_name);
 	uint32_t hash;
 
-	if (name_len > LTTNG_UST_ABI_SYM_NAME_LEN - 1) {
-		WARN("Truncating tracepoint name %s which exceeds size limits of %u chars", name, LTTNG_UST_ABI_SYM_NAME_LEN - 1);
-		name_len = LTTNG_UST_ABI_SYM_NAME_LEN - 1;
-	}
-	hash = jhash(name, name_len, 0);
+	hash = jhash(provider_name, provider_name_len, 0) ^
+		jhash(event_name, event_name_len, 0);
 	head = &tracepoint_table[hash & (TRACEPOINT_TABLE_SIZE - 1)];
 	cds_hlist_for_each_entry(e, node, head, hlist) {
-		if (!strncmp(name, e->name, LTTNG_UST_ABI_SYM_NAME_LEN - 1)) {
-			DBG("tracepoint %s busy", name);
+		if (!strcmp(event_name, e->event_name) && !strcmp(provider_name, e->provider_name)) {
+			DBG("tracepoint \"%s:%s\" busy", provider_name, event_name);
 			return ERR_PTR(-EEXIST);	/* Already there */
 		}
 	}
@@ -306,15 +310,21 @@ static struct tracepoint_entry *add_tracepoint(const char *name,
 	 * Using zmalloc here to allocate a variable length elements: name and
 	 * signature. Could cause some memory fragmentation if overused.
 	 */
-	name_off = sizeof(struct tracepoint_entry);
-	sig_off = name_off + name_len + 1;
+	provider_name_off = sizeof(struct tracepoint_entry);
+	event_name_off = provider_name_off + provider_name_len + 1;
+	sig_off = event_name_off + event_name_len + 1;
 
-	e = zmalloc(sizeof(struct tracepoint_entry) + name_len + 1 + sig_len + 1);
+	e = zmalloc(sizeof(struct tracepoint_entry) + provider_name_len + 1 +
+			event_name_len + 1 + sig_len + 1);
 	if (!e)
 		return ERR_PTR(-ENOMEM);
-	e->name = (char *) e + name_off;
-	memcpy(e->name, name, name_len + 1);
-	e->name[name_len] = '\0';
+	e->provider_name = (char *) e + provider_name_off;
+	memcpy(e->provider_name, provider_name, provider_name_len + 1);
+	e->provider_name[provider_name_len] = '\0';
+
+	e->event_name = (char *) e + event_name_off;
+	memcpy(e->event_name, event_name, event_name_len + 1);
+	e->event_name[event_name_len] = '\0';
 
 	e->signature = (char *) e + sig_off;
 	memcpy(e->signature, signature, sig_len + 1);
@@ -344,7 +354,8 @@ static void remove_tracepoint(struct tracepoint_entry *e)
 static void set_tracepoint(struct tracepoint_entry **entry,
 	struct lttng_ust_tracepoint *elem, int active)
 {
-	WARN_ON(strncmp((*entry)->name, elem->name, LTTNG_UST_ABI_SYM_NAME_LEN - 1) != 0);
+	WARN_ON(strcmp((*entry)->provider_name, elem->provider_name) != 0);
+	WARN_ON(strcmp((*entry)->event_name, elem->event_name) != 0);
 	/*
 	 * Check that signatures match before connecting a probe to a
 	 * tracepoint. Warn the user if they don't.
@@ -355,8 +366,8 @@ static void set_tracepoint(struct tracepoint_entry **entry,
 		/* Only print once, don't flood console. */
 		if (!warned) {
 			WARN("Tracepoint signature mismatch, not enabling one or more tracepoints. Ensure that the tracepoint probes prototypes match the application.");
-			WARN("Tracepoint \"%s\" signatures: call: \"%s\" vs probe: \"%s\".",
-				elem->name, elem->signature, (*entry)->signature);
+			WARN("Tracepoint \"%s:%s\" signatures: call: \"%s\" vs probe: \"%s\".",
+				elem->provider_name, elem->event_name, elem->signature, (*entry)->signature);
 			warned = 1;
 		}
 		/* Don't accept connecting non-matching signatures. */
@@ -394,27 +405,27 @@ static void add_callsite(struct tracepoint_lib * lib, struct lttng_ust_tracepoin
 {
 	struct cds_hlist_head *head;
 	struct callsite_entry *e;
-	const char *name = tp->name;
-	size_t name_len = strlen(name);
 	uint32_t hash;
 	struct tracepoint_entry *tp_entry;
 
-	if (name_len > LTTNG_UST_ABI_SYM_NAME_LEN - 1) {
-		WARN("Truncating tracepoint name %s which exceeds size limits of %u chars", name, LTTNG_UST_ABI_SYM_NAME_LEN - 1);
-		name_len = LTTNG_UST_ABI_SYM_NAME_LEN - 1;
+	if (!lttng_ust_tp_validate_event_name(tp)) {
+		WARN("Rejecting tracepoint name \"%s:%s\" which exceeds size limits of %u chars",
+			tp->provider_name, tp->event_name, LTTNG_UST_TRACEPOINT_NAME_LEN_MAX - 1);
+		return;
 	}
-	hash = jhash(name, name_len, 0);
+	hash = jhash(tp->provider_name, strlen(tp->provider_name), 0) ^
+		jhash(tp->event_name, strlen(tp->event_name), 0);
 	head = &callsite_table[hash & (CALLSITE_TABLE_SIZE - 1)];
 	e = zmalloc(sizeof(struct callsite_entry));
 	if (!e) {
-		PERROR("Unable to add callsite for tracepoint \"%s\"", name);
+		PERROR("Unable to add callsite for tracepoint \"%s:%s\"", tp->provider_name, tp->event_name);
 		return;
 	}
 	cds_hlist_add_head(&e->hlist, head);
 	e->tp = tp;
 	cds_list_add(&e->node, &lib->callsites);
 
-	tp_entry = get_tracepoint(name);
+	tp_entry = get_tracepoint(tp->provider_name, tp->event_name);
 	if (!tp_entry)
 		return;
 	tp_entry->callsite_refcount++;
@@ -429,7 +440,7 @@ static void remove_callsite(struct callsite_entry *e)
 {
 	struct tracepoint_entry *tp_entry;
 
-	tp_entry = get_tracepoint(e->tp->name);
+	tp_entry = get_tracepoint(e->tp->provider_name, e->tp->event_name);
 	if (tp_entry) {
 		if (e->tp_entry_callsite_ref)
 			tp_entry->callsite_refcount--;
@@ -446,26 +457,24 @@ static void remove_callsite(struct callsite_entry *e)
  * tracepoint entry.
  * Must be called with tracepoint mutex held.
  */
-static void tracepoint_sync_callsites(const char *name)
+static void tracepoint_sync_callsites(const char *provider_name, const char *event_name)
 {
+	struct tracepoint_entry *tp_entry;
 	struct cds_hlist_head *head;
 	struct cds_hlist_node *node;
 	struct callsite_entry *e;
-	size_t name_len = strlen(name);
 	uint32_t hash;
-	struct tracepoint_entry *tp_entry;
 
-	tp_entry = get_tracepoint(name);
-	if (name_len > LTTNG_UST_ABI_SYM_NAME_LEN - 1) {
-		WARN("Truncating tracepoint name %s which exceeds size limits of %u chars", name, LTTNG_UST_ABI_SYM_NAME_LEN - 1);
-		name_len = LTTNG_UST_ABI_SYM_NAME_LEN - 1;
-	}
-	hash = jhash(name, name_len, 0);
+	tp_entry = get_tracepoint(provider_name, event_name);
+	hash = jhash(provider_name, strlen(provider_name), 0) ^
+		jhash(event_name, strlen(event_name), 0);
 	head = &callsite_table[hash & (CALLSITE_TABLE_SIZE - 1)];
 	cds_hlist_for_each_entry(e, node, head, hlist) {
 		struct lttng_ust_tracepoint *tp = e->tp;
 
-		if (strncmp(name, tp->name, LTTNG_UST_ABI_SYM_NAME_LEN - 1))
+		if (strcmp(event_name, tp->event_name))
+			continue;
+		if (strcmp(provider_name, tp->provider_name))
 			continue;
 		if (tp_entry) {
 			if (!e->tp_entry_callsite_ref) {
@@ -498,11 +507,17 @@ void tracepoint_update_probe_range(struct lttng_ust_tracepoint * const *begin,
 	for (iter = begin; iter < end; iter++) {
 		if (!*iter)
 			continue;	/* skip dummy */
-		if (!(*iter)->name) {
+		if (!(*iter)->provider_name || !(*iter)->event_name) {
 			disable_tracepoint(*iter);
 			continue;
 		}
-		mark_entry = get_tracepoint((*iter)->name);
+		if (!lttng_ust_tp_validate_event_name(*iter)) {
+			WARN("Rejecting tracepoint name \"%s:%s\" which exceeds size limits of %u chars",
+				(*iter)->provider_name, (*iter)->event_name, LTTNG_UST_TRACEPOINT_NAME_LEN_MAX - 1);
+			disable_tracepoint(*iter);
+			continue;
+		}
+		mark_entry = get_tracepoint((*iter)->provider_name, (*iter)->event_name);
 		if (mark_entry) {
 			set_tracepoint(&mark_entry, *iter,
 					!!mark_entry->refcount);
@@ -530,7 +545,7 @@ static void lib_register_callsites(struct tracepoint_lib *lib)
 	for (iter = begin; iter < end; iter++) {
 		if (!*iter)
 			continue;	/* skip dummy */
-		if (!(*iter)->name) {
+		if (!(*iter)->provider_name || !(*iter)->event_name) {
 			continue;
 		}
 		add_callsite(lib, *iter);
@@ -558,20 +573,21 @@ static void tracepoint_update_probes(void)
 }
 
 static struct lttng_ust_tracepoint_probe *
-tracepoint_add_probe(const char *name, void (*probe)(void), void *data,
-		const char *signature)
+tracepoint_add_probe(const char *provider_name, const char *event_name,
+		void (*probe)(void), void *data, const char *signature)
 {
 	struct tracepoint_entry *entry;
 	struct lttng_ust_tracepoint_probe *old;
 
-	entry = get_tracepoint(name);
+	entry = get_tracepoint(provider_name, event_name);
 	if (entry) {
 		if (strcmp(entry->signature, signature) != 0) {
-			ERR("Tracepoint and probe signature do not match.");
+			ERR("Tracepoint \"%s:%s\": tracepoint and probe signature do not match: \"%s\" vs \"%s\".",
+				provider_name, event_name, entry->signature, signature);
 			return ERR_PTR(-EINVAL);
 		}
 	} else {
-		entry = add_tracepoint(name, signature);
+		entry = add_tracepoint(provider_name, event_name, signature);
 		if (IS_ERR(entry))
 			return (struct lttng_ust_tracepoint_probe *)entry;
 	}
@@ -593,29 +609,30 @@ static void tracepoint_release_queue_add_old_probes(void *old)
 
 /**
  * __tracepoint_probe_register -  Connect a probe to a tracepoint
- * @name: tracepoint name
+ * @name: tracepoint provider name
+ * @name: tracepoint event name
  * @probe: probe handler
  *
  * Returns 0 if ok, error value on error.
  * The probe address must at least be aligned on the architecture pointer size.
  * Called with the tracepoint mutex held.
  */
-int __tracepoint_probe_register(const char *name, void (*probe)(void),
-		void *data, const char *signature)
+int __tracepoint_probe_register(const char *provider_name, const char *event_name,
+		void (*probe)(void), void *data, const char *signature)
 {
 	void *old;
 	int ret = 0;
 
-	DBG("Registering probe to tracepoint %s", name);
+	DBG("Registering probe to tracepoint \"%s:%s\"", provider_name, event_name);
 
 	pthread_mutex_lock(&tracepoint_mutex);
-	old = tracepoint_add_probe(name, probe, data, signature);
+	old = tracepoint_add_probe(provider_name, event_name, probe, data, signature);
 	if (IS_ERR(old)) {
 		ret = PTR_ERR(old);
 		goto end;
 	}
 
-	tracepoint_sync_callsites(name);
+	tracepoint_sync_callsites(provider_name, event_name);
 	release_probes(old);
 end:
 	pthread_mutex_unlock(&tracepoint_mutex);
@@ -627,35 +644,35 @@ end:
  * calling lttng_ust_tp_probe_register_queue_release() one or multiple
  * times to ensure it does not leak memory.
  */
-int lttng_ust_tp_probe_register_queue_release(const char *name,
+int lttng_ust_tp_probe_register_queue_release(const char *provider_name, const char *event_name,
 		void (*probe)(void), void *data, const char *signature)
 {
 	void *old;
 	int ret = 0;
 
-	DBG("Registering probe to tracepoint %s. Queuing release.", name);
+	DBG("Registering probe to tracepoint \"%s:%s\". Queuing release.", provider_name, event_name);
 
 	pthread_mutex_lock(&tracepoint_mutex);
-	old = tracepoint_add_probe(name, probe, data, signature);
+	old = tracepoint_add_probe(provider_name, event_name, probe, data, signature);
 	if (IS_ERR(old)) {
 		ret = PTR_ERR(old);
 		goto end;
 	}
 
-	tracepoint_sync_callsites(name);
+	tracepoint_sync_callsites(provider_name, event_name);
 	tracepoint_release_queue_add_old_probes(old);
 end:
 	pthread_mutex_unlock(&tracepoint_mutex);
 	return ret;
 }
 
-static void *tracepoint_remove_probe(const char *name, void (*probe)(void),
-		void *data)
+static void *tracepoint_remove_probe(const char *provider_name, const char *event_name,
+		void (*probe)(void), void *data)
 {
 	struct tracepoint_entry *entry;
 	void *old;
 
-	entry = get_tracepoint(name);
+	entry = get_tracepoint(provider_name, event_name);
 	if (!entry)
 		return ERR_PTR(-ENOENT);
 	old = tracepoint_entry_remove_probe(entry, probe, data);
@@ -668,25 +685,26 @@ static void *tracepoint_remove_probe(const char *name, void (*probe)(void),
 
 /**
  * tracepoint_probe_unregister -  Disconnect a probe from a tracepoint
- * @name: tracepoint name
+ * @provider_name: tracepoint provider name
+ * @event_name: tracepoint event name
  * @probe: probe function pointer
  * @probe: probe data pointer
  */
-int __tracepoint_probe_unregister(const char *name, void (*probe)(void),
-		void *data)
+int __tracepoint_probe_unregister(const char *provider_name, const char *event_name,
+		void (*probe)(void), void *data)
 {
 	void *old;
 	int ret = 0;
 
-	DBG("Un-registering probe from tracepoint %s", name);
+	DBG("Un-registering probe \"%s:%s\" from tracepoint %p", provider_name, event_name, probe);
 
 	pthread_mutex_lock(&tracepoint_mutex);
-	old = tracepoint_remove_probe(name, probe, data);
+	old = tracepoint_remove_probe(provider_name, event_name, probe, data);
 	if (IS_ERR(old)) {
 		ret = PTR_ERR(old);
 		goto end;
 	}
-	tracepoint_sync_callsites(name);
+	tracepoint_sync_callsites(provider_name, event_name);
 	release_probes(old);
 end:
 	pthread_mutex_unlock(&tracepoint_mutex);
@@ -698,21 +716,21 @@ end:
  * calling lttng_ust_tp_probe_unregister_queue_release() one or multiple
  * times to ensure it does not leak memory.
  */
-int lttng_ust_tp_probe_unregister_queue_release(const char *name,
+int lttng_ust_tp_probe_unregister_queue_release(const char *provider_name, const char *event_name,
 		void (*probe)(void), void *data)
 {
 	void *old;
 	int ret = 0;
 
-	DBG("Un-registering probe from tracepoint %s. Queuing release.", name);
+	DBG("Un-registering probe from tracepoint \"%s:%s\". Queuing release.", provider_name, event_name);
 
 	pthread_mutex_lock(&tracepoint_mutex);
-	old = tracepoint_remove_probe(name, probe, data);
+	old = tracepoint_remove_probe(provider_name, event_name, probe, data);
 	if (IS_ERR(old)) {
 		ret = PTR_ERR(old);
 		goto end;
 	}
-	tracepoint_sync_callsites(name);
+	tracepoint_sync_callsites(provider_name, event_name);
 	tracepoint_release_queue_add_old_probes(old);
 end:
 	pthread_mutex_unlock(&tracepoint_mutex);
@@ -761,14 +779,14 @@ static void tracepoint_add_old_probes(void *old)
  *
  * caller must call tracepoint_probe_update_all()
  */
-int tracepoint_probe_register_noupdate(const char *name, void (*probe)(void),
-				       void *data, const char *signature)
+int tracepoint_probe_register_noupdate(const char *provider_name, const char *event_name,
+				       void (*probe)(void), void *data, const char *signature)
 {
 	void *old;
 	int ret = 0;
 
 	pthread_mutex_lock(&tracepoint_mutex);
-	old = tracepoint_add_probe(name, probe, data, signature);
+	old = tracepoint_add_probe(provider_name, event_name, probe, data, signature);
 	if (IS_ERR(old)) {
 		ret = PTR_ERR(old);
 		goto end;
@@ -787,16 +805,16 @@ end:
  * caller must call tracepoint_probe_update_all()
  * Called with the tracepoint mutex held.
  */
-int tracepoint_probe_unregister_noupdate(const char *name, void (*probe)(void),
-					 void *data)
+int tracepoint_probe_unregister_noupdate(const char *provider_name, const char *event_name,
+					 void (*probe)(void), void *data)
 {
 	void *old;
 	int ret = 0;
 
-	DBG("Un-registering probe from tracepoint %s", name);
+	DBG("Un-registering probe from tracepoint \"%s:%s\"", provider_name, event_name);
 
 	pthread_mutex_lock(&tracepoint_mutex);
-	old = tracepoint_remove_probe(name, probe, data);
+	old = tracepoint_remove_probe(provider_name, event_name, probe, data);
 	if (IS_ERR(old)) {
 		ret = PTR_ERR(old);
 		goto end;
@@ -903,7 +921,11 @@ lib_added:
 		int i;
 
 		for (i = 0; i < tracepoints_count; i++) {
-			DBG("registered tracepoint: %s", tracepoints_start[i]->name);
+			if (!lttng_ust_tp_validate_event_name(tracepoints_start[i]))
+				continue;
+			DBG("registered tracepoint: \"%s:%s\"",
+				tracepoints_start[i]->provider_name,
+				tracepoints_start[i]->event_name);
 		}
 	}
 

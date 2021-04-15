@@ -18,12 +18,12 @@ struct tracepoint_lib {
 	struct cds_list_head callsites;
 };
 
-int tracepoint_probe_register_noupdate(const char *name,
+int tracepoint_probe_register_noupdate(const char *provider_name, const char *event_name,
 		void (*callback)(void), void *priv,
 		const char *signature)
 	__attribute__((visibility("hidden")));
 
-int tracepoint_probe_unregister_noupdate(const char *name,
+int tracepoint_probe_unregister_noupdate(const char *provider_name, const char *event_name,
 		void (*callback)(void), void *priv)
 	__attribute__((visibility("hidden")));
 
