@@ -11,7 +11,7 @@
 #include <string.h>
 #include <inttypes.h>
 #include <lttng/ust-events.h>
-#include <lttng/ringbuffer-context.h>
+#include <lttng/ust-ringbuffer-context.h>
 #include <common/ust-context-provider.h>
 
 #include "common/macros.h"

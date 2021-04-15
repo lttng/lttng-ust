@@ -17,7 +17,7 @@
 #include <lttng/ust-tracer.h>
 #include "common/compat/tid.h"
 #include <urcu/tls-compat.h>
-#include <lttng/ringbuffer-context.h>
+#include <lttng/ust-ringbuffer-context.h>
 
 #include "context-internal.h"
 #include "lttng-tracer-core.h"

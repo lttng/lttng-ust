@@ -21,7 +21,7 @@
 #include <lttng/ust-arch.h>
 #include <lttng/ust-events.h>
 #include <lttng/ust-tracer.h>
-#include <lttng/ringbuffer-context.h>
+#include <lttng/ust-ringbuffer-context.h>
 #include <urcu/system.h>
 #include <urcu/arch.h>
 #include <urcu/rculist.h>

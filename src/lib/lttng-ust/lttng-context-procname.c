@@ -10,7 +10,7 @@
 #include <stddef.h>
 #include <lttng/ust-events.h>
 #include <lttng/ust-tracer.h>
-#include <lttng/ringbuffer-context.h>
+#include <lttng/ust-ringbuffer-context.h>
 #include <urcu/tls-compat.h>
 #include <assert.h>
 #include "common/compat/pthread.h"

@@ -29,7 +29,7 @@ struct mmsghdr;
 #include "ust_tests_hello.h"
 
 #include <lttng/ust-events.h>
-#include <lttng/ringbuffer-context.h>
+#include <lttng/ust-ringbuffer-context.h>
 /* Internal header. */
 #include <common/ust-context-provider.h>
 

@@ -13,7 +13,7 @@
 #include <urcu/arch.h>
 #include <urcu/list.h>
 #include <lttng/ust-tracer.h>
-#include <lttng/ringbuffer-context.h>
+#include <lttng/ust-ringbuffer-context.h>
 #include "common/logging.h"
 
 struct lttng_ust_session;

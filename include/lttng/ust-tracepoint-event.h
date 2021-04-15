@@ -10,7 +10,7 @@
 #include <urcu/compiler.h>
 #include <urcu/rculist.h>
 #include <lttng/ust-events.h>
-#include <lttng/ringbuffer-context.h>
+#include <lttng/ust-ringbuffer-context.h>
 #include <lttng/ust-arch.h>
 #include <lttng/ust-compiler.h>
 #include <lttng/tracepoint.h>

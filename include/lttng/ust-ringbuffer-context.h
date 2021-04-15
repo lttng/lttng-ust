@@ -6,8 +6,8 @@
  * Ring buffer context header.
  */
 
-#ifndef _LTTNG_RING_BUFFER_CONTEXT_H
-#define _LTTNG_RING_BUFFER_CONTEXT_H
+#ifndef _LTTNG_UST_RING_BUFFER_CONTEXT_H
+#define _LTTNG_UST_RING_BUFFER_CONTEXT_H
 
 #include <errno.h>
 #include <stdint.h>
@@ -128,4 +128,4 @@ unsigned int lttng_ust_ring_buffer_align(size_t align_drift __attribute__((unuse
 
 #endif
 
-#endif /* _LTTNG_RING_BUFFER_CONTEXT_H */
+#endif /* _LTTNG_UST_RING_BUFFER_CONTEXT_H */

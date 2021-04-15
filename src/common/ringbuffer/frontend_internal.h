@@ -17,7 +17,7 @@
 #include <stdint.h>
 #include <pthread.h>
 
-#include <lttng/ringbuffer-context.h>
+#include <lttng/ust-ringbuffer-context.h>
 #include "ringbuffer-config.h"
 #include "backend_types.h"
 #include "backend_internal.h"

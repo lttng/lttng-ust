@@ -20,7 +20,7 @@
 #include <lttng/ust-events.h>
 #include <lttng/ust-tracer.h>
 #include "lib/lttng-ust/getcpu.h"
-#include <lttng/ringbuffer-context.h>
+#include <lttng/ust-ringbuffer-context.h>
 
 #include "context-internal.h"
 
