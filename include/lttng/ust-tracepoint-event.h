@@ -969,21 +969,21 @@ static const char __tp_event_signature___##_provider##___##_name[] = 	\
  * mangled.
  */
 #ifdef __cplusplus
-#define LTTNG_TP_EXTERN_C extern "C"
+#define LTTNG_UST_TP_EXTERN_C extern "C"
 #else
-#define LTTNG_TP_EXTERN_C
+#define LTTNG_UST_TP_EXTERN_C
 #endif
 
 #undef TRACEPOINT_LOGLEVEL
 #define TRACEPOINT_LOGLEVEL(__provider, __name, __loglevel)		   \
 static const int _loglevel_value___##__provider##___##__name = __loglevel; \
-LTTNG_TP_EXTERN_C const int *_loglevel___##__provider##___##__name	   \
+LTTNG_UST_TP_EXTERN_C const int *_loglevel___##__provider##___##__name	   \
 		__attribute__((visibility("hidden"))) =			   \
 		&_loglevel_value___##__provider##___##__name;
 
 #include TRACEPOINT_INCLUDE
 
-#undef LTTNG_TP_EXTERN_C
+#undef LTTNG_UST_TP_EXTERN_C
 
 /*
  * Stage 6.1 of tracepoint event generation.
@@ -1001,19 +1001,19 @@ LTTNG_TP_EXTERN_C const int *_loglevel___##__provider##___##__name	   \
  * mangled.
  */
 #ifdef __cplusplus
-#define LTTNG_TP_EXTERN_C extern "C"
+#define LTTNG_UST_TP_EXTERN_C extern "C"
 #else
-#define LTTNG_TP_EXTERN_C
+#define LTTNG_UST_TP_EXTERN_C
 #endif
 
 #undef TRACEPOINT_MODEL_EMF_URI
 #define TRACEPOINT_MODEL_EMF_URI(__provider, __name, __uri)		   \
-LTTNG_TP_EXTERN_C const char *_model_emf_uri___##__provider##___##__name   \
+LTTNG_UST_TP_EXTERN_C const char *_model_emf_uri___##__provider##___##__name   \
 		__attribute__((visibility("hidden"))) = __uri;		   \
 
 #include TRACEPOINT_INCLUDE
 
-#undef LTTNG_TP_EXTERN_C
+#undef LTTNG_UST_TP_EXTERN_C
 
 /*
  * Stage 7.0 of tracepoint event generation.
