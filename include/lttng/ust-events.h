@@ -422,7 +422,7 @@ struct lttng_ust_event_notifier {
 	struct lttng_ust_event_notifier_private *priv;	/* Private event notifier interface */
 
 	int eval_capture;				/* Need to evaluate capture */
-	void (*notification_send)(struct lttng_ust_event_notifier *event_notifier,
+	void (*notification_send)(const struct lttng_ust_event_notifier *event_notifier,
 		const char *stack_data,
 		struct lttng_ust_notification_ctx *notif_ctx);
 

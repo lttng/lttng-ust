@@ -87,7 +87,7 @@ void lttng_ust_dummy_get_value(void *priv, struct lttng_ust_ctx_value *value)
 	__attribute__((visibility("hidden")));
 
 void lttng_event_notifier_notification_send(
-		struct lttng_ust_event_notifier *event_notifier,
+		const struct lttng_ust_event_notifier *event_notifier,
 		const char *stack_data,
 		struct lttng_ust_notification_ctx *notif_ctx)
 	__attribute__((visibility("hidden")));
