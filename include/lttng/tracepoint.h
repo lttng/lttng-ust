@@ -28,19 +28,19 @@
  */
 #include <sys/sdt.h>
 
-#define _LTTNG_SDT_NARG(...) \
-	__LTTNG_SDT_NARG(__VA_ARGS__, 12,11,10,9,8,7,6,5,4,3,2,1,0)
+#define _LTTNG_UST_SDT_NARG(...) \
+	__LTTNG_UST_SDT_NARG(__VA_ARGS__, 12,11,10,9,8,7,6,5,4,3,2,1,0)
 
-#define __LTTNG_SDT_NARG(_0,_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12, N, ...) N
+#define __LTTNG_UST_SDT_NARG(_0,_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12, N, ...) N
 
-#define _LTTNG_SDT_PROBE_N(provider, name, N, ...) \
+#define _LTTNG_UST_SDT_PROBE_N(provider, name, N, ...) \
 	_SDT_PROBE(provider, name, N, (__VA_ARGS__))
 
-#define LTTNG_STAP_PROBEV(provider, name, ...) \
-	_LTTNG_SDT_PROBE_N(provider, name, _LTTNG_SDT_NARG(0, ##__VA_ARGS__), ##__VA_ARGS__)
+#define LTTNG_UST_STAP_PROBEV(provider, name, ...) \
+	_LTTNG_UST_SDT_PROBE_N(provider, name, _LTTNG_UST_SDT_NARG(0, ##__VA_ARGS__), ##__VA_ARGS__)
 
 #else
-#define LTTNG_STAP_PROBEV(...)
+#define LTTNG_UST_STAP_PROBEV(...)
 #endif
 
 #ifdef __cplusplus
@@ -55,7 +55,7 @@ extern "C" {
 
 #define tracepoint(provider, name, ...)					    \
 	do {								    \
-		LTTNG_STAP_PROBEV(provider, name, ## __VA_ARGS__);	    \
+		LTTNG_UST_STAP_PROBEV(provider, name, ## __VA_ARGS__);	    \
 		if (tracepoint_enabled(provider, name)) 		    \
 			do_tracepoint(provider, name, __VA_ARGS__);	    \
 	} while (0)
