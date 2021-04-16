@@ -73,9 +73,6 @@ char* lttng_ust_sockinfo_get_procname(void *owner)
 void lttng_ust_sockinfo_session_enabled(void *owner)
 	__attribute__((visibility("hidden")));
 
-ssize_t lttng_ust_read(int fd, void *buf, size_t len)
-	__attribute__((visibility("hidden")));
-
 size_t lttng_ust_dummy_get_size(void *priv, size_t offset)
 	__attribute__((visibility("hidden")));
 

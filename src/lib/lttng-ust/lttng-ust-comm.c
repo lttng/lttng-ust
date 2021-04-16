@@ -357,24 +357,6 @@ static int got_timeout_env;
 
 static char *get_map_shm(struct sock_info *sock_info);
 
-ssize_t lttng_ust_read(int fd, void *buf, size_t len)
-{
-	ssize_t ret;
-	size_t copied = 0, to_copy = len;
-
-	do {
-		ret = read(fd, buf + copied, to_copy);
-		if (ret > 0) {
-			copied += ret;
-			to_copy -= ret;
-		}
-	} while ((ret > 0 && to_copy > 0)
-		|| (ret < 0 && errno == EINTR));
-	if (ret > 0) {
-		ret = copied;
-	}
-	return ret;
-}
 /*
  * Returns the HOME directory path. Caller MUST NOT free(3) the returned
  * pointer.

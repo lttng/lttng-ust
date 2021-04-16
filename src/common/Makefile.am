@@ -13,7 +13,6 @@ noinst_HEADERS = \
 	clock.h \
 	creds.h \
 	dynamic-type.h \
-	elf.h \
 	err-ptr.h \
 	events.h \
 	hash.h \
@@ -138,6 +137,8 @@ libsnprintf_la_SOURCES = \
 
 # Common library
 libcommon_la_SOURCES = \
+	elf.c \
+	elf.h \
 	getenv.c \
 	getenv.h \
 	logging.c \
@@ -146,6 +147,8 @@ libcommon_la_SOURCES = \
 	smp.h \
 	strutils.c \
 	strutils.h \
+	utils.c \
+	utils.h \
 	patient.c
 
 libcommon_la_LIBADD = \
