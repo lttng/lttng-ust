@@ -20,6 +20,6 @@ void py_tracepoint(const char *asctime, const char *msg,
 		const char *logger_name, const char *funcName, unsigned int lineno,
 		unsigned int int_loglevel, unsigned int thread, const char *threadName)
 {
-	tracepoint(lttng_python, event, asctime, msg, logger_name, funcName,
+	lttng_ust_tracepoint(lttng_python, event, asctime, msg, logger_name, funcName,
 			lineno, int_loglevel, thread, threadName);
 }

@@ -19,7 +19,7 @@ int main(void)
 	int i = 0;
 
 	for (i = 0; i < 100000; i++) {
-		tracepoint(sample_component, message, "Hello World");
+		lttng_ust_tracepoint(sample_component, message, "Hello World");
 		usleep(1);
 	}
 	return 0;

@@ -268,7 +268,7 @@ void *malloc(size_t size)
 	}
 	retval = cur_alloc.malloc(size);
 	if (URCU_TLS(malloc_nesting) == 1) {
-		tracepoint(lttng_ust_libc, malloc,
+		lttng_ust_tracepoint(lttng_ust_libc, malloc,
 			size, retval, LTTNG_UST_CALLER_IP());
 	}
 	URCU_TLS(malloc_nesting)--;
@@ -288,7 +288,7 @@ void free(void *ptr)
 	}
 
 	if (URCU_TLS(malloc_nesting) == 1) {
-		tracepoint(lttng_ust_libc, free,
+		lttng_ust_tracepoint(lttng_ust_libc, free,
 			ptr, LTTNG_UST_CALLER_IP());
 	}
 
@@ -318,7 +318,7 @@ void *calloc(size_t nmemb, size_t size)
 	}
 	retval = cur_alloc.calloc(nmemb, size);
 	if (URCU_TLS(malloc_nesting) == 1) {
-		tracepoint(lttng_ust_libc, calloc,
+		lttng_ust_tracepoint(lttng_ust_libc, calloc,
 			nmemb, size, retval, LTTNG_UST_CALLER_IP());
 	}
 	URCU_TLS(malloc_nesting)--;
@@ -371,7 +371,7 @@ void *realloc(void *ptr, size_t size)
 	retval = cur_alloc.realloc(ptr, size);
 end:
 	if (URCU_TLS(malloc_nesting) == 1) {
-		tracepoint(lttng_ust_libc, realloc,
+		lttng_ust_tracepoint(lttng_ust_libc, realloc,
 			ptr, size, retval, LTTNG_UST_CALLER_IP());
 	}
 	URCU_TLS(malloc_nesting)--;
@@ -392,7 +392,7 @@ void *memalign(size_t alignment, size_t size)
 	}
 	retval = cur_alloc.memalign(alignment, size);
 	if (URCU_TLS(malloc_nesting) == 1) {
-		tracepoint(lttng_ust_libc, memalign,
+		lttng_ust_tracepoint(lttng_ust_libc, memalign,
 			alignment, size, retval,
 			LTTNG_UST_CALLER_IP());
 	}
@@ -414,7 +414,7 @@ int posix_memalign(void **memptr, size_t alignment, size_t size)
 	}
 	retval = cur_alloc.posix_memalign(memptr, alignment, size);
 	if (URCU_TLS(malloc_nesting) == 1) {
-		tracepoint(lttng_ust_libc, posix_memalign,
+		lttng_ust_tracepoint(lttng_ust_libc, posix_memalign,
 			*memptr, alignment, size,
 			retval, LTTNG_UST_CALLER_IP());
 	}

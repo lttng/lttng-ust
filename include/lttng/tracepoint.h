@@ -19,6 +19,7 @@
 #include <lttng/ust-config.h>	/* for sdt */
 #include <lttng/ust-compiler.h>
 #include <lttng/ust-tracer.h>
+#include <lttng/ust-api-compat.h>
 
 #define LTTNG_UST_TRACEPOINT_NAME_LEN_MAX	256
 
@@ -49,17 +50,17 @@
 extern "C" {
 #endif
 
-#define tracepoint_enabled(provider, name) \
+#define lttng_ust_tracepoint_enabled(provider, name)				\
 	caa_unlikely(CMM_LOAD_SHARED(__tracepoint_##provider##___##name.state))
 
-#define do_tracepoint(provider, name, ...) \
+#define lttng_ust_do_tracepoint(provider, name, ...)				\
 	__tracepoint_cb_##provider##___##name(__VA_ARGS__)
 
-#define tracepoint(provider, name, ...)					    \
-	do {								    \
-		LTTNG_UST_STAP_PROBEV(provider, name, ## __VA_ARGS__);	    \
-		if (tracepoint_enabled(provider, name)) 		    \
-			do_tracepoint(provider, name, __VA_ARGS__);	    \
+#define lttng_ust_tracepoint(provider, name, ...)				\
+	do {									\
+		LTTNG_UST_STAP_PROBEV(provider, name, ## __VA_ARGS__);		\
+		if (lttng_ust_tracepoint_enabled(provider, name))		\
+			lttng_ust_do_tracepoint(provider, name, __VA_ARGS__);	\
 	} while (0)
 
 #define TP_ARGS(...)       __VA_ARGS__
@@ -566,6 +567,12 @@ __tracepoints__ptrs_destroy(void)
 #define _DEFINE_TRACEPOINT(_provider, _name, _args)
 
 #endif /* #else TRACEPOINT_DEFINE */
+
+#if LTTNG_UST_COMPAT_API(0)
+#define tracepoint			lttng_ust_tracepoint
+#define do_tracepoint			lttng_ust_do_tracepoint
+#define tracepoint_enabled		lttng_ust_tracepoint_enabled
+#endif /* #if LTTNG_UST_COMPAT_API(0) */
 
 #ifdef __cplusplus
 }

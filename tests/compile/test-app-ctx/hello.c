@@ -256,7 +256,7 @@ static
 void inthandler(int sig __attribute__((unused)))
 {
 	printf("in SIGUSR1 handler\n");
-	tracepoint(ust_tests_hello, tptest_sighandler);
+	lttng_ust_tracepoint(ust_tests_hello, tptest_sighandler);
 }
 
 static
@@ -314,7 +314,7 @@ int main(int argc, char **argv)
 	fprintf(stderr, "Tracing... ");
 	for (i = 0; i < 1000000; i++) {
 		netint = htonl(i);
-		tracepoint(ust_tests_hello, tptest, i, netint, values,
+		lttng_ust_tracepoint(ust_tests_hello, tptest, i, netint, values,
 			   text, strlen(text), dbl, flt, mybool);
 		test_inc_count();
 		//usleep(100000);

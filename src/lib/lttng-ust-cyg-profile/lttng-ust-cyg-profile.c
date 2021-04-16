@@ -22,10 +22,10 @@ void __cyg_profile_func_exit(void *this_fn, void *call_site)
 
 void __cyg_profile_func_enter(void *this_fn, void *call_site)
 {
-	tracepoint(lttng_ust_cyg_profile, func_entry, this_fn, call_site);
+	lttng_ust_tracepoint(lttng_ust_cyg_profile, func_entry, this_fn, call_site);
 }
 
 void __cyg_profile_func_exit(void *this_fn, void *call_site)
 {
-	tracepoint(lttng_ust_cyg_profile, func_exit, this_fn, call_site);
+	lttng_ust_tracepoint(lttng_ust_cyg_profile, func_exit, this_fn, call_site);
 }

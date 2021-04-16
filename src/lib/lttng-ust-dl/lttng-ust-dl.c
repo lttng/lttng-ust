@@ -118,17 +118,17 @@ void lttng_ust_dl_dlopen(void *so_base, const char *so_name,
 		goto end;
 	}
 
-	tracepoint(lttng_ust_dl, dlopen,
+	lttng_ust_tracepoint(lttng_ust_dl, dlopen,
 		ip, so_base, resolved_path, flags, memsz,
 		has_build_id, has_debug_link);
 
 	if (has_build_id) {
-		tracepoint(lttng_ust_dl, build_id,
+		lttng_ust_tracepoint(lttng_ust_dl, build_id,
 			ip, so_base, build_id, build_id_len);
 	}
 
 	if (has_debug_link) {
-		tracepoint(lttng_ust_dl, debug_link,
+		lttng_ust_tracepoint(lttng_ust_dl, debug_link,
 			ip, so_base, dbg_file, crc);
 	}
 
@@ -180,17 +180,17 @@ void lttng_ust_dl_dlmopen(void *so_base, Lmid_t nsid, const char *so_name,
 		goto end;
 	}
 
-	tracepoint(lttng_ust_dl, dlmopen,
+	lttng_ust_tracepoint(lttng_ust_dl, dlmopen,
 		ip, so_base, nsid, resolved_path, flags, memsz,
 		has_build_id, has_debug_link);
 
 	if (has_build_id) {
-		tracepoint(lttng_ust_dl, build_id,
+		lttng_ust_tracepoint(lttng_ust_dl, build_id,
 			ip, so_base, build_id, build_id_len);
 	}
 
 	if (has_debug_link) {
-		tracepoint(lttng_ust_dl, debug_link,
+		lttng_ust_tracepoint(lttng_ust_dl, debug_link,
 			ip, so_base, dbg_file, crc);
 	}
 
@@ -253,7 +253,7 @@ int dlclose(void *handle)
 
 		ret = dlinfo(handle, RTLD_DI_LINKMAP, &p);
 		if (ret != -1 && p != NULL && p->l_addr != 0) {
-			tracepoint(lttng_ust_dl, dlclose,
+			lttng_ust_tracepoint(lttng_ust_dl, dlclose,
 				LTTNG_UST_CALLER_IP(),
 				(void *) p->l_addr);
 		}

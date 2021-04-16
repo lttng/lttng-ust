@@ -19,7 +19,7 @@ JNIEXPORT void JNICALL Java_org_lttng_ust_LTTngUst_tracepointInt(JNIEnv *env,
 	jboolean iscopy;
 	const char *ev_name_cstr = (*env)->GetStringUTFChars(env, ev_name, &iscopy);
 
-	tracepoint(lttng_ust_java, int_event, ev_name_cstr, payload);
+	lttng_ust_tracepoint(lttng_ust_java, int_event, ev_name_cstr, payload);
 
 	(*env)->ReleaseStringUTFChars(env, ev_name, ev_name_cstr);
 }
@@ -33,7 +33,7 @@ JNIEXPORT void JNICALL Java_org_lttng_ust_LTTngUst_tracepointIntInt(JNIEnv *env,
 	jboolean iscopy;
 	const char *ev_name_cstr = (*env)->GetStringUTFChars(env, ev_name, &iscopy);
 
-	tracepoint(lttng_ust_java, int_int_event, ev_name_cstr, payload1, payload2);
+	lttng_ust_tracepoint(lttng_ust_java, int_int_event, ev_name_cstr, payload1, payload2);
 
 	(*env)->ReleaseStringUTFChars(env, ev_name, ev_name_cstr);
 }
@@ -46,7 +46,7 @@ JNIEXPORT void JNICALL Java_org_lttng_ust_LTTngUst_tracepointLong(JNIEnv *env,
 	jboolean iscopy;
 	const char *ev_name_cstr = (*env)->GetStringUTFChars(env, ev_name, &iscopy);
 
-	tracepoint(lttng_ust_java, long_event, ev_name_cstr, payload);
+	lttng_ust_tracepoint(lttng_ust_java, long_event, ev_name_cstr, payload);
 
 	(*env)->ReleaseStringUTFChars(env, ev_name, ev_name_cstr);
 }
@@ -60,7 +60,7 @@ JNIEXPORT void JNICALL Java_org_lttng_ust_LTTngUst_tracepointLongLong(JNIEnv *en
 	jboolean iscopy;
 	const char *ev_name_cstr = (*env)->GetStringUTFChars(env, ev_name, &iscopy);
 
-	tracepoint(lttng_ust_java, long_long_event, ev_name_cstr, payload1, payload2);
+	lttng_ust_tracepoint(lttng_ust_java, long_long_event, ev_name_cstr, payload1, payload2);
 
 	(*env)->ReleaseStringUTFChars(env, ev_name, ev_name_cstr);
 }
@@ -74,7 +74,7 @@ JNIEXPORT void JNICALL Java_org_lttng_ust_LTTngUst_tracepointString(JNIEnv *env,
 	const char *ev_name_cstr = (*env)->GetStringUTFChars(env, ev_name, &iscopy);
 	const char *payload_cstr = (*env)->GetStringUTFChars(env, payload, &iscopy);
 
-	tracepoint(lttng_ust_java, string_event, ev_name_cstr, payload_cstr);
+	lttng_ust_tracepoint(lttng_ust_java, string_event, ev_name_cstr, payload_cstr);
 
 	(*env)->ReleaseStringUTFChars(env, ev_name, ev_name_cstr);
 	(*env)->ReleaseStringUTFChars(env, payload, payload_cstr);

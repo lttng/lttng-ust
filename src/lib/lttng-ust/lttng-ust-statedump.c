@@ -207,7 +207,7 @@ void trace_bin_info_cb(struct lttng_ust_session *session, void *priv)
 {
 	struct bin_info_data *bin_data = (struct bin_info_data *) priv;
 
-	tracepoint(lttng_ust_statedump, bin_info,
+	lttng_ust_tracepoint(lttng_ust_statedump, bin_info,
 		session, bin_data->base_addr_ptr,
 		bin_data->resolved_path, bin_data->memsz,
 		bin_data->is_pic, bin_data->has_build_id,
@@ -219,7 +219,7 @@ void trace_build_id_cb(struct lttng_ust_session *session, void *priv)
 {
 	struct bin_info_data *bin_data = (struct bin_info_data *) priv;
 
-	tracepoint(lttng_ust_statedump, build_id,
+	lttng_ust_tracepoint(lttng_ust_statedump, build_id,
 		session, bin_data->base_addr_ptr,
 		bin_data->build_id, bin_data->build_id_len);
 }
@@ -229,7 +229,7 @@ void trace_debug_link_cb(struct lttng_ust_session *session, void *priv)
 {
 	struct bin_info_data *bin_data = (struct bin_info_data *) priv;
 
-	tracepoint(lttng_ust_statedump, debug_link,
+	lttng_ust_tracepoint(lttng_ust_statedump, debug_link,
 		session, bin_data->base_addr_ptr,
 		bin_data->dbg_file, bin_data->crc);
 }
@@ -238,19 +238,19 @@ static
 void procname_cb(struct lttng_ust_session *session, void *priv)
 {
 	char *procname = (char *) priv;
-	tracepoint(lttng_ust_statedump, procname, session, procname);
+	lttng_ust_tracepoint(lttng_ust_statedump, procname, session, procname);
 }
 
 static
 void trace_start_cb(struct lttng_ust_session *session, void *priv __attribute__((unused)))
 {
-	tracepoint(lttng_ust_statedump, start, session);
+	lttng_ust_tracepoint(lttng_ust_statedump, start, session);
 }
 
 static
 void trace_end_cb(struct lttng_ust_session *session, void *priv __attribute__((unused)))
 {
-	tracepoint(lttng_ust_statedump, end, session);
+	lttng_ust_tracepoint(lttng_ust_statedump, end, session);
 }
 
 static
@@ -380,19 +380,19 @@ void iter_begin(struct dl_iterate_data *data)
 static
 void trace_lib_load(const struct bin_info_data *bin_data, void *ip)
 {
-	tracepoint(lttng_ust_lib, load,
+	lttng_ust_tracepoint(lttng_ust_lib, load,
 		ip, bin_data->base_addr_ptr, bin_data->resolved_path,
 		bin_data->memsz, bin_data->has_build_id,
 		bin_data->has_debug_link);
 
 	if (bin_data->has_build_id) {
-		tracepoint(lttng_ust_lib, build_id,
+		lttng_ust_tracepoint(lttng_ust_lib, build_id,
 			ip, bin_data->base_addr_ptr, bin_data->build_id,
 			bin_data->build_id_len);
 	}
 
 	if (bin_data->has_debug_link) {
-		tracepoint(lttng_ust_lib, debug_link,
+		lttng_ust_tracepoint(lttng_ust_lib, debug_link,
 			ip, bin_data->base_addr_ptr, bin_data->dbg_file,
 			bin_data->crc);
 	}
@@ -401,7 +401,7 @@ void trace_lib_load(const struct bin_info_data *bin_data, void *ip)
 static
 void trace_lib_unload(const struct bin_info_data *bin_data, void *ip)
 {
-	tracepoint(lttng_ust_lib, unload, ip, bin_data->base_addr_ptr);
+	lttng_ust_tracepoint(lttng_ust_lib, unload, ip, bin_data->base_addr_ptr);
 }
 
 static

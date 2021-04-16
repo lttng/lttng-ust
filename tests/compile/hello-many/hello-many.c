@@ -31,8 +31,8 @@ int main(int argc, char **argv)
 	sleep(delay);
 
 	fprintf(stderr, "Tracing... ");
-	tracepoint(ust_tests_hello_many, tptest_simple1);
-	tracepoint(ust_tests_hello_many, tptest_simple34);
+	lttng_ust_tracepoint(ust_tests_hello_many, tptest_simple1);
+	lttng_ust_tracepoint(ust_tests_hello_many, tptest_simple34);
 	fprintf(stderr, " done.\n");
 	return 0;
 }

@@ -33,7 +33,7 @@ JNIEXPORT void JNICALL Java_org_lttng_ust_agent_jul_LttngJulApi_tracepoint(JNIEn
 	const char *class_name_cstr = (*env)->GetStringUTFChars(env, class_name, &iscopy);
 	const char *method_name_cstr = (*env)->GetStringUTFChars(env, method_name, &iscopy);
 
-	tracepoint(lttng_jul, event, msg_cstr, logger_name_cstr,
+	lttng_ust_tracepoint(lttng_jul, event, msg_cstr, logger_name_cstr,
 			class_name_cstr, method_name_cstr, millis, log_level, thread_id);
 
 	(*env)->ReleaseStringUTFChars(env, msg, msg_cstr);
@@ -76,7 +76,7 @@ JNIEXPORT void JNICALL Java_org_lttng_ust_agent_jul_LttngJulApi_tracepointWithCo
 	lttng_ust_context_info_tls.ctx_strings = context_info_strings_array;
 	lttng_ust_context_info_tls.ctx_strings_len = (*env)->GetArrayLength(env, context_info_strings);
 
-	tracepoint(lttng_jul, event, msg_cstr, logger_name_cstr,
+	lttng_ust_tracepoint(lttng_jul, event, msg_cstr, logger_name_cstr,
 			class_name_cstr, method_name_cstr, millis, log_level, thread_id);
 
 	lttng_ust_context_info_tls.ctx_entries = NULL;

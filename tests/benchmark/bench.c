@@ -48,7 +48,7 @@ void do_stuff(void)
 	for (i = 0; i < 100; i++)
 		cmm_barrier();
 #ifdef TRACING
-	tracepoint(ust_tests_benchmark, tpbench, v);
+	lttng_ust_tracepoint(ust_tests_benchmark, tpbench, v);
 #endif
 }
 

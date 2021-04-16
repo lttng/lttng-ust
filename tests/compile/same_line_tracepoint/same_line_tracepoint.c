@@ -10,6 +10,6 @@
 
 int main(void)
 {
-	tracepoint(ust_tests_sameline, event1);	tracepoint(ust_tests_sameline, event2);
+	lttng_ust_tracepoint(ust_tests_sameline, event1);	lttng_ust_tracepoint(ust_tests_sameline, event2);
 	return 0;
 }

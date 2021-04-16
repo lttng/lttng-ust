@@ -37,7 +37,7 @@ JNIEXPORT void JNICALL Java_org_lttng_ust_agent_log4j_LttngLog4jApi_tracepoint(J
 	const char *file_name_cstr = (*env)->GetStringUTFChars(env, file_name, &iscopy);
 	const char *thread_name_cstr = (*env)->GetStringUTFChars(env, thread_name, &iscopy);
 
-	tracepoint(lttng_log4j, event, msg_cstr, logger_name_cstr,
+	lttng_ust_tracepoint(lttng_log4j, event, msg_cstr, logger_name_cstr,
 		   class_name_cstr, method_name_cstr, file_name_cstr,
 		   line_number, timestamp, loglevel, thread_name_cstr);
 
@@ -87,7 +87,7 @@ JNIEXPORT void JNICALL Java_org_lttng_ust_agent_log4j_LttngLog4jApi_tracepointWi
 	lttng_ust_context_info_tls.ctx_strings = context_info_strings_array;
 	lttng_ust_context_info_tls.ctx_strings_len = (*env)->GetArrayLength(env, context_info_strings);
 
-	tracepoint(lttng_log4j, event, msg_cstr, logger_name_cstr,
+	lttng_ust_tracepoint(lttng_log4j, event, msg_cstr, logger_name_cstr,
 		   class_name_cstr, method_name_cstr, file_name_cstr,
 		   line_number, timestamp, loglevel, thread_name_cstr);
 

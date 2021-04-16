@@ -40,14 +40,14 @@ int main(int argc, char **argv)
 	sleep(delay);
 
 	fprintf(stderr, "Tracing... ");
-	tracepoint(ust_tests_demo, starting, 123);
+	lttng_ust_tracepoint(ust_tests_demo, starting, 123);
 	for (i = 0; i < 5; i++) {
 		netint = htonl(i);
-		tracepoint(ust_tests_demo2, loop, i, netint, values,
+		lttng_ust_tracepoint(ust_tests_demo2, loop, i, netint, values,
 			   text, strlen(text), dbl, flt);
 	}
-	tracepoint(ust_tests_demo, done, 456);
-	tracepoint(ust_tests_demo3, done, 42);
+	lttng_ust_tracepoint(ust_tests_demo, done, 456);
+	lttng_ust_tracepoint(ust_tests_demo3, done, 42);
 	fprintf(stderr, " done.\n");
 	return 0;
 }
