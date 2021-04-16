@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <sys/types.h>
+#include <pthread.h>
 #include <urcu/system.h>
 #include "common/logging.h"
 #include "common/macros.h"
@@ -25,8 +26,9 @@ struct lttng_env {
 	char *value;
 };
 
-static
-int lttng_ust_getenv_is_init = 0;
+/* lttng_ust_getenv_init_mutex provides mutual exclusion for initialization. */
+static pthread_mutex_t lttng_ust_getenv_init_mutex = PTHREAD_MUTEX_INITIALIZER;
+static int lttng_ust_getenv_is_init = 0;
 
 static struct lttng_env lttng_env[] = {
 	/*
@@ -88,8 +90,25 @@ void lttng_ust_getenv_init(void)
 {
 	size_t i;
 
-	if (CMM_LOAD_SHARED(lttng_ust_getenv_is_init))
+	/*
+	 * Return early if the init has already completed.
+	 */
+	if (CMM_LOAD_SHARED(lttng_ust_getenv_is_init)) {
+		/*
+		 * Load lttng_ust_getenv_is_init before reading environment cache.
+		 */
+		cmm_smp_rmb();
 		return;
+	}
+
+	pthread_mutex_lock(&lttng_ust_getenv_init_mutex);
+
+	/*
+	 * Check again if the init has completed in another thread now that we
+	 * have acquired the mutex.
+	 */
+	if (lttng_ust_getenv_is_init)
+		goto end_init;
 
 	for (i = 0; i < LTTNG_ARRAY_SIZE(lttng_env); i++) {
 		struct lttng_env *e = &lttng_env[i];
@@ -101,5 +120,12 @@ void lttng_ust_getenv_init(void)
 		}
 		e->value = getenv(e->key);
 	}
+
+	/*
+	 * Store environment cache before setting lttng_ust_getenv_is_init to 1.
+	 */
+	cmm_smp_wmb();
 	CMM_STORE_SHARED(lttng_ust_getenv_is_init, 1);
+end_init:
+	pthread_mutex_unlock(&lttng_ust_getenv_init_mutex);
 }
