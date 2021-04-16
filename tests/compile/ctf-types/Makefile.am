@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1-only
 
-AM_CPPFLAGS += -I$(srcdir) -Wsystem-headers
+AM_CPPFLAGS += -I$(srcdir)
 
 noinst_PROGRAMS = ctf-types
 ctf_types_SOURCES = ctf-types.c tp.c ust_tests_ctf_types.h
