@@ -262,7 +262,7 @@ uint64_t arch_read_perf_counter(
 }
 
 static
-int arch_perf_keep_fd(struct lttng_perf_counter_thread_field *thread_field)
+int arch_perf_keep_fd(struct lttng_perf_counter_thread_field *thread_field __attribute__((unused)))
 {
 	return 1;
 }

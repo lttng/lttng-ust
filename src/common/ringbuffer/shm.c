@@ -264,11 +264,19 @@ static bool lttng_is_numa_available(void)
 }
 #endif
 
+#ifdef HAVE_LIBNUMA
 struct shm_object *shm_object_table_alloc(struct shm_object_table *table,
 			size_t memory_map_size,
 			enum shm_object_type type,
 			int stream_fd,
 			int cpu)
+#else
+struct shm_object *shm_object_table_alloc(struct shm_object_table *table,
+			size_t memory_map_size,
+			enum shm_object_type type,
+			int stream_fd,
+			int cpu __attribute__((unused)))
+#endif
 {
 	struct shm_object *shm_object;
 #ifdef HAVE_LIBNUMA

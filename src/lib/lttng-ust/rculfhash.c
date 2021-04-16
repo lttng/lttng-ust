@@ -1006,7 +1006,7 @@ const struct lttng_ust_lfht_mm_type *get_mm_type(unsigned long max_nr_buckets)
  * For 32-bit architectures, use the order allocator.
  */
 static
-const struct lttng_ust_lfht_mm_type *get_mm_type(unsigned long max_nr_buckets)
+const struct lttng_ust_lfht_mm_type *get_mm_type(unsigned long max_nr_buckets __attribute__((unused)))
 {
 	return &lttng_ust_lfht_mm_order;
 }

@@ -192,11 +192,19 @@ static bool lttng_is_numa_available(void)
 }
 #endif
 
+#ifdef HAVE_LIBNUMA
 struct lttng_counter_shm_object *lttng_counter_shm_object_table_alloc(struct lttng_counter_shm_object_table *table,
 			size_t memory_map_size,
 			enum lttng_counter_shm_object_type type,
 			int cpu_fd,
 			int cpu)
+#else
+struct lttng_counter_shm_object *lttng_counter_shm_object_table_alloc(struct lttng_counter_shm_object_table *table,
+			size_t memory_map_size,
+			enum lttng_counter_shm_object_type type,
+			int cpu_fd,
+			int cpu __attribute__((unused)))
+#endif
 {
 	struct lttng_counter_shm_object *shm_object;
 #ifdef HAVE_LIBNUMA
