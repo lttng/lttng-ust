@@ -261,8 +261,8 @@ struct lttng_ust_tracepoint_dlopen {
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
-extern struct lttng_ust_tracepoint_dlopen tracepoint_dlopen;
-extern struct lttng_ust_tracepoint_dlopen *tracepoint_dlopen_ptr;
+extern struct lttng_ust_tracepoint_dlopen lttng_ust_tracepoint_dlopen;
+extern struct lttng_ust_tracepoint_dlopen *lttng_ust_tracepoint_dlopen_ptr;
 
 /*
  * These weak symbols, the constructor, and destructor take care of
@@ -273,7 +273,7 @@ int __tracepoint_registered
 	__attribute__((weak, visibility("hidden")));
 int __tracepoint_ptrs_registered
 	__attribute__((weak, visibility("hidden")));
-struct lttng_ust_tracepoint_dlopen tracepoint_dlopen
+struct lttng_ust_tracepoint_dlopen lttng_ust_tracepoint_dlopen
 		__attribute__((weak, visibility("hidden"))) = {
 	.struct_size = sizeof(struct lttng_ust_tracepoint_dlopen),
 };
@@ -287,7 +287,7 @@ struct lttng_ust_tracepoint_dlopen tracepoint_dlopen
  * scoping match that of the other weak hidden symbols found in this
  * header.
  */
-struct lttng_ust_tracepoint_dlopen *tracepoint_dlopen_ptr
+struct lttng_ust_tracepoint_dlopen *lttng_ust_tracepoint_dlopen_ptr
 	__attribute__((weak, visibility("hidden")));
 
 /*
@@ -324,11 +324,11 @@ struct lttng_ust_tracepoint_destructors_syms *tracepoint_destructors_syms_ptr
 
 static inline void tracepoint_disable_destructors(void)
 {
-	if (!tracepoint_dlopen_ptr)
-		tracepoint_dlopen_ptr = &tracepoint_dlopen;
+	if (!lttng_ust_tracepoint_dlopen_ptr)
+		lttng_ust_tracepoint_dlopen_ptr = &lttng_ust_tracepoint_dlopen;
 	if (!tracepoint_destructors_syms_ptr)
 		tracepoint_destructors_syms_ptr = &tracepoint_destructors_syms;
-	if (tracepoint_dlopen_ptr->liblttngust_handle
+	if (lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle
 			&& tracepoint_destructors_syms_ptr->tracepoint_disable_destructors)
 		tracepoint_destructors_syms_ptr->tracepoint_disable_destructors();
 }
@@ -340,26 +340,26 @@ __tracepoint__init_urcu_sym(void)
 static inline void
 __tracepoint__init_urcu_sym(void)
 {
-	if (!tracepoint_dlopen_ptr)
-		tracepoint_dlopen_ptr = &tracepoint_dlopen;
+	if (!lttng_ust_tracepoint_dlopen_ptr)
+		lttng_ust_tracepoint_dlopen_ptr = &lttng_ust_tracepoint_dlopen;
 	/*
 	 * Symbols below are needed by tracepoint call sites and probe
 	 * providers.
 	 */
-	if (!tracepoint_dlopen_ptr->rcu_read_lock_sym)
-		tracepoint_dlopen_ptr->rcu_read_lock_sym =
+	if (!lttng_ust_tracepoint_dlopen_ptr->rcu_read_lock_sym)
+		lttng_ust_tracepoint_dlopen_ptr->rcu_read_lock_sym =
 			URCU_FORCE_CAST(void (*)(void),
-				dlsym(tracepoint_dlopen_ptr->liblttngust_handle,
+				dlsym(lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle,
 					"tp_rcu_read_lock"));
-	if (!tracepoint_dlopen_ptr->rcu_read_unlock_sym)
-		tracepoint_dlopen_ptr->rcu_read_unlock_sym =
+	if (!lttng_ust_tracepoint_dlopen_ptr->rcu_read_unlock_sym)
+		lttng_ust_tracepoint_dlopen_ptr->rcu_read_unlock_sym =
 			URCU_FORCE_CAST(void (*)(void),
-				dlsym(tracepoint_dlopen_ptr->liblttngust_handle,
+				dlsym(lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle,
 					"tp_rcu_read_unlock"));
-	if (!tracepoint_dlopen_ptr->rcu_dereference_sym)
-		tracepoint_dlopen_ptr->rcu_dereference_sym =
+	if (!lttng_ust_tracepoint_dlopen_ptr->rcu_dereference_sym)
+		lttng_ust_tracepoint_dlopen_ptr->rcu_dereference_sym =
 			URCU_FORCE_CAST(void *(*)(void *p),
-				dlsym(tracepoint_dlopen_ptr->liblttngust_handle,
+				dlsym(lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle,
 					"tp_rcu_dereference_sym"));
 }
 #else
@@ -379,18 +379,18 @@ static void
 __tracepoints__init(void)
 {
 	if (__tracepoint_registered++) {
-		if (!tracepoint_dlopen_ptr->liblttngust_handle)
+		if (!lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle)
 			return;
 		__tracepoint__init_urcu_sym();
 		return;
 	}
 
-	if (!tracepoint_dlopen_ptr)
-		tracepoint_dlopen_ptr = &tracepoint_dlopen;
-	if (!tracepoint_dlopen_ptr->liblttngust_handle)
-		tracepoint_dlopen_ptr->liblttngust_handle =
+	if (!lttng_ust_tracepoint_dlopen_ptr)
+		lttng_ust_tracepoint_dlopen_ptr = &lttng_ust_tracepoint_dlopen;
+	if (!lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle)
+		lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle =
 			dlopen(LTTNG_UST_TRACEPOINT_LIB_SONAME, RTLD_NOW | RTLD_GLOBAL);
-	if (!tracepoint_dlopen_ptr->liblttngust_handle)
+	if (!lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle)
 		return;
 	__tracepoint__init_urcu_sym();
 }
@@ -405,11 +405,11 @@ __tracepoints__destroy(void)
 
 	if (--__tracepoint_registered)
 		return;
-	if (!tracepoint_dlopen_ptr)
-		tracepoint_dlopen_ptr = &tracepoint_dlopen;
+	if (!lttng_ust_tracepoint_dlopen_ptr)
+		lttng_ust_tracepoint_dlopen_ptr = &lttng_ust_tracepoint_dlopen;
 	if (!tracepoint_destructors_syms_ptr)
 		tracepoint_destructors_syms_ptr = &tracepoint_destructors_syms;
-	if (!tracepoint_dlopen_ptr->liblttngust_handle)
+	if (!lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle)
 		return;
 	if (__tracepoint_ptrs_registered)
 		return;
@@ -425,12 +425,12 @@ __tracepoints__destroy(void)
 		 */
 		return;
 	}
-	ret = dlclose(tracepoint_dlopen_ptr->liblttngust_handle);
+	ret = dlclose(lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle);
 	if (ret) {
 		fprintf(stderr, "Error (%d) in dlclose\n", ret);
 		abort();
 	}
-	memset(tracepoint_dlopen_ptr, 0, sizeof(*tracepoint_dlopen_ptr));
+	memset(lttng_ust_tracepoint_dlopen_ptr, 0, sizeof(*lttng_ust_tracepoint_dlopen_ptr));
 }
 
 #ifdef TRACEPOINT_DEFINE
@@ -500,34 +500,34 @@ __tracepoints__ptrs_init(void)
 {
 	if (__tracepoint_ptrs_registered++)
 		return;
-	if (!tracepoint_dlopen_ptr)
-		tracepoint_dlopen_ptr = &tracepoint_dlopen;
-	if (!tracepoint_dlopen_ptr->liblttngust_handle)
-		tracepoint_dlopen_ptr->liblttngust_handle =
+	if (!lttng_ust_tracepoint_dlopen_ptr)
+		lttng_ust_tracepoint_dlopen_ptr = &lttng_ust_tracepoint_dlopen;
+	if (!lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle)
+		lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle =
 			dlopen(LTTNG_UST_TRACEPOINT_LIB_SONAME, RTLD_NOW | RTLD_GLOBAL);
-	if (!tracepoint_dlopen_ptr->liblttngust_handle)
+	if (!lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle)
 		return;
 	if (!tracepoint_destructors_syms_ptr)
 		tracepoint_destructors_syms_ptr = &tracepoint_destructors_syms;
-	tracepoint_dlopen_ptr->tracepoint_register_lib =
+	lttng_ust_tracepoint_dlopen_ptr->tracepoint_register_lib =
 		URCU_FORCE_CAST(int (*)(struct lttng_ust_tracepoint * const *, int),
-				dlsym(tracepoint_dlopen_ptr->liblttngust_handle,
+				dlsym(lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle,
 					"tracepoint_register_lib"));
-	tracepoint_dlopen_ptr->tracepoint_unregister_lib =
+	lttng_ust_tracepoint_dlopen_ptr->tracepoint_unregister_lib =
 		URCU_FORCE_CAST(int (*)(struct lttng_ust_tracepoint * const *),
-				dlsym(tracepoint_dlopen_ptr->liblttngust_handle,
+				dlsym(lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle,
 					"tracepoint_unregister_lib"));
 	tracepoint_destructors_syms_ptr->tracepoint_disable_destructors =
 		URCU_FORCE_CAST(void (*)(void),
-				dlsym(tracepoint_dlopen_ptr->liblttngust_handle,
+				dlsym(lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle,
 					"tp_disable_destructors"));
 	tracepoint_destructors_syms_ptr->tracepoint_get_destructors_state =
 		URCU_FORCE_CAST(int (*)(void),
-				dlsym(tracepoint_dlopen_ptr->liblttngust_handle,
+				dlsym(lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle,
 					"tp_get_destructors_state"));
 	__tracepoint__init_urcu_sym();
-	if (tracepoint_dlopen_ptr->tracepoint_register_lib) {
-		tracepoint_dlopen_ptr->tracepoint_register_lib(__start___tracepoints_ptrs,
+	if (lttng_ust_tracepoint_dlopen_ptr->tracepoint_register_lib) {
+		lttng_ust_tracepoint_dlopen_ptr->tracepoint_register_lib(__start___tracepoints_ptrs,
 				__stop___tracepoints_ptrs -
 				__start___tracepoints_ptrs);
 	}
@@ -543,22 +543,22 @@ __tracepoints__ptrs_destroy(void)
 
 	if (--__tracepoint_ptrs_registered)
 		return;
-	if (!tracepoint_dlopen_ptr)
-		tracepoint_dlopen_ptr = &tracepoint_dlopen;
+	if (!lttng_ust_tracepoint_dlopen_ptr)
+		lttng_ust_tracepoint_dlopen_ptr = &lttng_ust_tracepoint_dlopen;
 	if (!tracepoint_destructors_syms_ptr)
 		tracepoint_destructors_syms_ptr = &tracepoint_destructors_syms;
-	if (tracepoint_dlopen_ptr->tracepoint_unregister_lib)
-		tracepoint_dlopen_ptr->tracepoint_unregister_lib(__start___tracepoints_ptrs);
-	if (tracepoint_dlopen_ptr->liblttngust_handle
+	if (lttng_ust_tracepoint_dlopen_ptr->tracepoint_unregister_lib)
+		lttng_ust_tracepoint_dlopen_ptr->tracepoint_unregister_lib(__start___tracepoints_ptrs);
+	if (lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle
 			&& tracepoint_destructors_syms_ptr->tracepoint_get_destructors_state
 			&& tracepoint_destructors_syms_ptr->tracepoint_get_destructors_state()
 			&& !__tracepoint_ptrs_registered) {
-		ret = dlclose(tracepoint_dlopen_ptr->liblttngust_handle);
+		ret = dlclose(lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle);
 		if (ret) {
 			fprintf(stderr, "Error (%d) in dlclose\n", ret);
 			abort();
 		}
-		memset(tracepoint_dlopen_ptr, 0, sizeof(*tracepoint_dlopen_ptr));
+		memset(lttng_ust_tracepoint_dlopen_ptr, 0, sizeof(*lttng_ust_tracepoint_dlopen_ptr));
 	}
 }
 

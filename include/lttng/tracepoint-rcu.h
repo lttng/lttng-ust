@@ -21,14 +21,14 @@
 
 #else	/* _LGPL_SOURCE */
 
-#define tp_rcu_read_lock	tracepoint_dlopen_ptr->rcu_read_lock_sym
-#define tp_rcu_read_unlock	tracepoint_dlopen_ptr->rcu_read_unlock_sym
+#define tp_rcu_read_lock	lttng_ust_tracepoint_dlopen_ptr->rcu_read_lock_sym
+#define tp_rcu_read_unlock	lttng_ust_tracepoint_dlopen_ptr->rcu_read_unlock_sym
 
 #define tp_rcu_dereference(p)						   \
 		URCU_FORCE_CAST(__typeof__(p),				   \
-			tracepoint_dlopen_ptr->rcu_dereference_sym(URCU_FORCE_CAST(void *, p)))
+			lttng_ust_tracepoint_dlopen_ptr->rcu_dereference_sym(URCU_FORCE_CAST(void *, p)))
 
-#define TP_RCU_LINK_TEST()	(tracepoint_dlopen_ptr && tp_rcu_read_lock)
+#define TP_RCU_LINK_TEST()	(lttng_ust_tracepoint_dlopen_ptr && tp_rcu_read_lock)
 
 #endif	/* _LGPL_SOURCE */
 
