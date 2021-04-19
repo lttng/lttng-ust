@@ -231,8 +231,8 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 			_elem_type_base)			\
 	lttng_ust_ctf_array_element_type_is_supported(_type, _item);
 
-#undef TP_FIELDS
-#define TP_FIELDS(...) __VA_ARGS__	/* Only one used in this phase */
+#undef LTTNG_UST_TP_FIELDS
+#define LTTNG_UST_TP_FIELDS(...) __VA_ARGS__	/* Only one used in this phase */
 
 #undef _TRACEPOINT_EVENT_CLASS
 #define _TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	\
@@ -357,8 +357,8 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 		.nofilter = 0,					\
 	}),
 
-#undef TP_FIELDS
-#define TP_FIELDS(...) __VA_ARGS__	/* Only one used in this phase */
+#undef LTTNG_UST_TP_FIELDS
+#define LTTNG_UST_TP_FIELDS(...) __VA_ARGS__	/* Only one used in this phase */
 
 #undef _TRACEPOINT_EVENT_CLASS
 #define _TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)		   	     \
@@ -457,8 +457,8 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));
 #undef LTTNG_UST_TP_ARGS
 #define LTTNG_UST_TP_ARGS(...) __VA_ARGS__
 
-#undef TP_FIELDS
-#define TP_FIELDS(...) __VA_ARGS__
+#undef LTTNG_UST_TP_FIELDS
+#define LTTNG_UST_TP_FIELDS(...) __VA_ARGS__
 
 #undef _TRACEPOINT_EVENT_CLASS
 #define _TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
@@ -626,8 +626,8 @@ size_t __event_get_size__##_provider##___##_name(			      \
 #undef LTTNG_UST_TP_ARGS
 #define LTTNG_UST_TP_ARGS(...) __VA_ARGS__
 
-#undef TP_FIELDS
-#define TP_FIELDS(...) __VA_ARGS__
+#undef LTTNG_UST_TP_FIELDS
+#define LTTNG_UST_TP_FIELDS(...) __VA_ARGS__
 
 #undef _TRACEPOINT_EVENT_CLASS
 #define _TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
@@ -701,8 +701,8 @@ void __event_prepare_interpreter_stack__##_provider##___##_name(char *__stack_da
 #undef LTTNG_UST_TP_ARGS
 #define LTTNG_UST_TP_ARGS(...) __VA_ARGS__
 
-#undef TP_FIELDS
-#define TP_FIELDS(...) __VA_ARGS__
+#undef LTTNG_UST_TP_FIELDS
+#define LTTNG_UST_TP_FIELDS(...) __VA_ARGS__
 
 #undef _TRACEPOINT_EVENT_CLASS
 #define _TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
@@ -789,8 +789,8 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 #undef LTTNG_UST_TP_ARGS
 #define LTTNG_UST_TP_ARGS(...) __VA_ARGS__
 
-#undef TP_FIELDS
-#define TP_FIELDS(...) __VA_ARGS__
+#undef LTTNG_UST_TP_FIELDS
+#define LTTNG_UST_TP_FIELDS(...) __VA_ARGS__
 
 /*
  * For state dump, check that "session" argument (mandatory) matches the

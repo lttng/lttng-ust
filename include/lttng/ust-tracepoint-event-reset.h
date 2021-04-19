@@ -18,8 +18,8 @@
 #undef LTTNG_UST_TP_ARGS
 #define LTTNG_UST_TP_ARGS(...)
 
-#undef TP_FIELDS
-#define TP_FIELDS(...)
+#undef LTTNG_UST_TP_FIELDS
+#define LTTNG_UST_TP_FIELDS(...)
 
 #undef  TRACEPOINT_LOGLEVEL_ENUM
 #define TRACEPOINT_LOGLEVEL_ENUM(...)

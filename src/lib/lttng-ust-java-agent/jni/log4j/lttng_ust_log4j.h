@@ -26,7 +26,7 @@ TRACEPOINT_EVENT(lttng_log4j, event,
 		long, timestamp,
 		int, log_level,
 		const char *, thread_name),
-	TP_FIELDS(
+	LTTNG_UST_TP_FIELDS(
 		ctf_string(msg, msg)
 		ctf_string(logger_name, logger_name)
 		ctf_string(class_name, class_name)

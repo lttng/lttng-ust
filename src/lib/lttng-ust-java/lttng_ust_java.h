@@ -14,7 +14,7 @@
 
 TRACEPOINT_EVENT(lttng_ust_java, int_event,
 	LTTNG_UST_TP_ARGS(const char *, name, int, payload),
-	TP_FIELDS(
+	LTTNG_UST_TP_FIELDS(
 		ctf_string(name, name)
 		ctf_integer(int, int_payload, payload)
 	)
@@ -22,7 +22,7 @@ TRACEPOINT_EVENT(lttng_ust_java, int_event,
 
 TRACEPOINT_EVENT(lttng_ust_java, int_int_event,
 	LTTNG_UST_TP_ARGS(const char *, name, int, payload1, int, payload2),
-	TP_FIELDS(
+	LTTNG_UST_TP_FIELDS(
 		ctf_string(name, name)
 		ctf_integer(int, int_payload1, payload1)
 		ctf_integer(int, int_payload2, payload2)
@@ -31,7 +31,7 @@ TRACEPOINT_EVENT(lttng_ust_java, int_int_event,
 
 TRACEPOINT_EVENT(lttng_ust_java, long_event,
 	LTTNG_UST_TP_ARGS(const char *, name, long, payload),
-	TP_FIELDS(
+	LTTNG_UST_TP_FIELDS(
 		ctf_string(name, name)
 		ctf_integer(long, long_payload, payload)
 	)
@@ -39,7 +39,7 @@ TRACEPOINT_EVENT(lttng_ust_java, long_event,
 
 TRACEPOINT_EVENT(lttng_ust_java, long_long_event,
 	LTTNG_UST_TP_ARGS(const char *, name, long, payload1, long, payload2),
-	TP_FIELDS(
+	LTTNG_UST_TP_FIELDS(
 		ctf_string(name, name)
 		ctf_integer(long, long_payload1, payload1)
 		ctf_integer(long, long_payload2, payload2)
@@ -48,7 +48,7 @@ TRACEPOINT_EVENT(lttng_ust_java, long_long_event,
 
 TRACEPOINT_EVENT(lttng_ust_java, string_event,
 	LTTNG_UST_TP_ARGS(const char *, name, const char *, payload),
-	TP_FIELDS(
+	LTTNG_UST_TP_FIELDS(
 		ctf_string(name, name)
 		ctf_string(string_payload, payload)
 	)

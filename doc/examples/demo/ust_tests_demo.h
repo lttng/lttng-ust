@@ -14,7 +14,7 @@
 
 TRACEPOINT_EVENT(ust_tests_demo, starting,
 	LTTNG_UST_TP_ARGS(int, value),
-	TP_FIELDS(
+	LTTNG_UST_TP_FIELDS(
 		ctf_integer(int, value, value)
 	)
 )
@@ -29,7 +29,7 @@ TRACEPOINT_MODEL_EMF_URI(ust_tests_demo, starting,
 
 TRACEPOINT_EVENT(ust_tests_demo, done,
 	LTTNG_UST_TP_ARGS(int, value),
-	TP_FIELDS(
+	LTTNG_UST_TP_FIELDS(
 		ctf_integer(int, value, value)
 	)
 )

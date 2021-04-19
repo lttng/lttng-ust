@@ -14,7 +14,7 @@
 
 TRACEPOINT_EVENT(ust_tests_demo3, done,
 	LTTNG_UST_TP_ARGS(int, value),
-	TP_FIELDS(
+	LTTNG_UST_TP_FIELDS(
 		ctf_integer(int, value, value)
 	)
 )

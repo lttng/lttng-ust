@@ -24,7 +24,7 @@ TRACEPOINT_EVENT(lttng_python, event,
 		int, thread,
 		const char *, threadName
 	),
-	TP_FIELDS(
+	LTTNG_UST_TP_FIELDS(
 		ctf_string(asctime, asctime)
 		ctf_string(msg, msg)
 		ctf_string(logger_name, logger_name)

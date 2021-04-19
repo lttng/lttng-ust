@@ -10,7 +10,7 @@
 TRACEPOINT_EVENT_CLASS(lttng_ust_tracelog, tlclass,
 	LTTNG_UST_TP_ARGS(const char *, file, int, line, const char *, func,
 		const char *, msg, unsigned int, len, void *, ip),
-	TP_FIELDS(
+	LTTNG_UST_TP_FIELDS(
 		ctf_integer(int, line, line)
 		ctf_string(file, file)
 		ctf_string(func, func)

@@ -21,7 +21,7 @@ TRACEPOINT_EVENT(
 	LTTNG_UST_TP_ARGS(
 		const char *, query_name
 	),
-	TP_FIELDS(
+	LTTNG_UST_TP_FIELDS(
 		ctf_string(query_name, query_name)
 	)
 )
@@ -32,7 +32,7 @@ TRACEPOINT_EVENT(
 	LTTNG_UST_TP_ARGS(
 		const char *, alignment
 	),
-	TP_FIELDS(
+	LTTNG_UST_TP_FIELDS(
 		ctf_string(alignment, alignment)
 	)
 )

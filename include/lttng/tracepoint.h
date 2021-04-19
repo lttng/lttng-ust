@@ -573,6 +573,7 @@ __tracepoints__ptrs_destroy(void)
 #define do_tracepoint			lttng_ust_do_tracepoint
 #define tracepoint_enabled		lttng_ust_tracepoint_enabled
 #define TP_ARGS				LTTNG_UST_TP_ARGS
+#define TP_FIELDS			LTTNG_UST_TP_FIELDS
 #endif /* #if LTTNG_UST_COMPAT_API(0) */
 
 #ifdef __cplusplus
@@ -641,9 +642,9 @@ __tracepoints__ptrs_destroy(void)
  *     LTTNG_UST_TP_ARGS(int, arg0, void *, arg1, char *, string, size_t, strlen,
  *             long *, arg4, size_t, arg4_len),
  *
- *	* TP_FIELDS describes the event payload layout in the trace *
+ *	* LTTNG_UST_TP_FIELDS describes the event payload layout in the trace *
  *
- *     TP_FIELDS(
+ *     LTTNG_UST_TP_FIELDS(
  *         * Integer, printed in base 10 *
  *         ctf_integer(int, field_a, arg0)
  *

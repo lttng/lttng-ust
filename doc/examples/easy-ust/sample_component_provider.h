@@ -76,10 +76,10 @@ TRACEPOINT_EVENT(
 	 */
 	LTTNG_UST_TP_ARGS(const char *, text),
 	/*
-	 * TP_FIELDS describes how to write the fields of the trace event.
+	 * LTTNG_UST_TP_FIELDS describes how to write the fields of the trace event.
 	 * You can use the args here
 	 */
-	TP_FIELDS(
+	LTTNG_UST_TP_FIELDS(
 	/*
 	 * The ctf_string macro takes a c string and writes it into a field
 	 * named "message"

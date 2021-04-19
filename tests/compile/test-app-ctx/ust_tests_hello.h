@@ -19,7 +19,7 @@ TRACEPOINT_EVENT(ust_tests_hello, tptest,
 		char *, text, size_t, textlen,
 		double, doublearg, float, floatarg,
 		bool, boolarg),
-	TP_FIELDS(
+	LTTNG_UST_TP_FIELDS(
 		ctf_integer(int, intfield, anint)
 		ctf_integer_hex(int, intfield2, anint)
 		ctf_integer(long, longfield, anint)
@@ -41,7 +41,7 @@ TRACEPOINT_EVENT(ust_tests_hello, tptest,
 
 TRACEPOINT_EVENT(ust_tests_hello, tptest_sighandler,
 	LTTNG_UST_TP_ARGS(),
-	TP_FIELDS()
+	LTTNG_UST_TP_FIELDS()
 )
 
 #endif /* _TRACEPOINT_UST_TESTS_HELLO_H */

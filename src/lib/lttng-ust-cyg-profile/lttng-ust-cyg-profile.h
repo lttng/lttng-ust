@@ -18,7 +18,7 @@ extern "C" {
 
 TRACEPOINT_EVENT_CLASS(lttng_ust_cyg_profile, func_class,
 	LTTNG_UST_TP_ARGS(void *, func_addr, void *, call_site),
-	TP_FIELDS(
+	LTTNG_UST_TP_FIELDS(
 		ctf_integer_hex(unsigned long, addr,
 			(unsigned long) func_addr)
 		ctf_integer_hex(unsigned long, call_site,

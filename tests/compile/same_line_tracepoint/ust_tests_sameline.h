@@ -14,13 +14,13 @@
 
 TRACEPOINT_EVENT(ust_tests_sameline, event1,
 	LTTNG_UST_TP_ARGS(),
-	TP_FIELDS()
+	LTTNG_UST_TP_FIELDS()
 )
 TRACEPOINT_LOGLEVEL(ust_tests_sameline, event1, TRACE_CRIT)
 
 TRACEPOINT_EVENT(ust_tests_sameline, event2,
 	LTTNG_UST_TP_ARGS(),
-	TP_FIELDS()
+	LTTNG_UST_TP_FIELDS()
 )
 TRACEPOINT_LOGLEVEL(ust_tests_sameline, event2, TRACE_CRIT)
 
