@@ -261,6 +261,7 @@ AC_CHECK_FUNCS([ \
   clock_gettime \
   ftruncate \
   getpagesize \
+  gettid \
   gettimeofday \
   localeconv \
   memchr \

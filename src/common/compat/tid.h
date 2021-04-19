@@ -13,7 +13,15 @@
 #include <sys/syscall.h>
 #endif
 
-#if defined(__NR_gettid)
+#ifdef HAVE_GETTID
+
+#include <unistd.h>
+static inline pid_t lttng_gettid(void)
+{
+	return gettid();
+}
+
+#elif defined(__NR_gettid)
 
 #include <unistd.h>
 static inline pid_t lttng_gettid(void)
