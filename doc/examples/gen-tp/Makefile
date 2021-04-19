@@ -39,7 +39,6 @@ sample.o: sample.c sample_tracepoint.h
 	@if $(AM_V_P); then set -x; else echo "  CC       $@"; fi; \
 		CPPFLAGS="$(AM_CPPFLAGS) $(CPPFLAGS)" \
 		CFLAGS="$(AM_CFLAGS) $(CFLAGS)" \
-		LDFLAGS="$(AM_LDFLAGS) $(LDFLAGS)" \
 		CC="$(CC)" \
 		$(PYTHON) $(LTTNG_GEN_TP_PATH)lttng-gen-tp -o $@ $<
 

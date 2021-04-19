@@ -138,12 +138,8 @@ class ObjFile:
             cflags = " " + os.environ['CFLAGS']
         else:
             cflags = ""
-        if 'LDFLAGS' in os.environ:
-            ldflags = " " + os.environ['LDFLAGS']
-        else:
-            ldflags = ""
 
-        command = cc + " -c" + cppflags + cflags + ldflags + " -I. -llttng-ust" + " -o " + self.outputFilename + " " + cFilename
+        command = cc + " -c" + cppflags + cflags + " -I. -o " + self.outputFilename + " " + cFilename
         if verbose:
             print("Compile command: " + command)
         subprocess.call(command.split())
