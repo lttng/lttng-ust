@@ -190,10 +190,10 @@ void lttng_perf_counter_exit(void)
 #else /* #ifdef HAVE_LINUX_PERF_EVENT_H */
 
 static inline
-int lttng_add_perf_counter_to_ctx(uint32_t type,
-				  uint64_t config,
-				  const char *name,
-				  struct lttng_ust_ctx **ctx)
+int lttng_add_perf_counter_to_ctx(uint32_t type __attribute__((unused)),
+				  uint64_t config __attribute__((unused)),
+				  const char *name __attribute__((unused)),
+				  struct lttng_ust_ctx **ctx __attribute__((unused)))
 {
 	return -ENOSYS;
 }

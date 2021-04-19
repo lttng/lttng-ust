@@ -13,6 +13,7 @@
 #include <signal.h>
 #include <sched.h>
 #include <stdarg.h>
+#include <stdlib.h>
 #include <errno.h>
 
 #include <lttng/ust-fork.h>
@@ -403,7 +404,7 @@ int setresgid(gid_t rgid, gid_t egid, gid_t sgid)
 
 pid_t rfork(int flags)
 {
-	static pid_t (*plibc_func)(void) = NULL;
+	static pid_t (*plibc_func)(int flags) = NULL;
 	sigset_t sigset;
 	pid_t retval;
 	int saved_errno;
@@ -419,7 +420,7 @@ pid_t rfork(int flags)
 
 	lttng_ust_before_fork(&sigset);
 	/* Do the real rfork */
-	retval = plibc_func();
+	retval = plibc_func(flags);
 	saved_errno = errno;
 	if (retval == 0) {
 		/* child */
