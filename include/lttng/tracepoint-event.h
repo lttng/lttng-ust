@@ -9,14 +9,14 @@
 #define __tp_stringify1(x)	#x
 #define __tp_stringify(x)	__tp_stringify1(x)
 
-#undef TRACEPOINT_EVENT_INSTANCE
-#define TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)
+#undef LTTNG_UST_TRACEPOINT_EVENT_INSTANCE
+#define LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)
 
-#undef TRACEPOINT_EVENT
-#define TRACEPOINT_EVENT(_provider, _name, _args, _fields)		\
-	TRACEPOINT_EVENT_CLASS(_provider, _name, _TP_PARAMS(_args),	\
+#undef LTTNG_UST_TRACEPOINT_EVENT
+#define LTTNG_UST_TRACEPOINT_EVENT(_provider, _name, _args, _fields)		\
+	LTTNG_UST_TRACEPOINT_EVENT_CLASS(_provider, _name, _TP_PARAMS(_args),	\
 			_TP_PARAMS(_fields))				\
-	TRACEPOINT_EVENT_INSTANCE(_provider, _name, _name,		\
+	LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(_provider, _name, _name,		\
 			_TP_PARAMS(_args))
 
 
@@ -40,18 +40,18 @@
 #undef LTTNG_UST_TP_ARGS
 #define LTTNG_UST_TP_ARGS(...)       __VA_ARGS__
 
-#undef TRACEPOINT_EVENT
-#define TRACEPOINT_EVENT(provider, name, args, fields)			\
-	_DECLARE_TRACEPOINT(provider, name, _TP_PARAMS(args))		\
-	_DEFINE_TRACEPOINT(provider, name, _TP_PARAMS(args))
+#undef LTTNG_UST_TRACEPOINT_EVENT
+#define LTTNG_UST_TRACEPOINT_EVENT(provider, name, args, fields)			\
+	LTTNG_UST__DECLARE_TRACEPOINT(provider, name, _TP_PARAMS(args))		\
+	LTTNG_UST__DEFINE_TRACEPOINT(provider, name, _TP_PARAMS(args))
 
-#undef TRACEPOINT_EVENT_CLASS
-#define TRACEPOINT_EVENT_CLASS(provider, name, args, fields)
+#undef LTTNG_UST_TRACEPOINT_EVENT_CLASS
+#define LTTNG_UST_TRACEPOINT_EVENT_CLASS(provider, name, args, fields)
 
-#undef TRACEPOINT_EVENT_INSTANCE
-#define TRACEPOINT_EVENT_INSTANCE(provider, _template, name, args)	\
-	_DECLARE_TRACEPOINT(provider, name, _TP_PARAMS(args))		\
-	_DEFINE_TRACEPOINT(provider, name, _TP_PARAMS(args))
+#undef LTTNG_UST_TRACEPOINT_EVENT_INSTANCE
+#define LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(provider, _template, name, args)	\
+	LTTNG_UST__DECLARE_TRACEPOINT(provider, name, _TP_PARAMS(args))		\
+	LTTNG_UST__DEFINE_TRACEPOINT(provider, name, _TP_PARAMS(args))
 
 #undef TRACEPOINT_LOGLEVEL
 #define TRACEPOINT_LOGLEVEL(provider, name, loglevel)

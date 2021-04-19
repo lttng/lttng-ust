@@ -181,7 +181,7 @@ extern "C" {
  * between caller's ip addresses within the probe using the return
  * address.
  */
-#define _DECLARE_TRACEPOINT(_provider, _name, ...)			 		\
+#define LTTNG_UST__DECLARE_TRACEPOINT(_provider, _name, ...)			 		\
 extern struct lttng_ust_tracepoint __tracepoint_##_provider##___##_name;		\
 static inline										\
 void __tracepoint_cb_##_provider##___##_name(_TP_ARGS_PROTO(__VA_ARGS__))		\
@@ -467,7 +467,7 @@ extern struct lttng_ust_tracepoint * const __stop___tracepoints_ptrs[]
  */
 #define _TP_EXTRACT_STRING(...)	#__VA_ARGS__
 
-#define _DEFINE_TRACEPOINT(_provider, _name, _args)				\
+#define LTTNG_UST__DEFINE_TRACEPOINT(_provider, _name, _args)				\
 	lttng_ust_tracepoint_validate_name_len(_provider, _name);		\
 	extern int __tracepoint_provider_##_provider; 				\
 	static const char __tp_provider_strtab_##_provider##___##_name[]	\
@@ -564,7 +564,7 @@ __tracepoints__ptrs_destroy(void)
 
 #else /* TRACEPOINT_DEFINE */
 
-#define _DEFINE_TRACEPOINT(_provider, _name, _args)
+#define LTTNG_UST__DEFINE_TRACEPOINT(_provider, _name, _args)
 
 #endif /* #else TRACEPOINT_DEFINE */
 
@@ -628,14 +628,14 @@ __tracepoints__ptrs_destroy(void)
 
 #endif /* #ifndef TRACEPOINT_ENUM */
 
-#ifndef TRACEPOINT_EVENT
+#ifndef LTTNG_UST_TRACEPOINT_EVENT
 
 /*
- * How to use the TRACEPOINT_EVENT macro:
+ * How to use the LTTNG_UST_TRACEPOINT_EVENT macro:
  *
  * An example:
  *
- * TRACEPOINT_EVENT(someproject_component, event_name,
+ * LTTNG_UST_TRACEPOINT_EVENT(someproject_component, event_name,
  *
  *     * LTTNG_UST_TP_ARGS takes from 0 to 10 "type, field_name" pairs *
  *
@@ -712,17 +712,23 @@ __tracepoints__ptrs_destroy(void)
  * the provider:event identifier is limited to 127 characters.
  */
 
-#define TRACEPOINT_EVENT(provider, name, args, fields)			\
-	_DECLARE_TRACEPOINT(provider, name, _TP_PARAMS(args))		\
-	_DEFINE_TRACEPOINT(provider, name, _TP_PARAMS(args))
+#define LTTNG_UST_TRACEPOINT_EVENT(provider, name, args, fields)			\
+	LTTNG_UST__DECLARE_TRACEPOINT(provider, name, _TP_PARAMS(args))		\
+	LTTNG_UST__DEFINE_TRACEPOINT(provider, name, _TP_PARAMS(args))
 
-#define TRACEPOINT_EVENT_CLASS(provider, name, args, fields)
+#define LTTNG_UST_TRACEPOINT_EVENT_CLASS(provider, name, args, fields)
 
-#define TRACEPOINT_EVENT_INSTANCE(provider, _template, name, args)	\
-	_DECLARE_TRACEPOINT(provider, name, _TP_PARAMS(args))		\
-	_DEFINE_TRACEPOINT(provider, name, _TP_PARAMS(args))
+#define LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(provider, _template, name, args)	\
+	LTTNG_UST__DECLARE_TRACEPOINT(provider, name, _TP_PARAMS(args))		\
+	LTTNG_UST__DEFINE_TRACEPOINT(provider, name, _TP_PARAMS(args))
 
-#endif /* #ifndef TRACEPOINT_EVENT */
+#if LTTNG_UST_COMPAT_API(0)
+#define TRACEPOINT_EVENT		LTTNG_UST_TRACEPOINT_EVENT
+#define TRACEPOINT_EVENT_CLASS		LTTNG_UST_TRACEPOINT_EVENT_CLASS
+#define TRACEPOINT_EVENT_INSTANCE	LTTNG_UST_TRACEPOINT_EVENT_INSTANCE
+#endif /* #if LTTNG_UST_COMPAT_API(0) */
+
+#endif /* #ifndef LTTNG_UST_TRACEPOINT_EVENT */
 
 #ifndef TRACEPOINT_LOGLEVEL
 
@@ -778,12 +784,12 @@ __tracepoints__ptrs_destroy(void)
  * debug information with function-level scope
  *
  * TRACE_DEBUG_LINE      13
- * debug information with line-level scope (TRACEPOINT_EVENT default)
+ * debug information with line-level scope (LTTNG_UST_TRACEPOINT_EVENT default)
  *
  * TRACE_DEBUG           14
  * debug-level message
  *
- * Declare tracepoint loglevels for tracepoints. A TRACEPOINT_EVENT
+ * Declare tracepoint loglevels for tracepoints. A LTTNG_UST_TRACEPOINT_EVENT
  * should be declared prior to the the TRACEPOINT_LOGLEVEL for a given
  * tracepoint name. The first field is the provider name, the second
  * field is the name of the tracepoint, the third field is the loglevel

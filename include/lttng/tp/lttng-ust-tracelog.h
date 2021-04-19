@@ -7,7 +7,7 @@
 #include <lttng/tracepoint.h>
 #include <stdarg.h>
 
-TRACEPOINT_EVENT_CLASS(lttng_ust_tracelog, tlclass,
+LTTNG_UST_TRACEPOINT_EVENT_CLASS(lttng_ust_tracelog, tlclass,
 	LTTNG_UST_TP_ARGS(const char *, file, int, line, const char *, func,
 		const char *, msg, unsigned int, len, void *, ip),
 	LTTNG_UST_TP_FIELDS(
@@ -20,7 +20,7 @@ TRACEPOINT_EVENT_CLASS(lttng_ust_tracelog, tlclass,
 )
 
 #define TP_TRACELOG_TEMPLATE(_level_enum) \
-	TRACEPOINT_EVENT_INSTANCE(lttng_ust_tracelog, tlclass, _level_enum, \
+	LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(lttng_ust_tracelog, tlclass, _level_enum, \
 		LTTNG_UST_TP_ARGS(const char *, file, int, line, const char *, func, \
 			const char *, msg, unsigned int, len, void *, ip) \
 	) \

@@ -16,7 +16,7 @@ extern "C" {
 
 #include <lttng/tracepoint.h>
 
-TRACEPOINT_EVENT(lttng_ust_pthread, pthread_mutex_lock_req,
+LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_pthread, pthread_mutex_lock_req,
 	LTTNG_UST_TP_ARGS(pthread_mutex_t *, mutex, void *, ip),
 	LTTNG_UST_TP_FIELDS(
 		ctf_integer_hex(void *, mutex, mutex)
@@ -24,7 +24,7 @@ TRACEPOINT_EVENT(lttng_ust_pthread, pthread_mutex_lock_req,
 	)
 )
 
-TRACEPOINT_EVENT(lttng_ust_pthread, pthread_mutex_lock_acq,
+LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_pthread, pthread_mutex_lock_acq,
 	LTTNG_UST_TP_ARGS(pthread_mutex_t *, mutex, int, status, void *, ip),
 	LTTNG_UST_TP_FIELDS(
 		ctf_integer_hex(void *, mutex, mutex)
@@ -33,7 +33,7 @@ TRACEPOINT_EVENT(lttng_ust_pthread, pthread_mutex_lock_acq,
 	)
 )
 
-TRACEPOINT_EVENT(lttng_ust_pthread, pthread_mutex_trylock,
+LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_pthread, pthread_mutex_trylock,
 	LTTNG_UST_TP_ARGS(pthread_mutex_t *, mutex, int, status, void *, ip),
 	LTTNG_UST_TP_FIELDS(
 		ctf_integer_hex(void *, mutex, mutex)
@@ -42,7 +42,7 @@ TRACEPOINT_EVENT(lttng_ust_pthread, pthread_mutex_trylock,
 	)
 )
 
-TRACEPOINT_EVENT(lttng_ust_pthread, pthread_mutex_unlock,
+LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_pthread, pthread_mutex_unlock,
 	LTTNG_UST_TP_ARGS(pthread_mutex_t *, mutex, int, status, void *, ip),
 	LTTNG_UST_TP_FIELDS(
 		ctf_integer_hex(void *, mutex, mutex)

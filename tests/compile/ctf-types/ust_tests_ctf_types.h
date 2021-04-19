@@ -33,7 +33,7 @@ TRACEPOINT_ENUM(ust_tests_ctf_types, testenum2,
  * Enumeration field is used twice to make sure the type declaration
  * is entered only once in the metadata file.
  */
-TRACEPOINT_EVENT(ust_tests_ctf_types, tptest,
+LTTNG_UST_TRACEPOINT_EVENT(ust_tests_ctf_types, tptest,
 	LTTNG_UST_TP_ARGS(int, anint, int, enumval, int, enumval2),
 	LTTNG_UST_TP_FIELDS(
 		ctf_integer(int, intfield, anint)
@@ -49,7 +49,7 @@ TRACEPOINT_EVENT(ust_tests_ctf_types, tptest,
  * Another tracepoint using the types to make sure each type is entered
  * only once in the metadata file.
  */
-TRACEPOINT_EVENT(ust_tests_ctf_types, tptest_bis,
+LTTNG_UST_TRACEPOINT_EVENT(ust_tests_ctf_types, tptest_bis,
 	LTTNG_UST_TP_ARGS(int, anint, int, enumval),
 	LTTNG_UST_TP_FIELDS(
 		ctf_integer(int, intfield, anint)

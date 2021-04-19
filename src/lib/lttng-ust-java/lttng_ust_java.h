@@ -12,7 +12,7 @@
 
 #include <lttng/tracepoint.h>
 
-TRACEPOINT_EVENT(lttng_ust_java, int_event,
+LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_java, int_event,
 	LTTNG_UST_TP_ARGS(const char *, name, int, payload),
 	LTTNG_UST_TP_FIELDS(
 		ctf_string(name, name)
@@ -20,7 +20,7 @@ TRACEPOINT_EVENT(lttng_ust_java, int_event,
 	)
 )
 
-TRACEPOINT_EVENT(lttng_ust_java, int_int_event,
+LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_java, int_int_event,
 	LTTNG_UST_TP_ARGS(const char *, name, int, payload1, int, payload2),
 	LTTNG_UST_TP_FIELDS(
 		ctf_string(name, name)
@@ -29,7 +29,7 @@ TRACEPOINT_EVENT(lttng_ust_java, int_int_event,
 	)
 )
 
-TRACEPOINT_EVENT(lttng_ust_java, long_event,
+LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_java, long_event,
 	LTTNG_UST_TP_ARGS(const char *, name, long, payload),
 	LTTNG_UST_TP_FIELDS(
 		ctf_string(name, name)
@@ -37,7 +37,7 @@ TRACEPOINT_EVENT(lttng_ust_java, long_event,
 	)
 )
 
-TRACEPOINT_EVENT(lttng_ust_java, long_long_event,
+LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_java, long_long_event,
 	LTTNG_UST_TP_ARGS(const char *, name, long, payload1, long, payload2),
 	LTTNG_UST_TP_FIELDS(
 		ctf_string(name, name)
@@ -46,7 +46,7 @@ TRACEPOINT_EVENT(lttng_ust_java, long_long_event,
 	)
 )
 
-TRACEPOINT_EVENT(lttng_ust_java, string_event,
+LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_java, string_event,
 	LTTNG_UST_TP_ARGS(const char *, name, const char *, payload),
 	LTTNG_UST_TP_FIELDS(
 		ctf_string(name, name)

@@ -1,4 +1,4 @@
-TRACEPOINT_EVENT(
+LTTNG_UST_TRACEPOINT_EVENT(
 	sample_tracepoint,
 	message, // C++ Style comment
 	LTTNG_UST_TP_ARGS(const char *, text),

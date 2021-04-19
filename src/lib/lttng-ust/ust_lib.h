@@ -23,7 +23,7 @@ extern "C" {
 #define LTTNG_UST_LIB_PROVIDER
 #include <lttng/tracepoint.h>
 
-TRACEPOINT_EVENT(lttng_ust_lib, load,
+LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_lib, load,
 	LTTNG_UST_TP_ARGS(void *, ip, void *, baddr, const char*, path,
 		uint64_t, memsz, uint8_t, has_build_id,
 		uint8_t, has_debug_link),
@@ -37,7 +37,7 @@ TRACEPOINT_EVENT(lttng_ust_lib, load,
 	)
 )
 
-TRACEPOINT_EVENT(lttng_ust_lib, build_id,
+LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_lib, build_id,
 	LTTNG_UST_TP_ARGS(
 		void *, ip,
 		void *, baddr,
@@ -52,7 +52,7 @@ TRACEPOINT_EVENT(lttng_ust_lib, build_id,
 	)
 )
 
-TRACEPOINT_EVENT(lttng_ust_lib, debug_link,
+LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_lib, debug_link,
 	LTTNG_UST_TP_ARGS(
 		void *, ip,
 		void *, baddr,
@@ -67,7 +67,7 @@ TRACEPOINT_EVENT(lttng_ust_lib, debug_link,
 	)
 )
 
-TRACEPOINT_EVENT(lttng_ust_lib, unload,
+LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_lib, unload,
 	LTTNG_UST_TP_ARGS(void *, ip, void *, baddr),
 	LTTNG_UST_TP_FIELDS(
 		ctf_unused(ip)

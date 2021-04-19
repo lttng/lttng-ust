@@ -52,7 +52,7 @@
  *
  *    sample_component:message:message = text.
  */
-TRACEPOINT_EVENT(
+LTTNG_UST_TRACEPOINT_EVENT(
 	/*
 	 * provider name, not a variable but a string starting with a letter
 	 * and containing either letters, numbers or underscores.
@@ -97,12 +97,12 @@ TRACEPOINT_EVENT(
 TRACEPOINT_LOGLEVEL(
        /*
         * The provider name, must be the same as the provider name in the
-        * TRACEPOINT_EVENT and as TRACEPOINT_PROVIDER above.
+        * LTTNG_UST_TRACEPOINT_EVENT and as TRACEPOINT_PROVIDER above.
         */
 	sample_component,
        /*
         * The tracepoint name, must be the same as the tracepoint name in the
-        * TRACEPOINT_EVENT
+        * LTTNG_UST_TRACEPOINT_EVENT
         */
 	message,
        /*

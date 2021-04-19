@@ -23,14 +23,14 @@ extern "C" {
 #define LTTNG_UST_STATEDUMP_PROVIDER
 #include <lttng/tracepoint.h>
 
-TRACEPOINT_EVENT(lttng_ust_statedump, start,
+LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_statedump, start,
 	LTTNG_UST_TP_ARGS(struct lttng_ust_session *, session),
 	LTTNG_UST_TP_FIELDS(
 		ctf_unused(session)
 	)
 )
 
-TRACEPOINT_EVENT(lttng_ust_statedump, bin_info,
+LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_statedump, bin_info,
 	LTTNG_UST_TP_ARGS(
 		struct lttng_ust_session *, session,
 		void *, baddr,
@@ -51,7 +51,7 @@ TRACEPOINT_EVENT(lttng_ust_statedump, bin_info,
 	)
 )
 
-TRACEPOINT_EVENT(lttng_ust_statedump, build_id,
+LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_statedump, build_id,
 	LTTNG_UST_TP_ARGS(
 		struct lttng_ust_session *, session,
 		void *, baddr,
@@ -66,7 +66,7 @@ TRACEPOINT_EVENT(lttng_ust_statedump, build_id,
 	)
 )
 
-TRACEPOINT_EVENT(lttng_ust_statedump, debug_link,
+LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_statedump, debug_link,
 	LTTNG_UST_TP_ARGS(
 		struct lttng_ust_session *, session,
 		void *, baddr,
@@ -81,7 +81,7 @@ TRACEPOINT_EVENT(lttng_ust_statedump, debug_link,
 	)
 )
 
-TRACEPOINT_EVENT(lttng_ust_statedump, procname,
+LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_statedump, procname,
 	LTTNG_UST_TP_ARGS(
 		struct lttng_ust_session *, session,
 		char *, name
@@ -92,7 +92,7 @@ TRACEPOINT_EVENT(lttng_ust_statedump, procname,
 	)
 )
 
-TRACEPOINT_EVENT(lttng_ust_statedump, end,
+LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_statedump, end,
 	LTTNG_UST_TP_ARGS(struct lttng_ust_session *, session),
 	LTTNG_UST_TP_FIELDS(
 		ctf_unused(session)

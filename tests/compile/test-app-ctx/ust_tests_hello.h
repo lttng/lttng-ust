@@ -14,7 +14,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-TRACEPOINT_EVENT(ust_tests_hello, tptest,
+LTTNG_UST_TRACEPOINT_EVENT(ust_tests_hello, tptest,
 	LTTNG_UST_TP_ARGS(int, anint, int, netint, long *, values,
 		char *, text, size_t, textlen,
 		double, doublearg, float, floatarg,
@@ -39,7 +39,7 @@ TRACEPOINT_EVENT(ust_tests_hello, tptest,
 	)
 )
 
-TRACEPOINT_EVENT(ust_tests_hello, tptest_sighandler,
+LTTNG_UST_TRACEPOINT_EVENT(ust_tests_hello, tptest_sighandler,
 	LTTNG_UST_TP_ARGS(),
 	LTTNG_UST_TP_FIELDS()
 )

@@ -26,31 +26,31 @@
 	     pos = cds_list_entry(tp_rcu_dereference(pos->member.next), __typeof__(*pos), member))
 
 /*
- * TRACEPOINT_EVENT_CLASS declares a class of tracepoints receiving the
+ * LTTNG_UST_TRACEPOINT_EVENT_CLASS declares a class of tracepoints receiving the
  * same arguments and having the same field layout.
  *
- * TRACEPOINT_EVENT_INSTANCE declares an instance of a tracepoint, with
+ * LTTNG_UST_TRACEPOINT_EVENT_INSTANCE declares an instance of a tracepoint, with
  * its own provider and name. It refers to a class (template).
  *
- * TRACEPOINT_EVENT declared both a class and an instance and does a
+ * LTTNG_UST_TRACEPOINT_EVENT declared both a class and an instance and does a
  * direct mapping from the instance to the class.
  */
 
-#undef TRACEPOINT_EVENT
-#define TRACEPOINT_EVENT(_provider, _name, _args, _fields)	\
-	_TRACEPOINT_EVENT_CLASS(_provider, _name,		\
+#undef LTTNG_UST_TRACEPOINT_EVENT
+#define LTTNG_UST_TRACEPOINT_EVENT(_provider, _name, _args, _fields)	\
+	LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name,		\
 			 _TP_PARAMS(_args),			\
 			 _TP_PARAMS(_fields))			\
-	_TRACEPOINT_EVENT_INSTANCE(_provider, _name, _name,	\
+	LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_provider, _name, _name,	\
 			 _TP_PARAMS(_args))
 
-#undef TRACEPOINT_EVENT_CLASS
-#define TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields) 		\
-	_TRACEPOINT_EVENT_CLASS(_provider, _name, _TP_PARAMS(_args), _TP_PARAMS(_fields))
+#undef LTTNG_UST_TRACEPOINT_EVENT_CLASS
+#define LTTNG_UST_TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields) 		\
+	LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _TP_PARAMS(_args), _TP_PARAMS(_fields))
 
-#undef TRACEPOINT_EVENT_INSTANCE
-#define TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args) 	\
-	_TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _TP_PARAMS(_args))
+#undef LTTNG_UST_TRACEPOINT_EVENT_INSTANCE
+#define LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args) 	\
+	LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _TP_PARAMS(_args))
 
 /* Helpers */
 #define _TP_ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
@@ -65,11 +65,11 @@
 /*
  * Stage 0 of tracepoint event generation.
  *
- * Check that each TRACEPOINT_EVENT provider argument match the
+ * Check that each LTTNG_UST_TRACEPOINT_EVENT provider argument match the
  * TRACEPOINT_PROVIDER by creating dummy callbacks.
  */
 
-/* Reset all macros within TRACEPOINT_EVENT */
+/* Reset all macros within LTTNG_UST_TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 
 static inline
@@ -80,12 +80,12 @@ void _TP_COMBINE_TOKENS(__tracepoint_provider_mismatch_, TRACEPOINT_PROVIDER)(vo
 {
 }
 
-#undef _TRACEPOINT_EVENT_CLASS
-#define _TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields) 	\
+#undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
+#define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields) 	\
 	__tracepoint_provider_mismatch_##_provider();
 
-#undef _TRACEPOINT_EVENT_INSTANCE
-#define _TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	\
+#undef LTTNG_UST__TRACEPOINT_EVENT_INSTANCE
+#define LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	\
 	__tracepoint_provider_mismatch_##_provider();
 
 static inline
@@ -100,15 +100,15 @@ void _TP_COMBINE_TOKENS(__tracepoint_provider_check_, TRACEPOINT_PROVIDER)(void)
 /*
  * Stage 0.1 of tracepoint event generation.
  *
- * Check that each TRACEPOINT_EVENT provider:name does not exceed the
+ * Check that each LTTNG_UST_TRACEPOINT_EVENT provider:name does not exceed the
  * tracepoint name length limit.
  */
 
-/* Reset all macros within TRACEPOINT_EVENT */
+/* Reset all macros within LTTNG_UST_TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 
-#undef _TRACEPOINT_EVENT_INSTANCE
-#define _TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	\
+#undef LTTNG_UST__TRACEPOINT_EVENT_INSTANCE
+#define LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	\
 	lttng_ust_tracepoint_validate_name_len(_provider, _name);
 
 #include TRACEPOINT_INCLUDE
@@ -121,18 +121,18 @@ void _TP_COMBINE_TOKENS(__tracepoint_provider_check_, TRACEPOINT_PROVIDER)(void)
  * class and the instance using the class actually match.
  */
 
-/* Reset all macros within TRACEPOINT_EVENT */
+/* Reset all macros within LTTNG_UST_TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 
 #undef LTTNG_UST_TP_ARGS
 #define LTTNG_UST_TP_ARGS(...)	__VA_ARGS__
 
-#undef _TRACEPOINT_EVENT_INSTANCE
-#define _TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args) \
+#undef LTTNG_UST__TRACEPOINT_EVENT_INSTANCE
+#define LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args) \
 void __event_template_proto___##_provider##___##_template(_TP_ARGS_DATA_PROTO(_args));
 
-#undef _TRACEPOINT_EVENT_CLASS
-#define _TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields) \
+#undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
+#define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields) \
 void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));
 
 #include TRACEPOINT_INCLUDE
@@ -214,7 +214,7 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
  * Verifying array and sequence elements are of an integer type.
  */
 
-/* Reset all macros within TRACEPOINT_EVENT */
+/* Reset all macros within LTTNG_UST_TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 #include <lttng/ust-tracepoint-event-write.h>
 #include <lttng/ust-tracepoint-event-nowrite.h>
@@ -234,8 +234,8 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 #undef LTTNG_UST_TP_FIELDS
 #define LTTNG_UST_TP_FIELDS(...) __VA_ARGS__	/* Only one used in this phase */
 
-#undef _TRACEPOINT_EVENT_CLASS
-#define _TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	\
+#undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
+#define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	\
 		_fields
 
 #include TRACEPOINT_INCLUDE
@@ -247,7 +247,7 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
  * Each event produce an array of fields.
  */
 
-/* Reset all macros within TRACEPOINT_EVENT */
+/* Reset all macros within LTTNG_UST_TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 #include <lttng/ust-tracepoint-event-write.h>
 #include <lttng/ust-tracepoint-event-nowrite.h>
@@ -360,8 +360,8 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 #undef LTTNG_UST_TP_FIELDS
 #define LTTNG_UST_TP_FIELDS(...) __VA_ARGS__	/* Only one used in this phase */
 
-#undef _TRACEPOINT_EVENT_CLASS
-#define _TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)		   	     \
+#undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
+#define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)		   	     \
 	static const struct lttng_ust_event_field * const __event_fields___##_provider##___##_name[] = { \
 		_fields									     \
 		ctf_integer(int, dummy, 0)	/* Dummy, C99 forbids 0-len array. */	     \
@@ -384,14 +384,14 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
  * Create probe callback prototypes.
  */
 
-/* Reset all macros within TRACEPOINT_EVENT */
+/* Reset all macros within LTTNG_UST_TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 
 #undef LTTNG_UST_TP_ARGS
 #define LTTNG_UST_TP_ARGS(...) __VA_ARGS__
 
-#undef _TRACEPOINT_EVENT_CLASS
-#define _TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)		\
+#undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
+#define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)		\
 static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));
 
 #include TRACEPOINT_INCLUDE
@@ -402,7 +402,7 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));
  * Create static inline function that calculates event size.
  */
 
-/* Reset all macros within TRACEPOINT_EVENT */
+/* Reset all macros within LTTNG_UST_TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 #include <lttng/ust-tracepoint-event-write.h>
 
@@ -460,8 +460,8 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));
 #undef LTTNG_UST_TP_FIELDS
 #define LTTNG_UST_TP_FIELDS(...) __VA_ARGS__
 
-#undef _TRACEPOINT_EVENT_CLASS
-#define _TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
+#undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
+#define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
 static inline								      \
 size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, _TP_ARGS_DATA_PROTO(_args)) \
 	lttng_ust_notrace;						      \
@@ -489,7 +489,7 @@ size_t __event_get_size__##_provider##___##_name(			      \
  * We make both write and nowrite data available to the filter.
  */
 
-/* Reset all macros within TRACEPOINT_EVENT */
+/* Reset all macros within LTTNG_UST_TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 #include <lttng/ust-tracepoint-event-write.h>
 #include <lttng/ust-tracepoint-event-nowrite.h>
@@ -629,8 +629,8 @@ size_t __event_get_size__##_provider##___##_name(			      \
 #undef LTTNG_UST_TP_FIELDS
 #define LTTNG_UST_TP_FIELDS(...) __VA_ARGS__
 
-#undef _TRACEPOINT_EVENT_CLASS
-#define _TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
+#undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
+#define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
 static inline								      \
 void __event_prepare_interpreter_stack__##_provider##___##_name(char *__stack_data,\
 						 _TP_ARGS_DATA_PROTO(_args))  \
@@ -651,7 +651,7 @@ void __event_prepare_interpreter_stack__##_provider##___##_name(char *__stack_da
  * Create static inline function that calculates event payload alignment.
  */
 
-/* Reset all macros within TRACEPOINT_EVENT */
+/* Reset all macros within LTTNG_UST_TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 #include <lttng/ust-tracepoint-event-write.h>
 
@@ -704,8 +704,8 @@ void __event_prepare_interpreter_stack__##_provider##___##_name(char *__stack_da
 #undef LTTNG_UST_TP_FIELDS
 #define LTTNG_UST_TP_FIELDS(...) __VA_ARGS__
 
-#undef _TRACEPOINT_EVENT_CLASS
-#define _TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
+#undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
+#define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
 static inline								      \
 size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 	lttng_ust_notrace;						      \
@@ -727,7 +727,7 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
  * and writes event data into the buffer.
  */
 
-/* Reset all macros within TRACEPOINT_EVENT */
+/* Reset all macros within LTTNG_UST_TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 #include <lttng/ust-tracepoint-event-write.h>
 
@@ -830,8 +830,8 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
  * 2*sizeof(unsigned long) for all supported architectures.
  * Perform UNION (||) of filter runtime list.
  */
-#undef _TRACEPOINT_EVENT_CLASS
-#define _TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
+#undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
+#define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
 static									      \
 void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 	lttng_ust_notrace;						      \
@@ -930,7 +930,7 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
  * Create probe signature
  */
 
-/* Reset all macros within TRACEPOINT_EVENT */
+/* Reset all macros within LTTNG_UST_TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 
 #undef LTTNG_UST_TP_ARGS
@@ -938,8 +938,8 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 
 #define _TP_EXTRACT_STRING2(...)	#__VA_ARGS__
 
-#undef _TRACEPOINT_EVENT_CLASS
-#define _TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	\
+#undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
+#define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	\
 static const char __tp_event_signature___##_provider##___##_name[] = 	\
 		_TP_EXTRACT_STRING2(_args);
 
@@ -956,7 +956,7 @@ static const char __tp_event_signature___##_provider##___##_name[] = 	\
  * the compiler will complain.
  */
 
-/* Reset all macros within TRACEPOINT_EVENT */
+/* Reset all macros within LTTNG_UST_TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 
 /*
@@ -988,7 +988,7 @@ LTTNG_UST_TP_EXTERN_C const int * const _loglevel___##__provider##___##__name	\
  * Tracepoint UML URI info.
  */
 
-/* Reset all macros within TRACEPOINT_EVENT */
+/* Reset all macros within LTTNG_UST_TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 
 /*
@@ -1039,11 +1039,11 @@ extern const struct lttng_ust_probe_desc _TP_COMBINE_TOKENS(__probe_desc___, TRA
  * to ensure C++ compilers default-initialize them.
  */
 
-/* Reset all macros within TRACEPOINT_EVENT */
+/* Reset all macros within LTTNG_UST_TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 
-#undef _TRACEPOINT_EVENT_INSTANCE
-#define _TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	       \
+#undef LTTNG_UST__TRACEPOINT_EVENT_INSTANCE
+#define LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	       \
 static const int *							       \
 	__ref_loglevel___##_provider##___##_name			       \
 	__attribute__((weakref ("_loglevel___" #_provider "___" #_name)));     \
@@ -1070,11 +1070,11 @@ static const struct lttng_ust_event_desc __event_desc___##_provider##_##_name = 
  * Create array of events.
  */
 
-/* Reset all macros within TRACEPOINT_EVENT */
+/* Reset all macros within LTTNG_UST_TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 
-#undef _TRACEPOINT_EVENT_INSTANCE
-#define _TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	       \
+#undef LTTNG_UST__TRACEPOINT_EVENT_INSTANCE
+#define LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	       \
 	&__event_desc___##_provider##_##_name,
 
 static const struct lttng_ust_event_desc * const _TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER)[] = {
@@ -1112,7 +1112,7 @@ static struct lttng_ust_registered_probe *_TP_COMBINE_TOKENS(__lttng_ust_probe_r
  * Register refcount is protected by libc dynamic loader mutex.
  */
 
-/* Reset all macros within TRACEPOINT_EVENT */
+/* Reset all macros within LTTNG_UST_TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 static void
 _TP_COMBINE_TOKENS(__lttng_ust_events_init__, TRACEPOINT_PROVIDER)(void)

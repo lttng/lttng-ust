@@ -4,13 +4,13 @@
  * Copyright (C) 2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
-/* Define to "nothing" all macros used for TRACEPOINT_EVENT */
+/* Define to "nothing" all macros used for LTTNG_UST_TRACEPOINT_EVENT */
 
-#undef _TRACEPOINT_EVENT_CLASS
-#define _TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)
+#undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
+#define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)
 
-#undef _TRACEPOINT_EVENT_INSTANCE
-#define _TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)
+#undef LTTNG_UST__TRACEPOINT_EVENT_INSTANCE
+#define LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)
 
 #undef TRACEPOINT_ENUM
 #define TRACEPOINT_ENUM(_provider, _name, _values)

@@ -76,7 +76,7 @@ void lttng_lazy_probe_register(struct lttng_ust_registered_probe *reg_probe)
 
 	/*
 	 * The provider ensures there are no duplicate event names.
-	 * Duplicated TRACEPOINT_EVENT event names would generate a
+	 * Duplicated LTTNG_UST_TRACEPOINT_EVENT event names would generate a
 	 * compile-time error due to duplicated symbol names.
 	 */
 

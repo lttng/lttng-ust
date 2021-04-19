@@ -16,7 +16,7 @@ extern "C" {
 
 #include <lttng/tracepoint.h>
 
-TRACEPOINT_EVENT_CLASS(lttng_ust_cyg_profile, func_class,
+LTTNG_UST_TRACEPOINT_EVENT_CLASS(lttng_ust_cyg_profile, func_class,
 	LTTNG_UST_TP_ARGS(void *, func_addr, void *, call_site),
 	LTTNG_UST_TP_FIELDS(
 		ctf_integer_hex(unsigned long, addr,
@@ -26,7 +26,7 @@ TRACEPOINT_EVENT_CLASS(lttng_ust_cyg_profile, func_class,
 	)
 )
 
-TRACEPOINT_EVENT_INSTANCE(lttng_ust_cyg_profile, func_class,
+LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(lttng_ust_cyg_profile, func_class,
 	func_entry,
 	LTTNG_UST_TP_ARGS(void *, func_addr, void *, call_site)
 )
@@ -34,7 +34,7 @@ TRACEPOINT_EVENT_INSTANCE(lttng_ust_cyg_profile, func_class,
 TRACEPOINT_LOGLEVEL(lttng_ust_cyg_profile, func_entry,
 	TRACE_DEBUG_FUNCTION)
 
-TRACEPOINT_EVENT_INSTANCE(lttng_ust_cyg_profile, func_class,
+LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(lttng_ust_cyg_profile, func_class,
 	func_exit,
 	LTTNG_UST_TP_ARGS(void *, func_addr, void *, call_site)
 )

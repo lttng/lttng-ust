@@ -22,7 +22,7 @@ extern "C" {
 #define LTTNG_UST_DL_PROVIDER
 #include <lttng/tracepoint.h>
 
-TRACEPOINT_EVENT(lttng_ust_dl, dlopen,
+LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_dl, dlopen,
 	LTTNG_UST_TP_ARGS(void *, ip, void *, baddr, const char *, path,
 		int, flags, uint64_t, memsz, uint8_t, has_build_id,
 		uint8_t, has_debug_link),
@@ -38,7 +38,7 @@ TRACEPOINT_EVENT(lttng_ust_dl, dlopen,
 )
 
 #ifdef HAVE_DLMOPEN
-TRACEPOINT_EVENT(lttng_ust_dl, dlmopen,
+LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_dl, dlmopen,
 	LTTNG_UST_TP_ARGS(void *, ip, void *, baddr, Lmid_t, nsid,
 		const char *, path, int, flags,
 		uint64_t, memsz, uint8_t, has_build_id,
@@ -56,7 +56,7 @@ TRACEPOINT_EVENT(lttng_ust_dl, dlmopen,
 )
 #endif
 
-TRACEPOINT_EVENT(lttng_ust_dl, build_id,
+LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_dl, build_id,
 	LTTNG_UST_TP_ARGS(
 		void *, ip,
 		void *, baddr,
@@ -71,7 +71,7 @@ TRACEPOINT_EVENT(lttng_ust_dl, build_id,
 	)
 )
 
-TRACEPOINT_EVENT(lttng_ust_dl, debug_link,
+LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_dl, debug_link,
 	LTTNG_UST_TP_ARGS(
 		void *, ip,
 		void *, baddr,
@@ -86,7 +86,7 @@ TRACEPOINT_EVENT(lttng_ust_dl, debug_link,
 	)
 )
 
-TRACEPOINT_EVENT(lttng_ust_dl, dlclose,
+LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_dl, dlclose,
 	LTTNG_UST_TP_ARGS(void *, ip, void *, baddr),
 	LTTNG_UST_TP_FIELDS(
 		ctf_unused(ip)

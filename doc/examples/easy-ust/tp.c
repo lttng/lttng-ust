@@ -10,6 +10,6 @@
  */
 #define TRACEPOINT_CREATE_PROBES
 /*
- * The header containing our TRACEPOINT_EVENTs.
+ * The header containing our LTTNG_UST_TRACEPOINT_EVENTs.
  */
 #include "sample_component_provider.h"
