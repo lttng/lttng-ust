@@ -13,13 +13,13 @@
 #include <lttng/tracepoint.h>
 
 TRACEPOINT_EVENT(ust_tests_sameline, event1,
-	TP_ARGS(),
+	LTTNG_UST_TP_ARGS(),
 	TP_FIELDS()
 )
 TRACEPOINT_LOGLEVEL(ust_tests_sameline, event1, TRACE_CRIT)
 
 TRACEPOINT_EVENT(ust_tests_sameline, event2,
-	TP_ARGS(),
+	LTTNG_UST_TP_ARGS(),
 	TP_FIELDS()
 )
 TRACEPOINT_LOGLEVEL(ust_tests_sameline, event2, TRACE_CRIT)

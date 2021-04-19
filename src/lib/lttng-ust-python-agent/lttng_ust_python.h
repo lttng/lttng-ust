@@ -14,7 +14,7 @@
 #include <stdbool.h>
 
 TRACEPOINT_EVENT(lttng_python, event,
-	TP_ARGS(
+	LTTNG_UST_TP_ARGS(
 		const char *, asctime,
 		const char *, msg,
 		const char *, logger_name,

@@ -25,7 +25,7 @@ TRACEPOINT_ENUM(ust_tests_hello, my_enum,
 )
 
 TRACEPOINT_EVENT(ust_tests_hello, tptest,
-	TP_ARGS(int, anint, int, netint, long *, values,
+	LTTNG_UST_TP_ARGS(int, anint, int, netint, long *, values,
 		 char *, text, size_t, textlen,
 		 double, doublearg, float, floatarg,
 		 int, enumarg),
@@ -49,7 +49,7 @@ TRACEPOINT_EVENT(ust_tests_hello, tptest,
 )
 
 TRACEPOINT_EVENT(ust_tests_hello, tptest_sighandler,
-	TP_ARGS(),
+	LTTNG_UST_TP_ARGS(),
 	TP_FIELDS()
 )
 

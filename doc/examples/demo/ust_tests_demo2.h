@@ -14,7 +14,7 @@
 #include <stddef.h>
 
 TRACEPOINT_EVENT(ust_tests_demo2, loop,
-	TP_ARGS(int, anint, int, netint, long *, values,
+	LTTNG_UST_TP_ARGS(int, anint, int, netint, long *, values,
 		 char *, text, size_t, textlen,
 		 double, doublearg, float, floatarg),
 	TP_FIELDS(

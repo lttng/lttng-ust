@@ -16,7 +16,7 @@
  * Tracepoint used by Java applications using the JUL handler.
  */
 TRACEPOINT_EVENT(lttng_jul, event,
-	TP_ARGS(
+	LTTNG_UST_TP_ARGS(
 		const char *, msg,
 		const char *, logger_name,
 		const char *, class_name,

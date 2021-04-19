@@ -18,7 +18,7 @@
 TRACEPOINT_EVENT(
 	TRACEPOINT_PROVIDER,
 	align_query,
-	TP_ARGS(
+	LTTNG_UST_TP_ARGS(
 		const char *, query_name
 	),
 	TP_FIELDS(
@@ -29,7 +29,7 @@ TRACEPOINT_EVENT(
 TRACEPOINT_EVENT(
 	TRACEPOINT_PROVIDER,
 	test_alignment,
-	TP_ARGS(
+	LTTNG_UST_TP_ARGS(
 		const char *, alignment
 	),
 	TP_FIELDS(

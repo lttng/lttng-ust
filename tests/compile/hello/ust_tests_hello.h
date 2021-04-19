@@ -15,7 +15,7 @@
 #include <stddef.h>
 
 TRACEPOINT_EVENT(ust_tests_hello, tptest,
-	TP_ARGS(int, anint, int, netint, long *, values,
+	LTTNG_UST_TP_ARGS(int, anint, int, netint, long *, values,
 		char *, text, size_t, textlen,
 		double, doublearg, float, floatarg,
 		bool, boolarg),
@@ -51,7 +51,7 @@ TRACEPOINT_EVENT(ust_tests_hello, tptest,
 )
 
 TRACEPOINT_EVENT(ust_tests_hello, tptest_sighandler,
-	TP_ARGS(),
+	LTTNG_UST_TP_ARGS(),
 	TP_FIELDS()
 )
 

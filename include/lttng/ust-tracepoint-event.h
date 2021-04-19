@@ -124,8 +124,8 @@ void _TP_COMBINE_TOKENS(__tracepoint_provider_check_, TRACEPOINT_PROVIDER)(void)
 /* Reset all macros within TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 
-#undef TP_ARGS
-#define TP_ARGS(...)	__VA_ARGS__
+#undef LTTNG_UST_TP_ARGS
+#define LTTNG_UST_TP_ARGS(...)	__VA_ARGS__
 
 #undef _TRACEPOINT_EVENT_INSTANCE
 #define _TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args) \
@@ -387,8 +387,8 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 /* Reset all macros within TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 
-#undef TP_ARGS
-#define TP_ARGS(...) __VA_ARGS__
+#undef LTTNG_UST_TP_ARGS
+#define LTTNG_UST_TP_ARGS(...) __VA_ARGS__
 
 #undef _TRACEPOINT_EVENT_CLASS
 #define _TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)		\
@@ -454,8 +454,8 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));
 #define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite)		\
 	_ctf_integer_ext(_type, _item, _src, BYTE_ORDER, 10, _nowrite)
 
-#undef TP_ARGS
-#define TP_ARGS(...) __VA_ARGS__
+#undef LTTNG_UST_TP_ARGS
+#define LTTNG_UST_TP_ARGS(...) __VA_ARGS__
 
 #undef TP_FIELDS
 #define TP_FIELDS(...) __VA_ARGS__
@@ -623,8 +623,8 @@ size_t __event_get_size__##_provider##___##_name(			      \
 #define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite)		\
 	_ctf_integer_ext(_type, _item, _src, BYTE_ORDER, 10, _nowrite)
 
-#undef TP_ARGS
-#define TP_ARGS(...) __VA_ARGS__
+#undef LTTNG_UST_TP_ARGS
+#define LTTNG_UST_TP_ARGS(...) __VA_ARGS__
 
 #undef TP_FIELDS
 #define TP_FIELDS(...) __VA_ARGS__
@@ -698,8 +698,8 @@ void __event_prepare_interpreter_stack__##_provider##___##_name(char *__stack_da
 #define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite)		\
 	_ctf_integer_ext(_type, _item, _src, BYTE_ORDER, 10, _nowrite)
 
-#undef TP_ARGS
-#define TP_ARGS(...) __VA_ARGS__
+#undef LTTNG_UST_TP_ARGS
+#define LTTNG_UST_TP_ARGS(...) __VA_ARGS__
 
 #undef TP_FIELDS
 #define TP_FIELDS(...) __VA_ARGS__
@@ -786,8 +786,8 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 #undef __get_dynamic_len
 #define __get_dynamic_len(field)	__stackvar.__dynamic_len[__dynamic_len_idx++]
 
-#undef TP_ARGS
-#define TP_ARGS(...) __VA_ARGS__
+#undef LTTNG_UST_TP_ARGS
+#define LTTNG_UST_TP_ARGS(...) __VA_ARGS__
 
 #undef TP_FIELDS
 #define TP_FIELDS(...) __VA_ARGS__
@@ -933,8 +933,8 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 /* Reset all macros within TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 
-#undef TP_ARGS
-#define TP_ARGS(...) __VA_ARGS__
+#undef LTTNG_UST_TP_ARGS
+#define LTTNG_UST_TP_ARGS(...) __VA_ARGS__
 
 #define _TP_EXTRACT_STRING2(...)	#__VA_ARGS__
 

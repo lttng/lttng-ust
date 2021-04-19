@@ -15,8 +15,8 @@
 #undef TRACEPOINT_ENUM
 #define TRACEPOINT_ENUM(_provider, _name, _values)
 
-#undef TP_ARGS
-#define TP_ARGS(...)
+#undef LTTNG_UST_TP_ARGS
+#define LTTNG_UST_TP_ARGS(...)
 
 #undef TP_FIELDS
 #define TP_FIELDS(...)

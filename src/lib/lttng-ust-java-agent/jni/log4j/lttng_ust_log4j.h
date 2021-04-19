@@ -16,7 +16,7 @@
  * Tracepoint used by Java applications using the log4j log appender.
  */
 TRACEPOINT_EVENT(lttng_log4j, event,
-	TP_ARGS(
+	LTTNG_UST_TP_ARGS(
 		const char *, msg,
 		const char *, logger_name,
 		const char *, class_name,

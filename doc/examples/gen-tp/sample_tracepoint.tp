@@ -1,7 +1,7 @@
 TRACEPOINT_EVENT(
 	sample_tracepoint,
 	message, // C++ Style comment
-	TP_ARGS(const char *, text),
+	LTTNG_UST_TP_ARGS(const char *, text),
 	TP_FIELDS(
 		ctf_string(message, text)
 		  )

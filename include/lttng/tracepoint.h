@@ -63,10 +63,10 @@ extern "C" {
 			lttng_ust_do_tracepoint(provider, name, __VA_ARGS__);	\
 	} while (0)
 
-#define TP_ARGS(...)       __VA_ARGS__
+#define LTTNG_UST_TP_ARGS(...)       __VA_ARGS__
 
 /*
- * TP_ARGS takes tuples of type, argument separated by a comma.
+ * LTTNG_UST_TP_ARGS takes tuples of type, argument separated by a comma.
  * It can take up to 10 tuples (which means that less than 10 tuples is
  * fine too).
  * Each tuple is also separated by a comma.
@@ -572,6 +572,7 @@ __tracepoints__ptrs_destroy(void)
 #define tracepoint			lttng_ust_tracepoint
 #define do_tracepoint			lttng_ust_do_tracepoint
 #define tracepoint_enabled		lttng_ust_tracepoint_enabled
+#define TP_ARGS				LTTNG_UST_TP_ARGS
 #endif /* #if LTTNG_UST_COMPAT_API(0) */
 
 #ifdef __cplusplus
@@ -635,9 +636,9 @@ __tracepoints__ptrs_destroy(void)
  *
  * TRACEPOINT_EVENT(someproject_component, event_name,
  *
- *     * TP_ARGS takes from 0 to 10 "type, field_name" pairs *
+ *     * LTTNG_UST_TP_ARGS takes from 0 to 10 "type, field_name" pairs *
  *
- *     TP_ARGS(int, arg0, void *, arg1, char *, string, size_t, strlen,
+ *     LTTNG_UST_TP_ARGS(int, arg0, void *, arg1, char *, string, size_t, strlen,
  *             long *, arg4, size_t, arg4_len),
  *
  *	* TP_FIELDS describes the event payload layout in the trace *

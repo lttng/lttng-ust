@@ -37,8 +37,8 @@
  * Put back definitions to the state they were when defined by
  * tracepoint.h.
  */
-#undef TP_ARGS
-#define TP_ARGS(...)       __VA_ARGS__
+#undef LTTNG_UST_TP_ARGS
+#define LTTNG_UST_TP_ARGS(...)       __VA_ARGS__
 
 #undef TRACEPOINT_EVENT
 #define TRACEPOINT_EVENT(provider, name, args, fields)			\

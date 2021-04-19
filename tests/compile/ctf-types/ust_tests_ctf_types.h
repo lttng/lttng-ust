@@ -34,7 +34,7 @@ TRACEPOINT_ENUM(ust_tests_ctf_types, testenum2,
  * is entered only once in the metadata file.
  */
 TRACEPOINT_EVENT(ust_tests_ctf_types, tptest,
-	TP_ARGS(int, anint, int, enumval, int, enumval2),
+	LTTNG_UST_TP_ARGS(int, anint, int, enumval, int, enumval2),
 	TP_FIELDS(
 		ctf_integer(int, intfield, anint)
 		ctf_enum(ust_tests_ctf_types, testenum, int, enumfield, enumval)
@@ -50,7 +50,7 @@ TRACEPOINT_EVENT(ust_tests_ctf_types, tptest,
  * only once in the metadata file.
  */
 TRACEPOINT_EVENT(ust_tests_ctf_types, tptest_bis,
-	TP_ARGS(int, anint, int, enumval),
+	LTTNG_UST_TP_ARGS(int, anint, int, enumval),
 	TP_FIELDS(
 		ctf_integer(int, intfield, anint)
 		ctf_enum(ust_tests_ctf_types, testenum, unsigned char,

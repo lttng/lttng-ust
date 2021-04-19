@@ -13,7 +13,7 @@
 #include <lttng/tracepoint.h>
 
 TRACEPOINT_EVENT(ust_tests_demo3, done,
-	TP_ARGS(int, value),
+	LTTNG_UST_TP_ARGS(int, value),
 	TP_FIELDS(
 		ctf_integer(int, value, value)
 	)

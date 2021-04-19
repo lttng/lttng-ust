@@ -65,16 +65,16 @@ TRACEPOINT_EVENT(
 	 */
 	message,
 	/*
-	 * TP_ARGS macro contains the arguments passed for the tracepoint
+	 * LTTNG_UST_TP_ARGS macro contains the arguments passed for the tracepoint
 	 * it is in the following format
-	 * 		TP_ARGS( type1, name1, type2, name2, ... type10, name10)
+	 * 		LTTNG_UST_TP_ARGS( type1, name1, type2, name2, ... type10, name10)
 	 * where there can be from zero to ten elements.
 	 * typeN is the datatype, such as int, struct or double **.
 	 * name is the variable name (in "int myInt" the name would be myint)
-	 * 		TP_ARGS() is valid to mean no arguments
-	 * 		TP_ARGS( void ) is valid too
+	 * 		LTTNG_UST_TP_ARGS() is valid to mean no arguments
+	 * 		LTTNG_UST_TP_ARGS( void ) is valid too
 	 */
-	TP_ARGS(const char *, text),
+	LTTNG_UST_TP_ARGS(const char *, text),
 	/*
 	 * TP_FIELDS describes how to write the fields of the trace event.
 	 * You can use the args here
