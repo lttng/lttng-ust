@@ -26,7 +26,7 @@ enum lttng_ust_dynamic_type {
 };
 
 int lttng_ust_dynamic_type_choices(size_t *nr_choices,
-		const struct lttng_ust_event_field ***choices)
+		const struct lttng_ust_event_field * const **choices)
 	__attribute__((visibility("hidden")));
 
 const struct lttng_ust_event_field *lttng_ust_dynamic_type_field(int64_t value)

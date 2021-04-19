@@ -37,7 +37,7 @@
 
 static
 ssize_t count_fields_recursive(size_t nr_fields,
-		const struct lttng_ust_event_field **lttng_fields);
+		const struct lttng_ust_event_field * const *lttng_fields);
 static
 int serialize_one_field(struct lttng_ust_session *session,
 		struct ustctl_field *fields, size_t *iter_output,
@@ -46,7 +46,7 @@ static
 int serialize_fields(struct lttng_ust_session *session,
 		struct ustctl_field *ustctl_fields,
 		size_t *iter_output, size_t nr_lttng_fields,
-		const struct lttng_ust_event_field **lttng_fields);
+		const struct lttng_ust_event_field * const *lttng_fields);
 
 /*
  * Human readable error message.
@@ -883,7 +883,7 @@ ssize_t count_one_type(const struct lttng_ust_type_common *lt)
 
 	case lttng_ust_type_dynamic:
 	{
-		const struct lttng_ust_event_field **choices;
+		const struct lttng_ust_event_field * const *choices;
 		size_t nr_choices;
 		int ret;
 
@@ -906,7 +906,7 @@ ssize_t count_one_type(const struct lttng_ust_type_common *lt)
 
 static
 ssize_t count_fields_recursive(size_t nr_fields,
-		const struct lttng_ust_event_field **lttng_fields)
+		const struct lttng_ust_event_field * const *lttng_fields)
 {
 	int i;
 	ssize_t ret, count = 0;
@@ -991,7 +991,7 @@ int serialize_dynamic_type(struct lttng_ust_session *session,
 		struct ustctl_field *fields, size_t *iter_output,
 		const char *field_name)
 {
-	const struct lttng_ust_event_field **choices;
+	const struct lttng_ust_event_field * const *choices;
 	char tag_field_name[LTTNG_UST_ABI_SYM_NAME_LEN];
 	const struct lttng_ust_type_common *tag_type;
 	const struct lttng_ust_event_field *tag_field_generic;
@@ -1256,7 +1256,7 @@ static
 int serialize_fields(struct lttng_ust_session *session,
 		struct ustctl_field *ustctl_fields,
 		size_t *iter_output, size_t nr_lttng_fields,
-		const struct lttng_ust_event_field **lttng_fields)
+		const struct lttng_ust_event_field * const *lttng_fields)
 {
 	int ret;
 	size_t i;
@@ -1275,7 +1275,7 @@ int alloc_serialize_fields(struct lttng_ust_session *session,
 		size_t *_nr_write_fields,
 		struct ustctl_field **ustctl_fields,
 		size_t nr_fields,
-		const struct lttng_ust_event_field **lttng_fields)
+		const struct lttng_ust_event_field * const *lttng_fields)
 {
 	struct ustctl_field *fields;
 	int ret;
@@ -1308,7 +1308,7 @@ error_type:
 static
 int serialize_entries(struct ustctl_enum_entry **_entries,
 		size_t nr_entries,
-		const struct lttng_ust_enum_entry **lttng_entries)
+		const struct lttng_ust_enum_entry * const *lttng_entries)
 {
 	struct ustctl_enum_entry *entries;
 	int i;
@@ -1389,7 +1389,7 @@ int ustcomm_register_event(int sock,
 	int loglevel,
 	const char *signature,		/* event signature (input) */
 	size_t nr_fields,		/* fields */
-	const struct lttng_ust_event_field **lttng_fields,
+	const struct lttng_ust_event_field * const *lttng_fields,
 	const char *model_emf_uri,
 	uint32_t *id)			/* event id (output) */
 {
@@ -1528,7 +1528,7 @@ int ustcomm_register_enum(int sock,
 	int session_objd,		/* session descriptor */
 	const char *enum_name,		/* enum name (input) */
 	size_t nr_entries,		/* entries */
-	const struct lttng_ust_enum_entry **lttng_entries,
+	const struct lttng_ust_enum_entry * const *lttng_entries,
 	uint64_t *id)
 {
 	ssize_t len;

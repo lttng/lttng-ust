@@ -179,7 +179,7 @@ int apply_field_reloc(const struct lttng_ust_event_desc *event_desc,
 		const char *field_name,
 		enum bytecode_op bytecode_op)
 {
-	const struct lttng_ust_event_field **fields, *field = NULL;
+	const struct lttng_ust_event_field * const *fields, *field = NULL;
 	unsigned int nr_fields, i;
 	struct load_op *op;
 	uint32_t field_offset = 0;

@@ -161,7 +161,7 @@ const struct lttng_ust_event_field *lttng_ust_dynamic_type_field(int64_t value)
 	return dt_var_fields[value];
 }
 
-int lttng_ust_dynamic_type_choices(size_t *nr_choices, const struct lttng_ust_event_field ***choices)
+int lttng_ust_dynamic_type_choices(size_t *nr_choices, const struct lttng_ust_event_field * const **choices)
 {
 	*nr_choices = _NR_LTTNG_UST_DYNAMIC_TYPES;
 	*choices = dt_var_fields;

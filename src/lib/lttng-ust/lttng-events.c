@@ -516,7 +516,7 @@ int lttng_create_enum_check(const struct lttng_ust_type_common *type,
 
 static
 int lttng_create_all_event_enums(size_t nr_fields,
-		const struct lttng_ust_event_field **event_fields,
+		const struct lttng_ust_event_field * const *event_fields,
 		struct lttng_ust_session *session)
 {
 	size_t i;

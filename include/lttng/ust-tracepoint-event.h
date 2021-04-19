@@ -203,7 +203,7 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 
 #undef TRACEPOINT_ENUM
 #define TRACEPOINT_ENUM(_provider, _name, _values)			\
-	const struct lttng_ust_enum_entry *__enum_values__##_provider##_##_name[] = { \
+	const struct lttng_ust_enum_entry * const __enum_values__##_provider##_##_name[] = { \
 		_values							\
 		ctf_enum_value("", 0)	/* Dummy, 0-len array forbidden by C99. */ \
 	};
@@ -362,7 +362,7 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 
 #undef _TRACEPOINT_EVENT_CLASS
 #define _TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)		   	     \
-	static const struct lttng_ust_event_field *__event_fields___##_provider##___##_name[] = { \
+	static const struct lttng_ust_event_field * const __event_fields___##_provider##___##_name[] = { \
 		_fields									     \
 		ctf_integer(int, dummy, 0)	/* Dummy, C99 forbids 0-len array. */	     \
 	};
@@ -972,10 +972,10 @@ static const char __tp_event_signature___##_provider##___##_name[] = 	\
 #endif
 
 #undef TRACEPOINT_LOGLEVEL
-#define TRACEPOINT_LOGLEVEL(__provider, __name, __loglevel)		   \
-static const int _loglevel_value___##__provider##___##__name = __loglevel; \
-LTTNG_UST_TP_EXTERN_C const int *_loglevel___##__provider##___##__name	   \
-		__attribute__((visibility("hidden"))) =			   \
+#define TRACEPOINT_LOGLEVEL(__provider, __name, __loglevel)		   	\
+static const int _loglevel_value___##__provider##___##__name = __loglevel; 	\
+LTTNG_UST_TP_EXTERN_C const int * const _loglevel___##__provider##___##__name	\
+		__attribute__((visibility("hidden"))) =				\
 		&_loglevel_value___##__provider##___##__name;
 
 #include TRACEPOINT_INCLUDE
@@ -1005,7 +1005,7 @@ LTTNG_UST_TP_EXTERN_C const int *_loglevel___##__provider##___##__name	   \
 
 #undef TRACEPOINT_MODEL_EMF_URI
 #define TRACEPOINT_MODEL_EMF_URI(__provider, __name, __uri)		   \
-LTTNG_UST_TP_EXTERN_C const char *_model_emf_uri___##__provider##___##__name   \
+LTTNG_UST_TP_EXTERN_C const char * const _model_emf_uri___##__provider##___##__name   \
 		__attribute__((visibility("hidden"))) = __uri;		   \
 
 #include TRACEPOINT_INCLUDE
@@ -1029,8 +1029,14 @@ extern const struct lttng_ust_probe_desc _TP_COMBINE_TOKENS(__probe_desc___, TRA
  * Stage 7.1 of tracepoint event generation.
  *
  * Create events description structures. We use a weakref because
- * loglevels are optional. If not declared, the event will point to the
+ * loglevels are optional. If not declared, the event will point to
  * a loglevel that contains NULL.
+ *
+ * C++ requires that const objects have a user-declared default
+ * constructor. However, in both C++ and C, weakref cannot be
+ * initialized because it causes the weakref attribute to be ignored.
+ * Therefore, the loglevel and model_emf_uri pointers are not const
+ * to ensure C++ compilers default-initialize them.
  */
 
 /* Reset all macros within TRACEPOINT_EVENT */
@@ -1071,7 +1077,7 @@ static const struct lttng_ust_event_desc __event_desc___##_provider##_##_name = 
 #define _TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	       \
 	&__event_desc___##_provider##_##_name,
 
-static const struct lttng_ust_event_desc *_TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER)[] = {
+static const struct lttng_ust_event_desc * const _TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER)[] = {
 #include TRACEPOINT_INCLUDE
 	NULL,	/* Dummy, C99 forbids 0-len array. */
 };

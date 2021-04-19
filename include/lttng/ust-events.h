@@ -203,8 +203,8 @@ struct lttng_ust_type_struct {
 	struct lttng_ust_type_common parent;
 	uint32_t struct_size;
 	unsigned int nr_fields;
-	const struct lttng_ust_event_field **fields;	/* Array of pointers to fields. */
-	unsigned int alignment;		/* Minimum alignment for this type. */
+	const struct lttng_ust_event_field * const *fields;	/* Array of pointers to fields. */
+	unsigned int alignment;					/* Minimum alignment for this type. */
 };
 
 /*
@@ -223,7 +223,7 @@ struct lttng_ust_enum_desc {
 	uint32_t struct_size;
 
 	const char *name;
-	const struct lttng_ust_enum_entry **entries;
+	const struct lttng_ust_enum_entry * const *entries;
 	unsigned int nr_entries;
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */
@@ -268,7 +268,7 @@ struct lttng_ust_event_desc {
 	const char *event_name;
 	const struct lttng_ust_probe_desc *probe_desc;
 	void (*probe_callback)(void);
-	const struct lttng_ust_event_field **fields;	/* event payload */
+	const struct lttng_ust_event_field * const *fields;	/* event payload */
 	unsigned int nr_fields;
 	const int **loglevel;
 	const char *signature;				/* Argument types/names received */
@@ -290,7 +290,7 @@ struct lttng_ust_probe_desc {
 	uint32_t struct_size;			/* Size of this structure. */
 
 	const char *provider_name;
-	const struct lttng_ust_event_desc **event_desc;
+	const struct lttng_ust_event_desc * const *event_desc;
 	unsigned int nr_events;
 	uint32_t major;
 	uint32_t minor;
