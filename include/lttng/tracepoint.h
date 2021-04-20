@@ -597,7 +597,7 @@ lttng_ust__tracepoints__ptrs_destroy(void)
 
 /* The following declarations must be outside re-inclusion protection. */
 
-#ifndef TRACEPOINT_ENUM
+#ifndef LTTNG_UST_TRACEPOINT_ENUM
 
 /*
  * Tracepoint Enumerations
@@ -608,7 +608,7 @@ lttng_ust__tracepoints__ptrs_destroy(void)
  *
  * An example:
  *
- * TRACEPOINT_ENUM(someproject_component, enumname,
+ * LTTNG_UST_TRACEPOINT_ENUM(someproject_component, enumname,
  *	TP_ENUM_VALUES(
  *		ctf_enum_value("even", 0)
  *		ctf_enum_value("uneven", 1)
@@ -632,14 +632,18 @@ lttng_ust__tracepoints__ptrs_destroy(void)
  * ctf_enum(someproject_component, enumname, enumtype, enumfield, enumval)
  *
  * Where "someproject_component" and "enumname" match those in the
- * TRACEPOINT_ENUM, "enumtype" is a signed or unsigned integer type
+ * LTTNG_UST_TRACEPOINT_ENUM, "enumtype" is a signed or unsigned integer type
  * backing the enumeration, "enumfield" is the name of the field and
  * "enumval" is the value.
  */
 
-#define TRACEPOINT_ENUM(provider, name, values)
+#define LTTNG_UST_TRACEPOINT_ENUM(provider, name, values)
 
-#endif /* #ifndef TRACEPOINT_ENUM */
+#if LTTNG_UST_COMPAT_API(0)
+#define TRACEPOINT_ENUM		LTTNG_UST_TRACEPOINT_ENUM
+#endif /* #if LTTNG_UST_COMPAT_API(0) */
+
+#endif /* #ifndef LTTNG_UST_TRACEPOINT_ENUM */
 
 #ifndef LTTNG_UST_TRACEPOINT_EVENT
 

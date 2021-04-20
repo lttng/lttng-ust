@@ -201,8 +201,8 @@ void __event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PR
 #define TP_ENUM_VALUES(...)						\
 	__VA_ARGS__
 
-#undef TRACEPOINT_ENUM
-#define TRACEPOINT_ENUM(_provider, _name, _values)			\
+#undef LTTNG_UST_TRACEPOINT_ENUM
+#define LTTNG_UST_TRACEPOINT_ENUM(_provider, _name, _values)			\
 	const struct lttng_ust_enum_entry * const __enum_values__##_provider##_##_name[] = { \
 		_values							\
 		ctf_enum_value("", 0)	/* Dummy, 0-len array forbidden by C99. */ \
@@ -367,8 +367,8 @@ void __event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PR
 		ctf_integer(int, dummy, 0)	/* Dummy, C99 forbids 0-len array. */	     \
 	};
 
-#undef TRACEPOINT_ENUM
-#define TRACEPOINT_ENUM(_provider, _name, _values)					\
+#undef LTTNG_UST_TRACEPOINT_ENUM
+#define LTTNG_UST_TRACEPOINT_ENUM(_provider, _name, _values)					\
 	static const struct lttng_ust_enum_desc __enum_##_provider##_##_name = {	\
 		.struct_size = sizeof(struct lttng_ust_enum_desc),			\
 		.name = #_provider "_" #_name,						\

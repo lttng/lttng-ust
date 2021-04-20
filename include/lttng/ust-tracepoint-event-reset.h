@@ -12,8 +12,8 @@
 #undef LTTNG_UST__TRACEPOINT_EVENT_INSTANCE
 #define LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)
 
-#undef TRACEPOINT_ENUM
-#define TRACEPOINT_ENUM(_provider, _name, _values)
+#undef LTTNG_UST_TRACEPOINT_ENUM
+#define LTTNG_UST_TRACEPOINT_ENUM(_provider, _name, _values)
 
 #undef LTTNG_UST_TP_ARGS
 #define LTTNG_UST_TP_ARGS(...)

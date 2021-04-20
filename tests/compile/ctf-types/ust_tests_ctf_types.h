@@ -12,7 +12,7 @@
 
 #include <lttng/tracepoint.h>
 
-TRACEPOINT_ENUM(ust_tests_ctf_types, testenum,
+LTTNG_UST_TRACEPOINT_ENUM(ust_tests_ctf_types, testenum,
 	TP_ENUM_VALUES(
 		ctf_enum_value("even", 0)
 		ctf_enum_value("uneven", 1)
@@ -21,7 +21,7 @@ TRACEPOINT_ENUM(ust_tests_ctf_types, testenum,
 	)
 )
 
-TRACEPOINT_ENUM(ust_tests_ctf_types, testenum2,
+LTTNG_UST_TRACEPOINT_ENUM(ust_tests_ctf_types, testenum2,
 	TP_ENUM_VALUES(
 		ctf_enum_value("zero", 0)
 		ctf_enum_value("five", 5)

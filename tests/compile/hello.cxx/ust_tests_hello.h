@@ -13,7 +13,7 @@
 #include <lttng/tracepoint.h>
 #include <stddef.h>
 
-TRACEPOINT_ENUM(ust_tests_hello, my_enum,
+LTTNG_UST_TRACEPOINT_ENUM(ust_tests_hello, my_enum,
 	TP_ENUM_VALUES(
 		ctf_enum_value("zero", 0)
 		ctf_enum_value("one", 1)
