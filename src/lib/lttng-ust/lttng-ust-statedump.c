@@ -630,7 +630,7 @@ void lttng_ust_statedump_init(void)
 {
 	lttng_ust__tracepoints__init();
 	lttng_ust__tracepoints__ptrs_init();
-	__lttng_ust_events_init__lttng_ust_statedump();
+	lttng_ust__events_init__lttng_ust_statedump();
 	lttng_ust_dl_update(LTTNG_UST_CALLER_IP());
 }
 

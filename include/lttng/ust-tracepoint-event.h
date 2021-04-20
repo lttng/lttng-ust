@@ -1122,10 +1122,10 @@ static struct lttng_ust_registered_probe *LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust
 /* Reset all macros within LTTNG_UST_TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 static void
-LTTNG_UST__TP_COMBINE_TOKENS(__lttng_ust_events_init__, LTTNG_UST_TRACEPOINT_PROVIDER)(void)
+LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__events_init__, LTTNG_UST_TRACEPOINT_PROVIDER)(void)
 	lttng_ust_notrace __attribute__((constructor));
 static void
-LTTNG_UST__TP_COMBINE_TOKENS(__lttng_ust_events_init__, LTTNG_UST_TRACEPOINT_PROVIDER)(void)
+LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__events_init__, LTTNG_UST_TRACEPOINT_PROVIDER)(void)
 {
 	struct lttng_ust_registered_probe *reg_probe;
 
