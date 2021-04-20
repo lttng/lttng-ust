@@ -31,16 +31,16 @@
  */
 #include <sys/sdt.h>
 
-#define _LTTNG_UST_SDT_NARG(...) \
-	__LTTNG_UST_SDT_NARG(__VA_ARGS__, 12,11,10,9,8,7,6,5,4,3,2,1,0)
+#define LTTNG_UST__SDT_NARG(...) \
+	LTTNG_UST___SDT_NARG(__VA_ARGS__, 12,11,10,9,8,7,6,5,4,3,2,1,0)
 
-#define __LTTNG_UST_SDT_NARG(_0,_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12, N, ...) N
+#define LTTNG_UST___SDT_NARG(_0,_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12, N, ...) N
 
-#define _LTTNG_UST_SDT_PROBE_N(provider, name, N, ...) \
+#define LTTNG_UST__SDT_PROBE_N(provider, name, N, ...) \
 	_SDT_PROBE(provider, name, N, (__VA_ARGS__))
 
 #define LTTNG_UST_STAP_PROBEV(provider, name, ...) \
-	_LTTNG_UST_SDT_PROBE_N(provider, name, _LTTNG_UST_SDT_NARG(0, ##__VA_ARGS__), ##__VA_ARGS__)
+	LTTNG_UST__SDT_PROBE_N(provider, name, LTTNG_UST__SDT_NARG(0, ##__VA_ARGS__), ##__VA_ARGS__)
 
 #else
 #define LTTNG_UST_STAP_PROBEV(...)
