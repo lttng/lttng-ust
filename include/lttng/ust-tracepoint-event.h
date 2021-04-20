@@ -943,16 +943,16 @@ void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PRO
 #undef LTTNG_UST_TP_ARGS
 #define LTTNG_UST_TP_ARGS(...) __VA_ARGS__
 
-#define _TP_EXTRACT_STRING2(...)	#__VA_ARGS__
+#define LTTNG_UST__TP_EXTRACT_STRING2(...)	#__VA_ARGS__
 
 #undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
 #define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	\
 static const char __tp_event_signature___##_provider##___##_name[] = 	\
-		_TP_EXTRACT_STRING2(_args);
+		LTTNG_UST__TP_EXTRACT_STRING2(_args);
 
 #include LTTNG_UST_TRACEPOINT_INCLUDE
 
-#undef _TP_EXTRACT_STRING2
+#undef LTTNG_UST__TP_EXTRACT_STRING2
 
 /*
  * Stage 6 of tracepoint event generation.
