@@ -18,7 +18,7 @@
 #include <lttng/ust-api-compat.h>
 #include <string.h>
 
-#define __LTTNG_UST_NULL_STRING	"(null)"
+#define LTTNG_UST__NULL_STRING	"(null)"
 
 #undef tp_list_for_each_entry_rcu
 #define tp_list_for_each_entry_rcu(pos, head, member)	\
@@ -449,7 +449,7 @@ static void __event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO
 #undef _ctf_string
 #define _ctf_string(_item, _src, _nowrite)				       \
 	__event_len += __dynamic_len[__dynamic_len_idx++] =		       \
-		strlen((_src) ? (_src) : __LTTNG_UST_NULL_STRING) + 1;
+		strlen((_src) ? (_src) : LTTNG_UST__NULL_STRING) + 1;
 
 #undef _ctf_unused
 #define _ctf_unused(_src)							\
@@ -615,7 +615,7 @@ size_t __event_get_size__##_provider##___##_name(			      \
 #define _ctf_string(_item, _src, _nowrite)				       \
 	{								       \
 		const void *__ctf_tmp_ptr =				       \
-			((_src) ? (_src) : __LTTNG_UST_NULL_STRING);	       \
+			((_src) ? (_src) : LTTNG_UST__NULL_STRING);	       \
 		memcpy(__stack_data, &__ctf_tmp_ptr, sizeof(void *));	       \
 		__stack_data += sizeof(void *);				       \
 	}
@@ -776,7 +776,7 @@ size_t __event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_PROTO(_args
 #define _ctf_string(_item, _src, _nowrite)					\
 	{									\
 		const char *__ctf_tmp_string =					\
-			((_src) ? (_src) : __LTTNG_UST_NULL_STRING);		\
+			((_src) ? (_src) : LTTNG_UST__NULL_STRING);		\
 		__chan->ops->event_strcpy(&__ctx, __ctf_tmp_string,		\
 			__get_dynamic_len(dest));				\
 	}
