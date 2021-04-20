@@ -4,5 +4,5 @@
  * Copyright (C) 2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
-#define TRACEPOINT_CREATE_PROBES
+#define LTTNG_UST_TRACEPOINT_CREATE_PROBES
 #include "ust_tests_demo2.h"

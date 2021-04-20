@@ -4,5 +4,5 @@
  * Copyright (C) 2013 Zifei Tong <soariez@gmail.com>
  */
 
-#define TRACEPOINT_CREATE_PROBES
+#define LTTNG_UST_TRACEPOINT_CREATE_PROBES
 #include "ust_tests_benchmark.h"

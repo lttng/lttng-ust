@@ -6,6 +6,6 @@
  */
 
 #define _LGPL_SOURCE
-#define TRACEPOINT_CREATE_PROBES
+#define LTTNG_UST_TRACEPOINT_CREATE_PROBES
 #define TP_IP_PARAM ip
 #include "ust_lib.h"

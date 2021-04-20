@@ -8,7 +8,7 @@
 #include "org_lttng_ust_LTTngUst.h"
 
 #define LTTNG_UST_TRACEPOINT_DEFINE
-#define TRACEPOINT_CREATE_PROBES
+#define LTTNG_UST_TRACEPOINT_CREATE_PROBES
 #include "lttng_ust_java.h"
 
 JNIEXPORT void JNICALL Java_org_lttng_ust_LTTngUst_tracepointInt(JNIEnv *env,

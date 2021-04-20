@@ -8,7 +8,7 @@
  * Defining macro creates the code objects of the traceprobes, only do
  * it once per file
  */
-#define TRACEPOINT_CREATE_PROBES
+#define LTTNG_UST_TRACEPOINT_CREATE_PROBES
 /*
  * The header containing our LTTNG_UST_TRACEPOINT_EVENTs.
  */

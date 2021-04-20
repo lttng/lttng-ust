@@ -5,7 +5,7 @@
  */
 
 #define LTTNG_UST_TRACEPOINT_DEFINE
-#define TRACEPOINT_CREATE_PROBES
+#define LTTNG_UST_TRACEPOINT_CREATE_PROBES
 #include "ust_tests_sameline.h"
 
 int main(void)

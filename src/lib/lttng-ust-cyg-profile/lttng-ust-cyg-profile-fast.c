@@ -10,7 +10,7 @@
 #include <stdio.h>
 
 #define LTTNG_UST_TRACEPOINT_DEFINE
-#define TRACEPOINT_CREATE_PROBES
+#define LTTNG_UST_TRACEPOINT_CREATE_PROBES
 #define TP_IP_PARAM func_addr
 #include "lttng-ust-cyg-profile-fast.h"
 

@@ -27,7 +27,7 @@
 #define LTTNG_UST_TRACEPOINT_DEFINE
 #include "ust_lib.h"				/* Only define. */
 
-#define TRACEPOINT_CREATE_PROBES
+#define LTTNG_UST_TRACEPOINT_CREATE_PROBES
 #define TP_SESSION_CHECK
 #include "lttng-ust-statedump-provider.h"	/* Define and create probes. */
 
