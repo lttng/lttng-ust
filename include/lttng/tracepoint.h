@@ -51,10 +51,10 @@ extern "C" {
 #endif
 
 #define lttng_ust_tracepoint_enabled(provider, name)				\
-	caa_unlikely(CMM_LOAD_SHARED(__tracepoint_##provider##___##name.state))
+	caa_unlikely(CMM_LOAD_SHARED(lttng_ust_tracepoint_##provider##___##name.state))
 
 #define lttng_ust_do_tracepoint(provider, name, ...)				\
-	__tracepoint_cb_##provider##___##name(__VA_ARGS__)
+	lttng_ust_tracepoint_cb_##provider##___##name(__VA_ARGS__)
 
 #define lttng_ust_tracepoint(provider, name, ...)				\
 	do {									\
@@ -182,19 +182,19 @@ extern "C" {
  * address.
  */
 #define LTTNG_UST__DECLARE_TRACEPOINT(_provider, _name, ...)			 		\
-extern struct lttng_ust_tracepoint __tracepoint_##_provider##___##_name;		\
+extern struct lttng_ust_tracepoint lttng_ust_tracepoint_##_provider##___##_name;		\
 static inline										\
-void __tracepoint_cb_##_provider##___##_name(_TP_ARGS_PROTO(__VA_ARGS__))		\
+void lttng_ust_tracepoint_cb_##_provider##___##_name(_TP_ARGS_PROTO(__VA_ARGS__))		\
 	__attribute__((always_inline, unused)) lttng_ust_notrace;			\
 static											\
-void __tracepoint_cb_##_provider##___##_name(_TP_ARGS_PROTO(__VA_ARGS__))		\
+void lttng_ust_tracepoint_cb_##_provider##___##_name(_TP_ARGS_PROTO(__VA_ARGS__))		\
 {											\
 	struct lttng_ust_tracepoint_probe *__tp_probe;					\
 											\
 	if (caa_unlikely(!TP_RCU_LINK_TEST()))						\
 		return;									\
 	tp_rcu_read_lock();								\
-	__tp_probe = tp_rcu_dereference(__tracepoint_##_provider##___##_name.probes);	\
+	__tp_probe = tp_rcu_dereference(lttng_ust_tracepoint_##_provider##___##_name.probes);	\
 	if (caa_unlikely(!__tp_probe))							\
 		goto end;								\
 	do {										\
@@ -208,30 +208,30 @@ end:											\
 	tp_rcu_read_unlock();								\
 }											\
 static inline										\
-void __tracepoint_register_##_provider##___##_name(char *provider_name, char *event_name, \
+void lttng_ust_tracepoint_register_##_provider##___##_name(char *provider_name, char *event_name, \
 		void (*func)(void), void *data)						\
 	lttng_ust_notrace;								\
 static inline										\
-void __tracepoint_register_##_provider##___##_name(char *provider_name, char *event_name, \
+void lttng_ust_tracepoint_register_##_provider##___##_name(char *provider_name, char *event_name, \
 		void (*func)(void), void *data)						\
 {											\
-	__tracepoint_probe_register(provider_name, event_name, func, data,		\
-		__tracepoint_##_provider##___##_name.signature);			\
+	lttng_ust_tracepoint_probe_register(provider_name, event_name, func, data,		\
+		lttng_ust_tracepoint_##_provider##___##_name.signature);			\
 }											\
 static inline										\
-void __tracepoint_unregister_##_provider##___##_name(char *provider_name, char *event_name, \
+void lttng_ust_tracepoint_unregister_##_provider##___##_name(char *provider_name, char *event_name, \
 		void (*func)(void), void *data)						\
 	lttng_ust_notrace;								\
 static inline										\
-void __tracepoint_unregister_##_provider##___##_name(char *provider_name, char *event_name, \
+void lttng_ust_tracepoint_unregister_##_provider##___##_name(char *provider_name, char *event_name, \
 		void (*func)(void), void *data)						\
 {											\
-	__tracepoint_probe_unregister(provider_name, event_name, func, data);		\
+	lttng_ust_tracepoint_probe_unregister(provider_name, event_name, func, data);		\
 }
 
-extern int __tracepoint_probe_register(const char *provider_name, const char *event_name,
+extern int lttng_ust_tracepoint_probe_register(const char *provider_name, const char *event_name,
 		void (*func)(void), void *data, const char *signature);
-extern int __tracepoint_probe_unregister(const char *provider_name, const char *event_name,
+extern int lttng_ust_tracepoint_probe_unregister(const char *provider_name, const char *event_name,
 		void (*func)(void), void *data);
 
 /*
@@ -269,9 +269,9 @@ extern struct lttng_ust_tracepoint_dlopen *lttng_ust_tracepoint_dlopen_ptr;
  * registering only _one_ instance of the tracepoints per shared-ojbect
  * (or for the whole main program).
  */
-int __tracepoint_registered
+int lttng_ust_tracepoint_registered
 	__attribute__((weak, visibility("hidden")));
-int __tracepoint_ptrs_registered
+int lttng_ust_tracepoint_ptrs_registered
 	__attribute__((weak, visibility("hidden")));
 struct lttng_ust_tracepoint_dlopen lttng_ust_tracepoint_dlopen
 		__attribute__((weak, visibility("hidden"))) = {
@@ -335,10 +335,10 @@ static inline void tracepoint_disable_destructors(void)
 
 #ifndef _LGPL_SOURCE
 static inline void
-__tracepoint__init_urcu_sym(void)
+lttng_ust_tracepoint__init_urcu_sym(void)
 	lttng_ust_notrace;
 static inline void
-__tracepoint__init_urcu_sym(void)
+lttng_ust_tracepoint__init_urcu_sym(void)
 {
 	if (!lttng_ust_tracepoint_dlopen_ptr)
 		lttng_ust_tracepoint_dlopen_ptr = &lttng_ust_tracepoint_dlopen;
@@ -364,10 +364,10 @@ __tracepoint__init_urcu_sym(void)
 }
 #else
 static inline void
-__tracepoint__init_urcu_sym(void)
+lttng_ust_tracepoint__init_urcu_sym(void)
 	lttng_ust_notrace;
 static inline void
-__tracepoint__init_urcu_sym(void)
+lttng_ust_tracepoint__init_urcu_sym(void)
 {
 }
 #endif
@@ -378,10 +378,10 @@ __tracepoints__init(void)
 static void
 __tracepoints__init(void)
 {
-	if (__tracepoint_registered++) {
+	if (lttng_ust_tracepoint_registered++) {
 		if (!lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle)
 			return;
-		__tracepoint__init_urcu_sym();
+		lttng_ust_tracepoint__init_urcu_sym();
 		return;
 	}
 
@@ -392,7 +392,7 @@ __tracepoints__init(void)
 			dlopen(LTTNG_UST_TRACEPOINT_LIB_SONAME, RTLD_NOW | RTLD_GLOBAL);
 	if (!lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle)
 		return;
-	__tracepoint__init_urcu_sym();
+	lttng_ust_tracepoint__init_urcu_sym();
 }
 
 static void
@@ -403,7 +403,7 @@ __tracepoints__destroy(void)
 {
 	int ret;
 
-	if (--__tracepoint_registered)
+	if (--lttng_ust_tracepoint_registered)
 		return;
 	if (!lttng_ust_tracepoint_dlopen_ptr)
 		lttng_ust_tracepoint_dlopen_ptr = &lttng_ust_tracepoint_dlopen;
@@ -411,7 +411,7 @@ __tracepoints__destroy(void)
 		lttng_ust_tracepoint_destructors_syms_ptr = &lttng_ust_tracepoint_destructors_syms;
 	if (!lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle)
 		return;
-	if (__tracepoint_ptrs_registered)
+	if (lttng_ust_tracepoint_ptrs_registered)
 		return;
 	/*
 	 * Lookup if destructors must be executed using the new method.
@@ -457,7 +457,7 @@ extern struct lttng_ust_tracepoint * const __stop___tracepoints_ptrs[]
 #ifdef TRACEPOINT_PROBE_DYNAMIC_LINKAGE
 #define _TRACEPOINT_UNDEFINED_REF(provider)	NULL
 #else	/* TRACEPOINT_PROBE_DYNAMIC_LINKAGE */
-#define _TRACEPOINT_UNDEFINED_REF(provider)	&__tracepoint_provider_##provider
+#define _TRACEPOINT_UNDEFINED_REF(provider)	&lttng_ust_tracepoint_provider_##provider
 #endif /* TRACEPOINT_PROBE_DYNAMIC_LINKAGE */
 
 /*
@@ -469,14 +469,14 @@ extern struct lttng_ust_tracepoint * const __stop___tracepoints_ptrs[]
 
 #define LTTNG_UST__DEFINE_TRACEPOINT(_provider, _name, _args)				\
 	lttng_ust_tracepoint_validate_name_len(_provider, _name);		\
-	extern int __tracepoint_provider_##_provider; 				\
+	extern int lttng_ust_tracepoint_provider_##_provider; 				\
 	static const char __tp_provider_strtab_##_provider##___##_name[]	\
 		__attribute__((section("__tracepoints_strings"))) =		\
 			#_provider;						\
 	static const char __tp_name_strtab_##_provider##___##_name[]		\
 		__attribute__((section("__tracepoints_strings"))) =		\
 			#_name;							\
-	struct lttng_ust_tracepoint __tracepoint_##_provider##___##_name	\
+	struct lttng_ust_tracepoint lttng_ust_tracepoint_##_provider##___##_name	\
 		__attribute__((section("__tracepoints"))) = {			\
 			sizeof(struct lttng_ust_tracepoint),			\
 			__tp_provider_strtab_##_provider##___##_name,		\
@@ -487,10 +487,10 @@ extern struct lttng_ust_tracepoint * const __stop___tracepoints_ptrs[]
 			_TP_EXTRACT_STRING(_args),				\
 		};								\
 	static struct lttng_ust_tracepoint *					\
-		__tracepoint_ptr_##_provider##___##_name			\
+		lttng_ust_tracepoint_ptr_##_provider##___##_name			\
 		__attribute__((section("__tracepoints_ptrs"), used))		\
 		__lttng_ust_variable_attribute_no_sanitize_address =		\
-			&__tracepoint_##_provider##___##_name;
+			&lttng_ust_tracepoint_##_provider##___##_name;
 
 static void
 __tracepoints__ptrs_init(void)
@@ -498,7 +498,7 @@ __tracepoints__ptrs_init(void)
 static void
 __tracepoints__ptrs_init(void)
 {
-	if (__tracepoint_ptrs_registered++)
+	if (lttng_ust_tracepoint_ptrs_registered++)
 		return;
 	if (!lttng_ust_tracepoint_dlopen_ptr)
 		lttng_ust_tracepoint_dlopen_ptr = &lttng_ust_tracepoint_dlopen;
@@ -525,7 +525,7 @@ __tracepoints__ptrs_init(void)
 		URCU_FORCE_CAST(int (*)(void),
 				dlsym(lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle,
 					"tp_get_destructors_state"));
-	__tracepoint__init_urcu_sym();
+	lttng_ust_tracepoint__init_urcu_sym();
 	if (lttng_ust_tracepoint_dlopen_ptr->tracepoint_register_lib) {
 		lttng_ust_tracepoint_dlopen_ptr->tracepoint_register_lib(__start___tracepoints_ptrs,
 				__stop___tracepoints_ptrs -
@@ -541,7 +541,7 @@ __tracepoints__ptrs_destroy(void)
 {
 	int ret;
 
-	if (--__tracepoint_ptrs_registered)
+	if (--lttng_ust_tracepoint_ptrs_registered)
 		return;
 	if (!lttng_ust_tracepoint_dlopen_ptr)
 		lttng_ust_tracepoint_dlopen_ptr = &lttng_ust_tracepoint_dlopen;
@@ -552,7 +552,7 @@ __tracepoints__ptrs_destroy(void)
 	if (lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle
 			&& lttng_ust_tracepoint_destructors_syms_ptr->tracepoint_get_destructors_state
 			&& lttng_ust_tracepoint_destructors_syms_ptr->tracepoint_get_destructors_state()
-			&& !__tracepoint_ptrs_registered) {
+			&& !lttng_ust_tracepoint_ptrs_registered) {
 		ret = dlclose(lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle);
 		if (ret) {
 			fprintf(stderr, "Error (%d) in dlclose\n", ret);

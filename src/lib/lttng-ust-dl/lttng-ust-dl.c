@@ -207,7 +207,7 @@ void *dlopen(const char *filename, int flags)
 	void *handle;
 
 	handle = _lttng_ust_dl_libc_dlopen(filename, flags);
-	if (__tracepoint_ptrs_registered && handle) {
+	if (lttng_ust_tracepoint_ptrs_registered && handle) {
 		struct link_map *p = NULL;
 		int ret;
 
@@ -227,7 +227,7 @@ void *dlmopen(Lmid_t nsid, const char *filename, int flags)
 	void *handle;
 
 	handle = _lttng_ust_dl_libc_dlmopen(nsid, filename, flags);
-	if (__tracepoint_ptrs_registered && handle) {
+	if (lttng_ust_tracepoint_ptrs_registered && handle) {
 		struct link_map *p = NULL;
 		int ret;
 
@@ -248,7 +248,7 @@ int dlclose(void *handle)
 {
 	int ret;
 
-	if (__tracepoint_ptrs_registered) {
+	if (lttng_ust_tracepoint_ptrs_registered) {
 		struct link_map *p = NULL;
 
 		ret = dlinfo(handle, RTLD_DI_LINKMAP, &p);

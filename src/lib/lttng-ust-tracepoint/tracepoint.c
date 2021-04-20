@@ -33,11 +33,11 @@
 #include "common/err-ptr.h"
 
 /* Test compiler support for weak symbols with hidden visibility. */
-int __tracepoint_test_symbol1 __attribute__((weak, visibility("hidden")));
-void *__tracepoint_test_symbol2 __attribute__((weak, visibility("hidden")));
+int lttng_ust_tracepoint_test_symbol1 __attribute__((weak, visibility("hidden")));
+void *lttng_ust_tracepoint_test_symbol2 __attribute__((weak, visibility("hidden")));
 struct {
 	char a[24];
-} __tracepoint_test_symbol3 __attribute__((weak, visibility("hidden")));
+} lttng_ust_tracepoint_test_symbol3 __attribute__((weak, visibility("hidden")));
 
 /* Set to 1 to enable tracepoint debug output */
 static const int tracepoint_debug;
@@ -608,7 +608,7 @@ static void tracepoint_release_queue_add_old_probes(void *old)
 }
 
 /**
- * __tracepoint_probe_register -  Connect a probe to a tracepoint
+ * lttng_ust_tracepoint_probe_register -  Connect a probe to a tracepoint
  * @name: tracepoint provider name
  * @name: tracepoint event name
  * @probe: probe handler
@@ -617,7 +617,7 @@ static void tracepoint_release_queue_add_old_probes(void *old)
  * The probe address must at least be aligned on the architecture pointer size.
  * Called with the tracepoint mutex held.
  */
-int __tracepoint_probe_register(const char *provider_name, const char *event_name,
+int lttng_ust_tracepoint_probe_register(const char *provider_name, const char *event_name,
 		void (*probe)(void), void *data, const char *signature)
 {
 	void *old;
@@ -640,7 +640,7 @@ end:
 }
 
 /*
- * Caller needs to invoke __tracepoint_probe_release_queue() after
+ * Caller needs to invoke lttng_ust_tracepoint_probe_release_queue() after
  * calling lttng_ust_tp_probe_register_queue_release() one or multiple
  * times to ensure it does not leak memory.
  */
@@ -690,7 +690,7 @@ static void *tracepoint_remove_probe(const char *provider_name, const char *even
  * @probe: probe function pointer
  * @probe: probe data pointer
  */
-int __tracepoint_probe_unregister(const char *provider_name, const char *event_name,
+int lttng_ust_tracepoint_probe_unregister(const char *provider_name, const char *event_name,
 		void (*probe)(void), void *data)
 {
 	void *old;
@@ -712,7 +712,7 @@ end:
 }
 
 /*
- * Caller needs to invoke __tracepoint_probe_release_queue() after
+ * Caller needs to invoke lttng_ust_tracepoint_probe_release_queue() after
  * calling lttng_ust_tp_probe_unregister_queue_release() one or multiple
  * times to ensure it does not leak memory.
  */
@@ -968,15 +968,15 @@ int tracepoint_unregister_lib(struct lttng_ust_tracepoint * const *tracepoints_s
 static void check_weak_hidden(void)
 {
 	DBG("Your compiler treats weak symbols with hidden visibility for integer objects as %s between compile units part of the same module.",
-		&__tracepoint_test_symbol1 == lttng_ust_tp_check_weak_hidden1() ?
+		&lttng_ust_tracepoint_test_symbol1 == lttng_ust_tp_check_weak_hidden1() ?
 			"SAME address" :
 			"DIFFERENT addresses");
 	DBG("Your compiler treats weak symbols with hidden visibility for pointer objects as %s between compile units part of the same module.",
-		&__tracepoint_test_symbol2 == lttng_ust_tp_check_weak_hidden2() ?
+		&lttng_ust_tracepoint_test_symbol2 == lttng_ust_tp_check_weak_hidden2() ?
 			"SAME address" :
 			"DIFFERENT addresses");
 	DBG("Your compiler treats weak symbols with hidden visibility for 24-byte structure objects as %s between compile units part of the same module.",
-		&__tracepoint_test_symbol3 == lttng_ust_tp_check_weak_hidden3() ?
+		&lttng_ust_tracepoint_test_symbol3 == lttng_ust_tp_check_weak_hidden3() ?
 			"SAME address" :
 			"DIFFERENT addresses");
 }

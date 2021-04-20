@@ -44,14 +44,14 @@ TP_TRACELOG_CB_TEMPLATE(TRACE_DEBUG);
 #define tracelog(level, fmt, ...)					\
 	do {								\
 		LTTNG_UST_STAP_PROBEV(tracepoint_lttng_ust_tracelog, level, ## __VA_ARGS__); \
-		if (caa_unlikely(__tracepoint_lttng_ust_tracelog___##level.state)) \
+		if (caa_unlikely(lttng_ust_tracepoint_lttng_ust_tracelog___##level.state)) \
 			_lttng_ust_tracelog_##level(__FILE__, __LINE__, __func__, \
 				fmt, ## __VA_ARGS__);			\
 	} while (0)
 
 #define vtracelog(level, fmt, ap)					\
 	do {								\
-		if (caa_unlikely(__tracepoint_lttng_ust_tracelog___##level.state)) \
+		if (caa_unlikely(lttng_ust_tracepoint_lttng_ust_tracelog___##level.state)) \
 			_lttng_ust_vtracelog_##level(__FILE__, __LINE__, __func__, \
 				fmt, ap);				\
 	} while (0)

@@ -24,7 +24,7 @@ void __lttng_ust_vtracef(const char *fmt, va_list ap)
 	/* len does not include the final \0 */
 	if (len < 0)
 		goto end;
-	__tracepoint_cb_lttng_ust_tracef___event(msg, len,
+	lttng_ust_tracepoint_cb_lttng_ust_tracef___event(msg, len,
 		LTTNG_UST_CALLER_IP());
 	free(msg);
 end:

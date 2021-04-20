@@ -30,7 +30,7 @@
 		/* len does not include the final \0 */ \
 		if (len < 0) \
 			goto end; \
-		__tracepoint_cb_lttng_ust_tracelog___##level(file, \
+		lttng_ust_tracepoint_cb_lttng_ust_tracelog___##level(file, \
 			line, func, msg, len, \
 			LTTNG_UST_CALLER_IP()); \
 		free(msg); \
