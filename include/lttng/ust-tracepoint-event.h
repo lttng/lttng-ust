@@ -73,10 +73,10 @@
 #include <lttng/ust-tracepoint-event-reset.h>
 
 static inline
-void _TP_COMBINE_TOKENS(lttng_ust_tracepoint_provider_mismatch_, TRACEPOINT_PROVIDER)(void)
+void LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_tracepoint_provider_mismatch_, TRACEPOINT_PROVIDER)(void)
 	lttng_ust_notrace;
 static inline
-void _TP_COMBINE_TOKENS(lttng_ust_tracepoint_provider_mismatch_, TRACEPOINT_PROVIDER)(void)
+void LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_tracepoint_provider_mismatch_, TRACEPOINT_PROVIDER)(void)
 {
 }
 
@@ -89,10 +89,10 @@ void _TP_COMBINE_TOKENS(lttng_ust_tracepoint_provider_mismatch_, TRACEPOINT_PROV
 	lttng_ust_tracepoint_provider_mismatch_##_provider();
 
 static inline
-void _TP_COMBINE_TOKENS(lttng_ust_tracepoint_provider_check_, TRACEPOINT_PROVIDER)(void)
+void LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_tracepoint_provider_check_, TRACEPOINT_PROVIDER)(void)
 	lttng_ust_notrace;
 static inline
-void _TP_COMBINE_TOKENS(lttng_ust_tracepoint_provider_check_, TRACEPOINT_PROVIDER)(void)
+void LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_tracepoint_provider_check_, TRACEPOINT_PROVIDER)(void)
 {
 #include TRACEPOINT_INCLUDE
 }
@@ -1022,7 +1022,7 @@ LTTNG_UST_TP_EXTERN_C const char * const _model_emf_uri___##__provider##___##__n
  * symbol table.
  */
 
-extern const struct lttng_ust_probe_desc _TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PROVIDER)
+extern const struct lttng_ust_probe_desc LTTNG_UST__TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PROVIDER)
 	__attribute__((visibility("hidden")));
 
 /*
@@ -1077,7 +1077,7 @@ static const struct lttng_ust_event_desc __event_desc___##_provider##_##_name = 
 #define LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	       \
 	&__event_desc___##_provider##_##_name,
 
-static const struct lttng_ust_event_desc * const _TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER)[] = {
+static const struct lttng_ust_event_desc * const LTTNG_UST__TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER)[] = {
 #include TRACEPOINT_INCLUDE
 	NULL,	/* Dummy, C99 forbids 0-len array. */
 };
@@ -1089,17 +1089,17 @@ static const struct lttng_ust_event_desc * const _TP_COMBINE_TOKENS(__event_desc
  * Create a toplevel descriptor for the whole probe.
  */
 
-const struct lttng_ust_probe_desc _TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PROVIDER) = {
+const struct lttng_ust_probe_desc LTTNG_UST__TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PROVIDER) = {
 	.struct_size = sizeof(struct lttng_ust_probe_desc),
 	.provider_name = __tp_stringify(TRACEPOINT_PROVIDER),
-	.event_desc = _TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER),
-	.nr_events = _TP_ARRAY_SIZE(_TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER)) - 1,
+	.event_desc = LTTNG_UST__TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER),
+	.nr_events = _TP_ARRAY_SIZE(LTTNG_UST__TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER)) - 1,
 	.major = LTTNG_UST_PROVIDER_MAJOR,
 	.minor = LTTNG_UST_PROVIDER_MINOR,
 };
 
-static int _TP_COMBINE_TOKENS(__probe_register_refcount___, TRACEPOINT_PROVIDER);
-static struct lttng_ust_registered_probe *_TP_COMBINE_TOKENS(__lttng_ust_probe_register_cookie___, TRACEPOINT_PROVIDER);
+static int LTTNG_UST__TP_COMBINE_TOKENS(__probe_register_refcount___, TRACEPOINT_PROVIDER);
+static struct lttng_ust_registered_probe *LTTNG_UST__TP_COMBINE_TOKENS(__lttng_ust_probe_register_cookie___, TRACEPOINT_PROVIDER);
 
 /*
  * Stage 9 of tracepoint event generation.
@@ -1115,14 +1115,14 @@ static struct lttng_ust_registered_probe *_TP_COMBINE_TOKENS(__lttng_ust_probe_r
 /* Reset all macros within LTTNG_UST_TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
 static void
-_TP_COMBINE_TOKENS(__lttng_ust_events_init__, TRACEPOINT_PROVIDER)(void)
+LTTNG_UST__TP_COMBINE_TOKENS(__lttng_ust_events_init__, TRACEPOINT_PROVIDER)(void)
 	lttng_ust_notrace __attribute__((constructor));
 static void
-_TP_COMBINE_TOKENS(__lttng_ust_events_init__, TRACEPOINT_PROVIDER)(void)
+LTTNG_UST__TP_COMBINE_TOKENS(__lttng_ust_events_init__, TRACEPOINT_PROVIDER)(void)
 {
 	struct lttng_ust_registered_probe *reg_probe;
 
-	if (_TP_COMBINE_TOKENS(__probe_register_refcount___,
+	if (LTTNG_UST__TP_COMBINE_TOKENS(__probe_register_refcount___,
 			TRACEPOINT_PROVIDER)++) {
 		return;
 	}
@@ -1134,29 +1134,29 @@ _TP_COMBINE_TOKENS(__lttng_ust_events_init__, TRACEPOINT_PROVIDER)(void)
 	 * runtime effect. However, if it detects an error, a linker
 	 * error will appear.
 	 */
-	_TP_COMBINE_TOKENS(lttng_ust_tracepoint_provider_check_, TRACEPOINT_PROVIDER)();
-	assert(!_TP_COMBINE_TOKENS(__lttng_ust_probe_register_cookie___, TRACEPOINT_PROVIDER));
-	reg_probe = lttng_ust_probe_register(&_TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PROVIDER));
+	LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_tracepoint_provider_check_, TRACEPOINT_PROVIDER)();
+	assert(!LTTNG_UST__TP_COMBINE_TOKENS(__lttng_ust_probe_register_cookie___, TRACEPOINT_PROVIDER));
+	reg_probe = lttng_ust_probe_register(&LTTNG_UST__TP_COMBINE_TOKENS(__probe_desc___, TRACEPOINT_PROVIDER));
 	if (!reg_probe) {
 		fprintf(stderr, "LTTng-UST: Error while registering tracepoint probe.\n");
 		abort();
 	}
-	_TP_COMBINE_TOKENS(__lttng_ust_probe_register_cookie___, TRACEPOINT_PROVIDER) = reg_probe;
+	LTTNG_UST__TP_COMBINE_TOKENS(__lttng_ust_probe_register_cookie___, TRACEPOINT_PROVIDER) = reg_probe;
 }
 
 static void
-_TP_COMBINE_TOKENS(__lttng_ust_events_exit__, TRACEPOINT_PROVIDER)(void)
+LTTNG_UST__TP_COMBINE_TOKENS(__lttng_ust_events_exit__, TRACEPOINT_PROVIDER)(void)
 	lttng_ust_notrace __attribute__((destructor));
 static void
-_TP_COMBINE_TOKENS(__lttng_ust_events_exit__, TRACEPOINT_PROVIDER)(void)
+LTTNG_UST__TP_COMBINE_TOKENS(__lttng_ust_events_exit__, TRACEPOINT_PROVIDER)(void)
 {
-	if (--_TP_COMBINE_TOKENS(__probe_register_refcount___,
+	if (--LTTNG_UST__TP_COMBINE_TOKENS(__probe_register_refcount___,
 			TRACEPOINT_PROVIDER)) {
 		return;
 	}
-	lttng_ust_probe_unregister(_TP_COMBINE_TOKENS(__lttng_ust_probe_register_cookie___, TRACEPOINT_PROVIDER));
-	_TP_COMBINE_TOKENS(__lttng_ust_probe_register_cookie___, TRACEPOINT_PROVIDER) = NULL;
+	lttng_ust_probe_unregister(LTTNG_UST__TP_COMBINE_TOKENS(__lttng_ust_probe_register_cookie___, TRACEPOINT_PROVIDER));
+	LTTNG_UST__TP_COMBINE_TOKENS(__lttng_ust_probe_register_cookie___, TRACEPOINT_PROVIDER) = NULL;
 }
 
-int _TP_COMBINE_TOKENS(lttng_ust_tracepoint_provider_, TRACEPOINT_PROVIDER)
+int LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_tracepoint_provider_, TRACEPOINT_PROVIDER)
 	__attribute__((visibility("default")));
