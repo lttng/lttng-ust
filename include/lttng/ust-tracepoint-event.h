@@ -94,7 +94,7 @@ void LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_tracepoint_provider_check_, TRACEPOI
 static inline
 void LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_tracepoint_provider_check_, TRACEPOINT_PROVIDER)(void)
 {
-#include TRACEPOINT_INCLUDE
+#include LTTNG_UST_TRACEPOINT_INCLUDE
 }
 
 /*
@@ -111,7 +111,7 @@ void LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_tracepoint_provider_check_, TRACEPOI
 #define LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	\
 	lttng_ust_tracepoint_validate_name_len(_provider, _name);
 
-#include TRACEPOINT_INCLUDE
+#include LTTNG_UST_TRACEPOINT_INCLUDE
 
 /*
  * Stage 0.2 of tracepoint event generation.
@@ -135,7 +135,7 @@ void __event_template_proto___##_provider##___##_template(LTTNG_UST__TP_ARGS_DAT
 #define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields) \
 void __event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args));
 
-#include TRACEPOINT_INCLUDE
+#include LTTNG_UST_TRACEPOINT_INCLUDE
 
 /*
  * Stage 0.9 of tracepoint event generation
@@ -207,7 +207,7 @@ void __event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PR
 		_values							\
 		ctf_enum_value("", 0)	/* Dummy, 0-len array forbidden by C99. */ \
 	};
-#include TRACEPOINT_INCLUDE
+#include LTTNG_UST_TRACEPOINT_INCLUDE
 
 /*
  * Stage 0.9.1
@@ -238,7 +238,7 @@ void __event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PR
 #define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	\
 		_fields
 
-#include TRACEPOINT_INCLUDE
+#include LTTNG_UST_TRACEPOINT_INCLUDE
 
 /*
  * Stage 1 of tracepoint event generation.
@@ -376,7 +376,7 @@ void __event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PR
 		.nr_entries = _TP_ARRAY_SIZE(__enum_values__##_provider##_##_name) - 1,	\
 	};
 
-#include TRACEPOINT_INCLUDE
+#include LTTNG_UST_TRACEPOINT_INCLUDE
 
 /*
  * Stage 2 of tracepoint event generation.
@@ -394,7 +394,7 @@ void __event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PR
 #define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)		\
 static void __event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args));
 
-#include TRACEPOINT_INCLUDE
+#include LTTNG_UST_TRACEPOINT_INCLUDE
 
 /*
  * Stage 3.0 of tracepoint event generation.
@@ -480,7 +480,7 @@ size_t __event_get_size__##_provider##___##_name(			      \
 	return __event_len;						      \
 }
 
-#include TRACEPOINT_INCLUDE
+#include LTTNG_UST_TRACEPOINT_INCLUDE
 
 /*
  * Stage 3.1 of tracepoint event generation.
@@ -643,7 +643,7 @@ void __event_prepare_interpreter_stack__##_provider##___##_name(char *__stack_da
 	_fields								      \
 }
 
-#include TRACEPOINT_INCLUDE
+#include LTTNG_UST_TRACEPOINT_INCLUDE
 
 /*
  * Stage 4 of tracepoint event generation.
@@ -717,7 +717,7 @@ size_t __event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_PROTO(_args
 	return __event_align;						      \
 }
 
-#include TRACEPOINT_INCLUDE
+#include LTTNG_UST_TRACEPOINT_INCLUDE
 
 
 /*
@@ -920,7 +920,7 @@ void __event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args)
 	}								      \
 }
 
-#include TRACEPOINT_INCLUDE
+#include LTTNG_UST_TRACEPOINT_INCLUDE
 
 #undef __get_dynamic_len
 
@@ -943,7 +943,7 @@ void __event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args)
 static const char __tp_event_signature___##_provider##___##_name[] = 	\
 		_TP_EXTRACT_STRING2(_args);
 
-#include TRACEPOINT_INCLUDE
+#include LTTNG_UST_TRACEPOINT_INCLUDE
 
 #undef _TP_EXTRACT_STRING2
 
@@ -978,7 +978,7 @@ LTTNG_UST_TP_EXTERN_C const int * const _loglevel___##__provider##___##__name	\
 		__attribute__((visibility("hidden"))) =				\
 		&_loglevel_value___##__provider##___##__name;
 
-#include TRACEPOINT_INCLUDE
+#include LTTNG_UST_TRACEPOINT_INCLUDE
 
 #undef LTTNG_UST_TP_EXTERN_C
 
@@ -1008,7 +1008,7 @@ LTTNG_UST_TP_EXTERN_C const int * const _loglevel___##__provider##___##__name	\
 LTTNG_UST_TP_EXTERN_C const char * const _model_emf_uri___##__provider##___##__name   \
 		__attribute__((visibility("hidden"))) = __uri;		   \
 
-#include TRACEPOINT_INCLUDE
+#include LTTNG_UST_TRACEPOINT_INCLUDE
 
 #undef LTTNG_UST_TP_EXTERN_C
 
@@ -1062,7 +1062,7 @@ static const struct lttng_ust_event_desc __event_desc___##_provider##_##_name = 
 	.model_emf_uri = &__ref_model_emf_uri___##_provider##___##_name,       \
 };
 
-#include TRACEPOINT_INCLUDE
+#include LTTNG_UST_TRACEPOINT_INCLUDE
 
 /*
  * Stage 7.2 of tracepoint event generation.
@@ -1078,7 +1078,7 @@ static const struct lttng_ust_event_desc __event_desc___##_provider##_##_name = 
 	&__event_desc___##_provider##_##_name,
 
 static const struct lttng_ust_event_desc * const LTTNG_UST__TP_COMBINE_TOKENS(__event_desc___, TRACEPOINT_PROVIDER)[] = {
-#include TRACEPOINT_INCLUDE
+#include LTTNG_UST_TRACEPOINT_INCLUDE
 	NULL,	/* Dummy, C99 forbids 0-len array. */
 };
 

@@ -60,8 +60,8 @@ LTTNG_UST_TRACEPOINT_EVENT(ust_tests_ctf_types, tptest_bis,
 
 #endif /* _TRACEPOINT_UST_TESTS_CTF_TYPES_H */
 
-#undef TRACEPOINT_INCLUDE
-#define TRACEPOINT_INCLUDE "./ust_tests_ctf_types.h"
+#undef LTTNG_UST_TRACEPOINT_INCLUDE
+#define LTTNG_UST_TRACEPOINT_INCLUDE "./ust_tests_ctf_types.h"
 
 /* This part must be outside ifdef protection */
 #include <lttng/tracepoint-event.h>

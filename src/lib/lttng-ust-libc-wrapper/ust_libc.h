@@ -76,8 +76,8 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_libc, posix_memalign,
 
 #endif /* _TRACEPOINT_UST_LIBC_H */
 
-#undef TRACEPOINT_INCLUDE
-#define TRACEPOINT_INCLUDE "./ust_libc.h"
+#undef LTTNG_UST_TRACEPOINT_INCLUDE
+#define LTTNG_UST_TRACEPOINT_INCLUDE "./ust_libc.h"
 
 /* This part must be outside ifdef protection */
 #include <lttng/tracepoint-event.h>

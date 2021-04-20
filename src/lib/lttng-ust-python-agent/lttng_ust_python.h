@@ -38,8 +38,8 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_python, event,
 
 #endif /* _TRACEPOINT_LTTNG_UST_PYTHON_H */
 
-#undef TRACEPOINT_INCLUDE
-#define TRACEPOINT_INCLUDE "./lttng_ust_python.h"
+#undef LTTNG_UST_TRACEPOINT_INCLUDE
+#define LTTNG_UST_TRACEPOINT_INCLUDE "./lttng_ust_python.h"
 
 /* This part must be outside ifdef protection */
 #include <lttng/tracepoint-event.h>

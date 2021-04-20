@@ -53,8 +53,8 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_pthread, pthread_mutex_unlock,
 
 #endif /* _TRACEPOINT_UST_PTHREAD_H */
 
-#undef TRACEPOINT_INCLUDE
-#define TRACEPOINT_INCLUDE "./ust_pthread.h"
+#undef LTTNG_UST_TRACEPOINT_INCLUDE
+#define LTTNG_UST_TRACEPOINT_INCLUDE "./ust_pthread.h"
 
 /* This part must be outside ifdef protection */
 #include <lttng/tracepoint-event.h>

@@ -96,8 +96,8 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_dl, dlclose,
 
 #endif /* _TRACEPOINT_UST_DL_H */
 
-#undef TRACEPOINT_INCLUDE
-#define TRACEPOINT_INCLUDE "./ust_dl.h"
+#undef LTTNG_UST_TRACEPOINT_INCLUDE
+#define LTTNG_UST_TRACEPOINT_INCLUDE "./ust_dl.h"
 
 /* This part must be outside ifdef protection */
 #include <lttng/tracepoint-event.h>

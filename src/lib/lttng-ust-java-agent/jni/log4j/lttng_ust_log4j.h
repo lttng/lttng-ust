@@ -41,8 +41,8 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_log4j, event,
 
 #endif /* _TRACEPOINT_LTTNG_UST_LOG4J_H */
 
-#undef TRACEPOINT_INCLUDE
-#define TRACEPOINT_INCLUDE "./lttng_ust_log4j.h"
+#undef LTTNG_UST_TRACEPOINT_INCLUDE
+#define LTTNG_UST_TRACEPOINT_INCLUDE "./lttng_ust_log4j.h"
 
 /* This part must be outside protection */
 #include <lttng/tracepoint-event.h>

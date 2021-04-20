@@ -37,8 +37,8 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_jul, event,
 
 #endif /* _TRACEPOINT_LTTNG_UST_JUL_H */
 
-#undef TRACEPOINT_INCLUDE
-#define TRACEPOINT_INCLUDE "./lttng_ust_jul.h"
+#undef LTTNG_UST_TRACEPOINT_INCLUDE
+#define LTTNG_UST_TRACEPOINT_INCLUDE "./lttng_ust_jul.h"
 
 /* This part must be outside protection */
 #include <lttng/tracepoint-event.h>

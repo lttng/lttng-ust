@@ -15,8 +15,8 @@
 #endif /* _TRACEPOINT_LTTNG_UST_TRACEF_PROVIDER_H */
 
 #define TP_IP_PARAM ip	/* IP context received as parameter */
-#undef TRACEPOINT_INCLUDE
-#define TRACEPOINT_INCLUDE "./tp/lttng-ust-tracef.h"
+#undef LTTNG_UST_TRACEPOINT_INCLUDE
+#define LTTNG_UST_TRACEPOINT_INCLUDE "./tp/lttng-ust-tracef.h"
 
 /* This part must be outside ifdef protection */
 #include <lttng/tracepoint-event.h>

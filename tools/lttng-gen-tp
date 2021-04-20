@@ -22,8 +22,8 @@ class HeaderFile:
 #undef TRACEPOINT_PROVIDER
 #define TRACEPOINT_PROVIDER {providerName}
 
-#undef TRACEPOINT_INCLUDE
-#define TRACEPOINT_INCLUDE "./{headerFilename}"
+#undef LTTNG_UST_TRACEPOINT_INCLUDE
+#define LTTNG_UST_TRACEPOINT_INCLUDE "./{headerFilename}"
 
 #if !defined({includeGuard}) || defined(LTTNG_UST_TRACEPOINT_HEADER_MULTI_READ)
 #define {includeGuard}

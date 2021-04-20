@@ -44,8 +44,8 @@ LTTNG_UST_TRACEPOINT_LOGLEVEL(lttng_ust_cyg_profile, func_exit,
 
 #endif /* _TRACEPOINT_LTTNG_UST_CYG_PROFILE_H */
 
-#undef TRACEPOINT_INCLUDE
-#define TRACEPOINT_INCLUDE "./lttng-ust-cyg-profile.h"
+#undef LTTNG_UST_TRACEPOINT_INCLUDE
+#define LTTNG_UST_TRACEPOINT_INCLUDE "./lttng-ust-cyg-profile.h"
 
 /* This part must be outside ifdef protection */
 #include <lttng/tracepoint-event.h>

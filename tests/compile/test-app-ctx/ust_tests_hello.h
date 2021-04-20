@@ -46,8 +46,8 @@ LTTNG_UST_TRACEPOINT_EVENT(ust_tests_hello, tptest_sighandler,
 
 #endif /* _TRACEPOINT_UST_TESTS_HELLO_H */
 
-#undef TRACEPOINT_INCLUDE
-#define TRACEPOINT_INCLUDE "./ust_tests_hello.h"
+#undef LTTNG_UST_TRACEPOINT_INCLUDE
+#define LTTNG_UST_TRACEPOINT_INCLUDE "./ust_tests_hello.h"
 
 /* This part must be outside ifdef protection */
 #include <lttng/tracepoint-event.h>

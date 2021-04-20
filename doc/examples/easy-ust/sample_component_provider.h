@@ -31,8 +31,8 @@
 /*
  * include file (this files's name)
  */
-#undef TRACEPOINT_INCLUDE
-#define TRACEPOINT_INCLUDE "./sample_component_provider.h"
+#undef LTTNG_UST_TRACEPOINT_INCLUDE
+#define LTTNG_UST_TRACEPOINT_INCLUDE "./sample_component_provider.h"
 
 /*
  * Add this precompiler conditionals to ensure the tracepoint event generation
