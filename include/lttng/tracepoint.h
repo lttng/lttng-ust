@@ -477,17 +477,17 @@ extern struct lttng_ust_tracepoint * const __stop_lttng_ust_tracepoints_ptrs[]
 #define LTTNG_UST__DEFINE_TRACEPOINT(_provider, _name, _args)				\
 	lttng_ust_tracepoint_validate_name_len(_provider, _name);		\
 	extern int lttng_ust_tracepoint_provider_##_provider; 				\
-	static const char __tp_provider_strtab_##_provider##___##_name[]	\
+	static const char lttng_ust_tp_provider_strtab_##_provider##___##_name[]	\
 		__attribute__((section("lttng_ust_tracepoints_strings"))) =		\
 			#_provider;						\
-	static const char __tp_name_strtab_##_provider##___##_name[]		\
+	static const char lttng_ust_tp_name_strtab_##_provider##___##_name[]		\
 		__attribute__((section("lttng_ust_tracepoints_strings"))) =		\
 			#_name;							\
 	struct lttng_ust_tracepoint lttng_ust_tracepoint_##_provider##___##_name	\
 		__attribute__((section("lttng_ust_tracepoints"))) = {			\
 			sizeof(struct lttng_ust_tracepoint),			\
-			__tp_provider_strtab_##_provider##___##_name,		\
-			__tp_name_strtab_##_provider##___##_name,		\
+			lttng_ust_tp_provider_strtab_##_provider##___##_name,		\
+			lttng_ust_tp_name_strtab_##_provider##___##_name,		\
 			0,							\
 			NULL,							\
 			LTTNG_UST__TRACEPOINT_UNDEFINED_REF(_provider), 	\
