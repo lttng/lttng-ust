@@ -124,7 +124,7 @@ This method decouples the tracepoint provider from the application,
 making it dynamically loadable.
 
   1. Into exactly one unit of your _application_, define
-     `TRACEPOINT_DEFINE` _and_ `TRACEPOINT_PROBE_DYNAMIC_LINKAGE`,
+     `TRACEPOINT_DEFINE` _and_ `LTTNG_UST_TRACEPOINT_PROBE_DYNAMIC_LINKAGE`,
      then include the tracepoint provider header.
   2. Include the tracepoint provider header into all C/C++ files using
      the provider and insert tracepoints using the `tracepoint()` macro.

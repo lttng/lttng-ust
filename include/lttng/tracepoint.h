@@ -446,26 +446,33 @@ extern struct lttng_ust_tracepoint * const __stop_lttng_ust_tracepoints_ptrs[]
 	__attribute__((weak, visibility("hidden")));
 
 /*
- * When TRACEPOINT_PROBE_DYNAMIC_LINKAGE is defined, we do not emit a
+ * When LTTNG_UST_TRACEPOINT_PROBE_DYNAMIC_LINKAGE is defined, we do not emit a
  * unresolved symbol that requires the provider to be linked in. When
- * TRACEPOINT_PROBE_DYNAMIC_LINKAGE is not defined, we emit an
+ * LTTNG_UST_TRACEPOINT_PROBE_DYNAMIC_LINKAGE is not defined, we emit an
  * unresolved symbol that depends on having the provider linked in,
  * otherwise the linker complains. This deals with use of static
  * libraries, ensuring that the linker does not remove the provider
  * object from the executable.
  */
-#ifdef TRACEPOINT_PROBE_DYNAMIC_LINKAGE
-#define _TRACEPOINT_UNDEFINED_REF(provider)	NULL
-#else	/* TRACEPOINT_PROBE_DYNAMIC_LINKAGE */
-#define _TRACEPOINT_UNDEFINED_REF(provider)	&lttng_ust_tracepoint_provider_##provider
-#endif /* TRACEPOINT_PROBE_DYNAMIC_LINKAGE */
+
+#if LTTNG_UST_COMPAT_API(0)
+# if defined(TRACEPOINT_PROBE_DYNAMIC_LINKAGE) && !defined(LTTNG_UST_TRACEPOINT_PROBE_DYNAMIC_LINKAGE)
+#  define LTTNG_UST_TRACEPOINT_PROBE_DYNAMIC_LINKAGE
+# endif
+#endif /* #if LTTNG_UST_COMPAT_API(0) */
+
+#ifdef LTTNG_UST_TRACEPOINT_PROBE_DYNAMIC_LINKAGE
+#define LTTNG_UST__TRACEPOINT_UNDEFINED_REF(provider)	NULL
+#else	/* LTTNG_UST_TRACEPOINT_PROBE_DYNAMIC_LINKAGE */
+#define LTTNG_UST__TRACEPOINT_UNDEFINED_REF(provider)	&lttng_ust_tracepoint_provider_##provider
+#endif /* LTTNG_UST_TRACEPOINT_PROBE_DYNAMIC_LINKAGE */
 
 /*
  * Note: to allow PIC code, we need to allow the linker to update the pointers
  * in the lttng_ust_tracepoints_ptrs section.
  * Therefore, this section is _not_ const (read-only).
  */
-#define _TP_EXTRACT_STRING(...)	#__VA_ARGS__
+#define LTTNG_UST__TP_EXTRACT_STRING(...)	#__VA_ARGS__
 
 #define LTTNG_UST__DEFINE_TRACEPOINT(_provider, _name, _args)				\
 	lttng_ust_tracepoint_validate_name_len(_provider, _name);		\
@@ -483,8 +490,8 @@ extern struct lttng_ust_tracepoint * const __stop_lttng_ust_tracepoints_ptrs[]
 			__tp_name_strtab_##_provider##___##_name,		\
 			0,							\
 			NULL,							\
-			_TRACEPOINT_UNDEFINED_REF(_provider), 			\
-			_TP_EXTRACT_STRING(_args),				\
+			LTTNG_UST__TRACEPOINT_UNDEFINED_REF(_provider), 	\
+			LTTNG_UST__TP_EXTRACT_STRING(_args),			\
 		};								\
 	static struct lttng_ust_tracepoint *					\
 		lttng_ust_tracepoint_ptr_##_provider##___##_name			\

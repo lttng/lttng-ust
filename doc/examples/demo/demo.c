@@ -18,7 +18,7 @@
 #include <stdlib.h>
 
 #define TRACEPOINT_DEFINE
-#define TRACEPOINT_PROBE_DYNAMIC_LINKAGE
+#define LTTNG_UST_TRACEPOINT_PROBE_DYNAMIC_LINKAGE
 #include "ust_tests_demo.h"
 #include "ust_tests_demo2.h"
 #include "ust_tests_demo3.h"
