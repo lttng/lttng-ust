@@ -57,6 +57,12 @@
 # endif
 #endif /* #if LTTNG_UST_COMPAT_API(0) */
 
+#if LTTNG_UST_COMPAT_API(0)
+# if defined(TP_IP_PARAM) && !defined(LTTNG_UST_TP_IP_PARAM)
+#  define LTTNG_UST_TP_IP_PARAM
+# endif
+#endif /* #if LTTNG_UST_COMPAT_API(0) */
+
 #include LTTNG_UST_TRACEPOINT_INCLUDE
 
 #include <lttng/ust-tracepoint-event.h>

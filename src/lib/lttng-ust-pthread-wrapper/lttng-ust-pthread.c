@@ -18,7 +18,7 @@
 
 #define LTTNG_UST_TRACEPOINT_DEFINE
 #define LTTNG_UST_TRACEPOINT_CREATE_PROBES
-#define TP_IP_PARAM ip
+#define LTTNG_UST_TP_IP_PARAM ip
 #include "ust_pthread.h"
 
 static __thread int thread_in_trace;

@@ -816,15 +816,16 @@ size_t lttng_ust__event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_PR
  * architecture for now by always using the NULL value for the ip
  * context.
  */
-#undef _TP_IP_PARAM
-#ifdef TP_IP_PARAM
-#define _TP_IP_PARAM(x)		(x)
+#undef LTTNG_UST__TP_IP_PARAM
+
+#ifdef LTTNG_UST_TP_IP_PARAM
+#define LTTNG_UST__TP_IP_PARAM(x)		(x)
 #else /* TP_IP_PARAM */
 
 #if defined(LTTNG_UST_ARCH_PPC) && !defined(LTTNG_UST_ARCH_PPC64)
-#define _TP_IP_PARAM(x)		NULL
+#define LTTNG_UST__TP_IP_PARAM(x)		NULL
 #else
-#define _TP_IP_PARAM(x)		__builtin_return_address(0)
+#define LTTNG_UST__TP_IP_PARAM(x)		__builtin_return_address(0)
 #endif
 
 #endif /* TP_IP_PARAM */
@@ -898,7 +899,7 @@ void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PRO
 			 LTTNG_UST__TP_ARGS_DATA_VAR(_args));			      \
 		lttng_ust__event_align = lttng_ust__event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_VAR(_args)); \
 		lttng_ust_ring_buffer_ctx_init(&__ctx, lttng_ust__event_recorder, __event_len, lttng_ust__event_align, \
-				_TP_IP_PARAM(TP_IP_PARAM));		      \
+				LTTNG_UST__TP_IP_PARAM(LTTNG_UST_TP_IP_PARAM));	      \
 		__ret = __chan->ops->event_reserve(&__ctx);		      \
 		if (__ret < 0)						      \
 			return;						      \
