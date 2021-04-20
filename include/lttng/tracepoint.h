@@ -85,21 +85,21 @@ extern "C" {
 		LTTNG_UST___TP_COMBINE_TOKENS4(_tokena, _tokenb, _tokenc, _tokend)
 
 /*
- * _TP_EXVAR* extract the var names.
- * _TP_EXVAR1 and _TP_EXDATA_VAR1 are needed for -std=c99.
+ * LTTNG_UST__TP_EXVAR* extract the var names.
+ * LTTNG_UST__TP_EXVAR1 and _TP_EXDATA_VAR1 are needed for -std=c99.
  */
-#define _TP_EXVAR0()
-#define _TP_EXVAR1(a)
-#define _TP_EXVAR2(a,b)						b
-#define _TP_EXVAR4(a,b,c,d)					b,d
-#define _TP_EXVAR6(a,b,c,d,e,f)					b,d,f
-#define _TP_EXVAR8(a,b,c,d,e,f,g,h)				b,d,f,h
-#define _TP_EXVAR10(a,b,c,d,e,f,g,h,i,j)			b,d,f,h,j
-#define _TP_EXVAR12(a,b,c,d,e,f,g,h,i,j,k,l)			b,d,f,h,j,l
-#define _TP_EXVAR14(a,b,c,d,e,f,g,h,i,j,k,l,m,n)		b,d,f,h,j,l,n
-#define _TP_EXVAR16(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p)		b,d,f,h,j,l,n,p
-#define _TP_EXVAR18(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r)	b,d,f,h,j,l,n,p,r
-#define _TP_EXVAR20(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t)	b,d,f,h,j,l,n,p,r,t
+#define LTTNG_UST__TP_EXVAR0()
+#define LTTNG_UST__TP_EXVAR1(a)
+#define LTTNG_UST__TP_EXVAR2(a,b)						b
+#define LTTNG_UST__TP_EXVAR4(a,b,c,d)					b,d
+#define LTTNG_UST__TP_EXVAR6(a,b,c,d,e,f)					b,d,f
+#define LTTNG_UST__TP_EXVAR8(a,b,c,d,e,f,g,h)				b,d,f,h
+#define LTTNG_UST__TP_EXVAR10(a,b,c,d,e,f,g,h,i,j)			b,d,f,h,j
+#define LTTNG_UST__TP_EXVAR12(a,b,c,d,e,f,g,h,i,j,k,l)			b,d,f,h,j,l
+#define LTTNG_UST__TP_EXVAR14(a,b,c,d,e,f,g,h,i,j,k,l,m,n)		b,d,f,h,j,l,n
+#define LTTNG_UST__TP_EXVAR16(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p)		b,d,f,h,j,l,n,p
+#define LTTNG_UST__TP_EXVAR18(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r)	b,d,f,h,j,l,n,p,r
+#define LTTNG_UST__TP_EXVAR20(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t)	b,d,f,h,j,l,n,p,r,t
 
 #define _TP_EXDATA_VAR0()						__tp_data
 #define _TP_EXDATA_VAR1(a)						__tp_data
@@ -148,7 +148,7 @@ extern "C" {
 #define _TP_NARGS(...)			__TP_NARGS(__VA_ARGS__, 20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0)
 #define __TP_NARGS(_0,_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15,_16,_17,_18,_19,_20, N, ...)	N
 #define _TP_PROTO_N(N, ...)		_TP_PARAMS(LTTNG_UST__TP_COMBINE_TOKENS(_TP_EXPROTO, N)(__VA_ARGS__))
-#define _TP_VAR_N(N, ...)		_TP_PARAMS(LTTNG_UST__TP_COMBINE_TOKENS(_TP_EXVAR, N)(__VA_ARGS__))
+#define _TP_VAR_N(N, ...)		_TP_PARAMS(LTTNG_UST__TP_COMBINE_TOKENS(LTTNG_UST__TP_EXVAR, N)(__VA_ARGS__))
 #define _TP_DATA_PROTO_N(N, ...)	_TP_PARAMS(LTTNG_UST__TP_COMBINE_TOKENS(_TP_EXDATA_PROTO, N)(__VA_ARGS__))
 #define _TP_DATA_VAR_N(N, ...)		_TP_PARAMS(LTTNG_UST__TP_COMBINE_TOKENS(_TP_EXDATA_VAR, N)(__VA_ARGS__))
 #define _TP_ARGS_PROTO(...)		_TP_PROTO_N(_TP_NARGS(0, ##__VA_ARGS__), ##__VA_ARGS__)
