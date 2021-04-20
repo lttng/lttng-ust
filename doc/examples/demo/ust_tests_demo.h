@@ -24,7 +24,7 @@ LTTNG_UST_TRACEPOINT_LOGLEVEL(ust_tests_demo, starting, LTTNG_UST_TRACEPOINT_LOG
  * Dummy model information, just for example. TODO: we should check if
  * EMF model URI have some standard format we should follow.
  */
-TRACEPOINT_MODEL_EMF_URI(ust_tests_demo, starting,
+LTTNG_UST_TRACEPOINT_MODEL_EMF_URI(ust_tests_demo, starting,
 	"http://example.com/path_to_model?q=ust_tests_demo:starting")
 
 LTTNG_UST_TRACEPOINT_EVENT(ust_tests_demo, done,
@@ -35,7 +35,7 @@ LTTNG_UST_TRACEPOINT_EVENT(ust_tests_demo, done,
 )
 LTTNG_UST_TRACEPOINT_LOGLEVEL(ust_tests_demo, done, LTTNG_UST_TRACEPOINT_LOGLEVEL_CRIT)
 
-TRACEPOINT_MODEL_EMF_URI(ust_tests_demo, done,
+LTTNG_UST_TRACEPOINT_MODEL_EMF_URI(ust_tests_demo, done,
 	"http://example.com/path_to_model?q=ust_tests_demo:done")
 
 #endif /* _TRACEPOINT_UST_TESTS_DEMO_H */

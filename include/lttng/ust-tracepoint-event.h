@@ -1003,8 +1003,8 @@ LTTNG_UST_TP_EXTERN_C const int * const _loglevel___##__provider##___##__name	\
 #define LTTNG_UST_TP_EXTERN_C
 #endif
 
-#undef TRACEPOINT_MODEL_EMF_URI
-#define TRACEPOINT_MODEL_EMF_URI(__provider, __name, __uri)		   \
+#undef LTTNG_UST_TRACEPOINT_MODEL_EMF_URI
+#define LTTNG_UST_TRACEPOINT_MODEL_EMF_URI(__provider, __name, __uri)		   \
 LTTNG_UST_TP_EXTERN_C const char * const _model_emf_uri___##__provider##___##__name   \
 		__attribute__((visibility("hidden"))) = __uri;		   \
 

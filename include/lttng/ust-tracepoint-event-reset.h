@@ -24,8 +24,8 @@
 #undef LTTNG_UST_TRACEPOINT_LOGLEVEL
 #define LTTNG_UST_TRACEPOINT_LOGLEVEL(provider, name, loglevel)
 
-#undef TRACEPOINT_MODEL_EMF_URI
-#define TRACEPOINT_MODEL_EMF_URI(provider, name, uri)
+#undef LTTNG_UST_TRACEPOINT_MODEL_EMF_URI
+#define LTTNG_UST_TRACEPOINT_MODEL_EMF_URI(provider, name, uri)
 
 #undef _ctf_integer_ext
 #define _ctf_integer_ext(_type, _item, _src, _byte_order, _base, \
