@@ -803,11 +803,11 @@ size_t lttng_ust__event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_PR
  * session this event belongs to. Ensures that we write state dump data only
  * into the started session, not into all sessions.
  */
-#undef _TP_SESSION_CHECK
-#ifdef TP_SESSION_CHECK
-#define _TP_SESSION_CHECK(session, csession)   (session == csession)
+#undef LTTNG_UST__TP_SESSION_CHECK
+#ifdef LTTNG_UST_TP_SESSION_CHECK
+#define LTTNG_UST__TP_SESSION_CHECK(session, csession)   (session == csession)
 #else /* TP_SESSION_CHECK */
-#define _TP_SESSION_CHECK(session, csession)   1
+#define LTTNG_UST__TP_SESSION_CHECK(session, csession)   1
 #endif /* TP_SESSION_CHECK */
 
 /*
@@ -863,7 +863,7 @@ void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PRO
 		struct lttng_ust_channel_buffer *__chan = lttng_ust__event_recorder->chan; \
 		struct lttng_ust_channel_common *__chan_common = __chan->parent; \
 									      \
-		if (!_TP_SESSION_CHECK(session, __chan_common->session))      \
+		if (!LTTNG_UST__TP_SESSION_CHECK(session, __chan_common->session))      \
 			return;						      \
 		if (caa_unlikely(!CMM_ACCESS_ONCE(__chan_common->session->active))) \
 			return;						      \

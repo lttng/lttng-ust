@@ -28,7 +28,7 @@
 #include "ust_lib.h"				/* Only define. */
 
 #define LTTNG_UST_TRACEPOINT_CREATE_PROBES
-#define TP_SESSION_CHECK
+#define LTTNG_UST_TP_SESSION_CHECK
 #include "lttng-ust-statedump-provider.h"	/* Define and create probes. */
 
 struct dl_iterate_data {
