@@ -628,8 +628,8 @@ int do_lttng_ust_statedump(void *owner)
 
 void lttng_ust_statedump_init(void)
 {
-	__tracepoints__init();
-	__tracepoints__ptrs_init();
+	lttng_ust__tracepoints__init();
+	lttng_ust__tracepoints__ptrs_init();
 	__lttng_ust_events_init__lttng_ust_statedump();
 	lttng_ust_dl_update(LTTNG_UST_CALLER_IP());
 }
@@ -653,7 +653,7 @@ void ust_dl_state_destroy(void)
 void lttng_ust_statedump_destroy(void)
 {
 	__lttng_ust_events_exit__lttng_ust_statedump();
-	__tracepoints__ptrs_destroy();
-	__tracepoints__destroy();
+	lttng_ust__tracepoints__ptrs_destroy();
+	lttng_ust__tracepoints__destroy();
 	ust_dl_state_destroy();
 }
