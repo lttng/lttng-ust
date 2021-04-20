@@ -7,7 +7,7 @@
 #undef TRACEPOINT_PROVIDER
 #define TRACEPOINT_PROVIDER ust_tests_ctf_types
 
-#if !defined(_TRACEPOINT_UST_TESTS_CTF_TYPES_H) || defined(TRACEPOINT_HEADER_MULTI_READ)
+#if !defined(_TRACEPOINT_UST_TESTS_CTF_TYPES_H) || defined(LTTNG_UST_TRACEPOINT_HEADER_MULTI_READ)
 #define _TRACEPOINT_UST_TESTS_CTF_TYPES_H
 
 #include <lttng/tracepoint.h>

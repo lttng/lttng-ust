@@ -7,7 +7,7 @@
 #undef TRACEPOINT_PROVIDER
 #define TRACEPOINT_PROVIDER lttng_ust_java
 
-#if !defined(_TRACEPOINT_LTTNG_UST_JAVA_H) || defined(TRACEPOINT_HEADER_MULTI_READ)
+#if !defined(_TRACEPOINT_LTTNG_UST_JAVA_H) || defined(LTTNG_UST_TRACEPOINT_HEADER_MULTI_READ)
 #define _TRACEPOINT_LTTNG_UST_JAVA_H
 
 #include <lttng/tracepoint.h>

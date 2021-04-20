@@ -25,7 +25,7 @@ class HeaderFile:
 #undef TRACEPOINT_INCLUDE
 #define TRACEPOINT_INCLUDE "./{headerFilename}"
 
-#if !defined({includeGuard}) || defined(TRACEPOINT_HEADER_MULTI_READ)
+#if !defined({includeGuard}) || defined(LTTNG_UST_TRACEPOINT_HEADER_MULTI_READ)
 #define {includeGuard}
 
 #include <lttng/tracepoint.h>

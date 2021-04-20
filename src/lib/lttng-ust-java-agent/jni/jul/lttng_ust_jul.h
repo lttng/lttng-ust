@@ -7,7 +7,7 @@
 #undef TRACEPOINT_PROVIDER
 #define TRACEPOINT_PROVIDER lttng_jul
 
-#if !defined(_TRACEPOINT_LTTNG_UST_JUL_H) || defined(TRACEPOINT_HEADER_MULTI_READ)
+#if !defined(_TRACEPOINT_LTTNG_UST_JUL_H) || defined(LTTNG_UST_TRACEPOINT_HEADER_MULTI_READ)
 #define _TRACEPOINT_LTTNG_UST_JUL_H
 
 #include <lttng/tracepoint.h>

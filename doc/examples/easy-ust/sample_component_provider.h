@@ -38,7 +38,7 @@
  * Add this precompiler conditionals to ensure the tracepoint event generation
  * can include this file more than once.
  */
-#if !defined(_SAMPLE_COMPONENT_PROVIDER_H) || defined(TRACEPOINT_HEADER_MULTI_READ)
+#if !defined(_SAMPLE_COMPONENT_PROVIDER_H) || defined(LTTNG_UST_TRACEPOINT_HEADER_MULTI_READ)
 #define _SAMPLE_COMPONENT_PROVIDER_H
 /*
  * Add this to allow programs to call "tracepoint(...):
