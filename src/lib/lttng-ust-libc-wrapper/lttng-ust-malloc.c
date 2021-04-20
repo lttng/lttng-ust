@@ -30,7 +30,7 @@
 #include "common/macros.h"
 #include "common/align.h"
 
-#define TRACEPOINT_DEFINE
+#define LTTNG_UST_TRACEPOINT_DEFINE
 #define TRACEPOINT_CREATE_PROBES
 #define TP_IP_PARAM ip
 #include "ust_libc.h"

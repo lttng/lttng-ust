@@ -4,7 +4,7 @@
  * Copyright (C) 2016 Sebastien Boisvert <sboisvert@gydle.com>
  */
 
-#define TRACEPOINT_DEFINE
+#define LTTNG_UST_TRACEPOINT_DEFINE
 
 #include "aligner-lib.h"
 #include "tracepoint-provider.h"

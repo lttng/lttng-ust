@@ -92,11 +92,11 @@ This method links the tracepoint provider with the application,
 either directly or through a static library (`.a`):
 
   1. Into exactly one unit (C/C++ source file) of your _application_,
-     define `TRACEPOINT_DEFINE` and include the tracepoint provider
+     define `LTTNG_UST_TRACEPOINT_DEFINE` and include the tracepoint provider
      header.
   2. Include the tracepoint provider header into all C/C++ files using
      the provider and insert tracepoints using the `tracepoint()` macro.
-  3. Use `-I.` when compiling the unit defining `TRACEPOINT_DEFINE`
+  3. Use `-I.` when compiling the unit defining `LTTNG_UST_TRACEPOINT_DEFINE`
      (e.g., `tp.c`).
   4. Link the application with `-ldl` on Linux, or with `-lc` on BSD,
      and with `-llttng-ust`.
@@ -124,7 +124,7 @@ This method decouples the tracepoint provider from the application,
 making it dynamically loadable.
 
   1. Into exactly one unit of your _application_, define
-     `TRACEPOINT_DEFINE` _and_ `LTTNG_UST_TRACEPOINT_PROBE_DYNAMIC_LINKAGE`,
+     `LTTNG_UST_TRACEPOINT_DEFINE` _and_ `LTTNG_UST_TRACEPOINT_PROBE_DYNAMIC_LINKAGE`,
      then include the tracepoint provider header.
   2. Include the tracepoint provider header into all C/C++ files using
      the provider and insert tracepoints using the `tracepoint()` macro.

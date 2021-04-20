@@ -5,6 +5,6 @@
  */
 
 #define TRACEPOINT_CREATE_PROBES
-#define TRACEPOINT_DEFINE
+#define LTTNG_UST_TRACEPOINT_DEFINE
 
 #include "tracepoint-provider.h"

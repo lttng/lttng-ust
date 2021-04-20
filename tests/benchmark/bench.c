@@ -16,7 +16,7 @@
 #include <urcu/compiler.h>
 
 #ifdef TRACING
-#define TRACEPOINT_DEFINE
+#define LTTNG_UST_TRACEPOINT_DEFINE
 #include "ust_tests_benchmark.h"
 #endif
 

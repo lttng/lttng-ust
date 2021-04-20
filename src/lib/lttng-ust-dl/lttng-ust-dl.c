@@ -26,7 +26,7 @@
 /* Include link.h last else it conflicts with ust-dlfcn. */
 #include <link.h>
 
-#define TRACEPOINT_DEFINE
+#define LTTNG_UST_TRACEPOINT_DEFINE
 #include "ust_dl.h"
 
 static void *(*__lttng_ust_plibc_dlopen)(const char *filename, int flags);

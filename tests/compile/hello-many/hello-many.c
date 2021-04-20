@@ -16,7 +16,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define TRACEPOINT_DEFINE
+#define LTTNG_UST_TRACEPOINT_DEFINE
 #include "ust_tests_hello_many.h"
 
 int main(int argc, char **argv)

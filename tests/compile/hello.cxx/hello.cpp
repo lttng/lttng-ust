@@ -17,7 +17,7 @@
 #include <arpa/inet.h>
 #include <stdlib.h>
 
-#define TRACEPOINT_DEFINE
+#define LTTNG_UST_TRACEPOINT_DEFINE
 #include "ust_tests_hello.h"
 
 static

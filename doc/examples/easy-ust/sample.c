@@ -8,10 +8,10 @@
 #include <unistd.h>
 
 /*
- * We need to define TRACEPOINT_DEFINE in one C file in the program
+ * We need to define LTTNG_UST_TRACEPOINT_DEFINE in one C file in the program
  * before including provider headers.
  */
-#define TRACEPOINT_DEFINE
+#define LTTNG_UST_TRACEPOINT_DEFINE
 #include "sample_component_provider.h"
 
 int main(void)

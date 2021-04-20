@@ -9,7 +9,7 @@
 #include "common/macros.h"
 
 #define TRACEPOINT_CREATE_PROBES
-#define TRACEPOINT_DEFINE
+#define LTTNG_UST_TRACEPOINT_DEFINE
 #include "lttng-ust-tracelog-provider.h"
 
 #define TRACELOG_CB(level) \

@@ -4,7 +4,7 @@
  * Copyright (C) 2013 Jérémie Galarneau
  */
 
-#define TRACEPOINT_DEFINE
+#define LTTNG_UST_TRACEPOINT_DEFINE
 #define TRACEPOINT_CREATE_PROBES
 #include "ust_tests_sameline.h"
 

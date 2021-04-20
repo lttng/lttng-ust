@@ -7,7 +7,7 @@
 #define _LGPL_SOURCE
 #include "org_lttng_ust_LTTngUst.h"
 
-#define TRACEPOINT_DEFINE
+#define LTTNG_UST_TRACEPOINT_DEFINE
 #define TRACEPOINT_CREATE_PROBES
 #include "lttng_ust_java.h"
 

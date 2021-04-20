@@ -433,7 +433,13 @@ lttng_ust__tracepoints__destroy(void)
 	memset(lttng_ust_tracepoint_dlopen_ptr, 0, sizeof(*lttng_ust_tracepoint_dlopen_ptr));
 }
 
-#ifdef TRACEPOINT_DEFINE
+#if LTTNG_UST_COMPAT_API(0)
+# if defined(TRACEPOINT_DEFINE) && !defined(LTTNG_UST_TRACEPOINT_DEFINE)
+#  define LTTNG_UST_TRACEPOINT_DEFINE
+# endif
+#endif /* #if LTTNG_UST_COMPAT_API(0) */
+
+#ifdef LTTNG_UST_TRACEPOINT_DEFINE
 
 /*
  * These weak symbols, the constructor, and destructor take care of
@@ -569,11 +575,11 @@ lttng_ust__tracepoints__ptrs_destroy(void)
 	}
 }
 
-#else /* TRACEPOINT_DEFINE */
+#else /* LTTNG_UST_TRACEPOINT_DEFINE */
 
 #define LTTNG_UST__DEFINE_TRACEPOINT(_provider, _name, _args)
 
-#endif /* #else TRACEPOINT_DEFINE */
+#endif /* #else LTTNG_UST_TRACEPOINT_DEFINE */
 
 #if LTTNG_UST_COMPAT_API(0)
 #define tracepoint			lttng_ust_tracepoint

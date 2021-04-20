@@ -5,7 +5,7 @@
  */
 
 #define _LGPL_SOURCE
-#define TRACEPOINT_DEFINE
+#define LTTNG_UST_TRACEPOINT_DEFINE
 #define TRACEPOINT_CREATE_PROBES
 #include "lttng_ust_python.h"
 

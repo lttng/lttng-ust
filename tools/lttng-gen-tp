@@ -61,7 +61,7 @@ class CFile:
 /*
  * The header containing our LTTNG_UST_TRACEPOINT_EVENTs.
  */
-#define TRACEPOINT_DEFINE
+#define LTTNG_UST_TRACEPOINT_DEFINE
 #include "{headerFilename}"
 """
 

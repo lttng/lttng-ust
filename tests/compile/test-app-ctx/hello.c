@@ -25,7 +25,7 @@ struct mmsghdr;
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define TRACEPOINT_DEFINE
+#define LTTNG_UST_TRACEPOINT_DEFINE
 #include "ust_tests_hello.h"
 
 #include <lttng/ust-events.h>

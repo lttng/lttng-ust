@@ -24,7 +24,7 @@
 #include "common/getenv.h"
 #include "lib/lttng-ust/events.h"
 
-#define TRACEPOINT_DEFINE
+#define LTTNG_UST_TRACEPOINT_DEFINE
 #include "ust_lib.h"				/* Only define. */
 
 #define TRACEPOINT_CREATE_PROBES

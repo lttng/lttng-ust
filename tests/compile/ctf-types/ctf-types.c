@@ -6,7 +6,7 @@
 
 #include <unistd.h>
 
-#define TRACEPOINT_DEFINE
+#define LTTNG_UST_TRACEPOINT_DEFINE
 #include "ust_tests_ctf_types.h"
 
 int main(int argc, char **argv)

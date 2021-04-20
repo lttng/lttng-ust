@@ -9,7 +9,7 @@
 #define _LGPL_SOURCE
 #include "org_lttng_ust_agent_jul_LttngJulApi.h"
 
-#define TRACEPOINT_DEFINE
+#define LTTNG_UST_TRACEPOINT_DEFINE
 #define TRACEPOINT_CREATE_PROBES
 #include "lttng_ust_jul.h"
 #include "../common/lttng_ust_context.h"

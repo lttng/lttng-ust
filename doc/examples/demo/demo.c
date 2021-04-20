@@ -17,7 +17,7 @@
 #include <arpa/inet.h>
 #include <stdlib.h>
 
-#define TRACEPOINT_DEFINE
+#define LTTNG_UST_TRACEPOINT_DEFINE
 #define LTTNG_UST_TRACEPOINT_PROBE_DYNAMIC_LINKAGE
 #include "ust_tests_demo.h"
 #include "ust_tests_demo2.h"
