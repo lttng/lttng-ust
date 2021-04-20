@@ -652,7 +652,7 @@ void ust_dl_state_destroy(void)
 
 void lttng_ust_statedump_destroy(void)
 {
-	__lttng_ust_events_exit__lttng_ust_statedump();
+	lttng_ust__events_exit__lttng_ust_statedump();
 	lttng_ust__tracepoints__ptrs_destroy();
 	lttng_ust__tracepoints__destroy();
 	ust_dl_state_destroy();

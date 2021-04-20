@@ -1152,10 +1152,10 @@ LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__events_init__, LTTNG_UST_TRACEPOINT_PROV
 }
 
 static void
-LTTNG_UST__TP_COMBINE_TOKENS(__lttng_ust_events_exit__, LTTNG_UST_TRACEPOINT_PROVIDER)(void)
+LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__events_exit__, LTTNG_UST_TRACEPOINT_PROVIDER)(void)
 	lttng_ust_notrace __attribute__((destructor));
 static void
-LTTNG_UST__TP_COMBINE_TOKENS(__lttng_ust_events_exit__, LTTNG_UST_TRACEPOINT_PROVIDER)(void)
+LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__events_exit__, LTTNG_UST_TRACEPOINT_PROVIDER)(void)
 {
 	if (--LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__probe_register_refcount___,
 			LTTNG_UST_TRACEPOINT_PROVIDER)) {
