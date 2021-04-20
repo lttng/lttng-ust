@@ -4,8 +4,8 @@
  * Copyright (C) 2016 Sebastien Boisvert <sboisvert@gydle.com>
  */
 
-#undef TRACEPOINT_PROVIDER
-#define TRACEPOINT_PROVIDER gydle_om
+#undef LTTNG_UST_TRACEPOINT_PROVIDER
+#define LTTNG_UST_TRACEPOINT_PROVIDER gydle_om
 
 #undef LTTNG_UST_TRACEPOINT_INCLUDE
 #define LTTNG_UST_TRACEPOINT_INCLUDE "tracepoint-provider.h"
@@ -16,7 +16,7 @@
 #include <lttng/tracepoint.h>
 
 LTTNG_UST_TRACEPOINT_EVENT(
-	TRACEPOINT_PROVIDER,
+	LTTNG_UST_TRACEPOINT_PROVIDER,
 	align_query,
 	LTTNG_UST_TP_ARGS(
 		const char *, query_name
@@ -27,7 +27,7 @@ LTTNG_UST_TRACEPOINT_EVENT(
 )
 
 LTTNG_UST_TRACEPOINT_EVENT(
-	TRACEPOINT_PROVIDER,
+	LTTNG_UST_TRACEPOINT_PROVIDER,
 	test_alignment,
 	LTTNG_UST_TP_ARGS(
 		const char *, alignment

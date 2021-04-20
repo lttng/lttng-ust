@@ -4,8 +4,8 @@
  * Copyright (C) 2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
-#undef TRACEPOINT_PROVIDER
-#define TRACEPOINT_PROVIDER lttng_log4j
+#undef LTTNG_UST_TRACEPOINT_PROVIDER
+#define LTTNG_UST_TRACEPOINT_PROVIDER lttng_log4j
 
 #if !defined(_TRACEPOINT_LTTNG_UST_LOG4J_H) || defined(LTTNG_UST_TRACEPOINT_HEADER_MULTI_READ)
 #define _TRACEPOINT_LTTNG_UST_LOG4J_H

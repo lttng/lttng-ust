@@ -4,8 +4,8 @@
  * Copyright (C) 2013 Zifei Tong <soariez@gmail.com>
  */
 
-#undef TRACEPOINT_PROVIDER
-#define TRACEPOINT_PROVIDER ust_tests_benchmark
+#undef LTTNG_UST_TRACEPOINT_PROVIDER
+#define LTTNG_UST_TRACEPOINT_PROVIDER ust_tests_benchmark
 
 #if !defined(_TRACEPOINT_UST_TESTS_BENCHMARK_H) || defined(LTTNG_UST_TRACEPOINT_HEADER_MULTI_READ)
 #define _TRACEPOINT_UST_TESTS_BENCHMARK_H

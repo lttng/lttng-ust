@@ -4,8 +4,8 @@
  * Copyright (C) 2014 - David Goulet <dgoulet@efficios.com>
  */
 
-#undef TRACEPOINT_PROVIDER
-#define TRACEPOINT_PROVIDER lttng_python
+#undef LTTNG_UST_TRACEPOINT_PROVIDER
+#define LTTNG_UST_TRACEPOINT_PROVIDER lttng_python
 
 #if !defined(_TRACEPOINT_LTTNG_UST_PYTHON_H) || defined(LTTNG_UST_TRACEPOINT_HEADER_MULTI_READ)
 #define _TRACEPOINT_LTTNG_UST_PYTHON_H

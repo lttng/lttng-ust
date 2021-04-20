@@ -19,8 +19,8 @@ class Usage(Exception):
 
 class HeaderFile:
     HEADER_TPL = """
-#undef TRACEPOINT_PROVIDER
-#define TRACEPOINT_PROVIDER {providerName}
+#undef LTTNG_UST_TRACEPOINT_PROVIDER
+#define LTTNG_UST_TRACEPOINT_PROVIDER {providerName}
 
 #undef LTTNG_UST_TRACEPOINT_INCLUDE
 #define LTTNG_UST_TRACEPOINT_INCLUDE "./{headerFilename}"

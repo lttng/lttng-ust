@@ -25,8 +25,8 @@
  * In this example, "sample" is the project, and "component" is the
  * component.
  */
-#undef TRACEPOINT_PROVIDER
-#define TRACEPOINT_PROVIDER sample_component
+#undef LTTNG_UST_TRACEPOINT_PROVIDER
+#define LTTNG_UST_TRACEPOINT_PROVIDER sample_component
 
 /*
  * include file (this files's name)
@@ -56,7 +56,7 @@ LTTNG_UST_TRACEPOINT_EVENT(
 	/*
 	 * provider name, not a variable but a string starting with a letter
 	 * and containing either letters, numbers or underscores.
-	 * Needs to be the same as TRACEPOINT_PROVIDER
+	 * Needs to be the same as LTTNG_UST_TRACEPOINT_PROVIDER
 	 */
 	sample_component,
 	/*
@@ -99,7 +99,7 @@ LTTNG_UST_TRACEPOINT_EVENT(
 LTTNG_UST_TRACEPOINT_LOGLEVEL(
        /*
         * The provider name, must be the same as the provider name in the
-        * LTTNG_UST_TRACEPOINT_EVENT and as TRACEPOINT_PROVIDER above.
+        * LTTNG_UST_TRACEPOINT_EVENT and as LTTNG_UST_TRACEPOINT_PROVIDER above.
         */
 	sample_component,
        /*

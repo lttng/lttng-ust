@@ -4,8 +4,8 @@
  * Copyright (C) 2014 Geneviève Bastien <gbastien@versatic.net>
  */
 
-#undef TRACEPOINT_PROVIDER
-#define TRACEPOINT_PROVIDER ust_tests_ctf_types
+#undef LTTNG_UST_TRACEPOINT_PROVIDER
+#define LTTNG_UST_TRACEPOINT_PROVIDER ust_tests_ctf_types
 
 #if !defined(_TRACEPOINT_UST_TESTS_CTF_TYPES_H) || defined(LTTNG_UST_TRACEPOINT_HEADER_MULTI_READ)
 #define _TRACEPOINT_UST_TESTS_CTF_TYPES_H

@@ -5,8 +5,8 @@
  * Copyright (C) 2015 Antoine Busque <abusque@efficios.com>
  */
 
-#undef TRACEPOINT_PROVIDER
-#define TRACEPOINT_PROVIDER lttng_ust_dl
+#undef LTTNG_UST_TRACEPOINT_PROVIDER
+#define LTTNG_UST_TRACEPOINT_PROVIDER lttng_ust_dl
 
 #if !defined(_TRACEPOINT_UST_DL_H) || defined(LTTNG_UST_TRACEPOINT_HEADER_MULTI_READ)
 #define _TRACEPOINT_UST_DL_H

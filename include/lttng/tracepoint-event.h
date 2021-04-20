@@ -45,6 +45,12 @@
 # endif
 #endif /* #if LTTNG_UST_COMPAT_API(0) */
 
+#if LTTNG_UST_COMPAT_API(0)
+# if defined(TRACEPOINT_PROVIDER) && !defined(LTTNG_UST_TRACEPOINT_PROVIDER)
+#  define LTTNG_UST_TRACEPOINT_PROVIDER TRACEPOINT_PROVIDER
+# endif
+#endif /* #if LTTNG_UST_COMPAT_API(0) */
+
 #include LTTNG_UST_TRACEPOINT_INCLUDE
 
 #include <lttng/ust-tracepoint-event.h>

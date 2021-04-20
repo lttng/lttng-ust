@@ -815,7 +815,7 @@ lttng_ust__tracepoints__ptrs_destroy(void)
  *      LTTNG_UST_TRACEPOINT_LOGLEVEL(< [com_company_]project[_component] >, < event >,
  *              < loglevel_name >)
  *
- * The TRACEPOINT_PROVIDER must be already declared before declaring a
+ * The LTTNG_UST_TRACEPOINT_PROVIDER must be already declared before declaring a
  * LTTNG_UST_TRACEPOINT_LOGLEVEL.
  */
 
