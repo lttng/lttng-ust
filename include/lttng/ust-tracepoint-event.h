@@ -1106,7 +1106,7 @@ const struct lttng_ust_probe_desc LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__probe_
 };
 
 static int LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__probe_register_refcount___, LTTNG_UST_TRACEPOINT_PROVIDER);
-static struct lttng_ust_registered_probe *LTTNG_UST__TP_COMBINE_TOKENS(__lttng_ust_probe_register_cookie___, LTTNG_UST_TRACEPOINT_PROVIDER);
+static struct lttng_ust_registered_probe *LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__probe_register_cookie___, LTTNG_UST_TRACEPOINT_PROVIDER);
 
 /*
  * Stage 9 of tracepoint event generation.
@@ -1142,13 +1142,13 @@ LTTNG_UST__TP_COMBINE_TOKENS(__lttng_ust_events_init__, LTTNG_UST_TRACEPOINT_PRO
 	 * error will appear.
 	 */
 	LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_tracepoint_provider_check_, LTTNG_UST_TRACEPOINT_PROVIDER)();
-	assert(!LTTNG_UST__TP_COMBINE_TOKENS(__lttng_ust_probe_register_cookie___, LTTNG_UST_TRACEPOINT_PROVIDER));
+	assert(!LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__probe_register_cookie___, LTTNG_UST_TRACEPOINT_PROVIDER));
 	reg_probe = lttng_ust_probe_register(&LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__probe_desc___, LTTNG_UST_TRACEPOINT_PROVIDER));
 	if (!reg_probe) {
 		fprintf(stderr, "LTTng-UST: Error while registering tracepoint probe.\n");
 		abort();
 	}
-	LTTNG_UST__TP_COMBINE_TOKENS(__lttng_ust_probe_register_cookie___, LTTNG_UST_TRACEPOINT_PROVIDER) = reg_probe;
+	LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__probe_register_cookie___, LTTNG_UST_TRACEPOINT_PROVIDER) = reg_probe;
 }
 
 static void
@@ -1161,8 +1161,8 @@ LTTNG_UST__TP_COMBINE_TOKENS(__lttng_ust_events_exit__, LTTNG_UST_TRACEPOINT_PRO
 			LTTNG_UST_TRACEPOINT_PROVIDER)) {
 		return;
 	}
-	lttng_ust_probe_unregister(LTTNG_UST__TP_COMBINE_TOKENS(__lttng_ust_probe_register_cookie___, LTTNG_UST_TRACEPOINT_PROVIDER));
-	LTTNG_UST__TP_COMBINE_TOKENS(__lttng_ust_probe_register_cookie___, LTTNG_UST_TRACEPOINT_PROVIDER) = NULL;
+	lttng_ust_probe_unregister(LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__probe_register_cookie___, LTTNG_UST_TRACEPOINT_PROVIDER));
+	LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__probe_register_cookie___, LTTNG_UST_TRACEPOINT_PROVIDER) = NULL;
 }
 
 int LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_tracepoint_provider_, LTTNG_UST_TRACEPOINT_PROVIDER)
