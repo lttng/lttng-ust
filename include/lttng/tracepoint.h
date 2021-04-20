@@ -115,21 +115,21 @@ extern "C" {
 #define LTTNG_UST__TP_EXDATA_VAR20(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t)	__tp_data,b,d,f,h,j,l,n,p,r,t
 
 /*
- * _TP_EXPROTO* extract tuples of type, var.
- * _TP_EXPROTO1 and LTTNG_UST__TP_EXDATA_PROTO1 are needed for -std=c99.
+ * LTTNG_UST__TP_EXPROTO* extract tuples of type, var.
+ * LTTNG_UST__TP_EXPROTO1 and LTTNG_UST__TP_EXDATA_PROTO1 are needed for -std=c99.
  */
-#define _TP_EXPROTO0()						void
-#define _TP_EXPROTO1(a)						void
-#define _TP_EXPROTO2(a,b)					a b
-#define _TP_EXPROTO4(a,b,c,d)					a b,c d
-#define _TP_EXPROTO6(a,b,c,d,e,f)				a b,c d,e f
-#define _TP_EXPROTO8(a,b,c,d,e,f,g,h)				a b,c d,e f,g h
-#define _TP_EXPROTO10(a,b,c,d,e,f,g,h,i,j)			a b,c d,e f,g h,i j
-#define _TP_EXPROTO12(a,b,c,d,e,f,g,h,i,j,k,l)			a b,c d,e f,g h,i j,k l
-#define _TP_EXPROTO14(a,b,c,d,e,f,g,h,i,j,k,l,m,n)		a b,c d,e f,g h,i j,k l,m n
-#define _TP_EXPROTO16(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p)		a b,c d,e f,g h,i j,k l,m n,o p
-#define _TP_EXPROTO18(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r)	a b,c d,e f,g h,i j,k l,m n,o p,q r
-#define _TP_EXPROTO20(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t)	a b,c d,e f,g h,i j,k l,m n,o p,q r,s t
+#define LTTNG_UST__TP_EXPROTO0()						void
+#define LTTNG_UST__TP_EXPROTO1(a)						void
+#define LTTNG_UST__TP_EXPROTO2(a,b)					a b
+#define LTTNG_UST__TP_EXPROTO4(a,b,c,d)					a b,c d
+#define LTTNG_UST__TP_EXPROTO6(a,b,c,d,e,f)				a b,c d,e f
+#define LTTNG_UST__TP_EXPROTO8(a,b,c,d,e,f,g,h)				a b,c d,e f,g h
+#define LTTNG_UST__TP_EXPROTO10(a,b,c,d,e,f,g,h,i,j)			a b,c d,e f,g h,i j
+#define LTTNG_UST__TP_EXPROTO12(a,b,c,d,e,f,g,h,i,j,k,l)			a b,c d,e f,g h,i j,k l
+#define LTTNG_UST__TP_EXPROTO14(a,b,c,d,e,f,g,h,i,j,k,l,m,n)		a b,c d,e f,g h,i j,k l,m n
+#define LTTNG_UST__TP_EXPROTO16(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p)		a b,c d,e f,g h,i j,k l,m n,o p
+#define LTTNG_UST__TP_EXPROTO18(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r)	a b,c d,e f,g h,i j,k l,m n,o p,q r
+#define LTTNG_UST__TP_EXPROTO20(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t)	a b,c d,e f,g h,i j,k l,m n,o p,q r,s t
 
 #define LTTNG_UST__TP_EXDATA_PROTO0()						void *__tp_data
 #define LTTNG_UST__TP_EXDATA_PROTO1(a)						void *__tp_data
@@ -147,7 +147,7 @@ extern "C" {
 /* Preprocessor trick to count arguments. Inspired from sdt.h. */
 #define _TP_NARGS(...)			__TP_NARGS(__VA_ARGS__, 20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0)
 #define __TP_NARGS(_0,_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15,_16,_17,_18,_19,_20, N, ...)	N
-#define _TP_PROTO_N(N, ...)		_TP_PARAMS(LTTNG_UST__TP_COMBINE_TOKENS(_TP_EXPROTO, N)(__VA_ARGS__))
+#define _TP_PROTO_N(N, ...)		_TP_PARAMS(LTTNG_UST__TP_COMBINE_TOKENS(LTTNG_UST__TP_EXPROTO, N)(__VA_ARGS__))
 #define _TP_VAR_N(N, ...)		_TP_PARAMS(LTTNG_UST__TP_COMBINE_TOKENS(LTTNG_UST__TP_EXVAR, N)(__VA_ARGS__))
 #define _TP_DATA_PROTO_N(N, ...)	_TP_PARAMS(LTTNG_UST__TP_COMBINE_TOKENS(LTTNG_UST__TP_EXDATA_PROTO, N)(__VA_ARGS__))
 #define _TP_DATA_VAR_N(N, ...)		_TP_PARAMS(LTTNG_UST__TP_COMBINE_TOKENS(LTTNG_UST__TP_EXDATA_VAR, N)(__VA_ARGS__))
