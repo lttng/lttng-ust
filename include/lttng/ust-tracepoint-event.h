@@ -56,11 +56,11 @@
 /* Helpers */
 #define LTTNG_UST__TP_ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
-#define _tp_max_t(type, x, y)				\
+#define lttng_ust__tp_max_t(type, x, y)			\
 	({						\
-		type __max1 = (x);              	\
-		type __max2 = (y);              	\
-		__max1 > __max2 ? __max1: __max2;	\
+		type lttng_ust__max1 = (x);            	\
+		type lttng_ust__max2 = (y);            	\
+		lttng_ust__max1 > lttng_ust__max2 ? lttng_ust__max1: lttng_ust__max2;	\
 	})
 
 /*
@@ -665,20 +665,20 @@ void __event_prepare_interpreter_stack__##_provider##___##_name(char *__stack_da
 #define _ctf_integer_ext(_type, _item, _src, _byte_order, _base, _nowrite)     \
 	if (0)								       \
 		(void) (_src);	/* Unused */				       \
-	__event_align = _tp_max_t(size_t, __event_align, lttng_ust_rb_alignof(_type));
+	__event_align = lttng_ust__tp_max_t(size_t, __event_align, lttng_ust_rb_alignof(_type));
 
 #undef _ctf_float
 #define _ctf_float(_type, _item, _src, _nowrite)			       \
 	if (0)								       \
 		(void) (_src);	/* Unused */ 				       \
-	__event_align = _tp_max_t(size_t, __event_align, lttng_ust_rb_alignof(_type));
+	__event_align = lttng_ust__tp_max_t(size_t, __event_align, lttng_ust_rb_alignof(_type));
 
 #undef _ctf_array_encoded
 #define _ctf_array_encoded(_type, _item, _src, _byte_order, _length,	       \
 			_encoding, _nowrite, _elem_type_base)		       \
 	if (0)								       \
 		(void) (_src);	/* Unused */				       \
-	__event_align = _tp_max_t(size_t, __event_align, lttng_ust_rb_alignof(_type));
+	__event_align = lttng_ust__tp_max_t(size_t, __event_align, lttng_ust_rb_alignof(_type));
 
 #undef _ctf_sequence_encoded
 #define _ctf_sequence_encoded(_type, _item, _src, _byte_order, _length_type,   \
@@ -687,8 +687,8 @@ void __event_prepare_interpreter_stack__##_provider##___##_name(char *__stack_da
 		(void) (_src);	/* Unused */				       \
 	if (0)								       \
 		(void) (_src_length);	/* Unused */			       \
-	__event_align = _tp_max_t(size_t, __event_align, lttng_ust_rb_alignof(_length_type));	  \
-	__event_align = _tp_max_t(size_t, __event_align, lttng_ust_rb_alignof(_type));
+	__event_align = lttng_ust__tp_max_t(size_t, __event_align, lttng_ust_rb_alignof(_length_type));	  \
+	__event_align = lttng_ust__tp_max_t(size_t, __event_align, lttng_ust_rb_alignof(_type));
 
 #undef _ctf_string
 #define _ctf_string(_item, _src, _nowrite)					\
