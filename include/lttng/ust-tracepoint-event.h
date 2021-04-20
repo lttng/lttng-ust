@@ -1097,7 +1097,7 @@ static const struct lttng_ust_event_desc * const LTTNG_UST__TP_COMBINE_TOKENS(lt
 
 const struct lttng_ust_probe_desc LTTNG_UST__TP_COMBINE_TOKENS(__probe_desc___, LTTNG_UST_TRACEPOINT_PROVIDER) = {
 	.struct_size = sizeof(struct lttng_ust_probe_desc),
-	.provider_name = __tp_stringify(LTTNG_UST_TRACEPOINT_PROVIDER),
+	.provider_name = lttng_ust__tp_stringify(LTTNG_UST_TRACEPOINT_PROVIDER),
 	.event_desc = LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__event_desc___, LTTNG_UST_TRACEPOINT_PROVIDER),
 	.nr_events = LTTNG_UST__TP_ARRAY_SIZE(LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__event_desc___, LTTNG_UST_TRACEPOINT_PROVIDER)) - 1,
 	.major = LTTNG_UST_PROVIDER_MAJOR,

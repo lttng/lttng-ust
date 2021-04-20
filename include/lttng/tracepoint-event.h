@@ -15,8 +15,8 @@
 
 #ifdef LTTNG_UST_TRACEPOINT_CREATE_PROBES
 
-#define __tp_stringify1(x)	#x
-#define __tp_stringify(x)	__tp_stringify1(x)
+#define lttng_ust__tp_stringify1(x)	#x
+#define lttng_ust__tp_stringify(x)	lttng_ust__tp_stringify1(x)
 
 #undef LTTNG_UST_TRACEPOINT_EVENT_INSTANCE
 #define LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)
