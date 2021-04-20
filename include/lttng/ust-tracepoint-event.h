@@ -54,7 +54,7 @@
 	LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, LTTNG_UST__TP_PARAMS(_args))
 
 /* Helpers */
-#define _TP_ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+#define LTTNG_UST__TP_ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 #define _tp_max_t(type, x, y)				\
 	({						\
@@ -379,7 +379,7 @@ void __event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PR
 		.struct_size = sizeof(struct lttng_ust_enum_desc),			\
 		.name = #_provider "_" #_name,						\
 		.entries = __enum_values__##_provider##_##_name,			\
-		.nr_entries = _TP_ARRAY_SIZE(__enum_values__##_provider##_##_name) - 1,	\
+		.nr_entries = LTTNG_UST__TP_ARRAY_SIZE(__enum_values__##_provider##_##_name) - 1,	\
 	};
 
 #include LTTNG_UST_TRACEPOINT_INCLUDE
@@ -846,7 +846,7 @@ void __event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args)
 {									      \
 	struct lttng_ust_event_common *__event = (struct lttng_ust_event_common *) __tp_data; \
 	size_t __dynamic_len_idx = 0;					      \
-	const size_t __num_fields = _TP_ARRAY_SIZE(__event_fields___##_provider##___##_name) - 1; \
+	const size_t __num_fields = LTTNG_UST__TP_ARRAY_SIZE(__event_fields___##_provider##___##_name) - 1; \
 	union {								      \
 		size_t __dynamic_len[__num_fields];			      \
 		char __interpreter_stack_data[2 * sizeof(unsigned long) * __num_fields]; \
@@ -1062,7 +1062,7 @@ static const struct lttng_ust_event_desc __event_desc___##_provider##_##_name = 
 	.probe_desc = &__probe_desc___##_provider,			       \
 	.probe_callback = (void (*)(void)) &__event_probe__##_provider##___##_template, \
 	.fields = __event_fields___##_provider##___##_template,		       \
-	.nr_fields = _TP_ARRAY_SIZE(__event_fields___##_provider##___##_template) - 1, \
+	.nr_fields = LTTNG_UST__TP_ARRAY_SIZE(__event_fields___##_provider##___##_template) - 1, \
 	.loglevel = &__ref_loglevel___##_provider##___##_name,		       \
 	.signature = __tp_event_signature___##_provider##___##_template,       \
 	.model_emf_uri = &__ref_model_emf_uri___##_provider##___##_name,       \
@@ -1099,7 +1099,7 @@ const struct lttng_ust_probe_desc LTTNG_UST__TP_COMBINE_TOKENS(__probe_desc___, 
 	.struct_size = sizeof(struct lttng_ust_probe_desc),
 	.provider_name = __tp_stringify(LTTNG_UST_TRACEPOINT_PROVIDER),
 	.event_desc = LTTNG_UST__TP_COMBINE_TOKENS(__event_desc___, LTTNG_UST_TRACEPOINT_PROVIDER),
-	.nr_events = _TP_ARRAY_SIZE(LTTNG_UST__TP_COMBINE_TOKENS(__event_desc___, LTTNG_UST_TRACEPOINT_PROVIDER)) - 1,
+	.nr_events = LTTNG_UST__TP_ARRAY_SIZE(LTTNG_UST__TP_COMBINE_TOKENS(__event_desc___, LTTNG_UST_TRACEPOINT_PROVIDER)) - 1,
 	.major = LTTNG_UST_PROVIDER_MAJOR,
 	.minor = LTTNG_UST_PROVIDER_MINOR,
 };
