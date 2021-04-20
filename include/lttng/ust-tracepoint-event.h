@@ -39,18 +39,18 @@
 #undef LTTNG_UST_TRACEPOINT_EVENT
 #define LTTNG_UST_TRACEPOINT_EVENT(_provider, _name, _args, _fields)	\
 	LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name,		\
-			 _TP_PARAMS(_args),			\
-			 _TP_PARAMS(_fields))			\
+			 LTTNG_UST__TP_PARAMS(_args),			\
+			 LTTNG_UST__TP_PARAMS(_fields))			\
 	LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_provider, _name, _name,	\
-			 _TP_PARAMS(_args))
+			 LTTNG_UST__TP_PARAMS(_args))
 
 #undef LTTNG_UST_TRACEPOINT_EVENT_CLASS
 #define LTTNG_UST_TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields) 		\
-	LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _TP_PARAMS(_args), _TP_PARAMS(_fields))
+	LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, LTTNG_UST__TP_PARAMS(_args), LTTNG_UST__TP_PARAMS(_fields))
 
 #undef LTTNG_UST_TRACEPOINT_EVENT_INSTANCE
 #define LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args) 	\
-	LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _TP_PARAMS(_args))
+	LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, LTTNG_UST__TP_PARAMS(_args))
 
 /* Helpers */
 #define _TP_ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
@@ -129,11 +129,11 @@ void LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_tracepoint_provider_check_, TRACEPOI
 
 #undef LTTNG_UST__TRACEPOINT_EVENT_INSTANCE
 #define LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args) \
-void __event_template_proto___##_provider##___##_template(_TP_ARGS_DATA_PROTO(_args));
+void __event_template_proto___##_provider##___##_template(LTTNG_UST__TP_ARGS_DATA_PROTO(_args));
 
 #undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
 #define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields) \
-void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));
+void __event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args));
 
 #include TRACEPOINT_INCLUDE
 
@@ -392,7 +392,7 @@ void __event_template_proto___##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args)
 
 #undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
 #define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)		\
-static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));
+static void __event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args));
 
 #include TRACEPOINT_INCLUDE
 
@@ -463,12 +463,12 @@ static void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args));
 #undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
 #define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
 static inline								      \
-size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, _TP_ARGS_DATA_PROTO(_args)) \
+size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, LTTNG_UST__TP_ARGS_DATA_PROTO(_args)) \
 	lttng_ust_notrace;						      \
 static inline								      \
 size_t __event_get_size__##_provider##___##_name(			      \
 		size_t *__dynamic_len __attribute__((__unused__)),	      \
-		_TP_ARGS_DATA_PROTO(_args))				      \
+		LTTNG_UST__TP_ARGS_DATA_PROTO(_args))				      \
 {									      \
 	size_t __event_len = 0;						      \
 	unsigned int __dynamic_len_idx __attribute__((__unused__)) = 0;	      \
@@ -633,7 +633,7 @@ size_t __event_get_size__##_provider##___##_name(			      \
 #define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
 static inline								      \
 void __event_prepare_interpreter_stack__##_provider##___##_name(char *__stack_data,\
-						 _TP_ARGS_DATA_PROTO(_args))  \
+						 LTTNG_UST__TP_ARGS_DATA_PROTO(_args))  \
 {									      \
 	if (0) {							      \
 		(void) __tp_data;	/* don't warn if unused */	      \
@@ -707,10 +707,10 @@ void __event_prepare_interpreter_stack__##_provider##___##_name(char *__stack_da
 #undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
 #define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
 static inline								      \
-size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
+size_t __event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_PROTO(_args))      \
 	lttng_ust_notrace;						      \
 static inline								      \
-size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
+size_t __event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_PROTO(_args))      \
 {									      \
 	size_t __event_align = 1;					      \
 	_fields								      \
@@ -833,10 +833,10 @@ size_t __event_get_align__##_provider##___##_name(_TP_ARGS_PROTO(_args))      \
 #undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
 #define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
 static									      \
-void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
+void __event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args))	      \
 	lttng_ust_notrace;						      \
 static									      \
-void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
+void __event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args))	      \
 {									      \
 	struct lttng_ust_event_common *__event = (struct lttng_ust_event_common *) __tp_data; \
 	size_t __dynamic_len_idx = 0;					      \
@@ -874,7 +874,7 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 		return;							      \
 	if (caa_unlikely(CMM_ACCESS_ONCE(__event->eval_filter))) { \
 		__event_prepare_interpreter_stack__##_provider##___##_name(__stackvar.__interpreter_stack_data, \
-			_TP_ARGS_DATA_VAR(_args));			      \
+			LTTNG_UST__TP_ARGS_DATA_VAR(_args));			      \
 		__interpreter_stack_prepared = true;			      \
 		if (caa_likely(__event->run_filter(__event, \
 				__stackvar.__interpreter_stack_data, NULL) != LTTNG_UST_EVENT_FILTER_ACCEPT)) \
@@ -889,8 +889,8 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 		struct lttng_ust_ring_buffer_ctx __ctx;		      \
 									      \
 		__event_len = __event_get_size__##_provider##___##_name(__stackvar.__dynamic_len, \
-			 _TP_ARGS_DATA_VAR(_args));			      \
-		__event_align = __event_get_align__##_provider##___##_name(_TP_ARGS_VAR(_args)); \
+			 LTTNG_UST__TP_ARGS_DATA_VAR(_args));			      \
+		__event_align = __event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_VAR(_args)); \
 		lttng_ust_ring_buffer_ctx_init(&__ctx, __event_recorder, __event_len, __event_align, \
 				_TP_IP_PARAM(TP_IP_PARAM));		      \
 		__ret = __chan->ops->event_reserve(&__ctx);		      \
@@ -910,7 +910,7 @@ void __event_probe__##_provider##___##_name(_TP_ARGS_DATA_PROTO(_args))	      \
 									      \
 		if (caa_unlikely(!__interpreter_stack_prepared && __notif_ctx.eval_capture)) \
 			__event_prepare_interpreter_stack__##_provider##___##_name(__stackvar.__interpreter_stack_data, \
-				_TP_ARGS_DATA_VAR(_args));		      \
+				LTTNG_UST__TP_ARGS_DATA_VAR(_args));		      \
 									      \
 		__event_notifier->notification_send(__event_notifier,	      \
 				__stackvar.__interpreter_stack_data,	      \

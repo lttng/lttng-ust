@@ -145,17 +145,17 @@ extern "C" {
 #define LTTNG_UST__TP_EXDATA_PROTO20(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t)	void *__tp_data,a b,c d,e f,g h,i j,k l,m n,o p,q r,s t
 
 /* Preprocessor trick to count arguments. Inspired from sdt.h. */
-#define _TP_NARGS(...)			__TP_NARGS(__VA_ARGS__, 20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0)
-#define __TP_NARGS(_0,_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15,_16,_17,_18,_19,_20, N, ...)	N
-#define _TP_PROTO_N(N, ...)		_TP_PARAMS(LTTNG_UST__TP_COMBINE_TOKENS(LTTNG_UST__TP_EXPROTO, N)(__VA_ARGS__))
-#define _TP_VAR_N(N, ...)		_TP_PARAMS(LTTNG_UST__TP_COMBINE_TOKENS(LTTNG_UST__TP_EXVAR, N)(__VA_ARGS__))
-#define _TP_DATA_PROTO_N(N, ...)	_TP_PARAMS(LTTNG_UST__TP_COMBINE_TOKENS(LTTNG_UST__TP_EXDATA_PROTO, N)(__VA_ARGS__))
-#define _TP_DATA_VAR_N(N, ...)		_TP_PARAMS(LTTNG_UST__TP_COMBINE_TOKENS(LTTNG_UST__TP_EXDATA_VAR, N)(__VA_ARGS__))
-#define _TP_ARGS_PROTO(...)		_TP_PROTO_N(_TP_NARGS(0, ##__VA_ARGS__), ##__VA_ARGS__)
-#define _TP_ARGS_VAR(...)		_TP_VAR_N(_TP_NARGS(0, ##__VA_ARGS__), ##__VA_ARGS__)
-#define _TP_ARGS_DATA_PROTO(...)	_TP_DATA_PROTO_N(_TP_NARGS(0, ##__VA_ARGS__), ##__VA_ARGS__)
-#define _TP_ARGS_DATA_VAR(...)		_TP_DATA_VAR_N(_TP_NARGS(0, ##__VA_ARGS__), ##__VA_ARGS__)
-#define _TP_PARAMS(...)			__VA_ARGS__
+#define LTTNG_UST__TP_NARGS(...)		LTTNG_UST___TP_NARGS(__VA_ARGS__, 20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0)
+#define LTTNG_UST___TP_NARGS(_0,_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15,_16,_17,_18,_19,_20, N, ...)	N
+#define LTTNG_UST__TP_PROTO_N(N, ...)		LTTNG_UST__TP_PARAMS(LTTNG_UST__TP_COMBINE_TOKENS(LTTNG_UST__TP_EXPROTO, N)(__VA_ARGS__))
+#define LTTNG_UST__TP_VAR_N(N, ...)		LTTNG_UST__TP_PARAMS(LTTNG_UST__TP_COMBINE_TOKENS(LTTNG_UST__TP_EXVAR, N)(__VA_ARGS__))
+#define LTTNG_UST__TP_DATA_PROTO_N(N, ...)	LTTNG_UST__TP_PARAMS(LTTNG_UST__TP_COMBINE_TOKENS(LTTNG_UST__TP_EXDATA_PROTO, N)(__VA_ARGS__))
+#define LTTNG_UST__TP_DATA_VAR_N(N, ...)	LTTNG_UST__TP_PARAMS(LTTNG_UST__TP_COMBINE_TOKENS(LTTNG_UST__TP_EXDATA_VAR, N)(__VA_ARGS__))
+#define LTTNG_UST__TP_ARGS_PROTO(...)		LTTNG_UST__TP_PROTO_N(LTTNG_UST__TP_NARGS(0, ##__VA_ARGS__), ##__VA_ARGS__)
+#define LTTNG_UST__TP_ARGS_VAR(...)		LTTNG_UST__TP_VAR_N(LTTNG_UST__TP_NARGS(0, ##__VA_ARGS__), ##__VA_ARGS__)
+#define LTTNG_UST__TP_ARGS_DATA_PROTO(...)	LTTNG_UST__TP_DATA_PROTO_N(LTTNG_UST__TP_NARGS(0, ##__VA_ARGS__), ##__VA_ARGS__)
+#define LTTNG_UST__TP_ARGS_DATA_VAR(...)	LTTNG_UST__TP_DATA_VAR_N(LTTNG_UST__TP_NARGS(0, ##__VA_ARGS__), ##__VA_ARGS__)
+#define LTTNG_UST__TP_PARAMS(...)		__VA_ARGS__
 
 /*
  * sizeof(#_provider) - 1 : length of the provider string (excluding \0).
@@ -184,10 +184,10 @@ extern "C" {
 #define LTTNG_UST__DECLARE_TRACEPOINT(_provider, _name, ...)			 		\
 extern struct lttng_ust_tracepoint lttng_ust_tracepoint_##_provider##___##_name;		\
 static inline										\
-void lttng_ust_tracepoint_cb_##_provider##___##_name(_TP_ARGS_PROTO(__VA_ARGS__))		\
+void lttng_ust_tracepoint_cb_##_provider##___##_name(LTTNG_UST__TP_ARGS_PROTO(__VA_ARGS__))		\
 	__attribute__((always_inline, unused)) lttng_ust_notrace;			\
 static											\
-void lttng_ust_tracepoint_cb_##_provider##___##_name(_TP_ARGS_PROTO(__VA_ARGS__))		\
+void lttng_ust_tracepoint_cb_##_provider##___##_name(LTTNG_UST__TP_ARGS_PROTO(__VA_ARGS__))		\
 {											\
 	struct lttng_ust_tracepoint_probe *__tp_probe;					\
 											\
@@ -201,8 +201,8 @@ void lttng_ust_tracepoint_cb_##_provider##___##_name(_TP_ARGS_PROTO(__VA_ARGS__)
 		void (*__tp_cb)(void) = __tp_probe->func;				\
 		void *__tp_data = __tp_probe->data;					\
 											\
-		URCU_FORCE_CAST(void (*)(_TP_ARGS_DATA_PROTO(__VA_ARGS__)), __tp_cb)	\
-				(_TP_ARGS_DATA_VAR(__VA_ARGS__));			\
+		URCU_FORCE_CAST(void (*)(LTTNG_UST__TP_ARGS_DATA_PROTO(__VA_ARGS__)), __tp_cb)	\
+				(LTTNG_UST__TP_ARGS_DATA_VAR(__VA_ARGS__));			\
 	} while ((++__tp_probe)->func);							\
 end:											\
 	tp_rcu_read_unlock();								\
@@ -713,14 +713,14 @@ __tracepoints__ptrs_destroy(void)
  */
 
 #define LTTNG_UST_TRACEPOINT_EVENT(provider, name, args, fields)			\
-	LTTNG_UST__DECLARE_TRACEPOINT(provider, name, _TP_PARAMS(args))		\
-	LTTNG_UST__DEFINE_TRACEPOINT(provider, name, _TP_PARAMS(args))
+	LTTNG_UST__DECLARE_TRACEPOINT(provider, name, LTTNG_UST__TP_PARAMS(args))		\
+	LTTNG_UST__DEFINE_TRACEPOINT(provider, name, LTTNG_UST__TP_PARAMS(args))
 
 #define LTTNG_UST_TRACEPOINT_EVENT_CLASS(provider, name, args, fields)
 
 #define LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(provider, _template, name, args)	\
-	LTTNG_UST__DECLARE_TRACEPOINT(provider, name, _TP_PARAMS(args))		\
-	LTTNG_UST__DEFINE_TRACEPOINT(provider, name, _TP_PARAMS(args))
+	LTTNG_UST__DECLARE_TRACEPOINT(provider, name, LTTNG_UST__TP_PARAMS(args))		\
+	LTTNG_UST__DEFINE_TRACEPOINT(provider, name, LTTNG_UST__TP_PARAMS(args))
 
 #if LTTNG_UST_COMPAT_API(0)
 #define TRACEPOINT_EVENT		LTTNG_UST_TRACEPOINT_EVENT
