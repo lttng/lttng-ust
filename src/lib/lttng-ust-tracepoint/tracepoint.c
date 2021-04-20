@@ -74,8 +74,8 @@ static CDS_LIST_HEAD(libs);
  * The tracepoint mutex protects the library tracepoints, the hash table, and
  * the library list.
  * All calls to the tracepoint API must be protected by the tracepoint mutex,
- * excepts calls to tracepoint_register_lib and
- * tracepoint_unregister_lib, which take the tracepoint mutex themselves.
+ * excepts calls to lttng_ust_tracepoint_register_lib and
+ * lttng_ust_tracepoint_unregister_lib, which take the tracepoint mutex themselves.
  */
 
 /*
@@ -877,9 +877,9 @@ static void new_tracepoints(struct lttng_ust_tracepoint * const *start,
  * against recent liblttng-ust headers require a recent liblttng-ust
  * runtime for those tracepoints to be taken into account.
  */
-int tracepoint_register_lib(struct lttng_ust_tracepoint * const *tracepoints_start,
+int lttng_ust_tracepoint_register_lib(struct lttng_ust_tracepoint * const *tracepoints_start,
 			     int tracepoints_count);
-int tracepoint_register_lib(struct lttng_ust_tracepoint * const *tracepoints_start,
+int lttng_ust_tracepoint_register_lib(struct lttng_ust_tracepoint * const *tracepoints_start,
 			     int tracepoints_count)
 {
 	struct tracepoint_lib *pl, *iter;
@@ -932,8 +932,8 @@ lib_added:
 	return 0;
 }
 
-int tracepoint_unregister_lib(struct lttng_ust_tracepoint * const *tracepoints_start);
-int tracepoint_unregister_lib(struct lttng_ust_tracepoint * const *tracepoints_start)
+int lttng_ust_tracepoint_unregister_lib(struct lttng_ust_tracepoint * const *tracepoints_start);
+int lttng_ust_tracepoint_unregister_lib(struct lttng_ust_tracepoint * const *tracepoints_start)
 {
 	struct tracepoint_lib *lib;
 
@@ -1023,16 +1023,16 @@ void *tp_rcu_dereference_sym(void *p)
 /*
  * Programs that have threads that survive after they exit, and therefore call
  * library destructors, should disable the tracepoint destructors by calling
- * tp_disable_destructors(). This will leak the tracepoint
+ * lttng_ust_tp_disable_destructors(). This will leak the tracepoint
  * instrumentation library shared object, leaving its teardown to the operating
  * system process teardown.
  *
  * To access and/or modify this value, users need to use a combination of
  * dlopen(3) and dlsym(3) to get an handle on the
- * tp_disable_destructors and tp_get_destructors_state symbols below.
+ * lttng_ust_tp_disable_destructors and lttng_ust_tp_get_destructors_state symbols below.
  */
-void tp_disable_destructors(void);
-void tp_disable_destructors(void)
+void lttng_ust_tp_disable_destructors(void);
+void lttng_ust_tp_disable_destructors(void)
 {
 	uatomic_set(&tracepoint_destructors_state, 0);
 }
@@ -1041,8 +1041,8 @@ void tp_disable_destructors(void)
  * Returns 1 if the destructors are enabled and should be executed.
  * Returns 0 if the destructors are disabled.
  */
-int tp_get_destructors_state(void);
-int tp_get_destructors_state(void)
+int lttng_ust_tp_get_destructors_state(void);
+int lttng_ust_tp_get_destructors_state(void)
 {
 	return uatomic_read(&tracepoint_destructors_state);
 }
