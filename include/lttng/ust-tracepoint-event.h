@@ -1029,7 +1029,7 @@ LTTNG_UST_TP_EXTERN_C const char * const _model_emf_uri___##__provider##___##__n
  * symbol table.
  */
 
-extern const struct lttng_ust_probe_desc LTTNG_UST__TP_COMBINE_TOKENS(__probe_desc___, LTTNG_UST_TRACEPOINT_PROVIDER)
+extern const struct lttng_ust_probe_desc LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__probe_desc___, LTTNG_UST_TRACEPOINT_PROVIDER)
 	__attribute__((visibility("hidden")));
 
 /*
@@ -1060,7 +1060,7 @@ static const char *							       \
 static const struct lttng_ust_event_desc lttng_ust__event_desc___##_provider##_##_name = { \
 	.struct_size = sizeof(struct lttng_ust_event_desc),		       \
 	.event_name = #_name,						       \
-	.probe_desc = &__probe_desc___##_provider,			       \
+	.probe_desc = &lttng_ust__probe_desc___##_provider,			       \
 	.probe_callback = (void (*)(void)) &lttng_ust__event_probe__##_provider##___##_template, \
 	.fields = lttng_ust__event_fields___##_provider##___##_template,		       \
 	.nr_fields = LTTNG_UST__TP_ARRAY_SIZE(lttng_ust__event_fields___##_provider##___##_template) - 1, \
@@ -1096,7 +1096,7 @@ static const struct lttng_ust_event_desc * const LTTNG_UST__TP_COMBINE_TOKENS(lt
  * Create a toplevel descriptor for the whole probe.
  */
 
-const struct lttng_ust_probe_desc LTTNG_UST__TP_COMBINE_TOKENS(__probe_desc___, LTTNG_UST_TRACEPOINT_PROVIDER) = {
+const struct lttng_ust_probe_desc LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__probe_desc___, LTTNG_UST_TRACEPOINT_PROVIDER) = {
 	.struct_size = sizeof(struct lttng_ust_probe_desc),
 	.provider_name = lttng_ust__tp_stringify(LTTNG_UST_TRACEPOINT_PROVIDER),
 	.event_desc = LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__event_desc___, LTTNG_UST_TRACEPOINT_PROVIDER),
@@ -1143,7 +1143,7 @@ LTTNG_UST__TP_COMBINE_TOKENS(__lttng_ust_events_init__, LTTNG_UST_TRACEPOINT_PRO
 	 */
 	LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_tracepoint_provider_check_, LTTNG_UST_TRACEPOINT_PROVIDER)();
 	assert(!LTTNG_UST__TP_COMBINE_TOKENS(__lttng_ust_probe_register_cookie___, LTTNG_UST_TRACEPOINT_PROVIDER));
-	reg_probe = lttng_ust_probe_register(&LTTNG_UST__TP_COMBINE_TOKENS(__probe_desc___, LTTNG_UST_TRACEPOINT_PROVIDER));
+	reg_probe = lttng_ust_probe_register(&LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__probe_desc___, LTTNG_UST_TRACEPOINT_PROVIDER));
 	if (!reg_probe) {
 		fprintf(stderr, "LTTng-UST: Error while registering tracepoint probe.\n");
 		abort();
