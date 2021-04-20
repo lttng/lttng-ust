@@ -768,9 +768,9 @@ size_t lttng_ust__event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_PR
 	}								\
 	if (lttng_ust_string_encoding_##_encoding == lttng_ust_string_encoding_none) \
 		__chan->ops->event_write(&__ctx, _src,			\
-			sizeof(_type) * __get_dynamic_len(dest), lttng_ust_rb_alignof(_type));	\
+			sizeof(_type) * lttng_ust__get_dynamic_len(dest), lttng_ust_rb_alignof(_type));	\
 	else								\
-		__chan->ops->event_pstrcpy_pad(&__ctx, (const char *) (_src), __get_dynamic_len(dest)); \
+		__chan->ops->event_pstrcpy_pad(&__ctx, (const char *) (_src), lttng_ust__get_dynamic_len(dest)); \
 
 #undef _ctf_string
 #define _ctf_string(_item, _src, _nowrite)					\
@@ -778,7 +778,7 @@ size_t lttng_ust__event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_PR
 		const char *__ctf_tmp_string =					\
 			((_src) ? (_src) : LTTNG_UST__NULL_STRING);		\
 		__chan->ops->event_strcpy(&__ctx, __ctf_tmp_string,		\
-			__get_dynamic_len(dest));				\
+			lttng_ust__get_dynamic_len(dest));			\
 	}
 
 #undef _ctf_unused
@@ -789,8 +789,8 @@ size_t lttng_ust__event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_PR
 	_ctf_integer_ext(_type, _item, _src, BYTE_ORDER, 10, _nowrite)
 
 /* Beware: this get len actually consumes the len value */
-#undef __get_dynamic_len
-#define __get_dynamic_len(field)	__stackvar.__dynamic_len[__dynamic_len_idx++]
+#undef lttng_ust__get_dynamic_len
+#define lttng_ust__get_dynamic_len(field)	__stackvar.__dynamic_len[__dynamic_len_idx++]
 
 #undef LTTNG_UST_TP_ARGS
 #define LTTNG_UST_TP_ARGS(...) __VA_ARGS__
@@ -929,7 +929,7 @@ void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PRO
 
 #include LTTNG_UST_TRACEPOINT_INCLUDE
 
-#undef __get_dynamic_len
+#undef lttng_ust__get_dynamic_len
 
 /*
  * Stage 5.1 of tracepoint event generation.
