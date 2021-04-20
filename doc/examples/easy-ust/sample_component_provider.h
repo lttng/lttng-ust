@@ -88,13 +88,15 @@ LTTNG_UST_TRACEPOINT_EVENT(
 	)
 )
 /*
- * Trace loglevel, shows the level of the trace event. It can be TRACE_EMERG,
- * TRACE_ALERT, TRACE_CRIT, TRACE_ERR, TRACE_WARNING, TRACE_INFO or others.
- * If this is not set, TRACE_DEFAULT is assumed.
- * The first two arguments identify the tracepoint
- * See details in <lttng/tracepoint.h> line 347
+ * Trace loglevel, shows the level of the trace event. It can be
+ * LTTNG_UST_TRACEPOINT_LOGLEVEL_EMERG, LTTNG_UST_TRACEPOINT_LOGLEVEL_ALERT,
+ * LTTNG_UST_TRACEPOINT_LOGLEVEL_CRIT, LTTNG_UST_TRACEPOINT_LOGLEVEL_ERR,
+ * LTTNG_UST_TRACEPOINT_LOGLEVEL_WARNING, LTTNG_UST_TRACEPOINT_LOGLEVEL_INFO or
+ * others.  If this is not set, LTTNG_UST_TRACEPOINT_LOGLEVEL_DEFAULT is
+ * assumed.  The first two arguments identify the tracepoint See details in
+ * <lttng/tracepoint.h> line 347
  */
-TRACEPOINT_LOGLEVEL(
+LTTNG_UST_TRACEPOINT_LOGLEVEL(
        /*
         * The provider name, must be the same as the provider name in the
         * LTTNG_UST_TRACEPOINT_EVENT and as TRACEPOINT_PROVIDER above.
@@ -109,7 +111,7 @@ TRACEPOINT_LOGLEVEL(
         * The tracepoint loglevel. Warning, some levels are abbreviated and
         * others are not, please see <lttng/tracepoint.h>
         */
-	TRACE_WARNING)
+	LTTNG_UST_TRACEPOINT_LOGLEVEL_WARNING)
 
 #endif /* _SAMPLE_COMPONENT_PROVIDER_H */
 

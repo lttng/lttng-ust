@@ -170,7 +170,7 @@ class TemplateFile:
         cleantext = re.sub("\s*", "", nolinecomment)
         # Remove multine C style comments
         nocomment = re.sub("/\*.*?\*/", "", cleantext)
-        entries = re.split("LTTNG_UST_TRACEPOINT_.*?", nocomment)
+        entries = re.split("^LTTNG_UST_TRACEPOINT_.*?", nocomment)
 
         for entry in entries:
             if entry != '':
@@ -200,7 +200,7 @@ usage = """
  When using the -o option, the OUTPUT_FILE must end with either .h, .c or .o
  The -o option can be repeated multiple times.
 
- The template file must contains LTTNG_UST_TRACEPOINT_EVENT and TRACEPOINT_LOGLEVEL
+ The template file must contains LTTNG_UST_TRACEPOINT_EVENT and LTTNG_UST_TRACEPOINT_LOGLEVEL
  as per defined in the lttng/tracepoint.h file.
  See the lttng-ust(3) man page for more details on the format.
 """

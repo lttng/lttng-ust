@@ -21,11 +21,8 @@
 #undef LTTNG_UST_TP_FIELDS
 #define LTTNG_UST_TP_FIELDS(...)
 
-#undef  TRACEPOINT_LOGLEVEL_ENUM
-#define TRACEPOINT_LOGLEVEL_ENUM(...)
-
-#undef TRACEPOINT_LOGLEVEL
-#define TRACEPOINT_LOGLEVEL(provider, name, loglevel)
+#undef LTTNG_UST_TRACEPOINT_LOGLEVEL
+#define LTTNG_UST_TRACEPOINT_LOGLEVEL(provider, name, loglevel)
 
 #undef TRACEPOINT_MODEL_EMF_URI
 #define TRACEPOINT_MODEL_EMF_URI(provider, name, uri)

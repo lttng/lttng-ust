@@ -16,13 +16,13 @@ LTTNG_UST_TRACEPOINT_EVENT(ust_tests_sameline, event1,
 	LTTNG_UST_TP_ARGS(),
 	LTTNG_UST_TP_FIELDS()
 )
-TRACEPOINT_LOGLEVEL(ust_tests_sameline, event1, TRACE_CRIT)
+LTTNG_UST_TRACEPOINT_LOGLEVEL(ust_tests_sameline, event1, TRACE_CRIT)
 
 LTTNG_UST_TRACEPOINT_EVENT(ust_tests_sameline, event2,
 	LTTNG_UST_TP_ARGS(),
 	LTTNG_UST_TP_FIELDS()
 )
-TRACEPOINT_LOGLEVEL(ust_tests_sameline, event2, TRACE_CRIT)
+LTTNG_UST_TRACEPOINT_LOGLEVEL(ust_tests_sameline, event2, TRACE_CRIT)
 
 #endif /* _TRACEPOINT_UST_TESTS_SAMELINE_H */
 

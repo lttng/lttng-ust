@@ -18,7 +18,7 @@ LTTNG_UST_TRACEPOINT_EVENT(ust_tests_demo3, done,
 		ctf_integer(int, value, value)
 	)
 )
-TRACEPOINT_LOGLEVEL(ust_tests_demo3, done, TRACE_WARNING)
+LTTNG_UST_TRACEPOINT_LOGLEVEL(ust_tests_demo3, done, LTTNG_UST_TRACEPOINT_LOGLEVEL_WARNING)
 
 #endif /* _TRACEPOINT_UST_TESTS_DEMO3_H */
 

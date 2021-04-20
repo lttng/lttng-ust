@@ -20,7 +20,7 @@ void print_err(const char* msg, ...)
 	va_list ap;
 
 	va_start(ap, msg);
-	vtracelog(TRACE_ERR, msg, ap);
+	vtracelog(LTTNG_UST_TRACEPOINT_LOGLEVEL_ERR, msg, ap);
 	va_end(ap);
 }
 

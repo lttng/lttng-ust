@@ -7,7 +7,7 @@
 #ifndef _UST_COMMON_TRACEPOINT_H
 #define _UST_COMMON_TRACEPOINT_H
 
-#define TRACE_DEFAULT	TRACE_DEBUG_LINE
+#define LTTNG_UST_TRACEPOINT_LOGLEVEL_DEFAULT	LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_LINE
 
 /*
  * These symbols are ABI between liblttng-ust-tracepoint and liblttng-ust,

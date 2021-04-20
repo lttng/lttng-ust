@@ -747,7 +747,7 @@ lttng_ust__tracepoints__ptrs_destroy(void)
 
 #endif /* #ifndef LTTNG_UST_TRACEPOINT_EVENT */
 
-#ifndef TRACEPOINT_LOGLEVEL
+#ifndef LTTNG_UST_TRACEPOINT_LOGLEVEL
 
 /*
  * Tracepoint Loglevels
@@ -761,85 +761,105 @@ lttng_ust__tracepoints__ptrs_destroy(void)
  * semantic. Loglevels 7 through 13 offer more fine-grained selection of
  * debug information.
  *
- * TRACE_EMERG           0
+ * LTTNG_UST_TRACEPOINT_LOGLEVEL_EMERG           0
  * system is unusable
  *
- * TRACE_ALERT           1
+ * LTTNG_UST_TRACEPOINT_LOGLEVEL_ALERT           1
  * action must be taken immediately
  *
- * TRACE_CRIT            2
+ * LTTNG_UST_TRACEPOINT_LOGLEVEL_CRIT            2
  * critical conditions
  *
- * TRACE_ERR             3
+ * LTTNG_UST_TRACEPOINT_LOGLEVEL_ERR             3
  * error conditions
  *
- * TRACE_WARNING         4
+ * LTTNG_UST_TRACEPOINT_LOGLEVEL_WARNING         4
  * warning conditions
  *
- * TRACE_NOTICE          5
+ * LTTNG_UST_TRACEPOINT_LOGLEVEL_NOTICE          5
  * normal, but significant, condition
  *
- * TRACE_INFO            6
+ * LTTNG_UST_TRACEPOINT_LOGLEVEL_INFO            6
  * informational message
  *
- * TRACE_DEBUG_SYSTEM    7
+ * LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_SYSTEM    7
  * debug information with system-level scope (set of programs)
  *
- * TRACE_DEBUG_PROGRAM   8
+ * LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_PROGRAM   8
  * debug information with program-level scope (set of processes)
  *
- * TRACE_DEBUG_PROCESS   9
+ * LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_PROCESS   9
  * debug information with process-level scope (set of modules)
  *
- * TRACE_DEBUG_MODULE    10
+ * LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_MODULE    10
  * debug information with module (executable/library) scope (set of units)
  *
- * TRACE_DEBUG_UNIT      11
+ * LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_UNIT      11
  * debug information with compilation unit scope (set of functions)
  *
- * TRACE_DEBUG_FUNCTION  12
+ * LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_FUNCTION  12
  * debug information with function-level scope
  *
- * TRACE_DEBUG_LINE      13
+ * LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_LINE      13
  * debug information with line-level scope (LTTNG_UST_TRACEPOINT_EVENT default)
  *
- * TRACE_DEBUG           14
+ * LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG           14
  * debug-level message
  *
  * Declare tracepoint loglevels for tracepoints. A LTTNG_UST_TRACEPOINT_EVENT
- * should be declared prior to the the TRACEPOINT_LOGLEVEL for a given
+ * should be declared prior to the the LTTNG_UST_TRACEPOINT_LOGLEVEL for a given
  * tracepoint name. The first field is the provider name, the second
  * field is the name of the tracepoint, the third field is the loglevel
  * name.
  *
- *      TRACEPOINT_LOGLEVEL(< [com_company_]project[_component] >, < event >,
+ *      LTTNG_UST_TRACEPOINT_LOGLEVEL(< [com_company_]project[_component] >, < event >,
  *              < loglevel_name >)
  *
  * The TRACEPOINT_PROVIDER must be already declared before declaring a
- * TRACEPOINT_LOGLEVEL.
+ * LTTNG_UST_TRACEPOINT_LOGLEVEL.
  */
 
 enum {
-	TRACE_EMERG		= 0,
-	TRACE_ALERT		= 1,
-	TRACE_CRIT		= 2,
-	TRACE_ERR		= 3,
-	TRACE_WARNING		= 4,
-	TRACE_NOTICE		= 5,
-	TRACE_INFO		= 6,
-	TRACE_DEBUG_SYSTEM	= 7,
-	TRACE_DEBUG_PROGRAM	= 8,
-	TRACE_DEBUG_PROCESS	= 9,
-	TRACE_DEBUG_MODULE	= 10,
-	TRACE_DEBUG_UNIT	= 11,
-	TRACE_DEBUG_FUNCTION	= 12,
-	TRACE_DEBUG_LINE	= 13,
-	TRACE_DEBUG		= 14,
+	LTTNG_UST_TRACEPOINT_LOGLEVEL_EMERG		= 0,
+	LTTNG_UST_TRACEPOINT_LOGLEVEL_ALERT		= 1,
+	LTTNG_UST_TRACEPOINT_LOGLEVEL_CRIT		= 2,
+	LTTNG_UST_TRACEPOINT_LOGLEVEL_ERR		= 3,
+	LTTNG_UST_TRACEPOINT_LOGLEVEL_WARNING		= 4,
+	LTTNG_UST_TRACEPOINT_LOGLEVEL_NOTICE		= 5,
+	LTTNG_UST_TRACEPOINT_LOGLEVEL_INFO		= 6,
+	LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_SYSTEM	= 7,
+	LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_PROGRAM	= 8,
+	LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_PROCESS	= 9,
+	LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_MODULE	= 10,
+	LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_UNIT	= 11,
+	LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_FUNCTION	= 12,
+	LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_LINE	= 13,
+	LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG		= 14,
 };
 
-#define TRACEPOINT_LOGLEVEL(provider, name, loglevel)
+#define LTTNG_UST_TRACEPOINT_LOGLEVEL(provider, name, loglevel)
 
-#endif /* #ifndef TRACEPOINT_LOGLEVEL */
+#if LTTNG_UST_COMPAT_API(0)
+#define TRACEPOINT_LOGLEVEL	LTTNG_UST_TRACEPOINT_LOGLEVEL
+
+#define TRACE_EMERG		LTTNG_UST_TRACEPOINT_LOGLEVEL_EMERG
+#define TRACE_ALERT		LTTNG_UST_TRACEPOINT_LOGLEVEL_ALERT
+#define TRACE_CRIT		LTTNG_UST_TRACEPOINT_LOGLEVEL_CRIT
+#define TRACE_ERR		LTTNG_UST_TRACEPOINT_LOGLEVEL_ERR
+#define TRACE_WARNING		LTTNG_UST_TRACEPOINT_LOGLEVEL_WARNING
+#define TRACE_NOTICE		LTTNG_UST_TRACEPOINT_LOGLEVEL_NOTICE
+#define TRACE_INFO		LTTNG_UST_TRACEPOINT_LOGLEVEL_INFO
+#define TRACE_DEBUG_SYSTEM	LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_SYSTEM
+#define TRACE_DEBUG_PROGRAM	LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_PROGRAM
+#define TRACE_DEBUG_PROCESS	LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_PROCESS
+#define TRACE_DEBUG_MODULE	LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_MODULE
+#define TRACE_DEBUG_UNIT	LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_UNIT
+#define TRACE_DEBUG_FUNCTION	LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_FUNCTION
+#define TRACE_DEBUG_LINE	LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_LINE
+#define TRACE_DEBUG		LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG
+#endif
+
+#endif /* #ifndef LTTNG_UST_TRACEPOINT_LOGLEVEL */
 
 #ifndef TRACEPOINT_MODEL_EMF_URI
 

@@ -14,4 +14,4 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_tracef, event,
 		ctf_unused(ip)
 	)
 )
-TRACEPOINT_LOGLEVEL(lttng_ust_tracef, event, TRACE_DEBUG)
+LTTNG_UST_TRACEPOINT_LOGLEVEL(lttng_ust_tracef, event, LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG)

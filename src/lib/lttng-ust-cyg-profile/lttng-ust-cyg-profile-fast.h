@@ -24,8 +24,8 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_cyg_profile_fast, func_entry,
 	)
 )
 
-TRACEPOINT_LOGLEVEL(lttng_ust_cyg_profile_fast, func_entry,
-	TRACE_DEBUG_FUNCTION)
+LTTNG_UST_TRACEPOINT_LOGLEVEL(lttng_ust_cyg_profile_fast, func_entry,
+	LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_FUNCTION)
 
 LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_cyg_profile_fast, func_exit,
 	LTTNG_UST_TP_ARGS(void *, func_addr),
@@ -34,8 +34,8 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_cyg_profile_fast, func_exit,
 	)
 )
 
-TRACEPOINT_LOGLEVEL(lttng_ust_cyg_profile_fast, func_exit,
-	TRACE_DEBUG_FUNCTION)
+LTTNG_UST_TRACEPOINT_LOGLEVEL(lttng_ust_cyg_profile_fast, func_exit,
+	LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_FUNCTION)
 
 #endif /* _TRACEPOINT_LTTNG_UST_CYG_PROFILE_FAST_H */
 

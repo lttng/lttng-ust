@@ -31,16 +31,16 @@ LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(lttng_ust_cyg_profile, func_class,
 	LTTNG_UST_TP_ARGS(void *, func_addr, void *, call_site)
 )
 
-TRACEPOINT_LOGLEVEL(lttng_ust_cyg_profile, func_entry,
-	TRACE_DEBUG_FUNCTION)
+LTTNG_UST_TRACEPOINT_LOGLEVEL(lttng_ust_cyg_profile, func_entry,
+	LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_FUNCTION)
 
 LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(lttng_ust_cyg_profile, func_class,
 	func_exit,
 	LTTNG_UST_TP_ARGS(void *, func_addr, void *, call_site)
 )
 
-TRACEPOINT_LOGLEVEL(lttng_ust_cyg_profile, func_exit,
-	TRACE_DEBUG_FUNCTION)
+LTTNG_UST_TRACEPOINT_LOGLEVEL(lttng_ust_cyg_profile, func_exit,
+	LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_FUNCTION)
 
 #endif /* _TRACEPOINT_LTTNG_UST_CYG_PROFILE_H */
 

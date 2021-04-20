@@ -53,8 +53,8 @@
 	LTTNG_UST__DECLARE_TRACEPOINT(provider, name, LTTNG_UST__TP_PARAMS(args))		\
 	LTTNG_UST__DEFINE_TRACEPOINT(provider, name, LTTNG_UST__TP_PARAMS(args))
 
-#undef TRACEPOINT_LOGLEVEL
-#define TRACEPOINT_LOGLEVEL(provider, name, loglevel)
+#undef LTTNG_UST_TRACEPOINT_LOGLEVEL
+#define LTTNG_UST_TRACEPOINT_LOGLEVEL(provider, name, loglevel)
 
 #undef TRACEPOINT_MODEL_EMF_URI
 #define TRACEPOINT_MODEL_EMF_URI(provider, name, uri)

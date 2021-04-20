@@ -120,23 +120,23 @@ int lttng_loglevel_match(int loglevel,
 		int req_loglevel)
 {
 	if (!has_loglevel)
-		loglevel = TRACE_DEFAULT;
+		loglevel = LTTNG_UST_TRACEPOINT_LOGLEVEL_DEFAULT;
 	switch (req_type) {
 	case LTTNG_UST_ABI_LOGLEVEL_RANGE:
 		if (loglevel <= req_loglevel
-				|| (req_loglevel == -1 && loglevel <= TRACE_DEBUG))
+				|| (req_loglevel == -1 && loglevel <= LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG))
 			return 1;
 		else
 			return 0;
 	case LTTNG_UST_ABI_LOGLEVEL_SINGLE:
 		if (loglevel == req_loglevel
-				|| (req_loglevel == -1 && loglevel <= TRACE_DEBUG))
+				|| (req_loglevel == -1 && loglevel <= LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG))
 			return 1;
 		else
 			return 0;
 	case LTTNG_UST_ABI_LOGLEVEL_ALL:
 	default:
-		if (loglevel <= TRACE_DEBUG)
+		if (loglevel <= LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG)
 			return 1;
 		else
 			return 0;
@@ -779,7 +779,7 @@ int lttng_event_recorder_create(const struct lttng_ust_event_desc *desc,
 	if (desc->loglevel)
 		loglevel = *(*desc->loglevel);
 	else
-		loglevel = TRACE_DEFAULT;
+		loglevel = LTTNG_UST_TRACEPOINT_LOGLEVEL_DEFAULT;
 	if (desc->model_emf_uri)
 		uri = *(desc->model_emf_uri);
 	else

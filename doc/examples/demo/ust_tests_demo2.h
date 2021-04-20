@@ -34,7 +34,7 @@ LTTNG_UST_TRACEPOINT_EVENT(ust_tests_demo2, loop,
 		ctf_float(double, doublefield, doublearg)
 	)
 )
-TRACEPOINT_LOGLEVEL(ust_tests_demo2, loop, TRACE_WARNING)
+LTTNG_UST_TRACEPOINT_LOGLEVEL(ust_tests_demo2, loop, LTTNG_UST_TRACEPOINT_LOGLEVEL_WARNING)
 
 #endif /* _TRACEPOINT_UST_TESTS_DEMO2_H */
 

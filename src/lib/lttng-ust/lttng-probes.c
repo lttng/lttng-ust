@@ -259,7 +259,7 @@ int lttng_probes_get_event_list(struct lttng_ust_tracepoint_list *list)
 			cds_list_add(&list_entry->head, &list->head);
 			lttng_ust_format_event_name(event_desc, list_entry->tp.name);
 			if (!event_desc->loglevel) {
-				list_entry->tp.loglevel = TRACE_DEFAULT;
+				list_entry->tp.loglevel = LTTNG_UST_TRACEPOINT_LOGLEVEL_DEFAULT;
 			} else {
 				list_entry->tp.loglevel = *(*event_desc->loglevel);
 			}
@@ -341,7 +341,7 @@ int lttng_probes_get_field_list(struct lttng_ust_field_list *list)
 				list_entry->field.field_name[0] = '\0';
 				list_entry->field.type = LTTNG_UST_ABI_FIELD_OTHER;
 				if (!event_desc->loglevel) {
-					list_entry->field.loglevel = TRACE_DEFAULT;
+					list_entry->field.loglevel = LTTNG_UST_TRACEPOINT_LOGLEVEL_DEFAULT;
 				} else {
 					list_entry->field.loglevel = *(*event_desc->loglevel);
 				}
@@ -394,7 +394,7 @@ int lttng_probes_get_field_list(struct lttng_ust_field_list *list)
 					list_entry->field.type = LTTNG_UST_ABI_FIELD_OTHER;
 				}
 				if (!event_desc->loglevel) {
-					list_entry->field.loglevel = TRACE_DEFAULT;
+					list_entry->field.loglevel = LTTNG_UST_TRACEPOINT_LOGLEVEL_DEFAULT;
 				} else {
 					list_entry->field.loglevel = *(*event_desc->loglevel);
 				}

@@ -18,7 +18,7 @@ LTTNG_UST_TRACEPOINT_EVENT(ust_tests_demo, starting,
 		ctf_integer(int, value, value)
 	)
 )
-TRACEPOINT_LOGLEVEL(ust_tests_demo, starting, TRACE_CRIT)
+LTTNG_UST_TRACEPOINT_LOGLEVEL(ust_tests_demo, starting, LTTNG_UST_TRACEPOINT_LOGLEVEL_CRIT)
 
 /*
  * Dummy model information, just for example. TODO: we should check if
@@ -33,7 +33,7 @@ LTTNG_UST_TRACEPOINT_EVENT(ust_tests_demo, done,
 		ctf_integer(int, value, value)
 	)
 )
-TRACEPOINT_LOGLEVEL(ust_tests_demo, done, TRACE_CRIT)
+LTTNG_UST_TRACEPOINT_LOGLEVEL(ust_tests_demo, done, LTTNG_UST_TRACEPOINT_LOGLEVEL_CRIT)
 
 TRACEPOINT_MODEL_EMF_URI(ust_tests_demo, done,
 	"http://example.com/path_to_model?q=ust_tests_demo:done")
