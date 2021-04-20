@@ -130,11 +130,11 @@ void LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_tracepoint_provider_check_, LTTNG_US
 
 #undef LTTNG_UST__TRACEPOINT_EVENT_INSTANCE
 #define LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args) \
-void __event_template_proto___##_provider##___##_template(LTTNG_UST__TP_ARGS_DATA_PROTO(_args));
+void lttng_ust__event_template_proto___##_provider##___##_template(LTTNG_UST__TP_ARGS_DATA_PROTO(_args));
 
 #undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
 #define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields) \
-void __event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args));
+void lttng_ust__event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args));
 
 #include LTTNG_UST_TRACEPOINT_INCLUDE
 
@@ -368,7 +368,7 @@ void __event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PR
 
 #undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
 #define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)		   	     \
-	static const struct lttng_ust_event_field * const __event_fields___##_provider##___##_name[] = { \
+	static const struct lttng_ust_event_field * const lttng_ust__event_fields___##_provider##___##_name[] = { \
 		_fields									     \
 		ctf_integer(int, dummy, 0)	/* Dummy, C99 forbids 0-len array. */	     \
 	};
@@ -398,7 +398,7 @@ void __event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PR
 
 #undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
 #define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)		\
-static void __event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args));
+static void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args));
 
 #include LTTNG_UST_TRACEPOINT_INCLUDE
 
@@ -469,10 +469,10 @@ static void __event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO
 #undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
 #define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
 static inline								      \
-size_t __event_get_size__##_provider##___##_name(size_t *__dynamic_len, LTTNG_UST__TP_ARGS_DATA_PROTO(_args)) \
+size_t lttng_ust__event_get_size__##_provider##___##_name(size_t *__dynamic_len, LTTNG_UST__TP_ARGS_DATA_PROTO(_args)) \
 	lttng_ust_notrace;						      \
 static inline								      \
-size_t __event_get_size__##_provider##___##_name(			      \
+size_t lttng_ust__event_get_size__##_provider##___##_name(			      \
 		size_t *__dynamic_len __attribute__((__unused__)),	      \
 		LTTNG_UST__TP_ARGS_DATA_PROTO(_args))				      \
 {									      \
@@ -638,7 +638,7 @@ size_t __event_get_size__##_provider##___##_name(			      \
 #undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
 #define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
 static inline								      \
-void __event_prepare_interpreter_stack__##_provider##___##_name(char *__stack_data,\
+void lttng_ust__event_prepare_interpreter_stack__##_provider##___##_name(char *__stack_data,\
 						 LTTNG_UST__TP_ARGS_DATA_PROTO(_args))  \
 {									      \
 	if (0) {							      \
@@ -665,20 +665,20 @@ void __event_prepare_interpreter_stack__##_provider##___##_name(char *__stack_da
 #define _ctf_integer_ext(_type, _item, _src, _byte_order, _base, _nowrite)     \
 	if (0)								       \
 		(void) (_src);	/* Unused */				       \
-	__event_align = lttng_ust__tp_max_t(size_t, __event_align, lttng_ust_rb_alignof(_type));
+	lttng_ust__event_align = lttng_ust__tp_max_t(size_t, lttng_ust__event_align, lttng_ust_rb_alignof(_type));
 
 #undef _ctf_float
 #define _ctf_float(_type, _item, _src, _nowrite)			       \
 	if (0)								       \
 		(void) (_src);	/* Unused */ 				       \
-	__event_align = lttng_ust__tp_max_t(size_t, __event_align, lttng_ust_rb_alignof(_type));
+	lttng_ust__event_align = lttng_ust__tp_max_t(size_t, lttng_ust__event_align, lttng_ust_rb_alignof(_type));
 
 #undef _ctf_array_encoded
 #define _ctf_array_encoded(_type, _item, _src, _byte_order, _length,	       \
 			_encoding, _nowrite, _elem_type_base)		       \
 	if (0)								       \
 		(void) (_src);	/* Unused */				       \
-	__event_align = lttng_ust__tp_max_t(size_t, __event_align, lttng_ust_rb_alignof(_type));
+	lttng_ust__event_align = lttng_ust__tp_max_t(size_t, lttng_ust__event_align, lttng_ust_rb_alignof(_type));
 
 #undef _ctf_sequence_encoded
 #define _ctf_sequence_encoded(_type, _item, _src, _byte_order, _length_type,   \
@@ -687,8 +687,8 @@ void __event_prepare_interpreter_stack__##_provider##___##_name(char *__stack_da
 		(void) (_src);	/* Unused */				       \
 	if (0)								       \
 		(void) (_src_length);	/* Unused */			       \
-	__event_align = lttng_ust__tp_max_t(size_t, __event_align, lttng_ust_rb_alignof(_length_type));	  \
-	__event_align = lttng_ust__tp_max_t(size_t, __event_align, lttng_ust_rb_alignof(_type));
+	lttng_ust__event_align = lttng_ust__tp_max_t(size_t, lttng_ust__event_align, lttng_ust_rb_alignof(_length_type));	  \
+	lttng_ust__event_align = lttng_ust__tp_max_t(size_t, lttng_ust__event_align, lttng_ust_rb_alignof(_type));
 
 #undef _ctf_string
 #define _ctf_string(_item, _src, _nowrite)					\
@@ -713,14 +713,14 @@ void __event_prepare_interpreter_stack__##_provider##___##_name(char *__stack_da
 #undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
 #define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
 static inline								      \
-size_t __event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_PROTO(_args))      \
+size_t lttng_ust__event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_PROTO(_args))      \
 	lttng_ust_notrace;						      \
 static inline								      \
-size_t __event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_PROTO(_args))      \
+size_t lttng_ust__event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_PROTO(_args))      \
 {									      \
-	size_t __event_align = 1;					      \
+	size_t lttng_ust__event_align = 1;					      \
 	_fields								      \
-	return __event_align;						      \
+	return lttng_ust__event_align;						      \
 }
 
 #include LTTNG_UST_TRACEPOINT_INCLUDE
@@ -839,14 +839,14 @@ size_t __event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_PROTO(_args
 #undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
 #define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
 static									      \
-void __event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args))	      \
+void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args))	      \
 	lttng_ust_notrace;						      \
 static									      \
-void __event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args))	      \
+void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args))	      \
 {									      \
 	struct lttng_ust_event_common *__event = (struct lttng_ust_event_common *) __tp_data; \
 	size_t __dynamic_len_idx = 0;					      \
-	const size_t __num_fields = LTTNG_UST__TP_ARRAY_SIZE(__event_fields___##_provider##___##_name) - 1; \
+	const size_t __num_fields = LTTNG_UST__TP_ARRAY_SIZE(lttng_ust__event_fields___##_provider##___##_name) - 1; \
 	union {								      \
 		size_t __dynamic_len[__num_fields];			      \
 		char __interpreter_stack_data[2 * sizeof(unsigned long) * __num_fields]; \
@@ -859,8 +859,8 @@ void __event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args)
 	switch (__event->type) {					      \
 	case LTTNG_UST_EVENT_TYPE_RECORDER:				      \
 	{								      \
-		struct lttng_ust_event_recorder *__event_recorder = (struct lttng_ust_event_recorder *) __event->child; \
-		struct lttng_ust_channel_buffer *__chan = __event_recorder->chan; \
+		struct lttng_ust_event_recorder *lttng_ust__event_recorder = (struct lttng_ust_event_recorder *) __event->child; \
+		struct lttng_ust_channel_buffer *__chan = lttng_ust__event_recorder->chan; \
 		struct lttng_ust_channel_common *__chan_common = __chan->parent; \
 									      \
 		if (!_TP_SESSION_CHECK(session, __chan_common->session))      \
@@ -879,7 +879,7 @@ void __event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args)
 	if (caa_unlikely(!TP_RCU_LINK_TEST()))				      \
 		return;							      \
 	if (caa_unlikely(CMM_ACCESS_ONCE(__event->eval_filter))) { \
-		__event_prepare_interpreter_stack__##_provider##___##_name(__stackvar.__interpreter_stack_data, \
+		lttng_ust__event_prepare_interpreter_stack__##_provider##___##_name(__stackvar.__interpreter_stack_data, \
 			LTTNG_UST__TP_ARGS_DATA_VAR(_args));			      \
 		__interpreter_stack_prepared = true;			      \
 		if (caa_likely(__event->run_filter(__event, \
@@ -889,15 +889,15 @@ void __event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args)
 	switch (__event->type) {					      \
 	case LTTNG_UST_EVENT_TYPE_RECORDER:				      \
 	{								      \
-		size_t __event_len, __event_align;			      \
-		struct lttng_ust_event_recorder *__event_recorder = (struct lttng_ust_event_recorder *) __event->child; \
-		struct lttng_ust_channel_buffer *__chan = __event_recorder->chan; \
+		size_t __event_len, lttng_ust__event_align;			      \
+		struct lttng_ust_event_recorder *lttng_ust__event_recorder = (struct lttng_ust_event_recorder *) __event->child; \
+		struct lttng_ust_channel_buffer *__chan = lttng_ust__event_recorder->chan; \
 		struct lttng_ust_ring_buffer_ctx __ctx;		      \
 									      \
-		__event_len = __event_get_size__##_provider##___##_name(__stackvar.__dynamic_len, \
+		__event_len = lttng_ust__event_get_size__##_provider##___##_name(__stackvar.__dynamic_len, \
 			 LTTNG_UST__TP_ARGS_DATA_VAR(_args));			      \
-		__event_align = __event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_VAR(_args)); \
-		lttng_ust_ring_buffer_ctx_init(&__ctx, __event_recorder, __event_len, __event_align, \
+		lttng_ust__event_align = lttng_ust__event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_VAR(_args)); \
+		lttng_ust_ring_buffer_ctx_init(&__ctx, lttng_ust__event_recorder, __event_len, lttng_ust__event_align, \
 				_TP_IP_PARAM(TP_IP_PARAM));		      \
 		__ret = __chan->ops->event_reserve(&__ctx);		      \
 		if (__ret < 0)						      \
@@ -908,17 +908,17 @@ void __event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args)
 	}								      \
 	case LTTNG_UST_EVENT_TYPE_NOTIFIER:				      \
 	{								      \
-		struct lttng_ust_event_notifier *__event_notifier = (struct lttng_ust_event_notifier *) __event->child; \
+		struct lttng_ust_event_notifier *lttng_ust__event_notifier = (struct lttng_ust_event_notifier *) __event->child; \
 		struct lttng_ust_notification_ctx __notif_ctx;		      \
 									      \
 		__notif_ctx.struct_size = sizeof(struct lttng_ust_notification_ctx); \
-		__notif_ctx.eval_capture = CMM_ACCESS_ONCE(__event_notifier->eval_capture); \
+		__notif_ctx.eval_capture = CMM_ACCESS_ONCE(lttng_ust__event_notifier->eval_capture); \
 									      \
 		if (caa_unlikely(!__interpreter_stack_prepared && __notif_ctx.eval_capture)) \
-			__event_prepare_interpreter_stack__##_provider##___##_name(__stackvar.__interpreter_stack_data, \
+			lttng_ust__event_prepare_interpreter_stack__##_provider##___##_name(__stackvar.__interpreter_stack_data, \
 				LTTNG_UST__TP_ARGS_DATA_VAR(_args));		      \
 									      \
-		__event_notifier->notification_send(__event_notifier,	      \
+		lttng_ust__event_notifier->notification_send(lttng_ust__event_notifier,	      \
 				__stackvar.__interpreter_stack_data,	      \
 				&__notif_ctx);				      \
 		break;							      \
@@ -1056,13 +1056,13 @@ static const int *							       \
 static const char *							       \
 	__ref_model_emf_uri___##_provider##___##_name			       \
 	__attribute__((weakref ("_model_emf_uri___" #_provider "___" #_name)));\
-static const struct lttng_ust_event_desc __event_desc___##_provider##_##_name = { \
+static const struct lttng_ust_event_desc lttng_ust__event_desc___##_provider##_##_name = { \
 	.struct_size = sizeof(struct lttng_ust_event_desc),		       \
 	.event_name = #_name,						       \
 	.probe_desc = &__probe_desc___##_provider,			       \
-	.probe_callback = (void (*)(void)) &__event_probe__##_provider##___##_template, \
-	.fields = __event_fields___##_provider##___##_template,		       \
-	.nr_fields = LTTNG_UST__TP_ARRAY_SIZE(__event_fields___##_provider##___##_template) - 1, \
+	.probe_callback = (void (*)(void)) &lttng_ust__event_probe__##_provider##___##_template, \
+	.fields = lttng_ust__event_fields___##_provider##___##_template,		       \
+	.nr_fields = LTTNG_UST__TP_ARRAY_SIZE(lttng_ust__event_fields___##_provider##___##_template) - 1, \
 	.loglevel = &__ref_loglevel___##_provider##___##_name,		       \
 	.signature = __tp_event_signature___##_provider##___##_template,       \
 	.model_emf_uri = &__ref_model_emf_uri___##_provider##___##_name,       \
@@ -1081,9 +1081,9 @@ static const struct lttng_ust_event_desc __event_desc___##_provider##_##_name = 
 
 #undef LTTNG_UST__TRACEPOINT_EVENT_INSTANCE
 #define LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	       \
-	&__event_desc___##_provider##_##_name,
+	&lttng_ust__event_desc___##_provider##_##_name,
 
-static const struct lttng_ust_event_desc * const LTTNG_UST__TP_COMBINE_TOKENS(__event_desc___, LTTNG_UST_TRACEPOINT_PROVIDER)[] = {
+static const struct lttng_ust_event_desc * const LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__event_desc___, LTTNG_UST_TRACEPOINT_PROVIDER)[] = {
 #include LTTNG_UST_TRACEPOINT_INCLUDE
 	NULL,	/* Dummy, C99 forbids 0-len array. */
 };
@@ -1098,8 +1098,8 @@ static const struct lttng_ust_event_desc * const LTTNG_UST__TP_COMBINE_TOKENS(__
 const struct lttng_ust_probe_desc LTTNG_UST__TP_COMBINE_TOKENS(__probe_desc___, LTTNG_UST_TRACEPOINT_PROVIDER) = {
 	.struct_size = sizeof(struct lttng_ust_probe_desc),
 	.provider_name = __tp_stringify(LTTNG_UST_TRACEPOINT_PROVIDER),
-	.event_desc = LTTNG_UST__TP_COMBINE_TOKENS(__event_desc___, LTTNG_UST_TRACEPOINT_PROVIDER),
-	.nr_events = LTTNG_UST__TP_ARRAY_SIZE(LTTNG_UST__TP_COMBINE_TOKENS(__event_desc___, LTTNG_UST_TRACEPOINT_PROVIDER)) - 1,
+	.event_desc = LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__event_desc___, LTTNG_UST_TRACEPOINT_PROVIDER),
+	.nr_events = LTTNG_UST__TP_ARRAY_SIZE(LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__event_desc___, LTTNG_UST_TRACEPOINT_PROVIDER)) - 1,
 	.major = LTTNG_UST_PROVIDER_MAJOR,
 	.minor = LTTNG_UST_PROVIDER_MINOR,
 };
