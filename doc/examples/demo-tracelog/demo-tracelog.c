@@ -25,7 +25,7 @@ int main(int argc, char **argv)
 
 	fprintf(stderr, "Tracing... ");
 	for (i = 0; i < 5; i++) {
-		tracelog(LTTNG_UST_TRACEPOINT_LOGLEVEL_ERR, "Error condition %d", i);
+		lttng_ust_tracelog(LTTNG_UST_TRACEPOINT_LOGLEVEL_ERR, "Error condition %d", i);
 	}
 	fprintf(stderr, " done.\n");
 	return 0;
