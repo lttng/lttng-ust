@@ -78,6 +78,8 @@
 /*
  * Non-static to ensure the compiler does not optimize away the xor.
  */
+uint8_t lttng_crash_magic_xor[]
+	__attribute__((visibility("hidden")));
 uint8_t lttng_crash_magic_xor[] = RB_CRASH_DUMP_ABI_MAGIC_XOR;
 
 /*

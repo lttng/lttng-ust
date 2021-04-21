@@ -264,7 +264,7 @@ struct sock_info {
 };
 
 /* Socket from app (connect) to session daemon (listen) for communication */
-struct sock_info global_apps = {
+static struct sock_info global_apps = {
 	.name = "global",
 	.global = 1,
 
@@ -286,7 +286,7 @@ struct sock_info global_apps = {
 
 /* TODO: allow global_apps_sock_path override */
 
-struct sock_info local_apps = {
+static struct sock_info local_apps = {
 	.name = "local",
 	.global = 0,
 	.root_handle = -1,

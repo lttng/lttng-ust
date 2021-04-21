@@ -121,7 +121,7 @@ void ipc_ns_get_value(void *priv __attribute__((unused)),
 	value->u.u64 = get_ipc_ns();
 }
 
-const struct lttng_ust_ctx_field *ctx_field = lttng_ust_static_ctx_field(
+static const struct lttng_ust_ctx_field *ctx_field = lttng_ust_static_ctx_field(
 	lttng_ust_static_event_field("ipc_ns",
 		lttng_ust_static_type_integer(sizeof(ino_t) * CHAR_BIT,
 				lttng_ust_rb_alignof(ino_t) * CHAR_BIT,

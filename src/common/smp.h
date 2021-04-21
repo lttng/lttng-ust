@@ -13,7 +13,8 @@
  *
  * If the sysconf call fails, don't populate the cache and return 0.
  */
-int num_possible_cpus(void);
+int num_possible_cpus(void)
+	__attribute__((visibility("hidden")));
 
 #define for_each_possible_cpu(cpu)		\
 	for ((cpu) = 0; (cpu) < num_possible_cpus(); (cpu)++)

@@ -63,7 +63,7 @@ struct lttng_ust_dl_node {
 
 #define UST_DL_STATE_HASH_BITS	8
 #define UST_DL_STATE_TABLE_SIZE	(1 << UST_DL_STATE_HASH_BITS)
-struct cds_hlist_head dl_state_table[UST_DL_STATE_TABLE_SIZE];
+static struct cds_hlist_head dl_state_table[UST_DL_STATE_TABLE_SIZE];
 
 typedef void (*tracepoint_cb)(struct lttng_ust_session *session, void *priv);
 
