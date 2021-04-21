@@ -15,6 +15,7 @@
 #include <lttng/ust-compiler.h>
 #include <lttng/tracepoint.h>
 #include <lttng/ust-endian.h>
+#include <lttng/ust-api-compat.h>
 #include <string.h>
 
 #define __LTTNG_UST_NULL_STRING	"(null)"
@@ -197,9 +198,14 @@ void __event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PR
 		.options = LTTNG_UST_ENUM_ENTRY_OPTION_IS_AUTO,		\
 	}),
 
-#undef TP_ENUM_VALUES
-#define TP_ENUM_VALUES(...)						\
+#undef LTTNG_UST_TP_ENUM_VALUES
+#define LTTNG_UST_TP_ENUM_VALUES(...)						\
 	__VA_ARGS__
+
+#if LTTNG_UST_COMPAT_API(0)
+# undef TP_ENUM_VALUES
+# define TP_ENUM_VALUES LTTNG_UST_TP_ENUM_VALUES
+#endif /* #if LTTNG_UST_COMPAT_API(0) */
 
 #undef LTTNG_UST_TRACEPOINT_ENUM
 #define LTTNG_UST_TRACEPOINT_ENUM(_provider, _name, _values)			\

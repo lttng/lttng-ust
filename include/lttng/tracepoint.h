@@ -609,7 +609,7 @@ lttng_ust__tracepoints__ptrs_destroy(void)
  * An example:
  *
  * LTTNG_UST_TRACEPOINT_ENUM(someproject_component, enumname,
- *	TP_ENUM_VALUES(
+ *	LTTNG_UST_TP_ENUM_VALUES(
  *		ctf_enum_value("even", 0)
  *		ctf_enum_value("uneven", 1)
  *		ctf_enum_range("twoto4", 2, 4)
@@ -619,7 +619,7 @@ lttng_ust__tracepoints__ptrs_destroy(void)
  *
  * Where "someproject_component" is the name of the component this enumeration
  * belongs to and "enumname" identifies this enumeration. Inside the
- * TP_ENUM_VALUES macro is the actual mapping. Each string value can map
+ * LTTNG_UST_TP_ENUM_VALUES macro is the actual mapping. Each string value can map
  * to either a single value with ctf_enum_value or a range of values
  * with ctf_enum_range.
  *

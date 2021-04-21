@@ -14,7 +14,7 @@
 #include <stddef.h>
 
 LTTNG_UST_TRACEPOINT_ENUM(ust_tests_hello, my_enum,
-	TP_ENUM_VALUES(
+	LTTNG_UST_TP_ENUM_VALUES(
 		ctf_enum_value("zero", 0)
 		ctf_enum_value("one", 1)
 		ctf_enum_auto("two")
