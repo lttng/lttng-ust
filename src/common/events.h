@@ -514,7 +514,7 @@ const struct lttng_ust_type_struct *lttng_ust_get_type_struct(const struct lttng
 		.size = (_size),									\
 		.alignment = (_alignment),								\
 		.signedness = (_signedness),								\
-		.reverse_byte_order = (_byte_order) != BYTE_ORDER,					\
+		.reverse_byte_order = (_byte_order) != LTTNG_UST_BYTE_ORDER,					\
 		.base = (_base),									\
 	}))
 
@@ -529,7 +529,7 @@ const struct lttng_ust_type_struct *lttng_ust_get_type_struct(const struct lttng
 		.encoding = lttng_ust_string_encoding_UTF8,						\
 		.elem_type = lttng_ust_static_type_integer(sizeof(char) * CHAR_BIT,			\
 				lttng_ust_rb_alignof(char) * CHAR_BIT, lttng_ust_is_signed_type(char),	\
-				BYTE_ORDER, 10),							\
+				LTTNG_UST_BYTE_ORDER, 10),							\
 	}))
 
 #define lttng_ust_static_event_field(_name, _type, _nowrite, _nofilter)					\

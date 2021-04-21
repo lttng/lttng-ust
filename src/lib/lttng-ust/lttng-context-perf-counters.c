@@ -531,7 +531,7 @@ static const struct lttng_ust_type_common *ust_type =
 	lttng_ust_static_type_integer(sizeof(uint64_t) * CHAR_BIT,
 			lttng_ust_rb_alignof(uint64_t) * CHAR_BIT,
 			lttng_ust_is_signed_type(uint64_t),
-			BYTE_ORDER, 10);
+			LTTNG_UST_BYTE_ORDER, 10);
 
 /* Called with UST lock held */
 int lttng_add_perf_counter_to_ctx(uint32_t type,

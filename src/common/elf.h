@@ -74,7 +74,7 @@ struct lttng_ust_elf {
  * Determine native endianness in order to convert when reading an ELF
  * file if there is a mismatch.
  */
-#if BYTE_ORDER == LITTLE_ENDIAN
+#if LTTNG_UST_BYTE_ORDER == LTTNG_UST_LITTLE_ENDIAN
 #define NATIVE_ELF_ENDIANNESS ELFDATA2LSB
 #else
 #define NATIVE_ELF_ENDIANNESS ELFDATA2MSB
@@ -100,13 +100,13 @@ struct lttng_ust_elf {
 	do {					\
 		switch (sizeof(x)) {		\
 		case 8:				\
-			x = bswap_64(x);	\
+			x = lttng_ust_bswap_64(x);	\
 			break;			\
 		case 4:				\
-			x = bswap_32(x);	\
+			x = lttng_ust_bswap_32(x);	\
 			break;			\
 		case 2:				\
-			x = bswap_16(x);	\
+			x = lttng_ust_bswap_16(x);	\
 			break;			\
 		case 1:				\
 			break;			\

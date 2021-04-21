@@ -99,7 +99,7 @@ static const struct lttng_ust_ctx_field *ctx_field = lttng_ust_static_ctx_field(
 		lttng_ust_static_type_integer(sizeof(uid_t) * CHAR_BIT,
 				lttng_ust_rb_alignof(uid_t) * CHAR_BIT,
 				lttng_ust_is_signed_type(uid_t),
-				BYTE_ORDER, 10),
+				LTTNG_UST_BYTE_ORDER, 10),
 		false, false),
 	vsuid_get_size,
 	vsuid_record,

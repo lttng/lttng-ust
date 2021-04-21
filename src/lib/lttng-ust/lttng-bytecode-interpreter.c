@@ -457,7 +457,7 @@ static int dynamic_load_field(struct estack_entry *stack_top)
 		dbg_printf("op load field s16\n");
 		tmp = *(int16_t *) stack_top->u.ptr.ptr;
 		if (stack_top->u.ptr.rev_bo)
-			tmp = bswap_16(tmp);
+			tmp = lttng_ust_bswap_16(tmp);
 		stack_top->u.v = tmp;
 		stack_top->type = REG_S64;
 		break;
@@ -469,7 +469,7 @@ static int dynamic_load_field(struct estack_entry *stack_top)
 		dbg_printf("op load field s32\n");
 		tmp = *(int32_t *) stack_top->u.ptr.ptr;
 		if (stack_top->u.ptr.rev_bo)
-			tmp = bswap_32(tmp);
+			tmp = lttng_ust_bswap_32(tmp);
 		stack_top->u.v = tmp;
 		stack_top->type = REG_S64;
 		break;
@@ -481,7 +481,7 @@ static int dynamic_load_field(struct estack_entry *stack_top)
 		dbg_printf("op load field s64\n");
 		tmp = *(int64_t *) stack_top->u.ptr.ptr;
 		if (stack_top->u.ptr.rev_bo)
-			tmp = bswap_64(tmp);
+			tmp = lttng_ust_bswap_64(tmp);
 		stack_top->u.v = tmp;
 		stack_top->type = REG_S64;
 		break;
@@ -493,7 +493,7 @@ static int dynamic_load_field(struct estack_entry *stack_top)
 		dbg_printf("op load field signed enumeration\n");
 		tmp = *(int64_t *) stack_top->u.ptr.ptr;
 		if (stack_top->u.ptr.rev_bo)
-			tmp = bswap_64(tmp);
+			tmp = lttng_ust_bswap_64(tmp);
 		stack_top->u.v = tmp;
 		stack_top->type = REG_S64;
 		break;
@@ -510,7 +510,7 @@ static int dynamic_load_field(struct estack_entry *stack_top)
 		dbg_printf("op load field u16\n");
 		tmp = *(uint16_t *) stack_top->u.ptr.ptr;
 		if (stack_top->u.ptr.rev_bo)
-			tmp = bswap_16(tmp);
+			tmp = lttng_ust_bswap_16(tmp);
 		stack_top->u.v = tmp;
 		stack_top->type = REG_U64;
 		break;
@@ -522,7 +522,7 @@ static int dynamic_load_field(struct estack_entry *stack_top)
 		dbg_printf("op load field u32\n");
 		tmp = *(uint32_t *) stack_top->u.ptr.ptr;
 		if (stack_top->u.ptr.rev_bo)
-			tmp = bswap_32(tmp);
+			tmp = lttng_ust_bswap_32(tmp);
 		stack_top->u.v = tmp;
 		stack_top->type = REG_U64;
 		break;
@@ -534,7 +534,7 @@ static int dynamic_load_field(struct estack_entry *stack_top)
 		dbg_printf("op load field u64\n");
 		tmp = *(uint64_t *) stack_top->u.ptr.ptr;
 		if (stack_top->u.ptr.rev_bo)
-			tmp = bswap_64(tmp);
+			tmp = lttng_ust_bswap_64(tmp);
 		stack_top->u.v = tmp;
 		stack_top->type = REG_U64;
 		break;
@@ -546,7 +546,7 @@ static int dynamic_load_field(struct estack_entry *stack_top)
 		dbg_printf("op load field unsigned enumeration\n");
 		tmp = *(uint64_t *) stack_top->u.ptr.ptr;
 		if (stack_top->u.ptr.rev_bo)
-			tmp = bswap_64(tmp);
+			tmp = lttng_ust_bswap_64(tmp);
 		stack_top->u.v = tmp;
 		stack_top->type = REG_U64;
 		break;

@@ -456,9 +456,9 @@ int lttng_ust_elf_get_build_id_from_segment(
 		}
 
 		if (!is_elf_native_endian(elf)) {
-			nhdr.n_namesz = bswap_32(nhdr.n_namesz);
-			nhdr.n_descsz = bswap_32(nhdr.n_descsz);
-			nhdr.n_type = bswap_32(nhdr.n_type);
+			nhdr.n_namesz = lttng_ust_bswap_32(nhdr.n_namesz);
+			nhdr.n_descsz = lttng_ust_bswap_32(nhdr.n_descsz);
+			nhdr.n_type = lttng_ust_bswap_32(nhdr.n_type);
 		}
 
 		offset += sizeof(nhdr) + nhdr.n_namesz;
@@ -629,7 +629,7 @@ int lttng_ust_elf_get_debug_link_from_section(struct lttng_ust_elf *elf,
 		goto error;
 	}
 	if (!is_elf_native_endian(elf)) {
-		_crc = bswap_32(_crc);
+		_crc = lttng_ust_bswap_32(_crc);
 	}
 
 end:

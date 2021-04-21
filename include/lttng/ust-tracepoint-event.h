@@ -306,7 +306,7 @@ void lttng_ust__event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARG
 	LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_event_field, { \
 		.struct_size = sizeof(struct lttng_ust_event_field), \
 		.name = "_" #_item "_length",			\
-		.type = lttng_ust_type_integer_define(_length_type, BYTE_ORDER, 10), \
+		.type = lttng_ust_type_integer_define(_length_type, LTTNG_UST_BYTE_ORDER, 10), \
 		.nowrite = _nowrite,				\
 		.nofilter = 1,					\
 	}),							\
@@ -357,7 +357,7 @@ void lttng_ust__event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARG
 			},					\
 			.struct_size = sizeof(struct lttng_ust_type_enum), \
 			.desc = &__enum_##_provider##_##_name, \
-			.container_type = lttng_ust_type_integer_define(_type, BYTE_ORDER, 10), \
+			.container_type = lttng_ust_type_integer_define(_type, LTTNG_UST_BYTE_ORDER, 10), \
 		}),						\
 		.nowrite = _nowrite,				\
 		.nofilter = 0,					\
@@ -458,7 +458,7 @@ static void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_D
 
 #undef _ctf_enum
 #define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite)		\
-	_ctf_integer_ext(_type, _item, _src, BYTE_ORDER, 10, _nowrite)
+	_ctf_integer_ext(_type, _item, _src, LTTNG_UST_BYTE_ORDER, 10, _nowrite)
 
 #undef LTTNG_UST_TP_ARGS
 #define LTTNG_UST_TP_ARGS(...) __VA_ARGS__
@@ -514,24 +514,24 @@ size_t lttng_ust__event_get_size__##_provider##___##_name(			      \
 		case 2:							       \
 		{							       \
 			union { _type t; int16_t v; } __tmp = { (_type) (_src) }; \
-			if (_byte_order != BYTE_ORDER)			       \
-				__tmp.v = bswap_16(__tmp.v);		       \
+			if (_byte_order != LTTNG_UST_BYTE_ORDER)			       \
+				__tmp.v = lttng_ust_bswap_16(__tmp.v);		       \
 			__ctf_tmp_int64 = (int64_t) __tmp.v;		       \
 			break;						       \
 		}							       \
 		case 4:							       \
 		{							       \
 			union { _type t; int32_t v; } __tmp = { (_type) (_src) }; \
-			if (_byte_order != BYTE_ORDER)			       \
-				__tmp.v = bswap_32(__tmp.v);		       \
+			if (_byte_order != LTTNG_UST_BYTE_ORDER)			       \
+				__tmp.v = lttng_ust_bswap_32(__tmp.v);		       \
 			__ctf_tmp_int64 = (int64_t) __tmp.v;		       \
 			break;						       \
 		}							       \
 		case 8:							       \
 		{							       \
 			union { _type t; int64_t v; } __tmp = { (_type) (_src) }; \
-			if (_byte_order != BYTE_ORDER)			       \
-				__tmp.v = bswap_64(__tmp.v);		       \
+			if (_byte_order != LTTNG_UST_BYTE_ORDER)			       \
+				__tmp.v = lttng_ust_bswap_64(__tmp.v);		       \
 			__ctf_tmp_int64 = (int64_t) __tmp.v;		       \
 			break;						       \
 		}							       \
@@ -551,24 +551,24 @@ size_t lttng_ust__event_get_size__##_provider##___##_name(			      \
 		case 2:							       \
 		{							       \
 			union { _type t; uint16_t v; } __tmp = { (_type) (_src) }; \
-			if (_byte_order != BYTE_ORDER)			       \
-				__tmp.v = bswap_16(__tmp.v);		       \
+			if (_byte_order != LTTNG_UST_BYTE_ORDER)			       \
+				__tmp.v = lttng_ust_bswap_16(__tmp.v);		       \
 			__ctf_tmp_uint64 = (uint64_t) __tmp.v;		       \
 			break;						       \
 		}							       \
 		case 4:							       \
 		{							       \
 			union { _type t; uint32_t v; } __tmp = { (_type) (_src) }; \
-			if (_byte_order != BYTE_ORDER)			       \
-				__tmp.v = bswap_32(__tmp.v);		       \
+			if (_byte_order != LTTNG_UST_BYTE_ORDER)			       \
+				__tmp.v = lttng_ust_bswap_32(__tmp.v);		       \
 			__ctf_tmp_uint64 = (uint64_t) __tmp.v;		       \
 			break;						       \
 		}							       \
 		case 8:							       \
 		{							       \
 			union { _type t; uint64_t v; } __tmp = { (_type) (_src) }; \
-			if (_byte_order != BYTE_ORDER)			       \
-				__tmp.v = bswap_64(__tmp.v);		       \
+			if (_byte_order != LTTNG_UST_BYTE_ORDER)			       \
+				__tmp.v = lttng_ust_bswap_64(__tmp.v);		       \
 			__ctf_tmp_uint64 = (uint64_t) __tmp.v;		       \
 			break;						       \
 		}							       \
@@ -627,7 +627,7 @@ size_t lttng_ust__event_get_size__##_provider##___##_name(			      \
 
 #undef _ctf_enum
 #define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite)		\
-	_ctf_integer_ext(_type, _item, _src, BYTE_ORDER, 10, _nowrite)
+	_ctf_integer_ext(_type, _item, _src, LTTNG_UST_BYTE_ORDER, 10, _nowrite)
 
 #undef LTTNG_UST_TP_ARGS
 #define LTTNG_UST_TP_ARGS(...) __VA_ARGS__
@@ -702,7 +702,7 @@ void lttng_ust__event_prepare_interpreter_stack__##_provider##___##_name(char *_
 
 #undef _ctf_enum
 #define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite)		\
-	_ctf_integer_ext(_type, _item, _src, BYTE_ORDER, 10, _nowrite)
+	_ctf_integer_ext(_type, _item, _src, LTTNG_UST_BYTE_ORDER, 10, _nowrite)
 
 #undef LTTNG_UST_TP_ARGS
 #define LTTNG_UST_TP_ARGS(...) __VA_ARGS__
@@ -786,7 +786,7 @@ size_t lttng_ust__event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_PR
 
 #undef _ctf_enum
 #define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite)	\
-	_ctf_integer_ext(_type, _item, _src, BYTE_ORDER, 10, _nowrite)
+	_ctf_integer_ext(_type, _item, _src, LTTNG_UST_BYTE_ORDER, 10, _nowrite)
 
 /* Beware: this get len actually consumes the len value */
 #undef lttng_ust__get_dynamic_len

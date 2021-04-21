@@ -41,10 +41,10 @@ do { \
 	c ^= b; c -= rot(b, 24); \
 }
 
-#if (BYTE_ORDER == LITTLE_ENDIAN)
-#define HASH_LITTLE_ENDIAN	1
+#if (LTTNG_UST_BYTE_ORDER == LTTNG_UST_LITTLE_ENDIAN)
+#define HASH_LTTNG_UST_LITTLE_ENDIAN	1
 #else
-#define HASH_LITTLE_ENDIAN	0
+#define HASH_LTTNG_UST_LITTLE_ENDIAN	0
 #endif
 
 /*
@@ -85,7 +85,7 @@ uint32_t hashlittle(const void *key, size_t length, uint32_t initval)
 	a = b = c = 0xdeadbeef + ((uint32_t)length) + initval;
 
 	u.ptr = key;
-	if (HASH_LITTLE_ENDIAN && ((u.i & 0x3) == 0)) {
+	if (HASH_LTTNG_UST_LITTLE_ENDIAN && ((u.i & 0x3) == 0)) {
 		const uint32_t *k = (const uint32_t *) key;	/* read 32-bit chunks */
 
 		/*------ all but last block: aligned reads and affect 32 bits of (a,b,c) */
@@ -128,7 +128,7 @@ uint32_t hashlittle(const void *key, size_t length, uint32_t initval)
 			}
 		}
 
-	} else if (HASH_LITTLE_ENDIAN && ((u.i & 0x1) == 0)) {
+	} else if (HASH_LTTNG_UST_LITTLE_ENDIAN && ((u.i & 0x1) == 0)) {
 		const uint16_t *k = (const uint16_t *) key;	/* read 16-bit chunks */
 		const uint8_t *k8;
 

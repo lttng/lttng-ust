@@ -58,7 +58,7 @@ static const struct lttng_ust_ctx_field *ctx_field = lttng_ust_static_ctx_field(
 		lttng_ust_static_type_integer(sizeof(int) * CHAR_BIT,
 				lttng_ust_rb_alignof(int) * CHAR_BIT,
 				lttng_ust_is_signed_type(int),
-				BYTE_ORDER, 10),
+				LTTNG_UST_BYTE_ORDER, 10),
 		false, false),
 	cpu_id_get_size,
 	cpu_id_record,

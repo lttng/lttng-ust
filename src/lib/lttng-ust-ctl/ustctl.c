@@ -2125,11 +2125,11 @@ int ustctl_recv_reg_msg(int sock,
 		return len;
 
 	if (reg_msg.magic == LTTNG_UST_ABI_COMM_MAGIC) {
-		*byte_order = BYTE_ORDER == BIG_ENDIAN ?
-				BIG_ENDIAN : LITTLE_ENDIAN;
-	} else if (reg_msg.magic == bswap_32(LTTNG_UST_ABI_COMM_MAGIC)) {
-		*byte_order = BYTE_ORDER == BIG_ENDIAN ?
-				LITTLE_ENDIAN : BIG_ENDIAN;
+		*byte_order = LTTNG_UST_BYTE_ORDER == LTTNG_UST_BIG_ENDIAN ?
+				LTTNG_UST_BIG_ENDIAN : LTTNG_UST_LITTLE_ENDIAN;
+	} else if (reg_msg.magic == lttng_ust_bswap_32(LTTNG_UST_ABI_COMM_MAGIC)) {
+		*byte_order = LTTNG_UST_BYTE_ORDER == LTTNG_UST_BIG_ENDIAN ?
+				LTTNG_UST_LITTLE_ENDIAN : LTTNG_UST_BIG_ENDIAN;
 	} else {
 		return -LTTNG_UST_ERR_INVAL_MAGIC;
 	}

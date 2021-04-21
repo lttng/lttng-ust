@@ -10,7 +10,7 @@
 #include <stdint.h>	/* C99 5.2.4.2 Numerical limits */
 #include <limits.h>	/* C99 5.2.4.2 Numerical limits */
 #include <stdbool.h>	/* C99 7.16 bool type */
-#include <lttng/ust-endian.h>	/* Non-standard BIG_ENDIAN, LITTLE_ENDIAN, BYTE_ORDER */
+#include <lttng/ust-endian.h>	/* Non-standard LTTNG_UST_BIG_ENDIAN, LTTNG_UST_LITTLE_ENDIAN, LTTNG_UST_BYTE_ORDER */
 
 /*
  * This header strictly follows the C99 standard, except for use of the
@@ -310,7 +310,7 @@ do {									\
  * bt_bitfield_write_be - write integer to a bitfield in big endian
  */
 
-#if (BYTE_ORDER == LITTLE_ENDIAN)
+#if (LTTNG_UST_BYTE_ORDER == LTTNG_UST_LITTLE_ENDIAN)
 
 #define bt_bitfield_write(ptr, type, start, length, v)			\
 	_bt_bitfield_write_le(ptr, type, start, length, v)
@@ -321,7 +321,7 @@ do {									\
 #define bt_bitfield_write_be(ptr, type, start, length, v)		\
 	_bt_bitfield_write_be(ptr, unsigned char, start, length, v)
 
-#elif (BYTE_ORDER == BIG_ENDIAN)
+#elif (LTTNG_UST_BYTE_ORDER == LTTNG_UST_BIG_ENDIAN)
 
 #define bt_bitfield_write(ptr, type, start, length, v)			\
 	_bt_bitfield_write_be(ptr, type, start, length, v)
@@ -332,7 +332,7 @@ do {									\
 #define bt_bitfield_write_be(ptr, type, start, length, v)		\
 	_bt_bitfield_write_be(ptr, type, start, length, v)
 
-#else /* (BYTE_ORDER == PDP_ENDIAN) */
+#else /* (LTTNG_UST_BYTE_ORDER == PDP_ENDIAN) */
 
 #error "Byte order not supported"
 
@@ -478,7 +478,7 @@ do {									\
  * bt_bitfield_read_be - read integer from a bitfield in big endian
  */
 
-#if (BYTE_ORDER == LITTLE_ENDIAN)
+#if (LTTNG_UST_BYTE_ORDER == LTTNG_UST_LITTLE_ENDIAN)
 
 #define bt_bitfield_read(ptr, type, start, length, vptr)		\
 	_bt_bitfield_read_le(ptr, type, start, length, vptr)
@@ -489,7 +489,7 @@ do {									\
 #define bt_bitfield_read_be(ptr, type, start, length, vptr)		\
 	_bt_bitfield_read_be(ptr, unsigned char, start, length, vptr)
 
-#elif (BYTE_ORDER == BIG_ENDIAN)
+#elif (LTTNG_UST_BYTE_ORDER == LTTNG_UST_BIG_ENDIAN)
 
 #define bt_bitfield_read(ptr, type, start, length, vptr)		\
 	_bt_bitfield_read_be(ptr, type, start, length, vptr)
@@ -500,7 +500,7 @@ do {									\
 #define bt_bitfield_read_be(ptr, type, start, length, vptr)		\
 	_bt_bitfield_read_be(ptr, type, start, length, vptr)
 
-#else /* (BYTE_ORDER == PDP_ENDIAN) */
+#else /* (LTTNG_UST_BYTE_ORDER == PDP_ENDIAN) */
 
 #error "Byte order not supported"
 

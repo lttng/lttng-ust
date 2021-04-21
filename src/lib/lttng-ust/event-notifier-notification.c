@@ -79,7 +79,7 @@ int64_t capture_sequence_element_signed(uint8_t *ptr,
 		int16_t tmp;
 		tmp = *(int16_t *) ptr;
 		if (byte_order_reversed)
-			tmp = bswap_16(tmp);
+			tmp = lttng_ust_bswap_16(tmp);
 
 		value = tmp;
 		break;
@@ -89,7 +89,7 @@ int64_t capture_sequence_element_signed(uint8_t *ptr,
 		int32_t tmp;
 		tmp = *(int32_t *) ptr;
 		if (byte_order_reversed)
-			tmp = bswap_32(tmp);
+			tmp = lttng_ust_bswap_32(tmp);
 
 		value = tmp;
 		break;
@@ -99,7 +99,7 @@ int64_t capture_sequence_element_signed(uint8_t *ptr,
 		int64_t tmp;
 		tmp = *(int64_t *) ptr;
 		if (byte_order_reversed)
-			tmp = bswap_64(tmp);
+			tmp = lttng_ust_bswap_64(tmp);
 
 		value = tmp;
 		break;
@@ -128,7 +128,7 @@ uint64_t capture_sequence_element_unsigned(uint8_t *ptr,
 		uint16_t tmp;
 		tmp = *(uint16_t *) ptr;
 		if (byte_order_reversed)
-			tmp = bswap_16(tmp);
+			tmp = lttng_ust_bswap_16(tmp);
 
 		value = tmp;
 		break;
@@ -138,7 +138,7 @@ uint64_t capture_sequence_element_unsigned(uint8_t *ptr,
 		uint32_t tmp;
 		tmp = *(uint32_t *) ptr;
 		if (byte_order_reversed)
-			tmp = bswap_32(tmp);
+			tmp = lttng_ust_bswap_32(tmp);
 
 		value = tmp;
 		break;
@@ -148,7 +148,7 @@ uint64_t capture_sequence_element_unsigned(uint8_t *ptr,
 		uint64_t tmp;
 		tmp = *(uint64_t *) ptr;
 		if (byte_order_reversed)
-			tmp = bswap_64(tmp);
+			tmp = lttng_ust_bswap_64(tmp);
 
 		value = tmp;
 		break;

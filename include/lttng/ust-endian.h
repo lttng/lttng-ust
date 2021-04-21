@@ -32,37 +32,36 @@
 #if (defined(__linux__) || defined(__CYGWIN__))
 #include <endian.h>
 #include <byteswap.h>
+
+#define lttng_ust_bswap_16(x)		bswap_16(x)
+#define lttng_ust_bswap_32(x)		bswap_32(x)
+#define lttng_ust_bswap_64(x)		bswap_64(x)
+
+#define LTTNG_UST_BYTE_ORDER		__BYTE_ORDER
+#define LTTNG_UST_LITTLE_ENDIAN		__LITTLE_ENDIAN
+#define LTTNG_UST_BIG_ENDIAN		__BIG_ENDIAN
+
+#ifdef __FLOAT_WORD_ORDER
+#define LTTNG_UST_FLOAT_WORD_ORDER	__FLOAT_WORD_ORDER
+#else /* __FLOAT_WORD_ORDER */
+#define LTTNG_UST_FLOAT_WORD_ORDER	__BYTE_ORDER
+#endif /* __FLOAT_WORD_ORDER */
+
 #elif defined(__FreeBSD__)
+
 #include <sys/endian.h>
-#define bswap_16(x)	bswap16(x)
-#define bswap_32(x)	bswap32(x)
-#define bswap_64(x)	bswap64(x)
+
+#define lttng_ust_bswap_16(x)		bswap16(x)
+#define lttng_ust_bswap_32(x)		bswap32(x)
+#define lttng_ust_bswap_64(x)		bswap64(x)
+
+#define LTTNG_UST_BYTE_ORDER		BYTE_ORDER
+#define LTTNG_UST_LITTLE_ENDIAN		LITTLE_ENDIAN
+#define LTTNG_UST_BIG_ENDIAN		BIG_ENDIAN
+#define FLOAT_WORD_ORDER		BYTE_ORDER
+
 #else
 #error "Please add support for your OS."
 #endif
-
-/*
- * BYTE_ORDER, LITTLE_ENDIAN, and BIG_ENDIAN are only defined on Linux
- * if __USE_BSD is defined. Force their definition.
- */
-#ifndef BYTE_ORDER
-#define BYTE_ORDER __BYTE_ORDER
-#endif
-
-#ifndef LITTLE_ENDIAN
-#define LITTLE_ENDIAN __LITTLE_ENDIAN
-#endif
-
-#ifndef BIG_ENDIAN
-#define BIG_ENDIAN __BIG_ENDIAN
-#endif
-
-#ifndef FLOAT_WORD_ORDER
-#ifdef __FLOAT_WORD_ORDER
-#define FLOAT_WORD_ORDER	__FLOAT_WORD_ORDER
-#else /* __FLOAT_WORD_ORDER */
-#define FLOAT_WORD_ORDER	BYTE_ORDER
-#endif /* __FLOAT_WORD_ORDER */
-#endif /* FLOAT_WORD_ORDER */
 
 #endif /* _LTTNG_UST_ENDIAN_H */

@@ -109,7 +109,7 @@ static const struct lttng_ust_ctx_field *ctx_field = lttng_ust_static_ctx_field(
 		lttng_ust_static_type_integer(sizeof(ino_t) * CHAR_BIT,
 				lttng_ust_rb_alignof(ino_t) * CHAR_BIT,
 				lttng_ust_is_signed_type(ino_t),
-				BYTE_ORDER, 10),
+				LTTNG_UST_BYTE_ORDER, 10),
 		false, false),
 	pid_ns_get_size,
 	pid_ns_record,
