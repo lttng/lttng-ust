@@ -45,11 +45,11 @@
 /*
  * Channel representation within consumer.
  */
-struct ustctl_consumer_channel {
+struct lttng_ust_ctl_consumer_channel {
 	struct lttng_ust_channel_buffer *chan;	/* lttng channel buffers */
 
 	/* initial attributes */
-	struct ustctl_consumer_channel_attr attr;
+	struct lttng_ust_ctl_consumer_channel_attr attr;
 	int wait_fd;				/* monitor close() */
 	int wakeup_fd;				/* monitor close() */
 };
@@ -57,34 +57,34 @@ struct ustctl_consumer_channel {
 /*
  * Stream representation within consumer.
  */
-struct ustctl_consumer_stream {
+struct lttng_ust_ctl_consumer_stream {
 	struct lttng_ust_ring_buffer *buf;
-	struct ustctl_consumer_channel *chan;
+	struct lttng_ust_ctl_consumer_channel *chan;
 	int shm_fd, wait_fd, wakeup_fd;
 	int cpu;
 	uint64_t memory_map_size;
 };
 
-#define USTCTL_COUNTER_ATTR_DIMENSION_MAX 8
-struct ustctl_counter_attr {
-	enum ustctl_counter_arithmetic arithmetic;
-	enum ustctl_counter_bitness bitness;
+#define LTTNG_UST_CTL_COUNTER_ATTR_DIMENSION_MAX 8
+struct lttng_ust_ctl_counter_attr {
+	enum lttng_ust_ctl_counter_arithmetic arithmetic;
+	enum lttng_ust_ctl_counter_bitness bitness;
 	uint32_t nr_dimensions;
 	int64_t global_sum_step;
-	struct ustctl_counter_dimension dimensions[USTCTL_COUNTER_ATTR_DIMENSION_MAX];
+	struct lttng_ust_ctl_counter_dimension dimensions[LTTNG_UST_CTL_COUNTER_ATTR_DIMENSION_MAX];
 	bool coalesce_hits;
 };
 
 /*
  * Counter representation within daemon.
  */
-struct ustctl_daemon_counter {
+struct lttng_ust_ctl_daemon_counter {
 	struct lib_counter *counter;
 	const struct lttng_counter_ops *ops;
-	struct ustctl_counter_attr *attr;	/* initial attributes */
+	struct lttng_ust_ctl_counter_attr *attr;	/* initial attributes */
 };
 
-int ustctl_release_handle(int sock, int handle)
+int lttng_ust_ctl_release_handle(int sock, int handle)
 {
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
@@ -101,7 +101,7 @@ int ustctl_release_handle(int sock, int handle)
  * If sock is negative, it means we don't have to notify the other side
  * (e.g. application has already vanished).
  */
-int ustctl_release_object(int sock, struct lttng_ust_abi_object_data *data)
+int lttng_ust_ctl_release_object(int sock, struct lttng_ust_abi_object_data *data)
 {
 	int ret;
 
@@ -171,13 +171,13 @@ int ustctl_release_object(int sock, struct lttng_ust_abi_object_data *data)
 	default:
 		assert(0);
 	}
-	return ustctl_release_handle(sock, data->handle);
+	return lttng_ust_ctl_release_handle(sock, data->handle);
 }
 
 /*
  * Send registration done packet to the application.
  */
-int ustctl_register_done(int sock)
+int lttng_ust_ctl_register_done(int sock)
 {
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
@@ -196,7 +196,7 @@ int ustctl_register_done(int sock)
 /*
  * returns session handle.
  */
-int ustctl_create_session(int sock)
+int lttng_ust_ctl_create_session(int sock)
 {
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
@@ -214,7 +214,7 @@ int ustctl_create_session(int sock)
 	return session_handle;
 }
 
-int ustctl_create_event(int sock, struct lttng_ust_abi_event *ev,
+int lttng_ust_ctl_create_event(int sock, struct lttng_ust_abi_event *ev,
 		struct lttng_ust_abi_object_data *channel_data,
 		struct lttng_ust_abi_object_data **_event_data)
 {
@@ -249,7 +249,7 @@ int ustctl_create_event(int sock, struct lttng_ust_abi_event *ev,
 	return 0;
 }
 
-int ustctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
+int lttng_ust_ctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
 		struct lttng_ust_abi_object_data *obj_data,
 		struct lttng_ust_abi_object_data **_context_data)
 {
@@ -332,7 +332,7 @@ end:
 	return ret;
 }
 
-int ustctl_set_filter(int sock, struct lttng_ust_abi_filter_bytecode *bytecode,
+int lttng_ust_ctl_set_filter(int sock, struct lttng_ust_abi_filter_bytecode *bytecode,
 		struct lttng_ust_abi_object_data *obj_data)
 {
 	struct ustcomm_ust_msg lum;
@@ -363,7 +363,7 @@ int ustctl_set_filter(int sock, struct lttng_ust_abi_filter_bytecode *bytecode,
 	return ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
 }
 
-int ustctl_set_capture(int sock, struct lttng_ust_abi_capture_bytecode *bytecode,
+int lttng_ust_ctl_set_capture(int sock, struct lttng_ust_abi_capture_bytecode *bytecode,
 		struct lttng_ust_abi_object_data *obj_data)
 {
 	struct ustcomm_ust_msg lum;
@@ -394,7 +394,7 @@ int ustctl_set_capture(int sock, struct lttng_ust_abi_capture_bytecode *bytecode
 	return ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
 }
 
-int ustctl_set_exclusion(int sock, struct lttng_ust_abi_event_exclusion *exclusion,
+int lttng_ust_ctl_set_exclusion(int sock, struct lttng_ust_abi_event_exclusion *exclusion,
 		struct lttng_ust_abi_object_data *obj_data)
 {
 	struct ustcomm_ust_msg lum;
@@ -429,7 +429,7 @@ int ustctl_set_exclusion(int sock, struct lttng_ust_abi_event_exclusion *exclusi
 }
 
 /* Enable event, channel and session ioctl */
-int ustctl_enable(int sock, struct lttng_ust_abi_object_data *object)
+int lttng_ust_ctl_enable(int sock, struct lttng_ust_abi_object_data *object)
 {
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
@@ -449,7 +449,7 @@ int ustctl_enable(int sock, struct lttng_ust_abi_object_data *object)
 }
 
 /* Disable event, channel and session ioctl */
-int ustctl_disable(int sock, struct lttng_ust_abi_object_data *object)
+int lttng_ust_ctl_disable(int sock, struct lttng_ust_abi_object_data *object)
 {
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
@@ -468,23 +468,23 @@ int ustctl_disable(int sock, struct lttng_ust_abi_object_data *object)
 	return 0;
 }
 
-int ustctl_start_session(int sock, int handle)
+int lttng_ust_ctl_start_session(int sock, int handle)
 {
 	struct lttng_ust_abi_object_data obj;
 
 	obj.handle = handle;
-	return ustctl_enable(sock, &obj);
+	return lttng_ust_ctl_enable(sock, &obj);
 }
 
-int ustctl_stop_session(int sock, int handle)
+int lttng_ust_ctl_stop_session(int sock, int handle)
 {
 	struct lttng_ust_abi_object_data obj;
 
 	obj.handle = handle;
-	return ustctl_disable(sock, &obj);
+	return lttng_ust_ctl_disable(sock, &obj);
 }
 
-int ustctl_create_event_notifier_group(int sock, int pipe_fd,
+int lttng_ust_ctl_create_event_notifier_group(int sock, int pipe_fd,
 		struct lttng_ust_abi_object_data **_event_notifier_group_data)
 {
 	struct lttng_ust_abi_object_data *event_notifier_group_data;
@@ -535,7 +535,7 @@ end:
 	return ret;
 }
 
-int ustctl_create_event_notifier(int sock, struct lttng_ust_abi_event_notifier *event_notifier,
+int lttng_ust_ctl_create_event_notifier(int sock, struct lttng_ust_abi_event_notifier *event_notifier,
 		struct lttng_ust_abi_object_data *event_notifier_group,
 		struct lttng_ust_abi_object_data **_event_notifier_data)
 {
@@ -585,7 +585,7 @@ int ustctl_create_event_notifier(int sock, struct lttng_ust_abi_event_notifier *
 	return ret;
 }
 
-int ustctl_tracepoint_list(int sock)
+int lttng_ust_ctl_tracepoint_list(int sock)
 {
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
@@ -602,7 +602,7 @@ int ustctl_tracepoint_list(int sock)
 	return tp_list_handle;
 }
 
-int ustctl_tracepoint_list_get(int sock, int tp_list_handle,
+int lttng_ust_ctl_tracepoint_list_get(int sock, int tp_list_handle,
 		struct lttng_ust_abi_tracepoint_iter *iter)
 {
 	struct ustcomm_ust_msg lum;
@@ -625,7 +625,7 @@ int ustctl_tracepoint_list_get(int sock, int tp_list_handle,
 	return 0;
 }
 
-int ustctl_tracepoint_field_list(int sock)
+int lttng_ust_ctl_tracepoint_field_list(int sock)
 {
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
@@ -642,7 +642,7 @@ int ustctl_tracepoint_field_list(int sock)
 	return tp_field_list_handle;
 }
 
-int ustctl_tracepoint_field_list_get(int sock, int tp_field_list_handle,
+int lttng_ust_ctl_tracepoint_field_list_get(int sock, int tp_field_list_handle,
 		struct lttng_ust_abi_field_iter *iter)
 {
 	struct ustcomm_ust_msg lum;
@@ -671,7 +671,7 @@ int ustctl_tracepoint_field_list_get(int sock, int tp_field_list_handle,
 	return 0;
 }
 
-int ustctl_tracer_version(int sock, struct lttng_ust_abi_tracer_version *v)
+int lttng_ust_ctl_tracer_version(int sock, struct lttng_ust_abi_tracer_version *v)
 {
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
@@ -691,7 +691,7 @@ int ustctl_tracer_version(int sock, struct lttng_ust_abi_tracer_version *v)
 	return 0;
 }
 
-int ustctl_wait_quiescent(int sock)
+int lttng_ust_ctl_wait_quiescent(int sock)
 {
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
@@ -707,7 +707,7 @@ int ustctl_wait_quiescent(int sock)
 	return 0;
 }
 
-int ustctl_calibrate(int sock __attribute__((unused)),
+int lttng_ust_ctl_calibrate(int sock __attribute__((unused)),
 		struct lttng_ust_abi_calibrate *calibrate)
 {
 	if (!calibrate)
@@ -716,7 +716,7 @@ int ustctl_calibrate(int sock __attribute__((unused)),
 	return -ENOSYS;
 }
 
-int ustctl_sock_flush_buffer(int sock, struct lttng_ust_abi_object_data *object)
+int lttng_ust_ctl_sock_flush_buffer(int sock, struct lttng_ust_abi_object_data *object)
 {
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
@@ -736,7 +736,7 @@ int ustctl_sock_flush_buffer(int sock, struct lttng_ust_abi_object_data *object)
 }
 
 static
-int ustctl_send_channel(int sock,
+int lttng_ust_ctl_send_channel(int sock,
 		enum lttng_ust_abi_chan_type type,
 		void *data,
 		uint64_t size,
@@ -786,7 +786,7 @@ int ustctl_send_channel(int sock,
 }
 
 static
-int ustctl_send_stream(int sock,
+int lttng_ust_ctl_send_stream(int sock,
 		uint32_t stream_nr,
 		uint64_t memory_map_size,
 		int shm_fd, int wakeup_fd,
@@ -844,7 +844,7 @@ int ustctl_send_stream(int sock,
 	return 0;
 }
 
-int ustctl_recv_channel_from_consumer(int sock,
+int lttng_ust_ctl_recv_channel_from_consumer(int sock,
 		struct lttng_ust_abi_object_data **_channel_data)
 {
 	struct lttng_ust_abi_object_data *channel_data;
@@ -920,7 +920,7 @@ error_alloc:
 	return ret;
 }
 
-int ustctl_recv_stream_from_consumer(int sock,
+int lttng_ust_ctl_recv_stream_from_consumer(int sock,
 		struct lttng_ust_abi_object_data **_stream_data)
 {
 	struct lttng_ust_abi_object_data *stream_data;
@@ -985,7 +985,7 @@ error_alloc:
 	return ret;
 }
 
-int ustctl_send_channel_to_ust(int sock, int session_handle,
+int lttng_ust_ctl_send_channel_to_ust(int sock, int session_handle,
 		struct lttng_ust_abi_object_data *channel_data)
 {
 	struct ustcomm_ust_msg lum;
@@ -1004,7 +1004,7 @@ int ustctl_send_channel_to_ust(int sock, int session_handle,
 	if (ret)
 		return ret;
 
-	ret = ustctl_send_channel(sock,
+	ret = lttng_ust_ctl_send_channel(sock,
 			channel_data->u.channel.type,
 			channel_data->u.channel.data,
 			channel_data->size,
@@ -1019,7 +1019,7 @@ int ustctl_send_channel_to_ust(int sock, int session_handle,
 	return ret;
 }
 
-int ustctl_send_stream_to_ust(int sock,
+int lttng_ust_ctl_send_stream_to_ust(int sock,
 		struct lttng_ust_abi_object_data *channel_data,
 		struct lttng_ust_abi_object_data *stream_data)
 {
@@ -1039,7 +1039,7 @@ int ustctl_send_stream_to_ust(int sock,
 	assert(stream_data);
 	assert(stream_data->type == LTTNG_UST_ABI_OBJECT_TYPE_STREAM);
 
-	ret = ustctl_send_stream(sock,
+	ret = lttng_ust_ctl_send_stream(sock,
 			stream_data->u.stream.stream_nr,
 			stream_data->size,
 			stream_data->u.stream.shm_fd,
@@ -1049,7 +1049,7 @@ int ustctl_send_stream_to_ust(int sock,
 	return ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
 }
 
-int ustctl_duplicate_ust_object_data(struct lttng_ust_abi_object_data **dest,
+int lttng_ust_ctl_duplicate_ust_object_data(struct lttng_ust_abi_object_data **dest,
                 struct lttng_ust_abi_object_data *src)
 {
 	struct lttng_ust_abi_object_data *obj;
@@ -1203,16 +1203,16 @@ error:
 
 /* Buffer operations */
 
-int ustctl_get_nr_stream_per_channel(void)
+int lttng_ust_ctl_get_nr_stream_per_channel(void)
 {
 	return num_possible_cpus();
 }
 
-struct ustctl_consumer_channel *
-	ustctl_create_channel(struct ustctl_consumer_channel_attr *attr,
+struct lttng_ust_ctl_consumer_channel *
+	lttng_ust_ctl_create_channel(struct lttng_ust_ctl_consumer_channel_attr *attr,
 		const int *stream_fds, int nr_stream_fds)
 {
-	struct ustctl_consumer_channel *chan;
+	struct lttng_ust_ctl_consumer_channel *chan;
 	const char *transport_name;
 	struct lttng_transport *transport;
 
@@ -1270,8 +1270,8 @@ struct ustctl_consumer_channel *
 	}
 	chan->chan->ops = &transport->ops;
 	memcpy(&chan->attr, attr, sizeof(chan->attr));
-	chan->wait_fd = ustctl_channel_get_wait_fd(chan);
-	chan->wakeup_fd = ustctl_channel_get_wakeup_fd(chan);
+	chan->wait_fd = lttng_ust_ctl_channel_get_wait_fd(chan);
+	chan->wakeup_fd = lttng_ust_ctl_channel_get_wakeup_fd(chan);
 	return chan;
 
 chan_error:
@@ -1279,23 +1279,23 @@ chan_error:
 	return NULL;
 }
 
-void ustctl_destroy_channel(struct ustctl_consumer_channel *chan)
+void lttng_ust_ctl_destroy_channel(struct lttng_ust_ctl_consumer_channel *chan)
 {
-	(void) ustctl_channel_close_wait_fd(chan);
-	(void) ustctl_channel_close_wakeup_fd(chan);
+	(void) lttng_ust_ctl_channel_close_wait_fd(chan);
+	(void) lttng_ust_ctl_channel_close_wakeup_fd(chan);
 	chan->chan->ops->priv->channel_destroy(chan->chan);
 	free(chan);
 }
 
-int ustctl_send_channel_to_sessiond(int sock,
-		struct ustctl_consumer_channel *channel)
+int lttng_ust_ctl_send_channel_to_sessiond(int sock,
+		struct lttng_ust_ctl_consumer_channel *channel)
 {
 	struct shm_object_table *table;
 
 	table = channel->chan->priv->rb_chan->handle->table;
 	if (table->size <= 0)
 		return -EINVAL;
-	return ustctl_send_channel(sock,
+	return lttng_ust_ctl_send_channel(sock,
 			channel->attr.type,
 			table->objects[0].memory_map,
 			table->objects[0].memory_map_size,
@@ -1303,21 +1303,21 @@ int ustctl_send_channel_to_sessiond(int sock,
 			0);
 }
 
-int ustctl_send_stream_to_sessiond(int sock,
-		struct ustctl_consumer_stream *stream)
+int lttng_ust_ctl_send_stream_to_sessiond(int sock,
+		struct lttng_ust_ctl_consumer_stream *stream)
 {
 	if (!stream)
-		return ustctl_send_stream(sock, -1U, -1U, -1, -1, 0);
+		return lttng_ust_ctl_send_stream(sock, -1U, -1U, -1, -1, 0);
 
-	return ustctl_send_stream(sock,
+	return lttng_ust_ctl_send_stream(sock,
 			stream->cpu,
 			stream->memory_map_size,
 			stream->shm_fd, stream->wakeup_fd,
 			0);
 }
 
-int ustctl_write_metadata_to_channel(
-		struct ustctl_consumer_channel *channel,
+int lttng_ust_ctl_write_metadata_to_channel(
+		struct lttng_ust_ctl_consumer_channel *channel,
 		const char *metadata_str,	/* NOT null-terminated */
 		size_t len)			/* metadata length */
 {
@@ -1364,8 +1364,8 @@ end:
  * Write at most one packet in the channel.
  * Returns the number of bytes written on success, < 0 on error.
  */
-ssize_t ustctl_write_one_packet_to_channel(
-		struct ustctl_consumer_channel *channel,
+ssize_t lttng_ust_ctl_write_one_packet_to_channel(
+		struct lttng_ust_ctl_consumer_channel *channel,
 		const char *metadata_str,	/* NOT null-terminated */
 		size_t len)			/* metadata length */
 {
@@ -1394,7 +1394,7 @@ end:
 	return reserve_len;
 }
 
-int ustctl_channel_close_wait_fd(struct ustctl_consumer_channel *consumer_chan)
+int lttng_ust_ctl_channel_close_wait_fd(struct lttng_ust_ctl_consumer_channel *consumer_chan)
 {
 	struct lttng_ust_ring_buffer_channel *chan;
 	int ret;
@@ -1407,7 +1407,7 @@ int ustctl_channel_close_wait_fd(struct ustctl_consumer_channel *consumer_chan)
 	return ret;
 }
 
-int ustctl_channel_close_wakeup_fd(struct ustctl_consumer_channel *consumer_chan)
+int lttng_ust_ctl_channel_close_wakeup_fd(struct lttng_ust_ctl_consumer_channel *consumer_chan)
 {
 	struct lttng_ust_ring_buffer_channel *chan;
 	int ret;
@@ -1420,7 +1420,7 @@ int ustctl_channel_close_wakeup_fd(struct ustctl_consumer_channel *consumer_chan
 	return ret;
 }
 
-int ustctl_stream_close_wait_fd(struct ustctl_consumer_stream *stream)
+int lttng_ust_ctl_stream_close_wait_fd(struct lttng_ust_ctl_consumer_stream *stream)
 {
 	struct lttng_ust_ring_buffer_channel *chan;
 
@@ -1429,7 +1429,7 @@ int ustctl_stream_close_wait_fd(struct ustctl_consumer_stream *stream)
 			chan, chan->handle, stream->cpu);
 }
 
-int ustctl_stream_close_wakeup_fd(struct ustctl_consumer_stream *stream)
+int lttng_ust_ctl_stream_close_wakeup_fd(struct lttng_ust_ctl_consumer_stream *stream)
 {
 	struct lttng_ust_ring_buffer_channel *chan;
 
@@ -1438,11 +1438,11 @@ int ustctl_stream_close_wakeup_fd(struct ustctl_consumer_stream *stream)
 			chan, chan->handle, stream->cpu);
 }
 
-struct ustctl_consumer_stream *
-	ustctl_create_stream(struct ustctl_consumer_channel *channel,
+struct lttng_ust_ctl_consumer_stream *
+	lttng_ust_ctl_create_stream(struct lttng_ust_ctl_consumer_channel *channel,
 			int cpu)
 {
-	struct ustctl_consumer_stream *stream;
+	struct lttng_ust_ctl_consumer_stream *stream;
 	struct lttng_ust_shm_handle *handle;
 	struct lttng_ust_ring_buffer_channel *rb_chan;
 	int shm_fd, wait_fd, wakeup_fd;
@@ -1482,21 +1482,21 @@ alloc_error:
 	return NULL;
 }
 
-void ustctl_destroy_stream(struct ustctl_consumer_stream *stream)
+void lttng_ust_ctl_destroy_stream(struct lttng_ust_ctl_consumer_stream *stream)
 {
 	struct lttng_ust_ring_buffer *buf;
-	struct ustctl_consumer_channel *consumer_chan;
+	struct lttng_ust_ctl_consumer_channel *consumer_chan;
 
 	assert(stream);
 	buf = stream->buf;
 	consumer_chan = stream->chan;
-	(void) ustctl_stream_close_wait_fd(stream);
-	(void) ustctl_stream_close_wakeup_fd(stream);
+	(void) lttng_ust_ctl_stream_close_wait_fd(stream);
+	(void) lttng_ust_ctl_stream_close_wakeup_fd(stream);
 	lib_ring_buffer_release_read(buf, consumer_chan->chan->priv->rb_chan->handle);
 	free(stream);
 }
 
-int ustctl_channel_get_wait_fd(struct ustctl_consumer_channel *chan)
+int lttng_ust_ctl_channel_get_wait_fd(struct lttng_ust_ctl_consumer_channel *chan)
 {
 	if (!chan)
 		return -EINVAL;
@@ -1504,7 +1504,7 @@ int ustctl_channel_get_wait_fd(struct ustctl_consumer_channel *chan)
 		&chan->chan->priv->rb_chan->handle->chan._ref);
 }
 
-int ustctl_channel_get_wakeup_fd(struct ustctl_consumer_channel *chan)
+int lttng_ust_ctl_channel_get_wakeup_fd(struct lttng_ust_ctl_consumer_channel *chan)
 {
 	if (!chan)
 		return -EINVAL;
@@ -1512,10 +1512,10 @@ int ustctl_channel_get_wakeup_fd(struct ustctl_consumer_channel *chan)
 		&chan->chan->priv->rb_chan->handle->chan._ref);
 }
 
-int ustctl_stream_get_wait_fd(struct ustctl_consumer_stream *stream)
+int lttng_ust_ctl_stream_get_wait_fd(struct lttng_ust_ctl_consumer_stream *stream)
 {
 	struct lttng_ust_ring_buffer *buf;
-	struct ustctl_consumer_channel *consumer_chan;
+	struct lttng_ust_ctl_consumer_channel *consumer_chan;
 
 	if (!stream)
 		return -EINVAL;
@@ -1524,10 +1524,10 @@ int ustctl_stream_get_wait_fd(struct ustctl_consumer_stream *stream)
 	return shm_get_wait_fd(consumer_chan->chan->priv->rb_chan->handle, &buf->self._ref);
 }
 
-int ustctl_stream_get_wakeup_fd(struct ustctl_consumer_stream *stream)
+int lttng_ust_ctl_stream_get_wakeup_fd(struct lttng_ust_ctl_consumer_stream *stream)
 {
 	struct lttng_ust_ring_buffer *buf;
-	struct ustctl_consumer_channel *consumer_chan;
+	struct lttng_ust_ctl_consumer_channel *consumer_chan;
 
 	if (!stream)
 		return -EINVAL;
@@ -1538,10 +1538,10 @@ int ustctl_stream_get_wakeup_fd(struct ustctl_consumer_stream *stream)
 
 /* For mmap mode, readable without "get" operation */
 
-void *ustctl_get_mmap_base(struct ustctl_consumer_stream *stream)
+void *lttng_ust_ctl_get_mmap_base(struct lttng_ust_ctl_consumer_stream *stream)
 {
 	struct lttng_ust_ring_buffer *buf;
-	struct ustctl_consumer_channel *consumer_chan;
+	struct lttng_ust_ctl_consumer_channel *consumer_chan;
 
 	if (!stream)
 		return NULL;
@@ -1551,10 +1551,10 @@ void *ustctl_get_mmap_base(struct ustctl_consumer_stream *stream)
 }
 
 /* returns the length to mmap. */
-int ustctl_get_mmap_len(struct ustctl_consumer_stream *stream,
+int lttng_ust_ctl_get_mmap_len(struct lttng_ust_ctl_consumer_stream *stream,
 		unsigned long *len)
 {
-	struct ustctl_consumer_channel *consumer_chan;
+	struct lttng_ust_ctl_consumer_channel *consumer_chan;
 	unsigned long mmap_buf_len;
 	struct lttng_ust_ring_buffer_channel *rb_chan;
 
@@ -1574,10 +1574,10 @@ int ustctl_get_mmap_len(struct ustctl_consumer_stream *stream,
 }
 
 /* returns the maximum size for sub-buffers. */
-int ustctl_get_max_subbuf_size(struct ustctl_consumer_stream *stream,
+int lttng_ust_ctl_get_max_subbuf_size(struct lttng_ust_ctl_consumer_stream *stream,
 		unsigned long *len)
 {
-	struct ustctl_consumer_channel *consumer_chan;
+	struct lttng_ust_ctl_consumer_channel *consumer_chan;
 	struct lttng_ust_ring_buffer_channel *rb_chan;
 
 	if (!stream)
@@ -1594,13 +1594,13 @@ int ustctl_get_max_subbuf_size(struct ustctl_consumer_stream *stream,
  */
 
 /* returns the offset of the subbuffer belonging to the mmap reader. */
-int ustctl_get_mmap_read_offset(struct ustctl_consumer_stream *stream,
+int lttng_ust_ctl_get_mmap_read_offset(struct lttng_ust_ctl_consumer_stream *stream,
 		unsigned long *off)
 {
 	struct lttng_ust_ring_buffer_channel *rb_chan;
 	unsigned long sb_bindex;
 	struct lttng_ust_ring_buffer *buf;
-	struct ustctl_consumer_channel *consumer_chan;
+	struct lttng_ust_ctl_consumer_channel *consumer_chan;
 	struct lttng_ust_ring_buffer_backend_pages_shmp *barray_idx;
 	struct lttng_ust_ring_buffer_backend_pages *pages;
 
@@ -1625,10 +1625,10 @@ int ustctl_get_mmap_read_offset(struct ustctl_consumer_stream *stream,
 }
 
 /* returns the size of the current sub-buffer, without padding (for mmap). */
-int ustctl_get_subbuf_size(struct ustctl_consumer_stream *stream,
+int lttng_ust_ctl_get_subbuf_size(struct lttng_ust_ctl_consumer_stream *stream,
 		unsigned long *len)
 {
-	struct ustctl_consumer_channel *consumer_chan;
+	struct lttng_ust_ctl_consumer_channel *consumer_chan;
 	struct lttng_ust_ring_buffer_channel *rb_chan;
 	struct lttng_ust_ring_buffer *buf;
 
@@ -1644,10 +1644,10 @@ int ustctl_get_subbuf_size(struct ustctl_consumer_stream *stream,
 }
 
 /* returns the size of the current sub-buffer, without padding (for mmap). */
-int ustctl_get_padded_subbuf_size(struct ustctl_consumer_stream *stream,
+int lttng_ust_ctl_get_padded_subbuf_size(struct lttng_ust_ctl_consumer_stream *stream,
 		unsigned long *len)
 {
-	struct ustctl_consumer_channel *consumer_chan;
+	struct lttng_ust_ctl_consumer_channel *consumer_chan;
 	struct lttng_ust_ring_buffer_channel *rb_chan;
 	struct lttng_ust_ring_buffer *buf;
 
@@ -1663,10 +1663,10 @@ int ustctl_get_padded_subbuf_size(struct ustctl_consumer_stream *stream,
 }
 
 /* Get exclusive read access to the next sub-buffer that can be read. */
-int ustctl_get_next_subbuf(struct ustctl_consumer_stream *stream)
+int lttng_ust_ctl_get_next_subbuf(struct lttng_ust_ctl_consumer_stream *stream)
 {
 	struct lttng_ust_ring_buffer *buf;
-	struct ustctl_consumer_channel *consumer_chan;
+	struct lttng_ust_ctl_consumer_channel *consumer_chan;
 
 	if (!stream)
 		return -EINVAL;
@@ -1678,10 +1678,10 @@ int ustctl_get_next_subbuf(struct ustctl_consumer_stream *stream)
 
 
 /* Release exclusive sub-buffer access, move consumer forward. */
-int ustctl_put_next_subbuf(struct ustctl_consumer_stream *stream)
+int lttng_ust_ctl_put_next_subbuf(struct lttng_ust_ctl_consumer_stream *stream)
 {
 	struct lttng_ust_ring_buffer *buf;
-	struct ustctl_consumer_channel *consumer_chan;
+	struct lttng_ust_ctl_consumer_channel *consumer_chan;
 
 	if (!stream)
 		return -EINVAL;
@@ -1694,10 +1694,10 @@ int ustctl_put_next_subbuf(struct ustctl_consumer_stream *stream)
 /* snapshot */
 
 /* Get a snapshot of the current ring buffer producer and consumer positions */
-int ustctl_snapshot(struct ustctl_consumer_stream *stream)
+int lttng_ust_ctl_snapshot(struct lttng_ust_ctl_consumer_stream *stream)
 {
 	struct lttng_ust_ring_buffer *buf;
-	struct ustctl_consumer_channel *consumer_chan;
+	struct lttng_ust_ctl_consumer_channel *consumer_chan;
 
 	if (!stream)
 		return -EINVAL;
@@ -1712,10 +1712,10 @@ int ustctl_snapshot(struct ustctl_consumer_stream *stream)
  * even if the consumed and produced positions are contained within the same
  * subbuffer.
  */
-int ustctl_snapshot_sample_positions(struct ustctl_consumer_stream *stream)
+int lttng_ust_ctl_snapshot_sample_positions(struct lttng_ust_ctl_consumer_stream *stream)
 {
 	struct lttng_ust_ring_buffer *buf;
-	struct ustctl_consumer_channel *consumer_chan;
+	struct lttng_ust_ctl_consumer_channel *consumer_chan;
 
 	if (!stream)
 		return -EINVAL;
@@ -1727,7 +1727,7 @@ int ustctl_snapshot_sample_positions(struct ustctl_consumer_stream *stream)
 }
 
 /* Get the consumer position (iteration start) */
-int ustctl_snapshot_get_consumed(struct ustctl_consumer_stream *stream,
+int lttng_ust_ctl_snapshot_get_consumed(struct lttng_ust_ctl_consumer_stream *stream,
 		unsigned long *pos)
 {
 	struct lttng_ust_ring_buffer *buf;
@@ -1740,7 +1740,7 @@ int ustctl_snapshot_get_consumed(struct ustctl_consumer_stream *stream,
 }
 
 /* Get the producer position (iteration end) */
-int ustctl_snapshot_get_produced(struct ustctl_consumer_stream *stream,
+int lttng_ust_ctl_snapshot_get_produced(struct lttng_ust_ctl_consumer_stream *stream,
 		unsigned long *pos)
 {
 	struct lttng_ust_ring_buffer *buf;
@@ -1753,11 +1753,11 @@ int ustctl_snapshot_get_produced(struct ustctl_consumer_stream *stream,
 }
 
 /* Get exclusive read access to the specified sub-buffer position */
-int ustctl_get_subbuf(struct ustctl_consumer_stream *stream,
+int lttng_ust_ctl_get_subbuf(struct lttng_ust_ctl_consumer_stream *stream,
 		unsigned long *pos)
 {
 	struct lttng_ust_ring_buffer *buf;
-	struct ustctl_consumer_channel *consumer_chan;
+	struct lttng_ust_ctl_consumer_channel *consumer_chan;
 
 	if (!stream)
 		return -EINVAL;
@@ -1768,10 +1768,10 @@ int ustctl_get_subbuf(struct ustctl_consumer_stream *stream,
 }
 
 /* Release exclusive sub-buffer access */
-int ustctl_put_subbuf(struct ustctl_consumer_stream *stream)
+int lttng_ust_ctl_put_subbuf(struct lttng_ust_ctl_consumer_stream *stream)
 {
 	struct lttng_ust_ring_buffer *buf;
-	struct ustctl_consumer_channel *consumer_chan;
+	struct lttng_ust_ctl_consumer_channel *consumer_chan;
 
 	if (!stream)
 		return -EINVAL;
@@ -1781,11 +1781,11 @@ int ustctl_put_subbuf(struct ustctl_consumer_stream *stream)
 	return 0;
 }
 
-void ustctl_flush_buffer(struct ustctl_consumer_stream *stream,
+void lttng_ust_ctl_flush_buffer(struct lttng_ust_ctl_consumer_stream *stream,
 		int producer_active)
 {
 	struct lttng_ust_ring_buffer *buf;
-	struct ustctl_consumer_channel *consumer_chan;
+	struct lttng_ust_ctl_consumer_channel *consumer_chan;
 
 	assert(stream);
 	buf = stream->buf;
@@ -1795,10 +1795,10 @@ void ustctl_flush_buffer(struct ustctl_consumer_stream *stream,
 		consumer_chan->chan->priv->rb_chan->handle);
 }
 
-void ustctl_clear_buffer(struct ustctl_consumer_stream *stream)
+void lttng_ust_ctl_clear_buffer(struct lttng_ust_ctl_consumer_stream *stream)
 {
 	struct lttng_ust_ring_buffer *buf;
-	struct ustctl_consumer_channel *consumer_chan;
+	struct lttng_ust_ctl_consumer_channel *consumer_chan;
 
 	assert(stream);
 	buf = stream->buf;
@@ -1825,7 +1825,7 @@ struct lttng_ust_client_lib_ring_buffer_client_cb *get_client_cb(
 	return client_cb;
 }
 
-int ustctl_get_timestamp_begin(struct ustctl_consumer_stream *stream,
+int lttng_ust_ctl_get_timestamp_begin(struct lttng_ust_ctl_consumer_stream *stream,
 		uint64_t *timestamp_begin)
 {
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
@@ -1842,7 +1842,7 @@ int ustctl_get_timestamp_begin(struct ustctl_consumer_stream *stream,
 	return client_cb->timestamp_begin(buf, chan, timestamp_begin);
 }
 
-int ustctl_get_timestamp_end(struct ustctl_consumer_stream *stream,
+int lttng_ust_ctl_get_timestamp_end(struct lttng_ust_ctl_consumer_stream *stream,
 	uint64_t *timestamp_end)
 {
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
@@ -1859,7 +1859,7 @@ int ustctl_get_timestamp_end(struct ustctl_consumer_stream *stream,
 	return client_cb->timestamp_end(buf, chan, timestamp_end);
 }
 
-int ustctl_get_events_discarded(struct ustctl_consumer_stream *stream,
+int lttng_ust_ctl_get_events_discarded(struct lttng_ust_ctl_consumer_stream *stream,
 	uint64_t *events_discarded)
 {
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
@@ -1876,7 +1876,7 @@ int ustctl_get_events_discarded(struct ustctl_consumer_stream *stream,
 	return client_cb->events_discarded(buf, chan, events_discarded);
 }
 
-int ustctl_get_content_size(struct ustctl_consumer_stream *stream,
+int lttng_ust_ctl_get_content_size(struct lttng_ust_ctl_consumer_stream *stream,
 	uint64_t *content_size)
 {
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
@@ -1893,7 +1893,7 @@ int ustctl_get_content_size(struct ustctl_consumer_stream *stream,
 	return client_cb->content_size(buf, chan, content_size);
 }
 
-int ustctl_get_packet_size(struct ustctl_consumer_stream *stream,
+int lttng_ust_ctl_get_packet_size(struct lttng_ust_ctl_consumer_stream *stream,
 	uint64_t *packet_size)
 {
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
@@ -1910,7 +1910,7 @@ int ustctl_get_packet_size(struct ustctl_consumer_stream *stream,
 	return client_cb->packet_size(buf, chan, packet_size);
 }
 
-int ustctl_get_stream_id(struct ustctl_consumer_stream *stream,
+int lttng_ust_ctl_get_stream_id(struct lttng_ust_ctl_consumer_stream *stream,
 		uint64_t *stream_id)
 {
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
@@ -1927,7 +1927,7 @@ int ustctl_get_stream_id(struct ustctl_consumer_stream *stream,
 	return client_cb->stream_id(buf, chan, stream_id);
 }
 
-int ustctl_get_current_timestamp(struct ustctl_consumer_stream *stream,
+int lttng_ust_ctl_get_current_timestamp(struct lttng_ust_ctl_consumer_stream *stream,
 		uint64_t *ts)
 {
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
@@ -1944,7 +1944,7 @@ int ustctl_get_current_timestamp(struct ustctl_consumer_stream *stream,
 	return client_cb->current_timestamp(buf, chan, ts);
 }
 
-int ustctl_get_sequence_number(struct ustctl_consumer_stream *stream,
+int lttng_ust_ctl_get_sequence_number(struct lttng_ust_ctl_consumer_stream *stream,
 		uint64_t *seq)
 {
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
@@ -1961,7 +1961,7 @@ int ustctl_get_sequence_number(struct ustctl_consumer_stream *stream,
 	return client_cb->sequence_number(buf, chan, seq);
 }
 
-int ustctl_get_instance_id(struct ustctl_consumer_stream *stream,
+int lttng_ust_ctl_get_instance_id(struct lttng_ust_ctl_consumer_stream *stream,
 		uint64_t *id)
 {
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
@@ -1980,14 +1980,14 @@ int ustctl_get_instance_id(struct ustctl_consumer_stream *stream,
 
 #ifdef HAVE_LINUX_PERF_EVENT_H
 
-int ustctl_has_perf_counters(void)
+int lttng_ust_ctl_has_perf_counters(void)
 {
 	return 1;
 }
 
 #else
 
-int ustctl_has_perf_counters(void)
+int lttng_ust_ctl_has_perf_counters(void)
 {
 	return 0;
 }
@@ -2003,7 +2003,7 @@ int ustctl_has_perf_counters(void)
  */
 static
 int get_cred(int sock,
-	const struct ustctl_reg_msg *reg_msg,
+	const struct lttng_ust_ctl_reg_msg *reg_msg,
 	uint32_t *pid,
 	uint32_t *ppid,
 	uint32_t *uid,
@@ -2046,7 +2046,7 @@ int get_cred(int sock,
  */
 static
 int get_cred(int sock,
-	const struct ustctl_reg_msg *reg_msg,
+	const struct lttng_ust_ctl_reg_msg *reg_msg,
 	uint32_t *pid,
 	uint32_t *ppid,
 	uint32_t *uid,
@@ -2077,7 +2077,7 @@ int get_cred(int sock,
 #warning "Using insecure fallback: trusting user id provided by registered applications. Please consider implementing use of unix socket credentials on your platform."
 static
 int get_cred(int sock,
-	const struct ustctl_reg_msg *reg_msg,
+	const struct lttng_ust_ctl_reg_msg *reg_msg,
 	uint32_t *pid,
 	uint32_t *ppid,
 	uint32_t *uid,
@@ -2096,8 +2096,8 @@ int get_cred(int sock,
 /*
  * Returns 0 on success, negative error value on error.
  */
-int ustctl_recv_reg_msg(int sock,
-	enum ustctl_socket_type *type,
+int lttng_ust_ctl_recv_reg_msg(int sock,
+	enum lttng_ust_ctl_socket_type *type,
 	uint32_t *major,
 	uint32_t *minor,
 	uint32_t *pid,
@@ -2114,7 +2114,7 @@ int ustctl_recv_reg_msg(int sock,
 	char *name)
 {
 	ssize_t len;
-	struct ustctl_reg_msg reg_msg;
+	struct lttng_ust_ctl_reg_msg reg_msg;
 
 	len = ustcomm_recv_unix_sock(sock, &reg_msg, sizeof(reg_msg));
 	if (len > 0 && len != sizeof(reg_msg))
@@ -2134,9 +2134,9 @@ int ustctl_recv_reg_msg(int sock,
 		return -LTTNG_UST_ERR_INVAL_MAGIC;
 	}
 	switch (reg_msg.socket_type) {
-	case 0:	*type = USTCTL_SOCKET_CMD;
+	case 0:	*type = LTTNG_UST_CTL_SOCKET_CMD;
 		break;
-	case 1:	*type = USTCTL_SOCKET_NOTIFY;
+	case 1:	*type = LTTNG_UST_CTL_SOCKET_NOTIFY;
 		break;
 	default:
 		return -LTTNG_UST_ERR_INVAL_SOCKET_TYPE;
@@ -2157,7 +2157,7 @@ int ustctl_recv_reg_msg(int sock,
 	return get_cred(sock, &reg_msg, pid, ppid, uid, gid);
 }
 
-int ustctl_recv_notify(int sock, enum ustctl_notify_cmd *notify_cmd)
+int lttng_ust_ctl_recv_notify(int sock, enum lttng_ust_ctl_notify_cmd *notify_cmd)
 {
 	struct ustcomm_notify_hdr header;
 	ssize_t len;
@@ -2171,13 +2171,13 @@ int ustctl_recv_notify(int sock, enum ustctl_notify_cmd *notify_cmd)
 		return len;
 	switch (header.notify_cmd) {
 	case 0:
-		*notify_cmd = USTCTL_NOTIFY_CMD_EVENT;
+		*notify_cmd = LTTNG_UST_CTL_NOTIFY_CMD_EVENT;
 		break;
 	case 1:
-		*notify_cmd = USTCTL_NOTIFY_CMD_CHANNEL;
+		*notify_cmd = LTTNG_UST_CTL_NOTIFY_CMD_CHANNEL;
 		break;
 	case 2:
-		*notify_cmd = USTCTL_NOTIFY_CMD_ENUM;
+		*notify_cmd = LTTNG_UST_CTL_NOTIFY_CMD_ENUM;
 		break;
 	default:
 		return -EINVAL;
@@ -2188,21 +2188,21 @@ int ustctl_recv_notify(int sock, enum ustctl_notify_cmd *notify_cmd)
 /*
  * Returns 0 on success, negative error value on error.
  */
-int ustctl_recv_register_event(int sock,
+int lttng_ust_ctl_recv_register_event(int sock,
 	int *session_objd,
 	int *channel_objd,
 	char *event_name,
 	int *loglevel,
 	char **signature,
 	size_t *nr_fields,
-	struct ustctl_field **fields,
+	struct lttng_ust_ctl_field **fields,
 	char **model_emf_uri)
 {
 	ssize_t len;
 	struct ustcomm_notify_event_msg msg;
 	size_t signature_len, fields_len, model_emf_uri_len;
 	char *a_sign = NULL, *a_model_emf_uri = NULL;
-	struct ustctl_field *a_fields = NULL;
+	struct lttng_ust_ctl_field *a_fields = NULL;
 
 	len = ustcomm_recv_unix_sock(sock, &msg, sizeof(msg));
 	if (len > 0 && len != sizeof(msg))
@@ -2309,7 +2309,7 @@ signature_error:
 /*
  * Returns 0 on success, negative error value on error.
  */
-int ustctl_reply_register_event(int sock,
+int lttng_ust_ctl_reply_register_event(int sock,
 	uint32_t id,
 	int ret_code)
 {
@@ -2320,7 +2320,7 @@ int ustctl_reply_register_event(int sock,
 	} reply;
 
 	memset(&reply, 0, sizeof(reply));
-	reply.header.notify_cmd = USTCTL_NOTIFY_CMD_EVENT;
+	reply.header.notify_cmd = LTTNG_UST_CTL_NOTIFY_CMD_EVENT;
 	reply.r.ret_code = ret_code;
 	reply.r.event_id = id;
 	len = ustcomm_send_unix_sock(sock, &reply, sizeof(reply));
@@ -2334,16 +2334,16 @@ int ustctl_reply_register_event(int sock,
 /*
  * Returns 0 on success, negative UST or system error value on error.
  */
-int ustctl_recv_register_enum(int sock,
+int lttng_ust_ctl_recv_register_enum(int sock,
 	int *session_objd,
 	char *enum_name,
-	struct ustctl_enum_entry **entries,
+	struct lttng_ust_ctl_enum_entry **entries,
 	size_t *nr_entries)
 {
 	ssize_t len;
 	struct ustcomm_notify_enum_msg msg;
 	size_t entries_len;
-	struct ustctl_enum_entry *a_entries = NULL;
+	struct lttng_ust_ctl_enum_entry *a_entries = NULL;
 
 	len = ustcomm_recv_unix_sock(sock, &msg, sizeof(msg));
 	if (len > 0 && len != sizeof(msg))
@@ -2393,7 +2393,7 @@ entries_error:
 /*
  * Returns 0 on success, negative error value on error.
  */
-int ustctl_reply_register_enum(int sock,
+int lttng_ust_ctl_reply_register_enum(int sock,
 	uint64_t id,
 	int ret_code)
 {
@@ -2404,7 +2404,7 @@ int ustctl_reply_register_enum(int sock,
 	} reply;
 
 	memset(&reply, 0, sizeof(reply));
-	reply.header.notify_cmd = USTCTL_NOTIFY_CMD_ENUM;
+	reply.header.notify_cmd = LTTNG_UST_CTL_NOTIFY_CMD_ENUM;
 	reply.r.ret_code = ret_code;
 	reply.r.enum_id = id;
 	len = ustcomm_send_unix_sock(sock, &reply, sizeof(reply));
@@ -2418,16 +2418,16 @@ int ustctl_reply_register_enum(int sock,
 /*
  * Returns 0 on success, negative UST or system error value on error.
  */
-int ustctl_recv_register_channel(int sock,
+int lttng_ust_ctl_recv_register_channel(int sock,
 	int *session_objd,		/* session descriptor (output) */
 	int *channel_objd,		/* channel descriptor (output) */
 	size_t *nr_fields,
-	struct ustctl_field **fields)
+	struct lttng_ust_ctl_field **fields)
 {
 	ssize_t len;
 	struct ustcomm_notify_channel_msg msg;
 	size_t fields_len;
-	struct ustctl_field *a_fields;
+	struct lttng_ust_ctl_field *a_fields;
 
 	len = ustcomm_recv_unix_sock(sock, &msg, sizeof(msg));
 	if (len > 0 && len != sizeof(msg))
@@ -2480,9 +2480,9 @@ alloc_error:
 /*
  * Returns 0 on success, negative error value on error.
  */
-int ustctl_reply_register_channel(int sock,
+int lttng_ust_ctl_reply_register_channel(int sock,
 	uint32_t chan_id,
-	enum ustctl_channel_header header_type,
+	enum lttng_ust_ctl_channel_header header_type,
 	int ret_code)
 {
 	ssize_t len;
@@ -2492,14 +2492,14 @@ int ustctl_reply_register_channel(int sock,
 	} reply;
 
 	memset(&reply, 0, sizeof(reply));
-	reply.header.notify_cmd = USTCTL_NOTIFY_CMD_CHANNEL;
+	reply.header.notify_cmd = LTTNG_UST_CTL_NOTIFY_CMD_CHANNEL;
 	reply.r.ret_code = ret_code;
 	reply.r.chan_id = chan_id;
 	switch (header_type) {
-	case USTCTL_CHANNEL_HEADER_COMPACT:
+	case LTTNG_UST_CTL_CHANNEL_HEADER_COMPACT:
 		reply.r.header_type = 1;
 		break;
-	case USTCTL_CHANNEL_HEADER_LARGE:
+	case LTTNG_UST_CTL_CHANNEL_HEADER_LARGE:
 		reply.r.header_type = 2;
 		break;
 	default:
@@ -2515,7 +2515,7 @@ int ustctl_reply_register_channel(int sock,
 }
 
 /* Regenerate the statedump. */
-int ustctl_regenerate_statedump(int sock, int handle)
+int lttng_ust_ctl_regenerate_statedump(int sock, int handle)
 {
 	struct ustcomm_ust_msg lum;
 	struct ustcomm_ust_reply lur;
@@ -2533,25 +2533,25 @@ int ustctl_regenerate_statedump(int sock, int handle)
 
 /* counter operations */
 
-int ustctl_get_nr_cpu_per_counter(void)
+int lttng_ust_ctl_get_nr_cpu_per_counter(void)
 {
 	return num_possible_cpus();
 }
 
-struct ustctl_daemon_counter *
-	ustctl_create_counter(size_t nr_dimensions,
-		const struct ustctl_counter_dimension *dimensions,
+struct lttng_ust_ctl_daemon_counter *
+	lttng_ust_ctl_create_counter(size_t nr_dimensions,
+		const struct lttng_ust_ctl_counter_dimension *dimensions,
 		int64_t global_sum_step,
 		int global_counter_fd,
 		int nr_counter_cpu_fds,
 		const int *counter_cpu_fds,
-		enum ustctl_counter_bitness bitness,
-		enum ustctl_counter_arithmetic arithmetic,
+		enum lttng_ust_ctl_counter_bitness bitness,
+		enum lttng_ust_ctl_counter_arithmetic arithmetic,
 		uint32_t alloc_flags,
 		bool coalesce_hits)
 {
 	const char *transport_name;
-	struct ustctl_daemon_counter *counter;
+	struct lttng_ust_ctl_daemon_counter *counter;
 	struct lttng_counter_transport *transport;
 	struct lttng_counter_dimension ust_dim[LTTNG_COUNTER_DIMENSION_MAX];
 	size_t i;
@@ -2560,33 +2560,33 @@ struct ustctl_daemon_counter *
 		return NULL;
 	/* Currently, only per-cpu allocation is supported. */
 	switch (alloc_flags) {
-	case USTCTL_COUNTER_ALLOC_PER_CPU:
+	case LTTNG_UST_CTL_COUNTER_ALLOC_PER_CPU:
 		break;
 
-	case USTCTL_COUNTER_ALLOC_PER_CPU | USTCTL_COUNTER_ALLOC_GLOBAL:
-	case USTCTL_COUNTER_ALLOC_GLOBAL:
+	case LTTNG_UST_CTL_COUNTER_ALLOC_PER_CPU | LTTNG_UST_CTL_COUNTER_ALLOC_GLOBAL:
+	case LTTNG_UST_CTL_COUNTER_ALLOC_GLOBAL:
 	default:
 		return NULL;
 	}
 	switch (bitness) {
-	case USTCTL_COUNTER_BITNESS_32:
+	case LTTNG_UST_CTL_COUNTER_BITNESS_32:
 		switch (arithmetic) {
-		case USTCTL_COUNTER_ARITHMETIC_MODULAR:
+		case LTTNG_UST_CTL_COUNTER_ARITHMETIC_MODULAR:
 			transport_name = "counter-per-cpu-32-modular";
 			break;
-		case USTCTL_COUNTER_ARITHMETIC_SATURATION:
+		case LTTNG_UST_CTL_COUNTER_ARITHMETIC_SATURATION:
 			transport_name = "counter-per-cpu-32-saturation";
 			break;
 		default:
 			return NULL;
 		}
 		break;
-	case USTCTL_COUNTER_BITNESS_64:
+	case LTTNG_UST_CTL_COUNTER_BITNESS_64:
 		switch (arithmetic) {
-		case USTCTL_COUNTER_ARITHMETIC_MODULAR:
+		case LTTNG_UST_CTL_COUNTER_ARITHMETIC_MODULAR:
 			transport_name = "counter-per-cpu-64-modular";
 			break;
-		case USTCTL_COUNTER_ARITHMETIC_SATURATION:
+		case LTTNG_UST_CTL_COUNTER_ARITHMETIC_SATURATION:
 			transport_name = "counter-per-cpu-64-saturation";
 			break;
 		default:
@@ -2640,7 +2640,7 @@ free_counter:
 	return NULL;
 }
 
-int ustctl_create_counter_data(struct ustctl_daemon_counter *counter,
+int lttng_ust_ctl_create_counter_data(struct lttng_ust_ctl_daemon_counter *counter,
 		struct lttng_ust_abi_object_data **_counter_data)
 {
 	struct lttng_ust_abi_object_data *counter_data;
@@ -2649,20 +2649,20 @@ int ustctl_create_counter_data(struct ustctl_daemon_counter *counter,
 	int ret;
 
 	switch (counter->attr->arithmetic) {
-	case USTCTL_COUNTER_ARITHMETIC_MODULAR:
+	case LTTNG_UST_CTL_COUNTER_ARITHMETIC_MODULAR:
 		counter_conf.arithmetic = LTTNG_UST_ABI_COUNTER_ARITHMETIC_MODULAR;
 		break;
-	case USTCTL_COUNTER_ARITHMETIC_SATURATION:
+	case LTTNG_UST_CTL_COUNTER_ARITHMETIC_SATURATION:
 		counter_conf.arithmetic = LTTNG_UST_ABI_COUNTER_ARITHMETIC_SATURATION;
 		break;
 	default:
 		return -EINVAL;
 	}
 	switch (counter->attr->bitness) {
-	case USTCTL_COUNTER_BITNESS_32:
+	case LTTNG_UST_CTL_COUNTER_BITNESS_32:
 		counter_conf.bitness = LTTNG_UST_ABI_COUNTER_BITNESS_32;
 		break;
-	case USTCTL_COUNTER_BITNESS_64:
+	case LTTNG_UST_CTL_COUNTER_BITNESS_64:
 		counter_conf.bitness = LTTNG_UST_ABI_COUNTER_BITNESS_64;
 		break;
 	default:
@@ -2705,7 +2705,7 @@ error_alloc:
 	return ret;
 }
 
-int ustctl_create_counter_global_data(struct ustctl_daemon_counter *counter,
+int lttng_ust_ctl_create_counter_global_data(struct lttng_ust_ctl_daemon_counter *counter,
 		struct lttng_ust_abi_object_data **_counter_global_data)
 {
 	struct lttng_ust_abi_object_data *counter_global_data;
@@ -2730,7 +2730,7 @@ error_alloc:
 	return ret;
 }
 
-int ustctl_create_counter_cpu_data(struct ustctl_daemon_counter *counter, int cpu,
+int lttng_ust_ctl_create_counter_cpu_data(struct lttng_ust_ctl_daemon_counter *counter, int cpu,
 		struct lttng_ust_abi_object_data **_counter_cpu_data)
 {
 	struct lttng_ust_abi_object_data *counter_cpu_data;
@@ -2756,14 +2756,14 @@ error_alloc:
 	return ret;
 }
 
-void ustctl_destroy_counter(struct ustctl_daemon_counter *counter)
+void lttng_ust_ctl_destroy_counter(struct lttng_ust_ctl_daemon_counter *counter)
 {
 	counter->ops->counter_destroy(counter->counter);
 	free(counter->attr);
 	free(counter);
 }
 
-int ustctl_send_counter_data_to_ust(int sock, int parent_handle,
+int lttng_ust_ctl_send_counter_data_to_ust(int sock, int parent_handle,
 		struct lttng_ust_abi_object_data *counter_data)
 {
 	struct ustcomm_ust_msg lum;
@@ -2800,7 +2800,7 @@ int ustctl_send_counter_data_to_ust(int sock, int parent_handle,
 	return ret;
 }
 
-int ustctl_send_counter_global_data_to_ust(int sock,
+int lttng_ust_ctl_send_counter_global_data_to_ust(int sock,
 		struct lttng_ust_abi_object_data *counter_data,
 		struct lttng_ust_abi_object_data *counter_global_data)
 {
@@ -2838,7 +2838,7 @@ int ustctl_send_counter_global_data_to_ust(int sock,
 	return ret;
 }
 
-int ustctl_send_counter_cpu_data_to_ust(int sock,
+int lttng_ust_ctl_send_counter_cpu_data_to_ust(int sock,
 		struct lttng_ust_abi_object_data *counter_data,
 		struct lttng_ust_abi_object_data *counter_cpu_data)
 {
@@ -2877,7 +2877,7 @@ int ustctl_send_counter_cpu_data_to_ust(int sock,
 	return ret;
 }
 
-int ustctl_counter_read(struct ustctl_daemon_counter *counter,
+int lttng_ust_ctl_counter_read(struct lttng_ust_ctl_daemon_counter *counter,
 		const size_t *dimension_indexes,
 		int cpu, int64_t *value,
 		bool *overflow, bool *underflow)
@@ -2886,7 +2886,7 @@ int ustctl_counter_read(struct ustctl_daemon_counter *counter,
 			value, overflow, underflow);
 }
 
-int ustctl_counter_aggregate(struct ustctl_daemon_counter *counter,
+int lttng_ust_ctl_counter_aggregate(struct lttng_ust_ctl_daemon_counter *counter,
 		const size_t *dimension_indexes,
 		int64_t *value,
 		bool *overflow, bool *underflow)
@@ -2895,7 +2895,7 @@ int ustctl_counter_aggregate(struct ustctl_daemon_counter *counter,
 			value, overflow, underflow);
 }
 
-int ustctl_counter_clear(struct ustctl_daemon_counter *counter,
+int lttng_ust_ctl_counter_clear(struct lttng_ust_ctl_daemon_counter *counter,
 		const size_t *dimension_indexes)
 {
 	return counter->ops->counter_clear(counter->counter, dimension_indexes);
@@ -2919,10 +2919,10 @@ void lttng_ust_ctl_ctor(void)
 }
 
 static
-void ustctl_exit(void)
+void lttng_ust_ctl_exit(void)
 	__attribute__((destructor));
 static
-void ustctl_exit(void)
+void lttng_ust_ctl_exit(void)
 {
 	lttng_ust_counter_clients_exit();
 	lttng_ust_ring_buffer_clients_exit();

@@ -621,7 +621,7 @@ void get_allow_blocking(void)
 }
 
 static
-int register_to_sessiond(int socket, enum ustctl_socket_type type)
+int register_to_sessiond(int socket, enum lttng_ust_ctl_socket_type type)
 {
 	return ustcomm_send_reg_msg(socket,
 		type,
@@ -1859,7 +1859,7 @@ restart:
 		sock_info->root_handle = ret;
 	}
 
-	ret = register_to_sessiond(sock_info->socket, USTCTL_SOCKET_CMD);
+	ret = register_to_sessiond(sock_info->socket, LTTNG_UST_CTL_SOCKET_CMD);
 	if (ret < 0) {
 		ERR("Error registering to %s ust cmd socket",
 			sock_info->name);
@@ -1952,7 +1952,7 @@ restart:
 	}
 
 	ret = register_to_sessiond(sock_info->notify_socket,
-			USTCTL_SOCKET_NOTIFY);
+			LTTNG_UST_CTL_SOCKET_NOTIFY);
 	if (ret < 0) {
 		ERR("Error registering to %s ust notify socket",
 			sock_info->name);

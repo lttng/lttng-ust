@@ -43,7 +43,7 @@ struct lttng_ust_enum_entry;
 struct lttng_integer_type;
 struct lttng_ust_session;
 
-struct ustctl_reg_msg {
+struct lttng_ust_ctl_reg_msg {
 	uint32_t magic;
 	uint32_t major;
 	uint32_t minor;
@@ -57,7 +57,7 @@ struct ustctl_reg_msg {
 	uint32_t uint32_t_alignment;
 	uint32_t uint64_t_alignment;
 	uint32_t long_alignment;
-	uint32_t socket_type;			/* enum ustctl_socket_type */
+	uint32_t socket_type;			/* enum lttng_ust_ctl_socket_type */
 	char name[LTTNG_UST_ABI_PROCNAME_LEN];	/* process name */
 	char padding[LTTNG_UST_COMM_REG_MSG_PADDING];
 } __attribute__((packed));
@@ -185,7 +185,7 @@ struct ustcomm_notify_channel_msg {
 struct ustcomm_notify_channel_reply {
 	int32_t ret_code;	/* 0: ok, negative: error code */
 	uint32_t chan_id;
-	uint32_t header_type;	/* enum ustctl_channel_header */
+	uint32_t header_type;	/* enum lttng_ust_ctl_channel_header */
 	char padding[USTCOMM_NOTIFY_CHANNEL_REPLY_PADDING];
 } __attribute__((packed));
 
@@ -266,7 +266,7 @@ int ustcomm_recv_counter_shm_from_sessiond(int sock,
  * Returns -EPIPE or -ECONNRESET if other end has hung up.
  */
 int ustcomm_send_reg_msg(int sock,
-		enum ustctl_socket_type type,
+		enum lttng_ust_ctl_socket_type type,
 		uint32_t bits_per_long,
 		uint32_t uint8_t_alignment,
 		uint32_t uint16_t_alignment,
