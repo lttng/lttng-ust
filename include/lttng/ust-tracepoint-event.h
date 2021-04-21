@@ -268,8 +268,8 @@ void lttng_ust__event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARG
 		.nofilter = 0,					\
 	}),
 
-#undef _ctf_float
-#define _ctf_float(_type, _item, _src, _nowrite)		\
+#undef lttng_ust__field_float
+#define lttng_ust__field_float(_type, _item, _src, _nowrite)		\
 	LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_event_field, { \
 		.struct_size = sizeof(struct lttng_ust_event_field), \
 		.name = #_item,					\
@@ -419,8 +419,8 @@ static void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_D
 	__event_len += lttng_ust_ring_buffer_align(__event_len, lttng_ust_rb_alignof(_type)); \
 	__event_len += sizeof(_type);
 
-#undef _ctf_float
-#define _ctf_float(_type, _item, _src, _nowrite)				 \
+#undef lttng_ust__field_float
+#define lttng_ust__field_float(_type, _item, _src, _nowrite)				 \
 	if (0)									 \
 		(void) (_src);	/* Unused */					 \
 	__event_len += lttng_ust_ring_buffer_align(__event_len, lttng_ust_rb_alignof(_type)); \
@@ -579,8 +579,8 @@ size_t lttng_ust__event_get_size__##_provider##___##_name(			      \
 	}								       \
 	__stack_data += sizeof(int64_t);
 
-#undef _ctf_float
-#define _ctf_float(_type, _item, _src, _nowrite)			       \
+#undef lttng_ust__field_float
+#define lttng_ust__field_float(_type, _item, _src, _nowrite)			       \
 	{								       \
 		double __ctf_tmp_double = (double) (_type) (_src);	       \
 		memcpy(__stack_data, &__ctf_tmp_double, sizeof(double));       \
@@ -667,8 +667,8 @@ void lttng_ust__event_prepare_interpreter_stack__##_provider##___##_name(char *_
 		(void) (_src);	/* Unused */				       \
 	lttng_ust__event_align = lttng_ust__tp_max_t(size_t, lttng_ust__event_align, lttng_ust_rb_alignof(_type));
 
-#undef _ctf_float
-#define _ctf_float(_type, _item, _src, _nowrite)			       \
+#undef lttng_ust__field_float
+#define lttng_ust__field_float(_type, _item, _src, _nowrite)			       \
 	if (0)								       \
 		(void) (_src);	/* Unused */ 				       \
 	lttng_ust__event_align = lttng_ust__tp_max_t(size_t, lttng_ust__event_align, lttng_ust_rb_alignof(_type));
@@ -744,8 +744,8 @@ size_t lttng_ust__event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_PR
 		__chan->ops->event_write(&__ctx, &__tmp, sizeof(__tmp), lttng_ust_rb_alignof(__tmp));\
 	}
 
-#undef _ctf_float
-#define _ctf_float(_type, _item, _src, _nowrite)		        \
+#undef lttng_ust__field_float
+#define lttng_ust__field_float(_type, _item, _src, _nowrite)		        \
 	{								\
 		_type __tmp = (_src);					\
 		__chan->ops->event_write(&__ctx, &__tmp, sizeof(__tmp), lttng_ust_rb_alignof(__tmp));\

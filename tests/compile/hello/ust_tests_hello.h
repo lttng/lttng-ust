@@ -43,8 +43,8 @@ LTTNG_UST_TRACEPOINT_EVENT(ust_tests_hello, tptest,
 		ctf_sequence_network(long, seqfield_network_3, values,
 			     size_t, 3)
 		ctf_string(stringfield, text)
-		ctf_float(float, floatfield, floatarg)
-		ctf_float(double, doublefield, doublearg)
+		lttng_ust_field_float(float, floatfield, floatarg)
+		lttng_ust_field_float(double, doublefield, doublearg)
 		lttng_ust_field_integer(bool, boolfield, boolarg)
 		lttng_ust_field_integer_nowrite(int, filterfield, anint)
 	)

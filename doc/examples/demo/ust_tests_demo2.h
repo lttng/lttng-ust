@@ -30,8 +30,8 @@ LTTNG_UST_TRACEPOINT_EVENT(ust_tests_demo2, loop,
 		ctf_sequence_text(char, seqfield2, text,
 			     size_t, textlen)
 		ctf_string(stringfield, text)
-		ctf_float(float, floatfield, floatarg)
-		ctf_float(double, doublefield, doublearg)
+		lttng_ust_field_float(float, floatfield, floatarg)
+		lttng_ust_field_float(double, doublefield, doublearg)
 	)
 )
 LTTNG_UST_TRACEPOINT_LOGLEVEL(ust_tests_demo2, loop, LTTNG_UST_TRACEPOINT_LOGLEVEL_WARNING)

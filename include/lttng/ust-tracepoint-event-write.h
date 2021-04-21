@@ -20,9 +20,9 @@
 #define lttng_ust_field_integer_network_hex(_type, _item, _src)		\
 	lttng_ust__field_integer_ext(_type, _item, _src, LTTNG_UST_BIG_ENDIAN, 16, 0)
 
-#undef ctf_float
-#define ctf_float(_type, _item, _src)				\
-	_ctf_float(_type, _item, _src, 0)
+#undef lttng_ust_field_float
+#define lttng_ust_field_float(_type, _item, _src)				\
+	lttng_ust__field_float(_type, _item, _src, 0)
 
 #undef ctf_array
 #define ctf_array(_type, _item, _src, _length)			\

@@ -8,9 +8,9 @@
 #define lttng_ust_field_integer_nowrite(_type, _item, _src)			\
 	lttng_ust__field_integer_ext(_type, _item, _src, LTTNG_UST_BYTE_ORDER, 10, 1)
 
-#undef ctf_float_nowrite
-#define ctf_float_nowrite(_type, _item, _src)			\
-	_ctf_float(_type, _item, _src, 1)
+#undef lttng_ust_field_float_nowrite
+#define lttng_ust_field_float_nowrite(_type, _item, _src)			\
+	lttng_ust__field_float(_type, _item, _src, 1)
 
 #undef ctf_array_nowrite
 #define ctf_array_nowrite(_type, _item, _src, _length)		\

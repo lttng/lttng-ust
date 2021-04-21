@@ -31,8 +31,8 @@
 #define lttng_ust__field_integer_ext(_type, _item, _src, _byte_order, _base, \
 			_nowrite)
 
-#undef _ctf_float
-#define _ctf_float(_type, _item, _src, _nowrite)
+#undef lttng_ust__field_float
+#define lttng_ust__field_float(_type, _item, _src, _nowrite)
 
 #undef _ctf_array_encoded
 #define _ctf_array_encoded(_type, _item, _src, _byte_order, _length, _encoding, \
@@ -64,8 +64,8 @@
 #undef lttng_ust_field_integer_network_hex
 #define lttng_ust_field_integer_network_hex(_type, _item, _src)
 
-#undef ctf_float
-#define ctf_float(_type, _item, _src)
+#undef lttng_ust_field_float
+#define lttng_ust_field_float(_type, _item, _src)
 
 #undef ctf_array
 #define ctf_array(_type, _item, _src, _length)
@@ -110,8 +110,8 @@
 #undef lttng_ust_field_integer_nowrite
 #define lttng_ust_field_integer_nowrite(_type, _item, _src)
 
-#undef ctf_float_nowrite
-#define ctf_float_nowrite(_type, _item, _src)
+#undef lttng_ust_field_float_nowrite
+#define lttng_ust_field_float_nowrite(_type, _item, _src)
 
 #undef ctf_array_nowrite
 #define ctf_array_nowrite(_type, _item, _src, _length)
