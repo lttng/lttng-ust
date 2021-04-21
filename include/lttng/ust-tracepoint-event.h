@@ -225,17 +225,17 @@ void lttng_ust__event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARG
 #include <lttng/ust-tracepoint-event-write.h>
 #include <lttng/ust-tracepoint-event-nowrite.h>
 
-#undef _ctf_array_encoded
-#define _ctf_array_encoded(_type, _item, _src, _byte_order,	\
+#undef lttng_ust__field_array_encoded
+#define lttng_ust__field_array_encoded(_type, _item, _src, _byte_order,	\
 			_length, _encoding, _nowrite,		\
 			_elem_type_base)			\
-	lttng_ust_ctf_array_element_type_is_supported(_type, _item);
+	lttng_ust_field_array_element_type_is_supported(_type, _item);
 
 #undef _ctf_sequence_encoded
 #define _ctf_sequence_encoded(_type, _item, _src, _byte_order,	\
 			_length_type, _src_length, _encoding, _nowrite, \
 			_elem_type_base)			\
-	lttng_ust_ctf_array_element_type_is_supported(_type, _item);
+	lttng_ust_field_array_element_type_is_supported(_type, _item);
 
 #undef LTTNG_UST_TP_FIELDS
 #define LTTNG_UST_TP_FIELDS(...) __VA_ARGS__	/* Only one used in this phase */
@@ -278,8 +278,8 @@ void lttng_ust__event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARG
 		.nofilter = 0,					\
 	}),
 
-#undef _ctf_array_encoded
-#define _ctf_array_encoded(_type, _item, _src, _byte_order,	\
+#undef lttng_ust__field_array_encoded
+#define lttng_ust__field_array_encoded(_type, _item, _src, _byte_order,	\
 			_length, _encoding, _nowrite,		\
 			_elem_type_base)			\
 	LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_event_field, { \
@@ -426,8 +426,8 @@ static void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_D
 	__event_len += lttng_ust_ring_buffer_align(__event_len, lttng_ust_rb_alignof(_type)); \
 	__event_len += sizeof(_type);
 
-#undef _ctf_array_encoded
-#define _ctf_array_encoded(_type, _item, _src, _byte_order, _length, _encoding,	 \
+#undef lttng_ust__field_array_encoded
+#define lttng_ust__field_array_encoded(_type, _item, _src, _byte_order, _length, _encoding,	 \
 			_nowrite, _elem_type_base)				 \
 	if (0)									 \
 		(void) (_src);	/* Unused */					 \
@@ -587,8 +587,8 @@ size_t lttng_ust__event_get_size__##_provider##___##_name(			      \
 		__stack_data += sizeof(double);				       \
 	}
 
-#undef _ctf_array_encoded
-#define _ctf_array_encoded(_type, _item, _src, _byte_order, _length,	       \
+#undef lttng_ust__field_array_encoded
+#define lttng_ust__field_array_encoded(_type, _item, _src, _byte_order, _length,	       \
 			_encoding, _nowrite, _elem_type_base)		       \
 	{								       \
 		unsigned long __ctf_tmp_ulong = (unsigned long) (_length);     \
@@ -673,8 +673,8 @@ void lttng_ust__event_prepare_interpreter_stack__##_provider##___##_name(char *_
 		(void) (_src);	/* Unused */ 				       \
 	lttng_ust__event_align = lttng_ust__tp_max_t(size_t, lttng_ust__event_align, lttng_ust_rb_alignof(_type));
 
-#undef _ctf_array_encoded
-#define _ctf_array_encoded(_type, _item, _src, _byte_order, _length,	       \
+#undef lttng_ust__field_array_encoded
+#define lttng_ust__field_array_encoded(_type, _item, _src, _byte_order, _length,	       \
 			_encoding, _nowrite, _elem_type_base)		       \
 	if (0)								       \
 		(void) (_src);	/* Unused */				       \
@@ -751,8 +751,8 @@ size_t lttng_ust__event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_PR
 		__chan->ops->event_write(&__ctx, &__tmp, sizeof(__tmp), lttng_ust_rb_alignof(__tmp));\
 	}
 
-#undef _ctf_array_encoded
-#define _ctf_array_encoded(_type, _item, _src, _byte_order, _length,	\
+#undef lttng_ust__field_array_encoded
+#define lttng_ust__field_array_encoded(_type, _item, _src, _byte_order, _length,	\
 			_encoding, _nowrite, _elem_type_base)		\
 	if (lttng_ust_string_encoding_##_encoding == lttng_ust_string_encoding_none) \
 		__chan->ops->event_write(&__ctx, _src, sizeof(_type) * (_length), lttng_ust_rb_alignof(_type)); \

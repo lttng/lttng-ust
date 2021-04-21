@@ -59,15 +59,15 @@
 #endif
 
 /**
- * lttng_ust_ctf_array_element_type_is_supported -
+ * lttng_ust_field_array_element_type_is_supported -
  *
- * Adds a compilation assertion that CTF arrays and sequences declared by the
+ * Adds a compilation assertion that array and sequence fields declared by the
  * user are of an integral type.
  */
-#define lttng_ust_ctf_array_element_type_is_supported(type, item) \
+#define lttng_ust_field_array_element_type_is_supported(type, item) \
 		lttng_ust_static_assert(lttng_ust_is_integer_type(type), \
-			"Non-integer type `" #item "` not supported as element of CTF_ARRAY or CTF_SEQUENCE", \
-			Non_integer_type__##item##__not_supported_as_element_of_CTF_ARRAY_or_CTF_SEQUENCE)
+			"Non-integer type `" #item "` not supported as element of LTTNG_UST_FIELD_ARRAY or LTTNG_UST_FIELD_SEQUENCE", \
+			Non_integer_type__##item##__not_supported_as_element_of_LTTNG_UST_FIELD_ARRAY_or_LTTNG_UST_FIELD_SEQUENCE)
 
 
 /**

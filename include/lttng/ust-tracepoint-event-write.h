@@ -24,29 +24,29 @@
 #define lttng_ust_field_float(_type, _item, _src)				\
 	lttng_ust__field_float(_type, _item, _src, 0)
 
-#undef ctf_array
-#define ctf_array(_type, _item, _src, _length)			\
-	_ctf_array_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER,	\
+#undef lttng_ust_field_array
+#define lttng_ust_field_array(_type, _item, _src, _length)			\
+	lttng_ust__field_array_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER,	\
 			_length, none, 0, 10)
 
-#undef ctf_array_hex
-#define ctf_array_hex(_type, _item, _src, _length)		\
-	_ctf_array_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER,	\
+#undef lttng_ust_field_array_hex
+#define lttng_ust_field_array_hex(_type, _item, _src, _length)		\
+	lttng_ust__field_array_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER,	\
 			_length, none, 0, 16)
 
-#undef ctf_array_network
-#define ctf_array_network(_type, _item, _src, _length)	\
-	_ctf_array_encoded(_type, _item, _src, LTTNG_UST_BIG_ENDIAN,	\
+#undef lttng_ust_field_array_network
+#define lttng_ust_field_array_network(_type, _item, _src, _length)	\
+	lttng_ust__field_array_encoded(_type, _item, _src, LTTNG_UST_BIG_ENDIAN,	\
 			_length, none, 0, 10)
 
-#undef ctf_array_network_hex
-#define ctf_array_network_hex(_type, _item, _src, _length)	\
-	_ctf_array_encoded(_type, _item, _src, LTTNG_UST_BIG_ENDIAN,	\
+#undef lttng_ust_field_array_network_hex
+#define lttng_ust_field_array_network_hex(_type, _item, _src, _length)	\
+	lttng_ust__field_array_encoded(_type, _item, _src, LTTNG_UST_BIG_ENDIAN,	\
 			_length, none, 0, 16)
 
-#undef ctf_array_text
-#define ctf_array_text(_type, _item, _src, _length)		\
-	_ctf_array_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER,	\
+#undef lttng_ust_field_array_text
+#define lttng_ust_field_array_text(_type, _item, _src, _length)		\
+	lttng_ust__field_array_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER,	\
 			_length, UTF8, 0, 10)
 
 #undef ctf_sequence

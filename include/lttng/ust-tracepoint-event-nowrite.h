@@ -12,27 +12,27 @@
 #define lttng_ust_field_float_nowrite(_type, _item, _src)			\
 	lttng_ust__field_float(_type, _item, _src, 1)
 
-#undef ctf_array_nowrite
-#define ctf_array_nowrite(_type, _item, _src, _length)		\
-	_ctf_array_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER, _length, none, 1, 10)
+#undef lttng_ust_field_array_nowrite
+#define lttng_ust_field_array_nowrite(_type, _item, _src, _length)		\
+	lttng_ust__field_array_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER, _length, none, 1, 10)
 
-#undef ctf_array_nowrite_hex
-#define ctf_array_nowrite_hex(_type, _item, _src, _length)	\
-	_ctf_array_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER, _length, none, 1, 16)
+#undef lttng_ust_field_array_nowrite_hex
+#define lttng_ust_field_array_nowrite_hex(_type, _item, _src, _length)	\
+	lttng_ust__field_array_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER, _length, none, 1, 16)
 
-#undef ctf_array_network_nowrite
-#define ctf_array_network_nowrite(_type, _item, _src, _length)	\
-	_ctf_array_encoded(_type, _item, _src, LTTNG_UST_BIG_ENDIAN,	\
+#undef lttng_ust_field_array_network_nowrite
+#define lttng_ust_field_array_network_nowrite(_type, _item, _src, _length)	\
+	lttng_ust__field_array_encoded(_type, _item, _src, LTTNG_UST_BIG_ENDIAN,	\
 			_length, none, 1, 10)
 
-#undef ctf_array_network_nowrite_hex
-#define ctf_array_network_nowrite_hex(_type, _item, _src, _length) \
-	_ctf_array_encoded(_type, _item, _src, LTTNG_UST_BIG_ENDIAN,	\
+#undef lttng_ust_field_array_network_nowrite_hex
+#define lttng_ust_field_array_network_nowrite_hex(_type, _item, _src, _length) \
+	lttng_ust__field_array_encoded(_type, _item, _src, LTTNG_UST_BIG_ENDIAN,	\
 			_length, none, 1, 16)
 
-#undef ctf_array_text_nowrite
-#define ctf_array_text_nowrite(_type, _item, _src, _length)	\
-	_ctf_array_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER, _length, UTF8, 1, 10)
+#undef lttng_ust_field_array_text_nowrite
+#define lttng_ust_field_array_text_nowrite(_type, _item, _src, _length)	\
+	lttng_ust__field_array_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER, _length, UTF8, 1, 10)
 
 #undef ctf_sequence_nowrite
 #define ctf_sequence_nowrite(_type, _item, _src, _length_type, _src_length) \

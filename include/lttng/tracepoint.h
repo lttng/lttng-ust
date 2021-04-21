@@ -596,6 +596,17 @@ lttng_ust__tracepoints__ptrs_destroy(void)
 
 #define ctf_float			lttng_ust_field_float
 #define ctf_float_nowrite		lttng_ust_field_float_nowrite
+
+#define ctf_array			lttng_ust_field_array
+#define ctf_array_hex			lttng_ust_field_array_hex
+#define ctf_array_network		lttng_ust_field_array_network
+#define ctf_array_network_hex		lttng_ust_field_array_network_hex
+#define ctf_array_text			lttng_ust_field_array_text
+#define ctf_array_nowrite		lttng_ust_field_array_nowrite
+#define ctf_array_nowrite_hex		lttng_ust_field_array_nowrite_hex
+#define ctf_array_network_nowrite	lttng_ust_field_array_network_nowrite
+#define ctf_array_network_nowrite_hex	lttng_ust_field_array_network_nowrite_hex
+#define ctf_array_text_nowrite		lttng_ust_field_array_text_nowrite
 #endif /* #if LTTNG_UST_COMPAT_API(0) */
 
 #ifdef __cplusplus
@@ -681,14 +692,14 @@ lttng_ust__tracepoints__ptrs_destroy(void)
  *         ctf_enum(someproject_component, enum_name, int, field_e, arg0)
  *
  *         * Array Sequence, printed as UTF8-encoded array of bytes *
- *         ctf_array_text(char, field_b, string, FIXED_LEN)
+ *         lttng_ust_field_array_text(char, field_b, string, FIXED_LEN)
  *         ctf_sequence_text(char, field_c, string, size_t, strlen)
  *
  *         * String, printed as UTF8-encoded string *
  *         ctf_string(field_e, string)
  *
  *         * Array sequence of signed integer values *
- *         ctf_array(long, field_f, arg4, FIXED_LEN4)
+ *         lttng_ust_field_array(long, field_f, arg4, FIXED_LEN4)
  *         ctf_sequence(long, field_g, arg4, size_t, arg4_len)
  *     )
  * )
