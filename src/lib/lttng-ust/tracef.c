@@ -13,10 +13,10 @@
 #include "lttng-ust-tracef-provider.h"
 
 static inline
-void __lttng_ust_vtracef(const char *fmt, va_list ap)
+void lttng_ust___vtracef(const char *fmt, va_list ap)
 	__attribute__((always_inline, format(printf, 1, 0)));
 static inline
-void __lttng_ust_vtracef(const char *fmt, va_list ap)
+void lttng_ust___vtracef(const char *fmt, va_list ap)
 {
 	char *msg;
 	const int len = vasprintf(&msg, fmt, ap);
@@ -31,25 +31,20 @@ end:
 	return;
 }
 
-/*
- * FIXME: We should include <lttng/tracef.h> for the declarations here, but it
- * fails with tracepoint magic above my paygrade.
- */
-
-void _lttng_ust_vtracef(const char *fmt, va_list ap)
+void lttng_ust__vtracef(const char *fmt, va_list ap)
 	__attribute__((format(printf, 1, 0)));
-void _lttng_ust_vtracef(const char *fmt, va_list ap)
+void lttng_ust__vtracef(const char *fmt, va_list ap)
 {
-	__lttng_ust_vtracef(fmt, ap);
+	lttng_ust___vtracef(fmt, ap);
 }
 
-void _lttng_ust_tracef(const char *fmt, ...)
+void lttng_ust__tracef(const char *fmt, ...)
 	__attribute__((format(printf, 1, 2)));
-void _lttng_ust_tracef(const char *fmt, ...)
+void lttng_ust__tracef(const char *fmt, ...)
 {
 	va_list ap;
 
 	va_start(ap, fmt);
-	__lttng_ust_vtracef(fmt, ap);
+	lttng_ust___vtracef(fmt, ap);
 	va_end(ap);
 }

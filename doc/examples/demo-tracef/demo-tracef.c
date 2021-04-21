@@ -27,7 +27,7 @@ int main(int argc, char **argv)
 
 	fprintf(stderr, "Tracing... ");
 	for (i = 0; i < 5; i++) {
-		tracef("This is a \"%s\" formatted %d event %lx",
+		lttng_ust_tracef("This is a \"%s\" formatted %d event %lx",
 			str, i, l);
 	}
 	fprintf(stderr, " done.\n");

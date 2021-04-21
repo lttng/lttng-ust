@@ -20,7 +20,7 @@ void print_debug(const char* msg, ...)
 	va_list ap;
 
 	va_start(ap, msg);
-	vtracef(msg, ap);
+	lttng_ust_vtracef(msg, ap);
 	va_end(ap);
 }
 
