@@ -15,12 +15,12 @@
 
 LTTNG_UST_TRACEPOINT_ENUM(ust_tests_hello, my_enum,
 	LTTNG_UST_TP_ENUM_VALUES(
-		ctf_enum_value("zero", 0)
-		ctf_enum_value("one", 1)
-		ctf_enum_auto("two")
-		ctf_enum_value("three", 3)
-		ctf_enum_range("ten to twenty", 10, 20)
-		ctf_enum_auto("21!")
+		lttng_ust_field_enum_value("zero", 0)
+		lttng_ust_field_enum_value("one", 1)
+		lttng_ust_field_enum_auto("two")
+		lttng_ust_field_enum_value("three", 3)
+		lttng_ust_field_enum_range("ten to twenty", 10, 20)
+		lttng_ust_field_enum_auto("21!")
 	)
 )
 
@@ -44,7 +44,7 @@ LTTNG_UST_TRACEPOINT_EVENT(ust_tests_hello, tptest,
 		lttng_ust_field_string(stringfield, text)
 		lttng_ust_field_float(float, floatfield, floatarg)
 		lttng_ust_field_float(double, doublefield, doublearg)
-		ctf_enum(ust_tests_hello, my_enum, int, enumfield, enumarg)
+		lttng_ust_field_enum(ust_tests_hello, my_enum, int, enumfield, enumarg)
 	)
 )
 

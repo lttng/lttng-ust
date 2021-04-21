@@ -82,6 +82,6 @@
 #define lttng_ust_field_unused(_src)					\
 	lttng_ust__field_unused(_src)
 
-#undef ctf_enum
-#define ctf_enum(_provider, _name, _type, _item, _src)			\
-	_ctf_enum(_provider, _name, _type, _item, _src, 0)
+#undef lttng_ust_field_enum
+#define lttng_ust_field_enum(_provider, _name, _type, _item, _src)			\
+	lttng_ust__field_enum(_provider, _name, _type, _item, _src, 0)

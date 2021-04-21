@@ -624,6 +624,12 @@ lttng_ust__tracepoints__ptrs_destroy(void)
 
 #define ctf_unused			lttng_ust_field_unused
 #define ctf_unused_nowrite		lttng_ust_field_unused_nowrite
+
+#define ctf_enum			lttng_ust_field_enum
+#define ctf_enum_nowrite		lttng_ust_field_enum_nowrite
+#define ctf_enum_value			lttng_ust_field_enum_value
+#define ctf_enum_range			lttng_ust_field_enum_range
+#define ctf_enum_auto			lttng_ust_field_enum_auto
 #endif /* #if LTTNG_UST_COMPAT_API(0) */
 
 #ifdef __cplusplus
@@ -647,18 +653,18 @@ lttng_ust__tracepoints__ptrs_destroy(void)
  *
  * LTTNG_UST_TRACEPOINT_ENUM(someproject_component, enumname,
  *	LTTNG_UST_TP_ENUM_VALUES(
- *		ctf_enum_value("even", 0)
- *		ctf_enum_value("uneven", 1)
- *		ctf_enum_range("twoto4", 2, 4)
- *		ctf_enum_value("five", 5)
+ *		lttng_ust_field_enum_value("even", 0)
+ *		lttng_ust_field_enum_value("uneven", 1)
+ *		lttng_ust_field_enum_range("twoto4", 2, 4)
+ *		lttng_ust_field_enum_value("five", 5)
  *	)
  * )
  *
  * Where "someproject_component" is the name of the component this enumeration
  * belongs to and "enumname" identifies this enumeration. Inside the
  * LTTNG_UST_TP_ENUM_VALUES macro is the actual mapping. Each string value can map
- * to either a single value with ctf_enum_value or a range of values
- * with ctf_enum_range.
+ * to either a single value with lttng_ust_field_enum_value or a range of values
+ * with lttng_ust_field_enum_range.
  *
  * Enumeration ranges may overlap, but the behavior is implementation-defined,
  * each trace reader will handle overlapping as it wishes.
@@ -666,7 +672,7 @@ lttng_ust__tracepoints__ptrs_destroy(void)
  * That enumeration can then be used in a field inside the TP_FIELD macro using
  * the following line:
  *
- * ctf_enum(someproject_component, enumname, enumtype, enumfield, enumval)
+ * lttng_ust_field_enum(someproject_component, enumname, enumtype, enumfield, enumval)
  *
  * Where "someproject_component" and "enumname" match those in the
  * LTTNG_UST_TRACEPOINT_ENUM, "enumtype" is a signed or unsigned integer type
@@ -706,7 +712,7 @@ lttng_ust__tracepoints__ptrs_destroy(void)
  *         lttng_ust_field_integer_hex(unsigned long, field_d, arg1)
  *
  *         * Enumeration *
- *         ctf_enum(someproject_component, enum_name, int, field_e, arg0)
+ *         lttng_ust_field_enum(someproject_component, enum_name, int, field_e, arg0)
  *
  *         * Array Sequence, printed as UTF8-encoded array of bytes *
  *         lttng_ust_field_array_text(char, field_b, string, FIXED_LEN)

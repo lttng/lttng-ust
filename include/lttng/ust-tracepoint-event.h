@@ -146,8 +146,8 @@ void lttng_ust__event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARG
 #include <lttng/ust-tracepoint-event-reset.h>
 
 /* Enumeration entry (single value) */
-#undef ctf_enum_value
-#define ctf_enum_value(_string, _value)					\
+#undef lttng_ust_field_enum_value
+#define lttng_ust_field_enum_value(_string, _value)					\
 	LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_enum_entry, {	\
 		.struct_size = sizeof(struct lttng_ust_enum_entry),		\
 		.start = {						\
@@ -164,8 +164,8 @@ void lttng_ust__event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARG
 	}),
 
 /* Enumeration entry (range) */
-#undef ctf_enum_range
-#define ctf_enum_range(_string, _range_start, _range_end)		\
+#undef lttng_ust_field_enum_range
+#define lttng_ust_field_enum_range(_string, _range_start, _range_end)		\
 	LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_enum_entry, {	\
 		.struct_size = sizeof(struct lttng_ust_enum_entry),		\
 		.start = {						\
@@ -182,8 +182,8 @@ void lttng_ust__event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARG
 	}),
 
 /* Enumeration entry (automatic value; follows the rules of CTF) */
-#undef ctf_enum_auto
-#define ctf_enum_auto(_string)						\
+#undef lttng_ust_field_enum_auto
+#define lttng_ust_field_enum_auto(_string)						\
 	LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_enum_entry, {	\
 		.struct_size = sizeof(struct lttng_ust_enum_entry),		\
 		.start = {						\
@@ -211,7 +211,7 @@ void lttng_ust__event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARG
 #define LTTNG_UST_TRACEPOINT_ENUM(_provider, _name, _values)			\
 	const struct lttng_ust_enum_entry * const __enum_values__##_provider##_##_name[] = { \
 		_values							\
-		ctf_enum_value("", 0)	/* Dummy, 0-len array forbidden by C99. */ \
+		lttng_ust_field_enum_value("", 0)	/* Dummy, 0-len array forbidden by C99. */ \
 	};
 #include LTTNG_UST_TRACEPOINT_INCLUDE
 
@@ -346,8 +346,8 @@ void lttng_ust__event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARG
 #undef lttng_ust__field_unused
 #define lttng_ust__field_unused(_src)
 
-#undef _ctf_enum
-#define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite) \
+#undef lttng_ust__field_enum
+#define lttng_ust__field_enum(_provider, _name, _type, _item, _src, _nowrite) \
 	LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_event_field, { \
 		.struct_size = sizeof(struct lttng_ust_event_field), \
 		.name = #_item,					\
@@ -456,8 +456,8 @@ static void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_D
 	if (0)									\
 		(void) (_src);  /* Unused */
 
-#undef _ctf_enum
-#define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite)		\
+#undef lttng_ust__field_enum
+#define lttng_ust__field_enum(_provider, _name, _type, _item, _src, _nowrite)		\
 	lttng_ust__field_integer_ext(_type, _item, _src, LTTNG_UST_BYTE_ORDER, 10, _nowrite)
 
 #undef LTTNG_UST_TP_ARGS
@@ -625,8 +625,8 @@ size_t lttng_ust__event_get_size__##_provider##___##_name(			      \
 	if (0)									\
 		(void) (_src);
 
-#undef _ctf_enum
-#define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite)		\
+#undef lttng_ust__field_enum
+#define lttng_ust__field_enum(_provider, _name, _type, _item, _src, _nowrite)		\
 	lttng_ust__field_integer_ext(_type, _item, _src, LTTNG_UST_BYTE_ORDER, 10, _nowrite)
 
 #undef LTTNG_UST_TP_ARGS
@@ -700,8 +700,8 @@ void lttng_ust__event_prepare_interpreter_stack__##_provider##___##_name(char *_
 	if (0)									\
 		(void) (_src);	/* Unused */
 
-#undef _ctf_enum
-#define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite)		\
+#undef lttng_ust__field_enum
+#define lttng_ust__field_enum(_provider, _name, _type, _item, _src, _nowrite)		\
 	lttng_ust__field_integer_ext(_type, _item, _src, LTTNG_UST_BYTE_ORDER, 10, _nowrite)
 
 #undef LTTNG_UST_TP_ARGS
@@ -784,8 +784,8 @@ size_t lttng_ust__event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_PR
 #undef lttng_ust__field_unused
 #define lttng_ust__field_unused(_src)
 
-#undef _ctf_enum
-#define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite)	\
+#undef lttng_ust__field_enum
+#define lttng_ust__field_enum(_provider, _name, _type, _item, _src, _nowrite)	\
 	lttng_ust__field_integer_ext(_type, _item, _src, LTTNG_UST_BYTE_ORDER, 10, _nowrite)
 
 /* Beware: this get len actually consumes the len value */

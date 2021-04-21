@@ -14,18 +14,18 @@
 
 LTTNG_UST_TRACEPOINT_ENUM(ust_tests_ctf_types, testenum,
 	LTTNG_UST_TP_ENUM_VALUES(
-		ctf_enum_value("even", 0)
-		ctf_enum_value("uneven", 1)
-		ctf_enum_range("twoto4", 2, 4)
-		ctf_enum_value("five\"extra\\test", 5)
+		lttng_ust_field_enum_value("even", 0)
+		lttng_ust_field_enum_value("uneven", 1)
+		lttng_ust_field_enum_range("twoto4", 2, 4)
+		lttng_ust_field_enum_value("five\"extra\\test", 5)
 	)
 )
 
 LTTNG_UST_TRACEPOINT_ENUM(ust_tests_ctf_types, testenum2,
 	LTTNG_UST_TP_ENUM_VALUES(
-		ctf_enum_value("zero", 0)
-		ctf_enum_value("five", 5)
-		ctf_enum_range("ten_to_twenty", 10, 20)
+		lttng_ust_field_enum_value("zero", 0)
+		lttng_ust_field_enum_value("five", 5)
+		lttng_ust_field_enum_range("ten_to_twenty", 10, 20)
 	)
 )
 
@@ -37,10 +37,10 @@ LTTNG_UST_TRACEPOINT_EVENT(ust_tests_ctf_types, tptest,
 	LTTNG_UST_TP_ARGS(int, anint, int, enumval, int, enumval2),
 	LTTNG_UST_TP_FIELDS(
 		lttng_ust_field_integer(int, intfield, anint)
-		ctf_enum(ust_tests_ctf_types, testenum, int, enumfield, enumval)
-		ctf_enum(ust_tests_ctf_types, testenum, long long,
+		lttng_ust_field_enum(ust_tests_ctf_types, testenum, int, enumfield, enumval)
+		lttng_ust_field_enum(ust_tests_ctf_types, testenum, long long,
 				enumfield_bis, enumval)
-		ctf_enum(ust_tests_ctf_types, testenum2, unsigned int,
+		lttng_ust_field_enum(ust_tests_ctf_types, testenum2, unsigned int,
 				enumfield_third, enumval2)
 	)
 )
@@ -53,7 +53,7 @@ LTTNG_UST_TRACEPOINT_EVENT(ust_tests_ctf_types, tptest_bis,
 	LTTNG_UST_TP_ARGS(int, anint, int, enumval),
 	LTTNG_UST_TP_FIELDS(
 		lttng_ust_field_integer(int, intfield, anint)
-		ctf_enum(ust_tests_ctf_types, testenum, unsigned char,
+		lttng_ust_field_enum(ust_tests_ctf_types, testenum, unsigned char,
 			enumfield, enumval)
 	)
 )

@@ -15,7 +15,7 @@
 #include "common/macros.h"
 #include "common/dynamic-type.h"
 
-#define ctf_enum_value(_string, _value)					\
+#define lttng_ust_field_enum_value(_string, _value)					\
 	LTTNG_UST_COMPOUND_LITERAL(struct lttng_ust_enum_entry, {		\
 		.struct_size = sizeof(struct lttng_ust_enum_entry),		\
 		.start = {						\
@@ -32,18 +32,18 @@
 	}),
 
 static const struct lttng_ust_enum_entry *dt_enum[_NR_LTTNG_UST_DYNAMIC_TYPES] = {
-	[LTTNG_UST_DYNAMIC_TYPE_NONE] = ctf_enum_value("_none", 0)
-	[LTTNG_UST_DYNAMIC_TYPE_S8] = ctf_enum_value("_int8", 1)
-	[LTTNG_UST_DYNAMIC_TYPE_S16] = ctf_enum_value("_int16", 2)
-	[LTTNG_UST_DYNAMIC_TYPE_S32] = ctf_enum_value("_int32", 3)
-	[LTTNG_UST_DYNAMIC_TYPE_S64] = ctf_enum_value("_int64", 4)
-	[LTTNG_UST_DYNAMIC_TYPE_U8] = ctf_enum_value("_uint8", 5)
-	[LTTNG_UST_DYNAMIC_TYPE_U16] = ctf_enum_value("_uint16", 6)
-	[LTTNG_UST_DYNAMIC_TYPE_U32] = ctf_enum_value("_uint32", 7)
-	[LTTNG_UST_DYNAMIC_TYPE_U64] = ctf_enum_value("_uint64", 8)
-	[LTTNG_UST_DYNAMIC_TYPE_FLOAT] = ctf_enum_value("_float", 9)
-	[LTTNG_UST_DYNAMIC_TYPE_DOUBLE] = ctf_enum_value("_double", 10)
-	[LTTNG_UST_DYNAMIC_TYPE_STRING] = ctf_enum_value("_string", 11)
+	[LTTNG_UST_DYNAMIC_TYPE_NONE] = lttng_ust_field_enum_value("_none", 0)
+	[LTTNG_UST_DYNAMIC_TYPE_S8] = lttng_ust_field_enum_value("_int8", 1)
+	[LTTNG_UST_DYNAMIC_TYPE_S16] = lttng_ust_field_enum_value("_int16", 2)
+	[LTTNG_UST_DYNAMIC_TYPE_S32] = lttng_ust_field_enum_value("_int32", 3)
+	[LTTNG_UST_DYNAMIC_TYPE_S64] = lttng_ust_field_enum_value("_int64", 4)
+	[LTTNG_UST_DYNAMIC_TYPE_U8] = lttng_ust_field_enum_value("_uint8", 5)
+	[LTTNG_UST_DYNAMIC_TYPE_U16] = lttng_ust_field_enum_value("_uint16", 6)
+	[LTTNG_UST_DYNAMIC_TYPE_U32] = lttng_ust_field_enum_value("_uint32", 7)
+	[LTTNG_UST_DYNAMIC_TYPE_U64] = lttng_ust_field_enum_value("_uint64", 8)
+	[LTTNG_UST_DYNAMIC_TYPE_FLOAT] = lttng_ust_field_enum_value("_float", 9)
+	[LTTNG_UST_DYNAMIC_TYPE_DOUBLE] = lttng_ust_field_enum_value("_double", 10)
+	[LTTNG_UST_DYNAMIC_TYPE_STRING] = lttng_ust_field_enum_value("_string", 11)
 };
 
 static struct lttng_ust_enum_desc dt_enum_desc = {

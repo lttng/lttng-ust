@@ -48,8 +48,8 @@
 #undef lttng_ust__field_unused
 #define lttng_ust__field_unused(_src)
 
-#undef _ctf_enum
-#define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite)
+#undef lttng_ust__field_enum
+#define lttng_ust__field_enum(_provider, _name, _type, _item, _src, _nowrite)
 
 /* "write" */
 #undef lttng_ust_field_integer
@@ -103,8 +103,8 @@
 #undef lttng_ust_field_unused
 #define lttng_ust_field_unused(_src)
 
-#undef ctf_enum
-#define ctf_enum(_provider, _name, _type, _item, _src)
+#undef lttng_ust_field_enum
+#define lttng_ust_field_enum(_provider, _name, _type, _item, _src)
 
 /* "nowrite" */
 #undef lttng_ust_field_integer_nowrite
@@ -149,5 +149,5 @@
 #undef lttng_ust_field_unused_nowrite
 #define lttng_ust_field_unused_nowrite(_src)
 
-#undef ctf_enum_nowrite
-#define ctf_enum_nowrite(_provider, _name, _type, _item, _src)
+#undef lttng_ust_field_enum_nowrite
+#define lttng_ust_field_enum_nowrite(_provider, _name, _type, _item, _src)
