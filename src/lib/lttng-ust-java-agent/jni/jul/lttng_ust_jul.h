@@ -29,9 +29,9 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_jul, event,
 		ctf_string(logger_name, logger_name)
 		ctf_string(class_name, class_name)
 		ctf_string(method_name, method_name)
-		ctf_integer(long, long_millis, millis)
-		ctf_integer(int, int_loglevel, log_level)
-		ctf_integer(int, int_threadid, thread_id)
+		lttng_ust_field_integer(long, long_millis, millis)
+		lttng_ust_field_integer(int, int_loglevel, log_level)
+		lttng_ust_field_integer(int, int_threadid, thread_id)
 	)
 )
 

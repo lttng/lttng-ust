@@ -20,11 +20,11 @@ LTTNG_UST_TRACEPOINT_EVENT(ust_tests_hello, tptest,
 		double, doublearg, float, floatarg,
 		bool, boolarg),
 	LTTNG_UST_TP_FIELDS(
-		ctf_integer(int, intfield, anint)
-		ctf_integer_hex(int, intfield2, anint)
-		ctf_integer(long, longfield, anint)
-		ctf_integer_network(int, netintfield, netint)
-		ctf_integer_network_hex(int, netintfieldhex, netint)
+		lttng_ust_field_integer(int, intfield, anint)
+		lttng_ust_field_integer_hex(int, intfield2, anint)
+		lttng_ust_field_integer(long, longfield, anint)
+		lttng_ust_field_integer_network(int, netintfield, netint)
+		lttng_ust_field_integer_network_hex(int, netintfieldhex, netint)
 		ctf_array_nowrite(long, arrfield1z, values, 3)
 		ctf_array(long, blah, values, 3)
 		ctf_array(long, arrfield1, values, 3)
@@ -45,8 +45,8 @@ LTTNG_UST_TRACEPOINT_EVENT(ust_tests_hello, tptest,
 		ctf_string(stringfield, text)
 		ctf_float(float, floatfield, floatarg)
 		ctf_float(double, doublefield, doublearg)
-		ctf_integer(bool, boolfield, boolarg)
-		ctf_integer_nowrite(int, filterfield, anint)
+		lttng_ust_field_integer(bool, boolfield, boolarg)
+		lttng_ust_field_integer_nowrite(int, filterfield, anint)
 	)
 )
 

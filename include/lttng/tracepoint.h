@@ -587,6 +587,12 @@ lttng_ust__tracepoints__ptrs_destroy(void)
 #define tracepoint_enabled		lttng_ust_tracepoint_enabled
 #define TP_ARGS				LTTNG_UST_TP_ARGS
 #define TP_FIELDS			LTTNG_UST_TP_FIELDS
+
+#define ctf_integer			lttng_ust_field_integer
+#define ctf_integer_hex			lttng_ust_field_integer_hex
+#define ctf_integer_network		lttng_ust_field_integer_network
+#define ctf_integer_network_hex		lttng_ust_field_integer_network_hex
+#define ctf_integer_nowrite		lttng_ust_field_integer_nowrite
 #endif /* #if LTTNG_UST_COMPAT_API(0) */
 
 #ifdef __cplusplus
@@ -663,10 +669,10 @@ lttng_ust__tracepoints__ptrs_destroy(void)
  *
  *     LTTNG_UST_TP_FIELDS(
  *         * Integer, printed in base 10 *
- *         ctf_integer(int, field_a, arg0)
+ *         lttng_ust_field_integer(int, field_a, arg0)
  *
  *         * Integer, printed with 0x base 16 *
- *         ctf_integer_hex(unsigned long, field_d, arg1)
+ *         lttng_ust_field_integer_hex(unsigned long, field_d, arg1)
  *
  *         * Enumeration *
  *         ctf_enum(someproject_component, enum_name, int, field_e, arg0)

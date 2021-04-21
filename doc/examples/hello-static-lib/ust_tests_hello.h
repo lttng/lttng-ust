@@ -18,11 +18,11 @@ LTTNG_UST_TRACEPOINT_EVENT(ust_tests_hello, tptest,
 		 char *, text, size_t, textlen,
 		 double, doublearg, float, floatarg),
 	LTTNG_UST_TP_FIELDS(
-		ctf_integer(int, intfield, anint)
-		ctf_integer_hex(int, intfield2, anint)
-		ctf_integer(long, longfield, anint)
-		ctf_integer_network(int, netintfield, netint)
-		ctf_integer_network_hex(int, netintfieldhex, netint)
+		lttng_ust_field_integer(int, intfield, anint)
+		lttng_ust_field_integer_hex(int, intfield2, anint)
+		lttng_ust_field_integer(long, longfield, anint)
+		lttng_ust_field_integer_network(int, netintfield, netint)
+		lttng_ust_field_integer_network_hex(int, netintfieldhex, netint)
 		ctf_array(long, arrfield1, values, 3)
 		ctf_array_text(char, arrfield2, text, 10)
 		ctf_sequence(char, seqfield1, text,

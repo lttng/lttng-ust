@@ -15,7 +15,7 @@
 LTTNG_UST_TRACEPOINT_EVENT(ust_tests_benchmark, tpbench,
 	LTTNG_UST_TP_ARGS(int, value),
 	LTTNG_UST_TP_FIELDS(
-		ctf_integer(int, event, value)
+		lttng_ust_field_integer(int, event, value)
 	)
 )
 

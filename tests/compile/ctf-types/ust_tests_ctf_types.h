@@ -36,7 +36,7 @@ LTTNG_UST_TRACEPOINT_ENUM(ust_tests_ctf_types, testenum2,
 LTTNG_UST_TRACEPOINT_EVENT(ust_tests_ctf_types, tptest,
 	LTTNG_UST_TP_ARGS(int, anint, int, enumval, int, enumval2),
 	LTTNG_UST_TP_FIELDS(
-		ctf_integer(int, intfield, anint)
+		lttng_ust_field_integer(int, intfield, anint)
 		ctf_enum(ust_tests_ctf_types, testenum, int, enumfield, enumval)
 		ctf_enum(ust_tests_ctf_types, testenum, long long,
 				enumfield_bis, enumval)
@@ -52,7 +52,7 @@ LTTNG_UST_TRACEPOINT_EVENT(ust_tests_ctf_types, tptest,
 LTTNG_UST_TRACEPOINT_EVENT(ust_tests_ctf_types, tptest_bis,
 	LTTNG_UST_TP_ARGS(int, anint, int, enumval),
 	LTTNG_UST_TP_FIELDS(
-		ctf_integer(int, intfield, anint)
+		lttng_ust_field_integer(int, intfield, anint)
 		ctf_enum(ust_tests_ctf_types, testenum, unsigned char,
 			enumfield, enumval)
 	)

@@ -27,8 +27,8 @@
 #undef LTTNG_UST_TRACEPOINT_MODEL_EMF_URI
 #define LTTNG_UST_TRACEPOINT_MODEL_EMF_URI(provider, name, uri)
 
-#undef _ctf_integer_ext
-#define _ctf_integer_ext(_type, _item, _src, _byte_order, _base, \
+#undef lttng_ust__field_integer_ext
+#define lttng_ust__field_integer_ext(_type, _item, _src, _byte_order, _base, \
 			_nowrite)
 
 #undef _ctf_float
@@ -52,17 +52,17 @@
 #define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite)
 
 /* "write" */
-#undef ctf_integer
-#define ctf_integer(_type, _item, _src)
+#undef lttng_ust_field_integer
+#define lttng_ust_field_integer(_type, _item, _src)
 
-#undef ctf_integer_hex
-#define ctf_integer_hex(_type, _item, _src)
+#undef lttng_ust_field_integer_hex
+#define lttng_ust_field_integer_hex(_type, _item, _src)
 
-#undef ctf_integer_network
-#define ctf_integer_network(_type, _item, _src)
+#undef lttng_ust_field_integer_network
+#define lttng_ust_field_integer_network(_type, _item, _src)
 
-#undef ctf_integer_network_hex
-#define ctf_integer_network_hex(_type, _item, _src)
+#undef lttng_ust_field_integer_network_hex
+#define lttng_ust_field_integer_network_hex(_type, _item, _src)
 
 #undef ctf_float
 #define ctf_float(_type, _item, _src)
@@ -107,8 +107,8 @@
 #define ctf_enum(_provider, _name, _type, _item, _src)
 
 /* "nowrite" */
-#undef ctf_integer_nowrite
-#define ctf_integer_nowrite(_type, _item, _src)
+#undef lttng_ust_field_integer_nowrite
+#define lttng_ust_field_integer_nowrite(_type, _item, _src)
 
 #undef ctf_float_nowrite
 #define ctf_float_nowrite(_type, _item, _src)

@@ -4,21 +4,21 @@
  * Copyright (C) 2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
-#undef ctf_integer
-#define ctf_integer(_type, _item, _src)				\
-	_ctf_integer_ext(_type, _item, _src, LTTNG_UST_BYTE_ORDER, 10, 0)
+#undef lttng_ust_field_integer
+#define lttng_ust_field_integer(_type, _item, _src)				\
+	lttng_ust__field_integer_ext(_type, _item, _src, LTTNG_UST_BYTE_ORDER, 10, 0)
 
-#undef ctf_integer_hex
-#define ctf_integer_hex(_type, _item, _src)			\
-	_ctf_integer_ext(_type, _item, _src, LTTNG_UST_BYTE_ORDER, 16, 0)
+#undef lttng_ust_field_integer_hex
+#define lttng_ust_field_integer_hex(_type, _item, _src)			\
+	lttng_ust__field_integer_ext(_type, _item, _src, LTTNG_UST_BYTE_ORDER, 16, 0)
 
-#undef ctf_integer_network
-#define ctf_integer_network(_type, _item, _src)			\
-	_ctf_integer_ext(_type, _item, _src, LTTNG_UST_BIG_ENDIAN, 10, 0)
+#undef lttng_ust_field_integer_network
+#define lttng_ust_field_integer_network(_type, _item, _src)			\
+	lttng_ust__field_integer_ext(_type, _item, _src, LTTNG_UST_BIG_ENDIAN, 10, 0)
 
-#undef ctf_integer_network_hex
-#define ctf_integer_network_hex(_type, _item, _src)		\
-	_ctf_integer_ext(_type, _item, _src, LTTNG_UST_BIG_ENDIAN, 16, 0)
+#undef lttng_ust_field_integer_network_hex
+#define lttng_ust_field_integer_network_hex(_type, _item, _src)		\
+	lttng_ust__field_integer_ext(_type, _item, _src, LTTNG_UST_BIG_ENDIAN, 16, 0)
 
 #undef ctf_float
 #define ctf_float(_type, _item, _src)				\

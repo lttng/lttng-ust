@@ -29,11 +29,11 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_lib, load,
 		uint8_t, has_debug_link),
 	LTTNG_UST_TP_FIELDS(
 		ctf_unused(ip)
-		ctf_integer_hex(void *, baddr, baddr)
-		ctf_integer(uint64_t, memsz, memsz)
+		lttng_ust_field_integer_hex(void *, baddr, baddr)
+		lttng_ust_field_integer(uint64_t, memsz, memsz)
 		ctf_string(path, path)
-		ctf_integer(uint8_t, has_build_id, has_build_id)
-		ctf_integer(uint8_t, has_debug_link, has_debug_link)
+		lttng_ust_field_integer(uint8_t, has_build_id, has_build_id)
+		lttng_ust_field_integer(uint8_t, has_debug_link, has_debug_link)
 	)
 )
 
@@ -46,7 +46,7 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_lib, build_id,
 	),
 	LTTNG_UST_TP_FIELDS(
 		ctf_unused(ip)
-		ctf_integer_hex(void *, baddr, baddr)
+		lttng_ust_field_integer_hex(void *, baddr, baddr)
 		ctf_sequence_hex(uint8_t, build_id, build_id,
 			size_t, build_id_len)
 	)
@@ -61,8 +61,8 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_lib, debug_link,
 	),
 	LTTNG_UST_TP_FIELDS(
 		ctf_unused(ip)
-		ctf_integer_hex(void *, baddr, baddr)
-		ctf_integer(uint32_t, crc, crc)
+		lttng_ust_field_integer_hex(void *, baddr, baddr)
+		lttng_ust_field_integer(uint32_t, crc, crc)
 		ctf_string(filename, filename)
 	)
 )
@@ -71,7 +71,7 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_lib, unload,
 	LTTNG_UST_TP_ARGS(void *, ip, void *, baddr),
 	LTTNG_UST_TP_FIELDS(
 		ctf_unused(ip)
-		ctf_integer_hex(void *, baddr, baddr)
+		lttng_ust_field_integer_hex(void *, baddr, baddr)
 	)
 )
 

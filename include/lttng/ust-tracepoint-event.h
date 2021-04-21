@@ -258,8 +258,8 @@ void lttng_ust__event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARG
 #include <lttng/ust-tracepoint-event-write.h>
 #include <lttng/ust-tracepoint-event-nowrite.h>
 
-#undef _ctf_integer_ext
-#define _ctf_integer_ext(_type, _item, _src, _byte_order, _base, _nowrite) \
+#undef lttng_ust__field_integer_ext
+#define lttng_ust__field_integer_ext(_type, _item, _src, _byte_order, _base, _nowrite) \
 	LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_event_field, { \
 		.struct_size = sizeof(struct lttng_ust_event_field), \
 		.name = #_item,					\
@@ -370,7 +370,7 @@ void lttng_ust__event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARG
 #define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)		   	     \
 	static const struct lttng_ust_event_field * const lttng_ust__event_fields___##_provider##___##_name[] = { \
 		_fields									     \
-		ctf_integer(int, dummy, 0)	/* Dummy, C99 forbids 0-len array. */	     \
+		lttng_ust_field_integer(int, dummy, 0)	/* Dummy, C99 forbids 0-len array. */	     \
 	};
 
 #undef LTTNG_UST_TRACEPOINT_ENUM
@@ -412,8 +412,8 @@ static void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_D
 #include <lttng/ust-tracepoint-event-reset.h>
 #include <lttng/ust-tracepoint-event-write.h>
 
-#undef _ctf_integer_ext
-#define _ctf_integer_ext(_type, _item, _src, _byte_order, _base, _nowrite)       \
+#undef lttng_ust__field_integer_ext
+#define lttng_ust__field_integer_ext(_type, _item, _src, _byte_order, _base, _nowrite)       \
 	if (0) 									 \
 		(void) (_src);	/* Unused */					 \
 	__event_len += lttng_ust_ring_buffer_align(__event_len, lttng_ust_rb_alignof(_type)); \
@@ -458,7 +458,7 @@ static void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_D
 
 #undef _ctf_enum
 #define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite)		\
-	_ctf_integer_ext(_type, _item, _src, LTTNG_UST_BYTE_ORDER, 10, _nowrite)
+	lttng_ust__field_integer_ext(_type, _item, _src, LTTNG_UST_BYTE_ORDER, 10, _nowrite)
 
 #undef LTTNG_UST_TP_ARGS
 #define LTTNG_UST_TP_ARGS(...) __VA_ARGS__
@@ -500,8 +500,8 @@ size_t lttng_ust__event_get_size__##_provider##___##_name(			      \
 #include <lttng/ust-tracepoint-event-write.h>
 #include <lttng/ust-tracepoint-event-nowrite.h>
 
-#undef _ctf_integer_ext
-#define _ctf_integer_ext(_type, _item, _src, _byte_order, _base, _nowrite)     \
+#undef lttng_ust__field_integer_ext
+#define lttng_ust__field_integer_ext(_type, _item, _src, _byte_order, _base, _nowrite)     \
 	if (lttng_ust_is_signed_type(_type)) {				       \
 		int64_t __ctf_tmp_int64;				       \
 		switch (sizeof(_type)) {				       \
@@ -627,7 +627,7 @@ size_t lttng_ust__event_get_size__##_provider##___##_name(			      \
 
 #undef _ctf_enum
 #define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite)		\
-	_ctf_integer_ext(_type, _item, _src, LTTNG_UST_BYTE_ORDER, 10, _nowrite)
+	lttng_ust__field_integer_ext(_type, _item, _src, LTTNG_UST_BYTE_ORDER, 10, _nowrite)
 
 #undef LTTNG_UST_TP_ARGS
 #define LTTNG_UST_TP_ARGS(...) __VA_ARGS__
@@ -661,8 +661,8 @@ void lttng_ust__event_prepare_interpreter_stack__##_provider##___##_name(char *_
 #include <lttng/ust-tracepoint-event-reset.h>
 #include <lttng/ust-tracepoint-event-write.h>
 
-#undef _ctf_integer_ext
-#define _ctf_integer_ext(_type, _item, _src, _byte_order, _base, _nowrite)     \
+#undef lttng_ust__field_integer_ext
+#define lttng_ust__field_integer_ext(_type, _item, _src, _byte_order, _base, _nowrite)     \
 	if (0)								       \
 		(void) (_src);	/* Unused */				       \
 	lttng_ust__event_align = lttng_ust__tp_max_t(size_t, lttng_ust__event_align, lttng_ust_rb_alignof(_type));
@@ -702,7 +702,7 @@ void lttng_ust__event_prepare_interpreter_stack__##_provider##___##_name(char *_
 
 #undef _ctf_enum
 #define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite)		\
-	_ctf_integer_ext(_type, _item, _src, LTTNG_UST_BYTE_ORDER, 10, _nowrite)
+	lttng_ust__field_integer_ext(_type, _item, _src, LTTNG_UST_BYTE_ORDER, 10, _nowrite)
 
 #undef LTTNG_UST_TP_ARGS
 #define LTTNG_UST_TP_ARGS(...) __VA_ARGS__
@@ -737,8 +737,8 @@ size_t lttng_ust__event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_PR
 #include <lttng/ust-tracepoint-event-reset.h>
 #include <lttng/ust-tracepoint-event-write.h>
 
-#undef _ctf_integer_ext
-#define _ctf_integer_ext(_type, _item, _src, _byte_order, _base, _nowrite) \
+#undef lttng_ust__field_integer_ext
+#define lttng_ust__field_integer_ext(_type, _item, _src, _byte_order, _base, _nowrite) \
 	{								\
 		_type __tmp = (_src);					\
 		__chan->ops->event_write(&__ctx, &__tmp, sizeof(__tmp), lttng_ust_rb_alignof(__tmp));\
@@ -786,7 +786,7 @@ size_t lttng_ust__event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_PR
 
 #undef _ctf_enum
 #define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite)	\
-	_ctf_integer_ext(_type, _item, _src, LTTNG_UST_BYTE_ORDER, 10, _nowrite)
+	lttng_ust__field_integer_ext(_type, _item, _src, LTTNG_UST_BYTE_ORDER, 10, _nowrite)
 
 /* Beware: this get len actually consumes the len value */
 #undef lttng_ust__get_dynamic_len

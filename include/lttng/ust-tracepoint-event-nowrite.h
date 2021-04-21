@@ -4,9 +4,9 @@
  * Copyright (C) 2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
-#undef ctf_integer_nowrite
-#define ctf_integer_nowrite(_type, _item, _src)			\
-	_ctf_integer_ext(_type, _item, _src, LTTNG_UST_BYTE_ORDER, 10, 1)
+#undef lttng_ust_field_integer_nowrite
+#define lttng_ust_field_integer_nowrite(_type, _item, _src)			\
+	lttng_ust__field_integer_ext(_type, _item, _src, LTTNG_UST_BYTE_ORDER, 10, 1)
 
 #undef ctf_float_nowrite
 #define ctf_float_nowrite(_type, _item, _src)			\
