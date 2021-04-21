@@ -27,15 +27,15 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_log4j, event,
 		int, log_level,
 		const char *, thread_name),
 	LTTNG_UST_TP_FIELDS(
-		ctf_string(msg, msg)
-		ctf_string(logger_name, logger_name)
-		ctf_string(class_name, class_name)
-		ctf_string(method_name, method_name)
-		ctf_string(filename, file_name)
+		lttng_ust_field_string(msg, msg)
+		lttng_ust_field_string(logger_name, logger_name)
+		lttng_ust_field_string(class_name, class_name)
+		lttng_ust_field_string(method_name, method_name)
+		lttng_ust_field_string(filename, file_name)
 		lttng_ust_field_integer(int, line_number, line_number)
 		lttng_ust_field_integer(long, timestamp, timestamp)
 		lttng_ust_field_integer(int, int_loglevel, log_level)
-		ctf_string(thread_name, thread_name)
+		lttng_ust_field_string(thread_name, thread_name)
 	)
 )
 

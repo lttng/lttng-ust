@@ -59,9 +59,9 @@
 	lttng_ust__field_sequence_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER,	\
 			_length_type, _src_length, UTF8, 1, 10)
 
-#undef ctf_string_nowrite
-#define ctf_string_nowrite(_item, _src)				\
-	_ctf_string(_item, _src, 1)
+#undef lttng_ust_field_string_nowrite
+#define lttng_ust_field_string_nowrite(_item, _src)				\
+	lttng_ust__field_string(_item, _src, 1)
 
 #undef ctf_unused_nowrite
 #define ctf_unused_nowrite(_src)				\

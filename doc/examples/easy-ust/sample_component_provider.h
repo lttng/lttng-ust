@@ -81,10 +81,10 @@ LTTNG_UST_TRACEPOINT_EVENT(
 	 */
 	LTTNG_UST_TP_FIELDS(
 	/*
-	 * The ctf_string macro takes a c string and writes it into a field
+	 * The lttng_ust_field_string macro takes a c string and writes it into a field
 	 * named "message"
 	 */
-		ctf_string(message, text)
+		lttng_ust_field_string(message, text)
 	)
 )
 /*

@@ -3,7 +3,7 @@ LTTNG_UST_TRACEPOINT_EVENT(
 	message, // C++ Style comment
 	LTTNG_UST_TP_ARGS(const char *, text),
 	LTTNG_UST_TP_FIELDS(
-		ctf_string(message, text)
+		lttng_ust_field_string(message, text)
 		  )
 )
 /*

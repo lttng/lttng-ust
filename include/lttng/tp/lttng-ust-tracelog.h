@@ -12,8 +12,8 @@ LTTNG_UST_TRACEPOINT_EVENT_CLASS(lttng_ust_tracelog, tlclass,
 		const char *, msg, unsigned int, len, void *, ip),
 	LTTNG_UST_TP_FIELDS(
 		lttng_ust_field_integer(int, line, line)
-		ctf_string(file, file)
-		ctf_string(func, func)
+		lttng_ust_field_string(file, file)
+		lttng_ust_field_string(func, func)
 		lttng_ust_field_sequence_text(char, msg, msg, unsigned int, len)
 		ctf_unused(ip)
 	)

@@ -74,9 +74,9 @@
 	lttng_ust__field_sequence_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER,	\
 			_length_type, _src_length, UTF8, 0, 10)
 
-#undef ctf_string
-#define ctf_string(_item, _src)					\
-	_ctf_string(_item, _src, 0)
+#undef lttng_ust_field_string
+#define lttng_ust_field_string(_item, _src)					\
+	lttng_ust__field_string(_item, _src, 0)
 
 #undef ctf_unused
 #define ctf_unused(_src)					\

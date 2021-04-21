@@ -618,6 +618,9 @@ lttng_ust__tracepoints__ptrs_destroy(void)
 #define ctf_sequence_network_nowrite	lttng_ust_field_sequence_network_nowrite
 #define ctf_sequence_network_nowrite_hex lttng_ust_field_sequence_network_nowrite_hex
 #define ctf_sequence_text_nowrite	lttng_ust_field_sequence_text_nowrite
+
+#define ctf_string			lttng_ust_field_string
+#define ctf_string_nowrite		lttng_ust_field_string_nowrite
 #endif /* #if LTTNG_UST_COMPAT_API(0) */
 
 #ifdef __cplusplus
@@ -707,7 +710,7 @@ lttng_ust__tracepoints__ptrs_destroy(void)
  *         lttng_ust_field_sequence_text(char, field_c, string, size_t, strlen)
  *
  *         * String, printed as UTF8-encoded string *
- *         ctf_string(field_e, string)
+ *         lttng_ust_field_string(field_e, string)
  *
  *         * Array sequence of signed integer values *
  *         lttng_ust_field_array(long, field_f, arg4, FIXED_LEN4)

@@ -327,8 +327,8 @@ void lttng_ust__event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARG
 		.nofilter = 0,					\
 	}),
 
-#undef _ctf_string
-#define _ctf_string(_item, _src, _nowrite)			\
+#undef lttng_ust__field_string
+#define lttng_ust__field_string(_item, _src, _nowrite)			\
 	LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_event_field, { \
 		.struct_size = sizeof(struct lttng_ust_event_field), \
 		.name = #_item,					\
@@ -446,8 +446,8 @@ static void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_D
 	__event_len += sizeof(_type) * __dynamic_len[__dynamic_len_idx];       \
 	__dynamic_len_idx++;
 
-#undef _ctf_string
-#define _ctf_string(_item, _src, _nowrite)				       \
+#undef lttng_ust__field_string
+#define lttng_ust__field_string(_item, _src, _nowrite)				       \
 	__event_len += __dynamic_len[__dynamic_len_idx++] =		       \
 		strlen((_src) ? (_src) : LTTNG_UST__NULL_STRING) + 1;
 
@@ -611,8 +611,8 @@ size_t lttng_ust__event_get_size__##_provider##___##_name(			      \
 		__stack_data += sizeof(void *);				       \
 	}
 
-#undef _ctf_string
-#define _ctf_string(_item, _src, _nowrite)				       \
+#undef lttng_ust__field_string
+#define lttng_ust__field_string(_item, _src, _nowrite)				       \
 	{								       \
 		const void *__ctf_tmp_ptr =				       \
 			((_src) ? (_src) : LTTNG_UST__NULL_STRING);	       \
@@ -690,8 +690,8 @@ void lttng_ust__event_prepare_interpreter_stack__##_provider##___##_name(char *_
 	lttng_ust__event_align = lttng_ust__tp_max_t(size_t, lttng_ust__event_align, lttng_ust_rb_alignof(_length_type));	  \
 	lttng_ust__event_align = lttng_ust__tp_max_t(size_t, lttng_ust__event_align, lttng_ust_rb_alignof(_type));
 
-#undef _ctf_string
-#define _ctf_string(_item, _src, _nowrite)					\
+#undef lttng_ust__field_string
+#define lttng_ust__field_string(_item, _src, _nowrite)					\
 	if (0)									\
 		(void) (_src);	/* Unused */
 
@@ -772,8 +772,8 @@ size_t lttng_ust__event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_PR
 	else								\
 		__chan->ops->event_pstrcpy_pad(&__ctx, (const char *) (_src), lttng_ust__get_dynamic_len(dest)); \
 
-#undef _ctf_string
-#define _ctf_string(_item, _src, _nowrite)					\
+#undef lttng_ust__field_string
+#define lttng_ust__field_string(_item, _src, _nowrite)					\
 	{									\
 		const char *__ctf_tmp_string =					\
 			((_src) ? (_src) : LTTNG_UST__NULL_STRING);		\

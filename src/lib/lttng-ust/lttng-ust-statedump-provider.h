@@ -44,7 +44,7 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_statedump, bin_info,
 		ctf_unused(session)
 		lttng_ust_field_integer_hex(void *, baddr, baddr)
 		lttng_ust_field_integer(uint64_t, memsz, memsz)
-		ctf_string(path, path)
+		lttng_ust_field_string(path, path)
 		lttng_ust_field_integer(uint8_t, is_pic, is_pic)
 		lttng_ust_field_integer(uint8_t, has_build_id, has_build_id)
 		lttng_ust_field_integer(uint8_t, has_debug_link, has_debug_link)
@@ -77,7 +77,7 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_statedump, debug_link,
 		ctf_unused(session)
 		lttng_ust_field_integer_hex(void *, baddr, baddr)
 		lttng_ust_field_integer(uint32_t, crc, crc)
-		ctf_string(filename, filename)
+		lttng_ust_field_string(filename, filename)
 	)
 )
 

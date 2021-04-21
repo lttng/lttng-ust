@@ -25,14 +25,14 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_python, event,
 		const char *, threadName
 	),
 	LTTNG_UST_TP_FIELDS(
-		ctf_string(asctime, asctime)
-		ctf_string(msg, msg)
-		ctf_string(logger_name, logger_name)
-		ctf_string(funcName, funcName)
+		lttng_ust_field_string(asctime, asctime)
+		lttng_ust_field_string(msg, msg)
+		lttng_ust_field_string(logger_name, logger_name)
+		lttng_ust_field_string(funcName, funcName)
 		lttng_ust_field_integer(unsigned int, lineno, lineno)
 		lttng_ust_field_integer(unsigned int, int_loglevel, int_loglevel)
 		lttng_ust_field_integer(unsigned int, thread, thread)
-		ctf_string(threadName, threadName)
+		lttng_ust_field_string(threadName, threadName)
 	)
 )
 
