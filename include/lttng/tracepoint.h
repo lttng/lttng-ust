@@ -621,6 +621,9 @@ lttng_ust__tracepoints__ptrs_destroy(void)
 
 #define ctf_string			lttng_ust_field_string
 #define ctf_string_nowrite		lttng_ust_field_string_nowrite
+
+#define ctf_unused			lttng_ust_field_unused
+#define ctf_unused_nowrite		lttng_ust_field_unused_nowrite
 #endif /* #if LTTNG_UST_COMPAT_API(0) */
 
 #ifdef __cplusplus

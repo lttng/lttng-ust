@@ -26,7 +26,7 @@ extern "C" {
 LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_statedump, start,
 	LTTNG_UST_TP_ARGS(struct lttng_ust_session *, session),
 	LTTNG_UST_TP_FIELDS(
-		ctf_unused(session)
+		lttng_ust_field_unused(session)
 	)
 )
 
@@ -41,7 +41,7 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_statedump, bin_info,
 		uint8_t, has_debug_link
 	),
 	LTTNG_UST_TP_FIELDS(
-		ctf_unused(session)
+		lttng_ust_field_unused(session)
 		lttng_ust_field_integer_hex(void *, baddr, baddr)
 		lttng_ust_field_integer(uint64_t, memsz, memsz)
 		lttng_ust_field_string(path, path)
@@ -59,7 +59,7 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_statedump, build_id,
 		size_t, build_id_len
 	),
 	LTTNG_UST_TP_FIELDS(
-		ctf_unused(session)
+		lttng_ust_field_unused(session)
 		lttng_ust_field_integer_hex(void *, baddr, baddr)
 		lttng_ust_field_sequence_hex(uint8_t, build_id, build_id,
 			size_t, build_id_len)
@@ -74,7 +74,7 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_statedump, debug_link,
 		uint32_t, crc
 	),
 	LTTNG_UST_TP_FIELDS(
-		ctf_unused(session)
+		lttng_ust_field_unused(session)
 		lttng_ust_field_integer_hex(void *, baddr, baddr)
 		lttng_ust_field_integer(uint32_t, crc, crc)
 		lttng_ust_field_string(filename, filename)
@@ -87,7 +87,7 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_statedump, procname,
 		char *, name
 	),
 	LTTNG_UST_TP_FIELDS(
-		ctf_unused(session)
+		lttng_ust_field_unused(session)
 		lttng_ust_field_array_text(char, procname, name, LTTNG_UST_ABI_PROCNAME_LEN)
 	)
 )
@@ -95,7 +95,7 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_statedump, procname,
 LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_statedump, end,
 	LTTNG_UST_TP_ARGS(struct lttng_ust_session *, session),
 	LTTNG_UST_TP_FIELDS(
-		ctf_unused(session)
+		lttng_ust_field_unused(session)
 	)
 )
 

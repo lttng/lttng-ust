@@ -20,7 +20,7 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_pthread, pthread_mutex_lock_req,
 	LTTNG_UST_TP_ARGS(pthread_mutex_t *, mutex, void *, ip),
 	LTTNG_UST_TP_FIELDS(
 		lttng_ust_field_integer_hex(void *, mutex, mutex)
-		ctf_unused(ip)
+		lttng_ust_field_unused(ip)
 	)
 )
 
@@ -29,7 +29,7 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_pthread, pthread_mutex_lock_acq,
 	LTTNG_UST_TP_FIELDS(
 		lttng_ust_field_integer_hex(void *, mutex, mutex)
 		lttng_ust_field_integer(int, status, status)
-		ctf_unused(ip)
+		lttng_ust_field_unused(ip)
 	)
 )
 
@@ -38,7 +38,7 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_pthread, pthread_mutex_trylock,
 	LTTNG_UST_TP_FIELDS(
 		lttng_ust_field_integer_hex(void *, mutex, mutex)
 		lttng_ust_field_integer(int, status, status)
-		ctf_unused(ip)
+		lttng_ust_field_unused(ip)
 	)
 )
 
@@ -47,7 +47,7 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_pthread, pthread_mutex_unlock,
 	LTTNG_UST_TP_FIELDS(
 		lttng_ust_field_integer_hex(void *, mutex, mutex)
 		lttng_ust_field_integer(int, status, status)
-		ctf_unused(ip)
+		lttng_ust_field_unused(ip)
 	)
 )
 

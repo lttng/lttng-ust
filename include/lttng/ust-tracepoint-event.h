@@ -343,8 +343,8 @@ void lttng_ust__event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARG
 		.nofilter = 0,					\
 	}),
 
-#undef _ctf_unused
-#define _ctf_unused(_src)
+#undef lttng_ust__field_unused
+#define lttng_ust__field_unused(_src)
 
 #undef _ctf_enum
 #define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite) \
@@ -451,8 +451,8 @@ static void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_D
 	__event_len += __dynamic_len[__dynamic_len_idx++] =		       \
 		strlen((_src) ? (_src) : LTTNG_UST__NULL_STRING) + 1;
 
-#undef _ctf_unused
-#define _ctf_unused(_src)							\
+#undef lttng_ust__field_unused
+#define lttng_ust__field_unused(_src)							\
 	if (0)									\
 		(void) (_src);  /* Unused */
 
@@ -620,8 +620,8 @@ size_t lttng_ust__event_get_size__##_provider##___##_name(			      \
 		__stack_data += sizeof(void *);				       \
 	}
 
-#undef _ctf_unused
-#define _ctf_unused(_src)							\
+#undef lttng_ust__field_unused
+#define lttng_ust__field_unused(_src)							\
 	if (0)									\
 		(void) (_src);
 
@@ -695,8 +695,8 @@ void lttng_ust__event_prepare_interpreter_stack__##_provider##___##_name(char *_
 	if (0)									\
 		(void) (_src);	/* Unused */
 
-#undef _ctf_unused
-#define _ctf_unused(_src)							\
+#undef lttng_ust__field_unused
+#define lttng_ust__field_unused(_src)							\
 	if (0)									\
 		(void) (_src);	/* Unused */
 
@@ -781,8 +781,8 @@ size_t lttng_ust__event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_PR
 			lttng_ust__get_dynamic_len(dest));			\
 	}
 
-#undef _ctf_unused
-#define _ctf_unused(_src)
+#undef lttng_ust__field_unused
+#define lttng_ust__field_unused(_src)
 
 #undef _ctf_enum
 #define _ctf_enum(_provider, _name, _type, _item, _src, _nowrite)	\

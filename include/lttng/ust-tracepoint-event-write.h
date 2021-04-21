@@ -78,9 +78,9 @@
 #define lttng_ust_field_string(_item, _src)					\
 	lttng_ust__field_string(_item, _src, 0)
 
-#undef ctf_unused
-#define ctf_unused(_src)					\
-	_ctf_unused(_src)
+#undef lttng_ust_field_unused
+#define lttng_ust_field_unused(_src)					\
+	lttng_ust__field_unused(_src)
 
 #undef ctf_enum
 #define ctf_enum(_provider, _name, _type, _item, _src)			\

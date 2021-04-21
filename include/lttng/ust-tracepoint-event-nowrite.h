@@ -63,9 +63,9 @@
 #define lttng_ust_field_string_nowrite(_item, _src)				\
 	lttng_ust__field_string(_item, _src, 1)
 
-#undef ctf_unused_nowrite
-#define ctf_unused_nowrite(_src)				\
-	_ctf_unused(_src)
+#undef lttng_ust_field_unused_nowrite
+#define lttng_ust_field_unused_nowrite(_src)				\
+	lttng_ust__field_unused(_src)
 
 #undef ctf_enum_nowrite
 #define ctf_enum_nowrite(_provider, _name, _type, _item, _src)		\
