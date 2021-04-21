@@ -191,10 +191,10 @@ void lttng_ust_tracepoint_cb_##_provider##___##_name(LTTNG_UST__TP_ARGS_PROTO(__
 {											\
 	struct lttng_ust_tracepoint_probe *__tp_probe;					\
 											\
-	if (caa_unlikely(!TP_RCU_LINK_TEST()))						\
+	if (caa_unlikely(!LTTNG_UST_TP_RCU_LINK_TEST()))						\
 		return;									\
-	tp_rcu_read_lock();								\
-	__tp_probe = tp_rcu_dereference(lttng_ust_tracepoint_##_provider##___##_name.probes);	\
+	lttng_ust_tp_rcu_read_lock();								\
+	__tp_probe = lttng_ust_tp_rcu_dereference(lttng_ust_tracepoint_##_provider##___##_name.probes);	\
 	if (caa_unlikely(!__tp_probe))							\
 		goto end;								\
 	do {										\
@@ -205,7 +205,7 @@ void lttng_ust_tracepoint_cb_##_provider##___##_name(LTTNG_UST__TP_ARGS_PROTO(__
 				(LTTNG_UST__TP_ARGS_DATA_VAR(__VA_ARGS__));			\
 	} while ((++__tp_probe)->func);							\
 end:											\
-	tp_rcu_read_unlock();								\
+	lttng_ust_tp_rcu_read_unlock();								\
 }											\
 static inline										\
 void lttng_ust_tracepoint_register_##_provider##___##_name(char *provider_name, char *event_name, \
@@ -350,17 +350,17 @@ lttng_ust_tracepoint__init_urcu_sym(void)
 		lttng_ust_tracepoint_dlopen_ptr->rcu_read_lock_sym =
 			URCU_FORCE_CAST(void (*)(void),
 				dlsym(lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle,
-					"tp_rcu_read_lock"));
+					"lttng_ust_tp_rcu_read_lock"));
 	if (!lttng_ust_tracepoint_dlopen_ptr->rcu_read_unlock_sym)
 		lttng_ust_tracepoint_dlopen_ptr->rcu_read_unlock_sym =
 			URCU_FORCE_CAST(void (*)(void),
 				dlsym(lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle,
-					"tp_rcu_read_unlock"));
+					"lttng_ust_tp_rcu_read_unlock"));
 	if (!lttng_ust_tracepoint_dlopen_ptr->rcu_dereference_sym)
 		lttng_ust_tracepoint_dlopen_ptr->rcu_dereference_sym =
 			URCU_FORCE_CAST(void *(*)(void *p),
 				dlsym(lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle,
-					"tp_rcu_dereference_sym"));
+					"lttng_ust_tp_rcu_dereference_sym"));
 }
 #else
 static inline void

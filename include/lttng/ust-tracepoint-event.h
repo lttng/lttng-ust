@@ -22,9 +22,9 @@
 
 #undef tp_list_for_each_entry_rcu
 #define tp_list_for_each_entry_rcu(pos, head, member)	\
-	for (pos = cds_list_entry(tp_rcu_dereference((head)->next), __typeof__(*pos), member);	\
+	for (pos = cds_list_entry(lttng_ust_tp_rcu_dereference((head)->next), __typeof__(*pos), member);	\
 	     &pos->member != (head);					\
-	     pos = cds_list_entry(tp_rcu_dereference(pos->member.next), __typeof__(*pos), member))
+	     pos = cds_list_entry(lttng_ust_tp_rcu_dereference(pos->member.next), __typeof__(*pos), member))
 
 /*
  * LTTNG_UST_TRACEPOINT_EVENT_CLASS declares a class of tracepoints receiving the
@@ -877,7 +877,7 @@ void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PRO
 	}								      \
 	if (caa_unlikely(!CMM_ACCESS_ONCE(__event->enabled)))		      \
 		return;							      \
-	if (caa_unlikely(!TP_RCU_LINK_TEST()))				      \
+	if (caa_unlikely(!LTTNG_UST_TP_RCU_LINK_TEST()))				      \
 		return;							      \
 	if (caa_unlikely(CMM_ACCESS_ONCE(__event->eval_filter))) { \
 		lttng_ust__event_prepare_interpreter_stack__##_provider##___##_name(__stackvar.__interpreter_stack_data, \

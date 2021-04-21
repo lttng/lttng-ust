@@ -998,24 +998,24 @@ void lttng_ust_tp_exit(void)
 /*
  * Create the wrapper symbols.
  */
-#undef tp_rcu_read_lock
-#undef tp_rcu_read_unlock
-#undef tp_rcu_dereference
+#undef lttng_ust_tp_rcu_read_lock
+#undef lttng_ust_tp_rcu_read_unlock
+#undef lttng_ust_tp_rcu_dereference
 
-void tp_rcu_read_lock(void);
-void tp_rcu_read_lock(void)
+void lttng_ust_tp_rcu_read_lock(void);
+void lttng_ust_tp_rcu_read_lock(void)
 {
 	lttng_ust_urcu_read_lock();
 }
 
-void tp_rcu_read_unlock(void);
-void tp_rcu_read_unlock(void)
+void lttng_ust_tp_rcu_read_unlock(void);
+void lttng_ust_tp_rcu_read_unlock(void)
 {
 	lttng_ust_urcu_read_unlock();
 }
 
-void *tp_rcu_dereference_sym(void *p);
-void *tp_rcu_dereference_sym(void *p)
+void *lttng_ust_tp_rcu_dereference_sym(void *p);
+void *lttng_ust_tp_rcu_dereference_sym(void *p)
 {
 	return lttng_ust_rcu_dereference(p);
 }
