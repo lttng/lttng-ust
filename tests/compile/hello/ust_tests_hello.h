@@ -32,15 +32,15 @@ LTTNG_UST_TRACEPOINT_EVENT(ust_tests_hello, tptest,
 		lttng_ust_field_array_network(long, arrfield1_network, values, 3)
 		lttng_ust_field_array_network_hex(long, arrfield1_network_hex, values, 3)
 		lttng_ust_field_array_text(char, arrfield2, text, 10)
-		ctf_sequence(char, seqfield1, text,
+		lttng_ust_field_sequence(char, seqfield1, text,
 			     size_t, textlen)
-		ctf_sequence_nowrite(char, seqfield1z, text,
+		lttng_ust_field_sequence_nowrite(char, seqfield1z, text,
 			     size_t, textlen)
-		ctf_sequence_hex(char, seqfield1_hex, text,
+		lttng_ust_field_sequence_hex(char, seqfield1_hex, text,
 			     size_t, textlen)
-		ctf_sequence_text(char, seqfield2, text,
+		lttng_ust_field_sequence_text(char, seqfield2, text,
 			     size_t, textlen)
-		ctf_sequence_network(long, seqfield_network_3, values,
+		lttng_ust_field_sequence_network(long, seqfield_network_3, values,
 			     size_t, 3)
 		ctf_string(stringfield, text)
 		lttng_ust_field_float(float, floatfield, floatarg)

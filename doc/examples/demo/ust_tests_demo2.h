@@ -25,9 +25,9 @@ LTTNG_UST_TRACEPOINT_EVENT(ust_tests_demo2, loop,
 		lttng_ust_field_integer_network_hex(int, netintfieldhex, netint)
 		lttng_ust_field_array(long, arrfield1, values, 3)
 		lttng_ust_field_array_text(char, arrfield2, text, 10)
-		ctf_sequence(char, seqfield1, text,
+		lttng_ust_field_sequence(char, seqfield1, text,
 			     size_t, textlen)
-		ctf_sequence_text(char, seqfield2, text,
+		lttng_ust_field_sequence_text(char, seqfield2, text,
 			     size_t, textlen)
 		ctf_string(stringfield, text)
 		lttng_ust_field_float(float, floatfield, floatarg)

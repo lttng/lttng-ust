@@ -34,29 +34,29 @@
 #define lttng_ust_field_array_text_nowrite(_type, _item, _src, _length)	\
 	lttng_ust__field_array_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER, _length, UTF8, 1, 10)
 
-#undef ctf_sequence_nowrite
-#define ctf_sequence_nowrite(_type, _item, _src, _length_type, _src_length) \
-	_ctf_sequence_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER,	\
+#undef lttng_ust_field_sequence_nowrite
+#define lttng_ust_field_sequence_nowrite(_type, _item, _src, _length_type, _src_length) \
+	lttng_ust__field_sequence_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER,	\
 			_length_type, _src_length, none, 1, 10)
 
-#undef ctf_sequence_nowrite_hex
-#define ctf_sequence_nowrite_hex(_type, _item, _src, _length_type, _src_length) \
-	_ctf_sequence_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER,	\
+#undef lttng_ust_field_sequence_nowrite_hex
+#define lttng_ust_field_sequence_nowrite_hex(_type, _item, _src, _length_type, _src_length) \
+	lttng_ust__field_sequence_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER,	\
 			_length_type, _src_length, none, 1, 16)
 
-#undef ctf_sequence_network_nowrite
-#define ctf_sequence_network_nowrite(_type, _item, _src, _length_type, _src_length) \
-	_ctf_sequence_encoded(_type, _item, _src, LTTNG_UST_BIG_ENDIAN,	\
+#undef lttng_ust_field_sequence_network_nowrite
+#define lttng_ust_field_sequence_network_nowrite(_type, _item, _src, _length_type, _src_length) \
+	lttng_ust__field_sequence_encoded(_type, _item, _src, LTTNG_UST_BIG_ENDIAN,	\
 			_length_type, _src_length, none, 1, 10)
 
-#undef ctf_sequence_network_nowrite_hex
-#define ctf_sequence_network_nowrite_hex(_type, _item, _src, _length_type, _src_length) \
-	_ctf_sequence_encoded(_type, _item, _src, LTTNG_UST_BIG_ENDIAN,	\
+#undef lttng_ust_field_sequence_network_nowrite_hex
+#define lttng_ust_field_sequence_network_nowrite_hex(_type, _item, _src, _length_type, _src_length) \
+	lttng_ust__field_sequence_encoded(_type, _item, _src, LTTNG_UST_BIG_ENDIAN,	\
 			_length_type, _src_length, none, 1, 16)
 
-#undef ctf_sequence_text_nowrite
-#define ctf_sequence_text_nowrite(_type, _item, _src, _length_type, _src_length) \
-	_ctf_sequence_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER,	\
+#undef lttng_ust_field_sequence_text_nowrite
+#define lttng_ust_field_sequence_text_nowrite(_type, _item, _src, _length_type, _src_length) \
+	lttng_ust__field_sequence_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER,	\
 			_length_type, _src_length, UTF8, 1, 10)
 
 #undef ctf_string_nowrite

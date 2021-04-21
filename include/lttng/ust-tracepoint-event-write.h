@@ -49,29 +49,29 @@
 	lttng_ust__field_array_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER,	\
 			_length, UTF8, 0, 10)
 
-#undef ctf_sequence
-#define ctf_sequence(_type, _item, _src, _length_type, _src_length) \
-	_ctf_sequence_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER,	\
+#undef lttng_ust_field_sequence
+#define lttng_ust_field_sequence(_type, _item, _src, _length_type, _src_length) \
+	lttng_ust__field_sequence_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER,	\
 			_length_type, _src_length, none, 0, 10)
 
-#undef ctf_sequence_hex
-#define ctf_sequence_hex(_type, _item, _src, _length_type, _src_length) \
-	_ctf_sequence_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER,	\
+#undef lttng_ust_field_sequence_hex
+#define lttng_ust_field_sequence_hex(_type, _item, _src, _length_type, _src_length) \
+	lttng_ust__field_sequence_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER,	\
 			_length_type, _src_length, none, 0, 16)
 
-#undef ctf_sequence_network
-#define ctf_sequence_network(_type, _item, _src, _length_type, _src_length) \
-	_ctf_sequence_encoded(_type, _item, _src, LTTNG_UST_BIG_ENDIAN,	\
+#undef lttng_ust_field_sequence_network
+#define lttng_ust_field_sequence_network(_type, _item, _src, _length_type, _src_length) \
+	lttng_ust__field_sequence_encoded(_type, _item, _src, LTTNG_UST_BIG_ENDIAN,	\
 			_length_type, _src_length, none, 0, 10)
 
-#undef ctf_sequence_network_hex
-#define ctf_sequence_network_hex(_type, _item, _src, _length_type, _src_length) \
-	_ctf_sequence_encoded(_type, _item, _src, LTTNG_UST_BIG_ENDIAN,	\
+#undef lttng_ust_field_sequence_network_hex
+#define lttng_ust_field_sequence_network_hex(_type, _item, _src, _length_type, _src_length) \
+	lttng_ust__field_sequence_encoded(_type, _item, _src, LTTNG_UST_BIG_ENDIAN,	\
 			_length_type, _src_length, none, 0, 16)
 
-#undef ctf_sequence_text
-#define ctf_sequence_text(_type, _item, _src, _length_type, _src_length) \
-	_ctf_sequence_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER,	\
+#undef lttng_ust_field_sequence_text
+#define lttng_ust_field_sequence_text(_type, _item, _src, _length_type, _src_length) \
+	lttng_ust__field_sequence_encoded(_type, _item, _src, LTTNG_UST_BYTE_ORDER,	\
 			_length_type, _src_length, UTF8, 0, 10)
 
 #undef ctf_string

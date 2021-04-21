@@ -61,7 +61,7 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_statedump, build_id,
 	LTTNG_UST_TP_FIELDS(
 		ctf_unused(session)
 		lttng_ust_field_integer_hex(void *, baddr, baddr)
-		ctf_sequence_hex(uint8_t, build_id, build_id,
+		lttng_ust_field_sequence_hex(uint8_t, build_id, build_id,
 			size_t, build_id_len)
 	)
 )
