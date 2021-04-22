@@ -52,7 +52,7 @@ static struct lttng_ust_enum_desc dt_enum_desc = {
 	.nr_entries = LTTNG_ARRAY_SIZE(dt_enum),
 };
 
-const struct lttng_ust_event_field *dt_var_fields[_NR_LTTNG_UST_DYNAMIC_TYPES] = {
+static const struct lttng_ust_event_field *dt_var_fields[_NR_LTTNG_UST_DYNAMIC_TYPES] = {
 	[LTTNG_UST_DYNAMIC_TYPE_NONE] = LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_event_field, {
 		.struct_size = sizeof(struct lttng_ust_event_field),
 		.name = "none",

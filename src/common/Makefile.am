@@ -12,7 +12,6 @@ noinst_HEADERS = \
 	bitmap.h \
 	clock.h \
 	creds.h \
-	dynamic-type.h \
 	err-ptr.h \
 	events.h \
 	hash.h \
@@ -137,6 +136,8 @@ libsnprintf_la_SOURCES = \
 
 # Common library
 libcommon_la_SOURCES = \
+	dynamic-type.c \
+	dynamic-type.h \
 	elf.c \
 	elf.h \
 	events.c \
