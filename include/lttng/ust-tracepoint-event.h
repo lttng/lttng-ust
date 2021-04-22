@@ -20,12 +20,6 @@
 
 #define LTTNG_UST__NULL_STRING	"(null)"
 
-#undef tp_list_for_each_entry_rcu
-#define tp_list_for_each_entry_rcu(pos, head, member)	\
-	for (pos = cds_list_entry(lttng_ust_tp_rcu_dereference((head)->next), __typeof__(*pos), member);	\
-	     &pos->member != (head);					\
-	     pos = cds_list_entry(lttng_ust_tp_rcu_dereference(pos->member.next), __typeof__(*pos), member))
-
 /*
  * LTTNG_UST_TRACEPOINT_EVENT_CLASS declares a class of tracepoints receiving the
  * same arguments and having the same field layout.
