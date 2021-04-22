@@ -11,6 +11,7 @@
 #include "common/getenv.h"
 
 #include "lib/lttng-ust-common/fd-tracker.h"
+#include "lib/lttng-ust-common/clock.h"
 
 /*
  * The liblttng-ust-common constructor, initialize the internal shared state.
@@ -24,6 +25,11 @@ void lttng_ust_common_ctor(void)
 	 * Initialize the shared state of the fd tracker.
 	 */
 	lttng_ust_fd_tracker_init();
+
+	/*
+	 * Initialize the potential user-provided clock plugin.
+	 */
+	lttng_ust_clock_init();
 }
 
 void lttng_ust_common_alloc_tls(void)

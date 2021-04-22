@@ -14,7 +14,7 @@
 #include <lttng/urcu/pointer.h>
 #include "common/bitfield.h"
 #include "common/align.h"
-#include "clock.h"
+#include "common/clock.h"
 #include "context-internal.h"
 #include "lttng-tracer.h"
 #include "common/ringbuffer/frontend_types.h"

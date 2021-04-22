@@ -28,7 +28,6 @@
 #include "common/events.h"
 #include "common/wait.h"
 #include "lib/lttng-ust/lttng-rb-clients.h"
-#include "common/clock.h"
 #include "common/getenv.h"
 #include "lib/lttng-ust/lttng-tracer-core.h"
 #include "lib/lttng-ust/lttng-counter-client.h"
@@ -2912,7 +2911,6 @@ void lttng_ust_ctl_ctor(void)
 	 */
 	lttng_ust_common_ctor();
 
-	lttng_ust_clock_init();
 	lttng_ust_ring_buffer_clients_init();
 	lttng_ust_counter_clients_init();
 	lib_ringbuffer_signal_init();

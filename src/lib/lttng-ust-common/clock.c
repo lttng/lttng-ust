@@ -11,13 +11,14 @@
 #include <stdio.h>
 
 #include <lttng/ust-clock.h>
+#include <lttng/ust-events.h>
 #include <urcu/system.h>
 #include <urcu/arch.h>
 
 #include "common/logging.h"
-
-#include "clock.h"
 #include "common/getenv.h"
+
+#include "lib/lttng-ust-common/clock.h"
 
 struct lttng_ust_trace_clock *lttng_ust_trace_clock;
 
