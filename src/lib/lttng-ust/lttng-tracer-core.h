@@ -70,33 +70,11 @@ char* lttng_ust_sockinfo_get_procname(void *owner)
 void lttng_ust_sockinfo_session_enabled(void *owner)
 	__attribute__((visibility("hidden")));
 
-size_t lttng_ust_dummy_get_size(void *priv, struct lttng_ust_probe_ctx *probe_ctx,
-		size_t offset)
-	__attribute__((visibility("hidden")));
-
-void lttng_ust_dummy_record(void *priv, struct lttng_ust_probe_ctx *probe_ctx,
-		struct lttng_ust_ring_buffer_ctx *ctx,
-		struct lttng_ust_channel_buffer *chan)
-	__attribute__((visibility("hidden")));
-
-void lttng_ust_dummy_get_value(void *priv, struct lttng_ust_probe_ctx *probe_ctx,
-		struct lttng_ust_ctx_value *value)
-	__attribute__((visibility("hidden")));
-
 void lttng_event_notifier_notification_send(
 		const struct lttng_ust_event_notifier *event_notifier,
 		const char *stack_data,
 		struct lttng_ust_probe_ctx *probe_ctx,
 		struct lttng_ust_notification_ctx *notif_ctx)
-	__attribute__((visibility("hidden")));
-
-struct lttng_counter_transport *lttng_counter_transport_find(const char *name)
-	__attribute__((visibility("hidden")));
-
-void lttng_counter_transport_register(struct lttng_counter_transport *transport)
-	__attribute__((visibility("hidden")));
-
-void lttng_counter_transport_unregister(struct lttng_counter_transport *transport)
 	__attribute__((visibility("hidden")));
 
 #ifdef HAVE_LINUX_PERF_EVENT_H

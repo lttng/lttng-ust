@@ -10,15 +10,14 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "lib/lttng-ust/events.h"
 #include <lttng/urcu/pointer.h>
+#include <urcu/tls-compat.h>
+
+#include "common/events.h"
 #include "common/bitfield.h"
 #include "common/align.h"
 #include "common/clock.h"
-#include "context-internal.h"
-#include "lttng-tracer.h"
 #include "common/ringbuffer/frontend_types.h"
-#include <urcu/tls-compat.h>
 
 #define LTTNG_COMPACT_EVENT_BITS       5
 #define LTTNG_COMPACT_TSC_BITS         27
@@ -197,7 +196,7 @@ size_t record_header_size(
 }
 
 #include "common/ringbuffer/api.h"
-#include "lttng-rb-clients.h"
+#include "common/ringbuffer-clients/clients.h"
 
 static
 void lttng_write_event_header_slow(const struct lttng_ust_ring_buffer_config *config,

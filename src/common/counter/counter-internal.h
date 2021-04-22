@@ -10,6 +10,8 @@
 #define _LTTNG_COUNTER_INTERNAL_H
 
 #include <stdint.h>
+#include <errno.h>
+
 #include <lttng/ust-config.h>
 #include <urcu/compiler.h>
 #include "counter-types.h"

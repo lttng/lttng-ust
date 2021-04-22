@@ -55,8 +55,8 @@
 #include "lib/lttng-ust/events.h"
 #include "context-internal.h"
 #include "common/align.h"
-#include "lttng-counter-client.h"
-#include "lttng-rb-clients.h"
+#include "common/counter-clients/clients.h"
+#include "common/ringbuffer-clients/clients.h"
 
 /*
  * Has lttng ust comm constructor been called ?

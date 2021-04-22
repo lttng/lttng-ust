@@ -571,9 +571,6 @@ struct lttng_enabler *lttng_event_notifier_enabler_as_enabler(
 
 
 
-/* This is ABI between liblttng-ust and liblttng-ust-ctl */
-struct lttng_transport *lttng_ust_transport_find(const char *name);
-
 /* This is ABI between liblttng-ust and liblttng-ust-dl */
 void lttng_ust_dl_update(void *ip);
 

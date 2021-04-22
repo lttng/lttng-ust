@@ -17,6 +17,7 @@
 #include "lttng-bytecode.h"
 #include "lib/lttng-ust/events.h"
 #include "common/macros.h"
+#include "common/tracer.h"
 
 static int lttng_fls(int val)
 {

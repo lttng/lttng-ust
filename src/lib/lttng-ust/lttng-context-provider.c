@@ -19,6 +19,7 @@
 #include "common/jhash.h"
 #include "context-provider-internal.h"
 #include "common/macros.h"
+#include "common/tracer.h"
 
 struct lttng_ust_registered_context_provider {
 	const struct lttng_ust_context_provider *provider;

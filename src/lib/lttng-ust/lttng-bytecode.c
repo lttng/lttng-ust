@@ -16,6 +16,7 @@
 #include "lttng-bytecode.h"
 #include "lib/lttng-ust/events.h"
 #include "common/macros.h"
+#include "common/tracer.h"
 
 static const char *opnames[] = {
 	[ BYTECODE_OP_UNKNOWN ] = "UNKNOWN",

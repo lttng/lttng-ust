@@ -7,8 +7,8 @@
  */
 
 #define _LGPL_SOURCE
-#include "lttng-tracer.h"
-#include "lttng-rb-clients.h"
+#include "common/tracer.h"
+#include "common/ringbuffer-clients/clients.h"
 
 #define RING_BUFFER_MODE_TEMPLATE		RING_BUFFER_OVERWRITE
 #define RING_BUFFER_MODE_TEMPLATE_STRING	"overwrite"
@@ -20,4 +20,4 @@
 	lttng_ring_buffer_client_overwrite_exit
 #define LTTNG_CLIENT_TYPE			LTTNG_CLIENT_OVERWRITE
 #define LTTNG_CLIENT_WAKEUP			RING_BUFFER_WAKEUP_BY_WRITER
-#include "lttng-ring-buffer-client-template.h"
+#include "common/ringbuffer-clients/template.h"

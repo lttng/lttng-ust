@@ -7,7 +7,7 @@
  */
 
 #define _LGPL_SOURCE
-#include "lttng-tracer.h"
+#include "common/tracer.h"
 
 #define RING_BUFFER_MODE_TEMPLATE		RING_BUFFER_DISCARD
 #define RING_BUFFER_MODE_TEMPLATE_STRING	"metadata"
@@ -16,4 +16,4 @@
 #define RING_BUFFER_MODE_TEMPLATE_EXIT	\
 	lttng_ring_buffer_metadata_client_exit
 #define LTTNG_CLIENT_TYPE			LTTNG_CLIENT_METADATA
-#include "lttng-ring-buffer-metadata-client-template.h"
+#include "common/ringbuffer-clients/metadata-template.h"

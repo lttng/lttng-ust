@@ -24,6 +24,7 @@ noinst_HEADERS = \
 	procname.h \
 	safe-snprintf.h \
 	tracepoint.h \
+	tracer.h \
 	wait.h
 
 noinst_HEADERS += \
@@ -50,8 +51,10 @@ noinst_HEADERS += \
 
 noinst_LTLIBRARIES = \
 	libcounter.la \
+	libcounter-clients.la \
 	libmsgpack.la \
 	libringbuffer.la \
+	libringbuffer-clients.la \
 	libsnprintf.la \
 	libcommon.la \
 	libustcomm.la
@@ -76,6 +79,15 @@ libcounter_la_LIBADD += -lnuma
 endif
 
 libcounter_la_CFLAGS = -DUST_COMPONENT="libcounter" $(AM_CFLAGS)
+
+# counter-clients
+libcounter_clients_la_SOURCES = \
+	counter-clients/clients.c \
+	counter-clients/clients.h \
+	counter-clients/percpu-32-modular.c \
+	counter-clients/percpu-64-modular.c
+
+libcounter_clients_la_CFLAGS = -DUST_COMPONENT="libcounter-clients" $(AM_CFLAGS)
 
 # msgpack
 libmsgpack_la_SOURCES = \
@@ -114,6 +126,20 @@ endif
 
 libringbuffer_la_CFLAGS = -DUST_COMPONENT="libringbuffer" $(AM_CFLAGS)
 
+# ringbuffer-client
+libringbuffer_clients_la_SOURCES = \
+	ringbuffer-clients/clients.c \
+	ringbuffer-clients/clients.h \
+	ringbuffer-clients/discard.c \
+	ringbuffer-clients/discard-rt.c \
+	ringbuffer-clients/metadata.c \
+	ringbuffer-clients/metadata-template.h \
+	ringbuffer-clients/overwrite.c \
+	ringbuffer-clients/overwrite-rt.c \
+	ringbuffer-clients/template.h
+
+libringbuffer_clients_la_CFLAGS = -DUST_COMPONENT="libringbuffer-clients" $(AM_CFLAGS)
+
 # snprintf
 libsnprintf_la_SOURCES = \
 	snprintf/fflush.c \
@@ -131,6 +157,7 @@ libsnprintf_la_SOURCES = \
 
 # Common library
 libcommon_la_SOURCES = \
+	core.c \
 	dynamic-type.c \
 	dynamic-type.h \
 	elf.c \

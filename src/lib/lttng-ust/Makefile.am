@@ -4,11 +4,7 @@ AM_CFLAGS += -I$(srcdir)
 
 lib_LTLIBRARIES = liblttng-ust.la
 
-noinst_LTLIBRARIES = \
-	liblttng-ust-runtime.la \
-	liblttng-ust-support.la
-
-liblttng_ust_runtime_la_SOURCES = \
+liblttng_ust_la_SOURCES = \
 	bytecode.h \
 	lttng-ust-comm.c \
 	lttng-ust-abi.c \
@@ -62,45 +58,27 @@ liblttng_ust_runtime_la_SOURCES = \
 	rculfhash-mm-chunk.c \
 	rculfhash-mm-mmap.c \
 	rculfhash-mm-order.c \
-	strerror.c
+	strerror.c \
+	lttng-tracer-core.h
 
 if HAVE_PERF_EVENT
-liblttng_ust_runtime_la_SOURCES += \
+liblttng_ust_la_SOURCES += \
 	lttng-context-perf-counters.c \
 	perf_event.h
 endif
 
-liblttng_ust_support_la_SOURCES = \
-	lttng-tracer.h \
-	lttng-tracer-core.h \
-	ust-core.c \
-	lttng-rb-clients.h \
-	lttng-ring-buffer-client-template.h \
-	lttng-ring-buffer-client-discard.c \
-	lttng-ring-buffer-client-discard-rt.c \
-	lttng-ring-buffer-client-overwrite.c \
-	lttng-ring-buffer-client-overwrite-rt.c \
-	lttng-ring-buffer-metadata-client-template.h \
-	lttng-ring-buffer-metadata-client.c \
-	lttng-counter-client.h \
-	lttng-counter-client-percpu-32-modular.c \
-	lttng-counter-client-percpu-64-modular.c
-
-liblttng_ust_la_SOURCES =
-
 liblttng_ust_la_LDFLAGS = -no-undefined -version-info $(LTTNG_UST_LIBRARY_VERSION)
 
-liblttng_ust_support_la_LIBADD = \
-	$(top_builddir)/src/common/libringbuffer.la \
-	$(top_builddir)/src/common/libcounter.la
-
 liblttng_ust_la_LIBADD = \
-	-lrt \
-	$(top_builddir)/src/lib/lttng-ust-common/liblttng-ust-common.la \
+	$(top_builddir)/src/common/libringbuffer.la \
+	$(top_builddir)/src/common/libringbuffer-clients.la \
+	$(top_builddir)/src/common/libcounter.la \
+	$(top_builddir)/src/common/libcounter-clients.la \
 	$(top_builddir)/src/common/libustcomm.la \
 	$(top_builddir)/src/common/libcommon.la \
+	$(top_builddir)/src/lib/lttng-ust-common/liblttng-ust-common.la \
 	$(top_builddir)/src/lib/lttng-ust-tracepoint/liblttng-ust-tracepoint.la \
-	liblttng-ust-runtime.la liblttng-ust-support.la \
+	-lrt \
 	$(DL_LIBS)
 
 liblttng_ust_la_CFLAGS = -DUST_COMPONENT="liblttng_ust" $(AM_CFLAGS)

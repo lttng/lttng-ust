@@ -1,24 +1,24 @@
 /* SPDX-License-Identifier: (GPL-2.0-only or LGPL-2.1-only)
  *
- * lttng-counter-client-percpu-32-modular.c
+ * lttng-counter-client-percpu-64-modular.c
  *
- * LTTng lib counter client. Per-cpu 32-bit counters in modular
+ * LTTng lib counter client. Per-cpu 64-bit counters in modular
  * arithmetic.
  *
  * Copyright (C) 2020 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
-#include "lib/lttng-ust/events.h"
-#include "common/counter/counter.h"
+#include "common/counter-clients/clients.h"
 #include "common/counter/counter-api.h"
-#include "lttng-tracer-core.h"
-#include "lttng-counter-client.h"
+#include "common/counter/counter.h"
+#include "common/events.h"
+#include "common/tracer.h"
 
 static const struct lib_counter_config client_config = {
 	.alloc = COUNTER_ALLOC_PER_CPU,
 	.sync = COUNTER_SYNC_PER_CPU,
 	.arithmetic = COUNTER_ARITHMETIC_MODULAR,
-	.counter_size = COUNTER_SIZE_32_BIT,
+	.counter_size = COUNTER_SIZE_64_BIT,
 };
 
 static struct lib_counter *counter_create(size_t nr_dimensions,
@@ -73,7 +73,7 @@ static int counter_clear(struct lib_counter *counter, const size_t *dimension_in
 }
 
 static struct lttng_counter_transport lttng_counter_transport = {
-	.name = "counter-per-cpu-32-modular",
+	.name = "counter-per-cpu-64-modular",
 	.ops = {
 		.counter_create = counter_create,
 		.counter_destroy = counter_destroy,
@@ -85,12 +85,12 @@ static struct lttng_counter_transport lttng_counter_transport = {
 	.client_config = &client_config,
 };
 
-void lttng_counter_client_percpu_32_modular_init(void)
+void lttng_counter_client_percpu_64_modular_init(void)
 {
 	lttng_counter_transport_register(&lttng_counter_transport);
 }
 
-void lttng_counter_client_percpu_32_modular_exit(void)
+void lttng_counter_client_percpu_64_modular_exit(void)
 {
 	lttng_counter_transport_unregister(&lttng_counter_transport);
 }

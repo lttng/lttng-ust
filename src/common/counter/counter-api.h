@@ -11,6 +11,7 @@
 
 #include <stdint.h>
 #include <limits.h>
+#include <errno.h>
 #include "counter.h"
 #include "counter-internal.h"
 #include <urcu/compiler.h>

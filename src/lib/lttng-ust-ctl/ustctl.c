@@ -27,10 +27,10 @@
 #include "common/ringbuffer/frontend.h"
 #include "common/events.h"
 #include "common/wait.h"
-#include "lib/lttng-ust/lttng-rb-clients.h"
+#include "common/ringbuffer-clients/clients.h"
 #include "common/getenv.h"
-#include "lib/lttng-ust/lttng-tracer-core.h"
-#include "lib/lttng-ust/lttng-counter-client.h"
+#include "common/tracer.h"
+#include "common/counter-clients/clients.h"
 
 #include "common/smp.h"
 #include "common/counter/counter.h"

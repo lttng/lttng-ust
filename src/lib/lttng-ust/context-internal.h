@@ -36,9 +36,6 @@ int lttng_ust_context_append(struct lttng_ust_ctx **ctx_p,
 		const struct lttng_ust_ctx_field *f)
 	__attribute__((visibility("hidden")));
 
-int lttng_context_is_app(const char *name)
-	__attribute__((visibility("hidden")));
-
 void lttng_context_vtid_reset(void)
 	__attribute__((visibility("hidden")));
 

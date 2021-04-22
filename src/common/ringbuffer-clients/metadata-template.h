@@ -10,12 +10,13 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "lib/lttng-ust/events.h"
+#include <urcu/tls-compat.h>
+
 #include "common/bitfield.h"
 #include "common/align.h"
-#include "lttng-tracer.h"
+#include "common/events.h"
+#include "common/tracer.h"
 #include "common/ringbuffer/frontend_types.h"
-#include <urcu/tls-compat.h>
 
 struct metadata_packet_header {
 	uint32_t magic;			/* 0x75D11D57 */
@@ -59,7 +60,7 @@ size_t record_header_size(
 }
 
 #include "common/ringbuffer/api.h"
-#include "lttng-rb-clients.h"
+#include "common/ringbuffer-clients/clients.h"
 
 static uint64_t client_ring_buffer_clock_read(
 		struct lttng_ust_ring_buffer_channel *chan __attribute__((unused)))

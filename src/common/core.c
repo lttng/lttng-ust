@@ -9,14 +9,16 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-#include "context-internal.h"
-#include "lib/lttng-ust/events.h"
+#include <lttng/ust-ringbuffer-context.h>
+
 #include "common/logging.h"
-#include "lttng-tracer-core.h"
-#include "lttng-rb-clients.h"
-#include "lttng-counter-client.h"
+#include "common/tracer.h"
 #include "common/jhash.h"
 
+
+/*
+ * Each library using the transports will have its local lists.
+ */
 static CDS_LIST_HEAD(lttng_transport_list);
 static CDS_LIST_HEAD(lttng_counter_transport_list);
 
@@ -175,32 +177,3 @@ void lttng_ust_free_channel_common(struct lttng_ust_channel_common *chan)
 	}
 }
 
-void lttng_ust_ring_buffer_clients_init(void)
-{
-	lttng_ring_buffer_metadata_client_init();
-	lttng_ring_buffer_client_overwrite_init();
-	lttng_ring_buffer_client_overwrite_rt_init();
-	lttng_ring_buffer_client_discard_init();
-	lttng_ring_buffer_client_discard_rt_init();
-}
-
-void lttng_ust_ring_buffer_clients_exit(void)
-{
-	lttng_ring_buffer_client_discard_rt_exit();
-	lttng_ring_buffer_client_discard_exit();
-	lttng_ring_buffer_client_overwrite_rt_exit();
-	lttng_ring_buffer_client_overwrite_exit();
-	lttng_ring_buffer_metadata_client_exit();
-}
-
-void lttng_ust_counter_clients_init(void)
-{
-	lttng_counter_client_percpu_64_modular_init();
-	lttng_counter_client_percpu_32_modular_init();
-}
-
-void lttng_ust_counter_clients_exit(void)
-{
-	lttng_counter_client_percpu_32_modular_exit();
-	lttng_counter_client_percpu_64_modular_exit();
-}

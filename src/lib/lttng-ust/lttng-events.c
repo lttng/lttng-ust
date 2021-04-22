@@ -43,7 +43,7 @@
 #include "common/tracepoint.h"
 #include "common/strutils.h"
 #include "lttng-bytecode.h"
-#include "lttng-tracer.h"
+#include "common/tracer.h"
 #include "lttng-tracer-core.h"
 #include "lttng-ust-statedump.h"
 #include "context-internal.h"

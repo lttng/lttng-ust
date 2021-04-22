@@ -4,10 +4,12 @@
  * Copyright (C) 2013 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
-#ifndef _LTTNG_RB_CLIENT_H
-#define _LTTNG_RB_CLIENT_H
+#ifndef _UST_COMMON_RINGBUFFER_CLIENTS_CLIENTS_H
+#define _UST_COMMON_RINGBUFFER_CLIENTS_CLIENTS_H
 
 #include <stdint.h>
+#include <lttng/ust-events.h>
+
 #include "common/ringbuffer/ringbuffer-config.h"
 
 struct lttng_ust_client_lib_ring_buffer_client_cb {
@@ -40,12 +42,11 @@ struct lttng_ust_client_lib_ring_buffer_client_cb {
 			struct lttng_ust_ring_buffer_channel *chan, uint64_t *id);
 };
 
-/*
- * The ring buffer clients init/exit symbols are private ABI for
- * liblttng-ust-ctl, which is why they are not hidden.
- */
-void lttng_ust_ring_buffer_clients_init(void);
-void lttng_ust_ring_buffer_clients_exit(void);
+void lttng_ust_ring_buffer_clients_init(void)
+	__attribute__((visibility("hidden")));
+
+void lttng_ust_ring_buffer_clients_exit(void)
+	__attribute__((visibility("hidden")));
 
 void lttng_ring_buffer_client_overwrite_init(void)
 	__attribute__((visibility("hidden")));
@@ -91,4 +92,4 @@ void lttng_ust_ring_buffer_client_discard_alloc_tls(void)
 void lttng_ust_ring_buffer_client_discard_rt_alloc_tls(void)
 	__attribute__((visibility("hidden")));
 
-#endif /* _LTTNG_RB_CLIENT_H */
+#endif /* _UST_COMMON_RINGBUFFER_CLIENTS_CLIENTS_H */
