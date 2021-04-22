@@ -10,8 +10,8 @@
  * RELEASE. See urcu.h for linking dynamically with the userspace rcu library.
  */
 
-#ifndef _LTTNG_URCU_POINTER_STATIC_H
-#define _LTTNG_URCU_POINTER_STATIC_H
+#ifndef _LTTNG_UST_URCU_POINTER_STATIC_H
+#define _LTTNG_UST_URCU_POINTER_STATIC_H
 
 #include <urcu/compiler.h>
 #include <urcu/arch.h>
@@ -127,4 +127,4 @@ extern "C" {
 }
 #endif
 
-#endif /* _LTTNG_URCU_POINTER_STATIC_H */
+#endif /* _LTTNG_UST_URCU_POINTER_STATIC_H */

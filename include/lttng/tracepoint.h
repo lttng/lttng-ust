@@ -4,8 +4,8 @@
  * Copyright (C) 2011-2012 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
-#ifndef _LTTNG_TRACEPOINT_H
-#define _LTTNG_TRACEPOINT_H
+#ifndef _LTTNG_UST_TRACEPOINT_H
+#define _LTTNG_UST_TRACEPOINT_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -592,7 +592,7 @@ lttng_ust__tracepoints__ptrs_destroy(void)
 }
 #endif
 
-#endif /* _LTTNG_TRACEPOINT_H */
+#endif /* _LTTNG_UST_TRACEPOINT_H */
 
 /* The following declarations must be outside re-inclusion protection. */
 

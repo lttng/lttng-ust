@@ -4,8 +4,8 @@
  * Copyright (C) 2011-2012 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
-#ifndef _LTTNG_TRACEPOINT_RCU_H
-#define _LTTNG_TRACEPOINT_RCU_H
+#ifndef _LTTNG_UST_TRACEPOINT_RCU_H
+#define _LTTNG_UST_TRACEPOINT_RCU_H
 
 #include <urcu/compiler.h>
 #include <lttng/urcu/pointer.h>
@@ -40,4 +40,4 @@
 #define TP_RCU_LINK_TEST	LTTNG_UST_TP_RCU_LINK_TEST
 #endif
 
-#endif	/* _LTTNG_TRACEPOINT_RCU_H */
+#endif	/* _LTTNG_UST_TRACEPOINT_RCU_H */

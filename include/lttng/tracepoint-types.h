@@ -4,8 +4,8 @@
  * Copyright (C) 2011-2012 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
-#ifndef _LTTNG_TRACEPOINT_TYPES_H
-#define _LTTNG_TRACEPOINT_TYPES_H
+#ifndef _LTTNG_UST_TRACEPOINT_TYPES_H
+#define _LTTNG_UST_TRACEPOINT_TYPES_H
 
 #include <stdint.h>
 
@@ -48,4 +48,4 @@ struct lttng_ust_tracepoint {
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
-#endif /* _LTTNG_TRACEPOINT_TYPES_H */
+#endif /* _LTTNG_UST_TRACEPOINT_TYPES_H */
