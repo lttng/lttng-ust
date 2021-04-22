@@ -707,20 +707,20 @@ void lttng_ust__event_prepare_interpreter_stack__##_provider##___##_name(char *_
 #define lttng_ust__field_integer_ext(_type, _item, _src, _byte_order, _base, _nowrite)     \
 	if (0)								       \
 		(void) (_src);	/* Unused */				       \
-	lttng_ust__event_align = lttng_ust__tp_max_t(size_t, lttng_ust__event_align, lttng_ust_rb_alignof(_type));
+	__event_align = lttng_ust__tp_max_t(size_t, __event_align, lttng_ust_rb_alignof(_type));
 
 #undef lttng_ust__field_float
 #define lttng_ust__field_float(_type, _item, _src, _nowrite)			       \
 	if (0)								       \
 		(void) (_src);	/* Unused */ 				       \
-	lttng_ust__event_align = lttng_ust__tp_max_t(size_t, lttng_ust__event_align, lttng_ust_rb_alignof(_type));
+	__event_align = lttng_ust__tp_max_t(size_t, __event_align, lttng_ust_rb_alignof(_type));
 
 #undef lttng_ust__field_array_encoded
 #define lttng_ust__field_array_encoded(_type, _item, _src, _byte_order, _length,	       \
 			_encoding, _nowrite, _elem_type_base)		       \
 	if (0)								       \
 		(void) (_src);	/* Unused */				       \
-	lttng_ust__event_align = lttng_ust__tp_max_t(size_t, lttng_ust__event_align, lttng_ust_rb_alignof(_type));
+	__event_align = lttng_ust__tp_max_t(size_t, __event_align, lttng_ust_rb_alignof(_type));
 
 #undef lttng_ust__field_sequence_encoded
 #define lttng_ust__field_sequence_encoded(_type, _item, _src, _byte_order, _length_type,   \
@@ -729,8 +729,8 @@ void lttng_ust__event_prepare_interpreter_stack__##_provider##___##_name(char *_
 		(void) (_src);	/* Unused */				       \
 	if (0)								       \
 		(void) (_src_length);	/* Unused */			       \
-	lttng_ust__event_align = lttng_ust__tp_max_t(size_t, lttng_ust__event_align, lttng_ust_rb_alignof(_length_type));	  \
-	lttng_ust__event_align = lttng_ust__tp_max_t(size_t, lttng_ust__event_align, lttng_ust_rb_alignof(_type));
+	__event_align = lttng_ust__tp_max_t(size_t, __event_align, lttng_ust_rb_alignof(_length_type));	  \
+	__event_align = lttng_ust__tp_max_t(size_t, __event_align, lttng_ust_rb_alignof(_type));
 
 #undef lttng_ust__field_string
 #define lttng_ust__field_string(_item, _src, _nowrite)					\
@@ -760,9 +760,9 @@ size_t lttng_ust__event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_PR
 static inline								      \
 size_t lttng_ust__event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_PROTO(_args))      \
 {									      \
-	size_t lttng_ust__event_align = 1;					      \
+	size_t __event_align = 1;					      \
 	_fields								      \
-	return lttng_ust__event_align;						      \
+	return __event_align;						      \
 }
 
 #include LTTNG_UST_TRACEPOINT_INCLUDE
@@ -903,8 +903,8 @@ void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PRO
 	switch (__event->type) {					      \
 	case LTTNG_UST_EVENT_TYPE_RECORDER:				      \
 	{								      \
-		struct lttng_ust_event_recorder *lttng_ust__event_recorder = (struct lttng_ust_event_recorder *) __event->child; \
-		struct lttng_ust_channel_buffer *__chan = lttng_ust__event_recorder->chan; \
+		struct lttng_ust_event_recorder *__event_recorder = (struct lttng_ust_event_recorder *) __event->child; \
+		struct lttng_ust_channel_buffer *__chan = __event_recorder->chan; \
 		struct lttng_ust_channel_common *__chan_common = __chan->parent; \
 									      \
 		if (!LTTNG_UST__TP_SESSION_CHECK(session, __chan_common->session)) \
@@ -935,15 +935,15 @@ void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PRO
 	switch (__event->type) {					      \
 	case LTTNG_UST_EVENT_TYPE_RECORDER:				      \
 	{								      \
-		size_t __event_len, lttng_ust__event_align;		      \
-		struct lttng_ust_event_recorder *lttng_ust__event_recorder = (struct lttng_ust_event_recorder *) __event->child; \
-		struct lttng_ust_channel_buffer *__chan = lttng_ust__event_recorder->chan; \
+		size_t __event_len, __event_align;			      \
+		struct lttng_ust_event_recorder *__event_recorder = (struct lttng_ust_event_recorder *) __event->child; \
+		struct lttng_ust_channel_buffer *__chan = __event_recorder->chan; \
 		struct lttng_ust_ring_buffer_ctx __ctx;			      \
 									      \
 		__event_len = lttng_ust__event_get_size__##_provider##___##_name(__stackvar.__dynamic_len, \
 			 LTTNG_UST__TP_ARGS_DATA_VAR(_args));			      \
-		lttng_ust__event_align = lttng_ust__event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_VAR(_args)); \
-		lttng_ust_ring_buffer_ctx_init(&__ctx, lttng_ust__event_recorder, __event_len, lttng_ust__event_align, \
+		__event_align = lttng_ust__event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_VAR(_args)); \
+		lttng_ust_ring_buffer_ctx_init(&__ctx, __event_recorder, __event_len, __event_align, \
 				&__probe_ctx);				      \
 		__ret = __chan->ops->event_reserve(&__ctx);		      \
 		if (__ret < 0)						      \
@@ -954,17 +954,17 @@ void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PRO
 	}								      \
 	case LTTNG_UST_EVENT_TYPE_NOTIFIER:				      \
 	{								      \
-		struct lttng_ust_event_notifier *lttng_ust__event_notifier = (struct lttng_ust_event_notifier *) __event->child; \
+		struct lttng_ust_event_notifier *__event_notifier = (struct lttng_ust_event_notifier *) __event->child; \
 		struct lttng_ust_notification_ctx __notif_ctx;		      \
 									      \
 		__notif_ctx.struct_size = sizeof(struct lttng_ust_notification_ctx); \
-		__notif_ctx.eval_capture = CMM_ACCESS_ONCE(lttng_ust__event_notifier->eval_capture); \
+		__notif_ctx.eval_capture = CMM_ACCESS_ONCE(__event_notifier->eval_capture); \
 									      \
 		if (caa_unlikely(!__interpreter_stack_prepared && __notif_ctx.eval_capture)) \
 			lttng_ust__event_prepare_interpreter_stack__##_provider##___##_name(__stackvar.__interpreter_stack_data, \
 				LTTNG_UST__TP_ARGS_DATA_VAR(_args));	      \
 									      \
-		lttng_ust__event_notifier->notification_send(lttng_ust__event_notifier, \
+		__event_notifier->notification_send(__event_notifier,	      \
 				__stackvar.__interpreter_stack_data,	      \
 				&__probe_ctx,				      \
 				&__notif_ctx);				      \
