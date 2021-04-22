@@ -39,7 +39,7 @@
 #include <lttng/ust-tracer.h>
 #include <lttng/ust-common.h>
 #include <urcu/tls-compat.h>
-#include "common/compat/futex.h"
+#include "lib/lttng-ust/futex.h"
 #include "common/ustcomm.h"
 #include "common/ust-fd.h"
 #include "common/logging.h"

@@ -17,9 +17,21 @@
 #include <urcu/arch.h>
 #include <urcu/system.h>
 
-#include "common/compat/futex.h"
+#include "lib/lttng-ust/futex.h"
 
 /*
+ * This compat header originated in userspace RCU where it's used across
+ * multiple shared objects hence the need to have the mutexes as public weak
+ * symbols, in our case here, it's only used internally by liblttng-ust so we
+ * can hide them. If we end up using this compat header in another library in
+ * this project we will have to use the same scheme, but in the meantime, don't
+ * expose those symbols in the ABI.
+ */
+
+/*
+ * This comment will apply if we start using this compat header in multiple
+ * libraires.
+ *
  * Using attribute "weak" for __lttng_ust_compat_futex_lock and
  * __lttng_ust_compat_futex_cond. Those are globally visible by the entire
  * program, even though many shared objects may have their own version.
@@ -27,10 +39,8 @@
  * (executable and all shared objects).
  */
 
-__attribute__((weak))
-pthread_mutex_t __lttng_ust_compat_futex_lock = PTHREAD_MUTEX_INITIALIZER;
-__attribute__((weak))
-pthread_cond_t __lttng_ust_compat_futex_cond = PTHREAD_COND_INITIALIZER;
+static pthread_mutex_t __lttng_ust_compat_futex_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t __lttng_ust_compat_futex_cond = PTHREAD_COND_INITIALIZER;
 
 /*
  * _NOT SIGNAL-SAFE_. pthread_cond is not signal-safe anyway. Though.

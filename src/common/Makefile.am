@@ -49,7 +49,6 @@ noinst_HEADERS += \
 
 noinst_LTLIBRARIES = \
 	libcounter.la \
-	libcompat.la \
 	libmsgpack.la \
 	libringbuffer.la \
 	libsnprintf.la \
@@ -76,11 +75,6 @@ libcounter_la_LIBADD += -lnuma
 endif
 
 libcounter_la_CFLAGS = -DUST_COMPONENT="libcounter" $(AM_CFLAGS)
-
-# compat
-libcompat_la_SOURCES = \
-	compat/futex.c \
-	compat/futex.h
 
 # msgpack
 libmsgpack_la_SOURCES = \
@@ -154,7 +148,6 @@ libcommon_la_SOURCES = \
 	patient.c
 
 libcommon_la_LIBADD = \
-	libcompat.la \
 	libmsgpack.la \
 	libsnprintf.la
 

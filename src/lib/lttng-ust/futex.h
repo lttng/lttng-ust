@@ -35,11 +35,11 @@ extern "C" {
  * (returns EINTR).
  */
 
-extern int lttng_ust_compat_futex_noasync(int32_t *uaddr, int op, int32_t val,
+int lttng_ust_compat_futex_noasync(int32_t *uaddr, int op, int32_t val,
 		const struct timespec *timeout, int32_t *uaddr2, int32_t val3)
 	__attribute__((visibility("hidden")));
 
-extern int lttng_ust_compat_futex_async(int32_t *uaddr, int op, int32_t val,
+int lttng_ust_compat_futex_async(int32_t *uaddr, int op, int32_t val,
 		const struct timespec *timeout, int32_t *uaddr2, int32_t val3)
 	__attribute__((visibility("hidden")));
 

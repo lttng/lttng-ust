@@ -44,6 +44,8 @@ liblttng_ust_runtime_la_SOURCES = \
 	lttng-ust-statedump.c \
 	lttng-ust-statedump.h \
 	lttng-ust-statedump-provider.h \
+	futex.c \
+	futex.h \
 	ust_lib.c \
 	ust_lib.h \
 	context-internal.h \
