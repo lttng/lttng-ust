@@ -139,6 +139,7 @@ libsnprintf_la_SOURCES = \
 libcommon_la_SOURCES = \
 	elf.c \
 	elf.h \
+	events.c \
 	getenv.c \
 	getenv.h \
 	logging.c \
