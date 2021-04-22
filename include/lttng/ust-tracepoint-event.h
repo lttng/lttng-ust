@@ -17,6 +17,54 @@
 #include <lttng/ust-endian.h>
 #include <lttng/ust-api-compat.h>
 #include <string.h>
+#include <lttng/ust-api-compat.h>
+
+#if LTTNG_UST_COMPAT_API(0)
+#define TP_FIELDS			LTTNG_UST_TP_FIELDS
+
+#define ctf_integer			lttng_ust_field_integer
+#define ctf_integer_hex			lttng_ust_field_integer_hex
+#define ctf_integer_network		lttng_ust_field_integer_network
+#define ctf_integer_network_hex		lttng_ust_field_integer_network_hex
+#define ctf_integer_nowrite		lttng_ust_field_integer_nowrite
+
+#define ctf_float			lttng_ust_field_float
+#define ctf_float_nowrite		lttng_ust_field_float_nowrite
+
+#define ctf_array			lttng_ust_field_array
+#define ctf_array_hex			lttng_ust_field_array_hex
+#define ctf_array_network		lttng_ust_field_array_network
+#define ctf_array_network_hex		lttng_ust_field_array_network_hex
+#define ctf_array_text			lttng_ust_field_array_text
+#define ctf_array_nowrite		lttng_ust_field_array_nowrite
+#define ctf_array_nowrite_hex		lttng_ust_field_array_nowrite_hex
+#define ctf_array_network_nowrite	lttng_ust_field_array_network_nowrite
+#define ctf_array_network_nowrite_hex	lttng_ust_field_array_network_nowrite_hex
+#define ctf_array_text_nowrite		lttng_ust_field_array_text_nowrite
+
+#define ctf_sequence			lttng_ust_field_sequence
+#define ctf_sequence_hex		lttng_ust_field_sequence_hex
+#define ctf_sequence_network		lttng_ust_field_sequence_network
+#define ctf_sequence_network_hex	lttng_ust_field_sequence_network_hex
+#define ctf_sequence_text		lttng_ust_field_sequence_text
+#define ctf_sequence_nowrite		lttng_ust_field_sequence_nowrite
+#define ctf_sequence_nowrite_hex	lttng_ust_field_sequence_nowrite_hex
+#define ctf_sequence_network_nowrite	lttng_ust_field_sequence_network_nowrite
+#define ctf_sequence_network_nowrite_hex lttng_ust_field_sequence_network_nowrite_hex
+#define ctf_sequence_text_nowrite	lttng_ust_field_sequence_text_nowrite
+
+#define ctf_string			lttng_ust_field_string
+#define ctf_string_nowrite		lttng_ust_field_string_nowrite
+
+#define ctf_unused			lttng_ust_field_unused
+#define ctf_unused_nowrite		lttng_ust_field_unused_nowrite
+
+#define ctf_enum			lttng_ust_field_enum
+#define ctf_enum_nowrite		lttng_ust_field_enum_nowrite
+#define ctf_enum_value			lttng_ust_field_enum_value
+#define ctf_enum_range			lttng_ust_field_enum_range
+#define ctf_enum_auto			lttng_ust_field_enum_auto
+#endif /* #if LTTNG_UST_COMPAT_API(0) */
 
 #define LTTNG_UST__NULL_STRING	"(null)"
 
