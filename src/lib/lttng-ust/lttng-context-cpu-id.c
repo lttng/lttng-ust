@@ -26,6 +26,7 @@
 
 static
 size_t cpu_id_get_size(void *priv __attribute__((unused)),
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
 		size_t offset)
 {
 	size_t size = 0;
@@ -37,8 +38,9 @@ size_t cpu_id_get_size(void *priv __attribute__((unused)),
 
 static
 void cpu_id_record(void *priv __attribute__((unused)),
-		 struct lttng_ust_ring_buffer_ctx *ctx,
-		 struct lttng_ust_channel_buffer *chan)
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
+		struct lttng_ust_ring_buffer_ctx *ctx,
+		struct lttng_ust_channel_buffer *chan)
 {
 	int cpu;
 
@@ -48,6 +50,7 @@ void cpu_id_record(void *priv __attribute__((unused)),
 
 static
 void cpu_id_get_value(void *priv __attribute__((unused)),
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
 		struct lttng_ust_ctx_value *value)
 {
 	value->u.s64 = lttng_ust_get_cpu();

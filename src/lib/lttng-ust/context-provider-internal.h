@@ -11,11 +11,12 @@
 #include <lttng/ust-events.h>
 
 void lttng_ust_context_set_event_notifier_group_provider(const char *name,
-		size_t (*get_size)(void *priv, size_t offset),
-		void (*record)(void *priv,
+		size_t (*get_size)(void *priv, struct lttng_ust_probe_ctx *probe_ctx,
+			size_t offset),
+		void (*record)(void *priv, struct lttng_ust_probe_ctx *probe_ctx,
 			struct lttng_ust_ring_buffer_ctx *ctx,
 			struct lttng_ust_channel_buffer *chan),
-		void (*get_value)(void *priv,
+		void (*get_value)(void *priv, struct lttng_ust_probe_ctx *probe_ctx,
 			struct lttng_ust_ctx_value *value),
 		void *priv)
 	__attribute__((visibility("hidden")));

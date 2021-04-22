@@ -38,6 +38,7 @@ void lttng_context_vtid_reset(void)
 
 static
 size_t vtid_get_size(void *priv __attribute__((unused)),
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
 		size_t offset)
 {
 	size_t size = 0;
@@ -62,8 +63,9 @@ pid_t wrapper_getvtid(void)
 
 static
 void vtid_record(void *priv __attribute__((unused)),
-		 struct lttng_ust_ring_buffer_ctx *ctx,
-		 struct lttng_ust_channel_buffer *chan)
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
+		struct lttng_ust_ring_buffer_ctx *ctx,
+		struct lttng_ust_channel_buffer *chan)
 {
 	pid_t vtid = wrapper_getvtid();
 
@@ -72,6 +74,7 @@ void vtid_record(void *priv __attribute__((unused)),
 
 static
 void vtid_get_value(void *priv __attribute__((unused)),
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
 		struct lttng_ust_ctx_value *value)
 {
 	value->u.s64 = wrapper_getvtid();

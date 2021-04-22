@@ -305,6 +305,7 @@ struct lttng_ust_bytecode_runtime {
 	int link_failed;
 	int (*interpreter_func)(struct lttng_ust_bytecode_runtime *bytecode_runtime,
 			const char *interpreter_stack_data,
+			struct lttng_ust_probe_ctx *probe_ctx,
 			void *ctx);
 	struct cds_list_head node;		/* list of bytecode runtime in event */
 	/*
@@ -441,10 +442,13 @@ struct lttng_ust_registered_probe {
 
 struct lttng_ust_ctx_field {
 	const struct lttng_ust_event_field *event_field;
-	size_t (*get_size)(void *priv, size_t offset);
-	void (*record)(void *priv, struct lttng_ust_ring_buffer_ctx *ctx,
-		       struct lttng_ust_channel_buffer *chan);
-	void (*get_value)(void *priv, struct lttng_ust_ctx_value *value);
+	size_t (*get_size)(void *priv, struct lttng_ust_probe_ctx *probe_ctx,
+			size_t offset);
+	void (*record)(void *priv, struct lttng_ust_probe_ctx *probe_ctx,
+			struct lttng_ust_ring_buffer_ctx *ctx,
+			struct lttng_ust_channel_buffer *chan);
+	void (*get_value)(void *priv, struct lttng_ust_probe_ctx *probe_ctx,
+			struct lttng_ust_ctx_value *value);
 	void (*destroy)(void *priv);
 	void *priv;
 };

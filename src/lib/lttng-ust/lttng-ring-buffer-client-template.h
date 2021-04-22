@@ -98,7 +98,8 @@ size_t ctx_get_aligned_size(size_t offset, struct lttng_ust_ctx *ctx,
 }
 
 static inline
-void ctx_get_struct_size(struct lttng_ust_ctx *ctx, size_t *ctx_len)
+void ctx_get_struct_size(struct lttng_ust_ring_buffer_ctx *bufctx,
+		struct lttng_ust_ctx *ctx, size_t *ctx_len)
 {
 	int i;
 	size_t offset = 0;
@@ -108,7 +109,7 @@ void ctx_get_struct_size(struct lttng_ust_ctx *ctx, size_t *ctx_len)
 		return;
 	}
 	for (i = 0; i < ctx->nr_fields; i++)
-		offset += ctx->fields[i].get_size(ctx->fields[i].priv, offset);
+		offset += ctx->fields[i].get_size(ctx->fields[i].priv, bufctx->probe_ctx, offset);
 	*ctx_len = offset;
 }
 
@@ -123,7 +124,7 @@ void ctx_record(struct lttng_ust_ring_buffer_ctx *bufctx,
 		return;
 	lttng_ust_ring_buffer_align_ctx(bufctx, ctx->largest_align);
 	for (i = 0; i < ctx->nr_fields; i++)
-		ctx->fields[i].record(ctx->fields[i].priv, bufctx, chan);
+		ctx->fields[i].record(ctx->fields[i].priv, bufctx->probe_ctx, bufctx, chan);
 }
 
 /*
@@ -690,8 +691,8 @@ int lttng_event_reserve(struct lttng_ust_ring_buffer_ctx *ctx)
 	client_ctx.chan_ctx = lttng_ust_rcu_dereference(lttng_chan->priv->ctx);
 	client_ctx.event_ctx = lttng_ust_rcu_dereference(event_recorder->priv->ctx);
 	/* Compute internal size of context structures. */
-	ctx_get_struct_size(client_ctx.chan_ctx, &client_ctx.packet_context_len);
-	ctx_get_struct_size(client_ctx.event_ctx, &client_ctx.event_context_len);
+	ctx_get_struct_size(ctx, client_ctx.chan_ctx, &client_ctx.packet_context_len);
+	ctx_get_struct_size(ctx, client_ctx.event_ctx, &client_ctx.event_context_len);
 
 	nesting = lib_ring_buffer_nesting_inc(&client_config);
 	if (nesting < 0)

@@ -42,7 +42,9 @@ void test_inc_count(void)
 }
 
 static
-size_t test_get_size(void *priv __attribute__((unused)), size_t offset)
+size_t test_get_size(void *priv __attribute__((unused)),
+		     struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
+		     size_t offset)
 {
 	int sel = test_count % _NR_LTTNG_UST_DYNAMIC_TYPES;
 	size_t size = 0;
@@ -104,6 +106,7 @@ size_t test_get_size(void *priv __attribute__((unused)), size_t offset)
 
 static
 void test_record(void *priv __attribute__((unused)),
+		 struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
 		 struct lttng_ust_ring_buffer_ctx *ctx,
 		 struct lttng_ust_channel_buffer *lttng_chan_buf)
 {
@@ -197,6 +200,7 @@ void test_record(void *priv __attribute__((unused)),
 
 static
 void test_get_value(void *priv __attribute__((unused)),
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
 		struct lttng_ust_ctx_value *value)
 {
 	int sel = test_count % _NR_LTTNG_UST_DYNAMIC_TYPES;

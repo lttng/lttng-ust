@@ -63,6 +63,7 @@ void lttng_context_veuid_reset(void)
 
 static
 size_t veuid_get_size(void *priv __attribute__((unused)),
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
 		size_t offset)
 {
 	size_t size = 0;
@@ -74,8 +75,9 @@ size_t veuid_get_size(void *priv __attribute__((unused)),
 
 static
 void veuid_record(void *priv __attribute__((unused)),
-		 struct lttng_ust_ring_buffer_ctx *ctx,
-		 struct lttng_ust_channel_buffer *chan)
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
+		struct lttng_ust_ring_buffer_ctx *ctx,
+		struct lttng_ust_channel_buffer *chan)
 {
 	uid_t veuid;
 
@@ -85,9 +87,10 @@ void veuid_record(void *priv __attribute__((unused)),
 
 static
 void veuid_get_value(void *priv __attribute__((unused)),
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
 		struct lttng_ust_ctx_value *value)
 {
-	value->u.s64 = get_veuid();
+	value->u.u64 = get_veuid();
 }
 
 static const struct lttng_ust_ctx_field *ctx_field = lttng_ust_static_ctx_field(

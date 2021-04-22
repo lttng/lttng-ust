@@ -23,6 +23,7 @@ struct lttng_ust_ring_buffer;
 struct lttng_ust_ring_buffer_channel;
 struct lttng_ust_ring_buffer_ctx;
 struct lttng_ust_ring_buffer_ctx_private;
+struct lttng_ust_probe_ctx;
 
 /*
  * ring buffer context
@@ -44,7 +45,7 @@ struct lttng_ust_ring_buffer_ctx {
 						 * alignment of the largest element
 						 * in the payload
 						 */
-	void *ip;				/* caller ip address */
+	struct lttng_ust_probe_ctx *probe_ctx;	/* Probe context */
 
 	/* Private ring buffer context, set by reserve callback. */
 	struct lttng_ust_ring_buffer_ctx_private *priv;
@@ -63,18 +64,18 @@ struct lttng_ust_ring_buffer_ctx {
 static inline
 void lttng_ust_ring_buffer_ctx_init(struct lttng_ust_ring_buffer_ctx *ctx,
 					void *client_priv, size_t data_size, int largest_align,
-					void *ip)
+					struct lttng_ust_probe_ctx *probe_ctx)
 	lttng_ust_notrace;
 static inline
 void lttng_ust_ring_buffer_ctx_init(struct lttng_ust_ring_buffer_ctx *ctx,
 					void *client_priv, size_t data_size, int largest_align,
-					void *ip)
+					struct lttng_ust_probe_ctx *probe_ctx)
 {
 	ctx->struct_size = sizeof(struct lttng_ust_ring_buffer_ctx);
 	ctx->client_priv = client_priv;
 	ctx->data_size = data_size;
 	ctx->largest_align = largest_align;
-	ctx->ip = ip;
+	ctx->probe_ctx = probe_ctx;
 	ctx->priv = NULL;
 }
 

@@ -67,6 +67,7 @@ void lttng_ust_context_procname_reset(void)
 
 static
 size_t procname_get_size(void *priv __attribute__((unused)),
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
 		size_t offset __attribute__((unused)))
 {
 	return LTTNG_UST_ABI_PROCNAME_LEN;
@@ -74,8 +75,9 @@ size_t procname_get_size(void *priv __attribute__((unused)),
 
 static
 void procname_record(void *priv __attribute__((unused)),
-		 struct lttng_ust_ring_buffer_ctx *ctx,
-		 struct lttng_ust_channel_buffer *chan)
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
+		struct lttng_ust_ring_buffer_ctx *ctx,
+		struct lttng_ust_channel_buffer *chan)
 {
 	const char *procname;
 
@@ -85,6 +87,7 @@ void procname_record(void *priv __attribute__((unused)),
 
 static
 void procname_get_value(void *priv __attribute__((unused)),
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
 		struct lttng_ust_ctx_value *value)
 {
 	value->u.str = wrapper_getprocname();

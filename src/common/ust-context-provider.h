@@ -17,6 +17,7 @@
 #include "common/dynamic-type.h"
 
 struct lttng_ust_registered_context_provider;
+struct lttng_ust_probe_ctx;
 
 /*
  * Context value
@@ -54,10 +55,13 @@ struct lttng_ust_context_provider {
 	uint32_t struct_size;
 
 	const char *name;
-	size_t (*get_size)(void *priv, size_t offset);
-	void (*record)(void *priv, struct lttng_ust_ring_buffer_ctx *ctx,
-		       struct lttng_ust_channel_buffer *chan);
-	void (*get_value)(void *priv, struct lttng_ust_ctx_value *value);
+	size_t (*get_size)(void *priv, struct lttng_ust_probe_ctx *probe_ctx,
+			size_t offset);
+	void (*record)(void *priv, struct lttng_ust_probe_ctx *probe_ctx,
+			struct lttng_ust_ring_buffer_ctx *ctx,
+			struct lttng_ust_channel_buffer *chan);
+	void (*get_value)(void *priv, struct lttng_ust_probe_ctx *probe_ctx,
+			struct lttng_ust_ctx_value *value);
 	void *priv;
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */

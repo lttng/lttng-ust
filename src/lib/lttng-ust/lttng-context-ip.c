@@ -19,6 +19,7 @@
 
 static
 size_t ip_get_size(void *priv __attribute__((unused)),
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
 		size_t offset)
 {
 	size_t size = 0;
@@ -30,13 +31,22 @@ size_t ip_get_size(void *priv __attribute__((unused)),
 
 static
 void ip_record(void *priv __attribute__((unused)),
-		 struct lttng_ust_ring_buffer_ctx *ctx,
-		 struct lttng_ust_channel_buffer *chan)
+		struct lttng_ust_probe_ctx *probe_ctx,
+		struct lttng_ust_ring_buffer_ctx *ctx,
+		struct lttng_ust_channel_buffer *chan)
 {
 	void *ip;
 
-	ip = ctx->ip;
+	ip = probe_ctx->ip;
 	chan->ops->event_write(ctx, &ip, sizeof(ip), lttng_ust_rb_alignof(ip));
+}
+
+static
+void ip_get_value(void *priv __attribute__((unused)),
+		struct lttng_ust_probe_ctx *probe_ctx,
+		struct lttng_ust_ctx_value *value)
+{
+	value->u.u64 = (unsigned long) probe_ctx->ip;
 }
 
 static const struct lttng_ust_ctx_field *ctx_field = lttng_ust_static_ctx_field(
@@ -48,7 +58,8 @@ static const struct lttng_ust_ctx_field *ctx_field = lttng_ust_static_ctx_field(
 		false, false),
 	ip_get_size,
 	ip_record,
-	NULL, NULL, NULL);
+	ip_get_value,
+	NULL, NULL);
 
 int lttng_add_ip_to_ctx(struct lttng_ust_ctx **ctx)
 {

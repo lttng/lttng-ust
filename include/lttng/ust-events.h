@@ -301,6 +301,26 @@ struct lttng_ust_probe_desc {
 /* Data structures used by the tracer. */
 
 /*
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
+ *
+ * The probe_ctx is not const because it may be extended to add future
+ * fields which could be modified by callbacks.
+ */
+struct lttng_ust_probe_ctx {
+	uint32_t struct_size;			/* Size of this structure. */
+
+	void *ip;				/* caller ip address */
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
+};
+
+/*
  * lttng_event structure is referred to by the tracing fast path. It
  * must be kept small.
  *
@@ -351,6 +371,7 @@ struct lttng_ust_event_common {
 	int eval_filter;				/* Need to evaluate filters */
 	int (*run_filter)(const struct lttng_ust_event_common *event,
 		const char *stack_data,
+		struct lttng_ust_probe_ctx *probe_ctx,
 		void *filter_ctx);
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */
@@ -395,7 +416,6 @@ struct lttng_ust_event_recorder {
 struct lttng_ust_notification_ctx {
 	uint32_t struct_size;		/* Size of this structure. */
 	int eval_capture;		/* Capture evaluation available. */
-
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
@@ -424,6 +444,7 @@ struct lttng_ust_event_notifier {
 	int eval_capture;				/* Need to evaluate capture */
 	void (*notification_send)(const struct lttng_ust_event_notifier *event_notifier,
 		const char *stack_data,
+		struct lttng_ust_probe_ctx *probe_ctx,
 		struct lttng_ust_notification_ctx *notif_ctx);
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */

@@ -880,16 +880,17 @@ size_t lttng_ust__event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_PR
  * Perform UNION (||) of filter runtime list.
  */
 #undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
-#define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	      \
+#define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)   \
 static									      \
-void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args))	      \
+void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args)) \
 	lttng_ust_notrace;						      \
 static									      \
-void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args))	      \
+void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args)) \
 {									      \
 	struct lttng_ust_event_common *__event = (struct lttng_ust_event_common *) __tp_data; \
 	size_t __dynamic_len_idx = 0;					      \
 	const size_t __num_fields = LTTNG_UST__TP_ARRAY_SIZE(lttng_ust__event_fields___##_provider##___##_name) - 1; \
+	struct lttng_ust_probe_ctx __probe_ctx;				      \
 	union {								      \
 		size_t __dynamic_len[__num_fields];			      \
 		char __interpreter_stack_data[2 * sizeof(unsigned long) * __num_fields]; \
@@ -906,7 +907,7 @@ void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PRO
 		struct lttng_ust_channel_buffer *__chan = lttng_ust__event_recorder->chan; \
 		struct lttng_ust_channel_common *__chan_common = __chan->parent; \
 									      \
-		if (!LTTNG_UST__TP_SESSION_CHECK(session, __chan_common->session))      \
+		if (!LTTNG_UST__TP_SESSION_CHECK(session, __chan_common->session)) \
 			return;						      \
 		if (caa_unlikely(!CMM_ACCESS_ONCE(__chan_common->session->active))) \
 			return;						      \
@@ -919,29 +920,31 @@ void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PRO
 	}								      \
 	if (caa_unlikely(!CMM_ACCESS_ONCE(__event->enabled)))		      \
 		return;							      \
-	if (caa_unlikely(!LTTNG_UST_TP_RCU_LINK_TEST()))				      \
+	if (caa_unlikely(!LTTNG_UST_TP_RCU_LINK_TEST()))		      \
 		return;							      \
-	if (caa_unlikely(CMM_ACCESS_ONCE(__event->eval_filter))) { \
+	__probe_ctx.struct_size = sizeof(struct lttng_ust_probe_ctx);	      \
+	__probe_ctx.ip = LTTNG_UST__TP_IP_PARAM(LTTNG_UST_TP_IP_PARAM);	      \
+	if (caa_unlikely(CMM_ACCESS_ONCE(__event->eval_filter))) {	      \
 		lttng_ust__event_prepare_interpreter_stack__##_provider##___##_name(__stackvar.__interpreter_stack_data, \
-			LTTNG_UST__TP_ARGS_DATA_VAR(_args));			      \
+			LTTNG_UST__TP_ARGS_DATA_VAR(_args));		      \
 		__interpreter_stack_prepared = true;			      \
-		if (caa_likely(__event->run_filter(__event, \
-				__stackvar.__interpreter_stack_data, NULL) != LTTNG_UST_EVENT_FILTER_ACCEPT)) \
+		if (caa_likely(__event->run_filter(__event,		      \
+				__stackvar.__interpreter_stack_data, &__probe_ctx, NULL) != LTTNG_UST_EVENT_FILTER_ACCEPT)) \
 			return;						      \
 	}								      \
 	switch (__event->type) {					      \
 	case LTTNG_UST_EVENT_TYPE_RECORDER:				      \
 	{								      \
-		size_t __event_len, lttng_ust__event_align;			      \
+		size_t __event_len, lttng_ust__event_align;		      \
 		struct lttng_ust_event_recorder *lttng_ust__event_recorder = (struct lttng_ust_event_recorder *) __event->child; \
 		struct lttng_ust_channel_buffer *__chan = lttng_ust__event_recorder->chan; \
-		struct lttng_ust_ring_buffer_ctx __ctx;		      \
+		struct lttng_ust_ring_buffer_ctx __ctx;			      \
 									      \
 		__event_len = lttng_ust__event_get_size__##_provider##___##_name(__stackvar.__dynamic_len, \
 			 LTTNG_UST__TP_ARGS_DATA_VAR(_args));			      \
 		lttng_ust__event_align = lttng_ust__event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_VAR(_args)); \
 		lttng_ust_ring_buffer_ctx_init(&__ctx, lttng_ust__event_recorder, __event_len, lttng_ust__event_align, \
-				LTTNG_UST__TP_IP_PARAM(LTTNG_UST_TP_IP_PARAM));	      \
+				&__probe_ctx);				      \
 		__ret = __chan->ops->event_reserve(&__ctx);		      \
 		if (__ret < 0)						      \
 			return;						      \
@@ -959,10 +962,11 @@ void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PRO
 									      \
 		if (caa_unlikely(!__interpreter_stack_prepared && __notif_ctx.eval_capture)) \
 			lttng_ust__event_prepare_interpreter_stack__##_provider##___##_name(__stackvar.__interpreter_stack_data, \
-				LTTNG_UST__TP_ARGS_DATA_VAR(_args));		      \
+				LTTNG_UST__TP_ARGS_DATA_VAR(_args));	      \
 									      \
-		lttng_ust__event_notifier->notification_send(lttng_ust__event_notifier,	      \
+		lttng_ust__event_notifier->notification_send(lttng_ust__event_notifier, \
 				__stackvar.__interpreter_stack_data,	      \
+				&__probe_ctx,				      \
 				&__notif_ctx);				      \
 		break;							      \
 	}								      \

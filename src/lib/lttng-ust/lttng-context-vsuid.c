@@ -67,6 +67,7 @@ void lttng_context_vsuid_reset(void)
 
 static
 size_t vsuid_get_size(void *priv __attribute__((unused)),
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
 		size_t offset)
 {
 	size_t size = 0;
@@ -78,8 +79,9 @@ size_t vsuid_get_size(void *priv __attribute__((unused)),
 
 static
 void vsuid_record(void *priv __attribute__((unused)),
-		 struct lttng_ust_ring_buffer_ctx *ctx,
-		 struct lttng_ust_channel_buffer *chan)
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
+		struct lttng_ust_ring_buffer_ctx *ctx,
+		struct lttng_ust_channel_buffer *chan)
 {
 	uid_t vsuid;
 
@@ -89,9 +91,10 @@ void vsuid_record(void *priv __attribute__((unused)),
 
 static
 void vsuid_get_value(void *priv __attribute__((unused)),
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
 		struct lttng_ust_ctx_value *value)
 {
-	value->u.s64 = get_vsuid();
+	value->u.u64 = get_vsuid();
 }
 
 static const struct lttng_ust_ctx_field *ctx_field = lttng_ust_static_ctx_field(

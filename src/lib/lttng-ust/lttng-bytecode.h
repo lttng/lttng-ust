@@ -330,11 +330,13 @@ int lttng_bytecode_specialize(const struct lttng_ust_event_desc *event_desc,
 
 int lttng_bytecode_interpret_error(struct lttng_ust_bytecode_runtime *bytecode_runtime,
 		const char *stack_data,
+		struct lttng_ust_probe_ctx *probe_ctx,
 		void *ctx)
 	__attribute__((visibility("hidden")));
 
 int lttng_bytecode_interpret(struct lttng_ust_bytecode_runtime *bytecode_runtime,
 		const char *stack_data,
+		struct lttng_ust_probe_ctx *probe_ctx,
 		void *ctx)
 	__attribute__((visibility("hidden")));
 

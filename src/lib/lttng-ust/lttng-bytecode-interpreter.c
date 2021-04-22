@@ -153,6 +153,7 @@ int stack_strcmp(struct estack *stack, int top, const char *cmp_type __attribute
 int lttng_bytecode_interpret_error(
 		struct lttng_ust_bytecode_runtime *bytecode_runtime __attribute__((unused)),
 		const char *stack_data __attribute__((unused)),
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
 		void *ctx __attribute__((unused)))
 {
 	return LTTNG_UST_BYTECODE_INTERPRETER_ERROR;
@@ -215,6 +216,7 @@ LABEL_##name
 		(reg_type == REG_U64 || reg_type == REG_S64)
 
 static int context_get_index(struct lttng_ust_ctx *ctx,
+		struct lttng_ust_probe_ctx *probe_ctx,
 		struct load_ptr *ptr,
 		uint32_t idx)
 {
@@ -230,7 +232,7 @@ static int context_get_index(struct lttng_ust_ctx *ctx,
 
 	switch (field->type->type) {
 	case lttng_ust_type_integer:
-		ctx_field->get_value(ctx_field->priv, &v);
+		ctx_field->get_value(ctx_field->priv, probe_ctx, &v);
 		if (lttng_ust_get_type_integer(field->type)->signedness) {
 			ptr->object_type = OBJECT_TYPE_S64;
 			ptr->u.s64 = v.u.s64;
@@ -246,7 +248,7 @@ static int context_get_index(struct lttng_ust_ctx *ctx,
 		const struct lttng_ust_type_integer *itype;
 
 		itype = lttng_ust_get_type_integer(lttng_ust_get_type_enum(field->type)->container_type);
-		ctx_field->get_value(ctx_field->priv, &v);
+		ctx_field->get_value(ctx_field->priv, probe_ctx, &v);
 		if (itype->signedness) {
 			ptr->object_type = OBJECT_TYPE_SIGNED_ENUM;
 			ptr->u.s64 = v.u.s64;
@@ -268,7 +270,7 @@ static int context_get_index(struct lttng_ust_ctx *ctx,
 			return -EINVAL;
 		}
 		ptr->object_type = OBJECT_TYPE_STRING;
-		ctx_field->get_value(ctx_field->priv, &v);
+		ctx_field->get_value(ctx_field->priv, probe_ctx, &v);
 		ptr->ptr = v.u.str;
 		break;
 	case lttng_ust_type_sequence:
@@ -281,22 +283,22 @@ static int context_get_index(struct lttng_ust_ctx *ctx,
 			return -EINVAL;
 		}
 		ptr->object_type = OBJECT_TYPE_STRING;
-		ctx_field->get_value(ctx_field->priv, &v);
+		ctx_field->get_value(ctx_field->priv, probe_ctx, &v);
 		ptr->ptr = v.u.str;
 		break;
 	case lttng_ust_type_string:
 		ptr->object_type = OBJECT_TYPE_STRING;
-		ctx_field->get_value(ctx_field->priv, &v);
+		ctx_field->get_value(ctx_field->priv, probe_ctx, &v);
 		ptr->ptr = v.u.str;
 		break;
 	case lttng_ust_type_float:
 		ptr->object_type = OBJECT_TYPE_DOUBLE;
-		ctx_field->get_value(ctx_field->priv, &v);
+		ctx_field->get_value(ctx_field->priv, probe_ctx, &v);
 		ptr->u.d = v.u.d;
 		ptr->ptr = &ptr->u.d;
 		break;
 	case lttng_ust_type_dynamic:
-		ctx_field->get_value(ctx_field->priv, &v);
+		ctx_field->get_value(ctx_field->priv, probe_ctx, &v);
 		switch (v.sel) {
 		case LTTNG_UST_DYNAMIC_TYPE_NONE:
 			return -EINVAL;
@@ -343,6 +345,7 @@ static int context_get_index(struct lttng_ust_ctx *ctx,
 }
 
 static int dynamic_get_index(struct lttng_ust_ctx *ctx,
+		struct lttng_ust_probe_ctx *probe_ctx,
 		struct bytecode_runtime *runtime,
 		uint64_t index, struct estack_entry *stack_top)
 {
@@ -403,6 +406,7 @@ static int dynamic_get_index(struct lttng_ust_ctx *ctx,
 	case LOAD_ROOT_APP_CONTEXT:	/* Fall-through */
 	{
 		ret = context_get_index(ctx,
+				probe_ctx,
 				&stack_top->u.ptr,
 				gid->ctx_index);
 		if (ret) {
@@ -711,6 +715,7 @@ again:
  */
 int lttng_bytecode_interpret(struct lttng_ust_bytecode_runtime *ust_bytecode,
 		const char *interpreter_stack_data,
+		struct lttng_ust_probe_ctx *probe_ctx,
 		void *caller_ctx)
 {
 	struct bytecode_runtime *bytecode = caa_container_of(ust_bytecode, struct bytecode_runtime, p);
@@ -2138,7 +2143,7 @@ int lttng_bytecode_interpret(struct lttng_ust_bytecode_runtime *ust_bytecode,
 			dbg_printf("get context ref offset %u type dynamic\n",
 				ref->offset);
 			ctx_field = &ctx->fields[ref->offset];
-			ctx_field->get_value(ctx_field->priv, &v);
+			ctx_field->get_value(ctx_field->priv, probe_ctx, &v);
 			estack_push(stack, top, ax, bx, ax_t, bx_t);
 			switch (v.sel) {
 			case LTTNG_UST_DYNAMIC_TYPE_NONE:
@@ -2186,7 +2191,7 @@ int lttng_bytecode_interpret(struct lttng_ust_bytecode_runtime *ust_bytecode,
 			dbg_printf("get context ref offset %u type string\n",
 				ref->offset);
 			ctx_field = &ctx->fields[ref->offset];
-			ctx_field->get_value(ctx_field->priv, &v);
+			ctx_field->get_value(ctx_field->priv, probe_ctx, &v);
 			estack_push(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax(stack, top)->u.s.str = v.u.str;
 			if (unlikely(!estack_ax(stack, top)->u.s.str)) {
@@ -2213,7 +2218,7 @@ int lttng_bytecode_interpret(struct lttng_ust_bytecode_runtime *ust_bytecode,
 			dbg_printf("get context ref offset %u type s64\n",
 				ref->offset);
 			ctx_field = &ctx->fields[ref->offset];
-			ctx_field->get_value(ctx_field->priv, &v);
+			ctx_field->get_value(ctx_field->priv, probe_ctx, &v);
 			estack_push(stack, top, ax, bx, ax_t, bx_t);
 			estack_ax_v = v.u.s64;
 			estack_ax_t = REG_S64;
@@ -2232,7 +2237,7 @@ int lttng_bytecode_interpret(struct lttng_ust_bytecode_runtime *ust_bytecode,
 			dbg_printf("get context ref offset %u type double\n",
 				ref->offset);
 			ctx_field = &ctx->fields[ref->offset];
-			ctx_field->get_value(ctx_field->priv, &v);
+			ctx_field->get_value(ctx_field->priv, probe_ctx, &v);
 			estack_push(stack, top, ax, bx, ax_t, bx_t);
 			memcpy(&estack_ax(stack, top)->u.d, &v.u.d, sizeof(struct literal_double));
 			estack_ax_t = REG_DOUBLE;
@@ -2316,7 +2321,7 @@ int lttng_bytecode_interpret(struct lttng_ust_bytecode_runtime *ust_bytecode,
 			struct get_index_u16 *index = (struct get_index_u16 *) insn->data;
 
 			dbg_printf("op get index u16\n");
-			ret = dynamic_get_index(ctx, bytecode, index->index, estack_ax(stack, top));
+			ret = dynamic_get_index(ctx, probe_ctx, bytecode, index->index, estack_ax(stack, top));
 			if (ret)
 				goto end;
 			estack_ax_v = estack_ax(stack, top)->u.v;
@@ -2331,7 +2336,7 @@ int lttng_bytecode_interpret(struct lttng_ust_bytecode_runtime *ust_bytecode,
 			struct get_index_u64 *index = (struct get_index_u64 *) insn->data;
 
 			dbg_printf("op get index u64\n");
-			ret = dynamic_get_index(ctx, bytecode, index->index, estack_ax(stack, top));
+			ret = dynamic_get_index(ctx, probe_ctx, bytecode, index->index, estack_ax(stack, top));
 			if (ret)
 				goto end;
 			estack_ax_v = estack_ax(stack, top)->u.v;
@@ -2513,6 +2518,7 @@ end:
  */
 int lttng_ust_interpret_event_filter(const struct lttng_ust_event_common *event,
 		const char *interpreter_stack_data,
+		struct lttng_ust_probe_ctx *probe_ctx,
 		void *event_filter_ctx __attribute__((unused)))
 {
 	struct lttng_ust_bytecode_runtime *filter_bc_runtime;
@@ -2522,7 +2528,7 @@ int lttng_ust_interpret_event_filter(const struct lttng_ust_event_common *event,
 
 	cds_list_for_each_entry_rcu(filter_bc_runtime, filter_bytecode_runtime_head, node) {
 		if (caa_likely(filter_bc_runtime->interpreter_func(filter_bc_runtime,
-				interpreter_stack_data, &bytecode_filter_ctx) == LTTNG_UST_BYTECODE_INTERPRETER_OK)) {
+				interpreter_stack_data, probe_ctx, &bytecode_filter_ctx) == LTTNG_UST_BYTECODE_INTERPRETER_OK)) {
 			if (caa_unlikely(bytecode_filter_ctx.result == LTTNG_UST_BYTECODE_FILTER_ACCEPT)) {
 				filter_record = true;
 				break;

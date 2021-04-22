@@ -161,6 +161,7 @@ void lttng_perf_unlock(void)
 
 static
 size_t perf_counter_get_size(void *priv __attribute__((unused)),
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
 		size_t offset)
 {
 	size_t size = 0;
@@ -442,8 +443,9 @@ uint64_t wrapper_perf_counter_read(void *priv)
 
 static
 void perf_counter_record(void *priv,
-		 struct lttng_ust_ring_buffer_ctx *ctx,
-		 struct lttng_ust_channel_buffer *chan)
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
+		struct lttng_ust_ring_buffer_ctx *ctx,
+		struct lttng_ust_channel_buffer *chan)
 {
 	uint64_t value;
 
@@ -453,9 +455,10 @@ void perf_counter_record(void *priv,
 
 static
 void perf_counter_get_value(void *priv,
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
 		struct lttng_ust_ctx_value *value)
 {
-	value->u.s64 = wrapper_perf_counter_read(priv);
+	value->u.u64 = wrapper_perf_counter_read(priv);
 }
 
 /* Called with perf lock held */

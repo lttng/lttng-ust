@@ -18,6 +18,7 @@
 
 static
 size_t pthread_id_get_size(void *priv __attribute__((unused)),
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
 		size_t offset)
 {
 	size_t size = 0;
@@ -29,8 +30,9 @@ size_t pthread_id_get_size(void *priv __attribute__((unused)),
 
 static
 void pthread_id_record(void *priv __attribute__((unused)),
-		 struct lttng_ust_ring_buffer_ctx *ctx,
-		 struct lttng_ust_channel_buffer *chan)
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
+		struct lttng_ust_ring_buffer_ctx *ctx,
+		struct lttng_ust_channel_buffer *chan)
 {
 	unsigned long pthread_id;
 
@@ -40,9 +42,10 @@ void pthread_id_record(void *priv __attribute__((unused)),
 
 static
 void pthread_id_get_value(void *priv __attribute__((unused)),
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
 		struct lttng_ust_ctx_value *value)
 {
-	value->u.s64 = (unsigned long) pthread_self();
+	value->u.u64 = (unsigned long) pthread_self();
 }
 
 static const struct lttng_ust_ctx_field *ctx_field = lttng_ust_static_ctx_field(

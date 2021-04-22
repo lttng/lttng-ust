@@ -254,10 +254,13 @@ void lttng_destroy_context(struct lttng_ust_ctx *ctx)
  */
 int lttng_ust_context_set_provider_rcu(struct lttng_ust_ctx **_ctx,
 		const char *name,
-		size_t (*get_size)(void *priv, size_t offset),
-		void (*record)(void *priv, struct lttng_ust_ring_buffer_ctx *ctx,
+		size_t (*get_size)(void *priv, struct lttng_ust_probe_ctx *probe_ctx,
+			size_t offset),
+		void (*record)(void *priv, struct lttng_ust_probe_ctx *probe_ctx,
+			struct lttng_ust_ring_buffer_ctx *ctx,
 			struct lttng_ust_channel_buffer *chan),
-		void (*get_value)(void *priv, struct lttng_ust_ctx_value *value),
+		void (*get_value)(void *priv, struct lttng_ust_probe_ctx *probe_ctx,
+			struct lttng_ust_ctx_value *value),
 		void *priv)
 {
 	int i, ret;

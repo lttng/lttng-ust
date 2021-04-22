@@ -91,6 +91,7 @@ void lttng_context_net_ns_reset(void)
 
 static
 size_t net_ns_get_size(void *priv __attribute__((unused)),
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
 		size_t offset)
 {
 	size_t size = 0;
@@ -102,8 +103,9 @@ size_t net_ns_get_size(void *priv __attribute__((unused)),
 
 static
 void net_ns_record(void *priv __attribute__((unused)),
-		 struct lttng_ust_ring_buffer_ctx *ctx,
-		 struct lttng_ust_channel_buffer *chan)
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
+		struct lttng_ust_ring_buffer_ctx *ctx,
+		struct lttng_ust_channel_buffer *chan)
 {
 	ino_t net_ns;
 
@@ -113,9 +115,10 @@ void net_ns_record(void *priv __attribute__((unused)),
 
 static
 void net_ns_get_value(void *priv __attribute__((unused)),
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
 		struct lttng_ust_ctx_value *value)
 {
-	value->u.s64 = get_net_ns();
+	value->u.u64 = get_net_ns();
 }
 
 static const struct lttng_ust_ctx_field *ctx_field = lttng_ust_static_ctx_field(
