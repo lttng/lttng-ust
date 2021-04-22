@@ -61,7 +61,8 @@ liblttng_ust_runtime_la_SOURCES = \
 	rculfhash-internal.h \
 	rculfhash-mm-chunk.c \
 	rculfhash-mm-mmap.c \
-	rculfhash-mm-order.c
+	rculfhash-mm-order.c \
+	strerror.c
 
 if HAVE_PERF_EVENT
 liblttng_ust_runtime_la_SOURCES += \

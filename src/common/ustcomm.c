@@ -23,15 +23,11 @@
 #include "common/ustcomm.h"
 #include "common/ust-fd.h"
 #include "common/macros.h"
-#include <lttng/ust-error.h>
 #include "common/dynamic-type.h"
 #include "common/logging.h"
 
 #include "common/events.h"
 #include "common/compat/pthread.h"
-
-#define USTCOMM_CODE_OFFSET(code)	\
-	(code == LTTNG_UST_OK ? 0 : (code - LTTNG_UST_ERR + 1))
 
 #define USTCOMM_MAX_SEND_FDS	4
 
@@ -47,43 +43,6 @@ int serialize_fields(struct lttng_ust_session *session,
 		struct lttng_ust_ctl_field *lttng_ust_ctl_fields,
 		size_t *iter_output, size_t nr_lttng_fields,
 		const struct lttng_ust_event_field * const *lttng_fields);
-
-/*
- * Human readable error message.
- */
-static const char *ustcomm_readable_code[] = {
-	[ USTCOMM_CODE_OFFSET(LTTNG_UST_OK) ] = "Success",
-	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR) ] = "Unknown error",
-	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_NOENT) ] = "No entry",
-	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_EXIST) ] = "Object already exists",
-	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_INVAL) ] = "Invalid argument",
-	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_PERM) ] = "Permission denied",
-	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_NOSYS) ] = "Not implemented",
-	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_EXITING) ] = "Process is exiting",
-
-	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_INVAL_MAGIC) ] = "Invalid magic number",
-	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_INVAL_SOCKET_TYPE) ] = "Invalid socket type",
-	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_UNSUP_MAJOR) ] = "Unsupported major version",
-	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_PEERCRED) ] = "Cannot get unix socket peer credentials",
-	[ USTCOMM_CODE_OFFSET(LTTNG_UST_ERR_PEERCRED_PID) ] = "Peer credentials PID is invalid. Socket appears to belong to a distinct, non-nested pid namespace.",
-};
-
-/*
- * lttng_ust_strerror
- * @code: must be a negative value of enum lttng_ust_error_code (or 0).
- *
- * Returns a ptr to a string representing a human readable error code from the
- * ustcomm_return_code enum.
- */
-const char *lttng_ust_strerror(int code)
-{
-	code = -code;
-
-	if (code < LTTNG_UST_OK || code >= LTTNG_UST_ERR_NR)
-		code = LTTNG_UST_ERR;
-
-	return ustcomm_readable_code[USTCOMM_CODE_OFFSET(code)];
-}
 
 /*
  * ustcomm_connect_unix_sock
