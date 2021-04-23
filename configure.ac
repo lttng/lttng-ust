@@ -650,9 +650,9 @@ AS_ECHO
 
 AS_IF([test -n "ust_version_description"], [
   AS_IF([test -n "$FOLD"], [
-    AS_ECHO("`AS_ECHO("ust_version_description") | $FOLD -s`")
+    AS_ECHO(["ust_version_description"]) | $FOLD -s
   ], [
-    AS_ECHO("ust_version_description")
+    AS_ECHO(["ust_version_description"])
   ])
   AS_ECHO
 ])
