@@ -7,12 +7,14 @@
 #define _LGPL_SOURCE
 #include <dlfcn.h>
 #include <stdlib.h>
-#include "common/logging.h"
 #include <urcu/system.h>
 #include <urcu/arch.h>
 
+#include "common/getcpu.h"
 #include "common/getenv.h"
-#include "lib/lttng-ust/getcpu.h"
+#include "common/logging.h"
+
+#include "lib/lttng-ust-common/getcpu.h"
 
 /* Function pointer to the current getcpu callback. */
 int (*lttng_ust_get_cpu_sym)(void);

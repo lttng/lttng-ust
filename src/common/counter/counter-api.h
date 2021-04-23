@@ -16,7 +16,7 @@
 #include <urcu/compiler.h>
 #include <urcu/uatomic.h>
 #include "common/bitmap.h"
-#include "lib/lttng-ust/getcpu.h"
+#include "common/getcpu.h"
 
 /*
  * Using unsigned arithmetic because overflow is defined.

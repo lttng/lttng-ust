@@ -12,6 +12,7 @@
 
 #include "lib/lttng-ust-common/fd-tracker.h"
 #include "lib/lttng-ust-common/clock.h"
+#include "lib/lttng-ust-common/getcpu.h"
 
 /*
  * The liblttng-ust-common constructor, initialize the internal shared state.
@@ -30,6 +31,11 @@ void lttng_ust_common_ctor(void)
 	 * Initialize the potential user-provided clock plugin.
 	 */
 	lttng_ust_clock_init();
+
+	/*
+	 * Initialize the potential user-provided getcpu plugin.
+	 */
+	lttng_ust_getcpu_plugin_init();
 }
 
 void lttng_ust_common_alloc_tls(void)

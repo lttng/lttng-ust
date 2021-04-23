@@ -4,8 +4,8 @@
  * Copyright (C) 2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  */
 
-#ifndef _LTTNG_GETCPU_H
-#define _LTTNG_GETCPU_H
+#ifndef _UST_COMMON_GETCPU_H
+#define _UST_COMMON_GETCPU_H
 
 #include <urcu/compiler.h>
 #include <urcu/system.h>
@@ -13,20 +13,16 @@
 
 #include <lttng/ust-getcpu.h>
 
-
-/*
- * Initialize the getcpu plugin if it's present.
- */
-void lttng_ust_getcpu_plugin_init(void)
-	__attribute__((visibility("hidden")));
-
 /*
  * Function pointer to the user provided getcpu callback, can be set at library
  * initialization by a dlopened plugin or at runtime by a user by calling
  * lttng_ust_getcpu_override() from the public API.
+ *
+ * This is an ABI symbol of liblttng-ust-common accessed by other libraries
+ * through the static inline function in this file. It is initialised in the
+ * liblttng-ust-common constructor.
  */
-extern int (*lttng_ust_get_cpu_sym)(void)
-	__attribute__((visibility("hidden")));
+extern int (*lttng_ust_get_cpu_sym)(void);
 
 #ifdef LTTNG_UST_DEBUG_VALGRIND
 

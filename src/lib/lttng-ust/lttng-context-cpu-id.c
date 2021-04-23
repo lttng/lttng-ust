@@ -19,8 +19,9 @@
 #include <limits.h>
 #include <lttng/ust-events.h>
 #include <lttng/ust-tracer.h>
-#include "lib/lttng-ust/getcpu.h"
 #include <lttng/ust-ringbuffer-context.h>
+
+#include "common/getcpu.h"
 
 #include "context-internal.h"
 

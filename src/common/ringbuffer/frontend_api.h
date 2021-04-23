@@ -15,7 +15,7 @@
 
 #include <urcu/compiler.h>
 
-#include "lib/lttng-ust/getcpu.h"
+#include "common/getcpu.h"
 #include "frontend.h"
 
 /**

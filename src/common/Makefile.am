@@ -14,6 +14,7 @@ noinst_HEADERS = \
 	creds.h \
 	err-ptr.h \
 	events.h \
+	getcpu.h \
 	hash.h \
 	jhash.h \
 	logging.h \

@@ -7,6 +7,8 @@ liblttng_ust_common_la_SOURCES = \
 	clock.h \
 	fd-tracker.c \
 	fd-tracker.h \
+	getcpu.c \
+	getcpu.h \
 	ust-common.c \
 	lttng-ust-urcu.c \
 	lttng-ust-urcu-pointer.c
