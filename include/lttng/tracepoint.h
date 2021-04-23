@@ -182,7 +182,8 @@ extern "C" {
  * address.
  */
 #define LTTNG_UST__DECLARE_TRACEPOINT(_provider, _name, ...)			 		\
-extern struct lttng_ust_tracepoint lttng_ust_tracepoint_##_provider##___##_name;		\
+extern struct lttng_ust_tracepoint lttng_ust_tracepoint_##_provider##___##_name		\
+		LTTNG_UST__TRACEPOINT_DEFINITION_VISIBILITY;				\
 static inline										\
 void lttng_ust_tracepoint_cb_##_provider##___##_name(LTTNG_UST__TP_ARGS_PROTO(__VA_ARGS__))		\
 	__attribute__((always_inline, unused)) lttng_ust_notrace;			\
@@ -482,7 +483,8 @@ extern struct lttng_ust_tracepoint * const __stop_lttng_ust_tracepoints_ptrs[]
 
 #define LTTNG_UST__DEFINE_TRACEPOINT(_provider, _name, _args)				\
 	lttng_ust_tracepoint_validate_name_len(_provider, _name);		\
-	extern int lttng_ust_tracepoint_provider_##_provider; 				\
+	extern int lttng_ust_tracepoint_provider_##_provider			\
+		LTTNG_UST__TRACEPOINT_PROVIDER_DEFINITION_VISIBILITY;		\
 	static const char lttng_ust_tp_provider_strtab_##_provider##___##_name[]	\
 		__attribute__((section("lttng_ust_tracepoints_strings"))) =		\
 			#_provider;						\
@@ -490,7 +492,8 @@ extern struct lttng_ust_tracepoint * const __stop_lttng_ust_tracepoints_ptrs[]
 		__attribute__((section("lttng_ust_tracepoints_strings"))) =		\
 			#_name;							\
 	struct lttng_ust_tracepoint lttng_ust_tracepoint_##_provider##___##_name	\
-		__attribute__((section("lttng_ust_tracepoints"))) = {			\
+		__attribute__((section("lttng_ust_tracepoints")))		\
+		LTTNG_UST__TRACEPOINT_DEFINITION_VISIBILITY = {			\
 			sizeof(struct lttng_ust_tracepoint),			\
 			lttng_ust_tp_provider_strtab_##_provider##___##_name,		\
 			lttng_ust_tp_name_strtab_##_provider##___##_name,		\
@@ -595,6 +598,39 @@ lttng_ust__tracepoints__ptrs_destroy(void)
 #endif /* _LTTNG_UST_TRACEPOINT_H */
 
 /* The following declarations must be outside re-inclusion protection. */
+
+/*
+ * LTTNG_UST_TRACEPOINT_HIDDEN_DEFINITION: Define this before including
+ * a tracepoint instrumentation header to hide symbols associated with
+ * tracepoint module instrumentation. This is useful if all compile
+ * units using the lttng_ust_tracepoint(),
+ * lttng_ust_tracepoint_enabled() and lttng_ust_do_tracepoint() macros
+ * is within the same module as the compile unit including the
+ * tracepoint header after defining LTTNG_UST_TRACEPOINT_DEFINE.
+ */
+
+#undef LTTNG_UST__TRACEPOINT_DEFINITION_VISIBILITY
+#ifdef LTTNG_UST_TRACEPOINT_HIDDEN_DEFINITION
+#define LTTNG_UST__TRACEPOINT_DEFINITION_VISIBILITY		__attribute__((visibility("hidden")))
+#else
+#define LTTNG_UST__TRACEPOINT_DEFINITION_VISIBILITY		__attribute__((visibility("default")))
+#endif
+
+/*
+ * LTTNG_UST_TRACEPOINT_PROVIDER_HIDDEN_DEFINITION: Define this before
+ * including a tracepoint instrumentation header to hide symbols
+ * associated with the tracepoint provider. This is useful if the
+ * tracepoint definition (including the header after defining
+ * LTTNG_UST_TRACEPOINT_DEFINE) is in the same module as the provider
+ * (including the header after defining
+ * LTTNG_UST_TRACEPOINT_CREATE_PROBES).
+ */
+#undef LTTNG_UST__TRACEPOINT_PROVIDER_DEFINITION_VISIBILITY
+#ifdef LTTNG_UST_TRACEPOINT_PROVIDER_HIDDEN_DEFINITION
+#define LTTNG_UST__TRACEPOINT_PROVIDER_DEFINITION_VISIBILITY	__attribute__((visibility("hidden")))
+#else
+#define LTTNG_UST__TRACEPOINT_PROVIDER_DEFINITION_VISIBILITY	__attribute__((visibility("default")))
+#endif
 
 #ifndef LTTNG_UST_TRACEPOINT_ENUM
 

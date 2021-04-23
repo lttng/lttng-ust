@@ -1211,5 +1211,21 @@ LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__events_exit__, LTTNG_UST_TRACEPOINT_PROV
 	LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__probe_register_cookie___, LTTNG_UST_TRACEPOINT_PROVIDER) = NULL;
 }
 
+/*
+ * LTTNG_UST_TRACEPOINT_PROVIDER_HIDDEN_DEFINITION: Define this before
+ * including a tracepoint instrumentation header to hide symbols
+ * associated with the tracepoint provider. This is useful if the
+ * tracepoint definition (including the header after defining
+ * LTTNG_UST_TRACEPOINT_DEFINE) is in the same module as the provider
+ * (including the header after defining
+ * LTTNG_UST_TRACEPOINT_CREATE_PROBES).
+ */
+#undef LTTNG_UST__TRACEPOINT_PROVIDER_DEFINITION_VISIBILITY
+#ifdef LTTNG_UST_TRACEPOINT_PROVIDER_HIDDEN_DEFINITION
+#define LTTNG_UST__TRACEPOINT_PROVIDER_DEFINITION_VISIBILITY	__attribute__((visibility("hidden")))
+#else
+#define LTTNG_UST__TRACEPOINT_PROVIDER_DEFINITION_VISIBILITY	__attribute__((visibility("default")))
+#endif
+
 int LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_tracepoint_provider_, LTTNG_UST_TRACEPOINT_PROVIDER)
-	__attribute__((visibility("default")));
+	LTTNG_UST__TRACEPOINT_PROVIDER_DEFINITION_VISIBILITY;
