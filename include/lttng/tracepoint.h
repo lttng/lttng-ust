@@ -216,7 +216,7 @@ static inline										\
 void lttng_ust_tracepoint_register_##_provider##___##_name(char *provider_name, char *event_name, \
 		void (*func)(void), void *data)						\
 {											\
-	lttng_ust_tracepoint_probe_register(provider_name, event_name, func, data,		\
+	lttng_ust_tracepoint_provider_register(provider_name, event_name, func, data,		\
 		lttng_ust_tracepoint_##_provider##___##_name.signature);			\
 }											\
 static inline										\
@@ -227,12 +227,12 @@ static inline										\
 void lttng_ust_tracepoint_unregister_##_provider##___##_name(char *provider_name, char *event_name, \
 		void (*func)(void), void *data)						\
 {											\
-	lttng_ust_tracepoint_probe_unregister(provider_name, event_name, func, data);		\
+	lttng_ust_tracepoint_provider_unregister(provider_name, event_name, func, data);		\
 }
 
-extern int lttng_ust_tracepoint_probe_register(const char *provider_name, const char *event_name,
+extern int lttng_ust_tracepoint_provider_register(const char *provider_name, const char *event_name,
 		void (*func)(void), void *data, const char *signature);
-extern int lttng_ust_tracepoint_probe_unregister(const char *provider_name, const char *event_name,
+extern int lttng_ust_tracepoint_provider_unregister(const char *provider_name, const char *event_name,
 		void (*func)(void), void *data);
 
 /*

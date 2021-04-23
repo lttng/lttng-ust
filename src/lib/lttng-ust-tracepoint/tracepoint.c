@@ -608,7 +608,7 @@ static void tracepoint_release_queue_add_old_probes(void *old)
 }
 
 /**
- * lttng_ust_tracepoint_probe_register -  Connect a probe to a tracepoint
+ * lttng_ust_tracepoint_provider_register -  Connect a probe to a tracepoint
  * @name: tracepoint provider name
  * @name: tracepoint event name
  * @probe: probe handler
@@ -617,7 +617,7 @@ static void tracepoint_release_queue_add_old_probes(void *old)
  * The probe address must at least be aligned on the architecture pointer size.
  * Called with the tracepoint mutex held.
  */
-int lttng_ust_tracepoint_probe_register(const char *provider_name, const char *event_name,
+int lttng_ust_tracepoint_provider_register(const char *provider_name, const char *event_name,
 		void (*probe)(void), void *data, const char *signature)
 {
 	void *old;
@@ -690,7 +690,7 @@ static void *tracepoint_remove_probe(const char *provider_name, const char *even
  * @probe: probe function pointer
  * @probe: probe data pointer
  */
-int lttng_ust_tracepoint_probe_unregister(const char *provider_name, const char *event_name,
+int lttng_ust_tracepoint_provider_unregister(const char *provider_name, const char *event_name,
 		void (*probe)(void), void *data)
 {
 	void *old;
