@@ -17,4 +17,6 @@
 void lttng_ust_common_ctor(void)
 	__attribute__((constructor));
 
+void lttng_ust_common_alloc_tls(void);
+
 #endif

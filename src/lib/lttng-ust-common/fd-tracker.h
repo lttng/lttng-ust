@@ -10,4 +10,7 @@
 void lttng_ust_fd_tracker_init(void)
 	__attribute__((visibility("hidden")));
 
+void lttng_ust_fd_tracker_alloc_tls(void)
+	__attribute__((visibility("hidden")));
+
 #endif

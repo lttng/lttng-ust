@@ -406,7 +406,7 @@ void lttng_ust_alloc_tls(void)
 	lttng_procname_alloc_tls();
 	lttng_ust_mutex_nest_alloc_tls();
 	lttng_ust_perf_counter_alloc_tls();
-	lttng_ust_fd_tracker_alloc_tls();
+	lttng_ust_common_alloc_tls();
 	lttng_cgroup_ns_alloc_tls();
 	lttng_ipc_ns_alloc_tls();
 	lttng_net_ns_alloc_tls();

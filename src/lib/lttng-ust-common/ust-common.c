@@ -25,3 +25,8 @@ void lttng_ust_common_ctor(void)
 	 */
 	lttng_ust_fd_tracker_init();
 }
+
+void lttng_ust_common_alloc_tls(void)
+{
+	lttng_ust_fd_tracker_alloc_tls();
+}
