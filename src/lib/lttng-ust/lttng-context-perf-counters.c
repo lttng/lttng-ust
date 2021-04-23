@@ -71,7 +71,7 @@ static pthread_key_t perf_counter_key;
  * lttng_perf_lock - Protect lttng-ust perf counter data structures
  *
  * Nests within the ust_lock, and therefore within the libc dl lock.
- * Therefore, we need to fixup the TLS before nesting into this lock.
+ * Therefore, we need to allocate the TLS before nesting into this lock.
  * Nests inside RCU bp read-side lock. Protects against concurrent
  * fork.
  */
@@ -90,9 +90,9 @@ static int ust_perf_saved_cancelstate;
 static DEFINE_URCU_TLS(int, ust_perf_mutex_nest);
 
 /*
- * Force a read (imply TLS fixup for dlopen) of TLS variables.
+ * Force a read (imply TLS allocation for dlopen) of TLS variables.
  */
-void lttng_ust_fixup_perf_counter_tls(void)
+void lttng_ust_perf_counter_alloc_tls(void)
 {
 	asm volatile ("" : : "m" (URCU_TLS(ust_perf_mutex_nest)));
 }

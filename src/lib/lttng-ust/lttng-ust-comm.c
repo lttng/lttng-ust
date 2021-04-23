@@ -374,48 +374,48 @@ const char *get_lttng_home_dir(void)
 }
 
 /*
- * Force a read (imply TLS fixup for dlopen) of TLS variables.
+ * Force a read (imply TLS allocation for dlopen) of TLS variables.
  */
 static
-void lttng_fixup_nest_count_tls(void)
+void lttng_nest_count_alloc_tls(void)
 {
 	asm volatile ("" : : "m" (URCU_TLS(lttng_ust_nest_count)));
 }
 
 static
-void lttng_fixup_ust_mutex_nest_tls(void)
+void lttng_ust_mutex_nest_alloc_tls(void)
 {
 	asm volatile ("" : : "m" (URCU_TLS(ust_mutex_nest)));
 }
 
 /*
- * Fixup lttng-ust urcu TLS.
+ * Allocate lttng-ust urcu TLS.
  */
 static
-void lttng_fixup_lttng_ust_urcu_tls(void)
+void lttng_lttng_ust_urcu_alloc_tls(void)
 {
 	(void) lttng_ust_urcu_read_ongoing();
 }
 
-void lttng_ust_fixup_tls(void)
+void lttng_ust_alloc_tls(void)
 {
-	lttng_fixup_lttng_ust_urcu_tls();
-	lttng_fixup_ringbuffer_tls();
-	lttng_fixup_vtid_tls();
-	lttng_fixup_nest_count_tls();
-	lttng_fixup_procname_tls();
-	lttng_fixup_ust_mutex_nest_tls();
-	lttng_ust_fixup_perf_counter_tls();
-	lttng_ust_fixup_fd_tracker_tls();
-	lttng_fixup_cgroup_ns_tls();
-	lttng_fixup_ipc_ns_tls();
-	lttng_fixup_net_ns_tls();
-	lttng_fixup_time_ns_tls();
-	lttng_fixup_uts_ns_tls();
-	lttng_ust_fixup_ring_buffer_client_discard_tls();
-	lttng_ust_fixup_ring_buffer_client_discard_rt_tls();
-	lttng_ust_fixup_ring_buffer_client_overwrite_tls();
-	lttng_ust_fixup_ring_buffer_client_overwrite_rt_tls();
+	lttng_lttng_ust_urcu_alloc_tls();
+	lttng_ringbuffer_alloc_tls();
+	lttng_vtid_alloc_tls();
+	lttng_nest_count_alloc_tls();
+	lttng_procname_alloc_tls();
+	lttng_ust_mutex_nest_alloc_tls();
+	lttng_ust_perf_counter_alloc_tls();
+	lttng_ust_fd_tracker_alloc_tls();
+	lttng_cgroup_ns_alloc_tls();
+	lttng_ipc_ns_alloc_tls();
+	lttng_net_ns_alloc_tls();
+	lttng_time_ns_alloc_tls();
+	lttng_uts_ns_alloc_tls();
+	lttng_ust_ring_buffer_client_discard_alloc_tls();
+	lttng_ust_ring_buffer_client_discard_rt_alloc_tls();
+	lttng_ust_ring_buffer_client_overwrite_alloc_tls();
+	lttng_ust_ring_buffer_client_overwrite_rt_alloc_tls();
 }
 
 /*
@@ -436,7 +436,7 @@ void lttng_ust_init_thread(void)
 	 * ensure those are initialized before a signal handler nesting over
 	 * this thread attempts to use them.
 	 */
-	lttng_ust_fixup_tls();
+	lttng_ust_alloc_tls();
 }
 
 int lttng_get_notify_socket(void *owner)
@@ -1741,7 +1741,7 @@ void *ust_listener_thread(void *arg)
 	int sock, ret, prev_connect_failed = 0, has_waited = 0, fd;
 	long timeout;
 
-	lttng_ust_fixup_tls();
+	lttng_ust_alloc_tls();
 	/*
 	 * If available, add '-ust' to the end of this thread's
 	 * process name
@@ -2069,11 +2069,11 @@ void lttng_ust_ctor(void)
 		return;
 
 	/*
-	 * Fixup interdependency between TLS fixup mutex (which happens
+	 * Fixup interdependency between TLS allocation mutex (which happens
 	 * to be the dynamic linker mutex) and ust_lock, taken within
 	 * the ust lock.
 	 */
-	lttng_ust_fixup_tls();
+	lttng_ust_alloc_tls();
 
 	lttng_ust_loaded = 1;
 
@@ -2378,8 +2378,8 @@ void lttng_ust_before_fork(sigset_t *save_sigset)
 	sigset_t all_sigs;
 	int ret;
 
-	/* Fixup lttng-ust TLS. */
-	lttng_ust_fixup_tls();
+	/* Allocate lttng-ust TLS. */
+	lttng_ust_alloc_tls();
 
 	if (URCU_TLS(lttng_ust_nest_count))
 		return;

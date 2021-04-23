@@ -48,7 +48,7 @@
 
 /*
  * Protect the lttng_fd_set. Nests within the ust_lock, and therefore
- * within the libc dl lock. Therefore, we need to fixup the TLS before
+ * within the libc dl lock. Therefore, we need to allocate the TLS before
  * nesting into this lock.
  *
  * The ust_safe_guard_fd_mutex nests within the ust_mutex. This mutex
@@ -77,9 +77,9 @@ static int num_fd_sets;
 static int init_done;
 
 /*
- * Force a read (imply TLS fixup for dlopen) of TLS variables.
+ * Force a read (imply TLS allocation for dlopen) of TLS variables.
  */
-void lttng_ust_fixup_fd_tracker_tls(void)
+void lttng_ust_fd_tracker_alloc_tls(void)
 {
 	asm volatile ("" : : "m" (URCU_TLS(ust_fd_mutex_nest)));
 }
@@ -323,7 +323,7 @@ int lttng_ust_safe_close_fd(int fd, int (*close_cb)(int fd))
 {
 	int ret = 0;
 
-	lttng_ust_fixup_fd_tracker_tls();
+	lttng_ust_fd_tracker_alloc_tls();
 
 	/*
 	 * Ensure the tracker is initialized when called from
@@ -359,7 +359,7 @@ int lttng_ust_safe_fclose_stream(FILE *stream, int (*fclose_cb)(FILE *stream))
 {
 	int ret = 0, fd;
 
-	lttng_ust_fixup_fd_tracker_tls();
+	lttng_ust_fd_tracker_alloc_tls();
 
 	/*
 	 * Ensure the tracker is initialized when called from
@@ -414,7 +414,7 @@ int lttng_ust_safe_closefrom_fd(int lowfd, int (*close_cb)(int fd))
 {
 	int ret = 0, close_success = 0, i;
 
-	lttng_ust_fixup_fd_tracker_tls();
+	lttng_ust_fd_tracker_alloc_tls();
 
 	/*
 	 * Ensure the tracker is initialized when called from

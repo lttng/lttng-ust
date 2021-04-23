@@ -34,31 +34,28 @@ void ust_lock_nocheck(void)
 void ust_unlock(void)
 	__attribute__((visibility("hidden")));
 
-void lttng_ust_fixup_tls(void)
+void lttng_ust_alloc_tls(void)
 	__attribute__((visibility("hidden")));
 
-void lttng_fixup_event_tls(void)
+void lttng_vtid_alloc_tls(void)
 	__attribute__((visibility("hidden")));
 
-void lttng_fixup_vtid_tls(void)
+void lttng_procname_alloc_tls(void)
 	__attribute__((visibility("hidden")));
 
-void lttng_fixup_procname_tls(void)
+void lttng_cgroup_ns_alloc_tls(void)
 	__attribute__((visibility("hidden")));
 
-void lttng_fixup_cgroup_ns_tls(void)
+void lttng_ipc_ns_alloc_tls(void)
 	__attribute__((visibility("hidden")));
 
-void lttng_fixup_ipc_ns_tls(void)
+void lttng_net_ns_alloc_tls(void)
 	__attribute__((visibility("hidden")));
 
-void lttng_fixup_net_ns_tls(void)
+void lttng_time_ns_alloc_tls(void)
 	__attribute__((visibility("hidden")));
 
-void lttng_fixup_time_ns_tls(void)
-	__attribute__((visibility("hidden")));
-
-void lttng_fixup_uts_ns_tls(void)
+void lttng_uts_ns_alloc_tls(void)
 	__attribute__((visibility("hidden")));
 
 const char *lttng_ust_obj_get_name(int id)
@@ -103,7 +100,7 @@ void lttng_counter_transport_unregister(struct lttng_counter_transport *transpor
 	__attribute__((visibility("hidden")));
 
 #ifdef HAVE_LINUX_PERF_EVENT_H
-void lttng_ust_fixup_perf_counter_tls(void)
+void lttng_ust_perf_counter_alloc_tls(void)
 	__attribute__((visibility("hidden")));
 
 void lttng_perf_lock(void)
@@ -113,7 +110,7 @@ void lttng_perf_unlock(void)
 	__attribute__((visibility("hidden")));
 #else /* #ifdef HAVE_LINUX_PERF_EVENT_H */
 static inline
-void lttng_ust_fixup_perf_counter_tls(void)
+void lttng_ust_perf_counter_alloc_tls(void)
 {
 }
 static inline

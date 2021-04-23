@@ -71,9 +71,9 @@ typedef struct lttng_ust_ring_buffer_ctx_private private_ctx_stack_t[LIB_RING_BU
 static DEFINE_URCU_TLS(private_ctx_stack_t, private_ctx_stack);
 
 /*
- * Force a read (imply TLS fixup for dlopen) of TLS variables.
+ * Force a read (imply TLS allocation for dlopen) of TLS variables.
  */
-void RING_BUFFER_MODE_TEMPLATE_TLS_FIXUP(void)
+void RING_BUFFER_MODE_TEMPLATE_ALLOC_TLS(void)
 {
 	asm volatile ("" : : "m" (URCU_TLS(private_ctx_stack)));
 }

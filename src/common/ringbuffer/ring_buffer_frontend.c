@@ -2558,9 +2558,9 @@ void lib_ring_buffer_check_deliver_slow(const struct lttng_ust_ring_buffer_confi
 }
 
 /*
- * Force a read (imply TLS fixup for dlopen) of TLS variables.
+ * Force a read (imply TLS allocation for dlopen) of TLS variables.
  */
-void lttng_fixup_ringbuffer_tls(void)
+void lttng_ringbuffer_alloc_tls(void)
 {
 	asm volatile ("" : : "m" (URCU_TLS(lib_ring_buffer_nesting)));
 }

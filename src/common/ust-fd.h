@@ -26,6 +26,6 @@ int lttng_ust_safe_close_fd(int fd, int (*close_cb)(int));
 int lttng_ust_safe_fclose_stream(FILE *stream, int (*fclose_cb)(FILE *stream));
 int lttng_ust_safe_closefrom_fd(int lowfd, int (*close_cb)(int));
 
-void lttng_ust_fixup_fd_tracker_tls(void);
+void lttng_ust_fd_tracker_alloc_tls(void);
 
 #endif	/* _LTTNG_UST_FD_H */

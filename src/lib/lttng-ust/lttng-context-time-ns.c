@@ -150,9 +150,9 @@ error_find_context:
 }
 
 /*
- *  * Force a read (imply TLS fixup for dlopen) of TLS variables.
- *   */
-void lttng_fixup_time_ns_tls(void)
+ * Force a read (imply TLS allocation for dlopen) of TLS variables.
+ */
+void lttng_time_ns_alloc_tls(void)
 {
 	asm volatile ("" : : "m" (URCU_TLS(cached_time_ns)));
 }

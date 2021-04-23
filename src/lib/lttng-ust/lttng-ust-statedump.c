@@ -554,10 +554,10 @@ void lttng_ust_dl_update(void *ip)
 		return;
 
 	/*
-	 * Fixup lttng-ust TLS when called from dlopen/dlclose
-	 * instrumentation.
+	 * Force the allocation of lttng-ust TLS variables when called from
+	 * dlopen/dlclose instrumentation.
 	 */
-	lttng_ust_fixup_tls();
+	lttng_ust_alloc_tls();
 
 	data.exec_found = 0;
 	data.first = true;

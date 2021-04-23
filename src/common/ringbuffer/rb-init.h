@@ -7,7 +7,7 @@
 #ifndef _LTTNG_UST_RINGBUFFER_RB_INIT_H
 #define _LTTNG_UST_RINGBUFFER_RB_INIT_H
 
-void lttng_fixup_ringbuffer_tls(void)
+void lttng_ringbuffer_alloc_tls(void)
 	__attribute__((visibility("hidden")));
 
 void lttng_ust_ringbuffer_set_allow_blocking(void)

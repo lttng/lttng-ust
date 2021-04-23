@@ -12,8 +12,8 @@
 
 #define RING_BUFFER_MODE_TEMPLATE		RING_BUFFER_DISCARD
 #define RING_BUFFER_MODE_TEMPLATE_STRING	"discard-rt"
-#define RING_BUFFER_MODE_TEMPLATE_TLS_FIXUP	\
-	lttng_ust_fixup_ring_buffer_client_discard_rt_tls
+#define RING_BUFFER_MODE_TEMPLATE_ALLOC_TLS	\
+	lttng_ust_ring_buffer_client_discard_rt_alloc_tls
 #define RING_BUFFER_MODE_TEMPLATE_INIT	\
 	lttng_ring_buffer_client_discard_rt_init
 #define RING_BUFFER_MODE_TEMPLATE_EXIT	\
