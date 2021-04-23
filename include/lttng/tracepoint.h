@@ -252,9 +252,9 @@ struct lttng_ust_tracepoint_dlopen {
 
 	void *liblttngust_handle;
 
-	int (*lttng_ust_tracepoint_register_lib)(struct lttng_ust_tracepoint * const *tracepoints_start,
+	int (*lttng_ust_tracepoint_module_register)(struct lttng_ust_tracepoint * const *tracepoints_start,
 		int tracepoints_count);
-	int (*lttng_ust_tracepoint_unregister_lib)(struct lttng_ust_tracepoint * const *tracepoints_start);
+	int (*lttng_ust_tracepoint_module_unregister)(struct lttng_ust_tracepoint * const *tracepoints_start);
 	void (*rcu_read_lock_sym)(void);
 	void (*rcu_read_unlock_sym)(void);
 	void *(*rcu_dereference_sym)(void *p);
@@ -525,14 +525,14 @@ lttng_ust__tracepoints__ptrs_init(void)
 		return;
 	if (!lttng_ust_tracepoint_destructors_syms_ptr)
 		lttng_ust_tracepoint_destructors_syms_ptr = &lttng_ust_tracepoint_destructors_syms;
-	lttng_ust_tracepoint_dlopen_ptr->lttng_ust_tracepoint_register_lib =
+	lttng_ust_tracepoint_dlopen_ptr->lttng_ust_tracepoint_module_register =
 		URCU_FORCE_CAST(int (*)(struct lttng_ust_tracepoint * const *, int),
 				dlsym(lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle,
-					"lttng_ust_tracepoint_register_lib"));
-	lttng_ust_tracepoint_dlopen_ptr->lttng_ust_tracepoint_unregister_lib =
+					"lttng_ust_tracepoint_module_register"));
+	lttng_ust_tracepoint_dlopen_ptr->lttng_ust_tracepoint_module_unregister =
 		URCU_FORCE_CAST(int (*)(struct lttng_ust_tracepoint * const *),
 				dlsym(lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle,
-					"lttng_ust_tracepoint_unregister_lib"));
+					"lttng_ust_tracepoint_module_unregister"));
 	lttng_ust_tracepoint_destructors_syms_ptr->tracepoint_disable_destructors =
 		URCU_FORCE_CAST(void (*)(void),
 				dlsym(lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle,
@@ -542,8 +542,8 @@ lttng_ust__tracepoints__ptrs_init(void)
 				dlsym(lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle,
 					"lttng_ust_tp_get_destructors_state"));
 	lttng_ust_tracepoint__init_urcu_sym();
-	if (lttng_ust_tracepoint_dlopen_ptr->lttng_ust_tracepoint_register_lib) {
-		lttng_ust_tracepoint_dlopen_ptr->lttng_ust_tracepoint_register_lib(__start_lttng_ust_tracepoints_ptrs,
+	if (lttng_ust_tracepoint_dlopen_ptr->lttng_ust_tracepoint_module_register) {
+		lttng_ust_tracepoint_dlopen_ptr->lttng_ust_tracepoint_module_register(__start_lttng_ust_tracepoints_ptrs,
 				__stop_lttng_ust_tracepoints_ptrs -
 				__start_lttng_ust_tracepoints_ptrs);
 	}
@@ -563,8 +563,8 @@ lttng_ust__tracepoints__ptrs_destroy(void)
 		lttng_ust_tracepoint_dlopen_ptr = &lttng_ust_tracepoint_dlopen;
 	if (!lttng_ust_tracepoint_destructors_syms_ptr)
 		lttng_ust_tracepoint_destructors_syms_ptr = &lttng_ust_tracepoint_destructors_syms;
-	if (lttng_ust_tracepoint_dlopen_ptr->lttng_ust_tracepoint_unregister_lib)
-		lttng_ust_tracepoint_dlopen_ptr->lttng_ust_tracepoint_unregister_lib(__start_lttng_ust_tracepoints_ptrs);
+	if (lttng_ust_tracepoint_dlopen_ptr->lttng_ust_tracepoint_module_unregister)
+		lttng_ust_tracepoint_dlopen_ptr->lttng_ust_tracepoint_module_unregister(__start_lttng_ust_tracepoints_ptrs);
 	if (lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle
 			&& lttng_ust_tracepoint_destructors_syms_ptr->tracepoint_get_destructors_state
 			&& lttng_ust_tracepoint_destructors_syms_ptr->tracepoint_get_destructors_state()

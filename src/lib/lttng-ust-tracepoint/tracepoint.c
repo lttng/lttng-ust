@@ -74,8 +74,8 @@ static CDS_LIST_HEAD(libs);
  * The tracepoint mutex protects the library tracepoints, the hash table, and
  * the library list.
  * All calls to the tracepoint API must be protected by the tracepoint mutex,
- * excepts calls to lttng_ust_tracepoint_register_lib and
- * lttng_ust_tracepoint_unregister_lib, which take the tracepoint mutex themselves.
+ * excepts calls to lttng_ust_tracepoint_module_register and
+ * lttng_ust_tracepoint_module_unregister, which take the tracepoint mutex themselves.
  */
 
 /*
@@ -877,9 +877,9 @@ static void new_tracepoints(struct lttng_ust_tracepoint * const *start,
  * against recent liblttng-ust headers require a recent liblttng-ust
  * runtime for those tracepoints to be taken into account.
  */
-int lttng_ust_tracepoint_register_lib(struct lttng_ust_tracepoint * const *tracepoints_start,
+int lttng_ust_tracepoint_module_register(struct lttng_ust_tracepoint * const *tracepoints_start,
 			     int tracepoints_count);
-int lttng_ust_tracepoint_register_lib(struct lttng_ust_tracepoint * const *tracepoints_start,
+int lttng_ust_tracepoint_module_register(struct lttng_ust_tracepoint * const *tracepoints_start,
 			     int tracepoints_count)
 {
 	struct tracepoint_lib *pl, *iter;
@@ -932,8 +932,8 @@ lib_added:
 	return 0;
 }
 
-int lttng_ust_tracepoint_unregister_lib(struct lttng_ust_tracepoint * const *tracepoints_start);
-int lttng_ust_tracepoint_unregister_lib(struct lttng_ust_tracepoint * const *tracepoints_start)
+int lttng_ust_tracepoint_module_unregister(struct lttng_ust_tracepoint * const *tracepoints_start);
+int lttng_ust_tracepoint_module_unregister(struct lttng_ust_tracepoint * const *tracepoints_start)
 {
 	struct tracepoint_lib *lib;
 
