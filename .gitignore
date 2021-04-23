@@ -50,8 +50,8 @@ cscope.*
 /src/common/config.h
 /src/common/config.h.in
 /src/common/stamp-h1
-/src/lttng-ust-ctl.pc
-/src/lttng-ust.pc
+/src/lib/lttng-ust-ctl.pc
+/src/lib/lttng-ust.pc
 
 /doc/examples/demo/demo
 /doc/examples/easy-ust/sample

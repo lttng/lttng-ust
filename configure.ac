@@ -600,8 +600,8 @@ AC_CONFIG_FILES([
   src/lib/lttng-ust/Makefile
   src/lib/lttng-ust-python-agent/Makefile
   src/lib/Makefile
-  src/lttng-ust-ctl.pc
-  src/lttng-ust.pc
+  src/lib/lttng-ust-ctl.pc
+  src/lib/lttng-ust.pc
   src/Makefile
   src/python-lttngust/lttngust/version.py
   src/python-lttngust/Makefile

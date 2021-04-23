@@ -26,3 +26,6 @@ endif
 if ENABLE_PYTHON_AGENT
 SUBDIRS += lttng-ust-python-agent
 endif
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = lttng-ust.pc lttng-ust-ctl.pc

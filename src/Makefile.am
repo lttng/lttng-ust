@@ -7,6 +7,3 @@ SUBDIRS = \
 if ENABLE_PYTHON_AGENT
 SUBDIRS += python-lttngust
 endif
-
-pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = lttng-ust.pc lttng-ust-ctl.pc
