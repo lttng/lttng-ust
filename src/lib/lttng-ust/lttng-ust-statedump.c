@@ -24,6 +24,9 @@
 #include "common/getenv.h"
 #include "lib/lttng-ust/events.h"
 
+#define LTTNG_UST_TRACEPOINT_HIDDEN_DEFINITION
+#define LTTNG_UST_TRACEPOINT_PROVIDER_HIDDEN_DEFINITION
+
 #define LTTNG_UST_TRACEPOINT_DEFINE
 #include "ust_lib.h"				/* Only define. */
 

@@ -26,6 +26,7 @@
 /* Include link.h last else it conflicts with ust-dlfcn. */
 #include <link.h>
 
+#define LTTNG_UST_TRACEPOINT_HIDDEN_DEFINITION
 #define LTTNG_UST_TRACEPOINT_DEFINE
 #include "ust_dl.h"
 
