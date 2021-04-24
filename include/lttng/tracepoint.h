@@ -230,10 +230,23 @@ void lttng_ust_tracepoint_unregister_##_provider##___##_name(char *provider_name
 	lttng_ust_tracepoint_provider_unregister(provider_name, event_name, func, data);		\
 }
 
-extern int lttng_ust_tracepoint_provider_register(const char *provider_name, const char *event_name,
+/*
+ * Registration of tracepoint provider probe functions with
+ * lttng_ust_tracepoint_provider_register, unregistration with
+ * lttng_ust_tracepoint_provider_unregister.
+ */
+int lttng_ust_tracepoint_provider_register(const char *provider_name, const char *event_name,
 		void (*func)(void), void *data, const char *signature);
-extern int lttng_ust_tracepoint_provider_unregister(const char *provider_name, const char *event_name,
+int lttng_ust_tracepoint_provider_unregister(const char *provider_name, const char *event_name,
 		void (*func)(void), void *data);
+
+/*
+ * Registration of tracepoint instrumentation modules with lttng_ust_tracepoint_module_register,
+ * unregistration with lttng_ust_tracepoint_module_unregister.
+ */
+int lttng_ust_tracepoint_module_register(struct lttng_ust_tracepoint * const *tracepoints_start,
+                             int tracepoints_count);
+int lttng_ust_tracepoint_module_unregister(struct lttng_ust_tracepoint * const *tracepoints_start);
 
 /*
  * tracepoint dynamic linkage handling (callbacks). Hidden visibility:
