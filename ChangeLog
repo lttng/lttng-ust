@@ -1,3 +1,557 @@
+2021-04-23 (National Take a Chance (on me ?) Day) lttng-ust 2.13.0-rc1
+	* Set the 2.13 release codename and description
+	* sequence type: use previous field for length if length_name is NULL
+	* tracepoint: Declare tracepoint module register/unregister API
+	* configure: fix printing a description containing a comma
+	* Rename lttng_ust_tracepoint_(un)register_lib
+	* Rename lttng_ust_tracepoint_probe_(un)register
+	* Move pkgconfig file to 'src/lib/'
+	* Move the ringbuffer and counter clients to 'src/common/'
+	* Move the getcpu plugin implementation to liblttn-ust-common
+	* Move the clock plugin implementation to liblttng-ust-common
+	* Make futex compat internal to liblttng-ust
+	* Move dynamic-type to libcommon
+	* Move lttng_ust_enum_get_from_desc to libcommon
+	* Move lttng_ust_strerror to liblttng-ust
+	* Expose a common alloc_tls for liblttng-ust-common
+	* Rename all 'fixup_tls' functions to 'alloc_tls'
+	* Hide symbols that shouldn't be part of the ABI
+	* Hide internal tracepoint and providers data symbols
+	* tracepoint: introduce macros to hide tracepoint/provider symbols
+	* Namespace liblttng-ust-ctl symbols
+	* Prefix public header include guards with LTTNG_UST_
+	* fix: missing prefix LTTNG_UST_ for FLOAT_WORD_ORDER on FreeBSD
+	* Cleanup: probe function: use __ prefixed identifiers for local variables
+	* API refactoring: introduce probe context
+	* Fix: move compat macros for tracepoint probes to ust-tracepoint-event.h
+	* Remove unused tp_list_for_each_entry_rcu
+	* Tracepoint API namespacing ctf_enum
+	* Tracepoint API namespacing ctf_unused
+	* Tracepoint API namespacing ctf_string
+	* Tracepoint API namespacing ctf_sequence
+	* Tracepoint API namespacing ctf_array
+	* Tracepoint API namespacing ctf_float
+	* Tracepoint API namespacing ctf_integer
+	* Tracepoint API namespacing tracepoint-rcu
+	* Tracepoint API namespacing ust-endian
+	* Tracepoint API namespacing tracelog
+	* Tracepoint API namespacing tracef
+	* Tracepoint API namespacing '__lttng_ust_events_exit'
+	* Tracepoint API namespacing '__lttng_ust_events_init'
+	* Tracepoint API namespacing '__lttng_ust_probe_register_cookie'
+	* Tracepoint API namespacing '__probe_register'
+	* Tracepoint API namespacing '__probe_desc'
+	* Tracepoint API namespacing '_TP_EXTRACT_STRING'
+	* Tracepoint API namespacing '__get_dynamic_len'
+	* Tracepoint API namespacing 'TP_IP_PARAM'
+	* Tracepoint API namespacing 'TP_SESSION_CHECK'
+	* Tracepoint API namespacing '__tp_stringify'
+	* Tracepoint API namespacing '__event_'
+	* Tracepoint API namespacing '_tp_max_t'
+	* Tracepoint API namespacing '_TP_ARRAY_SIZE'
+	* Tracepoint API namespacing '__LTTNG_UST_NULL_STRING'
+	* Tracepoint API namespacing 'TP_ENUM_VALUES'
+	* Tracepoint API namespacing 'TRACEPOINT_PROVIDER'
+	* Tracepoint API namespacing 'TRACEPOINT_INCLUDE'
+	* Tracepoint API namespacing 'TRACEPOINT_HEADER_MULTI_READ'
+	* Tracepoint API namespacing 'TRACEPOINT_CREATE_PROBES'
+	* Tracepoint API namespacing 'TRACEPOINT_MODEL_EMF_URI'
+	* Tracepoint API namespacing 'TRACEPOINT_LOGLEVEL'
+	* Tracepoint API namespacing 'TRACEPOINT_ENUM'
+	* Tracepoint API namespacing 'TRACEPOINT_DEFINE'
+	* Tracepoint API namespacing 'tracepoint_(un)register'
+	* Tracepoint API namespacing '__tp_provider' and '__tp_name'
+	* Tracepoint API namespacing 'TRACEPOINT_PROBE_DYNAMIC_LINKAGE'
+	* Tracepoint API namespacing ctor, dtor and sections
+	* Tracepoint API namespacing '_TP_NARGS'
+	* Tracepoint API namespacing '_TP_EXPROTO'
+	* Tracepoint API namespacing '_TP_EXDATA'
+	* Tracepoint API namespacing '_TP_EXVAR'
+	* Tracepoint API namespacing '_TP_COMBINE_TOKENS'
+	* Tracepoint API namespacing 'LTTNG_UST_SDT'
+	* Tracepoint API namespacing '__tracepoint_'
+	* Tracepoint API namespacing 'tracepoint_destructors_syms'
+	* Tracepoint API namespacing 'tracepoint_dlopen'
+	* Tracepoint API namespacing 'TRACEPOINT_EVENT'
+	* Tracepoint API namespacing 'TP_FIELDS'
+	* Tracepoint API namespacing 'TP_ARGS'
+	* Introduce API compatibility macros
+	* tracepoint: split provider and event name
+	* lttng-gen-tp: no linker flags when compiling .o
+	* Fix warnings on FreeBSD
+	* Add glibc gettid to wrapper
+	* ust-events.h API const-ness
+	* Hide lttng_ust_elf symbols
+	* Disable strict-aliasing globally
+	* configure: enable extended compiler warnings
+	* Fix warnings on non-x86_64 systems
+	* Remove -Wsystem-headers from tests
+	* Initialize liblttng-ust-common in dependent libraries
+	* Internal logging lazy-initialization
+	* getenv: make getenv helper init state mt-safe
+	* Remove duplicated 'smp' code
+	* Move liblttng-ust-pthread-wrapper to 'src/lib/'
+	* tracepoint: validate provider/event name length with static assert
+	* Rename ringbuffer-context.h to ust-ringbuffer-context.h
+	* Rename LTTNG_ALLOCATE_COMPOUND_LITERAL_ON_HEAP to add LTTNG_UST_ prefix
+	* Rename lttng_ust_lib_ring_buffer to lttng_ust_ring_buffer
+	* Remove unused ringbuffer-abi.h public header
+	* tracepoint: namespace systemtap UST macros with LTTNG_UST_ prefix
+	* Rename LTTNG_TP_EXTERN_C to LTTNG_UST_TP_EXTERN_C
+	* Rename __LTTNG_COMPOUND_LITERAL to LTTNG_UST_COMPOUND_LITERAL
+	* lttng_ust_static_assert: remove extra semicolons
+	* Fix: statedump init/exit namespacing
+	* Namespace tracepoint probes init/exit under lttng_ust_
+	* Namespace lttng_static_assert to lttng_ust_static_assert
+	* notification_send callback takes const event_notifier parameter
+	* run_filter callback takes const event parameter
+	* Fix: perform lazy initialization of getenv common lib
+	* fix: remove unused include wait.h
+	* Cleanup: use desc variable rather than deeply nested desc pointer
+	* cleanup: LTTNG_METADATA_TIMEOUT_MSEC defined twice
+	* Move liblttng-ust-tracepoint to 'src/lib/'
+	* Move liblttng-ust-common to 'src/lib/'
+	* Move string-utils.h to 'src/common/'
+	* Move ns.h to 'src/common/'
+	* Move lttng-hash-helper.h to 'src/common/'
+	* Move error.h to 'src/common/'
+	* Move jhash.h to 'src/common/'
+	* Move creds.h to 'src/common/'
+	* Move futex wrapper to 'common/compat/'
+	* Split ust-events-internal.h between common and liblttng-ust
+	* Move getenv to libcommon
+	* Move getcpu.h to 'lib/lttng-ust/'
+	* Split the common part of clock.h
+	* Move wait.h to 'src/common/'
+	* Rename internal ust_err to lttng_ust_logging
+	* Move liblttng-ust to 'src/lib/'
+	* cleanup: convenience libs at root of 'src/common/'
+	* Split and move compat.h to 'common/compat/'
+	* Move the mmap wrapper to 'common/compat/'
+	* Move libustcomm to 'src/common/'
+	* Move fd-tracker to liblttng-ust-common
+	* Move libringbuffer to 'src/common/'
+	* Move libcounter to 'src/common/'
+	* Move liblttng-ust-ctl to 'src/lib/'
+	* Move liblttng-ust-java* to 'src/lib/'
+	* Move liblttng-ust-dl to 'src/lib/'
+	* Move liblttng-ust-fd to 'src/lib/'
+	* Move liblttng-ust-cyg-profile to 'src/lib/'
+	* Move liblttng-ust-libc-wrapper to 'src/lib/'
+	* Move liblttng-ust-python-agent to 'src/lib/'
+	* Fix: event notifier group context leak
+	* Fix: perf counter context: leak event field structure
+	* Document nested type alignment field
+	* Move msgpack to libcommon
+	* Add an internal 'libcommon' for utils
+	* Move internal headers to 'src/' dir
+	* Add 'src' dir to global include path
+	* Move all sources to 'src/'
+	* Fix: pass private data to context callbacks
+	* Fix: app contexts: do not leak app context name, event field, context field
+	* Remove TRACEPOINT_INCLUDE_FILE undef
+	* Remove TRACEPOINT_INCLUDE_FILE macro
+	* Remove app context backward compatibility dead code
+	* Cleanup: Unaligned vs aligned ring buffer access comment
+	* Update unaligned vs aligned ring buffer access comment
+	* Refactoring: add back constness of public API structures
+	* Add 'ctf_unused' tracepoint field type
+	* cleanup: explicitly mark unused parameters (-Wunused-parameter)
+	* cleanup: rename template headers
+	* fix: string constants (-Wwrite-strings)
+	* fix: all functions have declarations (-Wmissing-prototypes -Wold-style-definition)
+	* cleanup: function attribute 'always_inline'
+	* cleanup: function attribute 'hidden'
+	* cleanup: function attribute 'no_instrument_function'
+	* cleanup: function attribute 'destructor'
+	* cleanup: function attribute 'constructor'
+	* cleanup: function attribute 'unused'
+	* tests: benchmark: improve benchmark scalability accuracy
+	* tests: benchmark: use cpu-bound workload, calculate average and std.dev.
+	* tests: improve benchmark script
+	* cleanup: function attribute 'format'
+	* Fix: liblttng-ust-ctl: missing ring buffer and counter clients init/exit symbols
+	* New API: lttng_ust_init_thread() for async-signal tracing
+	* fix: redundant decl of channel_destroy (-Wredundant-decls)
+	* Fix: tls-compat with hidden ring buffer context
+	* Fix: tls-compat with hidden ring buffer context
+	* Refactoring: hide internal fields of ring buffer context
+	* Move private ABI counter client symbols to dedicated header
+	* fix: add fallthrough annotations (-Wimplicit-fallthrough)
+	* fix: add format attribute to relevant functions (-Wsuggest-attribute=format)
+	* fix: use proper format specifiers in tests (-Wformat)
+	* fix: shadowed local variable in macros (-Wshadow)
+	* fix: size_t is unsigned, can't be negative
+	* Import libtap from babeltrace
+	* Add unit tests for utils macros
+	* Add a C++ version of lttng_ust_is_signed_type
+	* fix: int8_t is not considered an integer
+	* Add unit tests for lttng_ust_strerror
+	* Re-implement lttng_ust_strerr
+	* Namespace 'lttng_alignof' to 'lttng_ust_rb_alignof'
+	* Namespace remaining symbols in lttng/ringbuffer-context.h
+	* Python agent lib soname major bump
+	* Introduce SONAME defines
+	* Namespace ust-fork symbols
+	* Namespace RING_BUFFER_ALIGN macros
+	* cleanup: Remove redefinition of CHAR_BIT
+	* cleanup: Namespace public utils macros
+	* tracepoint probe refactoring: Move provider name to provider descriptor
+	* Refactoring: remove ring buffer channel pointer from struct lttng_ust_channel_buffer
+	* API cleanup: Remove handle from struct lttng_ust_channel_buffer
+	* Remove handle field from ring buffer context
+	* ring buffer context: cpu number becomes an output of reserve
+	* Fix: truncation of text array and sequences by NULL terminator
+	* Cleanup: use "char" type for padding
+	* compiler warning cleanup: is_signed_type: compare -1 to 1
+	* Rename struct lttng_ust_channel_ops to struct lttng_ust_channel_buffer_ops
+	* fix: Group Targets requires GNU Make >= 4.3
+	* clock override: introduce getter API for lttng tools
+	* ust-abi: add missing lttng_ust_abi prefixes
+	* fix: java detection is optional
+	* fix: use configured python when building the examples
+	* ABI refactoring: sequence and array of text: copy input as string
+	* cleanup: don't copy lttng-gen-tp in OOT builds
+	* configure: convert the remaining tab indent to spaces
+	* configure: regroup autoconf substituted variable
+	* configure: regroup automake conditionals
+	* configure: regroup C defines
+	* Introduce AE_FEATURE to manage configure features
+	* configure: regroup os and arch specific defaults
+	* configure: regroup library checks
+	* configure: regroup program checks
+	* configure: regroup C header checks
+	* configure: regroup and expand C compiler checks
+	* configure: Introduce macro ae_in_git_repo
+	* configure: centralize version information
+	* Use a single macro to configure CXX
+	* fix: use the configured cmake binary
+	* configure: standardize automake conditional names
+	* Centralize arch detection in a public header
+	* Set the default ust constructor timeout in the headers
+	* fix: don't override the project wide AM_CPPFLAGS
+	* Add basic shell tests script framework
+	* Simplify python agent build
+	* port: update pthread get/set name compat
+	* Fix: bytecode linker: validate event and field array/sequence encoding
+	* Validate match of all session channel's UUID
+	* Cleanup: Remove whiteline
+	* Cleanup: align private header comments
+	* Cleanup: remove old comments
+	* Refactoring and fix: bytecode ABI
+	* Bytecode: update documentation
+	* Refactoring: bytecode interpreter ABI
+	* Fix: java agent: migrate to new channel structures
+	* Move event context to private structures
+	* Move channel context to private structures
+	* Refactoring: Channel structures
+	* struct lttng_channel: split protocol ABI from instrumentation ABI
+	* Remove the LTTNG_PACKED macro
+	* Move public tracepoint definition headers to 'lttng/tp'
+	* Namespace lttng/align.h as lttng/ust-align.h
+	* Namespace lttng/bug.h as lttng/ust-bug.h
+	* Namespace enum lttng_ust_bytecode_interpreter_ret flags with lttng_ust_ prefix
+	* Namespace _float_mant_dig with lttng_ust_ prefix
+	* Namespace enumeration structures/enum with lttng_ust_ prefix
+	* ust-elf.h should be private, with public symbols
+	* counter-config.h should be private
+	* Fix: perf counters context: error handling on type allocation
+	* Fix: lttng_ust_destroy_type: add missing free() for compound types
+	* Fix: missing field name refactoring in java agent
+	* Fix: replace ringbuffer-config.h by ringbuffer-context.h include
+	* Add missing ringbuffer-context.h
+	* Refactoring: Privatize ring buffer config header
+	* Refactoring: Introduce extensibility scheme for tracepoint structures
+	* Clean-up: ustctl: adapt comment to use new ABI name
+	* Fix: ustctl: leak of event notifier data on communication error
+	* Refactoring: UST types public interfaces
+	* Refactoring: remove struct_size from struct lttng_ust_ctx_value
+	* Refactoring: struct lttng_ust_channel_ops
+	* Hide forward declaration of struct lttng_event_notifier_group
+	* Namepace struct lttng_session with lttng_ust_ prefix
+	* Cleanup: public type macros coding style
+	* Cleanup: Add whitelines after struct_size fields
+	* Refactoring: context structures
+	* cleanup: add comments to lttng/ust-endian.h
+	* Namespace 'struct channel' under 'lttng_ust_lib_ring_buffer_'
+	* Move context types to private header
+	* Move lttng_ust_dl_update to private ABI
+	* Namespace private ABI lttng_transport_find symbol
+	* Hide private lttng_session_active symbol
+	* Namespace lttng_context_procname_reset public symbol
+	* Remove LTTNG_HIDDEN macro
+	* Hide or namespace the remaining tracepoint internal symbols
+	* Refactoring: struct lttng_stack_ctx
+	* Refactoring: struct lttng_bytecode_runtime
+	* Move hash tables to internal header
+	* Cleanup: add whiteline after struct_size field
+	* Move struct lttng_counter_ops to internal header
+	* Move struct lttng_enum to internal header
+	* Refactoring: struct lttng_channel_ops
+	* Refactoring: struct lttng_enum_desc and lttng_enum_entry
+	* Refactoring: struct lttng_event_field
+	* Refactoring: struct lttng_event_desc and lttng_probe_desc
+	* Document public event and session structures
+	* Document public event structures
+	* Refactoring: combine event recorder and notifier callback functions
+	* Introduce event type field in common structure
+	* Refactor struct lttng_ust_lib_ring_buffer_ctx
+	* Combine common recorder/notifier functions to lttng_free_event_filter_runtime
+	* Rename struct lttng_event_notifier to struct lttng_ust_event_notifier
+	* Refactoring: namespace ust-abi.h content under regular prefix
+	* Refactor event notifier structure
+	* Rename struct lttng_event_common to struct lttng_ust_event_common
+	* Rename struct lttng_event to struct lttng_ust_event_recorder
+	* Introduce common event structure
+	* Fix: bytecode linker: iteration on wrong list head
+	* Fix: re-introduce basic type serialization functions
+	* Remove array, sequence, enum, struct legacy types
+	* Add structure size field to struct lttng_session
+	* Add structure size field to struct lttng_event
+	* Refactoring: introduce session private structure
+	* Refactoring: introduce bytecode runtime private structure
+	* Refactoring: introduce event private structure
+	* Namespace tracepoint_init and tracepoint_exit
+	* Remove lttng_ust_synchronize_trace public symbol
+	* Hide remaining tracer core private symbols
+	* Expose liblttng-libc-wrapper malloc ctor in public header
+	* Hide private context utils symbols
+	* Add missing doc/man/vtracelog.3 to gitignore
+	* tracef-tracelog-limitations.txt: take variadic variant into account
+	* tracef.3.txt/tracelog.3.txt: always take variadic variants into account
+	* doc/man/Makefile.am: handle vtracef(3) and vtracelog(3) correctly
+	* tracelog.3.txt: add `vtracelog` to the "NAME" section
+	* lttng-ust(3): reorganize the "Context information" section
+	* Hide tls fixup private symbols
+	* Hide ust_lock private symbols
+	* Hide strutils private symbols
+	* Hide lttng_ust_statedump private symbols
+	* Hide print_op private symbol
+	* Hide lttng_ust_getenv private symbols
+	* counter: shrink down number of dimensions to 4
+	* counters: add coalesce_hits to control API and protocol
+	* liblttng-ust-fd doesn't use the internal logging system
+	* Make 'lttng/ust-error.h' official API
+	* Drop unused typedef t_statedump_func_ptr from API
+	* README: lttng-ust does not depend on liburcu at runtime anymore
+	* Move ust-events.h private structs to internal
+	* Move ust-events.h private functions to internal
+	* Remove forward decl for unused 'struct lttng_ust_context_app'
+	* Move 'struct lttng_enabler' to private headers
+	* Move 'enum lttng_client_types' to private headers
+	* Move context symbols to private header
+	* Remove leftover symbols from liburcu-bp compat
+	* Remove unused ring buffer client callbacks symbols
+	* Remove ring buffer client callbacks from public headers
+	* Move lttng_ust_fixup_fd_tracker_tls to private header
+	* Move perf counter symbols to private header
+	* Bump liblttng-ust-ctl soname major to 5
+	* fix: trailing backslash in include/Makefile.am
+	* Document why the fd tracker is ABI without a public header
+	* Delete unused private header ust-ctl-private.h
+	* Hide private usterr-signal-safe.h symbols
+	* Move internal elf macros to a private header
+	* Move compat macros in 'lttng/align.h' to a private header
+	* Make 'lttng/bitmap.h' a private header
+	* Hide libringbuffer private symbols
+	* Hide private snprintf symbols
+	* Hide private ust-comm.h symbols
+	* Hide private ust-snprintf.h symbols
+	* Hide private share.h symbols
+	* Hide private ust-dynamic-type.h symbols
+	* Document why context provider is ABI without a public header
+	* Use 'ust-' prefix for all global private headers
+	* Move private headers out of 'lttng/' public header dir
+	* Fix: lttng_event_notifier_group_error_counter_cmd does not respect caller convention
+	* Move to kernel style SPDX license identifiers
+	* fix: unix socket peercred on FreeBSD
+	* Fix: uninitialized variable in lib_ring_buffer_channel_switch_timer_start
+	* Fix: "Cleanup: clarify bytecode ownership"
+	* Fix: Use unix socket peercred for pid, uid, gid credentials
+	* Move and hide new 'lttng_ust_counter_create' private symbol
+	* Move and hide new time_ns private symbols
+	* Move and hide new 'lttng_counter_transport_*' private symbols
+	* Hide new 'lttng_counter_client_percpu_*' private symbols
+	* Hide new 'ustcomm_recv_*' private symbols
+	* Hide new 'lttng_ust_lfht_*' private symbols
+	* Hide new 'lttng_release_event_notifier_group_error_counter' private symbol
+	* Hide new 'lttng_fixup_time_ns_tls' private symbol
+	* Hide new 'lttng_counter_*' private symbols
+	* Hide new 'lttng_ust_compat_futex_*' private symbols
+	* Hide new 'lttng_ust_context_set_event_notifier_group_provider' private symbol
+	* Hide new 'lttng_bytecode_*' private symbols
+	* Hide new 'lttng_context_init_all' private symbol
+	* Hide new 'lttng_counter_*' private symbols
+	* Hide mew 'lttng_msgpack_*' private symbols
+	* Hide new 'patient_writev' private symbol
+	* Remove unused deprecated and backward compatibility fields
+	* Remove backward compatibility for liburcu-bp
+	* Cleanup: Remove deprecated symbols following soname major version bump
+	* Bump soname major to 1
+	* Fix: memory and fd leaks in error counter
+	* Cleanup: clarify bytecode ownership
+	* Cleanup: clarify ownership of excluder
+	* Fix: event notifier group: fix fd leak on error
+	* Fix: stream fd leaks on error
+	* Fix: channel leak on error
+	* Fix: lttng_abi_map_channel should be static
+	* Fix: Use default visibility for tracepoint provider symbol
+	* Fix: configure: support Autoconf 2.70
+	* Fix: event notifier create protocol order issue
+	* Fix: lttng-ust 2.13 should not try to use notifiers from 2.12 or prior probes
+	* Fix: UST comm protocol: event notifier command is too large
+	* Fix: incorrect parameters passed to vtracelog
+	* event-notifier: Initialize `_notifier_notification` struct to zero
+	* Add tests/unit/libmsgpack/test_msgpack to gitignore
+	* ustctl.h: use enumeration values 0, 1 for bitness
+	* ust-abi: use 0, 1 for counter enumerations
+	* Cleanup: ust-abi: BITNESS_{32,64}BITS -> BITNESS_{32,64}
+	* Cleanup: use tabs in ust-abi.h
+	* Fix: add struct lttng_event_notifier forward declaration
+	* Fix: event notifier: notification send should be a callback
+	* Fix: ust-urcu: allow legacy applications without _LGPL_SOURCE
+	* Fix: ust-tracepoint: make sure to expand tracepoint provider token
+	* Fix: notifier: use store-release/load-acquire for error counter
+	* Fix: event-notifier: Groups may not have an error counter
+	* ustctl: Initialize counter_conf struct to zero
+	* cleanup: use <sys/syscall.h>
+	* port: fix futex_async wrapper namespacing on FreeBSD
+	* port: use ust-endian.h compat
+	* Fix: event-notifier: not propagating error counter indexes
+	* fix: undefined symbols for tracepoints in lgpl source
+	* Remove runtime dependency on liburcu shared objects
+	* Fix: handle default switch case with -EINVAL in __lttng_counter_add
+	* Bump LTTNG_UST_EVENT_NOTIFIER_PADDING to 32 bytes
+	* Fix: memory leak in apply_context_reloc
+	* Fix: libcounter bad compare
+	* Fix: remove dead code in msgpack.c
+	* Fix: counter: cast UINT*_MAX to 64-bit signed type before negative
+	* Fix: libcounter: use LTTNG_UST_ALIGN
+	* Fix: ust-abi: clarify which command is used on which object descriptor
+	* Implement event notifier error counter
+	* Implement libcounter
+	* Implement capturing payload on event notifiers
+	* bytecode: handle all integer types of dynamic contexts
+	* bytecode: initialize all contexts on event notifier group creation
+	* bytecode: Add `OBJECT_TYPE_{UN,}SIGNED_ENUM` type
+	* Generalize `lttng_enabler_link_bytecode()` bytecode list
+	* Cleanup: rename `_lttng_filter_link_bytecode()` -> `link_bytecode()`
+	* Add `interpreter_funcs` to `lttng_bytecode_runtime`
+	* bytecode: rename `lttng_filter_sync_state()` -> `lttng_bytecode_filter_sync_state()`
+	* Implement enum and sequence capture serialization functions
+	* Extract `handle_bytecode_recv()` function
+	* Rename filter bytecode types and files
+	* bytecode: generalize `struct lttng_ust_filter_bytecode_node`
+	* Cleanup: Rename filter functions/fields to mention "filter"
+	* Add `patient_writev()` function
+	* Add `libmsgpack` for serializing captures
+	* bytecode: allow interpreter to return any type
+	* bytecode: propagate `rev_bo` of element
+	* bytecode: set register type to `REG_PTR` even if not used
+	* Add `lttng_bytecode_interpret_format_output()` for top of stack extraction
+	* bytecode: add `REG_U64` interpreter register type
+	* Implement event notifier
+	* Add token to `struct lttng_ust_event`
+	* Create `_for_each` function to unregister probe providers
+	* Cleanup: extract function to borrow hashlist bucket
+	* Decouple `struct lttng_event` from filter code
+	* Cleanup: hide `lttng_ust_{filter_bytecode,excluder}_node`
+	* Abstract base `lttng_enabler` to support other types of enablers
+	* Rename `enum lttng_enabler_type` to `_format_type`
+	* Decouple `struct lttng_session` from filter code
+	* port: FreeBSD 12.2 added pthread_setname_np
+	* port: tests: Add a simple unit test for shm operations
+	* port: fsync(2) on a POSIX shm fd returns EINVAL on FreeBSD
+	* port: set shm size with ftruncate before writing
+	* fix: pass the detected CFLAGS to the C++ compiler
+	* Cleanup: silent rules are always available in automake >= 1.12
+	* Cleanup: Use pkg-config to detect liburcu
+	* tests: Move tap-driver.sh out of the autotools aux directory
+	* Enable autotools warnings as errors
+	* Cleanup: separate tests between 'unit' and 'compile'
+	* Cleanup: Bump autoconf required version to 2.69
+	* Cleanup: Remove obsolete and unused tests
+	* fix: pthread_setname_np tests to match compat behavior
+	* fix: pthread_setname_np fails on longer tread names
+	* Namespace lttng/align.h macros
+	* Fix: remove redefinition of _GNU_SOURCE
+	* Add pthread_setname_np tests
+	* port: fix pthread_setname_np integration
+	* Cleanup: standardise include path
+	* port: no libnuma on FreeBSD
+	* port: use /bin/sh in test_ust_elf
+	* port: fix typo 'lttng_ust_safe_closefrom' -> 'lttng_ust_safe_closefrom_fd'
+	* port: include limits.h first for CHAR_BIT
+	* port: fix endian and byteswap compat on FreeBSD
+	* port: Silence macro redefinition warnings on FreeBSD
+	* port: fix pthread autoconf detection to support FreeBSD
+	* Set version to 2.13-pre
+	* Fix: ustctl_release_object: eliminate double-close/free on error
+	* tests: return the proper TAP exit code
+	* Add userspace time namespace context
+	* Use libtool syntax in LDADD
+	* Add missing files to distribution
+	* Fix: python agent: 'time' has no attribute 'clock'
+	* Fix: libc-wrapper: undef temporary token rather than value
+	* Fix: support compile units including 'sys/sdt.h' without defining SDT_USE_VARIADIC
+	* Cleanup: have interpreter functions return _DISCARD instead of 0
+	* Cleanup: bytecode: typo: "s16" -> "u16"
+	* doc: Explain `struct lttng_bytecode_runtime` layout restrictions
+	* Fix: event probes attached before event enabled
+	* Fix: use underlying types for array and sequence assertion
+	* Add compile time assertion that array and sequence have integer elements
+	* Implement compile time assertion macro wrapper
+	* Fix: agent: read: end of loop condition should exclude 0
+	* fix: Java examples CLASSPATH override
+	* Add missing files to .gitignore
+	* fix: Add CLASSPATH to autoconf precious variables
+	* Fix: Java agent: close session daemon socket on error
+	* Java agent: Use inequality for read bound check
+	* Fix: Java agent: handle partial payload read
+	* Fix: incorrect field accounting for dynamic type
+	* ust-compiler.h: Allocate compound literals on heap with gcc <= 4.8
+	* Require C++11 for building probe providers with C++ compiler
+	* filter: bytecode already in the list should go before
+	* Bump LTTNG_UST_ABI version from 8.1 to 9.0
+	* tracepoint: Refactor representation of nested types
+	* Remove has_strcpy check following probe provider version bump
+	* Bump LTTNG_UST_PROVIDER_MAJOR from 1 to 2
+	* ust-compiler.h: Implement __LTTNG_COMPOUND_LITERAL
+	* Document dependency on liburcu >= 0.12
+	* configure: add check for DEFINE_URCU_TLS_INIT
+	* Cleanup: use DEFINE_URCU_TLS_INIT for all CONFIG_RCU_TLS configurations
+	* Fix: namespace contexts !CONFIG_RCU_TLS variable initialization
+	* Record event as soon as one filters evaluates to TRUE
+	* Cleanup: ust-tracepoint-event.h: extract `__num_fields` in a variable
+	* Fix: v.u.d might be uninitialized
+	* Fix: Add missing vtracelog demo to make dist
+	* Fix: Add missing vtracef demo to make dist
+	* Introduce vtracelog
+	* Introduce vtracef
+	* Fix: set FD_CLOEXEC on incoming FDs.
+	* Fix: tracepoint.h: Disable address sanitizer on pointer array section variables
+	* Fix: jhash.h: remove out-of-bound reads
+	* Fix: generation of man pages with multiple refnames
+	* Cleanup: remove trailing white spaces across project
+	* Fix: lttng-ust-comm.c: return number of fd rather size of array
+	* liblttng-ust-comm: move `_unlock_fd_tracker()` after `close()` on error paths
+	* Cleanup: liblttng-ust: change `int` flag to `bool`
+	* liblttng-ust: exit loop early on event enabler match
+	* Cleanup: remove redundant memory barrier
+	* Cleanup: remove unused `lttng_bytecode_runtime::event` field
+	* Docs: explain why unused `lttng_enabler::ctx` is kept around
+	* Cleanup: remove unused `lttng_free_enabler_filter_bytecode()` func
+	* Cleanup: move unused function to deprecated symbol list
+	* Cleanup: remove unused `__check_ust_safe_fmt()` function
+	* Cleanup: silence unused parameter `ps` warning
+	* Cleanup: apply `include-what-you-use` guideline for `close()`
+	* Cleanup: apply `include-what-you-use` guideline for `uint*_t`
+	* Cleanup: apply `include-what-you-use` guideline for `mbstate_t`
+	* Cleanup: apply `include-what-you-use` guideline for `fpos_t`
+	* Cleanup: apply `include-what-you-use` guideline for `size_t`
+	* Cleanup: typo: column -> colon
+	* Add git-review config
+
 2020-02-05 (National Weatherperson's Day) lttng-ust 2.12.0-rc1
 	* Fix: build with -fno-common
 	* Bump LTTNG_UST_ABI_MINOR_VERSION to 1
