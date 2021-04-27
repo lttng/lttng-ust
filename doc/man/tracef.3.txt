@@ -17,7 +17,7 @@ SYNOPSIS
 #define *tracef*('fmt', ...)
 #define *vtracef*('fmt', 'ap')
 
-Link with `-llttng-ust`.
+Link with `-llttng-ust -llttng-ust-common`.
 
 
 DESCRIPTION
@@ -80,7 +80,7 @@ like this:
 
 [role="term"]
 ----
-$ cc -o app app.c -llttng-ust
+$ cc -o app app.c -llttng-ust -llttng-ust-common
 ----
 
 You can create an LTTng tracing session, enable the `tracef()` events,
