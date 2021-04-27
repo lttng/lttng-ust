@@ -622,6 +622,8 @@ AC_CONFIG_FILES([
   tests/compile/api1/test-app-ctx/Makefile
   tests/compile/Makefile
   tests/Makefile
+  tests/regression/abi0-conflict/Makefile
+  tests/regression/Makefile
   tests/unit/gcc-weak-hidden/Makefile
   tests/unit/libmsgpack/Makefile
   tests/unit/libringbuffer/Makefile

@@ -1,12 +1,14 @@
 # SPDX-License-Identifier: LGPL-2.1-only
 
-SUBDIRS = utils unit compile benchmark
+SUBDIRS = utils unit compile benchmark regression
 
 LOG_DRIVER_FLAGS = --merge --comments
 LOG_DRIVER = env AM_TAP_AWK='$(AWK)' \
 	UST_TESTS_SRCDIR='$(abs_top_srcdir)/tests' \
 	UST_TESTS_BUILDDIR='$(abs_top_builddir)/tests' \
 	$(SHELL) $(srcdir)/utils/tap-driver.sh
+
+# Unit tests
 
 TESTS = \
 	unit/libringbuffer/test_shm \
@@ -22,6 +24,11 @@ if HAVE_CXX
 TESTS += \
 	unit/ust-utils/test_ust_utils_cxx
 endif
+
+# Regression tests
+
+TESTS += \
+	regression/abi0-conflict/test_abi0_conflict
 
 EXTRA_DIST = README
 

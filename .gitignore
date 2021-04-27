@@ -100,6 +100,16 @@ cscope.*
 /tests/compile/api1/test-app-ctx/hello-compatapi1
 /tests/compile/api1/ust-fields/ust-fields
 /tests/compile/api1/ust-fields/ust-fields-compatapi1
+/tests/regression/abi0-conflict/app_noust
+/tests/regression/abi0-conflict/app_noust_dlopen
+/tests/regression/abi0-conflict/app_noust_indirect_abi0
+/tests/regression/abi0-conflict/app_noust_indirect_abi0_abi1
+/tests/regression/abi0-conflict/app_noust_indirect_abi1
+/tests/regression/abi0-conflict/app_ust
+/tests/regression/abi0-conflict/app_ust_dlopen
+/tests/regression/abi0-conflict/app_ust_indirect_abi0
+/tests/regression/abi0-conflict/app_ust_indirect_abi0_abi1
+/tests/regression/abi0-conflict/app_ust_indirect_abi1
 /tests/unit/gcc-weak-hidden/test_gcc_weak_hidden
 /tests/unit/libmsgpack/test_msgpack
 /tests/unit/libringbuffer/test_shm
@@ -184,6 +194,8 @@ cscope.*
 /tests/compile/api1/hello/Makefile
 /tests/compile/api1/same_line_tracepoint/Makefile
 /tests/compile/api1/test-app-ctx/Makefile
+/tests/regression/abi0-conflict/Makefile
+/tests/regression/Makefile
 /tests/unit/Makefile
 /tests/unit/gcc-weak-hidden/Makefile
 /tests/unit/libmsgpack/Makefile
