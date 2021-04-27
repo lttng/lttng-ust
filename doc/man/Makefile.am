@@ -61,6 +61,10 @@ xmlto_verbose = $(xmlto_verbose_@AM_V@)
 xmlto_verbose_ = $(xmlto_verbose_@AM_DEFAULT_V@)
 xmlto_verbose_0 = @echo "  XMLTO     " $@;
 
+xmlto_verbose_out = $(xmlto_verbose_out_@AM_V@)
+xmlto_verbose_out_ = $(xmlto_verbose_out_@AM_DEFAULT_V@)
+xmlto_verbose_out_0 = 2>/dev/null
+
 # Tools to execute:
 ADOC = $(asciidoc_verbose)$(ASCIIDOC) -f $(ASCIIDOC_CONF) -d manpage \
 	-a mansource="LTTng" \
@@ -75,7 +79,7 @@ XTO = $(xmlto_verbose)$(XMLTO) -m $(XSL_FILE) man
 	$(ADOC_DOCBOOK) -o $@ $<
 
 %.1: %.1.xml $(XSL_FILE)
-	$(XTO) $< 2>/dev/null
+	$(XTO) $< $(xmlto_verbose_out)
 
 %.3.xml: $(srcdir)/%.3.txt $(COMMON_DEPS)
 	$(ADOC_DOCBOOK) -o $@ $<
@@ -92,13 +96,13 @@ tracelog.3 vtracelog.3: tracelog.3.alias
 .INTERMEDIATE: tracef.3.alias tracelog.3.alias
 
 tracef.3.alias: tracef.3.xml $(XSL_FILE)
-	$(XTO) $< 2>/dev/null
+	$(XTO) $< $(xmlto_verbose_out)
 
 tracelog.3.alias: tracelog.3.xml $(XSL_FILE)
-	$(XTO) $< 2>/dev/null
+	$(XTO) $< $(xmlto_verbose_out)
 
 %.3: %.3.xml $(XSL_FILE)
-	$(XTO) $< 2>/dev/null
+	$(XTO) $< $(xmlto_verbose_out)
 
 # Only clean the generated files if we have the tools to generate them again.
 CLEANFILES = $(MAN_XML) $(MAN)
