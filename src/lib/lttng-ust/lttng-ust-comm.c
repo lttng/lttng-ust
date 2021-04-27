@@ -2101,6 +2101,37 @@ void lttng_ust_libc_wrapper_malloc_ctor(void)
 }
 
 /*
+ * Use a symbol of the previous ABI to detect if liblttng-ust.so.0 is loaded in
+ * the current process.
+ */
+#define LTTNG_UST_SONAME_0_SYM	"ltt_probe_register"
+
+static
+void lttng_ust_check_soname_0(void)
+{
+	if (!dlsym(RTLD_DEFAULT, LTTNG_UST_SONAME_0_SYM))
+		return;
+
+	CRIT("Incompatible library ABIs detected within the same process. "
+		"The process is likely linked against different major soname of LTTng-UST which is unsupported. "
+		"The detection was triggered by lookup of ABI 0 symbol \"%s\" in the Global Symbol Table\n",
+		LTTNG_UST_SONAME_0_SYM);
+}
+
+/*
+ * Expose a canary symbol of the previous ABI to ensure we catch uses of a
+ * liblttng-ust.so.0 dlopen'd after .so.1 has been loaded. Use a different
+ * symbol than the detection code to ensure we don't detect ourself.
+ */
+void init_usterr(void);
+void init_usterr(void)
+{
+	CRIT("Incompatible library ABIs detected within the same process. "
+		"The process is likely linked against different major soname of LTTng-UST which is unsupported. "
+		"The detection was triggered by canary symbol \"%s\"\n", __func__);
+}
+
+/*
  * sessiond monitoring thread: monitor presence of global and per-user
  * sessiond by polling the application common named pipe.
  */
@@ -2130,6 +2161,14 @@ void lttng_ust_ctor(void)
 	lttng_ust_loaded = 1;
 
 	/*
+	 * Check if we find a symbol of the previous ABI in the current process
+	 * as different ABIs of liblttng-ust can't co-exist in a process. If we
+	 * do so, emit a critical log message which will also abort if the
+	 * LTTNG_UST_ABORT_ON_CRITICAL environment variable is set.
+	 */
+	lttng_ust_check_soname_0();
+
+	/*
 	 * We need to ensure that the liblttng-ust library is not unloaded to avoid
 	 * the unloading of code used by the ust_listener_threads as we can not
 	 * reliably know when they exited. To do that, manually load
@@ -2147,6 +2186,8 @@ void lttng_ust_ctor(void)
 	handle = dlopen(LTTNG_UST_LIB_SONAME, RTLD_LAZY | RTLD_NODELETE);
 	if (!handle) {
 		ERR("dlopen of liblttng-ust shared library (%s).", LTTNG_UST_LIB_SONAME);
+	} else {
+		DBG("dlopened liblttng-ust shared library (%s).", LTTNG_UST_LIB_SONAME);
 	}
 
 	/*
