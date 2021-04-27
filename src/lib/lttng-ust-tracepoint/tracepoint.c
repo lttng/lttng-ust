@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <dlfcn.h>
 
 #include <urcu/arch.h>
 #include <lttng/urcu/urcu-ust.h>
@@ -607,6 +608,39 @@ static void tracepoint_release_queue_add_old_probes(void *old)
 	}
 }
 
+/*
+ * Use a symbol of the previous ABI to detect if liblttng-ust-tracepoint.so.0
+ * is loaded in the current process.
+ */
+#define LTTNG_UST_TRACEPOINT_SONAME_0_SYM	"tracepoint_unregister_lib"
+
+static
+void lttng_ust_tracepoint_check_soname_0(void)
+{
+	if (!dlsym(RTLD_DEFAULT, LTTNG_UST_TRACEPOINT_SONAME_0_SYM))
+		return;
+
+	CRIT("Incompatible library ABIs detected within the same process. "
+		"The process is likely linked against different major soname of LTTng-UST which is unsupported. "
+		"The detection was triggered by lookup of ABI 0 symbol \"%s\" in the Global Symbol Table\n",
+		LTTNG_UST_TRACEPOINT_SONAME_0_SYM);
+}
+
+/*
+ * Expose a canary symbol of the previous ABI to ensure we catch uses of a
+ * liblttng-ust-tracepoint.so.0 dlopen'd after .so.1 has been loaded. Use a
+ * different symbol than the detection code to ensure we don't detect ourself.
+ */
+int tracepoint_register_lib(void *arg0 __attribute__((unused)), int arg1 __attribute__((unused)));
+int tracepoint_register_lib(void *arg0 __attribute__((unused)), int arg1 __attribute__((unused)))
+{
+	CRIT("Incompatible library ABIs detected within the same process. "
+		"The process is likely linked against different major soname of LTTng-UST which is unsupported. "
+		"The detection was triggered by canary symbol \"%s\"\n", __func__);
+
+	return -1;
+}
+
 /**
  * lttng_ust_tracepoint_provider_register -  Connect a probe to a tracepoint
  * @name: tracepoint provider name
@@ -622,6 +656,14 @@ int lttng_ust_tracepoint_provider_register(const char *provider_name, const char
 {
 	void *old;
 	int ret = 0;
+
+	/*
+	 * Check if we find a symbol of the previous ABI in the current process
+	 * as different ABIs of liblttng-ust can't co-exist in a process. If we
+	 * do so, emit a critical log message which will also abort if the
+	 * LTTNG_UST_ABORT_ON_CRITICAL environment variable is set.
+	 */
+	lttng_ust_tracepoint_check_soname_0();
 
 	DBG("Registering probe to tracepoint \"%s:%s\"", provider_name, event_name);
 
