@@ -1,0 +1,129 @@
+#!/bin/bash
+# SPDX-License-Identifier: LGPL-2.1-only
+
+if [ "x${UST_TESTS_SRCDIR:-}" != "x" ]; then
+	UTILSSH="$UST_TESTS_SRCDIR/utils/utils.sh"
+else
+	UTILSSH="$(dirname "$0")/../../utils/utils.sh"
+fi
+
+# shellcheck source=../../utils/utils.sh
+source "$UTILSSH"
+
+# shellcheck source=../../utils/tap.sh
+source "$UST_TESTS_SRCDIR/utils/tap.sh"
+
+CURDIR="${UST_TESTS_BUILDDIR}/regression/abi0-conflict"
+
+LIBFAKEUST0_PATH="${CURDIR}/.libs"
+LIBFAKEUST0="${LIBFAKEUST0_PATH}/libfakeust0.so"
+
+LIBUST1_PATH="${UST_TESTS_BUILDDIR}/../src/lib/lttng-ust/.libs/"
+LIBUST1="${LIBUST1_PATH}/liblttng-ust.so.1"
+
+STD_OUTPUT="/dev/null"
+STD_ERROR="/dev/null"
+
+# Force abort on CRIT() to detect ABI conflicts
+export LTTNG_UST_ABORT_ON_CRITICAL=1
+
+plan_tests 22
+
+###
+##  LD_PRELOAD tests
+###
+
+diag "LD_PRELOAD"
+
+## App NOT linked on liblttn-ust
+
+"${CURDIR}/app_noust" >"$STD_OUTPUT" 2>"$STD_ERROR"
+ok $? "LD_PRELOAD: no-ust app works"
+
+LD_PRELOAD="${LIBFAKEUST0}" "${CURDIR}/app_noust" >"$STD_OUTPUT" 2>"$STD_ERROR"
+ok $? "LD_PRELOAD: no-ust app with abi0 preload succeeds"
+
+LD_PRELOAD="${LIBFAKEUST0}:${LIBUST1}" "${CURDIR}/app_noust" >"$STD_OUTPUT" 2>"$STD_ERROR"
+isnt $? 0 "LD_PRELOAD: no-ust app with abi0 and abi1 preload fails"
+
+LD_PRELOAD="${LIBUST1}:${LIBFAKEUST0}" "${CURDIR}/app_noust" >"$STD_OUTPUT" 2>"$STD_ERROR"
+isnt $? 0 "LD_PRELOAD: no-ust app with abi1 and abi0 preload fails"
+
+
+## App linked on liblttn-ust.so.1
+
+"${CURDIR}/app_ust" >"$STD_OUTPUT" 2>"$STD_ERROR"
+ok $? "LD_PRELOAD: ust app works"
+
+LD_PRELOAD="${LIBFAKEUST0}" "${CURDIR}/app_ust" >"$STD_OUTPUT" 2>"$STD_ERROR"
+isnt $? 0 "LD_PRELOAD: ust app with abi0 preload fails"
+
+LD_PRELOAD="${LIBFAKEUST0}:${LIBUST1}" "${CURDIR}/app_ust" >"$STD_OUTPUT" 2>"$STD_ERROR"
+isnt $? 0 "LD_PRELOAD: ust app with abi0 and abi1 preload fails"
+
+LD_PRELOAD="${LIBUST1}:${LIBFAKEUST0}" "${CURDIR}/app_ust" >"$STD_OUTPUT" 2>"$STD_ERROR"
+isnt $? 0 "LD_PRELOAD: ust app with abi1 and abi0 preload fails"
+
+
+###
+## dlopen tests
+###
+
+diag "dlopen"
+
+## App NOT linked on liblttn-ust
+
+LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_noust_dlopen" abi0 >"$STD_OUTPUT" 2>"$STD_ERROR"
+ok $? "dlopen: no-ust app works"
+
+LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_noust_dlopen" abi1_abi1 >"$STD_OUTPUT" 2>"$STD_ERROR"
+ok $? "dlopen: no-ust app with abi1 and abi1 succeeds"
+
+LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_noust_dlopen" abi0_abi1 >"$STD_OUTPUT" 2>"$STD_ERROR"
+isnt $? 0 "dlopen: no-ust app with abi0 and abi1 fails"
+
+LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_noust_dlopen" abi1_abi0 >"$STD_OUTPUT" 2>"$STD_ERROR"
+isnt $? 0 "dlopen: no-ust app with abi1 and abi0 fails"
+
+## App linked on liblttn-ust.so.1
+
+LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_ust_dlopen" abi1 >"$STD_OUTPUT" 2>"$STD_ERROR"
+ok $? "dlopen: ust app works"
+
+LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_ust_dlopen" abi0 >"$STD_OUTPUT" 2>"$STD_ERROR"
+isnt $? 0 "dlopen: ust app with abi0 fails"
+
+LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_ust_dlopen" abi0_abi1 >"$STD_OUTPUT" 2>"$STD_ERROR"
+isnt $? 0 "dlopen: ust app with abi0 and abi1 fails"
+
+LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_ust_dlopen" abi1_abi0 >"$STD_OUTPUT" 2>"$STD_ERROR"
+isnt $? 0 "dlopen: ust app with abi1 and abi0 fails"
+
+
+###
+##  Indirect linking
+###
+
+diag "Indirect linking"
+
+## App NOT linked on liblttn-ust
+
+"${CURDIR}/app_noust_indirect_abi0" >"$STD_OUTPUT" 2>"$STD_ERROR"
+ok $? "indirect: no-ust app with abi0 succeeds"
+
+"${CURDIR}/app_noust_indirect_abi1" >"$STD_OUTPUT" 2>"$STD_ERROR"
+ok $? "indirect: no-ust app with abi1 succeeds"
+
+"${CURDIR}/app_noust_indirect_abi0_abi1" >"$STD_OUTPUT" 2>"$STD_ERROR"
+isnt $? 0 "indirect: no-ust app with abi0 and abi1 fails"
+
+## App linked on liblttn-ust
+
+"${CURDIR}/app_ust_indirect_abi0" >"$STD_OUTPUT" 2>"$STD_ERROR"
+isnt $? 0 "indirect: ust app with abi0 fails"
+
+"${CURDIR}/app_ust_indirect_abi1" >"$STD_OUTPUT" 2>"$STD_ERROR"
+ok $? "indirect: ust app with abi1 succeeds"
+
+"${CURDIR}/app_ust_indirect_abi0_abi1" >"$STD_OUTPUT" 2>"$STD_ERROR"
+isnt $? 0 "indirect: ust app with abi0 and abi1 fails"
