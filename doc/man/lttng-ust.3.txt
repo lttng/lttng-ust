@@ -65,7 +65,7 @@ SYNOPSIS
 #define *tracepoint*('prov_name', 't_name', ...)
 #define *tracepoint_enabled*('prov_name', 't_name')
 
-Link with `-llttng-ust -ldl`, following this man page.
+Link with `-llttng-ust -llttng-ust-common -ldl`, following this man page.
 
 
 DESCRIPTION
@@ -636,7 +636,7 @@ library containing it) and with `liblttng-ust` and `libdl`
 
 [role="term"]
 ----
-$ cc -o app tp.o app.o -llttng-ust -ldl
+$ cc -o app tp.o app.o -llttng-ust -llttng-ust-common -ldl
 ----
 
 
@@ -686,7 +686,7 @@ It is then linked as a shared library like this:
 
 [role="term"]
 ----
-$ cc -shared -Wl,--no-as-needed -o tp.so tp.o -llttng-ust
+$ cc -shared -Wl,--no-as-needed -o tp.so tp.o -llttng-ust -llttng-ust-common
 ----
 
 This tracepoint provider shared object isn't linked with the user
@@ -1120,7 +1120,7 @@ like this:
 ----
 $ cc -c -I. tp.c
 $ cc -c app.c
-$ cc -o app tp.o app.o -llttng-ust -ldl
+$ cc -o app tp.o app.o -llttng-ust -llttng-ust-common -ldl
 ----
 
 Using the man:lttng(1) tool, create an LTTng tracing session, enable
