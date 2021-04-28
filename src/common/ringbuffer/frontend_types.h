@@ -253,7 +253,6 @@ struct lttng_ust_ring_buffer_ctx_private {
 						 */
 	uint64_t tsc;				/* time-stamp counter value */
 	unsigned int rflags;			/* reservation flags */
-	void *ip;				/* caller ip address */
 
 	struct lttng_ust_ring_buffer *buf;	/*
 						 * buffer corresponding to processor id
