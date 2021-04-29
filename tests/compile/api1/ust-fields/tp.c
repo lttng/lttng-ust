@@ -5,4 +5,4 @@
  */
 
 #define LTTNG_UST_TRACEPOINT_CREATE_PROBES
-#include "ust_tests_ctf_types.h"
+#include "ust_tests_ust_fields.h"

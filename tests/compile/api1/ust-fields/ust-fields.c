@@ -7,7 +7,7 @@
 #include <unistd.h>
 
 #define LTTNG_UST_TRACEPOINT_DEFINE
-#include "ust_tests_ctf_types.h"
+#include "ust_tests_ust_fields.h"
 
 int main(int argc, char **argv)
 {
@@ -23,12 +23,12 @@ int main(int argc, char **argv)
 
 	fprintf(stderr, "Tracing... ");
 	for (i = 0; i < 100; i++) {
-		lttng_ust_tracepoint(ust_tests_ctf_types, tptest, i, i % 6,
+		lttng_ust_tracepoint(ust_tests_ust_fields, tptest, i, i % 6,
 			i % 21);
 	}
 
 	for (i = 0; i < 10; i++) {
-		lttng_ust_tracepoint(ust_tests_ctf_types, tptest_bis, i, i % 6);
+		lttng_ust_tracepoint(ust_tests_ust_fields, tptest_bis, i, i % 6);
 	}
 	fprintf(stderr, " done.\n");
 	return 0;
