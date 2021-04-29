@@ -76,6 +76,18 @@ cscope.*
 
 /tests/benchmark/bench1
 /tests/benchmark/bench2
+/tests/compile/api0/ctf-types/ctf-types
+/tests/compile/api0/ctf-types/ctf-types-api1
+/tests/compile/api0/hello.cxx/hello
+/tests/compile/api0/hello.cxx/hello-api1
+/tests/compile/api0/hello/hello
+/tests/compile/api0/hello/hello-api1
+/tests/compile/api0/hello-many/hello-many
+/tests/compile/api0/hello-many/hello-many-api1
+/tests/compile/api0/same_line_tracepoint/same_line_tracepoint
+/tests/compile/api0/same_line_tracepoint/same_line_tracepoint_api1
+/tests/compile/api0/test-app-ctx/hello
+/tests/compile/api0/test-app-ctx/hello-api1
 /tests/compile/api1/hello.cxx/hello
 /tests/compile/api1/hello.cxx/hello-compatapi1
 /tests/compile/api1/hello/hello
@@ -159,6 +171,12 @@ cscope.*
 /tests/Makefile
 /tests/benchmark/Makefile
 /tests/compile/Makefile
+/tests/compile/api0/Makefile
+/tests/compile/api0/ctf-types/Makefile
+/tests/compile/api0/hello-many/Makefile
+/tests/compile/api0/hello.cxx/Makefile
+/tests/compile/api0/hello/Makefile
+/tests/compile/api0/same_line_tracepoint/Makefile
 /tests/compile/api1/Makefile
 /tests/compile/api1/ust-fields/Makefile
 /tests/compile/api1/hello-many/Makefile

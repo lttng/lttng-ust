@@ -1,0 +1,5 @@
+Same line tracepoint test
+-------------------------
+
+This is a build test that verifies multiple tracepoint can be placed on a single
+line.
