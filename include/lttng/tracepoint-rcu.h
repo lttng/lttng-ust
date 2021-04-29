@@ -29,7 +29,7 @@
 		URCU_FORCE_CAST(__typeof__(p),				   \
 			lttng_ust_tracepoint_dlopen_ptr->rcu_dereference_sym(URCU_FORCE_CAST(void *, p)))
 
-#define LTTNG_UST_TP_RCU_LINK_TEST()	(lttng_ust_tracepoint_dlopen_ptr && tp_rcu_read_lock)
+#define LTTNG_UST_TP_RCU_LINK_TEST()	(lttng_ust_tracepoint_dlopen_ptr && lttng_ust_tp_rcu_read_lock)
 
 #endif	/* _LGPL_SOURCE */
 
