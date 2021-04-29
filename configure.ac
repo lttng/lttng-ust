@@ -607,13 +607,14 @@ AC_CONFIG_FILES([
   src/python-lttngust/Makefile
   src/python-lttngust/setup.py
   tests/benchmark/Makefile
-  tests/compile/ctf-types/Makefile
-  tests/compile/hello.cxx/Makefile
-  tests/compile/hello/Makefile
-  tests/compile/hello-many/Makefile
+  tests/compile/api1/ust-fields/Makefile
+  tests/compile/api1/hello.cxx/Makefile
+  tests/compile/api1/hello/Makefile
+  tests/compile/api1/hello-many/Makefile
+  tests/compile/api1/Makefile
+  tests/compile/api1/same_line_tracepoint/Makefile
+  tests/compile/api1/test-app-ctx/Makefile
   tests/compile/Makefile
-  tests/compile/same_line_tracepoint/Makefile
-  tests/compile/test-app-ctx/Makefile
   tests/Makefile
   tests/unit/gcc-weak-hidden/Makefile
   tests/unit/libmsgpack/Makefile
