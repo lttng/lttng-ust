@@ -58,7 +58,7 @@ do {								\
 } while (0)
 #endif
 
-/* Linked bytecode. Child of struct lttng_bytecode_runtime. */
+/* Linked bytecode. Child of struct lttng_ust_bytecode_runtime. */
 struct bytecode_runtime {
 	struct lttng_ust_bytecode_runtime p;
 	size_t data_len;
