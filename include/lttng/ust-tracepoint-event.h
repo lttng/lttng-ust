@@ -84,7 +84,7 @@
 	LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name,		\
 			 LTTNG_UST__TP_PARAMS(_args),			\
 			 LTTNG_UST__TP_PARAMS(_fields))			\
-	LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_provider, _name, _name,	\
+	LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_provider, _name, _provider, _name, \
 			 LTTNG_UST__TP_PARAMS(_args))
 
 #undef LTTNG_UST_TRACEPOINT_EVENT_CLASS
@@ -92,8 +92,8 @@
 	LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, LTTNG_UST__TP_PARAMS(_args), LTTNG_UST__TP_PARAMS(_fields))
 
 #undef LTTNG_UST_TRACEPOINT_EVENT_INSTANCE
-#define LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args) 	\
-	LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, LTTNG_UST__TP_PARAMS(_args))
+#define LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(_template_provider, _template_name, _provider, _name, _args) \
+	LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_template_provider, _template_name, _provider, _name, LTTNG_UST__TP_PARAMS(_args))
 
 /* Helpers */
 #define LTTNG_UST__TP_ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
@@ -128,7 +128,7 @@ void LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_tracepoint_provider_mismatch_, LTTNG
 	lttng_ust_tracepoint_provider_mismatch_##_provider();
 
 #undef LTTNG_UST__TRACEPOINT_EVENT_INSTANCE
-#define LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	\
+#define LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_template_provider, _template_name, _provider, _name, _args) \
 	lttng_ust_tracepoint_provider_mismatch_##_provider();
 
 static inline
@@ -151,7 +151,7 @@ void LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_tracepoint_provider_check_, LTTNG_US
 #include <lttng/ust-tracepoint-event-reset.h>
 
 #undef LTTNG_UST__TRACEPOINT_EVENT_INSTANCE
-#define LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	\
+#define LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_template_provider, _template_name, _provider, _name, _args) \
 	lttng_ust_tracepoint_validate_name_len(_provider, _name);
 
 #include LTTNG_UST_TRACEPOINT_INCLUDE
@@ -171,8 +171,8 @@ void LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_tracepoint_provider_check_, LTTNG_US
 #define LTTNG_UST_TP_ARGS(...)	__VA_ARGS__
 
 #undef LTTNG_UST__TRACEPOINT_EVENT_INSTANCE
-#define LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args) \
-void lttng_ust__event_template_proto___##_provider##___##_template(LTTNG_UST__TP_ARGS_DATA_PROTO(_args));
+#define LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_template_provider, _template_name, _provider, _name, _args) \
+void lttng_ust__event_template_proto___##_template_provider##___##_template_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args));
 
 #undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
 #define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields) \
@@ -289,7 +289,48 @@ void lttng_ust__event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARG
 #include LTTNG_UST_TRACEPOINT_INCLUDE
 
 /*
+ * Stage 0.9.2 of tracepoint event generation.
+ *
+ * Create probe signature
+ */
+
+/* Reset all macros within LTTNG_UST_TRACEPOINT_EVENT */
+#include <lttng/ust-tracepoint-event-reset.h>
+
+#undef LTTNG_UST_TP_ARGS
+#define LTTNG_UST_TP_ARGS(...) __VA_ARGS__
+
+#define LTTNG_UST__TP_EXTRACT_STRING2(...)	#__VA_ARGS__
+
+#undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
+#define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	\
+static const char __tp_event_signature___##_provider##___##_name[] = 	\
+		LTTNG_UST__TP_EXTRACT_STRING2(_args);
+
+#include LTTNG_UST_TRACEPOINT_INCLUDE
+
+#undef LTTNG_UST__TP_EXTRACT_STRING2
+
+/*
  * Stage 1 of tracepoint event generation.
+ *
+ * Create probe callback prototypes.
+ */
+
+/* Reset all macros within LTTNG_UST_TRACEPOINT_EVENT */
+#include <lttng/ust-tracepoint-event-reset.h>
+
+#undef LTTNG_UST_TP_ARGS
+#define LTTNG_UST_TP_ARGS(...) __VA_ARGS__
+
+#undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
+#define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)		\
+static void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args));
+
+#include LTTNG_UST_TRACEPOINT_INCLUDE
+
+/*
+ * Stage 2 of tracepoint event generation.
  *
  * Create event field type metadata section.
  * Each event produce an array of fields.
@@ -413,6 +454,13 @@ void lttng_ust__event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARG
 	static const struct lttng_ust_event_field * const lttng_ust__event_fields___##_provider##___##_name[] = { \
 		_fields									     \
 		lttng_ust_field_integer(int, dummy, 0)	/* Dummy, C99 forbids 0-len array. */	     \
+	};											     \
+	static const struct lttng_ust_tracepoint_class lttng_ust__event_class___##_provider##___##_name = { \
+		.struct_size = sizeof(struct lttng_ust_tracepoint_class),			     \
+		.fields = lttng_ust__event_fields___##_provider##___##_name,			     \
+		.nr_fields = LTTNG_UST__TP_ARRAY_SIZE(lttng_ust__event_fields___##_provider##___##_name) - 1, \
+		.probe_callback = (void (*)(void)) &lttng_ust__event_probe__##_provider##___##_name, \
+		.signature = __tp_event_signature___##_provider##___##_name,			     \
 	};
 
 #undef LTTNG_UST_TRACEPOINT_ENUM
@@ -423,24 +471,6 @@ void lttng_ust__event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARG
 		.entries = __enum_values__##_provider##_##_name,			\
 		.nr_entries = LTTNG_UST__TP_ARRAY_SIZE(__enum_values__##_provider##_##_name) - 1,	\
 	};
-
-#include LTTNG_UST_TRACEPOINT_INCLUDE
-
-/*
- * Stage 2 of tracepoint event generation.
- *
- * Create probe callback prototypes.
- */
-
-/* Reset all macros within LTTNG_UST_TRACEPOINT_EVENT */
-#include <lttng/ust-tracepoint-event-reset.h>
-
-#undef LTTNG_UST_TP_ARGS
-#define LTTNG_UST_TP_ARGS(...) __VA_ARGS__
-
-#undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
-#define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)		\
-static void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args));
 
 #include LTTNG_UST_TRACEPOINT_INCLUDE
 
@@ -978,29 +1008,6 @@ void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PRO
 #undef lttng_ust__get_dynamic_len
 
 /*
- * Stage 5.1 of tracepoint event generation.
- *
- * Create probe signature
- */
-
-/* Reset all macros within LTTNG_UST_TRACEPOINT_EVENT */
-#include <lttng/ust-tracepoint-event-reset.h>
-
-#undef LTTNG_UST_TP_ARGS
-#define LTTNG_UST_TP_ARGS(...) __VA_ARGS__
-
-#define LTTNG_UST__TP_EXTRACT_STRING2(...)	#__VA_ARGS__
-
-#undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
-#define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	\
-static const char __tp_event_signature___##_provider##___##_name[] = 	\
-		LTTNG_UST__TP_EXTRACT_STRING2(_args);
-
-#include LTTNG_UST_TRACEPOINT_INCLUDE
-
-#undef LTTNG_UST__TP_EXTRACT_STRING2
-
-/*
  * Stage 6 of tracepoint event generation.
  *
  * Tracepoint loglevel mapping definition generation. We generate a
@@ -1096,7 +1103,7 @@ extern const struct lttng_ust_probe_desc LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_
 #include <lttng/ust-tracepoint-event-reset.h>
 
 #undef LTTNG_UST__TRACEPOINT_EVENT_INSTANCE
-#define LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	       \
+#define LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_template_provider, _template_name, _provider, _name, _args) \
 static const int *							       \
 	__ref_loglevel___##_provider##___##_name			       \
 	__attribute__((weakref ("_loglevel___" #_provider "___" #_name)));     \
@@ -1107,11 +1114,8 @@ static const struct lttng_ust_event_desc lttng_ust__event_desc___##_provider##_#
 	.struct_size = sizeof(struct lttng_ust_event_desc),		       \
 	.event_name = #_name,						       \
 	.probe_desc = &lttng_ust__probe_desc___##_provider,			       \
-	.probe_callback = (void (*)(void)) &lttng_ust__event_probe__##_provider##___##_template, \
-	.fields = lttng_ust__event_fields___##_provider##___##_template,		       \
-	.nr_fields = LTTNG_UST__TP_ARRAY_SIZE(lttng_ust__event_fields___##_provider##___##_template) - 1, \
+	.tp_class = &lttng_ust__event_class___##_template_provider##___##_template_name, \
 	.loglevel = &__ref_loglevel___##_provider##___##_name,		       \
-	.signature = __tp_event_signature___##_provider##___##_template,       \
 	.model_emf_uri = &__ref_model_emf_uri___##_provider##___##_name,       \
 };
 
@@ -1127,7 +1131,7 @@ static const struct lttng_ust_event_desc lttng_ust__event_desc___##_provider##_#
 #include <lttng/ust-tracepoint-event-reset.h>
 
 #undef LTTNG_UST__TRACEPOINT_EVENT_INSTANCE
-#define LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)	       \
+#define LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_template_provider, _template_name, _provider, _name, _args) \
 	&lttng_ust__event_desc___##_provider##_##_name,
 
 static const struct lttng_ust_event_desc * const LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__event_desc___, LTTNG_UST_TRACEPOINT_PROVIDER)[] = {

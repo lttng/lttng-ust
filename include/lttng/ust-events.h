@@ -31,8 +31,13 @@ extern "C" {
  * Older tracepoint providers can always register to newer lttng-ust
  * library, but the opposite is rejected: a newer tracepoint provider is
  * rejected by an older lttng-ust library.
+ *
+ * LTTNG_UST_PROVIDER_MAJOR_OLDEST_COMPATIBLE is the floor value of
+ * oldest provider major version currently allowed, typically increased
+ * when LTTng-UST has an ABI-breaking soname bump.
  */
-#define LTTNG_UST_PROVIDER_MAJOR	2
+#define LTTNG_UST_PROVIDER_MAJOR			3
+#define LTTNG_UST_PROVIDER_MAJOR_OLDEST_COMPATIBLE	3
 #define LTTNG_UST_PROVIDER_MINOR	0
 
 struct lttng_ust_channel_buffer;
@@ -252,6 +257,28 @@ struct lttng_ust_event_field {
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
 
+/*
+ * Tracepoint class description
+ *
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
+ */
+
+struct lttng_ust_tracepoint_class {
+	uint32_t struct_size;
+
+	const struct lttng_ust_event_field * const *fields;
+	size_t nr_fields;
+	void (*probe_callback)(void);
+	const char *signature;				/* Argument types/names received */
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
+};
 
 /*
  * IMPORTANT: this structure is part of the ABI between the probe and
@@ -267,11 +294,8 @@ struct lttng_ust_event_desc {
 
 	const char *event_name;
 	const struct lttng_ust_probe_desc *probe_desc;
-	void (*probe_callback)(void);
-	const struct lttng_ust_event_field * const *fields;	/* event payload */
-	unsigned int nr_fields;
+	const struct lttng_ust_tracepoint_class *tp_class;
 	const int **loglevel;
-	const char *signature;				/* Argument types/names received */
 	const char **model_emf_uri;
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */

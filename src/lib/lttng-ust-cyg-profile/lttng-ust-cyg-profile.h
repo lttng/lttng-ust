@@ -27,7 +27,7 @@ LTTNG_UST_TRACEPOINT_EVENT_CLASS(lttng_ust_cyg_profile, func_class,
 )
 
 LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(lttng_ust_cyg_profile, func_class,
-	func_entry,
+	lttng_ust_cyg_profile, func_entry,
 	LTTNG_UST_TP_ARGS(void *, func_addr, void *, call_site)
 )
 
@@ -35,7 +35,7 @@ LTTNG_UST_TRACEPOINT_LOGLEVEL(lttng_ust_cyg_profile, func_entry,
 	LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_FUNCTION)
 
 LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(lttng_ust_cyg_profile, func_class,
-	func_exit,
+	lttng_ust_cyg_profile, func_exit,
 	LTTNG_UST_TP_ARGS(void *, func_addr, void *, call_site)
 )
 

@@ -190,10 +190,10 @@ int apply_field_reloc(const struct lttng_ust_event_desc *event_desc,
 	/* Lookup event by name */
 	if (!event_desc)
 		return -EINVAL;
-	fields = event_desc->fields;
+	fields = event_desc->tp_class->fields;
 	if (!fields)
 		return -EINVAL;
-	nr_fields = event_desc->nr_fields;
+	nr_fields = event_desc->tp_class->nr_fields;
 	for (i = 0; i < nr_fields; i++) {
 		if (fields[i]->nofilter) {
 			continue;

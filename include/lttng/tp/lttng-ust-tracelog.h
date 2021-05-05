@@ -20,7 +20,8 @@ LTTNG_UST_TRACEPOINT_EVENT_CLASS(lttng_ust_tracelog, tlclass,
 )
 
 #define LTTNG_UST_TP_TRACELOG_TEMPLATE(_level_enum) \
-	LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(lttng_ust_tracelog, tlclass, _level_enum, \
+	LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(lttng_ust_tracelog, tlclass, \
+		lttng_ust_tracelog, _level_enum, \
 		LTTNG_UST_TP_ARGS(const char *, file, int, line, const char *, func, \
 			const char *, msg, unsigned int, len, void *, ip) \
 	) \
