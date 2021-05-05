@@ -39,9 +39,40 @@ static CDS_LIST_HEAD(lazy_probe_init);
  */
 static int lazy_nesting;
 
+static
+int check_provider_version(const struct lttng_ust_probe_desc *desc)
+{
+	/*
+	 * Check tracepoint provider version compatibility.
+	 */
+	if (desc->major <= LTTNG_UST_PROVIDER_MAJOR &&
+			desc->major >= LTTNG_UST_PROVIDER_MAJOR_OLDEST_COMPATIBLE) {
+		DBG("Provider \"%s\" accepted, version %u.%u is compatible "
+			"with LTTng UST provider version %u.%u.",
+			desc->provider_name, desc->major, desc->minor,
+			LTTNG_UST_PROVIDER_MAJOR,
+			LTTNG_UST_PROVIDER_MINOR);
+		if (desc->major < LTTNG_UST_PROVIDER_MAJOR) {
+			DBG("However, some LTTng UST features might not be "
+				"available for this provider unless it is "
+				"recompiled against a more recent LTTng UST.");
+		}
+		return 1;		/* accept */
+	} else {
+		ERR("Provider \"%s\" rejected, version %u.%u is incompatible "
+			"with LTTng UST provider version %u.%u. Please upgrade "
+			"LTTng UST.",
+			desc->provider_name, desc->major, desc->minor,
+			LTTNG_UST_PROVIDER_MAJOR,
+			LTTNG_UST_PROVIDER_MINOR);
+		return 0;		/* reject */
+	}
+}
+
 /*
  * Validate that each event within the probe provider refers to the
- * right probe, and that the resulting name is not too long.
+ * right probe, that the resulting name is not too long, and that the
+ * event class belongs to a provider with compatible version.
  */
 static
 bool check_event_provider(const struct lttng_ust_probe_desc *probe_desc)
@@ -60,6 +91,11 @@ bool check_event_provider(const struct lttng_ust_probe_desc *probe_desc)
 			ERR("Error registering probe provider '%s'. Event '%s:%s' name is too long.",
 				probe_desc->provider_name, probe_desc->provider_name, event_desc->event_name);
 			return false;	/* provider mismatch */
+		}
+		if (!check_provider_version(event_desc->tp_class->probe_desc)) {
+			ERR("Error registering probe provider '%s'. Event '%s:%s' refers to an event class in a provider with incompatible version.",
+				probe_desc->provider_name, probe_desc->provider_name, event_desc->event_name);
+			return false;
 		}
 	}
 	return true;
@@ -131,35 +167,6 @@ struct cds_list_head *lttng_get_probe_list_head(void)
 	return &_probe_list;
 }
 
-static
-int check_provider_version(const struct lttng_ust_probe_desc *desc)
-{
-	/*
-	 * Check tracepoint provider version compatibility.
-	 */
-	if (desc->major <= LTTNG_UST_PROVIDER_MAJOR &&
-			desc->major >= LTTNG_UST_PROVIDER_MAJOR_OLDEST_COMPATIBLE) {
-		DBG("Provider \"%s\" accepted, version %u.%u is compatible "
-			"with LTTng UST provider version %u.%u.",
-			desc->provider_name, desc->major, desc->minor,
-			LTTNG_UST_PROVIDER_MAJOR,
-			LTTNG_UST_PROVIDER_MINOR);
-		if (desc->major < LTTNG_UST_PROVIDER_MAJOR) {
-			DBG("However, some LTTng UST features might not be "
-				"available for this provider unless it is "
-				"recompiled against a more recent LTTng UST.");
-		}
-		return 1;		/* accept */
-	} else {
-		ERR("Provider \"%s\" rejected, version %u.%u is incompatible "
-			"with LTTng UST provider version %u.%u. Please upgrade "
-			"LTTng UST.",
-			desc->provider_name, desc->major, desc->minor,
-			LTTNG_UST_PROVIDER_MAJOR,
-			LTTNG_UST_PROVIDER_MINOR);
-		return 0;		/* reject */
-	}
-}
 
 struct lttng_ust_registered_probe *lttng_ust_probe_register(const struct lttng_ust_probe_desc *desc)
 {
