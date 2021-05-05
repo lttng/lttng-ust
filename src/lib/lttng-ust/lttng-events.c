@@ -270,8 +270,8 @@ void register_event(struct lttng_ust_event_common *event)
 	desc = event->priv->desc;
 	ret = lttng_ust_tp_probe_register_queue_release(desc->probe_desc->provider_name,
 			desc->event_name,
-			desc->probe_callback,
-			event, desc->signature);
+			desc->tp_class->probe_callback,
+			event, desc->tp_class->signature);
 	WARN_ON_ONCE(ret);
 	if (!ret)
 		event->priv->registered = 1;
@@ -287,7 +287,7 @@ void unregister_event(struct lttng_ust_event_common *event)
 	desc = event->priv->desc;
 	ret = lttng_ust_tp_probe_unregister_queue_release(desc->probe_desc->provider_name,
 			desc->event_name,
-			desc->probe_callback,
+			desc->tp_class->probe_callback,
 			event);
 	WARN_ON_ONCE(ret);
 	if (!ret)
@@ -729,7 +729,7 @@ int lttng_event_recorder_create(const struct lttng_ust_event_desc *desc,
 		goto socket_error;
 	}
 
-	ret = lttng_create_all_event_enums(desc->nr_fields, desc->fields,
+	ret = lttng_create_all_event_enums(desc->tp_class->nr_fields, desc->tp_class->fields,
 			session);
 	if (ret < 0) {
 		DBG("Error (%d) adding enum to session", ret);
@@ -793,9 +793,9 @@ int lttng_event_recorder_create(const struct lttng_ust_event_desc *desc,
 		chan->priv->parent.objd,
 		name,
 		loglevel,
-		desc->signature,
-		desc->nr_fields,
-		desc->fields,
+		desc->tp_class->signature,
+		desc->tp_class->nr_fields,
+		desc->tp_class->fields,
 		uri,
 		&event_recorder->priv->id);
 	if (ret < 0) {
@@ -1173,12 +1173,12 @@ void _event_enum_destroy(struct lttng_ust_event_common *event)
 		unsigned int i;
 
 		/* Destroy enums of the current event. */
-		for (i = 0; i < event_recorder->parent->priv->desc->nr_fields; i++) {
+		for (i = 0; i < event_recorder->parent->priv->desc->tp_class->nr_fields; i++) {
 			const struct lttng_ust_enum_desc *enum_desc;
 			const struct lttng_ust_event_field *field;
 			struct lttng_enum *curr_enum;
 
-			field = event_recorder->parent->priv->desc->fields[i];
+			field = event_recorder->parent->priv->desc->tp_class->fields[i];
 			switch (field->type->type) {
 			case lttng_ust_type_enum:
 				enum_desc = lttng_ust_get_type_enum(field->type)->desc;

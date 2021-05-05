@@ -783,14 +783,17 @@ lttng_ust__tracepoints__ptrs_destroy(void)
 
 #define LTTNG_UST_TRACEPOINT_EVENT_CLASS(provider, name, args, fields)
 
-#define LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(provider, _template, name, args)	\
+#define LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(template_provider, template_name, provider, name, args)	\
 	LTTNG_UST__DECLARE_TRACEPOINT(provider, name, LTTNG_UST__TP_PARAMS(args))		\
 	LTTNG_UST__DEFINE_TRACEPOINT(provider, name, LTTNG_UST__TP_PARAMS(args))
 
 #if LTTNG_UST_COMPAT_API(0)
 #define TRACEPOINT_EVENT		LTTNG_UST_TRACEPOINT_EVENT
 #define TRACEPOINT_EVENT_CLASS		LTTNG_UST_TRACEPOINT_EVENT_CLASS
-#define TRACEPOINT_EVENT_INSTANCE	LTTNG_UST_TRACEPOINT_EVENT_INSTANCE
+#define TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, args)	\
+	LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(_provider, _template,	\
+		_provider, _name, LTTNG_UST__TP_PARAMS(args))
+
 #endif /* #if LTTNG_UST_COMPAT_API(0) */
 
 #endif /* #ifndef LTTNG_UST_TRACEPOINT_EVENT */

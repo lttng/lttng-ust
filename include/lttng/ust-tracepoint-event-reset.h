@@ -10,7 +10,7 @@
 #define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)
 
 #undef LTTNG_UST__TRACEPOINT_EVENT_INSTANCE
-#define LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)
+#define LTTNG_UST__TRACEPOINT_EVENT_INSTANCE(_template_provider, _template_name, _provider, _name, _args)
 
 #undef LTTNG_UST_TRACEPOINT_ENUM
 #define LTTNG_UST_TRACEPOINT_ENUM(_provider, _name, _values)

@@ -19,13 +19,14 @@
 #define lttng_ust__tp_stringify(x)	lttng_ust__tp_stringify1(x)
 
 #undef LTTNG_UST_TRACEPOINT_EVENT_INSTANCE
-#define LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(_provider, _template, _name, _args)
+#define LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(_template_provider, _template_name, \
+	_provider, _name, _args)
 
 #undef LTTNG_UST_TRACEPOINT_EVENT
 #define LTTNG_UST_TRACEPOINT_EVENT(_provider, _name, _args, _fields)		\
 	LTTNG_UST_TRACEPOINT_EVENT_CLASS(_provider, _name, LTTNG_UST__TP_PARAMS(_args),	\
 			LTTNG_UST__TP_PARAMS(_fields))				\
-	LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(_provider, _name, _name,		\
+	LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(_provider, _name, _provider, _name,	\
 			LTTNG_UST__TP_PARAMS(_args))
 
 
@@ -95,7 +96,7 @@
 #define LTTNG_UST_TRACEPOINT_EVENT_CLASS(provider, name, args, fields)
 
 #undef LTTNG_UST_TRACEPOINT_EVENT_INSTANCE
-#define LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(provider, _template, name, args)	\
+#define LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(template_provider, template_name, provider, name, args) \
 	LTTNG_UST__DECLARE_TRACEPOINT(provider, name, LTTNG_UST__TP_PARAMS(args))		\
 	LTTNG_UST__DEFINE_TRACEPOINT(provider, name, LTTNG_UST__TP_PARAMS(args))
 

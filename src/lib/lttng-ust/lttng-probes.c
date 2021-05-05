@@ -137,7 +137,8 @@ int check_provider_version(const struct lttng_ust_probe_desc *desc)
 	/*
 	 * Check tracepoint provider version compatibility.
 	 */
-	if (desc->major <= LTTNG_UST_PROVIDER_MAJOR) {
+	if (desc->major <= LTTNG_UST_PROVIDER_MAJOR &&
+			desc->major >= LTTNG_UST_PROVIDER_MAJOR_OLDEST_COMPATIBLE) {
 		DBG("Provider \"%s\" accepted, version %u.%u is compatible "
 			"with LTTng UST provider version %u.%u.",
 			desc->provider_name, desc->major, desc->minor,
@@ -326,7 +327,7 @@ int lttng_probes_get_field_list(struct lttng_ust_field_list *list)
 				probe_desc->event_desc[i];
 			int j;
 
-			if (event_desc->nr_fields == 0) {
+			if (event_desc->tp_class->nr_fields == 0) {
 				/* Events without fields. */
 				struct tp_field_list_entry *list_entry;
 
@@ -348,9 +349,9 @@ int lttng_probes_get_field_list(struct lttng_ust_field_list *list)
 				list_entry->field.nowrite = 1;
 			}
 
-			for (j = 0; j < event_desc->nr_fields; j++) {
+			for (j = 0; j < event_desc->tp_class->nr_fields; j++) {
 				const struct lttng_ust_event_field *event_field =
-					event_desc->fields[j];
+					event_desc->tp_class->fields[j];
 				struct tp_field_list_entry *list_entry;
 
 				/* Skip event if name is too long. */
