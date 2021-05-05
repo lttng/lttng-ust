@@ -230,6 +230,7 @@ struct lttng_ust_enum_desc {
 	const char *name;
 	const struct lttng_ust_enum_entry * const *entries;
 	unsigned int nr_entries;
+	const struct lttng_ust_probe_desc *probe_desc;
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
@@ -276,6 +277,7 @@ struct lttng_ust_tracepoint_class {
 	size_t nr_fields;
 	void (*probe_callback)(void);
 	const char *signature;				/* Argument types/names received */
+	const struct lttng_ust_probe_desc *probe_desc;
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
