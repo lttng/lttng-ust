@@ -330,6 +330,19 @@ static void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_D
 #include LTTNG_UST_TRACEPOINT_INCLUDE
 
 /*
+ * Stage 1.1 of tracepoint event generation.
+ *
+ * Declare toplevel descriptor for the whole probe.
+ * Unlike C, C++ does not allow tentative definitions. Therefore, we
+ * need to explicitly declare the variable with "extern", using hidden
+ * visibility to keep this symbol from being exported to the global
+ * symbol table.
+ */
+
+extern const struct lttng_ust_probe_desc LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__probe_desc___, LTTNG_UST_TRACEPOINT_PROVIDER)
+	__attribute__((visibility("hidden")));
+
+/*
  * Stage 2 of tracepoint event generation.
  *
  * Create event field type metadata section.
@@ -461,6 +474,7 @@ static void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_D
 		.nr_fields = LTTNG_UST__TP_ARRAY_SIZE(lttng_ust__event_fields___##_provider##___##_name) - 1, \
 		.probe_callback = (void (*)(void)) &lttng_ust__event_probe__##_provider##___##_name, \
 		.signature = __tp_event_signature___##_provider##___##_name,			     \
+		.probe_desc = &lttng_ust__probe_desc___##_provider,				     \
 	};
 
 #undef LTTNG_UST_TRACEPOINT_ENUM
@@ -470,6 +484,7 @@ static void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_D
 		.name = #_provider "_" #_name,						\
 		.entries = __enum_values__##_provider##_##_name,			\
 		.nr_entries = LTTNG_UST__TP_ARRAY_SIZE(__enum_values__##_provider##_##_name) - 1,	\
+		.probe_desc = &lttng_ust__probe_desc___##_provider,		        \
 	};
 
 #include LTTNG_UST_TRACEPOINT_INCLUDE
@@ -1075,19 +1090,6 @@ LTTNG_UST_TP_EXTERN_C const char * const _model_emf_uri___##__provider##___##__n
 /*
  * Stage 7.0 of tracepoint event generation.
  *
- * Declare toplevel descriptor for the whole probe.
- * Unlike C, C++ does not allow tentative definitions. Therefore, we
- * need to explicitly declare the variable with "extern", using hidden
- * visibility to keep this symbol from being exported to the global
- * symbol table.
- */
-
-extern const struct lttng_ust_probe_desc LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__probe_desc___, LTTNG_UST_TRACEPOINT_PROVIDER)
-	__attribute__((visibility("hidden")));
-
-/*
- * Stage 7.1 of tracepoint event generation.
- *
  * Create events description structures. We use a weakref because
  * loglevels are optional. If not declared, the event will point to
  * a loglevel that contains NULL.
@@ -1122,7 +1124,7 @@ static const struct lttng_ust_event_desc lttng_ust__event_desc___##_provider##_#
 #include LTTNG_UST_TRACEPOINT_INCLUDE
 
 /*
- * Stage 7.2 of tracepoint event generation.
+ * Stage 7.1 of tracepoint event generation.
  *
  * Create array of events.
  */
