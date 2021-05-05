@@ -69,6 +69,55 @@ int check_provider_version(const struct lttng_ust_probe_desc *desc)
 	}
 }
 
+static
+bool check_type_provider(const struct lttng_ust_type_common *type);
+
+static
+bool check_type_provider(const struct lttng_ust_type_common *type)
+{
+	switch (type->type) {
+	case lttng_ust_type_integer:
+		return true;
+	case lttng_ust_type_string:
+		return true;
+	case lttng_ust_type_float:
+		return true;
+	case lttng_ust_type_dynamic:
+		return true;
+	case lttng_ust_type_enum:
+	{
+		const struct lttng_ust_type_enum *enum_type = caa_container_of(type, const struct lttng_ust_type_enum, parent);
+
+		return check_provider_version(enum_type->desc->probe_desc);
+	}
+	case lttng_ust_type_array:
+	{
+		const struct lttng_ust_type_array *array_type = caa_container_of(type, const struct lttng_ust_type_array, parent);
+
+		return check_type_provider(array_type->elem_type);
+	}
+	case lttng_ust_type_sequence:
+	{
+		const struct lttng_ust_type_sequence *sequence_type = caa_container_of(type, const struct lttng_ust_type_sequence, parent);
+
+		return check_type_provider(sequence_type->elem_type);
+	}
+	case lttng_ust_type_struct:
+	{
+		const struct lttng_ust_type_struct *struct_type = caa_container_of(type, const struct lttng_ust_type_struct, parent);
+		size_t i;
+
+		for (i = 0; i < struct_type->nr_fields; i++) {
+			if (!check_type_provider(struct_type->fields[i]->type))
+				return false;
+		}
+		return true;
+	}
+	default:
+		return false;
+	}
+}
+
 /*
  * Validate that each event within the probe provider refers to the
  * right probe, that the resulting name is not too long, and that the
@@ -77,10 +126,11 @@ int check_provider_version(const struct lttng_ust_probe_desc *desc)
 static
 bool check_event_provider(const struct lttng_ust_probe_desc *probe_desc)
 {
-	int i;
+	int i, j;
 
 	for (i = 0; i < probe_desc->nr_events; i++) {
 		const struct lttng_ust_event_desc *event_desc = probe_desc->event_desc[i];
+		const struct lttng_ust_tracepoint_class *tp_class = event_desc->tp_class;
 
 		if (event_desc->probe_desc != probe_desc) {
 			ERR("Error registering probe provider '%s'. Event '%s:%s' refers to the wrong provider descriptor.",
@@ -92,10 +142,19 @@ bool check_event_provider(const struct lttng_ust_probe_desc *probe_desc)
 				probe_desc->provider_name, probe_desc->provider_name, event_desc->event_name);
 			return false;	/* provider mismatch */
 		}
-		if (!check_provider_version(event_desc->tp_class->probe_desc)) {
+		if (!check_provider_version(tp_class->probe_desc)) {
 			ERR("Error registering probe provider '%s'. Event '%s:%s' refers to an event class in a provider with incompatible version.",
 				probe_desc->provider_name, probe_desc->provider_name, event_desc->event_name);
 			return false;
+		}
+		for (j = 0; j < tp_class->nr_fields; j++) {
+			const struct lttng_ust_event_field *field = tp_class->fields[j];
+
+			if (!check_type_provider(field->type)) {
+				ERR("Error registering probe provider '%s'. Event '%s:%s' contains a field which refers to an provider with incompatible version.",
+					probe_desc->provider_name, probe_desc->provider_name, event_desc->event_name);
+				return false;
+			}
 		}
 	}
 	return true;
