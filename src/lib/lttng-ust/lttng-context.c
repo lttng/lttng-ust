@@ -260,8 +260,7 @@ int lttng_ust_context_set_provider_rcu(struct lttng_ust_ctx **_ctx,
 			struct lttng_ust_ring_buffer_ctx *ctx,
 			struct lttng_ust_channel_buffer *chan),
 		void (*get_value)(void *priv, struct lttng_ust_probe_ctx *probe_ctx,
-			struct lttng_ust_ctx_value *value),
-		void *priv)
+			struct lttng_ust_ctx_value *value))
 {
 	int i, ret;
 	struct lttng_ust_ctx *ctx = *_ctx, *new_ctx;
@@ -291,7 +290,6 @@ int lttng_ust_context_set_provider_rcu(struct lttng_ust_ctx **_ctx,
 		new_fields[i].get_size = get_size;
 		new_fields[i].record = record;
 		new_fields[i].get_value = get_value;
-		new_fields[i].priv = priv;
 	}
 	new_ctx->fields = new_fields;
 	lttng_ust_rcu_assign_pointer(*_ctx, new_ctx);

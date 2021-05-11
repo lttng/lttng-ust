@@ -82,10 +82,10 @@ static struct lttng_ust_jni_ctx_entry *lookup_ctx_by_name(const char *ctx_name)
 static size_t get_size_cb(void *priv, struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
 		size_t offset)
 {
+	const struct lttng_ust_app_context *app_ctx = (const struct lttng_ust_app_context *) priv;
+	const char *ctx_name = app_ctx->ctx_name;
 	struct lttng_ust_jni_ctx_entry *jctx;
 	size_t size = 0;
-	struct lttng_ust_jni_provider *jni_provider = (struct lttng_ust_jni_provider *) priv;
-	const char *ctx_name = jni_provider->name;
 	enum lttng_ust_jni_type jni_type;
 
 	size += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(char));
@@ -147,9 +147,9 @@ static void record_cb(void *priv,
 		 struct lttng_ust_ring_buffer_ctx *ctx,
 		 struct lttng_ust_channel_buffer *lttng_chan_buf)
 {
+	const struct lttng_ust_app_context *app_ctx = (const struct lttng_ust_app_context *) priv;
+	const char *ctx_name = app_ctx->ctx_name;
 	struct lttng_ust_jni_ctx_entry *jctx;
-	struct lttng_ust_jni_provider *jni_provider = (struct lttng_ust_jni_provider *) priv;
-	const char *ctx_name = jni_provider->name;
 	enum lttng_ust_jni_type jni_type;
 	char sel_char;
 
@@ -252,9 +252,9 @@ static void record_cb(void *priv,
 static void get_value_cb(void *priv, struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
 		struct lttng_ust_ctx_value *value)
 {
-	struct lttng_ust_jni_provider *jni_provider = (struct lttng_ust_jni_provider *) priv;
+	const struct lttng_ust_app_context *app_ctx = (const struct lttng_ust_app_context *) priv;
+	const char *ctx_name = app_ctx->ctx_name;
 	struct lttng_ust_jni_ctx_entry *jctx;
-	const char *ctx_name = jni_provider->name;
 	enum lttng_ust_jni_type jni_type;
 
 	jctx = lookup_ctx_by_name(ctx_name);

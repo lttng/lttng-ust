@@ -68,6 +68,27 @@ struct lttng_ust_context_provider {
 };
 
 /*
+ * Application context callback private data
+ *
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
+ */
+
+struct lttng_ust_app_context {
+	uint32_t struct_size;
+
+	struct lttng_ust_event_field *event_field;
+	char *ctx_name;
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
+};
+
+/*
  * Returns an opaque pointer on success, which must be passed to
  * lttng_ust_context_provider_unregister for unregistration. Returns
  * NULL on error.
