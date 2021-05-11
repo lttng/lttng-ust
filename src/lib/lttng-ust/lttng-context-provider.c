@@ -27,12 +27,6 @@ struct lttng_ust_registered_context_provider {
 	struct cds_hlist_node node;
 };
 
-struct lttng_ust_app_ctx {
-	char *name;
-	struct lttng_ust_event_field *event_field;
-	struct lttng_ust_type_common *type;
-};
-
 #define CONTEXT_PROVIDER_HT_BITS	12
 #define CONTEXT_PROVIDER_HT_SIZE	(1U << CONTEXT_PROVIDER_HT_BITS)
 struct context_provider_ht {
@@ -125,16 +119,6 @@ end:
 	free(reg_provider);
 }
 
-static void destroy_app_ctx(void *priv)
-{
-	struct lttng_ust_app_ctx *app_ctx = (struct lttng_ust_app_ctx *) priv;
-
-	free(app_ctx->name);
-	free(app_ctx->event_field);
-	free(app_ctx->type);
-	free(app_ctx);
-}
-
 /*
  * Called with ust mutex held.
  * Add application context to array of context, even if the application
@@ -150,7 +134,6 @@ int lttng_ust_add_app_context_to_ctx_rcu(const char *name,
 	struct lttng_ust_ctx_field new_field = { 0 };
 	struct lttng_ust_event_field *event_field = NULL;
 	struct lttng_ust_type_common *type = NULL;
-	struct lttng_ust_app_ctx *app_ctx = NULL;
 	char *ctx_name;
 	int ret;
 
@@ -171,11 +154,6 @@ int lttng_ust_add_app_context_to_ctx_rcu(const char *name,
 		ret = -ENOMEM;
 		goto error_field_type_alloc;
 	}
-	app_ctx = zmalloc(sizeof(struct lttng_ust_app_ctx));
-	if (!app_ctx) {
-		ret = -ENOMEM;
-		goto error_app_ctx_alloc;
-	}
 	event_field->name = ctx_name;
 	type->type = lttng_ust_type_dynamic;
 	event_field->type = type;
@@ -189,25 +167,24 @@ int lttng_ust_add_app_context_to_ctx_rcu(const char *name,
 		new_field.get_size = provider->get_size;
 		new_field.record = provider->record;
 		new_field.get_value = provider->get_value;
+		new_field.priv = provider->priv;
 	} else {
 		new_field.get_size = lttng_ust_dummy_get_size;
 		new_field.record = lttng_ust_dummy_record;
 		new_field.get_value = lttng_ust_dummy_get_value;
+		new_field.priv = NULL;
 	}
-	new_field.destroy = destroy_app_ctx;
-	new_field.priv = app_ctx;
 	/*
 	 * For application context, add it by expanding
 	 * ctx array.
 	 */
 	ret = lttng_ust_context_append_rcu(ctx, &new_field);
 	if (ret) {
-		destroy_app_ctx(app_ctx);
-		return ret;
+		goto error_append;
 	}
 	return 0;
 
-error_app_ctx_alloc:
+error_append:
 	free(type);
 error_field_type_alloc:
 	free(ctx_name);
