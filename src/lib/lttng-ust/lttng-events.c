@@ -2002,8 +2002,7 @@ void lttng_ust_context_set_session_provider(const char *name,
 			struct lttng_ust_ring_buffer_ctx *ctx,
 			struct lttng_ust_channel_buffer *chan),
 		void (*get_value)(void *priv, struct lttng_ust_probe_ctx *probe_ctx,
-			struct lttng_ust_ctx_value *value),
-		void *priv)
+			struct lttng_ust_ctx_value *value))
 {
 	struct lttng_ust_session_private *session_priv;
 
@@ -2013,18 +2012,18 @@ void lttng_ust_context_set_session_provider(const char *name,
 		int ret;
 
 		ret = lttng_ust_context_set_provider_rcu(&session_priv->ctx,
-				name, get_size, record, get_value, priv);
+				name, get_size, record, get_value);
 		if (ret)
 			abort();
 		cds_list_for_each_entry(chan, &session_priv->chan_head, node) {
 			ret = lttng_ust_context_set_provider_rcu(&chan->ctx,
-					name, get_size, record, get_value, priv);
+					name, get_size, record, get_value);
 			if (ret)
 				abort();
 		}
 		cds_list_for_each_entry(event_recorder_priv, &session_priv->events_head, node) {
 			ret = lttng_ust_context_set_provider_rcu(&event_recorder_priv->ctx,
-					name, get_size, record, get_value, priv);
+					name, get_size, record, get_value);
 			if (ret)
 				abort();
 		}
@@ -2045,8 +2044,7 @@ void lttng_ust_context_set_event_notifier_group_provider(const char *name,
 			struct lttng_ust_ring_buffer_ctx *ctx,
 			struct lttng_ust_channel_buffer *chan),
 		void (*get_value)(void *priv, struct lttng_ust_probe_ctx *probe_ctx,
-			struct lttng_ust_ctx_value *value),
-		void *priv)
+			struct lttng_ust_ctx_value *value))
 {
 	struct lttng_event_notifier_group *event_notifier_group;
 
@@ -2055,7 +2053,7 @@ void lttng_ust_context_set_event_notifier_group_provider(const char *name,
 
 		ret = lttng_ust_context_set_provider_rcu(
 				&event_notifier_group->ctx,
-				name, get_size, record, get_value, priv);
+				name, get_size, record, get_value);
 		if (ret)
 			abort();
 	}

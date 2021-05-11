@@ -17,8 +17,7 @@ void lttng_ust_context_set_event_notifier_group_provider(const char *name,
 			struct lttng_ust_ring_buffer_ctx *ctx,
 			struct lttng_ust_channel_buffer *chan),
 		void (*get_value)(void *priv, struct lttng_ust_probe_ctx *probe_ctx,
-			struct lttng_ust_ctx_value *value),
-		void *priv)
+			struct lttng_ust_ctx_value *value))
 	__attribute__((visibility("hidden")));
 
 #endif /* _LTTNG_UST_CONTEXT_PROVIDER_INTERNAL_H */

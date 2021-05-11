@@ -89,11 +89,11 @@ struct lttng_ust_registered_context_provider *lttng_ust_context_provider_registe
 
 	lttng_ust_context_set_session_provider(provider->name,
 		provider->get_size, provider->record,
-		provider->get_value, provider->priv);
+		provider->get_value);
 
 	lttng_ust_context_set_event_notifier_group_provider(provider->name,
 		provider->get_size, provider->record,
-		provider->get_value, provider->priv);
+		provider->get_value);
 end:
 	ust_unlock();
 	return reg_provider;
@@ -107,17 +107,31 @@ void lttng_ust_context_provider_unregister(struct lttng_ust_registered_context_p
 		goto end;
 	lttng_ust_context_set_session_provider(reg_provider->provider->name,
 		lttng_ust_dummy_get_size, lttng_ust_dummy_record,
-		lttng_ust_dummy_get_value, NULL);
+		lttng_ust_dummy_get_value);
 
 	lttng_ust_context_set_event_notifier_group_provider(reg_provider->provider->name,
 		lttng_ust_dummy_get_size, lttng_ust_dummy_record,
-		lttng_ust_dummy_get_value, NULL);
+		lttng_ust_dummy_get_value);
 
 	cds_hlist_del(&reg_provider->node);
 end:
 	ust_unlock();
 	free(reg_provider);
 }
+
+static
+void app_context_destroy(void *priv)
+{
+	struct lttng_ust_app_context *app_ctx = (struct lttng_ust_app_context *) priv;
+
+	free(app_ctx->ctx_name);
+	free(app_ctx->event_field);
+}
+
+static
+const struct lttng_ust_type_common app_ctx_type = {
+	.type = lttng_ust_type_dynamic,
+};
 
 /*
  * Called with ust mutex held.
@@ -133,7 +147,7 @@ int lttng_ust_add_app_context_to_ctx_rcu(const char *name,
 	const struct lttng_ust_context_provider *provider;
 	struct lttng_ust_ctx_field new_field = { 0 };
 	struct lttng_ust_event_field *event_field = NULL;
-	struct lttng_ust_type_common *type = NULL;
+	struct lttng_ust_app_context *app_ctx = NULL;
 	char *ctx_name;
 	int ret;
 
@@ -149,14 +163,17 @@ int lttng_ust_add_app_context_to_ctx_rcu(const char *name,
 		ret = -ENOMEM;
 		goto error_field_name_alloc;
 	}
-	type = zmalloc(sizeof(struct lttng_ust_type_common));
-	if (!type) {
+	app_ctx = zmalloc(sizeof(struct lttng_ust_app_context));
+	if (!app_ctx) {
 		ret = -ENOMEM;
-		goto error_field_type_alloc;
+		goto error_app_ctx_alloc;
 	}
+	app_ctx->struct_size = sizeof(struct lttng_ust_app_context);
+	app_ctx->event_field = event_field;
+	app_ctx->ctx_name = ctx_name;
+
 	event_field->name = ctx_name;
-	type->type = lttng_ust_type_dynamic;
-	event_field->type = type;
+	event_field->type = &app_ctx_type;
 	new_field.event_field = event_field;
 	/*
 	 * If provider is not found, we add the context anyway, but
@@ -167,13 +184,13 @@ int lttng_ust_add_app_context_to_ctx_rcu(const char *name,
 		new_field.get_size = provider->get_size;
 		new_field.record = provider->record;
 		new_field.get_value = provider->get_value;
-		new_field.priv = provider->priv;
 	} else {
 		new_field.get_size = lttng_ust_dummy_get_size;
 		new_field.record = lttng_ust_dummy_record;
 		new_field.get_value = lttng_ust_dummy_get_value;
-		new_field.priv = NULL;
 	}
+	new_field.priv = app_ctx;
+	new_field.destroy = app_context_destroy;
 	/*
 	 * For application context, add it by expanding
 	 * ctx array.
@@ -185,8 +202,8 @@ int lttng_ust_add_app_context_to_ctx_rcu(const char *name,
 	return 0;
 
 error_append:
-	free(type);
-error_field_type_alloc:
+	free(app_ctx);
+error_app_ctx_alloc:
 	free(ctx_name);
 error_field_name_alloc:
 	free(event_field);
