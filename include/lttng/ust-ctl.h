@@ -25,7 +25,7 @@
 /* Default unix socket path */
 #define LTTNG_UST_SOCK_FILENAME					\
 	"lttng-ust-sock-"					\
-	lttng_ust_stringify(LTTNG_UST_ABI_MAJOR_VERSION)
+	lttng_ust_stringify(LTTNG_UST_ABI_MAJOR_VERSION_OLDEST_COMPATIBLE)
 
 /*
  * Shared memory files path are automatically related to shm root, e.g.
@@ -33,7 +33,7 @@
  */
 #define LTTNG_UST_WAIT_FILENAME					\
 	"lttng-ust-wait-"					\
-	lttng_ust_stringify(LTTNG_UST_ABI_MAJOR_VERSION)
+	lttng_ust_stringify(LTTNG_UST_ABI_MAJOR_VERSION_OLDEST_COMPATIBLE)
 
 struct lttng_ust_ctl_consumer_channel_attr {
 	enum lttng_ust_abi_chan_type type;
