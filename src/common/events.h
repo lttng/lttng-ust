@@ -408,10 +408,13 @@ struct lttng_ust_abi_channel_config {
 	void *unused3;
 	void *unused4;
 	int unused5;
+	unsigned int _deprecated1;
+	unsigned int _deprecated2;
 	struct cds_list_head unused6;
 	void *unused7;
 	int unused8;
 	void *unused9;
+	unsigned int _deprecated3:1;
 
 	/* Channel ID */
 	unsigned int id;
