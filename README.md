@@ -171,6 +171,10 @@ human-readable text log.
     variable `LTTNG_UST_DEBUG` when launching the user application. It
     can also be enabled at build time by compiling LTTng-UST with
     `-DLTTNG_UST_DEBUG`.
+  - `liblttng-ust` abort on critical can be activated by setting the
+    environment variable `LTTNG_UST_ABORT_ON_CRITICAL` when launching the user
+    application. It can also be enabled at build time by compiling LTTng-UST with
+    `-DLTTNG_UST_ABORT_ON_CRITICAL`.
   - The environment variable `LTTNG_UST_REGISTER_TIMEOUT` can be used to
     specify how long the applications should wait for the session
     daemon  _registration done_ command before proceeding to execute the
