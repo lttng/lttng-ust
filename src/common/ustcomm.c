@@ -214,7 +214,7 @@ int ustcomm_listen_unix_sock(int sock)
 /*
  * ustcomm_close_unix_sock
  *
- * Shutdown cleanly a unix socket.
+ * Close unix socket.
  *
  * Handles fd tracker internally.
  */
@@ -232,6 +232,24 @@ int ustcomm_close_unix_sock(int sock)
 	}
 	lttng_ust_unlock_fd_tracker();
 
+	return ret;
+}
+
+/*
+ * ustcomm_shutdown_unix_sock
+ *
+ * Shutdown unix socket. Keeps the file descriptor open, but shutdown
+ * communication.
+ */
+int ustcomm_shutdown_unix_sock(int sock)
+{
+	int ret;
+
+	ret = shutdown(sock, SHUT_RDWR);
+	if (ret) {
+		PERROR("Socket shutdown error");
+		ret = -errno;
+	}
 	return ret;
 }
 
@@ -268,17 +286,13 @@ ssize_t ustcomm_recv_unix_sock(int sock, void *buf, size_t len)
 	} while ((ret > 0 && ret < len_last) || (ret < 0 && errno == EINTR));
 
 	if (ret < 0) {
-		int shutret;
-
 		if (errno != EPIPE && errno != ECONNRESET && errno != ECONNREFUSED)
 			PERROR("recvmsg");
 		ret = -errno;
 		if (ret == -ECONNRESET || ret == -ECONNREFUSED)
 			ret = -EPIPE;
 
-		shutret = shutdown(sock, SHUT_RDWR);
-		if (shutret)
-			ERR("Socket shutdown error");
+		(void) ustcomm_shutdown_unix_sock(sock);
 	} else if (ret > 0) {
 		ret = len;
 	}
@@ -318,17 +332,13 @@ ssize_t ustcomm_send_unix_sock(int sock, const void *buf, size_t len)
 	} while (ret < 0 && errno == EINTR);
 
 	if (ret < 0) {
-		int shutret;
-
 		if (errno != EPIPE && errno != ECONNRESET)
 			PERROR("sendmsg");
 		ret = -errno;
 		if (ret == -ECONNRESET)
 			ret = -EPIPE;
 
-		shutret = shutdown(sock, SHUT_RDWR);
-		if (shutret)
-			ERR("Socket shutdown error");
+		(void) ustcomm_shutdown_unix_sock(sock);
 	}
 
 	return ret;
