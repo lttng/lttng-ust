@@ -312,6 +312,17 @@ int lttng_ust_ctl_create_event(int sock, struct lttng_ust_abi_event *ev,
 	return 0;
 }
 
+/*
+ * Protocol for LTTNG_UST_ABI_CONTEXT command:
+ *
+ * - send:     struct ustcomm_ust_msg
+ * - send:     var len ctx_name
+ * - receive:  struct ustcomm_ust_reply
+ *
+ * TODO: At the next breaking protocol bump, we should indicate the total
+ * command message length as part of a message header so that the protocol can
+ * recover from invalid command errors.
+ */
 int lttng_ust_ctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
 		struct lttng_ust_abi_object_data *obj_data,
 		struct lttng_ust_abi_object_data **_context_data)
@@ -384,7 +395,14 @@ int lttng_ust_ctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
 	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
 	if (ret < 0) {
 		goto end;
+	} else if (ret == -EINVAL) {
+		/*
+		 * Command unknown from remote end. The communication socket is
+		 * now out-of-sync and needs to be shutdown.
+		 */
+		(void) ustcomm_shutdown_unix_sock(sock);
 	}
+
 	context_data->handle = -1;
 	DBG("Context created successfully");
 	*_context_data = context_data;
@@ -395,6 +413,17 @@ end:
 	return ret;
 }
 
+/*
+ * Protocol for LTTNG_UST_ABI_FILTER command:
+ *
+ * - send:     struct ustcomm_ust_msg
+ * - send:     var len bytecode
+ * - receive:  struct ustcomm_ust_reply
+ *
+ * TODO: At the next breaking protocol bump, we should indicate the total
+ * command message length as part of a message header so that the protocol can
+ * recover from invalid command errors.
+ */
 int lttng_ust_ctl_set_filter(int sock, struct lttng_ust_abi_filter_bytecode *bytecode,
 		struct lttng_ust_abi_object_data *obj_data)
 {
@@ -423,9 +452,25 @@ int lttng_ust_ctl_set_filter(int sock, struct lttng_ust_abi_filter_bytecode *byt
 	}
 	if (ret != bytecode->len)
 		return -EINVAL;
-	return ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	if (ret == -EINVAL) {
+		/*
+		 * Command unknown from remote end. The communication socket is
+		 * now out-of-sync and needs to be shutdown.
+		 */
+		(void) ustcomm_shutdown_unix_sock(sock);
+	}
+	return ret;
 }
 
+/*
+ * Protocol for LTTNG_UST_ABI_CAPTURE command:
+ *
+ * - send:     struct ustcomm_ust_msg
+ * - receive:  struct ustcomm_ust_reply
+ * - send:     var len bytecode
+ * - receive:  struct ustcomm_ust_reply (actual command return code)
+ */
 int lttng_ust_ctl_set_capture(int sock, struct lttng_ust_abi_capture_bytecode *bytecode,
 		struct lttng_ust_abi_object_data *obj_data)
 {
@@ -443,7 +488,7 @@ int lttng_ust_ctl_set_capture(int sock, struct lttng_ust_abi_capture_bytecode *b
 	lum.u.capture.reloc_offset = bytecode->reloc_offset;
 	lum.u.capture.seqnum = bytecode->seqnum;
 
-	ret = ustcomm_send_app_msg(sock, &lum);
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
 	/* send var len bytecode */
@@ -457,6 +502,17 @@ int lttng_ust_ctl_set_capture(int sock, struct lttng_ust_abi_capture_bytecode *b
 	return ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
 }
 
+/*
+ * Protocol for LTTNG_UST_ABI_EXCLUSION command:
+ *
+ * - send:     struct ustcomm_ust_msg
+ * - send:     var len exclusion names
+ * - receive:  struct ustcomm_ust_reply
+ *
+ * TODO: At the next breaking protocol bump, we should indicate the total
+ * command message length as part of a message header so that the protocol can
+ * recover from invalid command errors.
+ */
 int lttng_ust_ctl_set_exclusion(int sock, struct lttng_ust_abi_event_exclusion *exclusion,
 		struct lttng_ust_abi_object_data *obj_data)
 {
@@ -488,7 +544,15 @@ int lttng_ust_ctl_set_exclusion(int sock, struct lttng_ust_abi_event_exclusion *
 	if (ret != exclusion->count * LTTNG_UST_ABI_SYM_NAME_LEN) {
 		return -EINVAL;
 	}
-	return ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	if (ret == -EINVAL) {
+		/*
+		 * Command unknown from remote end. The communication socket is
+		 * now out-of-sync and needs to be shutdown.
+		 */
+		(void) ustcomm_shutdown_unix_sock(sock);
+	}
+	return ret;
 }
 
 /* Enable event, channel and session ioctl */
@@ -547,6 +611,14 @@ int lttng_ust_ctl_stop_session(int sock, int handle)
 	return lttng_ust_ctl_disable(sock, &obj);
 }
 
+/*
+ * Protocol for LTTNG_UST_ABI_EVENT_NOTIFIER_GROUP_CREATE command:
+ *
+ * - send:     struct ustcomm_ust_msg
+ * - receive:  struct ustcomm_ust_reply
+ * - send:     file descriptor
+ * - receive:  struct ustcomm_ust_reply (actual command return code)
+ */
 int lttng_ust_ctl_create_event_notifier_group(int sock, int pipe_fd,
 		struct lttng_ust_abi_object_data **_event_notifier_group_data)
 {
@@ -569,7 +641,7 @@ int lttng_ust_ctl_create_event_notifier_group(int sock, int pipe_fd,
 	lum.handle = LTTNG_UST_ABI_ROOT_HANDLE;
 	lum.cmd = LTTNG_UST_ABI_EVENT_NOTIFIER_GROUP_CREATE;
 
-	ret = ustcomm_send_app_msg(sock, &lum);
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		goto error;
 
@@ -598,6 +670,14 @@ end:
 	return ret;
 }
 
+/*
+ * Protocol for LTTNG_UST_ABI_EVENT_NOTIFIER_CREATE command:
+ *
+ * - send:     struct ustcomm_ust_msg
+ * - receive:  struct ustcomm_ust_reply
+ * - send:     struct lttng_ust_abi_event_notifier
+ * - receive:  struct ustcomm_ust_reply (actual command return code)
+ */
 int lttng_ust_ctl_create_event_notifier(int sock, struct lttng_ust_abi_event_notifier *event_notifier,
 		struct lttng_ust_abi_object_data *event_notifier_group,
 		struct lttng_ust_abi_object_data **_event_notifier_data)
@@ -622,7 +702,7 @@ int lttng_ust_ctl_create_event_notifier(int sock, struct lttng_ust_abi_event_not
 	lum.cmd = LTTNG_UST_ABI_EVENT_NOTIFIER_CREATE;
 	lum.u.event_notifier.len = sizeof(*event_notifier);
 
-	ret = ustcomm_send_app_msg(sock, &lum);
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret) {
 		free(event_notifier_data);
 		return ret;
@@ -1048,6 +1128,17 @@ error_alloc:
 	return ret;
 }
 
+/*
+ * Protocol for LTTNG_UST_ABI_CHANNEL command:
+ *
+ * - send:     struct ustcomm_ust_msg
+ * - send:     file descriptors and channel data
+ * - receive:  struct ustcomm_ust_reply
+ *
+ * TODO: At the next breaking protocol bump, we should indicate the total
+ * command message length as part of a message header so that the protocol can
+ * recover from invalid command errors.
+ */
 int lttng_ust_ctl_send_channel_to_ust(int sock, int session_handle,
 		struct lttng_ust_abi_object_data *channel_data)
 {
@@ -1078,10 +1169,27 @@ int lttng_ust_ctl_send_channel_to_ust(int sock, int session_handle,
 	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
 	if (!ret) {
 		channel_data->handle = lur.ret_val;
+	} else if (ret == -EINVAL) {
+		/*
+		 * Command unknown from remote end. The communication socket is
+		 * now out-of-sync and needs to be shutdown.
+		 */
+		(void) ustcomm_shutdown_unix_sock(sock);
 	}
 	return ret;
 }
 
+/*
+ * Protocol for LTTNG_UST_ABI_STREAM command:
+ *
+ * - send:     struct ustcomm_ust_msg
+ * - send:     file descriptors and stream data
+ * - receive:  struct ustcomm_ust_reply
+ *
+ * TODO: At the next breaking protocol bump, we should indicate the total
+ * command message length as part of a message header so that the protocol can
+ * recover from invalid command errors.
+ */
 int lttng_ust_ctl_send_stream_to_ust(int sock,
 		struct lttng_ust_abi_object_data *channel_data,
 		struct lttng_ust_abi_object_data *stream_data)
@@ -1109,7 +1217,15 @@ int lttng_ust_ctl_send_stream_to_ust(int sock,
 			stream_data->u.stream.wakeup_fd, 1);
 	if (ret)
 		return ret;
-	return ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	if (ret == -EINVAL) {
+		/*
+		 * Command unknown from remote end. The communication socket is
+		 * now out-of-sync and needs to be shutdown.
+		 */
+		(void) ustcomm_shutdown_unix_sock(sock);
+	}
+	return ret;
 }
 
 int lttng_ust_ctl_duplicate_ust_object_data(struct lttng_ust_abi_object_data **dest,
@@ -3013,6 +3129,14 @@ void lttng_ust_ctl_destroy_counter(struct lttng_ust_ctl_daemon_counter *counter)
 	free(counter);
 }
 
+/*
+ * Protocol for LTTNG_UST_ABI_COUNTER command:
+ *
+ * - send:     struct ustcomm_ust_msg
+ * - receive:  struct ustcomm_ust_reply
+ * - send:     counter data
+ * - receive:  struct ustcomm_ust_reply (actual command return code)
+ */
 int lttng_ust_ctl_send_counter_data_to_ust(int sock, int parent_handle,
 		struct lttng_ust_abi_object_data *counter_data)
 {
@@ -3030,7 +3154,7 @@ int lttng_ust_ctl_send_counter_data_to_ust(int sock, int parent_handle,
 	lum.handle = parent_handle;
 	lum.cmd = LTTNG_UST_ABI_COUNTER;
 	lum.u.counter.len = size;
-	ret = ustcomm_send_app_msg(sock, &lum);
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
 
@@ -3050,6 +3174,14 @@ int lttng_ust_ctl_send_counter_data_to_ust(int sock, int parent_handle,
 	return ret;
 }
 
+/*
+ * Protocol for LTTNG_UST_ABI_COUNTER_GLOBAL command:
+ *
+ * - send:     struct ustcomm_ust_msg
+ * - receive:  struct ustcomm_ust_reply
+ * - send:     file descriptor
+ * - receive:  struct ustcomm_ust_reply (actual command return code)
+ */
 int lttng_ust_ctl_send_counter_global_data_to_ust(int sock,
 		struct lttng_ust_abi_object_data *counter_data,
 		struct lttng_ust_abi_object_data *counter_global_data)
@@ -3068,7 +3200,7 @@ int lttng_ust_ctl_send_counter_global_data_to_ust(int sock,
 	lum.handle = counter_data->handle;	/* parent handle */
 	lum.cmd = LTTNG_UST_ABI_COUNTER_GLOBAL;
 	lum.u.counter_global.len = size;
-	ret = ustcomm_send_app_msg(sock, &lum);
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
 
@@ -3088,6 +3220,14 @@ int lttng_ust_ctl_send_counter_global_data_to_ust(int sock,
 	return ret;
 }
 
+/*
+ * Protocol for LTTNG_UST_ABI_COUNTER_CPU command:
+ *
+ * - send:     struct ustcomm_ust_msg
+ * - receive:  struct ustcomm_ust_reply
+ * - send:     file descriptor
+ * - receive:  struct ustcomm_ust_reply (actual command return code)
+ */
 int lttng_ust_ctl_send_counter_cpu_data_to_ust(int sock,
 		struct lttng_ust_abi_object_data *counter_data,
 		struct lttng_ust_abi_object_data *counter_cpu_data)
@@ -3107,7 +3247,7 @@ int lttng_ust_ctl_send_counter_cpu_data_to_ust(int sock,
 	lum.cmd = LTTNG_UST_ABI_COUNTER_CPU;
 	lum.u.counter_cpu.len = size;
 	lum.u.counter_cpu.cpu_nr = counter_cpu_data->u.counter_cpu.cpu_nr;
-	ret = ustcomm_send_app_msg(sock, &lum);
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
 
