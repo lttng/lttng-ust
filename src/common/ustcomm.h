@@ -207,6 +207,9 @@ int ustcomm_accept_unix_sock(int sock)
 int ustcomm_listen_unix_sock(int sock)
 	__attribute__((visibility("hidden")));
 
+int ustcomm_shutdown_unix_sock(int sock)
+	__attribute__((visibility("hidden")));
+
 int ustcomm_close_unix_sock(int sock)
 	__attribute__((visibility("hidden")));
 
