@@ -32,11 +32,12 @@ static int lttng_ust_getenv_is_init = 0;
 
 static struct lttng_env lttng_env[] = {
 	/*
-	 * LTTNG_UST_DEBUG is used directly by snprintf, because it
-	 * needs to be already set for ERR() used in
-	 * lttng_ust_getenv_init().
+	 * LTTNG_UST_DEBUG and LTTNG_UST_ABORT_ON_CRITICAL are used directly by
+	 * the internal logging, because they need to be already set for ERR()
+	 * used in lttng_ust_getenv_init().
 	 */
 	{ "LTTNG_UST_DEBUG", LTTNG_ENV_NOT_SECURE, NULL, },
+	{ "LTTNG_UST_ABORT_ON_CRITICAL", LTTNG_ENV_NOT_SECURE, NULL, },
 
 	/* Env. var. which can be used in setuid/setgid executables. */
 	{ "LTTNG_UST_WITHOUT_BADDR_STATEDUMP", LTTNG_ENV_NOT_SECURE, NULL, },

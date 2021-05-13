@@ -29,21 +29,27 @@ enum lttng_ust_log_level {
 	LTTNG_UST_LOG_LEVEL_DEBUG,
 };
 
+enum lttng_ust_log_critical_action {
+	LTTNG_UST_LOG_CRITICAL_ACTION_UNKNOWN = 0,
+	LTTNG_UST_LOG_CRITICAL_ACTION_NONE,
+	LTTNG_UST_LOG_CRITICAL_ACTION_ABORT,
+};
+
 extern int lttng_ust_log_level			/* enum lttng_ust_log_level */
+	__attribute__((visibility("hidden")));
+
+extern int lttng_ust_log_critical_action		/* enum lttng_ust_log_critical_action */
 	__attribute__((visibility("hidden")));
 
 /*
  * Initialize the global log level from the "LTTNG_UST_DEBUG" environment
- * variable.
+ * variable and the global log critical action from "LTTNG_UST_ABORT_ON_CRITICAL".
  *
  * This could end up being called concurrently by multiple threads but doesn't
  * require a mutex since the input is invariant across threads and the result
  * will be the same.
- *
- * Return the current log level to save the caller a second read of the global
- * log level.
  */
-int lttng_ust_logging_init(void)
+void lttng_ust_logging_init(void)
 	__attribute__((visibility("hidden")));
 
 #ifdef LTTNG_UST_DEBUG
@@ -61,15 +67,41 @@ bool lttng_ust_logging_debug_enabled(void)
 	current_log_level = CMM_LOAD_SHARED(lttng_ust_log_level);
 
 	/* If the global log level is unknown, lazy-initialize it. */
-	if (caa_unlikely(current_log_level == LTTNG_UST_LOG_LEVEL_UNKNOWN))
-		current_log_level = lttng_ust_logging_init();
+	if (caa_unlikely(current_log_level == LTTNG_UST_LOG_LEVEL_UNKNOWN)) {
+		lttng_ust_logging_init();
+		current_log_level = CMM_LOAD_SHARED(lttng_ust_log_level);
+	}
 
 	return current_log_level == LTTNG_UST_LOG_LEVEL_DEBUG;
 }
 #endif /* #ifdef LTTNG_UST_DEBUG */
 
+#ifdef LTTNG_UST_ABORT_ON_CRITICAL
+static inline
+bool lttng_ust_logging_abort_on_critical_enabled(void)
+{
+	return true;
+}
+#else /* #ifdef LTTNG_UST_ABORT_ON_CRITICAL */
+static inline
+bool lttng_ust_logging_abort_on_critical_enabled(void)
+{
+	int current_log_critical_action;
+
+	current_log_critical_action = CMM_LOAD_SHARED(lttng_ust_log_critical_action);
+
+	/* If the global log critical action is unknown, lazy-initialize it. */
+	if (caa_unlikely(current_log_critical_action == LTTNG_UST_LOG_CRITICAL_ACTION_UNKNOWN)) {
+		lttng_ust_logging_init();
+		current_log_critical_action = CMM_LOAD_SHARED(lttng_ust_log_critical_action);
+	}
+
+	return current_log_critical_action == LTTNG_UST_LOG_CRITICAL_ACTION_ABORT;
+}
+#endif /* #ifdef LTTNG_UST_ABORT_ON_CRITICAL */
+
 /*
- * The default component for error messages.
+ * The default component for log statements.
  */
 #ifndef UST_COMPONENT
 #define UST_COMPONENT libust
@@ -113,7 +145,13 @@ do {									\
 #define DBG_raw(fmt, args...)	sigsafe_print_err(fmt, ## args)
 #define WARN(fmt, args...)	ERRMSG("Warning: " fmt, ## args)
 #define ERR(fmt, args...)	ERRMSG("Error: " fmt, ## args)
-#define BUG(fmt, args...)	ERRMSG("BUG: " fmt, ## args)
+#define CRIT(fmt, args...)						\
+	do {								\
+		ERRMSG("Critical: " fmt, ## args);			\
+		if (lttng_ust_logging_abort_on_critical_enabled()) {	\
+			abort();					\
+		}							\
+	} while(0)
 
 #if !defined(__GLIBC__) || ((_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !defined(_GNU_SOURCE))
 /*
