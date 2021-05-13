@@ -855,6 +855,49 @@ end:
 }
 
 static
+void prepare_cmd_reply(struct ustcomm_ust_reply *lur, uint32_t handle, uint32_t cmd, int ret)
+{
+	lur->handle = handle;
+	lur->cmd = cmd;
+	lur->ret_val = ret;
+	if (ret >= 0) {
+		lur->ret_code = LTTNG_UST_OK;
+	} else {
+		/*
+		 * Use -LTTNG_UST_ERR as wildcard for UST internal
+		 * error that are not caused by the transport, except if
+		 * we already have a more precise error message to
+		 * report.
+		 */
+		if (ret > -LTTNG_UST_ERR) {
+			/* Translate code to UST error. */
+			switch (ret) {
+			case -EEXIST:
+				lur->ret_code = -LTTNG_UST_ERR_EXIST;
+				break;
+			case -EINVAL:
+				lur->ret_code = -LTTNG_UST_ERR_INVAL;
+				break;
+			case -ENOENT:
+				lur->ret_code = -LTTNG_UST_ERR_NOENT;
+				break;
+			case -EPERM:
+				lur->ret_code = -LTTNG_UST_ERR_PERM;
+				break;
+			case -ENOSYS:
+				lur->ret_code = -LTTNG_UST_ERR_NOSYS;
+				break;
+			default:
+				lur->ret_code = -LTTNG_UST_ERR;
+				break;
+			}
+		} else {
+			lur->ret_code = ret;
+		}
+	}
+}
+
+static
 int handle_message(struct sock_info *sock_info,
 		int sock, struct ustcomm_ust_msg *lum)
 {
@@ -876,6 +919,52 @@ int handle_message(struct sock_info *sock_info,
 	if (!ops) {
 		ret = -ENOENT;
 		goto error;
+	}
+
+	switch (lum->cmd) {
+	case LTTNG_UST_ABI_FILTER:
+	case LTTNG_UST_ABI_EXCLUSION:
+	case LTTNG_UST_ABI_CHANNEL:
+	case LTTNG_UST_ABI_STREAM:
+	case LTTNG_UST_ABI_CONTEXT:
+		/*
+		 * Those commands send additional payload after struct
+		 * ustcomm_ust_msg, which makes it pretty much impossible to
+		 * deal with "unknown command" errors without leaving the
+		 * communication pipe in a out-of-sync state. This is part of
+		 * the ABI between liblttng-ust-ctl and liblttng-ust, and
+		 * should be fixed on the next breaking
+		 * LTTNG_UST_ABI_MAJOR_VERSION protocol bump by indicating the
+		 * total command message length as part of a message header so
+		 * that the protocol can recover from invalid command errors.
+		 */
+		break;
+
+	case LTTNG_UST_ABI_CAPTURE:
+	case LTTNG_UST_ABI_COUNTER:
+	case LTTNG_UST_ABI_COUNTER_GLOBAL:
+	case LTTNG_UST_ABI_COUNTER_CPU:
+	case LTTNG_UST_ABI_EVENT_NOTIFIER_CREATE:
+	case LTTNG_UST_ABI_EVENT_NOTIFIER_GROUP_CREATE:
+		/*
+		 * Those commands expect a reply to the struct ustcomm_ust_msg
+		 * before sending additional payload.
+		 */
+		prepare_cmd_reply(&lur, lum->handle, lum->cmd, 0);
+
+		ret = send_reply(sock, &lur);
+		if (ret < 0) {
+			DBG("error sending reply");
+			goto error;
+		}
+		break;
+
+	default:
+		/*
+		 * Other commands either don't send additional payload, or are
+		 * unknown.
+		 */
+		break;
 	}
 
 	switch (lum->cmd) {
@@ -1295,44 +1384,8 @@ int handle_message(struct sock_info *sock_info,
 		break;
 	}
 
-	lur.handle = lum->handle;
-	lur.cmd = lum->cmd;
-	lur.ret_val = ret;
-	if (ret >= 0) {
-		lur.ret_code = LTTNG_UST_OK;
-	} else {
-		/*
-		 * Use -LTTNG_UST_ERR as wildcard for UST internal
-		 * error that are not caused by the transport, except if
-		 * we already have a more precise error message to
-		 * report.
-		 */
-		if (ret > -LTTNG_UST_ERR) {
-			/* Translate code to UST error. */
-			switch (ret) {
-			case -EEXIST:
-				lur.ret_code = -LTTNG_UST_ERR_EXIST;
-				break;
-			case -EINVAL:
-				lur.ret_code = -LTTNG_UST_ERR_INVAL;
-				break;
-			case -ENOENT:
-				lur.ret_code = -LTTNG_UST_ERR_NOENT;
-				break;
-			case -EPERM:
-				lur.ret_code = -LTTNG_UST_ERR_PERM;
-				break;
-			case -ENOSYS:
-				lur.ret_code = -LTTNG_UST_ERR_NOSYS;
-				break;
-			default:
-				lur.ret_code = -LTTNG_UST_ERR;
-				break;
-			}
-		} else {
-			lur.ret_code = ret;
-		}
-	}
+	prepare_cmd_reply(&lur, lum->handle, lum->cmd, ret);
+
 	if (ret >= 0) {
 		switch (lum->cmd) {
 		case LTTNG_UST_ABI_TRACER_VERSION:
