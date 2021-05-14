@@ -275,7 +275,8 @@ int ustcomm_send_reg_msg(int sock,
 		uint32_t uint16_t_alignment,
 		uint32_t uint32_t_alignment,
 		uint32_t uint64_t_alignment,
-		uint32_t long_alignment)
+		uint32_t long_alignment,
+		const char *procname)
 	__attribute__((visibility("hidden")));
 
 /*
