@@ -1,3 +1,18 @@
+2021-05-15 (National Dance Like a Chicken Day) lttng-ust 2.12.2
+	* tests: benchmark: improve benchmark scalability accuracy
+	* tests: benchmark: use cpu-bound workload, calculate average and std.dev.
+	* tests: improve benchmark script
+	* compiler warning cleanup: is_signed_type: compare -1 to 1
+	* Fix: properly compare type enumeration
+	* fix: use the configured cmake binary
+	* Fix: bytecode linker: validate event and field array/sequence encoding
+	* fix: unix socket peercred on FreeBSD
+	* Fix: uninitialized variable in lib_ring_buffer_channel_switch_timer_start
+	* Fix: Use unix socket peercred for pid, uid, gid credentials
+	* Fix: stream fd leaks on error
+	* Fix: channel leak on error
+	* Fix: lttng_abi_map_channel should be static
+
 2021-02-17 (Random Act of Kindness Day) lttng-ust 2.12.1
 	* Fix: Use default visibility for tracepoint provider symbol
 	* Fix: configure: support Autoconf 2.70
