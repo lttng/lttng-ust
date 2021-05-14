@@ -394,15 +394,15 @@ int lttng_ust_ctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
 	}
 	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
 	if (ret < 0) {
+		if (ret == -EINVAL) {
+			/*
+			 * Command unknown from remote end. The communication socket is
+			 * now out-of-sync and needs to be shutdown.
+			 */
+			(void) ustcomm_shutdown_unix_sock(sock);
+		}
 		goto end;
-	} else if (ret == -EINVAL) {
-		/*
-		 * Command unknown from remote end. The communication socket is
-		 * now out-of-sync and needs to be shutdown.
-		 */
-		(void) ustcomm_shutdown_unix_sock(sock);
 	}
-
 	context_data->handle = -1;
 	DBG("Context created successfully");
 	*_context_data = context_data;
