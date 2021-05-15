@@ -53,6 +53,7 @@ must be the same in all the `TRACEPOINT_EVENT()` macros of 'TEMPLATE'.
 
 Here's an example:
 
+[source,c]
 ---------------------------------------
 TRACEPOINT_EVENT(
     // Tracepoint provider name
