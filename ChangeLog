@@ -1,3 +1,26 @@
+2021-05-14 (National Dance Like a Chicken Day) lttng-ust 2.13.0-rc2
+	* Fix: ustcomm: application name uses the '-ust'-suffixed thread name
+	* Add abi0 conflict tests
+	* Detect unsupported use of .so.0 and .so.1 libraries within same process
+	* Add critical log level
+	* Fix: shutdown communication socket on -EINVAL
+	* Fix: lttng-ust control protocol handling of variable length command data
+	* ustcomm: implement shutdown API
+	* Fix: add missing fields in struct lttng_ust_abi_channel_config
+	* Fix: liblttng-ust-ctl: keep using lttng-ust-sock-8 and lttng-ust-wait-8 filenames
+	* liblttng-ust-ctl: Implement SIGBUS handling
+	* Fix: Java application context: pass application context argument to callbacks
+	* Fix: java application context segmentation fault
+	* Add api0 compile tests
+	* Move current compile tests to 'api1'
+	* fix: namespacing of 'tp_rcu_read_lock'
+	* Validate provider version for event enum field types
+	* Validate provider version for event class
+	* Add probe descriptor field to enum and event class
+	* Refactoring: tracepoint: allow explicit tracepoint instance provider name
+	* Fix: rename struct lttng_bytecode_runtime to struct lttng_ust_bytecode_runtime
+	* Remove unused ip field from struct lttng_ust_ring_buffer_ctx_private
+
 2021-04-23 (National Take a Chance (on me ?) Day) lttng-ust 2.13.0-rc1
 	* Set the 2.13 release codename and description
 	* sequence type: use previous field for length if length_name is NULL
