@@ -18,18 +18,34 @@
 #define LTTNG_UST_LIB_ABI0_SO_NAME "libfakeust0.so"
 #define LTTNG_UST_LIB_ABI1_SO_NAME "liblttng-ust.so.1"
 
+struct lib_desc {
+	const char *soname;
+	void *handle;
+};
+
+static struct lib_desc lib_desc[] = {
+	[0] = {
+		.soname = LTTNG_UST_LIB_ABI0_SO_NAME,
+	},
+	[1] = {
+		.soname = LTTNG_UST_LIB_ABI1_SO_NAME,
+	},
+	[2] = {
+		.soname = LTTNG_UST_LIB_ABI1_SO_NAME,
+	},
+};
+
 static
-int dlopen_ust(const char *lib_soname)
+int dlopen_ust(struct lib_desc *desc)
 {
 	int ret = EXIT_SUCCESS;
-	void *handle;
 
-	handle = dlopen(lib_soname, RTLD_NOW | RTLD_GLOBAL);
-	if (!handle) {
-		printf("Error: dlopen of liblttng-ust shared library (%s).\n", lib_soname);
+	desc->handle = dlopen(desc->soname, RTLD_NOW | RTLD_GLOBAL);
+	if (!desc->handle) {
+		printf("Error: dlopen of liblttng-ust shared library (%s).\n", desc->soname);
 		ret = EXIT_FAILURE;
 	} else {
-		printf("Success: dlopen of liblttng-ust shared library (%s).\n", lib_soname);
+		printf("Success: dlopen of liblttng-ust shared library (%s).\n", desc->soname);
 	}
 
 	return ret;
@@ -38,13 +54,13 @@ int dlopen_ust(const char *lib_soname)
 static
 int dlopen_abi0(void)
 {
-	return dlopen_ust(LTTNG_UST_LIB_ABI0_SO_NAME);
+	return dlopen_ust(&lib_desc[0]);
 }
 
 static
 int dlopen_abi1(void)
 {
-	return dlopen_ust(LTTNG_UST_LIB_ABI1_SO_NAME);
+	return dlopen_ust(&lib_desc[1]);
 }
 
 static
@@ -52,11 +68,11 @@ int dlopen_abi0_abi1(void)
 {
 	int ret = EXIT_SUCCESS;
 
-	ret = dlopen_ust(LTTNG_UST_LIB_ABI0_SO_NAME);
+	ret = dlopen_ust(&lib_desc[0]);
 	if (ret != EXIT_SUCCESS)
 		return ret;
 
-	ret = dlopen_ust(LTTNG_UST_LIB_ABI1_SO_NAME);
+	ret = dlopen_ust(&lib_desc[1]);
 
 	return ret;
 }
@@ -66,11 +82,11 @@ int dlopen_abi1_abi0(void)
 {
 	int ret = EXIT_SUCCESS;
 
-	ret = dlopen_ust(LTTNG_UST_LIB_ABI1_SO_NAME);
+	ret = dlopen_ust(&lib_desc[1]);
 	if (ret != EXIT_SUCCESS)
 		return ret;
 
-	ret = dlopen_ust(LTTNG_UST_LIB_ABI0_SO_NAME);
+	ret = dlopen_ust(&lib_desc[0]);
 
 	return ret;
 }
@@ -80,11 +96,11 @@ int dlopen_abi1_abi1(void)
 {
 	int ret = EXIT_SUCCESS;
 
-	ret = dlopen_ust(LTTNG_UST_LIB_ABI1_SO_NAME);
+	ret = dlopen_ust(&lib_desc[1]);
 	if (ret != EXIT_SUCCESS)
 		return ret;
 
-	ret = dlopen_ust(LTTNG_UST_LIB_ABI1_SO_NAME);
+	ret = dlopen_ust(&lib_desc[2]);
 
 	return ret;
 }
@@ -100,14 +116,12 @@ int main(int argc, char **argv)
 {
 	int ret = EXIT_SUCCESS;
 	const char *test_type;
-
 	int i, netint;
 	long values[] = { 1, 2, 3 };
 	char text[10] = "test";
 	double dbl = 2.0;
 	float flt = 2222.0;
 	bool mybool = 123;	/* should print "1" */
-
 
 	if (argc != 2) {
 		usage(argv);
