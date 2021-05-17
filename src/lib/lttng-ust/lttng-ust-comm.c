@@ -2125,6 +2125,10 @@ void lttng_ust_check_soname_0(void)
  * Expose a canary symbol of the previous ABI to ensure we catch uses of a
  * liblttng-ust.so.0 dlopen'd after .so.1 has been loaded. Use a different
  * symbol than the detection code to ensure we don't detect ourself.
+ *
+ * This scheme will only work on systems where the global symbol table has
+ * priority when resolving the symbols of a dlopened shared object, which is
+ * the case on Linux but not on FreeBSD.
  */
 void init_usterr(void);
 void init_usterr(void)

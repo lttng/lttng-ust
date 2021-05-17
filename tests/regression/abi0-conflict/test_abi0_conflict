@@ -24,10 +24,20 @@ LIBUST1="${LIBUST1_PATH}/liblttng-ust.so.1"
 STD_OUTPUT="/dev/null"
 STD_ERROR="/dev/null"
 
+NUM_TESTS=22
+
+# On FreeBSD, symbol resolution when dlopening a shared object will always
+# favor symbols local to this shared object and thus our canary function will
+# never be called which breaks our abi conflict detection when abi1 is loaded
+# first.
+if [ "$UST_OS_TYPE" = "freebsd" ]; then
+	NUM_TESTS=$((NUM_TESTS - 4))
+fi
+
 # Force abort on CRIT() to detect ABI conflicts
 export LTTNG_UST_ABORT_ON_CRITICAL=1
 
-plan_tests 22
+plan_tests $NUM_TESTS
 
 ###
 ##  LD_PRELOAD tests
@@ -35,7 +45,7 @@ plan_tests 22
 
 diag "LD_PRELOAD"
 
-## App NOT linked on liblttn-ust
+## App NOT linked on liblttng-ust
 
 "${CURDIR}/app_noust" >"$STD_OUTPUT" 2>"$STD_ERROR"
 ok $? "LD_PRELOAD: no-ust app works"
@@ -50,7 +60,7 @@ LD_PRELOAD="${LIBUST1}:${LIBFAKEUST0}" "${CURDIR}/app_noust" >"$STD_OUTPUT" 2>"$
 isnt $? 0 "LD_PRELOAD: no-ust app with abi1 and abi0 preload fails"
 
 
-## App linked on liblttn-ust.so.1
+## App linked on liblttng-ust.so.1
 
 "${CURDIR}/app_ust" >"$STD_OUTPUT" 2>"$STD_ERROR"
 ok $? "LD_PRELOAD: ust app works"
@@ -71,7 +81,7 @@ isnt $? 0 "LD_PRELOAD: ust app with abi1 and abi0 preload fails"
 
 diag "dlopen"
 
-## App NOT linked on liblttn-ust
+## App NOT linked on liblttng-ust
 
 LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_noust_dlopen" abi0 >"$STD_OUTPUT" 2>"$STD_ERROR"
 ok $? "dlopen: no-ust app works"
@@ -82,22 +92,26 @@ ok $? "dlopen: no-ust app with abi1 and abi1 succeeds"
 LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_noust_dlopen" abi0_abi1 >"$STD_OUTPUT" 2>"$STD_ERROR"
 isnt $? 0 "dlopen: no-ust app with abi0 and abi1 fails"
 
-LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_noust_dlopen" abi1_abi0 >"$STD_OUTPUT" 2>"$STD_ERROR"
-isnt $? 0 "dlopen: no-ust app with abi1 and abi0 fails"
+if [ "$UST_OS_TYPE" != "freebsd" ]; then
+    LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_noust_dlopen" abi1_abi0 >"$STD_OUTPUT" 2>"$STD_ERROR"
+    isnt $? 0 "dlopen: no-ust app with abi1 and abi0 fails"
+fi
 
-## App linked on liblttn-ust.so.1
+## App linked on liblttng-ust.so.1
 
 LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_ust_dlopen" abi1 >"$STD_OUTPUT" 2>"$STD_ERROR"
 ok $? "dlopen: ust app works"
 
-LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_ust_dlopen" abi0 >"$STD_OUTPUT" 2>"$STD_ERROR"
-isnt $? 0 "dlopen: ust app with abi0 fails"
+if [ "$UST_OS_TYPE" != "freebsd" ]; then
+    LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_ust_dlopen" abi0 >"$STD_OUTPUT" 2>"$STD_ERROR"
+    isnt $? 0 "dlopen: ust app with abi0 fails"
 
-LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_ust_dlopen" abi0_abi1 >"$STD_OUTPUT" 2>"$STD_ERROR"
-isnt $? 0 "dlopen: ust app with abi0 and abi1 fails"
+    LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_ust_dlopen" abi0_abi1 >"$STD_OUTPUT" 2>"$STD_ERROR"
+    isnt $? 0 "dlopen: ust app with abi0 and abi1 fails"
 
-LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_ust_dlopen" abi1_abi0 >"$STD_OUTPUT" 2>"$STD_ERROR"
-isnt $? 0 "dlopen: ust app with abi1 and abi0 fails"
+    LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_ust_dlopen" abi1_abi0 >"$STD_OUTPUT" 2>"$STD_ERROR"
+    isnt $? 0 "dlopen: ust app with abi1 and abi0 fails"
+fi
 
 
 ###
@@ -106,7 +120,7 @@ isnt $? 0 "dlopen: ust app with abi1 and abi0 fails"
 
 diag "Indirect linking"
 
-## App NOT linked on liblttn-ust
+## App NOT linked on liblttng-ust
 
 "${CURDIR}/app_noust_indirect_abi0" >"$STD_OUTPUT" 2>"$STD_ERROR"
 ok $? "indirect: no-ust app with abi0 succeeds"
@@ -117,7 +131,7 @@ ok $? "indirect: no-ust app with abi1 succeeds"
 "${CURDIR}/app_noust_indirect_abi0_abi1" >"$STD_OUTPUT" 2>"$STD_ERROR"
 isnt $? 0 "indirect: no-ust app with abi0 and abi1 fails"
 
-## App linked on liblttn-ust
+## App linked on liblttng-ust
 
 "${CURDIR}/app_ust_indirect_abi0" >"$STD_OUTPUT" 2>"$STD_ERROR"
 isnt $? 0 "indirect: ust app with abi0 fails"
