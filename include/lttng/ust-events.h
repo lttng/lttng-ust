@@ -360,6 +360,7 @@ struct lttng_ust_event_common_private;
 enum lttng_ust_event_type {
 	LTTNG_UST_EVENT_TYPE_RECORDER = 0,
 	LTTNG_UST_EVENT_TYPE_NOTIFIER = 1,
+	LTTNG_UST_EVENT_TYPE_COUNTER = 2,
 };
 
 /*
@@ -426,6 +427,33 @@ struct lttng_ust_event_recorder {
 	struct lttng_ust_event_recorder_private *priv;	/* Private event record interface */
 
 	struct lttng_ust_channel_buffer *chan;
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
+};
+
+struct lttng_ust_event_counter_private;
+
+/*
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
+ *
+ * struct lttng_ust_event_recorder is the action for recording events
+ * into a ring buffer. It inherits from struct lttng_ust_event_common
+ * by composition to ensure both parent and child structure are
+ * extensible.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
+ */
+struct lttng_ust_event_counter {
+	uint32_t struct_size;				/* Size of this structure. */
+
+	struct lttng_ust_event_common *parent;		/* Inheritance by aggregation. */
+	struct lttng_ust_event_counter_private *priv;	/* Private event counter interface */
+
+	struct lttng_ust_channel_counter *chan;
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
@@ -507,6 +535,7 @@ struct lttng_ust_channel_buffer_ops {
 
 enum lttng_ust_channel_type {
 	LTTNG_UST_CHANNEL_TYPE_BUFFER = 0,
+	LTTNG_UST_CHANNEL_TYPE_COUNTER = 1,
 };
 
 struct lttng_ust_channel_common_private;
@@ -552,6 +581,48 @@ struct lttng_ust_channel_buffer {
 	struct lttng_ust_channel_buffer_private *priv;	/* Private channel buffer interface */
 
 	struct lttng_ust_channel_buffer_ops *ops;
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
+};
+
+struct lttng_ust_channel_counter;
+struct lttng_ust_channel_counter_ops_private;
+
+/*
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
+ */
+struct lttng_ust_channel_counter_ops {
+	uint32_t struct_size;
+
+	struct lttng_ust_channel_counter_ops_private *priv;	/* Private channel counter ops interface */
+
+	int (*event_counter_add)(struct lttng_ust_event_counter *event_counter, int64_t v);
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
+};
+
+/*
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
+ *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
+ */
+struct lttng_ust_channel_counter {
+	uint32_t struct_size;				/* Size of this structure. */
+
+	struct lttng_ust_channel_common *parent;	/* Inheritance by aggregation. */
+	struct lttng_ust_channel_counter_private *priv;	/* Private channel counter interface */
+
+	struct lttng_ust_channel_counter_ops *ops;
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
@@ -611,6 +682,30 @@ void lttng_ust_probe_unregister(struct lttng_ust_registered_probe *reg_probe);
  * handler.
  */
 void lttng_ust_context_procname_reset(void);
+
+static inline
+struct lttng_ust_channel_common *lttng_ust_get_chan_common_from_event_common(
+		struct lttng_ust_event_common *event)
+{
+	switch (event->type) {
+	case LTTNG_UST_EVENT_TYPE_RECORDER:
+	{
+		struct lttng_ust_event_recorder *event_recorder = (struct lttng_ust_event_recorder *) event->child;
+		struct lttng_ust_channel_buffer *chan_buf = event_recorder->chan;
+
+		return chan_buf->parent;
+	}
+	case LTTNG_UST_EVENT_TYPE_COUNTER:
+	{
+		struct lttng_ust_event_counter *event_counter = (struct lttng_ust_event_counter *) event->child;
+		struct lttng_ust_channel_counter *chan_counter = event_counter->chan;
+
+		return chan_counter->parent;
+	}
+	default:
+		return NULL;
+	}
+}
 
 #ifdef __cplusplus
 }

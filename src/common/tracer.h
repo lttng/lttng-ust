@@ -80,6 +80,9 @@ int lttng_context_is_app(const char *name)
 struct lttng_ust_channel_buffer *lttng_ust_alloc_channel_buffer(void)
 	__attribute__((visibility("hidden")));
 
+struct lttng_ust_channel_counter *lttng_ust_alloc_channel_counter(void)
+	__attribute__((visibility("hidden")));
+
 void lttng_ust_free_channel_common(struct lttng_ust_channel_common *chan)
 	__attribute__((visibility("hidden")));
 

@@ -88,23 +88,30 @@ enum lttng_ust_abi_counter_bitness {
 	LTTNG_UST_ABI_COUNTER_BITNESS_64 = 1,
 };
 
+enum lttng_ust_abi_counter_dimension_flags {
+	LTTNG_UST_ABI_COUNTER_DIMENSION_FLAG_UNDERFLOW = (1 << 0),
+	LTTNG_UST_ABI_COUNTER_DIMENSION_FLAG_OVERFLOW = (1 << 1),
+};
+
 struct lttng_ust_abi_counter_dimension {
-	uint64_t size;
+	uint32_t flags;				/* enum lttng_ust_abi_counter_dimension_flags */
+	uint64_t size;				/* dimension size */
 	uint64_t underflow_index;
 	uint64_t overflow_index;
-	uint8_t has_underflow;
-	uint8_t has_overflow;
 } __attribute__((packed));
 
-#define LTTNG_UST_ABI_COUNTER_CONF_PADDING1 67
+enum lttng_ust_abi_counter_conf_flags {
+	LTTNG_UST_ABI_COUNTER_CONF_FLAG_COALESCE_HITS = (1 << 0),
+};
+
 struct lttng_ust_abi_counter_conf {
-	uint32_t arithmetic;	/* enum lttng_ust_abi_counter_arithmetic */
-	uint32_t bitness;	/* enum lttng_ust_abi_counter_bitness */
-	uint32_t number_dimensions;
+	uint32_t len;				/* Length of fields before var. len. data. */
+	uint32_t flags;				/* enum lttng_ust_abi_counter_conf_flags */
+	uint32_t arithmetic;			/* enum lttng_ust_abi_counter_arithmetic */
+	uint32_t bitness;			/* enum lttng_ust_abi_counter_bitness */
 	int64_t global_sum_step;
-	struct lttng_ust_abi_counter_dimension dimensions[LTTNG_UST_ABI_COUNTER_DIMENSION_MAX];
-	uint8_t coalesce_hits;
-	char padding[LTTNG_UST_ABI_COUNTER_CONF_PADDING1];
+	uint32_t number_dimensions;
+	uint32_t elem_len;			/* array stride (size of lttng_ust_abi_counter_dimension) */
 } __attribute__((packed));
 
 struct lttng_ust_abi_counter_value {
@@ -144,25 +151,56 @@ struct lttng_ust_abi_event_notifier_notification {
 	char padding[LTTNG_UST_ABI_EVENT_NOTIFIER_NOTIFICATION_PADDING];
 } __attribute__((packed));
 
-#define LTTNG_UST_ABI_COUNTER_PADDING1		(LTTNG_UST_ABI_SYM_NAME_LEN + 32)
 #define LTTNG_UST_ABI_COUNTER_DATA_MAX_LEN	4096U
 struct lttng_ust_abi_counter {
 	uint64_t len;
-	char padding[LTTNG_UST_ABI_COUNTER_PADDING1];
-	char data[];	/* variable sized data */
+	char data[];		/* variable sized data */
 } __attribute__((packed));
 
-#define LTTNG_UST_ABI_COUNTER_GLOBAL_PADDING1	(LTTNG_UST_ABI_SYM_NAME_LEN + 32)
 struct lttng_ust_abi_counter_global {
-	uint64_t len;		/* shm len */
-	char padding[LTTNG_UST_ABI_COUNTER_GLOBAL_PADDING1];
+	uint32_t len;		/* Length of this structure */
+	uint64_t shm_len;	/* shm len */
 } __attribute__((packed));
 
-#define LTTNG_UST_ABI_COUNTER_CPU_PADDING1	(LTTNG_UST_ABI_SYM_NAME_LEN + 32)
 struct lttng_ust_abi_counter_cpu {
-	uint64_t len;		/* shm len */
+	uint32_t len;		/* Length of this structure */
+	uint64_t shm_len;	/* shm len */
 	uint32_t cpu_nr;
-	char padding[LTTNG_UST_ABI_COUNTER_CPU_PADDING1];
+} __attribute__((packed));
+
+enum lttng_ust_abi_key_token_type {
+	LTTNG_UST_ABI_KEY_TOKEN_STRING = 0,		/* arg: strtab_offset. */
+	LTTNG_UST_ABI_KEY_TOKEN_EVENT_NAME = 1,		/* no arg. */
+	LTTNG_UST_ABI_KEY_TOKEN_PROVIDER_NAME = 2,	/* no arg. */
+};
+
+#define LTTNG_UST_ABI_KEY_ARG_PADDING1		256
+#define LTTNG_UST_ABI_KEY_TOKEN_STRING_LEN_MAX	256
+struct lttng_ust_abi_key_token {
+	uint32_t type;	/* enum lttng_ust_key_token_type */
+	union {
+		char string[LTTNG_UST_ABI_KEY_TOKEN_STRING_LEN_MAX];
+		char padding[LTTNG_UST_ABI_KEY_ARG_PADDING1];
+	} arg;
+} __attribute__((packed));
+
+#define LTTNG_UST_ABI_NR_KEY_TOKEN 4
+struct lttng_ust_abi_counter_key_dimension {
+	uint32_t nr_key_tokens;
+	struct lttng_ust_abi_key_token key_tokens[LTTNG_UST_ABI_NR_KEY_TOKEN];
+} __attribute__((packed));
+
+#define LTTNG_UST_ABI_COUNTER_DIMENSION_MAX 4
+struct lttng_ust_abi_counter_key {
+	uint32_t nr_dimensions;
+	struct lttng_ust_abi_counter_key_dimension key_dimensions[LTTNG_UST_ABI_COUNTER_DIMENSION_MAX];
+} __attribute__((packed));
+
+#define LTTNG_UST_ABI_COUNTER_EVENT_PADDING1	16
+struct lttng_ust_abi_counter_event {
+	struct lttng_ust_abi_event event;
+	struct lttng_ust_abi_counter_key key;
+	char padding[LTTNG_UST_ABI_COUNTER_EVENT_PADDING1];
 } __attribute__((packed));
 
 enum lttng_ust_abi_field_type {
@@ -268,6 +306,7 @@ enum lttng_ust_abi_object_type {
 	LTTNG_UST_ABI_OBJECT_TYPE_COUNTER = 6,
 	LTTNG_UST_ABI_OBJECT_TYPE_COUNTER_GLOBAL = 7,
 	LTTNG_UST_ABI_OBJECT_TYPE_COUNTER_CPU = 8,
+	LTTNG_UST_ABI_OBJECT_TYPE_COUNTER_EVENT = 9,
 };
 
 #define LTTNG_UST_ABI_OBJECT_DATA_PADDING1	32
@@ -411,6 +450,8 @@ struct lttng_ust_abi_event_exclusion {
 	LTTNG_UST_ABI_CMDW(0xD0, struct lttng_ust_abi_counter_global)
 #define LTTNG_UST_ABI_COUNTER_CPU		\
 	LTTNG_UST_ABI_CMDW(0xD1, struct lttng_ust_abi_counter_cpu)
+#define LTTNG_UST_ABI_COUNTER_EVENT		\
+	LTTNG_UST_ABI_CMDW(0xD2, struct lttng_ust_abi_counter_event)
 
 #define LTTNG_UST_ABI_ROOT_HANDLE	0
 

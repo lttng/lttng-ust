@@ -10,35 +10,48 @@
 #include "common/events.h"
 
 /*
- * Allocate and initialize a `struct lttng_event_enabler` object.
+ * Allocate and initialize a `struct lttng_event_recorder_enabler` object.
  *
- * On success, returns a `struct lttng_event_enabler`,
+ * On success, returns a `struct lttng_event_recorder_enabler`,
  * On memory error, returns NULL.
  */
-struct lttng_event_enabler *lttng_event_enabler_create(
+struct lttng_event_recorder_enabler *lttng_event_recorder_enabler_create(
 		enum lttng_enabler_format_type format_type,
-		struct lttng_ust_abi_event *event_param,
+		const struct lttng_ust_abi_event *event_param,
 		struct lttng_ust_channel_buffer *chan)
 	__attribute__((visibility("hidden")));
 
 /*
- * Destroy a `struct lttng_event_enabler` object.
+ * Allocate and initialize a `struct lttng_event_counter_enabler` object.
+ *
+ * On success, returns a `struct lttng_event_counter_enabler`,
+ * On memory error, returns NULL.
  */
-void lttng_event_enabler_destroy(struct lttng_event_enabler *enabler)
+struct lttng_event_counter_enabler *lttng_event_counter_enabler_create(
+		enum lttng_enabler_format_type format_type,
+		const struct lttng_ust_abi_event *event_param,
+		const struct lttng_ust_abi_counter_key *key,
+		struct lttng_ust_channel_counter *chan)
+	__attribute__((visibility("hidden")));
+
+/*
+ * Destroy a `struct lttng_event_enabler_common` object.
+ */
+void lttng_event_enabler_destroy(struct lttng_event_enabler_common *event_enabler)
 	__attribute__((visibility("hidden")));
 
 /*
  * Enable a `struct lttng_event_enabler` object and all events related to this
  * enabler.
  */
-int lttng_event_enabler_enable(struct lttng_event_enabler *enabler)
+int lttng_event_enabler_enable(struct lttng_event_enabler_session_common *enabler)
 	__attribute__((visibility("hidden")));
 
 /*
  * Disable a `struct lttng_event_enabler` object and all events related to this
  * enabler.
  */
-int lttng_event_enabler_disable(struct lttng_event_enabler *enabler)
+int lttng_event_enabler_disable(struct lttng_event_enabler_session_common *enabler)
 	__attribute__((visibility("hidden")));
 
 /*
@@ -46,7 +59,7 @@ int lttng_event_enabler_disable(struct lttng_event_enabler *enabler)
  * events related to this enabler.
  */
 int lttng_event_enabler_attach_filter_bytecode(
-		struct lttng_event_enabler *enabler,
+		struct lttng_event_enabler_session_common *enabler,
 		struct lttng_ust_bytecode_node **bytecode)
 	__attribute__((visibility("hidden")));
 
@@ -55,7 +68,7 @@ int lttng_event_enabler_attach_filter_bytecode(
  *
  * Not implemented.
  */
-int lttng_event_enabler_attach_context(struct lttng_event_enabler *enabler,
+int lttng_event_enabler_attach_context(struct lttng_event_enabler_session_common *enabler,
 		struct lttng_ust_abi_context *ctx)
 	__attribute__((visibility("hidden")));
 
@@ -63,7 +76,7 @@ int lttng_event_enabler_attach_context(struct lttng_event_enabler *enabler,
  * Attach exclusion list to `struct lttng_event_enabler` and all
  * events related to this enabler.
  */
-int lttng_event_enabler_attach_exclusion(struct lttng_event_enabler *enabler,
+int lttng_event_enabler_attach_exclusion(struct lttng_event_enabler_session_common *enabler,
 		struct lttng_ust_excluder_node **excluder)
 	__attribute__((visibility("hidden")));
 
@@ -106,13 +119,6 @@ struct lttng_event_notifier_enabler *lttng_event_notifier_enabler_create(
 		struct lttng_event_notifier_group *event_notifier_group,
 		enum lttng_enabler_format_type format_type,
 		struct lttng_ust_abi_event_notifier *event_notifier_param)
-	__attribute__((visibility("hidden")));
-
-/*
- * Destroy a `struct lttng_event_notifier_enabler` object.
- */
-void lttng_event_notifier_enabler_destroy(
-		struct lttng_event_notifier_enabler *event_notifier_enabler)
 	__attribute__((visibility("hidden")));
 
 /*
@@ -168,9 +174,12 @@ void lttng_free_event_filter_runtime(struct lttng_ust_event_common *event)
 int lttng_fix_pending_event_notifiers(void)
 	__attribute__((visibility("hidden")));
 
-struct lttng_counter *lttng_ust_counter_create(
+struct lttng_ust_channel_counter *lttng_ust_counter_create(
 		const char *counter_transport_name,
-		size_t number_dimensions, const struct lttng_counter_dimension *dimensions)
+		size_t number_dimensions,
+		const struct lttng_counter_dimension *dimensions,
+		int64_t global_sum_step,
+		bool coalesce_hits)
 	__attribute__((visibility("hidden")));
 
 #ifdef HAVE_LINUX_PERF_EVENT_H

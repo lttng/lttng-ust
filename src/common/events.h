@@ -65,11 +65,53 @@ enum lttng_enabler_format_type {
 	LTTNG_ENABLER_FORMAT_EVENT,
 };
 
+enum lttng_key_token_type {
+	LTTNG_KEY_TOKEN_STRING = 0,
+	LTTNG_KEY_TOKEN_EVENT_NAME = 1,
+	LTTNG_KEY_TOKEN_PROVIDER_NAME = 2,
+};
+
+#define LTTNG_KEY_TOKEN_STRING_LEN_MAX LTTNG_UST_ABI_KEY_TOKEN_STRING_LEN_MAX
+struct lttng_key_token {
+	enum lttng_key_token_type type;
+	union {
+		char string[LTTNG_KEY_TOKEN_STRING_LEN_MAX];
+	} arg;
+};
+
+#define LTTNG_NR_KEY_TOKEN LTTNG_UST_ABI_NR_KEY_TOKEN
+struct lttng_counter_key_dimension {
+	size_t nr_key_tokens;
+	struct lttng_key_token key_tokens[LTTNG_NR_KEY_TOKEN];
+};
+
+#define LTTNG_COUNTER_DIMENSION_MAX LTTNG_UST_ABI_COUNTER_DIMENSION_MAX
+struct lttng_counter_key {
+	size_t nr_dimensions;
+	struct lttng_counter_key_dimension key_dimensions[LTTNG_COUNTER_DIMENSION_MAX];
+};
+
+struct lttng_counter_dimension {
+	uint64_t size;
+	uint64_t underflow_index;
+	uint64_t overflow_index;
+	uint8_t has_underflow;
+	uint8_t has_overflow;
+};
+
+enum lttng_event_enabler_type {
+	LTTNG_EVENT_ENABLER_TYPE_RECORDER,
+	LTTNG_EVENT_ENABLER_TYPE_NOTIFIER,
+	LTTNG_EVENT_ENABLER_TYPE_COUNTER,
+};
+
 /*
  * Enabler field, within whatever object is enabling an event. Target of
  * backward reference.
  */
-struct lttng_enabler {
+struct lttng_event_enabler_common {
+	enum lttng_event_enabler_type enabler_type;
+
 	enum lttng_enabler_format_type format_type;
 
 	/* head list of struct lttng_ust_filter_bytecode_node */
@@ -79,12 +121,14 @@ struct lttng_enabler {
 
 	struct lttng_ust_abi_event event_param;
 	unsigned int enabled:1;
+
+	uint64_t user_token;		/* User-provided token */
 };
 
-struct lttng_event_enabler {
-	struct lttng_enabler base;
+struct lttng_event_enabler_session_common {
+	struct lttng_event_enabler_common parent;
+	struct lttng_ust_channel_common *chan;
 	struct cds_list_head node;	/* per-session list of enablers */
-	struct lttng_ust_channel_buffer *chan;
 	/*
 	 * Unused, but kept around to make it explicit that the tracer can do
 	 * it.
@@ -92,13 +136,23 @@ struct lttng_event_enabler {
 	struct lttng_ust_ctx *ctx;
 };
 
+struct lttng_event_recorder_enabler {
+	struct lttng_event_enabler_session_common parent;
+	struct lttng_ust_channel_buffer *chan;
+};
+
+struct lttng_event_counter_enabler {
+	struct lttng_event_enabler_session_common parent;
+	struct lttng_ust_channel_counter *chan;
+	struct lttng_counter_key key;
+};
+
 struct lttng_event_notifier_enabler {
-	struct lttng_enabler base;
+	struct lttng_event_enabler_common parent;
 	uint64_t error_counter_index;
 	struct cds_list_head node;	/* per-app list of event_notifier enablers */
 	struct cds_list_head capture_bytecode_head;
 	struct lttng_event_notifier_group *group; /* weak ref */
-	uint64_t user_token;		/* User-provided token */
 	uint64_t num_captures;
 };
 
@@ -110,7 +164,7 @@ enum lttng_ust_bytecode_type {
 struct lttng_ust_bytecode_node {
 	enum lttng_ust_bytecode_type type;
 	struct cds_list_head node;
-	struct lttng_enabler *enabler;
+	struct lttng_event_enabler_common *enabler;
 	struct  {
 		uint32_t len;
 		uint32_t reloc_offset;
@@ -141,7 +195,7 @@ struct lttng_ust_bytecode_filter_ctx {
 
 struct lttng_ust_excluder_node {
 	struct cds_list_head node;
-	struct lttng_enabler *enabler;
+	struct lttng_event_enabler_common *enabler;
 	/*
 	 * struct lttng_ust_event_exclusion had variable sized array,
 	 * must be last field.
@@ -182,44 +236,7 @@ struct lttng_ust_field_list {
  */
 struct lttng_enabler_ref {
 	struct cds_list_head node;		/* enabler ref list */
-	struct lttng_enabler *ref;		/* backward ref */
-};
-
-#define LTTNG_COUNTER_DIMENSION_MAX	8
-struct lttng_counter_dimension {
-	uint64_t size;
-	uint64_t underflow_index;
-	uint64_t overflow_index;
-	uint8_t has_underflow;
-	uint8_t has_overflow;
-};
-
-struct lttng_counter_ops {
-	struct lib_counter *(*counter_create)(size_t nr_dimensions,
-			const struct lttng_counter_dimension *dimensions,
-			int64_t global_sum_step,
-			int global_counter_fd,
-			int nr_counter_cpu_fds,
-			const int *counter_cpu_fds,
-			bool is_daemon);
-	void (*counter_destroy)(struct lib_counter *counter);
-	int (*counter_add)(struct lib_counter *counter,
-			const size_t *dimension_indexes, int64_t v);
-	int (*counter_read)(struct lib_counter *counter,
-			const size_t *dimension_indexes, int cpu,
-			int64_t *value, bool *overflow, bool *underflow);
-	int (*counter_aggregate)(struct lib_counter *counter,
-			const size_t *dimension_indexes, int64_t *value,
-			bool *overflow, bool *underflow);
-	int (*counter_clear)(struct lib_counter *counter, const size_t *dimension_indexes);
-};
-
-struct lttng_counter {
-	int objd;
-	struct lttng_event_notifier_group *event_notifier_group;    /* owner */
-	struct lttng_counter_transport *transport;
-	struct lib_counter *counter;
-	struct lttng_counter_ops *ops;
+	struct lttng_event_enabler_common *ref;		/* backward ref */
 };
 
 #define LTTNG_UST_EVENT_HT_BITS		12
@@ -252,7 +269,7 @@ struct lttng_event_notifier_group {
 	struct lttng_ust_event_notifier_ht event_notifiers_ht; /* hashtable of event_notifiers */
 	struct lttng_ust_ctx *ctx;		/* contexts for filters. */
 
-	struct lttng_counter *error_counter;
+	struct lttng_ust_channel_counter *error_counter;
 	size_t error_counter_len;
 };
 
@@ -266,7 +283,7 @@ struct lttng_transport {
 struct lttng_counter_transport {
 	const char *name;
 	struct cds_list_head node;
-	struct lttng_counter_ops ops;
+	struct lttng_ust_channel_counter_ops ops;
 	const struct lib_counter_config *client_config;
 };
 
@@ -284,14 +301,29 @@ struct lttng_ust_event_common_private {
 	struct cds_list_head filter_bytecode_runtime_head;
 };
 
-struct lttng_ust_event_recorder_private {
+struct lttng_ust_event_session_common_private {
 	struct lttng_ust_event_common_private parent;
 
-	struct lttng_ust_event_recorder *pub;	/* Public event interface */
-	struct cds_list_head node;		/* Event recorder list */
-	struct cds_hlist_node hlist;		/* Hash table of event recorders */
+	struct cds_hlist_node name_hlist;	/* Hash table of events, indexed by name */
+	struct cds_list_head node;		/* Event list */
 	struct lttng_ust_ctx *ctx;
+
+	struct lttng_ust_channel_common *chan;
+};
+
+struct lttng_ust_event_recorder_private {
+	struct lttng_ust_event_session_common_private parent;
+
+	struct lttng_ust_event_recorder *pub;	/* Public event interface */
 	unsigned int id;
+};
+
+struct lttng_ust_event_counter_private {
+	struct lttng_ust_event_session_common_private parent;
+
+	struct lttng_ust_event_counter *pub;	/* Public event interface */
+	char key[LTTNG_KEY_TOKEN_STRING_LEN_MAX];
+	uint64_t counter_index;
 };
 
 struct lttng_ust_event_notifier_private {
@@ -328,21 +360,19 @@ struct lttng_ust_session_private {
 	int been_active;			/* Been active ? */
 	int objd;				/* Object associated */
 	struct cds_list_head chan_head;		/* Channel list head */
+	struct cds_list_head counters_head;	/* Counter list head */
 	struct cds_list_head events_head;	/* list of events */
-	struct cds_list_head node;		/* Session list */
+	struct cds_list_head enablers_head;	/* List of enablers */
+	struct cds_list_head enums_head;
 
-	/* List of enablers */
-	struct cds_list_head enablers_head;
-	struct lttng_ust_event_ht events_ht;	/* ht of events */
+	struct lttng_ust_event_ht events_name_ht; /* ht of events, indexed by name */
+	struct lttng_ust_enum_ht enums_ht;	/* ht of enumerations */
+
+	struct cds_list_head node;		/* Session list */
 	void *owner;				/* object owner */
 	unsigned int tstate:1;			/* Transient enable state */
-
 	unsigned int statedump_pending:1;
-
-	struct lttng_ust_enum_ht enums_ht;	/* ht of enumerations */
-	struct cds_list_head enums_head;
 	struct lttng_ust_ctx *ctx;		/* contexts for filters. */
-
 	unsigned char uuid[LTTNG_UST_UUID_LEN];	/* Trace session unique ID */
 	bool uuid_set;				/* Is uuid set ? */
 };
@@ -386,6 +416,7 @@ struct lttng_ust_channel_common_private {
 
 	int objd;				/* Object associated with channel. */
 	unsigned int tstate:1;			/* Transient enable state */
+	bool coalesce_hits;
 };
 
 struct lttng_ust_channel_buffer_private {
@@ -399,6 +430,45 @@ struct lttng_ust_channel_buffer_private {
 	struct lttng_ust_ctx *ctx;
 	struct lttng_ust_ring_buffer_channel *rb_chan;	/* Ring buffer channel */
 	unsigned char uuid[LTTNG_UST_UUID_LEN];	/* Trace session unique ID */
+};
+
+struct lttng_ust_channel_counter_ops_private {
+	struct lttng_ust_channel_counter_ops *pub;	/* Public channel counter ops interface */
+
+	struct lttng_ust_channel_counter *(*counter_create)(size_t nr_dimensions,
+			const struct lttng_counter_dimension *dimensions,
+			int64_t global_sum_step,
+			int global_counter_fd,
+			int nr_counter_cpu_fds,
+			const int *counter_cpu_fds,
+			bool is_daemon);
+	void (*counter_destroy)(struct lttng_ust_channel_counter *counter);
+	int (*counter_add)(struct lttng_ust_channel_counter *counter,
+			const size_t *dimension_indexes, int64_t v);
+	int (*counter_read)(struct lttng_ust_channel_counter *counter,
+			const size_t *dimension_indexes, int cpu,
+			int64_t *value, bool *overflow, bool *underflow);
+	int (*counter_aggregate)(struct lttng_ust_channel_counter *counter,
+			const size_t *dimension_indexes, int64_t *value,
+			bool *overflow, bool *underflow);
+	int (*counter_clear)(struct lttng_ust_channel_counter *counter,
+			const size_t *dimension_indexes);
+};
+
+struct lttng_ust_channel_counter_private {
+	struct lttng_ust_channel_common_private parent;
+
+	struct lttng_ust_channel_counter *pub;		/* Public channel counter interface */
+	struct lib_counter *counter;
+	struct lttng_ust_channel_counter_ops *ops;
+
+	/* Event notifier group owner. */
+	struct lttng_event_notifier_group *event_notifier_group;
+
+	/* Session owner. */
+	struct lttng_session *session;
+	struct cds_list_head node;			/* Counter list (in session) */
+	size_t free_index;				/* Next index to allocate */
 };
 
 /*
@@ -566,17 +636,10 @@ const struct lttng_ust_type_struct *lttng_ust_get_type_struct(const struct lttng
 	})
 
 static inline
-struct lttng_enabler *lttng_event_enabler_as_enabler(
-		struct lttng_event_enabler *event_enabler)
-{
-	return &event_enabler->base;
-}
-
-static inline
-struct lttng_enabler *lttng_event_notifier_enabler_as_enabler(
+struct lttng_event_enabler_common *lttng_event_notifier_enabler_as_enabler(
 		struct lttng_event_notifier_enabler *event_notifier_enabler)
 {
-	return &event_notifier_enabler->base;
+	return &event_notifier_enabler->parent;
 }
 
 

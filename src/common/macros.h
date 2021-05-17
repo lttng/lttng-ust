@@ -74,4 +74,7 @@ void *zmalloc(size_t len)
 #define LTTNG_UST_CALLER_IP()		__builtin_return_address(0)
 #endif
 
+#define lttng_ust_offsetofend(type, field)	\
+	(offsetof(type, field) + sizeof(((type *)NULL)->field))
+
 #endif /* _UST_COMMON_MACROS_H */

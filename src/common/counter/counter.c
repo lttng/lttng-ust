@@ -106,19 +106,24 @@ int lttng_counter_set_global_shm(struct lib_counter *counter, int fd)
 {
 	struct lib_counter_config *config = &counter->config;
 	struct lib_counter_layout *layout;
+	int ret;
 
 	if (!(config->alloc & COUNTER_ALLOC_GLOBAL))
 		return -EINVAL;
 	layout = &counter->global_counters;
 	if (layout->shm_fd >= 0)
 		return -EBUSY;
-	return lttng_counter_layout_init(counter, -1, fd);
+	ret = lttng_counter_layout_init(counter, -1, fd);
+	if (!ret)
+		counter->received_shm++;
+	return ret;
 }
 
 int lttng_counter_set_cpu_shm(struct lib_counter *counter, int cpu, int fd)
 {
 	struct lib_counter_config *config = &counter->config;
 	struct lib_counter_layout *layout;
+	int ret;
 
 	if (cpu < 0 || cpu >= get_possible_cpus_array_len())
 		return -EINVAL;
@@ -128,7 +133,10 @@ int lttng_counter_set_cpu_shm(struct lib_counter *counter, int cpu, int fd)
 	layout = &counter->percpu_counters[cpu];
 	if (layout->shm_fd >= 0)
 		return -EBUSY;
-	return lttng_counter_layout_init(counter, cpu, fd);
+	ret = lttng_counter_layout_init(counter, cpu, fd);
+	if (!ret)
+		counter->received_shm++;
+	return ret;
 }
 
 static
@@ -252,6 +260,7 @@ struct lib_counter *lttng_counter_create(const struct lib_counter_config *config
 		nr_handles++;
 	if (config->alloc & COUNTER_ALLOC_PER_CPU)
 		nr_handles += nr_cpus;
+	counter->expected_shm = nr_handles;
 	/* Allocate table for global and per-cpu counters. */
 	counter->object_table = lttng_counter_shm_object_table_create(nr_handles, populate);
 	if (!counter->object_table)
@@ -321,6 +330,13 @@ int lttng_counter_get_cpu_shm(struct lib_counter *counter, int cpu, int *fd, siz
 	*fd = shm_fd;
 	*len = layout->shm_len;
 	return 0;
+}
+
+bool lttng_counter_ready(struct lib_counter *counter)
+{
+	if (counter->received_shm == counter->expected_shm)
+		return true;
+	return false;
 }
 
 int lttng_counter_read(const struct lib_counter_config *config,

@@ -536,13 +536,15 @@ int lttng_ust_ctl_recv_register_event(int sock,
 					 */
 	size_t *nr_fields,
 	struct lttng_ust_ctl_field **fields,
-	char **model_emf_uri);
+	char **model_emf_uri,
+	uint64_t *user_token);
 
 /*
  * Returns 0 on success, negative error value on error.
  */
 int lttng_ust_ctl_reply_register_event(int sock,
-	uint32_t id,			/* event id (input) */
+	uint32_t event_id,		/* event id (input) */
+	uint64_t counter_index,		/* counter index (input) */
 	int ret_code);			/* return code. 0 ok, negative error */
 
 /*
@@ -655,6 +657,11 @@ int lttng_ust_ctl_counter_aggregate(struct lttng_ust_ctl_daemon_counter *counter
 		bool *overflow, bool *underflow);
 int lttng_ust_ctl_counter_clear(struct lttng_ust_ctl_daemon_counter *counter,
 		const size_t *dimension_indexes);
+
+int lttng_ust_ctl_counter_create_event(int sock,
+		struct lttng_ust_abi_counter_event *counter_event,
+		struct lttng_ust_abi_object_data *counter_data,
+		struct lttng_ust_abi_object_data **counter_event_data);
 
 void lttng_ust_ctl_sigbus_handle(void *addr);
 

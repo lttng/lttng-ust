@@ -68,6 +68,9 @@ struct lib_counter {
 	struct lib_counter_layout global_counters;
 	struct lib_counter_layout *percpu_counters;
 
+	size_t expected_shm;
+	size_t received_shm;
+
 	bool is_daemon;
 	struct lttng_counter_shm_object_table *object_table;
 };

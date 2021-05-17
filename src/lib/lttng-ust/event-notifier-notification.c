@@ -318,7 +318,7 @@ static void record_error(const struct lttng_ust_event_notifier *event_notifier)
 {
 	struct lttng_event_notifier_group *event_notifier_group =
 			event_notifier->priv->group;
-	struct lttng_counter *error_counter;
+	struct lttng_ust_channel_counter *error_counter;
 	size_t dimension_index[1];
 	int ret;
 
@@ -336,8 +336,8 @@ static void record_error(const struct lttng_ust_event_notifier *event_notifier)
 		return;
 
 	dimension_index[0] = event_notifier->priv->error_counter_index;
-	ret = event_notifier_group->error_counter->ops->counter_add(
-			error_counter->counter, dimension_index, 1);
+	ret = event_notifier_group->error_counter->ops->priv->counter_add(
+			error_counter, dimension_index, 1);
 	if (ret)
 		WARN_ON_ONCE(1);
 }

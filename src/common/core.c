@@ -159,6 +159,41 @@ lttng_chan_buf_error:
 	return NULL;
 }
 
+struct lttng_ust_channel_counter *lttng_ust_alloc_channel_counter(void)
+{
+	struct lttng_ust_channel_counter *lttng_chan_counter;
+	struct lttng_ust_channel_common *lttng_chan_common;
+	struct lttng_ust_channel_counter_private *lttng_chan_counter_priv;
+
+	lttng_chan_counter = zmalloc(sizeof(struct lttng_ust_channel_counter));
+	if (!lttng_chan_counter)
+		goto lttng_chan_counter_error;
+	lttng_chan_counter->struct_size = sizeof(struct lttng_ust_channel_counter);
+	lttng_chan_common = zmalloc(sizeof(struct lttng_ust_channel_common));
+	if (!lttng_chan_common)
+		goto lttng_chan_common_error;
+	lttng_chan_common->struct_size = sizeof(struct lttng_ust_channel_common);
+	lttng_chan_counter_priv = zmalloc(sizeof(struct lttng_ust_channel_counter_private));
+	if (!lttng_chan_counter_priv)
+		goto lttng_chan_counter_priv_error;
+	lttng_chan_counter->parent = lttng_chan_common;
+	lttng_chan_common->type = LTTNG_UST_CHANNEL_TYPE_COUNTER;
+	lttng_chan_common->child = lttng_chan_counter;
+	lttng_chan_counter->priv = lttng_chan_counter_priv;
+	lttng_chan_common->priv = &lttng_chan_counter_priv->parent;
+	lttng_chan_counter_priv->pub = lttng_chan_counter;
+	lttng_chan_counter_priv->parent.pub = lttng_chan_common;
+
+	return lttng_chan_counter;
+
+lttng_chan_counter_priv_error:
+	free(lttng_chan_common);
+lttng_chan_common_error:
+	free(lttng_chan_counter);
+lttng_chan_counter_error:
+	return NULL;
+}
+
 void lttng_ust_free_channel_common(struct lttng_ust_channel_common *chan)
 {
 	switch (chan->type) {
@@ -170,6 +205,16 @@ void lttng_ust_free_channel_common(struct lttng_ust_channel_common *chan)
 		free(chan_buf->parent);
 		free(chan_buf->priv);
 		free(chan_buf);
+		break;
+	}
+	case LTTNG_UST_CHANNEL_TYPE_COUNTER:
+	{
+		struct lttng_ust_channel_counter *chan_counter;
+
+		chan_counter = (struct lttng_ust_channel_counter *)chan->child;
+		free(chan_counter->parent);
+		free(chan_counter->priv);
+		free(chan_counter);
 		break;
 	}
 	default:

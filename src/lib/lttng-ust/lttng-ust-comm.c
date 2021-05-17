@@ -388,6 +388,7 @@ static const char *cmd_name_mapping[] = {
 	/* Counter commands */
 	[ LTTNG_UST_ABI_COUNTER_GLOBAL ] = "Create Counter Global",
 	[ LTTNG_UST_ABI_COUNTER_CPU ] = "Create Counter CPU",
+	[ LTTNG_UST_ABI_COUNTER_EVENT ] = "Create Counter Event",
 };
 
 static const char *str_timeout;
@@ -1094,6 +1095,7 @@ int handle_message(struct sock_info *sock_info,
 	case LTTNG_UST_ABI_COUNTER:
 	case LTTNG_UST_ABI_COUNTER_GLOBAL:
 	case LTTNG_UST_ABI_COUNTER_CPU:
+	case LTTNG_UST_ABI_COUNTER_EVENT:
 	case LTTNG_UST_ABI_EVENT_NOTIFIER_CREATE:
 	case LTTNG_UST_ABI_EVENT_NOTIFIER_GROUP_CREATE:
 		/*
@@ -1479,6 +1481,48 @@ int handle_message(struct sock_info *sock_info,
 			if (close_ret)
 				PERROR("close");
 		}
+		break;
+	}
+	case LTTNG_UST_ABI_COUNTER_EVENT:
+	{
+		/* Receive struct lttng_ust_abi_counter_event */
+		struct lttng_ust_abi_counter_event counter_event;
+
+		if (sizeof(counter_event) != lum->u.counter_event.len) {
+			DBG("incorrect counter event data message size: %u", lum->u.counter_event.len);
+			ret = -EINVAL;
+			goto error;
+		}
+		len = ustcomm_recv_unix_sock(sock, &counter_event, sizeof(counter_event));
+		switch (len) {
+		case 0:	/* orderly shutdown */
+			ret = 0;
+			goto error;
+		default:
+			if (len == sizeof(counter_event)) {
+				DBG("counter event data received");
+				break;
+			} else if (len < 0) {
+				DBG("Receive failed from lttng-sessiond with errno %d", (int) -len);
+				if (len == -ECONNRESET) {
+					ERR("%s remote end closed connection", sock_info->name);
+					ret = len;
+					goto error;
+				}
+				ret = len;
+				goto error;
+			} else {
+				DBG("incorrect event notifier data message size: %zd", len);
+				ret = -EINVAL;
+				goto error;
+			}
+		}
+		if (ops->cmd)
+			ret = ops->cmd(lum->handle, lum->cmd,
+					(unsigned long) &counter_event,
+					&args, sock_info);
+		else
+			ret = -ENOSYS;
 		break;
 	}
 	case LTTNG_UST_ABI_EVENT_NOTIFIER_CREATE:

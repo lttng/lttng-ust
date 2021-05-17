@@ -972,6 +972,7 @@ static									      \
 void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PROTO(_args)) \
 {									      \
 	struct lttng_ust_event_common *__event = (struct lttng_ust_event_common *) __tp_data; \
+	struct lttng_ust_channel_common *__chan_common;			      \
 	size_t __dynamic_len_idx = 0;					      \
 	const size_t __num_fields = LTTNG_UST__TP_ARRAY_SIZE(lttng_ust__event_fields___##_provider##___##_name) - 1; \
 	struct lttng_ust_probe_ctx __probe_ctx;				      \
@@ -984,28 +985,19 @@ void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PRO
 									      \
 	if (0)								      \
 		(void) __dynamic_len_idx;	/* don't warn if unused */    \
-	switch (__event->type) {					      \
-	case LTTNG_UST_EVENT_TYPE_RECORDER:				      \
-	{								      \
-		struct lttng_ust_event_recorder *__event_recorder = (struct lttng_ust_event_recorder *) __event->child; \
-		struct lttng_ust_channel_buffer *__chan = __event_recorder->chan; \
-		struct lttng_ust_channel_common *__chan_common = __chan->parent; \
-									      \
+	if (caa_unlikely(!CMM_ACCESS_ONCE(__event->enabled)))		      \
+		return;							      \
+	if (caa_unlikely(!LTTNG_UST_TP_RCU_LINK_TEST()))		      \
+		return;							      \
+	__chan_common = lttng_ust_get_chan_common_from_event_common(__event); \
+	if (__chan_common) {						      \
 		if (!LTTNG_UST__TP_SESSION_CHECK(session, __chan_common->session)) \
 			return;						      \
 		if (caa_unlikely(!CMM_ACCESS_ONCE(__chan_common->session->active))) \
 			return;						      \
 		if (caa_unlikely(!CMM_ACCESS_ONCE(__chan_common->enabled)))   \
 			return;						      \
-		break;							      \
 	}								      \
-	case LTTNG_UST_EVENT_TYPE_NOTIFIER:				      \
-		break;							      \
-	}								      \
-	if (caa_unlikely(!CMM_ACCESS_ONCE(__event->enabled)))		      \
-		return;							      \
-	if (caa_unlikely(!LTTNG_UST_TP_RCU_LINK_TEST()))		      \
-		return;							      \
 	__probe_ctx.struct_size = sizeof(struct lttng_ust_probe_ctx);	      \
 	__probe_ctx.ip = LTTNG_UST__TP_IP_PARAM(LTTNG_UST_TP_IP_PARAM);	      \
 	if (caa_unlikely(CMM_ACCESS_ONCE(__event->eval_filter))) {	      \
@@ -1052,6 +1044,13 @@ void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PRO
 				__stackvar.__interpreter_stack_data,	      \
 				&__probe_ctx,				      \
 				&__notif_ctx);				      \
+		break;							      \
+	}								      \
+	case LTTNG_UST_EVENT_TYPE_COUNTER:				      \
+	{								      \
+		struct lttng_ust_event_counter *__event_counter = (struct lttng_ust_event_counter *) __event->child; \
+									      \
+		(void) __event_counter->chan->ops->event_counter_add(__event_counter, 1); \
 		break;							      \
 	}								      \
 	}								      \

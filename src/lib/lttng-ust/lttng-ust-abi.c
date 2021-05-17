@@ -38,6 +38,7 @@
 
 #include "common/ust-fd.h"
 #include "common/logging.h"
+#include "common/align.h"
 
 #include "common/ringbuffer/frontend_types.h"
 #include "common/ringbuffer/frontend.h"
@@ -275,6 +276,7 @@ static const struct lttng_ust_abi_objd_ops lttng_ops;
 static const struct lttng_ust_abi_objd_ops lttng_event_notifier_group_ops;
 static const struct lttng_ust_abi_objd_ops lttng_session_ops;
 static const struct lttng_ust_abi_objd_ops lttng_channel_ops;
+static const struct lttng_ust_abi_objd_ops lttng_counter_ops;
 static const struct lttng_ust_abi_objd_ops lttng_event_enabler_ops;
 static const struct lttng_ust_abi_objd_ops lttng_event_notifier_enabler_ops;
 static const struct lttng_ust_abi_objd_ops lttng_tracepoint_list_ops;
@@ -599,6 +601,143 @@ invalid:
 	return ret;
 }
 
+static
+bool check_zero(const char *p, size_t len)
+{
+	size_t i;
+
+	for (i = 0; i < len; i++) {
+		if (p[i] != 0)
+			return false;
+	}
+	return true;
+}
+
+static
+int copy_abi_struct(void *dst_struct, size_t dst_struct_len,
+		const void *src_struct, size_t src_struct_len)
+{
+	if (dst_struct_len >= src_struct_len) {
+		memcpy(dst_struct, src_struct, src_struct_len);
+		if (dst_struct_len > src_struct_len)
+			memset(dst_struct + src_struct_len, 0, dst_struct_len - src_struct_len);
+	} else {	/* dst_struct_len < src_struct_len */
+		/* Validate zero-padding. */
+		if (!check_zero(src_struct + dst_struct_len, src_struct_len - dst_struct_len))
+			return -E2BIG;
+		memcpy(dst_struct, src_struct, dst_struct_len);
+	}
+	return 0;
+}
+
+static
+long lttng_session_create_counter(
+		int session_objd,
+		struct lttng_ust_abi_counter *ust_counter,
+		union lttng_ust_abi_args *uargs,
+		void *owner)
+{
+	struct lttng_ust_session *session = objd_private(session_objd);
+	int counter_objd, ret;
+	const char *counter_transport_name;
+	struct lttng_ust_channel_counter *counter = NULL;
+	struct lttng_counter_dimension dimensions[1] = {};
+	size_t number_dimensions = 1;
+	const struct lttng_ust_abi_counter_conf *abi_counter_conf;
+	struct lttng_ust_abi_counter_conf counter_conf;
+	uint32_t min_expected_len = lttng_ust_offsetofend(struct lttng_ust_abi_counter_conf, elem_len);
+	const struct lttng_ust_abi_counter_dimension *abi_dimension;
+	struct lttng_ust_abi_counter_dimension dimension;
+
+	if (ust_counter->len < min_expected_len) {
+		ERR("LTTng: Map: Counter configuration of wrong size.");
+		return -EINVAL;
+	}
+	abi_counter_conf = uargs->counter.counter_data;
+	if (abi_counter_conf->len > ust_counter->len || abi_counter_conf->len < lttng_ust_offsetofend(struct lttng_ust_abi_counter_conf, elem_len)) {
+		return -EINVAL;
+	}
+	ret = copy_abi_struct(&counter_conf, sizeof(counter_conf), abi_counter_conf, abi_counter_conf->len);
+	if (ret) {
+		ERR("Unexpected counter configuration structure content");
+		return ret;
+	}
+	if (counter_conf.number_dimensions != 1) {
+		ERR("LTTng: Map: Unsupprted number of dimensions %u.", counter_conf.number_dimensions);
+		return -EINVAL;
+	}
+	if (counter_conf.elem_len < lttng_ust_offsetofend(struct lttng_ust_abi_counter_dimension, overflow_index)) {
+		ERR("Unexpected dimension array element length %u.", counter_conf.elem_len);
+		return -EINVAL;
+	}
+	if (counter_conf.len + counter_conf.elem_len > ust_counter->len) {
+		return -EINVAL;
+	}
+	abi_dimension = (const struct lttng_ust_abi_counter_dimension *)(((char *)abi_counter_conf) + counter_conf.len);
+	ret = copy_abi_struct(&dimension, sizeof(dimension), abi_dimension, counter_conf.elem_len);
+	if (ret) {
+		ERR("Unexpected dimension structure content");
+		return ret;
+	}
+	if (counter_conf.arithmetic != LTTNG_UST_ABI_COUNTER_ARITHMETIC_MODULAR) {
+		ERR("LTTng: Map: Counter of the wrong type.");
+		return -EINVAL;
+	}
+	if (counter_conf.global_sum_step) {
+		/* Unsupported. */
+		return -EINVAL;
+	}
+	switch (counter_conf.bitness) {
+	case LTTNG_UST_ABI_COUNTER_BITNESS_64:
+		counter_transport_name = "counter-per-cpu-64-modular";
+		break;
+	case LTTNG_UST_ABI_COUNTER_BITNESS_32:
+		counter_transport_name = "counter-per-cpu-32-modular";
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	dimensions[0].size = dimension.size;
+	dimensions[0].underflow_index = dimension.underflow_index;
+	dimensions[0].overflow_index = dimension.overflow_index;
+	dimensions[0].has_underflow = dimension.flags & LTTNG_UST_ABI_COUNTER_DIMENSION_FLAG_UNDERFLOW;
+	dimensions[0].has_overflow = dimension.flags & LTTNG_UST_ABI_COUNTER_DIMENSION_FLAG_OVERFLOW;
+
+	counter_objd = objd_alloc(NULL, &lttng_counter_ops, owner, "counter");
+	if (counter_objd < 0) {
+		ret = counter_objd;
+		goto objd_error;
+	}
+
+	counter = lttng_ust_counter_create(counter_transport_name,
+			number_dimensions, dimensions,
+			0, counter_conf.flags & LTTNG_UST_ABI_COUNTER_CONF_FLAG_COALESCE_HITS);
+	if (!counter) {
+		ret = -EINVAL;
+		goto counter_error;
+	}
+	counter->parent->session = session;
+	cds_list_add(&counter->priv->node, &session->priv->counters_head);
+	objd_set_private(counter_objd, counter);
+	counter->priv->parent.objd = counter_objd;
+	counter->priv->parent.tstate = 1;
+	counter->parent->enabled = 1;
+	/* The channel created holds a reference on the session */
+	objd_ref(session_objd);
+	return counter_objd;
+
+counter_error:
+	{
+		int err;
+
+		err = lttng_ust_abi_objd_unref(counter_objd, 1);
+		assert(!err);
+	}
+objd_error:
+	return ret;
+}
+
 /**
  *	lttng_session_cmd - lttng session object command
  *
@@ -638,10 +777,9 @@ long lttng_session_cmd(int objd, unsigned int cmd, unsigned long arg,
 	case LTTNG_UST_ABI_SESSION_STATEDUMP:
 		return lttng_session_statedump(session);
 	case LTTNG_UST_ABI_COUNTER:
-	case LTTNG_UST_ABI_COUNTER_GLOBAL:
-	case LTTNG_UST_ABI_COUNTER_CPU:
-		/* Not implemented yet. */
-		return -EINVAL;
+		return lttng_session_create_counter(objd,
+			(struct lttng_ust_abi_counter *) arg,
+			uargs, owner);
 	default:
 		return -EINVAL;
 	}
@@ -761,7 +899,7 @@ long lttng_event_notifier_group_error_counter_cmd(int objd, unsigned int cmd, un
 	union lttng_ust_abi_args *uargs, void *owner __attribute__((unused)))
 {
 	int ret;
-	struct lttng_counter *counter = objd_private(objd);
+	struct lttng_ust_channel_counter *counter = objd_private(objd);
 
 	switch (cmd) {
 	case LTTNG_UST_ABI_COUNTER_GLOBAL:
@@ -769,11 +907,19 @@ long lttng_event_notifier_group_error_counter_cmd(int objd, unsigned int cmd, un
 		break;
 	case LTTNG_UST_ABI_COUNTER_CPU:
 	{
-		struct lttng_ust_abi_counter_cpu *counter_cpu =
-			(struct lttng_ust_abi_counter_cpu *)arg;
+		struct lttng_ust_abi_counter_cpu *abi_counter_cpu =
+			(struct lttng_ust_abi_counter_cpu *) arg;
+		struct lttng_ust_abi_counter_cpu counter_cpu;
 
-		ret = lttng_counter_set_cpu_shm(counter->counter,
-			counter_cpu->cpu_nr, uargs->counter_shm.shm_fd);
+		if (abi_counter_cpu->len < lttng_ust_offsetofend(struct lttng_ust_abi_counter_cpu, cpu_nr)) {
+			return -EINVAL;
+		}
+		ret = copy_abi_struct(&counter_cpu, sizeof(counter_cpu),
+				abi_counter_cpu, abi_counter_cpu->len);
+		if (ret)
+			return ret;
+		ret = lttng_counter_set_cpu_shm(counter->priv->counter,
+			counter_cpu.cpu_nr, uargs->counter_shm.shm_fd);
 		if (!ret) {
 			/* Take ownership of the shm_fd. */
 			uargs->counter_shm.shm_fd = -1;
@@ -792,10 +938,10 @@ int lttng_release_event_notifier_group_error_counter(int objd)
 	__attribute__((visibility("hidden")));
 int lttng_release_event_notifier_group_error_counter(int objd)
 {
-	struct lttng_counter *counter = objd_private(objd);
+	struct lttng_ust_channel_counter *counter = objd_private(objd);
 
 	if (counter) {
-		return lttng_ust_abi_objd_unref(counter->event_notifier_group->objd, 0);
+		return lttng_ust_abi_objd_unref(counter->priv->event_notifier_group->objd, 0);
 	} else {
 		return -EINVAL;
 	}
@@ -807,27 +953,66 @@ static const struct lttng_ust_abi_objd_ops lttng_event_notifier_group_error_coun
 };
 
 static
-int lttng_ust_event_notifier_group_create_error_counter(int event_notifier_group_objd, void *owner,
-		struct lttng_ust_abi_counter_conf *error_counter_conf)
+int lttng_ust_event_notifier_group_create_error_counter(int event_notifier_group_objd,
+		struct lttng_ust_abi_counter *ust_counter,
+		union lttng_ust_abi_args *uargs,
+		void *owner)
 {
 	const char *counter_transport_name;
 	struct lttng_event_notifier_group *event_notifier_group =
 		objd_private(event_notifier_group_objd);
-	struct lttng_counter *counter;
+	struct lttng_ust_channel_counter *counter;
 	int counter_objd, ret;
-	struct lttng_counter_dimension dimensions[1];
 	size_t counter_len;
+	struct lttng_counter_dimension dimensions[1] = {};
+	const struct lttng_ust_abi_counter_conf *abi_counter_conf;
+	struct lttng_ust_abi_counter_conf counter_conf;
+	uint32_t min_expected_len = lttng_ust_offsetofend(struct lttng_ust_abi_counter_conf, elem_len);
+	const struct lttng_ust_abi_counter_dimension *abi_dimension;
+	struct lttng_ust_abi_counter_dimension dimension;
 
 	if (event_notifier_group->error_counter)
 		return -EBUSY;
 
-	if (error_counter_conf->arithmetic != LTTNG_UST_ABI_COUNTER_ARITHMETIC_MODULAR)
+	if (ust_counter->len < min_expected_len) {
+		ERR("LTTng: Counter configuration of wrong size.");
 		return -EINVAL;
-
-	if (error_counter_conf->number_dimensions != 1)
+	}
+	abi_counter_conf = uargs->counter.counter_data;
+	if (abi_counter_conf->len > ust_counter->len || abi_counter_conf->len < lttng_ust_offsetofend(struct lttng_ust_abi_counter_conf, elem_len)) {
 		return -EINVAL;
-
-	switch (error_counter_conf->bitness) {
+	}
+	ret = copy_abi_struct(&counter_conf, sizeof(counter_conf), abi_counter_conf, abi_counter_conf->len);
+	if (ret) {
+		ERR("Unexpected counter configuration structure content");
+		return ret;
+	}
+	if (counter_conf.number_dimensions != 1) {
+		ERR("LTTng: Map: Unsupprted number of dimensions %u.", counter_conf.number_dimensions);
+		return -EINVAL;
+	}
+	if (counter_conf.elem_len < lttng_ust_offsetofend(struct lttng_ust_abi_counter_dimension, overflow_index)) {
+		ERR("Unexpected dimension array element length %u.", counter_conf.elem_len);
+		return -EINVAL;
+	}
+	if (counter_conf.len + counter_conf.elem_len > ust_counter->len) {
+		return -EINVAL;
+	}
+	abi_dimension = (const struct lttng_ust_abi_counter_dimension *)(((char *)abi_counter_conf) + counter_conf.len);
+	ret = copy_abi_struct(&dimension, sizeof(dimension), abi_dimension, counter_conf.elem_len);
+	if (ret) {
+		ERR("Unexpected dimension structure content");
+		return ret;
+	}
+	if (counter_conf.arithmetic != LTTNG_UST_ABI_COUNTER_ARITHMETIC_MODULAR) {
+		ERR("LTTng: Counter of the wrong type.");
+		return -EINVAL;
+	}
+	if (counter_conf.global_sum_step) {
+		/* Unsupported. */
+		return -EINVAL;
+	}
+	switch (counter_conf.bitness) {
 	case LTTNG_UST_ABI_COUNTER_BITNESS_64:
 		counter_transport_name = "counter-per-cpu-64-modular";
 		break;
@@ -838,6 +1023,13 @@ int lttng_ust_event_notifier_group_create_error_counter(int event_notifier_group
 		return -EINVAL;
 	}
 
+	counter_len = dimension.size;
+	dimensions[0].size = counter_len;
+	dimensions[0].underflow_index = dimension.underflow_index;
+	dimensions[0].overflow_index = dimension.overflow_index;
+	dimensions[0].has_underflow = dimension.flags & LTTNG_UST_ABI_COUNTER_DIMENSION_FLAG_UNDERFLOW;
+	dimensions[0].has_overflow = dimension.flags & LTTNG_UST_ABI_COUNTER_DIMENSION_FLAG_OVERFLOW;
+
 	counter_objd = objd_alloc(NULL, &lttng_event_notifier_group_error_counter_ops, owner,
 		"event_notifier group error counter");
 	if (counter_objd < 0) {
@@ -845,14 +1037,7 @@ int lttng_ust_event_notifier_group_create_error_counter(int event_notifier_group
 		goto objd_error;
 	}
 
-	counter_len = error_counter_conf->dimensions[0].size;
-	dimensions[0].size = counter_len;
-	dimensions[0].underflow_index = 0;
-	dimensions[0].overflow_index = 0;
-	dimensions[0].has_underflow = 0;
-	dimensions[0].has_overflow = 0;
-
-	counter = lttng_ust_counter_create(counter_transport_name, 1, dimensions);
+	counter = lttng_ust_counter_create(counter_transport_name, 1, dimensions, 0, false);
 	if (!counter) {
 		ret = -EINVAL;
 		goto create_error;
@@ -869,8 +1054,8 @@ int lttng_ust_event_notifier_group_create_error_counter(int event_notifier_group
 	cmm_smp_mb();
 	CMM_STORE_SHARED(event_notifier_group->error_counter, counter);
 
-	counter->objd = counter_objd;
-	counter->event_notifier_group = event_notifier_group;	/* owner */
+	counter->priv->parent.objd = counter_objd;
+	counter->priv->event_notifier_group = event_notifier_group;	/* owner */
 
 	objd_set_private(counter_objd, counter);
 	/* The error counter holds a reference on the event_notifier group. */
@@ -914,10 +1099,8 @@ long lttng_event_notifier_group_cmd(int objd, unsigned int cmd, unsigned long ar
 	}
 	case LTTNG_UST_ABI_COUNTER:
 	{
-		struct lttng_ust_abi_counter_conf *counter_conf =
-			(struct lttng_ust_abi_counter_conf *) uargs->counter.counter_data;
 		return lttng_ust_event_notifier_group_create_error_counter(
-				objd, owner, counter_conf);
+				objd, (struct lttng_ust_abi_counter *) arg, uargs, owner);
 	}
 	default:
 		return -EINVAL;
@@ -1142,13 +1325,57 @@ error_add_stream:
 }
 
 static
-int lttng_abi_create_event_enabler(int channel_objd,
-			   struct lttng_ust_abi_event *event_param,
-			   void *owner,
-			   enum lttng_enabler_format_type format_type)
+int lttng_abi_create_event_recorder_enabler(int channel_objd,
+			struct lttng_ust_channel_buffer *channel,
+			struct lttng_ust_abi_event *event_param,
+			void *owner,
+			enum lttng_enabler_format_type format_type)
 {
-	struct lttng_ust_channel_buffer *channel = objd_private(channel_objd);
-	struct lttng_event_enabler *enabler;
+	struct lttng_event_recorder_enabler *enabler;
+	int event_objd, ret;
+
+	event_param->name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
+	event_objd = objd_alloc(NULL, &lttng_event_enabler_ops, owner,
+		"event recorder enabler");
+	if (event_objd < 0) {
+		ret = event_objd;
+		goto objd_error;
+	}
+	/*
+	 * We tolerate no failure path after event creation. It will stay
+	 * invariant for the rest of the session.
+	 */
+	enabler = lttng_event_recorder_enabler_create(format_type, event_param,
+			channel);
+	if (!enabler) {
+		ret = -ENOMEM;
+		goto event_error;
+	}
+	objd_set_private(event_objd, &enabler->parent);
+	/* The event holds a reference on the channel */
+	objd_ref(channel_objd);
+	return event_objd;
+
+event_error:
+	{
+		int err;
+
+		err = lttng_ust_abi_objd_unref(event_objd, 1);
+		assert(!err);
+	}
+objd_error:
+	return ret;
+}
+
+static
+int lttng_abi_create_event_counter_enabler(int channel_objd,
+			struct lttng_ust_channel_counter *channel,
+			struct lttng_ust_abi_event *event_param,
+			const struct lttng_ust_abi_counter_key *key_param,
+			void *owner,
+			enum lttng_enabler_format_type format_type)
+{
+	struct lttng_event_counter_enabler *enabler;
 	int event_objd, ret;
 
 	event_param->name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
@@ -1162,12 +1389,13 @@ int lttng_abi_create_event_enabler(int channel_objd,
 	 * We tolerate no failure path after event creation. It will stay
 	 * invariant for the rest of the session.
 	 */
-	enabler = lttng_event_enabler_create(format_type, event_param, channel);
+	enabler = lttng_event_counter_enabler_create(format_type, event_param,
+			key_param, channel);
 	if (!enabler) {
 		ret = -ENOMEM;
 		goto event_error;
 	}
-	objd_set_private(event_objd, enabler);
+	objd_set_private(event_objd, &enabler->parent);
 	/* The event holds a reference on the channel */
 	objd_ref(channel_objd);
 	return event_objd;
@@ -1240,11 +1468,13 @@ long lttng_channel_cmd(int objd, unsigned int cmd, unsigned long arg,
 			 * If the event name is a star globbing pattern,
 			 * we create the special star globbing enabler.
 			 */
-			return lttng_abi_create_event_enabler(objd, event_param,
-					owner, LTTNG_ENABLER_FORMAT_STAR_GLOB);
+			return lttng_abi_create_event_recorder_enabler(objd, lttng_chan_buf,
+					event_param, owner,
+					LTTNG_ENABLER_FORMAT_STAR_GLOB);
 		} else {
-			return lttng_abi_create_event_enabler(objd, event_param,
-					owner, LTTNG_ENABLER_FORMAT_EVENT);
+			return lttng_abi_create_event_recorder_enabler(objd, lttng_chan_buf,
+					event_param, owner,
+					LTTNG_ENABLER_FORMAT_EVENT);
 		}
 	}
 	case LTTNG_UST_ABI_CONTEXT:
@@ -1279,6 +1509,137 @@ static const struct lttng_ust_abi_objd_ops lttng_channel_ops = {
 };
 
 /**
+ *	lttng_counter_cmd - lttng control through object descriptors
+ *
+ *	@objd: the object descriptor
+ *	@cmd: the command
+ *	@arg: command arg
+ *	@uargs: UST arguments (internal)
+ *	@owner: objd owner
+ *
+ *	This object descriptor implements lttng commands:
+ *      LTTNG_UST_ABI_COUNTER_GLOBAL:
+ *              Returns a global counter object descriptor or failure.
+ *      LTTNG_UST_ABI_COUNTER_CPU:
+ *              Returns a per-cpu counter object descriptor or failure.
+ *	LTTNG_UST_ABI_COUNTER_EVENT
+ *		Returns an event object descriptor or failure.
+ *	LTTNG_UST_ABI_ENABLE
+ *		Enable recording for events in this channel (weak enable)
+ *	LTTNG_UST_ABI_DISABLE
+ *		Disable recording for events in this channel (strong disable)
+ *
+ * Counter and event object descriptors also hold a reference on the session.
+ */
+static
+long lttng_counter_cmd(int objd, unsigned int cmd, unsigned long arg,
+	union lttng_ust_abi_args *uargs, void *owner)
+{
+	struct lttng_ust_channel_counter *counter = objd_private(objd);
+
+	if (cmd != LTTNG_UST_ABI_COUNTER_GLOBAL && cmd != LTTNG_UST_ABI_COUNTER_CPU) {
+		/*
+		 * Check if counter received all global/per-cpu objects.
+		 */
+		if (!lttng_counter_ready(counter->priv->counter))
+			return -EPERM;
+	}
+
+	switch (cmd) {
+	case LTTNG_UST_ABI_COUNTER_GLOBAL:
+	{
+		struct lttng_ust_abi_counter_global *abi_counter_global =
+			(struct lttng_ust_abi_counter_global *) arg;
+		struct lttng_ust_abi_counter_global counter_global;
+		long ret;
+		int shm_fd;
+
+		if (abi_counter_global->len < lttng_ust_offsetofend(struct lttng_ust_abi_counter_global, shm_len)) {
+			return -EINVAL;
+		}
+		ret = copy_abi_struct(&counter_global, sizeof(counter_global),
+				abi_counter_global, abi_counter_global->len);
+		if (ret)
+			return ret;
+		shm_fd = uargs->counter_shm.shm_fd;
+		ret = lttng_counter_set_global_shm(counter->priv->counter, shm_fd);
+		if (!ret) {
+			/* Take ownership of shm_fd. */
+			uargs->counter_shm.shm_fd = -1;
+		}
+		return ret;
+	}
+	case LTTNG_UST_ABI_COUNTER_CPU:
+	{
+		struct lttng_ust_abi_counter_cpu *abi_counter_cpu =
+			(struct lttng_ust_abi_counter_cpu *) arg;
+		struct lttng_ust_abi_counter_cpu counter_cpu;
+		long ret;
+		int shm_fd;
+
+		if (abi_counter_cpu->len < lttng_ust_offsetofend(struct lttng_ust_abi_counter_cpu, cpu_nr)) {
+			return -EINVAL;
+		}
+		ret = copy_abi_struct(&counter_cpu, sizeof(counter_cpu),
+				abi_counter_cpu, abi_counter_cpu->len);
+		if (ret)
+			return ret;
+		shm_fd = uargs->counter_shm.shm_fd;
+		ret = lttng_counter_set_cpu_shm(counter->priv->counter,
+				counter_cpu.cpu_nr, shm_fd);
+		if (!ret) {
+			/* Take ownership of shm_fd. */
+			uargs->counter_shm.shm_fd = -1;
+		}
+		return ret;
+	}
+	case LTTNG_UST_ABI_COUNTER_EVENT:
+	{
+		struct lttng_ust_abi_counter_event *counter_event_param =
+			(struct lttng_ust_abi_counter_event *) arg;
+		struct lttng_ust_abi_event *event_param = &counter_event_param->event;
+		struct lttng_ust_abi_counter_key *key_param = &counter_event_param->key;
+
+		if (strutils_is_star_glob_pattern(event_param->name)) {
+			/*
+			 * If the event name is a star globbing pattern,
+			 * we create the special star globbing enabler.
+			 */
+			return lttng_abi_create_event_counter_enabler(objd, counter,
+					event_param, key_param,	owner,
+					LTTNG_ENABLER_FORMAT_STAR_GLOB);
+		} else {
+			return lttng_abi_create_event_counter_enabler(objd, counter,
+					event_param, key_param, owner,
+					LTTNG_ENABLER_FORMAT_EVENT);
+		}
+	}
+	case LTTNG_UST_ABI_ENABLE:
+		return lttng_channel_enable(counter->parent);
+	case LTTNG_UST_ABI_DISABLE:
+		return lttng_channel_disable(counter->parent);
+	default:
+		return -EINVAL;
+	}
+}
+
+static
+int lttng_counter_release(int objd)
+{
+	struct lttng_ust_channel_counter *counter = objd_private(objd);
+
+	if (counter) {
+		return lttng_ust_abi_objd_unref(counter->parent->session->priv->objd, 0);
+	}
+	return 0;
+}
+
+static const struct lttng_ust_abi_objd_ops lttng_counter_ops = {
+	.release = lttng_counter_release,
+	.cmd = lttng_counter_cmd,
+};
+
+/**
  *	lttng_enabler_cmd - lttng control through object descriptors
  *
  *	@objd: the object descriptor
@@ -1305,7 +1666,7 @@ long lttng_event_enabler_cmd(int objd, unsigned int cmd, unsigned long arg,
 	union lttng_ust_abi_args *uargs __attribute__((unused)),
 	void *owner __attribute__((unused)))
 {
-	struct lttng_event_enabler *enabler = objd_private(objd);
+	struct lttng_event_enabler_session_common *enabler = objd_private(objd);
 
 	switch (cmd) {
 	case LTTNG_UST_ABI_CONTEXT:
@@ -1338,7 +1699,7 @@ long lttng_event_enabler_cmd(int objd, unsigned int cmd, unsigned long arg,
 static
 int lttng_event_enabler_release(int objd)
 {
-	struct lttng_event_enabler *event_enabler = objd_private(objd);
+	struct lttng_event_recorder_enabler *event_enabler = objd_private(objd);
 
 	if (event_enabler)
 		return lttng_ust_abi_objd_unref(event_enabler->chan->priv->parent.objd, 0);

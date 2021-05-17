@@ -39,6 +39,12 @@ int lttng_counter_get_global_shm(struct lib_counter *counter, int *fd, size_t *l
 int lttng_counter_get_cpu_shm(struct lib_counter *counter, int cpu, int *fd, size_t *len)
 	__attribute__((visibility("hidden")));
 
+/*
+ * Has counter received all expected shm ?
+ */
+bool lttng_counter_ready(struct lib_counter *counter)
+	__attribute__((visibility("hidden")));
+
 int lttng_counter_read(const struct lib_counter_config *config,
 		       struct lib_counter *counter,
 		       const size_t *dimension_indexes,

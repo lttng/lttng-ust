@@ -18,6 +18,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <inttypes.h>
 
 #include <lttng/ust-ctl.h>
 #include "common/ustcomm.h"
@@ -1368,7 +1369,9 @@ int ustcomm_register_event(int sock,
 	size_t nr_fields,		/* fields */
 	const struct lttng_ust_event_field * const *lttng_fields,
 	const char *model_emf_uri,
-	uint32_t *id)			/* event id (output) */
+	uint64_t user_token,
+	uint32_t *event_id,		/* event id (output) */
+	uint64_t *counter_index)	/* counter index (output) */
 {
 	ssize_t len;
 	struct {
@@ -1391,6 +1394,7 @@ int ustcomm_register_event(int sock,
 	strncpy(msg.m.event_name, event_name, LTTNG_UST_ABI_SYM_NAME_LEN);
 	msg.m.event_name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
 	msg.m.loglevel = loglevel;
+	msg.m.user_token = user_token;
 	signature_len = strlen(signature) + 1;
 	msg.m.signature_len = signature_len;
 
@@ -1474,9 +1478,12 @@ int ustcomm_register_event(int sock,
 			return -EINVAL;
 		if (reply.r.ret_code < 0)
 			return reply.r.ret_code;
-		*id = reply.r.event_id;
-		DBG("Sent register event notification for name \"%s\": ret_code %d, event_id %u\n",
-			event_name, reply.r.ret_code, reply.r.event_id);
+		if (event_id)
+			*event_id = reply.r.event_id;
+		if (counter_index)
+			*counter_index = reply.r.counter_index;
+		DBG("Sent register event notification for name \"%s\": ret_code %d, event_id %u, counter_index %" PRIu64 "\n",
+			event_name, reply.r.ret_code, reply.r.event_id, reply.r.counter_index);
 		return 0;
 	default:
 		if (len < 0) {

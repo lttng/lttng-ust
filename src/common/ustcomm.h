@@ -102,6 +102,15 @@ struct ustcomm_ust_msg {
 			/* Length of struct lttng_ust_abi_event_notifier */
 			uint32_t len;
 		} event_notifier;
+		/*
+		 * For LTTNG_UST_ABI_COUNTER_EVENT, a struct
+		 * lttng_ust_counter_event implicitly follows struct
+		 * ustcomm_ust_msg.
+		 */
+		struct {
+			/* Length of struct lttng_ust_abi_counter_event */
+			uint32_t len;
+		} counter_event;
 		char padding[USTCOMM_MSG_PADDING2];
 	} u;
 } __attribute__((packed));
@@ -135,7 +144,7 @@ struct ustcomm_notify_hdr {
 	uint32_t notify_cmd;
 } __attribute__((packed));
 
-#define USTCOMM_NOTIFY_EVENT_MSG_PADDING	32
+#define USTCOMM_NOTIFY_EVENT_MSG_PADDING	24
 struct ustcomm_notify_event_msg {
 	uint32_t session_objd;
 	uint32_t channel_objd;
@@ -144,14 +153,16 @@ struct ustcomm_notify_event_msg {
 	uint32_t signature_len;
 	uint32_t fields_len;
 	uint32_t model_emf_uri_len;
+	uint64_t user_token;
 	char padding[USTCOMM_NOTIFY_EVENT_MSG_PADDING];
 	/* followed by signature, fields, and model_emf_uri */
 } __attribute__((packed));
 
-#define USTCOMM_NOTIFY_EVENT_REPLY_PADDING	32
+#define USTCOMM_NOTIFY_EVENT_REPLY_PADDING	24
 struct ustcomm_notify_event_reply {
 	int32_t ret_code;	/* 0: ok, negative: error code */
-	uint32_t event_id;
+	uint32_t event_id;	/* for ring buffer channel events */
+	uint64_t counter_index;	/* for counter channel events */
 	char padding[USTCOMM_NOTIFY_EVENT_REPLY_PADDING];
 } __attribute__((packed));
 
@@ -164,11 +175,11 @@ struct ustcomm_notify_enum_msg {
 	/* followed by enum entries */
 } __attribute__((packed));
 
-#define USTCOMM_NOTIFY_EVENT_REPLY_PADDING	32
+#define USTCOMM_NOTIFY_ENUM_REPLY_PADDING	32
 struct ustcomm_notify_enum_reply {
 	int32_t ret_code;	/* 0: ok, negative: error code */
 	uint64_t enum_id;
-	char padding[USTCOMM_NOTIFY_EVENT_REPLY_PADDING];
+	char padding[USTCOMM_NOTIFY_ENUM_REPLY_PADDING];
 } __attribute__((packed));
 
 #define USTCOMM_NOTIFY_CHANNEL_MSG_PADDING	32
@@ -292,7 +303,9 @@ int ustcomm_register_event(int sock,
 	size_t nr_fields,		/* fields */
 	const struct lttng_ust_event_field * const *fields,
 	const char *model_emf_uri,
-	uint32_t *id)			/* event id (output) */
+	uint64_t user_token,
+	uint32_t *id,			/* event id (output) */
+	uint64_t *counter_index)	/* counter index (output) */
 	__attribute__((visibility("hidden")));
 
 /*

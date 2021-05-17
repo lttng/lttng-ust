@@ -81,8 +81,8 @@ struct lttng_ust_ctl_counter_attr {
  * Counter representation within daemon.
  */
 struct lttng_ust_ctl_daemon_counter {
-	struct lib_counter *counter;
-	const struct lttng_counter_ops *ops;
+	struct lttng_ust_channel_counter *counter;
+	const struct lttng_ust_channel_counter_ops *ops;
 	struct lttng_ust_ctl_counter_attr *attr;	/* initial attributes */
 };
 
@@ -206,6 +206,7 @@ int lttng_ust_ctl_release_object(int sock, struct lttng_ust_abi_object_data *dat
 	case LTTNG_UST_ABI_OBJECT_TYPE_CONTEXT:
 	case LTTNG_UST_ABI_OBJECT_TYPE_EVENT_NOTIFIER_GROUP:
 	case LTTNG_UST_ABI_OBJECT_TYPE_EVENT_NOTIFIER:
+	case LTTNG_UST_ABI_OBJECT_TYPE_COUNTER_EVENT:
 		break;
 	case LTTNG_UST_ABI_OBJECT_TYPE_COUNTER:
 		free(data->u.counter.data);
@@ -2565,7 +2566,8 @@ int lttng_ust_ctl_recv_register_event(int sock,
 	char **signature,
 	size_t *nr_fields,
 	struct lttng_ust_ctl_field **fields,
-	char **model_emf_uri)
+	char **model_emf_uri,
+	uint64_t *user_token)
 {
 	ssize_t len;
 	struct ustcomm_notify_event_msg msg;
@@ -2588,6 +2590,7 @@ int lttng_ust_ctl_recv_register_event(int sock,
 	*loglevel = msg.loglevel;
 	signature_len = msg.signature_len;
 	fields_len = msg.fields_len;
+	*user_token = msg.user_token;
 
 	if (fields_len % sizeof(*a_fields) != 0) {
 		return -EINVAL;
@@ -2679,7 +2682,8 @@ signature_error:
  * Returns 0 on success, negative error value on error.
  */
 int lttng_ust_ctl_reply_register_event(int sock,
-	uint32_t id,
+	uint32_t event_id,
+	uint64_t counter_index,
 	int ret_code)
 {
 	ssize_t len;
@@ -2691,7 +2695,8 @@ int lttng_ust_ctl_reply_register_event(int sock,
 	memset(&reply, 0, sizeof(reply));
 	reply.header.notify_cmd = LTTNG_UST_CTL_NOTIFY_CMD_EVENT;
 	reply.r.ret_code = ret_code;
-	reply.r.event_id = id;
+	reply.r.event_id = event_id;
+	reply.r.counter_index = counter_index;
 	len = ustcomm_send_unix_sock(sock, &reply, sizeof(reply));
 	if (len > 0 && len != sizeof(reply))
 		return -EIO;
@@ -2994,7 +2999,7 @@ struct lttng_ust_ctl_daemon_counter *
 		ust_dim[i].has_underflow = dimensions[i].has_underflow;
 		ust_dim[i].has_overflow = dimensions[i].has_overflow;
 	}
-	counter->counter = transport->ops.counter_create(nr_dimensions,
+	counter->counter = transport->ops.priv->counter_create(nr_dimensions,
 		ust_dim, global_sum_step, global_counter_fd,
 		nr_counter_cpu_fds, counter_cpu_fds, true);
 	if (!counter->counter)
@@ -3012,65 +3017,72 @@ free_counter:
 int lttng_ust_ctl_create_counter_data(struct lttng_ust_ctl_daemon_counter *counter,
 		struct lttng_ust_abi_object_data **_counter_data)
 {
+	struct lttng_ust_abi_counter_conf *counter_conf = NULL;
+	struct lttng_ust_abi_counter_dimension *dimension;
+	uint32_t conf_len = sizeof(struct lttng_ust_abi_counter_conf) +
+				sizeof(struct lttng_ust_abi_counter_dimension);
 	struct lttng_ust_abi_object_data *counter_data;
-	struct lttng_ust_abi_counter_conf counter_conf = {0};
-	size_t i;
 	int ret;
 
+	if (counter->attr->nr_dimensions != 1) {
+		ret = -EINVAL;
+		goto error;
+	}
+	counter_conf = zmalloc(conf_len);
+	if (!counter_conf) {
+		ret = -ENOMEM;
+		goto error;
+	}
+	counter_conf->len = sizeof(struct lttng_ust_abi_counter_conf);
+	counter_conf->flags |= counter->attr->coalesce_hits ? LTTNG_UST_ABI_COUNTER_CONF_FLAG_COALESCE_HITS : 0;
 	switch (counter->attr->arithmetic) {
 	case LTTNG_UST_CTL_COUNTER_ARITHMETIC_MODULAR:
-		counter_conf.arithmetic = LTTNG_UST_ABI_COUNTER_ARITHMETIC_MODULAR;
+		counter_conf->arithmetic = LTTNG_UST_ABI_COUNTER_ARITHMETIC_MODULAR;
 		break;
 	case LTTNG_UST_CTL_COUNTER_ARITHMETIC_SATURATION:
-		counter_conf.arithmetic = LTTNG_UST_ABI_COUNTER_ARITHMETIC_SATURATION;
+		counter_conf->arithmetic = LTTNG_UST_ABI_COUNTER_ARITHMETIC_SATURATION;
 		break;
 	default:
-		return -EINVAL;
+		ret = -EINVAL;
+		goto error;
 	}
 	switch (counter->attr->bitness) {
 	case LTTNG_UST_CTL_COUNTER_BITNESS_32:
-		counter_conf.bitness = LTTNG_UST_ABI_COUNTER_BITNESS_32;
+		counter_conf->bitness = LTTNG_UST_ABI_COUNTER_BITNESS_32;
 		break;
 	case LTTNG_UST_CTL_COUNTER_BITNESS_64:
-		counter_conf.bitness = LTTNG_UST_ABI_COUNTER_BITNESS_64;
+		counter_conf->bitness = LTTNG_UST_ABI_COUNTER_BITNESS_64;
 		break;
 	default:
 		return -EINVAL;
 	}
-	counter_conf.number_dimensions = counter->attr->nr_dimensions;
-	counter_conf.global_sum_step = counter->attr->global_sum_step;
-	counter_conf.coalesce_hits = counter->attr->coalesce_hits;
-	for (i = 0; i < counter->attr->nr_dimensions; i++) {
-		counter_conf.dimensions[i].size = counter->attr->dimensions[i].size;
-		counter_conf.dimensions[i].underflow_index = counter->attr->dimensions[i].underflow_index;
-		counter_conf.dimensions[i].overflow_index = counter->attr->dimensions[i].overflow_index;
-		counter_conf.dimensions[i].has_underflow = counter->attr->dimensions[i].has_underflow;
-		counter_conf.dimensions[i].has_overflow = counter->attr->dimensions[i].has_overflow;
-	}
+	counter_conf->global_sum_step = counter->attr->global_sum_step;
+
+	counter_conf->number_dimensions = 1;
+	counter_conf->elem_len = sizeof(struct lttng_ust_abi_counter_dimension);
+
+	dimension = (struct lttng_ust_abi_counter_dimension *)((char *)counter_conf + sizeof(struct lttng_ust_abi_counter_conf));
+	dimension->flags |= counter->attr->dimensions[0].has_underflow ? LTTNG_UST_ABI_COUNTER_DIMENSION_FLAG_UNDERFLOW : 0;
+	dimension->flags |= counter->attr->dimensions[0].has_overflow ? LTTNG_UST_ABI_COUNTER_DIMENSION_FLAG_OVERFLOW : 0;
+	dimension->size = counter->attr->dimensions[0].size;
+	dimension->underflow_index = counter->attr->dimensions[0].underflow_index;
+	dimension->overflow_index = counter->attr->dimensions[0].overflow_index;
 
 	counter_data = zmalloc(sizeof(*counter_data));
 	if (!counter_data) {
 		ret = -ENOMEM;
-		goto error_alloc;
+		goto error;
 	}
 	counter_data->type = LTTNG_UST_ABI_OBJECT_TYPE_COUNTER;
 	counter_data->handle = -1;
-
-	counter_data->size = sizeof(counter_conf);
-	counter_data->u.counter.data = zmalloc(sizeof(counter_conf));
-	if (!counter_data->u.counter.data) {
-		ret = -ENOMEM;
-		goto error_alloc_data;
-	}
-
-	memcpy(counter_data->u.counter.data, &counter_conf, sizeof(counter_conf));
+	counter_data->size = conf_len;
+	counter_data->u.counter.data = counter_conf;
 	*_counter_data = counter_data;
 
 	return 0;
 
-error_alloc_data:
-	free(counter_data);
-error_alloc:
+error:
+	free(counter_conf);
 	return ret;
 }
 
@@ -3081,7 +3093,7 @@ int lttng_ust_ctl_create_counter_global_data(struct lttng_ust_ctl_daemon_counter
 	int ret, fd;
 	size_t len;
 
-	if (lttng_counter_get_global_shm(counter->counter, &fd, &len))
+	if (lttng_counter_get_global_shm(counter->counter->priv->counter, &fd, &len))
 		return -EINVAL;
 	counter_global_data = zmalloc(sizeof(*counter_global_data));
 	if (!counter_global_data) {
@@ -3106,7 +3118,7 @@ int lttng_ust_ctl_create_counter_cpu_data(struct lttng_ust_ctl_daemon_counter *c
 	int ret, fd;
 	size_t len;
 
-	if (lttng_counter_get_cpu_shm(counter->counter, cpu, &fd, &len))
+	if (lttng_counter_get_cpu_shm(counter->counter->priv->counter, cpu, &fd, &len))
 		return -EINVAL;
 	counter_cpu_data = zmalloc(sizeof(*counter_cpu_data));
 	if (!counter_cpu_data) {
@@ -3127,7 +3139,7 @@ error_alloc:
 
 void lttng_ust_ctl_destroy_counter(struct lttng_ust_ctl_daemon_counter *counter)
 {
-	counter->ops->counter_destroy(counter->counter);
+	counter->ops->priv->counter_destroy(counter->counter);
 	free(counter->attr);
 	free(counter);
 }
@@ -3202,7 +3214,8 @@ int lttng_ust_ctl_send_counter_global_data_to_ust(int sock,
 	memset(&lum, 0, sizeof(lum));
 	lum.handle = counter_data->handle;	/* parent handle */
 	lum.cmd = LTTNG_UST_ABI_COUNTER_GLOBAL;
-	lum.u.counter_global.len = size;
+	lum.u.counter_global.len = sizeof(struct lttng_ust_abi_counter_global);
+	lum.u.counter_global.shm_len = size;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
@@ -3248,7 +3261,8 @@ int lttng_ust_ctl_send_counter_cpu_data_to_ust(int sock,
 	memset(&lum, 0, sizeof(lum));
 	lum.handle = counter_data->handle;	/* parent handle */
 	lum.cmd = LTTNG_UST_ABI_COUNTER_CPU;
-	lum.u.counter_cpu.len = size;
+	lum.u.counter_cpu.len = sizeof(struct lttng_ust_abi_counter_cpu);
+	lum.u.counter_cpu.shm_len = size;
 	lum.u.counter_cpu.cpu_nr = counter_cpu_data->u.counter_cpu.cpu_nr;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
@@ -3275,7 +3289,7 @@ int lttng_ust_ctl_counter_read(struct lttng_ust_ctl_daemon_counter *counter,
 		int cpu, int64_t *value,
 		bool *overflow, bool *underflow)
 {
-	return counter->ops->counter_read(counter->counter, dimension_indexes, cpu,
+	return counter->ops->priv->counter_read(counter->counter, dimension_indexes, cpu,
 			value, overflow, underflow);
 }
 
@@ -3284,14 +3298,69 @@ int lttng_ust_ctl_counter_aggregate(struct lttng_ust_ctl_daemon_counter *counter
 		int64_t *value,
 		bool *overflow, bool *underflow)
 {
-	return counter->ops->counter_aggregate(counter->counter, dimension_indexes,
+	return counter->ops->priv->counter_aggregate(counter->counter, dimension_indexes,
 			value, overflow, underflow);
 }
 
 int lttng_ust_ctl_counter_clear(struct lttng_ust_ctl_daemon_counter *counter,
 		const size_t *dimension_indexes)
 {
-	return counter->ops->counter_clear(counter->counter, dimension_indexes);
+	return counter->ops->priv->counter_clear(counter->counter, dimension_indexes);
+}
+
+/*
+ * Protocol for LTTNG_UST_COUNTER_EVENT command:
+ *
+ * - send:     struct ustcomm_ust_msg
+ * - receive:  struct ustcomm_ust_reply
+ * - send:     struct lttng_ust_counter_event
+ * - receive:  struct ustcomm_ust_reply (actual command return code)
+ */
+int lttng_ust_ctl_counter_create_event(int sock,
+		struct lttng_ust_abi_counter_event *counter_event,
+		struct lttng_ust_abi_object_data *counter_data,
+		struct lttng_ust_abi_object_data **_counter_event_data)
+{
+	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_reply lur;
+	struct lttng_ust_abi_object_data *counter_event_data;
+	ssize_t len;
+	int ret;
+
+	if (!counter_data || !_counter_event_data)
+		return -EINVAL;
+
+	counter_event_data = zmalloc(sizeof(*counter_event_data));
+	if (!counter_event_data)
+		return -ENOMEM;
+	counter_event_data->type = LTTNG_UST_ABI_OBJECT_TYPE_COUNTER_EVENT;
+	memset(&lum, 0, sizeof(lum));
+	lum.handle = counter_data->handle;
+	lum.cmd = LTTNG_UST_ABI_COUNTER_EVENT;
+	lum.u.counter_event.len = sizeof(*counter_event);
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+	if (ret) {
+		free(counter_event_data);
+		return ret;
+	}
+	/* Send struct lttng_ust_counter_event */
+	len = ustcomm_send_unix_sock(sock, counter_event, sizeof(*counter_event));
+	if (len != sizeof(*counter_event)) {
+		free(counter_event_data);
+		if (len < 0)
+			return len;
+		else
+			return -EIO;
+	}
+	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	if (ret) {
+		free(counter_event_data);
+		return ret;
+	}
+	counter_event_data->handle = lur.ret_val;
+	DBG("received counter event handle %u", counter_event_data->handle);
+	*_counter_event_data = counter_event_data;
+	return 0;
 }
 
 int lttng_ust_ctl_get_version(uint32_t *major, uint32_t *minor,

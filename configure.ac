@@ -25,7 +25,7 @@ m4_define([ust_lib_version], ust_lib_version_current[:]ust_lib_version_revision[
 # Library version information of "liblttng-ust-ctl"
 # Following the numbering scheme proposed by libtool for the library version
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
-m4_define([ust_ctl_lib_version_current], [5])
+m4_define([ust_ctl_lib_version_current], [6])
 m4_define([ust_ctl_lib_version_revision], [0])
 m4_define([ust_ctl_lib_version_age], [0])
 m4_define([ust_ctl_lib_version], ust_ctl_lib_version_current[:]ust_ctl_lib_version_revision[:]ust_ctl_lib_version_age)
