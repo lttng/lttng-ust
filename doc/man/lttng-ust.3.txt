@@ -14,56 +14,72 @@ SYNOPSIS
 *#include <lttng/tracepoint.h>*
 
 [verse]
-#define *TRACEPOINT_ENUM*('prov_name', 'enum_name', 'mappings')
-#define *TRACEPOINT_EVENT*('prov_name', 't_name', 'args', 'fields')
-#define *TRACEPOINT_EVENT_CLASS*('prov_name', 'class_name', 'args', 'fields')
-#define *TRACEPOINT_EVENT_INSTANCE*('prov_name', 'class_name', 't_name', 'args')
-#define *TRACEPOINT_LOGLEVEL*('prov_name', 't_name', 'level')
-#define *ctf_array*('int_type', 'field_name', 'expr', 'count')
-#define *ctf_array_nowrite*('int_type', 'field_name', 'expr', 'count')
-#define *ctf_array_hex*('int_type', 'field_name', 'expr', 'count')
-#define *ctf_array_nowrite_hex*('int_type', 'field_name', 'expr', 'count')
-#define *ctf_array_network*('int_type', 'field_name', 'expr', 'count')
-#define *ctf_array_network_nowrite*('int_type', 'field_name', 'expr', 'count')
-#define *ctf_array_network_hex*('int_type', 'field_name', 'expr', 'count')
-#define *ctf_array_network_nowrite_hex*('int_type', 'field_name', 'expr', 'count')
-#define *ctf_array_text*(char, 'field_name', 'expr', 'count')
-#define *ctf_array_text_nowrite*(char, 'field_name', 'expr', 'count')
-#define *ctf_enum*('prov_name', 'enum_name', 'int_type', 'field_name', 'expr')
-#define *ctf_enum_nowrite*('prov_name', 'enum_name', 'int_type', 'field_name',
-                         'expr')
-#define *ctf_enum_value*('label', 'value')
-#define *ctf_enum_range*('label', 'start', 'end')
-#define *ctf_float*('float_type', 'field_name', 'expr')
-#define *ctf_float_nowrite*('float_type', 'field_name', 'expr')
-#define *ctf_integer*('int_type', 'field_name', 'expr')
-#define *ctf_integer_hex*('int_type', 'field_name', 'expr')
-#define *ctf_integer_network*('int_type', 'field_name', 'expr')
-#define *ctf_integer_network_hex*('int_type', 'field_name', 'expr')
-#define *ctf_integer_nowrite*('int_type', 'field_name', 'expr')
-#define *ctf_sequence*('int_type', 'field_name', 'expr', 'len_type', 'len_expr')
-#define *ctf_sequence_nowrite*('int_type', 'field_name', 'expr', 'len_type',
-                             'len_expr')
-#define *ctf_sequence_hex*('int_type', 'field_name', 'expr', 'len_type',
-                         'len_expr')
-#define *ctf_sequence_nowrite_hex*('int_type', 'field_name', 'expr', 'len_type',
-                                 'len_expr')
-#define *ctf_sequence_network*('int_type', 'field_name', 'expr', 'len_type',
-                             'len_expr')
-#define *ctf_sequence_network_nowrite*('int_type', 'field_name', 'expr',
-                                     'len_type', 'len_expr')
-#define *ctf_sequence_network_hex*('int_type', 'field_name', 'expr', 'len_type',
-                                 'len_expr')
-#define *ctf_sequence_network_nowrite_hex*('int_type', 'field_name', 'expr',
+#define *LTTNG_UST_TP_ARGS*('args'...)
+#define *LTTNG_UST_TP_ENUM_VALUES*('values'...)
+#define *LTTNG_UST_TP_FIELDS*('fields'...)
+#define *LTTNG_UST_TRACEPOINT_ENUM*('prov_name', 'enum_name', 'mappings')
+#define *LTTNG_UST_TRACEPOINT_EVENT*('prov_name', 't_name', 'args', 'fields')
+#define *LTTNG_UST_TRACEPOINT_EVENT_CLASS*('cls_prov_name', 'cls_name',
+                                         'args', 'fields')
+#define *LTTNG_UST_TRACEPOINT_EVENT_INSTANCE*('cls_prov_name', 'cls_name',
+                                            'inst_prov_name', 't_name', 'args')
+#define *LTTNG_UST_TRACEPOINT_LOGLEVEL*('prov_name', 't_name', 'level')
+#define *lttng_ust_do_tracepoint*('prov_name', 't_name', ...)
+#define *lttng_ust_field_array*('int_type', 'field_name', 'expr', 'count')
+#define *lttng_ust_field_array_nowrite*('int_type', 'field_name', 'expr', 'count')
+#define *lttng_ust_field_array_hex*('int_type', 'field_name', 'expr', 'count')
+#define *lttng_ust_field_array_nowrite_hex*('int_type', 'field_name', 'expr',
+                                          'count')
+#define *lttng_ust_field_array_network*('int_type', 'field_name', 'expr', 'count')
+#define *lttng_ust_field_array_network_nowrite*('int_type', 'field_name',
+                                              'expr', 'count')
+#define *lttng_ust_field_array_network_hex*('int_type', 'field_name', 'expr',
+                                          'count')
+#define *lttng_ust_field_array_network_nowrite_hex*('int_type', 'field_name',
+                                                  'expr', 'count')
+#define *lttng_ust_field_array_text*(char, 'field_name', 'expr', 'count')
+#define *lttng_ust_field_array_text_nowrite*(char, 'field_name', 'expr',
+                                           'count')
+#define *lttng_ust_field_enum*('prov_name', 'enum_name', 'int_type', 'field_name',
+                             'expr')
+#define *lttng_ust_field_enum_nowrite*('prov_name', 'enum_name', 'int_type',
+                                     'field_name', 'expr')
+#define *lttng_ust_field_enum_value*('label', 'value')
+#define *lttng_ust_field_enum_range*('label', 'start', 'end')
+#define *lttng_ust_field_float*('float_type', 'field_name', 'expr')
+#define *lttng_ust_field_float_nowrite*('float_type', 'field_name', 'expr')
+#define *lttng_ust_field_integer*('int_type', 'field_name', 'expr')
+#define *lttng_ust_field_integer_hex*('int_type', 'field_name', 'expr')
+#define *lttng_ust_field_integer_network*('int_type', 'field_name', 'expr')
+#define *lttng_ust_field_integer_network_hex*('int_type', 'field_name', 'expr')
+#define *lttng_ust_field_integer_nowrite*('int_type', 'field_name', 'expr')
+#define *lttng_ust_field_sequence*('int_type', 'field_name', 'expr',
+                                 'len_type', 'len_expr')
+#define *lttng_ust_field_sequence_nowrite*('int_type', 'field_name', 'expr',
                                          'len_type', 'len_expr')
-#define *ctf_sequence_text*(char, 'field_name', 'expr', 'len_type', 'len_expr')
-#define *ctf_sequence_text_nowrite*(char, 'field_name', 'expr', 'len_type',
-                                  'len_expr')
-#define *ctf_string*('field_name', 'expr')
-#define *ctf_string_nowrite*('field_name', 'expr')
-#define *do_tracepoint*('prov_name', 't_name', ...)
-#define *tracepoint*('prov_name', 't_name', ...)
-#define *tracepoint_enabled*('prov_name', 't_name')
+#define *lttng_ust_field_sequence_hex*('int_type', 'field_name', 'expr',
+                                     'len_type', 'len_expr')
+#define *lttng_ust_field_sequence_nowrite_hex*('int_type', 'field_name', 'expr',
+                                             'len_type', 'len_expr')
+#define *lttng_ust_field_sequence_network*('int_type', 'field_name', 'expr',
+                                         'len_type', 'len_expr')
+#define *lttng_ust_field_sequence_network_nowrite*('int_type', 'field_name',
+                                                 'expr', 'len_type',
+                                                 'len_expr')
+#define *lttng_ust_field_sequence_network_hex*('int_type', 'field_name', 'expr',
+                                             'len_type', 'len_expr')
+#define *lttng_ust_field_sequence_network_nowrite_hex*('int_type',
+                                                     'field_name',
+                                                     'expr', 'len_type',
+                                                     'len_expr')
+#define *lttng_ust_field_sequence_text*(char, 'field_name', 'expr', 'len_type',
+                                      'len_expr')
+#define *lttng_ust_field_sequence_text_nowrite*(char, 'field_name', 'expr',
+                                              'len_type', 'len_expr')
+#define *lttng_ust_field_string*('field_name', 'expr')
+#define *lttng_ust_field_string_nowrite*('field_name', 'expr')
+#define *lttng_ust_tracepoint*('prov_name', 't_name', ...)
+#define *lttng_ust_tracepoint_enabled*('prov_name', 't_name')
 
 Link with `-llttng-ust -llttng-ust-common -ldl`, following this man page.
 
@@ -87,11 +103,42 @@ http://lttng.org/docs/[the online LTTng documentation].
 
 There are three ways to use `liblttng-ust`:
 
-  * Using the man:tracef(3) API, which is similar to man:printf(3).
-  * Using the man:tracelog(3) API, which is man:tracef(3) with
-    a log level parameter.
+  * Using the man:lttng_ust_tracef(3) API, which is similar to
+    man:printf(3).
+  * Using the man:lttng_ust_tracelog(3) API, which is
+    man:lttng_ust_tracef(3) with a log level parameter.
   * Defining your own tracepoints. See the
     <<creating-tp,Creating a tracepoint provider>> section below.
+
+
+Compatibility with previous APIs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Since LTTng-UST{nbsp}2.13, the `LTTNG_UST_COMPAT_API_VERSION` definition
+controls which LTTng-UST APIs are available (compiled):
+
+Undefined::
+    All APIs are available.
+
+'N' (0 or positive integer)::
+    API version{nbsp}__N__, and all the following existing APIs, are
+    available. Previous APIs are not available (not compiled).
+
+The following table shows the mapping from LTTng-UST versions (up to
+LTTng-UST{nbsp}{manversion}) to available API versions:
+
+[options="header"]
+|====
+|LTTng-UST version |Available API versions
+|2.0 to 2.12 |0
+|2.13 |0 and 1
+|====
+
+This manual page **only** documents version{nbsp}1 of the API.
+
+If you wish to have access to version{nbsp}0 of the API (for example,
+the `tracepoint()`, `ctf_integer()`, and `TRACEPOINT_EVENT()` macros),
+then either don't define `LTTNG_UST_COMPAT_API_VERSION`, or define it to
+`0` before including any LTTng-UST header.
 
 
 [[creating-tp]]
@@ -100,12 +147,13 @@ Creating a tracepoint provider
 Creating a tracepoint provider is the first step of using
 `liblttng-ust`. The next steps are:
 
-  * <<tracepoint,Instrumenting your application with `tracepoint()` calls>>
+  * <<tracepoint,Instrumenting your application with
+    `lttng_ust_tracepoint()` calls>>
   * Building your application with LTTng-UST support, either
     <<build-static,statically>> or <<build-dynamic,dynamically>>.
 
-A *tracepoint provider* is a compiled object containing the event
-probes corresponding to your custom tracepoint definitions. A tracepoint
+A *tracepoint provider* is a compiled object containing the event probes
+corresponding to your custom tracepoint definitions. A tracepoint
 provider contains the code to get the size of an event and to serialize
 it, amongst other things.
 
@@ -113,21 +161,23 @@ To create a tracepoint provider, start with the following
 _tracepoint provider header_ template:
 
 ------------------------------------------------------------------------
-#undef TRACEPOINT_PROVIDER
-#define TRACEPOINT_PROVIDER my_provider
+#undef LTTNG_UST_TRACEPOINT_PROVIDER
+#define LTTNG_UST_TRACEPOINT_PROVIDER my_provider
 
-#undef TRACEPOINT_INCLUDE
-#define TRACEPOINT_INCLUDE "./tp.h"
+#undef LTTNG_UST_TRACEPOINT_INCLUDE
+#define LTTNG_UST_TRACEPOINT_INCLUDE "./tp.h"
 
-#if !defined(_TP_H) || defined(TRACEPOINT_HEADER_MULTI_READ)
+#if !defined(_TP_H) || \
+    defined(LTTNG_UST_TRACEPOINT_HEADER_MULTI_READ)
 #define _TP_H
 
 #include <lttng/tracepoint.h>
 
 /*
- * TRACEPOINT_EVENT(), TRACEPOINT_EVENT_CLASS(),
- * TRACEPOINT_EVENT_INSTANCE(), TRACEPOINT_LOGLEVEL(),
- * and `TRACEPOINT_ENUM()` are used here.
+ * LTTNG_UST_TRACEPOINT_EVENT(), LTTNG_UST_TRACEPOINT_EVENT_CLASS(),
+ * LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(),
+ * LTTNG_UST_TRACEPOINT_LOGLEVEL(), and `LTTNG_UST_TRACEPOINT_ENUM()`
+ * are used here.
  */
 
 #endif /* _TP_H */
@@ -136,14 +186,14 @@ _tracepoint provider header_ template:
 ------------------------------------------------------------------------
 
 In this template, the tracepoint provider is named `my_provider`
-(`TRACEPOINT_PROVIDER` definition). The file needs to bear the
-name of the `TRACEPOINT_INCLUDE` definition (`tp.h` in this case).
+(`LTTNG_UST_TRACEPOINT_PROVIDER` definition). The file needs to bear the
+name of the `LTTNG_UST_TRACEPOINT_INCLUDE` definition (`tp.h` in this case).
 Between `#include <lttng/tracepoint.h>` and `#endif` go
-the invocations of the <<tracepoint-event,`TRACEPOINT_EVENT()`>>,
-<<tracepoint-event-class,`TRACEPOINT_EVENT_CLASS()`>>,
-<<tracepoint-event-class,`TRACEPOINT_EVENT_INSTANCE()`>>,
-<<tracepoint-loglevel,`TRACEPOINT_LOGLEVEL()`>>, and
-<<tracepoint-enum,`TRACEPOINT_ENUM()`>> macros.
+the invocations of the <<tracepoint-event,`LTTNG_UST_TRACEPOINT_EVENT()`>>,
+<<tracepoint-event-class,`LTTNG_UST_TRACEPOINT_EVENT_CLASS()`>>,
+<<tracepoint-event-class,`LTTNG_UST_TRACEPOINT_EVENT_INSTANCE()`>>,
+<<tracepoint-loglevel,`LTTNG_UST_TRACEPOINT_LOGLEVEL()`>>, and
+<<tracepoint-enum,`LTTNG_UST_TRACEPOINT_ENUM()`>> macros.
 
 NOTE: You can avoid writing the prologue and epilogue boilerplate in the
 template file above by using the man:lttng-gen-tp(1) tool shipped with
@@ -153,7 +203,7 @@ The tracepoint provider header file needs to be included in a source
 file which looks like this:
 
 ------------------------------------------------------------------------
-#define TRACEPOINT_CREATE_PROBES
+#define LTTNG_UST_TRACEPOINT_CREATE_PROBES
 
 #include "tp.h"
 ------------------------------------------------------------------------
@@ -164,24 +214,24 @@ tracepoint provider sources, ready to be compiled.
 You can create multiple tracepoint providers to be used in a single
 application, but each one must have its own header file.
 
-The <<tracepoint-event,`TRACEPOINT_EVENT()` usage>> section below
-shows how to use the `TRACEPOINT_EVENT()` macro to define the actual
+The <<tracepoint-event,`LTTNG_UST_TRACEPOINT_EVENT()` usage>> section below
+shows how to use the `LTTNG_UST_TRACEPOINT_EVENT()` macro to define the actual
 tracepoints in the tracepoint provider header file.
 
 See the <<example,EXAMPLE>> section below for a complete example.
 
 
 [[tracepoint-event]]
-`TRACEPOINT_EVENT()` usage
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-The `TRACEPOINT_EVENT()` macro is used in a template provider
+`LTTNG_UST_TRACEPOINT_EVENT()` usage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The `LTTNG_UST_TRACEPOINT_EVENT()` macro is used in a template provider
 header file (see the <<creating-tp,Creating a tracepoint provider>>
 section above) to define LTTng-UST tracepoints.
 
-The `TRACEPOINT_EVENT()` usage template is as follows:
+The `LTTNG_UST_TRACEPOINT_EVENT()` usage template is as follows:
 
 ------------------------------------------------------------------------
-TRACEPOINT_EVENT(
+LTTNG_UST_TRACEPOINT_EVENT(
     /* Tracepoint provider name */
     my_provider,
 
@@ -189,26 +239,26 @@ TRACEPOINT_EVENT(
     my_tracepoint,
 
     /* List of tracepoint arguments (input) */
-    TP_ARGS(
+    LTTNG_UST_TP_ARGS(
         ...
     ),
 
     /* List of fields of eventual event (output) */
-    TP_FIELDS(
+    LTTNG_UST_TP_FIELDS(
         ...
     )
 )
 ------------------------------------------------------------------------
 
-The `TP_ARGS()` macro contains the input arguments of the tracepoint.
+The `LTTNG_UST_TP_ARGS()` macro contains the input arguments of the tracepoint.
 Those arguments can be used in the argument expressions of the output
-fields defined in `TP_FIELDS()`.
+fields defined in `LTTNG_UST_TP_FIELDS()`.
 
-The format of the `TP_ARGS()` parameters is: C type, then argument name;
+The format of the `LTTNG_UST_TP_ARGS()` parameters is: C type, then argument name;
 repeat as needed, up to ten times. For example:
 
 ------------------------------------------------------------------------
-TP_ARGS(
+LTTNG_UST_TP_ARGS(
     int, my_int,
     const char *, my_string,
     FILE *, my_file,
@@ -217,105 +267,118 @@ TP_ARGS(
 )
 ------------------------------------------------------------------------
 
-The `TP_FIELDS()` macro contains the output fields of the tracepoint,
-that is, the actual data that can be recorded in the payload of an
-event emitted by this tracepoint.
+The `LTTNG_UST_TP_FIELDS()` macro contains the output fields of the tracepoint,
+that is, the actual data that can be recorded in the payload of an event
+emitted by this tracepoint.
 
-The `TP_FIELDS()` macro contains a list of `ctf_*()` macros
-:not: separated by commas. The available macros are documented in the
-<<ctf-macros,Available `ctf_*()` field type macros>> section below.
+The `LTTNG_UST_TP_FIELDS()` macro contains a list of
+`lttng_ust_field_*()` macros :not: separated by commas.
+The available macros are documented in the
+<<ctf-macros,Available `lttng_ust_field_*()` field type macros>>
+section below.
 
 
 [[ctf-macros]]
-Available `ctf_*()` field type macros
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-This section documents the available `ctf_*()` macros that can be
-inserted in the `TP_FIELDS()` macro of the
-<<tracepoint-event,`TRACEPOINT_EVENT()` macro>>.
+Available field macros
+~~~~~~~~~~~~~~~~~~~~~~
+This section documents the available `lttng_ust_field_*()` macros that
+can be inserted in the `LTTNG_UST_TP_FIELDS()` macro of the
+<<tracepoint-event,`LTTNG_UST_TRACEPOINT_EVENT()` macro>>.
 
 Standard integer, displayed in base 10:
 
 [verse]
-*ctf_integer*('int_type', 'field_name', 'expr')
-*ctf_integer_nowrite*('int_type', 'field_name', 'expr')
+*lttng_ust_field_integer*('int_type', 'field_name', 'expr')
+*lttng_ust_field_integer_nowrite*('int_type', 'field_name', 'expr')
 
 Standard integer, displayed in base 16:
 
 [verse]
-*ctf_integer_hex*('int_type', 'field_name', 'expr')
+*lttng_ust_field_integer_hex*('int_type', 'field_name', 'expr')
 
 Integer in network byte order (big endian), displayed in base 10:
 
 [verse]
-*ctf_integer_network*('int_type', 'field_name', 'expr')
+*lttng_ust_field_integer_network*('int_type', 'field_name', 'expr')
 
 Integer in network byte order, displayed in base 16:
 
 [verse]
-*ctf_integer_network_hex*('int_type', 'field_name', 'expr')
+*lttng_ust_field_integer_network_hex*('int_type', 'field_name', 'expr')
 
 Floating point number:
 
 [verse]
-*ctf_float*('float_type', 'field_name', 'expr')
-*ctf_float_nowrite*('float_type', 'field_name', 'expr')
+*lttng_ust_field_float*('float_type', 'field_name', 'expr')
+*lttng_ust_field_float_nowrite*('float_type', 'field_name', 'expr')
 
 Null-terminated string:
 
 [verse]
-*ctf_string*('field_name', 'expr')
-*ctf_string_nowrite*('field_name', 'expr')
+*lttng_ust_field_string*('field_name', 'expr')
+*lttng_ust_field_string_nowrite*('field_name', 'expr')
 
 Statically-sized array of integers (`_hex` versions displayed in
 hexadecimal, `_network` versions in network byte order):
 
 [verse]
-*ctf_array*('int_type', 'field_name', 'expr', 'count')
-*ctf_array_nowrite*('int_type', 'field_name', 'expr', 'count')
-*ctf_array_hex*('int_type', 'field_name', 'expr', 'count')
-*ctf_array_nowrite_hex*('int_type', 'field_name', 'expr', 'count')
-*ctf_array_network*('int_type', 'field_name', 'expr', 'count')
-*ctf_array_network_nowrite*('int_type', 'field_name', 'expr', 'count')
-*ctf_array_network_hex*('int_type', 'field_name', 'expr', 'count')
-*ctf_array_network_nowrite_hex*('int_type', 'field_name', 'expr', 'count')
+*lttng_ust_field_array*('int_type', 'field_name', 'expr', 'count')
+*lttng_ust_field_array_nowrite*('int_type', 'field_name', 'expr', 'count')
+*lttng_ust_field_array_hex*('int_type', 'field_name', 'expr', 'count')
+*lttng_ust_field_array_nowrite_hex*('int_type', 'field_name', 'expr', 'count')
+*lttng_ust_field_array_network*('int_type', 'field_name', 'expr', 'count')
+*lttng_ust_field_array_network_nowrite*('int_type', 'field_name', 'expr',
+                                      'count')
+*lttng_ust_field_array_network_hex*('int_type', 'field_name', 'expr', 'count')
+*lttng_ust_field_array_network_nowrite_hex*('int_type', 'field_name',
+                                          'expr', 'count')
 
 Statically-sized array, printed as text; no need to be null-terminated:
 
 [verse]
-*ctf_array_text*(char, 'field_name', 'expr', 'count')
-*ctf_array_text_nowrite*(char, 'field_name', 'expr', 'count')
+*lttng_ust_field_array_text*(char, 'field_name', 'expr', 'count')
+*lttng_ust_field_array_text_nowrite*(char, 'field_name', 'expr', 'count')
 
 Dynamically-sized array of integers (`_hex` versions displayed in
 hexadecimal, `_network` versions in network byte order):
 
 [verse]
-*ctf_sequence*('int_type', 'field_name', 'expr', 'len_type', 'len_expr')
-*ctf_sequence_nowrite*('int_type', 'field_name', 'expr', 'len_type', 'len_expr')
-*ctf_sequence_hex*('int_type', 'field_name', 'expr', 'len_type', 'len_expr')
-*ctf_sequence_nowrite_hex*('int_type', 'field_name', 'expr', 'len_type',
+*lttng_ust_field_sequence*('int_type', 'field_name', 'expr', 'len_type',
                          'len_expr')
-*ctf_sequence_network*('int_type', 'field_name', 'expr', 'len_type', 'len_expr')
-*ctf_sequence_network_nowrite*('int_type', 'field_name', 'expr', 'len_type',
-                             'len_expr')
-*ctf_sequence_network_hex*('int_type', 'field_name', 'expr', 'len_type',
-                         'len_expr')
-*ctf_sequence_network_nowrite_hex*('int_type', 'field_name', 'expr',
+*lttng_ust_field_sequence_nowrite*('int_type', 'field_name', 'expr',
                                  'len_type', 'len_expr')
+*lttng_ust_field_sequence_hex*('int_type', 'field_name', 'expr', 'len_type',
+                             'len_expr')
+*lttng_ust_field_sequence_nowrite_hex*('int_type', 'field_name', 'expr',
+                                     'len_type', 'len_expr')
+*lttng_ust_field_sequence_network*('int_type', 'field_name', 'expr',
+                                 'len_type', 'len_expr')
+*lttng_ust_field_sequence_network_nowrite*('int_type', 'field_name', 'expr',
+                                         'len_type', 'len_expr')
+*lttng_ust_field_sequence_network_hex*('int_type', 'field_name', 'expr',
+                                     'len_type', 'len_expr')
+*lttng_ust_field_sequence_network_nowrite_hex*('int_type', 'field_name',
+                                             'expr', 'len_type',
+                                             'len_expr')
 
 Dynamically-sized array, displayed as text; no need to be null-terminated:
 
 [verse]
-*ctf_sequence_text*(char, 'field_name', 'expr', 'len_type', 'len_expr')
-*ctf_sequence_text_nowrite*(char, 'field_name', 'expr', 'len_type', 'len_expr')
+*lttng_ust_field_sequence_text*(char, 'field_name', 'expr', 'len_type',
+                              'len_expr')
+*lttng_ust_field_sequence_text_nowrite*(char, 'field_name', 'expr',
+                                      'len_type', 'len_expr')
 
 Enumeration. The enumeration field must be defined before using this
-macro with the `TRACEPOINT_ENUM()` macro. See the
-<<tracepoint-enum,`TRACEPOINT_ENUM()` usage>> section for more
+macro with the `LTTNG_UST_TRACEPOINT_ENUM()` macro. See the
+<<tracepoint-enum,`LTTNG_UST_TRACEPOINT_ENUM()` usage>> section for more
 information.
 
 [verse]
-*ctf_enum*('prov_name', 'enum_name', 'int_type', 'field_name', 'expr')
-*ctf_enum_nowrite*('prov_name', 'enum_name', 'int_type', 'field_name', 'expr')
+*lttng_ust_field_enum*('prov_name', 'enum_name', 'int_type', 'field_name',
+                     'expr')
+*lttng_ust_field_enum_nowrite*('prov_name', 'enum_name', 'int_type',
+                             'field_name', 'expr')
 
 The parameters are:
 
@@ -325,14 +388,14 @@ The parameters are:
 
 'enum_name'::
     Name of an enumeration field previously defined with the
-    `TRACEPOINT_ENUM()` macro. See the
-    <<tracepoint-enum,`TRACEPOINT_ENUM()` usage>> section for more
+    `LTTNG_UST_TRACEPOINT_ENUM()` macro. See the
+    <<tracepoint-enum,`LTTNG_UST_TRACEPOINT_ENUM()` usage>> section for more
     information.
 
 'expr'::
     C expression resulting in the field's value. This expression can
     use one or more arguments passed to the tracepoint. The arguments
-    of a given tracepoint are defined in the `TP_ARGS()` macro (see
+    of a given tracepoint are defined in the `LTTNG_UST_TP_ARGS()` macro (see
     the <<creating-tp,Creating a tracepoint provider>> section above).
 
 'field_name'::
@@ -367,17 +430,18 @@ See the <<example,EXAMPLE>> section below for a complete example.
 
 
 [[tracepoint-enum]]
-`TRACEPOINT_ENUM()` usage
-~~~~~~~~~~~~~~~~~~~~~~~~~
+`LTTNG_UST_TRACEPOINT_ENUM()` usage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 An enumeration field is a list of mappings between an integers, or a
 range of integers, and strings (sometimes called _labels_ or
 _enumerators_). Enumeration fields can be used to have a more compact
 trace when the possible values for a field are limited.
 
-An enumeration field is defined with the `TRACEPOINT_ENUM()` macro:
+An enumeration field is defined with the `LTTNG_UST_TRACEPOINT_ENUM()`
+macro:
 
 ------------------------------------------------------------------------
-TRACEPOINT_ENUM(
+LTTNG_UST_TRACEPOINT_ENUM(
     /* Tracepoint provider name */
     my_provider,
 
@@ -385,27 +449,28 @@ TRACEPOINT_ENUM(
     my_enum,
 
     /* Enumeration mappings */
-    TP_ENUM_VALUES(
+    LTTNG_UST_TP_ENUM_VALUES(
         ...
     )
 )
 ------------------------------------------------------------------------
 
-`TP_ENUM_VALUES()` contains a list of enumeration mappings, :not:
-separated by commas. Two macros can be used in the `TP_ENUM_VALUES()`:
-`ctf_enum_value()` and `ctf_enum_range()`.
+`LTTNG_UST_TP_ENUM_VALUES()` contains a list of enumeration mappings,
+:not: separated by commas. Two macros can be used in the
+`LTTNG_UST_TP_ENUM_VALUES()`: `lttng_ust_field_enum_value()` and
+`lttng_ust_field_enum_range()`.
 
-`ctf_enum_value()` is a single value mapping:
+`lttng_ust_field_enum_value()` is a single value mapping:
 
 [verse]
-*ctf_enum_value*('label', 'value')
+*lttng_ust_field_enum_value*('label', 'value')
 
 This macro maps the given 'label' string to the value 'value'.
 
-`ctf_enum_range()` is a range mapping:
+`lttng_ust_field_enum_range()` is a range mapping:
 
 [verse]
-*ctf_enum_range*('label', 'start', 'end')
+*lttng_ust_field_enum_range*('label', 'start', 'end')
 
 This macro maps the given 'label' string to the range of integers from
 'start' to 'end', inclusively. Range mappings may overlap, but the
@@ -416,40 +481,46 @@ See the <<example,EXAMPLE>> section below for a complete example.
 
 
 [[tracepoint-event-class]]
-`TRACEPOINT_EVENT_CLASS()` usage
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+`LTTNG_UST_TRACEPOINT_EVENT_CLASS()` usage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 A *tracepoint class* is a class of tracepoints sharing the
 same field types and names. A tracepoint instance is one instance of
 such a declared tracepoint class, with its own event name.
 
-LTTng-UST creates one event serialization function per tracepoint
-class. Using `TRACEPOINT_EVENT()` creates one tracepoint class per
-tracepoint definition, whereas using `TRACEPOINT_EVENT_CLASS()` and
-`TRACEPOINT_EVENT_INSTANCE()` creates one tracepoint class, and one or
-more tracepoint instances of this class. In other words, many
+LTTng-UST creates one event serialization function per tracepoint class.
+Using `LTTNG_UST_TRACEPOINT_EVENT()` creates one tracepoint class per
+tracepoint definition, whereas using
+`LTTNG_UST_TRACEPOINT_EVENT_CLASS()` and
+`LTTNG_UST_TRACEPOINT_EVENT_INSTANCE()` creates one tracepoint class,
+and one or more tracepoint instances of this class. In other words, many
 tracepoints can reuse the same serialization code. Reusing the same
 code, when possible, can reduce cache pollution, thus improve
 performance.
 
-The `TRACEPOINT_EVENT_CLASS()` macro accepts the same parameters as
-the `TRACEPOINT_EVENT()` macro, except that instead of an event name,
-its second parameter is the _tracepoint class name_:
+The `LTTNG_UST_TRACEPOINT_EVENT_CLASS()` macro accepts the same
+parameters as the `LTTNG_UST_TRACEPOINT_EVENT()` macro, except that
+instead of an event name, its second parameter is the _tracepoint class
+name_:
 
 ------------------------------------------------------------------------
-TRACEPOINT_EVENT_CLASS(
-    /* Tracepoint provider name */
+#define LTTNG_UST_TRACEPOINT_PROVIDER my_provider
+
+/* ... */
+
+LTTNG_UST_TRACEPOINT_EVENT_CLASS(
+    /* Tracepoint class provider name */
     my_provider,
 
     /* Tracepoint class name */
     my_tracepoint_class,
 
     /* List of tracepoint arguments (input) */
-    TP_ARGS(
+    LTTNG_UST_TP_ARGS(
         ...
     ),
 
     /* List of fields of eventual event (output) */
-    TP_FIELDS(
+    LTTNG_UST_TP_FIELDS(
         ...
     )
 )
@@ -459,33 +530,58 @@ Once the tracepoint class is defined, you can create as many tracepoint
 instances as needed:
 
 -------------------------------------------------------------------------
-TRACEPOINT_EVENT_INSTANCE(
-    /* Tracepoint provider name */
+#define LTTNG_UST_TRACEPOINT_PROVIDER natality
+
+/* ... */
+
+LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(
+    /* Name of the tracepoint class provider */
     my_provider,
 
     /* Tracepoint class name */
     my_tracepoint_class,
 
+    /* Name of the local (instance) tracepoint provider */
+    natality,
+
     /* Tracepoint/event name */
     my_tracepoint,
 
     /* List of tracepoint arguments (input) */
-    TP_ARGS(
+    LTTNG_UST_TP_ARGS(
         ...
     )
 )
 ------------------------------------------------------------------------
 
-As you can see, the `TRACEPOINT_EVENT_INSTANCE()` does not contain
-the `TP_FIELDS()` macro, because they are defined at the
-`TRACEPOINT_EVENT_CLASS()` level.
+As you can see, the `LTTNG_UST_TRACEPOINT_EVENT_INSTANCE()` does not
+contain the `LTTNG_UST_TP_FIELDS()` macro, because they are defined at
+the `LTTNG_UST_TRACEPOINT_EVENT_CLASS()` level.
+
+Note that the `LTTNG_UST_TRACEPOINT_EVENT_INSTANCE()` macro requires two
+provider names:
+
+* The name of the tracepoint class provider (`my_provider` in the
+  example above).
++
+This is the same as the first argument of the
+`LTTNG_UST_TRACEPOINT_EVENT_CLASS()` expansion to refer to.
+
+* The name of the local, or instance, provider (`natality` in the
+  example above).
++
+This is the provider name which becomes the prefix part of the name of
+the events which such a tracepoint creates.
+
+The two provider names may be different if the tracepoint class and the
+tracepoint instance macros are in two different translation units.
 
 See the <<example,EXAMPLE>> section below for a complete example.
 
 
 [[tracepoint-loglevel]]
-`TRACEPOINT_LOGLEVEL()` usage
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+`LTTNG_UST_TRACEPOINT_LOGLEVEL()` usage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Optionally, a *log level* can be assigned to a defined tracepoint.
 Assigning different levels of severity to tracepoints can be useful:
 when controlling tracing sessions, you can choose to only enable
@@ -494,12 +590,13 @@ nloption:--loglevel and nloption:--loglevel-only options of the
 man:lttng-enable-event(1) command.
 
 Log levels are assigned to tracepoints that are already defined using
-the `TRACEPOINT_LOGLEVEL()` macro. The latter must be used after having
-used `TRACEPOINT_EVENT()` or `TRACEPOINT_EVENT_INSTANCE()` for a given
-tracepoint. The `TRACEPOINT_LOGLEVEL()` macro is used as follows:
+the `LTTNG_UST_TRACEPOINT_LOGLEVEL()` macro. The latter must be used
+after having used `LTTNG_UST_TRACEPOINT_EVENT()` or
+`LTTNG_UST_TRACEPOINT_EVENT_INSTANCE()` for a given tracepoint. The
+`LTTNG_UST_TRACEPOINT_LOGLEVEL()` macro is used as follows:
 
 ------------------------------------------------------------------------
-TRACEPOINT_LOGLEVEL(
+LTTNG_UST_TRACEPOINT_LOGLEVEL(
     /* Tracepoint provider name */
     my_provider,
 
@@ -507,7 +604,7 @@ TRACEPOINT_LOGLEVEL(
     my_tracepoint,
 
     /* Log level */
-    TRACE_INFO
+    LTTNG_UST_TRACEPOINT_LOGLEVEL_INFO
 )
 ------------------------------------------------------------------------
 
@@ -524,10 +621,10 @@ Instrumenting your application
 Once the tracepoint provider is created (see the
 <<creating-tp,Creating a tracepoint provider>> section above), you can
 instrument your application with the defined tracepoints thanks to the
-`tracepoint()` macro:
+`lttng_ust_tracepoint()` macro:
 
 [verse]
-#define *tracepoint*('prov_name', 't_name', ...)
+#define *lttng_ust_tracepoint*('prov_name', 't_name', ...)
 
 With:
 
@@ -541,48 +638,48 @@ With:
     Tracepoint arguments, if any.
 
 Make sure to include the tracepoint provider header file anywhere you
-use `tracepoint()` for this provider.
+use `lttng_ust_tracepoint()` for this provider.
 
-NOTE: Even though LTTng-UST supports `tracepoint()` call site duplicates
-having the same provider and tracepoint names, it is recommended to use
-a provider/tracepoint name pair only once within the application source
-code to help map events back to their call sites when analyzing the
-trace.
+NOTE: Even though LTTng-UST supports `lttng_ust_tracepoint()` call site
+duplicates having the same provider and tracepoint names, it is
+recommended to use a provider/tracepoint name pair only once within the
+application source code to help map events back to their call sites when
+analyzing the trace.
 
 Sometimes, arguments to the tracepoint are expensive to compute (take
 call stack, for example). To avoid the computation when the tracepoint
-is disabled, you can use the `tracepoint_enabled()` and
-`do_tracepoint()` macros:
+is disabled, you can use the `lttng_ust_tracepoint_enabled()` and
+`lttng_ust_do_tracepoint()` macros:
 
 [verse]
-#define *tracepoint_enabled*('prov_name', 't_name')
-#define *do_tracepoint*('prov_name', 't_name', ...)
+#define *lttng_ust_tracepoint_enabled*('prov_name', 't_name')
+#define *lttng_ust_do_tracepoint*('prov_name', 't_name', ...)
 
-`tracepoint_enabled()` returns a non-zero value if the tracepoint
+`lttng_ust_tracepoint_enabled()` returns a non-zero value if the tracepoint
 named 't_name' from the provider named 'prov_name' is enabled at
 run time.
 
-`do_tracepoint()` is like `tracepoint()`, except that it doesn't check
-if the tracepoint is enabled. Using `tracepoint()` with
-`tracepoint_enabled()` is dangerous since `tracepoint()` also contains
-the `tracepoint_enabled()` check, thus a race condition is possible
+`lttng_ust_do_tracepoint()` is like `lttng_ust_tracepoint()`, except that it doesn't check
+if the tracepoint is enabled. Using `lttng_ust_tracepoint()` with
+`lttng_ust_tracepoint_enabled()` is dangerous since `lttng_ust_tracepoint()` also contains
+the `lttng_ust_tracepoint_enabled()` check, thus a race condition is possible
 in this situation:
 
 ------------------------------------------------------------------------
-if (tracepoint_enabled(my_provider, my_tracepoint)) {
+if (lttng_ust_tracepoint_enabled(my_provider, my_tracepoint)) {
     stuff = prepare_stuff();
 }
 
-tracepoint(my_provider, my_tracepoint, stuff);
+lttng_ust_tracepoint(my_provider, my_tracepoint, stuff);
 ------------------------------------------------------------------------
 
 If the tracepoint is enabled after the condition, then `stuff` is not
 prepared: the emitted event will either contain wrong data, or the
 whole application could crash (segmentation fault, for example).
 
-NOTE: Neither `tracepoint_enabled()` nor `do_tracepoint()` have
-a `STAP_PROBEV()` call, so if you need it, you should emit this call
-yourself.
+NOTE: Neither `lttng_ust_tracepoint_enabled()` nor
+`lttng_ust_do_tracepoint()` have a `STAP_PROBEV()` call, so if you need
+it, you should emit this call yourself.
 
 
 [[build-static]]
@@ -591,13 +688,13 @@ Statically linking the tracepoint provider
 With the static linking method, compiled tracepoint providers are copied
 into the target application.
 
-Define `TRACEPOINT_DEFINE` definition below the
-`TRACEPOINT_CREATE_PROBES` definition in the tracepoint provider
-source:
+Define `LTTNG_UST_TRACEPOINT_DEFINE` definition below the
+`LTTNG_UST_TRACEPOINT_CREATE_PROBES` definition in the tracepoint
+provider source:
 
 ------------------------------------------------------------------------
-#define TRACEPOINT_CREATE_PROBES
-#define TRACEPOINT_DEFINE
+#define LTTNG_UST_TRACEPOINT_CREATE_PROBES
+#define LTTNG_UST_TRACEPOINT_DEFINE
 
 #include "tp.h"
 ------------------------------------------------------------------------
@@ -610,8 +707,8 @@ $ cc -c -I. tp.c
 ----
 
 NOTE: Although an application instrumented with LTTng-UST tracepoints
-can be compiled with a C++ compiler, tracepoint probes should be
-compiled with a C compiler.
+can be compiled with a $$C++$$ compiler, tracepoint probes
+should be compiled with a C compiler.
 
 At this point, you _can_ archive this tracepoint provider object file,
 possibly with other object files of your application or with other
@@ -631,8 +728,8 @@ change, but need not to be otherwise recompiled (unless the tracepoint
 provider's API changes).
 
 Then, link your application with this object file (or with the static
-library containing it) and with `liblttng-ust` and `libdl`
-(`libc` on a BSD system):
+library containing it) and with `liblttng-ust`, `liblttng-ust-common`,
+and `libdl` (`libc` on a BSD system):
 
 [role="term"]
 ----
@@ -655,20 +752,20 @@ much the same as the <<build-static,static linking method>>, except
 that:
 
   * Since the tracepoint provider is not part of the application,
-    `TRACEPOINT_DEFINE` must be defined, for each tracepoint
-    provider, in exactly one source file of the
-    _application_
-  * `TRACEPOINT_PROBE_DYNAMIC_LINKAGE` must be defined next
-    to `TRACEPOINT_DEFINE`
+    `LTTNG_UST_TRACEPOINT_DEFINE` must be defined, for each tracepoint
+    provider, in exactly one source file of the _application_
+  * `LTTNG_UST_TRACEPOINT_PROBE_DYNAMIC_LINKAGE` must be defined next to
+    `LTTNG_UST_TRACEPOINT_DEFINE`
 
-Regarding `TRACEPOINT_DEFINE` and `TRACEPOINT_PROBE_DYNAMIC_LINKAGE`,
-the recommended practice is to use a separate C source file in your
-application to define them, then include the tracepoint provider header
-files afterwards. For example, as `tp-define.c`:
+Regarding `LTTNG_UST_TRACEPOINT_DEFINE` and
+`LTTNG_UST_TRACEPOINT_PROBE_DYNAMIC_LINKAGE`, the recommended practice
+is to use a separate C source file in your application to define them,
+then include the tracepoint provider header files afterwards. For
+example, as `tp-define.c`:
 
 ------------------------------------------------------------------------
-#define TRACEPOINT_DEFINE
-#define TRACEPOINT_PROBE_DYNAMIC_LINKAGE
+#define LTTNG_UST_TRACEPOINT_DEFINE
+#define LTTNG_UST_TRACEPOINT_PROBE_DYNAMIC_LINKAGE
 
 #include "tp.h"
 ------------------------------------------------------------------------
@@ -686,7 +783,8 @@ It is then linked as a shared library like this:
 
 [role="term"]
 ----
-$ cc -shared -Wl,--no-as-needed -o tp.so tp.o -llttng-ust -llttng-ust-common
+$ cc -shared -Wl,--no-as-needed -o tp.so tp.o -llttng-ust \
+     -llttng-ust-common
 ----
 
 This tracepoint provider shared object isn't linked with the user
@@ -1162,13 +1260,14 @@ Tracepoint provider header file
 `tp.h`:
 
 ------------------------------------------------------------------------
-#undef TRACEPOINT_PROVIDER
-#define TRACEPOINT_PROVIDER my_provider
+#undef LTTNG_UST_TRACEPOINT_PROVIDER
+#define LTTNG_UST_TRACEPOINT_PROVIDER my_provider
 
-#undef TRACEPOINT_INCLUDE
-#define TRACEPOINT_INCLUDE "./tp.h"
+#undef LTTNG_USTTRACEPOINT_INCLUDE
+#define LTTNG_USTTRACEPOINT_INCLUDE "./tp.h"
 
-#if !defined(_TP_H) || defined(TRACEPOINT_HEADER_MULTI_READ)
+#if !defined(_TP_H) || \
+    defined(LTTNG_UST_TRACEPOINT_HEADER_MULTI_READ)
 #define _TP_H
 
 #include <lttng/tracepoint.h>
@@ -1176,100 +1275,108 @@ Tracepoint provider header file
 
 #include "app.h"
 
-TRACEPOINT_EVENT(
+LTTNG_UST_TRACEPOINT_EVENT(
     my_provider,
     simple_event,
-    TP_ARGS(
+    LTTNG_UST_TP_ARGS(
         int, my_integer_arg,
         const char *, my_string_arg
     ),
-    TP_FIELDS(
-        ctf_string(argc, my_string_arg)
-        ctf_integer(int, argv, my_integer_arg)
+    LTTNG_UST_TP_FIELDS(
+        lttng_ust_field_string(argc, my_string_arg)
+        lttng_ust_field_integer(int, argv, my_integer_arg)
     )
 )
 
-TRACEPOINT_ENUM(
+LTTNG_UST_TRACEPOINT_ENUM(
     my_provider,
     my_enum,
-    TP_ENUM_VALUES(
-        ctf_enum_value("ZERO", 0)
-        ctf_enum_value("ONE", 1)
-        ctf_enum_value("TWO", 2)
-        ctf_enum_range("A RANGE", 52, 125)
-        ctf_enum_value("ONE THOUSAND", 1000)
+    LTTNG_UST_TP_ENUM_VALUES(
+        lttng_ust_field_enum_value("ZERO", 0)
+        lttng_ust_field_enum_value("ONE", 1)
+        lttng_ust_field_enum_value("TWO", 2)
+        lttng_ust_field_enum_range("A RANGE", 52, 125)
+        lttng_ust_field_enum_value("ONE THOUSAND", 1000)
     )
 )
 
-TRACEPOINT_EVENT(
+LTTNG_UST_TRACEPOINT_EVENT(
     my_provider,
     big_event,
-    TP_ARGS(
+    LTTNG_UST_TP_ARGS(
         int, my_integer_arg,
         const char *, my_string_arg,
         FILE *, stream,
         double, flt_arg,
         int *, array_arg
     ),
-    TP_FIELDS(
-        ctf_integer(int, int_field1, my_integer_arg * 2)
-        ctf_integer_hex(long int, stream_pos, ftell(stream))
-        ctf_float(double, float_field, flt_arg)
-        ctf_string(string_field, my_string_arg)
-        ctf_array(int, array_field, array_arg, 7)
-        ctf_array_text(char, array_text_field, array_arg, 5)
-        ctf_sequence(int, seq_field, array_arg, int,
-                     my_integer_arg / 10)
-        ctf_sequence_text(char, seq_text_field, array_arg,
-                          int, my_integer_arg / 5)
-        ctf_enum(my_provider, my_enum, int,
-                 enum_field, array_arg[1])
+    LTTNG_UST_TP_FIELDS(
+        lttng_ust_field_integer(int, int_field1, my_integer_arg * 2)
+        lttng_ust_field_integer_hex(long int, stream_pos,
+                                    ftell(stream))
+        lttng_ust_field_float(double, float_field, flt_arg)
+        lttng_ust_field_string(string_field, my_string_arg)
+        lttng_ust_field_array(int, array_field, array_arg, 7)
+        lttng_ust_field_array_text(char, array_text_field,
+                                   array_arg, 5)
+        lttng_ust_field_sequence(int, seq_field, array_arg, int,
+                                 my_integer_arg / 10)
+        lttng_ust_field_sequence_text(char, seq_text_field,
+                                      array_arg, int,
+                                      my_integer_arg / 5)
+        lttng_ust_field_enum(my_provider, my_enum, int,
+                             enum_field, array_arg[1])
     )
 )
 
-TRACEPOINT_LOGLEVEL(my_provider, big_event, TRACE_WARNING)
+LTTNG_UST_TRACEPOINT_LOGLEVEL(my_provider, big_event,
+                              LTTNG_UST_TRACEPOINT_LOGLEVEL_WARNING)
 
-TRACEPOINT_EVENT_CLASS(
+LTTNG_UST_TRACEPOINT_EVENT_CLASS(
     my_provider,
     my_tracepoint_class,
-    TP_ARGS(
+    LTTNG_UST_TP_ARGS(
         int, my_integer_arg,
         struct app_struct *, app_struct_arg
     ),
-    TP_FIELDS(
-        ctf_integer(int, a, my_integer_arg)
-        ctf_integer(unsigned long, b, app_struct_arg->b)
-        ctf_string(c, app_struct_arg->c)
+    LTTNG_UST_TP_FIELDS(
+        lttng_ust_field_integer(int, a, my_integer_arg)
+        lttng_ust_field_integer(unsigned long, b, app_struct_arg->b)
+        lttng_ust_field_string(c, app_struct_arg->c)
     )
 )
 
-TRACEPOINT_EVENT_INSTANCE(
+LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(
     my_provider,
     my_tracepoint_class,
+    my_provider,
     event_instance1,
-    TP_ARGS(
+    LTTNG_UST_TP_ARGS(
         int, my_integer_arg,
         struct app_struct *, app_struct_arg
     )
 )
 
-TRACEPOINT_EVENT_INSTANCE(
+LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(
     my_provider,
     my_tracepoint_class,
+    my_provider,
     event_instance2,
-    TP_ARGS(
+    LTTNG_UST_TP_ARGS(
         int, my_integer_arg,
         struct app_struct *, app_struct_arg
     )
 )
 
-TRACEPOINT_LOGLEVEL(my_provider, event_instance2, TRACE_INFO)
+LTTNG_UST_TRACEPOINT_LOGLEVEL(my_provider, event_instance2,
+                              LTTNG_UST_TRACEPOINT_LOGLEVEL_INFO)
 
-TRACEPOINT_EVENT_INSTANCE(
+LTTNG_UST_TRACEPOINT_EVENT_INSTANCE(
     my_provider,
     my_tracepoint_class,
+    my_provider,
     event_instance3,
-    TP_ARGS(
+    LTTNG_UST_TP_ARGS(
         int, my_integer_arg,
         struct app_struct *, app_struct_arg
     )
@@ -1286,8 +1393,8 @@ Tracepoint provider source file
 `tp.c`:
 
 ------------------------------------------------------------------------
-#define TRACEPOINT_CREATE_PROBES
-#define TRACEPOINT_DEFINE
+#define LTTNG_UST_TRACEPOINT_CREATE_PROBES
+#define LTTNG_UST_TRACEPOINT_DEFINE
 
 #include "tp.h"
 ------------------------------------------------------------------------
@@ -1331,7 +1438,7 @@ int main(int argc, char* argv[])
     FILE *stream;
     struct app_struct app_struct;
 
-    tracepoint(my_provider, simple_event, argc, argv[0]);
+    lttng_ust_tracepoint(my_provider, simple_event, argc, argv[0]);
     stream = fopen("/tmp/app.txt", "w");
 
     if (!stream) {
@@ -1346,19 +1453,22 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    tracepoint(my_provider, big_event, 35, "hello tracepoint",
-               stream, -3.14, array_of_ints);
+    lttng_ust_tracepoint(my_provider, big_event, 35,
+                         "hello tracepoint", stream, -3.14,
+                         array_of_ints);
     fclose(stream);
     app_struct.b = argc;
     app_struct.c = "[the string]";
-    tracepoint(my_provider, event_instance1, 23, &app_struct);
+    lttng_ust_tracepoint(my_provider, event_instance1, 23,
+                         &app_struct);
     app_struct.b = argc * 5;
     app_struct.c = "[other string]";
-    tracepoint(my_provider, event_instance2, 17, &app_struct);
+    lttng_ust_tracepoint(my_provider, event_instance2, 17,
+                         &app_struct);
     app_struct.b = 23;
     app_struct.c = "nothing";
-    tracepoint(my_provider, event_instance3, -52, &app_struct);
-
+    lttng_ust_tracepoint(my_provider, event_instance3, -52,
+                         &app_struct);
     return EXIT_SUCCESS;
 }
 ------------------------------------------------------------------------
@@ -1437,8 +1547,8 @@ include::common-authors.txt[]
 
 SEE ALSO
 --------
-man:tracef(3),
-man:tracelog(3),
+man:lttng_ust_tracef(3),
+man:lttng_ust_tracelog(3),
 man:lttng-gen-tp(1),
 man:lttng-ust-dl(3),
 man:lttng-ust-cyg-profile(3),

@@ -1,4 +1,7 @@
-The +{macro-name}()+ and +v{macro-name}()+ utility macros were
+:macro-name: lttng_ust_{macro-suffix}
+:vmacro-name: lttng_ust_v{macro-suffix}
+
+The +{macro-name}()+ and +{vmacro-name}()+ utility macros were
 developed to make user space tracing super simple, albeit with notable
 disadvantages compared to custom, full-fledged tracepoint providers:
 
@@ -9,7 +12,7 @@ disadvantages compared to custom, full-fledged tracepoint providers:
     macro using your own format. This also means that you cannot use
     filtering using a custom expression at run time because there are no
     isolated fields.
-  * Since +{macro-name}()+ and +v{macro-name}()+ use C standard
+  * Since +{macro-name}()+ and +{vmacro-name}()+ use C standard
     library's man:vasprintf(3) function in the background to format the
     strings at run time, their expected performance is lower than using
     custom tracepoint providers with typed fields, which do not require
@@ -18,11 +21,11 @@ disadvantages compared to custom, full-fledged tracepoint providers:
     user data fields is not as compact as binary fields in the resulting
     trace.
 
-Thus, +{macro-name}()+/+v{macro-name}()+ are useful for quick
+Thus, +{macro-name}()+/+{vmacro-name}()+ are useful for quick
 prototyping and debugging, but should not be considered for any
 permanent/serious application instrumentation.
 
-+v{macro-name}()+ does not have a `STAP_PROBEV()` call, because
++{vmacro-name}()+ does not have a `STAP_PROBEV()` call, because
 `STAP_PROBEV()` does not support `va_list`. If you need it, you should
 emit this call yourself.
 

@@ -1,5 +1,5 @@
-lttng-ust-dl(3)
-===============
+lttng-ust-cyg-profile(3)
+========================
 :object-type: library
 
 
@@ -100,7 +100,7 @@ Fast function tracing
 ~~~~~~~~~~~~~~~~~~~~~
 The following LTTng-UST events are available when using
 `liblttng-ust-cyg-profile-fast.so`. Their log level is set to
-`TRACE_DEBUG_FUNCTION`.
+`LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_FUNCTION`.
 
 `lttng_ust_cyg_profile_fast:func_entry`::
     Emitted when an application function is entered, or more
@@ -132,7 +132,7 @@ Verbose function tracing
 ~~~~~~~~~~~~~~~~~~~~~~~~
 The following LTTng-UST events are available when using
 `liblttng-ust-cyg-profile.so`. Their log level is set to
-`TRACE_DEBUG_FUNCTION`.
+`LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG_FUNCTION`.
 
 `lttng_ust_cyg_profile:func_entry`::
     Emitted when an application function is entered, or more

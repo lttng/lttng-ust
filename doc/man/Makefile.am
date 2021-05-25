@@ -12,16 +12,24 @@ MAN1_NAMES = \
 	lttng-gen-tp
 MAN3_NAMES = \
 	lttng-ust \
-	tracef \
-	tracelog \
 	lttng-ust-dl \
-	lttng-ust-cyg-profile
+	lttng-ust-cyg-profile \
+	lttng_ust_tracef \
+	lttng_ust_tracelog \
+	tracef \
+	tracelog
 
 # Man page aliases (generated from other sources):
-MAN3_ALIASES = vtracef.3 vtracelog.3
+MAN3_ALIASES = lttng_ust_vtracef.3 lttng_ust_vtracelog.3 vtracef.3 vtracelog.3
 
 # troff man pages:
-MAN3_TROFF = do_tracepoint.3 tracepoint.3 tracepoint_enabled.3
+MAN3_TROFF = \
+	do_tracepoint.3 \
+	lttng_ust_do_tracepoint.3 \
+	lttng_ust_tracepoint.3 \
+	lttng_ust_tracepoint_enabled.3 \
+	tracepoint.3 \
+	tracepoint_enabled.3
 
 # AsciiDoc sources and outputs:
 MAN1_TXT = $(call manaddsuffix,.1.txt,$(MAN1_NAMES))
@@ -93,12 +101,25 @@ tracef.3 vtracef.3: tracef.3.alias
 tracelog.3 vtracelog.3: tracelog.3.alias
 	@# Empty recipe to mark tracelog.3 and vtracelog.3 as rebuilt
 
-.INTERMEDIATE: tracef.3.alias tracelog.3.alias
+lttng_ust_tracef.3 lttng_ust_vtracef.3: lttng_ust_tracef.3.alias
+	@# Empty recipe to mark lttng_ust_tracef.3 and lttng_ust_vtracef.3 as rebuilt
+
+lttng_ust_tracelog.3 lttng_ust_vtracelog.3: lttng_ust_tracelog.3.alias
+	@# Empty recipe to mark lttng_ust_tracelog.3 and lttng_ust_vtracelog.3 as rebuilt
+
+
+.INTERMEDIATE: tracef.3.alias tracelog.3.alias lttng_ust_tracef.3.alias lttng_ust_tracelog.3.alias
 
 tracef.3.alias: tracef.3.xml $(XSL_FILE)
 	$(XTO) $< $(xmlto_verbose_out)
 
 tracelog.3.alias: tracelog.3.xml $(XSL_FILE)
+	$(XTO) $< $(xmlto_verbose_out)
+
+lttng_ust_tracef.3.alias: lttng_ust_tracef.3.xml $(XSL_FILE)
+	$(XTO) $< $(xmlto_verbose_out)
+
+lttng_ust_tracelog.3.alias: lttng_ust_tracelog.3.xml $(XSL_FILE)
 	$(XTO) $< $(xmlto_verbose_out)
 
 %.3: %.3.xml $(XSL_FILE)

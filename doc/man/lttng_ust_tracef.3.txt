@@ -1,0 +1,137 @@
+lttng_ust_tracef(3)
+===================
+:object-type: macro
+
+
+NAME
+----
+lttng_ust_tracef, lttng_ust_vtracef - LTTng-UST printf(3)-like interface
+
+
+SYNOPSIS
+--------
+[verse]
+*#include <lttng/tracef.h>*
+
+[verse]
+#define *lttng_ust_tracef*('fmt', ...)
+#define *lttng_ust_vtracef*('fmt', 'ap')
+
+Link with `-llttng-ust -llttng-ust-common`.
+
+
+DESCRIPTION
+-----------
+The LTTng-UST `lttng_ust_tracef()` and `lttng_ust_vtracef()` API allows
+you to trace your application with the help of simple man:printf(3)-like
+and man:vprintf(3)-like macros.
+
+The 'fmt' argument is passed directly as the 'fmt' parameter of
+man:vasprintf(3), as well as:
+
+For `lttng_ust_tracef()`::
+    The optional parameters following 'fmt'.
+
+For `lttng_ust_vtracef()`::
+    The 'ap' parameter as the 'ap' parameter of man:vasprintf(3)
+    (`va_list` type).
+
+To use `lttng_ust_tracef()` or `lttng_ust_vtracef()`, include
+`<lttng/tracef.h>` where you need it, and link your application with
+`liblttng-ust` and `liblttng-ust-common`. See the <<example,EXAMPLE>>
+section below for a complete usage example.
+
+Once your application is instrumented with `lttng_ust_tracef()` and/or
+`lttng_ust_vtracef()` calls and ready to run, use
+man:lttng-enable-event(1) to enable the `lttng_ust_tracef:*` event.
+
+The `lttng_ust_tracef()` and `lttng_ust_vtracef()` events contain a
+single field, named `msg`, which is the formatted string output.
+
+If you need to attach a specific log level to a
+`lttng_ust_tracef()`/`lttng_ust_vtracef()` call, use
+man:lttng_ust_tracelog(3) and man:lttng_ust_vtracelog(3) instead.
+
+See also the <<limitations,LIMITATIONS>> section below for important
+limitations to consider when using `lttng_ust_tracef()` or
+`lttng_ust_vtracef()`.
+
+
+[[example]]
+EXAMPLE
+-------
+Here's a usage example of `lttng_ust_tracef()`:
+
+-------------------------------------------------------------------
+#include <stdlib.h>
+#include <lttng/tracef.h>
+
+int main(void)
+{
+    int i;
+
+    for (i = 0; i < 25; i++) {
+        lttng_ust_tracef("my message: %s, this integer: %d",
+                         "a message", i);
+    }
+
+    return EXIT_SUCCESS;
+}
+-------------------------------------------------------------------
+
+This C source file, saved as `app.c`, can be compiled into a program
+like this:
+
+[role="term"]
+----
+$ cc -o app app.c -llttng-ust -llttng-ust-common
+----
+
+You can create an LTTng tracing session, enable the `lttng_ust_tracef()`
+events, and start the created tracing session like this:
+
+[role="term"]
+----
+$ lttng create my-session
+$ lttng enable-event --userspace 'lttng_ust_tracef:*'
+$ lttng start
+----
+
+Next, start the program to be traced:
+
+[role="term"]
+----
+$ ./app
+----
+
+Finally, stop the tracing session, and inspect the recorded events:
+
+[role="term"]
+----
+$ lttng stop
+$ lttng view
+----
+
+
+[[limitations]]
+LIMITATIONS
+-----------
+:macro-suffix: tracef
+
+include::tracef-tracelog-limitations.txt[]
+
+
+include::common-footer.txt[]
+
+include::common-copyrights.txt[]
+
+include::common-authors.txt[]
+
+
+SEE ALSO
+--------
+man:lttng_ust_tracelog(3),
+man:lttng_ust_vtracelog(3),
+man:lttng-ust(3),
+man:lttng(1),
+man:printf(3)

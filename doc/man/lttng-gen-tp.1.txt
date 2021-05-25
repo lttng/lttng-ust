@@ -40,21 +40,22 @@ needed.
 Template file format
 ~~~~~~~~~~~~~~~~~~~~
 The template file, which usually has the `.tp` extension, contains a
-list of `TRACEPOINT_EVENT()` definitions and other optional definition
-entries, like `TRACEPOINT_LOGLEVEL()`. See man:lttng-ust(3) for
-the complete list of available definitions.
+list of `LTTNG_UST_TRACEPOINT_EVENT()` definitions and other optional
+definition entries, like `LTTNG_UST_TRACEPOINT_LOGLEVEL()`. See
+man:lttng-ust(3) for the complete list of available definitions.
 
-The `TRACEPOINT_EVENT()` definitions are written as you would write them
-in an LTTng-UST template provider header file. C comments are supported
-(`/* */` and `//`), as well as lines starting with `#`.
+The `LTTNG_UST_TRACEPOINT_EVENT()` definitions are written as you would
+write them in an LTTng-UST template provider header file. C comments are
+supported (`/* */` and `//`), as well as lines starting with `#`.
 
-NOTE: The provider name (the first argument of `TRACEPOINT_EVENT()`)
-must be the same in all the `TRACEPOINT_EVENT()` macros of 'TEMPLATE'.
+NOTE: The provider name (the first argument of
+`LTTNG_UST_TRACEPOINT_EVENT()`) must be the same in all the
+`LTTNG_UST_TRACEPOINT_EVENT()` macros of 'TEMPLATE'.
 
 Here's an example:
 
 ---------------------------------------
-TRACEPOINT_EVENT(
+LTTNG_UST_TRACEPOINT_EVENT(
     // Tracepoint provider name
     my_provider,
 
@@ -62,11 +63,11 @@ TRACEPOINT_EVENT(
     my_event,
 
     // Tracepoint arguments (input)
-    TP_ARGS(char *, text),
+    LTTNG_UST_TP_ARGS(char *, text),
 
     // Tracepoint/event fields (output)
-    TP_FIELDS(
-        ctf_string(message, text)
+    LTTNG_UST_TP_FIELDS(
+        lttng_ust_field_string(message, text)
     )
 )
 ---------------------------------------
