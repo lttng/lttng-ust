@@ -66,7 +66,7 @@ Includes
     before the copyrights section.
   * `log-levels.txt`: definition list of LTTng-UST log levels.
   * `tracef-tracelog-limitations.txt`: limitations that apply to both
-    the `tracef(3)` and `tracelog(3)` man pages.
+    the `lttng_ust_tracef(3)` and `lttng_ust_tracelog(3)` man pages.
 
 
 Convention

@@ -22,100 +22,13 @@ Link with `-llttng-ust -llttng-ust-common`.
 
 DESCRIPTION
 -----------
-The LTTng-UST `tracef()` and `vtracef()` API allows you to trace your
-application with the help of simple man:printf(3)-like and
-man:vprintf(3)-like macros.
+The `tracef()` and `vtracef()` macros are part of version{nbsp}0 of the
+LTTng-UST API (see the ``Compatibility with previous APIs'' section of
+man:lttng-ust(3)).
 
-The 'fmt' argument is passed directly as the 'fmt' parameter of
-man:vasprintf(3), as well as:
-
-For `tracef()`::
-    The optional parameters following 'fmt'.
-
-For `vtracef()`::
-    The 'ap' parameter as the 'ap' parameter of man:vasprintf(3)
-    (`va_list` type).
-
-To use `tracef()` or `vtracef()`, include `<lttng/tracef.h>` where you
-need it, and link your application with `liblttng-ust`. See the
-<<example,EXAMPLE>> section below for a complete usage example.
-
-Once your application is instrumented with `tracef()` and/or `vtracef()`
-calls and ready to run, use man:lttng-enable-event(1) to enable the
-`lttng_ust_tracef:*` event.
-
-The `tracef()` and `vtracef()` events contain a single field, named
-`msg`, which is the formatted string output.
-
-If you need to attach a specific log level to a `tracef()`/`vtracef()`
-call, use man:tracelog(3) and man:vtracelog(3) instead.
-
-See also the <<limitations,LIMITATIONS>> section below for important
-limitations to consider when using `tracef()` or `vtracef()`.
-
-
-[[example]]
-EXAMPLE
--------
-Here's a usage example of `tracef()`:
-
--------------------------------------------------------------------
-#include <stdlib.h>
-#include <lttng/tracef.h>
-
-int main(void)
-{
-    int i;
-
-    for (i = 0; i < 25; i++) {
-        tracef("my message: %s, this integer: %d", "a message", i);
-    }
-
-    return EXIT_SUCCESS;
-}
--------------------------------------------------------------------
-
-This C source file, saved as `app.c`, can be compiled into a program
-like this:
-
-[role="term"]
-----
-$ cc -o app app.c -llttng-ust -llttng-ust-common
-----
-
-You can create an LTTng tracing session, enable the `tracef()` events,
-and start the created tracing session like this:
-
-[role="term"]
-----
-$ lttng create my-session
-$ lttng enable-event --userspace 'lttng_ust_tracef:*'
-$ lttng start
-----
-
-Next, start the program to be traced:
-
-[role="term"]
-----
-$ ./app
-----
-
-Finally, stop the tracing session, and inspect the recorded events:
-
-[role="term"]
-----
-$ lttng stop
-$ lttng view
-----
-
-
-[[limitations]]
-LIMITATIONS
------------
-:macro-name: tracef
-
-include::tracef-tracelog-limitations.txt[]
-
+Prefer using man:lttng_ust_tracef(3) and man:lttng_ust_vtracef(3) which
+are part of version{nbsp}1 of the API and have the `lttng_ust_`
+namespace.
 
 include::common-footer.txt[]
 
@@ -126,8 +39,5 @@ include::common-authors.txt[]
 
 SEE ALSO
 --------
-man:tracelog(3),
-man:vtracelog(3),
-man:lttng-ust(3),
-man:lttng(1),
-man:printf(3)
+man:lttng_ust_tracef(3),
+man:lttng_ust_vtracef(3)
