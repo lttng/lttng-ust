@@ -1745,13 +1745,6 @@ void lttng_session_sync_event_enablers(struct lttng_ust_session *session)
 	lttng_ust_tp_probe_prune_release_queue();
 }
 
-/* Support for event notifier is introduced by probe provider major version 2. */
-static
-bool lttng_ust_probe_supports_event_notifier(const struct lttng_ust_probe_desc *probe_desc)
-{
-	return probe_desc->major >= 2;
-}
-
 static
 void lttng_create_event_notifier_if_missing(
 		struct lttng_event_notifier_enabler *event_notifier_enabler)
@@ -1805,18 +1798,6 @@ void lttng_create_event_notifier_if_missing(
 			if (found)
 				continue;
 
-			/* Check that the probe supports event notifiers, else report the error. */
-			if (!lttng_ust_probe_supports_event_notifier(probe_desc)) {
-				ERR("Probe \"%s\" contains event \"%s:%s\" which matches an enabled event notifier, "
-					"but its version (%u.%u) is too old and does not implement event notifiers. "
-					"It needs to be recompiled against a newer version of LTTng-UST, otherwise "
-					"this event will not generate any notification.",
-					probe_desc->provider_name,
-					probe_desc->provider_name, desc->event_name,
-					probe_desc->major,
-					probe_desc->minor);
-				continue;
-			}
 			/*
 			 * We need to create a event_notifier for this event probe.
 			 */
