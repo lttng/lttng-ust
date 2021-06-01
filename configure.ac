@@ -7,12 +7,12 @@ dnl Process this file with autoconf to produce a configure script.
 
 # Project version information
 m4_define([ust_version_major], [2])
-m4_define([ust_version_minor], [13])
+m4_define([ust_version_minor], [14])
 m4_define([ust_version_patch], [0])
-m4_define([ust_version_dev_stage], [-rc1])
+m4_define([ust_version_dev_stage], [-pre])
 m4_define([ust_version], ust_version_major[.]ust_version_minor[.]ust_version_patch[]ust_version_dev_stage)
-m4_define([ust_version_name], [[Nordicité]])
-m4_define([ust_version_description], [[The product of a collaboration between Champ Libre and Boréale, this farmhouse IPA is brewed with Kveik yeast and Québec-grown barley, oats and juniper branches. The result is a remarkable fruity hazy golden IPA that offers a balanced touch of resinous and woodsy bitterness.]])
+m4_define([ust_version_name], [[O-Beer]])
+m4_define([ust_version_description], [[An alcoholic drink made from yeast-fermented malt flavored with hops.]])
 
 # Library version information of "liblttng-ust"
 # Following the numbering scheme proposed by libtool for the library version
