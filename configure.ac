@@ -276,10 +276,12 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 ])
 
 # urcu - check that URCU lib is available to compilation
-AC_CHECK_LIB([urcu-bp], [synchronize_rcu_bp], [], [AC_MSG_ERROR([Cannot find liburcu-bp lib. Use [LDFLAGS]=-Ldir to specify its location.])])
+# Check for 'synchronize_rcu_bp' and then failback to 'urcu_bp_synchronize_rcu' as the former was
+# removed from the ABI in liburcu 0.13.
+AC_CHECK_LIB([urcu-bp], [synchronize_rcu_bp], [], [
+	AC_CHECK_LIB([urcu-bp], [urcu_bp_synchronize_rcu], [], [AC_MSG_ERROR([Cannot find liburcu-bp lib. Use [LDFLAGS]=-Ldir to specify its location.])])
+])
 
-# urcu - check that URCU lib is at least version 0.6
-AC_CHECK_LIB([urcu-bp], [call_rcu_bp], [], [AC_MSG_ERROR([liburcu 0.6 or newer is needed, please update your version or use [LDFLAGS]=-Ldir to specify the right location.])])
 
 # numa.h integration
 AS_IF([test "x$NO_NUMA" = "x1"],[
