@@ -37,7 +37,6 @@ void lttng_ust__vtracef(const char *fmt, va_list ap)
 
 #if LTTNG_UST_COMPAT_API(0)
 #define tracef		lttng_ust_tracef
-#define vtracef		lttng_ust_vtracef
 #endif
 
 #ifdef __cplusplus

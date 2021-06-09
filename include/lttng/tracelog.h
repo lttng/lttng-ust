@@ -60,7 +60,6 @@ LTTNG_UST_TP_TRACELOG_CB_TEMPLATE(LTTNG_UST_TRACEPOINT_LOGLEVEL_DEBUG);
 #if LTTNG_UST_COMPAT_API(0)
 #define TP_TRACELOG_CB_TEMPLATE LTTNG_UST_TP_TRACELOG_CB_TEMPLATE
 #define tracelog	lttng_ust_tracelog
-#define vtracelog	lttng_ust_vtracelog
 #endif
 
 #ifdef __cplusplus
