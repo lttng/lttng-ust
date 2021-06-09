@@ -5,7 +5,7 @@ tracef(3)
 
 NAME
 ----
-tracef, vtracef - LTTng-UST printf(3)-like interface
+tracef - LTTng-UST printf(3)-like interface
 
 
 SYNOPSIS
@@ -15,20 +15,17 @@ SYNOPSIS
 
 [verse]
 #define *tracef*('fmt', ...)
-#define *vtracef*('fmt', 'ap')
 
 Link with `-llttng-ust -llttng-ust-common`.
 
 
 DESCRIPTION
 -----------
-The `tracef()` and `vtracef()` macros are part of version{nbsp}0 of the
-LTTng-UST API (see the ``Compatibility with previous APIs'' section of
-man:lttng-ust(3)).
+The `tracef()` macro is part of version{nbsp}0 of the LTTng-UST API (see
+the ``Compatibility with previous APIs'' section of man:lttng-ust(3)).
 
-Prefer using man:lttng_ust_tracef(3) and man:lttng_ust_vtracef(3) which
-are part of version{nbsp}1 of the API and have the `lttng_ust_`
-namespace.
+Prefer using man:lttng_ust_tracef(3) which is part of version{nbsp}1 of
+the API and has the `lttng_ust_` namespace.
 
 include::common-footer.txt[]
 

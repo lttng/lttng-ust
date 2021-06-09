@@ -71,8 +71,6 @@ cscope.*
 /doc/man/lttng-ust.3
 /doc/man/tracef.3
 /doc/man/tracelog.3
-/doc/man/vtracef.3
-/doc/man/vtracelog.3
 /doc/man/lttng_ust_tracef.3
 /doc/man/lttng_ust_tracelog.3
 /doc/man/lttng_ust_vtracef.3
