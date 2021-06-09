@@ -81,7 +81,11 @@ SYNOPSIS
 #define *lttng_ust_tracepoint*('prov_name', 't_name', ...)
 #define *lttng_ust_tracepoint_enabled*('prov_name', 't_name')
 
-Link with `-llttng-ust -llttng-ust-common -ldl`, following this man page.
+Link with, following this manual page:
+
+* `-llttng-ust -ldl`
+* If you define `_LGPL_SOURCE` before including
+  `<lttng/tracepoint.h>` (directly or indirectly): `-llttng-ust-common`
 
 
 DESCRIPTION
@@ -728,12 +732,12 @@ change, but need not to be otherwise recompiled (unless the tracepoint
 provider's API changes).
 
 Then, link your application with this object file (or with the static
-library containing it) and with `liblttng-ust`, `liblttng-ust-common`,
-and `libdl` (`libc` on a BSD system):
+library containing it) and with `liblttng-ust` and `libdl` (`libc` on a
+BSD system):
 
 [role="term"]
 ----
-$ cc -o app tp.o app.o -llttng-ust -llttng-ust-common -ldl
+$ cc -o app tp.o app.o -llttng-ust -ldl
 ----
 
 
@@ -783,8 +787,7 @@ It is then linked as a shared library like this:
 
 [role="term"]
 ----
-$ cc -shared -Wl,--no-as-needed -o tp.so tp.o -llttng-ust \
-     -llttng-ust-common
+$ cc -shared -Wl,--no-as-needed -o tp.so tp.o -llttng-ust
 ----
 
 This tracepoint provider shared object isn't linked with the user
@@ -1218,7 +1221,7 @@ like this:
 ----
 $ cc -c -I. tp.c
 $ cc -c app.c
-$ cc -o app tp.o app.o -llttng-ust -llttng-ust-common -ldl
+$ cc -o app tp.o app.o -llttng-ust -ldl
 ----
 
 Using the man:lttng(1) tool, create an LTTng tracing session, enable

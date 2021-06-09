@@ -17,8 +17,11 @@ SYNOPSIS
 #define *lttng_ust_tracelog*('level', 'fmt', ...)
 #define *lttng_ust_vtracelog*('level', 'fmt', 'ap')
 
-Link with `-llttng-ust -llttng-ust-common`.
+Link with:
 
+* `-llttng-ust`
+* If you define `_LGPL_SOURCE` before including
+  `<lttng/tracelog.h>` (directly or indirectly): `-llttng-ust-common`
 
 DESCRIPTION
 -----------
