@@ -1,3 +1,9 @@
+2021-07-16 (World Snake Day) lttng-ust 2.13.0-rc3
+	* Documentation: clarify API backward compatibility comment
+	* doc/man: only mention `-llttng-ust-common` in synopses (conditionally)
+	* doc/man: remove vtracef() and vtracelog() manual pages
+	* Remove vtracelog and vtracef from v0 compat API
+
 2021-05-14 (National Dance Like a Chicken Day) lttng-ust 2.13.0-rc2
 	* Fix: ustcomm: application name uses the '-ust'-suffixed thread name
 	* Add abi0 conflict tests
