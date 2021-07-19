@@ -2408,7 +2408,6 @@ int get_cred(int sock,
 /*
  * Override application uid/gid with unix socket credentials. Use the
  * first group of the cr_groups.
- * Use the pid and ppid provided by the application on registration.
  */
 static
 int get_cred(int sock,
@@ -2422,21 +2421,25 @@ int get_cred(int sock,
 	socklen_t xucred_len = sizeof(struct xucred);
 	int ret;
 
-	ret = getsockopt(sock, SOL_SOCKET, LOCAL_PEERCRED, &xucred, &xucred_len);
+	ret = getsockopt(sock, SOL_LOCAL, LOCAL_PEERCRED, &xucred, &xucred_len);
 	if (ret) {
 		return -LTTNG_UST_ERR_PEERCRED;
 	}
 	if (xucred.cr_version != XUCRED_VERSION || xucred.cr_ngroups < 1) {
 		return -LTTNG_UST_ERR_PEERCRED;
 	}
-	DBG("Unix socket peercred [ uid: %u, gid: %u ], "
-		"application registered claiming [ pid: %d, ppid: %d, uid: %u, gid: %u ]",
-		xucred.cr_uid, xucred.cr_groups[0],
+	DBG("Unix socket peercred [ pid: %u, uid: %u, gid: %u ], "
+		"application registered claiming [ pid: %u, ppid: %u, uid: %u, gid: %u ]",
+		xucred.cr_pid, xucred.cr_uid, xucred.cr_groups[0],
 		reg_msg->pid, reg_msg->ppid, reg_msg->uid, reg_msg->gid);
-	*pid = reg_msg->pid;
-	*ppid = reg_msg->ppid;
+	*pid = xucred.cr_pid;
 	*uid = xucred.cr_uid;
 	*gid = xucred.cr_groups[0];
+	if (xucred.cr_pid == reg_msg->pid) {
+		*ppid = reg_msg->ppid;
+	} else {
+		*ppid = 0;
+	}
 	return 0;
 }
 #else
