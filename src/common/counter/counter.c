@@ -453,6 +453,35 @@ int lttng_counter_aggregate(const struct lib_counter_config *config,
 	default:
 		return -EINVAL;
 	}
+	switch (config->counter_size) {
+	case COUNTER_SIZE_8_BIT:
+		if (sum > INT8_MAX)
+			*overflow = true;
+		if (sum < INT8_MIN)
+			*underflow = true;
+		sum = (int8_t) sum;	/* Truncate sum. */
+		break;
+	case COUNTER_SIZE_16_BIT:
+		if (sum > INT16_MAX)
+			*overflow = true;
+		if (sum < INT16_MIN)
+			*underflow = true;
+		sum = (int16_t) sum;	/* Truncate sum. */
+		break;
+	case COUNTER_SIZE_32_BIT:
+		if (sum > INT32_MAX)
+			*overflow = true;
+		if (sum < INT32_MIN)
+			*underflow = true;
+		sum = (int32_t) sum;	/* Truncate sum. */
+		break;
+#if CAA_BITS_PER_LONG == 64
+	case COUNTER_SIZE_64_BIT:
+		break;
+#endif
+	default:
+		return -EINVAL;
+	}
 	*value = sum;
 	return 0;
 }
