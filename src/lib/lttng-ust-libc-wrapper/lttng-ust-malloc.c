@@ -355,7 +355,7 @@ void *realloc(void *ptr, size_t size)
 			memcpy(retval, ptr, *old_size);
 		}
 		/*
-		 * Mimick that a NULL pointer has been received, so
+		 * Mimic that a NULL pointer has been received, so
 		 * memory allocation analysis based on the trace don't
 		 * get confused by the address from the static
 		 * allocator.

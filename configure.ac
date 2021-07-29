@@ -322,7 +322,7 @@ AC_ARG_VAR([CLASSPATH], [Java class path])
 
 
 ##                              ##
-## Optionnal features selection ##
+## Optional features selection ##
 ##                              ##
 
 # numa integration
@@ -419,7 +419,7 @@ AS_IF([AE_IS_FEATURE_ENABLED([jni-interface]) || AE_IS_FEATURE_ENABLED([java-age
   AX_PROG_JAVA
   AX_PROG_JAR
 
-  # Get the CPPFLAGS required to build jni libaries
+  # Get the CPPFLAGS required to build jni libraries
   AX_JNI_INCLUDE_DIR
   for jni_include_dir in $JNI_INCLUDE_DIRS; do
     JNI_CPPFLAGS="$JNI_CPPFLAGS -I$jni_include_dir"

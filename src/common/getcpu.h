@@ -82,7 +82,7 @@ int lttng_ust_get_cpu_internal(void)
 
 /*
  * FreeBSD and Cygwin do not allow query of CPU ID. Always use CPU
- * number 0, with the assocated performance degradation on SMP.
+ * number 0, with the associated performance degradation on SMP.
  */
 static inline
 int lttng_ust_get_cpu_internal(void)

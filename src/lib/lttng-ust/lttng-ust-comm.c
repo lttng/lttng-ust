@@ -2183,7 +2183,7 @@ void lttng_ust_ctor(void)
 	 * this library so it never becomes zero, thus never gets unloaded from the
 	 * address space of the process. Since we are already running in the
 	 * constructor of the LTTNG_UST_LIB_SONAME library, calling dlopen will
-	 * simply increment the refcount and no additionnal work is needed by the
+	 * simply increment the refcount and no additional work is needed by the
 	 * dynamic loader as the shared library is already loaded in the address
 	 * space. As a safe guard, we use the RTLD_NODELETE flag to prevent
 	 * unloading of the UST library if its refcount becomes zero (which should
@@ -2520,7 +2520,7 @@ void lttng_ust_after_fork_parent(sigset_t *restore_sigset)
 		return;
 	DBG("process %d", getpid());
 	lttng_ust_urcu_after_fork_parent();
-	/* Release mutexes and reenable signals */
+	/* Release mutexes and re-enable signals */
 	ust_after_fork_common(restore_sigset);
 }
 
@@ -2547,7 +2547,7 @@ void lttng_ust_after_fork_child(sigset_t *restore_sigset)
 	/* Release urcu mutexes */
 	lttng_ust_urcu_after_fork_child();
 	lttng_ust_cleanup(0);
-	/* Release mutexes and reenable signals */
+	/* Release mutexes and re-enable signals */
 	ust_after_fork_common(restore_sigset);
 	lttng_ust_ctor();
 }

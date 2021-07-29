@@ -96,7 +96,7 @@ class _TcpClient(object):
             except (Exception) as e:
                 # Whatever happens here, we have to close the socket and
                 # retry to connect to the session daemon since either
-                # the socket was closed, a network timeout occured, or
+                # the socket was closed, a network timeout occurred, or
                 # invalid data was received.
                 dbg._pdebug(self._debug('got exception: {}'.format(e)))
                 self._cleanup_socket()

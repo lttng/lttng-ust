@@ -41,7 +41,7 @@ public class LttngTcpSessiondClient implements Runnable {
 	private static final int PROTOCOL_MAJOR_VERSION = 2;
 	private static final int PROTOCOL_MINOR_VERSION = 0;
 
-	/** Command header from the session deamon. */
+	/** Command header from the session daemon. */
 	private final CountDownLatch registrationLatch = new CountDownLatch(1);
 
 	private Socket sessiondSock;

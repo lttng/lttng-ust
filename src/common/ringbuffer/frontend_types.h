@@ -120,7 +120,7 @@ enum lttng_crash_type {
 
 struct lttng_crash_abi {
 	uint8_t magic[RB_CRASH_DUMP_ABI_MAGIC_LEN];
-	uint64_t mmap_length;	/* Overall lenght of crash record */
+	uint64_t mmap_length;	/* Overall length of crash record */
 	uint16_t endian;	/*
 				 * { 0x12, 0x34 }: big endian
 				 * { 0x34, 0x12 }: little endian

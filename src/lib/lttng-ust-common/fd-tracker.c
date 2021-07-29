@@ -284,7 +284,7 @@ int lttng_ust_add_fd_to_tracker(int fd)
 
 	/* Trying to add an fd which we can not accommodate. */
 	assert(IS_FD_VALID(fd));
-	/* Setting an fd thats already set. */
+	/* Setting an fd that's already set. */
 	assert(!IS_FD_SET(fd, lttng_fd_set));
 
 	ADD_FD_TO_SET(fd, lttng_fd_set);

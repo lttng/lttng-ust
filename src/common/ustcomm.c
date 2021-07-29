@@ -1727,7 +1727,7 @@ int ustcomm_register_channel(int sock,
 }
 
 /*
- * Set socket reciving timeout.
+ * Set socket receiving timeout.
  */
 int ustcomm_setsockopt_rcv_timeout(int sock, unsigned int msec)
 {

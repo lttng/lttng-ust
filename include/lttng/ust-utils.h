@@ -138,7 +138,7 @@
  * @align_drift:  object offset from an "alignment"-aligned address.
  * @alignment:    natural object alignment. Must be non-zero, power of 2.
  *
- * Returns the offset that must be substracted to align towards lower addresses.
+ * Returns the offset that must be subtracted to align towards lower addresses.
  */
 #define lttng_ust_offset_align_floor(align_drift, alignment)		       \
 	({								       \

@@ -199,7 +199,7 @@ void capture_sequence(struct lttng_msgpack_writer *writer,
 		/*
 		 * We assume that alignment is smaller or equal to the size.
 		 * This currently holds true but if it changes in the future,
-		 * we will want to change the pointer arithmetics below to
+		 * we will want to change the pointer arithmetic below to
 		 * take into account that the next element might be further
 		 * away.
 		 */
