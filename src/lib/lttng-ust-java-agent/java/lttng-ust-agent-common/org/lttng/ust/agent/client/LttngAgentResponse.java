@@ -42,7 +42,7 @@ abstract class LttngAgentResponse {
 	 */
 	protected enum ReturnCode {
 
-		CODE_SUCCESS_CMD(1, "sucess"),
+		CODE_SUCCESS_CMD(1, "success"),
 		CODE_INVALID_CMD(2, "invalid"),
 		CODE_UNKNOWN_LOGGER_NAME(3, "unknown logger name");
 
