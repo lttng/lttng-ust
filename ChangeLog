@@ -1,3 +1,6 @@
+2021-08-02 (Ice Cream Sandwich Day) lttng-ust 2.13.0
+	* No change
+
 2021-07-16 (World Snake Day) lttng-ust 2.13.0-rc3
 	* Documentation: clarify API backward compatibility comment
 	* doc/man: only mention `-llttng-ust-common` in synopses (conditionally)
