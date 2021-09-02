@@ -27,6 +27,10 @@
 #error "LTTNG_PACKED should be defined"
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef LTTNG_UST_UUID_LEN
 #define LTTNG_UST_UUID_LEN	16
 #endif
@@ -517,5 +521,9 @@ int ustctl_reply_register_channel(int sock,
 	uint32_t chan_id,
 	enum ustctl_channel_header header_type,
 	int ret_code);			/* return code. 0 ok, negative error */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _LTTNG_UST_CTL_H */

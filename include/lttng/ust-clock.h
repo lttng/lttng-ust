@@ -22,6 +22,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Set each callback for the trace clock override, and then enable the
  * override. Those functions return negative error values on error, 0 on
@@ -63,5 +67,9 @@ int lttng_ust_trace_clock_set_description_cb(const char *(*description)(void));
  * Use the clock override rather than the default clock.
  */
 int lttng_ust_enable_trace_clock_override(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LTTNG_UST_CLOCK_H */
