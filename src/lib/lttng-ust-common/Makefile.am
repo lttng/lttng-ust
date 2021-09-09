@@ -11,7 +11,8 @@ liblttng_ust_common_la_SOURCES = \
 	getcpu.h \
 	ust-common.c \
 	lttng-ust-urcu.c \
-	lttng-ust-urcu-pointer.c
+	lttng-ust-urcu-pointer.c \
+	ust-cancelstate.c
 
 liblttng_ust_common_la_LIBADD = \
 	$(top_builddir)/src/common/libcommon.la \
