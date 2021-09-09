@@ -22,6 +22,7 @@
 #include <lttng/ust-events.h>
 #include <lttng/ust-tracer.h>
 #include <lttng/ust-ringbuffer-context.h>
+#include <lttng/ust-cancelstate.h>
 #include <urcu/system.h>
 #include <urcu/arch.h>
 #include <urcu/rculist.h>
@@ -78,12 +79,6 @@ static pthread_key_t perf_counter_key;
 static pthread_mutex_t ust_perf_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /*
- * Cancel state when grabbing the ust_perf_mutex. Saved when locking,
- * restored on unlock. Protected by ust_perf_mutex.
- */
-static int ust_perf_saved_cancelstate;
-
-/*
  * Track whether we are tracing from a signal handler nested on an
  * application thread.
  */
@@ -100,11 +95,10 @@ void lttng_ust_perf_counter_alloc_tls(void)
 void lttng_perf_lock(void)
 {
 	sigset_t sig_all_blocked, orig_mask;
-	int ret, oldstate;
+	int ret;
 
-	ret = pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldstate);
-	if (ret) {
-		ERR("pthread_setcancelstate: %s", strerror(ret));
+	if (lttng_ust_cancelstate_disable_push()) {
+		ERR("lttng_ust_cancelstate_disable_push");
 	}
 	sigfillset(&sig_all_blocked);
 	ret = pthread_sigmask(SIG_SETMASK, &sig_all_blocked, &orig_mask);
@@ -118,7 +112,6 @@ void lttng_perf_lock(void)
 		 */
 		cmm_barrier();
 		pthread_mutex_lock(&ust_perf_mutex);
-		ust_perf_saved_cancelstate = oldstate;
 	}
 	ret = pthread_sigmask(SIG_SETMASK, &orig_mask, NULL);
 	if (ret) {
@@ -129,8 +122,7 @@ void lttng_perf_lock(void)
 void lttng_perf_unlock(void)
 {
 	sigset_t sig_all_blocked, orig_mask;
-	int ret, newstate, oldstate;
-	bool restore_cancel = false;
+	int ret;
 
 	sigfillset(&sig_all_blocked);
 	ret = pthread_sigmask(SIG_SETMASK, &sig_all_blocked, &orig_mask);
@@ -143,19 +135,14 @@ void lttng_perf_unlock(void)
 	 */
 	cmm_barrier();
 	if (!--URCU_TLS(ust_perf_mutex_nest)) {
-		newstate = ust_perf_saved_cancelstate;
-		restore_cancel = true;
 		pthread_mutex_unlock(&ust_perf_mutex);
 	}
 	ret = pthread_sigmask(SIG_SETMASK, &orig_mask, NULL);
 	if (ret) {
 		ERR("pthread_sigmask: %s", strerror(ret));
 	}
-	if (restore_cancel) {
-		ret = pthread_setcancelstate(newstate, &oldstate);
-		if (ret) {
-			ERR("pthread_setcancelstate: %s", strerror(ret));
-		}
+	if (lttng_ust_cancelstate_disable_pop()) {
+		ERR("lttng_ust_cancelstate_disable_pop");
 	}
 }
 
