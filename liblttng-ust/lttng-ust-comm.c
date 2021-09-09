@@ -46,6 +46,7 @@
 #include <lttng/ust.h>
 #include <lttng/ust-error.h>
 #include <lttng/ust-ctl.h>
+#include <lttng/ust-cancelstate.h>
 #include <urcu/tls-compat.h>
 #include <ust-comm.h>
 #include <ust-fd.h>
@@ -130,14 +131,10 @@ int lttng_ust_loaded __attribute__((weak));
 int ust_lock(void)
 {
 	sigset_t sig_all_blocked, orig_mask;
-	int ret, oldstate;
+	int ret;
 
-	ret = pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldstate);
-	if (ret) {
-		ERR("pthread_setcancelstate: %s", strerror(ret));
-	}
-	if (oldstate != PTHREAD_CANCEL_ENABLE) {
-		ERR("pthread_setcancelstate: unexpected oldstate");
+	if (lttng_ust_cancelstate_disable_push()) {
+		ERR("lttng_ust_cancelstate_disable_push");
 	}
 	sigfillset(&sig_all_blocked);
 	ret = pthread_sigmask(SIG_SETMASK, &sig_all_blocked, &orig_mask);
@@ -166,14 +163,10 @@ int ust_lock(void)
 void ust_lock_nocheck(void)
 {
 	sigset_t sig_all_blocked, orig_mask;
-	int ret, oldstate;
+	int ret;
 
-	ret = pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldstate);
-	if (ret) {
-		ERR("pthread_setcancelstate: %s", strerror(ret));
-	}
-	if (oldstate != PTHREAD_CANCEL_ENABLE) {
-		ERR("pthread_setcancelstate: unexpected oldstate");
+	if (lttng_ust_cancelstate_disable_push()) {
+		ERR("lttng_ust_cancelstate_disable_push");
 	}
 	sigfillset(&sig_all_blocked);
 	ret = pthread_sigmask(SIG_SETMASK, &sig_all_blocked, &orig_mask);
@@ -194,7 +187,7 @@ void ust_lock_nocheck(void)
 void ust_unlock(void)
 {
 	sigset_t sig_all_blocked, orig_mask;
-	int ret, oldstate;
+	int ret;
 
 	sigfillset(&sig_all_blocked);
 	ret = pthread_sigmask(SIG_SETMASK, &sig_all_blocked, &orig_mask);
@@ -207,12 +200,8 @@ void ust_unlock(void)
 	if (ret) {
 		ERR("pthread_sigmask: %s", strerror(ret));
 	}
-	ret = pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &oldstate);
-	if (ret) {
-		ERR("pthread_setcancelstate: %s", strerror(ret));
-	}
-	if (oldstate != PTHREAD_CANCEL_DISABLE) {
-		ERR("pthread_setcancelstate: unexpected oldstate");
+	if (lttng_ust_cancelstate_disable_pop()) {
+		ERR("lttng_ust_cancelstate_disable_pop");
 	}
 }
 

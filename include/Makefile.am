@@ -36,6 +36,7 @@ noinst_HEADERS = \
 	ust-fd.h \
 	lttng/ust-tid.h \
 	lttng/bitfield.h \
+	lttng/ust-cancelstate.h \
 	lttng/ust-dlfcn.h \
 	lttng/ust-dynamic-type.h \
 	lttng/ust-context-provider.h \
