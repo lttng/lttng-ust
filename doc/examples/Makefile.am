@@ -142,7 +142,7 @@ all-local:
 				CFLAGS='$(CFLAGS)' \
 				AM_CFLAGS='$(AM_CFLAGS)' \
 				LDFLAGS="$(LDFLAGS)" \
-				AM_LDFLAGS='$(AM_LDFLAGS) -L../../../src/lib/lttng-ust/.libs -Wl,-rpath="$(PWD)/../../src/lib/lttng-ust/.libs/" -Wl,-rpath-link="$(PWD)/../../src/lib/lttng-ust/.libs/"' \
+				AM_LDFLAGS='$(AM_LDFLAGS) -L../../../src/lib/lttng-ust/.libs -Wl,-rpath="$(PWD)/../../src/lib/lttng-ust/.libs/" -Wl,-rpath-link="$(PWD)/../../src/lib/lttng-ust/.libs/:$(PWD)/../../src/lib/lttng-ust-tracepoint/.libs/:$(PWD)/../../src/lib/lttng-ust-common/.libs/"' \
 				LTTNG_GEN_TP_PATH="$$rel_src_subdir$(top_srcdir)/tools/" \
 				AM_V_P="$(AM_V_P)" \
 				AM_V_at="$(AM_V_at)" \
