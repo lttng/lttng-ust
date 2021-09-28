@@ -1479,15 +1479,18 @@ int main(int argc, char* argv[])
 
 ENVIRONMENT VARIABLES
 ---------------------
-`LTTNG_HOME`::
+`LTTNG_UST_HOME`::
     Alternative user's home directory. This variable is useful when the
     user running the instrumented application has a non-writable home
     directory.
 +
 Unix sockets used for the communication between `liblttng-ust` and the
 LTTng session and consumer daemons (part of the LTTng-tools project)
-are located in a specific directory under `$LTTNG_HOME` (or `$HOME` if
-`$LTTNG_HOME` is not set).
+are located in a specific directory under `$LTTNG_UST_HOME` (or `$HOME` if
+`$LTTNG_UST_HOME` is not set).
+
+NOTE: `$LTTNG_HOME` is also supported as a fallback of `$LTTNG_UST_HOME` for
+backward compatibility reason.
 
 `LTTNG_UST_ALLOW_BLOCKING`::
     If set, allow the application to retry event tracing when there's
