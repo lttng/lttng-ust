@@ -11,10 +11,15 @@
 #include <stdlib.h>
 #include <lttng/tracepoint-types.h>
 #include <lttng/tracepoint-rcu.h>
+#include <lttng/ust-utils.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 #include <urcu/compiler.h>
 #include <urcu/system.h>
 #include <dlfcn.h>	/* for dlopen */
 #include <string.h>	/* for memset */
+#include <stdbool.h>
 
 #include <lttng/ust-config.h>	/* for sdt */
 #include <lttng/ust-compiler.h>
@@ -386,6 +391,40 @@ lttng_ust_tracepoint__init_urcu_sym(void)
 }
 #endif
 
+/*
+ * Use getenv() directly and bypass lttng-ust helper functions
+ * because we may not have access to lttng-ust shared libraries.
+ */
+#ifdef LTTNG_UST_DEBUG
+static inline
+bool lttng_ust_tracepoint_logging_debug_enabled(void)
+{
+	return true;
+}
+#else /* #ifdef LTTNG_UST_DEBUG */
+static inline
+bool lttng_ust_tracepoint_logging_debug_enabled(void)
+{
+	return getenv("LTTNG_UST_DEBUG");
+}
+#endif /* #ifdef LTTNG_UST_DEBUG */
+
+#define LTTNG_UST_TRACEPOINT_THIS_IP		\
+	({ __label__ here; here: &&here; })
+
+static void
+lttng_ust_tracepoints_print_disabled_message(void)
+{
+	if (!lttng_ust_tracepoint_logging_debug_enabled())
+		return;
+	fprintf(stderr, "lttng-ust-tracepoint [%ld]: dlopen() failed to find '%s', tracepoints in this binary won't be registered. "
+		"(at addr=%p in %s() at " __FILE__ ":" lttng_ust_stringify(__LINE__) ")\n",
+		(long) getpid(),
+		LTTNG_UST_TRACEPOINT_LIB_SONAME,
+		LTTNG_UST_TRACEPOINT_THIS_IP,
+		__func__);
+}
+
 static void
 lttng_ust__tracepoints__init(void)
 	lttng_ust_notrace __attribute__((constructor));
@@ -404,8 +443,10 @@ lttng_ust__tracepoints__init(void)
 	if (!lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle)
 		lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle =
 			dlopen(LTTNG_UST_TRACEPOINT_LIB_SONAME, RTLD_NOW | RTLD_GLOBAL);
-	if (!lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle)
+	if (!lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle) {
+		lttng_ust_tracepoints_print_disabled_message();
 		return;
+	}
 	lttng_ust_tracepoint__init_urcu_sym();
 }
 
@@ -534,8 +575,10 @@ lttng_ust__tracepoints__ptrs_init(void)
 	if (!lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle)
 		lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle =
 			dlopen(LTTNG_UST_TRACEPOINT_LIB_SONAME, RTLD_NOW | RTLD_GLOBAL);
-	if (!lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle)
+	if (!lttng_ust_tracepoint_dlopen_ptr->liblttngust_handle) {
+		lttng_ust_tracepoints_print_disabled_message();
 		return;
+	}
 	if (!lttng_ust_tracepoint_destructors_syms_ptr)
 		lttng_ust_tracepoint_destructors_syms_ptr = &lttng_ust_tracepoint_destructors_syms;
 	lttng_ust_tracepoint_dlopen_ptr->lttng_ust_tracepoint_module_register =
