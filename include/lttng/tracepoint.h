@@ -413,20 +413,35 @@ bool lttng_ust_tracepoint_logging_debug_enabled(void)
 }
 #endif /* #ifdef LTTNG_UST_DEBUG */
 
+#ifdef LTTNG_UST_ABORT_ON_CRITICAL
+static inline
+bool lttng_ust_tracepoint_logging_abort_on_critical_enabled(void)
+{
+	return true;
+}
+#else /* #ifdef LTTNG_UST_ABORT_ON_CRITICAL */
+static inline
+bool lttng_ust_tracepoint_logging_abort_on_critical_enabled(void)
+{
+	return getenv("LTTNG_UST_ABORT_ON_CRITICAL");
+}
+#endif
+
 #define LTTNG_UST_TRACEPOINT_THIS_IP		\
 	({ __label__ here; here: &&here; })
 
 static void
 lttng_ust_tracepoints_print_disabled_message(void)
 {
-	if (!lttng_ust_tracepoint_logging_debug_enabled())
-		return;
-	fprintf(stderr, "lttng-ust-tracepoint [%ld]: dlopen() failed to find '%s', tracepoints in this binary won't be registered. "
-		"(at addr=%p in %s() at " __FILE__ ":" lttng_ust_stringify(__LINE__) ")\n",
-		(long) getpid(),
-		LTTNG_UST_TRACEPOINT_LIB_SONAME,
-		LTTNG_UST_TRACEPOINT_THIS_IP,
-		__func__);
+	if (lttng_ust_tracepoint_logging_debug_enabled())
+		fprintf(stderr, "lttng-ust-tracepoint [%ld]: Critical: dlopen() failed to find '%s', tracepoints in this binary won't be registered. "
+			"(at addr=%p in %s() at " __FILE__ ":" lttng_ust_stringify(__LINE__) ")\n",
+			(long) getpid(),
+			LTTNG_UST_TRACEPOINT_LIB_SONAME,
+			LTTNG_UST_TRACEPOINT_THIS_IP,
+			__func__);
+	if (lttng_ust_tracepoint_logging_abort_on_critical_enabled())
+		abort();
 }
 
 static void
