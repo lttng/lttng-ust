@@ -1507,6 +1507,9 @@ prevent discarding event records.
 WARNING: Setting this environment variable may significantly
 affect application timings.
 
+`LTTNG_UST_ABORT_ON_CRITICAL`::
+    If set, abort the instrumented application on a critical error message.
+
 `LTTNG_UST_CLOCK_PLUGIN`::
     Path to the shared object which acts as the clock override plugin.
     An example of such a plugin can be found in the LTTng-UST
