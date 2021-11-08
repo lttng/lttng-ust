@@ -862,7 +862,7 @@ long lttng_event_notifier_enabler_cmd(int objd, unsigned int cmd, unsigned long 
 			&event_notifier_enabler->parent,
 			(struct lttng_ust_bytecode_node **) arg);
 	case LTTNG_UST_ABI_EXCLUSION:
-		return lttng_event_notifier_enabler_attach_exclusion(event_notifier_enabler,
+		return lttng_event_enabler_attach_exclusion(&event_notifier_enabler->parent,
 			(struct lttng_ust_excluder_node **) arg);
 	case LTTNG_UST_ABI_CAPTURE:
 		return lttng_event_notifier_enabler_attach_capture_bytecode(
@@ -1784,7 +1784,7 @@ long lttng_event_enabler_cmd(int objd, unsigned int cmd, unsigned long arg,
 	}
 	case LTTNG_UST_ABI_EXCLUSION:
 	{
-		return lttng_event_enabler_attach_exclusion(enabler,
+		return lttng_event_enabler_attach_exclusion(&enabler->parent,
 				(struct lttng_ust_excluder_node **) arg);
 	}
 	default:

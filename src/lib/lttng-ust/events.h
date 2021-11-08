@@ -73,10 +73,10 @@ int lttng_event_enabler_attach_context(struct lttng_event_enabler_session_common
 	__attribute__((visibility("hidden")));
 
 /*
- * Attach exclusion list to `struct lttng_event_enabler` and all
+ * Attach exclusion list to `struct lttng_event_enabler_common` and all
  * events related to this enabler.
  */
-int lttng_event_enabler_attach_exclusion(struct lttng_event_enabler_session_common *enabler,
+int lttng_event_enabler_attach_exclusion(struct lttng_event_enabler_common *enabler,
 		struct lttng_ust_excluder_node **excluder)
 	__attribute__((visibility("hidden")));
 
@@ -128,15 +128,6 @@ struct lttng_event_notifier_enabler *lttng_event_notifier_enabler_create(
 int lttng_event_notifier_enabler_attach_capture_bytecode(
 		struct lttng_event_notifier_enabler *event_notifier_enabler,
 		struct lttng_ust_bytecode_node **bytecode)
-	__attribute__((visibility("hidden")));
-
-/*
- * Attach exclusion list to `struct lttng_event_notifier_enabler` and all
- * event notifiers related to this enabler.
- */
-int lttng_event_notifier_enabler_attach_exclusion(
-		struct lttng_event_notifier_enabler *event_notifier_enabler,
-		struct lttng_ust_excluder_node **excluder)
 	__attribute__((visibility("hidden")));
 
 void lttng_free_event_filter_runtime(struct lttng_ust_event_common *event)
