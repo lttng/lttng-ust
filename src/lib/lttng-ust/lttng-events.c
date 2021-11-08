@@ -2089,6 +2089,44 @@ void lttng_event_sync_capture_state(struct lttng_ust_event_common *event)
 	}
 }
 
+static
+bool lttng_get_event_enabled_state(struct lttng_ust_event_common *event)
+{
+	struct lttng_enabler_ref *enabler_ref;
+	bool enabled = false;
+
+	/* Enable events */
+	cds_list_for_each_entry(enabler_ref, &event->priv->enablers_ref_head, node) {
+		if (enabler_ref->ref->enabled) {
+			enabled = true;
+			break;
+		}
+	}
+
+	switch (event->type) {
+	case LTTNG_UST_EVENT_TYPE_RECORDER:		/* Fall-through */
+	case LTTNG_UST_EVENT_TYPE_COUNTER:
+	{
+		struct lttng_ust_event_common_private *event_priv = event->priv;
+		struct lttng_ust_event_session_common_private *event_session_priv =
+			caa_container_of(event_priv, struct lttng_ust_event_session_common_private, parent);
+
+		/*
+		 * Enabled state is based on union of enablers, with
+		 * intersection of session and channel transient enable
+		 * states.
+		 */
+		return enabled && event_session_priv->chan->session->priv->tstate && event_session_priv->chan->priv->tstate;
+	}
+	case LTTNG_UST_EVENT_TYPE_NOTIFIER:
+		return enabled;
+	default:
+		WARN_ON_ONCE(1);
+		return false;
+	}
+}
+
+
 /*
  * lttng_session_sync_event_enablers should be called just before starting a
  * session.
@@ -2108,24 +2146,7 @@ void lttng_session_sync_event_enablers(struct lttng_ust_session *session)
 	 * enable the event, else we disable it.
 	 */
 	cds_list_for_each_entry(event_priv, &session->priv->events_head, node) {
-		struct lttng_ust_event_session_common_private *event_session_priv =
-			caa_container_of(event_priv, struct lttng_ust_event_session_common_private, parent);
-		struct lttng_enabler_ref *enabler_ref;
-		int enabled = 0;
-
-		/* Enable events */
-		cds_list_for_each_entry(enabler_ref, &event_priv->enablers_ref_head, node) {
-			if (enabler_ref->ref->enabled) {
-				enabled = 1;
-				break;
-			}
-		}
-		/*
-		 * Enabled state is based on union of enablers, with
-		 * intesection of session and channel transient enable
-		 * states.
-		 */
-		enabled = enabled && session->priv->tstate && event_session_priv->chan->priv->tstate;
+		bool enabled = lttng_get_event_enabled_state(event_priv->pub);
 
 		CMM_STORE_SHARED(event_priv->pub->enabled, enabled);
 		/*
@@ -2160,16 +2181,7 @@ void lttng_event_notifier_group_sync_enablers(struct lttng_event_notifier_group 
 	 * we enable the event_notifier, else we disable it.
 	 */
 	cds_list_for_each_entry(event_priv, &event_notifier_group->event_notifiers_head, node) {
-		struct lttng_enabler_ref *enabler_ref;
-		int enabled = 0;
-
-		/* Enable event_notifiers */
-		cds_list_for_each_entry(enabler_ref, &event_priv->enablers_ref_head, node) {
-			if (enabler_ref->ref->enabled) {
-				enabled = 1;
-				break;
-			}
-		}
+		bool enabled = lttng_get_event_enabled_state(event_priv->pub);
 
 		CMM_STORE_SHARED(event_priv->pub->enabled, enabled);
 		/*
