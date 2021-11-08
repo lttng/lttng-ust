@@ -228,7 +228,7 @@ AC_CHECK_LIB([$libdl_name], [dlmopen],
 	[AC_DEFINE([HAVE_DLMOPEN], [1])]
 )
 
-AC_CHECK_LIB([pthread], [pthread_create])
+AC_CHECK_LIB([pthread], [pthread_create], [:])
 AC_CHECK_LIB([pthread], [pthread_setname_np],
 	AC_DEFINE([HAVE_PTHREAD_SETNAME_NP], [1], [Define to 1 if pthread_setname_np is available.]),
 	AC_CHECK_LIB([pthread], [pthread_set_name_np],
@@ -256,7 +256,7 @@ This error can also occur when the liburcu package's configure script has not be
 
 # urcu-cds - check that URCU Concurrent Data Structure lib is available to compilation
 # Part of Userspace RCU library 0.7.2 or better.
-AC_CHECK_LIB([urcu-cds], [_cds_lfht_new], [], [AC_MSG_ERROR([Cannot find
+AC_CHECK_LIB([urcu-cds], [_cds_lfht_new], [:], [AC_MSG_ERROR([Cannot find
 liburcu-cds lib, part of Userspace RCU 0.7 or better. Use [LDFLAGS]=-Ldir to specify its location.])])
 
 AC_MSG_CHECKING([caa_likely()])
@@ -275,10 +275,10 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 ])
 
 # urcu - check that URCU lib is available to compilation
-AC_CHECK_LIB([urcu-bp], [urcu_bp_synchronize_rcu], [], [AC_MSG_ERROR([Cannot find liburcu-bp 0.11 or newer. Use [LDFLAGS]=-Ldir to specify its location.])])
+AC_CHECK_LIB([urcu-bp], [urcu_bp_synchronize_rcu], [:], [AC_MSG_ERROR([Cannot find liburcu-bp 0.11 or newer. Use [LDFLAGS]=-Ldir to specify its location.])])
 
 # urcu - check that URCU lib is at least version 0.11
-AC_CHECK_LIB([urcu-bp], [urcu_bp_call_rcu], [], [AC_MSG_ERROR([liburcu 0.11 or newer is needed, please update your version or use [LDFLAGS]=-Ldir to specify the right location.])])
+AC_CHECK_LIB([urcu-bp], [urcu_bp_call_rcu], [:], [AC_MSG_ERROR([liburcu 0.11 or newer is needed, please update your version or use [LDFLAGS]=-Ldir to specify the right location.])])
 
 # numa.h integration
 AS_IF([test "x$NO_NUMA" = "x1"],[
@@ -295,7 +295,7 @@ AS_HELP_STRING([--disable-numa], [disable NUMA support])
 
 AS_IF([test "x$enable_numa" = "xyes"], [
 	# numa - check that numa lib is available
-	AC_CHECK_LIB([numa], [numa_available], [],
+	AC_CHECK_LIB([numa], [numa_available], [AC_DEFINE([HAVE_LIBNUMA], [1], [Define to 1 if libnuma is available.])],
 [AC_MSG_ERROR([libnuma is not available. Please either install it (e.g. libnuma-dev) or use [LDFLAGS]=-Ldir to specify the right location, or use --disable-numa configure argument to disable NUMA support.])])
 	have_libnuma=yes
 ])
