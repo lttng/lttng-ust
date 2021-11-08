@@ -737,7 +737,7 @@ int lttng_event_recorder_create(struct lttng_event_recorder_enabler *event_recor
 {
 	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
 	struct lttng_ust_event_recorder *event_recorder;
-	struct lttng_ust_event_session_common_private *event_session_priv_iter;
+	struct lttng_ust_event_common_private *event_priv_iter;
 	struct lttng_ust_event_recorder_private *event_recorder_priv;
 	struct lttng_ust_session *session = event_recorder_enabler->chan->parent->session;
 	struct cds_hlist_head *name_head;
@@ -748,14 +748,14 @@ int lttng_event_recorder_create(struct lttng_event_recorder_enabler *event_recor
 	lttng_ust_format_event_name(desc, name);
 	name_head = borrow_hash_table_bucket(session->priv->events_name_ht.table,
 		LTTNG_UST_EVENT_HT_SIZE, name);
-	cds_hlist_for_each_entry_2(event_session_priv_iter, name_head, name_hlist) {
+	cds_hlist_for_each_entry_2(event_priv_iter, name_head, name_hlist_node) {
 		bool same_event = false, same_channel = false, same_token = false;
 		struct lttng_ust_event_recorder_private *event_recorder_priv_iter;
 
-		if (event_session_priv_iter->parent.pub->type != LTTNG_UST_EVENT_TYPE_RECORDER)
+		if (event_priv_iter->pub->type != LTTNG_UST_EVENT_TYPE_RECORDER)
 			continue;
-		event_recorder_priv_iter = caa_container_of(event_session_priv_iter,
-			struct lttng_ust_event_recorder_private, parent);
+		event_recorder_priv_iter = caa_container_of(event_priv_iter,
+			struct lttng_ust_event_recorder_private, parent.parent);
 		WARN_ON_ONCE(!event_recorder_priv_iter->parent.parent.desc);
 		if (event_recorder_priv_iter->parent.parent.desc == desc)
 			same_event = true;
@@ -853,7 +853,7 @@ int lttng_event_recorder_create(struct lttng_event_recorder_enabler *event_recor
 	}
 
 	cds_list_add(&event_recorder_priv->parent.node, &session->priv->events_head);
-	cds_hlist_add_head(&event_recorder_priv->parent.name_hlist, name_head);
+	cds_hlist_add_head(&event_recorder_priv->parent.parent.name_hlist_node, name_head);
 	return 0;
 
 sessiond_register_error:
@@ -878,7 +878,7 @@ int lttng_event_counter_create(struct lttng_event_counter_enabler *event_counter
 	char key_string[LTTNG_KEY_TOKEN_STRING_LEN_MAX];
 	struct lttng_ust_event_counter *event_counter;
 	struct lttng_ust_event_counter_private *event_counter_priv;
-	struct lttng_ust_event_session_common_private *event_session_priv_iter;
+	struct lttng_ust_event_common_private *event_priv_iter;
 	struct lttng_ust_session *session = event_counter_enabler->chan->parent->session;
 	struct cds_hlist_head *name_head;
 	int ret = 0;
@@ -893,15 +893,15 @@ int lttng_event_counter_create(struct lttng_event_counter_enabler *event_counter
 	lttng_ust_format_event_name(desc, name);
 	name_head = borrow_hash_table_bucket(session->priv->events_name_ht.table,
 		LTTNG_UST_EVENT_HT_SIZE, name);
-	cds_hlist_for_each_entry_2(event_session_priv_iter, name_head, name_hlist) {
+	cds_hlist_for_each_entry_2(event_priv_iter, name_head, name_hlist_node) {
 		struct lttng_ust_event_counter_private *event_counter_priv_iter;
 		bool same_event = false, same_channel = false, same_key = false,
 				same_token = false;
 
-		if (event_session_priv_iter->parent.pub->type != LTTNG_UST_EVENT_TYPE_COUNTER)
+		if (event_priv_iter->pub->type != LTTNG_UST_EVENT_TYPE_COUNTER)
 			continue;
-		event_counter_priv_iter = caa_container_of(event_session_priv_iter,
-			struct lttng_ust_event_counter_private, parent);
+		event_counter_priv_iter = caa_container_of(event_priv_iter,
+			struct lttng_ust_event_counter_private, parent.parent);
 		WARN_ON_ONCE(!event_counter_priv_iter->parent.parent.desc);
 		if (event_counter_priv_iter->parent.parent.desc == desc)
 			same_event = true;
@@ -1005,7 +1005,7 @@ int lttng_event_counter_create(struct lttng_event_counter_enabler *event_counter
 
 	cds_list_add(&event_counter_priv->parent.node,
 		&event_counter_enabler->chan->parent->session->priv->events_head);
-	cds_hlist_add_head(&event_counter_priv->parent.name_hlist, name_head);
+	cds_hlist_add_head(&event_counter_priv->parent.parent.name_hlist_node, name_head);
 	return 0;
 
 sessiond_register_error:
@@ -1031,6 +1031,7 @@ int lttng_event_notifier_create(struct lttng_event_notifier_enabler *event_notif
 	struct lttng_event_notifier_group *event_notifier_group = event_notifier_enabler->group;
 	struct lttng_ust_event_notifier *event_notifier;
 	struct lttng_ust_event_notifier_private *event_notifier_priv;
+	struct lttng_ust_event_common_private *event_priv;
 	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
 	struct cds_hlist_head *head;
 	struct cds_hlist_node *node;
@@ -1046,14 +1047,13 @@ int lttng_event_notifier_create(struct lttng_event_notifier_enabler *event_notif
 		event_notifier_group->event_notifiers_ht.table,
 		LTTNG_UST_EVENT_NOTIFIER_HT_SIZE, name);
 
-	cds_hlist_for_each_entry(event_notifier_priv, node, head, hlist) {
+	cds_hlist_for_each_entry(event_priv, node, head, name_hlist_node) {
 		/*
 		 * Check if event_notifier already exists by checking
 		 * if the event_notifier and enabler share the same
 		 * description and id.
 		 */
-		if (event_notifier_priv->parent.desc == desc &&
-				event_notifier_priv->parent.user_token == event_notifier_enabler->parent.user_token) {
+		if (event_priv->desc == desc && event_priv->user_token == event_notifier_enabler->parent.user_token) {
 			found = true;
 			break;
 		}
@@ -1104,7 +1104,7 @@ int lttng_event_notifier_create(struct lttng_event_notifier_enabler *event_notif
 
 	cds_list_add(&event_notifier_priv->node,
 			&event_notifier_group->event_notifiers_head);
-	cds_hlist_add_head(&event_notifier_priv->hlist, head);
+	cds_hlist_add_head(&event_notifier_priv->parent.name_hlist_node, head);
 
 	return 0;
 
@@ -1388,7 +1388,6 @@ void probe_provider_event_for_each(const struct lttng_ust_probe_desc *provider_d
 	for (i = 0; i < provider_desc->nr_events; i++) {
 		const struct lttng_ust_event_desc *event_desc;
 		struct lttng_event_notifier_group *event_notifier_group;
-		struct lttng_ust_event_notifier_private *event_notifier_priv;
 		struct lttng_ust_session_private *session_priv;
 		struct cds_hlist_head *head;
 
@@ -1399,7 +1398,7 @@ void probe_provider_event_for_each(const struct lttng_ust_probe_desc *provider_d
 		 * description.
 		 */
 		cds_list_for_each_entry(session_priv, sessionsp, node) {
-			struct lttng_ust_event_session_common_private *event_session_priv;
+			struct lttng_ust_event_common_private *event_priv;
 			char name[LTTNG_UST_ABI_SYM_NAME_LEN];
 
 			/*
@@ -1411,9 +1410,9 @@ void probe_provider_event_for_each(const struct lttng_ust_probe_desc *provider_d
 				session_priv->events_name_ht.table,
 				LTTNG_UST_EVENT_HT_SIZE, name);
 
-			cds_hlist_for_each_entry_safe(event_session_priv, node, tmp_node, head, name_hlist) {
-				if (event_desc == event_session_priv->parent.desc) {
-					event_func(event_session_priv->parent.pub);
+			cds_hlist_for_each_entry_safe(event_priv, node, tmp_node, head, name_hlist_node) {
+				if (event_desc == event_priv->desc) {
+					event_func(event_priv->pub);
 					break;
 				}
 			}
@@ -1424,6 +1423,7 @@ void probe_provider_event_for_each(const struct lttng_ust_probe_desc *provider_d
 		 * description.
 		 */
 		cds_list_for_each_entry(event_notifier_group, &event_notifier_groups, node) {
+			struct lttng_ust_event_common_private *event_priv;
 			char name[LTTNG_UST_ABI_SYM_NAME_LEN];
 
 			/*
@@ -1436,9 +1436,9 @@ void probe_provider_event_for_each(const struct lttng_ust_probe_desc *provider_d
 				event_notifier_group->event_notifiers_ht.table,
 				LTTNG_UST_EVENT_NOTIFIER_HT_SIZE, name);
 
-			cds_hlist_for_each_entry_safe(event_notifier_priv, node, tmp_node, head, hlist) {
-				if (event_desc == event_notifier_priv->parent.desc) {
-					event_func(event_notifier_priv->parent.pub);
+			cds_hlist_for_each_entry_safe(event_priv, node, tmp_node, head, name_hlist_node) {
+				if (event_desc == event_priv->desc) {
+					event_func(event_priv->pub);
 					break;
 				}
 			}
@@ -1687,7 +1687,7 @@ void _lttng_event_destroy(struct lttng_ust_event_common *event)
 		/* Remove from event list. */
 		cds_list_del(&event_recorder->priv->parent.node);
 		/* Remove from event hash table. */
-		cds_hlist_del(&event_recorder->priv->parent.name_hlist);
+		cds_hlist_del(&event_recorder->priv->parent.parent.name_hlist_node);
 
 		lttng_destroy_context(event_recorder->priv->parent.ctx);
 		free(event_recorder->parent);
@@ -1702,7 +1702,7 @@ void _lttng_event_destroy(struct lttng_ust_event_common *event)
 		/* Remove from event list. */
 		cds_list_del(&event_notifier->priv->node);
 		/* Remove from event hash table. */
-		cds_hlist_del(&event_notifier->priv->hlist);
+		cds_hlist_del(&event_notifier->priv->parent.name_hlist_node);
 
 		free(event_notifier->priv);
 		free(event_notifier->parent);
@@ -1716,7 +1716,7 @@ void _lttng_event_destroy(struct lttng_ust_event_common *event)
 		/* Remove from event list. */
 		cds_list_del(&event_counter->priv->parent.node);
 		/* Remove from event hash table. */
-		cds_hlist_del(&event_counter->priv->parent.name_hlist);
+		cds_hlist_del(&event_counter->priv->parent.parent.name_hlist_node);
 
 		lttng_destroy_context(event_counter->priv->parent.ctx);
 		free(event_counter->parent);
