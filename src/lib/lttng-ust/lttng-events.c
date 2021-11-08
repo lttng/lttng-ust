@@ -2095,7 +2095,7 @@ int lttng_event_notifier_enabler_ref_event_notifiers(
 	cds_list_for_each_entry(event_notifier_priv, &event_notifier_group->event_notifiers_head, node) {
 		struct lttng_enabler_ref *enabler_ref;
 
-		if (!lttng_event_notifier_enabler_match_event_notifier(event_notifier_enabler, event_notifier_priv->pub))
+		if (!lttng_event_enabler_match_event(&event_notifier_enabler->parent, event_notifier_priv->parent.pub))
 			continue;
 
 		enabler_ref = lttng_enabler_ref(&event_notifier_priv->parent.enablers_ref_head,
