@@ -641,7 +641,49 @@ struct lttng_event_enabler_common *lttng_event_notifier_enabler_as_enabler(
 	return &event_notifier_enabler->parent;
 }
 
+static inline
+struct lttng_ust_event_ht *lttng_get_event_ht_from_enabler(struct lttng_event_enabler_common *event_enabler)
+{
+	switch (event_enabler->enabler_type) {
+	case LTTNG_EVENT_ENABLER_TYPE_RECORDER:		/* Fall-through */
+	case LTTNG_EVENT_ENABLER_TYPE_COUNTER:
+	{
+		struct lttng_event_enabler_session_common *event_enabler_session =
+			caa_container_of(event_enabler, struct lttng_event_enabler_session_common, parent);
+		return &event_enabler_session->chan->session->priv->events_name_ht;
+	}
+	case LTTNG_EVENT_ENABLER_TYPE_NOTIFIER:
+	{
+		struct lttng_event_notifier_enabler *event_notifier_enabler =
+			caa_container_of(event_enabler, struct lttng_event_notifier_enabler, parent);
+		return &event_notifier_enabler->group->event_notifiers_ht;
+	}
+	default:
+		return NULL;
+	}
+}
 
+static inline
+struct cds_list_head *lttng_get_event_list_head_from_enabler(struct lttng_event_enabler_common *event_enabler)
+{
+	switch (event_enabler->enabler_type) {
+	case LTTNG_EVENT_ENABLER_TYPE_RECORDER:		/* Fall-through */
+	case LTTNG_EVENT_ENABLER_TYPE_COUNTER:
+	{
+		struct lttng_event_enabler_session_common *event_enabler_session =
+			caa_container_of(event_enabler, struct lttng_event_enabler_session_common, parent);
+		return &event_enabler_session->chan->session->priv->events_head;
+	}
+	case LTTNG_EVENT_ENABLER_TYPE_NOTIFIER:
+	{
+		struct lttng_event_notifier_enabler *event_notifier_enabler =
+			caa_container_of(event_enabler, struct lttng_event_notifier_enabler, parent);
+		return &event_notifier_enabler->group->event_notifiers_head;
+	}
+	default:
+		return NULL;
+	}
+}
 
 /* This is ABI between liblttng-ust and liblttng-ust-dl */
 void lttng_ust_dl_update(void *ip);
