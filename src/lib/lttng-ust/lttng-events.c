@@ -79,6 +79,8 @@ void lttng_session_sync_event_enablers(struct lttng_ust_session *session);
 static
 void lttng_event_notifier_group_sync_enablers(
 		struct lttng_event_notifier_group *event_notifier_group);
+static
+void lttng_event_enabler_sync(struct lttng_event_enabler_common *event_enabler);
 
 bool lttng_ust_validate_event_name(const struct lttng_ust_event_desc *desc)
 {
@@ -1792,19 +1794,17 @@ struct lttng_event_notifier_enabler *lttng_event_notifier_enabler_create(
 	return event_notifier_enabler;
 }
 
-int lttng_event_enabler_enable(struct lttng_event_enabler_session_common *event_enabler)
+int lttng_event_enabler_enable(struct lttng_event_enabler_common *event_enabler)
 {
-	event_enabler->parent.enabled = 1;
-	lttng_session_lazy_sync_event_enablers(event_enabler->chan->session);
-
+	event_enabler->enabled = 1;
+	lttng_event_enabler_sync(event_enabler);
 	return 0;
 }
 
-int lttng_event_enabler_disable(struct lttng_event_enabler_session_common *event_enabler)
+int lttng_event_enabler_disable(struct lttng_event_enabler_common *event_enabler)
 {
-	event_enabler->parent.enabled = 0;
-	lttng_session_lazy_sync_event_enablers(event_enabler->chan->session);
-
+	event_enabler->enabled = 0;
+	lttng_event_enabler_sync(event_enabler);
 	return 0;
 }
 
@@ -1843,24 +1843,6 @@ int lttng_event_enabler_attach_exclusion(struct lttng_event_enabler_session_comm
 	_lttng_enabler_attach_exclusion(&event_enabler->parent, excluder);
 
 	lttng_session_lazy_sync_event_enablers(event_enabler->chan->session);
-	return 0;
-}
-
-int lttng_event_notifier_enabler_enable(
-		struct lttng_event_notifier_enabler *event_notifier_enabler)
-{
-	lttng_event_notifier_enabler_as_enabler(event_notifier_enabler)->enabled = 1;
-	lttng_event_notifier_group_sync_enablers(event_notifier_enabler->group);
-
-	return 0;
-}
-
-int lttng_event_notifier_enabler_disable(
-		struct lttng_event_notifier_enabler *event_notifier_enabler)
-{
-	lttng_event_notifier_enabler_as_enabler(event_notifier_enabler)->enabled = 0;
-	lttng_event_notifier_group_sync_enablers(event_notifier_enabler->group);
-
 	return 0;
 }
 
@@ -2345,6 +2327,30 @@ void lttng_session_lazy_sync_event_enablers(struct lttng_ust_session *session)
 	if (!session->active)
 		return;
 	lttng_session_sync_event_enablers(session);
+}
+
+static
+void lttng_event_enabler_sync(struct lttng_event_enabler_common *event_enabler)
+{
+	switch (event_enabler->enabler_type) {
+	case LTTNG_EVENT_ENABLER_TYPE_RECORDER:		/* Fall-through */
+	case LTTNG_EVENT_ENABLER_TYPE_COUNTER:
+	{
+		struct lttng_event_enabler_session_common *event_enabler_session =
+			caa_container_of(event_enabler, struct lttng_event_enabler_session_common, parent);
+		lttng_session_lazy_sync_event_enablers(event_enabler_session->chan->session);
+		break;
+	}
+	case LTTNG_EVENT_ENABLER_TYPE_NOTIFIER:
+	{
+		struct lttng_event_notifier_enabler *event_notifier_enabler =
+			caa_container_of(event_enabler, struct lttng_event_notifier_enabler, parent);
+		lttng_event_notifier_group_sync_enablers(event_notifier_enabler->group);
+		break;
+	}
+	default:
+		WARN_ON_ONCE(1);
+	}
 }
 
 /*

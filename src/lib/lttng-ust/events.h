@@ -41,17 +41,17 @@ void lttng_event_enabler_destroy(struct lttng_event_enabler_common *event_enable
 	__attribute__((visibility("hidden")));
 
 /*
- * Enable a `struct lttng_event_enabler` object and all events related to this
+ * Enable a `struct lttng_event_enabler_common` object and all events related to this
  * enabler.
  */
-int lttng_event_enabler_enable(struct lttng_event_enabler_session_common *enabler)
+int lttng_event_enabler_enable(struct lttng_event_enabler_common *enabler)
 	__attribute__((visibility("hidden")));
 
 /*
- * Disable a `struct lttng_event_enabler` object and all events related to this
+ * Disable a `struct lttng_event_enabler_common` object and all events related to this
  * enabler.
  */
-int lttng_event_enabler_disable(struct lttng_event_enabler_session_common *enabler)
+int lttng_event_enabler_disable(struct lttng_event_enabler_common *enabler)
 	__attribute__((visibility("hidden")));
 
 /*
@@ -119,22 +119,6 @@ struct lttng_event_notifier_enabler *lttng_event_notifier_enabler_create(
 		struct lttng_event_notifier_group *event_notifier_group,
 		enum lttng_enabler_format_type format_type,
 		struct lttng_ust_abi_event_notifier *event_notifier_param)
-	__attribute__((visibility("hidden")));
-
-/*
- * Enable a `struct lttng_event_notifier_enabler` object and all event
- * notifiers related to this enabler.
- */
-int lttng_event_notifier_enabler_enable(
-		struct lttng_event_notifier_enabler *event_notifier_enabler)
-	__attribute__((visibility("hidden")));
-
-/*
- * Disable a `struct lttng_event_notifier_enabler` object and all event
- * notifiers related to this enabler.
- */
-int lttng_event_notifier_enabler_disable(
-		struct lttng_event_notifier_enabler *event_notifier_enabler)
 	__attribute__((visibility("hidden")));
 
 /*

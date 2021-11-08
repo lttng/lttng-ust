@@ -869,9 +869,9 @@ long lttng_event_notifier_enabler_cmd(int objd, unsigned int cmd, unsigned long 
 			event_notifier_enabler,
 			(struct lttng_ust_bytecode_node **) arg);
 	case LTTNG_UST_ABI_ENABLE:
-		return lttng_event_notifier_enabler_enable(event_notifier_enabler);
+		return lttng_event_enabler_enable(&event_notifier_enabler->parent);
 	case LTTNG_UST_ABI_DISABLE:
-		return lttng_event_notifier_enabler_disable(event_notifier_enabler);
+		return lttng_event_enabler_disable(&event_notifier_enabler->parent);
 	default:
 		return -EINVAL;
 	}
@@ -1769,9 +1769,9 @@ long lttng_event_enabler_cmd(int objd, unsigned int cmd, unsigned long arg,
 		return lttng_event_enabler_attach_context(enabler,
 				(struct lttng_ust_abi_context *) arg);
 	case LTTNG_UST_ABI_ENABLE:
-		return lttng_event_enabler_enable(enabler);
+		return lttng_event_enabler_enable(&enabler->parent);
 	case LTTNG_UST_ABI_DISABLE:
-		return lttng_event_enabler_disable(enabler);
+		return lttng_event_enabler_disable(&enabler->parent);
 	case LTTNG_UST_ABI_FILTER:
 	{
 		int ret;
