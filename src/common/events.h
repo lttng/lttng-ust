@@ -129,13 +129,13 @@ struct lttng_event_enabler_common {
 	struct lttng_ust_abi_event event_param;
 	unsigned int enabled:1;
 
+	struct cds_list_head node;	/* list of enablers */
 	uint64_t user_token;		/* User-provided token */
 };
 
 struct lttng_event_enabler_session_common {
 	struct lttng_event_enabler_common parent;
 	struct lttng_ust_channel_common *chan;
-	struct cds_list_head node;	/* per-session list of enablers */
 	/*
 	 * Unused, but kept around to make it explicit that the tracer can do
 	 * it.
@@ -157,7 +157,6 @@ struct lttng_event_counter_enabler {
 struct lttng_event_notifier_enabler {
 	struct lttng_event_enabler_common parent;
 	uint64_t error_counter_index;
-	struct cds_list_head node;	/* per-app list of event_notifier enablers */
 	struct cds_list_head capture_bytecode_head;
 	struct lttng_event_notifier_group *group; /* weak ref */
 	uint64_t num_captures;
