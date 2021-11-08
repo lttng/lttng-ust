@@ -1808,22 +1808,14 @@ int lttng_event_enabler_disable(struct lttng_event_enabler_common *event_enabler
 	return 0;
 }
 
-static
-void _lttng_enabler_attach_filter_bytecode(struct lttng_event_enabler_common *enabler,
+int lttng_event_enabler_attach_filter_bytecode(struct lttng_event_enabler_common *event_enabler,
 		struct lttng_ust_bytecode_node **bytecode)
 {
-	(*bytecode)->enabler = enabler;
-	cds_list_add_tail(&(*bytecode)->node, &enabler->filter_bytecode_head);
+	(*bytecode)->enabler = event_enabler;
+	cds_list_add_tail(&(*bytecode)->node, &event_enabler->filter_bytecode_head);
 	/* Take ownership of bytecode */
 	*bytecode = NULL;
-}
-
-int lttng_event_enabler_attach_filter_bytecode(struct lttng_event_enabler_session_common *event_enabler,
-		struct lttng_ust_bytecode_node **bytecode)
-{
-	_lttng_enabler_attach_filter_bytecode(&event_enabler->parent, bytecode);
-
-	lttng_session_lazy_sync_event_enablers(event_enabler->chan->session);
+	lttng_event_enabler_sync(event_enabler);
 	return 0;
 }
 
@@ -1843,18 +1835,6 @@ int lttng_event_enabler_attach_exclusion(struct lttng_event_enabler_session_comm
 	_lttng_enabler_attach_exclusion(&event_enabler->parent, excluder);
 
 	lttng_session_lazy_sync_event_enablers(event_enabler->chan->session);
-	return 0;
-}
-
-int lttng_event_notifier_enabler_attach_filter_bytecode(
-		struct lttng_event_notifier_enabler *event_notifier_enabler,
-		struct lttng_ust_bytecode_node **bytecode)
-{
-	_lttng_enabler_attach_filter_bytecode(
-		lttng_event_notifier_enabler_as_enabler(event_notifier_enabler),
-		bytecode);
-
-	lttng_event_notifier_group_sync_enablers(event_notifier_enabler->group);
 	return 0;
 }
 
