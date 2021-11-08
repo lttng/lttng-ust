@@ -77,8 +77,7 @@ void lttng_session_lazy_sync_event_enablers(struct lttng_ust_session *session);
 static
 void lttng_session_sync_event_enablers(struct lttng_ust_session *session);
 static
-void lttng_event_notifier_group_sync_enablers(
-		struct lttng_event_notifier_group *event_notifier_group);
+void lttng_event_notifier_group_sync_enablers(struct lttng_event_notifier_group *event_notifier_group);
 static
 void lttng_event_enabler_sync(struct lttng_event_enabler_common *event_enabler);
 
@@ -2126,18 +2125,14 @@ bool lttng_get_event_enabled_state(struct lttng_ust_event_common *event)
 	}
 }
 
-
-/*
- * lttng_session_sync_event_enablers should be called just before starting a
- * session.
- */
 static
-void lttng_session_sync_event_enablers(struct lttng_ust_session *session)
+void lttng_sync_event_list(struct cds_list_head *event_enabler_list,
+		struct cds_list_head *event_list)
 {
-	struct lttng_event_enabler_common *event_enabler;
 	struct lttng_ust_event_common_private *event_priv;
+	struct lttng_event_enabler_common *event_enabler;
 
-	cds_list_for_each_entry(event_enabler, &session->priv->enablers_head, node)
+	cds_list_for_each_entry(event_enabler, event_enabler_list, node)
 		lttng_event_enabler_ref_events(event_enabler);
 
 	/*
@@ -2145,7 +2140,7 @@ void lttng_session_sync_event_enablers(struct lttng_ust_session *session)
 	 * and its channel and session transient states are enabled, we
 	 * enable the event, else we disable it.
 	 */
-	cds_list_for_each_entry(event_priv, &session->priv->events_head, node) {
+	cds_list_for_each_entry(event_priv, event_list, node) {
 		bool enabled = lttng_get_event_enabled_state(event_priv->pub);
 
 		CMM_STORE_SHARED(event_priv->pub->enabled, enabled);
@@ -2167,39 +2162,14 @@ void lttng_session_sync_event_enablers(struct lttng_ust_session *session)
 	lttng_ust_tp_probe_prune_release_queue();
 }
 
+/*
+ * lttng_session_sync_event_enablers should be called just before starting a
+ * session.
+ */
 static
-void lttng_event_notifier_group_sync_enablers(struct lttng_event_notifier_group *event_notifier_group)
+void lttng_session_sync_event_enablers(struct lttng_ust_session *session)
 {
-	struct lttng_event_enabler_common *event_enabler;
-	struct lttng_ust_event_common_private *event_priv;
-
-	cds_list_for_each_entry(event_enabler, &event_notifier_group->enablers_head, node)
-		lttng_event_enabler_ref_events(event_enabler);
-
-	/*
-	 * For each event_notifier, if at least one of its enablers is enabled,
-	 * we enable the event_notifier, else we disable it.
-	 */
-	cds_list_for_each_entry(event_priv, &event_notifier_group->event_notifiers_head, node) {
-		bool enabled = lttng_get_event_enabled_state(event_priv->pub);
-
-		CMM_STORE_SHARED(event_priv->pub->enabled, enabled);
-		/*
-		 * Sync tracepoint registration with event_notifier enabled
-		 * state.
-		 */
-		if (enabled) {
-			if (!event_priv->registered)
-				register_event(event_priv->pub);
-		} else {
-			if (event_priv->registered)
-				unregister_event(event_priv->pub);
-		}
-
-		lttng_event_sync_filter_state(event_priv->pub);
-		lttng_event_sync_capture_state(event_priv->pub);
-	}
-	lttng_ust_tp_probe_prune_release_queue();
+	lttng_sync_event_list(&session->priv->enablers_head, &session->priv->events_head);
 }
 
 /*
@@ -2218,6 +2188,12 @@ void lttng_session_lazy_sync_event_enablers(struct lttng_ust_session *session)
 }
 
 static
+void lttng_event_notifier_group_sync_enablers(struct lttng_event_notifier_group *event_notifier_group)
+{
+	lttng_sync_event_list(&event_notifier_group->enablers_head, &event_notifier_group->event_notifiers_head);
+}
+
+static
 void lttng_event_enabler_sync(struct lttng_event_enabler_common *event_enabler)
 {
 	switch (event_enabler->enabler_type) {
@@ -2226,7 +2202,7 @@ void lttng_event_enabler_sync(struct lttng_event_enabler_common *event_enabler)
 	{
 		struct lttng_event_enabler_session_common *event_enabler_session =
 			caa_container_of(event_enabler, struct lttng_event_enabler_session_common, parent);
-		lttng_session_lazy_sync_event_enablers(event_enabler_session->chan->session);
+		lttng_session_sync_event_enablers(event_enabler_session->chan->session);
 		break;
 	}
 	case LTTNG_EVENT_ENABLER_TYPE_NOTIFIER:
