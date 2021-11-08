@@ -1339,56 +1339,18 @@ void lttng_create_event_if_missing(struct lttng_event_enabler_session_common *ev
 			desc = probe_desc->event_desc[i];
 			if (!lttng_desc_match_enabler(desc, &event_enabler->parent))
 				continue;
-			switch (event_enabler->parent.enabler_type) {
-			case LTTNG_EVENT_ENABLER_TYPE_RECORDER:
-			{
-				struct lttng_event_recorder_enabler *event_recorder_enabler =
-					caa_container_of(event_enabler,
-						struct lttng_event_recorder_enabler,
-						parent);
-
-				/*
-				 * We need to create an event for this
-				 * event probe.
-				 */
-				ret = lttng_ust_event_create(&event_recorder_enabler->parent.parent,
-						probe_desc->event_desc[i]);
-				/* Skip if already found. */
-				if (ret == -EEXIST)
-					continue;
-				if (ret) {
-					DBG("Unable to create event \"%s:%s\", error %d\n",
-						probe_desc->provider_name,
-						probe_desc->event_desc[i]->event_name, ret);
-				}
-				break;
-			}
-			case LTTNG_EVENT_ENABLER_TYPE_COUNTER:
-			{
-				struct lttng_event_counter_enabler *event_counter_enabler =
-					caa_container_of(event_enabler,
-						struct lttng_event_counter_enabler,
-						parent);
-
-				/*
-				 * We need to create an event for this
-				 * event probe.
-				 */
-				ret = lttng_ust_event_create(&event_counter_enabler->parent.parent,
-						probe_desc->event_desc[i]);
-				/* Skip if already found. */
-				if (ret == -EEXIST)
-					continue;
-				if (ret) {
-					DBG("Unable to create event \"%s:%s\", error %d\n",
-						probe_desc->provider_name,
-						probe_desc->event_desc[i]->event_name, ret);
-				}
-				break;
-			}
-			default:
-				abort();	/* Unexpected */
+			/*
+			 * We need to create an event for this event probe.
+			 */
+			ret = lttng_ust_event_create(&event_enabler->parent,
+					probe_desc->event_desc[i]);
+			/* Skip if already found. */
+			if (ret == -EEXIST)
 				continue;
+			if (ret) {
+				DBG("Unable to create event \"%s:%s\", error %d\n",
+					probe_desc->provider_name,
+					probe_desc->event_desc[i]->event_name, ret);
 			}
 		}
 	}
