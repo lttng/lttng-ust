@@ -873,9 +873,9 @@ exist:
 
 static
 int lttng_event_counter_create(struct lttng_event_counter_enabler *event_counter_enabler,
-		const struct lttng_ust_event_desc *desc,
-		struct lttng_counter_key *key)
+		const struct lttng_ust_event_desc *desc)
 {
+	struct lttng_counter_key *key = &event_counter_enabler->key;
 	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
 	char key_string[LTTNG_KEY_TOKEN_STRING_LEN_MAX];
 	struct lttng_ust_event_counter *event_counter;
@@ -1025,10 +1025,12 @@ type_error:
 }
 
 static
-int lttng_event_notifier_create(const struct lttng_ust_event_desc *desc,
-		uint64_t token, uint64_t error_counter_index,
-		struct lttng_event_notifier_group *event_notifier_group)
+int lttng_event_notifier_create(struct lttng_event_notifier_enabler *event_notifier_enabler,
+		const struct lttng_ust_event_desc *desc)
 {
+	uint64_t token = event_notifier_enabler->parent.user_token;
+	uint64_t error_counter_index = event_notifier_enabler->error_counter_index;
+	struct lttng_event_notifier_group *event_notifier_group = event_notifier_enabler->group;
 	struct lttng_ust_event_notifier *event_notifier;
 	struct lttng_ust_event_notifier_private *event_notifier_priv;
 	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
@@ -1097,6 +1099,34 @@ parent_error:
 	free(event_notifier);
 error:
 	return ret;
+}
+
+static
+int lttng_ust_event_create(struct lttng_event_enabler_common *event_enabler,
+		const struct lttng_ust_event_desc *event_desc)
+{
+	switch (event_enabler->enabler_type) {
+	case LTTNG_EVENT_ENABLER_TYPE_RECORDER:
+	{
+		struct lttng_event_recorder_enabler *event_recorder_enabler =
+			caa_container_of(event_enabler, struct lttng_event_recorder_enabler, parent.parent);
+		return lttng_event_recorder_create(event_recorder_enabler, event_desc);
+	}
+	case LTTNG_EVENT_ENABLER_TYPE_NOTIFIER:
+	{
+		struct lttng_event_notifier_enabler *event_notifier_enabler =
+			caa_container_of(event_enabler, struct lttng_event_notifier_enabler, parent);
+		return lttng_event_notifier_create(event_notifier_enabler, event_desc);
+	}
+	case LTTNG_EVENT_ENABLER_TYPE_COUNTER:
+	{
+		struct lttng_event_counter_enabler *event_counter_enabler =
+			caa_container_of(event_enabler, struct lttng_event_counter_enabler, parent.parent);
+		return lttng_event_counter_create(event_counter_enabler, event_desc);
+	}
+	default:
+		return -EINVAL;
+	}
 }
 
 static
@@ -1321,7 +1351,7 @@ void lttng_create_event_if_missing(struct lttng_event_enabler_session_common *ev
 				 * We need to create an event for this
 				 * event probe.
 				 */
-				ret = lttng_event_recorder_create(event_recorder_enabler,
+				ret = lttng_ust_event_create(&event_recorder_enabler->parent.parent,
 						probe_desc->event_desc[i]);
 				/* Skip if already found. */
 				if (ret == -EEXIST)
@@ -1344,9 +1374,8 @@ void lttng_create_event_if_missing(struct lttng_event_enabler_session_common *ev
 				 * We need to create an event for this
 				 * event probe.
 				 */
-				ret = lttng_event_counter_create(event_counter_enabler,
-						probe_desc->event_desc[i],
-						&event_counter_enabler->key);
+				ret = lttng_ust_event_create(&event_counter_enabler->parent.parent,
+						probe_desc->event_desc[i]);
 				/* Skip if already found. */
 				if (ret == -EEXIST)
 					continue;
@@ -2121,10 +2150,7 @@ void lttng_create_event_notifier_if_missing(
 			/*
 			 * We need to create a event_notifier for this event probe.
 			 */
-			ret = lttng_event_notifier_create(desc,
-				event_notifier_enabler->parent.user_token,
-				event_notifier_enabler->error_counter_index,
-				event_notifier_group);
+			ret = lttng_ust_event_create(&event_notifier_enabler->parent, desc);
 			if (ret) {
 				DBG("Unable to create event_notifier \"%s:%s\", error %d\n",
 					probe_desc->provider_name,
