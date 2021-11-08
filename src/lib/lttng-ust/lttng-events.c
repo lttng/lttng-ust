@@ -1519,6 +1519,35 @@ void lttng_probe_provider_unregister_events(
 	probe_provider_event_for_each(provider_desc, _event_enum_destroy);
 }
 
+static
+void lttng_event_enabler_init_event_filter(struct lttng_event_enabler_common *event_enabler,
+		struct lttng_ust_event_common *event)
+{
+	switch (event_enabler->enabler_type) {
+	case LTTNG_EVENT_ENABLER_TYPE_RECORDER:		/* Fall-through */
+	case LTTNG_EVENT_ENABLER_TYPE_COUNTER:
+	{
+		struct lttng_event_enabler_session_common *event_enabler_session =
+			caa_container_of(event_enabler, struct lttng_event_enabler_session_common, parent);
+
+		lttng_enabler_link_bytecode(event->priv->desc, &event_enabler_session->chan->session->priv->ctx,
+			&event->priv->filter_bytecode_runtime_head, &event_enabler->filter_bytecode_head);
+		break;
+	}
+	case LTTNG_EVENT_ENABLER_TYPE_NOTIFIER:
+	{
+		struct lttng_event_notifier_enabler *event_notifier_enabler =
+			caa_container_of(event_enabler, struct lttng_event_notifier_enabler, parent);
+
+		lttng_enabler_link_bytecode(event->priv->desc, &event_notifier_enabler->group->ctx,
+			&event->priv->filter_bytecode_runtime_head, &event_enabler->filter_bytecode_head);
+		break;
+	}
+	default:
+		WARN_ON_ONCE(1);
+	}
+}
+
 /*
  * Create events associated with an event enabler (if not already present),
  * and add backward reference from the event to the enabler.
@@ -1557,15 +1586,7 @@ int lttng_event_enabler_ref_events(struct lttng_event_enabler_session_common *ev
 				&event_priv->parent.enablers_ref_head);
 		}
 
-		/*
-		 * Link filter bytecodes if not linked yet.
-		 */
-		lttng_enabler_link_bytecode(event_priv->parent.desc,
-			&session->priv->ctx,
-			&event_priv->parent.filter_bytecode_runtime_head,
-			&event_enabler->parent.filter_bytecode_head);
-
-		/* TODO: merge event context. */
+		lttng_event_enabler_init_event_filter(&event_enabler->parent, event_priv->parent.pub);
 	}
 end:
 	return 0;
@@ -2115,13 +2136,8 @@ int lttng_event_notifier_enabler_ref_event_notifiers(
 				&event_notifier_priv->parent.enablers_ref_head);
 		}
 
-		/*
-		 * Link filter bytecodes if not linked yet.
-		 */
-		lttng_enabler_link_bytecode(event_notifier_priv->parent.desc,
-			&event_notifier_group->ctx,
-			&event_notifier_priv->parent.filter_bytecode_runtime_head,
-			&lttng_event_notifier_enabler_as_enabler(event_notifier_enabler)->filter_bytecode_head);
+
+		lttng_event_enabler_init_event_filter(&event_notifier_enabler->parent, event_notifier_priv->parent.pub);
 
 		/*
 		 * Link capture bytecodes if not linked yet.
