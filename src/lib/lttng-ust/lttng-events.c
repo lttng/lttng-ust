@@ -229,7 +229,7 @@ struct lttng_event_notifier_group *lttng_event_notifier_group_create(void)
 
 	CDS_INIT_LIST_HEAD(&event_notifier_group->enablers_head);
 	CDS_INIT_LIST_HEAD(&event_notifier_group->event_notifiers_head);
-	for (i = 0; i < LTTNG_UST_EVENT_NOTIFIER_HT_SIZE; i++)
+	for (i = 0; i < LTTNG_UST_EVENT_HT_SIZE; i++)
 		CDS_INIT_HLIST_HEAD(&event_notifier_group->event_notifiers_ht.table[i]);
 
 	cds_list_add(&event_notifier_group->node, &event_notifier_groups);
@@ -1041,7 +1041,7 @@ int lttng_event_notifier_create(struct lttng_event_notifier_enabler *event_notif
 	lttng_ust_format_event_name(desc, name);
 	head = borrow_hash_table_bucket(
 		event_notifier_group->event_notifiers_ht.table,
-		LTTNG_UST_EVENT_NOTIFIER_HT_SIZE, name);
+		LTTNG_UST_EVENT_HT_SIZE, name);
 
 	cds_hlist_for_each_entry(event_priv, node, head, name_hlist_node) {
 		/*
@@ -1430,7 +1430,7 @@ void probe_provider_event_for_each(const struct lttng_ust_probe_desc *provider_d
 			lttng_ust_format_event_name(event_desc, name);
 			head = borrow_hash_table_bucket(
 				event_notifier_group->event_notifiers_ht.table,
-				LTTNG_UST_EVENT_NOTIFIER_HT_SIZE, name);
+				LTTNG_UST_EVENT_HT_SIZE, name);
 
 			cds_hlist_for_each_entry_safe(event_priv, node, tmp_node, head, name_hlist_node) {
 				if (event_desc == event_priv->desc) {

@@ -252,12 +252,6 @@ struct lttng_ust_event_ht {
 	struct cds_hlist_head table[LTTNG_UST_EVENT_HT_SIZE];
 };
 
-#define LTTNG_UST_EVENT_NOTIFIER_HT_BITS		12
-#define LTTNG_UST_EVENT_NOTIFIER_HT_SIZE		(1U << LTTNG_UST_EVENT_NOTIFIER_HT_BITS)
-struct lttng_ust_event_notifier_ht {
-	struct cds_hlist_head table[LTTNG_UST_EVENT_NOTIFIER_HT_SIZE];
-};
-
 #define LTTNG_UST_ENUM_HT_BITS		12
 #define LTTNG_UST_ENUM_HT_SIZE		(1U << LTTNG_UST_ENUM_HT_BITS)
 
@@ -272,7 +266,7 @@ struct lttng_event_notifier_group {
 	struct cds_list_head node;		/* Event notifier group handle list */
 	struct cds_list_head enablers_head;
 	struct cds_list_head event_notifiers_head; /* list of event_notifiers */
-	struct lttng_ust_event_notifier_ht event_notifiers_ht; /* hashtable of event_notifiers */
+	struct lttng_ust_event_ht event_notifiers_ht; /* hashtable of event notifiers */
 	struct lttng_ust_ctx *ctx;		/* contexts for filters. */
 
 	struct lttng_ust_channel_counter *error_counter;
