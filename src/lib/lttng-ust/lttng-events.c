@@ -1330,21 +1330,21 @@ struct lttng_enabler_ref *lttng_enabler_ref(
 }
 
 /*
- * Create struct lttng_event if it is missing and present in the list of
+ * Create struct lttng_ust_event_common if it is missing and present in the list of
  * tracepoint probes.
  */
 static
-void lttng_create_event_if_missing(struct lttng_event_enabler_session_common *event_enabler)
+void lttng_create_event_if_missing(struct lttng_event_enabler_common *event_enabler)
 {
 	struct lttng_ust_registered_probe *reg_probe;
 	const struct lttng_ust_event_desc *desc;
-	int i;
 	struct cds_list_head *probe_list;
+	int i;
 
 	probe_list = lttng_get_probe_list_head();
 	/*
 	 * For each probe event, if we find that a probe event matches
-	 * our enabler, create an associated lttng_event if not
+	 * our enabler, create an associated lttng_ust_event_common if not
 	 * already present.
 	 */
 	cds_list_for_each_entry(reg_probe, probe_list, head) {
@@ -1354,13 +1354,12 @@ void lttng_create_event_if_missing(struct lttng_event_enabler_session_common *ev
 			int ret;
 
 			desc = probe_desc->event_desc[i];
-			if (!lttng_desc_match_enabler(desc, &event_enabler->parent))
+			if (!lttng_desc_match_enabler(desc, event_enabler))
 				continue;
 			/*
 			 * We need to create an event for this event probe.
 			 */
-			ret = lttng_ust_event_create(&event_enabler->parent,
-					probe_desc->event_desc[i]);
+			ret = lttng_ust_event_create(event_enabler, probe_desc->event_desc[i]);
 			/* Skip if already found. */
 			if (ret == -EEXIST)
 				continue;
@@ -1534,7 +1533,7 @@ int lttng_event_enabler_ref_events(struct lttng_event_enabler_session_common *ev
 		goto end;
 
 	/* First ensure that probe events are created for this enabler. */
-	lttng_create_event_if_missing(event_enabler);
+	lttng_create_event_if_missing(&event_enabler->parent);
 
 	/* For each event matching enabler in session event list. */
 	cds_list_for_each_entry(event_priv, &session->priv->events_head, node) {
@@ -2071,45 +2070,6 @@ void lttng_session_sync_event_enablers(struct lttng_ust_session *session)
 	lttng_ust_tp_probe_prune_release_queue();
 }
 
-static
-void lttng_create_event_notifier_if_missing(
-		struct lttng_event_notifier_enabler *event_notifier_enabler)
-{
-	struct lttng_ust_registered_probe *reg_probe;
-	struct cds_list_head *probe_list;
-	int i;
-
-	probe_list = lttng_get_probe_list_head();
-
-	cds_list_for_each_entry(reg_probe, probe_list, head) {
-		const struct lttng_ust_probe_desc *probe_desc = reg_probe->desc;
-
-		for (i = 0; i < probe_desc->nr_events; i++) {
-			int ret;
-			const struct lttng_ust_event_desc *desc;
-
-			desc = probe_desc->event_desc[i];
-
-			if (!lttng_desc_match_enabler(desc,
-					lttng_event_notifier_enabler_as_enabler(event_notifier_enabler)))
-				continue;
-
-			/*
-			 * We need to create a event_notifier for this event probe.
-			 */
-			ret = lttng_ust_event_create(&event_notifier_enabler->parent, desc);
-			/* Skip if already found. */
-			if (ret == -EEXIST)
-				continue;
-			if (ret) {
-				DBG("Unable to create event \"%s:%s\", error %d\n",
-					probe_desc->provider_name,
-					probe_desc->event_desc[i]->event_name, ret);
-			}
-		}
-	}
-}
-
 /*
  * Create event_notifiers associated with a event_notifier enabler (if not already present).
  */
@@ -2129,7 +2089,7 @@ int lttng_event_notifier_enabler_ref_event_notifiers(
 		goto end;
 
 	/* First, ensure that probe event_notifiers are created for this enabler. */
-	lttng_create_event_notifier_if_missing(event_notifier_enabler);
+	lttng_create_event_if_missing(&event_notifier_enabler->parent);
 
 	/* Link the created event_notifier with its associated enabler. */
 	cds_list_for_each_entry(event_notifier_priv, &event_notifier_group->event_notifiers_head, node) {
