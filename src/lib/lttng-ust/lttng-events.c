@@ -2063,6 +2063,32 @@ void lttng_event_sync_filter_state(struct lttng_ust_event_common *event)
 	CMM_STORE_SHARED(event->eval_filter, !(has_enablers_without_filter_bytecode || !nr_filters));
 }
 
+static
+void lttng_event_sync_capture_state(struct lttng_ust_event_common *event)
+{
+	switch (event->type) {
+	case LTTNG_UST_EVENT_TYPE_RECORDER:		/* Fall-through */
+	case LTTNG_UST_EVENT_TYPE_COUNTER:
+		break;
+	case LTTNG_UST_EVENT_TYPE_NOTIFIER:
+	{
+		struct lttng_ust_event_notifier *event_notifier = event->child;
+		struct lttng_ust_bytecode_runtime *runtime;
+		int nr_captures = 0;
+
+		/* Enable captures */
+		cds_list_for_each_entry(runtime, &event_notifier->priv->capture_bytecode_runtime_head, node) {
+			lttng_bytecode_sync_state(runtime);
+			nr_captures++;
+		}
+		CMM_STORE_SHARED(event_notifier->eval_capture, !!nr_captures);
+		break;
+	}
+	default:
+		WARN_ON_ONCE(1);
+	}
+}
+
 /*
  * lttng_session_sync_event_enablers should be called just before starting a
  * session.
@@ -2115,6 +2141,7 @@ void lttng_session_sync_event_enablers(struct lttng_ust_session *session)
 		}
 
 		lttng_event_sync_filter_state(event_priv->pub);
+		lttng_event_sync_capture_state(event_priv->pub);
 	}
 	lttng_ust_tp_probe_prune_release_queue();
 }
@@ -2133,12 +2160,8 @@ void lttng_event_notifier_group_sync_enablers(struct lttng_event_notifier_group 
 	 * we enable the event_notifier, else we disable it.
 	 */
 	cds_list_for_each_entry(event_priv, &event_notifier_group->event_notifiers_head, node) {
-		struct lttng_ust_event_notifier_private *event_notifier_priv =
-			caa_container_of(event_priv, struct lttng_ust_event_notifier_private, parent);
 		struct lttng_enabler_ref *enabler_ref;
-		struct lttng_ust_bytecode_runtime *runtime;
 		int enabled = 0;
-		int nr_captures = 0;
 
 		/* Enable event_notifiers */
 		cds_list_for_each_entry(enabler_ref, &event_priv->enablers_ref_head, node) {
@@ -2162,15 +2185,7 @@ void lttng_event_notifier_group_sync_enablers(struct lttng_event_notifier_group 
 		}
 
 		lttng_event_sync_filter_state(event_priv->pub);
-
-		/* Enable captures. */
-		cds_list_for_each_entry(runtime,
-				&event_notifier_priv->capture_bytecode_runtime_head, node) {
-			lttng_bytecode_sync_state(runtime);
-			nr_captures++;
-		}
-		CMM_STORE_SHARED(event_notifier_priv->pub->eval_capture,
-				!!nr_captures);
+		lttng_event_sync_capture_state(event_priv->pub);
 	}
 	lttng_ust_tp_probe_prune_release_queue();
 }
