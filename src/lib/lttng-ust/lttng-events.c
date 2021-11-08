@@ -1035,7 +1035,9 @@ int lttng_event_notifier_create(struct lttng_event_notifier_enabler *event_notif
 	struct lttng_ust_event_notifier_private *event_notifier_priv;
 	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
 	struct cds_hlist_head *head;
+	struct cds_hlist_node *node;
 	int ret = 0;
+	bool found = false;
 
 	/*
 	 * Get the hashtable bucket the created lttng_event_notifier object
@@ -1045,6 +1047,21 @@ int lttng_event_notifier_create(struct lttng_event_notifier_enabler *event_notif
 	head = borrow_hash_table_bucket(
 		event_notifier_group->event_notifiers_ht.table,
 		LTTNG_UST_EVENT_NOTIFIER_HT_SIZE, name);
+
+	cds_hlist_for_each_entry(event_notifier_priv, node, head, hlist) {
+		/*
+		 * Check if event_notifier already exists by checking
+		 * if the event_notifier and enabler share the same
+		 * description and id.
+		 */
+		if (event_notifier_priv->parent.desc == desc &&
+				event_notifier_priv->parent.user_token == event_notifier_enabler->parent.user_token) {
+			found = true;
+			break;
+		}
+	}
+	if (found)
+		return -EEXIST;
 
 	event_notifier = zmalloc(sizeof(struct lttng_ust_event_notifier));
 	if (!event_notifier) {
@@ -2058,7 +2075,6 @@ static
 void lttng_create_event_notifier_if_missing(
 		struct lttng_event_notifier_enabler *event_notifier_enabler)
 {
-	struct lttng_event_notifier_group *event_notifier_group = event_notifier_enabler->group;
 	struct lttng_ust_registered_probe *reg_probe;
 	struct cds_list_head *probe_list;
 	int i;
@@ -2070,12 +2086,7 @@ void lttng_create_event_notifier_if_missing(
 
 		for (i = 0; i < probe_desc->nr_events; i++) {
 			int ret;
-			bool found = false;
 			const struct lttng_ust_event_desc *desc;
-			char name[LTTNG_UST_ABI_SYM_NAME_LEN];
-			struct lttng_ust_event_notifier_private *event_notifier_priv;
-			struct cds_hlist_head *head;
-			struct cds_hlist_node *node;
 
 			desc = probe_desc->event_desc[i];
 
@@ -2084,37 +2095,14 @@ void lttng_create_event_notifier_if_missing(
 				continue;
 
 			/*
-			 * Given the current event_notifier group, get the bucket that
-			 * the target event_notifier would be if it was already
-			 * created.
-			 */
-			lttng_ust_format_event_name(desc, name);
-			head = borrow_hash_table_bucket(
-				event_notifier_group->event_notifiers_ht.table,
-				LTTNG_UST_EVENT_NOTIFIER_HT_SIZE, name);
-
-			cds_hlist_for_each_entry(event_notifier_priv, node, head, hlist) {
-				/*
-				 * Check if event_notifier already exists by checking
-				 * if the event_notifier and enabler share the same
-				 * description and id.
-				 */
-				if (event_notifier_priv->parent.desc == desc &&
-						event_notifier_priv->parent.user_token == event_notifier_enabler->parent.user_token) {
-					found = true;
-					break;
-				}
-			}
-
-			if (found)
-				continue;
-
-			/*
 			 * We need to create a event_notifier for this event probe.
 			 */
 			ret = lttng_ust_event_create(&event_notifier_enabler->parent, desc);
+			/* Skip if already found. */
+			if (ret == -EEXIST)
+				continue;
 			if (ret) {
-				DBG("Unable to create event_notifier \"%s:%s\", error %d\n",
+				DBG("Unable to create event \"%s:%s\", error %d\n",
 					probe_desc->provider_name,
 					probe_desc->event_desc[i]->event_name, ret);
 			}
