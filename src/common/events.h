@@ -307,12 +307,12 @@ struct lttng_ust_event_common_private {
 	struct cds_list_head filter_bytecode_runtime_head;
 
 	struct cds_hlist_node name_hlist_node;	/* node in events-by-name hash table */
+	struct cds_list_head node;		/* node in event list */
 };
 
 struct lttng_ust_event_session_common_private {
 	struct lttng_ust_event_common_private parent;
 
-	struct cds_list_head node;		/* Event list */
 	struct lttng_ust_ctx *ctx;
 
 	struct lttng_ust_channel_common *chan;
@@ -340,7 +340,6 @@ struct lttng_ust_event_notifier_private {
 	struct lttng_event_notifier_group *group; /* weak ref */
 	size_t num_captures;			/* Needed to allocate the msgpack array. */
 	uint64_t error_counter_index;
-	struct cds_list_head node;		/* Event notifier list */
 	struct cds_list_head capture_bytecode_runtime_head;
 };
 
