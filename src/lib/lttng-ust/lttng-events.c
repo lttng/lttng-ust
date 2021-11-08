@@ -2038,6 +2038,31 @@ end:
 	return 0;
 }
 
+static
+void lttng_event_sync_filter_state(struct lttng_ust_event_common *event)
+{
+	int has_enablers_without_filter_bytecode = 0, nr_filters = 0;
+	struct lttng_ust_bytecode_runtime *runtime;
+	struct lttng_enabler_ref *enabler_ref;
+
+	/* Check if has enablers without bytecode enabled */
+	cds_list_for_each_entry(enabler_ref, &event->priv->enablers_ref_head, node) {
+		if (enabler_ref->ref->enabled
+				&& cds_list_empty(&enabler_ref->ref->filter_bytecode_head)) {
+			has_enablers_without_filter_bytecode = 1;
+			break;
+		}
+	}
+	event->priv->has_enablers_without_filter_bytecode = has_enablers_without_filter_bytecode;
+
+	/* Enable filters */
+	cds_list_for_each_entry(runtime, &event->priv->filter_bytecode_runtime_head, node) {
+		lttng_bytecode_sync_state(runtime);
+		nr_filters++;
+	}
+	CMM_STORE_SHARED(event->eval_filter, !(has_enablers_without_filter_bytecode || !nr_filters));
+}
+
 /*
  * lttng_session_sync_event_enablers should be called just before starting a
  * session.
@@ -2060,9 +2085,7 @@ void lttng_session_sync_event_enablers(struct lttng_ust_session *session)
 		struct lttng_ust_event_session_common_private *event_session_priv =
 			caa_container_of(event_priv, struct lttng_ust_event_session_common_private, parent);
 		struct lttng_enabler_ref *enabler_ref;
-		struct lttng_ust_bytecode_runtime *runtime;
-		int enabled = 0, has_enablers_without_filter_bytecode = 0;
-		int nr_filters = 0;
+		int enabled = 0;
 
 		/* Enable events */
 		cds_list_for_each_entry(enabler_ref, &event_priv->enablers_ref_head, node) {
@@ -2091,25 +2114,7 @@ void lttng_session_sync_event_enablers(struct lttng_ust_session *session)
 				unregister_event(event_priv->pub);
 		}
 
-		/* Check if has enablers without bytecode enabled */
-		cds_list_for_each_entry(enabler_ref, &event_priv->enablers_ref_head, node) {
-			if (enabler_ref->ref->enabled
-					&& cds_list_empty(&enabler_ref->ref->filter_bytecode_head)) {
-				has_enablers_without_filter_bytecode = 1;
-				break;
-			}
-		}
-		event_priv->has_enablers_without_filter_bytecode =
-			has_enablers_without_filter_bytecode;
-
-		/* Enable filters */
-		cds_list_for_each_entry(runtime,
-				&event_priv->filter_bytecode_runtime_head, node) {
-			lttng_bytecode_sync_state(runtime);
-			nr_filters++;
-		}
-		CMM_STORE_SHARED(event_priv->pub->eval_filter,
-			!(has_enablers_without_filter_bytecode || !nr_filters));
+		lttng_event_sync_filter_state(event_priv->pub);
 	}
 	lttng_ust_tp_probe_prune_release_queue();
 }
@@ -2132,8 +2137,8 @@ void lttng_event_notifier_group_sync_enablers(struct lttng_event_notifier_group 
 			caa_container_of(event_priv, struct lttng_ust_event_notifier_private, parent);
 		struct lttng_enabler_ref *enabler_ref;
 		struct lttng_ust_bytecode_runtime *runtime;
-		int enabled = 0, has_enablers_without_filter_bytecode = 0;
-		int nr_filters = 0, nr_captures = 0;
+		int enabled = 0;
+		int nr_captures = 0;
 
 		/* Enable event_notifiers */
 		cds_list_for_each_entry(enabler_ref, &event_priv->enablers_ref_head, node) {
@@ -2156,23 +2161,7 @@ void lttng_event_notifier_group_sync_enablers(struct lttng_event_notifier_group 
 				unregister_event(event_priv->pub);
 		}
 
-		/* Check if has enablers without bytecode enabled */
-		cds_list_for_each_entry(enabler_ref, &event_priv->enablers_ref_head, node) {
-			if (enabler_ref->ref->enabled
-					&& cds_list_empty(&enabler_ref->ref->filter_bytecode_head)) {
-				has_enablers_without_filter_bytecode = 1;
-				break;
-			}
-		}
-		event_priv->has_enablers_without_filter_bytecode = has_enablers_without_filter_bytecode;
-
-		/* Enable filters */
-		cds_list_for_each_entry(runtime, &event_priv->filter_bytecode_runtime_head, node) {
-			lttng_bytecode_sync_state(runtime);
-			nr_filters++;
-		}
-		CMM_STORE_SHARED(event_priv->pub->eval_filter,
-			!(has_enablers_without_filter_bytecode || !nr_filters));
+		lttng_event_sync_filter_state(event_priv->pub);
 
 		/* Enable captures. */
 		cds_list_for_each_entry(runtime,
