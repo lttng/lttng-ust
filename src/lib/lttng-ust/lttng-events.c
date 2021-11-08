@@ -1568,49 +1568,6 @@ void lttng_event_enabler_init_event_capture(struct lttng_event_enabler_common *e
 }
 
 /*
- * Create events associated with an event enabler (if not already present),
- * and add backward reference from the event to the enabler.
- */
-static
-int lttng_event_enabler_ref_events(struct lttng_event_enabler_session_common *event_enabler)
-{
-	struct lttng_ust_session *session = event_enabler->chan->session;
-	struct lttng_ust_event_common_private *event_priv;
-
-	if (!event_enabler->parent.enabled)
-		goto end;
-
-	/* First ensure that probe events are created for this enabler. */
-	lttng_create_event_if_missing(&event_enabler->parent);
-
-	/* For each event matching enabler in session event list. */
-	cds_list_for_each_entry(event_priv, &session->priv->events_head, node) {
-		struct lttng_enabler_ref *enabler_ref;
-
-		if (!lttng_event_enabler_match_event(&event_enabler->parent, event_priv->pub))
-			continue;
-
-		enabler_ref = lttng_enabler_ref(&event_priv->enablers_ref_head, &event_enabler->parent);
-		if (!enabler_ref) {
-			/*
-			 * If no backward ref, create it.
-			 * Add backward ref from event to enabler.
-			 */
-			enabler_ref = zmalloc(sizeof(*enabler_ref));
-			if (!enabler_ref)
-				return -ENOMEM;
-			enabler_ref->ref = &event_enabler->parent;
-			cds_list_add(&enabler_ref->node,
-				&event_priv->enablers_ref_head);
-		}
-
-		lttng_event_enabler_init_event_filter(&event_enabler->parent, event_priv->pub);
-	}
-end:
-	return 0;
-}
-
-/*
  * Called at library load: connect the probe on all enablers matching
  * this event.
  * Called with session mutex held.
@@ -2034,6 +1991,54 @@ void lttng_event_enabler_destroy(struct lttng_event_enabler_common *event_enable
 }
 
 /*
+ * Create events associated with an event enabler (if not already present).
+ * and add backward reference from the event to the enabler.
+ */
+static
+int lttng_event_enabler_ref_events(struct lttng_event_enabler_common *event_enabler)
+{
+	struct cds_list_head *event_list = lttng_get_event_list_head_from_enabler(event_enabler);
+	struct lttng_ust_event_common_private *event_priv;
+
+	 /*
+	  * Only try to create events for enablers that are enabled, the user
+	  * might still be attaching filter or exclusion to the event enabler.
+	  */
+	if (!event_enabler->enabled)
+		goto end;
+
+	/* First, ensure that probe event_notifiers are created for this enabler. */
+	lttng_create_event_if_missing(event_enabler);
+
+	/* Link the created events with their associated enabler. */
+	cds_list_for_each_entry(event_priv, event_list, node) {
+		struct lttng_enabler_ref *enabler_ref;
+
+		if (!lttng_event_enabler_match_event(event_enabler, event_priv->pub))
+			continue;
+
+		enabler_ref = lttng_enabler_ref(&event_priv->enablers_ref_head, event_enabler);
+		if (!enabler_ref) {
+			/*
+			 * If no backward ref, create it.
+			 * Add backward ref from event_notifier to enabler.
+			 */
+			enabler_ref = zmalloc(sizeof(*enabler_ref));
+			if (!enabler_ref)
+				return -ENOMEM;
+
+			enabler_ref->ref = event_enabler;
+			cds_list_add(&enabler_ref->node, &event_priv->enablers_ref_head);
+		}
+
+		lttng_event_enabler_init_event_filter(event_enabler, event_priv->pub);
+		lttng_event_enabler_init_event_capture(event_enabler, event_priv->pub);
+	}
+end:
+	return 0;
+}
+
+/*
  * lttng_session_sync_event_enablers should be called just before starting a
  * session.
  */
@@ -2043,12 +2048,9 @@ void lttng_session_sync_event_enablers(struct lttng_ust_session *session)
 	struct lttng_event_enabler_common *event_enabler;
 	struct lttng_ust_event_common_private *event_priv;
 
-	cds_list_for_each_entry(event_enabler, &session->priv->enablers_head, node) {
-		struct lttng_event_enabler_session_common *event_enabler_session =
-			caa_container_of(event_enabler, struct lttng_event_enabler_session_common, parent);
+	cds_list_for_each_entry(event_enabler, &session->priv->enablers_head, node)
+		lttng_event_enabler_ref_events(event_enabler);
 
-		lttng_event_enabler_ref_events(event_enabler_session);
-	}
 	/*
 	 * For each event, if at least one of its enablers is enabled,
 	 * and its channel and session transient states are enabled, we
@@ -2112,71 +2114,14 @@ void lttng_session_sync_event_enablers(struct lttng_ust_session *session)
 	lttng_ust_tp_probe_prune_release_queue();
 }
 
-/*
- * Create event_notifiers associated with a event_notifier enabler (if not already present).
- */
-static
-int lttng_event_notifier_enabler_ref_event_notifiers(
-		struct lttng_event_notifier_enabler *event_notifier_enabler)
-{
-	struct lttng_event_notifier_group *event_notifier_group = event_notifier_enabler->group;
-	struct lttng_ust_event_common_private *event_priv;
-
-	 /*
-	  * Only try to create event_notifiers for enablers that are enabled, the user
-	  * might still be attaching filter or exclusion to the
-	  * event_notifier_enabler.
-	  */
-	if (!lttng_event_notifier_enabler_as_enabler(event_notifier_enabler)->enabled)
-		goto end;
-
-	/* First, ensure that probe event_notifiers are created for this enabler. */
-	lttng_create_event_if_missing(&event_notifier_enabler->parent);
-
-	/* Link the created event_notifier with its associated enabler. */
-	cds_list_for_each_entry(event_priv, &event_notifier_group->event_notifiers_head, node) {
-		struct lttng_enabler_ref *enabler_ref;
-
-		if (!lttng_event_enabler_match_event(&event_notifier_enabler->parent, event_priv->pub))
-			continue;
-
-		enabler_ref = lttng_enabler_ref(&event_priv->enablers_ref_head,
-			lttng_event_notifier_enabler_as_enabler(event_notifier_enabler));
-		if (!enabler_ref) {
-			/*
-			 * If no backward ref, create it.
-			 * Add backward ref from event_notifier to enabler.
-			 */
-			enabler_ref = zmalloc(sizeof(*enabler_ref));
-			if (!enabler_ref)
-				return -ENOMEM;
-
-			enabler_ref->ref = lttng_event_notifier_enabler_as_enabler(
-				event_notifier_enabler);
-			cds_list_add(&enabler_ref->node,
-				&event_priv->enablers_ref_head);
-		}
-
-
-		lttng_event_enabler_init_event_filter(&event_notifier_enabler->parent, event_priv->pub);
-		lttng_event_enabler_init_event_capture(&event_notifier_enabler->parent, event_priv->pub);
-	}
-end:
-	return 0;
-}
-
 static
 void lttng_event_notifier_group_sync_enablers(struct lttng_event_notifier_group *event_notifier_group)
 {
 	struct lttng_event_enabler_common *event_enabler;
 	struct lttng_ust_event_common_private *event_priv;
 
-	cds_list_for_each_entry(event_enabler, &event_notifier_group->enablers_head, node) {
-		struct lttng_event_notifier_enabler *event_notifier_enabler =
-			caa_container_of(event_enabler, struct lttng_event_notifier_enabler, parent);
-
-		lttng_event_notifier_enabler_ref_event_notifiers(event_notifier_enabler);
-	}
+	cds_list_for_each_entry(event_enabler, &event_notifier_group->enablers_head, node)
+		lttng_event_enabler_ref_events(event_enabler);
 
 	/*
 	 * For each event_notifier, if at least one of its enablers is enabled,
