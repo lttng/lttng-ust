@@ -1002,8 +1002,8 @@ int lttng_event_recorder_create(struct lttng_event_recorder_enabler *event_recor
 		goto sessiond_register_error;
 	}
 
-	cds_list_add(&event_recorder_priv->parent.parent.node, &session->priv->events_head);
-	cds_hlist_add_head(&event_recorder_priv->parent.parent.name_hlist_node, name_head);
+	cds_list_add(&event->priv->node, &session->priv->events_head);
+	cds_hlist_add_head(&event->priv->name_hlist_node, name_head);
 	return 0;
 
 sessiond_register_error:
@@ -1116,9 +1116,8 @@ int lttng_event_counter_create(struct lttng_event_counter_enabler *event_counter
 		goto sessiond_register_error;
 	}
 
-	cds_list_add(&event_counter_priv->parent.parent.node,
-		&event_counter_enabler->chan->parent->session->priv->events_head);
-	cds_hlist_add_head(&event_counter_priv->parent.parent.name_hlist_node, name_head);
+	cds_list_add(&event->priv->node, &event_counter_enabler->chan->parent->session->priv->events_head);
+	cds_hlist_add_head(&event->priv->name_hlist_node, name_head);
 	return 0;
 
 sessiond_register_error:
@@ -1176,9 +1175,8 @@ int lttng_event_notifier_create(struct lttng_event_notifier_enabler *event_notif
 	event_notifier_priv = caa_container_of(event->priv, struct lttng_ust_event_notifier_private, parent);
 
 	event_notifier_priv->parent.desc = desc;
-	cds_list_add(&event_notifier_priv->parent.node,
-			&event_notifier_group->event_notifiers_head);
-	cds_hlist_add_head(&event_notifier_priv->parent.name_hlist_node, head);
+	cds_list_add(&event->priv->node, &event_notifier_group->event_notifiers_head);
+	cds_hlist_add_head(&event->priv->name_hlist_node, head);
 
 	return 0;
 
