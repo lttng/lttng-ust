@@ -470,22 +470,38 @@ int lttng_create_enum_check(const struct lttng_ust_type_common *type,
 }
 
 static
-int lttng_create_all_event_enums(size_t nr_fields,
-		const struct lttng_ust_event_field * const *event_fields,
-		struct lttng_ust_session *session)
+int lttng_create_all_event_enums(struct lttng_event_enabler_common *event_enabler,
+		const struct lttng_ust_event_desc *desc)
 {
+	size_t nr_fields = desc->tp_class->nr_fields;
+	const struct lttng_ust_event_field * const *event_fields = desc->tp_class->fields;
+	struct lttng_ust_session *session;
 	size_t i;
 	int ret;
 
-	/* For each field, ensure enum is part of the session. */
-	for (i = 0; i < nr_fields; i++) {
-		const struct lttng_ust_type_common *type = event_fields[i]->type;
+	switch (event_enabler->enabler_type) {
+	case LTTNG_EVENT_ENABLER_TYPE_RECORDER:		/* Fall-through */
+	case LTTNG_EVENT_ENABLER_TYPE_COUNTER:
+	{
+		struct lttng_event_enabler_session_common *event_enabler_session =
+			caa_container_of(event_enabler, struct lttng_event_enabler_session_common, parent);
 
-		ret = lttng_create_enum_check(type, session);
-		if (ret)
-			return ret;
+		session = event_enabler_session->chan->session;
+		/* For each field, ensure enum is part of the session. */
+		for (i = 0; i < nr_fields; i++) {
+			const struct lttng_ust_type_common *type = event_fields[i]->type;
+
+			ret = lttng_create_enum_check(type, session);
+			if (ret)
+				return ret;
+		}
+		return 0;
 	}
-	return 0;
+	case LTTNG_EVENT_ENABLER_TYPE_NOTIFIER:
+		return 0;
+	default:
+		return -EINVAL;
+	}
 }
 
 static
@@ -1052,8 +1068,7 @@ int lttng_event_recorder_create(struct lttng_event_recorder_enabler *event_recor
 		}
 	}
 
-	ret = lttng_create_all_event_enums(desc->tp_class->nr_fields, desc->tp_class->fields,
-			session);
+	ret = lttng_create_all_event_enums(&event_recorder_enabler->parent.parent, desc);
 	if (ret < 0) {
 		DBG("Error (%d) adding enum to session", ret);
 		goto create_enum_error;
@@ -1092,7 +1107,6 @@ int lttng_event_counter_create(struct lttng_event_counter_enabler *event_counter
 	char key_string[LTTNG_KEY_TOKEN_STRING_LEN_MAX] = { 0 };
 	struct lttng_ust_event_common *event;
 	struct lttng_ust_event_common_private *event_priv_iter;
-	struct lttng_ust_session *session = event_counter_enabler->chan->parent->session;
 	struct cds_hlist_head *name_head;
 	int ret = 0;
 
@@ -1130,8 +1144,7 @@ int lttng_event_counter_create(struct lttng_event_counter_enabler *event_counter
 		}
 	}
 
-	ret = lttng_create_all_event_enums(desc->tp_class->nr_fields, desc->tp_class->fields,
-			session);
+	ret = lttng_create_all_event_enums(&event_counter_enabler->parent.parent, desc);
 	if (ret < 0) {
 		DBG("Error (%d) adding enum to session", ret);
 		goto create_enum_error;
