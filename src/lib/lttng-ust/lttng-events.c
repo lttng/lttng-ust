@@ -1705,41 +1705,22 @@ void _lttng_event_destroy(struct lttng_ust_event_common *event)
 			&event->priv->enablers_ref_head, node)
 		free(enabler_ref);
 
+	/* Remove from event list. */
+	cds_list_del(&event->priv->node);
+	/* Remove from event hash table. */
+	cds_hlist_del(&event->priv->name_hlist_node);
+
 	switch (event->type) {
 	case LTTNG_UST_EVENT_TYPE_RECORDER:
 	{
-		struct lttng_ust_event_recorder *event_recorder = event->child;
+		struct lttng_ust_event_session_common_private *event_session_priv =
+			caa_container_of(event->priv, struct lttng_ust_event_session_common_private, parent);
 
-		/* Remove from event list. */
-		cds_list_del(&event_recorder->priv->parent.parent.node);
-		/* Remove from event hash table. */
-		cds_hlist_del(&event_recorder->priv->parent.parent.name_hlist_node);
-
-		lttng_destroy_context(event_recorder->priv->parent.ctx);
+		lttng_destroy_context(event_session_priv->ctx);
 		break;
 	}
 	case LTTNG_UST_EVENT_TYPE_NOTIFIER:
-	{
-		struct lttng_ust_event_notifier *event_notifier = event->child;
-
-		/* Remove from event list. */
-		cds_list_del(&event_notifier->priv->parent.node);
-		/* Remove from event hash table. */
-		cds_hlist_del(&event_notifier->priv->parent.name_hlist_node);
 		break;
-	}
-	case LTTNG_UST_EVENT_TYPE_COUNTER:
-	{
-		struct lttng_ust_event_counter *event_counter = event->child;
-
-		/* Remove from event list. */
-		cds_list_del(&event_counter->priv->parent.parent.node);
-		/* Remove from event hash table. */
-		cds_hlist_del(&event_counter->priv->parent.parent.name_hlist_node);
-
-		lttng_destroy_context(event_counter->priv->parent.ctx);
-		break;
-	}
 	default:
 		abort();
 	}
