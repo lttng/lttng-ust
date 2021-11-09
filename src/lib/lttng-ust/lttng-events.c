@@ -1080,24 +1080,19 @@ bool lttng_event_enabler_event_desc_key_match_event(struct lttng_event_enabler_c
 	}
 }
 
-/*
- * Supports event creation while tracing session is active.
- */
 static
-int lttng_event_recorder_create(struct lttng_event_recorder_enabler *event_recorder_enabler,
-		const struct lttng_ust_event_desc *desc)
+int lttng_ust_event_create(struct lttng_event_enabler_common *event_enabler, const struct lttng_ust_event_desc *desc)
 {
-	struct lttng_ust_event_ht *events_ht = lttng_get_event_ht_from_enabler(&event_recorder_enabler->parent.parent);
-	struct cds_list_head *event_list_head = lttng_get_event_list_head_from_enabler(&event_recorder_enabler->parent.parent);
-	char name[LTTNG_UST_ABI_SYM_NAME_LEN] = { 0 };
 	char key_string[LTTNG_KEY_TOKEN_STRING_LEN_MAX] = { 0 };
-	struct lttng_ust_event_common *event;
+	char name[LTTNG_UST_ABI_SYM_NAME_LEN] = { 0 };
+	struct cds_list_head *event_list_head = lttng_get_event_list_head_from_enabler(event_enabler);
+	struct lttng_ust_event_ht *events_ht = lttng_get_event_ht_from_enabler(event_enabler);
 	struct lttng_ust_event_common_private *event_priv_iter;
+	struct lttng_ust_event_common *event;
 	struct cds_hlist_head *name_head;
 	int ret = 0;
 
-	if (format_event_key(&event_recorder_enabler->parent.parent, key_string,
-			desc->probe_desc->provider_name, desc->event_name)) {
+	if (format_event_key(event_enabler, key_string, desc->probe_desc->provider_name, desc->event_name)) {
 		ret = -EINVAL;
 		goto type_error;
 	}
@@ -1105,85 +1100,26 @@ int lttng_event_recorder_create(struct lttng_event_recorder_enabler *event_recor
 	lttng_ust_format_event_name(desc, name);
 	name_head = borrow_hash_table_bucket(events_ht->table, LTTNG_UST_EVENT_HT_SIZE, name);
 	cds_hlist_for_each_entry_2(event_priv_iter, name_head, name_hlist_node) {
-		if (lttng_event_enabler_event_desc_key_match_event(&event_recorder_enabler->parent.parent,
+		if (lttng_event_enabler_event_desc_key_match_event(event_enabler,
 				desc, key_string, event_priv_iter->pub)) {
 			ret = -EEXIST;
 			goto exist;
 		}
 	}
 
-	ret = lttng_create_all_event_enums(&event_recorder_enabler->parent.parent, desc);
+	ret = lttng_create_all_event_enums(event_enabler, desc);
 	if (ret < 0) {
 		DBG("Error (%d) adding enum to session", ret);
 		goto create_enum_error;
 	}
 
-	event = lttng_ust_event_alloc(&event_recorder_enabler->parent.parent, desc, key_string);
+	event = lttng_ust_event_alloc(event_enabler, desc, key_string);
 	if (!event) {
 		ret = -ENOMEM;
 		goto alloc_error;
 	}
 
-	ret = lttng_event_register_to_sessiond(&event_recorder_enabler->parent.parent, event, name);
-	if (ret < 0) {
-		DBG("Error (%d) registering event '%s' key '%s' to sessiond", ret, name, key_string);
-		goto sessiond_register_error;
-	}
-	cds_list_add(&event->priv->node, event_list_head);
-	cds_hlist_add_head(&event->priv->name_hlist_node, name_head);
-	return 0;
-
-sessiond_register_error:
-	lttng_ust_event_free(event);
-alloc_error:
-create_enum_error:
-exist:
-type_error:
-	return ret;
-}
-
-static
-int lttng_event_counter_create(struct lttng_event_counter_enabler *event_counter_enabler,
-		const struct lttng_ust_event_desc *desc)
-{
-	struct lttng_ust_event_ht *events_ht = lttng_get_event_ht_from_enabler(&event_counter_enabler->parent.parent);
-	struct cds_list_head *event_list_head = lttng_get_event_list_head_from_enabler(&event_counter_enabler->parent.parent);
-	char name[LTTNG_UST_ABI_SYM_NAME_LEN] = { 0 };
-	char key_string[LTTNG_KEY_TOKEN_STRING_LEN_MAX] = { 0 };
-	struct lttng_ust_event_common *event;
-	struct lttng_ust_event_common_private *event_priv_iter;
-	struct cds_hlist_head *name_head;
-	int ret = 0;
-
-	if (format_event_key(&event_counter_enabler->parent.parent, key_string,
-			desc->probe_desc->provider_name, desc->event_name)) {
-		ret = -EINVAL;
-		goto type_error;
-	}
-
-	lttng_ust_format_event_name(desc, name);
-	name_head = borrow_hash_table_bucket(events_ht->table, LTTNG_UST_EVENT_HT_SIZE, name);
-	cds_hlist_for_each_entry_2(event_priv_iter, name_head, name_hlist_node) {
-		if (lttng_event_enabler_event_desc_key_match_event(&event_counter_enabler->parent.parent,
-				desc, key_string, event_priv_iter->pub)) {
-			ret = -EEXIST;
-			goto exist;
-		}
-	}
-
-	ret = lttng_create_all_event_enums(&event_counter_enabler->parent.parent, desc);
-	if (ret < 0) {
-		DBG("Error (%d) adding enum to session", ret);
-		goto create_enum_error;
-	}
-
-	event = lttng_ust_event_alloc(&event_counter_enabler->parent.parent, desc, key_string);
-	if (!event) {
-		ret = -ENOMEM;
-		goto alloc_error;
-	}
-
-	ret = lttng_event_register_to_sessiond(&event_counter_enabler->parent.parent, event, name);
+	ret = lttng_event_register_to_sessiond(event_enabler, event, name);
 	if (ret < 0) {
 		DBG("Error (%d) registering event '%s' key '%s' to sessiond", ret, name, key_string);
 		goto sessiond_register_error;
@@ -1200,77 +1136,6 @@ create_enum_error:
 exist:
 type_error:
 	return ret;
-}
-
-static
-int lttng_event_notifier_create(struct lttng_event_notifier_enabler *event_notifier_enabler,
-		const struct lttng_ust_event_desc *desc)
-{
-	struct lttng_ust_event_ht *events_ht = lttng_get_event_ht_from_enabler(&event_notifier_enabler->parent);
-	struct cds_list_head *event_list_head = lttng_get_event_list_head_from_enabler(&event_notifier_enabler->parent);
-	char key_string[LTTNG_KEY_TOKEN_STRING_LEN_MAX] = { 0 };
-	struct lttng_ust_event_common *event;
-	struct lttng_ust_event_common_private *event_priv;
-	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
-	struct cds_hlist_head *head;
-	struct cds_hlist_node *node;
-	int ret = 0;
-
-	/*
-	 * Get the hashtable bucket the created lttng_event_notifier object
-	 * should be inserted.
-	 */
-	lttng_ust_format_event_name(desc, name);
-	head = borrow_hash_table_bucket(events_ht->table, LTTNG_UST_EVENT_HT_SIZE, name);
-	cds_hlist_for_each_entry(event_priv, node, head, name_hlist_node) {
-		if (lttng_event_enabler_event_desc_key_match_event(&event_notifier_enabler->parent,
-				desc, key_string, event_priv->pub)) {
-			ret = -EEXIST;
-			goto exist;
-		}
-	}
-
-	event = lttng_ust_event_alloc(&event_notifier_enabler->parent, desc, key_string);
-	if (!event) {
-		ret = -ENOMEM;
-		goto error;
-	}
-	cds_list_add(&event->priv->node, event_list_head);
-	cds_hlist_add_head(&event->priv->name_hlist_node, head);
-
-	return 0;
-
-error:
-exist:
-	return ret;
-}
-
-static
-int lttng_ust_event_create(struct lttng_event_enabler_common *event_enabler,
-		const struct lttng_ust_event_desc *event_desc)
-{
-	switch (event_enabler->enabler_type) {
-	case LTTNG_EVENT_ENABLER_TYPE_RECORDER:
-	{
-		struct lttng_event_recorder_enabler *event_recorder_enabler =
-			caa_container_of(event_enabler, struct lttng_event_recorder_enabler, parent.parent);
-		return lttng_event_recorder_create(event_recorder_enabler, event_desc);
-	}
-	case LTTNG_EVENT_ENABLER_TYPE_NOTIFIER:
-	{
-		struct lttng_event_notifier_enabler *event_notifier_enabler =
-			caa_container_of(event_enabler, struct lttng_event_notifier_enabler, parent);
-		return lttng_event_notifier_create(event_notifier_enabler, event_desc);
-	}
-	case LTTNG_EVENT_ENABLER_TYPE_COUNTER:
-	{
-		struct lttng_event_counter_enabler *event_counter_enabler =
-			caa_container_of(event_enabler, struct lttng_event_counter_enabler, parent.parent);
-		return lttng_event_counter_create(event_counter_enabler, event_desc);
-	}
-	default:
-		return -EINVAL;
-	}
 }
 
 static
