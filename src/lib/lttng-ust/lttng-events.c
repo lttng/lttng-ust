@@ -723,6 +723,192 @@ bool match_event_counter_token(struct lttng_ust_event_counter *event_counter,
 	return false;
 }
 
+static
+struct lttng_ust_event_common *lttng_ust_event_alloc(struct lttng_event_enabler_common *event_enabler)
+{
+	switch (event_enabler->enabler_type) {
+	case LTTNG_EVENT_ENABLER_TYPE_RECORDER:
+	{
+		struct lttng_event_recorder_enabler *event_recorder_enabler =
+			caa_container_of(event_enabler, struct lttng_event_recorder_enabler, parent.parent);
+		struct lttng_ust_event_recorder *event_recorder;
+		struct lttng_ust_event_recorder_private *event_recorder_priv;
+
+		event_recorder = zmalloc(sizeof(struct lttng_ust_event_recorder));
+		if (!event_recorder)
+			return NULL;
+		event_recorder->struct_size = sizeof(struct lttng_ust_event_recorder);
+
+		event_recorder->parent = zmalloc(sizeof(struct lttng_ust_event_common));
+		if (!event_recorder->parent) {
+			free(event_recorder);
+			return NULL;
+		}
+		event_recorder->parent->struct_size = sizeof(struct lttng_ust_event_common);
+		event_recorder->parent->type = LTTNG_UST_EVENT_TYPE_RECORDER;
+		event_recorder->parent->child = event_recorder;
+
+		event_recorder_priv = zmalloc(sizeof(struct lttng_ust_event_recorder_private));
+		if (!event_recorder_priv) {
+			free(event_recorder->parent);
+			free(event_recorder);
+			return NULL;
+		}
+		event_recorder->priv = event_recorder_priv;
+		event_recorder_priv->pub = event_recorder;
+		event_recorder->parent->priv = &event_recorder_priv->parent.parent;
+		event_recorder_priv->parent.parent.pub = event_recorder->parent;
+		event_recorder->chan = event_recorder_enabler->chan;
+
+		/* Event will be enabled by enabler sync. */
+		event_recorder->parent->run_filter = lttng_ust_interpret_event_filter;
+		event_recorder->parent->enabled = 0;
+		event_recorder->parent->priv->registered = 0;
+		CDS_INIT_LIST_HEAD(&event_recorder->parent->priv->filter_bytecode_runtime_head);
+		CDS_INIT_LIST_HEAD(&event_recorder->parent->priv->enablers_ref_head);
+		event_recorder_priv->parent.chan = event_recorder_enabler->chan->parent;
+		return event_recorder->parent;
+	}
+	case LTTNG_EVENT_ENABLER_TYPE_NOTIFIER:
+	{
+		struct lttng_event_notifier_enabler *event_notifier_enabler =
+			caa_container_of(event_enabler, struct lttng_event_notifier_enabler, parent);
+		struct lttng_ust_event_notifier *event_notifier;
+		struct lttng_ust_event_notifier_private *event_notifier_priv;
+		struct lttng_event_notifier_group *event_notifier_group = event_notifier_enabler->group;
+		uint64_t token = event_notifier_enabler->parent.user_token;
+		uint64_t error_counter_index = event_notifier_enabler->error_counter_index;
+
+		event_notifier = zmalloc(sizeof(struct lttng_ust_event_notifier));
+		if (!event_notifier)
+			return NULL;
+		event_notifier->struct_size = sizeof(struct lttng_ust_event_notifier);
+
+		event_notifier->parent = zmalloc(sizeof(struct lttng_ust_event_common));
+		if (!event_notifier->parent) {
+			free(event_notifier);
+			return NULL;
+		}
+		event_notifier->parent->struct_size = sizeof(struct lttng_ust_event_common);
+		event_notifier->parent->type = LTTNG_UST_EVENT_TYPE_NOTIFIER;
+		event_notifier->parent->child = event_notifier;
+
+		event_notifier_priv = zmalloc(sizeof(struct lttng_ust_event_notifier_private));
+		if (!event_notifier_priv) {
+			free(event_notifier->parent);
+			free(event_notifier);
+			return NULL;
+		}
+		event_notifier->priv = event_notifier_priv;
+		event_notifier_priv->pub = event_notifier;
+		event_notifier->parent->priv = &event_notifier_priv->parent;
+		event_notifier_priv->parent.pub = event_notifier->parent;
+
+		event_notifier_priv->group = event_notifier_group;
+		event_notifier_priv->parent.user_token = token;
+		event_notifier_priv->error_counter_index = error_counter_index;
+
+		/* Event notifier will be enabled by enabler sync. */
+		event_notifier->parent->run_filter = lttng_ust_interpret_event_filter;
+		event_notifier->parent->enabled = 0;
+		event_notifier_priv->parent.registered = 0;
+
+		CDS_INIT_LIST_HEAD(&event_notifier->parent->priv->filter_bytecode_runtime_head);
+		CDS_INIT_LIST_HEAD(&event_notifier->priv->capture_bytecode_runtime_head);
+		CDS_INIT_LIST_HEAD(&event_notifier_priv->parent.enablers_ref_head);
+		event_notifier->notification_send = lttng_event_notifier_notification_send;
+		return event_notifier->parent;
+	}
+	case LTTNG_EVENT_ENABLER_TYPE_COUNTER:
+	{
+		struct lttng_event_counter_enabler *event_counter_enabler =
+			caa_container_of(event_enabler, struct lttng_event_counter_enabler, parent.parent);
+		struct lttng_ust_event_counter *event_counter;
+		struct lttng_ust_event_counter_private *event_counter_priv;
+
+		event_counter = zmalloc(sizeof(struct lttng_ust_event_counter));
+		if (!event_counter)
+			return NULL;
+		event_counter->struct_size = sizeof(struct lttng_ust_event_counter);
+
+		event_counter->parent = zmalloc(sizeof(struct lttng_ust_event_common));
+		if (!event_counter->parent) {
+			free(event_counter);
+			return NULL;
+		}
+		event_counter->parent->struct_size = sizeof(struct lttng_ust_event_common);
+		event_counter->parent->type = LTTNG_UST_EVENT_TYPE_COUNTER;
+		event_counter->parent->child = event_counter;
+
+		event_counter_priv = zmalloc(sizeof(struct lttng_ust_event_counter_private));
+		if (!event_counter_priv) {
+			free(event_counter->parent);
+			free(event_counter);
+			return NULL;
+		}
+		event_counter->priv = event_counter_priv;
+		event_counter_priv->pub = event_counter;
+		event_counter->parent->priv = &event_counter_priv->parent.parent;
+		event_counter_priv->parent.parent.pub = event_counter->parent;
+		event_counter->chan = event_counter_enabler->chan;
+
+		/* Event will be enabled by enabler sync. */
+		event_counter->parent->run_filter = lttng_ust_interpret_event_filter;
+		event_counter->parent->enabled = 0;
+		event_counter->parent->priv->registered = 0;
+		CDS_INIT_LIST_HEAD(&event_counter->parent->priv->filter_bytecode_runtime_head);
+		CDS_INIT_LIST_HEAD(&event_counter->parent->priv->enablers_ref_head);
+		event_counter_priv->parent.chan = event_counter_enabler->chan->parent;
+		if (!event_counter->chan->priv->parent.coalesce_hits)
+			event_counter->priv->parent.parent.user_token = event_counter_enabler->parent.parent.user_token;
+		return event_counter->parent;
+	}
+	default:
+		return NULL;
+	}
+}
+
+static
+void lttng_ust_event_free(struct lttng_ust_event_common *event)
+{
+	struct lttng_ust_event_common_private *event_priv = event->priv;
+
+	switch (event->type) {
+	case LTTNG_UST_EVENT_TYPE_RECORDER:
+	{
+		struct lttng_ust_event_recorder_private *event_recorder_priv =
+			caa_container_of(event_priv, struct lttng_ust_event_recorder_private, parent.parent);
+
+		free(event_recorder_priv->pub->parent);
+		free(event_recorder_priv->pub);
+		free(event_recorder_priv);
+		break;
+	}
+	case LTTNG_UST_EVENT_TYPE_NOTIFIER:
+	{
+		struct lttng_ust_event_notifier_private *event_notifier_priv =
+			caa_container_of(event_priv, struct lttng_ust_event_notifier_private, parent);
+
+		free(event_notifier_priv->pub->parent);
+		free(event_notifier_priv->pub);
+		free(event_notifier_priv);
+		break;
+	}
+	case LTTNG_UST_EVENT_TYPE_COUNTER:
+	{
+		struct lttng_ust_event_counter_private *event_counter_priv =
+			caa_container_of(event_priv, struct lttng_ust_event_counter_private, parent.parent);
+
+		free(event_counter_priv->pub->parent);
+		free(event_counter_priv->pub);
+		free(event_counter_priv);
+		break;
+	}
+	default:
+		WARN_ON_ONCE(1);
+	}
+}
+
 /*
  * Supports event creation while tracing session is active.
  */
@@ -731,7 +917,7 @@ int lttng_event_recorder_create(struct lttng_event_recorder_enabler *event_recor
 		const struct lttng_ust_event_desc *desc)
 {
 	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
-	struct lttng_ust_event_recorder *event_recorder;
+	struct lttng_ust_event_common *event;
 	struct lttng_ust_event_common_private *event_priv_iter;
 	struct lttng_ust_event_recorder_private *event_recorder_priv;
 	struct lttng_ust_session *session = event_recorder_enabler->chan->parent->session;
@@ -779,45 +965,14 @@ int lttng_event_recorder_create(struct lttng_event_recorder_enabler *event_recor
 		goto create_enum_error;
 	}
 
-	/*
-	 * Check if loglevel match. Refuse to connect event if not.
-	 */
-	event_recorder = zmalloc(sizeof(struct lttng_ust_event_recorder));
-	if (!event_recorder) {
+	event = lttng_ust_event_alloc(&event_recorder_enabler->parent.parent);
+	if (!event) {
 		ret = -ENOMEM;
-		goto cache_error;
+		goto alloc_error;
 	}
-	event_recorder->struct_size = sizeof(struct lttng_ust_event_recorder);
+	event_recorder_priv = caa_container_of(event->priv, struct lttng_ust_event_recorder_private, parent.parent);
 
-	event_recorder->parent = zmalloc(sizeof(struct lttng_ust_event_common));
-	if (!event_recorder->parent) {
-		ret = -ENOMEM;
-		goto parent_error;
-	}
-	event_recorder->parent->struct_size = sizeof(struct lttng_ust_event_common);
-	event_recorder->parent->type = LTTNG_UST_EVENT_TYPE_RECORDER;
-	event_recorder->parent->child = event_recorder;
-
-	event_recorder_priv = zmalloc(sizeof(struct lttng_ust_event_recorder_private));
-	if (!event_recorder_priv) {
-		ret = -ENOMEM;
-		goto priv_error;
-	}
-	event_recorder->priv = event_recorder_priv;
-	event_recorder_priv->pub = event_recorder;
-	event_recorder->parent->priv = &event_recorder_priv->parent.parent;
-	event_recorder_priv->parent.parent.pub = event_recorder->parent;
-
-	event_recorder->chan = event_recorder_enabler->chan;
-
-	/* Event will be enabled by enabler sync. */
-	event_recorder->parent->run_filter = lttng_ust_interpret_event_filter;
-	event_recorder->parent->enabled = 0;
-	event_recorder->parent->priv->registered = 0;
-	CDS_INIT_LIST_HEAD(&event_recorder->parent->priv->filter_bytecode_runtime_head);
-	CDS_INIT_LIST_HEAD(&event_recorder->parent->priv->enablers_ref_head);
-	event_recorder->parent->priv->desc = desc;
-	event_recorder_priv->parent.chan = event_recorder_enabler->chan->parent;
+	event->priv->desc = desc;
 
 	if (desc->loglevel)
 		loglevel = *(*desc->loglevel);
@@ -840,7 +995,7 @@ int lttng_event_recorder_create(struct lttng_event_recorder_enabler *event_recor
 		desc->tp_class->fields,
 		uri,
 		0,
-		&event_recorder->priv->id,
+		&event_recorder_priv->id,
 		NULL);
 	if (ret < 0) {
 		DBG("Error (%d) registering event to sessiond", ret);
@@ -852,12 +1007,8 @@ int lttng_event_recorder_create(struct lttng_event_recorder_enabler *event_recor
 	return 0;
 
 sessiond_register_error:
-	free(event_recorder_priv);
-priv_error:
-	free(event_recorder->parent);
-parent_error:
-	free(event_recorder);
-cache_error:
+	lttng_ust_event_free(event);
+alloc_error:
 create_enum_error:
 socket_error:
 exist:
@@ -871,9 +1022,9 @@ int lttng_event_counter_create(struct lttng_event_counter_enabler *event_counter
 	struct lttng_counter_key *key = &event_counter_enabler->key;
 	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
 	char key_string[LTTNG_KEY_TOKEN_STRING_LEN_MAX];
-	struct lttng_ust_event_counter *event_counter;
-	struct lttng_ust_event_counter_private *event_counter_priv;
+	struct lttng_ust_event_common *event;
 	struct lttng_ust_event_common_private *event_priv_iter;
+	struct lttng_ust_event_counter_private *event_counter_priv;
 	struct lttng_ust_session *session = event_counter_enabler->chan->parent->session;
 	struct cds_hlist_head *name_head;
 	int ret = 0;
@@ -927,48 +1078,15 @@ int lttng_event_counter_create(struct lttng_event_counter_enabler *event_counter
 		goto create_enum_error;
 	}
 
-	/*
-	 * Check if loglevel match. Refuse to connect event if not.
-	 */
-	event_counter = zmalloc(sizeof(struct lttng_ust_event_counter));
-	if (!event_counter) {
+	event = lttng_ust_event_alloc(&event_counter_enabler->parent.parent);
+	if (!event) {
 		ret = -ENOMEM;
-		goto cache_error;
+		goto alloc_error;
 	}
-	event_counter->struct_size = sizeof(struct lttng_ust_event_counter);
+	event_counter_priv = caa_container_of(event->priv, struct lttng_ust_event_counter_private, parent.parent);
 
-	event_counter->parent = zmalloc(sizeof(struct lttng_ust_event_common));
-	if (!event_counter->parent) {
-		ret = -ENOMEM;
-		goto parent_error;
-	}
-	event_counter->parent->struct_size = sizeof(struct lttng_ust_event_common);
-	event_counter->parent->type = LTTNG_UST_EVENT_TYPE_COUNTER;
-	event_counter->parent->child = event_counter;
-
-	event_counter_priv = zmalloc(sizeof(struct lttng_ust_event_counter_private));
-	if (!event_counter_priv) {
-		ret = -ENOMEM;
-		goto priv_error;
-	}
-	event_counter->priv = event_counter_priv;
-	event_counter_priv->pub = event_counter;
-	event_counter->parent->priv = &event_counter_priv->parent.parent;
-	event_counter_priv->parent.parent.pub = event_counter->parent;
-
-	event_counter->chan = event_counter_enabler->chan;
-
-	/* Event will be enabled by enabler sync. */
-	event_counter->parent->run_filter = lttng_ust_interpret_event_filter;
-	event_counter->parent->enabled = 0;
-	event_counter->parent->priv->registered = 0;
-	CDS_INIT_LIST_HEAD(&event_counter->parent->priv->filter_bytecode_runtime_head);
-	CDS_INIT_LIST_HEAD(&event_counter->parent->priv->enablers_ref_head);
-	event_counter->parent->priv->desc = desc;
-	event_counter_priv->parent.chan = event_counter_enabler->chan->parent;
-	strcpy(event_counter->priv->key, key_string);
-	if (!event_counter->chan->priv->parent.coalesce_hits)
-		event_counter->priv->parent.parent.user_token = event_counter_enabler->parent.parent.user_token;
+	event->priv->desc = desc;
+	strcpy(event_counter_priv->key, key_string);
 
 	if (desc->loglevel)
 		loglevel = *(*desc->loglevel);
@@ -992,7 +1110,7 @@ int lttng_event_counter_create(struct lttng_event_counter_enabler *event_counter
 		uri,
 		event_counter_enabler->parent.parent.user_token,
 		NULL,
-		&event_counter->priv->counter_index);
+		&event_counter_priv->counter_index);
 	if (ret < 0) {
 		DBG("Error (%d) registering event to sessiond", ret);
 		goto sessiond_register_error;
@@ -1004,12 +1122,8 @@ int lttng_event_counter_create(struct lttng_event_counter_enabler *event_counter
 	return 0;
 
 sessiond_register_error:
-	free(event_counter_priv);
-priv_error:
-	free(event_counter->parent);
-parent_error:
-	free(event_counter);
-cache_error:
+	lttng_ust_event_free(event);
+alloc_error:
 create_enum_error:
 socket_error:
 exist:
@@ -1021,12 +1135,10 @@ static
 int lttng_event_notifier_create(struct lttng_event_notifier_enabler *event_notifier_enabler,
 		const struct lttng_ust_event_desc *desc)
 {
-	uint64_t token = event_notifier_enabler->parent.user_token;
-	uint64_t error_counter_index = event_notifier_enabler->error_counter_index;
-	struct lttng_event_notifier_group *event_notifier_group = event_notifier_enabler->group;
-	struct lttng_ust_event_notifier *event_notifier;
+	struct lttng_ust_event_common *event;
 	struct lttng_ust_event_notifier_private *event_notifier_priv;
 	struct lttng_ust_event_common_private *event_priv;
+	struct lttng_event_notifier_group *event_notifier_group = event_notifier_enabler->group;
 	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
 	struct cds_hlist_head *head;
 	struct cds_hlist_node *node;
@@ -1056,57 +1168,20 @@ int lttng_event_notifier_create(struct lttng_event_notifier_enabler *event_notif
 	if (found)
 		return -EEXIST;
 
-	event_notifier = zmalloc(sizeof(struct lttng_ust_event_notifier));
-	if (!event_notifier) {
+	event = lttng_ust_event_alloc(&event_notifier_enabler->parent);
+	if (!event) {
 		ret = -ENOMEM;
 		goto error;
 	}
-	event_notifier->struct_size = sizeof(struct lttng_ust_event_notifier);
+	event_notifier_priv = caa_container_of(event->priv, struct lttng_ust_event_notifier_private, parent);
 
-	event_notifier->parent = zmalloc(sizeof(struct lttng_ust_event_common));
-	if (!event_notifier->parent) {
-		ret = -ENOMEM;
-		goto parent_error;
-	}
-	event_notifier->parent->struct_size = sizeof(struct lttng_ust_event_common);
-	event_notifier->parent->type = LTTNG_UST_EVENT_TYPE_NOTIFIER;
-	event_notifier->parent->child = event_notifier;
-
-	event_notifier_priv = zmalloc(sizeof(struct lttng_ust_event_notifier_private));
-	if (!event_notifier_priv) {
-		ret = -ENOMEM;
-		goto priv_error;
-	}
-	event_notifier->priv = event_notifier_priv;
-	event_notifier_priv->pub = event_notifier;
-	event_notifier->parent->priv = &event_notifier_priv->parent;
-	event_notifier_priv->parent.pub = event_notifier->parent;
-
-	event_notifier_priv->group = event_notifier_group;
-	event_notifier_priv->parent.user_token = token;
-	event_notifier_priv->error_counter_index = error_counter_index;
-
-	/* Event notifier will be enabled by enabler sync. */
-	event_notifier->parent->run_filter = lttng_ust_interpret_event_filter;
-	event_notifier->parent->enabled = 0;
-	event_notifier_priv->parent.registered = 0;
-
-	CDS_INIT_LIST_HEAD(&event_notifier->parent->priv->filter_bytecode_runtime_head);
-	CDS_INIT_LIST_HEAD(&event_notifier->priv->capture_bytecode_runtime_head);
-	CDS_INIT_LIST_HEAD(&event_notifier_priv->parent.enablers_ref_head);
 	event_notifier_priv->parent.desc = desc;
-	event_notifier->notification_send = lttng_event_notifier_notification_send;
-
 	cds_list_add(&event_notifier_priv->parent.node,
 			&event_notifier_group->event_notifiers_head);
 	cds_hlist_add_head(&event_notifier_priv->parent.name_hlist_node, head);
 
 	return 0;
 
-priv_error:
-	free(event_notifier->parent);
-parent_error:
-	free(event_notifier);
 error:
 	return ret;
 }
@@ -1641,9 +1716,6 @@ void _lttng_event_destroy(struct lttng_ust_event_common *event)
 		cds_hlist_del(&event_recorder->priv->parent.parent.name_hlist_node);
 
 		lttng_destroy_context(event_recorder->priv->parent.ctx);
-		free(event_recorder->parent);
-		free(event_recorder->priv);
-		free(event_recorder);
 		break;
 	}
 	case LTTNG_UST_EVENT_TYPE_NOTIFIER:
@@ -1654,10 +1726,6 @@ void _lttng_event_destroy(struct lttng_ust_event_common *event)
 		cds_list_del(&event_notifier->priv->parent.node);
 		/* Remove from event hash table. */
 		cds_hlist_del(&event_notifier->priv->parent.name_hlist_node);
-
-		free(event_notifier->priv);
-		free(event_notifier->parent);
-		free(event_notifier);
 		break;
 	}
 	case LTTNG_UST_EVENT_TYPE_COUNTER:
@@ -1670,14 +1738,12 @@ void _lttng_event_destroy(struct lttng_ust_event_common *event)
 		cds_hlist_del(&event_counter->priv->parent.parent.name_hlist_node);
 
 		lttng_destroy_context(event_counter->priv->parent.ctx);
-		free(event_counter->parent);
-		free(event_counter->priv);
-		free(event_counter);
 		break;
 	}
 	default:
 		abort();
 	}
+	lttng_ust_event_free(event);
 }
 
 static
