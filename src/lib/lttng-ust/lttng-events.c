@@ -1021,6 +1021,65 @@ int lttng_event_register_to_sessiond(struct lttng_event_enabler_common *event_en
 	}
 }
 
+static
+bool lttng_event_enabler_event_desc_key_match_event(struct lttng_event_enabler_common *event_enabler,
+		const struct lttng_ust_event_desc *desc,
+		const char *key_string,
+		struct lttng_ust_event_common *event)
+{
+	switch (event_enabler->enabler_type) {
+	case LTTNG_EVENT_ENABLER_TYPE_RECORDER:
+	{
+		struct lttng_event_recorder_enabler *event_recorder_enabler =
+			caa_container_of(event_enabler, struct lttng_event_recorder_enabler, parent.parent);
+		struct lttng_ust_event_recorder *event_recorder = event->child;
+		bool same_event = false, same_channel = false, same_token = false;
+
+		WARN_ON_ONCE(!event->priv->desc);
+		if (event->priv->desc == desc)
+			same_event = true;
+		if (event_recorder_enabler->chan == event_recorder->chan) {
+			same_channel = true;
+			if (match_event_recorder_token(event_recorder, event_enabler->user_token))
+				same_token = true;
+		}
+		return same_event && same_channel && same_token;
+	}
+	case LTTNG_EVENT_ENABLER_TYPE_NOTIFIER:
+	{
+		/*
+		 * Check if event_notifier already exists by checking
+		 * if the event_notifier and enabler share the same
+		 * description and id.
+		 */
+		return event->priv->desc == desc && event->priv->user_token == event_enabler->user_token;
+	}
+	case LTTNG_EVENT_ENABLER_TYPE_COUNTER:
+	{
+		struct lttng_event_counter_enabler *event_counter_enabler =
+			caa_container_of(event_enabler, struct lttng_event_counter_enabler, parent.parent);
+		struct lttng_ust_event_counter *event_counter = event->child;
+		bool same_event = false, same_channel = false, same_key = false,
+				same_token = false;
+
+		WARN_ON_ONCE(!event->priv->desc);
+		if (event->priv->desc == desc)
+			same_event = true;
+		if (event_counter_enabler->chan == event_counter->chan) {
+			same_channel = true;
+			if (match_event_counter_token(event_counter, event_enabler->user_token))
+				same_token = true;
+		}
+		if (key_string[0] == '\0' || !strcmp(key_string, event_counter->priv->key))
+			same_key = true;
+		return same_event && same_channel && same_key && same_token;
+	}
+	default:
+		WARN_ON_ONCE(1);
+		return false;
+	}
+}
+
 /*
  * Supports event creation while tracing session is active.
  */
@@ -1046,23 +1105,8 @@ int lttng_event_recorder_create(struct lttng_event_recorder_enabler *event_recor
 	lttng_ust_format_event_name(desc, name);
 	name_head = borrow_hash_table_bucket(events_ht->table, LTTNG_UST_EVENT_HT_SIZE, name);
 	cds_hlist_for_each_entry_2(event_priv_iter, name_head, name_hlist_node) {
-		bool same_event = false, same_channel = false, same_token = false;
-		struct lttng_ust_event_recorder_private *event_recorder_priv_iter;
-
-		if (event_priv_iter->pub->type != LTTNG_UST_EVENT_TYPE_RECORDER)
-			continue;
-		event_recorder_priv_iter = caa_container_of(event_priv_iter,
-			struct lttng_ust_event_recorder_private, parent.parent);
-		WARN_ON_ONCE(!event_recorder_priv_iter->parent.parent.desc);
-		if (event_recorder_priv_iter->parent.parent.desc == desc)
-			same_event = true;
-		if (event_recorder_enabler->chan == event_recorder_priv_iter->pub->chan) {
-			same_channel = true;
-			if (match_event_recorder_token(event_recorder_priv_iter->pub,
-					event_recorder_enabler->parent.parent.user_token))
-				same_token = true;
-		}
-		if (same_event && same_channel && same_token) {
+		if (lttng_event_enabler_event_desc_key_match_event(&event_recorder_enabler->parent.parent,
+				desc, key_string, event_priv_iter->pub)) {
 			ret = -EEXIST;
 			goto exist;
 		}
@@ -1120,26 +1164,8 @@ int lttng_event_counter_create(struct lttng_event_counter_enabler *event_counter
 	lttng_ust_format_event_name(desc, name);
 	name_head = borrow_hash_table_bucket(events_ht->table, LTTNG_UST_EVENT_HT_SIZE, name);
 	cds_hlist_for_each_entry_2(event_priv_iter, name_head, name_hlist_node) {
-		struct lttng_ust_event_counter_private *event_counter_priv_iter;
-		bool same_event = false, same_channel = false, same_key = false,
-				same_token = false;
-
-		if (event_priv_iter->pub->type != LTTNG_UST_EVENT_TYPE_COUNTER)
-			continue;
-		event_counter_priv_iter = caa_container_of(event_priv_iter,
-			struct lttng_ust_event_counter_private, parent.parent);
-		WARN_ON_ONCE(!event_counter_priv_iter->parent.parent.desc);
-		if (event_counter_priv_iter->parent.parent.desc == desc)
-			same_event = true;
-		if (event_counter_enabler->chan == event_counter_priv_iter->pub->chan) {
-			same_channel = true;
-			if (match_event_counter_token(event_counter_priv_iter->pub,
-					event_counter_enabler->parent.parent.user_token))
-				same_token = true;
-		}
-		if (key_string[0] == '\0' || !strcmp(key_string, event_counter_priv_iter->key))
-			same_key = true;
-		if (same_event && same_channel && same_key && same_token) {
+		if (lttng_event_enabler_event_desc_key_match_event(&event_counter_enabler->parent.parent,
+				desc, key_string, event_priv_iter->pub)) {
 			ret = -EEXIST;
 			goto exist;
 		}
@@ -1189,7 +1215,6 @@ int lttng_event_notifier_create(struct lttng_event_notifier_enabler *event_notif
 	struct cds_hlist_head *head;
 	struct cds_hlist_node *node;
 	int ret = 0;
-	bool found = false;
 
 	/*
 	 * Get the hashtable bucket the created lttng_event_notifier object
@@ -1198,18 +1223,12 @@ int lttng_event_notifier_create(struct lttng_event_notifier_enabler *event_notif
 	lttng_ust_format_event_name(desc, name);
 	head = borrow_hash_table_bucket(events_ht->table, LTTNG_UST_EVENT_HT_SIZE, name);
 	cds_hlist_for_each_entry(event_priv, node, head, name_hlist_node) {
-		/*
-		 * Check if event_notifier already exists by checking
-		 * if the event_notifier and enabler share the same
-		 * description and id.
-		 */
-		if (event_priv->desc == desc && event_priv->user_token == event_notifier_enabler->parent.user_token) {
-			found = true;
-			break;
+		if (lttng_event_enabler_event_desc_key_match_event(&event_notifier_enabler->parent,
+				desc, key_string, event_priv->pub)) {
+			ret = -EEXIST;
+			goto exist;
 		}
 	}
-	if (found)
-		return -EEXIST;
 
 	event = lttng_ust_event_alloc(&event_notifier_enabler->parent, desc, key_string);
 	if (!event) {
@@ -1222,6 +1241,7 @@ int lttng_event_notifier_create(struct lttng_event_notifier_enabler *event_notif
 	return 0;
 
 error:
+exist:
 	return ret;
 }
 
