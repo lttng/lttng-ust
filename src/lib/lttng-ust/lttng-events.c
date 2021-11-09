@@ -661,14 +661,20 @@ struct cds_hlist_head *borrow_hash_table_bucket(
 }
 
 static
-int format_event_key(char *key_string, const struct lttng_counter_key *key,
+int format_event_key(struct lttng_event_enabler_common *event_enabler, char *key_string,
 		     const char *provider_name, const char *event_name)
 {
+	struct lttng_event_counter_enabler *event_counter_enabler;
 	const struct lttng_counter_key_dimension *dim;
 	size_t i, left = LTTNG_KEY_TOKEN_STRING_LEN_MAX;
+	const struct lttng_counter_key *key;
 
-	key_string[0] = '\0';
-	if (!key || !key->nr_dimensions)
+	if (event_enabler->enabler_type != LTTNG_EVENT_ENABLER_TYPE_COUNTER) {
+		return 0;
+	}
+	event_counter_enabler = caa_container_of(event_enabler, struct lttng_event_counter_enabler, parent.parent);
+	key = &event_counter_enabler->key;
+	if (!key->nr_dimensions)
 		return 0;
 	/* Currently event keys can only be specified on a single dimension. */
 	if (key->nr_dimensions != 1)
@@ -724,8 +730,11 @@ bool match_event_counter_token(struct lttng_ust_event_counter *event_counter,
 }
 
 static
-struct lttng_ust_event_common *lttng_ust_event_alloc(struct lttng_event_enabler_common *event_enabler)
+struct lttng_ust_event_common *lttng_ust_event_alloc(struct lttng_event_enabler_common *event_enabler,
+		const struct lttng_ust_event_desc *desc,
+		const char *key_string)
 {
+
 	switch (event_enabler->enabler_type) {
 	case LTTNG_EVENT_ENABLER_TYPE_RECORDER:
 	{
@@ -767,6 +776,8 @@ struct lttng_ust_event_common *lttng_ust_event_alloc(struct lttng_event_enabler_
 		CDS_INIT_LIST_HEAD(&event_recorder->parent->priv->filter_bytecode_runtime_head);
 		CDS_INIT_LIST_HEAD(&event_recorder->parent->priv->enablers_ref_head);
 		event_recorder_priv->parent.chan = event_recorder_enabler->chan->parent;
+		event_recorder->priv->parent.parent.desc = desc;
+
 		return event_recorder->parent;
 	}
 	case LTTNG_EVENT_ENABLER_TYPE_NOTIFIER:
@@ -817,6 +828,7 @@ struct lttng_ust_event_common *lttng_ust_event_alloc(struct lttng_event_enabler_
 		CDS_INIT_LIST_HEAD(&event_notifier->priv->capture_bytecode_runtime_head);
 		CDS_INIT_LIST_HEAD(&event_notifier_priv->parent.enablers_ref_head);
 		event_notifier->notification_send = lttng_event_notifier_notification_send;
+		event_notifier_priv->parent.desc = desc;
 		return event_notifier->parent;
 	}
 	case LTTNG_EVENT_ENABLER_TYPE_COUNTER:
@@ -861,6 +873,8 @@ struct lttng_ust_event_common *lttng_ust_event_alloc(struct lttng_event_enabler_
 		event_counter_priv->parent.chan = event_counter_enabler->chan->parent;
 		if (!event_counter->chan->priv->parent.coalesce_hits)
 			event_counter->priv->parent.parent.user_token = event_counter_enabler->parent.parent.user_token;
+		event_counter->priv->parent.parent.desc = desc;
+		strcpy(event_counter_priv->key, key_string);
 		return event_counter->parent;
 	}
 	default:
@@ -998,13 +1012,19 @@ static
 int lttng_event_recorder_create(struct lttng_event_recorder_enabler *event_recorder_enabler,
 		const struct lttng_ust_event_desc *desc)
 {
-	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
+	char name[LTTNG_UST_ABI_SYM_NAME_LEN] = { 0 };
 	char key_string[LTTNG_KEY_TOKEN_STRING_LEN_MAX] = { 0 };
 	struct lttng_ust_event_common *event;
 	struct lttng_ust_event_common_private *event_priv_iter;
 	struct lttng_ust_session *session = event_recorder_enabler->chan->parent->session;
 	struct cds_hlist_head *name_head;
 	int ret = 0;
+
+	if (format_event_key(&event_recorder_enabler->parent.parent, key_string,
+			desc->probe_desc->provider_name, desc->event_name)) {
+		ret = -EINVAL;
+		goto type_error;
+	}
 
 	lttng_ust_format_event_name(desc, name);
 	name_head = borrow_hash_table_bucket(session->priv->events_name_ht.table,
@@ -1039,12 +1059,11 @@ int lttng_event_recorder_create(struct lttng_event_recorder_enabler *event_recor
 		goto create_enum_error;
 	}
 
-	event = lttng_ust_event_alloc(&event_recorder_enabler->parent.parent);
+	event = lttng_ust_event_alloc(&event_recorder_enabler->parent.parent, desc, key_string);
 	if (!event) {
 		ret = -ENOMEM;
 		goto alloc_error;
 	}
-	event->priv->desc = desc;
 
 	ret = lttng_event_register_to_sessiond(&event_recorder_enabler->parent.parent, event, name);
 	if (ret < 0) {
@@ -1060,6 +1079,7 @@ sessiond_register_error:
 alloc_error:
 create_enum_error:
 exist:
+type_error:
 	return ret;
 }
 
@@ -1067,17 +1087,16 @@ static
 int lttng_event_counter_create(struct lttng_event_counter_enabler *event_counter_enabler,
 		const struct lttng_ust_event_desc *desc)
 {
-	struct lttng_counter_key *key = &event_counter_enabler->key;
-	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
-	char key_string[LTTNG_KEY_TOKEN_STRING_LEN_MAX];
+	char name[LTTNG_UST_ABI_SYM_NAME_LEN] = { 0 };
+	char key_string[LTTNG_KEY_TOKEN_STRING_LEN_MAX] = { 0 };
 	struct lttng_ust_event_common *event;
 	struct lttng_ust_event_common_private *event_priv_iter;
-	struct lttng_ust_event_counter_private *event_counter_priv;
 	struct lttng_ust_session *session = event_counter_enabler->chan->parent->session;
 	struct cds_hlist_head *name_head;
 	int ret = 0;
 
-	if (format_event_key(key_string, key, desc->probe_desc->provider_name, desc->event_name)) {
+	if (format_event_key(&event_counter_enabler->parent.parent, key_string,
+			desc->probe_desc->provider_name, desc->event_name)) {
 		ret = -EINVAL;
 		goto type_error;
 	}
@@ -1118,15 +1137,11 @@ int lttng_event_counter_create(struct lttng_event_counter_enabler *event_counter
 		goto create_enum_error;
 	}
 
-	event = lttng_ust_event_alloc(&event_counter_enabler->parent.parent);
+	event = lttng_ust_event_alloc(&event_counter_enabler->parent.parent, desc, key_string);
 	if (!event) {
 		ret = -ENOMEM;
 		goto alloc_error;
 	}
-	event_counter_priv = caa_container_of(event->priv, struct lttng_ust_event_counter_private, parent.parent);
-
-	event->priv->desc = desc;
-	strcpy(event_counter_priv->key, key_string);
 
 	ret = lttng_event_register_to_sessiond(&event_counter_enabler->parent.parent, event, name);
 	if (ret < 0) {
@@ -1151,8 +1166,8 @@ static
 int lttng_event_notifier_create(struct lttng_event_notifier_enabler *event_notifier_enabler,
 		const struct lttng_ust_event_desc *desc)
 {
+	char key_string[LTTNG_KEY_TOKEN_STRING_LEN_MAX] = { 0 };
 	struct lttng_ust_event_common *event;
-	struct lttng_ust_event_notifier_private *event_notifier_priv;
 	struct lttng_ust_event_common_private *event_priv;
 	struct lttng_event_notifier_group *event_notifier_group = event_notifier_enabler->group;
 	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
@@ -1184,14 +1199,11 @@ int lttng_event_notifier_create(struct lttng_event_notifier_enabler *event_notif
 	if (found)
 		return -EEXIST;
 
-	event = lttng_ust_event_alloc(&event_notifier_enabler->parent);
+	event = lttng_ust_event_alloc(&event_notifier_enabler->parent, desc, key_string);
 	if (!event) {
 		ret = -ENOMEM;
 		goto error;
 	}
-	event_notifier_priv = caa_container_of(event->priv, struct lttng_ust_event_notifier_private, parent);
-	event_notifier_priv->parent.desc = desc;
-
 	cds_list_add(&event->priv->node, &event_notifier_group->event_notifiers_head);
 	cds_hlist_add_head(&event->priv->name_hlist_node, head);
 
