@@ -1029,11 +1029,11 @@ int lttng_event_recorder_create(struct lttng_event_recorder_enabler *event_recor
 		const struct lttng_ust_event_desc *desc)
 {
 	struct lttng_ust_event_ht *events_ht = lttng_get_event_ht_from_enabler(&event_recorder_enabler->parent.parent);
+	struct cds_list_head *event_list_head = lttng_get_event_list_head_from_enabler(&event_recorder_enabler->parent.parent);
 	char name[LTTNG_UST_ABI_SYM_NAME_LEN] = { 0 };
 	char key_string[LTTNG_KEY_TOKEN_STRING_LEN_MAX] = { 0 };
 	struct lttng_ust_event_common *event;
 	struct lttng_ust_event_common_private *event_priv_iter;
-	struct lttng_ust_session *session = event_recorder_enabler->chan->parent->session;
 	struct cds_hlist_head *name_head;
 	int ret = 0;
 
@@ -1085,7 +1085,7 @@ int lttng_event_recorder_create(struct lttng_event_recorder_enabler *event_recor
 		DBG("Error (%d) registering event '%s' key '%s' to sessiond", ret, name, key_string);
 		goto sessiond_register_error;
 	}
-	cds_list_add(&event->priv->node, &session->priv->events_head);
+	cds_list_add(&event->priv->node, event_list_head);
 	cds_hlist_add_head(&event->priv->name_hlist_node, name_head);
 	return 0;
 
@@ -1103,6 +1103,7 @@ int lttng_event_counter_create(struct lttng_event_counter_enabler *event_counter
 		const struct lttng_ust_event_desc *desc)
 {
 	struct lttng_ust_event_ht *events_ht = lttng_get_event_ht_from_enabler(&event_counter_enabler->parent.parent);
+	struct cds_list_head *event_list_head = lttng_get_event_list_head_from_enabler(&event_counter_enabler->parent.parent);
 	char name[LTTNG_UST_ABI_SYM_NAME_LEN] = { 0 };
 	char key_string[LTTNG_KEY_TOKEN_STRING_LEN_MAX] = { 0 };
 	struct lttng_ust_event_common *event;
@@ -1162,7 +1163,7 @@ int lttng_event_counter_create(struct lttng_event_counter_enabler *event_counter
 		goto sessiond_register_error;
 	}
 
-	cds_list_add(&event->priv->node, &event_counter_enabler->chan->parent->session->priv->events_head);
+	cds_list_add(&event->priv->node, event_list_head);
 	cds_hlist_add_head(&event->priv->name_hlist_node, name_head);
 	return 0;
 
@@ -1180,10 +1181,10 @@ int lttng_event_notifier_create(struct lttng_event_notifier_enabler *event_notif
 		const struct lttng_ust_event_desc *desc)
 {
 	struct lttng_ust_event_ht *events_ht = lttng_get_event_ht_from_enabler(&event_notifier_enabler->parent);
+	struct cds_list_head *event_list_head = lttng_get_event_list_head_from_enabler(&event_notifier_enabler->parent);
 	char key_string[LTTNG_KEY_TOKEN_STRING_LEN_MAX] = { 0 };
 	struct lttng_ust_event_common *event;
 	struct lttng_ust_event_common_private *event_priv;
-	struct lttng_event_notifier_group *event_notifier_group = event_notifier_enabler->group;
 	char name[LTTNG_UST_ABI_SYM_NAME_LEN];
 	struct cds_hlist_head *head;
 	struct cds_hlist_node *node;
@@ -1215,7 +1216,7 @@ int lttng_event_notifier_create(struct lttng_event_notifier_enabler *event_notif
 		ret = -ENOMEM;
 		goto error;
 	}
-	cds_list_add(&event->priv->node, &event_notifier_group->event_notifiers_head);
+	cds_list_add(&event->priv->node, event_list_head);
 	cds_hlist_add_head(&event->priv->name_hlist_node, head);
 
 	return 0;
