@@ -952,12 +952,6 @@ int lttng_event_recorder_create(struct lttng_event_recorder_enabler *event_recor
 		}
 	}
 
-	notify_socket = lttng_get_notify_socket(session->priv->owner);
-	if (notify_socket < 0) {
-		ret = notify_socket;
-		goto socket_error;
-	}
-
 	ret = lttng_create_all_event_enums(desc->tp_class->nr_fields, desc->tp_class->fields,
 			session);
 	if (ret < 0) {
@@ -983,6 +977,12 @@ int lttng_event_recorder_create(struct lttng_event_recorder_enabler *event_recor
 	else
 		uri = NULL;
 
+	notify_socket = lttng_get_notify_socket(session->priv->owner);
+	if (notify_socket < 0) {
+		ret = notify_socket;
+		goto socket_error;
+	}
+
 	/* Fetch event ID from sessiond */
 	ret = ustcomm_register_event(notify_socket,
 		session,
@@ -1007,10 +1007,10 @@ int lttng_event_recorder_create(struct lttng_event_recorder_enabler *event_recor
 	return 0;
 
 sessiond_register_error:
+socket_error:
 	lttng_ust_event_free(event);
 alloc_error:
 create_enum_error:
-socket_error:
 exist:
 	return ret;
 }
@@ -1065,12 +1065,6 @@ int lttng_event_counter_create(struct lttng_event_counter_enabler *event_counter
 		}
 	}
 
-	notify_socket = lttng_get_notify_socket(session->priv->owner);
-	if (notify_socket < 0) {
-		ret = notify_socket;
-		goto socket_error;
-	}
-
 	ret = lttng_create_all_event_enums(desc->tp_class->nr_fields, desc->tp_class->fields,
 			session);
 	if (ret < 0) {
@@ -1097,6 +1091,12 @@ int lttng_event_counter_create(struct lttng_event_counter_enabler *event_counter
 	else
 		uri = NULL;
 
+	notify_socket = lttng_get_notify_socket(session->priv->owner);
+	if (notify_socket < 0) {
+		ret = notify_socket;
+		goto socket_error;
+	}
+
 	/* Fetch event ID from sessiond */
 	ret = ustcomm_register_event(notify_socket,
 		session,
@@ -1121,10 +1121,10 @@ int lttng_event_counter_create(struct lttng_event_counter_enabler *event_counter
 	return 0;
 
 sessiond_register_error:
+socket_error:
 	lttng_ust_event_free(event);
 alloc_error:
 create_enum_error:
-socket_error:
 exist:
 type_error:
 	return ret;
