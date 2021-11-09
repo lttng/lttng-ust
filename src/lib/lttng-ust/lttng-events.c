@@ -1012,6 +1012,7 @@ static
 int lttng_event_recorder_create(struct lttng_event_recorder_enabler *event_recorder_enabler,
 		const struct lttng_ust_event_desc *desc)
 {
+	struct lttng_ust_event_ht *events_ht = lttng_get_event_ht_from_enabler(&event_recorder_enabler->parent.parent);
 	char name[LTTNG_UST_ABI_SYM_NAME_LEN] = { 0 };
 	char key_string[LTTNG_KEY_TOKEN_STRING_LEN_MAX] = { 0 };
 	struct lttng_ust_event_common *event;
@@ -1027,8 +1028,7 @@ int lttng_event_recorder_create(struct lttng_event_recorder_enabler *event_recor
 	}
 
 	lttng_ust_format_event_name(desc, name);
-	name_head = borrow_hash_table_bucket(session->priv->events_name_ht.table,
-		LTTNG_UST_EVENT_HT_SIZE, name);
+	name_head = borrow_hash_table_bucket(events_ht->table, LTTNG_UST_EVENT_HT_SIZE, name);
 	cds_hlist_for_each_entry_2(event_priv_iter, name_head, name_hlist_node) {
 		bool same_event = false, same_channel = false, same_token = false;
 		struct lttng_ust_event_recorder_private *event_recorder_priv_iter;
@@ -1087,6 +1087,7 @@ static
 int lttng_event_counter_create(struct lttng_event_counter_enabler *event_counter_enabler,
 		const struct lttng_ust_event_desc *desc)
 {
+	struct lttng_ust_event_ht *events_ht = lttng_get_event_ht_from_enabler(&event_counter_enabler->parent.parent);
 	char name[LTTNG_UST_ABI_SYM_NAME_LEN] = { 0 };
 	char key_string[LTTNG_KEY_TOKEN_STRING_LEN_MAX] = { 0 };
 	struct lttng_ust_event_common *event;
@@ -1102,8 +1103,7 @@ int lttng_event_counter_create(struct lttng_event_counter_enabler *event_counter
 	}
 
 	lttng_ust_format_event_name(desc, name);
-	name_head = borrow_hash_table_bucket(session->priv->events_name_ht.table,
-		LTTNG_UST_EVENT_HT_SIZE, name);
+	name_head = borrow_hash_table_bucket(events_ht->table, LTTNG_UST_EVENT_HT_SIZE, name);
 	cds_hlist_for_each_entry_2(event_priv_iter, name_head, name_hlist_node) {
 		struct lttng_ust_event_counter_private *event_counter_priv_iter;
 		bool same_event = false, same_channel = false, same_key = false,
@@ -1166,6 +1166,7 @@ static
 int lttng_event_notifier_create(struct lttng_event_notifier_enabler *event_notifier_enabler,
 		const struct lttng_ust_event_desc *desc)
 {
+	struct lttng_ust_event_ht *events_ht = lttng_get_event_ht_from_enabler(&event_notifier_enabler->parent);
 	char key_string[LTTNG_KEY_TOKEN_STRING_LEN_MAX] = { 0 };
 	struct lttng_ust_event_common *event;
 	struct lttng_ust_event_common_private *event_priv;
@@ -1181,10 +1182,7 @@ int lttng_event_notifier_create(struct lttng_event_notifier_enabler *event_notif
 	 * should be inserted.
 	 */
 	lttng_ust_format_event_name(desc, name);
-	head = borrow_hash_table_bucket(
-		event_notifier_group->event_notifiers_ht.table,
-		LTTNG_UST_EVENT_HT_SIZE, name);
-
+	head = borrow_hash_table_bucket(events_ht->table, LTTNG_UST_EVENT_HT_SIZE, name);
 	cds_hlist_for_each_entry(event_priv, node, head, name_hlist_node) {
 		/*
 		 * Check if event_notifier already exists by checking
