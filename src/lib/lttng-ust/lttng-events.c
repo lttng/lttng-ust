@@ -1205,77 +1205,57 @@ int lttng_desc_match_enabler(const struct lttng_ust_event_desc *desc,
 }
 
 static
-int lttng_event_recorder_enabler_match_event_recorder(struct lttng_event_recorder_enabler *event_recorder_enabler,
-		struct lttng_ust_event_recorder *event_recorder)
+bool lttng_event_session_enabler_match_event_session(struct lttng_event_enabler_session_common *event_enabler_session,
+		struct lttng_ust_event_session_common_private *event_session_priv)
 {
-	if (lttng_desc_match_enabler(event_recorder->parent->priv->desc,
-			&event_recorder_enabler->parent.parent)
-			&& event_recorder->chan == event_recorder_enabler->chan)
-		return 1;
+	if (lttng_desc_match_enabler(event_session_priv->parent.desc, &event_enabler_session->parent)
+			&& event_session_priv->chan == event_enabler_session->chan
+			&& match_event_session_token(event_session_priv, event_enabler_session->parent.user_token))
+		return true;
 	else
-		return 0;
-}
-
-static
-int lttng_event_counter_enabler_match_event_counter(struct lttng_event_counter_enabler *event_counter_enabler,
-		struct lttng_ust_event_counter *event_counter)
-{
-	if (lttng_desc_match_enabler(event_counter->parent->priv->desc,
-			&event_counter_enabler->parent.parent)
-			&& event_counter->chan == event_counter_enabler->chan
-			&& match_event_session_token(&event_counter->priv->parent, event_counter_enabler->parent.parent.user_token))
-		return 1;
-	else
-		return 0;
+		return false;
 }
 
 static
 int lttng_event_notifier_enabler_match_event_notifier(
 		struct lttng_event_notifier_enabler *event_notifier_enabler,
-		struct lttng_ust_event_notifier *event_notifier)
+		struct lttng_ust_event_notifier_private *event_notifier_priv)
 {
-	int desc_matches = lttng_desc_match_enabler(event_notifier->priv->parent.desc,
+	int desc_matches = lttng_desc_match_enabler(event_notifier_priv->parent.desc,
 		lttng_event_notifier_enabler_as_enabler(event_notifier_enabler));
 
-	if (desc_matches && event_notifier->priv->group == event_notifier_enabler->group &&
-			event_notifier->priv->parent.user_token == event_notifier_enabler->parent.user_token)
+	if (desc_matches && event_notifier_priv->group == event_notifier_enabler->group &&
+			event_notifier_priv->parent.user_token == event_notifier_enabler->parent.user_token)
 		return 1;
 	else
 		return 0;
 }
 
 static
-int lttng_event_enabler_match_event(
+bool lttng_event_enabler_match_event(
 		struct lttng_event_enabler_common *event_enabler,
 		struct lttng_ust_event_common *event)
 {
 	switch (event_enabler->enabler_type) {
-	case LTTNG_EVENT_ENABLER_TYPE_RECORDER:
+	case LTTNG_EVENT_ENABLER_TYPE_RECORDER:		/* Fall-through */
+	case LTTNG_EVENT_ENABLER_TYPE_COUNTER:
 	{
-		struct lttng_event_recorder_enabler *event_recorder_enabler =
-			caa_container_of(event_enabler, struct lttng_event_recorder_enabler, parent.parent);
-		struct lttng_ust_event_recorder *event_recorder =
-			(struct lttng_ust_event_recorder *) event->child;
-		return lttng_event_recorder_enabler_match_event_recorder(event_recorder_enabler, event_recorder);
+		struct lttng_event_enabler_session_common *event_enabler_session =
+			caa_container_of(event_enabler, struct lttng_event_enabler_session_common, parent);
+		struct lttng_ust_event_session_common_private *event_session_priv =
+			caa_container_of(event->priv, struct lttng_ust_event_session_common_private, parent);
+		return lttng_event_session_enabler_match_event_session(event_enabler_session, event_session_priv);
 	}
 	case LTTNG_EVENT_ENABLER_TYPE_NOTIFIER:
 	{
 		struct lttng_event_notifier_enabler *event_notifier_enabler =
 			caa_container_of(event_enabler, struct lttng_event_notifier_enabler, parent);
-		struct lttng_ust_event_notifier *event_notifier =
-			(struct lttng_ust_event_notifier *) event->child;
-		return lttng_event_notifier_enabler_match_event_notifier(event_notifier_enabler, event_notifier);
-	}
-	case LTTNG_EVENT_ENABLER_TYPE_COUNTER:
-	{
-		struct lttng_event_counter_enabler *event_counter_enabler =
-			caa_container_of(event_enabler, struct lttng_event_counter_enabler, parent.parent);
-		struct lttng_ust_event_counter *event_counter =
-			(struct lttng_ust_event_counter *) event->child;
-		return lttng_event_counter_enabler_match_event_counter(event_counter_enabler, event_counter);
+		struct lttng_ust_event_notifier_private *event_notifier_priv =
+			caa_container_of(event->priv, struct lttng_ust_event_notifier_private, parent);
+		return lttng_event_notifier_enabler_match_event_notifier(event_notifier_enabler, event_notifier_priv);
 	}
 	}
-	return 0;
+	return false;
 }
 
 static
