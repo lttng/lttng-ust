@@ -71,7 +71,7 @@ static int counter_add(struct lttng_ust_channel_counter *counter,
 static int event_counter_add(struct lttng_ust_event_counter *event_counter, int64_t v)
 {
 	struct lttng_ust_channel_counter *counter = event_counter->chan;
-	size_t index = event_counter->priv->counter_index;
+	size_t index = event_counter->priv->parent.id;
 
 	return counter_add(counter, &index, v);
 }

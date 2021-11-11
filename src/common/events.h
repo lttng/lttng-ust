@@ -310,13 +310,14 @@ struct lttng_ust_event_session_common_private {
 	struct lttng_ust_ctx *ctx;
 
 	struct lttng_ust_channel_common *chan;
+
+	uint64_t id;				/* Event id */
 };
 
 struct lttng_ust_event_recorder_private {
 	struct lttng_ust_event_session_common_private parent;
 
 	struct lttng_ust_event_recorder *pub;	/* Public event interface */
-	unsigned int id;
 };
 
 struct lttng_ust_event_counter_private {
@@ -324,7 +325,6 @@ struct lttng_ust_event_counter_private {
 
 	struct lttng_ust_event_counter *pub;	/* Public event interface */
 	char key[LTTNG_KEY_TOKEN_STRING_LEN_MAX];
-	uint64_t counter_index;
 };
 
 struct lttng_ust_event_notifier_private {

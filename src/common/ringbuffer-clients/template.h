@@ -687,7 +687,7 @@ int lttng_event_reserve(struct lttng_ust_ring_buffer_ctx *ctx)
 	struct lttng_ust_ring_buffer_ctx_private *private_ctx;
 	uint32_t event_id;
 
-	event_id = event_recorder->priv->id;
+	event_id = (uint32_t) event_recorder->priv->parent.id;
 	client_ctx.chan_ctx = lttng_ust_rcu_dereference(lttng_chan->priv->ctx);
 	client_ctx.event_ctx = lttng_ust_rcu_dereference(event_recorder->priv->parent.ctx);
 	/* Compute internal size of context structures. */

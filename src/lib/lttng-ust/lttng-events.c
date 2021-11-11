@@ -965,15 +965,13 @@ int lttng_event_register_to_sessiond(struct lttng_event_enabler_common *event_en
 		struct lttng_ust_event_recorder_private *event_recorder_priv =
 			caa_container_of(event->priv, struct lttng_ust_event_recorder_private, parent.parent);
 		struct lttng_ust_session *session = event_recorder_enabler->chan->parent->session;
-		uint64_t id;
-		int ret;
 
 		notify_socket = lttng_get_notify_socket(session->priv->owner);
 		if (notify_socket < 0)
 			return notify_socket;
 
 		/* Fetch event ID from sessiond */
-		ret = ustcomm_register_event(notify_socket,
+		return ustcomm_register_event(notify_socket,
 			session,
 			session->priv->objd,
 			event_recorder_enabler->chan->priv->parent.objd,
@@ -984,11 +982,7 @@ int lttng_event_register_to_sessiond(struct lttng_event_enabler_common *event_en
 			desc->tp_class->fields,
 			uri,
 			0,
-			&id);
-		if (ret)
-			return ret;
-		event_recorder_priv->id = id;
-		return 0;
+			&event_recorder_priv->parent.id);
 	}
 
 	case LTTNG_EVENT_ENABLER_TYPE_NOTIFIER:
@@ -1018,7 +1012,7 @@ int lttng_event_register_to_sessiond(struct lttng_event_enabler_common *event_en
 			desc->tp_class->fields,
 			uri,
 			event_counter_enabler->parent.parent.user_token,
-			&event_counter_priv->counter_index);
+			&event_counter_priv->parent.id);
 	}
 	default:
 		return -EINVAL;
