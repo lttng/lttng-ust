@@ -2681,8 +2681,7 @@ signature_error:
  * Returns 0 on success, negative error value on error.
  */
 int lttng_ust_ctl_reply_register_event(int sock,
-	uint32_t event_id,
-	uint64_t counter_index,
+	uint64_t id,
 	int ret_code)
 {
 	ssize_t len;
@@ -2694,8 +2693,8 @@ int lttng_ust_ctl_reply_register_event(int sock,
 	memset(&reply, 0, sizeof(reply));
 	reply.header.notify_cmd = LTTNG_UST_CTL_NOTIFY_CMD_EVENT;
 	reply.r.ret_code = ret_code;
-	reply.r.event_id = event_id;
-	reply.r.counter_index = counter_index;
+	reply.r.old_event_id = (uint32_t) id;	/* For backward compatibility */
+	reply.r.id = id;
 	len = ustcomm_send_unix_sock(sock, &reply, sizeof(reply));
 	if (len > 0 && len != sizeof(reply))
 		return -EIO;

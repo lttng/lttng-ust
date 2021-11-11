@@ -147,8 +147,10 @@ struct ustcomm_notify_event_msg {
 #define USTCOMM_NOTIFY_EVENT_REPLY_PADDING	24
 struct ustcomm_notify_event_reply {
 	int32_t ret_code;	/* 0: ok, negative: error code */
-	uint32_t event_id;	/* for ring buffer channel events */
-	uint64_t counter_index;	/* for counter channel events */
+
+	/* 32-bit (lower bits) event id for backward compatibility with ABI major < 10 */
+	uint32_t old_event_id;	/* TODO: remove field on future protocol compatibility break. */
+	uint64_t id;		/* 64-bit event id.  */
 	char padding[USTCOMM_NOTIFY_EVENT_REPLY_PADDING];
 } __attribute__((packed));
 
@@ -290,8 +292,7 @@ int ustcomm_register_event(int sock,
 	const struct lttng_ust_event_field * const *fields,
 	const char *model_emf_uri,
 	uint64_t user_token,
-	uint32_t *id,			/* event id (output) */
-	uint64_t *counter_index)	/* counter index (output) */
+	uint64_t *id)			/* (output) */
 	__attribute__((visibility("hidden")));
 
 /*

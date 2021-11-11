@@ -543,8 +543,7 @@ int lttng_ust_ctl_recv_register_event(int sock,
  * Returns 0 on success, negative error value on error.
  */
 int lttng_ust_ctl_reply_register_event(int sock,
-	uint32_t event_id,		/* event id (input) */
-	uint64_t counter_index,		/* counter index (input) */
+	uint64_t id,			/* id (input) */
 	int ret_code);			/* return code. 0 ok, negative error */
 
 /*

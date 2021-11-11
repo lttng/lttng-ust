@@ -1370,8 +1370,7 @@ int ustcomm_register_event(int sock,
 	const struct lttng_ust_event_field * const *lttng_fields,
 	const char *model_emf_uri,
 	uint64_t user_token,
-	uint32_t *event_id,		/* event id (output) */
-	uint64_t *counter_index)	/* counter index (output) */
+	uint64_t *id)			/* event id (output) */
 {
 	ssize_t len;
 	struct {
@@ -1478,12 +1477,9 @@ int ustcomm_register_event(int sock,
 			return -EINVAL;
 		if (reply.r.ret_code < 0)
 			return reply.r.ret_code;
-		if (event_id)
-			*event_id = reply.r.event_id;
-		if (counter_index)
-			*counter_index = reply.r.counter_index;
-		DBG("Sent register event notification for name \"%s\": ret_code %d, event_id %u, counter_index %" PRIu64 "\n",
-			event_name, reply.r.ret_code, reply.r.event_id, reply.r.counter_index);
+		*id = reply.r.id;
+		DBG("Sent register event notification for name \"%s\": ret_code %d, id %" PRIu64 "\n",
+			event_name, reply.r.ret_code, reply.r.id);
 		return 0;
 	default:
 		if (len < 0) {
