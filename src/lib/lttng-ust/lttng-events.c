@@ -944,27 +944,27 @@ int lttng_event_register_to_sessiond(struct lttng_event_enabler_common *event_en
 		struct lttng_ust_event_common *event,
 		const char *name)
 {
-	const struct lttng_ust_event_desc *desc = event->priv->desc;
-	int notify_socket, loglevel;
-	const char *uri;
-
-	if (desc->loglevel)
-		loglevel = *(*desc->loglevel);
-	else
-		loglevel = LTTNG_UST_TRACEPOINT_LOGLEVEL_DEFAULT;
-	if (desc->model_emf_uri)
-		uri = *(desc->model_emf_uri);
-	else
-		uri = NULL;
-
 	switch (event_enabler->enabler_type) {
-	case LTTNG_EVENT_ENABLER_TYPE_RECORDER:
+	case LTTNG_EVENT_ENABLER_TYPE_RECORDER:		/* Fall-through */
+	case LTTNG_EVENT_ENABLER_TYPE_COUNTER:
 	{
-		struct lttng_event_recorder_enabler *event_recorder_enabler =
-			caa_container_of(event_enabler, struct lttng_event_recorder_enabler, parent.parent);
-		struct lttng_ust_event_recorder_private *event_recorder_priv =
-			caa_container_of(event->priv, struct lttng_ust_event_recorder_private, parent.parent);
-		struct lttng_ust_session *session = event_recorder_enabler->chan->parent->session;
+		struct lttng_event_enabler_session_common *event_enabler_session =
+			caa_container_of(event_enabler, struct lttng_event_enabler_session_common, parent);
+		struct lttng_ust_event_session_common_private *event_session_priv =
+			caa_container_of(event->priv, struct lttng_ust_event_session_common_private, parent);
+		struct lttng_ust_session *session = event_enabler_session->chan->session;
+		const struct lttng_ust_event_desc *desc = event->priv->desc;
+		int notify_socket, loglevel;
+		const char *uri;
+
+		if (desc->loglevel)
+			loglevel = *(*desc->loglevel);
+		else
+			loglevel = LTTNG_UST_TRACEPOINT_LOGLEVEL_DEFAULT;
+		if (desc->model_emf_uri)
+			uri = *(desc->model_emf_uri);
+		else
+			uri = NULL;
 
 		notify_socket = lttng_get_notify_socket(session->priv->owner);
 		if (notify_socket < 0)
@@ -974,46 +974,19 @@ int lttng_event_register_to_sessiond(struct lttng_event_enabler_common *event_en
 		return ustcomm_register_event(notify_socket,
 			session,
 			session->priv->objd,
-			event_recorder_enabler->chan->priv->parent.objd,
+			event_enabler_session->chan->priv->objd,
 			name,
 			loglevel,
 			desc->tp_class->signature,
 			desc->tp_class->nr_fields,
 			desc->tp_class->fields,
 			uri,
-			0,
-			&event_recorder_priv->parent.id);
+			event_enabler_session->parent.user_token,
+			&event_session_priv->id);
 	}
 
 	case LTTNG_EVENT_ENABLER_TYPE_NOTIFIER:
 		return 0;
-
-	case LTTNG_EVENT_ENABLER_TYPE_COUNTER:
-	{
-		struct lttng_event_counter_enabler *event_counter_enabler =
-			caa_container_of(event_enabler, struct lttng_event_counter_enabler, parent.parent);
-		struct lttng_ust_session *session = event_counter_enabler->chan->parent->session;
-		struct lttng_ust_event_counter_private *event_counter_priv =
-			caa_container_of(event->priv, struct lttng_ust_event_counter_private, parent.parent);
-
-		notify_socket = lttng_get_notify_socket(session->priv->owner);
-		if (notify_socket < 0)
-			return notify_socket;
-
-		/* Fetch event ID from sessiond */
-		return ustcomm_register_event(notify_socket,
-			session,
-			session->priv->objd,
-			event_counter_enabler->chan->priv->parent.objd,
-			name,
-			loglevel,
-			desc->tp_class->signature,
-			desc->tp_class->nr_fields,
-			desc->tp_class->fields,
-			uri,
-			event_counter_enabler->parent.parent.user_token,
-			&event_counter_priv->parent.id);
-	}
 	default:
 		return -EINVAL;
 	}
