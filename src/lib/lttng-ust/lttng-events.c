@@ -724,23 +724,36 @@ int format_event_key(struct lttng_event_enabler_common *event_enabler, char *key
 }
 
 static
-bool match_event_recorder_token(struct lttng_ust_event_recorder *event_recorder,
-		uint64_t token)
+bool match_event_key(struct lttng_ust_event_common *event, const char *key_string)
 {
-	if (event_recorder->chan->priv->parent.coalesce_hits)
+	switch (event->type) {
+	case LTTNG_UST_EVENT_TYPE_RECORDER:	/* Fall-through */
+	case LTTNG_UST_EVENT_TYPE_NOTIFIER:
 		return true;
-	if (event_recorder->priv->parent.parent.user_token == token)
-		return true;
-	return false;
+
+	case LTTNG_UST_EVENT_TYPE_COUNTER:
+	{
+		struct lttng_ust_event_counter_private *event_counter_priv =
+			caa_container_of(event->priv, struct lttng_ust_event_counter_private, parent.parent);
+
+		if (key_string[0] == '\0')
+			return true;
+		return !strcmp(key_string, event_counter_priv->key);
+	}
+
+	default:
+		WARN_ON_ONCE(1);
+		return false;
+	}
 }
 
 static
-bool match_event_counter_token(struct lttng_ust_event_counter *event_counter,
+bool match_event_session_token(struct lttng_ust_event_session_common_private *event_session_priv,
 		uint64_t token)
 {
-	if (event_counter->chan->priv->parent.coalesce_hits)
+	if (event_session_priv->chan->priv->coalesce_hits)
 		return true;
-	if (event_counter->priv->parent.parent.user_token == token)
+	if (event_session_priv->parent.user_token == token)
 		return true;
 	return false;
 }
@@ -999,23 +1012,29 @@ bool lttng_event_enabler_event_desc_key_match_event(struct lttng_event_enabler_c
 		struct lttng_ust_event_common *event)
 {
 	switch (event_enabler->enabler_type) {
-	case LTTNG_EVENT_ENABLER_TYPE_RECORDER:
+	case LTTNG_EVENT_ENABLER_TYPE_RECORDER:		/* Fall-through */
+	case LTTNG_EVENT_ENABLER_TYPE_COUNTER:
 	{
-		struct lttng_event_recorder_enabler *event_recorder_enabler =
-			caa_container_of(event_enabler, struct lttng_event_recorder_enabler, parent.parent);
-		struct lttng_ust_event_recorder *event_recorder = event->child;
-		bool same_event = false, same_channel = false, same_token = false;
+		struct lttng_event_enabler_session_common *event_session_enabler =
+			caa_container_of(event_enabler, struct lttng_event_enabler_session_common, parent);
+		struct lttng_ust_event_session_common_private *event_session_priv =
+			caa_container_of(event->priv, struct lttng_ust_event_session_common_private, parent);
+		bool same_event = false, same_channel = false, same_key = false,
+				same_token = false;
 
 		WARN_ON_ONCE(!event->priv->desc);
 		if (event->priv->desc == desc)
 			same_event = true;
-		if (event_recorder_enabler->chan == event_recorder->chan) {
+		if (event_session_enabler->chan == event_session_priv->chan) {
 			same_channel = true;
-			if (match_event_recorder_token(event_recorder, event_enabler->user_token))
+			if (match_event_session_token(event_session_priv, event_enabler->user_token))
 				same_token = true;
 		}
-		return same_event && same_channel && same_token;
+		if (match_event_key(event, key_string))
+			same_key = true;
+		return same_event && same_channel && same_key && same_token;
 	}
+
 	case LTTNG_EVENT_ENABLER_TYPE_NOTIFIER:
 	{
 		/*
@@ -1025,26 +1044,7 @@ bool lttng_event_enabler_event_desc_key_match_event(struct lttng_event_enabler_c
 		 */
 		return event->priv->desc == desc && event->priv->user_token == event_enabler->user_token;
 	}
-	case LTTNG_EVENT_ENABLER_TYPE_COUNTER:
-	{
-		struct lttng_event_counter_enabler *event_counter_enabler =
-			caa_container_of(event_enabler, struct lttng_event_counter_enabler, parent.parent);
-		struct lttng_ust_event_counter *event_counter = event->child;
-		bool same_event = false, same_channel = false, same_key = false,
-				same_token = false;
 
-		WARN_ON_ONCE(!event->priv->desc);
-		if (event->priv->desc == desc)
-			same_event = true;
-		if (event_counter_enabler->chan == event_counter->chan) {
-			same_channel = true;
-			if (match_event_counter_token(event_counter, event_enabler->user_token))
-				same_token = true;
-		}
-		if (key_string[0] == '\0' || !strcmp(key_string, event_counter->priv->key))
-			same_key = true;
-		return same_event && same_channel && same_key && same_token;
-	}
 	default:
 		WARN_ON_ONCE(1);
 		return false;
@@ -1223,7 +1223,7 @@ int lttng_event_counter_enabler_match_event_counter(struct lttng_event_counter_e
 	if (lttng_desc_match_enabler(event_counter->parent->priv->desc,
 			&event_counter_enabler->parent.parent)
 			&& event_counter->chan == event_counter_enabler->chan
-			&& match_event_counter_token(event_counter, event_counter_enabler->parent.parent.user_token))
+			&& match_event_session_token(&event_counter->priv->parent, event_counter_enabler->parent.parent.user_token))
 		return 1;
 	else
 		return 0;
