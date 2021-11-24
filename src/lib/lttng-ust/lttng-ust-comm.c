@@ -259,7 +259,7 @@ struct sock_info {
 	int statedump_pending;
 	int initial_statedump_done;
 	/* Keep procname for statedump */
-	char procname[LTTNG_UST_ABI_PROCNAME_LEN];
+	char procname[LTTNG_UST_CONTEXT_PROCNAME_LEN];
 };
 
 /* Socket from app (connect) to session daemon (listen) for communication */
@@ -482,7 +482,7 @@ int setup_global_apps(void)
 	}
 
 	global_apps.allowed = 1;
-	lttng_pthread_getname_np(global_apps.procname, LTTNG_UST_ABI_PROCNAME_LEN);
+	lttng_pthread_getname_np(global_apps.procname, LTTNG_UST_CONTEXT_PROCNAME_LEN);
 error:
 	return ret;
 }
@@ -528,7 +528,7 @@ int setup_local_apps(void)
 		goto end;
 	}
 
-	lttng_pthread_getname_np(local_apps.procname, LTTNG_UST_ABI_PROCNAME_LEN);
+	lttng_pthread_getname_np(local_apps.procname, LTTNG_UST_CONTEXT_PROCNAME_LEN);
 end:
 	return ret;
 }

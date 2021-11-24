@@ -18,6 +18,13 @@
 #include "common/macros.h"
 #include "common/ust-context-provider.h"
 
+/*
+ * The context procname length is part of the LTTng-UST ABI.
+ * TODO: At the next breaking protocol bump, all users of this macro
+ * should instead use LTTNG_UST_ABI_PROCNAME_LEN.
+ */
+#define LTTNG_UST_CONTEXT_PROCNAME_LEN	17
+
 struct lttng_ust_abi_obj;
 struct lttng_event_notifier_group;
 
