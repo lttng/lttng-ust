@@ -88,7 +88,7 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_ust_statedump, procname,
 	),
 	LTTNG_UST_TP_FIELDS(
 		lttng_ust_field_unused(session)
-		lttng_ust_field_array_text(char, procname, name, LTTNG_UST_ABI_PROCNAME_LEN)
+		lttng_ust_field_array_text(char, procname, name, LTTNG_UST_CONTEXT_PROCNAME_LEN)
 	)
 )
 
