@@ -65,9 +65,12 @@
  *   static assertion. This parameter must be a valid C identifier as it will
  *   be used as a typedef name.
  */
-#if defined (__cplusplus) || __STDC_VERSION__ >= 201112L
+#ifdef __cplusplus
 #define lttng_ust_static_assert(predicate, msg, c_identifier_msg)  \
 	static_assert(predicate, msg)
+#elif __STDC_VERSION__ >= 201112L
+#define lttng_ust_static_assert(predicate, msg, c_identifier_msg)  \
+	_Static_assert(predicate, msg)
 #else
 /*
  * Evaluates the predicate and emit a compilation error on failure.
