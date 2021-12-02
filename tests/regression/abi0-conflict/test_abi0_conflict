@@ -26,11 +26,21 @@ STD_ERROR="/dev/null"
 
 NUM_TESTS=22
 
+# Set this variable to disable tests that rely on a library using a symbol from
+# the global offset table even if it provides its own copy, which is the
+# default behavior on Linux. This happens when using the '-Bsymbolic-functions'
+# linker flag.
+UST_TESTS_LD_SYMBOLIC_FUNC=${UST_TESTS_LD_SYMBOLIC_FUNC:-}
+
 # On FreeBSD, symbol resolution when dlopening a shared object will always
 # favor symbols local to this shared object and thus our canary function will
 # never be called which breaks our abi conflict detection when abi1 is loaded
 # first.
 if [ "$UST_OS_TYPE" = "freebsd" ]; then
+	UST_TESTS_LD_SYMBOLIC_FUNC=1
+fi
+
+if [ "$UST_TESTS_LD_SYMBOLIC_FUNC" != "" ]; then
 	NUM_TESTS=$((NUM_TESTS - 4))
 fi
 
@@ -92,7 +102,7 @@ ok $? "dlopen: no-ust app with abi1 and abi1 succeeds"
 LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_noust_dlopen" abi0_abi1 >"$STD_OUTPUT" 2>"$STD_ERROR"
 isnt $? 0 "dlopen: no-ust app with abi0 and abi1 fails"
 
-if [ "$UST_OS_TYPE" != "freebsd" ]; then
+if [ "$UST_TESTS_LD_SYMBOLIC_FUNC" = "" ]; then
     LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_noust_dlopen" abi1_abi0 >"$STD_OUTPUT" 2>"$STD_ERROR"
     isnt $? 0 "dlopen: no-ust app with abi1 and abi0 fails"
 fi
@@ -102,7 +112,7 @@ fi
 LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_ust_dlopen" abi1 >"$STD_OUTPUT" 2>"$STD_ERROR"
 ok $? "dlopen: ust app works"
 
-if [ "$UST_OS_TYPE" != "freebsd" ]; then
+if [ "$UST_TESTS_LD_SYMBOLIC_FUNC" = "" ]; then
     LD_LIBRARY_PATH="$LIBFAKEUST0_PATH:$LIBUST1_PATH" "${CURDIR}/app_ust_dlopen" abi0 >"$STD_OUTPUT" 2>"$STD_ERROR"
     isnt $? 0 "dlopen: ust app with abi0 fails"
 
