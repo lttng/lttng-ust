@@ -1169,13 +1169,24 @@ static struct lttng_ust_registered_probe *LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust
  * linking the probe statically.
  *
  * Register refcount is protected by libc dynamic loader mutex.
+ *
+ * Note that when building this code as C++, the definition of constructors
+ * and destructors invoking the registration and unregistration functions
+ * must be performed _after_ the initialization of the probes.
+ *
+ * This is because we rely on the order of initialization of static variables
+ * and anonymous namespaces (their order of declaration) to ensure probes are
+ * fully initialized, see
+ * https://en.cppreference.com/w/cpp/language/initialization. This is especially
+ * important when LTTNG_UST_ALLOCATE_COMPOUND_LITERAL_ON_HEAP is defined as
+ * compound literals are then dynamically initialized.
  */
 
 /* Reset all macros within LTTNG_UST_TRACEPOINT_EVENT */
 #include <lttng/ust-tracepoint-event-reset.h>
+
 static void
-LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__events_init__, LTTNG_UST_TRACEPOINT_PROVIDER)(void)
-	lttng_ust_notrace __attribute__((constructor));
+LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__events_init__, LTTNG_UST_TRACEPOINT_PROVIDER)(void) lttng_ust_notrace;
 static void
 LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__events_init__, LTTNG_UST_TRACEPOINT_PROVIDER)(void)
 {
@@ -1204,8 +1215,7 @@ LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__events_init__, LTTNG_UST_TRACEPOINT_PROV
 }
 
 static void
-LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__events_exit__, LTTNG_UST_TRACEPOINT_PROVIDER)(void)
-	lttng_ust_notrace __attribute__((destructor));
+LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__events_exit__, LTTNG_UST_TRACEPOINT_PROVIDER)(void) lttng_ust_notrace;
 static void
 LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__events_exit__, LTTNG_UST_TRACEPOINT_PROVIDER)(void)
 {
@@ -1216,6 +1226,12 @@ LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__events_exit__, LTTNG_UST_TRACEPOINT_PROV
 	lttng_ust_probe_unregister(LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__probe_register_cookie___, LTTNG_UST_TRACEPOINT_PROVIDER));
 	LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__probe_register_cookie___, LTTNG_UST_TRACEPOINT_PROVIDER) = NULL;
 }
+
+LTTNG_UST_DECLARE_CONSTRUCTOR_DESTRUCTOR(
+	LTTNG_UST_TRACEPOINT_PROVIDER,
+	LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__events_init__, LTTNG_UST_TRACEPOINT_PROVIDER),
+	LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust__events_exit__, LTTNG_UST_TRACEPOINT_PROVIDER),
+	lttng_ust_notrace)
 
 /*
  * LTTNG_UST_TRACEPOINT_PROVIDER_HIDDEN_DEFINITION: Define this before
