@@ -1170,8 +1170,7 @@ void cleanup_sock_info(struct sock_info *sock_info, int exiting)
 		}
 		sock_info->root_handle = -1;
 	}
-	sock_info->registration_done = 0;
-	sock_info->initial_statedump_done = 0;
+
 
 	/*
 	 * wait_shm_mmap, socket and notify socket are used by listener
@@ -1182,6 +1181,9 @@ void cleanup_sock_info(struct sock_info *sock_info, int exiting)
 	 */
 	if (exiting)
 		return;
+
+	sock_info->registration_done = 0;
+	sock_info->initial_statedump_done = 0;
 
 	if (sock_info->socket != -1) {
 		ret = ustcomm_close_unix_sock(sock_info->socket);
