@@ -86,4 +86,56 @@
     typedef char lttng_ust_static_assert_##c_identifier_msg[2*!!(predicate)-1]
 #endif
 
+/*
+ * Wrap constructor and destructor functions to invoke them as functions with
+ * the constructor/destructor GNU C attributes when building as C, or as the
+ * constructor/destructor of a variable defined within an anonymous namespace
+ * when building as C++.
+ */
+#ifdef __cplusplus
+#define LTTNG_UST_DECLARE_CONSTRUCTOR_DESTRUCTOR(name, constructor_func,        \
+						 destructor_func, ...)          \
+namespace lttng {                                                               \
+namespace ust {                                                                 \
+namespace details {                                                             \
+class LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_constructor_destructor_,           \
+				   name) {                                      \
+public:                                                                         \
+	LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_constructor_destructor_,         \
+				     name)() __VA_ARGS__        \
+	{                                                                       \
+		constructor_func();                                             \
+	}                                                                       \
+	~LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_constructor_destructor_,        \
+                                      name)() __VA_ARGS__       \
+	{                                                                       \
+		destructor_func();                                              \
+	}                                                                       \
+};                                                                              \
+}                                                                               \
+}                                                                               \
+}                                                                               \
+                                                                                \
+namespace {                                                                     \
+const lttng::ust::details::LTTNG_UST__TP_COMBINE_TOKENS(                        \
+	lttng_ust_constructor_destructor_, name)                                \
+		LTTNG_UST__TP_COMBINE_TOKENS(name, registration_instance);      \
+}
+#else /* __cplusplus */
+#define LTTNG_UST_DECLARE_CONSTRUCTOR_DESTRUCTOR(name, constructor_func,             \
+						 destructor_func, ...)               \
+	static void LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_constructor_, name)(void) \
+		__attribute__((constructor)) __VA_ARGS__;            \
+	static void LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_constructor_, name)(void) \
+	{                                                                            \
+		constructor_func();                                                  \
+	}                                                                            \
+	static void LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_destructor_, name)(void)  \
+		__attribute__((destructor)) __VA_ARGS__;             \
+	static void LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_destructor_, name)(void)  \
+	{                                                                            \
+		destructor_func();                                                   \
+	}
+#endif
+
 #endif /* _LTTNG_UST_COMPILER_H */
