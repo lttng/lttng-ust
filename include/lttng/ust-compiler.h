@@ -32,8 +32,8 @@
  * g++ 4.8 and prior do not support C99 compound literals. Therefore,
  * force allocating those on the heap with these C++ compilers.
  */
-#if defined (__cplusplus) && defined (__GNUC__) && \
-	(__GNUC__ < 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ <= 8))
+#if defined (__cplusplus) && !defined (__clang__) && defined (__GNUC__) && \
+	((__GNUC__ < 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ <= 8)))
 # ifndef LTTNG_UST_ALLOCATE_COMPOUND_LITERAL_ON_HEAP
 #  define LTTNG_UST_ALLOCATE_COMPOUND_LITERAL_ON_HEAP
 # endif

@@ -194,7 +194,7 @@ human-readable text log.
 
 Since LTTng-UST 2.3, both tracepoints and tracepoint providers can be
 compiled in C++. To compile tracepoint probes in C++, you need
-G++ >= 4.7 or Clang. The C++ compilers need to support C++11.
+G++ >= 4.7 or Clang >= 4.0. The C++ compilers need to support C++11.
 
 
 Contact
