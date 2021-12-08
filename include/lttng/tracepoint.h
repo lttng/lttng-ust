@@ -26,6 +26,10 @@
 #include <lttng/ust-tracer.h>
 #include <lttng/ust-api-compat.h>
 
+#if (defined(__cplusplus) && (__cplusplus <= 199711L))
+#error "C++11 support is required to build tracepoints and providers as C++"
+#endif
+
 #define LTTNG_UST_TRACEPOINT_NAME_LEN_MAX	256
 
 #ifdef LTTNG_UST_HAVE_SDT_INTEGRATION
