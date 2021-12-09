@@ -78,8 +78,6 @@ void _lttng_ust_fd_ctor(void)
 static
 void _lttng_ust_fd_ctor(void)
 {
-	lttng_ust_common_ctor();
-
 	/*
 	 * Initialize the function pointers to the original libc symbols in the
 	 * constructor since close() has to stay async-signal-safe and as such,
