@@ -106,17 +106,17 @@ namespace details {								\
 class LTTNG_UST_COMPILER_COMBINE_TOKENS(lttng_ust_constructor_destructor_,      \
 				   name) {					\
 public:										\
-	LTTNG_UST_COMPILER_COMBINE_TOKENS(lttng_ust_constructor_destructor_,    \
-				     name)() __VA_ARGS__			\
-	{									\
-		constructor_func();						\
-	}									\
-	~LTTNG_UST_COMPILER_COMBINE_TOKENS(lttng_ust_constructor_destructor_,   \
-				      name)() __VA_ARGS__			\
-	{									\
-		destructor_func();						\
-	}									\
+	LTTNG_UST_COMPILER_COMBINE_TOKENS(lttng_ust_constructor_destructor_, name)() __VA_ARGS__; \
+	~LTTNG_UST_COMPILER_COMBINE_TOKENS(lttng_ust_constructor_destructor_, name)() __VA_ARGS__; \
 };										\
+LTTNG_UST_COMPILER_COMBINE_TOKENS(lttng_ust_constructor_destructor_, name)::LTTNG_UST_COMPILER_COMBINE_TOKENS(lttng_ust_constructor_destructor_, name)() \
+{										\
+	constructor_func();							\
+}										\
+LTTNG_UST_COMPILER_COMBINE_TOKENS(lttng_ust_constructor_destructor_, name)::~LTTNG_UST_COMPILER_COMBINE_TOKENS(lttng_ust_constructor_destructor_, name)() \
+{										\
+	destructor_func();							\
+}										\
 }										\
 }										\
 }										\
