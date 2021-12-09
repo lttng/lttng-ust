@@ -6,7 +6,7 @@
 
 #include <pthread.h>
 #include <errno.h>
-#include <error.h>
+#include <string.h>
 #include <urcu/tls-compat.h>
 #include <lttng/ust-cancelstate.h>
 #include <usterr-signal-safe.h>
