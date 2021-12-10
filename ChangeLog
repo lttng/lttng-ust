@@ -1,3 +1,23 @@
+2021-12-10 (Lost and Found Day) lttng-ust 2.13.1
+	* Fix: ust-compiler: constructor/destructor build on g++ 4.8
+	* ust-compiler: constructor/destructor whitespaces layout and macro dependency
+	* Fix: ust-cancelstate: include string.h for strerror
+	* Fix: libnuma is prepended to LIBS
+	* fix: Allow disabling some abi compat tests
+	* Fix: generate probe registration constructor as a C++ constuctor
+	* Fix: nestable pthread cancelstate
+	* Fix: abort on decrement_sem_count during concurrent tracing start and teardown
+	* fix: allocating C++ compound literal on heap with Clang
+	* Check for C++11 when building C++ probe providers
+	* fix: liblttng-ust-fd async-signal-safe close()
+	* tracepoints: print debug message when lttng-ust-tracepoint.so is not found
+	* Fix: static_assert unavailable with glibc < 2.16
+	* Fix: combined tracing of lttng-ust 2.12/2.13 generates corrupted traces
+	* doc/man: Document LTTNG_UST_ABORT_ON_CRITICAL variable
+	* fix: remove autoconf features default value in help message
+	* Set git-review branch to stable-2.13
+	* Fix: add extern "C" to two header files
+
 2021-08-02 (Ice Cream Sandwich Day) lttng-ust 2.13.0
 	* No change
 
