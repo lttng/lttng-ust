@@ -1,3 +1,7 @@
+2022-01-05 (National Bird Day) lttng-ust 2.11.5
+	* Set git-review branch to stable-2.11
+	* fix: allow building with userspace-rcu 0.13
+
 2021-05-14 (National Dance Like a Chicken Day) lttng-ust 2.11.4
 	* tests: benchmark: improve benchmark scalability accuracy
 	* tests: benchmark: use cpu-bound workload, calculate average and std.dev.
