@@ -1,3 +1,14 @@
+2022-01-05 (National Bird Day) lttng-ust 2.12.3
+	* Fix: ust-cancelstate: include string.h for strerror
+	* Fix: lttng-ust-fd: remove lttng_ust_common_ctor call
+	* Fix: nestable pthread cancelstate
+	* Fix: abort on decrement_sem_count during concurrent tracing start and teardown
+	* fix: liblttng-ust-fd async-signal-safe close()
+	* Set git-review branch to stable-2.12
+	* fix: link benchmark with pthread
+	* Fix: liblttng-ust-ctl have dependencies on liburcu
+	* Fix: add extern "C" to two header files
+
 2021-05-15 (National Dance Like a Chicken Day) lttng-ust 2.12.2
 	* tests: benchmark: improve benchmark scalability accuracy
 	* tests: benchmark: use cpu-bound workload, calculate average and std.dev.
