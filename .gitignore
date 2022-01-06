@@ -133,9 +133,14 @@ cscope.*
 /src/lib/lttng-ust-java-agent/java/lttng-ust-agent-log4j/classnoinst.stamp
 /src/lib/lttng-ust-java-agent/java/lttng-ust-agent-log4j/log4j-jni-header.stamp
 /src/lib/lttng-ust-java-agent/java/lttng-ust-agent-log4j/*.jar
+/src/lib/lttng-ust-java-agent/java/lttng-ust-agent-log4j2/classnoinst.stamp
+/src/lib/lttng-ust-java-agent/java/lttng-ust-agent-log4j2/log4j-jni-header.stamp
+/src/lib/lttng-ust-java-agent/java/lttng-ust-agent-log4j2/*.jar
+/src/lib/lttng-ust-java-agent/java/lttng-ust-agent-log4j2/META-INF
 /src/lib/lttng-ust-java-agent/jni/common/org_lttng_ust_agent_context_LttngContextApi.h
 /src/lib/lttng-ust-java-agent/jni/jul/org_lttng_ust_agent_jul_LttngJulApi.h
 /src/lib/lttng-ust-java-agent/jni/log4j/org_lttng_ust_agent_log4j_LttngLog4jApi.h
+/src/lib/lttng-ust-java-agent/jni/log4j/org_lttng_ust_agent_log4j2_LttngLog4j2Api.h
 /src/lib/lttng-ust-java/classnoinst.stamp
 /src/lib/lttng-ust-java/jni-header.stamp
 
@@ -168,10 +173,12 @@ cscope.*
 /src/lib/lttng-ust-java-agent/java/lttng-ust-agent-common/Makefile
 /src/lib/lttng-ust-java-agent/java/lttng-ust-agent-jul/Makefile
 /src/lib/lttng-ust-java-agent/java/lttng-ust-agent-log4j/Makefile
+/src/lib/lttng-ust-java-agent/java/lttng-ust-agent-log4j2/Makefile
 /src/lib/lttng-ust-java-agent/jni/Makefile
 /src/lib/lttng-ust-java-agent/jni/common/Makefile
 /src/lib/lttng-ust-java-agent/jni/jul/Makefile
 /src/lib/lttng-ust-java-agent/jni/log4j/Makefile
+/src/lib/lttng-ust-java-agent/jni/log4j2/Makefile
 /src/lib/lttng-ust-java/Makefile
 /src/lib/lttng-ust-libc-wrapper/Makefile
 /src/lib/lttng-ust-pthread-wrapper/Makefile

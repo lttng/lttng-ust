@@ -8,8 +8,8 @@
 # This makefile is purposefully kept simple to support GNU and BSD make.
 #
 
-# Required JAR files for Log4j
-JARFILE_LOG4J=lttng-ust-agent-log4j.jar
+# Required JAR files for Log4j 2.x
+JARFILE_LOG4J2=lttng-ust-agent-log4j2.jar
 JARFILE_COMMON=lttng-ust-agent-common.jar
 
 # If system classpath is empty, try to guess log4j location
@@ -18,10 +18,10 @@ ifeq "$(CLASSPATH)" ""
 endif
 
 # Check if the top level makefile overrides the Log4j Jar file's path.
-ifeq "$(JAVA_CLASSPATH_OVERRIDE_LOG4J)" ""
-	LOG4J_CP = /usr/local/share/java/$(JARFILE_LOG4J):/usr/share/java/$(JARFILE_LOG4J)
+ifeq "$(JAVA_CLASSPATH_OVERRIDE_LOG4J2)" ""
+	LOG4J2_CP = /usr/local/share/java/$(JARFILE_LOG4J2):/usr/share/java/$(JARFILE_LOG4J2)
 else
-	LOG4J_CP = $(JAVA_CLASSPATH_OVERRIDE_LOG4J)/$(JARFILE_LOG4J)
+	LOG4J2_CP = $(JAVA_CLASSPATH_OVERRIDE_LOG4J2)/$(JARFILE_LOG4J2)
 endif
 
 # Check if the top level makefile overrides the Common Jar file's path.
@@ -32,12 +32,12 @@ else
 endif
 
 JFLAGS = -g
-JC = javac -classpath "$(CLASSPATH):$(LOG4J_CP):$(COMMON_CP):."
+JC = javac -classpath "$(CLASSPATH):$(LOG4J2_CP):$(COMMON_CP):."
 .SUFFIXES: .java .class
 .java.class:
 	$(JC) $(JFLAGS) $*.java
 
-CLASSES = HelloLog4j.java
+CLASSES = HelloLog4j2.java
 
 all: classes
 

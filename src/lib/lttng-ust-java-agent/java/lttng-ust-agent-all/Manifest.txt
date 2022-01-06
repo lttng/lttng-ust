@@ -5,4 +5,4 @@ Specification-Vendor: LTTng Project
 Implementation-Title: org.lttng.ust.agent.all
 Implementation-Version: 1.0.0
 Implementation-Vendor: LTTng Project
-Class-Path: lttng-ust-agent-common.jar lttng-ust-agent-jul.jar lttng-ust-agent-log4j.jar
+Class-Path: lttng-ust-agent-common.jar lttng-ust-agent-jul.jar lttng-ust-agent-log4j.jar lttng-ust-agent-log4j2.jar
