@@ -1,4 +1,6 @@
 #!/bin/bash
+#
+# SPDX-License-Identifier: MIT
 
 #
 # The -cp path should be changed to the lttng ust agent jar file on your system
@@ -8,23 +10,23 @@
 
 DIR=$(dirname "$0")
 JARFILE_COMMON="lttng-ust-agent-common.jar"
-JARFILE_LOG4J="lttng-ust-agent-log4j.jar"
+JARFILE_LOG4J2="lttng-ust-agent-log4j2.jar"
 JAVA_OPTIONS=""
 
 # If system classpath is empty, try to guess log4j location
 if [ "x$CLASSPATH" = "x" ]; then
-	CLASSPATH="/usr/local/share/java/log4j.jar:/usr/share/java/log4j.jar"
+	CLASSPATH="/usr/local/share/java/log4j-core.jar:/usr/share/java/log4j-core.jar:/usr/local/share/java/log4j-api.jar:/usr/share/java/log4j-api.jar"
 fi
 
 cd "$DIR" || exit 1
 
 if [ -f "$DIR/.intree" ]; then
-	CLASSPATH="$CLASSPATH:../../../liblttng-ust-java-agent/java/lttng-ust-agent-common/$JARFILE_COMMON"
-	CLASSPATH="$CLASSPATH:../../../liblttng-ust-java-agent/java/lttng-ust-agent-log4j/$JARFILE_LOG4J"
-	LIBPATH="../../../liblttng-ust-java-agent/jni/log4j/.libs"
+	CLASSPATH="$CLASSPATH:../../../lib/lttng-ust-java-agent/java/lttng-ust-agent-common/$JARFILE_COMMON"
+	CLASSPATH="$CLASSPATH:../../../lib/lttng-ust-java-agent/java/lttng-ust-agent-log4j2/$JARFILE_LOG4J2"
+	LIBPATH="../../../lib/lttng-ust-java-agent/jni/log4j/.libs"
 else
 	CLASSPATH="$CLASSPATH:/usr/local/share/java/$JARFILE_COMMON:/usr/share/java/$JARFILE_COMMON"
-	CLASSPATH="$CLASSPATH:/usr/local/share/java/$JARFILE_LOG4J:/usr/share/java/$JARFILE_LOG4J"
+	CLASSPATH="$CLASSPATH:/usr/local/share/java/$JARFILE_LOG4J2:/usr/share/java/$JARFILE_LOG4J2"
 	# Use system defined java.library.path
 	#LIBPATH="/usr/local/lib:/usr/lib"
 fi
@@ -33,4 +35,4 @@ if [ "x$LIBPATH" != "x" ]; then
 	JAVA_OPTIONS="$JAVA_OPTIONS -Djava.library.path=$LIBPATH"
 fi
 
-java -classpath "$CLASSPATH:." $JAVA_OPTIONS HelloLog4j
+java -classpath "$CLASSPATH:." $JAVA_OPTIONS HelloLog4j2

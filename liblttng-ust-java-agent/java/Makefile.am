@@ -7,3 +7,7 @@ endif
 if BUILD_JAVA_AGENT_WITH_LOG4J
 SUBDIRS += lttng-ust-agent-log4j
 endif
+
+if BUILD_JAVA_AGENT_WITH_LOG4J2
+SUBDIRS += lttng-ust-agent-log4j2
+endif

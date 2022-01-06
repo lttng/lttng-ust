@@ -50,9 +50,9 @@ import org.lttng.ust.agent.log4j.LttngLogAppender;
  * @author Alexandre Montplaisir
  * @author Christian Babeux
  */
-public class Hello {
+public class HelloLog4j {
 
-	private static final Logger HELLO_LOG = Logger.getLogger(Hello.class);
+	private static final Logger HELLO_LOG = Logger.getLogger(HelloLog4j.class);
 
 	/**
 	 * Application start

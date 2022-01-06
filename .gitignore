@@ -88,6 +88,7 @@ tests/gcc-weak-hidden/test_gcc_weak_hidden
 
 # Java agent library
 *.class
+META-INF
 lttng-ust-agent*.jar
 liblttng-ust-agent.jar
 classnoinst.stamp
@@ -98,6 +99,7 @@ log4j-jni-header.stamp
 org_lttng_ust_agent_context_LttngContextApi.h
 org_lttng_ust_agent_jul_LttngJulApi.h
 org_lttng_ust_agent_log4j_LttngLog4jApi.h
+org_lttng_ust_agent_log4j2_LttngLog4j2Api.h
 
 # Python agent
 python-lttngust/lttngust/__init__.py

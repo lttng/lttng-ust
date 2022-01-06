@@ -23,9 +23,34 @@ endif
 if BUILD_JAVA_AGENT_WITH_LOG4J
 doc_examples_java_log4jdir = ${docdir}/examples/java-log4j
 dist_doc_examples_java_log4j_DATA = java-log4j/Makefile \
-				  java-log4j/Hello.java \
+				  java-log4j/HelloLog4j.java \
 				  java-log4j/run
 SUBDIRS_LOG4J = java-log4j
+endif
+
+if BUILD_JAVA_AGENT_WITH_LOG4J2
+doc_examples_java_log4j2_basicdir = ${docdir}/examples/java-log4j2-basic
+dist_doc_examples_java_log4j2_basic_DATA = \
+	java-log4j2-basic/Makefile \
+	java-log4j2-basic/HelloLog4j2.java \
+	java-log4j2-basic/log4j2.xml \
+	java-log4j2-basic/run
+
+doc_examples_java_log4j2_ctxdir = ${docdir}/examples/java-log4j2-ctx
+dist_doc_examples_java_log4j2_ctx_DATA = \
+	java-log4j2-ctx/Makefile \
+	java-log4j2-ctx/HelloLog4j2Ctx.java \
+	java-log4j2-ctx/log4j2.ctx1.xml \
+	java-log4j2-ctx/log4j2.ctx2.xml \
+	java-log4j2-ctx/run
+
+doc_examples_java_log4j2_progdir = ${docdir}/examples/java-log4j2-prog
+dist_doc_examples_java_log4j2_prog_DATA = \
+	java-log4j2-prog/Makefile \
+	java-log4j2-prog/HelloLog4j2Prog.java \
+	java-log4j2-prog/run
+
+SUBDIRS_LOG4J2 = java-log4j2-basic java-log4j2-prog
 endif
 
 if BUILD_PYTHON_AGENT
@@ -107,7 +132,7 @@ endif
 
 all-local:
 	$(AM_V_at)if [ x"$(srcdir)" != x"$(builddir)" ]; then \
-		for subdir in $(SUBDIRS_PROXY) $(SUBDIRS_JUL) $(SUBDIRS_LOG4J) $(SUBDIRS_CMAKE); do \
+		for subdir in $(SUBDIRS_PROXY) $(SUBDIRS_JUL) $(SUBDIRS_LOG4J) $(SUBDIRS_LOG4J2) $(SUBDIRS_CMAKE); do \
 			cp -pfR $(srcdir)/$$subdir $(builddir); \
 			chmod -R u+w $(builddir)/$$subdir; \
 		done; \
@@ -166,6 +191,18 @@ all-local:
 			) || exit 1; \
 		done; \
 	fi; \
+	if [ x"$(SUBDIRS_LOG4J2)" != x"" ]; then \
+		for subdir in $(SUBDIRS_LOG4J2); do \
+			( \
+				cd $$subdir && \
+				$(MAKE) all \
+					CLASSPATH="$(CLASSPATH)" \
+					JAVA_CLASSPATH_OVERRIDE_LOG4J2="../../../liblttng-ust-java-agent/java/lttng-ust-agent-log4j2" \
+					JAVA_CLASSPATH_OVERRIDE_COMMON="../../../liblttng-ust-java-agent/java/lttng-ust-agent-common" \
+					$(AM_MAKEFLAGS) \
+			) || exit 1; \
+		done; \
+	fi; \
 	if [ x"$(SUBDIRS_CMAKE)" != x"" ]; then \
 		for subdir in $(SUBDIRS_CMAKE); do \
 			( \
@@ -208,6 +245,13 @@ clean-local:
 			fi; \
 		done; \
 	fi; \
+	if [ x"$(SUBDIRS_LOG4J2)" != x"" ]; then \
+		for subdir in $(SUBDIRS_LOG4J2); do \
+			if [ -d $$subdir ]; then \
+				(cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) clean && cd ..) || exit 1; \
+			fi; \
+		done; \
+	fi; \
 	if [ x"$(SUBDIRS_CMAKE)" != x"" ]; then \
 		for subdir in $(SUBDIRS_CMAKE); do \
 			if [ -d $$subdir ]; then \
@@ -216,7 +260,7 @@ clean-local:
 		done; \
 	fi; \
 	if [ x"$(srcdir)" != x"$(builddir)" ]; then \
-		for subdir in $(SUBDIRS_PROXY) $(SUBDIRS_JUL) $(SUBDIRS_LOG4J) $(SUBDIRS_CMAKE); do \
+		for subdir in $(SUBDIRS_PROXY) $(SUBDIRS_JUL) $(SUBDIRS_LOG4J) $(SUBDIRS_LOG4J2) $(SUBDIRS_CMAKE); do \
 			rm -rf $(builddir)/$$subdir; \
 		done; \
 	fi;

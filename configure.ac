@@ -337,11 +337,19 @@ AS_HELP_STRING([--enable-java-agent-jul], [build the LTTng UST Java agent with J
 ])
 
 AC_ARG_ENABLE([java-agent-log4j], [
-AS_HELP_STRING([--enable-java-agent-log4j], [build the LTTng UST Java agent with Log4j support [default=no]])
+AS_HELP_STRING([--enable-java-agent-log4j], [build the LTTng UST Java agent with Log4j 1.x support [default=no]])
 ], [
 	java_agent_log4j=$enableval
 ], [
 	java_agent_log4j=no
+])
+
+AC_ARG_ENABLE([java-agent-log4j2], [
+AS_HELP_STRING([--enable-java-agent-log4j2], [build the LTTng UST Java agent with Log4j 2.x support [default=no]])
+], [
+	java_agent_log4j2=$enableval
+], [
+	java_agent_log4j2=no
 ])
 
 AC_ARG_ENABLE([java-agent-all], [
@@ -349,13 +357,19 @@ AS_HELP_STRING([--enable-java-agent-all], [build the LTTng UST Java agent with a
 ], [
 	java_agent_jul=$enableval
 	java_agent_log4j=$enableval
+	# This backport to a stable branch requires the explicit use of
+	# '--enable-java-agent-log4j2' to avoid introducing a new dependency in
+	# an existing configuration.
+	#java_agent_log4j2=$enableval
 ], [:])
 
 AM_CONDITIONAL([BUILD_JAVA_AGENT], [test "x$java_agent_jul" = "xyes" || test "x$java_agent_log4j" = "xyes"])
 AM_CONDITIONAL([BUILD_JAVA_AGENT_WITH_JUL], [test "x$java_agent_jul" = "xyes"])
 AM_CONDITIONAL([BUILD_JAVA_AGENT_WITH_LOG4J], [test "x$java_agent_log4j" = "xyes"])
+AM_CONDITIONAL([BUILD_JAVA_AGENT_WITH_LOG4J2], [test "x$java_agent_log4j2" = "xyes"])
+AM_CONDITIONAL([BUILD_JAVA_AGENT_WITH_LOG4J_COMMON], [test "x$java_agent_log4j" = "xyes" || test "x$java_agent_log4j2" = "xyes"])
 
-AS_IF([test "x$jni_interface" = "xyes" || test "x$java_agent_jul" = "xyes" || test "x$java_agent_log4j" = "xyes"], [
+AS_IF([test "x$jni_interface" = "xyes" || test "x$java_agent_jul" = "xyes" || test "x$java_agent_log4j" = "xyes" || test "x$java_agent_log4j2" = "xyes"], [
 	AX_JAVA_OPTIONS
 	AX_PROG_JAVAC
 	AX_PROG_JAVA
@@ -382,6 +396,21 @@ AS_IF([test "x$java_agent_log4j" = "xyes"], [
 	AS_IF([test "x$ac_cv_class_org_apache_log4j_Logger" = "xno"], [
 		AC_MSG_ERROR([The UST Java agent support for log4j was requested but the Log4j classes were not found. Please specify the location of the Log4j jar via the Java CLASSPATH e.g: export CLASSPATH="/path/to/log4j.jar"])
 	])
+])
+
+# The log4j 2.x agent requires the log4j core and api jars in the classpath
+AS_IF([test "x$java_agent_log4j2" = "xyes"], [
+  AX_CHECK_CLASSPATH
+  AX_CHECK_CLASS([org.apache.logging.log4j.Logger])
+  AX_CHECK_CLASS([org.apache.logging.log4j.core.Core])
+  AS_IF([test "x$ac_cv_class_org_apache_logging_log4j_Logger" = "xno" || test "x$ac_cv_class_org_apache_logging_log4j_core_Core" = "xno"], [
+    AC_MSG_ERROR([dnl
+The UST Java agent support for log4j was requested but the Log4j classes were
+not found. Please specify the location of the Log4j API and core 2.x jars via the Java CLASSPATH
+environment variable, e.g. ./configure CLASSPATH="/path/to/log4j-core.jar:/path/to/log4j-api.jar"
+Current CLASSPATH: "$CLASSPATH"
+    ])
+  ])
 ])
 
 # Option to build the python agent
@@ -534,6 +563,7 @@ AC_CONFIG_FILES([
 	liblttng-ust-java-agent/java/lttng-ust-agent-common/Makefile
 	liblttng-ust-java-agent/java/lttng-ust-agent-jul/Makefile
 	liblttng-ust-java-agent/java/lttng-ust-agent-log4j/Makefile
+	liblttng-ust-java-agent/java/lttng-ust-agent-log4j2/Makefile
 	liblttng-ust-java-agent/jni/Makefile
 	liblttng-ust-java-agent/jni/common/Makefile
 	liblttng-ust-java-agent/jni/jul/Makefile
@@ -612,7 +642,10 @@ test "x$java_agent_jul" = xyes && value=1 || value=0
 PPRINT_PROP_BOOL_CUSTOM([Java agent (JUL support)], $value, [use --enable-java-agent-jul])
 
 test "x$java_agent_log4j" = xyes && value=1 || value=0
-PPRINT_PROP_BOOL_CUSTOM([Java agent (Log4j support)], $value, [use --enable-java-agent-log4j])
+PPRINT_PROP_BOOL_CUSTOM([Java agent (Log4j 1.x support)], $value, [use --enable-java-agent-log4j])
+
+test "x$java_agent_log4j2" = xyes && value=1 || value=0
+PPRINT_PROP_BOOL_CUSTOM([Java agent (Log4j 2.x support)], $value, [use --enable-java-agent-log4j2])
 
 test "x$jni_interface" = xyes && value=1 || value=0
 PPRINT_PROP_BOOL_CUSTOM([JNI interface (JNI)], $value, [use --enable-jni-interface])

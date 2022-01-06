@@ -230,7 +230,7 @@ This package contains the following elements:
     JAR library to provide an LTTng-UST logging back-end for Java
     applications using Java Util Logging or Log4j. (Configure with
     `--enable-java-agent-jul` or `--enable-java-agent-log4j` or
-    `--enable-java-agent-all`).
+    `--enable-java-agent-log4j2` or `--enable-java-agent-all`).
   - `liblttng-ust-libc-wrapper`: an example library that can be
     preloaded to instrument some calls to libc (currently `malloc()` and
     `free()`) and to POSIX threads (mutexes currently instrumented) in
