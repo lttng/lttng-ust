@@ -8,14 +8,19 @@ The agent can be built in three different configurations:
 
 $ ./configure --enable-java-agent-jul
 
-2) Java agent with Log4j support:
+2) Java agent with Log4j 1.x support (deprecated):
 
 $ export CLASSPATH=$CLASSPATH:/path/to/log4j.jar
 $ ./configure --enable-java-agent-log4j
 
-3) Java agent with JUL + Log4j support
+3) Java agent with Log4j 2.x support:
 
-$ export CLASSPATH=$CLASSPATH:/path/to/log4j.jar
+$ export CLASSPATH=$CLASSPATH:/path/to/log4j-core.jar:/path/to/log4j-api.jar
+$ ./configure --enable-java-agent-log4j2
+
+4) Java agent with JUL + Log4j 1.x + Log4j 2.x support
+
+$ export CLASSPATH=$CLASSPATH:/path/to/log4j.jar:/path/to/log4j-core.jar:/path/to/log4j-api.jar
 $ ./configure --enable-java-agent-all
 
 To build the agent with log4j support, make sure that the log4j jar
@@ -25,24 +30,28 @@ The configure script will automatically detect the appropriate Java
 binaries to use in order to build the Java agent.
 
 Enabling the JUL support will build a "lttng-ust-agent-jul.jar" file. Enabling
-the log4j support will build a "lttng-ust-agent-log4j.jar". Both of these jars
+the log4j 1.x support will build a "lttng-ust-agent-log4j.jar" and enabling
+log4j 2.x support will build a "lttng-ust-agent-log4j2.jar". All of these jars
 depend on a third "lttng-ust-agent-common.jar", which will always be built.
 
 All these archives will be installed in the arch-agnostic "$prefix/share/java"
 path, e.g: "/usr/share/java". You need to make sure the .jar for the logging
-API you want to use (either lttng-ust-agent-jul.jar or -log4j.jar) is on your
+API you want to use (either "lttng-ust-agent-jul.jar",
+"lttng-ust-agent-log4j.jar" or "lttng-ust-agent-log4j2.jar") is on your
 application's classpath.
 
-Both logging libraries also require an architecture-specific shared object
-(e.g: "liblttng-ust-jul-jni.so"), which is installed by the build system when
-doing "make install". Make sure that your Java application can find this shared
-object, by using the "java.library.path" property if necessary.
+The logging libraries require an architecture-specific shared object,
+"liblttng-ust-jul-jni.so" for JUL and "liblttng-ust-jul-log4j.so" for both
+Log4j 1.x and 2.x, which are installed by the build system when doing "make
+install". Make sure that your Java application can find this shared object, by
+using the "java.library.path" property if necessary.
 
 In order to use UST tracing in your Java application, you simply need to
 instantiate a LttngLogHandler or a LttngLogAppender (for JUL or Log4j,
 respectively), then attach it to a JUL or Log4j Logger class.
 
-Refer to the code examples in examples/java-jul/ and examples/java-log4j/.
+Refer to the code examples in "examples/java-jul/", "examples/java-log4j/" and
+"examples/java-log4j2-*/".
 
 LTTng session daemon agents will be initialized as needed. If no session daemon
 is available, the execution will continue and the agents will retry connecting

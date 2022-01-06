@@ -8,13 +8,7 @@
 
 #define _LGPL_SOURCE
 #include "org_lttng_ust_agent_log4j_LttngLog4jApi.h"
-
-#define LTTNG_UST_TRACEPOINT_HIDDEN_DEFINITION
-#define LTTNG_UST_TRACEPOINT_PROVIDER_HIDDEN_DEFINITION
-
-#define LTTNG_UST_TRACEPOINT_DEFINE
-#define LTTNG_UST_TRACEPOINT_CREATE_PROBES
-#include "lttng_ust_log4j.h"
+#include "lttng_ust_log4j_tp.h"
 #include "../common/lttng_ust_context.h"
 
 /*
