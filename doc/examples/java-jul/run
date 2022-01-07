@@ -15,9 +15,9 @@ JAVA_OPTIONS=""
 cd $DIR
 
 if [ -f "$DIR/.intree" ]; then
-	CLASSPATH="../../../lib/lttng-ust-java-agent/java/lttng-ust-agent-common/$JARFILE_COMMON"
-	CLASSPATH="$CLASSPATH:../../../lib/lttng-ust-java-agent/java/lttng-ust-agent-jul/$JARFILE_JUL"
-	LIBPATH="../../../lib/lttng-ust-java-agent/jni/jul/.libs"
+	CLASSPATH="../../../src/lib/lttng-ust-java-agent/java/lttng-ust-agent-common/$JARFILE_COMMON"
+	CLASSPATH="$CLASSPATH:../../../src/lib/lttng-ust-java-agent/java/lttng-ust-agent-jul/$JARFILE_JUL"
+	LIBPATH="../../../src/lib/lttng-ust-java-agent/jni/jul/.libs"
 else
 	CLASSPATH="/usr/local/share/java/$JARFILE_COMMON:/usr/share/java/$JARFILE_COMMON"
 	CLASSPATH="$CLASSPATH:/usr/local/share/java/$JARFILE_JUL:/usr/share/java/$JARFILE_JUL"
