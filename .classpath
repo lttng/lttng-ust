@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry excluding="lttng-ust-agent-all/|lttng-ust-agent-all/|lttng-ust-agent-common/|lttng-ust-agent-common/|lttng-ust-agent-jul/|lttng-ust-agent-jul/|lttng-ust-agent-log4j2/|lttng-ust-agent-log4j2/|lttng-ust-agent-log4j/|lttng-ust-agent-log4j/" kind="src" path="src/lib/lttng-ust-java-agent/java"/>
+	<classpathentry kind="src" path="src/lib/lttng-ust-java-agent/java/lttng-ust-agent-all"/>
+	<classpathentry kind="src" path="src/lib/lttng-ust-java-agent/java/lttng-ust-agent-common"/>
+	<classpathentry kind="src" path="src/lib/lttng-ust-java-agent/java/lttng-ust-agent-jul"/>
+	<classpathentry kind="src" path="src/lib/lttng-ust-java-agent/java/lttng-ust-agent-log4j2"/>
+	<classpathentry kind="src" path="src/lib/lttng-ust-java-agent/java/lttng-ust-agent-log4j"/>
+	<classpathentry kind="src" path="doc/examples/java-log4j2-basic">
+		<attributes>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="lttng-ust/src/lib/lttng-ust-java-agent/jni/log4j/.libs"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="src" path="doc/examples/java-log4j2-ctx">
+		<attributes>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="lttng-ust/src/lib/lttng-ust-java-agent/jni/log4j/.libs"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="src" path="doc/examples/java-log4j2-prog">
+		<attributes>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="lttng-ust/src/lib/lttng-ust-java-agent/jni/log4j/.libs"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="src" path="doc/examples/java-log4j">
+		<attributes>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="lttng-ust/src/lib/lttng-ust-java-agent/jni/log4j/.libs"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="/usr/share/java/log4j-1.2.jar"/>
+	<classpathentry kind="lib" path="/usr/share/java/log4j-1.2-api.jar"/>
+	<classpathentry kind="lib" path="/usr/share/java/log4j-api.jar"/>
+	<classpathentry kind="lib" path="/usr/share/java/log4j-core.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

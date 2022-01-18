@@ -210,3 +210,4 @@ cscope.*
 /tests/unit/ust-utils/Makefile
 /tests/utils/Makefile
 /tools/Makefile
+/bin/
