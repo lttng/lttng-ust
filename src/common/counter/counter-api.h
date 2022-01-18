@@ -234,7 +234,7 @@ static inline int __lttng_counter_add_percpu(const struct lib_counter_config *co
 					     struct lib_counter *counter,
 					     const size_t *dimension_indexes, int64_t v)
 {
-	int64_t move_sum;
+	int64_t move_sum = 0;
 	int ret;
 
 	ret = __lttng_counter_add(config, COUNTER_ALLOC_PER_CPU, config->sync,
