@@ -319,6 +319,11 @@ PKG_CHECK_MODULES([URCU], [liburcu >= 0.12])
 # Additional variables captured during ./configure
 
 AC_ARG_VAR([CLASSPATH], [Java class path])
+AC_ARG_VAR([JAVACFLAGS], [Java compiler flags])
+AC_ARG_VAR([JAVAC], [Java compiler])
+AC_ARG_VAR([JAVAFLAGS], [Java VM flags])
+AC_ARG_VAR([JAVA], [Java VM])
+AC_ARG_VAR([JAVAPREFIX], [prefix where Java runtime is installed])
 
 
 ##                              ##
@@ -379,9 +384,6 @@ AS_HELP_STRING([--with-lttng-system-rundir], [Location of the system directory w
 ], [
   lttng_system_rundir="/var/run/lttng"
 ])
-
-# Add the java command line arguments like '--wit-java-prefix'
-AX_JAVA_OPTIONS
 
 
 ##                                          ##
