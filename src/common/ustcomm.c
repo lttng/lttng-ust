@@ -998,7 +998,7 @@ int serialize_dynamic_type(struct lttng_ust_session *session,
 
 	strncpy(uf->name, field_name, LTTNG_UST_ABI_SYM_NAME_LEN);
 	uf->name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
-	uf->type.atype = lttng_ust_ctl_atype_variant;
+	uf->type.atype = lttng_ust_ctl_atype_variant_nestable;
 	uf->type.u.variant_nestable.nr_choices = nr_choices;
 	strncpy(uf->type.u.variant_nestable.tag_name,
 		tag_field_name,
