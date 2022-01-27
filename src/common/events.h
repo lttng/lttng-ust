@@ -136,11 +136,6 @@ struct lttng_event_enabler_common {
 struct lttng_event_enabler_session_common {
 	struct lttng_event_enabler_common parent;
 	struct lttng_ust_channel_common *chan;
-	/*
-	 * Unused, but kept around to make it explicit that the tracer can do
-	 * it.
-	 */
-	struct lttng_ust_ctx *ctx;
 };
 
 struct lttng_event_recorder_enabler {

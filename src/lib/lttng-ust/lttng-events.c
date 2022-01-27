@@ -1863,7 +1863,6 @@ void lttng_event_enabler_destroy(struct lttng_event_enabler_common *event_enable
 			caa_container_of(event_enabler, struct lttng_event_enabler_session_common, parent);
 
 		cds_list_del(&enabler_session->parent.node);
-		lttng_destroy_context(enabler_session->ctx);
 		break;
 	}
 	case LTTNG_EVENT_ENABLER_TYPE_NOTIFIER:
