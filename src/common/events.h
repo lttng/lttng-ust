@@ -307,8 +307,6 @@ struct lttng_ust_event_common_private {
 struct lttng_ust_event_session_common_private {
 	struct lttng_ust_event_common_private parent;
 
-	struct lttng_ust_ctx *ctx;
-
 	struct lttng_ust_channel_common *chan;
 
 	uint64_t id;				/* Event id */

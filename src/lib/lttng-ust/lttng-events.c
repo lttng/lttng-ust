@@ -1585,20 +1585,6 @@ void _lttng_event_destroy(struct lttng_ust_event_common *event)
 	/* Remove from event hash table. */
 	cds_hlist_del(&event->priv->name_hlist_node);
 
-	switch (event->type) {
-	case LTTNG_UST_EVENT_TYPE_RECORDER:
-	{
-		struct lttng_ust_event_session_common_private *event_session_priv =
-			caa_container_of(event->priv, struct lttng_ust_event_session_common_private, parent);
-
-		lttng_destroy_context(event_session_priv->ctx);
-		break;
-	}
-	case LTTNG_UST_EVENT_TYPE_NOTIFIER:
-		break;
-	default:
-		abort();
-	}
 	lttng_ust_event_free(event);
 }
 
@@ -2159,7 +2145,6 @@ void lttng_ust_context_set_session_provider(const char *name,
 
 	cds_list_for_each_entry(session_priv, &sessions, node) {
 		struct lttng_ust_channel_buffer_private *chan;
-		struct lttng_ust_event_common_private *event_priv;
 		int ret;
 
 		ret = lttng_ust_context_set_provider_rcu(&session_priv->ctx,
@@ -2168,15 +2153,6 @@ void lttng_ust_context_set_session_provider(const char *name,
 			abort();
 		cds_list_for_each_entry(chan, &session_priv->chan_head, node) {
 			ret = lttng_ust_context_set_provider_rcu(&chan->ctx,
-					name, get_size, record, get_value);
-			if (ret)
-				abort();
-		}
-		cds_list_for_each_entry(event_priv, &session_priv->events_head, node) {
-			struct lttng_ust_event_session_common_private *event_session_priv =
-				caa_container_of(event_priv, struct lttng_ust_event_session_common_private, parent);
-
-			ret = lttng_ust_context_set_provider_rcu(&event_session_priv->ctx,
 					name, get_size, record, get_value);
 			if (ret)
 				abort();

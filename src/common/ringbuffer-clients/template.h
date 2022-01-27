@@ -60,7 +60,6 @@ struct lttng_client_ctx {
 	size_t packet_context_len;
 	size_t event_context_len;
 	struct lttng_ust_ctx *chan_ctx;
-	struct lttng_ust_ctx *event_ctx;
 };
 
 /*
@@ -189,8 +188,6 @@ size_t record_header_size(
 	}
 	offset += ctx_get_aligned_size(offset, client_ctx->chan_ctx,
 			client_ctx->packet_context_len);
-	offset += ctx_get_aligned_size(offset, client_ctx->event_ctx,
-			client_ctx->event_context_len);
 	*pre_header_padding = padding;
 	return offset - orig_offset;
 }
@@ -255,7 +252,6 @@ void lttng_write_event_header(const struct lttng_ust_ring_buffer_config *config,
 	}
 
 	ctx_record(ctx, lttng_chan, client_ctx->chan_ctx);
-	ctx_record(ctx, lttng_chan, client_ctx->event_ctx);
 	lttng_ust_ring_buffer_align_ctx(ctx, ctx->largest_align);
 
 	return;
@@ -329,7 +325,6 @@ void lttng_write_event_header_slow(const struct lttng_ust_ring_buffer_config *co
 		WARN_ON_ONCE(1);
 	}
 	ctx_record(ctx, lttng_chan, client_ctx->chan_ctx);
-	ctx_record(ctx, lttng_chan, client_ctx->event_ctx);
 	lttng_ust_ring_buffer_align_ctx(ctx, ctx->largest_align);
 }
 
@@ -689,10 +684,8 @@ int lttng_event_reserve(struct lttng_ust_ring_buffer_ctx *ctx)
 
 	event_id = (uint32_t) event_recorder->priv->parent.id;
 	client_ctx.chan_ctx = lttng_ust_rcu_dereference(lttng_chan->priv->ctx);
-	client_ctx.event_ctx = lttng_ust_rcu_dereference(event_recorder->priv->parent.ctx);
 	/* Compute internal size of context structures. */
 	ctx_get_struct_size(ctx, client_ctx.chan_ctx, &client_ctx.packet_context_len);
-	ctx_get_struct_size(ctx, client_ctx.event_ctx, &client_ctx.event_context_len);
 
 	nesting = lib_ring_buffer_nesting_inc(&client_config);
 	if (nesting < 0)
