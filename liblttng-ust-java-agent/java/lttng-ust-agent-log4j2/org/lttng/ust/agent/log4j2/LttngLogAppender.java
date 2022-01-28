@@ -25,6 +25,7 @@ import org.apache.logging.log4j.core.config.plugins.Plugin;
 import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
 import org.apache.logging.log4j.core.config.plugins.PluginElement;
 import org.apache.logging.log4j.core.config.plugins.PluginFactory;
+import org.apache.logging.log4j.message.Message;
 import org.lttng.ust.agent.ILttngHandler;
 import org.lttng.ust.agent.context.ContextInfoSerializer;
 
@@ -164,8 +165,19 @@ public final class LttngLogAppender extends AbstractAppender implements ILttngHa
 		 * Check if the current message should be logged, according to the UST session
 		 * settings.
 		 */
-		if (!agent.isEventEnabled(event.getLoggerName())) {
+		String loggername = event.getLoggerName();
+		if (loggername == null || !agent.isEventEnabled(loggername)) {
 			return;
+		}
+
+		/*
+		 * Default value if the Message is null.
+		 */
+		String message = "";
+
+		Message eventMessage = event.getMessage();
+		if (eventMessage != null) {
+			message = eventMessage.getFormattedMessage();
 		}
 
 		/*
@@ -191,8 +203,8 @@ public final class LttngLogAppender extends AbstractAppender implements ILttngHa
 
 		eventCount.incrementAndGet();
 
-		LttngLog4j2Api.tracepointWithContext(event.getMessage().getFormattedMessage(), event.getLoggerName(), classname,
-				methodname, filename, line, event.getTimeMillis(), event.getLevel().intLevel(), event.getThreadName(),
+		LttngLog4j2Api.tracepointWithContext(message, loggername, classname, methodname, filename, line,
+				event.getTimeMillis(), event.getLevel().intLevel(), event.getThreadName(),
 				contextInfo.getEntriesArray(), contextInfo.getStringsArray());
 	}
 }
