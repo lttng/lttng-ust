@@ -41,11 +41,33 @@ enum loglevel_log4j2 {
 };
 
 /*
+ * Convert a custom Log4j 2.x loglevel to its equivalent 1.x standard loglevel.
+ */
+static jint loglevel_custom_2x_to_standard_1x(jint loglevel)
+{
+	if (loglevel <= LOGLEVEL_LOG4J2_OFF) {
+		return LOGLEVEL_LOG4J1_OFF;
+	} else if (loglevel <= LOGLEVEL_LOG4J2_FATAL) {
+		return LOGLEVEL_LOG4J1_FATAL;
+	} else if (loglevel <= LOGLEVEL_LOG4J2_ERROR) {
+		return LOGLEVEL_LOG4J1_ERROR;
+	} else if (loglevel <= LOGLEVEL_LOG4J2_WARN) {
+		return LOGLEVEL_LOG4J1_WARN;
+	} else if (loglevel <= LOGLEVEL_LOG4J2_INFO) {
+		return LOGLEVEL_LOG4J1_INFO;
+	} else if (loglevel <= LOGLEVEL_LOG4J2_DEBUG) {
+		return LOGLEVEL_LOG4J1_DEBUG;
+	} else if (loglevel <= LOGLEVEL_LOG4J2_TRACE) {
+		return LOGLEVEL_LOG4J1_TRACE;
+	} else {
+		return LOGLEVEL_LOG4J1_ALL;
+	}
+}
+
+/*
  * The integer values of the loglevels has obviously changed in log4j2,
  * translate them to the values of log4j1 since they are exposed in the API of
  * lttng-tools.
- *
- * Custom loglevels might pose a problem when using ranges.
  */
 static jint loglevel_2x_to_1x(jint loglevel)
 {
@@ -68,7 +90,7 @@ static jint loglevel_2x_to_1x(jint loglevel)
 		return LOGLEVEL_LOG4J1_ALL;
 	default:
 		/* Handle custom loglevels. */
-		return loglevel;
+		return loglevel_custom_2x_to_standard_1x(loglevel);
 	}
 }
 
