@@ -1,0 +1,14 @@
+/*
+ * SPDX-License-Identifier: LGPL-2.1-only
+ *
+ * Copyright (C) 2022 EfficiOS Inc.
+ */
+
+#define _LGPL_SOURCE
+
+#define LTTNG_UST_TRACEPOINT_HIDDEN_DEFINITION
+#define LTTNG_UST_TRACEPOINT_PROVIDER_HIDDEN_DEFINITION
+
+#define LTTNG_UST_TRACEPOINT_DEFINE
+#define LTTNG_UST_TRACEPOINT_CREATE_PROBES
+#include "lttng_ust_log4j2_tp.h"

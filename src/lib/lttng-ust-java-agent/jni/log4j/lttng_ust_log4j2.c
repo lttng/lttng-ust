@@ -9,6 +9,7 @@
 #define _LGPL_SOURCE
 #include "org_lttng_ust_agent_log4j2_LttngLog4j2Api.h"
 #include "lttng_ust_log4j_tp.h"
+#include "lttng_ust_log4j2_tp.h"
 #include "../common/lttng_ust_context.h"
 
 /*
@@ -109,7 +110,8 @@ JNIEXPORT void JNICALL Java_org_lttng_ust_agent_log4j2_LttngLog4j2Api_tracepoint
 						jint logLevel,
 						jstring threadName,
 						jbyteArray context_info_entries,
-						jbyteArray context_info_strings)
+						jbyteArray context_info_strings,
+						jboolean log4j1Compat)
 {
 	jboolean iscopy;
 	const char *msg_cstr = (*env)->GetStringUTFChars(env, message, &iscopy);
@@ -132,9 +134,21 @@ JNIEXPORT void JNICALL Java_org_lttng_ust_agent_log4j2_LttngLog4j2Api_tracepoint
 	lttng_ust_context_info_tls.ctx_strings = context_info_strings_array;
 	lttng_ust_context_info_tls.ctx_strings_len = (*env)->GetArrayLength(env, context_info_strings);
 
-	lttng_ust_tracepoint(lttng_log4j, event, msg_cstr, logger_name_cstr,
-		   class_name_cstr, method_name_cstr, file_name_cstr,
-		   lineNumber, timeStamp, loglevel_2x_to_1x(logLevel), thread_name_cstr);
+	if (log4j1Compat) {
+		/*
+		 * Log4j 1.x compatible tracepoint with loglevel conversion.
+		 */
+		lttng_ust_tracepoint(lttng_log4j, event, msg_cstr, logger_name_cstr,
+			   class_name_cstr, method_name_cstr, file_name_cstr,
+			   lineNumber, timeStamp, loglevel_2x_to_1x(logLevel), thread_name_cstr);
+	} else {
+		/*
+		 * Log4j 2.x tracepoint with native loglevel.
+		 */
+		lttng_ust_tracepoint(lttng_log4j2, event, msg_cstr, logger_name_cstr,
+			   class_name_cstr, method_name_cstr, file_name_cstr,
+			   lineNumber, timeStamp, logLevel, thread_name_cstr);
+	}
 
 	lttng_ust_context_info_tls.ctx_entries = NULL;
 	lttng_ust_context_info_tls.ctx_entries_len = 0;

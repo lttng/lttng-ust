@@ -27,17 +27,25 @@ import org.lttng.ust.agent.AbstractLttngAgent;
  */
 class LttngLog4j2Agent extends AbstractLttngAgent<LttngLogAppender> {
 
-	private static LttngLog4j2Agent instance = null;
+	private static LttngLog4j2Agent log4j2_instance = null;
+	private static LttngLog4j2Agent log4j1_instance = null;
 
-	private LttngLog4j2Agent() {
-		super(Domain.LOG4J);
+	private LttngLog4j2Agent(Domain domain) {
+		super(domain);
 	}
 
-	public static synchronized LttngLog4j2Agent getInstance() {
-		if (instance == null) {
-			instance = new LttngLog4j2Agent();
+	public static synchronized LttngLog4j2Agent getLog4j1Instance() {
+		if (log4j1_instance == null) {
+			log4j1_instance = new LttngLog4j2Agent(Domain.LOG4J);
 		}
-		return instance;
+		return log4j1_instance;
+	}
+
+	public static synchronized LttngLog4j2Agent getLog4j2Instance() {
+		if (log4j2_instance == null) {
+			log4j2_instance = new LttngLog4j2Agent(Domain.LOG4J2);
+		}
+		return log4j2_instance;
 	}
 
 	@Override

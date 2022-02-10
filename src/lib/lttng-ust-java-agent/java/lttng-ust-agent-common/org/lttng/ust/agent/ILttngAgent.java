@@ -34,7 +34,7 @@ public interface ILttngAgent<T extends ILttngHandler> {
 	 * Tracing domains. Corresponds to domains defined by LTTng Tools.
 	 */
 	enum Domain {
-		JUL(3), LOG4J(4);
+		JUL(3), LOG4J(4), LOG4J2(6);
 		private int value;
 
 		private Domain(int value) {

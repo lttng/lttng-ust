@@ -1,21 +1,21 @@
 /*
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (C) 2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+ * Copyright (C) 2022 EfficiOS Inc.
  */
 
 #undef LTTNG_UST_TRACEPOINT_PROVIDER
-#define LTTNG_UST_TRACEPOINT_PROVIDER lttng_log4j
+#define LTTNG_UST_TRACEPOINT_PROVIDER lttng_log4j2
 
-#if !defined(_TRACEPOINT_LTTNG_UST_LOG4J_H) || defined(LTTNG_UST_TRACEPOINT_HEADER_MULTI_READ)
-#define _TRACEPOINT_LTTNG_UST_LOG4J_H
+#if !defined(_TRACEPOINT_LTTNG_UST_LOG4J2_H) || defined(LTTNG_UST_TRACEPOINT_HEADER_MULTI_READ)
+#define _TRACEPOINT_LTTNG_UST_LOG4J2_H
 
 #include <lttng/tracepoint.h>
 
 /*
- * Tracepoint used by Java applications using the log4j 1.x convention for loglevels.
+ * Tracepoint used by Java applications using the log4j 2.x convention for loglevels.
  */
-LTTNG_UST_TRACEPOINT_EVENT(lttng_log4j, event,
+LTTNG_UST_TRACEPOINT_EVENT(lttng_log4j2, event,
 	LTTNG_UST_TP_ARGS(
 		const char *, msg,
 		const char *, logger_name,
@@ -39,10 +39,10 @@ LTTNG_UST_TRACEPOINT_EVENT(lttng_log4j, event,
 	)
 )
 
-#endif /* _TRACEPOINT_LTTNG_UST_LOG4J_H */
+#endif /* _TRACEPOINT_LTTNG_UST_LOG4J2_H */
 
 #undef LTTNG_UST_TRACEPOINT_INCLUDE
-#define LTTNG_UST_TRACEPOINT_INCLUDE "./lttng_ust_log4j_tp.h"
+#define LTTNG_UST_TRACEPOINT_INCLUDE "./lttng_ust_log4j2_tp.h"
 
 /* This part must be outside protection */
 #include <lttng/tracepoint-event.h>

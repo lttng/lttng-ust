@@ -54,15 +54,21 @@ public class HelloLog4j2Prog {
 		appenderBuilder.add(standardLayout);
 		builder.add(appenderBuilder);
 
-		/* Create an Lttng appender */
+		/* Create an Lttng appender for the LOG4J domain */
 		appenderBuilder = builder.newAppender("Lttng1", "Lttng");
 		appenderBuilder.addAttribute("domain", "LOG4J");
+		builder.add(appenderBuilder);
+
+		/* Create an Lttng appender for the LOG4J2 domain */
+		appenderBuilder = builder.newAppender("Lttng2", "Lttng");
+		appenderBuilder.addAttribute("domain", "LOG4J2");
 		builder.add(appenderBuilder);
 
 		/* Create a root logger with both appenders attached */
 		RootLoggerComponentBuilder rootLogger = builder.newRootLogger(Level.DEBUG);
 		rootLogger.add(builder.newAppenderRef("Stdout"));
 		rootLogger.add(builder.newAppenderRef("Lttng1"));
+		rootLogger.add(builder.newAppenderRef("Lttng2"));
 		builder.add(rootLogger);
 
 		Configurator.initialize(builder.build());

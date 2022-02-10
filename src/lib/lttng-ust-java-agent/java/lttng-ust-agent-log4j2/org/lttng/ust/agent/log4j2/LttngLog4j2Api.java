@@ -17,5 +17,5 @@ final class LttngLog4j2Api {
 
 	static native void tracepointWithContext(String message, String loggerName, String className, String methodName,
 			String fileName, int lineNumber, long timeStamp, int logLevel, String threadName, byte[] contextEntries,
-			byte[] contextStrings);
+			byte[] contextStrings, boolean log4j1Compat);
 }

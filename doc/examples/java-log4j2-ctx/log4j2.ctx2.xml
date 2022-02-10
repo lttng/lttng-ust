@@ -4,13 +4,15 @@
     <Console name="Console" target="SYSTEM_OUT">
       <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
     </Console>
-    <Lttng name="Lttng" domain="LOG4J">
+    <Lttng name="Lttng1" domain="LOG4J">
+    <Lttng name="Lttng2" domain="LOG4J2">
     </Lttng>
   </Appenders>
   <Loggers>
     <Root level="debug">
       <AppenderRef ref="Console"/>
-      <AppenderRef ref="Lttng"/>
+      <AppenderRef ref="Lttng1"/>
+      <AppenderRef ref="Lttng2"/>
     </Root>
   </Loggers>
 </Configuration>

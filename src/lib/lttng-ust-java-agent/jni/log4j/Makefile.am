@@ -4,6 +4,8 @@ AM_CPPFLAGS += -I$(builddir) -I$(srcdir) $(JNI_CPPFLAGS)
 
 lib_LTLIBRARIES = liblttng-ust-log4j-jni.la
 liblttng_ust_log4j_jni_la_SOURCES = \
+	lttng_ust_log4j2_tp.c \
+	lttng_ust_log4j2_tp.h \
 	lttng_ust_log4j_tp.c \
 	lttng_ust_log4j_tp.h
 nodist_liblttng_ust_log4j_jni_la_SOURCES =

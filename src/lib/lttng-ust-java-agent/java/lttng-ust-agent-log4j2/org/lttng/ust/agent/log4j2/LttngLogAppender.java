@@ -92,7 +92,9 @@ public final class LttngLogAppender extends AbstractAppender implements ILttngHa
 
 		/* Register to the relevant agent. */
 		if (domain == LttngLog4j2Agent.Domain.LOG4J) {
-			agent = LttngLog4j2Agent.getInstance();
+			agent = LttngLog4j2Agent.getLog4j1Instance();
+		} else if (domain == LttngLog4j2Agent.Domain.LOG4J2) {
+			agent = LttngLog4j2Agent.getLog4j2Instance();
 		} else {
 			throw new IllegalArgumentException("Unsupported domain '" + domain + "'");
 		}
@@ -239,6 +241,6 @@ public final class LttngLogAppender extends AbstractAppender implements ILttngHa
 
 		LttngLog4j2Api.tracepointWithContext(message, loggername, classname, methodname, filename, line,
 				event.getTimeMillis(), event.getLevel().intLevel(), event.getThreadName(),
-				contextInfo.getEntriesArray(), contextInfo.getStringsArray());
+				contextInfo.getEntriesArray(), contextInfo.getStringsArray(), agent.getDomain() == Domain.LOG4J);
 	}
 }
