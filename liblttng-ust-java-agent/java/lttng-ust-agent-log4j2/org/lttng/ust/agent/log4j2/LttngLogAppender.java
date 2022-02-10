@@ -26,6 +26,7 @@ import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
 import org.apache.logging.log4j.core.config.plugins.PluginElement;
 import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 import org.apache.logging.log4j.message.Message;
+import org.lttng.ust.agent.ILttngAgent.Domain;
 import org.lttng.ust.agent.ILttngHandler;
 import org.lttng.ust.agent.context.ContextInfoSerializer;
 
@@ -61,20 +62,24 @@ public final class LttngLogAppender extends AbstractAppender implements ILttngHa
 	 * Constructor
 	 *
 	 * @param name             The name of the Appender.
+	 * @param domain           The LTTng-UST agent domain 'LOG4J' / 'LOG4J2'.
 	 * @param filter           The Filter or null.
-	 * @param ignoreExceptions If {@code "true"} (default) exceptions encountered
-	 *                         when appending events are logged; otherwise they are
+	 * @param ignoreExceptions If {@code "true"} exceptions encountered when
+	 *                         appending events are logged; otherwise they are
 	 *                         propagated to the caller.
 	 *
-	 * @throws IOException       This handler requires the lttng-ust-log4j-jni.so
-	 *                           native library, through which it will send the
-	 *                           trace events. This exception is thrown if this
-	 *                           library cannot be found.
-	 * @throws SecurityException We will forward any SecurityExcepion that may be
-	 *                           thrown when trying to load the JNI library.
+	 * @throws IOException              This handler requires the
+	 *                                  lttng-ust-log4j-jni.so native library,
+	 *                                  through which it will send the trace events.
+	 *                                  This exception is thrown if this library
+	 *                                  cannot be found.
+	 * @throws IllegalArgumentException If the provided domain is unsupported.
+	 * @throws SecurityException        We will forward any SecurityExcepion that
+	 *                                  may be thrown when trying to load the JNI
+	 *                                  library.
 	 */
-	protected LttngLogAppender(String name, Filter filter, boolean ignoreExceptions)
-			throws IOException, SecurityException {
+	protected LttngLogAppender(String name, LttngLog4j2Agent.Domain domain, Filter filter, boolean ignoreExceptions)
+			throws IOException, IllegalArgumentException, SecurityException {
 
 		super(name, filter, null, ignoreExceptions, Property.EMPTY_ARRAY);
 
@@ -86,7 +91,12 @@ public final class LttngLogAppender extends AbstractAppender implements ILttngHa
 		}
 
 		/* Register to the relevant agent. */
-		agent = LttngLog4j2Agent.getInstance();
+		if (domain == LttngLog4j2Agent.Domain.LOG4J) {
+			agent = LttngLog4j2Agent.getInstance();
+		} else {
+			throw new IllegalArgumentException("Unsupported domain '" + domain + "'");
+		}
+
 		agent.registerHandler(this);
 	}
 
@@ -94,27 +104,27 @@ public final class LttngLogAppender extends AbstractAppender implements ILttngHa
 	 * Create an LttngLogAppender.
 	 *
 	 * @param name             The name of the Appender, null returns null.
+	 * @param domain           The LTTng-UST agent domain 'LOG4J' / 'LOG4J2'.
 	 * @param ignoreExceptions If {@code "true"} (default) exceptions encountered
 	 *                         when appending events are logged; otherwise they are
 	 *                         propagated to the caller.
 	 * @param filter           The Filter or null.
 	 *
-	 * @return A new LttngLogAppender, null if the name was null.
-	 *
-	 * @throws IOException       This handler requires the lttng-ust-log4j-jni.so
-	 *                           native library, through which it will send the
-	 *                           trace events. This exception is thrown if this
-	 *                           library cannot be found.
-	 * @throws SecurityException We will forward any SecurityExcepion that may be
-	 *                           thrown when trying to load the JNI library.
+	 * @return A new LttngLogAppender, null if the name was null or the domain is
+	 *         null or invalid.
 	 */
 	@PluginFactory
 	public static LttngLogAppender createAppender(@PluginAttribute("name") String name,
-			@PluginAttribute("ignoreExceptions") Boolean ignoreExceptions, @PluginElement("Filters") Filter filter)
-			throws IOException, SecurityException {
+			@PluginAttribute("domain") String domain, @PluginAttribute("ignoreExceptions") Boolean ignoreExceptions,
+			@PluginElement("Filters") Filter filter) {
 
 		if (name == null) {
 			LOGGER.error("No name provided for LttngLogAppender");
+			return null;
+		}
+
+		if (domain == null) {
+			LOGGER.error("No domain provided for LttngLogAppender");
 			return null;
 		}
 
@@ -122,7 +132,31 @@ public final class LttngLogAppender extends AbstractAppender implements ILttngHa
 			ignoreExceptions = true;
 		}
 
-		return new LttngLogAppender(name, filter, ignoreExceptions);
+		/* Parse the domain string */
+		LttngLog4j2Agent.Domain parsedDomain;
+		try {
+			parsedDomain = LttngLog4j2Agent.Domain.valueOf(domain.toUpperCase());
+		} catch (IllegalArgumentException e) {
+			LOGGER.error("Invalid domain '{}' for LttngLogAppender", domain);
+			return null;
+		}
+
+		/* Create the appender and handle the possible failures. */
+		LttngLogAppender newAppender;
+		try {
+			newAppender = new LttngLogAppender(name, parsedDomain, filter, ignoreExceptions);
+		} catch (IllegalArgumentException e) {
+			LOGGER.error("Invalid domain '{}' for LttngLogAppender", parsedDomain);
+			newAppender = null;
+		} catch (SecurityException e) {
+			LOGGER.error("Security error trying to load '{}' JNI library for LttngLogAppender", SHARED_OBJECT_NAME);
+			newAppender = null;
+		} catch (IOException e) {
+			LOGGER.error("Failed to load '{}' JNI library for LttngLogAppender", SHARED_OBJECT_NAME);
+			newAppender = null;
+		}
+
+		return newAppender;
 	}
 
 	@Override
