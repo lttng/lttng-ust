@@ -50,18 +50,19 @@ public class HelloLog4j2Prog {
 		standardLayout.addAttribute("pattern", "%d [%t] %-5level: %msg%n%throwable");
 
 		/* Create a console appender */
-		AppenderComponentBuilder appenderBuilder = builder.newAppender("Stdout", "CONSOLE");
+		AppenderComponentBuilder appenderBuilder = builder.newAppender("Stdout", "Console");
 		appenderBuilder.add(standardLayout);
 		builder.add(appenderBuilder);
 
 		/* Create an Lttng appender */
-		appenderBuilder = builder.newAppender("Lttng", "LTTNG");
+		appenderBuilder = builder.newAppender("Lttng1", "Lttng");
+		appenderBuilder.addAttribute("domain", "LOG4J");
 		builder.add(appenderBuilder);
 
 		/* Create a root logger with both appenders attached */
 		RootLoggerComponentBuilder rootLogger = builder.newRootLogger(Level.DEBUG);
 		rootLogger.add(builder.newAppenderRef("Stdout"));
-		rootLogger.add(builder.newAppenderRef("Lttng"));
+		rootLogger.add(builder.newAppenderRef("Lttng1"));
 		builder.add(rootLogger);
 
 		Configurator.initialize(builder.build());
