@@ -134,10 +134,14 @@ libringbuffer_clients_la_SOURCES = \
 	ringbuffer-clients/clients.h \
 	ringbuffer-clients/discard.c \
 	ringbuffer-clients/discard-rt.c \
+	ringbuffer-clients/discard-global.c \
+	ringbuffer-clients/discard-global-rt.c \
 	ringbuffer-clients/metadata.c \
 	ringbuffer-clients/metadata-template.h \
 	ringbuffer-clients/overwrite.c \
 	ringbuffer-clients/overwrite-rt.c \
+	ringbuffer-clients/overwrite-global.c \
+	ringbuffer-clients/overwrite-global-rt.c \
 	ringbuffer-clients/template.h
 
 libringbuffer_clients_la_CFLAGS = -DUST_COMPONENT="libringbuffer-clients" $(AM_CFLAGS)

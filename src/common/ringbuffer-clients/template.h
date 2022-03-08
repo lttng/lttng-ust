@@ -51,7 +51,9 @@ struct packet_header {
 						 * the beginning of the trace.
 						 * (may overflow)
 						 */
+#ifdef RING_BUFFER_CLIENT_HAS_CPU_ID
 		uint32_t cpu_id;		/* CPU id associated with stream */
+#endif
 		uint8_t header_end;		/* End of header */
 	} ctx;
 };
@@ -378,14 +380,20 @@ static void client_buffer_begin(struct lttng_ust_ring_buffer *buf, uint64_t time
 	header->magic = CTF_MAGIC_NUMBER;
 	memcpy(header->uuid, lttng_chan->priv->uuid, sizeof(lttng_chan->priv->uuid));
 	header->stream_id = lttng_chan->priv->id;
+#ifdef RING_BUFFER_CLIENT_HAS_CPU_ID
 	header->stream_instance_id = buf->backend.cpu;
+#else
+	header->stream_instance_id = 0;
+#endif
 	header->ctx.timestamp_begin = timestamp;
 	header->ctx.timestamp_end = 0;
 	header->ctx.content_size = ~0ULL; /* for debugging */
 	header->ctx.packet_size = ~0ULL;
 	header->ctx.packet_seq_num = chan->backend.num_subbuf * cnt + subbuf_idx;
 	header->ctx.events_discarded = 0;
+#ifdef RING_BUFFER_CLIENT_HAS_CPU_ID
 	header->ctx.cpu_id = buf->backend.cpu;
+#endif
 }
 
 /*
@@ -569,8 +577,12 @@ static int client_instance_id(struct lttng_ust_ring_buffer *buf,
 		struct lttng_ust_ring_buffer_channel *chan __attribute__((unused)),
 		uint64_t *id)
 {
+#ifdef RING_BUFFER_CLIENT_HAS_CPU_ID
 	*id = buf->backend.cpu;
-
+#else
+	(void) buf;
+	*id = 0;
+#endif
 	return 0;
 }
 
@@ -604,7 +616,9 @@ static int client_packet_initialize(struct lttng_ust_ring_buffer *buf,
 	packet_header->ctx.timestamp_end = timestamp_end;
 	packet_header->ctx.content_size = client_packet_header_size() * CHAR_BIT;
 	packet_header->ctx.packet_size = size * CHAR_BIT;
+#ifdef RING_BUFFER_CLIENT_HAS_CPU_ID
 	packet_header->ctx.cpu_id = buf->backend.cpu;
+#endif
 	packet_header->ctx.packet_seq_num = sequence_number;
 	*packet_length = client_packet_header_size();
 	*packet_length_padded = size;
@@ -836,19 +850,30 @@ static
 int lttng_flush_buffer(struct lttng_ust_channel_buffer *chan)
 {
 	struct lttng_ust_ring_buffer_channel *rb_chan = chan->priv->rb_chan;
-	struct lttng_ust_ring_buffer *buf;
-	int cpu;
+	int shm_fd, wait_fd, wakeup_fd;
+	uint64_t memory_map_size;
+	void *memory_map_addr;
 
-	for_each_channel_cpu(cpu, rb_chan) {
-		int shm_fd, wait_fd, wakeup_fd;
-		uint64_t memory_map_size;
-		void *memory_map_addr;
+	if (client_config.alloc == RING_BUFFER_ALLOC_GLOBAL) {
+		struct lttng_ust_ring_buffer *buf;
 
 		buf = channel_get_ring_buffer(&client_config, rb_chan,
-				cpu, rb_chan->handle, &shm_fd, &wait_fd,
+				0, rb_chan->handle, &shm_fd, &wait_fd,
 				&wakeup_fd, &memory_map_size, &memory_map_addr);
 		lib_ring_buffer_switch(&client_config, buf,
 				SWITCH_ACTIVE, rb_chan->handle);
+	} else {
+		int cpu;
+
+		for_each_channel_cpu(cpu, rb_chan) {
+			struct lttng_ust_ring_buffer *buf;
+
+			buf = channel_get_ring_buffer(&client_config, rb_chan,
+					cpu, rb_chan->handle, &shm_fd, &wait_fd,
+					&wakeup_fd, &memory_map_size, &memory_map_addr);
+			lib_ring_buffer_switch(&client_config, buf,
+					SWITCH_ACTIVE, rb_chan->handle);
+		}
 	}
 	return 0;
 }

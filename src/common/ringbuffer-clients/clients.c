@@ -13,10 +13,18 @@ void lttng_ust_ring_buffer_clients_init(void)
 	lttng_ring_buffer_client_overwrite_rt_init();
 	lttng_ring_buffer_client_discard_init();
 	lttng_ring_buffer_client_discard_rt_init();
+	lttng_ring_buffer_client_overwrite_global_init();
+	lttng_ring_buffer_client_overwrite_global_rt_init();
+	lttng_ring_buffer_client_discard_global_init();
+	lttng_ring_buffer_client_discard_global_rt_init();
 }
 
 void lttng_ust_ring_buffer_clients_exit(void)
 {
+	lttng_ring_buffer_client_discard_global_rt_exit();
+	lttng_ring_buffer_client_discard_global_exit();
+	lttng_ring_buffer_client_overwrite_global_rt_exit();
+	lttng_ring_buffer_client_overwrite_global_exit();
 	lttng_ring_buffer_client_discard_rt_exit();
 	lttng_ring_buffer_client_discard_exit();
 	lttng_ring_buffer_client_overwrite_rt_exit();
