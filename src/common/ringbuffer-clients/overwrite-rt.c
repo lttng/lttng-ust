@@ -11,6 +11,7 @@
 #include "common/ringbuffer-clients/clients.h"
 
 #define RING_BUFFER_MODE_TEMPLATE		RING_BUFFER_OVERWRITE
+#define RING_BUFFER_ALLOC_TEMPLATE		RING_BUFFER_ALLOC_PER_CPU
 #define RING_BUFFER_MODE_TEMPLATE_STRING	"overwrite-rt"
 #define RING_BUFFER_MODE_TEMPLATE_ALLOC_TLS	\
 	lttng_ust_ring_buffer_client_overwrite_rt_alloc_tls

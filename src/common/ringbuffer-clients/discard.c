@@ -11,6 +11,7 @@
 #include "common/ringbuffer-clients/clients.h"
 
 #define RING_BUFFER_MODE_TEMPLATE		RING_BUFFER_DISCARD
+#define RING_BUFFER_ALLOC_TEMPLATE		RING_BUFFER_ALLOC_PER_CPU
 #define RING_BUFFER_MODE_TEMPLATE_STRING	"discard"
 #define RING_BUFFER_MODE_TEMPLATE_ALLOC_TLS	\
 	lttng_ust_ring_buffer_client_discard_alloc_tls
