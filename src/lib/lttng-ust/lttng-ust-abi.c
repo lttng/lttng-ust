@@ -471,6 +471,8 @@ int lttng_abi_map_channel(int session_objd,
 	switch (type) {
 	case LTTNG_UST_ABI_CHAN_PER_CPU:
 		break;
+	case LTTNG_UST_ABI_CHAN_GLOBAL:
+		break;
 	default:
 		ret = -EINVAL;
 		goto invalid;
@@ -527,6 +529,27 @@ int lttng_abi_map_channel(int session_objd,
 					transport_name = "relay-discard-mmap";
 				} else {
 					transport_name = "relay-discard-rt-mmap";
+				}
+			}
+		} else {
+			ret = -EINVAL;
+			goto notransport;
+		}
+		chan_name = "channel";
+		break;
+	case LTTNG_UST_ABI_CHAN_GLOBAL:
+		if (config->output == RING_BUFFER_MMAP) {
+			if (config->mode == RING_BUFFER_OVERWRITE) {
+				if (config->wakeup == RING_BUFFER_WAKEUP_BY_WRITER) {
+					transport_name = "relay-overwrite-global-mmap";
+				} else {
+					transport_name = "relay-overwrite-global-rt-mmap";
+				}
+			} else {
+				if (config->wakeup == RING_BUFFER_WAKEUP_BY_WRITER) {
+					transport_name = "relay-discard-global-mmap";
+				} else {
+					transport_name = "relay-discard-global-rt-mmap";
 				}
 			}
 		} else {

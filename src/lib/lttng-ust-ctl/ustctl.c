@@ -1431,6 +1431,25 @@ struct lttng_ust_ctl_consumer_channel *
 		else
 			return NULL;
 		break;
+	case LTTNG_UST_ABI_CHAN_GLOBAL:
+		if (attr->output == LTTNG_UST_ABI_MMAP) {
+			if (attr->overwrite) {
+				if (attr->read_timer_interval == 0) {
+					transport_name = "relay-overwrite-global-mmap";
+				} else {
+					transport_name = "relay-overwrite-global-rt-mmap";
+				}
+			} else {
+				if (attr->read_timer_interval == 0) {
+					transport_name = "relay-discard-global-mmap";
+				} else {
+					transport_name = "relay-discard-rt-global-mmap";
+				}
+			}
+		} else {
+			return NULL;
+		}
+		break;
 	default:
 		transport_name = "<unknown>";
 		return NULL;
