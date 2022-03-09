@@ -51,7 +51,8 @@ struct lttng_ust_ring_buffer_client_cb {
 			      struct lttng_ust_shm_handle *handle);
 	void (*buffer_end) (struct lttng_ust_ring_buffer *buf, uint64_t tsc,
 			    unsigned int subbuf_idx, unsigned long data_size,
-			    struct lttng_ust_shm_handle *handle);
+			    struct lttng_ust_shm_handle *handle,
+			    const struct lttng_ust_ring_buffer_ctx *ctx);
 
 	/* Optional callbacks (can be set to NULL) */
 

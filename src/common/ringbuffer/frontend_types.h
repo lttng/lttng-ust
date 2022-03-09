@@ -253,12 +253,19 @@ struct lttng_ust_ring_buffer_ctx_private {
 						 */
 	uint64_t tsc;				/* time-stamp counter value */
 	unsigned int rflags;			/* reservation flags */
-
 	struct lttng_ust_ring_buffer *buf;	/*
 						 * buffer corresponding to processor id
 						 * for this channel
 						 */
 	struct lttng_ust_ring_buffer_backend_pages *backend_pages;
+
+	/*
+	 * Records lost counts are only loaded into these fields before
+	 * reserving the last bytes from the ring buffer.
+	 */
+	unsigned long records_lost_full;
+	unsigned long records_lost_wrap;
+	unsigned long records_lost_big;
 };
 
 static inline

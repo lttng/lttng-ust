@@ -127,7 +127,8 @@ static void client_buffer_begin(struct lttng_ust_ring_buffer *buf,
 static void client_buffer_end(struct lttng_ust_ring_buffer *buf,
 		uint64_t tsc  __attribute__((unused)),
 		unsigned int subbuf_idx, unsigned long data_size,
-		struct lttng_ust_shm_handle *handle)
+		struct lttng_ust_shm_handle *handle,
+		const struct lttng_ust_ring_buffer_ctx *ctx)
 {
 	struct lttng_ust_ring_buffer_channel *chan = shmp(handle, buf->backend.chan);
 	struct metadata_packet_header *header =
@@ -146,9 +147,9 @@ static void client_buffer_end(struct lttng_ust_ring_buffer *buf,
 	 * We do not care about the records lost count, because the metadata
 	 * channel waits and retry.
 	 */
-	(void) lib_ring_buffer_get_records_lost_full(&client_config, buf);
-	records_lost += lib_ring_buffer_get_records_lost_wrap(&client_config, buf);
-	records_lost += lib_ring_buffer_get_records_lost_big(&client_config, buf);
+	(void) lib_ring_buffer_get_records_lost_full(&client_config, ctx);
+	records_lost += lib_ring_buffer_get_records_lost_wrap(&client_config, ctx);
+	records_lost += lib_ring_buffer_get_records_lost_big(&client_config, ctx);
 	WARN_ON_ONCE(records_lost != 0);
 }
 

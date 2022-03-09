@@ -288,7 +288,7 @@ void lib_ring_buffer_commit(const struct lttng_ust_ring_buffer_config *config,
 	commit_count = v_read(config, &cc_hot->cc);
 
 	lib_ring_buffer_check_deliver(config, buf, chan, offset_end - 1,
-				      commit_count, endidx, handle, ctx_private->tsc);
+				      commit_count, endidx, handle, ctx);
 	/*
 	 * Update used size at each commit. It's needed only for extracting
 	 * ring_buffer buffers from vmcore, after crash.
