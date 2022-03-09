@@ -108,17 +108,10 @@ struct shm_object *_shm_object_table_alloc_shm(struct shm_object_table *table,
 	obj = &table->objects[table->allocated_len];
 
 	/* wait_fd: create pipe */
-	ret = pipe(waitfd);
+	ret = pipe2(waitfd, O_CLOEXEC);
 	if (ret < 0) {
 		PERROR("pipe");
 		goto error_pipe;
-	}
-	for (i = 0; i < 2; i++) {
-		ret = fcntl(waitfd[i], F_SETFD, FD_CLOEXEC);
-		if (ret < 0) {
-			PERROR("fcntl");
-			goto error_fcntl;
-		}
 	}
 	/* The write end of the pipe needs to be non-blocking */
 	ret = fcntl(waitfd[1], F_SETFL, O_NONBLOCK);
@@ -201,17 +194,10 @@ struct shm_object *_shm_object_table_alloc_mem(struct shm_object_table *table,
 		goto alloc_error;
 
 	/* wait_fd: create pipe */
-	ret = pipe(waitfd);
+	ret = pipe2(waitfd, O_CLOEXEC);
 	if (ret < 0) {
 		PERROR("pipe");
 		goto error_pipe;
-	}
-	for (i = 0; i < 2; i++) {
-		ret = fcntl(waitfd[i], F_SETFD, FD_CLOEXEC);
-		if (ret < 0) {
-			PERROR("fcntl");
-			goto error_fcntl;
-		}
 	}
 	/* The write end of the pipe needs to be non-blocking */
 	ret = fcntl(waitfd[1], F_SETFL, O_NONBLOCK);
@@ -373,11 +359,6 @@ struct shm_object *shm_object_table_append_mem(struct shm_object_table *table,
 	obj->shm_fd = -1;
 	obj->shm_fd_ownership = 0;
 
-	ret = fcntl(obj->wait_fd[1], F_SETFD, FD_CLOEXEC);
-	if (ret < 0) {
-		PERROR("fcntl");
-		goto error_fcntl;
-	}
 	/* The write end of the pipe needs to be non-blocking */
 	ret = fcntl(obj->wait_fd[1], F_SETFL, O_NONBLOCK);
 	if (ret < 0) {

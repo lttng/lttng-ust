@@ -108,9 +108,8 @@ int ustcomm_connect_unix_sock(const char *pathname, long timeout)
 	/*
 	 * libust threads require the close-on-exec flag for all
 	 * resources so it does not leak file descriptors upon exec.
-	 * SOCK_CLOEXEC is not used since it is linux specific.
 	 */
-	fd = socket(PF_UNIX, SOCK_STREAM, 0);
+	fd = socket(PF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
 	if (fd < 0) {
 		PERROR("socket");
 		ret = -errno;
@@ -124,12 +123,6 @@ int ustcomm_connect_unix_sock(const char *pathname, long timeout)
 		if (ret < 0) {
 			WARN("Error setting connect socket send timeout");
 		}
-	}
-	ret = fcntl(fd, F_SETFD, FD_CLOEXEC);
-	if (ret < 0) {
-		PERROR("fcntl");
-		ret = -errno;
-		goto error_fcntl;
 	}
 
 	memset(&sun, 0, sizeof(sun));
@@ -158,7 +151,6 @@ int ustcomm_connect_unix_sock(const char *pathname, long timeout)
 	return fd;
 
 error_connect:
-error_fcntl:
 	{
 		int closeret;
 
@@ -454,7 +446,6 @@ ssize_t ustcomm_recv_fds_unix_sock(int sock, int *fds, size_t nb_fd)
 	char recv_fd[CMSG_SPACE(sizeof_fds)];
 	struct msghdr msg;
 	char dummy;
-	int i;
 
 	memset(&msg, 0, sizeof(msg));
 
@@ -467,7 +458,7 @@ ssize_t ustcomm_recv_fds_unix_sock(int sock, int *fds, size_t nb_fd)
 	msg.msg_controllen = sizeof(recv_fd);
 
 	do {
-		ret = recvmsg(sock, &msg, 0);
+		ret = recvmsg(sock, &msg, MSG_CMSG_CLOEXEC);
 	} while (ret < 0 && errno == EINTR);
 	if (ret < 0) {
 		if (errno != EPIPE && errno != ECONNRESET) {
@@ -512,15 +503,6 @@ ssize_t ustcomm_recv_fds_unix_sock(int sock, int *fds, size_t nb_fd)
 	}
 
 	memcpy(fds, CMSG_DATA(cmsg), sizeof_fds);
-
-	/* Set FD_CLOEXEC */
-	for (i = 0; i < nb_fd; i++) {
-		ret = fcntl(fds[i], F_SETFD, FD_CLOEXEC);
-		if (ret < 0) {
-			PERROR("fcntl failed to set FD_CLOEXEC on fd %d",
-			       fds[i]);
-		}
-	}
 
 	ret = nb_fd;
 end:
