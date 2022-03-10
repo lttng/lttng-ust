@@ -205,7 +205,7 @@ int subbuffer_id_check_index(const struct lttng_ust_ring_buffer_config *config,
 
 static inline
 int lib_ring_buffer_backend_get_pages(const struct lttng_ust_ring_buffer_config *config,
-			struct lttng_ust_ring_buffer_ctx *ctx,
+			const struct lttng_ust_ring_buffer_ctx *ctx,
 			struct lttng_ust_ring_buffer_backend_pages **backend_pages)
 {
 	struct lttng_ust_ring_buffer_ctx_private *ctx_private = ctx->priv;
@@ -244,7 +244,7 @@ static inline
 struct lttng_ust_ring_buffer_backend_pages *
 	lib_ring_buffer_get_backend_pages_from_ctx(
 		const struct lttng_ust_ring_buffer_config *config __attribute__((unused)),
-		struct lttng_ust_ring_buffer_ctx *ctx)
+		const struct lttng_ust_ring_buffer_ctx *ctx)
 {
 	return ctx->priv->backend_pages;
 }
@@ -256,9 +256,7 @@ struct lttng_ust_ring_buffer_backend_pages *
 #ifdef LTTNG_RING_BUFFER_COUNT_EVENTS
 static inline
 void subbuffer_count_record(const struct lttng_ust_ring_buffer_config *config,
-			    const struct lttng_ust_ring_buffer_ctx *ctx,
-			    struct lttng_ust_ring_buffer_backend *bufb,
-			    unsigned long idx, struct lttng_ust_shm_handle *handle)
+			    const struct lttng_ust_ring_buffer_ctx *ctx)
 {
 	struct lttng_ust_ring_buffer_backend_pages *backend_pages;
 
@@ -272,10 +270,7 @@ void subbuffer_count_record(const struct lttng_ust_ring_buffer_config *config,
 #else /* LTTNG_RING_BUFFER_COUNT_EVENTS */
 static inline
 void subbuffer_count_record(const struct lttng_ust_ring_buffer_config *config __attribute__((unused)),
-		const struct lttng_ust_ring_buffer_ctx *ctx __attribute__((unused)),
-		struct lttng_ust_ring_buffer_backend *bufb __attribute__((unused)),
-		unsigned long idx __attribute__((unused)),
-		struct lttng_ust_shm_handle *handle __attribute__((unused)))
+		const struct lttng_ust_ring_buffer_ctx *ctx __attribute__((unused)))
 {
 }
 #endif /* #else LTTNG_RING_BUFFER_COUNT_EVENTS */

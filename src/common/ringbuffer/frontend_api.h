@@ -257,7 +257,7 @@ void lib_ring_buffer_commit(const struct lttng_ust_ring_buffer_config *config,
 	/*
 	 * Must count record before incrementing the commit count.
 	 */
-	subbuffer_count_record(config, ctx, &buf->backend, endidx, handle);
+	subbuffer_count_record(config, ctx);
 
 	/*
 	 * Order all writes to buffer before the commit count update that will
