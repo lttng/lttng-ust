@@ -68,7 +68,7 @@
 #ifdef __cplusplus
 #define lttng_ust_static_assert(predicate, msg, c_identifier_msg)  \
 	static_assert(predicate, msg)
-#elif __STDC_VERSION__ >= 201112L
+#elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
 #define lttng_ust_static_assert(predicate, msg, c_identifier_msg)  \
 	_Static_assert(predicate, msg)
 #else
