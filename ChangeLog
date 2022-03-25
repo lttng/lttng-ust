@@ -1,3 +1,19 @@
+2022-03-25 (National Waffle Day) lttng-ust 2.13.2
+	* fix: __STDC_VERSION__ can be undefined in C++
+	* Fix: sample discarded events count before reserve
+	* Fix: ring buffer event counter
+	* Fix: concurrent exec(2) file descriptor leak
+	* Add 'domain' parameter to the Log4j 2.x agent
+	* fix: Convert custom loglevels in Log4j 2.x agent
+	* fix: coverity reported null returns in Log4j2 agent
+	* Add a Log4j 2.x Java agent
+	* Fix: may be used uninitialized on powerpc
+	* Revert "Fix: ustcomm: serialize variant_nestable type"
+	* Fix: ustcomm: serialize variant_nestable type
+	* Fix: doc/examples/java-log4j: fix paths to directories
+	* Fix: doc/examples/java-jul: fix paths to directories
+	* Copyright ownership transfer
+
 2021-12-10 (Lost and Found Day) lttng-ust 2.13.1
 	* Fix: ust-compiler: constructor/destructor build on g++ 4.8
 	* ust-compiler: constructor/destructor whitespaces layout and macro dependency
