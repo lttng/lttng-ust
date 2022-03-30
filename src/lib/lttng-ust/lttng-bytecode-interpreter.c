@@ -242,6 +242,7 @@ static int context_get_index(struct lttng_ust_ctx *ctx,
 			ptr->u.u64 = v.u.s64;	/* Cast. */
 			ptr->ptr = &ptr->u.u64;
 		}
+		ptr->rev_bo = lttng_ust_get_type_integer(field->type)->reverse_byte_order;
 		break;
 	case lttng_ust_type_enum:
 	{
@@ -258,6 +259,7 @@ static int context_get_index(struct lttng_ust_ctx *ctx,
 			ptr->u.u64 = v.u.s64;	/* Cast. */
 			ptr->ptr = &ptr->u.u64;
 		}
+		ptr->rev_bo = itype->reverse_byte_order;
 		break;
 	}
 	case lttng_ust_type_array:
@@ -296,6 +298,7 @@ static int context_get_index(struct lttng_ust_ctx *ctx,
 		ctx_field->get_value(ctx_field->priv, probe_ctx, &v);
 		ptr->u.d = v.u.d;
 		ptr->ptr = &ptr->u.d;
+		ptr->rev_bo = lttng_ust_get_type_float(field->type)->reverse_byte_order;
 		break;
 	case lttng_ust_type_dynamic:
 		ctx_field->get_value(ctx_field->priv, probe_ctx, &v);
@@ -309,6 +312,11 @@ static int context_get_index(struct lttng_ust_ctx *ctx,
 			ptr->object_type = OBJECT_TYPE_U64;
 			ptr->u.u64 = v.u.u64;
 			ptr->ptr = &ptr->u.u64;
+			/*
+			 * struct lttng_ust_ctx_value does not currently
+			 * feature a byte order field.
+			 */
+			ptr->rev_bo = false;
 			dbg_printf("context get index dynamic u64 %" PRIi64 "\n", ptr->u.u64);
 			break;
 		case LTTNG_UST_DYNAMIC_TYPE_S8:
@@ -318,6 +326,11 @@ static int context_get_index(struct lttng_ust_ctx *ctx,
 			ptr->object_type = OBJECT_TYPE_S64;
 			ptr->u.s64 = v.u.s64;
 			ptr->ptr = &ptr->u.s64;
+			/*
+			 * struct lttng_ust_ctx_value does not currently
+			 * feature a byte order field.
+			 */
+			ptr->rev_bo = false;
 			dbg_printf("context get index dynamic s64 %" PRIi64 "\n", ptr->u.s64);
 			break;
 		case LTTNG_UST_DYNAMIC_TYPE_FLOAT:
@@ -325,6 +338,11 @@ static int context_get_index(struct lttng_ust_ctx *ctx,
 			ptr->object_type = OBJECT_TYPE_DOUBLE;
 			ptr->u.d = v.u.d;
 			ptr->ptr = &ptr->u.d;
+			/*
+			 * struct lttng_ust_ctx_value does not currently
+			 * feature a byte order field.
+			 */
+			ptr->rev_bo = false;
 			dbg_printf("context get index dynamic double %g\n", ptr->u.d);
 			break;
 		case LTTNG_UST_DYNAMIC_TYPE_STRING:
