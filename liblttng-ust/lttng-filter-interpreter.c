@@ -246,6 +246,7 @@ static int context_get_index(struct lttng_ctx *ctx,
 			ptr->u.u64 = v.u.s64;	/* Cast. */
 			ptr->ptr = &ptr->u.u64;
 		}
+		ptr->rev_bo = field->type.u.basic.integer.reverse_byte_order;
 		break;
 	case atype_enum:
 	{
@@ -262,6 +263,7 @@ static int context_get_index(struct lttng_ctx *ctx,
 			ptr->u.u64 = v.u.s64;	/* Cast. */
 			ptr->ptr = &ptr->u.u64;
 		}
+		ptr->rev_bo = itype->reverse_byte_order;
 		break;
 	}
 	case atype_array:
@@ -300,6 +302,7 @@ static int context_get_index(struct lttng_ctx *ctx,
 		ctx_field->get_value(ctx_field, &v);
 		ptr->u.d = v.u.d;
 		ptr->ptr = &ptr->u.d;
+		ptr->rev_bo = field->type.u.basic._float.reverse_byte_order;
 		break;
 	case atype_dynamic:
 		ctx_field->get_value(ctx_field, &v);
@@ -310,12 +313,22 @@ static int context_get_index(struct lttng_ctx *ctx,
 			ptr->object_type = OBJECT_TYPE_S64;
 			ptr->u.s64 = v.u.s64;
 			ptr->ptr = &ptr->u.s64;
+			/*
+			 * struct lttng_ctx_value does not currently
+			 * feature a byte order field.
+			 */
+			ptr->rev_bo = false;
 			dbg_printf("context get index dynamic s64 %" PRIi64 "\n", ptr->u.s64);
 			break;
 		case LTTNG_UST_DYNAMIC_TYPE_DOUBLE:
 			ptr->object_type = OBJECT_TYPE_DOUBLE;
 			ptr->u.d = v.u.d;
 			ptr->ptr = &ptr->u.d;
+			/*
+			 * struct lttng_ctx_value does not currently
+			 * feature a byte order field.
+			 */
+			ptr->rev_bo = false;
 			dbg_printf("context get index dynamic double %g\n", ptr->u.d);
 			break;
 		case LTTNG_UST_DYNAMIC_TYPE_STRING:
