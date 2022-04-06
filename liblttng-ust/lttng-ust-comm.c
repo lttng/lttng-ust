@@ -139,13 +139,13 @@ int ust_lock(void)
 	sigfillset(&sig_all_blocked);
 	ret = pthread_sigmask(SIG_SETMASK, &sig_all_blocked, &orig_mask);
 	if (ret) {
-		ERR("pthread_sigmask: %s", strerror(ret));
+		ERR("pthread_sigmask: ret=%d", ret);
 	}
 	if (!URCU_TLS(ust_mutex_nest)++)
 		pthread_mutex_lock(&ust_mutex);
 	ret = pthread_sigmask(SIG_SETMASK, &orig_mask, NULL);
 	if (ret) {
-		ERR("pthread_sigmask: %s", strerror(ret));
+		ERR("pthread_sigmask: ret=%d", ret);
 	}
 	if (lttng_ust_comm_should_quit) {
 		return -1;
@@ -171,13 +171,13 @@ void ust_lock_nocheck(void)
 	sigfillset(&sig_all_blocked);
 	ret = pthread_sigmask(SIG_SETMASK, &sig_all_blocked, &orig_mask);
 	if (ret) {
-		ERR("pthread_sigmask: %s", strerror(ret));
+		ERR("pthread_sigmask: ret=%d", ret);
 	}
 	if (!URCU_TLS(ust_mutex_nest)++)
 		pthread_mutex_lock(&ust_mutex);
 	ret = pthread_sigmask(SIG_SETMASK, &orig_mask, NULL);
 	if (ret) {
-		ERR("pthread_sigmask: %s", strerror(ret));
+		ERR("pthread_sigmask: ret=%d", ret);
 	}
 }
 
@@ -192,13 +192,13 @@ void ust_unlock(void)
 	sigfillset(&sig_all_blocked);
 	ret = pthread_sigmask(SIG_SETMASK, &sig_all_blocked, &orig_mask);
 	if (ret) {
-		ERR("pthread_sigmask: %s", strerror(ret));
+		ERR("pthread_sigmask: ret=%d", ret);
 	}
 	if (!--URCU_TLS(ust_mutex_nest))
 		pthread_mutex_unlock(&ust_mutex);
 	ret = pthread_sigmask(SIG_SETMASK, &orig_mask, NULL);
 	if (ret) {
-		ERR("pthread_sigmask: %s", strerror(ret));
+		ERR("pthread_sigmask: ret=%d", ret);
 	}
 	if (lttng_ust_cancelstate_disable_pop()) {
 		ERR("lttng_ust_cancelstate_disable_pop");

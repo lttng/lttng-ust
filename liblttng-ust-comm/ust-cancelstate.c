@@ -27,7 +27,7 @@ int lttng_ust_cancelstate_disable_push(void)
 		goto end;
 	ret = pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldstate);
 	if (ret) {
-		ERR("pthread_setcancelstate: %s", strerror(ret));
+		ERR("pthread_setcancelstate: ret=%d", ret);
 		return -1;
 	}
 	state->oldstate = oldstate;
@@ -46,7 +46,7 @@ int lttng_ust_cancelstate_disable_pop(void)
 		goto end;
 	ret = pthread_setcancelstate(state->oldstate, &oldstate);
 	if (ret) {
-		ERR("pthread_setcancelstate: %s", strerror(ret));
+		ERR("pthread_setcancelstate: ret=%d", ret);
 		return -1;
 	}
 	if (oldstate != PTHREAD_CANCEL_DISABLE) {
