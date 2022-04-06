@@ -119,6 +119,28 @@ static int lttng_ust_comm_should_quit;
 int lttng_ust_loaded __attribute__((weak));
 
 /*
+ * Notes on async-signal-safety of ust lock: a few libc functions are used
+ * which are not strictly async-signal-safe:
+ *
+ * - pthread_setcancelstate
+ * - pthread_mutex_lock
+ * - pthread_mutex_unlock
+ *
+ * As of glibc 2.35, the implementation of pthread_setcancelstate only
+ * touches TLS data, and it appears to be safe to use from signal
+ * handlers. If the libc implementation changes, this will need to be
+ * revisited, and we may ask glibc to provide an async-signal-safe
+ * pthread_setcancelstate.
+ *
+ * As of glibc 2.35, the implementation of pthread_mutex_lock/unlock
+ * for fast mutexes only relies on the pthread_mutex_t structure.
+ * Disabling signals around all uses of this mutex ensures
+ * signal-safety. If the libc implementation changes and eventually uses
+ * other global resources, this will need to be revisited and we may
+ * need to implement our own mutex.
+ */
+
+/*
  * Return 0 on success, -1 if should quit.
  * The lock is taken in both cases.
  * Signal-safe.
