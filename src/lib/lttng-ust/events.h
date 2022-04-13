@@ -29,8 +29,8 @@ struct lttng_event_recorder_enabler *lttng_event_recorder_enabler_create(
  */
 struct lttng_event_counter_enabler *lttng_event_counter_enabler_create(
 		enum lttng_enabler_format_type format_type,
-		const struct lttng_ust_abi_event *event_param,
-		const struct lttng_ust_abi_counter_key *key,
+		const struct lttng_ust_abi_counter_event *counter_event,
+		const struct lttng_counter_key *key,
 		struct lttng_ust_channel_counter *chan)
 	__attribute__((visibility("hidden")));
 

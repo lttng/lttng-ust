@@ -3318,6 +3318,7 @@ int lttng_ust_ctl_counter_clear(struct lttng_ust_ctl_daemon_counter *counter,
  */
 int lttng_ust_ctl_counter_create_event(int sock,
 		struct lttng_ust_abi_counter_event *counter_event,
+		size_t counter_event_len,
 		struct lttng_ust_abi_object_data *counter_data,
 		struct lttng_ust_abi_object_data **_counter_event_data)
 {
@@ -3337,15 +3338,15 @@ int lttng_ust_ctl_counter_create_event(int sock,
 	memset(&lum, 0, sizeof(lum));
 	lum.handle = counter_data->handle;
 	lum.cmd = LTTNG_UST_ABI_COUNTER_EVENT;
-	lum.u.counter_event.len = sizeof(*counter_event);
+	lum.u.counter_event.len = counter_event_len;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret) {
 		free(counter_event_data);
 		return ret;
 	}
 	/* Send struct lttng_ust_counter_event */
-	len = ustcomm_send_unix_sock(sock, counter_event, sizeof(*counter_event));
-	if (len != sizeof(*counter_event)) {
+	len = ustcomm_send_unix_sock(sock, counter_event, counter_event_len);
+	if (len != counter_event_len) {
 		free(counter_event_data);
 		if (len < 0)
 			return len;

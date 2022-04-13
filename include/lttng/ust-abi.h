@@ -107,8 +107,6 @@ struct lttng_ust_abi_event_notifier_notification {
 	char padding[LTTNG_UST_ABI_EVENT_NOTIFIER_NOTIFICATION_PADDING];
 } __attribute__((packed));
 
-#define LTTNG_UST_ABI_COUNTER_DIMENSION_MAX 4
-
 enum lttng_ust_abi_key_token_type {
 	LTTNG_UST_ABI_KEY_TOKEN_STRING = 0,		/* arg: strtab_offset. */
 	LTTNG_UST_ABI_KEY_TOKEN_EVENT_NAME = 1,		/* no arg. */
@@ -125,33 +123,35 @@ enum lttng_ust_abi_counter_bitness {
 	LTTNG_UST_ABI_COUNTER_BITNESS_64 = 1,
 };
 
-#define LTTNG_UST_ABI_KEY_ARG_PADDING1		256
-#define LTTNG_UST_ABI_KEY_TOKEN_STRING_LEN_MAX	256
+#define LTTNG_UST_ABI_KEY_TOKEN_STRING_LEN_MAX	4096
+
+struct lttng_ust_abi_counter_key_string {
+	uint32_t string_len;		/* string length (includes \0) */
+	char str[];			/* Null-terminated string. */
+} __attribute__((packed));
+
 struct lttng_ust_abi_key_token {
-	uint32_t type;	/* enum lttng_ust_key_token_type */
-	union {
-		char string[LTTNG_UST_ABI_KEY_TOKEN_STRING_LEN_MAX];
-		char padding[LTTNG_UST_ABI_KEY_ARG_PADDING1];
-	} arg;
+	uint32_t len;				/* length of this structure. */
+	uint32_t type;				/* enum lttng_ust_key_token_type */
+
+	/* Followed by a struct lttng_ust_abi_counter_key_string for LTTNG_UST_ABI_KEY_TOKEN_STRING. */
 } __attribute__((packed));
 
-#define LTTNG_UST_ABI_NR_KEY_TOKEN 4
 struct lttng_ust_abi_counter_key_dimension {
+	uint32_t len;				/* length of this structure */
 	uint32_t nr_key_tokens;
-	struct lttng_ust_abi_key_token key_tokens[LTTNG_UST_ABI_NR_KEY_TOKEN];
+
+	/* Followed by a variable-length array of key tokens */
 } __attribute__((packed));
 
-#define LTTNG_UST_ABI_COUNTER_DIMENSION_MAX 4
-struct lttng_ust_abi_counter_key {
-	uint32_t nr_dimensions;
-	struct lttng_ust_abi_counter_key_dimension key_dimensions[LTTNG_UST_ABI_COUNTER_DIMENSION_MAX];
-} __attribute__((packed));
-
-#define LTTNG_UST_ABI_COUNTER_EVENT_PADDING1	16
+#define LTTNG_UST_ABI_COUNTER_EVENT_MAX_LEN	4096U
 struct lttng_ust_abi_counter_event {
+	uint32_t len;				/* length of this structure */
+
 	struct lttng_ust_abi_event event;
-	struct lttng_ust_abi_counter_key key;
-	char padding[LTTNG_UST_ABI_COUNTER_EVENT_PADDING1];
+	uint32_t number_key_dimensions;		/* array of dimensions is an array of var. len. elements. */
+
+	/* Followed by a variable-length array of key dimensions */
 } __attribute__((packed));
 
 enum lttng_ust_abi_counter_dimension_flags {
@@ -178,12 +178,6 @@ struct lttng_ust_abi_counter_conf {
 	int64_t global_sum_step;
 	uint32_t number_dimensions;
 	uint32_t elem_len;			/* array stride (size of lttng_ust_abi_counter_dimension) */
-} __attribute__((packed));
-
-struct lttng_ust_abi_counter_value {
-	uint32_t number_dimensions;
-	uint64_t dimension_indexes[LTTNG_UST_ABI_COUNTER_DIMENSION_MAX];
-	int64_t value;
 } __attribute__((packed));
 
 #define LTTNG_UST_ABI_COUNTER_DATA_MAX_LEN	4096U

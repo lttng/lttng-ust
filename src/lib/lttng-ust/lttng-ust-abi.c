@@ -1368,17 +1368,117 @@ objd_error:
 }
 
 static
+int copy_counter_key(struct lttng_counter_key *internal_key,
+		     unsigned long arg, size_t arg_len,
+		     const struct lttng_ust_abi_counter_event *counter_event)
+{
+	size_t i, j, nr_dimensions, offset = 0;
+	char *addr = (char *)arg;
+	int ret;
+
+	nr_dimensions = counter_event->number_key_dimensions;
+	if (nr_dimensions != 1)
+		return -EINVAL;
+	internal_key->nr_dimensions = nr_dimensions;
+	offset += counter_event->len;
+	for (i = 0; i < nr_dimensions; i++) {
+		const struct lttng_ust_abi_counter_key_dimension *abi_dim;
+		struct lttng_ust_abi_counter_key_dimension dim;
+		struct lttng_counter_key_dimension *internal_dim = &internal_key->key_dimensions[i];
+		size_t nr_key_tokens;
+
+		abi_dim = (const struct lttng_ust_abi_counter_key_dimension *)(addr + offset);
+		offset += abi_dim->len;
+		if (offset > arg_len || abi_dim->len < lttng_ust_offsetofend(struct lttng_ust_abi_counter_key_dimension, nr_key_tokens))
+			return -EINVAL;
+		ret = copy_abi_struct(&dim, sizeof(dim), abi_dim, abi_dim->len);
+		if (ret)
+			return ret;
+		nr_key_tokens = dim.nr_key_tokens;
+		if (!nr_key_tokens || nr_key_tokens > LTTNG_NR_KEY_TOKEN)
+			return -EINVAL;
+		internal_dim->nr_key_tokens = nr_key_tokens;
+		for (j = 0; j < nr_key_tokens; j++) {
+			const struct lttng_ust_abi_key_token *abi_token;
+			struct lttng_ust_abi_key_token token;
+			struct lttng_key_token *internal_token = &internal_dim->key_tokens[j];
+
+			abi_token = (const struct lttng_ust_abi_key_token *)(addr + offset);
+			offset += abi_token->len;
+			if (offset > arg_len || abi_token->len < lttng_ust_offsetofend(struct lttng_ust_abi_key_token, type))
+				return -EINVAL;
+			ret = copy_abi_struct(&token, sizeof(token), abi_token, abi_token->len);
+			if (ret)
+				return ret;
+			switch (token.type) {
+			case LTTNG_UST_ABI_KEY_TOKEN_STRING:
+			{
+				const struct lttng_ust_abi_counter_key_string *abi_key_string;
+
+				abi_key_string = (const struct lttng_ust_abi_counter_key_string *)(addr + offset);
+				offset += sizeof(struct lttng_ust_abi_counter_key_string);
+				if (offset > arg_len)
+					return -EINVAL;
+				internal_token->type = LTTNG_KEY_TOKEN_STRING;
+				if (!abi_key_string->string_len || abi_key_string->string_len > LTTNG_KEY_TOKEN_STRING_LEN_MAX)
+					return -EINVAL;
+				offset += abi_key_string->string_len;
+				if (offset > arg_len)
+					return -EINVAL;
+				if (abi_key_string->str[abi_key_string->string_len - 1] != '\0' ||
+						strlen(abi_key_string->str) + 1 != abi_key_string->string_len)
+					return -EINVAL;
+				memcpy(internal_token->arg.string, abi_key_string->str, abi_key_string->string_len);
+				break;
+			}
+			case LTTNG_UST_ABI_KEY_TOKEN_EVENT_NAME:
+				internal_token->type = LTTNG_KEY_TOKEN_EVENT_NAME;
+				break;
+			case LTTNG_UST_ABI_KEY_TOKEN_PROVIDER_NAME:
+				internal_token->type = LTTNG_KEY_TOKEN_PROVIDER_NAME;
+				break;
+			default:
+				return -EINVAL;
+			}
+		}
+	}
+	return 0;
+}
+
+static
 int lttng_abi_create_event_counter_enabler(int channel_objd,
 			struct lttng_ust_channel_counter *channel,
-			struct lttng_ust_abi_event *event_param,
-			const struct lttng_ust_abi_counter_key *key_param,
-			void *owner,
-			enum lttng_enabler_format_type format_type)
+			unsigned long arg, size_t arg_len, void *owner)
 {
+	struct lttng_ust_abi_counter_event *abi_counter_event = (struct lttng_ust_abi_counter_event *)arg;
+	struct lttng_ust_abi_counter_event counter_event = {};
+	struct lttng_counter_key counter_key = {};
 	struct lttng_event_counter_enabler *enabler;
+	enum lttng_enabler_format_type format_type;
 	int event_objd, ret;
 
-	event_param->name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
+	if (arg_len < lttng_ust_offsetofend(struct lttng_ust_abi_counter_event, number_key_dimensions)) {
+		return -EINVAL;
+	}
+	if (arg_len < abi_counter_event->len ||
+			abi_counter_event->len < lttng_ust_offsetofend(struct lttng_ust_abi_counter_event, number_key_dimensions)) {
+		return -EINVAL;
+	}
+	ret = copy_abi_struct(&counter_event, sizeof(counter_event),
+			abi_counter_event, abi_counter_event->len);
+	if (ret) {
+		return ret;
+	}
+	counter_event.event.name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
+	if (strutils_is_star_glob_pattern(counter_event.event.name)) {
+		format_type = LTTNG_ENABLER_FORMAT_STAR_GLOB;
+	} else {
+		format_type = LTTNG_ENABLER_FORMAT_EVENT;
+	}
+	ret = copy_counter_key(&counter_key, arg, arg_len, &counter_event);
+	if (ret) {
+		return ret;
+	}
 	event_objd = objd_alloc(NULL, &lttng_event_enabler_ops, owner,
 		"event enabler");
 	if (event_objd < 0) {
@@ -1389,8 +1489,7 @@ int lttng_abi_create_event_counter_enabler(int channel_objd,
 	 * We tolerate no failure path after event creation. It will stay
 	 * invariant for the rest of the session.
 	 */
-	enabler = lttng_event_counter_enabler_create(format_type, event_param,
-			key_param, channel);
+	enabler = lttng_event_counter_enabler_create(format_type, &counter_event, &counter_key, channel);
 	if (!enabler) {
 		ret = -ENOMEM;
 		goto event_error;
@@ -1595,24 +1694,8 @@ long lttng_counter_cmd(int objd, unsigned int cmd, unsigned long arg,
 	}
 	case LTTNG_UST_ABI_COUNTER_EVENT:
 	{
-		struct lttng_ust_abi_counter_event *counter_event_param =
-			(struct lttng_ust_abi_counter_event *) arg;
-		struct lttng_ust_abi_event *event_param = &counter_event_param->event;
-		struct lttng_ust_abi_counter_key *key_param = &counter_event_param->key;
-
-		if (strutils_is_star_glob_pattern(event_param->name)) {
-			/*
-			 * If the event name is a star globbing pattern,
-			 * we create the special star globbing enabler.
-			 */
-			return lttng_abi_create_event_counter_enabler(objd, counter,
-					event_param, key_param,	owner,
-					LTTNG_ENABLER_FORMAT_STAR_GLOB);
-		} else {
-			return lttng_abi_create_event_counter_enabler(objd, counter,
-					event_param, key_param, owner,
-					LTTNG_ENABLER_FORMAT_EVENT);
-		}
+		return lttng_abi_create_event_counter_enabler(objd, counter,
+				arg, uargs->counter_event.len, owner);
 	}
 	case LTTNG_UST_ABI_ENABLE:
 		return lttng_channel_enable(counter->parent);

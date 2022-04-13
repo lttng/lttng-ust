@@ -52,6 +52,9 @@ union lttng_ust_abi_args {
 	struct {
 		int shm_fd;
 	} counter_shm;
+	struct {
+		uint32_t len;
+	} counter_event;
 };
 
 struct lttng_ust_abi_objd_ops {
@@ -71,7 +74,7 @@ enum lttng_key_token_type {
 	LTTNG_KEY_TOKEN_PROVIDER_NAME = 2,
 };
 
-#define LTTNG_KEY_TOKEN_STRING_LEN_MAX LTTNG_UST_ABI_KEY_TOKEN_STRING_LEN_MAX
+#define LTTNG_KEY_TOKEN_STRING_LEN_MAX 4096
 struct lttng_key_token {
 	enum lttng_key_token_type type;
 	union {
@@ -79,13 +82,13 @@ struct lttng_key_token {
 	} arg;
 };
 
-#define LTTNG_NR_KEY_TOKEN LTTNG_UST_ABI_NR_KEY_TOKEN
+#define LTTNG_NR_KEY_TOKEN 8
 struct lttng_counter_key_dimension {
 	size_t nr_key_tokens;
 	struct lttng_key_token key_tokens[LTTNG_NR_KEY_TOKEN];
 };
 
-#define LTTNG_COUNTER_DIMENSION_MAX LTTNG_UST_ABI_COUNTER_DIMENSION_MAX
+#define LTTNG_COUNTER_DIMENSION_MAX 4
 struct lttng_counter_key {
 	size_t nr_dimensions;
 	struct lttng_counter_key_dimension key_dimensions[LTTNG_COUNTER_DIMENSION_MAX];

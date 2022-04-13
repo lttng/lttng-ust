@@ -1058,6 +1058,7 @@ int handle_message(struct sock_info *sock_info,
 	union lttng_ust_abi_args args;
 	char ctxstr[LTTNG_UST_ABI_SYM_NAME_LEN];	/* App context string. */
 	ssize_t len;
+	struct lttng_ust_abi_counter_event *counter_event = NULL;
 
 	memset(&lur, 0, sizeof(lur));
 
@@ -1486,20 +1487,24 @@ int handle_message(struct sock_info *sock_info,
 	case LTTNG_UST_ABI_COUNTER_EVENT:
 	{
 		/* Receive struct lttng_ust_abi_counter_event */
-		struct lttng_ust_abi_counter_event counter_event;
-
-		if (sizeof(counter_event) != lum->u.counter_event.len) {
-			DBG("incorrect counter event data message size: %u", lum->u.counter_event.len);
+		if (lum->u.counter_event.len > LTTNG_UST_ABI_COUNTER_EVENT_MAX_LEN) {
+			DBG("counter event data message too large: %u", lum->u.counter_event.len);
 			ret = -EINVAL;
 			goto error;
 		}
-		len = ustcomm_recv_unix_sock(sock, &counter_event, sizeof(counter_event));
+		args.counter_event.len = lum->u.counter_event.len;
+		counter_event = zmalloc(lum->u.counter_event.len);
+		if (!counter_event) {
+			ret = -ENOMEM;
+			goto error;
+		}
+		len = ustcomm_recv_unix_sock(sock, counter_event, lum->u.counter_event.len);
 		switch (len) {
 		case 0:	/* orderly shutdown */
 			ret = 0;
 			goto error;
 		default:
-			if (len == sizeof(counter_event)) {
+			if (len == lum->u.counter_event.len) {
 				DBG("counter event data received");
 				break;
 			} else if (len < 0) {
@@ -1519,7 +1524,7 @@ int handle_message(struct sock_info *sock_info,
 		}
 		if (ops->cmd)
 			ret = ops->cmd(lum->handle, lum->cmd,
-					(unsigned long) &counter_event,
+					(unsigned long) counter_event,
 					&args, sock_info);
 		else
 			ret = -ENOSYS;
@@ -1636,6 +1641,7 @@ int handle_message(struct sock_info *sock_info,
 error:
 	ust_unlock();
 
+	free(counter_event);
 	return ret;
 }
 

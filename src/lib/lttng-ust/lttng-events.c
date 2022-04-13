@@ -1692,59 +1692,6 @@ void lttng_ust_abi_events_exit(void)
 		lttng_session_destroy(session_priv->pub);
 }
 
-static
-int copy_counter_key(struct lttng_counter_key *key,
-		     const struct lttng_ust_abi_counter_key *key_param)
-{
-	size_t i, j, nr_dimensions;
-
-	nr_dimensions = key_param->nr_dimensions;
-	if (nr_dimensions > LTTNG_UST_ABI_COUNTER_DIMENSION_MAX)
-		return -EINVAL;
-	key->nr_dimensions = nr_dimensions;
-	for (i = 0; i < nr_dimensions; i++) {
-		const struct lttng_ust_abi_counter_key_dimension *udim =
-			&key_param->key_dimensions[i];
-		struct lttng_counter_key_dimension *dim =
-			&key->key_dimensions[i];
-		size_t nr_key_tokens;
-
-		nr_key_tokens = udim->nr_key_tokens;
-		if (!nr_key_tokens || nr_key_tokens > LTTNG_UST_ABI_NR_KEY_TOKEN)
-			return -EINVAL;
-		dim->nr_key_tokens = nr_key_tokens;
-		for (j = 0; j < nr_key_tokens; j++) {
-			const struct lttng_ust_abi_key_token *utoken =
-				&udim->key_tokens[j];
-			struct lttng_key_token *token =
-				&dim->key_tokens[j];
-
-			switch (utoken->type) {
-			case LTTNG_UST_ABI_KEY_TOKEN_STRING:
-			{
-				size_t len;
-
-				token->type = LTTNG_UST_ABI_KEY_TOKEN_STRING;
-				len = strnlen(utoken->arg.string, LTTNG_UST_ABI_KEY_TOKEN_STRING_LEN_MAX);
-				if (!len || len >= LTTNG_UST_ABI_KEY_TOKEN_STRING_LEN_MAX)
-					return -EINVAL;
-				strcpy(token->arg.string, utoken->arg.string);
-				break;
-			}
-			case LTTNG_UST_ABI_KEY_TOKEN_EVENT_NAME:
-				token->type = LTTNG_UST_ABI_KEY_TOKEN_EVENT_NAME;
-				break;
-			case LTTNG_UST_ABI_KEY_TOKEN_PROVIDER_NAME:
-				token->type = LTTNG_UST_ABI_KEY_TOKEN_PROVIDER_NAME;
-				break;
-			default:
-				return -EINVAL;
-			}
-		}
-	}
-	return 0;
-}
-
 /*
  * Enabler management.
  */
@@ -1777,8 +1724,8 @@ struct lttng_event_recorder_enabler *lttng_event_recorder_enabler_create(
 
 struct lttng_event_counter_enabler *lttng_event_counter_enabler_create(
 		enum lttng_enabler_format_type format_type,
-		const struct lttng_ust_abi_event *event_param,
-		const struct lttng_ust_abi_counter_key *key,
+		const struct lttng_ust_abi_counter_event *counter_event,
+		const struct lttng_counter_key *key,
 		struct lttng_ust_channel_counter *chan)
 {
 	struct lttng_event_counter_enabler *event_enabler;
@@ -1790,18 +1737,13 @@ struct lttng_event_counter_enabler *lttng_event_counter_enabler_create(
 	event_enabler->parent.parent.format_type = format_type;
 	CDS_INIT_LIST_HEAD(&event_enabler->parent.parent.filter_bytecode_head);
 	CDS_INIT_LIST_HEAD(&event_enabler->parent.parent.excluder_head);
-	memcpy(&event_enabler->parent.parent.event_param, event_param,
+	memcpy(&event_enabler->parent.parent.event_param, &counter_event->event,
 		sizeof(event_enabler->parent.parent.event_param));
 	event_enabler->chan = chan;
-	if (key) {
-		if (copy_counter_key(&event_enabler->key, key)) {
-			free(event_enabler);
-			return NULL;
-		}
-	}
+	memcpy(&event_enabler->key, key, sizeof(struct lttng_counter_key));
 	/* ctx left NULL */
 	event_enabler->parent.parent.enabled = 0;
-	event_enabler->parent.parent.user_token = event_param->token;
+	event_enabler->parent.parent.user_token = counter_event->event.token;
 	event_enabler->parent.chan = chan->parent;
 	cds_list_add(&event_enabler->parent.node, &event_enabler->chan->parent->session->priv->enablers_head);
 	lttng_session_lazy_sync_event_enablers(event_enabler->chan->parent->session);
