@@ -893,12 +893,51 @@ const char *bytecode_type_str(uint32_t cmd)
 {
 	switch (cmd) {
 	case LTTNG_UST_ABI_CAPTURE:
-		return "capture";
+		return "capture bytecode";
 	case LTTNG_UST_ABI_FILTER:
-		return "filter";
+		return "filter bytecode";
 	default:
 		abort();
 	}
+}
+
+enum handle_message_error {
+	MSG_OK = 0,
+	MSG_ERROR = 1,
+	MSG_SHUTDOWN = 2,
+};
+
+/*
+ * Return:
+ * < 0: error
+ * 0: OK, handle command.
+ * > 0: shutdown (no error).
+ */
+static
+enum handle_message_error handle_error(struct sock_info *sock_info, ssize_t len,
+		ssize_t expected_len, const char *str, int *error_code)
+{
+	if (!len) {
+		/* orderly shutdown */
+		*error_code = 0;
+		return MSG_SHUTDOWN;
+	}
+	if (len == expected_len) {
+		DBG("%s data received", str);
+		*error_code = 0;
+		return MSG_OK;
+	}
+	if (len < 0) {
+		DBG("Receive failed from lttng-sessiond with errno %d", (int) -len);
+		if (len == -ECONNRESET) {
+			ERR("%s remote end closed connection", sock_info->name);
+		}
+		*error_code = len;
+		return MSG_ERROR;
+	}
+	DBG("incorrect %s data message size: %zd", str, len);
+	*error_code = -EINVAL;
+	return MSG_ERROR;
 }
 
 static
@@ -933,14 +972,14 @@ int handle_bytecode_recv(struct sock_info *sock_info,
 	}
 
 	if (data_size > data_size_max) {
-		ERR("Bytecode %s data size is too large: %u bytes",
+		ERR("%s data size is too large: %u bytes",
 				bytecode_type_str(lum->cmd), data_size);
 		ret = -EINVAL;
 		goto end;
 	}
 
 	if (reloc_offset > data_size) {
-		ERR("Bytecode %s reloc offset %u is not within data",
+		ERR("%s reloc offset %u is not within data",
 				bytecode_type_str(lum->cmd), reloc_offset);
 		ret = -EINVAL;
 		goto end;
@@ -959,34 +998,13 @@ int handle_bytecode_recv(struct sock_info *sock_info,
 	bytecode->type = type;
 
 	len = ustcomm_recv_unix_sock(sock, bytecode->bc.data, bytecode->bc.len);
-	switch (len) {
-	case 0:	/* orderly shutdown */
-		ret = 0;
+	switch (handle_error(sock_info, len, bytecode->bc.len, bytecode_type_str(lum->cmd), &ret)) {
+	case MSG_OK:
+		break;
+	case MSG_ERROR:		/* Fallthrough */
+	case MSG_SHUTDOWN:
 		goto end;
-	default:
-		if (len == bytecode->bc.len) {
-			DBG("Bytecode %s data received",
-					bytecode_type_str(lum->cmd));
-			break;
-		} else if (len < 0) {
-			DBG("Receive failed from lttng-sessiond with errno %d",
-					(int) -len);
-			if (len == -ECONNRESET) {
-				ERR("%s remote end closed connection",
-						sock_info->name);
-				ret = len;
-				goto end;
-			}
-			ret = len;
-			goto end;
-		} else {
-			DBG("Incorrect %s bytecode data message size: %zd",
-					bytecode_type_str(lum->cmd), len);
-			ret = -EINVAL;
-			goto end;
-		}
 	}
-
 	ops = lttng_ust_abi_objd_ops(lum->handle);
 	if (!ops) {
 		ret = -ENOENT;
@@ -1054,13 +1072,11 @@ int handle_message(struct sock_info *sock_info,
 {
 	int ret = 0;
 	const struct lttng_ust_abi_objd_ops *ops;
-	struct ustcomm_ust_reply lur;
+	struct ustcomm_ust_reply lur = {};
 	union lttng_ust_abi_args args;
 	char ctxstr[LTTNG_UST_ABI_SYM_NAME_LEN];	/* App context string. */
 	ssize_t len;
 	void *var_len_cmd_data = NULL;
-
-	memset(&lur, 0, sizeof(lur));
 
 	if (ust_lock()) {
 		ret = -LTTNG_UST_ERR_EXITING;
@@ -1160,32 +1176,13 @@ int handle_message(struct sock_info *sock_info,
 		node->excluder.count = count;
 		len = ustcomm_recv_unix_sock(sock, node->excluder.names,
 				count * LTTNG_UST_ABI_SYM_NAME_LEN);
-		switch (len) {
-		case 0:	/* orderly shutdown */
-			ret = 0;
+		switch (handle_error(sock_info, len, count * LTTNG_UST_ABI_SYM_NAME_LEN, "exclusion", &ret)) {
+		case MSG_OK:
+			break;
+		case MSG_ERROR:		/* Fallthrough */
+		case MSG_SHUTDOWN:
 			free(node);
 			goto error;
-		default:
-			if (len == count * LTTNG_UST_ABI_SYM_NAME_LEN) {
-				DBG("Exclusion data received");
-				break;
-			} else if (len < 0) {
-				DBG("Receive failed from lttng-sessiond with errno %d", (int) -len);
-				if (len == -ECONNRESET) {
-					ERR("%s remote end closed connection", sock_info->name);
-					ret = len;
-					free(node);
-					goto error;
-				}
-				ret = len;
-				free(node);
-				goto error;
-			} else {
-				DBG("Incorrect exclusion data message size: %zd", len);
-				ret = -EINVAL;
-				free(node);
-				goto error;
-			}
 		}
 		if (ops->cmd)
 			ret = ops->cmd(lum->handle, lum->cmd,
@@ -1202,33 +1199,14 @@ int handle_message(struct sock_info *sock_info,
 
 		len = ustcomm_recv_event_notifier_notif_fd_from_sessiond(sock,
 			&event_notifier_notif_fd);
-		switch (len) {
-		case 0:	/* orderly shutdown */
-			ret = 0;
-			goto error;
-		case 1:
+		switch (handle_error(sock_info, len, 1, "event notifier group", &ret)) {
+		case MSG_OK:
 			break;
-		default:
-			if (len < 0) {
-				DBG("Receive failed from lttng-sessiond with errno %d",
-						(int) -len);
-				if (len == -ECONNRESET) {
-					ERR("%s remote end closed connection",
-							sock_info->name);
-					ret = len;
-					goto error;
-				}
-				ret = len;
-				goto error;
-			} else {
-				DBG("Incorrect event notifier fd message size: %zd",
-						len);
-				ret = -EINVAL;
-				goto error;
-			}
+		case MSG_ERROR:		/* Fallthrough */
+		case MSG_SHUTDOWN:
+			goto error;
 		}
-		args.event_notifier_handle.event_notifier_notif_fd =
-				event_notifier_notif_fd;
+		args.event_notifier_handle.event_notifier_notif_fd = event_notifier_notif_fd;
 		if (ops->cmd)
 			ret = ops->cmd(lum->handle, lum->cmd,
 					(unsigned long) &lum->u,
@@ -1252,28 +1230,12 @@ int handle_message(struct sock_info *sock_info,
 		len = ustcomm_recv_channel_from_sessiond(sock,
 				&chan_data, lum->u.channel.len,
 				&wakeup_fd);
-		switch (len) {
-		case 0:	/* orderly shutdown */
-			ret = 0;
+		switch (handle_error(sock_info, len, lum->u.channel.len, "channel", &ret)) {
+		case MSG_OK:
+			break;
+		case MSG_ERROR:		/* Fallthrough */
+		case MSG_SHUTDOWN:
 			goto error;
-		default:
-			if (len == lum->u.channel.len) {
-				DBG("channel data received");
-				break;
-			} else if (len < 0) {
-				DBG("Receive failed from lttng-sessiond with errno %d", (int) -len);
-				if (len == -ECONNRESET) {
-					ERR("%s remote end closed connection", sock_info->name);
-					ret = len;
-					goto error;
-				}
-				ret = len;
-				goto error;
-			} else {
-				DBG("incorrect channel data message size: %zd", len);
-				ret = -EINVAL;
-				goto error;
-			}
 		}
 		args.channel.chan_data = chan_data;
 		args.channel.wakeup_fd = wakeup_fd;
@@ -1352,28 +1314,12 @@ int handle_message(struct sock_info *sock_info,
 			p = &ctxstr[strlen("$app.")];
 			recvlen = ctxlen - strlen("$app.");
 			len = ustcomm_recv_unix_sock(sock, p, recvlen);
-			switch (len) {
-			case 0:	/* orderly shutdown */
-				ret = 0;
+			switch (handle_error(sock_info, len, recvlen, "app context", &ret)) {
+			case MSG_OK:
+				break;
+			case MSG_ERROR:		/* Fallthrough */
+			case MSG_SHUTDOWN:
 				goto error;
-			default:
-				if (len == recvlen) {
-					DBG("app context data received");
-					break;
-				} else if (len < 0) {
-					DBG("Receive failed from lttng-sessiond with errno %d", (int) -len);
-					if (len == -ECONNRESET) {
-						ERR("%s remote end closed connection", sock_info->name);
-						ret = len;
-						goto error;
-					}
-					ret = len;
-					goto error;
-				} else {
-					DBG("incorrect app context data message size: %zd", len);
-					ret = -EINVAL;
-					goto error;
-				}
 			}
 			/* Put : between provider and ctxname. */
 			p[lum->u.context.u.app_ctx.provider_name_len - 1] = ':';
@@ -1395,28 +1341,12 @@ int handle_message(struct sock_info *sock_info,
 	{
 		len = ustcomm_recv_var_len_cmd_from_sessiond(sock,
 				&var_len_cmd_data, lum->u.var_len_cmd.cmd_len);
-		switch (len) {
-		case 0:	/* orderly shutdown */
-			ret = 0;
+		switch (handle_error(sock_info, len, lum->u.var_len_cmd.cmd_len, "counter", &ret)) {
+		case MSG_OK:
+			break;
+		case MSG_ERROR:		/* Fallthrough */
+		case MSG_SHUTDOWN:
 			goto error;
-		default:
-			if (len == lum->u.var_len_cmd.cmd_len) {
-				DBG("counter data received");
-				break;
-			} else if (len < 0) {
-				DBG("Receive failed from lttng-sessiond with errno %d", (int) -len);
-				if (len == -ECONNRESET) {
-					ERR("%s remote end closed connection", sock_info->name);
-					ret = len;
-					goto error;
-				}
-				ret = len;
-				goto error;
-			} else {
-				DBG("incorrect counter data message size: %zd", len);
-				ret = -EINVAL;
-				goto error;
-			}
 		}
 		args.counter.len = lum->u.var_len_cmd.cmd_len;
 		if (ops->cmd)
@@ -1431,28 +1361,12 @@ int handle_message(struct sock_info *sock_info,
 	{
 		len = ustcomm_recv_var_len_cmd_from_sessiond(sock,
 				&var_len_cmd_data, lum->u.var_len_cmd.cmd_len);
-		switch (len) {
-		case 0:	/* orderly shutdown */
-			ret = 0;
+		switch (handle_error(sock_info, len, lum->u.var_len_cmd.cmd_len, "counter global", &ret)) {
+		case MSG_OK:
+			break;
+		case MSG_ERROR:		/* Fallthrough */
+		case MSG_SHUTDOWN:
 			goto error;
-		default:
-			if (len == lum->u.var_len_cmd.cmd_len) {
-				DBG("counter data received");
-				break;
-			} else if (len < 0) {
-				DBG("Receive failed from lttng-sessiond with errno %d", (int) -len);
-				if (len == -ECONNRESET) {
-					ERR("%s remote end closed connection", sock_info->name);
-					ret = len;
-					goto error;
-				}
-				ret = len;
-				goto error;
-			} else {
-				DBG("incorrect counter data message size: %zd", len);
-				ret = -EINVAL;
-				goto error;
-			}
 		}
 		/* Receive shm_fd */
 		ret = ustcomm_recv_counter_shm_from_sessiond(sock, &args.counter_shm.shm_fd);
@@ -1482,28 +1396,12 @@ int handle_message(struct sock_info *sock_info,
 	{
 		len = ustcomm_recv_var_len_cmd_from_sessiond(sock,
 				&var_len_cmd_data, lum->u.var_len_cmd.cmd_len);
-		switch (len) {
-		case 0:	/* orderly shutdown */
-			ret = 0;
+		switch (handle_error(sock_info, len, lum->u.var_len_cmd.cmd_len, "counter cpu", &ret)) {
+		case MSG_OK:
+			break;
+		case MSG_ERROR:		/* Fallthrough */
+		case MSG_SHUTDOWN:
 			goto error;
-		default:
-			if (len == lum->u.var_len_cmd.cmd_len) {
-				DBG("counter data received");
-				break;
-			} else if (len < 0) {
-				DBG("Receive failed from lttng-sessiond with errno %d", (int) -len);
-				if (len == -ECONNRESET) {
-					ERR("%s remote end closed connection", sock_info->name);
-					ret = len;
-					goto error;
-				}
-				ret = len;
-				goto error;
-			} else {
-				DBG("incorrect counter data message size: %zd", len);
-				ret = -EINVAL;
-				goto error;
-			}
 		}
 		/* Receive shm_fd */
 		ret = ustcomm_recv_counter_shm_from_sessiond(sock, &args.counter_shm.shm_fd);
@@ -1533,28 +1431,12 @@ int handle_message(struct sock_info *sock_info,
 	{
 		len = ustcomm_recv_var_len_cmd_from_sessiond(sock,
 				&var_len_cmd_data, lum->u.var_len_cmd.cmd_len);
-		switch (len) {
-		case 0:	/* orderly shutdown */
-			ret = 0;
+		switch (handle_error(sock_info, len, lum->u.var_len_cmd.cmd_len, "counter event", &ret)) {
+		case MSG_OK:
+			break;
+		case MSG_ERROR:		/* Fallthrough */
+		case MSG_SHUTDOWN:
 			goto error;
-		default:
-			if (len == lum->u.var_len_cmd.cmd_len) {
-				DBG("counter event data received");
-				break;
-			} else if (len < 0) {
-				DBG("Receive failed from lttng-sessiond with errno %d", (int) -len);
-				if (len == -ECONNRESET) {
-					ERR("%s remote end closed connection", sock_info->name);
-					ret = len;
-					goto error;
-				}
-				ret = len;
-				goto error;
-			} else {
-				DBG("incorrect counter data message size: %zd", len);
-				ret = -EINVAL;
-				goto error;
-			}
 		}
 		args.counter_event.len = lum->u.var_len_cmd.cmd_len;
 		if (ops->cmd)
@@ -1569,28 +1451,12 @@ int handle_message(struct sock_info *sock_info,
 	{
 		len = ustcomm_recv_var_len_cmd_from_sessiond(sock,
 				&var_len_cmd_data, lum->u.var_len_cmd.cmd_len);
-		switch (len) {
-		case 0:	/* orderly shutdown */
-			ret = 0;
+		switch (handle_error(sock_info, len, lum->u.var_len_cmd.cmd_len, "event notifier", &ret)) {
+		case MSG_OK:
+			break;
+		case MSG_ERROR:		/* Fallthrough */
+		case MSG_SHUTDOWN:
 			goto error;
-		default:
-			if (len == lum->u.var_len_cmd.cmd_len) {
-				DBG("event notifier data received");
-				break;
-			} else if (len < 0) {
-				DBG("Receive failed from lttng-sessiond with errno %d", (int) -len);
-				if (len == -ECONNRESET) {
-					ERR("%s remote end closed connection", sock_info->name);
-					ret = len;
-					goto error;
-				}
-				ret = len;
-				goto error;
-			} else {
-				DBG("incorrect event notifier data message size: %zd", len);
-				ret = -EINVAL;
-				goto error;
-			}
 		}
 		args.event_notifier.len = lum->u.var_len_cmd.cmd_len;
 		if (ops->cmd)
