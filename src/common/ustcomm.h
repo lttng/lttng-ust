@@ -90,27 +90,9 @@ struct ustcomm_ust_msg {
 			uint32_t reloc_offset;
 			uint64_t seqnum;
 		} __attribute__((packed)) capture;
-		struct lttng_ust_abi_counter counter;
-		struct lttng_ust_abi_counter_global counter_global;
-		struct lttng_ust_abi_counter_cpu counter_cpu;
-		/*
-		 * For lttng_ust_abi_EVENT_NOTIFIER_CREATE, a struct
-		 * lttng_ust_abi_event_notifier implicitly follows struct
-		 * ustcomm_ust_msg.
-		 */
 		struct {
-			/* Length of struct lttng_ust_abi_event_notifier */
-			uint32_t len;
-		} event_notifier;
-		/*
-		 * For LTTNG_UST_ABI_COUNTER_EVENT, a struct
-		 * lttng_ust_counter_event implicitly follows struct
-		 * ustcomm_ust_msg.
-		 */
-		struct {
-			/* Length of struct lttng_ust_abi_counter_event */
-			uint32_t len;
-		} counter_event;
+			uint32_t cmd_len;
+		} __attribute__((packed)) var_len_cmd;
 		char padding[USTCOMM_MSG_PADDING2];
 	} u;
 } __attribute__((packed));
@@ -266,8 +248,8 @@ ssize_t ustcomm_recv_event_notifier_notif_fd_from_sessiond(int sock,
 		int *event_notifier_notif_fd)
 	__attribute__((visibility("hidden")));
 
-ssize_t ustcomm_recv_counter_from_sessiond(int sock,
-		void **counter_data, uint64_t len)
+ssize_t ustcomm_recv_var_len_cmd_from_sessiond(int sock,
+		void **data, uint32_t len)
 	__attribute__((visibility("hidden")));
 
 int ustcomm_recv_counter_shm_from_sessiond(int sock,

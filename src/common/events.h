@@ -47,9 +47,13 @@ union lttng_ust_abi_args {
 		int event_notifier_notif_fd;
 	} event_notifier_handle;
 	struct {
-		void *counter_data;
+		uint32_t len;
+	} event_notifier;
+	struct {
+		uint32_t len;
 	} counter;
 	struct {
+		uint32_t len;
 		int shm_fd;
 	} counter_shm;
 	struct {

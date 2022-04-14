@@ -683,7 +683,7 @@ int lttng_ust_ctl_create_event_notifier(int sock, struct lttng_ust_abi_event_not
 		struct lttng_ust_abi_object_data *event_notifier_group,
 		struct lttng_ust_abi_object_data **_event_notifier_data)
 {
-	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	struct lttng_ust_abi_object_data *event_notifier_data;
 	ssize_t len;
@@ -698,10 +698,9 @@ int lttng_ust_ctl_create_event_notifier(int sock, struct lttng_ust_abi_event_not
 
 	event_notifier_data->type = LTTNG_UST_ABI_OBJECT_TYPE_EVENT_NOTIFIER;
 
-	memset(&lum, 0, sizeof(lum));
 	lum.handle = event_notifier_group->handle;
 	lum.cmd = LTTNG_UST_ABI_EVENT_NOTIFIER_CREATE;
-	lum.u.event_notifier.len = sizeof(*event_notifier);
+	lum.u.var_len_cmd.cmd_len = sizeof(*event_notifier);
 
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret) {
@@ -3155,7 +3154,7 @@ void lttng_ust_ctl_destroy_counter(struct lttng_ust_ctl_daemon_counter *counter)
 int lttng_ust_ctl_send_counter_data_to_ust(int sock, int parent_handle,
 		struct lttng_ust_abi_object_data *counter_data)
 {
-	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret;
 	size_t size;
@@ -3165,15 +3164,14 @@ int lttng_ust_ctl_send_counter_data_to_ust(int sock, int parent_handle,
 		return -EINVAL;
 
 	size = counter_data->size;
-	memset(&lum, 0, sizeof(lum));
 	lum.handle = parent_handle;
 	lum.cmd = LTTNG_UST_ABI_COUNTER;
-	lum.u.counter.len = size;
+	lum.u.var_len_cmd.cmd_len = size;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
 
-	/* Send counter data */
+	/* Send var len cmd */
 	len = ustcomm_send_unix_sock(sock, counter_data->u.counter.data, size);
 	if (len != size) {
 		if (len < 0)
@@ -3201,7 +3199,8 @@ int lttng_ust_ctl_send_counter_global_data_to_ust(int sock,
 		struct lttng_ust_abi_object_data *counter_data,
 		struct lttng_ust_abi_object_data *counter_global_data)
 {
-	struct ustcomm_ust_msg lum;
+	struct lttng_ust_abi_counter_global counter_global = {};
+	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret, shm_fd[1];
 	size_t size;
@@ -3211,14 +3210,24 @@ int lttng_ust_ctl_send_counter_global_data_to_ust(int sock,
 		return -EINVAL;
 
 	size = counter_global_data->size;
-	memset(&lum, 0, sizeof(lum));
 	lum.handle = counter_data->handle;	/* parent handle */
 	lum.cmd = LTTNG_UST_ABI_COUNTER_GLOBAL;
-	lum.u.counter_global.len = sizeof(struct lttng_ust_abi_counter_global);
-	lum.u.counter_global.shm_len = size;
+	lum.u.var_len_cmd.cmd_len = sizeof(struct lttng_ust_abi_counter_global);
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
+
+	counter_global.len = sizeof(struct lttng_ust_abi_counter_global);
+	counter_global.shm_len = size;
+
+	/* Send var len cmd */
+	len = ustcomm_send_unix_sock(sock, &counter_global, sizeof(struct lttng_ust_abi_counter_global));
+	if (len != sizeof(struct lttng_ust_abi_counter_global)) {
+		if (len < 0)
+			return len;
+		else
+			return -EIO;
+	}
 
 	shm_fd[0] = counter_global_data->u.counter_global.shm_fd;
 	len = ustcomm_send_fds_unix_sock(sock, shm_fd, 1);
@@ -3248,7 +3257,8 @@ int lttng_ust_ctl_send_counter_cpu_data_to_ust(int sock,
 		struct lttng_ust_abi_object_data *counter_data,
 		struct lttng_ust_abi_object_data *counter_cpu_data)
 {
-	struct ustcomm_ust_msg lum;
+	struct lttng_ust_abi_counter_cpu counter_cpu = {};
+	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret, shm_fd[1];
 	size_t size;
@@ -3258,15 +3268,25 @@ int lttng_ust_ctl_send_counter_cpu_data_to_ust(int sock,
 		return -EINVAL;
 
 	size = counter_cpu_data->size;
-	memset(&lum, 0, sizeof(lum));
 	lum.handle = counter_data->handle;	/* parent handle */
 	lum.cmd = LTTNG_UST_ABI_COUNTER_CPU;
-	lum.u.counter_cpu.len = sizeof(struct lttng_ust_abi_counter_cpu);
-	lum.u.counter_cpu.shm_len = size;
-	lum.u.counter_cpu.cpu_nr = counter_cpu_data->u.counter_cpu.cpu_nr;
+	lum.u.var_len_cmd.cmd_len = sizeof(struct lttng_ust_abi_counter_cpu);
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
+
+	counter_cpu.len = sizeof(struct lttng_ust_abi_counter_cpu);
+	counter_cpu.shm_len = size;
+	counter_cpu.cpu_nr = counter_cpu_data->u.counter_cpu.cpu_nr;
+
+	/* Send var len cmd */
+	len = ustcomm_send_unix_sock(sock, &counter_cpu, sizeof(struct lttng_ust_abi_counter_cpu));
+	if (len != sizeof(struct lttng_ust_abi_counter_cpu)) {
+		if (len < 0)
+			return len;
+		else
+			return -EIO;
+	}
 
 	shm_fd[0] = counter_cpu_data->u.counter_global.shm_fd;
 	len = ustcomm_send_fds_unix_sock(sock, shm_fd, 1);
@@ -3322,7 +3342,7 @@ int lttng_ust_ctl_counter_create_event(int sock,
 		struct lttng_ust_abi_object_data *counter_data,
 		struct lttng_ust_abi_object_data **_counter_event_data)
 {
-	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	struct lttng_ust_abi_object_data *counter_event_data;
 	ssize_t len;
@@ -3335,16 +3355,16 @@ int lttng_ust_ctl_counter_create_event(int sock,
 	if (!counter_event_data)
 		return -ENOMEM;
 	counter_event_data->type = LTTNG_UST_ABI_OBJECT_TYPE_COUNTER_EVENT;
-	memset(&lum, 0, sizeof(lum));
 	lum.handle = counter_data->handle;
 	lum.cmd = LTTNG_UST_ABI_COUNTER_EVENT;
-	lum.u.counter_event.len = counter_event_len;
+	lum.u.var_len_cmd.cmd_len = counter_event_len;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret) {
 		free(counter_event_data);
 		return ret;
 	}
-	/* Send struct lttng_ust_counter_event */
+
+	/* Send var len cmd */
 	len = ustcomm_send_unix_sock(sock, counter_event, counter_event_len);
 	if (len != counter_event_len) {
 		free(counter_event_data);

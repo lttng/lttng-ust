@@ -708,31 +708,31 @@ error:
 	return ret;
 }
 
-ssize_t ustcomm_recv_counter_from_sessiond(int sock,
-		void **_counter_data, uint64_t var_len)
+ssize_t ustcomm_recv_var_len_cmd_from_sessiond(int sock,
+		void **_data, uint32_t var_len)
 {
-	void *counter_data;
+	void *data;
 	ssize_t len;
 
-	if (var_len > LTTNG_UST_ABI_COUNTER_DATA_MAX_LEN) {
+	if (var_len > LTTNG_UST_ABI_CMD_MAX_LEN) {
 		len = -EINVAL;
 		goto error_check;
 	}
 	/* Receive variable length data */
-	counter_data = zmalloc(var_len);
-	if (!counter_data) {
+	data = zmalloc(var_len);
+	if (!data) {
 		len = -ENOMEM;
 		goto error_alloc;
 	}
-	len = ustcomm_recv_unix_sock(sock, counter_data, var_len);
+	len = ustcomm_recv_unix_sock(sock, data, var_len);
 	if (len != var_len) {
 		goto error_recv;
 	}
-	*_counter_data = counter_data;
+	*_data = data;
 	return len;
 
 error_recv:
-	free(counter_data);
+	free(data);
 error_alloc:
 error_check:
 	return len;

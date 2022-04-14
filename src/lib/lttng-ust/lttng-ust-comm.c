@@ -1058,7 +1058,7 @@ int handle_message(struct sock_info *sock_info,
 	union lttng_ust_abi_args args;
 	char ctxstr[LTTNG_UST_ABI_SYM_NAME_LEN];	/* App context string. */
 	ssize_t len;
-	struct lttng_ust_abi_counter_event *counter_event = NULL;
+	void *var_len_cmd_data = NULL;
 
 	memset(&lur, 0, sizeof(lur));
 
@@ -1393,16 +1393,14 @@ int handle_message(struct sock_info *sock_info,
 		break;
 	case LTTNG_UST_ABI_COUNTER:
 	{
-		void *counter_data;
-
-		len = ustcomm_recv_counter_from_sessiond(sock,
-				&counter_data, lum->u.counter.len);
+		len = ustcomm_recv_var_len_cmd_from_sessiond(sock,
+				&var_len_cmd_data, lum->u.var_len_cmd.cmd_len);
 		switch (len) {
 		case 0:	/* orderly shutdown */
 			ret = 0;
 			goto error;
 		default:
-			if (len == lum->u.counter.len) {
+			if (len == lum->u.var_len_cmd.cmd_len) {
 				DBG("counter data received");
 				break;
 			} else if (len < 0) {
@@ -1420,28 +1418,51 @@ int handle_message(struct sock_info *sock_info,
 				goto error;
 			}
 		}
-		args.counter.counter_data = counter_data;
+		args.counter.len = lum->u.var_len_cmd.cmd_len;
 		if (ops->cmd)
 			ret = ops->cmd(lum->handle, lum->cmd,
-					(unsigned long) &lum->u,
+					(unsigned long) var_len_cmd_data,
 					&args, sock_info);
 		else
 			ret = -ENOSYS;
-		free(args.counter.counter_data);
 		break;
 	}
 	case LTTNG_UST_ABI_COUNTER_GLOBAL:
 	{
+		len = ustcomm_recv_var_len_cmd_from_sessiond(sock,
+				&var_len_cmd_data, lum->u.var_len_cmd.cmd_len);
+		switch (len) {
+		case 0:	/* orderly shutdown */
+			ret = 0;
+			goto error;
+		default:
+			if (len == lum->u.var_len_cmd.cmd_len) {
+				DBG("counter data received");
+				break;
+			} else if (len < 0) {
+				DBG("Receive failed from lttng-sessiond with errno %d", (int) -len);
+				if (len == -ECONNRESET) {
+					ERR("%s remote end closed connection", sock_info->name);
+					ret = len;
+					goto error;
+				}
+				ret = len;
+				goto error;
+			} else {
+				DBG("incorrect counter data message size: %zd", len);
+				ret = -EINVAL;
+				goto error;
+			}
+		}
 		/* Receive shm_fd */
-		ret = ustcomm_recv_counter_shm_from_sessiond(sock,
-			&args.counter_shm.shm_fd);
+		ret = ustcomm_recv_counter_shm_from_sessiond(sock, &args.counter_shm.shm_fd);
 		if (ret) {
 			goto error;
 		}
-
+		args.counter_shm.len = lum->u.var_len_cmd.cmd_len;
 		if (ops->cmd)
 			ret = ops->cmd(lum->handle, lum->cmd,
-					(unsigned long) &lum->u,
+					(unsigned long) var_len_cmd_data,
 					&args, sock_info);
 		else
 			ret = -ENOSYS;
@@ -1459,16 +1480,40 @@ int handle_message(struct sock_info *sock_info,
 	}
 	case LTTNG_UST_ABI_COUNTER_CPU:
 	{
+		len = ustcomm_recv_var_len_cmd_from_sessiond(sock,
+				&var_len_cmd_data, lum->u.var_len_cmd.cmd_len);
+		switch (len) {
+		case 0:	/* orderly shutdown */
+			ret = 0;
+			goto error;
+		default:
+			if (len == lum->u.var_len_cmd.cmd_len) {
+				DBG("counter data received");
+				break;
+			} else if (len < 0) {
+				DBG("Receive failed from lttng-sessiond with errno %d", (int) -len);
+				if (len == -ECONNRESET) {
+					ERR("%s remote end closed connection", sock_info->name);
+					ret = len;
+					goto error;
+				}
+				ret = len;
+				goto error;
+			} else {
+				DBG("incorrect counter data message size: %zd", len);
+				ret = -EINVAL;
+				goto error;
+			}
+		}
 		/* Receive shm_fd */
-		ret = ustcomm_recv_counter_shm_from_sessiond(sock,
-			&args.counter_shm.shm_fd);
+		ret = ustcomm_recv_counter_shm_from_sessiond(sock, &args.counter_shm.shm_fd);
 		if (ret) {
 			goto error;
 		}
-
+		args.counter_shm.len = lum->u.var_len_cmd.cmd_len;
 		if (ops->cmd)
 			ret = ops->cmd(lum->handle, lum->cmd,
-					(unsigned long) &lum->u,
+					(unsigned long) var_len_cmd_data,
 					&args, sock_info);
 		else
 			ret = -ENOSYS;
@@ -1486,25 +1531,14 @@ int handle_message(struct sock_info *sock_info,
 	}
 	case LTTNG_UST_ABI_COUNTER_EVENT:
 	{
-		/* Receive struct lttng_ust_abi_counter_event */
-		if (lum->u.counter_event.len > LTTNG_UST_ABI_COUNTER_EVENT_MAX_LEN) {
-			DBG("counter event data message too large: %u", lum->u.counter_event.len);
-			ret = -EINVAL;
-			goto error;
-		}
-		args.counter_event.len = lum->u.counter_event.len;
-		counter_event = zmalloc(lum->u.counter_event.len);
-		if (!counter_event) {
-			ret = -ENOMEM;
-			goto error;
-		}
-		len = ustcomm_recv_unix_sock(sock, counter_event, lum->u.counter_event.len);
+		len = ustcomm_recv_var_len_cmd_from_sessiond(sock,
+				&var_len_cmd_data, lum->u.var_len_cmd.cmd_len);
 		switch (len) {
 		case 0:	/* orderly shutdown */
 			ret = 0;
 			goto error;
 		default:
-			if (len == lum->u.counter_event.len) {
+			if (len == lum->u.var_len_cmd.cmd_len) {
 				DBG("counter event data received");
 				break;
 			} else if (len < 0) {
@@ -1517,14 +1551,15 @@ int handle_message(struct sock_info *sock_info,
 				ret = len;
 				goto error;
 			} else {
-				DBG("incorrect event notifier data message size: %zd", len);
+				DBG("incorrect counter data message size: %zd", len);
 				ret = -EINVAL;
 				goto error;
 			}
 		}
+		args.counter_event.len = lum->u.var_len_cmd.cmd_len;
 		if (ops->cmd)
 			ret = ops->cmd(lum->handle, lum->cmd,
-					(unsigned long) counter_event,
+					(unsigned long) var_len_cmd_data,
 					&args, sock_info);
 		else
 			ret = -ENOSYS;
@@ -1532,21 +1567,14 @@ int handle_message(struct sock_info *sock_info,
 	}
 	case LTTNG_UST_ABI_EVENT_NOTIFIER_CREATE:
 	{
-		/* Receive struct lttng_ust_event_notifier */
-		struct lttng_ust_abi_event_notifier event_notifier;
-
-		if (sizeof(event_notifier) != lum->u.event_notifier.len) {
-			DBG("incorrect event notifier data message size: %u", lum->u.event_notifier.len);
-			ret = -EINVAL;
-			goto error;
-		}
-		len = ustcomm_recv_unix_sock(sock, &event_notifier, sizeof(event_notifier));
+		len = ustcomm_recv_var_len_cmd_from_sessiond(sock,
+				&var_len_cmd_data, lum->u.var_len_cmd.cmd_len);
 		switch (len) {
 		case 0:	/* orderly shutdown */
 			ret = 0;
 			goto error;
 		default:
-			if (len == sizeof(event_notifier)) {
+			if (len == lum->u.var_len_cmd.cmd_len) {
 				DBG("event notifier data received");
 				break;
 			} else if (len < 0) {
@@ -1564,9 +1592,10 @@ int handle_message(struct sock_info *sock_info,
 				goto error;
 			}
 		}
+		args.event_notifier.len = lum->u.var_len_cmd.cmd_len;
 		if (ops->cmd)
 			ret = ops->cmd(lum->handle, lum->cmd,
-					(unsigned long) &event_notifier,
+					(unsigned long) var_len_cmd_data,
 					&args, sock_info);
 		else
 			ret = -ENOSYS;
@@ -1641,7 +1670,7 @@ int handle_message(struct sock_info *sock_info,
 error:
 	ust_unlock();
 
-	free(counter_event);
+	free(var_len_cmd_data);
 	return ret;
 }
 

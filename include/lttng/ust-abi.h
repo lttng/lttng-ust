@@ -23,6 +23,8 @@
 #define LTTNG_UST_ABI_MAJOR_VERSION_OLDEST_COMPATIBLE	8
 #define LTTNG_UST_ABI_MINOR_VERSION		0
 
+#define LTTNG_UST_ABI_CMD_MAX_LEN			4096U
+
 enum lttng_ust_abi_instrumentation {
 	LTTNG_UST_ABI_TRACEPOINT	= 0,
 	LTTNG_UST_ABI_PROBE		= 1,
@@ -144,7 +146,6 @@ struct lttng_ust_abi_counter_key_dimension {
 	/* Followed by a variable-length array of key tokens */
 } __attribute__((packed));
 
-#define LTTNG_UST_ABI_COUNTER_EVENT_MAX_LEN	4096U
 struct lttng_ust_abi_counter_event {
 	uint32_t len;				/* length of this structure */
 
@@ -180,20 +181,14 @@ struct lttng_ust_abi_counter_conf {
 	uint32_t elem_len;			/* array stride (size of lttng_ust_abi_counter_dimension) */
 } __attribute__((packed));
 
-#define LTTNG_UST_ABI_COUNTER_DATA_MAX_LEN	4096U
-struct lttng_ust_abi_counter {
-	uint64_t len;
-	char data[];		/* variable sized data */
-} __attribute__((packed));
-
 struct lttng_ust_abi_counter_global {
-	uint32_t len;		/* Length of this structure */
-	uint64_t shm_len;	/* shm len */
+	uint32_t len;				/* Length of this structure */
+	uint64_t shm_len;			/* shm len */
 } __attribute__((packed));
 
 struct lttng_ust_abi_counter_cpu {
-	uint32_t len;		/* Length of this structure */
-	uint64_t shm_len;	/* shm len */
+	uint32_t len;				/* Length of this structure */
+	uint64_t shm_len;			/* shm len */
 	uint32_t cpu_nr;
 } __attribute__((packed));
 
@@ -378,9 +373,10 @@ struct lttng_ust_abi_event_exclusion {
 	char names[LTTNG_UST_ABI_SYM_NAME_LEN][0];
 } __attribute__((packed));
 
-#define LTTNG_UST_ABI_CMD(minor)		(minor)
-#define LTTNG_UST_ABI_CMDR(minor, type)		(minor)
-#define LTTNG_UST_ABI_CMDW(minor, type)		(minor)
+#define LTTNG_UST_ABI_CMD(minor)			(minor)
+#define LTTNG_UST_ABI_CMDR(minor, type)			(minor)
+#define LTTNG_UST_ABI_CMDW(minor, type)			(minor)
+#define LTTNG_UST_ABI_CMDV(minor, var_len_cmd_type)	(minor)
 
 /* Handled by object descriptor */
 #define LTTNG_UST_ABI_RELEASE			LTTNG_UST_ABI_CMD(0x1)
@@ -430,22 +426,22 @@ struct lttng_ust_abi_event_exclusion {
 
 /* Event notifier group commands */
 #define LTTNG_UST_ABI_EVENT_NOTIFIER_CREATE	\
-	LTTNG_UST_ABI_CMDW(0xB0, struct lttng_ust_abi_event_notifier)
+	LTTNG_UST_ABI_CMDV(0xB0, struct lttng_ust_abi_event_notifier)
 
 /* Event notifier commands */
 #define LTTNG_UST_ABI_CAPTURE			LTTNG_UST_ABI_CMD(0xB6)
 
 /* Session and event notifier group commands */
 #define LTTNG_UST_ABI_COUNTER			\
-	LTTNG_UST_ABI_CMDW(0xC0, struct lttng_ust_abi_counter)
+	LTTNG_UST_ABI_CMDV(0xC0, struct lttng_ust_abi_counter_conf)
 
 /* Counter commands */
 #define LTTNG_UST_ABI_COUNTER_GLOBAL		\
-	LTTNG_UST_ABI_CMDW(0xD0, struct lttng_ust_abi_counter_global)
+	LTTNG_UST_ABI_CMDV(0xD0, struct lttng_ust_abi_counter_global)
 #define LTTNG_UST_ABI_COUNTER_CPU		\
-	LTTNG_UST_ABI_CMDW(0xD1, struct lttng_ust_abi_counter_cpu)
+	LTTNG_UST_ABI_CMDV(0xD1, struct lttng_ust_abi_counter_cpu)
 #define LTTNG_UST_ABI_COUNTER_EVENT		\
-	LTTNG_UST_ABI_CMDW(0xD2, struct lttng_ust_abi_counter_event)
+	LTTNG_UST_ABI_CMDV(0xD2, struct lttng_ust_abi_counter_event)
 
 #define LTTNG_UST_ABI_ROOT_HANDLE	0
 
