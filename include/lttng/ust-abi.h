@@ -125,8 +125,6 @@ enum lttng_ust_abi_counter_bitness {
 	LTTNG_UST_ABI_COUNTER_BITNESS_64 = 1,
 };
 
-#define LTTNG_UST_ABI_KEY_TOKEN_STRING_LEN_MAX	4096
-
 struct lttng_ust_abi_counter_key_string {
 	uint32_t string_len;		/* string length (includes \0) */
 	char str[];			/* Null-terminated string. */
