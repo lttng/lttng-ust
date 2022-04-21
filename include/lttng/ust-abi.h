@@ -430,16 +430,18 @@ struct lttng_ust_abi_event_exclusion {
 #define LTTNG_UST_ABI_CAPTURE			LTTNG_UST_ABI_CMD(0xB6)
 
 /* Session and event notifier group commands */
+/* (0xC0) reserved for old ABI. */
 #define LTTNG_UST_ABI_COUNTER			\
-	LTTNG_UST_ABI_CMDV(0xC0, struct lttng_ust_abi_counter_conf)
+	LTTNG_UST_ABI_CMDV(0xC1, struct lttng_ust_abi_counter_conf)
 
 /* Counter commands */
+/* (0xD0, 0xD1) reserved for old ABI. */
 #define LTTNG_UST_ABI_COUNTER_GLOBAL		\
-	LTTNG_UST_ABI_CMDV(0xD0, struct lttng_ust_abi_counter_global)
+	LTTNG_UST_ABI_CMDV(0xD2, struct lttng_ust_abi_counter_global)
 #define LTTNG_UST_ABI_COUNTER_CPU		\
-	LTTNG_UST_ABI_CMDV(0xD1, struct lttng_ust_abi_counter_cpu)
+	LTTNG_UST_ABI_CMDV(0xD3, struct lttng_ust_abi_counter_cpu)
 #define LTTNG_UST_ABI_COUNTER_EVENT		\
-	LTTNG_UST_ABI_CMDV(0xD2, struct lttng_ust_abi_counter_event)
+	LTTNG_UST_ABI_CMDV(0xD4, struct lttng_ust_abi_counter_event)
 
 #define LTTNG_UST_ABI_ROOT_HANDLE	0
 

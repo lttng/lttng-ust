@@ -3144,6 +3144,162 @@ void lttng_ust_ctl_destroy_counter(struct lttng_ust_ctl_daemon_counter *counter)
 }
 
 /*
+ * Protocol for LTTNG_UST_ABI_OLD_COUNTER command:
+ *
+ * - send:     struct ustcomm_ust_msg
+ * - receive:  struct ustcomm_ust_reply
+ * - send:     counter data
+ * - receive:  struct ustcomm_ust_reply (actual command return code)
+ */
+static
+int lttng_ust_ctl_send_old_counter_data_to_ust(int sock, int parent_handle,
+		struct lttng_ust_abi_object_data *counter_data)
+{
+	const struct lttng_ust_abi_counter_conf *counter_conf = counter_data->u.counter.data;
+	const struct lttng_ust_abi_counter_dimension *dimension;
+	struct lttng_ust_abi_old_counter_conf old_counter_conf = {};
+	struct ustcomm_ust_msg lum = {};
+	struct ustcomm_ust_reply lur;
+	int ret;
+	size_t size;
+	ssize_t len;
+
+	if (!counter_data)
+		return -EINVAL;
+
+	if (counter_conf->number_dimensions != 1)
+		return -EINVAL;
+	old_counter_conf.coalesce_hits = (counter_conf->flags & LTTNG_UST_ABI_COUNTER_CONF_FLAG_COALESCE_HITS) ? 1 : 0;
+	old_counter_conf.arithmetic = counter_conf->arithmetic;
+	old_counter_conf.bitness = counter_conf->bitness;
+	old_counter_conf.global_sum_step = counter_conf->global_sum_step;
+
+	dimension = (struct lttng_ust_abi_counter_dimension *)((char *)counter_conf + sizeof(struct lttng_ust_abi_counter_conf));
+	old_counter_conf.number_dimensions = 1;
+	old_counter_conf.dimensions[0].size = dimension->size;
+	old_counter_conf.dimensions[0].has_underflow = (dimension->flags & LTTNG_UST_ABI_COUNTER_DIMENSION_FLAG_UNDERFLOW) ? 1 : 0;
+	old_counter_conf.dimensions[0].has_overflow = (dimension->flags & LTTNG_UST_ABI_COUNTER_DIMENSION_FLAG_OVERFLOW) ? 1 : 0;
+	old_counter_conf.dimensions[0].underflow_index = dimension->underflow_index;
+	old_counter_conf.dimensions[0].overflow_index = dimension->overflow_index;
+
+	size = sizeof(old_counter_conf);
+	lum.handle = parent_handle;
+	lum.cmd = LTTNG_UST_ABI_OLD_COUNTER;
+	lum.u.counter_old.len = size;
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+	if (ret)
+		return ret;
+
+	/* Send counter data */
+	len = ustcomm_send_unix_sock(sock, &old_counter_conf, size);
+	if (len != size) {
+		if (len < 0)
+			return len;
+		else
+			return -EIO;
+	}
+
+	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	if (!ret) {
+		counter_data->handle = lur.ret_val;
+	}
+	return ret;
+}
+
+/*
+ * Protocol for LTTNG_UST_ABI_OLD_COUNTER_GLOBAL command:
+ *
+ * - send:     struct ustcomm_ust_msg
+ * - receive:  struct ustcomm_ust_reply
+ * - send:     file descriptor
+ * - receive:  struct ustcomm_ust_reply (actual command return code)
+ */
+static
+int lttng_ust_ctl_send_old_counter_global_data_to_ust(int sock,
+		struct lttng_ust_abi_object_data *counter_data,
+		struct lttng_ust_abi_object_data *counter_global_data)
+{
+	struct ustcomm_ust_msg lum = {};
+	struct ustcomm_ust_reply lur;
+	int ret, shm_fd[1];
+	size_t size;
+	ssize_t len;
+
+	if (!counter_data || !counter_global_data)
+		return -EINVAL;
+
+	size = counter_global_data->size;
+	lum.handle = counter_data->handle;	/* parent handle */
+	lum.cmd = LTTNG_UST_ABI_OLD_COUNTER_GLOBAL;
+	lum.u.counter_global_old.len = size;
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+	if (ret)
+		return ret;
+
+	shm_fd[0] = counter_global_data->u.counter_global.shm_fd;
+	len = ustcomm_send_fds_unix_sock(sock, shm_fd, 1);
+	if (len <= 0) {
+		if (len < 0)
+			return len;
+		else
+			return -EIO;
+	}
+
+	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	if (!ret) {
+		counter_global_data->handle = lur.ret_val;
+	}
+	return ret;
+}
+
+/*
+ * Protocol for LTTNG_UST_ABI_OLD_COUNTER_CPU command:
+ *
+ * - send:     struct ustcomm_ust_msg
+ * - receive:  struct ustcomm_ust_reply
+ * - send:     file descriptor
+ * - receive:  struct ustcomm_ust_reply (actual command return code)
+ */
+static
+int lttng_ust_ctl_send_old_counter_cpu_data_to_ust(int sock,
+		struct lttng_ust_abi_object_data *counter_data,
+		struct lttng_ust_abi_object_data *counter_cpu_data)
+{
+	struct ustcomm_ust_msg lum = {};
+	struct ustcomm_ust_reply lur;
+	int ret, shm_fd[1];
+	size_t size;
+	ssize_t len;
+
+	if (!counter_data || !counter_cpu_data)
+		return -EINVAL;
+
+	size = counter_cpu_data->size;
+	lum.handle = counter_data->handle;	/* parent handle */
+	lum.cmd = LTTNG_UST_ABI_OLD_COUNTER_CPU;
+	lum.u.counter_cpu_old.len = size;
+	lum.u.counter_cpu_old.cpu_nr = counter_cpu_data->u.counter_cpu.cpu_nr;
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+	if (ret)
+		return ret;
+
+	shm_fd[0] = counter_cpu_data->u.counter_global.shm_fd;
+	len = ustcomm_send_fds_unix_sock(sock, shm_fd, 1);
+	if (len <= 0) {
+		if (len < 0)
+			return len;
+		else
+			return -EIO;
+	}
+
+	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+	if (!ret) {
+		counter_cpu_data->handle = lur.ret_val;
+	}
+	return ret;
+}
+
+/*
  * Protocol for LTTNG_UST_ABI_COUNTER command:
  *
  * - send:     struct ustcomm_ust_msg
@@ -3168,8 +3324,12 @@ int lttng_ust_ctl_send_counter_data_to_ust(int sock, int parent_handle,
 	lum.cmd = LTTNG_UST_ABI_COUNTER;
 	lum.u.var_len_cmd.cmd_len = size;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
-	if (ret)
+	if (ret == -LTTNG_UST_ERR_INVAL) {
+		return lttng_ust_ctl_send_old_counter_data_to_ust(sock, parent_handle, counter_data);
+	}
+	if (ret) {
 		return ret;
+	}
 
 	/* Send var len cmd */
 	len = ustcomm_send_unix_sock(sock, counter_data->u.counter.data, size);
@@ -3214,8 +3374,12 @@ int lttng_ust_ctl_send_counter_global_data_to_ust(int sock,
 	lum.cmd = LTTNG_UST_ABI_COUNTER_GLOBAL;
 	lum.u.var_len_cmd.cmd_len = sizeof(struct lttng_ust_abi_counter_global);
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
-	if (ret)
+	if (ret == -LTTNG_UST_ERR_INVAL) {
+		return lttng_ust_ctl_send_old_counter_global_data_to_ust(sock, counter_data, counter_global_data);
+	}
+	if (ret) {
 		return ret;
+	}
 
 	counter_global.len = sizeof(struct lttng_ust_abi_counter_global);
 	counter_global.shm_len = size;
@@ -3272,8 +3436,12 @@ int lttng_ust_ctl_send_counter_cpu_data_to_ust(int sock,
 	lum.cmd = LTTNG_UST_ABI_COUNTER_CPU;
 	lum.u.var_len_cmd.cmd_len = sizeof(struct lttng_ust_abi_counter_cpu);
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
-	if (ret)
+	if (ret == -LTTNG_UST_ERR_INVAL) {
+		return lttng_ust_ctl_send_old_counter_cpu_data_to_ust(sock, counter_data, counter_cpu_data);
+	}
+	if (ret) {
 		return ret;
+	}
 
 	counter_cpu.len = sizeof(struct lttng_ust_abi_counter_cpu);
 	counter_cpu.shm_len = size;
