@@ -433,10 +433,10 @@ void iter_end(struct dl_iterate_data *data, void *ip)
 	 */
 	for (i = 0; i < UST_DL_STATE_TABLE_SIZE; i++) {
 		struct cds_hlist_head *head;
-		struct lttng_ust_dl_node *e;
+		struct lttng_ust_dl_node *e, *tmp;
 
 		head = &dl_state_table[i];
-		cds_hlist_for_each_entry_2(e, head, node) {
+		cds_hlist_for_each_entry_safe_2(e, tmp, head, node) {
 			if (e->marked) {
 				if (!e->traced) {
 					trace_lib_load(&e->bin_data, ip);
