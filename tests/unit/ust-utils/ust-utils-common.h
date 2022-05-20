@@ -6,7 +6,7 @@
 
 #include "tap.h"
 
-#define NUM_TESTS 60
+#define NUM_TESTS 94
 
 static
 void test_ust_stringify(void)
@@ -116,6 +116,61 @@ void test_ust_is_integer_type(void)
 	ok_is_not_integer_type(void *);
 }
 
+#define ok_is_pointer_type(_type) \
+	ok(lttng_ust_is_pointer_type(_type) == true, "lttng_ust_is_pointer_type - '" lttng_ust_stringify(_type) "' is a pointer")
+
+#define ok_is_not_pointer_type(_type) \
+	ok(lttng_ust_is_pointer_type(_type) == false, "lttng_ust_is_pointer_type - '" lttng_ust_stringify(_type) "' is not a pointer")
+
+struct dummy {
+	int a;
+};
+
+static
+void test_ust_is_pointer_type(void)
+{
+	ok_is_not_pointer_type(char);
+	ok_is_not_pointer_type(short);
+	ok_is_not_pointer_type(int);
+	ok_is_not_pointer_type(long);
+	ok_is_not_pointer_type(long long);
+
+	ok_is_not_pointer_type(signed char);
+	ok_is_not_pointer_type(signed short);
+	ok_is_not_pointer_type(signed int);
+	ok_is_not_pointer_type(signed long);
+	ok_is_not_pointer_type(signed long long);
+
+	ok_is_not_pointer_type(unsigned char);
+	ok_is_not_pointer_type(unsigned short);
+	ok_is_not_pointer_type(unsigned int);
+	ok_is_not_pointer_type(unsigned long);
+	ok_is_not_pointer_type(unsigned long long);
+
+	ok_is_not_pointer_type(int8_t);
+	ok_is_not_pointer_type(int16_t);
+	ok_is_not_pointer_type(int32_t);
+	ok_is_not_pointer_type(int64_t);
+	ok_is_not_pointer_type(intmax_t);
+
+	ok_is_not_pointer_type(uint8_t);
+	ok_is_not_pointer_type(uint16_t);
+	ok_is_not_pointer_type(uint32_t);
+	ok_is_not_pointer_type(uint64_t);
+	ok_is_not_pointer_type(uintmax_t);
+
+	ok_is_not_pointer_type(float);
+	ok_is_not_pointer_type(double);
+	ok_is_not_pointer_type(long double);
+
+	ok_is_pointer_type(void *);
+	ok_is_pointer_type(void **);
+	ok_is_pointer_type(struct dummy *);
+	ok_is_pointer_type(int *);
+	ok_is_pointer_type(float *);
+	ok_is_pointer_type(double *);
+}
+
 int main(void)
 {
 	plan_tests(NUM_TESTS);
@@ -123,6 +178,7 @@ int main(void)
 	test_ust_stringify();
 	test_ust_is_signed();
 	test_ust_is_integer_type();
+	test_ust_is_pointer_type();
 
 	return exit_status();
 }

@@ -59,14 +59,28 @@
 #endif
 
 /**
+ * lttng_ust_is_pointer_type - check if type is a pointer
+ *
+ * Returns true if the type of @type is a pointer.
+ */
+#if defined(__cplusplus)
+#define lttng_ust_is_pointer_type(type) (std::is_pointer<type>::value)
+#else
+/* The difference between two pointers is an integer. */
+#define lttng_ust_is_pointer_type(type) \
+	(lttng_ust_is_integer_type(typeof(((type)0 - (type)0))) && !lttng_ust_is_integer_type(type))
+#endif
+
+
+/**
  * lttng_ust_field_array_element_type_is_supported -
  *
  * Adds a compilation assertion that array and sequence fields declared by the
- * user are of an integral type.
+ * user are of an integral or pointer type.
  */
 #define lttng_ust_field_array_element_type_is_supported(type, item) \
-		lttng_ust_static_assert(lttng_ust_is_integer_type(type), \
-			"Non-integer type `" #item "` not supported as element of LTTNG_UST_FIELD_ARRAY or LTTNG_UST_FIELD_SEQUENCE", \
+		lttng_ust_static_assert(lttng_ust_is_integer_type(type) || lttng_ust_is_pointer_type(type), \
+			"Non-integer, non-pointer type `" #item "` not supported as element of LTTNG_UST_FIELD_ARRAY or LTTNG_UST_FIELD_SEQUENCE", \
 			Non_integer_type__##item##__not_supported_as_element_of_LTTNG_UST_FIELD_ARRAY_or_LTTNG_UST_FIELD_SEQUENCE)
 
 
