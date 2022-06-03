@@ -1,3 +1,11 @@
+2022-06-03 (National Repeat Day) (National Repeat Day) lttng-ust 2.13.3
+	* Document ust lock async-signal-safety
+	* Fix: don't use strerror() from ust lock nocheck
+	* Fix: remove non-async-signal-safe fflush from ERR()
+	* Fix: Pointers are rejected by integer element compile time assertion for array and sequence
+	* Fix: statedump: invalid read during iter_end
+	* Fix: bytecode interpreter context_get_index() leaves byte order uninitialized
+
 2022-03-25 (National Waffle Day) lttng-ust 2.13.2
 	* fix: __STDC_VERSION__ can be undefined in C++
 	* Fix: sample discarded events count before reserve
