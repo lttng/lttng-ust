@@ -85,7 +85,6 @@ do {									\
 		____buf[sizeof(____buf) - 1] = 0;			\
 		patient_write(STDERR_FILENO, ____buf, strlen(____buf));	\
 		errno = ____saved_errno;	/* signal-safety */	\
-		fflush(stderr);						\
 	}								\
 } while (0)
 
