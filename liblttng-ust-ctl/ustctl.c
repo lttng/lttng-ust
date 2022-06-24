@@ -915,7 +915,7 @@ int ustctl_duplicate_ust_object_data(struct lttng_ust_object_data **dest,
 			obj->u.channel.wakeup_fd =
 				dup(src->u.channel.wakeup_fd);
 			if (obj->u.channel.wakeup_fd < 0) {
-				ret = errno;
+				ret = -errno;
 				goto chan_error_wakeup_fd;
 			}
 		} else {
@@ -951,7 +951,7 @@ int ustctl_duplicate_ust_object_data(struct lttng_ust_object_data **dest,
 			obj->u.stream.wakeup_fd =
 				dup(src->u.stream.wakeup_fd);
 			if (obj->u.stream.wakeup_fd < 0) {
-				ret = errno;
+				ret = -errno;
 				goto stream_error_wakeup_fd;
 			}
 		} else {
@@ -963,7 +963,7 @@ int ustctl_duplicate_ust_object_data(struct lttng_ust_object_data **dest,
 			obj->u.stream.shm_fd =
 				dup(src->u.stream.shm_fd);
 			if (obj->u.stream.shm_fd < 0) {
-				ret = errno;
+				ret = -errno;
 				goto stream_error_shm_fd;
 			}
 		} else {
