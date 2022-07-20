@@ -113,6 +113,7 @@ cscope.*
 /tests/regression/abi0-conflict/app_ust_indirect_abi0_abi1
 /tests/regression/abi0-conflict/app_ust_indirect_abi1
 /tests/unit/gcc-weak-hidden/test_gcc_weak_hidden
+/tests/unit/libcommon/test_smp
 /tests/unit/libmsgpack/test_msgpack
 /tests/unit/libringbuffer/test_shm
 /tests/unit/pthread_name/test_pthread_name
@@ -208,6 +209,7 @@ cscope.*
 /tests/regression/Makefile
 /tests/unit/Makefile
 /tests/unit/gcc-weak-hidden/Makefile
+/tests/unit/libcommon/Makefile
 /tests/unit/libmsgpack/Makefile
 /tests/unit/libringbuffer/Makefile
 /tests/unit/pthread_name/Makefile

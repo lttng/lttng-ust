@@ -657,6 +657,7 @@ AC_CONFIG_FILES([
   tests/regression/abi0-conflict/Makefile
   tests/regression/Makefile
   tests/unit/gcc-weak-hidden/Makefile
+  tests/unit/libcommon/Makefile
   tests/unit/libmsgpack/Makefile
   tests/unit/libringbuffer/Makefile
   tests/unit/Makefile
