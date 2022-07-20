@@ -13,6 +13,7 @@ LOG_DRIVER = env AM_TAP_AWK='$(AWK)' \
 TESTS = \
 	unit/libringbuffer/test_shm \
 	unit/gcc-weak-hidden/test_gcc_weak_hidden \
+	unit/libcommon/test_smp \
 	unit/libmsgpack/test_msgpack \
 	unit/pthread_name/test_pthread_name \
 	unit/snprintf/test_snprintf \

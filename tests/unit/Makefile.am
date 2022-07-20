@@ -2,6 +2,7 @@
 
 SUBDIRS = \
 	gcc-weak-hidden \
+	libcommon \
 	libmsgpack \
 	libringbuffer \
 	pthread_name \
