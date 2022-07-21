@@ -162,6 +162,7 @@ m4_define([WARN_FLAGS_LIST], [ dnl
   -Wno-sign-compare dnl
   -Wno-missing-field-initializers dnl
   -Wno-null-dereference dnl
+  -Wno-gnu dnl Disable warnings for GNU extensions on Clang
 ])
 
 # Pass -Werror as an extra flag during the test: this is needed to make the
