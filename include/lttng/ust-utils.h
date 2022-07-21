@@ -68,7 +68,7 @@
 #else
 /* The difference between two pointers is an integer. */
 #define lttng_ust_is_pointer_type(type) \
-	(lttng_ust_is_integer_type(typeof(((type)0 - (type)0))) && !lttng_ust_is_integer_type(type))
+	(lttng_ust_is_integer_type(typeof(((type)1 - (type)1))) && !lttng_ust_is_integer_type(type))
 #endif
 
 
