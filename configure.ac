@@ -559,6 +559,7 @@ AC_CONFIG_FILES([
 	tests/utils/Makefile
 	tests/test-app-ctx/Makefile
 	tests/gcc-weak-hidden/Makefile
+	tests/libringbuffer/Makefile
 	lttng-ust.pc
 ])
 
