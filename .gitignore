@@ -82,6 +82,7 @@ tests/ctf-types/ctf-types
 tests/test-app-ctx/hello
 tests/gcc-weak-hidden/test-gcc-wh
 tests/gcc-weak-hidden/test_gcc_weak_hidden
+tests/libringbuffer/test_smp
 
 # Java agent library
 *.class
