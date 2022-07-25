@@ -105,14 +105,14 @@ int get_possible_cpu_mask_from_sysfs(char *buf, size_t max_bytes)
 {
 	ssize_t bytes_read = 0;
 	size_t total_bytes_read = 0;
-	int fd = 0;
+	int fd = -1, ret = -1;
 
 	if (buf == NULL)
-		return -1;
+		goto end;
 
 	fd = open("/sys/devices/system/cpu/possible", O_RDONLY);
 	if (fd < 0)
-		return -1;
+		goto end;
 
 	do {
 		bytes_read = read(fd, buf + total_bytes_read,
@@ -122,16 +122,13 @@ int get_possible_cpu_mask_from_sysfs(char *buf, size_t max_bytes)
 			if (errno == EINTR) {
 				continue;	/* retry operation */
 			} else {
-				return -1;
+				goto end;
 			}
 		}
 
 		total_bytes_read += bytes_read;
 		assert(total_bytes_read <= max_bytes);
 	} while (max_bytes > total_bytes_read && bytes_read > 0);
-
-	if (close(fd))
-		PERROR("close");
 
 	/*
 	 * Make sure the mask read is a null terminated string.
@@ -141,7 +138,13 @@ int get_possible_cpu_mask_from_sysfs(char *buf, size_t max_bytes)
 	else
 		buf[max_bytes - 1] = '\0';
 
-	return total_bytes_read;
+	if (total_bytes_read > INT_MAX)
+		goto end;
+	ret = (int) total_bytes_read;
+end:
+	if (fd >= 0 && close(fd) < 0)
+		PERROR("close");
+	return ret;
 }
 
 /*
