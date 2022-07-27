@@ -30,7 +30,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "align.h"
 #include "smp.h"
 #include "usterr-signal-safe.h"
 
