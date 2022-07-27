@@ -8,57 +8,49 @@
 #define _LGPL_SOURCE
 #include <assert.h>
 #include <ctype.h>
+#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
 
 #include <urcu/compiler.h>
 
 #include "common/logging.h"
 #include "common/smp.h"
 
-static int num_possible_cpus_cache;
-
-#if (defined(__GLIBC__) || defined( __UCLIBC__))
-int get_num_possible_cpus_fallback(void)
-{
-	/* On Linux, when some processors are offline
-	 * _SC_NPROCESSORS_CONF counts the offline
-	 * processors, whereas _SC_NPROCESSORS_ONLN
-	 * does not. If we used _SC_NPROCESSORS_ONLN,
-	 * getcpu() could return a value greater than
-	 * this sysconf, in which case the arrays
-	 * indexed by processor would overflow.
-	 */
-	return sysconf(_SC_NPROCESSORS_CONF);
-}
-
-#else
-
-/*
- * The MUSL libc implementation of the _SC_NPROCESSORS_CONF sysconf does not
- * return the number of configured CPUs in the system but relies on the cpu
- * affinity mask of the current task.
- *
- * So instead we use a strategy similar to GLIBC's, counting the cpu
- * directories in "/sys/devices/system/cpu" and fallback on the value from
- * sysconf if it fails.
- */
-
-#include <dirent.h>
-#include <limits.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-
 #define __max(a,b) ((a)>(b)?(a):(b))
 
+static int num_possible_cpus_cache;
+
+/*
+ * As a fallback to parsing the CPU mask in "/sys/devices/system/cpu/possible",
+ * iterate on all the folders in "/sys/devices/system/cpu" that start with
+ * "cpu" followed by an integer, keep the highest CPU id encountered during
+ * this iteration and add 1 to get a number of CPUs.
+ *
+ * Then get the value from sysconf(_SC_NPROCESSORS_CONF) as a fallback and
+ * return the highest one.
+ *
+ * On Linux, using the value from sysconf can be unreliable since the way it
+ * counts CPUs varies between C libraries and even between versions of the same
+ * library. If we used it directly, getcpu() could return a value greater than
+ * this sysconf, in which case the arrays indexed by processor would overflow.
+ *
+ * As another example, the MUSL libc implementation of the _SC_NPROCESSORS_CONF
+ * sysconf does not return the number of configured CPUs in the system but
+ * relies on the cpu affinity mask of the current task.
+ *
+ * Returns 0 or less on error.
+ */
 int get_num_possible_cpus_fallback(void)
 {
-	int count = 0;
+	long max_cpuid = -1;
+
 	DIR *cpudir;
 	struct dirent *entry;
 
@@ -67,31 +59,37 @@ int get_num_possible_cpus_fallback(void)
 		goto end;
 
 	/*
-	 * Count the number of directories named "cpu" followed by and
-	 * integer. This is the same strategy as glibc uses.
+	 * Iterate on all directories named "cpu" followed by an integer.
 	 */
 	while ((entry = readdir(cpudir))) {
 		if (entry->d_type == DT_DIR &&
 			strncmp(entry->d_name, "cpu", 3) == 0) {
 
 			char *endptr;
-			unsigned long cpu_num;
+			long cpu_id;
 
-			cpu_num = strtoul(entry->d_name + 3, &endptr, 10);
-			if ((cpu_num < ULONG_MAX) && (endptr != entry->d_name + 3)
+			cpu_id = strtol(entry->d_name + 3, &endptr, 10);
+			if ((cpu_id < LONG_MAX) && (endptr != entry->d_name + 3)
 					&& (*endptr == '\0')) {
-				count++;
+				if (cpu_id > max_cpuid)
+					max_cpuid = cpu_id;
 			}
 		}
 	}
 
+	/*
+	 * If the max CPU id is out of bound, set it to -1 so it results in a
+	 * CPU num of 0.
+	 */
+	if (max_cpuid < 0 || max_cpuid > INT_MAX)
+		max_cpuid = -1;
+
 end:
 	/*
-	 * Get the sysconf value as a fallback. Keep the highest number.
+	 * Get the sysconf value as a last resort. Keep the highest number.
 	 */
-	return __max(sysconf(_SC_NPROCESSORS_CONF), count);
+	return __max(sysconf(_SC_NPROCESSORS_CONF), max_cpuid + 1);
 }
-#endif
 
 /*
  * Get the CPU possible mask string from sysfs.
