@@ -30,27 +30,31 @@ int get_num_possible_cpus_fallback(void)
 	__attribute__((visibility("hidden")));
 
 /*
- * Get the number of CPUs from the possible cpu mask.
+ * Get the highest CPU id from a CPU mask.
  *
  * pmask: the mask to parse.
  * len: the len of the mask excluding '\0'.
  *
- * Returns the number of possible CPUs from the mask or 0 on error.
+ * Returns the highest CPU id from the mask or -1 on error.
  */
-int get_num_possible_cpus_from_mask(const char *pmask, size_t len)
+int get_max_cpuid_from_mask(const char *pmask, size_t len)
 	__attribute__((visibility("hidden")));
 
 /*
- * Returns the total number of CPUs in the system. If the cache is not yet
- * initialized, get the value from "/sys/devices/system/cpu/possible" or
- * fallback to sysconf and cache it.
+ * Returns the length of an array that could contain a per-CPU element for each
+ * possible CPU id for the lifetime of the process.
+ *
+ * We currently assume CPU ids are contiguous up the maximum CPU id.
+ *
+ * If the cache is not yet initialized, get the value from
+ * "/sys/devices/system/cpu/possible" or fallback to sysconf and cache it.
  *
  * If all methods fail, don't populate the cache and return 0.
  */
-int num_possible_cpus(void)
+int get_possible_cpus_array_len(void)
 	__attribute__((visibility("hidden")));
 
 #define for_each_possible_cpu(cpu)		\
-	for ((cpu) = 0; (cpu) < num_possible_cpus(); (cpu)++)
+	for ((cpu) = 0; (cpu) < get_possible_cpus_array_len(); (cpu)++)
 
 #endif /* _UST_COMMON_SMP_H */

@@ -118,7 +118,7 @@ int lttng_counter_set_cpu_shm(struct lib_counter *counter, int cpu, int fd)
 	struct lib_counter_config *config = &counter->config;
 	struct lib_counter_layout *layout;
 
-	if (cpu < 0 || cpu >= num_possible_cpus())
+	if (cpu < 0 || cpu >= get_possible_cpus_array_len())
 		return -EINVAL;
 
 	if (!(config->alloc & COUNTER_ALLOC_PER_CPU))
@@ -171,7 +171,7 @@ int validate_args(const struct lib_counter_config *config,
 	int nr_counter_cpu_fds,
 	const int *counter_cpu_fds)
 {
-	int nr_cpus = num_possible_cpus();
+	int nr_cpus = get_possible_cpus_array_len();
 
 	if (CAA_BITS_PER_LONG != 64 && config->counter_size == COUNTER_SIZE_64_BIT) {
 		WARN_ON_ONCE(1);
@@ -210,7 +210,7 @@ struct lib_counter *lttng_counter_create(const struct lib_counter_config *config
 	size_t dimension, nr_elem = 1;
 	int cpu, ret;
 	int nr_handles = 0;
-	int nr_cpus = num_possible_cpus();
+	int nr_cpus = get_possible_cpus_array_len();
 
 	if (validate_args(config, nr_dimensions, max_nr_elem,
 			global_sum_step, global_counter_fd, nr_counter_cpu_fds,
@@ -309,7 +309,7 @@ int lttng_counter_get_cpu_shm(struct lib_counter *counter, int cpu, int *fd, siz
 	struct lib_counter_layout *layout;
 	int shm_fd;
 
-	if (cpu >= num_possible_cpus())
+	if (cpu >= get_possible_cpus_array_len())
 		return -1;
 	layout = &counter->percpu_counters[cpu];
 	shm_fd = layout->shm_fd;
@@ -335,13 +335,13 @@ int lttng_counter_read(const struct lib_counter_config *config,
 
 	switch (config->alloc) {
 	case COUNTER_ALLOC_PER_CPU:
-		if (cpu < 0 || cpu >= num_possible_cpus())
+		if (cpu < 0 || cpu >= get_possible_cpus_array_len())
 			return -EINVAL;
 		layout = &counter->percpu_counters[cpu];
 		break;
 	case COUNTER_ALLOC_PER_CPU | COUNTER_ALLOC_GLOBAL:
 		if (cpu >= 0) {
-			if (cpu >= num_possible_cpus())
+			if (cpu >= get_possible_cpus_array_len())
 				return -EINVAL;
 			layout = &counter->percpu_counters[cpu];
 		} else {
@@ -469,13 +469,13 @@ int lttng_counter_clear_cpu(const struct lib_counter_config *config,
 
 	switch (config->alloc) {
 	case COUNTER_ALLOC_PER_CPU:
-		if (cpu < 0 || cpu >= num_possible_cpus())
+		if (cpu < 0 || cpu >= get_possible_cpus_array_len())
 			return -EINVAL;
 		layout = &counter->percpu_counters[cpu];
 		break;
 	case COUNTER_ALLOC_PER_CPU | COUNTER_ALLOC_GLOBAL:
 		if (cpu >= 0) {
-			if (cpu >= num_possible_cpus())
+			if (cpu >= get_possible_cpus_array_len())
 				return -EINVAL;
 			layout = &counter->percpu_counters[cpu];
 		} else {

@@ -982,7 +982,7 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_ring_buffer_c
 	int64_t blocking_timeout_ms;
 
 	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU)
-		nr_streams = num_possible_cpus();
+		nr_streams = get_possible_cpus_array_len();
 	else
 		nr_streams = 1;
 
@@ -1011,7 +1011,7 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_ring_buffer_c
 		return NULL;
 
 	/* Allocate table for channel + per-cpu buffers */
-	handle->table = shm_object_table_create(1 + num_possible_cpus());
+	handle->table = shm_object_table_create(1 + get_possible_cpus_array_len());
 	if (!handle->table)
 		goto error_table_alloc;
 
@@ -1095,7 +1095,7 @@ struct lttng_ust_shm_handle *channel_handle_create(void *data,
 		return NULL;
 
 	/* Allocate table for channel + per-cpu buffers */
-	handle->table = shm_object_table_create(1 + num_possible_cpus());
+	handle->table = shm_object_table_create(1 + get_possible_cpus_array_len());
 	if (!handle->table)
 		goto error_table_alloc;
 	/* Add channel object */
@@ -1190,7 +1190,7 @@ struct lttng_ust_ring_buffer *channel_get_ring_buffer(
 	if (config->alloc == RING_BUFFER_ALLOC_GLOBAL) {
 		cpu = 0;
 	} else {
-		if (cpu >= num_possible_cpus())
+		if (cpu >= get_possible_cpus_array_len())
 			return NULL;
 	}
 	ref = &chan->backend.buf[cpu].shmp._ref;
@@ -1235,7 +1235,7 @@ int ring_buffer_stream_close_wait_fd(const struct lttng_ust_ring_buffer_config *
 	if (config->alloc == RING_BUFFER_ALLOC_GLOBAL) {
 		cpu = 0;
 	} else {
-		if (cpu >= num_possible_cpus())
+		if (cpu >= get_possible_cpus_array_len())
 			return -EINVAL;
 	}
 	ref = &chan->backend.buf[cpu].shmp._ref;
@@ -1253,7 +1253,7 @@ int ring_buffer_stream_close_wakeup_fd(const struct lttng_ust_ring_buffer_config
 	if (config->alloc == RING_BUFFER_ALLOC_GLOBAL) {
 		cpu = 0;
 	} else {
-		if (cpu >= num_possible_cpus())
+		if (cpu >= get_possible_cpus_array_len())
 			return -EINVAL;
 	}
 	ref = &chan->backend.buf[cpu].shmp._ref;
