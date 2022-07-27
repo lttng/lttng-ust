@@ -7,6 +7,8 @@
 #ifndef _UST_COMMON_SMP_H
 #define _UST_COMMON_SMP_H
 
+#define LTTNG_UST_CPUMASK_SIZE 4096
+
 /*
  * Get the CPU possible mask string from sysfs.
  *
