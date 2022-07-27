@@ -25,7 +25,7 @@
 
 #define __max(a,b) ((a)>(b)?(a):(b))
 
-static int num_possible_cpus_cache;
+static int possible_cpus_array_len_cache;
 
 /*
  * As a fallback to parsing the CPU mask in "/sys/devices/system/cpu/possible",
@@ -146,14 +146,14 @@ end:
 }
 
 /*
- * Get the number of CPUs from the possible cpu mask.
+ * Get the highest CPU id from a CPU mask.
  *
  * pmask: the mask to parse.
  * len: the len of the mask excluding '\0'.
  *
- * Returns the number of possible CPUs from the mask or 0 on error.
+ * Returns the highest CPU id from the mask or -1 on error.
  */
-int get_num_possible_cpus_from_mask(const char *pmask, size_t len)
+int get_max_cpuid_from_mask(const char *pmask, size_t len)
 {
 	ssize_t i;
 	unsigned long cpu_index;
@@ -179,13 +179,13 @@ int get_num_possible_cpus_from_mask(const char *pmask, size_t len)
 	 * CPUs.
 	 */
 	if ((&pmask[i] != endptr) && (cpu_index < INT_MAX))
-		return (int) cpu_index + 1;
+		return (int) cpu_index;
 
 error:
-	return 0;
+	return -1;
 }
 
-static void _get_num_possible_cpus(void)
+static void update_possible_cpus_array_len_cache(void)
 {
 	int ret;
 	char buf[LTTNG_UST_CPUMASK_SIZE];
@@ -196,9 +196,12 @@ static void _get_num_possible_cpus(void)
 		goto fallback;
 
 	/* Parse the possible cpu mask, on failure fallback to sysconf. */
-	ret = get_num_possible_cpus_from_mask((char *) &buf, ret);
-	if (ret > 0)
+	ret = get_max_cpuid_from_mask((char *) &buf, ret);
+	if (ret >= 0) {
+		/* Add 1 to convert from max cpuid to an array len. */
+		ret++;
 		goto end;
+	}
 
 fallback:
 	/* Fallback to sysconf. */
@@ -209,20 +212,24 @@ end:
 	if (ret < 1)
 		return;
 
-	num_possible_cpus_cache = ret;
+	possible_cpus_array_len_cache = ret;
 }
 
 /*
- * Returns the total number of CPUs in the system. If the cache is not yet
- * initialized, get the value from "/sys/devices/system/cpu/possible" or
- * fallback to sysconf and cache it.
+ * Returns the length of an array that could contain a per-CPU element for each
+ * possible CPU id for the lifetime of the process.
+ *
+ * We currently assume CPU ids are contiguous up the maximum CPU id.
+ *
+ * If the cache is not yet initialized, get the value from
+ * "/sys/devices/system/cpu/possible" or fallback to sysconf and cache it.
  *
  * If all methods fail, don't populate the cache and return 0.
  */
-int num_possible_cpus(void)
+int get_possible_cpus_array_len(void)
 {
-	if (caa_unlikely(!num_possible_cpus_cache))
-		_get_num_possible_cpus();
+	if (caa_unlikely(!possible_cpus_array_len_cache))
+		update_possible_cpus_array_len_cache();
 
-	return num_possible_cpus_cache;
+	return possible_cpus_array_len_cache;
 }

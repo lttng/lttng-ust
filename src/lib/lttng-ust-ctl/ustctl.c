@@ -1384,7 +1384,7 @@ error:
 
 int lttng_ust_ctl_get_nr_stream_per_channel(void)
 {
-	return num_possible_cpus();
+	return get_possible_cpus_array_len();
 }
 
 struct lttng_ust_ctl_consumer_channel *
@@ -2904,7 +2904,7 @@ int lttng_ust_ctl_regenerate_statedump(int sock, int handle)
 
 int lttng_ust_ctl_get_nr_cpu_per_counter(void)
 {
-	return num_possible_cpus();
+	return get_possible_cpus_array_len();
 }
 
 struct lttng_ust_ctl_daemon_counter *
