@@ -10,13 +10,13 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <stdlib.h>
 
 #include <urcu/compiler.h>
 
-#include "common/align.h"
 #include "common/logging.h"
 #include "common/smp.h"
 
@@ -190,11 +190,10 @@ error:
 static void _get_num_possible_cpus(void)
 {
 	int ret;
-	int buf_len = LTTNG_UST_PAGE_SIZE;
-	char buf[buf_len];
+	char buf[LTTNG_UST_CPUMASK_SIZE];
 
 	/* Get the possible cpu mask from sysfs, fallback to sysconf. */
-	ret = get_possible_cpu_mask_from_sysfs((char *) &buf, buf_len);
+	ret = get_possible_cpu_mask_from_sysfs((char *) &buf, LTTNG_UST_CPUMASK_SIZE);
 	if (ret <= 0)
 		goto fallback;
 
