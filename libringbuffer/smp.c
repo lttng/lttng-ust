@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "align.h"
 #include "smp.h"
 #include "usterr-signal-safe.h"
 
@@ -206,11 +207,10 @@ error:
 void _get_num_possible_cpus(void)
 {
 	int ret;
-	int buf_len = sysconf(_SC_PAGE_SIZE);
-	char buf[buf_len];
+	char buf[LTTNG_UST_CPUMASK_SIZE];
 
 	/* Get the possible cpu mask from sysfs, fallback to sysconf. */
-	ret = get_possible_cpu_mask_from_sysfs((char *) &buf, buf_len);
+	ret = get_possible_cpu_mask_from_sysfs((char *) &buf, LTTNG_UST_CPUMASK_SIZE);
 	if (ret <= 0)
 		goto fallback;
 
