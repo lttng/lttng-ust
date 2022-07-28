@@ -13,7 +13,10 @@ LOG_DRIVER = env AM_TAP_AWK='$(AWK)' \
 TESTS = \
 	unit/libringbuffer/test_shm \
 	unit/gcc-weak-hidden/test_gcc_weak_hidden \
-	unit/libcommon/test_smp \
+	unit/libcommon/test_get_cpu_mask_from_sysfs \
+	unit/libcommon/test_get_max_cpuid_from_mask \
+	unit/libcommon/test_get_max_cpuid_from_sysfs \
+	unit/libcommon/test_get_possible_cpus_array_len \
 	unit/libmsgpack/test_msgpack \
 	unit/pthread_name/test_pthread_name \
 	unit/snprintf/test_snprintf \

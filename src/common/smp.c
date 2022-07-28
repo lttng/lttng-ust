@@ -28,33 +28,29 @@
 static int possible_cpus_array_len_cache;
 
 /*
- * As a fallback to parsing the CPU mask in "/sys/devices/system/cpu/possible",
- * iterate on all the folders in "/sys/devices/system/cpu" that start with
+ * Get the highest CPU id from sysfs.
+ *
+ * Iterate on all the folders in "/sys/devices/system/cpu" that start with
  * "cpu" followed by an integer, keep the highest CPU id encountered during
  * this iteration and add 1 to get a number of CPUs.
  *
- * Then get the value from sysconf(_SC_NPROCESSORS_CONF) as a fallback and
- * return the highest one.
- *
- * On Linux, using the value from sysconf can be unreliable since the way it
- * counts CPUs varies between C libraries and even between versions of the same
- * library. If we used it directly, getcpu() could return a value greater than
- * this sysconf, in which case the arrays indexed by processor would overflow.
- *
- * As another example, the MUSL libc implementation of the _SC_NPROCESSORS_CONF
- * sysconf does not return the number of configured CPUs in the system but
- * relies on the cpu affinity mask of the current task.
- *
- * Returns 0 or less on error.
+ * Returns the highest CPU id, or -1 on error.
  */
-int get_num_possible_cpus_fallback(void)
+int get_max_cpuid_from_sysfs(void)
+{
+	return _get_max_cpuid_from_sysfs("/sys/devices/system/cpu");
+}
+
+int _get_max_cpuid_from_sysfs(const char *path)
 {
 	long max_cpuid = -1;
 
 	DIR *cpudir;
 	struct dirent *entry;
 
-	cpudir = opendir("/sys/devices/system/cpu");
+	assert(path);
+
+	cpudir = opendir(path);
 	if (cpudir == NULL)
 		goto end;
 
@@ -85,10 +81,35 @@ int get_num_possible_cpus_fallback(void)
 		max_cpuid = -1;
 
 end:
+	return max_cpuid;
+}
+
+/*
+ * As a fallback to parsing the CPU mask in "/sys/devices/system/cpu/possible",
+ * iterate on all the folders in "/sys/devices/system/cpu" that start with
+ * "cpu" followed by an integer, keep the highest CPU id encountered during
+ * this iteration and add 1 to get a number of CPUs.
+ *
+ * Then get the value from sysconf(_SC_NPROCESSORS_CONF) as a fallback and
+ * return the highest one.
+ *
+ * On Linux, using the value from sysconf can be unreliable since the way it
+ * counts CPUs varies between C libraries and even between versions of the same
+ * library. If we used it directly, getcpu() could return a value greater than
+ * this sysconf, in which case the arrays indexed by processor would overflow.
+ *
+ * As another example, the MUSL libc implementation of the _SC_NPROCESSORS_CONF
+ * sysconf does not return the number of configured CPUs in the system but
+ * relies on the cpu affinity mask of the current task.
+ *
+ * Returns 0 or less on error.
+ */
+int get_num_possible_cpus_fallback(void)
+{
 	/*
 	 * Get the sysconf value as a last resort. Keep the highest number.
 	 */
-	return __max(sysconf(_SC_NPROCESSORS_CONF), max_cpuid + 1);
+	return __max(sysconf(_SC_NPROCESSORS_CONF), get_max_cpuid_from_sysfs() + 1);
 }
 
 /*
@@ -101,14 +122,31 @@ end:
  */
 int get_possible_cpu_mask_from_sysfs(char *buf, size_t max_bytes)
 {
+	return get_cpu_mask_from_sysfs(buf, max_bytes,
+			"/sys/devices/system/cpu/possible");
+}
+
+/*
+ * Get a CPU mask string from sysfs.
+ *
+ * buf: the buffer where the mask will be read.
+ * max_bytes: the maximum number of bytes to write in the buffer.
+ * path: file path to read the mask from.
+ *
+ * Returns the number of bytes read or -1 on error.
+ */
+int get_cpu_mask_from_sysfs(char *buf, size_t max_bytes, const char *path)
+{
 	ssize_t bytes_read = 0;
 	size_t total_bytes_read = 0;
 	int fd = -1, ret = -1;
 
+	assert(path);
+
 	if (buf == NULL)
 		goto end;
 
-	fd = open("/sys/devices/system/cpu/possible", O_RDONLY);
+	fd = open(path, O_RDONLY);
 	if (fd < 0)
 		goto end;
 

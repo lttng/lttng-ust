@@ -113,7 +113,10 @@ cscope.*
 /tests/regression/abi0-conflict/app_ust_indirect_abi0_abi1
 /tests/regression/abi0-conflict/app_ust_indirect_abi1
 /tests/unit/gcc-weak-hidden/test_gcc_weak_hidden
-/tests/unit/libcommon/test_smp
+/tests/unit/libcommon/get_cpu_mask_from_sysfs
+/tests/unit/libcommon/get_max_cpuid_from_sysfs
+/tests/unit/libcommon/test_get_max_cpuid_from_mask
+/tests/unit/libcommon/test_get_possible_cpus_array_len
 /tests/unit/libmsgpack/test_msgpack
 /tests/unit/libringbuffer/test_shm
 /tests/unit/pthread_name/test_pthread_name
