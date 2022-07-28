@@ -1,14 +1,9 @@
 /*
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (C) 2020 Francis Deslauriers <francis.deslauriers@efficios.com>
+ * Copyright (C) 2022 Michael Jeanson <mjeanson@efficios.com>
  */
 
-#include <assert.h>
-#include <limits.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "tap.h"
@@ -66,7 +61,7 @@ int main(void)
 {
 	int ret, i;
 
-	plan_tests(parse_test_data_len + 1);
+	plan_tests(parse_test_data_len);
 
 	diag("Testing smp helpers");
 
@@ -77,8 +72,6 @@ int main(void)
 			"get_max_cpuid_from_mask '%s', expected: '%d', result: '%d'",
 			parse_test_data[i].buf, parse_test_data[i].expected, ret);
 	}
-
-	ok(get_possible_cpus_array_len() > 0, "get_possible_cpus_array_len (%d > 0)", get_possible_cpus_array_len());
 
 	return exit_status();
 }

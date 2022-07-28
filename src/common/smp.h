@@ -10,6 +10,18 @@
 #define LTTNG_UST_CPUMASK_SIZE 4096
 
 /*
+ * Get a CPU mask string from sysfs.
+ *
+ * buf: the buffer where the mask will be read.
+ * max_bytes: the maximum number of bytes to write in the buffer.
+ * path: file path to read the mask from.
+ *
+ * Returns the number of bytes read or -1 on error.
+ */
+int get_cpu_mask_from_sysfs(char *buf, size_t max_bytes, const char *path)
+	__attribute__((visibility("hidden")));
+
+/*
  * Get the CPU possible mask string from sysfs.
  *
  * buf: the buffer where the mask will be read.
@@ -18,6 +30,21 @@
  * Returns the number of bytes read or -1 on error.
  */
 int get_possible_cpu_mask_from_sysfs(char *buf, size_t max_bytes)
+	__attribute__((visibility("hidden")));
+
+/*
+ * Get the highest CPU id from sysfs.
+ *
+ * Iterate on all the folders in "/sys/devices/system/cpu" that start with
+ * "cpu" followed by an integer, keep the highest CPU id encountered during
+ * this iteration and add 1 to get a number of CPUs.
+ *
+ * Returns the highest CPU id, or -1 on error.
+ */
+int get_max_cpuid_from_sysfs(void)
+	__attribute__((visibility("hidden")));
+
+int _get_max_cpuid_from_sysfs(const char *path)
 	__attribute__((visibility("hidden")));
 
 /*
