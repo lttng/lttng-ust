@@ -19,7 +19,7 @@
 #define LTTNG_UST_ABI_COMM_MAGIC			0xC57C57C5
 
 /* Version for ABI between liblttng-ust, sessiond, consumerd */
-#define LTTNG_UST_ABI_MAJOR_VERSION			9
+#define LTTNG_UST_ABI_MAJOR_VERSION			10
 #define LTTNG_UST_ABI_MAJOR_VERSION_OLDEST_COMPATIBLE	8
 #define LTTNG_UST_ABI_MINOR_VERSION		0
 
