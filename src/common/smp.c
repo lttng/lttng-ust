@@ -73,6 +73,9 @@ int _get_max_cpuid_from_sysfs(const char *path)
 		}
 	}
 
+	if (closedir(cpudir))
+		PERROR("closedir");
+
 	/*
 	 * If the max CPU id is out of bound, set it to -1 so it results in a
 	 * CPU num of 0.
