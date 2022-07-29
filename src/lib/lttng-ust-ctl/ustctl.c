@@ -3294,6 +3294,14 @@ int lttng_ust_ctl_counter_clear(struct lttng_ust_ctl_daemon_counter *counter,
 	return counter->ops->counter_clear(counter->counter, dimension_indexes);
 }
 
+int lttng_ust_ctl_get_version(uint32_t *major, uint32_t *minor,
+		uint32_t *patchlevel) {
+	*major = LTTNG_UST_MAJOR_VERSION;
+	*minor = LTTNG_UST_MINOR_VERSION;
+	*patchlevel = LTTNG_UST_PATCHLEVEL_VERSION;
+	return 0;
+}
+
 static
 void lttng_ust_ctl_ctor(void)
 	__attribute__((constructor));

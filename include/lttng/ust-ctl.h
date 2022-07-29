@@ -660,6 +660,8 @@ int lttng_ust_ctl_counter_clear(struct lttng_ust_ctl_daemon_counter *counter,
 
 void lttng_ust_ctl_sigbus_handle(void *addr);
 
+int lttng_ust_ctl_get_version(uint32_t *major, uint32_t *minor, uint32_t *patchlevel);
+
 #ifdef __cplusplus
 }
 #endif
