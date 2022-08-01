@@ -193,10 +193,6 @@ int get_num_possible_cpus_from_mask(const char *pmask, size_t len)
 
 	cpu_index = strtoul(&pmask[i], &endptr, 10);
 
-	/*
-	 * If we read a CPU index, increment it by one to return a number of
-	 * CPUs.
-	 */
 	if ((&pmask[i] != endptr) && (cpu_index < INT_MAX))
 		return (int) cpu_index + 1;
 
