@@ -50,6 +50,7 @@ liblttng_ust_la_SOURCES = \
 	tracef.c \
 	lttng-ust-tracef-provider.h \
 	tracelog.c \
+	tracelog-internal.h \
 	lttng-ust-tracelog-provider.h \
 	event-notifier-notification.c \
 	rculfhash.c \
