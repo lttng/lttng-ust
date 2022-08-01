@@ -447,6 +447,8 @@ void lttng_ust_init_thread(void)
 	 * this thread attempts to use them.
 	 */
 	lttng_ust_common_init_thread(LTTNG_UST_INIT_THREAD_MASK);
+
+	lttng_ust_urcu_register_thread();
 }
 
 int lttng_get_notify_socket(void *owner)
