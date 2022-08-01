@@ -26,6 +26,8 @@
 #define LTTNG_RFLAG_EXTENDED		RING_BUFFER_RFLAG_END
 #define LTTNG_RFLAG_END			(LTTNG_RFLAG_EXTENDED << 1)
 
+#define LTTNG_TRACE_PRINTF_BUFSIZE	512
+
 /*
  * LTTng client type enumeration. Used by the consumer to map the
  * callbacks from its own address space.

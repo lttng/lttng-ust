@@ -7,6 +7,7 @@
 #define _LGPL_SOURCE
 #include <stdio.h>
 #include "common/macros.h"
+#include "common/tracer.h"
 
 /* The tracepoint definition is public, but the provider definition is hidden. */
 #define LTTNG_UST_TRACEPOINT_PROVIDER_HIDDEN_DEFINITION
@@ -15,32 +16,9 @@
 #define LTTNG_UST_TRACEPOINT_DEFINE
 #include "lttng-ust-tracelog-provider.h"
 
+#include "tracelog-internal.h"
+
 #define LTTNG_UST_TRACELOG_CB(level) \
-	static inline \
-	void lttng_ust___vtracelog_##level(const char *file, \
-			int line, const char *func, \
-			const char *fmt, va_list ap) \
-		__attribute__((always_inline, format(printf, 4, 0))); \
-	\
-	static inline \
-	void lttng_ust___vtracelog_##level(const char *file, \
-			int line, const char *func, \
-			const char *fmt, va_list ap) \
-	{ \
-		char *msg; \
-		const int len = vasprintf(&msg, fmt, ap); \
-		\
-		/* len does not include the final \0 */ \
-		if (len < 0) \
-			goto end; \
-		lttng_ust_tracepoint_cb_lttng_ust_tracelog___##level(file, \
-			line, func, msg, len, \
-			LTTNG_UST_CALLER_IP()); \
-		free(msg); \
-	end: \
-		return; \
-	} \
-	\
 	void lttng_ust__vtracelog_##level(const char *file, \
 			int line, const char *func, \
 			const char *fmt, va_list ap) \
@@ -53,7 +31,9 @@
 			int line, const char *func, \
 			const char *fmt, va_list ap) \
 	{ \
-		lttng_ust___vtracelog_##level(file, line, func, fmt, ap); \
+		LTTNG_UST_TRACELOG_VALIST(fmt, ap, \
+			lttng_ust_tracepoint_cb_lttng_ust_tracelog___##level, \
+			file, line, func, msg, len, LTTNG_UST_CALLER_IP()); \
 	} \
 	\
 	void lttng_ust__tracelog_##level(const char *file, \
@@ -68,11 +48,9 @@
 			int line, const char *func, \
 			const char *fmt, ...) \
 	{ \
-		va_list ap; \
-		\
-		va_start(ap, fmt); \
-		lttng_ust___vtracelog_##level(file, line, func, fmt, ap); \
-		va_end(ap); \
+		LTTNG_UST_TRACELOG_VARARG(fmt, \
+			lttng_ust_tracepoint_cb_lttng_ust_tracelog___##level, \
+			file, line, func, msg, len, LTTNG_UST_CALLER_IP()); \
 	}
 
 LTTNG_UST_TRACELOG_CB(LTTNG_UST_TRACEPOINT_LOGLEVEL_EMERG)
