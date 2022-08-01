@@ -557,7 +557,7 @@ void lttng_ust_dl_update(void *ip)
 	 * Force the allocation of lttng-ust TLS variables when called from
 	 * dlopen/dlclose instrumentation.
 	 */
-	lttng_ust_alloc_tls();
+	lttng_ust_common_init_thread(0);
 
 	data.exec_found = 0;
 	data.first = true;

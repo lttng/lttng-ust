@@ -231,7 +231,7 @@ struct lttng_ust_registered_probe *lttng_ust_probe_register(const struct lttng_u
 {
 	struct lttng_ust_registered_probe *reg_probe = NULL;
 
-	lttng_ust_alloc_tls();
+	lttng_ust_common_init_thread(0);
 
 	/*
 	 * If version mismatch, don't register, but don't trigger assert
@@ -269,7 +269,7 @@ end:
 
 void lttng_ust_probe_unregister(struct lttng_ust_registered_probe *reg_probe)
 {
-	lttng_ust_alloc_tls();
+	lttng_ust_common_init_thread(0);
 
 	if (!reg_probe)
 		return;

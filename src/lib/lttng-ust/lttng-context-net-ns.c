@@ -153,7 +153,9 @@ error_find_context:
 /*
  * Force a read (imply TLS allocation for dlopen) of TLS variables.
  */
-void lttng_net_ns_alloc_tls(void)
+void lttng_ust_net_ns_init_thread(int flags)
 {
 	asm volatile ("" : : "m" (URCU_TLS(cached_net_ns)));
+	if (flags & LTTNG_UST_INIT_THREAD_CONTEXT_CACHE)
+		(void)get_net_ns();
 }

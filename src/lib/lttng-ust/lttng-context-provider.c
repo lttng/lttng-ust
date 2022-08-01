@@ -67,7 +67,7 @@ struct lttng_ust_registered_context_provider *lttng_ust_context_provider_registe
 	size_t name_len = strlen(provider->name);
 	uint32_t hash;
 
-	lttng_ust_alloc_tls();
+	lttng_ust_common_init_thread(0);
 
 	/* Provider name starts with "$app.". */
 	if (strncmp("$app.", provider->name, strlen("$app.")) != 0)
@@ -101,7 +101,7 @@ end:
 
 void lttng_ust_context_provider_unregister(struct lttng_ust_registered_context_provider *reg_provider)
 {
-	lttng_ust_alloc_tls();
+	lttng_ust_common_init_thread(0);
 
 	if (ust_lock())
 		goto end;

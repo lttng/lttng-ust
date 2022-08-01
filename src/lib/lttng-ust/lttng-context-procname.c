@@ -122,7 +122,9 @@ error_find_context:
 /*
  * Force a read (imply TLS allocation for dlopen) of TLS variables.
  */
-void lttng_procname_alloc_tls(void)
+void lttng_ust_procname_init_thread(int flags)
 {
 	asm volatile ("" : : "m" (URCU_TLS(cached_procname)[0]));
+	if (flags & LTTNG_UST_INIT_THREAD_CONTEXT_CACHE)
+		(void)wrapper_getprocname();
 }

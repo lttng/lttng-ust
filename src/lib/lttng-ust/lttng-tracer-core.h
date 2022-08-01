@@ -16,6 +16,11 @@
 #include <lttng/ust-ringbuffer-context.h>
 #include "common/logging.h"
 
+enum lttng_ust_init_thread_flags {
+	LTTNG_UST_INIT_THREAD_CONTEXT_CACHE = (1 << 0),
+	LTTNG_UST_INIT_THREAD_MASK = (LTTNG_UST_INIT_THREAD_CONTEXT_CACHE << 1) - 1,
+};
+
 struct lttng_ust_session;
 struct lttng_ust_channel_buffer;
 struct lttng_ust_ctx_field;
@@ -34,28 +39,28 @@ void ust_lock_nocheck(void)
 void ust_unlock(void)
 	__attribute__((visibility("hidden")));
 
-void lttng_ust_alloc_tls(void)
+void lttng_ust_common_init_thread(int flags)
 	__attribute__((visibility("hidden")));
 
-void lttng_vtid_alloc_tls(void)
+void lttng_ust_vtid_init_thread(int flags)
 	__attribute__((visibility("hidden")));
 
-void lttng_procname_alloc_tls(void)
+void lttng_ust_procname_init_thread(int flags)
 	__attribute__((visibility("hidden")));
 
-void lttng_cgroup_ns_alloc_tls(void)
+void lttng_ust_cgroup_ns_init_thread(int flags)
 	__attribute__((visibility("hidden")));
 
-void lttng_ipc_ns_alloc_tls(void)
+void lttng_ust_ipc_ns_init_thread(int flags)
 	__attribute__((visibility("hidden")));
 
-void lttng_net_ns_alloc_tls(void)
+void lttng_ust_net_ns_init_thread(int flags)
 	__attribute__((visibility("hidden")));
 
-void lttng_time_ns_alloc_tls(void)
+void lttng_ust_time_ns_init_thread(int flags)
 	__attribute__((visibility("hidden")));
 
-void lttng_uts_ns_alloc_tls(void)
+void lttng_ust_uts_ns_init_thread(int flags)
 	__attribute__((visibility("hidden")));
 
 const char *lttng_ust_obj_get_name(int id)
@@ -78,7 +83,7 @@ void lttng_event_notifier_notification_send(
 	__attribute__((visibility("hidden")));
 
 #ifdef HAVE_LINUX_PERF_EVENT_H
-void lttng_ust_perf_counter_alloc_tls(void)
+void lttng_ust_perf_counter_init_thread(int flags)
 	__attribute__((visibility("hidden")));
 
 void lttng_perf_lock(void)
@@ -88,7 +93,7 @@ void lttng_perf_unlock(void)
 	__attribute__((visibility("hidden")));
 #else /* #ifdef HAVE_LINUX_PERF_EVENT_H */
 static inline
-void lttng_ust_perf_counter_alloc_tls(void)
+void lttng_ust_perf_counter_init_thread(int flags __attribute__((unused)))
 {
 }
 static inline

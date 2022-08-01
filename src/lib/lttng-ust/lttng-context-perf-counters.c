@@ -87,9 +87,10 @@ static DEFINE_URCU_TLS(int, ust_perf_mutex_nest);
 /*
  * Force a read (imply TLS allocation for dlopen) of TLS variables.
  */
-void lttng_ust_perf_counter_alloc_tls(void)
+void lttng_ust_perf_counter_init_thread(int flags)
 {
 	asm volatile ("" : : "m" (URCU_TLS(ust_perf_mutex_nest)));
+	(void)flags;
 }
 
 void lttng_perf_lock(void)

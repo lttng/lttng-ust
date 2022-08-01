@@ -387,7 +387,7 @@ const char *get_lttng_home_dir(void)
  * Force a read (imply TLS allocation for dlopen) of TLS variables.
  */
 static
-void lttng_nest_count_alloc_tls(void)
+void lttng_ust_nest_count_alloc_tls(void)
 {
 	asm volatile ("" : : "m" (URCU_TLS(lttng_ust_nest_count)));
 }
@@ -402,26 +402,26 @@ void lttng_ust_mutex_nest_alloc_tls(void)
  * Allocate lttng-ust urcu TLS.
  */
 static
-void lttng_lttng_ust_urcu_alloc_tls(void)
+void lttng_ust_urcu_alloc_tls(void)
 {
 	(void) lttng_ust_urcu_read_ongoing();
 }
 
-void lttng_ust_alloc_tls(void)
+void lttng_ust_common_init_thread(int flags)
 {
-	lttng_lttng_ust_urcu_alloc_tls();
+	lttng_ust_urcu_alloc_tls();
 	lttng_ringbuffer_alloc_tls();
-	lttng_vtid_alloc_tls();
-	lttng_nest_count_alloc_tls();
-	lttng_procname_alloc_tls();
+	lttng_ust_vtid_init_thread(flags);
+	lttng_ust_nest_count_alloc_tls();
+	lttng_ust_procname_init_thread(flags);
 	lttng_ust_mutex_nest_alloc_tls();
-	lttng_ust_perf_counter_alloc_tls();
+	lttng_ust_perf_counter_init_thread(flags);
 	lttng_ust_common_alloc_tls();
-	lttng_cgroup_ns_alloc_tls();
-	lttng_ipc_ns_alloc_tls();
-	lttng_net_ns_alloc_tls();
-	lttng_time_ns_alloc_tls();
-	lttng_uts_ns_alloc_tls();
+	lttng_ust_cgroup_ns_init_thread(flags);
+	lttng_ust_ipc_ns_init_thread(flags);
+	lttng_ust_net_ns_init_thread(flags);
+	lttng_ust_time_ns_init_thread(flags);
+	lttng_ust_uts_ns_init_thread(flags);
 	lttng_ust_ring_buffer_client_discard_alloc_tls();
 	lttng_ust_ring_buffer_client_discard_rt_alloc_tls();
 	lttng_ust_ring_buffer_client_overwrite_alloc_tls();
@@ -446,7 +446,7 @@ void lttng_ust_init_thread(void)
 	 * ensure those are initialized before a signal handler nesting over
 	 * this thread attempts to use them.
 	 */
-	lttng_ust_alloc_tls();
+	lttng_ust_common_init_thread(LTTNG_UST_INIT_THREAD_MASK);
 }
 
 int lttng_get_notify_socket(void *owner)
@@ -1815,7 +1815,7 @@ void *ust_listener_thread(void *arg)
 	int sock, ret, prev_connect_failed = 0, has_waited = 0, fd;
 	long timeout;
 
-	lttng_ust_alloc_tls();
+	lttng_ust_common_init_thread(0);
 	/*
 	 * If available, add '-ust' to the end of this thread's
 	 * process name
@@ -2183,7 +2183,7 @@ void lttng_ust_ctor(void)
 	 * to be the dynamic linker mutex) and ust_lock, taken within
 	 * the ust lock.
 	 */
-	lttng_ust_alloc_tls();
+	lttng_ust_common_init_thread(0);
 
 	lttng_ust_loaded = 1;
 
@@ -2497,7 +2497,7 @@ void lttng_ust_before_fork(sigset_t *save_sigset)
 	int ret;
 
 	/* Allocate lttng-ust TLS. */
-	lttng_ust_alloc_tls();
+	lttng_ust_common_init_thread(0);
 
 	if (URCU_TLS(lttng_ust_nest_count))
 		return;

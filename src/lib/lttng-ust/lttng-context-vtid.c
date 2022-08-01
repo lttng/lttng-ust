@@ -112,7 +112,9 @@ error_find_context:
 /*
  * Force a read (imply TLS allocation for dlopen) of TLS variables.
  */
-void lttng_vtid_alloc_tls(void)
+void lttng_ust_vtid_init_thread(int flags)
 {
 	asm volatile ("" : : "m" (URCU_TLS(cached_vtid)));
+	if (flags & LTTNG_UST_INIT_THREAD_CONTEXT_CACHE)
+		(void)wrapper_getvtid();
 }
