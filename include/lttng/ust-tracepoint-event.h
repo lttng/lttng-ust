@@ -257,9 +257,16 @@ void lttng_ust__event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARG
 	};
 #include LTTNG_UST_TRACEPOINT_INCLUDE
 
+#if defined(__cplusplus)
+
 /*
  * Stage 0.9.1
- * Verifying array and sequence elements are of an integer type.
+ * Verifying array and sequence elements are of an integer or pointer
+ * type.
+ *
+ * This compile-time check is only enabled in C++, because the C
+ * implementation of lttng_ust_is_pointer_type does not support opaque
+ * pointer types.
  */
 
 /* Reset all macros within LTTNG_UST_TRACEPOINT_EVENT */
@@ -287,6 +294,8 @@ void lttng_ust__event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARG
 		_fields
 
 #include LTTNG_UST_TRACEPOINT_INCLUDE
+
+#endif
 
 /*
  * Stage 0.9.2 of tracepoint event generation.

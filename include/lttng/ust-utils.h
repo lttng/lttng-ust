@@ -62,6 +62,9 @@
  * lttng_ust_is_pointer_type - check if type is a pointer
  *
  * Returns true if the type of @type is a pointer.
+ *
+ * Note: The C implementation of lttng_ust_is_pointer_type uses pointer
+ * arithmetic, which does not work on opaque pointer types.
  */
 #if defined(__cplusplus)
 #define lttng_ust_is_pointer_type(type) (std::is_pointer<type>::value)
