@@ -1,3 +1,13 @@
+2022-08-19 (National Potato Day) lttng-ust 2.12.6
+	* cleanup: remove stale comment
+	* fix: Unify possible CPU number fallback
+	* Fix: remove unused align.h header
+	* fix: removed accidental VLA in _get_num_possible_cpus()
+	* Add unit tests for num possible cpus
+	* fix: num_possible_cpus() with hot-unplugged CPUs
+	* Fix: Use negative value for error code of lttng_ust_ctl_duplicate_ust_object_data
+	* Fix: sessiond wait futex: handle spurious futex wakeups
+
 2022-06-03 (National Repeat Day) (National Repeat Day) lttng-ust 2.12.5
 	* Document ust lock async-signal-safety
 	* Fix: don't use strerror() from ust lock nocheck
