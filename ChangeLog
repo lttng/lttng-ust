@@ -1,3 +1,19 @@
+2022-08-19 (National Popato Day) lttng-ust 2.13.4
+	* cleanup: remove stale comment
+	* Fix: disable array/sequence compile-time type check in C
+	* fix: add missing closedir in _get_max_cpuid_from_sysfs()
+	* Add more unit tests for possible_cpus_array_len
+	* Clarify terminology around cpu ids and array length
+	* fix: Unify possible CPU number fallback
+	* fix: removed accidental VLA in _get_num_possible_cpus()
+	* Fix: file descriptor leak in get_possible_cpu_mask_from_sysfs
+	* Add unit tests for num possible cpus
+	* fix: num_possible_cpus() with hot-unplugged CPUs
+	* fix: Disable warnings for GNU extensions on Clang
+	* fix: clang warning '-Wnull-pointer-subtraction' in lttng_ust_is_pointer_type
+	* Fix: Use negative value for error code of lttng_ust_ctl_duplicate_ust_object_data
+	* Fix: sessiond wait futex: handle spurious futex wakeups
+
 2022-06-03 (National Repeat Day) (National Repeat Day) lttng-ust 2.13.3
 	* Document ust lock async-signal-safety
 	* Fix: don't use strerror() from ust lock nocheck
