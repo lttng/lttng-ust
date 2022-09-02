@@ -66,11 +66,13 @@ static inline int __lttng_counter_add(const struct lib_counter_config *config,
 				move_sum = 0;
 				old = res;
 				n = (int8_t) ((uint8_t) old + (uint8_t) v);
-				if (caa_unlikely(n > (int8_t) global_sum_step))
-					move_sum = (int8_t) global_sum_step / 2;
-				else if (caa_unlikely(n < -(int8_t) global_sum_step))
-					move_sum = -((int8_t) global_sum_step / 2);
-				n -= move_sum;
+				if (caa_unlikely(global_sum_step)) {
+					if (caa_unlikely(n > (int8_t) global_sum_step))
+						move_sum = (int8_t) global_sum_step / 2;
+					else if (caa_unlikely(n < -(int8_t) global_sum_step))
+						move_sum = -((int8_t) global_sum_step / 2);
+					n -= move_sum;
+				}
 				res = uatomic_cmpxchg(int_p, old, n);
 			} while (old != res);
 			break;
@@ -107,11 +109,13 @@ static inline int __lttng_counter_add(const struct lib_counter_config *config,
 				move_sum = 0;
 				old = res;
 				n = (int16_t) ((uint16_t) old + (uint16_t) v);
-				if (caa_unlikely(n > (int16_t) global_sum_step))
-					move_sum = (int16_t) global_sum_step / 2;
-				else if (caa_unlikely(n < -(int16_t) global_sum_step))
-					move_sum = -((int16_t) global_sum_step / 2);
-				n -= move_sum;
+				if (caa_unlikely(global_sum_step)) {
+					if (caa_unlikely(n > (int16_t) global_sum_step))
+						move_sum = (int16_t) global_sum_step / 2;
+					else if (caa_unlikely(n < -(int16_t) global_sum_step))
+						move_sum = -((int16_t) global_sum_step / 2);
+					n -= move_sum;
+				}
 				res = uatomic_cmpxchg(int_p, old, n);
 			} while (old != res);
 			break;
@@ -148,11 +152,13 @@ static inline int __lttng_counter_add(const struct lib_counter_config *config,
 				move_sum = 0;
 				old = res;
 				n = (int32_t) ((uint32_t) old + (uint32_t) v);
-				if (caa_unlikely(n > (int32_t) global_sum_step))
-					move_sum = (int32_t) global_sum_step / 2;
-				else if (caa_unlikely(n < -(int32_t) global_sum_step))
-					move_sum = -((int32_t) global_sum_step / 2);
-				n -= move_sum;
+				if (caa_unlikely(global_sum_step)) {
+					if (caa_unlikely(n > (int32_t) global_sum_step))
+						move_sum = (int32_t) global_sum_step / 2;
+					else if (caa_unlikely(n < -(int32_t) global_sum_step))
+						move_sum = -((int32_t) global_sum_step / 2);
+					n -= move_sum;
+				}
 				res = uatomic_cmpxchg(int_p, old, n);
 			} while (old != res);
 			break;
@@ -190,11 +196,13 @@ static inline int __lttng_counter_add(const struct lib_counter_config *config,
 				move_sum = 0;
 				old = res;
 				n = (int64_t) ((uint64_t) old + (uint64_t) v);
-				if (caa_unlikely(n > (int64_t) global_sum_step))
-					move_sum = (int64_t) global_sum_step / 2;
-				else if (caa_unlikely(n < -(int64_t) global_sum_step))
-					move_sum = -((int64_t) global_sum_step / 2);
-				n -= move_sum;
+				if (caa_unlikely(global_sum_step)) {
+					if (caa_unlikely(n > (int64_t) global_sum_step))
+						move_sum = (int64_t) global_sum_step / 2;
+					else if (caa_unlikely(n < -(int64_t) global_sum_step))
+						move_sum = -((int64_t) global_sum_step / 2);
+					n -= move_sum;
+				}
 				res = uatomic_cmpxchg(int_p, old, n);
 			} while (old != res);
 			break;
