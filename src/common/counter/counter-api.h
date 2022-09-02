@@ -24,7 +24,7 @@
  */
 static inline int __lttng_counter_add(const struct lib_counter_config *config,
 				      enum lib_counter_config_alloc alloc,
-				      enum lib_counter_config_sync sync,
+				      enum lib_counter_config_sync sync __attribute__((unused)),
 				      struct lib_counter *counter,
 				      const size_t *dimension_indexes, int64_t v,
 				      int64_t *remainder)
@@ -59,8 +59,8 @@ static inline int __lttng_counter_add(const struct lib_counter_config *config,
 		int8_t global_sum_step = counter->global_sum_step.s8;
 
 		res = *int_p;
-		switch (sync) {
-		case COUNTER_SYNC_PER_CPU:
+		switch (alloc) {
+		case COUNTER_ALLOC_PER_CPU:
 		{
 			do {
 				move_sum = 0;
@@ -75,7 +75,7 @@ static inline int __lttng_counter_add(const struct lib_counter_config *config,
 			} while (old != res);
 			break;
 		}
-		case COUNTER_SYNC_GLOBAL:
+		case COUNTER_ALLOC_GLOBAL:
 		{
 			do {
 				old = res;
@@ -100,8 +100,8 @@ static inline int __lttng_counter_add(const struct lib_counter_config *config,
 		int16_t global_sum_step = counter->global_sum_step.s16;
 
 		res = *int_p;
-		switch (sync) {
-		case COUNTER_SYNC_PER_CPU:
+		switch (alloc) {
+		case COUNTER_ALLOC_PER_CPU:
 		{
 			do {
 				move_sum = 0;
@@ -116,7 +116,7 @@ static inline int __lttng_counter_add(const struct lib_counter_config *config,
 			} while (old != res);
 			break;
 		}
-		case COUNTER_SYNC_GLOBAL:
+		case COUNTER_ALLOC_GLOBAL:
 		{
 			do {
 				old = res;
@@ -141,8 +141,8 @@ static inline int __lttng_counter_add(const struct lib_counter_config *config,
 		int32_t global_sum_step = counter->global_sum_step.s32;
 
 		res = *int_p;
-		switch (sync) {
-		case COUNTER_SYNC_PER_CPU:
+		switch (alloc) {
+		case COUNTER_ALLOC_PER_CPU:
 		{
 			do {
 				move_sum = 0;
@@ -157,7 +157,7 @@ static inline int __lttng_counter_add(const struct lib_counter_config *config,
 			} while (old != res);
 			break;
 		}
-		case COUNTER_SYNC_GLOBAL:
+		case COUNTER_ALLOC_GLOBAL:
 		{
 			do {
 				old = res;
@@ -183,8 +183,8 @@ static inline int __lttng_counter_add(const struct lib_counter_config *config,
 		int64_t global_sum_step = counter->global_sum_step.s64;
 
 		res = *int_p;
-		switch (sync) {
-		case COUNTER_SYNC_PER_CPU:
+		switch (alloc) {
+		case COUNTER_ALLOC_PER_CPU:
 		{
 			do {
 				move_sum = 0;
@@ -199,7 +199,7 @@ static inline int __lttng_counter_add(const struct lib_counter_config *config,
 			} while (old != res);
 			break;
 		}
-		case COUNTER_SYNC_GLOBAL:
+		case COUNTER_ALLOC_GLOBAL:
 		{
 			do {
 				old = res;
