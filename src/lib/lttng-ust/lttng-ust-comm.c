@@ -1582,14 +1582,14 @@ open_write:
 	pid = fork();
 	URCU_TLS(lttng_ust_nest_count)--;
 	if (pid > 0) {
-		int status;
+		int status, wait_ret;
 
 		/*
 		 * Parent: wait for child to return, in which case the
 		 * shared memory map will have been created.
 		 */
-		pid = wait(&status);
-		if (pid < 0 || !WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+		wait_ret = waitpid(pid, &status, 0);
+		if (wait_ret < 0 || !WIFEXITED(status) || WEXITSTATUS(status) != 0) {
 			wait_shm_fd = -1;
 			goto end;
 		}
