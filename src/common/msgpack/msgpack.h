@@ -67,4 +67,10 @@ int lttng_msgpack_begin_array(
 int lttng_msgpack_end_array(struct lttng_msgpack_writer *writer)
 	__attribute__((visibility("hidden")));
 
+int lttng_msgpack_save_writer_pos(struct lttng_msgpack_writer *writer, uint8_t **pos)
+	__attribute__((visibility("hidden")));
+
+int lttng_msgpack_restore_writer_pos(struct lttng_msgpack_writer *writer, uint8_t *pos)
+	__attribute__((visibility("hidden")));
+
 #endif /* _LTTNG_UST_MSGPACK_H */
