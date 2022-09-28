@@ -30,6 +30,8 @@
 #define CAPTURE_BUFFER_SIZE \
 	(PIPE_BUF - sizeof(struct lttng_ust_abi_event_notifier_notification) - 1)
 
+#define MSG_WRITE_NIL_LEN 1
+
 struct lttng_event_notifier_notification {
 	int notification_fd;
 	uint64_t event_notifier_token;
@@ -401,6 +403,17 @@ void notification_send(struct lttng_event_notifier_notification *notif,
 	}
 }
 
+/*
+ * Validate that the buffer has enough room to hold empty capture fields.
+ */
+static
+bool validate_buffer_len(struct lttng_event_notifier_notification *notif, size_t captures_left)
+{
+	if (notif->writer.end_write_pos - notif->writer.write_pos < MSG_WRITE_NIL_LEN * captures_left)
+		return false;
+	return true;
+}
+
 void lttng_event_notifier_notification_send(
 		const struct lttng_ust_event_notifier *event_notifier,
 		const char *stack_data,
@@ -412,11 +425,14 @@ void lttng_event_notifier_notification_send(
 	 * allocation in this context.
 	 */
 	struct lttng_event_notifier_notification notif = {0};
+	size_t captures_left;
 
-	if (notification_init(&notif, event_notifier)) {
-		record_error(event_notifier);
-		goto end;
-	}
+	if (notification_init(&notif, event_notifier))
+		goto error;
+
+	captures_left = event_notifier->priv->num_captures;
+	if (!validate_buffer_len(&notif, captures_left))
+		goto error;
 
 	if (caa_unlikely(notif_ctx->eval_capture)) {
 		struct lttng_ust_bytecode_runtime *capture_bc_runtime;
@@ -431,30 +447,40 @@ void lttng_event_notifier_notification_send(
 				&event_notifier->priv->capture_bytecode_runtime_head, node) {
 			struct lttng_interpreter_output output;
 			uint8_t *save_pos;
-			int ret;
+			int ret = -1;
 
 			lttng_msgpack_save_writer_pos(&notif.writer, &save_pos);
 			if (capture_bc_runtime->interpreter_func(capture_bc_runtime,
 					stack_data, probe_ctx, &output) == LTTNG_UST_BYTECODE_INTERPRETER_OK)
 				ret = notification_append_capture(&notif, &output);
-			else
-				ret = notification_append_empty_capture(&notif);
-			if (ret) {
+			if (ret || !validate_buffer_len(&notif, captures_left)) {
 				/*
-				 * On append capture error, skip the field
-				 * capture by restoring the msgpack writer
-				 * position.
+				 * On append capture error or if the generated
+				 * buffer data would not leave enough room to
+				 * write empty capture fields for the remaining
+				 * fields, skip the field capture by restoring
+				 * the msgpack writer position and writing an
+				 * empty capture field.
 				 */
 				lttng_msgpack_restore_writer_pos(&notif.writer, save_pos);
+				ret = notification_append_empty_capture(&notif);
+				if (ret)
+					CRIT("Not enough space for empty capture field\n");
 			}
 		}
 	}
+
+	if (notif.has_captures && lttng_msgpack_end_array(&notif.writer))
+		goto error;
 
 	/*
 	 * Send the notification (including the capture buffer) to the
 	 * sessiond.
 	 */
 	notification_send(&notif, event_notifier);
-end:
+	return;
+
+error:
+	record_error(event_notifier);
 	return;
 }
