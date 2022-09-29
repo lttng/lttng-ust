@@ -1104,60 +1104,28 @@ int validate_instruction_context(
 		dbg_printf("Validate load field\n");
 		break;
 	}
+
+	/*
+	 * Disallow already specialized bytecode op load field instructions to
+	 * ensure that the received bytecode does not read a memory area larger
+	 * than the memory targeted by the instrumentation.
+	 */
 	case BYTECODE_OP_LOAD_FIELD_S8:
-	{
-		dbg_printf("Validate load field s8\n");
-		break;
-	}
 	case BYTECODE_OP_LOAD_FIELD_S16:
-	{
-		dbg_printf("Validate load field s16\n");
-		break;
-	}
 	case BYTECODE_OP_LOAD_FIELD_S32:
-	{
-		dbg_printf("Validate load field s32\n");
-		break;
-	}
 	case BYTECODE_OP_LOAD_FIELD_S64:
-	{
-		dbg_printf("Validate load field s64\n");
-		break;
-	}
 	case BYTECODE_OP_LOAD_FIELD_U8:
-	{
-		dbg_printf("Validate load field u8\n");
-		break;
-	}
 	case BYTECODE_OP_LOAD_FIELD_U16:
-	{
-		dbg_printf("Validate load field u16\n");
-		break;
-	}
 	case BYTECODE_OP_LOAD_FIELD_U32:
-	{
-		dbg_printf("Validate load field u32\n");
-		break;
-	}
 	case BYTECODE_OP_LOAD_FIELD_U64:
-	{
-		dbg_printf("Validate load field u64\n");
-		break;
-	}
 	case BYTECODE_OP_LOAD_FIELD_STRING:
-	{
-		dbg_printf("Validate load field string\n");
-		break;
-	}
 	case BYTECODE_OP_LOAD_FIELD_SEQUENCE:
-	{
-		dbg_printf("Validate load field sequence\n");
-		break;
-	}
 	case BYTECODE_OP_LOAD_FIELD_DOUBLE:
 	{
-		dbg_printf("Validate load field double\n");
-		break;
+		dbg_printf("Validate load field, reject specialized load instruction (%d)\n",
+				(int) opcode);
+		ret = -EINVAL;
+		goto end;
 	}
 
 	case BYTECODE_OP_GET_SYMBOL:
