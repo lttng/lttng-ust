@@ -458,6 +458,11 @@ int link_bytecode(const struct lttng_ust_event_desc *event_desc,
 	runtime->len = bytecode->bc.reloc_offset;
 	/* copy original bytecode */
 	memcpy(runtime->code, bytecode->bc.data, runtime->len);
+	/* Validate bytecode load instructions before relocs. */
+	ret = lttng_bytecode_validate_load(runtime);
+	if (ret) {
+		goto link_error;
+	}
 	/*
 	 * apply relocs. Those are a uint16_t (offset in bytecode)
 	 * followed by a string (field name).
