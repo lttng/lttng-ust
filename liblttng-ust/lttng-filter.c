@@ -468,6 +468,11 @@ int _lttng_filter_event_link_bytecode(struct lttng_event *event,
 	runtime->len = filter_bytecode->bc.reloc_offset;
 	/* copy original bytecode */
 	memcpy(runtime->code, filter_bytecode->bc.data, runtime->len);
+	/* Validate bytecode load instructions before relocs. */
+	ret = lttng_filter_validate_bytecode_load(runtime);
+	if (ret) {
+		goto link_error;
+	}
 	/*
 	 * apply relocs. Those are a uint16_t (offset in bytecode)
 	 * followed by a string (field name).

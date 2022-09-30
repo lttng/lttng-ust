@@ -399,15 +399,8 @@ int bytecode_validate_overflow(struct bytecode_runtime *bytecode,
 		break;
 	}
 
-	/* load field ref */
+	/* load field and get context ref */
 	case FILTER_OP_LOAD_FIELD_REF:
-	{
-		ERR("Unknown field ref type\n");
-		ret = -EINVAL;
-		break;
-	}
-
-	/* get context ref */
 	case FILTER_OP_GET_CONTEXT_REF:
 	case FILTER_OP_LOAD_FIELD_REF_STRING:
 	case FILTER_OP_LOAD_FIELD_REF_SEQUENCE:
@@ -1180,6 +1173,236 @@ int validate_instruction_all_contexts(struct bytecode_runtime *bytecode,
 }
 
 /*
+ * Validate load instructions: specialized instructions not accepted as input.
+ *
+ * Return value:
+ * >0: going to next insn.
+ * 0: success, stop iteration.
+ * <0: error
+ */
+static
+int validate_load(char **_next_pc,
+		char *pc)
+{
+	int ret = 0;
+	char *next_pc = *_next_pc;
+
+	switch (*(filter_opcode_t *) pc) {
+	case FILTER_OP_UNKNOWN:
+	default:
+	{
+		ERR("Unknown bytecode op %u\n",
+			(unsigned int) *(filter_opcode_t *) pc);
+		ret = -EINVAL;
+		goto end;
+	}
+
+	case FILTER_OP_RETURN:
+	{
+		next_pc += sizeof(struct return_op);
+		break;
+	}
+
+	case FILTER_OP_RETURN_S64:
+	{
+		next_pc += sizeof(struct return_op);
+		break;
+	}
+
+	/* binary */
+	case FILTER_OP_MUL:
+	case FILTER_OP_DIV:
+	case FILTER_OP_MOD:
+	case FILTER_OP_PLUS:
+	case FILTER_OP_MINUS:
+	{
+		ERR("Unsupported bytecode op %u\n",
+			(unsigned int) *(filter_opcode_t *) pc);
+		ret = -EINVAL;
+		goto end;
+	}
+
+	case FILTER_OP_EQ:
+	case FILTER_OP_NE:
+	case FILTER_OP_GT:
+	case FILTER_OP_LT:
+	case FILTER_OP_GE:
+	case FILTER_OP_LE:
+	case FILTER_OP_EQ_STRING:
+	case FILTER_OP_NE_STRING:
+	case FILTER_OP_GT_STRING:
+	case FILTER_OP_LT_STRING:
+	case FILTER_OP_GE_STRING:
+	case FILTER_OP_LE_STRING:
+	case FILTER_OP_EQ_STAR_GLOB_STRING:
+	case FILTER_OP_NE_STAR_GLOB_STRING:
+	case FILTER_OP_EQ_S64:
+	case FILTER_OP_NE_S64:
+	case FILTER_OP_GT_S64:
+	case FILTER_OP_LT_S64:
+	case FILTER_OP_GE_S64:
+	case FILTER_OP_LE_S64:
+	case FILTER_OP_EQ_DOUBLE:
+	case FILTER_OP_NE_DOUBLE:
+	case FILTER_OP_GT_DOUBLE:
+	case FILTER_OP_LT_DOUBLE:
+	case FILTER_OP_GE_DOUBLE:
+	case FILTER_OP_LE_DOUBLE:
+	case FILTER_OP_EQ_DOUBLE_S64:
+	case FILTER_OP_NE_DOUBLE_S64:
+	case FILTER_OP_GT_DOUBLE_S64:
+	case FILTER_OP_LT_DOUBLE_S64:
+	case FILTER_OP_GE_DOUBLE_S64:
+	case FILTER_OP_LE_DOUBLE_S64:
+	case FILTER_OP_EQ_S64_DOUBLE:
+	case FILTER_OP_NE_S64_DOUBLE:
+	case FILTER_OP_GT_S64_DOUBLE:
+	case FILTER_OP_LT_S64_DOUBLE:
+	case FILTER_OP_GE_S64_DOUBLE:
+	case FILTER_OP_LE_S64_DOUBLE:
+	case FILTER_OP_BIT_RSHIFT:
+	case FILTER_OP_BIT_LSHIFT:
+	case FILTER_OP_BIT_AND:
+	case FILTER_OP_BIT_OR:
+	case FILTER_OP_BIT_XOR:
+	{
+		next_pc += sizeof(struct binary_op);
+		break;
+	}
+
+	/* unary */
+	case FILTER_OP_UNARY_PLUS:
+	case FILTER_OP_UNARY_MINUS:
+	case FILTER_OP_UNARY_PLUS_S64:
+	case FILTER_OP_UNARY_MINUS_S64:
+	case FILTER_OP_UNARY_NOT_S64:
+	case FILTER_OP_UNARY_NOT:
+	case FILTER_OP_UNARY_BIT_NOT:
+	case FILTER_OP_UNARY_PLUS_DOUBLE:
+	case FILTER_OP_UNARY_MINUS_DOUBLE:
+	case FILTER_OP_UNARY_NOT_DOUBLE:
+	{
+		next_pc += sizeof(struct unary_op);
+		break;
+	}
+
+	/* logical */
+	case FILTER_OP_AND:
+	case FILTER_OP_OR:
+	{
+		next_pc += sizeof(struct logical_op);
+		break;
+	}
+
+	/* load field ref */
+	case FILTER_OP_LOAD_FIELD_REF:
+	/* get context ref */
+	case FILTER_OP_GET_CONTEXT_REF:
+	{
+		next_pc += sizeof(struct load_op) + sizeof(struct field_ref);
+		break;
+	}
+	case FILTER_OP_LOAD_FIELD_REF_STRING:
+	case FILTER_OP_LOAD_FIELD_REF_SEQUENCE:
+	case FILTER_OP_GET_CONTEXT_REF_STRING:
+	case FILTER_OP_LOAD_FIELD_REF_S64:
+	case FILTER_OP_GET_CONTEXT_REF_S64:
+	case FILTER_OP_LOAD_FIELD_REF_DOUBLE:
+	case FILTER_OP_GET_CONTEXT_REF_DOUBLE:
+	{
+		/*
+		 * Reject specialized load field ref instructions.
+		 */
+		ret = -EINVAL;
+		goto end;
+	}
+
+	/* load from immediate operand */
+	case FILTER_OP_LOAD_STRING:
+	case FILTER_OP_LOAD_STAR_GLOB_STRING:
+	{
+		struct load_op *insn = (struct load_op *) pc;
+
+		next_pc += sizeof(struct load_op) + strlen(insn->data) + 1;
+		break;
+	}
+
+	case FILTER_OP_LOAD_S64:
+	{
+		next_pc += sizeof(struct load_op) + sizeof(struct literal_numeric);
+		break;
+	}
+	case FILTER_OP_LOAD_DOUBLE:
+	{
+		next_pc += sizeof(struct load_op) + sizeof(struct literal_double);
+		break;
+	}
+
+	case FILTER_OP_CAST_DOUBLE_TO_S64:
+	case FILTER_OP_CAST_TO_S64:
+	case FILTER_OP_CAST_NOP:
+	{
+		next_pc += sizeof(struct cast_op);
+		break;
+	}
+
+	/*
+	 * Instructions for recursive traversal through composed types.
+	 */
+	case FILTER_OP_GET_CONTEXT_ROOT:
+	case FILTER_OP_GET_APP_CONTEXT_ROOT:
+	case FILTER_OP_GET_PAYLOAD_ROOT:
+	case FILTER_OP_LOAD_FIELD:
+	{
+		next_pc += sizeof(struct load_op);
+		break;
+	}
+
+	case FILTER_OP_LOAD_FIELD_S8:
+	case FILTER_OP_LOAD_FIELD_S16:
+	case FILTER_OP_LOAD_FIELD_S32:
+	case FILTER_OP_LOAD_FIELD_S64:
+	case FILTER_OP_LOAD_FIELD_U8:
+	case FILTER_OP_LOAD_FIELD_U16:
+	case FILTER_OP_LOAD_FIELD_U32:
+	case FILTER_OP_LOAD_FIELD_U64:
+	case FILTER_OP_LOAD_FIELD_STRING:
+	case FILTER_OP_LOAD_FIELD_SEQUENCE:
+	case FILTER_OP_LOAD_FIELD_DOUBLE:
+	{
+		/*
+		 * Reject specialized load field instructions.
+		 */
+		ret = -EINVAL;
+		goto end;
+	}
+
+	case FILTER_OP_GET_SYMBOL:
+	case FILTER_OP_GET_SYMBOL_FIELD:
+	{
+		next_pc += sizeof(struct load_op) + sizeof(struct get_symbol);
+		break;
+	}
+
+	case FILTER_OP_GET_INDEX_U16:
+	{
+		next_pc += sizeof(struct load_op) + sizeof(struct get_index_u16);
+		break;
+	}
+
+	case FILTER_OP_GET_INDEX_U64:
+	{
+		next_pc += sizeof(struct load_op) + sizeof(struct get_index_u64);
+		break;
+	}
+
+	}
+end:
+	*_next_pc = next_pc;
+	return ret;
+}
+
+/*
  * Return value:
  * >0: going to next insn.
  * 0: success, stop iteration.
@@ -1808,6 +2031,32 @@ int exec_insn(struct bytecode_runtime *bytecode,
 	}
 end:
 	*_next_pc = next_pc;
+	return ret;
+}
+
+int lttng_filter_validate_bytecode_load(struct bytecode_runtime *bytecode)
+{
+	char *pc, *next_pc, *start_pc;
+	int ret = -EINVAL;
+
+	start_pc = &bytecode->code[0];
+	for (pc = next_pc = start_pc; pc - start_pc < bytecode->len;
+			pc = next_pc) {
+		ret = bytecode_validate_overflow(bytecode, start_pc, pc);
+		if (ret != 0) {
+			if (ret == -ERANGE)
+				ERR("filter bytecode overflow\n");
+			goto end;
+		}
+		dbg_printf("Validating loads: op %s (%u)\n",
+			print_op((unsigned int) *(filter_opcode_t *) pc),
+			(unsigned int) *(filter_opcode_t *) pc);
+
+		ret = validate_load(&next_pc, pc);
+		if (ret)
+			goto end;
+	}
+end:
 	return ret;
 }
 

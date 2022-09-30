@@ -291,6 +291,7 @@ struct estack {
 const char *print_op(enum filter_op op);
 
 int lttng_filter_validate_bytecode(struct bytecode_runtime *bytecode);
+int lttng_filter_validate_bytecode_load(struct bytecode_runtime *bytecode);
 int lttng_filter_specialize_bytecode(struct lttng_event *event,
 		struct bytecode_runtime *bytecode);
 
