@@ -324,6 +324,9 @@ void lttng_bytecode_sync_state(struct lttng_ust_bytecode_runtime *runtime)
 int lttng_bytecode_validate(struct bytecode_runtime *bytecode)
 	__attribute__((visibility("hidden")));
 
+int lttng_bytecode_validate_load(struct bytecode_runtime *bytecode)
+	__attribute__((visibility("hidden")));
+
 int lttng_bytecode_specialize(const struct lttng_ust_event_desc *event_desc,
 		struct bytecode_runtime *bytecode)
 	__attribute__((visibility("hidden")));
