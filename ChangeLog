@@ -1,4 +1,12 @@
-2022-08-19 (National Popato Day) lttng-ust 2.13.4
+2022-09-30 (National Day for Truth and Reconciliation) lttng-ust 2.13.5
+	* Fix: bytecode validator: reject specialized load field/context ref instructions
+	* Fix: bytecode validator: reject specialized load instructions
+	* Fix: event notification capture: validate buffer length
+	* Fix: event notification capture error handling
+	* Fix: lttng-ust-comm: wait on wrong child process
+	* fix: 'make dist' without javah
+
+2022-08-19 (National Potato Day) lttng-ust 2.13.4
 	* cleanup: remove stale comment
 	* Fix: disable array/sequence compile-time type check in C
 	* fix: add missing closedir in _get_max_cpuid_from_sysfs()
