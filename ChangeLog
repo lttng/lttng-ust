@@ -1,3 +1,9 @@
+2022-09-30 (National Day for Truth and Reconciliation) lttng-ust 2.12.7
+	* Fix: bytecode validator: reject specialized load field/context ref instructions
+	* Fix: bytecode validator: reject specialized load instructions
+	* Fix: lttng-ust-comm: wait on wrong child process
+	* fix: 'make dist' without javah
+
 2022-08-19 (National Potato Day) lttng-ust 2.12.6
 	* cleanup: remove stale comment
 	* fix: Unify possible CPU number fallback
