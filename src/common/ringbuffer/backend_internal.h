@@ -595,6 +595,21 @@ int update_read_sb_index(const struct lttng_ust_ring_buffer_config *config,
 #define inline_memcpy(dest, src, n)	memcpy(dest, src, n)
 #endif
 
+#define LOAD_UNALIGNED_INT(type, p) \
+	({ \
+		struct packed_struct { type __v; } __attribute__((packed)); \
+		(((const struct packed_struct *) (p))->__v); \
+	})
+
+#define STORE_UNALIGNED_INT(type, p, v)	\
+	do { \
+		struct packed_struct { type __v; } __attribute__((packed)); \
+		((struct packed_struct *) (p))->__v = (v); \
+	} while (0)
+
+/*
+ * Copy from src into dest, assuming unaligned src and dest.
+ */
 static inline
 void lttng_inline_memcpy(void *dest, const void *src,
 		unsigned long len)
@@ -608,13 +623,13 @@ void lttng_inline_memcpy(void *dest, const void *src,
 		*(uint8_t *) dest = *(const uint8_t *) src;
 		break;
 	case 2:
-		*(uint16_t *) dest = *(const uint16_t *) src;
+		STORE_UNALIGNED_INT(uint16_t, dest, LOAD_UNALIGNED_INT(uint16_t, src));
 		break;
 	case 4:
-		*(uint32_t *) dest = *(const uint32_t *) src;
+		STORE_UNALIGNED_INT(uint32_t, dest, LOAD_UNALIGNED_INT(uint32_t, src));
 		break;
 	case 8:
-		*(uint64_t *) dest = *(const uint64_t *) src;
+		STORE_UNALIGNED_INT(uint64_t, dest, LOAD_UNALIGNED_INT(uint64_t, src));
 		break;
 	default:
 		inline_memcpy(dest, src, len);
