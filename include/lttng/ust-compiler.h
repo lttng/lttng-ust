@@ -10,6 +10,16 @@
 
 #include <assert.h>
 
+/*
+ * By default, LTTng-UST uses the priority 150 for the tracepoint and probe
+ * provider constructors to trace tracepoints located within
+ * constructors/destructors with a higher priority value within the same
+ * module. This priority can be overridden by the application.
+ */
+#ifndef LTTNG_UST_CONSTRUCTOR_PRIO
+#define LTTNG_UST_CONSTRUCTOR_PRIO	150
+#endif
+
 #define lttng_ust_notrace __attribute__((no_instrument_function))
 
 /*
@@ -130,13 +140,13 @@ const lttng::ust::details::LTTNG_UST_COMPILER_COMBINE_TOKENS(			\
 #define LTTNG_UST_DECLARE_CONSTRUCTOR_DESTRUCTOR(name, constructor_func,	\
 						 destructor_func, ...)		\
 	static void LTTNG_UST_COMPILER_COMBINE_TOKENS(lttng_ust_constructor_, name)(void) \
-		__attribute__((constructor)) __VA_ARGS__;			\
+		__attribute__((constructor(LTTNG_UST_CONSTRUCTOR_PRIO))) __VA_ARGS__; \
 	static void LTTNG_UST_COMPILER_COMBINE_TOKENS(lttng_ust_constructor_, name)(void) \
 	{									\
 		constructor_func();						\
 	}									\
 	static void LTTNG_UST_COMPILER_COMBINE_TOKENS(lttng_ust_destructor_, name)(void) \
-		__attribute__((destructor)) __VA_ARGS__;			\
+		__attribute__((destructor(LTTNG_UST_CONSTRUCTOR_PRIO))) __VA_ARGS__; \
 	static void LTTNG_UST_COMPILER_COMBINE_TOKENS(lttng_ust_destructor_, name)(void) \
 	{									\
 		destructor_func();						\
