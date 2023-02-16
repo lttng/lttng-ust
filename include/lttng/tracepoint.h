@@ -446,7 +446,7 @@ lttng_ust_tracepoints_print_disabled_message(void)
 
 static void
 lttng_ust__tracepoints__init(void)
-	lttng_ust_notrace __attribute__((constructor));
+	lttng_ust_notrace __attribute__((constructor(LTTNG_UST_CONSTRUCTOR_PRIO)));
 static void
 lttng_ust__tracepoints__init(void)
 {
@@ -471,7 +471,7 @@ lttng_ust__tracepoints__init(void)
 
 static void
 lttng_ust__tracepoints__destroy(void)
-	lttng_ust_notrace __attribute__((destructor));
+	lttng_ust_notrace __attribute__((destructor(LTTNG_UST_CONSTRUCTOR_PRIO)));
 static void
 lttng_ust__tracepoints__destroy(void)
 {
@@ -583,7 +583,7 @@ extern struct lttng_ust_tracepoint * const __stop_lttng_ust_tracepoints_ptrs[]
 
 static void
 lttng_ust__tracepoints__ptrs_init(void)
-	lttng_ust_notrace __attribute__((constructor));
+	lttng_ust_notrace __attribute__((constructor(LTTNG_UST_CONSTRUCTOR_PRIO)));
 static void
 lttng_ust__tracepoints__ptrs_init(void)
 {
@@ -626,7 +626,7 @@ lttng_ust__tracepoints__ptrs_init(void)
 
 static void
 lttng_ust__tracepoints__ptrs_destroy(void)
-	lttng_ust_notrace __attribute__((destructor));
+	lttng_ust_notrace __attribute__((destructor(LTTNG_UST_CONSTRUCTOR_PRIO)));
 static void
 lttng_ust__tracepoints__ptrs_destroy(void)
 {
