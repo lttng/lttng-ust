@@ -103,11 +103,17 @@
 		LTTNG_UST_COMPILER__COMBINE_TOKENS(_tokena, _tokenb)
 /*
  * Wrap constructor and destructor functions to invoke them as functions with
- * the constructor/destructor GNU C attributes when building as C, or as the
- * constructor/destructor of a variable defined within an anonymous namespace
- * when building as C++.
+ * the constructor/destructor GNU C attributes, which ensures that those
+ * constructors/destructors are ordered before/after C++
+ * constructors/destructors.
+ *
+ * Wrap constructor and destructor functions as the constructor/destructor of a
+ * variable defined within an anonymous namespace when building as C++ with
+ * LTTNG_UST_ALLOCATE_COMPOUND_LITERAL_ON_HEAP defined. With this option,
+ * there are no guarantees that the events in C++ constructors/destructors will
+ * be traced.
  */
-#ifdef __cplusplus
+#if defined (__cplusplus) && defined (LTTNG_UST_ALLOCATE_COMPOUND_LITERAL_ON_HEAP)
 #define LTTNG_UST_DECLARE_CONSTRUCTOR_DESTRUCTOR(name, constructor_func,	\
 						 destructor_func, ...)		\
 namespace lttng {								\
@@ -136,7 +142,7 @@ const lttng::ust::details::LTTNG_UST_COMPILER_COMBINE_TOKENS(			\
 	lttng_ust_constructor_destructor_, name)				\
 		LTTNG_UST_COMPILER_COMBINE_TOKENS(name, registration_instance); \
 }
-#else /* __cplusplus */
+#else
 #define LTTNG_UST_DECLARE_CONSTRUCTOR_DESTRUCTOR(name, constructor_func,	\
 						 destructor_func, ...)		\
 	static void LTTNG_UST_COMPILER_COMBINE_TOKENS(lttng_ust_constructor_, name)(void) \
