@@ -24,6 +24,16 @@
  * SOFTWARE.
  */
 
+/*
+ * By default, LTTng-UST uses the priority 150 for the tracepoint and probe
+ * provider constructors to trace tracepoints located within
+ * constructors/destructors with a higher priority value within the same
+ * module. This priority can be overridden by the application.
+ */
+#ifndef LTTNG_UST_CONSTRUCTOR_PRIO
+#define LTTNG_UST_CONSTRUCTOR_PRIO	150
+#endif
+
 #define lttng_ust_notrace __attribute__((no_instrument_function))
 #define LTTNG_PACKED	__attribute__((__packed__))
 

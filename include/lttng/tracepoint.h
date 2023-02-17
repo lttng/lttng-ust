@@ -333,7 +333,7 @@ __tracepoint__init_urcu_sym(void)
 }
 #endif
 
-static void lttng_ust_notrace __attribute__((constructor))
+static void lttng_ust_notrace __attribute__((constructor(LTTNG_UST_CONSTRUCTOR_PRIO)))
 __tracepoints__init(void);
 static void
 __tracepoints__init(void)
@@ -355,7 +355,7 @@ __tracepoints__init(void)
 	__tracepoint__init_urcu_sym();
 }
 
-static void lttng_ust_notrace __attribute__((destructor))
+static void lttng_ust_notrace __attribute__((destructor(LTTNG_UST_CONSTRUCTOR_PRIO)))
 __tracepoints__destroy(void);
 static void
 __tracepoints__destroy(void)
@@ -460,7 +460,7 @@ extern struct lttng_ust_tracepoint * const __stop___tracepoints_ptrs[]
 		__lttng_ust_variable_attribute_no_sanitize_address =		\
 			&__tracepoint_##_provider##___##_name;
 
-static void lttng_ust_notrace __attribute__((constructor))
+static void lttng_ust_notrace __attribute__((constructor(LTTNG_UST_CONSTRUCTOR_PRIO)))
 __tracepoints__ptrs_init(void);
 static void
 __tracepoints__ptrs_init(void)
@@ -504,7 +504,7 @@ __tracepoints__ptrs_init(void)
 	}
 }
 
-static void lttng_ust_notrace __attribute__((destructor))
+static void lttng_ust_notrace __attribute__((destructor(LTTNG_UST_CONSTRUCTOR_PRIO)))
 __tracepoints__ptrs_destroy(void);
 static void
 __tracepoints__ptrs_destroy(void)
