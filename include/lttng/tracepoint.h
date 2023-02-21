@@ -405,7 +405,22 @@ __tracepoints__destroy(void)
 	memset(tracepoint_dlopen_ptr, 0, sizeof(*tracepoint_dlopen_ptr));
 }
 
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* _LTTNG_TRACEPOINT_H */
+
+/* The following declarations must be outside re-inclusion protection. */
+
 #ifdef TRACEPOINT_DEFINE
+
+#ifndef _LTTNG_UST_TRACEPOINT_DEFINE_ONCE
+#define _LTTNG_UST_TRACEPOINT_DEFINE_ONCE
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
  * These weak symbols, the constructor, and destructor take care of
@@ -439,6 +454,7 @@ extern struct lttng_ust_tracepoint * const __stop___tracepoints_ptrs[]
  */
 #define _TP_EXTRACT_STRING(...)	#__VA_ARGS__
 
+#undef _DEFINE_TRACEPOINT
 #define _DEFINE_TRACEPOINT(_provider, _name, _args)				\
 	extern int __tracepoint_provider_##_provider; 				\
 	static const char __tp_strtab_##_provider##___##_name[]			\
@@ -532,19 +548,18 @@ __tracepoints__ptrs_destroy(void)
 	}
 }
 
-#else /* TRACEPOINT_DEFINE */
-
-#define _DEFINE_TRACEPOINT(_provider, _name, _args)
-
-#endif /* #else TRACEPOINT_DEFINE */
-
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _LTTNG_TRACEPOINT_H */
+#endif /* _LTTNG_UST_TRACEPOINT_DEFINE_ONCE */
 
-/* The following declarations must be outside re-inclusion protection. */
+#else /* TRACEPOINT_DEFINE */
+
+#undef _DEFINE_TRACEPOINT
+#define _DEFINE_TRACEPOINT(_provider, _name, _args)
+
+#endif /* #else TRACEPOINT_DEFINE */
 
 #ifndef TRACEPOINT_ENUM
 
