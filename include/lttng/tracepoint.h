@@ -513,7 +513,29 @@ lttng_ust__tracepoints__destroy(void)
 # endif
 #endif /* #if LTTNG_UST_COMPAT_API(0) */
 
+#if LTTNG_UST_COMPAT_API(0)
+#define tracepoint			lttng_ust_tracepoint
+#define do_tracepoint			lttng_ust_do_tracepoint
+#define tracepoint_enabled		lttng_ust_tracepoint_enabled
+#define TP_ARGS				LTTNG_UST_TP_ARGS
+#endif /* #if LTTNG_UST_COMPAT_API(0) */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* _LTTNG_UST_TRACEPOINT_H */
+
+/* The following declarations must be outside re-inclusion protection. */
+
 #ifdef LTTNG_UST_TRACEPOINT_DEFINE
+
+#ifndef _LTTNG_UST_TRACEPOINT_DEFINE_ONCE
+#define _LTTNG_UST_TRACEPOINT_DEFINE_ONCE
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
  * These weak symbols, the constructor, and destructor take care of
@@ -554,6 +576,7 @@ extern struct lttng_ust_tracepoint * const __stop_lttng_ust_tracepoints_ptrs[]
  */
 #define LTTNG_UST__TP_EXTRACT_STRING(...)	#__VA_ARGS__
 
+#undef LTTNG_UST__DEFINE_TRACEPOINT
 #define LTTNG_UST__DEFINE_TRACEPOINT(_provider, _name, _args)				\
 	lttng_ust_tracepoint_validate_name_len(_provider, _name);		\
 	extern int lttng_ust_tracepoint_provider_##_provider			\
@@ -653,26 +676,18 @@ lttng_ust__tracepoints__ptrs_destroy(void)
 	}
 }
 
-#else /* LTTNG_UST_TRACEPOINT_DEFINE */
-
-#define LTTNG_UST__DEFINE_TRACEPOINT(_provider, _name, _args)
-
-#endif /* #else LTTNG_UST_TRACEPOINT_DEFINE */
-
-#if LTTNG_UST_COMPAT_API(0)
-#define tracepoint			lttng_ust_tracepoint
-#define do_tracepoint			lttng_ust_do_tracepoint
-#define tracepoint_enabled		lttng_ust_tracepoint_enabled
-#define TP_ARGS				LTTNG_UST_TP_ARGS
-#endif /* #if LTTNG_UST_COMPAT_API(0) */
-
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _LTTNG_UST_TRACEPOINT_H */
+#endif /* _LTTNG_UST_TRACEPOINT_DEFINE_ONCE */
 
-/* The following declarations must be outside re-inclusion protection. */
+#else /* LTTNG_UST_TRACEPOINT_DEFINE */
+
+#undef LTTNG_UST__DEFINE_TRACEPOINT
+#define LTTNG_UST__DEFINE_TRACEPOINT(_provider, _name, _args)
+
+#endif /* #else LTTNG_UST_TRACEPOINT_DEFINE */
 
 /*
  * LTTNG_UST_TRACEPOINT_HIDDEN_DEFINITION: Define this before including
