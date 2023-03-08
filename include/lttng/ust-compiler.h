@@ -85,15 +85,17 @@
 /*
  * Evaluates the predicate and emit a compilation error on failure.
  *
- * If the predicate evaluates to true, this macro emits a typedef of an array
- * of size 0.
+ * If the predicate evaluates to true, this macro emits a function
+ * prototype with an argument type which is an array of size 0.
  *
- * If the predicate evaluates to false, this macro emits a typedef of an array
- * of negative size which is invalid in C and forces a compiler error. The msg
- * parameter is used in the tentative typedef so it is printed to the user.
+ * If the predicate evaluates to false, this macro emits a function
+ * prototype with an argument type which is an array of negative size
+ * which is invalid in C and forces a compiler error. The
+ * c_identifier_msg parameter is used as the argument identifier so it
+ * is printed to the user when the error is reported.
  */
 #define lttng_ust_static_assert(predicate, msg, c_identifier_msg)  \
-    typedef char lttng_ust_static_assert_##c_identifier_msg[2*!!(predicate)-1]
+	void lttng_ust_static_assert_proto(char c_identifier_msg[2*!!(predicate)-1])
 #endif
 
 /* Combine two tokens. */
