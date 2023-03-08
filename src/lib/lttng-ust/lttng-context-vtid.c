@@ -114,7 +114,7 @@ error_find_context:
  */
 void lttng_ust_vtid_init_thread(int flags)
 {
-	asm volatile ("" : : "m" (URCU_TLS(cached_vtid)));
+	__asm__ __volatile__ ("" : : "m" (URCU_TLS(cached_vtid)));
 	if (flags & LTTNG_UST_INIT_THREAD_CONTEXT_CACHE)
 		(void)wrapper_getvtid();
 }

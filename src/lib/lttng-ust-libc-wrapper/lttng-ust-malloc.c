@@ -428,7 +428,7 @@ int posix_memalign(void **memptr, size_t alignment, size_t size)
 static
 void lttng_ust_malloc_nesting_alloc_tls(void)
 {
-	asm volatile ("" : : "m" (URCU_TLS(malloc_nesting)));
+	__asm__ __volatile__ ("" : : "m" (URCU_TLS(malloc_nesting)));
 }
 
 void lttng_ust_libc_wrapper_malloc_ctor(void)

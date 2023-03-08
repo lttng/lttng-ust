@@ -389,13 +389,13 @@ const char *get_lttng_home_dir(void)
 static
 void lttng_ust_nest_count_alloc_tls(void)
 {
-	asm volatile ("" : : "m" (URCU_TLS(lttng_ust_nest_count)));
+	__asm__ __volatile__ ("" : : "m" (URCU_TLS(lttng_ust_nest_count)));
 }
 
 static
 void lttng_ust_mutex_nest_alloc_tls(void)
 {
-	asm volatile ("" : : "m" (URCU_TLS(ust_mutex_nest)));
+	__asm__ __volatile__ ("" : : "m" (URCU_TLS(ust_mutex_nest)));
 }
 
 /*

@@ -155,7 +155,7 @@ error_find_context:
  */
 void lttng_ust_ipc_ns_init_thread(int flags)
 {
-	asm volatile ("" : : "m" (URCU_TLS(cached_ipc_ns)));
+	__asm__ __volatile__ ("" : : "m" (URCU_TLS(cached_ipc_ns)));
 	if (flags & LTTNG_UST_INIT_THREAD_CONTEXT_CACHE)
 		(void)get_ipc_ns();
 }

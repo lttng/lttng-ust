@@ -2582,7 +2582,7 @@ void lib_ring_buffer_check_deliver_slow(const struct lttng_ust_ring_buffer_confi
  */
 void lttng_ringbuffer_alloc_tls(void)
 {
-	asm volatile ("" : : "m" (URCU_TLS(lib_ring_buffer_nesting)));
+	__asm__ __volatile__ ("" : : "m" (URCU_TLS(lib_ring_buffer_nesting)));
 }
 
 void lib_ringbuffer_signal_init(void)

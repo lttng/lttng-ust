@@ -26,7 +26,7 @@
  * Returns a nesting level >= 0 on success, -EPERM on failure (nesting
  * count too high).
  *
- * asm volatile and "memory" clobber prevent the compiler from moving
+ * __asm__ __volatile__ and "memory" clobber prevent the compiler from moving
  * instructions out of the ring buffer nesting count. This is required to ensure
  * that probe side-effects which can cause recursion (e.g. unforeseen traps,
  * divisions by 0, ...) are triggered within the incremented nesting count

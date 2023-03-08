@@ -74,7 +74,7 @@ static DEFINE_URCU_TLS(private_ctx_stack_t, private_ctx_stack);
  */
 void RING_BUFFER_MODE_TEMPLATE_ALLOC_TLS(void)
 {
-	asm volatile ("" : : "m" (URCU_TLS(private_ctx_stack)));
+	__asm__ __volatile__ ("" : : "m" (URCU_TLS(private_ctx_stack)));
 }
 
 static inline uint64_t lib_ring_buffer_clock_read(
