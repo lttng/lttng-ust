@@ -76,7 +76,7 @@ static int init_done;
  */
 void lttng_ust_fd_tracker_alloc_tls(void)
 {
-	asm volatile ("" : : "m" (URCU_TLS(ust_fd_mutex_nest)));
+	__asm__ __volatile__ ("" : : "m" (URCU_TLS(ust_fd_mutex_nest)));
 }
 
 /*

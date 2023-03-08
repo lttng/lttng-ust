@@ -89,7 +89,7 @@ static DEFINE_URCU_TLS(int, ust_perf_mutex_nest);
  */
 void lttng_ust_perf_counter_alloc_tls(void)
 {
-	asm volatile ("" : : "m" (URCU_TLS(ust_perf_mutex_nest)));
+	__asm__ __volatile__ ("" : : "m" (URCU_TLS(ust_perf_mutex_nest)));
 }
 
 void lttng_perf_lock(void)
@@ -181,7 +181,7 @@ uint64_t rdpmc(unsigned int counter)
 {
 	unsigned int low, high;
 
-	asm volatile("rdpmc" : "=a" (low), "=d" (high) : "c" (counter));
+	__asm__ __volatile__("rdpmc" : "=a" (low), "=d" (high) : "c" (counter));
 
 	return low | ((uint64_t) high) << 32;
 }

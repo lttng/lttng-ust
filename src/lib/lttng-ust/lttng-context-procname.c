@@ -124,5 +124,5 @@ error_find_context:
  */
 void lttng_procname_alloc_tls(void)
 {
-	asm volatile ("" : : "m" (URCU_TLS(cached_procname)[0]));
+	__asm__ __volatile__ ("" : : "m" (URCU_TLS(cached_procname)[0]));
 }

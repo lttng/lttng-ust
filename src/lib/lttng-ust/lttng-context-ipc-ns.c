@@ -155,5 +155,5 @@ error_find_context:
  */
 void lttng_ipc_ns_alloc_tls(void)
 {
-	asm volatile ("" : : "m" (URCU_TLS(cached_ipc_ns)));
+	__asm__ __volatile__ ("" : : "m" (URCU_TLS(cached_ipc_ns)));
 }
