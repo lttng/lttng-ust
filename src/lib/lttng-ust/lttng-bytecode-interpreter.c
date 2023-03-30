@@ -166,7 +166,7 @@ int lttng_bytecode_interpret_error(
  */
 
 #define START_OP							\
-	start_pc = &bytecode->data[0];					\
+	start_pc = &bytecode->code[0];					\
 	for (pc = next_pc = start_pc; pc - start_pc < bytecode->len;	\
 			pc = next_pc) {					\
 		dbg_printf("Executing op %s (%u)\n",			\
