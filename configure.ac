@@ -400,6 +400,10 @@ AE_IF_FEATURE_DISABLED([shared], [
   AC_MSG_ERROR(LTTng-UST requires shared libraries to be enabled)
 ])
 
+AE_IF_FEATURE_ENABLED([static], [
+  AC_MSG_ERROR(Static linking LTTng-UST is currently unsupported)
+])
+
 AE_IF_FEATURE_ENABLED([java-agent-all], [
   AE_FEATURE_ENABLE([java-agent-jul])
   AE_FEATURE_ENABLE([java-agent-log4j])
