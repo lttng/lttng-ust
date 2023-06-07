@@ -1,3 +1,9 @@
+2023-06-07 (National VCR Day) lttng-ust 2.12.8
+	* Fix: segmentation fault on filter interpretation in "switch" mode
+	* Fix: Reevaluate LTTNG_UST_TRACEPOINT_DEFINE each time tracepoint.h is included
+	* Fix: trace events in C constructors/destructors
+	* Fix: use unaligned pointer accesses for lttng_inline_memcpy
+
 2022-09-30 (National Day for Truth and Reconciliation) lttng-ust 2.12.7
 	* Fix: bytecode validator: reject specialized load field/context ref instructions
 	* Fix: bytecode validator: reject specialized load instructions
