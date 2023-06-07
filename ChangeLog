@@ -1,3 +1,13 @@
+2023-06-07 (National VCR Day) lttng-ust 2.13.6
+	* Fix: segmentation fault on filter interpretation in "switch" mode
+	* Fix: `ip` context is expressed as a base-10 field
+	* Fix: c99: use __asm__ __volatile__
+	* Fix: c99: static assert: clang build fails due to multiple typedef
+	* Fix: Reevaluate LTTNG_UST_TRACEPOINT_DEFINE each time tracepoint.h is included
+	* Fix: trace events in C++ constructors/destructors
+	* Fix: trace events in C constructors/destructors
+	* Fix: use unaligned pointer accesses for lttng_inline_memcpy
+
 2022-09-30 (National Day for Truth and Reconciliation) lttng-ust 2.13.5
 	* Fix: bytecode validator: reject specialized load field/context ref instructions
 	* Fix: bytecode validator: reject specialized load instructions
