@@ -422,6 +422,16 @@ AS_HELP_STRING([--enable-python-agent], [build the LTTng UST Python agent [defau
 AM_CONDITIONAL([BUILD_PYTHON_AGENT], [test "x$python_agent" = "xyes"])
 AS_IF([test "x$python_agent" = "xyes"], [
 	AM_PATH_PYTHON([2.7])
+
+	AX_COMPARE_VERSION(["$PYTHON_VERSION"], [ge], ["3.12"], [
+	  AC_MSG_CHECKING([for python setuptools])
+	  AS_IF(["$PYTHON" -c "import setuptools" 2>/dev/null], [
+	    AC_MSG_RESULT([yes])
+	  ], [
+	    AC_MSG_RESULT([no])
+	    AC_MSG_ERROR([Python >= 3.12 removed 'distutils', the 'setuptools' module needs to be installed for the selected interpreter.])
+	  ])
+	])
 ])
 
 # sdt.h integration
