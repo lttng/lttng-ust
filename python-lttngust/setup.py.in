@@ -23,6 +23,28 @@ if sys.version_info < (3, 12):
 else:
     from setuptools import setup, Extension
 
+# Starting with Debian's Python 3.10, the default install scheme is
+# 'posix_local' which is a Debian specific scheme based on 'posix_prefix' but
+# with an added 'local' prefix. This is the default so users doing system wide
+# manual installations of python modules end up in '/usr/local'. This
+# interferes with our autotools based install which already defaults to
+# '/usr/local' and expect a provided prefix to be used verbatim.
+#
+# Monkeypatch sysconfig to override this scheme and use 'posix_prefix' instead.
+if sys.version_info >= (3, 10):
+    import sysconfig
+
+    original_get_preferred_scheme = sysconfig.get_preferred_scheme
+
+    def our_get_preferred_scheme(key):
+        scheme = original_get_preferred_scheme(key)
+        if scheme == "posix_local":
+            return "posix_prefix"
+        else:
+            return scheme
+
+    sysconfig.get_preferred_scheme = our_get_preferred_scheme
+
 PY_PATH_WARN_MSG = """
 -------------------------------------WARNING------------------------------------
 The install directory used:\n ({0})\nis not included in your PYTHONPATH.
