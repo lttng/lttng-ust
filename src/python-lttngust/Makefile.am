@@ -10,6 +10,10 @@ STATIC_BINDINGS_DEPS = \
 	lttngust/debug.py \
 	lttngust/loghandler.py
 
+GENERATED_BINDINGS_DEPS = \
+	lttngust/version.py \
+	setup.py
+
 all-local: build-python-bindings.stamp
 
 copy-static-deps.stamp: $(addprefix $(srcdir)/, $(STATIC_BINDINGS_DEPS))
@@ -23,7 +27,7 @@ copy-static-deps.stamp: $(addprefix $(srcdir)/, $(STATIC_BINDINGS_DEPS))
 # Use setup.py for the installation instead of Autoconf.
 # This ease the installation process and assure a *pythonic*
 # installation.
-build-python-bindings.stamp: copy-static-deps.stamp
+build-python-bindings.stamp: copy-static-deps.stamp $(GENERATED_BINDINGS_DEPS)
 	$(PYTHON) $(builddir)/setup.py build --force
 	touch $@
 
