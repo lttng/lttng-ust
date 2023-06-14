@@ -483,6 +483,7 @@ environment variable.
   ])
 
   AX_COMPARE_VERSION(["$PYTHON_VERSION"], [ge], ["3.12"], [
+    have_python_312_or_greater=yes
     AC_MSG_CHECKING([for python setuptools])
     AS_IF(["$PYTHON" -c "import setuptools" 2>/dev/null], [
       AC_MSG_RESULT([yes])
@@ -576,6 +577,7 @@ AM_CONDITIONAL([HAVE_CMAKE], [test "x$CMAKE" != "x"])
 AM_CONDITIONAL([HAVE_CXX], [test "$HAVE_CXX11" = "1"])
 AM_CONDITIONAL([HAVE_JAVAH], [test "x$JAVAH" != "x"])
 AM_CONDITIONAL([HAVE_PERF_EVENT], [test "x$ac_cv_header_linux_perf_event_h" = "xyes"])
+AM_CONDITIONAL([HAVE_PYTHON_312_OR_GREATER], [test "x$have_python_312_or_greater" = "xyes"])
 
 
 ##                                             ##
