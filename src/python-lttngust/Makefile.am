@@ -26,7 +26,7 @@ endif
 all-local: build-python-bindings.stamp
 
 copy-static-deps.stamp: $(addprefix $(srcdir)/, $(STATIC_BINDINGS_DEPS))
-	@if [ x"$(srcdir)" != x"$(builddir)" ]; then \
+	$(AM_V_at)if [ x"$(srcdir)" != x"$(builddir)" ]; then \
 		for file in $(STATIC_BINDINGS_DEPS); do \
 			cp -f $(srcdir)/$$file $(builddir)/$$file; \
 		done; \
@@ -37,11 +37,11 @@ copy-static-deps.stamp: $(addprefix $(srcdir)/, $(STATIC_BINDINGS_DEPS))
 # This ease the installation process and assure a *pythonic*
 # installation.
 build-python-bindings.stamp: copy-static-deps.stamp $(GENERATED_BINDINGS_DEPS)
-	$(PYTHON) $(builddir)/setup.py build --force
+	$(AM_V_at)$(PYTHON) $(builddir)/setup.py build --force
 	touch $@
 
 install-exec-local: build-python-bindings.stamp
-	@opts="--prefix=$(prefix) --record $(INSTALLED_FILES) --verbose --no-compile $(DISTSETUPOPTS)"; \
+	$(AM_V_at)opts="--prefix=$(prefix) --record $(INSTALLED_FILES) --verbose --no-compile $(DISTSETUPOPTS)"; \
 	if [ "$(DESTDIR)" != "" ]; then \
 		opts="$$opts --root=$(DESTDIR)"; \
 	fi; \
@@ -49,7 +49,7 @@ install-exec-local: build-python-bindings.stamp
 
 clean-local:
 	rm -rf $(builddir)/build
-	@if [ x"$(srcdir)" != x"$(builddir)" ]; then \
+	$(AM_V_at)if [ x"$(srcdir)" != x"$(builddir)" ]; then \
 		for file in $(STATIC_BINDINGS_DEPS); do \
 			rm -f $(builddir)/$$file; \
 		done; \
