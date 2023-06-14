@@ -1,7 +1,11 @@
+GENERATED_BINDINGS_DEPS = \
+	lttngust/__init__.py \
+	setup.py
+
 # Use setup.py for the installation instead of Autoconf.
 # This ease the installation process and assure a *pythonic*
 # installation.
-all-local:
+all-local: $(GENERATED_BINDINGS_DEPS)
 	$(PYTHON) setup.py build --verbose
 
 install-exec-local:
