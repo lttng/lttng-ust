@@ -424,6 +424,7 @@ AS_IF([test "x$python_agent" = "xyes"], [
 	AM_PATH_PYTHON([2.7])
 
 	AX_COMPARE_VERSION(["$PYTHON_VERSION"], [ge], ["3.12"], [
+	  have_python_312_or_greater=yes
 	  AC_MSG_CHECKING([for python setuptools])
 	  AS_IF(["$PYTHON" -c "import setuptools" 2>/dev/null], [
 	    AC_MSG_RESULT([yes])
@@ -433,6 +434,8 @@ AS_IF([test "x$python_agent" = "xyes"], [
 	  ])
 	])
 ])
+
+AM_CONDITIONAL([HAVE_PYTHON_312_OR_GREATER], [test "x$have_python_312_or_greater" = "xyes"])
 
 # sdt.h integration
 AC_ARG_WITH([sdt], [

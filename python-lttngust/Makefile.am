@@ -2,6 +2,15 @@ GENERATED_BINDINGS_DEPS = \
 	lttngust/__init__.py \
 	setup.py
 
+# For python < 3.12, force the use of distutils even if setuptools is
+# installed. For python >= 3.12, set the externally managed option to allow
+# installation in a directory which isn't in the current PYTHONPATH.
+if HAVE_PYTHON_312_OR_GREATER
+PY_INSTALL_OPTS = --single-version-externally-managed
+else
+export SETUPTOOLS_USE_DISTUTILS=stdlib
+endif
+
 # Use setup.py for the installation instead of Autoconf.
 # This ease the installation process and assure a *pythonic*
 # installation.
@@ -13,7 +22,7 @@ install-exec-local:
 	if [ "$(DESTDIR)" != "" ]; then \
 		opts="$$opts --root=$(DESTDIR)"; \
 	fi; \
-	$(PYTHON) setup.py install $$opts;
+	$(PYTHON) setup.py install $(PY_INSTALL_OPTS) $$opts;
 
 clean-local:
 	rm -rf $(builddir)/build
