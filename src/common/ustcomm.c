@@ -720,6 +720,8 @@ ssize_t count_one_type(const struct lttng_ust_type_common *lt)
 	case lttng_ust_type_integer:
 	case lttng_ust_type_float:
 	case lttng_ust_type_string:
+	case lttng_ust_type_fixed_length_blob:
+	case lttng_ust_type_variable_length_blob:
 		return 1;
 	case lttng_ust_type_enum:
 		return count_one_type(lttng_ust_get_type_enum(lt)->container_type) + 1;
@@ -1091,6 +1093,65 @@ int serialize_one_type(struct lttng_ust_session *session,
 		} else {
 			ut->u.enum_nestable.id = -1ULL;
 		}
+		break;
+	}
+	case lttng_ust_type_fixed_length_blob:
+	{
+		struct lttng_ust_ctl_field *uf = &fields[*iter_output];
+		struct lttng_ust_ctl_type *ut = &uf->type;
+		const char *media_type;
+
+		if (field_name) {
+			strncpy(uf->name, field_name, LTTNG_UST_ABI_SYM_NAME_LEN);
+			uf->name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
+		} else {
+			uf->name[0] = '\0';
+		}
+		ut->u.fixed_length_blob.length = lttng_ust_get_type_fixed_length_blob(lt)->length;
+		media_type = lttng_ust_get_type_fixed_length_blob(lt)->media_type;
+		if (!media_type) {
+			ut->u.fixed_length_blob.media_type[0] = '\0';
+		} else {
+			strncpy(ut->u.fixed_length_blob.media_type, media_type, LTTNG_UST_ABI_SYM_NAME_LEN);
+			ut->u.fixed_length_blob.media_type[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
+		}
+		ut->atype = lttng_ust_ctl_atype_fixed_length_blob;
+		(*iter_output)++;
+		break;
+	}
+	case lttng_ust_type_variable_length_blob:
+	{
+		struct lttng_ust_ctl_field *uf = &fields[*iter_output];
+		struct lttng_ust_ctl_type *ut = &uf->type;
+		const char *length_name = lttng_ust_get_type_variable_length_blob(lt)->length_name;
+		const char *media_type = lttng_ust_get_type_variable_length_blob(lt)->media_type;
+
+		if (field_name) {
+			strncpy(uf->name, field_name, LTTNG_UST_ABI_SYM_NAME_LEN);
+			uf->name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
+		} else {
+			uf->name[0] = '\0';
+		}
+		ut->atype = lttng_ust_ctl_atype_variable_length_blob;
+		/*
+		 * If length_name field is NULL, use the previous field
+		 * as length.
+		 */
+		if (!length_name)
+			length_name = prev_field_name;
+		if (!length_name)
+			return -EINVAL;
+		strncpy(ut->u.variable_length_blob.length_name,
+			length_name, LTTNG_UST_ABI_SYM_NAME_LEN);
+		ut->u.variable_length_blob.length_name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
+		if (!media_type) {
+			ut->u.variable_length_blob.media_type[0] = '\0';
+		} else {
+			strncpy(ut->u.variable_length_blob.media_type, media_type, LTTNG_UST_ABI_SYM_NAME_LEN);
+			ut->u.variable_length_blob.media_type[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
+		}
+		ut->atype = lttng_ust_ctl_atype_variable_length_blob;
+		(*iter_output)++;
 		break;
 	}
 	default:

@@ -556,6 +556,8 @@ enum lttng_ust_ctl_abstract_types {
 	lttng_ust_ctl_atype_sequence_nestable,
 	lttng_ust_ctl_atype_struct_nestable,
 	lttng_ust_ctl_atype_variant_nestable,
+	lttng_ust_ctl_atype_fixed_length_blob,
+	lttng_ust_ctl_atype_variable_length_blob,
 	NR_LTTNG_UST_CTL_ABSTRACT_TYPES,
 };
 
@@ -672,6 +674,14 @@ struct lttng_ust_ctl_type {
 			uint32_t alignment;
 			/* Followed by nr_choices struct lttng_ust_ctl_field. */
 		} variant_nestable;
+		struct {
+			uint32_t length;
+			char media_type[LTTNG_UST_ABI_SYM_NAME_LEN];
+		} fixed_length_blob;
+		struct {
+			char length_name[LTTNG_UST_ABI_SYM_NAME_LEN];
+			char media_type[LTTNG_UST_ABI_SYM_NAME_LEN];
+		} variable_length_blob;
 
 		/* Legacy ABI */
 		union {

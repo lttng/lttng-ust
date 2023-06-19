@@ -580,6 +580,22 @@ const struct lttng_ust_type_struct *lttng_ust_get_type_struct(const struct lttng
 	return caa_container_of(type, const struct lttng_ust_type_struct, parent);
 }
 
+static inline
+const struct lttng_ust_type_fixed_length_blob *lttng_ust_get_type_fixed_length_blob(const struct lttng_ust_type_common *type)
+{
+	if (type->type != lttng_ust_type_fixed_length_blob)
+		return NULL;
+	return caa_container_of(type, const struct lttng_ust_type_fixed_length_blob, parent);
+}
+
+static inline
+const struct lttng_ust_type_variable_length_blob *lttng_ust_get_type_variable_length_blob(const struct lttng_ust_type_common *type)
+{
+	if (type->type != lttng_ust_type_variable_length_blob)
+		return NULL;
+	return caa_container_of(type, const struct lttng_ust_type_variable_length_blob, parent);
+}
+
 #define lttng_ust_static_type_integer(_size, _alignment, _signedness, _byte_order, _base)		\
 	((const struct lttng_ust_type_common *) LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_type_integer, { \
 		.parent = {										\
