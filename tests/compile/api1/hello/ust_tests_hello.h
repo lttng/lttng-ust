@@ -55,6 +55,17 @@ LTTNG_UST_TRACEPOINT_EVENT(ust_tests_hello, tptest_sighandler,
 	LTTNG_UST_TP_FIELDS()
 )
 
+LTTNG_UST_TRACEPOINT_EVENT(ust_tests_hello, tptest_blob,
+	LTTNG_UST_TP_ARGS(uint8_t *, blob, size_t, blob_size),
+	LTTNG_UST_TP_FIELDS(
+		lttng_ust_field_fixed_length_blob(fixblobfield, blob, 4, NULL)
+		lttng_ust_field_variable_length_blob(varblobfield, blob, size_t, blob_size, NULL)
+		lttng_ust_field_fixed_length_blob_nowrite(fixblobfield_nowrite, blob, 4, NULL)
+		lttng_ust_field_variable_length_blob_nowrite(varblobfield_nowrite, blob, size_t, blob_size, NULL)
+		lttng_ust_field_fixed_length_blob(fixblobfield_mt, blob, 4, "example/mediatype")
+	)
+)
+
 #endif /* _TRACEPOINT_UST_TESTS_HELLO_H */
 
 #undef LTTNG_UST_TRACEPOINT_INCLUDE

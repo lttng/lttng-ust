@@ -70,6 +70,8 @@ int main(int argc, char **argv)
 	float flt = 2222.0;
 	int delay = 0;
 	bool mybool = 123;	/* should print "1" */
+	uint8_t myblob[] = { 0x1, 0x2, 0x3, 0x4 };
+	size_t myblob_size = 4;
 
 	init_int_handler();
 
@@ -85,6 +87,7 @@ int main(int argc, char **argv)
 		netint = htonl(i);
 		lttng_ust_tracepoint(ust_tests_hello, tptest, i, netint, values,
 			   text, strlen(text), dbl, flt, mybool);
+		lttng_ust_tracepoint(ust_tests_hello, tptest_blob, myblob, myblob_size);
 		//usleep(100000);
 	}
 	fprintf(stderr, " done.\n");
