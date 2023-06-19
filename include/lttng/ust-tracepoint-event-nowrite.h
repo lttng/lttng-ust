@@ -68,3 +68,11 @@
 #undef lttng_ust_field_enum_nowrite
 #define lttng_ust_field_enum_nowrite(_provider, _name, _type, _item, _src)		\
 	lttng_ust__field_enum(_provider, _name, _type, _item, _src, 1)
+
+#undef lttng_ust_field_fixed_length_blob_nowrite
+#define lttng_ust_field_fixed_length_blob_nowrite(_item, _src, _length, _media_type) \
+	lttng_ust__field_fixed_length_blob(_item, _src, _length, _media_type, 1)
+
+#undef lttng_ust_field_variable_length_blob_nowrite
+#define lttng_ust_field_variable_length_blob_nowrite(_item, _src, _length_type, _src_length, _media_type) \
+	lttng_ust__field_variable_length_blob(_item, _src, _length_type, _src_length, _media_type, 1)

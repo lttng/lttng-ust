@@ -149,6 +149,9 @@ static size_t get_type_max_align(const struct lttng_ust_type_common *type)
 		}
 		return field_align;
 	}
+	case lttng_ust_type_fixed_length_blob:		/* Fall-through */
+	case lttng_ust_type_variable_length_blob:
+		return CHAR_BIT;
 	default:
 		WARN_ON_ONCE(1);
 		return 0;

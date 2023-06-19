@@ -221,6 +221,7 @@ static int specialize_get_index(struct bytecode_runtime *runtime,
 			const struct lttng_ust_event_field *field;
 			uint32_t elem_len, num_elems;
 			int signedness;
+			bool reverse_byte_order = false;
 
 			field = stack_top->load.field;
 			switch (field->type->type) {
@@ -231,13 +232,19 @@ static int specialize_get_index(struct bytecode_runtime *runtime,
 				}
 				integer_type = lttng_ust_get_type_integer(lttng_ust_get_type_array(field->type)->elem_type);
 				num_elems = lttng_ust_get_type_array(field->type)->length;
+				elem_len = integer_type->size;
+				signedness = integer_type->signedness;
+				reverse_byte_order = integer_type->reverse_byte_order;
+				break;
+			case lttng_ust_type_fixed_length_blob:		/* Fall-through. */
+				num_elems = lttng_ust_get_type_fixed_length_blob(field->type)->length;
+				elem_len = CHAR_BIT;
+				signedness = false;
 				break;
 			default:
 				ret = -EINVAL;
 				goto end;
 			}
-			elem_len = integer_type->size;
-			signedness = integer_type->signedness;
 			if (index >= num_elems) {
 				ret = -EINVAL;
 				goto end;
@@ -250,7 +257,7 @@ static int specialize_get_index(struct bytecode_runtime *runtime,
 			gid.array_len = num_elems * (elem_len / CHAR_BIT);
 			gid.elem.type = stack_top->load.object_type;
 			gid.elem.len = elem_len;
-			if (integer_type->reverse_byte_order)
+			if (reverse_byte_order)
 				gid.elem.rev_bo = true;
 			stack_top->load.rev_bo = gid.elem.rev_bo;
 			break;
@@ -260,7 +267,8 @@ static int specialize_get_index(struct bytecode_runtime *runtime,
 			const struct lttng_ust_type_integer *integer_type;
 			const struct lttng_ust_event_field *field;
 			uint32_t elem_len;
-			int signedness;
+			int signedness = 0;
+			bool reverse_byte_order = false;
 
 			field = stack_top->load.field;
 			switch (field->type->type) {
@@ -270,13 +278,17 @@ static int specialize_get_index(struct bytecode_runtime *runtime,
 					goto end;
 				}
 				integer_type = lttng_ust_get_type_integer(lttng_ust_get_type_sequence(field->type)->elem_type);
+				elem_len = integer_type->size;
+				signedness = integer_type->signedness;
+				reverse_byte_order = integer_type->reverse_byte_order;
+				break;
+			case lttng_ust_type_variable_length_blob:
+				elem_len = CHAR_BIT;
 				break;
 			default:
 				ret = -EINVAL;
 				goto end;
 			}
-			elem_len = integer_type->size;
-			signedness = integer_type->signedness;
 			ret = specialize_get_index_object_type(&stack_top->load.object_type,
 					signedness, elem_len);
 			if (ret)
@@ -284,7 +296,7 @@ static int specialize_get_index(struct bytecode_runtime *runtime,
 			gid.offset = index * (elem_len / CHAR_BIT);
 			gid.elem.type = stack_top->load.object_type;
 			gid.elem.len = elem_len;
-			if (integer_type->reverse_byte_order)
+			if (reverse_byte_order)
 				gid.elem.rev_bo = true;
 			stack_top->load.rev_bo = gid.elem.rev_bo;
 			break;
@@ -408,6 +420,14 @@ static int specialize_load_object(const struct lttng_ust_event_field *field,
 		break;
 	case lttng_ust_type_dynamic:
 		load->object_type = OBJECT_TYPE_DYNAMIC;
+		break;
+	case lttng_ust_type_fixed_length_blob:
+		load->object_type = OBJECT_TYPE_ARRAY;
+		load->field = field;
+		break;
+	case lttng_ust_type_variable_length_blob:
+		load->object_type = OBJECT_TYPE_SEQUENCE;
+		load->field = field;
 		break;
 	default:
 		ERR("Unknown type: %d", (int) field->type->type);
@@ -540,12 +560,14 @@ static int specialize_payload_lookup(const struct lttng_ust_event_desc *event_de
 		}
 		/* compute field offset on stack */
 		switch (field->type->type) {
-		case lttng_ust_type_integer:
+		case lttng_ust_type_integer:			/* Fall-through. */
 		case lttng_ust_type_enum:
 			field_offset += sizeof(int64_t);
 			break;
-		case lttng_ust_type_array:
-		case lttng_ust_type_sequence:
+		case lttng_ust_type_array:			/* Fall-through. */
+		case lttng_ust_type_sequence:			/* Fall-through. */
+		case lttng_ust_type_fixed_length_blob:		/* Fall-through. */
+		case lttng_ust_type_variable_length_blob:
 			field_offset += sizeof(unsigned long);
 			field_offset += sizeof(void *);
 			break;

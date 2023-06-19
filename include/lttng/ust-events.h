@@ -36,7 +36,7 @@ extern "C" {
  * oldest provider major version currently allowed, typically increased
  * when LTTng-UST has an ABI-breaking soname bump.
  */
-#define LTTNG_UST_PROVIDER_MAJOR			3
+#define LTTNG_UST_PROVIDER_MAJOR			4
 #define LTTNG_UST_PROVIDER_MAJOR_OLDEST_COMPATIBLE	3
 #define LTTNG_UST_PROVIDER_MINOR	0
 
@@ -62,6 +62,8 @@ enum lttng_ust_type {
 	lttng_ust_type_array,
 	lttng_ust_type_sequence,
 	lttng_ust_type_struct,
+	lttng_ust_type_fixed_length_blob,
+	lttng_ust_type_variable_length_blob,
 	NR_LTTNG_UST_TYPE,
 };
 
@@ -210,6 +212,20 @@ struct lttng_ust_type_struct {
 	unsigned int nr_fields;
 	const struct lttng_ust_event_field * const *fields;	/* Array of pointers to fields. */
 	unsigned int alignment;					/* Minimum alignment for this type. */
+};
+
+struct lttng_ust_type_fixed_length_blob {
+	struct lttng_ust_type_common parent;
+	uint32_t struct_size;
+	unsigned int length;		/* Num. elems. */
+	const char *media_type;		/* Media type, NULL if none. */
+};
+
+struct lttng_ust_type_variable_length_blob {
+	struct lttng_ust_type_common parent;
+	uint32_t struct_size;
+	const char *length_name;	/* Length field name. If NULL, use previous field. */
+	const char *media_type;		/* Media type, NULL if none. */
 };
 
 /*

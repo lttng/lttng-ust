@@ -498,6 +498,47 @@ extern const struct lttng_ust_probe_desc LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_
 		.nofilter = 0,					\
 	}),
 
+#undef lttng_ust__field_fixed_length_blob
+#define lttng_ust__field_fixed_length_blob(_item, _src, _length, _media_type, _nowrite) \
+	LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_event_field, { \
+		.struct_size = sizeof(struct lttng_ust_event_field), \
+		.name = #_item,					\
+		.type = (const struct lttng_ust_type_common *) LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_type_fixed_length_blob, { \
+			.parent = {				\
+				.type = lttng_ust_type_fixed_length_blob, \
+			},					\
+			.struct_size = sizeof(struct lttng_ust_type_fixed_length_blob), \
+			.length = (_length),			\
+			.media_type = (_media_type),		\
+		}),						\
+		.nowrite = _nowrite,				\
+		.nofilter = 0,					\
+	}),
+
+#undef lttng_ust__field_variable_length_blob
+#define lttng_ust__field_variable_length_blob(_item, _src, _length_type, _src_length, _media_type, _nowrite) \
+	LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_event_field, { \
+		.struct_size = sizeof(struct lttng_ust_event_field), \
+		.name = "_" #_item "_length",			\
+		.type = lttng_ust_type_integer_define(_length_type, LTTNG_UST_BYTE_ORDER, 10), \
+		.nowrite = _nowrite,				\
+		.nofilter = 1,					\
+	}),							\
+	LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_event_field, { \
+		.struct_size = sizeof(struct lttng_ust_event_field), \
+		.name = #_item,					\
+		.type = (const struct lttng_ust_type_common *) LTTNG_UST_COMPOUND_LITERAL(const struct lttng_ust_type_variable_length_blob, { \
+			.parent = {				\
+				.type = lttng_ust_type_variable_length_blob, \
+			},					\
+			.struct_size = sizeof(struct lttng_ust_type_variable_length_blob), \
+			.length_name = NULL,	/* Use previous field. */ \
+			.media_type = (_media_type),		\
+		}),						\
+		.nowrite = _nowrite,				\
+		.nofilter = 0,					\
+	}),
+
 #undef LTTNG_UST_TP_FIELDS
 #define LTTNG_UST_TP_FIELDS(...) __VA_ARGS__	/* Only one used in this phase */
 
@@ -585,6 +626,22 @@ extern const struct lttng_ust_probe_desc LTTNG_UST__TP_COMBINE_TOKENS(lttng_ust_
 #undef lttng_ust__field_enum
 #define lttng_ust__field_enum(_provider, _name, _type, _item, _src, _nowrite)		\
 	lttng_ust__field_integer_ext(_type, _item, _src, LTTNG_UST_BYTE_ORDER, 10, _nowrite)
+
+#undef lttng_ust__field_fixed_length_blob
+#define lttng_ust__field_fixed_length_blob(_item, _src, _length, _media_type, _nowrite) \
+	if (0)									\
+		(void) (_src);	/* Unused */					\
+	__event_len += _length;
+
+#undef lttng_ust__field_variable_length_blob
+#define lttng_ust__field_variable_length_blob(_item, _src, _length_type, _src_length, _media_type, _nowrite) \
+	if (0)								\
+		(void)(_src);	/* Unused */				\
+	__event_len += lttng_ust_ring_buffer_align(__event_len, lttng_ust_rb_alignof(_length_type)); \
+	__event_len += sizeof(_length_type);					\
+	__dynamic_len[__dynamic_len_idx] = (_src_length);			\
+	__event_len += __dynamic_len[__dynamic_len_idx];			\
+	__dynamic_len_idx++;
 
 #undef LTTNG_UST_TP_ARGS
 #define LTTNG_UST_TP_ARGS(...) __VA_ARGS__
@@ -755,6 +812,28 @@ size_t lttng_ust__event_get_size__##_provider##___##_name(			      \
 #define lttng_ust__field_enum(_provider, _name, _type, _item, _src, _nowrite)		\
 	lttng_ust__field_integer_ext(_type, _item, _src, LTTNG_UST_BYTE_ORDER, 10, _nowrite)
 
+#undef lttng_ust__field_fixed_length_blob
+#define lttng_ust__field_fixed_length_blob(_item, _src, _length, _media_type, _nowrite) \
+	{								       \
+		unsigned long __ctf_tmp_ulong = (unsigned long) (_length);     \
+		const void *__ctf_tmp_ptr = (_src);			       \
+		memcpy(__stack_data, &__ctf_tmp_ulong, sizeof(unsigned long)); \
+		__stack_data += sizeof(unsigned long);			       \
+		memcpy(__stack_data, &__ctf_tmp_ptr, sizeof(void *));	       \
+		__stack_data += sizeof(void *);				       \
+	}
+
+#undef lttng_ust__field_variable_length_blob
+#define lttng_ust__field_variable_length_blob(_item, _src, _length_type, _src_length, _media_type, _nowrite) \
+	{								       \
+		unsigned long __ctf_tmp_ulong = (unsigned long) (_src_length); \
+		const void *__ctf_tmp_ptr = (_src);			       \
+		memcpy(__stack_data, &__ctf_tmp_ulong, sizeof(unsigned long)); \
+		__stack_data += sizeof(unsigned long);			       \
+		memcpy(__stack_data, &__ctf_tmp_ptr, sizeof(void *));	       \
+		__stack_data += sizeof(void *);				       \
+	}
+
 #undef LTTNG_UST_TP_ARGS
 #define LTTNG_UST_TP_ARGS(...) __VA_ARGS__
 
@@ -829,6 +908,19 @@ void lttng_ust__event_prepare_interpreter_stack__##_provider##___##_name(char *_
 #undef lttng_ust__field_enum
 #define lttng_ust__field_enum(_provider, _name, _type, _item, _src, _nowrite)		\
 	lttng_ust__field_integer_ext(_type, _item, _src, LTTNG_UST_BYTE_ORDER, 10, _nowrite)
+
+#undef lttng_ust__field_fixed_length_blob
+#define lttng_ust__field_fixed_length_blob(_item, _src, _length, _media_type, _nowrite) \
+	if (0)								       \
+		(void) (_src);	/* Unused */
+
+#undef lttng_ust__field_variable_length_blob
+#define lttng_ust__field_variable_length_blob(_item, _src, _length_type, _src_length, _media_type, _nowrite) \
+	if (0)								       \
+		(void) (_src);	/* Unused */				       \
+	if (0)								       \
+		(void) (_src_length);	/* Unused */			       \
+	__event_align = lttng_ust__tp_max_t(size_t, __event_align, lttng_ust_rb_alignof(_length_type));
 
 #undef LTTNG_UST_TP_ARGS
 #define LTTNG_UST_TP_ARGS(...) __VA_ARGS__
@@ -913,6 +1005,18 @@ size_t lttng_ust__event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_PR
 #undef lttng_ust__field_enum
 #define lttng_ust__field_enum(_provider, _name, _type, _item, _src, _nowrite)	\
 	lttng_ust__field_integer_ext(_type, _item, _src, LTTNG_UST_BYTE_ORDER, 10, _nowrite)
+
+#undef lttng_ust__field_fixed_length_blob
+#define lttng_ust__field_fixed_length_blob(_item, _src, _length, _media_type, _nowrite) \
+	__chan->ops->event_write(&__ctx, _src, _length, 1);
+
+#undef lttng_ust__field_variable_length_blob
+#define lttng_ust__field_variable_length_blob(_item, _src, _length_type, _src_length, _media_type, _nowrite) \
+	{								\
+		_length_type __tmpl = __stackvar.__dynamic_len[__dynamic_len_idx]; \
+		__chan->ops->event_write(&__ctx, &__tmpl, sizeof(_length_type), lttng_ust_rb_alignof(_length_type)); \
+	}								\
+	__chan->ops->event_write(&__ctx, _src, lttng_ust__get_dynamic_len(dest), 1);
 
 /* Beware: this get len actually consumes the len value */
 #undef lttng_ust__get_dynamic_len

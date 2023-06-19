@@ -300,6 +300,12 @@ static int context_get_index(struct lttng_ust_ctx *ctx,
 		ptr->ptr = &ptr->u.d;
 		ptr->rev_bo = lttng_ust_get_type_float(field->type)->reverse_byte_order;
 		break;
+	case lttng_ust_type_fixed_length_blob:
+		ERR("Fixed length blobs in contexts are not supported by bytecode interpreter.");
+		return -EINVAL;
+	case lttng_ust_type_variable_length_blob:
+		ERR("Variable length blobs in contexts are not supported by bytecode interpreter.");
+		return -EINVAL;
 	case lttng_ust_type_dynamic:
 		ctx_field->get_value(ctx_field->priv, probe_ctx, &v);
 		switch (v.sel) {
@@ -385,7 +391,13 @@ static int dynamic_get_index(struct lttng_ust_ctx *ctx,
 			stack_top->u.ptr.ptr = ptr;
 			stack_top->u.ptr.object_type = gid->elem.type;
 			stack_top->u.ptr.rev_bo = gid->elem.rev_bo;
-			assert(stack_top->u.ptr.field->type->type == lttng_ust_type_array);
+			switch (stack_top->u.ptr.field->type->type) {
+			case lttng_ust_type_array:			/* Fall-through. */
+			case lttng_ust_type_fixed_length_blob:
+				break;
+			default:
+				return -EINVAL;
+			}
 			stack_top->u.ptr.field = NULL;
 			break;
 		}
@@ -404,7 +416,13 @@ static int dynamic_get_index(struct lttng_ust_ctx *ctx,
 			stack_top->u.ptr.ptr = ptr;
 			stack_top->u.ptr.object_type = gid->elem.type;
 			stack_top->u.ptr.rev_bo = gid->elem.rev_bo;
-			assert(stack_top->u.ptr.field->type->type == lttng_ust_type_sequence);
+			switch (stack_top->u.ptr.field->type->type) {
+			case lttng_ust_type_sequence:			/* Fall-through. */
+			case lttng_ust_type_variable_length_blob:
+				break;
+			default:
+				return -EINVAL;
+			}
 			stack_top->u.ptr.field = NULL;
 			break;
 		}
@@ -637,6 +655,9 @@ end:
 }
 
 static
+struct lttng_ust_type_common *lttng_ust_static_blob_char = lttng_ust_type_integer_define(uint8_t, LTTNG_UST_BYTE_ORDER, 16);
+
+static
 int lttng_bytecode_interpret_format_output(struct estack_entry *ax,
 		struct lttng_interpreter_output *output)
 {
@@ -683,14 +704,33 @@ again:
 			output->type = LTTNG_INTERPRETER_TYPE_SEQUENCE;
 			output->u.sequence.ptr = *(const char **) (ax->u.ptr.ptr + sizeof(unsigned long));
 			output->u.sequence.nr_elem = *(unsigned long *) ax->u.ptr.ptr;
-			output->u.sequence.nested_type = lttng_ust_get_type_sequence(ax->u.ptr.field->type)->elem_type;
+			switch (ax->u.ptr.field->type->type) {
+			case lttng_ust_type_sequence:
+				output->u.sequence.nested_type = lttng_ust_get_type_sequence(ax->u.ptr.field->type)->elem_type;
+				break;
+			case lttng_ust_type_variable_length_blob:
+				output->u.sequence.nested_type = lttng_ust_static_blob_char;
+				break;
+			default:
+				return -EINVAL;
+			}
 			break;
 		case OBJECT_TYPE_ARRAY:
 			/* Skip count (unsigned long) */
 			output->type = LTTNG_INTERPRETER_TYPE_SEQUENCE;
 			output->u.sequence.ptr = *(const char **) (ax->u.ptr.ptr + sizeof(unsigned long));
-			output->u.sequence.nr_elem = lttng_ust_get_type_array(ax->u.ptr.field->type)->length;
-			output->u.sequence.nested_type = lttng_ust_get_type_array(ax->u.ptr.field->type)->elem_type;
+			switch (ax->u.ptr.field->type->type) {
+			case lttng_ust_type_array:
+				output->u.sequence.nr_elem = lttng_ust_get_type_array(ax->u.ptr.field->type)->length;
+				output->u.sequence.nested_type = lttng_ust_get_type_array(ax->u.ptr.field->type)->elem_type;
+				break;
+			case lttng_ust_type_fixed_length_blob:
+				output->u.sequence.nr_elem = lttng_ust_get_type_fixed_length_blob(ax->u.ptr.field->type)->length;
+				output->u.sequence.nested_type = lttng_ust_static_blob_char;
+				break;
+			default:
+				return -EINVAL;
+			}
 			break;
 		case OBJECT_TYPE_SIGNED_ENUM:
 			ret = dynamic_load_field(ax);

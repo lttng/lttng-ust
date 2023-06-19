@@ -113,6 +113,10 @@ bool check_type_provider(const struct lttng_ust_type_common *type)
 		}
 		return true;
 	}
+	case lttng_ust_type_fixed_length_blob:
+		return true;
+	case lttng_ust_type_variable_length_blob:
+		return true;
 	default:
 		return false;
 	}
@@ -456,6 +460,12 @@ int lttng_probes_get_field_list(struct lttng_ust_field_list *list)
 					break;
 				case lttng_ust_type_enum:
 					list_entry->field.type = LTTNG_UST_ABI_FIELD_ENUM;
+					break;
+				case lttng_ust_type_fixed_length_blob:
+					list_entry->field.type = LTTNG_UST_ABI_FIELD_OTHER;
+					break;
+				case lttng_ust_type_variable_length_blob:
+					list_entry->field.type = LTTNG_UST_ABI_FIELD_OTHER;
 					break;
 				default:
 					list_entry->field.type = LTTNG_UST_ABI_FIELD_OTHER;

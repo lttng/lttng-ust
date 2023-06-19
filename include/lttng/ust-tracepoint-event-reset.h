@@ -49,6 +49,12 @@
 #undef lttng_ust__field_enum
 #define lttng_ust__field_enum(_provider, _name, _type, _item, _src, _nowrite)
 
+#undef lttng_ust__field_fixed_length_blob
+#define lttng_ust__field_fixed_length_blob(_item, _src, _length, _media_type, _nowrite)
+
+#undef lttng_ust__field_variable_length_blob
+#define lttng_ust__field_variable_length_blob(_item, _src, _length_type, _src_length, _media_type, _nowrite)
+
 /* "write" */
 #undef lttng_ust_field_integer
 #define lttng_ust_field_integer(_type, _item, _src)
@@ -104,6 +110,12 @@
 #undef lttng_ust_field_enum
 #define lttng_ust_field_enum(_provider, _name, _type, _item, _src)
 
+#undef lttng_ust_field_fixed_length_blob
+#define lttng_ust_field_fixed_length_blob(_item, _src, _length, _media_type, _nowrite)
+
+#undef lttng_ust_field_variable_length_blob
+#define lttng_ust_field_variable_length_blob(_item, _src, _length_type, _src_length, _media_type, _nowrite)
+
 /* "nowrite" */
 #undef lttng_ust_field_integer_nowrite
 #define lttng_ust_field_integer_nowrite(_type, _item, _src)
@@ -149,3 +161,9 @@
 
 #undef lttng_ust_field_enum_nowrite
 #define lttng_ust_field_enum_nowrite(_provider, _name, _type, _item, _src)
+
+#undef lttng_ust_field_fixed_length_blob_nowrite
+#define lttng_ust_field_fixed_length_blob_nowrite(_item, _src, _length, _media_type)
+
+#undef lttng_ust_field_variable_length_blob_nowrite
+#define lttng_ust_field_variable_length_blob_nowrite(_item, _src, _length_type, _src_length, _media_type)

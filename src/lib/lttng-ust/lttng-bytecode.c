@@ -210,6 +210,8 @@ int apply_field_reloc(const struct lttng_ust_event_desc *event_desc,
 			break;
 		case lttng_ust_type_array:
 		case lttng_ust_type_sequence:
+		case lttng_ust_type_fixed_length_blob:
+		case lttng_ust_type_variable_length_blob:
 			field_offset += sizeof(unsigned long);
 			field_offset += sizeof(void *);
 			break;
@@ -267,6 +269,10 @@ int apply_field_reloc(const struct lttng_ust_event_desc *event_desc,
 			break;
 		case lttng_ust_type_float:
 			op->op = BYTECODE_OP_LOAD_FIELD_REF_DOUBLE;
+			break;
+		case lttng_ust_type_fixed_length_blob:		/* Fall-through. */
+		case lttng_ust_type_variable_length_blob:
+			op->op = BYTECODE_OP_LOAD_FIELD_REF_SEQUENCE;
 			break;
 		default:
 			return -EINVAL;
@@ -358,6 +364,11 @@ int apply_context_reloc(struct bytecode_runtime *runtime,
 			break;
 		case lttng_ust_type_dynamic:
 			op->op = BYTECODE_OP_GET_CONTEXT_REF;
+			break;
+			/* Blobs are not supported as strings. */
+		case lttng_ust_type_fixed_length_blob:		/* Fall-through. */
+		case lttng_ust_type_variable_length_blob:
+				return -EINVAL;
 			break;
 		default:
 			return -EINVAL;

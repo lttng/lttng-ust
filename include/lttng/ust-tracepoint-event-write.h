@@ -83,3 +83,11 @@
 #undef lttng_ust_field_enum
 #define lttng_ust_field_enum(_provider, _name, _type, _item, _src)			\
 	lttng_ust__field_enum(_provider, _name, _type, _item, _src, 0)
+
+#undef lttng_ust_field_fixed_length_blob
+#define lttng_ust_field_fixed_length_blob(_item, _src, _length, _media_type) \
+	lttng_ust__field_fixed_length_blob(_item, _src, _length, _media_type, 0)
+
+#undef lttng_ust_field_variable_length_blob
+#define lttng_ust_field_variable_length_blob(_item, _src, _length_type, _src_length, _media_type) \
+	lttng_ust__field_variable_length_blob(_item, _src, _length_type, _src_length, _media_type, 0)
