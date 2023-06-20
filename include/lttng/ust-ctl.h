@@ -610,7 +610,7 @@ struct lttng_ust_ctl_enum_entry {
 } __attribute__((packed));
 
 /* legacy */
-#define LTTNG_UST_CTL_UST_BASIC_TYPE_PADDING	296
+#define LTTNG_UST_CTL_UST_BASIC_TYPE_PADDING	312
 union _lttng_ust_ctl_basic_type {
 	struct lttng_ust_ctl_integer_type integer;
 	struct {
