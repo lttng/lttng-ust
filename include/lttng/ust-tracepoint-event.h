@@ -853,7 +853,7 @@ size_t lttng_ust__event_get_align__##_provider##___##_name(LTTNG_UST__TP_ARGS_PR
 	if (lttng_ust_string_encoding_##_encoding == lttng_ust_string_encoding_none) \
 		__chan->ops->event_write(&__ctx, _src, sizeof(_type) * (_length), lttng_ust_rb_alignof(_type)); \
 	else								\
-		__chan->ops->event_pstrcpy_pad(&__ctx, (const char *) (_src), _length); \
+		__chan->ops->event_pstrcpy_pad(&__ctx, (const char *) (_src), _length);
 
 #undef lttng_ust__field_sequence_encoded
 #define lttng_ust__field_sequence_encoded(_type, _item, _src, _byte_order, _length_type, \
