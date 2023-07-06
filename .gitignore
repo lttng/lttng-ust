@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 EfficiOS, Inc.
+#
+# SPDX-License-Identifier: MIT
+
 *.so
 *.swp
 *.o
@@ -125,6 +129,10 @@ cscope.*
 /tests/unit/ust-error/test_ust_error
 /tests/unit/ust-utils/test_ust_utils
 /tests/unit/ust-utils/test_ust_utils_cxx
+
+/src/lib/lttng-ust-java/org_lttng_ust_LTTngUst.h
+/src/lib/lttng-ust-java/org/
+/src/lib/lttng-ust-java/liblttng-ust-java.jar
 
 # Java agent library
 /src/lib/lttng-ust-java-agent/java/lttng-ust-agent-all/*.jar

@@ -1,0 +1,7 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: LTTng-UST
+Upstream-Contact: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+
+Files: extras/abi/2.*/* extras/abi/empty/*
+Copyright: 2023 EfficiOS, Inc.
+License: CC0-1.0

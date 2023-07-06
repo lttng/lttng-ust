@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2008 Kevin L. Mitchell <klmitch@mit.edu>
+#
+# SPDX-License-Identifier: FSFAP
+#
 # ===========================================================================
 #    https://www.gnu.org/software/autoconf-archive/ax_sys_weak_alias.html
 # ===========================================================================

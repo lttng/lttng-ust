@@ -1,9 +1,11 @@
 #!/bin/sh
 #
 # SPDX-License-Identifier: LGPL-2.1-only
+#
+# SPDX-FileCopyrightText: 2022 EfficiOS Inc.
 
 set -x
-if [ ! -e config ]; then
+if [ ! -d "config" ]; then
 	mkdir config
 fi
 

@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2016 Philippe Proulx <pproulx@efficios.com>
+
+SPDX-License-Identifier: CC-BY-4.0
+-->
+
 # LTTng-UST contributor's guide
 
 Being an open source project, the LTTng-UST project welcomes

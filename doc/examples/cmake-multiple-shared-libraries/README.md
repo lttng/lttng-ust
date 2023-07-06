@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2016 Sebastien Boisvert <sboisvert@gydle.com>
+
+SPDX-License-Identifier: CC-BY-4.0
+-->
+
 This examples shows how to use LTTng-UST in a project that uses
 CMake as the build system generator.
 

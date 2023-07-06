@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+SPDX-FileCopyrightText: 2023 EfficiOS, Inc.
+
+SPDX-License-Identifier: MIT
+-->
+
 <projectDescription>
 	<name>lttng-ust</name>
 	<comment></comment>

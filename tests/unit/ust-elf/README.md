@@ -1,5 +1,10 @@
-lttng_ust_elf unit tests
-========================
+<!--
+SPDX-FileCopyrightText: 2016 Antoine Busque <abusque@efficios.com>
+
+SPDX-License-Identifier: CC-BY-4.0
+-->
+
+# lttng\_ust\_elf unit tests
 
 This is a series of unit tests for LTTng UST's ELF parser. The parser
 is used to retrieve memory size, build ID, and debug link information
@@ -14,9 +19,9 @@ architectures representing all combinations of bitness and endianness
 are currently tested:
 
 * x86
-* x86_64
+* x86\_64
 * armeb
-* aarch64_be
+* aarch64\_be
 
 For each architecture, there is a corresponding subdirectory under
 `data`, and each of these directories contains exactly 2 files,
@@ -37,9 +42,11 @@ The debug information bundled in `main.elf` is then copied into
 `main.elf.debug` and stripped, and a debug link pointing to this file
 is added to the executable. The commands used are as follow:
 
-    $ objcopy --only-keep-debug main.elf main.elf.debug
-    $ strip -g main.elf
-    $ objcopy --add-gnu-debuglink=main.elf.debug main.elf
+```
+$ objcopy --only-keep-debug main.elf main.elf.debug
+$ strip -g main.elf
+$ objcopy --add-gnu-debuglink=main.elf.debug main.elf
+```
 
 There is also a series of tests used to check detection of
 position-independent code (PIC). These tests use three pre-compiled
@@ -47,6 +54,8 @@ ELF files found under `data/pic/`, namely `hello.exec`, `hello.pie`,
 and `hello.pic`. These can be re-generated using the files `hello.c`
 and `libhello.c`, with the following commands:
 
-    $ gcc hello.c -o hello.exec
-    $ gcc hello.c -fPIC -pie -o hello.pie
-    $ gcc -shared -o hello.pic -fPIC libhello.c
+```
+$ gcc hello.c -o hello.exec
+$ gcc hello.c -fPIC -pie -o hello.pie
+$ gcc -shared -o hello.pic -fPIC libhello.c
+```

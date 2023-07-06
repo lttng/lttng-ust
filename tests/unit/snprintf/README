@@ -1,9 +1,0 @@
-ust_safe_snprintf test
--------------------
-
-Basic functionality test of the ust snprintf() implementation.
-
-DESCRIPTION
------------
-
-The ust_safe_snprintf() is tested against a known output string.

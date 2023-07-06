@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2023 EfficiOS, Inc
+#
 # SPDX-License-Identifier: LGPL-2.1-only
 
 doc_examplesdir = ${docdir}/examples
@@ -66,7 +68,7 @@ SUBDIRS_CMAKE = cmake-multiple-shared-libraries
 endif
 endif
 
-dist_doc_examples_DATA = README
+dist_doc_examples_DATA = README.md
 
 dist_doc_examples_easy_ust_DATA = easy-ust/Makefile \
 	easy-ust/sample.c \

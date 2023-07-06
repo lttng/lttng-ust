@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2023 EfficiOS, Inc
+#
 # SPDX-License-Identifier: LGPL-2.1-only
 
 AM_CPPFLAGS += -I$(srcdir)
@@ -16,4 +18,4 @@ same_line_tracepoint_compatapi1_LDADD = \
 	$(top_builddir)/src/lib/lttng-ust/liblttng-ust.la \
 	$(DL_LIBS)
 
-EXTRA_DIST = README
+EXTRA_DIST = README.md

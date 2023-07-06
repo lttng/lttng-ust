@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+SPDX-FileCopyrightText: 2023 EfficiOS, Inc.
+
+SPDX-License-Identifier: MIT
+-->
+
 <classpath>
 	<classpathentry excluding="lttng-ust-agent-all/|lttng-ust-agent-all/|lttng-ust-agent-common/|lttng-ust-agent-common/|lttng-ust-agent-jul/|lttng-ust-agent-jul/|lttng-ust-agent-log4j2/|lttng-ust-agent-log4j2/|lttng-ust-agent-log4j/|lttng-ust-agent-log4j/" kind="src" path="src/lib/lttng-ust-java-agent/java"/>
 	<classpathentry kind="src" path="src/lib/lttng-ust-java-agent/java/lttng-ust-agent-all"/>

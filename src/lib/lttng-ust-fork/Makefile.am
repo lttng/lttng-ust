@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2023 EfficiOS, Inc
+#
 # SPDX-License-Identifier: LGPL-2.1-only
 
 lib_LTLIBRARIES = liblttng-ust-fork.la

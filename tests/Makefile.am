@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2023 EfficiOS, Inc
+#
 # SPDX-License-Identifier: LGPL-2.1-only
 
 SUBDIRS = utils unit compile benchmark regression
@@ -34,7 +36,7 @@ endif
 TESTS += \
 	regression/abi0-conflict/test_abi0_conflict
 
-EXTRA_DIST = README
+EXTRA_DIST = README.md
 
 check-loop:
 	while [ 0 ]; do \

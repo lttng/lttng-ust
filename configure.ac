@@ -286,8 +286,8 @@ AC_CHECK_FUNCS([ \
 #AC_FUNC_REALLOC
 
 # Check for pthread_setname_np and its signature
-LTTNG_PTHREAD_SETNAME_NP
-LTTNG_PTHREAD_GETNAME_NP
+AE_PTHREAD_SETNAME_NP
+AE_PTHREAD_GETNAME_NP
 
 # Check dor dlopen() in -ldl or -lc
 AC_CHECK_LIB([dl], [dlopen], [
@@ -692,15 +692,15 @@ AC_OUTPUT
 ## Mini-report on what will be built. ##
 ##                                    ##
 
-PPRINT_INIT
-PPRINT_SET_INDENT(1)
-PPRINT_SET_TS(38)
+AE_PPRINT_INIT
+AE_PPRINT_SET_INDENT(1)
+AE_PPRINT_SET_TS(38)
 
 AS_ECHO
 AS_IF([test -n "ust_version_name"], [
-  AS_ECHO("${PPRINT_COLOR_BLDBLU}LTTng-ust $PACKAGE_VERSION \"ust_version_name\"$PPRINT_COLOR_RST")
+  AS_ECHO("${AE_PPRINT_COLOR_BLDBLU}LTTng-ust $PACKAGE_VERSION \"ust_version_name\"$AE_PPRINT_COLOR_RST")
 ], [
-  AS_ECHO("${PPRINT_COLOR_BLDBLU}LTTng-ust $PACKAGE_VERSION")
+  AS_ECHO("${AE_PPRINT_COLOR_BLDBLU}LTTng-ust $PACKAGE_VERSION")
 ])
 
 AS_ECHO
@@ -714,90 +714,90 @@ AS_IF([test -n "ust_version_description"], [
   AS_ECHO
 ])
 
-PPRINT_SUBTITLE([System])
+AE_PPRINT_SUBTITLE([System])
 
-PPRINT_PROP_STRING([Target architecture], $host_cpu)
+AE_PPRINT_PROP_STRING([Target architecture], $host_cpu)
 
 AS_IF([test "x$unsupported_arch" = "xyes"],[
-       PPRINT_WARN([Your architecture ($host_cpu) is unsupported, using safe default of no unaligned access.])
+       AE_PPRINT_WARN([Your architecture ($host_cpu) is unsupported, using safe default of no unaligned access.])
 ])
 
 AS_ECHO
-PPRINT_SUBTITLE([Features])
-PPRINT_SET_INDENT(1)
+AE_PPRINT_SUBTITLE([Features])
+AE_PPRINT_SET_INDENT(1)
 
 test "x$with_sdt" = "xyes" && value=1 || value=0
-PPRINT_PROP_BOOL_CUSTOM([sdt.h integration], $value, [use --with-sdt])
+AE_PPRINT_PROP_BOOL_CUSTOM([sdt.h integration], $value, [use --with-sdt])
 
 AE_IS_FEATURE_ENABLED([java-agent-jul]) && value=1 || value=0
-PPRINT_PROP_BOOL_CUSTOM([Java agent (JUL support)], $value, [use --enable-java-agent-jul])
+AE_PPRINT_PROP_BOOL_CUSTOM([Java agent (JUL support)], $value, [use --enable-java-agent-jul])
 
 AE_IS_FEATURE_ENABLED([java-agent-log4j]) && value=1 || value=0
-PPRINT_PROP_BOOL_CUSTOM([Java agent (Log4j 1.x support (deprecated))], $value, [use --enable-java-agent-log4j])
+AE_PPRINT_PROP_BOOL_CUSTOM([Java agent (Log4j 1.x support (deprecated))], $value, [use --enable-java-agent-log4j])
 
 AE_IS_FEATURE_ENABLED([java-agent-log4j2]) && value=1 || value=0
-PPRINT_PROP_BOOL_CUSTOM([Java agent (Log4j 2.x support)], $value, [use --enable-java-agent-log4j2])
+AE_PPRINT_PROP_BOOL_CUSTOM([Java agent (Log4j 2.x support)], $value, [use --enable-java-agent-log4j2])
 
 AE_IS_FEATURE_ENABLED([jni-interface]) && value=1 || value=0
-PPRINT_PROP_BOOL_CUSTOM([JNI interface (JNI)], $value, [use --enable-jni-interface])
+AE_PPRINT_PROP_BOOL_CUSTOM([JNI interface (JNI)], $value, [use --enable-jni-interface])
 
 AE_IS_FEATURE_ENABLED([python-agent]) && value=1 || value=0
-PPRINT_PROP_BOOL_CUSTOM([Python agent], $value, [use --enable-python-agent])
+AE_PPRINT_PROP_BOOL_CUSTOM([Python agent], $value, [use --enable-python-agent])
 
 test "x$ac_cv_header_linux_perf_event_h" = "xyes" && value=1 || value=0
-PPRINT_PROP_BOOL_CUSTOM([Perf event integration], $value)
+AE_PPRINT_PROP_BOOL_CUSTOM([Perf event integration], $value)
 
 AE_IS_FEATURE_ENABLED([numa]) && value=1 || value=0
-PPRINT_PROP_BOOL([NUMA], $value)
+AE_PPRINT_PROP_BOOL([NUMA], $value)
 
 AS_ECHO
-PPRINT_SET_INDENT(0)
+AE_PPRINT_SET_INDENT(0)
 
 AE_IS_FEATURE_ENABLED([examples]) && value=1 || value=0
-PPRINT_PROP_BOOL([Build and install examples], $value, $PPRINT_COLOR_SUBTITLE)
+AE_PPRINT_PROP_BOOL([Build and install examples], $value, $AE_PPRINT_COLOR_SUBTITLE)
 
 # man pages build enabled/disabled
 m4_pushdef([build_man_pages_msg], [Build and install man pages])
 
 AE_IF_FEATURE_ENABLED([man-pages], [
   AE_IF_IN_GIT_REPO([
-    PPRINT_PROP_BOOL([build_man_pages_msg], 1, $PPRINT_COLOR_SUBTITLE)
+    AE_PPRINT_PROP_BOOL([build_man_pages_msg], 1, $AE_PPRINT_COLOR_SUBTITLE)
   ], [
     AS_IF([test "x$have_asciidoc_xmlto" = "xyes"], [
-      PPRINT_PROP_BOOL([build_man_pages_msg], 1, $PPRINT_COLOR_SUBTITLE)
+      AE_PPRINT_PROP_BOOL([build_man_pages_msg], 1, $AE_PPRINT_COLOR_SUBTITLE)
     ], [
-      PPRINT_PROP_STRING([build_man_pages_msg],
-        [${PPRINT_COLOR_BLDGRN}yes (already built)],
-        $PPRINT_COLOR_SUBTITLE)
+      AE_PPRINT_PROP_STRING([build_man_pages_msg],
+        [${AE_PPRINT_COLOR_BLDGRN}yes (already built)],
+        $AE_PPRINT_COLOR_SUBTITLE)
     ])
   ])
 ], [
-  PPRINT_PROP_BOOL([build_man_pages_msg], 0, $PPRINT_COLOR_SUBTITLE)
+  AE_PPRINT_PROP_BOOL([build_man_pages_msg], 0, $AE_PPRINT_COLOR_SUBTITLE)
 ])
 
 m4_popdef([build_man_pages_msg])
 
-PPRINT_SET_INDENT(1)
+AE_PPRINT_SET_INDENT(1)
 
 report_bindir="`eval eval echo $bindir`"
 report_libdir="`eval eval echo $libdir`"
 
 # Print the bindir and libdir this `make install' will install into.
 AS_ECHO
-PPRINT_SUBTITLE([Install directories])
-PPRINT_PROP_STRING([Binaries], [$report_bindir])
-PPRINT_PROP_STRING([Libraries], [$report_libdir])
+AE_PPRINT_SUBTITLE([Install directories])
+AE_PPRINT_PROP_STRING([Binaries], [$report_bindir])
+AE_PPRINT_PROP_STRING([Libraries], [$report_libdir])
 
 AS_ECHO
-PPRINT_SUBTITLE([System directories])
+AE_PPRINT_SUBTITLE([System directories])
 
-PPRINT_PROP_STRING([lttng-sessiond rundir], [$lttng_system_rundir])
+AE_PPRINT_PROP_STRING([lttng-sessiond rundir], [$lttng_system_rundir])
 
-PPRINT_SET_INDENT(0)
+AE_PPRINT_SET_INDENT(0)
 
 AS_IF([test "x$warn_prebuilt_man_pages" = "xyes" ], [
   AS_ECHO
-  PPRINT_WARN([dnl
+  AE_PPRINT_WARN([dnl
 Both asciidoc and xmlto are needed to build the LTTng-UST man pages.
 
 Note that the man pages are already built in this distribution tarball,

@@ -5,7 +5,7 @@ General Public License v2.1 only:
 
 According with:
 
-	LICENSES/LGPL-2.1
+	LICENSES/LGPL-2.1.txt
 
 It is intended to allow use of the tracer API from both free and proprietary
 software.
@@ -18,7 +18,7 @@ terms of the MIT License:
 
 According with:
 
-	LICENSES/MIT
+	LICENSES/MIT.txt
 
 
 The UST control library is provided under the terms of the GNU General
@@ -28,7 +28,7 @@ Public License v2.0 only:
 
 According with:
 
-	LICENSES/GPL-2.0
+	LICENSES/GPL-2.0-only.txt
 
 This applies to:
 
@@ -44,7 +44,7 @@ The snprintf code is provided under the terms of the BSD 3-Clause "New" or
 
 According with:
 
-	LICENSES/BSD-3-Clause
+	LICENSES/BSD-3-Clause.txt
 
 This applies to:
 
@@ -69,7 +69,7 @@ The TAP test library is provided under the terms of the BSD 2-Clause
 
 According with:
 
-        LICENSES/BSD-2-Clause
+        LICENSES/BSD-2-Clause.txt
 
 They are only used when running the tests in the source tree. This applies
 to:
@@ -85,7 +85,7 @@ License v3.0 or later:
 
 According with:
 
-        LICENSES/GPL-3.0
+        LICENSES/GPL-3.0-or-later.txt
 
 It's only used when running the tests in the source tree. This applies to:
 
