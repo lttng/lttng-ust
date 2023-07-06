@@ -1,9 +1,9 @@
+// SPDX-FileCopyrightText: 2009 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+// SPDX-FileCopyrightText: 2009 Paul E. McKenney, IBM Corporation.
+//
+// SPDX-License-Identifier: LGPL-2.1-or-later
+
 /*
- * SPDX-License-Identifier: LGPL-2.1-or-later
- *
- * Copyright (c) 2009 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
- * Copyright (c) 2009 Paul E. McKenney, IBM Corporation.
- *
  * Userspace RCU header.
  *
  * TO BE INCLUDED ONLY IN CODE THAT IS TO BE RECOMPILED ON EACH LIBURCU

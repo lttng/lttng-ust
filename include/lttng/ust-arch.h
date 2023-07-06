@@ -1,9 +1,6 @@
-/*
- * SPDX-License-Identifier: MIT
- *
- * Copyright (C) 2021 Michael Jeanson <michael.jeanson@efficios.com>
- *
- */
+// SPDX-FileCopyrightText: 2021 Michael Jeanson <mjeanson@efficios.com>
+//
+// SPDX-License-Identifier: MIT
 
 #ifndef _LTTNG_UST_ARCH_H
 #define _LTTNG_UST_ARCH_H

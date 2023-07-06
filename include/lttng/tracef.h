@@ -1,8 +1,6 @@
-/*
- * SPDX-License-Identifier: MIT
- *
- * Copyright (C) 2013-2014 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
- */
+// SPDX-FileCopyrightText: 2013-2014 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+//
+// SPDX-License-Identifier: MIT
 
 #ifndef _LTTNG_UST_TRACEF_H
 #define _LTTNG_UST_TRACEF_H

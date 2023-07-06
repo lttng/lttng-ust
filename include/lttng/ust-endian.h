@@ -1,8 +1,6 @@
-/*
- * SPDX-License-Identifier: MIT
- *
- * Copyright (C) 2012 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
- */
+// SPDX-FileCopyrightText: 2012 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+//
+// SPDX-License-Identifier: MIT
 
 /*
  * This header defines the following endian macros based on the current

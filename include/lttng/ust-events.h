@@ -1,8 +1,8 @@
+// SPDX-FileCopyrightText: 2010-2012 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+//
+// SPDX-License-Identifier: MIT
+
 /*
- * SPDX-License-Identifier: MIT
- *
- * Copyright (C) 2010-2012 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
- *
  * Holds LTTng per-session event registry.
  */
 

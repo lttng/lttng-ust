@@ -1,8 +1,6 @@
-/*
- * SPDX-License-Identifier: LGPL-2.1-only
- *
- * Copyright (C) 2014 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
- */
+// SPDX-FileCopyrightText: 2014 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+//
+// SPDX-License-Identifier: LGPL-2.1-only
 
 #ifndef LTTNG_UST_GETCPU_H
 #define LTTNG_UST_GETCPU_H

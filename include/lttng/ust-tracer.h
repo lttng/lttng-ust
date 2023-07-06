@@ -1,8 +1,8 @@
+// SPDX-FileCopyrightText: 2005-2012 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+//
+// SPDX-License-Identifier: MIT
+
 /*
- * SPDX-License-Identifier: MIT
- *
- * Copyright (C) 2005-2012 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
- *
  * This contains the core definitions for the Linux Trace Toolkit.
  */
 

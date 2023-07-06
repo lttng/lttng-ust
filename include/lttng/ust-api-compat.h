@@ -1,8 +1,8 @@
+// SPDX-FileCopyrightText: 2021 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+//
+// SPDX-License-Identifier: MIT
+
 /*
- * SPDX-License-Identifier: MIT
- *
- * Copyright (C) 2021 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
- *
  * LTTng-UST API compatibility header
  */
 

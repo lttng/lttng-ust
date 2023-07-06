@@ -1,8 +1,8 @@
+// SPDX-FileCopyrightText: 2021 Michael Jeanson <mjeanson@efficios.com>
+//
+// SPDX-License-Identifier: MIT
+
 /*
- * SPDX-License-Identifier: MIT
- *
- * Copyright (C) 2021 Michael Jeanson <mjeanson@efficios.com>
- *
  * Public symbols of liblttng-ust-common.so
  */
 

@@ -1,8 +1,6 @@
-/*
- * SPDX-License-Identifier: MIT
- *
- * Copyright (C) 2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
- */
+// SPDX-FileCopyrightText: 2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+//
+// SPDX-License-Identifier: MIT
 
 #undef lttng_ust_field_integer
 #define lttng_ust_field_integer(_type, _item, _src)				\
