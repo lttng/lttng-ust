@@ -46,7 +46,7 @@ org_lttng_ust_LTTngUst.h:
 	$(JAVAH) -classpath $(srcdir) $(JAVAHFLAGS) org.lttng.ust.LTTngUst
 endif
 
-EXTRA_DIST = README
+EXTRA_DIST = README.md
 
 CLEANFILES = $(jarfile) org_lttng_ust_LTTngUst.h
 

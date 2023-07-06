@@ -185,4 +185,4 @@ libustcomm_la_SOURCES = \
 	ustcomm.c \
 	ustcomm.h
 
-EXTRA_DIST = snprintf/README
+EXTRA_DIST = snprintf/README.md

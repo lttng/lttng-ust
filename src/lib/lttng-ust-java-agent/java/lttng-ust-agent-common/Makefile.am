@@ -40,7 +40,9 @@ dist_noinst_JAVA = $(pkgpath)/AbstractLttngAgent.java \
 				   $(pkgpath)/utils/LttngUstAgentLogger.java
 
 
-dist_noinst_DATA = $(jarfile_manifest)
+dist_noinst_DATA = \
+	$(jarfile_manifest) \
+	$(jarfile_manifest).license
 
 jar_DATA = $(jarfile)
 

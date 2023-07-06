@@ -15,7 +15,9 @@ jarfile_compat_symlink = liblttng-ust-agent.jar
 
 jardir = $(datadir)/java
 
-dist_noinst_DATA = $(jarfile_manifest)
+dist_noinst_DATA = \
+	$(jarfile_manifest) \
+	$(jarfile_manifest).license
 
 jar_DATA = $(jarfile)
 

@@ -1,2 +1,0 @@
-This is a signal safe version of snprintf/vsnprintf. The code is
-originally from the OpenBSD libc.

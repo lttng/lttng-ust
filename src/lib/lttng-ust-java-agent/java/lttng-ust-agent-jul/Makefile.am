@@ -20,7 +20,9 @@ dist_noinst_JAVA = $(pkgpath)/LttngJulAgent.java \
 				   $(pkgpath)/LttngJulApi.java \
 				   $(pkgpath)/LttngLogHandler.java
 
-dist_noinst_DATA = $(jarfile_manifest)
+dist_noinst_DATA = \
+	$(jarfile_manifest) \
+	$(jarfile_manifest).license
 
 jar_DATA = $(jarfile)
 

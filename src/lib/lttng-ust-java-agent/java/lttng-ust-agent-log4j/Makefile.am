@@ -20,7 +20,9 @@ dist_noinst_JAVA = $(pkgpath)/LttngLog4jAgent.java \
 				   $(pkgpath)/LttngLog4jApi.java \
 				   $(pkgpath)/LttngLogAppender.java
 
-dist_noinst_DATA = $(jarfile_manifest)
+dist_noinst_DATA = \
+	$(jarfile_manifest) \
+	$(jarfile_manifest).license
 
 jar_DATA = $(jarfile)
 
