@@ -1,4 +1,7 @@
 #!/bin/bash
+
+# SPDX-FileCopyrightText: 2023 EfficiOS, Inc
+#
 # SPDX-License-Identifier: LGPL-2.1-only
 
 if [ "x${UST_TESTS_SRCDIR:-}" != "x" ]; then

@@ -18,4 +18,4 @@ bench2_LDADD = \
 
 dist_noinst_SCRIPTS = test_benchmark ptime
 
-EXTRA_DIST = README
+EXTRA_DIST = README.md

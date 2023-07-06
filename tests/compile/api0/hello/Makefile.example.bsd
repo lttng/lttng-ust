@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2011 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+#
+# SPDX-License-Identifier: MIT
+
 # Example makefile for build outside of the LTTng-UST tree.
 
 hello:

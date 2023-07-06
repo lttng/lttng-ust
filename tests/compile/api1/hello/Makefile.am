@@ -19,4 +19,7 @@ hello_compatapi1_LDADD = \
 	$(top_builddir)/src/lib/lttng-ust/liblttng-ust.la \
 	$(DL_LIBS)
 
-EXTRA_DIST = README
+EXTRA_DIST = \
+	Makefile.example.bsd \
+	Makefile.example.linux \
+	README.md

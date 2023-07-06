@@ -19,4 +19,4 @@ hello_many_compatapi1_LDADD = \
 	$(top_builddir)/src/lib/lttng-ust/liblttng-ust.la \
 	$(DL_LIBS)
 
-EXTRA_DIST = README
+EXTRA_DIST = README.md

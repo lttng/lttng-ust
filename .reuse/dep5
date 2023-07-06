@@ -5,3 +5,7 @@ Upstream-Contact: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
 Files: extras/abi/2.*/* extras/abi/empty/*
 Copyright: 2023 EfficiOS, Inc.
 License: CC0-1.0
+
+Files: tests/unit/ust-elf/data/*
+Copyright: 2023 EfficiOS, Inc.
+License: LGPL-2.1-or-later
