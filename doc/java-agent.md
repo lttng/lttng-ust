@@ -1,27 +1,33 @@
-======================
- Using the Java agent
-======================
+<!--
+SPDX-FileCopyrightText: 2014 Christian Babeux <christian.babeux@efficios.com>
+SPDX-FileCopyrightText: 2015 Alexandre Montplaisir <alexmonthy@efficios.com>
+SPDX-FileCopyrightText: 2022 Michael Jeanson <mjeanson@efficios.com>
+
+SPDX-License-Identifier: CC-BY-4.0
+-->
+
+# Using the Java agent
 
 The agent can be built in three different configurations:
 
 1) Java agent with JUL support:
 
-$ ./configure --enable-java-agent-jul
+    $ ./configure --enable-java-agent-jul
 
 2) Java agent with Log4j 1.x support (deprecated):
 
-$ export CLASSPATH=$CLASSPATH:/path/to/log4j.jar
-$ ./configure --enable-java-agent-log4j
+    $ export CLASSPATH=$CLASSPATH:/path/to/log4j.jar
+    $ ./configure --enable-java-agent-log4j
 
 3) Java agent with Log4j 2.x support:
 
-$ export CLASSPATH=$CLASSPATH:/path/to/log4j-core.jar:/path/to/log4j-api.jar
-$ ./configure --enable-java-agent-log4j2
+    $ export CLASSPATH=$CLASSPATH:/path/to/log4j-core.jar:/path/to/log4j-api.jar
+    $ ./configure --enable-java-agent-log4j2
 
 4) Java agent with JUL + Log4j 1.x + Log4j 2.x support
 
-$ export CLASSPATH=$CLASSPATH:/path/to/log4j.jar:/path/to/log4j-core.jar:/path/to/log4j-api.jar
-$ ./configure --enable-java-agent-all
+    $ export CLASSPATH=$CLASSPATH:/path/to/log4j.jar:/path/to/log4j-core.jar:/path/to/log4j-api.jar
+    $ ./configure --enable-java-agent-all
 
 To build the agent with log4j support, make sure that the log4j jar
 is in your Java classpath.
@@ -29,44 +35,41 @@ is in your Java classpath.
 The configure script will automatically detect the appropriate Java
 binaries to use in order to build the Java agent.
 
-Enabling the JUL support will build a "lttng-ust-agent-jul.jar" file. Enabling
-the log4j 1.x support will build a "lttng-ust-agent-log4j.jar" and enabling
-log4j 2.x support will build a "lttng-ust-agent-log4j2.jar". All of these jars
-depend on a third "lttng-ust-agent-common.jar", which will always be built.
+Enabling the JUL support will build a `lttng-ust-agent-jul.jar` file. Enabling
+the log4j 1.x support will build a `lttng-ust-agent-log4j.jar` and enabling
+log4j 2.x support will build a `lttng-ust-agent-log4j2.jar`. All of these jars
+depend on a fourth `lttng-ust-agent-common.jar`, which will always be built.
 
-All these archives will be installed in the arch-agnostic "$prefix/share/java"
-path, e.g: "/usr/share/java". You need to make sure the .jar for the logging
-API you want to use (either "lttng-ust-agent-jul.jar",
-"lttng-ust-agent-log4j.jar" or "lttng-ust-agent-log4j2.jar") is on your
+All these archives will be installed in the arch-agnostic `$prefix/share/java`
+path, e.g: `/usr/share/java`. You need to make sure the .jar for the logging
+API you want to use (either `lttng-ust-agent-jul.jar`,
+`lttng-ust-agent-log4j.jar` or `lttng-ust-agent-log4j2.jar`) is on your
 application's classpath.
 
 The logging libraries require an architecture-specific shared object,
-"liblttng-ust-jul-jni.so" for JUL and "liblttng-ust-jul-log4j.so" for both
-Log4j 1.x and 2.x, which are installed by the build system when doing "make
-install". Make sure that your Java application can find this shared object, by
-using the "java.library.path" property if necessary.
+`liblttng-ust-jul-jni.so` for JUL and `liblttng-ust-jul-log4j.so` for both
+Log4j 1.x and 2.x, which are installed by the build system when doing `make
+install`. Make sure that your Java application can find this shared object, by
+using the `java.library.path` property if necessary.
 
 In order to use UST tracing in your Java application, you simply need to
-instantiate a LttngLogHandler or a LttngLogAppender (for JUL or Log4j,
+instantiate a `LttngLogHandler` or a `LttngLogAppender` (for JUL or Log4j,
 respectively), then attach it to a JUL or Log4j Logger class.
 
-Refer to the code examples in "examples/java-jul/", "examples/java-log4j/" and
-"examples/java-log4j2-*/".
+Refer to the code examples in `examples/java-jul/`, `examples/java-log4j/` and
+`examples/java-log4j2-*/`.
 
 LTTng session daemon agents will be initialized as needed. If no session daemon
 is available, the execution will continue and the agents will retry connecting
 every 3 seconds.
 
 
-==============
- Object model
-==============
+# Object model
 
 The object model of the Java agent implementation is as follows:
 
----------
-Ownership
----------
+## Ownership
+
 Log Handlers: LttngLogHandler, LttngLogAppender
   n handlers/appenders, managed by the application.
   Can be created programmatically, or via a configuration file,
@@ -78,16 +81,14 @@ Agent singletons: LttngJulAgent, LttngLog4jAgent
   Each agent instantiates 2 TCP clients, one for the root session daemon, one for the user one.
   One type of TCP client class for now. TCP client may become a singleton in the future.
 
--------
-Control
--------
+## Control
+
 Messages come from the session daemon through the socket connection.
 Agent passes back-reference to itself to the TCP clients.
 Clients use this reference to invoke callbacks, which modify the state of the agent (enabling/disabling events, etc.)
 
----------
-Data path
----------
+## Data path
+
 Log messages are generated by the application and sent to the Logger objects,
 which then send them to the Handlers.
 
@@ -98,9 +99,8 @@ ILttngAgent#isEventEnabled() for example.
 Events that are logged call the native tracepoint through JNI, which generates
 a UST event. There is one type of tracepoint per domain (Jul or Logj4).
 
------------------------
-Filtering notifications
------------------------
+## Filtering notifications
+
 FilterChangeNotifier is the singleton notifier class.
 Applications implement an IFilterChangeListener, and register it to the notifier.
 

@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2011-2012 Matthew Khouzam <matthew.khouzam@ericsson.com>
+// SPDX-FileCopyrightText: 2012 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+//
+// SPDX-License-Identifier: MIT
+
 LTTNG_UST_TRACEPOINT_EVENT(
 	sample_tracepoint,
 	message, // C++ Style comment

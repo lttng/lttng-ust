@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2016 Philippe Proulx <pproulx@efficios.com>
+// SPDX-License-Identifier: CC-BY-4.0
+//
 AUTHORS
 -------
 LTTng-UST was originally written by Mathieu Desnoyers, with additional

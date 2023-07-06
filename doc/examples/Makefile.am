@@ -20,7 +20,7 @@ dist_doc_examples_java_jul_DATA = java-jul/Makefile \
 				  java-jul/run \
 				  java-jul/ApplicationContextExample.java \
 				  java-jul/FilterChangeListenerExample.java \
-				  java-jul/README
+				  java-jul/README.md
 SUBDIRS_JUL = java-jul
 endif
 
@@ -94,7 +94,7 @@ dist_doc_examples_gen_tp_DATA = gen-tp/Makefile \
 dist_doc_examples_demo_DATA = demo/demo.c \
 	demo/demo-trace \
 	demo/Makefile \
-	demo/README \
+	demo/README.md \
 	demo/tp2.c \
 	demo/tp3.c \
 	demo/tp.c \
@@ -104,29 +104,29 @@ dist_doc_examples_demo_DATA = demo/demo.c \
 
 dist_doc_examples_hello_static_lib_DATA = hello-static-lib/Makefile \
 	hello-static-lib/hello.c \
-	hello-static-lib/README \
+	hello-static-lib/README.md \
 	hello-static-lib/ust_tests_hello.h \
 	hello-static-lib/tp.c
 
 dist_doc_examples_demo_tracef_DATA = demo-tracef/Makefile \
 	demo-tracef/demo-tracef.c \
 	demo-tracef/demo-vtracef.c \
-	demo-tracef/README
+	demo-tracef/README.md
 
 dist_doc_examples_demo_tracelog_DATA = demo-tracelog/Makefile \
 	demo-tracelog/demo-tracelog.c \
 	demo-tracelog/demo-vtracelog.c \
-	demo-tracelog/README
+	demo-tracelog/README.md
 
 dist_doc_examples_clock_override_DATA = clock-override/Makefile \
 	clock-override/lttng-ust-clock-override-example.c \
 	clock-override/run-clock-override \
-	clock-override/README
+	clock-override/README.md
 
 dist_doc_examples_getcpu_override_DATA = getcpu-override/Makefile \
 	getcpu-override/lttng-ust-getcpu-override-example.c \
 	getcpu-override/run-getcpu-override \
-	getcpu-override/README
+	getcpu-override/README.md
 
 # Copies are for VPATH build support
 SUBDIRS_PROXY = easy-ust demo hello-static-lib demo-tracef clock-override \

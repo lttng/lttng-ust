@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+SPDX-FileCopyrightText: 2023 EfficiOS, Inc.
+
+SPDX-License-Identifier: LGPL-2.1-or-later
+-->
+
 <Configuration name="Context1" status="WARN">
   <Appenders>
     <Console name="Console" target="SYSTEM_OUT">

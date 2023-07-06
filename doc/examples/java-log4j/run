@@ -1,4 +1,6 @@
 #!/bin/bash
+
+# SPDX-FileCopyrightText: 2023 EfficiOS, Inc
 #
 # SPDX-License-Identifier: MIT
 

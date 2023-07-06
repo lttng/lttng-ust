@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2023 EfficiOS, Inc
+#
 # SPDX-License-Identifier: MIT
 
 import lttngust

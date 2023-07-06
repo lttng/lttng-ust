@@ -29,20 +29,11 @@
 #   ``TRUE`` if the ``tracef()`` API is available in the system's LTTng-UST
 # ``LTTNGUST_HAS_TRACELOG``
 #   ``TRUE`` if the ``tracelog()`` API is available in the system's LTTng-UST
-
-#=============================================================================
-# Copyright 2016 Kitware, Inc.
-# Copyright 2016 Philippe Proulx <pproulx@efficios.com>
 #
-# Distributed under the OSI-approved BSD License (the "License");
-# see accompanying file Copyright.txt for details.
+# SPDX-FileCopyrightText: 2016 Kitware, Inc.
+# SPDX-FileCopyrightText: 2016 Philippe Proulx <pproulx@efficios.com>
 #
-# This software is distributed WITHOUT ANY WARRANTY; without even the
-# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the License for more information.
-#=============================================================================
-# (To distribute this file outside of CMake, substitute the full
-#  License text for the above reference.)
+# SPDX-License-Identifier: BSD-3-Clause
 
 find_path(LTTNGUST_INCLUDE_DIRS NAMES lttng/tracepoint.h)
 # Must also check for the path of generated header files since out-of-tree

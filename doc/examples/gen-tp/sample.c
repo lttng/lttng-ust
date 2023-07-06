@@ -1,9 +1,7 @@
-/*
- * SPDX-License-Identifier: MIT
- *
- * Copyright (C) 2011-2012 Matthew Khouzam <matthew.khouzam@ericsson.com>
- * Copyright (C) 2012 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
- */
+// SPDX-FileCopyrightText: 2011-2012 Matthew Khouzam <matthew.khouzam@ericsson.com>
+// SPDX-FileCopyrightText: 2012 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+//
+// SPDX-License-Identifier: MIT
 
 #include <unistd.h>
 

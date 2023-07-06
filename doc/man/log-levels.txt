@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2016 Philippe Proulx <pproulx@efficios.com>
+// SPDX-License-Identifier: CC-BY-4.0
+//
 `LTTNG_UST_TRACEPOINT_LOGLEVEL_EMERG`::
     System is unusable.
 

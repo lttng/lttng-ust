@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2016 Philippe Proulx <pproulx@efficios.com>
+// SPDX-License-Identifier: CC-BY-4.0
+//
 BUGS
 ----
 If you encounter any issue or usability problem, please report it on the

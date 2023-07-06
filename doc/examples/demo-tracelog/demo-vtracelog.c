@@ -1,8 +1,6 @@
-/*
- * SPDX-License-Identifier: LGPL-2.1-only
- *
- * Copyright (C) 2020 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
- */
+// SPDX-FileCopyrightText: 2020 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+//
+// SPDX-License-Identifier: LGPL-2.1-only
 
 #include <stdarg.h>
 #include <stdlib.h>
