@@ -39,7 +39,7 @@ pid_t fork(void)
 	pid_t retval;
 	int saved_errno;
 
-	func = uatomic_read(plibc_func);
+	func = uatomic_read(&plibc_func);
 	if (func == NULL) {
 		func = dlsym(RTLD_NEXT, "fork");
 		if (func == NULL) {
@@ -72,7 +72,7 @@ int daemon(int nochdir, int noclose)
 	int retval;
 	int saved_errno;
 
-	func = uatomic_read(plibc_func);
+	func = uatomic_read(&plibc_func);
 	if (func == NULL) {
 		func = dlsym(RTLD_NEXT, "daemon");
 		if (func == NULL) {
@@ -105,7 +105,7 @@ int setuid(uid_t uid)
 	int retval;
 	int saved_errno;
 
-	func = uatomic_read(plibc_func);
+	func = uatomic_read(&plibc_func);
 	if (func == NULL) {
 		func = dlsym(RTLD_NEXT, "setuid");
 		if (func == NULL) {
@@ -133,7 +133,7 @@ int setgid(gid_t gid)
 	int retval;
 	int saved_errno;
 
-	func = uatomic_read(plibc_func);
+	func = uatomic_read(&plibc_func);
 	if (func == NULL) {
 		func = dlsym(RTLD_NEXT, "setgid");
 		if (func == NULL) {
@@ -161,7 +161,7 @@ int seteuid(uid_t euid)
 	int retval;
 	int saved_errno;
 
-	func = uatomic_read(plibc_func);
+	func = uatomic_read(&plibc_func);
 	if (func == NULL) {
 		func = dlsym(RTLD_NEXT, "seteuid");
 		if (func == NULL) {
@@ -189,7 +189,7 @@ int setegid(gid_t egid)
 	int retval;
 	int saved_errno;
 
-	func = uatomic_read(plibc_func);
+	func = uatomic_read(&plibc_func);
 	if (func == NULL) {
 		func = dlsym(RTLD_NEXT, "setegid");
 		if (func == NULL) {
@@ -217,7 +217,7 @@ int setreuid(uid_t ruid, uid_t euid)
 	int retval;
 	int saved_errno;
 
-	func = uatomic_read(plibc_func);
+	func = uatomic_read(&plibc_func);
 	if (func == NULL) {
 		func = dlsym(RTLD_NEXT, "setreuid");
 		if (func == NULL) {
@@ -245,7 +245,7 @@ int setregid(gid_t rgid, gid_t egid)
 	int retval;
 	int saved_errno;
 
-	func = uatomic_read(plibc_func);
+	func = uatomic_read(&plibc_func);
 	if (func == NULL) {
 		func = dlsym(RTLD_NEXT, "setregid");
 		if (func == NULL) {
@@ -308,7 +308,7 @@ int clone(int (*fn)(void *), void *child_stack, int flags, void *arg, ...)
 	ctid = va_arg(ap, pid_t *);
 	va_end(ap);
 
-	func = uatomic_read(plibc_func);
+	func = uatomic_read(&plibc_func);
 	if (func == NULL) {
 		func = dlsym(RTLD_NEXT, "clone");
 		if (func == NULL) {
@@ -349,7 +349,7 @@ int setns(int fd, int nstype)
 	int retval;
 	int saved_errno;
 
-	func = uatomic_read(plibc_func);
+	func = uatomic_read(&plibc_func);
 	if (func == NULL) {
 		func = dlsym(RTLD_NEXT, "setns");
 		if (func == NULL) {
@@ -377,7 +377,7 @@ int unshare(int flags)
 	int retval;
 	int saved_errno;
 
-	func = uatomic_read(plibc_func);
+	func = uatomic_read(&plibc_func);
 	if (func == NULL) {
 		func = dlsym(RTLD_NEXT, "unshare");
 		if (func == NULL) {
@@ -405,7 +405,7 @@ int setresuid(uid_t ruid, uid_t euid, uid_t suid)
 	int retval;
 	int saved_errno;
 
-	func = uatomic_read(plibc_func);
+	func = uatomic_read(&plibc_func);
 	if (func == NULL) {
 		func = dlsym(RTLD_NEXT, "setresuid");
 		if (func == NULL) {
@@ -433,7 +433,7 @@ int setresgid(gid_t rgid, gid_t egid, gid_t sgid)
 	int retval;
 	int saved_errno;
 
-	func = uatomic_read(plibc_func);
+	func = uatomic_read(&plibc_func);
 	if (func == NULL) {
 		func = dlsym(RTLD_NEXT, "setresgid");
 		if (func == NULL) {
@@ -464,7 +464,7 @@ pid_t rfork(int flags)
 	pid_t retval;
 	int saved_errno;
 
-	func = uatomic_read(plibc_func);
+	func = uatomic_read(&plibc_func);
 	if (func == NULL) {
 		func = dlsym(RTLD_NEXT, "rfork");
 		if (func == NULL) {
