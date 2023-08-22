@@ -9,6 +9,7 @@
 #include <common/compat/dlfcn.h>
 
 #include <unistd.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <signal.h>
 #include <sched.h>
@@ -16,28 +17,165 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#include <pthread.h>
+
 #include <lttng/ust-fork.h>
 
 #include <urcu/uatomic.h>
 
+#include "common/macros.h"
+
+struct libc_pointer {
+	void **procedure;
+	const char *symbol;
+};
+
+#define DEFINE_LIBC_POINTER(name) { (void**)&plibc_## name, #name }
+
+#ifdef __linux__
+
+struct user_desc;
+
+static int (*plibc_clone)(int (*fn)(void *), void *child_stack,
+			int flags, void *arg, pid_t *ptid,
+			struct user_desc *tls, pid_t *ctid) = NULL;
+
+static int (*plibc_setns)(int fd, int nstype) = NULL;
+
+static int (*plibc_setresgid)(gid_t rgid, gid_t egid, gid_t sgid) = NULL;
+
+static int (*plibc_setresuid)(uid_t ruid, uid_t euid, uid_t suid) = NULL;
+
+static int (*plibc_unshare)(int flags) = NULL;
+
+#elif defined (__FreeBSD__)
+
+static pid_t (*plibc_rfork)(int flags) = NULL;
+
+#endif
+
+static int (*plibc_daemon)(int nochdir, int noclose) = NULL;
+
+static pid_t (*plibc_fork)(void) = NULL;
+
+static int (*plibc_setegid)(gid_t egid) = NULL;
+
+static int (*plibc_seteuid)(uid_t euid) = NULL;
+
+static int (*plibc_setgid)(gid_t gid) = NULL;
+
+static int (*plibc_setregid)(gid_t rgid, gid_t egid) = NULL;
+
+static int (*plibc_setreuid)(uid_t ruid, uid_t euid) = NULL;
+
+static int (*plibc_setuid)(uid_t uid) = NULL;
+
+static void lttng_ust_fork_wrapper_ctor(void)
+	__attribute__((constructor));
+
+static pthread_mutex_t initialization_guard = PTHREAD_MUTEX_INITIALIZER;
+static bool was_initialized = false;
+
+/*
+ * Must be called with initialization_guard held.
+ */
+static void initialize(void)
+{
+	const struct libc_pointer libc_pointers[] = {
+#ifdef __linux__
+		DEFINE_LIBC_POINTER(clone),
+		DEFINE_LIBC_POINTER(setns),
+		DEFINE_LIBC_POINTER(setresgid),
+		DEFINE_LIBC_POINTER(setresuid),
+		DEFINE_LIBC_POINTER(unshare),
+#elif defined (__FreeBSD__)
+		DEFINE_LIBC_POINTER(rfork),
+#endif
+		DEFINE_LIBC_POINTER(daemon),
+		DEFINE_LIBC_POINTER(fork),
+		DEFINE_LIBC_POINTER(setegid),
+		DEFINE_LIBC_POINTER(seteuid),
+		DEFINE_LIBC_POINTER(setgid),
+		DEFINE_LIBC_POINTER(setregid),
+		DEFINE_LIBC_POINTER(setreuid),
+		DEFINE_LIBC_POINTER(setuid),
+	};
+
+	size_t k;
+
+	for (k = 0; k < LTTNG_ARRAY_SIZE(libc_pointers); ++k) {
+		void *procedure = dlsym(RTLD_NEXT, libc_pointers[k].symbol);
+
+		if (NULL == procedure) {
+			fprintf(stderr,
+				"libustfork: unable to find \"%s\" symbol\n",
+				libc_pointers[k].symbol);
+			continue;
+		}
+
+		uatomic_set(libc_pointers[k].procedure, procedure);
+	}
+}
+
+/*
+ * Lazy initialization is required because it is possible for a shared library
+ * to have a constructor that is executed before our constructor, which could
+ * call some libc functions that we are wrapping.
+ *
+ * It is also possible for this library constructor to create a thread using the
+ * raw system call. Therefore, the lazy initialization must be multi-thread safe.
+ */
+static void *lazy_initialize(void **pfunc)
+{
+	void *func = uatomic_read(pfunc);
+
+	/*
+	 * If *pfunc != NULL, then it is assumed that some thread has already
+	 * called the initialization routine.
+	 */
+	if (caa_likely(func)) {
+		goto out;
+	}
+
+	pthread_mutex_lock(&initialization_guard);
+	if (!was_initialized) {
+		initialize();
+		was_initialized = true;
+	}
+	func = *pfunc;
+	pthread_mutex_unlock(&initialization_guard);
+out:
+	return func;
+}
+
+#define LAZY_INITIALIZE_OR_NOSYS(ptr)			\
+	({						\
+		void *ret;				\
+							\
+		ret = lazy_initialize((void**)&(ptr));	\
+		if (NULL == ret) {			\
+			errno = ENOSYS;			\
+			return -1;			\
+		}					\
+							\
+		ret;					\
+	})
+
+static void lttng_ust_fork_wrapper_ctor(void)
+{
+	/*
+	 * Using fork here because it is defined on all supported OS.
+	 */
+	(void) lazy_initialize((void**)&plibc_fork);
+}
+
 pid_t fork(void)
 {
-	static pid_t (*plibc_func)(void) = NULL;
-	pid_t (*func)(void);
 	sigset_t sigset;
 	pid_t retval;
 	int saved_errno;
 
-	func = uatomic_read(&plibc_func);
-	if (func == NULL) {
-		func = dlsym(RTLD_NEXT, "fork");
-		if (func == NULL) {
-			fprintf(stderr, "libustfork: unable to find \"fork\" symbol\n");
-			errno = ENOSYS;
-			return -1;
-		}
-		uatomic_set(&plibc_func, func);
-	}
+	pid_t (*func)(void) = LAZY_INITIALIZE_OR_NOSYS(plibc_fork);
 
 	lttng_ust_before_fork(&sigset);
 	/* Do the real fork */
@@ -55,22 +193,11 @@ pid_t fork(void)
 
 int daemon(int nochdir, int noclose)
 {
-	static int (*plibc_func)(int nochdir, int noclose) = NULL;
-	int (*func)(int nochdir, int noclose);
 	sigset_t sigset;
 	int retval;
 	int saved_errno;
 
-	func = uatomic_read(&plibc_func);
-	if (func == NULL) {
-		func = dlsym(RTLD_NEXT, "daemon");
-		if (func == NULL) {
-			fprintf(stderr, "libustfork: unable to find \"daemon\" symbol\n");
-			errno = ENOSYS;
-			return -1;
-		}
-		uatomic_set(&plibc_func, func);
-	}
+	int (*func)(int, int) = LAZY_INITIALIZE_OR_NOSYS(plibc_daemon);
 
 	lttng_ust_before_fork(&sigset);
 	/* Do the real daemon call */
@@ -89,21 +216,10 @@ int daemon(int nochdir, int noclose)
 
 int setuid(uid_t uid)
 {
-	static int (*plibc_func)(uid_t uid) = NULL;
-	int (*func)(uid_t uid);
 	int retval;
 	int saved_errno;
 
-	func = uatomic_read(&plibc_func);
-	if (func == NULL) {
-		func = dlsym(RTLD_NEXT, "setuid");
-		if (func == NULL) {
-			fprintf(stderr, "libustfork: unable to find \"setuid\" symbol\n");
-			errno = ENOSYS;
-			return -1;
-		}
-		uatomic_set(&plibc_func, func);
-	}
+	int (*func)(uid_t) = LAZY_INITIALIZE_OR_NOSYS(plibc_setuid);
 
 	/* Do the real setuid */
 	retval = func(uid);
@@ -117,21 +233,10 @@ int setuid(uid_t uid)
 
 int setgid(gid_t gid)
 {
-	static int (*plibc_func)(gid_t gid) = NULL;
-	int (*func)(gid_t gid);
 	int retval;
 	int saved_errno;
 
-	func = uatomic_read(&plibc_func);
-	if (func == NULL) {
-		func = dlsym(RTLD_NEXT, "setgid");
-		if (func == NULL) {
-			fprintf(stderr, "libustfork: unable to find \"setgid\" symbol\n");
-			errno = ENOSYS;
-			return -1;
-		}
-		uatomic_set(&plibc_func, func);
-	}
+	int (*func)(gid_t) = LAZY_INITIALIZE_OR_NOSYS(plibc_setgid);
 
 	/* Do the real setgid */
 	retval = func(gid);
@@ -145,21 +250,10 @@ int setgid(gid_t gid)
 
 int seteuid(uid_t euid)
 {
-	static int (*plibc_func)(uid_t euid) = NULL;
-	int (*func)(uid_t euid);
 	int retval;
 	int saved_errno;
 
-	func = uatomic_read(&plibc_func);
-	if (func == NULL) {
-		func = dlsym(RTLD_NEXT, "seteuid");
-		if (func == NULL) {
-			fprintf(stderr, "libustfork: unable to find \"seteuid\" symbol\n");
-			errno = ENOSYS;
-			return -1;
-		}
-		uatomic_set(&plibc_func, func);
-	}
+	int (*func)(uid_t) = LAZY_INITIALIZE_OR_NOSYS(plibc_seteuid);
 
 	/* Do the real seteuid */
 	retval = func(euid);
@@ -173,21 +267,10 @@ int seteuid(uid_t euid)
 
 int setegid(gid_t egid)
 {
-	static int (*plibc_func)(gid_t egid) = NULL;
-	int (*func)(gid_t egid);
 	int retval;
 	int saved_errno;
 
-	func = uatomic_read(&plibc_func);
-	if (func == NULL) {
-		func = dlsym(RTLD_NEXT, "setegid");
-		if (func == NULL) {
-			fprintf(stderr, "libustfork: unable to find \"setegid\" symbol\n");
-			errno = ENOSYS;
-			return -1;
-		}
-		uatomic_set(&plibc_func, func);
-	}
+	int (*func)(gid_t) = LAZY_INITIALIZE_OR_NOSYS(plibc_setegid);
 
 	/* Do the real setegid */
 	retval = func(egid);
@@ -201,21 +284,11 @@ int setegid(gid_t egid)
 
 int setreuid(uid_t ruid, uid_t euid)
 {
-	static int (*plibc_func)(uid_t ruid, uid_t euid) = NULL;
-	int (*func)(uid_t ruid, uid_t euid);
 	int retval;
 	int saved_errno;
 
-	func = uatomic_read(&plibc_func);
-	if (func == NULL) {
-		func = dlsym(RTLD_NEXT, "setreuid");
-		if (func == NULL) {
-			fprintf(stderr, "libustfork: unable to find \"setreuid\" symbol\n");
-			errno = ENOSYS;
-			return -1;
-		}
-		uatomic_set(&plibc_func, func);
-	}
+	int (*func)(uid_t, uid_t) =
+		LAZY_INITIALIZE_OR_NOSYS(plibc_setreuid);
 
 	/* Do the real setreuid */
 	retval = func(ruid, euid);
@@ -229,21 +302,10 @@ int setreuid(uid_t ruid, uid_t euid)
 
 int setregid(gid_t rgid, gid_t egid)
 {
-	static int (*plibc_func)(gid_t rgid, gid_t egid) = NULL;
-	int (*func)(gid_t rgid, gid_t egid);
 	int retval;
 	int saved_errno;
 
-	func = uatomic_read(&plibc_func);
-	if (func == NULL) {
-		func = dlsym(RTLD_NEXT, "setregid");
-		if (func == NULL) {
-			fprintf(stderr, "libustfork: unable to find \"setregid\" symbol\n");
-			errno = ENOSYS;
-			return -1;
-		}
-		uatomic_set(&plibc_func, func);
-	}
+	int (*func)(gid_t, gid_t) = LAZY_INITIALIZE_OR_NOSYS(plibc_setregid);
 
 	/* Do the real setregid */
 	retval = func(rgid, egid);
@@ -256,8 +318,6 @@ int setregid(gid_t rgid, gid_t egid)
 }
 
 #ifdef __linux__
-
-struct user_desc;
 
 struct ustfork_clone_info {
 	int (*fn)(void *);
@@ -276,12 +336,6 @@ static int clone_fn(void *arg)
 
 int clone(int (*fn)(void *), void *child_stack, int flags, void *arg, ...)
 {
-	static int (*plibc_func)(int (*fn)(void *), void *child_stack,
-			int flags, void *arg, pid_t *ptid,
-			struct user_desc *tls, pid_t *ctid) = NULL;
-	int (*func)(int (*fn)(void *), void *child_stack,
-			int flags, void *arg, pid_t *ptid,
-			struct user_desc *tls, pid_t *ctid);
 	/* var args */
 	pid_t *ptid;
 	struct user_desc *tls;
@@ -297,16 +351,9 @@ int clone(int (*fn)(void *), void *child_stack, int flags, void *arg, ...)
 	ctid = va_arg(ap, pid_t *);
 	va_end(ap);
 
-	func = uatomic_read(&plibc_func);
-	if (func == NULL) {
-		func = dlsym(RTLD_NEXT, "clone");
-		if (func == NULL) {
-			fprintf(stderr, "libustfork: unable to find \"clone\" symbol.\n");
-			errno = ENOSYS;
-			return -1;
-		}
-		uatomic_set(&plibc_func, func);
-	}
+	int (*func)(int (*)(void *), void *, int , void *, pid_t *,
+		    struct user_desc *, pid_t *) =
+		LAZY_INITIALIZE_OR_NOSYS(plibc_clone);
 
 	if (flags & CLONE_VM) {
 		/*
@@ -333,21 +380,10 @@ int clone(int (*fn)(void *), void *child_stack, int flags, void *arg, ...)
 
 int setns(int fd, int nstype)
 {
-	static int (*plibc_func)(int fd, int nstype) = NULL;
-	int (*func)(int fd, int nstype);
 	int retval;
 	int saved_errno;
 
-	func = uatomic_read(&plibc_func);
-	if (func == NULL) {
-		func = dlsym(RTLD_NEXT, "setns");
-		if (func == NULL) {
-			fprintf(stderr, "libustfork: unable to find \"setns\" symbol\n");
-			errno = ENOSYS;
-			return -1;
-		}
-		uatomic_set(&plibc_func, func);
-	}
+	int (*func)(int, int) = LAZY_INITIALIZE_OR_NOSYS(plibc_setns);
 
 	/* Do the real setns */
 	retval = func(fd, nstype);
@@ -361,21 +397,10 @@ int setns(int fd, int nstype)
 
 int unshare(int flags)
 {
-	static int (*plibc_func)(int flags) = NULL;
-	int (*func)(int flags);
 	int retval;
 	int saved_errno;
 
-	func = uatomic_read(&plibc_func);
-	if (func == NULL) {
-		func = dlsym(RTLD_NEXT, "unshare");
-		if (func == NULL) {
-			fprintf(stderr, "libustfork: unable to find \"unshare\" symbol\n");
-			errno = ENOSYS;
-			return -1;
-		}
-		uatomic_set(&plibc_func, func);
-	}
+	int (*func)(int) = LAZY_INITIALIZE_OR_NOSYS(plibc_unshare);
 
 	/* Do the real setns */
 	retval = func(flags);
@@ -389,21 +414,11 @@ int unshare(int flags)
 
 int setresuid(uid_t ruid, uid_t euid, uid_t suid)
 {
-	static int (*plibc_func)(uid_t ruid, uid_t euid, uid_t suid) = NULL;
-	int (*func)(uid_t ruid, uid_t euid, uid_t suid);
 	int retval;
 	int saved_errno;
 
-	func = uatomic_read(&plibc_func);
-	if (func == NULL) {
-		func = dlsym(RTLD_NEXT, "setresuid");
-		if (func == NULL) {
-			fprintf(stderr, "libustfork: unable to find \"setresuid\" symbol\n");
-			errno = ENOSYS;
-			return -1;
-		}
-		uatomic_set(&plibc_func, func);
-	}
+	int (*func)(uid_t, uid_t, uid_t) =
+		LAZY_INITIALIZE_OR_NOSYS(plibc_setresuid);
 
 	/* Do the real setresuid */
 	retval = func(ruid, euid, suid);
@@ -417,21 +432,11 @@ int setresuid(uid_t ruid, uid_t euid, uid_t suid)
 
 int setresgid(gid_t rgid, gid_t egid, gid_t sgid)
 {
-	static int (*plibc_func)(gid_t rgid, gid_t egid, gid_t sgid) = NULL;
-	int (*func)(gid_t rgid, gid_t egid, gid_t sgid);
 	int retval;
 	int saved_errno;
 
-	func = uatomic_read(&plibc_func);
-	if (func == NULL) {
-		func = dlsym(RTLD_NEXT, "setresgid");
-		if (func == NULL) {
-			fprintf(stderr, "libustfork: unable to find \"setresgid\" symbol\n");
-			errno = ENOSYS;
-			return -1;
-		}
-		uatomic_set(&plibc_func, func);
-	}
+	int (*func)(gid_t, gid_t, gid_t) =
+		LAZY_INITIALIZE_OR_NOSYS(plibc_setresgid);
 
 	/* Do the real setresgid */
 	retval = func(rgid, egid, sgid);
@@ -447,22 +452,11 @@ int setresgid(gid_t rgid, gid_t egid, gid_t sgid)
 
 pid_t rfork(int flags)
 {
-	static pid_t (*plibc_func)(int flags) = NULL;
-	pid_t (*func)(int flags);
 	sigset_t sigset;
 	pid_t retval;
 	int saved_errno;
 
-	func = uatomic_read(&plibc_func);
-	if (func == NULL) {
-		func = dlsym(RTLD_NEXT, "rfork");
-		if (func == NULL) {
-			fprintf(stderr, "libustfork: unable to find \"rfork\" symbol\n");
-			errno = ENOSYS;
-			return -1;
-		}
-		uatomic_set(&plibc_func, func);
-	}
+	pid_t (*func)(int) = LAZY_INITIALIZE_OR_NOSYS(plibc_rfork);
 
 	lttng_ust_before_fork(&sigset);
 	/* Do the real rfork */
