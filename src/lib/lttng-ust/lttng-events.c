@@ -97,6 +97,48 @@ void lttng_ust_format_event_name(const struct lttng_ust_event_desc *desc,
 	strcat(name, desc->event_name);
 }
 
+static
+void lttng_event_enabler_unsync(struct lttng_event_enabler_common *event_enabler)
+{
+	switch (event_enabler->enabler_type) {
+	case LTTNG_EVENT_ENABLER_TYPE_RECORDER:		/* Fall-through */
+	case LTTNG_EVENT_ENABLER_TYPE_COUNTER:
+	{
+		struct lttng_event_enabler_session_common *event_enabler_session =
+			caa_container_of(event_enabler, struct lttng_event_enabler_session_common, parent);
+		cds_list_move(&event_enabler->node,
+			      &event_enabler_session->chan->session->priv->unsync_enablers_head);
+		break;
+	}
+	case LTTNG_EVENT_ENABLER_TYPE_NOTIFIER:
+	{
+		struct lttng_event_notifier_enabler *event_notifier_enabler =
+			caa_container_of(event_enabler, struct lttng_event_notifier_enabler, parent);
+		cds_list_move(&event_enabler->node,
+			      &event_notifier_enabler->group->unsync_enablers_head);
+		break;
+	}
+	default:
+		WARN_ON_ONCE(1);
+	}
+}
+
+static
+void lttng_session_unsync_enablers(struct lttng_ust_session *session)
+{
+	cds_list_splice(&session->priv->sync_enablers_head,
+			&session->priv->unsync_enablers_head);
+	CDS_INIT_LIST_HEAD(&session->priv->sync_enablers_head);
+}
+
+static
+void lttng_event_notifier_group_unsync_enablers(struct lttng_event_notifier_group *event_notifier_group)
+{
+	cds_list_splice(&event_notifier_group->sync_enablers_head,
+			&event_notifier_group->unsync_enablers_head);
+	CDS_INIT_LIST_HEAD(&event_notifier_group->sync_enablers_head);
+}
+
 /*
  * Called with ust lock held.
  */
@@ -166,7 +208,8 @@ struct lttng_ust_session *lttng_session_create(void)
 	CDS_INIT_LIST_HEAD(&session->priv->chan_head);
 	CDS_INIT_LIST_HEAD(&session->priv->events_head);
 	CDS_INIT_LIST_HEAD(&session->priv->enums_head);
-	CDS_INIT_LIST_HEAD(&session->priv->enablers_head);
+	CDS_INIT_LIST_HEAD(&session->priv->unsync_enablers_head);
+	CDS_INIT_LIST_HEAD(&session->priv->sync_enablers_head);
 	CDS_INIT_LIST_HEAD(&session->priv->counters_head);
 	for (i = 0; i < LTTNG_UST_EVENT_HT_SIZE; i++)
 		CDS_INIT_HLIST_HEAD(&session->priv->events_name_ht.table[i]);
@@ -226,7 +269,8 @@ struct lttng_event_notifier_group *lttng_event_notifier_group_create(void)
 		return NULL;
 	}
 
-	CDS_INIT_LIST_HEAD(&event_notifier_group->enablers_head);
+	CDS_INIT_LIST_HEAD(&event_notifier_group->sync_enablers_head);
+	CDS_INIT_LIST_HEAD(&event_notifier_group->unsync_enablers_head);
 	CDS_INIT_LIST_HEAD(&event_notifier_group->event_notifiers_head);
 	for (i = 0; i < LTTNG_UST_EVENT_HT_SIZE; i++)
 		CDS_INIT_HLIST_HEAD(&event_notifier_group->event_notifiers_ht.table[i]);
@@ -309,12 +353,13 @@ void lttng_session_destroy(struct lttng_ust_session *session)
 		_lttng_event_unregister(event_priv->pub);
 	lttng_ust_urcu_synchronize_rcu();	/* Wait for in-flight events to complete */
 	lttng_ust_tp_probe_prune_release_queue();
-	cds_list_for_each_entry_safe(event_enabler, event_tmpenabler, &session->priv->enablers_head, node)
+	cds_list_for_each_entry_safe(event_enabler, event_tmpenabler, &session->priv->unsync_enablers_head, node)
+		lttng_event_enabler_destroy(event_enabler);
+	cds_list_for_each_entry_safe(event_enabler, event_tmpenabler, &session->priv->sync_enablers_head, node)
 		lttng_event_enabler_destroy(event_enabler);
 	cds_list_for_each_entry_safe(event_priv, tmpevent_priv, &session->priv->events_head, node)
 		_lttng_event_destroy(event_priv->pub);
-	cds_list_for_each_entry_safe(_enum, tmp_enum,
-			&session->priv->enums_head, node)
+	cds_list_for_each_entry_safe(_enum, tmp_enum, &session->priv->enums_head, node)
 		_lttng_enum_destroy(_enum);
 	cds_list_for_each_entry_safe(chan_buffer, tmpchan_buffer, &session->priv->chan_head, node)
 		_lttng_channel_unmap(chan_buffer->pub);
@@ -344,9 +389,10 @@ void lttng_event_notifier_group_destroy(
 
 	lttng_ust_urcu_synchronize_rcu();
 
-	cds_list_for_each_entry_safe(event_enabler, tmpevent_enabler, &event_notifier_group->enablers_head, node)
+	cds_list_for_each_entry_safe(event_enabler, tmpevent_enabler, &event_notifier_group->sync_enablers_head, node)
 		lttng_event_enabler_destroy(event_enabler);
-
+	cds_list_for_each_entry_safe(event_enabler, tmpevent_enabler, &event_notifier_group->unsync_enablers_head, node)
+		lttng_event_enabler_destroy(event_enabler);
 	cds_list_for_each_entry_safe(event_priv, tmpevent_priv, &event_notifier_group->event_notifiers_head, node)
 		_lttng_event_destroy(event_priv->pub);
 
@@ -1526,6 +1572,11 @@ int lttng_fix_pending_events(void)
 	struct lttng_ust_session_private *session_priv;
 
 	cds_list_for_each_entry(session_priv, &sessions, node) {
+		/*
+		 * New probes have appeared, we need to re-sync all
+		 * enablers.
+		 */
+		lttng_session_unsync_enablers(session_priv->pub);
 		lttng_session_lazy_sync_event_enablers(session_priv->pub);
 	}
 	return 0;
@@ -1536,6 +1587,11 @@ int lttng_fix_pending_event_notifiers(void)
 	struct lttng_event_notifier_group *event_notifier_group;
 
 	cds_list_for_each_entry(event_notifier_group, &event_notifier_groups, node) {
+		/*
+		 * New probes have appeared, we need to re-sync all
+		 * enablers.
+		 */
+		lttng_event_notifier_group_unsync_enablers(event_notifier_group);
 		lttng_event_notifier_group_sync_enablers(event_notifier_group);
 	}
 	return 0;
@@ -1628,7 +1684,7 @@ struct lttng_event_recorder_enabler *lttng_event_recorder_enabler_create(
 	event_enabler->parent.parent.enabled = 0;
 	event_enabler->parent.parent.user_token = event_param->token;
 	event_enabler->parent.chan = chan->parent;
-	cds_list_add(&event_enabler->parent.parent.node, &event_enabler->chan->parent->session->priv->enablers_head);
+	cds_list_add(&event_enabler->parent.parent.node, &event_enabler->chan->parent->session->priv->unsync_enablers_head);
 	lttng_session_lazy_sync_event_enablers(event_enabler->chan->parent->session);
 
 	return event_enabler;
@@ -1657,7 +1713,7 @@ struct lttng_event_counter_enabler *lttng_event_counter_enabler_create(
 	event_enabler->parent.parent.enabled = 0;
 	event_enabler->parent.parent.user_token = counter_event->event.token;
 	event_enabler->parent.chan = chan->parent;
-	cds_list_add(&event_enabler->parent.parent.node, &event_enabler->chan->parent->session->priv->enablers_head);
+	cds_list_add(&event_enabler->parent.parent.node, &event_enabler->chan->parent->session->priv->unsync_enablers_head);
 	lttng_session_lazy_sync_event_enablers(event_enabler->chan->parent->session);
 
 	return event_enabler;
@@ -1696,7 +1752,7 @@ struct lttng_event_notifier_enabler *lttng_event_notifier_enabler_create(
 	event_notifier_enabler->parent.enabled = 0;
 	event_notifier_enabler->group = event_notifier_group;
 
-	cds_list_add(&event_notifier_enabler->parent.node, &event_notifier_group->enablers_head);
+	cds_list_add(&event_notifier_enabler->parent.node, &event_notifier_group->unsync_enablers_head);
 
 	lttng_event_notifier_group_sync_enablers(event_notifier_group);
 
@@ -1706,6 +1762,7 @@ struct lttng_event_notifier_enabler *lttng_event_notifier_enabler_create(
 int lttng_event_enabler_enable(struct lttng_event_enabler_common *event_enabler)
 {
 	event_enabler->enabled = 1;
+	lttng_event_enabler_unsync(event_enabler);
 	lttng_event_enabler_sync(event_enabler);
 	return 0;
 }
@@ -1713,7 +1770,9 @@ int lttng_event_enabler_enable(struct lttng_event_enabler_common *event_enabler)
 int lttng_event_enabler_disable(struct lttng_event_enabler_common *event_enabler)
 {
 	event_enabler->enabled = 0;
+	lttng_event_enabler_unsync(event_enabler);
 	lttng_event_enabler_sync(event_enabler);
+
 	return 0;
 }
 
@@ -1724,6 +1783,7 @@ int lttng_event_enabler_attach_filter_bytecode(struct lttng_event_enabler_common
 	cds_list_add_tail(&(*bytecode)->node, &event_enabler->filter_bytecode_head);
 	/* Take ownership of bytecode */
 	*bytecode = NULL;
+	lttng_event_enabler_unsync(event_enabler);
 	lttng_event_enabler_sync(event_enabler);
 	return 0;
 }
@@ -1735,6 +1795,7 @@ int lttng_event_enabler_attach_exclusion(struct lttng_event_enabler_common *even
 	cds_list_add_tail(&(*excluder)->node, &event_enabler->excluder_head);
 	/* Take ownership of excluder */
 	*excluder = NULL;
+	lttng_event_enabler_unsync(event_enabler);
 	lttng_event_enabler_sync(event_enabler);
 	return 0;
 }
@@ -1750,7 +1811,7 @@ int lttng_event_notifier_enabler_attach_capture_bytecode(
 	/* Take ownership of bytecode */
 	*bytecode = NULL;
 	event_notifier_enabler->num_captures++;
-
+	lttng_event_enabler_unsync(&event_notifier_enabler->parent);
 	lttng_event_notifier_group_sync_enablers(event_notifier_enabler->group);
 	return 0;
 }
@@ -1848,7 +1909,6 @@ void lttng_event_enabler_destroy(struct lttng_event_enabler_common *event_enable
 			&event_enabler->filter_bytecode_head, node) {
 		free(filter_node);
 	}
-
 	/* Destroy excluders */
 	cds_list_for_each_entry_safe(excluder_node, tmp_excluder_node,
 			&event_enabler->excluder_head, node) {
@@ -2033,14 +2093,27 @@ bool lttng_get_event_enabled_state(struct lttng_ust_event_common *event)
 }
 
 static
-void lttng_sync_event_list(struct cds_list_head *event_enabler_list,
+void lttng_sync_event_list(struct cds_list_head *sync_event_enabler_list,
+		struct cds_list_head *unsync_event_enabler_list,
 		struct cds_list_head *event_list)
 {
 	struct lttng_ust_event_common_private *event_priv;
 	struct lttng_event_enabler_common *event_enabler;
+	struct cds_list_head iter_list;
 
-	cds_list_for_each_entry(event_enabler, event_enabler_list, node)
-		lttng_event_enabler_ref_events(event_enabler);
+	/*
+	 * lttng_event_enabler_ref_events can cause lazy probes
+	 * to add items to the unsync_enablers_head list. Iterate on a
+	 * local copy of that list until it is stable (empty).
+	 */
+	do {
+		CDS_INIT_LIST_HEAD(&iter_list);
+		cds_list_splice(unsync_event_enabler_list, &iter_list);
+		CDS_INIT_LIST_HEAD(unsync_event_enabler_list);
+		cds_list_for_each_entry(event_enabler, &iter_list, node)
+			lttng_event_enabler_ref_events(event_enabler);
+		cds_list_splice(&iter_list, sync_event_enabler_list);
+	} while (!cds_list_empty(unsync_event_enabler_list));
 
 	/*
 	 * For each event, if at least one of its enablers is enabled,
@@ -2076,7 +2149,9 @@ void lttng_sync_event_list(struct cds_list_head *event_enabler_list,
 static
 void lttng_session_sync_event_enablers(struct lttng_ust_session *session)
 {
-	lttng_sync_event_list(&session->priv->enablers_head, &session->priv->events_head);
+	lttng_sync_event_list(&session->priv->sync_enablers_head,
+			&session->priv->unsync_enablers_head,
+			&session->priv->events_head);
 }
 
 /*
@@ -2097,7 +2172,9 @@ void lttng_session_lazy_sync_event_enablers(struct lttng_ust_session *session)
 static
 void lttng_event_notifier_group_sync_enablers(struct lttng_event_notifier_group *event_notifier_group)
 {
-	lttng_sync_event_list(&event_notifier_group->enablers_head, &event_notifier_group->event_notifiers_head);
+	lttng_sync_event_list(&event_notifier_group->sync_enablers_head,
+			&event_notifier_group->unsync_enablers_head,
+			&event_notifier_group->event_notifiers_head);
 }
 
 static

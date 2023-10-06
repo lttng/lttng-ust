@@ -259,7 +259,12 @@ struct lttng_event_notifier_group {
 	void *owner;
 	int notification_fd;
 	struct cds_list_head node;		/* Event notifier group handle list */
-	struct cds_list_head enablers_head;
+
+	/* List of non-synchronized enablers */
+	struct cds_list_head unsync_enablers_head;
+	/* List of synchronized enablers */
+	struct cds_list_head sync_enablers_head;
+
 	struct cds_list_head event_notifiers_head; /* list of event_notifiers */
 	struct lttng_ust_event_ht event_notifiers_ht; /* hashtable of event notifiers */
 	struct lttng_ust_ctx *ctx;		/* contexts for filters. */
@@ -354,13 +359,18 @@ struct lttng_ust_session_private {
 	struct cds_list_head chan_head;		/* Channel list head */
 	struct cds_list_head counters_head;	/* Counter list head */
 	struct cds_list_head events_head;	/* list of events */
-	struct cds_list_head enablers_head;	/* List of enablers */
+	struct cds_list_head node;		/* Session list */
+
+	/* List of non-synchronized enablers */
+	struct cds_list_head unsync_enablers_head;
+	/* List of synchronized enablers */
+	struct cds_list_head sync_enablers_head;
+
 	struct cds_list_head enums_head;
 
 	struct lttng_ust_event_ht events_name_ht; /* ht of events, indexed by name */
 	struct lttng_ust_enum_ht enums_ht;	/* ht of enumerations */
 
-	struct cds_list_head node;		/* Session list */
 	void *owner;				/* object owner */
 	unsigned int tstate:1;			/* Transient enable state */
 	unsigned int statedump_pending:1;
