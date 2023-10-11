@@ -82,6 +82,7 @@ int ustcomm_connect_unix_sock(const char *pathname, long timeout)
 	strncpy(sun.sun_path, pathname, sizeof(sun.sun_path));
 	sun.sun_path[sizeof(sun.sun_path) - 1] = '\0';
 
+	DBG("Connecting to '%s'", sun.sun_path);
 	ret = connect(fd, (struct sockaddr *) &sun, sizeof(sun));
 	if (ret < 0) {
 		/*
