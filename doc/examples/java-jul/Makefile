@@ -48,4 +48,4 @@ classes: $(CLASSES:.java=.class)
 
 .PHONY: clean
 clean:
-	$(RM) $(CLASSES:.java=.class)
+	$(RM) $(CLASSES:.java=*.class)
