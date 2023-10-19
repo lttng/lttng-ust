@@ -1,4 +1,3 @@
-Useless change
 LTTng-UST
 =========
 
