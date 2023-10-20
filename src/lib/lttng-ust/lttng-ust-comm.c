@@ -257,7 +257,7 @@ struct sock_info {
 	int root_handle;
 	int registration_done;
 	int allowed;
-	int global;
+	bool multi_user;
 	int thread_active;
 
 	char sock_path[PATH_MAX];
@@ -276,7 +276,7 @@ struct sock_info {
 /* Socket from app (connect) to session daemon (listen) for communication */
 static struct sock_info global_apps = {
 	.name = "global",
-	.global = 1,
+	.multi_user = true,
 
 	.root_handle = -1,
 	.registration_done = 0,
@@ -298,7 +298,7 @@ static struct sock_info global_apps = {
 
 static struct sock_info local_apps = {
 	.name = "local",
-	.global = 0,
+	.multi_user = false,
 	.root_handle = -1,
 	.registration_done = 0,
 	.allowed = 0,	/* Check setuid bit first */
@@ -1613,7 +1613,7 @@ open_write:
 
 		/* Child */
 		create_mode = S_IRUSR | S_IWUSR | S_IRGRP;
-		if (sock_info->global)
+		if (sock_info->multi_user)
 			create_mode |= S_IROTH | S_IWGRP | S_IWOTH;
 		/*
 		 * We're alone in a child process, so we can modify the
@@ -1643,7 +1643,7 @@ open_write:
 		 * sessiond will be able to override all rights and wake
 		 * us up.
 		 */
-		if (!sock_info->global && errno != EACCES) {
+		if (!sock_info->multi_user && errno != EACCES) {
 			ERR("Error opening shm %s", sock_info->wait_shm_path);
 			_exit(EXIT_FAILURE);
 		}
@@ -1656,7 +1656,7 @@ open_write:
 		return -1;
 	}
 end:
-	if (wait_shm_fd >= 0 && !sock_info->global) {
+	if (wait_shm_fd >= 0 && !sock_info->multi_user) {
 		struct stat statbuf;
 
 		/*
