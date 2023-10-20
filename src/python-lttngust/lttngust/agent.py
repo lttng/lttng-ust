@@ -266,6 +266,8 @@ def _get_port_from_file(path):
 
     return port
 
+def _get_ust_app_path():
+    return os.getenv('LTTNG_UST_APP_PATH')
 
 def _get_user_home_path():
     # $LTTNG_HOME overrides $HOME if it exists
@@ -298,14 +300,24 @@ def _init_threads():
     'lttng'.encode().decode()
 
     _initialized = True
-    sys_port = _get_port_from_file('/var/run/lttng/agent.port')
-    user_port_file = os.path.join(_get_user_home_path(), '.lttng', 'agent.port')
-    user_port = _get_port_from_file(user_port_file)
+
+    # The LTTNG_UST_APP_PATH environment variables disables connections
+    # to the global and per-user session daemons.
+    if _get_ust_app_path() is not None:
+        ust_app_port_file = os.path.join(_get_ust_app_path(), 'agent.port')
+        ust_app_port = _get_port_from_file(ust_app_port_file)
+        sys_port = None
+        user_port = None
+        dbg._pdebug('ust_app session daemon port: {}'.format(ust_app_port))
+    else:
+        sys_port = _get_port_from_file('/var/run/lttng/agent.port')
+        user_port_file = os.path.join(_get_user_home_path(), '.lttng', 'agent.port')
+        user_port = _get_port_from_file(user_port_file)
+        dbg._pdebug('system session daemon port: {}'.format(sys_port))
+        dbg._pdebug('user session daemon port: {}'.format(user_port))
+
     reg_queue = queue.Queue()
     reg_expecting = 0
-
-    dbg._pdebug('system session daemon port: {}'.format(sys_port))
-    dbg._pdebug('user session daemon port: {}'.format(user_port))
 
     if sys_port == user_port and sys_port is not None:
         # The two session daemon ports are the same. This is not normal.
@@ -314,6 +326,16 @@ def _init_threads():
         sys_port = None
 
     try:
+     if ust_app_port is not None:
+            dbg._pdebug('creating ust_app client thread')
+            t = threading.Thread(target=_client_thread_target,
+                                 args=('ust_app', ust_app_port, reg_queue))
+            t.name = 'ust_app'
+            t.daemon = True
+            t.start()
+            dbg._pdebug('created and started ust_app client thread')
+            reg_expecting += 1
+
         if sys_port is not None:
             dbg._pdebug('creating system client thread')
             t = threading.Thread(target=_client_thread_target,

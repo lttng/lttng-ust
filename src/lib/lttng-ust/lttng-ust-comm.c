@@ -234,10 +234,10 @@ void ust_unlock(void)
  */
 static sem_t constructor_wait;
 /*
- * Doing this for both the global and local sessiond.
+ * Doing this for the ust_app, global and local sessiond.
  */
 enum {
-	sem_count_initial_value = 4,
+	sem_count_initial_value = 6,
 };
 
 static int sem_count = sem_count_initial_value;
@@ -264,8 +264,15 @@ struct sock_info {
 	int socket;
 	int notify_socket;
 
+	/*
+	 * If wait_shm_is_file is true, use standard open to open and
+	 * create the shared memory used for waiting on session daemon.
+	 * Otherwise, use shm_open to create this file.
+	 */
+	bool wait_shm_is_file;
 	char wait_shm_path[PATH_MAX];
 	char *wait_shm_mmap;
+
 	/* Keep track of lazy state dump not performed yet. */
 	int statedump_pending;
 	int initial_statedump_done;
@@ -274,6 +281,26 @@ struct sock_info {
 };
 
 /* Socket from app (connect) to session daemon (listen) for communication */
+static struct sock_info ust_app = {
+	.name = "ust_app",
+	.multi_user = true,
+
+	.root_handle = -1,
+	.registration_done = 0,
+	.allowed = 0,
+	.thread_active = 0,
+
+	.socket = -1,
+	.notify_socket = -1,
+
+	.wait_shm_is_file = true,
+
+	.statedump_pending = 0,
+	.initial_statedump_done = 0,
+	.procname[0] = '\0'
+};
+
+
 static struct sock_info global_apps = {
 	.name = "global",
 	.multi_user = true,
@@ -287,14 +314,13 @@ static struct sock_info global_apps = {
 	.socket = -1,
 	.notify_socket = -1,
 
+	.wait_shm_is_file = false,
 	.wait_shm_path = "/" LTTNG_UST_WAIT_FILENAME,
 
 	.statedump_pending = 0,
 	.initial_statedump_done = 0,
 	.procname[0] = '\0'
 };
-
-/* TODO: allow global_apps_sock_path override */
 
 static struct sock_info local_apps = {
 	.name = "local",
@@ -306,6 +332,8 @@ static struct sock_info local_apps = {
 
 	.socket = -1,
 	.notify_socket = -1,
+
+	.wait_shm_is_file = false,
 
 	.statedump_pending = 0,
 	.initial_statedump_done = 0,
@@ -381,6 +409,12 @@ const char *get_lttng_home_dir(void)
                return val;
        }
        return (const char *) lttng_ust_getenv("HOME");
+}
+
+static
+const char *get_lttng_ust_app_path(void)
+{
+       return (const char *) lttng_ust_getenv("LTTNG_UST_APP_PATH");
 }
 
 /*
@@ -481,10 +515,68 @@ void print_cmd(int cmd, int handle)
 }
 
 static
+int setup_ust_apps(void)
+{
+	const char *ust_app_path;
+	int ret = 0;
+	uid_t uid;
+
+	assert(!ust_app.wait_shm_mmap);
+
+	uid = getuid();
+	/*
+	 * Disallow ust apps tracing for setuid binaries, because we
+	 * cannot use the environment variables anyway.
+	 */
+	if (uid != geteuid()) {
+		DBG("UST app tracing disabled for setuid binary.");
+		assert(ust_app.allowed == 0);
+		ret = 0;
+		goto end;
+	}
+	ust_app_path = get_lttng_ust_app_path();
+	if (!ust_app_path) {
+		DBG("LTTNG_UST_APP_PATH environment variable not set.");
+		assert(ust_app.allowed == 0);
+		ret = -ENOENT;
+		goto end;
+	}
+	/*
+	 * The LTTNG_UST_APP_PATH env. var. disables global and local
+	 * sessiond connections.
+	 */
+	ust_app.allowed = 1;
+	snprintf(ust_app.sock_path, PATH_MAX, "%s/%s",
+		ust_app_path, LTTNG_UST_SOCK_FILENAME);
+	snprintf(ust_app.wait_shm_path, PATH_MAX, "%s/%s",
+		ust_app_path,
+		LTTNG_UST_WAIT_FILENAME);
+
+	ust_app.wait_shm_mmap = get_map_shm(&ust_app);
+	if (!ust_app.wait_shm_mmap) {
+		WARN("Unable to get map shm for ust_app. Disabling LTTng-UST ust_app tracing.");
+		ust_app.allowed = 0;
+		ret = -EIO;
+		goto end;
+	}
+
+	lttng_pthread_getname_np(ust_app.procname, LTTNG_UST_CONTEXT_PROCNAME_LEN);
+end:
+	return ret;
+}
+
+static
 int setup_global_apps(void)
 {
 	int ret = 0;
 	assert(!global_apps.wait_shm_mmap);
+
+	/*
+	 * The LTTNG_UST_APP_PATH env. var. disables global sessiond
+	 * connections.
+	 */
+	if (ust_app.allowed)
+		return 0;
 
 	global_apps.wait_shm_mmap = get_map_shm(&global_apps);
 	if (!global_apps.wait_shm_mmap) {
@@ -499,6 +591,7 @@ int setup_global_apps(void)
 error:
 	return ret;
 }
+
 static
 int setup_local_apps(void)
 {
@@ -507,6 +600,13 @@ int setup_local_apps(void)
 	uid_t uid;
 
 	assert(!local_apps.wait_shm_mmap);
+
+	/*
+	 * The LTTNG_UST_APP_PATH env. var. disables local sessiond
+	 * connections.
+	 */
+	if (ust_app.allowed)
+		return 0;
 
 	uid = getuid();
 	/*
@@ -1520,6 +1620,15 @@ void cleanup_sock_info(struct sock_info *sock_info, int exiting)
 	}
 }
 
+static
+int wait_shm_open(struct sock_info *sock_info, int flags, mode_t mode)
+{
+	if (sock_info->wait_shm_is_file)
+		return open(sock_info->wait_shm_path, flags, mode);
+	else
+		return shm_open(sock_info->wait_shm_path, flags, mode);
+}
+
 /*
  * Using fork to set umask in the child process (not multi-thread safe).
  * We deal with the shm_open vs ftruncate race (happening when the
@@ -1538,7 +1647,7 @@ int get_wait_shm(struct sock_info *sock_info, size_t mmap_size)
 	/*
 	 * Try to open read-only.
 	 */
-	wait_shm_fd = shm_open(sock_info->wait_shm_path, O_RDONLY, 0);
+	wait_shm_fd = wait_shm_open(sock_info, O_RDONLY, 0);
 	if (wait_shm_fd >= 0) {
 		int32_t tmp_read;
 		ssize_t len;
@@ -1598,7 +1707,7 @@ open_write:
 		/*
 		 * Try to open read-only again after creation.
 		 */
-		wait_shm_fd = shm_open(sock_info->wait_shm_path, O_RDONLY, 0);
+		wait_shm_fd = wait_shm_open(sock_info, O_RDONLY, 0);
 		if (wait_shm_fd < 0) {
 			/*
 			 * Real-only open did not work. It's a failure
@@ -1625,7 +1734,7 @@ open_write:
 		 * We don't do an exclusive open, because we allow other
 		 * processes to create+ftruncate it concurrently.
 		 */
-		wait_shm_fd = shm_open(sock_info->wait_shm_path,
+		wait_shm_fd = wait_shm_open(sock_info,
 				O_RDWR | O_CREAT, create_mode);
 		if (wait_shm_fd >= 0) {
 			ret = ftruncate(wait_shm_fd, mmap_size);
@@ -2258,6 +2367,11 @@ void lttng_ust_ctor(void)
 		PERROR("sem_init");
 	}
 
+	ret = setup_ust_apps();
+	if (ret) {
+		assert(ust_app.allowed == 0);
+		DBG("ust_app setup returned %d", ret);
+	}
 	ret = setup_global_apps();
 	if (ret) {
 		assert(global_apps.allowed == 0);
@@ -2288,6 +2402,19 @@ void lttng_ust_ctor(void)
 	ret = pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);
 	if (ret) {
 		ERR("pthread_attr_setdetachstate: %s", strerror(ret));
+	}
+
+	if (ust_app.allowed) {
+		pthread_mutex_lock(&ust_exit_mutex);
+		ret = pthread_create(&ust_app.ust_listener, &thread_attr,
+				ust_listener_thread, &ust_app);
+		if (ret) {
+			ERR("pthread_create ust_app: %s", strerror(ret));
+		}
+		ust_app.thread_active = 1;
+		pthread_mutex_unlock(&ust_exit_mutex);
+	} else {
+		handle_register_done(&ust_app);
 	}
 
 	if (global_apps.allowed) {
@@ -2369,8 +2496,10 @@ void lttng_ust_ctor(void)
 static
 void lttng_ust_cleanup(int exiting)
 {
+	cleanup_sock_info(&ust_app, exiting);
 	cleanup_sock_info(&global_apps, exiting);
 	cleanup_sock_info(&local_apps, exiting);
+	ust_app.allowed = 0;
 	local_apps.allowed = 0;
 	global_apps.allowed = 0;
 	/*
@@ -2420,6 +2549,15 @@ void lttng_ust_exit(void)
 
 	pthread_mutex_lock(&ust_exit_mutex);
 	/* cancel threads */
+	if (ust_app.thread_active) {
+		ret = pthread_cancel(ust_app.ust_listener);
+		if (ret) {
+			ERR("Error cancelling ust listener thread: %s",
+				strerror(ret));
+		} else {
+			ust_app.thread_active = 0;
+		}
+	}
 	if (global_apps.thread_active) {
 		ret = pthread_cancel(global_apps.ust_listener);
 		if (ret) {

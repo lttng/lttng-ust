@@ -170,20 +170,32 @@ public class LttngTcpSessiondClient implements Runnable {
 	}
 
 	private void connectToSessiond() throws IOException {
-		int rootPort = getPortFromFile(ROOT_PORT_FILE);
-		int userPort = getPortFromFile(getHomePath() + USER_PORT_FILE);
+		int portToUse;
 
 		/*
-		 * Check for the edge case of both files existing but pointing to the
-		 * same port. In this case, let the root client handle it.
+		 * The environment variable LTTNG_UST_APP_PATH disables
+		 * connection to per-user and root session daemons.
 		 */
-		if ((rootPort != 0) && (rootPort == userPort) && (!isRoot)) {
-			log("User and root config files both point to port " + rootPort +
-					". Letting the root client handle it.");
-			throw new IOException();
-		}
+		String lttngUstAppPath = getUstAppPath();
 
-		int portToUse = (isRoot ? rootPort : userPort);
+		if (lttngUstAppPath != null) {
+			portToUse = getPortFromFile(lttngUstAppPath + USER_PORT_FILE);
+		} else {
+			int rootPort = getPortFromFile(ROOT_PORT_FILE);
+			int userPort = getPortFromFile(getHomePath() + USER_PORT_FILE);
+
+			/*
+			 * Check for the edge case of both files existing but pointing to the
+			 * same port. In this case, let the root client handle it.
+			 */
+			if ((rootPort != 0) && (rootPort == userPort) && (!isRoot)) {
+				log("User and root config files both point to port " + rootPort +
+						". Letting the root client handle it.");
+				throw new IOException();
+			}
+
+			portToUse = (isRoot ? rootPort : userPort);
+		}
 
 		if (portToUse == 0) {
 			/* No session daemon available. Stop and retry later. */
@@ -195,17 +207,20 @@ public class LttngTcpSessiondClient implements Runnable {
 		this.outToSessiond = new DataOutputStream(sessiondSock.getOutputStream());
 	}
 
+	private static String getUstAppPath() {
+		return System.getenv("LTTNG_UST_APP_PATH");
+	}
+
 	private static String getHomePath() {
 		/*
 		 * The environment variable LTTNG_HOME overrides HOME if
-		 * defined.
+		 * set.
 		 */
-		String homePath = System.getenv("LTTNG_HOME");
-
-		if (homePath == null) {
-			homePath = System.getProperty("user.home");
+		String lttngHomePath = System.getenv("LTTNG_HOME");
+		if (lttngHomePath != null) {
+			return lttngHomePath;
 		}
-		return homePath;
+		return System.getProperty("user.home");
 	}
 
 	/**
