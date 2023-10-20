@@ -370,26 +370,16 @@ static char *get_map_shm(struct sock_info *sock_info);
 /*
  * Returns the HOME directory path. Caller MUST NOT free(3) the returned
  * pointer.
- * The following env are checked in order of priority:
- *  1 - LTTNG_UST_HOME
- *  2 - LTTNG_HOME
- *  3 - HOME
  */
 static
 const char *get_lttng_home_dir(void)
 {
        const char *val;
 
-       val = (const char *) lttng_ust_getenv("LTTNG_UST_HOME");
-       if (val != NULL) {
-               return val;
-       }
-
        val = (const char *) lttng_ust_getenv("LTTNG_HOME");
        if (val != NULL) {
                return val;
        }
-
        return (const char *) lttng_ust_getenv("HOME");
 }
 

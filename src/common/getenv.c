@@ -49,7 +49,6 @@ static struct lttng_env lttng_env[] = {
 	{ "LTTNG_UST_ALLOW_BLOCKING", LTTNG_ENV_SECURE, NULL, },
 	{ "HOME", LTTNG_ENV_SECURE, NULL, },
 	{ "LTTNG_HOME", LTTNG_ENV_SECURE, NULL, },
-	{ "LTTNG_UST_HOME", LTTNG_ENV_SECURE, NULL, },
 };
 
 static

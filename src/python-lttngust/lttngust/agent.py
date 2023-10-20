@@ -268,10 +268,8 @@ def _get_port_from_file(path):
 
 
 def _get_user_home_path():
-    # $LTTNG_UST_HOME overrides $LTTNG_HOME if it exist.
-    # In turn, $LTTNG_HOME overrides $HOME if it exists
-    return os.getenv('LTTNG_UST_HOME', os.getenv('LTTNG_HOME',
-        os.path.expanduser('~')))
+    # $LTTNG_HOME overrides $HOME if it exists
+    return os.getenv('LTTNG_HOME', os.path.expanduser('~'))
 
 
 _initialized = False

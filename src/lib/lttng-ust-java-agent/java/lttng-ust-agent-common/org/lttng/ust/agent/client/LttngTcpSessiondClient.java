@@ -197,29 +197,15 @@ public class LttngTcpSessiondClient implements Runnable {
 
 	private static String getHomePath() {
 		/*
-		 * The environment variable LTTNG_UST_HOME overrides LTTNG_HOME
-		 * if present.
 		 * The environment variable LTTNG_HOME overrides HOME if
 		 * defined.
 		 */
-		String lttngUstHomePath = System.getenv("LTTNG_UST_HOME");
-		String lttngHomePath = System.getenv("LTTNG_HOME");
+		String homePath = System.getenv("LTTNG_HOME");
 
-		if (lttngUstHomePath != null) {
-			/*
-			 * LTTNG_UST_HOME has priority over LTTNG_HOME and user
-			 * home directory.
-			 */
-			return lttngUstHomePath;
+		if (homePath == null) {
+			homePath = System.getProperty("user.home");
 		}
-
-		if (lttngHomePath != null) {
-			/* LTTNG_HOME has priority over user home directory. */
-			return lttngHomePath;
-		}
-
-		/* Default to the user home directory. */
-		return System.getProperty("user.home");
+		return homePath;
 	}
 
 	/**
