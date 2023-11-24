@@ -210,6 +210,7 @@ Maintainer: [Mathieu Desnoyers](mailto:mathieu.desnoyers@efficios.com)
 
 Mailing list: [`lttng-dev@lists.lttng.org`](https://lttng.org/cgi-bin/mailman/listinfo/lttng-dev)
 
+Code review: [_lttng-ust_ project](https://review.lttng.org/q/project:lttng-ust) on LTTng Review
 
 Package contents
 ----------------
