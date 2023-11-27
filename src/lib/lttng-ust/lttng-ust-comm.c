@@ -411,10 +411,43 @@ const char *get_lttng_home_dir(void)
        return (const char *) lttng_ust_getenv("HOME");
 }
 
+/*
+ * Returns the LTTNG_UST_APP_PATH path. If environment variable exists
+ * and contains a ':', the first path before the ':' separator is returned.
+ * The return value should be freed by the caller if it is not NULL.
+ */
 static
-const char *get_lttng_ust_app_path(void)
+char *get_lttng_ust_app_path(void)
 {
-       return (const char *) lttng_ust_getenv("LTTNG_UST_APP_PATH");
+	const char *env_val = lttng_ust_getenv("LTTNG_UST_APP_PATH");
+	char *val = NULL;
+	char *sep = NULL;
+	if (env_val == NULL)
+		goto error;
+	sep = strchr((char*)env_val, ':');
+	if (sep) {
+		/*
+		 * Split into multiple paths using ':' as a separator.
+		 * There is no escaping of the ':' separator.
+		 */
+		WARN("':' separator in LTTNG_UST_APP_PATH, only the first path will be used.");
+		val = zmalloc(sep - env_val + 1);
+		if (!val) {
+			PERROR("zmalloc get_lttng_ust_app_path");
+			goto error;
+		}
+		memcpy(val, env_val, sep - env_val);
+		val[sep - env_val] = '\0';
+	} else {
+		val = strdup(env_val);
+		if (!val) {
+			PERROR("strdup");
+			goto error;
+		}
+	}
+
+error:
+	return val;
 }
 
 /*
@@ -517,7 +550,7 @@ void print_cmd(int cmd, int handle)
 static
 int setup_ust_apps(void)
 {
-	const char *ust_app_path;
+	char *ust_app_path = NULL;
 	int ret = 0;
 	uid_t uid;
 
@@ -562,6 +595,8 @@ int setup_ust_apps(void)
 
 	lttng_pthread_getname_np(ust_app.procname, LTTNG_UST_CONTEXT_PROCNAME_LEN);
 end:
+	if (ust_app_path)
+		free(ust_app_path);
 	return ret;
 }
 

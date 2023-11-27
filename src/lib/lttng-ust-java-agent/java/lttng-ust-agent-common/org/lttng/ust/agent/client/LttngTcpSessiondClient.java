@@ -208,8 +208,16 @@ public class LttngTcpSessiondClient implements Runnable {
 		this.outToSessiond = new DataOutputStream(sessiondSock.getOutputStream());
 	}
 
-	private static String getUstAppPath() {
-		return System.getenv("LTTNG_UST_APP_PATH");
+	private String getUstAppPath() {
+		String ustAppPath = System.getenv("LTTNG_UST_APP_PATH");
+		if (ustAppPath != null) {
+			String[] paths = ustAppPath.split(":");
+			if (paths.length > 1) {
+				log("':' separator in LTTNG_UST_APP_PATH, only the first path will be used");
+			}
+			return paths[0];
+		}
+		return ustAppPath;
 	}
 
 	private static String getHomePath() {

@@ -267,7 +267,13 @@ def _get_port_from_file(path):
     return port
 
 def _get_ust_app_path():
-    return os.getenv('LTTNG_UST_APP_PATH')
+    paths = os.getenv('LTTNG_UST_APP_PATH')
+    if paths is None:
+        return paths
+    paths = paths.split(':')
+    if len(paths) > 1:
+        dbg._pwarning("':' separator in LTTNG_UST_APP_PATH, only the first path will be used")
+    return paths[0]
 
 def _get_user_home_path():
     # $LTTNG_HOME overrides $HOME if it exists
@@ -326,7 +332,7 @@ def _init_threads():
         sys_port = None
 
     try:
-     if ust_app_port is not None:
+        if ust_app_port is not None:
             dbg._pdebug('creating ust_app client thread')
             t = threading.Thread(target=_client_thread_target,
                                  args=('ust_app', ust_app_port, reg_queue))
