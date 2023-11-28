@@ -36,6 +36,7 @@ public class LttngTcpSessiondClient implements Runnable {
 	private static final String SESSION_HOST = "127.0.0.1";
 	private static final String ROOT_PORT_FILE = "/var/run/lttng/agent.port";
 	private static final String USER_PORT_FILE = "/.lttng/agent.port";
+	private static final String APP_PATH_PORT_FILE = "/agent.port";
 	private static final Charset PORT_FILE_ENCODING = Charset.forName("UTF-8");
 
 	private static final int PROTOCOL_MAJOR_VERSION = 2;
@@ -179,7 +180,7 @@ public class LttngTcpSessiondClient implements Runnable {
 		String lttngUstAppPath = getUstAppPath();
 
 		if (lttngUstAppPath != null) {
-			portToUse = getPortFromFile(lttngUstAppPath + USER_PORT_FILE);
+			portToUse = getPortFromFile(lttngUstAppPath + APP_PATH_PORT_FILE);
 		} else {
 			int rootPort = getPortFromFile(ROOT_PORT_FILE);
 			int userPort = getPortFromFile(getHomePath() + USER_PORT_FILE);
