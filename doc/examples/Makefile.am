@@ -213,9 +213,8 @@ all-local:
 	if [ x"$(SUBDIRS_CMAKE)" != x"" ]; then \
 		for subdir in $(SUBDIRS_CMAKE); do \
 			( \
-				cd $$subdir && \
-				$(MKDIR_P) build && \
-				cd build && \
+				$(MKDIR_P) $$subdir/build && \
+				cd $$subdir/build && \
 				AR="$(AR)" \
 					CC="$(CC)" \
 					CXX="$(CXX)" \
