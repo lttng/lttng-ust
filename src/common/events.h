@@ -343,9 +343,9 @@ struct lttng_ust_session_private {
 
 	struct lttng_ust_event_ht events_ht;	/* ht of events */
 	void *owner;				/* object owner */
-	int tstate:1;				/* Transient enable state */
+	unsigned int tstate:1;			/* Transient enable state */
 
-	int statedump_pending:1;
+	unsigned int statedump_pending:1;
 
 	struct lttng_ust_enum_ht enums_ht;	/* ht of enumerations */
 	struct cds_list_head enums_head;
@@ -393,7 +393,7 @@ struct lttng_ust_channel_common_private {
 	struct lttng_ust_channel_common *pub;	/* Public channel interface */
 
 	int objd;				/* Object associated with channel. */
-	int tstate:1;				/* Transient enable state */
+	unsigned int tstate:1;			/* Transient enable state */
 };
 
 struct lttng_ust_channel_buffer_private {
