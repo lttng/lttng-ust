@@ -1,3 +1,14 @@
+2024-01-10 (National Houseplant Appreciation Day) lttng-ust 2.12.9
+	* fix: invoke MKDIR_P before changing directories
+	* fix: clean java inner class files in examples
+	* ustfork: Fix warning about volatile qualifier
+	* ustfork: Fix possible race conditions
+	* Fix: FreeBSD: Pass flags arguments to rfork wrapper
+	* fix: python agent: use stdlib distutils when setuptools is installed
+	* fix: python agent: install on Debian python >= 3.10
+	* fix: python agent: Add a dependency on generated files
+	* python: use setuptools with python >= 3.12
+
 2023-06-07 (National VCR Day) lttng-ust 2.12.8
 	* Fix: segmentation fault on filter interpretation in "switch" mode
 	* Fix: Reevaluate LTTNG_UST_TRACEPOINT_DEFINE each time tracepoint.h is included
