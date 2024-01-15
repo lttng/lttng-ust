@@ -30,7 +30,6 @@
 #include <urcu/system.h>
 #include <urcu/uatomic.h>
 #include <urcu/compiler.h>
-#include <urcu/tls-compat.h>
 #include <urcu/arch.h>
 #include <lttng/align.h>
 #include <helper.h>
@@ -92,13 +91,13 @@ void ust_malloc_spin_unlock(pthread_mutex_t *lock)
 	uatomic_set(&ust_malloc_lock, 0);
 }
 
-#define calloc static_calloc
-#define pthread_mutex_lock ust_malloc_spin_lock
-#define pthread_mutex_unlock ust_malloc_spin_unlock
-static DEFINE_URCU_TLS(int, malloc_nesting);
-#undef pthread_mutex_unlock
-#undef pthread_mutex_lock
-#undef calloc
+/*
+ * Use initial-exec TLS model for the malloc_nesting nesting guard
+ * variable to ensure that the glibc implementation of the TLS access
+ * don't trigger infinite recursion by calling the memory allocator
+ * wrapper functions, which could happen with global-dynamic.
+ */
+static __thread __attribute__((tls_model("initial-exec"))) int malloc_nesting;
 
 /*
  * Static allocator to use when initially executing dlsym(). It keeps a
@@ -257,7 +256,7 @@ void *malloc(size_t size)
 {
 	void *retval;
 
-	URCU_TLS(malloc_nesting)++;
+	malloc_nesting++;
 	if (cur_alloc.malloc == NULL) {
 		lookup_all_symbols();
 		if (cur_alloc.malloc == NULL) {
@@ -266,17 +265,17 @@ void *malloc(size_t size)
 		}
 	}
 	retval = cur_alloc.malloc(size);
-	if (URCU_TLS(malloc_nesting) == 1) {
+	if (malloc_nesting == 1) {
 		tracepoint(lttng_ust_libc, malloc,
 			size, retval, LTTNG_UST_CALLER_IP());
 	}
-	URCU_TLS(malloc_nesting)--;
+	malloc_nesting--;
 	return retval;
 }
 
 void free(void *ptr)
 {
-	URCU_TLS(malloc_nesting)++;
+	malloc_nesting++;
 	/*
 	 * Check whether the memory was allocated with
 	 * static_calloc_align, in which case there is nothing to free.
@@ -286,7 +285,7 @@ void free(void *ptr)
 		goto end;
 	}
 
-	if (URCU_TLS(malloc_nesting) == 1) {
+	if (malloc_nesting == 1) {
 		tracepoint(lttng_ust_libc, free,
 			ptr, LTTNG_UST_CALLER_IP());
 	}
@@ -300,14 +299,14 @@ void free(void *ptr)
 	}
 	cur_alloc.free(ptr);
 end:
-	URCU_TLS(malloc_nesting)--;
+	malloc_nesting--;
 }
 
 void *calloc(size_t nmemb, size_t size)
 {
 	void *retval;
 
-	URCU_TLS(malloc_nesting)++;
+	malloc_nesting++;
 	if (cur_alloc.calloc == NULL) {
 		lookup_all_symbols();
 		if (cur_alloc.calloc == NULL) {
@@ -316,11 +315,11 @@ void *calloc(size_t nmemb, size_t size)
 		}
 	}
 	retval = cur_alloc.calloc(nmemb, size);
-	if (URCU_TLS(malloc_nesting) == 1) {
+	if (malloc_nesting == 1) {
 		tracepoint(lttng_ust_libc, calloc,
 			nmemb, size, retval, LTTNG_UST_CALLER_IP());
 	}
-	URCU_TLS(malloc_nesting)--;
+	malloc_nesting--;
 	return retval;
 }
 
@@ -328,7 +327,7 @@ void *realloc(void *ptr, size_t size)
 {
 	void *retval;
 
-	URCU_TLS(malloc_nesting)++;
+	malloc_nesting++;
 	/*
 	 * Check whether the memory was allocated with
 	 * static_calloc_align, in which case there is nothing
@@ -369,11 +368,11 @@ void *realloc(void *ptr, size_t size)
 	}
 	retval = cur_alloc.realloc(ptr, size);
 end:
-	if (URCU_TLS(malloc_nesting) == 1) {
+	if (malloc_nesting == 1) {
 		tracepoint(lttng_ust_libc, realloc,
 			ptr, size, retval, LTTNG_UST_CALLER_IP());
 	}
-	URCU_TLS(malloc_nesting)--;
+	malloc_nesting--;
 	return retval;
 }
 
@@ -381,7 +380,7 @@ void *memalign(size_t alignment, size_t size)
 {
 	void *retval;
 
-	URCU_TLS(malloc_nesting)++;
+	malloc_nesting++;
 	if (cur_alloc.memalign == NULL) {
 		lookup_all_symbols();
 		if (cur_alloc.memalign == NULL) {
@@ -390,12 +389,12 @@ void *memalign(size_t alignment, size_t size)
 		}
 	}
 	retval = cur_alloc.memalign(alignment, size);
-	if (URCU_TLS(malloc_nesting) == 1) {
+	if (malloc_nesting == 1) {
 		tracepoint(lttng_ust_libc, memalign,
 			alignment, size, retval,
 			LTTNG_UST_CALLER_IP());
 	}
-	URCU_TLS(malloc_nesting)--;
+	malloc_nesting--;
 	return retval;
 }
 
@@ -403,7 +402,7 @@ int posix_memalign(void **memptr, size_t alignment, size_t size)
 {
 	int retval;
 
-	URCU_TLS(malloc_nesting)++;
+	malloc_nesting++;
 	if (cur_alloc.posix_memalign == NULL) {
 		lookup_all_symbols();
 		if (cur_alloc.posix_memalign == NULL) {
@@ -412,19 +411,13 @@ int posix_memalign(void **memptr, size_t alignment, size_t size)
 		}
 	}
 	retval = cur_alloc.posix_memalign(memptr, alignment, size);
-	if (URCU_TLS(malloc_nesting) == 1) {
+	if (malloc_nesting == 1) {
 		tracepoint(lttng_ust_libc, posix_memalign,
 			*memptr, alignment, size,
 			retval, LTTNG_UST_CALLER_IP());
 	}
-	URCU_TLS(malloc_nesting)--;
+	malloc_nesting--;
 	return retval;
-}
-
-static
-void lttng_ust_fixup_malloc_nesting_tls(void)
-{
-	asm volatile ("" : : "m" (URCU_TLS(malloc_nesting)));
 }
 
 __attribute__((constructor))
@@ -434,7 +427,6 @@ void lttng_ust_malloc_wrapper_init(void)
 	if (cur_alloc.calloc) {
 		return;
 	}
-	lttng_ust_fixup_malloc_nesting_tls();
 	/*
 	 * Ensure the allocator is in place before the process becomes
 	 * multithreaded.
