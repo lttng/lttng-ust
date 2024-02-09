@@ -688,6 +688,27 @@ NOTE: Neither `lttng_ust_tracepoint_enabled()` nor
 `lttng_ust_do_tracepoint()` have a `STAP_PROBEV()` call, so if you need
 it, you should emit this call yourself.
 
+Tracing in C/C++ constructors and destructors
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+As of LTTng-UST{nbsp}2.13, tracepoint definitions are implemented using
+compound literals. In the following cases, those compound literals are
+allocated on the heap:
+
+* g++{nbsp}<=={nbsp}4.8 is used as the compiler or,
+* `LTTNG_UST_ALLOCATE_COMPOUND_LITERAL_ON_HEAP` is defined in the C pre-processor flags
+and the application is compiled with a C++ compiler
+
+When the compound literals are heap-allocated, there are some cases in which
+both C-style and C++ constructors and destructors will not be traced.
+
+1. C-style constructors and destructors in statically linked archives
+2. C-style constructors and destructors in the application itself
+3. Some C++-style constructors and destructors in the application and statically linked archives
+
+In the 3rd case above, which C++-style constructors and destructors will not be traced depends
+on the initialization order within each translation unit and across the entire program when
+all translation units are linked together.
 
 [[build-static]]
 Statically linking the tracepoint provider
