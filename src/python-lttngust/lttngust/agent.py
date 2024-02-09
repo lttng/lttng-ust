@@ -316,6 +316,7 @@ def _init_threads():
         user_port = None
         dbg._pdebug('ust_app session daemon port: {}'.format(ust_app_port))
     else:
+        ust_app_port = None
         sys_port = _get_port_from_file('/var/run/lttng/agent.port')
         user_port_file = os.path.join(_get_user_home_path(), '.lttng', 'agent.port')
         user_port = _get_port_from_file(user_port_file)
