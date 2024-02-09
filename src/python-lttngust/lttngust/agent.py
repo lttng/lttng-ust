@@ -362,9 +362,9 @@ def _init_threads():
             t.start()
             dbg._pdebug('created and started user client thread')
             reg_expecting += 1
-    except:
+    except Exception as e:
         # cannot create threads for some reason; stop this initialization
-        dbg._pwarning('cannot create client threads')
+        dbg._pwarning('cannot create client threads: {}'.format(e))
         return
 
     if reg_expecting == 0:
