@@ -203,6 +203,23 @@ compiled in C++. To compile tracepoint probes in C++, you need
 G++ >= 4.7 or Clang >= 4.0. The C++ compilers need to support C++11.
 
 
+Supported versions
+------------------
+
+The LTTng project supports the last two released stable versions
+(e.g. stable-2.13 and stable-2.12).
+
+Fixes are backported from the master branch to the last stable version
+unless those fixes would break the ABI or API. Those fixes may be backported
+to the second-last stable version, depending on complexity and ABI/API
+compatibility.
+
+Security fixes are backported from the master branch to both of the last stable
+version and the the second-last stable version.
+
+New features are integrated into the master branch and not backported to the
+last stable branch.
+
 Contact
 -------
 
