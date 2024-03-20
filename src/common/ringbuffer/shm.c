@@ -69,12 +69,12 @@ error:
 	return ret;
 }
 
-struct shm_object_table *shm_object_table_create(size_t max_nb_obj)
+struct shm_object_table *shm_object_table_create(size_t max_nb_obj, bool populate)
 {
 	struct shm_object_table *table;
 
-	table = zmalloc(sizeof(struct shm_object_table) +
-			max_nb_obj * sizeof(table->objects[0]));
+	table = zmalloc_populate(sizeof(struct shm_object_table) +
+			max_nb_obj * sizeof(table->objects[0]), populate);
 	if (!table)
 		return NULL;
 	table->size = max_nb_obj;
@@ -84,9 +84,11 @@ struct shm_object_table *shm_object_table_create(size_t max_nb_obj)
 static
 struct shm_object *_shm_object_table_alloc_shm(struct shm_object_table *table,
 					   size_t memory_map_size,
-					   int stream_fd)
+					   int stream_fd,
+					   bool populate)
 {
 	int shmfd, waitfd[2], ret, i;
+	int flags = MAP_SHARED;
 	struct shm_object *obj;
 	char *memory_map;
 
@@ -145,9 +147,11 @@ struct shm_object *_shm_object_table_alloc_shm(struct shm_object_table *table,
 	obj->shm_fd_ownership = 0;
 	obj->shm_fd = shmfd;
 
+	if (populate)
+		flags |= LTTNG_MAP_POPULATE;
 	/* memory_map: mmap */
 	memory_map = mmap(NULL, memory_map_size, PROT_READ | PROT_WRITE,
-			  MAP_SHARED | LTTNG_MAP_POPULATE, shmfd, 0);
+			  flags, shmfd, 0);
 	if (memory_map == MAP_FAILED) {
 		PERROR("mmap");
 		goto error_mmap;
@@ -178,7 +182,7 @@ error_pipe:
 
 static
 struct shm_object *_shm_object_table_alloc_mem(struct shm_object_table *table,
-					   size_t memory_map_size)
+					   size_t memory_map_size, bool populate)
 {
 	struct shm_object *obj;
 	void *memory_map;
@@ -188,7 +192,7 @@ struct shm_object *_shm_object_table_alloc_mem(struct shm_object_table *table,
 		return NULL;
 	obj = &table->objects[table->allocated_len];
 
-	memory_map = zmalloc(memory_map_size);
+	memory_map = zmalloc_populate(memory_map_size, populate);
 	if (!memory_map)
 		goto alloc_error;
 
@@ -255,13 +259,15 @@ struct shm_object *shm_object_table_alloc(struct shm_object_table *table,
 			size_t memory_map_size,
 			enum shm_object_type type,
 			int stream_fd,
-			int cpu)
+			int cpu,
+			bool populate)
 #else
 struct shm_object *shm_object_table_alloc(struct shm_object_table *table,
 			size_t memory_map_size,
 			enum shm_object_type type,
 			int stream_fd,
-			int cpu __attribute__((unused)))
+			int cpu __attribute__((unused)),
+			bool populate)
 #endif
 {
 	struct shm_object *shm_object;
@@ -284,10 +290,11 @@ struct shm_object *shm_object_table_alloc(struct shm_object_table *table,
 	switch (type) {
 	case SHM_OBJECT_SHM:
 		shm_object = _shm_object_table_alloc_shm(table, memory_map_size,
-				stream_fd);
+				stream_fd, populate);
 		break;
 	case SHM_OBJECT_MEM:
-		shm_object = _shm_object_table_alloc_mem(table, memory_map_size);
+		shm_object = _shm_object_table_alloc_mem(table, memory_map_size,
+				populate);
 		break;
 	default:
 		assert(0);
@@ -301,8 +308,9 @@ struct shm_object *shm_object_table_alloc(struct shm_object_table *table,
 
 struct shm_object *shm_object_table_append_shm(struct shm_object_table *table,
 			int shm_fd, int wakeup_fd, uint32_t stream_nr,
-			size_t memory_map_size)
+			size_t memory_map_size, bool populate)
 {
+	int flags = MAP_SHARED;
 	struct shm_object *obj;
 	char *memory_map;
 	int ret;
@@ -328,9 +336,11 @@ struct shm_object *shm_object_table_append_shm(struct shm_object_table *table,
 		goto error_fcntl;
 	}
 
+	if (populate)
+		flags |= LTTNG_MAP_POPULATE;
 	/* memory_map: mmap */
 	memory_map = mmap(NULL, memory_map_size, PROT_READ | PROT_WRITE,
-			  MAP_SHARED | LTTNG_MAP_POPULATE, shm_fd, 0);
+			  flags, shm_fd, 0);
 	if (memory_map == MAP_FAILED) {
 		PERROR("mmap");
 		goto error_mmap;

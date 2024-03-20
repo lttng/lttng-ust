@@ -8,8 +8,31 @@
 #define _UST_COMMON_MACROS_H
 
 #include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
 
 #include <lttng/ust-arch.h>
+
+/*
+ * calloc() does not always populate the page table for the allocated
+ * memory. Optionally enforce page table populate.
+ */
+static inline
+void *zmalloc_populate(size_t len, bool populate)
+	__attribute__((always_inline));
+static inline
+void *zmalloc_populate(size_t len, bool populate)
+{
+	if (populate) {
+		void *ret = malloc(len);
+		if (ret == NULL)
+			return ret;
+		bzero(ret, len);
+		return ret;
+	} else {
+		return calloc(len, 1);
+	}
+}
 
 /*
  * Memory allocation zeroed
@@ -20,7 +43,7 @@ void *zmalloc(size_t len)
 static inline
 void *zmalloc(size_t len)
 {
-	return calloc(len, 1);
+	return zmalloc_populate(len, false);
 }
 
 #define max_t(type, x, y)				\

@@ -42,6 +42,7 @@ static struct lttng_env lttng_env[] = {
 	/* Env. var. which can be used in setuid/setgid executables. */
 	{ "LTTNG_UST_WITHOUT_BADDR_STATEDUMP", LTTNG_ENV_NOT_SECURE, NULL, },
 	{ "LTTNG_UST_REGISTER_TIMEOUT", LTTNG_ENV_NOT_SECURE, NULL, },
+	{ "LTTNG_UST_MAP_POPULATE_POLICY", LTTNG_ENV_NOT_SECURE, NULL, },
 
 	/* Env. var. which are not fetched in setuid/setgid executables. */
 	{ "LTTNG_UST_CLOCK_PLUGIN", LTTNG_ENV_SECURE, NULL, },

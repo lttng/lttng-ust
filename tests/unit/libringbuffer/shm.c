@@ -34,12 +34,12 @@ int main(void)
 	ok(shmfd > 0, "Open a POSIX shm fd");
 
 	/* Create a dummy shm object table to test the allocation function */
-	table = shm_object_table_create(1);
+	table = shm_object_table_create(1, false);
 	ok(table, "Create a shm object table");
 	assert(table);
 
 	/* This function sets the initial size of the shm with ftruncate and zeros it */
-	shmobj = shm_object_table_alloc(table, shmsize, SHM_OBJECT_SHM, shmfd, -1);
+	shmobj = shm_object_table_alloc(table, shmsize, SHM_OBJECT_SHM, shmfd, -1, false);
 	ok(shmobj, "Allocate the shm object table");
 	assert(shmobj);
 

@@ -69,12 +69,12 @@ error:
 	return ret;
 }
 
-struct lttng_counter_shm_object_table *lttng_counter_shm_object_table_create(size_t max_nb_obj)
+struct lttng_counter_shm_object_table *lttng_counter_shm_object_table_create(size_t max_nb_obj, bool populate)
 {
 	struct lttng_counter_shm_object_table *table;
 
-	table = zmalloc(sizeof(struct lttng_counter_shm_object_table) +
-			max_nb_obj * sizeof(table->objects[0]));
+	table = zmalloc_populate(sizeof(struct lttng_counter_shm_object_table) +
+			max_nb_obj * sizeof(table->objects[0]), populate);
 	if (!table)
 		return NULL;
 	table->size = max_nb_obj;
@@ -84,10 +84,11 @@ struct lttng_counter_shm_object_table *lttng_counter_shm_object_table_create(siz
 static
 struct lttng_counter_shm_object *_lttng_counter_shm_object_table_alloc_shm(struct lttng_counter_shm_object_table *table,
 					   size_t memory_map_size,
-					   int cpu_fd)
+					   int cpu_fd, bool populate)
 {
-	int shmfd, ret;
 	struct lttng_counter_shm_object *obj;
+	int flags = MAP_SHARED;
+	int shmfd, ret;
 	char *memory_map;
 
 	if (cpu_fd < 0)
@@ -121,9 +122,11 @@ struct lttng_counter_shm_object *_lttng_counter_shm_object_table_alloc_shm(struc
 	obj->shm_fd_ownership = 0;
 	obj->shm_fd = shmfd;
 
+	if (populate)
+		flags |= LTTNG_MAP_POPULATE;
 	/* memory_map: mmap */
 	memory_map = mmap(NULL, memory_map_size, PROT_READ | PROT_WRITE,
-			  MAP_SHARED | LTTNG_MAP_POPULATE, shmfd, 0);
+			  flags, shmfd, 0);
 	if (memory_map == MAP_FAILED) {
 		PERROR("mmap");
 		goto error_mmap;
@@ -145,7 +148,7 @@ error_zero_file:
 
 static
 struct lttng_counter_shm_object *_lttng_counter_shm_object_table_alloc_mem(struct lttng_counter_shm_object_table *table,
-					   size_t memory_map_size)
+					   size_t memory_map_size, bool populate)
 {
 	struct lttng_counter_shm_object *obj;
 	void *memory_map;
@@ -154,7 +157,7 @@ struct lttng_counter_shm_object *_lttng_counter_shm_object_table_alloc_mem(struc
 		return NULL;
 	obj = &table->objects[table->allocated_len];
 
-	memory_map = zmalloc(memory_map_size);
+	memory_map = zmalloc_populate(memory_map_size, populate);
 	if (!memory_map)
 		goto alloc_error;
 
@@ -197,13 +200,15 @@ struct lttng_counter_shm_object *lttng_counter_shm_object_table_alloc(struct ltt
 			size_t memory_map_size,
 			enum lttng_counter_shm_object_type type,
 			int cpu_fd,
-			int cpu)
+			int cpu,
+			bool populate)
 #else
 struct lttng_counter_shm_object *lttng_counter_shm_object_table_alloc(struct lttng_counter_shm_object_table *table,
 			size_t memory_map_size,
 			enum lttng_counter_shm_object_type type,
 			int cpu_fd,
-			int cpu __attribute__((unused)))
+			int cpu __attribute__((unused)),
+			bool populate)
 #endif
 {
 	struct lttng_counter_shm_object *shm_object;
@@ -226,10 +231,11 @@ struct lttng_counter_shm_object *lttng_counter_shm_object_table_alloc(struct ltt
 	switch (type) {
 	case LTTNG_COUNTER_SHM_OBJECT_SHM:
 		shm_object = _lttng_counter_shm_object_table_alloc_shm(table, memory_map_size,
-				cpu_fd);
+				cpu_fd, populate);
 		break;
 	case LTTNG_COUNTER_SHM_OBJECT_MEM:
-		shm_object = _lttng_counter_shm_object_table_alloc_mem(table, memory_map_size);
+		shm_object = _lttng_counter_shm_object_table_alloc_mem(table, memory_map_size,
+				populate);
 		break;
 	default:
 		assert(0);
@@ -242,10 +248,10 @@ struct lttng_counter_shm_object *lttng_counter_shm_object_table_alloc(struct ltt
 }
 
 struct lttng_counter_shm_object *lttng_counter_shm_object_table_append_shm(struct lttng_counter_shm_object_table *table,
-			int shm_fd,
-			size_t memory_map_size)
+			int shm_fd, size_t memory_map_size, bool populate)
 {
 	struct lttng_counter_shm_object *obj;
+	int flags = MAP_SHARED;
 	char *memory_map;
 
 	if (table->allocated_len >= table->size)
@@ -256,9 +262,11 @@ struct lttng_counter_shm_object *lttng_counter_shm_object_table_append_shm(struc
 	obj->shm_fd = shm_fd;
 	obj->shm_fd_ownership = 1;
 
+	if (populate)
+		flags |= LTTNG_MAP_POPULATE;
 	/* memory_map: mmap */
 	memory_map = mmap(NULL, memory_map_size, PROT_READ | PROT_WRITE,
-			  MAP_SHARED | LTTNG_MAP_POPULATE, shm_fd, 0);
+			  flags, shm_fd, 0);
 	if (memory_map == MAP_FAILED) {
 		PERROR("mmap");
 		goto error_mmap;

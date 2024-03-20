@@ -21,6 +21,7 @@
 #include "common/smp.h"
 #include "shm.h"
 #include "common/align.h"
+#include "common/populate.h"
 
 /**
  * lib_ring_buffer_backend_allocate - allocate a channel buffer
@@ -346,7 +347,8 @@ int channel_backend_init(struct channel_backend *chanb,
 			struct shm_object *shmobj;
 
 			shmobj = shm_object_table_alloc(handle->table, shmsize,
-					SHM_OBJECT_SHM, stream_fds[i], i);
+					SHM_OBJECT_SHM, stream_fds[i], i,
+					lttng_ust_map_populate_cpu_is_enabled(i));
 			if (!shmobj)
 				goto end;
 			align_shm(shmobj, __alignof__(struct lttng_ust_ring_buffer));
@@ -365,7 +367,8 @@ int channel_backend_init(struct channel_backend *chanb,
 		struct lttng_ust_ring_buffer *buf;
 
 		shmobj = shm_object_table_alloc(handle->table, shmsize,
-					SHM_OBJECT_SHM, stream_fds[0], -1);
+					SHM_OBJECT_SHM, stream_fds[0], -1,
+					lttng_ust_map_populate_is_enabled());
 		if (!shmobj)
 			goto end;
 		align_shm(shmobj, __alignof__(struct lttng_ust_ring_buffer));

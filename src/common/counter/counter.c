@@ -17,6 +17,7 @@
 #include "common/bitmap.h"
 
 #include "common/smp.h"
+#include "common/populate.h"
 #include "shm.h"
 
 static size_t lttng_counter_get_dimension_nr_elements(struct lib_counter_dimension *dimension)
@@ -84,13 +85,14 @@ static int lttng_counter_layout_init(struct lib_counter *counter, int cpu, int s
 	if (counter->is_daemon) {
 		/* Allocate and clear shared memory. */
 		shm_object = lttng_counter_shm_object_table_alloc(counter->object_table,
-			shm_length, LTTNG_COUNTER_SHM_OBJECT_SHM, shm_fd, cpu);
+			shm_length, LTTNG_COUNTER_SHM_OBJECT_SHM, shm_fd, cpu,
+			lttng_ust_map_populate_cpu_is_enabled(cpu));
 		if (!shm_object)
 			return -ENOMEM;
 	} else {
 		/* Map pre-existing shared memory. */
 		shm_object = lttng_counter_shm_object_table_append_shm(counter->object_table,
-			shm_fd, shm_length);
+			shm_fd, shm_length, lttng_ust_map_populate_cpu_is_enabled(cpu));
 		if (!shm_object)
 			return -ENOMEM;
 	}
@@ -211,12 +213,13 @@ struct lib_counter *lttng_counter_create(const struct lib_counter_config *config
 	int cpu, ret;
 	int nr_handles = 0;
 	int nr_cpus = get_possible_cpus_array_len();
+	bool populate = lttng_ust_map_populate_is_enabled();
 
 	if (validate_args(config, nr_dimensions, max_nr_elem,
 			global_sum_step, global_counter_fd, nr_counter_cpu_fds,
 			counter_cpu_fds))
 		return NULL;
-	counter = zmalloc(sizeof(struct lib_counter));
+	counter = zmalloc_populate(sizeof(struct lib_counter), populate);
 	if (!counter)
 		return NULL;
 	counter->global_counters.shm_fd = -1;
@@ -225,13 +228,13 @@ struct lib_counter *lttng_counter_create(const struct lib_counter_config *config
 	if (lttng_counter_set_global_sum_step(counter, global_sum_step))
 		goto error_sum_step;
 	counter->nr_dimensions = nr_dimensions;
-	counter->dimensions = zmalloc(nr_dimensions * sizeof(*counter->dimensions));
+	counter->dimensions = zmalloc_populate(nr_dimensions * sizeof(*counter->dimensions), populate);
 	if (!counter->dimensions)
 		goto error_dimensions;
 	for (dimension = 0; dimension < nr_dimensions; dimension++)
 		counter->dimensions[dimension].max_nr_elem = max_nr_elem[dimension];
 	if (config->alloc & COUNTER_ALLOC_PER_CPU) {
-		counter->percpu_counters = zmalloc(sizeof(struct lib_counter_layout) * nr_cpus);
+		counter->percpu_counters = zmalloc_populate(sizeof(struct lib_counter_layout) * nr_cpus, populate);
 		if (!counter->percpu_counters)
 			goto error_alloc_percpu;
 		for_each_possible_cpu(cpu)
@@ -250,7 +253,7 @@ struct lib_counter *lttng_counter_create(const struct lib_counter_config *config
 	if (config->alloc & COUNTER_ALLOC_PER_CPU)
 		nr_handles += nr_cpus;
 	/* Allocate table for global and per-cpu counters. */
-	counter->object_table = lttng_counter_shm_object_table_create(nr_handles);
+	counter->object_table = lttng_counter_shm_object_table_create(nr_handles, populate);
 	if (!counter->object_table)
 		goto error_alloc_object_table;
 

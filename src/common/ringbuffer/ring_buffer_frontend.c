@@ -63,6 +63,7 @@
 #include "shm.h"
 #include "rb-init.h"
 #include "common/compat/errno.h"	/* For ENODATA */
+#include "common/populate.h"
 
 /* Print DBG() messages about events lost only every 1048576 hits */
 #define DBG_PRINT_NR_LOST	(1UL << 20)
@@ -980,6 +981,7 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_ring_buffer_c
 	struct shm_object *shmobj;
 	unsigned int nr_streams;
 	int64_t blocking_timeout_ms;
+	bool populate = lttng_ust_map_populate_is_enabled();
 
 	if (config->alloc == RING_BUFFER_ALLOC_PER_CPU)
 		nr_streams = get_possible_cpus_array_len();
@@ -1006,12 +1008,12 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_ring_buffer_c
 					 read_timer_interval))
 		return NULL;
 
-	handle = zmalloc(sizeof(struct lttng_ust_shm_handle));
+	handle = zmalloc_populate(sizeof(struct lttng_ust_shm_handle), populate);
 	if (!handle)
 		return NULL;
 
 	/* Allocate table for channel + per-cpu buffers */
-	handle->table = shm_object_table_create(1 + get_possible_cpus_array_len());
+	handle->table = shm_object_table_create(1 + get_possible_cpus_array_len(), populate);
 	if (!handle->table)
 		goto error_table_alloc;
 
@@ -1026,7 +1028,7 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_ring_buffer_c
 
 	/* Allocate normal memory for channel (not shared) */
 	shmobj = shm_object_table_alloc(handle->table, shmsize, SHM_OBJECT_MEM,
-			-1, -1);
+			-1, -1, populate);
 	if (!shmobj)
 		goto error_append;
 	/* struct lttng_ust_ring_buffer_channel is at object 0, offset 0 (hardcoded) */
@@ -1089,13 +1091,14 @@ struct lttng_ust_shm_handle *channel_handle_create(void *data,
 {
 	struct lttng_ust_shm_handle *handle;
 	struct shm_object *object;
+	bool populate = lttng_ust_map_populate_is_enabled();
 
-	handle = zmalloc(sizeof(struct lttng_ust_shm_handle));
+	handle = zmalloc_populate(sizeof(struct lttng_ust_shm_handle), populate);
 	if (!handle)
 		return NULL;
 
 	/* Allocate table for channel + per-cpu buffers */
-	handle->table = shm_object_table_create(1 + get_possible_cpus_array_len());
+	handle->table = shm_object_table_create(1 + get_possible_cpus_array_len(), populate);
 	if (!handle->table)
 		goto error_table_alloc;
 	/* Add channel object */
@@ -1124,7 +1127,7 @@ int channel_handle_add_stream(struct lttng_ust_shm_handle *handle,
 	/* Add stream object */
 	object = shm_object_table_append_shm(handle->table,
 			shm_fd, wakeup_fd, stream_nr,
-			memory_map_size);
+			memory_map_size, lttng_ust_map_populate_cpu_is_enabled(stream_nr));
 	if (!object)
 		return -EINVAL;
 	return 0;

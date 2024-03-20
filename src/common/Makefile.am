@@ -171,6 +171,8 @@ libcommon_la_SOURCES = \
 	logging.h \
 	smp.c \
 	smp.h \
+	populate.c \
+	populate.h \
 	strutils.c \
 	strutils.h \
 	utils.c \
