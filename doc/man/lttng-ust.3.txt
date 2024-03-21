@@ -1322,10 +1322,10 @@ LTTNG_UST_TRACEPOINT_EVENT(
         lttng_ust_field_array(int, array_field, array_arg, 7)
         lttng_ust_field_array_text(char, array_text_field,
                                    array_arg, 5)
-        lttng_ust_field_sequence(int, seq_field, array_arg, int,
+        lttng_ust_field_sequence(int, seq_field, array_arg, unsigned int,
                                  my_integer_arg / 10)
         lttng_ust_field_sequence_text(char, seq_text_field,
-                                      array_arg, int,
+                                      array_arg, unsigned int,
                                       my_integer_arg / 5)
         lttng_ust_field_enum(my_provider, my_enum, int,
                              enum_field, array_arg[1])
