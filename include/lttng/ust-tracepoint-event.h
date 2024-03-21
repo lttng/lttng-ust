@@ -257,6 +257,38 @@ void lttng_ust__event_template_proto___##_provider##___##_name(LTTNG_UST__TP_ARG
 	};
 #include LTTNG_UST_TRACEPOINT_INCLUDE
 
+
+/*
+ * Stage 0.9.0
+ * Verifying sequence length types are of an unsigned type.
+ */
+
+/* Reset all macros within LTTNG_UST_TRACEPOINT_EVENT */
+#include <lttng/ust-tracepoint-event-reset.h>
+#include <lttng/ust-tracepoint-event-write.h>
+#include <lttng/ust-tracepoint-event-nowrite.h>
+
+/*
+ * Note that it is not possible to encode the length type as a C identifier,
+ * since it can be multiple tokens.
+ */
+#undef lttng_ust__field_sequence_encoded
+#define lttng_ust__field_sequence_encoded(_type, _item, _src, _byte_order,	\
+			_length_type, _src_length, _encoding, _nowrite, \
+			_elem_type_base)			\
+	lttng_ust_static_assert(!lttng_ust_is_signed_type(_length_type), \
+				"Length type " #_length_type " is not a unsigned integer type", \
+				Length_type_is_not_a_unsigned_integer_type);
+
+#undef LTTNG_UST_TP_FIELDS
+#define LTTNG_UST_TP_FIELDS(...) __VA_ARGS__	/* Only one used in this phase */
+
+#undef LTTNG_UST__TRACEPOINT_EVENT_CLASS
+#define LTTNG_UST__TRACEPOINT_EVENT_CLASS(_provider, _name, _args, _fields)	\
+		_fields
+
+#include LTTNG_UST_TRACEPOINT_INCLUDE
+
 #if defined(__cplusplus)
 
 /*
