@@ -1204,10 +1204,10 @@ TRACEPOINT_EVENT(
         ctf_string(string_field, my_string_arg)
         ctf_array(int, array_field, array_arg, 7)
         ctf_array_text(char, array_text_field, array_arg, 5)
-        ctf_sequence(int, seq_field, array_arg, int,
+        ctf_sequence(int, seq_field, array_arg, unsigned int,
                      my_integer_arg / 10)
         ctf_sequence_text(char, seq_text_field, array_arg,
-                          int, my_integer_arg / 5)
+                          unsigned int, my_integer_arg / 5)
         ctf_enum(my_provider, my_enum, int,
                  enum_field, array_arg[1])
     )
