@@ -466,3 +466,62 @@ int lttng_ust_safe_closefrom_fd(int lowfd, int (*close_cb)(int fd))
 end:
 	return ret;
 }
+
+/*
+ * Implement helper for close_range() override.
+ */
+int lttng_ust_safe_close_range_fd(unsigned int first, unsigned int last, int flags,
+		int (*close_range_cb)(unsigned int first, unsigned int last, int flags))
+{
+	int ret = 0, i;
+
+	lttng_ust_fd_tracker_alloc_tls();
+
+	/*
+	 * Ensure the tracker is initialized when called from
+	 * constructors.
+	 */
+	lttng_ust_fd_tracker_init();
+
+	if (first > last || last > INT_MAX) {
+		ret = -1;
+		errno = EINVAL;
+		goto end;
+	}
+	/*
+	 * If called from lttng-ust, we directly call close_range
+	 * without validating whether the FD is part of the tracked set.
+	 */
+	if (URCU_TLS(ust_fd_mutex_nest)) {
+		if (close_range_cb(first, last, flags) < 0) {
+			ret = -1;
+			goto end;
+		}
+	} else {
+		int last_check = last;
+
+		if (last > lttng_ust_max_fd)
+			last_check = lttng_ust_max_fd;
+		lttng_ust_lock_fd_tracker();
+		for (i = first; i <= last_check; i++) {
+			if (IS_FD_VALID(i) && IS_FD_SET(i, lttng_fd_set))
+				continue;
+			if (close_range_cb(i, i, flags) < 0) {
+				ret = -1;
+				/* propagate errno from close_range_cb. */
+				lttng_ust_unlock_fd_tracker();
+				goto end;
+			}
+		}
+		if (last > lttng_ust_max_fd) {
+			if (close_range_cb(lttng_ust_max_fd + 1, last, flags) < 0) {
+				ret = -1;
+				lttng_ust_unlock_fd_tracker();
+				goto end;
+			}
+		}
+		lttng_ust_unlock_fd_tracker();
+	}
+end:
+	return ret;
+}
