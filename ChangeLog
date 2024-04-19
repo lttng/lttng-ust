@@ -1,3 +1,8 @@
+2024-04-19 (National Garlic Day) lttng-ust 2.12.10
+	* Add close_range wrapper to liblttng-ust-fd.so
+	* lttng-ust(3): Fix wrong len_type for sequence
+	* Fix: libc wrapper: use initial-exec for malloc_nesting TLS
+
 2024-01-10 (National Houseplant Appreciation Day) lttng-ust 2.12.9
 	* fix: invoke MKDIR_P before changing directories
 	* fix: clean java inner class files in examples
