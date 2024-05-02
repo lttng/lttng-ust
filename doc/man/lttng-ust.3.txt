@@ -1206,8 +1206,9 @@ if (lttng_ust_loaded) {
 [[example]]
 EXAMPLE
 -------
+
 NOTE: A few examples are available in the
-https://github.com/lttng/lttng-ust/tree/v{lttng_version}/doc/examples[`doc/examples`]
+https://github.com/lttng/lttng-ust/tree/stable-{lttng_version}/doc/examples[`doc/examples`]
 directory of LTTng-UST's source tree.
 
 This example shows all the features documented in the previous
@@ -1514,7 +1515,7 @@ affect application timings.
     Path to the shared object which acts as the clock override plugin.
     An example of such a plugin can be found in the LTTng-UST
     documentation under
-    https://github.com/lttng/lttng-ust/tree/v{lttng_version}/doc/examples/clock-override[`examples/clock-override`].
+    https://github.com/lttng/lttng-ust/tree/stable-{lttng_version}/doc/examples/clock-override[`examples/clock-override`].
 
 `LTTNG_UST_DEBUG`::
     If set, enable `liblttng-ust`'s debug and error output.
@@ -1523,7 +1524,7 @@ affect application timings.
     Path to the shared object which acts as the `getcpu()` override
     plugin. An example of such a plugin can be found in the LTTng-UST
     documentation under
-    https://github.com/lttng/lttng-ust/tree/v{lttng_version}/doc/examples/getcpu-override[`examples/getcpu-override`].
+    https://github.com/lttng/lttng-ust/tree/stable-{lttng_version}/doc/examples/getcpu-override[`examples/getcpu-override`].
 
 `LTTNG_UST_REGISTER_TIMEOUT`::
     Waiting time for the _registration done_ session daemon command
