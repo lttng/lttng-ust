@@ -59,7 +59,8 @@ xmlto_verbose_0 = @echo "  XMLTO     " $@;
 # Tools to execute:
 ADOC = $(asciidoc_verbose)$(ASCIIDOC) -f $(ASCIIDOC_CONF) -d manpage \
 	-a lttng_version="$(PACKAGE_VERSION)" \
-	-a lttng_ust_register_timeout="@LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_MS@"
+	-a lttng_ust_register_timeout="@LTTNG_UST_DEFAULT_CONSTRUCTOR_TIMEOUT_MS@" \
+	-a lttng_version="$(LTTNG_UST_MAJOR_VERSION).$(LTTNG_UST_MINOR_VERSION)"
 
 ADOC_DOCBOOK = $(ADOC) -b docbook
 XTO = $(xmlto_verbose)$(XMLTO) -m $(XSL_FILE) man
