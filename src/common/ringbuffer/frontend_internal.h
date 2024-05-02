@@ -85,62 +85,62 @@ unsigned long subbuf_index(unsigned long offset,
 }
 
 /*
- * Last TSC comparison functions. Check if the current TSC overflows tsc_bits
- * bits from the last TSC read. When overflows are detected, the full 64-bit
- * timestamp counter should be written in the record header. Reads and writes
- * last_tsc atomically.
+ * Last timestamp comparison functions. Check if the current timestamp overflows
+ * timestamp_bits bits from the last timestamp read. When overflows are
+ * detected, the full 64-bit timestamp counter should be written in the record
+ * header. Reads and writes last_timestamp atomically.
  */
 
 #if (CAA_BITS_PER_LONG == 32)
 static inline
-void save_last_tsc(const struct lttng_ust_ring_buffer_config *config,
-		   struct lttng_ust_ring_buffer *buf, uint64_t tsc)
+void save_last_timestamp(const struct lttng_ust_ring_buffer_config *config,
+		   struct lttng_ust_ring_buffer *buf, uint64_t timestamp)
 {
-	if (config->tsc_bits == 0 || config->tsc_bits == 64)
+	if (config->timestamp_bits == 0 || config->timestamp_bits == 64)
 		return;
 
 	/*
 	 * Ensure the compiler performs this update in a single instruction.
 	 */
-	v_set(config, &buf->last_tsc, (unsigned long)(tsc >> config->tsc_bits));
+	v_set(config, &buf->last_timestamp, (unsigned long)(timestamp >> config->timestamp_bits));
 }
 
 static inline
-int last_tsc_overflow(const struct lttng_ust_ring_buffer_config *config,
-		      struct lttng_ust_ring_buffer *buf, uint64_t tsc)
+int last_timestamp_overflow(const struct lttng_ust_ring_buffer_config *config,
+		      struct lttng_ust_ring_buffer *buf, uint64_t timestamp)
 {
-	unsigned long tsc_shifted;
+	unsigned long timestamp_shifted;
 
-	if (config->tsc_bits == 0 || config->tsc_bits == 64)
+	if (config->timestamp_bits == 0 || config->timestamp_bits == 64)
 		return 0;
 
-	tsc_shifted = (unsigned long)(tsc >> config->tsc_bits);
-	if (caa_unlikely(tsc_shifted
-		     - (unsigned long)v_read(config, &buf->last_tsc)))
+	timestamp_shifted = (unsigned long)(timestamp >> config->timestamp_bits);
+	if (caa_unlikely(timestamp_shifted
+		     - (unsigned long)v_read(config, &buf->last_timestamp)))
 		return 1;
 	else
 		return 0;
 }
 #else
 static inline
-void save_last_tsc(const struct lttng_ust_ring_buffer_config *config,
-		   struct lttng_ust_ring_buffer *buf, uint64_t tsc)
+void save_last_timestamp(const struct lttng_ust_ring_buffer_config *config,
+		   struct lttng_ust_ring_buffer *buf, uint64_t timestamp)
 {
-	if (config->tsc_bits == 0 || config->tsc_bits == 64)
+	if (config->timestamp_bits == 0 || config->timestamp_bits == 64)
 		return;
 
-	v_set(config, &buf->last_tsc, (unsigned long)tsc);
+	v_set(config, &buf->last_timestamp, (unsigned long)timestamp);
 }
 
 static inline
-int last_tsc_overflow(const struct lttng_ust_ring_buffer_config *config,
-		      struct lttng_ust_ring_buffer *buf, uint64_t tsc)
+int last_timestamp_overflow(const struct lttng_ust_ring_buffer_config *config,
+		      struct lttng_ust_ring_buffer *buf, uint64_t timestamp)
 {
-	if (config->tsc_bits == 0 || config->tsc_bits == 64)
+	if (config->timestamp_bits == 0 || config->timestamp_bits == 64)
 		return 0;
 
-	if (caa_unlikely((tsc - v_read(config, &buf->last_tsc))
-		     >> config->tsc_bits))
+	if (caa_unlikely((timestamp - v_read(config, &buf->last_timestamp))
+		     >> config->timestamp_bits))
 		return 1;
 	else
 		return 0;
@@ -287,7 +287,7 @@ int lib_ring_buffer_reserve_committed(const struct lttng_ust_ring_buffer_config 
 }
 
 /*
- * Receive end of subbuffer TSC as parameter. It has been read in the
+ * Receive end of subbuffer timestamp as parameter. It has been read in the
  * space reservation loop of either reserve or switch, which ensures it
  * progresses monotonically with event records in the buffer. Therefore,
  * it ensures that the end timestamp of a subbuffer is <= begin

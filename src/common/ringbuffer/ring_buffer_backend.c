@@ -235,7 +235,7 @@ void channel_backend_reset(struct channel_backend *chanb)
 	 * num_subbuf_order, buf_size_order, extra_reader_sb, num_subbuf,
 	 * priv, notifiers, config, cpumask and name.
 	 */
-	chanb->start_tsc = config->cb.ring_buffer_clock_read(chan);
+	chanb->start_timestamp = config->cb.ring_buffer_clock_read(chan);
 }
 
 /**
@@ -382,7 +382,7 @@ int channel_backend_init(struct channel_backend *chanb,
 		if (ret)
 			goto free_bufs;
 	}
-	chanb->start_tsc = config->cb.ring_buffer_clock_read(chan);
+	chanb->start_timestamp = config->cb.ring_buffer_clock_read(chan);
 
 	return 0;
 

@@ -46,10 +46,10 @@ struct lttng_ust_ring_buffer_client_cb {
 
 	/* Slow path only, at subbuffer switch */
 	size_t (*subbuffer_header_size) (void);
-	void (*buffer_begin) (struct lttng_ust_ring_buffer *buf, uint64_t tsc,
+	void (*buffer_begin) (struct lttng_ust_ring_buffer *buf, uint64_t timestamp,
 			      unsigned int subbuf_idx,
 			      struct lttng_ust_shm_handle *handle);
-	void (*buffer_end) (struct lttng_ust_ring_buffer *buf, uint64_t tsc,
+	void (*buffer_end) (struct lttng_ust_ring_buffer *buf, uint64_t timestamp,
 			    unsigned int subbuf_idx, unsigned long data_size,
 			    struct lttng_ust_shm_handle *handle,
 			    const struct lttng_ust_ring_buffer_ctx *ctx);
@@ -185,10 +185,10 @@ struct lttng_ust_ring_buffer_config {
 	enum lttng_ust_ring_buffer_ipi_types ipi;
 	enum lttng_ust_ring_buffer_wakeup_types wakeup;
 	/*
-	 * tsc_bits: timestamp bits saved at each record.
+	 * timestamp_bits: timestamp bits saved at each record.
 	 *   0 and 64 disable the timestamp compression scheme.
 	 */
-	unsigned int tsc_bits;
+	unsigned int timestamp_bits;
 	struct lttng_ust_ring_buffer_client_cb cb;
 	/*
 	 * client_type is used by the consumer process (which is in a
@@ -204,18 +204,18 @@ struct lttng_ust_ring_buffer_config {
 /*
  * Reservation flags.
  *
- * RING_BUFFER_RFLAG_FULL_TSC
+ * RING_BUFFER_RFLAG_FULL_TIMESTAMP
  *
  * This flag is passed to record_header_size() and to the primitive used to
  * write the record header. It indicates that the full 64-bit time value is
  * needed in the record header. If this flag is not set, the record header needs
- * only to contain "tsc_bits" bit of time value.
+ * only to contain "timestamp_bits" bit of time value.
  *
  * Reservation flags can be added by the client, starting from
  * "(RING_BUFFER_FLAGS_END << 0)". It can be used to pass information from
  * record_header_size() to lib_ring_buffer_write_record_header().
  */
-#define	RING_BUFFER_RFLAG_FULL_TSC		(1U << 0)
+#define	RING_BUFFER_RFLAG_FULL_TIMESTAMP	(1U << 0)
 #define RING_BUFFER_RFLAG_END			(1U << 1)
 
 /*

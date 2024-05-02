@@ -93,7 +93,7 @@ static size_t client_packet_header_size(void)
 }
 
 static void client_buffer_begin(struct lttng_ust_ring_buffer *buf,
-		uint64_t tsc __attribute__((unused)),
+		uint64_t timestamp __attribute__((unused)),
 		unsigned int subbuf_idx,
 		struct lttng_ust_shm_handle *handle)
 {
@@ -125,7 +125,7 @@ static void client_buffer_begin(struct lttng_ust_ring_buffer *buf,
  * subbuffer. data_size is between 1 and subbuf_size.
  */
 static void client_buffer_end(struct lttng_ust_ring_buffer *buf,
-		uint64_t tsc  __attribute__((unused)),
+		uint64_t timestamp  __attribute__((unused)),
 		unsigned int subbuf_idx, unsigned long data_size,
 		struct lttng_ust_shm_handle *handle,
 		const struct lttng_ust_ring_buffer_ctx *ctx)
@@ -193,7 +193,7 @@ static const struct lttng_ust_ring_buffer_config client_config = {
 	.cb.buffer_create = client_buffer_create,
 	.cb.buffer_finalize = client_buffer_finalize,
 
-	.tsc_bits = 0,
+	.timestamp_bits = 0,
 	.alloc = RING_BUFFER_ALLOC_GLOBAL,
 	.sync = RING_BUFFER_SYNC_GLOBAL,
 	.mode = RING_BUFFER_MODE_TEMPLATE,

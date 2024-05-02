@@ -87,7 +87,7 @@ struct channel_backend {
 	unsigned int buf_size_order;	/* Order of buffer size */
 	unsigned int extra_reader_sb:1;	/* has extra reader subbuffer ? */
 	unsigned long num_subbuf;	/* Number of sub-buffers for writer */
-	uint64_t start_tsc;		/* Channel creation TSC value */
+	uint64_t start_timestamp;	/* Channel creation timestamp value */
 	DECLARE_SHMP(void *, priv_data);/* Client-specific information */
 	struct lttng_ust_ring_buffer_config config; /* Ring buffer configuration */
 	char name[NAME_MAX];		/* Channel name */

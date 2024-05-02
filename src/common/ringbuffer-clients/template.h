@@ -19,8 +19,8 @@
 #include "common/clock.h"
 #include "common/ringbuffer/frontend_types.h"
 
-#define LTTNG_COMPACT_EVENT_BITS       5
-#define LTTNG_COMPACT_TSC_BITS         27
+#define LTTNG_COMPACT_EVENT_BITS	5
+#define LTTNG_COMPACT_TIMESTAMP_BITS	27
 
 /*
  * Keep the natural field alignment for _each field_ within this structure if
@@ -156,7 +156,7 @@ size_t record_header_size(
 	case 1:	/* compact */
 		padding = lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(uint32_t));
 		offset += padding;
-		if (!(ctx->priv->rflags & (RING_BUFFER_RFLAG_FULL_TSC | LTTNG_RFLAG_EXTENDED))) {
+		if (!(ctx->priv->rflags & (RING_BUFFER_RFLAG_FULL_TIMESTAMP | LTTNG_RFLAG_EXTENDED))) {
 			offset += sizeof(uint32_t);	/* id and timestamp */
 		} else {
 			/* Minimum space taken by LTTNG_COMPACT_EVENT_BITS id */
@@ -172,7 +172,7 @@ size_t record_header_size(
 		padding = lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(uint16_t));
 		offset += padding;
 		offset += sizeof(uint16_t);
-		if (!(ctx->priv->rflags & (RING_BUFFER_RFLAG_FULL_TSC | LTTNG_RFLAG_EXTENDED))) {
+		if (!(ctx->priv->rflags & (RING_BUFFER_RFLAG_FULL_TIMESTAMP | LTTNG_RFLAG_EXTENDED))) {
 			offset += lttng_ust_ring_buffer_align(offset, lttng_ust_rb_alignof(uint32_t));
 			offset += sizeof(uint32_t);	/* timestamp */
 		} else {
@@ -235,14 +235,14 @@ void lttng_write_event_header(const struct lttng_ust_ring_buffer_config *config,
 				event_id);
 		bt_bitfield_write(&id_time, uint32_t,
 				LTTNG_COMPACT_EVENT_BITS,
-				LTTNG_COMPACT_TSC_BITS,
-				ctx->priv->tsc);
+				LTTNG_COMPACT_TIMESTAMP_BITS,
+				ctx->priv->timestamp);
 		lib_ring_buffer_write(config, ctx, &id_time, sizeof(id_time));
 		break;
 	}
 	case 2:	/* large */
 	{
-		uint32_t timestamp = (uint32_t) ctx->priv->tsc;
+		uint32_t timestamp = (uint32_t) ctx->priv->timestamp;
 		uint16_t id = event_id;
 
 		lib_ring_buffer_write(config, ctx, &id, sizeof(id));
@@ -275,7 +275,7 @@ void lttng_write_event_header_slow(const struct lttng_ust_ring_buffer_config *co
 
 	switch (lttng_chan->priv->header_type) {
 	case 1:	/* compact */
-		if (!(ctx_private->rflags & (RING_BUFFER_RFLAG_FULL_TSC | LTTNG_RFLAG_EXTENDED))) {
+		if (!(ctx_private->rflags & (RING_BUFFER_RFLAG_FULL_TIMESTAMP | LTTNG_RFLAG_EXTENDED))) {
 			uint32_t id_time = 0;
 
 			bt_bitfield_write(&id_time, uint32_t,
@@ -284,12 +284,12 @@ void lttng_write_event_header_slow(const struct lttng_ust_ring_buffer_config *co
 					event_id);
 			bt_bitfield_write(&id_time, uint32_t,
 					LTTNG_COMPACT_EVENT_BITS,
-					LTTNG_COMPACT_TSC_BITS,
-					ctx_private->tsc);
+					LTTNG_COMPACT_TIMESTAMP_BITS,
+					ctx_private->timestamp);
 			lib_ring_buffer_write(config, ctx, &id_time, sizeof(id_time));
 		} else {
 			uint8_t id = 0;
-			uint64_t timestamp = ctx_private->tsc;
+			uint64_t timestamp = ctx_private->timestamp;
 
 			bt_bitfield_write(&id, uint8_t,
 					0,
@@ -305,8 +305,8 @@ void lttng_write_event_header_slow(const struct lttng_ust_ring_buffer_config *co
 		break;
 	case 2:	/* large */
 	{
-		if (!(ctx_private->rflags & (RING_BUFFER_RFLAG_FULL_TSC | LTTNG_RFLAG_EXTENDED))) {
-			uint32_t timestamp = (uint32_t) ctx_private->tsc;
+		if (!(ctx_private->rflags & (RING_BUFFER_RFLAG_FULL_TIMESTAMP | LTTNG_RFLAG_EXTENDED))) {
+			uint32_t timestamp = (uint32_t) ctx_private->timestamp;
 			uint16_t id = event_id;
 
 			lib_ring_buffer_write(config, ctx, &id, sizeof(id));
@@ -314,7 +314,7 @@ void lttng_write_event_header_slow(const struct lttng_ust_ring_buffer_config *co
 			lib_ring_buffer_write(config, ctx, &timestamp, sizeof(timestamp));
 		} else {
 			uint16_t id = 65535;
-			uint64_t timestamp = ctx_private->tsc;
+			uint64_t timestamp = ctx_private->timestamp;
 
 			lib_ring_buffer_write(config, ctx, &id, sizeof(id));
 			/* Align extended struct on largest member */
@@ -364,7 +364,7 @@ static size_t client_packet_header_size(void)
 	return offsetof(struct packet_header, ctx.header_end);
 }
 
-static void client_buffer_begin(struct lttng_ust_ring_buffer *buf, uint64_t tsc,
+static void client_buffer_begin(struct lttng_ust_ring_buffer *buf, uint64_t timestamp,
 				unsigned int subbuf_idx,
 				struct lttng_ust_shm_handle *handle)
 {
@@ -384,7 +384,7 @@ static void client_buffer_begin(struct lttng_ust_ring_buffer *buf, uint64_t tsc,
 	memcpy(header->uuid, lttng_chan->priv->uuid, sizeof(lttng_chan->priv->uuid));
 	header->stream_id = lttng_chan->priv->id;
 	header->stream_instance_id = buf->backend.cpu;
-	header->ctx.timestamp_begin = tsc;
+	header->ctx.timestamp_begin = timestamp;
 	header->ctx.timestamp_end = 0;
 	header->ctx.content_size = ~0ULL; /* for debugging */
 	header->ctx.packet_size = ~0ULL;
@@ -397,7 +397,7 @@ static void client_buffer_begin(struct lttng_ust_ring_buffer *buf, uint64_t tsc,
  * offset is assumed to never be 0 here : never deliver a completely empty
  * subbuffer. data_size is between 1 and subbuf_size.
  */
-static void client_buffer_end(struct lttng_ust_ring_buffer *buf, uint64_t tsc,
+static void client_buffer_end(struct lttng_ust_ring_buffer *buf, uint64_t timestamp,
 			      unsigned int subbuf_idx, unsigned long data_size,
 			      struct lttng_ust_shm_handle *handle,
 			      const struct lttng_ust_ring_buffer_ctx *ctx)
@@ -413,7 +413,7 @@ static void client_buffer_end(struct lttng_ust_ring_buffer *buf, uint64_t tsc,
 	assert(header);
 	if (!header)
 		return;
-	header->ctx.timestamp_end = tsc;
+	header->ctx.timestamp_end = timestamp;
 	header->ctx.content_size =
 		(uint64_t) data_size * CHAR_BIT;		/* in bits */
 	header->ctx.packet_size =
@@ -614,7 +614,7 @@ static const struct lttng_ust_ring_buffer_config client_config = {
 	.cb.content_size_field = client_content_size_field,
 	.cb.packet_size_field = client_packet_size_field,
 
-	.tsc_bits = LTTNG_COMPACT_TSC_BITS,
+	.timestamp_bits = LTTNG_COMPACT_TIMESTAMP_BITS,
 	.alloc = RING_BUFFER_ALLOC_PER_CPU,
 	.sync = RING_BUFFER_SYNC_GLOBAL,
 	.mode = RING_BUFFER_MODE_TEMPLATE,

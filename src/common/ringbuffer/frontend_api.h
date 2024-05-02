@@ -82,8 +82,8 @@ int lib_ring_buffer_try_reserve(const struct lttng_ust_ring_buffer_config *confi
 	*o_begin = v_read(config, &buf->offset);
 	*o_old = *o_begin;
 
-	ctx_private->tsc = lib_ring_buffer_clock_read(chan);
-	if ((int64_t) ctx_private->tsc == -EIO)
+	ctx_private->timestamp = lib_ring_buffer_clock_read(chan);
+	if ((int64_t) ctx_private->timestamp == -EIO)
 		return 1;
 
 	/*
@@ -93,8 +93,8 @@ int lib_ring_buffer_try_reserve(const struct lttng_ust_ring_buffer_config *confi
 	 */
 	//prefetch(&buf->commit_hot[subbuf_index(*o_begin, chan)]);
 
-	if (last_tsc_overflow(config, buf, ctx_private->tsc))
-		ctx_private->rflags |= RING_BUFFER_RFLAG_FULL_TSC;
+	if (last_timestamp_overflow(config, buf, ctx_private->timestamp))
+		ctx_private->rflags |= RING_BUFFER_RFLAG_FULL_TIMESTAMP;
 
 	if (caa_unlikely(subbuf_offset(*o_begin, chan) == 0))
 		return 1;
@@ -130,7 +130,8 @@ int lib_ring_buffer_try_reserve(const struct lttng_ust_ring_buffer_config *confi
  * @ctx: ring buffer context. (input and output) Must be already initialized.
  *
  * Atomic wait-free slot reservation. The reserved space starts at the context
- * "pre_offset". Its length is "slot_size". The associated time-stamp is "tsc".
+ * "pre_offset". Its length is "slot_size". The associated time-stamp is
+ * "timestamp".
  *
  * Return :
  *  0 on success.
@@ -179,12 +180,12 @@ int lib_ring_buffer_reserve(const struct lttng_ust_ring_buffer_config *config,
 		goto slow_path;
 
 	/*
-	 * Atomically update last_tsc. This update races against concurrent
-	 * atomic updates, but the race will always cause supplementary full TSC
-	 * record headers, never the opposite (missing a full TSC record header
-	 * when it would be needed).
+	 * Atomically update last_timestamp. This update races against concurrent
+	 * atomic updates, but the race will always cause supplementary full
+	 * timestamp record headers, never the opposite (missing a full
+	 * timestamp record header when it would be needed).
 	 */
-	save_last_tsc(config, buf, ctx_private->tsc);
+	save_last_timestamp(config, buf, ctx_private->timestamp);
 
 	/*
 	 * Push the reader if necessary
@@ -317,17 +318,17 @@ int lib_ring_buffer_try_discard_reserve(const struct lttng_ust_ring_buffer_confi
 
 	/*
 	 * We need to ensure that if the cmpxchg succeeds and discards the
-	 * record, the next record will record a full TSC, because it cannot
-	 * rely on the last_tsc associated with the discarded record to detect
-	 * overflows. The only way to ensure this is to set the last_tsc to 0
-	 * (assuming no 64-bit TSC overflow), which forces to write a 64-bit
+	 * record, the next record will record a full timestamp, because it cannot
+	 * rely on the last_timestamp associated with the discarded record to detect
+	 * overflows. The only way to ensure this is to set the last_timestamp to 0
+	 * (assuming no 64-bit timestamp overflow), which forces to write a 64-bit
 	 * timestamp in the next record.
 	 *
-	 * Note: if discard fails, we must leave the TSC in the record header.
-	 * It is needed to keep track of TSC overflows for the following
+	 * Note: if discard fails, we must leave the timestamp in the record header.
+	 * It is needed to keep track of timestamp overflows for the following
 	 * records.
 	 */
-	save_last_tsc(config, buf, 0ULL);
+	save_last_timestamp(config, buf, 0ULL);
 
 	if (caa_likely(v_cmpxchg(config, &buf->offset, end_offset, ctx_private->pre_offset)
 		   != end_offset))

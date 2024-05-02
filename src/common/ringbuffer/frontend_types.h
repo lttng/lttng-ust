@@ -181,7 +181,7 @@ struct lttng_ust_ring_buffer {
 	int record_disabled;
 	/* End of cache-hot 32 bytes cacheline */
 
-	union v_atomic last_tsc;	/*
+	union v_atomic last_timestamp;	/*
 					 * Last timestamp written in the buffer.
 					 */
 
@@ -251,7 +251,7 @@ struct lttng_ust_ring_buffer_ctx_private {
 						 * prior to record header alignment
 						 * padding.
 						 */
-	uint64_t tsc;				/* time-stamp counter value */
+	uint64_t timestamp;			/* time-stamp counter value */
 	unsigned int rflags;			/* reservation flags */
 	struct lttng_ust_ring_buffer *buf;	/*
 						 * buffer corresponding to processor id
