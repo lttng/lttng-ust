@@ -76,13 +76,14 @@ xmlto_verbose_out_ = $(xmlto_verbose_out_@AM_DEFAULT_V@)
 xmlto_verbose_out_0 = 2>/dev/null
 
 # Tools to execute:
-ADOC = $(asciidoc_verbose)$(ASCIIDOC) -f $(ASCIIDOC_CONF) -d manpage \
+ADOC = $(asciidoc_verbose)$(ASCIIDOC) -v -f $(ASCIIDOC_CONF) -d manpage \
 	-a mansource="LTTng" \
 	-a manmanual="LTTng Manual" \
-	-a manversion="$(PACKAGE_VERSION)"
+	-a manversion="$(PACKAGE_VERSION)" \
+	-a lttng_version="$(LTTNG_UST_MAJOR_VERSION).$(LTTNG_UST_MINOR_VERSION)"
 
 ADOC_DOCBOOK = $(ADOC) -b docbook
-XTO = $(xmlto_verbose)$(XMLTO) -m $(XSL_FILE) man
+XTO = $(xmlto_verbose)$(XMLTO) -v -m $(XSL_FILE) man
 
 # Recipes:
 %.1.xml: $(srcdir)/%.1.txt $(COMMON_DEPS)
