@@ -40,6 +40,13 @@ struct lttng_ust_client_lib_ring_buffer_client_cb {
 		struct lttng_ust_ring_buffer_channel *chan, uint64_t *seq);
 	int (*instance_id) (struct lttng_ust_ring_buffer *buf,
 			struct lttng_ust_ring_buffer_channel *chan, uint64_t *id);
+	int (*packet_create) (void **packet, uint64_t *packet_length);
+	int (*packet_initialize) (struct lttng_ust_ring_buffer *buf,
+			struct lttng_ust_ring_buffer_channel *chan,
+			void *packet,
+			uint64_t timestamp_begin, uint64_t timestamp_end,
+			uint64_t sequence_number, uint64_t *packet_length,
+			uint64_t *packet_length_padded);
 };
 
 void lttng_ust_ring_buffer_clients_init(void)

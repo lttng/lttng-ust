@@ -177,6 +177,7 @@ int lttng_ust_ctl_duplicate_ust_object_data(struct lttng_ust_abi_object_data **d
 struct lttng_ust_ctl_consumer_channel;
 struct lttng_ust_ctl_consumer_stream;
 struct lttng_ust_ctl_consumer_channel_attr;
+struct lttng_ust_ctl_consumer_packet;
 
 int lttng_ust_ctl_get_nr_stream_per_channel(void);
 
@@ -256,6 +257,18 @@ int lttng_ust_ctl_put_subbuf(struct lttng_ust_ctl_consumer_stream *stream);
 
 int lttng_ust_ctl_flush_buffer(struct lttng_ust_ctl_consumer_stream *stream,
 		int producer_active);
+/*
+ * Perform an active flush, populating a packet if there was not packet
+ * delivery performed during the flush so readers can be able to infer the lack
+ * events between the last produced packet and the time the produced position
+ * sampled (indicated by an empty packet).
+ *
+ * `packet` and `packet_populated` must be non-NULL.
+ * `packet` should be a pointer to memory allocated by `lttng_ust_ctl_packet_create`.
+ */
+int lttng_ust_ctl_flush_events_or_populate_packet(struct lttng_ust_ctl_consumer_stream *stream,
+		struct lttng_ust_ctl_consumer_packet *packet,
+		bool *packet_populated, bool *flush_done);
 int lttng_ust_ctl_clear_buffer(struct lttng_ust_ctl_consumer_stream *stream);
 
 /* index */
@@ -294,6 +307,19 @@ int lttng_ust_ctl_get_instance_id(struct lttng_ust_ctl_consumer_stream *stream,
  */
 int lttng_ust_ctl_get_current_timestamp(struct lttng_ust_ctl_consumer_stream *stream,
 		uint64_t *ts);
+
+/*
+ * Packets
+ */
+
+/*
+ * Allocates and creates a new packet, owned by the caller.
+ * The packet must be destroyed using `lttng_ust_ctl_packet_destroy`.
+ */
+int lttng_ust_ctl_packet_create(struct lttng_ust_ctl_consumer_packet **packet);
+void lttng_ust_ctl_packet_destroy(struct lttng_ust_ctl_consumer_packet *packet);
+int lttng_ust_ctl_packet_get_buffer(struct lttng_ust_ctl_consumer_packet *packet, void **buffer,
+		uint64_t *packet_length, uint64_t *packet_length_padded);
 
 /* returns whether UST has perf counters support. */
 int lttng_ust_ctl_has_perf_counters(void);

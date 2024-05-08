@@ -574,6 +574,66 @@ static int client_instance_id(struct lttng_ust_ring_buffer *buf,
 	return 0;
 }
 
+static int client_packet_initialize(struct lttng_ust_ring_buffer *buf,
+		struct lttng_ust_ring_buffer_channel *chan,
+		void *packet,
+		uint64_t timestamp_begin, uint64_t timestamp_end,
+		uint64_t sequence_number, uint64_t *packet_length,
+		uint64_t *packet_length_padded)
+{
+	struct packet_header *packet_header = (struct packet_header *)packet;
+	uint64_t size = LTTNG_UST_PAGE_ALIGN(client_packet_header_size());
+	struct lttng_ust_channel_buffer *lttng_chan_buf;
+
+	assert(packet);
+	assert(packet_length);
+	assert(packet_length_padded);
+	if (!buf || !chan)
+		return -EINVAL;
+
+	memset(packet, 0, size);
+	lttng_chan_buf = channel_get_private(chan);
+	/*
+	 * See client_buffer_begin().
+	 */
+	packet_header->magic = CTF_MAGIC_NUMBER;
+	memcpy(packet_header->uuid, lttng_chan_buf->priv->uuid, sizeof(lttng_chan_buf->priv->uuid));
+	packet_header->stream_id = lttng_chan_buf->priv->id;
+	packet_header->stream_instance_id = buf->backend.cpu;
+	packet_header->ctx.timestamp_begin = timestamp_begin;
+	packet_header->ctx.timestamp_end = timestamp_end;
+	packet_header->ctx.content_size = client_packet_header_size() * CHAR_BIT;
+	packet_header->ctx.packet_size = size * CHAR_BIT;
+	packet_header->ctx.cpu_id = buf->backend.cpu;
+	packet_header->ctx.packet_seq_num = sequence_number;
+	*packet_length = client_packet_header_size();
+	*packet_length_padded = size;
+	return 0;
+}
+
+/*
+ * The caller must free the pointer stored in packet when done.
+ */
+static int client_packet_create(void **packet, uint64_t *packet_length)
+{
+	void *new_packet = NULL;
+	uint64_t size = LTTNG_UST_PAGE_ALIGN(client_packet_header_size());
+
+	assert(packet);
+	assert(packet_length);
+
+	new_packet = zmalloc(size);
+	if (!new_packet) {
+		*packet = NULL;
+		*packet_length = 0;
+		return -ENOMEM;
+	}
+
+	*packet = new_packet;
+	*packet_length = size;
+	return 0;
+}
+
 static const
 struct lttng_ust_client_lib_ring_buffer_client_cb client_cb = {
 	.parent = {
@@ -596,6 +656,8 @@ struct lttng_ust_client_lib_ring_buffer_client_cb client_cb = {
 	.current_timestamp = client_current_timestamp,
 	.sequence_number = client_sequence_number,
 	.instance_id = client_instance_id,
+	.packet_create = client_packet_create,
+	.packet_initialize = client_packet_initialize,
 };
 
 static const struct lttng_ust_ring_buffer_config client_config = {
