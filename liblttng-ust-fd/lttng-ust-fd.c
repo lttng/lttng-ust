@@ -158,6 +158,9 @@ int fclose(FILE *stream)
 			__lttng_ust_fd_plibc_fclose);
 }
 
+/* Old libc headers don't contain a close_range() declaration. */
+int close_range(unsigned int first, unsigned int last, int flags);
+
 /*
  * Override the libc close_range() symbol with our own, allowing
  * applications to close arbitrary file descriptors. If the fd is owned
