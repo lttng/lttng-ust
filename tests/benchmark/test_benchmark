@@ -11,7 +11,7 @@ plan_tests 1
 : ${ITERS:=10}
 : ${DURATION:=2}
 : ${NR_THREADS:=1}
-: ${NR_CPUS:=$(lscpu | grep "^CPU(s)" | sed 's/^.*:[ \t]*//g')}
+: ${NR_CPUS:=$(lscpu | grep "^CPU(s):" | sed 's/^.*:[ \t]*//g')}
 
 : ${TIME:="./$CURDIR/ptime"}
 
