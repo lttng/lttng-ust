@@ -144,14 +144,29 @@ struct ustcomm_notify_event_msg {
 	/* followed by signature, fields, and model_emf_uri */
 } __attribute__((packed));
 
-#define USTCOMM_NOTIFY_EVENT_REPLY_PADDING	24
+#define USTCOMM_NOTIFY_EVENT_REPLY_PADDING	32
 struct ustcomm_notify_event_reply {
 	int32_t ret_code;	/* 0: ok, negative: error code */
-
-	/* 32-bit (lower bits) event id for backward compatibility with ABI major < 10 */
-	uint32_t old_event_id;	/* TODO: remove field on future protocol compatibility break. */
-	uint64_t id;		/* 64-bit event id.  */
+	uint32_t id;	/* 32-bit event id. */
 	char padding[USTCOMM_NOTIFY_EVENT_REPLY_PADDING];
+} __attribute__((packed));
+
+#define USTCOMM_NOTIFY_KEY_MSG_PADDING	24
+struct ustcomm_notify_key_msg {
+	uint32_t session_objd;
+	uint32_t map_objd;
+	uint32_t dimension;
+	uint32_t key_string_len;
+	uint64_t user_token;
+	char padding[USTCOMM_NOTIFY_KEY_MSG_PADDING];
+	/* followed by dimension_indexes (array of @dimension uint64_t items) and key_string. */
+} __attribute__((packed));
+
+#define USTCOMM_NOTIFY_KEY_REPLY_PADDING	32
+struct ustcomm_notify_key_reply {
+	int32_t ret_code;	/* 0: ok, negative: error code */
+	uint64_t index;		/* 64-bit key index. */
+	char padding[USTCOMM_NOTIFY_KEY_REPLY_PADDING];
 } __attribute__((packed));
 
 #define USTCOMM_NOTIFY_ENUM_MSG_PADDING		32
@@ -292,7 +307,21 @@ int ustcomm_register_event(int sock,
 	const struct lttng_ust_event_field * const *fields,
 	const char *model_emf_uri,
 	uint64_t user_token,
-	uint64_t *id)			/* (output) */
+	uint32_t *id)			/* (output) */
+	__attribute__((visibility("hidden")));
+
+/*
+ * Returns 0 on success, negative error value on error.
+ * Returns -EPIPE or -ECONNRESET if other end has hung up.
+ */
+int ustcomm_register_key(int sock,
+	int session_objd,		/* session descriptor */
+	int map_objd,			/* map descriptor */
+	uint32_t dimension,
+	const uint64_t *dimension_indexes,
+	const char *key_string,		/* key string (input) */
+	uint64_t user_token,
+	uint64_t *index)		/* (output) */
 	__attribute__((visibility("hidden")));
 
 /*

@@ -2548,6 +2548,9 @@ int lttng_ust_ctl_recv_notify(int sock, enum lttng_ust_ctl_notify_cmd *notify_cm
 	case 2:
 		*notify_cmd = LTTNG_UST_CTL_NOTIFY_CMD_ENUM;
 		break;
+	case 3:
+		*notify_cmd = LTTNG_UST_CTL_NOTIFY_CMD_KEY;
+		break;
 	default:
 		return -EINVAL;
 	}
@@ -2681,7 +2684,7 @@ signature_error:
  * Returns 0 on success, negative error value on error.
  */
 int lttng_ust_ctl_reply_register_event(int sock,
-	uint64_t id,
+	uint32_t id,
 	int ret_code)
 {
 	ssize_t len;
@@ -2693,8 +2696,135 @@ int lttng_ust_ctl_reply_register_event(int sock,
 	memset(&reply, 0, sizeof(reply));
 	reply.header.notify_cmd = LTTNG_UST_CTL_NOTIFY_CMD_EVENT;
 	reply.r.ret_code = ret_code;
-	reply.r.old_event_id = (uint32_t) id;	/* For backward compatibility */
 	reply.r.id = id;
+	len = ustcomm_send_unix_sock(sock, &reply, sizeof(reply));
+	if (len > 0 && len != sizeof(reply))
+		return -EIO;
+	if (len < 0)
+		return len;
+	return 0;
+}
+
+/*
+ * Returns 0 on success, negative UST or system error value on error.
+ */
+int lttng_ust_ctl_recv_register_key(int sock,
+	int *session_objd,		/* session descriptor (output) */
+	int *map_objd,			/* map descriptor (output) */
+	uint32_t *dimension,		/*
+					 * Against which dimension is
+					 * this key expressed. (output)
+					 */
+	uint64_t **dimension_indexes,	/*
+					 * Indexes (output,
+					 * dynamically
+					 * allocated, must be
+					 * free(3)'d by the
+					 * caller if function
+					 * returns success.)
+					 * Contains @dimension
+					 * elements.
+					 */
+	char **key_string,		/*
+					 * key string (output,
+					 * dynamically allocated, must
+					 * be free(3)'d by the caller if
+					 * function returns success.)
+					 */
+	uint64_t *user_token)
+{
+	ssize_t len;
+	struct ustcomm_notify_key_msg msg;
+	size_t dimension_indexes_len, key_string_len;
+	uint64_t *a_dimension_indexes = NULL;
+	char *a_key_string = NULL;
+
+	len = ustcomm_recv_unix_sock(sock, &msg, sizeof(msg));
+	if (len > 0 && len != sizeof(msg))
+		return -EIO;
+	if (len == 0)
+		return -EPIPE;
+	if (len < 0)
+		return len;
+
+	*session_objd = msg.session_objd;
+	*map_objd = msg.map_objd;
+	*dimension = msg.dimension;
+	dimension_indexes_len = msg.dimension * sizeof(uint64_t);
+	key_string_len = msg.key_string_len;
+	*user_token = msg.user_token;
+
+	if (dimension_indexes_len) {
+		/* recv dimension_indexes */
+		a_dimension_indexes = zmalloc(dimension_indexes_len);
+		if (!a_dimension_indexes) {
+			len = -ENOMEM;
+			goto error;
+		}
+		len = ustcomm_recv_unix_sock(sock, a_dimension_indexes, dimension_indexes_len);
+		if (len > 0 && len != dimension_indexes_len) {
+			len = -EIO;
+			goto error;
+		}
+		if (len == 0) {
+			len = -EPIPE;
+			goto error;
+		}
+		if (len < 0) {
+			goto error;
+		}
+	}
+
+	if (key_string_len) {
+		/* recv key_string */
+		a_key_string = zmalloc(key_string_len);
+		if (!a_key_string) {
+			len = -ENOMEM;
+			goto error;
+		}
+		len = ustcomm_recv_unix_sock(sock, a_key_string, key_string_len);
+		if (len > 0 && len != key_string_len) {
+			len = -EIO;
+			goto error;
+		}
+		if (len == 0) {
+			len = -EPIPE;
+			goto error;
+		}
+		if (len < 0) {
+			goto error;
+		}
+		/* Enforce end of string */
+		a_key_string[key_string_len - 1] = '\0';
+	}
+
+	*dimension_indexes = a_dimension_indexes;
+	*key_string = a_key_string;
+	return 0;
+
+error:
+	free(a_key_string);
+	free(a_dimension_indexes);
+	return len;
+}
+
+/*
+ * Returns 0 on success, negative error value on error.
+ */
+int lttng_ust_ctl_reply_register_key(int sock,
+	uint64_t index,			/* Index within dimension (input) */
+	int ret_code)			/* return code. 0 ok, negative error */
+{
+	ssize_t len;
+	struct {
+		struct ustcomm_notify_hdr header;
+		struct ustcomm_notify_key_reply r;
+	} reply;
+
+	memset(&reply, 0, sizeof(reply));
+	reply.header.notify_cmd = LTTNG_UST_CTL_NOTIFY_CMD_KEY;
+	reply.r.ret_code = ret_code;
+	reply.r.index = index;
 	len = ustcomm_send_unix_sock(sock, &reply, sizeof(reply));
 	if (len > 0 && len != sizeof(reply))
 		return -EIO;
@@ -2996,6 +3126,14 @@ struct lttng_ust_ctl_daemon_counter *
 		ust_dim[i].overflow_index = dimensions[i].overflow_index;
 		ust_dim[i].has_underflow = dimensions[i].has_underflow;
 		ust_dim[i].has_overflow = dimensions[i].has_overflow;
+		switch (dimensions[i].key_type) {
+		case LTTNG_UST_CTL_KEY_TYPE_TOKENS:
+			ust_dim[i].key_type = LTTNG_KEY_TYPE_TOKENS;
+			break;
+		case LTTNG_UST_CTL_KEY_TYPE_INTEGER:	/* Fall-through */
+		default:
+			goto free_attr;
+		}
 	}
 	counter->counter = transport->ops.priv->counter_create(nr_dimensions,
 		ust_dim, global_sum_step, global_counter_fd,
@@ -3065,6 +3203,15 @@ int lttng_ust_ctl_create_counter_data(struct lttng_ust_ctl_daemon_counter *count
 	dimension->size = counter->attr->dimensions[0].size;
 	dimension->underflow_index = counter->attr->dimensions[0].underflow_index;
 	dimension->overflow_index = counter->attr->dimensions[0].overflow_index;
+	switch (counter->attr->dimensions[0].key_type) {
+	case LTTNG_UST_CTL_KEY_TYPE_TOKENS:
+		dimension->key_type = LTTNG_UST_ABI_KEY_TYPE_TOKENS;
+		break;
+	case LTTNG_UST_CTL_KEY_TYPE_INTEGER:	/* Fall-through */
+	default:
+		ret = -EINVAL;
+		goto error;
+	}
 
 	counter_data = zmalloc(sizeof(*counter_data));
 	if (!counter_data) {
@@ -3180,6 +3327,8 @@ int lttng_ust_ctl_send_old_counter_data_to_ust(int sock, int parent_handle,
 	old_counter_conf.dimensions[0].has_overflow = (dimension->flags & LTTNG_UST_ABI_COUNTER_DIMENSION_FLAG_OVERFLOW) ? 1 : 0;
 	old_counter_conf.dimensions[0].underflow_index = dimension->underflow_index;
 	old_counter_conf.dimensions[0].overflow_index = dimension->overflow_index;
+	if (dimension->key_type != LTTNG_UST_ABI_KEY_TYPE_TOKENS)
+		return -EINVAL;
 
 	size = sizeof(old_counter_conf);
 	lum.handle = parent_handle;

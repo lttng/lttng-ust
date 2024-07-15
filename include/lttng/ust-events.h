@@ -438,6 +438,22 @@ struct lttng_ust_event_counter_private;
  * UST. Fields need to be only added at the end, never reordered, never
  * removed.
  *
+ * The field @struct_size should be used to determine the size of the
+ * structure. It should be queried before using additional fields added
+ * at the end of the structure.
+ */
+struct lttng_ust_event_counter_ctx {
+	uint32_t struct_size;		/* Size of this structure. */
+	int args_available;		/* Input arguments are available. */
+
+	/* End of base ABI. Fields below should be used after checking struct_size. */
+};
+
+/*
+ * IMPORTANT: this structure is part of the ABI between the probe and
+ * UST. Fields need to be only added at the end, never reordered, never
+ * removed.
+ *
  * struct lttng_ust_event_recorder is the action for recording events
  * into a ring buffer. It inherits from struct lttng_ust_event_common
  * by composition to ensure both parent and child structure are
@@ -454,6 +470,8 @@ struct lttng_ust_event_counter {
 	struct lttng_ust_event_counter_private *priv;	/* Private event counter interface */
 
 	struct lttng_ust_channel_counter *chan;
+
+	int use_args;					/* Use input arguments. */
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };
@@ -602,7 +620,10 @@ struct lttng_ust_channel_counter_ops {
 
 	struct lttng_ust_channel_counter_ops_private *priv;	/* Private channel counter ops interface */
 
-	int (*event_counter_add)(struct lttng_ust_event_counter *event_counter, int64_t v);
+	int (*counter_hit)(struct lttng_ust_event_counter *event_counter,
+		const char *stack_data,
+		struct lttng_ust_probe_ctx *probe_ctx,
+		struct lttng_ust_event_counter_ctx *event_counter_ctx);
 
 	/* End of base ABI. Fields below should be used after checking struct_size. */
 };

@@ -1049,8 +1049,19 @@ void lttng_ust__event_probe__##_provider##___##_name(LTTNG_UST__TP_ARGS_DATA_PRO
 	case LTTNG_UST_EVENT_TYPE_COUNTER:				      \
 	{								      \
 		struct lttng_ust_event_counter *__event_counter = (struct lttng_ust_event_counter *) __event->child; \
+		struct lttng_ust_event_counter_ctx __event_counter_ctx;	      \
 									      \
-		(void) __event_counter->chan->ops->event_counter_add(__event_counter, 1); \
+		__event_counter_ctx.struct_size = sizeof(struct lttng_ust_event_counter_ctx); \
+		__event_counter_ctx.args_available = CMM_ACCESS_ONCE(__event_counter->use_args); \
+									      \
+		if (caa_unlikely(!__interpreter_stack_prepared && __event_counter_ctx.args_available)) \
+			lttng_ust__event_prepare_interpreter_stack__##_provider##___##_name(__stackvar.__interpreter_stack_data, \
+				LTTNG_UST__TP_ARGS_DATA_VAR(_args));	      \
+									      \
+		(void) __event_counter->chan->ops->counter_hit(__event_counter, \
+				__stackvar.__interpreter_stack_data,	      \
+				&__probe_ctx,				      \
+				&__event_counter_ctx);			      \
 		break;							      \
 	}								      \
 	}								      \

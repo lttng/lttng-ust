@@ -742,8 +742,11 @@ int format_event_key(struct lttng_event_enabler_common *event_enabler, char *key
 	if (key->nr_dimensions != 1)
 		return -EINVAL;
 	dim = &key->key_dimensions[0];
-	for (i = 0; i < dim->nr_key_tokens; i++) {
-		const struct lttng_key_token *token = &dim->key_tokens[i];
+	/* Currently only tokens keys are supported. */
+	if (dim->key_type != LTTNG_KEY_TYPE_TOKENS)
+		return -EINVAL;
+	for (i = 0; i < dim->u.tokens.nr_key_tokens; i++) {
+		const struct lttng_key_token *token = &dim->u.tokens.key_tokens[i];
 		size_t token_len;
 		const char *str;
 
@@ -950,6 +953,7 @@ struct lttng_ust_event_common *lttng_ust_event_alloc(struct lttng_event_enabler_
 			event_counter->priv->parent.parent.user_token = event_counter_enabler->parent.parent.user_token;
 		event_counter->priv->parent.parent.desc = desc;
 		strcpy(event_counter_priv->key, key_string);
+		event_counter_priv->action = event_counter_enabler->action;
 		return event_counter->parent;
 	}
 	default:
@@ -1005,7 +1009,6 @@ int lttng_event_register_to_sessiond(struct lttng_event_enabler_common *event_en
 {
 	switch (event_enabler->enabler_type) {
 	case LTTNG_EVENT_ENABLER_TYPE_RECORDER:		/* Fall-through */
-	case LTTNG_EVENT_ENABLER_TYPE_COUNTER:
 	{
 		struct lttng_event_enabler_session_common *event_enabler_session =
 			caa_container_of(event_enabler, struct lttng_event_enabler_session_common, parent);
@@ -1013,8 +1016,9 @@ int lttng_event_register_to_sessiond(struct lttng_event_enabler_common *event_en
 			caa_container_of(event->priv, struct lttng_ust_event_session_common_private, parent);
 		struct lttng_ust_session *session = event_enabler_session->chan->session;
 		const struct lttng_ust_event_desc *desc = event->priv->desc;
-		int notify_socket, loglevel;
+		int notify_socket, loglevel, ret;
 		const char *uri;
+		uint32_t id;
 
 		if (desc->loglevel)
 			loglevel = *(*desc->loglevel);
@@ -1030,7 +1034,7 @@ int lttng_event_register_to_sessiond(struct lttng_event_enabler_common *event_en
 			return notify_socket;
 
 		/* Fetch event ID from sessiond */
-		return ustcomm_register_event(notify_socket,
+		ret = ustcomm_register_event(notify_socket,
 			session,
 			session->priv->objd,
 			event_enabler_session->chan->priv->objd,
@@ -1041,7 +1045,39 @@ int lttng_event_register_to_sessiond(struct lttng_event_enabler_common *event_en
 			desc->tp_class->fields,
 			uri,
 			event_enabler_session->parent.user_token,
-			&event_session_priv->id);
+			&id);
+		if (ret)
+			return ret;
+		event_session_priv->id = id;
+		return 0;
+	}
+	case LTTNG_EVENT_ENABLER_TYPE_COUNTER:
+	{
+		struct lttng_event_enabler_session_common *event_enabler_session =
+			caa_container_of(event_enabler, struct lttng_event_enabler_session_common, parent);
+		struct lttng_ust_event_session_common_private *event_session_priv =
+			caa_container_of(event->priv, struct lttng_ust_event_session_common_private, parent);
+		struct lttng_ust_session *session = event_enabler_session->chan->session;
+		uint64_t dimension_index[LTTNG_COUNTER_DIMENSION_MAX];
+		int notify_socket, ret;
+
+		notify_socket = lttng_get_notify_socket(session->priv->owner);
+		if (notify_socket < 0)
+			return notify_socket;
+
+		/* Fetch key index from sessiond */
+		ret = ustcomm_register_key(notify_socket,
+			session->priv->objd,
+			event_enabler_session->chan->priv->objd,
+			0,	/* target dimension */
+			NULL,
+			name,
+			event_enabler_session->parent.user_token,
+			dimension_index);	/* Filled up to target dimension. */
+		if (ret)
+			return ret;
+		event_session_priv->id = dimension_index[0];
+		return 0;
 	}
 
 	case LTTNG_EVENT_ENABLER_TYPE_NOTIFIER:
@@ -1697,10 +1733,20 @@ struct lttng_event_counter_enabler *lttng_event_counter_enabler_create(
 		struct lttng_ust_channel_counter *chan)
 {
 	struct lttng_event_counter_enabler *event_enabler;
+	enum lttng_event_counter_action action;
 
 	event_enabler = zmalloc(sizeof(*event_enabler));
 	if (!event_enabler)
 		return NULL;
+
+	switch (counter_event->action) {
+	case LTTNG_UST_ABI_COUNTER_ACTION_INCREMENT:
+		action = LTTNG_EVENT_COUNTER_ACTION_INCREMENT;
+		break;
+	default:
+		goto error;
+	}
+	event_enabler->action = action;
 	event_enabler->parent.parent.enabler_type = LTTNG_EVENT_ENABLER_TYPE_COUNTER;
 	event_enabler->parent.parent.format_type = format_type;
 	CDS_INIT_LIST_HEAD(&event_enabler->parent.parent.filter_bytecode_head);
@@ -1717,6 +1763,10 @@ struct lttng_event_counter_enabler *lttng_event_counter_enabler_create(
 	lttng_session_lazy_sync_event_enablers(event_enabler->chan->parent->session);
 
 	return event_enabler;
+
+error:
+	free(event_enabler);
+	return NULL;
 }
 
 struct lttng_event_notifier_enabler *lttng_event_notifier_enabler_create(

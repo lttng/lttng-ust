@@ -49,6 +49,8 @@ static struct lttng_ust_channel_counter *counter_create(size_t nr_dimensions,
 	if (!counter)
 		goto error;
 	lttng_chan_counter->priv->counter = counter;
+	for (i = 0; i < nr_dimensions; i++)
+		lttng_chan_counter->priv->dimension_key_types[i] = dimensions[i].key_type;
 	return lttng_chan_counter;
 
 error:
@@ -68,12 +70,22 @@ static int counter_add(struct lttng_ust_channel_counter *counter,
 	return lttng_counter_add(&client_config, counter->priv->counter, dimension_indexes, v);
 }
 
-static int event_counter_add(struct lttng_ust_event_counter *event_counter, int64_t v)
+static int counter_hit(struct lttng_ust_event_counter *event_counter,
+		const char *stack_data __attribute__((unused)),
+		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
+		struct lttng_ust_event_counter_ctx *event_counter_ctx __attribute__((unused)))
 {
 	struct lttng_ust_channel_counter *counter = event_counter->chan;
-	size_t index = event_counter->priv->parent.id;
 
-	return counter_add(counter, &index, v);
+	switch (event_counter->priv->action) {
+	case LTTNG_EVENT_COUNTER_ACTION_INCREMENT:
+	{
+		size_t index = event_counter->priv->parent.id;
+		return counter_add(counter, &index, 1);
+	}
+	default:
+		return -ENOSYS;
+	}
 }
 
 static int counter_read(struct lttng_ust_channel_counter *counter, const size_t *dimension_indexes, int cpu,
@@ -108,7 +120,7 @@ static struct lttng_counter_transport lttng_counter_transport = {
 			.counter_aggregate = counter_aggregate,
 			.counter_clear = counter_clear,
 		}),
-		.event_counter_add = event_counter_add,
+		.counter_hit = counter_hit,
 	},
 	.client_config = &client_config,
 };

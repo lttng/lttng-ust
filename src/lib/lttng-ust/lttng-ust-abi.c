@@ -701,6 +701,14 @@ long lttng_session_create_counter(
 	dimensions[0].overflow_index = dimension.overflow_index;
 	dimensions[0].has_underflow = dimension.flags & LTTNG_UST_ABI_COUNTER_DIMENSION_FLAG_UNDERFLOW;
 	dimensions[0].has_overflow = dimension.flags & LTTNG_UST_ABI_COUNTER_DIMENSION_FLAG_OVERFLOW;
+	switch (dimension.key_type) {
+	case LTTNG_UST_ABI_KEY_TYPE_TOKENS:
+		dimensions[0].key_type = LTTNG_KEY_TYPE_TOKENS;
+		break;
+	case LTTNG_UST_ABI_KEY_TYPE_INTEGER:	/* Fall-through */
+	default:
+		return -EINVAL;
+	}
 
 	counter_objd = objd_alloc(NULL, &lttng_counter_ops, owner, "counter");
 	if (counter_objd < 0) {
@@ -1375,78 +1383,109 @@ objd_error:
 }
 
 static
+int copy_counter_key_dimension_tokens(const struct lttng_ust_abi_counter_key_dimension_tokens *abi_dim_tokens,
+		const char *addr, size_t *offset, size_t arg_len, struct lttng_counter_key_dimension *internal_dim)
+{
+	struct lttng_ust_abi_counter_key_dimension_tokens dim_tokens;
+	size_t nr_key_tokens, j;
+	int ret;
+
+	if (abi_dim_tokens->parent.len < sizeof(struct lttng_ust_abi_counter_key_dimension_tokens))
+		return -EINVAL;
+	ret = copy_abi_struct(&dim_tokens, sizeof(dim_tokens), abi_dim_tokens, abi_dim_tokens->parent.len);
+	if (ret)
+		return ret;
+	nr_key_tokens = dim_tokens.nr_key_tokens;
+	if (!nr_key_tokens || nr_key_tokens > LTTNG_NR_KEY_TOKEN)
+		return -EINVAL;
+	internal_dim->key_type = LTTNG_KEY_TYPE_TOKENS;
+	internal_dim->u.tokens.nr_key_tokens = nr_key_tokens;
+	*offset += sizeof(struct lttng_ust_abi_counter_key_dimension_tokens);
+	for (j = 0; j < nr_key_tokens; j++) {
+		struct lttng_key_token *internal_token = &internal_dim->u.tokens.key_tokens[j];
+		const struct lttng_ust_abi_key_token *abi_token;
+
+		if (*offset + sizeof(struct lttng_ust_abi_key_token) > arg_len)
+			return -EINVAL;
+		abi_token = (const struct lttng_ust_abi_key_token *)(addr + *offset);
+		if (abi_token->len < sizeof(struct lttng_ust_abi_key_token))
+			return -EINVAL;
+		if (*offset + abi_token->len > arg_len)
+			return -EINVAL;
+		switch (abi_token->type) {
+		case LTTNG_UST_ABI_KEY_TOKEN_STRING:
+		{
+			const struct lttng_ust_abi_key_token_string *abi_key_string;
+			struct lttng_ust_abi_key_token_string token_string;
+
+			if (abi_token->len < sizeof(struct lttng_ust_abi_key_token_string))
+				return -EINVAL;
+			abi_key_string = (const struct lttng_ust_abi_key_token_string *)(addr + *offset);
+			ret = copy_abi_struct(&token_string, sizeof(token_string), abi_key_string, abi_key_string->parent.len);
+			if (ret)
+				return ret;
+			*offset += abi_key_string->parent.len;
+			internal_token->type = LTTNG_KEY_TOKEN_STRING;
+			if (!abi_key_string->string_len || abi_key_string->string_len > LTTNG_KEY_TOKEN_STRING_LEN_MAX)
+				return -EINVAL;
+			*offset += abi_key_string->string_len;
+			if (*offset > arg_len)
+				return -EINVAL;
+			if (abi_key_string->str[abi_key_string->string_len - 1] != '\0' ||
+					strlen(abi_key_string->str) + 1 != abi_key_string->string_len)
+				return -EINVAL;
+			memcpy(internal_token->arg.string, abi_key_string->str, abi_key_string->string_len);
+			break;
+		}
+		case LTTNG_UST_ABI_KEY_TOKEN_EVENT_NAME:
+			internal_token->type = LTTNG_KEY_TOKEN_EVENT_NAME;
+			*offset += abi_token->len;
+			break;
+		case LTTNG_UST_ABI_KEY_TOKEN_PROVIDER_NAME:
+			internal_token->type = LTTNG_KEY_TOKEN_PROVIDER_NAME;
+			*offset += abi_token->len;
+			break;
+		default:
+			return -EINVAL;
+		}
+	}
+	return 0;
+}
+
+static
 int copy_counter_key(struct lttng_counter_key *internal_key,
-		     unsigned long arg, size_t arg_len,
+		     unsigned long arg, size_t action_fields_len, size_t arg_len,
 		     const struct lttng_ust_abi_counter_event *counter_event)
 {
-	size_t i, j, nr_dimensions, offset = 0;
-	char *addr = (char *)arg;
+	size_t i, nr_dimensions, offset = 0;
+	const char *addr = (const char *)arg;
 	int ret;
 
 	nr_dimensions = counter_event->number_key_dimensions;
 	if (nr_dimensions != 1)
 		return -EINVAL;
 	internal_key->nr_dimensions = nr_dimensions;
-	offset += counter_event->len;
+	offset += counter_event->len + action_fields_len;
 	for (i = 0; i < nr_dimensions; i++) {
-		const struct lttng_ust_abi_counter_key_dimension *abi_dim;
-		struct lttng_ust_abi_counter_key_dimension dim;
 		struct lttng_counter_key_dimension *internal_dim = &internal_key->key_dimensions[i];
-		size_t nr_key_tokens;
+		const struct lttng_ust_abi_counter_key_dimension *abi_dim;
 
 		abi_dim = (const struct lttng_ust_abi_counter_key_dimension *)(addr + offset);
-		offset += abi_dim->len;
-		if (offset > arg_len || abi_dim->len < lttng_ust_offsetofend(struct lttng_ust_abi_counter_key_dimension, nr_key_tokens))
+		if (offset + abi_dim->len > arg_len || abi_dim->len < lttng_ust_offsetofend(struct lttng_ust_abi_counter_key_dimension, key_type))
 			return -EINVAL;
-		ret = copy_abi_struct(&dim, sizeof(dim), abi_dim, abi_dim->len);
-		if (ret)
-			return ret;
-		nr_key_tokens = dim.nr_key_tokens;
-		if (!nr_key_tokens || nr_key_tokens > LTTNG_NR_KEY_TOKEN)
-			return -EINVAL;
-		internal_dim->nr_key_tokens = nr_key_tokens;
-		for (j = 0; j < nr_key_tokens; j++) {
-			const struct lttng_ust_abi_key_token *abi_token;
-			struct lttng_ust_abi_key_token token;
-			struct lttng_key_token *internal_token = &internal_dim->key_tokens[j];
-
-			abi_token = (const struct lttng_ust_abi_key_token *)(addr + offset);
-			offset += abi_token->len;
-			if (offset > arg_len || abi_token->len < lttng_ust_offsetofend(struct lttng_ust_abi_key_token, type))
-				return -EINVAL;
-			ret = copy_abi_struct(&token, sizeof(token), abi_token, abi_token->len);
+		switch (abi_dim->key_type) {
+		case LTTNG_UST_ABI_KEY_TYPE_TOKENS:
+		{
+			struct lttng_ust_abi_counter_key_dimension_tokens *dim_tokens =
+				caa_container_of(abi_dim, struct lttng_ust_abi_counter_key_dimension_tokens, parent);
+			ret = copy_counter_key_dimension_tokens(dim_tokens, addr, &offset, arg_len,
+					internal_dim);
 			if (ret)
 				return ret;
-			switch (token.type) {
-			case LTTNG_UST_ABI_KEY_TOKEN_STRING:
-			{
-				const struct lttng_ust_abi_counter_key_string *abi_key_string;
-
-				abi_key_string = (const struct lttng_ust_abi_counter_key_string *)(addr + offset);
-				offset += sizeof(struct lttng_ust_abi_counter_key_string);
-				if (offset > arg_len)
-					return -EINVAL;
-				internal_token->type = LTTNG_KEY_TOKEN_STRING;
-				if (!abi_key_string->string_len || abi_key_string->string_len > LTTNG_KEY_TOKEN_STRING_LEN_MAX)
-					return -EINVAL;
-				offset += abi_key_string->string_len;
-				if (offset > arg_len)
-					return -EINVAL;
-				if (abi_key_string->str[abi_key_string->string_len - 1] != '\0' ||
-						strlen(abi_key_string->str) + 1 != abi_key_string->string_len)
-					return -EINVAL;
-				memcpy(internal_token->arg.string, abi_key_string->str, abi_key_string->string_len);
-				break;
-			}
-			case LTTNG_UST_ABI_KEY_TOKEN_EVENT_NAME:
-				internal_token->type = LTTNG_KEY_TOKEN_EVENT_NAME;
-				break;
-			case LTTNG_UST_ABI_KEY_TOKEN_PROVIDER_NAME:
-				internal_token->type = LTTNG_KEY_TOKEN_PROVIDER_NAME;
-				break;
-			default:
-				return -EINVAL;
-			}
+			break;
+		}
+		default:
+			return -EINVAL;
 		}
 	}
 	return 0;
@@ -1462,7 +1501,9 @@ int lttng_abi_create_event_counter_enabler(int channel_objd,
 	struct lttng_counter_key counter_key = {};
 	struct lttng_event_counter_enabler *enabler;
 	enum lttng_enabler_format_type format_type;
+	size_t action_fields_len = 0;
 	int event_objd, ret;
+	size_t i;
 
 	if (arg_len < lttng_ust_offsetofend(struct lttng_ust_abi_counter_event, number_key_dimensions)) {
 		return -EINVAL;
@@ -1476,15 +1517,30 @@ int lttng_abi_create_event_counter_enabler(int channel_objd,
 	if (ret) {
 		return ret;
 	}
+	switch (counter_event.action) {
+	case LTTNG_UST_ABI_COUNTER_ACTION_INCREMENT:
+		/* No additional fields specific to this action. */
+		break;
+	default:
+		return -EINVAL;
+	}
 	counter_event.event.name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
 	if (strutils_is_star_glob_pattern(counter_event.event.name)) {
 		format_type = LTTNG_ENABLER_FORMAT_STAR_GLOB;
 	} else {
 		format_type = LTTNG_ENABLER_FORMAT_EVENT;
 	}
-	ret = copy_counter_key(&counter_key, arg, arg_len, &counter_event);
+	ret = copy_counter_key(&counter_key, arg, action_fields_len, arg_len, &counter_event);
 	if (ret) {
 		return ret;
+	}
+	/*
+	 * Validate that each dimension counter key type match the map
+	 * key type.
+	 */
+	for (i = 0; i < counter_key.nr_dimensions; i++) {
+		if (channel->priv->dimension_key_types[i] != counter_key.key_dimensions[i].key_type)
+			return -EINVAL;
 	}
 	event_objd = objd_alloc(NULL, &lttng_event_enabler_ops, owner,
 		"event enabler");

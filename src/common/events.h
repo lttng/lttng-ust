@@ -86,10 +86,21 @@ struct lttng_key_token {
 	} arg;
 };
 
+enum lttng_key_type {
+	LTTNG_KEY_TYPE_TOKENS = 0,
+	LTTNG_KEY_TYPE_INTEGER = 1,
+};
+
 #define LTTNG_NR_KEY_TOKEN 8
 struct lttng_counter_key_dimension {
-	size_t nr_key_tokens;
-	struct lttng_key_token key_tokens[LTTNG_NR_KEY_TOKEN];
+	enum lttng_key_type key_type;
+
+	union {
+		struct {
+			size_t nr_key_tokens;
+			struct lttng_key_token key_tokens[LTTNG_NR_KEY_TOKEN];
+		} tokens;
+	} u;
 };
 
 #define LTTNG_COUNTER_DIMENSION_MAX 4
@@ -102,6 +113,7 @@ struct lttng_counter_dimension {
 	uint64_t size;
 	uint64_t underflow_index;
 	uint64_t overflow_index;
+	enum lttng_key_type key_type;
 	uint8_t has_underflow;
 	uint8_t has_overflow;
 };
@@ -143,10 +155,16 @@ struct lttng_event_recorder_enabler {
 	struct lttng_ust_channel_buffer *chan;
 };
 
+enum lttng_event_counter_action {
+	LTTNG_EVENT_COUNTER_ACTION_INCREMENT = 0,
+};
+
 struct lttng_event_counter_enabler {
 	struct lttng_event_enabler_session_common parent;
 	struct lttng_ust_channel_counter *chan;
 	struct lttng_counter_key key;
+
+	enum lttng_event_counter_action action;
 };
 
 struct lttng_event_notifier_enabler {
@@ -322,6 +340,7 @@ struct lttng_ust_event_counter_private {
 	struct lttng_ust_event_session_common_private parent;
 
 	struct lttng_ust_event_counter *pub;	/* Public event interface */
+	enum lttng_event_counter_action action;
 	char key[LTTNG_KEY_TOKEN_STRING_LEN_MAX];
 };
 
@@ -471,6 +490,7 @@ struct lttng_ust_channel_counter_private {
 	struct lttng_session *session;
 	struct cds_list_head node;			/* Counter list (in session) */
 	size_t free_index;				/* Next index to allocate */
+	enum lttng_key_type dimension_key_types[LTTNG_COUNTER_DIMENSION_MAX];
 };
 
 /*

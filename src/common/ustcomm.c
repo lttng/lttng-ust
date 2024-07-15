@@ -1370,7 +1370,7 @@ int ustcomm_register_event(int sock,
 	const struct lttng_ust_event_field * const *lttng_fields,
 	const char *model_emf_uri,
 	uint64_t user_token,
-	uint64_t *id)			/* event id (output) */
+	uint32_t *id)			/* event id (output) */
 {
 	ssize_t len;
 	struct {
@@ -1478,7 +1478,7 @@ int ustcomm_register_event(int sock,
 		if (reply.r.ret_code < 0)
 			return reply.r.ret_code;
 		*id = reply.r.id;
-		DBG("Sent register event notification for name \"%s\": ret_code %d, id %" PRIu64 "\n",
+		DBG("Sent register event notification for name \"%s\": ret_code %d, id %" PRIu32 "\n",
 			event_name, reply.r.ret_code, reply.r.id);
 		return 0;
 	default:
@@ -1497,6 +1497,113 @@ int ustcomm_register_event(int sock,
 	/* Error path only. */
 error_fields:
 	free(fields);
+	return ret;
+}
+
+/*
+ * Returns 0 on success, negative error value on error.
+ * Returns -EPIPE or -ECONNRESET if other end has hung up.
+ */
+int ustcomm_register_key(int sock,
+	int session_objd,		/* session descriptor */
+	int map_objd,			/* map descriptor */
+	uint32_t dimension,
+	const uint64_t *dimension_indexes,
+	const char *key_string,		/* key string (input) */
+	uint64_t user_token,
+	uint64_t *index)		/* (output) */
+{
+	ssize_t len;
+	struct {
+		struct ustcomm_notify_hdr header;
+		struct ustcomm_notify_key_msg m;
+	} msg;
+	struct {
+		struct ustcomm_notify_hdr header;
+		struct ustcomm_notify_key_reply r;
+	} reply;
+	size_t dimension_indexes_len;
+	int ret;
+
+	memset(&msg, 0, sizeof(msg));
+	msg.header.notify_cmd = LTTNG_UST_CTL_NOTIFY_CMD_KEY;
+	msg.m.session_objd = session_objd;
+	msg.m.map_objd = map_objd;
+	msg.m.dimension = dimension;
+	dimension_indexes_len = sizeof(uint64_t) * dimension;
+	msg.m.key_string_len = strlen(key_string) + 1;
+	msg.m.user_token = user_token;
+
+	len = ustcomm_send_unix_sock(sock, &msg, sizeof(msg));
+	if (len > 0 && len != sizeof(msg)) {
+		ret = -EIO;
+		goto error_send;
+	}
+	if (len < 0) {
+		ret = len;
+		goto error_send;
+	}
+
+	/* send dimension_indexes */
+	if (dimension_indexes) {
+		len = ustcomm_send_unix_sock(sock, dimension_indexes, dimension_indexes_len);
+		if (len > 0 && len != dimension_indexes_len) {
+			ret = -EIO;
+			goto error_dimension_indexes;
+		}
+		if (len < 0) {
+			ret = len;
+			goto error_dimension_indexes;
+		}
+	}
+
+	/* send key_string */
+	len = ustcomm_send_unix_sock(sock, key_string, msg.m.key_string_len);
+	if (len > 0 && len != dimension_indexes_len) {
+		ret = -EIO;
+		goto error_dimension_indexes;
+	}
+	if (len < 0) {
+		ret = len;
+		goto error_dimension_indexes;
+	}
+
+	/* receive reply */
+	len = ustcomm_recv_unix_sock(sock, &reply, sizeof(reply));
+	switch (len) {
+	case 0:	/* orderly shutdown */
+		return -EPIPE;
+	case sizeof(reply):
+		if (reply.header.notify_cmd != msg.header.notify_cmd) {
+			ERR("Unexpected result message command "
+				"expected: %u vs received: %u\n",
+				msg.header.notify_cmd, reply.header.notify_cmd);
+			return -EINVAL;
+		}
+		if (reply.r.ret_code > 0)
+			return -EINVAL;
+		if (reply.r.ret_code < 0)
+			return reply.r.ret_code;
+		*index = reply.r.index;
+		DBG("Sent register key notification for key \"%s\": ret_code %d, index %" PRIu64 "\n",
+			key_string, reply.r.ret_code, reply.r.index);
+		return 0;
+	default:
+		if (len < 0) {
+			/* Transport level error */
+			if (errno == EPIPE || errno == ECONNRESET)
+				len = -errno;
+			return len;
+		} else {
+			ERR("incorrect message size: %zd\n", len);
+			return len;
+		}
+	}
+	/* Unreached. */
+
+	/* Error path only. */
+error_dimension_indexes:
+error_send:
 	return ret;
 }
 
