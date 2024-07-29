@@ -209,7 +209,7 @@ enum lttng_ust_abi_counter_dimension_flags {
 struct lttng_ust_abi_counter_dimension {
 	uint32_t key_type;			/* enum lttng_ust_abi_key_type */
 	uint32_t flags;				/* enum lttng_ust_abi_counter_dimension_flags */
-	uint64_t size;				/* dimension size */
+	uint64_t size;				/* dimension size (count of entries) */
 	uint64_t underflow_index;
 	uint64_t overflow_index;
 } __attribute__((packed));
