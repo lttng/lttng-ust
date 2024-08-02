@@ -225,7 +225,7 @@ all-local:
 					-DCMAKE_LIBRARY_PATH="$(abs_top_builddir)/src/lib/lttng-ust/.libs" \
 					-DCMAKE_C_FLAGS="$(AM_CFLAGS) $(CPPFLAGS) $(CFLAGS)" \
 					-DCMAKE_CXX_FLAGS="$(AM_CXXFLAGS) $(CXXFLAGS) $(CPPFLAGS)" \
-					-DCMAKE_EXE_LINKER_FLAGS="$(AM_LDFLAGS) $(LDFLAGS)" \
+					-DCMAKE_EXE_LINKER_FLAGS="$(AM_LDFLAGS) -Wl,-rpath-link=\"$(abs_top_builddir)/src/lib/lttng-ust/.libs:$(abs_top_builddir)/src/lib/lttng-ust-tracepoint/.libs/:$(abs_top_builddir)/src/lib/lttng-ust-common/.libs/\" $(LDFLAGS)" \
 					.. && \
 				$(MAKE) \
 			) || exit 1; \
