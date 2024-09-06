@@ -9,7 +9,7 @@
 
 #include "./fake-ust.h"
 
-void init_usterr(void)
+ __attribute__((noinline)) void init_usterr(void)
 {
 	fprintf(stderr, "libfakeust0: init_usterr() called.\n");
 }
