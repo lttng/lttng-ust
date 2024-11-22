@@ -247,7 +247,7 @@ static bool lttng_is_numa_available(void)
 	if (ret && errno == ENOSYS) {
 		return false;
 	}
-	return numa_available() > 0;
+	return numa_available() >= 0;
 }
 #endif
 
