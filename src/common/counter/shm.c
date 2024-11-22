@@ -185,7 +185,7 @@ static bool lttng_is_numa_available(void)
 	int ret;
 
 	ret = get_mempolicy(NULL, NULL, 0, NULL, 0);
-	if (ret && errno == ENOSYS) {
+	if (ret && (errno == ENOSYS || errno == EPERM)) {
 		return false;
 	}
 	return numa_available() >= 0;
