@@ -51,6 +51,8 @@ public final class LttngLogAppender extends AbstractAppender implements ILttngHa
 
 	private static final String SHARED_OBJECT_NAME = "lttng-ust-log4j-jni";
 
+	private static final String CONTEXT_OBJECT_NAME = "lttng-ust-context-jni";
+
 	/**
 	 * Number of events logged (really sent through JNI) by this handler
 	 */
@@ -85,6 +87,7 @@ public final class LttngLogAppender extends AbstractAppender implements ILttngHa
 
 		/* Initialize LTTng UST tracer. */
 		try {
+			System.loadLibrary(CONTEXT_OBJECT_NAME); // $NON-NLS-1$
 			System.loadLibrary(SHARED_OBJECT_NAME); // $NON-NLS-1$
 		} catch (UnsatisfiedLinkError e) {
 			throw new IOException(e);
