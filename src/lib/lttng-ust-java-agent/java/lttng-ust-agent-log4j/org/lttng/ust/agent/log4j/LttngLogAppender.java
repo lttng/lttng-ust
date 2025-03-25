@@ -37,6 +37,8 @@ public class LttngLogAppender extends AppenderSkeleton implements ILttngHandler 
 
 	private static final String SHARED_OBJECT_NAME = "lttng-ust-log4j-jni";
 
+	private static final String CONTEXT_OBJECT_NAME = "lttng-ust-context-jni";
+
 	private final AtomicLong eventCount = new AtomicLong(0);
 
 	private final ILttngAgent<LttngLogAppender> agent;
@@ -57,6 +59,7 @@ public class LttngLogAppender extends AppenderSkeleton implements ILttngHandler 
 		super();
 		/* Initialize LTTng UST tracer. */
 		try {
+			System.loadLibrary(CONTEXT_OBJECT_NAME); // $NON-NLS-1$
 			System.loadLibrary(SHARED_OBJECT_NAME); // $NON-NLS-1$
 		} catch (UnsatisfiedLinkError e) {
 			throw new IOException(e);

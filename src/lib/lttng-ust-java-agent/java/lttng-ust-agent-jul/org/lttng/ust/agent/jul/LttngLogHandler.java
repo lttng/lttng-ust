@@ -38,6 +38,8 @@ public class LttngLogHandler extends Handler implements ILttngHandler {
 
 	private static final String SHARED_OBJECT_NAME = "lttng-ust-jul-jni";
 
+	private static final String CONTEXT_OBJECT_NAME = "lttng-ust-context-jni";
+
 	/**
 	 * Dummy Formatter object, so we can use its
 	 * {@link Formatter#formatMessage(LogRecord)} method.
@@ -69,6 +71,7 @@ public class LttngLogHandler extends Handler implements ILttngHandler {
 		super();
 		/* Initialize LTTng UST tracer. */
 		try {
+			System.loadLibrary(CONTEXT_OBJECT_NAME); // $NON-NLS-1$
 			System.loadLibrary(SHARED_OBJECT_NAME); //$NON-NLS-1$
 		} catch (UnsatisfiedLinkError e) {
 			throw new IOException(e);
