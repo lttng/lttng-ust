@@ -1893,8 +1893,12 @@ int lttng_ust_ctl_get_padded_subbuf_size(struct lttng_ust_ctl_consumer_stream *s
 	struct lttng_ust_ring_buffer_channel *rb_chan;
 	struct lttng_ust_ring_buffer *buf;
 	struct lttng_ust_sigbus_range range;
+	ssize_t page_size;
 
 	if (!stream)
+		return -EINVAL;
+	page_size = LTTNG_UST_PAGE_SIZE;
+	if (page_size < 0)
 		return -EINVAL;
 	buf = stream->buf;
 	consumer_chan = stream->chan;
@@ -1905,7 +1909,7 @@ int lttng_ust_ctl_get_padded_subbuf_size(struct lttng_ust_ctl_consumer_stream *s
 				stream->memory_map_size);
 	*len = lib_ring_buffer_get_read_data_size(&rb_chan->backend.config, buf,
 		rb_chan->handle);
-	*len = LTTNG_UST_PAGE_ALIGN(*len);
+	*len = LTTNG_UST_ALIGN(*len, page_size);
 	lttng_ust_sigbus_del_range(&range);
 	sigbus_end();
 	return 0;

@@ -137,12 +137,15 @@ static void client_buffer_end(struct lttng_ust_ring_buffer *buf,
 				subbuf_idx * chan->backend.subbuf_size,
 				handle);
 	unsigned long records_lost = 0;
+	ssize_t page_size = LTTNG_UST_PAGE_SIZE;
 
 	assert(header);
 	if (!header)
 		return;
+	if (page_size < 0)
+		return;
 	header->content_size = data_size * CHAR_BIT;		/* in bits */
-	header->packet_size = LTTNG_UST_PAGE_ALIGN(data_size) * CHAR_BIT; /* in bits */
+	header->packet_size = LTTNG_UST_ALIGN(data_size, page_size) * CHAR_BIT; /* in bits */
 	/*
 	 * We do not care about the records lost count, because the metadata
 	 * channel waits and retry.

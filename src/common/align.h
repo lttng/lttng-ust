@@ -26,6 +26,5 @@
 
 #define __LTTNG_UST_ALIGN_MASK(v, mask)	(((v) + (mask)) & ~(mask))
 #define LTTNG_UST_ALIGN(v, align)	__LTTNG_UST_ALIGN_MASK(v, (__typeof__(v)) (align) - 1)
-#define LTTNG_UST_PAGE_ALIGN(addr)	LTTNG_UST_ALIGN(addr, LTTNG_UST_PAGE_SIZE)
 
 #endif /* _UST_COMMON_ALIGN_H */

@@ -412,15 +412,18 @@ static void client_buffer_end(struct lttng_ust_ring_buffer *buf, uint64_t timest
 				subbuf_idx * chan->backend.subbuf_size,
 				handle);
 	unsigned long records_lost = 0;
+	ssize_t page_size = LTTNG_UST_PAGE_SIZE;
 
 	assert(header);
 	if (!header)
+		return;
+	if (page_size < 0)
 		return;
 	header->ctx.timestamp_end = timestamp;
 	header->ctx.content_size =
 		(uint64_t) data_size * CHAR_BIT;		/* in bits */
 	header->ctx.packet_size =
-		(uint64_t) LTTNG_UST_PAGE_ALIGN(data_size) * CHAR_BIT;	/* in bits */
+		(uint64_t) LTTNG_UST_ALIGN(data_size, page_size) * CHAR_BIT;	/* in bits */
 
 	records_lost += lib_ring_buffer_get_records_lost_full(&client_config, ctx);
 	records_lost += lib_ring_buffer_get_records_lost_wrap(&client_config, ctx);
@@ -594,15 +597,19 @@ static int client_packet_initialize(struct lttng_ust_ring_buffer *buf,
 		uint64_t *packet_length_padded)
 {
 	struct packet_header *packet_header = (struct packet_header *)packet;
-	size_t size = LTTNG_UST_PAGE_ALIGN(client_packet_header_size());
 	struct lttng_ust_channel_buffer *lttng_chan_buf;
+	ssize_t page_size = LTTNG_UST_PAGE_SIZE;
+	size_t size;
 
 	assert(packet);
 	assert(packet_length);
 	assert(packet_length_padded);
 	if (!buf || !chan)
 		return -EINVAL;
+	if (page_size < 0)
+		return -EINVAL;
 
+	size = LTTNG_UST_ALIGN(client_packet_header_size(), page_size);
 	memset(packet, 0, size);
 	lttng_chan_buf = channel_get_private(chan);
 	/*
@@ -630,12 +637,16 @@ static int client_packet_initialize(struct lttng_ust_ring_buffer *buf,
  */
 static int client_packet_create(void **packet, uint64_t *packet_length)
 {
+	ssize_t page_size = LTTNG_UST_PAGE_SIZE;
 	void *new_packet = NULL;
-	size_t size = LTTNG_UST_PAGE_ALIGN(client_packet_header_size());
+	size_t size;
 
 	assert(packet);
 	assert(packet_length);
 
+	if (page_size < 0)
+		return -EINVAL;
+	size = LTTNG_UST_ALIGN(client_packet_header_size(), page_size);
 	new_packet = zmalloc(size);
 	if (!new_packet) {
 		*packet = NULL;
