@@ -594,7 +594,7 @@ static int client_packet_initialize(struct lttng_ust_ring_buffer *buf,
 		uint64_t *packet_length_padded)
 {
 	struct packet_header *packet_header = (struct packet_header *)packet;
-	uint64_t size = LTTNG_UST_PAGE_ALIGN(client_packet_header_size());
+	size_t size = LTTNG_UST_PAGE_ALIGN(client_packet_header_size());
 	struct lttng_ust_channel_buffer *lttng_chan_buf;
 
 	assert(packet);
@@ -631,7 +631,7 @@ static int client_packet_initialize(struct lttng_ust_ring_buffer *buf,
 static int client_packet_create(void **packet, uint64_t *packet_length)
 {
 	void *new_packet = NULL;
-	uint64_t size = LTTNG_UST_PAGE_ALIGN(client_packet_header_size());
+	size_t size = LTTNG_UST_PAGE_ALIGN(client_packet_header_size());
 
 	assert(packet);
 	assert(packet_length);
