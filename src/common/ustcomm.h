@@ -92,7 +92,7 @@ struct ustcomm_ust_msg {
 			uint64_t seqnum;
 		} __attribute__((packed)) capture;
 		struct lttng_ust_abi_old_counter counter_old;
-		struct lttng_ust_abi_old_counter_global counter_global_old;
+		struct lttng_ust_abi_old_counter_channel counter_channel_old;
 		struct lttng_ust_abi_old_counter_cpu counter_cpu_old;
 		struct {
 			uint32_t cmd_len;

@@ -42,8 +42,8 @@ static inline int __lttng_counter_add(const struct lib_counter_config *config,
 	case COUNTER_ALLOC_PER_CPU:
 		layout = &counter->percpu_counters[lttng_ust_get_cpu()];
 		break;
-	case COUNTER_ALLOC_GLOBAL:
-		layout = &counter->global_counters;
+	case COUNTER_ALLOC_PER_CHANNEL:
+		layout = &counter->channel_counters;
 		break;
 	default:
 		return -EINVAL;
@@ -77,7 +77,7 @@ static inline int __lttng_counter_add(const struct lib_counter_config *config,
 			} while (old != res);
 			break;
 		}
-		case COUNTER_ALLOC_GLOBAL:
+		case COUNTER_ALLOC_PER_CHANNEL:
 		{
 			do {
 				old = res;
@@ -120,7 +120,7 @@ static inline int __lttng_counter_add(const struct lib_counter_config *config,
 			} while (old != res);
 			break;
 		}
-		case COUNTER_ALLOC_GLOBAL:
+		case COUNTER_ALLOC_PER_CHANNEL:
 		{
 			do {
 				old = res;
@@ -163,7 +163,7 @@ static inline int __lttng_counter_add(const struct lib_counter_config *config,
 			} while (old != res);
 			break;
 		}
-		case COUNTER_ALLOC_GLOBAL:
+		case COUNTER_ALLOC_PER_CHANNEL:
 		{
 			do {
 				old = res;
@@ -207,7 +207,7 @@ static inline int __lttng_counter_add(const struct lib_counter_config *config,
 			} while (old != res);
 			break;
 		}
-		case COUNTER_ALLOC_GLOBAL:
+		case COUNTER_ALLOC_PER_CHANNEL:
 		{
 			do {
 				old = res;
@@ -250,16 +250,16 @@ static inline int __lttng_counter_add_percpu(const struct lib_counter_config *co
 	if (caa_unlikely(ret))
 		return ret;
 	if (caa_unlikely(move_sum))
-		return __lttng_counter_add(config, COUNTER_ALLOC_GLOBAL, COUNTER_SYNC_GLOBAL,
+		return __lttng_counter_add(config, COUNTER_ALLOC_PER_CHANNEL, COUNTER_SYNC_PER_CHANNEL,
 					   counter, dimension_indexes, move_sum, NULL);
 	return 0;
 }
 
-static inline int __lttng_counter_add_global(const struct lib_counter_config *config,
+static inline int __lttng_counter_add_per_channel(const struct lib_counter_config *config,
 					     struct lib_counter *counter,
 					     const size_t *dimension_indexes, int64_t v)
 {
-	return __lttng_counter_add(config, COUNTER_ALLOC_GLOBAL, config->sync, counter,
+	return __lttng_counter_add(config, COUNTER_ALLOC_PER_CHANNEL, config->sync, counter,
 				   dimension_indexes, v, NULL);
 }
 
@@ -269,10 +269,10 @@ static inline int lttng_counter_add(const struct lib_counter_config *config,
 {
 	switch (config->alloc) {
 	case COUNTER_ALLOC_PER_CPU:	/* Fallthrough */
-	case COUNTER_ALLOC_PER_CPU | COUNTER_ALLOC_GLOBAL:
+	case COUNTER_ALLOC_PER_CPU | COUNTER_ALLOC_PER_CHANNEL:
 		return __lttng_counter_add_percpu(config, counter, dimension_indexes, v);
-	case COUNTER_ALLOC_GLOBAL:
-		return __lttng_counter_add_global(config, counter, dimension_indexes, v);
+	case COUNTER_ALLOC_PER_CHANNEL:
+		return __lttng_counter_add_per_channel(config, counter, dimension_indexes, v);
 	default:
 		return -EINVAL;
 	}

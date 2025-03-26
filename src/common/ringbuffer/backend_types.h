@@ -65,7 +65,7 @@ struct lttng_ust_ring_buffer_backend {
 	DECLARE_SHMP(char, memory_map);	/* memory mapping */
 
 	DECLARE_SHMP(struct lttng_ust_ring_buffer_channel, chan);	/* Associated channel */
-	int cpu;			/* This buffer's cpu. -1 if global. */
+	int cpu;			/* This buffer's cpu. -1 if per-channel. */
 	union v_atomic records_read;	/* Number of records read */
 	unsigned int allocated:1;	/* is buffer allocated ? */
 	char padding[RB_BACKEND_RING_BUFFER_PADDING];

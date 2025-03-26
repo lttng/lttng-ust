@@ -697,7 +697,7 @@ static const struct lttng_ust_ring_buffer_config client_config = {
 	.cb.packet_size_field = client_packet_size_field,
 	.timestamp_bits = LTTNG_COMPACT_TIMESTAMP_BITS,
 	.alloc = RING_BUFFER_ALLOC_TEMPLATE,
-	.sync = RING_BUFFER_SYNC_GLOBAL,
+	.sync = RING_BUFFER_SYNC_PER_CHANNEL,
 	.mode = RING_BUFFER_MODE_TEMPLATE,
 	.backend = RING_BUFFER_PAGE,
 	.output = RING_BUFFER_MMAP,
@@ -865,7 +865,7 @@ int lttng_flush_buffer(struct lttng_ust_channel_buffer *chan)
 	uint64_t memory_map_size;
 	void *memory_map_addr;
 
-	if (client_config.alloc == RING_BUFFER_ALLOC_GLOBAL) {
+	if (client_config.alloc == RING_BUFFER_ALLOC_PER_CHANNEL) {
 		struct lttng_ust_ring_buffer *buf;
 
 		buf = channel_get_ring_buffer(&client_config, rb_chan,

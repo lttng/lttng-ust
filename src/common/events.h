@@ -459,7 +459,7 @@ struct lttng_ust_channel_counter_ops_private {
 	struct lttng_ust_channel_counter *(*counter_create)(size_t nr_dimensions,
 			const struct lttng_counter_dimension *dimensions,
 			int64_t global_sum_step,
-			int global_counter_fd,
+			int channel_counter_fd,
 			int nr_counter_cpu_fds,
 			const int *counter_cpu_fds,
 			bool is_daemon);

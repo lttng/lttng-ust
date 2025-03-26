@@ -1012,7 +1012,7 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_ring_buffer_c
 	if (!handle)
 		return NULL;
 
-	/* Allocate table for channel + per-cpu buffers */
+	/* Allocate table for per-channel + per-cpu buffers */
 	handle->table = shm_object_table_create(1 + get_possible_cpus_array_len(), populate);
 	if (!handle->table)
 		goto error_table_alloc;
@@ -1097,7 +1097,7 @@ struct lttng_ust_shm_handle *channel_handle_create(void *data,
 	if (!handle)
 		return NULL;
 
-	/* Allocate table for channel + per-cpu buffers */
+	/* Allocate table for per-channel + per-cpu buffers */
 	handle->table = shm_object_table_create(1 + get_possible_cpus_array_len(), populate);
 	if (!handle->table)
 		goto error_table_alloc;
@@ -1190,7 +1190,7 @@ struct lttng_ust_ring_buffer *channel_get_ring_buffer(
 {
 	struct shm_ref *ref;
 
-	if (config->alloc == RING_BUFFER_ALLOC_GLOBAL) {
+	if (config->alloc == RING_BUFFER_ALLOC_PER_CHANNEL) {
 		cpu = 0;
 	} else {
 		if (cpu >= get_possible_cpus_array_len())
@@ -1235,7 +1235,7 @@ int ring_buffer_stream_close_wait_fd(const struct lttng_ust_ring_buffer_config *
 {
 	struct shm_ref *ref;
 
-	if (config->alloc == RING_BUFFER_ALLOC_GLOBAL) {
+	if (config->alloc == RING_BUFFER_ALLOC_PER_CHANNEL) {
 		cpu = 0;
 	} else {
 		if (cpu >= get_possible_cpus_array_len())
@@ -1253,7 +1253,7 @@ int ring_buffer_stream_close_wakeup_fd(const struct lttng_ust_ring_buffer_config
 	struct shm_ref *ref;
 	int ret;
 
-	if (config->alloc == RING_BUFFER_ALLOC_GLOBAL) {
+	if (config->alloc == RING_BUFFER_ALLOC_PER_CHANNEL) {
 		cpu = 0;
 	} else {
 		if (cpu >= get_possible_cpus_array_len())
@@ -2052,7 +2052,7 @@ int lib_ring_buffer_try_switch_slow(enum switch_mode mode,
  * For RING_BUFFER_SYNC_PER_CPU ring buffers, as a v_cmpxchg is used for
  * some atomic operations, this function must be called from the CPU
  * which owns the buffer for a ACTIVE flush. However, for
- * RING_BUFFER_SYNC_GLOBAL ring buffers, this function can be called
+ * RING_BUFFER_SYNC_PER_CHANNEL ring buffers, this function can be called
  * from any CPU.
  */
 void lib_ring_buffer_switch_slow(struct lttng_ust_ring_buffer *buf, enum switch_mode mode,

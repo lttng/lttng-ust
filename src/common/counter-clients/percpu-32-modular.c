@@ -24,7 +24,7 @@ static const struct lib_counter_config client_config = {
 static struct lttng_ust_channel_counter *counter_create(size_t nr_dimensions,
 					  const struct lttng_counter_dimension *dimensions,
 					  int64_t global_sum_step,
-					  int global_counter_fd,
+					  int channel_counter_fd,
 					  int nr_counter_cpu_fds,
 					  const int *counter_cpu_fds,
 					  bool is_daemon)
@@ -44,7 +44,7 @@ static struct lttng_ust_channel_counter *counter_create(size_t nr_dimensions,
 	if (!lttng_chan_counter)
 		return NULL;
 	counter = lttng_counter_create(&client_config, nr_dimensions, max_nr_elem,
-				    global_sum_step, global_counter_fd, nr_counter_cpu_fds,
+				    global_sum_step, channel_counter_fd, nr_counter_cpu_fds,
 				    counter_cpu_fds, is_daemon);
 	if (!counter)
 		goto error;

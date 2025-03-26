@@ -61,7 +61,7 @@ static int lttng_counter_layout_init(struct lib_counter *counter, int cpu, int s
 		return 0;	/* Skip, will be populated later. */
 
 	if (cpu == -1)
-		layout = &counter->global_counters;
+		layout = &counter->channel_counters;
 	else
 		layout = &counter->percpu_counters[cpu];
 	switch (counter->config.counter_size) {
@@ -102,15 +102,15 @@ static int lttng_counter_layout_init(struct lib_counter *counter, int cpu, int s
 	return 0;
 }
 
-int lttng_counter_set_global_shm(struct lib_counter *counter, int fd)
+int lttng_counter_set_channel_shm(struct lib_counter *counter, int fd)
 {
 	struct lib_counter_config *config = &counter->config;
 	struct lib_counter_layout *layout;
 	int ret;
 
-	if (!(config->alloc & COUNTER_ALLOC_GLOBAL))
+	if (!(config->alloc & COUNTER_ALLOC_PER_CHANNEL))
 		return -EINVAL;
-	layout = &counter->global_counters;
+	layout = &counter->channel_counters;
 	if (layout->shm_fd >= 0)
 		return -EBUSY;
 	ret = lttng_counter_layout_init(counter, -1, fd);
@@ -140,8 +140,8 @@ int lttng_counter_set_cpu_shm(struct lib_counter *counter, int cpu, int fd)
 }
 
 static
-int lttng_counter_set_global_sum_step(struct lib_counter *counter,
-				      int64_t global_sum_step)
+int lttng_counter_set_channel_sum_step(struct lib_counter *counter,
+				int64_t global_sum_step)
 {
 	if (global_sum_step < 0)
 		return -EINVAL;
@@ -177,7 +177,7 @@ int validate_args(const struct lib_counter_config *config,
 	size_t nr_dimensions __attribute__((unused)),
 	const size_t *max_nr_elem,
 	int64_t global_sum_step,
-	int global_counter_fd,
+	int channel_counter_fd,
 	int nr_counter_cpu_fds,
 	const int *counter_cpu_fds)
 {
@@ -191,12 +191,12 @@ int validate_args(const struct lib_counter_config *config,
 		return -1;
 	/*
 	 * global sum step is only useful with allocating both per-cpu
-	 * and global counters.
+	 * and per-channel counters.
 	 */
-	if (global_sum_step && (!(config->alloc & COUNTER_ALLOC_GLOBAL) ||
+	if (global_sum_step && (!(config->alloc & COUNTER_ALLOC_PER_CHANNEL) ||
 			!(config->alloc & COUNTER_ALLOC_PER_CPU)))
 		return -1;
-	if (!(config->alloc & COUNTER_ALLOC_GLOBAL) && global_counter_fd >= 0)
+	if (!(config->alloc & COUNTER_ALLOC_PER_CHANNEL) && channel_counter_fd >= 0)
 		return -1;
 	if (!(config->alloc & COUNTER_ALLOC_PER_CPU) && counter_cpu_fds)
 		return -1;
@@ -211,7 +211,7 @@ struct lib_counter *lttng_counter_create(const struct lib_counter_config *config
 					 size_t nr_dimensions,
 					 const size_t *max_nr_elem,
 					 int64_t global_sum_step,
-					 int global_counter_fd,
+					 int channel_counter_fd,
 					 int nr_counter_cpu_fds,
 					 const int *counter_cpu_fds,
 					 bool is_daemon)
@@ -224,16 +224,16 @@ struct lib_counter *lttng_counter_create(const struct lib_counter_config *config
 	bool populate = lttng_ust_map_populate_is_enabled();
 
 	if (validate_args(config, nr_dimensions, max_nr_elem,
-			global_sum_step, global_counter_fd, nr_counter_cpu_fds,
+			global_sum_step, channel_counter_fd, nr_counter_cpu_fds,
 			counter_cpu_fds))
 		return NULL;
 	counter = zmalloc_populate(sizeof(struct lib_counter), populate);
 	if (!counter)
 		return NULL;
-	counter->global_counters.shm_fd = -1;
+	counter->channel_counters.shm_fd = -1;
 	counter->config = *config;
 	counter->is_daemon = is_daemon;
-	if (lttng_counter_set_global_sum_step(counter, global_sum_step))
+	if (lttng_counter_set_channel_sum_step(counter, global_sum_step))
 		goto error_sum_step;
 	counter->nr_dimensions = nr_dimensions;
 	counter->dimensions = zmalloc_populate(nr_dimensions * sizeof(*counter->dimensions), populate);
@@ -256,18 +256,18 @@ struct lib_counter *lttng_counter_create(const struct lib_counter_config *config
 		nr_elem *= lttng_counter_get_dimension_nr_elements(&counter->dimensions[dimension]);
 	counter->allocated_elem = nr_elem;
 
-	if (config->alloc & COUNTER_ALLOC_GLOBAL)
+	if (config->alloc & COUNTER_ALLOC_PER_CHANNEL)
 		nr_handles++;
 	if (config->alloc & COUNTER_ALLOC_PER_CPU)
 		nr_handles += nr_cpus;
 	counter->expected_shm = nr_handles;
-	/* Allocate table for global and per-cpu counters. */
+	/* Allocate table for per-channel and per-cpu counters. */
 	counter->object_table = lttng_counter_shm_object_table_create(nr_handles, populate);
 	if (!counter->object_table)
 		goto error_alloc_object_table;
 
-	if (config->alloc & COUNTER_ALLOC_GLOBAL) {
-		ret = lttng_counter_layout_init(counter, -1, global_counter_fd);	/* global */
+	if (config->alloc & COUNTER_ALLOC_PER_CHANNEL) {
+		ret = lttng_counter_layout_init(counter, -1, channel_counter_fd);	/* per-channel */
 		if (ret)
 			goto layout_init_error;
 	}
@@ -304,15 +304,15 @@ void lttng_counter_destroy(struct lib_counter *counter)
 	free(counter);
 }
 
-int lttng_counter_get_global_shm(struct lib_counter *counter, int *fd, size_t *len)
+int lttng_counter_get_channel_shm(struct lib_counter *counter, int *fd, size_t *len)
 {
 	int shm_fd;
 
-	shm_fd = counter->global_counters.shm_fd;
+	shm_fd = counter->channel_counters.shm_fd;
 	if (shm_fd < 0)
 		return -1;
 	*fd = shm_fd;
-	*len = counter->global_counters.shm_len;
+	*len = counter->channel_counters.shm_len;
 	return 0;
 }
 
@@ -358,19 +358,19 @@ int lttng_counter_read(const struct lib_counter_config *config,
 			return -EINVAL;
 		layout = &counter->percpu_counters[cpu];
 		break;
-	case COUNTER_ALLOC_PER_CPU | COUNTER_ALLOC_GLOBAL:
+	case COUNTER_ALLOC_PER_CPU | COUNTER_ALLOC_PER_CHANNEL:
 		if (cpu >= 0) {
 			if (cpu >= get_possible_cpus_array_len())
 				return -EINVAL;
 			layout = &counter->percpu_counters[cpu];
 		} else {
-			layout = &counter->global_counters;
+			layout = &counter->channel_counters;
 		}
 		break;
-	case COUNTER_ALLOC_GLOBAL:
+	case COUNTER_ALLOC_PER_CHANNEL:
 		if (cpu >= 0)
 			return -EINVAL;
-		layout = &counter->global_counters;
+		layout = &counter->channel_counters;
 		break;
 	default:
 		return -EINVAL;
@@ -427,8 +427,8 @@ int lttng_counter_aggregate(const struct lib_counter_config *config,
 	*underflow = false;
 
 	switch (config->alloc) {
-	case COUNTER_ALLOC_GLOBAL:	/* Fallthrough */
-	case COUNTER_ALLOC_PER_CPU | COUNTER_ALLOC_GLOBAL:
+	case COUNTER_ALLOC_PER_CHANNEL:	/* Fallthrough */
+	case COUNTER_ALLOC_PER_CPU | COUNTER_ALLOC_PER_CHANNEL:
 		/* Read global counter. */
 		ret = lttng_counter_read(config, counter, dimension_indexes,
 					 -1, &v, &of, &uf);
@@ -445,9 +445,9 @@ int lttng_counter_aggregate(const struct lib_counter_config *config,
 	}
 
 	switch (config->alloc) {
-	case COUNTER_ALLOC_GLOBAL:
+	case COUNTER_ALLOC_PER_CHANNEL:
 		break;
-	case COUNTER_ALLOC_PER_CPU | COUNTER_ALLOC_GLOBAL:	/* Fallthrough */
+	case COUNTER_ALLOC_PER_CPU | COUNTER_ALLOC_PER_CHANNEL:	/* Fallthrough */
 	case COUNTER_ALLOC_PER_CPU:
 		for_each_possible_cpu(cpu) {
 			int64_t old = sum;
@@ -521,19 +521,19 @@ int lttng_counter_clear_cpu(const struct lib_counter_config *config,
 			return -EINVAL;
 		layout = &counter->percpu_counters[cpu];
 		break;
-	case COUNTER_ALLOC_PER_CPU | COUNTER_ALLOC_GLOBAL:
+	case COUNTER_ALLOC_PER_CPU | COUNTER_ALLOC_PER_CHANNEL:
 		if (cpu >= 0) {
 			if (cpu >= get_possible_cpus_array_len())
 				return -EINVAL;
 			layout = &counter->percpu_counters[cpu];
 		} else {
-			layout = &counter->global_counters;
+			layout = &counter->channel_counters;
 		}
 		break;
-	case COUNTER_ALLOC_GLOBAL:
+	case COUNTER_ALLOC_PER_CHANNEL:
 		if (cpu >= 0)
 			return -EINVAL;
-		layout = &counter->global_counters;
+		layout = &counter->channel_counters;
 		break;
 	default:
 		return -EINVAL;
@@ -585,8 +585,8 @@ int lttng_counter_clear(const struct lib_counter_config *config,
 	switch (config->alloc) {
 	case COUNTER_ALLOC_PER_CPU:
 		break;
-	case COUNTER_ALLOC_GLOBAL:	/* Fallthrough */
-	case COUNTER_ALLOC_PER_CPU | COUNTER_ALLOC_GLOBAL:
+	case COUNTER_ALLOC_PER_CHANNEL:	/* Fallthrough */
+	case COUNTER_ALLOC_PER_CPU | COUNTER_ALLOC_PER_CHANNEL:
 		/* Clear global counter. */
 		ret = lttng_counter_clear_cpu(config, counter, dimension_indexes, -1);
 		if (ret < 0)
@@ -598,14 +598,14 @@ int lttng_counter_clear(const struct lib_counter_config *config,
 
 	switch (config->alloc) {
 	case COUNTER_ALLOC_PER_CPU:	/* Fallthrough */
-	case COUNTER_ALLOC_PER_CPU | COUNTER_ALLOC_GLOBAL:
+	case COUNTER_ALLOC_PER_CPU | COUNTER_ALLOC_PER_CHANNEL:
 		for_each_possible_cpu(cpu) {
 			ret = lttng_counter_clear_cpu(config, counter, dimension_indexes, cpu);
 			if (ret < 0)
 				return ret;
 		}
 		break;
-	case COUNTER_ALLOC_GLOBAL:
+	case COUNTER_ALLOC_PER_CHANNEL:
 		break;
 	default:
 		return -EINVAL;

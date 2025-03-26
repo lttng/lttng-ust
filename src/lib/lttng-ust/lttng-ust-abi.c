@@ -471,7 +471,7 @@ int lttng_abi_map_channel(int session_objd,
 	switch (type) {
 	case LTTNG_UST_ABI_CHAN_PER_CPU:
 		break;
-	case LTTNG_UST_ABI_CHAN_GLOBAL:
+	case LTTNG_UST_ABI_CHAN_PER_CHANNEL:
 		break;
 	default:
 		ret = -EINVAL;
@@ -537,19 +537,19 @@ int lttng_abi_map_channel(int session_objd,
 		}
 		chan_name = "channel";
 		break;
-	case LTTNG_UST_ABI_CHAN_GLOBAL:
+	case LTTNG_UST_ABI_CHAN_PER_CHANNEL:
 		if (config->output == RING_BUFFER_MMAP) {
 			if (config->mode == RING_BUFFER_OVERWRITE) {
 				if (config->wakeup == RING_BUFFER_WAKEUP_BY_WRITER) {
-					transport_name = "relay-overwrite-global-mmap";
+					transport_name = "relay-overwrite-channel-mmap";
 				} else {
-					transport_name = "relay-overwrite-global-rt-mmap";
+					transport_name = "relay-overwrite-channel-rt-mmap";
 				}
 			} else {
 				if (config->wakeup == RING_BUFFER_WAKEUP_BY_WRITER) {
-					transport_name = "relay-discard-global-mmap";
+					transport_name = "relay-discard-channel-mmap";
 				} else {
-					transport_name = "relay-discard-global-rt-mmap";
+					transport_name = "relay-discard-channel-rt-mmap";
 				}
 			}
 		} else {
@@ -918,7 +918,7 @@ long lttng_event_notifier_enabler_cmd(int objd, unsigned int cmd, unsigned long 
  *	@owner: objd owner
  *
  *	This descriptor implements lttng commands:
- *      LTTNG_UST_ABI_COUNTER_GLOBAL
+ *      LTTNG_UST_ABI_COUNTER_CHANNEL
  *        Return negative error code on error, 0 on success.
  *      LTTNG_UST_ABI_COUNTER_CPU
  *        Return negative error code on error, 0 on success.
@@ -931,7 +931,7 @@ long lttng_event_notifier_group_error_counter_cmd(int objd, unsigned int cmd, un
 	struct lttng_ust_channel_counter *counter = objd_private(objd);
 
 	switch (cmd) {
-	case LTTNG_UST_ABI_COUNTER_GLOBAL:
+	case LTTNG_UST_ABI_COUNTER_CHANNEL:
 		ret = -EINVAL;	/* Unimplemented. */
 		break;
 	case LTTNG_UST_ABI_COUNTER_CPU:
@@ -1703,8 +1703,8 @@ static const struct lttng_ust_abi_objd_ops lttng_channel_ops = {
  *	@owner: objd owner
  *
  *	This object descriptor implements lttng commands:
- *      LTTNG_UST_ABI_COUNTER_GLOBAL:
- *              Returns a global counter object descriptor or failure.
+ *      LTTNG_UST_ABI_COUNTER_CHANNEL:
+ *              Returns a channel counter object descriptor or failure.
  *      LTTNG_UST_ABI_COUNTER_CPU:
  *              Returns a per-cpu counter object descriptor or failure.
  *	LTTNG_UST_ABI_COUNTER_EVENT
@@ -1722,35 +1722,35 @@ long lttng_counter_cmd(int objd, unsigned int cmd, unsigned long arg,
 {
 	struct lttng_ust_channel_counter *counter = objd_private(objd);
 
-	if (cmd != LTTNG_UST_ABI_COUNTER_GLOBAL && cmd != LTTNG_UST_ABI_COUNTER_CPU) {
+	if (cmd != LTTNG_UST_ABI_COUNTER_CHANNEL && cmd != LTTNG_UST_ABI_COUNTER_CPU) {
 		/*
-		 * Check if counter received all global/per-cpu objects.
+		 * Check if counter received all per-channel/per-cpu objects.
 		 */
 		if (!lttng_counter_ready(counter->priv->counter))
 			return -EPERM;
 	}
 
 	switch (cmd) {
-	case LTTNG_UST_ABI_COUNTER_GLOBAL:
+	case LTTNG_UST_ABI_COUNTER_CHANNEL:
 	{
-		struct lttng_ust_abi_counter_global *abi_counter_global =
-			(struct lttng_ust_abi_counter_global *) arg;
-		struct lttng_ust_abi_counter_global counter_global;
+		struct lttng_ust_abi_counter_channel *abi_counter_channel =
+			(struct lttng_ust_abi_counter_channel *) arg;
+		struct lttng_ust_abi_counter_channel counter_channel;
 		long ret;
 		int shm_fd;
 
-		if (uargs->counter_shm.len < lttng_ust_offsetofend(struct lttng_ust_abi_counter_global, shm_len))
+		if (uargs->counter_shm.len < lttng_ust_offsetofend(struct lttng_ust_abi_counter_channel, shm_len))
 			return -EINVAL;
-		if (abi_counter_global->len > uargs->counter_shm.len ||
-				abi_counter_global->len < lttng_ust_offsetofend(struct lttng_ust_abi_counter_global, shm_len)) {
+		if (abi_counter_channel->len > uargs->counter_shm.len ||
+				abi_counter_channel->len < lttng_ust_offsetofend(struct lttng_ust_abi_counter_channel, shm_len)) {
 			return -EINVAL;
 		}
-		ret = copy_abi_struct(&counter_global, sizeof(counter_global),
-				abi_counter_global, abi_counter_global->len);
+		ret = copy_abi_struct(&counter_channel, sizeof(counter_channel),
+				abi_counter_channel, abi_counter_channel->len);
 		if (ret)
 			return ret;
 		shm_fd = uargs->counter_shm.shm_fd;
-		ret = lttng_counter_set_global_shm(counter->priv->counter, shm_fd);
+		ret = lttng_counter_set_channel_shm(counter->priv->counter, shm_fd);
 		if (!ret) {
 			/* Take ownership of shm_fd. */
 			uargs->counter_shm.shm_fd = -1;

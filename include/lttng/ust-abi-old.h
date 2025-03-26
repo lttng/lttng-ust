@@ -42,10 +42,10 @@ struct lttng_ust_abi_old_counter {
 	char data[];    /* variable sized data */
 } __attribute__((packed));
 
-#define LTTNG_UST_ABI_OLD_COUNTER_GLOBAL_PADDING1	(LTTNG_UST_ABI_OLD_SYM_NAME_LEN + 32)
-struct lttng_ust_abi_old_counter_global {
+#define LTTNG_UST_ABI_OLD_COUNTER_CHANNEL_PADDING1	(LTTNG_UST_ABI_OLD_SYM_NAME_LEN + 32)
+struct lttng_ust_abi_old_counter_channel {
 	uint64_t len;	/* shm len */
-	char padding[LTTNG_UST_ABI_OLD_COUNTER_GLOBAL_PADDING1];
+	char padding[LTTNG_UST_ABI_OLD_COUNTER_CHANNEL_PADDING1];
 } __attribute__((packed));
 
 #define LTTNG_UST_ABI_OLD_COUNTER_CPU_PADDING1		(LTTNG_UST_ABI_OLD_SYM_NAME_LEN + 32)
@@ -60,8 +60,8 @@ struct lttng_ust_abi_old_counter_cpu {
 	LTTNG_UST_ABI_CMDW(0xC0, struct lttng_ust_abi_old_counter)
 
 /* Counter commands */
-#define LTTNG_UST_ABI_OLD_COUNTER_GLOBAL	\
-	LTTNG_UST_ABI_CMDW(0xD0, struct lttng_ust_abi_old_counter_global)
+#define LTTNG_UST_ABI_OLD_COUNTER_CHANNEL	\
+	LTTNG_UST_ABI_CMDW(0xD0, struct lttng_ust_abi_old_counter_channel)
 #define LTTNG_UST_ABI_OLD_COUNTER_CPU		\
 	LTTNG_UST_ABI_CMDW(0xD1, struct lttng_ust_abi_old_counter_cpu)
 

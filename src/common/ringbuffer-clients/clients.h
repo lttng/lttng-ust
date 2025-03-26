@@ -58,25 +58,25 @@ void lttng_ust_ring_buffer_clients_exit(void)
 void lttng_ring_buffer_client_overwrite_init(void)
 	__attribute__((visibility("hidden")));
 
-void lttng_ring_buffer_client_overwrite_global_init(void)
+void lttng_ring_buffer_client_overwrite_per_channel_init(void)
 	__attribute__((visibility("hidden")));
 
 void lttng_ring_buffer_client_overwrite_rt_init(void)
 	__attribute__((visibility("hidden")));
 
-void lttng_ring_buffer_client_overwrite_global_rt_init(void)
+void lttng_ring_buffer_client_overwrite_per_channel_rt_init(void)
 	__attribute__((visibility("hidden")));
 
 void lttng_ring_buffer_client_discard_init(void)
 	__attribute__((visibility("hidden")));
 
-void lttng_ring_buffer_client_discard_global_init(void)
+void lttng_ring_buffer_client_discard_per_channel_init(void)
 	__attribute__((visibility("hidden")));
 
 void lttng_ring_buffer_client_discard_rt_init(void)
 	__attribute__((visibility("hidden")));
 
-void lttng_ring_buffer_client_discard_global_rt_init(void)
+void lttng_ring_buffer_client_discard_per_channel_rt_init(void)
 	__attribute__((visibility("hidden")));
 
 void lttng_ring_buffer_metadata_client_init(void)
@@ -86,25 +86,25 @@ void lttng_ring_buffer_metadata_client_init(void)
 void lttng_ring_buffer_client_overwrite_exit(void)
 	__attribute__((visibility("hidden")));
 
-void lttng_ring_buffer_client_overwrite_global_exit(void)
+void lttng_ring_buffer_client_overwrite_per_channel_exit(void)
 	__attribute__((visibility("hidden")));
 
 void lttng_ring_buffer_client_overwrite_rt_exit(void)
 	__attribute__((visibility("hidden")));
 
-void lttng_ring_buffer_client_overwrite_global_rt_exit(void)
+void lttng_ring_buffer_client_overwrite_per_channel_rt_exit(void)
 	__attribute__((visibility("hidden")));
 
 void lttng_ring_buffer_client_discard_exit(void)
 	__attribute__((visibility("hidden")));
 
-void lttng_ring_buffer_client_discard_global_exit(void)
+void lttng_ring_buffer_client_discard_per_channel_exit(void)
 	__attribute__((visibility("hidden")));
 
 void lttng_ring_buffer_client_discard_rt_exit(void)
 	__attribute__((visibility("hidden")));
 
-void lttng_ring_buffer_client_discard_global_rt_exit(void)
+void lttng_ring_buffer_client_discard_per_channel_rt_exit(void)
 	__attribute__((visibility("hidden")));
 
 void lttng_ring_buffer_metadata_client_exit(void)
@@ -114,25 +114,25 @@ void lttng_ring_buffer_metadata_client_exit(void)
 void lttng_ust_ring_buffer_client_overwrite_alloc_tls(void)
 	__attribute__((visibility("hidden")));
 
-void lttng_ust_ring_buffer_client_overwrite_global_alloc_tls(void)
+void lttng_ust_ring_buffer_client_overwrite_per_channel_alloc_tls(void)
 	__attribute__((visibility("hidden")));
 
 void lttng_ust_ring_buffer_client_overwrite_rt_alloc_tls(void)
 	__attribute__((visibility("hidden")));
 
-void lttng_ust_ring_buffer_client_overwrite_global_rt_alloc_tls(void)
+void lttng_ust_ring_buffer_client_overwrite_per_channel_rt_alloc_tls(void)
 	__attribute__((visibility("hidden")));
 
 void lttng_ust_ring_buffer_client_discard_alloc_tls(void)
 	__attribute__((visibility("hidden")));
 
-void lttng_ust_ring_buffer_client_discard_global_alloc_tls(void)
+void lttng_ust_ring_buffer_client_discard_per_channel_alloc_tls(void)
 	__attribute__((visibility("hidden")));
 
 void lttng_ust_ring_buffer_client_discard_rt_alloc_tls(void)
 	__attribute__((visibility("hidden")));
 
-void lttng_ust_ring_buffer_client_discard_global_rt_alloc_tls(void)
+void lttng_ust_ring_buffer_client_discard_per_channel_rt_alloc_tls(void)
 	__attribute__((visibility("hidden")));
 
 #endif /* _UST_COMMON_RINGBUFFER_CLIENTS_CLIENTS_H */

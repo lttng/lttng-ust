@@ -386,7 +386,7 @@ static const char *cmd_name_mapping[] = {
 	[ LTTNG_UST_ABI_COUNTER ] = "Create Counter",
 
 	/* Counter commands */
-	[ LTTNG_UST_ABI_COUNTER_GLOBAL ] = "Create Counter Global",
+	[ LTTNG_UST_ABI_COUNTER_CHANNEL ] = "Create Counter Channel",
 	[ LTTNG_UST_ABI_COUNTER_CPU ] = "Create Counter CPU",
 	[ LTTNG_UST_ABI_COUNTER_EVENT ] = "Create Counter Event",
 };
@@ -494,10 +494,10 @@ void lttng_ust_common_init_thread(int flags)
 	lttng_ust_ring_buffer_client_discard_rt_alloc_tls();
 	lttng_ust_ring_buffer_client_overwrite_alloc_tls();
 	lttng_ust_ring_buffer_client_overwrite_rt_alloc_tls();
-	lttng_ust_ring_buffer_client_discard_global_alloc_tls();
-	lttng_ust_ring_buffer_client_discard_global_rt_alloc_tls();
-	lttng_ust_ring_buffer_client_overwrite_global_alloc_tls();
-	lttng_ust_ring_buffer_client_overwrite_global_rt_alloc_tls();
+	lttng_ust_ring_buffer_client_discard_per_channel_alloc_tls();
+	lttng_ust_ring_buffer_client_discard_per_channel_rt_alloc_tls();
+	lttng_ust_ring_buffer_client_overwrite_per_channel_alloc_tls();
+	lttng_ust_ring_buffer_client_overwrite_per_channel_rt_alloc_tls();
 }
 
 /*
@@ -1114,7 +1114,7 @@ int handle_message(struct sock_info *sock_info,
 
 	case LTTNG_UST_ABI_CAPTURE:
 	case LTTNG_UST_ABI_COUNTER:
-	case LTTNG_UST_ABI_COUNTER_GLOBAL:
+	case LTTNG_UST_ABI_COUNTER_CHANNEL:
 	case LTTNG_UST_ABI_COUNTER_CPU:
 	case LTTNG_UST_ABI_COUNTER_EVENT:
 	case LTTNG_UST_ABI_EVENT_NOTIFIER_CREATE:
@@ -1361,11 +1361,11 @@ int handle_message(struct sock_info *sock_info,
 			ret = -ENOSYS;
 		break;
 	}
-	case LTTNG_UST_ABI_COUNTER_GLOBAL:
+	case LTTNG_UST_ABI_COUNTER_CHANNEL:
 	{
 		len = ustcomm_recv_var_len_cmd_from_sessiond(sock,
 				&var_len_cmd_data, lum->u.var_len_cmd.cmd_len);
-		switch (handle_error(sock_info, len, lum->u.var_len_cmd.cmd_len, "counter global", &ret)) {
+		switch (handle_error(sock_info, len, lum->u.var_len_cmd.cmd_len, "counter channel", &ret)) {
 		case MSG_OK:
 			break;
 		case MSG_ERROR:		/* Fallthrough */
@@ -1619,7 +1619,7 @@ int wait_shm_open(struct sock_info *sock_info, int flags, mode_t mode)
  * sessiond owns the shm and does not let everybody modify it, to ensure
  * safety against shm_unlink) by simply letting the mmap fail and
  * retrying after a few seconds.
- * For global shm, everybody has rw access to it until the sessiond
+ * For channel shm, everybody has rw access to it until the sessiond
  * starts.
  */
 static
@@ -1731,7 +1731,7 @@ open_write:
 		/*
 		 * For local shm, we need to have rw access to accept
 		 * opening it: this means the local sessiond will be
-		 * able to wake us up. For global shm, we open it even
+		 * able to wake us up. For channel shm, we open it even
 		 * if rw access is not granted, because the root.root
 		 * sessiond will be able to override all rights and wake
 		 * us up.

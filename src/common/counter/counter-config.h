@@ -13,12 +13,12 @@
 
 enum lib_counter_config_alloc {
 	COUNTER_ALLOC_PER_CPU =	(1 << 0),
-	COUNTER_ALLOC_GLOBAL  = (1 << 1),
+	COUNTER_ALLOC_PER_CHANNEL  = (1 << 1),
 };
 
 enum lib_counter_config_sync {
 	COUNTER_SYNC_PER_CPU,
-	COUNTER_SYNC_GLOBAL,
+	COUNTER_SYNC_PER_CHANNEL,
 };
 
 struct lib_counter_config {

@@ -222,14 +222,14 @@ int lttng_ust_ctl_release_object(int sock, struct lttng_ust_abi_object_data *dat
 		free(data->u.counter.data);
 		data->u.counter.data = NULL;
 		break;
-	case LTTNG_UST_ABI_OBJECT_TYPE_COUNTER_GLOBAL:
-		if (data->u.counter_global.shm_fd >= 0) {
-			ret = close(data->u.counter_global.shm_fd);
+	case LTTNG_UST_ABI_OBJECT_TYPE_COUNTER_CHANNEL:
+		if (data->u.counter_channel.shm_fd >= 0) {
+			ret = close(data->u.counter_channel.shm_fd);
 			if (ret < 0) {
 				ret = -errno;
 				return ret;
 			}
-			data->u.counter_global.shm_fd = -1;
+			data->u.counter_channel.shm_fd = -1;
 		}
 		break;
 	case LTTNG_UST_ABI_OBJECT_TYPE_COUNTER_CPU:
@@ -1348,12 +1348,12 @@ int lttng_ust_ctl_duplicate_ust_object_data(struct lttng_ust_abi_object_data **d
 		break;
 	}
 
-	case LTTNG_UST_ABI_OBJECT_TYPE_COUNTER_GLOBAL:
+	case LTTNG_UST_ABI_OBJECT_TYPE_COUNTER_CHANNEL:
 	{
-		if (src->u.counter_global.shm_fd >= 0) {
-			obj->u.counter_global.shm_fd =
-				dup(src->u.counter_global.shm_fd);
-			if (obj->u.counter_global.shm_fd < 0) {
+		if (src->u.counter_channel.shm_fd >= 0) {
+			obj->u.counter_channel.shm_fd =
+				dup(src->u.counter_channel.shm_fd);
+			if (obj->u.counter_channel.shm_fd < 0) {
 				ret = -errno;
 				goto error_type;
 			}
@@ -1431,19 +1431,19 @@ struct lttng_ust_ctl_consumer_channel *
 		else
 			return NULL;
 		break;
-	case LTTNG_UST_ABI_CHAN_GLOBAL:
+	case LTTNG_UST_ABI_CHAN_PER_CHANNEL:
 		if (attr->output == LTTNG_UST_ABI_MMAP) {
 			if (attr->overwrite) {
 				if (attr->read_timer_interval == 0) {
-					transport_name = "relay-overwrite-global-mmap";
+					transport_name = "relay-overwrite-channel-mmap";
 				} else {
-					transport_name = "relay-overwrite-global-rt-mmap";
+					transport_name = "relay-overwrite-channel-rt-mmap";
 				}
 			} else {
 				if (attr->read_timer_interval == 0) {
-					transport_name = "relay-discard-global-mmap";
+					transport_name = "relay-discard-channel-mmap";
 				} else {
-					transport_name = "relay-discard-rt-global-mmap";
+					transport_name = "relay-discard-rt-channel-mmap";
 				}
 			}
 		} else {
@@ -3279,7 +3279,7 @@ struct lttng_ust_ctl_daemon_counter *
 	lttng_ust_ctl_create_counter(size_t nr_dimensions,
 		const struct lttng_ust_ctl_counter_dimension *dimensions,
 		int64_t global_sum_step,
-		int global_counter_fd,
+		int channel_counter_fd,
 		int nr_counter_cpu_fds,
 		const int *counter_cpu_fds,
 		enum lttng_ust_ctl_counter_bitness bitness,
@@ -3300,8 +3300,8 @@ struct lttng_ust_ctl_daemon_counter *
 	case LTTNG_UST_CTL_COUNTER_ALLOC_PER_CPU:
 		break;
 
-	case LTTNG_UST_CTL_COUNTER_ALLOC_PER_CPU | LTTNG_UST_CTL_COUNTER_ALLOC_GLOBAL:
-	case LTTNG_UST_CTL_COUNTER_ALLOC_GLOBAL:
+	case LTTNG_UST_CTL_COUNTER_ALLOC_PER_CPU | LTTNG_UST_CTL_COUNTER_ALLOC_PER_CHANNEL:
+	case LTTNG_UST_CTL_COUNTER_ALLOC_PER_CHANNEL:
 	default:
 		return NULL;
 	}
@@ -3371,7 +3371,7 @@ struct lttng_ust_ctl_daemon_counter *
 		}
 	}
 	counter->counter = transport->ops.priv->counter_create(nr_dimensions,
-		ust_dim, global_sum_step, global_counter_fd,
+		ust_dim, global_sum_step, channel_counter_fd,
 		nr_counter_cpu_fds, counter_cpu_fds, true);
 	if (!counter->counter)
 		goto free_attr;
@@ -3466,25 +3466,25 @@ error:
 	return ret;
 }
 
-int lttng_ust_ctl_create_counter_global_data(struct lttng_ust_ctl_daemon_counter *counter,
-		struct lttng_ust_abi_object_data **_counter_global_data)
+int lttng_ust_ctl_create_counter_channel_data(struct lttng_ust_ctl_daemon_counter *counter,
+		struct lttng_ust_abi_object_data **_counter_channel_data)
 {
-	struct lttng_ust_abi_object_data *counter_global_data;
+	struct lttng_ust_abi_object_data *counter_channel_data;
 	int ret, fd;
 	size_t len;
 
-	if (lttng_counter_get_global_shm(counter->counter->priv->counter, &fd, &len))
+	if (lttng_counter_get_channel_shm(counter->counter->priv->counter, &fd, &len))
 		return -EINVAL;
-	counter_global_data = zmalloc(sizeof(*counter_global_data));
-	if (!counter_global_data) {
+	counter_channel_data = zmalloc(sizeof(*counter_channel_data));
+	if (!counter_channel_data) {
 		ret = -ENOMEM;
 		goto error_alloc;
 	}
-	counter_global_data->type = LTTNG_UST_ABI_OBJECT_TYPE_COUNTER_GLOBAL;
-	counter_global_data->handle = -1;
-	counter_global_data->size = len;
-	counter_global_data->u.counter_global.shm_fd = fd;
-	*_counter_global_data = counter_global_data;
+	counter_channel_data->type = LTTNG_UST_ABI_OBJECT_TYPE_COUNTER_CHANNEL;
+	counter_channel_data->handle = -1;
+	counter_channel_data->size = len;
+	counter_channel_data->u.counter_channel.shm_fd = fd;
+	*_counter_channel_data = counter_channel_data;
 	return 0;
 
 error_alloc:
@@ -3590,7 +3590,7 @@ int lttng_ust_ctl_send_old_counter_data_to_ust(int sock, int parent_handle,
 }
 
 /*
- * Protocol for LTTNG_UST_ABI_OLD_COUNTER_GLOBAL command:
+ * Protocol for LTTNG_UST_ABI_OLD_COUNTER_CHANNEL command:
  *
  * - send:     struct ustcomm_ust_msg
  * - receive:  struct ustcomm_ust_reply
@@ -3598,9 +3598,9 @@ int lttng_ust_ctl_send_old_counter_data_to_ust(int sock, int parent_handle,
  * - receive:  struct ustcomm_ust_reply (actual command return code)
  */
 static
-int lttng_ust_ctl_send_old_counter_global_data_to_ust(int sock,
+int lttng_ust_ctl_send_old_counter_channel_data_to_ust(int sock,
 		struct lttng_ust_abi_object_data *counter_data,
-		struct lttng_ust_abi_object_data *counter_global_data)
+		struct lttng_ust_abi_object_data *counter_channel_data)
 {
 	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
@@ -3608,18 +3608,18 @@ int lttng_ust_ctl_send_old_counter_global_data_to_ust(int sock,
 	size_t size;
 	ssize_t len;
 
-	if (!counter_data || !counter_global_data)
+	if (!counter_data || !counter_channel_data)
 		return -EINVAL;
 
-	size = counter_global_data->size;
+	size = counter_channel_data->size;
 	lum.handle = counter_data->handle;	/* parent handle */
-	lum.cmd = LTTNG_UST_ABI_OLD_COUNTER_GLOBAL;
-	lum.u.counter_global_old.len = size;
+	lum.cmd = LTTNG_UST_ABI_OLD_COUNTER_CHANNEL;
+	lum.u.counter_channel_old.len = size;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
 
-	shm_fd[0] = counter_global_data->u.counter_global.shm_fd;
+	shm_fd[0] = counter_channel_data->u.counter_channel.shm_fd;
 	len = ustcomm_send_fds_unix_sock(sock, shm_fd, 1);
 	if (len <= 0) {
 		if (len < 0)
@@ -3630,7 +3630,7 @@ int lttng_ust_ctl_send_old_counter_global_data_to_ust(int sock,
 
 	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
 	if (!ret) {
-		counter_global_data->handle = lur.ret_val;
+		counter_channel_data->handle = lur.ret_val;
 	}
 	return ret;
 }
@@ -3666,7 +3666,7 @@ int lttng_ust_ctl_send_old_counter_cpu_data_to_ust(int sock,
 	if (ret)
 		return ret;
 
-	shm_fd[0] = counter_cpu_data->u.counter_global.shm_fd;
+	shm_fd[0] = counter_cpu_data->u.counter_channel.shm_fd;
 	len = ustcomm_send_fds_unix_sock(sock, shm_fd, 1);
 	if (len <= 0) {
 		if (len < 0)
@@ -3731,52 +3731,52 @@ int lttng_ust_ctl_send_counter_data_to_ust(int sock, int parent_handle,
 }
 
 /*
- * Protocol for LTTNG_UST_ABI_COUNTER_GLOBAL command:
+ * Protocol for LTTNG_UST_ABI_COUNTER_CHANNEL command:
  *
  * - send:     struct ustcomm_ust_msg
  * - receive:  struct ustcomm_ust_reply
  * - send:     file descriptor
  * - receive:  struct ustcomm_ust_reply (actual command return code)
  */
-int lttng_ust_ctl_send_counter_global_data_to_ust(int sock,
+int lttng_ust_ctl_send_counter_channel_data_to_ust(int sock,
 		struct lttng_ust_abi_object_data *counter_data,
-		struct lttng_ust_abi_object_data *counter_global_data)
+		struct lttng_ust_abi_object_data *counter_channel_data)
 {
-	struct lttng_ust_abi_counter_global counter_global = {};
+	struct lttng_ust_abi_counter_channel counter_channel = {};
 	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret, shm_fd[1];
 	size_t size;
 	ssize_t len;
 
-	if (!counter_data || !counter_global_data)
+	if (!counter_data || !counter_channel_data)
 		return -EINVAL;
 
-	size = counter_global_data->size;
+	size = counter_channel_data->size;
 	lum.handle = counter_data->handle;	/* parent handle */
-	lum.cmd = LTTNG_UST_ABI_COUNTER_GLOBAL;
-	lum.u.var_len_cmd.cmd_len = sizeof(struct lttng_ust_abi_counter_global);
+	lum.cmd = LTTNG_UST_ABI_COUNTER_CHANNEL;
+	lum.u.var_len_cmd.cmd_len = sizeof(struct lttng_ust_abi_counter_channel);
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret == -LTTNG_UST_ERR_INVAL) {
-		return lttng_ust_ctl_send_old_counter_global_data_to_ust(sock, counter_data, counter_global_data);
+		return lttng_ust_ctl_send_old_counter_channel_data_to_ust(sock, counter_data, counter_channel_data);
 	}
 	if (ret) {
 		return ret;
 	}
 
-	counter_global.len = sizeof(struct lttng_ust_abi_counter_global);
-	counter_global.shm_len = size;
+	counter_channel.len = sizeof(struct lttng_ust_abi_counter_channel);
+	counter_channel.shm_len = size;
 
 	/* Send var len cmd */
-	len = ustcomm_send_unix_sock(sock, &counter_global, sizeof(struct lttng_ust_abi_counter_global));
-	if (len != sizeof(struct lttng_ust_abi_counter_global)) {
+	len = ustcomm_send_unix_sock(sock, &counter_channel, sizeof(struct lttng_ust_abi_counter_channel));
+	if (len != sizeof(struct lttng_ust_abi_counter_channel)) {
 		if (len < 0)
 			return len;
 		else
 			return -EIO;
 	}
 
-	shm_fd[0] = counter_global_data->u.counter_global.shm_fd;
+	shm_fd[0] = counter_channel_data->u.counter_channel.shm_fd;
 	len = ustcomm_send_fds_unix_sock(sock, shm_fd, 1);
 	if (len <= 0) {
 		if (len < 0)
@@ -3787,7 +3787,7 @@ int lttng_ust_ctl_send_counter_global_data_to_ust(int sock,
 
 	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
 	if (!ret) {
-		counter_global_data->handle = lur.ret_val;
+		counter_channel_data->handle = lur.ret_val;
 	}
 	return ret;
 }
@@ -3839,7 +3839,7 @@ int lttng_ust_ctl_send_counter_cpu_data_to_ust(int sock,
 			return -EIO;
 	}
 
-	shm_fd[0] = counter_cpu_data->u.counter_global.shm_fd;
+	shm_fd[0] = counter_cpu_data->u.counter_channel.shm_fd;
 	len = ustcomm_send_fds_unix_sock(sock, shm_fd, 1);
 	if (len <= 0) {
 		if (len < 0)

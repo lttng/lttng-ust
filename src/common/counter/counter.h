@@ -18,7 +18,7 @@ struct lib_counter *lttng_counter_create(const struct lib_counter_config *config
 					 size_t nr_dimensions,
 					 const size_t *max_nr_elem,
 					 int64_t global_sum_step,
-					 int global_counter_fd,
+					 int channel_counter_fd,
 					 int nr_counter_cpu_fds,
 					 const int *counter_cpu_fds,
 					 bool is_daemon)
@@ -27,13 +27,13 @@ struct lib_counter *lttng_counter_create(const struct lib_counter_config *config
 void lttng_counter_destroy(struct lib_counter *counter)
 	__attribute__((visibility("hidden")));
 
-int lttng_counter_set_global_shm(struct lib_counter *counter, int fd)
+int lttng_counter_set_channel_shm(struct lib_counter *counter, int fd)
 	__attribute__((visibility("hidden")));
 
 int lttng_counter_set_cpu_shm(struct lib_counter *counter, int cpu, int fd)
 	__attribute__((visibility("hidden")));
 
-int lttng_counter_get_global_shm(struct lib_counter *counter, int *fd, size_t *len)
+int lttng_counter_get_channel_shm(struct lib_counter *counter, int *fd, size_t *len)
 	__attribute__((visibility("hidden")));
 
 int lttng_counter_get_cpu_shm(struct lib_counter *counter, int cpu, int *fd, size_t *len)
