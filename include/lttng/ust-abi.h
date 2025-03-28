@@ -126,6 +126,7 @@ enum lttng_ust_abi_counter_bitness {
 	LTTNG_UST_ABI_COUNTER_BITNESS_64 = 1,
 };
 
+#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 struct lttng_ust_abi_key_token {
 	uint32_t len;				/* length of child structure. */
 	uint32_t type;				/* enum lttng_ust_abi_key_token_type */
@@ -142,6 +143,7 @@ struct lttng_ust_abi_key_token_string {
 
 	char str[];			/* Null-terminated string following this structure. */
 } __attribute__((packed));
+#endif	 /* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 
 /*
  * token types event_name and provider_name don't have specific fields,
@@ -157,6 +159,7 @@ enum lttng_ust_abi_key_type {
 	LTTNG_UST_ABI_KEY_TYPE_INTEGER = 1,		/* Dimension key is an integer value. */
 };
 
+#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 struct lttng_ust_abi_counter_key_dimension {
 	uint32_t len;				/* length of child structure */
 	uint32_t key_type;			/* enum lttng_ust_abi_key_type */
@@ -201,6 +204,7 @@ struct lttng_ust_abi_counter_event {
 	 * variable-length array of key dimensions.
 	 */
 } __attribute__((packed));
+#endif	/* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 
 enum lttng_ust_abi_counter_dimension_flags {
 	LTTNG_UST_ABI_COUNTER_DIMENSION_FLAG_UNDERFLOW = (1 << 0),

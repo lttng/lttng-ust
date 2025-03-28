@@ -3879,6 +3879,7 @@ int lttng_ust_ctl_counter_clear(struct lttng_ust_ctl_daemon_counter *counter,
 	return counter->ops->priv->counter_clear(counter->counter, dimension_indexes);
 }
 
+#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 /*
  * Protocol for LTTNG_UST_COUNTER_EVENT command:
  *
@@ -3934,6 +3935,7 @@ int lttng_ust_ctl_counter_create_event(int sock,
 	*_counter_event_data = counter_event_data;
 	return 0;
 }
+#endif	 /* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 
 int lttng_ust_ctl_get_version(uint32_t *major, uint32_t *minor,
 		uint32_t *patchlevel) {

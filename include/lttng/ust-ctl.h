@@ -725,11 +725,13 @@ int lttng_ust_ctl_counter_aggregate(struct lttng_ust_ctl_daemon_counter *counter
 int lttng_ust_ctl_counter_clear(struct lttng_ust_ctl_daemon_counter *counter,
 		const size_t *dimension_indexes);
 
+#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 int lttng_ust_ctl_counter_create_event(int sock,
 		struct lttng_ust_abi_counter_event *counter_event,
 		size_t counter_event_len,
 		struct lttng_ust_abi_object_data *counter_data,
 		struct lttng_ust_abi_object_data **counter_event_data);
+#endif	/* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 
 void lttng_ust_ctl_sigbus_handle(void *addr);
 

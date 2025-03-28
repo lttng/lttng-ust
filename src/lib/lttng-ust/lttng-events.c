@@ -1726,6 +1726,7 @@ struct lttng_event_recorder_enabler *lttng_event_recorder_enabler_create(
 	return event_enabler;
 }
 
+#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 struct lttng_event_counter_enabler *lttng_event_counter_enabler_create(
 		enum lttng_enabler_format_type format_type,
 		const struct lttng_ust_abi_counter_event *counter_event,
@@ -1768,6 +1769,7 @@ error:
 	free(event_enabler);
 	return NULL;
 }
+#endif	/* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 
 struct lttng_event_notifier_enabler *lttng_event_notifier_enabler_create(
 		struct lttng_event_notifier_group *event_notifier_group,

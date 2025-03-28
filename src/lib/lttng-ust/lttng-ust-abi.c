@@ -1405,6 +1405,7 @@ objd_error:
 	return ret;
 }
 
+#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 static
 int copy_counter_key_dimension_tokens(const struct lttng_ust_abi_counter_key_dimension_tokens *abi_dim_tokens,
 		const char *addr, size_t *offset, size_t arg_len, struct lttng_counter_key_dimension *internal_dim)
@@ -1595,6 +1596,7 @@ event_error:
 objd_error:
 	return ret;
 }
+#endif	/* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 
 /**
  *	lttng_channel_cmd - lttng control through object descriptors
@@ -1718,7 +1720,7 @@ static const struct lttng_ust_abi_objd_ops lttng_channel_ops = {
  */
 static
 long lttng_counter_cmd(int objd, unsigned int cmd, unsigned long arg,
-	union lttng_ust_abi_args *uargs, void *owner)
+	union lttng_ust_abi_args *uargs, void *owner __attribute__((unused)))
 {
 	struct lttng_ust_channel_counter *counter = objd_private(objd);
 
@@ -1784,11 +1786,13 @@ long lttng_counter_cmd(int objd, unsigned int cmd, unsigned long arg,
 		}
 		return ret;
 	}
+#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 	case LTTNG_UST_ABI_COUNTER_EVENT:
 	{
 		return lttng_abi_create_event_counter_enabler(objd, counter,
 				arg, uargs->counter_event.len, owner);
 	}
+#endif /* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 	case LTTNG_UST_ABI_ENABLE:
 		return lttng_channel_enable(counter->parent);
 	case LTTNG_UST_ABI_DISABLE:

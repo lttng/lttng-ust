@@ -388,7 +388,9 @@ static const char *cmd_name_mapping[] = {
 	/* Counter commands */
 	[ LTTNG_UST_ABI_COUNTER_CHANNEL ] = "Create Counter Channel",
 	[ LTTNG_UST_ABI_COUNTER_CPU ] = "Create Counter CPU",
+#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 	[ LTTNG_UST_ABI_COUNTER_EVENT ] = "Create Counter Event",
+#endif	/* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 };
 
 static const char *str_timeout;
@@ -1116,7 +1118,9 @@ int handle_message(struct sock_info *sock_info,
 	case LTTNG_UST_ABI_COUNTER:
 	case LTTNG_UST_ABI_COUNTER_CHANNEL:
 	case LTTNG_UST_ABI_COUNTER_CPU:
+#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 	case LTTNG_UST_ABI_COUNTER_EVENT:
+#endif	/* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 	case LTTNG_UST_ABI_EVENT_NOTIFIER_CREATE:
 	case LTTNG_UST_ABI_EVENT_NOTIFIER_GROUP_CREATE:
 		/*
@@ -1431,6 +1435,7 @@ int handle_message(struct sock_info *sock_info,
 		}
 		break;
 	}
+#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 	case LTTNG_UST_ABI_COUNTER_EVENT:
 	{
 		len = ustcomm_recv_var_len_cmd_from_sessiond(sock,
@@ -1451,6 +1456,7 @@ int handle_message(struct sock_info *sock_info,
 			ret = -ENOSYS;
 		break;
 	}
+#endif	/* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 	case LTTNG_UST_ABI_EVENT_NOTIFIER_CREATE:
 	{
 		len = ustcomm_recv_var_len_cmd_from_sessiond(sock,

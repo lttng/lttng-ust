@@ -21,6 +21,7 @@ struct lttng_event_recorder_enabler *lttng_event_recorder_enabler_create(
 		struct lttng_ust_channel_buffer *chan)
 	__attribute__((visibility("hidden")));
 
+#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 /*
  * Allocate and initialize a `struct lttng_event_counter_enabler` object.
  *
@@ -33,6 +34,7 @@ struct lttng_event_counter_enabler *lttng_event_counter_enabler_create(
 		const struct lttng_counter_key *key,
 		struct lttng_ust_channel_counter *chan)
 	__attribute__((visibility("hidden")));
+#endif	 /* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 
 /*
  * Destroy a `struct lttng_event_enabler_common` object.
