@@ -16,7 +16,7 @@ of contributing a patch to LTTng-UST.
 The LTTng-UST project uses [Git](https://git-scm.com/) for version
 control. The upstream Git repository URL is:
 
-    git://git.lttng.org/lttng-ust.git
+    https://git.lttng.org/lttng-ust.git
 
 
 ## Coding standard
