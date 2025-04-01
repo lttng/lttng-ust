@@ -63,12 +63,12 @@ struct lttng_ust_ring_buffer_ctx {
  */
 static inline
 void lttng_ust_ring_buffer_ctx_init(struct lttng_ust_ring_buffer_ctx *ctx,
-					void *client_priv, size_t data_size, int largest_align,
+					void *client_priv, size_t data_size, size_t largest_align,
 					struct lttng_ust_probe_ctx *probe_ctx)
 	lttng_ust_notrace;
 static inline
 void lttng_ust_ring_buffer_ctx_init(struct lttng_ust_ring_buffer_ctx *ctx,
-					void *client_priv, size_t data_size, int largest_align,
+					void *client_priv, size_t data_size, size_t largest_align,
 					struct lttng_ust_probe_ctx *probe_ctx)
 {
 	ctx->struct_size = sizeof(struct lttng_ust_ring_buffer_ctx);
