@@ -164,17 +164,17 @@ class TemplateFile:
         removePreprocess = re.compile("#.*$", flags=re.MULTILINE)
         noPreprocess = removePreprocess.sub("", self.text)
         # Remove // comments
-        removeLineComment = re.compile("\/\/.*$", flags=re.MULTILINE)
+        removeLineComment = re.compile(r"//.*$", flags=re.MULTILINE)
         nolinecomment = removeLineComment.sub("", noPreprocess)
         # Remove all spaces and lines
-        cleantext = re.sub("\s*", "", nolinecomment)
+        cleantext = re.sub(r"\s*", "", nolinecomment)
         # Remove multine C style comments
-        nocomment = re.sub("/\*.*?\*/", "", cleantext)
+        nocomment = re.sub(r"/\*.*?\*/", "", cleantext)
         entries = re.split("^LTTNG_UST_TRACEPOINT_.*?", nocomment)
 
         for entry in entries:
             if entry != '':
-                decomp = re.findall("(\w*?)\((\w*?),(\w*?),", entry)
+                decomp = re.findall(r"(\w*?)\((\w*?),(\w*?),", entry)
                 typea = decomp[0][0]
                 domain = decomp[0][1]
                 name = decomp[0][2]
@@ -289,21 +289,21 @@ def main(argv=None):
                 if headerFilename:
                     curFilename = headerFilename
                 else:
-                    curFilename = re.sub("\.tp$", ".h", arg)
+                    curFilename = re.sub(r"\.tp$", ".h", arg)
                 doth = HeaderFile(curFilename, tpl)
                 doth.write()
             if doCFile:
                 if cFilename:
                     curFilename = cFilename
                 else:
-                    curFilename = re.sub("\.tp$", ".c", arg)
+                    curFilename = re.sub(r"\.tp$", ".c", arg)
                 dotc = CFile(curFilename, tpl)
                 dotc.write()
             if doObj:
                 if objFilename:
                     curFilename = objFilename
                 else:
-                    curFilename = re.sub("\.tp$", ".o", arg)
+                    curFilename = re.sub(r"\.tp$", ".o", arg)
                 dotobj = ObjFile(curFilename, tpl)
                 dotobj.write()
         except IOError as args:
