@@ -1505,15 +1505,34 @@ int main(int argc, char* argv[])
 ENVIRONMENT VARIABLES
 ---------------------
 `LTTNG_UST_APP_PATH`::
-    Path under which unix sockets used for the communication between
-    the application (tracee) instrumented with `liblttng-ust` and the
-    LTTng session and consumer daemons (part of the LTTng-tools project)
-    are located. When `$LTTNG_UST_APP_PATH` is specified, only this path
-    is considered for connecting to a session daemon. The
-    `$LTTNG_UST_APP_PATH` target directory must exist and be accessible
-    by the user before the application is executed for tracing to work.
-    Setting this environment variable disables connection to root and
-    per-user session daemons.
+    Path of the directory where to expect the LTTng session daemon to
+    place the following files to receive instrumented application
+    connection requests:
++
+--
+* The application registration Unix socket.
+
+* The "wait" shared memory files to wake up instrumented applications
+  that are waiting for a session daemon to start.
+
+* The agent port file.
++
+This file contains the TCP port the agents must connect to in order to
+enable LTTng tracing.
+--
++
+This directory must exist when you start the application for LTTng
+tracing to be enabled.
++
+When `LTTNG_UST_APP_PATH` is set, liblttng-ust:
++
+--
+* Only considers this path to connect to a session daemon.
+* Won't connect to root and/or user session daemons as usual.
+--
++
+See the corresponding `LTTNG_UST_CTL_PATH` environment variable of
+man:lttng-sessiond(8).
 
 `LTTNG_HOME`::
     Alternative user's home directory. This variable is useful when the
