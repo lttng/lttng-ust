@@ -1504,6 +1504,34 @@ int main(int argc, char* argv[])
 
 ENVIRONMENT VARIABLES
 ---------------------
+`LTTNG_HOME`::
+    Alternative user's home directory. This variable is useful when the
+    user running the instrumented application has a non-writable home
+    directory. This path is where unix sockets for communication with
+    the per-user session daemon are located.
+
+`LTTNG_UST_ABORT_ON_CRITICAL`::
+    If set, abort the instrumented application on a critical
+    error message.
+
+`LTTNG_UST_ALLOW_BLOCKING`::
+    If set, allow the application to retry event tracing when there's
+    no space left for the event record in the sub-buffer, therefore
+    effectively blocking the application until space is made available
+    or the configured timeout is reached.
++
+To allow an application to block during tracing, you also need to
+specify a blocking timeout when you create a channel with the
+nloption:--blocking-timeout option of the man:lttng-enable-channel(1)
+command.
++
+This option can be useful in workloads generating very large trace data
+throughput, where blocking the application is an acceptable trade-off to
+prevent discarding event records.
++
+WARNING: Setting this environment variable may significantly
+affect application timings.
+
 `LTTNG_UST_APP_PATH`::
     Path of the directory where to expect the LTTng session daemon to
     place the following files to receive instrumented application
@@ -1533,33 +1561,6 @@ When `LTTNG_UST_APP_PATH` is set, liblttng-ust:
 +
 See the corresponding `LTTNG_UST_CTL_PATH` environment variable of
 man:lttng-sessiond(8).
-
-`LTTNG_HOME`::
-    Alternative user's home directory. This variable is useful when the
-    user running the instrumented application has a non-writable home
-    directory. This path is where unix sockets for communication with
-    the per-user session daemon are located.
-
-`LTTNG_UST_ALLOW_BLOCKING`::
-    If set, allow the application to retry event tracing when there's
-    no space left for the event record in the sub-buffer, therefore
-    effectively blocking the application until space is made available
-    or the configured timeout is reached.
-+
-To allow an application to block during tracing, you also need to
-specify a blocking timeout when you create a channel with the
-nloption:--blocking-timeout option of the man:lttng-enable-channel(1)
-command.
-+
-This option can be useful in workloads generating very large trace data
-throughput, where blocking the application is an acceptable trade-off to
-prevent discarding event records.
-+
-WARNING: Setting this environment variable may significantly
-affect application timings.
-
-`LTTNG_UST_ABORT_ON_CRITICAL`::
-    If set, abort the instrumented application on a critical error message.
 
 `LTTNG_UST_CLOCK_PLUGIN`::
     Path to the shared object which acts as the clock override plugin.
