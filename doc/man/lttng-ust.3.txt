@@ -1507,7 +1507,7 @@ ENVIRONMENT VARIABLES
 `LTTNG_HOME`::
     Alternative user's home directory. This variable is useful when the
     user running the instrumented application has a non-writable home
-    directory. This path is where unix sockets for communication with
+    directory. This path is where Unix sockets for communication with
     the per-user session daemon are located.
 
 `LTTNG_UST_ABORT_ON_CRITICAL`::
