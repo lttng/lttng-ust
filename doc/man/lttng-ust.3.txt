@@ -1577,21 +1577,18 @@ affect application timings.
     https://github.com/lttng/lttng-ust/tree/stable-{lttng_version}/doc/examples/getcpu-override[`examples/getcpu-override`].
 
 `LTTNG_UST_MAP_POPULATE_POLICY`::
+    If set, override the policy used to populate shared memory pages
+    within the application.
 +
---
-If set, override the policy used to populate shared memory pages
-within the application. The expected values are:
+The possible values are:
 
-`none`:::
-  Do not pre-populate any pages, take minor faults on first access
+`none` (default):::
+  Do not pre-populate any page: take minor faults on first access
   while tracing.
 
 `cpu_possible`:::
   Pre-populate pages for all possible CPUs in the system, as
-  listed by `/sys/devices/system/cpu/possible`.
---
-+
-Default: `none`. If the policy is unknown, use the default.
+  shown in `/sys/devices/system/cpu/possible`.
 
 `LTTNG_UST_REGISTER_TIMEOUT`::
     Waiting time for the _registration done_ session daemon command
