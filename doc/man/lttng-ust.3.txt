@@ -400,7 +400,7 @@ The parameters are:
     information.
 
 'expr'::
-    C expression resulting in the field's value. This expression can
+    C expression resulting in the field value. This expression can
     use one or more arguments passed to the tracepoint. The arguments
     of a given tracepoint are defined in the `LTTNG_UST_TP_ARGS()` macro (see
     the <<creating-tp,Creating a tracepoint provider>> section above).
@@ -417,11 +417,11 @@ The parameters are:
     integer/enumeration field.
 
 'len_expr'::
-    C expression resulting in the sequence's length. This expression
+    C expression resulting in the sequence length. This expression
     can use one or more arguments passed to the tracepoint.
 
 'len_type'::
-    Unsigned integer C type of sequence's length.
+    Unsigned integer C type of sequence length.
 
 'prov_name'::
     Tracepoint provider name. This must be the same as the tracepoint
@@ -750,10 +750,10 @@ $ ar rc tp.a tp.o
 Using a static library does have the advantage of centralising the
 tracepoint providers objects so they can be shared between multiple
 applications. This way, when the tracepoint provider is modified, the
-source code changes don't have to be patched into each application's
-source code tree. The applications need to be relinked after each
-change, but need not to be otherwise recompiled (unless the tracepoint
-provider's API changes).
+source code changes don't have to be patched into the source code tree
+of each application. The applications need to be relinked after each
+change, but need not to be otherwise recompiled (unless the API of the
+tracepoint provider changes).
 
 Then, link your application with this object file (or with the static
 library containing it) and with `liblttng-ust` and `libdl` (`libc` on a
@@ -1085,7 +1085,7 @@ Fields:
 |Base address of loaded library.
 
 |`crc`
-|Debug link file's CRC.
+|CRC of debug link file.
 
 |`filename`
 |Debug link file name.
@@ -1193,7 +1193,7 @@ Fields:
 |Base address of loaded library.
 
 |`crc`
-|Debug link file's CRC.
+|CRC of debug link file.
 
 |`filename`
 |Debug link file name.
@@ -1569,7 +1569,7 @@ man:lttng-sessiond(8).
     https://github.com/lttng/lttng-ust/tree/stable-{lttng_version}/doc/examples/clock-override[`examples/clock-override`].
 
 `LTTNG_UST_DEBUG`::
-    If set, enable `liblttng-ust`'s debug and error output.
+    If set, enable the debug and error output of `liblttng-ust`.
 
 `LTTNG_UST_GETCPU_PLUGIN`::
     Path to the shared object which acts as the `getcpu()` override
