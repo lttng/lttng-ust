@@ -1,3 +1,17 @@
+2025-04-14 (National Gardening Day) lttng-ust 2.13.9
+	* Fix: Use UATOMIC_HAS_ATOMIC_{BYTE,SHORT} for counter atomics
+	* Fix: lttng-ust-tp regex warnings
+	* lttng-ust-java: Load lttng-ust-context-jni before other JNI libraries
+	* doc/examples: set minimal CMake version to 3.5.0
+	* Fix: Update `get_mempolicy` check to handle `EPERM`
+	* Fix: Correct `numa_available` return code checks
+	* Fix: test_benchmark: do not match "CPU(s) scaling MHz:"
+	* Tests: Fix abi conflict test when building with clang
+	* Fix: Build examples when rpath is stripped from in-build-tree libs
+	* ust-fd: Add close_range declaration
+	* docs: Correct GitHub URLs in lttng-ust.3
+	* fix: handle EINTR correctly in get_cpu_mask_from_sysfs
+
 2024-04-19 (National Garlic Day) lttng-ust 2.13.8
 	* Add close_range wrapper to liblttng-ust-fd.so
 	* ust-tracepoint-event: Add static check of sequences length type
