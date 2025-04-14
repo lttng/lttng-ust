@@ -10,6 +10,7 @@
 #include "counter-internal.h"
 #include <urcu/system.h>
 #include <urcu/compiler.h>
+#include <urcu/uatomic.h>
 #include <stdbool.h>
 
 #include "common/macros.h"
@@ -65,8 +66,12 @@ static int lttng_counter_layout_init(struct lib_counter *counter, int cpu, int s
 	else
 		layout = &counter->percpu_counters[cpu];
 	switch (counter->config.counter_size) {
+#ifdef UATOMIC_HAS_ATOMIC_BYTE
 	case COUNTER_SIZE_8_BIT:
+#endif	/* UATOMIC_HAS_ATOMIC_BYTE */
+#ifdef UATOMIC_HAS_ATOMIC_SHORT
 	case COUNTER_SIZE_16_BIT:
+#endif	/* UATOMIC_HAS_ATOMIC_SHORT */
 	case COUNTER_SIZE_32_BIT:
 	case COUNTER_SIZE_64_BIT:
 		counter_size = (size_t) counter->config.counter_size;
@@ -147,16 +152,20 @@ int lttng_counter_set_channel_sum_step(struct lib_counter *counter,
 		return -EINVAL;
 
 	switch (counter->config.counter_size) {
+#ifdef UATOMIC_HAS_ATOMIC_BYTE
 	case COUNTER_SIZE_8_BIT:
 		if (global_sum_step > INT8_MAX)
 			return -EINVAL;
 		counter->global_sum_step.s8 = (int8_t) global_sum_step;
 		break;
+#endif	/* UATOMIC_HAS_ATOMIC_BYTE */
+#ifdef UATOMIC_HAS_ATOMIC_SHORT
 	case COUNTER_SIZE_16_BIT:
 		if (global_sum_step > INT16_MAX)
 			return -EINVAL;
 		counter->global_sum_step.s16 = (int16_t) global_sum_step;
 		break;
+#endif	/* UATOMIC_HAS_ATOMIC_SHORT */
 	case COUNTER_SIZE_32_BIT:
 		if (global_sum_step > INT32_MAX)
 			return -EINVAL;
@@ -379,18 +388,22 @@ int lttng_counter_read(const struct lib_counter_config *config,
 		return -ENODEV;
 
 	switch (config->counter_size) {
+#ifdef UATOMIC_HAS_ATOMIC_BYTE
 	case COUNTER_SIZE_8_BIT:
 	{
 		int8_t *int_p = (int8_t *) layout->counters + index;
 		*value = (int64_t) CMM_LOAD_SHARED(*int_p);
 		break;
 	}
+#endif	/* UATOMIC_HAS_ATOMIC_BYTE */
+#ifdef UATOMIC_HAS_ATOMIC_SHORT
 	case COUNTER_SIZE_16_BIT:
 	{
 		int16_t *int_p = (int16_t *) layout->counters + index;
 		*value = (int64_t) CMM_LOAD_SHARED(*int_p);
 		break;
 	}
+#endif	/* UATOMIC_HAS_ATOMIC_SHORT */
 	case COUNTER_SIZE_32_BIT:
 	{
 		int32_t *int_p = (int32_t *) layout->counters + index;
@@ -470,6 +483,7 @@ int lttng_counter_aggregate(const struct lib_counter_config *config,
 		return -EINVAL;
 	}
 	switch (config->counter_size) {
+#ifdef UATOMIC_HAS_ATOMIC_BYTE
 	case COUNTER_SIZE_8_BIT:
 		if (sum > INT8_MAX)
 			*overflow = true;
@@ -477,6 +491,8 @@ int lttng_counter_aggregate(const struct lib_counter_config *config,
 			*underflow = true;
 		sum = (int8_t) sum;	/* Truncate sum. */
 		break;
+#endif	/* UATOMIC_HAS_ATOMIC_BYTE */
+#ifdef UATOMIC_HAS_ATOMIC_SHORT
 	case COUNTER_SIZE_16_BIT:
 		if (sum > INT16_MAX)
 			*overflow = true;
@@ -484,6 +500,7 @@ int lttng_counter_aggregate(const struct lib_counter_config *config,
 			*underflow = true;
 		sum = (int16_t) sum;	/* Truncate sum. */
 		break;
+#endif	/* UATOMIC_HAS_ATOMIC_SHORT */
 	case COUNTER_SIZE_32_BIT:
 		if (sum > INT32_MAX)
 			*overflow = true;
@@ -542,18 +559,22 @@ int lttng_counter_clear_cpu(const struct lib_counter_config *config,
 		return -ENODEV;
 
 	switch (config->counter_size) {
+#ifdef UATOMIC_HAS_ATOMIC_BYTE
 	case COUNTER_SIZE_8_BIT:
 	{
 		int8_t *int_p = (int8_t *) layout->counters + index;
 		CMM_STORE_SHARED(*int_p, 0);
 		break;
 	}
+#endif	/* UATOMIC_HAS_ATOMIC_BYTE */
+#ifdef UATOMIC_HAS_ATOMIC_SHORT
 	case COUNTER_SIZE_16_BIT:
 	{
 		int16_t *int_p = (int16_t *) layout->counters + index;
 		CMM_STORE_SHARED(*int_p, 0);
 		break;
 	}
+#endif	/* UATOMIC_HAS_ATOMIC_SHORT */
 	case COUNTER_SIZE_32_BIT:
 	{
 		int32_t *int_p = (int32_t *) layout->counters + index;

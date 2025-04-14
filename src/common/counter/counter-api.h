@@ -52,6 +52,7 @@ static inline int __lttng_counter_add(const struct lib_counter_config *config,
 		return -ENODEV;
 
 	switch (config->counter_size) {
+#ifdef UATOMIC_HAS_ATOMIC_BYTE
 	case COUNTER_SIZE_8_BIT:
 	{
 		int8_t *int_p = (int8_t *) layout->counters + index;
@@ -95,6 +96,8 @@ static inline int __lttng_counter_add(const struct lib_counter_config *config,
 			underflow = true;
 		break;
 	}
+#endif	/* UATOMIC_HAS_ATOMIC_BYTE */
+#ifdef UATOMIC_HAS_ATOMIC_SHORT
 	case COUNTER_SIZE_16_BIT:
 	{
 		int16_t *int_p = (int16_t *) layout->counters + index;
@@ -138,6 +141,7 @@ static inline int __lttng_counter_add(const struct lib_counter_config *config,
 			underflow = true;
 		break;
 	}
+#endif	/* UATOMIC_HAS_ATOMIC_SHORT */
 	case COUNTER_SIZE_32_BIT:
 	{
 		int32_t *int_p = (int32_t *) layout->counters + index;
