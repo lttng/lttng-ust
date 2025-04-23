@@ -121,7 +121,9 @@ struct lttng_counter_dimension {
 enum lttng_event_enabler_type {
 	LTTNG_EVENT_ENABLER_TYPE_RECORDER,
 	LTTNG_EVENT_ENABLER_TYPE_NOTIFIER,
+#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 	LTTNG_EVENT_ENABLER_TYPE_COUNTER,
+#endif	/* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 };
 
 /*
@@ -669,7 +671,9 @@ struct lttng_ust_event_ht *lttng_get_event_ht_from_enabler(struct lttng_event_en
 {
 	switch (event_enabler->enabler_type) {
 	case LTTNG_EVENT_ENABLER_TYPE_RECORDER:		/* Fall-through */
+#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 	case LTTNG_EVENT_ENABLER_TYPE_COUNTER:
+#endif	/* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 	{
 		struct lttng_event_enabler_session_common *event_enabler_session =
 			caa_container_of(event_enabler, struct lttng_event_enabler_session_common, parent);
@@ -691,7 +695,9 @@ struct cds_list_head *lttng_get_event_list_head_from_enabler(struct lttng_event_
 {
 	switch (event_enabler->enabler_type) {
 	case LTTNG_EVENT_ENABLER_TYPE_RECORDER:		/* Fall-through */
+#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 	case LTTNG_EVENT_ENABLER_TYPE_COUNTER:
+#endif	/* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 	{
 		struct lttng_event_enabler_session_common *event_enabler_session =
 			caa_container_of(event_enabler, struct lttng_event_enabler_session_common, parent);

@@ -1500,6 +1500,7 @@ error_fields:
 	return ret;
 }
 
+#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 /*
  * Returns 0 on success, negative error value on error.
  * Returns -EPIPE or -ECONNRESET if other end has hung up.
@@ -1606,6 +1607,7 @@ error_dimension_indexes:
 error_send:
 	return ret;
 }
+#endif	/* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 
 /*
  * Returns 0 on success, negative error value on error.

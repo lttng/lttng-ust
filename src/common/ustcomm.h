@@ -310,6 +310,7 @@ int ustcomm_register_event(int sock,
 	uint32_t *id)			/* (output) */
 	__attribute__((visibility("hidden")));
 
+#ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 /*
  * Returns 0 on success, negative error value on error.
  * Returns -EPIPE or -ECONNRESET if other end has hung up.
@@ -323,6 +324,7 @@ int ustcomm_register_key(int sock,
 	uint64_t user_token,
 	uint64_t *index)		/* (output) */
 	__attribute__((visibility("hidden")));
+#endif	/* CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER */
 
 /*
  * Returns 0 on success, negative error value on error.
