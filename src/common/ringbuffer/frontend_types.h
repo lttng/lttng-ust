@@ -18,6 +18,7 @@
 #include <urcu/list.h>
 #include <urcu/uatomic.h>
 
+#include <lttng/ust-abi.h>
 #include <lttng/ust-ringbuffer-context.h>
 #include "ringbuffer-config.h"
 #include "common/logging.h"
@@ -62,6 +63,7 @@ struct lttng_ust_ring_buffer_channel {
 		struct {
 			int32_t blocking_timeout_ms;
 			void *priv;		/* Private data pointer. */
+			uint32_t owner_id;
 		} s;
 		char padding[RB_CHANNEL_PADDING];
 	} u;
@@ -77,7 +79,10 @@ struct lttng_ust_ring_buffer_channel {
 struct commit_counters_hot {
 	union v_atomic cc;		/* Commit counter */
 	union v_atomic seq;		/* Consecutive commits */
-	char padding[RB_COMMIT_COUNT_HOT_PADDING];
+	union {
+		union v_atomic owner; /* Current owner of this subbufer */
+		char padding[RB_COMMIT_COUNT_HOT_PADDING];
+	};
 } __attribute__((aligned(CAA_CACHE_LINE_SIZE)));
 
 /* Per-subbuffer commit counters used only on cold paths */
@@ -293,6 +298,22 @@ static inline
 void channel_set_private(struct lttng_ust_ring_buffer_channel *chan, void *priv)
 {
 	chan->u.s.priv = priv;
+}
+
+
+static inline
+int channel_set_owner_id(struct lttng_ust_ring_buffer_channel *chan,
+			uint32_t owner_id)
+{
+	switch (owner_id) {
+	case LTTNG_UST_ABI_OWNER_ID_UNSET:
+		/* fallthrough */
+	case LTTNG_UST_ABI_OWNER_ID_CONSUMER:
+		return -1;
+	default:
+		chan->u.s.owner_id = owner_id;
+		return 0;
+	}
 }
 
 #ifndef __rb_same_type

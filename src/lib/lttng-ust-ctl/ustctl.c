@@ -1164,6 +1164,7 @@ int lttng_ust_ctl_send_channel_to_ust(int sock, int session_handle,
 	lum.cmd = LTTNG_UST_ABI_CHANNEL;
 	lum.u.channel.len = channel_data->size;
 	lum.u.channel.type = channel_data->u.channel.type;
+	lum.u.channel.owner_id = channel_data->u.channel.owner_id;
 	ret = ustcomm_send_app_msg(sock, &lum);
 	if (ret)
 		return ret;
@@ -1404,6 +1405,7 @@ struct lttng_ust_ctl_consumer_channel *
 	struct lttng_ust_ctl_consumer_channel *chan;
 	const char *transport_name;
 	struct lttng_transport *transport;
+	uint32_t owner = attr->owner_id;
 
 	switch (attr->type) {
 	case LTTNG_UST_ABI_CHAN_PER_CPU:
@@ -1472,7 +1474,8 @@ struct lttng_ust_ctl_consumer_channel *
 			attr->read_timer_interval,
 			attr->uuid, attr->chan_id,
 			stream_fds, nr_stream_fds,
-			attr->blocking_timeout);
+			attr->blocking_timeout,
+			owner);
 	if (!chan->chan) {
 		goto chan_error;
 	}
@@ -1746,6 +1749,12 @@ int lttng_ust_ctl_stream_get_wakeup_fd(struct lttng_ust_ctl_consumer_stream *str
 	return shm_get_wakeup_fd(consumer_chan->chan->priv->rb_chan->handle, &buf->self._ref);
 }
 
+
+void lttng_ust_ctl_set_channel_owner_id(struct lttng_ust_abi_object_data *obj,
+					uint32_t id)
+{
+	obj->u.channel.owner_id = id;
+}
 /* For mmap mode, readable without "get" operation */
 
 void *lttng_ust_ctl_get_mmap_base(struct lttng_ust_ctl_consumer_stream *stream)

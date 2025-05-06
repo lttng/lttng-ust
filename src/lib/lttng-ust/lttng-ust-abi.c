@@ -576,6 +576,11 @@ int lttng_abi_map_channel(int session_objd,
 		goto objd_error;
 	}
 
+	if (channel_set_owner_id(chan, ust_chan->owner_id)) {
+		ret = -EINVAL;
+		goto objd_error;
+	}
+
 	/* Initialize our lttng chan */
 	lttng_chan_buf->parent->enabled = 1;
 	lttng_chan_buf->parent->session = session;

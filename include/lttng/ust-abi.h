@@ -47,6 +47,11 @@ enum lttng_ust_abi_chan_type {
 	LTTNG_UST_ABI_CHAN_PER_CHANNEL	= 2,
 };
 
+enum lttng_ust_abi_owner_id_type {
+	LTTNG_UST_ABI_OWNER_ID_UNSET		= 0,
+	LTTNG_UST_ABI_OWNER_ID_CONSUMER		= 1,
+};
+
 struct lttng_ust_abi_tracer_version {
 	uint32_t major;
 	uint32_t minor;
@@ -64,6 +69,7 @@ struct lttng_ust_abi_tracer_version {
 struct lttng_ust_abi_channel {
 	uint64_t len;
 	int32_t type;	/* enum lttng_ust_abi_chan_type */
+	uint32_t owner_id;
 	char padding[LTTNG_UST_ABI_CHANNEL_PADDING];
 	char data[];	/* variable sized data */
 } __attribute__((packed));

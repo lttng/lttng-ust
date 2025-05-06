@@ -48,6 +48,7 @@ struct lttng_ust_ctl_consumer_channel_attr {
 	uint32_t chan_id;			/* channel ID */
 	unsigned char uuid[LTTNG_UST_UUID_LEN]; /* Trace session unique ID */
 	int64_t blocking_timeout;			/* Blocking timeout (usec) */
+	uint32_t owner_id;
 } __attribute__((packed));
 
 /*
@@ -229,6 +230,8 @@ int lttng_ust_ctl_get_mmap_len(struct lttng_ust_ctl_consumer_stream *stream,
 int lttng_ust_ctl_get_max_subbuf_size(struct lttng_ust_ctl_consumer_stream *stream,
 		unsigned long *len);
 
+void lttng_ust_ctl_set_channel_owner_id(struct lttng_ust_abi_object_data *obj,
+					uint32_t id);
 /*
  * For mmap mode, operate on the current packet (between get/put or
  * get_next/put_next).

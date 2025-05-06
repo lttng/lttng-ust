@@ -421,7 +421,8 @@ struct lttng_ust_channel_buffer_ops_private {
 			unsigned char *uuid,
 			uint32_t chan_id,
 			const int *stream_fds, int nr_stream_fds,
-			int64_t blocking_timeout);
+			int64_t blocking_timeout,
+			uint32_t owner_id);
 	void (*channel_destroy)(struct lttng_ust_channel_buffer *chan);
 	/*
 	 * packet_avail_size returns the available size in the current
