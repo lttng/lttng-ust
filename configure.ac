@@ -9,7 +9,7 @@ dnl Process this file with autoconf to produce a configure script.
 m4_define([ust_version_major], [2])
 m4_define([ust_version_minor], [14])
 m4_define([ust_version_patch], [0])
-m4_define([ust_version_dev_stage], [-rc1])
+m4_define([ust_version_dev_stage], [-rc2])
 m4_define([ust_version], ust_version_major[.]ust_version_minor[.]ust_version_patch[]ust_version_dev_stage)
 m4_define([ust_version_name], [[Orbitales]])
 m4_define([ust_version_description], [[This release is named after Orbitales[,] a bold creation from Noctem Artisans Brasseurs in Québec City. Pitch black and dense—one team member compared the color to used motor oil—this beer offers an intriguing sensory experience. Aged in wood casks[,] it delivers rich aromas and flavors of blackberry as well as a hint of acidity. There’s no head to speak of[,] but a whisper of blue cheese funk lingers just enough to keep you curious.]])

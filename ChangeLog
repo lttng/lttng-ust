@@ -2,6 +2,10 @@
 #
 # SPDX-License-Identifier: CC-BY-4.0
 
+2025-05-14 lttng-ust 2.14.0-rc2
+	* Only compile trace hit counter code with experimental define
+	* Hide experimental counter symbols
+
 2025-04-16 (National Wear Your Pajamas to Work Day) lttng-ust 2.14.0-rc1
 	* Fix release description
 	* Set the 2.14 release codename and description
