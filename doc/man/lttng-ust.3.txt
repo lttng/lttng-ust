@@ -885,10 +885,11 @@ General context fields::
 `cpu_id`:::
     CPU ID.
 +
-NOTE: This context field is always enabled, and it cannot be added
-with man:lttng-add-context(1). Its main purpose is to be used for
-dynamic event filtering. See man:lttng-enable-event(1) for more
-information about event filtering.
+NOTE: With the default per-CPU buffer allocation policy (see
+man:lttng-enable-channel(1)), this context field is always enabled, and
+it cannot be added with man:lttng-add-context(1): its main purpose is to
+be used for dynamic event filtering. See man:lttng-enable-event(1) for
+more information about event filtering.
 
 `ip`:::
     Instruction pointer: enables recording the exact address from which
