@@ -94,6 +94,7 @@ static size_t client_packet_header_size(void)
 
 static void client_buffer_begin(struct lttng_ust_ring_buffer *buf,
 		uint64_t timestamp __attribute__((unused)),
+		uint64_t discarded_events __attribute__((unused)),
 		unsigned int subbuf_idx,
 		struct lttng_ust_shm_handle *handle)
 {

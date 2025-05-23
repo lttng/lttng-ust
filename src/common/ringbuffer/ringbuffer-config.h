@@ -46,7 +46,9 @@ struct lttng_ust_ring_buffer_client_cb {
 
 	/* Slow path only, at subbuffer switch */
 	size_t (*subbuffer_header_size) (void);
-	void (*buffer_begin) (struct lttng_ust_ring_buffer *buf, uint64_t timestamp,
+	void (*buffer_begin) (struct lttng_ust_ring_buffer *buf,
+			      uint64_t timestamp,
+			      uint64_t discarded_events,
 			      unsigned int subbuf_idx,
 			      struct lttng_ust_shm_handle *handle);
 	void (*buffer_end) (struct lttng_ust_ring_buffer *buf, uint64_t timestamp,

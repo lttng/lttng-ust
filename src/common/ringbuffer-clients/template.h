@@ -361,7 +361,9 @@ static size_t client_packet_header_size(void)
 	return offsetof(struct packet_header, ctx.header_end);
 }
 
-static void client_buffer_begin(struct lttng_ust_ring_buffer *buf, uint64_t timestamp,
+static void client_buffer_begin(struct lttng_ust_ring_buffer *buf,
+				uint64_t timestamp,
+				uint64_t events_discarded,
 				unsigned int subbuf_idx,
 				struct lttng_ust_shm_handle *handle)
 {
@@ -373,6 +375,10 @@ static void client_buffer_begin(struct lttng_ust_ring_buffer *buf, uint64_t time
 				handle);
 	struct lttng_ust_channel_buffer *lttng_chan = channel_get_private(chan);
 	uint64_t cnt = shmp_index(handle, buf->backend.buf_cnt, subbuf_idx)->seq_cnt;
+	struct commit_counters_cold *cc_cold = shmp_index(handle, buf->commit_cold, subbuf_idx);
+
+	if (!cc_cold)
+		return;
 
 	assert(header);
 	if (!header)
@@ -394,6 +400,14 @@ static void client_buffer_begin(struct lttng_ust_ring_buffer *buf, uint64_t time
 #ifdef RING_BUFFER_CLIENT_HAS_CPU_ID
 	header->ctx.cpu_id = buf->backend.cpu;
 #endif
+
+	/*
+	 * Done under the protection of ownership.
+	 *
+	 * Because other processes need to take the ownership and lock the
+	 * sub-buffer, this can be done without atomic operation.
+	 */
+	cc_cold->begin_events_discarded = events_discarded;
 }
 
 /*
@@ -499,7 +513,27 @@ static int client_timestamp_end(struct lttng_ust_ring_buffer *buf,
 	return 0;
 }
 
-static int client_events_discarded(struct lttng_ust_ring_buffer *buf,
+static int client_events_discarded_begin(struct lttng_ust_ring_buffer *buf,
+		struct lttng_ust_ring_buffer_channel *chan,
+		uint64_t *events_discarded)
+{
+	struct lttng_ust_shm_handle *handle = chan->handle;
+	size_t subbuf_idx;
+	struct commit_counters_cold *cc_cold;
+
+	subbuf_idx = subbuf_index(buf->get_subbuf_consumed, chan);
+
+	cc_cold = shmp_index(handle, buf->commit_cold, subbuf_idx);
+
+	if (!cc_cold)
+		return -1;
+
+	*events_discarded = cc_cold->begin_events_discarded;
+
+	return 0;
+}
+
+static int client_events_discarded_end(struct lttng_ust_ring_buffer *buf,
 		struct lttng_ust_ring_buffer_channel *chan,
 		uint64_t *events_discarded)
 {
@@ -696,7 +730,8 @@ struct lttng_ust_client_lib_ring_buffer_client_cb client_cb = {
 	},
 	.timestamp_begin = client_timestamp_begin,
 	.timestamp_end = client_timestamp_end,
-	.events_discarded = client_events_discarded,
+	.events_discarded_begin = client_events_discarded_begin,
+	.events_discarded_end = client_events_discarded_end,
 	.content_size = client_content_size,
 	.packet_size = client_packet_size,
 	.stream_id = client_stream_id,

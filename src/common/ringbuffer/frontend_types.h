@@ -90,13 +90,19 @@ struct commit_counters_hot {
 struct commit_counters_cold {
 	union v_atomic cc_sb;		/* Incremented _once_ at sb switch */
 	union {
-		unsigned long end_events_discarded; /*
-						     * Passing events discarded counter
-						     * read upon try_reserve and try_switch
-						     * that fills a subbuffer to check_deliver
-						     * so it can be written into the packet
-						     * header field.
-						     */
+		struct {
+			unsigned long begin_events_discarded; /*
+							       * Events discarded before
+							       * starting sub-buffer.
+							       */
+			unsigned long end_events_discarded; /*
+							     * Passing events discarded counter
+							     * read upon try_reserve and try_switch
+							     * that fills a subbuffer to check_deliver
+							     * so it can be written into the packet
+							     * header field.
+							     */
+		};
 		char padding[RB_COMMIT_COUNT_COLD_PADDING];
 	};
 } __attribute__((aligned(CAA_CACHE_LINE_SIZE)));

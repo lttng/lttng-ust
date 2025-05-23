@@ -400,7 +400,7 @@ int lib_ring_buffer_create(struct lttng_ust_ring_buffer *buf,
 		goto free_chanbuf;
 	}
 	timestamp = config->cb.ring_buffer_clock_read(shmp_chan);
-	config->cb.buffer_begin(buf, timestamp, 0, handle);
+	config->cb.buffer_begin(buf, timestamp, 0, 0, handle);
 	cc_hot = shmp_index(handle, buf->commit_hot, 0);
 	if (!cc_hot) {
 		ret = -EPERM;
@@ -1777,7 +1777,12 @@ void lib_ring_buffer_switch_old_start(struct lttng_ust_ring_buffer *buf,
 	unsigned long commit_count;
 	struct commit_counters_hot *cc_hot;
 
-	config->cb.buffer_begin(buf, ctx->priv->timestamp, oldidx, handle);
+	config->cb.buffer_begin(buf,
+				ctx->priv->timestamp,
+				ctx->priv->records_lost_full +
+				ctx->priv->records_lost_wrap +
+				ctx->priv->records_lost_big,
+				oldidx, handle);
 
 	/*
 	 * Order all writes to buffer before the commit count update that will
@@ -1879,7 +1884,12 @@ void lib_ring_buffer_switch_new_start(struct lttng_ust_ring_buffer *buf,
 	unsigned long commit_count;
 	struct commit_counters_hot *cc_hot;
 
-	config->cb.buffer_begin(buf, ctx->priv->timestamp, beginidx, handle);
+	config->cb.buffer_begin(buf,
+				ctx->priv->timestamp,
+				ctx->priv->records_lost_full +
+				ctx->priv->records_lost_big +
+				ctx->priv->records_lost_wrap,
+				beginidx, handle);
 
 	/*
 	 * Order all writes to buffer before the commit count update that will

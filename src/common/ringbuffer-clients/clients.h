@@ -21,9 +21,12 @@ struct lttng_ust_client_lib_ring_buffer_client_cb {
 	int (*timestamp_end) (struct lttng_ust_ring_buffer *buf,
 			struct lttng_ust_ring_buffer_channel *chan,
 			uint64_t *timestamp_end);
-	int (*events_discarded) (struct lttng_ust_ring_buffer *buf,
-			struct lttng_ust_ring_buffer_channel *chan,
-			uint64_t *events_discarded);
+	int (*events_discarded_begin) (struct lttng_ust_ring_buffer *buf,
+				struct lttng_ust_ring_buffer_channel *chan,
+				uint64_t *events_discarded);
+	int (*events_discarded_end) (struct lttng_ust_ring_buffer *buf,
+				struct lttng_ust_ring_buffer_channel *chan,
+				uint64_t *events_discarded);
 	int (*content_size) (struct lttng_ust_ring_buffer *buf,
 			struct lttng_ust_ring_buffer_channel *chan,
 			uint64_t *content_size);

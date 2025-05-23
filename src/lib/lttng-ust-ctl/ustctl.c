@@ -2237,6 +2237,7 @@ int lttng_ust_ctl_flush_events_or_populate_packet(struct lttng_ust_ctl_consumer_
 		goto err_sigbus;
 
 	ret = client_cb->current_events_discarded(buf, chan, &events_discarded);
+
 	if (ret < 0)
 		goto err_sigbus;
 
@@ -2391,7 +2392,7 @@ int lttng_ust_ctl_get_events_discarded(struct lttng_ust_ctl_consumer_stream *str
 		return -EIO;
 	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
 				stream->memory_map_size);
-	ret = client_cb->events_discarded(buf, chan, events_discarded);
+	ret = client_cb->events_discarded_end(buf, chan, events_discarded);
 	lttng_ust_sigbus_del_range(&range);
 	sigbus_end();
 	return ret;
