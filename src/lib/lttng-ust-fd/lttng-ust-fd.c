@@ -13,9 +13,9 @@
 #include <errno.h>
 
 #include <lttng/ust-common.h>
+#include <lttng/ust-fd.h>
 
 #include "common/macros.h"
-#include "common/ust-fd.h"
 
 #define LTTNG_UST_DLSYM_FAILED_PTR 0x1
 

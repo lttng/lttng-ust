@@ -5,9 +5,9 @@
  */
 
 #include <lttng/ust-common.h>
+#include <lttng/ust-fd.h>
 
 #include "common/logging.h"
-#include "common/ust-fd.h"
 #include "common/getenv.h"
 
 #include "lib/lttng-ust-common/fd-tracker.h"

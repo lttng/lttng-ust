@@ -39,10 +39,10 @@
 #include <lttng/ust-tracer.h>
 #include <lttng/ust-common.h>
 #include <lttng/ust-cancelstate.h>
+#include <lttng/ust-fd.h>
 #include <urcu/tls-compat.h>
 #include "lib/lttng-ust/futex.h"
 #include "common/ustcomm.h"
-#include "common/ust-fd.h"
 #include "common/logging.h"
 #include "common/macros.h"
 #include "common/tracepoint.h"

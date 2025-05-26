@@ -31,12 +31,12 @@
 
 #include <lttng/tracepoint.h>
 #include <lttng/ust-events.h>
+#include <lttng/ust-fd.h>
 
 #include "common/logging.h"
 #include "common/macros.h"
 #include <lttng/ust-ctl.h>
 #include "common/ustcomm.h"
-#include "common/ust-fd.h"
 #include "common/dynamic-type.h"
 #include "common/ust-context-provider.h"
 

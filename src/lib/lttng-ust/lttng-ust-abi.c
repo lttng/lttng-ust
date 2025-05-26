@@ -35,8 +35,8 @@
 #include <lttng/ust-error.h>
 #include <lttng/ust-events.h>
 #include <lttng/ust-version.h>
+#include <lttng/ust-fd.h>
 
-#include "common/ust-fd.h"
 #include "common/logging.h"
 #include "common/align.h"
 

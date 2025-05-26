@@ -43,10 +43,6 @@ noinst_HEADERS += \
 noinst_HEADERS += \
 	ust-context-provider.h
 
-# Used by liblttng-ust-fd
-noinst_HEADERS += \
-	ust-fd.h
-
 ###                      ###
 ##  Convenience libraries ##
 ###                      ###

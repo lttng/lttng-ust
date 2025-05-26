@@ -25,10 +25,10 @@
 #include <urcu/tls-compat.h>
 #include <urcu/system.h>
 
-#include "common/ust-fd.h"
 #include "common/macros.h"
 #include <lttng/ust-error.h>
 #include <lttng/ust-cancelstate.h>
+#include <lttng/ust-fd.h>
 #include "common/logging.h"
 
 #include "lib/lttng-ust-common/fd-tracker.h"

@@ -26,9 +26,9 @@
 #endif
 
 #include <lttng/ust-utils.h>
+#include <lttng/ust-fd.h>
 
 #include "common/macros.h"
-#include "common/ust-fd.h"
 #include "common/compat/mmap.h"
 
 /*

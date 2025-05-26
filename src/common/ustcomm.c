@@ -21,8 +21,8 @@
 #include <inttypes.h>
 
 #include <lttng/ust-ctl.h>
+#include <lttng/ust-fd.h>
 #include "common/ustcomm.h"
-#include "common/ust-fd.h"
 #include "common/macros.h"
 #include "common/dynamic-type.h"
 #include "common/logging.h"

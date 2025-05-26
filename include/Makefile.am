@@ -34,6 +34,7 @@ nobase_include_HEADERS = \
 	lttng/tracelog.h \
 	lttng/tp/lttng-ust-tracelog.h \
 	lttng/ust-clock.h \
+	lttng/ust-fd.h \
 	lttng/ust-getcpu.h \
 	lttng/ust-libc-wrapper.h \
 	lttng/ust-thread.h \

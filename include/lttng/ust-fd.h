@@ -8,10 +8,6 @@
 #define _LTTNG_UST_FD_H
 
 /*
- * The fd tracker feature is part of the ABI and used by liblttng-ust-fd.
- * However, some test code and documentation needs to be written before it is
- * exposed to users with a public header.
- *
  * These symbols are provided by 'liblttng-ust-common'.
  */
 

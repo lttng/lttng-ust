@@ -14,11 +14,11 @@
 #include <unistd.h>
 
 #include <lttng/ust-utils.h>
+#include <lttng/ust-fd.h>
 
 #include "common/elf.h"
 #include "common/logging.h"
 #include "common/macros.h"
-#include "common/ust-fd.h"
 #include "common/utils.h"
 
 #define BUF_LEN	4096
