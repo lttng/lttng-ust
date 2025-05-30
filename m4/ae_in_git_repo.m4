@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2021 Michael Jeanson <mjeanson@efficios.com>
-#
 # SPDX-License-Identifier: GPL-2.0-or-later WITH LicenseRef-Autoconf-exception-macro
+# SPDX-FileCopyrightText: 2021 Michael Jeanson <mjeanson@efficios.com>
 #
 # SYNOPSIS
 #
@@ -14,7 +13,7 @@
 #
 # ---------------------------------------------------------------------------
 
-#serial 2
+#serial 3
 
 AC_DEFUN([AE_IF_IN_GIT_REPO], [
   AC_CACHE_VAL([ae_cv_in_git_repo], [
@@ -28,7 +27,7 @@ AC_DEFUN([AE_IF_IN_GIT_REPO], [
 
   AS_IF([test "x$ae_cv_in_git_repo" = "xyes"], [dnl
     $1
-  ], [: dnl
+  ], [:
     $2
   ])
 ])
