@@ -403,32 +403,32 @@ static void client_buffer_begin(struct lttng_ust_ring_buffer *buf, uint64_t time
 static void client_buffer_end(struct lttng_ust_ring_buffer *buf, uint64_t timestamp,
 			      unsigned int subbuf_idx, unsigned long data_size,
 			      struct lttng_ust_shm_handle *handle,
-			      const struct lttng_ust_ring_buffer_ctx *ctx)
+			      const struct lttng_ust_ring_buffer_ctx *ctx __attribute__((unused)))
 {
 	struct lttng_ust_ring_buffer_channel *chan = shmp(handle, buf->backend.chan);
+	struct commit_counters_cold *cc_cold = shmp_index(handle, buf->commit_cold, subbuf_idx);
 	struct packet_header *header =
 		(struct packet_header *)
 			lib_ring_buffer_offset_address(&buf->backend,
 				subbuf_idx * chan->backend.subbuf_size,
 				handle);
-	unsigned long records_lost = 0;
 	ssize_t page_size = LTTNG_UST_PAGE_SIZE;
 
 	assert(header);
+	assert(cc_cold);
 	if (!header)
 		return;
 	if (page_size < 0)
 		return;
+	if (!cc_cold)
+		return;
+
 	header->ctx.timestamp_end = timestamp;
 	header->ctx.content_size =
 		(uint64_t) data_size * CHAR_BIT;		/* in bits */
 	header->ctx.packet_size =
 		(uint64_t) LTTNG_UST_ALIGN(data_size, page_size) * CHAR_BIT;	/* in bits */
-
-	records_lost += lib_ring_buffer_get_records_lost_full(&client_config, ctx);
-	records_lost += lib_ring_buffer_get_records_lost_wrap(&client_config, ctx);
-	records_lost += lib_ring_buffer_get_records_lost_big(&client_config, ctx);
-	header->ctx.events_discarded = records_lost;
+	header->ctx.events_discarded = cc_cold->end_events_discarded;
 }
 
 static int client_buffer_create(
