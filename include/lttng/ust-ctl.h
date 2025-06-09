@@ -312,6 +312,18 @@ int lttng_ust_ctl_poll_state_owner(struct lttng_ust_ctl_subbuf_state *state,
 int lttng_ust_ctl_poll_state_destroy(struct lttng_ust_ctl_subbuf_state *state);
 
 /*
+ * Try to fixup any stalled sub-buffer in the range [consumed_pos, produced_pos].
+ *
+ * `ids[length]` is a list of known owners that are dead. Only sub-buffer owned
+ * by dead owners (or without any owner) can be fixed up by this function.
+ */
+int lttng_ust_ctl_fixup_stalled_stream(struct lttng_ust_ctl_consumer_stream *stream,
+				unsigned long consumed_pos,
+				unsigned long produced_pos,
+				uint32_t *ids,
+				uint32_t length);
+
+/*
  * For mmap mode, operate on the current packet (between get/put or
  * get_next/put_next).
  */

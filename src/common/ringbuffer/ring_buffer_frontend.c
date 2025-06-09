@@ -2531,6 +2531,7 @@ void lib_ring_buffer_vmcore_check_deliver(const struct lttng_ust_ring_buffer_con
  * but it is disabled by default due to its performance overhead.
  */
 #ifdef LTTNG_RING_BUFFER_COUNT_EVENTS
+#error "The feature LTTNG_RING_BUFFER_COUNT_EVENTS is not compatible with stalled buffers fixup."
 static
 void deliver_count_events(const struct lttng_ust_ring_buffer_config *config,
 		struct lttng_ust_ring_buffer *buf,
@@ -2652,8 +2653,18 @@ void lib_ring_buffer_check_deliver_slow(const struct lttng_ust_ring_buffer_confi
 		 * Contains a memory barrier that ensures counter stores
 		 * are ordered before set noref and offset.
 		 */
-		lib_ring_buffer_set_noref_offset(config, &buf->backend, idx,
-						 buf_trunc_val(offset, chan), handle);
+		if (caa_unlikely(ctx->priv->is_fixup)) {
+			struct lttng_ust_ring_buffer_backend_subbuffer *wsb;
+			wsb = shmp_index(handle, buf->backend.buf_wsb, idx);
+			if (wsb && !subbuffer_id_is_noref(config, wsb->id)) {
+				lib_ring_buffer_set_noref_offset(config, &buf->backend, idx,
+							buf_trunc_val(offset, chan), handle);
+			}
+
+		} else {
+			lib_ring_buffer_set_noref_offset(config, &buf->backend, idx,
+							buf_trunc_val(offset, chan), handle);
+		}
 
 		/*
 		 * Order set_noref and record counter updates before the

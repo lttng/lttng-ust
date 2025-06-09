@@ -293,6 +293,11 @@ struct lttng_ust_ring_buffer_ctx_private {
 	 * over the sub-buffer while committing. e.g. due to a buffer switch.
 	 */
 	unsigned long reserve_then;
+
+	/*
+	 * Tells if the context is within a fixup.
+	 */
+	int is_fixup;
 };
 
 static inline

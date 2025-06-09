@@ -1756,6 +1756,438 @@ void lttng_ust_ctl_set_channel_owner_id(struct lttng_ust_abi_object_data *obj,
 	obj->u.channel.owner_id = id;
 }
 
+/*
+ * Determine if COMMIT is balanced with respect to RESERVE.
+ *
+ * This can only hold true if COMMIT is from the same sub-buffer index of
+ * subbuf_index(RESERVE, chan).
+ */
+static inline
+bool commit_balanced(unsigned long reserve, unsigned long commit, struct lttng_ust_ring_buffer_channel *chan)
+{
+	return subbuf_offset(reserve, chan) == subbuf_offset(commit,chan);
+}
+
+static inline ssize_t
+find_owner(uint32_t *ids, size_t length, int32_t owner_id)
+{
+	if (!ids)
+		return -1;
+
+	for (size_t k = 0; k < length; ++k) {
+		if (ids[k] == (uint32_t)owner_id) {
+			return k;
+		}
+	}
+
+	return -1;
+}
+
+static
+int get_next_subbuf_context(const struct lttng_ust_ring_buffer_config *config,
+			struct lttng_ust_ring_buffer_channel *chan,
+			struct lttng_ust_ring_buffer *buf,
+			long reserve,
+			struct lttng_ust_shm_handle *handle,
+			struct lttng_ust_ring_buffer_ctx_private *priv)
+{
+	int err;
+	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
+
+	client_cb = caa_container_of(config->cb_ptr,
+			struct lttng_ust_client_lib_ring_buffer_client_cb,
+			parent);
+
+	if (lib_ring_buffer_get_subbuf(buf, reserve, handle) != 0) {
+		return -1;
+	}
+
+	err = client_cb->timestamp_begin(buf, chan, &priv->timestamp);
+
+	if (err)
+		goto put;
+
+	/*
+	 * `events_discarded_begin()' will return the aggregated counters of
+	 * lost records. It is stored in `records_lost_full' and the other
+	 * counters are set to 0, since it is going to be aggregated anyway
+	 * later.
+	 *
+	 * This needs to be changed whenever lost records counters are split.
+	 */
+	err = client_cb->events_discarded_begin(buf, chan, &priv->records_lost_full);
+
+	priv->records_lost_wrap = 0;
+	priv->records_lost_big = 0;
+put:
+	lib_ring_buffer_put_subbuf(buf, handle);
+
+	return err;
+}
+
+static inline
+int do_fixup_stalled_subbuf_as_owner(const struct lttng_ust_ring_buffer_config *config,
+				struct lttng_ust_ring_buffer_channel *chan,
+				struct lttng_ust_ring_buffer *buf,
+				size_t subbuf_idx,
+				struct lttng_ust_shm_handle *handle,
+				struct lttng_ust_ring_buffer_ctx *ctx,
+				struct commit_counters_hot *cc_hot,
+				long hot)
+{
+	unsigned long reserve, fill_reserve, minimal_reserve;
+	long long fill_diff, minimal_diff;
+
+	/* Order read of hot with respect to reserve. */
+	cmm_smp_rmb();
+	reserve = v_read(config, &buf->offset);
+
+	fill_reserve = subbuf_fill_reserve(hot, subbuf_idx, chan);
+	minimal_reserve = subbuf_minimum_reserve(hot, subbuf_idx, chan);
+
+	/*
+	 * When comparing the current reserve position and the fill reserve
+	 * position, a number of things can be assumed, depending on:
+	 *
+	 *   - The sign of reserve_diff
+	 *
+	 *   - If the sub-buffer is the current sub-buffer with respect to the
+	 *    current reserve position
+	 *
+	 * These assumptions are detailed below in every branch
+	 */
+	fill_diff = subbuf_align(reserve - 1, chan) - fill_reserve;
+	minimal_diff = reserve - minimal_reserve;
+
+	assert(0 <= (long long)chan->backend.buf_size - minimal_diff);
+
+	/* Reservation is in this sub-buffer and in this buffer turn. */
+	if (fill_diff == 0) {
+
+		/*
+		 * The reserve position is exactly at the boundary between this
+		 * sub-buffer and the next sub-buffer of this turn.
+		 *
+		 * The commit counter of this sub-buffer is not balanced.
+		 *
+		 * In order to fix the stall, an observable side-effect must be
+		 * made while taking a timestamp to guarantee ordering.
+		 */
+		long old_reserve, expected_reserve;
+
+		if (fill_reserve == reserve) {
+			old_reserve = v_cmpxchg(config, &buf->offset, reserve, reserve - 1);
+			expected_reserve = reserve - 1;
+		} else {
+			old_reserve = reserve;
+			expected_reserve = reserve;
+		}
+
+		if (old_reserve != reserve) {
+
+			/*
+			 * Someone made a reservation. Take the next
+			 * sub-buffer timestamp.
+			 */
+			int err = get_next_subbuf_context(config,
+							chan, buf,
+							fill_reserve,
+							handle, ctx->priv);
+			if (err) {
+				return -1;
+			}
+		} else {
+
+			/*
+			 * The reservation offset moved back in time.
+			 * Take a snapshot of the time and record
+			 * counters, then try to move the reservation
+			 * offset back in the future so that external
+			 * observers can see a side effect.
+			 */
+			uint64_t current_timestamp = config->cb.ring_buffer_clock_read(chan);
+			uint64_t current_records_lost_full = v_read(config, &buf->records_lost_full);
+			uint64_t current_records_lost_wrap = v_read(config, &buf->records_lost_wrap);
+			uint64_t current_records_lost_big = v_read(config, &buf->records_lost_big);
+
+			/* Side effect observable by external producers. */
+			if (expected_reserve == v_cmpxchg(config, &buf->offset, expected_reserve, fill_reserve)) {
+				/* Succeed. The time has been fixed. */
+				ctx->priv->timestamp = current_timestamp;
+				ctx->priv->records_lost_full = current_records_lost_full;
+				ctx->priv->records_lost_wrap = current_records_lost_wrap;
+				ctx->priv->records_lost_big = current_records_lost_big;
+			} else {
+				/*
+				 * Failure. Someone made a reservation. Try
+				 * to take the next sub-buffer.
+				 */
+				int err = get_next_subbuf_context(config,
+								chan, buf,
+								fill_reserve,
+								handle, ctx->priv);
+				if (err) {
+					return -1;
+				}
+			}
+
+		}
+
+		lib_ring_buffer_lazy_padding_as_owner_slow(config, chan, buf, subbuf_idx,
+							handle, ctx, hot);
+	} else {
+		/*
+		 * At this point, it is certain that the reserve position is
+		 * past this sub-buffer.
+		 *
+		 * This is important to understand how the reserve difference
+		 * works.
+		 */
+		if (minimal_diff <= 0) {
+			/*
+			 * This can only happen if the commit counter of this
+			 * sub-buffer is balanced with the reservation.
+			 *
+			 * Since the reservation is past this sub-buffer, this
+			 * mean that the commit counter is "full" and a deliver
+			 * is maybe required.
+			 */
+			struct commit_counters_cold *cc_cold;
+			long cold;
+
+			cc_cold = shmp_index(handle, buf->commit_cold, subbuf_idx);
+
+			cold = v_read(config, &cc_cold->cc_sb);
+
+			/*
+			 * Since the sub-buffer is full, fill_reserve will point
+			 * to the next buffer. Thus, it is certain that it is at
+			 * least buf_size.
+			 */
+			if (cold != hot) {
+				/* Crash happend during deliver. */
+				if (cold == (hot - chan->backend.subbuf_size) + 1) {
+					v_set(config, &cc_cold->cc_sb, cold - 1);
+				}
+				assert(fill_reserve > chan->backend.buf_size);
+				lib_ring_buffer_reserve_push_reader(config, buf, chan,
+								fill_reserve - chan->backend.buf_size - 1);
+				lib_ring_buffer_check_deliver_slow(config, buf, chan,
+								fill_reserve - chan->backend.buf_size - 1,
+								hot, subbuf_idx, handle, ctx);
+			} else {
+				/* Spurious wakeup */
+				if (config->wakeup == RING_BUFFER_WAKEUP_BY_WRITER
+					&& uatomic_read(&buf->active_readers)) {
+					lib_ring_buffer_wakeup(buf, handle);
+				}
+			}
+		} else {
+			int err = get_next_subbuf_context(config,
+							chan, buf,
+							fill_reserve,
+							handle, ctx->priv);
+			if (err) {
+				lib_ring_buffer_switch_slow(buf, SWITCH_ACTIVE, handle);
+				return -1;
+			}
+
+			lib_ring_buffer_lazy_padding_as_owner_slow(config, chan, buf, subbuf_idx,
+								handle, ctx, hot);
+		}
+	}
+
+	v_set(config, &cc_hot->owner, LTTNG_UST_ABI_OWNER_ID_UNSET);
+
+	return 0;
+}
+
+static inline
+int fixup_stalled_subbuf(const struct lttng_ust_ring_buffer_config *config,
+			struct lttng_ust_ring_buffer_channel *chan,
+			struct lttng_ust_ring_buffer *buf,
+			size_t subbuf_idx,
+			struct lttng_ust_shm_handle *handle,
+			uint32_t *ids,
+			size_t length,
+			struct lttng_ust_ring_buffer_ctx *ctx)
+{
+	struct commit_counters_hot *cc_hot;
+	long actual_owner;
+	long hot;
+
+	cc_hot = shmp_index(handle, buf->commit_hot, subbuf_idx);
+
+	if (!cc_hot)
+		return -1;
+
+	actual_owner = v_read(config, &cc_hot->owner);
+	cmm_smp_rmb();
+	hot = v_read(config, &cc_hot->cc);
+
+	if (find_owner(ids, length, actual_owner) != -1) {
+
+		/* Take ownership. */
+		int err;
+
+		v_set(config, &cc_hot->owner, chan->u.s.owner_id);
+
+		/*
+		 * Since ownership is taken, it's fine to do a none atomic read.
+		 */
+		err = do_fixup_stalled_subbuf_as_owner(config, chan, buf, subbuf_idx,
+							handle, ctx, cc_hot, hot);
+
+		/*
+		 * Failed to fixup the stalled sub-buffer. We are still the
+		 * owner of the sub-buffer. It's okay to restore the previous
+		 * owner (since it's marked for reclaim) and try again later.
+		 */
+		if (err) {
+			v_set(config, &cc_hot->owner, actual_owner);
+		}
+
+		return err;
+
+	} else if (actual_owner == LTTNG_UST_ABI_OWNER_ID_UNSET) {
+
+		long reserve;
+
+		reserve = v_read(config, &buf->offset);
+		cmm_smp_rmb();
+
+		/*
+		 * These are the same balanced (between the reserve position and
+		 * the commit counters of the sub-buffer) checks made in
+		 * do_fixup_stalled_subbuf_as_owner().
+		 *
+		 * The check are made here without taking the ownership to avoid
+		 * any visible side effects for external producers until it's
+		 * strictly necessary.
+		 *
+		 * In other words, if these checks passed, it's not necessary to
+		 * do a fixup of the sub-buffer and thus the ownership does not
+		 * need to be taken. However, if one of the checks failed, the
+		 * ownership must be taken first and then the check must be
+		 * remade.
+		 */
+		long fill_reserve = (((subbuf_trunc(hot, chan) >> chan->backend.subbuf_size_order) << chan->backend.buf_size_order)
+				+ (subbuf_idx << chan->backend.subbuf_size_order) + chan->backend.subbuf_size);
+
+		if (subbuf_align(reserve, chan) - fill_reserve == 0) {
+			if (commit_balanced(reserve, hot, chan))
+				return 0;
+		} else {
+
+			long reserve_diff = reserve - fill_reserve;
+
+			/*
+			 * This can only happen if the commit counter of this
+			 * sub-buffer is balanced with the reservation.
+			 *
+			 * Since the reservation is past this sub-buffer, this
+			 * means that the commit counter is "full".
+			 */
+			if (reserve_diff < 0) {
+				return 0;
+			}
+		}
+
+		if (v_cmpxchg(config, &cc_hot->owner, LTTNG_UST_ABI_OWNER_ID_UNSET, chan->u.s.owner_id) !=
+			LTTNG_UST_ABI_OWNER_ID_UNSET) {
+			return 0;
+		}
+
+		/* Re-read hot commit after taking ownership. */
+		hot = v_read(config, &cc_hot->cc);
+
+		return do_fixup_stalled_subbuf_as_owner(config, chan, buf, subbuf_idx,
+							handle, ctx, cc_hot, hot);
+	} else if (actual_owner == LTTNG_UST_ABI_OWNER_ID_CONSUMER) {
+		/*
+		 * This can happen if the sub-buffer had no owner and that the
+		 * consumer failed to do a fixup for some reason. It will force
+		 * any producer to emit a buffer-switch, thus unblocking the
+		 * consumer on that sub-buffer.
+		 */
+		return do_fixup_stalled_subbuf_as_owner(config, chan, buf, subbuf_idx,
+							handle, ctx, cc_hot, hot);
+	}
+
+	return 0;
+}
+
+static int do_lttng_ust_ctl_fixup_stalled_stream(struct lttng_ust_ctl_consumer_stream *stream,
+						unsigned long consumed_pos,
+						unsigned long produced_pos,
+						uint32_t *ids,
+						uint32_t length)
+{
+	int failed_count = 0;
+	struct lttng_ust_ring_buffer *buf;
+	struct lttng_ust_ring_buffer_channel *rb_chan;
+	struct lttng_ust_ctl_consumer_channel *chan;
+	struct lttng_ust_ring_buffer_ctx_private ctx_priv = {
+		.is_fixup = 1,
+	};
+	struct lttng_ust_ring_buffer_ctx ctx = { 0 };
+
+	ctx.priv = &ctx_priv;
+
+	chan = stream->chan;
+	rb_chan = chan->chan->priv->rb_chan;
+	buf = stream->buf;
+
+	while ((long) (consumed_pos - produced_pos) <= 0) {
+		int err = fixup_stalled_subbuf(&rb_chan->backend.config,
+					rb_chan, buf,
+					subbuf_index(produced_pos, rb_chan),
+					rb_chan->handle,
+					ids,
+					length,
+					&ctx);
+		if (err) {
+			failed_count += 1;
+		}
+
+		produced_pos -= rb_chan->backend.subbuf_size;
+	}
+
+	return failed_count;
+}
+
+int lttng_ust_ctl_fixup_stalled_stream(struct lttng_ust_ctl_consumer_stream *stream,
+				unsigned long consumed_pos,
+				unsigned long produced_pos,
+				uint32_t *ids,
+				uint32_t length)
+{
+	struct lttng_ust_sigbus_range range;
+	int failed_count;
+
+	if (!stream)
+		return -EINVAL;
+
+	if (consumed_pos >= produced_pos)
+		return 0;
+
+	if (sigbus_begin())
+		return -EIO;
+
+	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
+				stream->memory_map_size);
+
+	failed_count = do_lttng_ust_ctl_fixup_stalled_stream(stream,
+							consumed_pos,
+							produced_pos,
+							ids, length);
+	lttng_ust_sigbus_del_range(&range);
+
+	sigbus_end();
+
+	return failed_count;
+}
+
 struct lttng_ust_ctl_subbuf_state {
 	struct lttng_ust_ring_buffer *buf;
 	struct lttng_ust_ring_buffer_channel *chan;
