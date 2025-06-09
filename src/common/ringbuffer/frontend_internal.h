@@ -419,8 +419,15 @@ void lib_ring_buffer_write_commit_counter(
 		return;
 
 	commit_seq_old = v_read(config, &cc_hot->seq);
-	if (caa_likely((long) (commit_seq_old - commit_count) < 0))
-		v_set(config, &cc_hot->seq, commit_count);
+
+	/*
+	 * The sequence count can be equal to the commit count (== 0), if and only if,
+	 * there is no padding in the sub-buffer.
+	 */
+	if (caa_likely((long) (commit_seq_old - commit_count) > 0))
+		abort();
+
+	v_set(config, &cc_hot->seq, commit_count);
 }
 
 /**

@@ -16,6 +16,7 @@
 #include <urcu/compiler.h>
 
 #include "common/getcpu.h"
+#include "common/testpoint.h"
 #include "frontend.h"
 
 /**
@@ -82,6 +83,10 @@ int lib_ring_buffer_try_reserve(const struct lttng_ust_ring_buffer_config *confi
 	*o_begin = v_read(config, &buf->offset);
 	*o_old = *o_begin;
 
+	/*
+	 * Offset must be read before the timestamp to guarantee the increasing
+	 * timestamp in the subbufer.
+	 */
 	ctx_private->timestamp = lib_ring_buffer_clock_read(chan);
 	if ((int64_t) ctx_private->timestamp == -EIO)
 		return 1;
@@ -175,9 +180,42 @@ int lib_ring_buffer_reserve(const struct lttng_ust_ring_buffer_config *config,
 						 &o_end, &o_old, &before_hdr_pad)))
 		goto slow_path;
 
-	if (caa_unlikely(v_cmpxchg(config, &buf->offset, o_old, o_end)
-		     != o_old))
+	/*
+	 * Before taking the reservation, try to take the ownership.
+	 */
+	if (caa_unlikely(lib_ring_buffer_try_take_subbuf_ownership(
+					config, chan, buf,
+					subbuf_index(o_end - 1, chan),
+					handle)))
 		goto slow_path;
+
+	/*
+	 * Observable side-effect: Ownership of the sub-buffer is now taken.
+	 * Other producers reservations are impacted.
+	 */
+	TESTPOINT("lib_ring_buffer_reserve_take_ownership_succeed");
+
+	/*
+	 * Try the fast reservation.  If failed, do the lazy padding of the
+	 * sub-buffer before releasing ownership and going to the slowpath.
+	 */
+	if (caa_unlikely(v_cmpxchg(config, &buf->offset, o_old, o_end)
+		     != o_old)) {
+		lib_ring_buffer_clear_owner_lazy_padding(config,
+							chan, buf,
+							subbuf_index(o_end - 1, chan),
+							handle,
+							ctx);
+		goto slow_path;
+	}
+
+	ctx->priv->reserve_then = o_end;
+
+	/*
+	 * Observable side-effect: Reservation offset has been incremented.
+	 * Consumer's snapshots and other producers reservations are impacted.
+	 */
+	TESTPOINT("lib_ring_buffer_reserve_cmpxchg_succeed");
 
 	/*
 	 * Atomically update last_timestamp. This update races against concurrent
@@ -191,6 +229,8 @@ int lib_ring_buffer_reserve(const struct lttng_ust_ring_buffer_config *config,
 	 * Push the reader if necessary
 	 */
 	lib_ring_buffer_reserve_push_reader(config, buf, chan, o_end - 1);
+
+	TESTPOINT("lib_ring_buffer_reserve_after_push_reader");
 
 	/*
 	 * Clear noref flag for this subbuffer.
@@ -261,41 +301,66 @@ void lib_ring_buffer_commit(const struct lttng_ust_ring_buffer_config *config,
 	subbuffer_count_record(config, ctx);
 
 	/*
+	 * Observable side-effect: The number of commited records is
+	 * incremented.
+	 *
+	 * Consumer's snapshots are impacted.
+	 *
+	 * None-observable side-effect: The commit counter is not balanced with
+	 * the reservation position.
+	 */
+	TESTPOINT("lib_ring_buffer_commit_after_record_count");
+
+	commit_count = cc_hot->cc.a + ctx_private->slot_size;
+
+	/*
 	 * Order all writes to buffer before the commit count update that will
 	 * determine that the subbuffer is full.
+	 *
+	 * TODO:uatomic This could be merged with the following v_set() into a single
+	 * store release operation.
 	 */
 	cmm_smp_wmb();
 
-	v_add(config, ctx_private->slot_size, &cc_hot->cc);
+	/*
+	 * Only the owner of the sub-buffer can increment the hot commit
+	 * counter.
+	 *
+	 * This needs to be atomically set with respect with readers.
+	 */
+	v_set(config, &cc_hot->cc, commit_count);
+
 
 	/*
-	 * commit count read can race with concurrent OOO commit count updates.
-	 * This is only needed for lib_ring_buffer_check_deliver (for
-	 * non-polling delivery only) and for
-	 * lib_ring_buffer_write_commit_counter.  The race can only cause the
-	 * counter to be read with the same value more than once, which could
-	 * cause :
-	 * - Multiple delivery for the same sub-buffer (which is handled
-	 *   gracefully by the reader code) if the value is for a full
-	 *   sub-buffer. It's important that we can never miss a sub-buffer
-	 *   delivery. Re-reading the value after the v_add ensures this.
-	 * - Reading a commit_count with a higher value that what was actually
-	 *   added to it for the lib_ring_buffer_write_commit_counter call
-	 *   (again caused by a concurrent committer). It does not matter,
-	 *   because this function is interested in the fact that the commit
-	 *   count reaches back the reserve offset for a specific sub-buffer,
-	 *   which is completely independent of the order.
+	 * Observable side-effect: The hot commit counter of the sub-buffer is
+	 * balanced for the last reservation in that sub-buffer.
+	 *
+	 * This impacts any producer trying to do a lazy-padding on the
+	 * sub-buffer.
 	 */
-	commit_count = v_read(config, &cc_hot->cc);
+	TESTPOINT("lib_ring_buffer_commit_after_commit_count");
 
 	lib_ring_buffer_check_deliver(config, buf, chan, offset_end - 1,
 				      commit_count, endidx, handle, ctx);
+
 	/*
 	 * Update used size at each commit. It's needed only for extracting
 	 * ring_buffer buffers from vmcore, after crash.
 	 */
 	lib_ring_buffer_write_commit_counter(config, buf, chan,
 			offset_end, commit_count, handle, cc_hot);
+
+	/*
+	 * None-observable side-effect: Releasing the ownership of the
+	 * sub-buffer.
+	 *
+	 * Producers will not get access to this sub-buffer until the ownership
+	 * is released.
+	 */
+	TESTPOINT("lib_ring_buffer_commit_before_clear_owner");
+
+	lib_ring_buffer_clear_owner_lazy_padding(config, chan, buf, endidx,
+						handle, ctx);
 }
 
 /**

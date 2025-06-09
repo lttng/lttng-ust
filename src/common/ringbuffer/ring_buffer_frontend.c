@@ -64,6 +64,7 @@
 #include "rb-init.h"
 #include "common/compat/errno.h"	/* For ENODATA */
 #include "common/populate.h"
+#include "common/testpoint.h"
 
 /* Print DBG() messages about events lost only every 1048576 hits */
 #define DBG_PRINT_NR_LOST	(1UL << 20)
@@ -1793,6 +1794,13 @@ void lib_ring_buffer_switch_old_start(struct lttng_ust_ring_buffer *buf,
 		return;
 	v_add(config, config->cb.subbuffer_header_size(),
 	      &cc_hot->cc);
+
+	/*
+	 * Observable side-effect: The old sub-buffer packet header begin has been
+	 * commited.
+	 */
+	TESTPOINT("lib_ring_buffer_switch_old_start_after_commit");
+
 	commit_count = v_read(config, &cc_hot->cc);
 	/* Check if the written buffer has to be delivered */
 	lib_ring_buffer_check_deliver(config, buf, chan, offsets->old,
@@ -1856,6 +1864,13 @@ void lib_ring_buffer_switch_old_end(struct lttng_ust_ring_buffer *buf,
 	if (!cc_hot)
 		return;
 	v_add(config, padding_size, &cc_hot->cc);
+
+	/*
+	 * Observable side-effect: The old sub-buffer packet header end has been
+	 * commited.
+	 */
+	TESTPOINT("lib_ring_buffer_switch_old_end_after_commit");
+
 	commit_count = v_read(config, &cc_hot->cc);
 	lib_ring_buffer_check_deliver(config, buf, chan, offsets->old - 1,
 				      commit_count, oldidx, handle, ctx);
@@ -1899,6 +1914,13 @@ void lib_ring_buffer_switch_new_start(struct lttng_ust_ring_buffer *buf,
 	if (!cc_hot)
 		return;
 	v_add(config, config->cb.subbuffer_header_size(), &cc_hot->cc);
+
+	/*
+	 * Observable side-effect: The new sub-buffer packet header begin has been
+	 * commited.
+	 */
+	TESTPOINT("lib_ring_buffer_switch_new_start_after_commit");
+
 	commit_count = v_read(config, &cc_hot->cc);
 	/* Check if the written buffer has to be delivered */
 	lib_ring_buffer_check_deliver(config, buf, chan, offsets->begin,
@@ -1996,6 +2018,7 @@ int lib_ring_buffer_try_switch_slow(enum switch_mode mode,
 	if (caa_unlikely(off == 0)) {
 		unsigned long sb_index, commit_count;
 		struct commit_counters_cold *cc_cold;
+		struct commit_counters_hot *cc_hot;
 
 		/*
 		 * We are performing a SWITCH_FLUSH. There may be concurrent
@@ -2012,6 +2035,9 @@ int lib_ring_buffer_try_switch_slow(enum switch_mode mode,
 
 		/* Test new buffer integrity */
 		sb_index = subbuf_index(offsets->begin, chan);
+		cc_hot = shmp_index(handle, buf->commit_hot, sb_index);
+		if (!cc_hot)
+			return -1;
 		cc_cold = shmp_index(handle, buf->commit_cold, sb_index);
 		if (!cc_cold)
 			return -1;
@@ -2020,7 +2046,7 @@ int lib_ring_buffer_try_switch_slow(enum switch_mode mode,
 		  (buf_trunc(offsets->begin, chan)
 		   >> chan->backend.num_subbuf_order)
 		  - (commit_count & chan->commit_count_mask);
-		if (caa_likely(reserve_commit_diff == 0)) {
+		if (caa_likely(reserve_commit_diff == 0) && caa_likely(v_read(config, &cc_hot->owner) == LTTNG_UST_ABI_OWNER_ID_UNSET)) {
 			/* Next subbuffer not being written to. */
 			if (caa_unlikely(config->mode != RING_BUFFER_OVERWRITE &&
 				subbuf_trunc(offsets->begin, chan)
@@ -2087,7 +2113,6 @@ void lib_ring_buffer_switch_slow(struct lttng_ust_ring_buffer *buf, enum switch_
 	struct lttng_ust_ring_buffer_ctx_private ctx_priv;
 	struct lttng_ust_ring_buffer_ctx ctx;
 	struct switch_offsets offsets;
-	unsigned long oldidx;
 
 	ctx.priv = &ctx_priv;
 	chan = shmp(handle, buf->backend.chan);
@@ -2108,33 +2133,30 @@ void lib_ring_buffer_switch_slow(struct lttng_ust_ring_buffer *buf, enum switch_
 		 != offsets.old);
 
 	/*
+	 * This might seem odd, but it will force to pass the early check in
+	 * `lib_ring_buffer_clear_owner_lazy_padding' while still doing the
+	 * second check.
+	 */
+	ctx_priv.reserve_then = offsets.old - 1;
+
+	/*
+	 * Observable side-effect: Reservation offset has been incremented.
+	 * Consumer's snapshots and other producers reservations are impacted.
+	 */
+	TESTPOINT("lib_ring_buffer_switch_slow_cmpxchg_succeed");
+
+	/*
 	 * Atomically update last_timestamp. This update races against concurrent
 	 * atomic updates, but the race will always cause supplementary full
-	 * timestamp records, never the opposite (missing a full timestamp
-	 * record when it would be needed).
+	 * timestamp record headers, never the opposite (missing a full
+	 * timestamp record header when it would be needed).
 	 */
-	save_last_timestamp(config, buf, ctx.priv->timestamp);
+	save_last_timestamp(config, buf, ctx_priv.timestamp);
 
-	/*
-	 * Push the reader if necessary
-	 */
-	lib_ring_buffer_reserve_push_reader(config, buf, chan, offsets.old);
-
-	oldidx = subbuf_index(offsets.old, chan);
-	lib_ring_buffer_clear_noref(config, &buf->backend, oldidx, handle);
-
-	/*
-	 * May need to populate header start on SWITCH_FLUSH.
-	 */
-	if (offsets.switch_old_start) {
-		lib_ring_buffer_switch_old_start(buf, chan, &offsets, &ctx, handle);
-		offsets.old += config->cb.subbuffer_header_size();
-	}
-
-	/*
-	 * Switch old subbuffer.
-	 */
-	lib_ring_buffer_switch_old_end(buf, chan, &offsets, &ctx, handle);
+	lib_ring_buffer_try_clear_lazy_padding(config, chan, buf,
+					subbuf_index(offsets.old, chan),
+					handle,
+					&ctx);
 }
 
 static
@@ -2209,6 +2231,7 @@ retry:
 	if (caa_unlikely(offsets->switch_new_start)) {
 		unsigned long sb_index, commit_count;
 		struct commit_counters_cold *cc_cold;
+		struct commit_counters_hot *cc_hot;
 
 		/*
 		 * We are typically not filling the previous buffer completely.
@@ -2227,6 +2250,9 @@ retry:
 		 * are not seen reordered when updated by another CPU.
 		 */
 		cmm_smp_rmb();
+		cc_hot = shmp_index(handle, buf->commit_hot, sb_index);
+		if (!cc_hot)
+			return -1;
 		cc_cold = shmp_index(handle, buf->commit_cold, sb_index);
 		if (!cc_cold)
 			return -1;
@@ -2246,7 +2272,7 @@ retry:
 		  (buf_trunc(offsets->begin, chan)
 		   >> chan->backend.num_subbuf_order)
 		  - (commit_count & chan->commit_count_mask);
-		if (caa_likely(reserve_commit_diff == 0)) {
+		if (caa_likely(reserve_commit_diff == 0) && caa_likely(v_read(config, &cc_hot->owner) == LTTNG_UST_ABI_OWNER_ID_UNSET)) {
 			/* Next subbuffer not being written to. */
 			if (caa_unlikely(config->mode != RING_BUFFER_OVERWRITE &&
 				subbuf_trunc(offsets->begin, chan)
@@ -2385,14 +2411,44 @@ int lib_ring_buffer_reserve_slow(struct lttng_ust_ring_buffer_ctx *ctx,
 
 	offsets.size = 0;
 
-	do {
+	while (1) {
+
 		ret = lib_ring_buffer_try_reserve_slow(buf, chan, &offsets,
 						       ctx, client_ctx);
 		if (caa_unlikely(ret))
 			return ret;
-	} while (caa_unlikely(v_cmpxchg(config, &buf->offset, offsets.old,
-				    offsets.end)
-			  != offsets.old));
+
+		if (caa_unlikely(lib_ring_buffer_try_take_subbuf_ownership(
+						config, chan, buf,
+						subbuf_index(offsets.end - 1, chan),
+						handle))) {
+			lib_ring_buffer_switch_slow(buf, SWITCH_FLUSH, handle);
+			continue;
+		}
+
+		/*
+		 * Observable side-effect: Ownership of the sub-buffer is now taken.
+		 * Other producers reservations are impacted.
+		 */
+		TESTPOINT("lib_ring_buffer_reserve_slow_take_ownership_succeed");
+
+		if (caa_unlikely(v_cmpxchg(config, &buf->offset, offsets.old,
+				    offsets.end) != offsets.old)) {
+			lib_ring_buffer_clear_owner_lazy_padding(config, chan, buf,
+								subbuf_index(offsets.end - 1, chan),
+								handle,
+								ctx);
+			continue;
+		}
+
+		/*
+		 * Observable side-effect: Reservation offset has been incremented.
+		 * Consumer's snapshots and other producers reservations are impacted.
+		 */
+		TESTPOINT("lib_ring_buffer_reserve_slow_cmpxchg_succeed");
+
+		break;
+	}
 
 	/*
 	 * Atomically update last_timestamp. This update races against concurrent
@@ -2407,6 +2463,8 @@ int lib_ring_buffer_reserve_slow(struct lttng_ust_ring_buffer_ctx *ctx,
 	 */
 	lib_ring_buffer_reserve_push_reader(config, buf, chan, offsets.end - 1);
 
+	TESTPOINT("lib_ring_buffer_reserve_slow_after_push_reader");
+
 	/*
 	 * Clear noref flag for this subbuffer.
 	 */
@@ -2418,11 +2476,23 @@ int lib_ring_buffer_reserve_slow(struct lttng_ust_ring_buffer_ctx *ctx,
 	 * Switch old subbuffer if needed.
 	 */
 	if (caa_unlikely(offsets.switch_old_end)) {
-		lib_ring_buffer_clear_noref(config, &buf->backend,
-					    subbuf_index(offsets.old - 1, chan),
-					    handle);
-		lib_ring_buffer_switch_old_end(buf, chan, &offsets, ctx, handle);
+		/*
+		 * This will force not to pass the first condition while still
+		 * checking the second condition in
+		 * lib_ring_buffer_lazy_padding_as_owner().
+		 */
+		ctx->priv->reserve_then = offsets.end - 1;
+
+		lib_ring_buffer_try_clear_lazy_padding(config, chan, buf,
+						subbuf_index(offsets.old - 1, chan),
+						handle, ctx);
 	}
+
+	/*
+	 * This is the actual reservation position to keep track of for this
+	 * commit.
+	 */
+	ctx->priv->reserve_then = offsets.end;
 
 	/*
 	 * Populate new subbuffer.
@@ -2539,6 +2609,13 @@ void lib_ring_buffer_check_deliver_slow(const struct lttng_ust_ring_buffer_confi
 		uint64_t *ts_end;
 
 		/*
+		 * Observable side-effect: The sub-buffer's cold commit counter
+		 * has been incremented by one and the sub-buffer is now in
+		 * exlusived access by this producer.
+		 */
+		TESTPOINT("lib_ring_buffer_check_deliver_slow_cmpxchg_succeed");
+
+		/*
 		 * Start of exclusive subbuffer access. We are
 		 * guaranteed to be the last writer in this subbuffer
 		 * and any other writer trying to access this subbuffer
@@ -2568,6 +2645,8 @@ void lib_ring_buffer_check_deliver_slow(const struct lttng_ust_ring_buffer_confi
 		 */
 		subbuffer_inc_packet_count(chan, buf, handle, commit_count, idx);
 
+		TESTPOINT("lib_ring_buffer_check_deliver_slow_before_set_noref");
+
 		/*
 		 * Set noref flag and offset for this subbuffer id.
 		 * Contains a memory barrier that ensures counter stores
@@ -2581,6 +2660,8 @@ void lib_ring_buffer_check_deliver_slow(const struct lttng_ust_ring_buffer_confi
 		 * end of subbuffer exclusive access. Orders with
 		 * respect to writers coming into the subbuffer after
 		 * wrap around, and also order wrt concurrent readers.
+		 *
+		 * TODO: Store release.
 		 */
 		cmm_smp_mb();
 		/* End of exclusive subbuffer access */
@@ -2592,6 +2673,12 @@ void lib_ring_buffer_check_deliver_slow(const struct lttng_ust_ring_buffer_confi
 		cmm_smp_wmb();
 		lib_ring_buffer_vmcore_check_deliver(config, buf,
 					 commit_count, idx, handle);
+
+		/*
+		 * Observable side-effect: The consumer is notified by the
+		 * producer for a new sub-buffer to consume.
+		 */
+		TESTPOINT("lib_ring_buffer_check_deliver_slow_before_wakeup");
 
 		/*
 		 * RING_BUFFER_WAKEUP_BY_WRITER wakeup is not lock-free.
