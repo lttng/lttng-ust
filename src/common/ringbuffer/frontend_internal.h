@@ -18,6 +18,7 @@
 #include <pthread.h>
 
 #include <lttng/ust-ringbuffer-context.h>
+#include "common/testpoint.h"
 #include "ringbuffer-config.h"
 #include "backend_types.h"
 #include "backend_internal.h"
@@ -82,6 +83,58 @@ unsigned long subbuf_index(unsigned long offset,
 			struct lttng_ust_ring_buffer_channel *chan)
 {
 	return buf_offset(offset, chan) >> chan->backend.subbuf_size_order;
+}
+
+/*
+ * subbuf_fill_reserve returns the reservation position to fill the sub-buffer
+ * given the value of `hot' in sub-buffer at index `subbuf_idx'.
+ *
+ * Examples:
+ *
+ *  subbuf_fill_reserve(0, 0) => subbuf_size
+ *  subbuf_fill_reserve(1, 0) => subbuf_size
+ *  subbuf_fill_reserve(subbuf_size, 0) => buf_size + subbuf_size
+ *  subbuf_fill_reserve(subbuf_size + 1, 0) => buf_size + subbuf_size
+ *
+ *  subbuf_fill_reserve(0, 1) => 2 * subbuf_size
+ *  subbuf_fill_reserve(1, 1) => 2 * subbuf_size
+ *  subbuf_fill_reserve(subbuf_size, 1) => buf_size + 2 * subbuf_size
+ *  subbuf_fill_reserve(subbuf_size + 1, 1) => buf_size + 2 * subbuf_size
+ */
+static inline
+unsigned long subbuf_fill_reserve(unsigned long hot,
+				unsigned long subbuf_idx,
+				struct lttng_ust_ring_buffer_channel *chan)
+{
+	return ((((subbuf_align(hot, chan) >> chan->backend.subbuf_size_order) - 1) << chan->backend.buf_size_order)
+		+ (subbuf_idx << chan->backend.subbuf_size_order)
+		+ chan->backend.subbuf_size);
+}
+
+/*
+ * subbuf_minimum_reserve returns the minimal reservation position given the
+ * value of `hot' in sub-buffer at index `subbuf_idx'.
+ *
+ * Examples:
+ *
+ *  subbuf_minimum_reserve(0, 0) => 0
+ *  subbuf_minimum_reserve(1, 0) => 1
+ *  subbuf_minimum_reserve(subbuf_size, 0) => buf_size
+ *  subbuf_minimum_reserve(subbuf_size + 1, 0) => buf_size + 1
+ *
+ *  subbuf_minimum_reserve(0, 1) => subbuf_size
+ *  subbuf_minimum_reserve(1, 1) => subbuf_size + 1
+ *  subbuf_minimum_reserve(subbuf_size, 1) => buf_size + subbuf_size
+ *  subbuf_minimum_reserve(subbuf_size + 1, 1) => buf_size + subbuf_size + 1
+ */
+static inline
+unsigned long subbuf_minimum_reserve(unsigned long hot,
+				unsigned long subbuf_idx,
+				struct lttng_ust_ring_buffer_channel *chan)
+{
+	return ((((subbuf_trunc(hot, chan) >> chan->backend.subbuf_size_order)) << chan->backend.buf_size_order)
+		+ (subbuf_idx << chan->backend.subbuf_size_order)
+		+ subbuf_offset(hot, chan));
 }
 
 /*
@@ -368,6 +421,170 @@ void lib_ring_buffer_write_commit_counter(
 	commit_seq_old = v_read(config, &cc_hot->seq);
 	if (caa_likely((long) (commit_seq_old - commit_count) < 0))
 		v_set(config, &cc_hot->seq, commit_count);
+}
+
+/**
+ * lib_ring_buffer_try_take_subbuf_ownership - Try to take the ownership of a
+ * sub-buffer.
+ *
+ * @config: ring buffer instance configuration.
+ * @chan: ring buffer channel instance.
+ * @buf: ring buffer instance.
+ * @subbuf_index: index of subbufer in @buf to take ownership of.
+ * @handle: share memory handle.
+ *
+ * On success, the ownership of the subbuffer at @subbuf_index in @buf is now
+ * this process and return 0.
+ */
+static inline
+int lib_ring_buffer_try_take_subbuf_ownership(const struct lttng_ust_ring_buffer_config *config,
+					struct lttng_ust_ring_buffer_channel *chan,
+					struct lttng_ust_ring_buffer *buf,
+					unsigned long subbuf_idx,
+					struct lttng_ust_shm_handle *handle)
+{
+	struct commit_counters_hot *cc_hot;
+	union v_atomic *owner;
+	long new_owner, old_owner;
+
+	cc_hot = shmp_index(handle, buf->commit_hot, subbuf_idx);
+
+	if (caa_unlikely(!cc_hot))
+		return -1;
+
+	new_owner = chan->u.s.owner_id;
+	owner = &cc_hot->owner;
+
+	old_owner = v_cmpxchg(config, owner, LTTNG_UST_ABI_OWNER_ID_UNSET, new_owner);
+
+	if (caa_unlikely(old_owner != LTTNG_UST_ABI_OWNER_ID_UNSET)) {
+		return -1;
+	}
+
+	return 0;
+}
+
+static inline
+int lib_ring_buffer_release_subbuf_ownership(const struct lttng_ust_ring_buffer_config *config,
+					struct lttng_ust_ring_buffer *buf,
+					unsigned long subbuf_idx,
+					struct lttng_ust_shm_handle *handle)
+{
+	struct commit_counters_hot *cc_hot;
+
+	cc_hot = shmp_index(handle, buf->commit_hot, subbuf_idx);
+
+	if (caa_unlikely(!cc_hot))
+		return -1;
+
+	/* TODO:uatomic This really should be a store-release operation. */
+	cmm_smp_mb();
+	v_set(config, &cc_hot->owner, LTTNG_UST_ABI_OWNER_ID_UNSET);
+
+	return 0;
+}
+
+extern void lib_ring_buffer_lazy_padding_as_owner_slow(const struct lttng_ust_ring_buffer_config *config,
+						struct lttng_ust_ring_buffer_channel *chan,
+						struct lttng_ust_ring_buffer *buf,
+						unsigned long subbuf_idx,
+						struct lttng_ust_shm_handle *handle,
+						const struct lttng_ust_ring_buffer_ctx *ctx,
+						unsigned long hot);
+
+static inline
+void lib_ring_buffer_lazy_padding_as_owner(const struct lttng_ust_ring_buffer_config *config,
+					struct lttng_ust_ring_buffer_channel *chan,
+					struct lttng_ust_ring_buffer *buf,
+					unsigned long subbuf_idx,
+					struct lttng_ust_shm_handle *handle,
+					const struct lttng_ust_ring_buffer_ctx *ctx,
+					unsigned long *sampled_reserve)
+{
+	struct commit_counters_hot *cc_hot;
+	long hot, reserve;
+
+	reserve = v_read(config, &buf->offset);
+	if (sampled_reserve)
+		*sampled_reserve = reserve;
+
+	/*
+	 * Reserve position has not moved during commit.
+	 */
+	if (reserve == ctx->priv->reserve_then) {
+		return;
+	}
+
+	cc_hot = shmp_index(handle, buf->commit_hot, subbuf_idx);
+
+	if (caa_unlikely(!cc_hot))
+		return;
+
+	/*
+	 * It is okay to read the hot value out of order and not atomically
+	 * because it is guaranteed that only the owner of the sub-buffer calls
+	 * this function.
+	 */
+	hot = cc_hot->cc.v;
+
+
+	/*
+	 * At this point, a lazy padding is only required if the hot commit
+	 * counter is not fully balanced with respect to the reserve position.
+	 */
+	if (reserve - (long)subbuf_minimum_reserve(hot, subbuf_idx, chan) > 0) {
+		lib_ring_buffer_lazy_padding_as_owner_slow(config, chan, buf, subbuf_idx,
+						handle, ctx, hot);
+	}
+}
+
+static inline
+void lib_ring_buffer_clear_owner_lazy_padding(const struct lttng_ust_ring_buffer_config *config,
+					struct lttng_ust_ring_buffer_channel *chan,
+					struct lttng_ust_ring_buffer *buf,
+					unsigned long subbuf_idx,
+					struct lttng_ust_shm_handle *handle,
+					const struct lttng_ust_ring_buffer_ctx *ctx)
+{
+	unsigned long sampled_reserve;
+
+	lib_ring_buffer_lazy_padding_as_owner(config, chan, buf, subbuf_idx, handle, ctx, &sampled_reserve);
+	TESTPOINT("lib_ring_buffer_clear_owner_lazy_padding_before_ownership_release");
+	(void) lib_ring_buffer_release_subbuf_ownership(config, buf, subbuf_idx, handle);
+
+
+
+	/*
+	 * Re-validate the sampled reserve position after releasing
+	 * ownership. This takes care of situations where a concurrent producer
+	 * moves the reserve position between our sampled_reserve snapshot and
+	 * release of the subbuffer ownership.
+	 *
+	 * When this is detected, try to take ownership again to do the lazy
+	 * padding. If the ownership is already taken by a concurrent producer,
+	 * it means it moved the reserve position immediately *after* we have
+	 * released ownership. There is no lazy padding to handle in that
+	 * scenario.
+	 */
+	if (sampled_reserve != v_read(config, &buf->offset)) {
+		TESTPOINT("lib_ring_buffer_clear_owner_lazy_padding_before_take_ownership");
+		if (lib_ring_buffer_try_take_subbuf_ownership(config, chan, buf, subbuf_idx, handle) == 0) {
+			lib_ring_buffer_lazy_padding_as_owner(config, chan, buf, subbuf_idx, handle, ctx, NULL);
+			(void) lib_ring_buffer_release_subbuf_ownership(config, buf, subbuf_idx, handle);
+		}
+	}
+}
+
+static inline
+void lib_ring_buffer_try_clear_lazy_padding(const struct lttng_ust_ring_buffer_config *config,
+					struct lttng_ust_ring_buffer_channel *chan,
+					struct lttng_ust_ring_buffer *buf,
+					unsigned long subbuf_idx,
+					struct lttng_ust_shm_handle *handle,
+					const struct lttng_ust_ring_buffer_ctx *ctx)
+{
+	if (lib_ring_buffer_try_take_subbuf_ownership(config, chan, buf, subbuf_idx, handle) == 0)
+		lib_ring_buffer_clear_owner_lazy_padding(config, chan, buf, subbuf_idx, handle, ctx);
 }
 
 extern int lib_ring_buffer_create(struct lttng_ust_ring_buffer *buf,

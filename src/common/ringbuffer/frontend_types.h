@@ -286,6 +286,13 @@ struct lttng_ust_ring_buffer_ctx_private {
 	unsigned long records_lost_full;
 	unsigned long records_lost_wrap;
 	unsigned long records_lost_big;
+
+	/*
+	 * Position of reservation after successfully taking the
+	 * reservation. Used to determine if another producers or consumer skips
+	 * over the sub-buffer while committing. e.g. due to a buffer switch.
+	 */
+	unsigned long reserve_then;
 };
 
 static inline

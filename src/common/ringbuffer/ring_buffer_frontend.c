@@ -2628,3 +2628,46 @@ void lib_ringbuffer_signal_init(void)
 		PERROR("pthread_sigmask");
 	}
 }
+
+void lib_ring_buffer_lazy_padding_as_owner_slow(const struct lttng_ust_ring_buffer_config *config,
+						struct lttng_ust_ring_buffer_channel *chan,
+						struct lttng_ust_ring_buffer *buf,
+						unsigned long subbuf_idx,
+						struct lttng_ust_shm_handle *handle,
+						const struct lttng_ust_ring_buffer_ctx *ctx,
+						unsigned long hot)
+{
+	struct switch_offsets offsets = { 0 };
+	unsigned long padding, oldidx;
+
+	assert(v_read(config, &buf->offset) - (long)subbuf_minimum_reserve(hot, subbuf_idx, chan) > 0);
+
+	padding = subbuf_trunc(hot, chan) + chan->backend.subbuf_size - hot;
+
+	/* The "reserve" value if hot was aligned to the next subbufer. */
+	offsets.end = (((subbuf_trunc(hot, chan) >> chan->backend.subbuf_size_order) << chan->backend.buf_size_order)
+		+ (subbuf_idx << chan->backend.subbuf_size_order) + chan->backend.subbuf_size);
+
+	offsets.old = offsets.begin = offsets.end - padding;
+	offsets.switch_old_start = subbuf_offset(offsets.begin, chan) == 0;
+
+	/*
+	 * Push the reader if necessary
+	 */
+	lib_ring_buffer_reserve_push_reader(config, buf, chan, offsets.end - 1);
+
+	oldidx = subbuf_index(offsets.old, chan);
+	assert(oldidx == subbuf_idx);
+
+	lib_ring_buffer_clear_noref(config, &buf->backend, oldidx, handle);
+
+	if (offsets.switch_old_start) {
+		lib_ring_buffer_switch_old_start(buf, chan, &offsets, ctx, handle);
+		offsets.old += config->cb.subbuffer_header_size();
+	}
+
+	/*
+	 * Switch old subbuffer.
+	 */
+	lib_ring_buffer_switch_old_end(buf, chan, &offsets, ctx, handle);
+}
