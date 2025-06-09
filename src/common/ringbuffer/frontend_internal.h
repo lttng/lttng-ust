@@ -175,9 +175,10 @@ extern void lib_ring_buffer_wakeup(struct lttng_ust_ring_buffer *buf,
 /* Buffer write helpers */
 
 static inline
-void lib_ring_buffer_reserve_push_reader(struct lttng_ust_ring_buffer *buf,
-					 struct lttng_ust_ring_buffer_channel *chan,
-					 unsigned long offset)
+void lib_ring_buffer_reserve_push_reader(const struct lttng_ust_ring_buffer_config *config __attribute__((unused)),
+					struct lttng_ust_ring_buffer *buf,
+					struct lttng_ust_ring_buffer_channel *chan,
+					unsigned long offset)
 {
 	unsigned long consumed_old, consumed_new;
 
@@ -185,19 +186,34 @@ void lib_ring_buffer_reserve_push_reader(struct lttng_ust_ring_buffer *buf,
 		consumed_old = uatomic_read(&buf->consumed);
 		/*
 		 * If buffer is in overwrite mode, push the reader consumed
-		 * count if the write position has reached it and we are not
-		 * at the first iteration (don't push the reader farther than
-		 * the writer). This operation can be done concurrently by many
-		 * writers in the same buffer, the writer being at the farthest
-		 * write position sub-buffer index in the buffer being the one
-		 * which will win this loop.
+		 * count if the write position has reached it and we are not at
+		 * the first iteration (don't push the reader farther than the
+		 * writer). This operation can be done concurrently by many
+		 * writers in the same buffer.
 		 */
 		if (caa_unlikely(subbuf_trunc(offset, chan)
 			      - subbuf_trunc(consumed_old, chan)
 			     >= chan->backend.buf_size))
-			consumed_new = subbuf_align(consumed_old, chan);
+			/*
+			 * At this point, it is sure that `offset` is greater or
+			 * equal to `buf_size`. Thus `subbuf_trunc(offset) -
+			 * buf_size` is greater or equal to zero.
+			 *
+			 * The computation of the new consumed position is made
+			 * by calculating the exact distance of `buf_size` from
+			 * the truncation of `offset` minus `buf_size`, plus a
+			 * `subbuf_size`. The later is required because of the
+			 * sub-buffer truncation.
+			 */
+			consumed_new = (subbuf_trunc(offset, chan) -
+					chan->backend.buf_size +
+					chan->backend.subbuf_size);
 		else
 			return;
+		/*
+		 * This path is only reachable from overwrite mode buffers.
+		 */
+		assert(config->mode == RING_BUFFER_OVERWRITE);
 	} while (caa_unlikely(uatomic_cmpxchg(&buf->consumed, consumed_old,
 					      consumed_new) != consumed_old));
 }

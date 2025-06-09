@@ -2118,7 +2118,7 @@ void lib_ring_buffer_switch_slow(struct lttng_ust_ring_buffer *buf, enum switch_
 	/*
 	 * Push the reader if necessary
 	 */
-	lib_ring_buffer_reserve_push_reader(buf, chan, offsets.old);
+	lib_ring_buffer_reserve_push_reader(config, buf, chan, offsets.old);
 
 	oldidx = subbuf_index(offsets.old, chan);
 	lib_ring_buffer_clear_noref(config, &buf->backend, oldidx, handle);
@@ -2405,7 +2405,7 @@ int lib_ring_buffer_reserve_slow(struct lttng_ust_ring_buffer_ctx *ctx,
 	/*
 	 * Push the reader if necessary
 	 */
-	lib_ring_buffer_reserve_push_reader(buf, chan, offsets.end - 1);
+	lib_ring_buffer_reserve_push_reader(config, buf, chan, offsets.end - 1);
 
 	/*
 	 * Clear noref flag for this subbuffer.

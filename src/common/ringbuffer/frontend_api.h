@@ -190,7 +190,7 @@ int lib_ring_buffer_reserve(const struct lttng_ust_ring_buffer_config *config,
 	/*
 	 * Push the reader if necessary
 	 */
-	lib_ring_buffer_reserve_push_reader(buf, chan, o_end - 1);
+	lib_ring_buffer_reserve_push_reader(config, buf, chan, o_end - 1);
 
 	/*
 	 * Clear noref flag for this subbuffer.
