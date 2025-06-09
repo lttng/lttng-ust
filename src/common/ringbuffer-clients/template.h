@@ -374,12 +374,19 @@ static void client_buffer_begin(struct lttng_ust_ring_buffer *buf,
 				subbuf_idx * chan->backend.subbuf_size,
 				handle);
 	struct lttng_ust_channel_buffer *lttng_chan = channel_get_private(chan);
-	uint64_t cnt = shmp_index(handle, buf->backend.buf_cnt, subbuf_idx)->seq_cnt;
 	struct commit_counters_cold *cc_cold = shmp_index(handle, buf->commit_cold, subbuf_idx);
+	uint64_t packet_cnt;
 
-	if (!cc_cold)
-		return;
+        if (!cc_cold)
+                return;
 
+       /*
+        * Exclusive access to cold commit count since the caller must be the
+        * owner of the sub-buffer.
+        */
+	packet_cnt = subbuffer_load_packet_count(chan, buf, handle,
+						cc_cold->cc_sb.v,
+						subbuf_idx);
 	assert(header);
 	if (!header)
 		return;
@@ -395,7 +402,7 @@ static void client_buffer_begin(struct lttng_ust_ring_buffer *buf,
 	header->ctx.timestamp_end = 0;
 	header->ctx.content_size = ~0ULL; /* for debugging */
 	header->ctx.packet_size = ~0ULL;
-	header->ctx.packet_seq_num = chan->backend.num_subbuf * cnt + subbuf_idx;
+	header->ctx.packet_seq_num = chan->backend.num_subbuf * packet_cnt + subbuf_idx;
 	header->ctx.events_discarded = 0;
 #ifdef RING_BUFFER_CLIENT_HAS_CPU_ID
 	header->ctx.cpu_id = buf->backend.cpu;

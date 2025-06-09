@@ -437,18 +437,70 @@ unsigned long subbuffer_get_data_size(
 	return backend_pages->data_size;
 }
 
+/*
+ * Reader the packet counter of the sub-buffer at `idx`, given the current cold
+ * commit counter `current_commit_cold`.
+ *
+ * On error, return ~0ULL.
+ */
 static inline
-void subbuffer_inc_packet_count(
-		const struct lttng_ust_ring_buffer_config *config __attribute__((unused)),
-		struct lttng_ust_ring_buffer_backend *bufb,
-		unsigned long idx, struct lttng_ust_shm_handle *handle)
+uint64_t subbuffer_load_packet_count(
+		const struct lttng_ust_ring_buffer_channel *chan,
+		struct lttng_ust_ring_buffer *buf,
+		struct lttng_ust_shm_handle *handle,
+		unsigned long current_commit_cold,
+		unsigned long idx)
 {
 	struct lttng_ust_ring_buffer_backend_counts *counts;
+	size_t seq_idx;
 
-	counts = shmp_index(handle, bufb->buf_cnt, idx);
+	counts = shmp_index(handle, buf->backend.buf_cnt, idx);
+	if (!counts)
+		return ~0ULL;
+
+	seq_idx = (current_commit_cold >> chan->backend.subbuf_size_order) & 1;
+
+	return counts->seq_cnt[seq_idx];
+}
+
+/*
+ * Increment the packet count of sub-buffer at index `idx`, given the future
+ * value the cold commit counter `next_commit_cold`. Note that this only
+ * prepares the future slot and won't be observable by readers until the cold
+ * commit counter is moved to `next_commit_cold`.
+ *
+ * The sequence counter allows for atomic transaction that will be visible to
+ * reader once the cold commit counter is `next_commit_cold`.
+ *
+ * This works by preparing the value that will become the true value once the
+ * cold commit counter reached `next_commit_cold` by incrementing the value in
+ * the current slot and storing it in the next slot.
+ *
+ * Thus, the increment has the following properties:
+ *
+ *   - Mutually exclusive with respect to readers and writers
+ *
+ *   - Restartable by a fixup if the producer crashed before storing the
+ *     `next_commit_cold` into the cold commit counter
+ */
+static inline
+void subbuffer_inc_packet_count(
+		const struct lttng_ust_ring_buffer_channel *chan,
+		struct lttng_ust_ring_buffer *buf,
+		struct lttng_ust_shm_handle *handle,
+		unsigned long next_commit_cold,
+		unsigned long idx)
+{
+	struct lttng_ust_ring_buffer_backend_counts *counts;
+	size_t seq_idx;
+
+	counts = shmp_index(handle, buf->backend.buf_cnt, idx);
 	if (!counts)
 		return;
-	counts->seq_cnt++;
+
+	seq_idx = (next_commit_cold >> chan->backend.subbuf_size_order) & 1;
+
+	counts->seq_cnt[seq_idx] = counts->seq_cnt[1 - seq_idx] + 1;
 }
 
 /**

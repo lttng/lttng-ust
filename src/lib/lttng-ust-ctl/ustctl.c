@@ -2183,7 +2183,7 @@ int lttng_ust_ctl_flush_events_or_populate_packet(struct lttng_ust_ctl_consumer_
 		struct lttng_ust_ctl_consumer_packet *packet,
 		bool *packet_populated, bool *flush_done)
 {
-	uint64_t sample_time = 0, seq_num = 0, subbuf_idx = 0, cnt = 0, events_discarded = 0;
+	uint64_t sample_time = 0, seq_num = 0, subbuf_idx = 0, events_discarded = 0;
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
 	struct lttng_ust_ring_buffer_backend_counts *counts;
 	struct lttng_ust_ring_buffer_channel *chan = NULL;
@@ -2254,6 +2254,17 @@ int lttng_ust_ctl_flush_events_or_populate_packet(struct lttng_ust_ctl_consumer_
 		goto err_sigbus;
 
 	if (pos_before == pos_after) {
+
+		struct commit_counters_cold *cc_cold;
+		uint64_t packet_cnt;
+
+		cc_cold = shmp_index(chan->handle, buf->commit_cold, subbuf_idx);
+
+		if (!cc_cold) {
+			ret = -EFAULT;
+			goto err_sigbus;
+		}
+
 		/*
 		 * The packet may have been previously initialized, but not
 		 * necessarily for the current stream therefore it is reset.
@@ -2283,9 +2294,14 @@ int lttng_ust_ctl_flush_events_or_populate_packet(struct lttng_ust_ctl_consumer_
 			goto err_sigbus;
 		}
 
-		cnt = counts->seq_cnt;
-		seq_num = chan->backend.num_subbuf * cnt + subbuf_idx;
-		ret = client_cb->packet_initialize(buf, chan, packet->p, sample_time, sample_time, seq_num, events_discarded, &packet->packet_length, &packet->packet_length_padded);
+		packet_cnt = subbuffer_load_packet_count(chan, buf, chan->handle,
+						v_read(&chan->backend.config, &cc_cold->cc_sb),
+						subbuf_idx);
+		seq_num = chan->backend.num_subbuf * packet_cnt + subbuf_idx;
+		ret = client_cb->packet_initialize(buf, chan, packet->p, sample_time,
+						sample_time, seq_num, events_discarded,
+						&packet->packet_length,
+						&packet->packet_length_padded);
 		if (ret < 0)
 			goto err_sigbus;
 

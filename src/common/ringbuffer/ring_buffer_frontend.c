@@ -2566,7 +2566,7 @@ void lib_ring_buffer_check_deliver_slow(const struct lttng_ust_ring_buffer_confi
 		 * Increment the packet counter while we have exclusive
 		 * access.
 		 */
-		subbuffer_inc_packet_count(config, &buf->backend, idx, handle);
+		subbuffer_inc_packet_count(chan, buf, handle, commit_count, idx);
 
 		/*
 		 * Set noref flag and offset for this subbuffer id.

@@ -33,10 +33,19 @@ struct lttng_ust_ring_buffer_backend_counts {
 	/*
 	 * Counter specific to the sub-buffer location within the ring buffer.
 	 * The actual sequence number of the packet within the entire ring
-	 * buffer can be derived from the formula nr_subbuffers * seq_cnt +
-	 * subbuf_idx.
+	 * buffer can be derived from the following formula:
+	 *
+	 *   nr_subbuffers * seq_cnt + subbuf_idx.
+	 *
+	 * This is a sequence counter with two slots.
+	 *
+	 * Readers always load from the current slot, while writers only mutate
+	 * the next slot. The current slot is derived from the cold commit
+	 * counter and the next slot is the other slot. See the corresponding
+	 * procedures `subbuffer_load_packet_count()` and
+	 * `subbuffer_inc_packet_count()` for details.
 	 */
-	uint64_t seq_cnt;               /* packet sequence number */
+	uint64_t seq_cnt[2];               /* packet sequence number */
 };
 
 /*
