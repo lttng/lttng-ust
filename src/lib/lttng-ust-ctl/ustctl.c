@@ -1755,6 +1755,130 @@ void lttng_ust_ctl_set_channel_owner_id(struct lttng_ust_abi_object_data *obj,
 {
 	obj->u.channel.owner_id = id;
 }
+
+struct lttng_ust_ctl_subbuf_state {
+	struct lttng_ust_ring_buffer *buf;
+	struct lttng_ust_ring_buffer_channel *chan;
+	unsigned long consumed_pos;
+	unsigned long produced_pos;
+	unsigned long cc_hot;
+	unsigned long cc_cold;
+	size_t idx;
+	uint32_t owner;
+};
+
+int lttng_ust_ctl_poll_state_create(struct lttng_ust_ctl_consumer_stream *stream,
+				unsigned long consumed_pos, unsigned long produced_pos,
+				struct lttng_ust_ctl_subbuf_state **pstate)
+{
+	struct lttng_ust_ctl_subbuf_state *state;
+
+	if (!stream || !pstate)
+		return -EINVAL;
+
+	state = zmalloc(sizeof(*state));
+
+	if (!state)
+		return -ENOMEM;
+
+	state->buf = stream->buf;
+	state->chan = stream->chan->chan->priv->rb_chan;
+	state->consumed_pos = consumed_pos;
+	state->produced_pos = produced_pos;
+
+	*pstate = state;
+
+	return 0;
+}
+
+int lttng_ust_ctl_poll_state_next(struct lttng_ust_ctl_subbuf_state *state)
+{
+	struct commit_counters_hot *cc_hot;
+	struct commit_counters_cold *cc_cold;
+	size_t subbuf_idx;
+
+	if ((long)(state->consumed_pos - state->produced_pos) >= 0)
+		return 0;
+
+	subbuf_idx = subbuf_index(state->consumed_pos, state->chan);
+
+	cc_hot = shmp_index(state->chan->handle, state->buf->commit_hot, subbuf_idx);
+
+	if (!cc_hot) {
+		return -EIO;
+	}
+
+	cc_cold = shmp_index(state->chan->handle, state->buf->commit_cold, subbuf_idx);
+
+	if (!cc_cold){
+		return -EIO;
+	}
+
+	state->idx = subbuf_idx;
+	state->cc_hot = v_read(&state->chan->backend.config, &cc_hot->cc);
+	state->cc_cold = v_read(&state->chan->backend.config, &cc_cold->cc_sb);
+	state->owner = v_read(&state->chan->backend.config, &cc_hot->owner);
+
+	state->consumed_pos += state->chan->backend.subbuf_size;
+
+	return 1;
+}
+
+
+int lttng_ust_ctl_poll_state_cc_hot(struct lttng_ust_ctl_subbuf_state *state,
+				unsigned long *cc_hot)
+{
+	if (!state || !cc_hot)
+		return -EINVAL;
+
+	*cc_hot = state->cc_hot;
+
+	return 0;
+}
+
+int lttng_ust_ctl_poll_state_cc_cold(struct lttng_ust_ctl_subbuf_state *state,
+				unsigned long *cc_cold)
+{
+	if (!state || !cc_cold)
+		return -EINVAL;
+
+	*cc_cold = state->cc_cold;
+
+	return 0;
+}
+
+int lttng_ust_ctl_poll_state_index(struct lttng_ust_ctl_subbuf_state *state,
+				size_t *idx)
+{
+	if (!state || !idx)
+		return -EINVAL;
+
+	*idx = state->idx;
+
+	return 0;
+}
+
+int lttng_ust_ctl_poll_state_owner(struct lttng_ust_ctl_subbuf_state *state,
+				uint32_t *owner)
+{
+	if (!state || !owner)
+		return -EINVAL;
+
+	*owner = state->owner;
+
+	return 0;
+}
+
+int lttng_ust_ctl_poll_state_destroy(struct lttng_ust_ctl_subbuf_state *state)
+{
+	if (!state)
+		return -EINVAL;
+
+	free(state);
+
+	return 0;
+}
+
 /* For mmap mode, readable without "get" operation */
 
 void *lttng_ust_ctl_get_mmap_base(struct lttng_ust_ctl_consumer_stream *stream)

@@ -232,6 +232,85 @@ int lttng_ust_ctl_get_max_subbuf_size(struct lttng_ust_ctl_consumer_stream *stre
 
 void lttng_ust_ctl_set_channel_owner_id(struct lttng_ust_abi_object_data *obj,
 					uint32_t id);
+
+/* Opaque type. */
+struct lttng_ust_ctl_subbuf_state;
+
+/*
+ * Create a polling state object.
+ *
+ * The object will poll sub-buffers from `stream` in the range `[consumed_pos,
+ * produced_pos)`.
+ *
+ * Return 0 on success.
+ *
+ * Return a negative value on error.
+ */
+int lttng_ust_ctl_poll_state_create(struct lttng_ust_ctl_consumer_stream *stream,
+				unsigned long consumed_pos, unsigned long produced_pos,
+				struct lttng_ust_ctl_subbuf_state **state);
+
+/*
+ * Poll the state of the next sub-buffer.
+ *
+ * Return 0 if no next sub-buffer is available.
+ *
+ * Return 1 on success.
+ *
+ * Return a negative value on error.
+ */
+int lttng_ust_ctl_poll_state_next(struct lttng_ust_ctl_subbuf_state *state);
+
+
+/*
+ * Get the hot commit counter of the current polled sub-buffer.
+ *
+ * Return 0 on success.
+ *
+ * Return a negative value on error.
+ */
+int lttng_ust_ctl_poll_state_cc_hot(struct lttng_ust_ctl_subbuf_state *state,
+				unsigned long *cc_hot);
+
+/*
+ * Get the cold commit counter of the current polled sub-buffer.
+ *
+ * Return 0 on success.
+ *
+ * Return a negative value on error.
+ */
+int lttng_ust_ctl_poll_state_cc_cold(struct lttng_ust_ctl_subbuf_state *state,
+				unsigned long *cc_cold);
+
+/*
+ * Get the index in the buffer of the current polled sub-buffer.
+ *
+ * Return 0 on success.
+ *
+ * Return a negative value on error.
+ */
+int lttng_ust_ctl_poll_state_index(struct lttng_ust_ctl_subbuf_state *state,
+				size_t *idx);
+
+/*
+ * Get the owner of the current polled sub-buffer.
+ *
+ * Return 0 on success.
+ *
+ * Return a negative value on error.
+ */
+int lttng_ust_ctl_poll_state_owner(struct lttng_ust_ctl_subbuf_state *state,
+				uint32_t *owner);
+
+/*
+ * Destroy the state polling object.
+ *
+ * Return 0 on success.
+ *
+ * Return a negative value on error.
+ */
+int lttng_ust_ctl_poll_state_destroy(struct lttng_ust_ctl_subbuf_state *state);
+
 /*
  * For mmap mode, operate on the current packet (between get/put or
  * get_next/put_next).
