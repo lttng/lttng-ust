@@ -168,6 +168,10 @@ void lib_ring_buffer_check_deliver_slow(const struct lttng_ust_ring_buffer_confi
 				   const struct lttng_ust_ring_buffer_ctx *ctx)
 	__attribute__((visibility("hidden")));
 
+extern void lib_ring_buffer_wakeup(struct lttng_ust_ring_buffer *buf,
+		struct lttng_ust_shm_handle *handle)
+	__attribute__((visibility("hidden")));
+
 /* Buffer write helpers */
 
 static inline

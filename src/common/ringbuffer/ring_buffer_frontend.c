@@ -524,7 +524,6 @@ int lib_ring_buffer_poll_deliver(const struct lttng_ust_ring_buffer_config *conf
 	return 1;
 }
 
-static
 void lib_ring_buffer_wakeup(struct lttng_ust_ring_buffer *buf,
 		struct lttng_ust_shm_handle *handle)
 {
