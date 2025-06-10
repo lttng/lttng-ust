@@ -593,8 +593,8 @@ static int client_packet_initialize(struct lttng_ust_ring_buffer *buf,
 		struct lttng_ust_ring_buffer_channel *chan,
 		void *packet,
 		uint64_t timestamp_begin, uint64_t timestamp_end,
-		uint64_t sequence_number, uint64_t *packet_length,
-		uint64_t *packet_length_padded)
+		uint64_t sequence_number, uint64_t events_discarded,
+		uint64_t *packet_length, uint64_t *packet_length_padded)
 {
 	struct packet_header *packet_header = (struct packet_header *)packet;
 	struct lttng_ust_channel_buffer *lttng_chan_buf;
@@ -623,6 +623,7 @@ static int client_packet_initialize(struct lttng_ust_ring_buffer *buf,
 	packet_header->ctx.timestamp_end = timestamp_end;
 	packet_header->ctx.content_size = client_packet_header_size() * CHAR_BIT;
 	packet_header->ctx.packet_size = size * CHAR_BIT;
+	packet_header->ctx.events_discarded = (unsigned long) events_discarded;
 #ifdef RING_BUFFER_CLIENT_HAS_CPU_ID
 	packet_header->ctx.cpu_id = buf->backend.cpu;
 #endif
