@@ -2174,7 +2174,7 @@ int lttng_ust_ctl_flush_events_or_populate_packet(struct lttng_ust_ctl_consumer_
 		struct lttng_ust_ctl_consumer_packet *packet,
 		bool *packet_populated, bool *flush_done)
 {
-	uint64_t sample_time = 0, seq_num = 0, subbuf_idx = 0, cnt = 0;
+	uint64_t sample_time = 0, seq_num = 0, subbuf_idx = 0, cnt = 0, events_discarded = 0;
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
 	struct lttng_ust_ring_buffer_backend_counts *counts;
 	struct lttng_ust_ring_buffer_channel *chan = NULL;
@@ -2227,6 +2227,10 @@ int lttng_ust_ctl_flush_events_or_populate_packet(struct lttng_ust_ctl_consumer_
 	if (ret < 0)
 		goto err_sigbus;
 
+	ret = client_cb->events_discarded(buf, chan, &events_discarded);
+	if (ret < 0)
+		goto err_sigbus;
+
 	_lttng_ust_ctl_flush_buffer(buf, 1, stream->chan);
 	if (flush_done)
 		*flush_done = true;
@@ -2271,7 +2275,7 @@ int lttng_ust_ctl_flush_events_or_populate_packet(struct lttng_ust_ctl_consumer_
 
 		cnt = counts->seq_cnt;
 		seq_num = chan->backend.num_subbuf * cnt + subbuf_idx;
-		ret = client_cb->packet_initialize(buf, chan, packet->p, sample_time, sample_time, seq_num, &packet->packet_length, &packet->packet_length_padded);
+		ret = client_cb->packet_initialize(buf, chan, packet->p, sample_time, sample_time, seq_num, events_discarded, &packet->packet_length, &packet->packet_length_padded);
 		if (ret < 0)
 			goto err_sigbus;
 
