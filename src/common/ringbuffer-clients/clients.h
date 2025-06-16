@@ -33,6 +33,9 @@ struct lttng_ust_client_lib_ring_buffer_client_cb {
 	int (*stream_id) (struct lttng_ust_ring_buffer *buf,
 			struct lttng_ust_ring_buffer_channel *chan,
 			uint64_t *stream_id);
+	int (*current_events_discarded) (struct lttng_ust_ring_buffer *buf,
+					 struct lttng_ust_ring_buffer_channel *chan,
+					 uint64_t *events_discarded);
 	int (*current_timestamp) (struct lttng_ust_ring_buffer *buf,
 			struct lttng_ust_ring_buffer_channel *chan,
 			uint64_t *ts);

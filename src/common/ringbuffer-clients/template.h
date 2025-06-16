@@ -552,6 +552,27 @@ static int client_stream_id(struct lttng_ust_ring_buffer *buf __attribute__((unu
 	return 0;
 }
 
+/*
+ * Samples the events discarded counters of the ring buffer.
+ */
+static int client_current_events_discarded(
+		struct lttng_ust_ring_buffer *buf,
+		struct lttng_ust_ring_buffer_channel *chan,
+		uint64_t *events_discarded)
+{
+	uint64_t e = 0;
+
+	if (!events_discarded) {
+		return -1;
+	}
+
+	e += v_read(&chan->backend.config, &buf->records_lost_full);
+	e += v_read(&chan->backend.config, &buf->records_lost_wrap);
+	e += v_read(&chan->backend.config, &buf->records_lost_big);
+	*events_discarded = e;
+	return 0;
+}
+
 static int client_current_timestamp(
 		struct lttng_ust_ring_buffer *buf  __attribute__((unused)),
 		struct lttng_ust_ring_buffer_channel *chan,
@@ -679,6 +700,7 @@ struct lttng_ust_client_lib_ring_buffer_client_cb client_cb = {
 	.content_size = client_content_size,
 	.packet_size = client_packet_size,
 	.stream_id = client_stream_id,
+	.current_events_discarded = client_current_events_discarded,
 	.current_timestamp = client_current_timestamp,
 	.sequence_number = client_sequence_number,
 	.instance_id = client_instance_id,
