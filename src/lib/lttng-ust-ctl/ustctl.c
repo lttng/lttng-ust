@@ -2227,7 +2227,7 @@ int lttng_ust_ctl_flush_events_or_populate_packet(struct lttng_ust_ctl_consumer_
 	if (ret < 0)
 		goto err_sigbus;
 
-	ret = client_cb->events_discarded(buf, chan, &events_discarded);
+	ret = client_cb->current_events_discarded(buf, chan, &events_discarded);
 	if (ret < 0)
 		goto err_sigbus;
 
