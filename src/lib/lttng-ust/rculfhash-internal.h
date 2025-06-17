@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include "common/utils.h"
 
 #ifdef DEBUG
 #define dbg_printf(fmt, args...)     printf("[debug lttng-ust rculfhash] " fmt, ## args)
@@ -125,15 +126,6 @@ struct lttng_ust_lfht {
 	 */
 };
 
-extern unsigned int lttng_ust_lfht_fls_ulong(unsigned long x)
-	__attribute__((visibility("hidden")));
-
-extern int lttng_ust_lfht_get_count_order_u32(uint32_t x)
-	__attribute__((visibility("hidden")));
-
-extern int lttng_ust_lfht_get_count_order_ulong(unsigned long x)
-	__attribute__((visibility("hidden")));
-
 #ifdef POISON_FREE
 #define poison_free(ptr)					\
 	do {							\
@@ -162,7 +154,7 @@ struct lttng_ust_lfht *__default_alloc_lttng_ust_lfht(
 	ht->bucket_at = mm->bucket_at;
 	ht->min_nr_alloc_buckets = min_nr_alloc_buckets;
 	ht->min_alloc_buckets_order =
-		lttng_ust_lfht_get_count_order_ulong(min_nr_alloc_buckets);
+		lttng_ust_get_count_order_ulong(min_nr_alloc_buckets);
 	ht->max_nr_buckets = max_nr_buckets;
 
 	return ht;

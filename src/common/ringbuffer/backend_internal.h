@@ -714,45 +714,4 @@ void lib_ring_buffer_do_memset(char *dest, char c, unsigned long len)
 		dest[i] = c;
 }
 
-/* arch-agnostic implementation */
-
-static inline int lttng_ust_fls(unsigned int x)
-{
-	int r = 32;
-
-	if (!x)
-		return 0;
-	if (!(x & 0xFFFF0000U)) {
-		x <<= 16;
-		r -= 16;
-	}
-	if (!(x & 0xFF000000U)) {
-		x <<= 8;
-		r -= 8;
-	}
-	if (!(x & 0xF0000000U)) {
-		x <<= 4;
-		r -= 4;
-	}
-	if (!(x & 0xC0000000U)) {
-		x <<= 2;
-		r -= 2;
-	}
-	if (!(x & 0x80000000U)) {
-		/* No need to bit shift on last operation */
-		r -= 1;
-	}
-	return r;
-}
-
-static inline int get_count_order(unsigned int count)
-{
-	int order;
-
-	order = lttng_ust_fls(count) - 1;
-	if (count & (count - 1))
-		order++;
-	return order;
-}
-
 #endif /* _LTTNG_RING_BUFFER_BACKEND_INTERNAL_H */

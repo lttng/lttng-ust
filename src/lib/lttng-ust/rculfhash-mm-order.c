@@ -8,6 +8,7 @@
  */
 
 #include <rculfhash-internal.h>
+#include "common/utils.h"
 
 static
 void lttng_ust_lfht_alloc_bucket_table(struct lttng_ust_lfht *ht, unsigned long order)
@@ -49,11 +50,11 @@ struct lttng_ust_lfht_node *bucket_at(struct lttng_ust_lfht *ht, unsigned long i
 		return &ht->tbl_order[0][index];
 	}
 	/*
-	 * equivalent to lttng_ust_lfht_get_count_order_ulong(index + 1), but
+	 * equivalent to lttng_ust_get_count_order_ulong(index + 1), but
 	 * optimizes away the non-existing 0 special-case for
-	 * lttng_ust_lfht_get_count_order_ulong.
+	 * lttng_ust_get_count_order_ulong.
 	 */
-	order = lttng_ust_lfht_fls_ulong(index);
+	order = lttng_ust_fls_ulong(index);
 	dbg_printf("bucket index %lu order %lu aridx %lu\n",
 		   index, order, index & ((1UL << (order - 1)) - 1));
 	return &ht->tbl_order[order][index & ((1UL << (order - 1)) - 1)];

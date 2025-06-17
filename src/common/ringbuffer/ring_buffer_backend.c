@@ -22,6 +22,7 @@
 #include "shm.h"
 #include "common/align.h"
 #include "common/populate.h"
+#include "common/utils.h"
 
 /**
  * lib_ring_buffer_backend_allocate - allocate a channel buffer
@@ -303,9 +304,9 @@ int channel_backend_init(struct channel_backend *chanb,
 
 	chanb->buf_size = num_subbuf * subbuf_size;
 	chanb->subbuf_size = subbuf_size;
-	chanb->buf_size_order = get_count_order(chanb->buf_size);
-	chanb->subbuf_size_order = get_count_order(subbuf_size);
-	chanb->num_subbuf_order = get_count_order(num_subbuf);
+	chanb->buf_size_order = lttng_ust_get_count_order_ulong(chanb->buf_size);
+	chanb->subbuf_size_order = lttng_ust_get_count_order_ulong(subbuf_size);
+	chanb->num_subbuf_order = lttng_ust_get_count_order_ulong(num_subbuf);
 	chanb->extra_reader_sb =
 			(config->mode == RING_BUFFER_OVERWRITE) ? 1 : 0;
 	chanb->num_subbuf = num_subbuf;

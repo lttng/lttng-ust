@@ -266,6 +266,7 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <signal.h>
+#include "common/utils.h"
 
 /*
  * Split-counters lazily update the global counter each 1024
@@ -400,151 +401,6 @@ unsigned long bit_reverse_ulong(unsigned long v)
 #else
 	return bit_reverse_u64(v);
 #endif
-}
-
-/*
- * fls: returns the position of the most significant bit.
- * Returns 0 if no bit is set, else returns the position of the most
- * significant bit (from 1 to 32 on 32-bit, from 1 to 64 on 64-bit).
- */
-#if defined(LTTNG_UST_ARCH_X86)
-static inline
-unsigned int fls_u32(uint32_t x)
-{
-	int r;
-
-	__asm__ ("bsrl %1,%0\n\t"
-	    "jnz 1f\n\t"
-	    "movl $-1,%0\n\t"
-	    "1:\n\t"
-	    : "=r" (r) : "rm" (x));
-	return r + 1;
-}
-#define HAS_FLS_U32
-#endif
-
-#if defined(LTTNG_UST_ARCH_AMD64)
-static inline
-unsigned int fls_u64(uint64_t x)
-{
-	long r;
-
-	__asm__ ("bsrq %1,%0\n\t"
-	    "jnz 1f\n\t"
-	    "movq $-1,%0\n\t"
-	    "1:\n\t"
-	    : "=r" (r) : "rm" (x));
-	return r + 1;
-}
-#define HAS_FLS_U64
-#endif
-
-#ifndef HAS_FLS_U64
-static
-unsigned int fls_u64(uint64_t x)
-	__attribute__((unused));
-static
-unsigned int fls_u64(uint64_t x)
-{
-	unsigned int r = 64;
-
-	if (!x)
-		return 0;
-
-	if (!(x & 0xFFFFFFFF00000000ULL)) {
-		x <<= 32;
-		r -= 32;
-	}
-	if (!(x & 0xFFFF000000000000ULL)) {
-		x <<= 16;
-		r -= 16;
-	}
-	if (!(x & 0xFF00000000000000ULL)) {
-		x <<= 8;
-		r -= 8;
-	}
-	if (!(x & 0xF000000000000000ULL)) {
-		x <<= 4;
-		r -= 4;
-	}
-	if (!(x & 0xC000000000000000ULL)) {
-		x <<= 2;
-		r -= 2;
-	}
-	if (!(x & 0x8000000000000000ULL)) {
-		x <<= 1;
-		r -= 1;
-	}
-	return r;
-}
-#endif
-
-#ifndef HAS_FLS_U32
-static
-unsigned int fls_u32(uint32_t x)
-	__attribute__((unused));
-static
-unsigned int fls_u32(uint32_t x)
-{
-	unsigned int r = 32;
-
-	if (!x)
-		return 0;
-	if (!(x & 0xFFFF0000U)) {
-		x <<= 16;
-		r -= 16;
-	}
-	if (!(x & 0xFF000000U)) {
-		x <<= 8;
-		r -= 8;
-	}
-	if (!(x & 0xF0000000U)) {
-		x <<= 4;
-		r -= 4;
-	}
-	if (!(x & 0xC0000000U)) {
-		x <<= 2;
-		r -= 2;
-	}
-	if (!(x & 0x80000000U)) {
-		x <<= 1;
-		r -= 1;
-	}
-	return r;
-}
-#endif
-
-unsigned int lttng_ust_lfht_fls_ulong(unsigned long x)
-{
-#if (CAA_BITS_PER_LONG == 32)
-	return fls_u32(x);
-#else
-	return fls_u64(x);
-#endif
-}
-
-/*
- * Return the minimum order for which x <= (1UL << order).
- * Return -1 if x is 0.
- */
-int lttng_ust_lfht_get_count_order_u32(uint32_t x)
-{
-	if (!x)
-		return -1;
-
-	return fls_u32(x - 1);
-}
-
-/*
- * Return the minimum order for which x <= (1UL << order).
- * Return -1 if x is 0.
- */
-int lttng_ust_lfht_get_count_order_ulong(unsigned long x)
-{
-	if (!x)
-		return -1;
-
-	return lttng_ust_lfht_fls_ulong(x - 1);
 }
 
 static
@@ -952,7 +808,7 @@ void lttng_ust_lfht_create_bucket(struct lttng_ust_lfht *ht, unsigned long size)
 	node->next = flag_bucket(get_end());
 	node->reverse_hash = 0;
 
-	bucket_order = lttng_ust_lfht_get_count_order_ulong(size);
+	bucket_order = lttng_ust_get_count_order_ulong(size);
 	assert(bucket_order >= 0);
 
 	for (order = 1; order < (unsigned long) bucket_order + 1; order++) {
@@ -1059,7 +915,7 @@ struct lttng_ust_lfht *lttng_ust_lfht_new(unsigned long init_size,
 	ht->flags = flags;
 	/* this mutex should not nest in read-side C.S. */
 	pthread_mutex_init(&ht->resize_mutex, NULL);
-	order = lttng_ust_lfht_get_count_order_ulong(init_size);
+	order = lttng_ust_get_count_order_ulong(init_size);
 	ht->resize_target = 1UL << order;
 	lttng_ust_lfht_create_bucket(ht, 1UL << order);
 	ht->size = 1UL << order;
@@ -1285,7 +1141,7 @@ int lttng_ust_lfht_delete_bucket(struct lttng_ust_lfht *ht)
 		assert(is_bucket(node->next));
 	}
 
-	for (order = lttng_ust_lfht_get_count_order_ulong(size); (long)order >= 0; order--)
+	for (order = lttng_ust_get_count_order_ulong(size); (long)order >= 0; order--)
 		lttng_ust_lfht_free_bucket_table(ht, order);
 
 	return 0;
