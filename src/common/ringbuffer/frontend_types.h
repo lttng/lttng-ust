@@ -64,6 +64,11 @@ struct lttng_ust_ring_buffer_channel {
 			int32_t blocking_timeout_ms;
 			void *priv;		/* Private data pointer. */
 			uint32_t owner_id;
+			/*
+			 * activity_timestamp_bits: defines the granularity of the
+			 * last activity timestamp (on 32-bit).
+			 */
+			unsigned int activity_timestamp_bits;
 		} s;
 		char padding[RB_CHANNEL_PADDING];
 	} u;
@@ -238,7 +243,15 @@ struct lttng_ust_ring_buffer {
 	unsigned int get_subbuf:1;	/* Sub-buffer being held by reader */
 	/* shmp pointer to self */
 	DECLARE_SHMP(struct lttng_ust_ring_buffer, self);
-	char padding[RB_RING_BUFFER_PADDING];
+	union {
+		/*
+		 * The last activity timestamp is only used on 32-bit.
+		 * Otherwise the last_timestamp field contains the
+		 * entire timestamp.
+		 */
+		union v_atomic last_activity_timestamp;
+		char padding[RB_RING_BUFFER_PADDING];
+	} u;
 } __attribute__((aligned(CAA_CACHE_LINE_SIZE)));
 
 /*

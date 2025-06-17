@@ -2711,6 +2711,16 @@ int _lttng_ust_ctl_get_current_timestamp(struct lttng_ust_ring_buffer *buf,
 }
 
 static
+int _lttng_ust_ctl_last_activity_timestamp_compare(struct lttng_ust_ring_buffer *buf,
+		struct lttng_ust_ring_buffer_channel *chan,
+		uint64_t ts)
+{
+	const struct lttng_ust_ring_buffer_config *config = &chan->backend.config;
+
+	return last_activity_timestamp_compare(config, chan, buf, ts);
+}
+
+static
 void lttng_ust_ctl_packet_reset(struct lttng_ust_ctl_consumer_packet *packet)
 {
 	if (packet->p) {
@@ -3069,6 +3079,28 @@ int lttng_ust_ctl_get_current_timestamp(struct lttng_ust_ctl_consumer_stream *st
 	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
 				stream->memory_map_size);
 	ret = _lttng_ust_ctl_get_current_timestamp(buf, chan, client_cb, ts);
+	lttng_ust_sigbus_del_range(&range);
+	sigbus_end();
+	return ret;
+}
+
+int lttng_ust_ctl_last_activity_timestamp_compare(struct lttng_ust_ctl_consumer_stream *stream,
+		uint64_t ts)
+{
+	struct lttng_ust_ring_buffer_channel *chan;
+	struct lttng_ust_ring_buffer *buf;
+	struct lttng_ust_sigbus_range range;
+	int ret;
+
+	if (!stream || !ts)
+		return -EINVAL;
+	buf = stream->buf;
+	chan = stream->chan->chan->priv->rb_chan;
+	if (sigbus_begin())
+		return -EIO;
+	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
+				stream->memory_map_size);
+	ret = _lttng_ust_ctl_last_activity_timestamp_compare(buf, chan, ts);
 	lttng_ust_sigbus_del_range(&range);
 	sigbus_end();
 	return ret;

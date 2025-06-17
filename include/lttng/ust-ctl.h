@@ -403,6 +403,18 @@ int lttng_ust_ctl_get_current_timestamp(struct lttng_ust_ctl_consumer_stream *st
 		uint64_t *ts);
 
 /*
+ * Return < 0 if the last activity timestamp for @stream is before @ts,
+ * return > 0 if it after, 0 if equal. Note that on 32-bit architectures
+ * the accuracy of the comparison has a coarseness in the order of
+ * 250ms.
+ *
+ * The @ts parameter is expressed in clock cycles, as defined by the
+ * clock frequency.
+ */
+int lttng_ust_ctl_last_activity_timestamp_compare(struct lttng_ust_ctl_consumer_stream *stream,
+		uint64_t ts);
+
+/*
  * Packets
  */
 

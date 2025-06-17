@@ -231,7 +231,7 @@ int lib_ring_buffer_reserve(const struct lttng_ust_ring_buffer_config *config,
 	 * timestamp record headers, never the opposite (missing a full
 	 * timestamp record header when it would be needed).
 	 */
-	save_last_timestamp(config, buf, ctx_private->timestamp);
+	save_last_timestamp(config, chan, buf, ctx_private->timestamp);
 
 	/*
 	 * Push the reader if necessary
@@ -401,7 +401,7 @@ int lib_ring_buffer_try_discard_reserve(const struct lttng_ust_ring_buffer_confi
 	 * It is needed to keep track of timestamp overflows for the following
 	 * records.
 	 */
-	save_last_timestamp(config, buf, 0ULL);
+	save_last_timestamp(config, ctx_private->chan, buf, 0ULL);
 
 	if (caa_likely(v_cmpxchg(config, &buf->offset, end_offset, ctx_private->pre_offset)
 		   != end_offset))

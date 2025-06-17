@@ -147,15 +147,18 @@ unsigned long subbuf_minimum_reserve(unsigned long hot,
 #if (CAA_BITS_PER_LONG == 32)
 static inline
 void save_last_timestamp(const struct lttng_ust_ring_buffer_config *config,
+		   struct lttng_ust_ring_buffer_channel *chan,
 		   struct lttng_ust_ring_buffer *buf, uint64_t timestamp)
 {
-	if (config->timestamp_bits == 0 || config->timestamp_bits == 64)
-		return;
+	unsigned int activity_timestamp_bits = chan->u.s.activity_timestamp_bits;
 
 	/*
-	 * Ensure the compiler performs this update in a single instruction.
+	 * Ensure the compiler performs each update in a single instruction.
 	 */
-	v_set(config, &buf->last_timestamp, (unsigned long)(timestamp >> config->timestamp_bits));
+	if (config->timestamp_bits < 64)
+		v_set(config, &buf->last_timestamp, (unsigned long)(timestamp >> config->timestamp_bits));
+	if (activity_timestamp_bits < 64)
+		v_set(config, &buf->u.last_activity_timestamp, (unsigned long)(timestamp >> chan->u.s.activity_timestamp_bits));
 }
 
 static inline
@@ -164,7 +167,7 @@ int last_timestamp_overflow(const struct lttng_ust_ring_buffer_config *config,
 {
 	unsigned long timestamp_shifted;
 
-	if (config->timestamp_bits == 0 || config->timestamp_bits == 64)
+	if (config->timestamp_bits == 0 || config->timestamp_bits >= 64)
 		return 0;
 
 	timestamp_shifted = (unsigned long)(timestamp >> config->timestamp_bits);
@@ -174,14 +177,34 @@ int last_timestamp_overflow(const struct lttng_ust_ring_buffer_config *config,
 	else
 		return 0;
 }
+
+static inline
+int last_activity_timestamp_compare(const struct lttng_ust_ring_buffer_config *config,
+		      struct lttng_ust_ring_buffer_channel *chan,
+		      struct lttng_ust_ring_buffer *buf, uint64_t timestamp)
+{
+	unsigned int activity_timestamp_bits = chan->u.s.activity_timestamp_bits;
+	unsigned long timestamp_shifted;
+	long res;
+
+	if (activity_timestamp_bits >= 64)
+		return 0;
+
+	timestamp_shifted = (unsigned long)(timestamp >> activity_timestamp_bits);
+	res = (long)((unsigned long)v_read(config, &buf->u.last_activity_timestamp) - timestamp_shifted);
+	if (res < 0)
+		return -1;
+	else if (res > 0)
+		return 1;
+	else
+		return 0;
+}
 #else
 static inline
 void save_last_timestamp(const struct lttng_ust_ring_buffer_config *config,
+		   struct lttng_ust_ring_buffer_channel *chan __attribute__((unused)),
 		   struct lttng_ust_ring_buffer *buf, uint64_t timestamp)
 {
-	if (config->timestamp_bits == 0 || config->timestamp_bits == 64)
-		return;
-
 	v_set(config, &buf->last_timestamp, (unsigned long)timestamp);
 }
 
@@ -189,11 +212,27 @@ static inline
 int last_timestamp_overflow(const struct lttng_ust_ring_buffer_config *config,
 		      struct lttng_ust_ring_buffer *buf, uint64_t timestamp)
 {
-	if (config->timestamp_bits == 0 || config->timestamp_bits == 64)
+	if (config->timestamp_bits == 0 || config->timestamp_bits >= 64)
 		return 0;
 
 	if (caa_unlikely((timestamp - v_read(config, &buf->last_timestamp))
 		     >> config->timestamp_bits))
+		return 1;
+	else
+		return 0;
+}
+
+static inline
+int last_activity_timestamp_compare(const struct lttng_ust_ring_buffer_config *config,
+		      struct lttng_ust_ring_buffer_channel *chan __attribute__((unused)),
+		      struct lttng_ust_ring_buffer *buf, uint64_t timestamp)
+{
+	int64_t res;
+
+	res = (int64_t)((uint64_t)v_read(config, &buf->last_timestamp) - timestamp);
+	if (res < 0)
+		return -1;
+	else if (res > 0)
 		return 1;
 	else
 		return 0;

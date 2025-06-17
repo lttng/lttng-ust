@@ -65,6 +65,7 @@
 #include "common/compat/errno.h"	/* For ENODATA */
 #include "common/populate.h"
 #include "common/testpoint.h"
+#include "common/utils.h"
 
 /* Print DBG() messages about events lost only every 1048576 hits */
 #define DBG_PRINT_NR_LOST	(1UL << 20)
@@ -206,6 +207,7 @@ void lib_ring_buffer_reset(struct lttng_ust_ring_buffer *buf,
 	uatomic_set(&buf->consumed, 0);
 	uatomic_set(&buf->record_disabled, 0);
 	v_set(config, &buf->last_timestamp, 0);
+	v_set(config, &buf->u.last_activity_timestamp, 0);
 	lib_ring_buffer_backend_reset(&buf->backend, handle);
 	/* Don't reset number of active readers */
 	v_set(config, &buf->records_lost_full, 0);
@@ -939,6 +941,26 @@ static void channel_free(struct lttng_ust_ring_buffer_channel *chan,
 	shm_object_table_destroy(handle->table, consumer);
 	free(handle);
 }
+#if (CAA_BITS_PER_LONG == 32)
+static unsigned int get_activity_timestamp_bits(const struct lttng_ust_ring_buffer_config *config,
+						struct lttng_ust_ring_buffer_channel *chan)
+{
+	uint64_t freq = config->cb.ring_buffer_clock_freq(chan);
+
+	if (!freq)
+		return 0;
+	/*
+	 * The activity timestamp accuracy is in the order of 250ms (1s / 4).
+	 */
+	return lttng_ust_get_count_order_u64(freq >> 2);
+}
+#else
+static unsigned int get_activity_timestamp_bits(const struct lttng_ust_ring_buffer_config *config __attribute__((unused)),
+						struct lttng_ust_ring_buffer_channel *chan __attribute__((unused)))
+{
+	return 0;
+}
+#endif
 
 /**
  * channel_create - Create channel.
@@ -1061,6 +1083,7 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_ring_buffer_c
 
 	chan->u.s.blocking_timeout_ms = (int32_t) blocking_timeout_ms;
 	chan->u.s.owner_id = owner_id;
+	chan->u.s.activity_timestamp_bits = get_activity_timestamp_bits(config, chan);
 
 	channel_set_private(chan, priv);
 
@@ -2151,7 +2174,7 @@ void lib_ring_buffer_switch_slow(struct lttng_ust_ring_buffer *buf, enum switch_
 	 * timestamp record headers, never the opposite (missing a full
 	 * timestamp record header when it would be needed).
 	 */
-	save_last_timestamp(config, buf, ctx_priv.timestamp);
+	save_last_timestamp(config, chan, buf, ctx_priv.timestamp);
 
 	lib_ring_buffer_try_clear_lazy_padding(config, chan, buf,
 					subbuf_index(offsets.old, chan),
@@ -2455,7 +2478,7 @@ int lib_ring_buffer_reserve_slow(struct lttng_ust_ring_buffer_ctx *ctx,
 	 * timestamp records, never the opposite (missing a full timestamp
 	 * record when it would be needed).
 	 */
-	save_last_timestamp(config, buf, ctx_private->timestamp);
+	save_last_timestamp(config, chan, buf, ctx_private->timestamp);
 
 	/*
 	 * Push the reader if necessary

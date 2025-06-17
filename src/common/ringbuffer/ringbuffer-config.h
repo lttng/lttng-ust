@@ -88,6 +88,9 @@ struct lttng_ust_ring_buffer_client_cb {
 				size_t *offset, size_t *length);
 	void (*packet_size_field) (const struct lttng_ust_ring_buffer_config *config,
 				size_t *offset, size_t *length);
+
+	/* Get clock frequency for the channel. */
+	uint64_t (*ring_buffer_clock_freq) (struct lttng_ust_ring_buffer_channel *chan);
 };
 
 /*
