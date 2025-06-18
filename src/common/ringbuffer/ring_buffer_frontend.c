@@ -945,8 +945,10 @@ static void channel_free(struct lttng_ust_ring_buffer_channel *chan,
 static unsigned int get_activity_timestamp_bits(const struct lttng_ust_ring_buffer_config *config,
 						struct lttng_ust_ring_buffer_channel *chan)
 {
-	uint64_t freq = config->cb.ring_buffer_clock_freq(chan);
+	uint64_t freq = 0;
 
+	if (config->cb.ring_buffer_clock_freq)
+		freq = config->cb.ring_buffer_clock_freq(chan);
 	if (!freq)
 		return 0;
 	/*

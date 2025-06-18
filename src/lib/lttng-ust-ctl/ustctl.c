@@ -54,6 +54,7 @@ struct lttng_ust_ctl_consumer_channel {
 	struct lttng_ust_ctl_consumer_channel_attr attr;
 	int wait_fd;				/* monitor close() */
 	int wakeup_fd;				/* monitor close() */
+	uint64_t clock_freq;
 };
 
 /*
@@ -1403,6 +1404,7 @@ struct lttng_ust_ctl_consumer_channel *
 		const int *stream_fds, int nr_stream_fds)
 {
 	struct lttng_ust_ctl_consumer_channel *chan;
+	struct lttng_ust_ring_buffer_channel *rb_chan;
 	const char *transport_name;
 	struct lttng_transport *transport;
 	uint32_t owner = attr->owner_id;
@@ -1483,6 +1485,9 @@ struct lttng_ust_ctl_consumer_channel *
 	memcpy(&chan->attr, attr, sizeof(chan->attr));
 	chan->wait_fd = lttng_ust_ctl_channel_get_wait_fd(chan);
 	chan->wakeup_fd = lttng_ust_ctl_channel_get_wakeup_fd(chan);
+	rb_chan = chan->chan->priv->rb_chan;
+	if (rb_chan && rb_chan->backend.config.cb.ring_buffer_clock_freq)
+		chan->clock_freq = rb_chan->backend.config.cb.ring_buffer_clock_freq(rb_chan);
 	return chan;
 
 chan_error:
@@ -3104,6 +3109,24 @@ int lttng_ust_ctl_last_activity_timestamp_compare(struct lttng_ust_ctl_consumer_
 	lttng_ust_sigbus_del_range(&range);
 	sigbus_end();
 	return ret;
+}
+
+int lttng_ust_ctl_timestamp_add(struct lttng_ust_ctl_consumer_stream *stream,
+		uint64_t *ts, int64_t delta_ns)
+{
+	uint64_t freq;
+	int64_t delta;
+
+	if (!stream || !ts)
+		return -EINVAL;
+	freq = stream->chan->clock_freq;
+	delta = delta_ns;
+	if (freq != 1000000000ULL) {
+		delta *= freq;
+		delta /= 1000000000ULL;
+	}
+	*ts += delta;
+	return 0;
 }
 
 int lttng_ust_ctl_get_sequence_number(struct lttng_ust_ctl_consumer_stream *stream,

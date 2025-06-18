@@ -415,6 +415,16 @@ int lttng_ust_ctl_last_activity_timestamp_compare(struct lttng_ust_ctl_consumer_
 		uint64_t ts);
 
 /*
+ * Add a nanoseconds @delta_ns (positive or negative) to a stream @timestamp.
+ * Return 0 on success, negative error value on error. @timestamp is an
+ * inout parameter.
+ *
+ * This helper takes into account the stream's clocksource frequency.
+ */
+int lttng_ust_ctl_timestamp_add(struct lttng_ust_ctl_consumer_stream *stream,
+		uint64_t *ts, int64_t delta_ns);
+
+/*
  * Packets
  */
 

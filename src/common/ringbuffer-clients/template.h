@@ -337,6 +337,15 @@ static uint64_t client_ring_buffer_clock_read(struct lttng_ust_ring_buffer_chann
 	return lib_ring_buffer_clock_read(chan);
 }
 
+static uint64_t client_ring_buffer_clock_freq(struct lttng_ust_ring_buffer_channel *chan __attribute__((unused)))
+{
+	lttng_ust_clock_freq_function get_freq_cb;
+
+	if (lttng_ust_trace_clock_get_freq_cb(&get_freq_cb))
+		return 0ULL;
+	return get_freq_cb();
+}
+
 static
 size_t client_record_header_size(const struct lttng_ust_ring_buffer_config *config,
 				 struct lttng_ust_ring_buffer_channel *chan,
@@ -755,6 +764,7 @@ static const struct lttng_ust_ring_buffer_config client_config = {
 	.cb.buffer_finalize = client_buffer_finalize,
 	.cb.content_size_field = client_content_size_field,
 	.cb.packet_size_field = client_packet_size_field,
+	.cb.ring_buffer_clock_freq = client_ring_buffer_clock_freq,
 	.timestamp_bits = LTTNG_COMPACT_TIMESTAMP_BITS,
 	.alloc = RING_BUFFER_ALLOC_TEMPLATE,
 	.sync = RING_BUFFER_SYNC_PER_CHANNEL,
