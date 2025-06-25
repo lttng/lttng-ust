@@ -21,7 +21,12 @@ struct lttng_ust_ring_buffer_backend_pages {
 	union v_atomic records_unread;	/* records to read */
 	unsigned long data_size;	/* Amount of data to read from subbuf */
 	DECLARE_SHMP(char, p);		/* Backing memory map */
-	char padding[RB_BACKEND_PAGES_PADDING];
+	union {
+		struct {
+			unsigned long begin_events_discarded; /* Events discarded before starting sub-buffer. */
+		} s;
+		char padding[RB_BACKEND_PAGES_PADDING];
+	} u;
 };
 
 struct lttng_ust_ring_buffer_backend_subbuffer {

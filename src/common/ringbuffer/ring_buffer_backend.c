@@ -513,6 +513,35 @@ int lib_ring_buffer_read_cstr(struct lttng_ust_ring_buffer_backend *bufb, size_t
 }
 
 /**
+ * lib_ring_buffer_read_backend_pages - get backend pages of a buffer location
+ * @bufb : buffer backend
+ */
+struct lttng_ust_ring_buffer_backend_pages *
+	lib_ring_buffer_read_backend_pages(struct lttng_ust_ring_buffer_backend *bufb,
+					   struct lttng_ust_shm_handle *handle)
+{
+	struct lttng_ust_ring_buffer_backend_pages_shmp *rpages;
+	struct lttng_ust_ring_buffer_backend_pages *backend_pages;
+	struct channel_backend *chanb;
+	const struct lttng_ust_ring_buffer_config *config;
+	unsigned long sb_bindex, id;
+
+	chanb = &shmp(handle, bufb->chan)->backend;
+	if (!chanb)
+		return NULL;
+	config = &chanb->config;
+	id = bufb->buf_rsb.id;
+	sb_bindex = subbuffer_id_get_index(config, id);
+	rpages = shmp_index(handle, bufb->array, sb_bindex);
+	if (!rpages)
+		return NULL;
+	CHAN_WARN_ON(chanb, config->mode == RING_BUFFER_OVERWRITE
+		     && subbuffer_id_is_noref(config, id));
+	backend_pages = shmp(handle, rpages->shmp);
+	return backend_pages;
+}
+
+/**
  * lib_ring_buffer_read_offset_address - get address of a buffer location
  * @bufb : buffer backend
  * @offset : offset within the buffer.
@@ -527,43 +556,26 @@ void *lib_ring_buffer_read_offset_address(struct lttng_ust_ring_buffer_backend *
 					  size_t offset,
 					  struct lttng_ust_shm_handle *handle)
 {
-	struct lttng_ust_ring_buffer_backend_pages_shmp *rpages;
 	struct lttng_ust_ring_buffer_backend_pages *backend_pages;
 	struct channel_backend *chanb;
-	const struct lttng_ust_ring_buffer_config *config;
-	unsigned long sb_bindex, id;
 
 	chanb = &shmp(handle, bufb->chan)->backend;
 	if (!chanb)
 		return NULL;
-	config = &chanb->config;
-	offset &= chanb->buf_size - 1;
-	id = bufb->buf_rsb.id;
-	sb_bindex = subbuffer_id_get_index(config, id);
-	rpages = shmp_index(handle, bufb->array, sb_bindex);
-	if (!rpages)
-		return NULL;
-	CHAN_WARN_ON(chanb, config->mode == RING_BUFFER_OVERWRITE
-		     && subbuffer_id_is_noref(config, id));
-	backend_pages = shmp(handle, rpages->shmp);
+	backend_pages = lib_ring_buffer_read_backend_pages(bufb, handle);
 	if (!backend_pages)
 		return NULL;
 	return shmp_index(handle, backend_pages->p, offset & (chanb->subbuf_size - 1));
 }
 
 /**
- * lib_ring_buffer_offset_address - get address of a location within the buffer
+ * lib_ring_buffer_offset_backend_pages - get the backend pages of a location within the buffer
  * @bufb : buffer backend
  * @offset : offset within the buffer.
- *
- * Return the address where a given offset is located.
- * Should be used to get the current subbuffer header pointer. Given we know
- * it's always at the beginning of a page, it's safe to write directly to this
- * address, as long as the write is never bigger than a page size.
  */
-void *lib_ring_buffer_offset_address(struct lttng_ust_ring_buffer_backend *bufb,
-				     size_t offset,
-				     struct lttng_ust_shm_handle *handle)
+struct lttng_ust_ring_buffer_backend_pages *lib_ring_buffer_offset_backend_pages(
+		struct lttng_ust_ring_buffer_backend *bufb, size_t offset,
+		struct lttng_ust_shm_handle *handle)
 {
 	size_t sbidx;
 	struct lttng_ust_ring_buffer_backend_pages_shmp *rpages;
@@ -590,6 +602,33 @@ void *lib_ring_buffer_offset_address(struct lttng_ust_ring_buffer_backend *bufb,
 	CHAN_WARN_ON(chanb, config->mode == RING_BUFFER_OVERWRITE
 		     && subbuffer_id_is_noref(config, id));
 	backend_pages = shmp(handle, rpages->shmp);
+	if (!backend_pages)
+		return NULL;
+	return backend_pages;
+}
+
+/**
+ * lib_ring_buffer_offset_address - get address of a location within the buffer
+ * @bufb : buffer backend
+ * @offset : offset within the buffer.
+ *
+ * Return the address where a given offset is located.
+ * Should be used to get the current subbuffer header pointer. Given we know
+ * it's always at the beginning of a page, it's safe to write directly to this
+ * address, as long as the write is never bigger than a page size.
+ */
+void *lib_ring_buffer_offset_address(struct lttng_ust_ring_buffer_backend *bufb,
+				     size_t offset,
+				     struct lttng_ust_shm_handle *handle)
+{
+	struct lttng_ust_ring_buffer_backend_pages *backend_pages =
+		lib_ring_buffer_offset_backend_pages(bufb, offset, handle);
+	struct channel_backend *chanb;
+
+	chanb = &shmp(handle, bufb->chan)->backend;
+	if (!chanb)
+		return NULL;
+	backend_pages = lib_ring_buffer_offset_backend_pages(bufb, offset, handle);
 	if (!backend_pages)
 		return NULL;
 	return shmp_index(handle, backend_pages->p, offset & (chanb->subbuf_size - 1));

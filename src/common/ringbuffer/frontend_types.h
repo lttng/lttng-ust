@@ -91,10 +91,6 @@ struct commit_counters_cold {
 	union v_atomic cc_sb;		/* Incremented _once_ at sb switch */
 	union {
 		struct {
-			unsigned long begin_events_discarded; /*
-							       * Events discarded before
-							       * starting sub-buffer.
-							       */
 			unsigned long end_events_discarded; /*
 							     * Passing events discarded counter
 							     * read upon try_reserve and try_switch

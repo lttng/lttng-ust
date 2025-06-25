@@ -33,6 +33,11 @@ extern int lib_ring_buffer_read_cstr(struct lttng_ust_ring_buffer_backend *bufb,
 				     struct lttng_ust_shm_handle *handle)
 	__attribute__((visibility("hidden")));
 
+extern struct lttng_ust_ring_buffer_backend_pages *
+	lib_ring_buffer_read_backend_pages(struct lttng_ust_ring_buffer_backend *bufb,
+					   struct lttng_ust_shm_handle *handle)
+	__attribute__((visibility("hidden")));
+
 /*
  * Return the address where a given offset is located.
  * Should be used to get the current subbuffer header pointer. Given we know
@@ -49,6 +54,12 @@ extern void *
 lib_ring_buffer_read_offset_address(struct lttng_ust_ring_buffer_backend *bufb,
 				    size_t offset,
 				    struct lttng_ust_shm_handle *handle)
+	__attribute__((visibility("hidden")));
+
+extern struct lttng_ust_ring_buffer_backend_pages *
+lib_ring_buffer_offset_backend_pages(struct lttng_ust_ring_buffer_backend *bufb,
+				     size_t offset,
+				     struct lttng_ust_shm_handle *handle)
 	__attribute__((visibility("hidden")));
 
 /**

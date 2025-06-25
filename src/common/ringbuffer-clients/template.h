@@ -375,6 +375,9 @@ static void client_buffer_begin(struct lttng_ust_ring_buffer *buf,
 				handle);
 	struct lttng_ust_channel_buffer *lttng_chan = channel_get_private(chan);
 	struct commit_counters_cold *cc_cold = shmp_index(handle, buf->commit_cold, subbuf_idx);
+	struct lttng_ust_ring_buffer_backend_pages *backend_pages =
+			lib_ring_buffer_offset_backend_pages(&buf->backend,
+				subbuf_idx * chan->backend.subbuf_size, handle);
 	uint64_t packet_cnt;
 
         if (!cc_cold)
@@ -414,7 +417,7 @@ static void client_buffer_begin(struct lttng_ust_ring_buffer *buf,
 	 * Because other processes need to take the ownership and lock the
 	 * sub-buffer, this can be done without atomic operation.
 	 */
-	cc_cold->begin_events_discarded = events_discarded;
+	backend_pages->u.s.begin_events_discarded = events_discarded;
 }
 
 /*
@@ -525,18 +528,10 @@ static int client_events_discarded_begin(struct lttng_ust_ring_buffer *buf,
 		uint64_t *events_discarded)
 {
 	struct lttng_ust_shm_handle *handle = chan->handle;
-	size_t subbuf_idx;
-	struct commit_counters_cold *cc_cold;
+	struct lttng_ust_ring_buffer_backend_pages *backend_pages =
+			lib_ring_buffer_read_backend_pages(&buf->backend, handle);
 
-	subbuf_idx = subbuf_index(buf->get_subbuf_consumed, chan);
-
-	cc_cold = shmp_index(handle, buf->commit_cold, subbuf_idx);
-
-	if (!cc_cold)
-		return -1;
-
-	*events_discarded = cc_cold->begin_events_discarded;
-
+	*events_discarded = backend_pages->u.s.begin_events_discarded;
 	return 0;
 }
 
