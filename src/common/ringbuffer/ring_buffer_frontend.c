@@ -201,7 +201,6 @@ void lib_ring_buffer_reset(struct lttng_ust_ring_buffer *buf,
 		v_set(config, &cc_hot->cc, 0);
 		v_set(config, &cc_hot->seq, 0);
 		v_set(config, &cc_cold->cc_sb, 0);
-		cc_cold->end_events_discarded = 0;
 		*ts_end = 0;
 	}
 	uatomic_set(&buf->consumed, 0);
@@ -1853,7 +1852,9 @@ void lib_ring_buffer_switch_old_end(struct lttng_ust_ring_buffer *buf,
 	const struct lttng_ust_ring_buffer_config *config = &chan->backend.config;
 	unsigned long oldidx = subbuf_index(offsets->old - 1, chan);
 	unsigned long commit_count, padding_size, data_size;
-	struct commit_counters_cold *cc_cold;
+	struct lttng_ust_ring_buffer_backend_pages *backend_pages =
+			lib_ring_buffer_offset_backend_pages(&buf->backend,
+				offsets->old - 1, handle);
 	struct commit_counters_hot *cc_hot;
 	uint64_t *ts_end;
 
@@ -1863,8 +1864,7 @@ void lib_ring_buffer_switch_old_end(struct lttng_ust_ring_buffer *buf,
 				handle);
 
 	ts_end = shmp_index(handle, buf->ts_end, oldidx);
-	cc_cold = shmp_index(handle, buf->commit_cold, oldidx);
-	if (!ts_end || !cc_cold)
+	if (!ts_end || !backend_pages)
 		return;
 	/*
 	 * This is the last space reservation in that sub-buffer before
@@ -1875,7 +1875,7 @@ void lib_ring_buffer_switch_old_end(struct lttng_ust_ring_buffer *buf,
 	 * current space reservation.
 	 */
 	*ts_end = ctx->priv->timestamp;
-	cc_cold->end_events_discarded =
+	backend_pages->end_events_discarded =
 		lib_ring_buffer_get_records_lost_full(config, ctx) +
 		lib_ring_buffer_get_records_lost_wrap(config, ctx) +
 		lib_ring_buffer_get_records_lost_big(config, ctx);
@@ -1971,7 +1971,9 @@ void lib_ring_buffer_switch_new_end(struct lttng_ust_ring_buffer *buf,
 				    struct lttng_ust_shm_handle *handle)
 {
 	const struct lttng_ust_ring_buffer_config *config = &chan->backend.config;
-	struct commit_counters_cold *cc_cold;
+	struct lttng_ust_ring_buffer_backend_pages *backend_pages =
+			lib_ring_buffer_offset_backend_pages(&buf->backend,
+				offsets->end - 1, handle);
 	unsigned long endidx, data_size;
 	uint64_t *ts_end;
 
@@ -1980,8 +1982,7 @@ void lib_ring_buffer_switch_new_end(struct lttng_ust_ring_buffer *buf,
 	subbuffer_set_data_size(config, &buf->backend, endidx, data_size,
 				handle);
 	ts_end = shmp_index(handle, buf->ts_end, endidx);
-	cc_cold = shmp_index(handle, buf->commit_cold, endidx);
-	if (!ts_end || !cc_cold)
+	if (!ts_end || !backend_pages)
 		return;
 	/*
 	 * This is the last space reservation in that sub-buffer before
@@ -1992,7 +1993,7 @@ void lib_ring_buffer_switch_new_end(struct lttng_ust_ring_buffer *buf,
 	 * current space reservation.
 	 */
 	*ts_end = ctx->priv->timestamp;
-	cc_cold->end_events_discarded =
+	backend_pages->end_events_discarded =
 		lib_ring_buffer_get_records_lost_full(config, ctx) +
 		lib_ring_buffer_get_records_lost_wrap(config, ctx) +
 		lib_ring_buffer_get_records_lost_big(config, ctx);

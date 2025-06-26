@@ -23,10 +23,17 @@ struct lttng_ust_ring_buffer_backend_pages {
 	DECLARE_SHMP(char, p);		/* Backing memory map */
 	union {
 		struct {
-			unsigned long begin_events_discarded; /* Events discarded before starting sub-buffer. */
-		} s;
+			unsigned long begin_events_discarded;	/* Events discarded before starting sub-buffer. */
+			unsigned long end_events_discarded;	/*
+								 * Passing events discarded counter
+								 * read upon try_reserve and try_switch
+								 * that fills a subbuffer to check_deliver
+								 * so it can be written into the packet
+								 * header field.
+								 */
+		};
 		char padding[RB_BACKEND_PAGES_PADDING];
-	} u;
+	};
 };
 
 struct lttng_ust_ring_buffer_backend_subbuffer {

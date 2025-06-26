@@ -426,7 +426,7 @@ static void client_buffer_begin(struct lttng_ust_ring_buffer *buf,
 	 * Because other processes need to take the ownership and lock the
 	 * sub-buffer, this can be done without atomic operation.
 	 */
-	backend_pages->u.s.begin_events_discarded = events_discarded;
+	backend_pages->begin_events_discarded = events_discarded;
 }
 
 /*
@@ -439,21 +439,22 @@ static void client_buffer_end(struct lttng_ust_ring_buffer *buf, uint64_t timest
 			      const struct lttng_ust_ring_buffer_ctx *ctx __attribute__((unused)))
 {
 	struct lttng_ust_ring_buffer_channel *chan = shmp(handle, buf->backend.chan);
-	struct commit_counters_cold *cc_cold = shmp_index(handle, buf->commit_cold, subbuf_idx);
 	struct packet_header *header =
 		(struct packet_header *)
 			lib_ring_buffer_offset_address(&buf->backend,
 				subbuf_idx * chan->backend.subbuf_size,
 				handle);
+	struct lttng_ust_ring_buffer_backend_pages *backend_pages =
+			lib_ring_buffer_offset_backend_pages(&buf->backend,
+				subbuf_idx * chan->backend.subbuf_size, handle);
 	ssize_t page_size = LTTNG_UST_PAGE_SIZE;
 
 	assert(header);
-	assert(cc_cold);
 	if (!header)
 		return;
 	if (page_size < 0)
 		return;
-	if (!cc_cold)
+	if (!backend_pages)
 		return;
 
 	header->ctx.timestamp_end = timestamp;
@@ -461,7 +462,7 @@ static void client_buffer_end(struct lttng_ust_ring_buffer *buf, uint64_t timest
 		(uint64_t) data_size * CHAR_BIT;		/* in bits */
 	header->ctx.packet_size =
 		(uint64_t) LTTNG_UST_ALIGN(data_size, page_size) * CHAR_BIT;	/* in bits */
-	header->ctx.events_discarded = cc_cold->end_events_discarded;
+	header->ctx.events_discarded = backend_pages->end_events_discarded;
 }
 
 static int client_buffer_create(
@@ -540,7 +541,7 @@ static int client_events_discarded_begin(struct lttng_ust_ring_buffer *buf,
 	struct lttng_ust_ring_buffer_backend_pages *backend_pages =
 			lib_ring_buffer_read_backend_pages(&buf->backend, handle);
 
-	*events_discarded = backend_pages->u.s.begin_events_discarded;
+	*events_discarded = backend_pages->begin_events_discarded;
 	return 0;
 }
 
