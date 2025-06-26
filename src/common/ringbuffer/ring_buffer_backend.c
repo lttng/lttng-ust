@@ -323,9 +323,6 @@ int channel_backend_init(struct channel_backend *chanb,
 	shmsize += sizeof(struct commit_counters_hot) * num_subbuf;
 	shmsize += lttng_ust_offset_align(shmsize, __alignof__(struct commit_counters_cold));
 	shmsize += sizeof(struct commit_counters_cold) * num_subbuf;
-	/* Sampled timestamp end */
-	shmsize += lttng_ust_offset_align(shmsize, __alignof__(uint64_t));
-	shmsize += sizeof(uint64_t) * num_subbuf;
 
 	/* Per-cpu buffer size: backend */
 	/* num_subbuf + 1 is the worse case */

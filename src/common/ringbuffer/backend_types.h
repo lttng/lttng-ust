@@ -14,7 +14,7 @@
 #include "shm_internal.h"
 #include "vatomic.h"
 
-#define RB_BACKEND_PAGES_PADDING	16
+#define RB_BACKEND_PAGES_PADDING	128
 struct lttng_ust_ring_buffer_backend_pages {
 	unsigned long mmap_offset;	/* offset of the subbuffer in mmap */
 	union v_atomic records_commit;	/* current records committed count */
@@ -30,6 +30,20 @@ struct lttng_ust_ring_buffer_backend_pages {
 								 * that fills a subbuffer to check_deliver
 								 * so it can be written into the packet
 								 * header field.
+								 */
+			uint64_t timestamp_end;			/*
+								 * timestamp_end per sub-buffer.
+								 * Time is sampled by the
+								 * switch_*_end() callbacks
+								 * which are the last space
+								 * reservation performed in the
+								 * sub-buffer before it can be
+								 * fully committed and
+								 * delivered. This time value is
+								 * then read by the deliver
+								 * callback, performed by the
+								 * last commit before the buffer
+								 * becomes readable.
 								 */
 		};
 		char padding[RB_BACKEND_PAGES_PADDING];
