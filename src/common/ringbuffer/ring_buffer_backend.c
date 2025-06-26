@@ -292,10 +292,9 @@ int channel_backend_init(struct channel_backend *chanb,
 	if (!num_subbuf || (num_subbuf & (num_subbuf - 1)))
 		return -EINVAL;
 	/*
-	 * Overwrite mode buffers require at least 2 subbuffers per
-	 * buffer.
+	 * Require at least 2 subbuffers per buffer.
 	 */
-	if (config->mode == RING_BUFFER_OVERWRITE && num_subbuf < 2)
+	if (num_subbuf < 2)
 		return -EINVAL;
 
 	ret = subbuffer_id_check_index(config, num_subbuf);
@@ -307,8 +306,11 @@ int channel_backend_init(struct channel_backend *chanb,
 	chanb->buf_size_order = lttng_ust_get_count_order_ulong(chanb->buf_size);
 	chanb->subbuf_size_order = lttng_ust_get_count_order_ulong(subbuf_size);
 	chanb->num_subbuf_order = lttng_ust_get_count_order_ulong(num_subbuf);
-	chanb->extra_reader_sb =
-			(config->mode == RING_BUFFER_OVERWRITE) ? 1 : 0;
+	/*
+	 * Allocate an extra subbuffer for the reader to allow punching
+	 * holes (reclaim pages) from any type of ring buffer.
+	 */
+	chanb->extra_reader_sb = 1;
 	chanb->num_subbuf = num_subbuf;
 	strncpy(chanb->name, name, NAME_MAX);
 	chanb->name[NAME_MAX - 1] = '\0';
@@ -445,8 +447,7 @@ size_t lib_ring_buffer_read(struct lttng_ust_ring_buffer_backend *bufb, size_t o
 	 * subbuffers.
 	 */
 	CHAN_WARN_ON(chanb, offset >= chanb->buf_size);
-	CHAN_WARN_ON(chanb, config->mode == RING_BUFFER_OVERWRITE
-		     && subbuffer_id_is_noref(config, id));
+	CHAN_WARN_ON(chanb, subbuffer_id_is_noref(config, id));
 	backend_pages = shmp(handle, rpages->shmp);
 	if (!backend_pages)
 		return 0;
@@ -497,8 +498,7 @@ int lib_ring_buffer_read_cstr(struct lttng_ust_ring_buffer_backend *bufb, size_t
 	 * subbuffers.
 	 */
 	CHAN_WARN_ON(chanb, offset >= chanb->buf_size);
-	CHAN_WARN_ON(chanb, config->mode == RING_BUFFER_OVERWRITE
-		     && subbuffer_id_is_noref(config, id));
+	CHAN_WARN_ON(chanb, subbuffer_id_is_noref(config, id));
 	backend_pages = shmp(handle, rpages->shmp);
 	if (!backend_pages)
 		return -EINVAL;
@@ -536,8 +536,7 @@ struct lttng_ust_ring_buffer_backend_pages *
 	rpages = shmp_index(handle, bufb->array, sb_bindex);
 	if (!rpages)
 		return NULL;
-	CHAN_WARN_ON(chanb, config->mode == RING_BUFFER_OVERWRITE
-		     && subbuffer_id_is_noref(config, id));
+	CHAN_WARN_ON(chanb, subbuffer_id_is_noref(config, id));
 	backend_pages = shmp(handle, rpages->shmp);
 	return backend_pages;
 }
@@ -600,8 +599,7 @@ struct lttng_ust_ring_buffer_backend_pages *lib_ring_buffer_offset_backend_pages
 	rpages = shmp_index(handle, bufb->array, sb_bindex);
 	if (!rpages)
 		return NULL;
-	CHAN_WARN_ON(chanb, config->mode == RING_BUFFER_OVERWRITE
-		     && subbuffer_id_is_noref(config, id));
+	CHAN_WARN_ON(chanb, subbuffer_id_is_noref(config, id));
 	backend_pages = shmp(handle, rpages->shmp);
 	if (!backend_pages)
 		return NULL;

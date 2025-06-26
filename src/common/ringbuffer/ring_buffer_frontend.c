@@ -1658,8 +1658,7 @@ void lib_ring_buffer_put_subbuf(struct lttng_ust_ring_buffer *buf,
 	v_add(config, v_read(config, &backend_pages->records_unread),
 			&bufb->records_read);
 	v_set(config, &backend_pages->records_unread, 0);
-	CHAN_WARN_ON(chan, config->mode == RING_BUFFER_OVERWRITE
-		     && subbuffer_id_is_noref(config, bufb->buf_rsb.id));
+	CHAN_WARN_ON(chan, subbuffer_id_is_noref(config, bufb->buf_rsb.id));
 	subbuffer_id_set_noref(config, &bufb->buf_rsb.id);
 
 	/*

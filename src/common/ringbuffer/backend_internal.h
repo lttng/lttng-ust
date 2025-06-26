@@ -105,16 +105,11 @@ extern void _lib_ring_buffer_write(struct lttng_ust_ring_buffer_backend *bufb,
  * mode).
  */
 static inline
-unsigned long subbuffer_id(const struct lttng_ust_ring_buffer_config *config,
+unsigned long subbuffer_id(const struct lttng_ust_ring_buffer_config *config __attribute__((unused)),
 			   unsigned long offset, unsigned long noref,
 			   unsigned long index)
 {
-	if (config->mode == RING_BUFFER_OVERWRITE)
-		return (offset << SB_ID_OFFSET_SHIFT)
-		       | (noref << SB_ID_NOREF_SHIFT)
-		       | index;
-	else
-		return index;
+	return (offset << SB_ID_OFFSET_SHIFT) | (noref << SB_ID_NOREF_SHIFT) | index;
 }
 
 /*
@@ -130,23 +125,17 @@ int subbuffer_id_compare_offset(
 }
 
 static inline
-unsigned long subbuffer_id_get_index(const struct lttng_ust_ring_buffer_config *config,
+unsigned long subbuffer_id_get_index(const struct lttng_ust_ring_buffer_config *config __attribute__((unused)),
 				     unsigned long id)
 {
-	if (config->mode == RING_BUFFER_OVERWRITE)
-		return id & SB_ID_INDEX_MASK;
-	else
-		return id;
+	return id & SB_ID_INDEX_MASK;
 }
 
 static inline
-unsigned long subbuffer_id_is_noref(const struct lttng_ust_ring_buffer_config *config,
+unsigned long subbuffer_id_is_noref(const struct lttng_ust_ring_buffer_config *config __attribute__((unused)),
 				    unsigned long id)
 {
-	if (config->mode == RING_BUFFER_OVERWRITE)
-		return !!(id & SB_ID_NOREF_MASK);
-	else
-		return 1;
+	return !!(id & SB_ID_NOREF_MASK);
 }
 
 /*
@@ -154,36 +143,32 @@ unsigned long subbuffer_id_is_noref(const struct lttng_ust_ring_buffer_config *c
  * needed.
  */
 static inline
-void subbuffer_id_set_noref(const struct lttng_ust_ring_buffer_config *config,
+void subbuffer_id_set_noref(const struct lttng_ust_ring_buffer_config *config __attribute__((unused)),
 			    unsigned long *id)
 {
-	if (config->mode == RING_BUFFER_OVERWRITE)
-		*id |= SB_ID_NOREF_MASK;
+	*id |= SB_ID_NOREF_MASK;
 }
 
 static inline
-void subbuffer_id_set_noref_offset(const struct lttng_ust_ring_buffer_config *config,
+void subbuffer_id_set_noref_offset(const struct lttng_ust_ring_buffer_config *config __attribute__((unused)),
 				   unsigned long *id, unsigned long offset)
 {
 	unsigned long tmp;
 
-	if (config->mode == RING_BUFFER_OVERWRITE) {
-		tmp = *id;
-		tmp &= ~SB_ID_OFFSET_MASK;
-		tmp |= offset << SB_ID_OFFSET_SHIFT;
-		tmp |= SB_ID_NOREF_MASK;
-		/* Volatile store, read concurrently by readers. */
-		CMM_ACCESS_ONCE(*id) = tmp;
-	}
+	tmp = *id;
+	tmp &= ~SB_ID_OFFSET_MASK;
+	tmp |= offset << SB_ID_OFFSET_SHIFT;
+	tmp |= SB_ID_NOREF_MASK;
+	/* Volatile store, read concurrently by readers. */
+	CMM_ACCESS_ONCE(*id) = tmp;
 }
 
 /* No volatile access, since already used locally */
 static inline
-void subbuffer_id_clear_noref(const struct lttng_ust_ring_buffer_config *config,
+void subbuffer_id_clear_noref(const struct lttng_ust_ring_buffer_config *config __attribute__((unused)),
 			      unsigned long *id)
 {
-	if (config->mode == RING_BUFFER_OVERWRITE)
-		*id &= ~SB_ID_NOREF_MASK;
+	*id &= ~SB_ID_NOREF_MASK;
 }
 
 /*
@@ -194,13 +179,10 @@ void subbuffer_id_clear_noref(const struct lttng_ust_ring_buffer_config *config,
  * -EPERM on failure.
  */
 static inline
-int subbuffer_id_check_index(const struct lttng_ust_ring_buffer_config *config,
+int subbuffer_id_check_index(const struct lttng_ust_ring_buffer_config *config __attribute__((unused)),
 			     unsigned long num_subbuf)
 {
-	if (config->mode == RING_BUFFER_OVERWRITE)
-		return (num_subbuf > (1UL << HALF_ULONG_BITS)) ? -EPERM : 0;
-	else
-		return 0;
+	return (num_subbuf > (1UL << HALF_ULONG_BITS)) ? -EPERM : 0;
 }
 
 static inline
@@ -230,8 +212,7 @@ int lib_ring_buffer_backend_get_pages(const struct lttng_ust_ring_buffer_config 
 	if (caa_unlikely(!rpages))
 		return -1;
 	CHAN_WARN_ON(ctx_private->chan,
-		     config->mode == RING_BUFFER_OVERWRITE
-		     && subbuffer_id_is_noref(config, id));
+		     subbuffer_id_is_noref(config, id));
 	_backend_pages = shmp(handle, rpages->shmp);
 	if (caa_unlikely(!_backend_pages))
 		return -1;
@@ -516,9 +497,6 @@ void lib_ring_buffer_clear_noref(const struct lttng_ust_ring_buffer_config *conf
 	unsigned long id, new_id;
 	struct lttng_ust_ring_buffer_backend_subbuffer *wsb;
 
-	if (config->mode != RING_BUFFER_OVERWRITE)
-		return;
-
 	/*
 	 * Performing a volatile access to read the sb_pages, because we want to
 	 * read a coherent version of the pointer and the associated noref flag.
@@ -560,9 +538,6 @@ void lib_ring_buffer_set_noref_offset(const struct lttng_ust_ring_buffer_config 
 	struct lttng_ust_ring_buffer_backend_subbuffer *wsb;
 	struct lttng_ust_ring_buffer_channel *chan;
 
-	if (config->mode != RING_BUFFER_OVERWRITE)
-		return;
-
 	wsb = shmp_index(handle, bufb->buf_wsb, idx);
 	if (!wsb)
 		return;
@@ -601,45 +576,39 @@ int update_read_sb_index(const struct lttng_ust_ring_buffer_config *config,
 			 struct lttng_ust_shm_handle *handle)
 {
 	struct lttng_ust_ring_buffer_backend_subbuffer *wsb;
+	struct lttng_ust_ring_buffer_channel *chan;
 	unsigned long old_id, new_id;
 
 	wsb = shmp_index(handle, bufb->buf_wsb, consumed_idx);
 	if (caa_unlikely(!wsb))
 		return -EPERM;
 
-	if (config->mode == RING_BUFFER_OVERWRITE) {
-		struct lttng_ust_ring_buffer_channel *chan;
-
-		/*
-		 * Exchange the target writer subbuffer with our own unused
-		 * subbuffer. No need to use CMM_ACCESS_ONCE() here to read the
-		 * old_wpage, because the value read will be confirmed by the
-		 * following cmpxchg().
-		 */
-		old_id = wsb->id;
-		if (caa_unlikely(!subbuffer_id_is_noref(config, old_id)))
-			return -EAGAIN;
-		/*
-		 * Make sure the offset count we are expecting matches the one
-		 * indicated by the writer.
-		 */
-		if (caa_unlikely(!subbuffer_id_compare_offset(config, old_id,
-							  consumed_count)))
-			return -EAGAIN;
-		chan = shmp(handle, bufb->chan);
-		if (caa_unlikely(!chan))
-			return -EPERM;
-		CHAN_WARN_ON(chan, !subbuffer_id_is_noref(config, bufb->buf_rsb.id));
-		subbuffer_id_set_noref_offset(config, &bufb->buf_rsb.id,
-					      consumed_count);
-		new_id = uatomic_cmpxchg(&wsb->id, old_id, bufb->buf_rsb.id);
-		if (caa_unlikely(old_id != new_id))
-			return -EAGAIN;
-		bufb->buf_rsb.id = new_id;
-	} else {
-		/* No page exchange, use the writer page directly */
-		bufb->buf_rsb.id = wsb->id;
-	}
+	/*
+	 * Exchange the target writer subbuffer with our own unused
+	 * subbuffer. No need to use CMM_ACCESS_ONCE() here to read the
+	 * old_wpage, because the value read will be confirmed by the
+	 * following cmpxchg().
+	 */
+	old_id = wsb->id;
+	if (caa_unlikely(!subbuffer_id_is_noref(config, old_id)))
+		return -EAGAIN;
+	/*
+	 * Make sure the offset count we are expecting matches the one
+	 * indicated by the writer.
+	 */
+	if (caa_unlikely(!subbuffer_id_compare_offset(config, old_id,
+						  consumed_count)))
+		return -EAGAIN;
+	chan = shmp(handle, bufb->chan);
+	if (caa_unlikely(!chan))
+		return -EPERM;
+	CHAN_WARN_ON(chan, !subbuffer_id_is_noref(config, bufb->buf_rsb.id));
+	subbuffer_id_set_noref_offset(config, &bufb->buf_rsb.id,
+				      consumed_count);
+	new_id = uatomic_cmpxchg(&wsb->id, old_id, bufb->buf_rsb.id);
+	if (caa_unlikely(old_id != new_id))
+		return -EAGAIN;
+	bufb->buf_rsb.id = new_id;
 	return 0;
 }
 
