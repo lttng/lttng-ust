@@ -2372,13 +2372,12 @@ retry:
 	}
 	/*
 	 * Populate the records lost counters when the space reservation
-	 * may cause a sub-buffer switch.
+	 * may cause a sub-buffer switch. Due to lazy padding, we always
+	 * need to populate those.
 	 */
-	if (offsets->switch_new_end || offsets->switch_old_end) {
-		ctx_private->records_lost_full = v_read(config, &buf->records_lost_full);
-		ctx_private->records_lost_wrap = v_read(config, &buf->records_lost_wrap);
-		ctx_private->records_lost_big = v_read(config, &buf->records_lost_big);
-	}
+	ctx_private->records_lost_full = v_read(config, &buf->records_lost_full);
+	ctx_private->records_lost_wrap = v_read(config, &buf->records_lost_wrap);
+	ctx_private->records_lost_big = v_read(config, &buf->records_lost_big);
 	return 0;
 }
 

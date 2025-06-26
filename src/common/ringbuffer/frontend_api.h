@@ -126,6 +126,14 @@ int lib_ring_buffer_try_reserve(const struct lttng_ust_ring_buffer_config *confi
 		 */
 		return 1;
 
+	/*
+	 * Populate the records lost counters prior to an eventual lazy
+	 * padding.
+	 */
+	ctx_private->records_lost_full = v_read(config, &buf->records_lost_full);
+	ctx_private->records_lost_wrap = v_read(config, &buf->records_lost_wrap);
+	ctx_private->records_lost_big = v_read(config, &buf->records_lost_big);
+
 	return 0;
 }
 
