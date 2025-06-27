@@ -2,6 +2,13 @@
 #
 # SPDX-License-Identifier: CC-BY-4.0
 
+2025-06-27 lttng-ust 2.14.0
+	* Fix: Sample current `events_discarded` for populating packet
+	* Add `current_events_discarded` callback
+	* Fix: Set events_discarded on terminal packets
+	* Fix: Sample discarded packet counters per sub-buffer
+	* lttng-ust(3): `cpu_id` is now addable with a per-channel policy
+
 2025-05-14 lttng-ust 2.14.0-rc2
 	* Only compile trace hit counter code with experimental define
 	* Hide experimental counter symbols
