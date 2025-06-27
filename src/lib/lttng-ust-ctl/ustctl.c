@@ -3129,6 +3129,89 @@ int lttng_ust_ctl_timestamp_add(struct lttng_ust_ctl_consumer_stream *stream,
 	return 0;
 }
 
+static
+int _lttng_ust_ctl_get_subbuf_timestamp_range(struct lttng_ust_ring_buffer *buf,
+		struct lttng_ust_ring_buffer_channel *chan,
+		uint64_t *_timestamp_begin, uint64_t *_timestamp_end,
+		unsigned long pos)
+{
+	const struct lttng_ust_ring_buffer_config *config = &chan->backend.config;
+	struct lttng_ust_ring_buffer_backend_pages *backend_pages;
+	unsigned long consume, reserve, prev_reserve, cold;
+	struct commit_counters_cold *cc_cold;
+	uint64_t timestamp_begin, timestamp_end;
+	int ret;
+
+	ret = lib_ring_buffer_snapshot_sample_positions(buf, &consume, &reserve, chan->handle);
+	if (ret)
+		return ret;
+	/* Order position snapshot before reading timestamp_end. */
+	cmm_smp_rmb();
+	prev_reserve = subbuf_align(reserve - 1, chan) - chan->backend.buf_size;
+	if ((long)(pos - prev_reserve) < 0)
+		return -ENODATA;
+	if ((long)(pos - subbuf_align(reserve - 1, chan)) >= 0)
+		return -ENODATA;
+	if ((long)(pos - subbuf_trunc(reserve, chan)) >= 0)
+		return -EBUSY;
+	backend_pages = lib_ring_buffer_offset_backend_pages(&buf->backend, pos, chan->handle);
+	if (!backend_pages)
+		return -EIO;
+	cc_cold = shmp_index(chan->handle, buf->commit_cold, subbuf_index(pos, chan));
+	if (!cc_cold)
+		return -EIO;
+	cold = v_read(config, &cc_cold->cc_sb);
+	/*
+	 * Check if all commits (and deliver) associated with this
+	 * position have been done.
+	 */
+	if ((buf_trunc(pos, chan) >> chan->backend.num_subbuf_order) - (cold & chan->commit_count_mask) != 0) {
+		return -EBUSY;
+	}
+	timestamp_begin = backend_pages->timestamp_begin;
+	timestamp_end = backend_pages->timestamp_end;
+	/*
+	 * After reading the timestamp_end, validate once more that it
+	 * has not been overwritten.
+	 */
+	/* Order reading timestamp_end before position snapshot. */
+	cmm_smp_rmb();
+	ret = lib_ring_buffer_snapshot_sample_positions(buf, &consume, &reserve, chan->handle);
+	if (ret)
+		return ret;
+	prev_reserve = subbuf_align(reserve - 1, chan) - chan->backend.buf_size;
+	if ((long)(pos - prev_reserve) < 0)
+		return -ENODATA;
+	if (_timestamp_begin)
+		*_timestamp_begin = timestamp_begin;
+	if (_timestamp_end)
+		*_timestamp_end = timestamp_end;
+	return 0;
+}
+
+int lttng_ust_ctl_get_subbuf_timestamp_range(struct lttng_ust_ctl_consumer_stream *stream,
+		uint64_t *timestamp_begin, uint64_t *timestamp_end, unsigned long pos)
+{
+	struct lttng_ust_ring_buffer_channel *chan;
+	struct lttng_ust_ring_buffer *buf;
+	struct lttng_ust_sigbus_range range;
+	int ret;
+
+	if (!stream)
+		return -EINVAL;
+	buf = stream->buf;
+	chan = stream->chan->chan->priv->rb_chan;
+	if (sigbus_begin())
+		return -EIO;
+	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
+				stream->memory_map_size);
+	ret = _lttng_ust_ctl_get_subbuf_timestamp_range(buf,
+			chan, timestamp_begin, timestamp_end, pos);
+	lttng_ust_sigbus_del_range(&range);
+	sigbus_end();
+	return ret;
+}
+
 int lttng_ust_ctl_get_sequence_number(struct lttng_ust_ctl_consumer_stream *stream,
 		uint64_t *seq)
 {
