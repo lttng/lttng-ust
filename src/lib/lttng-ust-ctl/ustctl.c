@@ -2168,7 +2168,7 @@ int lttng_ust_ctl_fixup_stalled_stream(struct lttng_ust_ctl_consumer_stream *str
 	if (!stream)
 		return -EINVAL;
 
-	if (consumed_pos >= produced_pos)
+	if ((long)(consumed_pos - produced_pos) >= 0)
 		return 0;
 
 	if (sigbus_begin())
