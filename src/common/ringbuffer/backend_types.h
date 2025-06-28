@@ -31,6 +31,10 @@ struct lttng_ust_ring_buffer_backend_pages {
 								 * so it can be written into the packet
 								 * header field.
 								 */
+			uint64_t timestamp_begin;		/*
+								 * timestamp_begin
+								 * per-subbuffer.
+								 */
 			uint64_t timestamp_end;			/*
 								 * timestamp_end per sub-buffer.
 								 * Time is sampled by the

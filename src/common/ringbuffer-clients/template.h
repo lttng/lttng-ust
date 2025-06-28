@@ -426,6 +426,7 @@ static void client_buffer_begin(struct lttng_ust_ring_buffer *buf,
 	 * Because other processes need to take the ownership and lock the
 	 * sub-buffer, this can be done without atomic operation.
 	 */
+	backend_pages->timestamp_begin = timestamp;
 	backend_pages->begin_events_discarded = events_discarded;
 }
 
