@@ -1427,6 +1427,48 @@ void lib_ring_buffer_move_consumer(struct lttng_ust_ring_buffer *buf,
 }
 
 /**
+ * lib_ring_buffer_try_exchange_subbuf - exchange subbuffer at pos with reader subbuffer
+ * @buf: ring buffer
+ * @pos: produce position to exchange
+ *
+ * Return -ENOENT if the subbuffer is being used for writing or there is
+ * no subbuffer matching the @pos producer position in the buffer, else
+ * return 0 on success. Return -EIO on shared memory access error.
+ */
+int lib_ring_buffer_try_exchange_subbuf(struct lttng_ust_ring_buffer *buf,
+	unsigned long pos, struct lttng_ust_shm_handle *handle)
+{
+	const struct lttng_ust_ring_buffer_config *config;
+	struct lttng_ust_ring_buffer_channel *chan;
+	unsigned long idx;
+	int ret;
+
+	chan = shmp(handle, buf->backend.chan);
+	if (!chan)
+		return -EIO;
+	config = &chan->backend.config;
+
+	/*
+	 * Move the consumer forward one subbuffer ahead of pos if we
+	 * are about to exchange a yet unconsumed subbuffer.
+	 */
+	lib_ring_buffer_move_consumer(buf, subbuf_align(pos, chan), handle);
+
+	idx = subbuf_index(pos, chan);
+	ret = update_read_sb_index(config, &buf->backend, &chan->backend,
+				   idx, buf_trunc_val(pos, chan),
+				   handle);
+	switch (ret) {
+	case -EPERM:
+		return -EIO;
+	case -EAGAIN:
+		return -ENOENT;
+	}
+	subbuffer_id_clear_noref(config, &buf->backend.buf_rsb.id);
+	return 0;
+}
+
+/**
  * lib_ring_buffer_get_subbuf - get exclusive access to subbuffer for reading
  * @buf: ring buffer
  * @consumed: consumed count indicating the position where to read

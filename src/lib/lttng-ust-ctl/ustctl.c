@@ -3212,6 +3212,27 @@ int lttng_ust_ctl_get_subbuf_timestamp_range(struct lttng_ust_ctl_consumer_strea
 	return ret;
 }
 
+int lttng_ust_ctl_try_exchange_subbuf(struct lttng_ust_ctl_consumer_stream *stream, unsigned long pos)
+{
+	struct lttng_ust_ring_buffer_channel *chan;
+	struct lttng_ust_ring_buffer *buf;
+	struct lttng_ust_sigbus_range range;
+	int ret;
+
+	if (!stream)
+		return -EINVAL;
+	buf = stream->buf;
+	chan = stream->chan->chan->priv->rb_chan;
+	if (sigbus_begin())
+		return -EIO;
+	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
+				stream->memory_map_size);
+	ret = lib_ring_buffer_try_exchange_subbuf(buf, pos, chan->handle);
+	lttng_ust_sigbus_del_range(&range);
+	sigbus_end();
+	return ret;
+}
+
 int lttng_ust_ctl_get_sequence_number(struct lttng_ust_ctl_consumer_stream *stream,
 		uint64_t *seq)
 {

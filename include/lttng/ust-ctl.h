@@ -425,6 +425,15 @@ int lttng_ust_ctl_timestamp_add(struct lttng_ust_ctl_consumer_stream *stream,
 		uint64_t *ts, int64_t delta_ns);
 
 /*
+ * Try to exchange the subbuffer corresponding to @pos with the reader subbuffer.
+ *
+ * Return -ENOENT if the subbuffer is being used for writing or there is
+ * no subbuffer matching the @pos producer position in the buffer, else
+ * return 0 on success. Return -EIO on shared memory access error.
+ */
+int lttng_ust_ctl_try_exchange_subbuf(struct lttng_ust_ctl_consumer_stream *stream, unsigned long pos);
+
+/*
  * Get the latest timestamp begin/end for a given subbuffer produce
  * position, if available. This allows querying unconsumed as well as
  * already consumed subbuffers.
