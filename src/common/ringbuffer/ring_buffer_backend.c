@@ -38,7 +38,8 @@ int lib_ring_buffer_backend_allocate(const struct lttng_ust_ring_buffer_config *
 				     size_t size __attribute__((unused)), size_t num_subbuf,
 				     int extra_reader_sb,
 				     struct lttng_ust_shm_handle *handle,
-				     struct shm_object *shmobj)
+				     struct shm_object *shmobj,
+				     bool populate)
 {
 	struct channel_backend *chanb;
 	unsigned long subbuf_size, mmap_offset = 0;
@@ -140,6 +141,10 @@ int lib_ring_buffer_backend_allocate(const struct lttng_ust_ring_buffer_config *
 			pages->mmap_offset = mmap_offset;
 			mmap_offset += subbuf_size;
 		}
+		if (populate) {
+			pages->timestamp_begin = chanb->start_timestamp;
+			pages->timestamp_end = chanb->start_timestamp;
+		}
 	}
 	return 0;
 
@@ -157,7 +162,7 @@ page_size_error:
 int lib_ring_buffer_backend_create(struct lttng_ust_ring_buffer_backend *bufb,
 				   struct channel_backend *chanb, int cpu,
 				   struct lttng_ust_shm_handle *handle,
-				   struct shm_object *shmobj)
+				   struct shm_object *shmobj, bool populate)
 {
 	const struct lttng_ust_ring_buffer_config *config = &chanb->config;
 
@@ -167,7 +172,7 @@ int lib_ring_buffer_backend_create(struct lttng_ust_ring_buffer_backend *bufb,
 	return lib_ring_buffer_backend_allocate(config, bufb, chanb->buf_size,
 						chanb->num_subbuf,
 						chanb->extra_reader_sb,
-						handle, shmobj);
+						handle, shmobj, populate);
 }
 
 void lib_ring_buffer_backend_reset(struct lttng_ust_ring_buffer_backend *bufb,
@@ -301,6 +306,7 @@ int channel_backend_init(struct channel_backend *chanb,
 	if (ret)
 		return ret;
 
+	chanb->start_timestamp = config->cb.ring_buffer_clock_read(chan);
 	chanb->buf_size = num_subbuf * subbuf_size;
 	chanb->subbuf_size = subbuf_size;
 	chanb->buf_size_order = lttng_ust_get_count_order_ulong(chanb->buf_size);
@@ -344,11 +350,11 @@ int channel_backend_init(struct channel_backend *chanb,
 		 * We need to allocate for all possible cpus.
 		 */
 		for_each_possible_cpu(i) {
+			bool populate = lttng_ust_map_populate_cpu_is_enabled(i);
 			struct shm_object *shmobj;
 
 			shmobj = shm_object_table_alloc(handle->table, shmsize,
-					SHM_OBJECT_SHM, stream_fds[i], i,
-					lttng_ust_map_populate_cpu_is_enabled(i));
+					SHM_OBJECT_SHM, stream_fds[i], i, populate);
 			if (!shmobj)
 				goto end;
 			align_shm(shmobj, __alignof__(struct lttng_ust_ring_buffer));
@@ -358,17 +364,18 @@ int channel_backend_init(struct channel_backend *chanb,
 				goto end;
 			set_shmp(buf->self, chanb->buf[i].shmp._ref);
 			ret = lib_ring_buffer_create(buf, chanb, i,
-					handle, shmobj);
+					handle, shmobj, populate);
 			if (ret)
 				goto free_bufs;	/* cpu hotplug locked */
 		}
 	} else {
+		bool populate = lttng_ust_map_populate_is_enabled();
 		struct shm_object *shmobj;
 		struct lttng_ust_ring_buffer *buf;
 
 		shmobj = shm_object_table_alloc(handle->table, shmsize,
 					SHM_OBJECT_SHM, stream_fds[0], -1,
-					lttng_ust_map_populate_is_enabled());
+					populate);
 		if (!shmobj)
 			goto end;
 		align_shm(shmobj, __alignof__(struct lttng_ust_ring_buffer));
@@ -378,11 +385,10 @@ int channel_backend_init(struct channel_backend *chanb,
 			goto end;
 		set_shmp(buf->self, chanb->buf[0].shmp._ref);
 		ret = lib_ring_buffer_create(buf, chanb, -1,
-					handle, shmobj);
+					handle, shmobj, populate);
 		if (ret)
 			goto free_bufs;
 	}
-	chanb->start_timestamp = config->cb.ring_buffer_clock_read(chan);
 
 	return 0;
 
