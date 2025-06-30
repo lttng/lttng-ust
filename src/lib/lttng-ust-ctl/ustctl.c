@@ -3130,46 +3130,51 @@ int lttng_ust_ctl_timestamp_add(struct lttng_ust_ctl_consumer_stream *stream,
 }
 
 static
-int _lttng_ust_ctl_get_subbuf_timestamp_range(struct lttng_ust_ring_buffer *buf,
+int _lttng_ust_ctl_get_subbuf_state(struct lttng_ust_ring_buffer *buf,
 		struct lttng_ust_ring_buffer_channel *chan,
+		unsigned long subbuf_idx, unsigned long *_pos,
 		uint64_t *_timestamp_begin, uint64_t *_timestamp_end,
-		unsigned long pos)
+		bool *_populated)
 {
 	const struct lttng_ust_ring_buffer_config *config = &chan->backend.config;
 	struct lttng_ust_ring_buffer_backend_pages *backend_pages;
-	unsigned long consume, reserve, prev_reserve, cold;
+	unsigned long pos, consume, reserve, prev_reserve, cold;
 	struct commit_counters_cold *cc_cold;
 	uint64_t timestamp_begin, timestamp_end;
+	bool populated;
 	int ret;
+
+	if (subbuf_idx >= (1UL << chan->backend.num_subbuf_order))
+		return -EINVAL;
 
 	ret = lib_ring_buffer_snapshot_sample_positions(buf, &consume, &reserve, chan->handle);
 	if (ret)
 		return ret;
-	/* Order position snapshot before reading timestamp_end. */
+	/* Order position snapshot before reading state. */
 	cmm_smp_rmb();
 	prev_reserve = subbuf_align(reserve - 1, chan) - chan->backend.buf_size;
-	if ((long)(pos - prev_reserve) < 0)
-		return -ENODATA;
-	if ((long)(pos - subbuf_align(reserve - 1, chan)) >= 0)
-		return -ENODATA;
-	if ((long)(pos - subbuf_trunc(reserve, chan)) >= 0)
+	if (subbuf_idx == subbuf_index(reserve, chan))
 		return -EBUSY;
-	backend_pages = lib_ring_buffer_offset_backend_pages(&buf->backend, pos, chan->handle);
+	backend_pages = lib_ring_buffer_index_backend_pages(&buf->backend, subbuf_idx, chan->handle);
 	if (!backend_pages)
 		return -EIO;
-	cc_cold = shmp_index(chan->handle, buf->commit_cold, subbuf_index(pos, chan));
+	cc_cold = shmp_index(chan->handle, buf->commit_cold, subbuf_idx);
 	if (!cc_cold)
 		return -EIO;
 	cold = v_read(config, &cc_cold->cc_sb);
+	pos = prev_reserve;
+	if (subbuf_index(pos, chan) < subbuf_idx)
+		pos += chan->backend.buf_size;
+	pos = buf_trunc(pos, chan) + (subbuf_idx * chan->backend.subbuf_size);
 	/*
 	 * Check if all commits (and deliver) associated with this
 	 * position have been done.
 	 */
-	if ((buf_trunc(pos, chan) >> chan->backend.num_subbuf_order) - (cold & chan->commit_count_mask) != 0) {
+	if ((buf_trunc(pos, chan) >> chan->backend.num_subbuf_order) - (cold & chan->commit_count_mask) != 0)
 		return -EBUSY;
-	}
 	timestamp_begin = backend_pages->timestamp_begin;
 	timestamp_end = backend_pages->timestamp_end;
+	populated = backend_pages->populated;
 	/*
 	 * After reading the timestamp_end, validate once more that it
 	 * has not been overwritten.
@@ -3181,16 +3186,22 @@ int _lttng_ust_ctl_get_subbuf_timestamp_range(struct lttng_ust_ring_buffer *buf,
 		return ret;
 	prev_reserve = subbuf_align(reserve - 1, chan) - chan->backend.buf_size;
 	if ((long)(pos - prev_reserve) < 0)
-		return -ENODATA;
+		return -EBUSY;
+	if (_pos)
+		*_pos = pos;
 	if (_timestamp_begin)
 		*_timestamp_begin = timestamp_begin;
 	if (_timestamp_end)
 		*_timestamp_end = timestamp_end;
+	if (_populated)
+		*_populated = populated;
 	return 0;
 }
 
-int lttng_ust_ctl_get_subbuf_timestamp_range(struct lttng_ust_ctl_consumer_stream *stream,
-		uint64_t *timestamp_begin, uint64_t *timestamp_end, unsigned long pos)
+int lttng_ust_ctl_get_subbuf_state(struct lttng_ust_ctl_consumer_stream *stream,
+		unsigned long subbuf_idx, unsigned long *pos,
+		uint64_t *timestamp_begin, uint64_t *timestamp_end,
+		bool *populated)
 {
 	struct lttng_ust_ring_buffer_channel *chan;
 	struct lttng_ust_ring_buffer *buf;
@@ -3205,8 +3216,8 @@ int lttng_ust_ctl_get_subbuf_timestamp_range(struct lttng_ust_ctl_consumer_strea
 		return -EIO;
 	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
 				stream->memory_map_size);
-	ret = _lttng_ust_ctl_get_subbuf_timestamp_range(buf,
-			chan, timestamp_begin, timestamp_end, pos);
+	ret = _lttng_ust_ctl_get_subbuf_state(buf, chan, subbuf_idx,
+			pos, timestamp_begin, timestamp_end, populated);
 	lttng_ust_sigbus_del_range(&range);
 	sigbus_end();
 	return ret;

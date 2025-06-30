@@ -438,19 +438,22 @@ int lttng_ust_ctl_try_exchange_subbuf(struct lttng_ust_ctl_consumer_stream *stre
  * position, if available. This allows querying unconsumed as well as
  * already consumed subbuffers.
  *
- * @timestamp_begin: Timestamp at the beginning of the subbuffer
- * @timestamp_end:   Timestamp at the end of the subbuffer
- * @pos:             Produce position (free running counter) to query
+ * @subbuf_idx:      Subbuffer index to query (input)
+ * @pos:             Free running counter position (output)
+ * @timestamp_begin: Timestamp at the beginning of the subbuffer (output)
+ * @timestamp_end:   Timestamp at the end of the subbuffer (output)
+ * @populated:       Whether the subbuffer memory is populated (output)
  *
  * The @timestamp_begin and @timestamp_end parameters are expressed in
  * clock cycles, as defined by the clock frequency.
  *
- * Return 0 on success, -EBUSY if the subbuffer is being written to,
- * -ENODATA if the subbuffer does not contain any data. Return -EIO
- * on error accessing the ring buffer shared memory.
+ * Return 0 on success, -EBUSY if the subbuffer is being written to.
+ * Return -EIO on error accessing the ring buffer shared memory.
  */
-int lttng_ust_ctl_get_subbuf_timestamp_range(struct lttng_ust_ctl_consumer_stream *stream,
-		uint64_t *timestamp_begin, uint64_t *timestamp_end, unsigned long pos);
+int lttng_ust_ctl_get_subbuf_state(struct lttng_ust_ctl_consumer_stream *stream,
+		unsigned long subbuf_idx, unsigned long *pos,
+		uint64_t *timestamp_begin, uint64_t *timestamp_end,
+		bool *populated);
 
 /*
  * Packets

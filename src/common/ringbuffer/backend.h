@@ -57,6 +57,12 @@ lib_ring_buffer_read_offset_address(struct lttng_ust_ring_buffer_backend *bufb,
 	__attribute__((visibility("hidden")));
 
 extern struct lttng_ust_ring_buffer_backend_pages *
+lib_ring_buffer_index_backend_pages(struct lttng_ust_ring_buffer_backend *bufb,
+				     size_t sbidx,
+				     struct lttng_ust_shm_handle *handle)
+	__attribute__((visibility("hidden")));
+
+extern struct lttng_ust_ring_buffer_backend_pages *
 lib_ring_buffer_offset_backend_pages(struct lttng_ust_ring_buffer_backend *bufb,
 				     size_t offset,
 				     struct lttng_ust_shm_handle *handle)
