@@ -434,6 +434,15 @@ int lttng_ust_ctl_timestamp_add(struct lttng_ust_ctl_consumer_stream *stream,
 int lttng_ust_ctl_try_exchange_subbuf(struct lttng_ust_ctl_consumer_stream *stream, unsigned long pos);
 
 /*
+ * Reclaim memory (MADV_REMOVE) backing reader subbuffer.
+ *
+ * Return 0 on success, -ENOMEM if memory is already reclaimed. It can
+ * also return any negative errno from madvise(2).
+ * Return -EIO on shared memory access error.
+ */
+int lttng_ust_ctl_reclaim_reader_subbuf(struct lttng_ust_ctl_consumer_stream *stream);
+
+/*
  * Get the latest timestamp begin/end for a given subbuffer produce
  * position, if available. This allows querying unconsumed as well as
  * already consumed subbuffers.

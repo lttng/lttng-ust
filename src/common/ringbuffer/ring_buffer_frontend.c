@@ -1469,6 +1469,51 @@ int lib_ring_buffer_try_exchange_subbuf(struct lttng_ust_ring_buffer *buf,
 }
 
 /**
+ * lib_ring_buffer_reclaim_reader_subbuf - Reclaim memory (MADV_REMOVE) backing reader subbuffer.
+ * @buf: ring buffer
+ *
+ * Return -ENOENT if the subbuffer is being used for writing or there is
+ * no subbuffer matching the @pos producer position in the buffer, else
+ * return 0 on success. Return -EIO on shared memory access error.
+ */
+int lib_ring_buffer_reclaim_reader_subbuf(struct lttng_ust_ring_buffer *buf,
+	struct lttng_ust_shm_handle *handle)
+{
+	const struct lttng_ust_ring_buffer_config *config;
+	struct lttng_ust_ring_buffer_channel *chan;
+	struct lttng_ust_ring_buffer_backend_pages_shmp *rpages;
+	struct lttng_ust_ring_buffer_backend_pages *backend_pages;
+	unsigned long id, sb_bindex;
+	void *addr;
+	int ret;
+
+	chan = shmp(handle, buf->backend.chan);
+	if (!chan)
+		return -EIO;
+	config = &chan->backend.config;
+	id = buf->backend.buf_rsb.id;
+	sb_bindex = subbuffer_id_get_index(config, id);
+	rpages = shmp_index(handle, buf->backend.array, sb_bindex);
+	if (!rpages)
+		return -EIO;
+	backend_pages = shmp(handle, rpages->shmp);
+	if (!backend_pages)
+		return -EIO;
+	if (!backend_pages->populated)
+		return -ENOMEM;
+	addr = shmp_index(handle, backend_pages->p, 0);
+	if (!addr)
+		return -EIO;
+	ret = madvise(addr, chan->backend.subbuf_size, MADV_REMOVE);
+	if (ret)
+		return -errno;
+	backend_pages->populated = false;
+	backend_pages->timestamp_begin = 0;
+	backend_pages->timestamp_end = 0;
+	return 0;
+}
+
+/**
  * lib_ring_buffer_get_subbuf - get exclusive access to subbuffer for reading
  * @buf: ring buffer
  * @consumed: consumed count indicating the position where to read

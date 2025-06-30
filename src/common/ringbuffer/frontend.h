@@ -161,6 +161,10 @@ extern int lib_ring_buffer_try_exchange_subbuf(struct lttng_ust_ring_buffer *buf
 	unsigned long pos, struct lttng_ust_shm_handle *handle)
 	__attribute__((visibility("hidden")));
 
+extern int lib_ring_buffer_reclaim_reader_subbuf(struct lttng_ust_ring_buffer *buf,
+	struct lttng_ust_shm_handle *handle)
+	__attribute__((visibility("hidden")));
+
 /*
  * lib_ring_buffer_get_next_subbuf/lib_ring_buffer_put_next_subbuf are helpers
  * to read sub-buffers sequentially.
