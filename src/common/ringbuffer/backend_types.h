@@ -49,6 +49,10 @@ struct lttng_ust_ring_buffer_backend_pages {
 								 * last commit before the buffer
 								 * becomes readable.
 								 */
+			uint8_t populated;			/*
+								 * Whether memory is populated for
+								 * this subbuffer.
+								 */
 		};
 		char padding[RB_BACKEND_PAGES_PADDING];
 	};

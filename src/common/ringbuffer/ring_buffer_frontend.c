@@ -1896,6 +1896,7 @@ void lib_ring_buffer_switch_old_end(struct lttng_ust_ring_buffer *buf,
 	 * sub-buffer is postponed until the commit counter is
 	 * incremented for the current space reservation.
 	 */
+	backend_pages->populated = true;
 	backend_pages->timestamp_end = ctx->priv->timestamp;
 	backend_pages->end_events_discarded =
 		lib_ring_buffer_get_records_lost_full(config, ctx) +

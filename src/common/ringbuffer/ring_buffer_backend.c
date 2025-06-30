@@ -141,6 +141,7 @@ int lib_ring_buffer_backend_allocate(const struct lttng_ust_ring_buffer_config *
 			pages->mmap_offset = mmap_offset;
 			mmap_offset += subbuf_size;
 		}
+		pages->populated = populate;
 		if (populate) {
 			pages->timestamp_begin = chanb->start_timestamp;
 			pages->timestamp_end = chanb->start_timestamp;
