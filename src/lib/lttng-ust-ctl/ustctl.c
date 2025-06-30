@@ -2193,125 +2193,272 @@ int lttng_ust_ctl_fixup_stalled_stream(struct lttng_ust_ctl_consumer_stream *str
 	return failed_count;
 }
 
-struct lttng_ust_ctl_subbuf_state {
+struct lttng_ust_ctl_subbuf_iter {
 	struct lttng_ust_ring_buffer *buf;
 	struct lttng_ust_ring_buffer_channel *chan;
+	enum lttng_ust_ctl_subbuf_iter_type type;
+	bool valid;
+	unsigned long iter_pos;
+	unsigned long iter_next_pos;
+	unsigned long iter_end;
 	unsigned long consumed_pos;
 	unsigned long produced_pos;
 	unsigned long cc_hot;
 	unsigned long cc_cold;
 	size_t idx;
 	uint32_t owner;
+
+	/* Delivered state. */
+	uint64_t timestamp_begin;
+	uint64_t timestamp_end;
+	bool populated;
 };
 
-int lttng_ust_ctl_poll_state_create(struct lttng_ust_ctl_consumer_stream *stream,
-				unsigned long consumed_pos, unsigned long produced_pos,
-				struct lttng_ust_ctl_subbuf_state **pstate)
+int lttng_ust_ctl_subbuf_iter_create(struct lttng_ust_ctl_consumer_stream *stream,
+				enum lttng_ust_ctl_subbuf_iter_type iter_type,
+				struct lttng_ust_ctl_subbuf_iter **piter)
 {
-	struct lttng_ust_ctl_subbuf_state *state;
+	unsigned long consumed_pos, produced_pos;
+	struct lttng_ust_ctl_subbuf_iter *iter;
+	int ret;
 
-	if (!stream || !pstate)
+	if (!stream || !piter)
 		return -EINVAL;
 
-	state = zmalloc(sizeof(*state));
+	iter = zmalloc(sizeof(*iter));
 
-	if (!state)
+	if (!iter)
 		return -ENOMEM;
 
-	state->buf = stream->buf;
-	state->chan = stream->chan->chan->priv->rb_chan;
-	state->consumed_pos = consumed_pos;
-	state->produced_pos = produced_pos;
+	iter->buf = stream->buf;
+	iter->chan = stream->chan->chan->priv->rb_chan;
 
-	*pstate = state;
+	ret = lib_ring_buffer_snapshot_sample_positions(iter->buf, &consumed_pos, &produced_pos, iter->chan->handle);
+	if (ret)
+		return ret;
+
+	iter->consumed_pos = consumed_pos;
+	iter->produced_pos = produced_pos;
+	iter->type = iter_type;
+	iter->valid = false;
+
+	/* Beginning of iteration. */
+	switch (iter->type) {
+	case LTTNG_UST_CTL_SUBBUF_ITER_DELIVERED:	/* Fallthrough */
+	case LTTNG_UST_CTL_SUBBUF_ITER_DELIVERED_CONSUMED:
+		/* Order position snapshot before reading backend pages fields. */
+		cmm_smp_rmb();
+		iter->iter_next_pos = subbuf_align(produced_pos - 1, iter->chan) - iter->chan->backend.buf_size;
+		break;
+	case LTTNG_UST_CTL_SUBBUF_ITER_UNCONSUMED:
+		iter->iter_next_pos = consumed_pos;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	/* End of iteration. */
+	switch (iter->type) {
+	case LTTNG_UST_CTL_SUBBUF_ITER_DELIVERED:	/* Fallthrough */
+	case LTTNG_UST_CTL_SUBBUF_ITER_UNCONSUMED:
+		iter->iter_end = produced_pos;
+		break;
+	case LTTNG_UST_CTL_SUBBUF_ITER_DELIVERED_CONSUMED:
+		iter->iter_end = consumed_pos;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	*piter = iter;
 
 	return 0;
 }
 
-int lttng_ust_ctl_poll_state_next(struct lttng_ust_ctl_subbuf_state *state)
+int lttng_ust_ctl_subbuf_iter_next(struct lttng_ust_ctl_subbuf_iter *piter)
 {
+	struct lttng_ust_ring_buffer_backend_pages *backend_pages;
+	unsigned long consumed_pos, produced_pos, prev_produced_pos;
+	struct lttng_ust_ctl_subbuf_iter iter = *piter;
 	struct commit_counters_hot *cc_hot;
 	struct commit_counters_cold *cc_cold;
 	size_t subbuf_idx;
+	int ret;
 
-	if ((long)(state->consumed_pos - state->produced_pos) >= 0)
-		return 0;
+	piter->valid = false;
 
-	subbuf_idx = subbuf_index(state->consumed_pos, state->chan);
+	for (;;) {
+		iter.iter_pos = iter.iter_next_pos;
+		iter.iter_next_pos += iter.chan->backend.subbuf_size;
 
-	cc_hot = shmp_index(state->chan->handle, state->buf->commit_hot, subbuf_idx);
+		if ((long)(iter.iter_pos - iter.iter_end) >= 0)
+			return 0;	/* End of iteration. */
 
-	if (!cc_hot) {
-		return -EIO;
+		subbuf_idx = subbuf_index(iter.iter_pos, iter.chan);
+
+		backend_pages = lib_ring_buffer_index_backend_pages(&iter.buf->backend, subbuf_idx, iter.chan->handle);
+		if (!backend_pages) {
+			return -EIO;
+		}
+
+		cc_hot = shmp_index(iter.chan->handle, iter.buf->commit_hot, subbuf_idx);
+		if (!cc_hot) {
+			return -EIO;
+		}
+
+		cc_cold = shmp_index(iter.chan->handle, iter.buf->commit_cold, subbuf_idx);
+		if (!cc_cold){
+			return -EIO;
+		}
+
+		iter.idx = subbuf_idx;
+		iter.cc_hot = v_read(&iter.chan->backend.config, &cc_hot->cc);
+		iter.cc_cold = v_read(&iter.chan->backend.config, &cc_cold->cc_sb);
+		iter.owner = v_read(&iter.chan->backend.config, &cc_hot->owner);
+
+		switch (iter.type) {
+		case LTTNG_UST_CTL_SUBBUF_ITER_DELIVERED:		/* Fallthrough */
+		case LTTNG_UST_CTL_SUBBUF_ITER_DELIVERED_CONSUMED:
+			/*
+			 * Check if all commits (and deliver) associated
+			 * with this position have been done.
+			 */
+			if ((buf_trunc(iter.iter_pos, iter.chan) >> iter.chan->backend.num_subbuf_order) - (iter.cc_cold & iter.chan->commit_count_mask) != 0) {
+				/* Retry with the next subbuffer. */
+				continue;
+			}
+			iter.timestamp_begin = backend_pages->timestamp_begin;
+			iter.timestamp_end = backend_pages->timestamp_end;
+			iter.populated = backend_pages->populated;
+
+			/*
+			 * After reading the backend pages fields, validate once more
+			 * that they have not been overwritten.
+			 */
+			/* Order reading backend pages fields before position snapshot. */
+			cmm_smp_rmb();
+			ret = lib_ring_buffer_snapshot_sample_positions(iter.buf, &consumed_pos, &produced_pos, iter.chan->handle);
+			if (ret)
+				return ret;
+			prev_produced_pos = subbuf_align(produced_pos - 1, iter.chan) - iter.chan->backend.buf_size;
+			if ((long)(iter.iter_pos - prev_produced_pos) < 0) {
+				/* Retry with the next subbuffer. */
+				continue;
+			}
+			/*
+			 * Reevaluate whether consumed position has
+			 * moved concurrently.
+			 */
+			if (iter.type == LTTNG_UST_CTL_SUBBUF_ITER_DELIVERED_CONSUMED) {
+				iter.iter_end = consumed_pos;
+				if ((long)(iter.iter_pos - iter.iter_end) >= 0)
+					return 0;	/* End of iteration. */
+			}
+			break;
+		case LTTNG_UST_CTL_SUBBUF_ITER_UNCONSUMED:	/* Fallthrough */
+		default:
+			break;
+		}
+		break;
 	}
 
-	cc_cold = shmp_index(state->chan->handle, state->buf->commit_cold, subbuf_idx);
-
-	if (!cc_cold){
-		return -EIO;
-	}
-
-	state->idx = subbuf_idx;
-	state->cc_hot = v_read(&state->chan->backend.config, &cc_hot->cc);
-	state->cc_cold = v_read(&state->chan->backend.config, &cc_cold->cc_sb);
-	state->owner = v_read(&state->chan->backend.config, &cc_hot->owner);
-
-	state->consumed_pos += state->chan->backend.subbuf_size;
-
-	return 1;
+	iter.valid = true;
+	*piter = iter;
+	return 1;	/* Valid iterator. */
 }
 
 
-int lttng_ust_ctl_poll_state_cc_hot(struct lttng_ust_ctl_subbuf_state *state,
+int lttng_ust_ctl_subbuf_iter_cc_hot(struct lttng_ust_ctl_subbuf_iter *iter,
 				unsigned long *cc_hot)
 {
-	if (!state || !cc_hot)
+	if (!iter || !cc_hot || !iter->valid)
 		return -EINVAL;
 
-	*cc_hot = state->cc_hot;
+	*cc_hot = iter->cc_hot;
 
 	return 0;
 }
 
-int lttng_ust_ctl_poll_state_cc_cold(struct lttng_ust_ctl_subbuf_state *state,
+int lttng_ust_ctl_subbuf_iter_cc_cold(struct lttng_ust_ctl_subbuf_iter *iter,
 				unsigned long *cc_cold)
 {
-	if (!state || !cc_cold)
+	if (!iter || !cc_cold || !iter->valid)
 		return -EINVAL;
 
-	*cc_cold = state->cc_cold;
+	*cc_cold = iter->cc_cold;
 
 	return 0;
 }
 
-int lttng_ust_ctl_poll_state_index(struct lttng_ust_ctl_subbuf_state *state,
+int lttng_ust_ctl_subbuf_iter_index(struct lttng_ust_ctl_subbuf_iter *iter,
 				size_t *idx)
 {
-	if (!state || !idx)
+	if (!iter || !idx || !iter->valid)
 		return -EINVAL;
 
-	*idx = state->idx;
+	*idx = iter->idx;
 
 	return 0;
 }
 
-int lttng_ust_ctl_poll_state_owner(struct lttng_ust_ctl_subbuf_state *state,
+int lttng_ust_ctl_subbuf_iter_owner(struct lttng_ust_ctl_subbuf_iter *iter,
 				uint32_t *owner)
 {
-	if (!state || !owner)
+	if (!iter || !owner || !iter->valid)
 		return -EINVAL;
 
-	*owner = state->owner;
+	*owner = iter->owner;
 
 	return 0;
 }
 
-int lttng_ust_ctl_poll_state_destroy(struct lttng_ust_ctl_subbuf_state *state)
+int lttng_ust_ctl_subbuf_iter_timestamp_begin(struct lttng_ust_ctl_subbuf_iter *iter,
+				uint64_t *timestamp_begin)
 {
-	if (!state)
+	if (!iter || !timestamp_begin || !iter->valid || iter->type == LTTNG_UST_CTL_SUBBUF_ITER_UNCONSUMED)
 		return -EINVAL;
 
-	free(state);
+	*timestamp_begin = iter->timestamp_begin;
+
+	return 0;
+}
+
+int lttng_ust_ctl_subbuf_iter_timestamp_end(struct lttng_ust_ctl_subbuf_iter *iter,
+				uint64_t *timestamp_end)
+{
+	if (!iter || !timestamp_end || !iter->valid || iter->type == LTTNG_UST_CTL_SUBBUF_ITER_UNCONSUMED)
+		return -EINVAL;
+
+	*timestamp_end = iter->timestamp_end;
+
+	return 0;
+}
+
+int lttng_ust_ctl_subbuf_iter_populated(struct lttng_ust_ctl_subbuf_iter *iter,
+				bool *populated)
+{
+	if (!iter || !populated || !iter->valid || iter->type == LTTNG_UST_CTL_SUBBUF_ITER_UNCONSUMED)
+		return -EINVAL;
+
+	*populated = iter->populated;
+
+	return 0;
+}
+
+int lttng_ust_ctl_subbuf_iter_pos(struct lttng_ust_ctl_subbuf_iter *iter,
+				unsigned long *pos)
+{
+	if (!iter || !pos || !iter->valid)
+		return -EINVAL;
+
+	*pos = iter->iter_pos;
+
+	return 0;
+}
+
+int lttng_ust_ctl_subbuf_iter_destroy(struct lttng_ust_ctl_subbuf_iter *iter)
+{
+	free(iter);
 
 	return 0;
 }
@@ -3127,100 +3274,6 @@ int lttng_ust_ctl_timestamp_add(struct lttng_ust_ctl_consumer_stream *stream,
 	}
 	*ts += delta;
 	return 0;
-}
-
-static
-int _lttng_ust_ctl_get_subbuf_state(struct lttng_ust_ring_buffer *buf,
-		struct lttng_ust_ring_buffer_channel *chan,
-		unsigned long subbuf_idx, unsigned long *_pos,
-		uint64_t *_timestamp_begin, uint64_t *_timestamp_end,
-		bool *_populated)
-{
-	const struct lttng_ust_ring_buffer_config *config = &chan->backend.config;
-	struct lttng_ust_ring_buffer_backend_pages *backend_pages;
-	unsigned long pos, consume, reserve, prev_reserve, cold;
-	struct commit_counters_cold *cc_cold;
-	uint64_t timestamp_begin, timestamp_end;
-	bool populated;
-	int ret;
-
-	if (subbuf_idx >= (1UL << chan->backend.num_subbuf_order))
-		return -EINVAL;
-
-	ret = lib_ring_buffer_snapshot_sample_positions(buf, &consume, &reserve, chan->handle);
-	if (ret)
-		return ret;
-	/* Order position snapshot before reading state. */
-	cmm_smp_rmb();
-	prev_reserve = subbuf_align(reserve - 1, chan) - chan->backend.buf_size;
-	if (subbuf_idx == subbuf_index(reserve, chan))
-		return -EBUSY;
-	backend_pages = lib_ring_buffer_index_backend_pages(&buf->backend, subbuf_idx, chan->handle);
-	if (!backend_pages)
-		return -EIO;
-	cc_cold = shmp_index(chan->handle, buf->commit_cold, subbuf_idx);
-	if (!cc_cold)
-		return -EIO;
-	cold = v_read(config, &cc_cold->cc_sb);
-	pos = prev_reserve;
-	if (subbuf_index(pos, chan) < subbuf_idx)
-		pos += chan->backend.buf_size;
-	pos = buf_trunc(pos, chan) + (subbuf_idx * chan->backend.subbuf_size);
-	/*
-	 * Check if all commits (and deliver) associated with this
-	 * position have been done.
-	 */
-	if ((buf_trunc(pos, chan) >> chan->backend.num_subbuf_order) - (cold & chan->commit_count_mask) != 0)
-		return -EBUSY;
-	timestamp_begin = backend_pages->timestamp_begin;
-	timestamp_end = backend_pages->timestamp_end;
-	populated = backend_pages->populated;
-	/*
-	 * After reading the timestamp_end, validate once more that it
-	 * has not been overwritten.
-	 */
-	/* Order reading timestamp_end before position snapshot. */
-	cmm_smp_rmb();
-	ret = lib_ring_buffer_snapshot_sample_positions(buf, &consume, &reserve, chan->handle);
-	if (ret)
-		return ret;
-	prev_reserve = subbuf_align(reserve - 1, chan) - chan->backend.buf_size;
-	if ((long)(pos - prev_reserve) < 0)
-		return -EBUSY;
-	if (_pos)
-		*_pos = pos;
-	if (_timestamp_begin)
-		*_timestamp_begin = timestamp_begin;
-	if (_timestamp_end)
-		*_timestamp_end = timestamp_end;
-	if (_populated)
-		*_populated = populated;
-	return 0;
-}
-
-int lttng_ust_ctl_get_subbuf_state(struct lttng_ust_ctl_consumer_stream *stream,
-		unsigned long subbuf_idx, unsigned long *pos,
-		uint64_t *timestamp_begin, uint64_t *timestamp_end,
-		bool *populated)
-{
-	struct lttng_ust_ring_buffer_channel *chan;
-	struct lttng_ust_ring_buffer *buf;
-	struct lttng_ust_sigbus_range range;
-	int ret;
-
-	if (!stream)
-		return -EINVAL;
-	buf = stream->buf;
-	chan = stream->chan->chan->priv->rb_chan;
-	if (sigbus_begin())
-		return -EIO;
-	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
-				stream->memory_map_size);
-	ret = _lttng_ust_ctl_get_subbuf_state(buf, chan, subbuf_idx,
-			pos, timestamp_begin, timestamp_end, populated);
-	lttng_ust_sigbus_del_range(&range);
-	sigbus_end();
-	return ret;
 }
 
 int lttng_ust_ctl_reclaim_reader_subbuf(struct lttng_ust_ctl_consumer_stream *stream)

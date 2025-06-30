@@ -234,24 +234,32 @@ void lttng_ust_ctl_set_channel_owner_id(struct lttng_ust_abi_object_data *obj,
 					uint32_t id);
 
 /* Opaque type. */
-struct lttng_ust_ctl_subbuf_state;
+struct lttng_ust_ctl_subbuf_iter;
+
+enum lttng_ust_ctl_subbuf_iter_type {
+	/* Iterate on all delivered subbuffers: those non-consumed and consumed. */
+	LTTNG_UST_CTL_SUBBUF_ITER_DELIVERED = 0,
+	/* Iterate on subbuffers which were delivered and consumed. */
+	LTTNG_UST_CTL_SUBBUF_ITER_DELIVERED_CONSUMED = 1,
+	/* Iterate only on non-consumed subbuffers, whether they were delivered or not. */
+	LTTNG_UST_CTL_SUBBUF_ITER_UNCONSUMED = 2,
+};
 
 /*
- * Create a polling state object.
+ * Create a subbuffer iterator object.
  *
- * The object will poll sub-buffers from `stream` in the range `[consumed_pos,
- * produced_pos)`.
+ * The object will iterate on sub-buffers from `stream`.
  *
  * Return 0 on success.
  *
  * Return a negative value on error.
  */
-int lttng_ust_ctl_poll_state_create(struct lttng_ust_ctl_consumer_stream *stream,
-				unsigned long consumed_pos, unsigned long produced_pos,
-				struct lttng_ust_ctl_subbuf_state **state);
+int lttng_ust_ctl_subbuf_iter_create(struct lttng_ust_ctl_consumer_stream *stream,
+				enum lttng_ust_ctl_subbuf_iter_type iter_type,
+				struct lttng_ust_ctl_subbuf_iter **iter);
 
 /*
- * Poll the state of the next sub-buffer.
+ * Iterate to the next sub-buffer.
  *
  * Return 0 if no next sub-buffer is available.
  *
@@ -259,57 +267,97 @@ int lttng_ust_ctl_poll_state_create(struct lttng_ust_ctl_consumer_stream *stream
  *
  * Return a negative value on error.
  */
-int lttng_ust_ctl_poll_state_next(struct lttng_ust_ctl_subbuf_state *state);
+int lttng_ust_ctl_subbuf_iter_next(struct lttng_ust_ctl_subbuf_iter *iter);
 
 
 /*
- * Get the hot commit counter of the current polled sub-buffer.
+ * Get the hot commit counter of the current sub-buffer.
  *
  * Return 0 on success.
  *
  * Return a negative value on error.
  */
-int lttng_ust_ctl_poll_state_cc_hot(struct lttng_ust_ctl_subbuf_state *state,
+int lttng_ust_ctl_subbuf_iter_cc_hot(struct lttng_ust_ctl_subbuf_iter *iter,
 				unsigned long *cc_hot);
 
 /*
- * Get the cold commit counter of the current polled sub-buffer.
+ * Get the cold commit counter of the current sub-buffer.
  *
  * Return 0 on success.
  *
  * Return a negative value on error.
  */
-int lttng_ust_ctl_poll_state_cc_cold(struct lttng_ust_ctl_subbuf_state *state,
+int lttng_ust_ctl_subbuf_iter_cc_cold(struct lttng_ust_ctl_subbuf_iter *iter,
 				unsigned long *cc_cold);
 
 /*
- * Get the index in the buffer of the current polled sub-buffer.
+ * Get the index in the buffer of the current sub-buffer.
  *
  * Return 0 on success.
  *
  * Return a negative value on error.
  */
-int lttng_ust_ctl_poll_state_index(struct lttng_ust_ctl_subbuf_state *state,
+int lttng_ust_ctl_subbuf_iter_index(struct lttng_ust_ctl_subbuf_iter *iter,
 				size_t *idx);
 
 /*
- * Get the owner of the current polled sub-buffer.
+ * Get the owner of the current sub-buffer.
  *
  * Return 0 on success.
  *
  * Return a negative value on error.
  */
-int lttng_ust_ctl_poll_state_owner(struct lttng_ust_ctl_subbuf_state *state,
+int lttng_ust_ctl_subbuf_iter_owner(struct lttng_ust_ctl_subbuf_iter *iter,
 				uint32_t *owner);
 
 /*
- * Destroy the state polling object.
+ * Get the timestamp begin of the current sub-buffer.
  *
  * Return 0 on success.
  *
  * Return a negative value on error.
  */
-int lttng_ust_ctl_poll_state_destroy(struct lttng_ust_ctl_subbuf_state *state);
+int lttng_ust_ctl_subbuf_iter_timestamp_begin(struct lttng_ust_ctl_subbuf_iter *iter,
+				uint64_t *timestamp_begin);
+
+/*
+ * Get the timestamp end of the current sub-buffer.
+ *
+ * Return 0 on success.
+ *
+ * Return a negative value on error.
+ */
+int lttng_ust_ctl_subbuf_iter_timestamp_end(struct lttng_ust_ctl_subbuf_iter *iter,
+				uint64_t *timestamp_end);
+
+/*
+ * Get the populated state of the current sub-buffer.
+ *
+ * Return 0 on success.
+ *
+ * Return a negative value on error.
+ */
+int lttng_ust_ctl_subbuf_iter_populated(struct lttng_ust_ctl_subbuf_iter *iter,
+				bool *populated);
+
+/*
+ * Get the free running position of the current sub-buffer.
+ *
+ * Return 0 on success.
+ *
+ * Return a negative value on error.
+ */
+int lttng_ust_ctl_subbuf_iter_pos(struct lttng_ust_ctl_subbuf_iter *iter,
+				unsigned long *pos);
+
+/*
+ * Destroy the subbuf iterator object.
+ *
+ * Return 0 on success.
+ *
+ * Return a negative value on error.
+ */
+int lttng_ust_ctl_subbuf_iter_destroy(struct lttng_ust_ctl_subbuf_iter *iter);
 
 /*
  * Try to fixup any stalled sub-buffer in the range [consumed_pos, produced_pos].
@@ -441,28 +489,6 @@ int lttng_ust_ctl_try_exchange_subbuf(struct lttng_ust_ctl_consumer_stream *stre
  * Return -EIO on shared memory access error.
  */
 int lttng_ust_ctl_reclaim_reader_subbuf(struct lttng_ust_ctl_consumer_stream *stream);
-
-/*
- * Get the latest timestamp begin/end for a given subbuffer produce
- * position, if available. This allows querying unconsumed as well as
- * already consumed subbuffers.
- *
- * @subbuf_idx:      Subbuffer index to query (input)
- * @pos:             Free running counter position (output)
- * @timestamp_begin: Timestamp at the beginning of the subbuffer (output)
- * @timestamp_end:   Timestamp at the end of the subbuffer (output)
- * @populated:       Whether the subbuffer memory is populated (output)
- *
- * The @timestamp_begin and @timestamp_end parameters are expressed in
- * clock cycles, as defined by the clock frequency.
- *
- * Return 0 on success, -EBUSY if the subbuffer is being written to.
- * Return -EIO on error accessing the ring buffer shared memory.
- */
-int lttng_ust_ctl_get_subbuf_state(struct lttng_ust_ctl_consumer_stream *stream,
-		unsigned long subbuf_idx, unsigned long *pos,
-		uint64_t *timestamp_begin, uint64_t *timestamp_end,
-		bool *populated);
 
 /*
  * Packets
