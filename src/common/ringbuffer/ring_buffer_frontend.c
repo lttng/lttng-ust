@@ -965,6 +965,8 @@ static unsigned int get_activity_timestamp_bits(const struct lttng_ust_ring_buff
  * @read_timer_interval: Time interval (in us) to wake up pending readers.
  * @stream_fds: array of stream file descriptors.
  * @nr_stream_fds: number of file descriptors in array.
+ * @preallocate_backing: whether to preallocate the backing memory for the
+ *                       ring buffer or do so lazily on access.
  *
  * Holds cpu hotplug.
  * Returns NULL on failure.
@@ -980,7 +982,8 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_ring_buffer_c
 		   unsigned int read_timer_interval,
 		   const int *stream_fds, int nr_stream_fds,
 		   int64_t blocking_timeout,
-		   uint32_t owner_id)
+		   uint32_t owner_id,
+		   bool preallocate_backing)
 {
 	int ret;
 	size_t shmsize, chansize;
@@ -1036,7 +1039,7 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_ring_buffer_c
 
 	/* Allocate normal memory for channel (not shared) */
 	shmobj = shm_object_table_alloc(handle->table, shmsize, SHM_OBJECT_MEM,
-			-1, -1, populate);
+			-1, -1, populate, preallocate_backing);
 	if (!shmobj)
 		goto error_append;
 	/* struct lttng_ust_ring_buffer_channel is at object 0, offset 0 (hardcoded) */
@@ -1073,7 +1076,7 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_ring_buffer_c
 
 	ret = channel_backend_init(&chan->backend, name, config,
 				   subbuf_size, num_subbuf, handle,
-				   stream_fds);
+				   stream_fds, preallocate_backing);
 	if (ret)
 		goto error_backend_init;
 

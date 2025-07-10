@@ -1477,7 +1477,8 @@ struct lttng_ust_ctl_consumer_channel *
 			attr->uuid, attr->chan_id,
 			stream_fds, nr_stream_fds,
 			attr->blocking_timeout,
-			owner);
+			owner,
+			attr->preallocate_backing);
 	if (!chan->chan) {
 		goto chan_error;
 	}

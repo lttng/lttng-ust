@@ -43,7 +43,8 @@ int channel_backend_init(struct channel_backend *chanb,
 			 const struct lttng_ust_ring_buffer_config *config,
 			 size_t subbuf_size,
 			 size_t num_subbuf, struct lttng_ust_shm_handle *handle,
-			 const int *stream_fds)
+			 const int *stream_fds,
+			 bool preallocate_backing)
 	__attribute__((visibility("hidden")));
 
 void channel_backend_free(struct channel_backend *chanb,

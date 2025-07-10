@@ -39,7 +39,8 @@ int main(void)
 	assert(table);
 
 	/* This function sets the initial size of the shm with ftruncate and zeros it */
-	shmobj = shm_object_table_alloc(table, shmsize, SHM_OBJECT_SHM, shmfd, -1, false);
+	shmobj = shm_object_table_alloc(table, shmsize, SHM_OBJECT_SHM, shmfd,
+		-1, false, true);
 	ok(shmobj, "Allocate the shm object table");
 	assert(shmobj);
 

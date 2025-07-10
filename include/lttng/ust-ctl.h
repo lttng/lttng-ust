@@ -49,6 +49,8 @@ struct lttng_ust_ctl_consumer_channel_attr {
 	unsigned char uuid[LTTNG_UST_UUID_LEN]; /* Trace session unique ID */
 	int64_t blocking_timeout;			/* Blocking timeout (usec) */
 	uint32_t owner_id;
+	/* 1: preallocate/zero, 0: don't preallocate (sparse/lazy allocation) */
+	int preallocate_backing;
 } __attribute__((packed));
 
 /*

@@ -78,7 +78,7 @@ struct shm_object *shm_object_table_alloc(struct shm_object_table *table,
 			size_t memory_map_size,
 			enum shm_object_type type,
 			const int stream_fd,
-			int cpu, bool populate)
+			int cpu, bool populate, bool allocate_backing)
 	__attribute__((visibility("hidden")));
 
 struct shm_object *shm_object_table_append_shm(struct shm_object_table *table,

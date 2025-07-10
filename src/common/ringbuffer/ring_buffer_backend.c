@@ -255,6 +255,8 @@ void channel_backend_reset(struct channel_backend *chanb)
  * @num_subbuf: number of sub-buffers (power of 2)
  * @lttng_ust_shm_handle: shared memory handle
  * @stream_fds: stream file descriptors.
+ * @preallocate: preallocate the channel buffers if true, otherwise
+ *               allocate them on demand.
  *
  * Returns channel pointer if successful, %NULL otherwise.
  *
@@ -269,7 +271,7 @@ int channel_backend_init(struct channel_backend *chanb,
 			 const struct lttng_ust_ring_buffer_config *config,
 			 size_t subbuf_size, size_t num_subbuf,
 			 struct lttng_ust_shm_handle *handle,
-			 const int *stream_fds)
+			 const int *stream_fds, bool preallocate_backing)
 {
 	struct lttng_ust_ring_buffer_channel *chan = caa_container_of(chanb,
 			struct lttng_ust_ring_buffer_channel, backend);
@@ -355,7 +357,8 @@ int channel_backend_init(struct channel_backend *chanb,
 			struct shm_object *shmobj;
 
 			shmobj = shm_object_table_alloc(handle->table, shmsize,
-					SHM_OBJECT_SHM, stream_fds[i], i, populate);
+					SHM_OBJECT_SHM, stream_fds[i], i, populate,
+					preallocate_backing);
 			if (!shmobj)
 				goto end;
 			align_shm(shmobj, __alignof__(struct lttng_ust_ring_buffer));
@@ -376,7 +379,8 @@ int channel_backend_init(struct channel_backend *chanb,
 
 		shmobj = shm_object_table_alloc(handle->table, shmsize,
 					SHM_OBJECT_SHM, stream_fds[0], -1,
-					populate);
+					populate,
+					preallocate_backing);
 		if (!shmobj)
 			goto end;
 		align_shm(shmobj, __alignof__(struct lttng_ust_ring_buffer));

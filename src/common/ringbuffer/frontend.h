@@ -52,7 +52,8 @@ struct lttng_ust_shm_handle *channel_create(const struct lttng_ust_ring_buffer_c
 				unsigned int read_timer_interval,
 				const int *stream_fds, int nr_stream_fds,
 				int64_t blocking_timeout,
-				uint32_t owner_id)
+				uint32_t owner_id,
+				bool preallocate_backing)
 	__attribute__((visibility("hidden")));
 
 /*

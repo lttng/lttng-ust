@@ -791,7 +791,7 @@ struct lttng_ust_channel_buffer *_channel_create(const char *name,
 				uint32_t chan_id,
 				const int *stream_fds, int nr_stream_fds,
 				int64_t blocking_timeout,
-				uint32_t owner_id)
+				uint32_t owner_id, bool preallocate_backing)
 {
 	struct lttng_ust_abi_channel_config chan_priv_init;
 	struct lttng_ust_shm_handle *handle;
@@ -813,7 +813,8 @@ struct lttng_ust_channel_buffer *_channel_create(const char *name,
 			&chan_priv_init,
 			lttng_chan_buf, buf_addr, subbuf_size, num_subbuf,
 			switch_timer_interval, read_timer_interval,
-			stream_fds, nr_stream_fds, blocking_timeout, owner_id);
+			stream_fds, nr_stream_fds, blocking_timeout, owner_id,
+			preallocate_backing);
 	if (!handle)
 		goto error;
 	lttng_chan_buf->priv->rb_chan = shmp(handle, handle->chan);
