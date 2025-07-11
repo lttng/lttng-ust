@@ -333,14 +333,14 @@ int lttng_ust_ctl_subbuf_iter_timestamp_end(struct lttng_ust_ctl_subbuf_iter *it
 				uint64_t *timestamp_end);
 
 /*
- * Get the populated state of the current sub-buffer.
+ * Get the allocated state of the current sub-buffer.
  *
  * Return 0 on success.
  *
  * Return a negative value on error.
  */
-int lttng_ust_ctl_subbuf_iter_populated(struct lttng_ust_ctl_subbuf_iter *iter,
-				bool *populated);
+int lttng_ust_ctl_subbuf_iter_allocated(struct lttng_ust_ctl_subbuf_iter *iter,
+				bool *allocated);
 
 /*
  * Get the free running position of the current sub-buffer.

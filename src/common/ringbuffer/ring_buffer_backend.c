@@ -39,7 +39,7 @@ int lib_ring_buffer_backend_allocate(const struct lttng_ust_ring_buffer_config *
 				     int extra_reader_sb,
 				     struct lttng_ust_shm_handle *handle,
 				     struct shm_object *shmobj,
-				     bool populate)
+				     bool preallocate)
 {
 	struct channel_backend *chanb;
 	unsigned long subbuf_size, mmap_offset = 0;
@@ -141,8 +141,8 @@ int lib_ring_buffer_backend_allocate(const struct lttng_ust_ring_buffer_config *
 			pages->mmap_offset = mmap_offset;
 			mmap_offset += subbuf_size;
 		}
-		pages->populated = populate;
-		if (populate) {
+		pages->allocated = preallocate;
+		if (preallocate) {
 			pages->timestamp_begin = chanb->start_timestamp;
 			pages->timestamp_end = chanb->start_timestamp;
 		}
@@ -163,7 +163,7 @@ page_size_error:
 int lib_ring_buffer_backend_create(struct lttng_ust_ring_buffer_backend *bufb,
 				   struct channel_backend *chanb, int cpu,
 				   struct lttng_ust_shm_handle *handle,
-				   struct shm_object *shmobj, bool populate)
+				   struct shm_object *shmobj, bool preallocate)
 {
 	const struct lttng_ust_ring_buffer_config *config = &chanb->config;
 
@@ -173,7 +173,7 @@ int lib_ring_buffer_backend_create(struct lttng_ust_ring_buffer_backend *bufb,
 	return lib_ring_buffer_backend_allocate(config, bufb, chanb->buf_size,
 						chanb->num_subbuf,
 						chanb->extra_reader_sb,
-						handle, shmobj, populate);
+						handle, shmobj, preallocate);
 }
 
 void lib_ring_buffer_backend_reset(struct lttng_ust_ring_buffer_backend *bufb,
@@ -368,7 +368,7 @@ int channel_backend_init(struct channel_backend *chanb,
 				goto end;
 			set_shmp(buf->self, chanb->buf[i].shmp._ref);
 			ret = lib_ring_buffer_create(buf, chanb, i,
-					handle, shmobj, populate);
+					handle, shmobj, preallocate_backing);
 			if (ret)
 				goto free_bufs;	/* cpu hotplug locked */
 		}
@@ -390,7 +390,7 @@ int channel_backend_init(struct channel_backend *chanb,
 			goto end;
 		set_shmp(buf->self, chanb->buf[0].shmp._ref);
 		ret = lib_ring_buffer_create(buf, chanb, -1,
-					handle, shmobj, populate);
+					handle, shmobj, preallocate_backing);
 		if (ret)
 			goto free_bufs;
 	}

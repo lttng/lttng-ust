@@ -329,7 +329,7 @@ void init_crash_abi(const struct lttng_ust_ring_buffer_config *config,
 int lib_ring_buffer_create(struct lttng_ust_ring_buffer *buf,
 			   struct channel_backend *chanb, int cpu,
 			   struct lttng_ust_shm_handle *handle,
-			   struct shm_object *shmobj, bool populate)
+			   struct shm_object *shmobj, bool preallocate)
 {
 	const struct lttng_ust_ring_buffer_config *config = &chanb->config;
 	struct lttng_ust_ring_buffer_channel *chan = caa_container_of(chanb,
@@ -364,7 +364,7 @@ int lib_ring_buffer_create(struct lttng_ust_ring_buffer *buf,
 	}
 
 	ret = lib_ring_buffer_backend_create(&buf->backend, &chan->backend,
-			cpu, handle, shmobj, populate);
+			cpu, handle, shmobj, preallocate);
 	if (ret) {
 		goto free_commit_cold;
 	}
@@ -1502,7 +1502,7 @@ int lib_ring_buffer_reclaim_reader_subbuf(struct lttng_ust_ring_buffer *buf,
 	backend_pages = shmp(handle, rpages->shmp);
 	if (!backend_pages)
 		return -EIO;
-	if (!backend_pages->populated)
+	if (!backend_pages->allocated)
 		return -ENOMEM;
 	addr = shmp_index(handle, backend_pages->p, 0);
 	if (!addr)
@@ -1510,7 +1510,7 @@ int lib_ring_buffer_reclaim_reader_subbuf(struct lttng_ust_ring_buffer *buf,
 	ret = madvise(addr, chan->backend.subbuf_size, MADV_REMOVE);
 	if (ret)
 		return -errno;
-	backend_pages->populated = false;
+	backend_pages->allocated = false;
 	backend_pages->timestamp_begin = 0;
 	backend_pages->timestamp_end = 0;
 	return 0;
@@ -1944,7 +1944,7 @@ void lib_ring_buffer_switch_old_end(struct lttng_ust_ring_buffer *buf,
 	 * sub-buffer is postponed until the commit counter is
 	 * incremented for the current space reservation.
 	 */
-	backend_pages->populated = true;
+	backend_pages->allocated = true;
 	backend_pages->timestamp_end = ctx->priv->timestamp;
 	backend_pages->end_events_discarded =
 		lib_ring_buffer_get_records_lost_full(config, ctx) +

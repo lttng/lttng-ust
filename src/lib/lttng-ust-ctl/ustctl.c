@@ -2212,7 +2212,7 @@ struct lttng_ust_ctl_subbuf_iter {
 	/* Delivered state. */
 	uint64_t timestamp_begin;
 	uint64_t timestamp_end;
-	bool populated;
+	bool allocated;
 };
 
 int lttng_ust_ctl_subbuf_iter_create(struct lttng_ust_ctl_consumer_stream *stream,
@@ -2330,7 +2330,7 @@ int lttng_ust_ctl_subbuf_iter_next(struct lttng_ust_ctl_subbuf_iter *piter)
 			}
 			iter.timestamp_begin = backend_pages->timestamp_begin;
 			iter.timestamp_end = backend_pages->timestamp_end;
-			iter.populated = backend_pages->populated;
+			iter.allocated = backend_pages->allocated;
 
 			/*
 			 * After reading the backend pages fields, validate once more
@@ -2435,13 +2435,13 @@ int lttng_ust_ctl_subbuf_iter_timestamp_end(struct lttng_ust_ctl_subbuf_iter *it
 	return 0;
 }
 
-int lttng_ust_ctl_subbuf_iter_populated(struct lttng_ust_ctl_subbuf_iter *iter,
-				bool *populated)
+int lttng_ust_ctl_subbuf_iter_allocated(struct lttng_ust_ctl_subbuf_iter *iter,
+				bool *allocated)
 {
-	if (!iter || !populated || !iter->valid || iter->type == LTTNG_UST_CTL_SUBBUF_ITER_UNCONSUMED)
+	if (!iter || !allocated || !iter->valid || iter->type == LTTNG_UST_CTL_SUBBUF_ITER_UNCONSUMED)
 		return -EINVAL;
 
-	*populated = iter->populated;
+	*allocated = iter->allocated;
 
 	return 0;
 }

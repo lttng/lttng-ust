@@ -49,8 +49,8 @@ struct lttng_ust_ring_buffer_backend_pages {
 								 * last commit before the buffer
 								 * becomes readable.
 								 */
-			uint8_t populated;			/*
-								 * Whether memory is populated for
+			uint8_t allocated;			/*
+								 * Whether memory is allocated for
 								 * this subbuffer.
 								 */
 		};

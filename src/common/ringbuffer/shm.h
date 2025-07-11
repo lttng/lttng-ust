@@ -78,12 +78,12 @@ struct shm_object *shm_object_table_alloc(struct shm_object_table *table,
 			size_t memory_map_size,
 			enum shm_object_type type,
 			const int stream_fd,
-			int cpu, bool populate, bool allocate_backing)
+			int cpu, bool populate_mapping, bool allocate_backing)
 	__attribute__((visibility("hidden")));
 
 struct shm_object *shm_object_table_append_shm(struct shm_object_table *table,
 			int shm_fd, int wakeup_fd, uint32_t stream_nr,
-			size_t memory_map_size, bool populate)
+			size_t memory_map_size, bool populate_mapping)
 	__attribute__((visibility("hidden")));
 
 /* mem ownership is passed to shm_object_table_append_mem(). */
