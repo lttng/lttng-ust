@@ -410,7 +410,13 @@ static void client_buffer_begin(struct lttng_ust_ring_buffer *buf,
 #else
 	header->stream_instance_id = 0;
 #endif
-	header->ctx.timestamp_begin = timestamp;
+	if (subbuf_idx == 0 && uatomic_read(&buf->use_creation_timestamp)) {
+		header->ctx.timestamp_begin = chan->backend.start_timestamp;
+		uatomic_set(&buf->use_creation_timestamp, 0);
+	} else {
+		header->ctx.timestamp_begin = timestamp;
+	}
+
 	header->ctx.timestamp_end = 0;
 	header->ctx.content_size = ~0ULL; /* for debugging */
 	header->ctx.packet_size = ~0ULL;

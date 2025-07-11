@@ -200,6 +200,7 @@ void lib_ring_buffer_reset(struct lttng_ust_ring_buffer *buf,
 	}
 	uatomic_set(&buf->consumed, 0);
 	uatomic_set(&buf->record_disabled, 0);
+	uatomic_set(&buf->use_creation_timestamp, 1);
 	v_set(config, &buf->last_timestamp, 0);
 	v_set(config, &buf->u.last_activity_timestamp, 0);
 	lib_ring_buffer_backend_reset(&buf->backend, handle);
@@ -334,12 +335,7 @@ int lib_ring_buffer_create(struct lttng_ust_ring_buffer *buf,
 	const struct lttng_ust_ring_buffer_config *config = &chanb->config;
 	struct lttng_ust_ring_buffer_channel *chan = caa_container_of(chanb,
 			struct lttng_ust_ring_buffer_channel, backend);
-	struct lttng_ust_ring_buffer_backend_subbuffer *wsb;
-	struct lttng_ust_ring_buffer_channel *shmp_chan;
-	struct commit_counters_hot *cc_hot;
 	void *priv = channel_get_private_config(chan);
-	size_t subbuf_header_size;
-	uint64_t timestamp;
 	int ret;
 
 	/* Test for cpu hotplug */
@@ -373,28 +369,8 @@ int lib_ring_buffer_create(struct lttng_ust_ring_buffer *buf,
 	 * Write the subbuffer header for first subbuffer so we know the total
 	 * duration of data gathering.
 	 */
-	subbuf_header_size = config->cb.subbuffer_header_size();
-	v_set(config, &buf->offset, subbuf_header_size);
-	wsb = shmp_index(handle, buf->backend.buf_wsb, 0);
-	if (!wsb) {
-		ret = -EPERM;
-		goto free_chanbuf;
-	}
-	subbuffer_id_clear_noref(config, &wsb->id);
-	shmp_chan = shmp(handle, buf->backend.chan);
-	if (!shmp_chan) {
-		ret = -EPERM;
-		goto free_chanbuf;
-	}
-	timestamp = config->cb.ring_buffer_clock_read(shmp_chan);
-	config->cb.buffer_begin(buf, timestamp, 0, 0, handle);
-	cc_hot = shmp_index(handle, buf->commit_hot, 0);
-	if (!cc_hot) {
-		ret = -EPERM;
-		goto free_chanbuf;
-	}
-	v_add(config, subbuf_header_size, &cc_hot->cc);
-	v_add(config, subbuf_header_size, &cc_hot->seq);
+	v_set(config, &buf->offset, 0);
+	uatomic_set(&buf->use_creation_timestamp, 1);
 
 	if (config->cb.buffer_create) {
 		ret = config->cb.buffer_create(buf, priv, cpu, chanb->name, handle);

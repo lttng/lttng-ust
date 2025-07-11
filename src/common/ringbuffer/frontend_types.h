@@ -216,6 +216,7 @@ struct lttng_ust_ring_buffer {
 	unsigned long prod_snapshot;	/* Producer count snapshot */
 	unsigned long cons_snapshot;	/* Consumer count snapshot */
 	unsigned int get_subbuf:1;	/* Sub-buffer being held by reader */
+	int use_creation_timestamp;
 	/* shmp pointer to self */
 	DECLARE_SHMP(struct lttng_ust_ring_buffer, self);
 	union {
