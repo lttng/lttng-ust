@@ -102,15 +102,15 @@ int lib_ring_buffer_backend_allocate(const struct lttng_ust_ring_buffer_config *
 		sb = shmp_index(handle, bufb->buf_wsb, i);
 		if (!sb)
 			goto free_array;
-		sb->id = subbuffer_id(config, 0, 1, i);
+		sb->id = subbuffer_id(config, ~0UL, 1, i);
 	}
 
 	/* Assign read-side subbuffer table */
 	if (extra_reader_sb)
-		bufb->buf_rsb.id = subbuffer_id(config, 0, 1,
+		bufb->buf_rsb.id = subbuffer_id(config, ~0UL, 1,
 						num_subbuf_alloc - 1);
 	else
-		bufb->buf_rsb.id = subbuffer_id(config, 0, 1, 0);
+		bufb->buf_rsb.id = subbuffer_id(config, ~0UL, 1, 0);
 
 	/* Allocate subbuffer packet counter table */
 	align_shm(shmobj, __alignof__(struct lttng_ust_ring_buffer_backend_counts));
