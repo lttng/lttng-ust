@@ -2754,12 +2754,12 @@ void lib_ring_buffer_check_deliver_slow(const struct lttng_ust_ring_buffer_confi
 			wsb = shmp_index(handle, buf->backend.buf_wsb, idx);
 			if (wsb && !subbuffer_id_is_noref(config, wsb->id)) {
 				lib_ring_buffer_set_noref_offset(config, &buf->backend, idx,
-							buf_trunc_val(offset, chan), handle);
+							buf_trunc_val(offset - 1, chan), handle);
 			}
 
 		} else {
 			lib_ring_buffer_set_noref_offset(config, &buf->backend, idx,
-							buf_trunc_val(offset, chan), handle);
+							buf_trunc_val(offset - 1, chan), handle);
 		}
 
 		/*
