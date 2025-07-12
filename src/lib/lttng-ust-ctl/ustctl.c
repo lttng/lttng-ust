@@ -2324,7 +2324,7 @@ int lttng_ust_ctl_subbuf_iter_next(struct lttng_ust_ctl_subbuf_iter *piter)
 			 * Check if all commits (and deliver) associated
 			 * with this position have been done.
 			 */
-			if ((buf_trunc(iter.iter_pos, iter.chan) >> iter.chan->backend.num_subbuf_order) - (iter.cc_cold & iter.chan->commit_count_mask) != 0) {
+			if ((buf_trunc(iter.iter_pos, iter.chan) >> iter.chan->backend.num_subbuf_order) - ((iter.cc_cold - iter.chan->backend.subbuf_size) & iter.chan->commit_count_mask) != 0) {
 				/* Retry with the next subbuffer. */
 				continue;
 			}
