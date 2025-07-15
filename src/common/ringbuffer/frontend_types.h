@@ -120,7 +120,7 @@ struct commit_counters_cold {
 
 #define RB_CRASH_ENDIAN			0x1234
 
-#define RB_CRASH_DUMP_ABI_MAJOR		0
+#define RB_CRASH_DUMP_ABI_MAJOR		1
 #define RB_CRASH_DUMP_ABI_MINOR		0
 
 enum lttng_crash_type {
