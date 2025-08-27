@@ -2227,7 +2227,6 @@ int lttng_ust_ctl_subbuf_iter_create(struct lttng_ust_ctl_consumer_stream *strea
 		return -EINVAL;
 
 	iter = zmalloc(sizeof(*iter));
-
 	if (!iter)
 		return -ENOMEM;
 
@@ -2235,9 +2234,9 @@ int lttng_ust_ctl_subbuf_iter_create(struct lttng_ust_ctl_consumer_stream *strea
 	iter->chan = stream->chan->chan->priv->rb_chan;
 
 	ret = lib_ring_buffer_snapshot_sample_positions(iter->buf, &consumed_pos, &produced_pos, iter->chan->handle);
-	if (ret)
-		return ret;
-
+	if (ret) {
+		goto error;
+	}
 	iter->consumed_pos = consumed_pos;
 	iter->produced_pos = produced_pos;
 	iter->type = iter_type;
@@ -2255,7 +2254,8 @@ int lttng_ust_ctl_subbuf_iter_create(struct lttng_ust_ctl_consumer_stream *strea
 		iter->iter_next_pos = consumed_pos;
 		break;
 	default:
-		return -EINVAL;
+		ret = -EINVAL;
+		goto error;
 	}
 
 	/* End of iteration. */
@@ -2268,12 +2268,18 @@ int lttng_ust_ctl_subbuf_iter_create(struct lttng_ust_ctl_consumer_stream *strea
 		iter->iter_end = consumed_pos;
 		break;
 	default:
-		return -EINVAL;
+		ret = -EINVAL;
+		goto error;
 	}
 
 	*piter = iter;
 
 	return 0;
+
+error:
+
+	free(iter);
+	return ret;
 }
 
 int lttng_ust_ctl_subbuf_iter_next(struct lttng_ust_ctl_subbuf_iter *piter)
