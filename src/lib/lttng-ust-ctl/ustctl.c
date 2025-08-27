@@ -1095,7 +1095,7 @@ int lttng_ust_ctl_recv_stream_from_consumer(int sock,
 	len = ustcomm_recv_unix_sock(sock, &stream_data->size,
 			sizeof(stream_data->size));
 	if (len != sizeof(stream_data->size)) {
-		if (len < 0)
+		if (len < 0 && len >= INT_MIN)
 			ret = len;
 		else
 			ret = -EINVAL;
@@ -1110,7 +1110,7 @@ int lttng_ust_ctl_recv_stream_from_consumer(int sock,
 	len = ustcomm_recv_unix_sock(sock, &stream_data->u.stream.stream_nr,
 			sizeof(stream_data->u.stream.stream_nr));
 	if (len != sizeof(stream_data->u.stream.stream_nr)) {
-		if (len < 0)
+		if (len < 0 && len >= INT_MIN)
 			ret = len;
 		else
 			ret = -EINVAL;
@@ -1120,7 +1120,7 @@ int lttng_ust_ctl_recv_stream_from_consumer(int sock,
 	/* recv shm fd and wakeup fd */
 	len = ustcomm_recv_fds_unix_sock(sock, fds, 2);
 	if (len <= 0) {
-		if (len < 0) {
+		if (len < 0 && len >= INT_MIN) {
 			ret = len;
 			goto error;
 		} else {

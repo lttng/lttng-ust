@@ -664,7 +664,7 @@ int ustcomm_recv_stream_from_sessiond(int sock,
 	len = ustcomm_recv_fds_unix_sock(sock, fds, 2);
 	if (len <= 0) {
 		lttng_ust_unlock_fd_tracker();
-		if (len < 0) {
+		if (len < 0 && len >= INT_MIN) {
 			ret = len;
 			goto error;
 		} else {
@@ -750,7 +750,7 @@ int ustcomm_recv_counter_shm_from_sessiond(int sock,
 	len = ustcomm_recv_fds_unix_sock(sock, fds, 1);
 	if (len <= 0) {
 		lttng_ust_unlock_fd_tracker();
-		if (len < 0) {
+		if (len < 0 && len >= INT_MIN) {
 			ret = len;
 			goto error;
 		} else {
