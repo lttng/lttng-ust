@@ -30,7 +30,7 @@
  * be set for a thread before the first event is logged within this
  * thread.
  */
-typedef char procname_array[PROCNAME_NESTING_MAX][LTTNG_UST_CONTEXT_PROCNAME_LEN];
+typedef char procname_array[PROCNAME_NESTING_MAX][LTTNG_UST_ABI_PROCNAME_LEN];
 
 static DEFINE_URCU_TLS(procname_array, cached_procname);
 
@@ -47,8 +47,8 @@ const char *wrapper_getprocname(void)
 		CMM_STORE_SHARED(URCU_TLS(procname_nesting), nesting + 1);
 		/* Increment nesting before updating cache. */
 		cmm_barrier();
-		lttng_pthread_getname_np(URCU_TLS(cached_procname)[nesting], LTTNG_UST_CONTEXT_PROCNAME_LEN);
-		URCU_TLS(cached_procname)[nesting][LTTNG_UST_CONTEXT_PROCNAME_LEN - 1] = '\0';
+		lttng_pthread_getname_np(URCU_TLS(cached_procname)[nesting], LTTNG_UST_ABI_PROCNAME_LEN);
+		URCU_TLS(cached_procname)[nesting][LTTNG_UST_ABI_PROCNAME_LEN - 1] = '\0';
 		/* Decrement nesting after updating cache. */
 		cmm_barrier();
 		CMM_STORE_SHARED(URCU_TLS(procname_nesting), nesting);
@@ -70,7 +70,7 @@ size_t procname_get_size(void *priv __attribute__((unused)),
 		struct lttng_ust_probe_ctx *probe_ctx __attribute__((unused)),
 		size_t offset __attribute__((unused)))
 {
-	return LTTNG_UST_CONTEXT_PROCNAME_LEN;
+	return LTTNG_UST_ABI_PROCNAME_LEN;
 }
 
 static
@@ -82,7 +82,7 @@ void procname_record(void *priv __attribute__((unused)),
 	const char *procname;
 
 	procname = wrapper_getprocname();
-	chan->ops->event_write(ctx, procname, LTTNG_UST_CONTEXT_PROCNAME_LEN, 1);
+	chan->ops->event_write(ctx, procname, LTTNG_UST_ABI_PROCNAME_LEN, 1);
 }
 
 static
@@ -95,7 +95,7 @@ void procname_get_value(void *priv __attribute__((unused)),
 
 static const struct lttng_ust_ctx_field *ctx_field = lttng_ust_static_ctx_field(
 	lttng_ust_static_event_field("procname",
-		lttng_ust_static_type_array_text(LTTNG_UST_CONTEXT_PROCNAME_LEN),
+		lttng_ust_static_type_array_text(LTTNG_UST_ABI_PROCNAME_LEN),
 		false, false),
 	procname_get_size,
 	procname_record,
