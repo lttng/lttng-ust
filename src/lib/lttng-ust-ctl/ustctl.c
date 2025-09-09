@@ -2891,6 +2891,118 @@ void lttng_ust_ctl_packet_reset(struct lttng_ust_ctl_consumer_packet *packet)
 	packet->packet_length_padded = 0;
 }
 
+static
+int _lttng_ust_ctl_flush_events_or_populate_packet(struct lttng_ust_ctl_consumer_stream *stream,
+		struct lttng_ust_ctl_consumer_packet *packet,
+		bool *packet_populated, bool *flush_done)
+{
+	uint64_t sample_time = 0, seq_num = 0, subbuf_idx = 0, events_discarded = 0;
+	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
+	struct lttng_ust_ring_buffer_backend_counts *counts;
+	struct lttng_ust_ring_buffer_channel *chan = NULL;
+	unsigned long pos_before = 0, pos_after = 0;
+	struct lttng_ust_ring_buffer *buf;
+	struct switch_offests;
+	int ret;
+
+	buf = stream->buf;
+	chan = stream->chan->chan->priv->rb_chan;
+	client_cb = get_client_cb(buf, chan);
+	if (!client_cb)
+		return -ENOSYS;
+
+	/*
+	 * The producer position and timestamp are sampled in explicit order
+	 * before the active flush done. Once the flush is complete,
+	 * if the producer position is unchanged, the packet will populated.
+	 *
+	 * This is done to avoid a race condition wherein there could be a
+	 * new event produced between the time the samples were taken and
+	 * the time the flush is done.
+	 */
+	ret = _lttng_ust_ctl_snapshot_sample_positions(buf, stream->chan);
+	if (ret < 0)
+		return ret;
+
+	ret = lttng_ust_ctl_snapshot_get_produced(stream, &pos_before);
+	if (ret < 0)
+		return ret;
+
+	ret = _lttng_ust_ctl_get_current_timestamp(buf, chan, client_cb, &sample_time);
+	if (ret < 0)
+		return ret;
+
+	ret = client_cb->current_events_discarded(buf, chan, &events_discarded);
+
+	if (ret < 0)
+		return ret;
+
+	_lttng_ust_ctl_flush_buffer(buf, 1, stream->chan);
+	if (flush_done)
+		*flush_done = true;
+
+	ret = _lttng_ust_ctl_snapshot_sample_positions(buf, stream->chan);
+	if (ret < 0)
+		return ret;
+
+	ret = lttng_ust_ctl_snapshot_get_produced(stream, &pos_after);
+	if (ret < 0)
+		return ret;
+
+	if (pos_before == pos_after) {
+
+		struct commit_counters_cold *cc_cold;
+		uint64_t packet_cnt;
+
+		cc_cold = shmp_index(chan->handle, buf->commit_cold, subbuf_idx);
+
+		if (!cc_cold)
+			return -EFAULT;
+
+		/*
+		 * The packet may have been previously initialized, but not
+		 * necessarily for the current stream therefore it is reset.
+		 */
+		lttng_ust_ctl_packet_reset(packet);
+		if (!packet->p) {
+			ret = client_cb->packet_create(&packet->p, &packet->packet_length);
+			if (ret < 0)
+				return ret;
+		}
+
+		/*
+		 * To compute the sequence number that the terminal packet should have,
+		 * the produced position that was sampled is used to infer the current
+		 * subbuffer index.
+		 *
+		 * As the sequence number isn't actually incremented afterwards, in situations
+		 * where there are multiple back-to-back snapshots there may be packets that
+		 * share the same sequence number. If a later packet uses the same
+		 * sequence number, readers should discard the earlier duplicates
+		 * based on the end timestamps.
+		 */
+		subbuf_idx = subbuf_index(pos_after, chan);
+		counts = shmp_index(chan->handle, buf->backend.buf_cnt, subbuf_idx);
+		if (!counts)
+			return -EINVAL;
+
+		packet_cnt = subbuffer_load_packet_count(chan, buf, chan->handle,
+						v_read(&chan->backend.config, &cc_cold->cc_sb),
+						subbuf_idx);
+		seq_num = chan->backend.num_subbuf * packet_cnt + subbuf_idx;
+		ret = client_cb->packet_initialize(buf, chan, packet->p, sample_time,
+						sample_time, seq_num, events_discarded,
+						&packet->packet_length,
+						&packet->packet_length_padded);
+		if (ret < 0)
+			return ret;
+
+		*packet_populated = true;
+	}
+
+	return 0;
+}
+
 /*
  * Perform an active flush of the stream.
  *
@@ -2908,14 +3020,7 @@ int lttng_ust_ctl_flush_events_or_populate_packet(struct lttng_ust_ctl_consumer_
 		struct lttng_ust_ctl_consumer_packet *packet,
 		bool *packet_populated, bool *flush_done)
 {
-	uint64_t sample_time = 0, seq_num = 0, subbuf_idx = 0, events_discarded = 0;
-	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
-	struct lttng_ust_ring_buffer_backend_counts *counts;
-	struct lttng_ust_ring_buffer_channel *chan = NULL;
-	unsigned long pos_before = 0, pos_after = 0;
 	struct lttng_ust_sigbus_range range;
-	struct lttng_ust_ring_buffer *buf;
-	struct switch_offests;
 	int ret;
 
 	assert(packet);
@@ -2927,114 +3032,10 @@ int lttng_ust_ctl_flush_events_or_populate_packet(struct lttng_ust_ctl_consumer_
 
 	if (!stream)
 		return -EINVAL;
-
-	buf = stream->buf;
-	chan = stream->chan->chan->priv->rb_chan;
-	client_cb = get_client_cb(buf, chan);
-	if (!client_cb)
-		return -ENOSYS;
-
 	if (sigbus_begin())
 		return -EIO;
-
-	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr,
-		stream->memory_map_size);
-
-	/*
-	 * The producer position and timestamp are sampled in explicit order
-	 * before the active flush done. Once the flush is complete,
-	 * if the producer position is unchanged, the packet will populated.
-	 *
-	 * This is done to avoid a race condition wherein there could be a
-	 * new event produced between the time the samples were taken and
-	 * the time the flush is done.
-	 */
-	ret = _lttng_ust_ctl_snapshot_sample_positions(buf, stream->chan);
-	if (ret < 0)
-		goto err_sigbus;
-
-	ret = lttng_ust_ctl_snapshot_get_produced(stream, &pos_before);
-	if (ret < 0)
-		goto err_sigbus;
-
-	ret = _lttng_ust_ctl_get_current_timestamp(buf, chan, client_cb, &sample_time);
-	if (ret < 0)
-		goto err_sigbus;
-
-	ret = client_cb->current_events_discarded(buf, chan, &events_discarded);
-
-	if (ret < 0)
-		goto err_sigbus;
-
-	_lttng_ust_ctl_flush_buffer(buf, 1, stream->chan);
-	if (flush_done)
-		*flush_done = true;
-
-	ret = _lttng_ust_ctl_snapshot_sample_positions(buf, stream->chan);
-	if (ret < 0)
-		goto err_sigbus;
-
-	ret = lttng_ust_ctl_snapshot_get_produced(stream, &pos_after);
-	if (ret < 0)
-		goto err_sigbus;
-
-	if (pos_before == pos_after) {
-
-		struct commit_counters_cold *cc_cold;
-		uint64_t packet_cnt;
-
-		cc_cold = shmp_index(chan->handle, buf->commit_cold, subbuf_idx);
-
-		if (!cc_cold) {
-			ret = -EFAULT;
-			goto err_sigbus;
-		}
-
-		/*
-		 * The packet may have been previously initialized, but not
-		 * necessarily for the current stream therefore it is reset.
-		 */
-		lttng_ust_ctl_packet_reset(packet);
-		if (!packet->p) {
-			ret = client_cb->packet_create(&packet->p, &packet->packet_length);
-			if (ret < 0)
-				goto err_sigbus;
-		}
-
-		/*
-		 * To compute the sequence number that the terminal packet should have,
-		 * the produced position that was sampled is used to infer the current
-		 * subbuffer index.
-		 *
-		 * As the sequence number isn't actually incremented afterwards, in situations
-		 * where there are multiple back-to-back snapshots there may be packets that
-		 * share the same sequence number. If a later packet uses the same
-		 * sequence number, readers should discard the earlier duplicates
-		 * based on the end timestamps.
-		 */
-		subbuf_idx = subbuf_index(pos_after, chan);
-		counts = shmp_index(chan->handle, buf->backend.buf_cnt, subbuf_idx);
-		if (!counts) {
-			ret = -EINVAL;
-			goto err_sigbus;
-		}
-
-		packet_cnt = subbuffer_load_packet_count(chan, buf, chan->handle,
-						v_read(&chan->backend.config, &cc_cold->cc_sb),
-						subbuf_idx);
-		seq_num = chan->backend.num_subbuf * packet_cnt + subbuf_idx;
-		ret = client_cb->packet_initialize(buf, chan, packet->p, sample_time,
-						sample_time, seq_num, events_discarded,
-						&packet->packet_length,
-						&packet->packet_length_padded);
-		if (ret < 0)
-			goto err_sigbus;
-
-		*packet_populated = true;
-	}
-
-	ret = 0;
-err_sigbus:
+	lttng_ust_sigbus_add_range(&range, stream->memory_map_addr, stream->memory_map_size);
+	ret = _lttng_ust_ctl_flush_events_or_populate_packet(stream, packet, packet_populated, flush_done);
 	lttng_ust_sigbus_del_range(&range);
 	sigbus_end();
 	return ret;
