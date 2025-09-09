@@ -39,6 +39,15 @@ void v_set(const struct lttng_ust_ring_buffer_config *config, union v_atomic *v_
 }
 
 static inline
+void v_store(const struct lttng_ust_ring_buffer_config *config, union v_atomic *v_a,
+	     long v, enum cmm_memorder mo)
+{
+	assert(config->sync != RING_BUFFER_SYNC_PER_CPU);
+	uatomic_store(&v_a->a, v, mo);
+}
+
+
+static inline
 void v_add(const struct lttng_ust_ring_buffer_config *config, long v, union v_atomic *v_a)
 {
 	assert(config->sync != RING_BUFFER_SYNC_PER_CPU);
