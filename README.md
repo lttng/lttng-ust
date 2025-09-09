@@ -17,7 +17,7 @@ user space tracing helpers for any application.
 Prerequisites
 -------------
 
-LTTng-UST depends on **[liburcu](http://liburcu.org/) >= 0.12** at build
+LTTng-UST depends on **[liburcu](http://liburcu.org/) >= 0.15** at build
 time. It also optionally depends on libnuma.
 
 

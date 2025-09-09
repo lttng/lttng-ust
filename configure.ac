@@ -309,8 +309,8 @@ AC_CHECK_LIB([$libdl_name], [dlmopen], [
   AC_DEFINE([HAVE_DLMOPEN], [1], [Define to 1 if dlmopen is available.])
 ])
 
-# Require URCU >= 0.12 for DEFINE_URCU_TLS_INIT
-PKG_CHECK_MODULES([URCU], [liburcu >= 0.12])
+# Require URCU >= 0.15 for CMM_RELEASE
+PKG_CHECK_MODULES([URCU], [liburcu >= 0.15])
 
 
 ##                 ##
