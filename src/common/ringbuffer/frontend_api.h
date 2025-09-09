@@ -322,21 +322,13 @@ void lib_ring_buffer_commit(const struct lttng_ust_ring_buffer_config *config,
 	commit_count = cc_hot->cc.a + ctx_private->slot_size;
 
 	/*
-	 * Order all writes to buffer before the commit count update that will
-	 * determine that the subbuffer is full.
-	 *
-	 * TODO:uatomic This could be merged with the following v_set() into a single
-	 * store release operation.
-	 */
-	cmm_smp_wmb();
-
-	/*
 	 * Only the owner of the sub-buffer can increment the hot commit
 	 * counter.
-	 *
 	 * This needs to be atomically set with respect with readers.
+	 * Store-release orders all writes to buffer before the commit
+	 * count update that will determine that the subbuffer is full.
 	 */
-	v_set(config, &cc_hot->cc, commit_count);
+	v_store(config, &cc_hot->cc, commit_count, CMM_RELEASE);
 
 
 	/*
