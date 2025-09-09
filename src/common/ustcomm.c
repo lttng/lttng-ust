@@ -506,22 +506,22 @@ int ustcomm_recv_app_reply(int sock, struct ustcomm_ust_reply *lur,
 	{
 		int err = 0;
 
-		if (lur->handle != expected_handle) {
+		if (lur->header.handle != expected_handle) {
 			ERR("Unexpected result message handle: "
 				"expected: %u vs received: %u\n",
-				expected_handle, lur->handle);
+				expected_handle, lur->header.handle);
 			err = 1;
 		}
-		if (lur->cmd != expected_cmd) {
+		if (lur->header.cmd != expected_cmd) {
 			ERR("Unexpected result message command "
 				"expected: %u vs received: %u\n",
-				expected_cmd, lur->cmd);
+				expected_cmd, lur->header.cmd);
 			err = 1;
 		}
 		if (err) {
 			return -EINVAL;
 		} else {
-			return lur->ret_code;
+			return lur->header.ret_code;
 		}
 	}
 	default:
@@ -541,7 +541,7 @@ int ustcomm_send_app_cmd(int sock,
 	ret = ustcomm_send_app_msg(sock, lum);
 	if (ret)
 		return ret;
-	ret = ustcomm_recv_app_reply(sock, lur, lum->handle, lum->cmd);
+	ret = ustcomm_recv_app_reply(sock, lur, lum->header.handle, lum->header.cmd);
 	if (ret > 0)
 		return -EIO;
 	return ret;
@@ -793,6 +793,7 @@ int ustcomm_send_reg_msg(int sock,
 	ssize_t len;
 	struct lttng_ust_ctl_reg_msg reg_msg;
 
+	memset(reg_msg.padding, 0, sizeof(reg_msg.padding));
 	reg_msg.magic = LTTNG_UST_ABI_COMM_MAGIC;
 	reg_msg.major = LTTNG_UST_ABI_MAJOR_VERSION;
 	reg_msg.minor = LTTNG_UST_ABI_MINOR_VERSION;
@@ -809,7 +810,6 @@ int ustcomm_send_reg_msg(int sock,
 	reg_msg.socket_type = type;
 	memset(reg_msg.name, 0, sizeof(reg_msg.name));
 	strncpy(reg_msg.name, procname, sizeof(reg_msg.name) - 1);
-	memset(reg_msg.padding, 0, sizeof(reg_msg.padding));
 
 	len = ustcomm_send_unix_sock(sock, &reg_msg, sizeof(reg_msg));
 	if (len > 0 && len != sizeof(reg_msg))
