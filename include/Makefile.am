@@ -21,7 +21,6 @@ nobase_include_HEADERS = \
 	lttng/ust-common.h \
 	lttng/ust-ctl.h \
 	lttng/ust-abi.h \
-	lttng/ust-abi-old.h \
 	lttng/ust-tracer.h \
 	lttng/ust-compiler.h \
 	lttng/ust-fork.h \
