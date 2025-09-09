@@ -522,10 +522,11 @@ int lib_ring_buffer_release_subbuf_ownership(const struct lttng_ust_ring_buffer_
 
 	if (caa_unlikely(!cc_hot))
 		return -1;
-
-	/* TODO:uatomic This really should be a store-release operation. */
-	cmm_smp_mb();
-	v_set(config, &cc_hot->owner, LTTNG_UST_ABI_OWNER_ID_UNSET);
+	/*
+	 * Store-release orders stores performed with ownership held
+	 * before releasing the ownership (unset).
+	 */
+	v_store(config, &cc_hot->owner, LTTNG_UST_ABI_OWNER_ID_UNSET, CMM_RELEASE);
 
 	return 0;
 }
