@@ -20,10 +20,6 @@
 extern "C" {
 #endif
 
-#ifndef LTTNG_UST_UUID_LEN
-#define LTTNG_UST_UUID_LEN	16
-#endif
-
 /* Default unix socket path */
 #define LTTNG_UST_SOCK_FILENAME					\
 	"lttng-ust-sock-"					\
@@ -46,7 +42,7 @@ struct lttng_ust_ctl_consumer_channel_attr {
 	unsigned int read_timer_interval;	/* usec */
 	enum lttng_ust_abi_output output;	/* splice, mmap */
 	uint32_t chan_id;			/* channel ID */
-	unsigned char uuid[LTTNG_UST_UUID_LEN]; /* Trace session unique ID */
+	unsigned char uuid[LTTNG_UST_ABI_UUID_LEN]; /* Trace session unique ID */
 	int64_t blocking_timeout;			/* Blocking timeout (usec) */
 	uint32_t owner_id;
 	/* 1: preallocate/zero, 0: don't preallocate (sparse/lazy allocation) */

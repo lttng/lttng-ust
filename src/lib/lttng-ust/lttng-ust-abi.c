@@ -599,7 +599,7 @@ int lttng_abi_map_channel(int session_objd,
 	lttng_chan_buf->priv->type = type;
 	/* Copy fields from lttng ust chan config. */
 	lttng_chan_buf->priv->id = lttng_chan_config->id;
-	memcpy(lttng_chan_buf->priv->uuid, lttng_chan_config->uuid, LTTNG_UST_UUID_LEN);
+	memcpy(lttng_chan_buf->priv->uuid, lttng_chan_config->uuid, LTTNG_UST_ABI_UUID_LEN);
 	channel_set_private(chan, lttng_chan_buf);
 
 	/*

@@ -396,7 +396,7 @@ struct lttng_ust_session_private {
 	unsigned int tstate:1;			/* Transient enable state */
 	unsigned int statedump_pending:1;
 	struct lttng_ust_ctx *ctx;		/* contexts for filters. */
-	unsigned char uuid[LTTNG_UST_UUID_LEN];	/* Trace session unique ID */
+	unsigned char uuid[LTTNG_UST_ABI_UUID_LEN]; /* Trace session unique ID */
 	bool uuid_set;				/* Is uuid set ? */
 };
 
@@ -455,7 +455,7 @@ struct lttng_ust_channel_buffer_private {
 	enum lttng_ust_abi_chan_type type;
 	struct lttng_ust_ctx *ctx;
 	struct lttng_ust_ring_buffer_channel *rb_chan;	/* Ring buffer channel */
-	unsigned char uuid[LTTNG_UST_UUID_LEN];	/* Trace session unique ID */
+	unsigned char uuid[LTTNG_UST_ABI_UUID_LEN];	/* Trace session unique ID */
 };
 
 struct lttng_ust_channel_counter_ops_private {
@@ -496,35 +496,6 @@ struct lttng_ust_channel_counter_private {
 	struct cds_list_head node;			/* Counter list (in session) */
 	size_t free_index;				/* Next index to allocate */
 	enum lttng_key_type dimension_key_types[LTTNG_COUNTER_DIMENSION_MAX];
-};
-
-/*
- * IMPORTANT: this structure is part of the ABI between the consumer
- * daemon and the UST library within traced applications. Changing it
- * breaks the UST communication protocol.
- *
- * TODO: remove unused fields on next UST communication protocol
- * breaking update.
- */
-struct lttng_ust_abi_channel_config {
-	void *unused1;
-	int unused2;
-	void *unused3;
-	void *unused4;
-	int unused5;
-	unsigned int _deprecated1;
-	unsigned int _deprecated2;
-	struct cds_list_head unused6;
-	void *unused7;
-	int unused8;
-	void *unused9;
-	unsigned int _deprecated3:1;
-
-	/* Channel ID */
-	unsigned int id;
-	enum lttng_ust_abi_chan_type unused10;
-	unsigned char uuid[LTTNG_UST_UUID_LEN]; /* Trace session unique ID */
-	int unused11:1;
 };
 
 /* Global (filter), event and channel contexts. */

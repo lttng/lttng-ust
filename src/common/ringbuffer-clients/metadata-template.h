@@ -20,7 +20,7 @@
 
 struct metadata_packet_header {
 	uint32_t magic;			/* 0x75D11D57 */
-	uint8_t  uuid[LTTNG_UST_UUID_LEN]; /* Unique Universal Identifier */
+	uint8_t  uuid[LTTNG_UST_ABI_UUID_LEN]; /* Unique Universal Identifier */
 	uint32_t checksum;		/* 0 if unused */
 	uint32_t content_size;		/* in bits */
 	uint32_t packet_size;		/* in bits */
@@ -231,11 +231,11 @@ struct lttng_ust_channel_buffer *_channel_create(const char *name,
 	lttng_chan_buf = lttng_ust_alloc_channel_buffer();
 	if (!lttng_chan_buf)
 		return NULL;
-	memcpy(lttng_chan_buf->priv->uuid, uuid, LTTNG_UST_UUID_LEN);
+	memcpy(lttng_chan_buf->priv->uuid, uuid, LTTNG_UST_ABI_UUID_LEN);
 	lttng_chan_buf->priv->id = chan_id;
 
 	memset(&chan_priv_init, 0, sizeof(chan_priv_init));
-	memcpy(chan_priv_init.uuid, uuid, LTTNG_UST_UUID_LEN);
+	memcpy(chan_priv_init.uuid, uuid, LTTNG_UST_ABI_UUID_LEN);
 	chan_priv_init.id = chan_id;
 
 	handle = channel_create(&client_config, name,

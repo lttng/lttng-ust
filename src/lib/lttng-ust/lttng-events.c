@@ -2362,11 +2362,11 @@ int lttng_ust_session_uuid_validate(struct lttng_ust_session *session,
 		return 0;
 	/* Compare UUID with session. */
 	if (session->priv->uuid_set) {
-		if (memcmp(session->priv->uuid, uuid, LTTNG_UST_UUID_LEN)) {
+		if (memcmp(session->priv->uuid, uuid, LTTNG_UST_ABI_UUID_LEN)) {
 			return -1;
 		}
 	} else {
-		memcpy(session->priv->uuid, uuid, LTTNG_UST_UUID_LEN);
+		memcpy(session->priv->uuid, uuid, LTTNG_UST_ABI_UUID_LEN);
 		session->priv->uuid_set = true;
 	}
 	return 0;

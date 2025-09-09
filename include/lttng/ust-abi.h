@@ -25,6 +25,10 @@
 
 #define LTTNG_UST_ABI_CMD_MAX_LEN			4096U
 
+#ifndef LTTNG_UST_ABI_UUID_LEN
+#define LTTNG_UST_ABI_UUID_LEN				16
+#endif
+
 enum lttng_ust_abi_instrumentation {
 	LTTNG_UST_ABI_TRACEPOINT	= 0,
 	LTTNG_UST_ABI_PROBE		= 1,
@@ -73,6 +77,21 @@ struct lttng_ust_abi_channel {
 	char padding[LTTNG_UST_ABI_CHANNEL_PADDING];
 	char data[];	/* variable sized data */
 } __attribute__((packed));
+
+#define LTTNG_UST_ABI_CHANNEL_CONFIG_SIZE	64
+struct lttng_ust_abi_channel_config {
+	union {
+		struct {
+			unsigned int id;				/* Channel ID */
+			unsigned char uuid[LTTNG_UST_ABI_UUID_LEN];	/* Trace session unique ID */
+		};
+		char padding[LTTNG_UST_ABI_CHANNEL_CONFIG_SIZE];
+	};
+} __attribute__((packed));
+
+lttng_ust_static_assert(sizeof(struct lttng_ust_abi_channel_config) == LTTNG_UST_ABI_CHANNEL_CONFIG_SIZE,
+		"Incorrect size for struct lttng_ust_abi_channel_config",
+		Incorrect_size_for_struct_lttng_ust_abi_channel_config);
 
 #define LTTNG_UST_ABI_STREAM_PADDING1	(LTTNG_UST_ABI_SYM_NAME_LEN + 32)
 struct lttng_ust_abi_stream {
