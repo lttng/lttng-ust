@@ -2739,16 +2739,14 @@ void lib_ring_buffer_check_deliver_slow(const struct lttng_ust_ring_buffer_confi
 		}
 
 		/*
-		 * Order set_noref and record counter updates before the
-		 * end of subbuffer exclusive access. Orders with
-		 * respect to writers coming into the subbuffer after
-		 * wrap around, and also order wrt concurrent readers.
-		 *
-		 * TODO: Store release.
+		 * Store-release orders set_noref and record counter
+		 * updates before the end of subbuffer exclusive access.
+		 * Orders with respect to writers coming into the
+		 * subbuffer after wrap around, and also order wrt
+		 * concurrent readers.
 		 */
-		cmm_smp_mb();
 		/* End of exclusive subbuffer access */
-		v_set(config, &cc_cold->cc_sb, commit_count);
+		v_store(config, &cc_cold->cc_sb, commit_count, CMM_RELEASE);
 		/*
 		 * Order later updates to reserve count after
 		 * the commit cold cc_sb update.
