@@ -160,12 +160,11 @@ void lttng_ust_ctl_sigbus_handle(void *addr)
 
 int lttng_ust_ctl_release_handle(int sock, int handle)
 {
-	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 
 	if (sock < 0 || handle < 0)
 		return 0;
-	memset(&lum, 0, sizeof(lum));
 	lum.header.handle = handle;
 	lum.header.cmd = LTTNG_UST_ABI_RELEASE;
 	return ustcomm_send_app_cmd(sock, &lum, &lur);
@@ -254,12 +253,11 @@ int lttng_ust_ctl_release_object(int sock, struct lttng_ust_abi_object_data *dat
  */
 int lttng_ust_ctl_register_done(int sock)
 {
-	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret;
 
 	DBG("Sending register done command to %d", sock);
-	memset(&lum, 0, sizeof(lum));
 	lum.header.handle = LTTNG_UST_ABI_ROOT_HANDLE;
 	lum.header.cmd = LTTNG_UST_ABI_REGISTER_DONE;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
@@ -273,12 +271,11 @@ int lttng_ust_ctl_register_done(int sock)
  */
 int lttng_ust_ctl_create_session(int sock)
 {
-	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret, session_handle;
 
 	/* Create session */
-	memset(&lum, 0, sizeof(lum));
 	lum.header.handle = LTTNG_UST_ABI_ROOT_HANDLE;
 	lum.header.cmd = LTTNG_UST_ABI_SESSION;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
@@ -293,7 +290,7 @@ int lttng_ust_ctl_create_event(int sock, struct lttng_ust_abi_event *ev,
 		struct lttng_ust_abi_object_data *channel_data,
 		struct lttng_ust_abi_object_data **_event_data)
 {
-	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	struct lttng_ust_abi_object_data *event_data;
 	int ret;
@@ -305,7 +302,6 @@ int lttng_ust_ctl_create_event(int sock, struct lttng_ust_abi_event *ev,
 	if (!event_data)
 		return -ENOMEM;
 	event_data->header.type = LTTNG_UST_ABI_OBJECT_TYPE_EVENT;
-	memset(&lum, 0, sizeof(lum));
 	lum.header.handle = channel_data->header.handle;
 	lum.header.cmd = LTTNG_UST_ABI_EVENT;
 	strncpy(lum.cmd.event.name, ev->name,
@@ -330,16 +326,12 @@ int lttng_ust_ctl_create_event(int sock, struct lttng_ust_abi_event *ev,
  * - send:     struct ustcomm_ust_msg
  * - send:     var len ctx_name
  * - receive:  struct ustcomm_ust_reply
- *
- * TODO: At the next breaking protocol bump, we should indicate the total
- * command message length as part of a message header so that the protocol can
- * recover from invalid command errors.
  */
 int lttng_ust_ctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
 		struct lttng_ust_abi_object_data *obj_data,
 		struct lttng_ust_abi_object_data **_context_data)
 {
-	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	struct lttng_ust_abi_object_data *context_data = NULL;
 	char *buf = NULL;
@@ -357,10 +349,8 @@ int lttng_ust_ctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
 		goto end;
 	}
 	context_data->header.type = LTTNG_UST_ABI_OBJECT_TYPE_CONTEXT;
-	memset(&lum, 0, sizeof(lum));
 	lum.header.handle = obj_data->header.handle;
 	lum.header.cmd = LTTNG_UST_ABI_CONTEXT;
-
 	lum.cmd.context.header.ctx = ctx->ctx;
 	switch (ctx->ctx) {
 	case LTTNG_UST_ABI_CONTEXT_PERF_THREAD_COUNTER:
@@ -385,6 +375,7 @@ int lttng_ust_ctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
 				provider_name_len);
 		memcpy(buf + provider_name_len, ctx->u.app_ctx.ctx_name,
 				ctx_name_len);
+		lum.header.payload_size += len;
 		break;
 	}
 	default:
@@ -431,24 +422,20 @@ end:
  * - send:     struct ustcomm_ust_msg
  * - send:     var len bytecode
  * - receive:  struct ustcomm_ust_reply
- *
- * TODO: At the next breaking protocol bump, we should indicate the total
- * command message length as part of a message header so that the protocol can
- * recover from invalid command errors.
  */
 int lttng_ust_ctl_set_filter(int sock, struct lttng_ust_abi_filter_bytecode *bytecode,
 		struct lttng_ust_abi_object_data *obj_data)
 {
-	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret;
 
 	if (!obj_data)
 		return -EINVAL;
 
-	memset(&lum, 0, sizeof(lum));
 	lum.header.handle = obj_data->header.handle;
 	lum.header.cmd = LTTNG_UST_ABI_FILTER;
+	lum.header.payload_size = bytecode->len;
 	lum.cmd.filter.data_size = bytecode->len;
 	lum.cmd.filter.reloc_offset = bytecode->reloc_offset;
 	lum.cmd.filter.seqnum = bytecode->seqnum;
@@ -486,14 +473,13 @@ int lttng_ust_ctl_set_filter(int sock, struct lttng_ust_abi_filter_bytecode *byt
 int lttng_ust_ctl_set_capture(int sock, struct lttng_ust_abi_capture_bytecode *bytecode,
 		struct lttng_ust_abi_object_data *obj_data)
 {
-	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret;
 
 	if (!obj_data)
 		return -EINVAL;
 
-	memset(&lum, 0, sizeof(lum));
 	lum.header.handle = obj_data->header.handle;
 	lum.header.cmd = LTTNG_UST_ABI_CAPTURE;
 	lum.cmd.capture.data_size = bytecode->len;
@@ -520,25 +506,24 @@ int lttng_ust_ctl_set_capture(int sock, struct lttng_ust_abi_capture_bytecode *b
  * - send:     struct ustcomm_ust_msg
  * - send:     var len exclusion names
  * - receive:  struct ustcomm_ust_reply
- *
- * TODO: At the next breaking protocol bump, we should indicate the total
- * command message length as part of a message header so that the protocol can
- * recover from invalid command errors.
  */
 int lttng_ust_ctl_set_exclusion(int sock, struct lttng_ust_abi_event_exclusion *exclusion,
 		struct lttng_ust_abi_object_data *obj_data)
 {
-	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret;
+	uint32_t exclusion_length;
 
 	if (!obj_data) {
 		return -EINVAL;
 	}
 
-	memset(&lum, 0, sizeof(lum));
+	exclusion_length = exclusion->count * LTTNG_UST_ABI_SYM_NAME_LEN;
+
 	lum.header.handle = obj_data->header.handle;
 	lum.header.cmd = LTTNG_UST_ABI_EXCLUSION;
+	lum.header.payload_size = exclusion_length;
 	lum.cmd.exclusion.count = exclusion->count;
 
 	ret = ustcomm_send_app_msg(sock, &lum);
@@ -549,7 +534,7 @@ int lttng_ust_ctl_set_exclusion(int sock, struct lttng_ust_abi_event_exclusion *
 	/* send var len exclusion names */
 	ret = ustcomm_send_unix_sock(sock,
 			exclusion->names,
-			exclusion->count * LTTNG_UST_ABI_SYM_NAME_LEN);
+			exclusion_length);
 	if (ret < 0) {
 		return ret;
 	}
@@ -570,14 +555,13 @@ int lttng_ust_ctl_set_exclusion(int sock, struct lttng_ust_abi_event_exclusion *
 /* Enable event, channel and session ioctl */
 int lttng_ust_ctl_enable(int sock, struct lttng_ust_abi_object_data *object)
 {
-	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret;
 
 	if (!object)
 		return -EINVAL;
 
-	memset(&lum, 0, sizeof(lum));
 	lum.header.handle = object->header.handle;
 	lum.header.cmd = LTTNG_UST_ABI_ENABLE;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
@@ -590,14 +574,13 @@ int lttng_ust_ctl_enable(int sock, struct lttng_ust_abi_object_data *object)
 /* Disable event, channel and session ioctl */
 int lttng_ust_ctl_disable(int sock, struct lttng_ust_abi_object_data *object)
 {
-	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret;
 
 	if (!object)
 		return -EINVAL;
 
-	memset(&lum, 0, sizeof(lum));
 	lum.header.handle = object->header.handle;
 	lum.header.cmd = LTTNG_UST_ABI_DISABLE;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
@@ -635,7 +618,7 @@ int lttng_ust_ctl_create_event_notifier_group(int sock, int pipe_fd,
 		struct lttng_ust_abi_object_data **_event_notifier_group_data)
 {
 	struct lttng_ust_abi_object_data *event_notifier_group_data;
-	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	ssize_t len;
 	int ret;
@@ -649,7 +632,6 @@ int lttng_ust_ctl_create_event_notifier_group(int sock, int pipe_fd,
 
 	event_notifier_group_data->header.type = LTTNG_UST_ABI_OBJECT_TYPE_EVENT_NOTIFIER_GROUP;
 
-	memset(&lum, 0, sizeof(lum));
 	lum.header.handle = LTTNG_UST_ABI_ROOT_HANDLE;
 	lum.header.cmd = LTTNG_UST_ABI_EVENT_NOTIFIER_GROUP_CREATE;
 
@@ -741,11 +723,10 @@ int lttng_ust_ctl_create_event_notifier(int sock, struct lttng_ust_abi_event_not
 
 int lttng_ust_ctl_tracepoint_list(int sock)
 {
-	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret, tp_list_handle;
 
-	memset(&lum, 0, sizeof(lum));
 	lum.header.handle = LTTNG_UST_ABI_ROOT_HANDLE;
 	lum.header.cmd = LTTNG_UST_ABI_TRACEPOINT_LIST;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
@@ -759,14 +740,13 @@ int lttng_ust_ctl_tracepoint_list(int sock)
 int lttng_ust_ctl_tracepoint_list_get(int sock, int tp_list_handle,
 		struct lttng_ust_abi_tracepoint_iter *iter)
 {
-	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret;
 
 	if (!iter)
 		return -EINVAL;
 
-	memset(&lum, 0, sizeof(lum));
 	lum.header.handle = tp_list_handle;
 	lum.header.cmd = LTTNG_UST_ABI_TRACEPOINT_LIST_GET;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
@@ -781,11 +761,10 @@ int lttng_ust_ctl_tracepoint_list_get(int sock, int tp_list_handle,
 
 int lttng_ust_ctl_tracepoint_field_list(int sock)
 {
-	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret, tp_field_list_handle;
 
-	memset(&lum, 0, sizeof(lum));
 	lum.header.handle = LTTNG_UST_ABI_ROOT_HANDLE;
 	lum.header.cmd = LTTNG_UST_ABI_TRACEPOINT_FIELD_LIST;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
@@ -799,7 +778,7 @@ int lttng_ust_ctl_tracepoint_field_list(int sock)
 int lttng_ust_ctl_tracepoint_field_list_get(int sock, int tp_field_list_handle,
 		struct lttng_ust_abi_field_iter *iter)
 {
-	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret;
 	ssize_t len;
@@ -807,7 +786,6 @@ int lttng_ust_ctl_tracepoint_field_list_get(int sock, int tp_field_list_handle,
 	if (!iter)
 		return -EINVAL;
 
-	memset(&lum, 0, sizeof(lum));
 	lum.header.handle = tp_field_list_handle;
 	lum.header.cmd = LTTNG_UST_ABI_TRACEPOINT_FIELD_LIST_GET;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
@@ -827,14 +805,13 @@ int lttng_ust_ctl_tracepoint_field_list_get(int sock, int tp_field_list_handle,
 
 int lttng_ust_ctl_tracer_version(int sock, struct lttng_ust_abi_tracer_version *v)
 {
-	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret;
 
 	if (!v)
 		return -EINVAL;
 
-	memset(&lum, 0, sizeof(lum));
 	lum.header.handle = LTTNG_UST_ABI_ROOT_HANDLE;
 	lum.header.cmd = LTTNG_UST_ABI_TRACER_VERSION;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
@@ -847,11 +824,10 @@ int lttng_ust_ctl_tracer_version(int sock, struct lttng_ust_abi_tracer_version *
 
 int lttng_ust_ctl_wait_quiescent(int sock)
 {
-	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret;
 
-	memset(&lum, 0, sizeof(lum));
 	lum.header.handle = LTTNG_UST_ABI_ROOT_HANDLE;
 	lum.header.cmd = LTTNG_UST_ABI_WAIT_QUIESCENT;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
@@ -872,14 +848,13 @@ int lttng_ust_ctl_calibrate(int sock __attribute__((unused)),
 
 int lttng_ust_ctl_sock_flush_buffer(int sock, struct lttng_ust_abi_object_data *object)
 {
-	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret;
 
 	if (!object)
 		return -EINVAL;
 
-	memset(&lum, 0, sizeof(lum));
 	lum.header.handle = object->header.handle;
 	lum.header.cmd = LTTNG_UST_ABI_FLUSH_BUFFER;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
@@ -1145,27 +1120,31 @@ error_alloc:
  * - send:     struct ustcomm_ust_msg
  * - send:     file descriptors and channel data
  * - receive:  struct ustcomm_ust_reply
- *
- * TODO: At the next breaking protocol bump, we should indicate the total
- * command message length as part of a message header so that the protocol can
- * recover from invalid command errors.
  */
 int lttng_ust_ctl_send_channel_to_ust(int sock, int session_handle,
 		struct lttng_ust_abi_object_data *channel_data)
 {
-	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret;
 
 	if (!channel_data)
 		return -EINVAL;
 
-	memset(&lum, 0, sizeof(lum));
 	lum.header.handle = session_handle;
 	lum.header.cmd = LTTNG_UST_ABI_CHANNEL;
 	lum.cmd.channel.len = channel_data->header.size;
 	lum.cmd.channel.type = channel_data->type.channel.type;
 	lum.cmd.channel.owner_id = channel_data->type.channel.owner_id;
+
+	/*
+	 * Payload is channel data and one file descriptor:
+	 *
+	 * 1. Wakeup
+	 */
+	lum.header.payload_size = channel_data->header.size + 1;
+	lum.header.ancillary_size = sizeof(int);
+
 	ret = ustcomm_send_app_msg(sock, &lum);
 	if (ret)
 		return ret;
@@ -1195,26 +1174,31 @@ int lttng_ust_ctl_send_channel_to_ust(int sock, int session_handle,
  * Protocol for LTTNG_UST_ABI_STREAM command:
  *
  * - send:     struct ustcomm_ust_msg
- * - send:     file descriptors and stream data
+ * - send:     file descriptors
  * - receive:  struct ustcomm_ust_reply
- *
- * TODO: At the next breaking protocol bump, we should indicate the total
- * command message length as part of a message header so that the protocol can
- * recover from invalid command errors.
  */
 int lttng_ust_ctl_send_stream_to_ust(int sock,
 		struct lttng_ust_abi_object_data *channel_data,
 		struct lttng_ust_abi_object_data *stream_data)
 {
-	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret;
 
-	memset(&lum, 0, sizeof(lum));
 	lum.header.handle = channel_data->header.handle;
 	lum.header.cmd = LTTNG_UST_ABI_STREAM;
 	lum.cmd.stream.len = stream_data->header.size;
 	lum.cmd.stream.stream_nr = stream_data->type.stream.stream_nr;
+
+	/*
+	 * Payload is stream data and two file descriptors:
+	 *
+	 *  1. Shared memory
+	 *  2. Wakeup
+	 */
+	lum.header.payload_size = 2;
+	lum.header.ancillary_size = 2 * sizeof(int);
+
 	ret = ustcomm_send_app_msg(sock, &lum);
 	if (ret)
 		return ret;
@@ -4095,11 +4079,10 @@ int lttng_ust_ctl_reply_register_channel(int sock,
 /* Regenerate the statedump. */
 int lttng_ust_ctl_regenerate_statedump(int sock, int handle)
 {
-	struct ustcomm_ust_msg lum;
+	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret;
 
-	memset(&lum, 0, sizeof(lum));
 	lum.header.handle = handle;
 	lum.header.cmd = LTTNG_UST_ABI_SESSION_STATEDUMP;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);

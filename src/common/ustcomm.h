@@ -80,6 +80,8 @@ struct ustcomm_ust_msg {
 		struct {
 			uint32_t handle;
 			uint32_t cmd;
+			uint32_t payload_size; /* in byte */
+			uint32_t ancillary_size; /* in byte */
 		} __attribute__((packed));
 	} header;
 
