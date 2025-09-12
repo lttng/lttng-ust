@@ -1842,7 +1842,7 @@ int do_fixup_stalled_subbuf_as_owner(const struct lttng_ust_ring_buffer_config *
 				long hot)
 {
 	unsigned long reserve, fill_reserve, minimal_reserve;
-	long long fill_diff, minimal_diff;
+	long fill_diff, minimal_diff;
 
 	/* Order read of hot with respect to reserve. */
 	cmm_smp_rmb();
@@ -1865,7 +1865,7 @@ int do_fixup_stalled_subbuf_as_owner(const struct lttng_ust_ring_buffer_config *
 	fill_diff = subbuf_align(reserve - 1, chan) - fill_reserve;
 	minimal_diff = reserve - minimal_reserve;
 
-	assert(0 <= (long long)chan->backend.buf_size - minimal_diff);
+	assert(0 <= (long)chan->backend.buf_size - minimal_diff);
 
 	/* Reservation is in this sub-buffer and in this buffer turn. */
 	if (fill_diff == 0) {
