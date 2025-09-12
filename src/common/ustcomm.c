@@ -547,234 +547,26 @@ int ustcomm_send_app_cmd(int sock,
 	return ret;
 }
 
-/*
- * chan_data is allocated internally if this function returns the
- * expected var_len.
- */
-ssize_t ustcomm_recv_channel_from_sessiond(int sock,
-		void **_chan_data, uint64_t var_len,
-		int *_wakeup_fd)
-{
-	void *chan_data;
-	ssize_t len, nr_fd;
-	int wakeup_fd, ret;
-
-	if (var_len > LTTNG_UST_ABI_CHANNEL_DATA_MAX_LEN) {
-		len = -EINVAL;
-		goto error_check;
-	}
-	/* Receive variable length data */
-	chan_data = zmalloc(var_len);
-	if (!chan_data) {
-		len = -ENOMEM;
-		goto error_alloc;
-	}
-	len = ustcomm_recv_unix_sock(sock, chan_data, var_len);
-	if (len != var_len) {
-		goto error_recv;
-	}
-	/* recv wakeup fd */
-	lttng_ust_lock_fd_tracker();
-	nr_fd = ustcomm_recv_fds_unix_sock(sock, &wakeup_fd, 1);
-	if (nr_fd <= 0) {
-		lttng_ust_unlock_fd_tracker();
-		if (nr_fd < 0) {
-			len = nr_fd;
-			goto error_recv;
-		} else {
-			len = -EIO;
-			goto error_recv;
-		}
-	}
-
-	ret = lttng_ust_add_fd_to_tracker(wakeup_fd);
-	if (ret < 0) {
-		ret = close(wakeup_fd);
-		if (ret) {
-			PERROR("close on wakeup_fd");
-		}
-		len = -EIO;
-		lttng_ust_unlock_fd_tracker();
-		goto error_recv;
-	}
-
-	*_wakeup_fd = ret;
-	lttng_ust_unlock_fd_tracker();
-
-	*_chan_data = chan_data;
-	return len;
-
-error_recv:
-	free(chan_data);
-error_alloc:
-error_check:
-	return len;
-}
-
-ssize_t ustcomm_recv_event_notifier_notif_fd_from_sessiond(int sock,
-		int *_event_notifier_notif_fd)
-{
-	ssize_t nr_fd;
-	int event_notifier_notif_fd, ret;
-
-	/* Receive event_notifier notification fd */
-	lttng_ust_lock_fd_tracker();
-	nr_fd = ustcomm_recv_fds_unix_sock(sock, &event_notifier_notif_fd, 1);
-	if (nr_fd <= 0) {
-		lttng_ust_unlock_fd_tracker();
-		if (nr_fd < 0) {
-			ret = nr_fd;
-			goto error;
-		} else {
-			ret = -EIO;
-			goto error;
-		}
-	}
-
-	ret = lttng_ust_add_fd_to_tracker(event_notifier_notif_fd);
-	if (ret < 0) {
-		ret = close(event_notifier_notif_fd);
-		if (ret) {
-			PERROR("close on event_notifier notif fd");
-		}
-		ret = -EIO;
-		lttng_ust_unlock_fd_tracker();
-		goto error;
-	}
-
-	*_event_notifier_notif_fd = ret;
-	lttng_ust_unlock_fd_tracker();
-
-	ret = nr_fd;
-
-error:
-	return ret;
-}
-
-int ustcomm_recv_stream_from_sessiond(int sock,
-		uint64_t *memory_map_size __attribute__((unused)),
-		int *shm_fd, int *wakeup_fd)
-{
-	ssize_t len;
-	int ret;
-	int fds[2];
-
-	/* recv shm fd and wakeup fd */
-	lttng_ust_lock_fd_tracker();
-	len = ustcomm_recv_fds_unix_sock(sock, fds, 2);
-	if (len <= 0) {
-		lttng_ust_unlock_fd_tracker();
-		if (len < 0 && len >= INT_MIN) {
-			ret = len;
-			goto error;
-		} else {
-			ret = -EIO;
-			goto error;
-		}
-	}
-
-	ret = lttng_ust_add_fd_to_tracker(fds[0]);
-	if (ret < 0) {
-		ret = close(fds[0]);
-		if (ret) {
-			PERROR("close on received shm_fd");
-		}
-		ret = -EIO;
-		lttng_ust_unlock_fd_tracker();
-		goto error;
-	}
-	*shm_fd = ret;
-
-	ret = lttng_ust_add_fd_to_tracker(fds[1]);
-	if (ret < 0) {
-		ret = close(*shm_fd);
-		if (ret) {
-			PERROR("close on shm_fd");
-		}
-		*shm_fd = -1;
-		ret = close(fds[1]);
-		if (ret) {
-			PERROR("close on received wakeup_fd");
-		}
-		ret = -EIO;
-		lttng_ust_unlock_fd_tracker();
-		goto error;
-	}
-	*wakeup_fd = ret;
-	lttng_ust_unlock_fd_tracker();
-	return 0;
-
-error:
-	return ret;
-}
-
-ssize_t ustcomm_recv_var_len_cmd_from_sessiond(int sock,
-		void **_data, uint32_t var_len)
+ssize_t ustcomm_recv_var_len_cmd_from_sessiond(const char *payload, uint32_t payload_size,
+					void **_data, uint32_t var_len)
 {
 	void *data;
-	ssize_t len;
+
+	assert(var_len <= payload_size);
 
 	if (var_len > LTTNG_UST_ABI_CMD_MAX_LEN) {
-		len = -EINVAL;
-		goto error_check;
+		return -EINVAL;
 	}
 	/* Receive variable length data */
 	data = zmalloc(var_len);
 	if (!data) {
-		len = -ENOMEM;
-		goto error_alloc;
+		return -ENOMEM;
 	}
-	len = ustcomm_recv_unix_sock(sock, data, var_len);
-	if (len != var_len) {
-		goto error_recv;
-	}
+	memcpy(data, payload, var_len);
+
 	*_data = data;
-	return len;
 
-error_recv:
-	free(data);
-error_alloc:
-error_check:
-	return len;
-}
-
-int ustcomm_recv_counter_shm_from_sessiond(int sock,
-		int *shm_fd)
-{
-	ssize_t len;
-	int ret;
-	int fds[1];
-
-	/* recv shm fd fd */
-	lttng_ust_lock_fd_tracker();
-	len = ustcomm_recv_fds_unix_sock(sock, fds, 1);
-	if (len <= 0) {
-		lttng_ust_unlock_fd_tracker();
-		if (len < 0 && len >= INT_MIN) {
-			ret = len;
-			goto error;
-		} else {
-			ret = -EIO;
-			goto error;
-		}
-	}
-
-	ret = lttng_ust_add_fd_to_tracker(fds[0]);
-	if (ret < 0) {
-		ret = close(fds[0]);
-		if (ret) {
-			PERROR("close on received shm_fd");
-		}
-		ret = -EIO;
-		lttng_ust_unlock_fd_tracker();
-		goto error;
-	}
-	*shm_fd = ret;
-	lttng_ust_unlock_fd_tracker();
-	return 0;
-
-error:
-	return ret;
+	return var_len;
 }
 
 /*
