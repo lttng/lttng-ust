@@ -1799,6 +1799,7 @@ int get_next_subbuf_context(const struct lttng_ust_ring_buffer_config *config,
 {
 	int err;
 	struct lttng_ust_client_lib_ring_buffer_client_cb *client_cb;
+	uint64_t events_discarded = 0;
 
 	client_cb = caa_container_of(config->cb_ptr,
 			struct lttng_ust_client_lib_ring_buffer_client_cb,
@@ -1815,14 +1816,14 @@ int get_next_subbuf_context(const struct lttng_ust_ring_buffer_config *config,
 
 	/*
 	 * `events_discarded_begin()' will return the aggregated counters of
-	 * lost records. It is stored in `records_lost_full' and the other
-	 * counters are set to 0, since it is going to be aggregated anyway
-	 * later.
+	 * lost records truncated to "unsigned long". It is stored in
+	 * `records_lost_full' and the other counters are set to 0,
+	 * since it is going to be aggregated anyway later.
 	 *
 	 * This needs to be changed whenever lost records counters are split.
 	 */
-	err = client_cb->events_discarded_begin(buf, chan, &priv->records_lost_full);
-
+	err = client_cb->events_discarded_begin(buf, chan, &events_discarded);
+	priv->records_lost_full = (unsigned long) events_discarded;
 	priv->records_lost_wrap = 0;
 	priv->records_lost_big = 0;
 put:
