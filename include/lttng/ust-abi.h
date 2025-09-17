@@ -380,6 +380,7 @@ struct lttng_ust_abi_context {
 			/* Includes trailing '\0'. */
 			uint32_t provider_name_len;
 			uint32_t ctx_name_len;
+			char name[];
 		} __attribute__((packed)) app_ctx;
 	} type;
 } __attribute__((packed));
@@ -552,6 +553,7 @@ struct lttng_ust_abi_event_exclusion {
 lttng_ust_static_assert(sizeof(struct lttng_ust_abi_event_exclusion) == LTTNG_UST_ABI_EXCLUSION_SIZE,
 			"Unexpected size for struct lttng_ust_abi_event_exclusion",
 			Unexpected_size_for_struct_lttng_ust_abi_event_exclusion);
+
 
 #define LTTNG_UST_ABI_CMD(minor)			(minor)
 #define LTTNG_UST_ABI_CMDR(minor, type)			(minor)
