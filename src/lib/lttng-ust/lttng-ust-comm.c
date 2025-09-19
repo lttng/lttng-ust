@@ -541,19 +541,27 @@ char* lttng_ust_sockinfo_get_procname(void *owner)
 	return info->procname;
 }
 
+/*
+ * Print the command name but also return true if the command is known.
+ */
 static
-void print_cmd(int cmd, int handle, uint32_t payload_size, uint32_t ancillary_size)
+bool print_cmd(int cmd, int handle, uint32_t payload_size, uint32_t ancillary_size)
 {
 	const char *cmd_name = "Unknown";
+	bool known = false;
 
-	if (cmd >= 0 && cmd < LTTNG_ARRAY_SIZE(cmd_name_mapping)
-			&& cmd_name_mapping[cmd]) {
-		cmd_name = cmd_name_mapping[cmd];
+	if (cmd >= 0 && cmd < LTTNG_ARRAY_SIZE(cmd_name_mapping)) {
+		if (cmd_name_mapping[cmd]) {
+			cmd_name = cmd_name_mapping[cmd];
+		}
+		known = true;
 	}
 	DBG("Message Received \"%s\" (%d), Handle \"%s\" (%d), Payload Size (%" PRIu32 "), Ancillary Size (%" PRIu32 ")",
 		cmd_name, cmd,
 		lttng_ust_obj_get_name(handle), handle,
 		payload_size, ancillary_size);
+
+	return known;
 }
 
 static
@@ -909,48 +917,9 @@ const char *bytecode_type_str(uint32_t cmd)
 	}
 }
 
-enum handle_message_error {
-	MSG_OK = 0,
-	MSG_ERROR = 1,
-	MSG_SHUTDOWN = 2,
-};
-
-/*
- * Return:
- * < 0: error
- * 0: OK, handle command.
- * > 0: shutdown (no error).
- */
-static
-enum handle_message_error handle_error(struct sock_info *sock_info, ssize_t len,
-		ssize_t expected_len, const char *str, int *error_code)
-{
-	if (!len) {
-		/* orderly shutdown */
-		*error_code = 0;
-		return MSG_SHUTDOWN;
-	}
-	if (len == expected_len) {
-		DBG("%s data received", str);
-		*error_code = 0;
-		return MSG_OK;
-	}
-	if (len < 0) {
-		DBG("Receive failed from lttng-sessiond with errno %d", (int) -len);
-		if (len == -ECONNRESET) {
-			ERR("%s remote end closed connection", sock_info->name);
-		}
-		*error_code = len;
-		return MSG_ERROR;
-	}
-	DBG("incorrect %s data message size: %zd", str, len);
-	*error_code = -EINVAL;
-	return MSG_ERROR;
-}
-
 static
 int handle_bytecode(struct sock_info *sock_info,
-		struct ustcomm_ust_msg *lum,
+		struct ustcomm_ust_msg_header *lum,
 		const void *payload, uint32_t payload_size)
 {
 	struct lttng_ust_bytecode_node *bytecode = NULL;
@@ -961,7 +930,7 @@ int handle_bytecode(struct sock_info *sock_info,
 	uint64_t seqnum;
 	int ret = 0;
 
-	switch (lum->header.cmd) {
+	switch (lum->cmd) {
 	case LTTNG_UST_ABI_FILTER: {
 		const struct lttng_ust_abi_filter_bytecode *filter;
 
@@ -1000,14 +969,14 @@ int handle_bytecode(struct sock_info *sock_info,
 
 	if (data_size > data_size_max) {
 		ERR("%s data size is too large: %u bytes",
-				bytecode_type_str(lum->header.cmd), data_size);
+				bytecode_type_str(lum->cmd), data_size);
 		ret = -EINVAL;
 		goto end;
 	}
 
 	if (reloc_offset > data_size) {
 		ERR("%s reloc offset %u is not within data",
-				bytecode_type_str(lum->header.cmd), reloc_offset);
+				bytecode_type_str(lum->cmd), reloc_offset);
 		ret = -EINVAL;
 		goto end;
 	}
@@ -1026,7 +995,7 @@ int handle_bytecode(struct sock_info *sock_info,
 
 	memcpy(bytecode->bc.data, data, data_size);
 
-	ops = lttng_ust_abi_objd_ops(lum->header.handle);
+	ops = lttng_ust_abi_objd_ops(lum->handle);
 	if (!ops) {
 		ret = -ENOENT;
 		goto end;
@@ -1037,7 +1006,7 @@ int handle_bytecode(struct sock_info *sock_info,
 	 * NULL.
 	 */
 	if (ops->cmd)
-		ret = ops->cmd(lum->header.handle, lum->header.cmd,
+		ret = ops->cmd(lum->handle, lum->cmd,
 			(unsigned long) &bytecode,
 			NULL, sock_info);
 	else
@@ -1154,9 +1123,9 @@ void untrack_fd(int *fd)
 
 static
 int handle_message(struct sock_info *sock_info,
-		int sock, struct ustcomm_ust_msg *lum,
-		const void *payload, size_t payload_size,
-		int *ancillary_fds, size_t fds_count)
+		int sock, struct ustcomm_ust_msg_header *lum,
+		const void *restrict payload, size_t payload_size,
+		const void *restrict ancillary_data, size_t ancillary_size)
 {
 	int ret = 0;
 	const struct lttng_ust_abi_objd_ops *ops;
@@ -1165,30 +1134,31 @@ int handle_message(struct sock_info *sock_info,
 	char ctxstr[LTTNG_UST_ABI_SYM_NAME_LEN];	/* App context string. */
 	ssize_t len;
 	void *var_len_cmd_data = NULL;
+	const int *ancillary_fds = (const int *)ancillary_data;
 
 	if (ust_lock()) {
 		ret = -LTTNG_UST_ERR_EXITING;
 		goto error;
 	}
 
-	ops = lttng_ust_abi_objd_ops(lum->header.handle);
+	ops = lttng_ust_abi_objd_ops(lum->handle);
 	if (!ops) {
 		ret = -ENOENT;
 		goto error;
 	}
 
-	switch (lum->header.cmd) {
+	switch (lum->cmd) {
 	case LTTNG_UST_ABI_REGISTER_DONE:
-		if (lum->header.handle == LTTNG_UST_ABI_ROOT_HANDLE)
+		if (lum->handle == LTTNG_UST_ABI_ROOT_HANDLE)
 			ret = handle_register_done(sock_info);
 		else
 			ret = -EINVAL;
 		break;
 	case LTTNG_UST_ABI_RELEASE:
-		if (lum->header.handle == LTTNG_UST_ABI_ROOT_HANDLE)
+		if (lum->handle == LTTNG_UST_ABI_ROOT_HANDLE)
 			ret = -EPERM;
 		else
-			ret = lttng_ust_abi_objd_unref(lum->header.handle, 1);
+			ret = lttng_ust_abi_objd_unref(lum->handle, 1);
 		break;
 	case LTTNG_UST_ABI_CAPTURE:
 	case LTTNG_UST_ABI_FILTER:
@@ -1228,7 +1198,7 @@ int handle_message(struct sock_info *sock_info,
 		memcpy(node->excluder.names, exclusion->names, exclusion_size);
 
 		if (ops->cmd)
-			ret = ops->cmd(lum->header.handle, lum->header.cmd,
+			ret = ops->cmd(lum->handle, lum->cmd,
 					(unsigned long) &node,
 					&args, sock_info);
 		else
@@ -1240,8 +1210,8 @@ int handle_message(struct sock_info *sock_info,
 	{
 		int event_notifier_notif_fd;
 
-		assert(payload_size == 0);
-		assert(fds_count == 1);
+		assert(payload_size == 1);
+		assert(ancillary_size == sizeof(int));
 
 		event_notifier_notif_fd = track_fd(ancillary_fds[0]);
 
@@ -1252,7 +1222,7 @@ int handle_message(struct sock_info *sock_info,
 
 		args.event_notifier_handle.event_notifier_notif_fd = event_notifier_notif_fd;
 		if (ops->cmd)
-			ret = ops->cmd(lum->header.handle, lum->header.cmd,
+			ret = ops->cmd(lum->handle, lum->cmd,
 					(unsigned long) payload,
 					&args, sock_info);
 		else
@@ -1267,7 +1237,7 @@ int handle_message(struct sock_info *sock_info,
 		const struct lttng_ust_abi_channel *channel = payload;
 
 		assert(payload_size == sizeof(*channel) + channel->len);
-		assert(fds_count == 1);
+		assert(ancillary_size == sizeof(int));
 
 		wakeup_fd = track_fd(ancillary_fds[0]);
 
@@ -1291,7 +1261,7 @@ int handle_message(struct sock_info *sock_info,
 
 		/* Chan data is copied. */
 		if (ops->cmd)
-			ret = ops->cmd(lum->header.handle, lum->header.cmd,
+			ret = ops->cmd(lum->handle, lum->cmd,
 					(unsigned long) payload,
 					&args, sock_info);
 		else
@@ -1302,7 +1272,7 @@ int handle_message(struct sock_info *sock_info,
 	case LTTNG_UST_ABI_STREAM:
 	{
 		assert(payload_size == sizeof(struct lttng_ust_abi_stream));
-		assert(fds_count == 2);
+		assert(ancillary_size == 2 * sizeof(int));
 
 		args.stream.shm_fd = track_fd(ancillary_fds[0]);
 
@@ -1320,7 +1290,7 @@ int handle_message(struct sock_info *sock_info,
 		}
 
 		if (ops->cmd)
-			ret = ops->cmd(lum->header.handle, lum->header.cmd,
+			ret = ops->cmd(lum->handle, lum->cmd,
 					(unsigned long) payload,
 					&args, sock_info);
 		else
@@ -1331,45 +1301,67 @@ int handle_message(struct sock_info *sock_info,
 	}
 	case LTTNG_UST_ABI_CONTEXT: {
 		const struct lttng_ust_abi_context *context = payload;
-		assert(payload_size >= sizeof(*context));
+
+		assert(payload_size >= sizeof(struct lttng_ust_abi_context));
+
 		switch (context->header.ctx) {
 		case LTTNG_UST_ABI_CONTEXT_APP_CONTEXT:
 		{
-			char *p;
-			size_t ctxlen, recvlen;
+			const char *provider_name;
+			const char *context_name;
+			char *app_ctx = ctxstr;
+			size_t ctxlen;
 
 			assert(payload_size ==
 				sizeof(*context) +
 				context->type.app_ctx.provider_name_len +
 				context->type.app_ctx.ctx_name_len);
 
-			ctxlen = strlen("$app.") + context->type.app_ctx.provider_name_len - 1
-					+ strlen(":") + context->type.app_ctx.ctx_name_len;
+			assert(context->type.app_ctx.provider_name_len +
+				context->type.app_ctx.ctx_name_len < LTTNG_UST_ABI_SYM_NAME_LEN);
+
+			/* NOTE: These are not null terminated strings. */
+			provider_name = payload + sizeof(*context);
+			context_name = provider_name + context->type.app_ctx.provider_name_len;
+
+			assert(provider_name - (const char *)payload < payload_size);
+			assert(context_name - (const char *)payload < payload_size);
+
+			ctxlen = strlen("$app.") + context->type.app_ctx.provider_name_len
+				+ strlen(":") + context->type.app_ctx.ctx_name_len;
 			if (ctxlen >= LTTNG_UST_ABI_SYM_NAME_LEN) {
 				ERR("Application context string length size is too large: %zu bytes",
 					ctxlen);
 				ret = -EINVAL;
 				goto error;
 			}
-			strcpy(ctxstr, "$app.");
-			p = &ctxstr[strlen("$app.")];
-			recvlen = ctxlen - strlen("$app.");
 
-			assert(recvlen == payload_size);
-			memcpy(p, context->type.app_ctx.name,
-				context->type.app_ctx.provider_name_len +
-				context->type.app_ctx.ctx_name_len);
+			strcpy(app_ctx, "$app.");
+			app_ctx += strlen("$app.");
 
-			/* Put : between provider and ctxname. */
-			p[context->type.app_ctx.provider_name_len - 1] = ':';
+			memcpy(app_ctx, provider_name, context->type.app_ctx.provider_name_len);
+			app_ctx += context->type.app_ctx.provider_name_len;
+
+			app_ctx[0] = ':';
+			app_ctx += 1;
+
+			memcpy(app_ctx, context_name, context->type.app_ctx.ctx_name_len);
+			app_ctx += context->type.app_ctx.ctx_name_len;
+
+			app_ctx[0] = '\0';
+
 			args.app_context.ctxname = ctxstr;
 			break;
 		}
 		default:
+		{
+
 			break;
 		}
+		}
+
 		if (ops->cmd) {
-			ret = ops->cmd(lum->header.handle, lum->header.cmd,
+			ret = ops->cmd(lum->handle, lum->cmd,
 					(unsigned long) payload,
 					&args, sock_info);
 		} else {
@@ -1386,7 +1378,7 @@ int handle_message(struct sock_info *sock_info,
 
 		args.counter.len = payload_size;
 		if (ops->cmd)
-			ret = ops->cmd(lum->header.handle, lum->header.cmd,
+			ret = ops->cmd(lum->handle, lum->cmd,
 					(unsigned long) var_len_cmd_data,
 					&args, sock_info);
 		else
@@ -1395,7 +1387,8 @@ int handle_message(struct sock_info *sock_info,
 	}
 	case LTTNG_UST_ABI_COUNTER_CHANNEL:
 	{
-		assert(fds_count == 1);
+		assert(payload_size == sizeof(struct lttng_ust_abi_counter_channel));
+		assert(ancillary_size == sizeof(int));
 
 		args.counter_shm.shm_fd = track_fd(ancillary_fds[0]);
 
@@ -1416,7 +1409,7 @@ int handle_message(struct sock_info *sock_info,
 
 		/* Take ownership of data. */
 		if (ops->cmd)
-			ret = ops->cmd(lum->header.handle, lum->header.cmd,
+			ret = ops->cmd(lum->handle, lum->cmd,
 					(unsigned long) var_len_cmd_data,
 					&args, sock_info);
 		else
@@ -1426,7 +1419,8 @@ int handle_message(struct sock_info *sock_info,
 	}
 	case LTTNG_UST_ABI_COUNTER_CPU:
 	{
-		assert(fds_count == 1);
+		assert(payload_size == sizeof(struct lttng_ust_abi_counter_cpu));
+		assert(ancillary_size == sizeof(int));
 
 		args.counter_shm.shm_fd = track_fd(ancillary_fds[0]);
 
@@ -1445,7 +1439,7 @@ int handle_message(struct sock_info *sock_info,
 
 		args.counter_shm.len = payload_size;
 		if (ops->cmd)
-			ret = ops->cmd(lum->header.handle, lum->header.cmd,
+			ret = ops->cmd(lum->handle, lum->cmd,
 					(unsigned long) var_len_cmd_data,
 					&args, sock_info);
 		else
@@ -1466,7 +1460,7 @@ int handle_message(struct sock_info *sock_info,
 
 		args.counter_event.len = payload_size;
 		if (ops->cmd)
-			ret = ops->cmd(lum->header.handle, lum->header.cmd,
+			ret = ops->cmd(lum->handle, lum->cmd,
 					(unsigned long) var_len_cmd_data,
 					&args, sock_info);
 		else
@@ -1484,7 +1478,7 @@ int handle_message(struct sock_info *sock_info,
 
 		args.event_notifier.len = payload_size;
 		if (ops->cmd)
-			ret = ops->cmd(lum->header.handle, lum->header.cmd,
+			ret = ops->cmd(lum->handle, lum->cmd,
 					(unsigned long) var_len_cmd_data,
 					&args, sock_info);
 		else
@@ -1494,7 +1488,7 @@ int handle_message(struct sock_info *sock_info,
 
 	default:
 		if (ops->cmd)
-			ret = ops->cmd(lum->header.handle, lum->header.cmd,
+			ret = ops->cmd(lum->handle, lum->cmd,
 				(unsigned long) payload,
 				&args, sock_info);
 		else
@@ -1502,10 +1496,10 @@ int handle_message(struct sock_info *sock_info,
 		break;
 	}
 
-	prepare_cmd_reply(&lur, lum->header.handle, lum->header.cmd, ret);
+	prepare_cmd_reply(&lur, lum->handle, lum->cmd, ret);
 
 	if (ret >= 0) {
-		switch (lum->header.cmd) {
+		switch (lum->cmd) {
 		case LTTNG_UST_ABI_TRACER_VERSION: {
 			assert(payload_size == 0);
                         /*
@@ -1555,7 +1549,7 @@ int handle_message(struct sock_info *sock_info,
 	 * after the reply.
 	 */
 	if (lur.header.ret_code == LTTNG_UST_OK) {
-		switch (lum->header.cmd) {
+		switch (lum->cmd) {
 		case LTTNG_UST_ABI_TRACEPOINT_FIELD_LIST_GET:
 			len = ustcomm_send_unix_sock(sock,
 				&args.field_list.entry,
@@ -1930,44 +1924,95 @@ error:
 	return;
 }
 
-static int read_message_payload_and_ancillary(struct sock_info *sock_info,
-					int sock,
-					char *payload, uint32_t expected_payload_size,
-					int *ancillary_data, uint32_t expected_ancillary_size)
+static void
+flush_message(int sock, const struct ustcomm_ust_msg_header *lum, char *payload_buf)
 {
-	ssize_t total_length = 0;
-	ssize_t actual_payload_size = 0, actual_ancillary_size = 0;
-	int payload_ret, ancillary_ret;
+	struct ustcomm_ust_reply lur = {};
+	struct msghdr msghdr;
+	struct iovec iov[] = {
+		{
+			.iov_base = payload_buf,
+			.iov_len = lum->payload_size,
+		},
+	};
+	ssize_t len;
+	int ret;
 
-	if (expected_payload_size)
-		actual_payload_size = ustcomm_recv_unix_sock(sock, payload,
-							expected_payload_size);
+	prepare_cmd_reply(&lur, lum->handle, lum->cmd, -ENOSYS);
 
-	if (actual_payload_size > 0)
-		total_length += actual_payload_size;
+	if (!lum->payload_size)
+		goto no_payload;
 
-	handle_error(sock_info,
-		actual_payload_size, expected_payload_size,
-		"command payload", &payload_ret);
+	memset(&msghdr, 0, sizeof(msghdr));
 
-	if (expected_ancillary_size)
-		actual_ancillary_size = ustcomm_recv_fds_unix_sock(sock, ancillary_data,
-								expected_ancillary_size);
+	msghdr.msg_iov = iov;
+	msghdr.msg_iovlen = LTTNG_ARRAY_SIZE(iov);
+	msghdr.msg_control = NULL;
+	msghdr.msg_controllen = lum->ancillary_size;
 
-	if (actual_ancillary_size > 0)
-		total_length += actual_ancillary_size;
+	len = recvmsg(sock, &msghdr, MSG_TRUNC);
 
-	handle_error(sock_info,
-		actual_ancillary_size, expected_ancillary_size,
-		"command ancillary data", &ancillary_ret);
+	assert(len == lum->payload_size);
 
-	if (payload_ret)
-		return payload_ret;
+no_payload:
+	ret = send_reply(sock, &lur);
 
-	if (ancillary_ret)
-		return ancillary_ret;
+	assert(ret == 0);
+}
 
-	assert(total_length == expected_payload_size + expected_ancillary_size);
+static int read_message_payload_and_ancillary(int sock,
+					uint32_t expected_payload_size,
+					uint32_t expected_ancillary_size,
+					char *payload_buf, uint32_t payload_buf_size,
+					char *ancillary_buf, uint32_t ancillary_buf_size)
+{
+	struct msghdr msghdr;
+	ssize_t size_recv;
+	struct cmsghdr *cmptr;
+	struct iovec iov[] = {
+		{
+			.iov_base = payload_buf,
+			.iov_len = expected_payload_size,
+		},
+	};
+
+	if (!expected_payload_size)
+		return 0;
+
+	assert(expected_payload_size <= payload_buf_size);
+	assert(expected_ancillary_size <= ancillary_buf_size);
+
+	memset(&msghdr, 0, sizeof(msghdr));
+
+	msghdr.msg_iov = iov;
+	msghdr.msg_iovlen = LTTNG_ARRAY_SIZE(iov);
+	msghdr.msg_control = ancillary_buf;
+	msghdr.msg_controllen = ancillary_buf_size;
+
+	size_recv = recvmsg(sock, &msghdr, MSG_TRUNC);
+
+	if (size_recv != expected_payload_size) {
+		switch (size_recv) {
+		case -1:
+			return -errno;
+		case 0:
+			return -ESHUTDOWN;
+		default:
+			/*
+			 * No error nor shutdown, but the received payload size
+			 * is not matching what is described in the message header.
+			 */
+			return -EBADMSG;
+		}
+	}
+
+	if (expected_ancillary_size) {
+		cmptr = CMSG_FIRSTHDR(&msghdr);
+
+		assert(cmptr->cmsg_len == CMSG_LEN(expected_ancillary_size));
+
+		memmove(ancillary_buf, CMSG_DATA(cmptr), expected_ancillary_size);
+	}
 
 	return 0;
 }
@@ -2218,11 +2263,13 @@ restart:
 
 	for (;;) {
 		ssize_t len;
-		struct ustcomm_ust_msg lum;
-		char payload[LTTNG_UST_COMM_MAX_PAYLOAD_SIZE];
-
-		/* TODO: Set a good size for ancillary datas. */
-		int ancillary_fds[16];
+		struct ustcomm_ust_msg_header lum;
+		char payload_buf[LTTNG_UST_COMM_MAX_PAYLOAD_SIZE];
+		union {
+			char buf[LTTNG_UST_COMM_MAX_PAYLOAD_SIZE];
+			struct cmsghdr align;
+		} ancillary_buf;
+		bool known;
 
 		len = ustcomm_recv_unix_sock(sock, &lum, sizeof(lum));
 		switch (len) {
@@ -2246,27 +2293,37 @@ restart:
 			ust_unlock();
 			goto end;
 		case sizeof(lum):
-			print_cmd(lum.header.cmd, lum.header.handle,
-				lum.header.payload_size, lum.header.ancillary_size);
-			ret = read_message_payload_and_ancillary(sock_info, sock,
-								payload, lum.header.payload_size,
-								ancillary_fds, lum.header.ancillary_size);
+			known = print_cmd(lum.cmd, lum.handle,
+					lum.payload_size, lum.ancillary_size);
+			if (!known) {
+				flush_message(sock, &lum, payload_buf);
+				continue;
+			}
+
+			ret = read_message_payload_and_ancillary(sock,
+								lum.payload_size, lum.ancillary_size,
+								payload_buf, LTTNG_ARRAY_SIZE(payload_buf),
+								ancillary_buf.buf, LTTNG_ARRAY_SIZE(ancillary_buf.buf));
 			if (ret) {
-				ERR("Error while reading message payload for %s socket",
+				ERR("Error %d while reading message payload for %s socket",
+					-ret,
 					sock_info->name);
 				goto end;
 			}
 			ret = handle_message(sock_info, sock, &lum,
-					payload, lum.header.payload_size,
-					ancillary_fds, lum.header.ancillary_size);
+					payload_buf, lum.payload_size,
+					ancillary_buf.buf, lum.ancillary_size);
 			if (ret) {
 				ERR("Error handling message for %s socket",
 					sock_info->name);
+
 				/*
 				 * Close socket if protocol error is
 				 * detected.
 				 */
-				goto end;
+				if (ret != -ENOSYS)
+					goto end;
+
 			}
 			continue;
 		default:

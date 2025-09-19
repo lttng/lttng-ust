@@ -478,22 +478,86 @@ end:
 	return ret;
 }
 
-int ustcomm_send_app_msg(int sock, struct ustcomm_ust_msg *lum,
-			const struct iovec *iov, int iovcnt)
+static size_t
+prepare_ancillary_data(struct msghdr *msg, const int *fds, int fds_cnt,
+		char *control_buf, size_t control_buf_len)
 {
-	ssize_t total_payload_size = 0;
-	ssize_t sent_size;
+	struct cmsghdr *cmptr;
+	unsigned int sizeof_fds = fds_cnt * sizeof(int);
 
-	if (iov) {
-		assert(iovcnt);
-		for (size_t i = 0; i < iovcnt; ++i) {
-			total_payload_size += iov[i].iov_len;
-		}
-	} else {
-		assert(!iovcnt);
+	if (!fds) {
+		/*
+		 * At least one byte is required when sending ancillary data.
+		 */
+		assert(fds_cnt == 0);
+		msg->msg_control = NULL;
+		msg->msg_controllen = 0;
+		return 0;
 	}
 
-	lum->header.payload_size = total_payload_size;
+	assert(fds_cnt > 0);
+
+	msg->msg_control = control_buf;
+	msg->msg_controllen = control_buf_len;
+
+	cmptr = CMSG_FIRSTHDR(msg);
+
+	cmptr->cmsg_level = SOL_SOCKET;
+	cmptr->cmsg_type = SCM_RIGHTS;
+	cmptr->cmsg_len = CMSG_LEN(sizeof_fds);
+	memcpy(CMSG_DATA(cmptr), fds, sizeof_fds);
+
+	return sizeof_fds;
+}
+
+static size_t
+prepare_payload_data(struct msghdr *msg, struct iovec *iov, int iovcnt)
+{
+	size_t total_size = 0;
+
+	if (!iov) {
+		assert(iovcnt == 0);
+		return 0;
+
+
+	}
+
+	assert(iovcnt > 0);
+
+	for (int i = 0; i < iovcnt; ++i) {
+		total_size += iov[i].iov_len;
+	}
+
+	msg->msg_iov = iov;
+	msg->msg_iovlen = iovcnt;
+
+	return total_size;
+}
+
+int ustcomm_send_app_msg(int sock, struct ustcomm_ust_msg_header *lum,
+			struct iovec *iov, int iovcnt,
+			const int *fds, size_t fds_cnt)
+{
+	struct msghdr msghdr;
+	ssize_t sent_size;
+	union {
+		char buf[CMSG_SPACE(USTCOMM_MAX_SEND_FDS * sizeof(int))];
+		struct cmsghdr align;
+	} control_buf = { 0 };
+
+	/*
+	 * Memset to ensure all bytes of unions are zeroed.
+	 */
+	memset(&msghdr, 0, sizeof(msghdr));
+
+	lum->payload_size = prepare_payload_data(&msghdr, iov, iovcnt);
+
+	lum->ancillary_size = prepare_ancillary_data(&msghdr, fds, fds_cnt,
+						control_buf.buf, sizeof(control_buf.buf));
+
+	if (lum->ancillary_size > 0) {
+		assert(lum->payload_size > 0);
+	}
 
 	sent_size = ustcomm_send_unix_sock(sock, lum, sizeof(*lum));
 
@@ -509,13 +573,13 @@ int ustcomm_send_app_msg(int sock, struct ustcomm_ust_msg *lum,
 		}
 	}
 
-	if (!iov) {
+	if (lum->payload_size == 0) {
 		return 0;
 	}
 
-	sent_size = ustcomm_sendv_unix_sock(sock, iov, iovcnt);
+	sent_size = sendmsg(sock, &msghdr, MSG_NOSIGNAL);
 
-	if (sent_size != total_payload_size) {
+	if (sent_size != lum->payload_size) {
 		if (sent_size < 0) {
 			return sent_size;
 		} else {
@@ -568,16 +632,17 @@ int ustcomm_recv_app_reply(int sock, struct ustcomm_ust_reply *lur,
 }
 
 int ustcomm_send_app_cmd(int sock,
-			struct ustcomm_ust_msg *lum,
+			struct ustcomm_ust_msg_header *lum,
 			struct ustcomm_ust_reply *lur)
 {
 	int ret;
 
 	ret = ustcomm_send_app_msg(sock, lum,
+				NULL, 0,
 				NULL, 0);
 	if (ret)
 		return ret;
-	ret = ustcomm_recv_app_reply(sock, lur, lum->header.handle, lum->header.cmd);
+	ret = ustcomm_recv_app_reply(sock, lur, lum->handle, lum->cmd);
 	if (ret > 0)
 		return -EIO;
 	return ret;
