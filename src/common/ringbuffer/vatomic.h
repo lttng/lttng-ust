@@ -31,6 +31,14 @@ long v_read(const struct lttng_ust_ring_buffer_config *config, union v_atomic *v
 }
 
 static inline
+long v_load(const struct lttng_ust_ring_buffer_config *config, union v_atomic *v_a,
+	    enum cmm_memorder mo)
+{
+	assert(config->sync != RING_BUFFER_SYNC_PER_CPU);
+	return uatomic_load(&v_a->a, mo);
+}
+
+static inline
 void v_set(const struct lttng_ust_ring_buffer_config *config, union v_atomic *v_a,
 	   long v)
 {

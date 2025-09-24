@@ -522,11 +522,27 @@ int lib_ring_buffer_release_subbuf_ownership(const struct lttng_ust_ring_buffer_
 
 	if (caa_unlikely(!cc_hot))
 		return -1;
+
 	/*
-	 * Store-release orders stores performed with ownership held
-	 * before releasing the ownership (unset).
+	 * The sequential consistency MO acts as a store-release
+	 * semi-permeable barrier to order stores performed with
+	 * ownership held before releasing the ownership.
+	 *
+	 * The sequential consistency MO is also needed to order the
+	 * store to the sub-buffer owner (releasing ownership) before
+	 * the following sequential consistency load of `buf->offset`.
+	 *
+	 * This pairs with the sequence of cmpxchg to `buf->offset`
+	 * in lib_ring_buffer_switch_slow() followed by a cmpxchg to
+	 * sub-buffer owner lib_ring_buffer_try_clear_lazy_padding().
+	 * Both of those cmpxchg are sequential consistency on success.
+	 *
+	 * These sequences of (store-X/load-Y, store-Y/load-X) form a
+	 * Dekker memory ordering. This guarantees that the lazy padding
+	 * is performed as soon as the ownership is released without
+	 * relying on buffer stall recovery.
 	 */
-	v_store(config, &cc_hot->owner, LTTNG_UST_ABI_OWNER_ID_UNSET, CMM_RELEASE);
+	v_store(config, &cc_hot->owner, LTTNG_UST_ABI_OWNER_ID_UNSET, CMM_SEQ_CST);
 
 	return 0;
 }
@@ -599,8 +615,6 @@ void lib_ring_buffer_clear_owner_lazy_padding(const struct lttng_ust_ring_buffer
 	TESTPOINT("lib_ring_buffer_clear_owner_lazy_padding_before_ownership_release");
 	(void) lib_ring_buffer_release_subbuf_ownership(config, buf, subbuf_idx, handle);
 
-
-
 	/*
 	 * Re-validate the sampled reserve position after releasing
 	 * ownership. This takes care of situations where a concurrent producer
@@ -612,8 +626,11 @@ void lib_ring_buffer_clear_owner_lazy_padding(const struct lttng_ust_ring_buffer
 	 * it means it moved the reserve position immediately *after* we have
 	 * released ownership. There is no lazy padding to handle in that
 	 * scenario.
+	 *
+	 * Refer to the comment within lib_ring_buffer_release_subbuf_ownership()
+	 * for explanation of the seq-cst memory ordering.
 	 */
-	if (sampled_reserve != v_read(config, &buf->offset)) {
+	if (sampled_reserve != v_load(config, &buf->offset, CMM_SEQ_CST)) {
 		TESTPOINT("lib_ring_buffer_clear_owner_lazy_padding_before_take_ownership");
 		if (lib_ring_buffer_try_take_subbuf_ownership(config, chan, buf, subbuf_idx, handle) == 0) {
 			lib_ring_buffer_lazy_padding_as_owner(config, chan, buf, subbuf_idx, handle, ctx, NULL);
