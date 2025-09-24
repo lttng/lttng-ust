@@ -14,7 +14,7 @@
  * force race conditions to happen with an external debugger.
  */
 #define TESTPOINT(label)						\
-	__asm__ volatile (".local lttng_ust_testpoint_" label "%=\n\t"	\
-			"lttng_ust_testpoint_" label "%= =." : : :)
+	__asm__ volatile (".local lttng_ust_testpoint_" label ".%=\n\t"	\
+			"lttng_ust_testpoint_" label ".%= =." : : :)
 
 #endif	/* _UST_COMMON_TESTPOINT_H */
