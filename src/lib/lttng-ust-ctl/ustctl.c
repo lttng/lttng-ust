@@ -868,6 +868,95 @@ int lttng_ust_ctl_tracer_version(int sock, struct lttng_ust_abi_tracer_version *
 	return ret;
 }
 
+/*
+ * The unknown command is meant to be used for testing only. Users should never
+ * use that command.
+ *
+ * The command will return 0 if all internal tests pass.
+ *
+ * The following tests are done:
+ *
+ *   1. A dummy payload is sent with the read end of a socket pair before being
+ *   closed.
+ *
+ *   2. The client replied with `LTTNG_UST_ERR_NOSYS`
+ *
+ *   3. The command writes to the write end of the pipe and expect `errno` to be
+ *   `EPIPE`.
+ *
+ * The tests validate that the client will correctly handle unknown command by
+ * returning the appropriate error code and close any sent file descriptor.
+ */
+int lttng_ust_ctl_unknown_command(int sock)
+{
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
+	int ret;
+	char buf[27];
+	struct iovec iov[] = {
+		{
+			.iov_base = buf,
+			.iov_len = LTTNG_ARRAY_SIZE(buf),
+		},
+	};
+
+	int fds[2];
+
+	char dummy;
+
+	/*
+	 * Note that passing SOCK_CLOEXEC | SOCK_NONBLOCK flags to `type' is a
+	 * Linux extension.
+	 */
+	if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC | SOCK_NONBLOCK, 0, fds) < 0)
+		return -errno;
+
+	lum.cmd = LTTNG_UST_ABI_UNKNOWN_COMMAND;
+
+	ret = ustcomm_send_app_msg(sock, &lum,
+				iov, LTTNG_ARRAY_SIZE(iov),
+				&fds[0], 1);
+
+	(void) close(fds[0]);
+
+	/* Error while sending message. This command does not check for that. */
+	if (ret < 0) {
+		ret = 0;
+		goto out;
+	}
+
+	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+
+	switch (ret) {
+	case -LTTNG_UST_ERR_NOSYS:
+		break;
+	case -EPIPE:		/* Maybe the application died. */
+		ret = 0;
+		/* fall through */
+	default:
+		goto out;
+	}
+
+	ret = send(fds[1], &dummy, sizeof(dummy), MSG_NOSIGNAL);
+
+	/*
+	 * Some bytes were sent, which means the read side is still open.
+	 */
+	if (ret != -1) {
+		/* EIO is not used by send(2). */
+		ret = -EIO;
+	} else if (errno == EPIPE) {
+		ret = 0;
+	} else {
+		ret = -errno;
+	}
+
+out:
+	(void) close(fds[1]);
+
+	return ret;
+}
+
 int lttng_ust_ctl_wait_quiescent(int sock)
 {
 	struct ustcomm_ust_msg_header lum = {};
