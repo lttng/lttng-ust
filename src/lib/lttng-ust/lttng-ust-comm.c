@@ -61,6 +61,23 @@
 #include "common/ringbuffer-clients/clients.h"
 
 /*
+ * Becareful with side-effects and these macros.
+ */
+#define EXPECT_PAYLOAD_SIZE(payload_size, expected_size)		\
+	if (payload_size != expected_size) {				\
+		ERR("payload size `%" PRIu64 "` does not match expected size: %" PRIu64 "\n", \
+			(uint64_t)payload_size, (uint64_t)expected_size); \
+	}								\
+	if (payload_size != expected_size)
+
+#define EXPECT_ANCILLARY_SIZE(ancillary_size, expected_size)		\
+	if (ancillary_size != expected_size) {				\
+		ERR("ancillary size `%" PRIu64 "` does not match expected size: %" PRIu64 "\n", \
+			(uint64_t)ancillary_size, (uint64_t)expected_size); \
+	}								\
+	if (ancillary_size != expected_size)
+
+/*
  * Has lttng ust comm constructor been called ?
  */
 static int initialized;
@@ -936,7 +953,9 @@ int handle_bytecode(struct sock_info *sock_info,
 
 		filter = payload;
 
-		assert(payload_size == sizeof(*filter) + filter->len);
+		EXPECT_PAYLOAD_SIZE(payload_size, sizeof(*filter) + filter->len) {
+			return -EINVAL;
+		}
 
 		type = LTTNG_UST_BYTECODE_TYPE_FILTER;
 		data_size_max = LTTNG_UST_ABI_FILTER_BYTECODE_MAX_LEN;
@@ -952,7 +971,9 @@ int handle_bytecode(struct sock_info *sock_info,
 
 		capture = payload;
 
-		assert(payload_size == sizeof(*capture) + capture->len);
+		EXPECT_PAYLOAD_SIZE(payload_size, sizeof(*capture) + capture->len) {
+			return -EINVAL;
+		}
 
 		type = LTTNG_UST_BYTECODE_TYPE_CAPTURE;
 		data_size_max = LTTNG_UST_ABI_CAPTURE_BYTECODE_MAX_LEN;
@@ -1106,8 +1127,6 @@ void untrack_fd(int *fd)
 {
 	int close_ret;
 
-	assert(fd);
-
 	if (*fd < 0)
 		return;
 
@@ -1176,9 +1195,11 @@ int handle_message(struct sock_info *sock_info,
 
 		exclusion = payload;
 
-		assert(payload_size ==
-			sizeof(*exclusion) +
-			exclusion->count * LTTNG_UST_ABI_SYM_NAME_LEN);
+		EXPECT_PAYLOAD_SIZE(payload_size, sizeof(*exclusion) +
+				exclusion->count * LTTNG_UST_ABI_SYM_NAME_LEN) {
+			ret = -EINVAL;
+			goto error;
+		}
 
 		count = exclusion->count;
 		exclusion_size = count * LTTNG_UST_ABI_SYM_NAME_LEN;
@@ -1210,8 +1231,15 @@ int handle_message(struct sock_info *sock_info,
 	{
 		int event_notifier_notif_fd;
 
-		assert(payload_size == 1);
-		assert(ancillary_size == sizeof(int));
+		EXPECT_PAYLOAD_SIZE(payload_size, 1) {
+			ret = -EINVAL;
+			goto error;
+		}
+
+		EXPECT_ANCILLARY_SIZE(ancillary_size, sizeof(int)) {
+			ret = -EINVAL;
+			goto error;
+		}
 
 		event_notifier_notif_fd = track_fd(ancillary_fds[0]);
 
@@ -1236,8 +1264,15 @@ int handle_message(struct sock_info *sock_info,
 		void *chan_data;
 		const struct lttng_ust_abi_channel *channel = payload;
 
-		assert(payload_size == sizeof(*channel) + channel->len);
-		assert(ancillary_size == sizeof(int));
+		EXPECT_PAYLOAD_SIZE(payload_size, sizeof(*channel) + channel->len) {
+			ret = -EINVAL;
+			goto error;
+		}
+
+		EXPECT_ANCILLARY_SIZE(ancillary_size, sizeof(int)) {
+			ret = -EINVAL;
+			goto error;
+		}
 
 		wakeup_fd = track_fd(ancillary_fds[0]);
 
@@ -1271,8 +1306,16 @@ int handle_message(struct sock_info *sock_info,
 	}
 	case LTTNG_UST_ABI_STREAM:
 	{
-		assert(payload_size == sizeof(struct lttng_ust_abi_stream));
-		assert(ancillary_size == 2 * sizeof(int));
+		EXPECT_PAYLOAD_SIZE(payload_size, sizeof(struct lttng_ust_abi_stream)) {
+			ret = -EBADMSG;
+			goto error;
+		}
+
+
+		EXPECT_PAYLOAD_SIZE(ancillary_size, 2 * sizeof(int)) {
+			ret = -EBADMSG;
+			goto error;
+		}
 
 		args.stream.shm_fd = track_fd(ancillary_fds[0]);
 
@@ -1302,8 +1345,6 @@ int handle_message(struct sock_info *sock_info,
 	case LTTNG_UST_ABI_CONTEXT: {
 		const struct lttng_ust_abi_context *context = payload;
 
-		assert(payload_size >= sizeof(struct lttng_ust_abi_context));
-
 		switch (context->header.ctx) {
 		case LTTNG_UST_ABI_CONTEXT_APP_CONTEXT:
 		{
@@ -1312,20 +1353,30 @@ int handle_message(struct sock_info *sock_info,
 			char *app_ctx = ctxstr;
 			size_t ctxlen;
 
-			assert(payload_size ==
-				sizeof(*context) +
-				context->type.app_ctx.provider_name_len +
-				context->type.app_ctx.ctx_name_len);
+			EXPECT_PAYLOAD_SIZE(payload_size, sizeof(*context) +
+					context->type.app_ctx.provider_name_len +
+					context->type.app_ctx.ctx_name_len) {
+				ret = -EBADMSG;
+				goto error;
+			}
 
-			assert(context->type.app_ctx.provider_name_len +
-				context->type.app_ctx.ctx_name_len < LTTNG_UST_ABI_SYM_NAME_LEN);
+			EXPECT_ANCILLARY_SIZE(ancillary_size, 0) {
+				ret = -EBADMSG;
+				goto error;
+			}
+
+			if (context->type.app_ctx.provider_name_len + context->type.app_ctx.ctx_name_len >= LTTNG_UST_ABI_SYM_NAME_LEN) {
+				ERR("provider name and context name sizes `%" PRIu32 "`, `%" PRIu32 "` exceed maximum symbol name length: %u\n",
+					context->type.app_ctx.provider_name_len,
+					context->type.app_ctx.ctx_name_len,
+					LTTNG_UST_ABI_SYM_NAME_LEN);
+				ret = -EINVAL;
+				goto error;
+			}
 
 			/* NOTE: These are not null terminated strings. */
 			provider_name = payload + sizeof(*context);
 			context_name = provider_name + context->type.app_ctx.provider_name_len;
-
-			assert(provider_name - (const char *)payload < payload_size);
-			assert(context_name - (const char *)payload < payload_size);
 
 			ctxlen = strlen("$app.") + context->type.app_ctx.provider_name_len
 				+ strlen(":") + context->type.app_ctx.ctx_name_len;
@@ -1387,8 +1438,15 @@ int handle_message(struct sock_info *sock_info,
 	}
 	case LTTNG_UST_ABI_COUNTER_CHANNEL:
 	{
-		assert(payload_size == sizeof(struct lttng_ust_abi_counter_channel));
-		assert(ancillary_size == sizeof(int));
+		EXPECT_PAYLOAD_SIZE(payload_size, sizeof(struct lttng_ust_abi_counter_channel)) {
+			ret = -EBADMSG;
+			goto error;
+		}
+
+		EXPECT_ANCILLARY_SIZE(ancillary_size, sizeof(int)) {
+			ret = -EBADMSG;
+			goto error;
+		}
 
 		args.counter_shm.shm_fd = track_fd(ancillary_fds[0]);
 
@@ -1419,8 +1477,15 @@ int handle_message(struct sock_info *sock_info,
 	}
 	case LTTNG_UST_ABI_COUNTER_CPU:
 	{
-		assert(payload_size == sizeof(struct lttng_ust_abi_counter_cpu));
-		assert(ancillary_size == sizeof(int));
+		EXPECT_PAYLOAD_SIZE(payload_size, sizeof(struct lttng_ust_abi_counter_cpu)) {
+			ret = -EBADMSG;
+			goto error;
+		}
+
+		EXPECT_ANCILLARY_SIZE(ancillary_size, sizeof(int)) {
+			ret = -EBADMSG;
+			goto error;
+		}
 
 		args.counter_shm.shm_fd = track_fd(ancillary_fds[0]);
 
@@ -1501,7 +1566,6 @@ int handle_message(struct sock_info *sock_info,
 	if (ret >= 0) {
 		switch (lum->cmd) {
 		case LTTNG_UST_ABI_TRACER_VERSION: {
-			assert(payload_size == 0);
                         /*
 			 * Payload was filled with the tracer version with the object callback.
 			 *
@@ -1513,7 +1577,6 @@ int handle_message(struct sock_info *sock_info,
 			break;
 		}
 		case LTTNG_UST_ABI_TRACEPOINT_LIST_GET: {
-			assert(payload_size == 0);
 			/*
 			 * Same rationale has with tracer version.
 			 */
@@ -1952,12 +2015,15 @@ flush_message(int sock, const struct ustcomm_ust_msg_header *lum, char *payload_
 
 	len = recvmsg(sock, &msghdr, MSG_TRUNC);
 
-	assert(len == lum->payload_size);
+	EXPECT_PAYLOAD_SIZE(lum->payload_size, len) {
+		ERR("error while flushing unknown command");
+	}
 
 no_payload:
 	ret = send_reply(sock, &lur);
 
-	assert(ret == 0);
+	if (ret != 0)
+		ERR("failed to send reply while flushing unknown command: %d", ret);
 }
 
 static int read_message_payload_and_ancillary(int sock,
@@ -1979,8 +2045,17 @@ static int read_message_payload_and_ancillary(int sock,
 	if (!expected_payload_size)
 		return 0;
 
-	assert(expected_payload_size <= payload_buf_size);
-	assert(expected_ancillary_size <= ancillary_buf_size);
+	if (expected_payload_size > payload_buf_size) {
+		ERR("message payload of `%" PRIu32 "` exceed maximum payload size `%" PRIu32 "`\n",
+			expected_payload_size, payload_buf_size);
+		return -EBADMSG;
+	}
+
+	if (expected_ancillary_size > ancillary_buf_size) {
+		ERR("message ancillary of `%" PRIu32 "` exceed maximum ancillary size `%" PRIu32 "`\n",
+			expected_ancillary_size, ancillary_buf_size);
+		return -EBADMSG;
+	}
 
 	memset(&msghdr, 0, sizeof(msghdr));
 
@@ -2009,7 +2084,9 @@ static int read_message_payload_and_ancillary(int sock,
 	if (expected_ancillary_size) {
 		cmptr = CMSG_FIRSTHDR(&msghdr);
 
-		assert(cmptr->cmsg_len == CMSG_LEN(expected_ancillary_size));
+		EXPECT_ANCILLARY_SIZE(cmptr->cmsg_len, CMSG_LEN(expected_ancillary_size)) {
+			return -EBADMSG;
+		}
 
 		memmove(ancillary_buf, CMSG_DATA(cmptr), expected_ancillary_size);
 	}
