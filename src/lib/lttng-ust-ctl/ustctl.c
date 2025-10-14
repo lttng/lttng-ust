@@ -394,7 +394,10 @@ int lttng_ust_ctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
 		len = provider_name_len + ctx_name_len;
 
 		/* Never filled entirely for null byte. */
-		assert(len < sizeof(buf));
+		if (len >= sizeof(buf)) {
+			ret = -E2BIG;
+			goto end;
+		}
 
 		memcpy(buf,
 			ctx->u.app_ctx.provider_name,

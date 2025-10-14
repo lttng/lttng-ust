@@ -478,7 +478,7 @@ end:
 	return ret;
 }
 
-static size_t
+static int64_t
 prepare_ancillary_data(struct msghdr *msg, const int *fds, int fds_cnt,
 		char *control_buf, size_t control_buf_len)
 {
@@ -486,16 +486,18 @@ prepare_ancillary_data(struct msghdr *msg, const int *fds, int fds_cnt,
 	unsigned int sizeof_fds = fds_cnt * sizeof(int);
 
 	if (!fds) {
-		/*
-		 * At least one byte is required when sending ancillary data.
-		 */
-		assert(fds_cnt == 0);
+
+		if (fds_cnt != 0)
+			return -EINVAL;
+
 		msg->msg_control = NULL;
 		msg->msg_controllen = 0;
+
 		return 0;
 	}
 
-	assert(fds_cnt > 0);
+	if (fds_cnt == 0)
+		return -EINVAL;
 
 	msg->msg_control = control_buf;
 	msg->msg_controllen = control_buf_len;
@@ -510,19 +512,21 @@ prepare_ancillary_data(struct msghdr *msg, const int *fds, int fds_cnt,
 	return sizeof_fds;
 }
 
-static size_t
+static int64_t
 prepare_payload_data(struct msghdr *msg, struct iovec *iov, int iovcnt)
 {
 	size_t total_size = 0;
 
 	if (!iov) {
-		assert(iovcnt == 0);
+
+		if (iovcnt != 0)
+			return -EINVAL;
+
 		return 0;
-
-
 	}
 
-	assert(iovcnt > 0);
+	if (iovcnt == 0)
+		return -EINVAL;
 
 	for (int i = 0; i < iovcnt; ++i) {
 		total_size += iov[i].iov_len;
@@ -540,6 +544,7 @@ int ustcomm_send_app_msg(int sock, struct ustcomm_ust_msg_header *lum,
 {
 	struct msghdr msghdr;
 	ssize_t sent_size;
+	int64_t payload_size, ancillary_size;
 	union {
 		char buf[CMSG_SPACE(USTCOMM_MAX_SEND_FDS * sizeof(int))];
 		struct cmsghdr align;
@@ -550,14 +555,40 @@ int ustcomm_send_app_msg(int sock, struct ustcomm_ust_msg_header *lum,
 	 */
 	memset(&msghdr, 0, sizeof(msghdr));
 
-	lum->payload_size = prepare_payload_data(&msghdr, iov, iovcnt);
+	payload_size = prepare_payload_data(&msghdr, iov, iovcnt);
 
-	lum->ancillary_size = prepare_ancillary_data(&msghdr, fds, fds_cnt,
+	if (payload_size < 0) {
+		ERR("error while preparing payload data: %d\n", (int)payload_size);
+		return payload_size;
+	}
+
+	if (payload_size > LTTNG_UST_COMM_MAX_PAYLOAD_SIZE) {
+		ERR("payload data size is too big: %" PRId64, payload_size);
+		return -E2BIG;
+	}
+
+	ancillary_size = prepare_ancillary_data(&msghdr, fds, fds_cnt,
 						control_buf.buf, sizeof(control_buf.buf));
 
-	if (lum->ancillary_size > 0) {
-		assert(lum->payload_size > 0);
+	if (ancillary_size < 0) {
+		ERR("error while preparing ancillary data: %d\n", (int)ancillary_size);
+		return ancillary_size;
 	}
+
+	if (payload_size > LTTNG_UST_COMM_MAX_PAYLOAD_SIZE) {
+		ERR("ancillary data size is too big: %" PRId64, ancillary_size);
+		return -E2BIG;
+	}
+
+	if (ancillary_size > 0) {
+		if (payload_size == 0) {
+			ERR("ancillary size is not null but payload size is");
+			return -EINVAL;
+		}
+	}
+
+	lum->payload_size = (uint32_t)payload_size;
+	lum->ancillary_size = (uint32_t)ancillary_size;
 
 	sent_size = ustcomm_send_unix_sock(sock, lum, sizeof(*lum));
 
