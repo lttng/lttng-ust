@@ -1447,6 +1447,7 @@ int lib_ring_buffer_try_exchange_subbuf(struct lttng_ust_ring_buffer *buf,
 	return 0;
 }
 
+#ifdef __linux__
 /**
  * lib_ring_buffer_reclaim_reader_subbuf - Reclaim memory (MADV_REMOVE) backing reader subbuffer.
  * @buf: ring buffer
@@ -1491,6 +1492,16 @@ int lib_ring_buffer_reclaim_reader_subbuf(struct lttng_ust_ring_buffer *buf,
 	backend_pages->timestamp_end = 0;
 	return 0;
 }
+#else
+/*
+ * MADV_REMOVE is linux specific.
+ */
+int lib_ring_buffer_reclaim_reader_subbuf(struct lttng_ust_ring_buffer *buf,
+	struct lttng_ust_shm_handle *handle)
+{
+	return -EOPNOTSUPP;
+}
+#endif
 
 /**
  * lib_ring_buffer_get_subbuf - get exclusive access to subbuffer for reading
