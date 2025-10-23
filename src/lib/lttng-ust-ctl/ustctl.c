@@ -352,17 +352,17 @@ int lttng_ust_ctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
 		.header.ctx = ctx->ctx,
 
 	};
+	char buf[LTTNG_UST_ABI_SYM_NAME_LEN];
 	struct iovec iov[] = {
 		{
 			.iov_base = &context,
 			.iov_len = sizeof(context),
 		},
 		{
-
+			.iov_base = buf,
+			.iov_len = 0,
 		},
 	};
-	struct iovec *iovp = &iov[0];
-	int iovcnt = 1;
 
 	if (!obj_data || !_context_data) {
 		ret = -EINVAL;
@@ -386,7 +386,6 @@ int lttng_ust_ctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
 	{
 		size_t provider_name_len = strlen(ctx->u.app_ctx.provider_name);
 		size_t ctx_name_len = strlen(ctx->u.app_ctx.ctx_name);
-		char buf[LTTNG_UST_ABI_SYM_NAME_LEN];
 
 		context.type.app_ctx.provider_name_len = provider_name_len;
 		context.type.app_ctx.ctx_name_len = ctx_name_len;
@@ -407,16 +406,14 @@ int lttng_ust_ctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
 			ctx->u.app_ctx.ctx_name,
 			ctx_name_len);
 
-		iov[1].iov_base = buf;
 		iov[1].iov_len = len;
-		iovcnt = 2;
 		break;
 	}
 	default:
 		break;
 	}
 	ret = ustcomm_send_app_msg(sock, &lum,
-				iovp, iovcnt,
+				iov, LTTNG_ARRAY_SIZE(iov),
 				NULL, 0);
 	if (ret < 0)
 		goto end;
