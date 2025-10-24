@@ -1515,13 +1515,11 @@ int handle_message(struct sock_info *sock_info,
 #ifdef CONFIG_LTTNG_UST_EXPERIMENTAL_COUNTER
 	case LTTNG_UST_ABI_COUNTER_EVENT:
 	{
-		ret = copy_phdr(payload, payload_size,
+		ret = copy_payload(payload, payload_size,
 				&var_len_cmd_data);
 
-		if (len < 0) {
-			ret = len;
+		if (ret)
 			goto error;
-		}
 
 		args.counter_event.len = payload_size;
 		if (ops->cmd)
