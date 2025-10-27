@@ -564,7 +564,7 @@ struct lttng_ust_abi_event_exclusion {
 			uint32_t count;
 		} __attribute__((packed));
 	};
-	char names[0];
+	char names[LTTNG_UST_ABI_SYM_NAME_LEN][0];
 } __attribute__((packed));
 
 lttng_ust_static_assert(sizeof(struct lttng_ust_abi_event_exclusion) == LTTNG_UST_ABI_EXCLUSION_SIZE,
