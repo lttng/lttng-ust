@@ -38,10 +38,6 @@
 #include "common/smp.h"
 #include "common/counter/counter.h"
 
-#define DEFINE_ZEROED(type, name)		\
-	type name;				\
-	memset(&name, '\0', sizeof(type))
-
 /*
  * Number of milliseconds to retry before failing metadata writes on
  * buffer full condition. (10 seconds)
@@ -164,8 +160,8 @@ void lttng_ust_ctl_sigbus_handle(void *addr)
 
 int lttng_ust_ctl_release_handle(int sock, int handle)
 {
-	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
-	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
 
 	if (sock < 0 || handle < 0)
 		return 0;
@@ -257,8 +253,8 @@ int lttng_ust_ctl_release_object(int sock, struct lttng_ust_abi_object_data *dat
  */
 int lttng_ust_ctl_register_done(int sock)
 {
-	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
-	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
 	int ret;
 
 	DBG("Sending register done command to %d", sock);
@@ -275,8 +271,8 @@ int lttng_ust_ctl_register_done(int sock)
  */
 int lttng_ust_ctl_create_session(int sock)
 {
-	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
-	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
 	int ret, session_handle;
 
 	/* Create session */
@@ -294,17 +290,16 @@ int lttng_ust_ctl_create_event(int sock, struct lttng_ust_abi_event *ev,
 		struct lttng_ust_abi_object_data *channel_data,
 		struct lttng_ust_abi_object_data **_event_data)
 {
-	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
-	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
-	DEFINE_ZEROED(struct lttng_ust_abi_event, ev_copy);
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
+	struct lttng_ust_abi_object_data *event_data;
+	int ret;
 	struct iovec iov[] = {
 		{
-			.iov_base = &ev_copy,
-			.iov_len = sizeof(ev_copy),
+			.iov_base = ev,
+			.iov_len = sizeof(*ev),
 		},
 	};
-	int ret;
-	struct lttng_ust_abi_object_data *event_data;
 
 	if (!channel_data || !_event_data)
 		return -EINVAL;
@@ -312,12 +307,6 @@ int lttng_ust_ctl_create_event(int sock, struct lttng_ust_abi_event *ev,
 	event_data = zmalloc(sizeof(*event_data));
 	if (!event_data)
 		return -ENOMEM;
-
-	ev_copy.instrumentation = ev->instrumentation;
-	ev_copy.loglevel_type = ev->loglevel_type;
-	ev_copy.loglevel = ev->loglevel;
-	ev_copy.token = ev->token;
-	memcpy(ev_copy.name, ev->name, sizeof(ev_copy.name));
 
 	event_data->header.type = LTTNG_UST_ABI_OBJECT_TYPE_EVENT;
 	lum.handle = channel_data->header.handle;
@@ -354,9 +343,12 @@ int lttng_ust_ctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
 		struct lttng_ust_abi_object_data *obj_data,
 		struct lttng_ust_abi_object_data **_context_data)
 {
-	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
-	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
-	DEFINE_ZEROED(struct lttng_ust_abi_context, context);
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
+	struct lttng_ust_abi_object_data *context_data = NULL;
+	size_t len;
+	int ret;
+	struct lttng_ust_abi_context context = {};
 	char buf[LTTNG_UST_ABI_SYM_NAME_LEN] = {0};
 	struct iovec iov[] = {
 		{
@@ -368,9 +360,6 @@ int lttng_ust_ctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
 			.iov_len = 0,
 		},
 	};
-	int ret;
-	struct lttng_ust_abi_object_data *context_data = NULL;
-	size_t len;
 
 	if (!obj_data || !_context_data) {
 		ret = -EINVAL;
@@ -382,7 +371,6 @@ int lttng_ust_ctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
 		ret = -ENOMEM;
 		goto end;
 	}
-
 	context_data->header.type = LTTNG_UST_ABI_OBJECT_TYPE_CONTEXT;
 	lum.handle = obj_data->header.handle;
 	lum.cmd = LTTNG_UST_ABI_CONTEXT;
@@ -458,9 +446,15 @@ end:
 int lttng_ust_ctl_set_filter(int sock, struct lttng_ust_abi_filter_bytecode *bytecode,
 		struct lttng_ust_abi_object_data *obj_data)
 {
-	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
-	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
-	DEFINE_ZEROED(struct lttng_ust_abi_filter_bytecode, filter);
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
+	int ret;
+	struct lttng_ust_abi_filter_bytecode filter = {};
+
+	filter.len = bytecode->len;
+	filter.reloc_offset = bytecode->reloc_offset;
+	filter.seqnum = bytecode->seqnum;
+
 	struct iovec iov[] = {
 		{
 			.iov_base = &filter,
@@ -471,17 +465,12 @@ int lttng_ust_ctl_set_filter(int sock, struct lttng_ust_abi_filter_bytecode *byt
 			.iov_len = bytecode->len,
 		}
 	};
-	int ret;
 
 	if (!obj_data)
 		return -EINVAL;
 
 	lum.handle = obj_data->header.handle;
 	lum.cmd = LTTNG_UST_ABI_FILTER;
-
-	filter.len = bytecode->len;
-	filter.reloc_offset = bytecode->reloc_offset;
-	filter.seqnum = bytecode->seqnum;
 
 	ret = ustcomm_send_app_msg(sock, &lum,
 				iov, LTTNG_ARRAY_SIZE(iov),
@@ -510,9 +499,13 @@ int lttng_ust_ctl_set_filter(int sock, struct lttng_ust_abi_filter_bytecode *byt
 int lttng_ust_ctl_set_capture(int sock, struct lttng_ust_abi_capture_bytecode *bytecode,
 		struct lttng_ust_abi_object_data *obj_data)
 {
-	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
-	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
-	DEFINE_ZEROED(struct lttng_ust_abi_capture_bytecode, capture);
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
+	int ret;
+	struct lttng_ust_abi_capture_bytecode capture = {};
+	capture.len = bytecode->len;
+	capture.reloc_offset = bytecode->reloc_offset;
+	capture.seqnum = bytecode->seqnum;
 	struct iovec iov[] = {
 		{
 			.iov_base = &capture,
@@ -523,14 +516,9 @@ int lttng_ust_ctl_set_capture(int sock, struct lttng_ust_abi_capture_bytecode *b
 			.iov_len = bytecode->len,
 		},
 	};
-	int ret;
 
 	if (!obj_data)
 		return -EINVAL;
-
-	capture.len = bytecode->len;
-	capture.reloc_offset = bytecode->reloc_offset;
-	capture.seqnum = bytecode->seqnum;
 
 	lum.handle = obj_data->header.handle;
 	lum.cmd = LTTNG_UST_ABI_CAPTURE;
@@ -556,8 +544,9 @@ int lttng_ust_ctl_set_capture(int sock, struct lttng_ust_abi_capture_bytecode *b
 int lttng_ust_ctl_set_exclusion(int sock, struct lttng_ust_abi_event_exclusion *exclusion,
 		struct lttng_ust_abi_object_data *obj_data)
 {
-	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
-	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
+	int ret;
 	struct iovec iov[] = {
 		{
 			.iov_base = exclusion,
@@ -568,7 +557,6 @@ int lttng_ust_ctl_set_exclusion(int sock, struct lttng_ust_abi_event_exclusion *
 			.iov_len = exclusion->count * LTTNG_UST_ABI_SYM_NAME_LEN,
 		},
 	};
-	int ret;
 
 	if (!obj_data) {
 		return -EINVAL;
@@ -598,8 +586,8 @@ int lttng_ust_ctl_set_exclusion(int sock, struct lttng_ust_abi_event_exclusion *
 /* Enable event, channel and session ioctl */
 int lttng_ust_ctl_enable(int sock, struct lttng_ust_abi_object_data *object)
 {
-	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
-	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
 	int ret;
 
 	if (!object)
@@ -617,8 +605,8 @@ int lttng_ust_ctl_enable(int sock, struct lttng_ust_abi_object_data *object)
 /* Disable event, channel and session ioctl */
 int lttng_ust_ctl_disable(int sock, struct lttng_ust_abi_object_data *object)
 {
-	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
-	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
 	int ret;
 
 	if (!object)
@@ -659,19 +647,16 @@ int lttng_ust_ctl_stop_session(int sock, int handle)
 int lttng_ust_ctl_create_event_notifier_group(int sock, int pipe_fd,
 		struct lttng_ust_abi_object_data **_event_notifier_group_data)
 {
-	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
-	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	struct lttng_ust_abi_object_data *event_notifier_group_data;
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
+	int ret;
 	char dummy = '\0';
 	struct iovec iov[] = {
 		{
 			.iov_base = &dummy,
 			.iov_len = sizeof(dummy),
 		}
-	};
-	int ret;
-	struct lttng_ust_abi_object_data *event_notifier_group_data;
-	int fds[] = {
-		pipe_fd,
 	};
 
 	if (!_event_notifier_group_data)
@@ -685,6 +670,11 @@ int lttng_ust_ctl_create_event_notifier_group(int sock, int pipe_fd,
 
 	lum.handle = LTTNG_UST_ABI_ROOT_HANDLE;
 	lum.cmd = LTTNG_UST_ABI_EVENT_NOTIFIER_GROUP_CREATE;
+
+	int fds[] = {
+		pipe_fd,
+	};
+
 	ret = ustcomm_send_app_msg(sock, &lum,
 				iov, LTTNG_ARRAY_SIZE(iov),
 				fds, LTTNG_ARRAY_SIZE(fds));
@@ -721,16 +711,16 @@ int lttng_ust_ctl_create_event_notifier(int sock, struct lttng_ust_abi_event_not
 		struct lttng_ust_abi_object_data *event_notifier_group,
 		struct lttng_ust_abi_object_data **_event_notifier_data)
 {
-	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
-	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
+	struct lttng_ust_abi_object_data *event_notifier_data;
+	int ret;
 	struct iovec iov[] = {
 		{
 			.iov_base = event_notifier,
 			.iov_len = sizeof(*event_notifier),
 		},
 	};
-	int ret;
-	struct lttng_ust_abi_object_data *event_notifier_data;
 
 	if (!event_notifier_group || !_event_notifier_data)
 		return -EINVAL;
@@ -766,8 +756,8 @@ int lttng_ust_ctl_create_event_notifier(int sock, struct lttng_ust_abi_event_not
 
 int lttng_ust_ctl_tracepoint_list(int sock)
 {
-	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
-	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
 	int ret, tp_list_handle;
 
 	lum.handle = LTTNG_UST_ABI_ROOT_HANDLE;
@@ -783,8 +773,8 @@ int lttng_ust_ctl_tracepoint_list(int sock)
 int lttng_ust_ctl_tracepoint_list_get(int sock, int tp_list_handle,
 		struct lttng_ust_abi_tracepoint_iter *iter)
 {
-	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
-	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
 	int ret;
 
 	if (!iter)
@@ -804,8 +794,8 @@ int lttng_ust_ctl_tracepoint_list_get(int sock, int tp_list_handle,
 
 int lttng_ust_ctl_tracepoint_field_list(int sock)
 {
-	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
-	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
 	int ret, tp_field_list_handle;
 
 	lum.handle = LTTNG_UST_ABI_ROOT_HANDLE;
@@ -821,8 +811,8 @@ int lttng_ust_ctl_tracepoint_field_list(int sock)
 int lttng_ust_ctl_tracepoint_field_list_get(int sock, int tp_field_list_handle,
 		struct lttng_ust_abi_field_iter *iter)
 {
-	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
-	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
 	int ret;
 	ssize_t len;
 
@@ -848,8 +838,8 @@ int lttng_ust_ctl_tracepoint_field_list_get(int sock, int tp_field_list_handle,
 
 int lttng_ust_ctl_tracer_version(int sock, struct lttng_ust_abi_tracer_version *v)
 {
-	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
-	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
 	int ret;
 
 	if (!v)
@@ -896,18 +886,20 @@ int lttng_ust_ctl_tracer_version(int sock, struct lttng_ust_abi_tracer_version *
  */
 int lttng_ust_ctl_unknown_command(int sock)
 {
-	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
-	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
-	char buf[27] = {0};
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
+	int ret;
+	char buf[27] = {};
 	struct iovec iov[] = {
 		{
 			.iov_base = buf,
 			.iov_len = LTTNG_ARRAY_SIZE(buf),
 		},
 	};
-	int ret;
-	char dummy = '\0';
+
 	int fds[2];
+
+	char dummy;
 
 	/*
 	 * Note that passing SOCK_CLOEXEC | SOCK_NONBLOCK flags to `type' is a
@@ -964,8 +956,8 @@ out:
 
 int lttng_ust_ctl_wait_quiescent(int sock)
 {
-	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
-	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
 	int ret;
 
 	lum.handle = LTTNG_UST_ABI_ROOT_HANDLE;
@@ -988,8 +980,8 @@ int lttng_ust_ctl_calibrate(int sock __attribute__((unused)),
 
 int lttng_ust_ctl_sock_flush_buffer(int sock, struct lttng_ust_abi_object_data *object)
 {
-	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
-	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
 	int ret;
 
 	if (!object)
@@ -1264,9 +1256,10 @@ error_alloc:
 int lttng_ust_ctl_send_channel_to_ust(int sock, int session_handle,
 				struct lttng_ust_abi_object_data *channel_data)
 {
-	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
-	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
-	DEFINE_ZEROED(struct lttng_ust_abi_channel, channel);
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
+	struct lttng_ust_abi_channel channel = {};
+	int ret;
 	struct iovec iov[] = {
 		{
 			.iov_base = &channel,
@@ -1278,10 +1271,6 @@ int lttng_ust_ctl_send_channel_to_ust(int sock, int session_handle,
 		},
 
 	};
-	int ret;
-	int fds[] = {
-		channel_data->type.channel.wakeup_fd,
-	};
 
 	if (!channel_data)
 		return -EINVAL;
@@ -1292,6 +1281,10 @@ int lttng_ust_ctl_send_channel_to_ust(int sock, int session_handle,
 
 	lum.handle = session_handle;
 	lum.cmd = LTTNG_UST_ABI_CHANNEL;
+
+	int fds[] = {
+		channel_data->type.channel.wakeup_fd,
+	};
 
 	ret = ustcomm_send_app_msg(sock, &lum,
 				iov, LTTNG_ARRAY_SIZE(iov),
@@ -1323,19 +1316,15 @@ int lttng_ust_ctl_send_stream_to_ust(int sock,
 		struct lttng_ust_abi_object_data *channel_data,
 		struct lttng_ust_abi_object_data *stream_data)
 {
-	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
-	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
-	DEFINE_ZEROED(struct lttng_ust_abi_stream, stream);
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
+	int ret;
+	struct lttng_ust_abi_stream stream = {};
 	struct iovec iov[] = {
 		{
 			.iov_base = &stream,
 			.iov_len = sizeof(stream),
 		},
-	};
-	int ret;
-	int fds[] = {
-		stream_data->type.stream.shm_fd,
-		stream_data->type.stream.wakeup_fd,
 	};
 
 	if (!stream_data || !channel_data)
@@ -1346,6 +1335,11 @@ int lttng_ust_ctl_send_stream_to_ust(int sock,
 
 	lum.handle = channel_data->header.handle;
 	lum.cmd = LTTNG_UST_ABI_STREAM;
+
+	int fds[] = {
+		stream_data->type.stream.shm_fd,
+		stream_data->type.stream.wakeup_fd,
+	};
 
 	ret = ustcomm_send_app_msg(sock, &lum,
 				iov, LTTNG_ARRAY_SIZE(iov),
@@ -4220,8 +4214,8 @@ int lttng_ust_ctl_reply_register_channel(int sock,
 /* Regenerate the statedump. */
 int lttng_ust_ctl_regenerate_statedump(int sock, int handle)
 {
-	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
-	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
 	int ret;
 
 	lum.handle = handle;
@@ -4501,15 +4495,15 @@ void lttng_ust_ctl_destroy_counter(struct lttng_ust_ctl_daemon_counter *counter)
 int lttng_ust_ctl_send_counter_data_to_ust(int sock, int parent_handle,
 		struct lttng_ust_abi_object_data *counter_data)
 {
-	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
-	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
+	int ret;
 	struct iovec iov[] = {
 		{
 			.iov_base = counter_data->type.counter.data,
 			.iov_len = counter_data->header.size,
 		},
 	};
-	int ret;
 
 	if (!counter_data)
 		return -EINVAL;
@@ -4543,19 +4537,15 @@ int lttng_ust_ctl_send_counter_channel_data_to_ust(int sock,
 		struct lttng_ust_abi_object_data *counter_data,
 		struct lttng_ust_abi_object_data *counter_channel_data)
 {
-	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
-	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
-	DEFINE_ZEROED(struct lttng_ust_abi_counter_channel, counter_channel);
+	struct lttng_ust_abi_counter_channel counter_channel = {};
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
+	ssize_t len;
 	struct iovec iov[] = {
 		{
 			.iov_base = &counter_channel,
 			.iov_len = sizeof(counter_channel),
 		},
-	};
-	int ret;
-	ssize_t len;
-	int fds[] = {
-		counter_channel_data->type.counter_channel.shm_fd,
 	};
 
 	if (!counter_data || !counter_channel_data)
@@ -4566,6 +4556,10 @@ int lttng_ust_ctl_send_counter_channel_data_to_ust(int sock,
 
 	lum.handle = counter_data->header.handle;	/* parent handle */
 	lum.cmd = LTTNG_UST_ABI_COUNTER_CHANNEL;
+
+	int fds[] = {
+		counter_channel_data->type.counter_channel.shm_fd,
+	};
 
 	ret = ustcomm_send_app_msg(sock, &lum,
 				iov, LTTNG_ARRAY_SIZE(iov),
@@ -4593,18 +4587,15 @@ int lttng_ust_ctl_send_counter_cpu_data_to_ust(int sock,
 		struct lttng_ust_abi_object_data *counter_data,
 		struct lttng_ust_abi_object_data *counter_cpu_data)
 {
-	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
-	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
-	DEFINE_ZEROED(struct lttng_ust_abi_counter_cpu, counter_cpu);
+	struct lttng_ust_abi_counter_cpu counter_cpu = {};
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
+	int ret;
 	struct iovec iov[] = {
 		{
 			.iov_base = &counter_cpu,
 			.iov_len = sizeof(counter_cpu),
 		},
-	};
-	int ret;
-	int fds[] = {
-		counter_cpu_data->type.counter_channel.shm_fd,
 	};
 
 	if (!counter_data || !counter_cpu_data)
@@ -4616,6 +4607,10 @@ int lttng_ust_ctl_send_counter_cpu_data_to_ust(int sock,
 
 	lum.handle = counter_data->header.handle;	/* parent handle */
 	lum.cmd = LTTNG_UST_ABI_COUNTER_CPU;
+
+	int fds[] = {
+		counter_cpu_data->type.counter_channel.shm_fd,
+	};
 
 	ret = ustcomm_send_app_msg(sock, &lum,
 				iov, LTTNG_ARRAY_SIZE(iov),
@@ -4672,17 +4667,17 @@ int lttng_ust_ctl_counter_create_event(int sock,
 		struct lttng_ust_abi_object_data *counter_data,
 		struct lttng_ust_abi_object_data **_counter_event_data)
 {
-	DEFINE_ZEROED(struct ustcomm_ust_msg_header, lum);
-	DEFINE_ZEROED(struct ustcomm_ust_reply, lur);
+	struct ustcomm_ust_msg_header lum = {};
+	struct ustcomm_ust_reply lur;
+	struct lttng_ust_abi_object_data *counter_event_data;
+	ssize_t len;
+	int ret;
 	struct iovec iov[] = {
 		{
 			.iov_base = counter_event,
 			.iov_len = counter_event_len,
 		},
 	};
-	int ret;
-	struct lttng_ust_abi_object_data *counter_event_data;
-	ssize_t len;
 
 	if (!counter_data || !_counter_event_data)
 		return -EINVAL;
