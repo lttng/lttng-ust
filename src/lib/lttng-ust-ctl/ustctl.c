@@ -4552,16 +4552,17 @@ int lttng_ust_ctl_send_counter_channel_data_to_ust(int sock,
 			.iov_len = sizeof(counter_channel),
 		},
 	};
+	int ret;
+	ssize_t len;
 	int fds[] = {
 		counter_channel_data->type.counter_channel.shm_fd,
 	};
-	int ret;
 
 	if (!counter_data || !counter_channel_data)
 		return -EINVAL;
 
 	counter_channel.len = sizeof(struct lttng_ust_abi_counter_channel);
-	counter_channel.shm_len = counter_channel_data->header.size;
+	counter_channel.shm_len = counter_channel_data->size;
 
 	lum.handle = counter_data->header.handle;	/* parent handle */
 	lum.cmd = LTTNG_UST_ABI_COUNTER_CHANNEL;
@@ -4601,10 +4602,10 @@ int lttng_ust_ctl_send_counter_cpu_data_to_ust(int sock,
 			.iov_len = sizeof(counter_cpu),
 		},
 	};
+	int ret;
 	int fds[] = {
 		counter_cpu_data->type.counter_channel.shm_fd,
 	};
-	int ret;
 
 	if (!counter_data || !counter_cpu_data)
 		return -EINVAL;
@@ -4679,8 +4680,9 @@ int lttng_ust_ctl_counter_create_event(int sock,
 			.iov_len = counter_event_len,
 		},
 	};
-	struct lttng_ust_abi_object_data *counter_event_data;
 	int ret;
+	struct lttng_ust_abi_object_data *counter_event_data;
+	ssize_t len;
 
 	if (!counter_data || !_counter_event_data)
 		return -EINVAL;
@@ -4688,7 +4690,7 @@ int lttng_ust_ctl_counter_create_event(int sock,
 	counter_event_data = zmalloc(sizeof(*counter_event_data));
 	if (!counter_event_data)
 		return -ENOMEM;
-	counter_event_data->header.type = LTTNG_UST_ABI_OBJECT_TYPE_COUNTER_EVENT;
+	counter_event_data->type = LTTNG_UST_ABI_OBJECT_TYPE_COUNTER_EVENT;
 
 	lum.handle = counter_data->header.handle;
 	lum.cmd = LTTNG_UST_ABI_COUNTER_EVENT;
