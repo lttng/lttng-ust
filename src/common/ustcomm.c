@@ -296,20 +296,23 @@ ssize_t ustcomm_recv_unix_sock(int sock, void *buf, size_t len)
 }
 
 /*
- * ustcomm_sendv_unix_sock
+ * ustcomm_send_unix_sock
  *
- * Send iov[iovcnt] over sock. Using sendmsg API.
+ * Send buf data of size len. Using sendmsg API.
  * Return the size of sent data.
  */
-ssize_t ustcomm_sendv_unix_sock(int sock, const struct iovec *iov, int iovcnt)
+ssize_t ustcomm_send_unix_sock(int sock, const void *buf, size_t len)
 {
 	struct msghdr msg;
+	struct iovec iov[1];
 	ssize_t ret;
 
 	memset(&msg, 0, sizeof(msg));
 
-	msg.msg_iov = (struct iovec*)iov;
-	msg.msg_iovlen = iovcnt;
+	iov[0].iov_base = (void *) buf;
+	iov[0].iov_len = len;
+	msg.msg_iov = iov;
+	msg.msg_iovlen = 1;
 
 	/*
 	 * Using the MSG_NOSIGNAL when sending data from sessiond to
@@ -333,14 +336,6 @@ ssize_t ustcomm_sendv_unix_sock(int sock, const struct iovec *iov, int iovcnt)
 	}
 
 	return ret;
-}
-
-ssize_t ustcomm_send_unix_sock(int sock, const void *buf, size_t len)
-{
-	struct iovec iov[1];
-	iov[0].iov_base = (void *) buf;
-	iov[0].iov_len = len;
-	return ustcomm_sendv_unix_sock(sock, iov, 1);
 }
 
 /*
@@ -478,52 +473,22 @@ end:
 	return ret;
 }
 
-int ustcomm_send_app_msg(int sock, struct ustcomm_ust_msg *lum,
-			const struct iovec *iov, int iovcnt)
+int ustcomm_send_app_msg(int sock, struct ustcomm_ust_msg *lum)
 {
-	ssize_t total_payload_size = 0;
-	ssize_t sent_size;
+	ssize_t len;
 
-	if (iov) {
-		assert(iovcnt);
-		for (size_t i = 0; i < iovcnt; ++i) {
-			total_payload_size += iov[i].iov_len;
-		}
-	} else {
-		assert(!iovcnt);
-	}
-
-	lum->header.payload_size = total_payload_size;
-
-	sent_size = ustcomm_send_unix_sock(sock, lum, sizeof(*lum));
-
-	switch (sent_size) {
+	len = ustcomm_send_unix_sock(sock, lum, sizeof(*lum));
+	switch (len) {
 	case sizeof(*lum):
 		break;
 	default:
-		if (sent_size < 0) {
-			return sent_size;
+		if (len < 0) {
+			return len;
 		} else {
-			ERR("incorrect message size: %zd\n", sent_size);
+			ERR("incorrect message size: %zd\n", len);
 			return -EINVAL;
 		}
 	}
-
-	if (!iov) {
-		return 0;
-	}
-
-	sent_size = ustcomm_sendv_unix_sock(sock, iov, iovcnt);
-
-	if (sent_size != total_payload_size) {
-		if (sent_size < 0) {
-			return sent_size;
-		} else {
-			ERR("incorrect message size: %zd\n", sent_size);
-			return -EINVAL;
-		}
-	}
-
 	return 0;
 }
 
@@ -573,14 +538,35 @@ int ustcomm_send_app_cmd(int sock,
 {
 	int ret;
 
-	ret = ustcomm_send_app_msg(sock, lum,
-				NULL, 0);
+	ret = ustcomm_send_app_msg(sock, lum);
 	if (ret)
 		return ret;
 	ret = ustcomm_recv_app_reply(sock, lur, lum->header.handle, lum->header.cmd);
 	if (ret > 0)
 		return -EIO;
 	return ret;
+}
+
+ssize_t ustcomm_recv_var_len_cmd_from_sessiond(const char *payload, uint32_t payload_size,
+					void **_data, uint32_t var_len)
+{
+	void *data;
+
+	assert(var_len <= payload_size);
+
+	if (var_len > LTTNG_UST_ABI_CMD_MAX_LEN) {
+		return -EINVAL;
+	}
+	/* Receive variable length data */
+	data = zmalloc(var_len);
+	if (!data) {
+		return -ENOMEM;
+	}
+	memcpy(data, payload, var_len);
+
+	*_data = data;
+
+	return var_len;
 }
 
 /*

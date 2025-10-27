@@ -294,12 +294,6 @@ int lttng_ust_ctl_create_event(int sock, struct lttng_ust_abi_event *ev,
 	struct ustcomm_ust_reply lur;
 	struct lttng_ust_abi_object_data *event_data;
 	int ret;
-	struct iovec iov[] = {
-		{
-			.iov_base = ev,
-			.iov_len = sizeof(*ev),
-		},
-	};
 
 	if (!channel_data || !_event_data)
 		return -EINVAL;
@@ -307,24 +301,19 @@ int lttng_ust_ctl_create_event(int sock, struct lttng_ust_abi_event *ev,
 	event_data = zmalloc(sizeof(*event_data));
 	if (!event_data)
 		return -ENOMEM;
-
 	event_data->header.type = LTTNG_UST_ABI_OBJECT_TYPE_EVENT;
 	lum.header.handle = channel_data->header.handle;
 	lum.header.cmd = LTTNG_UST_ABI_EVENT;
-
-	ret = ustcomm_send_app_msg(sock, &lum,
-				iov, LTTNG_ARRAY_SIZE(iov));
-	if (ret < 0) {
+	strncpy(lum.cmd.event.name, ev->name,
+		LTTNG_UST_ABI_SYM_NAME_LEN);
+	lum.cmd.event.instrumentation = ev->instrumentation;
+	lum.cmd.event.loglevel_type = ev->loglevel_type;
+	lum.cmd.event.loglevel = ev->loglevel;
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+	if (ret) {
 		free(event_data);
 		return ret;
 	}
-
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.header.handle, lum.header.cmd);
-
-	if (ret < 0) {
-
-	}
-
 	event_data->header.handle = lur.header.ret_val;
 	DBG("received event handle %u", event_data->header.handle);
 	*_event_data = event_data;
@@ -348,17 +337,6 @@ int lttng_ust_ctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
 	char *buf = NULL;
 	size_t len;
 	int ret;
-	struct lttng_ust_abi_context context = {};
-	struct iovec iov[] = {
-		{
-			.iov_base = &context,
-			.iov_len = sizeof(context),
-		},
-		{
-
-		},
-	};
-	int iovcnt = 0;
 
 	if (!obj_data || !_context_data) {
 		ret = -EINVAL;
@@ -373,11 +351,10 @@ int lttng_ust_ctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
 	context_data->header.type = LTTNG_UST_ABI_OBJECT_TYPE_CONTEXT;
 	lum.header.handle = obj_data->header.handle;
 	lum.header.cmd = LTTNG_UST_ABI_CONTEXT;
-	context.header.ctx = ctx->ctx;
+	lum.cmd.context.header.ctx = ctx->ctx;
 	switch (ctx->ctx) {
 	case LTTNG_UST_ABI_CONTEXT_PERF_THREAD_COUNTER:
-		context.type.perf_counter = ctx->u.perf_counter;
-		iovcnt = 1;
+		lum.cmd.context.type.perf_counter = ctx->u.perf_counter;
 		break;
 	case LTTNG_UST_ABI_CONTEXT_APP_CONTEXT:
 	{
@@ -385,9 +362,8 @@ int lttng_ust_ctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
 				ctx->u.app_ctx.provider_name) + 1;
 		size_t ctx_name_len = strlen(ctx->u.app_ctx.ctx_name) + 1;
 
-		context.type.app_ctx.provider_name_len = provider_name_len;
-		context.type.app_ctx.ctx_name_len = ctx_name_len;
-		iovcnt = 2;
+		lum.cmd.context.type.app_ctx.provider_name_len = provider_name_len;
+		lum.cmd.context.type.app_ctx.ctx_name_len = ctx_name_len;
 
 		len = provider_name_len + ctx_name_len;
 		buf = zmalloc(len);
@@ -399,19 +375,26 @@ int lttng_ust_ctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
 				provider_name_len);
 		memcpy(buf + provider_name_len, ctx->u.app_ctx.ctx_name,
 				ctx_name_len);
-
-		iov[1].iov_base = buf;
-		iov[1].iov_len = len;
+		lum.header.payload_size += len;
 		break;
 	}
 	default:
 		break;
 	}
-	ret = ustcomm_send_app_msg(sock, &lum,
-				iov, iovcnt);
-	if (ret < 0)
+	ret = ustcomm_send_app_msg(sock, &lum);
+	if (ret)
 		goto end;
-
+	if (buf) {
+		/* send var len ctx_name */
+		ret = ustcomm_send_unix_sock(sock, buf, len);
+		if (ret < 0) {
+			goto end;
+		}
+		if (ret != len) {
+			ret = -EINVAL;
+			goto end;
+		}
+	}
 	ret = ustcomm_recv_app_reply(sock, &lur, lum.header.handle, lum.header.cmd);
 	if (ret < 0) {
 		if (ret == -EINVAL) {
@@ -446,33 +429,28 @@ int lttng_ust_ctl_set_filter(int sock, struct lttng_ust_abi_filter_bytecode *byt
 	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret;
-	struct lttng_ust_abi_filter_bytecode filter = {
-		.len = bytecode->len,
-		.reloc_offset = bytecode->reloc_offset,
-		.seqnum = bytecode->seqnum,
-	};
-	struct iovec iov[] = {
-		{
-			.iov_base = &filter,
-			.iov_len = sizeof(filter)
-		},
-		{
-			.iov_base = bytecode->data,
-			.iov_len = bytecode->len,
-		}
-	};
 
 	if (!obj_data)
 		return -EINVAL;
 
 	lum.header.handle = obj_data->header.handle;
 	lum.header.cmd = LTTNG_UST_ABI_FILTER;
+	lum.header.payload_size = bytecode->len;
+	lum.cmd.filter.data_size = bytecode->len;
+	lum.cmd.filter.reloc_offset = bytecode->reloc_offset;
+	lum.cmd.filter.seqnum = bytecode->seqnum;
 
-	ret = ustcomm_send_app_msg(sock, &lum,
-				iov, LTTNG_ARRAY_SIZE(iov));
-	if (ret < 0)
+	ret = ustcomm_send_app_msg(sock, &lum);
+	if (ret)
 		return ret;
-
+	/* send var len bytecode */
+	ret = ustcomm_send_unix_sock(sock, bytecode->data,
+				bytecode->len);
+	if (ret < 0) {
+		return ret;
+	}
+	if (ret != bytecode->len)
+		return -EINVAL;
 	ret = ustcomm_recv_app_reply(sock, &lur, lum.header.handle, lum.header.cmd);
 	if (ret == -EINVAL) {
 		/*
@@ -497,35 +475,28 @@ int lttng_ust_ctl_set_capture(int sock, struct lttng_ust_abi_capture_bytecode *b
 	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret;
-	struct lttng_ust_abi_capture_bytecode capture = {
-		.len = bytecode->len,
-		.reloc_offset = bytecode->reloc_offset,
-		.seqnum = bytecode->seqnum,
-	};
-	struct iovec iov[] = {
-		{
-			.iov_base = &capture,
-			.iov_len = sizeof(capture),
-		},
-		{
-			.iov_base = bytecode->data,
-			.iov_len = bytecode->len,
-		},
-	};
 
 	if (!obj_data)
 		return -EINVAL;
 
 	lum.header.handle = obj_data->header.handle;
 	lum.header.cmd = LTTNG_UST_ABI_CAPTURE;
+	lum.header.payload_size = bytecode->len;
+	lum.cmd.capture.data_size = bytecode->len;
+	lum.cmd.capture.reloc_offset = bytecode->reloc_offset;
+	lum.cmd.capture.seqnum = bytecode->seqnum;
 
-	ret = ustcomm_send_app_msg(sock, &lum,
-				iov, LTTNG_ARRAY_SIZE(iov));
-
+	ret = ustcomm_send_app_msg(sock, &lum);
+	if (ret)
+		return ret;
+	/* send var len bytecode */
+	ret = ustcomm_send_unix_sock(sock, bytecode->data,
+				bytecode->len);
 	if (ret < 0) {
 		return ret;
 	}
-
+	if (ret != bytecode->len)
+		return -EINVAL;
 	return ustcomm_recv_app_reply(sock, &lur, lum.header.handle, lum.header.cmd);
 }
 
@@ -542,30 +513,34 @@ int lttng_ust_ctl_set_exclusion(int sock, struct lttng_ust_abi_event_exclusion *
 	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret;
-	struct iovec iov[] = {
-		{
-			.iov_base = exclusion,
-			.iov_len = sizeof(*exclusion),
-		},
-		{
-			.iov_base = exclusion->names,
-			.iov_len = exclusion->count * LTTNG_UST_ABI_SYM_NAME_LEN,
-		},
-	};
+	uint32_t exclusion_length;
 
 	if (!obj_data) {
 		return -EINVAL;
 	}
 
+	exclusion_length = exclusion->count * LTTNG_UST_ABI_SYM_NAME_LEN;
+
 	lum.header.handle = obj_data->header.handle;
 	lum.header.cmd = LTTNG_UST_ABI_EXCLUSION;
+	lum.header.payload_size = exclusion_length;
+	lum.cmd.exclusion.count = exclusion->count;
 
-	ret = ustcomm_send_app_msg(sock, &lum,
-				iov, LTTNG_ARRAY_SIZE(iov));
-	if (ret< 0) {
+	ret = ustcomm_send_app_msg(sock, &lum);
+	if (ret) {
 		return ret;
 	}
 
+	/* send var len exclusion names */
+	ret = ustcomm_send_unix_sock(sock,
+			exclusion->names,
+			exclusion_length);
+	if (ret < 0) {
+		return ret;
+	}
+	if (ret != exclusion->count * LTTNG_UST_ABI_SYM_NAME_LEN) {
+		return -EINVAL;
+	}
 	ret = ustcomm_recv_app_reply(sock, &lur, lum.header.handle, lum.header.cmd);
 	if (ret == -EINVAL) {
 		/*
@@ -660,9 +635,8 @@ int lttng_ust_ctl_create_event_notifier_group(int sock, int pipe_fd,
 	lum.header.cmd = LTTNG_UST_ABI_EVENT_NOTIFIER_GROUP_CREATE;
 	lum.header.ancillary_size = 1;
 
-	ret = ustcomm_send_app_msg(sock, &lum, NULL, 0);
-
-	if (ret < 0)
+	ret = ustcomm_send_app_msg(sock, &lum);
+	if (ret)
 		goto error;
 
 	/* Send event_notifier notification pipe. */
@@ -704,13 +678,8 @@ int lttng_ust_ctl_create_event_notifier(int sock, struct lttng_ust_abi_event_not
 	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	struct lttng_ust_abi_object_data *event_notifier_data;
+	ssize_t len;
 	int ret;
-	struct iovec iov[] = {
-		{
-			.iov_base = event_notifier,
-			.iov_len = sizeof(*event_notifier),
-		},
-	};
 
 	if (!event_notifier_group || !_event_notifier_data)
 		return -EINVAL;
@@ -723,14 +692,23 @@ int lttng_ust_ctl_create_event_notifier(int sock, struct lttng_ust_abi_event_not
 
 	lum.header.handle = event_notifier_group->header.handle;
 	lum.header.cmd = LTTNG_UST_ABI_EVENT_NOTIFIER_CREATE;
+	lum.header.payload_size = sizeof(*event_notifier);
+	lum.cmd.var_len_cmd.cmd_len = sizeof(*event_notifier);
 
-	ret = ustcomm_send_app_msg(sock, &lum,
-				iov, LTTNG_ARRAY_SIZE(iov));
-	if (ret < 0) {
+	ret = ustcomm_send_app_msg(sock, &lum);
+	if (ret) {
 		free(event_notifier_data);
 		return ret;
 	}
-
+	/* Send struct lttng_ust_abi_event_notifier */
+	len = ustcomm_send_unix_sock(sock, event_notifier, sizeof(*event_notifier));
+	if (len != sizeof(*event_notifier)) {
+		free(event_notifier_data);
+		if (len < 0)
+			return len;
+		else
+			return -EIO;
+	}
 	ret = ustcomm_recv_app_reply(sock, &lur, lum.header.handle, lum.header.cmd);
 	if (ret) {
 		free(event_notifier_data);
@@ -836,20 +814,12 @@ int lttng_ust_ctl_tracer_version(int sock, struct lttng_ust_abi_tracer_version *
 
 	lum.header.handle = LTTNG_UST_ABI_ROOT_HANDLE;
 	lum.header.cmd = LTTNG_UST_ABI_TRACER_VERSION;
-
-	ret = ustcomm_send_app_msg(sock, &lum, NULL, 0);
-
-	if (ret < 0)
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
+	if (ret)
 		return ret;
-
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.header.handle, lum.header.cmd);
-
-	if (ret == 0) {
-		memcpy(v, &lur.cmd.version, sizeof(*v));
-		DBG("received tracer version");
-	}
-
-	return ret;
+	memcpy(v, &lur.cmd.version, sizeof(*v));
+	DBG("received tracer version");
+	return 0;
 }
 
 int lttng_ust_ctl_wait_quiescent(int sock)
@@ -1156,59 +1126,37 @@ int lttng_ust_ctl_send_channel_to_ust(int sock, int session_handle,
 {
 	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
-	struct lttng_ust_abi_channel channel;
 	int ret;
-	ssize_t len;
-	int fd;
-	struct iovec iov[] = {
-		{
-			.iov_base = &channel,
-			.iov_len = sizeof(channel),
-		},
-		{
-			.iov_base = channel_data->type.channel.data,
-			.iov_len = channel_data->header.size,
-		},
-
-	};
 
 	if (!channel_data)
 		return -EINVAL;
 
-	channel.len = channel_data->header.size;
-	channel.type = channel_data->type.channel.type;
-	channel.owner_id = channel_data->type.channel.owner_id;
-
 	lum.header.handle = session_handle;
 	lum.header.cmd = LTTNG_UST_ABI_CHANNEL;
+	lum.cmd.channel.len = channel_data->header.size;
+	lum.cmd.channel.type = channel_data->type.channel.type;
+	lum.cmd.channel.owner_id = channel_data->type.channel.owner_id;
 
 	/*
 	 * Payload is channel data and one file descriptor:
 	 *
 	 * 1. Wakeup
 	 */
+	lum.header.payload_size = channel_data->header.size;
 	lum.header.ancillary_size = 1;
 
-	ret = ustcomm_send_app_msg(sock, &lum,
-				iov, LTTNG_ARRAY_SIZE(iov));
-	if (ret < 0)
+	ret = ustcomm_send_app_msg(sock, &lum);
+	if (ret)
 		return ret;
 
-	/*
-	 * Using temporary variable to avoid taking address of member of packed
-	 * structure.
-	 */
-	fd = channel_data->type.channel.wakeup_fd;
-
-	len = ustcomm_send_fds_unix_sock(sock, &fd, 1);
-
-	if (len <= 0) {
-		if (len < 0)
-			return len;
-		else
-			return -EIO;
-	}
-
+	ret = lttng_ust_ctl_send_channel(sock,
+			channel_data->type.channel.type,
+			channel_data->type.channel.data,
+			channel_data->header.size,
+			channel_data->type.channel.wakeup_fd,
+			1);
+	if (ret)
+		return ret;
 	ret = ustcomm_recv_app_reply(sock, &lur, lum.header.handle, lum.header.cmd);
 	if (!ret) {
 		channel_data->header.handle = lur.header.ret_val;
@@ -1236,24 +1184,11 @@ int lttng_ust_ctl_send_stream_to_ust(int sock,
 	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret;
-	ssize_t len;
-	int fds[2];
-	struct lttng_ust_abi_stream stream;
-	struct iovec iov[] = {
-		{
-			.iov_base = &stream,
-			.iov_len = sizeof(stream),
-		},
-	};
-
-	if (!stream_data || !channel_data)
-		return -EINVAL;
-
-	stream.len = stream_data->header.size;
-	stream.stream_nr = stream_data->type.stream.stream_nr;
 
 	lum.header.handle = channel_data->header.handle;
 	lum.header.cmd = LTTNG_UST_ABI_STREAM;
+	lum.cmd.stream.len = stream_data->header.size;
+	lum.cmd.stream.stream_nr = stream_data->type.stream.stream_nr;
 
 	/*
 	 * Payload is stream data and two file descriptors:
@@ -1263,24 +1198,20 @@ int lttng_ust_ctl_send_stream_to_ust(int sock,
 	 */
 	lum.header.ancillary_size = 2;
 
-	ret = ustcomm_send_app_msg(sock, &lum,
-				iov, LTTNG_ARRAY_SIZE(iov));
-
-	if (ret < 0)
+	ret = ustcomm_send_app_msg(sock, &lum);
+	if (ret)
 		return ret;
 
-	fds[0] = stream_data->type.stream.shm_fd;
-	fds[1] = stream_data->type.stream.wakeup_fd;
+	assert(stream_data);
+	assert(stream_data->header.type == LTTNG_UST_ABI_OBJECT_TYPE_STREAM);
 
-	len = ustcomm_send_fds_unix_sock(sock, fds,
-					LTTNG_ARRAY_SIZE(fds));
-	if (len <= 0) {
-		if (len < 0)
-			return len;
-		else
-			return -EIO;
-	}
-
+	ret = lttng_ust_ctl_send_stream(sock,
+			stream_data->type.stream.stream_nr,
+			stream_data->header.size,
+			stream_data->type.stream.shm_fd,
+			stream_data->type.stream.wakeup_fd, 1);
+	if (ret)
+		return ret;
 	ret = ustcomm_recv_app_reply(sock, &lur, lum.header.handle, lum.header.cmd);
 	if (ret == -EINVAL) {
 		/*
@@ -4431,23 +4362,30 @@ int lttng_ust_ctl_send_counter_data_to_ust(int sock, int parent_handle,
 	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret;
-	struct iovec iov[] = {
-		{
-			.iov_base = counter_data->type.counter.data,
-			.iov_len = counter_data->header.size,
-		},
-	};
+	size_t size;
+	ssize_t len;
 
 	if (!counter_data)
 		return -EINVAL;
 
+	size = counter_data->header.size;
 	lum.header.handle = parent_handle;
 	lum.header.cmd = LTTNG_UST_ABI_COUNTER;
+	lum.header.payload_size = size;
+	lum.cmd.var_len_cmd.cmd_len = size;
 
-	ret = ustcomm_send_app_msg(sock, &lum,
-				iov, LTTNG_ARRAY_SIZE(iov));
-	if (ret < 0) {
+	ret = ustcomm_send_app_msg(sock, &lum);
+	if (ret) {
 		return ret;
+	}
+
+	/* Send var len cmd */
+	len = ustcomm_send_unix_sock(sock, counter_data->type.counter.data, size);
+	if (len != size) {
+		if (len < 0)
+			return len;
+		else
+			return -EIO;
 	}
 
 	ret = ustcomm_recv_app_reply(sock, &lur, lum.header.handle, lum.header.cmd);
@@ -4473,28 +4411,33 @@ int lttng_ust_ctl_send_counter_channel_data_to_ust(int sock,
 	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret, shm_fd[1];
+	size_t size;
 	ssize_t len;
-	struct iovec iov[] = {
-		{
-			.iov_base = &counter_channel,
-			.iov_len = sizeof(counter_channel),
-		},
-	};
 
 	if (!counter_data || !counter_channel_data)
 		return -EINVAL;
 
-	counter_channel.len = sizeof(struct lttng_ust_abi_counter_channel);
-	counter_channel.shm_len = counter_channel_data->size;
-
+	size = counter_channel_data->size;
 	lum.header.handle = counter_data->header.handle;	/* parent handle */
 	lum.header.cmd = LTTNG_UST_ABI_COUNTER_CHANNEL;
+	lum.header.payload_size = sizeof(struct lttng_ust_abi_counter_channel);
 	lum.header.ancillary_size = 1;
-
-	ret = ustcomm_send_app_msg(sock, &lum,
-				iov, LTTNG_ARRAY_SIZE(iov));
-	if (ret < 0) {
+	lum.cmd.var_len_cmd.cmd_len = sizeof(struct lttng_ust_abi_counter_channel);
+	ret = ustcomm_send_app_msg(sock, &lum);
+	if (ret) {
 		return ret;
+	}
+
+	counter_channel.len = sizeof(struct lttng_ust_abi_counter_channel);
+	counter_channel.shm_len = size;
+
+	/* Send var len cmd */
+	len = ustcomm_send_unix_sock(sock, &counter_channel, sizeof(struct lttng_ust_abi_counter_channel));
+	if (len != sizeof(struct lttng_ust_abi_counter_channel)) {
+		if (len < 0)
+			return len;
+		else
+			return -EIO;
 	}
 
 	shm_fd[0] = counter_channel_data->type.counter_channel.shm_fd;
@@ -4529,30 +4472,34 @@ int lttng_ust_ctl_send_counter_cpu_data_to_ust(int sock,
 	struct ustcomm_ust_msg lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret, shm_fd[1];
+	size_t size;
 	ssize_t len;
-	struct iovec iov[] = {
-		{
-			.iov_base = &counter_cpu,
-			.iov_len = sizeof(counter_cpu),
-		},
-	};
 
 	if (!counter_data || !counter_cpu_data)
 		return -EINVAL;
 
-	counter_cpu.len = sizeof(struct lttng_ust_abi_counter_cpu);
-	counter_cpu.shm_len = counter_cpu_data->header.size;
-	counter_cpu.cpu_nr = counter_cpu_data->type.counter_cpu.cpu_nr;
-
+	size = counter_cpu_data->header.size;
 	lum.header.handle = counter_data->header.handle;	/* parent handle */
 	lum.header.cmd = LTTNG_UST_ABI_COUNTER_CPU;
+	lum.header.payload_size = sizeof(struct lttng_ust_abi_counter_cpu);
 	lum.header.ancillary_size = 1;
-
-	ret = ustcomm_send_app_msg(sock, &lum,
-				iov, LTTNG_ARRAY_SIZE(iov));
-
-	if (ret < 0) {
+	lum.cmd.var_len_cmd.cmd_len = sizeof(struct lttng_ust_abi_counter_cpu);
+	ret = ustcomm_send_app_msg(sock, &lum);
+	if (ret) {
 		return ret;
+	}
+
+	counter_cpu.len = sizeof(struct lttng_ust_abi_counter_cpu);
+	counter_cpu.shm_len = size;
+	counter_cpu.cpu_nr = counter_cpu_data->type.counter_cpu.cpu_nr;
+
+	/* Send var len cmd */
+	len = ustcomm_send_unix_sock(sock, &counter_cpu, sizeof(struct lttng_ust_abi_counter_cpu));
+	if (len != sizeof(struct lttng_ust_abi_counter_cpu)) {
+		if (len < 0)
+			return len;
+		else
+			return -EIO;
 	}
 
 	shm_fd[0] = counter_cpu_data->type.counter_channel.shm_fd;
@@ -4616,12 +4563,6 @@ int lttng_ust_ctl_counter_create_event(int sock,
 	struct lttng_ust_abi_object_data *counter_event_data;
 	ssize_t len;
 	int ret;
-	struct iovec iov[] = {
-		{
-			.iov_base = counter_event,
-			.iov_len = counter_event_len,
-		},
-	};
 
 	if (!counter_data || !_counter_event_data)
 		return -EINVAL;
@@ -4630,17 +4571,25 @@ int lttng_ust_ctl_counter_create_event(int sock,
 	if (!counter_event_data)
 		return -ENOMEM;
 	counter_event_data->type = LTTNG_UST_ABI_OBJECT_TYPE_COUNTER_EVENT;
-
 	lum.header.handle = counter_data->header.handle;
 	lum.header.cmd = LTTNG_UST_ABI_COUNTER_EVENT;
-
-	ret = ustcomm_send_app_msg(sock, &lum,
-				iov, LTTNG_ARRAY_SIZE(iov));
-	if (ret < 0) {
+	lum.header.payload_size = counter_event_len;
+	lum.cmd.var_len_cmd.cmd_len = counter_event_len;
+	ret = ustcomm_send_app_msg(sock, &lum);
+	if (ret) {
 		free(counter_event_data);
 		return ret;
 	}
 
+	/* Send var len cmd */
+	len = ustcomm_send_unix_sock(sock, counter_event, counter_event_len);
+	if (len != counter_event_len) {
+		free(counter_event_data);
+		if (len < 0)
+			return len;
+		else
+			return -EIO;
+	}
 	ret = ustcomm_recv_app_reply(sock, &lur, lum.header.handle, lum.header.cmd);
 	if (ret) {
 		free(counter_event_data);

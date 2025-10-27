@@ -13,7 +13,6 @@
 #ifndef _UST_COMMON_UST_COMM_H
 #define _UST_COMMON_UST_COMM_H
 
-#include <sys/uio.h>
 #include <stdint.h>
 #include <limits.h>
 #include <unistd.h>
@@ -97,7 +96,29 @@ struct ustcomm_ust_msg {
 
 	union {
 		char padding[USTCOMM_MSG_CMD_FIELDS_SIZE];
-	} _cmd;
+		struct lttng_ust_abi_channel channel;
+		struct lttng_ust_abi_stream stream;
+		struct lttng_ust_abi_event event;
+		struct lttng_ust_abi_context context;
+		struct lttng_ust_abi_tracer_version version;
+		struct lttng_ust_abi_tracepoint_iter tracepoint;
+		struct {
+			uint32_t data_size;	/* following filter data */
+			uint32_t reloc_offset;
+			uint64_t seqnum;
+		} __attribute__((packed)) filter;
+		struct {
+			uint32_t count;	/* how many names follow */
+		} __attribute__((packed)) exclusion;
+		struct {
+			uint32_t data_size;	/* following capture data */
+			uint32_t reloc_offset;
+			uint64_t seqnum;
+		} __attribute__((packed)) capture;
+		struct {
+			uint32_t cmd_len;
+		} __attribute__((packed)) var_len_cmd;
+	} cmd;
 } __attribute__((packed));
 
 lttng_ust_static_assert(sizeof(struct ustcomm_ust_msg) == USTCOMM_MSG_HEADER_FIELDS_SIZE + USTCOMM_MSG_CMD_FIELDS_SIZE,
@@ -304,9 +325,6 @@ int ustcomm_close_unix_sock(int sock)
 ssize_t ustcomm_recv_unix_sock(int sock, void *buf, size_t len)
 	__attribute__((visibility("hidden")));
 
-ssize_t ustcomm_sendv_unix_sock(int sock, const struct iovec *iov, int iovcnt)
-	__attribute__((visibility("hidden")));
-
 ssize_t ustcomm_send_unix_sock(int sock, const void *buf, size_t len)
 	__attribute__((visibility("hidden")));
 
@@ -319,9 +337,7 @@ ssize_t ustcomm_recv_fds_unix_sock(int sock, int *fds, size_t nb_fd)
 const char *ustcomm_get_readable_code(int code)
 	__attribute__((visibility("hidden")));
 
-
-int ustcomm_send_app_msg(int sock, struct ustcomm_ust_msg *lum,
-			const struct iovec *iov, int iovcnt)
+int ustcomm_send_app_msg(int sock, struct ustcomm_ust_msg *lum)
 	__attribute__((visibility("hidden")));
 
 int ustcomm_recv_app_reply(int sock, struct ustcomm_ust_reply *lur,
@@ -345,6 +361,10 @@ int ustcomm_recv_stream_fds_from_sessiond(int sock,
 
 ssize_t ustcomm_recv_event_notifier_notif_fd_from_sessiond(int sock,
 		int *event_notifier_notif_fd)
+	__attribute__((visibility("hidden")));
+
+ssize_t ustcomm_recv_var_len_cmd_from_sessiond(const char *payload, uint32_t payload_size,
+					void **data, uint32_t len)
 	__attribute__((visibility("hidden")));
 
 int ustcomm_recv_counter_shm_from_sessiond(int sock,
