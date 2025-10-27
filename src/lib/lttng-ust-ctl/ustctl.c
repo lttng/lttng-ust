@@ -466,6 +466,7 @@ int lttng_ust_ctl_set_filter(int sock, struct lttng_ust_abi_filter_bytecode *byt
  * Protocol for LTTNG_UST_ABI_CAPTURE command:
  *
  * - send:     struct ustcomm_ust_msg
+ * - receive:  struct ustcomm_ust_reply
  * - send:     var len bytecode
  * - receive:  struct ustcomm_ust_reply (actual command return code)
  */
@@ -481,12 +482,11 @@ int lttng_ust_ctl_set_capture(int sock, struct lttng_ust_abi_capture_bytecode *b
 
 	lum.header.handle = obj_data->header.handle;
 	lum.header.cmd = LTTNG_UST_ABI_CAPTURE;
-	lum.header.payload_size = bytecode->len;
 	lum.cmd.capture.data_size = bytecode->len;
 	lum.cmd.capture.reloc_offset = bytecode->reloc_offset;
 	lum.cmd.capture.seqnum = bytecode->seqnum;
 
-	ret = ustcomm_send_app_msg(sock, &lum);
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
 	/* send var len bytecode */
@@ -610,6 +610,7 @@ int lttng_ust_ctl_stop_session(int sock, int handle)
  * Protocol for LTTNG_UST_ABI_EVENT_NOTIFIER_GROUP_CREATE command:
  *
  * - send:     struct ustcomm_ust_msg
+ * - receive:  struct ustcomm_ust_reply
  * - send:     file descriptor
  * - receive:  struct ustcomm_ust_reply (actual command return code)
  */
@@ -633,9 +634,8 @@ int lttng_ust_ctl_create_event_notifier_group(int sock, int pipe_fd,
 
 	lum.header.handle = LTTNG_UST_ABI_ROOT_HANDLE;
 	lum.header.cmd = LTTNG_UST_ABI_EVENT_NOTIFIER_GROUP_CREATE;
-	lum.header.ancillary_size = 1;
 
-	ret = ustcomm_send_app_msg(sock, &lum);
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		goto error;
 
@@ -668,6 +668,7 @@ end:
  * Protocol for LTTNG_UST_ABI_EVENT_NOTIFIER_CREATE command:
  *
  * - send:     struct ustcomm_ust_msg
+ * - receive:  struct ustcomm_ust_reply
  * - send:     struct lttng_ust_abi_event_notifier
  * - receive:  struct ustcomm_ust_reply (actual command return code)
  */
@@ -692,10 +693,9 @@ int lttng_ust_ctl_create_event_notifier(int sock, struct lttng_ust_abi_event_not
 
 	lum.header.handle = event_notifier_group->header.handle;
 	lum.header.cmd = LTTNG_UST_ABI_EVENT_NOTIFIER_CREATE;
-	lum.header.payload_size = sizeof(*event_notifier);
 	lum.cmd.var_len_cmd.cmd_len = sizeof(*event_notifier);
 
-	ret = ustcomm_send_app_msg(sock, &lum);
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret) {
 		free(event_notifier_data);
 		return ret;
@@ -1142,8 +1142,8 @@ int lttng_ust_ctl_send_channel_to_ust(int sock, int session_handle,
 	 *
 	 * 1. Wakeup
 	 */
-	lum.header.payload_size = channel_data->header.size;
-	lum.header.ancillary_size = 1;
+	lum.header.payload_size = channel_data->header.size + 1;
+	lum.header.ancillary_size = sizeof(int);
 
 	ret = ustcomm_send_app_msg(sock, &lum);
 	if (ret)
@@ -1196,7 +1196,8 @@ int lttng_ust_ctl_send_stream_to_ust(int sock,
 	 *  1. Shared memory
 	 *  2. Wakeup
 	 */
-	lum.header.ancillary_size = 2;
+	lum.header.payload_size = 2;
+	lum.header.ancillary_size = 2 * sizeof(int);
 
 	ret = ustcomm_send_app_msg(sock, &lum);
 	if (ret)
@@ -4353,8 +4354,9 @@ void lttng_ust_ctl_destroy_counter(struct lttng_ust_ctl_daemon_counter *counter)
  * Protocol for LTTNG_UST_ABI_COUNTER command:
  *
  * - send:     struct ustcomm_ust_msg
- * - send:     counter data
  * - receive:  struct ustcomm_ust_reply
+ * - send:     counter data
+ * - receive:  struct ustcomm_ust_reply (actual command return code)
  */
 int lttng_ust_ctl_send_counter_data_to_ust(int sock, int parent_handle,
 		struct lttng_ust_abi_object_data *counter_data)
@@ -4371,10 +4373,8 @@ int lttng_ust_ctl_send_counter_data_to_ust(int sock, int parent_handle,
 	size = counter_data->header.size;
 	lum.header.handle = parent_handle;
 	lum.header.cmd = LTTNG_UST_ABI_COUNTER;
-	lum.header.payload_size = size;
 	lum.cmd.var_len_cmd.cmd_len = size;
-
-	ret = ustcomm_send_app_msg(sock, &lum);
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret) {
 		return ret;
 	}
@@ -4400,6 +4400,7 @@ int lttng_ust_ctl_send_counter_data_to_ust(int sock, int parent_handle,
  * Protocol for LTTNG_UST_ABI_COUNTER_CHANNEL command:
  *
  * - send:     struct ustcomm_ust_msg
+ * - receive:  struct ustcomm_ust_reply
  * - send:     file descriptor
  * - receive:  struct ustcomm_ust_reply (actual command return code)
  */
@@ -4420,10 +4421,8 @@ int lttng_ust_ctl_send_counter_channel_data_to_ust(int sock,
 	size = counter_channel_data->size;
 	lum.header.handle = counter_data->header.handle;	/* parent handle */
 	lum.header.cmd = LTTNG_UST_ABI_COUNTER_CHANNEL;
-	lum.header.payload_size = sizeof(struct lttng_ust_abi_counter_channel);
-	lum.header.ancillary_size = 1;
 	lum.cmd.var_len_cmd.cmd_len = sizeof(struct lttng_ust_abi_counter_channel);
-	ret = ustcomm_send_app_msg(sock, &lum);
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret) {
 		return ret;
 	}
@@ -4461,6 +4460,7 @@ int lttng_ust_ctl_send_counter_channel_data_to_ust(int sock,
  * Protocol for LTTNG_UST_ABI_COUNTER_CPU command:
  *
  * - send:     struct ustcomm_ust_msg
+ * - receive:  struct ustcomm_ust_reply
  * - send:     file descriptor
  * - receive:  struct ustcomm_ust_reply (actual command return code)
  */
@@ -4481,10 +4481,8 @@ int lttng_ust_ctl_send_counter_cpu_data_to_ust(int sock,
 	size = counter_cpu_data->header.size;
 	lum.header.handle = counter_data->header.handle;	/* parent handle */
 	lum.header.cmd = LTTNG_UST_ABI_COUNTER_CPU;
-	lum.header.payload_size = sizeof(struct lttng_ust_abi_counter_cpu);
-	lum.header.ancillary_size = 1;
 	lum.cmd.var_len_cmd.cmd_len = sizeof(struct lttng_ust_abi_counter_cpu);
-	ret = ustcomm_send_app_msg(sock, &lum);
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret) {
 		return ret;
 	}
@@ -4549,6 +4547,7 @@ int lttng_ust_ctl_counter_clear(struct lttng_ust_ctl_daemon_counter *counter,
  * Protocol for LTTNG_UST_COUNTER_EVENT command:
  *
  * - send:     struct ustcomm_ust_msg
+ * - receive:  struct ustcomm_ust_reply
  * - send:     struct lttng_ust_counter_event
  * - receive:  struct ustcomm_ust_reply (actual command return code)
  */
@@ -4573,9 +4572,8 @@ int lttng_ust_ctl_counter_create_event(int sock,
 	counter_event_data->type = LTTNG_UST_ABI_OBJECT_TYPE_COUNTER_EVENT;
 	lum.header.handle = counter_data->header.handle;
 	lum.header.cmd = LTTNG_UST_ABI_COUNTER_EVENT;
-	lum.header.payload_size = counter_event_len;
 	lum.cmd.var_len_cmd.cmd_len = counter_event_len;
-	ret = ustcomm_send_app_msg(sock, &lum);
+	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret) {
 		free(counter_event_data);
 		return ret;

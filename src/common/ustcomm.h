@@ -41,15 +41,6 @@ struct lttng_ust_enum_entry;
 struct lttng_integer_type;
 struct lttng_ust_session;
 
-/*
- * The maximum payload size is twice the maximum bytecode code for filters.
- *
- * That ought to be enough for extension in the future.  This is also small
- * enough to fit on stacks of threads created with the default glibc pthread
- * attribute: 2 MB on most architectures.
- */
-#define LTTNG_UST_COMM_MAX_PAYLOAD_SIZE (1024 * 128)
-
 #define LTTNG_UST_COMM_REG_MSG_SIZE			136
 struct lttng_ust_ctl_reg_msg {
 	union {
@@ -352,10 +343,12 @@ int ustcomm_send_app_cmd(int sock,
 int ustcomm_recv_fd(int sock)
 	__attribute__((visibility("hidden")));
 
-int ustcomm_recv_channel_wakeup_fd_from_sessiond(int sock)
+ssize_t ustcomm_recv_channel_from_sessiond(int sock,
+		void **chan_data, uint64_t len, int *wakeup_fd)
 	__attribute__((visibility("hidden")));
 
-int ustcomm_recv_stream_fds_from_sessiond(int sock,
+int ustcomm_recv_stream_from_sessiond(int sock,
+		uint64_t *memory_map_size,
 		int *shm_fd, int *wakeup_fd)
 	__attribute__((visibility("hidden")));
 
@@ -363,8 +356,8 @@ ssize_t ustcomm_recv_event_notifier_notif_fd_from_sessiond(int sock,
 		int *event_notifier_notif_fd)
 	__attribute__((visibility("hidden")));
 
-ssize_t ustcomm_recv_var_len_cmd_from_sessiond(const char *payload, uint32_t payload_size,
-					void **data, uint32_t len)
+ssize_t ustcomm_recv_var_len_cmd_from_sessiond(int sock,
+		void **data, uint32_t len)
 	__attribute__((visibility("hidden")));
 
 int ustcomm_recv_counter_shm_from_sessiond(int sock,
