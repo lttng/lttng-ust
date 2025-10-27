@@ -348,7 +348,10 @@ int lttng_ust_ctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
 	struct lttng_ust_abi_object_data *context_data = NULL;
 	size_t len;
 	int ret;
-	struct lttng_ust_abi_context context = {};
+	struct lttng_ust_abi_context context = {
+		.header.ctx = ctx->ctx,
+
+	};
 	char buf[LTTNG_UST_ABI_SYM_NAME_LEN];
 	struct iovec iov[] = {
 		{
@@ -449,12 +452,11 @@ int lttng_ust_ctl_set_filter(int sock, struct lttng_ust_abi_filter_bytecode *byt
 	struct ustcomm_ust_msg_header lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret;
-	struct lttng_ust_abi_filter_bytecode filter = {};
-
-	filter.len = bytecode->len;
-	filter.reloc_offset = bytecode->reloc_offset;
-	filter.seqnum = bytecode->seqnum;
-
+	struct lttng_ust_abi_filter_bytecode filter = {
+		.len = bytecode->len,
+		.reloc_offset = bytecode->reloc_offset,
+		.seqnum = bytecode->seqnum,
+	};
 	struct iovec iov[] = {
 		{
 			.iov_base = &filter,
@@ -502,10 +504,11 @@ int lttng_ust_ctl_set_capture(int sock, struct lttng_ust_abi_capture_bytecode *b
 	struct ustcomm_ust_msg_header lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret;
-	struct lttng_ust_abi_capture_bytecode capture = {};
-	capture.len = bytecode->len;
-	capture.reloc_offset = bytecode->reloc_offset;
-	capture.seqnum = bytecode->seqnum;
+	struct lttng_ust_abi_capture_bytecode capture = {
+		.len = bytecode->len,
+		.reloc_offset = bytecode->reloc_offset,
+		.seqnum = bytecode->seqnum,
+	};
 	struct iovec iov[] = {
 		{
 			.iov_base = &capture,
@@ -651,7 +654,7 @@ int lttng_ust_ctl_create_event_notifier_group(int sock, int pipe_fd,
 	struct ustcomm_ust_msg_header lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret;
-	char dummy = '\0';
+	char dummy;
 	struct iovec iov[] = {
 		{
 			.iov_base = &dummy,
@@ -889,7 +892,7 @@ int lttng_ust_ctl_unknown_command(int sock)
 	struct ustcomm_ust_msg_header lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret;
-	char buf[27] = {};
+	char buf[27];
 	struct iovec iov[] = {
 		{
 			.iov_base = buf,
@@ -1258,7 +1261,7 @@ int lttng_ust_ctl_send_channel_to_ust(int sock, int session_handle,
 {
 	struct ustcomm_ust_msg_header lum = {};
 	struct ustcomm_ust_reply lur;
-	struct lttng_ust_abi_channel channel = {};
+	struct lttng_ust_abi_channel channel;
 	int ret;
 	struct iovec iov[] = {
 		{
@@ -1319,7 +1322,7 @@ int lttng_ust_ctl_send_stream_to_ust(int sock,
 	struct ustcomm_ust_msg_header lum = {};
 	struct ustcomm_ust_reply lur;
 	int ret;
-	struct lttng_ust_abi_stream stream = {};
+	struct lttng_ust_abi_stream stream;
 	struct iovec iov[] = {
 		{
 			.iov_base = &stream,
