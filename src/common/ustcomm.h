@@ -82,12 +82,27 @@ lttng_ust_static_assert(sizeof(struct lttng_ust_ctl_reg_msg) == LTTNG_UST_COMM_R
 /*
  * Data structure for the commands sent from sessiond to UST.
  */
-struct ustcomm_ust_msg_header {
-	uint32_t handle;
-	uint32_t cmd;
-	uint32_t payload_size; /* in byte */
-	uint32_t ancillary_size; /* in byte */
+#define USTCOMM_MSG_HEADER_FIELDS_SIZE		32
+#define USTCOMM_MSG_CMD_FIELDS_SIZE		320
+struct ustcomm_ust_msg {
+	union {
+		char padding[USTCOMM_MSG_HEADER_FIELDS_SIZE];
+		struct {
+			uint32_t handle;
+			uint32_t cmd;
+			uint32_t payload_size; /* in byte */
+			uint32_t ancillary_size; /* in byte */
+		} __attribute__((packed));
+	} header;
+
+	union {
+		char padding[USTCOMM_MSG_CMD_FIELDS_SIZE];
+	} _cmd;
 } __attribute__((packed));
+
+lttng_ust_static_assert(sizeof(struct ustcomm_ust_msg) == USTCOMM_MSG_HEADER_FIELDS_SIZE + USTCOMM_MSG_CMD_FIELDS_SIZE,
+			"Unexpected size for struct ustcomm_ust_msg",
+			Unexpected_size_for_struct_ustcomm_ust_msg);
 
 /*
  * Data structure for the response from UST to the session daemon.
@@ -305,9 +320,8 @@ const char *ustcomm_get_readable_code(int code)
 	__attribute__((visibility("hidden")));
 
 
-int ustcomm_send_app_msg(int sock, struct ustcomm_ust_msg_header *lum,
-			struct iovec *iov, int iovcnt,
-			const int *fds, size_t fds_cnt)
+int ustcomm_send_app_msg(int sock, struct ustcomm_ust_msg *lum,
+			const struct iovec *iov, int iovcnt)
 	__attribute__((visibility("hidden")));
 
 int ustcomm_recv_app_reply(int sock, struct ustcomm_ust_reply *lur,
@@ -315,7 +329,7 @@ int ustcomm_recv_app_reply(int sock, struct ustcomm_ust_reply *lur,
 	__attribute__((visibility("hidden")));
 
 int ustcomm_send_app_cmd(int sock,
-		struct ustcomm_ust_msg_header *lum,
+		struct ustcomm_ust_msg *lum,
 		struct ustcomm_ust_reply *lur)
 	__attribute__((visibility("hidden")));
 
