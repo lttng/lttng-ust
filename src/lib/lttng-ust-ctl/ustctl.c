@@ -349,7 +349,7 @@ int lttng_ust_ctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
 	size_t len;
 	int ret;
 	struct lttng_ust_abi_context context = {};
-	char buf[LTTNG_UST_ABI_SYM_NAME_LEN] = {0};
+	char buf[LTTNG_UST_ABI_SYM_NAME_LEN];
 	struct iovec iov[] = {
 		{
 			.iov_base = &context,
