@@ -34,6 +34,7 @@
 
 /* Queue size of listen(2) */
 #define LTTNG_UST_COMM_MAX_LISTEN			10
+#define LTTNG_UST_COMM_REG_MSG_PADDING			64
 
 struct lttng_ust_event_field;
 struct lttng_ust_ctx_field;
@@ -41,50 +42,35 @@ struct lttng_ust_enum_entry;
 struct lttng_integer_type;
 struct lttng_ust_session;
 
-#define LTTNG_UST_COMM_REG_MSG_SIZE			136
 struct lttng_ust_ctl_reg_msg {
-	union {
-		char padding[LTTNG_UST_COMM_REG_MSG_SIZE];
-		struct {
-			uint32_t magic;
-			uint32_t major;
-			uint32_t minor;
-			uint32_t pid;
-			uint32_t ppid;
-			uint32_t uid;
-			uint32_t gid;
-			uint32_t bits_per_long;
-			uint32_t uint8_t_alignment;
-			uint32_t uint16_t_alignment;
-			uint32_t uint32_t_alignment;
-			uint32_t uint64_t_alignment;
-			uint32_t long_alignment;
-			uint32_t socket_type;			/* enum lttng_ust_ctl_socket_type */
-			char name[LTTNG_UST_ABI_PROCNAME_LEN];	/* process name */
-		} __attribute__((packed));
-	};
+	uint32_t magic;
+	uint32_t major;
+	uint32_t minor;
+	uint32_t pid;
+	uint32_t ppid;
+	uint32_t uid;
+	uint32_t gid;
+	uint32_t bits_per_long;
+	uint32_t uint8_t_alignment;
+	uint32_t uint16_t_alignment;
+	uint32_t uint32_t_alignment;
+	uint32_t uint64_t_alignment;
+	uint32_t long_alignment;
+	uint32_t socket_type;			/* enum lttng_ust_ctl_socket_type */
+	char name[LTTNG_UST_ABI_PROCNAME_LEN];	/* process name */
+	char padding[LTTNG_UST_COMM_REG_MSG_PADDING];
 } __attribute__((packed));
-
-lttng_ust_static_assert(sizeof(struct lttng_ust_ctl_reg_msg) == LTTNG_UST_COMM_REG_MSG_SIZE,
-			"Unexpected size for struct lttng_ust_ctl_reg_msg",
-			Unexpected_size_for_struct_lttng_ust_ctl_reg_msg);
 
 /*
  * Data structure for the commands sent from sessiond to UST.
  */
-#define USTCOMM_MSG_HEADER_FIELDS_SIZE		32
-#define USTCOMM_MSG_CMD_FIELDS_SIZE		320
+#define USTCOMM_MSG_PADDING1		32
+#define USTCOMM_MSG_PADDING2		32
 struct ustcomm_ust_msg {
+	uint32_t handle;
+	uint32_t cmd;
+	char padding[USTCOMM_MSG_PADDING1];
 	union {
-		char padding[USTCOMM_MSG_HEADER_FIELDS_SIZE];
-		struct {
-			uint32_t handle;
-			uint32_t cmd;
-		} __attribute__((packed));
-	} header;
-
-	union {
-		char padding[USTCOMM_MSG_CMD_FIELDS_SIZE];
 		struct lttng_ust_abi_channel channel;
 		struct lttng_ust_abi_stream stream;
 		struct lttng_ust_abi_event event;
@@ -107,31 +93,23 @@ struct ustcomm_ust_msg {
 		struct {
 			uint32_t cmd_len;
 		} __attribute__((packed)) var_len_cmd;
-	} cmd;
+		char padding[USTCOMM_MSG_PADDING2];
+	} u;
 } __attribute__((packed));
-
-lttng_ust_static_assert(sizeof(struct ustcomm_ust_msg) == USTCOMM_MSG_HEADER_FIELDS_SIZE + USTCOMM_MSG_CMD_FIELDS_SIZE,
-			"Unexpected size for struct ustcomm_ust_msg",
-			Unexpected_size_for_struct_ustcomm_ust_msg);
 
 /*
  * Data structure for the response from UST to the session daemon.
  * cmd_type is sent back in the reply for validation.
  */
-#define USTCOMM_REPLY_HEADER_SIZE		32
-#define USTCOMM_REPLY_CMD_SIZE			320
+#define USTCOMM_REPLY_PADDING1		32
+#define USTCOMM_REPLY_PADDING2		32
 struct ustcomm_ust_reply {
+	uint32_t handle;
+	uint32_t cmd;
+	int32_t ret_code;	/* enum ustcomm_return_code */
+	uint32_t ret_val;	/* return value */
+	char padding[USTCOMM_REPLY_PADDING1];
 	union {
-		char padding[USTCOMM_REPLY_HEADER_SIZE];
-		struct {
-			uint32_t handle;
-			uint32_t cmd;
-			int32_t ret_code;	/* enum ustcomm_return_code */
-			uint32_t ret_val;	/* return value */
-		} __attribute__((packed));
-	} header;
-	union {
-		char padding[USTCOMM_REPLY_CMD_SIZE];
 		struct {
 			uint64_t memory_map_size;
 		} __attribute__((packed)) channel;
@@ -140,152 +118,85 @@ struct ustcomm_ust_reply {
 		} __attribute__((packed)) stream;
 		struct lttng_ust_abi_tracer_version version;
 		struct lttng_ust_abi_tracepoint_iter tracepoint;
-	} cmd;
+		char padding[USTCOMM_REPLY_PADDING2];
+	} u;
 } __attribute__((packed));
-
-lttng_ust_static_assert(sizeof(struct ustcomm_ust_reply) == USTCOMM_REPLY_HEADER_SIZE + USTCOMM_REPLY_CMD_SIZE,
-			"Unexpected size for struct ustcomm_ust_reply",
-			Unexpected_size_for_struct_ustcomm_ust_reply);
 
 struct ustcomm_notify_hdr {
 	uint32_t notify_cmd;
 } __attribute__((packed));
 
-#define USTCOMM_NOTIFY_EVENT_MSG_SIZE		320
+#define USTCOMM_NOTIFY_EVENT_MSG_PADDING	24
 struct ustcomm_notify_event_msg {
-	union {
-		char padding[USTCOMM_NOTIFY_EVENT_MSG_SIZE];
-		struct {
-			uint32_t session_objd;
-			uint32_t channel_objd;
-			char event_name[LTTNG_UST_ABI_SYM_NAME_LEN];
-			int32_t loglevel;
-			uint32_t signature_len;
-			uint32_t fields_len;
-			uint32_t model_emf_uri_len;
-			uint64_t user_token;
-		} __attribute__((packed));
-	};
+	uint32_t session_objd;
+	uint32_t channel_objd;
+	char event_name[LTTNG_UST_ABI_SYM_NAME_LEN];
+	int32_t loglevel;
+	uint32_t signature_len;
+	uint32_t fields_len;
+	uint32_t model_emf_uri_len;
+	uint64_t user_token;
+	char padding[USTCOMM_NOTIFY_EVENT_MSG_PADDING];
 	/* followed by signature, fields, and model_emf_uri */
 } __attribute__((packed));
 
-lttng_ust_static_assert(sizeof(struct ustcomm_notify_event_msg) == USTCOMM_NOTIFY_EVENT_MSG_SIZE,
-			"Unexpected size for struct ustcomm_notify_event_msg",
-			Unexpected_size_for_struct_ustcomm_notify_event_msg);
-
-#define USTCOMM_NOTIFY_EVENT_REPLY_SIZE		32
+#define USTCOMM_NOTIFY_EVENT_REPLY_PADDING	32
 struct ustcomm_notify_event_reply {
-	union {
-		char padding[USTCOMM_NOTIFY_EVENT_REPLY_SIZE];
-		struct {
-			int32_t ret_code;	/* 0: ok, negative: error code */
-			uint32_t id;	/* 32-bit event id. */
-		} __attribute__((packed));
-	};
+	int32_t ret_code;	/* 0: ok, negative: error code */
+	uint32_t id;	/* 32-bit event id. */
+	char padding[USTCOMM_NOTIFY_EVENT_REPLY_PADDING];
 } __attribute__((packed));
 
-lttng_ust_static_assert(sizeof(struct ustcomm_notify_event_reply) == USTCOMM_NOTIFY_EVENT_REPLY_SIZE,
-			"Unexpected size for struct ustcomm_notify_event_reply",
-			Unexpected_size_for_struct_ustcomm_notify_event_reply);
-
-#define USTCOMM_NOTIFY_KEY_MSG_SIZE		64
+#define USTCOMM_NOTIFY_KEY_MSG_PADDING	24
 struct ustcomm_notify_key_msg {
-	union {
-		char padding[USTCOMM_NOTIFY_KEY_MSG_SIZE];
-		struct {
-			uint32_t session_objd;
-			uint32_t map_objd;
-			uint32_t dimension;
-			uint32_t key_string_len;
-			uint64_t user_token;
-		} __attribute__((packed));
-	};
+	uint32_t session_objd;
+	uint32_t map_objd;
+	uint32_t dimension;
+	uint32_t key_string_len;
+	uint64_t user_token;
+	char padding[USTCOMM_NOTIFY_KEY_MSG_PADDING];
 	/* followed by dimension_indexes (array of @dimension uint64_t items) and key_string. */
 } __attribute__((packed));
 
-lttng_ust_static_assert(sizeof(struct ustcomm_notify_key_msg) == USTCOMM_NOTIFY_KEY_MSG_SIZE,
-			"Unexpected size for struct ustcomm_notify_key_msg",
-			Unexpected_size_for_struct_ustcomm_notify_key_msg);
-
-#define USTCOMM_NOTIFY_KEY_REPLY_SIZE		32
+#define USTCOMM_NOTIFY_KEY_REPLY_PADDING	32
 struct ustcomm_notify_key_reply {
-	union {
-		char padding[USTCOMM_NOTIFY_KEY_REPLY_SIZE];
-		struct {
-			int32_t ret_code;	/* 0: ok, negative: error code */
-			uint64_t index;		/* 64-bit key index. */
-		} __attribute__((packed));
-	};
+	int32_t ret_code;	/* 0: ok, negative: error code */
+	uint64_t index;		/* 64-bit key index. */
+	char padding[USTCOMM_NOTIFY_KEY_REPLY_PADDING];
 } __attribute__((packed));
 
-lttng_ust_static_assert(sizeof(struct ustcomm_notify_key_reply) == USTCOMM_NOTIFY_KEY_REPLY_SIZE,
-			"Unexpected size for struct ustcomm_notify_key_reply",
-			Unexpected_size_for_struct_ustcomm_notify_key_reply);
-
-#define USTCOMM_NOTIFY_ENUM_MSG_SIZE		320
+#define USTCOMM_NOTIFY_ENUM_MSG_PADDING		32
 struct ustcomm_notify_enum_msg {
-	union {
-		char padding[USTCOMM_NOTIFY_ENUM_MSG_SIZE];
-		struct {
-			uint32_t session_objd;
-			char enum_name[LTTNG_UST_ABI_SYM_NAME_LEN];
-			uint32_t entries_len;
-		} __attribute__((packed));
-	};
+	uint32_t session_objd;
+	char enum_name[LTTNG_UST_ABI_SYM_NAME_LEN];
+	uint32_t entries_len;
+	char padding[USTCOMM_NOTIFY_ENUM_MSG_PADDING];
 	/* followed by enum entries */
 } __attribute__((packed));
 
-lttng_ust_static_assert(sizeof(struct ustcomm_notify_enum_msg) == USTCOMM_NOTIFY_ENUM_MSG_SIZE,
-			"Unexpected size for struct ustcomm_notify_enum_msg",
-			Unexpected_size_for_struct_ustcomm_notify_enum_msg);
-
-#define USTCOMM_NOTIFY_ENUM_REPLY_SIZE		32
+#define USTCOMM_NOTIFY_ENUM_REPLY_PADDING	32
 struct ustcomm_notify_enum_reply {
-	union {
-		char padding[USTCOMM_NOTIFY_ENUM_REPLY_SIZE];
-		struct {
-			int32_t ret_code;	/* 0: ok, negative: error code */
-			uint64_t enum_id;
-		} __attribute__((packed));
-	};
+	int32_t ret_code;	/* 0: ok, negative: error code */
+	uint64_t enum_id;
+	char padding[USTCOMM_NOTIFY_ENUM_REPLY_PADDING];
 } __attribute__((packed));
 
-lttng_ust_static_assert(sizeof(struct ustcomm_notify_enum_reply) == USTCOMM_NOTIFY_ENUM_REPLY_SIZE,
-			"Unexpected size for struct ustcomm_notify_enum_reply",
-			Unexpected_size_for_struct_ustcomm_notify_enum_reply);
-
-#define USTCOMM_NOTIFY_CHANNEL_MSG_SIZE		32
+#define USTCOMM_NOTIFY_CHANNEL_MSG_PADDING	32
 struct ustcomm_notify_channel_msg {
-	union {
-		char padding[USTCOMM_NOTIFY_CHANNEL_MSG_SIZE];
-		struct {
-			uint32_t session_objd;
-			uint32_t channel_objd;
-			uint32_t ctx_fields_len;
-		} __attribute__((packed));
-	};
+	uint32_t session_objd;
+	uint32_t channel_objd;
+	uint32_t ctx_fields_len;
+	char padding[USTCOMM_NOTIFY_CHANNEL_MSG_PADDING];
 	/* followed by context fields */
 } __attribute__((packed));
 
-lttng_ust_static_assert(sizeof(struct ustcomm_notify_channel_msg) == USTCOMM_NOTIFY_CHANNEL_MSG_SIZE,
-			"Unexpected size for struct ustcomm_notify_channel_msg",
-			Unexpected_size_for_struct_ustcomm_notify_channel_msg);
-
-#define USTCOMM_NOTIFY_CHANNEL_REPLY_SIZE	32
+#define USTCOMM_NOTIFY_CHANNEL_REPLY_PADDING	32
 struct ustcomm_notify_channel_reply {
-	union {
-		char padding[USTCOMM_NOTIFY_CHANNEL_REPLY_SIZE];
-		struct {
-			int32_t ret_code;	/* 0: ok, negative: error code */
-			uint32_t chan_id;
-			uint32_t header_type;	/* enum lttng_ust_ctl_channel_header */
-		} __attribute__((packed));
-	};
+	int32_t ret_code;	/* 0: ok, negative: error code */
+	uint32_t chan_id;
+	uint32_t header_type;	/* enum lttng_ust_ctl_channel_header */
+	char padding[USTCOMM_NOTIFY_CHANNEL_REPLY_PADDING];
 } __attribute__((packed));
-
-lttng_ust_static_assert(sizeof(struct ustcomm_notify_channel_reply) == USTCOMM_NOTIFY_CHANNEL_REPLY_SIZE,
-			"Unexpected size for struct ustcomm_notify_channel_reply",
-			Unexpected_size_for_struct_ustcomm_notify_channel_reply);
 
 /*
  * LTTNG_UST_TRACEPOINT_FIELD_LIST reply is followed by a

@@ -166,8 +166,8 @@ int lttng_ust_ctl_release_handle(int sock, int handle)
 	if (sock < 0 || handle < 0)
 		return 0;
 	memset(&lum, 0, sizeof(lum));
-	lum.header.handle = handle;
-	lum.header.cmd = LTTNG_UST_ABI_RELEASE;
+	lum.handle = handle;
+	lum.cmd = LTTNG_UST_ABI_RELEASE;
 	return ustcomm_send_app_cmd(sock, &lum, &lur);
 }
 
@@ -182,35 +182,35 @@ int lttng_ust_ctl_release_object(int sock, struct lttng_ust_abi_object_data *dat
 	if (!data)
 		return -EINVAL;
 
-	switch (data->header.type) {
+	switch (data->type) {
 	case LTTNG_UST_ABI_OBJECT_TYPE_CHANNEL:
-		if (data->type.channel.wakeup_fd >= 0) {
-			ret = close(data->type.channel.wakeup_fd);
+		if (data->u.channel.wakeup_fd >= 0) {
+			ret = close(data->u.channel.wakeup_fd);
 			if (ret < 0) {
 				ret = -errno;
 				return ret;
 			}
-			data->type.channel.wakeup_fd = -1;
+			data->u.channel.wakeup_fd = -1;
 		}
-		free(data->type.channel.data);
-		data->type.channel.data = NULL;
+		free(data->u.channel.data);
+		data->u.channel.data = NULL;
 		break;
 	case LTTNG_UST_ABI_OBJECT_TYPE_STREAM:
-		if (data->type.stream.shm_fd >= 0) {
-			ret = close(data->type.stream.shm_fd);
+		if (data->u.stream.shm_fd >= 0) {
+			ret = close(data->u.stream.shm_fd);
 			if (ret < 0) {
 				ret = -errno;
 				return ret;
 			}
-			data->type.stream.shm_fd = -1;
+			data->u.stream.shm_fd = -1;
 		}
-		if (data->type.stream.wakeup_fd >= 0) {
-			ret = close(data->type.stream.wakeup_fd);
+		if (data->u.stream.wakeup_fd >= 0) {
+			ret = close(data->u.stream.wakeup_fd);
 			if (ret < 0) {
 				ret = -errno;
 				return ret;
 			}
-			data->type.stream.wakeup_fd = -1;
+			data->u.stream.wakeup_fd = -1;
 		}
 		break;
 	case LTTNG_UST_ABI_OBJECT_TYPE_EVENT:
@@ -220,33 +220,33 @@ int lttng_ust_ctl_release_object(int sock, struct lttng_ust_abi_object_data *dat
 	case LTTNG_UST_ABI_OBJECT_TYPE_COUNTER_EVENT:
 		break;
 	case LTTNG_UST_ABI_OBJECT_TYPE_COUNTER:
-		free(data->type.counter.data);
-		data->type.counter.data = NULL;
+		free(data->u.counter.data);
+		data->u.counter.data = NULL;
 		break;
 	case LTTNG_UST_ABI_OBJECT_TYPE_COUNTER_CHANNEL:
-		if (data->type.counter_channel.shm_fd >= 0) {
-			ret = close(data->type.counter_channel.shm_fd);
+		if (data->u.counter_channel.shm_fd >= 0) {
+			ret = close(data->u.counter_channel.shm_fd);
 			if (ret < 0) {
 				ret = -errno;
 				return ret;
 			}
-			data->type.counter_channel.shm_fd = -1;
+			data->u.counter_channel.shm_fd = -1;
 		}
 		break;
 	case LTTNG_UST_ABI_OBJECT_TYPE_COUNTER_CPU:
-		if (data->type.counter_cpu.shm_fd >= 0) {
-			ret = close(data->type.counter_cpu.shm_fd);
+		if (data->u.counter_cpu.shm_fd >= 0) {
+			ret = close(data->u.counter_cpu.shm_fd);
 			if (ret < 0) {
 				ret = -errno;
 				return ret;
 			}
-			data->type.counter_cpu.shm_fd = -1;
+			data->u.counter_cpu.shm_fd = -1;
 		}
 		break;
 	default:
 		assert(0);
 	}
-	return lttng_ust_ctl_release_handle(sock, data->header.handle);
+	return lttng_ust_ctl_release_handle(sock, data->handle);
 }
 
 /*
@@ -260,8 +260,8 @@ int lttng_ust_ctl_register_done(int sock)
 
 	DBG("Sending register done command to %d", sock);
 	memset(&lum, 0, sizeof(lum));
-	lum.header.handle = LTTNG_UST_ABI_ROOT_HANDLE;
-	lum.header.cmd = LTTNG_UST_ABI_REGISTER_DONE;
+	lum.handle = LTTNG_UST_ABI_ROOT_HANDLE;
+	lum.cmd = LTTNG_UST_ABI_REGISTER_DONE;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
@@ -279,12 +279,12 @@ int lttng_ust_ctl_create_session(int sock)
 
 	/* Create session */
 	memset(&lum, 0, sizeof(lum));
-	lum.header.handle = LTTNG_UST_ABI_ROOT_HANDLE;
-	lum.header.cmd = LTTNG_UST_ABI_SESSION;
+	lum.handle = LTTNG_UST_ABI_ROOT_HANDLE;
+	lum.cmd = LTTNG_UST_ABI_SESSION;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
-	session_handle = lur.header.ret_val;
+	session_handle = lur.ret_val;
 	DBG("received session handle %u", session_handle);
 	return session_handle;
 }
@@ -304,22 +304,22 @@ int lttng_ust_ctl_create_event(int sock, struct lttng_ust_abi_event *ev,
 	event_data = zmalloc(sizeof(*event_data));
 	if (!event_data)
 		return -ENOMEM;
-	event_data->header.type = LTTNG_UST_ABI_OBJECT_TYPE_EVENT;
+	event_data->type = LTTNG_UST_ABI_OBJECT_TYPE_EVENT;
 	memset(&lum, 0, sizeof(lum));
-	lum.header.handle = channel_data->header.handle;
-	lum.header.cmd = LTTNG_UST_ABI_EVENT;
-	strncpy(lum.cmd.event.name, ev->name,
+	lum.handle = channel_data->handle;
+	lum.cmd = LTTNG_UST_ABI_EVENT;
+	strncpy(lum.u.event.name, ev->name,
 		LTTNG_UST_ABI_SYM_NAME_LEN);
-	lum.cmd.event.instrumentation = ev->instrumentation;
-	lum.cmd.event.loglevel_type = ev->loglevel_type;
-	lum.cmd.event.loglevel = ev->loglevel;
+	lum.u.event.instrumentation = ev->instrumentation;
+	lum.u.event.loglevel_type = ev->loglevel_type;
+	lum.u.event.loglevel = ev->loglevel;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret) {
 		free(event_data);
 		return ret;
 	}
-	event_data->header.handle = lur.header.ret_val;
-	DBG("received event handle %u", event_data->header.handle);
+	event_data->handle = lur.ret_val;
+	DBG("received event handle %u", event_data->handle);
 	*_event_data = event_data;
 	return 0;
 }
@@ -356,15 +356,15 @@ int lttng_ust_ctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
 		ret = -ENOMEM;
 		goto end;
 	}
-	context_data->header.type = LTTNG_UST_ABI_OBJECT_TYPE_CONTEXT;
+	context_data->type = LTTNG_UST_ABI_OBJECT_TYPE_CONTEXT;
 	memset(&lum, 0, sizeof(lum));
-	lum.header.handle = obj_data->header.handle;
-	lum.header.cmd = LTTNG_UST_ABI_CONTEXT;
+	lum.handle = obj_data->handle;
+	lum.cmd = LTTNG_UST_ABI_CONTEXT;
 
-	lum.cmd.context.header.ctx = ctx->ctx;
+	lum.u.context.ctx = ctx->ctx;
 	switch (ctx->ctx) {
 	case LTTNG_UST_ABI_CONTEXT_PERF_THREAD_COUNTER:
-		lum.cmd.context.type.perf_counter = ctx->u.perf_counter;
+		lum.u.context.u.perf_counter = ctx->u.perf_counter;
 		break;
 	case LTTNG_UST_ABI_CONTEXT_APP_CONTEXT:
 	{
@@ -372,8 +372,8 @@ int lttng_ust_ctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
 				ctx->u.app_ctx.provider_name) + 1;
 		size_t ctx_name_len = strlen(ctx->u.app_ctx.ctx_name) + 1;
 
-		lum.cmd.context.type.app_ctx.provider_name_len = provider_name_len;
-		lum.cmd.context.type.app_ctx.ctx_name_len = ctx_name_len;
+		lum.u.context.u.app_ctx.provider_name_len = provider_name_len;
+		lum.u.context.u.app_ctx.ctx_name_len = ctx_name_len;
 
 		len = provider_name_len + ctx_name_len;
 		buf = zmalloc(len);
@@ -404,7 +404,7 @@ int lttng_ust_ctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
 			goto end;
 		}
 	}
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.header.handle, lum.header.cmd);
+	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
 	if (ret < 0) {
 		if (ret == -EINVAL) {
 			/*
@@ -415,7 +415,7 @@ int lttng_ust_ctl_add_context(int sock, struct lttng_ust_context_attr *ctx,
 		}
 		goto end;
 	}
-	context_data->header.handle = -1;
+	context_data->handle = -1;
 	DBG("Context created successfully");
 	*_context_data = context_data;
 	context_data = NULL;
@@ -447,11 +447,11 @@ int lttng_ust_ctl_set_filter(int sock, struct lttng_ust_abi_filter_bytecode *byt
 		return -EINVAL;
 
 	memset(&lum, 0, sizeof(lum));
-	lum.header.handle = obj_data->header.handle;
-	lum.header.cmd = LTTNG_UST_ABI_FILTER;
-	lum.cmd.filter.data_size = bytecode->len;
-	lum.cmd.filter.reloc_offset = bytecode->reloc_offset;
-	lum.cmd.filter.seqnum = bytecode->seqnum;
+	lum.handle = obj_data->handle;
+	lum.cmd = LTTNG_UST_ABI_FILTER;
+	lum.u.filter.data_size = bytecode->len;
+	lum.u.filter.reloc_offset = bytecode->reloc_offset;
+	lum.u.filter.seqnum = bytecode->seqnum;
 
 	ret = ustcomm_send_app_msg(sock, &lum);
 	if (ret)
@@ -464,7 +464,7 @@ int lttng_ust_ctl_set_filter(int sock, struct lttng_ust_abi_filter_bytecode *byt
 	}
 	if (ret != bytecode->len)
 		return -EINVAL;
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.header.handle, lum.header.cmd);
+	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
 	if (ret == -EINVAL) {
 		/*
 		 * Command unknown from remote end. The communication socket is
@@ -494,11 +494,11 @@ int lttng_ust_ctl_set_capture(int sock, struct lttng_ust_abi_capture_bytecode *b
 		return -EINVAL;
 
 	memset(&lum, 0, sizeof(lum));
-	lum.header.handle = obj_data->header.handle;
-	lum.header.cmd = LTTNG_UST_ABI_CAPTURE;
-	lum.cmd.capture.data_size = bytecode->len;
-	lum.cmd.capture.reloc_offset = bytecode->reloc_offset;
-	lum.cmd.capture.seqnum = bytecode->seqnum;
+	lum.handle = obj_data->handle;
+	lum.cmd = LTTNG_UST_ABI_CAPTURE;
+	lum.u.capture.data_size = bytecode->len;
+	lum.u.capture.reloc_offset = bytecode->reloc_offset;
+	lum.u.capture.seqnum = bytecode->seqnum;
 
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
@@ -511,7 +511,7 @@ int lttng_ust_ctl_set_capture(int sock, struct lttng_ust_abi_capture_bytecode *b
 	}
 	if (ret != bytecode->len)
 		return -EINVAL;
-	return ustcomm_recv_app_reply(sock, &lur, lum.header.handle, lum.header.cmd);
+	return ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
 }
 
 /*
@@ -537,9 +537,9 @@ int lttng_ust_ctl_set_exclusion(int sock, struct lttng_ust_abi_event_exclusion *
 	}
 
 	memset(&lum, 0, sizeof(lum));
-	lum.header.handle = obj_data->header.handle;
-	lum.header.cmd = LTTNG_UST_ABI_EXCLUSION;
-	lum.cmd.exclusion.count = exclusion->count;
+	lum.handle = obj_data->handle;
+	lum.cmd = LTTNG_UST_ABI_EXCLUSION;
+	lum.u.exclusion.count = exclusion->count;
 
 	ret = ustcomm_send_app_msg(sock, &lum);
 	if (ret) {
@@ -556,7 +556,7 @@ int lttng_ust_ctl_set_exclusion(int sock, struct lttng_ust_abi_event_exclusion *
 	if (ret != exclusion->count * LTTNG_UST_ABI_SYM_NAME_LEN) {
 		return -EINVAL;
 	}
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.header.handle, lum.header.cmd);
+	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
 	if (ret == -EINVAL) {
 		/*
 		 * Command unknown from remote end. The communication socket is
@@ -578,12 +578,12 @@ int lttng_ust_ctl_enable(int sock, struct lttng_ust_abi_object_data *object)
 		return -EINVAL;
 
 	memset(&lum, 0, sizeof(lum));
-	lum.header.handle = object->header.handle;
-	lum.header.cmd = LTTNG_UST_ABI_ENABLE;
+	lum.handle = object->handle;
+	lum.cmd = LTTNG_UST_ABI_ENABLE;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
-	DBG("enabled handle %u", object->header.handle);
+	DBG("enabled handle %u", object->handle);
 	return 0;
 }
 
@@ -598,12 +598,12 @@ int lttng_ust_ctl_disable(int sock, struct lttng_ust_abi_object_data *object)
 		return -EINVAL;
 
 	memset(&lum, 0, sizeof(lum));
-	lum.header.handle = object->header.handle;
-	lum.header.cmd = LTTNG_UST_ABI_DISABLE;
+	lum.handle = object->handle;
+	lum.cmd = LTTNG_UST_ABI_DISABLE;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
-	DBG("disable handle %u", object->header.handle);
+	DBG("disable handle %u", object->handle);
 	return 0;
 }
 
@@ -611,7 +611,7 @@ int lttng_ust_ctl_start_session(int sock, int handle)
 {
 	struct lttng_ust_abi_object_data obj;
 
-	obj.header.handle = handle;
+	obj.handle = handle;
 	return lttng_ust_ctl_enable(sock, &obj);
 }
 
@@ -619,7 +619,7 @@ int lttng_ust_ctl_stop_session(int sock, int handle)
 {
 	struct lttng_ust_abi_object_data obj;
 
-	obj.header.handle = handle;
+	obj.handle = handle;
 	return lttng_ust_ctl_disable(sock, &obj);
 }
 
@@ -647,11 +647,11 @@ int lttng_ust_ctl_create_event_notifier_group(int sock, int pipe_fd,
 	if (!event_notifier_group_data)
 		return -ENOMEM;
 
-	event_notifier_group_data->header.type = LTTNG_UST_ABI_OBJECT_TYPE_EVENT_NOTIFIER_GROUP;
+	event_notifier_group_data->type = LTTNG_UST_ABI_OBJECT_TYPE_EVENT_NOTIFIER_GROUP;
 
 	memset(&lum, 0, sizeof(lum));
-	lum.header.handle = LTTNG_UST_ABI_ROOT_HANDLE;
-	lum.header.cmd = LTTNG_UST_ABI_EVENT_NOTIFIER_GROUP_CREATE;
+	lum.handle = LTTNG_UST_ABI_ROOT_HANDLE;
+	lum.cmd = LTTNG_UST_ABI_EVENT_NOTIFIER_GROUP_CREATE;
 
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
@@ -664,12 +664,12 @@ int lttng_ust_ctl_create_event_notifier_group(int sock, int pipe_fd,
 		goto error;
 	}
 
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.header.handle, lum.header.cmd);
+	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
 	if (ret)
 		goto error;
 
-	event_notifier_group_data->header.handle = lur.header.ret_val;
-	DBG("received event_notifier group handle %d", event_notifier_group_data->header.handle);
+	event_notifier_group_data->handle = lur.ret_val;
+	DBG("received event_notifier group handle %d", event_notifier_group_data->handle);
 
 	*_event_notifier_group_data = event_notifier_group_data;
 
@@ -707,11 +707,11 @@ int lttng_ust_ctl_create_event_notifier(int sock, struct lttng_ust_abi_event_not
 	if (!event_notifier_data)
 		return -ENOMEM;
 
-	event_notifier_data->header.type = LTTNG_UST_ABI_OBJECT_TYPE_EVENT_NOTIFIER;
+	event_notifier_data->type = LTTNG_UST_ABI_OBJECT_TYPE_EVENT_NOTIFIER;
 
-	lum.header.handle = event_notifier_group->header.handle;
-	lum.header.cmd = LTTNG_UST_ABI_EVENT_NOTIFIER_CREATE;
-	lum.cmd.var_len_cmd.cmd_len = sizeof(*event_notifier);
+	lum.handle = event_notifier_group->handle;
+	lum.cmd = LTTNG_UST_ABI_EVENT_NOTIFIER_CREATE;
+	lum.u.var_len_cmd.cmd_len = sizeof(*event_notifier);
 
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret) {
@@ -727,13 +727,13 @@ int lttng_ust_ctl_create_event_notifier(int sock, struct lttng_ust_abi_event_not
 		else
 			return -EIO;
 	}
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.header.handle, lum.header.cmd);
+	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
 	if (ret) {
 		free(event_notifier_data);
 		return ret;
 	}
-	event_notifier_data->header.handle = lur.header.ret_val;
-	DBG("received event_notifier handle %u", event_notifier_data->header.handle);
+	event_notifier_data->handle = lur.ret_val;
+	DBG("received event_notifier handle %u", event_notifier_data->handle);
 	*_event_notifier_data = event_notifier_data;
 
 	return ret;
@@ -746,12 +746,12 @@ int lttng_ust_ctl_tracepoint_list(int sock)
 	int ret, tp_list_handle;
 
 	memset(&lum, 0, sizeof(lum));
-	lum.header.handle = LTTNG_UST_ABI_ROOT_HANDLE;
-	lum.header.cmd = LTTNG_UST_ABI_TRACEPOINT_LIST;
+	lum.handle = LTTNG_UST_ABI_ROOT_HANDLE;
+	lum.cmd = LTTNG_UST_ABI_TRACEPOINT_LIST;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
-	tp_list_handle = lur.header.ret_val;
+	tp_list_handle = lur.ret_val;
 	DBG("received tracepoint list handle %u", tp_list_handle);
 	return tp_list_handle;
 }
@@ -767,15 +767,15 @@ int lttng_ust_ctl_tracepoint_list_get(int sock, int tp_list_handle,
 		return -EINVAL;
 
 	memset(&lum, 0, sizeof(lum));
-	lum.header.handle = tp_list_handle;
-	lum.header.cmd = LTTNG_UST_ABI_TRACEPOINT_LIST_GET;
+	lum.handle = tp_list_handle;
+	lum.cmd = LTTNG_UST_ABI_TRACEPOINT_LIST_GET;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
 	DBG("received tracepoint list entry name %s loglevel %d",
-		lur.cmd.tracepoint.name,
-		lur.cmd.tracepoint.loglevel);
-	memcpy(iter, &lur.cmd.tracepoint, sizeof(*iter));
+		lur.u.tracepoint.name,
+		lur.u.tracepoint.loglevel);
+	memcpy(iter, &lur.u.tracepoint, sizeof(*iter));
 	return 0;
 }
 
@@ -786,12 +786,12 @@ int lttng_ust_ctl_tracepoint_field_list(int sock)
 	int ret, tp_field_list_handle;
 
 	memset(&lum, 0, sizeof(lum));
-	lum.header.handle = LTTNG_UST_ABI_ROOT_HANDLE;
-	lum.header.cmd = LTTNG_UST_ABI_TRACEPOINT_FIELD_LIST;
+	lum.handle = LTTNG_UST_ABI_ROOT_HANDLE;
+	lum.cmd = LTTNG_UST_ABI_TRACEPOINT_FIELD_LIST;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
-	tp_field_list_handle = lur.header.ret_val;
+	tp_field_list_handle = lur.ret_val;
 	DBG("received tracepoint field list handle %u", tp_field_list_handle);
 	return tp_field_list_handle;
 }
@@ -808,8 +808,8 @@ int lttng_ust_ctl_tracepoint_field_list_get(int sock, int tp_field_list_handle,
 		return -EINVAL;
 
 	memset(&lum, 0, sizeof(lum));
-	lum.header.handle = tp_field_list_handle;
-	lum.header.cmd = LTTNG_UST_ABI_TRACEPOINT_FIELD_LIST_GET;
+	lum.handle = tp_field_list_handle;
+	lum.cmd = LTTNG_UST_ABI_TRACEPOINT_FIELD_LIST_GET;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
@@ -835,12 +835,12 @@ int lttng_ust_ctl_tracer_version(int sock, struct lttng_ust_abi_tracer_version *
 		return -EINVAL;
 
 	memset(&lum, 0, sizeof(lum));
-	lum.header.handle = LTTNG_UST_ABI_ROOT_HANDLE;
-	lum.header.cmd = LTTNG_UST_ABI_TRACER_VERSION;
+	lum.handle = LTTNG_UST_ABI_ROOT_HANDLE;
+	lum.cmd = LTTNG_UST_ABI_TRACER_VERSION;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
-	memcpy(v, &lur.cmd.version, sizeof(*v));
+	memcpy(v, &lur.u.version, sizeof(*v));
 	DBG("received tracer version");
 	return 0;
 }
@@ -852,8 +852,8 @@ int lttng_ust_ctl_wait_quiescent(int sock)
 	int ret;
 
 	memset(&lum, 0, sizeof(lum));
-	lum.header.handle = LTTNG_UST_ABI_ROOT_HANDLE;
-	lum.header.cmd = LTTNG_UST_ABI_WAIT_QUIESCENT;
+	lum.handle = LTTNG_UST_ABI_ROOT_HANDLE;
+	lum.cmd = LTTNG_UST_ABI_WAIT_QUIESCENT;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
@@ -880,12 +880,12 @@ int lttng_ust_ctl_sock_flush_buffer(int sock, struct lttng_ust_abi_object_data *
 		return -EINVAL;
 
 	memset(&lum, 0, sizeof(lum));
-	lum.header.handle = object->header.handle;
-	lum.header.cmd = LTTNG_UST_ABI_FLUSH_BUFFER;
+	lum.handle = object->handle;
+	lum.cmd = LTTNG_UST_ABI_FLUSH_BUFFER;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
-	DBG("flushed buffer handle %u", object->header.handle);
+	DBG("flushed buffer handle %u", object->handle);
 	return 0;
 }
 
@@ -1011,13 +1011,13 @@ int lttng_ust_ctl_recv_channel_from_consumer(int sock,
 		ret = -ENOMEM;
 		goto error_alloc;
 	}
-	channel_data->header.type = LTTNG_UST_ABI_OBJECT_TYPE_CHANNEL;
-	channel_data->header.handle = -1;
+	channel_data->type = LTTNG_UST_ABI_OBJECT_TYPE_CHANNEL;
+	channel_data->handle = -1;
 
 	/* recv mmap size */
-	len = ustcomm_recv_unix_sock(sock, &channel_data->header.size,
-			sizeof(channel_data->header.size));
-	if (len != sizeof(channel_data->header.size)) {
+	len = ustcomm_recv_unix_sock(sock, &channel_data->size,
+			sizeof(channel_data->size));
+	if (len != sizeof(channel_data->size)) {
 		if (len < 0)
 			ret = len;
 		else
@@ -1026,9 +1026,9 @@ int lttng_ust_ctl_recv_channel_from_consumer(int sock,
 	}
 
 	/* recv channel type */
-	len = ustcomm_recv_unix_sock(sock, &channel_data->type.channel.type,
-			sizeof(channel_data->type.channel.type));
-	if (len != sizeof(channel_data->type.channel.type)) {
+	len = ustcomm_recv_unix_sock(sock, &channel_data->u.channel.type,
+			sizeof(channel_data->u.channel.type));
+	if (len != sizeof(channel_data->u.channel.type)) {
 		if (len < 0)
 			ret = len;
 		else
@@ -1037,14 +1037,14 @@ int lttng_ust_ctl_recv_channel_from_consumer(int sock,
 	}
 
 	/* recv channel data */
-	channel_data->type.channel.data = zmalloc(channel_data->header.size);
-	if (!channel_data->type.channel.data) {
+	channel_data->u.channel.data = zmalloc(channel_data->size);
+	if (!channel_data->u.channel.data) {
 		ret = -ENOMEM;
 		goto error;
 	}
-	len = ustcomm_recv_unix_sock(sock, channel_data->type.channel.data,
-			channel_data->header.size);
-	if (len != channel_data->header.size) {
+	len = ustcomm_recv_unix_sock(sock, channel_data->u.channel.data,
+			channel_data->size);
+	if (len != channel_data->size) {
 		if (len < 0)
 			ret = len;
 		else
@@ -1062,12 +1062,12 @@ int lttng_ust_ctl_recv_channel_from_consumer(int sock,
 			goto error_recv_data;
 		}
 	}
-	channel_data->type.channel.wakeup_fd = wakeup_fd;
+	channel_data->u.channel.wakeup_fd = wakeup_fd;
 	*_channel_data = channel_data;
 	return 0;
 
 error_recv_data:
-	free(channel_data->type.channel.data);
+	free(channel_data->u.channel.data);
 error:
 	free(channel_data);
 error_alloc:
@@ -1088,28 +1088,28 @@ int lttng_ust_ctl_recv_stream_from_consumer(int sock,
 		goto error_alloc;
 	}
 
-	stream_data->header.type = LTTNG_UST_ABI_OBJECT_TYPE_STREAM;
-	stream_data->header.handle = -1;
+	stream_data->type = LTTNG_UST_ABI_OBJECT_TYPE_STREAM;
+	stream_data->handle = -1;
 
 	/* recv mmap size */
-	len = ustcomm_recv_unix_sock(sock, &stream_data->header.size,
-			sizeof(stream_data->header.size));
-	if (len != sizeof(stream_data->header.size)) {
+	len = ustcomm_recv_unix_sock(sock, &stream_data->size,
+			sizeof(stream_data->size));
+	if (len != sizeof(stream_data->size)) {
 		if (len < 0 && len >= INT_MIN)
 			ret = len;
 		else
 			ret = -EINVAL;
 		goto error;
 	}
-	if (stream_data->header.size == -1) {
+	if (stream_data->size == -1) {
 		ret = -LTTNG_UST_ERR_NOENT;
 		goto error;
 	}
 
 	/* recv stream nr */
-	len = ustcomm_recv_unix_sock(sock, &stream_data->type.stream.stream_nr,
-			sizeof(stream_data->type.stream.stream_nr));
-	if (len != sizeof(stream_data->type.stream.stream_nr)) {
+	len = ustcomm_recv_unix_sock(sock, &stream_data->u.stream.stream_nr,
+			sizeof(stream_data->u.stream.stream_nr));
+	if (len != sizeof(stream_data->u.stream.stream_nr)) {
 		if (len < 0 && len >= INT_MIN)
 			ret = len;
 		else
@@ -1128,8 +1128,8 @@ int lttng_ust_ctl_recv_stream_from_consumer(int sock,
 			goto error;
 		}
 	}
-	stream_data->type.stream.shm_fd = fds[0];
-	stream_data->type.stream.wakeup_fd = fds[1];
+	stream_data->u.stream.shm_fd = fds[0];
+	stream_data->u.stream.wakeup_fd = fds[1];
 	*_stream_data = stream_data;
 	return 0;
 
@@ -1161,26 +1161,26 @@ int lttng_ust_ctl_send_channel_to_ust(int sock, int session_handle,
 		return -EINVAL;
 
 	memset(&lum, 0, sizeof(lum));
-	lum.header.handle = session_handle;
-	lum.header.cmd = LTTNG_UST_ABI_CHANNEL;
-	lum.cmd.channel.len = channel_data->header.size;
-	lum.cmd.channel.type = channel_data->type.channel.type;
-	lum.cmd.channel.owner_id = channel_data->type.channel.owner_id;
+	lum.handle = session_handle;
+	lum.cmd = LTTNG_UST_ABI_CHANNEL;
+	lum.u.channel.len = channel_data->size;
+	lum.u.channel.type = channel_data->u.channel.type;
+	lum.u.channel.owner_id = channel_data->u.channel.owner_id;
 	ret = ustcomm_send_app_msg(sock, &lum);
 	if (ret)
 		return ret;
 
 	ret = lttng_ust_ctl_send_channel(sock,
-			channel_data->type.channel.type,
-			channel_data->type.channel.data,
-			channel_data->header.size,
-			channel_data->type.channel.wakeup_fd,
+			channel_data->u.channel.type,
+			channel_data->u.channel.data,
+			channel_data->size,
+			channel_data->u.channel.wakeup_fd,
 			1);
 	if (ret)
 		return ret;
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.header.handle, lum.header.cmd);
+	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
 	if (!ret) {
-		channel_data->header.handle = lur.header.ret_val;
+		channel_data->handle = lur.ret_val;
 	} else if (ret == -EINVAL) {
 		/*
 		 * Command unknown from remote end. The communication socket is
@@ -1211,25 +1211,25 @@ int lttng_ust_ctl_send_stream_to_ust(int sock,
 	int ret;
 
 	memset(&lum, 0, sizeof(lum));
-	lum.header.handle = channel_data->header.handle;
-	lum.header.cmd = LTTNG_UST_ABI_STREAM;
-	lum.cmd.stream.len = stream_data->header.size;
-	lum.cmd.stream.stream_nr = stream_data->type.stream.stream_nr;
+	lum.handle = channel_data->handle;
+	lum.cmd = LTTNG_UST_ABI_STREAM;
+	lum.u.stream.len = stream_data->size;
+	lum.u.stream.stream_nr = stream_data->u.stream.stream_nr;
 	ret = ustcomm_send_app_msg(sock, &lum);
 	if (ret)
 		return ret;
 
 	assert(stream_data);
-	assert(stream_data->header.type == LTTNG_UST_ABI_OBJECT_TYPE_STREAM);
+	assert(stream_data->type == LTTNG_UST_ABI_OBJECT_TYPE_STREAM);
 
 	ret = lttng_ust_ctl_send_stream(sock,
-			stream_data->type.stream.stream_nr,
-			stream_data->header.size,
-			stream_data->type.stream.shm_fd,
-			stream_data->type.stream.wakeup_fd, 1);
+			stream_data->u.stream.stream_nr,
+			stream_data->size,
+			stream_data->u.stream.shm_fd,
+			stream_data->u.stream.wakeup_fd, 1);
 	if (ret)
 		return ret;
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.header.handle, lum.header.cmd);
+	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
 	if (ret == -EINVAL) {
 		/*
 		 * Command unknown from remote end. The communication socket is
@@ -1246,7 +1246,7 @@ int lttng_ust_ctl_duplicate_ust_object_data(struct lttng_ust_abi_object_data **d
 	struct lttng_ust_abi_object_data *obj;
 	int ret;
 
-	if (src->header.handle != -1) {
+	if (src->handle != -1) {
 		ret = -EINVAL;
 		goto error;
 	}
@@ -1257,38 +1257,38 @@ int lttng_ust_ctl_duplicate_ust_object_data(struct lttng_ust_abi_object_data **d
 		goto error;
 	}
 
-	obj->header.type = src->header.type;
-	obj->header.handle = src->header.handle;
-	obj->header.size = src->header.size;
+	obj->type = src->type;
+	obj->handle = src->handle;
+	obj->size = src->size;
 
-	switch (obj->header.type) {
+	switch (obj->type) {
 	case LTTNG_UST_ABI_OBJECT_TYPE_CHANNEL:
 	{
-		obj->type.channel.type = src->type.channel.type;
-		if (src->type.channel.wakeup_fd >= 0) {
-			obj->type.channel.wakeup_fd =
-				dup(src->type.channel.wakeup_fd);
-			if (obj->type.channel.wakeup_fd < 0) {
+		obj->u.channel.type = src->u.channel.type;
+		if (src->u.channel.wakeup_fd >= 0) {
+			obj->u.channel.wakeup_fd =
+				dup(src->u.channel.wakeup_fd);
+			if (obj->u.channel.wakeup_fd < 0) {
 				ret = -errno;
 				goto chan_error_wakeup_fd;
 			}
 		} else {
-			obj->type.channel.wakeup_fd =
-				src->type.channel.wakeup_fd;
+			obj->u.channel.wakeup_fd =
+				src->u.channel.wakeup_fd;
 		}
-		obj->type.channel.data = zmalloc(obj->header.size);
-		if (!obj->type.channel.data) {
+		obj->u.channel.data = zmalloc(obj->size);
+		if (!obj->u.channel.data) {
 			ret = -ENOMEM;
 			goto chan_error_alloc;
 		}
-		memcpy(obj->type.channel.data, src->type.channel.data, obj->header.size);
+		memcpy(obj->u.channel.data, src->u.channel.data, obj->size);
 		break;
 
 	chan_error_alloc:
-		if (src->type.channel.wakeup_fd >= 0) {
+		if (src->u.channel.wakeup_fd >= 0) {
 			int closeret;
 
-			closeret = close(obj->type.channel.wakeup_fd);
+			closeret = close(obj->u.channel.wakeup_fd);
 			if (closeret) {
 				PERROR("close");
 			}
@@ -1300,37 +1300,37 @@ int lttng_ust_ctl_duplicate_ust_object_data(struct lttng_ust_abi_object_data **d
 
 	case LTTNG_UST_ABI_OBJECT_TYPE_STREAM:
 	{
-		obj->type.stream.stream_nr = src->type.stream.stream_nr;
-		if (src->type.stream.wakeup_fd >= 0) {
-			obj->type.stream.wakeup_fd =
-				dup(src->type.stream.wakeup_fd);
-			if (obj->type.stream.wakeup_fd < 0) {
+		obj->u.stream.stream_nr = src->u.stream.stream_nr;
+		if (src->u.stream.wakeup_fd >= 0) {
+			obj->u.stream.wakeup_fd =
+				dup(src->u.stream.wakeup_fd);
+			if (obj->u.stream.wakeup_fd < 0) {
 				ret = -errno;
 				goto stream_error_wakeup_fd;
 			}
 		} else {
-			obj->type.stream.wakeup_fd =
-				src->type.stream.wakeup_fd;
+			obj->u.stream.wakeup_fd =
+				src->u.stream.wakeup_fd;
 		}
 
-		if (src->type.stream.shm_fd >= 0) {
-			obj->type.stream.shm_fd =
-				dup(src->type.stream.shm_fd);
-			if (obj->type.stream.shm_fd < 0) {
+		if (src->u.stream.shm_fd >= 0) {
+			obj->u.stream.shm_fd =
+				dup(src->u.stream.shm_fd);
+			if (obj->u.stream.shm_fd < 0) {
 				ret = -errno;
 				goto stream_error_shm_fd;
 			}
 		} else {
-			obj->type.stream.shm_fd =
-				src->type.stream.shm_fd;
+			obj->u.stream.shm_fd =
+				src->u.stream.shm_fd;
 		}
 		break;
 
 	stream_error_shm_fd:
-		if (src->type.stream.wakeup_fd >= 0) {
+		if (src->u.stream.wakeup_fd >= 0) {
 			int closeret;
 
-			closeret = close(obj->type.stream.wakeup_fd);
+			closeret = close(obj->u.stream.wakeup_fd);
 			if (closeret) {
 				PERROR("close");
 			}
@@ -1341,21 +1341,21 @@ int lttng_ust_ctl_duplicate_ust_object_data(struct lttng_ust_abi_object_data **d
 
 	case LTTNG_UST_ABI_OBJECT_TYPE_COUNTER:
 	{
-		obj->type.counter.data = zmalloc(obj->header.size);
-		if (!obj->type.counter.data) {
+		obj->u.counter.data = zmalloc(obj->size);
+		if (!obj->u.counter.data) {
 			ret = -ENOMEM;
 			goto error_type;
 		}
-		memcpy(obj->type.counter.data, src->type.counter.data, obj->header.size);
+		memcpy(obj->u.counter.data, src->u.counter.data, obj->size);
 		break;
 	}
 
 	case LTTNG_UST_ABI_OBJECT_TYPE_COUNTER_CHANNEL:
 	{
-		if (src->type.counter_channel.shm_fd >= 0) {
-			obj->type.counter_channel.shm_fd =
-				dup(src->type.counter_channel.shm_fd);
-			if (obj->type.counter_channel.shm_fd < 0) {
+		if (src->u.counter_channel.shm_fd >= 0) {
+			obj->u.counter_channel.shm_fd =
+				dup(src->u.counter_channel.shm_fd);
+			if (obj->u.counter_channel.shm_fd < 0) {
 				ret = -errno;
 				goto error_type;
 			}
@@ -1365,11 +1365,11 @@ int lttng_ust_ctl_duplicate_ust_object_data(struct lttng_ust_abi_object_data **d
 
 	case LTTNG_UST_ABI_OBJECT_TYPE_COUNTER_CPU:
 	{
-		obj->type.counter_cpu.cpu_nr = src->type.counter_cpu.cpu_nr;
-		if (src->type.counter_cpu.shm_fd >= 0) {
-			obj->type.counter_cpu.shm_fd =
-				dup(src->type.counter_cpu.shm_fd);
-			if (obj->type.counter_cpu.shm_fd < 0) {
+		obj->u.counter_cpu.cpu_nr = src->u.counter_cpu.cpu_nr;
+		if (src->u.counter_cpu.shm_fd >= 0) {
+			obj->u.counter_cpu.shm_fd =
+				dup(src->u.counter_cpu.shm_fd);
+			if (obj->u.counter_cpu.shm_fd < 0) {
 				ret = -errno;
 				goto error_type;
 			}
@@ -1759,7 +1759,7 @@ int lttng_ust_ctl_stream_get_wakeup_fd(struct lttng_ust_ctl_consumer_stream *str
 void lttng_ust_ctl_set_channel_owner_id(struct lttng_ust_abi_object_data *obj,
 					uint32_t id)
 {
-	obj->type.channel.owner_id = id;
+	obj->u.channel.owner_id = id;
 }
 
 /*
@@ -4100,8 +4100,8 @@ int lttng_ust_ctl_regenerate_statedump(int sock, int handle)
 	int ret;
 
 	memset(&lum, 0, sizeof(lum));
-	lum.header.handle = handle;
-	lum.header.cmd = LTTNG_UST_ABI_SESSION_STATEDUMP;
+	lum.handle = handle;
+	lum.cmd = LTTNG_UST_ABI_SESSION_STATEDUMP;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret)
 		return ret;
@@ -4294,10 +4294,10 @@ int lttng_ust_ctl_create_counter_data(struct lttng_ust_ctl_daemon_counter *count
 		ret = -ENOMEM;
 		goto error;
 	}
-	counter_data->header.type = LTTNG_UST_ABI_OBJECT_TYPE_COUNTER;
-	counter_data->header.handle = -1;
-	counter_data->header.size = conf_len;
-	counter_data->type.counter.data = counter_conf;
+	counter_data->type = LTTNG_UST_ABI_OBJECT_TYPE_COUNTER;
+	counter_data->handle = -1;
+	counter_data->size = conf_len;
+	counter_data->u.counter.data = counter_conf;
 	*_counter_data = counter_data;
 
 	return 0;
@@ -4322,10 +4322,10 @@ int lttng_ust_ctl_create_counter_channel_data(struct lttng_ust_ctl_daemon_counte
 		ret = -ENOMEM;
 		goto error_alloc;
 	}
-	counter_channel_data->header.type = LTTNG_UST_ABI_OBJECT_TYPE_COUNTER_CHANNEL;
-	counter_channel_data->header.handle = -1;
-	counter_channel_data->header.size = len;
-	counter_channel_data->type.counter_channel.shm_fd = fd;
+	counter_channel_data->type = LTTNG_UST_ABI_OBJECT_TYPE_COUNTER_CHANNEL;
+	counter_channel_data->handle = -1;
+	counter_channel_data->size = len;
+	counter_channel_data->u.counter_channel.shm_fd = fd;
 	*_counter_channel_data = counter_channel_data;
 	return 0;
 
@@ -4348,11 +4348,11 @@ int lttng_ust_ctl_create_counter_cpu_data(struct lttng_ust_ctl_daemon_counter *c
 		ret = -ENOMEM;
 		goto error_alloc;
 	}
-	counter_cpu_data->header.type = LTTNG_UST_ABI_OBJECT_TYPE_COUNTER_CPU;
-	counter_cpu_data->header.handle = -1;
-	counter_cpu_data->header.size = len;
-	counter_cpu_data->type.counter_cpu.shm_fd = fd;
-	counter_cpu_data->type.counter_cpu.cpu_nr = cpu;
+	counter_cpu_data->type = LTTNG_UST_ABI_OBJECT_TYPE_COUNTER_CPU;
+	counter_cpu_data->handle = -1;
+	counter_cpu_data->size = len;
+	counter_cpu_data->u.counter_cpu.shm_fd = fd;
+	counter_cpu_data->u.counter_cpu.cpu_nr = cpu;
 	*_counter_cpu_data = counter_cpu_data;
 	return 0;
 
@@ -4387,17 +4387,17 @@ int lttng_ust_ctl_send_counter_data_to_ust(int sock, int parent_handle,
 	if (!counter_data)
 		return -EINVAL;
 
-	size = counter_data->header.size;
-	lum.header.handle = parent_handle;
-	lum.header.cmd = LTTNG_UST_ABI_COUNTER;
-	lum.cmd.var_len_cmd.cmd_len = size;
+	size = counter_data->size;
+	lum.handle = parent_handle;
+	lum.cmd = LTTNG_UST_ABI_COUNTER;
+	lum.u.var_len_cmd.cmd_len = size;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret) {
 		return ret;
 	}
 
 	/* Send var len cmd */
-	len = ustcomm_send_unix_sock(sock, counter_data->type.counter.data, size);
+	len = ustcomm_send_unix_sock(sock, counter_data->u.counter.data, size);
 	if (len != size) {
 		if (len < 0)
 			return len;
@@ -4405,9 +4405,9 @@ int lttng_ust_ctl_send_counter_data_to_ust(int sock, int parent_handle,
 			return -EIO;
 	}
 
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.header.handle, lum.header.cmd);
+	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
 	if (!ret) {
-		counter_data->header.handle = lur.header.ret_val;
+		counter_data->handle = lur.ret_val;
 	}
 	return ret;
 }
@@ -4436,9 +4436,9 @@ int lttng_ust_ctl_send_counter_channel_data_to_ust(int sock,
 		return -EINVAL;
 
 	size = counter_channel_data->size;
-	lum.header.handle = counter_data->header.handle;	/* parent handle */
-	lum.header.cmd = LTTNG_UST_ABI_COUNTER_CHANNEL;
-	lum.cmd.var_len_cmd.cmd_len = sizeof(struct lttng_ust_abi_counter_channel);
+	lum.handle = counter_data->handle;	/* parent handle */
+	lum.cmd = LTTNG_UST_ABI_COUNTER_CHANNEL;
+	lum.u.var_len_cmd.cmd_len = sizeof(struct lttng_ust_abi_counter_channel);
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret) {
 		return ret;
@@ -4456,7 +4456,7 @@ int lttng_ust_ctl_send_counter_channel_data_to_ust(int sock,
 			return -EIO;
 	}
 
-	shm_fd[0] = counter_channel_data->type.counter_channel.shm_fd;
+	shm_fd[0] = counter_channel_data->u.counter_channel.shm_fd;
 	len = ustcomm_send_fds_unix_sock(sock, shm_fd, 1);
 	if (len <= 0) {
 		if (len < 0)
@@ -4465,9 +4465,9 @@ int lttng_ust_ctl_send_counter_channel_data_to_ust(int sock,
 			return -EIO;
 	}
 
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.header.handle, lum.header.cmd);
+	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
 	if (!ret) {
-		counter_channel_data->header.handle = lur.header.ret_val;
+		counter_channel_data->handle = lur.ret_val;
 	}
 	return ret;
 }
@@ -4495,10 +4495,10 @@ int lttng_ust_ctl_send_counter_cpu_data_to_ust(int sock,
 	if (!counter_data || !counter_cpu_data)
 		return -EINVAL;
 
-	size = counter_cpu_data->header.size;
-	lum.header.handle = counter_data->header.handle;	/* parent handle */
-	lum.header.cmd = LTTNG_UST_ABI_COUNTER_CPU;
-	lum.cmd.var_len_cmd.cmd_len = sizeof(struct lttng_ust_abi_counter_cpu);
+	size = counter_cpu_data->size;
+	lum.handle = counter_data->handle;	/* parent handle */
+	lum.cmd = LTTNG_UST_ABI_COUNTER_CPU;
+	lum.u.var_len_cmd.cmd_len = sizeof(struct lttng_ust_abi_counter_cpu);
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret) {
 		return ret;
@@ -4506,7 +4506,7 @@ int lttng_ust_ctl_send_counter_cpu_data_to_ust(int sock,
 
 	counter_cpu.len = sizeof(struct lttng_ust_abi_counter_cpu);
 	counter_cpu.shm_len = size;
-	counter_cpu.cpu_nr = counter_cpu_data->type.counter_cpu.cpu_nr;
+	counter_cpu.cpu_nr = counter_cpu_data->u.counter_cpu.cpu_nr;
 
 	/* Send var len cmd */
 	len = ustcomm_send_unix_sock(sock, &counter_cpu, sizeof(struct lttng_ust_abi_counter_cpu));
@@ -4517,7 +4517,7 @@ int lttng_ust_ctl_send_counter_cpu_data_to_ust(int sock,
 			return -EIO;
 	}
 
-	shm_fd[0] = counter_cpu_data->type.counter_channel.shm_fd;
+	shm_fd[0] = counter_cpu_data->u.counter_channel.shm_fd;
 	len = ustcomm_send_fds_unix_sock(sock, shm_fd, 1);
 	if (len <= 0) {
 		if (len < 0)
@@ -4526,9 +4526,9 @@ int lttng_ust_ctl_send_counter_cpu_data_to_ust(int sock,
 			return -EIO;
 	}
 
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.header.handle, lum.header.cmd);
+	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
 	if (!ret) {
-		counter_cpu_data->header.handle = lur.header.ret_val;
+		counter_cpu_data->handle = lur.ret_val;
 	}
 	return ret;
 }
@@ -4587,9 +4587,9 @@ int lttng_ust_ctl_counter_create_event(int sock,
 	if (!counter_event_data)
 		return -ENOMEM;
 	counter_event_data->type = LTTNG_UST_ABI_OBJECT_TYPE_COUNTER_EVENT;
-	lum.header.handle = counter_data->header.handle;
-	lum.header.cmd = LTTNG_UST_ABI_COUNTER_EVENT;
-	lum.cmd.var_len_cmd.cmd_len = counter_event_len;
+	lum.handle = counter_data->handle;
+	lum.cmd = LTTNG_UST_ABI_COUNTER_EVENT;
+	lum.u.var_len_cmd.cmd_len = counter_event_len;
 	ret = ustcomm_send_app_cmd(sock, &lum, &lur);
 	if (ret) {
 		free(counter_event_data);
@@ -4605,13 +4605,13 @@ int lttng_ust_ctl_counter_create_event(int sock,
 		else
 			return -EIO;
 	}
-	ret = ustcomm_recv_app_reply(sock, &lur, lum.header.handle, lum.header.cmd);
+	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
 	if (ret) {
 		free(counter_event_data);
 		return ret;
 	}
-	counter_event_data->header.handle = lur.header.ret_val;
-	DBG("received counter event handle %u", counter_event_data->header.handle);
+	counter_event_data->handle = lur.ret_val;
+	DBG("received counter event handle %u", counter_event_data->handle);
 	*_counter_event_data = counter_event_data;
 	return 0;
 }

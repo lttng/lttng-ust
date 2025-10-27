@@ -1815,19 +1815,19 @@ struct lttng_event_notifier_enabler *lttng_event_notifier_enabler_create(
 	CDS_INIT_LIST_HEAD(&event_notifier_enabler->parent.excluder_head);
 	CDS_INIT_LIST_HEAD(&event_notifier_enabler->capture_bytecode_head);
 
-	event_notifier_enabler->parent.user_token = event_notifier_param->token;
+	event_notifier_enabler->parent.user_token = event_notifier_param->event.token;
 	event_notifier_enabler->error_counter_index = event_notifier_param->error_counter_index;
 	event_notifier_enabler->num_captures = 0;
 
 	memcpy(&event_notifier_enabler->parent.event_param.name,
-		event_notifier_param->name,
+		event_notifier_param->event.name,
 		sizeof(event_notifier_enabler->parent.event_param.name));
 	event_notifier_enabler->parent.event_param.instrumentation =
-		event_notifier_param->instrumentation;
+		event_notifier_param->event.instrumentation;
 	event_notifier_enabler->parent.event_param.loglevel =
-		event_notifier_param->loglevel;
+		event_notifier_param->event.loglevel;
 	event_notifier_enabler->parent.event_param.loglevel_type =
-		event_notifier_param->loglevel_type;
+		event_notifier_param->event.loglevel_type;
 
 	event_notifier_enabler->parent.enabled = 0;
 	event_notifier_enabler->group = event_notifier_group;
@@ -1908,14 +1908,14 @@ int lttng_attach_context(struct lttng_ust_abi_context *context_param,
 	if (session->priv->been_active)
 		return -EPERM;
 
-	switch (context_param->header.ctx) {
+	switch (context_param->ctx) {
 	case LTTNG_UST_ABI_CONTEXT_PTHREAD_ID:
 		return lttng_add_pthread_id_to_ctx(ctx);
 	case LTTNG_UST_ABI_CONTEXT_PERF_THREAD_COUNTER:
 	{
 		struct lttng_ust_abi_perf_counter_ctx *perf_ctx_param;
 
-		perf_ctx_param = &context_param->type.perf_counter;
+		perf_ctx_param = &context_param->u.perf_counter;
 		return lttng_add_perf_counter_to_ctx(
 			perf_ctx_param->type,
 			perf_ctx_param->config,

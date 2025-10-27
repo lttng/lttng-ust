@@ -854,7 +854,7 @@ static int lttng_ust_event_notifier_enabler_create(int event_notifier_group_obj,
 	struct lttng_event_notifier_enabler *event_notifier_enabler;
 	int event_notifier_objd, ret;
 
-	event_notifier_param->name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
+	event_notifier_param->event.name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
 	event_notifier_objd = objd_alloc(NULL, &lttng_event_notifier_enabler_ops, owner,
 		"event_notifier enabler");
 	if (event_notifier_objd < 0) {
@@ -1125,8 +1125,8 @@ long lttng_event_notifier_group_cmd(int objd, unsigned int cmd, unsigned long ar
 				abi_event_notifier, uargs->event_notifier.len);
 		if (ret)
 			return ret;
-		event_notifier.name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
-		if (strutils_is_star_glob_pattern(event_notifier.name)) {
+		event_notifier.event.name[LTTNG_UST_ABI_SYM_NAME_LEN - 1] = '\0';
+		if (strutils_is_star_glob_pattern(event_notifier.event.name)) {
 			/*
 			 * If the event name is a star globbing pattern,
 			 * we create the special star globbing enabler.

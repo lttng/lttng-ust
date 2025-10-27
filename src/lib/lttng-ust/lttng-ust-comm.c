@@ -958,20 +958,20 @@ int handle_bytecode_recv(struct sock_info *sock_info,
 	ssize_t len;
 	int ret = 0;
 
-	switch (lum->header.cmd) {
+	switch (lum->cmd) {
 	case LTTNG_UST_ABI_FILTER:
 		type = LTTNG_UST_BYTECODE_TYPE_FILTER;
-		data_size = lum->cmd.filter.data_size;
+		data_size = lum->u.filter.data_size;
 		data_size_max = LTTNG_UST_ABI_FILTER_BYTECODE_MAX_LEN;
-		reloc_offset = lum->cmd.filter.reloc_offset;
-		seqnum = lum->cmd.filter.seqnum;
+		reloc_offset = lum->u.filter.reloc_offset;
+		seqnum = lum->u.filter.seqnum;
 		break;
 	case LTTNG_UST_ABI_CAPTURE:
 		type = LTTNG_UST_BYTECODE_TYPE_CAPTURE;
-		data_size = lum->cmd.capture.data_size;
+		data_size = lum->u.capture.data_size;
 		data_size_max = LTTNG_UST_ABI_CAPTURE_BYTECODE_MAX_LEN;
-		reloc_offset = lum->cmd.capture.reloc_offset;
-		seqnum = lum->cmd.capture.seqnum;
+		reloc_offset = lum->u.capture.reloc_offset;
+		seqnum = lum->u.capture.seqnum;
 		break;
 	default:
 		abort();
@@ -979,14 +979,14 @@ int handle_bytecode_recv(struct sock_info *sock_info,
 
 	if (data_size > data_size_max) {
 		ERR("%s data size is too large: %u bytes",
-				bytecode_type_str(lum->header.cmd), data_size);
+				bytecode_type_str(lum->cmd), data_size);
 		ret = -EINVAL;
 		goto end;
 	}
 
 	if (reloc_offset > data_size) {
 		ERR("%s reloc offset %u is not within data",
-				bytecode_type_str(lum->header.cmd), reloc_offset);
+				bytecode_type_str(lum->cmd), reloc_offset);
 		ret = -EINVAL;
 		goto end;
 	}
@@ -1004,21 +1004,21 @@ int handle_bytecode_recv(struct sock_info *sock_info,
 	bytecode->type = type;
 
 	len = ustcomm_recv_unix_sock(sock, bytecode->bc.data, bytecode->bc.len);
-	switch (handle_error(sock_info, len, bytecode->bc.len, bytecode_type_str(lum->header.cmd), &ret)) {
+	switch (handle_error(sock_info, len, bytecode->bc.len, bytecode_type_str(lum->cmd), &ret)) {
 	case MSG_OK:
 		break;
 	case MSG_ERROR:		/* Fallthrough */
 	case MSG_SHUTDOWN:
 		goto end;
 	}
-	ops = lttng_ust_abi_objd_ops(lum->header.handle);
+	ops = lttng_ust_abi_objd_ops(lum->handle);
 	if (!ops) {
 		ret = -ENOENT;
 		goto end;
 	}
 
 	if (ops->cmd)
-		ret = ops->cmd(lum->header.handle, lum->header.cmd,
+		ret = ops->cmd(lum->handle, lum->cmd,
 			(unsigned long) &bytecode,
 			NULL, sock_info);
 	else
@@ -1032,11 +1032,11 @@ end:
 static
 void prepare_cmd_reply(struct ustcomm_ust_reply *lur, uint32_t handle, uint32_t cmd, int ret)
 {
-	lur->header.handle = handle;
-	lur->header.cmd = cmd;
-	lur->header.ret_val = ret;
+	lur->handle = handle;
+	lur->cmd = cmd;
+	lur->ret_val = ret;
 	if (ret >= 0) {
-		lur->header.ret_code = LTTNG_UST_OK;
+		lur->ret_code = LTTNG_UST_OK;
 	} else {
 		/*
 		 * Use -LTTNG_UST_ERR as wildcard for UST internal
@@ -1048,26 +1048,26 @@ void prepare_cmd_reply(struct ustcomm_ust_reply *lur, uint32_t handle, uint32_t 
 			/* Translate code to UST error. */
 			switch (ret) {
 			case -EEXIST:
-				lur->header.ret_code = -LTTNG_UST_ERR_EXIST;
+				lur->ret_code = -LTTNG_UST_ERR_EXIST;
 				break;
 			case -EINVAL:
-				lur->header.ret_code = -LTTNG_UST_ERR_INVAL;
+				lur->ret_code = -LTTNG_UST_ERR_INVAL;
 				break;
 			case -ENOENT:
-				lur->header.ret_code = -LTTNG_UST_ERR_NOENT;
+				lur->ret_code = -LTTNG_UST_ERR_NOENT;
 				break;
 			case -EPERM:
-				lur->header.ret_code = -LTTNG_UST_ERR_PERM;
+				lur->ret_code = -LTTNG_UST_ERR_PERM;
 				break;
 			case -ENOSYS:
-				lur->header.ret_code = -LTTNG_UST_ERR_NOSYS;
+				lur->ret_code = -LTTNG_UST_ERR_NOSYS;
 				break;
 			default:
-				lur->header.ret_code = -LTTNG_UST_ERR;
+				lur->ret_code = -LTTNG_UST_ERR;
 				break;
 			}
 		} else {
-			lur->header.ret_code = ret;
+			lur->ret_code = ret;
 		}
 	}
 }
@@ -1089,13 +1089,13 @@ int handle_message(struct sock_info *sock_info,
 		goto error;
 	}
 
-	ops = lttng_ust_abi_objd_ops(lum->header.handle);
+	ops = lttng_ust_abi_objd_ops(lum->handle);
 	if (!ops) {
 		ret = -ENOENT;
 		goto error;
 	}
 
-	switch (lum->header.cmd) {
+	switch (lum->cmd) {
 	case LTTNG_UST_ABI_FILTER:
 	case LTTNG_UST_ABI_EXCLUSION:
 	case LTTNG_UST_ABI_CHANNEL:
@@ -1127,7 +1127,7 @@ int handle_message(struct sock_info *sock_info,
 		 * Those commands expect a reply to the struct ustcomm_ust_msg
 		 * before sending additional payload.
 		 */
-		prepare_cmd_reply(&lur, lum->header.handle, lum->header.cmd, 0);
+		prepare_cmd_reply(&lur, lum->handle, lum->cmd, 0);
 
 		ret = send_reply(sock, &lur);
 		if (ret < 0) {
@@ -1144,18 +1144,18 @@ int handle_message(struct sock_info *sock_info,
 		break;
 	}
 
-	switch (lum->header.cmd) {
+	switch (lum->cmd) {
 	case LTTNG_UST_ABI_REGISTER_DONE:
-		if (lum->header.handle == LTTNG_UST_ABI_ROOT_HANDLE)
+		if (lum->handle == LTTNG_UST_ABI_ROOT_HANDLE)
 			ret = handle_register_done(sock_info);
 		else
 			ret = -EINVAL;
 		break;
 	case LTTNG_UST_ABI_RELEASE:
-		if (lum->header.handle == LTTNG_UST_ABI_ROOT_HANDLE)
+		if (lum->handle == LTTNG_UST_ABI_ROOT_HANDLE)
 			ret = -EPERM;
 		else
-			ret = lttng_ust_abi_objd_unref(lum->header.handle, 1);
+			ret = lttng_ust_abi_objd_unref(lum->handle, 1);
 		break;
 	case LTTNG_UST_ABI_CAPTURE:
 	case LTTNG_UST_ABI_FILTER:
@@ -1169,7 +1169,7 @@ int handle_message(struct sock_info *sock_info,
 		struct lttng_ust_excluder_node *node;
 		unsigned int count;
 
-		count = lum->cmd.exclusion.count;
+		count = lum->u.exclusion.count;
 		if (count == 0) {
 			/* There are no names to read */
 			ret = 0;
@@ -1193,7 +1193,7 @@ int handle_message(struct sock_info *sock_info,
 			goto error;
 		}
 		if (ops->cmd)
-			ret = ops->cmd(lum->header.handle, lum->header.cmd,
+			ret = ops->cmd(lum->handle, lum->cmd,
 					(unsigned long) &node,
 					&args, sock_info);
 		else
@@ -1216,8 +1216,8 @@ int handle_message(struct sock_info *sock_info,
 		}
 		args.event_notifier_handle.event_notifier_notif_fd = event_notifier_notif_fd;
 		if (ops->cmd)
-			ret = ops->cmd(lum->header.handle, lum->header.cmd,
-					(unsigned long) &lum->cmd,
+			ret = ops->cmd(lum->handle, lum->cmd,
+					(unsigned long) &lum->u,
 					&args, sock_info);
 		else
 			ret = -ENOSYS;
@@ -1236,9 +1236,9 @@ int handle_message(struct sock_info *sock_info,
 		int wakeup_fd;
 
 		len = ustcomm_recv_channel_from_sessiond(sock,
-				&chan_data, lum->cmd.channel.len,
+				&chan_data, lum->u.channel.len,
 				&wakeup_fd);
-		switch (handle_error(sock_info, len, lum->cmd.channel.len, "channel", &ret)) {
+		switch (handle_error(sock_info, len, lum->u.channel.len, "channel", &ret)) {
 		case MSG_OK:
 			break;
 		case MSG_ERROR:		/* Fallthrough */
@@ -1248,8 +1248,8 @@ int handle_message(struct sock_info *sock_info,
 		args.channel.chan_data = chan_data;
 		args.channel.wakeup_fd = wakeup_fd;
 		if (ops->cmd)
-			ret = ops->cmd(lum->header.handle, lum->header.cmd,
-					(unsigned long) &lum->cmd,
+			ret = ops->cmd(lum->handle, lum->cmd,
+					(unsigned long) &lum->u,
 					&args, sock_info);
 		else
 			ret = -ENOSYS;
@@ -1280,8 +1280,8 @@ int handle_message(struct sock_info *sock_info,
 		}
 
 		if (ops->cmd)
-			ret = ops->cmd(lum->header.handle, lum->header.cmd,
-					(unsigned long) &lum->cmd,
+			ret = ops->cmd(lum->handle, lum->cmd,
+					(unsigned long) &lum->u,
 					&args, sock_info);
 		else
 			ret = -ENOSYS;
@@ -1304,14 +1304,14 @@ int handle_message(struct sock_info *sock_info,
 		break;
 	}
 	case LTTNG_UST_ABI_CONTEXT:
-		switch (lum->cmd.context.header.ctx) {
+		switch (lum->u.context.ctx) {
 		case LTTNG_UST_ABI_CONTEXT_APP_CONTEXT:
 		{
 			char *p;
 			size_t ctxlen, recvlen;
 
-			ctxlen = strlen("$app.") + lum->cmd.context.type.app_ctx.provider_name_len - 1
-					+ strlen(":") + lum->cmd.context.type.app_ctx.ctx_name_len;
+			ctxlen = strlen("$app.") + lum->u.context.u.app_ctx.provider_name_len - 1
+					+ strlen(":") + lum->u.context.u.app_ctx.ctx_name_len;
 			if (ctxlen >= LTTNG_UST_ABI_SYM_NAME_LEN) {
 				ERR("Application context string length size is too large: %zu bytes",
 					ctxlen);
@@ -1330,7 +1330,7 @@ int handle_message(struct sock_info *sock_info,
 				goto error;
 			}
 			/* Put : between provider and ctxname. */
-			p[lum->cmd.context.type.app_ctx.provider_name_len - 1] = ':';
+			p[lum->u.context.u.app_ctx.provider_name_len - 1] = ':';
 			args.app_context.ctxname = ctxstr;
 			break;
 		}
@@ -1338,8 +1338,8 @@ int handle_message(struct sock_info *sock_info,
 			break;
 		}
 		if (ops->cmd) {
-			ret = ops->cmd(lum->header.handle, lum->header.cmd,
-					(unsigned long) &lum->cmd,
+			ret = ops->cmd(lum->handle, lum->cmd,
+					(unsigned long) &lum->u,
 					&args, sock_info);
 		} else {
 			ret = -ENOSYS;
@@ -1348,17 +1348,17 @@ int handle_message(struct sock_info *sock_info,
 	case LTTNG_UST_ABI_COUNTER:
 	{
 		len = ustcomm_recv_var_len_cmd_from_sessiond(sock,
-				&var_len_cmd_data, lum->cmd.var_len_cmd.cmd_len);
-		switch (handle_error(sock_info, len, lum->cmd.var_len_cmd.cmd_len, "counter", &ret)) {
+				&var_len_cmd_data, lum->u.var_len_cmd.cmd_len);
+		switch (handle_error(sock_info, len, lum->u.var_len_cmd.cmd_len, "counter", &ret)) {
 		case MSG_OK:
 			break;
 		case MSG_ERROR:		/* Fallthrough */
 		case MSG_SHUTDOWN:
 			goto error;
 		}
-		args.counter.len = lum->cmd.var_len_cmd.cmd_len;
+		args.counter.len = lum->u.var_len_cmd.cmd_len;
 		if (ops->cmd)
-			ret = ops->cmd(lum->header.handle, lum->header.cmd,
+			ret = ops->cmd(lum->handle, lum->cmd,
 					(unsigned long) var_len_cmd_data,
 					&args, sock_info);
 		else
@@ -1368,8 +1368,8 @@ int handle_message(struct sock_info *sock_info,
 	case LTTNG_UST_ABI_COUNTER_CHANNEL:
 	{
 		len = ustcomm_recv_var_len_cmd_from_sessiond(sock,
-				&var_len_cmd_data, lum->cmd.var_len_cmd.cmd_len);
-		switch (handle_error(sock_info, len, lum->cmd.var_len_cmd.cmd_len, "counter channel", &ret)) {
+				&var_len_cmd_data, lum->u.var_len_cmd.cmd_len);
+		switch (handle_error(sock_info, len, lum->u.var_len_cmd.cmd_len, "counter channel", &ret)) {
 		case MSG_OK:
 			break;
 		case MSG_ERROR:		/* Fallthrough */
@@ -1381,9 +1381,9 @@ int handle_message(struct sock_info *sock_info,
 		if (ret) {
 			goto error;
 		}
-		args.counter_shm.len = lum->cmd.var_len_cmd.cmd_len;
+		args.counter_shm.len = lum->u.var_len_cmd.cmd_len;
 		if (ops->cmd)
-			ret = ops->cmd(lum->header.handle, lum->header.cmd,
+			ret = ops->cmd(lum->handle, lum->cmd,
 					(unsigned long) var_len_cmd_data,
 					&args, sock_info);
 		else
@@ -1403,8 +1403,8 @@ int handle_message(struct sock_info *sock_info,
 	case LTTNG_UST_ABI_COUNTER_CPU:
 	{
 		len = ustcomm_recv_var_len_cmd_from_sessiond(sock,
-				&var_len_cmd_data, lum->cmd.var_len_cmd.cmd_len);
-		switch (handle_error(sock_info, len, lum->cmd.var_len_cmd.cmd_len, "counter cpu", &ret)) {
+				&var_len_cmd_data, lum->u.var_len_cmd.cmd_len);
+		switch (handle_error(sock_info, len, lum->u.var_len_cmd.cmd_len, "counter cpu", &ret)) {
 		case MSG_OK:
 			break;
 		case MSG_ERROR:		/* Fallthrough */
@@ -1416,9 +1416,9 @@ int handle_message(struct sock_info *sock_info,
 		if (ret) {
 			goto error;
 		}
-		args.counter_shm.len = lum->cmd.var_len_cmd.cmd_len;
+		args.counter_shm.len = lum->u.var_len_cmd.cmd_len;
 		if (ops->cmd)
-			ret = ops->cmd(lum->header.handle, lum->header.cmd,
+			ret = ops->cmd(lum->handle, lum->cmd,
 					(unsigned long) var_len_cmd_data,
 					&args, sock_info);
 		else
@@ -1439,17 +1439,17 @@ int handle_message(struct sock_info *sock_info,
 	case LTTNG_UST_ABI_COUNTER_EVENT:
 	{
 		len = ustcomm_recv_var_len_cmd_from_sessiond(sock,
-				&var_len_cmd_data, lum->cmd.var_len_cmd.cmd_len);
-		switch (handle_error(sock_info, len, lum->cmd.var_len_cmd.cmd_len, "counter event", &ret)) {
+				&var_len_cmd_data, lum->u.var_len_cmd.cmd_len);
+		switch (handle_error(sock_info, len, lum->u.var_len_cmd.cmd_len, "counter event", &ret)) {
 		case MSG_OK:
 			break;
 		case MSG_ERROR:		/* Fallthrough */
 		case MSG_SHUTDOWN:
 			goto error;
 		}
-		args.counter_event.len = lum->cmd.var_len_cmd.cmd_len;
+		args.counter_event.len = lum->u.var_len_cmd.cmd_len;
 		if (ops->cmd)
-			ret = ops->cmd(lum->header.handle, lum->header.cmd,
+			ret = ops->cmd(lum->handle, lum->cmd,
 					(unsigned long) var_len_cmd_data,
 					&args, sock_info);
 		else
@@ -1460,17 +1460,17 @@ int handle_message(struct sock_info *sock_info,
 	case LTTNG_UST_ABI_EVENT_NOTIFIER_CREATE:
 	{
 		len = ustcomm_recv_var_len_cmd_from_sessiond(sock,
-				&var_len_cmd_data, lum->cmd.var_len_cmd.cmd_len);
-		switch (handle_error(sock_info, len, lum->cmd.var_len_cmd.cmd_len, "event notifier", &ret)) {
+				&var_len_cmd_data, lum->u.var_len_cmd.cmd_len);
+		switch (handle_error(sock_info, len, lum->u.var_len_cmd.cmd_len, "event notifier", &ret)) {
 		case MSG_OK:
 			break;
 		case MSG_ERROR:		/* Fallthrough */
 		case MSG_SHUTDOWN:
 			goto error;
 		}
-		args.event_notifier.len = lum->cmd.var_len_cmd.cmd_len;
+		args.event_notifier.len = lum->u.var_len_cmd.cmd_len;
 		if (ops->cmd)
-			ret = ops->cmd(lum->header.handle, lum->header.cmd,
+			ret = ops->cmd(lum->handle, lum->cmd,
 					(unsigned long) var_len_cmd_data,
 					&args, sock_info);
 		else
@@ -1480,27 +1480,27 @@ int handle_message(struct sock_info *sock_info,
 
 	default:
 		if (ops->cmd)
-			ret = ops->cmd(lum->header.handle, lum->header.cmd,
-					(unsigned long) &lum->cmd,
+			ret = ops->cmd(lum->handle, lum->cmd,
+					(unsigned long) &lum->u,
 					&args, sock_info);
 		else
 			ret = -ENOSYS;
 		break;
 	}
 
-	prepare_cmd_reply(&lur, lum->header.handle, lum->header.cmd, ret);
+	prepare_cmd_reply(&lur, lum->handle, lum->cmd, ret);
 
 	if (ret >= 0) {
-		switch (lum->header.cmd) {
+		switch (lum->cmd) {
 		case LTTNG_UST_ABI_TRACER_VERSION:
-			lur.cmd.version = lum->cmd.version;
+			lur.u.version = lum->u.version;
 			break;
 		case LTTNG_UST_ABI_TRACEPOINT_LIST_GET:
-			memcpy(&lur.cmd.tracepoint, &lum->cmd.tracepoint, sizeof(lur.cmd.tracepoint));
+			memcpy(&lur.u.tracepoint, &lum->u.tracepoint, sizeof(lur.u.tracepoint));
 			break;
 		}
 	}
-	DBG("Return value: %d", lur.header.ret_val);
+	DBG("Return value: %d", lur.ret_val);
 
 	ust_unlock();
 
@@ -1526,8 +1526,8 @@ int handle_message(struct sock_info *sock_info,
 	 * LTTNG_UST_TRACEPOINT_FIELD_LIST_GET needs to send the field
 	 * after the reply.
 	 */
-	if (lur.header.ret_code == LTTNG_UST_OK) {
-		switch (lum->header.cmd) {
+	if (lur.ret_code == LTTNG_UST_OK) {
+		switch (lum->cmd) {
 		case LTTNG_UST_ABI_TRACEPOINT_FIELD_LIST_GET:
 			len = ustcomm_send_unix_sock(sock,
 				&args.field_list.entry,
@@ -2172,7 +2172,7 @@ restart:
 			ust_unlock();
 			goto end;
 		case sizeof(lum):
-			print_cmd(lum.header.cmd, lum.header.handle);
+			print_cmd(lum.cmd, lum.handle);
 			ret = handle_message(sock_info, sock, &lum);
 			if (ret) {
 				ERR("Error handling message for %s socket",
