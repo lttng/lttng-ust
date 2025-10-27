@@ -321,9 +321,9 @@ int lttng_ust_ctl_create_event(int sock, struct lttng_ust_abi_event *ev,
 	}
 
 	ret = ustcomm_recv_app_reply(sock, &lur, lum.handle, lum.cmd);
+
 	if (ret < 0) {
-		free(event_data);
-		return ret;
+
 	}
 
 	event_data->header.handle = lur.header.ret_val;
