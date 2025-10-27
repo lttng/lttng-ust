@@ -12,8 +12,8 @@
 #include <stdint.h>
 #include <lttng/ust-compiler.h>
 
-#define LTTNG_UST_ABI_SYM_NAME_LEN			256U
-#define LTTNG_UST_ABI_PROCNAME_LEN			16U
+#define LTTNG_UST_ABI_SYM_NAME_LEN			256
+#define LTTNG_UST_ABI_PROCNAME_LEN			16
 
 /* UST comm magic number, used to validate protocol and endianness. */
 #define LTTNG_UST_ABI_COMM_MAGIC			0xC57C57C5
