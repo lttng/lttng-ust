@@ -18,24 +18,7 @@
 /* UST comm magic number, used to validate protocol and endianness. */
 #define LTTNG_UST_ABI_COMM_MAGIC			0xC57C57C5
 
-/*
- * Version for ABI between liblttng-ust, sessiond, consumerd.
- *
- * The "major" version bump breaks compatibility between
- * sender/receivers interacting over the unix socket.
- * This compability break can be introduced by any minor
- * release of LTTng (e.g. between 2.14 and 2.15). A handshake
- * is done at application registration to validate the protocol
- * major version, and applications will refuse to interact with
- * an incompatible sessiond.
- *
- * Within a "major" version, it is possible to extend the communication
- * protocol by introducing additional commands. A sessiond sending such
- * new commands which may be unknown by the instrumented application
- * need to handle "unknown command" replies. Extending with new commands
- * is the favored approach to work-around a protocol issue within a
- * given protocol major version without breaking compatibility.
- */
+/* Version for ABI between liblttng-ust, sessiond, consumerd */
 #define LTTNG_UST_ABI_MAJOR_VERSION			11
 #define LTTNG_UST_ABI_MAJOR_VERSION_OLDEST_COMPATIBLE	11
 #define LTTNG_UST_ABI_MINOR_VERSION			 0
