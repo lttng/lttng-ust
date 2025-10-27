@@ -140,9 +140,6 @@ int lttng_ust_ctl_tracepoint_field_list_get(int sock, int tp_field_list_handle,
 		struct lttng_ust_abi_field_iter *iter);
 
 int lttng_ust_ctl_tracer_version(int sock, struct lttng_ust_abi_tracer_version *v);
-
-int lttng_ust_ctl_unknown_command(int sock);
-
 int lttng_ust_ctl_wait_quiescent(int sock);
 
 int lttng_ust_ctl_sock_flush_buffer(int sock, struct lttng_ust_abi_object_data *object);

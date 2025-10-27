@@ -613,13 +613,6 @@ lttng_ust_static_assert(sizeof(struct lttng_ust_abi_event_exclusion) == LTTNG_US
 /* Event notifier commands */
 #define LTTNG_UST_ABI_CAPTURE			LTTNG_UST_ABI_CMD(0xB6)
 
-/*
- * Dummy command for testing unknown command.
- *
- * Not meant to be used by users.
- */
-#define LTTNG_UST_ABI_UNKNOWN_COMMAND		LTTNG_UST_ABI_CMD(UINT32_MAX)
-
 /* Session and event notifier group commands */
 /* (0xC0) reserved for old ABI. */
 #define LTTNG_UST_ABI_COUNTER			\
