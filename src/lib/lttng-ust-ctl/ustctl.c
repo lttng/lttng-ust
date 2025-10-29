@@ -1332,15 +1332,13 @@ int lttng_ust_ctl_send_stream_to_ust(int sock,
 			.iov_len = sizeof(stream),
 		},
 	};
-	int ret;
-	int fds[] = {
-		stream_data->type.stream.shm_fd,
-		stream_data->type.stream.wakeup_fd,
-	};
+	int ret, fds[2];
 
 	if (!stream_data || !channel_data)
 		return -EINVAL;
 
+	fds[0] = stream_data->type.stream.shm_fd;
+	fds[1] = stream_data->type.stream.wakeup_fd;
 	stream.len = stream_data->header.size;
 	stream.stream_nr = stream_data->type.stream.stream_nr;
 
@@ -4601,14 +4599,12 @@ int lttng_ust_ctl_send_counter_cpu_data_to_ust(int sock,
 			.iov_len = sizeof(counter_cpu),
 		},
 	};
-	int fds[] = {
-		counter_cpu_data->type.counter_channel.shm_fd,
-	};
-	int ret;
+	int ret, fds[1];
 
 	if (!counter_data || !counter_cpu_data)
 		return -EINVAL;
 
+	fds[0] = counter_cpu_data->type.counter_channel.shm_fd;
 	counter_cpu.len = sizeof(struct lttng_ust_abi_counter_cpu);
 	counter_cpu.shm_len = counter_cpu_data->header.size;
 	counter_cpu.cpu_nr = counter_cpu_data->type.counter_cpu.cpu_nr;
